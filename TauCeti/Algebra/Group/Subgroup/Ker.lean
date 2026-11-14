@@ -20,6 +20,7 @@ range and kernel of the pointwise inverse of a homomorphism into a commutative g
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
 public section
@@ -28,7 +29,8 @@ namespace MonoidHom
 
 variable {G M : Type*} [Group G] [Monoid M]
 
-/-- Membership in the equality locus of two group homomorphisms is pointwise equality. -/
+/-- Membership in the equality locus of two monoid homomorphisms out of a group is pointwise
+equality. -/
 @[to_additive (attr := simp)]
 theorem mem_eqLocus {f g : G →* M} {x : G} : x ∈ f.eqLocus g ↔ f x = g x :=
   Iff.rfl
@@ -37,15 +39,16 @@ theorem mem_eqLocus {f g : G →* M} {x : G} : x ∈ f.eqLocus g ↔ f x = g x :
 @[to_additive /-- Precomposition with a surjective additive group homomorphism does not change the
 range. -/]
 theorem range_comp_of_surjective {N P : Type*} [Group N] [Group P] (g : N →* P) (f : G →* N)
-    (hf : Function.Surjective f) : (g.comp f).range = g.range := by
-  rw [range_comp, range_eq_top_of_surjective f hf, ← range_eq_map]
+    (hf : Function.Surjective f) : (g.comp f).range = g.range :=
+  SetLike.coe_injective <| by simpa only [coe_range, coe_comp] using hf.range_comp g
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
 additive group has the same range. -/]
 theorem range_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.range = f.range := by
-  ext y
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩⟩ <;> simpa using hx
+  ext
+  simp only [mem_range]
+  exact inv_surjective.exists.trans (by simp)
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same kernel. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
@@ -55,3 +58,25 @@ theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker :=
   simp
 
 end MonoidHom
+
+namespace Subgroup
+
+/-- A homomorphism out of a join of subgroups is determined by its restrictions to both
+factors, without any normalization hypothesis. -/
+theorem sup_hom_ext {G M : Type*} [Group G] [Monoid M] (H K : Subgroup G)
+    {F F' : ↥(H ⊔ K) →* M}
+    (hH : ∀ a : H, F (inclusion le_sup_left a) = F' (inclusion le_sup_left a))
+    (hK : ∀ b : K, F (inclusion le_sup_right b) = F' (inclusion le_sup_right b)) : F = F' := by
+  have hsup : H ⊔ K ≤ (F.eqLocus F').map (H ⊔ K).subtype := by
+    apply sup_le
+    · intro a ha
+      exact ⟨inclusion le_sup_left (⟨a, ha⟩ : H), hH ⟨a, ha⟩, by simp⟩
+    · intro b hb
+      exact ⟨inclusion le_sup_right (⟨b, hb⟩ : K), hK ⟨b, hb⟩, by simp⟩
+  apply MonoidHom.ext
+  intro x
+  obtain ⟨y, hy, heq⟩ := hsup x.property
+  have hxy : y = x := Subtype.ext heq
+  exact hxy ▸ hy
+
+end Subgroup

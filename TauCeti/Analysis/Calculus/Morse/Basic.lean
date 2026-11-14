@@ -120,8 +120,6 @@ twice differentiable point is `ContDiffAt.isSymmSndFDerivAt`.
   M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 1, for the nondegeneracy condition in
   Banach and Hilbert generality used here, namely invertibility of the second derivative as a map
   into the dual space.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -165,6 +163,16 @@ theorem hasNondegenerateCriticalPointsOn_iff {s : Set E} :
     HasNondegenerateCriticalPointsOn f s ↔
       ∀ ⦃x⦄, x ∈ s → fderiv ℝ f x = 0 → IsNondegenerateCriticalPoint f x :=
   Iff.rfl
+
+/-- A function with nondegenerate critical points on `s` is differentiable at every point of `s`:
+where it is not differentiable `fderiv` is `0` by convention, so the point would be a critical
+point, hence nondegenerate, hence a point of differentiability. -/
+theorem HasNondegenerateCriticalPointsOn.differentiableAt {s : Set E}
+    (hM : HasNondegenerateCriticalPointsOn f s) {x : E} (hx : x ∈ s) :
+    DifferentiableAt ℝ f x := by
+  by_contra hd
+  exact hd ((hasNondegenerateCriticalPointsOn_iff.1 hM hx
+    (fderiv_zero_of_not_differentiableAt hd)).contDiffAt.differentiableAt two_ne_zero)
 
 /-- Having nondegenerate critical points on `t` is inherited by every subset of `t`. -/
 theorem HasNondegenerateCriticalPointsOn.mono {s t : Set E}
@@ -248,8 +256,7 @@ theorem isNondegenerateCriticalPoint_comp_iff {φ : F → E} {b : F} (hf : ContD
     (hφ : ContDiffAt ℝ 2 φ b) (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b ↔ IsNondegenerateCriticalPoint f (φ b) := by
   have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 :=
-    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num))
-      (hφ.differentiableAt (by norm_num)) hinv
+    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num)) hinv
   obtain ⟨e, he⟩ := hinv
   -- The Hessian pulls back as `ψ ↦ ψ ∘ e` composed with the Hessian composed with `e`, and each of
   -- the three factors is invertible.
@@ -314,13 +321,12 @@ theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
   · simpa [hfun] using h.isInvertible
 
 /-- **Nondegenerate critical points pull back through a chart.** If `k` has nondegenerate critical
-points on the target of an open partial homeomorphism `Φ`, is `C²` there, and `Φ` is `C²` with
-invertible differential on its source, then every function that equals `k ∘ Φ + r` on the source
-has nondegenerate critical points on the source. -/
+points on the target of an open partial homeomorphism `Φ`, and `Φ` is `C²` with invertible
+differential on its source, then every function that equals `k ∘ Φ + r` on the source has
+nondegenerate critical points on the source. -/
 theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
     {Φ : OpenPartialHomeomorph F E} {k : E → ℝ} {h : F → ℝ} {r : ℝ}
     (hk : HasNondegenerateCriticalPointsOn k Φ.target)
-    (hkd : ∀ w ∈ Φ.target, ContDiffAt ℝ 2 k w)
     (hΦ : ∀ u ∈ Φ.source, ContDiffAt ℝ 2 Φ u ∧ (fderiv ℝ Φ u).IsInvertible)
     (hev : ∀ u ∈ Φ.source, h u = k (Φ u) + r) :
     HasNondegenerateCriticalPointsOn h Φ.source := by
@@ -330,10 +336,10 @@ theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
     eventually_of_mem (Φ.open_source.mem_nhds hu) hev
   -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
   have hkcrit : fderiv ℝ k (Φ u) = 0 := by
-    rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible
-      (((hkd _ (Φ.map_source hu)).add contDiffAt_const).differentiableAt (by norm_num))
-      (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
-    simpa [fderiv_add_const] using hcrit
+    by_cases hd : DifferentiableAt ℝ k (Φ u)
+    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r) hinv] at hcrit
+      simpa [fderiv_add_const] using hcrit
+    · exact fderiv_zero_of_not_differentiableAt hd
   have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=
     (isNondegenerateCriticalPoint_add_const_iff _).2
       (hasNondegenerateCriticalPointsOn_iff.1 hk (Φ.map_source hu) hkcrit)

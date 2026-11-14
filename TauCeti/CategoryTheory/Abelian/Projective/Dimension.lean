@@ -24,9 +24,15 @@ In an abelian category with enough projectives, every object has projective dime
 if and only if every subobject of a projective object is projective. This is the hereditary
 condition, expressed using Mathlib's existing projective-dimension predicate.
 
+A morphism `f` of projective objects shifts dimension by two between its kernel and its cokernel
+(`CategoryTheory.hasProjectiveDimensionLT_cokernel_iff_kernel`).
+
 When every object has projective dimension at most one, the criterion shows that the cycles and
 boundaries of a complex of projective objects are projective. Surjections onto these boundaries
 then split, so the cycles split off the terms.
+
+The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of an object is short exact
+(`CategoryTheory.Projective.kernelShortComplex_shortExact`).
 
 When coproducts indexed by `ι` are exact, for instance for direct sums of modules, a coproduct of
 objects of projective dimension at most `n` has projective dimension at most `n`
@@ -63,6 +69,40 @@ theorem projective_of_mono_of_hasProjectiveDimensionLE_one {X Y : C} (f : X ⟶ 
   exact projective_iff_hasProjectiveDimensionLT_one.mpr
     (hS.hasProjectiveDimensionLT_X₁ 1 inferInstance inferInstance)
 
+/-- **Dimension shifting along a morphism of projectives.** For a morphism `f : P ⟶ Q` of
+projective objects, the exact sequence `0 ⟶ ker f ⟶ P ⟶ Q ⟶ coker f ⟶ 0` lowers the projective
+dimension of `coker f` by two: it is less than `n + 3` exactly when that of `ker f` is less than
+`n + 1`. -/
+theorem hasProjectiveDimensionLT_cokernel_iff_kernel {P Q : C} (f : P ⟶ Q) [Projective P]
+    [Projective Q] (n : ℕ) :
+    HasProjectiveDimensionLT (cokernel f) (n + 3) ↔
+      HasProjectiveDimensionLT (kernel f) (n + 1) := by
+  have hz : kernel.ι f ≫ Abelian.factorThruImage f = 0 := by
+    simp [← cancel_mono (Abelian.image.ι f)]
+  have h₁ : (ShortComplex.mk _ _ hz).ShortExact :=
+    { exact := ShortComplex.exact_of_f_is_kernel _
+        (isKernelOfComp (Abelian.image.ι f) f (kernelIsKernel f) hz (by simp)) }
+  have h₂ : (ShortComplex.mk (Abelian.image.ι f) (cokernel.π f)
+      (kernel.condition _)).ShortExact :=
+    { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
+  exact (h₂.hasProjectiveDimensionLT_X₃_iff (n + 1) ‹_›).trans
+    (h₁.hasProjectiveDimensionLT_X₃_iff n ‹_›)
+
+/-- In an abelian category of projective dimension at most one, if `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` is exact
+with `X₁` and `X₃` projective, then `X₂` is projective: the image of `X₂ ⟶ X₃` is a subobject of
+`X₃`, hence projective, so `X₂` is an extension of projective objects. -/
+theorem _root_.CategoryTheory.ShortComplex.Exact.projective_X₂_of_mono_f
+    [∀ X : C, HasProjectiveDimensionLE X 1] {S : ShortComplex C} (hS : S.Exact) [Mono S.f]
+    [Projective S.X₁] [Projective S.X₃] : Projective S.X₂ := by
+  have : Projective (image S.g) := projective_of_mono_of_hasProjectiveDimensionLE_one (image.ι S.g)
+  have hS' : (ShortComplex.mk S.f (factorThruImage S.g)
+      (comp_factorThruImage_eq_zero S.zero)).ShortExact :=
+    { exact := ShortComplex.exact_of_g_is_cokernel _ hS.isColimitImage }
+  exact projective_iff_hasProjectiveDimensionLT_one.mpr
+    (hS'.hasProjectiveDimensionLT_X₂ 1
+      (projective_iff_hasProjectiveDimensionLT_one.mp ‹_›)
+      (projective_iff_hasProjectiveDimensionLT_one.mp ‹_›))
+
 variable (C) [EnoughProjectives C]
 
 /-- Every object has projective dimension at most one precisely when every monomorphism into a
@@ -83,6 +123,20 @@ theorem forall_hasProjectiveDimensionLE_one_iff_projective_of_mono :
       { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel P.f) }
     exact hS.hasProjectiveDimensionLT_X₃ 1 inferInstance inferInstance
 
+variable {C} in
+/-- The short complex `ker π ⟶ P ⟶ X` of the chosen projective presentation `π : P ⟶ X`. -/
+noncomputable abbrev Projective.kernelShortComplex (X : C) : ShortComplex C :=
+  ShortComplex.mk (kernel.ι (Projective.π X)) (Projective.π X) (kernel.condition _)
+
+variable {C} in
+/-- The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` is short exact. -/
+theorem Projective.kernelShortComplex_shortExact (X : C) :
+    (Projective.kernelShortComplex X).ShortExact :=
+  { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
+
+instance (X : C) : Projective (Projective.kernelShortComplex X).X₂ :=
+  inferInstanceAs (Projective (Projective.over X))
+
 section Coproducts
 
 variable {C} {ι : Type*} [HasColimitsOfShape (Discrete ι) C]
@@ -101,9 +155,7 @@ theorem hasProjectiveDimensionLT_of_isColimit_cofan {X : ι → C} {c : Cofan X}
     · have (i : ι) : Projective (X i) := projective_iff_hasProjectiveDimensionLT_one.2 (h i)
       exact projective_iff_hasProjectiveDimensionLT_one.1 (Projective.of_isColimit_cofan hc)
     -- Cover every summand by a projective object; the kernels have projective dimension `< n + 1`.
-    have hK (i : ι) : (ShortComplex.mk (kernel.ι (Projective.π (X i))) (Projective.π (X i))
-        (kernel.condition _)).ShortExact :=
-      { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
+    have hK (i : ι) := Projective.kernelShortComplex_shortExact (X i)
     let T : ShortComplex (Discrete ι ⥤ C) :=
       ShortComplex.mk (X₁ := Discrete.functor fun i ↦ kernel (Projective.π (X i)))
         (X₂ := Discrete.functor fun i ↦ Projective.over (X i)) (X₃ := Discrete.functor X)

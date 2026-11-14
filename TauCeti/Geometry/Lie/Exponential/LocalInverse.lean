@@ -35,11 +35,6 @@ tangent-space exponential.
 * `exists_injOn_mulInvariantExp_modelSpace`: exponential is injective near zero.
 * `TauCeti.exists_contMDiffMap_eventually_apply_lieExp_eq`: every smooth germ on the Lie algebra
   at zero is the pullback along `lieExp` of a globally smooth function on the group.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 -/
 public section
 open Filter Function Manifold
@@ -48,7 +43,6 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [IsManifold I 1 G]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 private theorem smoothOrder_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by
@@ -58,7 +52,7 @@ private theorem smoothOrder_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by
 coordinates. -/
 noncomputable def mulInvariantExpChart [FiniteDimensional ℝ E] [LieGroup I ∞ G]
     [T2Space G] [BoundarylessManifold I G] (v : E) : E := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact extChartAt I (1 : G)
     (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))
 
@@ -97,7 +91,7 @@ theorem mulInvariantExpChart_zero [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 theorem contDiffAt_mulInvariantExpChart_zero [FiniteDimensional ℝ E] [LieGroup I ∞ G]
     [T2Space G] [BoundarylessManifold I G] :
     ContDiffAt ℝ ∞ (mulInvariantExpChart (I := I) (G := G)) 0 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let f : E → G := fun v =>
     mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)
   have hfzero : f 0 = 1 := by
@@ -133,7 +127,7 @@ private theorem hasFDerivAt_mulInvariantExpChart_zero_equiv [FiniteDimensional �
 theorem. -/
 noncomputable def mulInvariantExpOpenPartialHomeomorph [FiniteDimensional ℝ E] [LieGroup I ∞ G]
     [T2Space G] [BoundarylessManifold I G] : OpenPartialHomeomorph E E := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact (contDiffAt_mulInvariantExpChart_zero (I := I) (G := G))
     |>.toOpenPartialHomeomorph _
       (hasFDerivAt_mulInvariantExpChart_zero_equiv (I := I) (G := G)) smoothOrder_ne_zero
@@ -150,7 +144,7 @@ theorem mulInvariantExpOpenPartialHomeomorph_apply [FiniteDimensional ℝ E] [Li
 theorem zero_mem_mulInvariantExpOpenPartialHomeomorph_source [FiniteDimensional ℝ E]
     [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] :
     0 ∈ (mulInvariantExpOpenPartialHomeomorph (I := I) (G := G)).source := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact (contDiffAt_mulInvariantExpChart_zero (I := I) (G := G))
     |>.mem_toOpenPartialHomeomorph_source
       (hasFDerivAt_mulInvariantExpChart_zero_equiv (I := I) (G := G)) smoothOrder_ne_zero
@@ -215,7 +209,7 @@ theorem contDiffAt_mulInvariantLogChart_one [FiniteDimensional ℝ E]
     [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] :
     ContDiffAt ℝ ∞ (mulInvariantLogChart (I := I) (G := G))
       (extChartAt I (1 : G) (1 : G)) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   let φ := mulInvariantExpOpenPartialHomeomorph (I := I) (G := G)
   have hφ : (φ : E → E) = mulInvariantExpChart (I := I) (G := G) := by
     funext v
@@ -523,17 +517,9 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
     obtain ⟨A, hA⟩ := hx.2.2
     rw [hψF]
     exact ⟨ContinuousLinearEquiv.ofUnit A, hA⟩
-  -- The partial diffeomorphism has the underlying partial equivalence of `ψ`, so its source and
-  -- coercion are those of `ψ`.
-  have hd := TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψsmooth
-    hψsymmSmooth
-  have hdsrc : (TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth).source
-      = ψ.source := congrArg PartialEquiv.source hd
-  have hdcoe : ⇑(TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth) =
-      ψ := congrArg (⇑) hd
   refine ⟨TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth,
-    hdsrc ▸ hzeroψ, fun x hx => ?_, hψF.symm.trans hdcoe.symm⟩
-  rw [hdsrc, hsrc] at hx
+    by simpa using hzeroψ, fun x hx => ?_, by simpa using hψF.symm⟩
+  simp only [TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv, hsrc] at hx
   exact hx.2.1
 
 /-- The fully charted exponential is a smooth local diffeomorphism at zero. -/
@@ -647,7 +633,8 @@ theorem exists_contMDiffMap_eventually_apply_lieExp_eq [FiniteDimensional ℝ E]
   have h1 : (1 : G) ∈ hd.localInverse.source := by
     simpa only [lieExp_zero] using hd.localInverse_mem_source
   obtain ⟨f, hf⟩ := (hφ.contMDiff.comp_contMDiffOn
-    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq hd.localInverse_open_source h1
+    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq
+      (hd.localInverse_open_source.mem_nhds h1)
   refine ⟨f, ?_⟩
   have hexp : Tendsto (lieExp (I := I) (G := G)) (𝓝 0) (𝓝 1) := by
     simpa only [lieExp_zero] using

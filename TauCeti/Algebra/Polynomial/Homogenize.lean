@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Expand
+public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Algebra.Polynomial.Roots
@@ -62,8 +64,8 @@ roots of `F(X, 1)` multiplied by `a`.
   `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏ (X₀ - a X₁)`.
 * `Polynomial.sub_natDegree_le_one_of_not_sq_dvd_homogenize`,
   `Polynomial.nodup_roots_of_not_sq_dvd_homogenize`: if neither `X₁ ^ 2` nor any
-  `(X₀ - a X₁) ^ 2` divides the homogenization of degree `n ≥ natDegree p`, then
-  `n ≤ natDegree p + 1` and the roots of `p` are simple.
+  `(X₀ - a X₁) ^ 2` divides the homogenization of degree `n` (with `n ≥ natDegree p` for the
+  second), then `n ≤ natDegree p + 1` and the roots of `p` are simple.
 * `Squarefree.not_sq_dvd_homogenize_natDegree`: conversely, the homogenization of degree
   `natDegree p` of a squarefree polynomial `p` has no squared linear factor.
 * `Polynomial.eval_homogenize_integralNormalization`: `G(a x, y) = a ^ (d - 1) F(x, y)` for the
@@ -74,6 +76,12 @@ roots of `F(X, 1)` multiplied by `a`.
 * `Polynomial.aeval_homogenize_eq_sum`, `Polynomial.aeval_homogenize`: the value of the
   homogenization of degree `n` at `(a, b)`, as a sum of terms and, for `b ≠ 0` in a semifield
   algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
+* `Polynomial.aeval_homogenize_of_eq_zero`, `Polynomial.aeval_homogenize_reflect`: the value
+  at `(a, 0)` is `p_n a ^ n`, and reflecting `p` at `n` exchanges the two coordinates.
+* `Polynomial.homogenize_expand`: for `p ≠ 0`, homogenizing `q(X ^ p)` at degree `p n` is
+  substituting `(X₀ ^ p, X₁ ^ p)` into the homogenization of `q` at degree `n`.
+* `Polynomial.eval_homogenize_geom_sum`: the homogenization of degree `m (p - 1)` of the geometric
+  sum `∑_{i < p} (X ^ m) ^ i` takes the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a binary form of degree `d` with no
@@ -164,11 +172,12 @@ theorem sub_mul_dvd_eval_homogenize {p : R[X]} {a : R} (ha : p.IsRoot a) {n : �
   rw [hpq, homogenize_mul _ _ (natDegree_X_sub_C_le a) (by omega), map_mul]
   exact dvd_mul_of_dvd_left (by simp [homogenize_X one_ne_zero]) _
 
-/-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n ≥ natDegree p`, then
-`n ≤ natDegree p + 1`. -/
-theorem sub_natDegree_le_one_of_not_sq_dvd_homogenize {p : R[X]} {n : ℕ} (hn : p.natDegree ≤ n)
+/-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n`, then
+`n ≤ natDegree p + 1`, stated as `n - natDegree p ≤ 1`. -/
+theorem sub_natDegree_le_one_of_not_sq_dvd_homogenize {p : R[X]} {n : ℕ}
     (h : ¬MvPolynomial.X 1 ^ 2 ∣ p.homogenize n) : n - p.natDegree ≤ 1 := by
   by_contra! hk
+  have hn : p.natDegree ≤ n := by omega
   rw [homogenize_eq_X_pow_mul_homogenize_natDegree hn] at h
   exact h ((pow_dvd_pow _ hk).mul_right _)
 
@@ -271,6 +280,32 @@ theorem bijOn_eval_homogenize_integralNormalization [IsDomain S] {p : S[X]}
 
 end IntegralNormalization
 
+section Expand
+
+variable {S : Type*} [CommSemiring S]
+
+/-- Homogenization commutes with expansion: for `p ≠ 0`, the homogenization of degree `p n` of
+`q(X ^ p)` is the homogenization of degree `n` of `q` with `X₀ ^ p` and `X₁ ^ p` substituted
+for the two variables. Coefficients of `q` beyond degree `n` are dropped on both sides. The
+hypothesis is needed: for `p = 0` the left side is the constant `q(1)` while the right side
+is the sum of the coefficients of `q` up to degree `n`. -/
+theorem homogenize_expand {p : ℕ} (hp : p ≠ 0) (q : S[X]) (n : ℕ) :
+    (expand S p q).homogenize (p * n) = MvPolynomial.expand p (q.homogenize n) := by
+  induction q using Polynomial.induction_on' with
+  | add q r hq hr => simp [hq, hr]
+  | monomial k c =>
+    rw [expand_monomial]
+    rcases le_or_gt k n with hkn | hnk
+    · rw [homogenize_monomial (by grw [hkn, mul_comm]), homogenize_monomial hkn,
+        MvPolynomial.expand_monomial]
+      congr 2
+      ext i
+      fin_cases i <;> simp [Nat.mul_sub, mul_comm]
+    · rw [homogenize_monomial_of_lt hnk, homogenize_monomial_of_lt (by rw [mul_comm]; gcongr),
+        map_zero]
+
+end Expand
+
 section Evaluation
 
 variable {S : Type*} [CommSemiring S]
@@ -291,6 +326,51 @@ theorem aeval_homogenize {K : Type*} [Semifield K] [Algebra S K] {p : S[X]} {n :
     MvPolynomial.aeval x (p.homogenize n) = aeval (x 0 / x 1) p * x 1 ^ n := by
   rw [MvPolynomial.aeval_def, ← MvPolynomial.eval_map, ← homogenize_map,
     eval_homogenize (natDegree_map_le.trans hn) x hx, eval_map_algebraMap]
+
+/-- At a point whose second coordinate vanishes, the homogenization of degree `n` of `p` takes
+the value `p_n (x 0) ^ n`: only the monomial `X₀ ^ n` survives. -/
+theorem aeval_homogenize_of_eq_zero {A : Type*} [CommSemiring A] [Algebra S A] (p : S[X])
+    (n : ℕ) (x : Fin 2 → A) (hx : x 1 = 0) :
+    MvPolynomial.aeval x (p.homogenize n) = algebraMap S A (p.coeff n) * x 0 ^ n := by
+  have hx' : x = ![x 0, 0] := by
+    ext i
+    fin_cases i <;> simp [hx]
+  rw [hx', aeval_homogenize_eq_sum, Finset.sum_eq_single (n, 0)]
+  · simp
+  · rintro ⟨k, l⟩ hkl hne
+    have hl : l ≠ 0 := by
+      rintro rfl
+      exact hne (by simpa using hkl)
+    simp [hl]
+  · simp
+
+/-- Reflecting `p` at `n` exchanges the two variables of its homogenization of degree `n`: the
+homogenization of `p.reflect n` takes at `(a, b)` the value that the homogenization of `p`
+takes at `(b, a)`. -/
+theorem aeval_homogenize_reflect {A : Type*} [CommSemiring A] [Algebra S A] (p : S[X]) (n : ℕ)
+    (a b : A) :
+    MvPolynomial.aeval ![a, b] ((p.reflect n).homogenize n) =
+      MvPolynomial.aeval ![b, a] (p.homogenize n) := by
+  rw [aeval_homogenize_eq_sum, aeval_homogenize_eq_sum,
+    ← Finset.Nat.sum_antidiagonal_swap (n := n)]
+  refine Finset.sum_congr rfl fun kl hkl => ?_
+  rw [Finset.mem_antidiagonal] at hkl
+  rw [Prod.fst_swap, Prod.snd_swap, coeff_reflect, revAt_le (by omega),
+    show n - kl.2 = kl.1 by omega, mul_comm (a ^ kl.2)]
+
+/-- The homogenization of the geometric sum `∑_{i < p} (X ^ m) ^ i` at degree `m (p - 1)` takes
+the value `∑_{i < p} (a ^ m) ^ i (b ^ m) ^ (p - 1 - i)` at `(a, b)`. -/
+theorem eval_homogenize_geom_sum (m p : ℕ) (a b : S) :
+    MvPolynomial.eval ![a, b]
+        ((∑ i ∈ Finset.range p, (X ^ m) ^ i : S[X]).homogenize (m * (p - 1))) =
+      ∑ i ∈ Finset.range p, (a ^ m) ^ i * (b ^ m) ^ (p - 1 - i) := by
+  rw [homogenize_finsetSum, map_sum]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  have hi : i ≤ p - 1 := by
+    rw [Finset.mem_range] at hi
+    omega
+  rw [← pow_mul, homogenize_X_pow (Nat.mul_le_mul_left m hi), ← Nat.mul_sub, pow_mul, pow_mul]
+  simp
 
 end Evaluation
 
@@ -336,7 +416,7 @@ theorem IsHomogeneous.exists_linear_factors {R : Type*} [CommRing R] [IsDomain R
   have hg₀ : g ≠ 0 := fun hg ↦ hF₀ (by rw [← hG, hg, Polynomial.homogenize_zero])
   -- No squared linear factor: `X₁ ^ 2 ∤ F` gives `k ≤ 1`, and `(X₀ - α X₁) ^ 2 ∤ F` gives
   -- simple roots.
-  have hk := g.sub_natDegree_le_one_of_not_sq_dvd_homogenize hgd <| by
+  have hk := g.sub_natDegree_le_one_of_not_sq_dvd_homogenize (n := d) <| by
     simpa [hG] using hsq 0 1 (by simp)
   have hnodup := g.nodup_roots_of_not_sq_dvd_homogenize hgd fun α ↦ by
     have e : C 1 * X 0 + C (-α) * X 1 = (X 0 - C α * X 1 : MvPolynomial (Fin 2) R) := by

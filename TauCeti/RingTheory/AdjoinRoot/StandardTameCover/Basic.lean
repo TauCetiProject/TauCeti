@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -49,7 +50,9 @@ maximal ideal lies over the maximal ideal of `A` and contains the root. So when 
 Noetherian, `f` is a nonzerodivisor and `A/(f)` is regular, the cover is a regular local ring,
 hence a normal domain, again for every `e ≥ 1`. This is the regularity of the root algebra
 `A[x]/(x^e - f)` used in the proof of Stacks, Lemma 58.31.5 (0EYG), where `A` is a strictly
-henselian regular local ring and `f` a local equation of the divisor.
+henselian regular local ring and `f` a local equation of the divisor. The cover has the same
+residue field as `A`; to use the residue-field API, first install
+`standardTameCover_isLocalRing` as a local instance.
 
 ## Main definitions
 
@@ -70,6 +73,9 @@ henselian regular local ring and `f` a local equation of the divisor.
 * `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
 * For `e ≠ 0` the cover is a finite `A`-module (an instance).
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
+* `TauCeti.IsFiniteProductOfStandardTameCovers.finite`,
+  `TauCeti.IsFiniteProductOfStandardTameCovers.free`: a finite product of standard covers is
+  finite free over `A`, including the empty product and the zero base ring.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
   isomorphisms.
 * `TauCeti.isFiniteProductOfStandardTameCovers_standardTameCover`: a single standard cover with
@@ -112,7 +118,7 @@ public section
 
 universe u v w
 
-open Polynomial TensorProduct
+open Polynomial TensorProduct IsLocalRing
 
 namespace TauCeti
 
@@ -151,6 +157,23 @@ theorem isFiniteProductOfStandardTameCovers_iff {C : Type v} [CommRing C] [Algeb
         (∀ i, IsUnit (e i : A)) ∧ Nonempty (C ≃ₐ[A] ∀ i, standardTameCover A f (e i)) :=
   Iff.rfl
 
+/-- A finite product of standard tame covers is finite over the base. -/
+theorem IsFiniteProductOfStandardTameCovers.finite {C : Type v} [CommRing C] [Algebra A C]
+    {f : A} (h : IsFiniteProductOfStandardTameCovers A C f) : Module.Finite A C := by
+  obtain ⟨ι, _, e, he, -, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
+  have (i : ι) : Module.Finite A (standardTameCover A f (e i)) :=
+    (monic_X_pow_sub_C f (Nat.ne_of_gt (he i))).finite_adjoinRoot
+  exact Module.Finite.equiv σ.symm.toLinearEquiv
+
+/-- A finite product of standard tame covers is free over the base, including the empty
+product and the zero base ring. -/
+theorem IsFiniteProductOfStandardTameCovers.free {C : Type v} [CommRing C] [Algebra A C]
+    {f : A} (h : IsFiniteProductOfStandardTameCovers A C f) : Module.Free A C := by
+  obtain ⟨ι, _, e, he, -, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
+  have (i : ι) : Module.Free A (standardTameCover A f (e i)) :=
+    (monic_X_pow_sub_C f (Nat.ne_of_gt (he i))).free_adjoinRoot
+  exact Module.Free.of_equiv σ.symm.toLinearEquiv
+
 /-- Being a finite product of standard covers is invariant under `A`-algebra isomorphisms. -/
 theorem IsFiniteProductOfStandardTameCovers.of_algEquiv {C : Type v} {C' : Type w} [CommRing C]
     [Algebra A C] [CommRing C'] [Algebra A C'] {f : A}
@@ -160,14 +183,22 @@ theorem IsFiniteProductOfStandardTameCovers.of_algEquiv {C : Type v} {C' : Type 
   exact (isFiniteProductOfStandardTameCovers_iff f).mpr
     ⟨ι, inferInstance, e, he, heu, ⟨φ.symm.trans ψ⟩⟩
 
-/-- A single standard cover whose exponent `e ≥ 1` is invertible in `A` is a finite product of
-standard covers, indexed by a point. -/
-theorem isFiniteProductOfStandardTameCovers_standardTameCover (f : A) {e : ℕ} (he : 1 ≤ e)
+/-- A single standard cover whose exponent is invertible in `A` is a finite product of standard
+covers, indexed by a point.  Over a nontrivial ring the exponent is then positive; over the zero
+ring every cover is the zero ring, so the cover of exponent `1` serves. -/
+theorem isFiniteProductOfStandardTameCovers_standardTameCover (f : A) {e : ℕ}
     (heu : IsUnit (e : A)) :
-    IsFiniteProductOfStandardTameCovers A (standardTameCover A f e) f :=
-  (isFiniteProductOfStandardTameCovers_iff f).mpr
-    ⟨Unit, inferInstance, fun _ ↦ e, fun _ ↦ he, fun _ ↦ heu,
-      ⟨(AlgEquiv.funUnique A Unit (standardTameCover A f e)).symm⟩⟩
+    IsFiniteProductOfStandardTameCovers A (standardTameCover A f e) f := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · have h₁ : Subsingleton (standardTameCover A f e) := Module.subsingleton A _
+    have h₂ : Subsingleton (standardTameCover A f 1) := Module.subsingleton A _
+    exact (isFiniteProductOfStandardTameCovers_iff f).mpr
+      ⟨Unit, inferInstance, fun _ ↦ 1, fun _ ↦ le_rfl, fun _ ↦ by simp,
+        ⟨default⟩⟩
+  · have he : 1 ≤ e := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at heu
+    exact (isFiniteProductOfStandardTameCovers_iff f).mpr
+      ⟨Unit, inferInstance, fun _ ↦ e, fun _ ↦ he, fun _ ↦ heu,
+        ⟨(AlgEquiv.funUnique A Unit (standardTameCover A f e)).symm⟩⟩
 
 /-- For `e ≥ 1` the root `x` of the standard cover is a nonzerodivisor if and only if `f` is a
 nonzerodivisor of `A`. -/
@@ -472,6 +503,76 @@ theorem standardTameCover_isLocalRing (hf : f ∈ IsLocalRing.maximalIdeal A) (h
       ← (standardTameCoverQuotientSpanRootAlgEquiv f he).map_eq_zero_iff]
     simpa [φ] using this
   simpa using M.add_mem ((Ideal.span_singleton_le_iff_mem M).mpr hroot hxa) haM
+
+section ResidueField
+
+variable [IsLocalRing (standardTameCover A f e)]
+
+/-- If the cover along an element of the maximal ideal is local, its exponent is positive: the
+cover of exponent `0` is `A / (1 - f)`, which is the zero ring because `1 - f` is a unit. -/
+private theorem ne_zero_of_isLocalRing_standardTameCover (hf : f ∈ maximalIdeal A) : e ≠ 0 := by
+  rintro rfl
+  have hu : IsUnit (1 - f) := isUnit_one_sub_self_of_mem_nonunits f hf
+  have h0 : algebraMap A (standardTameCover A f 0) (1 - f) = 0 := by
+    have := AdjoinRoot.eval₂_root (X ^ 0 - C f : A[X])
+    simpa [AdjoinRoot.algebraMap_eq] using this
+  exact not_isUnit_zero (h0 ▸ hu.map (algebraMap A (standardTameCover A f 0)))
+
+/-- The root of a cover along an element of the maximal ideal vanishes in its residue field. -/
+@[simp]
+theorem standardTameCover_residue_root (hf : f ∈ maximalIdeal A) :
+    residue (standardTameCover A f e) (AdjoinRoot.root (X ^ e - C f)) = 0 := by
+  have he := ne_zero_of_isLocalRing_standardTameCover (A := A) (f := f) (e := e) hf
+  have := (monic_X_pow_sub_C f he).finite_adjoinRoot
+  have hcomap : (maximalIdeal (standardTameCover A f e)).under A = maximalIdeal A :=
+    IsLocalRing.eq_maximalIdeal inferInstance
+  rw [residue_eq_zero_iff]
+  apply Ideal.IsPrime.mem_of_pow_mem inferInstance e
+  rw [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
+  rwa [← Ideal.mem_comap, ← Ideal.under_def, hcomap]
+
+/-- The residue field of a local root cover along the maximal ideal is canonically isomorphic to
+that of the base. The root reduces to zero, and constants reduce as in `A`. No hypothesis on the
+exponent is needed: the cover of exponent `0` is the zero ring, which is not local. -/
+noncomputable def standardTameCoverResidueFieldEquiv (hf : f ∈ maximalIdeal A) :
+    ResidueField (standardTameCover A f e) ≃+* ResidueField A := by
+  let φ : standardTameCover A f e →+* ResidueField A :=
+    AdjoinRoot.lift (residue A) 0 (by
+      simp [ne_zero_of_isLocalRing_standardTameCover hf, (residue_eq_zero_iff f).mpr hf])
+  have hφ : Function.Surjective φ := by
+    intro z
+    obtain ⟨a, rfl⟩ := residue_surjective z
+    exact ⟨AdjoinRoot.of _ a, by simp [φ]⟩
+  have hker : RingHom.ker φ = maximalIdeal (standardTameCover A f e) :=
+    IsLocalRing.eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective φ hφ)
+  exact (Ideal.quotEquivOfEq hker.symm).trans (RingHom.quotientKerEquivOfSurjective hφ)
+
+/-- The residue-field identification of a root cover preserves the residues of constants. -/
+@[simp]
+theorem standardTameCoverResidueFieldEquiv_residue_of (hf : f ∈ maximalIdeal A) (a : A) :
+    standardTameCoverResidueFieldEquiv hf
+      (residue (standardTameCover A f e) (AdjoinRoot.of _ a)) = residue A a := by
+  unfold standardTameCoverResidueFieldEquiv
+  -- `erw` identifies the residue-field wrapper with the quotient used by the two comparisons.
+  erw [RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, AdjoinRoot.lift_of]
+
+/-- In the inverse residue-field identification, a constant is sent to the same constant. -/
+@[simp]
+theorem standardTameCoverResidueFieldEquiv_symm_residue (hf : f ∈ maximalIdeal A) (a : A) :
+    (standardTameCoverResidueFieldEquiv hf).symm (residue A a) =
+      residue (standardTameCover A f e) (AdjoinRoot.of _ a) := by
+  apply (standardTameCoverResidueFieldEquiv hf).injective
+  simp
+
+/-- A root cover along the maximal ideal has separably closed residue field whenever the
+base does. This does not require the exponent to be invertible. -/
+theorem standardTameCover_isSepClosed_residueField [IsSepClosed (ResidueField A)]
+    (hf : f ∈ maximalIdeal A) :
+    IsSepClosed (ResidueField (standardTameCover A f e)) :=
+  IsSepClosed.of_ringEquiv (standardTameCoverResidueFieldEquiv hf).symm
+
+end ResidueField
 
 /-- If `A` is a Noetherian local ring, `f ∈ 𝔪_A` is a nonzerodivisor and `A ⧸ (f)` is regular,
 then `A[x]/(x^e - f)` is a regular local ring for every `e > 0`, whether or not `e` is invertible

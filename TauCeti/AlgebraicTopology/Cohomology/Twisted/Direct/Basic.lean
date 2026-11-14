@@ -20,6 +20,11 @@ This differs from `LocalCoefficientSystem.twistedCochainComplex` in
 `Cohomology/Twisted/Basic`, which applies a fixed-module Hom functor to `L`-twisted chains
 and hence uses the corresponding dual coefficient system.
 
+Continuous maps pull these cochains back to the pullback coefficient system
+(`cochainsPullback` and `cochainComplexPullback`), by evaluation on image simplices.
+Their functoriality laws and the induced maps on cohomology are developed in
+`Cohomology/Twisted/Direct/Pullback`.
+
 The construction follows Hatcher, *Algebraic Topology*, Section 3.H. Its transport identities
 come from `Singular/Twisted/Basic`; the differential and its square-zero proof use Mathlib's
 `AlgebraicTopology.alternatingCofaceMapComplex`.
@@ -436,5 +441,52 @@ lemma cochainComplex_d_eval_constant (M : ModuleCat.{w} R) (n : ℕ)
   simp only [constantFunctor_obj_map]
   -- The identity of `ModuleCat` acts by the identity linear map on the constant fibre.
   rfl
+
+section Pullback
+
+variable {Y : TopCat.{v}} (f : Y ⟶ X) (L : LocalCoefficientSystem.{u, v, w} R X)
+
+/-- Pullback of local-system-valued cosimplicial cochains along a continuous map. -/
+def cochainsPullback : cochains L ⟶ cochains ((pullback f.hom).obj L) where
+  app n := ModuleCat.ofHom (LinearMap.pi fun σ ↦
+    LinearMap.proj ((TopCat.toSSet.map f).app (Opposite.op n) σ))
+  naturality {m n} α := by
+    ext c σ
+    -- Evaluation simp lemmas do not match the dependent-product module instances inherited
+    -- from `cochains`; `change` evaluates these maps while leaving pullback transport explicit.
+    change L.map (inv (vertexTransport α.op ((TopCat.toSSet.map f).app _ σ)))
+        (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ))) =
+      ((pullback f.hom).obj L).map (inv (vertexTransport α.op σ))
+        (c ((TopCat.toSSet.obj X).map α.op ((TopCat.toSSet.map f).app _ σ)))
+    simp only [pullback_obj_map, (FundamentalGroupoid.map f.hom).map_inv,
+      map_vertexTransport]
+    -- The fibre module instances agree definitionally after the transport rewrites.
+    rfl
+
+/-- Pullback evaluates a cochain on the image simplex. -/
+@[simp↓]
+lemma cochainsPullback_eval (n : SimplexCategory) (c : (cochains L).obj n)
+    (σ : (TopCat.toSSet.obj Y).obj (Opposite.op n)) :
+    cochainsEval ((pullback f.hom).obj L) σ ((cochainsPullback f L).app n c) =
+      cochainsEval L ((TopCat.toSSet.map f).app _ σ) c := (rfl)
+
+/-- Pullback of the singular cochain complex with values in a local system. -/
+def cochainComplexPullback : cochainComplex L ⟶ cochainComplex ((pullback f.hom).obj L) :=
+  (AlgebraicTopology.alternatingCofaceMapComplex _).map (cochainsPullback f L)
+
+/-- Pullback of cochain complexes is induced by pullback of cosimplicial cochains. -/
+lemma cochainComplexPullback_eq :
+    cochainComplexPullback f L = eqToHom (cochainComplex_eq L) ≫
+      (AlgebraicTopology.alternatingCofaceMapComplex _).map (cochainsPullback f L) ≫
+        eqToHom (cochainComplex_eq ((pullback f.hom).obj L)).symm := (rfl)
+
+/-- Pullback of cochains evaluates on the image simplex. -/
+@[simp↓]
+lemma cochainComplexPullback_eval (n : ℕ) (c : (cochainComplex L).X n)
+    (σ : (TopCat.toSSet.obj Y) _⦋n⦌) :
+    cochainComplexEval ((pullback f.hom).obj L) n σ ((cochainComplexPullback f L).f n c) =
+      cochainComplexEval L n ((TopCat.toSSet.map f).app _ σ) c := (rfl)
+
+end Pullback
 
 end TauCeti.LocalCoefficientSystem

@@ -30,11 +30,17 @@ differences of the remaining columns.
 
 ## Main results
 
+* `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
+  the determinant.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 * `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
   the determinant of its consecutive row differences on the remaining columns.
+* `Matrix.det_of_sum_rows`: the determinant of a matrix whose rows are sums over finite sets is the
+  sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
+* `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
+  is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
 -/
 
 public section
@@ -94,5 +100,63 @@ theorem det_eq_det_of_col_zero_eq_one (N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     (B := of (Fin.cons (N 0) fun i => N i.succ - N i.castSucc)) (fun _ => 1) (fun _ => rfl)
     (fun _ _ => by simp), det_succ_column_zero, Fin.sum_univ_succ]
   simp [hN, submatrix]
+
+end Matrix
+
+namespace Matrix
+
+/-- Interchanging the rows occupied by two prescribed vectors reverses the determinant. -/
+theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : Matrix ι ι R) (j k : ι)
+    (a b : ι → R) (h : j ≠ k) :
+    ((A.updateRow j a).updateRow k b).det =
+      -((A.updateRow k a).updateRow j b).det := by
+  let M := (A.updateRow k a).updateRow j b
+  have hkj : k ≠ j := Ne.symm h
+  have he :
+      M.submatrix (Equiv.swap j k) id =
+        (A.updateRow j a).updateRow k b := by
+    ext r l
+    by_cases hrj : r = j
+    · subst r
+      simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply, h, hkj]
+    · by_cases hrk : r = k
+      · subst r
+        simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply]
+      · simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply, hrj, hrk,
+          Equiv.swap_apply_of_ne_of_ne hrj hrk]
+  rw [← he, Matrix.det_permute]
+  simp [M, Equiv.Perm.sign_swap h]
+
+/-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
+columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
+is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
+theorem det_submatrix_ne_zero_of_map {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] (f : R →+* S) {A : Matrix m n R} {r : l → m} {c : l → n}
+    (h : ((A.map f).submatrix r c).det ≠ 0) : (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix] at h
+  exact ne_of_apply_ne f (by rwa [map_zero])
+
+/-- Along an injective ring homomorphism `f`, a minor of `A.map f` is nonzero exactly when the
+minor of `A` on the same rows and columns is nonzero. -/
+theorem det_submatrix_map_ne_zero_iff {m n R S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] {f : R →+* S} (hf : Function.Injective f) {A : Matrix m n R} {r : l → m}
+    {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
+
+/-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
+`i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
+row, of the determinants of the resulting matrices. -/
+theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : ∀ i, Finset (κ i)) (g : ∀ i, κ i → ι → R) :
+    (Matrix.of fun i j => ∑ t ∈ A i, g i t j).det
+      = ∑ y ∈ Fintype.piFinset A, (Matrix.of fun i j => g i (y i) j).det := by
+  have key := (detRowAlternating (R := R) (n := ι)).toMultilinearMap.map_sum_finset
+    (A := A) (g := g)
+  have hrow : (fun i => ∑ t ∈ A i, g i t) = fun i j => ∑ t ∈ A i, g i t j := by
+    funext i j
+    exact Finset.sum_apply j _ _
+  rw [hrow] at key
+  exact key
 
 end Matrix

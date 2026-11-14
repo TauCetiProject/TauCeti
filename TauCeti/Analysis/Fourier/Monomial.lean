@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Pointwise identities and estimates for the Fourier monomials
@@ -22,6 +25,9 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 
 ## Main statements
 
+* `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
+* `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
+  `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`: `fourier n (x + y) = fourier n x * fourier n y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
@@ -34,15 +40,44 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
   is `exp (2πi ∑ i, n i * x i)`.
+* `TauCeti.UnitAddTorus.contDiff_mFourier_coe` and
+  `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: this lift of `mFourier n` is smooth,
+  and its `k`-th derivative is bounded by `(2π ∑ i, |n i|) ^ k`.
 -/
 
 public section
 
 open Complex Real
+open scoped ContDiff
 
 namespace TauCeti
 
 variable {T : ℝ}
+
+/-- Every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
+
+Not `@[simp]`, because `simp` already reduces the left-hand side via `fourier_apply` and
+`Circle.norm_coe`. -/
+theorem norm_fourier_apply (k : ℤ) (x : AddCircle T) : ‖fourier k x‖ = 1 := by
+  rw [fourier_apply]
+  exact Circle.norm_coe _
+
+/-- Raising a Fourier monomial to the `m`-th power multiplies its frequency by `m`. -/
+theorem fourier_pow (k : ℤ) (m : ℕ) :
+    fourier (T := T) k ^ m = fourier (T := T) (m * k) := by
+  induction m with
+  | zero =>
+    ext x
+    simp
+  | succ m ih =>
+    ext x
+    rw [pow_succ, ContinuousMap.mul_apply, ih, Nat.cast_add, Nat.cast_one, add_mul, one_mul,
+      fourier_add]
+
+/-- The `m`-th power of the fundamental Fourier monomial `fourier 1` is `fourier m`. -/
+theorem fourier_one_pow (m : ℕ) :
+    fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
+  simpa using fourier_pow (T := T) 1 m
 
 /-- A Fourier monomial turns a sum of points into a product:
 `fourier n (x + y) = fourier n x * fourier n y`. -/
@@ -87,7 +122,6 @@ between `π / 6` and `π / 3` in absolute value. -/
 theorem one_le_norm_fourier_sub_one (hT : 0 < T) {n : ℤ} (hn : n ≠ 0) {x : ℝ}
     (hx₁ : T / (6 * |(n : ℝ)|) ≤ x) (hx₂ : x ≤ T / (3 * |(n : ℝ)|)) :
     1 ≤ ‖fourier n (x : AddCircle T) - 1‖ := by
-  have hn0 : 0 < |(n : ℝ)| := abs_pos.2 (Int.cast_ne_zero.2 hn)
   have hexp : (2 * π * I * n * x / T : ℂ) = I * ((2 * π * n * x / T : ℝ) : ℂ) := by
     push_cast
     ring
@@ -186,5 +220,49 @@ theorem mFourier_coe_apply (n : d → ℤ) (x : d → ℝ) :
   refine congrArg cexp (Finset.sum_congr rfl fun i _ ↦ ?_)
   push_cast
   ring
+
+/-- The lift of the Fourier mode `mFourier n` to `d → ℝ` is smooth. -/
+theorem contDiff_mFourier_coe (n : d → ℤ) :
+    ContDiff ℝ ∞ fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle) := by
+  have h : ContDiff ℝ ∞ fun t : ℝ ↦ (t : ℂ) := Complex.ofRealCLM.contDiff
+  simp only [mFourier_coe_apply]
+  fun_prop
+
+/-- The lift of the Fourier mode `mFourier n` has `k`-th derivative bounded by
+`(2π ∑ i, |n i|) ^ k`. -/
+theorem norm_iteratedFDeriv_mFourier_coe_le (n : d → ℤ) (k : ℕ) (x : d → ℝ) :
+    ‖iteratedFDeriv ℝ k (fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle)) x‖ ≤
+      (2 * π * ∑ i, |(n i : ℝ)|) ^ k := by
+  -- The mode is `exp` composed with the real-linear map `y ↦ (∑ i, n i * y i) • 2πi`.
+  set L : (d → ℝ) →L[ℝ] ℝ := ∑ i, (n i : ℝ) • ContinuousLinearMap.proj i
+  have hLapply (y : d → ℝ) : L y = ∑ i, (n i : ℝ) * y i := by
+    simp [L]
+  have hL : ‖L‖ ≤ ∑ i, |(n i : ℝ)| := by
+    refine L.opNorm_le_bound (Finset.sum_nonneg fun i _ ↦ abs_nonneg _) fun y ↦ ?_
+    rw [hLapply, Finset.sum_mul]
+    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (norm_le_pi_norm y i) (abs_nonneg _)
+  set L' : (d → ℝ) →L[ℝ] ℂ := L.smulRight (2 * π * I)
+  have heq : (fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle)) = cexp ∘ L' := by
+    funext y
+    simp only [mFourier_coe_apply, Function.comp_apply, L', ContinuousLinearMap.smulRight_apply,
+      hLapply, Complex.real_smul]
+    push_cast
+    ring_nf
+  have hnorm : ‖L'‖ ≤ 2 * π * ∑ i, |(n i : ℝ)| := by
+    rw [ContinuousLinearMap.norm_smulRight_apply, mul_comm]
+    have h2π : ‖(2 * π * I : ℂ)‖ = 2 * π := by
+      simp [abs_of_pos Real.pi_pos]
+    rw [h2π]
+    exact mul_le_mul_of_nonneg_left hL (by positivity)
+  rw [heq]
+  refine (L'.norm_iteratedFDeriv_comp_right_le Complex.contDiff_exp x
+    (mod_cast le_top)).trans ?_
+  -- `L' x` is purely imaginary, so every derivative of `exp` there has norm one.
+  have hre : (L' x).re = 0 := by
+    simp [L', ContinuousLinearMap.smulRight_apply]
+  rw [norm_iteratedFDeriv_real_cexp, Complex.norm_exp, hre, Real.exp_zero, one_mul]
+  exact pow_le_pow_left₀ (norm_nonneg _) hnorm k
 
 end TauCeti.UnitAddTorus

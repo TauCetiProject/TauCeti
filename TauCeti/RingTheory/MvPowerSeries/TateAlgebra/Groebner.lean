@@ -210,7 +210,7 @@ private theorem exists_gap (F : Finset (IsRestricted.subring (R := R) c)) :
       rcases Finset.mem_insert.mp hy with rfl | hy
       · exact absurd ht (by simp)
       · exact hε y hy t ht
-    obtain ⟨δ, hδ0, hδx, hδ⟩ := exists_norm_coeff_mul_prod_gap x hx
+    obtain ⟨δ, _, hδx, hδ⟩ := exists_norm_coeff_mul_prod_gap x hx
     have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr hx
     refine ⟨max ε (δ / ‖x‖), hε0.trans_le (le_max_left _ _),
       max_lt hε1 ((div_lt_one hxpos).mpr hδx), fun y hy t ht ↦ ?_⟩
@@ -473,8 +473,7 @@ theorem exists_finset_eq_sum_mul_isRestricted_subring_of_division [CompleteSpace
   let m : MonomialOrder σ := MonomialOrder.lex
   obtain ⟨F, hFH, hF⟩ := exists_finset_isLeadingIndex m deg H
   obtain ⟨ε, hε0, hε1, hε⟩ := exists_gap F
-  refine ⟨F, hFH, fun y hy ↦ TauCeti.exists_eq_sum_mul_of_approx (S := H) hε0.le hε1
-    (fun y hy ↦ ?_) hy⟩
+  refine ⟨F, hFH, fun y hy ↦ TauCeti.exists_eq_sum_mul_of_approx (S := H) hε1 (fun y hy ↦ ?_) hy⟩
   rcases eq_or_ne y 0 with rfl | hy0
   · exact ⟨0, fun x _ ↦ by simp, by simp, by simp⟩
   obtain ⟨b, hb, hbε⟩ :=

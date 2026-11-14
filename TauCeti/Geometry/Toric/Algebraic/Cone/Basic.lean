@@ -83,6 +83,19 @@ theorem isLatticeRational_iff :
 theorem isLatticeRational_hull_image (i : N →+ V) (s : Finset N) :
     IsLatticeRational i (PointedCone.hull ℝ (i '' (s : Set N))) := ⟨s, rfl⟩
 
+/-- A finite generating set contained in the image of the lattice generates a lattice-rational
+cone. -/
+theorem isLatticeRational_hull_of_forall_mem_range (s : Finset V)
+    (hs : ∀ x ∈ s, ∃ n : N, i n = x) :
+    IsLatticeRational i (PointedCone.hull ℝ (s : Set V)) := by
+  classical
+  have hs' : (s : Set V) ⊆ i '' (Set.univ : Set N) := by
+    intro x hx
+    obtain ⟨n, hn⟩ := hs x hx
+    exact ⟨n, Set.mem_univ _, hn⟩
+  obtain ⟨t, -, ht⟩ := Finset.subset_set_image_iff.mp hs'
+  exact isLatticeRational_iff.mpr ⟨t, by rw [← Finset.coe_image, ht]⟩
+
 /-- The zero cone is lattice rational. -/
 @[simp]
 theorem isLatticeRational_bot (i : N →+ V) : IsLatticeRational i (⊥ : PointedCone ℝ V) :=
@@ -173,10 +186,8 @@ theorem IsLatticeRational.of_isFaceOf (hσ : IsLatticeRational i σ) (hτ : τ.I
     IsLatticeRational i τ := by
   classical
   obtain ⟨s, rfl⟩ := hσ
-  refine ⟨s.filter fun v ↦ i v ∈ τ,
-    (PointedCone.Face.eq_hull_inter_of_eq_hull ⟨τ, hτ⟩ _ rfl).trans ?_⟩
+  refine ⟨s.filter fun v ↦ i v ∈ τ, (hτ.eq_hull_inter_of_eq_hull rfl).trans ?_⟩
   rw [Finset.coe_filter, ← Set.image_inter_preimage]
-  -- The face `⟨τ, hτ⟩` has by definition the same members as `τ`.
   rfl
 
 /-- A face of a toric cone is a toric cone. Since the pairwise intersection of two cones of a fan

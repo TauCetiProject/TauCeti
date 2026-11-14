@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Torsion.Free
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.PowerSeries.Evaluation
-import TauCeti.RingTheory.PowerSeries.Rescale
+import TauCeti.RingTheory.PowerSeries.InverseFunction
 
 /-!
 # The filtration of the elliptic formal group by powers of the ideal
@@ -23,11 +22,10 @@ quotients of the filtration have the orders of the successive quotients of the p
 
 Over a complete discrete valuation ring `O` with maximal ideal `𝔪`, multiplication by an integer
 `n ≠ 0` of valuation `e` is an isomorphism `Ê(𝔪 ^ k) ≅ Ê(𝔪 ^ (k + e))` as soon as `e < k`. With
-`c = ϖ ^ (k - 1)` for a uniformizer `ϖ`, the points of `Ê(𝔪 ^ k)` are the parameters `c s` with
-`s ∈ 𝔪`, and the multiplication series satisfies `[n](c X) = n c · g(X)` for a series
-`g(X) = X + ⋯` with coefficients in `O` (`PowerSeries.exists_rescale_eq_C_mul`, which needs only
-`n ∣ c`). Evaluating `g` and its compositional inverse on `𝔪` shows that `s ↦ g(s)` is a
-bijection of `𝔪`. Consequently `[Ê(𝔪 ^ k) : n Ê(𝔪 ^ k)] = #(O ⧸ 𝔪) ^ e`, and `Ê(𝔪 ^ k)` has no
+the inverse function theorem for integral power series
+(`PowerSeries.bijOn_eval₂_maximalIdeal_pow`), applied to the multiplication series, one gets
+its exact image and injectivity on these parameters. Consequently
+`[Ê(𝔪 ^ k) : n Ê(𝔪 ^ k)] = #(O ⧸ 𝔪) ^ e`, and `Ê(𝔪 ^ k)` has no
 nonzero `n`-torsion. This is the formal-group input to the index of `n E(K)` for an elliptic curve
 over a local field `K` at a place dividing `n`.
 
@@ -153,135 +151,38 @@ section NSMul
 variable [IsDomain O] [IsDiscreteValuationRing O] {W : WeierstrassCurve O}
   [Fact (IsAdic (maximalIdeal O))]
 
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
-/-- A parameter in the maximal ideal is evaluable. -/
-private theorem hasEval_of_mem {s : O} (hs : s ∈ maximalIdeal O) : HasEval s :=
-  (Fact.out : IsAdic (maximalIdeal O)).isTopologicallyNilpotent_of_mem hs
-
-/-- **Multiplication by `n` deep in the formal group**: for `c` divisible by `n`, there is a series
-`g(X) = X + ⋯` with `[n](c s) = n c g(s)` at every parameter `c s` with `s ∈ 𝔪`. -/
-private theorem exists_coe_nsmul_eq (n : ℕ) {c : O} (hc : (n : O) ∣ c) :
-    ∃ g : O⟦X⟧, constantCoeff g = 0 ∧ IsUnit (coeff 1 g) ∧
-      ∀ (P : FormalGroupPoint W (maximalIdeal O)) {s : O} (hs : s ∈ maximalIdeal O),
-        (P : O) = c * s →
-          ((n • P : FormalGroupPoint W (maximalIdeal O)) : O) =
-            n * c * aeval (hasEval_of_mem hs) g := by
-  have hf1 : coeff 1 ((formalGroup W).nsmulSeries n) = n :=
-    (formalGroup W).coeff_one_nsmulSeries n
-  obtain ⟨g, hg0, hg1, hfg⟩ :=
-    exists_rescale_eq_C_mul ((formalGroup W).constantCoeff_nsmulSeries n) (hf1 ▸ hc)
-  refine ⟨g, hg0, hg1 ▸ isUnit_one, fun P s hs hP ↦ ?_⟩
-  have hcs : HasEval (c • s) := by
-    rw [smul_eq_mul, ← hP]
-    exact P.hasEval
-  -- evaluate `[n](c X) = n c · g(X)` at `s`
-  have h := aeval_rescale (hasEval_of_mem hs) c hcs ((formalGroup W).nsmulSeries n)
-  rw [hfg, map_mul, aeval_C] at h
-  simpa [hf1, coe_nsmul, coe_aeval, ← hP] using h.symm
-
-/-- The setup shared by `map_nsmul_filtration` and `nsmul_filtration_injective`: if `(n) = 𝔪 ^ e`
-with `e < k`, take for `c` the `(k - 1)`-st power of a uniformizer, which `n` divides. Then
-`𝔪 ^ k = c 𝔪`, `𝔪 ^ (k + e) = n c 𝔪`, and `[n](c s) = n c g(s)` for `s ∈ 𝔪` and a series
-`g(X) = X + ⋯` (`exists_coe_nsmul_eq`). -/
-private theorem exists_nsmul_filtration_eq {n e k : ℕ}
-    (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e) (hek : e < k) :
-    ∃ (c : O) (g : O⟦X⟧), maximalIdeal O ^ k = Ideal.span {c} * maximalIdeal O ∧
-      maximalIdeal O ^ (k + e) = Ideal.span {(n : O) * c} * maximalIdeal O ∧
-      constantCoeff g = 0 ∧ IsUnit (coeff 1 g) ∧
-      ∀ (P : FormalGroupPoint W (maximalIdeal O)) {s : O} (hs : s ∈ maximalIdeal O),
-        (P : O) = c * s →
-          ((n • P : FormalGroupPoint W (maximalIdeal O)) : O) =
-            n * c * aeval (hasEval_of_mem hs) g := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-  have hpow (j : ℕ) : maximalIdeal O ^ j = Ideal.span {ϖ ^ j} := by
-    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
-  have hnc : (n : O) ∣ ϖ ^ (k - 1) := by
-    rw [← Ideal.span_singleton_le_span_singleton, hn, hpow]
-    exact Ideal.span_singleton_le_span_singleton.mpr (pow_dvd_pow ϖ (by omega))
-  obtain ⟨g, hg0, hg1, hng⟩ := exists_coe_nsmul_eq (W := W) n hnc
-  refine ⟨ϖ ^ (k - 1), g, ?_, ?_, hg0, hg1, hng⟩
-  · rw [← hpow, ← pow_succ, Nat.sub_add_cancel (by omega)]
-  · rw [← Ideal.span_singleton_mul_span_singleton, hn, ← hpow, mul_assoc, ← pow_succ, ← pow_add]
-    congr 1
-    omega
-
 /-- **`n Ê(𝔪 ^ k) = Ê(𝔪 ^ (k + e))`**: over a complete discrete valuation ring, if `(n) = 𝔪 ^ e`
 with `e < k`, multiplication by `n` carries `Ê(𝔪 ^ k)` onto `Ê(𝔪 ^ (k + e))`. -/
 theorem map_nsmul_filtration {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e)
     (hek : e < k) :
     (filtration W (maximalIdeal O) k).map (nsmulAddMonoidHom n) =
       filtration W (maximalIdeal O) (k + e) := by
-  -- the parameters of `Ê(𝔪 ^ k)` are the `c s` with `s ∈ 𝔪`, and those of `Ê(𝔪 ^ (k + e))` are
-  -- the `n c s` with `s ∈ 𝔪`
-  obtain ⟨c, g, hk, hke, hg0, hg1, hng⟩ := exists_nsmul_filtration_eq (W := W) hn hek
+  have h := bijOn_eval₂_maximalIdeal_pow ((formalGroup W).constantCoeff_nsmulSeries n)
+    (by simpa using hn) hek
   ext Q
   constructor
   · rintro ⟨P, hP, rfl⟩
-    rw [SetLike.mem_coe, mem_filtration, hk, Ideal.mem_span_singleton_mul] at hP
-    obtain ⟨s, hs, hPs⟩ := hP
-    rw [mem_filtration, nsmulAddMonoidHom_apply, hng P hs hPs.symm, hke]
-    exact Ideal.mul_mem_mul (Ideal.mem_span_singleton_self _)
-      (aeval_mem_of_constantCoeff_eq_zero _ hg0 hs)
+    simpa only [mem_filtration, nsmulAddMonoidHom_apply, coe_nsmul, SetLike.mem_coe]
+      using h.mapsTo hP
   · intro hQ
-    rw [mem_filtration, hke, Ideal.mem_span_singleton_mul] at hQ
-    obtain ⟨s', hs', hQs⟩ := hQ
-    -- solve `g(s) = s'` with the compositional inverse of `g`
-    set ginv := g.substInvOfIsUnit hg1
-    have hginv0 : constantCoeff ginv = 0 := constantCoeff_substInvOfIsUnit _ _
-    set s := aeval (hasEval_of_mem hs') ginv
-    have hs : s ∈ maximalIdeal O := aeval_mem_of_constantCoeff_eq_zero _ hginv0 hs'
-    have hgs : aeval (hasEval_of_mem hs) g = s' := by
-      have h := congrArg (aeval (R := O) (hasEval_of_mem hs'))
-        (subst_substInvOfIsUnit_right g hg0 hg1)
-      rwa [aeval_subst (HasSubst.of_constantCoeff_zero hginv0)
-        (continuous_aeval (hasEval_of_mem hs')) (hasEval_of_mem hs), aeval_X] at h
-    have hcs : c * s ∈ maximalIdeal O ^ k := by
-      rw [hk]
-      exact Ideal.mul_mem_mul (Ideal.mem_span_singleton_self c) hs
+    obtain ⟨t, ht, htQ⟩ := h.surjOn hQ
     let P : FormalGroupPoint W (maximalIdeal O) :=
-      ⟨c * s, Ideal.pow_le_self (by omega) hcs⟩
-    refine ⟨P, hcs, FormalGroupPoint.ext ?_⟩
-    rw [nsmulAddMonoidHom_apply, hng P hs rfl, hgs, hQs]
+      ⟨t, Ideal.pow_le_self (by omega) ht⟩
+    exact ⟨P, ht, FormalGroupPoint.ext (by simpa only [nsmulAddMonoidHom_apply,
+      coe_nsmul] using htQ)⟩
 
 /-- **`Ê(𝔪 ^ k)` has no nonzero `n`-torsion**: over a complete discrete valuation ring, if
 `(n) = 𝔪 ^ e` with `e < k`, multiplication by `n` is injective on `Ê(𝔪 ^ k)`. -/
 theorem nsmul_filtration_injective {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e)
     (hek : e < k) :
     Function.Injective (fun P : filtration W (maximalIdeal O) k ↦ n • P) := by
-  obtain ⟨c, g, hk, hke, hg0, hg1, hng⟩ := exists_nsmul_filtration_eq (W := W) hn hek
-  have hnc0 : (n : O) * c ≠ 0 := by
-    rintro h
-    rw [h, Ideal.span_singleton_eq_bot.mpr rfl, Ideal.bot_mul] at hke
-    exact pow_ne_zero _ (IsDiscreteValuationRing.not_a_field O) hke
-  refine (injective_iff_map_eq_zero
-    (nsmulAddMonoidHom (α := filtration W (maximalIdeal O) k) n)).mpr fun P hP ↦ ?_
-  have hP2 : ((P : FormalGroupPoint W (maximalIdeal O)) : O) ∈
-      Ideal.span {c} * maximalIdeal O := by
-    rw [← hk]
-    exact P.2
-  obtain ⟨s, hs, hPs⟩ := Ideal.mem_span_singleton_mul.mp hP2
-  -- `n c g(s) = 0`, so `g(s) = 0`
-  have hgs : aeval (hasEval_of_mem hs) g = 0 := by
-    have h := congrArg (fun Q : filtration W (maximalIdeal O) k ↦
-      ((Q : FormalGroupPoint W (maximalIdeal O)) : O)) hP
-    simp only [nsmulAddMonoidHom_apply, AddSubgroup.coe_nsmul, ZeroMemClass.coe_zero,
-      coe_zero] at h
-    rw [hng _ hs hPs.symm] at h
-    exact (mul_eq_zero.mp h).resolve_left hnc0
-  -- and `s` is the value of the compositional inverse of `g` at `g(s) = 0`
-  have hs0 : s = 0 := by
-    have hgs' : HasEval (aeval (hasEval_of_mem hs) g) :=
-      hasEval_of_mem (aeval_mem_of_constantCoeff_eq_zero _ hg0 hs)
-    have h := congrArg (aeval (R := O) (hasEval_of_mem hs))
-      (subst_substInvOfIsUnit_left g hg0 hg1)
-    rw [aeval_subst (HasSubst.of_constantCoeff_zero hg0) (continuous_aeval _) hgs',
-      aeval_X] at h
-    obtain ⟨b, hb⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero hgs'
-      (constantCoeff_substInvOfIsUnit g hg1)
-    rw [← h, hb, hgs, zero_mul]
-  ext
-  simp [← hPs, hs0]
+  have h := bijOn_eval₂_maximalIdeal_pow ((formalGroup W).constantCoeff_nsmulSeries n)
+    (by simpa using hn) hek
+  intro P Q hPQ
+  have hcoords := congrArg
+    (fun T : filtration W (maximalIdeal O) k ↦ ((T : FormalGroupPoint W (maximalIdeal O)) : O)) hPQ
+  simp only [AddSubgroup.coe_nsmul, coe_nsmul] at hcoords
+  exact Subtype.ext (FormalGroupPoint.ext (h.injOn P.property Q.property hcoords))
 
 /-- **The index of `n Ê(𝔪 ^ k)` in `Ê(𝔪 ^ k)`**: over a complete discrete valuation ring, if
 `(n) = 𝔪 ^ e` with `e < k`, then `[Ê(𝔪 ^ k) : n Ê(𝔪 ^ k)] = #(O ⧸ 𝔪) ^ e`. -/

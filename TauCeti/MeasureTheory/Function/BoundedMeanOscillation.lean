@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
+-- `TauCeti.Analysis.Normed.Module.Ball` is imported privately: it supplies
+-- `TauCeti.preimage_smul_ball_smul_norm` inside the proof of the dilation invariance.
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Functions of bounded and of vanishing mean oscillation
@@ -56,13 +59,16 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top` and `MeasureTheory.MemLp.memBMO`: `L^∞ ⊆ BMO`.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
-  dilation invariance.
+  dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
+  modulus.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
   vanishing mean oscillation.
+* `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le`: for an additive Haar measure, the
+  averages over the concentric balls `B(c, 2ʲ r)` drift by at most `2ⁿ ‖f‖_{BMO}` per doubling.
 
 ## References
 
@@ -186,7 +192,7 @@ theorem bmoSeminorm_le_two_mul_eLpNorm_top (f : X → F) (μ : Measure X) :
       ((laverage_le_essSup _).trans (essSup_le_of_ae_le _ hae))
   refine (laverage_le_essSup _).trans (essSup_le_of_ae_le _ (hae.mono fun y hy => ?_))
   rw [two_mul]
-  exact enorm_sub_le.trans (add_le_add hy havg)
+  exact eNorm_sub_le.trans (add_le_add hy havg)
 
 /-! ### Functions of bounded mean oscillation -/
 
@@ -219,7 +225,7 @@ theorem memBMO_zero : MemBMO (0 : X → F) μ :=
 
 theorem MemBMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (hf : MemBMO f μ) (k : 𝕜) : MemBMO (k • f) μ :=
-  ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top enorm_lt_top hf.2⟩
+  ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top eNorm_lt_top hf.2⟩
 
 theorem MemBMO.neg (hf : MemBMO f μ) : MemBMO (-f) μ :=
   ⟨hf.1.neg, by rw [bmoSeminorm_neg]; exact hf.2⟩
@@ -440,7 +446,7 @@ theorem memVMO_zero : MemVMO (0 : X → F) μ :=
 theorem MemVMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (hf : MemVMO f μ) (k : 𝕜) : MemVMO (k • f) μ := by
   refine ⟨hf.1.const_smul k, ?_⟩
-  have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from enorm_ne_top))
+  have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from eNorm_ne_top))
   rw [mul_zero] at h
   rwa [show vmoModulus (k • f) μ = fun r => ‖k‖ₑ * vmoModulus f μ r from
     funext (vmoModulus_const_smul k)]
@@ -542,6 +548,24 @@ theorem bmoSeminorm_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [Measu
     (fun c r => ⟨c + b, r, by simp [preimage_add_right_ball]⟩)
     (fun c' r' => ⟨c' - b, r', by simp [preimage_add_right_ball]⟩) f
 
+/-- The VMO modulus is invariant under translation for a right-invariant measure. -/
+@[simp]
+theorem vmoModulus_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G]
+    [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] (f : G → F) (b : G) (r : ℝ) :
+    vmoModulus (fun x => f (x + b)) μ r = vmoModulus f μ r := by
+  have hosc (c : G) (s : ℝ) :
+      ⨍⁻ y in ball c s, ‖f (y + b) - ⨍ z in ball c s, f (z + b) ∂μ‖ₑ ∂μ =
+        ⨍⁻ y in ball (c + b) s, ‖f y - ⨍ z in ball (c + b) s, f z ∂μ‖ₑ ∂μ := by
+    simpa [preimage_add_right_ball] using
+      setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul (μ := μ) (ν := μ)
+        (e := MeasurableEquiv.addRight b) (a := 1) (by simpa using map_add_right_eq_self μ b)
+        one_ne_zero ENNReal.one_ne_top f (ball (c + b) s)
+  refine le_antisymm (vmoModulus_le fun c s hs => ?_) (vmoModulus_le fun c s hs => ?_)
+  · rw [hosc]
+    exact setLAverage_enorm_sub_setAverage_le_vmoModulus f μ _ hs
+  · have h := setLAverage_enorm_sub_setAverage_le_vmoModulus (fun x => f (x + b)) μ (c - b) hs
+    rwa [hosc, sub_add_cancel] at h
+
 /-- The BMO seminorm is invariant under dilation `x ↦ t • x`, `t ≠ 0`, for an additive Haar
 measure on a finite-dimensional real normed space. -/
 @[simp]
@@ -549,14 +573,70 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
     [μ.IsAddHaarMeasure] (f : E → F) {t : ℝ} (ht : t ≠ 0) :
     bmoSeminorm (fun x => f (t • x)) μ = bmoSeminorm f μ := by
-  have hpre (c : E) (r : ℝ) : (fun x => t • x) ⁻¹' ball c r = ball (t⁻¹ • c) (‖t⁻¹‖ * r) := by
-    rw [Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
   refine bmoSeminorm_comp_of_map_eq_smul (e := MeasurableEquiv.smul₀ t ht)
     (Measure.map_addHaar_smul μ ht) (by simp [ht]) ENNReal.ofReal_ne_top
-    (fun c r => ⟨t • c, ‖t‖ * r, ?_⟩) (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', (hpre c' r').symm⟩) f
-  simp only [MeasurableEquiv.coe_smul₀, hpre, inv_smul_smul₀ ht, ← mul_assoc, norm_inv,
-    inv_mul_cancel₀ (norm_ne_zero_iff.2 ht), one_mul]
+    (fun c r => ⟨t • c, ‖t‖ * r, by
+      rw [MeasurableEquiv.coe_smul₀]
+      exact (preimage_smul_ball_smul_norm c (norm_pos_iff.2 ht) r).symm⟩)
+    (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', ?_⟩) f
+  rw [MeasurableEquiv.coe_smul₀, Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
 
 end Invariance
+
+/-! ### Averages over concentric balls -/
+
+section ConcentricBalls
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- **Averages over concentric dyadic balls.** For an additive Haar measure on a real normed space
+of finite dimension `n`, the averages of `b` over the balls `B(c, 2ʲ r)` move by at most
+`2ⁿ ‖b‖_{BMO}` at each doubling of the radius, so they stay within `(j + 1) 2ⁿ ‖b‖_{BMO}` of the
+average over `B(c, 2 r)`. -/
+theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStronglyMeasurable b μ)
+    (c : E) {r : ℝ} (hr : 0 < r) (j : ℕ) :
+    ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ ≤
+      (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
+  set n := Module.finrank ℝ E
+  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+    simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
+  have hstep : ∀ ρ : ℝ, 0 < ρ →
+      ‖(⨍ y in ball c ρ, b y ∂μ) - ⨍ y in ball c (2 * ρ), b y ∂μ‖ₑ ≤ 2 ^ n * bmoSeminorm b μ :=
+    fun ρ hρ => by
+    have h0 : μ (ball c ρ) ≠ 0 := (measure_ball_pos μ c hρ).ne'
+    have htop : μ (ball c ρ) ≠ ∞ := measure_ball_lt_top.ne
+    refine (enorm_setAverage_sub_le_of_subset (ball_subset_ball (by linarith : ρ ≤ 2 * ρ)) h0
+      measure_ball_lt_top.ne hb.restrict _).trans ?_
+    rw [μ.addHaar_ball_mul_of_pos c two_pos, μ.addHaar_ball_center c,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, ← μ.addHaar_ball_center c,
+      ENNReal.mul_div_cancel_right h0 htop]
+    gcongr
+    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm b μ c (2 * ρ)
+  have hind : ∀ j : ℕ, ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ ≤
+      j * 2 ^ n * bmoSeminorm b μ := by
+    intro j
+    induction j with
+    | zero => simp
+    | succ j ih =>
+      calc ‖(⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ
+          ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ‖ₑ +
+              ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ := by
+            rw [eNorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
+            exact htri _ _ _
+        _ ≤ 2 ^ n * bmoSeminorm b μ + j * 2 ^ n * bmoSeminorm b μ := by
+            gcongr
+            rw [pow_succ, mul_comm _ (2 : ℝ), mul_assoc]
+            exact hstep _ (by positivity)
+        _ = ((j + 1 : ℕ) : ℝ≥0∞) * 2 ^ n * bmoSeminorm b μ := by push_cast; ring
+  calc ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ
+      ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ +
+          ‖(⨍ y in ball c r, b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ :=
+        htri _ _ _
+    _ ≤ j * 2 ^ n * bmoSeminorm b μ + 2 ^ n * bmoSeminorm b μ := add_le_add (hind j) (hstep r hr)
+    _ = (j + 1) * 2 ^ n * bmoSeminorm b μ := by ring
+
+end ConcentricBalls
 
 end TauCeti

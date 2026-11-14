@@ -11,7 +11,8 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
-import TauCeti.RingTheory.Ideal.Quotient.Artinian
+import TauCeti.RingTheory.FractionalIdeal.Operations
+import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 
 /-!
 # Ideals of an order away from its conductor
@@ -130,15 +131,15 @@ def integralIdealsAwayConductorEquiv :
   toFun I := ⟨I.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     rw [mem_integralIdealsPrimeTo_conductorModulus_iff]
     refine ⟨fun h => I.2.1 ?_,
-      map_sup_eq_top_of_coprime_comap (S := O.toRingOfIntegers.toSubring) I.2.2⟩
+      Ideal.map_sup_eq_top_of_coprime_comap I.2.2⟩
     exact (comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers I.2.2).symm.trans
         ((congrArg (Ideal.comap O.toRingOfIntegers.toSubring.subtype) h).trans
           (Ideal.comap_bot_of_injective _ Subtype.val_injective))⟩
   invFun J := ⟨J.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     have hJ := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.2
-    refine ⟨fun h => hJ.1 ?_, comap_sup_eq_top_of_le (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers hJ.2⟩
+    refine ⟨fun h => hJ.1 ?_, (comap_sup_comap_eq_top_iff (S := O.toRingOfIntegers.toSubring)
+      O.conductor_le_toRingOfIntegers).mpr hJ.2⟩
     exact (map_comap_of_coprime (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers hJ.2).symm.trans
         ((congrArg (Ideal.map O.toRingOfIntegers.toSubring.subtype) h).trans Ideal.map_bot)⟩
@@ -182,7 +183,7 @@ private theorem restrictScalars_coeIdeal_sup_conductor {I : Ideal O.toRingOfInte
   apply le_antisymm
   · refine sup_le (fun y hy => ?_) (fun y hy => ?_)
     · have h := FractionalIdeal.coeIdeal_le_one (S := O.toSubalgebra⁰) hy
-      rwa [← FractionalIdeal.mem_coe, FractionalIdeal.coe_one] at h
+      rwa [← FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.coeToSubmodule_one] at h
     · obtain ⟨c, hc, rfl⟩ := (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mp hy
       exact Submodule.mem_one.mpr ⟨⟨_, O.conductor_le_order hc⟩, rfl⟩
   · intro y hy
@@ -225,8 +226,8 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
   have hi : i * one = i := by rw [← Submodule.restrictScalars_mul, mul_one]
   have hbf : b * f = f := by rw [← Submodule.restrictScalars_mul, one_mul]
   have hMj : (M : Submodule (𝓞 K) K).restrictScalars ℤ * j = b := by
-    rw [← Submodule.restrictScalars_mul, ← FractionalIdeal.coe_mul, mul_inv_cancel₀ hM,
-      FractionalIdeal.coe_one]
+    rw [← Submodule.restrictScalars_mul, ← FractionalIdeal.coeToSubmodule_mul, mul_inv_cancel₀ hM,
+      FractionalIdeal.coeToSubmodule_one]
   -- `I + 𝔣 = O`, since `I` is coprime to the conductor and `𝔣 ⊆ O`.
   have hif : i ⊔ f = one := restrictScalars_coeIdeal_sup_conductor hI.2
   -- The `ℤ`-submodule `O + 𝔣 M⁻¹` is an inverse of `I`; it lies in `I⁻¹`, so `I * I⁻¹ = O`.
@@ -237,31 +238,7 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
           rw [Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one, mul_right_comm]
       _ = i ⊔ f := by rw [hMj, hbf]
       _ = one := hif
-  have hIfr : Ifr ≠ 0 := FractionalIdeal.coeIdeal_ne_zero.mpr <|
-    (Ideal.map_eq_bot_iff_of_injective O.toRingOfIntegersEquiv.injective).not.mpr hI.1
-  have hle : one ⊔ f * j ≤ ((Ifr⁻¹ : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
-      Submodule O.toSubalgebra K).restrictScalars ℤ := by
-    intro x hx
-    rw [Submodule.restrictScalars_mem, FractionalIdeal.mem_coe,
-      FractionalIdeal.mem_inv_iff hIfr]
-    intro y hy
-    have h := Submodule.mul_mem_mul
-      ((Submodule.restrictScalars_mem ℤ _ _).mpr (FractionalIdeal.mem_coe.mpr hy) : y ∈ i) hx
-    rw [hinv, Submodule.restrictScalars_mem] at h
-    rw [mul_comm, ← FractionalIdeal.mem_coe, FractionalIdeal.coe_one]
-    exact h
-  have h1 : (1 : K) ∈ i * (one ⊔ f * j) := by
-    rw [hinv]
-    exact Submodule.mem_one.mpr ⟨1, map_one _⟩
-  have h2 : (1 : K) ∈ ((Ifr * Ifr⁻¹ : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
-      Submodule O.toSubalgebra K).restrictScalars ℤ := by
-    rw [FractionalIdeal.coe_mul, Submodule.restrictScalars_mul]
-    exact Submodule.mul_le.mpr (fun m hm n hn => Submodule.mul_mem_mul hm (hle hn)) h1
-  refine (FractionalIdeal.mul_inv_cancel_iff_isUnit K).mp (le_antisymm
-    FractionalIdeal.mul_one_div_le_one ?_)
-  rw [← FractionalIdeal.coe_le_coe, FractionalIdeal.coe_one, Submodule.one_le,
-    ← Submodule.restrictScalars_mem ℤ]
-  exact h2
+  exact FractionalIdeal.isUnit_of_restrictScalars_mul_eq_one (A := ℤ) hinv
 
 variable (O)
 

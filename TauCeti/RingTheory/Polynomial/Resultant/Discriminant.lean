@@ -829,13 +829,15 @@ theorem separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
   f.separable_map_zmod_iff_not_dvd_discr p <| by
     rw [hf.leadingCoeff]; exact_mod_cast (Fact.out : p.Prime).not_dvd_one
 
-/-- The discriminant of a monic integral polynomial is a square in `ℚ` exactly when it is a square
-in `ℤ`. -/
-theorem isSquare_discr_map_rat_iff {f : ℤ[X]} (hf : f.Monic) :
-    IsSquare (f.map (Int.castRingHom ℚ)).discr ↔ IsSquare f.discr := by
-  rw [hf.discr_map, eq_intCast, Rat.isSquare_intCast_iff]
-
 end Monic
+
+/-- The discriminant of an integral polynomial is a square in `ℚ` exactly when it is a square
+in `ℤ`. -/
+theorem isSquare_discr_map_rat_iff (f : ℤ[X]) :
+    IsSquare (f.map (Int.castRingHom ℚ)).discr ↔ IsSquare f.discr := by
+  rw [discr_map_of_natDegree_eq (Int.castRingHom ℚ)
+    (natDegree_map_eq_of_injective (RingHom.injective_int _) f), eq_intCast,
+    Rat.isSquare_intCast_iff]
 
 end Polynomial
 
@@ -865,13 +867,13 @@ theorem discr_powerBasis_eq_minpoly_discr {K L : Type*} [Field K] [Field L]
   case neg =>
     -- The inseparable case: the trace form vanishes identically, and so does the discriminant of
     -- the minimal polynomial, which is monic and not separable.
-    have hzero : Algebra.traceMatrix K pb.basis = 0 := by
+    have hzero : traceMatrix K pb.basis = 0 := by
       ext i j
-      simp [Algebra.traceMatrix_apply, Algebra.traceForm_apply,
-        Algebra.trace_eq_zero_of_not_isSeparable hsepL]
+      simp [traceMatrix_apply, traceForm_apply,
+        trace_eq_zero_of_not_isSeparable hsepL]
     have hminpoly : ¬ (minpoly K pb.gen).Separable := fun h ↦ hsepL (hsep_of h)
     have : Nonempty (Fin pb.dim) := ⟨⟨0, pb.dim_pos⟩⟩
-    rw [Algebra.discr_def, hzero, Matrix.det_zero,
+    rw [discr_def, hzero, Matrix.det_zero,
       eq_comm, ← not_ne_iff, (minpoly.monic pb.isIntegral_gen).discr_ne_zero_iff]
     exact hminpoly
   have e : Fin pb.dim ≃ (L →ₐ[K] E) := by
@@ -880,7 +882,7 @@ theorem discr_powerBasis_eq_minpoly_discr {K L : Type*} [Field K] [Field L]
     exact (PowerBasis.finrank pb).symm
   have hr := pb.roots_map_minpoly_eq_map_algHom e
   apply (algebraMap K E).injective
-  rw [Algebra.discr_powerBasis_eq_prod K E pb e,
+  rw [discr_powerBasis_eq_prod K E pb e,
     (minpoly.monic pb.isIntegral_gen).discr_eq_prod_roots_sub_sq_of_splits hs hr]
   apply Finset.prod_congr rfl
   intro i _
@@ -967,9 +969,9 @@ private theorem sylvesterDeriv_of_natDegree_eq_four {f : R[X]}
          0, f.coeff 4, f.coeff 3, 0, 0, 4 * f.coeff 4, 3 * f.coeff 3;
          0, 0, 1, 0, 0, 0, 4] := by
   ext ⟨i, hi⟩ ⟨j, hj⟩
-  simp only [Polynomial.sylvesterDeriv, hf, OfNat.ofNat_ne_zero, ↓reduceDIte,
-    Polynomial.sylvester, Fin.addCases, Nat.add_one_sub_one, Fin.val_castLT,
-    Fin.val_subNat, Fin.val_cast, Polynomial.coeff_derivative, eq_rec_constant, dite_eq_ite,
+  simp only [sylvesterDeriv, hf, OfNat.ofNat_ne_zero, ↓reduceDIte,
+    sylvester, Fin.addCases, Nat.add_one_sub_one, Fin.val_castLT,
+    Fin.val_subNat, Fin.val_cast, coeff_derivative, eq_rec_constant, dite_eq_ite,
     Nat.reduceMul, Nat.reduceSub, Nat.cast_ofNat, Matrix.reindex_apply, finCongr_symm,
     Matrix.submatrix_apply, finCongr_apply, Fin.cast_mk, Matrix.updateRow_apply, Fin.mk.injEq,
     Matrix.of_apply, one_mul, Matrix.cons_val', Matrix.cons_val_fin_one]

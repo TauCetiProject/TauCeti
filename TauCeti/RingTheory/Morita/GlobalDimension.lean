@@ -25,6 +25,7 @@ dimension in every universe in which both are small.
 
 * `CategoryTheory.Equivalence.globalDimension_eq`: rings with equivalent module categories have
   the same global dimension.
+* `RingEquiv.globalDimension_eq`: isomorphic rings have the same global dimension.
 * `IsMoritaEquivalent.globalDimension_eq`: Morita equivalent algebras have the same global
   dimension.
 * `TauCeti.globalDimension_matrix`: a matrix ring has the global dimension of its coefficients.
@@ -57,6 +58,11 @@ theorem _root_.CategoryTheory.Equivalence.globalDimension_eq {R : Type u} [Ring 
       projectiveDimension_eq_of_iso (e.counitIso.app N)
     rw [← hN, e.projectiveDimension_functor_obj]
     exact ModuleCat.projectiveDimension_le_globalDimension _
+
+/-- Isomorphic rings have the same global dimension. -/
+theorem _root_.RingEquiv.globalDimension_eq {R : Type u} [Ring R] {S : Type u'} [Ring S]
+    (e : R ≃+* S) : globalDimension.{v} R = globalDimension.{v} S :=
+  (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).globalDimension_eq.symm
 
 /-- **Morita equivalent algebras have the same global dimension**, computed with modules in any
 universe in which both algebras are small. -/

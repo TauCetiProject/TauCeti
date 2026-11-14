@@ -62,6 +62,8 @@ the ideal-theoretic one at the unramified primes.
   representative of the absolute Artin symbol of `x`.
 * `TauCeti.ClassFieldTheory.localArtinAt_comp`: compatibility with restriction to a normal
   subextension.
+* `TauCeti.ClassFieldTheory.localArtinAt_norm`: compatibility with the local norm from a
+  finite place of an intermediate field.
 * `TauCeti.ClassFieldTheory.localArtinAt_eq_map_normResidue`: the local Artin symbol at `v` is
   finite local reciprocity for `L_w/K_v`, read through the decomposition group of `w`.
 * `TauCeti.ClassFieldTheory.normGroup_le_ker_localArtinAt`: local norms have trivial local Artin
@@ -101,7 +103,7 @@ abelianized Galois group of a finite normal extension `L/K`: the absolute local 
 completion `K_v`, read in `Gal(L/K)^ab` by restriction along a place of `L` above `v`
 (`TauCeti.decompositionRestrict`). It does not depend on the choice of that place. -/
 def localArtinAt (v : HeightOneSpectrum (𝓞 K)) :
-    (v.adicCompletion K)ˣ →* Abelianization Gal(L/K) :=
+    (v.adicCompletion K)ˣ →* Group.Abelianization Gal(L/K) :=
   (decompositionRestrict K (v.adicCompletion K) L).comp (artinMap (v.adicCompletion K))
 
 variable {K L}
@@ -122,7 +124,7 @@ theorem localArtinAt_eq_of_mk_eq_artinMap (v : HeightOneSpectrum (𝓞 K))
       artinMap (v.adicCompletion K) x)
     (j : L →ₐ[K] AlgebraicClosure (v.adicCompletion K)) (σ : Gal(L/K))
     (hσ : ∀ y : L, j (σ y) = τ.toRingEquiv (j y)) :
-    localArtinAt K L v x = Abelianization.of σ := by
+    localArtinAt K L v x = Group.Abelianization.of σ := by
   rw [localArtinAt_apply, ← hτ, decompositionRestrict_mk j τ σ hσ]
 
 /-- **Compatibility with restriction to a normal subextension.** For a `K`-embedding
@@ -130,8 +132,70 @@ theorem localArtinAt_eq_of_mk_eq_artinMap (v : HeightOneSpectrum (𝓞 K))
 restricted to `M` along `f`, is the local Artin symbol at `v` in `Gal(M/K)^ab`. -/
 theorem localArtinAt_comp (v : HeightOneSpectrum (𝓞 K)) {M : Type} [Field M] [Algebra K M]
     [FiniteDimensional K M] [Normal K M] (f : M →ₐ[K] L) :
-    (Abelianization.map f.restrictNormalHom).comp (localArtinAt K L v) = localArtinAt K M v := by
+    (Group.Abelianization.map f.restrictNormalHom).comp (localArtinAt K L
+        v) = localArtinAt K M v := by
   rw [localArtinAt, localArtinAt, ← MonoidHom.comp_assoc, decompositionRestrict_comp]
+
+/-- **Norm functoriality in the ground field.** Let `K ⊆ E ⊆ L` with `L/K` finite normal, and let
+`w` be a finite place of `E` above the finite place `v` of `K`. The local Artin symbol at `v` of
+the local norm `N_{E_w/K_v}(y)` is the local Artin symbol at `w` of `y`, read in `Gal(L/K)^ab`
+through the inclusion `Gal(L/E) ≤ Gal(L/K)`:
+
+```text
+Art_v (N_{E_w/K_v} y) = Art_w y.
+```
+
+It is the norm functoriality `artinMap_norm` of the absolute local Artin maps, read through the
+decomposition groups. The instances on `L/E` follow from those on `L/K`. -/
+theorem localArtinAt_norm {E : Type} [Field E] [NumberField E] [Algebra K E] [Algebra E L]
+    [IsScalarTower K E L] [FiniteDimensional E L] [Normal E L] (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal] (y : (w.adicCompletion E)ˣ) :
+    localArtinAt K L v (Algebra.normUnits (v.adicCompletion K) y) =
+      Group.Abelianization.map (AlgEquiv.restrictScalarsHom K) (localArtinAt E L w y) := by
+  -- Represent `Art_w y` by `τ ∈ G_{E_w}`; then `Art_v (N y)` is represented by its image in
+  -- `G_{K_v}` along an embedding `iota` of `E_w` in `K_vˢ`.
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap (w.adicCompletion E) y)
+  let iota : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=
+    IsSepClosed.lift
+  rw [localArtinAt_apply, localArtinAt_apply, ← artinMap_norm _ iota y τ hτ, ← hτ]
+  -- Restrict `τ` to `σ ∈ Gal(L/E)` along an embedding `j` of `L` in `E_wˢ`.
+  let j : L →ₐ[E] SeparableClosure (w.adicCompletion E) := IsSepClosed.lift
+  let τ' := absoluteGaloisGroupRestrictEquiv (w.adicCompletion E) τ
+  let σ : Gal(L/E) := j.restrictNormalHom (AlgEquiv.restrictScalarsHom E τ')
+  have hσ (x : L) : j (σ x) = τ' (j x) := j.restrictNormalHom_commutes _ x
+  -- Transporting `j` along the identification `φ` of `E_wˢ` with `K_vˢ` gives a `K`-embedding
+  -- `jK` of `L` in `K_vᵃˡᵍ`, which intertwines `σ` with the image of `τ` in `G_{K_v}`.
+  let φ := separableClosureRingEquiv (v.adicCompletion K) (w.adicCompletion E) iota
+  let jK : L →ₐ[K] AlgebraicClosure (v.adicCompletion K) :=
+    { ((separableClosure _ (AlgebraicClosure (v.adicCompletion K))).val.toRingHom.comp
+        (φ.toRingHom.comp j.toRingHom)) with
+      commutes' := fun k ↦ by
+        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
+          MonoidHom.coe_ofClass, RingHom.coe_comp, Function.comp_apply, AlgHom.toRingHom_eq_coe,
+          RingHom.coe_coe, RingEquiv.toRingHom_eq_coe]
+        have hk : algebraMap E (w.adicCompletion E) (algebraMap K E k) =
+            algebraMap (v.adicCompletion K) (w.adicCompletion E)
+              (algebraMap K (v.adicCompletion K) k) := by
+          rw [← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+        rw [IsScalarTower.algebraMap_apply K E L, AlgHom.commutes,
+          IsScalarTower.algebraMap_apply E (w.adicCompletion E)
+            (SeparableClosure (w.adicCompletion E)), hk,
+          separableClosureRingEquiv_algebraMap, AlgHom.commutes,
+          IsScalarTower.algebraMap_apply K (v.adicCompletion K)
+            (AlgebraicClosure (v.adicCompletion K))]
+        exact AlgHom.commutes _ _ }
+  -- By construction, `jK` is `j` followed by `φ` and the inclusion `K_vˢ ⊆ K_vᵃˡᵍ`.
+  have hjK (z : L) : jK z = (φ (j z) : AlgebraicClosure (v.adicCompletion K)) := rfl
+  rw [decompositionRestrict_mk
+      (((separableClosure _ (AlgebraicClosure _)).val.restrictScalars E).comp j) τ σ
+      fun x ↦ by
+        simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, IntermediateField.coe_val, hσ]
+        exact coe_absoluteGaloisGroupRestrictEquiv_apply _ τ (j x),
+    Group.Abelianization.map_of]
+  refine decompositionRestrict_mk jK _ _ fun x ↦ ?_
+  rw [hjK, hjK, AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply, hσ,
+    ← absoluteGaloisGroupExtend_apply_separableClosureRingEquiv]
+  exact coe_absoluteGaloisGroupRestrictEquiv_apply _ _ (φ (j x))
 
 end Normal
 
@@ -150,7 +214,7 @@ of its norm residue symbol in `Gal(L_w/K_v)^ab` under the identification of `Gal
 the decomposition group of `w` (`IsDedekindDomain.HeightOneSpectrum.decompositionEquiv`). -/
 theorem localArtinAt_eq_map_normResidue (x : (v.adicCompletion K)ˣ) :
     localArtinAt K L v x =
-      Abelianization.map ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
+      Group.Abelianization.map ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
           (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom)
         (normResidue (v.adicCompletion K) (w.adicCompletion L)
           (x : (v.adicCompletion K)ˣ ⧸ normGroup (v.adicCompletion K) (w.adicCompletion L))) := by
@@ -161,7 +225,8 @@ theorem localArtinAt_eq_map_normResidue (x : (v.adicCompletion K)ˣ) :
   -- of `w` acting on `L_w` as `ρ`.
   set ρ := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) τ)
   set σ := (HeightOneSpectrum.decompositionEquiv v w).symm ρ
-  rw [normResidue_mk _ _ ι, artinMap_restrict _ _ ι x τ hτ, toMul_ofMul, Abelianization.map_of]
+  rw [normResidue_mk _ _ ι, artinMap_restrict _ _ ι x τ hτ, toMul_ofMul,
+      Group.Abelianization.map_of]
   let j : L →ₐ[K] AlgebraicClosure (v.adicCompletion K) :=
     (((separableClosure (v.adicCompletion K) (AlgebraicClosure (v.adicCompletion K))).val.comp
       ι).restrictScalars K).comp (IsScalarTower.toAlgHom K L (w.adicCompletion L))
@@ -187,27 +252,28 @@ a finite place of `L` above `v`, the local Artin symbols at `v` are exactly the 
 `Gal(L/K)^ab` of the elements of the decomposition group of `w`. -/
 theorem range_localArtinAt :
     (localArtinAt K L v).range =
-      (MulAction.stabilizer Gal(L/K) w.asIdeal).map Abelianization.of := by
+      (MulAction.stabilizer Gal(L/K) w.asIdeal).map Group.Abelianization.of := by
   set φ := (MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
     (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom
   -- The local Artin symbol factors as `K_vˣ ↠ K_vˣ ⧸ N(L_wˣ) ≃ Gal(L_w/K_v)^ab → Gal(L/K)^ab`.
-  have h : localArtinAt K L v = ((Abelianization.map φ).comp
+  have h : localArtinAt K L v = ((Group.Abelianization.map φ).comp
       (normResidue (v.adicCompletion K) (w.adicCompletion L)).toMonoidHom).comp
         (QuotientGroup.mk' _) :=
     MonoidHom.ext (localArtinAt_eq_map_normResidue v w)
-  -- `Abelianization G` is the quotient of `G` by its commutator subgroup.
+  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup.
   have hof : Function.Surjective
-      (Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K))) :=
+      (Group.Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K))) :=
     QuotientGroup.mk_surjective
   -- On `Gal(L_w/K_v)`, abelianizing after `φ` is the same as abelianizing before it.
-  have hmap : (Abelianization.map φ).comp Abelianization.of = Abelianization.of.comp φ :=
-    MonoidHom.ext (Abelianization.map_of φ)
-  calc (localArtinAt K L v).range = (Abelianization.map φ).range := by
+  have hmap : (Group.Abelianization.map
+      φ).comp Group.Abelianization.of = Group.Abelianization.of.comp φ :=
+    MonoidHom.ext (Group.Abelianization.map_of φ)
+  calc (localArtinAt K L v).range = (Group.Abelianization.map φ).range := by
         rw [h, MonoidHom.range_comp_of_surjective _ _ (QuotientGroup.mk'_surjective _),
           MonoidHom.range_comp_of_surjective _ _ (normResidue _ _).surjective]
-    _ = (Abelianization.of.comp φ).range := by
+    _ = (Group.Abelianization.of.comp φ).range := by
         rw [← hmap, MonoidHom.range_comp_of_surjective _ _ hof]
-    _ = (MulAction.stabilizer Gal(L/K) w.asIdeal).map Abelianization.of := by
+    _ = (MulAction.stabilizer Gal(L/K) w.asIdeal).map Group.Abelianization.of := by
         rw [MonoidHom.range_comp, MonoidHom.range_comp_of_surjective _ _
           (HeightOneSpectrum.decompositionEquiv v w).symm.surjective, Subgroup.range_subtype]
 
@@ -221,16 +287,16 @@ theorem localArtinAt_eq_one_iff_mem_normGroup [IsMulCommutative Gal(L/K)]
     (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom
   -- `Gal(L_w/K_v)^ab → Gal(L/K)^ab` is injective: `Gal(L/K)` is commutative, so it is its own
   -- abelianization, and `Gal(L_w/K_v)` embeds in it as the decomposition group.
-  have hφ : ∀ z, Abelianization.map φ z = 1 → z = 1 := fun z ↦ by
+  have hφ : ∀ z, Group.Abelianization.map φ z = 1 → z = 1 := fun z ↦ by
     induction z using QuotientGroup.induction_on with
     | H ρ =>
       intro h
-      have h' : φ ρ = 1 := Abelianization.of_injective <| by
-        rwa [← Abelianization.map_of, map_one]
+      have h' : φ ρ = 1 := Group.Abelianization.of_injective <| by
+        rwa [← Group.Abelianization.map_of, map_one]
       have hρ : ρ = 1 := (HeightOneSpectrum.decompositionEquiv v w).symm.injective <|
         Subtype.ext (by simpa [φ] using h')
       rw [hρ]
-      exact map_one (Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K)))
+      exact map_one (Group.Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K)))
   rw [localArtinAt_eq_map_normResidue v w]
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [(QuotientGroup.eq_one_iff x).2 h, map_one, map_one]⟩
   rw [← QuotientGroup.eq_one_iff, ← (normResidue _ _).map_eq_one_iff]
@@ -248,7 +314,7 @@ symbol at `v` of `x ∈ K_vˣ` is the class of `σ` raised to the normalized val
 theorem localArtinAt_eq_of_isArithFrobAt {σ : Gal(L/K)} (hσ : IsArithFrobAt (𝓞 K) σ w.asIdeal)
     (x : (v.adicCompletion K)ˣ) :
     localArtinAt K L v x =
-      Abelianization.of σ ^ (normalizedValuation (v.adicCompletion K) x).toAdd := by
+      Group.Abelianization.of σ ^ (normalizedValuation (v.adicCompletion K) x).toAdd := by
   have : IsUnramified (v.adicCompletion K) (w.adicCompletion L) :=
     HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt v w
   -- Under the decomposition-group identification `σ` is the local Frobenius of `L_w/K_v`.
@@ -266,7 +332,7 @@ theorem localArtinAt_eq_of_isArithFrobAt {σ : Gal(L/K)} (hσ : IsArithFrobAt (�
 theorem localArtinAt_uniformizer_eq_of_isArithFrobAt {σ : Gal(L/K)}
     (hσ : IsArithFrobAt (𝓞 K) σ w.asIdeal) {π : (v.adicCompletion K)ˣ}
     (hπ : IsUniformizer (v.adicCompletion K) π) :
-    localArtinAt K L v π = Abelianization.of σ := by
+    localArtinAt K L v π = Group.Abelianization.of σ := by
   rw [localArtinAt_eq_of_isArithFrobAt v w hσ, (isUniformizer_def π).1 hπ, toAdd_ofAdd,
     zpow_one]
 
@@ -293,7 +359,7 @@ theorem localArtinAt_eq_artinElement_zpow (hab : ∀ σ τ : Gal(L/K), Commute �
       Algebra.IsUnramifiedAt (𝓞 K) Q)
     (x : (v.adicCompletion K)ˣ) :
     localArtinAt K L v x =
-      Abelianization.of (NumberFieldArithmetic.artinElement hab v.asIdeal hur) ^
+      Group.Abelianization.of (NumberFieldArithmetic.artinElement hab v.asIdeal hur) ^
         (normalizedValuation (v.adicCompletion K) x).toAdd := by
   obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
   have := hur w.asIdeal

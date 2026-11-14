@@ -20,7 +20,8 @@ Mathlib's `PowerSeries.substInvOfIsUnit` supplies this inverse; the existing
 multiplication on formal parameters.
 Consequently the kernel of reduction over a completed discretely valued field is uniquely
 divisible by integers prime to the residue characteristic. This supplies torsion lifts under
-good reduction.
+good reduction. The point-level theorem `WeierstrassCurve.exists_nsmul_eq_of_pole` gives division
+inside the points reducing to infinity for any integral elliptic equation over the completion.
 
 ## References
 
@@ -81,13 +82,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
-local instance : IsLinearTopology (u.adicCompletionIntegers F) (u.adicCompletionIntegers F) :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸
-    Ideal.isLinearTopology (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))
-
-local instance : Fact (IsAdic (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
-
 open scoped Classical in
 /-- The kernel of reduction is uniquely divisible by integers prime to the residue
 characteristic. -/
@@ -103,5 +97,21 @@ theorem nsmul_kerReduction_bijective {n : ℕ} (hn : (n : A) ∉ u.asIdeal) :
   · intro P
     obtain ⟨Q, hQ⟩ := (FormalGroupPoint.nsmul_bijective hunit).2 (e.symm P)
     exact ⟨e Q, by simpa using congrArg e hQ⟩
+
+open scoped Classical in
+/-- Over a completed discretely valued field, division by an integer prime to the residue
+characteristic preserves the points reducing to infinity, for any integral elliptic equation. -/
+theorem exists_nsmul_eq_of_pole (V : WeierstrassCurve (u.adicCompletion F))
+    [hV : IsIntegral (u.adicCompletionIntegers F) V] [V.IsElliptic]
+    {n : ℕ} (hn : (n : A) ∉ u.asIdeal) {P : V.toAffine.Point}
+    (hP : P = 0 ∨ 1 < Valued.v P.xCoord) :
+    ∃ Q : V.toAffine.Point, (Q = 0 ∨ 1 < Valued.v Q.xCoord) ∧ n • Q = P := by
+  obtain ⟨C, rfl⟩ := hV.integral
+  have hP' : P ∈ C.kerReduction u := by
+    rw [mem_kerReduction_iff, Affine.Point.reduction_eq_zero_iff]
+    exact hP
+  obtain ⟨Q, hQ⟩ := (C.nsmul_kerReduction_bijective u hn).2 ⟨P, hP'⟩
+  refine ⟨Q, ?_, congrArg Subtype.val hQ⟩
+  exact (Affine.Point.reduction_eq_zero_iff _ _).mp ((C.mem_kerReduction_iff u).mp Q.2)
 
 end WeierstrassCurve

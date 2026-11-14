@@ -118,14 +118,11 @@ theorem index_eq_finrank_of_range_absoluteGaloisGroupExtend_eq_comap {L : Type*}
   rw [← shapiroOpenSubgroup_index, shapiroOpenSubgroup_toSubgroup, ← hσ,
     index_range_absoluteGaloisGroupExtend]
 
-/-- The Shapiro fixed field is fixed exactly by the preimage of `C`: the preimage is open, hence
-closed, and infinite Galois theory recovers a closed subgroup from its fixed field. -/
-theorem fixingSubgroup_shapiroField [IsGalois F (AlgebraicClosure F)] :
+/-- The Shapiro fixed field is fixed exactly by the preimage of `C`. -/
+theorem fixingSubgroup_shapiroField :
     (shapiroField F V C).fixingSubgroup = (shapiroOpenSubgroup F V C).toSubgroup := by
   rw [shapiroField_def]
-  exact InfiniteGalois.fixingSubgroup_fixedField
-    (⟨(shapiroOpenSubgroup F V C).toSubgroup, (shapiroOpenSubgroup F V C).isClosed⟩ :
-      ClosedSubgroup (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F))
+  exact fixingSubgroup_fixedField (shapiroOpenSubgroup F V C).isClosed
 
 /-- The degree of the Shapiro fixed field over `F` is the index of `C` in `G_F / V`. -/
 theorem finrank_shapiroField [IsGalois F (AlgebraicClosure F)] :
@@ -177,7 +174,7 @@ variable {R : Type v} [Field R]
 
 /-- Induction from `C` scales dimension by the degree of the associated fixed field. -/
 theorem finrank_ind_eq_finrank_shapiroField_mul [IsGalois F (AlgebraicClosure F)]
-    (B : Rep.{max u v} R C) [FiniteDimensional R B] :
+    (B : Rep.{max u v} R C) :
     Module.finrank R (Rep.ind C.subtype B) =
       Module.finrank F (shapiroField F V C) * Module.finrank R B := by
   rw [Rep.finrank_ind, finrank_shapiroField]
@@ -205,7 +202,7 @@ theorem finrank_base_shapiroField [Algebra k F] :
 coefficient dimension by the same index by which passage to the fixed field scales base degree. -/
 theorem finrank_base_mul_finrank_ind_eq_shapiroField
     [IsGalois F (AlgebraicClosure F)] [Algebra k F]
-    (B : Rep.{max u v} R C) [FiniteDimensional R B] :
+    (B : Rep.{max u v} R C) :
     Module.finrank k F * Module.finrank R (Rep.ind C.subtype B) =
       Module.finrank k (shapiroField F V C) * Module.finrank R B := by
   rw [finrank_ind_eq_finrank_shapiroField_mul,

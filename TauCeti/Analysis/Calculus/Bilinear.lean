@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 public import TauCeti.Analysis.Normed.Operator.Bilinear
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
@@ -22,7 +24,8 @@ critical point, but it depends on nothing beyond the bilinear chain rule
 
 The same chain rule differentiates the pairing `y ↦ B (u y) (∂_w u y)` of a `C²` map `u` with one
 of its directional derivatives, the one-form `x ↦ B x` pulled back along `u` and evaluated in the
-direction `w`; its derivative involves the second derivative of `u`.
+direction `w`; its derivative involves the second derivative of `u`. Along a curve, it shows that a
+pairing `s ↦ B (u s) (v s)` which is constant has vanishing derivative `B u' v + B u v'`.
 
 ## Main results
 
@@ -38,8 +41,12 @@ direction `w`; its derivative involves the second derivative of `u`.
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply`: `y ↦ B (u y) (∂_w u y)` is `C^n` at a
   point where `u` is `C^(n+1)`.
+* `ContinuousLinearMap.apply_add_apply_eq_zero_of_const`: if `s ↦ B (u s) (v s)` is constant, then
+  `B u' (v t) + B (u t) v' = 0`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContDiffOn.clm_bilinearComp`: the pullback `B x (L₁ x ·) (L₂ x ·)` of a smooth family of
+  bilinear maps along smooth families of linear maps is smooth.
 * `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
   of bilinear maps, read along `u` and pulled back along `u`, are those of the family, taken in
   the directions of the images under `u` and pulled back along `u`.
@@ -121,6 +128,16 @@ theorem _root_.ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply (B : F →L[
   (B.contDiff.contDiffAt.comp z (hu.of_le le_self_add)).clm_apply
     ((hu.fderiv_right le_rfl).clm_apply contDiffAt_const)
 
+/-- If the pairing `s ↦ B (u s) (v s)` of two curves is constant, its derivative
+`B u' (v t) + B (u t) v'` vanishes. -/
+theorem _root_.ContinuousLinearMap.apply_add_apply_eq_zero_of_const (B : E →L[𝕜] F →L[𝕜] G)
+    {u : 𝕜 → E} {v : 𝕜 → F} {u' : E} {v' : F} {t : 𝕜} (hu : HasDerivAt u u' t)
+    (hv : HasDerivAt v v' t) {c : G} (h : ∀ s, B (u s) (v s) = c) :
+    B u' (v t) + B (u t) v' = 0 := by
+  have hd := B.hasDerivAt_of_bilinear (fun _ ↦ hu) (fun _ ↦ hv)
+  rw [funext h, add_comm] at hd
+  exact hd.unique (hasDerivAt_const t c)
+
 /-- The pullback `(v, w) ↦ B (L v) (L w)` of a continuous bilinear map `B` along a continuous linear
 map `L` is `C^n` as a function of the pair `(B, L)`. -/
 theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
@@ -134,6 +151,21 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
   rw [h]
   exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
     (contDiff_fst.clm_comp contDiff_snd)
+
+/-- The pullback `(v, w) ↦ B x (L₁ x v) (L₂ x w)` of a `C^n` family of continuous bilinear maps
+along two `C^n` families of continuous linear maps is `C^n`. -/
+theorem _root_.ContDiffOn.clm_bilinearComp {P E₁ E₂ F₁ F₂ : Type*} [NormedAddCommGroup P]
+    [NormedSpace 𝕜 P] [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [NormedAddCommGroup E₂]
+    [NormedSpace 𝕜 E₂] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂]
+    [NormedSpace 𝕜 F₂] {s : Set P} {B : P → F₁ →L[𝕜] F₂ →L[𝕜] G} {L₁ : P → E₁ →L[𝕜] F₁}
+    {L₂ : P → E₂ →L[𝕜] F₂} (hB : ContDiffOn 𝕜 n B s) (hL₁ : ContDiffOn 𝕜 n L₁ s)
+    (hL₂ : ContDiffOn 𝕜 n L₂ s) :
+    ContDiffOn 𝕜 n (fun x ↦ (B x).bilinearComp (L₁ x) (L₂ x)) s := by
+  refine (((ContinuousLinearMap.compL 𝕜 E₂ F₂ G).flip.contDiff.comp_contDiffOn hL₂).clm_comp
+    (hB.clm_comp hL₁)).congr fun x _ ↦ ?_
+  -- Both sides pull `B x` back along `L₁ x` in the first slot and `L₂ x` in the second.
+  ext u v
+  rfl
 
 noncomputable section PullbackBilin
 

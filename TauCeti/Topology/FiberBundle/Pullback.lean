@@ -11,11 +11,12 @@ public import Mathlib.Topology.FiberBundle.Constructions
 /-!
 # Pullbacks of fibre bundles
 
-Three facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
+Four facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is the fibre of `E` over
 `f x`, needed to pull back bundles with extra structure on their fibres or on their atlas.
 
-* The fibres of `f *ᵖ E` carry the actions of a monoid on the fibres of `E`
-  (`Bundle.Pullback.instMulAction`), as Mathlib already does for module structures. This is what
+* The fibres of `f *ᵖ E` carry the scalar operations and monoid actions on the fibres of `E`
+  (`Bundle.Pullback.instSMul`, `Bundle.Pullback.instMulAction`), as Mathlib already does for
+  module structures. This is what
   makes the pullback of a principal bundle again carry a right action on its fibres.
 * The coordinate change between the pullbacks `e.pullback f` and `e'.pullback f` of two
   trivializations, over a point `x` with `f x` in the base set of `e`, is the coordinate change
@@ -23,7 +24,11 @@ Three facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is 
   regularity of the coordinate changes of `E` to those of `f *ᵖ E`.
 * The canonical lift `Bundle.Pullback.lift f : TotalSpace F (f *ᵖ E) → TotalSpace F E` has range
   `(π F E) ⁻¹' Set.range f` and inherits injectivity, inducingness, and topological (or open /
-  closed) embedding properties from `f` (`Bundle.Pullback.isEmbedding_lift`).
+  closed) embedding properties from `f` (`Bundle.Pullback.isEmbedding_lift`). A point of the
+  total space of `f *ᵖ E` is determined by its projection and its lift
+  (`Bundle.Pullback.totalSpace_ext`).
+* A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
+  the total space of `E` are (`Bundle.Pullback.continuous_iff`).
 -/
 
 public section
@@ -31,6 +36,11 @@ public section
 open Bundle Set Topology
 
 variable {B B' : Type*}
+
+/-- The fibres of a pullback bundle inherit scalar multiplication from the original fibres. -/
+instance Bundle.Pullback.instSMul {M : Type*} {E : B → Type*}
+    [i : ∀ b, SMul M (E b)] (f : B' → B) (x : B') : SMul M ((f *ᵖ E) x) :=
+  i (f x)
 
 /-- The fibres of a pullback bundle `f *ᵖ E` carry the actions on the fibres of `E`: the fibre over
 `x` is the fibre of `E` over `f x`. -/
@@ -63,7 +73,24 @@ theorem Bundle.Pullback.lift_injective {f : B' → B} (hf : Function.Injective f
   obtain rfl : x₁ = x₂ := hf (congrArg (π F E) h)
   exact TotalSpace.ext rfl (TotalSpace.ext_iff.mp h).2
 
+/-- Two points of the total space of a pullback bundle are equal when they have the same base
+point and the same lift to the original total space. -/
+theorem Bundle.Pullback.totalSpace_ext {f : B' → B} {z z' : TotalSpace F (f *ᵖ E)}
+    (h : z.proj = z'.proj) (h' : Pullback.lift f z = Pullback.lift f z') : z = z' := by
+  obtain ⟨y, a⟩ := z
+  obtain ⟨y', a'⟩ := z'
+  obtain rfl : y = y' := h
+  exact congrArg (TotalSpace.mk y) (TotalSpace.mk_injective (F := F) (E := E) (f y) h')
+
 variable [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)]
+
+omit [TopologicalSpace B] in
+/-- A map into the total space of a pullback bundle `f *ᵖ E` is continuous exactly when its
+projection to the new base and its lift to the total space of `E` are continuous. -/
+theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' → B}
+    {g : Z → TotalSpace F (f *ᵖ E)} :
+    Continuous g ↔ Continuous (fun z ↦ (g z).proj) ∧ Continuous (fun z ↦ Pullback.lift f (g z)) :=
+  (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.trans continuous_prodMk
 
 /-- If `f` is a topological inducing map and the projection `π F E` is continuous, then
 `Pullback.lift f` is a topological inducing map. -/
@@ -108,6 +135,15 @@ end Lift
 variable {F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace F]
   [TopologicalSpace (TotalSpace F E)] [∀ b, Nonempty (E b)] {K : Type*} [FunLike K B' B]
   [ContinuousMapClass K B' B]
+
+/-- The fibre coordinate in a pullback chart is the original chart's fibre coordinate at the
+canonical lift. -/
+theorem Bundle.Pullback.trivializationAt_snd [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+    (f : K) (x₀ : B') (z : TotalSpace F ((f : B' → B) *ᵖ E)) :
+    (trivializationAt F ((f : B' → B) *ᵖ E) x₀ z).2 =
+      (trivializationAt F E (f x₀) (Pullback.lift f z)).2 := by
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+    Trivialization.pullback_apply]
 
 /-- The coordinate change between the pullbacks of two trivializations, over a point `x` whose
 image `f x` lies in the base set of the first, is the coordinate change between the

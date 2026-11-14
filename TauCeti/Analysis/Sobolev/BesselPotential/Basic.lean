@@ -38,8 +38,13 @@ descriptions.
   representative of a derivative of a real `Lᵖ` function may be chosen real.
 * `MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`: `H^{k,p}(ℝⁿ) = W^{k,p}(ℝⁿ)` for
   every natural `k` and `1 < p < ∞`.
+* `TemperedDistribution.exists_w1p_value_ae_eq_of_mem_realSobolevFunctions`: a real function in
+  `H^{s,p}(ℝⁿ)`, `s ≥ 1`, is almost everywhere the value of an element of `W^{1,p}(ℝⁿ)`.
 * `TemperedDistribution.fderiv_apply_mem_realSobolevFunctions`: the classical directional
   derivatives of a real `C¹` function in `H^{s+1,p}`, `s ≥ 0`, lie in `H^{s,p}`.
+* `TemperedDistribution.mem_realSobolevFunctions_add_one_of_fderiv_apply`: conversely, a real `C¹`
+  function in `H^{s,p}` whose classical directional derivatives lie in `H^{s,p}` lies in
+  `H^{s+1,p}`.
 
 ## References
 
@@ -146,6 +151,18 @@ open scoped ENNReal LineDeriv
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
 
+/-- **Bessel-potential functions of order at least one are `W^{1,p}` values.** For `1 < p < ∞`
+and `s ≥ 1`, a real function in `H^{s,p}(ℝⁿ)` agrees almost everywhere with the value of an
+element of the weak-derivative Sobolev space `W^{1,p}(ℝⁿ)`. -/
+theorem exists_w1p_value_ae_eq_of_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {s : ℝ} (hs : 1 ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) :
+    ∃ w : W1p (volume : Measure E) ⊤ p, (W1p.value w : E → ℝ) =ᵐ[volume] f := by
+  obtain ⟨u, hu, h1⟩ := mem_realSobolevFunctions.1 (realSobolevFunctions_mono hp hp_top hs hf)
+  obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top 1 u).1
+    (by exact_mod_cast h1)
+  exact ⟨Wkp.firstOrder 0 w, by rw [Wkp.value_firstOrder]; exact hw.trans hu⟩
+
 /-- **Classical derivatives of Sobolev functions.** For `1 < p < ∞` and `s ≥ 0`, each classical
 directional derivative of a real `C¹` function in `H^{s+1,p}` lies in `H^{s,p}`: the
 distributional derivative lies in `H^{s,p} ⊆ Lᵖ`, so it is a weak derivative, and a continuous
@@ -171,5 +188,21 @@ theorem fderiv_apply_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)] 
   have hae := hline.ae_eq_lineDeriv hint fun x _ ↦ (hdiff x).lineDifferentiableAt
   refine mem_realSobolevFunctions.2 ⟨u', ?_, hu' ▸ hd⟩
   simpa only [Opens.coe_top, Measure.restrict_univ, (hdiff _).lineDeriv_eq_fderiv] using hae
+
+/-- **Sobolev regularity from classical derivatives.** For `1 < p < ∞`, a real `C¹` function in
+`H^{s,p}` whose classical directional derivatives all lie in `H^{s,p}` lies in `H^{s+1,p}`: the
+classical derivatives are weak derivatives, hence the distributional ones. This is the converse of
+`fderiv_apply_mem_realSobolevFunctions`. -/
+theorem mem_realSobolevFunctions_add_one_of_fderiv_apply {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {s : ℝ} {f : E → ℝ} (hf : ContDiff ℝ 1 f)
+    (hmem : f ∈ realSobolevFunctions E s p)
+    (hd : ∀ v, (fun x ↦ fderiv ℝ f x v) ∈ realSobolevFunctions E s p) :
+    f ∈ realSobolevFunctions E (s + 1) p := by
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hmem
+  refine mem_realSobolevFunctions.2
+    ⟨u, huf, (memSobolev_add_one_iff hp hp_top).2 ⟨hu, fun v ↦ ?_⟩⟩
+  obtain ⟨u', hu'f, hu'⟩ := mem_realSobolevFunctions.1 (hd v)
+  rw [lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff hf huf hu'f]
+  exact hu'
 
 end TemperedDistribution

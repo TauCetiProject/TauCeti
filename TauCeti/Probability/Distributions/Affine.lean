@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
+public import TauCeti.MeasureTheory.Group.Convolution.Translation
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
@@ -17,6 +18,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Independence.ConvolutionPower
 
 /-!
 # Affine images of real laws
@@ -42,7 +44,8 @@ which is Mathlib's `MeasureTheory.Measure.map_const`.
 The variance, moment-generating function and characteristic function computations follow
 Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const_add` and
 `ProbabilityTheory.variance_const_mul`, `ProbabilityTheory.mgf_const_add` and
-`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_apply_real`, which they reduce to.
+`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_map_const_add` and
+`MeasureTheory.charFun_map_mul`, which they reduce to.
 
 ## Main results
 
@@ -77,6 +80,10 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 * `TauCeti.Probability.mgf_id_neg`, `TauCeti.Probability.integrableExpSet_id_neg`,
   `TauCeti.Probability.cgf_id_neg` — the exponential transforms of the reflected law at `-t`;
 * `TauCeti.Probability.charFun_map_affine` — the characteristic function `exp (i a t) φ(b t)`.
+
+Affine images also commute with convolution when the translations are accumulated: offsets
+`a` and `c` give the offset `a + c`, and applying the same offset to each of `n` summands gives
+`n * a`. The corresponding finite independent-sum law includes the empty sum and zero slope.
 -/
 
 public section
@@ -314,14 +321,14 @@ theorem upperQuantile_map_affine_pos [IsProbabilityMeasure μ] {u : ℝ} (hb : 0
     (μ.map fun x => a + b * x).upperQuantile u = a + b * μ.upperQuantile u := by
   apply le_antisymm
   · have hmass := Measure.measureReal_Iio_upperQuantile_le
-      (μ.map fun x => a + b * x) h0 h1
+      (μ.map fun x => a + b * x) h0
     rw [measureReal_Iio_map_affine_of_pos hb] at hmass
     have hq := (Measure.le_upperQuantile_iff μ h0 h1).mpr hmass
     have := (div_le_iff₀ hb).mp hq
     linarith
   · rw [Measure.le_upperQuantile_iff _ h0 h1, measureReal_Iio_map_affine_of_pos hb]
     simp only [add_sub_cancel_left, mul_div_cancel_left₀ _ hb.ne']
-    exact Measure.measureReal_Iio_upperQuantile_le μ h0 h1
+    exact Measure.measureReal_Iio_upperQuantile_le μ h0
 
 /-- A negative affine map carries lower quantiles to reflected upper quantiles. The upper
 quantile is necessary when the original cdf has a plateau at level `1 - u`. -/
@@ -333,7 +340,7 @@ theorem quantile_map_affine_neg [IsProbabilityMeasure μ] {u : ℝ} (hb : b < 0)
   have h11 : 1 - u < 1 := sub_lt_self _ h0
   apply le_antisymm
   · rw [Measure.quantile_le_iff _ h0 h1, cdf_map_affine_of_neg hb]
-    have hmass := Measure.measureReal_Iio_upperQuantile_le μ h10 h11
+    have hmass := Measure.measureReal_Iio_upperQuantile_le μ h10
     simp only [add_sub_cancel_left, mul_div_cancel_left₀ _ hb.ne]
     linarith
   · have hcdf := Measure.le_cdf_quantile (μ.map fun x => a + b * x) h1
@@ -353,7 +360,7 @@ theorem upperQuantile_map_affine_neg [IsProbabilityMeasure μ] {u : ℝ} (hb : b
   have h11 : 1 - u < 1 := sub_lt_self _ h0
   apply le_antisymm
   · have hmass := Measure.measureReal_Iio_upperQuantile_le
-      (μ.map fun x => a + b * x) h0 h1
+      (μ.map fun x => a + b * x) h0
     rw [measureReal_Iio_map_affine_of_neg hb] at hmass
     have hcdf : 1 - u ≤ cdf μ
         (((μ.map fun x => a + b * x).upperQuantile u - a) / b) := by linarith
@@ -519,12 +526,81 @@ theorem cgf_id_neg (t : ℝ) : cgf id μ.neg t = cgf id μ (-t) := by
 theorem charFun_map_affine (t : ℝ) :
     charFun (μ.map fun x => a + b * x) t =
       Complex.exp (a * t * Complex.I) * charFun μ (b * t) := by
-  rw [charFun_apply_real, charFun_apply_real,
-    integral_map (measurable_affine a b).aemeasurable (by fun_prop), ← integral_const_mul]
-  refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  dsimp only
-  rw [← Complex.exp_add]
-  push_cast
-  ring_nf
+  rw [show (fun x => a + b * x) = (a + ·) ∘ (b * ·) from rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop), charFun_map_const_add, charFun_map_mul,
+    mul_comm]
+  simp [mul_comm]
 
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+open scoped MeasureTheory
+
+/-- The convolution of two real affine images with common slope is the affine image of the
+convolution, with the two offsets added. The slope may be zero or negative. -/
+theorem conv_map_affine (μ ν : Measure ℝ) [SFinite ν] (a c b : ℝ) :
+    (μ.map (fun x ↦ a + b * x)) ∗ (ν.map (fun x ↦ c + b * x)) =
+      (μ ∗ ν).map (fun x ↦ a + c + b * x) := by
+  have hmap (ρ : Measure ℝ) (d : ℝ) :
+      ρ.map (fun x ↦ d + b * x) = (ρ.map (b * ·)).map (d + ·) := by
+    rw [map_map (measurable_const_add d) (by fun_prop)]
+    rfl
+  have hscale : (μ.map (b * ·)) ∗ (ν.map (b * ·)) = (μ ∗ ν).map (b * ·) := by
+    simpa [Pi.smul_def, smul_eq_mul] using (map_conv_continuousLinearMap (μ := μ) (ν := ν)
+      (b • ContinuousLinearMap.id ℝ ℝ)).symm
+  rw [hmap μ a, hmap ν c, conv_map_add, hscale,
+    map_map (by fun_prop) (by fun_prop)]
+  rfl
+
+/-- Applying the same real affine map to every summand accumulates the translation once per
+summand. This holds at every slope and for the empty sum. -/
+theorem convolutionPower_map_affine (μ : Measure ℝ) [SFinite μ] (a b : ℝ) (n : ℕ) :
+    (μ.map (fun x ↦ a + b * x)).convolutionPower n =
+      (μ.convolutionPower n).map (fun x ↦ (n : ℝ) * a + b * x) := by
+  have hmap : μ.map (fun x ↦ a + b * x) = (μ.map (b * ·)).map (a + ·) := by
+    rw [map_map (measurable_const_add a) (by fun_prop)]
+    rfl
+  have hscale : (μ.map (b * ·)).convolutionPower n =
+      (μ.convolutionPower n).map (b * ·) := by
+    let f : ℝ →+ ℝ := b • AddMonoidHom.id ℝ
+    have hf : (f : ℝ → ℝ) = (b * ·) := by
+      ext x
+      simp [f, smul_eq_mul]
+    have hfm : Measurable f := by rw [hf]; fun_prop
+    simpa only [hf] using (map_convolutionPower μ f hfm n).symm
+  rw [hmap, convolutionPower_map_add, hscale, map_map (by fun_prop) (by fun_prop)]
+  simp [nsmul_eq_mul, Function.comp_def]
+
+end MeasureTheory.Measure
+
+namespace ProbabilityTheory
+
+variable {Ω ι : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ : Measure ℝ}
+  {X : ι → Ω → ℝ}
+
+/-- The sum of two affine images of independent real variables, with the same slope, has the
+affine image of the convolution law, with the two offsets added. -/
+theorem IndepFun.hasLaw_add_affine {ν : Measure ℝ} [SigmaFinite μ] [SigmaFinite ν]
+    {Y Z : Ω → ℝ} (h : IndepFun Y Z P) (hY : HasLaw Y μ P) (hZ : HasLaw Z ν P)
+    (a c b : ℝ) :
+    HasLaw (fun ω ↦ (a + b * Y ω) + (c + b * Z ω))
+      ((μ ∗ ν).map (fun x ↦ a + c + b * x)) P := by
+  have hmap : HasLaw (fun x : ℝ ↦ a + c + b * x)
+      ((μ ∗ ν).map (fun x ↦ a + c + b * x)) (μ ∗ ν) := hasLaw_map (by fun_prop)
+  apply (hmap.comp (h.hasLaw_fun_add hY hZ)).congr
+  exact ae_of_all _ fun ω ↦ by simp only [Function.comp_apply]; ring
+
+/-- The sum of affine images with a common slope of independent variables with common law
+`μ` is the affine image of the convolution power, with all offsets added. -/
+theorem iIndepFun.hasLaw_finset_sum_affine_convolutionPower (h : iIndepFun X P)
+    (hX : ∀ i, HasLaw (X i) μ P) (s : Finset ι) (a : ι → ℝ) (b : ℝ) :
+    HasLaw (fun ω ↦ ∑ i ∈ s, (a i + b * X i ω))
+      ((μ.convolutionPower s.card).map (fun x ↦ (∑ i ∈ s, a i) + b * x)) P := by
+  have hmap : HasLaw (fun x : ℝ ↦ (∑ i ∈ s, a i) + b * x)
+      ((μ.convolutionPower s.card).map (fun x ↦ (∑ i ∈ s, a i) + b * x))
+      (μ.convolutionPower s.card) := hasLaw_map (by fun_prop)
+  have hsum := hmap.comp (h.hasLaw_finset_sum_convolutionPower hX s)
+  simpa [Function.comp_def, Finset.sum_add_distrib, Finset.mul_sum, Finset.sum_fn] using hsum
+
+end ProbabilityTheory

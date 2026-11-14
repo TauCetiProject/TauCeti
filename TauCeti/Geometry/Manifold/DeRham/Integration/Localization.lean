@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Euclidean
-import TauCeti.Geometry.Manifold.Orientation.Pullback
+import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 
 /-!
 # Localization of compactly supported top-degree cohomology
@@ -49,16 +49,15 @@ compactly supported cohomology is bijective, for any orientation, including in d
 theorem bijective_integral_of_diffeomorph_normedSpace [SigmaCompactSpace M]
     (o : Manifold.Orientation I M (Fin n)) (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ M) :
     Function.Bijective (integral o) := by
-  let oE := o.pullback (Φ.contMDiff.of_le (by simp))
-    (fun x ↦ Φ.isInvertible_mfderiv (x := x) (by simp)) o.card_eq
-  have hΦ : ∀ x, oE.IsOrientationPreservingAt o Φ x :=
-    o.isOrientationPreservingAt_pullback _ _ _
-  have heq : (integral oE).comp (equivOfDiffeomorph Φ n).toLinearMap = integral o := by
-    ext c
-    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, equivOfDiffeomorph_apply] using
-      integral_map_diffeomorph oE o Φ hΦ c
-  rw [← heq]
-  exact (bijective_integral_normedSpace oE).comp (equivOfDiffeomorph Φ n).bijective
+  -- `H^n_c(M) ≅ H^n_c(E)` is a line, and integration onto `ℝ` is surjective.
+  have : Nonempty M := ⟨Φ 0⟩
+  have hfin : finrank ℝ (compactlySupportedDeRhamCohomology I M n) = finrank ℝ ℝ := by
+    rw [(equivOfDiffeomorph Φ n).finrank_eq, finrank_self]
+    exact finrank_compactlySupportedDeRhamCohomology_normedSpace E (by simpa using o.card_eq.symm)
+  have : FiniteDimensional ℝ (compactlySupportedDeRhamCohomology I M n) :=
+    Module.finite_of_finrank_eq_succ (hfin.trans (finrank_self ℝ))
+  exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin).mpr
+    (surjective_integral o), surjective_integral o⟩
 
 /-- A class extended by zero from a Euclidean coordinate domain vanishes if its integral
 vanishes. No connectedness of the ambient manifold or of the larger open subset is required. -/
@@ -68,8 +67,7 @@ theorem eq_zero_of_integral_eq_zero_of_mem_range_extendByZero
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {c : compactlySupportedDeRhamCohomology I W n}
     (hc : c ∈ LinearMap.range (extendByZero h n))
     (hzero : integral (o.restrict W) c = 0) : c = 0 := by
-  have : SigmaCompactSpace U :=
-    ⟨Φ.toHomeomorph.surjective.range_eq ▸ isSigmaCompact_range Φ.continuous⟩
+  have : SigmaCompactSpace U := Φ.toHomeomorph.symm.isClosedEmbedding.sigmaCompactSpace
   obtain ⟨d, rfl⟩ := hc
   rw [integral_extendByZero] at hzero
   have hd : d = 0 := (bijective_integral_of_diffeomorph_normedSpace (o.restrict U) Φ).injective

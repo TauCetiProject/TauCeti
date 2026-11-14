@@ -41,7 +41,7 @@ theorem strictMonoOn_quantile_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
 /-- With positive scale, the skew-normal quantile is continuous on interior levels. -/
 theorem continuousOn_quantile_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     ContinuousOn (skewNormalMeasure m s α).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_skewNormalMeasure hs m α)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_skewNormalMeasure hs m α).strictMonoOn _)
 
 /-- Skew-normal quantiles tend to minus infinity as the level tends to zero from above. -/

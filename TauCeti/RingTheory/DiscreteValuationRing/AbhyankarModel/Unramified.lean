@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Algebra.NatCast
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
+public import Mathlib.RingTheory.RingHom.Unramified
+import Mathlib.RingTheory.Unramified.LocalRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -21,7 +23,8 @@ Kummer ring `A[t]/(t ^ n − π)` maps to the Abhyankar model by sending `t` to 
 At every maximal ideal of the model, the maximal ideal of the Kummer ring
 generates the maximal ideal of the localization. Thus its ramification
 index is one. When the residue extension of `B/A` is algebraic separable, so is
-that of each of these localizations over the Kummer ring.
+that of each of these localizations over the Kummer ring. If `A → B` is also essentially
+of finite type, these localizations are formally unramified over the Kummer ring.
 
 This is the Kummer base-change computation in Abhyankar's lemma for discrete
 valuation rings, Stacks Project, Lemma 15.116.4 (Tag 0BRM). The model has already
@@ -61,7 +64,7 @@ theorem map_maximalIdeal_abhyankarModelKummerHom :
   have hn := mul_ne_zero he.neZero_natCast.out hd
   have := standardTameCover_isLocalRing ((mem_maximalIdeal π).mpr hπ.not_isUnit) hn
   have hmax := (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)
-    ).eq_span_singleton_of_isMaximal (monic_X_pow_sub_C π hn)
+    ).eq_span_singleton_of_isMaximal
       (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) AdjoinRoot.adjoinRoot_eq_top
       (maximalIdeal (standardTameCover A π (e * d)))
   rw [hmax]
@@ -126,10 +129,8 @@ theorem isSeparable_abhyankarModelKummerHom
   let := ((algebraMap _ S).comp (abhyankarModelKummerHom (d := d) hπB).toRingHom).toAlgebra
   have : IsLocalHom (algebraMap R S) :=
     isLocalHom_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
-  have : IsScalarTower A R S := .of_algebraMap_eq fun a ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes,
-      ← IsScalarTower.algebraMap_apply A (abhyankarModel ϖ u e d) S]
+  have : IsScalarTower A R S := .of_algHom
+    ((IsScalarTower.toAlgHom A (abhyankarModel ϖ u e d) S).comp (abhyankarModelKummerHom hπB))
   -- Finiteness makes every maximal ideal of the model lie over the closed point of `B`.
   obtain ⟨_, hrank⟩ := abhyankarModel_free ϖ u (Nat.pos_of_ne_zero he₀)
     (Nat.pos_of_ne_zero hd)
@@ -143,14 +144,9 @@ theorem isSeparable_abhyankarModelKummerHom
       ← Ideal.under_def (abhyankarModel ϖ u e d),
       IsLocalization.AtPrime.under_maximalIdeal S M,
       ← Ideal.under_def, ← Ideal.over_def M (maximalIdeal B)]
-  have := isSeparable_abhyankarModel_quotient M
-    ((mem_maximalIdeal ϖ).mpr hϖ.not_isUnit) hu he hd
-  -- Localization at a maximal ideal does not change its residue field.
-  let σ := (IsLocalization.AtPrime.equivQuotMaximalIdeal M S).restrictScalars B
-  let τ := σ.extendScalarsOfSurjective (R := B) (S := B ⧸ maximalIdeal B)
-    Ideal.Quotient.mk_surjective
   have : Algebra.IsSeparable (ResidueField B) (ResidueField S) :=
-    (AlgEquiv.Algebra.isSeparable_iff τ).mp inferInstance
+    isSeparable_residueField_localization_abhyankarModel M
+      ((mem_maximalIdeal ϖ).mpr hϖ.not_isUnit) hu he hd
   have : IsLocalHom (algebraMap A S) := by
     rw [IsScalarTower.algebraMap_eq A B S]
     infer_instance
@@ -164,6 +160,37 @@ theorem isSeparable_abhyankarModelKummerHom
     isLocalHom_of_comp (algebraMap A R) (algebraMap R S)
   exact Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A) (ResidueField R)
     (ResidueField S)
+
+include hπ hϖ hu he hd in
+/-- Each maximal localization of the Abhyankar model is formally unramified over the Kummer
+root ring `A[π^(1/(ed))]` when `A → B` is essentially of finite type with separable residue
+extension. No invertibility of `d` is required. This is the Kummer-base local computation
+in SGA 1, Exposé X, Lemme 3.6 and Stacks, Lemma 15.116.4 (0BRM). -/
+theorem formallyUnramified_abhyankarModelKummerHom
+    [IsLocalHom (algebraMap A B)] [Algebra.EssFiniteType A B]
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    ((algebraMap _ (Localization.AtPrime M)).comp
+      (abhyankarModelKummerHom (d := d) hπB).toRingHom).FormallyUnramified := by
+  let R := standardTameCover A π (e * d)
+  let D := abhyankarModel ϖ u e d
+  let S := Localization.AtPrime M
+  have := standardTameCover_isLocalRing ((mem_maximalIdeal π).mpr hπ.not_isUnit)
+    (mul_ne_zero he.neZero_natCast.out hd)
+  let := ((algebraMap _ S).comp (abhyankarModelKummerHom (d := d) hπB).toRingHom).toAlgebra
+  have hmap : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S :=
+    map_maximalIdeal_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
+  have : IsLocalHom (algebraMap R S) :=
+    isLocalHom_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
+  have : Algebra.IsSeparable (ResidueField R) (ResidueField S) :=
+    isSeparable_abhyankarModelKummerHom hπ hϖ hu he hd hπB M
+  have : IsScalarTower A R S := .of_algHom
+    ((IsScalarTower.toAlgHom A D S).comp (abhyankarModelKummerHom hπB))
+  have : Algebra.FiniteType B D := inferInstance
+  have : Algebra.EssFiniteType A D := .comp A B D
+  have : Algebra.EssFiniteType A S := .comp A D S
+  have : Algebra.EssFiniteType R S := .of_comp A R S
+  exact RingHom.formallyUnramified_algebraMap.mpr
+    (Algebra.FormallyUnramified.of_map_maximalIdeal hmap)
 
 end Local
 

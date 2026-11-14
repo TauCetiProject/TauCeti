@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Integrating complementary power bounds
@@ -19,11 +21,72 @@ the scale is the square of the spatial separation.
 The endpoint-singular form `TauCeti.norm_integral_le_of_ae_norm_le_rpow` reverses time and
 specializes the scale to obtain a bound proportional to the spatial separation to the Hölder
 exponent.
+
+The one-sided estimates `TauCeti.intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_right`
+and `TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right` treat `a ≤ b` and a
+function with values in a normed group whose norm is bounded almost everywhere on `(a, b]` by
+`K * (s - a) ^ u` with `-1 < u`. If the function is a.e. strongly measurable on `(a, b]`, it is
+interval integrable; without any measurability assumption, the norm of its integral over `[a, b]`
+is at most `K * ((b - a) ^ (u + 1) / (u + 1))`. Both use `TauCeti.intervalIntegrable_sub_const_rpow`
+and `TauCeti.integral_sub_const_rpow`. The `_left` forms treat the singularity at `b`, with bound
+`K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
 -/
 
 public section
 
 namespace TauCeti
+
+namespace intervalIntegral
+
+open MeasureTheory Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+omit [NormedSpace ℝ E] in
+/-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
+`-1 < u` is interval integrable on `[a, b]`, given that it is a.e. strongly measurable there. -/
+theorem intervalIntegrable_of_norm_le_mul_sub_rpow_right {f : ℝ → E} {a b K u : ℝ}
+    (hu : -1 < u) (hab : a ≤ b) (hmeas : AEStronglyMeasurable f (volume.restrict (Ioc a b)))
+    (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
+    IntervalIntegrable f volume a b := by
+  rw [← uIoc_of_le hab] at hmeas hbound
+  exact ((TauCeti.intervalIntegrable_sub_const_rpow hu a a b).const_mul K).mono_fun' hmeas hbound
+
+/-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
+`-1 < u` has integral over `[a, b]` of norm at most `K * ((b - a) ^ (u + 1) / (u + 1))`. -/
+theorem norm_integral_le_of_norm_le_mul_sub_rpow_right {f : ℝ → E} {a b K u : ℝ}
+    (hu : -1 < u) (hab : a ≤ b)
+    (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
+    ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
+  refine (intervalIntegral.norm_integral_le_of_norm_le hab
+    ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
+    ((TauCeti.intervalIntegrable_sub_const_rpow hu a a b).const_mul K)).trans_eq ?_
+  rw [intervalIntegral.integral_const_mul, TauCeti.integral_sub_const_rpow hu]
+
+omit [NormedSpace ℝ E] in
+/-- The mirror image of
+`TauCeti.intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_right`: the
+singularity is at the right endpoint `b`. -/
+theorem intervalIntegrable_of_norm_le_mul_sub_rpow_left {f : ℝ → E} {a b K u : ℝ}
+    (hu : -1 < u) (hab : a ≤ b) (hmeas : AEStronglyMeasurable f (volume.restrict (Ioc a b)))
+    (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (b - s) ^ u) :
+    IntervalIntegrable f volume a b := by
+  rw [← uIoc_of_le hab] at hmeas hbound
+  exact ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K).mono_fun' hmeas hbound
+
+/-- The mirror image of
+`TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right`: the
+singularity is at the right endpoint `b`. -/
+theorem norm_integral_le_of_norm_le_mul_sub_rpow_left {f : ℝ → E} {a b K u : ℝ}
+    (hu : -1 < u) (hab : a ≤ b)
+    (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (b - s) ^ u) :
+    ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
+  refine (intervalIntegral.norm_integral_le_of_norm_le hab
+    ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
+    ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K)).trans_eq ?_
+  rw [intervalIntegral.integral_const_mul, TauCeti.integral_sub_rpow hu]
+
+end intervalIntegral
 
 open MeasureTheory Set Real
 
@@ -33,10 +96,14 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 at zero and the second at infinity; the resulting bound is uniform in the endpoint `t ≥ 0`. -/
 theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : ℝ}
     (ha : 0 < a) (hb : 0 < b) (hA : 0 ≤ A) (hB : 0 ≤ B) (hd : 0 < d) (ht : 0 ≤ t)
-    (hf : IntervalIntegrable f volume 0 t)
     (hnear : ∀ᵐ r ∂volume.restrict (Ioo 0 t), ‖f r‖ ≤ A * r ^ (a - 1))
     (hfar : ∀ᵐ r ∂volume.restrict (Ioo 0 t), ‖f r‖ ≤ B * r ^ (-b - 1)) :
     ‖∫ r in 0..t, f r‖ ≤ A / a * d ^ a + B / b * d ^ (-b) := by
+  -- A non-integrable function has integral `0`.
+  by_cases hf : IntervalIntegrable f volume 0 t
+  swap
+  · rw [intervalIntegral.integral_undef hf, norm_zero]
+    positivity
   have hnear' : ∀ᵐ r ∂volume, r ∈ Ioc 0 t → ‖f r‖ ≤ A * r ^ (a - 1) := by
     rwa [restrict_Ioo_eq_restrict_Ioc, ae_restrict_iff' measurableSet_Ioc] at hnear
   have hfar' : ∀ᵐ r ∂volume, r ∈ Ioc 0 t → ‖f r‖ ≤ B * r ^ (-b - 1) := by
@@ -44,14 +111,14 @@ theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : �
   have hsmall {s : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) :
       ‖∫ r in 0..s, f r‖ ≤ A / a * s ^ a := by
     have hr : -1 < a - 1 := by linarith
-    calc
-      ‖∫ r in 0..s, f r‖ ≤ ∫ r in 0..s, A * r ^ (a - 1) :=
-        intervalIntegral.norm_integral_le_of_norm_le hs
-          (hnear'.mono fun r hr hrs => hr ⟨hrs.1, hrs.2.trans hst⟩)
-          ((intervalIntegral.intervalIntegrable_rpow' hr).const_mul A)
+    have hsub : Ioc 0 s ⊆ Ioc 0 t := Ioc_subset_Ioc_right hst
+    have h := TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right (f := f)
+      (a := 0) (b := s) (K := A) hr hs
+      ((ae_restrict_iff' measurableSet_Ioc).mpr
+        (hnear'.mono fun r hr hrs => by simpa using hr (hsub hrs)))
+    calc ‖∫ r in 0..s, f r‖ ≤ A * ((s - 0) ^ (a - 1 + 1) / (a - 1 + 1)) := h
       _ = A / a * s ^ a := by
-        rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hr)]
-        rw [sub_add_cancel, Real.zero_rpow ha.ne', sub_zero]
+        rw [sub_zero, sub_add_cancel]
         ring
   by_cases htd : t ≤ d
   · exact (hsmall ht le_rfl).trans <| le_add_of_le_of_nonneg
@@ -87,6 +154,19 @@ theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : �
     rw [← intervalIntegral.integral_add_adjacent_intervals hfd hft]
     exact (norm_add_le _ _).trans (add_le_add (hsmall hd.le hdt) htail)
 
+/-- A constant bounding a norm almost everywhere against a function that is positive on
+`(0, t)` is nonnegative. -/
+private theorem nonneg_of_ae_norm_le_mul {F : Type*} [NormedAddCommGroup F] {Φ : ℝ → F}
+    {w : ℝ → ℝ} {t C : ℝ} (ht : 0 < t) (hw : ∀ s ∈ Ioo 0 t, 0 < w s)
+    (h : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ C * w s) : 0 ≤ C := by
+  have h' : ∀ᵐ _ ∂volume.restrict (Ioo 0 t), 0 ≤ C := by
+    rw [ae_restrict_iff' measurableSet_Ioo]
+    filter_upwards [h] with s hs hs'
+    exact (mul_nonneg_iff_of_pos_right (hw s hs')).1 ((norm_nonneg _).trans (hs ⟨hs'.1, hs'.2.le⟩))
+  have : (ae (volume.restrict (Ioo 0 t))).NeBot :=
+    ae_neBot.2 (Measure.measure_univ_ne_zero.1 (by simp [ht]))
+  exact h'.exists.elim fun _ h => h
+
 open scoped Interval in
 /-- Splitting a singular integral at distance `δ²` from its singular endpoint. If the integrand
 is `O(A (t - s)^((α - 2)/2))`, which is integrable, and also `O(B δ (t - s)^((α - 3)/2))`, which is
@@ -95,10 +175,19 @@ integrable away from `s = t`, then using the first bound on `t - δ² < s < t` a
 integration behind parabolic Hölder estimates at two points at distance `δ`. -/
 theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {Φ : ℝ → F} {α δ t A B : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : 0 < t)
-    (hδ : 0 < δ) (hA : 0 ≤ A) (hB : 0 ≤ B) (hΦ : IntervalIntegrable Φ volume 0 t)
+    (hδ : 0 < δ)
     (hΦA : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2))
     (hΦB : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ) :
     ‖∫ s in 0..t, Φ s‖ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
+  -- Both constants are nonnegative: the bounds hold at some point `s < t`, where `t - s > 0`.
+  have hA : 0 ≤ A := nonneg_of_ae_norm_le_mul (Φ := Φ) (w := fun s => (t - s) ^ ((α - 2) / 2)) ht
+    (fun _ hs => rpow_pos_of_pos (sub_pos.2 hs.2) _) hΦA
+  have hB : 0 ≤ B := by
+    refine (mul_nonneg_iff_of_pos_right hδ).1 (nonneg_of_ae_norm_le_mul (Φ := Φ)
+      (w := fun s => (t - s) ^ ((α - 3) / 2)) (C := B * δ) ht
+      (fun _ hs => rpow_pos_of_pos (sub_pos.2 hs.2) _) ?_)
+    filter_upwards [hΦB] with s h hs
+    exact (h hs).trans_eq (by ring)
   -- Reverse time to put the singular endpoint at zero, then split at scale `δ²`.
   have hrev : ∀ᵐ r ∂volume.restrict (Ioo 0 t),
       ‖Φ (t - r)‖ ≤ A * r ^ (α / 2 - 1) ∧
@@ -118,7 +207,7 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
       exact hfar.trans_eq (by ring)
   have hi := norm_intervalIntegral_le_of_rpow_bounds (by linarith : 0 < α / 2)
     (by linarith : 0 < (1 - α) / 2) hA (mul_nonneg hB hδ.le)
-    (sq_pos_of_pos hδ) ht.le (by simpa using (hΦ.comp_sub_left t).symm)
+    (sq_pos_of_pos hδ) ht.le
     (hrev.mono fun _ h => h.1) (hrev.mono fun _ h => h.2)
   have heq : (∫ r in 0..t, Φ (t - r)) = ∫ s in 0..t, Φ s := by
     rw [intervalIntegral.integral_comp_sub_left, sub_self, sub_zero]
@@ -139,5 +228,40 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     _ = 2 / α * A * δ ^ α + 2 / (1 - α) * B *
         ((δ ^ 2) ^ (-((1 - α) / 2)) * δ) := by field_simp
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by rw [hpow]; ring
+
+open scoped Interval in
+/-- **Difference of two integrals over nearby intervals.** Let `s₀ = 2 t' - t`, so that
+`t - s₀ = 2 (t - t')`, and suppose `0 ≤ s₀ ≤ t' ≤ t`. If `‖∫₀^{s₀} (g₁ - g₂)‖ ≤ D`,
+`‖∫_{s₀}^t g₁‖ ≤ c (2 (t - t')) ^ β` and `‖∫_{s₀}^{t'} g₂‖ ≤ c (t - t') ^ β` for `0 ≤ β ≤ 1`,
+then `‖∫₀^t g₁ - ∫₀^{t'} g₂‖ ≤ D + 3 c (t - t') ^ β`. -/
+theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' D : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
+    (hs₀ : 0 ≤ 2 * t' - t) (htt' : t' ≤ t) (hg₁ : IntervalIntegrable g₁ volume 0 t)
+    (hg₂ : IntervalIntegrable g₂ volume 0 t')
+    (hfar : ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ ≤ D)
+    (h₁ : ‖∫ s in (2 * t' - t)..t, g₁ s‖ ≤ c * (2 * (t - t')) ^ β)
+    (h₂ : ‖∫ s in (2 * t' - t)..t', g₂ s‖ ≤ c * (t - t') ^ β) :
+    ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ D + 3 * c * (t - t') ^ β := by
+  have hmem {τ : ℝ} (hτ : 2 * t' - t ≤ τ) : 2 * t' - t ∈ [[0, τ]] := by
+    rw [uIcc_of_le (hs₀.trans hτ)]
+    exact ⟨hs₀, hτ⟩
+  have hsplit {τ : ℝ} {g : ℝ → V} (hg : IntervalIntegrable g volume 0 τ) (hτ : 2 * t' - t ≤ τ) :
+      ∫ s in 0..τ, g s = (∫ s in 0..2 * t' - t, g s) + ∫ s in (2 * t' - t)..τ, g s :=
+    (intervalIntegral.integral_add_adjacent_intervals
+      (hg.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem hτ)))
+      (hg.mono_set (uIcc_subset_uIcc (hmem hτ) right_mem_uIcc))).symm
+  have hg₁' := hg₁.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem (by linarith)))
+  have hg₂' := hg₂.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem (by linarith)))
+  rw [hsplit hg₁ (by linarith), hsplit hg₂ (by linarith),
+    show ∀ a b c d : V, a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
+    ← intervalIntegral.integral_sub hg₁' hg₂']
+  have h₃ : (2 * (t - t')) ^ β ≤ 2 * (t - t') ^ β :=
+    rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
+  calc ‖(∫ s in 0..2 * t' - t, (g₁ s - g₂ s)) + (∫ s in (2 * t' - t)..t, g₁ s) -
+        ∫ s in (2 * t' - t)..t', g₂ s‖
+      ≤ ‖∫ s in 0..2 * t' - t, (g₁ s - g₂ s)‖ + ‖∫ s in (2 * t' - t)..t, g₁ s‖ +
+          ‖∫ s in (2 * t' - t)..t', g₂ s‖ := norm_sub_le_of_le (norm_add_le _ _) le_rfl
+    _ ≤ D + c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr; exact h₁.trans (by gcongr)
+    _ = D + 3 * c * (t - t') ^ β := by ring
 
 end TauCeti

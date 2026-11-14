@@ -56,12 +56,15 @@ structure CartanRealization {I K : Type*} [Field K] (A : Matrix I I K)
 
 namespace CartanRealization
 
-variable {I K H : Type*} [Fintype I] [Field K] [AddCommGroup H] [Module K H]
-  {A : Matrix I I K} (R : CartanRealization A H)
+variable {I K H : Type*}
 
 attribute [simp] root_coroot
 
-omit [Fintype I] in
+section
+
+variable [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
+  (R : CartanRealization A H)
+
 /-- A realization is determined by its roots and coroots. -/
 @[ext]
 theorem ext {S : CartanRealization A H} (hc : ∀ i, R.coroot i = S.coroot i)
@@ -69,6 +72,79 @@ theorem ext {S : CartanRealization A H} (hc : ∀ i, R.coroot i = S.coroot i)
   cases R
   cases S
   congr <;> exact funext (by assumption)
+
+/-- Evaluation against all the simple roots. -/
+def rootEvaluation : H →ₗ[K] (I → K) := LinearMap.pi R.root
+
+@[simp]
+theorem rootEvaluation_apply (h : H) (i : I) : R.rootEvaluation h i = R.root i h := by rfl
+
+/-- Root evaluation is onto: the full realization retains the directions that a singular
+Cartan matrix cannot detect on the coroot span. The ambient space may be infinite-dimensional. -/
+theorem rootEvaluation_surjective [Finite I] : Function.Surjective R.rootEvaluation := by
+  classical
+  let := Fintype.ofFinite I
+  -- A functional killing the image would give a vanishing combination of the roots.
+  refine LinearMap.dualMap_injective_iff.mp <| (injective_iff_map_eq_zero _).mpr fun φ hφ => ?_
+  have hsum : ∑ i, φ (Pi.single i 1) • R.root i = 0 := by
+    ext h
+    have hφh := LinearMap.congr_fun hφ h
+    rw [LinearMap.dualMap_apply, ← Finset.univ_sum_single (R.rootEvaluation h)] at hφh
+    have hs (i : I) : Pi.single i (R.root i h) = R.root i h • Pi.single i (1 : K) := by
+      rw [← Pi.single_smul', smul_eq_mul, mul_one]
+    simpa [hs, mul_comm] using hφh
+  ext i
+  exact Fintype.linearIndependent_iff.mp R.root_linearIndependent _ hsum i
+
+/-- The span of the simple coroots, as an embedded coordinate space. -/
+def corootSpan : Submodule K H := Submodule.span K (Set.range R.coroot)
+
+/-- The coroot span is the span of the simple coroots. -/
+theorem corootSpan_def : R.corootSpan = Submodule.span K (Set.range R.coroot) := by rfl
+
+/-- Every simple coroot belongs to the coroot span. -/
+@[simp]
+theorem coroot_mem_corootSpan (i : I) : R.coroot i ∈ R.corootSpan :=
+  Submodule.subset_span (Set.mem_range_self i)
+
+/-- The Cartan center consists of all vectors annihilated by the simple roots, not just those
+in the coroot span. -/
+def cartanCenter : Submodule K H := LinearMap.ker R.rootEvaluation
+
+/-- The Cartan center is the kernel of evaluation against all the simple roots. -/
+theorem cartanCenter_def : R.cartanCenter = LinearMap.ker R.rootEvaluation := by rfl
+
+@[simp]
+theorem mem_cartanCenter_iff (h : H) : h ∈ R.cartanCenter ↔ ∀ i, R.root i h = 0 := by
+  simp [cartanCenter, LinearMap.mem_ker, funext_iff]
+
+private theorem linearIndependent_root_coordinates {J : Type*} [Finite J]
+    (b : Basis J K H) : LinearIndependent K (fun i j => R.root i (b j)) := by
+  classical
+  let := Fintype.ofFinite J
+  have heq : (fun i j => R.root i (b j)) = b.dualBasis.equivFun ∘ R.root := by
+    ext i j
+    simp [Basis.dualBasis_equivFun]
+  rw [heq]
+  exact R.root_linearIndependent.map' b.dualBasis.equivFun.toLinearMap
+    (LinearMap.ker_eq_bot.mpr b.dualBasis.equivFun.injective)
+
+private theorem rootEvaluation_eq_mulVec_coordinates {J : Type*} [Fintype J]
+    (b : Basis J K H) (h : H) :
+    R.rootEvaluation h = (fun i j => R.root i (b j)) *ᵥ b.equivFun h := by
+  ext i
+  calc
+    R.rootEvaluation h i = R.root i (∑ j, b.equivFun h j • b j) := by
+      rw [b.sum_equivFun, rootEvaluation_apply]
+    _ = _ := by
+      simp only [map_sum, map_smul, smul_eq_mul, Matrix.mulVec, dotProduct, mul_comm]
+
+end
+
+section CorootMap
+
+variable [Fintype I] [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
+  (R : CartanRealization A H)
 
 /-- The embedding of coroot coefficients into the ambient space. -/
 noncomputable def corootMap : (I → K) →ₗ[K] H :=
@@ -88,13 +164,6 @@ theorem corootMap_single [DecidableEq I] (i : I) (c : K) :
 theorem corootMap_injective : Function.Injective R.corootMap :=
   linearIndependent_iff_injective_fintypeLinearCombination.mp R.coroot_linearIndependent
 
-/-- Evaluation against all the simple roots. -/
-def rootEvaluation : H →ₗ[K] (I → K) := LinearMap.pi R.root
-
-omit [Fintype I] in
-@[simp]
-theorem rootEvaluation_apply (h : H) (i : I) : R.rootEvaluation h i = R.root i h := (rfl)
-
 /-- Restricting root evaluation to the coroot span gives the transpose of the Cartan matrix. -/
 @[simp]
 theorem rootEvaluation_corootMap (c : I → K) :
@@ -102,18 +171,9 @@ theorem rootEvaluation_corootMap (c : I → K) :
   ext j
   simp [corootMap_apply, Matrix.mulVec, dotProduct, mul_comm]
 
-/-- The span of the simple coroots, as an embedded coordinate space. -/
-def corootSpan : Submodule K H := Submodule.span K (Set.range R.coroot)
-
 /-- The coroot embedding has image the coroot span. -/
 theorem range_corootMap : LinearMap.range R.corootMap = R.corootSpan :=
   Fintype.range_linearCombination K R.coroot
-
-omit [Fintype I] in
-/-- Every simple coroot belongs to the coroot span. -/
-@[simp]
-theorem coroot_mem_corootSpan (i : I) : R.coroot i ∈ R.corootSpan :=
-  Submodule.subset_span (Set.mem_range_self i)
 
 /-- Every coroot coefficient vector represents a vector in the coroot span. -/
 @[simp]
@@ -124,15 +184,6 @@ theorem corootMap_mem_corootSpan (c : I → K) : R.corootMap c ∈ R.corootSpan 
 /-- Membership in the coroot span is equivalent to having coroot coordinates. -/
 theorem mem_corootSpan_iff (h : H) : h ∈ R.corootSpan ↔ ∃ c, R.corootMap c = h := by
   rw [← R.range_corootMap, LinearMap.mem_range]
-
-/-- The Cartan center consists of all vectors annihilated by the simple roots, not just those
-in the coroot span. -/
-def cartanCenter : Submodule K H := LinearMap.ker R.rootEvaluation
-
-omit [Fintype I] in
-@[simp]
-theorem mem_cartanCenter_iff (h : H) : h ∈ R.cartanCenter ↔ ∀ i, R.root i h = 0 := by
-  simp [cartanCenter, LinearMap.mem_ker, funext_iff]
 
 /-- In coroot coordinates the centrality equations are the left-kernel equations for `A`. -/
 theorem corootMap_mem_cartanCenter_iff (c : I → K) :
@@ -156,36 +207,19 @@ theorem finrank_cartanCenter_inf_corootSpan_add_rank :
       (LinearMap.ker A.transpose.mulVecLin)).finrank_eq]
   have h := A.transpose.mulVecLin.finrank_range_add_finrank_ker
   -- Matrix rank is the dimension of the range of its coordinate linear map.
-  have hr : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := (rfl)
+  have hr : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := rfl
   rw [hr, Matrix.rank_transpose, Module.finrank_fintype_fun_eq_card] at h
   omega
 
-omit [Fintype I] in
-private theorem linearIndependent_root_coordinates {J : Type*} [Finite J]
-    (b : Basis J K H) : LinearIndependent K (fun i j => R.root i (b j)) := by
-  classical
-  let := Fintype.ofFinite J
-  have heq : (fun i j => R.root i (b j)) = b.dualBasis.equivFun ∘ R.root := by
-    ext i j
-    simp [Basis.dualBasis_equivFun]
-  rw [heq]
-  exact R.root_linearIndependent.map' b.dualBasis.equivFun.toLinearMap
-    (LinearMap.ker_eq_bot.mpr b.dualBasis.equivFun.injective)
-
-omit [Fintype I] in
-private theorem rootEvaluation_eq_mulVec_coordinates {J : Type*} [Fintype J]
-    (b : Basis J K H) (h : H) :
-    R.rootEvaluation h = (fun i j => R.root i (b j)) *ᵥ b.equivFun h := by
-  ext i
-  calc
-    R.rootEvaluation h i = R.root i (∑ j, b.equivFun h j • b j) := by
-      rw [b.sum_equivFun, rootEvaluation_apply]
-    _ = _ := by
-      simp only [map_sum, map_smul, smul_eq_mul, Matrix.mulVec, dotProduct, mul_comm]
+end CorootMap
 
 section Restriction
 
-omit [Fintype I] in
+section
+
+variable [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
+  (R : CartanRealization A H)
+
 /-- Restrict a realization to a subspace containing its coroots and supplying every root
 evaluation. The latter condition is expressed by spanning together with the Cartan center. -/
 def restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -205,28 +239,18 @@ def restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
     simpa [map_add, hz', LinearMap.sum_apply, LinearMap.smul_apply] using hm'
   root_coroot i j := R.root_coroot i j
 
-omit [Fintype I] in
 /-- Restriction preserves each simple coroot under the subspace inclusion. -/
 @[simp]
 theorem coe_restrict_coroot (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) (i : I) :
-    ((R.restrict M hc hs).coroot i : H) = R.coroot i := (rfl)
+    ((R.restrict M hc hs).coroot i : H) = R.coroot i := by rfl
 
-omit [Fintype I] in
 /-- Restricted roots are the original functionals on vectors in the subspace. -/
 @[simp]
 theorem restrict_root_apply (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) (i : I) (m : M) :
-    (R.restrict M hc hs).root i m = R.root i m := (rfl)
+    (R.restrict M hc hs).root i m = R.root i m := by rfl
 
-/-- Restriction preserves coroot linear combinations under the subspace inclusion. -/
-@[simp]
-theorem coe_restrict_corootMap (M : Submodule K H) (hc : R.corootSpan ≤ M)
-    (hs : M ⊔ R.cartanCenter = ⊤) (c : I → K) :
-    ((R.restrict M hc hs).corootMap c : H) = R.corootMap c := by
-  simp [corootMap_apply]
-
-omit [Fintype I] in
 /-- Root evaluation on a restriction agrees with the original evaluation. -/
 @[simp]
 theorem restrict_rootEvaluation (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -235,7 +259,6 @@ theorem restrict_rootEvaluation (M : Submodule K H) (hc : R.corootSpan ≤ M)
   ext i
   simp
 
-omit [Fintype I] in
 /-- The coroot span of a restriction maps onto the original coroot span. -/
 theorem corootSpan_restrict_map_subtype (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) :
@@ -244,7 +267,6 @@ theorem corootSpan_restrict_map_subtype (M : Submodule K H) (hc : R.corootSpan �
     funext (R.coe_restrict_coroot M hc hs)
   simp only [corootSpan, Submodule.map_span, ← Set.range_comp, heq]
 
-omit [Fintype I] in
 /-- The coroot span of a restricted realization is the trace of the original coroot span. -/
 @[simp]
 theorem corootSpan_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -253,7 +275,6 @@ theorem corootSpan_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
   rw [← R.corootSpan_restrict_map_subtype M hc hs,
     Submodule.comap_map_eq_of_injective M.injective_subtype]
 
-omit [Fintype I] in
 /-- The center of a restricted realization is the trace of the original center. -/
 @[simp]
 theorem cartanCenter_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -262,36 +283,44 @@ theorem cartanCenter_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
   ext m
   simp
 
+end
+
+/-- Restriction preserves coroot linear combinations under the subspace inclusion. -/
+@[simp]
+theorem coe_restrict_corootMap [Fintype I] [Field K] [AddCommGroup H] [Module K H]
+    {A : Matrix I I K} (R : CartanRealization A H) (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) (c : I → K) :
+    ((R.restrict M hc hs).corootMap c : H) = R.corootMap c := by
+  simp [corootMap_apply]
+
 end Restriction
 
 section FiniteDimensional
+
+variable [Fintype I] [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
+  (R : CartanRealization A H)
 
 /-- A finite-dimensional realization is minimal if it attains the sharp dimension bound. -/
 def IsMinimal (_R : CartanRealization A H) : Prop :=
   FiniteDimensional K H ∧ finrank K H = 2 * Fintype.card I - A.rank
 
-variable [FiniteDimensional K H]
+variable {R} in
+/-- A minimal realization has finite-dimensional ambient space. -/
+theorem IsMinimal.finiteDimensional (hR : R.IsMinimal) : FiniteDimensional K H := hR.1
 
-omit [Fintype I] in
-/-- Root evaluation is onto: the full realization retains the directions that a singular
-Cartan matrix cannot detect on the coroot span. -/
-theorem rootEvaluation_surjective : Function.Surjective R.rootEvaluation := by
-  classical
-  let := Fintype.ofFinite (Basis.ofVectorSpaceIndex K H)
-  let b := Basis.ofVectorSpace K H
-  let M : Matrix I (Basis.ofVectorSpaceIndex K H) K := fun i j => R.root i (b j)
-  have hM : LinearIndependent K M.row := R.linearIndependent_root_coordinates b
-  intro c
-  obtain ⟨x, hx⟩ := hM.mulVec_surjective c
-  refine ⟨b.equivFun.symm x, ?_⟩
-  rw [R.rootEvaluation_eq_mulVec_coordinates b, b.equivFun.apply_symm_apply]
-  exact hx
+/-- A minimal realization has dimension twice the number of nodes minus the matrix rank. -/
+theorem IsMinimal.finrank_eq {R : CartanRealization A H} (hR : R.IsMinimal) :
+    finrank K H = 2 * Fintype.card I - A.rank :=
+  hR.2
 
-omit [FiniteDimensional K H] in
 /-- The dimension of the coroot span equals the number of simple coroots. -/
 @[simp]
 theorem finrank_corootSpan : finrank K R.corootSpan = Fintype.card I :=
   finrank_span_eq_card R.coroot_linearIndependent
+
+section
+
+variable [FiniteDimensional K H]
 
 /-- The center has codimension equal to the number of simple roots. -/
 theorem finrank_cartanCenter_add_card :
@@ -344,28 +373,63 @@ theorem isMinimal_iff : R.IsMinimal ↔ finrank K H + A.rank = 2 * Fintype.card 
   · intro h
     exact ⟨inferInstance, by omega⟩
 
+end
+
 /-- A realization is minimal exactly when its full center lies in the coroot span. -/
 theorem isMinimal_iff_cartanCenter_le_corootSpan :
     R.IsMinimal ↔ R.cartanCenter ≤ R.corootSpan := by
-  rw [R.isMinimal_iff]
-  have hc := R.finrank_cartanCenter_add_card
-  have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
   constructor
-  · intro h
+  · intro hR
+    have := hR.finiteDimensional
+    have h := R.isMinimal_iff.mp hR
+    have hc := R.finrank_cartanCenter_add_card
+    have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
     have heq : R.cartanCenter ⊓ R.corootSpan = R.cartanCenter :=
       Submodule.eq_of_le_of_finrank_eq inf_le_left (by omega)
     exact inf_eq_left.mp heq
   · intro h
+    have : FiniteDimensional K R.corootSpan :=
+      FiniteDimensional.span_of_finite K (Set.finite_range _)
+    have : FiniteDimensional K R.cartanCenter := Submodule.finiteDimensional_of_le h
+    have : FiniteDimensional K (H ⧸ R.cartanCenter) :=
+      Module.Finite.equiv (LinearMap.quotKerEquivOfSurjective _ R.rootEvaluation_surjective).symm
+    have : FiniteDimensional K H := Module.Finite.of_submodule_quotient R.cartanCenter
+    rw [R.isMinimal_iff]
+    have hc := R.finrank_cartanCenter_add_card
+    have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
     rw [inf_eq_left.mpr h] at hi
+    omega
+
+/-- A realization of a nonsingular matrix is minimal exactly when the simple coroots span
+its ambient space. Either condition implies finite dimensionality. -/
+theorem isMinimal_iff_corootSpan_eq_top [DecidableEq I] (hA : IsUnit A) :
+    R.IsMinimal ↔ R.corootSpan = ⊤ := by
+  classical
+  have hrank := Matrix.rank_of_isUnit A hA
+  constructor
+  · intro hR
+    let := hR.finiteDimensional
+    have h := R.isMinimal_iff.mp hR
+    rw [hrank] at h
+    apply Submodule.eq_top_of_finrank_eq
+    rw [R.finrank_corootSpan]
+    omega
+  · intro h
+    let := Module.Finite.of_basis (Basis.mk R.coroot_linearIndependent (le_of_eq h.symm))
+    rw [R.isMinimal_iff, hrank]
+    have hd := R.finrank_corootSpan
+    rw [h, finrank_top] at hd
     omega
 
 end FiniteDimensional
 
 section Transport
 
-variable {H' : Type*} [AddCommGroup H'] [Module K H']
+section
 
-omit [Fintype I] in
+variable [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
+  (R : CartanRealization A H) {H' : Type*} [AddCommGroup H'] [Module K H']
+
 /-- Transport a realization along a linear equivalence of ambient spaces. -/
 noncomputable def map (e : H ≃ₗ[K] H') : CartanRealization A H' where
   coroot := e ∘ R.coroot
@@ -376,22 +440,13 @@ noncomputable def map (e : H ≃ₗ[K] H') : CartanRealization A H' where
     (LinearMap.ker_eq_bot.mpr (LinearMap.dualMap_injective_of_surjective e.symm.surjective))
   root_coroot i j := by simp
 
-omit [Fintype I] in
 @[simp]
-theorem map_coroot (e : H ≃ₗ[K] H') (i : I) : (R.map e).coroot i = e (R.coroot i) := (rfl)
+theorem map_coroot (e : H ≃ₗ[K] H') (i : I) : (R.map e).coroot i = e (R.coroot i) := by rfl
 
-omit [Fintype I] in
 @[simp]
 theorem map_root_apply (e : H ≃ₗ[K] H') (i : I) (h : H') :
-    (R.map e).root i h = R.root i (e.symm h) := (rfl)
+    (R.map e).root i h = R.root i (e.symm h) := by rfl
 
-/-- Transport commutes with taking a coroot linear combination. -/
-@[simp]
-theorem map_corootMap (e : H ≃ₗ[K] H') (c : I → K) :
-    (R.map e).corootMap c = e (R.corootMap c) := by
-  simp [corootMap_apply]
-
-omit [Fintype I] in
 /-- Root evaluation after transport is evaluation at the inverse image. -/
 @[simp]
 theorem map_rootEvaluation (e : H ≃ₗ[K] H') (h : H') :
@@ -399,14 +454,12 @@ theorem map_rootEvaluation (e : H ≃ₗ[K] H') (h : H') :
   ext i
   simp
 
-omit [Fintype I] in
 /-- Transport carries the coroot span to its image. -/
 theorem corootSpan_map (e : H ≃ₗ[K] H') :
     (R.map e).corootSpan = R.corootSpan.map e.toLinearMap := by
   have hc : (R.map e).coroot = e ∘ R.coroot := funext (R.map_coroot e)
   simp only [corootSpan, hc, Submodule.map_span, ← Set.range_comp, LinearEquiv.coe_coe]
 
-omit [Fintype I] in
 /-- Transport carries the full Cartan center to its image. -/
 theorem cartanCenter_map (e : H ≃ₗ[K] H') :
     (R.map e).cartanCenter = R.cartanCenter.map e.toLinearMap := by
@@ -414,18 +467,57 @@ theorem cartanCenter_map (e : H ≃ₗ[K] H') :
   ext h
   simp
 
-omit [Fintype I] in
 /-- Transport by the identity leaves a realization unchanged. -/
 @[simp]
 theorem map_refl : R.map (LinearEquiv.refl K H) = R := by
   ext <;> simp
 
-omit [Fintype I] in
 /-- Successive transports agree with transport by the composite equivalence. -/
 @[simp]
 theorem map_trans {H'' : Type*} [AddCommGroup H''] [Module K H'']
     (e : H ≃ₗ[K] H') (f : H' ≃ₗ[K] H'') : (R.map e).map f = R.map (e.trans f) := by
   ext <;> simp
+
+/-- If the coroots span both realizations, there is a unique linear equivalence preserving
+all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
+theorem existsUnique_linearEquiv_of_corootSpan_eq_top (S : CartanRealization A H')
+    (hR : R.corootSpan = ⊤) (hS : S.corootSpan = ⊤) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  let b := Basis.mk R.coroot_linearIndependent (le_of_eq hR.symm)
+  let c := Basis.mk S.coroot_linearIndependent (le_of_eq hS.symm)
+  have hb (i : I) : b i = R.coroot i := Basis.mk_apply _ _ i
+  have hc (i : I) : c i = S.coroot i := Basis.mk_apply _ _ i
+  let e := b.equiv c (Equiv.refl I)
+  have he (i : I) : e (R.coroot i) = S.coroot i := by
+    simpa only [hb, hc, Equiv.refl_apply] using b.equiv_apply i c (Equiv.refl I)
+  refine ⟨e, (R.map e).ext (fun i => he i) (fun i => ?_), ?_⟩
+  · have hf : (S.root i).comp e.toLinearMap = R.root i := by
+      apply b.ext
+      intro j
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hb, he, root_coroot]
+    ext h
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+      map_root_apply] using (LinearMap.congr_fun hf (e.symm h)).symm
+  · intro f hf
+    apply LinearEquiv.toLinearMap_injective
+    apply b.ext
+    intro i
+    have hfc : f (R.coroot i) = S.coroot i :=
+      congrArg (fun T : CartanRealization A H' => T.coroot i) hf
+    simpa only [LinearEquiv.coe_coe, hb] using hfc.trans (he i).symm
+
+end
+
+section
+
+variable [Fintype I] [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}
+  (R : CartanRealization A H) {H' : Type*} [AddCommGroup H'] [Module K H']
+
+/-- Transport commutes with taking a coroot linear combination. -/
+@[simp]
+theorem map_corootMap (e : H ≃ₗ[K] H') (c : I → K) :
+    (R.map e).corootMap c = e (R.corootMap c) := by
+  simp [corootMap_apply]
 
 /-- Minimality is invariant under linear equivalence of the ambient spaces. -/
 @[simp]
@@ -438,11 +530,22 @@ theorem isMinimal_map (e : H ≃ₗ[K] H') : (R.map e).IsMinimal ↔ R.IsMinimal
     let := hfin
     exact ⟨e.finiteDimensional, by rw [← e.finrank_eq]; exact hdim⟩
 
+/-- Minimal realizations of a nonsingular matrix have a unique root- and coroot-preserving
+isomorphism. Singular matrices need not have uniqueness. -/
+theorem existsUnique_linearEquiv_of_isMinimal [DecidableEq I]
+    (S : CartanRealization A H') (hA : IsUnit A) (hR : R.IsMinimal) (hS : S.IsMinimal) :
+    ∃! e : H ≃ₗ[K] H', R.map e = S := by
+  exact R.existsUnique_linearEquiv_of_corootSpan_eq_top S
+    ((R.isMinimal_iff_corootSpan_eq_top hA).mp hR)
+    ((S.isMinimal_iff_corootSpan_eq_top hA).mp hS)
+
+end
+
 end Transport
 
 section Construction
 
-variable (A) (Z : Submodule K (I → K))
+variable [Fintype I] [Field K] (A : Matrix I I K) (Z : Submodule K (I → K))
 
 open scoped Classical in
 /-- Realize a matrix by adjoining a supplement to its transpose's image. The first factor
@@ -464,7 +567,7 @@ noncomputable def ofSupplement
 
 @[simp]
 theorem ofSupplement_coroot (hZ : LinearMap.range A.transpose.mulVecLin ⊔ Z = ⊤) (i : I) :
-    (ofSupplement A Z hZ).coroot i = ((Pi.basisFun K I) i, 0) := (rfl)
+    (ofSupplement A Z hZ).coroot i = ((Pi.basisFun K I) i, 0) := by rfl
 
 @[simp]
 theorem ofSupplement_root_apply (hZ : LinearMap.range A.transpose.mulVecLin ⊔ Z = ⊤)
@@ -479,7 +582,7 @@ theorem isMinimal_ofSupplement (hZ : IsCompl (LinearMap.range A.transpose.mulVec
   classical
   refine ⟨inferInstance, ?_⟩
   -- Matrix rank is defined as the dimension of the range of mulVecLin.
-  have hrank : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := (rfl)
+  have hrank : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := rfl
   rw [Matrix.rank_transpose] at hrank
   have h := Submodule.finrank_add_eq_of_isCompl hZ
   rw [hrank, Module.finrank_fintype_fun_eq_card] at h

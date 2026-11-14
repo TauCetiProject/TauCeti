@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
 /-!
@@ -116,17 +117,11 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero [DecidableEq �
     {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
       energyFormH1 (fun _ => 1) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 φ) = 0) :
     ∃ h : EuclideanSpace ℝ ι → ℝ, HarmonicOnNhd h Omega ∧
-      (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h := by
-  refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
-    ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩)
-  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
-    ← hw φ, energyFormH1_zero_zero_eq_setIntegral]
-  simp_rw [real_inner_comm (W1p.gradient w _)]
-  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
-  refine integral_congr_ae ?_
-  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-  rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-  exact EuclideanSpace.inner_eq_star_dotProduct _ _
+      (W1p.value w : EuclideanSpace ℝ ι → ℝ) =ᵐ[mu.restrict Omega] h :=
+  WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
+    ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ =>
+      neg_eq_zero.1 ((energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul
+        .rfl φ).symm.trans (hw φ))⟩)
 
 /-- **The weak gradient of a weakly harmonic Sobolev function is harmonic.** If the value of
 `w ∈ W^{1,p}(Ω)` is weakly harmonic on `Ω`, then the weak gradient of `w` agrees almost
@@ -182,7 +177,7 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
       (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 u
   have hw0 : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+    rw [hw v, zero_apply]
   have hsub : u - w ∈ w1p0Submodule volume Omega 2 := by
     have hwu :=
       (ClosedSubmodule.mem_toSubmodule_iff (w - u) (w1p0Submodule volume Omega 2)).2 huw

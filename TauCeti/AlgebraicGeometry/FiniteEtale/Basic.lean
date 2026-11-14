@@ -160,7 +160,7 @@ private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ⟨ObjectProperty.isoMk _ (Over.isoMk X.obj.left.isoSpec.symm ?_)⟩⟩
   exact hφ.symm
 
-instance : (spec R).EssSurj where
+instance essSurj_spec : (spec R).EssSurj where
   mem_essImage X := exists_spec_iso R X
 
 instance : (spec R).IsEquivalence where

@@ -153,19 +153,7 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
   have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
     (ae_restrict_iff' hmeas).1 hu
-  -- the weak gradient vanishes off `K` as well, because `u` vanishes on the open set `Ω \ K`
-  have hgrad : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.gradient u x = 0 := by
-    set V : Opens E := ⟨(Omega : Set E) \ K, Omega.isOpen.sdiff hK.isClosed⟩
-    have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
-    have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
-      rw [ae_restrict_iff' hVmeas]
-      filter_upwards [humu] with x hx hxV
-      exact hx hxV.1 hxV.2
-    have hgradV := (ae_restrict_iff' hVmeas).1
-      (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) Set.sdiff_subset hvalV)
-    rw [ae_restrict_iff' hmeas]
-    filter_upwards [hgradV] with x hx hxO hxK
-    exact hx ⟨hxO, hxK⟩
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK.isClosed hu
   -- the zero-extension of `u` to the whole space is again a Sobolev function
   have hweak : HasWeakFDerivOn mu ⊤
       ((extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u) : E → ℝ))
@@ -187,7 +175,7 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     rw [hwdef, W1p.value_mk]
     exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
-  obtain ⟨chi, M, hchi, -, hchi_one_nhds, hchi_cpt, hchi_ts, hM0, hchiM_all,
+  obtain ⟨chi, M, hchi, -, hchi_one_nhds, _, hchi_ts, hM0, hchiM_all,
     hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
   have hchi_one : ∀ x ∈ K, chi x = 1 := fun x hx => by
     have hx' : x ∈ chi ⁻¹' ({1} : Set ℝ) := interior_subset (hchi_one_nhds hx)
@@ -212,12 +200,10 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
       rw [hzero, smul_zero]
   -- so the extension is a cutoff product, whose restriction to `Ω` is `u`
   have hmem := W1p.restrictL_contDiffSMul_mem_w1p0Submodule hp hchi hM0 hchiM hchigradM hchi_ts w
-  have hwu : W1p.restrictL le_top w = u := by
-    refine W1p.ext_value (Lp.ext ?_)
-    filter_upwards [W1p.value_restrictL_ae le_top w,
-      hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)), ae_restrict_mem hmeas]
-      with x h1 h2 hx
-    rw [h1, h2, indicator_of_mem hx]
+  have hwu : W1p.restrictL le_top w = u := W1p.restrictL_eq_of_value_ae_eq le_top (by
+    filter_upwards [hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)),
+      ae_restrict_mem hmeas] with x h2 hx
+    rw [h2, indicator_of_mem hx])
   rwa [hLw, hwu] at hmem
 
 /-! ### Multiplication by a compactly supported cutoff -/

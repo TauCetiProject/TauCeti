@@ -64,14 +64,14 @@ theorem wassersteinEDist_map_le_of_edist_le
   have hm : AEMeasurable (fun z : Z ↦ edist z (F z)) ρ :=
     measurable_edist.comp_aemeasurable (aemeasurable_id.prodMk hF)
   refine (wassersteinEDist_map_le measurable_edist hF 1).trans ?_
-  refine (eLpNorm_mono_enorm_ae hm.aestronglyMeasurable (g := fun _ : Z ↦ δ) hδ).trans ?_
+  refine (eLpNorm_mono_eNorm_ae hm.aestronglyMeasurable (g := fun _ : Z ↦ δ) hδ).trans ?_
   rw [eLpNorm_const _ (by norm_num : (1 : ℝ≥0∞) ≠ 0) (IsProbabilityMeasure.ne_zero ρ)]
   simp
 
 section Comparison
 
 variable {X : Type u} [PseudoEMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-  {p ε : ℝ≥0∞} {μ ν : Measure X} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+  {p ε : ℝ≥0∞} {μ ν : Measure X} [IsProbabilityMeasure μ]
 
 /-- If the `p`-Wasserstein distance is strictly below `ε²`, then the Lévy--Prokhorov
 extended distance is at most `ε`, for `1 ≤ p`.
@@ -84,11 +84,12 @@ theorem levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self
     levyProkhorovEDist μ ν ≤ ε := by
   obtain ⟨π, hπ, hπε⟩ := wassersteinEDist_lt_iff.mp h
   let : IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have : IsProbabilityMeasure ν := hπ.isProbabilityMeasure_right
   have hint : ∫⁻ z, edist z.1 z.2 ∂π < ε * ε := by
     calc
       ∫⁻ z, edist z.1 z.2 ∂π
           = eLpNorm (fun z : X × X ↦ edist z.1 z.2) 1 π := by
-              rw [eLpNorm_one_eq_lintegral_enorm hd.aestronglyMeasurable]
+              rw [eLpNorm_one_eq_lintegral_eNorm hd.aestronglyMeasurable]
               simp
       _ ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π :=
         eLpNorm_le_eLpNorm_of_exponent_le hp

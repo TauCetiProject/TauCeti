@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.HarishChandra
 public import TauCeti.Algebra.Lie.Killing.CartanRestriction
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
 -- Non-public: commutators lower the PBW degree, used only inside the proofs.
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.AssociatedGraded
 
@@ -120,7 +120,7 @@ theorem cartanProjection_mem_pbwFiltration {n : ℕ} {u : U L}
     · simpa using UniversalEnvelopingAlgebra.one_mem_pbwFiltration K H (n + 1)
     · have hw := UniversalEnvelopingAlgebra.prod_map_ι_mem_pbwFiltration K L
         (k := n) (l := l) (by simpa using hl)
-      obtain ⟨e, he, heq⟩ := exists_cartanProjection_ι_mul_eq b x (l.map _).prod
+      obtain ⟨e, _, heq⟩ := exists_cartanProjection_ι_mul_eq b x (l.map _).prod
       rw [Submodule.mem_comap, List.map_cons, List.prod_cons, heq]
       refine add_mem ?_ (UniversalEnvelopingAlgebra.pbwFiltration_mono K H n.le_succ (ih ?_))
       · simpa [add_comm] using UniversalEnvelopingAlgebra.mul_mem_pbwFiltration K H
@@ -151,7 +151,7 @@ theorem cartanProjection_prod_map_ι_sub_mem_pbwFiltrationPrevious (l : List L) 
   induction l with
   | nil => simp
   | cons x l ih =>
-    obtain ⟨e, he, heq⟩ := exists_cartanProjection_ι_mul_eq b x (l.map _).prod
+    obtain ⟨e, _, heq⟩ := exists_cartanProjection_ι_mul_eq b x (l.map _).prod
     have hw := UniversalEnvelopingAlgebra.prod_map_ι_mem_pbwFiltration K L (l := l) le_rfl
     simp only [List.map_cons, List.prod_cons, List.length_cons]
     rw [heq, add_sub_right_comm, ← mul_sub]

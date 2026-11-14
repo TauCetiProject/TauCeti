@@ -56,7 +56,7 @@ Formally, this file follows and reuses
 generator family, defining ideal and factorization pattern for the full toral closure it
 specializes to a selected set of root indices, and it is the scheme-level counterpart of the
 pointwise subsystem subgroups in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel`.
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic`.
 -/
 
 public section
@@ -774,20 +774,22 @@ theorem kostantTorusSubsystemClosedSubgroup_le_iff
     constructor
     · intro i hi
       apply (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mp
-      rw [kostantRootSubgroupToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff]
+      rw [kostantRootSubgroupToToral_def, CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi]
       exact hP (.inl ⟨i, hi⟩)
     · apply (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mp
-      rw [kostantWeightTorusToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff]
+      rw [kostantWeightTorusToToral_def, CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi]
       exact hP (.inr ())
   · rintro ⟨hroot, htorus⟩
     apply hminimal.mpr
     rintro (i | u)
     · have hi := (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mpr (hroot i.1 i.2)
-      rw [kostantRootSubgroupToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff] at hi
+      rw [kostantRootSubgroupToToral_def,
+        CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi] at hi
       exact hi
     · rcases u with ⟨⟩
       have ht := (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mpr htorus
-      rw [kostantWeightTorusToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff] at ht
+      rw [kostantWeightTorusToToral_def,
+        CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi] at ht
       exact ht
 
 /-- **Rigidity of a torus-subsystem group scheme.** Two homomorphisms out of the subsystem

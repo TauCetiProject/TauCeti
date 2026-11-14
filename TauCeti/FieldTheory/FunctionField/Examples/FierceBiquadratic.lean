@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.FieldTheory.RatFunc.PIndependent
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
-public import TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic
+public import TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic.Basic
 
 /-!
 # A fierce biquadratic extension over explicit constants
@@ -112,10 +112,6 @@ instance : IsDomain ExtensionRing :=
 /-- The explicit biquadratic extension is a discrete valuation ring. -/
 instance : IsDiscreteValuationRing ExtensionRing :=
   FierceBiquadratic.isDiscreteValuationRing_ringYZ t_mem_maximalIdeal
-    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
-
-instance : IsLocalHom (algebraMap BaseRing ExtensionRing) :=
-  FierceBiquadratic.isLocalHom_algebraMap_ringYZ t_mem_maximalIdeal
     sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 /-- The parameter remains a uniformizer in the extension: its ramification index is one. -/

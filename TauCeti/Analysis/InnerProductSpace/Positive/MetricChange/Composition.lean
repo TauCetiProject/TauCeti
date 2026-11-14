@@ -19,7 +19,7 @@ The successive transport from the reference inner product to `h` and then to `k`
 the direct transport to `k`. `metricChangeCompositionCorrection` constructs their explicit
 orthogonal discrepancy. `metricChangeBetween_mul_metricChangeTransport` gives the comparison,
 and `metricChangeCompositionCorrection_eq_iff` characterizes the correction uniquely.
-These are pointwise statements; no parameter regularity is asserted here.
+`Continuous.metricChangeCompositionCorrection` proves continuous dependence on both metrics.
 
 The construction uses `ContinuousLinearMap.metricChangeTransport` and its inverse square root
 identities. See R. Bhatia, *Positive Definite Matrices*, Princeton University Press, 2007,
@@ -240,6 +240,28 @@ theorem metricChangeCompositionCorrection_apply
             (k.bilinearComp h.metricChangeTransport h.metricChangeTransport) x)) :=
   (rfl)
 
+/-- The composition correction varies continuously with two continuous positive metrics,
+with values in the native unitary group of the operator algebra. -/
+theorem _root_.Continuous.metricChangeCompositionCorrection
+    {X : Type*} [TopologicalSpace X] {h k : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hh : Continuous h) (hk : Continuous k)
+    (hpos : ∀ x, IsStrictlyPositive (h x)♯) (kpos : ∀ x, IsStrictlyPositive (k x)♯) :
+    Continuous fun x ↦ Unitary.linearIsometryEquiv.symm
+      ((h x).metricChangeCompositionCorrection (k x) (hpos x) (kpos x)) := by
+  have hT := continuousOn_metricChangeTransport.comp_continuous hh hpos
+  have hP : Continuous fun x ↦
+      (k x).bilinearComp (h x).metricChangeTransport (h x).metricChangeTransport := by
+    exact (flipₗᵢ ℝ E E ℝ).continuous.comp
+      (((flipₗᵢ ℝ E E ℝ).continuous.comp (hk.clm_comp hT)).clm_comp hT)
+  have hPT := continuousOn_metricChangeTransport.comp_continuous hP fun x ↦
+    isStrictlyPositive_bilinearComp_metricChangeTransport (h x) (k x) (hpos x) (kpos x)
+  have hS := continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous hk
+    fun x ↦ (kpos x).nonneg
+  apply Topology.IsInducing.subtypeVal.continuous_iff.2
+  refine ((hS.mul hT).mul hPT).congr fun x ↦ ?_
+  ext u
+  simp [Unitary.coe_symm_linearIsometryEquiv_apply]
+
 /-- Evaluation of the inverse composition correction, using the three inverse transports. -/
 @[simp]
 theorem metricChangeCompositionCorrection_symm_apply
@@ -280,6 +302,23 @@ theorem metricChangeCompositionCorrection_eq_iff
   have he := congrArg (fun S : E →L[ℝ] E ↦ (CFC.sqrt k♯ * S) x) (hc.symm.trans heq)
   simpa only [← mul_assoc, sqrt_mul_metricChangeTransport hK, one_mul,
     LinearIsometryEquiv.coe_coe''] using he
+
+/-- Canonical transport between two positive metrics depends continuously on both metrics. -/
+theorem _root_.Continuous.metricChangeBetween
+    {X : Type*} [TopologicalSpace X] {h k : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hh : Continuous h) (hk : Continuous k)
+    (hpos : ∀ x, IsStrictlyPositive (h x)♯) (kpos : ∀ x, IsStrictlyPositive (k x)♯) :
+    Continuous fun x ↦ (h x).metricChangeBetween (k x) := by
+  have hQ : Continuous fun x ↦
+      ((h x).metricChangeCompositionCorrection (k x) (hpos x) (kpos x) : E →L[ℝ] E) :=
+    continuous_subtype_val.comp (hh.metricChangeCompositionCorrection hk hpos kpos)
+  have hT := continuousOn_metricChangeTransport.comp_continuous hk kpos
+  have hS := continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous hh
+    fun x ↦ (hpos x).nonneg
+  refine ((hT.mul hQ).mul hS).congr fun x ↦ ?_
+  simp only [Pi.mul_apply, Function.comp_apply]
+  rw [← metricChangeBetween_mul_metricChangeTransport _ _ (hpos x) (kpos x), mul_assoc,
+    metricChangeTransport_mul_sqrt (hpos x), mul_one]
 
 /-- The composition correction is trivial when the intermediate and final metrics agree. -/
 @[simp]

@@ -58,14 +58,19 @@ minus the chirality element `CliffordAlgebra.chirality` of
 * `CliffordAlgebra.volumeElement_mul_ι_of_even` and `CliffordAlgebra.volumeElement_mul_ι_of_odd`:
   it anticommutes with every vector in even dimension and commutes with every vector in odd
   dimension.
+* `CliffordAlgebra.volumeElement_mul_eq_involute_mul`: in even dimension the raw volume
+  intertwines the grade involution.
 * `CliffordAlgebra.volumeElement_mul_self`: for `Q v = -‖v‖²` it squares to
-  `(-1) ^ ⌊(n + 1) / 2⌋`.
+  `(-1) ^ ⌊(n + 1) / 2⌋`, while for the zero form in positive dimension it squares to zero
+  (`CliffordAlgebra.volumeElement_mul_self_of_forall_eq_zero`).
 * `CliffordAlgebra.algebraMap_add_smul_volumeElement_inj`: in positive dimension, `r + s · vol`
   determines `r` and `s`. When the volume element squares to `-1`, for instance for an oriented
   plane with `Q v = -‖v‖²`, the elements `r + s · vol` multiply as the complex numbers `r + s i`
   (`CliffordAlgebra.algebraMap_add_smul_volumeElement_mul`), with spinor norm `r² + s²`
   (`CliffordAlgebra.algebraMap_add_smul_volumeElement_mul_star_self`).
 * `CliffordAlgebra.volumeElement_eq_ι_mul_ι`: in dimension two the volume element is `c(e₀) c(e₁)`.
+* `CliffordAlgebra.involute_eq_volumeElement_mul_mul`: in rank divisible by four, left and
+  right multiplication by the negative-metric raw volume recover parity.
 * `CliffordAlgebra.volumeElement_mul_basis`: for `Q v = -‖v‖²` it sends the Clifford basis vector
   `e_s` of a positively oriented orthonormal basis to a signed `e_{sᶜ}`.
 
@@ -238,6 +243,16 @@ theorem volumeElement_mul_ι_of_even (hn : Even n) (v : V) :
   rw [h, smul_mul_assoc, prod_map_ι_mul_ι_of_even_length hl (hln ▸ hn) (hspan v), mul_smul_comm,
     smul_neg]
 
+/-- In even dimension the raw volume element intertwines the grade involution:
+`ω x = involute x * ω`. -/
+theorem volumeElement_mul_eq_involute_mul (hn : Even n) (x : CliffordAlgebra Q) :
+    volumeElement Q o * x = involute x * volumeElement Q o := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => simp [Algebra.commutes]
+  | ι v => simp [volumeElement_mul_ι_of_even o hn]
+  | add x y hx hy => simp [mul_add, add_mul, hx, hy]
+  | mul x y hx hy => rw [← mul_assoc, hx, mul_assoc, hy, map_mul, mul_assoc]
+
 /-- In odd dimension the volume element commutes with every vector. -/
 theorem volumeElement_mul_ι_of_odd (hn : Odd n) (v : V) :
     volumeElement Q o * ι Q v = ι Q v * volumeElement Q o := by
@@ -252,6 +267,15 @@ theorem volumeElement_mul_self (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
   rw [Finset.card_univ, Fintype.card_fin, Nat.neg_one_pow_choose_two] at h
   rcases volumeElement_eq_basis_or_eq_neg (Q := Q) o (frame V n) with h' | h' <;>
     simp only [h', neg_mul_neg, h]
+
+/-- For the zero quadratic form the volume element squares to zero in positive dimension, in
+contrast to `CliffordAlgebra.volumeElement_mul_self`. -/
+theorem volumeElement_mul_self_of_forall_eq_zero (hn : n ≠ 0) (hQ : ∀ v, Q v = 0) :
+    volumeElement Q o * volumeElement Q o = 0 := by
+  obtain ⟨l, c, hl, hln, -, h⟩ := exists_volumeElement_eq_smul_prod (Q := Q) o
+  obtain ⟨a, l, rfl⟩ := List.exists_cons_of_length_pos (hln ▸ Nat.pos_of_ne_zero hn)
+  rw [h, smul_mul_smul_comm, prod_map_ι_sq_scalar hl]
+  simp [hQ]
 
 /-- **The coordinates of `r + s · vol`**: in positive dimension, the scalar `r` and the volume
 coefficient `s` of `r + s · vol` are determined by the element. -/
@@ -307,6 +331,18 @@ theorem volumeElement_eq_ι_mul_ι [Fact (finrank ℝ V = 2)] (o : Orientation �
     volumeElement Q o = ι Q (b 0) * ι Q (b 1) := by
   rw [volumeElement_eq o b hb hQb]
   simp [List.finRange_succ]
+
+/-- In rank divisible by four, parity is left times right raw negative volume.
+No orientation choice remains on the right, since reversing it changes both factors' signs. -/
+theorem involute_eq_volumeElement_mul_mul (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hn : 4 ∣ n)
+    (s : CliffordAlgebra Q) :
+    involute s = volumeElement Q o * s * volumeElement Q o := by
+  obtain ⟨k, rfl⟩ := hn
+  have heven : Even (4 * k) := ⟨2 * k, by omega⟩
+  have hexp : (4 * k + 1) / 2 = 2 * k := by omega
+  rw [volumeElement_mul_eq_involute_mul o heven, mul_assoc,
+    volumeElement_mul_self o hQ, hexp]
+  simp [pow_mul]
 
 open Set in
 /-- For `Q v = -‖v‖²`, the Clifford product of the volume element with the basis vector `e_s` of a

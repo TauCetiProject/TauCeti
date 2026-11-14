@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
 public import Mathlib.RingTheory.Valuation.Basic
 import Mathlib.RingTheory.Polynomial.IsIntegral
+import TauCeti.Algebra.Algebra.Hom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
@@ -63,10 +64,7 @@ because the finiteness that makes it honest is proved from `transcendental_pullb
 with the degree of the function field over the rational function field.
 
 The construction is the coordinate-ring form of D. Angdinata's function-field definition of an
-isogeny and follows the nonconstancy argument described in the elliptic-curves roadmap. The
-composition definition follows the seed in `TauCetiRoadmap/EllipticCurves/Suggested.lean`,
-discharging the `mapsInfinity` obligation the seed leaves open. The geometric interpretation is
-Silverman, *The Arithmetic of Elliptic Curves*, II.2.4.
+isogeny. The geometric interpretation is Silverman, *The Arithmetic of Elliptic Curves*, II.2.4.
 -/
 
 public section
@@ -223,6 +221,21 @@ theorem algebraMap_functionField_eq_fieldPullback (φ : Isogeny W₁ W₂)
     algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z :=
   congrFun (congrArg DFunLike.coe (ringHom_eq_fieldPullback φ _ fun x ↦ by
     rw [← IsScalarTower.algebraMap_apply]; exact h x)) z
+
+/-- **The pullback-induced function-field algebra sits in a tower over the coordinate ring.** If
+`W₁.FunctionField` is a `W₂.CoordinateRing`-algebra through the coordinate pullback, then with the
+`W₂.FunctionField`-algebra structure induced by `fieldPullback` it is a tower over it.
+
+Not an instance, since both structures depend on `φ`: a consumer installs the function-field
+structure locally with `let _ := φ.fieldPullback.toRingHom.toAlgebra`. -/
+theorem isScalarTower_coordinateRing_of_algebraMap_eq_pullback (φ : Isogeny W₁ W₂)
+    [Algebra W₂.CoordinateRing W₁.FunctionField]
+    (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x) :
+    letI := φ.fieldPullback.toRingHom.toAlgebra
+    IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+  letI := φ.fieldPullback.toRingHom.toAlgebra
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [h, φ.fieldPullback.algebraMap_toAlgebra_apply, fieldPullback_algebraMap]
 
 /-- The identity isogeny induces the identity pullback on the function field. -/
 @[simp]

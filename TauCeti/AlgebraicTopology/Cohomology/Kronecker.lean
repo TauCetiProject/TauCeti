@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
+public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 
 /-!
 # The Kronecker map of singular cohomology
@@ -37,9 +39,12 @@ the case where its `Ext¹`-term vanishes.
   `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
   every coefficient object.
+* `TopCat.singularKronecker_constSingularCocycle`: the class of the constant `0`-cocycle with
+  value `e : R ⟶ M` evaluates on zeroth homology as the augmentation followed by `e`.
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
   relative singular cohomology, the Kronecker map of the relative singular chain complex, with
-  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`.
+  `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`;
+  `TopPair.singularKronecker_singularCohomologyπ` compares it with the absolute Kronecker map.
 
 ## References
 
@@ -124,6 +129,26 @@ lemma singularKroneckerEquiv_apply (X : TopCat.{w}) (k : Type*) [Ring k] [Linear
     X.singularKroneckerEquiv k n α = X.singularKronecker k n α :=
   TauCeti.ChainComplex.kroneckerEquiv_apply n α
 
+/-- **The Kronecker pairing of a constant `0`-cocycle**: evaluating the class of the constant
+`0`-cocycle with value `e : R ⟶ M` on zeroth homology is the augmentation followed by `e`. For `e`
+the identity, the unit class of `H⁰(X; R)` pairs with zeroth homology as the augmentation. -/
+@[simp, reassoc]
+lemma singularKronecker_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (e : R ⟶ M) :
+    X.singularKronecker k 0
+        ((X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e)) =
+      X.singularHomology₀ε R ≫ e :=
+  -- The constant cochain evaluates a vertex to `e`, and the augmentation sends its class to `𝟙 R`.
+  -- Zeroth singular homology is the homology of the singular chain complex only after unfolding
+  -- `singularHomologyFunctor`, so `Category.assoc` is applied as a term rather than rewritten.
+  SSet.homology₀_hom_ext R fun x ↦ by
+    rw [SSet.ιHomology₀_def]
+    refine (Category.assoc _ _ _).trans ?_
+    simp only [singularKronecker_homologyπ, HomologicalComplex.liftCycles_i_assoc,
+      iCycles_constSingularCocycle, SSet.ιChainComplex_constCochain]
+    exact ((Category.assoc _ _ _).trans
+      (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε_assoc (X := toSSet.obj X) R x e)).symm
+
 end TopCat
 
 namespace TopPair
@@ -163,5 +188,13 @@ lemma singularKronecker_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Type
     P.singularKronecker k n (TopPair.singularCohomologyMap f n α) =
       P.singularHomologyMap f R n ≫ P'.singularKronecker k n α :=
   TauCeti.ChainComplex.kronecker_naturality (singularChainComplexMap f R) n α
+
+/-- Evaluating the image in `Hⁿ(X; R, M)` of a relative class `α ∈ Hⁿ(X, A; R, M)` is evaluating
+`α` after the map `Hₙ(X; R) ⟶ Hₙ(X, A; R)`. -/
+lemma singularKronecker_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
+    (n : ℕ) (α : P.singularCohomology R k M n) :
+    P.fst.singularKronecker k n (P.singularCohomologyπ R k M n α) =
+      P.singularHomologyπ R n ≫ P.singularKronecker k n α :=
+  TauCeti.ChainComplex.kronecker_naturality (P.singularChainComplexπ R) n α
 
 end TopPair

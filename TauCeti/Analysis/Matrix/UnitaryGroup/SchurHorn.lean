@@ -170,7 +170,8 @@ theorem exists_mem_unitaryGroup_re_diag_mul_diagonal_mul_star_eq {w d : ι → �
     simp
   have hsub : convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin _) ↦ (w ∘ eqv.symm) ∘ σ) ⊆
       convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin _) ↦ ev ∘ σ) :=
-    convexHull_min (Set.range_subset_iff.2 fun σ ↦ comp_perm_mem_convexHull_range_comp_perm hw σ)
+    convexHull_min
+      (Set.range_subset_iff.2 fun σ ↦ σ.comp_perm_mem_convexHull_range_comp_perm_iff.2 hw)
       (convex_convexHull ℝ _)
   -- Reindexing by `eqv` carries the permutohedron of `w` onto that of `w ∘ eqv.symm`.
   have hd' : d ∘ eqv.symm ∈
@@ -276,8 +277,10 @@ theorem exists_isSymm_fin_two_charpoly_eq_iff {l₁ l₂ d₁ d₂ : ℝ} (hl : 
   · -- Compare the coefficients of `X` and `1` in the two characteristic polynomials.
     rw [charpoly_fin_two, hpoly] at hχ
     have htr : A.trace = l₁ + l₂ := by
-      linarith [show -A.trace = -l₂ + -l₁ by simpa using congr_arg (coeff · 1) hχ]
-    have hdet : A.det = l₁ * l₂ := by simpa using congr_arg (coeff · 0) hχ
+      linarith [show -A.trace = -l₂ + -l₁ by
+        simpa using congr_arg (AddMonoidAlgebra.coeff · 1) hχ]
+    have hdet : A.det = l₁ * l₂ := by
+      simpa using congr_arg (AddMonoidAlgebra.coeff · 0) hχ
     have h₁₀ : A 1 0 = A 0 1 := hA.apply 0 1
     rw [trace_fin_two, h₀, h₁] at htr
     rw [det_fin_two, h₀, h₁, h₁₀] at hdet

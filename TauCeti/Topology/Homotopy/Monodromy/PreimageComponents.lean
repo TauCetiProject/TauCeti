@@ -61,7 +61,7 @@ local monodromy.
 
 public section
 
-namespace TauCeti
+namespace IsCoveringMap
 
 open Equiv Equiv.Perm
 
@@ -69,7 +69,7 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
 
 /-- **A lift of a path of `V` stays over `V`.** Monodromy along a path lying in `V` joins each
 point of the fibre over its source to its image by a path inside `p ⁻¹' V`, namely the lift. -/
-theorem _root_.IsCoveringMap.joinedIn_preimage_monodromy (hp : IsCoveringMap p) {V : Set X}
+theorem joinedIn_preimage_monodromy (hp : IsCoveringMap p) {V : Set X}
     {x y : X} (γ : Path x y) (hγ : ∀ t, γ t ∈ V) (e : p ⁻¹' {x}) :
     JoinedIn (p ⁻¹' V) (e : E) (hp.monodromy (.mk γ) e : E) := by
   have he : p (e : E) = x := e.2
@@ -82,7 +82,7 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_monodromy (hp : IsCoveringMap p) 
 /-- **Points of a fibre joined over `V`.** Two points of the fibre over `v ∈ V` are joined by a
 path inside `p ⁻¹' V` exactly when monodromy along the image in `π₁(X, v)` of some loop of `V`
 carries the first to the second. -/
-theorem _root_.IsCoveringMap.joinedIn_preimage_iff (hp : IsCoveringMap p) {V : Set X} {v : X}
+theorem joinedIn_preimage_iff (hp : IsCoveringMap p) {V : Set X} {v : X}
     (hv : v ∈ V) (e e' : p ⁻¹' {v}) :
     JoinedIn (p ⁻¹' V) (e : E) (e' : E) ↔
       ∃ g : FundamentalGroup V ⟨v, hv⟩,
@@ -120,7 +120,7 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_iff (hp : IsCoveringMap p) {V : S
 
 /-- **Every point over a path-connected `V` is joined over `V` to the fibre over `v`.** Lifting a
 path of `V` from `p e` to `v`, starting at `e`, gives a path inside `p ⁻¹' V` ending over `v`. -/
-theorem _root_.IsCoveringMap.exists_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
+theorem exists_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
     (hV : IsPathConnected V) {v : X} (hv : v ∈ V) {e : E} (he : p e ∈ V) :
     ∃ e' : p ⁻¹' {v}, JoinedIn (p ⁻¹' V) e e' := by
   have hjoin := hV.joinedIn (p e) he v hv
@@ -134,9 +134,11 @@ theorem _root_.IsCoveringMap.exists_joinedIn_preimage (hp : IsCoveringMap p) {V 
 /-- **Points of a fibre joined over a simply connected `V` coincide.** A path inside `p ⁻¹' V`
 joining two points of the fibre over `v ∈ V` projects to a loop of `V`, which is null-homotopic
 in `V`, so its monodromy is trivial. -/
-theorem _root_.IsCoveringMap.eq_of_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
-    [SimplyConnectedSpace V] {v : X} (hv : v ∈ V) {e e' : p ⁻¹' {v}}
+theorem eq_of_joinedIn_preimage (hp : IsCoveringMap p) {V : Set X}
+    [SimplyConnectedSpace V] {v : X} {e e' : p ⁻¹' {v}}
     (h : JoinedIn (p ⁻¹' V) (e : E) (e' : E)) : e = e' := by
+  have hv : v ∈ V :=
+    Set.mem_singleton_iff.mp (Set.mem_preimage.mp e.2) ▸ Set.mem_preimage.mp h.source_mem
   obtain ⟨g, rfl⟩ := (hp.joinedIn_preimage_iff hv e e').1 h
   rw [Subsingleton.elim g 1, map_one, ← IsCoveringMap.coe_monodromyPerm, map_one,
     Equiv.Perm.one_apply]
@@ -145,7 +147,7 @@ theorem _root_.IsCoveringMap.eq_of_joinedIn_preimage (hp : IsCoveringMap p) {V :
 For `v ∈ V`, sending a point of the fibre over `v` to its path component in `p ⁻¹' V` is a
 bijection: every path component meets the fibre (`IsCoveringMap.exists_joinedIn_preimage`), and
 in only one point (`IsCoveringMap.eq_of_joinedIn_preimage`). -/
-noncomputable def _root_.IsCoveringMap.fiberEquivZerothHomotopy (hp : IsCoveringMap p)
+noncomputable def fiberEquivZerothHomotopy (hp : IsCoveringMap p)
     {V : Set X} (hV : IsSimplyConnected V) {v : X} (hv : v ∈ V) :
     p ⁻¹' {v} ≃ ZerothHomotopy (p ⁻¹' V) :=
   have hmem (e : p ⁻¹' {v}) : (e : E) ∈ p ⁻¹' V := by
@@ -153,7 +155,7 @@ noncomputable def _root_.IsCoveringMap.fiberEquivZerothHomotopy (hp : IsCovering
     exact hv
   haveI := hV.simplyConnectedSpace
   Equiv.ofBijective (fun e => ZerothHomotopy.mk (⟨e, hmem e⟩ : p ⁻¹' V))
-    ⟨fun e e' h => hp.eq_of_joinedIn_preimage hv
+    ⟨fun e e' h => hp.eq_of_joinedIn_preimage
         ((joinedIn_iff_joined (hmem e) (hmem e')).2 (Quotient.exact h)),
       fun a => by
         induction a with
@@ -164,7 +166,7 @@ noncomputable def _root_.IsCoveringMap.fiberEquivZerothHomotopy (hp : IsCovering
 /-- The identification of a fibre with the path components over a simply connected `V` sends a
 point to its path component. -/
 @[simp]
-theorem _root_.IsCoveringMap.fiberEquivZerothHomotopy_apply (hp : IsCoveringMap p) {V : Set X}
+theorem fiberEquivZerothHomotopy_apply (hp : IsCoveringMap p) {V : Set X}
     (hV : IsSimplyConnected V) {v : X} (hv : v ∈ V) (e : p ⁻¹' {v}) :
     hp.fiberEquivZerothHomotopy hV hv e =
       ZerothHomotopy.mk ⟨(e : E), by rw [Set.mem_preimage, e.2]; exact hv⟩ :=
@@ -173,7 +175,7 @@ theorem _root_.IsCoveringMap.fiberEquivZerothHomotopy_apply (hp : IsCoveringMap 
 /-- **Cycles of a generating loop are the components over `V`.** If the class `c` generates
 `π₁(V, v)`, two points of the fibre over `v` lie in the same cycle of the monodromy permutation
 of `c` exactly when they are joined by a path inside `p ⁻¹' V`. -/
-theorem _root_.IsCoveringMap.sameCycle_monodromyPerm_iff_joinedIn_preimage (hp : IsCoveringMap p)
+theorem sameCycle_monodromyPerm_iff_joinedIn_preimage (hp : IsCoveringMap p)
     {V : Set X} {v : X} (hv : v ∈ V) {c : FundamentalGroup V ⟨v, hv⟩}
     (hc : Subgroup.zpowers c = ⊤) (e e' : p ⁻¹' {v}) :
     (hp.monodromyPerm v
@@ -193,7 +195,7 @@ theorem _root_.IsCoveringMap.sameCycle_monodromyPerm_iff_joinedIn_preimage (hp :
 path-connected `V ∋ v` whose fundamental group is generated by `c`, sending a point of the fibre
 over `v` to its path component in `p ⁻¹' V` identifies the cycles of the monodromy permutation of
 `c` with the path components of `p ⁻¹' V`. -/
-noncomputable def _root_.IsCoveringMap.sameCycleQuotientEquivZerothHomotopy (hp : IsCoveringMap p)
+noncomputable def sameCycleQuotientEquivZerothHomotopy (hp : IsCoveringMap p)
     {V : Set X} (hV : IsPathConnected V) {v : X} (hv : v ∈ V) {c : FundamentalGroup V ⟨v, hv⟩}
     (hc : Subgroup.zpowers c = ⊤) :
     Quotient (SameCycle.setoid (hp.monodromyPerm v
@@ -220,11 +222,11 @@ noncomputable def _root_.IsCoveringMap.sameCycleQuotientEquivZerothHomotopy (hp 
 
 /-- The identification of cycles with path components sends the cycle of a point of the fibre
 to the path component containing that point. -/
-theorem _root_.IsCoveringMap.sameCycleQuotientEquivZerothHomotopy_mk (hp : IsCoveringMap p)
+theorem sameCycleQuotientEquivZerothHomotopy_mk (hp : IsCoveringMap p)
     {V : Set X} (hV : IsPathConnected V) {v : X} (hv : v ∈ V) {c : FundamentalGroup V ⟨v, hv⟩}
     (hc : Subgroup.zpowers c = ⊤) (e : p ⁻¹' {v}) :
     hp.sameCycleQuotientEquivZerothHomotopy hV hv hc (Quotient.mk _ e) =
       ZerothHomotopy.mk ⟨(e : E), by rw [Set.mem_preimage, e.2]; exact hv⟩ :=
   (rfl)
 
-end TauCeti
+end IsCoveringMap
