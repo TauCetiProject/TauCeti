@@ -46,6 +46,8 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
   complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
   above, is acyclic.
+* `TauCeti.ExactStructure.AcyclicData.epi_d`: the differential of an acyclic complex into the
+  last nonzero degree is an epimorphism.
 
 ## References
 
@@ -200,6 +202,17 @@ noncomputable def liftZ {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 
 theorem liftZ_i {T : C} (n : ℤ) (k : T ⟶ K.X n) (hk : k ≫ h.p n = 0) :
     h.liftZ n k hk ≫ h.i n = k :=
   (E.isKernelCokernelPair _ (h.conflation n)).lift_f k hk
+
+include h in
+/-- **The last differential of an acyclic complex is an epimorphism**: if `Kⁿ⁺²` vanishes, then
+`Kⁿ ⟶ Kⁿ⁺¹` is an epimorphism. -/
+theorem epi_d (n : ℤ) (hK : IsZero (K.X (n + 1 + 1))) : Epi (K.d n (n + 1)) := by
+  -- `Zⁿ⁺¹ ↣ Kⁿ⁺¹` has zero cokernel `Zⁿ⁺²`, so `d : Kⁿ ↠ Zⁿ⁺¹ ↣ Kⁿ⁺¹` is an epimorphism.
+  have hZ : IsZero (h.Z (n + 1 + 1)) := IsZero.of_mono (h.i (n + 1 + 1)) hK
+  have : Epi (h.i (n + 1)) := Preadditive.epi_of_isZero_cokernel' _
+    (E.isKernelCokernelPair _ (h.conflation (n + 1))).gIsCokernel hZ
+  rw [← h.fac]
+  infer_instance
 
 end descZ
 

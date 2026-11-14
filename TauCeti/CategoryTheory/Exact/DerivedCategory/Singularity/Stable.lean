@@ -27,7 +27,9 @@ For a Frobenius exact structure this is the Keller–Vossieck comparison functor
 * `TauCeti.ExactStructure.singleToSingularity`: the functor `C ⥤ D_sg(E)` placing an object in
   degree zero, with its defining equation `singleToSingularity_eq`.
 * `TauCeti.ExactStructure.stableToSingularity`: the induced functor `stable(E) ⥤ D_sg(E)`, with
-  the factorization `projectiveStableFunctor_comp_stableToSingularity`.
+  the factorization `projectiveStableFunctor_comp_stableToSingularity`, and
+  `TauCeti.ExactStructure.stableToSingularityObjIso` identifying its values with objects placed in
+  degree zero.
 
 ## References
 
@@ -105,5 +107,13 @@ theorem stableToSingularity_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶
         E.singleToSingularity.map f ≫
           eqToHom (E.stableToSingularity_obj_projectiveStableFunctor_obj Y).symm :=
   Functor.congr_hom E.projectiveStableFunctor_comp_stableToSingularity f
+
+/-- The image of an object of the stable category in the singularity category is the object
+placed in degree zero. -/
+noncomputable def stableToSingularityObjIso (X : C) :
+    E.stableToSingularity.obj (E.projectiveStableFunctor.obj X) ≅
+      (SingularityCategory.Q E).obj ((BoundedDerivedCategory.Q E).obj
+        ((HomotopyCategory.Bounded.singleFunctor C 0).obj X)) :=
+  Iso.refl _
 
 end TauCeti.ExactStructure

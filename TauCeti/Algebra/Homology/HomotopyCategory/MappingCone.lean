@@ -42,6 +42,8 @@ whose cones are acyclic.
   homotopy equivalence is contractible.
 * `CochainComplex.quasiIso_iff_acyclic_mappingCone`: in an abelian category, a morphism is a
   quasi-isomorphism exactly when its mapping cone is acyclic.
+* `CochainComplex.mappingCone.isIso_inr_f`: the inclusion of the target into the mapping cone is
+  an isomorphism in each degree where the source vanishes one degree up.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
 
@@ -145,6 +147,13 @@ lemma inr_f_snd_v' (p q : ℤ) (h : p + 0 = q) :
     (inr f).f p ≫ (snd f).v p q h = (L.XIsoOfEq (show p = q by lia)).hom := by
   obtain rfl : q = p := by lia
   simp
+
+/-- In a degree `n` with `Kⁿ⁺¹ = 0`, the inclusion `Lⁿ ⟶ (mappingCone f)ⁿ` is an isomorphism. -/
+lemma isIso_inr_f (n : ℤ) (h : IsZero (K.X (n + 1))) : IsIso ((inr f).f n) := by
+  have : Epi ((inr f).f n) :=
+    ⟨fun g₁ g₂ hg ↦ ext_from f (n + 1) n rfl (h.eq_of_src _ _) hg⟩
+  have : IsSplitMono ((inr f).f n) := IsSplitMono.mk' ⟨_, inr_f_snd_v f n⟩
+  exact isIso_of_epi_of_isSplitMono _
 
 end HasHomotopyCofiber
 
