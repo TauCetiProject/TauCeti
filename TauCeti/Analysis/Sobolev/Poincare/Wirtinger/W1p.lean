@@ -15,13 +15,14 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.MeasurableHull
 
 /-!
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
 
 Let `Ω` be a bounded convex open subset of a finite-dimensional real inner product space `E` of
-dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` be null-measurable and have
-positive measure.  This file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
+dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have positive measure.  This
+file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
 
 `‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖∇u‖_{Lᵖ(Ω)}`,
 
@@ -233,12 +234,9 @@ private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠
 
 /-! ### The inequality on the whole domain -/
 
-/-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
-in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` be
-null-measurable of positive measure.  For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its
-mean over `S` by at most `μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak
-gradient. -/
-theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
+/-- The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)` for a null-measurable set `S`; see
+`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` for the statement without measurability. -/
+private theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex_of_nullMeasurableSet (hp : p ≠ ∞)
     (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
     (hSm : NullMeasurableSet S mu) (hS : S ⊆ (Omega : Set E)) (hS0 : mu S ≠ 0)
     (u : W1p mu Omega p) :
@@ -295,6 +293,32 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
         Filter.liminf_le_liminf hbound
     _ = ENNReal.ofReal (K / mu.real S) * ‖W1p.gradient u‖ₑ := htend.liminf_eq
 
+/-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
+in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` have positive
+measure.  For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its mean over `S` by at most
+`μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak gradient. -/
+theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
+    (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
+    (hS : S ⊆ (Omega : Set E)) (hS0 : mu S ≠ 0) (u : W1p mu Omega p) :
+    eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict Omega) ≤
+      ENNReal.ofReal (mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real S) *
+        ‖W1p.gradient u‖ₑ := by
+  have hOfin : mu (Omega : Set E) ≠ ∞ :=
+    ((measure_mono subset_closure).trans_lt hb.isCompact_closure.measure_lt_top).ne
+  have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
+  -- Replace `S` by a measurable set with the same restricted measure.
+  obtain ⟨S', hS'Ω, hS'm, hres⟩ : ∃ S' ⊆ (Omega : Set E), MeasurableSet S' ∧
+      mu.restrict S' = mu.restrict S :=
+    ⟨Omega ∩ toMeasurable mu S, inter_subset_left,
+      Omega.isOpen.measurableSet.inter (measurableSet_toMeasurable mu S),
+      Measure.restrict_inter_toMeasurable hSfin Omega.isOpen.measurableSet hS⟩
+  have hmu : mu S' = mu S := by
+    rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
+  have hmuR : mu.real S' = mu.real S := by rw [measureReal_def, measureReal_def, hmu]
+  have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex_of_nullMeasurableSet (S := S') hp hconv hb
+    hS'm.nullMeasurableSet hS'Ω (hmu ▸ hS0) u
+  rwa [hres, hmuR] at h
+
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of
 `u ∈ W^{1,p}(B(c, R))` from its mean over the ball is at most `2 ^ (n + 1) * R` times the `Lᵖ`
@@ -318,8 +342,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     rw [hOmega]
     exact mu.addHaar_real_ball_mul_diam_ball_pow_div_le c hR
   refine (W1p.eLpNorm_value_sub_setAverage_le_of_convex hp (hOmega ▸ convex_ball c R)
-    (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
-    Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
+    (hOmega ▸ Metric.isBounded_ball (x := c) (r := R)) subset_rfl hpos u).trans
     (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) le_rfl)
 
 /-- **The Poincaré–Wirtinger inequality on a ball inside the domain, in `L²`.**  If

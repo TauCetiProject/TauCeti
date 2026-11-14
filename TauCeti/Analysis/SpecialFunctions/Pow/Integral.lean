@@ -20,6 +20,10 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 -- `setLIntegral_comp_preimage_of_map_eq_smul`, used only inside the proof of
 -- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
 import TauCeti.MeasureTheory.Integral.Average
+-- `TauCeti.Analysis.SpecialFunctions.Pow.Real` is imported privately: it supplies
+-- `Real.mul_rpow_of_nonneg_left`, used only inside the proof of
+-- `TauCeti.setLIntegral_comp_mul_left_mul_rpow`.
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Lower integrals of a real power, and the layer cake formula in `ℝ≥0∞`
@@ -434,12 +438,11 @@ theorem setLIntegral_Ioi_rpow_mul_ite_le (hs : 0 < s) (a : ℝ≥0∞) {r : ℝ}
   simp only [sub_add_cancel, neg_neg, hsplit]
   exact le_of_eq (by ring)
 
-/-- Substituting `t = c s`, for `c > 0`, in a lower integral against the weight `t ^ q` over a set
-of nonnegative reals: the weight is homogeneous of degree `q`, so the substitution costs the factor
-`c ^ (-(q + 1))`. Here `T` is the preimage of `S` under `s ↦ c s`. -/
+/-- Substituting `t = c s`, for `c > 0`, in a lower integral against the weight `t ^ q`: the
+weight is homogeneous of degree `q`, so the substitution costs the factor `c ^ (-(q + 1))`. Here
+`T` is the preimage of `S` under `s ↦ c s`. -/
 theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (hc : 0 < c)
-    {S T : Set ℝ} (hT : MeasurableSet T) (hST : ∀ s, s ∈ T ↔ c * s ∈ S) (hT0 : T ⊆ Ici 0)
-    (q : ℝ) :
+    {S T : Set ℝ} (hST : ∀ s, s ∈ T ↔ c * s ∈ S) (q : ℝ) :
     ∫⁻ s in T, g (c * s) * ENNReal.ofReal (s ^ q) =
       ENNReal.ofReal (c ^ (-(q + 1))) * ∫⁻ t in S, g t * ENNReal.ofReal (t ^ q) := by
   set e := (Homeomorph.mulLeft₀ c hc.ne').toMeasurableEquiv
@@ -455,8 +458,8 @@ theorem setLIntegral_comp_mul_left_mul_rpow (g : ℝ → ℝ≥0∞) {c : ℝ} (
     abs_of_pos hc] at h
   have hcongr : ∫⁻ s in T, g (c * s) * ENNReal.ofReal ((c * s) ^ q) =
       ∫⁻ s in T, ENNReal.ofReal (c ^ q) * (g (c * s) * ENNReal.ofReal (s ^ q)) :=
-    setLIntegral_congr_fun hT fun s hs => by
-      rw [Real.mul_rpow hc.le (hT0 hs), ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
+    lintegral_congr fun s => by
+      rw [Real.mul_rpow_of_nonneg_left hc.le s q, ENNReal.ofReal_mul (Real.rpow_nonneg hc.le q)]
       ring
   rw [hcongr, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top] at h
   have hinv : ENNReal.ofReal (c ^ (-q)) * ENNReal.ofReal (c ^ q) = 1 := by
@@ -490,11 +493,11 @@ theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
   set w : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (p - 1))
   set I : ℝ → ℝ≥0∞ := fun N => ∫⁻ t in Ioo 0 N, m t * w t
   have hw : Measurable w := ENNReal.measurable_ofReal.comp (measurable_id.pow_const _)
-  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
+  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos
     (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
       simp only [mem_Ioo]
       constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
-    (fun s hs => le_of_lt hs.1) (p - 1)
+    (p - 1)
   rw [sub_add_cancel] at hscale
   have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
     rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]

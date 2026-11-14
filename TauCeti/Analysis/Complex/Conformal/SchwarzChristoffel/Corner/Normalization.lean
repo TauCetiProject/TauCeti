@@ -146,7 +146,7 @@ private theorem cpow_inv_sub_cpow_of_sector
       Complex.arg (f z - w) = 0 ∨ Complex.arg (f z - w) = β * Real.pi) :
     ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w :=
   fun z hz =>
-    cpow_inv_cpow_of_arg_mem_Ioc hβ ⟨(neg_lt_zero.mpr (mul_pos hβ Real.pi_pos)).trans_le
+    cpow_inv_cpow_of_arg_mem_Ioc ⟨(neg_lt_zero.mpr (mul_pos hβ Real.pi_pos)).trans_le
       (arg_sub_mem_Icc_of_sector hβ hinterior hedges z hz).1,
       (arg_sub_mem_Icc_of_sector hβ hinterior hedges z hz).2⟩
 

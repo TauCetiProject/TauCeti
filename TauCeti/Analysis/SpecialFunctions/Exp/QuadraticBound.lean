@@ -18,7 +18,7 @@ Mathlib records the lower bound `1 + x + x ^ 2 / 2 ≤ exp x` for `0 ≤ x`
 
 * `Real.exp_le_one_add_add_sq_div_two_of_nonpos`: for `x ≤ 0`,
   `exp x ≤ 1 + x + x ^ 2 / 2`;
-* `Real.exp_le_one_add_add_sq_div_of_le`: if `x ≤ c` with `0 ≤ c < 3`, then
+* `Real.exp_le_one_add_add_sq_div_of_le`: if `x ≤ c` with `c < 3`, then
   `exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3))`;
 * `Real.exp_le_one_add_add_sq_div_two_mul_exp_abs`: for every real `x`,
   `exp x ≤ 1 + x + x ^ 2 / 2 * exp |x|`;
@@ -88,16 +88,36 @@ private theorem exp_le_one_add_add_sq_div_of_nonneg_of_le {x c : ℝ} (hx : 0 �
   rw [mul_comm 2, ← div_div, div_eq_mul_inv _ (1 - c / 3)]
   linarith
 
-/-- **Bernstein's exponential bound.** If `x ≤ c` with `0 ≤ c < 3`, then
-`exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3))`. Only an upper bound on `x` is needed: negative `x`
-are covered by `Real.exp_le_one_add_add_sq_div_two_of_nonpos`. -/
-theorem exp_le_one_add_add_sq_div_of_le {x c : ℝ} (hxc : x ≤ c) (hc0 : 0 ≤ c) (hc3 : c < 3) :
+/-- For `x ≤ 0`, `exp x ≤ 1 + x + x ^ 2 / (2 * (1 - x / 3))`, the Padé-type bound
+`6 + 2 t ≤ exp t * (6 - 4 t + t ^ 2)` at `t = -x`. -/
+private theorem exp_le_one_add_add_sq_div_of_nonpos {x : ℝ} (hx : x ≤ 0) :
+    exp x ≤ 1 + x + x ^ 2 / (2 * (1 - x / 3)) := by
+  -- With `t = -x ≥ 0`, the Taylor bound `∑ i < 5, t ^ i / i ! ≤ exp t` times
+  -- `6 - 4 t + t ^ 2 > 0` is `6 + 2 t + t ^ 4 / 12 + t ^ 6 / 24 ≤ exp t * (6 - 4 t + t ^ 2)`.
+  have hT := sum_le_exp_of_nonneg (neg_nonneg.2 hx) 5
+  norm_num [Finset.sum_range_succ, Nat.factorial] at hT
+  have hq : 0 ≤ 6 + 4 * x + x ^ 2 := by nlinarith [sq_nonneg (x + 2)]
+  have key : 6 - 2 * x ≤ exp (-x) * (6 + 4 * x + x ^ 2) := by
+    nlinarith [mul_le_mul_of_nonneg_right hT hq, pow_two_nonneg (x ^ 2), pow_two_nonneg (x ^ 3)]
+  have h6 : 0 < 6 - 2 * x := by linarith
+  have heq : 1 + x + x ^ 2 / (2 * (1 - x / 3)) = (6 + 4 * x + x ^ 2) / (6 - 2 * x) := by
+    have hden : 2 * (1 - x / 3) = (6 - 2 * x) / 3 := by ring
+    rw [hden, div_div_eq_mul_div, eq_div_iff h6.ne', add_mul, div_mul_cancel₀ _ h6.ne']
+    ring
+  rw [heq, le_div_iff₀ h6]
+  calc exp x * (6 - 2 * x) ≤ exp x * (exp (-x) * (6 + 4 * x + x ^ 2)) :=
+        mul_le_mul_of_nonneg_left key (exp_pos x).le
+    _ = 6 + 4 * x + x ^ 2 := by rw [← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul]
+
+/-- **Bernstein's exponential bound.** If `x ≤ c` with `c < 3`, then
+`exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3))`. Only an upper bound on `x` is needed. For `0 ≤ c`
+and `x ≤ 0` it is weaker than `Real.exp_le_one_add_add_sq_div_two_of_nonpos`. -/
+theorem exp_le_one_add_add_sq_div_of_le {x c : ℝ} (hxc : x ≤ c) (hc3 : c < 3) :
     exp x ≤ 1 + x + x ^ 2 / (2 * (1 - c / 3)) := by
   rcases le_total x 0 with hx | hx
-  · refine (exp_le_one_add_add_sq_div_two_of_nonpos hx).trans ?_
+  · refine (exp_le_one_add_add_sq_div_of_nonpos hx).trans ?_
     gcongr
-    · nlinarith
-    · linarith
+    linarith
   · exact exp_le_one_add_add_sq_div_of_nonneg_of_le hx hxc hc3
 
 /-- Real numbers `S`, `t` and `V > 0` satisfy `t S + V exp (2 t) / 2 ≥ -S |t| - S ^ 2 / V`. For

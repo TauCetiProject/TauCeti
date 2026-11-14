@@ -586,8 +586,8 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le {f : (ι → ℝ) → F}
     rwa [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, ENNReal.ofReal_mul hγ.le]
   -- Integrated against `w`, the term `σ (γ s)` is `γ^(-p)` times the layer cake integral `J`.
   have hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s = ENNReal.ofReal (γ ^ (-p)) * J := by
-    rw [setLIntegral_comp_mul_left_mul_rpow σ hγ measurableSet_Ioi (S := Ioi 0)
-      (fun s => (mul_pos_iff_of_pos_left hγ).symm) Ioi_subset_Ici_self, sub_add_cancel]
+    rw [setLIntegral_comp_mul_left_mul_rpow σ hγ (S := Ioi 0)
+      (fun s => (mul_pos_iff_of_pos_left hγ).symm), sub_add_cancel]
   have hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹ :=
     ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow n p
   -- Substituting `t = 2 s` and applying the good-`λ` inequality bounds `I N` by `I N / 2 + …`.

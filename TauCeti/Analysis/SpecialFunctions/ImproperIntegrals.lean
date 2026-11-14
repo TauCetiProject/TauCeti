@@ -158,13 +158,37 @@ lemma abs_integral_rpow_sub_one_mul_le {E : ℝ → ℝ} {τ c T x : ℝ} (hτ :
     _ = c * ((x ^ (τ + 1) - T ^ (τ + 1)) / (τ + 1)) := by
         rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inr ⟨hτ, h0⟩)]
 
-/-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E` is
-interval integrable above `1` and `E t = o(t)`, then for every exponent `τ > -1` the weighted
-integral `∫ t in 1..x, t ^ (τ - 1) * E t` is `o(x ^ (τ + 1))`. -/
+/-- If `E` fails to be interval integrable on some `[1, x₀]`, the weighted integrals
+`∫ t in 1..x, t ^ (τ - 1) * E t` vanish for `x ≥ x₀`. -/
+private lemma eventually_integral_rpow_sub_one_mul_eq_zero {E : ℝ → ℝ} {τ : ℝ}
+    (hE_int : ¬ ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x) :
+    ∀ᶠ x : ℝ in atTop, ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t = 0 := by
+  push Not at hE_int
+  obtain ⟨x₀, hx₀, hnot⟩ := hE_int
+  filter_upwards [eventually_ge_atTop x₀] with x hx
+  refine intervalIntegral.integral_undef fun h ↦ hnot ?_
+  -- Multiplying back by `t ^ (1 - τ)` would make `E` integrable on `[1, x₀]`.
+  have h1 := intervalIntegrable_rpow_sub_one_mul (2 - τ) (h.mono_set (by
+    rw [uIcc_of_le hx₀, uIcc_of_le (hx₀.trans hx)]
+    exact Icc_subset_Icc le_rfl hx)) zero_lt_one hx₀
+  have hexp : 2 - τ - 1 + (τ - 1) = 0 := by ring
+  refine h1.congr fun t ht ↦ ?_
+  rw [uIoc_of_le hx₀] at ht
+  have ht0 : 0 < t := by linarith [ht.1]
+  rw [← mul_assoc, ← Real.rpow_add ht0, hexp, Real.rpow_zero, one_mul]
+
+/-- **A remainder `o(t)` integrates to `o(x ^ (τ + 1))` against `t ^ (τ - 1)`.** If `E t = o(t)`,
+then for every exponent `τ > -1` the weighted integral `∫ t in 1..x, t ^ (τ - 1) * E t` is
+`o(x ^ (τ + 1))`. (Where `E` is not interval integrable on `[1, x]`, the integral is `0`.) -/
 theorem isLittleO_integral_rpow_sub_one_mul {E : ℝ → ℝ} {τ : ℝ} (hτ : -1 < τ)
-    (hE_int : ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x) (hE : E =o[atTop] id) :
+    (hE : E =o[atTop] id) :
     (fun x : ℝ ↦ ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * E t) =o[atTop] fun x ↦ x ^ (τ + 1) := by
   have hτ1 : 0 < τ + 1 := by linarith
+  by_cases hE_int : ∀ x, 1 ≤ x → IntervalIntegrable E volume 1 x
+  swap
+  · exact (isLittleO_zero (fun x : ℝ ↦ x ^ (τ + 1)) atTop).congr'
+      ((eventually_integral_rpow_sub_one_mul_eq_zero hE_int).mono fun x hx ↦ hx.symm)
+      Filter.EventuallyEq.rfl
   have hint {a b : ℝ} (ha : 1 ≤ a) (hab : a ≤ b) :=
     intervalIntegrable_rpow_sub_one_mul τ
       ((hE_int b (ha.trans hab)).mono_set <| by
