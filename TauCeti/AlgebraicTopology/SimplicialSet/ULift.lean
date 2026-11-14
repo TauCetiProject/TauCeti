@@ -28,11 +28,12 @@ models.
 The comparison goes through compatible families of faces: by
 `SSet.hasLiftingProperty_horn_ι_iff`, lifting against a horn inclusion is a statement about
 simplices and their faces, and maps from a standard simplex into the universe lift of `X` are
-the simplices of `X` (`SSet.uliftFunctorHomEquiv`), compatibly with faces and with maps of
-simplicial sets.
+the simplices of `X` (`SSet.uliftFunctorObjEquiv`, `SSet.uliftFunctorHomEquiv`), compatibly with
+faces and with maps of simplicial sets.
 
 ## Main results
 
+* `SSet.uliftFunctorObjEquiv`: equivalence `X.obj m ≃ (uliftFunctor.obj X).obj m` on simplices.
 * `SSet.hasLiftingProperty_horn_ι_uliftFunctor_map_iff`: the universe lift of a map has the right
   lifting property with respect to a horn inclusion exactly when the map has it.
 * `SSet.fibration_uliftFunctor_map_iff`, `SSet.innerFibration_uliftFunctor_map_iff`: the
@@ -46,9 +47,60 @@ public section
 open CategoryTheory Limits Simplicial HomotopicalAlgebra
 open SSet.modelCategoryQuillen
 
-universe u v
-
 namespace SSet
+
+section ObjEquiv
+
+universe w u'
+
+/-- Equivalence `X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m` on simplices of `X : SSet.{u'}`,
+mirroring `TopCat.uliftFunctorObjHomeo` so simplices of `uliftFunctor.obj X` retain their
+syntactic type under `implicit` transparency. -/
+def uliftFunctorObjEquiv (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ) :
+    X.obj m ≃ (uliftFunctor.{w, u'}.obj X).obj m :=
+  Equiv.ulift.symm
+
+@[simp]
+theorem uliftFunctorObjEquiv_down (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ) (x : X.obj m) :
+    (X.uliftFunctorObjEquiv.{w} m x).down = x :=
+  (rfl)
+
+theorem uliftFunctorObjEquiv_symm_eq_down (X : SSet.{u'}) (m : SimplexCategoryᵒᵖ)
+    (x : (uliftFunctor.{w, u'}.obj X).obj m) :
+    (X.uliftFunctorObjEquiv.{w} m).symm x = x.down :=
+  (rfl)
+
+@[simp]
+theorem uliftFunctorObjEquiv_map (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
+    (x : X.obj m₁) :
+    (uliftFunctor.{w, u'}.obj X).map f (X.uliftFunctorObjEquiv m₁ x) =
+      X.uliftFunctorObjEquiv m₂ (X.map f x) :=
+  (rfl)
+
+@[simp]
+theorem uliftFunctorObjEquiv_symm_map (X : SSet.{u'}) {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
+    (x : (uliftFunctor.{w, u'}.obj X).obj m₁) :
+    (X.uliftFunctorObjEquiv m₂).symm ((uliftFunctor.{w, u'}.obj X).map f x) =
+      X.map f ((X.uliftFunctorObjEquiv m₁).symm x) :=
+  (rfl)
+
+@[simp]
+theorem uliftFunctor_map_uliftFunctorObjEquiv {X Y : SSet.{u'}} (f : X ⟶ Y)
+    (m : SimplexCategoryᵒᵖ) (x : X.obj m) :
+    (uliftFunctor.{w, u'}.map f).app m (X.uliftFunctorObjEquiv m x) =
+      Y.uliftFunctorObjEquiv m (f.app m x) :=
+  (rfl)
+
+@[simp]
+theorem uliftFunctorObjEquiv_symm_uliftFunctor_map {X Y : SSet.{u'}} (f : X ⟶ Y)
+    (m : SimplexCategoryᵒᵖ) (x : (uliftFunctor.{w, u'}.obj X).obj m) :
+    (Y.uliftFunctorObjEquiv m).symm ((uliftFunctor.{w, u'}.map f).app m x) =
+      f.app m ((X.uliftFunctorObjEquiv m).symm x) :=
+  (rfl)
+
+end ObjEquiv
+
+universe u v
 
 variable {X Y : SSet.{u}}
 
@@ -66,6 +118,12 @@ theorem yonedaEquiv_uliftFunctorHomEquiv {n : SimplexCategory}
 
 theorem uliftFunctorHomEquiv_symm_apply {n : SimplexCategory} (f : stdSimplex.{u}.obj n ⟶ X) :
     (uliftFunctorHomEquiv.{u, v} X n).symm f = yonedaEquiv.symm (ULift.up (yonedaEquiv f)) :=
+  (rfl)
+
+theorem uliftFunctorHomEquiv_symm_eq_yonedaEquiv_symm {n : SimplexCategory}
+    (f : stdSimplex.{u}.obj n ⟶ X) :
+    (uliftFunctorHomEquiv.{u, v} X n).symm f =
+      yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (Opposite.op n) (yonedaEquiv f)) :=
   (rfl)
 
 /-- Lowering a constant map gives the constant map at the lowered vertex. -/

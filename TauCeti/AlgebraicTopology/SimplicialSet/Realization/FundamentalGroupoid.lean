@@ -47,20 +47,6 @@ section EdgePath
 
 variable {X Y : SSet.{u}} {x₀ x₁ x₂ : X _⦋0⦌}
 
-private lemma const_zero_one_zero : SimplexCategory.const ⦋0⦌ ⦋1⦌ 0 = SimplexCategory.δ 1 := by
-  ext a : 3; fin_cases a; rfl
-
-private lemma const_zero_one_one : SimplexCategory.const ⦋0⦌ ⦋1⦌ 1 = SimplexCategory.δ 0 := by
-  ext a : 3; fin_cases a; rfl
-
-private lemma const_zero_two_zero :
-    SimplexCategory.const ⦋0⦌ ⦋2⦌ 0 = SimplexCategory.const ⦋0⦌ ⦋1⦌ 0 ≫ SimplexCategory.δ 2 := by
-  ext a : 3; fin_cases a; rfl
-
-private lemma const_zero_two_two :
-    SimplexCategory.const ⦋0⦌ ⦋2⦌ 2 = SimplexCategory.const ⦋0⦌ ⦋1⦌ 1 ≫ SimplexCategory.δ 0 := by
-  ext a : 3; fin_cases a; rfl
-
 /-- The continuous path in `|X|` from `toTopPoint x₀` to `toTopPoint x₁` traced by an edge
 `e : X.Edge x₀ x₁`. -/
 noncomputable def Edge.toTopPath (e : X.Edge x₀ x₁) :
@@ -69,11 +55,11 @@ noncomputable def Edge.toTopPath (e : X.Edge x₀ x₁) :
     (StdSimplex.homeomorphI.symm : C(unitInterval, StdSimplex ℝ (Fin 2)))
   source' := by
     simp only [ContinuousMap.toFun_eq_coe, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
-      StdSimplex.homeomorphI_symm_zero, toTopObjMk_single, const_zero_one_zero,
+      StdSimplex.homeomorphI_symm_zero, toTopObjMk_single, ← SimplexCategory.δ_one_eq_const,
       ← SimplicialObject.δ_def, e.src_eq]
   target' := by
     simp only [ContinuousMap.toFun_eq_coe, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
-      StdSimplex.homeomorphI_symm_one, toTopObjMk_single, const_zero_one_one,
+      StdSimplex.homeomorphI_symm_one, toTopObjMk_single, ← SimplexCategory.δ_zero_eq_const,
       ← SimplicialObject.δ_def, e.tgt_eq]
 
 @[simp]
@@ -118,28 +104,30 @@ theorem Edge.CompStruct.homotopic_toTopPath {e₀₁ : X.Edge x₀ x₁} {e₁�
   obtain ⟨H⟩ := SimplyConnectedSpace.paths_homotopic (p₀₁.trans p₁₂) p₀₂
   let F : C(StdSimplex ℝ (Fin 3), |X|) := ⟨toTopObjMk h.simplex, continuous_toTopObjMk h.simplex⟩
   have hx₀ : toTopPoint x₀ = F (StdSimplex.single 0) := by
-    simp only [F, ContinuousMap.coe_mk, toTopObjMk_single, const_zero_two_zero, op_comp,
-      Functor.map_comp_apply, ← SimplicialObject.δ_def, h.d₂, const_zero_one_zero, e₀₁.src_eq]
+    have hc₀ : SimplexCategory.const ⦋0⦌ ⦋2⦌ 0 = SimplexCategory.δ 1 ≫ SimplexCategory.δ 2 := by
+      rw [SimplexCategory.δ_one_eq_const, SimplexCategory.const_comp]; rfl
+    simp only [F, ContinuousMap.coe_mk, toTopObjMk_single, hc₀, op_comp, Functor.map_comp_apply,
+      ← SimplicialObject.δ_def, h.d₂, e₀₁.src_eq]
   have hx₂ : toTopPoint x₂ = F (StdSimplex.single 2) := by
-    simp only [F, ContinuousMap.coe_mk, toTopObjMk_single, const_zero_two_two, op_comp,
-      Functor.map_comp_apply, ← SimplicialObject.δ_def, h.d₀, const_zero_one_one, e₁₂.tgt_eq]
+    have hc₂ : SimplexCategory.const ⦋0⦌ ⦋2⦌ 2 = SimplexCategory.δ 0 ≫ SimplexCategory.δ 0 := by
+      rw [SimplexCategory.δ_zero_eq_const, SimplexCategory.const_comp]; rfl
+    simp only [F, ContinuousMap.coe_mk, toTopObjMk_single, hc₂, op_comp, Functor.map_comp_apply,
+      ← SimplicialObject.δ_def, h.d₀, e₁₂.tgt_eq]
+  have hface (k : Fin 3) (s : unitInterval) :
+      F (facePath k s) = toTopObjMk (X.δ k h.simplex) (StdSimplex.homeomorphI.symm s) :=
+    (toTopObjMk_map (SimplexCategory.δ k) h.simplex (StdSimplex.homeomorphI.symm s)).symm
   have htrans : ((p₀₁.trans p₁₂).map F.continuous).cast hx₀ hx₂ =
       e₀₁.toTopPath.trans e₁₂.toTopPath := by
     ext t
     rw [_root_.Path.cast_coe, _root_.Path.map_coe, Function.comp_apply, _root_.Path.trans_apply,
       _root_.Path.trans_apply]
     split_ifs
-    · change toTopObjMk h.simplex (StdSimplex.map (SimplexCategory.δ 2)
-        (StdSimplex.homeomorphI.symm _)) = _
-      rw [← toTopObjMk_map, ← SimplicialObject.δ_def, h.d₂, Edge.toTopPath_apply]
-    · change toTopObjMk h.simplex (StdSimplex.map (SimplexCategory.δ 0)
-        (StdSimplex.homeomorphI.symm _)) = _
-      rw [← toTopObjMk_map, ← SimplicialObject.δ_def, h.d₀, Edge.toTopPath_apply]
+    · exact (hface 2 _).trans (by rw [h.d₂, Edge.toTopPath_apply])
+    · exact (hface 0 _).trans (by rw [h.d₀, Edge.toTopPath_apply])
   have hdiag : (p₀₂.map F.continuous).cast hx₀ hx₂ = e₀₂.toTopPath := by
     ext t
-    change toTopObjMk h.simplex (StdSimplex.map (SimplexCategory.δ 1)
-      (StdSimplex.homeomorphI.symm t)) = _
-    rw [← toTopObjMk_map, ← SimplicialObject.δ_def, h.d₁, Edge.toTopPath_apply]
+    rw [_root_.Path.cast_coe, _root_.Path.map_coe, Function.comp_apply]
+    exact (hface 1 t).trans (by rw [h.d₁, Edge.toTopPath_apply])
   exact ⟨((H.map F).pathCast hx₀ hx₂).cast htrans hdiag⟩
 
 end EdgePath
@@ -149,7 +137,7 @@ section FundamentalGroupoid
 /-- The canonical functor from the simplicial fundamental groupoid of `X` to the topological
 fundamental groupoid of its geometric realization `|X|`, sending a vertex `x` to `toTopPoint x`
 and an edge `e` to the path homotopy class `Path.Homotopic.Quotient.mk e.toTopPath`. -/
-@[expose, implicit_reducible]
+@[expose]
 noncomputable def toTopFundamentalGroupoid (X : SSet.{u}) :
     SSet.FundamentalGroupoid X ⥤ _root_.FundamentalGroupoid |X| :=
   FundamentalGroupoid.desc (fun x ↦ .mk (toTopPoint x))
@@ -182,6 +170,8 @@ noncomputable def mapFundamentalGroupoidToTopIso {X Y : SSet.{u}} (f : X ⟶ Y) 
   dsimp only [Functor.comp_map]
   rw [mapFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
     toTopFundamentalGroupoid_map_homMk, Category.assoc]
+  -- `FundamentalGroupoid.map` is semireducible, so unfolding it directly to `Quotient.map` makes
+  -- the surrounding composition ill-typed at `implicit` transparency; state the reduced goal first.
   change _root_.FundamentalGroupoid.fromPath (.mk (e.map f).toTopPath) =
     eqToHom (congrArg _root_.FundamentalGroupoid.mk (toTop_map_toTopPoint f x).symm) ≫
       _root_.Path.Homotopic.Quotient.map (.mk e.toTopPath) (toTop.map f).hom ≫

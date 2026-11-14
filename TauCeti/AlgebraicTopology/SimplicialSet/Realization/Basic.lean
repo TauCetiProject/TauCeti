@@ -35,6 +35,7 @@ is injective (`SSet.toTopPoint_injective`).
 We also record the basic point-set identifications of `|X|`:
 * `SSet.nonempty_toTop_iff`, `SSet.isEmpty_toTop_iff`: `|X|` is nonempty (resp. empty) precisely
   when `X` has a `0`-simplex (resp. no `0`-simplices).
+* `SSet.toTop_map_const`: a constant simplicial map `SSet.const y` realizes to `TopCat.const`.
 * `SSet.toTopConstIso`, `SSet.toTopConstHomeomorph`: the realization of a constant (discrete)
   simplicial set `(Functor.const SimplexCategoryᵒᵖ).obj S` is discrete on `S`.
 * `SSet.toTopUliftNatIso`, `SSet.toTopUliftIso`, `SSet.toTopUliftHomeomorph`: geometric realization
@@ -132,6 +133,15 @@ instance isEmpty_toTop (X : SSet.{u}) [IsEmpty (X _⦋0⦌)] : IsEmpty |X| :=
 instance nonempty_toTop (X : SSet.{u}) [X.Nonempty] : Nonempty |X| :=
   (nonempty_toTop_iff X).2 ‹_›
 
+/-- The geometric realization of a constant simplicial map `SSet.const y` is the constant
+continuous map at `toTopPoint y` (dual to `TopCat.toSSet_map_const`). -/
+@[simp]
+lemma toTop_map_const (X : SSet.{u}) {Y : SSet.{u}} (y : Y _⦋0⦌) :
+    toTop.map (SSet.const (X := X) y) = TopCat.const (X := |X|) (toTopPoint y) :=
+  toTop_hom_ext fun _ _ _ ↦ by
+    rw [toTop_map_toTopObjMk, SSet.const_app, TypeCat.ofHom_apply, toTopObjMk_map,
+      toTopObjMk_zero, TopCat.const_apply]
+
 end Points
 
 section Discrete
@@ -148,12 +158,11 @@ noncomputable def toTopConstIso (S : Type u) :
       ⟨fun s ↦ toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s, continuous_bot⟩
   have hpt (s : S) :
       homMap (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
-    let s₀ : ((Functor.const SimplexCategoryᵒᵖ).obj S) _⦋0⦌ := s
-    change homMap (toTopPoint s₀) = s
-    rw [toTopPoint_eq_toTopObjMk s₀ default, apply_toTopObjMk, Equiv.apply_symm_apply]
+    rw [toTopPoint_eq_toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s default,
+      apply_toTopObjMk, Equiv.apply_symm_apply]
     have h0 := constHomEquiv_symm_app_zero S
       (fun t ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm t) s
-    dsimp [s₀] at h0 ⊢
+    dsimp at h0 ⊢
     rw [h0]; rfl
   exact
     { hom := homMap
@@ -176,9 +185,8 @@ lemma toTopConstIso_inv_apply (S : Type u) (s : S) :
 
 @[simp]
 lemma toTopConstIso_hom_toTopPoint (S : Type u) (s : S) :
-    (toTopConstIso S).hom (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
-  change ((toTopConstIso S).inv ≫ (toTopConstIso S).hom) s = (𝟙 (TopCat.discrete.obj S)) s
-  rw [(toTopConstIso S).inv_hom_id]
+    (toTopConstIso S).hom (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s :=
+  ConcreteCategory.congr_hom (toTopConstIso S).inv_hom_id s
 
 /-- The homeomorphism between the geometric realization of the constant simplicial set on `S` and
 the discrete topological space on `S`. -/
@@ -212,6 +220,7 @@ structure ToTopCell (X : SSet.{u}) : Type u where
   /-- Every barycentric coordinate is nonzero (hence strictly positive). -/
   coords_ne_zero : ∀ j, coords.weights j ≠ 0
 
+@[ext (iff := false)]
 lemma ToTopCell.ext {X : SSet.{u}} {c₁ c₂ : X.ToTopCell} (hs : c₁.simplex = c₂.simplex)
     (hc : ∀ j : Fin (c₁.simplex.dim + 1),
       c₁.coords.weights j = c₂.coords.weights (Fin.cast (by rw [hs]) j)) :
@@ -246,8 +255,8 @@ private lemma exists_mono_map_eq_of_stdSimplex :
       obtain ⟨k, ι', _, w₀, hw₀, hw'⟩ :=
         ih n (Nat.lt_succ_self n) (StdSimplex.comap Fin.succAbove_right_injective w hsupp)
       refine ⟨k, ι' ≫ SimplexCategory.δ j, mono_comp _ _, w₀, hw₀, ?_⟩
-      change w = w₀.map (j.succAbove ∘ ι')
-      rw [StdSimplex.map_comp, ← hw', StdSimplex.map_comap]
+      exact (StdSimplex.map_comap Fin.succAbove_right_injective w hsupp).symm.trans
+        (by rw [hw', StdSimplex.map_map]; rfl)
     · push Not at h0
       exact ⟨n, 𝟙 ⦋n⦌, inferInstance, w, h0, (StdSimplex.map_id w).symm⟩
 
@@ -331,7 +340,8 @@ private lemma toTopCellOfSimplex_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : 
     (hw₀ : ∀ j, w₀.weights j ≠ 0) (hw : w = w₀.map ι)
     (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π] (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.1) :
     toTopCellOfSimplex x w = ⟨N.mk z.1 z.2, w₀.map π, weights_map_ne_zero_of_epi π hw₀⟩ := by
-  let hface := exists_mono_map_eq_of_stdSimplex w
+  rw [toTopCellOfSimplex]
+  set hface := exists_mono_map_eq_of_stdSimplex w
   set k' := hface.choose
   set ι' : ⦋k'⦌ ⟶ ⦋n⦌ := hface.choose_spec.choose
   have : Mono ι' := hface.choose_spec.choose_spec.choose
@@ -339,13 +349,12 @@ private lemma toTopCellOfSimplex_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : 
   have hw₀' : ∀ j, w₀'.weights j ≠ 0 := hface.choose_spec.choose_spec.choose_spec.choose_spec.1
   have hw' : w = w₀'.map ι' := hface.choose_spec.choose_spec.choose_spec.choose_spec.2
   have hk : k' = k := unique_mono_dim_of_stdSimplex hw₀' hw₀ (hw'.symm.trans hw)
-  let hez := X.exists_nonDegenerate (X.map ι'.op x)
+  set hez := X.exists_nonDegenerate (X.map ι'.op x)
   set r' := hez.choose
   set π' : ⦋k'⦌ ⟶ ⦋r'⦌ := hez.choose_spec.choose
   have : Epi π' := hez.choose_spec.choose_spec.choose
   set z' : X.nonDegenerate r' := hez.choose_spec.choose_spec.choose_spec.choose
   have hz' : X.map ι'.op x = X.map π'.op z'.1 := hez.choose_spec.choose_spec.choose_spec.choose_spec
-  change (⟨N.mk z'.1 z'.2, w₀'.map π', weights_map_ne_zero_of_epi π' hw₀'⟩ : X.ToTopCell) = _
   subst hk
   obtain ⟨rfl, rfl⟩ := unique_mono_of_stdSimplex hw₀' hw₀ (hw'.symm.trans hw)
   have hr : r' = r := X.unique_nonDegenerate_dim (X.map ι'.op x) π' z' hz' π z hz
@@ -391,9 +400,11 @@ private lemma toTopObjMk_toTopCellOfSimplex {X : SSet.{u}} {n : ℕ} (x : X _⦋
       toTopObjMk x w := by
   obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := exists_mono_map_eq_of_stdSimplex w
   obtain ⟨r, π, _, z, hz⟩ := X.exists_nonDegenerate (X.map ι.op x)
-  rw [toTopCellOfSimplex_eq_of_decomp x w ι w₀ hw₀ hw π z hz]
-  change toTopObjMk z.1 (w₀.map π) = toTopObjMk x w
-  rw [← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
+  refine (congrArg (fun c : X.ToTopCell ↦ toTopObjMk c.simplex.simplex c.coords)
+    (toTopCellOfSimplex_eq_of_decomp x w ι w₀ hw₀ hw π z hz)).trans ?_
+  have hmk : toTopObjMk (X := X) (n := (N.mk z.1 z.2).dim) (N.mk z.1 z.2).simplex (w₀.map π) =
+      toTopObjMk z.1 (w₀.map π) := rfl
+  rw [hmk, ← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
 
 /-- An open cell `(s, w)` is recovered from its point `toTopObjMk s.simplex w`. -/
 private lemma toTopCellOfSimplex_cell {X : SSet.{u}} (c : X.ToTopCell) :
@@ -546,50 +557,15 @@ end Cells
 
 section ULift
 
-/-- The bijection between `m`-simplices of `X` and `m`-simplices of `uliftFunctor.obj X`, matching
-the direction of `TopCat.uliftFunctorObjHomeo`. -/
-@[expose]
-def uliftFunctorObjEquiv (X : SSet.{u}) (m : SimplexCategoryᵒᵖ) :
-    X.obj m ≃ (uliftFunctor.{v, u}.obj X).obj m :=
-  Equiv.ulift.symm
-
-@[simp]
-lemma uliftFunctorObjEquiv_map {X : SSet.{u}} {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
-    (x : X.obj m₁) :
-    (uliftFunctor.{v, u}.obj X).map f (X.uliftFunctorObjEquiv.{v} m₁ x) =
-      X.uliftFunctorObjEquiv.{v} m₂ (X.map f x) :=
-  (rfl)
-
-@[simp]
-lemma uliftFunctorObjEquiv_symm_map {X : SSet.{u}} {m₁ m₂ : SimplexCategoryᵒᵖ} (f : m₁ ⟶ m₂)
-    (x : (uliftFunctor.{v, u}.obj X).obj m₁) :
-    (X.uliftFunctorObjEquiv.{v} m₂).symm ((uliftFunctor.{v, u}.obj X).map f x) =
-      X.map f ((X.uliftFunctorObjEquiv.{v} m₁).symm x) :=
-  (rfl)
-
-@[simp]
-lemma uliftFunctor_map_uliftFunctorObjEquiv {X Y : SSet.{u}} (f : X ⟶ Y)
-    {m : SimplexCategoryᵒᵖ} (x : X.obj m) :
-    (uliftFunctor.{v, u}.map f).app m (X.uliftFunctorObjEquiv.{v} m x) =
-      Y.uliftFunctorObjEquiv.{v} m (f.app m x) :=
-  (rfl)
-
-@[simp]
-lemma uliftFunctorObjEquiv_symm_uliftFunctor_map {X Y : SSet.{u}} (f : X ⟶ Y)
-    {m : SimplexCategoryᵒᵖ} (x : (uliftFunctor.{v, u}.obj X).obj m) :
-    (Y.uliftFunctorObjEquiv.{v} m).symm ((uliftFunctor.{v, u}.map f).app m x) =
-      f.app m ((X.uliftFunctorObjEquiv.{v} m).symm x) :=
-  (rfl)
-
-/-- Geometric realization of a universe-lifted simplicial set is naturally isomorphic to the
-universe lift of its geometric realization. -/
-noncomputable def toTopUliftIso (X : SSet.{u}) :
-    |uliftFunctor.{v, u}.obj X| ≅ TopCat.uliftFunctor.{v, u}.obj |X| := by
-  let φ : uliftFunctor.{v, u}.obj X ⟶ TopCat.toSSet.obj (TopCat.uliftFunctor.{v, u}.obj |X|) :=
+/-- Forward morphism `|uliftFunctor.obj X| ⟶ TopCat.uliftFunctor.obj |X|` adjoint to lifting the
+adjunction unit of `X`. -/
+private noncomputable def toTopUliftHom (X : SSet.{u}) :
+    |uliftFunctor.{v, u}.obj X| ⟶ TopCat.uliftFunctor.{v, u}.obj |X| :=
+  (sSetTopAdj.homEquiv _ _).symm
     { app m := ↾fun x ↦ ((TopCat.uliftFunctor.{v, u}.obj |X|).toSSetObjEquiv m).symm
         ((|X|.uliftFunctorObjHomeo : C(|X|, TopCat.uliftFunctor.{v, u}.obj |X|)).comp
-          (|X|.toSSetObjEquiv m ((sSetTopAdj.unit.app X).app m
-            ((X.uliftFunctorObjEquiv.{v} m).symm x))))
+          (|X|.toSSetObjEquiv m
+            ((sSetTopAdj.unit.app X).app m ((X.uliftFunctorObjEquiv.{v} m).symm x))))
       naturality m₁ m₂ f := by
         obtain ⟨a₁, rfl⟩ : ∃ a, m₁ = op a := ⟨m₁.unop, rfl⟩
         obtain ⟨a₂, rfl⟩ : ∃ a, m₂ = op a := ⟨m₂.unop, rfl⟩
@@ -599,108 +575,168 @@ noncomputable def toTopUliftIso (X : SSet.{u}) :
         ext w
         simp only [TypeCat.Fun.toFun_apply, ConcreteCategory.comp_apply, TypeCat.ofHom_apply,
           TopCat.toSSetObjEquiv_naturality_apply, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-          ContinuousMap.coe_ofClass, uliftFunctorObjEquiv_symm_map]
+          ContinuousMap.coe_ofClass]
         have hnat := ConcreteCategory.congr_hom ((sSetTopAdj.unit.app X).naturality g.op)
           ((X.uliftFunctorObjEquiv.{v} (op a₁)).symm x)
         dsimp at hnat
-        rw [hnat, TopCat.toSSetObjEquiv_naturality_apply] }
-  let homMap : |uliftFunctor.{v, u}.obj X| ⟶ TopCat.uliftFunctor.{v, u}.obj |X| :=
-    (sSetTopAdj.homEquiv _ _).symm φ
-  have hhom {n : ℕ} (x : (uliftFunctor.{v, u}.obj X) _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
-      homMap (toTopObjMk x w) =
-        |X|.uliftFunctorObjHomeo (toTopObjMk ((X.uliftFunctorObjEquiv.{v} (op ⦋n⦌)).symm x) w) := by
-    rw [apply_toTopObjMk, Equiv.apply_symm_apply]
-    simp only [φ, TypeCat.ofHom_apply, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-      ContinuousMap.coe_ofClass, toTopObjMk_def]
-  -- Inverse map via preservation of colimits by `toTop` and `TopCat.uliftFunctor`.
+        rw [← TopCat.toSSetObjEquiv_naturality_apply, ← hnat, uliftFunctorObjEquiv_symm_map] }
+
+private lemma toTopUliftHom_toTopObjMk {X : SSet.{u}} {n : ℕ}
+    (x : (uliftFunctor.{v, u}.obj X) _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTopUliftHom.{v, u} X (toTopObjMk x w) =
+      |X|.uliftFunctorObjHomeo (toTopObjMk ((X.uliftFunctorObjEquiv.{v} (op ⦋n⦌)).symm x) w) := by
+  rw [toTopUliftHom, apply_toTopObjMk, Equiv.apply_symm_apply]
+  simp only [TypeCat.ofHom_apply, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
+    ContinuousMap.coe_ofClass, toTopObjMk_def]
+
+/-- Homeomorphism identifying the lifted realization of a standard simplex in `Type u` with the
+realization of the standard simplex in `Type (max u v)`. -/
+private noncomputable def toTopUliftSimplexHomeo (m : SimplexCategory) :
+    TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj m| ≃ₜ |stdSimplex.{max u v}.obj m| :=
+  (|stdSimplex.{u}.obj m|.uliftFunctorObjHomeo.symm.trans m.toTopHomeo.{u}).trans
+    m.toTopHomeo.{max u v}.symm
+
+private lemma toTopUliftSimplexHomeo_apply (m : SimplexCategory)
+    (y : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj m|) :
+    toTopUliftSimplexHomeo.{v, u} m y =
+      m.toTopHomeo.{max u v}.symm (m.toTopHomeo.{u}
+        (|stdSimplex.{u}.obj m|.uliftFunctorObjHomeo.symm y)) :=
+  (rfl)
+
+/-- Morphism in `TopCat` underlying `toTopUliftSimplexHomeo`. -/
+private noncomputable def toTopUliftSimplexHom (m : SimplexCategory) :
+    TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj m| ⟶ |stdSimplex.{max u v}.obj m| :=
+  ConcreteCategory.ofHom (toTopUliftSimplexHomeo.{v, u} m : C(_, _))
+
+@[simp]
+private lemma toTopUliftSimplexHom_apply (m : SimplexCategory)
+    (y : TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj m|) :
+    toTopUliftSimplexHom.{v, u} m y = toTopUliftSimplexHomeo.{v, u} m y :=
+  (rfl)
+
+private def toTopUliftCoconeLegHom {X : SSet.{u}} (j : CostructuredArrow uliftYoneda.{u} X) :
+    stdSimplex.{max u v}.obj j.left ⟶ uliftFunctor.{v, u}.obj X :=
+  (uliftFunctorHomEquiv.{u, v} X j.left).symm j.hom
+
+/-- Cocone assembling the inverse `TopCat.uliftFunctor.obj |X| ⟶ |uliftFunctor.obj X|` via
+preservation of colimits by `toTop` and `TopCat.uliftFunctor`. -/
+private noncomputable def toTopUliftCocone (X : SSet.{u}) :
+    Cocone (CostructuredArrow.proj uliftYoneda.{u} X ⋙ uliftYoneda.{u} ⋙
+      toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) where
+  pt := |uliftFunctor.{v, u}.obj X|
+  ι :=
+    { app j := toTopUliftSimplexHom.{v, u} j.left ≫
+        toTop.{max u v}.map (toTopUliftCoconeLegHom.{v, u} j)
+      naturality j₁ j₂ α := by
+        ext y
+        simp only [Functor.comp_obj, CostructuredArrow.proj_obj, Functor.comp_map,
+          CostructuredArrow.proj_map, Functor.const_obj_obj, Functor.const_obj_map,
+          Category.comp_id, ConcreteCategory.comp_apply, toTopUliftSimplexHom_apply]
+        have hy : toTopUliftSimplexHomeo.{v, u} j₂.left
+              ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (uliftYoneda.{u}.map α.left))) y) =
+            toTop.{max u v}.map (stdSimplex.{max u v}.map α.left)
+              (toTopUliftSimplexHomeo.{v, u} j₁.left y) := by
+          let y₁ : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj j₁.left| := y
+          have hy₀ : toTopUliftSimplexHomeo.{v, u} j₂.left
+                ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (uliftYoneda.{u}.map α.left))) y) =
+              toTopUliftSimplexHomeo.{v, u} j₂.left
+                ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (stdSimplex.{u}.map α.left))) y₁) :=
+            rfl
+          have hy₁ : toTopUliftSimplexHomeo.{v, u} j₁.left y =
+              toTopUliftSimplexHomeo.{v, u} j₁.left y₁ := rfl
+          rw [hy₀, hy₁, toTopUliftSimplexHomeo_apply, toTopUliftSimplexHomeo_apply,
+            TopCat.uliftFunctorObjHomeo_symm_naturality_apply,
+            SimplexCategory.toTopHomeo_naturality_apply,
+            SimplexCategory.toTopHomeo_symm_naturality_apply]
+        have hα : toTopUliftCoconeLegHom.{v, u} j₁ =
+            SSet.stdSimplex.map α.left ≫ toTopUliftCoconeLegHom.{v, u} j₂ := by
+          let f₁ : stdSimplex.{u}.obj j₁.left ⟶ X := j₁.hom
+          let f₂ : stdSimplex.{u}.obj j₂.left ⟶ X := j₂.hom
+          have hf₁ : toTopUliftCoconeLegHom.{v, u} j₁ =
+              (uliftFunctorHomEquiv.{u, v} X j₁.left).symm f₁ := rfl
+          have hf₂ : toTopUliftCoconeLegHom.{v, u} j₂ =
+              (uliftFunctorHomEquiv.{u, v} X j₂.left).symm f₂ := rfl
+          rw [hf₁, hf₂]
+          exact (uliftFunctorHomEquiv.{u, v} X j₁.left).injective (by
+            rw [Equiv.apply_symm_apply, uliftFunctorHomEquiv_map_comp, Equiv.apply_symm_apply]
+            exact (CostructuredArrow.w α).symm)
+        rw [hy, hα, toTop.map_comp, ConcreteCategory.comp_apply] }
+
+/-- Inverse morphism `TopCat.uliftFunctor.obj |X| ⟶ |uliftFunctor.obj X|`. -/
+private noncomputable def toTopUliftInv (X : SSet.{u}) :
+    TopCat.uliftFunctor.{v, u}.obj |X| ⟶ |uliftFunctor.{v, u}.obj X| :=
+  (isColimitOfPreserves (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (denseAtUliftYoneda X)).desc
+    (toTopUliftCocone.{v, u} X)
+
+private lemma toTopUliftInv_uliftFunctorObjHomeo_toTopObjMk {X : SSet.{u}} {n : ℕ}
+    (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTopUliftInv.{v, u} X (|X|.uliftFunctorObjHomeo (toTopObjMk x w)) =
+      toTopObjMk (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) w := by
   let hc := isColimitOfPreserves (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (denseAtUliftYoneda X)
-  let legHomeo (m : SimplexCategory) :
-      TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj m| ≃ₜ |stdSimplex.{max u v}.obj m| :=
-    (|stdSimplex.{u}.obj m|.uliftFunctorObjHomeo.symm.trans m.toTopHomeo.{u}).trans
-      m.toTopHomeo.{max u v}.symm
-  let c : Cocone (CostructuredArrow.proj uliftYoneda.{u} X ⋙ uliftYoneda.{u} ⋙
-      toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) :=
-    { pt := |uliftFunctor.{v, u}.obj X|
-      ι :=
-        { app j := (TopCat.isoOfHomeo (legHomeo j.left)).hom ≫
-            toTop.{max u v}.map ((uliftFunctorHomEquiv.{u, v} X j.left).symm j.hom)
-          naturality j₁ j₂ α := by
-            ext y
-            let y' : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj j₁.left| := y
-            let f₁ : stdSimplex.{u}.obj j₁.left ⟶ X := j₁.hom
-            let f₂ : stdSimplex.{u}.obj j₂.left ⟶ X := j₂.hom
-            change (toTop.{max u v}.map ((uliftFunctorHomEquiv.{u, v} X j₂.left).symm f₂))
-                (legHomeo j₂.left ((TopCat.uliftFunctor.{v, u}.map
-                  (toTop.{u}.map (stdSimplex.{u}.map α.left))) y')) =
-              (toTop.{max u v}.map ((uliftFunctorHomEquiv.{u, v} X j₁.left).symm f₁))
-                (legHomeo j₁.left y')
-            simp only [legHomeo, Homeomorph.trans_apply]
-            rw [TopCat.uliftFunctorObjHomeo_symm_naturality_apply,
-              SimplexCategory.toTopHomeo_naturality_apply,
-              SimplexCategory.toTopHomeo_symm_naturality_apply]
-            have hα : (uliftFunctorHomEquiv.{u, v} X j₁.left).symm f₁ =
-                SSet.stdSimplex.map α.left ≫ (uliftFunctorHomEquiv.{u, v} X j₂.left).symm f₂ :=
-              (uliftFunctorHomEquiv.{u, v} X j₁.left).injective (by
-                rw [Equiv.apply_symm_apply, uliftFunctorHomEquiv_map_comp, Equiv.apply_symm_apply]
-                exact (CostructuredArrow.w α).symm)
-            rw [hα, toTop.map_comp, ConcreteCategory.comp_apply] } }
-  let invMap : TopCat.uliftFunctor.{v, u}.obj |X| ⟶ |uliftFunctor.{v, u}.obj X| := hc.desc c
-  have hinv {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
-      invMap (|X|.uliftFunctorObjHomeo (toTopObjMk x w)) =
-        toTopObjMk (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) w := by
-    let j : CostructuredArrow uliftYoneda.{u} X := CostructuredArrow.mk (yonedaEquiv.symm x)
-    have hj := ConcreteCategory.congr_hom (hc.fac c j)
-      (|stdSimplex.{u}.obj ⦋n⦌|.uliftFunctorObjHomeo (⦋n⦌.toTopHomeo.symm w))
-    change invMap ((TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (yonedaEquiv.symm x)))
-        (|stdSimplex.{u}.obj ⦋n⦌|.uliftFunctorObjHomeo (⦋n⦌.toTopHomeo.symm w))) =
-      (toTop.{max u v}.map ((uliftFunctorHomEquiv.{u, v} X ⦋n⦌).symm (yonedaEquiv.symm x)))
-        (legHomeo ⦋n⦌
-          (|stdSimplex.{u}.obj ⦋n⦌|.uliftFunctorObjHomeo (⦋n⦌.toTopHomeo.symm w))) at hj
-    rw [toTopObjMk_eq_toTop_map, ← TopCat.uliftFunctorObjHomeo_naturality_apply]
-    refine hj.trans ?_
-    have hsymm : (uliftFunctorHomEquiv.{u, v} X ⦋n⦌).symm (yonedaEquiv.symm x) =
-        yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) :=
-      (uliftFunctorHomEquiv.{u, v} X ⦋n⦌).injective <| yonedaEquiv.injective <| by
-        rw [Equiv.apply_symm_apply, yonedaEquiv_uliftFunctorHomEquiv,
-          Equiv.apply_symm_apply, Equiv.apply_symm_apply]; rfl
-    simp only [legHomeo, Homeomorph.trans_apply, Homeomorph.symm_apply_apply,
-      Homeomorph.apply_symm_apply, hsymm, ← toTopObjMk_eq_toTop_map]
-  exact
-    { hom := homMap
-      inv := invMap
-      hom_inv_id := toTop_hom_ext fun n x w ↦ by
-        simp only [ConcreteCategory.comp_apply, TopCat.id_app, hhom, hinv, Equiv.apply_symm_apply]
-      inv_hom_id := by
-        ext p
-        obtain ⟨q, rfl⟩ := |X|.uliftFunctorObjHomeo.surjective p
-        obtain ⟨n, x, w, rfl⟩ := exists_toTopObjMk q
-        simp only [ConcreteCategory.comp_apply, TopCat.id_app, hinv, hhom, Equiv.symm_apply_apply] }
+  let j : CostructuredArrow uliftYoneda.{u} X := CostructuredArrow.mk (yonedaEquiv.symm x)
+  let z₀ : TopCat.uliftFunctor.{v, u}.obj |stdSimplex.{u}.obj ⦋n⦌| :=
+    |stdSimplex.{u}.obj ⦋n⦌|.uliftFunctorObjHomeo (⦋n⦌.toTopHomeo.symm w)
+  let z : TopCat.uliftFunctor.{v, u}.obj |uliftYoneda.{u}.obj ⦋n⦌| := z₀
+  have hj : toTopUliftInv.{v, u} X
+        (TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (yonedaEquiv.symm x)) z) =
+      (toTopUliftSimplexHom.{v, u} ⦋n⦌ ≫
+        toTop.{max u v}.map (toTopUliftCoconeLegHom.{v, u} j)) z :=
+    ConcreteCategory.congr_hom (hc.fac (toTopUliftCocone.{v, u} X) j) z
+  have hz : TopCat.uliftFunctor.{v, u}.map (toTop.{u}.map (yonedaEquiv.symm x)) z =
+      |X|.uliftFunctorObjHomeo (toTopObjMk x w) := by
+    rw [toTopObjMk_eq_toTop_map]
+    exact TopCat.uliftFunctorObjHomeo_naturality_apply (toTop.{u}.map (yonedaEquiv.symm x))
+      (⦋n⦌.toTopHomeo.symm w)
+  rw [← hz, hj, ConcreteCategory.comp_apply, toTopUliftSimplexHom_apply]
+  have hsymm : toTopUliftCoconeLegHom.{v, u} j =
+      yonedaEquiv.symm (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) := by
+    have hj₀ : toTopUliftCoconeLegHom.{v, u} j =
+        (uliftFunctorHomEquiv.{u, v} X ⦋n⦌).symm (yonedaEquiv.symm x) := rfl
+    rw [hj₀, uliftFunctorHomEquiv_symm_eq_yonedaEquiv_symm, Equiv.apply_symm_apply]
+  have hw : toTopUliftSimplexHomeo.{v, u} ⦋n⦌ z = ⦋n⦌.toTopHomeo.{max u v}.symm w := by
+    have hz₀ : toTopUliftSimplexHomeo.{v, u} ⦋n⦌ z = toTopUliftSimplexHomeo.{v, u} ⦋n⦌ z₀ := rfl
+    rw [hz₀, toTopUliftSimplexHomeo_apply]
+    simp [z₀]
+  rw [hsymm, hw, ← toTopObjMk_eq_toTop_map]
+
+/-- Geometric realization of a universe-lifted simplicial set is naturally isomorphic to the
+universe lift of its geometric realization. -/
+noncomputable def toTopUliftIso (X : SSet.{u}) :
+    |uliftFunctor.{v, u}.obj X| ≅ TopCat.uliftFunctor.{v, u}.obj |X| where
+  hom := toTopUliftHom.{v, u} X
+  inv := toTopUliftInv.{v, u} X
+  hom_inv_id := toTop_hom_ext fun _ _ _ ↦ by
+    simp only [ConcreteCategory.comp_apply, TopCat.id_app, toTopUliftHom_toTopObjMk,
+      toTopUliftInv_uliftFunctorObjHomeo_toTopObjMk, Equiv.apply_symm_apply]
+  inv_hom_id := by
+    ext p
+    obtain ⟨q, rfl⟩ := |X|.uliftFunctorObjHomeo.surjective p
+    obtain ⟨_, _, _, rfl⟩ := exists_toTopObjMk q
+    simp only [ConcreteCategory.comp_apply, TopCat.id_app,
+      toTopUliftInv_uliftFunctorObjHomeo_toTopObjMk, toTopUliftHom_toTopObjMk,
+      Equiv.symm_apply_apply]
 
 @[simp]
 lemma toTopUliftIso_hom_toTopObjMk {X : SSet.{u}} {n : ℕ}
     (x : (uliftFunctor.{v, u}.obj X) _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
     (toTopUliftIso.{v, u} X).hom (toTopObjMk x w) =
-      |X|.uliftFunctorObjHomeo (toTopObjMk ((X.uliftFunctorObjEquiv.{v} (op ⦋n⦌)).symm x) w) := by
-  rw [toTopUliftIso, apply_toTopObjMk, Equiv.apply_symm_apply]
-  simp only [TypeCat.ofHom_apply, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-    ContinuousMap.coe_ofClass, toTopObjMk_def]
+      |X|.uliftFunctorObjHomeo (toTopObjMk ((X.uliftFunctorObjEquiv.{v} (op ⦋n⦌)).symm x) w) :=
+  toTopUliftHom_toTopObjMk x w
 
 @[simp]
 lemma toTopUliftIso_inv_uliftFunctorObjHomeo_toTopObjMk {X : SSet.{u}} {n : ℕ}
     (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
     (toTopUliftIso.{v, u} X).inv (|X|.uliftFunctorObjHomeo (toTopObjMk x w)) =
-      toTopObjMk (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) w := by
-  apply (TopCat.homeoOfIso (toTopUliftIso.{v, u} X)).injective
-  simp only [TopCat.homeoOfIso_apply, Iso.inv_hom_id_apply, toTopUliftIso_hom_toTopObjMk,
-    Equiv.symm_apply_apply]
+      toTopObjMk (X.uliftFunctorObjEquiv.{v} (op ⦋n⦌) x) w :=
+  toTopUliftInv_uliftFunctorObjHomeo_toTopObjMk x w
 
 /-- Natural isomorphism `|uliftFunctor.obj ·| ≅ uliftFunctor.obj |·|`. -/
 noncomputable def toTopUliftNatIso :
     uliftFunctor.{v, u} ⋙ toTop.{max u v} ≅ toTop.{u} ⋙ TopCat.uliftFunctor.{v, u} :=
-  NatIso.ofComponents toTopUliftIso fun f ↦ toTop_hom_ext fun n x w ↦ by
+  NatIso.ofComponents toTopUliftIso fun f ↦ toTop_hom_ext fun _ _ _ ↦ by
     simp only [Functor.comp_obj, Functor.comp_map, ConcreteCategory.comp_apply,
       toTop_map_toTopObjMk, toTopUliftIso_hom_toTopObjMk,
-      TopCat.uliftFunctorObjHomeo_naturality_apply, uliftFunctorObjEquiv_symm_uliftFunctor_map]
+      uliftFunctorObjEquiv_symm_uliftFunctor_map, TopCat.uliftFunctorObjHomeo_naturality_apply]
 
 /-- Homeomorphism `|X| ≃ₜ |uliftFunctor.obj X|` between the geometric realization of `X` and the
 geometric realization of its universe lift, matching `TopCat.uliftFunctorObjHomeo`. -/
@@ -739,7 +775,7 @@ lemma toTopUliftHomeomorph_symm_toTopPoint {X : SSet.{u}}
 lemma toTopUliftHomeomorph_naturality {X Y : SSet.{u}} (f : X ⟶ Y) (p : |X|) :
     toTop.map (uliftFunctor.{v, u}.map f) (toTopUliftHomeomorph.{v, u} X p) =
       toTopUliftHomeomorph.{v, u} Y (toTop.map f p) := by
-  obtain ⟨n, x, w, rfl⟩ := exists_toTopObjMk p
+  obtain ⟨_, _, _, rfl⟩ := exists_toTopObjMk p
   simp
 
 @[simp]
@@ -747,7 +783,7 @@ lemma toTopUliftHomeomorph_symm_naturality {X Y : SSet.{u}} (f : X ⟶ Y)
     (p : |uliftFunctor.{v, u}.obj X|) :
     (toTopUliftHomeomorph.{v, u} Y).symm (toTop.map (uliftFunctor.{v, u}.map f) p) =
       toTop.map f ((toTopUliftHomeomorph.{v, u} X).symm p) := by
-  obtain ⟨n, x, w, rfl⟩ := exists_toTopObjMk p
+  obtain ⟨_, _, _, rfl⟩ := exists_toTopObjMk p
   simp
 
 end ULift
