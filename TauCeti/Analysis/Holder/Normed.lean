@@ -514,12 +514,13 @@ section compLipschitz
 
 variable {X' : Type*} [MetricSpace X'] {K : ℝ≥0}
 
-/-- Precomposition with a `K`-Lipschitz map preserves bounded `α`-Hölder functions: the global
-Hölder seminorm grows by at most the factor `K ^ α`. -/
-theorem nnHolderNorm_comp_le {g : X' → X} (hg : LipschitzWith K g) (f : HolderSpace α X Y) :
-    nnHolderNorm α ((f : X → Y) ∘ g) ≤ nnHolderNorm α (f : X → Y) * K ^ (α : ℝ) := by
-  have h := f.memHolder.holderWith.comp (holderWith_one.2 hg)
-  rw [mul_one, coe_toBoundedContinuousFunction] at h
+/-- Precomposition with a `K`-Lipschitz map: the global Hölder seminorm of an `α`-Hölder function
+grows by at most the factor `K ^ α`. -/
+theorem _root_.MemHolder.nnHolderNorm_comp_le {Z : Type*} [EMetricSpace Z] {f : X → Z}
+    (hf : MemHolder α f) {g : X' → X} (hg : LipschitzWith K g) :
+    nnHolderNorm α (f ∘ g) ≤ nnHolderNorm α f * K ^ (α : ℝ) := by
+  have h := hf.holderWith.comp (holderWith_one.2 hg)
+  rw [mul_one] at h
   exact h.nnholderNorm_le
 
 /-- Precomposition with a `K`-Lipschitz map, as a continuous linear map between bounded Hölder
@@ -540,7 +541,7 @@ def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
         f.toBoundedContinuousFunction ⟨g, hg.continuous⟩
       have h₂ : (nnHolderNorm α ((f : X → Y) ∘ g) : ℝ) ≤
           nnHolderNorm α (f : X → Y) * (K : ℝ) ^ (α : ℝ) := by
-        exact_mod_cast nnHolderNorm_comp_le hg f
+        exact_mod_cast f.memHolder.nnHolderNorm_comp_le hg
       have hM₁ : (1 : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_left _ _
       have hMK : (K : ℝ) ^ (α : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_right _ _
       have hH : (0 : ℝ) ≤ nnHolderNorm α (f : X → Y) := NNReal.coe_nonneg _

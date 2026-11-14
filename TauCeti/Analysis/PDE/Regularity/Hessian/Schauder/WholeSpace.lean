@@ -91,7 +91,7 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- **The global Schauder estimate with lower-order bounds.** Let `0 < α < 1`, and let `λ`, `Λ`
+/-- **The global Schauder estimate with lower-order bounds.** Let `α < 1`, and let `λ`, `Λ`
 and `L` be given. Then there is a constant `C`, depending only on `n`, `α`, `λ`, `Λ` and `L`, with
 the following property. Let `a` be a matrix-valued coefficient on `ℝ^{n+1}` which is uniformly
 elliptic and bounded with constants `0 < λ ≤ Λ` (`UniformlyEllipticOn univ a λ Λ`) and globally
@@ -100,7 +100,7 @@ elliptic and bounded with constants `0 < λ ≤ Λ` (`UniformlyEllipticOn univ a
 constants). If `L u` is globally `α`-Hölder with constant `K`, then `D²u` is globally `α`-Hölder
 with constant `C (K + N)`. -/
 theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holderWith
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (lam Lam : ℝ) (L : ℝ≥0) :
+    {α : ℝ≥0} (hα1 : α < 1) (lam Lam : ℝ) (L : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       UniformlyEllipticOn univ a lam Lam → (∀ i j, HolderWith L α (fun x => a x i j)) →
       ∀ {u : E → ℝ} {N K : ℝ≥0}, ContDiff ℝ 2 u →
@@ -109,6 +109,14 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holder
       HolderWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) →
       HolderWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) := by
+  -- For `α = 0` the Hölder condition is the bound `‖D²u‖ ≤ N`.
+  rcases eq_or_ne α 0 with rfl | hα0
+  · refine ⟨2, fun {a} _ _ {u N K} _ _ _ hN₂ _ _ x y => ?_⟩
+    have hd : dist (iteratedFDeriv ℝ 2 u x) (iteratedFDeriv ℝ 2 u y) ≤ ((2 * (K + N) : ℝ≥0) : ℝ) :=
+      (dist_le_norm_add_norm _ _).trans (by push_cast; linarith [hN₂ x, hN₂ y, K.coe_nonneg])
+    simpa only [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_dist, ENNReal.ofReal_coe_nnreal]
+      using ENNReal.ofReal_le_ofReal hd
+  have hα : 0 < α := pos_iff_ne_zero.2 hα0
   -- Without `0 < λ` no coefficient field is uniformly elliptic.
   rcases le_or_gt lam 0 with hlam | hlam
   · exact ⟨0, fun hA => absurd hA.pos (not_lt.2 hlam)⟩
@@ -150,12 +158,23 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holder
         exact le_add_self
     _ = (C₁ + 2 * δ ^ (-(α : ℝ))) * (K + N) := by ring
 
+/-- A `C²` function that is bounded and has globally Hölder Hessian has a bounded Hessian, by the
+interpolation inequality on balls of radius `2`. -/
+private theorem bddAbove_norm_iteratedFDeriv_two {α H N : ℝ≥0} {u : E → ℝ}
+    (hH : HolderWith H α (iteratedFDeriv ℝ 2 u)) (hu : ContDiff ℝ 2 u) (hN : ∀ x, |u x| ≤ N) :
+    BddAbove (range fun x => ‖iteratedFDeriv ℝ 2 u x‖) :=
+  ⟨2 * N / 1 ^ 2 + 3 * H * 1 ^ (α : ℝ), by
+    rintro _ ⟨x, rfl⟩
+    exact (hH.holderOnWith univ).norm_iteratedFDeriv_two_le_of_contDiffOn isOpen_univ
+      hu.contDiffOn (subset_univ _) (fun y _ => by simpa only [Real.norm_eq_abs] using hN y)
+      one_pos (subset_univ _)⟩
+
 /-- **The global Schauder estimate on the whole space.** Let `0 < α < 1`, and let `λ`, `Λ` and
 `L` be given. Then there is a constant `C`, depending only on `n`, `α`, `λ`, `Λ` and `L`, with the
 following property. Let `a` be a matrix-valued coefficient on `ℝ^{n+1}` which is uniformly
 elliptic and bounded with constants `0 < λ ≤ Λ` (`UniformlyEllipticOn univ a λ Λ`) and globally
 `α`-Hölder entrywise with constant `L`, and put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`. Let `u` be `C²` with
-`|u| ≤ N`, and with `D²u` bounded and globally `α`-Hölder (with any constant). If `L u` is globally
+`|u| ≤ N`, and with `D²u` globally `α`-Hölder (with any constant). If `L u` is globally
 `α`-Hölder with constant `K`, then `D²u` is globally `α`-Hölder with constant `C (K + N)`, and
 `‖Du‖` and `‖D²u‖` are bounded by `C (K + N)`. -/
 theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv
@@ -163,13 +182,13 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       UniformlyEllipticOn univ a lam Lam → (∀ i j, HolderWith L α (fun x => a x i j)) →
       ∀ {u : E → ℝ} {N K : ℝ≥0}, ContDiff ℝ 2 u → (∀ x, |u x| ≤ N) →
-      BddAbove (range fun x => ‖iteratedFDeriv ℝ 2 u x‖) → MemHolder α (iteratedFDeriv ℝ 2 u) →
+      MemHolder α (iteratedFDeriv ℝ 2 u) →
       HolderWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) →
       HolderWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) ∧
         (∀ x, ‖fderiv ℝ u x‖ ≤ C * (K + N)) ∧ ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ C * (K + N) := by
   obtain ⟨C₁, hC₁⟩ :=
-    exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holderWith hα hα1 lam Lam L
+    exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holderWith hα1 lam Lam L
   -- The interpolation scale `ε`, small enough to absorb the Hölder norm of `D²u`.
   obtain ⟨ε, hε, hε1, hεC⟩ :=
     Real.exists_pos_le_one_mul_rpow_le (4 * C₁) (NNReal.coe_pos.2 hα)
@@ -178,10 +197,11 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   set c : ℝ := 34 / ε + 32 / ε ^ 2
   have hc : 0 ≤ c := by positivity
   set A : ℝ := 2 * C₁ * (1 + c)
-  refine ⟨(3 * A + c).toNNReal, fun {a} hEll hL {u N K} hu hN hbdd hmem hK => ?_⟩
+  refine ⟨(3 * A + c).toNNReal, fun {a} hEll hL {u N K} hu hN hmem hK => ?_⟩
   -- The Hölder norm `H` of `D²u` and the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
+  have hbdd := bddAbove_norm_iteratedFDeriv_two hH hu hN
   obtain ⟨h1, h2⟩ := hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le hu
     (fun y => by simpa only [Real.norm_eq_abs] using hN y) hbdd hε hε1
   -- The first estimate with `N₁ = (1 + c) N + 4 H ε^α`, which bounds `|u|`, `‖Du‖` and `‖D²u‖`.
@@ -236,9 +256,7 @@ theorem exists_norm_le_of_sum_smul_fderiv_fderiv
   obtain ⟨C, hC⟩ :=
     exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv hα hα1 lam Lam L
   refine ⟨3 * C + 1, fun {a} hA hL u N K hN hK => ?_⟩
-  obtain ⟨hH, h1, h2⟩ := hC hA hL u.contDiff hN
-    ⟨‖u‖, by rintro _ ⟨x, rfl⟩; exact u.norm_iteratedFDeriv_apply_le le_rfl x⟩
-    u.memHolder_iteratedFDeriv hK
+  obtain ⟨hH, h1, h2⟩ := hC hA hL u.contDiff hN u.memHolder_iteratedFDeriv hK
   have hKN : (N : ℝ) ≤ K + N := le_add_of_nonneg_left K.coe_nonneg
   have hCKN : 0 ≤ (C : ℝ) * (K + N) := by positivity
   have b0 : ‖u.iteratedFDeriv 0‖ ≤ N := (BoundedContinuousFunction.norm_le N.coe_nonneg).2
