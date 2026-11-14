@@ -17,7 +17,6 @@ import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Process.Indistinguishable
-import TauCeti.Probability.Process.StochasticInterval
 import TauCeti.Probability.Process.TimeIntegral
 
 /-!
@@ -37,7 +36,7 @@ Second, any adapted modification `I` of `t ↦ hW.l2Integral t (hH.toPredictable
 centered `L²` martingale satisfying the Itô isometry `integral_sq_of_ae_eq_l2Integral`, the
 cross-isometry `integral_mul_of_ae_eq_l2Integral`, and the square-compensation martingale
 property `martingale_sq_sub_integral_of_ae_eq_l2Integral`. Optional stopping at raw stopping times
-is established in `TauCeti.Probability.BrownianMotion.Integral.Stopping`.
+is established in `TauCeti.Probability.BrownianMotion.Integral.OptionalStopping`.
 
 Finally, when `W` has almost surely continuous paths, `exists_continuous_l2Integral` selects a
 strongly predictable, almost surely continuous martingale modification, unique up to
@@ -75,39 +74,14 @@ theorem sub (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K) 
     BrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
   simpa only [sub_eq_add_neg] using hH.add hK.neg
 
-/-- Stopping an expected-square-integrable predictable integrand at a raw stopping time
-preserves `BrownianIntegrable`. -/
-theorem ite_le (hH : BrownianIntegrable ℱ P H) {τ : Ω → WithTop ℝ≥0}
-    (hτ : IsStoppingTime ℱ τ) :
-    BrownianIntegrable ℱ P (fun t : ℝ≥0 ↦ fun ω ↦
-      if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) := by
-  refine ⟨hH.isStronglyPredictable.ite_le hτ, fun T ↦ ?_⟩
-  have hS : MeasurableSet {p : ℝ≥0 × Ω | (p.1 : WithTop ℝ≥0) ≤ τ p.2} :=
-    ℱ.predictable_le_prod _ hτ.measurableSet_predictable_ge
-  have hfun : Function.uncurry (fun t : ℝ≥0 ↦ fun ω ↦
-      if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
-      {p : ℝ≥0 × Ω | (p.1 : WithTop ℝ≥0) ≤ τ p.2}.indicator (Function.uncurry H) := by
-    ext ⟨t, ω⟩
-    simp only [Function.uncurry_apply_pair, indicator_apply, mem_ofPred_eq]
-  rw [hfun]
-  exact (hH.memLp T).indicator hS.nullMeasurableSet
-
 /-- Restricting an expected-square-integrable predictable integrand to a predictable rectangle
 `(u, v] × E` preserves `BrownianIntegrable`. -/
 theorem indicator_Ioc_prod (hH : BrownianIntegrable ℱ P H) (u v : ℝ≥0)
     {E : Set Ω} (hE : MeasurableSet[ℱ u] E) :
     BrownianIntegrable ℱ P (fun t ω ↦ (Ioc u v).indicator (fun _ ↦ E.indicator (H t) ω) t) := by
-  have hfun : Function.uncurry (fun t ω ↦ (Ioc u v).indicator (fun _ ↦ E.indicator (H t) ω) t) =
-      (Ioc u v ×ˢ E).indicator (Function.uncurry H) := by
-    ext ⟨t, ω⟩
-    by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω]
-  have hp : IsStronglyPredictable ℱ
-      (fun t ω ↦ (Ioc u v).indicator (fun _ ↦ E.indicator (H t) ω) t) := by
-    rw [IsStronglyPredictable, hfun]
-    exact hH.isStronglyPredictable.indicator (measurableSet_predictable_Ioc_prod u v hE)
-  refine ⟨hp, fun T ↦ ?_⟩
-  rw [hfun]
-  exact (hH.memLp T).indicator (measurableSet_Ioc.prod (ℱ.le u E hE)).nullMeasurableSet
+  convert hH.indicator (measurableSet_predictable_Ioc_prod u v hE) using 1
+  ext t ω
+  by_cases ht : t ∈ Ioc u v <;> by_cases hω : ω ∈ E <;> simp [ht, hω]
 
 /-- Finite-horizon expected square energy written against `Probability.timeMeasure`. -/
 theorem memLp_timeMeasure (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :

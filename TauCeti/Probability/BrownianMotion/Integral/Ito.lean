@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Integral.Stopping
+public import TauCeti.Probability.BrownianMotion.Integral.OptionalStopping
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import Mathlib.Probability.Process.LocalProperty
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
@@ -75,29 +75,6 @@ theorem neg (h : LocallyBrownianIntegrable ℱ P H) :
 theorem sub (hH : LocallyBrownianIntegrable ℱ P H) (hK : LocallyBrownianIntegrable ℱ P K) :
     LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) := by
   simpa only [sub_eq_add_neg] using hH.add hK.neg
-
-/-- Stopping a locally square-integrable predictable integrand at a raw stopping time preserves
-`LocallyBrownianIntegrable`. -/
-theorem ite_le (hH : LocallyBrownianIntegrable ℱ P H) {τ : Ω → WithTop ℝ≥0}
-    (hτ : IsStoppingTime ℱ τ) :
-    LocallyBrownianIntegrable ℱ P (fun t : ℝ≥0 ↦ fun ω ↦
-      if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) := by
-  refine ⟨hH.isStronglyPredictable.ite_le hτ, hH.ae_memLp.mono fun ω hω T ↦ ?_⟩
-  have hS : MeasurableSet {t : ℝ≥0 | (t : WithTop ℝ≥0) ≤ τ ω} := by
-    cases τ ω with
-    | top =>
-      rw [show {t : ℝ≥0 | (t : WithTop ℝ≥0) ≤ ⊤} = univ by
-        ext; simp only [mem_ofPred_eq, mem_univ, iff_true]; exact le_top]
-      exact MeasurableSet.univ
-    | coe s =>
-      rw [show {t : ℝ≥0 | (t : WithTop ℝ≥0) ≤ (s : WithTop ℝ≥0)} = Iic s by
-        ext; simp only [mem_ofPred_eq, mem_Iic]; exact WithTop.coe_le_coe]
-      exact measurableSet_Iic
-  have hfun : (fun t : ℝ≥0 ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0) =
-      {t : ℝ≥0 | (t : WithTop ℝ≥0) ≤ τ ω}.indicator (fun t ↦ H t ω) := by
-    ext t; simp only [indicator_apply, mem_ofPred_eq]
-  rw [hfun]
-  exact (hω T).indicator hS.nullMeasurableSet
 
 end TauCeti.LocallyBrownianIntegrable
 
