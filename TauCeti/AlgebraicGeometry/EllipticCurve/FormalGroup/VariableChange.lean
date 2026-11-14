@@ -234,6 +234,34 @@ theorem subst_formalCoordinate_formalDenom_mul (C C' : VariableChange R)
   simp only [inverseDenom_def, formalDenom_def, map_mul, map_pow] at hd
   grind
 
+/-- The formal coordinate times the transition denominator is the numerator
+`u² X + r W(C • W)` of the projective change of variables. -/
+private theorem formalCoordinate_mul_formalDenom (C : VariableChange R) (W : WeierstrassCurve R) :
+    (C.formalCoordinate W).toPowerSeries * C.formalDenom W =
+      PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W) := by
+  have h := C.formalDenom_mul_inverseDenom W
+  simp only [formalCoordinate_toPowerSeries, inverseDenom_def] at h ⊢
+  linear_combination (PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) * h
+
+/-- Substituting the formal coordinate of `C` into the numerator of `C'` gives the numerator of
+`C * C'` divided by the denominator of `C`. -/
+private theorem subst_formalCoordinate_numerator (C C' : VariableChange R)
+    (W : WeierstrassCurve R) :
+    subst (C.formalCoordinate (C' • W)).toPowerSeries
+        (PowerSeries.C (C'.u : R) ^ 2 * X + PowerSeries.C C'.r * formalW (C' • W)) =
+      (PowerSeries.C ((C * C').u : R) ^ 2 * X +
+        PowerSeries.C (C * C').r * formalW ((C * C') • W)) * C.inverseDenom (C' • W) := by
+  have hp : HasSubst (C.formalCoordinate (C' • W)).toPowerSeries :=
+    (C.formalCoordinate (C' • W)).hasSubst
+  have hw : subst (C.formalCoordinate (C' • W)).toPowerSeries (formalW (C' • W)) =
+      formalW ((C * C') • W) * C.inverseDenom (C' • W) := by
+    simpa only [inverseDenom_def, mul_smul] using C.subst_formalCoordinate_formalW (C' • W)
+  simp only [PowerSeries.subst_add hp, PowerSeries.subst_mul hp, PowerSeries.subst_pow hp,
+    PowerSeries.subst_X hp, PowerSeries.subst_C, ← PowerSeries.C_apply, hw]
+  simp only [formalCoordinate_toPowerSeries, mul_smul]
+  simp only [inverseDenom_def, mul_def, Units.val_mul, map_add, map_mul, map_pow]
+  ring
+
 /-- Formal parameter transitions reverse the native product, just like the
 maps of Weierstrass curves: first apply `C` to go to `C' • W`, then `C'` to go
 to `W`. This is the cocycle identity for the formal neighbourhood charts. -/
@@ -252,24 +280,14 @@ theorem formalCoordinate_mul (C C' : VariableChange R) (W : WeierstrassCurve R) 
   have he : subst P E * subst P e = 1 := by
     rw [← PowerSeries.coe_substAlgHom hp, ← map_mul, C'.formalDenom_mul_inverseDenom W,
       map_one]
-  have hw : subst P (formalW (C' • W)) = formalW ((C * C') • W) * d := by
-    simpa only [P, d, inverseDenom_def, mul_smul] using C.subst_formalCoordinate_formalW (C' • W)
   have hE : subst P E * D = H := subst_formalCoordinate_formalDenom_mul C C' W
   have hN : subst P (PowerSeries.C (C'.u : R) ^ 2 * X +
-      PowerSeries.C C'.r * formalW (C' • W)) = N * d := by
-    simp only [← PowerSeries.coe_substAlgHom hp, map_add, map_mul, map_pow,
-      PowerSeries.substAlgHom_X, PowerSeries.subst_C, ← PowerSeries.C_apply,
-      PowerSeries.coe_substAlgHom, hw]
-    simp only [P, formalCoordinate_toPowerSeries, N, mul_smul]
-    simp only [d, inverseDenom_def, mul_def, Units.val_mul, map_add, map_mul, map_pow]
-    ring
+      PowerSeries.C C'.r * formalW (C' • W)) = N * d := subst_formalCoordinate_numerator C C' W
   have hQ : subst P (C'.formalCoordinate W).toPowerSeries = N * d * subst P e := by
     simp only [formalCoordinate_toPowerSeries, PowerSeries.subst_mul hp, hN,
       e, inverseDenom_def]
-  have hH : ((C * C').formalCoordinate W).toPowerSeries * H = N := by
-    have h := (C * C').formalDenom_mul_inverseDenom W
-    simp only [formalCoordinate_toPowerSeries, N, H, inverseDenom_def] at *
-    linear_combination N * h
+  have hH : ((C * C').formalCoordinate W).toPowerSeries * H = N :=
+    formalCoordinate_mul_formalDenom (C * C') W
   apply TauCeti.FormalCoordinate.ext
   apply ((C * C').isUnit_formalDenom W).mul_right_cancel
   rw [hH, TauCeti.FormalCoordinate.toPowerSeries_mul, hQ]
