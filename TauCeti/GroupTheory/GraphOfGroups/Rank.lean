@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
+public import TauCeti.GroupTheory.Coprod.Finiteness
 public import TauCeti.GroupTheory.GraphOfGroups.GraphPresentation
 public import TauCeti.GroupTheory.FreeGroup.Rank
 
@@ -30,11 +31,13 @@ spanning tree has one positive dart fewer than there are vertices, which gives t
 of the rank: the rank plus the number of vertices is the number of geometric edges plus one.
 In particular the path group of a rose has rank its number of petals.
 
-The same holds for a graph of groups with trivial vertex groups over a rose: relative to its
-maximal tree its fundamental group is free on the petals
-(`TauCeti.GraphOfGroups.π₁Tree.roseEquivFreeGroup`), so it is finitely generated exactly when
-there are finitely many petals (`TauCeti.GraphOfGroups.π₁Tree.fg_rose_iff_finite`), and then its
-rank is their number (`TauCeti.GraphOfGroups.π₁Tree.rank_rose`).
+The fundamental group of a graph of groups with finitely many vertices and geometric edges and
+finitely generated vertex groups is finitely generated, relative to any set of darts. For a
+graph of groups with trivial vertex groups over a rose, relative to its maximal tree, the
+fundamental group is free on the petals (`TauCeti.GraphOfGroups.π₁Tree.roseEquivFreeGroup`), so it
+is finitely generated exactly when there are finitely many petals
+(`TauCeti.GraphOfGroups.π₁Tree.fg_rose_iff_finite`), and then its rank is their number
+(`TauCeti.GraphOfGroups.π₁Tree.rank_rose`).
 
 ## References
 
@@ -159,7 +162,15 @@ end TauCeti.SerreGraph.GraphPresentation
 
 namespace TauCeti.GraphOfGroups.π₁Tree
 
-universe v w x
+universe u v w x
+
+/-- The fundamental group of a graph of groups with finitely many vertices and geometric edges
+and finitely generated vertex groups is finitely generated, relative to any set of darts. -/
+instance {Γ : SerreGraph.{u, v}} (𝔸 : GraphOfGroups.{u, v, w, x} Γ) (T : Set Γ.E) [Finite Γ.V]
+    [Finite Γ.GeomEdge] [∀ a, Group.FG (𝔸.vertexGroup a)] : Group.FG (π₁Tree 𝔸 T) := by
+  obtain ⟨O, hO⟩ := Γ.exists_isOrientation
+  have : Finite O := Finite.of_injective _ hO.bijective_toGeomEdge.1
+  exact Group.fg_of_surjective (ofCoprod_surjective (𝔸 := 𝔸) (T := T) hO.mem_or_rev_mem)
 
 variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
   [∀ a, Subsingleton (𝔸.vertexGroup a)] (T : Set (SerreGraph.rose α).E) [IsEmpty T]
@@ -168,11 +179,6 @@ variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
 finitely generated exactly when the rose has finitely many petals. -/
 theorem fg_rose_iff_finite : Group.FG (π₁Tree 𝔸 T) ↔ Finite α :=
   (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 T)).fg_iff_finite
-
-/-- The fundamental group of a graph of groups with trivial vertex groups over a rose with
-finitely many petals is finitely generated. -/
-instance [Finite α] : Group.FG (π₁Tree 𝔸 T) :=
-  (fg_rose_iff_finite 𝔸 T).2 inferInstance
 
 /-- The fundamental group of a graph of groups with trivial vertex groups over a rose, when
 finitely generated, has rank the number of petals: for the rose with `n` petals it is free of
