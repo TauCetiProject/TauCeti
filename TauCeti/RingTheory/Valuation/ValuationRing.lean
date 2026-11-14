@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
+import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Valuation rings: squares `1 + 4c`, domination, surjective local maps, divisibility
@@ -30,6 +33,10 @@ as soon as every element of `S` is a fraction `φ a / φ b`: either `b ∣ a`, a
 the image of `a / b`, or `a ∣ b`, and the fraction is the inverse of the image of `b / a`, which
 is then a unit because `φ` is local.
 
+In a valuation ring an irreducible element `ϖ` generates the maximal ideal, with no discreteness
+hypothesis; so for a valuation subring `s` of a commutative ring the powers of the maximal ideal
+are, inside that ring, the scaled copies `ϖ ^ k • s`.
+
 Finally, on a monoid with total divisibility, a multiplicative map preserving zero and one is
 determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
@@ -43,6 +50,10 @@ discrete valuation ring on its own elements, and the points with zero support of
   lies in a ring `S` dominating `R` already lies in `R`.
 * `TauCeti.ValuationRing.surjective_of_forall_exists_mul_eq`: a local homomorphism from a ring
   with total divisibility to a domain whose elements are fractions of images is surjective.
+* `Irreducible.maximalIdeal_eq_of_preValuationRing`: an irreducible element
+  of a valuation ring generates its maximal ideal.
+* `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
+  of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
 
@@ -138,6 +149,29 @@ theorem surjective_of_forall_exists_mul_eq (φ : R →+* S) [IsLocalHom φ]
   rw [hzc, ← map_mul, IsUnit.val_inv_mul, map_one]
 
 end Surjective
+
+/-- In a valuation ring, an irreducible element generates the maximal ideal. No discrete valuation
+ring hypothesis is needed (compare `Irreducible.maximalIdeal_eq`). -/
+theorem _root_.Irreducible.maximalIdeal_eq_of_preValuationRing {R : Type*} [CommRing R]
+    [Nontrivial R] [PreValuationRing R] {ϖ : R} (hϖ : Irreducible ϖ) :
+    IsLocalRing.maximalIdeal R = Ideal.span {ϖ} := by
+  ext y
+  rw [Ideal.mem_span_singleton, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+  refine ⟨fun hy ↦ ?_, fun h hu ↦ hϖ.not_isUnit (isUnit_of_dvd_unit h hu)⟩
+  rcases _root_.ValuationRing.dvd_total y ϖ with h | h
+  · exact ((hϖ.dvd_iff.mp h).resolve_left hy).dvd
+  · exact h
+
+open Pointwise in
+/-- For an irreducible element `ϖ` of a subring `s` of a commutative ring `A` that is a valuation
+ring, the image in `A` of the power `𝓂 ^ k` of the maximal ideal of `s` is the scaled copy
+`ϖ ^ k • s`. For instance `s` can be the ring of integers of a valuation on a field. -/
+theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRing A] [SetLike S A]
+    [SubringClass S A] {s : S} [Nontrivial s] [PreValuationRing s] {ϖ : s} (hϖ : Irreducible ϖ)
+    (k : ℕ) :
+    ((↑) : s → A) '' ↑(IsLocalRing.maximalIdeal s ^ k) = (ϖ : A) ^ k • (s : Set A) := by
+  rw [hϖ.maximalIdeal_eq_of_preValuationRing]
+  exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.2 k
 
 end ValuationRing
 

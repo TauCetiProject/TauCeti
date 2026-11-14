@@ -19,6 +19,7 @@ import Mathlib.RingTheory.Unramified.Field
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
+import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.IntegralClosure.Transfer
@@ -101,6 +102,8 @@ integral closure of `B` in it.
 * `TauCeti.isSeparable_abhyankarModel_quotient`: over a local ring, for `ϖ` in the maximal ideal,
   `u` a unit, `e` invertible in `B` and `d ≠ 0`, the residue fields at maximal ideals over the
   maximal ideal of `B` are separable over the residue field of `B`.
+* `TauCeti.isSeparable_residueField_localization_abhyankarModel`: under the same hypotheses, the
+  same holds for the residue fields of the local rings at maximal ideals that are local over `B`.
 
 ## References
 
@@ -562,6 +565,19 @@ theorem isSeparable_abhyankarModel_quotient (hϖ : ϖ ∈ maximalIdeal B) (hu : 
   have := finite_abhyankarModel (ϖ := ϖ) (u := u) he₀ hd
   have : Module.Finite (B ⧸ maximalIdeal B) (abhyankarModel ϖ u e d ⧸ M) := inferInstance
   exact Algebra.FormallyUnramified.isSeparable _ _
+
+/-- **The residue fields of the local rings of the Abhyankar model are separable.** Let `B` be a
+local ring, `ϖ` an element of its maximal ideal, `u` a unit and `e` invertible in `B`, and
+`d ≠ 0`. If the local ring of `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)` at a maximal ideal is local
+over `B`, then its residue field is separable over the residue field of `B`. -/
+theorem isSeparable_residueField_localization_abhyankarModel (hϖ : ϖ ∈ maximalIdeal B)
+    (hu : IsUnit u) (he : IsUnit (e : B)) (hd : d ≠ 0)
+    [IsLocalHom (algebraMap B (Localization.AtPrime M))] :
+    Algebra.IsSeparable (ResidueField B) (ResidueField (Localization.AtPrime M)) := by
+  have : M.LiesOver (maximalIdeal B) :=
+    ⟨by rw [← IsLocalization.AtPrime.under_maximalIdeal (Localization.AtPrime M) M,
+      Ideal.under_under, ← Ideal.over_def _ (maximalIdeal B)]⟩
+  exact isSeparable_residueField_localization M (isSeparable_abhyankarModel_quotient M hϖ hu he hd)
 
 end LocalRing
 
