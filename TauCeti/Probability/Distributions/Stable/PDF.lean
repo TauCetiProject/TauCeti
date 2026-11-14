@@ -47,6 +47,10 @@ is a Dirac mass, which has no density; its characteristic function is not integr
   parameter value.
 * `TauCeti.Probability.stablePDFReal_nonneg`, `TauCeti.Probability.continuous_stablePDFReal` and
   `TauCeti.Probability.stablePDFReal_le`: nonnegativity, continuity and the uniform bound.
+* `TauCeti.Probability.norm_stablePDFReal_le_integral`: the bound `(2π)⁻¹ ∫ ‖φ‖` (Bochner
+  integral) for every parameter value.
+* `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale`: a zero-scale stable law is
+  singular with respect to Lebesgue measure.
 * `TauCeti.Probability.hasPDF_of_hasLaw_stableMeasure`,
   `TauCeti.Probability.pdf_eq_stablePDF_of_hasLaw_stableMeasure` and
   `TauCeti.Probability.rnDeriv_stableMeasure`: the density interfaces.
@@ -144,6 +148,19 @@ theorem stablePDFReal_zero_scale (α β m x : ℝ) : stablePDFReal α β 0 m x =
   · exact stablePDFReal_of_invalid
       (by simpa only [mem_Ioc, not_and_or, not_lt, not_le, or_assoc] using hv) 0 m x
 
+/-- At scale zero the stable density vanishes. -/
+@[simp]
+theorem stablePDF_zero_scale (α β m : ℝ) : stablePDF α β 0 m = 0 := by
+  ext x
+  simp [stablePDF_eq_ofReal]
+
+/-- For invalid shapes the stable density vanishes. -/
+@[simp]
+theorem stablePDF_of_invalid (h : α ≤ 0 ∨ 2 < α ∨ 1 < |β|) (s : ℝ≥0) (m : ℝ) :
+    stablePDF α β s m = 0 := by
+  ext x
+  simp [stablePDF_eq_ofReal, stablePDFReal_of_invalid h]
+
 /-- The stable density is nonnegative. -/
 theorem stablePDFReal_nonneg (α β : ℝ) (s : ℝ≥0) (m x : ℝ) : 0 ≤ stablePDFReal α β s m x :=
   Measure.charFunDensity_nonneg x
@@ -168,24 +185,40 @@ theorem measurable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
 theorem measurable_stablePDF (α β : ℝ) (s : ℝ≥0) (m : ℝ) : Measurable (stablePDF α β s m) :=
   (measurable_stablePDFReal α β s m).ennreal_ofReal
 
-/-- **The stable density is bounded.** For valid shapes and positive scale it is at most
-`Γ(1/α) / (π α s)`, which is `(2π)⁻¹ ∫ |φ|`. -/
-theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) (m x : ℝ) :
-    stablePDFReal α β s m x ≤ Real.Gamma α⁻¹ / (π * α * s) := by
-  have h := integral_abs_rpow_mul_exp_neg_abs_rpow hα.1 (q := 0) (by norm_num)
-  simp only [Real.rpow_zero, one_mul, zero_add, one_div] at h
-  refine (Measure.charFunDensity_le _ x).trans_eq ?_
-  simp_rw [norm_charFun_stableMeasure hα hβ]
-  rw [Measure.integral_comp_mul_left (fun t : ℝ ↦ Real.exp (-|t| ^ α)), h, abs_inv,
-    abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
-  field_simp
+/-- The stable density is uniformly bounded for every parameter value, by `(2π)⁻¹` times the
+Bochner integral `∫ t, ‖φ t‖` of the modulus of its characteristic function `φ`. For positive
+scale this integral is the `L¹` norm of `φ`; it vanishes when `φ` is not integrable (valid
+parameters at scale zero) and when `φ = 0` (invalid parameters). -/
+theorem norm_stablePDFReal_le_integral (α β : ℝ) (s : ℝ≥0) (m x : ℝ) :
+    ‖stablePDFReal α β s m x‖ ≤ (2 * Real.pi)⁻¹ * ∫ t, ‖charFun (stableMeasure α β s m) t‖ := by
+  rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x), stablePDFReal_def]
+  exact Measure.charFunDensity_le _ x
 
-/-- For valid shapes and positive scale, the norm of the stable density is at most
-`Γ(1/α) / (π α s)`. -/
-theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) (m x : ℝ) :
+/-- **The stable density is bounded.** For `0 < α ≤ 2` it is at most `Γ(1/α) / (π α s)`, which is
+`(2π)⁻¹ ∫ |φ|` for valid skewness and positive scale. For invalid skewness the density vanishes
+and the right-hand side is nonnegative. At scale zero both sides vanish by the division-by-zero
+convention. -/
+theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (β : ℝ) (s : ℝ≥0) (m x : ℝ) :
+    stablePDFReal α β s m x ≤ Real.Gamma α⁻¹ / (π * α * s) := by
+  by_cases hβ : |β| ≤ 1
+  · rcases eq_zero_or_pos s with rfl | hs
+    · simp
+    · have h := integral_abs_rpow_mul_exp_neg_abs_rpow hα.1 (q := 0) (by norm_num)
+      simp only [Real.rpow_zero, one_mul, zero_add, one_div] at h
+      refine (Measure.charFunDensity_le _ x).trans_eq ?_
+      simp_rw [norm_charFun_stableMeasure hα hβ]
+      rw [Measure.integral_comp_mul_left (fun t : ℝ ↦ Real.exp (-|t| ^ α)), h, abs_inv,
+        abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
+      field_simp
+  · rw [stablePDFReal_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))]
+    have := hα.1
+    positivity
+
+/-- For `0 < α ≤ 2`, the norm of the stable density is at most `Γ(1/α) / (π α s)`. -/
+theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (β : ℝ) (s : ℝ≥0) (m x : ℝ) :
     ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
-  exact stablePDFReal_le hα hβ hs m x
+  exact stablePDFReal_le hα β s m x
 
 /-! ### The law as a measure with density -/
 
@@ -236,18 +269,31 @@ theorem hasPDF_of_hasLaw_stableMeasure (hs : 0 < s) (hX : HasLaw X (stableMeasur
   hasPDF_of_hasLaw_withDensity (measurable_stablePDF α β s m).aemeasurable
     (by rwa [stableMeasure_eq_withDensity α β hs] at hX)
 
-/-- The density of a random variable with a positive-scale stable law is `stablePDF`. -/
-theorem pdf_eq_stablePDF_of_hasLaw_stableMeasure (hs : 0 < s)
-    (hX : HasLaw X (stableMeasure α β s m) P) :
-    pdf X P volume =ᵐ[volume] stablePDF α β s m :=
-  pdf_eq_of_hasLaw_withDensity (measurable_stablePDF α β s m).aemeasurable
-    (by rwa [stableMeasure_eq_withDensity α β hs] at hX)
+/-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
+shape or skewness parameters, this is the singularity of the zero measure. -/
+theorem mutuallySingular_stableMeasure_zero_scale (α β m : ℝ) :
+    stableMeasure α β 0 m ⟂ₘ volume := by
+  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  · rw [stableMeasure_zero_scale h.1 h.2]
+    exact mutuallySingular_dirac m volume
+  · rw [stableMeasure_of_not_valid h]
+    exact Measure.MutuallySingular.zero_left
 
-/-- The Radon–Nikodym derivative of a positive-scale stable law against Lebesgue measure is
-`stablePDF`. -/
-theorem rnDeriv_stableMeasure (α β : ℝ) (hs : 0 < s) (m : ℝ) :
+/-- The Radon–Nikodym derivative of a stable law against Lebesgue measure is `stablePDF`. At
+scale zero the law is a Dirac mass or zero, so both sides vanish almost everywhere. -/
+theorem rnDeriv_stableMeasure (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
     (stableMeasure α β s m).rnDeriv volume =ᵐ[volume] stablePDF α β s m := by
-  rw [stableMeasure_eq_withDensity α β hs]
-  exact Measure.rnDeriv_withDensity volume (measurable_stablePDF α β s m)
+  rcases eq_zero_or_pos s with rfl | hs
+  · rw [stablePDF_zero_scale]
+    exact (mutuallySingular_stableMeasure_zero_scale α β m).rnDeriv_ae_eq_zero
+  · rw [stableMeasure_eq_withDensity α β hs]
+    exact Measure.rnDeriv_withDensity volume (measurable_stablePDF α β s m)
+
+/-- The density of a random variable with a stable law is `stablePDF`. At scale zero the law is
+singular, so both sides vanish almost everywhere. -/
+theorem pdf_eq_stablePDF_of_hasLaw_stableMeasure (hX : HasLaw X (stableMeasure α β s m) P) :
+    pdf X P volume =ᵐ[volume] stablePDF α β s m := by
+  rw [pdf_def, hX.map_eq]
+  exact rnDeriv_stableMeasure α β s m
 
 end TauCeti.Probability
