@@ -333,6 +333,18 @@ def toRiemannianIsometry (f : M ≃ᵢ N) : RiemannianIsometry I J M N :=
 theorem coe_toRiemannianIsometry (f : M ≃ᵢ N) : ⇑(f.toRiemannianIsometry I J) = f :=
   (rfl)
 
+/-- Forgetting smoothness after `toRiemannianIsometry` recovers the isometry equivalence. -/
+@[simp]
+theorem toIsometryEquiv_toRiemannianIsometry (f : M ≃ᵢ N) :
+    ((f.toRiemannianIsometry I J : RiemannianIsometry I J M N) : M ≃ᵢ N) = f :=
+  IsometryEquiv.ext fun _ ↦ (rfl)
+
+/-- `toRiemannianIsometry` recovers a smooth Riemannian isometry from its isometry equivalence. -/
+@[simp]
+theorem toRiemannianIsometry_toIsometryEquiv (Φ : RiemannianIsometry I J M N) :
+    (Φ : M ≃ᵢ N).toRiemannianIsometry I J = Φ :=
+  RiemannianIsometry.ext fun _ ↦ (rfl)
+
 end IsometryEquiv
 
 namespace TauCeti.RiemannianIsometry
