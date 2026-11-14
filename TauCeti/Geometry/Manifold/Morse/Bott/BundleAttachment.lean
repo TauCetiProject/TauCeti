@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 import TauCeti.Topology.VectorBundle.DiscSphere
 
 /-!
@@ -40,9 +41,11 @@ Whitney sum `Eᵤ i ×ᵇ Eₛ i` of two smooth vector bundles with smooth fibre
 base `B i`, whose target contains the closed tube `‖u‖² + ‖v‖² ≤ 2ε` and in which
 `f = c - ‖u‖² + ‖v‖²`. Different submanifolds may have different dimensions, indices and
 codimensions. If the sources of the `Ψ i` are disjoint, the band `f⁻¹[c - ε, c + ε]` is compact
-and its critical points lie in these sources, then `M_{c-ε}` with the negative disc bundles of the
-`Ψ i` attached is a strong deformation retract of `M_{c+ε}`
-(`TauCeti.exists_sublevel_union_negativeDiscBundles_deformation`). The companion theorem
+and its critical points lie in these sources, then the intersection with `M_{c+ε}` of `M_{c-ε}`
+with the negative disc bundles of the `Ψ i` attached is a strong deformation retract of `M_{c+ε}`
+(`TauCeti.exists_sublevel_union_negativeDiscBundles_deformation`). For `0 ≤ ε` the intersection
+is `M_{c-ε}` with the negative disc bundles attached; for `ε ≤ 0` it is `M_{c+ε}` itself, and the
+retraction is the identity. The companion theorem
 `TauCeti.exists_sublevel_union_negativeDiscBundle_deformation` (`Morse/Bott/Attachment.lean`)
 states the attachment intrinsically on `M`, for a tube carrying the squared norms `s, t` and a
 scaling of the positive directions; here the normal forms are maps to actual Whitney sums of
@@ -66,8 +69,9 @@ bundles attached.
 ## Main results
 
 * `TauCeti.exists_sublevel_union_negativeDiscBundles_deformation`: the sublevel `M_{c+ε}` strong
-  deformation retracts onto `M_{c-ε}` with the negative disc bundles of Morse–Bott normal forms
-  attached.
+  deformation retracts onto its intersection with `M_{c-ε}` with the negative disc bundles of
+  Morse–Bott normal forms attached; for `0 ≤ ε` this is `M_{c-ε}` with the negative disc bundles
+  attached, and for `ε ≤ 0` the retraction is the identity.
 
 ## References
 
@@ -181,14 +185,6 @@ private theorem eqOn_zero_of_notMem_image (hμ₀ : ∀ r, 2 * ε ≤ r → μ r
     exact hy ⟨Ψ i y, not_lt.1 h, (Ψ i).toOpenPartialHomeomorph.left_inv hys⟩
   exact hμ₀ _ (by nlinarith [sq_nonneg ‖(Ψ i y).2.2‖])
 
-/-- The image of the closed tube `‖u‖² + ‖v‖² ≤ 2ε` lies in the source of its normal form. -/
-private theorem image_tube_subset_source
-    (hdisc : ∀ i, {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target) (i : ι) :
-    (Ψ i).toOpenPartialHomeomorph.symm '' {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆
-      (Ψ i).source := by
-  rintro _ ⟨z, hz, rfl⟩
-  exact (Ψ i).toOpenPartialHomeomorph.map_target (hdisc i hz)
-
 variable [Fintype ι] (hΨ : Pairwise (Disjoint on fun i ↦ (Ψ i).source))
 include hΨ
 
@@ -274,18 +270,12 @@ include hμ₀
 /-- Milnor's function has the same sublevel `{F ≤ c + ε}` as `f`: inside the tube
 `‖u‖² + 2‖v‖² < 2ε` of a normal form, `f = c - ‖u‖² + ‖v‖² < c + ε`. -/
 private theorem setOf_milnorBottFunction_le (hμ_nonneg : ∀ r, 0 ≤ μ r) :
-    {x | milnorBottFunction Ψ f μ x ≤ c + ε} = {x | f x ≤ c + ε} := by
-  ext x
-  refine ⟨fun hx ↦ ?_, fun hx ↦ (lowerOn_le (fun _ _ _ ↦ hμ_nonneg _) x).trans hx⟩
-  rw [mem_ofPred_eq] at hx ⊢
-  by_cases hxs : ∃ i, x ∈ (Ψ i).source
-  · obtain ⟨i, hi⟩ := hxs
-    rw [milnorBottFunction_of_mem hΨ hi] at hx
-    rcases le_or_gt (2 * ε) (‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2) with h | h
-    · rwa [hμ₀ _ h, sub_zero] at hx
-    · rw [hf i x hi]
-      nlinarith [sq_nonneg ‖(Ψ i x).2.1‖]
-  · rwa [milnorBottFunction, lowerOn_of_forall_notMem (not_exists.1 hxs)] at hx
+    {x | milnorBottFunction Ψ f μ x ≤ c + ε} = {x | f x ≤ c + ε} :=
+  setOf_lowerOn_le hΨ (fun _ _ _ ↦ hμ_nonneg _) fun i x hx hμx ↦ by
+    have h : ‖(Ψ i x).2.1‖ ^ 2 + 2 * ‖(Ψ i x).2.2‖ ^ 2 < 2 * ε :=
+      not_le.1 fun h ↦ hμx (hμ₀ _ h)
+    rw [hf i x hx]
+    nlinarith [sq_nonneg ‖(Ψ i x).2.1‖]
 
 /-- Points of `{F ≤ c - ε}` moved by Milnor's retraction lie in the closed tubes
 `‖u‖² + ‖v‖² ≤ 2ε`, where the retraction only shrinks the second component, so it keeps them
@@ -403,27 +393,29 @@ variable [∀ i b, InnerProductSpace ℝ (Eᵤ i b)] [∀ i b, InnerProductSpace
   (hdisc : ∀ i, {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε} ⊆ (Ψ i).target)
 include hdisc
 
+variable [T2Space M]
+
 omit [Fintype ι] hΨ hf hμ₀ in
-private theorem isCompact_image_tube (i : ι) :
-    IsCompact ((Ψ i).toOpenPartialHomeomorph.symm ''
+/-- The image of the closed tube `‖u‖² + ‖v‖² ≤ 2ε` is closed, as the tube is compact. -/
+private theorem isClosed_image_tube (i : ι) :
+    IsClosed ((Ψ i).toOpenPartialHomeomorph.symm ''
       {z | ‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ 2 * ε}) :=
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (HB := HB i) (IB := IB i)
     (n := ∞) (F := Fᵤ i) (V := Eᵤ i)
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (HB := HB i) (IB := IB i)
     (n := ∞) (F := Fₛ i) (V := Eₛ i)
-  (isCompact_setOf_norm_sq_add_norm_sq_le_prod_bundle (r := fun _ ↦ 2 * ε)
-    continuous_const).image_of_continuousOn
-    ((Ψ i).toOpenPartialHomeomorph.continuousOn_symm.mono (hdisc i))
-
-variable [T2Space M]
+  (Ψ i).toOpenPartialHomeomorph.isClosed_image_symm_of_isCompact
+    (isCompact_setOf_norm_sq_add_norm_sq_le_prod_bundle (r := fun _ ↦ 2 * ε) continuous_const)
+    (hdisc i)
 
 omit hΨ hf in
 /-- **Milnor's function is smooth.** -/
 private theorem contMDiff_milnorBottFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hμ : ContDiff ℝ ∞ μ) : ContMDiff I 𝓘(ℝ) ∞ (milnorBottFunction Ψ f μ) :=
-  contMDiff_lowerOn (eqOn_zero_of_notMem_image hμ₀)
-    (fun i ↦ (isCompact_image_tube hdisc i).isClosed) (fun i ↦ (Ψ i).open_source)
-    (image_tube_subset_source hdisc) hfs fun i ↦
+  contMDiff_lowerOn (eqOn_zero_of_notMem_image hμ₀) (isClosed_image_tube hdisc)
+    (fun i ↦ (Ψ i).open_source)
+    (fun i ↦ ((Ψ i).toOpenPartialHomeomorph.mapsTo_symm.mono_left (hdisc i)).image_subset) hfs
+    fun i ↦
     -- `μ (s + 2 t)` is a smooth function of `(s, t) = (‖u‖², ‖v‖²)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ (p.1 + 2 * p.2) := hμ.comp (by fun_prop)
     hg.contMDiff.comp_contMDiffOn
@@ -445,7 +437,8 @@ private theorem mfderiv_milnorBottFunction_ne_zero_of_mem_Icc
     exact mfderiv_milnorBottFunction_ne_zero hΨ hf hε hμ hμa hμ_nonneg hμ_eq
       ((contMDiff_milnorBottFunction hμ₀ hdisc hfs hμ).mdifferentiableAt (by simp)) hi hx.1
   · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (eqOn_zero_of_notMem_image hμ₀)
-      (fun i ↦ (isCompact_image_tube hdisc i).isClosed) (image_tube_subset_source hdisc) hcrit
+      (isClosed_image_tube hdisc)
+      (fun i ↦ ((Ψ i).toOpenPartialHomeomorph.mapsTo_symm.mono_left (hdisc i)).image_subset) hcrit
       (not_exists.1 hxs) hx
 
 end MilnorFunction
@@ -470,10 +463,13 @@ finite-dimensional fibres over compact bases, in which
 sources of the `Ψ i`. The negative disc bundle of `Ψ i` is the set of points with
 `‖u‖² ≤ ε` and `v = 0`.
 
-Then the lower sublevel `{f ≤ c - ε}` with these negative disc bundles attached is a strong
-deformation retract of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a
-homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. The disc
-bundles lie in `{f ≤ c}`, so intersecting with `{f ≤ c + ε}` does not change the retract. -/
+Then the intersection with `{f ≤ c + ε}` of the lower sublevel `{f ≤ c - ε}` with these negative
+disc bundles attached is a strong deformation retract of `{f ≤ c + ε}`: there is a retraction of
+`{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the identity which
+fixes it pointwise. For `0 ≤ ε` the disc bundles lie in `{f ≤ c}`, so the intersection does not
+change the retract: it is the lower sublevel with the negative disc bundles attached. For `ε ≤ 0`
+the sublevel `{f ≤ c + ε}` lies in `{f ≤ c - ε}`, so the intersection is `{f ≤ c + ε}` itself and
+the retraction is the identity. -/
 theorem exists_sublevel_union_negativeDiscBundles_deformation [Finite ι]
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (Ψ : ∀ i, PartialDiffeomorph I ((IB i).prod 𝓘(ℝ, Fᵤ i × Fₛ i)) M

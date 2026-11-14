@@ -29,6 +29,8 @@ critical submanifolds.
 
 ## Main results
 
+* `TauCeti.setOf_lowerOn_le`: lowering where `f` is below `b` keeps the sublevel `{f ≤ b}`.
+* `TauCeti.lowerOn_eq_of_notMem`: the lowered function is `f` outside the supports `K i`.
 * `TauCeti.contMDiff_lowerOn`: the lowered function is smooth.
 * `TauCeti.lowerOn_eventuallyEq`: it agrees with `f` near points outside the supports `K i`.
 
@@ -72,6 +74,21 @@ theorem lowerOn_of_forall_notMem (hx : ∀ i, x ∉ U i) : lowerOn U g f x = f x
 theorem lowerOn_le (hg : ∀ i, ∀ y ∈ U i, 0 ≤ g i y) (x : M) : lowerOn U g f x ≤ f x :=
   sub_le_self _ (Finset.sum_nonneg fun i _ ↦ indicator_nonneg (hg i) _)
 
+/-- Lowering by nonnegative functions does not change the sublevel `{f ≤ b}` if `f ≤ b` wherever
+some `g i` is nonzero on `U i`. -/
+theorem setOf_lowerOn_le (hU : Pairwise (Disjoint on U)) (hg : ∀ i, ∀ y ∈ U i, 0 ≤ g i y)
+    {b : ℝ} (hgb : ∀ i, ∀ y ∈ U i, g i y ≠ 0 → f y ≤ b) :
+    {x | lowerOn U g f x ≤ b} = {x | f x ≤ b} := by
+  ext x
+  refine ⟨fun hx ↦ ?_, fun hx ↦ (lowerOn_le hg x).trans hx⟩
+  rw [mem_ofPred_eq] at hx ⊢
+  by_cases hxU : ∃ i, x ∈ U i
+  · obtain ⟨i, hi⟩ := hxU
+    by_cases h : g i x = 0
+    · rwa [lowerOn_of_mem hU hi, h, sub_zero] at hx
+    · exact hgb i x hi h
+  · rwa [lowerOn_of_forall_notMem (not_exists.1 hxU)] at hx
+
 variable (hgK : ∀ i, EqOn (g i) 0 (U i \ K i))
 include hgK
 
@@ -83,6 +100,11 @@ private theorem indicator_eq_zero_of_notMem (i : ι) {y : M} (hy : y ∉ K i) :
     exact hgK i ⟨hyU, hy⟩
   · exact indicator_of_notMem hyU _
 
+/-- Outside the sets `K i`, the lowered function is `f`. -/
+theorem lowerOn_eq_of_notMem (hx : x ∉ ⋃ i, K i) : lowerOn U g f x = f x := by
+  rw [lowerOn_def, Finset.sum_eq_zero fun i _ ↦
+    indicator_eq_zero_of_notMem hgK i fun h ↦ hx (mem_iUnion.2 ⟨i, h⟩), sub_zero]
+
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   (hK : ∀ i, IsClosed (K i))
@@ -91,8 +113,7 @@ include hK
 /-- Outside the closed sets `K i`, the lowered function agrees with `f` on a neighbourhood. -/
 theorem lowerOn_eventuallyEq (hx : x ∉ ⋃ i, K i) : lowerOn U g f =ᶠ[𝓝 x] f := by
   filter_upwards [(isClosed_iUnion_of_finite hK).isOpen_compl.mem_nhds hx] with y hy
-  rw [lowerOn_def, Finset.sum_eq_zero fun i _ ↦
-    indicator_eq_zero_of_notMem hgK i fun h ↦ hy (mem_iUnion.2 ⟨i, h⟩), sub_zero]
+  exact lowerOn_eq_of_notMem hgK hy
 
 /-- **The lowered function is smooth** when `f` is smooth and each `g i` is smooth on the open set
 `U i` and vanishes on `U i` outside the closed set `K i ⊆ U i`. -/

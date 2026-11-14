@@ -15,13 +15,15 @@ Milnor's proof of the cell attachment theorem (Theorem 3.2 of *Morse Theory*) re
 `f` near each critical point by `F = f - μ(‖u‖² + 2‖v‖²)`, lowered by a cutoff in a chart and equal
 to `f` elsewhere (`TauCeti.lowerOn`). Bott's attachment of negative disc bundles runs the same
 construction fibrewise in normal forms over critical submanifolds. This file records the part of
-the critical-point argument that does not depend on the chart model: outside the sets `U i` on
-which `f` is lowered, critical points of the lowered function are critical points of `f`.
+the critical-point argument that does not depend on the chart model: if each lowering term `g i`
+vanishes on `U i` outside a closed set `K i ⊆ U i`, then outside the sets `U i` on which `f` is
+lowered, critical points of the lowered function are critical points of `f`.
 
 ## Main results
 
-* `TauCeti.mfderiv_lowerOn_ne_zero_of_forall_notMem`: outside the `U i`, the lowered function has
-  no critical points with values in a set `s` if `f` has none outside the `U i` with values in `s`.
+* `TauCeti.mfderiv_lowerOn_ne_zero_of_forall_notMem`: if each `g i` vanishes on `U i` outside a
+  closed set `K i ⊆ U i`, then outside the `U i` the lowered function has no critical points with
+  values in a set `s` if `f` has none outside the `U i` with values in `s`.
 
 ## References
 
@@ -40,8 +42,9 @@ variable {M ι : Type*} {U K : ι → Set M} {g : ι → M → ℝ} {f : M → �
   {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- Outside the sets `U i`, the lowered function has no critical points with values in `s`,
-provided the critical points of `f` with values in `s` lie in the `U i`. -/
+/-- Suppose each `g i` vanishes on `U i` outside a closed set `K i ⊆ U i`. Outside the sets
+`U i`, the lowered function has no critical points with values in `s`, provided the critical
+points of `f` with values in `s` lie in the `U i`. -/
 theorem mfderiv_lowerOn_ne_zero_of_forall_notMem (hgK : ∀ i, EqOn (g i) 0 (U i \ K i))
     (hK : ∀ i, IsClosed (K i)) (hKU : ∀ i, K i ⊆ U i) {s : Set ℝ}
     (hcrit : criticalPoints I f ∩ f ⁻¹' s ⊆ ⋃ i, U i) (hx : ∀ i, x ∉ U i)

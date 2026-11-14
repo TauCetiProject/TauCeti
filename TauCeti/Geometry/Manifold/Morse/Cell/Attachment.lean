@@ -13,6 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.Morse.QuadraticHandle
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Cell and handle attachment across a critical level
@@ -376,27 +377,22 @@ private theorem milnorFunction_eq_add_iff (hμ_nonneg : ∀ r, 0 ≤ μ r) :
 variable (hball : ∀ i, closedBall 0 √(2 * ε) ⊆ (ψ i).target)
 include hball
 
-omit [Fintype ι] hψ hf hμ₀ in
-private theorem isCompact_image_closedBall (i : ι) :
-    IsCompact ((ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
-  (isCompact_closedBall _ _).image_of_continuousOn
-    ((ψ i).toOpenPartialHomeomorph.continuousOn_symm.mono (hball i))
-
 variable [T2Space M]
 
-omit hψ hf hμ₀ [Fintype ι] [T2Space M] in
-/-- The image of the closed ball of radius `√(2ε)` of a chart lies in its source. -/
-private theorem image_closedBall_subset_source (i : ι) :
-    (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε) ⊆ (ψ i).source := by
-  rintro _ ⟨z, hz, rfl⟩
-  exact (ψ i).toOpenPartialHomeomorph.map_target (hball i hz)
+omit [Fintype ι] hψ hf hμ₀ in
+/-- The image of the closed ball of radius `√(2ε)` of a chart is closed, as the ball is compact. -/
+private theorem isClosed_image_closedBall (i : ι) :
+    IsClosed ((ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
+  (ψ i).toOpenPartialHomeomorph.isClosed_image_symm_of_isCompact (isCompact_closedBall _ _)
+    (hball i)
 
 /-- **Milnor's function is smooth.** -/
 private theorem contMDiff_milnorFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hμ : ContDiff ℝ ∞ μ) :
     ContMDiff I 𝓘(ℝ) ∞ (milnorFunction ψ f c μ) :=
   contMDiff_lowerOn (eqOn_zero_of_notMem_image hψ hf hμ₀)
-    (fun i ↦ (isCompact_image_closedBall hball i).isClosed) (fun i ↦ (ψ i).open_source)
-    (image_closedBall_subset_source hball) hfs fun i ↦
+    (isClosed_image_closedBall hball) (fun i ↦ (ψ i).open_source)
+    (fun i ↦ ((ψ i).toOpenPartialHomeomorph.mapsTo_symm.mono_left (hball i)).image_subset) hfs
+    fun i ↦
     -- `μ ((3 s + (t - c)) / 2)` is a smooth function of `(s, t) = (‖ψ i y‖², f y)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ ((3 * p.1 + (p.2 - c)) / 2) :=
       hμ.comp (by fun_prop)
@@ -446,8 +442,8 @@ private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
     exact mfderiv_milnorFunction_ne_zero hψ hf hε hμ hμa hμ_nonneg hμ_eq
       ((contMDiff_milnorFunction hψ hf hμ₀ hball hfs hμ).mdifferentiableAt (by simp)) hi h₁
   · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (eqOn_zero_of_notMem_image hψ hf hμ₀)
-      (fun i ↦ (isCompact_image_closedBall hball i).isClosed) (image_closedBall_subset_source hball)
-      hcrit
+      (isClosed_image_closedBall hball)
+      (fun i ↦ ((ψ i).toOpenPartialHomeomorph.mapsTo_symm.mono_left (hball i)).image_subset) hcrit
       (not_exists.1 hxs) ⟨h₁, h₂⟩
 
 end MilnorFunction

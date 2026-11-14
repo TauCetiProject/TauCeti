@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.ContMDiff.LowerOn
+import TauCeti.Geometry.Manifold.Morse.MilnorFunction
 import TauCeti.Topology.ContinuousMap.ApplyProdMk
 import TauCeti.Topology.Homotopy.DeformationRetract
 
@@ -290,10 +290,6 @@ private theorem tubeMilnorFunction_of_mem (hx : x ∈ W) :
     tubeMilnorFunction f s t W μ x = f x - μ (s x + 2 * t x) :=
   lowerOn_of_mem (i := ()) Subsingleton.pairwise hx
 
-private theorem tubeMilnorFunction_of_notMem (hx : x ∉ W) :
-    tubeMilnorFunction f s t W μ x = f x :=
-  lowerOn_of_forall_notMem fun _ ↦ hx
-
 private theorem tubeMilnorFunction_le (hμ : ∀ r, 0 ≤ μ r) (x : M) :
     tubeMilnorFunction f s t W μ x ≤ f x :=
   lowerOn_le (fun _ _ _ ↦ hμ _) x
@@ -305,37 +301,22 @@ include hs₀ hf hμ₀ in
 /-- Milnor's function has the same sublevel `{F ≤ c + ε}` as `f`: where it is lowered,
 `s + 2t < 2ε`, so `f = c - s + t < c + ε`. -/
 private theorem setOf_tubeMilnorFunction_le (hμ : ∀ r, 0 ≤ μ r) :
-    {x | tubeMilnorFunction f s t W μ x ≤ c + ε} = {x | f x ≤ c + ε} := by
-  ext x
-  refine ⟨fun hx ↦ ?_, fun hx ↦ (tubeMilnorFunction_le hμ x).trans hx⟩
-  simp only [mem_ofPred_eq] at hx ⊢
-  by_cases hxW : x ∈ W
-  · rw [tubeMilnorFunction_of_mem hxW] at hx
-    rcases le_or_gt (2 * ε) (s x + 2 * t x) with h | h
-    · rwa [hμ₀ _ h, sub_zero] at hx
-    · rw [hf x hxW]
-      linarith [hs₀ x hxW]
-  · rwa [tubeMilnorFunction_of_notMem hxW] at hx
+    {x | tubeMilnorFunction f s t W μ x ≤ c + ε} = {x | f x ≤ c + ε} :=
+  setOf_lowerOn_le Subsingleton.pairwise (fun _ _ _ ↦ hμ _) fun _ x hxW hμx ↦ by
+    have h : s x + 2 * t x < 2 * ε := not_le.1 fun h ↦ hμx (hμ₀ _ h)
+    rw [hf x hxW]
+    linarith [hs₀ x hxW]
 
 include hμ₀ in
-/-- Away from the part `{s + 2t ≤ 2ε}` of the tube, Milnor's function is `f`. -/
-private theorem tubeMilnorFunction_eq_of_notMem
-    (hx : x ∉ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) : tubeMilnorFunction f s t W μ x = f x := by
-  by_cases hxW : x ∈ W
-  · rw [tubeMilnorFunction_of_mem hxW, hμ₀ _ (not_le.1 fun h ↦ hx ⟨hxW, h⟩).le, sub_zero]
-  · exact tubeMilnorFunction_of_notMem hxW
+/-- The lowering term of Milnor's function vanishes on the tube away from its part
+`{s + 2t ≤ 2ε}`. -/
+private theorem eqOn_zero_of_notMem_tube :
+    EqOn (fun y ↦ μ (s y + 2 * t y)) 0 (W \ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) :=
+  fun _ hy ↦ hμ₀ _ (not_le.1 fun h ↦ hy.2 ⟨hy.1, h⟩).le
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
-
-include hμ₀ hK in
-/-- Away from the part `{s + 2t ≤ 2ε}` of the tube, Milnor's function agrees with `f` near each
-point. -/
-private theorem tubeMilnorFunction_eventuallyEq
-    (hx : x ∉ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) : tubeMilnorFunction f s t W μ =ᶠ[𝓝 x] f :=
-  eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun _ hy ↦
-    tubeMilnorFunction_eq_of_notMem hμ₀ hy
 
 include hμ₀ hK in
 /-- **Milnor's function is smooth.** The lowering term is supported in the compact part
@@ -344,7 +325,7 @@ private theorem contMDiff_tubeMilnorFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W) (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hμs : ContDiff ℝ ∞ μ) :
     ContMDiff I 𝓘(ℝ) ∞ (tubeMilnorFunction f s t W μ) :=
   contMDiff_lowerOn (K := fun _ ↦ {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
-    (fun _ y hy ↦ hμ₀ _ (not_le.1 fun h ↦ hy.2 ⟨hy.1, h⟩).le) (fun _ ↦ hK.isClosed) (fun _ ↦ hW)
+    (fun _ ↦ eqOn_zero_of_notMem_tube hμ₀) (fun _ ↦ hK.isClosed) (fun _ ↦ hW)
     (fun _ _ hx ↦ hx.1) hfs fun _ ↦
     -- `μ (a + 2 b)` is a smooth function of `(a, b) = (s y, t y)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ (p.1 + 2 * p.2) := hμs.comp (by fun_prop)
@@ -469,12 +450,13 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation (hfs : ContMDiff I 
           linarith [hs₀ x hxW]
         · linarith [hμ_nonneg (s x)]
       · exact mfderiv_tubeMilnorFunction_ne_zero hf hW hs ht hμ hμa hdir hxW htx
-    · have hFx : F x = f x := tubeMilnorFunction_of_notMem hxW
-      rw [(tubeMilnorFunction_eventuallyEq hμ₀ hK fun h ↦ hxW h.1).mfderiv_eq]
-      exact fun h0 ↦ hxW (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, hFx ▸ h₁, hFx ▸ h₂⟩)
+    · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (K := fun _ ↦ K)
+        (fun _ ↦ eqOn_zero_of_notMem_tube hμ₀) (fun _ ↦ hK.isClosed) (fun _ _ hx ↦ hx.1)
+        (hcrit.trans (subset_iUnion (fun _ : Unit ↦ W) ())) (fun _ ↦ hxW) ⟨h₁, h₂⟩
   -- Off `K`, a point of `{F ≤ c - ε}` lies in `{f ≤ c - ε}`.
   have hXK (x : M) (hx : x ∈ {x | F x ≤ c - ε}) (hxK : x ∉ K) : f x ≤ c - ε :=
-    (tubeMilnorFunction_eq_of_notMem hμ₀ hxK).symm.trans_le hx
+    (lowerOn_eq_of_notMem (K := fun _ ↦ K) (fun _ ↦ eqOn_zero_of_notMem_tube hμ₀)
+      (by rwa [iUnion_const])).symm.trans_le hx
   -- Scaling the positive directions does not increase `F`.
   have hXφ (τ : unitInterval) (x : W) (hx : (x : M) ∈ {x | F x ≤ c - ε}) :
       (φ (τ, x) : M) ∈ {x | F x ≤ c - ε} := by

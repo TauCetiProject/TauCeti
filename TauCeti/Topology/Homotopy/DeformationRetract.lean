@@ -9,6 +9,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.LocalAtTarget
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Topology.Homeomorph.Extend
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Deformation retractions
@@ -440,8 +441,8 @@ private theorem continuous_chartDeformation [T2Space M] [Finite ι] (hC : ∀ i,
     Continuous fun p : I × X ↦ chartDeformation φ G p.1 p.2 := by
   have hval : Continuous fun q : I × X ↦ (q.2 : M) := continuous_subtype_val.comp continuous_snd
   set K := ⋃ i, (φ i).symm '' C i
-  have hK : IsClosed K := (isCompact_iUnion fun i ↦ (hC i).image_of_continuousOn
-    ((φ i).continuousOn_symm.mono (hCφ i))).isClosed
+  have hK : IsClosed K := isClosed_iUnion_of_finite fun i ↦
+    (φ i).isClosed_image_symm_of_isCompact (hC i) (hCφ i)
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   by_cases h : ∃ i, (p.2 : M) ∈ (φ i).source
   · obtain ⟨i, hi⟩ := h
