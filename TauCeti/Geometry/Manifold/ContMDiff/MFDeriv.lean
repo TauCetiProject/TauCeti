@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
-# Joint regularity of derivatives in families
+# Regularity of differentials applied to sections and of derivatives in families
 
 For a jointly `C^m` family of maps from a normed space to another normed space, the derivative
 in the vector-space variable is jointly `C^n` when `n + 1 ≤ m`. The parameter may range over
@@ -23,7 +24,14 @@ maps `T(f q) : TM → TN` form a jointly `C^n` map `Q × TM → TN`
 diffeomorphisms act smoothly on tangent tensors, for instance in pulling back a family of almost
 complex structures along a family of diffeomorphisms.
 
+The differential of a vector-valued function is a section of the bundle of linear maps;
+its regularity at a point also loses one derivative.
+
 ## Main results
+
+* `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
+  `C^n` section of the bundle of linear maps;
+  `ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv` is the pointwise statement.
 
 * `ContMDiffAt.fderiv_right`: the derivative in the vector-space variable of a jointly `C^m`
   family is jointly `C^n` when `n + 1 ≤ m`.
@@ -31,6 +39,9 @@ complex structures along a family of diffeomorphisms.
   of a jointly `C^n` family is jointly `C^m` when `m + i ≤ n`.
 * `ContMDiff.contMDiff_tangentMap_family`: the tangent maps of a jointly `C^m` family of maps
   between manifolds form a jointly `C^n` map when `n + 1 ≤ m`.
+
+Applying the differential of a `C^(n+1)` map to a `C^n` tangent section gives a `C^n`
+tangent field along the map (`ContMDiffAt.mfderiv_apply_sectionAlong`).
 
 ## Formal sources
 
@@ -43,6 +54,63 @@ public section
 
 open scoped ContDiff Manifold
 
+section SectionAlong
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP]
+  [TopologicalSpace HP] [TopologicalSpace P] [ChartedSpace HP P]
+  {IP : ModelWithCorners 𝕜 EP HP} {b : P → M}
+  {f : M → N} {s : ∀ y : P, TangentSpace I (b y)} {x : P} {m n : ℕ∞ω} {u : Set P}
+
+/-- The differential of a map regular at a point sends a tangent section regular within a
+set to a field along the map, losing one derivative of the map. No metric or
+finite-dimensionality assumption is needed. -/
+theorem ContMDiffWithinAt.mfderiv_apply_sectionAlong
+    (hs : ContMDiffWithinAt IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y)) u x)
+    (hf : ContMDiffAt I J m f (b x)) (hnm : n + 1 ≤ m) :
+    ContMDiffWithinAt IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) u x := by
+  -- The tangent map composed with a section is the bundled differential applied to that section.
+  simpa only [Function.comp_def, tangentMap] using
+    (hf.contMDiffAt_tangentMap hnm).comp_contMDiffWithinAt x hs
+
+/-- The differential of a `C^m` map sends a `C^n` tangent section to a `C^n` field along
+it when `n + 1 ≤ m`. No metric or finite-dimensionality assumption is needed. -/
+theorem ContMDiffAt.mfderiv_apply_sectionAlong (hf : ContMDiffAt I J m f (b x))
+    (hs : ContMDiffAt IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y)) x)
+    (hnm : n + 1 ≤ m) :
+    ContMDiffAt IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) x :=
+  ContMDiffWithinAt.mfderiv_apply_sectionAlong hs hf hnm
+
+/-- The differential sends a tangent field along a base map, regular on a set, to a regular
+field along the composite when the map is regular at the image points and `n + 1 ≤ m`. -/
+theorem ContMDiffOn.mfderiv_apply_sectionAlong
+    (hs : ContMDiffOn IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y)) u)
+    (hf : ∀ x ∈ u, ContMDiffAt I J m f (b x)) (hnm : n + 1 ≤ m) :
+    ContMDiffOn IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) u :=
+  fun x hx ↦ (hs x hx).mfderiv_apply_sectionAlong (hf x hx) hnm
+
+/-- The differential of a `C^m` map sends a `C^n` tangent field along any base map to a
+`C^n` field along the composite when `n + 1 ≤ m`. -/
+theorem ContMDiff.mfderiv_apply_sectionAlong (hf : ContMDiff I J m f)
+    (hs : ContMDiff IP (I.prod 𝓘(𝕜, E)) n
+      (fun y ↦ Bundle.TotalSpace.mk' E (b y) (s y))) (hnm : n + 1 ≤ m) :
+    ContMDiff IP (J.prod 𝓘(𝕜, F)) n
+      (fun y ↦ Bundle.TotalSpace.mk' F (f (b y)) (mfderiv I J f (b y) (s y))) :=
+  fun x ↦ (hf (b x)).mfderiv_apply_sectionAlong (hs x) hnm
+
+end SectionAlong
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -130,3 +198,39 @@ theorem ContMDiff.contMDiff_tangentMap_family [IsManifold IQ m Q] {f : Q → M �
   exact hd.symm
 
 end TangentMap
+
+section VectorValued
+
+open Bundle
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The differential of a function that is `C^(n+1)` at a point is a `C^n` section of the
+bundle of linear maps at that point. -/
+theorem ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv [IsManifold I 1 M]
+    {n : WithTop ℕ∞} {f : M → F} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, F) (n + 1) f x) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun y : M ↦ TangentSpace I y →L[ℝ] F) y (mvfderiv I f y)) x := by
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, (hf.mfderiv_const le_rfl).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun y ↦ ?_)⟩
+  -- The target trivialization and its tangent coordinates are identities; the remaining
+  -- comparison is the evaluation lemma for the vector-valued derivative.
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
+    inTangentCoordinates, TangentBundle.continuousLinearMapAt_model_space]
+  ext v
+  exact mvfderiv_apply_eq_mfderiv_apply f y _
+
+/-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
+section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
+when `F = ℝ`. -/
+theorem ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {f : M → F} (hf : ContMDiff I 𝓘(ℝ, F) (n + 1) f) :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) x (mvfderiv I f x)) :=
+  fun x ↦ (hf x).contMDiffAt_totalSpaceMk_mvfderiv
+
+end VectorValued

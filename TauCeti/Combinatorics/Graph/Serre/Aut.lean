@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Convex
 public import TauCeti.Combinatorics.Graph.Serre.Dist
+public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.Combinatorics.Quiver.Cast
 public import Mathlib.Data.ZMod.Basic
@@ -14,10 +15,11 @@ public import Mathlib.Data.ZMod.Basic
 /-!
 # Automorphisms of Serre graphs
 
-An automorphism of a Serre graph is a pair of bijections of its vertices and darts commuting with
-the source and reversal maps. Automorphisms form a group, `SerreGraph.Aut Γ`, acting on the
-vertices, on the darts and on the geometric edges. A group action on a Serre graph is then a
-homomorphism into this group, as in Serre's *Trees*.
+An automorphism of a Serre graph is an isomorphism of the graph with itself, that is, a pair of
+bijections of its vertices and darts commuting with the source and reversal maps. Automorphisms
+form a group, `SerreGraph.Aut Γ`, under composition of isomorphisms, acting on the vertices, on the
+darts and on the geometric edges. A group action on a Serre graph is then a homomorphism into this
+group, as in Serre's *Trees*.
 
 An automorphism translates a path to a path of the same length through the translated darts,
 reduced exactly when the original path is; translation of paths commutes with concatenation and
@@ -44,64 +46,55 @@ namespace SerreGraph
 
 variable (Γ : SerreGraph)
 
-/-- An automorphism of a Serre graph: bijections of the vertices and of the darts preserving
-sources and reversal. -/
-structure Aut where
-  /-- The bijection of vertices. -/
-  equivV : Γ.V ≃ Γ.V
-  /-- The bijection of darts. -/
-  equivE : Γ.E ≃ Γ.E
-  /-- Sources are preserved. -/
-  map_src : ∀ e, Γ.src (equivE e) = equivV (Γ.src e)
-  /-- Reversal is preserved. -/
-  map_rev : ∀ e, equivE (Γ.rev e) = Γ.rev (equivE e)
+/-- The automorphisms of a Serre graph: its isomorphisms with itself, that is, bijections of the
+vertices and of the darts preserving sources and reversal. -/
+abbrev Aut : Type _ := Γ.Iso Γ
 
 namespace Aut
 
 variable {Γ}
 
-@[ext] theorem ext {φ ψ : Γ.Aut} (hV : ∀ v, φ.equivV v = ψ.equivV v)
-    (hE : ∀ e, φ.equivE e = ψ.equivE e) : φ = ψ := by
-  obtain ⟨φV, φE, _, _⟩ := φ
-  obtain ⟨ψV, ψE, _, _⟩ := ψ
-  obtain rfl : φV = ψV := Equiv.ext hV
-  obtain rfl : φE = ψE := Equiv.ext hE
-  rfl
-
 /-- Automorphisms form a group under composition, with `φ * ψ` acting as `ψ` followed by `φ`. -/
 instance : Group Γ.Aut where
-  mul φ ψ :=
-    { equivV := ψ.equivV.trans φ.equivV
-      equivE := ψ.equivE.trans φ.equivE
-      map_src e := by simp only [Equiv.trans_apply, φ.map_src, ψ.map_src]
-      map_rev e := by simp only [Equiv.trans_apply, φ.map_rev, ψ.map_rev] }
-  one :=
-    { equivV := Equiv.refl _
-      equivE := Equiv.refl _
-      map_src _ := rfl
-      map_rev _ := rfl }
-  inv φ :=
-    { equivV := φ.equivV.symm
-      equivE := φ.equivE.symm
-      map_src e := by rw [Equiv.eq_symm_apply, ← φ.map_src, Equiv.apply_symm_apply]
-      map_rev e := by rw [Equiv.symm_apply_eq, φ.map_rev, Equiv.apply_symm_apply] }
-  mul_assoc _ _ _ := rfl
-  one_mul _ := rfl
-  mul_one _ := rfl
-  inv_mul_cancel φ := ext (fun v => φ.equivV.symm_apply_apply v)
-    (fun e => φ.equivE.symm_apply_apply e)
+  one := Iso.refl Γ
+  mul φ ψ := ψ.trans φ
+  inv φ := φ.symm
+  mul_assoc _ _ _ := (Iso.trans_assoc _ _ _).symm
+  one_mul := Iso.trans_refl
+  mul_one := Iso.refl_trans
+  inv_mul_cancel := Iso.self_trans_symm
+
+theorem one_def : (1 : Γ.Aut) = Iso.refl Γ := (rfl)
+
+theorem mul_def (φ ψ : Γ.Aut) : φ * ψ = ψ.trans φ := (rfl)
+
+theorem inv_def (φ : Γ.Aut) : φ⁻¹ = φ.symm := (rfl)
+
+@[simp] theorem one_equivV : (1 : Γ.Aut).equivV = Equiv.refl Γ.V := Iso.refl_equivV Γ
+
+@[simp] theorem one_equivE : (1 : Γ.Aut).equivE = Equiv.refl Γ.E := Iso.refl_equivE Γ
+
+@[simp] theorem mul_equivV (φ ψ : Γ.Aut) : (φ * ψ).equivV = ψ.equivV.trans φ.equivV :=
+  Iso.trans_equivV ψ φ
+
+@[simp] theorem mul_equivE (φ ψ : Γ.Aut) : (φ * ψ).equivE = ψ.equivE.trans φ.equivE :=
+  Iso.trans_equivE ψ φ
+
+@[simp] theorem inv_equivV (φ : Γ.Aut) : φ⁻¹.equivV = φ.equivV.symm := Iso.symm_equivV φ
+
+@[simp] theorem inv_equivE (φ : Γ.Aut) : φ⁻¹.equivE = φ.equivE.symm := Iso.symm_equivE φ
 
 /-- Automorphisms act on vertices. -/
 instance : MulAction Γ.Aut Γ.V where
   smul φ v := φ.equivV v
-  one_smul _ := rfl
-  mul_smul _ _ _ := rfl
+  one_smul v := congrArg (· v) one_equivV
+  mul_smul φ ψ v := congrArg (· v) (mul_equivV φ ψ)
 
 /-- Automorphisms act on darts. -/
 instance : MulAction Γ.Aut Γ.E where
   smul φ e := φ.equivE e
-  one_smul _ := rfl
-  mul_smul _ _ _ := rfl
+  one_smul e := congrArg (· e) one_equivE
+  mul_smul φ ψ e := congrArg (· e) (mul_equivE φ ψ)
 
 theorem smul_vertex_def (φ : Γ.Aut) (v : Γ.V) : φ • v = φ.equivV v := (rfl)
 
@@ -116,37 +109,17 @@ theorem smul_dart_def (φ : Γ.Aut) (e : Γ.E) : φ • e = φ.equivE e := (rfl)
 @[simp] theorem tgt_smul (φ : Γ.Aut) (e : Γ.E) : Γ.tgt (φ • e) = φ • Γ.tgt e := by
   rw [tgt, rev_smul, src_smul, src_rev]
 
-/-- Automorphisms act on geometric edges. -/
-instance : SMul Γ.Aut Γ.GeomEdge where
-  smul φ := GeomEdge.lift Γ (fun e => Γ.toGeomEdge (φ • e)) fun e => by
-    rw [← rev_smul, toGeomEdge_rev]
+/-- Automorphisms act on geometric edges, through the induced bijection of geometric edges. -/
+instance : MulAction Γ.Aut Γ.GeomEdge where
+  smul φ := φ.geomEdgeEquiv
+  one_smul x := congrArg (· x) (Iso.geomEdgeEquiv_refl Γ)
+  mul_smul φ ψ x := congrArg (· x) (Iso.geomEdgeEquiv_trans ψ φ)
+
+theorem smul_geomEdge_def (φ : Γ.Aut) (x : Γ.GeomEdge) : φ • x = φ.geomEdgeEquiv x := (rfl)
 
 @[simp] theorem smul_toGeomEdge (φ : Γ.Aut) (e : Γ.E) :
     φ • Γ.toGeomEdge e = Γ.toGeomEdge (φ • e) :=
-  GeomEdge.lift_toGeomEdge Γ _ _ e
-
-/-- Automorphisms act on geometric edges. -/
-instance : MulAction Γ.Aut Γ.GeomEdge where
-  one_smul x := by
-    obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
-    rw [smul_toGeomEdge, one_smul]
-  mul_smul φ ψ x := by
-    obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
-    simp only [smul_toGeomEdge, mul_smul]
-
-/-- The graph morphism underlying an automorphism. -/
-@[expose] def toHom (φ : Γ.Aut) : Γ.Hom Γ where
-  mapV v := φ • v
-  mapE e := φ • e
-  map_src := src_smul φ
-  map_rev e := (rev_smul φ e).symm
-
-@[simp] theorem toHom_mapV (φ : Γ.Aut) (v : Γ.V) : φ.toHom.mapV v = φ • v := (rfl)
-
-@[simp] theorem toHom_mapE (φ : Γ.Aut) (e : Γ.E) : φ.toHom.mapE e = φ • e := (rfl)
-
-theorem toHom_mapE_injective (φ : Γ.Aut) : Function.Injective φ.toHom.mapE :=
-  φ.equivE.injective
+  Iso.geomEdgeEquiv_toGeomEdge φ e
 
 /-- A morphism of Serre graphs invariant under an automorphism forces that automorphism to map no
 dart to its reverse. -/
@@ -154,7 +127,7 @@ theorem smul_ne_rev_of_comp_toHom_eq {Δ : SerreGraph} (f : Γ.Hom Δ) (φ : Γ.
     (h : Hom.comp f φ.toHom = f) (e : Γ.E) : φ • e ≠ Γ.rev e := by
   intro he
   have h₁ : f.mapE (φ • e) = f.mapE e := by
-    simpa using congrArg (fun k : Γ.Hom Δ => k.mapE e) h
+    simpa [smul_dart_def] using congrArg (fun k : Γ.Hom Δ => k.mapE e) h
   rw [he, f.map_rev] at h₁
   exact Δ.rev_ne _ h₁
 
@@ -234,7 +207,7 @@ theorem mul_smulPath (φ ψ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
     · have : IsEmpty (Γ.Path (ψ • a) (ψ • b)) := ⟨fun p =>
         hab.false ((ψ⁻¹.smulPath p).cast (inv_smul_smul ψ a) (inv_smul_smul ψ b))⟩
       rw [dist_of_isEmpty this, dist_of_isEmpty hab]
-    · exact ψ.toHom.dist_le hab
+    · simpa only [smul_vertex_def, Iso.toHom_mapV] using ψ.toHom.dist_le hab
   refine (key φ a b).antisymm ?_
   simpa only [inv_smul_smul] using key φ⁻¹ (φ • a) (φ • b)
 

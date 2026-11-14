@@ -85,8 +85,10 @@ private theorem det_mul_pos_of_isOrientationPreservingAt
     (o.orientationAt 0) ef.toLinearEquiv eg.toLinearEquiv o.card_eq).mp
       (hfo.trans (ho.trans hgo.symm))
   rw [← hcentre] at heg
-  have hdf := (f.contMDiff.mdifferentiableAt (by simp) (x := 0)).fderiv_chartAt_comp
-  have hdg := (g.contMDiff.mdifferentiableAt (by simp) (x := 0)).fderiv_chartAt_comp
+  have hdf := ContinuousAt.fderiv_chartAt_comp (𝕜 := ℝ) (E := E)
+    (f.contMDiff.continuous.continuousAt (x := (0 : E)))
+  have hdg := ContinuousAt.fderiv_chartAt_comp (𝕜 := ℝ) (E := E)
+    (g.contMDiff.continuous.continuousAt (x := (0 : E)))
   rw [← hcentre] at hdg
   rw [hdf, hdg]
   simpa only [← hef, ← heg] using! hprod

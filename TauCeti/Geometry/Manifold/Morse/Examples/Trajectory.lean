@@ -10,15 +10,18 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
-# Convergence of gradient trajectories: two negative controls
+# Convergence of gradient trajectories: three negative controls
 
 A forward trajectory of `-grad f`, for a Morse function `f` and a `C¹` Riemannian metric, which
 stays in a compact set converges to a critical point in that set
 (`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient`), and the limit of any
 convergent forward trajectory is a critical point
-(`IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient`). This file shows on the
-function `f(x) = x` on `ℝ`, which has no critical points, that neither the compact trap nor the
-regularity of the metric can be dropped from these statements.
+(`IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient`). For a proper Morse function
+bounded below every forward trajectory is trapped in a compact set
+(`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient_of_isProperMap`). This file
+shows on the functions `f(x) = x` and `f(x) = exp (-x)` on `ℝ`, which have no critical points,
+that neither the compact trap, nor the regularity of the metric, nor the properness of `f` can be
+dropped from these statements.
 
 * **The compact trap cannot be dropped.** The function `f(x) = x` is a Morse function
   (`TauCeti.isMorse_id_real`), vacuously, since it has no critical points
@@ -38,8 +41,17 @@ regularity of the metric can be dropped from these statements.
   `t ↦ x₀ / (1 + x₀ t)` (`TauCeti.isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`). For
   `x₀ = 1` it stays in the compact interval `[0, 1]` and converges to `0`, which is not a critical
   point of `f` (`TauCeti.exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`).
+* **A lower bound without properness does not trap.** The function `f(x) = exp (-x)` is bounded
+  below by `0` and is a Morse function (`TauCeti.isMorse_exp_neg_real`), vacuously, since it has
+  no critical points (`TauCeti.criticalPoints_exp_neg_real`), but it is not proper
+  (`TauCeti.not_isProperMap_exp_neg_real`). For the standard metric, the trajectory of `-grad f`
+  through `x₀` is `t ↦ log (exp x₀ + t)` for `t > -exp x₀`
+  (`TauCeti.maximalIntegralCurve_neg_mgradient_exp_neg`). It runs off to `+∞`
+  (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_exp_neg`), so from no starting point does
+  its forward part stay in a compact set
+  (`TauCeti.not_mapsTo_maximalIntegralCurve_neg_mgradient_exp_neg`).
 
-Neither example uses compactness of the manifold `ℝ`: the theorems recalled above replace it by
+None of the examples uses compactness of the manifold `ℝ`: the theorems recalled above replace it by
 the compact set containing the trajectory.
 
 ## References
@@ -133,6 +145,91 @@ theorem not_tendsto_of_isMIntegralCurveOn_neg_mgradient_id
   exact not_tendsto_nhds_of_tendsto_atBot hbot p
 
 end Untrapped
+
+/-! ### The function `f(x) = exp (-x)` and the standard metric -/
+
+section BoundedBelow
+
+/-- The derivative of `x ↦ exp (-x)` is `x ↦ -exp (-x)`. -/
+private theorem hasDerivAt_exp_neg_real (x : ℝ) :
+    HasDerivAt (fun y : ℝ ↦ Real.exp (-y)) (-Real.exp (-x)) x := by
+  simpa using (hasDerivAt_neg x).exp
+
+/-- **The function `f(x) = exp (-x)` on `ℝ` has no critical points.** -/
+theorem criticalPoints_exp_neg_real :
+    criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ Real.exp (-x)) = ∅ := by
+  ext x
+  simp only [mem_criticalPoints_iff_fderiv_eq_zero, mem_empty_iff_false, iff_false]
+  intro h
+  have h1 := congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L 1) h
+  rw [(hasDerivAt_exp_neg_real x).hasFDerivAt.fderiv] at h1
+  simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul, zero_apply,
+    neg_eq_zero] at h1
+  exact (Real.exp_pos _).ne' h1
+
+/-- **The function `f(x) = exp (-x)` on `ℝ` is a Morse function**, vacuously: it has no critical
+points. -/
+theorem isMorse_exp_neg_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ Real.exp (-x)) :=
+  isMorseOn_univ.1 (isMorseOn_iff_criticalPoints.2
+    ⟨(Real.contDiff_exp.comp contDiff_neg).contMDiff.contMDiffOn,
+      fun x _ hx ↦ by simp [criticalPoints_exp_neg_real] at hx⟩)
+
+/-- **The function `f(x) = exp (-x)` on `ℝ` is not proper**: the preimage of `[0, 1]` is the
+unbounded interval `[0, ∞)`. -/
+theorem not_isProperMap_exp_neg_real : ¬ IsProperMap (fun x : ℝ ↦ Real.exp (-x)) := by
+  intro h
+  obtain ⟨m, hm⟩ := (h.isCompact_preimage (isCompact_Icc (a := (0 : ℝ)) (b := 1))).bddAbove
+  have hmem : max m 0 + 1 ∈ (fun x : ℝ ↦ Real.exp (-x)) ⁻¹' Icc 0 1 :=
+    ⟨(Real.exp_pos _).le, Real.exp_le_one_iff.2 (by linarith [le_max_right m 0])⟩
+  linarith [hm hmem, le_max_left m 0]
+
+/-- The curve `t ↦ log (exp x₀ + t)` solves `x' = exp (-x)` where `exp x₀ + t > 0`. -/
+private theorem hasDerivAt_expNegTrajectory {x₀ t : ℝ} (ht : 0 < Real.exp x₀ + t) :
+    HasDerivAt (fun s ↦ Real.log (Real.exp x₀ + s))
+      (-gradient (fun y : ℝ ↦ Real.exp (-y)) (Real.log (Real.exp x₀ + t))) t := by
+  rw [gradient_eq_deriv', (hasDerivAt_exp_neg_real _).deriv, neg_neg, Real.exp_neg,
+    Real.exp_log ht]
+  simpa using ((hasDerivAt_id t).const_add (Real.exp x₀)).log ht.ne'
+
+/-- **The trajectory of `-grad exp (-x)` through `x₀`** is `t ↦ log (exp x₀ + t)`, wherever
+`exp x₀ + t > 0`. -/
+theorem maximalIntegralCurve_neg_mgradient_exp_neg {x₀ t : ℝ} (ht : -Real.exp x₀ < t) :
+    maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ Real.exp (-y))) x₀ t =
+      Real.log (Real.exp x₀ + t) := by
+  have h0 : (0 : ℝ) ∈ Ioo (-Real.exp x₀) (max t 0 + 1) :=
+    ⟨neg_lt_zero.2 (Real.exp_pos x₀), by linarith [le_max_right t 0]⟩
+  simpa using eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt
+    (f := fun y : ℝ ↦ Real.exp (-y)) (by fun_prop) h0
+    (fun s hs ↦ hasDerivAt_expNegTrajectory (by linarith [hs.1]))
+    (mem_Ioo.mpr ⟨ht, by linarith [le_max_left t 0]⟩)
+
+/-- The trajectory of `-grad exp (-x)` through any `x₀` runs off to `+∞`. -/
+theorem tendsto_maximalIntegralCurve_neg_mgradient_exp_neg (x₀ : ℝ) :
+    Tendsto (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ Real.exp (-y))) x₀) atTop
+      atTop := by
+  refine (Real.tendsto_log_atTop.comp
+    (tendsto_atTop_add_const_left atTop (Real.exp x₀) tendsto_id)).congr' ?_
+  filter_upwards [eventually_ge_atTop 0] with t ht
+  exact (maximalIntegralCurve_neg_mgradient_exp_neg (t := t)
+    (by linarith [Real.exp_pos x₀])).symm
+
+/-- **A lower bound without properness does not trap.** For `f(x) = exp (-x)`, which is a Morse
+function bounded below but not proper, the forward part of the trajectory of `-grad f` through
+any point, for the standard metric, stays in no compact set. So the properness hypothesis of
+`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient_of_isProperMap` cannot be
+weakened to boundedness below. -/
+theorem not_mapsTo_maximalIntegralCurve_neg_mgradient_exp_neg (x₀ : ℝ) {K : Set ℝ}
+    (hK : IsCompact K) :
+    ¬ MapsTo (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ Real.exp (-y))) x₀)
+      (Ici 0) K := by
+  intro hmaps
+  obtain ⟨m, hm⟩ := hK.bddAbove
+  obtain ⟨t, ht, ht0⟩ :=
+    (((tendsto_maximalIntegralCurve_neg_mgradient_exp_neg x₀).eventually_gt_atTop m).and
+      (eventually_ge_atTop 0)).exists
+  exact (hm (hmaps (mem_Ici.mpr ht0))).not_gt ht
+
+end BoundedBelow
 
 /-! ### The function `f(x) = x` and a discontinuous metric -/
 
