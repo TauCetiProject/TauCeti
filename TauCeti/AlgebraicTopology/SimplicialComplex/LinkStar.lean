@@ -43,6 +43,8 @@ the link of a simplex need not contain every vertex even when `K` does.
   closed star or link, phrased as membership in `K` plus the local condition.
 * `PreAbstractSimplicialComplex.mem_closedStar_nonempty` / `mem_link_nonempty`: the
   introduction-friendly membership forms using only nonemptiness and the defining local data.
+* `PreAbstractSimplicialComplex.erase_mem_link_singleton` / `link_link_singleton_erase`:
+  peeling off a vertex `v ∈ σ` reduces `link K σ` to the link of `σ.erase v` inside `link K {v}`.
 * `PreAbstractSimplicialComplex.closedStar_sup_deletion`: the closed star and the deletion
   cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`.
 * `PreAbstractSimplicialComplex.link_le_deletion_of_nonempty`: for a nonempty `σ`, the
@@ -183,6 +185,19 @@ theorem link_link {σ τ : Finset ι} (hστ : Disjoint σ τ) :
       refine mem_link.mpr ⟨hρτσK, disjoint_union_left.mpr ⟨hρσdis, hστ.symm⟩, ?_⟩
       simpa [union_assoc, union_left_comm, union_comm] using hρστK
     exact mem_link.mpr ⟨hρσ, hρτdis, hρτσ⟩
+
+/-- Erasing a vertex `v ∈ σ` from a face `σ ∈ K` gives a face of `link K {v}` whenever the
+remaining finset is nonempty. -/
+theorem erase_mem_link_singleton {v : ι} (hσ : σ ∈ K) (hv : v ∈ σ)
+    (hne : (σ.erase v).Nonempty) : σ.erase v ∈ link K {v} :=
+  mem_link_nonempty.mpr ⟨hne, disjoint_singleton_right.mpr (notMem_erase v σ), by
+    rwa [union_singleton, insert_erase hv]⟩
+
+/-- Peeling off a vertex `v ∈ σ` identifies `link K σ` with the link of `σ.erase v` inside the
+vertex link `link K {v}`. -/
+theorem link_link_singleton_erase {v : ι} (hv : v ∈ σ) :
+    link (link K {v}) (σ.erase v) = link K σ := by
+  rw [link_link (disjoint_singleton_left.mpr (notMem_erase v σ)), singleton_union, insert_erase hv]
 
 /-- The closed star of `σ` is a subcomplex of `K`. -/
 theorem closedStar_le : closedStar K σ ≤ K := by
@@ -375,19 +390,17 @@ theorem map_closedStar {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Funct
 theorem map_link {κ : Type*} [DecidableEq κ] (f : ι → κ) (hf : Function.Injective f) :
     (link K σ).map f = link (K.map f) (σ.image f) := by
   refine SetLike.ext fun τ => ?_
-  have hdisj (ρ : Finset ι) : Disjoint (ρ.image f) (σ.image f) ↔ Disjoint ρ σ := by
-    simp [disjoint_left, hf.eq_iff]
   constructor
   · rintro ⟨ρ, hρ, rfl⟩
     obtain ⟨hρK, hdis, hρσK⟩ := mem_link.mp hρ
     rw [mem_link, ← image_union, image_mem_map_iff_of_injective f hf,
-      image_mem_map_iff_of_injective f hf, hdisj]
+      image_mem_map_iff_of_injective f hf, disjoint_image hf]
     exact ⟨hρK, hdis, hρσK⟩
   · intro hτ
     obtain ⟨hτK, hdis, hτσK⟩ := mem_link.mp hτ
     obtain ⟨ρ, hρK, rfl⟩ := mem_map_iff.mp hτK
     rw [← image_union, image_mem_map_iff_of_injective f hf] at hτσK
-    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (hdisj ρ).mp hdis, hτσK⟩, rfl⟩
+    exact mem_map_iff.mpr ⟨ρ, mem_link.mpr ⟨hρK, (disjoint_image hf).mp hdis, hτσK⟩, rfl⟩
 
 omit [DecidableEq ι] in
 /-- An injective relabeling commutes with taking the deletion: a face contains the image of `σ`

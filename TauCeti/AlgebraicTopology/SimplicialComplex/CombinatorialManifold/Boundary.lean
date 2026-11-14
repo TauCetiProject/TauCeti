@@ -41,8 +41,9 @@ combinatorial `n`-manifold whose own boundary is void.
 * `PreAbstractSimplicialComplex.IsCombinatorialManifold.mem_manifoldBoundary_iff`: in a
   combinatorial `n`-manifold `K`, a finset `σ` lies in `manifoldBoundary K` if and only if
   `σ ∈ K` and `link K σ` is a combinatorial `(n - σ.card)`-ball.
-* `PreAbstractSimplicialComplex.IsCombinatorialManifold.link_manifoldBoundary`:
-  `link (manifoldBoundary K) σ = manifoldBoundary (link K σ)` for any finset `σ`.
+* `PreAbstractSimplicialComplex.IsCombinatorialManifold.link_manifoldBoundary` and
+  `PreAbstractSimplicialComplex.IsCombinatorialManifold.manifoldBoundary_stellarSubdivision`:
+  `manifoldBoundary` commutes with links and with stellar subdivision at any fresh vertex.
 * `PreAbstractSimplicialComplex.StellarEquivalentUpToRelabeling.manifoldBoundary`: intrinsic
   stellar equivalence between combinatorial manifolds induces intrinsic stellar equivalence between
   their boundaries.
@@ -104,7 +105,6 @@ theorem manifoldBoundary_le : manifoldBoundary K ≤ K :=
 
 /-- A vertex belongs to `manifoldBoundary K` exactly when its link in `K` is a combinatorial
 ball. -/
-@[simp]
 theorem singleton_mem_manifoldBoundary_iff :
     ({v} : Finset ι) ∈ manifoldBoundary K ↔ ∃ d, IsCombinatorialBall (link K {v}) d := by
   rw [mem_manifoldBoundary_iff]
@@ -198,7 +198,7 @@ theorem IsCombinatorialManifold.isCombinatorialBall_link_of_subset
     (hb : IsCombinatorialBall (link K σ) d) (hτne : τ.Nonempty) (hτσ : τ ⊆ σ) :
     IsCombinatorialBall (link K τ) (n - τ.card) := by
   have hσ : σ ∈ K := mem_of_link_ne_bot (hτne.mono hτσ) hb.ne_bot
-  have hσcard : σ.card ≤ n := hK.card_le_of_link_ne_bot hσ hb.ne_bot
+  have hσcard : σ.card ≤ n := hK.card_le_of_link_ne_bot hb.ne_bot
   have hτcard : τ.card ≤ n := (Finset.card_le_card hτσ).trans hσcard
   have hτ : τ ∈ K := (K.isRelLowerSet_faces hσ).2 hτσ hτne
   rcases hK.isCombinatorialSphere_or_isCombinatorialBall_link hτ hτcard with hs | hball
@@ -293,9 +293,9 @@ variable {ι : Type*} [DecidableEq ι] {K L : PreAbstractSimplicialComplex ι}
   {σ : Finset ι} {v : ι} {n : ℕ}
 
 private theorem mem_manifoldBoundary_stellarSubdivision_iff_of_notMem {τ : Finset ι}
-    (hK : IsCombinatorialManifold K n) (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hvτ : v ∉ τ) :
+    (hK : IsCombinatorialManifold K n) (hv : ({v} : Finset ι) ∉ K) (hvτ : v ∉ τ) :
     τ ∈ manifoldBoundary (stellarSubdivision K σ v) ↔ τ ∈ manifoldBoundary K ∧ ¬ σ ⊆ τ := by
-  have hL : IsCombinatorialManifold (stellarSubdivision K σ v) n := hK.stellarSubdivision hσ hv
+  have hL : IsCombinatorialManifold (stellarSubdivision K σ v) n := hK.stellarSubdivision hv
   rw [hL.mem_manifoldBoundary_iff_exists_isCombinatorialBall,
     mem_stellarSubdivision_iff_of_notMem hvτ,
     hK.mem_manifoldBoundary_iff_exists_isCombinatorialBall]
@@ -312,17 +312,17 @@ private theorem mem_manifoldBoundary_stellarSubdivision_iff_of_notMem {τ : Fins
     exact ⟨⟨hτK, havoid⟩, d, IsCombinatorialBall.of_stellarEquivalentUpToRelabeling he hb⟩
 
 private theorem insert_mem_manifoldBoundary_stellarSubdivision_iff {ρ : Finset ι}
-    (hK : IsCombinatorialManifold K n) (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hvρ : v ∉ ρ) :
+    (hK : IsCombinatorialManifold K n) (hv : ({v} : Finset ι) ∉ K) (hvρ : v ∉ ρ) :
     insert v ρ ∈ manifoldBoundary (stellarSubdivision K σ v) ↔
       ¬ σ ⊆ ρ ∧ ρ ∪ σ ∈ manifoldBoundary K := by
-  have hL : IsCombinatorialManifold (stellarSubdivision K σ v) n := hK.stellarSubdivision hσ hv
+  have hL : IsCombinatorialManifold (stellarSubdivision K σ v) n := hK.stellarSubdivision hv
   rw [hL.mem_manifoldBoundary_iff_exists_isCombinatorialBall,
     insert_mem_stellarSubdivision_iff hvρ,
     hK.mem_manifoldBoundary_iff_exists_isCombinatorialBall]
   have hiff (havoid : ¬ σ ⊆ ρ) (hunion : ρ ∪ σ ∈ K) :
       (∃ d, IsCombinatorialBall (link (stellarSubdivision K σ v) (insert v ρ)) d) ↔
         ∃ d, IsCombinatorialBall (link K (ρ ∪ σ)) d := by
-    have hmap := map_link_stellarSubdivision_insert_eq_join hv hvρ havoid hunion
+    have hmap := map_link_stellarSubdivision_insert_eq_join hv havoid hunion
     have hev (d : ℕ) :
         IsCombinatorialBall (link (stellarSubdivision K σ v) (insert v ρ)) d ↔
           IsCombinatorialBall (join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ))) d := by
@@ -343,7 +343,7 @@ private theorem insert_mem_manifoldBoundary_stellarSubdivision_iff {ρ : Finset 
         refine ⟨fun ⟨_, hb⟩ =>
           absurd hb (hsb.map Sum.inl Sum.inl_injective).not_isCombinatorialBall,
           fun ⟨_, hb⟩ => absurd rfl hb.ne_bot⟩
-      · have hcard : (ρ ∪ σ).card ≤ n := hK.card_le_of_link_ne_bot hunion hbot
+      · have hcard : (ρ ∪ σ).card ≤ n := hK.card_le_of_link_ne_bot hbot
         rcases hK.isCombinatorialSphere_or_isCombinatorialBall_link hunion hcard with hslk | hblk
         · refine ⟨fun ⟨_, hb⟩ => absurd hb (hsb.join hslk).not_isCombinatorialBall,
             fun ⟨_, hb⟩ => absurd hb hslk.not_isCombinatorialBall⟩
@@ -354,42 +354,29 @@ private theorem insert_mem_manifoldBoundary_stellarSubdivision_iff {ρ : Finset 
   · rintro ⟨havoid, hunion, hball⟩
     exact ⟨⟨havoid, hunion⟩, (hiff havoid hunion).mpr hball⟩
 
-/-- Starring an interior face `σ ∉ manifoldBoundary K` of a combinatorial manifold at a fresh
+/-- Taking the manifold boundary of a combinatorial manifold commutes with starring any finset `σ`
+at a fresh vertex `v`. -/
+theorem IsCombinatorialManifold.manifoldBoundary_stellarSubdivision
+    (hK : IsCombinatorialManifold K n) (hv : ({v} : Finset ι) ∉ K) (σ : Finset ι) :
+    manifoldBoundary (PreAbstractSimplicialComplex.stellarSubdivision K σ v) =
+      PreAbstractSimplicialComplex.stellarSubdivision (manifoldBoundary K) σ v := by
+  refine SetLike.ext fun τ => ?_
+  by_cases hvτ : v ∈ τ
+  · rw [← Finset.insert_erase hvτ,
+      insert_mem_manifoldBoundary_stellarSubdivision_iff hK hv (Finset.notMem_erase v τ),
+      insert_mem_stellarSubdivision_iff (Finset.notMem_erase v τ)]
+  · rw [mem_manifoldBoundary_stellarSubdivision_iff_of_notMem hK hv hvτ,
+      mem_stellarSubdivision_iff_of_notMem hvτ]
+
+/-- Starring a nonempty finset `σ ∉ manifoldBoundary K` of a combinatorial manifold at a fresh
 vertex leaves `manifoldBoundary K` unchanged. -/
 theorem IsCombinatorialManifold.manifoldBoundary_stellarSubdivision_of_notMem
-    (hK : IsCombinatorialManifold K n) (hσ : σ ∈ K) (hσbd : σ ∉ manifoldBoundary K)
+    (hK : IsCombinatorialManifold K n) (hσne : σ.Nonempty) (hσbd : σ ∉ manifoldBoundary K)
     (hv : ({v} : Finset ι) ∉ K) :
     manifoldBoundary (PreAbstractSimplicialComplex.stellarSubdivision K σ v) =
       manifoldBoundary K := by
-  have hσne : σ.Nonempty := (K.isRelLowerSet_faces hσ).1
-  refine SetLike.ext fun τ => ?_
-  by_cases hvτ : v ∈ τ
-  · rw [← Finset.insert_erase hvτ,
-      insert_mem_manifoldBoundary_stellarSubdivision_iff hK hσ hv (Finset.notMem_erase v τ)]
-    refine ⟨fun ⟨_, hunion⟩ => absurd
-      (((manifoldBoundary K).isRelLowerSet_faces hunion).2 Finset.subset_union_right hσne) hσbd,
-      fun hmem => ?_⟩
-    rw [Finset.insert_erase hvτ] at hmem
-    exact absurd (manifoldBoundary_le (singleton_mem_of_mem hmem hvτ)) hv
-  · rw [mem_manifoldBoundary_stellarSubdivision_iff_of_notMem hK hσ hv hvτ]
-    exact ⟨fun h => h.1, fun hτbd => ⟨hτbd,
-      fun hsub => hσbd (((manifoldBoundary K).isRelLowerSet_faces hτbd).2 hsub hσne)⟩⟩
-
-/-- Starring a boundary face `σ ∈ manifoldBoundary K` of a combinatorial manifold at a fresh vertex
-subdivides `manifoldBoundary K` at `σ`. -/
-theorem IsCombinatorialManifold.manifoldBoundary_stellarSubdivision_of_mem
-    (hK : IsCombinatorialManifold K n) (hσbd : σ ∈ manifoldBoundary K)
-    (hv : ({v} : Finset ι) ∉ K) :
-    manifoldBoundary (PreAbstractSimplicialComplex.stellarSubdivision K σ v) =
-      PreAbstractSimplicialComplex.stellarSubdivision (manifoldBoundary K) σ v := by
-  have hσ : σ ∈ K := manifoldBoundary_le hσbd
-  refine SetLike.ext fun τ => ?_
-  by_cases hvτ : v ∈ τ
-  · rw [← Finset.insert_erase hvτ,
-      insert_mem_manifoldBoundary_stellarSubdivision_iff hK hσ hv (Finset.notMem_erase v τ),
-      insert_mem_stellarSubdivision_iff (Finset.notMem_erase v τ)]
-  · rw [mem_manifoldBoundary_stellarSubdivision_iff_of_notMem hK hσ hv hvτ,
-      mem_stellarSubdivision_iff_of_notMem hvτ]
+  rw [hK.manifoldBoundary_stellarSubdivision hv σ,
+    stellarSubdivision_eq_self_of_notMem (fun h => hv (manifoldBoundary_le h)) hσne hσbd]
 
 /-- Stellar equivalence between combinatorial manifolds induces stellar equivalence between their
 boundaries. -/
@@ -397,25 +384,25 @@ theorem StellarEquivalent.manifoldBoundary (he : StellarEquivalent K L)
     (hK : IsCombinatorialManifold K n) :
     StellarEquivalent (PreAbstractSimplicialComplex.manifoldBoundary K)
       (PreAbstractSimplicialComplex.manifoldBoundary L) := by
-  suffices h : (IsCombinatorialManifold K n ↔ IsCombinatorialManifold L n) ∧
-      (IsCombinatorialManifold K n →
-        StellarEquivalent (PreAbstractSimplicialComplex.manifoldBoundary K)
-          (PreAbstractSimplicialComplex.manifoldBoundary L)) from h.2 hK
-  apply StellarEquivalent.induction_on he
-  · intro A B hm
-    refine ⟨hm.stellarEquivalent.isCombinatorialManifold_iff, fun hA => ?_⟩
-    obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hm
-    by_cases hσbd : σ ∈ PreAbstractSimplicialComplex.manifoldBoundary A
-    · rw [hA.manifoldBoundary_stellarSubdivision_of_mem hσbd hv]
-      exact stellarEquivalent_stellarSubdivision hσbd (fun h => hv (manifoldBoundary_le h))
-    · rw [hA.manifoldBoundary_stellarSubdivision_of_notMem hσ hσbd hv]
-  · intro _
-    exact ⟨Iff.rfl, fun _ => equivalence_stellarEquivalent.refl _⟩
-  · intro _ _ ih
-    exact ⟨ih.1.symm, fun hB => equivalence_stellarEquivalent.symm (ih.2 (ih.1.mpr hB))⟩
-  · intro _ _ _ ih₁ ih₂
-    exact ⟨ih₁.1.trans ih₂.1, fun hA =>
-      equivalence_stellarEquivalent.trans (ih₁.2 hA) (ih₂.2 (ih₁.1.mp hA))⟩
+  revert hK
+  induction he using StellarEquivalent.induction with
+  | rel A B hm =>
+      intro hA
+      obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hm
+      rw [hA.manifoldBoundary_stellarSubdivision hv σ]
+      by_cases hσbd : σ ∈ PreAbstractSimplicialComplex.manifoldBoundary A
+      · exact stellarEquivalent_stellarSubdivision hσbd (fun h => hv (manifoldBoundary_le h))
+      · rw [stellarSubdivision_eq_self_of_notMem (fun h => hv (manifoldBoundary_le h))
+          (A.isRelLowerSet_faces hσ).1 hσbd]
+  | refl _ =>
+      intro _
+      exact .refl _
+  | symm _ _ hAB ih =>
+      intro hB
+      exact (ih ((StellarEquivalent.isCombinatorialManifold_iff hAB).mpr hB)).symm
+  | trans _ _ _ hAB _ ih₁ ih₂ =>
+      intro hA
+      exact (ih₁ hA).trans (ih₂ ((StellarEquivalent.isCombinatorialManifold_iff hAB).mp hA))
 
 /-- Intrinsic stellar equivalence up to relabeling between combinatorial manifolds induces
 intrinsic stellar equivalence between their boundaries. -/
@@ -423,24 +410,23 @@ theorem StellarEquivalentUpToRelabeling.manifoldBoundary
     (he : StellarEquivalentUpToRelabeling K L) (hK : IsCombinatorialManifold K n) :
     StellarEquivalentUpToRelabeling (PreAbstractSimplicialComplex.manifoldBoundary K)
       (PreAbstractSimplicialComplex.manifoldBoundary L) := by
-  suffices h : (IsCombinatorialManifold K n ↔ IsCombinatorialManifold L n) ∧
-      (IsCombinatorialManifold K n →
-        StellarEquivalentUpToRelabeling (PreAbstractSimplicialComplex.manifoldBoundary K)
-          (PreAbstractSimplicialComplex.manifoldBoundary L)) from h.2 hK
-  apply StellarEquivalentUpToRelabeling.induction_on he
-  · intro A B f g hfg
-    refine ⟨(IsCombinatorialManifold.map_iff_of_injective f f.injective).symm.trans
-      (hfg.isCombinatorialManifold_iff.trans
-        (IsCombinatorialManifold.map_iff_of_injective g g.injective)), fun hA => ?_⟩
-    have hebd := hfg.manifoldBoundary (hA.map f f.injective)
-    rw [← map_manifoldBoundary f f.injective, ← map_manifoldBoundary g g.injective] at hebd
-    exact StellarEquivalentUpToRelabeling.of_common_relabeling f g hebd
-  · intro _
-    exact ⟨Iff.rfl, fun _ => .refl _⟩
-  · intro _ _ ih
-    exact ⟨ih.1.symm, fun hB => (ih.2 (ih.1.mpr hB)).symm⟩
-  · intro _ _ _ ih₁ ih₂
-    exact ⟨ih₁.1.trans ih₂.1, fun hA => (ih₁.2 hA).trans (ih₂.2 (ih₁.1.mp hA))⟩
+  revert hK
+  induction he using StellarEquivalentUpToRelabeling.induction with
+  | rel A B f g hfg =>
+      intro hA
+      have hebd := hfg.manifoldBoundary (hA.map f f.injective)
+      rw [← map_manifoldBoundary f f.injective, ← map_manifoldBoundary g g.injective] at hebd
+      exact StellarEquivalentUpToRelabeling.of_common_relabeling f g hebd
+  | refl _ =>
+      intro _
+      exact .refl _
+  | symm _ _ hAB ih =>
+      intro hB
+      exact (ih ((StellarEquivalentUpToRelabeling.isCombinatorialManifold_iff hAB).mpr hB)).symm
+  | trans _ _ _ hAB _ ih₁ ih₂ =>
+      intro hA
+      exact (ih₁ hA).trans
+        (ih₂ ((StellarEquivalentUpToRelabeling.isCombinatorialManifold_iff hAB).mp hA))
 
 end StellarInvariance
 

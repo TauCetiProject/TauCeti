@@ -33,12 +33,49 @@ def restrict (K : PreAbstractSimplicialComplex ι) (s : Set ι) :
       fun {_} hτσ hτ =>
         (K.isRelLowerSet_faces hσ).2 (Finset.map_subset_map.mpr hτσ) (Finset.map_nonempty.mpr hτ)⟩
 
+/-- A finite set of vertices in `s` belongs to `K.restrict s` if and only if its subtype
+embedding into `ι` belongs to `K`. Unlike `mem_restrict_iff`, this requires no `DecidableEq ι`. -/
+theorem mem_restrict_iff_map (K : PreAbstractSimplicialComplex ι) (s : Set ι)
+    (σ : Finset s) :
+    σ ∈ K.restrict s ↔ σ.map (Function.Embedding.subtype (· ∈ s)) ∈ K :=
+  Iff.rfl
+
 /-- A face in the vertex restriction is a face after forgetting the vertex-membership proofs. -/
 @[simp]
 theorem mem_restrict_iff [DecidableEq ι] (K : PreAbstractSimplicialComplex ι) (s : Set ι)
     (σ : Finset s) : σ ∈ K.restrict s ↔ σ.image Subtype.val ∈ K := by
-  change σ.map (Function.Embedding.subtype (· ∈ s)) ∈ K ↔ _
-  rw [Finset.map_eq_image, Function.Embedding.coe_subtype]
+  rw [mem_restrict_iff_map, Finset.map_eq_image, Function.Embedding.coe_subtype]
+
+/-- Restricting the void precomplex to any vertex set gives the void precomplex. -/
+@[simp]
+theorem bot_restrict (s : Set ι) :
+    (⊥ : PreAbstractSimplicialComplex ι).restrict s = ⊥ :=
+  SetLike.ext fun _ => Iff.rfl
+
+/-- Restricting the full precomplex to any vertex set gives the full precomplex on that set. -/
+@[simp]
+theorem top_restrict (s : Set ι) :
+    (⊤ : PreAbstractSimplicialComplex ι).restrict s = ⊤ :=
+  SetLike.ext fun _ => Finset.map_nonempty
+
+/-- Restricting any precomplex to the empty vertex set gives the void precomplex. -/
+@[simp]
+theorem restrict_empty (K : PreAbstractSimplicialComplex ι) :
+    K.restrict (∅ : Set ι) = ⊥ :=
+  eq_bot_iff.mpr fun _ hσ =>
+    let ⟨⟨_, hx⟩, _⟩ := ((K.restrict ∅).isRelLowerSet_faces hσ).1
+    hx.elim
+
+/-- Vertex restriction distributes over intersection of precomplexes. -/
+@[simp]
+theorem inf_restrict (K L : PreAbstractSimplicialComplex ι) (s : Set ι) :
+    (K ⊓ L).restrict s = K.restrict s ⊓ L.restrict s :=
+  SetLike.ext fun _ => Iff.rfl
+
+/-- Vertex restriction is monotone in the precomplex. -/
+theorem restrict_mono {K L : PreAbstractSimplicialComplex ι} (h : K ≤ L) (s : Set ι) :
+    K.restrict s ≤ L.restrict s :=
+  fun _ hσ => h hσ
 
 /-- The canonical simplicial inclusion of a vertex restriction into the original precomplex. -/
 def restrictInclusion [DecidableEq ι] (K : PreAbstractSimplicialComplex ι) (s : Set ι) :
@@ -65,6 +102,22 @@ def restrictInclusionOfSubset (K : PreAbstractSimplicialComplex ι) {s t : Set �
 theorem coe_restrictInclusionOfSubset (K : PreAbstractSimplicialComplex ι) {s t : Set ι}
     [DecidableEq t] (hst : s ⊆ t) :
     ⇑(K.restrictInclusionOfSubset hst) = Set.inclusion hst := (rfl)
+
+/-- Restricting along the reflexive inclusion `s ⊆ s` gives the identity simplicial map. -/
+@[simp]
+theorem restrictInclusionOfSubset_refl (K : PreAbstractSimplicialComplex ι) {s : Set ι}
+    [DecidableEq s] (h : s ⊆ s) :
+    K.restrictInclusionOfSubset h = SimplicialMap.id (K.restrict s) :=
+  DFunLike.ext _ _ fun x => (SimplicialMap.id_apply x).symm
+
+/-- Composing vertex-restriction inclusions agrees with the inclusion for the transitive
+subset proof. -/
+@[simp]
+theorem restrictInclusionOfSubset_comp (K : PreAbstractSimplicialComplex ι) {s t u : Set ι}
+    [DecidableEq t] [DecidableEq u] (htu : t ⊆ u) (hst : s ⊆ t) :
+    (K.restrictInclusionOfSubset htu).comp (K.restrictInclusionOfSubset hst) =
+      K.restrictInclusionOfSubset (hst.trans htu) :=
+  DFunLike.ext _ _ fun x => SimplicialMap.comp_apply _ _ x
 
 /-- Including a smaller vertex restriction into a larger one and then into the original precomplex
 is the inclusion of the smaller restriction. -/
@@ -126,10 +179,8 @@ attribute [local instance] Classical.decEq
 def restrict (K : AbstractSimplicialComplex ι) (s : Set ι) : AbstractSimplicialComplex s :=
   PreAbstractSimplicialComplex.toAbstractSimplicialComplex s
     (PreAbstractSimplicialComplex.restrict K.toPreAbstractSimplicialComplex s) fun v => by
-      change ({v} : Finset s) ∈
-        PreAbstractSimplicialComplex.restrict K.toPreAbstractSimplicialComplex s
-      rw [PreAbstractSimplicialComplex.mem_restrict_iff, Finset.image_singleton,
-        mem_toPreAbstractSimplicialComplex]
+      rw [PreAbstractSimplicialComplex.mem_faces, PreAbstractSimplicialComplex.mem_restrict_iff,
+        Finset.image_singleton, mem_toPreAbstractSimplicialComplex]
       exact K.singleton_mem v.1
 
 /-- Forgetting singletons commutes with restricting the vertex set. -/
@@ -168,6 +219,24 @@ def restrictInclusionOfSubset (K : AbstractSimplicialComplex ι) {s t : Set ι} 
 @[simp]
 theorem coe_restrictInclusionOfSubset (K : AbstractSimplicialComplex ι) {s t : Set ι}
     (hst : s ⊆ t) : ⇑(K.restrictInclusionOfSubset hst) = Set.inclusion hst := (rfl)
+
+/-- Restricting an abstract complex along `s ⊆ s` gives the identity simplicial map. -/
+@[simp]
+theorem restrictInclusionOfSubset_refl (K : AbstractSimplicialComplex ι) {s : Set ι}
+    (h : s ⊆ s) :
+    K.restrictInclusionOfSubset h =
+      PreAbstractSimplicialComplex.SimplicialMap.id
+        (K.restrict s).toPreAbstractSimplicialComplex :=
+  K.toPreAbstractSimplicialComplex.restrictInclusionOfSubset_refl h
+
+/-- Composing vertex-restriction inclusions on an abstract complex agrees with the inclusion
+for the transitive subset proof. -/
+@[simp]
+theorem restrictInclusionOfSubset_comp (K : AbstractSimplicialComplex ι) {s t u : Set ι}
+    (htu : t ⊆ u) (hst : s ⊆ t) :
+    (K.restrictInclusionOfSubset htu).comp (K.restrictInclusionOfSubset hst) =
+      K.restrictInclusionOfSubset (hst.trans htu) :=
+  K.toPreAbstractSimplicialComplex.restrictInclusionOfSubset_comp htu hst
 
 /-- Including a smaller vertex restriction into a larger one and then into the original complex
 is the inclusion of the smaller restriction. -/

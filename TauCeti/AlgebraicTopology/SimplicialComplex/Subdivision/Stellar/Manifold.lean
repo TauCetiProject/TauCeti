@@ -55,22 +55,24 @@ theorem IsCombinatorialManifold.stellarSubdivision_succ
   · exact hK.isCombinatorialSphere_or_isCombinatorialBall_link_stellarSubdivision
       (notMem_link_of_notMem hvK) hwv hw
 
-/-- Backward invariance of combinatorial manifolds along a stellar move: if starring `σ ∈ K` at a
-fresh vertex `v` yields a combinatorial `n`-manifold, then `K` was already a combinatorial
-`n`-manifold. -/
+/-- Backward invariance of combinatorial manifolds along a stellar subdivision: if starring a
+nonempty finset `σ` at a fresh vertex `v` yields a combinatorial `n`-manifold, then `K` was
+already a combinatorial `n`-manifold. -/
 theorem IsCombinatorialManifold.of_stellarSubdivision
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
+    (hσne : σ.Nonempty) (hv : ({v} : Finset ι) ∉ K)
     (hsub : IsCombinatorialManifold (stellarSubdivision K σ v) n) :
     IsCombinatorialManifold K n := by
   cases n with
   | zero =>
       refine isCombinatorialManifold_zero_iff.mpr fun w hw => ?_
-      obtain ⟨u, hu, he⟩ := exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσ hv hw
+      obtain ⟨u, hu, he⟩ :=
+        exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσne hv hw
       exact dimension_eq_bot_iff.mp
         (by rw [← he.dimension_eq, isCombinatorialManifold_zero_iff.mp hsub hu, dimension_bot])
   | succ m =>
       refine isCombinatorialManifold_succ_iff.mpr fun w hw => ?_
-      obtain ⟨u, hu, he⟩ := exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσ hv hw
+      obtain ⟨u, hu, he⟩ :=
+        exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσne hv hw
       have her := he.stellarEquivalentUpToRelabeling
       exact (isCombinatorialManifold_succ_iff.mp hsub hu).imp
         (IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling her)

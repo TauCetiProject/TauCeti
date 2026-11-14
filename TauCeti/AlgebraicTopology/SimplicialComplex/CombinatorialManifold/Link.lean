@@ -62,12 +62,13 @@ universe u
 
 private theorem forall_isCombinatorialSphere_link_of_stellarSubdivision {ι : Type*}
     [DecidableEq ι] {K : PreAbstractSimplicialComplex ι} {σ : Finset ι} {v : ι} {m : ℕ}
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K)
+    (hσne : σ.Nonempty) (hv : ({v} : Finset ι) ∉ K)
     (hsub : ∀ ⦃w : ι⦄, ({w} : Finset ι) ∈ stellarSubdivision K σ v →
       IsCombinatorialSphere (link (stellarSubdivision K σ v) {w}) m) :
     ∀ ⦃w : ι⦄, ({w} : Finset ι) ∈ K → IsCombinatorialSphere (link K {w}) m := by
   intro w hw
-  obtain ⟨u, hu, he⟩ := exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσ hv hw
+  obtain ⟨u, hu, he⟩ :=
+    exists_singleton_mem_stellarSubdivision_stellarEquivalent_link hσne hv hw
   exact IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling
     he.stellarEquivalentUpToRelabeling (hsub hu)
 
@@ -89,6 +90,7 @@ private theorem link_face_of_lt_step {n : ℕ} (ih : ∀ d < n, ManifoldDimStep.
         (∀ ⦃w : ι⦄, ({w} : Finset ι) ∈ K → IsCombinatorialSphere (link K {w}) m) →
         IsCombinatorialSphere (link K σ) (d - (k + 1)))
   | 0, d, _, _, _, K, σ, hσ, hcard, hle => by
+      -- Base case `σ.card = 1`: read off the vertex-link hypothesis directly.
       obtain ⟨v, rfl⟩ := Finset.card_eq_one.mp hcard
       cases d with
       | zero => omega
@@ -98,25 +100,18 @@ private theorem link_face_of_lt_step {n : ℕ} (ih : ∀ d < n, ManifoldDimStep.
           · obtain rfl : m = m' := Nat.succ.inj hm'
             simpa using hall hσ
   | k + 1, d, hd, ι, _, K, σ, hσ, hcard, hle => by
+      -- Inductive step: peel off a vertex `v ∈ σ` and recurse in `link K {v}` at `σ.erase v`.
       cases d with
       | zero => omega
       | succ m =>
           have hmn : m < n := by omega
           obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
           have hvK : ({v} : Finset ι) ∈ K := singleton_mem_of_mem hσ hv
-          let τ : Finset ι := σ.erase v
-          have hτcard : τ.card = k + 1 := by
+          have hτcard : (σ.erase v).card = k + 1 := by
             rw [Finset.card_erase_of_mem hv, hcard]
             rfl
-          have hτne : τ.Nonempty := Finset.card_pos.mp (by omega)
-          have hdis : Disjoint ({v} : Finset ι) τ :=
-            Finset.disjoint_singleton_left.mpr (Finset.notMem_erase v σ)
-          have hunion : τ ∪ {v} = σ := by
-            rw [Finset.union_singleton, Finset.insert_erase hv]
-          have hτmem : τ ∈ link K {v} :=
-            mem_link_nonempty.mpr ⟨hτne, hdis.symm, hunion ▸ hσ⟩
-          have hlinkeq : link K σ = link (link K {v}) τ := by
-            rw [← hunion, Finset.union_comm, ← link_link hdis]
+          have hτmem : σ.erase v ∈ link K {v} :=
+            erase_mem_link_singleton hσ hv (Finset.card_pos.mp (by omega))
           have hsubeq : m + 1 - (k + 2) = m - (k + 1) := by omega
           have hrec := link_face_of_lt_step ih k (Nat.le_of_lt hmn) hτmem hτcard (by omega)
           refine ⟨fun hK => ?_, fun m' hm' hall => ?_⟩
@@ -124,7 +119,7 @@ private theorem link_face_of_lt_step {n : ℕ} (ih : ∀ d < n, ManifoldDimStep.
               rcases isCombinatorialManifold_succ_iff.mp hK hvK with hs | hb
               · exact (ih m hmn (link K {v})).2.1 hs
               · exact (ih m hmn (link K {v})).1 hb
-            rw [hlinkeq, hsubeq]
+            rw [← link_link_singleton_erase hv, hsubeq]
             exact hrec.1 hLman
           · obtain rfl : m = m' := Nat.succ.inj hm'
             have hs : IsCombinatorialSphere (link K {v}) m := hall hvK
@@ -132,7 +127,7 @@ private theorem link_face_of_lt_step {n : ℕ} (ih : ∀ d < n, ManifoldDimStep.
             | zero => omega
             | succ r =>
                 have hallL := (ih (r + 1) hmn (link K {v})).2.2 r rfl hs
-                rw [hlinkeq, hsubeq]
+                rw [← link_link_singleton_erase hv, hsubeq]
                 exact hrec.2 r rfl hallL
 
 private theorem closedStar_inf_deletion_of_lt_step {m : ℕ}
@@ -221,9 +216,11 @@ private theorem stellarEquivalent_of_lt_step {n : ℕ} (ih : ∀ d < n, Manifold
   apply StellarEquivalent.induction_on he
   · intro X Y hm
     obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp hm
+    have hσne : σ.Nonempty := (X.isRelLowerSet_faces hσ).1
     have hfwd := stellarSubdivision_of_lt_step ih hσ hv
-    exact ⟨⟨hfwd.1, IsCombinatorialManifold.of_stellarSubdivision hσ hv⟩,
-      fun m hm' => ⟨hfwd.2 m hm', forall_isCombinatorialSphere_link_of_stellarSubdivision hσ hv⟩⟩
+    exact ⟨⟨hfwd.1, IsCombinatorialManifold.of_stellarSubdivision hσne hv⟩,
+      fun m hm' => ⟨hfwd.2 m hm',
+        forall_isCombinatorialSphere_link_of_stellarSubdivision hσne hv⟩⟩
   · intro _
     exact ⟨Iff.rfl, fun _ _ => Iff.rfl⟩
   · intro _ _ hrec
@@ -251,19 +248,19 @@ private theorem manifoldDimStep (n : ℕ) : ManifoldDimStep.{u} n := by
   induction n using Nat.strongRecOn with
   | ind n ih =>
       intro ι _ K
+      have ofModel {M : PreAbstractSimplicialComplex ι}
+          (he : StellarEquivalentUpToRelabeling K M) (hfin : K.faces.Finite)
+          (hM : IsCombinatorialManifold M n) : IsCombinatorialManifold K n := by
+        obtain ⟨f, g, hfg⟩ := he.exists_common_relabeling hfin
+        rw [← IsCombinatorialManifold.map_iff_of_injective f f.injective,
+          (stellarEquivalent_of_lt_step ih hfg).1,
+          IsCombinatorialManifold.map_iff_of_injective g g.injective]
+        exact hM
       refine ⟨fun hb => ?_, fun hs => ?_, fun m hm hs => ?_⟩
       · obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp hb
-        obtain ⟨f, g, hfg⟩ := he.exists_common_relabeling hb.finite_faces
-        rw [← IsCombinatorialManifold.map_iff_of_injective f f.injective,
-          (stellarEquivalent_of_lt_step ih hfg).1,
-          IsCombinatorialManifold.map_iff_of_injective g g.injective]
-        exact isCombinatorialManifold_simplex hV
+        exact ofModel he hb.finite_faces (isCombinatorialManifold_simplex hV)
       · obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp hs
-        obtain ⟨f, g, hfg⟩ := he.exists_common_relabeling hs.finite_faces
-        rw [← IsCombinatorialManifold.map_iff_of_injective f f.injective,
-          (stellarEquivalent_of_lt_step ih hfg).1,
-          IsCombinatorialManifold.map_iff_of_injective g g.injective]
-        exact isCombinatorialManifold_simplexBoundary hV
+        exact ofModel he hs.finite_faces (isCombinatorialManifold_simplexBoundary hV)
       · subst hm
         obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp hs
         obtain ⟨f, g, hfg⟩ := he.exists_common_relabeling hs.finite_faces
@@ -358,19 +355,26 @@ theorem IsCombinatorialManifold.isCombinatorialManifold_link
 
 /-! ### Stellar subdivision and stellar equivalence of combinatorial manifolds -/
 
-/-- Starring any face of a combinatorial `n`-manifold at a fresh vertex yields another
-combinatorial `n`-manifold. -/
+/-- Starring any finset `σ` in a combinatorial `n`-manifold at a fresh vertex yields another
+combinatorial `n`-manifold (`⊥` when `σ = ∅`, and `K` when `σ` is nonempty and not a face). -/
 theorem IsCombinatorialManifold.stellarSubdivision (hK : IsCombinatorialManifold K n)
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
-    IsCombinatorialManifold (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n :=
-  (stellarSubdivision_of_lt_step (fun d _ => manifoldDimStep d) hσ hv).1 hK
+    (hv : ({v} : Finset ι) ∉ K) :
+    IsCombinatorialManifold (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n := by
+  rcases σ.eq_empty_or_nonempty with rfl | hσne
+  · rw [stellarSubdivision_empty]
+    exact isCombinatorialManifold_bot
+  · by_cases hσ : σ ∈ K
+    · exact (stellarSubdivision_of_lt_step (fun d _ => manifoldDimStep d) hσ hv).1 hK
+    · rwa [stellarSubdivision_eq_self_of_notMem hv hσne hσ]
 
-/-- Starring a face at a fresh vertex preserves and reflects combinatorial `n`-manifolds. -/
+/-- Starring a nonempty finset at a fresh vertex preserves and reflects combinatorial
+`n`-manifolds. -/
 theorem IsCombinatorialManifold.stellarSubdivision_iff
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
+    (hσne : σ.Nonempty) (hv : ({v} : Finset ι) ∉ K) :
     IsCombinatorialManifold (PreAbstractSimplicialComplex.stellarSubdivision K σ v) n ↔
       IsCombinatorialManifold K n :=
-  ⟨IsCombinatorialManifold.of_stellarSubdivision hσ hv, fun hK => hK.stellarSubdivision hσ hv⟩
+  ⟨IsCombinatorialManifold.of_stellarSubdivision hσne hv,
+    fun hK => hK.stellarSubdivision hv⟩
 
 /-- Stellar equivalence preserves and reflects combinatorial `n`-manifolds. -/
 theorem StellarEquivalent.isCombinatorialManifold_iff (he : StellarEquivalent K L) :

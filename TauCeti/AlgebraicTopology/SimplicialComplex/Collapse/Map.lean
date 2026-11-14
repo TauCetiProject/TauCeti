@@ -91,10 +91,8 @@ theorem map_iff_of_injective (f : α → β) (hf : Function.Injective f) :
         upper_mem := ?_
         lower_ssubset_upper := (Finset.image_ssubset_image hf).mp h.lower_ssubset_upper
         eq_lower_or_eq_upper := ?_ }
-    · obtain ⟨ρ, hρ, hρσ⟩ := mem_map_iff.mp h.lower_mem
-      simpa only [(Finset.image_inj hf).mp hρσ] using hρ
-    · obtain ⟨ρ, hρ, hρτ⟩ := mem_map_iff.mp h.upper_mem
-      simpa only [(Finset.image_inj hf).mp hρτ] using hρ
+    · exact (image_mem_map_iff_of_injective f hf).mp h.lower_mem
+    · exact (image_mem_map_iff_of_injective f hf).mp h.upper_mem
     · intro ω hω hσω
       have hω' : ω.image f ∈ K.map f := mem_map_iff.mpr ⟨ω, hω, rfl⟩
       have hσω' : σ.image f ⊆ ω.image f := Finset.image_subset_image hσω
@@ -201,13 +199,7 @@ theorem map_iff_of_injective (f : α → β) (hf : Function.Injective f) :
   constructor
   · intro h
     obtain ⟨w, hw⟩ := collapsible_iff.mp h
-    have hwK : ({w} : Finset β) ∈ K.map f := point_le_iff.mp hw.le
-    obtain ⟨σ, hσ, hσw⟩ := mem_map_iff.mp hwK
-    obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
-    have hvw : f v = w := by
-      have : f v ∈ σ.image f := Finset.mem_image.mpr ⟨v, hv, rfl⟩
-      rw [hσw, Finset.mem_singleton] at this
-      exact this
+    obtain ⟨v, _, hvw⟩ := singleton_mem_map_iff.mp (point_le_iff.mp hw.le)
     refine collapsible_iff.mpr ⟨v, (CollapsesTo.map_iff_of_injective f hf).mp ?_⟩
     simpa [hvw] using hw
   · exact fun h => h.map f hf

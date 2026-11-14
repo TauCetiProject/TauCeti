@@ -93,12 +93,12 @@ theorem stellarEquivalent_link_stellarSubdivision_of_notMem
   · rw [stellarSubdivision_eq_self_of_notMem hv hne hrem]
 
 /-- Every vertex of `K` has its link stellar equivalent to the link of some vertex of
-`stellarSubdivision K σ v`: the new vertex `v` when `σ = {w}`, and `w` itself otherwise. -/
+`stellarSubdivision K σ v` for any nonempty `σ`: the new vertex `v` when `σ = {w}`, and `w`
+itself otherwise. -/
 theorem exists_singleton_mem_stellarSubdivision_stellarEquivalent_link
-    (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) (hw : ({w} : Finset ι) ∈ K) :
+    (hσne : σ.Nonempty) (hv : ({v} : Finset ι) ∉ K) (hw : ({w} : Finset ι) ∈ K) :
     ∃ u, ({u} : Finset ι) ∈ stellarSubdivision K σ v ∧
       StellarEquivalent (link K {w}) (link (stellarSubdivision K σ v) {u}) := by
-  have hσne : σ.Nonempty := (K.isRelLowerSet_faces hσ).1
   have hwv : w ≠ v := fun h => hv (h ▸ hw)
   have hvw : v ∉ ({w} : Finset ι) := by simpa [eq_comm] using hwv
   by_cases hsubw : σ ⊆ {w}
@@ -113,10 +113,10 @@ theorem exists_singleton_mem_stellarSubdivision_stellarEquivalent_link
 containing the new vertex in `stellarSubdivision K σ v` with the join of `simplexBoundary (σ \ ρ)`
 and `link K (ρ ∪ σ)`. -/
 theorem map_link_stellarSubdivision_insert_eq_join {ρ : Finset ι}
-    (hv : ({v} : Finset ι) ∉ K) (hvρ : v ∉ ρ)
-    (havoid : ¬ σ ⊆ ρ) (hunion : ρ ∪ σ ∈ K) :
+    (hv : ({v} : Finset ι) ∉ K) (havoid : ¬ σ ⊆ ρ) (hunion : ρ ∪ σ ∈ K) :
     (link (stellarSubdivision K σ v) (insert v ρ)).map (partitionEmbedding (· ∈ σ)) =
       join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ)) := by
+  have hvρ : v ∉ ρ := fun h => notMem_of_singleton_notMem hv hunion (mem_union_left σ h)
   have hσ : σ ∈ K :=
     (K.isRelLowerSet_faces hunion).2 subset_union_right
       ((sdiff_nonempty.mpr havoid).mono sdiff_subset)
@@ -131,13 +131,20 @@ theorem map_link_stellarSubdivision_insert_eq_join {ρ : Finset ι}
     · exact Or.inl he
     · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr he,
         sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
-  rw [link_stellarSubdivision_insert hv hvρ,
-    map_link (partitionEmbedding (· ∈ σ)) (partitionEmbedding (· ∈ σ)).injective,
-    map_closedStar_inf_deletion_eq_join hσ, image_partitionEmbedding,
-    filter_mem_eq_inter, filter_notMem_eq_sdiff,
-    link_join hs ht, link_simplexBoundary inter_subset_right,
-    link_link sdiff_disjoint.symm, sdiff_inter_self_right,
-    union_sdiff_self_eq_union, union_comm σ ρ]
+  have hstellar :
+      (link (stellarSubdivision K σ v) (insert v ρ)).map (partitionEmbedding (· ∈ σ)) =
+        link (join (simplexBoundary σ) (link K σ)) ((ρ ∩ σ).disjSum (ρ \ σ)) := by
+    rw [link_stellarSubdivision_insert hv hvρ,
+      map_link (partitionEmbedding (· ∈ σ)) (partitionEmbedding (· ∈ σ)).injective,
+      map_closedStar_inf_deletion_eq_join hσ]
+    simp only [image_partitionEmbedding, filter_mem_eq_inter, filter_notMem_eq_sdiff]
+  have hjoin :
+      link (join (simplexBoundary σ) (link K σ)) ((ρ ∩ σ).disjSum (ρ \ σ)) =
+        join (simplexBoundary (σ \ ρ)) (link K (ρ ∪ σ)) := by
+    rw [link_join hs ht, link_simplexBoundary inter_subset_right,
+      link_link sdiff_disjoint.symm]
+    simp only [sdiff_inter_self_right, union_sdiff_self_eq_union, union_comm σ ρ]
+  exact hstellar.trans hjoin
 
 /-- A surviving old vertex of a zero-dimensional combinatorial manifold still has void link
 after stellar subdivision. -/

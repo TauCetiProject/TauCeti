@@ -67,9 +67,7 @@ theorem IsCombinatorialManifold.isPure (h : IsCombinatorialManifold K n) : IsPur
         obtain ⟨τ, hτ, -, hcard⟩ := hpure.exists_coface hρ
         exact ⟨τ, hτ, by simp [hempty], hcard⟩
       · apply hpure.exists_coface
-        exact mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr hempty,
-          disjoint_singleton_right.mpr (notMem_erase v σ), by
-            rwa [union_singleton, insert_erase hv]⟩
+        exact erase_mem_link_singleton hσ hv (nonempty_iff_ne_empty.mpr hempty)
     obtain ⟨τ, hτ, hsub, hcard⟩ := hex
     obtain ⟨-, hdis, hface⟩ := mem_link_nonempty.mp hτ
     refine ⟨insert v τ, by rwa [union_singleton] at hface, ?_, ?_⟩
@@ -90,9 +88,9 @@ theorem IsCombinatorialManifold.link_eq_bot_iff (h : IsCombinatorialManifold K n
     (hσ : σ ∈ K) : link K σ = ⊥ ↔ σ.card = n + 1 :=
   h.isPure.link_eq_bot_iff hσ
 
-/-- A face of a combinatorial `n`-manifold with nonvoid link has at most `n` vertices. -/
+/-- Any finset with nonvoid link in a combinatorial `n`-manifold has at most `n` vertices. -/
 theorem IsCombinatorialManifold.card_le_of_link_ne_bot (h : IsCombinatorialManifold K n)
-    (hσ : σ ∈ K) (hne : link K σ ≠ ⊥) : σ.card ≤ n :=
-  h.isPure.card_le_of_link_ne_bot hσ hne
+    (hne : link K σ ≠ ⊥) : σ.card ≤ n :=
+  h.isPure.card_le_of_link_ne_bot hne
 
 end PreAbstractSimplicialComplex
