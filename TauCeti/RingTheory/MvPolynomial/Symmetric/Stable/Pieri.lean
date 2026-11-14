@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Young.Interlacing
 public import TauCeti.Combinatorics.Young.VerticalStrip
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Omega
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Pieri
 
 /-!
@@ -18,9 +18,9 @@ strips and multiplying it by `e_r` adds vertical strips:
 
 `h_r · s_ν = ∑_μ s_μ` and `e_r · s_ν = ∑_μ s_μ`,
 
-the first sum running over the partitions `μ` of `|ν| + r` whose Young diagram interlaces that of
-`ν` (the skew shape `μ / ν` is a horizontal strip), the second over those for which `μ / ν` is a
-vertical strip.
+the first sum running over the partitions `μ` of `|ν| + r` whose Young diagram is interlaced by
+that of `ν` (the skew shape `μ / ν` is a horizontal strip), the second over those for which
+`μ / ν` is a vertical strip.
 
 The involution `ω` exchanges the two rules. It sends `h_r` to `e_r` and `s_μ` to `s_(μᵗ)`
 (`TauCeti.SymmetricFunction.omega_of_stableSchur`), and a skew shape is a vertical strip exactly
@@ -80,9 +80,7 @@ theorem of_stableEsymm_mul_of_stableSchur {R : Type*} [CommSemiring R] {n : ℕ}
   ext_specialization fun d => by
     simp only [map_mul, map_sum, specialization_of, coe_stableSymmetricProj_stableEsymm,
       coe_stableSymmetricProj_stableSchur]
-    -- As for the horizontal rule, the two `esymm (Fin d)` differ only in the decidable equality
-    -- instance on the alphabet.
-    convert esymm_mul_schurPoly (R := R) (σ := Fin d) ν r using 3
+    exact esymm_mul_schurPoly (R := R) (σ := Fin d) ν r
 
 end SymmetricFunction
 
