@@ -90,59 +90,79 @@ open ReducedTensorWords
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   {𝒜 ℋ : AInfinityAlgebra R A}
 
-/-- If `𝒜` agrees with the graded algebra `ℋ` on the words of length at most three, and
-`m_𝒜 - m_ℋ` is the Hochschild differential of a cochain `χ` on the words of length at most four,
-then the obstruction `m₄` is the Hochschild differential of `χ` restricted to the words of length
-three.  Indeed, `χ` differs from this restriction by its restriction to the words of length two
-and by a cochain vanishing on the words of length at most three, and neither changes the
-Hochschild differential on the words of length four. -/
+/-- Let `𝒜` agree with the graded algebra `ℋ` on the words of length at most `n + 1`, and let `χ`
+be a cochain vanishing on the words of length at most `n` whose Hochschild differential is
+`m_𝒜 - m_ℋ` on the words of length at most `n + 2`.  Then the obstruction `mₙ₊₂` is the
+Hochschild differential of `χ` restricted to the words of length `n + 1`.  Indeed `χ` differs
+from this restriction by a cochain vanishing on the words of length at most `n + 1`, whose
+Hochschild differential vanishes on the words of length at most `n + 2`. -/
+private theorem hochschildDifferential_comp_lengthProj_eq_obstruction (hℋ : ℋ.IsMinimal)
+    (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) {n : ℕ}
+    (h : ∀ z ∈ filtration R A (n + 1), 𝒜.taylor z = ℋ.taylor z)
+    {χ : ReducedTensorWords R A →ₗ[R] A} (hχ₀ : ∀ z ∈ filtration R A n, χ z = 0)
+    (hχ : ∀ z ∈ filtration R A (n + 2),
+      𝒜.taylor z - ℋ.taylor z = ℋ.hochschildDifferential 0 χ z) :
+    ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) =
+      𝒜.obstruction ℋ ⟨n + 2, by omega⟩ := by
+  set φ := χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩
+  have hφ : φ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = φ :=
+    comp_lengthProj_comp_lengthProj R A χ _
+  have hd : ∀ z ∈ filtration R A (n + 1), (χ - φ) z = 0 := fun z hz ↦ by
+    rw [LinearMap.sub_apply, LinearMap.comp_apply, apply_lengthProj_of_mem_filtration R A hχ₀ hz,
+      sub_self]
+  -- Both sides are concentrated on the words of length `n + 2`.
+  refine LinearMap.ext fun z ↦ ?_
+  have hw := lengthProj_mem_filtration R A ⟨n + 2, by omega⟩ z
+  have hobs : 𝒜.obstruction ℋ ⟨n + 2, by omega⟩ (lengthProj R A ⟨n + 2, by omega⟩ z) =
+      𝒜.taylor (lengthProj R A ⟨n + 2, by omega⟩ z) -
+        ℋ.taylor (lengthProj R A ⟨n + 2, by omega⟩ z) :=
+    obstruction_apply_of_mem_filtration h hw
+  have hsplit := hχ _ hw
+  rw [← sub_add_cancel χ φ, hochschildDifferential_add, LinearMap.add_apply,
+    hℋ.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 0 hd hw, zero_add] at hsplit
+  rw [← hochschildDifferential_comp_lengthProj (hℋ.taylor_comp_lengthProj_two hm) 0 hφ,
+    ← obstruction_comp_lengthProj, LinearMap.comp_apply, LinearMap.comp_apply, hobs, hsplit]
+
+/-- If `𝒜` agrees with the graded algebra `ℋ` on the words of length at most three, and a cochain
+`χ` vanishing on the words of length one has Hochschild differential `m_𝒜 - m_ℋ` on the words of
+length at most four, then the obstruction `m₄` is the Hochschild differential of `χ` restricted to
+the words of length three. -/
 private theorem hochschildDifferential_comp_lengthProj_three (hℋ : ℋ.IsMinimal)
     (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) (h : ∀ z ∈ filtration R A 3, 𝒜.taylor z = ℋ.taylor z)
     {χ : ReducedTensorWords R A →ₗ[R] A} (hχ₁ : ∀ z ∈ filtration R A 1, χ z = 0)
     (hχ : ∀ z ∈ filtration R A 4, 𝒜.taylor z - ℋ.taylor z = ℋ.hochschildDifferential 0 χ z) :
     ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) =
       𝒜.obstruction ℋ ⟨4, by norm_num⟩ := by
-  have hcomp₂ := hℋ.taylor_comp_lengthProj_two hm
-  have hg : ∀ z ∈ filtration R A 3,
-      (χ - χ ∘ₗ lengthProj R A ⟨2, two_pos⟩ - χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) z = 0 := by
-    have hg₂ : ∀ z ∈ filtration R A 2, (χ - χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) z = 0 :=
-      fun z hz ↦ by
-        rw [LinearMap.sub_apply, LinearMap.comp_apply,
-          apply_lengthProj_of_mem_filtration R A (n := 1) hχ₁ hz, sub_self]
-    intro z hz
-    have h₃ := apply_lengthProj_of_mem_filtration R A (n := 2) hg₂ hz
-    rw [LinearMap.sub_apply, LinearMap.comp_apply,
-      lengthProj_lengthProj_of_ne R A (by decide), map_zero, sub_zero] at h₃
-    rw [LinearMap.sub_apply, ← h₃, LinearMap.comp_apply, sub_self]
-  have hδ₃ : ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) ∘ₗ
-      lengthProj R A ⟨4, by norm_num⟩ =
-        ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) :=
-    hochschildDifferential_comp_lengthProj hcomp₂ 0 (n := 2)
-      (comp_lengthProj_comp_lengthProj R A _ _)
-  have hδ₂ : ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) ∘ₗ
-      lengthProj R A ⟨3, by norm_num⟩ =
-        ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) :=
-    hochschildDifferential_comp_lengthProj hcomp₂ 0 (n := 1)
-      (comp_lengthProj_comp_lengthProj R A _ _)
-  -- Both sides are concentrated on the words of length four.
-  refine LinearMap.ext fun z ↦ ?_
-  rw [← hδ₃, ← obstruction_comp_lengthProj, LinearMap.comp_apply, LinearMap.comp_apply]
-  have hw := lengthProj_mem_filtration R A ⟨4, by norm_num⟩ z
-  have hobs : 𝒜.obstruction ℋ ⟨4, by norm_num⟩ (lengthProj R A ⟨4, by norm_num⟩ z) =
-      𝒜.taylor (lengthProj R A ⟨4, by norm_num⟩ z) -
-        ℋ.taylor (lengthProj R A ⟨4, by norm_num⟩ z) :=
-    obstruction_apply_of_mem_filtration (n := 3) h hw
-  have hsplit : χ = (χ - χ ∘ₗ lengthProj R A ⟨2, two_pos⟩ -
-      χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) +
-        (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩ + χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩) := by
-    abel
-  rw [hobs, hχ _ hw]
-  conv_rhs => rw [hsplit]
-  rw [hochschildDifferential_add, hochschildDifferential_add,
-    LinearMap.add_apply, LinearMap.add_apply,
-    hℋ.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 0 (e := 3) hg hw,
-    ← hδ₂, LinearMap.comp_apply, lengthProj_lengthProj_of_ne R A (by decide), map_zero,
-    zero_add, zero_add]
+  -- Apply `hochschildDifferential_comp_lengthProj_eq_obstruction` to `χ - χ ∘ π₂`, which vanishes
+  -- on the words of length at most two: the length-two component `χ ∘ π₂` has Hochschild
+  -- differential `m_𝒜 - m_ℋ = 0` on the words of length three, and changes neither the restriction
+  -- to length three nor the differential on the words of length four.
+  have hχ₀ : ∀ z ∈ filtration R A 2, (χ - χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) z = 0 :=
+    fun z hz ↦ by
+      rw [LinearMap.sub_apply, LinearMap.comp_apply,
+        apply_lengthProj_of_mem_filtration R A (n := 1) hχ₁ hz, sub_self]
+  have hsplit : ℋ.hochschildDifferential 0 χ =
+      ℋ.hochschildDifferential 0 (χ - χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) +
+        ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) := by
+    rw [← hochschildDifferential_add, sub_add_cancel]
+  -- The differential of the length-two component lives on the words of length three, where it
+  -- is `m_𝒜 - m_ℋ = 0`.
+  have hδ₂ (z : ReducedTensorWords R A) :
+      ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) z = 0 := by
+    have hw := lengthProj_mem_filtration R A ⟨3, by norm_num⟩ z
+    have h₃ := hχ _ (filtration_monotone R A (by norm_num) hw)
+    rw [hsplit, LinearMap.add_apply,
+      hℋ.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 0 hχ₀ hw, zero_add,
+      h _ hw, sub_self] at h₃
+    rw [← hochschildDifferential_comp_lengthProj (hℋ.taylor_comp_lengthProj_two hm) 0 (n := 1)
+      (comp_lengthProj_comp_lengthProj R A _ _), LinearMap.comp_apply, ← h₃]
+  have hπ : (χ - χ ∘ₗ lengthProj R A ⟨2, two_pos⟩) ∘ₗ lengthProj R A ⟨3, by norm_num⟩ =
+      χ ∘ₗ lengthProj R A ⟨3, by norm_num⟩ := LinearMap.ext fun z ↦ by
+    rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+      lengthProj_lengthProj_of_ne R A (by decide), map_zero, sub_zero, LinearMap.comp_apply]
+  rw [← hπ]
+  refine hochschildDifferential_comp_lengthProj_eq_obstruction hℋ hm (n := 2) h hχ₀ fun z hz ↦ ?_
+  rw [hχ z hz, hsplit, LinearMap.add_apply, hδ₂, add_zero]
 
 /-- Where `𝒜` agrees with `ℋ`, the Hochschild differential of `f.taylor - letter` vanishes, for an
 `A∞` morphism `f : 𝒜 ⟶ ℋ` as in
@@ -342,42 +362,39 @@ theorem IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstructi
 
 /-! ### The first obstruction in every arity -/
 
-/-- Let `𝒜` agree with the graded algebra `ℋ` on the words of length at most `n + 1`, and let `χ`
-be a cochain vanishing on the words of length at most `n` whose Hochschild differential is
-`m_𝒜 - m_ℋ` on the words of length at most `n + 2`.  Then the obstruction `mₙ₊₂` is the
-Hochschild differential of `χ` restricted to the words of length `n + 1`.  Indeed `χ` differs
-from this restriction by a cochain vanishing on the words of length at most `n + 1`, whose
-Hochschild differential vanishes on the words of length at most `n + 2`. -/
-private theorem hochschildDifferential_comp_lengthProj_eq_obstruction (hℋ : ℋ.IsMinimal)
-    (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) {n : ℕ}
-    (h : ∀ z ∈ filtration R A (n + 1), 𝒜.taylor z = ℋ.taylor z)
-    {χ : ReducedTensorWords R A →ₗ[R] A} (hχ₀ : ∀ z ∈ filtration R A n, χ z = 0)
-    (hχ : ∀ z ∈ filtration R A (n + 2),
-      𝒜.taylor z - ℋ.taylor z = ℋ.hochschildDifferential 0 χ z) :
-    ℋ.hochschildDifferential 0 (χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩) =
-      𝒜.obstruction ℋ ⟨n + 2, by omega⟩ := by
-  set φ := χ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩
-  have hφ : φ ∘ₗ lengthProj R A ⟨n + 1, n.succ_pos⟩ = φ :=
-    comp_lengthProj_comp_lengthProj R A χ _
-  have hd : ∀ z ∈ filtration R A (n + 1), (χ - φ) z = 0 := fun z hz ↦ by
-    rw [LinearMap.sub_apply, LinearMap.comp_apply, apply_lengthProj_of_mem_filtration R A hχ₀ hz,
-      sub_self]
-  -- Both sides are concentrated on the words of length `n + 2`.
-  refine LinearMap.ext fun z ↦ ?_
-  have hw := lengthProj_mem_filtration R A ⟨n + 2, by omega⟩ z
-  have hobs : 𝒜.obstruction ℋ ⟨n + 2, by omega⟩ (lengthProj R A ⟨n + 2, by omega⟩ z) =
-      𝒜.taylor (lengthProj R A ⟨n + 2, by omega⟩ z) -
-        ℋ.taylor (lengthProj R A ⟨n + 2, by omega⟩ z) :=
-    obstruction_apply_of_mem_filtration h hw
-  have hsplit := hχ _ hw
-  rw [← sub_add_cancel χ φ, hochschildDifferential_add, LinearMap.add_apply,
-    hℋ.hochschildDifferential_apply_eq_zero_of_mem_filtration_add_one 0 hd hw, zero_add] at hsplit
-  rw [← hochschildDifferential_comp_lengthProj (hℋ.taylor_comp_lengthProj_two hm) 0 hφ,
-    ← obstruction_comp_lengthProj, LinearMap.comp_apply, LinearMap.comp_apply, hobs, hsplit]
-
 section Rat
 
 variable [Algebra ℚ R]
+
+/-- Let `f : 𝒜 ⟶ ℋ` be an `A∞` morphism whose Taylor map is `letter` on the words of length at most
+`e`, for some `e ≥ 1`, and let `χ` be a homogeneous Hochschild cocycle of `ℋ` with no unary
+component that vanishes on the words of length at most `e`.  Then on the words of length at most
+`e + 1` the Taylor map of `f` followed by the exponential `ℋ.expHom` of `χ` is `f.taylor + χ`. -/
+private theorem taylor_comp_expHom_apply_of_mem_filtration {e : ℕ} (he : 1 ≤ e)
+    (f : AInfinityHom 𝒜 ℋ) (hf : ∀ z ∈ filtration R A e, f.taylor z = letter R A z)
+    {χ : ReducedTensorWords R A →ₗ[R] A} (hχe : ∀ z ∈ filtration R A e, χ z = 0)
+    (hχ₁ : χ ∘ₗ ofLetter R A = 0) (hδχ : ℋ.hochschildDifferential 0 χ = 0)
+    (hχ : LinearMap.IsHomogeneous χ (gradedPiece (ℋ.grading.shift 1))
+      (ℋ.grading.shift 1).piece 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A (e + 1)) :
+    ((ℋ.expHom hχ hχ₁ hδχ).comp f).taylor z = f.taylor z + χ z := by
+  -- On the words of length at most `e + 1`, `f` is `id + coderiv ψ` for `ψ = f.taylor - letter`
+  -- and the exponential is `id + coderiv χ`, so the composite has Taylor map `letter + ψ + χ`.
+  set ψ := f.taylor - letter R A with hψdef
+  have hψe : ∀ w ∈ filtration R A e, ψ w = 0 := fun w hw ↦ by
+    rw [hψdef, LinearMap.sub_apply, hf w hw, sub_self]
+  have hft : f.taylor = letter R A + ψ := by rw [hψdef, add_sub_cancel]
+  have hFz : f.barMap z = z + coderiv R ψ z := by
+    rw [f.barMap_eq_coalgHom, hft,
+      coalgHom_letter_add_apply_of_mem_filtration hψe (filtration_monotone R A (by omega) hz)]
+  have hw : z + coderiv R ψ z ∈ filtration R A (2 * e) :=
+    filtration_monotone R A (by omega) (add_mem hz (coderiv_mem_filtration R ψ hz))
+  have hD : coderiv R ψ z ∈ filtration R A e :=
+    filtration_monotone R A he (coderiv_filtration_add_le R ψ hψe 1 ⟨z, by rwa [add_comm], rfl⟩)
+  simp only [AInfinityHom.taylor_def, AInfinityHom.barMap_comp, barMap_expHom,
+    LinearMap.comp_apply, hFz]
+  rw [expCoderiv_apply_of_mem_filtration he hχe hw]
+  simp only [map_add, letter_coderiv_apply, hχe _ hD, add_zero]
 
 /-- **Raising the order of a morphism to a graded algebra.**  Over a `ℚ`-algebra, let
 `f : 𝒜 ⟶ ℋ` be an `A∞` morphism to the graded algebra `ℋ` whose Taylor map is `letter` on the
@@ -405,9 +422,6 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
     rw [hφ₀def, LinearMap.comp_apply,
       lengthProj_apply_eq_zero_of_mem_filtration R A (n := ⟨e + 1, e.succ_pos⟩) e.lt_succ_self hz,
       map_zero]
-  have hψφ₀ : ∀ z ∈ filtration R A (e + 1), (ψ - φ₀) z = 0 := fun z hz ↦ by
-    rw [LinearMap.sub_apply, hφ₀def, LinearMap.comp_apply,
-      apply_lengthProj_of_mem_filtration R A hψe hz, sub_self]
   -- `φ₀` is a Hochschild cocycle: this is the obstruction lemma for `ℋ` relative to itself, whose
   -- obstruction vanishes.
   have hδφ₀ : ℋ.hochschildDifferential 0 φ₀ = 0 := by
@@ -425,22 +439,10 @@ private theorem exists_taylor_apply_eq_letter_succ (hℋ : ℋ.IsMinimal)
   have hδχ : ℋ.hochschildDifferential 0 χ = 0 := by
     rw [hχdef, hochschildDifferential_smul, hδφ₀, smul_zero]
   refine ⟨(ℋ.expHom hχ hχ₁ hδχ).comp f, fun z hz ↦ ?_⟩
-  -- On the words of length at most `e + 1`, `f` is `id + coderiv ψ` and the exponential is
-  -- `id + coderiv χ`, so the composite has Taylor map `letter + ψ + χ = letter`.
-  have hFz : f.barMap z = z + coderiv R ψ z := by
-    rw [f.barMap_eq_coalgHom, (add_sub_cancel (letter R A) f.taylor).symm,
-      coalgHom_letter_add_apply_of_mem_filtration hψe (filtration_monotone R A (by omega) hz)]
-  have hw : z + coderiv R ψ z ∈ filtration R A (2 * e) :=
-    filtration_monotone R A (by omega) (add_mem hz (coderiv_mem_filtration R ψ hz))
-  have hD : coderiv R ψ z ∈ filtration R A e :=
-    filtration_monotone R A he (coderiv_filtration_add_le R ψ hψe 1 ⟨z, by rwa [add_comm], rfl⟩)
-  have hφz : φ₀ z = ψ z := by
-    have h₀ := hψφ₀ z hz
-    rwa [LinearMap.sub_apply, sub_eq_zero, eq_comm] at h₀
-  simp only [AInfinityHom.taylor_def, AInfinityHom.barMap_comp, barMap_expHom,
-    LinearMap.comp_apply, hFz]
-  rw [expCoderiv_apply_of_mem_filtration he hχe hw]
-  simp only [map_add, letter_coderiv_apply, hχdef, LinearMap.smul_apply, hφ₀e _ hD, hφz]
+  -- On the words of length at most `e + 1`, `χ = -φ₀ = -ψ`, so `f.taylor + χ = letter`.
+  rw [taylor_comp_expHom_apply_of_mem_filtration he f hf hχe hχ₁ hδχ hχ hz, hχdef,
+    LinearMap.smul_apply, hφ₀def, LinearMap.comp_apply,
+    apply_lengthProj_of_mem_filtration R A hψe hz, hψdef, LinearMap.sub_apply]
   module
 
 /-- The first obstruction is a coboundary for an `A∞` morphism with linear part the identity, over
