@@ -6,16 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
-# The projective image of `Γ₀(N)`
+# The projective images of `Γ₀(N)` and `Γ(N)`
 
 The compactified modular curve is a quotient by a subgroup of `PSL₂(ℤ)`, while congruence
 subgroups are defined inside `SL₂(ℤ)`. Since `Γ₀(N)` contains the center `{±I}`, passing to its
-projective image does not change its index. This identifies the arithmetic index with the degree
-input used by the compactified quotient map.
+projective image does not change its index, and lifting that image back to `SL₂(ℤ)` recovers
+`Γ₀(N)`. This identifies the arithmetic index with the degree input used by the compactified
+quotient map.
+
+The principal congruence subgroup `Γ(N)` behaves differently: for `N ≥ 3` it does not contain
+`-I`, so its projective image has half its index: the image of `Γ(N)` in `PSL₂(ℤ)` has index
+`|SL₂(ℤ/Nℤ)| / 2`. At `N = 3` the two indices are `24` and `12`.
+
+## References
+
+* Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, Graduate Texts in
+  Mathematics 228, Springer, 2005, §1.2 (the index of `Γ(N)` and of `±Γ(N)`).
 -/
 
 public section
@@ -37,11 +47,8 @@ theorem Gamma0Projective_def (N : ℕ) :
 
 /-- The center of `SL₂(ℤ)` is contained in every congruence subgroup `Γ₀(N)`. -/
 theorem center_le_Gamma0 (N : ℕ) :
-    Subgroup.center SL(2, ℤ) ≤ CongruenceSubgroup.Gamma0 N := by
-  intro z hz
-  rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hz with hz | hz
-  · simp [hz]
-  · simp [hz]
+    Subgroup.center SL(2, ℤ) ≤ CongruenceSubgroup.Gamma0 N :=
+  Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem.mpr CongruenceSubgroup.neg_one_mem_Gamma0
 
 /-- Membership of the image of a matrix in `Γ₀(N)` is unchanged by projectivization. -/
 @[simp]
@@ -73,8 +80,31 @@ theorem mem_Gamma0Projective_iff (N : ℕ) (g : PSL(2, ℤ)) :
 /-- The projective image of `Γ₀(N)` has the same index as `Γ₀(N)`: the quotient map's kernel,
 the center of `SL₂(ℤ)`, is already contained in `Γ₀(N)`. -/
 theorem Gamma0Projective_index (N : ℕ) :
-    (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index := by
-  rw [Gamma0Projective_def, Subgroup.index_map_mk'_eq_index_sup,
-    sup_eq_left.mpr (center_le_Gamma0 N)]
+    (Gamma0Projective N).index = (CongruenceSubgroup.Gamma0 N).index :=
+  Matrix.SpecialLinearGroup.index_map_mk'_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
+
+/-- The lift of the projective image of `Γ₀(N)` to `SL₂(ℤ)` is `Γ₀(N)`, which contains `-I`. -/
+@[simp]
+theorem liftSL_Gamma0Projective (N : ℕ) :
+    (Gamma0Projective N).liftSL = CongruenceSubgroup.Gamma0 N :=
+  Matrix.SpecialLinearGroup.liftSL_map_of_neg_one_mem CongruenceSubgroup.neg_one_mem_Gamma0
+
+/-- **The projective index of `Γ(N)`** for `N ≥ 3`: since `-I ∉ Γ(N)`, the image of `Γ(N)` in
+`PSL₂(ℤ)` has index `|SL₂(ℤ/Nℤ)| / 2`. -/
+theorem two_mul_index_map_Gamma {N : ℕ} (hN : 3 ≤ N) :
+    2 * ((CongruenceSubgroup.Gamma N).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = Nat.card SL(2, ZMod N) := by
+  rw [Matrix.SpecialLinearGroup.two_mul_index_map_mk'_of_neg_one_notMem,
+    CongruenceSubgroup.index_Gamma]
+  rw [CongruenceSubgroup.neg_one_mem_Gamma_iff]
+  exact fun h ↦ by have := Nat.le_of_dvd two_pos h; omega
+
+/-- The image of `Γ(3)` in `PSL₂(ℤ)` has index `12`, half the index of `Γ(3)`, since `-I ∉ Γ(3)`. -/
+theorem index_map_Gamma_three :
+    ((CongruenceSubgroup.Gamma 3).map
+        (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 12 := by
+  have h := two_mul_index_map_Gamma le_rfl
+  rw [← CongruenceSubgroup.index_Gamma, CongruenceSubgroup.index_Gamma_three] at h
+  omega
 
 end TauCeti.CongruenceSubgroup
