@@ -470,8 +470,7 @@ abbrev mergeFaces : SurfaceModel.{u, v, w} where
   hasSurfaceLink v := (S.hasSurfaceLink v).mergeFaces h
 
 /-- Merging two faces of a surface model does not change its Euler characteristic. -/
-@[simp] theorem eulerChar_mergeFaces : (S.mergeFaces h).eulerChar = S.eulerChar :=
-  haveI : Finite S.graph.GeomEdge := Finite.of_surjective _ S.graph.toGeomEdge_surjective
+theorem eulerChar_mergeFaces : (S.mergeFaces h).eulerChar = S.eulerChar :=
   S.toPolygonalComplex.eulerChar_mergeFaces h
 
 /-- Merging two faces of a surface model does not change its orientability. -/
