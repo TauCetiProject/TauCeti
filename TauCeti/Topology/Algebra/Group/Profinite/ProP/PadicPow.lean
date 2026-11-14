@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Subgroup
@@ -39,6 +40,8 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.module`: the `ℤ_[p]`-module structure on an abelian pro-`p` group.
 * `TauCeti.IsProP.padicPowHomeomorph`: for a unit `u` of `ℤ_[p]`, the power `a ↦ a ^ u` as a
   homeomorphism of the group, with inverse `a ↦ a ^ u⁻¹`.
+* `TauCeti.IsProP.powHomeomorphOfCoprime`: for `m : ℕ` coprime to `p`, the ordinary power
+  `a ↦ a ^ m` as a homeomorphism of the group.
 
 ## Main results
 
@@ -59,8 +62,11 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.conj_padicPow`: the power commutes with conjugation;
   `TauCeti.IsProP.commute_padicPow`: powers of commuting elements commute.
 * `TauCeti.IsProP.padicPow_padicPow_inv`, `TauCeti.IsProP.padicPow_left_inj`,
-  `TauCeti.IsProP.closedZpowers_padicPow`: a unit exponent `u` is undone by `u⁻¹`, its power map
-  is injective, and `a ^ u` generates the same closed subgroup as `a`.
+  `TauCeti.IsProP.closedZpowers_padicPow`, `TauCeti.IsProP.pow_bijective_of_coprime`,
+  `TauCeti.IsProP.subsingleton_monoidHom_multiplicativeInt`: a unit exponent `u` is undone by
+  `u⁻¹`, its power map is injective, `a ^ u` generates the same closed subgroup as `a`, raising to
+  a natural power coprime to `p` is bijective, and a pro-`p` group admits no nontrivial
+  homomorphism to `Multiplicative ℤ`.
 * `TauCeti.IsProP.mk_padicPow_quotient`, `TauCeti.IsProP.ofMul_mk_padicPow_quotient`: modulo a
   closed normal subgroup the power is the power of the class, and it is the scalar action of
   `ℤ_[p]` when the quotient is abelian.
@@ -412,6 +418,86 @@ theorem closedZpowers_padicPow (hA : IsProP p A) (a : A) (u : ℤ_[p]ˣ) :
     closedZpowers (hA.padicPow a u) = closedZpowers a :=
   (hA.closedZpowers_padicPow_le a u).antisymm
     (by simpa using hA.closedZpowers_padicPow_le (hA.padicPow a u) ↑u⁻¹)
+
+/-- **Raising to a power coprime to `p` is a homeomorphism of a pro-`p` group.** A natural number
+`m` coprime to `p` is a unit `u` of `ℤ_[p]`, so `a ↦ a ^ m` coincides with `a ↦ a ^ u` and has
+continuous inverse `a ↦ a ^ u⁻¹`. -/
+noncomputable def powHomeomorphOfCoprime (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) : A ≃ₜ A where
+  toFun a := a ^ m
+  invFun := (hA.padicPowHomeomorph (PadicInt.isUnit_natCast_of_coprime hm).unit).symm
+  left_inv a := by
+    simpa [padicPow_natCast] using
+      (hA.padicPowHomeomorph (PadicInt.isUnit_natCast_of_coprime hm).unit).left_inv a
+  right_inv a := by
+    simpa [padicPow_natCast] using
+      (hA.padicPowHomeomorph (PadicInt.isUnit_natCast_of_coprime hm).unit).right_inv a
+  continuous_toFun := continuous_pow m
+  continuous_invFun :=
+    (hA.padicPowHomeomorph (PadicInt.isUnit_natCast_of_coprime hm).unit).continuous_symm
+
+/-- The homeomorphism `TauCeti.IsProP.powHomeomorphOfCoprime` acts as `a ↦ a ^ m`. -/
+@[simp]
+theorem powHomeomorphOfCoprime_apply (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) (a : A) :
+    hA.powHomeomorphOfCoprime hm a = a ^ m :=
+  (rfl)
+
+/-- For `m` coprime to `p`, `TauCeti.IsProP.powHomeomorphOfCoprime` agrees with the `p`-adic unit
+power homeomorphism attached to `(m : ℤ_[p])`. -/
+theorem powHomeomorphOfCoprime_eq_padicPowHomeomorph (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) :
+    hA.powHomeomorphOfCoprime hm =
+      hA.padicPowHomeomorph (PadicInt.isUnit_natCast_of_coprime hm).unit :=
+  Homeomorph.ext fun a ↦ by simp
+
+/-- The `m`-th power of the `m`-th root in a pro-`p` group is the original element. -/
+@[simp]
+theorem pow_powHomeomorphOfCoprime_symm (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) (a : A) :
+    (hA.powHomeomorphOfCoprime hm).symm a ^ m = a :=
+  (hA.powHomeomorphOfCoprime hm).apply_symm_apply a
+
+/-- The `m`-th root of `a ^ m` in a pro-`p` group is `a`. -/
+@[simp]
+theorem powHomeomorphOfCoprime_symm_pow (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) (a : A) :
+    (hA.powHomeomorphOfCoprime hm).symm (a ^ m) = a :=
+  (hA.powHomeomorphOfCoprime hm).symm_apply_apply a
+
+/-- **Raising to a power coprime to `p` is bijective on a pro-`p` group.** -/
+theorem pow_bijective_of_coprime (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) :
+    Function.Bijective fun a : A ↦ a ^ m :=
+  (hA.powHomeomorphOfCoprime hm).bijective
+
+/-- Raising to a power coprime to `p` is injective on a pro-`p` group. -/
+theorem pow_left_injective_of_coprime (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) :
+    Function.Injective fun a : A ↦ a ^ m :=
+  (hA.powHomeomorphOfCoprime hm).injective
+
+/-- Two elements of a pro-`p` group with the same `m`-th power for `m` coprime to `p` are equal. -/
+theorem pow_left_inj_of_coprime (hA : IsProP p A) {a b : A} {m : ℕ} (hm : p.Coprime m) :
+    a ^ m = b ^ m ↔ a = b :=
+  (hA.pow_left_injective_of_coprime hm).eq_iff
+
+/-- Raising to a power coprime to `p` is surjective on a pro-`p` group. -/
+theorem pow_surjective_of_coprime (hA : IsProP p A) {m : ℕ} (hm : p.Coprime m) :
+    Function.Surjective fun a : A ↦ a ^ m :=
+  (hA.powHomeomorphOfCoprime hm).surjective
+
+/-- **A pro-`p` group admits no nontrivial group homomorphism to `Multiplicative ℤ`**, even without
+a continuity assumption: every element is divisible by `(p + 1) ^ k` for all `k`, whereas `0` is
+the only integer divisible by arbitrarily large powers of `p + 1`. -/
+theorem subsingleton_monoidHom_multiplicativeInt (hA : IsProP p A) :
+    Subsingleton (A →* Multiplicative ℤ) := by
+  refine ⟨fun f g ↦ MonoidHom.ext fun a ↦ ?_⟩
+  suffices ∀ φ : A →* Multiplicative ℤ, φ a = 1 by rw [this f, this g]
+  intro φ
+  let k := (φ a).toAdd.natAbs
+  have hcop : p.Coprime ((p + 1) ^ k) :=
+    (Nat.coprime_self_add_right.mpr p.coprime_one_right).pow_right k
+  obtain ⟨b, hb⟩ := hA.pow_surjective_of_coprime hcop a
+  have hdvd : (((p + 1) ^ k : ℕ) : ℤ) ∣ (φ a).toAdd :=
+    ⟨(φ b).toAdd, by rw [← hb, map_pow, toAdd_pow, nsmul_eq_mul]⟩
+  have hp : 1 < p + 1 := Nat.succ_lt_succ hp.out.pos
+  have hlt : |(φ a).toAdd| < (((p + 1) ^ k : ℕ) : ℤ) := by
+    simpa only [Int.abs_eq_natAbs, k] using mod_cast Nat.lt_pow_self hp
+  exact Multiplicative.toAdd.injective (Int.eq_zero_of_abs_lt_dvd hdvd hlt)
 
 /-! ### Quotients -/
 

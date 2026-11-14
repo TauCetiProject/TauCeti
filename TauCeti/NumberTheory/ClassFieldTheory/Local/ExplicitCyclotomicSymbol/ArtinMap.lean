@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.NumberTheory.Padics.ValuativeRel
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -30,11 +31,14 @@ inverse of the unit part:
 ```
 
 and for a finite extension `F/ℚ_p` the Artin symbol of a unit `u` of the valuation ring of `F`
-(`v(u) = 1`) has cyclotomic character `N_{F/ℚ_p}(u)⁻¹`. This is the cyclotomic normalization of
-local class field theory, with the arithmetic Frobenius convention. On the roots of unity of
-`p`-power order it identifies the Artin map with the explicit local symbols `cyclotomicSymbol`,
-which act there through `u⁻¹` as well (`TauCeti.unitsMap_cyclotomicSymbol_primePow`), so the
-product formula for those explicit symbols becomes a statement about Artin symbols.
+(`v(u) = 1`) has cyclotomic character `N_{F/ℚ_p}(u)⁻¹`. Because the discrete rank-one valuation of
+a local field finite over `ℚ_p` restricts automatically to the `p`-adic valuation on `ℚ_p`
+(`TauCeti.valuativeExtension_padic`), this unit normalization requires no auxiliary valuation
+compatibility hypothesis between `F` and `ℚ_p`. This is the cyclotomic normalization of local class
+field theory, with the arithmetic Frobenius convention. On the roots of unity of `p`-power order it
+identifies the Artin map with the explicit local symbols `cyclotomicSymbol`, which act there through
+`u⁻¹` as well (`TauCeti.unitsMap_cyclotomicSymbol_primePow`), so the product formula for those
+explicit symbols becomes a statement about Artin symbols.
 
 The proof uses no Lubin–Tate theory. It compares, at each finite level `pⁿ`, a representative of
 the Artin symbol of a uniformizer `p u` with an automorphism acting through the explicit symbol
@@ -64,9 +68,10 @@ norms `a² - 3b²` fill only `1 + 3ℤ_3`, while the image is all of `ℤ_3ˣ`.
   character of the Artin symbol of `pᵏ u` is `u⁻¹`.
 * `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic`: a representative of the
   Artin symbol of a unit `u ∈ ℤ_pˣ` has cyclotomic character `u⁻¹`.
-* `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_unit`: for `F/ℚ_p` finite, a
-  representative of the Artin symbol of a unit `u` of the valuation ring of `F` has cyclotomic
-  character `N_{F/ℚ_p}(u)⁻¹`.
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_unit`,
+  `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_unit`: for `F/ℚ_p` finite, the Artin
+  symbol (and any Galois representative of it) of a unit `u` of the valuation ring of `F` has
+  cyclotomic character `N_{F/ℚ_p}(u)⁻¹`, without assuming `ValuativeExtension ℚ_[p] F`.
 * `TauCeti.ClassFieldTheory.localArtinMap_cyclotomic_padic_primePow`: over `ℚ_p`, a
   representative of the finite Artin symbol of `pᵏ u` acts on the roots of unity of order dividing
   `pⁿ` by the power `u⁻¹ mod pⁿ`.
@@ -90,6 +95,7 @@ norms `a² - 3b²` fill only `1 + 3ℤ_3`, while the image is all of `ℤ_3ˣ`.
 
 * J. S. Milne, *Class Field Theory*, Chapter VII, Example 8.2, for the explicit symbols.
 * J. Neukirch, *Algebraic Number Theory*, Chapter V, §2, for the norm residue symbol over `ℚ_p`.
+* J.-P. Serre, *Local Fields*, Chapter XIV, §3, for the cyclotomic Artin normalization on units.
 -/
 
 public section
@@ -295,22 +301,17 @@ theorem localCyclotomicCharacter_artinMap_padic (u : ℤ_[p]ˣ)
   rw [← abelianizedLocalCyclotomicCharacter_mk, hσ]
   exact abelianizedLocalCyclotomicCharacter_artinMap_padic p (k := 0) (by simp)
 
-/-- **The cyclotomic normalization of the local Artin map of a finite extension of `ℚ_p`.** Let
-`F/ℚ_p` be finite. If `σ ∈ G_F` represents the absolute Artin symbol of a unit `u` of the valuation
-ring of `F` (`v(u) = 1`), then the `p`-adic cyclotomic character of `σ` is the inverse of the norm
-of `u`:
-
-```text
-χ_cyc (Art_F u) = N_{F/ℚ_p}(u)⁻¹.
-```
--/
-theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRel F]
+/-- **The cyclotomic character of the Artin symbol of a valuation-ring unit in a finite extension
+of `ℚ_p`.** Let `F/ℚ_p` be finite and let `u` be a unit of the valuation ring of `F` (`v(u) = 1`).
+Then the `p`-adic cyclotomic character of the absolute Artin symbol of `u` is `N_{F/ℚ_p}(u)⁻¹`,
+without assuming `ValuativeExtension ℚ_[p] F`. -/
+theorem abelianizedLocalCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRel F]
     [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
-    [FiniteDimensional ℚ_[p] F] [ValuativeExtension ℚ_[p] F] (u : Fˣ)
-    (hu : ValuativeRel.valuation F (u : F) = 1) (σ : Field.absoluteGaloisGroup F)
-    (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = artinMap F u) :
-    Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (localCyclotomicCharacter p F σ) =
+    [Module.Finite ℚ_[p] F] (u : Fˣ) (hu : ValuativeRel.valuation F (u : F) = 1) :
+    Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom
+      (abelianizedLocalCyclotomicCharacter p F (artinMap F u)) =
       (Units.map (Algebra.norm ℚ_[p] : F →* ℚ_[p]) u)⁻¹ := by
+  have : ValuativeExtension ℚ_[p] F := valuativeExtension_padic p F
   -- Instance search does not find `Nontrivial ℚ_[p]` within its budget, so it is supplied from
   -- the field structure.
   have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
@@ -321,13 +322,32 @@ theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRe
       toAdd_one]
   obtain ⟨w, hw⟩ := _root_.Padic.exists_eq_zpow_valuation_mul
     (Units.ne_zero (Algebra.normUnits ℚ_[p] u))
-  rw [← abelianizedLocalCyclotomicCharacter_mk, hσ,
-    abelianizedLocalCyclotomicCharacter_artinMap_norm ℚ_[p] p,
+  rw [abelianizedLocalCyclotomicCharacter_artinMap_norm ℚ_[p] p,
     abelianizedLocalCyclotomicCharacter_artinMap_padic p hw]
   rw [Algebra.coe_normUnits] at hw hv
   rw [hv, zpow_zero, one_mul] at hw
   ext
   simp [hw]
+
+/-- **The cyclotomic normalization of the local Artin map of a finite extension of `ℚ_p`.** Let
+`F/ℚ_p` be finite. If `σ ∈ G_F` represents the absolute Artin symbol of a unit `u` of the valuation
+ring of `F` (`v(u) = 1`), then the `p`-adic cyclotomic character of `σ` is the inverse of the norm
+of `u`:
+
+```text
+χ_cyc (Art_F u) = N_{F/ℚ_p}(u)⁻¹.
+```
+
+No `ValuativeExtension ℚ_[p] F` hypothesis is needed (`TauCeti.valuativeExtension_padic`). -/
+theorem localCyclotomicCharacter_artinMap_unit (F : Type) [Field F] [ValuativeRel F]
+    [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra ℚ_[p] F]
+    [Module.Finite ℚ_[p] F] (u : Fˣ)
+    (hu : ValuativeRel.valuation F (u : F) = 1) (σ : Field.absoluteGaloisGroup F)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization F) = artinMap F u) :
+    Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (localCyclotomicCharacter p F σ) =
+      (Units.map (Algebra.norm ℚ_[p] : F →* ℚ_[p]) u)⁻¹ := by
+  rw [← abelianizedLocalCyclotomicCharacter_mk, hσ]
+  exact abelianizedLocalCyclotomicCharacter_artinMap_unit p F u hu
 
 /-! ### Finite-level Artin symbols on roots of unity of `p`-power order -/
 
@@ -464,10 +484,11 @@ theorem localCyclotomicCharacter_artinMap_uniformizer (ϖ : Kˣ)
   rw [hχ, hnorm, map_inv]
   simp
 
+omit [ValuativeExtension ℚ_[p] K] in
 /-- **The cyclotomic characters of the Artin symbols of units are the unit norms.** For a finite
 extension `K/ℚ_p`, the values `χ_cyc(Art_K u)` at the units `u` of the valuation ring of `K` form
 the subgroup of `ℤ_pˣ` of norms `N_{K/ℚ_p}(u)` of such units, since
-`χ_cyc(Art_K u) = N_{K/ℚ_p}(u)⁻¹` (`localCyclotomicCharacter_artinMap_unit`). -/
+`χ_cyc(Art_K u) = N_{K/ℚ_p}(u)⁻¹` (`abelianizedLocalCyclotomicCharacter_artinMap_unit`). -/
 theorem map_unitFiltration_zero_artinMap_eq_comap_map_normUnits :
     (unitFiltration K 0).map
         ((abelianizedLocalCyclotomicCharacter p K).toMonoidHom.comp (artinMap K)) =
@@ -476,11 +497,10 @@ theorem map_unitFiltration_zero_artinMap_eq_comap_map_normUnits :
   set φ := (abelianizedLocalCyclotomicCharacter p K).toMonoidHom.comp (artinMap K)
   have key {u : Kˣ} (hu : u ∈ unitFiltration K 0) :
       Units.map (algebraMap ℤ_[p] ℚ_[p]).toMonoidHom (φ u) = (Algebra.normUnits ℚ_[p] u)⁻¹ := by
-    obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K u)
-    have hσ' : φ u = localCyclotomicCharacter p K σ := by simp [φ, ← hσ]
-    rw [hσ', localCyclotomicCharacter_artinMap_unit p K u ((mem_unitFiltration_zero u).1 hu) σ hσ]
+    have h :=
+      abelianizedLocalCyclotomicCharacter_artinMap_unit p K u ((mem_unitFiltration_zero u).1 hu)
     ext
-    simp
+    simpa [φ] using congrArg Units.val h
   ext v
   simp only [Subgroup.mem_map, Subgroup.mem_comap]
   constructor
