@@ -171,6 +171,11 @@ theorem toGraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
       simp [ih]
 
 @[simp]
+theorem toGraph_toSubgraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
+    p.toSimpleGraph.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p := by
+  rw [← SimpleGraph.Walk.walkGraph_toGraph, toGraph_toSimpleGraph]
+
+@[simp]
 theorem toSimpleGraph_reverse (p : (Graph.ofSimpleGraph H).Walk x y) :
     p.reverse.toSimpleGraph = p.toSimpleGraph.reverse := by
   conv_lhs => rw [← toGraph_toSimpleGraph p, ← SimpleGraph.Walk.toGraph_reverse,

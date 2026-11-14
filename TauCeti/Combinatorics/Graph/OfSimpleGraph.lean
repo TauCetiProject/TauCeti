@@ -135,6 +135,11 @@ theorem verts_toGraphOrderIso_symm_apply (K : Set.Iic (Graph.ofSimpleGraph G)) :
     (toGraphOrderIso.symm K).verts = V(K.1) := (rfl)
 
 @[simp]
+theorem edgeSet_toGraphOrderIso_symm_apply (K : Set.Iic (Graph.ofSimpleGraph G)) :
+    (toGraphOrderIso.symm K).edgeSet = E(K.1) := by
+  rw [← edgeSet_toGraph, toGraph_toGraphOrderIso_symm_apply]
+
+@[simp]
 theorem toGraphOrderIso_symm_apply_adj (K : Set.Iic (Graph.ofSimpleGraph G)) :
     (toGraphOrderIso.symm K).Adj x y ↔ K.1.Adj x y := by
   rw [← toGraph_adj, toGraph_toGraphOrderIso_symm_apply]
