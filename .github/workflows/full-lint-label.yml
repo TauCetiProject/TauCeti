@@ -1,21 +1,24 @@
-name: Rebuild on full-lint
+name: Rebuild on CI label changes
 
-# Adding the `full-lint` label to a PR asks for its environment lint to cover the whole library
-# (scripts/lint-scope.sh). Labels do not trigger pr-build, which would otherwise start (and fan
-# out to every workflow_run consumer) on every label change, so this dispatches one pr-build run
-# for the PR, exactly as a maintainer would with `gh workflow run pr-build.yml -f pr=N`. That run
-# supersedes any build of the PR in progress through pr-build's concurrency group.
+# Only CI policy labels dispatch pr-build. Unrelated labels skip this router
+# without creating a build run or waking every pr-build workflow_run consumer.
+# A self-tested assertion can supersede an existing build without allocating a
+# runner; removing it, or requesting full lint, restores the ordinary build.
 
 on:
   pull_request_target:
-    types: [labeled]
+    types: [labeled, unlabeled]
 
 permissions:
   actions: write
 
 jobs:
   rebuild:
-    if: ${{ github.event.label.name == 'full-lint' }}
+    if: >-
+      github.event.label.name == 'self-tested' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'full-lint') ||
+      (contains(github.event.pull_request.labels.*.name, 'self-tested') &&
+       contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name))
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch pr-build for this PR
@@ -23,4 +26,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-        run: gh workflow run pr-build.yml -R "$REPO" -f pr="$PR"
+          LABEL_HEAD: ${{ github.event.pull_request.head.sha }}
+          MAINTENANCE: >-
+            ${{ github.event.pull_request.user.type == 'Bot' &&
+                github.event.pull_request.head.repo.full_name == github.repository &&
+                (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') ||
+                 startsWith(github.event.pull_request.head.ref, 'lint-repair/')) }}
+          SKIP_BUILD: >-
+            ${{ contains(github.event.pull_request.labels.*.name, 'self-tested') &&
+                !contains(github.event.pull_request.labels.*.name, 'full-lint') &&
+                !contains(github.event.pull_request.labels.*.name, 'lint-repair') &&
+                !startsWith(github.event.pull_request.head.ref, 'lint-repair/') }}
+        run: >-
+          gh workflow run pr-build.yml -R "$REPO" -f pr="$PR"
+          -f skip_build="$SKIP_BUILD" -f label_head="$LABEL_HEAD" -f maintenance="$MAINTENANCE"
