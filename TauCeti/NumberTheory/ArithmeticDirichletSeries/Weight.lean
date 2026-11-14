@@ -199,6 +199,11 @@ theorem apply_eq_zero_iff_not_isGood (χ : MultiplicativeIdealWeight K) (I : Ide
     χ I = 0 ↔ ¬ χ.IsGood I := by
   rw [← not_ne_iff, χ.apply_ne_zero_iff_isGood]
 
+/-- The absolute norm of a nonzero ideal is nonzero, as a complex number. -/
+theorem natCast_absNorm_ne_zero {I : Ideal (𝓞 K)} (hI : I ≠ ⊥) :
+    ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (Ideal.absNorm_eq_zero_iff.not.mpr hI)
+
 /-!
 ### Constructors and operations
 -/
@@ -272,11 +277,8 @@ noncomputable instance : One (MultiplicativeIdealWeight K) where
 /-- The trivial weight is the indicator of the nonzero ideals. -/
 @[simp]
 theorem one_apply (I : Ideal (𝓞 K)) :
-    (1 : MultiplicativeIdealWeight K) I = if I = ⊥ then 0 else 1 := by
-  split_ifs with hI
-  · subst I
-    simp
-  · exact MonoidWithZeroHom.one_apply_of_ne_zero hI
+    (1 : MultiplicativeIdealWeight K) I = if I = ⊥ then 0 else 1 :=
+  MonoidWithZeroHom.one_apply_def I
 
 @[simp]
 theorem badPrimes_one : (1 : MultiplicativeIdealWeight K).badPrimes = ∅ := by
@@ -459,8 +461,7 @@ theorem normTwist_normTwist (z w : ℂ) (χ : MultiplicativeIdealWeight K) :
   ext I
   rcases eq_or_ne I ⊥ with rfl | hI
   · simp
-  · have h : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
-      exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr hI
+  · have h := natCast_absNorm_ne_zero hI
     rw [normTwist_apply, normTwist_apply, normTwist_apply, neg_add, Complex.cpow_add _ _ h]
     ring
 
@@ -472,8 +473,7 @@ theorem normTwist_mul_normTwist (z w : ℂ) (χ ψ : MultiplicativeIdealWeight K
   ext I
   rcases eq_or_ne I ⊥ with rfl | hI
   · simp
-  · have h : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
-      exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr hI
+  · have h := natCast_absNorm_ne_zero hI
     rw [TauCeti.MultiplicativeIdealWeight.mul_apply, normTwist_apply, normTwist_apply,
       normTwist_apply, TauCeti.MultiplicativeIdealWeight.mul_apply, neg_add,
       Complex.cpow_add _ _ h]
@@ -564,8 +564,7 @@ theorem IsNormTwistOnGood.normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
       (u + v) := by
   intro I hI
   have hI' : χ.IsGood I := hI.mono (by rw [badPrimes_normTwist])
-  have hN : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
-    exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr hI'.ne_bot
+  have hN := natCast_absNorm_ne_zero hI'.ne_bot
   rw [normTwist_apply, h I hI', neg_neg, ← Complex.cpow_add _ _ hN]
   congr 1
   push_cast
@@ -604,8 +603,7 @@ theorem IsNormTwistOnGood.mul {χ ψ : MultiplicativeIdealWeight K} {u v : ℝ}
   intro I hI
   have hχI : χ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_left)
   have hψI : ψ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_right)
-  have hN : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
-    exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr hχI.ne_bot
+  have hN := natCast_absNorm_ne_zero hχI.ne_bot
   rw [TauCeti.MultiplicativeIdealWeight.mul_apply, hχ I hχI, hψ I hψI, ← Complex.cpow_add _ _ hN]
   congr 1
   push_cast
@@ -1151,10 +1149,7 @@ theorem toIdealArithmeticFunction_apply (χ : UnitaryIdealWeight K) (I : (Ideal 
 /-- The ideal arithmetic function of a unitary weight agrees with that of its underlying
 multiplicative weight. -/
 theorem toIdealArithmeticFunction_eq_val (χ : UnitaryIdealWeight K) :
-    χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := by
-  funext I
-  rw [toIdealArithmeticFunction_apply,
-    MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
+    χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := (rfl)
 
 /-- **Regrouping absorbs an imaginary norm twist.** For `z.re = 0`, twisting a unitary weight by
 `N(I) ^ (-z)` multiplies its `n`-th norm coefficient by `n ^ (-z)`. -/
