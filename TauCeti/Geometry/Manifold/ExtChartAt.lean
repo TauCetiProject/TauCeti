@@ -44,8 +44,9 @@ Coordinate changes transport images of subsets of chart overlaps and are injecti
 without differentiability assumptions, and they take values in the range of the model; for a
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
-the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
-inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
+the manifold. On an open subset, chart targets consist of the points of the ambient chart targets
+whose inverse images lie in the subset, and inverse charts agree through inclusion on the smaller
+target. Near a chart point the inverse charts
 of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
 convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
@@ -813,6 +814,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A point lies in the target of an inherited chart exactly when it lies in the target of the
+ambient chart and its preimage lies in the open subset. -/
+theorem mem_chartAt_target_iff (U : Opens M) (p : U) {w : H} :
+    w ∈ (chartAt H p).target ↔
+      w ∈ (chartAt H (p : M)).target ∧ (chartAt H (p : M)).symm w ∈ U := by
+  simp only [chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def,
+    OpenPartialHomeomorph.trans_target, openPartialHomeomorphSubtypeCoe_target,
+    Set.mem_inter_iff, Set.mem_preimage, SetLike.mem_coe]
 
 /-- An inherited extended chart restricts the ambient target to the points whose inverse
 coordinates lie in the open subset. -/
