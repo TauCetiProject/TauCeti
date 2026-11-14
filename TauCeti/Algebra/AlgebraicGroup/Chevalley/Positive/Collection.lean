@@ -112,7 +112,7 @@ theorem mem_positiveSubgroup_iff_exists_prod
   · subst hG2
     exact mem_positiveSubgroup_iff_exists_prod_G2 D l hl hcover A g
   · have : (t.rationalRootSystem ht).IsNotG2 :=
-      t.isNotG2_rationalRootSystem_of_ne_G2 ht hG2
+      t.isNotG2_rationalRootSystem_of_ne_G2 hG2
     rw [D.positiveSubgroup_eq_iSup,
       mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod
         D.representation D.lattice D.representation_mem_lattice

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.G2
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Parabolic.NotG2
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Parabolic
 
 /-!
 # Rank-one punctured positive subgroups of a Chevalley datum
@@ -21,10 +19,10 @@ element `n_{αᵢ}(s)` (`s : Aˣ`), and also by the actual torus `T(A)`. Consequ
 point factors as `v * x_{αᵢ}(u)` with `v ∈ U^{(i)}`, and every point of `D.borelSubgroup A`
 factors as `v * x_{αᵢ}(u) * t`.
 
-This all-type local factorization combines `Positive/G2` in type `G₂` with
-`Parabolic/NotG2` and `isNotG2_rationalRootSystem_of_ne_G2` outside type `G₂`. It supplies the
-simple-reflection reduction step for the Tits-system multiplication axiom without characteristic
-restrictions.
+This all-type local factorization transports
+`TauCeti.DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton` from the
+admissible lattice to the datum's point group. It supplies the simple-reflection reduction step
+for the Tits-system multiplication axiom without characteristic restrictions.
 
 ## Main declarations
 
@@ -114,39 +112,34 @@ theorem closure_simpleRootPair_le_normalizer_puncturedPositivePoints
         Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) (t.simpleIndex ht i)) A)) ≤
       Subgroup.normalizer (D.puncturedPositivePoints i A : Set (D.points A)) := by
-  by_cases hG2 : t = G2
-  · subst hG2
-    exact D.closure_simpleRootPair_le_normalizer_positivePoints_diff_singleton_G2 A i
-  · have : (t.rationalRootSystem ht).IsNotG2 :=
-      t.isNotG2_rationalRootSystem_of_ne_G2 ht hG2
-    let e := Units.mapEquiv (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
-    let f := e.symm.toMonoidHom.comp (D.points A).subtype
-    have hf (γ : Fin t.numRoots) :
-        f.comp (D.rootSubgroupPoints γ A) =
-          chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-            D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) := by
-      apply MonoidHom.ext
-      intro u
-      apply e.injective
-      simp only [f, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-        MulEquiv.apply_symm_apply, Subgroup.coe_subtype]
-      apply Units.ext
-      simpa [e] using congrArg Units.val (D.coe_rootSubgroupPoints γ A u)
-    have hinj : Function.Injective f := e.symm.injective.comp (D.points A).subtype_injective
-    have hlat := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton_of_isNotG2
-      D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator i (CommAlgCat.of ℤ A)
-    have hmap : (Subgroup.closure
-        (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
-          Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
-            (t.simpleIndex ht i) (t.simpleIndex ht i)) A))).map f ≤
-          Subgroup.normalizer ((D.puncturedPositivePoints i A).map f) := by
-      simpa only [puncturedPositivePoints_def, Subgroup.closure_union, ← MonoidHom.coe_range,
-        Subgroup.closure_eq, Subgroup.map_sup, Subgroup.map_iSup, MonoidHom.map_range, hf]
-        using hlat
-    have hpre := (Subgroup.map_le_iff_le_comap.mp hmap).trans
-      (((D.puncturedPositivePoints i A).map f).le_normalizer_comap f)
-    simpa only [Subgroup.comap_map_eq_self_of_injective hinj] using hpre
+  let e := Units.mapEquiv (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
+  let f := e.symm.toMonoidHom.comp (D.points A).subtype
+  have hf (γ : Fin t.numRoots) :
+      f.comp (D.rootSubgroupPoints γ A) =
+        chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) := by
+    apply MonoidHom.ext
+    intro u
+    apply e.injective
+    simp only [f, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      MulEquiv.apply_symm_apply, Subgroup.coe_subtype]
+    apply Units.ext
+    simpa [e] using congrArg Units.val (D.coe_rootSubgroupPoints γ A u)
+  have hinj : Function.Injective f := e.symm.injective.comp (D.points A).subtype_injective
+  have hlat := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
+    D.representation D.lattice D.representation_mem_lattice
+    D.isNilpotent_representation_rootGenerator i (CommAlgCat.of ℤ A)
+  have hmap : (Subgroup.closure
+      (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
+        Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
+          (t.simpleIndex ht i) (t.simpleIndex ht i)) A))).map f ≤
+        Subgroup.normalizer ((D.puncturedPositivePoints i A).map f) := by
+    simpa only [puncturedPositivePoints_def, Subgroup.closure_union, ← MonoidHom.coe_range,
+      Subgroup.closure_eq, Subgroup.map_sup, Subgroup.map_iSup, MonoidHom.map_range, hf]
+      using hlat
+  have hpre := (Subgroup.map_le_iff_le_comap.mp hmap).trans
+    (((D.puncturedPositivePoints i A).map f).le_normalizer_comap f)
+  simpa only [Subgroup.comap_map_eq_self_of_injective hinj] using hpre
 
 /-- The positive simple root subgroup `X_{αᵢ}` normalizes `D.puncturedPositivePoints i A`. -/
 theorem range_rootSubgroupPoints_simpleIndex_le_normalizer_puncturedPositivePoints
