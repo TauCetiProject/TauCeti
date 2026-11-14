@@ -66,7 +66,9 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
   pole in every dimension, including `n = 0`.
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
-  Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
+  Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`;
+  every map out of `TopCat.diskBoundary (n + 1)` arises this way
+  (`GenLoop.diskBoundaryMap_sphereEquiv_symm`).
 * `GenLoop.diskMap`: a generalized loop `γ` of dimension `n` read on the disk `𝔻 n`, the map onto
   `γ` of a sphere formed by attaching an `n`-cell along a constant map.
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
@@ -641,6 +643,17 @@ theorem diskBoundaryMap_map {Y : TopCat.{u}} (f : X ⟶ Y) {y : Y} (hf : f x = y
     (p : Ω^ (Fin n) X x) : diskBoundaryMap (GenLoop.map f.hom hf p) = diskBoundaryMap p ≫ f := by
   ext s
   simp
+
+/-- **Every attaching map is the attaching map of a generalized loop.** A map
+`g : ∂𝔻 (n + 1) ⟶ X` is the attaching map of the generalized loop corresponding to it under
+`GenLoop.sphereEquiv`, based at the image of the north pole. -/
+theorem diskBoundaryMap_sphereEquiv_symm (g : TopCat.diskBoundary.{u} (n + 1) ⟶ X) :
+    diskBoundaryMap ((sphereEquiv n X (g ⟨TauCeti.sphereNorthPole n⟩)).symm
+      ⟨g.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩) = g := by
+  ext s
+  rw [diskBoundaryMap_apply, ← coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  -- What remains is `g ⟨s.down⟩ = g s`, which holds by the `ULift` eta rule.
+  rfl
 
 end GenLoop
 
