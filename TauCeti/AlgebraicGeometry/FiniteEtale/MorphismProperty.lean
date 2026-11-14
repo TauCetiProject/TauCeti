@@ -118,4 +118,32 @@ instance faithful_pullback (f : T ⟶ S) [IsDominant f] : (pullback f).Faithful 
     Functor.Faithful.of_iso (pullbackCompEquivOver f).symm
   exact Functor.Faithful.of_comp (pullback f) (equivOver T).functor
 
+/-- Essential surjectivity of `TauCeti.FiniteEtaleScheme.pullback f` is equivalent to essential
+surjectivity of Mathlib's `MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f`. -/
+theorem essSurj_pullback_iff (f : T ⟶ S) :
+    letI : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
+    (pullback f).EssSurj ↔
+      (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := by
+  let : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
+  constructor
+  · intro _
+    have : (pullback f ⋙ (equivOver T).functor).EssSurj := inferInstance
+    have : ((equivOver S).functor ⋙
+        MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj :=
+      Functor.essSurj_of_iso (pullbackCompEquivOver f)
+    have : ((equivOver S).inverse ⋙ (equivOver S).functor ⋙
+        MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := inferInstance
+    exact Functor.essSurj_of_iso
+      ((Functor.associator _ _ _).symm ≪≫
+        Functor.isoWhiskerRight (equivOver S).counitIso _ ≪≫ Functor.leftUnitor _)
+  · intro _
+    have : ((equivOver S).functor ⋙
+        MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := inferInstance
+    have : (pullback f ⋙ (equivOver T).functor).EssSurj :=
+      Functor.essSurj_of_iso (pullbackCompEquivOver f).symm
+    have : ((pullback f ⋙ (equivOver T).functor) ⋙ (equivOver T).inverse).EssSurj := inferInstance
+    exact Functor.essSurj_of_iso
+      (Functor.associator _ _ _ ≪≫
+        Functor.isoWhiskerLeft _ (equivOver T).unitIso.symm ≪≫ Functor.rightUnitor _)
+
 end TauCeti.FiniteEtaleScheme

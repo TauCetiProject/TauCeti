@@ -28,8 +28,25 @@ Two points with the same images agree, and the topology is the one induced by th
 because the preimages of affine opens of the members form a basis of the limit
 (`isBasis_preimage_isAffineOpen`).
 
+For any diagram `D : I ⥤ Scheme` and open `U` of `D.obj i`, `opensDiagramObjIso` and
+`opensConePtIso` identify the stages of `opensDiagram D i U` and the vertex of `opensCone D c i U`
+with the corresponding preimage open subschemes `(D.map j.hom ⁻¹ᵁ U).toScheme` and
+`(c.π.app i ⁻¹ᵁ U).toScheme`, compatibly with `opensDiagramι`, transition maps, and cone
+projections. More generally, for any morphism `p : Y ⟶ D.obj i₀` to a stage of `D`,
+`pullbackDiagram D i₀ p` and `pullbackDiagramCone D c i₀ p` base-change `D` and `c` along `p` over
+`Over i₀`, preserving affine transition maps, quasi-compactness (when `p` is quasi-compact),
+quasi-separation (when `p` is quasi-separated), and cofiltered limits
+(`isLimitPullbackDiagramCone`).
+
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.opensDiagramObjIso` and `TauCeti.AlgebraicGeometry.opensConePtIso`:
+  identifications of the stages of `opensDiagram` and the vertex of `opensCone` with preimage open
+  subschemes, together with transition-map and cone-projection compatibility lemmas.
+* `TauCeti.AlgebraicGeometry.pullbackDiagram`, `TauCeti.AlgebraicGeometry.pullbackDiagramCone`,
+  and `TauCeti.AlgebraicGeometry.isLimitPullbackDiagramCone`: the `Over i₀`-indexed base change of
+  `D` and `c` along a morphism `p : Y ⟶ D.obj i₀`, its projections `pullbackDiagramSnd` and
+  `pullbackDiagramToBase`, and preservation of cofiltered limits.
 * `TauCeti.AlgebraicGeometry.Scheme.residueFieldDiagram`: the residue fields of a compatible
   family of points of a diagram of schemes, as a diagram in `CommRingCatᵒᵖ`.
 * `TauCeti.AlgebraicGeometry.Scheme.fromSpecResidueFieldDiagram`: the morphisms `Spec κ(xᵢ) ⟶ Dᵢ`,
@@ -56,7 +73,181 @@ universe u
 
 open CategoryTheory Limits AlgebraicGeometry Opposite
 
-namespace TauCeti.AlgebraicGeometry.Scheme
+namespace TauCeti.AlgebraicGeometry
+
+section OpensDiagram
+
+variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Cone D) (i : I)
+  (U : (D.obj i).Opens)
+
+/-- Identification of stage `j` of `opensDiagram D i U` with the open subscheme
+`(D.map j.hom ⁻¹ᵁ U).toScheme`. -/
+noncomputable def opensDiagramObjIso (j : Over i) :
+    (opensDiagram D i U).obj j ≅ (D.map j.hom ⁻¹ᵁ U).toScheme :=
+  eqToIso (opensDiagram_obj D i U j)
+
+/-- Identification of the vertex of `opensCone D c i U` with the open subscheme
+`(c.π.app i ⁻¹ᵁ U).toScheme`. -/
+noncomputable def opensConePtIso :
+    (opensCone D c i U).pt ≅ (c.π.app i ⁻¹ᵁ U).toScheme :=
+  eqToIso (opensCone_pt D c i U)
+
+/-- Composing `(opensDiagramObjIso D i U j).hom` with the open inclusion `(D.map j.hom ⁻¹ᵁ U).ι`
+gives the `j`-component of `opensDiagramι D i U`. -/
+@[reassoc (attr := simp)]
+theorem opensDiagramObjIso_hom_ι (j : Over i) :
+    (opensDiagramObjIso D i U j).hom ≫ (D.map j.hom ⁻¹ᵁ U).ι = (opensDiagramι D i U).app j :=
+  (Category.id_comp _).trans (opensDiagramι_app D i U j).symm
+
+/-- Composing `(opensDiagramObjIso D i U j).inv` with `(opensDiagramι D i U).app j` recovers the
+open inclusion `(D.map j.hom ⁻¹ᵁ U).ι`. -/
+@[reassoc]
+theorem opensDiagramObjIso_inv_app (j : Over i) :
+    (opensDiagramObjIso D i U j).inv ≫ (opensDiagramι D i U).app j = (D.map j.hom ⁻¹ᵁ U).ι := by
+  rw [← opensDiagramObjIso_hom_ι, Iso.inv_hom_id_assoc]
+
+/-- Under `opensDiagramObjIso`, a transition morphism of `opensDiagram D i U` corresponds to
+`Scheme.Hom.resLE` along `D.map f.left`. -/
+@[reassoc]
+theorem opensDiagram_map_comp_objIso_hom {j k : Over i} (f : j ⟶ k) :
+    (opensDiagram D i U).map f ≫ (opensDiagramObjIso D i U k).hom =
+      (opensDiagramObjIso D i U j).hom ≫
+        (D.map f.left).resLE (D.map k.hom ⁻¹ᵁ U) (D.map j.hom ⁻¹ᵁ U)
+          (by rw [← Scheme.Hom.comp_preimage, ← D.map_comp, Over.w f]) := by
+  rw [← cancel_mono (D.map k.hom ⁻¹ᵁ U).ι, Category.assoc, opensDiagramObjIso_hom_ι,
+    (opensDiagramι D i U).naturality f, Functor.comp_map, Over.forget_map,
+    Category.assoc, Scheme.Hom.resLE_comp_ι, opensDiagramObjIso_hom_ι_assoc]
+
+/-- Under `opensConePtIso` and `opensDiagramObjIso`, the `j`-projection of `opensCone D c i U`
+corresponds to `Scheme.Hom.resLE` along `c.π.app j.left`. -/
+@[reassoc]
+theorem opensCone_π_app_comp_objIso_hom (j : Over i) :
+    (opensCone D c i U).π.app j ≫ (opensDiagramObjIso D i U j).hom =
+      (opensConePtIso D c i U).hom ≫
+        (c.π.app j.left).resLE (D.map j.hom ⁻¹ᵁ U) (c.π.app i ⁻¹ᵁ U)
+          (by rw [← Scheme.Hom.comp_preimage, c.w]) :=
+  (Category.comp_id _).trans ((opensCone_π_app D c i U j).trans (Category.id_comp _).symm)
+
+/-- Composing the `j`-projection of `opensCone D c i U` with `(opensDiagramι D i U).app j` factors
+through `opensConePtIso`, `(c.π.app i ⁻¹ᵁ U).ι`, and `c.π.app j.left`. -/
+@[reassoc]
+theorem opensCone_π_app_comp_opensDiagramι_app (j : Over i) :
+    (opensCone D c i U).π.app j ≫ (opensDiagramι D i U).app j =
+      (opensConePtIso D c i U).hom ≫ (c.π.app i ⁻¹ᵁ U).ι ≫ c.π.app j.left := by
+  rw [← opensDiagramObjIso_hom_ι, ← Category.assoc, opensCone_π_app_comp_objIso_hom,
+    Category.assoc, Scheme.Hom.resLE_comp_ι]
+
+end OpensDiagram
+
+section PullbackDiagram
+
+variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Cone D)
+
+/-- Base-changing a diagram `D : I ⥤ Scheme` along a morphism `p : Y ⟶ D.obj i₀` to stage `i₀`
+gives an `Over i₀`-indexed diagram sending `j` to `pullback p (D.map j.hom)`. -/
+@[expose, simps, implicit_reducible]
+noncomputable def pullbackDiagram (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) :
+    Over i₀ ⥤ Scheme.{u} where
+  obj j := pullback p (D.map j.hom)
+  map {j k} f :=
+    pullback.map p (D.map j.hom) p (D.map k.hom)
+      (𝟙 _) (D.map f.left) (𝟙 _) (by simp) (by simp [← D.map_comp])
+  map_id j := by apply pullback.hom_ext <;> simp
+  map_comp f g := by apply pullback.hom_ext <;> simp
+
+/-- Second-projection natural transformation from `pullbackDiagram D i₀ p` to `Over.forget i₀ ⋙ D`.
+-/
+noncomputable def pullbackDiagramSnd (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) :
+    pullbackDiagram D i₀ p ⟶ Over.forget i₀ ⋙ D where
+  app j := pullback.snd p (D.map j.hom)
+  naturality f := by simp
+
+/-- Component of `pullbackDiagramSnd` at `j : Over i₀`. -/
+@[simp]
+theorem pullbackDiagramSnd_app (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) (j : Over i₀) :
+    (pullbackDiagramSnd D i₀ p).app j = pullback.snd p (D.map j.hom) := by
+  rfl
+
+/-- Structural natural transformation from `pullbackDiagram D i₀ p` to the constant diagram on
+`D.obj i₀`. -/
+noncomputable def pullbackDiagramToBase (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) :
+    pullbackDiagram D i₀ p ⟶ (Functor.const (Over i₀)).obj (D.obj i₀) where
+  app j := pullback.snd p (D.map j.hom) ≫ D.map j.hom
+  naturality f := by simp [← D.map_comp]
+
+/-- Component of `pullbackDiagramToBase` at `j : Over i₀`. -/
+@[simp]
+theorem pullbackDiagramToBase_app (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) (j : Over i₀) :
+    (pullbackDiagramToBase D i₀ p).app j = pullback.snd p (D.map j.hom) ≫ D.map j.hom := by
+  rfl
+
+/-- Cone over `pullbackDiagram D i₀ p` with vertex `pullback p (c.π.app i₀)` induced by a cone `c`
+over `D`. -/
+@[expose, simps, implicit_reducible]
+noncomputable def pullbackDiagramCone (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) :
+    Cone (pullbackDiagram D i₀ p) where
+  pt := pullback p (c.π.app i₀)
+  π :=
+    { app := fun j ↦
+        pullback.map p (c.π.app i₀) p (D.map j.hom)
+          (𝟙 _) (c.π.app j.left) (𝟙 _) (by simp) (by simp [c.w])
+      naturality := fun {_ _} f ↦ by apply pullback.hom_ext <;> simp [c.w] }
+
+/-- Every transition morphism of `pullbackDiagram D i₀ p` forms a pullback square with
+`D.map f.left` along the second projections. -/
+theorem isPullback_pullbackDiagram_map {i₀ : I} {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀)
+    {j k : Over i₀} (f : j ⟶ k) :
+    IsPullback ((pullbackDiagram D i₀ p).map f) (pullback.snd p (D.map j.hom))
+      (pullback.snd p (D.map k.hom)) (D.map f.left) := by
+  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback p (D.map k.hom))
+  have h1 : (pullbackDiagram D i₀ p).map f ≫ pullback.fst p (D.map k.hom) =
+      pullback.fst p (D.map j.hom) := by simp
+  have h2 : D.map f.left ≫ D.map k.hom = D.map j.hom := by rw [← D.map_comp, Over.w f]
+  rw [h1, h2]
+  exact IsPullback.of_hasPullback p (D.map j.hom)
+
+/-- Affine transition morphisms of `D` base-change to affine transition morphisms of
+`pullbackDiagram D i₀ p`. -/
+instance isAffineHom_pullbackDiagram_map {i₀ : I} {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀)
+    {j k : Over i₀} (f : j ⟶ k) [IsAffineHom (D.map f.left)] :
+    IsAffineHom ((pullbackDiagram D i₀ p).map f) :=
+  MorphismProperty.of_isPullback (isPullback_pullbackDiagram_map D p f).flip inferInstance
+
+/-- Quasi-compactness of a stage of `D` transfers to `pullbackDiagram D i₀ p` along a quasi-compact
+morphism `p`. -/
+instance compactSpace_pullbackDiagram_obj {i₀ : I} {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀)
+    [QuasiCompact p] (j : Over i₀) [CompactSpace (D.obj j.left)] :
+    CompactSpace ((pullbackDiagram D i₀ p).obj j) :=
+  QuasiCompact.compactSpace_of_compactSpace (pullback.snd p (D.map j.hom))
+
+/-- Quasi-separation of a stage of `D` transfers to `pullbackDiagram D i₀ p` along a
+quasi-separated morphism `p`. -/
+instance quasiSeparatedSpace_pullbackDiagram_obj {i₀ : I} {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀)
+    [QuasiSeparated p] (j : Over i₀) [QuasiSeparatedSpace (D.obj j.left)] :
+    QuasiSeparatedSpace ((pullbackDiagram D i₀ p).obj j) :=
+  quasiSeparatedSpace_of_quasiSeparated (pullback.snd p (D.map j.hom))
+
+/-- When `I` is cofiltered and `c` is a limit cone over `D`, `pullbackDiagramCone D c i₀ p` exhibits
+`pullback p (c.π.app i₀)` as the limit of `pullbackDiagram D i₀ p`. -/
+noncomputable def isLimitPullbackDiagramCone [IsCofiltered I] (hc : IsLimit c)
+    (i₀ : I) {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀) :
+    IsLimit (pullbackDiagramCone D c i₀ p) := by
+  have : IsConnected (Over i₀) := isConnected_of_hasTerminal (Over i₀)
+  refine isLimitOfIsPullbackOfIsConnected (pullbackDiagramSnd D i₀ p)
+    (pullbackDiagramCone D c i₀ p) (c.whisker (Over.forget i₀))
+    { hom := pullback.snd p (c.π.app i₀)
+      w := fun j ↦ by simp }
+    (fun j ↦ ?_) ((Functor.Initial.isLimitWhiskerEquiv (Over.forget i₀) c).symm hc)
+  refine IsPullback.of_right ?_ (by simp) (IsPullback.of_hasPullback p (D.map j.hom))
+  have h1 : (pullbackDiagramCone D c i₀ p).π.app j ≫ pullback.fst p (D.map j.hom) =
+      pullback.fst p (c.π.app i₀) := by simp
+  have h2 : (c.whisker (Over.forget i₀)).π.app j = c.π.app j.left := rfl
+  rw [h1, h2, c.w j.hom]
+  exact IsPullback.of_hasPullback p (c.π.app i₀)
+
+end PullbackDiagram
+
+namespace Scheme
 
 section Points
 
@@ -208,4 +399,6 @@ instance preservesLimit_forgetToTop : PreservesLimit D Scheme.forgetToTop where
     rw [TopCat.nonempty_isLimit_iff_eq_induced _ h.some]
     exact topologicalSpace_eq_iInf_induced_of_isLimit hc
 
-end TauCeti.AlgebraicGeometry.Scheme
+end Scheme
+
+end TauCeti.AlgebraicGeometry

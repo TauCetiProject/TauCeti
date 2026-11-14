@@ -61,6 +61,13 @@ This file records general-purpose facts about open subsets of schemes.
   `V i`.
 * `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
   intersections of affine opens are affine.
+* `AlgebraicGeometry.Scheme.Opens.ι_image_preimage_eq_inf`: applying `U.ι` to `U.ι ⁻¹ᵁ V` recovers
+  `U ⊓ V`.
+* `AlgebraicGeometry.Scheme.Hom.quasiCompact_preimage_ι`,
+  `AlgebraicGeometry.Scheme.Hom.isCompact_preimage_of_quasiCompact_ι`, and
+  `AlgebraicGeometry.Scheme.Opens.isCompact_ι_preimage_of_quasiCompact`: quasi-compactness of open
+  inclusions is preserved under preimage, so the preimage of an open `U` with `QuasiCompact U.ι`
+  inside a compact scheme or compact open `W` is compact.
 * `AlgebraicGeometry.Scheme.OpenCover.dense_of_forall_dense_subset`: a subset of a scheme is dense
   if its preimage in every chart of an open cover contains a dense subset.
 -/
@@ -373,6 +380,36 @@ lemma _root_.AlgebraicGeometry.Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIs
   rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
   rw [hl]
   exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top (X.basicOpen s)).symm
+
+/-- Applying the open immersion `U.ι` to the preimage `U.ι ⁻¹ᵁ V` recovers `U ⊓ V`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Opens.ι_image_preimage_eq_inf
+    (U V : X.Opens) : U.ι ''ᵁ (U.ι ⁻¹ᵁ V) = U ⊓ V := by
+  rw [U.ι.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+
+-- Not an instance: `(𝟙 X) ⁻¹ᵁ U` is definitionally `U`, which would loop typeclass search.
+/-- Pulling back an open `U` with quasi-compact inclusion along a scheme morphism `f` gives an open
+`f ⁻¹ᵁ U` with quasi-compact inclusion. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.quasiCompact_preimage_ι {Y : Scheme.{u}}
+    (f : X ⟶ Y) (U : Y.Opens) [QuasiCompact U.ι] : QuasiCompact (f ⁻¹ᵁ U).ι :=
+  MorphismProperty.of_isPullback (isPullback_morphismRestrict f U) ‹_›
+
+/-- Along a morphism from a compact scheme `X`, the preimage of an open `U` whose inclusion `U.ι`
+is quasi-compact is compact. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isCompact_preimage_of_quasiCompact_ι {Y : Scheme.{u}}
+    (f : X ⟶ Y) [CompactSpace X] (U : Y.Opens) [QuasiCompact U.ι] :
+    IsCompact (f ⁻¹ᵁ U : Set X) := by
+  have := f.quasiCompact_preimage_ι U
+  have : CompactSpace (f ⁻¹ᵁ U).toScheme := QuasiCompact.compactSpace_of_compactSpace (f ⁻¹ᵁ U).ι
+  simpa only [Scheme.Opens.range_ι] using isCompact_range (f ⁻¹ᵁ U).ι.continuous
+
+/-- For a compact open `W` of `X` and an open `U` whose inclusion `U.ι` is quasi-compact, the
+preimage `W.ι ⁻¹ᵁ U` is compact in `W.toScheme`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Opens.isCompact_ι_preimage_of_quasiCompact
+    (W U : X.Opens) [QuasiCompact U.ι] (hW : IsCompact (W : Set X)) :
+    IsCompact ((W.ι ⁻¹ᵁ U : W.toScheme.Opens) : Set W.toScheme) := by
+  have : CompactSpace W.toScheme :=
+    ⟨W.ι.isOpenEmbedding.isInducing.isCompact_iff.mpr (by simpa using hW)⟩
+  exact W.ι.isCompact_preimage_of_quasiCompact_ι U
 
 end
 
