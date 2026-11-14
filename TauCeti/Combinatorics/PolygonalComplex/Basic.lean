@@ -178,6 +178,29 @@ theorem incoming_mk_of_eq_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : �
   rw [← h]
   exact C.incoming_nextCorner ⟨f, i⟩
 
+/-- The incoming side of the first corner of a face is its last side. -/
+theorem incoming_mk_zero (f : C.Face) :
+    C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩ =
+      C.side f ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩ :=
+  C.incoming_mk_of_eq_zero rfl rfl
+
+/-- The corner preceding the first corner of a face is its last corner. -/
+theorem prevCorner_mk_zero (f : C.Face) :
+    C.prevCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ =
+      ⟨f, ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩⟩ := by
+  rw [prevCorner_def]
+  refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
+  have h := Fin.coe_finRotate_eq_ite ((finRotate (C.sides f)).symm ⟨0, C.sides_pos f⟩)
+  rw [Equiv.apply_symm_apply] at h
+  dsimp only at h ⊢
+  split_ifs at h
+  omega
+
+/-- A face with a single side is attached along a loop. -/
+theorem tgt_side_eq_src_side_of_sides_eq_one {f : C.Face} (hf : C.sides f = 1)
+    (i : Fin (C.sides f)) : C.graph.tgt (C.side f i) = C.graph.src (C.side f i) :=
+  C.tgt_side_eq_src_side (by split_ifs <;> omega)
+
 /-- The two germs of a corner, both starting at its vertex: the reverse of its incoming side and
 its outgoing side. -/
 def cornerEnds (c : C.Corner) : C.graph.E × C.graph.E :=
@@ -246,6 +269,13 @@ theorem linkDegree_def (e : C.graph.E) :
     C.linkDegree e =
       Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e} :=
   (rfl)
+
+/-- The degree of a germ `e` at the vertex `v` is the number of darts of the link of `v` starting
+at `e`. -/
+theorem linkDegree_eq_card_of_src_eq {e : C.graph.E} {v : C.graph.V} (h : C.graph.src e = v) :
+    C.linkDegree e = Nat.card {d : (C.vertexLink v).E // ((C.vertexLink v).src d).1 = e} := by
+  subst h
+  rfl
 
 /-- The number of face sides attached along the dart `e`, as the `Nat.card` of the corners whose
 outgoing side is `e`. As with `Nat.card`, this is `0` when there are infinitely many such corners;
