@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Topology.DiscreteSubset
@@ -99,6 +100,8 @@ computed in any chart, also on manifolds with boundary or corners
   excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 * `TauCeti.fixedPointDerivative_iterate`: at a fixed point where `f` is differentiable, the
   fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
+* `TauCeti.det_id_sub_fixedPointDerivative_iterate_apply_iterate`: for a map differentiable along a
+  periodic orbit of period `n`, `det (1 - d(f^[n]))` is the same at all points of the orbit.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
@@ -456,6 +459,96 @@ theorem fixedPointDerivative_iterate_mul {d : ℕ} (hx : IsPeriodicPt f d x)
     rfl
   rw [key _ (iterate_mul f d n)]
   exact fixedPointDerivative_iterate ⟨x, hx.eq⟩ hf n
+
+/-- Moving a fixed point along an equation `y = y'` does not change `det (1 - df)`. -/
+private theorem det_id_sub_fixedPointDerivative_congr {g : M → M} {y y' : M} (h : y = y')
+    (hy : g y = y) (hy' : g y' = y') :
+    LinearMap.det (LinearMap.id - fixedPointDerivative I g ⟨y, hy⟩) =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I g ⟨y', hy'⟩) := by
+  subst h
+  rfl
+
+/-- If the differential of `g` at a fixed point `y` acts as an endomorphism `D` of the model space,
+then `det (1 - dg_y) = det (1 - D)`. The tangent space `T_y M` is `E` by definition. -/
+private theorem det_id_sub_fixedPointDerivative_eq_of_apply {g : M → M} (y : {y // g y = y})
+    {D : E →ₗ[𝕜] E} (hD : ∀ v : E, mfderiv I I g y.1 v = D v) :
+    LinearMap.det (LinearMap.id - fixedPointDerivative I g y) = LinearMap.det (1 - D) := by
+  rw [← Module.End.one_eq_id]
+  congr 2
+  exact LinearMap.ext fun v ↦ (fixedPointDerivative_apply y v).trans (hD v)
+
+/-- If `f` is differentiable at the first `n` points `f^[k] y`, `k < n`, of the forward orbit of
+`y`, then `f^[n]` is differentiable at `y`. -/
+private theorem mdifferentiableAt_iterate_of_forall_lt {y : M} {n : ℕ}
+    (hf : ∀ k < n, MDifferentiableAt I I f (f^[k] y)) : MDifferentiableAt I I f^[n] y := by
+  induction n with
+  | zero => exact mdifferentiableAt_id
+  | succ n ih =>
+    exact iterate_succ' f n ▸
+      (hf n n.lt_succ_self).comp y (ih fun k hk ↦ hf k (hk.trans n.lt_succ_self))
+
+/-- **`det (1 - df^n)` is constant along a periodic orbit.** If `x` is a periodic point of `f` of
+period `n` and `f` is differentiable at the points `f^[k] x`, `k < n`, of its orbit, the
+fixed-point derivatives of `f^[n]` at `x` and at `f x` have the same `det (1 - ·)`. -/
+theorem det_id_sub_fixedPointDerivative_iterate_apply {n : ℕ} (hx : IsPeriodicPt f n x)
+    (hf : ∀ k < n, MDifferentiableAt I I f (f^[k] x)) :
+    LinearMap.det (LinearMap.id - fixedPointDerivative I f^[n] ⟨f x, hx.apply.eq⟩) =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I f^[n] ⟨x, hx.eq⟩) := by
+  cases n with
+  | zero =>
+    -- `f^[0]` is the identity, with derivative the identity at every point.
+    have h₀ : ∀ y (v : E), mfderiv I I f^[0] y v = (1 : E →ₗ[𝕜] E) v := fun y v ↦ by
+      rw [iterate_zero, mfderiv_id]
+      rfl
+    rw [det_id_sub_fixedPointDerivative_eq_of_apply _ (h₀ (f x)),
+      det_id_sub_fixedPointDerivative_eq_of_apply _ (h₀ x)]
+  | succ n =>
+    have hxn : f^[n] (f x) = x := hx.eq
+    have hA : MDifferentiableAt I I f x := hf 0 n.succ_pos
+    have hB : MDifferentiableAt I I f^[n] (f x) := mdifferentiableAt_iterate_of_forall_lt
+      fun k hk ↦ (iterate_succ_apply f k x).symm ▸ hf (k + 1) (Nat.succ_lt_succ hk)
+    let A : E →L[𝕜] E := mfderiv I I f x
+    let B : E →L[𝕜] E := mfderiv I I f^[n] (f x)
+    -- At `x`, `f^[n + 1] = f^[n] ∘ f` has derivative `B ∘ A`.
+    have e₁ := det_id_sub_fixedPointDerivative_eq_of_apply (I := I) ⟨x, hx.eq⟩
+      (D := (B : E →ₗ[𝕜] E) ∘ₗ (A : E →ₗ[𝕜] E)) fun v ↦ mfderiv_comp_apply x hB hA v
+    -- At `f x`, `f^[n + 1] = f ∘ f^[n]` has derivative `A ∘ B`, since `f^[n] (f x) = x`.
+    have hcomp : ∀ g : M → M, g = f ∘ f^[n] → ∀ w : E, mfderiv I I g (f x) w = A (B w) := by
+      rintro _ rfl w
+      exact mfderiv_comp_apply_of_eq (f x) hA hB hxn w
+    have e₂ := det_id_sub_fixedPointDerivative_eq_of_apply (I := I) ⟨f x, hx.apply.eq⟩
+      (D := (A : E →ₗ[𝕜] E) ∘ₗ (B : E →ₗ[𝕜] E)) (hcomp _ (iterate_succ' f n))
+    rw [e₁, e₂]
+    -- In infinite dimensions both determinants are `1`.
+    by_cases hfin : Module.Finite 𝕜 E
+    swap
+    · rw [LinearMap.det_eq_one_of_not_module_finite hfin,
+        LinearMap.det_eq_one_of_not_module_finite hfin]
+    -- `det (1 - A ∘ B) = det (1 - B ∘ A)` (the Weinstein–Aronszajn identity).
+    have key := LinearMap.det_one_add_comp_comm (-(A : E →ₗ[𝕜] E)) (B : E →ₗ[𝕜] E)
+    simp only [LinearMap.neg_comp, LinearMap.comp_neg, ← sub_eq_add_neg] at key
+    exact key
+
+/-- **`det (1 - df^n)` is constant along a periodic orbit.** If `x` is a periodic point of `f` of
+period `n` and `f` is differentiable at the points `f^[k] x`, `k < n`, of its orbit, the
+fixed-point derivatives of `f^[n]` at `x` and at every point `f^[j] x` of its orbit have the same
+`det (1 - ·)`. Over `ℝ`, at a nondegenerate fixed point of `f^[n]` in the interior of `M`, the
+sign of this determinant is the local Lefschetz index, which is therefore the same at every point
+of the orbit. -/
+theorem det_id_sub_fixedPointDerivative_iterate_apply_iterate {n : ℕ} (hx : IsPeriodicPt f n x)
+    (hf : ∀ k < n, MDifferentiableAt I I f (f^[k] x)) (j : ℕ) :
+    LinearMap.det (LinearMap.id - fixedPointDerivative I f^[n] ⟨f^[j] x, (hx.apply_iterate j).eq⟩) =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I f^[n] ⟨x, hx.eq⟩) := by
+  induction j with
+  | zero => rfl
+  | succ j ih =>
+    -- `f` is differentiable along the orbit of `f^[j] x`, which is the orbit of `x`.
+    have hf' : ∀ k < n, MDifferentiableAt I I f (f^[k] (f^[j] x)) := fun k hk ↦ by
+      rw [← iterate_add_apply, ← hx.iterate_mod_apply]
+      exact hf _ (Nat.mod_lt _ (Nat.zero_lt_of_lt hk))
+    rw [det_id_sub_fixedPointDerivative_congr (iterate_succ_apply' f j x) _
+        (hx.apply_iterate j).apply.eq,
+      det_id_sub_fixedPointDerivative_iterate_apply (hx.apply_iterate j) hf', ih]
 
 /-- **Nondegeneracy as a determinant condition.** On a manifold modelled on a finite-dimensional
 space, a fixed point `x` at which `f` is differentiable is nondegenerate exactly when
