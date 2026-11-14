@@ -26,10 +26,6 @@ structure sheaf `AlgebraicGeometry.Proj.structureSheaf` through the same sequenc
 the sheaf of types. The passage to a presheaf of modules via `PresheafOfModules.ofPresheaf`
 follows `AlgebraicGeometry.StructureSheaf.moduleStructurePresheaf` in Mathlib's
 `Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
-Unlike for Mathlib's `Proj` structure sheaf, no comparison isomorphism is needed here: the
-presheaf of abelian groups has the sheaf of types as its underlying presheaf of types
-definitionally, so the sheaf condition is read off directly, as for `AlgebraicGeometry.tilde` in
-Mathlib's `Mathlib/AlgebraicGeometry/Modules/Tilde.lean`.
 
 The fractions `r / s` form sections `AlgebraicGeometry.Proj.twistingSheaf.const`, and the
 difference of two of them is again a fraction
