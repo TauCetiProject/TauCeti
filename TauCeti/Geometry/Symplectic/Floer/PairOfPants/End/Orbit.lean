@@ -128,6 +128,15 @@ theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
   rw [hX, mul_one, smul_smul, endSign_mul_self, one_smul] at h
   exact h
 
+/-- Reading an orbit of `H_q` with the time `±t` of the end gives an orbit of the positive end
+Hamiltonian `H'_q`. This is the converse of `hasDerivAt_comp_endSign_mul`. -/
+theorem hasDerivAt_comp_endSign_mul_positiveEndHamiltonian {q : Puncture} {y : ℝ → V}
+    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) (t : ℝ) :
+    HasDerivAt (fun t ↦ y (q.endSign * t))
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t))) t :=
+  hasDerivAt_comp_endSign_mul (H := positiveEndHamiltonian H)
+    (by simpa only [positiveEndHamiltonian_positiveEndHamiltonian] using hy) t
+
 omit [FiniteDimensional ℝ V] in
 /-- The action of a loop for the positive end Hamiltonian `H'_q` is `±` the action, for `H_q`,
 of the loop read with the time `±t` of the end. -/

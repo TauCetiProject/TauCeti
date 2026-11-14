@@ -654,6 +654,14 @@ theorem positiveEndHamiltonian_apply {X : Type*} (H : Puncture → ℝ → X →
     (t : ℝ) (x : X) : positiveEndHamiltonian H q t x = q.endSign * H q (q.endSign * t) x :=
   (rfl)
 
+/-- Passing to the positive end chart twice gives back the end Hamiltonian:
+`(H'_q)'(t, x) = ±(±H_q(±(±t), x)) = H_q(t, x)`. -/
+@[simp]
+theorem positiveEndHamiltonian_positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ)
+    (q : Puncture) : positiveEndHamiltonian (positiveEndHamiltonian H) q = H q := by
+  funext t x
+  simp only [positiveEndHamiltonian_apply, ← mul_assoc, endSign_mul_self, one_mul]
+
 theorem periodic_positiveEndHamiltonian {X : Type*} {H : Puncture → ℝ → X → ℝ} {q : Puncture}
     (hH : Periodic (H q) 1) : Periodic (positiveEndHamiltonian H q) 1 := by
   intro t
