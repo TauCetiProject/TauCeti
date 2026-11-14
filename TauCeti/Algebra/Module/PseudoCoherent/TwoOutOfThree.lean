@@ -90,7 +90,7 @@ private theorem extension_succ {n : ℕ}
   rw [succ_iff] at h₁ h₂
   obtain ⟨a, π₁, hπ₁, h₁⟩ := h₁
   obtain ⟨b, π₂, hπ₂, h₂⟩ := h₂
-  obtain ⟨π, hπ, i, p, hi, hip, hp⟩ := exists_surjective_ker_exact hf hfg hg hπ₁ hπ₂
+  obtain ⟨π, hπ, -, -, i, p, -, -, hi, hip, hp⟩ := exists_surjective_ker_exact hf hfg hg hπ₁ hπ₂
   exact (succ_iff_ker hπ).mpr (ih hi hip hp h₁ h₂)
 
 /-- The extension statement in degree `n`, for modules in the universe of `R`. -/
