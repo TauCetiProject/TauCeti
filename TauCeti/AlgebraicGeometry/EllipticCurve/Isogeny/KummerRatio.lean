@@ -14,7 +14,8 @@ import TauCeti.GroupTheory.Index.Comp
 Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 `[E₂(F) : φ E₁(F)] / #E₁(F)[φ]`. The kernel is always finite. The ratio is positive when the
 image has finite index, and zero otherwise, following the convention for subgroup indices.
-It is multiplicative under composition, without a finite-index hypothesis.
+It is multiplicative under composition, without a finite-index hypothesis, and equals one for
+degree-one isogenies.
 
 Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
 formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
@@ -80,5 +81,30 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
   have hrange : (AddMonoidHom.id W.Point).range = ⊤ :=
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
+
+/-- A degree-one isogeny induces a bijection on rational points, so its Kummer ratio is one. -/
+theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1) :
+    φ.kummerRatio = 1 := by
+  classical
+  obtain ⟨ψ, hψφ, hφψ⟩ := exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one φ hφ
+  have hcomp₁ : (Hom.ofIsogeny ψ).pointMapHom.comp (Hom.ofIsogeny φ).pointMapHom =
+      AddMonoidHom.id W₁.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hψφ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hcomp₂ : (Hom.ofIsogeny φ).pointMapHom.comp (Hom.ofIsogeny ψ).pointMapHom =
+      AddMonoidHom.id W₂.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hφψ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    eq_bot_iff.mpr fun P hP ↦ by
+      have hP₀ : (Hom.ofIsogeny ψ).pointMapHom ((Hom.ofIsogeny φ).pointMapHom P) = P := by
+        rw [← AddMonoidHom.comp_apply, hcomp₁, AddMonoidHom.id_apply]
+      rw [← hP₀, AddMonoidHom.mem_ker.mp hP, map_zero]
+      exact zero_mem ⊥
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
+    AddMonoidHom.range_eq_top.mpr fun Q ↦
+      ⟨(Hom.ofIsogeny ψ).pointMapHom Q, by
+        rw [← AddMonoidHom.comp_apply, hcomp₂, AddMonoidHom.id_apply]⟩
+  simp [kummerRatio_def, hker, hrange]
 
 end TauCeti.Isogeny
