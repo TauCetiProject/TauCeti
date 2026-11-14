@@ -14,10 +14,10 @@ import Mathlib.Algebra.Group.Commute.Units
 # Units in monoids
 
 This file lifts units in the range of a local monoid homomorphism to units of its source.
-It also rewrites integer powers of products of units as monomials with consecutive natural
-exponents. These identities
-let bilateral sums over integer powers split into two sums over natural numbers, without
-requiring a zero in the ambient monoid.
+It also rewrites a strictly negative integer power of a product of units as an inverse monomial
+with consecutive natural exponents, which lets the negative half of a bilateral sum over integer
+powers be expressed as a sum over natural numbers without requiring a zero in the ambient monoid.
+The nonnegative half is `TauCeti.mul_pow_mul_eq_pow_succ_mul_pow` in `TauCeti.Algebra.Group.Pow`.
 
 ## Main results
 

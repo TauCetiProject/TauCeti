@@ -185,7 +185,8 @@ theorem evalIntBivariateSeries_tateFormalX (u v : Kˣ)
   have hs := summable_tateUniformizationX (u * v) hq u
   have hp : Summable (fun n : ℕ ↦ (u : K) ^ (n + 1) * (v : K) ^ n /
       (1 - (u : K) ^ (n + 1) * (v : K) ^ n) ^ 2) := by
-    simpa only [Function.comp_def, Units.val_mul, mul_zpow_natCast_mul] using
+    simpa only [Function.comp_def, Units.val_mul, zpow_natCast,
+      mul_pow_mul_eq_pow_succ_mul_pow] using
       hs.comp_injective Nat.cast_injective
   have hn : Function.Injective (fun n : ℕ ↦ -((n : ℤ) + 1)) := by
     intro a b h
@@ -197,7 +198,8 @@ theorem evalIntBivariateSeries_tateFormalX (u v : Kˣ)
       using hs.comp_injective hn
   rw [eval_tateFormalX_expansion _ _ hu hv, tateUniformizationX_def,
     ← tsum_nat_add_neg_add_one hs]
-  simp_rw [Units.val_mul_zpow_neg_natCast_succ_mul, Units.val_mul, mul_zpow_natCast_mul,
+  simp_rw [Units.val_mul_zpow_neg_natCast_succ_mul, Units.val_mul, zpow_natCast,
+    mul_pow_mul_eq_pow_succ_mul_pow,
     inv_div_one_sub_inv_sq]
   rw [hp.tsum_add hm]
   ring
@@ -213,7 +215,8 @@ theorem evalIntBivariateSeries_tateFormalY (u v : Kˣ)
   have hs := summable_tateUniformizationY (u * v) hq u
   have hp : Summable (fun n : ℕ ↦ ((u : K) ^ (n + 1) * (v : K) ^ n) ^ 2 /
       (1 - (u : K) ^ (n + 1) * (v : K) ^ n) ^ 3) := by
-    simpa only [Function.comp_def, Units.val_mul, mul_zpow_natCast_mul] using
+    simpa only [Function.comp_def, Units.val_mul, zpow_natCast,
+      mul_pow_mul_eq_pow_succ_mul_pow] using
       hs.comp_injective Nat.cast_injective
   have hn : Function.Injective (fun n : ℕ ↦ -((n : ℤ) + 1)) := by
     intro a b h
@@ -225,7 +228,8 @@ theorem evalIntBivariateSeries_tateFormalY (u v : Kˣ)
       using hs.comp_injective hn
   rw [eval_tateFormalY_expansion _ _ hu hv, tateUniformizationY_def,
     ← tsum_nat_add_neg_add_one hs]
-  simp_rw [Units.val_mul_zpow_neg_natCast_succ_mul, Units.val_mul, mul_zpow_natCast_mul,
+  simp_rw [Units.val_mul_zpow_neg_natCast_succ_mul, Units.val_mul, zpow_natCast,
+    mul_pow_mul_eq_pow_succ_mul_pow,
     inv_sq_div_one_sub_inv_cube]
   rw [hp.tsum_add hm]
   ring
