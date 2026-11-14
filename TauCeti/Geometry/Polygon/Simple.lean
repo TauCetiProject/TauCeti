@@ -472,13 +472,9 @@ theorem boundaryParam_rotate (t : ℝ) :
 `-(i + 1)`, where `i` is the edge it runs along at time `t`. -/
 theorem edgeIndexAt_neg {t : ℝ} (ht : Int.fract t ≠ 0) :
     edgeIndexAt n (-t) = -finRotate n (edgeIndexAt n t) := by
-  have hfract := (Int.fract_nonneg t).lt_of_ne' ht
-  rw [Int.fract] at hfract
-  have hfloor : ⌊-t⌋ = -⌊t⌋ - 1 := by
-    rw [Int.floor_eq_iff]
-    push_cast
-    constructor <;> linarith [Int.lt_floor_add_one t]
-  rw [edgeIndexAt, edgeIndexAt, hfloor, ← vertexIndex_add_one, ← vertexIndex_neg, neg_add']
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_neg,
+    (Int.ceil_eq_floor_add_one_iff_notMem t).2 (Int.fract_ne_zero_iff.1 ht), vertexIndex_neg,
+    vertexIndex_add_one]
 
 /-- The reversal `poly.reverse` traverses the boundary of `poly` backwards from vertex `0`: its
 boundary parametrization at time `t` is that of `poly` at time `-t`. -/
@@ -599,10 +595,8 @@ theorem exists_mem_Ico_boundaryParam_eq {x : P} (hx : x ∈ poly.boundary ℝ) :
     ∃ t ∈ Ico (0 : ℝ) n, poly.boundaryParam t = x := by
   rw [← range_boundaryParam] at hx
   obtain ⟨u, rfl⟩ := hx
-  have hn : (0 : ℝ) < n := mod_cast NeZero.pos n
-  refine ⟨toIcoMod hn 0 u, by simpa using toIcoMod_mem_Ico hn 0 u, ?_⟩
-  rw [← sub_sub_cancel u (toIcoMod hn 0 u), self_sub_toIcoMod]
-  exact poly.periodic_boundaryParam.sub_zsmul_eq _
+  obtain ⟨t, ht, h⟩ := poly.periodic_boundaryParam.exists_mem_Ico₀ (mod_cast NeZero.pos n) u
+  exact ⟨t, ht, h.symm⟩
 
 /-- The circle parametrization of a simple polygon is injective. -/
 theorem IsSimple.boundaryParamCircle_injective (h : poly.IsSimple ℝ) :
