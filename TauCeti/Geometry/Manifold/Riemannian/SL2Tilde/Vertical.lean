@@ -43,26 +43,6 @@ namespace TauCeti.SL2Tilde
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
-private def coordinateMap (Φ : Isom J SL2Tilde) : P → P :=
-  toProd ∘ Φ ∘ toProd.symm
-
-private theorem contDiff_coordinateMap (Φ : Isom J SL2Tilde) :
-    ContDiff ℝ ∞ (coordinateMap Φ) := by
-  -- The type synonym has exactly the model-space atlas, and both coordinate
-  -- equivalences are identities in that atlas.
-  exact Φ.contMDiff.contDiff
-
-private theorem coordinate_derivative (Φ : Isom J SL2Tilde) (p : SL2Tilde)
-    (u : TangentSpace J p) :
-    fderiv ℝ (coordinateMap Φ) (toProd p) (tangentSpaceCastModel J p u) =
-      tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u) := by
-  -- The inherited model-space atlas identifies the coordinate derivative and
-  -- tangent casts with Mathlib's canonical normed-space derivative bridge.
-  change fderiv ℝ (coordinateMap Φ) (toProd p) u =
-    mfderiv J J (coordinateMap Φ) (toProd p) u
-  rw [mfderiv_eq_fderiv]
-  rfl
-
 private theorem vertical_derivative_sign (Φ : Isom J SL2Tilde) (p : P) :
     (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).1 = 0 ∧
       (fderiv ℝ (coordinateMap Φ) p (0, 0, 1)).2.1 = 0 ∧
@@ -78,7 +58,7 @@ private theorem vertical_derivative_sign (Φ : Isom J SL2Tilde) (p : P) :
   rw [inner_def, inner_def] at hi
   have hs : (tangentSpaceCastModel J (Φ q) (mfderiv J J Φ q v)).2.2 ^ 2 = 1 := by
     simpa [h.1, h.2, hv', pow_two] using hi
-  have he := coordinate_derivative Φ q v
+  have he := fderiv_coordinateMap_apply Φ q v
   simp only [hv', q, Equiv.apply_symm_apply] at he
   rw [he]
   exact ⟨h.1, h.2, sq_eq_one_iff.mp hs⟩
@@ -106,7 +86,7 @@ theorem exists_mfderiv_vertical_eq (Φ : Isom J SL2Tilde) :
   refine ⟨(fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2,
     (vertical_derivative_sign Φ 0).2.2, ?_⟩
   intro p r
-  rw [← coordinate_derivative]
+  rw [← fderiv_coordinateMap_apply]
   simp only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply]
   have hunit : fderiv ℝ (coordinateMap Φ) (toProd p) (0, 0, 1) =
       (0, 0, (fderiv ℝ (coordinateMap Φ) 0 (0, 0, 1)).2.2) :=
@@ -127,7 +107,7 @@ theorem exists_apply_vertical_eq (Φ : Isom J SL2Tilde) :
   refine ⟨ε, hε, fun p t => toProd.injective ?_⟩
   have hder (q : P) : fderiv ℝ (coordinateMap Φ) q (0, 0, 1) = (0, 0, ε) := by
     have h := hd (toProd.symm q) 1
-    rw [← coordinate_derivative] at h
+    rw [← fderiv_coordinateMap_apply] at h
     simpa only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
       Equiv.apply_symm_apply, mul_one] using h
   have h := apply_add_smul_eq_of_fderiv_apply_eq
