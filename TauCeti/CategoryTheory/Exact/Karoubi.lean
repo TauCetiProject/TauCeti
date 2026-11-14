@@ -68,13 +68,12 @@ private def karoubiConflations : ConflationClass (Karoubi C) where
   Conflation S := ∃ T : ShortComplex C, E.Conflation T ∧ Nonempty (Retract S (T.map (toKaroubi C)))
   isKernelCokernelPair _ := fun ⟨_, hT, ⟨e⟩⟩ ↦
     ((E.isKernelCokernelPair _ hT).map (toKaroubi C)).of_retract e
-  isClosedUnderIsomorphisms := ⟨fun e ⟨T, hT, ⟨r⟩⟩ ↦
-    ⟨T, hT, ⟨⟨e.inv ≫ r.i, r.r ≫ e.hom, by simp⟩⟩⟩⟩
+  isClosedUnderIsomorphisms := ⟨fun e ⟨T, hT, ⟨r⟩⟩ ↦ ⟨T, hT, ⟨(Retract.ofIso e.symm).trans r⟩⟩⟩
 
 /-- The image of a conflation of `E` is a conflation of the idempotent completion. -/
 private theorem karoubiConflations_map_toKaroubi {T : ShortComplex C} (hT : E.Conflation T) :
     E.karoubiConflations.Conflation (T.map (toKaroubi C)) :=
-  ⟨T, hT, ⟨⟨𝟙 _, 𝟙 _, by simp⟩⟩⟩
+  ⟨T, hT, ⟨Retract.refl _⟩⟩
 
 /-- A retract of the image of an inflation of `E` is an inflation of the idempotent completion.
 The cokernel is the image of the idempotent induced on the cokernel of the inflation of `E`. -/
