@@ -29,12 +29,12 @@ to `{μ}` while `volume {μ} = 0`; the positive-variance hypothesis `v ≠ 0` is
 * `TauCeti.Probability.gaussianReal_Icc_le`, `TauCeti.Probability.gaussianReal_closedBall_le`, and
   `TauCeti.Probability.gaussianReal_Icc_neg_le` — interval and symmetric small-ball bounds
   `gaussianReal μ v [x - r, x + r] ≤ ENNReal.ofReal (√(2 / (π * v)) * r)`.
-* `TauCeti.Probability.pi_gaussianReal_forall_abs_sub_le` and
-  `TauCeti.Probability.pi_gaussianReal_zero_one_forall_abs_le` — `ℓ^∞` box small-ball bounds for
+* `TauCeti.Probability.pi_gaussianReal_forall_abs_sub_le_le` and
+  `TauCeti.Probability.pi_gaussianReal_zero_one_forall_abs_le_le` — `ℓ^∞` box small-ball bounds for
   product Gaussian measures over a finite index type.
-* `ProbabilityTheory.HasLaw.measure_abs_sub_le_of_gaussianReal`,
-  `ProbabilityTheory.HasLaw.measure_forall_abs_sub_le_of_pi_gaussianReal`, and
-  `ProbabilityTheory.HasLaw.measure_forall_abs_le_of_pi_gaussianReal_zero_one` — random-variable
+* `ProbabilityTheory.HasLaw.measure_abs_sub_le_le_of_gaussianReal`,
+  `ProbabilityTheory.HasLaw.measure_forall_abs_sub_le_le_of_pi_gaussianReal`, and
+  `ProbabilityTheory.HasLaw.measure_forall_abs_le_le_of_pi_gaussianReal_zero_one` — random-variable
   small-ball bounds under `HasLaw`.
 -/
 
@@ -109,7 +109,7 @@ theorem gaussianReal_zero_one_Icc_neg_le (r : ℝ) :
   simpa using gaussianReal_Icc_neg_le 0 one_ne_zero r
 
 /-- Small-ball bound for an `ℓ^∞` box under a finite product of nondegenerate real Gaussian laws. -/
-theorem pi_gaussianReal_forall_abs_sub_le {ι : Type*} [Fintype ι] (μ : ι → ℝ)
+theorem pi_gaussianReal_forall_abs_sub_le_le {ι : Type*} [Fintype ι] (μ : ι → ℝ)
     {v : ι → ℝ≥0} (hv : ∀ i, v i ≠ 0) (x r : ι → ℝ) :
     (Measure.pi fun i ↦ gaussianReal (μ i) (v i)) {y | ∀ i, |y i - x i| ≤ r i} ≤
       ∏ i, ENNReal.ofReal (√(2 / (π * (v i : ℝ))) * r i) := by
@@ -122,10 +122,10 @@ theorem pi_gaussianReal_forall_abs_sub_le {ι : Type*} [Fintype ι] (μ : ι →
 
 /-- Cube small-ball bound for a finite product of standard Gaussian laws `gaussianReal 0 1`:
 the `ℓ^∞` ball of radius `r` has measure at most `(√(2 / π) * r) ^ |ι|`. -/
-theorem pi_gaussianReal_zero_one_forall_abs_le (ι : Type*) [Fintype ι] (r : ℝ) :
+theorem pi_gaussianReal_zero_one_forall_abs_le_le (ι : Type*) [Fintype ι] (r : ℝ) :
     (Measure.pi fun _ : ι ↦ gaussianReal 0 1) {y | ∀ i, |y i| ≤ r} ≤
       ENNReal.ofReal (√(2 / π) * r) ^ Fintype.card ι := by
-  simpa using pi_gaussianReal_forall_abs_sub_le (ι := ι) (fun _ ↦ 0) (fun _ ↦ one_ne_zero)
+  simpa using pi_gaussianReal_forall_abs_sub_le_le (ι := ι) (fun _ ↦ 0) (fun _ ↦ one_ne_zero)
     (fun _ ↦ 0) (fun _ ↦ r)
 
 end TauCeti.Probability
@@ -138,7 +138,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- Small-ball bound for a real random variable with law `gaussianReal μ v` (`v ≠ 0`), uniformly
 in the center `x`. -/
-theorem measure_abs_sub_le_of_gaussianReal {X : Ω → ℝ} {μ : ℝ} {v : ℝ≥0}
+theorem measure_abs_sub_le_le_of_gaussianReal {X : Ω → ℝ} {μ : ℝ} {v : ℝ≥0}
     (hX : HasLaw X (gaussianReal μ v) P) (hv : v ≠ 0) (x r : ℝ) :
     P {ω | |X ω - x| ≤ r} ≤ ENNReal.ofReal (√(2 / (π * (v : ℝ))) * r) := by
   have hset : {y : ℝ | |y - x| ≤ r} = Metric.closedBall x r := by
@@ -152,7 +152,7 @@ theorem measure_abs_sub_le_of_gaussianReal {X : Ω → ℝ} {μ : ℝ} {v : ℝ�
 
 /-- Box small-ball bound for a random vector whose coordinates have independent nondegenerate real
 Gaussian laws `gaussianReal (μ i) (v i)`. -/
-theorem measure_forall_abs_sub_le_of_pi_gaussianReal {ι : Type*} [Fintype ι]
+theorem measure_forall_abs_sub_le_le_of_pi_gaussianReal {ι : Type*} [Fintype ι]
     {X : Ω → ι → ℝ} {μ : ι → ℝ} {v : ι → ℝ≥0}
     (hX : HasLaw X (Measure.pi fun i ↦ gaussianReal (μ i) (v i)) P)
     (hv : ∀ i, v i ≠ 0) (x r : ι → ℝ) :
@@ -163,14 +163,14 @@ theorem measure_forall_abs_sub_le_of_pi_gaussianReal {ι : Type*} [Fintype ι]
       measurableSet_le (continuous_abs.comp (continuous_id.sub continuous_const)).measurable
         measurable_const
   rw [hX.measure_eq hmeas]
-  exact pi_gaussianReal_forall_abs_sub_le μ hv x r
+  exact pi_gaussianReal_forall_abs_sub_le_le μ hv x r
 
 /-- Cube small-ball bound for a random vector whose coordinates are independent standard Gaussians:
 `P(∀ i, |X ω i| ≤ r) ≤ (√(2 / π) * r) ^ |ι|`. -/
-theorem measure_forall_abs_le_of_pi_gaussianReal_zero_one {ι : Type*} [Fintype ι]
+theorem measure_forall_abs_le_le_of_pi_gaussianReal_zero_one {ι : Type*} [Fintype ι]
     {X : Ω → ι → ℝ} (hX : HasLaw X (Measure.pi fun _ : ι ↦ gaussianReal 0 1) P) (r : ℝ) :
     P {ω | ∀ i, |X ω i| ≤ r} ≤ ENNReal.ofReal (√(2 / π) * r) ^ Fintype.card ι := by
-  simpa using hX.measure_forall_abs_sub_le_of_pi_gaussianReal (fun _ ↦ one_ne_zero)
+  simpa using hX.measure_forall_abs_sub_le_le_of_pi_gaussianReal (fun _ ↦ one_ne_zero)
     (fun _ ↦ 0) (fun _ ↦ r)
 
 end ProbabilityTheory.HasLaw

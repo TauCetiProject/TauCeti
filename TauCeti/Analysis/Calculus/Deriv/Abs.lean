@@ -22,7 +22,7 @@ to a curve on `ℝ` that is differentiable at no real number.
 
 ## Main statements
 
-* `DifferentiableAt.differentiableAt_of_comp_abs` — differentiability of `s ↦ f |s|` at `t ≠ 0`
+* `DifferentiableAt.of_comp_abs` — differentiability of `s ↦ f |s|` at `t ≠ 0`
   implies `DifferentiableAt ℝ f |t|`.
 * `DifferentiableAt.differentiableWithinAt_Ici_of_comp_abs` — differentiability of `s ↦ f |s|` at
   any `t : ℝ` implies `DifferentiableWithinAt ℝ f (Set.Ici |t|) |t|`.
@@ -38,7 +38,7 @@ namespace DifferentiableAt
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {t : ℝ}
 
 /-- If `s ↦ f |s|` is differentiable at `t ≠ 0`, then `f` is differentiable at `|t|`. -/
-theorem differentiableAt_of_comp_abs (h : DifferentiableAt ℝ (fun s ↦ f |s|) t) (ht : t ≠ 0) :
+theorem of_comp_abs (h : DifferentiableAt ℝ (fun s ↦ f |s|) t) (ht : t ≠ 0) :
     DifferentiableAt ℝ f |t| := by
   rcases ht.lt_or_gt with ht_neg | ht_pos
   · have hpos : 0 < -t := neg_pos.mpr ht_neg
@@ -62,6 +62,6 @@ theorem differentiableWithinAt_Ici_of_comp_abs (h : DifferentiableAt ℝ (fun s 
   rcases eq_or_ne t 0 with rfl | ht
   · rw [abs_zero]
     exact h.differentiableWithinAt.congr (fun s hs ↦ by rw [abs_of_nonneg hs]) (by simp)
-  · exact (h.differentiableAt_of_comp_abs ht).differentiableWithinAt
+  · exact (h.of_comp_abs ht).differentiableWithinAt
 
 end DifferentiableAt

@@ -21,22 +21,27 @@ all have norm `O(h)`. By reflection `s ↦ f (-s)`, a dual statement holds for l
 `(f · - f t) =O[𝓝[<] t] (· - t)` using the `p` consecutive grid increments immediately to the left
 of `t` (starting at integer index `⌈t / h⌉ - (p + 1)`).
 
-Contrapositively, if inside a one-sided neighborhood `s ∈ 𝓝[>] t` (resp. `s ∈ 𝓝[<] t`) every block
-of `p` consecutive dyadic `2⁻ⁿ`-increments contained in `s` eventually has an increment exceeding
-`M / 2ⁿ`, then `f` fails the corresponding one-sided pointwise Lipschitz bound at `t`, and in
-particular fails one-sided and two-sided differentiability at `t`.
+Contrapositively, if inside a one-sided neighborhood `s ∈ 𝓝[>] t` (resp. `s ∈ 𝓝[<] t`) or a
+two-sided neighborhood `s ∈ 𝓝 t` every block of `p` consecutive `2⁻ⁿ`-grid increments contained in
+`s` eventually has an increment exceeding `M / 2ⁿ`, then `f` fails the corresponding one-sided
+pointwise Lipschitz bound at `t`, and in particular fails one-sided and two-sided differentiability
+at `t`.
 
 ## Main statements
 
-* `Asymptotics.IsBigO.exists_forall_norm_sub_mul_le_of_nhdsGT` — right-sided uniform-mesh window
+* `Asymptotics.IsBigO.exists_forall_norm_sub_le_mul_of_nhdsGT` — right-sided uniform-mesh window
   bound from `(f · - f t) =O[𝓝[>] t] (· - t)`.
-* `Asymptotics.IsBigO.exists_forall_norm_sub_mul_le_of_nhdsLT` — left-sided uniform-mesh window
+* `Asymptotics.IsBigO.exists_forall_norm_sub_le_mul_of_nhdsLT` — left-sided uniform-mesh window
   bound from `(f · - f t) =O[𝓝[<] t] (· - t)`.
-* `TauCeti.not_isBigO_sub_nhdsGT_of_dyadic` and `TauCeti.not_isBigO_sub_nhdsLT_of_dyadic` —
-  obstruction to one-sided pointwise Lipschitz oscillation from local dyadic rough-path oscillation.
-* `TauCeti.not_differentiableWithinAt_Ici_of_dyadic`,
-  `TauCeti.not_differentiableWithinAt_Iic_of_dyadic`, and `TauCeti.not_differentiableAt_of_dyadic` —
-  resulting non-existence of one-sided and two-sided derivatives.
+* `TauCeti.not_isBigO_sub_nhdsGT_of_eventually_exists_lt_norm_sub` and
+  `TauCeti.not_isBigO_sub_nhdsLT_of_eventually_exists_lt_norm_sub` — obstruction to one-sided
+  pointwise Lipschitz oscillation from local `2⁻ⁿ`-grid oscillation.
+* `TauCeti.not_differentiableWithinAt_Ici_of_eventually_exists_lt_norm_sub`,
+  `TauCeti.not_differentiableWithinAt_Iic_of_eventually_exists_lt_norm_sub`,
+  `TauCeti.not_differentiableAt_of_mem_nhdsGT_of_eventually_exists_lt_norm_sub`,
+  `TauCeti.not_differentiableAt_of_mem_nhdsLT_of_eventually_exists_lt_norm_sub`, and
+  `TauCeti.not_differentiableAt_of_eventually_exists_lt_norm_sub` — resulting non-existence of
+  one-sided and two-sided derivatives.
 
 ## References
 
@@ -60,7 +65,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] {f : ℝ → E} {t : ℝ}
 then for every window length `p : ℕ` there exist `K > 0` and `δ > 0` such that for every mesh
 `0 < h` with `(p + 1) * h < δ`, all `p` consecutive integer-grid increments immediately to the right
 of `t` have norm at most `K * h`. -/
-theorem exists_forall_norm_sub_mul_le_of_nhdsGT
+theorem exists_forall_norm_sub_le_mul_of_nhdsGT
     (h : (f · - f t) =O[𝓝[>] t] (· - t)) (p : ℕ) :
     ∃ K > 0, ∃ δ > 0, ∀ {h₀ : ℝ}, 0 < h₀ → ((p + 1 : ℕ) : ℝ) * h₀ < δ →
       ∀ j < p,
@@ -106,7 +111,7 @@ then for every window length `p : ℕ` there exist `K > 0` and `δ > 0` such tha
 `0 < h` with `(p + 1) * h < δ`, all `p` consecutive integer-grid increments from
 `(⌈t / h⌉ - (p + 1)) * h` to `(⌈t / h⌉ - 1) * h` (strictly to the left of `t`) have norm at most
 `K * h`. -/
-theorem exists_forall_norm_sub_mul_le_of_nhdsLT
+theorem exists_forall_norm_sub_le_mul_of_nhdsLT
     (h : (f · - f t) =O[𝓝[<] t] (· - t)) (p : ℕ) :
     ∃ K > 0, ∃ δ > 0, ∀ {h₀ : ℝ}, 0 < h₀ → ((p + 1 : ℕ) : ℝ) * h₀ < δ →
       ∀ j < p,
@@ -115,7 +120,7 @@ theorem exists_forall_norm_sub_mul_le_of_nhdsLT
   have hneg : (fun s : ℝ ↦ f (-s) - f (- -t)) =O[𝓝[>] (-t)] (· - (-t)) :=
     ((h.comp_tendsto tendsto_neg_nhdsGT_neg).congr (fun s ↦ by simp)
       fun s ↦ by simp only [Function.comp_apply]; ring).of_neg_right
-  obtain ⟨K, hK, δ, hδ, hwin⟩ := hneg.exists_forall_norm_sub_mul_le_of_nhdsGT p
+  obtain ⟨K, hK, δ, hδ, hwin⟩ := hneg.exists_forall_norm_sub_le_mul_of_nhdsGT p
   refine ⟨K, hK, δ, hδ, fun {h₀} hh₀ hmesh j hj ↦ ?_⟩
   have hj' : p - 1 - j < p := by omega
   have hstep := hwin hh₀ hmesh (p - 1 - j) hj'
@@ -138,22 +143,22 @@ end Asymptotics.IsBigO
 
 namespace TauCeti
 
-section Dyadic
+section GridOscillation
 
 variable {E : Type*}
 
-/-- If inside a right-sided neighborhood `s ∈ 𝓝[>] t` every window of `p` consecutive dyadic
-`2⁻ⁿ`-increments eventually contains an increment exceeding `M / 2ⁿ`, then `f` fails the
-right-sided Lipschitz bound `(f · - f t) =O[𝓝[>] t] (· - t)`. -/
-theorem not_isBigO_sub_nhdsGT_of_dyadic [SeminormedAddCommGroup E] {f : ℝ → E} {p : ℕ}
-    {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[>] t)
+/-- If inside a right-sided neighborhood `s ∈ 𝓝[>] t` every window of `p` consecutive `2⁻ⁿ`-grid
+increments eventually contains an increment exceeding `M / 2ⁿ`, then `f` fails the right-sided
+Lipschitz bound `(f · - f t) =O[𝓝[>] t] (· - t)`. -/
+theorem not_isBigO_sub_nhdsGT_of_eventually_exists_lt_norm_sub
+    [SeminormedAddCommGroup E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[>] t)
     (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
       (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
       ∃ j : Fin p,
         (M : ℝ) / 2 ^ n < ‖f (((m + j + 1 : ℤ) : ℝ) / 2 ^ n) - f (((m + j : ℤ) : ℝ) / 2 ^ n)‖) :
     ¬ (f · - f t) =O[𝓝[>] t] (· - t) := by
   intro hO
-  obtain ⟨K, _, δ, hδ, hwin⟩ := hO.exists_forall_norm_sub_mul_le_of_nhdsGT p
+  obtain ⟨K, _, δ, hδ, hwin⟩ := hO.exists_forall_norm_sub_le_mul_of_nhdsGT p
   obtain ⟨b, htb, hb⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp hs
   have hδ' : 0 < min δ (b - t) := lt_min hδ (sub_pos.mpr htb)
   have hlim : Tendsto (fun n : ℕ ↦ ((p + 1 : ℕ) : ℝ) * (2⁻¹ : ℝ) ^ n) atTop (𝓝 0) := by
@@ -188,11 +193,11 @@ theorem not_isBigO_sub_nhdsGT_of_dyadic [SeminormedAddCommGroup E] {f : ℝ → 
   simp only [div_eq_mul_inv] at hj_gt
   linarith
 
-/-- If inside a left-sided neighborhood `s ∈ 𝓝[<] t` every window of `p` consecutive dyadic
-`2⁻ⁿ`-increments eventually contains an increment exceeding `M / 2ⁿ`, then `f` fails the
-left-sided Lipschitz bound `(f · - f t) =O[𝓝[<] t] (· - t)`. -/
-theorem not_isBigO_sub_nhdsLT_of_dyadic [SeminormedAddCommGroup E] {f : ℝ → E} {p : ℕ}
-    {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[<] t)
+/-- If inside a left-sided neighborhood `s ∈ 𝓝[<] t` every window of `p` consecutive `2⁻ⁿ`-grid
+increments eventually contains an increment exceeding `M / 2ⁿ`, then `f` fails the left-sided
+Lipschitz bound `(f · - f t) =O[𝓝[<] t] (· - t)`. -/
+theorem not_isBigO_sub_nhdsLT_of_eventually_exists_lt_norm_sub
+    [SeminormedAddCommGroup E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[<] t)
     (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
       (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
       ∃ j : Fin p,
@@ -202,7 +207,7 @@ theorem not_isBigO_sub_nhdsLT_of_dyadic [SeminormedAddCommGroup E] {f : ℝ → 
   have hneg : (fun u : ℝ ↦ f (-u) - f (- -t)) =O[𝓝[>] (-t)] (· - (-t)) :=
     ((hO.comp_tendsto tendsto_neg_nhdsGT_neg).congr (fun u ↦ by simp)
       fun u ↦ by simp only [Function.comp_apply]; ring).of_neg_right
-  refine not_isBigO_sub_nhdsGT_of_dyadic (p := p) (s := Neg.neg ⁻¹' s)
+  refine not_isBigO_sub_nhdsGT_of_eventually_exists_lt_norm_sub (p := p) (s := Neg.neg ⁻¹' s)
     (tendsto_neg_nhdsGT_neg hs) (fun M ↦ (hosc M).mono fun n hn m' hm' ↦ ?_) hneg
   have hm_mem (k : ℕ) (hk : k ≤ p) : ((-(m' + p) + k : ℤ) : ℝ) / 2 ^ n ∈ s := by
     have hk' : p - k ≤ p := Nat.sub_le p k
@@ -227,41 +232,69 @@ theorem not_isBigO_sub_nhdsLT_of_dyadic [SeminormedAddCommGroup E] {f : ℝ → 
     omega
   rwa [ha, hb, norm_sub_rev] at hj
 
-/-- Under the dyadic rough-path oscillation property inside a right-sided neighborhood `s ∈ 𝓝[>] t`,
-`f` has no right derivative at `t`. -/
-theorem not_differentiableWithinAt_Ici_of_dyadic [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[>] t)
+/-- Under the `2⁻ⁿ`-grid rough-path oscillation property inside a right-sided neighborhood
+`s ∈ 𝓝[>] t`, `f` has no right derivative at `t`. -/
+theorem not_differentiableWithinAt_Ici_of_eventually_exists_lt_norm_sub
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ}
+    (hs : s ∈ 𝓝[>] t)
     (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
       (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
       ∃ j : Fin p,
         (M : ℝ) / 2 ^ n < ‖f (((m + j + 1 : ℤ) : ℝ) / 2 ^ n) - f (((m + j : ℤ) : ℝ) / 2 ^ n)‖) :
     ¬ DifferentiableWithinAt ℝ f (Ici t) t := fun hd ↦
-  not_isBigO_sub_nhdsGT_of_dyadic hs hosc
+  not_isBigO_sub_nhdsGT_of_eventually_exists_lt_norm_sub hs hosc
     (hd.isBigO_sub.mono (nhdsWithin_mono _ Ioi_subset_Ici_self))
 
-/-- Under the dyadic rough-path oscillation property inside a left-sided neighborhood `s ∈ 𝓝[<] t`,
-`f` has no left derivative at `t`. -/
-theorem not_differentiableWithinAt_Iic_of_dyadic [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[<] t)
+/-- Under the `2⁻ⁿ`-grid rough-path oscillation property inside a left-sided neighborhood
+`s ∈ 𝓝[<] t`, `f` has no left derivative at `t`. -/
+theorem not_differentiableWithinAt_Iic_of_eventually_exists_lt_norm_sub
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ}
+    (hs : s ∈ 𝓝[<] t)
     (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
       (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
       ∃ j : Fin p,
         (M : ℝ) / 2 ^ n < ‖f (((m + j + 1 : ℤ) : ℝ) / 2 ^ n) - f (((m + j : ℤ) : ℝ) / 2 ^ n)‖) :
     ¬ DifferentiableWithinAt ℝ f (Iic t) t := fun hd ↦
-  not_isBigO_sub_nhdsLT_of_dyadic hs hosc
+  not_isBigO_sub_nhdsLT_of_eventually_exists_lt_norm_sub hs hosc
     (hd.isBigO_sub.mono (nhdsWithin_mono _ Iio_subset_Iic_self))
 
-/-- Under the dyadic rough-path oscillation property inside a right-sided neighborhood `s ∈ 𝓝[>] t`,
-`f` is not differentiable at `t`. -/
-theorem not_differentiableAt_of_dyadic [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ} (hs : s ∈ 𝓝[>] t)
+/-- Under the `2⁻ⁿ`-grid rough-path oscillation property inside a right-sided neighborhood
+`s ∈ 𝓝[>] t`, `f` is not differentiable at `t`. -/
+theorem not_differentiableAt_of_mem_nhdsGT_of_eventually_exists_lt_norm_sub
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ}
+    (hs : s ∈ 𝓝[>] t)
     (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
       (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
       ∃ j : Fin p,
         (M : ℝ) / 2 ^ n < ‖f (((m + j + 1 : ℤ) : ℝ) / 2 ^ n) - f (((m + j : ℤ) : ℝ) / 2 ^ n)‖) :
     ¬ DifferentiableAt ℝ f t := fun hd ↦
-  not_differentiableWithinAt_Ici_of_dyadic hs hosc hd.differentiableWithinAt
+  not_differentiableWithinAt_Ici_of_eventually_exists_lt_norm_sub hs hosc hd.differentiableWithinAt
 
-end Dyadic
+/-- Under the `2⁻ⁿ`-grid rough-path oscillation property inside a left-sided neighborhood
+`s ∈ 𝓝[<] t`, `f` is not differentiable at `t`. -/
+theorem not_differentiableAt_of_mem_nhdsLT_of_eventually_exists_lt_norm_sub
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ}
+    (hs : s ∈ 𝓝[<] t)
+    (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
+      (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
+      ∃ j : Fin p,
+        (M : ℝ) / 2 ^ n < ‖f (((m + j + 1 : ℤ) : ℝ) / 2 ^ n) - f (((m + j : ℤ) : ℝ) / 2 ^ n)‖) :
+    ¬ DifferentiableAt ℝ f t := fun hd ↦
+  not_differentiableWithinAt_Iic_of_eventually_exists_lt_norm_sub hs hosc hd.differentiableWithinAt
+
+/-- Under the `2⁻ⁿ`-grid rough-path oscillation property inside a neighborhood `s ∈ 𝓝 t`, `f` is
+not differentiable at `t`. -/
+theorem not_differentiableAt_of_eventually_exists_lt_norm_sub
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {p : ℕ} {t : ℝ} {s : Set ℝ}
+    (hs : s ∈ 𝓝 t)
+    (hosc : ∀ M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
+      (∀ k ≤ p, ((m + k : ℤ) : ℝ) / 2 ^ n ∈ s) →
+      ∃ j : Fin p,
+        (M : ℝ) / 2 ^ n < ‖f (((m + j + 1 : ℤ) : ℝ) / 2 ^ n) - f (((m + j : ℤ) : ℝ) / 2 ^ n)‖) :
+    ¬ DifferentiableAt ℝ f t :=
+  not_differentiableAt_of_mem_nhdsGT_of_eventually_exists_lt_norm_sub
+    (nhdsWithin_le_nhds hs) hosc
+
+end GridOscillation
 
 end TauCeti

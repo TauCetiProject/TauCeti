@@ -53,17 +53,16 @@ directly by `IsBrownianReal` via structure extension.
   `ProbabilityTheory.IsPreBrownianReal.ae_not_monotoneOn_Icc`, and
   `ProbabilityTheory.IsPreBrownianReal.ae_not_antitoneOn_Icc` — simultaneous nowhere monotonicity
   and nowhere antitonicity on `(a, b)` and `[a, b]`.
-* `ProbabilityTheory.IsPreBrownianReal.measure_exists_dyadic_three_increments_le` and
-  `ProbabilityTheory.IsPreBrownianReal.ae_eventually_forall_exists_dyadic_three_increment_gt` —
-  quantitative geometric small-ball decay and almost-sure dyadic rough-path oscillation on triples
-  of consecutive increments.
+* `ProbabilityTheory.IsPreBrownianReal.measure_exists_forall_abs_sub_le_le` and
+  `ProbabilityTheory.IsPreBrownianReal.ae_eventually_forall_exists_lt_abs_sub` — quantitative
+  geometric small-ball decay and almost-sure dyadic rough-path oscillation on triples of
+  consecutive increments.
 * `ProbabilityTheory.IsPreBrownianReal.ae_not_isBigO_sub_nhdsGT`,
   `ProbabilityTheory.IsPreBrownianReal.ae_not_isBigO_sub_nhdsLT`,
   `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableWithinAt_Ici`,
   `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableWithinAt_Iic`,
-  `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableAt`,
-  `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableAt_and_not_differentiableWithinAt_zero`,
-  and `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableAt_abs` — simultaneous failure of
+  `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableAt`, and
+  `ProbabilityTheory.IsPreBrownianReal.ae_not_differentiableAt_comp_abs` — simultaneous failure of
   one-sided Lipschitz bounds and one- and two-sided differentiability on `[0, ∞)` and on `ℝ`.
 
 ## References
@@ -335,7 +334,7 @@ theorem ae_not_antitoneOn_Icc (hB : IsPreBrownianReal B P) :
 
 /-! ### Simultaneous Paley–Wiener–Zygmund nowhere differentiability -/
 
-private theorem measure_forall_dyadic_three_increments_le (hB : IsPreBrownianReal B P)
+private theorem measure_forall_abs_sub_le_le (hB : IsPreBrownianReal B P)
     (M : ℝ) (n m : ℕ) :
     P {ω | ∀ j : Fin 3,
         |B (((m + j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ n) ω -
@@ -372,13 +371,13 @@ private theorem measure_forall_dyadic_three_increments_le (hB : IsPreBrownianRea
             div_mul_cancel₀ _ (by positivity)]
   refine (measure_mono hsub).trans ?_
   simpa using
-    (hB.hasLaw_normalizedBrownianIncrements hg).measure_forall_abs_le_of_pi_gaussianReal_zero_one
+    (hB.hasLaw_normalizedBrownianIncrements hg).measure_forall_abs_le_le_of_pi_gaussianReal_zero_one
       (M / √((2 : ℝ) ^ n))
 
 /-- Quantitative Paley–Wiener–Zygmund small-ball union bound: the probability that on `[0, N]` some
 window of three consecutive dyadic `2⁻ⁿ`-increments has all three increments bounded by `M / 2ⁿ`
 decays geometrically like `N * (√(2 / π) * M)³ * ((√2)⁻¹)ⁿ` (and vanishes when `M < 0`). -/
-theorem measure_exists_dyadic_three_increments_le (hB : IsPreBrownianReal B P) (N : ℕ) (M : ℝ)
+theorem measure_exists_forall_abs_sub_le_le (hB : IsPreBrownianReal B P) (N : ℕ) (M : ℝ)
     (n : ℕ) :
     P {ω | ∃ m < N * 2 ^ n, ∀ j : Fin 3,
         |B (((m + j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ n) ω -
@@ -410,7 +409,7 @@ theorem measure_exists_dyadic_three_increments_le (hB : IsPreBrownianReal B P) (
       ≤ ∑ m ∈ Finset.range (N * 2 ^ n), P (W m) := measure_biUnion_finset_le _ _
     _ ≤ ∑ _ ∈ Finset.range (N * 2 ^ n),
           ENNReal.ofReal (√(2 / π) * (M / √((2 : ℝ) ^ n))) ^ 3 :=
-        Finset.sum_le_sum fun m _ ↦ hB.measure_forall_dyadic_three_increments_le M n m
+        Finset.sum_le_sum fun m _ ↦ hB.measure_forall_abs_sub_le_le M n m
     _ = ((N * 2 ^ n : ℕ) : ℝ≥0∞) *
           ENNReal.ofReal (√(2 / π) * (M / √((2 : ℝ) ^ n))) ^ 3 := by
         simp
@@ -431,19 +430,15 @@ theorem measure_exists_dyadic_three_increments_le (hB : IsPreBrownianReal B P) (
 /-- Almost surely, for every horizon `N : ℕ` and slope bound `M : ℝ`, at all sufficiently fine
 dyadic scales `2⁻ⁿ` every window of three consecutive increments on `[0, N]` contains at least one
 increment strictly larger than `M / 2ⁿ`. -/
-theorem ae_eventually_forall_exists_dyadic_three_increment_gt (hB : IsPreBrownianReal B P) :
+theorem ae_eventually_forall_exists_lt_abs_sub (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ (N : ℕ) (M : ℝ), ∀ᶠ n in atTop, ∀ m < N * 2 ^ n, ∃ j : Fin 3,
       M / 2 ^ n <
-        |B (((m + j + 1 : ℕ) : ℝ) / 2 ^ n).toNNReal ω -
-          B (((m + j : ℕ) : ℝ) / 2 ^ n).toNNReal ω| := by
-  have htoNN (k n : ℕ) : (((k : ℝ) / 2 ^ n).toNNReal) = (k : ℝ≥0) / (2 : ℝ≥0) ^ n := by
-    apply NNReal.coe_injective
-    rw [Real.coe_toNNReal _ (by positivity)]
-    simp
+        |B (((m + j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ n) ω -
+          B (((m + j : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ n) ω| := by
   have hnat : ∀ᵐ ω ∂P, ∀ N M : ℕ, ∀ᶠ n in atTop, ∀ m < N * 2 ^ n, ∃ j : Fin 3,
       (M : ℝ) / 2 ^ n <
-        |B (((m + j + 1 : ℕ) : ℝ) / 2 ^ n).toNNReal ω -
-          B (((m + j : ℕ) : ℝ) / 2 ^ n).toNNReal ω| := by
+        |B (((m + j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ n) ω -
+          B (((m + j : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ n) ω| := by
     rw [ae_all_iff]
     intro N
     rw [ae_all_iff]
@@ -458,7 +453,7 @@ theorem ae_eventually_forall_exists_dyadic_three_increment_gt (hB : IsPreBrownia
     have hsum : (∑' n, P (E n)) ≠ ∞ := by
       have htsum : (∑' n, P (E n)) ≤
           ∑' n, ENNReal.ofReal ((N : ℝ) * (√(2 / π) * (M : ℝ)) ^ 3 * (√2)⁻¹ ^ n) :=
-        tsum_le_tsum fun n ↦ hB.measure_exists_dyadic_three_increments_le N M n
+        tsum_le_tsum fun n ↦ hB.measure_exists_forall_abs_sub_le_le N M n
       refine ne_top_of_le_ne_top ?_ htsum
       have hs : Summable fun n : ℕ ↦ (N : ℝ) * (√(2 / π) * (M : ℝ)) ^ 3 * (√2)⁻¹ ^ n :=
         (summable_geometric_of_lt_one (by positivity) hlt1).mul_left _
@@ -467,20 +462,23 @@ theorem ae_eventually_forall_exists_dyadic_three_increment_gt (hB : IsPreBrownia
     filter_upwards [ae_eventually_notMem hsum] with ω hω
     refine hω.mono fun n hn m hm ↦ ?_
     simp only [E, Set.mem_ofPred_eq, not_exists, not_and, not_forall, not_le] at hn
-    obtain ⟨j, hj⟩ := hn m hm
-    exact ⟨j, by simpa only [htoNN] using hj⟩
+    exact hn m hm
   filter_upwards [hnat] with ω hω N M
   refine (hω N ⌈M⌉₊).mono fun n hn m hm ↦ ?_
   obtain ⟨j, hj⟩ := hn m hm
   exact ⟨j, (div_le_div_of_nonneg_right (Nat.le_ceil M) (by positivity)).trans_lt hj⟩
 
-private theorem ae_eventually_dyadic_three_increment_gt_Ioo (hB : IsPreBrownianReal B P) :
+private theorem ae_eventually_exists_lt_norm_sub_Ioo (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ N M : ℕ, ∀ᶠ n in atTop, ∀ m : ℤ,
       (∀ k : ℕ, k ≤ 3 → ((m + k : ℤ) : ℝ) / 2 ^ n ∈ Ioo (0 : ℝ) N) → ∃ j : Fin 3,
         (M : ℝ) / 2 ^ n <
           ‖B (((m + j + 1 : ℤ) : ℝ) / 2 ^ n).toNNReal ω -
             B (((m + j : ℤ) : ℝ) / 2 ^ n).toNNReal ω‖ := by
-  filter_upwards [hB.ae_eventually_forall_exists_dyadic_three_increment_gt] with ω hosc N M
+  have htoNN (k n : ℕ) : (((k : ℝ) / 2 ^ n).toNNReal) = (k : ℝ≥0) / (2 : ℝ≥0) ^ n := by
+    apply NNReal.coe_injective
+    rw [Real.coe_toNNReal _ (by positivity)]
+    simp
+  filter_upwards [hB.ae_eventually_forall_exists_lt_abs_sub] with ω hosc N M
   refine (hosc N M).mono fun n hn m hm ↦ ?_
   have hpow_pos : (0 : ℝ) < (2 : ℝ) ^ n := by positivity
   have hm0 := hm 0 (Nat.zero_le 3)
@@ -499,7 +497,7 @@ private theorem ae_eventually_dyadic_three_increment_gt_Ioo (hB : IsPreBrownianR
     exact_mod_cast (by omega : m + j + 1 = (m.toNat + j + 1 : ℕ))
   have hb : ((m + j : ℤ) : ℝ) = ((m.toNat + j : ℕ) : ℝ) := by
     exact_mod_cast (by omega : m + j = (m.toNat + j : ℕ))
-  rw [Real.norm_eq_abs, ha, hb]
+  rw [Real.norm_eq_abs, ha, hb, htoNN, htoNN]
   exact hj
 
 /-- Almost surely, on one common full-measure event, `s ↦ B s.toNNReal ω` fails the right-sided
@@ -508,9 +506,9 @@ pointwise Lipschitz bound `(fun s ↦ B s.toNNReal ω - B t.toNNReal ω) =O[𝓝
 theorem ae_not_isBigO_sub_nhdsGT (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ t : ℝ, 0 ≤ t →
       ¬ (fun s : ℝ ↦ B s.toNNReal ω - B t.toNNReal ω) =O[𝓝[>] t] (· - t) := by
-  filter_upwards [hB.ae_eventually_dyadic_three_increment_gt_Ioo] with ω hosc t ht
+  filter_upwards [hB.ae_eventually_exists_lt_norm_sub_Ioo] with ω hosc t ht
   have htN : t < ((⌊t⌋₊ + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.lt_floor_add_one t
-  exact not_isBigO_sub_nhdsGT_of_dyadic
+  exact not_isBigO_sub_nhdsGT_of_eventually_exists_lt_norm_sub
     (mem_of_superset (Ioo_mem_nhdsGT htN) (Ioo_subset_Ioo_left ht)) (hosc (⌊t⌋₊ + 1))
 
 /-- Almost surely, on one common full-measure event, `s ↦ B s.toNNReal ω` fails the left-sided
@@ -519,47 +517,40 @@ pointwise Lipschitz bound `(fun s ↦ B s.toNNReal ω - B t.toNNReal ω) =O[𝓝
 theorem ae_not_isBigO_sub_nhdsLT (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ t : ℝ, 0 < t →
       ¬ (fun s : ℝ ↦ B s.toNNReal ω - B t.toNNReal ω) =O[𝓝[<] t] (· - t) := by
-  filter_upwards [hB.ae_eventually_dyadic_three_increment_gt_Ioo] with ω hosc t ht
+  filter_upwards [hB.ae_eventually_exists_lt_norm_sub_Ioo] with ω hosc t ht
   have htN : t < ((⌊t⌋₊ + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.lt_floor_add_one t
-  exact not_isBigO_sub_nhdsLT_of_dyadic
+  exact not_isBigO_sub_nhdsLT_of_eventually_exists_lt_norm_sub
     (mem_of_superset (Ioo_mem_nhdsLT ht) (Ioo_subset_Ioo_right htN.le)) (hosc (⌊t⌋₊ + 1))
 
-/-- Almost surely, `s ↦ B s.toNNReal ω` has no right derivative at any `t ≥ 0`. -/
+/-- **Paley–Wiener–Zygmund simultaneous right-sided nowhere differentiability of Brownian motion**
+(Mörters–Peres, Theorem 1.30; Lalley, Proposition 9): on one common full-measure event,
+`s ↦ B s.toNNReal ω` has no right derivative at any `t ≥ 0` (including `t = 0`). -/
 theorem ae_not_differentiableWithinAt_Ici (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ t : ℝ, 0 ≤ t →
       ¬ DifferentiableWithinAt ℝ (fun s : ℝ ↦ B s.toNNReal ω) (Ici t) t := by
   filter_upwards [hB.ae_not_isBigO_sub_nhdsGT] with ω hω t ht hd
   exact hω t ht (hd.isBigO_sub.mono (nhdsWithin_mono _ Ioi_subset_Ici_self))
 
-/-- Almost surely, `s ↦ B s.toNNReal ω` has no left derivative at any `t > 0`. -/
+/-- Almost surely, on one common full-measure event, `s ↦ B s.toNNReal ω` has no left derivative at
+any `t > 0`. -/
 theorem ae_not_differentiableWithinAt_Iic (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ t : ℝ, 0 < t →
       ¬ DifferentiableWithinAt ℝ (fun s : ℝ ↦ B s.toNNReal ω) (Iic t) t := by
   filter_upwards [hB.ae_not_isBigO_sub_nhdsLT] with ω hω t ht hd
   exact hω t ht (hd.isBigO_sub.mono (nhdsWithin_mono _ Iio_subset_Iic_self))
 
-/-- Almost surely, `s ↦ B s.toNNReal ω` is not differentiable at any `t ≥ 0`. -/
+/-- **Paley–Wiener–Zygmund simultaneous nowhere differentiability of Brownian motion**
+(Mörters–Peres, Theorem 1.30; Lalley, Proposition 9): on one common full-measure event,
+`s ↦ B s.toNNReal ω` is not differentiable at any `t ≥ 0`. (On `(-∞, 0]`, `Real.toNNReal` clamps
+negative arguments to `0`, so the extended function is constant equal to `B 0 ω`.) -/
 theorem ae_not_differentiableAt (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ t : ℝ, 0 ≤ t → ¬ DifferentiableAt ℝ (fun s : ℝ ↦ B s.toNNReal ω) t := by
   filter_upwards [hB.ae_not_differentiableWithinAt_Ici] with ω hω t ht hd
   exact hω t ht hd.differentiableWithinAt
 
-/-- **Paley–Wiener–Zygmund simultaneous nowhere differentiability of Brownian motion**
-(Mörters–Peres, Theorem 1.30; Lalley, Proposition 9): one common full-measure event excludes
-two-sided derivatives at every positive time and excludes the right derivative at zero.
-(The extension by `Real.toNNReal` clamps negative arguments to `0`, so the extended function is
-constant on `(-∞, 0]`.) -/
-theorem ae_not_differentiableAt_and_not_differentiableWithinAt_zero
-    (hB : IsPreBrownianReal B P) :
-    ∀ᵐ ω ∂P,
-      (∀ t : ℝ, 0 < t → ¬ DifferentiableAt ℝ (fun s : ℝ ↦ B s.toNNReal ω) t) ∧
-      ¬ DifferentiableWithinAt ℝ (fun s : ℝ ↦ B s.toNNReal ω) (Ici 0) 0 := by
-  filter_upwards [hB.ae_not_differentiableWithinAt_Ici] with ω hω
-  exact ⟨fun t ht hd ↦ hω t ht.le hd.differentiableWithinAt, hω 0 le_rfl⟩
-
 /-- Reflecting a pre-Brownian motion across `t = 0` via `s ↦ B |s|.toNNReal ω` yields sample paths
 that are almost surely differentiable at **no** real number `t : ℝ`. -/
-theorem ae_not_differentiableAt_abs (hB : IsPreBrownianReal B P) :
+theorem ae_not_differentiableAt_comp_abs (hB : IsPreBrownianReal B P) :
     ∀ᵐ ω ∂P, ∀ t : ℝ, ¬ DifferentiableAt ℝ (fun s : ℝ ↦ B |s|.toNNReal ω) t := by
   filter_upwards [hB.ae_not_differentiableWithinAt_Ici] with ω hnd t hd
   exact hnd |t| (abs_nonneg t)
