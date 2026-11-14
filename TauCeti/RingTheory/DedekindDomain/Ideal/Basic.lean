@@ -307,6 +307,27 @@ theorem asIdeal_equivOfRingEquiv (e : R ≃+* R') (v : HeightOneSpectrum R) :
 theorem asIdeal_equivOfRingEquiv_symm (e : R ≃+* R') (w : HeightOneSpectrum R') :
     ((equivOfRingEquiv e).symm w).asIdeal = Ideal.comap e w.asIdeal := rfl
 
+/-- Transport along the identity ring isomorphism fixes every height-one prime. -/
+@[simp]
+theorem equivOfRingEquiv_refl :
+    equivOfRingEquiv (RingEquiv.refl R) = Equiv.refl (HeightOneSpectrum R) := by
+  apply Equiv.ext
+  intro v
+  apply HeightOneSpectrum.ext
+  ext x
+  simp
+
+/-- Transport of height-one primes respects composition of ring isomorphisms. -/
+theorem equivOfRingEquiv_trans {R'' : Type*} [CommRing R''] (e : R ≃+* R')
+    (f : R' ≃+* R'') :
+    equivOfRingEquiv (e.trans f) = (equivOfRingEquiv e).trans (equivOfRingEquiv f) := by
+  apply Equiv.ext
+  intro v
+  apply HeightOneSpectrum.ext
+  rw [Equiv.trans_apply, asIdeal_equivOfRingEquiv, asIdeal_equivOfRingEquiv,
+    asIdeal_equivOfRingEquiv]
+  exact (Ideal.map_map (I := v.asIdeal) (e : R →+* R') (f : R' →+* R'')).symm
+
 end RingEquivTransport
 
 section OfIrreducible
