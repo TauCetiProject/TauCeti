@@ -12,8 +12,9 @@ public import Mathlib.Order.Fin.Tuple
 /-!
 # `Finsupp.cons`, `Finsupp.snoc` and their lexicographic comparison
 
-`Finsupp.cons x s : Fin (n + 1) →₀ M` puts `x` in front of `s`. Adding two of them adds heads and
-tails separately. The lexicographic order compares the entries at `0` first, so two of them are
+`Finsupp.cons x s : Fin (n + 1) →₀ M` puts `x` in front of `s`, and `s.mapDomain Fin.succ` is
+`Finsupp.cons 0 s`. Adding or componentwise comparing two `Finsupp.cons` vectors operates on heads
+and tails separately. The lexicographic order compares the entries at `0` first, so two of them are
 compared by their heads, and then by their tails.
 
 Dually, `Finsupp.snoc s x : Fin (n + 1) →₀ M` appends `x` after `s`, and `Finsupp.init t` forgets
@@ -35,6 +36,28 @@ theorem cons_add_cons [AddZeroClass M] (x y : M) (s t : Fin n →₀ M) :
     cons x s + cons y t = cons (x + y) (s + t) := by
   ext i
   cases i using Fin.cases <;> simp
+
+/-- Pushing forward along `Fin.succ` prepends `0` at coordinate `0`. -/
+@[simp]
+theorem mapDomain_finSucc [AddCommMonoid M] (s : Fin n →₀ M) :
+    s.mapDomain Fin.succ = cons 0 s := by
+  ext k
+  cases k using Fin.cases with
+  | zero =>
+    rw [cons_zero, mapDomain_of_notMem_range]
+    rintro ⟨i, hi⟩
+    exact Fin.succ_ne_zero i hi
+  | succ i =>
+    rw [cons_succ, mapDomain_apply_of_injective (Fin.succ_injective n)]
+
+/-- Componentwise comparison of `Finsupp.cons` compares heads and tails separately. -/
+@[simp]
+theorem cons_le_cons_iff [Zero M] [LE M] {x y : M} {s t : Fin n →₀ M} :
+    cons x s ≤ cons y t ↔ x ≤ y ∧ s ≤ t := by
+  refine ⟨fun h ↦ ⟨by simpa using h 0, fun i ↦ by simpa using h i.succ⟩, fun ⟨h0, hs⟩ k ↦ ?_⟩
+  cases k using Fin.cases with
+  | zero => exact h0
+  | succ i => exact hs i
 
 /-- Strict lexicographic comparison of `Finsupp.cons` compares the heads first and compares
 the tails when the heads are equal. -/

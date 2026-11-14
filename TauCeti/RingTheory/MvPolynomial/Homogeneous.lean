@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
+public import Mathlib.Data.Finsupp.Fin
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+import TauCeti.Data.Finsupp.Fin
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
@@ -45,7 +47,10 @@ degree-one component of a polynomial in finitely many variables as the linear fo
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 The top component of a nonzero polynomial is nonzero
 (`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`). With no variables every homogeneous
-polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`).
+polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`),
+and in `n + 1` variables every homogeneous polynomial of degree `d + 1` splits into its `X 0 = 0`
+specialization lifted along `Fin.succ` plus `X 0` times a homogeneous polynomial of degree `d`
+(`MvPolynomial.IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
 `(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
@@ -283,6 +288,72 @@ theorem homogeneousSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
   refine eq_bot_iff.2 fun p hp ↦ ?_
   rw [Submodule.mem_bot, eq_C_of_isEmpty p,
     ((mem_homogeneousSubmodule _ _).1 hp).coeff_eq_zero (by simp), map_zero]
+
+/-- Specializing `X 0 ↦ 0` and shifting `X i.succ ↦ X i` sends `monomial α c` to `monomial α.tail c`
+when `α 0 = 0`, and to `0` otherwise. -/
+theorem aeval_cons_zero_monomial {n : ℕ} (α : Fin (n + 1) →₀ ℕ) (c : R) :
+    _root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X) (monomial α c) =
+      if α 0 = 0 then monomial α.tail c else 0 := by
+  split_ifs with h0
+  · have hren : rename Fin.succ (monomial α.tail c) = monomial α c := by
+      rw [rename_monomial, Finsupp.mapDomain_finSucc, ← h0, Finsupp.cons_tail]
+    have hcomp : Fin.cons (0 : MvPolynomial (Fin n) R) X ∘ Fin.succ = X := by ext i; simp
+    rw [← hren, aeval_rename, hcomp, aeval_X_left, AlgHom.id_apply]
+  · have hmul : X 0 * monomial (α - Finsupp.single 0 1) c = monomial α c := by
+      rw [X, monomial_mul_monomial, one_mul,
+        add_tsub_cancel_of_le (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero h0))]
+    rw [← hmul, map_mul]; simp
+
+/-- Specializing `X 0 ↦ 0` and shifting `X i.succ ↦ X i` preserves homogeneity of degree `d`. -/
+theorem IsHomogeneous.aeval_cons_zero {n d : ℕ} {p : MvPolynomial (Fin (n + 1)) R}
+    (hp : p.IsHomogeneous d) :
+    (_root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X) p).IsHomogeneous d := by
+  have h := hp.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X) fun i ↦ by
+    cases i using Fin.cases with
+    | zero => exact isHomogeneous_zero (Fin n) R 1
+    | succ j => exact isHomogeneous_X R j
+  rwa [one_mul] at h
+
+/-- Every homogeneous polynomial `p` of degree `d + 1` in `n + 1` variables decomposes as the lift
+along `Fin.succ` of its `X 0 = 0` specialization plus `X 0 * q` for a homogeneous `q` of degree
+`d`. -/
+theorem IsHomogeneous.exists_eq_rename_succ_add_X_zero_mul {n d : ℕ}
+    {p : MvPolynomial (Fin (n + 1)) R} (hp : p.IsHomogeneous (d + 1)) :
+    ∃ q : MvPolynomial (Fin (n + 1)) R, q.IsHomogeneous d ∧
+      rename Fin.succ (_root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X) p) +
+        X 0 * q = p := by
+  classical
+  refine ⟨∑ α ∈ p.support with α 0 ≠ 0, monomial (α - Finsupp.single 0 1) (p.coeff α), ?_, ?_⟩
+  · rw [← mem_homogeneousSubmodule]
+    refine Submodule.sum_mem _ fun α hα ↦ ?_
+    obtain ⟨hsupp, h0⟩ := Finset.mem_filter.mp hα
+    have hdegα : α.degree = d + 1 := by
+      rw [Finsupp.degree_apply]; exact (hp.degree_eq_sum_deg_support hsupp).symm
+    have hle : Finsupp.single (0 : Fin (n + 1)) 1 ≤ α :=
+      Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero h0)
+    have hadd : (α - Finsupp.single 0 1).degree + 1 = α.degree := by
+      simpa [map_add] using congrArg Finsupp.degree (tsub_add_cancel_of_le hle)
+    exact (mem_homogeneousSubmodule d _).mpr (isHomogeneous_monomial (p.coeff α) (by omega))
+  · conv_rhs => rw [p.as_sum]
+    rw [← Finset.sum_filter_add_sum_filter_not p.support (fun α ↦ α 0 = 0)]
+    congr 1
+    · conv_lhs => rw [p.as_sum, map_sum, map_sum,
+        ← Finset.sum_filter_add_sum_filter_not p.support (fun α ↦ α 0 = 0)]
+      have hzero : ∑ α ∈ p.support with ¬ α 0 = 0,
+          rename Fin.succ (_root_.MvPolynomial.aeval (Fin.cons (0 : MvPolynomial (Fin n) R) X)
+            (monomial α (p.coeff α))) = 0 :=
+        Finset.sum_eq_zero fun α hα ↦ by
+          simp [aeval_cons_zero_monomial, (Finset.mem_filter.mp hα).2]
+      rw [hzero, add_zero]
+      refine Finset.sum_congr rfl fun α hα ↦ ?_
+      have h0 : α 0 = 0 := (Finset.mem_filter.mp hα).2
+      simp only [aeval_cons_zero_monomial, h0, ↓reduceIte, rename_monomial,
+        Finsupp.mapDomain_finSucc]
+      rw [← h0, Finsupp.cons_tail]
+    · rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun α hα ↦ ?_
+      rw [X, monomial_mul_monomial, one_mul, add_tsub_cancel_of_le
+        (Finsupp.single_le_iff.mpr (Nat.pos_of_ne_zero (Finset.mem_filter.mp hα).2))]
 
 end CommSemiring
 
