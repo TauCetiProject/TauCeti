@@ -13,6 +13,9 @@ public import TauCeti.Geometry.Manifold.Instances.OpenBall.Basic
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
 # The rotated disc as a complex manifold
@@ -37,6 +40,9 @@ on which the rotations lift.
   of `ℂ` on its target.
 * `TauCeti.rootsOfUnityBall.instContMDiffConstSMul`: the rotations act on the disc by `C^n` maps,
   that is, by biholomorphisms.
+* `TauCeti.rootsOfUnityBall.exists_contMDiffAt_root_and_log`: near a nonzero point, the power map
+  `u ↦ u ^ m` between the discs has a holomorphic local section together with a holomorphic
+  logarithm of it.
 -/
 
 public section
@@ -119,5 +125,55 @@ theorem isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall {n : ℕ∞ω} (hn : 1 ≤
     IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m) u :=
   IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ)) (P := ℂ) (isLocalDiffeomorph_coe_rootsOfUnityBall u)
     (isLocalDiffeomorphAt_pow hn (NeZero.ne m) hu)
+
+/-- **Holomorphic local roots and their logarithms.** For `0 ≤ r` and `t₀ ≠ 0` in the disc of
+radius `r ^ m`, there are maps `L` to `ℂ` and `w` to the disc of radius `r`, both `C^n` at `t₀`
+(holomorphic for `n ≠ 0`), such that every `t ≠ 0` has `w t ^ m = t` and `exp (L t) = w t`. Near
+`t₀` they are given by the branch `L t = log z₀ + (1 / m) log (t / z₀ ^ m)` for an `m`-th root `z₀`
+of `t₀`, which is holomorphic even when `t₀` lies on the branch cut of the principal logarithm. -/
+theorem rootsOfUnityBall.exists_contMDiffAt_root_and_log (hr : 0 ≤ r)
+    {t₀ : Metric.ball (0 : ℂ) (r ^ m)} (ht₀ : (t₀ : ℂ) ≠ 0) :
+    ∃ (L : Metric.ball (0 : ℂ) (r ^ m) → ℂ)
+      (w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r),
+      ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n L t₀ ∧ ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n w t₀ ∧
+        ∀ t : Metric.ball (0 : ℂ) (r ^ m), (t : ℂ) ≠ 0 →
+          rootsOfUnityBall.powMap m r (w t) = t ∧ Complex.exp (L t) = w t := by
+  set z₀ := rootsOfUnityBall.rootMap hr t₀
+  have hz₀m : (z₀ : ℂ) ^ m = t₀ := by
+    rw [← rootsOfUnityBall.coe_powMap, rootsOfUnityBall.powMap_rootMap]
+  have hz₀ : (z₀ : ℂ) ≠ 0 := fun h ↦ ht₀ (by rw [← hz₀m, h, zero_pow (NeZero.ne m)])
+  let L : Metric.ball (0 : ℂ) (r ^ m) → ℂ := fun t ↦
+    Complex.log z₀ + (m : ℂ)⁻¹ * Complex.log (t / (z₀ : ℂ) ^ m)
+  have hmem (t : Metric.ball (0 : ℂ) (r ^ m)) : Complex.exp (L t) ∈ rootsOfUnityBall m r := by
+    by_cases ht : (t : ℂ) = 0
+    · simp only [L, ht, zero_div, Complex.log_zero, mul_zero, add_zero, Complex.exp_log hz₀]
+      exact z₀.2
+    · rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
+        ← norm_pow, Complex.exp_log_add_inv_mul_log_div_pow hz₀ ht, ← mem_ball_zero_iff]
+      exact t.2
+  -- The branch is holomorphic at `t₀`, where `t / z₀ ^ m = 1` lies in the slit plane.
+  have hlog : ContDiffAt ℂ n (fun t ↦ Complex.log (t / (z₀ : ℂ) ^ m)) t₀ := by
+    have h := (Complex.contDiffAt_log (n := n) (x := (t₀ : ℂ) / (z₀ : ℂ) ^ m)
+      (by rw [hz₀m, div_self ht₀]; exact Complex.one_mem_slitPlane)).comp (t₀ : ℂ)
+      (contDiffAt_id.div_const ((z₀ : ℂ) ^ m))
+    exact h
+  have hL : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n L t₀ := by
+    have h := ((contDiffAt_const (c := Complex.log z₀)).add
+      ((contDiffAt_const (c := (m : ℂ)⁻¹)).mul hlog)).contMDiffAt.comp t₀
+      (contMDiff_subtypeVal_ball (I := 𝓘(ℂ)) (n := n) (c := (0 : ℂ)) (r := r ^ m)).contMDiffAt
+    exact h
+  let w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r := fun t ↦
+    ⟨Complex.exp (L t), hmem t⟩
+  have hexp : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n (((↑) : rootsOfUnityBall m r → ℂ) ∘ w) t₀ :=
+    Complex.contDiff_exp.contMDiff.contMDiffAt.comp t₀ hL
+  refine ⟨L, w, hL, ?_, fun t ht ↦ ⟨?_, rfl⟩⟩
+  · -- The inclusion of the disc of radius `r` is a local diffeomorphism.
+    exact contMDiffWithinAt_univ.1 (ContMDiffWithinAt.of_comp_isLocalDiffeomorph
+      (isLocalDiffeomorph_coe_rootsOfUnityBall _)
+      ((Topology.IsInducing.subtypeVal.continuousAt_iff (f := w)).2
+        hexp.continuousAt).continuousWithinAt
+      (contMDiffWithinAt_univ.2 hexp))
+  · exact Subtype.ext (by
+      rw [rootsOfUnityBall.coe_powMap]; exact Complex.exp_log_add_inv_mul_log_div_pow hz₀ ht)
 
 end TauCeti
