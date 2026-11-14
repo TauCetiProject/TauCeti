@@ -57,7 +57,7 @@ Conditioning on it replaces a function on each atom by its average there.
   expectations of a real or complex `f ∈ Lᵖ` converge to `f` in `Lᵖ` for `1 ≤ p < ∞`.
 * `TauCeti.unitInterval.tendsto_ae_condExp_dyadicFiltration`: the dyadic conditional expectations
   of an integrable function converge to it almost everywhere.
-* `TauCeti.unitInterval.setAverage_dyadicCell_eq_half` and
+* `TauCeti.unitInterval.setAverage_dyadicCell_eq_half_smul_add` and
   `TauCeti.unitInterval.integral_comp_dyadicAtom`: midpoint identity for averages on dyadic cells
   and atom-sum formula for integrals of functions of `dyadicAtom N`.
 
@@ -274,7 +274,7 @@ theorem volume_dyadicCell_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
   ring
 
 /-- Each half of a positively numbered dyadic cell has half its real volume. -/
-theorem measureReal_dyadicCell_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
+theorem volume_real_dyadicCell_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
     volume.real (dyadicCell (2 * n + e)) = volume.real (dyadicCell n) / 2 := by
   simp [Measure.real, volume_dyadicCell_two_mul_add hn he, ENNReal.toReal_div]
 
@@ -293,21 +293,21 @@ theorem measurableSet_dyadicFiltration_dyadicCell {N n : ℕ} (hn : n < 2 * N) :
 theorem measurableSet_dyadicCell (n : ℕ) : MeasurableSet (dyadicCell n) :=
   dyadicFiltration.le (n + 1) _ (measurableSet_dyadicFiltration_dyadicCell (by omega))
 
-/-- The average of an integrable function on `dyadicCell n` (`0 < n`) is the midpoint of its
+/-- The average of a function integrable on `dyadicCell n` (`0 < n`) is the midpoint of its
 averages on the two halves `dyadicCell (2 * n)` and `dyadicCell (2 * n + 1)`. -/
-theorem setAverage_dyadicCell_eq_half {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : I → E} (hf : Integrable f) {n : ℕ} (hn : 0 < n) :
+theorem setAverage_dyadicCell_eq_half_smul_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : I → E} {n : ℕ} (hf : IntegrableOn f (dyadicCell n)) (hn : 0 < n) :
     (⨍ y in dyadicCell n, f y) =
       (2⁻¹ : ℝ) • ((⨍ y in dyadicCell (2 * n), f y) + ⨍ y in dyadicCell (2 * n + 1), f y) := by
   have hunion : ∫ y in dyadicCell n, f y =
       (∫ y in dyadicCell (2 * n), f y) + ∫ y in dyadicCell (2 * n + 1), f y := by
-    conv_lhs => rw [dyadicCell_eq_union hn]
+    rw [dyadicCell_eq_union hn] at hf ⊢
     exact setIntegral_union disjoint_dyadicCell_two_mul (measurableSet_dyadicCell _)
-      hf.integrableOn hf.integrableOn
+      (hf.mono_set Set.subset_union_left) (hf.mono_set Set.subset_union_right)
   have hv0 : volume.real (dyadicCell (2 * n)) = volume.real (dyadicCell n) / 2 := by
-    simpa using measureReal_dyadicCell_two_mul_add (e := 0) hn two_pos
+    simpa using volume_real_dyadicCell_two_mul_add (e := 0) hn two_pos
   have hv1 : volume.real (dyadicCell (2 * n + 1)) = volume.real (dyadicCell n) / 2 :=
-    measureReal_dyadicCell_two_mul_add (e := 1) hn one_lt_two
+    volume_real_dyadicCell_two_mul_add (e := 1) hn one_lt_two
   have hc : (2⁻¹ : ℝ) * (2 / volume.real (dyadicCell n)) = (volume.real (dyadicCell n))⁻¹ := by
     ring
   simp only [setAverage_eq, hunion, hv0, hv1, inv_div, smul_add, smul_smul, hc]

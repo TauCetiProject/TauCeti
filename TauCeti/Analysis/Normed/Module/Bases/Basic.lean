@@ -163,7 +163,7 @@ theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (n : ℕ) :
 basis. -/
 theorem nnNormProjBound_le {C : NNReal} (hC : ∀ n : ℕ, ‖b.proj n‖ ≤ C) :
     b.nnNormProjBound ≤ C :=
-  ciSup_le fun n ↦ hC n
+  ciSup_le fun n ↦ by exact_mod_cast hC n
 
 end SchauderBasis
 
@@ -178,7 +178,7 @@ variable {β 𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup 
 basis. -/
 theorem nnNormProjBound_le {C : NNReal} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C) :
     b.nnNormProjBound ≤ C :=
-  ciSup_le fun A ↦ hC A
+  ciSup_le fun A ↦ by exact_mod_cast hC A
 
 end General
 
@@ -210,9 +210,15 @@ theorem toSchauderBasis_proj (n : ℕ) :
     b.toSchauderBasis.proj n = b.proj (Finset.range n) :=
   (rfl)
 
+/-- The finite projections of the classical basis agree with those of the unconditional basis. -/
+@[simp]
+theorem proj_toSchauderBasis (A : Finset ℕ) :
+    GeneralSchauderBasis.proj b.toSchauderBasis A = b.proj A :=
+  (rfl)
+
 /-- Converting a classical basis to an unconditional basis and back recovers the original basis. -/
 @[simp]
-theorem toSchauderBasis_toUnconditionalSchauderBasis (c : SchauderBasis 𝕜 X)
+theorem _root_.SchauderBasis.toSchauderBasis_toUnconditionalSchauderBasis (c : SchauderBasis 𝕜 X)
     (h : ∀ x, HasSum (fun i ↦ c.coord i x • c i) x) :
     (c.toUnconditionalSchauderBasis h).toSchauderBasis = c :=
   (rfl)
@@ -220,7 +226,7 @@ theorem toSchauderBasis_toUnconditionalSchauderBasis (c : SchauderBasis 𝕜 X)
 /-- Converting an `ℕ`-indexed unconditional basis to a classical basis and back recovers the
 original basis. -/
 @[simp]
-theorem _root_.GeneralSchauderBasis.toUnconditionalSchauderBasis_toSchauderBasis
+theorem toUnconditionalSchauderBasis_toSchauderBasis
     (h : ∀ x, HasSum (fun i ↦ b.toSchauderBasis.coord i x • b.toSchauderBasis i) x) :
     b.toSchauderBasis.toUnconditionalSchauderBasis h = b :=
   (rfl)

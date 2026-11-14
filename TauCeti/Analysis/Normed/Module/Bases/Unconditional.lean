@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Normed.Module.Bases.Basic
 public import TauCeti.Analysis.Normed.Module.BoundedCoefficients
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Rearrangements and coordinate multipliers of unconditional bases
@@ -23,20 +24,21 @@ controls all bounded coordinate multipliers. If every such projection has norm a
 multiplier `x ↦ ∑ i ∈ A, a i • b.coord i x • b i` has norm at most `2 * t * C` for real
 coefficients and `4 * t * C` for scalar coefficients of norm at most `t`. In particular a uniform
 bound on finite coordinate projections is equivalent to one on signed coordinate multipliers
-(`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`). For a classical Schauder basis, a uniform
-bound `C` on signed multipliers along initial segments `Finset.range N` transfers without loss of
-constant to bounded real multipliers and finite coordinate projections over arbitrary finite sets,
-and with a factor of `2` to bounded scalar multipliers
-(`SchauderBasis.norm_proj_le_of_forall_range_abs_eq_one`). Whenever the finite projections of a
-basis with a nontrivial summation filter are uniformly bounded, its coordinate series converges
-unconditionally (`GeneralSchauderBasis.hasSum_of_norm_proj_le`), even without completeness of the
-ambient space.
+(`GeneralSchauderBasis.exists_forall_norm_proj_le_iff`). For an `ℕ`-indexed generalized Schauder
+basis, a uniform bound `C` on signed multipliers along initial segments `Finset.range N` transfers
+without loss of constant to bounded real multipliers and finite coordinate projections over
+arbitrary finite sets, and with a factor of `2` to bounded scalar multipliers
+(`GeneralSchauderBasis.norm_proj_le_of_forall_range_abs_eq_one`). Whenever the finite projections
+of a basis with a nontrivial summation filter are uniformly bounded, its coordinate series
+converges unconditionally (`GeneralSchauderBasis.hasSum_of_norm_proj_le`), even without
+completeness of the ambient space.
 
 In a Banach space every bounded scalar family `a ∈ ℓ^∞(β, 𝕜)` then defines the multiplier
 `x ↦ ∑' i, a i • b.coord i x • b i`, whose series converges unconditionally
 (`UnconditionalSchauderBasis.hasSum_multiplier`). This is the continuous bilinear map
-`UnconditionalSchauderBasis.multiplier`, of norm at most `4 * b.nnNormProjBound`; it acts on
-each basis vector by its coefficient and is multiplicative, sending `1` to the identity.
+`UnconditionalSchauderBasis.multiplier`, of norm at most `4 * b.nnNormProjBound` (and at most `C`
+over `ℝ` or `2 * C` over `𝕜` from initial-segment sign bounds `C`); it acts on each basis vector
+by its coefficient and is multiplicative, sending `1` to the identity.
 
 ## References
 
@@ -113,34 +115,17 @@ theorem hasSum_of_norm_proj_le [L.NeBot] {C : ℝ} (hC : ∀ A : Finset β, ‖b
   -- and uniform boundedness of `b.proj` propagates convergence from the dense span to `X`.
   rw [HasSum, SummationFilter.unconditional_filter]
   simp_rw [← b.proj_apply]
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  set M := max C 0
-  have hM : 0 ≤ M := le_max_right C 0
-  have hδ : 0 < ε / (M + 1) := div_pos hε (by linarith)
-  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 (b.dense_span x) (ε / (M + 1)) hδ
+  refine ContinuousLinearMap.tendsto_apply_of_dense b.dense_span (.of_forall hC)
+    (g := .id 𝕜 X) (fun y hy ↦ ?_) x
   obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hy
-  refine ⟨c.support, fun A hA ↦ ?_⟩
-  have hfix : b.proj A (c.sum fun i a ↦ a • b i) = c.sum fun i a ↦ a • b i := by
-    rw [Finsupp.sum, map_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [map_smul, b.proj_apply_basis_mem, ite_eq_left (hA hi)]
-  have hdiff : b.proj A x - x =
-      b.proj A (x - c.sum fun i a ↦ a • b i) - (x - c.sum fun i a ↦ a • b i) := by
-    rw [map_sub, hfix, sub_sub_sub_cancel_right]
-  rw [dist_eq_norm, hdiff]
-  rw [dist_eq_norm] at hxy
-  calc
-    ‖b.proj A (x - c.sum fun i a ↦ a • b i) - (x - c.sum fun i a ↦ a • b i)‖
-        ≤ ‖b.proj A (x - c.sum fun i a ↦ a • b i)‖ + ‖x - c.sum fun i a ↦ a • b i‖ :=
-      norm_sub_le _ _
-    _ ≤ M * ‖x - c.sum fun i a ↦ a • b i‖ + ‖x - c.sum fun i a ↦ a • b i‖ := by
-      gcongr
-      exact (b.proj A).le_of_opNorm_le ((hC A).trans (le_max_left C 0)) _
-    _ = (M + 1) * ‖x - c.sum fun i a ↦ a • b i‖ := by ring
-    _ < (M + 1) * (ε / (M + 1)) := mul_lt_mul_of_pos_left hxy (by linarith)
-    _ = ε := mul_div_cancel₀ ε (by linarith)
+  refine tendsto_atTop_of_eventually_const (i₀ := c.support) fun A hA ↦ ?_
+  rw [ContinuousLinearMap.id_apply, Finsupp.sum, map_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [map_smul, b.proj_apply_basis_mem, ite_eq_left (hA hi)]
 
 end NormProjLe
+
+section BoundedMultipliers
 
 variable {β 𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   {L : SummationFilter β} (b : GeneralSchauderBasis β 𝕜 X L)
@@ -183,12 +168,12 @@ theorem exists_forall_norm_proj_le_iff :
     rw [proj_apply]
     exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg x))
 
-end GeneralSchauderBasis
+end BoundedMultipliers
 
-namespace SchauderBasis
+section InitialSegments
 
 variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-  (b : SchauderBasis 𝕜 X)
+  {L : SummationFilter ℕ} (b : GeneralSchauderBasis ℕ 𝕜 X L)
 
 /-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has norm
 at most `S` at `x`, then every real coordinate multiplier over an arbitrary finite set `A` with
@@ -199,14 +184,12 @@ theorem norm_sum_ofReal_smul_coord_smul_le_of_forall_range {S : ℝ} {x : X}
     (A : Finset ℕ) {a : ℕ → ℝ} {t : ℝ} (ht : 0 ≤ t) (ha : ∀ n ∈ A, |a n| ≤ t) :
     ‖∑ n ∈ A, (a n : 𝕜) • b.coord n x • b n‖ ≤ t * S := by
   classical
-  -- Embed `A` in `Finset.range (A.sup id + 1)` and extend `a` by `0` outside `A`.
-  let N := A.sup id + 1
-  have hAN : A ⊆ Finset.range N := fun n hn ↦
-    Finset.mem_range.2 (Nat.lt_succ_of_le (A.le_sup (f := id) hn))
+  -- Embed `A` in `Finset.range (A.sup id).succ` and extend `a` by `0` outside `A`.
+  let N := (A.sup id).succ
   let a' : ℕ → ℝ := fun n ↦ if n ∈ A then a n else 0
   have heq : ∑ n ∈ A, (a n : 𝕜) • b.coord n x • b n =
       ∑ n ∈ Finset.range N, (a' n : 𝕜) • b.coord n x • b n := by
-    rw [← Finset.sum_subset hAN]
+    rw [← Finset.sum_subset (Finset.subset_range_sup_succ A)]
     · exact Finset.sum_congr rfl fun n hn ↦ by simp [a', hn]
     · intro n _ hn
       simp [a', hn]
@@ -224,39 +207,29 @@ theorem norm_sum_smul_coord_smul_le_of_forall_range {S : ℝ} {x : X}
     (hS : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
       ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ S)
     (A : Finset ℕ) {a : ℕ → 𝕜} {t : ℝ} (ht : 0 ≤ t) (ha : ∀ n ∈ A, ‖a n‖ ≤ t) :
-    ‖∑ n ∈ A, a n • b.coord n x • b n‖ ≤ 2 * t * S := by
-  classical
-  let N := A.sup id + 1
-  have hAN : A ⊆ Finset.range N := fun n hn ↦
-    Finset.mem_range.2 (Nat.lt_succ_of_le (A.le_sup (f := id) hn))
-  let a' : ℕ → 𝕜 := fun n ↦ if n ∈ A then a n else 0
-  have heq : ∑ n ∈ A, a n • b.coord n x • b n =
-      ∑ n ∈ Finset.range N, a' n • b.coord n x • b n := by
-    rw [← Finset.sum_subset hAN]
-    · exact Finset.sum_congr rfl fun n hn ↦ by simp [a', hn]
-    · intro n _ hn
-      simp [a', hn]
-  rw [heq]
-  refine TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one (hS N) ht fun n _ ↦ ?_
-  dsimp only [a']
-  split_ifs with hn
-  · exact ha n hn
-  · simpa using ht
+    ‖∑ n ∈ A, a n • b.coord n x • b n‖ ≤ 2 * t * S :=
+  TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one
+    (fun ε hε ↦ by
+      simpa using b.norm_sum_ofReal_smul_coord_smul_le_of_forall_range hS A zero_le_one
+        fun n _ ↦ (hε n).le)
+    ht ha
 
 /-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has
-operator norm at most `C`, then every finite coordinate projection `GeneralSchauderBasis.proj b A`
-also has operator norm at most `C`. -/
+operator norm at most `C`, then every finite coordinate projection `b.proj A` also has operator
+norm at most `C`. -/
 theorem norm_proj_le_of_forall_range_abs_eq_one {C : ℝ} (hC0 : 0 ≤ C)
     (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
       ∀ x, ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ C * ‖x‖)
     (A : Finset ℕ) :
-    ‖GeneralSchauderBasis.proj b A‖ ≤ C := by
-  refine (GeneralSchauderBasis.proj b A).opNorm_le_bound hC0 fun x ↦ ?_
+    ‖b.proj A‖ ≤ C := by
+  refine (b.proj A).opNorm_le_bound hC0 fun x ↦ ?_
   have h := b.norm_sum_ofReal_smul_coord_smul_le_of_forall_range
     (fun N ε hε ↦ hC N ε hε x) A (a := 1) zero_le_one (fun _ _ ↦ by simp)
-  simpa [GeneralSchauderBasis.proj_apply] using h
+  simpa [proj_apply] using h
 
-end SchauderBasis
+end InitialSegments
+
+end GeneralSchauderBasis
 
 namespace UnconditionalSchauderBasis
 
@@ -324,6 +297,14 @@ theorem multiplier_apply (a : ℓ^∞(β, 𝕜)) (x : X) :
     b.multiplier a x = ∑' i, a i • b.coord i x • b i :=
   (rfl)
 
+/-- If every finite partial sum of the multiplied expansion has operator norm at most `M`, with
+`0 ≤ M`, then `b.multiplier a` has operator norm at most `M`. -/
+theorem norm_multiplier_le_of_forall_sum_le (a : ℓ^∞(β, 𝕜)) {M : ℝ} (hM0 : 0 ≤ M)
+    (hM : ∀ (A : Finset β) (x : X), ‖∑ i ∈ A, a i • b.coord i x • b i‖ ≤ M * ‖x‖) :
+    ‖b.multiplier a‖ ≤ M :=
+  (b.multiplier a).opNorm_le_bound hM0 fun x ↦
+    le_of_tendsto' (b.hasSum_multiplier a x).norm fun A ↦ hM A x
+
 /-- The coordinate multiplier has norm at most `4` times the basis constant and the norm of the
 coefficient family. -/
 theorem norm_multiplier_le (a : ℓ^∞(β, 𝕜)) :
@@ -370,5 +351,39 @@ theorem multiplier_mul (a c : ℓ^∞(β, 𝕜)) :
   b.multiplier_eq_iff.2 fun i ↦ by simp [lp.infty_coeFn_mul, smul_smul, mul_comm]
 
 end Multiplier
+
+section NatMultiplier
+
+/-- Over `ℝ`, if every `±1`-signed coordinate multiplier along an initial segment `Finset.range N`
+has operator norm at most `C` (`0 ≤ C`), then `b.multiplier a` has operator norm at most
+`C * ‖a‖`. -/
+theorem norm_multiplier_le_of_forall_range_abs_eq_one
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+    (b : UnconditionalSchauderBasis ℕ ℝ X) {C : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
+      ∀ x, ‖∑ n ∈ Finset.range N, ε n • b.coord n x • b n‖ ≤ C * ‖x‖)
+    (a : ℓ^∞(ℕ, ℝ)) :
+    ‖b.multiplier a‖ ≤ C * ‖a‖ :=
+  b.norm_multiplier_le_of_forall_sum_le a (mul_nonneg hC0 (norm_nonneg a)) fun A x ↦ by
+    have h := b.norm_sum_ofReal_smul_coord_smul_le_of_forall_range
+      (fun N ε hε ↦ by simpa using hC N ε hε x) A (norm_nonneg a)
+      fun n _ ↦ by simpa using lp.norm_apply_le_norm ENNReal.top_ne_zero a n
+    simpa only [RCLike.ofReal_real_eq_id, id_eq] using h.trans_eq (by ring)
+
+/-- If every `±1`-signed coordinate multiplier along an initial segment `Finset.range N` has
+operator norm at most `C` (`0 ≤ C`), then `b.multiplier a` has operator norm at most
+`2 * C * ‖a‖`. -/
+theorem norm_multiplier_le_two_mul_of_forall_range_abs_eq_one
+    {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
+    (b : UnconditionalSchauderBasis ℕ 𝕜 X) {C : ℝ} (hC0 : 0 ≤ C)
+    (hC : ∀ (N : ℕ) (ε : ℕ → ℝ), (∀ n, |ε n| = 1) →
+      ∀ x, ‖∑ n ∈ Finset.range N, (ε n : 𝕜) • b.coord n x • b n‖ ≤ C * ‖x‖)
+    (a : ℓ^∞(ℕ, 𝕜)) :
+    ‖b.multiplier a‖ ≤ 2 * C * ‖a‖ :=
+  b.norm_multiplier_le_of_forall_sum_le a (by positivity) fun A x ↦
+    (b.norm_sum_smul_coord_smul_le_of_forall_range (fun N ε hε ↦ hC N ε hε x) A (norm_nonneg a)
+      fun n _ ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero a n).trans_eq (by ring)
+
+end NatMultiplier
 
 end UnconditionalSchauderBasis
