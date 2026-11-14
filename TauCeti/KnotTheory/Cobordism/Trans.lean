@@ -6,19 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Cobordism.Basic
-public import TauCeti.Geometry.Manifold.Instances.Quotient
 
-import TauCeti.Geometry.Manifold.ContMDiff.Defs
-import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
-import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import TauCeti.Geometry.Manifold.Instances.Quotient
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.Orientation.Glue
 import TauCeti.Geometry.Manifold.Orientation.OpenSubset
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 
 /-!
@@ -527,9 +520,9 @@ private theorem range_stackMap_eq_union :
         rw [comp_apply, hQK _ hlt.le]
         exact .inr ⟨(mem_range_upper_iff_of_le S₂ h₂.le).2 hK, h₁⟩
 
-/-- The image of the composite is connected: it is the union of the lower half with its heights
-capped at `1 / 2` and the upper half with its heights raised to at least `1 / 2`, two connected
-sets meeting along the circle `K₁` at height `1 / 2`. -/
+/-- The image of the composite is preconnected: it is the union of the lower half with its
+heights capped at `1 / 2` and the upper half with its heights raised to at least `1 / 2`, two
+connected sets meeting along the circle `K₁` at height `1 / 2`. -/
 private theorem isPreconnected_range_stackMap : IsPreconnected (range (stackMap S₁ S₂)) := by
   let P : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ := fun p ↦ (p.1, min p.2 (1 / 2))
   let Q : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ := fun p ↦ (p.1, max p.2 (1 / 2))
@@ -710,7 +703,7 @@ private theorem mem_overlap_iff {q : lowerPiece S₁ S₂} :
     q ∈ overlap S₁ S₂ ↔ (1 - topWidth S₁) / 2 < (lower S₁ q).2 :=
   Iff.rfl
 
-/-- The overlap is connected: its image is the cylinder over `K₁` over an open interval of
+/-- The overlap is preconnected: its image is the cylinder over `K₁` over an open interval of
 heights. -/
 private instance : PreconnectedSpace (overlap S₁ S₂) := by
   let g : overlap S₁ S₂ → sphere (0 : E) 1 × ℝ :=
