@@ -32,8 +32,8 @@ if `c` is a biproduct bicone of `A` and `B`, for instance the concrete product
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 * `TauCeti.groupCohomology.map_id_add` and `TauCeti.groupCohomology.map_id_smul`: the map induced
   on cohomology is `k`-linear in the morphism of representations.
-* `TauCeti.groupCohomology.smul_eq_zero_of_forall_smul_eq_zero` and
-  `TauCeti.groupCohomology.natCard_coe_nsmul_eq_zero`: scalars annihilating `A` (in particular
+* `groupCohomology.smul_eq_zero_of_forall_smul_eq_zero` and
+  `groupCohomology.natCard_coe_nsmul_eq_zero`: scalars annihilating `A` (in particular
   `Nat.card A`) annihilate `Hⁿ(G, A)` in every degree.
 * `TauCeti.groupCohomology.smul_bijective` and `TauCeti.groupCohomology.nsmul_bijective`: a
   bijective scalar action on `A` induces a bijective scalar action on `Hⁿ(G, A)`.
@@ -108,32 +108,6 @@ theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
     map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
   (functor k G n).map_nsmul
 
-/-- A scalar `c : k` that annihilates every element of `A` annihilates `Hⁿ(G, A)` in every degree
-`n`. -/
-theorem smul_eq_zero_of_forall_smul_eq_zero {A : Rep k G} {c : k} {n : ℕ}
-    (hA : ∀ a : A, c • a = 0) (x : groupCohomology A n) : c • x = 0 := by
-  have hc : c • (𝟙 A : A ⟶ A) = 0 := by
-    ext a
-    simp [Rep.smul_hom, hA a]
-  have hmap := congrArg (fun f ↦ f.hom x) (map_id_smul c (𝟙 A) n)
-  rw [hc, map_id_zero, map_id] at hmap
-  exact hmap.symm
-
-/-- A natural number `m` that annihilates every element of `A` annihilates `Hⁿ(G, A)` in every
-degree `n`. -/
-theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m n : ℕ}
-    (hA : ∀ a : A, m • a = 0) (x : groupCohomology A n) : m • x = 0 := by
-  rw [← Nat.cast_smul_eq_nsmul k]
-  exact smul_eq_zero_of_forall_smul_eq_zero
-    (fun a ↦ by rw [Nat.cast_smul_eq_nsmul, hA a]) x
-
-/-- `Hⁿ(G, A)` is annihilated by `Nat.card A` in every degree `n`. When `A` is infinite,
-`Nat.card A = 0` and both sides vanish trivially. -/
-@[simp]
-theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
-    Nat.card A • x = 0 :=
-  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
-
 /-- A scalar `c : k` acting bijectively on `A` acts bijectively on `Hⁿ(G, A)` in every degree
 `n`. -/
 theorem smul_bijective (c : k) (A : Rep k G)
@@ -164,6 +138,40 @@ theorem nsmul_bijective (m : ℕ) (A : Rep k G)
     smul_bijective (m : k) A (by simpa only [Nat.cast_smul_eq_nsmul] using hA) n
 
 end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+open TauCeti.groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- A scalar `c : k` that annihilates every element of `A` annihilates `Hⁿ(G, A)` in every degree
+`n`. -/
+theorem smul_eq_zero_of_forall_smul_eq_zero {A : Rep k G} {c : k} {n : ℕ}
+    (hA : ∀ a : A, c • a = 0) (x : groupCohomology A n) : c • x = 0 := by
+  have hc : c • (𝟙 A : A ⟶ A) = 0 := by
+    ext a
+    simp [Rep.smul_hom, hA a]
+  have hmap := congrArg (fun f ↦ f.hom x) (map_id_smul c (𝟙 A) n)
+  rw [hc, map_id_zero, map_id] at hmap
+  exact hmap.symm
+
+/-- A natural number `m` that annihilates every element of `A` annihilates `Hⁿ(G, A)` in every
+degree `n`. -/
+theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m n : ℕ}
+    (hA : ∀ a : A, m • a = 0) (x : groupCohomology A n) : m • x = 0 := by
+  rw [← Nat.cast_smul_eq_nsmul k]
+  exact smul_eq_zero_of_forall_smul_eq_zero
+    (fun a ↦ by rw [Nat.cast_smul_eq_nsmul, hA a]) x
+
+/-- `Hⁿ(G, A)` is annihilated by `Nat.card A` in every degree `n`. When `A` is infinite,
+`Nat.card A = 0` and both sides vanish trivially. -/
+@[simp]
+theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
+    Nat.card A • x = 0 :=
+  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
+
+end groupCohomology
 
 namespace CategoryTheory.Limits.BinaryBicone.IsBilimit
 
