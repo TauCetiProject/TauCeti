@@ -72,7 +72,7 @@ theorem isZero_singularCohomology_of_compactSpace (R N : ModuleCat.{w} k) [Modul
   obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
   have := projective_singularHomology_of_compactSpace R (M := M) hn (Nat.le_of_lt_succ hm)
   exact (TopCat.of M).isZero_singularCohomology_succ_of_projective_homology R N j
-    (isZero_singularHomology_of_compactSpace R (M := M) hn (by omega))
+    (isZero_singularHomology_of_finrank_lt R (M := M) hn (by omega))
 
 /-- **Cup products of pulled-back classes vanish above the dimension.** Let `M` be a compact
 Hausdorff space modelled on a real normed space of finite dimension `n`, and let `f : X ⟶ M` be a

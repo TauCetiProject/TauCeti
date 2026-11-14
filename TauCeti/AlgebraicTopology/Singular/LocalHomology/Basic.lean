@@ -345,32 +345,25 @@ lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv [FiniteDimensional �
 /-- **Local homology in the top degree**: at a point with a chart to a real normed space of
 dimension `n + 1`, the local homology `Hₙ₊₁(M, M ∖ {x})` is one copy of the coefficients.  It is
 `TauCeti.singularHomologyComplSingletonIso` followed by the map on reduced homology induced by the
-homeomorphism of the unit sphere of `E` with `TopCat.sphere n`
-(`TauCeti.sphereHomeomorphOfFinrankEq` and `TauCeti.diskBoundaryHomeomorph`), and by
-`TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
+homeomorphism `TauCeti.sphereHomeomorphTopCatSphere` of the unit sphere of `E` with
+`TopCat.sphere n`, and by `TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
 def singularHomologyComplSingletonIsoOfFinrankEq {n : ℕ} (h : finrank ℝ E = n + 1) :
     (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology R (n + 1) ≅ R :=
-  haveI := Module.finite_of_finrank_eq_succ h
   singularHomologyComplSingletonIso R φ hx n ≪≫
-    (reducedSingularHomologyFunctor R n).mapIso (TopCat.isoOfHomeo
-      ((sphereHomeomorphOfFinrankEq
-          (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
-        (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n)) ≪≫
+    (reducedSingularHomologyFunctor R n).mapIso
+      (TopCat.isoOfHomeo (sphereHomeomorphTopCatSphere.{w} h)) ≪≫
     reducedSingularHomologyTopCatSphereIso R n
 
 /-- `TauCeti.singularHomologyComplSingletonIsoOfFinrankEq` is
 `TauCeti.singularHomologyComplSingletonIso`, followed by the map on reduced homology induced by the
-homeomorphism of the unit sphere of `E` with `TopCat.sphere n`, and by
-`TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
+homeomorphism `TauCeti.sphereHomeomorphTopCatSphere` of the unit sphere of `E` with
+`TopCat.sphere n`, and by `TauCeti.reducedSingularHomologyTopCatSphereIso`. -/
 @[simp]
 lemma singularHomologyComplSingletonIsoOfFinrankEq_hom {n : ℕ} (h : finrank ℝ E = n + 1) :
-    haveI := Module.finite_of_finrank_eq_succ h
     (singularHomologyComplSingletonIsoOfFinrankEq R φ hx h).hom =
       (singularHomologyComplSingletonIso R φ hx n).hom ≫
-        (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
-          (((sphereHomeomorphOfFinrankEq
-              (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
-            (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n) :
+        (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (sphereHomeomorphTopCatSphere.{w} h :
             C(sphere (0 : E) 1, TopCat.sphere.{w} n))) ≫
           (reducedSingularHomologyTopCatSphereIso R n).hom :=
   (rfl)
@@ -381,13 +374,10 @@ by the homeomorphism of `TopCat.sphere n` with the unit sphere of `E`, and by th
 `TauCeti.singularHomologyComplSingletonIso`. -/
 @[simp]
 lemma singularHomologyComplSingletonIsoOfFinrankEq_inv {n : ℕ} (h : finrank ℝ E = n + 1) :
-    haveI := Module.finite_of_finrank_eq_succ h
     (singularHomologyComplSingletonIsoOfFinrankEq R φ hx h).inv =
       (reducedSingularHomologyTopCatSphereIso R n).inv ≫
-        (reducedSingularHomologyFunctor R n).map (TopCat.ofHom
-          (((sphereHomeomorphOfFinrankEq
-              (h.trans (finrank_euclideanSpace_ulift_fin.{w} (n + 1)).symm)).trans
-            (diskBoundaryHomeomorph (n + 1)).symm : sphere (0 : E) 1 ≃ₜ TopCat.sphere.{w} n).symm :
+        (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom ((sphereHomeomorphTopCatSphere.{w} h).symm :
             C(TopCat.sphere.{w} n, sphere (0 : E) 1))) ≫
           (singularHomologyComplSingletonIso R φ hx n).inv := by
   simp [singularHomologyComplSingletonIsoOfFinrankEq]

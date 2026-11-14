@@ -127,6 +127,12 @@ Coefficients are an object `R` of an abelian category with coproducts.
   when `d = q = 0`), and vanishes otherwise.
   `ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ` gives the same ranks for the unit
   sphere of a real normed space of dimension `d + 1`.
+* `ContinuousMap.HomotopyEquiv.reducedSingularHomologySphereIso`,
+  `ContinuousMap.HomotopyEquiv.isZero_reducedSingularHomology_of_sphere_of_ne`,
+  `ContinuousMap.HomotopyEquiv.singularHomologySphereIso`, and
+  `ContinuousMap.HomotopyEquiv.isZero_singularHomology_of_sphere_of_ne`: reduced and ordinary
+  singular homology of a space homotopy equivalent to the unit sphere of a real normed space of
+  dimension `n + 1` (in any universe).
 
 ## References
 
@@ -1021,16 +1027,99 @@ rank `rank M` in degree `d`, plus `rank M` in degree zero, as for `TopCat.sphere
 (`ModuleCat.finrank_singularHomology_sphere`). -/
 theorem finrank_singularHomology_sphere_of_finrank_eq_succ [StrongRankCondition k]
     [Module.Free k M] [Module.Finite k M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] {d : ℕ} (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
+    {d : ℕ} (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
       (TopCat.of (Metric.sphere (0 : E) 1))) =
       (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
   rw [← finrank_singularHomology_sphere M d q]
-  exact (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).mapIso (TopCat.isoOfHomeo
-    ((sphereHomeomorphOfFinrankEq
-        (hE.trans (finrank_euclideanSpace_ulift_fin.{w} (d + 1)).symm)).trans
-      (diskBoundaryHomeomorph (d + 1)).symm))).toLinearEquiv.finrank_eq
+  exact (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).mapIso
+    (TopCat.isoOfHomeo (TauCeti.sphereHomeomorphTopCatSphere.{w} hE))).toLinearEquiv.finrank_eq
 
 end Free
 
 end ModuleCat
+
+namespace ContinuousMap.HomotopyEquiv
+
+open scoped ContinuousMap
+
+variable {X : Type w} [TopologicalSpace X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+
+/-- **Reduced top homology of a space homotopy equivalent to `Sⁿ`.** For any `n : ℕ` and any real
+normed space `F` of dimension `n + 1`, a homotopy equivalence `e : X ≃ₕ Metric.sphere (0 : F) 1`
+induces an isomorphism `H~ₙ(X; R) ≅ R`. -/
+def reducedSingularHomologySphereIso {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) :
+    (TauCeti.reducedSingularHomologyFunctor R n).obj (TopCat.of X) ≅ R :=
+  (e.topCatSphere hF).reducedSingularHomologyIso R n ≪≫
+    TauCeti.reducedSingularHomologyTopCatSphereIso R n
+
+@[simp]
+theorem reducedSingularHomologySphereIso_hom {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) :
+    (e.reducedSingularHomologySphereIso R hF).hom =
+      (TauCeti.reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (e.topCatSphere hF).toFun) ≫
+        (TauCeti.reducedSingularHomologyTopCatSphereIso R n).hom :=
+  (Iso.trans_hom _ _).trans
+    ((reducedSingularHomologyIso_hom R (e.topCatSphere hF) n) =≫
+      (TauCeti.reducedSingularHomologyTopCatSphereIso R n).hom)
+
+@[simp]
+theorem reducedSingularHomologySphereIso_inv {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) :
+    (e.reducedSingularHomologySphereIso R hF).inv =
+      (TauCeti.reducedSingularHomologyTopCatSphereIso R n).inv ≫
+        (TauCeti.reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (e.topCatSphere hF).invFun) :=
+  (Iso.trans_inv _ _).trans
+    (congrArg ((TauCeti.reducedSingularHomologyTopCatSphereIso R n).inv ≫ ·)
+      (reducedSingularHomologyIso_inv R (e.topCatSphere hF) n))
+
+/-- **Reduced homology of a space homotopy equivalent to `Sⁿ` vanishes outside degree `n`.** -/
+theorem isZero_reducedSingularHomology_of_sphere_of_ne {n k : ℕ}
+    (e : X ≃ₕ Metric.sphere (0 : F) 1) (hF : Module.finrank ℝ F = n + 1) (hk : k ≠ n) :
+    IsZero ((TauCeti.reducedSingularHomologyFunctor R k).obj (TopCat.of X)) :=
+  (TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne R hk).of_iso
+    ((e.topCatSphere hF).reducedSingularHomologyIso R k)
+
+/-- **Top singular homology of a space homotopy equivalent to `Sⁿ` (`1 ≤ n`).** For `1 ≤ n` and
+`Module.finrank ℝ F = n + 1`, a homotopy equivalence `e : X ≃ₕ Metric.sphere (0 : F) 1` induces an
+isomorphism `Hₙ(X; R) ≅ R`. -/
+def singularHomologySphereIso {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) (hn : 1 ≤ n) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of X) ≅ R :=
+  match n, hn with
+  | m + 1, _ =>
+    ((TauCeti.reducedSingularHomologySuccIso R m).app (TopCat.of X)).symm ≪≫
+      e.reducedSingularHomologySphereIso R hF
+
+@[simp]
+theorem singularHomologySphereIso_succ_hom {m : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = m + 1 + 1) (hm : 1 ≤ m + 1) :
+    (e.singularHomologySphereIso R hF hm).hom =
+      ((TauCeti.reducedSingularHomologySuccIso R m).app (TopCat.of X)).inv ≫
+        (e.reducedSingularHomologySphereIso R hF).hom :=
+  Iso.trans_hom _ _
+
+@[simp]
+theorem singularHomologySphereIso_succ_inv {m : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = m + 1 + 1) (hm : 1 ≤ m + 1) :
+    (e.singularHomologySphereIso R hF hm).inv =
+      (e.reducedSingularHomologySphereIso R hF).inv ≫
+        ((TauCeti.reducedSingularHomologySuccIso R m).app (TopCat.of X)).hom :=
+  Iso.trans_inv _ _
+
+/-- **Singular homology of a space homotopy equivalent to `Sⁿ` vanishes in positive degrees other
+than `n`.** -/
+theorem isZero_singularHomology_of_sphere_of_ne {n k : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) (hk₀ : k ≠ 0) (hkn : k ≠ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (TopCat.of X)) :=
+  match k, hk₀ with
+  | q + 1, _ =>
+    (e.isZero_reducedSingularHomology_of_sphere_of_ne R hF hkn).of_iso
+      ((TauCeti.reducedSingularHomologySuccIso R q).app (TopCat.of X)).symm
+
+end ContinuousMap.HomotopyEquiv

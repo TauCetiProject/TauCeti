@@ -16,6 +16,11 @@ The unit sphere of a nontrivial finite-dimensional real normed space is not cont
 This distinguishes spherical links from ball links, including the two-point zero-sphere.
 No inner product on the normed space is required: the reduced homology computation is
 transported from a Euclidean space of the same dimension.
+Consequently no contractible space (in particular, no real normed space or Euclidean space) is
+homotopy equivalent to such a sphere
+(`TauCeti.isEmpty_homotopyEquiv_sphere_of_contractibleSpace`,
+`TauCeti.isEmpty_normedSpace_homotopyEquiv_sphere`,
+`TauCeti.isEmpty_euclideanSpace_homotopyEquiv_sphere`).
 
 The sphere has nonzero reduced singular homology with integer coefficients in its
 dimension, whereas a contractible space has zero reduced homology in every degree. See Hatcher,
@@ -26,6 +31,7 @@ contractibility of spheres.
 public section
 
 open CategoryTheory Limits Metric Module
+open scoped ContinuousMap
 
 universe w
 
@@ -51,5 +57,30 @@ theorem not_contractibleSpace_sphere {E : Type w} [NormedAddCommGroup E] [Normed
       (TopCat.of (sphere (0 : E) 1)) n).of_iso e.symm
   have : Subsingleton (ULift.{w} ℤ) := ModuleCat.isZero_iff_subsingleton.mp hz
   exact zero_ne_one (Subsingleton.elim (0 : ULift.{w} ℤ) 1)
+
+/-- **No contractible space is homotopy equivalent to a sphere.** For any contractible space `X`
+and any nontrivial finite-dimensional real normed space `F`, `X ≃ₕ sphere (0 : F) 1` is empty,
+including for the two-point zero-sphere when `finrank ℝ F = 1`. -/
+theorem isEmpty_homotopyEquiv_sphere_of_contractibleSpace (X : Type*) [TopologicalSpace X]
+    [ContractibleSpace X] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] [Nontrivial F] :
+    IsEmpty (X ≃ₕ sphere (0 : F) 1) :=
+  ⟨fun e ↦ not_contractibleSpace_sphere e.symm.contractibleSpace⟩
+
+/-- **No real normed space is homotopy equivalent to a sphere.** For any real normed space `E` and
+any nontrivial finite-dimensional real normed space `F`, `E ≃ₕ sphere (0 : F) 1` is empty. -/
+theorem isEmpty_normedSpace_homotopyEquiv_sphere (E F : Type*) [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [Nontrivial F] :
+    IsEmpty (E ≃ₕ sphere (0 : F) 1) :=
+  isEmpty_homotopyEquiv_sphere_of_contractibleSpace E F
+
+/-- **No Euclidean space is homotopy equivalent to a sphere.** In particular, `ℝ³` is not homotopy
+equivalent to `S³`. -/
+theorem isEmpty_euclideanSpace_homotopyEquiv_sphere (ι : Type*) [Finite ι] (n : ℕ) :
+    IsEmpty (EuclideanSpace ℝ ι ≃ₕ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
+  cases nonempty_fintype ι
+  exact isEmpty_normedSpace_homotopyEquiv_sphere (EuclideanSpace ℝ ι)
+    (EuclideanSpace ℝ (Fin (n + 1)))
 
 end TauCeti
