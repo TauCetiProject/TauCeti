@@ -38,6 +38,10 @@ symmetric monoidal structure on bundles presented by finite coordinate charts.
 
 The matrix comparison uses Mathlib's `Matrix.kronecker` and `LinearMap.toMatrix'`; through it
 the mixed-product law is Mathlib's `Matrix.mul_kronecker_mul`.
+
+`ContinuousLinearMap.kroneckerCoev` and `ContinuousLinearMap.kroneckerEv` place a scalar down the
+diagonal of `Fin (n * n) → R` and sum the diagonal entries back into `Fin 1 → R`. They commute with
+`kroneckerComm` and satisfy the two snake identities of an exact pairing on `Fin n → R`.
 -/
 
 public section
@@ -66,6 +70,35 @@ variable (f f₂ : (Fin m → R) →L[R] (Fin m' → R)) (g g₂ : (Fin n → R)
       f (fun i' ↦ g (fun j' ↦ v (finProdFinEquiv (i', j'))) j) i := by
   simp only [kronecker, coe_pi', coe_comp, Function.comp_apply, proj_apply,
     Equiv.symm_apply_apply]
+
+/-- A Kronecker product acts factorwise on pure-tensor coordinate vectors. -/
+theorem kronecker_apply_mul (u : Fin m → R) (c : Fin n → R) :
+    (f.kronecker g) (fun k ↦ u (finProdFinEquiv.symm k).1 * c (finProdFinEquiv.symm k).2) =
+      fun k ↦ f u (finProdFinEquiv.symm k).1 * g c (finProdFinEquiv.symm k).2 := by
+  ext k
+  obtain ⟨⟨i, l⟩, rfl⟩ := finProdFinEquiv.surjective k
+  have hrow (i' : Fin m) :
+      g (fun l' ↦ u i' * c l') l = u i' * g c l := by
+    change g (u i' • c) l = _
+    rw [g.map_smul, Pi.smul_apply, smul_eq_mul]
+  simp only [kronecker_apply, Equiv.symm_apply_apply, hrow]
+  have hcol : (fun i' ↦ u i' * g c l) = g c l • u := by ext i'; exact mul_comm _ _
+  rw [hcol, f.map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
+
+/-- On standard basis vectors indexed via `finProdFinEquiv`, a Kronecker product multiplies the
+corresponding matrix entries of its factors. -/
+theorem kronecker_single (i : Fin m) (l : Fin n) (i' : Fin m') (l' : Fin n') :
+    (f.kronecker g) (Pi.single (finProdFinEquiv (i, l)) 1) (finProdFinEquiv (i', l')) =
+      f (Pi.single i 1) i' * g (Pi.single l 1) l' := by
+  have hp : (Pi.single (finProdFinEquiv (i, l)) (1 : R) : Fin (m * n) → R) =
+      fun k ↦ (Pi.single (M := fun _ : Fin m ↦ R) i 1) (finProdFinEquiv.symm k).1 *
+        (Pi.single (M := fun _ : Fin n ↦ R) l 1) (finProdFinEquiv.symm k).2 := by
+    ext k
+    obtain ⟨⟨a, b⟩, rfl⟩ := finProdFinEquiv.surjective k
+    simp [Pi.single_apply, Prod.mk.injEq, ite_and]
+    split_ifs <;> rfl
+  simpa [hp] using congrFun (kronecker_apply_mul f g (Pi.single i 1) (Pi.single l 1))
+    (finProdFinEquiv (i', l'))
 
 /-- The matrix of a Kronecker product is the reindexed Kronecker product of the matrices. -/
 theorem toMatrix'_kronecker :
@@ -375,5 +408,89 @@ theorem kroneckerComm_hexagon_reverse (m n p : ℕ) :
   obtain ⟨⟨k, j⟩, rfl⟩ := finProdFinEquiv.surjective k
   obtain ⟨⟨l, i⟩, rfl⟩ := finProdFinEquiv.surjective k
   simp
+
+end ContinuousLinearMap
+
+/-! ### Diagonal coevaluation and evaluation on Kronecker coordinates -/
+
+namespace ContinuousLinearMap
+
+section CoevEv
+
+variable (R : Type*) [Semiring R] [TopologicalSpace R]
+
+/-- Place the single coordinate of `Fin 1 → R` down the diagonal `(i, i)` of `Fin (n * n) → R`,
+stored at `finProdFinEquiv (i, i)`, with zeros off the diagonal. -/
+def kroneckerCoev (n : ℕ) : (Fin 1 → R) →L[R] (Fin (n * n) → R) :=
+  pi fun k ↦ if (finProdFinEquiv.symm k).1 = (finProdFinEquiv.symm k).2 then proj 0 else 0
+
+@[simp] theorem kroneckerCoev_apply {R : Type*} [Semiring R] [TopologicalSpace R] {n : ℕ}
+    (c : Fin 1 → R) (i j : Fin n) :
+    kroneckerCoev R n c (finProdFinEquiv (i, j)) = if i = j then c 0 else 0 := by
+  simp only [kroneckerCoev, coe_pi', Equiv.symm_apply_apply]
+  split_ifs <;> rfl
+
+/-- Sum the diagonal entries `(i, i)` of `Fin (n * n) → R` into the single coordinate of
+`Fin 1 → R`. -/
+def kroneckerEv [ContinuousAdd R] (n : ℕ) : (Fin (n * n) → R) →L[R] (Fin 1 → R) :=
+  pi fun _ ↦ ∑ i : Fin n, proj (finProdFinEquiv (i, i))
+
+@[simp] theorem kroneckerEv_apply {R : Type*} [Semiring R] [TopologicalSpace R] [ContinuousAdd R]
+    {n : ℕ} (v : Fin (n * n) → R) (k : Fin 1) :
+    kroneckerEv R n v k = ∑ i : Fin n, v (finProdFinEquiv (i, i)) := by
+  simp only [kroneckerEv, coe_pi', sum_apply, proj_apply]
+
+end CoevEv
+
+section Snake
+
+open ContinuousLinearEquiv
+
+variable {R : Type*} [CommSemiring R] [TopologicalSpace R]
+
+/-- Swapping the two factors fixes the diagonal coevaluation. -/
+@[simp] theorem kroneckerComm_comp_kroneckerCoev (n : ℕ) :
+    (kroneckerComm R n n : (Fin (n * n) → R) →L[R] _).comp (kroneckerCoev R n) =
+      kroneckerCoev R n := by
+  refine ContinuousLinearMap.ext fun c ↦ funext fun k ↦ ?_
+  obtain ⟨⟨j, i⟩, rfl⟩ := finProdFinEquiv.surjective k
+  simp [eq_comm]
+
+variable [ContinuousAdd R]
+
+/-- Diagonal evaluation is invariant under swapping the two factors. -/
+@[simp] theorem kroneckerEv_comp_kroneckerComm (n : ℕ) :
+    (kroneckerEv R n).comp (kroneckerComm R n n : (Fin (n * n) → R) →L[R] _) =
+      kroneckerEv R n := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  simp
+
+/-- First snake identity for `kroneckerCoev` and `kroneckerEv`: coevaluation on the right followed
+by evaluation on the left reduces to the composite of the right and inverse left unitors. -/
+theorem kroneckerEv_kronecker_comp_kroneckerAssoc_symm_comp_kronecker_kroneckerCoev (n : ℕ) :
+    ((kroneckerEv R n).kronecker (ContinuousLinearMap.id R (Fin n → R))).comp
+      (((kroneckerAssoc R n n n).symm : (Fin (n * (n * n)) → R) →L[R] _).comp
+        ((ContinuousLinearMap.id R (Fin n → R)).kronecker (kroneckerCoev R n))) =
+      ((kroneckerLid R n).symm : (Fin n → R) →L[R] _).comp
+        (kroneckerRid R n : (Fin (n * 1) → R) →L[R] _) := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨z, j⟩, rfl⟩ := finProdFinEquiv.surjective k
+  rw [Subsingleton.elim z 0]
+  simp
+
+/-- Second snake identity for `kroneckerCoev` and `kroneckerEv`: coevaluation on the left followed
+by evaluation on the right reduces to the composite of the left and inverse right unitors. -/
+theorem kronecker_kroneckerEv_comp_kroneckerAssoc_comp_kroneckerCoev_kronecker (n : ℕ) :
+    ((ContinuousLinearMap.id R (Fin n → R)).kronecker (kroneckerEv R n)).comp
+      ((kroneckerAssoc R n n n : (Fin (n * n * n) → R) →L[R] _).comp
+        ((kroneckerCoev R n).kronecker (ContinuousLinearMap.id R (Fin n → R)))) =
+      ((kroneckerRid R n).symm : (Fin n → R) →L[R] _).comp
+        (kroneckerLid R n : (Fin (1 * n) → R) →L[R] _) := by
+  refine ContinuousLinearMap.ext fun v ↦ funext fun k ↦ ?_
+  obtain ⟨⟨i, z⟩, rfl⟩ := finProdFinEquiv.surjective k
+  rw [Subsingleton.elim z 0]
+  simp
+
+end Snake
 
 end ContinuousLinearMap
