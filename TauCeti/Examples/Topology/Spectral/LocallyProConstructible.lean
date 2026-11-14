@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Topology.Spectral.LocallyProConstructible
+import TauCeti.Topology.Spectral.PatchCriterion
 import Mathlib.Topology.Compactification.OnePoint.Basic
-import Mathlib.Topology.InductiveDimension.Classes
 
 /-!
 # Checks for locally pro-constructible images
@@ -38,9 +38,7 @@ example (s : Set ℕ) : IsLocallyProConstructible (id '' s) := by
 compactification has image that is not locally pro-constructible. -/
 example : IsLocallySpectralMap ((↑) : ℕ → OnePoint ℕ) ∧
     ¬ IsLocallyProConstructible (((↑) : ℕ → OnePoint ℕ) '' univ) := by
-  have : SpectralSpace (OnePoint ℕ) :=
-    { toPrespectralSpace := .of_isTopologicalBasis isTopologicalBasis_isClopen
-        fun _ hU ↦ hU.isClosed.isCompact }
+  have : SpectralSpace (OnePoint ℕ) := spectralSpace_of_zeroDimensionalSpace (OnePoint ℕ)
   refine ⟨.of_forall_exists fun n ↦ ⟨{n}, {(n : OnePoint ℕ)}, mapsTo_singleton.mpr rfl,
     isOpen_discrete _, ?_, rfl, inferInstance, continuous_of_discreteTopology,
     fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩

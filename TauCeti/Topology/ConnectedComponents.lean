@@ -85,8 +85,8 @@ space by them.
   components is split into two disjoint nonempty open sets, these are its components.
 * `IsPreconnected.connectedComponentIn_union_eq_left`: a preconnected open set `u`, separated by a
   disjoint open set `v`, is a connected component of `u ∪ v`.
-* `IsClopen.preimage_connectedComponents_image`, `IsClopen.image_connectedComponents`: a clopen set
-  is saturated for the connected-components equivalence relation and has clopen image in
+* `IsClopen.preimage_image_connectedComponentsMk`, `IsClopen.image_connectedComponentsMk`: a clopen
+  set is saturated for the connected-components equivalence relation and has clopen image in
   `ConnectedComponents X`.
 * `TauCeti.connectedComponentsClopensOrderIso`: pullback along `ConnectedComponents.mk` identifies
   the clopen subsets of `ConnectedComponents X` order-isomorphically with those of `X`.
@@ -771,16 +771,16 @@ theorem _root_.IsPreconnected.connectedComponentIn_union_eq_left {u v : Set X}
 
 /-- A clopen subset is saturated for the connected-components equivalence relation: pulling its
 image in `ConnectedComponents X` back along `ConnectedComponents.mk` recovers `s`. -/
-theorem _root_.IsClopen.preimage_connectedComponents_image {s : Set X} (hs : IsClopen s) :
+theorem _root_.IsClopen.preimage_image_connectedComponentsMk {s : Set X} (hs : IsClopen s) :
     ConnectedComponents.mk ⁻¹' (ConnectedComponents.mk '' s) = s :=
   (connectedComponents_preimage_image s).trans hs.biUnion_connectedComponent_eq
 
 /-- The image of a clopen subset under `ConnectedComponents.mk` is clopen in
 `ConnectedComponents X`. -/
-theorem _root_.IsClopen.image_connectedComponents {s : Set X} (hs : IsClopen s) :
+theorem _root_.IsClopen.image_connectedComponentsMk {s : Set X} (hs : IsClopen s) :
     IsClopen (ConnectedComponents.mk '' s) :=
   ConnectedComponents.isQuotientMap_coe.isClopen_preimage.mp
-    (hs.preimage_connectedComponents_image.symm ▸ hs)
+    (hs.preimage_image_connectedComponentsMk.symm ▸ hs)
 
 variable (X) in
 /-- Pullback along `ConnectedComponents.mk` identifies the clopen subsets of
@@ -788,12 +788,12 @@ variable (X) in
 def connectedComponentsClopensOrderIso :
     TopologicalSpace.Clopens (ConnectedComponents X) ≃o TopologicalSpace.Clopens X where
   toFun U := ⟨ConnectedComponents.mk ⁻¹' U, U.isClopen.preimage ConnectedComponents.continuous_coe⟩
-  invFun V := ⟨ConnectedComponents.mk '' V, V.isClopen.image_connectedComponents⟩
+  invFun V := ⟨ConnectedComponents.mk '' V, V.isClopen.image_connectedComponentsMk⟩
   left_inv U := TopologicalSpace.Clopens.ext <| by
     simp only [TopologicalSpace.Clopens.coe_mk]
     exact Set.image_preimage_eq (U : Set (ConnectedComponents X)) ConnectedComponents.surjective_coe
   right_inv V := TopologicalSpace.Clopens.ext
-    (by simp [V.isClopen.preimage_connectedComponents_image])
+    (by simp [V.isClopen.preimage_image_connectedComponentsMk])
   map_rel_iff' {U₁ U₂} := by
     simp [← SetLike.coe_subset_coe,
       ConnectedComponents.surjective_coe.preimage_subset_preimage_iff]
@@ -831,6 +831,6 @@ theorem mem_connectedComponentsClopensOrderIso_symm
     {V : TopologicalSpace.Clopens X} {x : X} :
     ConnectedComponents.mk x ∈ (connectedComponentsClopensOrderIso X).symm V ↔ x ∈ V := by
   rw [← SetLike.mem_coe, coe_connectedComponentsClopensOrderIso_symm, ← mem_preimage,
-    V.isClopen.preimage_connectedComponents_image, SetLike.mem_coe]
+    V.isClopen.preimage_image_connectedComponentsMk, SetLike.mem_coe]
 
 end TauCeti
