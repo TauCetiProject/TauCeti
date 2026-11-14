@@ -29,7 +29,7 @@ rotation carries the crossing of the strands from `x` to `a` and from `y` to `b`
 the rotated strands from `a` to `x` and from `b` to `y`, and resolving one crossing and rotating is
 resolving the other (`TauCeti.StrandDiagram.reverse_resolve`). The corresponding statements for the
 algebra `A(Z)` of a pointed matched circle are in
-`TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite`.
+`TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite.Basic`.
 
 Both maps respect the grading of `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic`,
 through maps of grading groups. Relabelling transports the boundary of a class and keeps the Maslov
@@ -796,6 +796,12 @@ def rev : StrandGradingGroup (Fin n) ≃* (StrandGradingGroup (Fin n))ᵐᵒᵖ 
   reverse.trans (MulEquiv.op (map Fin.revOrderIso))
 
 variable {n}
+
+/-- The orientation reversal of the grading group of `{1, …, n}` is the reversal followed by the
+relabelling of the reversed order. -/
+theorem unop_rev_apply (g : StrandGradingGroup (Fin n)) :
+    (rev n g).unop = map Fin.revOrderIso (reverse g).unop :=
+  (rfl)
 
 @[simp]
 theorem rev_maslov (g : StrandGradingGroup (Fin n)) : (rev n g).unop.maslov = g.maslov := by

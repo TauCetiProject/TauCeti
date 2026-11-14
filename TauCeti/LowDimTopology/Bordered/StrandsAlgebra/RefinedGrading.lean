@@ -160,6 +160,14 @@ theorem pushBoundary_indicator [DecidableEq α] {M : α → β} {S : Finset α} 
   · rw [card_eq_zero.2 (filter_eq_empty_iff.2 fun x _ h ↦ hb (mem_image.2 ⟨x, h.2, h.1⟩)),
       Nat.cast_zero]
 
+/-- `M_*` does not see a reindexing of the points: reading both the matching and the boundary
+through a bijection `e` gives the same sums over the fibres. -/
+theorem pushBoundary_comp_equiv {γ : Type*} [Fintype γ] (e : γ ≃ α) (M : α → β) (δ : α → ℤ) :
+    pushBoundary (M ∘ e) (δ ∘ e) = pushBoundary M δ := by
+  ext b
+  simp only [pushBoundary_apply, Function.comp_apply]
+  exact sum_equiv e (by simp) fun _ _ ↦ rfl
+
 /-- A boundary carried to `0` by `M_*` has total sum zero. -/
 theorem sum_eq_zero_of_pushBoundary_eq_zero {M : α → β} {δ : α → ℤ}
     (hδ : pushBoundary M δ = 0) : ∑ x, δ x = 0 := by
@@ -500,6 +508,10 @@ variable (R : Type*) [CommSemiring R]
 diagrams of refined grading `g`. -/
 def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :=
   gradedPartBy R ψ.grading g
+
+theorem gradedPart_def (g : StrandGradingGroup α) :
+    ψ.gradedPart R g = gradedPartBy R ψ.grading g :=
+  (rfl)
 
 variable {R}
 
