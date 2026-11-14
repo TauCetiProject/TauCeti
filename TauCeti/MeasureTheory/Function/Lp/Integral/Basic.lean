@@ -24,8 +24,8 @@ open scoped ENNReal
 
 namespace MeasureTheory.Lp
 
-variable {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NormedRing E] [NormedSpace ℝ E]
-  {p : ℝ≥0∞}
+variable {α E : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NonUnitalNormedRing E]
+  [NormedSpace ℝ E] {p : ℝ≥0∞}
 
 /-- Negating an `Lᵖ` class negates its integral against any function `h`. -/
 theorem integral_neg_mul (g : Lp E p μ) (h : α → E) :

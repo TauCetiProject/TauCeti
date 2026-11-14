@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Inverse
 public import TauCeti.Analysis.PDE.Spectrum.Sequence
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import TauCeti.Analysis.PDE.WeakLaplacian
-import TauCeti.MeasureTheory.Function.Lp.Integral
+import TauCeti.MeasureTheory.Function.Lp.Integral.Basic
 
 /-!
 # The Dirichlet realization of a divergence-form operator

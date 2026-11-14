@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+public import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Measure.WithDensity
