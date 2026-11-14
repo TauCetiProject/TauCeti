@@ -40,8 +40,8 @@ In the namespace `TauCeti`:
 
 * `isMorse_iff_of_forall_coe_eq_cos_pow_three_add_mul_cos`: `cos³ θ + ε cos θ` is Morse exactly
   when `ε ≠ 0` and `ε ≠ -3`.
-* `mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoint_of_cos_eq_zero`: the points
-  where `cos θ = 0` are degenerate critical points of `cos³ θ`.
+* `mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_cos_pow_three`:
+  the points where `cos θ = 0` are degenerate critical points of `cos³ θ`.
 * `mem_closure_setOf_isMorse_and_not_isMorse_of_forall_coe_eq_cos_pow_three`: the non-Morse
   function `cos³ θ` is a limit of Morse functions in `C^∞`.
 * `isMorse_of_forall_coe_eq_cos`: `cos θ` is a Morse function.
@@ -68,6 +68,11 @@ namespace TauCeti
 
 /-- The period of the circle `ℝ ⧸ 2πℤ` is positive. -/
 local instance morseCircleTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+
+/-- The function `cos` on the circle `ℝ ⧸ 2πℤ` is smooth. -/
+private theorem contMDiff_cos_periodic_lift :
+    ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (cos_periodic.lift : AddCircle (2 * π) → ℝ) :=
+  (AddCircle.contMDiff_iff_contDiff_of_forall_coe fun t ↦ Periodic.lift_coe _ t).2 contDiff_cos
 
 /-! ### The family `cos³ θ + ε cos θ` -/
 
@@ -128,7 +133,8 @@ theorem isMorse_iff_of_forall_coe_eq_cos_pow_three_add_mul_cos
 
 /-- **The degenerate critical points of `cos³ θ`.** Where `cos θ = 0`, that is at `θ = ±π/2`,
 the function `cos³ θ` has a critical point at which its second derivative vanishes. -/
-theorem mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoint_of_cos_eq_zero
+theorem
+    mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_cos_pow_three
     (hf : ∀ t : ℝ, f t = cos t ^ 3) {t : ℝ} (ht : cos t = 0) :
     (t : AddCircle (2 * π)) ∈ criticalPoints 𝓘(ℝ) f ∧
       ¬ IsManifoldNondegenerateCriticalPoint 𝓘(ℝ) f t := by
@@ -145,8 +151,7 @@ theorem mem_closure_setOf_isMorse_and_not_isMorse_of_forall_coe_eq_cos_pow_three
     (f : C^∞⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯) (hf : ∀ t : ℝ, f t = cos t ^ 3) :
     f ∈ closure {g : C^∞⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯ | IsMorse 𝓘(ℝ) g} ∧
       ¬ IsMorse 𝓘(ℝ) f := by
-  have hc : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (cos_periodic.lift : AddCircle (2 * π) → ℝ) :=
-    (contMDiff_iff_contDiff_of_forall_coe fun t ↦ Periodic.lift_coe _ t).2 contDiff_cos
+  have hc := contMDiff_cos_periodic_lift
   let Φ (ε : ℝ) : C^∞⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯ :=
     ⟨fun x ↦ f x + ε * cos_periodic.lift x, f.contMDiff.add (contMDiff_const.mul hc)⟩
   have hΦ : Continuous Φ := ContMDiff.continuous_manifoldWeakWhitney (I' := 𝓘(ℝ))
@@ -179,6 +184,12 @@ theorem isMorse_of_forall_coe_eq_cos (hf : ∀ t : ℝ, f t = cos t) : IsMorse �
   intro h
   simpa [ht, h] using sin_sq_add_cos_sq t
 
+/-- Every critical point of `cos θ` on the circle is nondegenerate. -/
+private theorem isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_cos
+    (hf : ∀ t : ℝ, f t = cos t) {x : AddCircle (2 * π)} (hx : x ∈ criticalPoints 𝓘(ℝ) f) :
+    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ) f x :=
+  (isMorse_of_forall_coe_eq_cos hf).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx
+
 /-- **`cos θ` stays Morse under `C²`-small perturbations.** For `n ≥ 2`, every `C^n` function
 close enough to `cos θ` in the weak Whitney topology has only nondegenerate critical points. -/
 theorem eventually_forall_isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_cos
@@ -187,9 +198,7 @@ theorem eventually_forall_isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_
     ∀ᶠ g : C^n⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯ in 𝓝 c,
       ∀ x ∈ criticalPoints 𝓘(ℝ) g, IsManifoldNondegenerateCriticalPoint 𝓘(ℝ) g x :=
   (isOpen_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint hn).mem_nhds
-    fun _ hx ↦
-      (isMorse_of_forall_coe_eq_cos hc).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-        hx
+    fun _ ↦ isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_cos hc
 
 /-- The perturbation `(1 - cos (N θ)) / N²` of `cos θ`, as a function on the circle. -/
 private noncomputable def cosPerturbation (N : ℕ) : AddCircle (2 * π) → ℝ :=
@@ -206,6 +215,20 @@ private theorem hasDerivAt_cosPerturbation (N : ℕ) (t : ℝ) :
     using 1
   ring
 
+private theorem deriv_cos_add_cosPerturbation (N : ℕ) :
+    deriv (fun t ↦ cos t + (1 - cos (N * t)) / N ^ 2) =
+      fun t ↦ -sin t + N * sin (N * t) / N ^ 2 :=
+  funext fun t ↦ ((Real.hasDerivAt_cos t).add (hasDerivAt_cosPerturbation N t)).deriv
+
+private theorem iteratedDeriv_two_cos_add_cosPerturbation {N : ℕ} (hN : (N : ℝ) ≠ 0) (t : ℝ) :
+    iteratedDeriv 2 (fun t ↦ cos t + (1 - cos (N * t)) / N ^ 2) t = -cos t + cos (N * t) := by
+  rw [iteratedDeriv_succ, iteratedDeriv_one, deriv_cos_add_cosPerturbation]
+  refine HasDerivAt.deriv ?_
+  convert (Real.hasDerivAt_sin t).fun_neg.fun_add
+    ((((hasDerivAt_id' t).const_mul (N : ℝ)).sin.const_mul (N : ℝ)).div_const ((N : ℝ) ^ 2))
+    using 1
+  field_simp
+
 /-- The perturbation `(1 - cos (N θ)) / N²` and its derivative `sin (N θ) / N` are bounded by
 `2 / N`: read in any chart of the circle, so is its coordinate derivative of order at most one. -/
 private theorem norm_chartIteratedFDeriv_cosPerturbation_le {N : ℕ} (hN : 1 ≤ N)
@@ -216,10 +239,8 @@ private theorem norm_chartIteratedFDeriv_cosPerturbation_le {N : ℕ} (hN : 1 �
   have hN' : (1 : ℝ) ≤ N := by exact_mod_cast hN
   have hNpos : (0 : ℝ) < N := by linarith
   rw [ContMDiffMap.chartIteratedFDeriv_self_target_apply,
-    iteratedFDerivWithin_congr (f := fun t ↦ (1 - cos (N * t)) / N ^ 2)
-      (fun u hu ↦ by
-        rw [comp_apply, hg, AddCircle.extChartAt_symm_apply x hu, cosPerturbation_coe]) z.2,
-    iteratedFDerivWithin_of_isOpen m (isOpen_extChartAt_target x) z.2,
+    AddCircle.iteratedFDerivWithin_comp_extChartAt_symm_of_forall_coe
+      (F := fun t ↦ (1 - cos (N * t)) / N ^ 2) (fun t ↦ by rw [hg, cosPerturbation_coe]) x m z.2,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv]
   have hm1 : m ≤ 1 := by exact_mod_cast hm
   interval_cases m
@@ -246,7 +267,7 @@ theorem frequently_mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoi
       (0 : AddCircle (2 * π)) ∈ criticalPoints 𝓘(ℝ) g ∧
         ¬ IsManifoldNondegenerateCriticalPoint 𝓘(ℝ) g 0 := by
   have hcont (N : ℕ) : ContMDiff 𝓘(ℝ) 𝓘(ℝ) 1 (cosPerturbation N) :=
-    (contMDiff_iff_contDiff_of_forall_coe (cosPerturbation_coe N)).2 (by fun_prop)
+    (AddCircle.contMDiff_iff_contDiff_of_forall_coe (cosPerturbation_coe N)).2 (by fun_prop)
   let h (N : ℕ) : C^1⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯ := ⟨cosPerturbation N, hcont N⟩
   -- The perturbations tend to `0` in `C¹`: each chart seminorm of order at most one is at most
   -- `2 / N`.
@@ -267,20 +288,13 @@ theorem frequently_mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoi
   have hN0 : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
   have hG (t : ℝ) : (c + h N) t = cos t + (1 - cos (N * t)) / N ^ 2 := by
     rw [ContMDiffMap.coe_add, Pi.add_apply, hc, ContMDiffMap.coeFn_mk, cosPerturbation_coe]
-  have hG' : deriv (fun t ↦ cos t + (1 - cos (N * t)) / N ^ 2) =
-      fun t ↦ -sin t + N * sin (N * t) / N ^ 2 :=
-    funext fun t ↦ ((Real.hasDerivAt_cos t).add (hasDerivAt_cosPerturbation N t)).deriv
   have hG'' : iteratedDeriv 2 (fun t ↦ cos t + (1 - cos (N * t)) / N ^ 2) 0 = 0 := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hG', ((Real.hasDerivAt_sin 0).fun_neg.fun_add
-      ((((hasDerivAt_id' (0 : ℝ)).const_mul (N : ℝ)).sin.const_mul (N : ℝ)).div_const
-        ((N : ℝ) ^ 2))).deriv]
-    simp only [mul_zero, cos_zero, mul_one]
-    field_simp [hN0]
-    ring
+    simp [iteratedDeriv_two_cos_add_cosPerturbation hN0]
   have := (isManifoldNondegenerateCriticalPoint_coe_iff_of_forall_coe hG (by fun_prop) 0).not
   rw [QuotientAddGroup.mk_zero] at this
   refine ⟨?_, this.2 fun h ↦ h.2 hG''⟩
-  rw [← QuotientAddGroup.mk_zero, coe_mem_criticalPoints_iff_of_forall_coe hG, hG']
+  rw [← QuotientAddGroup.mk_zero, coe_mem_criticalPoints_iff_of_forall_coe hG,
+    deriv_cos_add_cosPerturbation]
   simp
 
 /-- **Openness of Morse functions fails in `C¹`.** On the circle, the `C¹` functions all of whose
@@ -296,12 +310,10 @@ theorem not_isOpen_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCritic
   have hc : ∀ t : ℝ, cos_periodic.lift (t : AddCircle (2 * π)) = cos t :=
     fun t ↦ Periodic.lift_coe _ t
   let c : C^1⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯ :=
-    ⟨cos_periodic.lift, (contMDiff_iff_contDiff_of_forall_coe hc).2 (by fun_prop)⟩
+    ⟨cos_periodic.lift, contMDiff_cos_periodic_lift.of_le (by simp)⟩
   have hmem : c ∈ {f : C^1⟮𝓘(ℝ), AddCircle (2 * π); 𝓘(ℝ), ℝ⟯ |
       ∀ x ∈ criticalPoints 𝓘(ℝ) f, IsManifoldNondegenerateCriticalPoint 𝓘(ℝ) f x} :=
-    fun _ hx ↦
-      (isMorse_of_forall_coe_eq_cos hc).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-        hx
+    fun _ ↦ isManifoldNondegenerateCriticalPoint_of_forall_coe_eq_cos hc
   obtain ⟨g, ⟨hg0, hg⟩, hgS⟩ :=
     ((frequently_mem_criticalPoints_and_not_isManifoldNondegenerateCriticalPoint_zero c
       hc).and_eventually (hopen.mem_nhds hmem)).exists

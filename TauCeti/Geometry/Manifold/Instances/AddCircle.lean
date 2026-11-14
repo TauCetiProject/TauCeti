@@ -68,6 +68,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle.comp_extChartAt_symm_eventuallyEq_of_forall_coe`: the extended chart at the class of
   `t` sends it to `t` up to a multiple of the period, and a function on `AddCircle p` read in an
   extended chart is its lift to `ℝ`, which is periodic (`AddCircle.periodic_of_forall_coe`).
+  On the chart target, its iterated derivatives are those of the lift
+  (`AddCircle.iteratedFDerivWithin_comp_extChartAt_symm_of_forall_coe`).
 * `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
   `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
   derivative.
@@ -76,7 +78,9 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
   `AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ` is as smooth as `f`, and has the
   derivative of `f`. Conversely a continuous lift of a `C^n` map is `C^n`
-  (`AddCircle.contDiff_of_comp_coe_eq`).
+  (`AddCircle.contDiff_of_comp_coe_eq`). A function on `AddCircle p` with values in a normed
+  space is `C^n` exactly when its lift to `ℝ` is
+  (`AddCircle.contMDiff_iff_contDiff_of_forall_coe`).
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
 * `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
@@ -547,6 +551,20 @@ theorem comp_extChartAt_symm_eventuallyEq_of_forall_coe {α : Type*} {f : AddCir
   rw [Function.comp_apply, extChartAt_symm_apply x hz, hf]
 
 variable {p} in
+/-- If a function `f` on `AddCircle p` takes the value `F t` at the class of every real `t`, then
+at every point of the target of an extended chart, the iterated derivatives within that target of
+the coordinate expression of `f` are those of `F`. -/
+theorem iteratedFDerivWithin_comp_extChartAt_symm_of_forall_coe {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : AddCircle p → E} {F : ℝ → E}
+    (hf : ∀ t : ℝ, f t = F t) (x : AddCircle p) (m : ℕ) {z : ℝ}
+    (hz : z ∈ (extChartAt 𝓘(ℝ) x).target) :
+    iteratedFDerivWithin ℝ m (f ∘ (extChartAt 𝓘(ℝ) x).symm) (extChartAt 𝓘(ℝ) x).target z =
+      iteratedFDeriv ℝ m F z := by
+  rw [iteratedFDerivWithin_congr (f := F)
+      (fun u hu ↦ by rw [Function.comp_apply, extChartAt_symm_apply x hu, hf]) hz,
+    iteratedFDerivWithin_of_isOpen m (isOpen_extChartAt_target x) hz]
+
+variable {p} in
 /-- At each point of its target, the inverse of an extended chart of `AddCircle p` has derivative
 the identity of `ℝ`: near that point it is the quotient map `ℝ → AddCircle p`. -/
 theorem mfderiv_extChartAt_symm (x : AddCircle p) {z : ℝ}
@@ -610,6 +628,14 @@ theorem contDiff_of_comp_coe_eq {n : ℕ∞ω} {g : AddCircle p → AddCircle q}
     (isLocalDiffeomorph_coe q n) hf) ?_)
   rw [← h]
   exact hg.comp (contMDiff_coe p n)
+
+/-- A function on `AddCircle p` with values in a normed space is `C^n` exactly when its lift to
+`ℝ` is. -/
+theorem contMDiff_iff_contDiff_of_forall_coe {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ∞ω} {f : AddCircle p → E} {F : ℝ → E} (hf : ∀ t : ℝ, f t = F t) :
+    ContMDiff 𝓘(ℝ) 𝓘(ℝ, E) n f ↔ ContDiff ℝ n F := by
+  rw [← (isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective le_rfl,
+    show f ∘ ((↑) : ℝ → AddCircle p) = F from funext hf, contMDiff_iff_contDiff]
 
 /-- A map `g : AddCircle p → AddCircle q` lifting a map `f : ℝ → ℝ`, in the sense that
 `g ∘ (↑) = (↑) ∘ f`, has at the image of `t` the derivative of `f` at `t`. -/

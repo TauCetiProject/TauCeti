@@ -19,7 +19,7 @@ A function `f` on the circle `AddCircle p = ℝ ⧸ pℤ` is read through the qu
 is `F` itself (`AddCircle.comp_extChartAt_symm_eventuallyEq_of_forall_coe`). This file reads the
 Morse-theoretic notions on the circle off the first two derivatives of `F`:
 
-* `f` is `C^n` exactly when `F` is;
+* `f` is `C^n` exactly when `F` is (`AddCircle.contMDiff_iff_contDiff_of_forall_coe`);
 * the class of `t` is a critical point of `f` exactly when `F'(t) = 0`;
 * for `C²` functions it is a nondegenerate critical point exactly when moreover `F''(t) ≠ 0`;
 * so `f` is a Morse function exactly when `F` is smooth and `F''` does not vanish where `F'`
@@ -27,7 +27,6 @@ Morse-theoretic notions on the circle off the first two derivatives of `F`:
 
 ## Main results
 
-* `TauCeti.contMDiff_iff_contDiff_of_forall_coe`: `f` is `C^n` exactly when its lift is.
 * `TauCeti.coe_mem_criticalPoints_iff_of_forall_coe`: critical points on the circle.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_coe_iff_of_forall_coe`: nondegenerate critical
   points on the circle.
@@ -42,13 +41,6 @@ open scoped Manifold Topology ContDiff
 namespace TauCeti
 
 variable {p : ℝ} [Fact (0 < p)] {f : AddCircle p → ℝ} {F : ℝ → ℝ}
-
-/-- A function on `AddCircle p` is `C^n` exactly when its lift to `ℝ` is. -/
-theorem contMDiff_iff_contDiff_of_forall_coe (hf : ∀ t : ℝ, f t = F t) {n : WithTop ℕ∞} :
-    ContMDiff 𝓘(ℝ) 𝓘(ℝ) n f ↔ ContDiff ℝ n F := by
-  have hF : f ∘ ((↑) : ℝ → AddCircle p) = F := funext hf
-  rw [← (AddCircle.isLocalDiffeomorph_coe p n).contMDiff_comp_iff QuotientAddGroup.mk_surjective
-    le_rfl, hF, contMDiff_iff_contDiff]
 
 /-- **Critical points on the circle.** If `f t = F t` for every real `t`, the class of `t` is a
 critical point of `f` exactly when `F'(t) = 0`. -/
@@ -78,7 +70,7 @@ theorem isManifoldNondegenerateCriticalPoint_coe_iff_of_forall_coe (hf : ∀ t :
 function exactly when `F` is smooth and `F''(t) ≠ 0` wherever `F'(t) = 0`. -/
 theorem isMorse_iff_of_forall_coe (hf : ∀ t : ℝ, f t = F t) :
     IsMorse 𝓘(ℝ) f ↔ ContDiff ℝ ∞ F ∧ ∀ t, deriv F t = 0 → iteratedDeriv 2 F t ≠ 0 := by
-  rw [isMorse_iff, contMDiff_iff_contDiff_of_forall_coe hf]
+  rw [isMorse_iff, AddCircle.contMDiff_iff_contDiff_of_forall_coe hf]
   refine and_congr_right fun hF ↦ ?_
   have hF2 : ContDiff ℝ 2 F := hF.of_le (by simp)
   simp_rw [← mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
