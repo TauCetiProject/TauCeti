@@ -45,6 +45,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_sub_le_one`: for `‖x - y‖ ≤ 1`,
   `⟨x⟩ ^ s ≤ 2 ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.one_add_norm_sub_sq_rpow_le_of_norm_sub_le_one`: for `‖x - x₀‖ ≤ 1`,
+  `⟨x - y⟩ ^ s ≤ 2 ^ (|s| / 2) 2 ^ |s| ⟨x₀⟩ ^ s ⟨y⟩ ^ |s|`, uniformly near `x₀`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul`: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖` with
   `c ≥ 1`, then `⟨x⟩ ^ s ≤ c ^ |s| ⟨y⟩ ^ s`; in particular
   (`TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`) rescaling by `c ≥ 1` changes the weight
@@ -55,6 +57,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
+* `TauCeti.norm_pow_le_one_add_norm_sq_rpow`: conversely `‖x‖ ^ N ≤ ⟨x⟩ ^ N`.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
@@ -176,6 +179,23 @@ theorem one_add_norm_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] {x
         ring_nf
 
 omit [SeminormedAddGroup E] in
+/-- **Peetre's inequality near a point.** For `x` within distance one of `x₀`, translating `x` by
+`y` changes the weight by a factor uniform in `x`:
+`⟨x - y⟩ ^ s ≤ 2 ^ (|s| / 2) 2 ^ |s| ⟨x₀⟩ ^ s ⟨y⟩ ^ |s|` for every real `s`. -/
+theorem one_add_norm_sub_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] (s : ℝ)
+    {x x₀ : E} (h : ‖x - x₀‖ ≤ 1) (y : E) :
+    (1 + ‖x - y‖ ^ 2) ^ (s / 2) ≤
+      2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖x₀‖ ^ 2) ^ (s / 2) * (1 + ‖y‖ ^ 2) ^ (|s| / 2) := by
+  have h₁ := one_add_norm_sq_rpow_le_mul_sub s (x - y) x
+  rw [sub_sub_cancel_left, norm_neg] at h₁
+  have h₂ := one_add_norm_sq_rpow_le_of_norm_sub_le_one h s
+  calc (1 + ‖x - y‖ ^ 2) ^ (s / 2)
+      ≤ 2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (|s| / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) := h₁
+    _ ≤ 2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (|s| / 2) * (2 ^ |s| * (1 + ‖x₀‖ ^ 2) ^ (s / 2)) := by
+        gcongr
+    _ = _ := by ring
+
+omit [SeminormedAddGroup E] in
 /-- Comparable norms give comparable Japanese bracket weights: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖`
 with `c ≥ 1`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
 For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ c ‖x‖`. This applies to
@@ -260,6 +280,16 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) (N : ℕ) :
     _ = (1 + ‖x‖) ^ N := by
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity),
           ← Real.rpow_natCast]
+        ring_nf
+
+/-- A natural power of the norm is at most the same power of the Japanese bracket:
+`‖x‖ ^ N ≤ (1 + ‖x‖ ^ 2) ^ (N / 2)`. -/
+theorem norm_pow_le_one_add_norm_sq_rpow (x : E) (N : ℕ) :
+    ‖x‖ ^ N ≤ (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) :=
+  calc ‖x‖ ^ N ≤ √(1 + ‖x‖ ^ 2) ^ N :=
+        pow_le_pow_left₀ (norm_nonneg _) (Real.le_sqrt_of_sq_le (by linarith)) _
+    _ = (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) := by
+        rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
         ring_nf
 
 /-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,

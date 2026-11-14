@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -70,6 +71,9 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   smooth functions.
 * `TauCeti.mixedDeriv_eq_iteratedFDeriv`, `TauCeti.mixedDeriv_eq_iteratedFDeriv_append`: its
   comparison with `iteratedFDeriv` on the directions `TauCeti.mixedDirections`.
+* `ContinuousMultilinearMap.norm_le_sum_mixedDirection`,
+  `TauCeti.norm_iteratedFDeriv_le_sum_mixedDeriv`: conversely, a Fréchet derivative on
+  `ℝⁿ × ℝⁿ` is bounded by mixed derivatives along words of position and frequency letters.
 * `TauCeti.exists_bound_mixedDeriv_comp_snd`: symbol-type estimates for a position-independent
   function from estimates of the Fréchet derivatives of its profile.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
@@ -185,19 +189,8 @@ theorem _root_.ContinuousMultilinearMap.norm_le_sum_single {k : ℕ}
     (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n) A) :
     ‖M‖ ≤ ∑ r : Fin k → Fin n, ‖M fun i => EuclideanSpace.single (r i) 1‖ := by
   classical
-  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
-  have hv : v = fun i => ∑ j, v i j • EuclideanSpace.single j (1 : ℝ) := by
-    funext i
-    simpa [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] using
-      ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr (v i)).symm
-  rw [hv, M.map_sum, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
-  rw [M.map_smul_univ, norm_smul, mul_comm]
-  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-  rw [norm_prod]
-  gcongr with i
-  calc ‖v i (r i)‖ ≤ ‖v i‖ := PiLp.norm_apply_le (v i) (r i)
-    _ = ‖∑ j, v i j • EuclideanSpace.single j (1 : ℝ)‖ := by rw [← congrFun hv i]
+  simpa using M.norm_le_sum_basis (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+    fun v j => by simpa using PiLp.norm_apply_le v j
 
 /-- Conversely to `TauCeti.norm_coordinateDeriv_le`, the `k`-th Fréchet derivative of a `C^k`
 function is bounded by the sum of the norms of its coordinate derivatives along the words of
@@ -456,6 +449,17 @@ theorem mixedDeriv_coordinateDeriv_snd (α β : List (Fin n)) (j : Fin n)
       mixedDeriv α (β ++ [j]) a x ξ := by
   simp only [mixedDeriv_def, coordinateDeriv_append]
 
+/-- The frequency derivatives of a mixed derivative of a smooth function, at a fixed position,
+are mixed derivatives with more frequency letters: `∂_ξ^w (∂_x^α ∂_ξ^β a) = ∂_x^α ∂_ξ^(w ++ β) a`.
+-/
+theorem coordinateDeriv_mixedDeriv {a : CoordinateSpace n × CoordinateSpace n → A}
+    (ha : ContDiff ℝ ∞ a) (α β w : List (Fin n)) (x : CoordinateSpace n) :
+    coordinateDeriv w (fun ξ => mixedDeriv α β a x ξ) = fun ξ => mixedDeriv α (w ++ β) a x ξ := by
+  have h (γ : List (Fin n)) : (fun ξ => mixedDeriv α γ a x ξ) =
+      coordinateDeriv γ (fun η => coordinateDeriv α (fun y => a (y, η)) x) :=
+    funext fun ξ => mixedDeriv_eq_coordinateDeriv_snd ha α γ x ξ
+  rw [h, h, coordinateDeriv_append]
+
 /-- The mixed derivative of the position derivative `∂_{x_j} a` of a smooth function is a mixed
 derivative of `a` with one more position derivative. -/
 theorem mixedDeriv_coordinateDeriv_fst {a : CoordinateSpace n × CoordinateSpace n → A}
@@ -693,6 +697,38 @@ theorem iteratedFDerivAlong_map_mixedDirection (w : List (Fin n ⊕ Fin n))
     simpa using hperm.length_eq.symm
   rw [mixedDeriv_eq_iteratedFDerivAlong _ _ (by exact_mod_cast hlen ▸ ha), mixedDirections,
     (hperm.map mixedDirection).iteratedFDerivAlong_eq ha (by simp)]
+
+/-- A continuous multilinear map on `ℝⁿ × ℝⁿ` has norm at most the sum of the norms of its values
+on tuples of the coordinate directions `TauCeti.mixedDirection`. -/
+theorem _root_.ContinuousMultilinearMap.norm_le_sum_mixedDirection {k : ℕ}
+    (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n × CoordinateSpace n) A) :
+    ‖M‖ ≤ ∑ r : Fin k → Fin n ⊕ Fin n, ‖M fun i => mixedDirection (r i)‖ := by
+  classical
+  -- `mixedDirection` is the product of the standard bases of the two factors.
+  set b := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+  have hb : ⇑(b.prod b) = mixedDirection := by
+    ext1 l
+    cases l <;> simp [b, Module.Basis.prod_apply]
+  rw [← hb]
+  refine M.norm_le_sum_basis (b.prod b) fun v l => ?_
+  cases l with
+  | inl j => simpa [b] using (PiLp.norm_apply_le v.1 j).trans (norm_fst_le v)
+  | inr j => simpa [b] using (PiLp.norm_apply_le v.2 j).trans (norm_snd_le v)
+
+/-- The `k`-th Fréchet derivative of a `C^k` function of a position and a frequency is bounded by
+the sum of the norms of its mixed derivatives along the words of `k` position and frequency
+letters. -/
+theorem norm_iteratedFDeriv_le_sum_mixedDeriv {k : ℕ} (ha : ContDiff ℝ k a)
+    (x ξ : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k a (x, ξ)‖ ≤ ∑ r : Fin k → Fin n ⊕ Fin n,
+      ‖mixedDeriv ((List.ofFn r).filterMap Sum.getLeft?) ((List.ofFn r).filterMap Sum.getRight?)
+        a x ξ‖ := by
+  refine (iteratedFDeriv ℝ k a (x, ξ)).norm_le_sum_mixedDirection.trans (le_of_eq ?_)
+  refine Finset.sum_congr rfl fun r _ => ?_
+  have h := iteratedFDerivAlong_map_mixedDirection (List.ofFn r) (by simpa using ha) (x, ξ)
+  rw [List.map_ofFn, iteratedFDerivAlong_ofFn_eq_iteratedFDeriv ha] at h
+  rw [← h]
+  rfl
 
 end IteratedFDerivAlong
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -31,6 +32,12 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.norm_smul_apply_sub_smul_le`, `SchwartzMap.integrable_smul_apply_sub_smul`,
+  `SchwartzMap.norm_integral_smul_apply_sub_smul_le`: the translates `η ↦ f (ξ - c • η)` of a
+  continuous function of polynomial growth are integrable against a Schwartz function `g`, and
+  `‖∫ g(η) f(ξ - c • η) dη‖ ≤ C' ⟨ξ⟩ ^ s` when `‖f ζ‖ ≤ C ⟨ζ⟩ ^ s`.
+* `SchwartzMap.integrable_smul_continuousMultilinearMap_apply_smul`: `g(η) M(c • η, …, c • η)` is
+  integrable for a continuous multilinear map `M`.
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
   envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
   the integral.
@@ -98,6 +105,24 @@ theorem one_add_norm_smul_sq_rpow_mul_norm_le (c m : ℝ) (k : ℕ) (f : 𝓢(E,
     _ = max 1 |c| ^ K * (1 + ‖x‖) ^ (-(k : ℝ)) * ((1 + ‖x‖) ^ (K + k) * ‖f x‖) := by
         rw [hsplit]; ring
     _ ≤ max 1 |c| ^ K * (1 + ‖x‖) ^ (-(k : ℝ)) * (2 ^ (K + k) * S) := by gcongr
+    _ = _ := by ring
+
+/-- The integrable majorant of the translates of a function of polynomial growth against a
+Schwartz function: if `‖f ζ‖ ≤ C ⟨ζ⟩ ^ s` and `‖ξ - ξ₀‖ ≤ 1`, then
+`‖g η • f (ξ - c • η)‖ ≤ C 2 ^ (|s| / 2) 2 ^ |s| ⟨ξ₀⟩ ^ s ⟨c • η⟩ ^ |s| ‖g η‖`, uniformly in `ξ`. -/
+theorem norm_smul_apply_sub_smul_le {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
+    (g : 𝓢(E, ℂ)) {f : E → H} {C s : ℝ} (hf : ∀ ζ, ‖f ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (s / 2)) (c : ℝ)
+    {ξ ξ₀ : E} (h : ‖ξ - ξ₀‖ ≤ 1) (η : E) :
+    ‖g η • f (ξ - c • η)‖ ≤
+      C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2)) *
+        ((1 + ‖c • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hf 0)
+  rw [norm_smul, mul_comm]
+  calc ‖f (ξ - c • η)‖ * ‖g η‖
+      ≤ C * (1 + ‖ξ - c • η‖ ^ 2) ^ (s / 2) * ‖g η‖ := by gcongr; exact hf _
+    _ ≤ C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ₀‖ ^ 2) ^ (s / 2) *
+          (1 + ‖c • η‖ ^ 2) ^ (|s| / 2)) * ‖g η‖ := by
+        gcongr; exact TauCeti.one_add_norm_sub_sq_rpow_le_of_norm_sub_le_one s h (c • η)
     _ = _ := by ring
 
 end Weight
@@ -235,6 +260,52 @@ theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(
   exact integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
     ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖)
     (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
+
+section Translate
+
+variable {H : Type*} [NormedAddCommGroup H] [NormedSpace ℂ H]
+
+/-- The translates `η ↦ f (ξ - c • η)` of a continuous function of polynomial growth are
+integrable against a Schwartz function. -/
+theorem integrable_smul_apply_sub_smul (g : 𝓢(E, ℂ)) {f : E → H} (hfc : Continuous f) {C s : ℝ}
+    (hf : ∀ ζ, ‖f ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (s / 2)) (c : ℝ) (ξ : E) :
+    Integrable (fun η ↦ g η • f (ξ - c • η)) μ :=
+  ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) c |s|).const_mul _).mono'
+    (g.continuous.smul (hfc.comp (by fun_prop))).aestronglyMeasurable
+    (.of_forall (g.norm_smul_apply_sub_smul_le hf c (ξ₀ := ξ) (by simp)))
+
+omit [SecondCountableTopology E] in
+/-- **The size of an average of translates.** If `‖f ζ‖ ≤ C ⟨ζ⟩ ^ s`, then
+`‖∫ g(η) f(ξ - c • η) dη‖ ≤ C' ⟨ξ⟩ ^ s` with `C'` independent of `ξ`. -/
+theorem norm_integral_smul_apply_sub_smul_le (g : 𝓢(E, ℂ)) {f : E → H} {C s : ℝ}
+    (hf : ∀ ζ, ‖f ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (s / 2)) (c : ℝ) (ξ : E) :
+    ‖∫ η, g η • f (ξ - c • η) ∂μ‖ ≤
+      C * 2 ^ (|s| / 2) * 2 ^ |s| *
+        (∫ η, (1 + ‖c • η‖ ^ 2) ^ (|s| / 2) * ‖g η‖ ∂μ) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+  refine (norm_integral_le_of_norm_le
+    ((g.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) c |s|).const_mul
+    (C * (2 ^ (|s| / 2) * 2 ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))))
+    (.of_forall (g.norm_smul_apply_sub_smul_le hf c (ξ₀ := ξ) (by simp)))).trans (le_of_eq ?_)
+  rw [integral_const_mul]
+  ring
+
+/-- The terms `η ↦ g(η) M(c • η, …, c • η)` of an averaged Taylor polynomial are integrable
+against a Schwartz function `g`. -/
+theorem integrable_smul_continuousMultilinearMap_apply_smul (g : 𝓢(E, ℂ)) {k : ℕ}
+    (M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ E) H) (c : ℝ) :
+    Integrable (fun η ↦ g η • M (fun _ ↦ c • η)) μ := by
+  refine ((g.integrable_pow_mul μ k).const_mul (‖M‖ * |c| ^ k)).mono'
+    (g.continuous.smul (M.coe_continuous.comp (by fun_prop))).aestronglyMeasurable
+    (.of_forall fun η ↦ ?_)
+  rw [norm_smul]
+  calc ‖g η‖ * ‖M fun _ ↦ c • η‖ ≤ ‖g η‖ * (‖M‖ * ∏ _i : Fin k, ‖c • η‖) := by
+        gcongr; exact M.le_opNorm _
+    _ = ‖M‖ * |c| ^ k * (‖η‖ ^ k * ‖g η‖) := by
+        simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, norm_smul,
+          Real.norm_eq_abs, mul_pow]
+        ring
+
+end Translate
 
 section Smul
 

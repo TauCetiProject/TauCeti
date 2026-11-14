@@ -10,6 +10,9 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 /-!
 # Operator-norm bounds for continuous multilinear maps
 
+A continuous multilinear map on a normed space with a basis whose coordinates are bounded by the
+norm is bounded by the sum of the norms of its values on tuples of basis vectors.
+
 A continuous multilinear map `D` on `E × F` in `j + l` variables, evaluated on `j` directions
 `(u i, 0)` in `E` followed by `l` directions `(0, w i)` in `F`, is bounded by
 `‖D‖ * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖)`. This is the form in which mixed derivatives in two groups
@@ -20,6 +23,8 @@ with constant `‖g‖`.
 
 ## Main declarations
 
+* `ContinuousMultilinearMap.norm_le_sum_basis`: a multilinear map is bounded by its values on
+  tuples of basis vectors, for a basis whose coordinates are bounded by the norm.
 * `ContinuousMultilinearMap.norm_apply_append_prod_le`: the operator-norm bound on
   `Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))`.
 * `ContinuousLinearMap.norm_compContinuousMultilinearMap_sub_le`: the Lipschitz bound for
@@ -33,6 +38,23 @@ namespace ContinuousMultilinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F G : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
   [NormedSpace 𝕜 G]
+
+/-- A continuous multilinear map on a normed space with a basis whose coordinates are bounded by
+the norm has norm at most the sum of the norms of its values on tuples of basis vectors. -/
+theorem norm_le_sum_basis {ι : Type*} [Fintype ι] {k : ℕ} (b : Module.Basis ι 𝕜 E)
+    (hb : ∀ v i, ‖b.repr v i‖ ≤ ‖v‖) (M : E [×k]→L[𝕜] G) :
+    ‖M‖ ≤ ∑ r : Fin k → ι, ‖M fun i => b (r i)‖ := by
+  classical
+  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
+  calc ‖M v‖ = ‖M fun i => ∑ l, b.repr (v i) l • b l‖ := by simp only [b.sum_repr]
+    _ = ‖∑ r : Fin k → ι, M fun i => b.repr (v i) (r i) • b (r i)‖ := by rw [M.map_sum]
+    _ ≤ ∑ r : Fin k → ι, ‖M fun i => b.repr (v i) (r i) • b (r i)‖ := norm_sum_le _ _
+    _ ≤ ∑ r : Fin k → ι, ‖M fun i => b (r i)‖ * ∏ i, ‖v i‖ := by
+        refine Finset.sum_le_sum fun r _ => ?_
+        rw [M.map_smul_univ, norm_smul, norm_prod, mul_comm]
+        gcongr with i
+        exact hb _ _
+    _ = _ := by rw [Finset.sum_mul]
 
 /-- The operator-norm bound for a multilinear map on `E × F` evaluated on `j` directions in `E`
 followed by `l` directions in `F`. -/
