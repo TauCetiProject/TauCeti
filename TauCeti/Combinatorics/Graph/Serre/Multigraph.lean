@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
+public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Serre.Iso
 
 /-!
 # The multigraph underlying a Serre graph
 
-Reversal pairs of darts are the edges of the underlying undirected multigraph. This
-construction retains loops and parallel edges, while its walks forget which direction of a
-loop was chosen. Path reachability and connectedness agree with those of the multigraph.
+Reversal pairs of darts are the edges of the underlying undirected multigraph; they are the
+geometric edges of the Serre graph (`SerreGraph.geomEdgeEquivEdge`). This construction retains
+loops and parallel edges, while its walks forget which direction of a loop was chosen. Path
+reachability and connectedness agree with those of the multigraph.
 
 When all darts are loops, for instance in the graph `noEdge V` without edges, distinct vertices
 lie in distinct connected components and the component count `Graph.componentCount` is
@@ -31,11 +33,24 @@ when it is an orientation, this multigraph has the adjacency of the multigraph o
 pairs: the identity of the vertices is an isomorphism of the underlying simple graphs
 (`SerreGraph.toSimpleGraphEndpointGraphIsoToGraph`). Hence two vertices are joined in it exactly
 when a path of the Serre graph joins them, the two multigraphs have the same number of
-components, and it is connected exactly when the Serre graph is.
+components, and it is connected exactly when the Serre graph is. For an orientation the
+multigraph of its darts is even isomorphic to the multigraph of reversal pairs
+(`SerreGraph.IsOrientation.endpointGraphIsoToGraph`).
+
+An isomorphism of Serre graphs induces a bijection of reversal orbits (`SerreGraph.Iso.edgeEquiv`)
+and an isomorphism of the underlying multigraphs (`SerreGraph.Iso.toGraphIso`). Conversely every
+isomorphism of the underlying multigraphs lifts to an isomorphism of Serre graphs
+(`SerreGraph.Iso.ofToGraphIso`). The lift is forced on every dart except a loop, where both darts
+of the orbit have the right ends; it is not unique, since reversing the darts of a loop is a
+nontrivial automorphism of a Serre graph which induces the identity of its multigraph. Hence two
+Serre graphs are isomorphic exactly when their underlying multigraphs are
+(`SerreGraph.nonempty_iso_iff_nonempty_toGraph_iso`).
 
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §§2.1–2.2.
+* I. Kapovich, R. Weidmann, A. Miasnikov, *Foldings, graphs of groups and the membership
+  problem*, Convention 2.1 and Convention 3.2.
 -/
 
 public section
@@ -62,6 +77,10 @@ def edgeSetoid : Setoid Γ.E where
         · exact Or.inr h
         · exact Or.inl (by rw [h, k, Γ.rev_rev])⟩
 
+/-- Two darts are related by `edgeSetoid` exactly when they are equal or reverse one another. -/
+@[simp] theorem edgeSetoid_apply (e f : Γ.E) : Γ.edgeSetoid e f ↔ e = f ∨ e = Γ.rev f :=
+  Iff.rfl
+
 /-- The undirected edge carried by a dart, identified with its reverse. -/
 abbrev Edge : Type _ := Quotient Γ.edgeSetoid
 
@@ -83,6 +102,49 @@ theorem edge_surjective : Function.Surjective Γ.edge := Quotient.mk_surjective
 /-- Two darts determine the same edge exactly when they agree up to reversal. -/
 theorem edge_eq_iff (e f : Γ.E) :
     Γ.edge e = Γ.edge f ↔ e = f ∨ e = Γ.rev f := Quotient.eq
+
+/-- A bijection of darts commuting with reversal induces a bijection of reversal orbits. -/
+def Edge.congr {Δ : SerreGraph} (f : Γ.E ≃ Δ.E) (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) :
+    Γ.Edge ≃ Δ.Edge :=
+  Quotient.congr f fun _ _ ↦ by simp [← hf]
+
+@[simp] theorem Edge.congr_edge {Δ : SerreGraph} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Γ.E) :
+    Edge.congr Γ f hf (Γ.edge e) = Δ.edge (f e) :=
+  (rfl)
+
+@[simp] theorem Edge.congr_symm_edge {Δ : SerreGraph} (f : Γ.E ≃ Δ.E)
+    (hf : ∀ e, f (Γ.rev e) = Δ.rev (f e)) (e : Δ.E) :
+    (Edge.congr Γ f hf).symm (Δ.edge e) = Γ.edge (f.symm e) :=
+  (rfl)
+
+/-- The reversal orbits of darts are the geometric edges. -/
+def geomEdgeEquivEdge : Γ.GeomEdge ≃ Γ.Edge where
+  toFun := GeomEdge.lift Γ Γ.edge Γ.edge_rev
+  invFun := Quotient.lift Γ.toGeomEdge fun e e' h ↦ by
+    rcases h with rfl | rfl
+    exacts [rfl, Γ.toGeomEdge_rev e']
+  left_inv x := by
+    obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
+    rw [GeomEdge.lift_toGeomEdge]
+    rfl
+  right_inv q := by
+    induction q using Edge.ind with
+    | h e => exact GeomEdge.lift_toGeomEdge ..
+
+@[simp] theorem geomEdgeEquivEdge_toGeomEdge (e : Γ.E) :
+    Γ.geomEdgeEquivEdge (Γ.toGeomEdge e) = Γ.edge e :=
+  GeomEdge.lift_toGeomEdge ..
+
+@[simp] theorem geomEdgeEquivEdge_symm_edge (e : Γ.E) :
+    Γ.geomEdgeEquivEdge.symm (Γ.edge e) = Γ.toGeomEdge e :=
+  (rfl)
+
+variable {Γ} in
+/-- An orientation contains exactly one dart of every reversal orbit. -/
+theorem IsOrientation.bijective_edge {O : Set Γ.E} (hO : Γ.IsOrientation O) :
+    Function.Bijective fun e : O ↦ Γ.edge e := by
+  simpa [Function.comp_def] using Γ.geomEdgeEquivEdge.bijective.comp hO.bijective_toGeomEdge
 
 /-- The ends of a reversal orbit, as an unordered pair. -/
 def edgeEnds (q : Γ.Edge) : Sym2 Γ.V :=
@@ -377,6 +439,52 @@ def toSimpleGraphEndpointGraphIsoToGraph (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O
     (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (x : Γ.toGraph.vertexSet) :
     ((toSimpleGraphEndpointGraphIsoToGraph hO).symm x : Γ.V) = x := (rfl)
 
+private theorem IsOrientation.bijective_edge_endpointGraph (hO : Γ.IsOrientation O) :
+    Function.Bijective fun e : (Γ.endpointGraph O).edgeSet ↦
+      (⟨Γ.edge e, by simp⟩ : Γ.toGraph.edgeSet) :=
+  (Equiv.subtypeUnivEquiv fun _ ↦ by simp).symm.bijective.comp hO.bijective_edge
+
+/-- For an orientation `O` of a Serre graph, the multigraph of the darts of `O`, each joining its
+source to its target, is isomorphic to the multigraph of reversal pairs: the isomorphism is the
+identity on vertices and sends a dart of `O` to its reversal orbit. -/
+noncomputable def IsOrientation.endpointGraphIsoToGraph (hO : Γ.IsOrientation O) :
+    (Γ.endpointGraph O).Iso Γ.toGraph where
+  vertexEquiv := Equiv.subtypeEquivRight fun _ ↦ by simp
+  edgeEquiv := .ofBijective _ hO.bijective_edge_endpointGraph
+  map_isLink_iff := by
+    rintro ⟨e, he : e ∈ O⟩ a b
+    simp [he]
+
+/-- The isomorphism of the multigraph of an orientation with the multigraph of reversal pairs is
+the identity on vertices. -/
+@[simp] theorem IsOrientation.coe_endpointGraphIsoToGraph_vertexEquiv_apply
+    (hO : Γ.IsOrientation O) (x : (Γ.endpointGraph O).vertexSet) :
+    (hO.endpointGraphIsoToGraph.vertexEquiv x : Γ.V) = x := (rfl)
+
+@[simp] theorem IsOrientation.coe_endpointGraphIsoToGraph_vertexEquiv_symm_apply
+    (hO : Γ.IsOrientation O) (x : Γ.toGraph.vertexSet) :
+    (hO.endpointGraphIsoToGraph.vertexEquiv.symm x : Γ.V) = x := (rfl)
+
+/-- The isomorphism of the multigraph of an orientation with the multigraph of reversal pairs
+sends a dart of the orientation to its reversal orbit. -/
+@[simp] theorem IsOrientation.coe_endpointGraphIsoToGraph_edgeEquiv_apply
+    (hO : Γ.IsOrientation O) (e : (Γ.endpointGraph O).edgeSet) :
+    (hO.endpointGraphIsoToGraph.edgeEquiv e : Γ.Edge) = Γ.edge e := (rfl)
+
+/-- The inverse of the isomorphism of the multigraph of an orientation with the multigraph of
+reversal pairs sends the reversal orbit of a dart of the orientation to that dart. -/
+@[simp] theorem IsOrientation.coe_endpointGraphIsoToGraph_edgeEquiv_symm_edge
+    (hO : Γ.IsOrientation O) {e : Γ.E} (he : e ∈ O) :
+    (hO.endpointGraphIsoToGraph.edgeEquiv.symm ⟨Γ.edge e, by simp⟩ : Γ.E) = e :=
+  congrArg Subtype.val ((hO.endpointGraphIsoToGraph.edgeEquiv.symm_apply_eq (y := ⟨e, he⟩)).2 rfl)
+
+/-- The inverse of the isomorphism of the multigraph of an orientation with the multigraph of
+reversal pairs sends a reversal orbit to a dart of the orientation in that orbit. -/
+@[simp] theorem IsOrientation.edge_endpointGraphIsoToGraph_edgeEquiv_symm
+    (hO : Γ.IsOrientation O) (q : Γ.toGraph.edgeSet) :
+    Γ.edge (hO.endpointGraphIsoToGraph.edgeEquiv.symm q : Γ.E) = q :=
+  congrArg Subtype.val (hO.endpointGraphIsoToGraph.edgeEquiv.apply_symm_apply q)
+
 /-- For a dart set containing at least one dart of every reversal pair, two vertices are joined
 by a walk in the multigraph of its darts exactly when a path of the Serre graph joins them. -/
 theorem reachable_endpointGraph_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) (x y : Γ.V) :
@@ -422,6 +530,206 @@ theorem IsOrientation.connected_endpointGraph_iff (hO : Γ.IsOrientation O) :
   SerreGraph.connected_endpointGraph_iff hO.mem_or_rev_mem
 
 end EndpointGraph
+
+section Iso
+
+variable {Γ} {Δ Θ : SerreGraph}
+
+namespace Iso
+
+/-- The bijection of reversal orbits induced by an isomorphism of Serre graphs. -/
+def edgeEquiv (φ : Γ.Iso Δ) : Γ.Edge ≃ Δ.Edge :=
+  Edge.congr Γ φ.equivE φ.map_rev
+
+@[simp] theorem edgeEquiv_edge (φ : Γ.Iso Δ) (e : Γ.E) :
+    φ.edgeEquiv (Γ.edge e) = Δ.edge (φ.equivE e) :=
+  (rfl)
+
+@[simp] theorem edgeEquiv_symm_edge (φ : Γ.Iso Δ) (e : Δ.E) :
+    φ.edgeEquiv.symm (Δ.edge e) = Γ.edge (φ.equivE.symm e) :=
+  (rfl)
+
+@[simp] theorem edgeEquiv_refl (Γ : SerreGraph) : (refl Γ).edgeEquiv = Equiv.refl Γ.Edge :=
+  Equiv.ext fun q ↦ by induction q using Edge.ind with | h e => simp
+
+@[simp] theorem edgeEquiv_symm (φ : Γ.Iso Δ) : φ.symm.edgeEquiv = φ.edgeEquiv.symm :=
+  Equiv.ext fun q ↦ by induction q using Edge.ind with | h e => simp
+
+@[simp] theorem edgeEquiv_trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
+    (φ.trans ψ).edgeEquiv = φ.edgeEquiv.trans ψ.edgeEquiv :=
+  Equiv.ext fun q ↦ by induction q using Edge.ind with | h e => simp
+
+/-- The isomorphism of underlying multigraphs induced by an isomorphism of Serre graphs: a vertex
+goes to its image, and the reversal orbit of a dart to the reversal orbit of its image. -/
+def toGraphIso (φ : Γ.Iso Δ) : Γ.toGraph.Iso Δ.toGraph where
+  vertexEquiv := φ.equivV.subtypeEquiv fun _ ↦ by simp
+  edgeEquiv := φ.edgeEquiv.subtypeEquiv fun _ ↦ by simp
+  map_isLink_iff q a b := by
+    obtain ⟨q, hq⟩ := q
+    induction q using Edge.ind with
+    | h e =>
+      simp only [Equiv.subtypeEquiv_apply, edgeEquiv_edge, toGraph_isLink, edgeEnds_edge,
+        map_src, map_tgt, ← Sym2.map_mk]
+      exact (Sym2.map.injective φ.equivV.injective).eq_iff
+
+/-- The induced isomorphism of multigraphs is the vertex bijection on vertices. -/
+@[simp] theorem coe_toGraphIso_vertexEquiv_apply (φ : Γ.Iso Δ) (x : Γ.toGraph.vertexSet) :
+    (φ.toGraphIso.vertexEquiv x : Δ.V) = φ.equivV x := (rfl)
+
+@[simp] theorem coe_toGraphIso_vertexEquiv_symm_apply (φ : Γ.Iso Δ) (x : Δ.toGraph.vertexSet) :
+    (φ.toGraphIso.vertexEquiv.symm x : Γ.V) = φ.equivV.symm x := (rfl)
+
+/-- The induced isomorphism of multigraphs is the bijection of reversal orbits on edges. -/
+@[simp] theorem coe_toGraphIso_edgeEquiv_apply (φ : Γ.Iso Δ) (q : Γ.toGraph.edgeSet) :
+    (φ.toGraphIso.edgeEquiv q : Δ.Edge) = φ.edgeEquiv q := (rfl)
+
+@[simp] theorem coe_toGraphIso_edgeEquiv_symm_apply (φ : Γ.Iso Δ) (q : Δ.toGraph.edgeSet) :
+    (φ.toGraphIso.edgeEquiv.symm q : Γ.Edge) = φ.edgeEquiv.symm q := (rfl)
+
+private theorem graphIso_ext {φ ψ : Γ.toGraph.Iso Δ.toGraph}
+    (hV : ∀ x, (φ.vertexEquiv x : Δ.V) = ψ.vertexEquiv x)
+    (hE : ∀ e he, (φ.edgeEquiv ⟨Γ.edge e, he⟩ : Δ.Edge) = ψ.edgeEquiv ⟨Γ.edge e, he⟩) : φ = ψ := by
+  refine Graph.Iso.ext (Equiv.ext fun x ↦ Subtype.ext (hV x)) (Equiv.ext fun q ↦ ?_)
+  obtain ⟨q, hq⟩ := q
+  induction q using Edge.ind with
+  | h e => exact Subtype.ext (hE e hq)
+
+/-- The identity of a Serre graph induces the identity of its multigraph. -/
+@[simp] theorem toGraphIso_refl (Γ : SerreGraph) : (refl Γ).toGraphIso = Graph.Iso.refl Γ.toGraph :=
+  graphIso_ext (fun _ ↦ by simp) fun _ _ ↦ by simp
+
+/-- Inducing isomorphisms of multigraphs is compatible with composition. -/
+@[simp] theorem toGraphIso_trans (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ) :
+    (φ.trans ψ).toGraphIso = φ.toGraphIso.trans ψ.toGraphIso :=
+  graphIso_ext (fun _ ↦ by simp) fun _ _ ↦ by simp
+
+/-- Inducing isomorphisms of multigraphs is compatible with inverses. -/
+@[simp] theorem toGraphIso_symm (φ : Γ.Iso Δ) : φ.symm.toGraphIso = φ.toGraphIso.symm :=
+  graphIso_ext (fun _ ↦ by simp) fun _ _ ↦ by simp
+
+section Lift
+
+variable (φ : Γ.toGraph.Iso Δ.toGraph)
+
+/-- The bijection of all vertices underlying an isomorphism of underlying multigraphs. -/
+private def liftV : Γ.V ≃ Δ.V :=
+  (Equiv.subtypeUnivEquiv fun _ ↦ by simp).symm.trans
+    (φ.vertexEquiv.trans (Equiv.subtypeUnivEquiv fun _ ↦ by simp))
+
+/-- The bijection of all reversal orbits underlying an isomorphism of underlying multigraphs. -/
+private def liftOrbit : Γ.Edge ≃ Δ.Edge :=
+  (Equiv.subtypeUnivEquiv fun _ ↦ by simp).symm.trans
+    (φ.edgeEquiv.trans (Equiv.subtypeUnivEquiv fun _ ↦ by simp))
+
+private theorem exists_liftDart (e : Γ.E) :
+    ∃ f : Quiver.Hom (liftV φ (Γ.src e)) (liftV φ (Γ.tgt e)), Δ.edge f.1 = liftOrbit φ (Γ.edge e) :=
+  Δ.exists_hom_of_toGraph_isLink <|
+    (φ.map_isLink_iff ⟨Γ.edge e, by simp⟩ ⟨Γ.src e, by simp⟩ ⟨Γ.tgt e, by simp⟩).2
+      (by simp)
+
+/-- A dart above the image of the orbit of a dart, joining the images of its ends. -/
+private noncomputable def liftDart (e : Γ.E) : Δ.E := (exists_liftDart φ e).choose.1
+
+private theorem src_liftDart (e : Γ.E) : Δ.src (liftDart φ e) = liftV φ (Γ.src e) :=
+  (exists_liftDart φ e).choose.2.1
+
+private theorem tgt_liftDart (e : Γ.E) : Δ.tgt (liftDart φ e) = liftV φ (Γ.tgt e) :=
+  (exists_liftDart φ e).choose.2.2
+
+private theorem edge_liftDart (e : Γ.E) : Δ.edge (liftDart φ e) = liftOrbit φ (Γ.edge e) :=
+  (exists_liftDart φ e).choose_spec
+
+open Classical in
+/-- The dart map of the lift: `liftDart` on a chosen orientation, extended to the reverse darts
+by reversal. -/
+private noncomputable def liftE (e : Γ.E) : Δ.E :=
+  if e ∈ Γ.exists_isOrientation.choose then liftDart φ e else Δ.rev (liftDart φ (Γ.rev e))
+
+private theorem liftE_rev (e : Γ.E) : liftE φ (Γ.rev e) = Δ.rev (liftE φ e) := by
+  by_cases he : e ∈ Γ.exists_isOrientation.choose <;>
+    simp [liftE, he, Γ.exists_isOrientation.choose_spec.mem_rev_iff Γ e]
+
+private theorem src_liftE (e : Γ.E) : Δ.src (liftE φ e) = liftV φ (Γ.src e) := by
+  by_cases he : e ∈ Γ.exists_isOrientation.choose <;> simp [liftE, he, src_liftDart, tgt_liftDart]
+
+private theorem edge_liftE (e : Γ.E) : Δ.edge (liftE φ e) = liftOrbit φ (Γ.edge e) := by
+  by_cases he : e ∈ Γ.exists_isOrientation.choose <;> simp [liftE, he, edge_liftDart]
+
+/-- The morphism of Serre graphs lifting an isomorphism of underlying multigraphs. -/
+private noncomputable def liftHom : Γ.Hom Δ where
+  mapV := liftV φ
+  mapE := liftE φ
+  map_src := src_liftE φ
+  map_rev := liftE_rev φ
+
+private theorem liftE_injective : Function.Injective (liftE φ) := by
+  intro e e' h
+  have hq : liftOrbit φ (Γ.edge e) = liftOrbit φ (Γ.edge e') := by
+    rw [← edge_liftE, ← edge_liftE, h]
+  rcases (Γ.edge_eq_iff _ _).1 ((liftOrbit φ).injective hq) with rfl | rfl
+  · rfl
+  · rw [liftE_rev] at h
+    exact absurd h (Δ.rev_ne _)
+
+private theorem liftE_surjective : Function.Surjective (liftE φ) := by
+  intro f
+  obtain ⟨e, he⟩ := Γ.edge_surjective ((liftOrbit φ).symm (Δ.edge f))
+  have hf : Δ.edge (liftE φ e) = Δ.edge f := by
+    rw [edge_liftE, he, Equiv.apply_symm_apply]
+  rcases (Δ.edge_eq_iff _ _).1 hf with h | h
+  · exact ⟨e, h⟩
+  · exact ⟨Γ.rev e, by rw [liftE_rev, h, rev_rev]⟩
+
+end Lift
+
+/-- An isomorphism of the underlying multigraphs of two Serre graphs lifts to an isomorphism of
+the Serre graphs. Each dart goes to a dart over the image of its reversal orbit, with the image
+ends; for a loop the direction is chosen, compatibly with reversal. -/
+noncomputable def ofToGraphIso (φ : Γ.toGraph.Iso Δ.toGraph) : Γ.Iso Δ :=
+  (liftHom φ).toIso (liftV φ).bijective ⟨liftE_injective φ, liftE_surjective φ⟩
+
+/-- The lift of a multigraph isomorphism is that isomorphism on vertices. -/
+@[simp] theorem ofToGraphIso_equivV_apply (φ : Γ.toGraph.Iso Δ.toGraph) (v : Γ.V) :
+    (ofToGraphIso φ).equivV v = φ.vertexEquiv ⟨v, by simp⟩ :=
+  Hom.toIso_equivV_apply _ _ _ _
+
+@[simp] theorem ofToGraphIso_equivV_symm_apply (φ : Γ.toGraph.Iso Δ.toGraph) (v : Δ.V) :
+    (ofToGraphIso φ).equivV.symm v = φ.vertexEquiv.symm ⟨v, by simp⟩ := by
+  rw [Equiv.symm_apply_eq, ofToGraphIso_equivV_apply]
+  simp
+
+/-- The lift of a multigraph isomorphism sends each dart into the image of its reversal orbit. -/
+@[simp] theorem edge_ofToGraphIso_equivE (φ : Γ.toGraph.Iso Δ.toGraph) (e : Γ.E) :
+    Δ.edge ((ofToGraphIso φ).equivE e) = φ.edgeEquiv ⟨Γ.edge e, by simp⟩ :=
+  (congrArg Δ.edge (Hom.toIso_equivE_apply _ _ _ _)).trans (edge_liftE φ e)
+
+@[simp] theorem edge_ofToGraphIso_equivE_symm (φ : Γ.toGraph.Iso Δ.toGraph) (e : Δ.E) :
+    Γ.edge ((ofToGraphIso φ).equivE.symm e) = φ.edgeEquiv.symm ⟨Δ.edge e, by simp⟩ := by
+  obtain ⟨d, rfl⟩ := (ofToGraphIso φ).equivE.surjective e
+  simp
+
+/-- The lift of a multigraph isomorphism is that isomorphism on reversal orbits. -/
+@[simp] theorem ofToGraphIso_edgeEquiv_apply (φ : Γ.toGraph.Iso Δ.toGraph) (q : Γ.Edge) :
+    (ofToGraphIso φ).edgeEquiv q = φ.edgeEquiv ⟨q, by simp⟩ := by
+  induction q using Edge.ind with | h e => simp
+
+@[simp] theorem ofToGraphIso_edgeEquiv_symm_apply (φ : Γ.toGraph.Iso Δ.toGraph) (q : Δ.Edge) :
+    (ofToGraphIso φ).edgeEquiv.symm q = φ.edgeEquiv.symm ⟨q, by simp⟩ := by
+  induction q using Edge.ind with | h e => simp
+
+/-- The lift of a multigraph isomorphism induces that multigraph isomorphism. -/
+@[simp] theorem toGraphIso_ofToGraphIso (φ : Γ.toGraph.Iso Δ.toGraph) :
+    (ofToGraphIso φ).toGraphIso = φ :=
+  graphIso_ext (fun _ ↦ by simp) fun _ _ ↦ by simp
+
+end Iso
+
+/-- Two Serre graphs are isomorphic exactly when their underlying multigraphs are. -/
+theorem nonempty_iso_iff_nonempty_toGraph_iso :
+    Nonempty (Γ.Iso Δ) ↔ Nonempty (Γ.toGraph.Iso Δ.toGraph) :=
+  ⟨Nonempty.map Iso.toGraphIso, Nonempty.map Iso.ofToGraphIso⟩
+
+end Iso
 
 /-- Every connected component of the underlying multigraph is the component of a vertex. -/
 theorem toGraph_connectedComponentOf_surjective :
