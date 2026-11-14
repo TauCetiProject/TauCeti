@@ -43,6 +43,7 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two positive times,
   `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
+* `TauCeti.continuousOn_uncurry_heatKernel`: `(t, x) ↦ K_t(x)` is continuous for `t > 0`.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
 * `TauCeti.memLp_heatKernel`: `K_t` belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`.
@@ -125,6 +126,19 @@ theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 <
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
   contDiff_const.mul (((contDiff_norm_sq ℝ).neg.div_const _).exp)
+
+/-- The heat kernel is jointly continuous in time and space at positive times. -/
+theorem continuousOn_uncurry_heatKernel :
+    ContinuousOn (Function.uncurry (heatKernel : ℝ → E → ℝ)) (Set.Ioi 0 ×ˢ Set.univ) := by
+  intro z hz
+  have hz1 : 0 < z.1 := hz.1
+  refine ContinuousAt.continuousWithinAt ?_
+  simp only [Function.uncurry_def, heatKernel_apply]
+  refine ContinuousAt.mul ?_ ?_
+  · exact (continuousAt_const.mul continuousAt_fst).rpow_const
+      (Or.inl (mul_pos (by positivity) hz1).ne')
+  · exact ((continuous_norm.comp continuous_snd).pow 2).neg.continuousAt.div
+      (continuousAt_const.mul continuousAt_fst) (mul_pos (by positivity) hz1).ne' |>.rexp
 
 section Laplacian
 
