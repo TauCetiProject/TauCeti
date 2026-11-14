@@ -66,6 +66,20 @@ instance quasiIso_tensorHom_id_of_isKFlat
   rw [h]
   infer_instance
 
+/-- A quasi-isomorphism between K-flat complexes of modules remains a quasi-isomorphism after
+tensoring on the left with an arbitrary, possibly unbounded, complex. -/
+instance quasiIso_id_tensorHom_of_isKFlat
+    (A : CochainComplex (ModuleCat.{u} R) ℤ)
+    {K L : CochainComplex (ModuleCat.{u} R) ℤ} [K.IsKFlat] [L.IsKFlat]
+    (f : K ⟶ L) [QuasiIso f] :
+    QuasiIso (tensorHom (𝟙 A) f) := by
+  rw [HomologicalComplex.tensorHom, ← whiskerLeft_eq_mapBifunctorMap]
+  have : QuasiIso (f ▷ A) := by
+    rw [whiskerRight_eq_mapBifunctorMap]
+    exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 A)))
+  exact quasiIso_of_arrow_mk_iso (f ▷ A) (A ◁ f)
+    (Arrow.isoMk (β_ K A) (β_ L A) (BraidedCategory.braiding_naturality_left f A).symm)
+
 variable [HasDerivedCategory (ModuleCat.{u} R)]
 
 /-- A quasi-isomorphism of K-flat models induces an invertible transformation on the entire
