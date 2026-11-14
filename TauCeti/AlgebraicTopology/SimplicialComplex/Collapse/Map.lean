@@ -48,13 +48,6 @@ namespace PreAbstractSimplicialComplex
 variable {α β : Type*} [DecidableEq β]
 variable {K L : _root_.PreAbstractSimplicialComplex α}
 
-private theorem map_injective (f : α → β) (hf : Function.Injective f) :
-    Function.Injective (fun K : _root_.PreAbstractSimplicialComplex α => K.map f) := by
-  intro K L hKL
-  apply SetLike.ext'
-  apply (Finset.image_injective hf).image_injective
-  exact congrArg (fun P => P.faces) hKL
-
 /-- Mapping a one-vertex complex along any vertex map gives the one-vertex complex at the image
 vertex. -/
 @[simp]
@@ -68,25 +61,6 @@ theorem map_point (f : α → β) (v : α) : (point v).map f = point (f v) := by
     simp
   · rintro rfl
     exact ⟨{v}, mem_point.mpr rfl, by simp⟩
-
-/-- An injective vertex map commutes with deletion: a face contains the image of `σ` exactly when
-its unique preimage face contains `σ`. -/
-@[simp]
-theorem map_deletion (f : α → β) (hf : Function.Injective f) (K : PreAbstractSimplicialComplex α)
-    (σ : Finset α) : (deletion K σ).map f = deletion (K.map f) (σ.image f) := by
-  refine SetLike.ext fun ω => ?_
-  constructor
-  · intro hω
-    obtain ⟨ρ, hρ, rfl⟩ := mem_map_iff.mp hω
-    obtain ⟨hρK, hσρ⟩ := mem_deletion.mp hρ
-    refine mem_deletion.mpr ⟨mem_map_iff.mpr ⟨ρ, hρK, rfl⟩, fun h => hσρ ?_⟩
-    exact (Finset.image_subset_image_iff hf).mp h
-  · intro hω
-    obtain ⟨hωK, hσρ⟩ := mem_deletion.mp hω
-    obtain ⟨ρ, hρK, hρω⟩ := mem_map_iff.mp hωK
-    subst ω
-    refine mem_map_iff.mpr ⟨ρ, mem_deletion.mpr ⟨hρK, fun h => hσρ ?_⟩, rfl⟩
-    exact Finset.image_subset_image h
 
 namespace IsFreePair
 
@@ -117,10 +91,8 @@ theorem map_iff_of_injective (f : α → β) (hf : Function.Injective f) :
         upper_mem := ?_
         lower_ssubset_upper := (Finset.image_ssubset_image hf).mp h.lower_ssubset_upper
         eq_lower_or_eq_upper := ?_ }
-    · obtain ⟨ρ, hρ, hρσ⟩ := mem_map_iff.mp h.lower_mem
-      simpa only [(Finset.image_inj hf).mp hρσ] using hρ
-    · obtain ⟨ρ, hρ, hρτ⟩ := mem_map_iff.mp h.upper_mem
-      simpa only [(Finset.image_inj hf).mp hρτ] using hρ
+    · exact (image_mem_map_iff_of_injective f hf).mp h.lower_mem
+    · exact (image_mem_map_iff_of_injective f hf).mp h.upper_mem
     · intro ω hω hσω
       have hω' : ω.image f ∈ K.map f := mem_map_iff.mpr ⟨ω, hω, rfl⟩
       have hσω' : σ.image f ⊆ ω.image f := Finset.image_subset_image hσω
@@ -141,7 +113,7 @@ theorem map (h : ElementaryCollapsesTo K L) (f : α → β) (hf : Function.Injec
   have hL : L = deletion K σ := SetLike.ext fun ω =>
     (hmem ω).trans <| (mem_deletion_of_isFreePair K hfree).symm.trans mem_deletion.symm
   subst L
-  exact of_isFreePair (hfree.map f hf) (map_deletion f hf K σ)
+  exact of_isFreePair (hfree.map f hf) (map_deletion f hf)
 
 private theorem exists_of_map_left {P : _root_.PreAbstractSimplicialComplex β}
     {f : α → β} (hf : Function.Injective f) (h : ElementaryCollapsesTo (K.map f) P) :
@@ -158,7 +130,7 @@ private theorem exists_of_map_left {P : _root_.PreAbstractSimplicialComplex β}
   subst τ'
   have hfree' : IsFreePair K σ τ :=
     (IsFreePair.map_iff_of_injective f hf).mp hfree
-  exact ⟨deletion K σ, (map_deletion f hf K σ).symm, of_isFreePair hfree' rfl⟩
+  exact ⟨deletion K σ, (map_deletion f hf).symm, of_isFreePair hfree' rfl⟩
 
 /-- An injective relabeling preserves and reflects an elementary collapse. -/
 theorem map_iff_of_injective (f : α → β) (hf : Function.Injective f) :
@@ -227,13 +199,7 @@ theorem map_iff_of_injective (f : α → β) (hf : Function.Injective f) :
   constructor
   · intro h
     obtain ⟨w, hw⟩ := collapsible_iff.mp h
-    have hwK : ({w} : Finset β) ∈ K.map f := point_le_iff.mp hw.le
-    obtain ⟨σ, hσ, hσw⟩ := mem_map_iff.mp hwK
-    obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
-    have hvw : f v = w := by
-      have : f v ∈ σ.image f := Finset.mem_image.mpr ⟨v, hv, rfl⟩
-      rw [hσw, Finset.mem_singleton] at this
-      exact this
+    obtain ⟨v, _, hvw⟩ := singleton_mem_map_iff.mp (point_le_iff.mp hw.le)
     refine collapsible_iff.mpr ⟨v, (CollapsesTo.map_iff_of_injective f hf).mp ?_⟩
     simpa [hvw] using hw
   · exact fun h => h.map f hf
