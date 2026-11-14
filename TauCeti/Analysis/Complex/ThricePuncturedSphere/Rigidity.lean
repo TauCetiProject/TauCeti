@@ -30,8 +30,8 @@ and `1` is the identity.
 
 ## Main results
 
-* `TauCeti.ThricePuncturedSphere.eqOn_id_of_injOn`: an injective holomorphic self-map of `S`
-  fixing the punctures `0` and `1` is the identity.
+* `TauCeti.ThricePuncturedSphere.eqOn_id_of_injOn`: a map holomorphic and injective on `S`
+  tending to `0` at `0` and to `1` at `1` is the identity of `S`.
 
 ## References
 
