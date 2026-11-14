@@ -39,36 +39,24 @@ open MeasureTheory Set
 
 namespace TauCeti
 
-private lemma image_exp_neg_Ioi : (fun u : ℝ ↦ Real.exp (-u)) '' Ioi 0 = Ioo 0 1 := by
-  ext t
-  constructor
-  · rintro ⟨u, hu, rfl⟩
-    exact ⟨Real.exp_pos _, Real.exp_lt_one_iff.mpr (neg_lt_zero.mpr hu)⟩
-  · rintro ⟨ht0, ht1⟩
-    exact ⟨-Real.log t, neg_pos.mpr (Real.log_neg ht0 ht1), by simp [Real.exp_log ht0]⟩
-
-private lemma injOn_exp_neg : InjOn (fun u : ℝ ↦ Real.exp (-u)) (Ioi 0) :=
-  fun _ _ _ _ h ↦ neg_injective (Real.exp_injective h)
-
-private lemma hasDerivWithinAt_exp_neg (u : ℝ) :
-    HasDerivWithinAt (fun x : ℝ ↦ Real.exp (-x)) (-Real.exp (-u)) (Ioi 0) u := by
-  simpa using ((hasDerivAt_id u).neg.exp).hasDerivWithinAt
-
 /-- For `r > -1` and `k : ℕ`, the logarithmic moment integrand `t ↦ t ^ r * (-log t) ^ k` is
 interval integrable on `[0, 1]`. -/
 theorem intervalIntegrable_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
     IntervalIntegrable (fun t : ℝ ↦ t ^ r * (-Real.log t) ^ k) volume 0 1 := by
-  rw [intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one, ← image_exp_neg_Ioi,
-    integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi
-      (fun u _ ↦ hasDerivWithinAt_exp_neg u) injOn_exp_neg]
-  have hgam : IntegrableOn (fun u : ℝ ↦ u ^ (k : ℝ) * Real.exp (-(r + 1) * u ^ (1 : ℝ))) (Ioi 0) :=
-    integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith [Nat.cast_nonneg (α := ℝ) k])
+  rw [intervalIntegrable_iff_integrableOn_Ioo_of_le zero_le_one,
+    show Ioo (0 : ℝ) 1 = Real.exp '' Iio 0 by rw [Real.image_exp_Iio, Real.exp_zero],
+    integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Iio
+      (fun u _ ↦ (Real.hasDerivAt_exp u).hasDerivWithinAt) Real.exp_injective.injOn]
+  have hgam :
+      IntegrableOn (fun u : ℝ ↦ u ^ (k : ℝ) * Real.exp (-(r + 1) * u ^ (1 : ℝ))) (Ioi (-0)) := by
+    rw [neg_zero]
+    exact integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith [Nat.cast_nonneg (α := ℝ) k])
       zero_lt_one (by linarith)
-  refine hgam.congr_fun (fun u _ ↦ ?_) measurableSet_Ioi
+  refine hgam.comp_neg_Iio.congr_fun (fun u _ ↦ ?_) measurableSet_Iio
   dsimp only
-  rw [smul_eq_mul, abs_neg, abs_of_pos (Real.exp_pos _), Real.rpow_one, Real.rpow_natCast,
-    ← Real.exp_mul, Real.log_exp, neg_neg]
-  rw [mul_comm (u ^ k), ← mul_assoc, ← Real.exp_add]
+  rw [smul_eq_mul, abs_of_pos (Real.exp_pos _), Real.rpow_one, Real.rpow_natCast,
+    ← Real.exp_mul, Real.log_exp]
+  rw [mul_comm ((-u) ^ k), ← mul_assoc, ← Real.exp_add]
   congr 2
   ring
 
@@ -83,15 +71,16 @@ theorem intervalIntegrable_pow_mul_neg_log_pow (m k : ℕ) :
 theorem integral_rpow_mul_neg_log_pow {r : ℝ} (hr : -1 < r) (k : ℕ) :
     ∫ t : ℝ in 0..1, t ^ r * (-Real.log t) ^ k = (k.factorial : ℝ) / (r + 1) ^ (k + 1) := by
   have hr1 : 0 < r + 1 := by linarith
-  rw [intervalIntegral.integral_of_le zero_le_one, integral_Ioc_eq_integral_Ioo,
-    ← image_exp_neg_Ioi,
-    integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi
-      (fun u _ ↦ hasDerivWithinAt_exp_neg u) injOn_exp_neg]
+  rw [intervalIntegral.integral_of_le zero_le_one,
+    show Ioc (0 : ℝ) 1 = Real.exp '' Iic 0 by rw [Real.image_exp_Iic, Real.exp_zero],
+    integral_image_eq_integral_abs_deriv_smul measurableSet_Iic
+      (fun u _ ↦ (Real.hasDerivAt_exp u).hasDerivWithinAt) Real.exp_injective.injOn,
+    show Iic (0 : ℝ) = Iic (-0) by simp, ← integral_comp_neg_Ioi]
   have hcongr : ∫ u : ℝ in Ioi 0,
-      |-Real.exp (-u)| • (Real.exp (-u) ^ r * (-Real.log (Real.exp (-u))) ^ k) =
+      |Real.exp (-u)| • (Real.exp (-u) ^ r * (-Real.log (Real.exp (-u))) ^ k) =
       ∫ u : ℝ in Ioi 0, u ^ (((k + 1 : ℕ) : ℝ) - 1) * Real.exp (-((r + 1) * u)) := by
     refine setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_
-    rw [smul_eq_mul, abs_neg, abs_of_pos (Real.exp_pos _), ← Real.exp_mul, Real.log_exp, neg_neg,
+    rw [smul_eq_mul, abs_of_pos (Real.exp_pos _), ← Real.exp_mul, Real.log_exp, neg_neg,
       Nat.cast_add, Nat.cast_one, add_sub_cancel_right, Real.rpow_natCast]
     rw [mul_comm (u ^ k), ← mul_assoc, ← Real.exp_add]
     congr 2
