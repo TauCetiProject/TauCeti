@@ -246,7 +246,6 @@ variable {R β γ δ : Type*} [TopologicalSpace β] [TopologicalSpace γ] [Topol
 variable (R δ) in
 /-- Reindexing `C₀(α, δ)` along a homeomorphism `e : α ≃ₜ β` as a star-algebra equivalence
 `f ↦ f ∘ e.symm`, matching `ZeroAtInftyContinuousMap.congrLeft`. -/
-@[expose]
 def congrLeftStarAlgEquiv [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
     [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
     (e : α ≃ₜ β) : C₀(α, δ) ≃⋆ₐ[R] C₀(β, δ) where
@@ -308,21 +307,24 @@ variable {R α β E A : Type*} [TopologicalSpace α] [CompactSpace α]
 theorem isometry_liftZeroAtInfty [PseudoMetricSpace β] [Zero β] :
     Isometry (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty : C(α, β) → C₀(α, β)) :=
   Isometry.of_dist_eq fun f g ↦ by
-    rw [← ZeroAtInftyContinuousMap.dist_toBCF_eq_dist,
-      ← BoundedContinuousFunction.dist_mkOfCompact]
-    congr 1
+    have h (h : C(α, β)) :
+        (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty h).toBCF =
+          BoundedContinuousFunction.mkOfCompact h := by
+      ext x
+      simp
+    rw [← ZeroAtInftyContinuousMap.dist_toBCF_eq_dist, h, h,
+      BoundedContinuousFunction.dist_mkOfCompact]
 
 /-- On a compact space, `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty` preserves the
 supremum norm. -/
 @[simp]
 theorem norm_liftZeroAtInfty [SeminormedAddCommGroup E] (f : C(α, E)) :
     ‖ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f‖ = ‖f‖ :=
-  isometry_liftZeroAtInfty.norm_map_of_map_zero rfl f
+  isometry_liftZeroAtInfty.norm_map_of_map_zero (by ext; simp) f
 
 variable (R α A) in
 /-- On a compact space `α`, `C(α, A)` and `C₀(α, A)` are canonically isomorphic as star
 algebras via `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty`. -/
-@[expose]
 def liftZeroAtInftyStarAlgEquiv [NonUnitalNonAssocSemiring A] [TopologicalSpace A]
     [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [SMulZeroClass R A]
     [ContinuousConstSMul R A] : C(α, A) ≃⋆ₐ[R] C₀(α, A) where

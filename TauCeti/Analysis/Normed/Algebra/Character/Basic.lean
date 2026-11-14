@@ -134,13 +134,6 @@ end TauCeti
 
 namespace WeakDual.CharacterSpace
 
-/-- Every character in `characterSpace 𝕜 A` is nonzero at some element of `A`. -/
-theorem exists_ne_zero {𝕜 A : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
-    [ContinuousConstSMul 𝕜 𝕜] [NonUnitalNonAssocSemiring A] [TopologicalSpace A] [Module 𝕜 A]
-    (χ : characterSpace 𝕜 A) : ∃ a : A, χ a ≠ 0 :=
-  ContinuousLinearMap.exists_ne_zero (f := toCLM χ) fun h ↦
-    χ.prop.1 (WeakDual.toStrongDual.injective h)
-
 section LocallyCompact
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜] [NonUnitalNormedRing A]

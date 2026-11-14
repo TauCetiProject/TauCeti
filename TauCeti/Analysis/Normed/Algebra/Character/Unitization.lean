@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Algebra.Unitization
 public import TauCeti.Analysis.Normed.Algebra.Character.Basic
 public import TauCeti.Topology.Compactification.OnePoint.ComplSingleton
 
+import TauCeti.Topology.Algebra.Module.Spaces.CharacterSpace
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -34,7 +35,7 @@ augmentation character `ε : u ↦ u.fst`, and restricting characters of `Unitiz
   homeomorphic to `OnePoint (characterSpace 𝕜 A)` with `∞` sent to `Unitization.augmentation 𝕜 A`.
 * `Unitization.isOpen_singleton_augmentation_of_forall_mul_eq`,
   `Unitization.isClopen_singleton_augmentation`, and
-  `WeakDual.CharacterSpace.compactSpace_of_isUnital`: when `A` has a right (in particular,
+  `WeakDual.CharacterSpace.compactSpace_of_forall_mul_eq`: when `A` has a right (in particular,
   two-sided) multiplicative identity, `{augmentation 𝕜 A}` is open in
   `characterSpace 𝕜 (Unitization 𝕜 A)` and `characterSpace 𝕜 A` is compact.
 
@@ -44,7 +45,7 @@ augmentation character `ε : u ↦ u.fst`, and restricting characters of `Unitiz
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, §2.1.
 -/
 
-@[expose] public section
+public section
 
 open Filter Function Set Topology OnePoint WeakDual
 
@@ -87,17 +88,6 @@ theorem toAlgHom_augmentation :
     CharacterSpace.toAlgHom (augmentation 𝕜 A) = fstHom 𝕜 A := by
   ext
   rfl
-
-/-- As a ring ideal, the kernel of `Unitization.augmentation 𝕜 A` agrees with `ker (fstHom 𝕜 A)`. -/
-theorem ker_augmentation :
-    RingHom.ker (augmentation 𝕜 A) = RingHom.ker (fstHom 𝕜 A) := by
-  ext
-  rfl
-
-/-- An element of `Unitization 𝕜 A` lies in `ker (augmentation 𝕜 A)` iff its scalar part is `0`. -/
-theorem mem_ker_augmentation {u : Unitization 𝕜 A} :
-    u ∈ RingHom.ker (augmentation 𝕜 A) ↔ u.fst = 0 :=
-  Iff.rfl
 
 /-- An element of `Unitization 𝕜 A` killed by `augmentation 𝕜 A` equals the image of its `A`
 component under `Unitization.inr`. -/
@@ -168,13 +158,6 @@ theorem isOpen_singleton_augmentation_of_forall_mul_eq {e : A} (he : ∀ a : A, 
   exact isClosed_singleton.isOpen_compl.preimage
     ((WeakDual.eval_continuous (e : Unitization 𝕜 A)).comp continuous_subtype_val)
 
-/-- When `IsUnital A` holds, `{augmentation 𝕜 A}` is open in
-`characterSpace 𝕜 (Unitization 𝕜 A)`. -/
-theorem isOpen_singleton_augmentation_of_isUnital [IsUnital A] :
-    IsOpen ({augmentation 𝕜 A} : Set (characterSpace 𝕜 (Unitization 𝕜 A))) := by
-  obtain ⟨e, he⟩ := IsUnital.isUnital (A := A)
-  exact isOpen_singleton_augmentation_of_forall_mul_eq fun a ↦ (he a).2
-
 /-- When `A` is a subsingleton, the augmentation character is the unique character of
 `Unitization 𝕜 A`. -/
 noncomputable instance instUniqueCharacterSpace [Subsingleton A] :
@@ -195,41 +178,11 @@ section UnitalAlgebra
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
 
-/-- When `A` has a multiplicative identity `1`, every character of `Unitization 𝕜 A` sends
-`((1 : A) : Unitization 𝕜 A)` to the idempotent `0` or `1` in `𝕜`. -/
-theorem apply_inr_one_eq_zero_or_one (φ : characterSpace 𝕜 (Unitization 𝕜 A)) :
-    φ ((1 : A) : Unitization 𝕜 A) = 0 ∨ φ ((1 : A) : Unitization 𝕜 A) = 1 :=
-  apply_inr_eq_zero_or_one (one_mul 1) φ
-
-/-- For unital `A`, a character of `Unitization 𝕜 A` is the augmentation character if and only if it
-vanishes at `(1 : A)`. -/
-theorem eq_augmentation_iff_apply_inr_one {φ : characterSpace 𝕜 (Unitization 𝕜 A)} :
-    φ = augmentation 𝕜 A ↔ φ ((1 : A) : Unitization 𝕜 A) = 0 :=
-  eq_augmentation_iff_apply_inr_eq_zero mul_one
-
-/-- For unital `A`, a character of `Unitization 𝕜 A` differs from the augmentation character if and
-only if it sends `(1 : A)` to `1`. -/
-theorem ne_augmentation_iff_apply_inr_one {φ : characterSpace 𝕜 (Unitization 𝕜 A)} :
-    φ ≠ augmentation 𝕜 A ↔ φ ((1 : A) : Unitization 𝕜 A) = 1 :=
-  ne_augmentation_iff_apply_inr_eq_one mul_one
-
-/-- When `A` is unital, the singleton `{augmentation 𝕜 A}` is open in
-`characterSpace 𝕜 (Unitization 𝕜 A)`. -/
-theorem isOpen_singleton_augmentation :
-    IsOpen ({augmentation 𝕜 A} : Set (characterSpace 𝕜 (Unitization 𝕜 A))) :=
-  isOpen_singleton_augmentation_of_forall_mul_eq mul_one
-
 /-- When `A` is unital, `{augmentation 𝕜 A}` is clopen in
 `characterSpace 𝕜 (Unitization 𝕜 A)`. -/
 theorem isClopen_singleton_augmentation :
     IsClopen ({augmentation 𝕜 A} : Set (characterSpace 𝕜 (Unitization 𝕜 A))) :=
-  ⟨isClosed_singleton, isOpen_singleton_augmentation⟩
-
-/-- When `A` is unital, the complement of `augmentation 𝕜 A` is closed in
-`characterSpace 𝕜 (Unitization 𝕜 A)`. -/
-theorem isClosed_compl_singleton_augmentation :
-    IsClosed ({augmentation 𝕜 A}ᶜ : Set (characterSpace 𝕜 (Unitization 𝕜 A))) :=
-  isOpen_singleton_augmentation.isClosed_compl
+  ⟨isClosed_singleton, isOpen_singleton_augmentation_of_forall_mul_eq mul_one⟩
 
 end UnitalAlgebra
 
@@ -395,13 +348,6 @@ theorem compactSpace_of_forall_mul_eq [ProperSpace 𝕜] [CompleteSpace A] {e : 
     TauCeti.compactSpace_complSingleton_iff_isOpen_singleton.mpr
       (Unitization.isOpen_singleton_augmentation_of_forall_mul_eq he)
   exact (unitizationComplAugmentationHomeomorph 𝕜 A).symm.compactSpace
-
-/-- When `IsUnital A` holds for a nonunital Banach algebra `A` over a proper nontrivially normed
-field `𝕜`, `characterSpace 𝕜 A` is compact. -/
-theorem compactSpace_of_isUnital [ProperSpace 𝕜] [CompleteSpace A] [IsUnital A] :
-    CompactSpace (characterSpace 𝕜 A) := by
-  obtain ⟨e, he⟩ := IsUnital.isUnital (A := A)
-  exact compactSpace_of_forall_mul_eq fun a ↦ (he a).2
 
 variable (𝕜 A) in
 /-- When `𝕜` is proper and `A` is complete, `OnePoint (characterSpace 𝕜 A)` is canonically

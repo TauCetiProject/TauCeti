@@ -160,6 +160,19 @@ theorem compactSpace_complSingleton_iff_isOpen_singleton [CompactSpace X] [T2Spa
   rw [← hrange]
   exact (isCompact_range continuous_subtype_val).isClosed
 
+/-- In a compact space `X`, the inclusion of `{x : X // x ≠ x₀}` into `X` tends to `x₀` along the
+cocompact filter. -/
+theorem tendsto_subtypeVal_cocompact_nhds [CompactSpace X] (x₀ : X) :
+    Tendsto (Subtype.val : {x : X // x ≠ x₀} → X) (cocompact {x : X // x ≠ x₀}) (𝓝 x₀) := by
+  rw [hasBasis_cocompact.tendsto_left_iff]
+  intro N hN
+  obtain ⟨U, hU₁, hU₂, hU₃⟩ := mem_nhds_iff.mp hN
+  refine ⟨Subtype.val ⁻¹' Uᶜ, ?_, by simpa using (mapsTo_preimage Subtype.val U).mono_right hU₁⟩
+  have hsub : Uᶜ ⊆ range (Subtype.val : {x : X // x ≠ x₀} → X) := fun x hx ↦
+    ⟨⟨x, fun h ↦ hx (h ▸ hU₃)⟩, rfl⟩
+  rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, image_preimage_eq_iff.mpr hsub]
+  exact hU₂.isClosed_compl.isCompact
+
 section TubeLemma
 
 variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]

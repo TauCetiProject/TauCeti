@@ -25,7 +25,7 @@ This file provides:
   unital (`ContinuousMap.coe_evalKerSubalgebra_eq_idealOfSet`).
 -/
 
-@[expose] public section
+public section
 
 namespace WeakDual.CharacterSpace
 

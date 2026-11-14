@@ -15,15 +15,11 @@ For a compact Hausdorff space `K` and any point `x₀ : K`, the punctured subspa
 `OnePoint.equivOfIsEmbeddingOfRangeEq` identifies `OnePoint {x : K // x ≠ x₀}` homeomorphically with
 `K` by sending `∞` to `x₀` (`TauCeti.onePointComplSingletonHomeomorph`), including when `K` is a
 singleton or `x₀` is isolated.
-
-On any compact space `K` (without Hausdorff assumptions), the subtype inclusion
-`{x : K // x ≠ x₀} → K` tends to `x₀` along the cocompact filter
-(`TauCeti.tendsto_subtypeVal_cocompact_nhds`).
 -/
 
-@[expose] public section
+public section
 
-open Filter Set Topology OnePoint
+open Topology OnePoint
 
 namespace TauCeti
 
@@ -71,19 +67,5 @@ theorem onePointComplSingletonHomeomorph_symm_apply_coe (x₀ : K) (x : {x : K /
   onePointComplSingletonHomeomorph_symm_apply_of_ne x.2
 
 end Hausdorff
-
-/-- In a compact space `K`, the inclusion of `{x : K // x ≠ x₀}` into `K` tends to `x₀` along the
-cocompact filter. -/
-theorem tendsto_subtypeVal_cocompact_nhds {K : Type*} [TopologicalSpace K] [CompactSpace K]
-    (x₀ : K) :
-    Tendsto (Subtype.val : {x : K // x ≠ x₀} → K) (cocompact {x : K // x ≠ x₀}) (𝓝 x₀) := by
-  rw [hasBasis_cocompact.tendsto_left_iff]
-  intro N hN
-  obtain ⟨U, hU₁, hU₂, hU₃⟩ := mem_nhds_iff.mp hN
-  refine ⟨Subtype.val ⁻¹' Uᶜ, ?_, by simpa using (mapsTo_preimage Subtype.val U).mono_right hU₁⟩
-  have hsub : Uᶜ ⊆ range (Subtype.val : {x : K // x ≠ x₀} → K) := fun x hx ↦
-    ⟨⟨x, fun h ↦ hx (h ▸ hU₃)⟩, rfl⟩
-  rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, image_preimage_eq_iff.mpr hsub]
-  exact hU₂.isClosed_compl.isCompact
 
 end TauCeti

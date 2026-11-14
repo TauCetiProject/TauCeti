@@ -184,7 +184,6 @@ variable {𝕜 A B C : Type*} [NontriviallyNormedField 𝕜]
 
 /-- An algebra equivalence `e : A ≃ₐ[𝕜] B` between unital Banach algebras induces a weak-star
 homeomorphism `characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A` by character pullback. -/
-@[expose]
 noncomputable def characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
     characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A where
   toFun := e.toAlgHom.characterPullback

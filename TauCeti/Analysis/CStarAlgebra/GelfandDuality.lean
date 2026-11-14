@@ -25,9 +25,8 @@ This file develops Gelfand duality for nonunital commutative C⋆-algebras by pa
 minimal C⋆-unitization `A⁺¹ = Unitization ℂ A` and the augmentation character
 `ε = Unitization.augmentation ℂ A`:
 
-* `TauCeti.map_gelfandStarTransform_inrRange` and
-  `TauCeti.image_gelfandStarTransform_range_inr`: under `gelfandStarTransform A⁺¹`, the image of
-  `A` inside `A⁺¹` (`ker ε`) equals the maximal ideal
+* `TauCeti.map_gelfandStarTransform_inrRange`: under `gelfandStarTransform A⁺¹`, the image of `A`
+  inside `A⁺¹` (`ker ε`) equals the maximal ideal
   `ContinuousMap.evalKerSubalgebra ℂ ℂ ε = {F ∈ C(characterSpace ℂ A⁺¹, ℂ) : F ε = 0}`, which
   `ContinuousMap.restrictComplSingletonStarAlgEquiv` identifies isometrically with
   `C₀({φ : characterSpace ℂ A⁺¹ // φ ≠ ε}, ℂ)`;
@@ -57,7 +56,7 @@ minimal C⋆-unitization `A⁺¹ = Unitization ℂ A` and the augmentation chara
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Theorem 2.1.10.
 -/
 
-@[expose] public section
+public section
 
 open Filter Function Set Topology OnePoint WeakDual
 open scoped CStarAlgebra ZeroAtInfty
@@ -97,13 +96,19 @@ theorem map_gelfandStarTransform_inrRange :
     exact ⟨u, ⟨u.snd, Unitization.inr_snd_of_augmentation_eq_zero hu⟩,
       (gelfandStarTransform A⁺¹).apply_symm_apply F⟩
 
-/-- Set-level form of `map_gelfandStarTransform_inrRange`: the Gelfand transform of `A⁺¹` carries
-`Set.range (Unitization.inr : A → A⁺¹)` onto `{F ∈ C(characterSpace ℂ A⁺¹, ℂ) : F ε = 0}`. -/
-theorem image_gelfandStarTransform_range_inr :
-    gelfandStarTransform A⁺¹ '' Set.range (Unitization.inr : A → A⁺¹) =
-      {F : C(characterSpace ℂ A⁺¹, ℂ) | F (Unitization.augmentation ℂ A) = 0} := by
-  ext F
-  simpa using SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F
+private theorem bijective_codRestrict_gelfandStarTransform :
+    Function.Bijective
+      (((gelfandStarTransform A⁺¹).toNonUnitalStarAlgHom.comp
+          (Unitization.inrNonUnitalStarAlgHom ℂ A)).codRestrict
+        (ContinuousMap.evalKerSubalgebra ℂ ℂ (Unitization.augmentation ℂ A))
+        fun a ↦ ContinuousMap.mem_evalKerSubalgebra.mpr
+          (gelfandStarTransform_unitization_inr_apply_augmentation a)) :=
+  ⟨(NonUnitalStarAlgHom.injective_codRestrict _ _ _).mpr <|
+      (gelfandStarTransform A⁺¹).injective.comp Unitization.inr_injective,
+    fun F ↦ by
+      obtain ⟨_, ⟨a, rfl⟩, hu⟩ :=
+        (SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F.1).mpr F.2
+      exact ⟨a, Subtype.ext hu⟩⟩
 
 variable (A) in
 /-- **Nonunital Gelfand transform via the punctured unitization character space.** Restricting
@@ -113,33 +118,22 @@ variable (A) in
 extension by zero across the augmentation character. -/
 noncomputable def puncturedGelfandStarTransform :
     A ≃⋆ₐ[ℂ] C₀({φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}, ℂ) :=
-  let Φ : A →⋆ₙₐ[ℂ] C(characterSpace ℂ A⁺¹, ℂ) :=
-    (gelfandStarTransform A⁺¹).toNonUnitalStarAlgHom.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
-  let hΦ : Function.Bijective
-      (Φ.codRestrict (ContinuousMap.evalKerSubalgebra ℂ ℂ (Unitization.augmentation ℂ A))
-        gelfandStarTransform_unitization_inr_apply_augmentation) :=
-    ⟨(NonUnitalStarAlgHom.injective_codRestrict _ _ _).mpr <|
-        (gelfandStarTransform A⁺¹).injective.comp Unitization.inr_injective,
-      fun F ↦ by
-        obtain ⟨_, ⟨a, rfl⟩, hu⟩ :=
-          (SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F.1).mpr F.2
-        exact ⟨a, Subtype.ext hu⟩⟩
-  (StarAlgEquiv.ofBijective _ hΦ).trans
+  (StarAlgEquiv.ofBijective _ bijective_codRestrict_gelfandStarTransform).trans
     (ContinuousMap.restrictComplSingletonStarAlgEquiv ℂ ℂ (Unitization.augmentation ℂ A))
 
 /-- `puncturedGelfandStarTransform A a` evaluates `φ.1` on `(a : A⁺¹)`. -/
 @[simp]
 theorem puncturedGelfandStarTransform_apply (a : A)
     (φ : {φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}) :
-    puncturedGelfandStarTransform A a φ = φ.1 (a : A⁺¹) := (rfl)
+    puncturedGelfandStarTransform A a φ = φ.1 (a : A⁺¹) := by
+  simp [puncturedGelfandStarTransform]
 
 /-- Extending `puncturedGelfandStarTransform A a` by zero at the augmentation character recovers
 `gelfandStarTransform A⁺¹ ↑a`. -/
 @[simp]
 theorem extendZero_puncturedGelfandStarTransform (a : A) :
-    (puncturedGelfandStarTransform A a).extendZero = gelfandStarTransform A⁺¹ (a : A⁺¹) :=
-  ZeroAtInftyContinuousMap.extendZero_restrictComplSingleton
-    (gelfandStarTransform_unitization_inr_apply_augmentation a)
+    (puncturedGelfandStarTransform A a).extendZero = gelfandStarTransform A⁺¹ (a : A⁺¹) := by
+  simp [puncturedGelfandStarTransform]
 
 /-- The inverse of `puncturedGelfandStarTransform A` extends `g` by zero at the augmentation
 character and applies `(gelfandStarTransform A⁺¹).symm`. -/
@@ -161,14 +155,6 @@ noncomputable def nonUnitalGelfandStarTransform :
   (puncturedGelfandStarTransform A).trans
     (ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ ℂ
       (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).symm)
-
-/-- Factorization of `nonUnitalGelfandStarTransform A` through `puncturedGelfandStarTransform A` and
-`unitizationComplAugmentationHomeomorph ℂ A`. -/
-theorem nonUnitalGelfandStarTransform_def (A : Type*) [NonUnitalCommCStarAlgebra A] :
-    nonUnitalGelfandStarTransform A =
-      (puncturedGelfandStarTransform A).trans
-        (ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ ℂ
-          (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).symm) := (rfl)
 
 /-- `nonUnitalGelfandStarTransform A a` evaluates a character `χ` at `a`. -/
 @[simp]
@@ -252,16 +238,18 @@ theorem nonUnitalGelfandStarTransform_eq_of_unital (A : Type*) [CommCStarAlgebra
 if `A` has a multiplicative identity (`IsUnital A`). -/
 theorem compactSpace_characterSpace_iff_isUnital (A : Type*) [NonUnitalCommCStarAlgebra A] :
     CompactSpace (characterSpace ℂ A) ↔ IsUnital A := by
-  refine ⟨fun _ ↦ ⟨?_⟩, fun _ ↦ WeakDual.CharacterSpace.compactSpace_of_isUnital⟩
-  let oneC₀ : C₀(characterSpace ℂ A, ℂ) :=
-    ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ (characterSpace ℂ A) ℂ 1
-  refine ⟨(nonUnitalGelfandStarTransform A).symm oneC₀, fun a ↦ ?_⟩
-  have hleft : (nonUnitalGelfandStarTransform A).symm oneC₀ * a = a := by
-    apply EquivLike.injective (nonUnitalGelfandStarTransform A)
-    rw [map_mul, StarAlgEquiv.apply_symm_apply]
-    ext χ
-    simp [oneC₀]
-  exact ⟨hleft, (mul_comm a _).trans hleft⟩
+  refine ⟨fun _ ↦ ⟨?_⟩, fun _ ↦ ?_⟩
+  · let oneC₀ : C₀(characterSpace ℂ A, ℂ) :=
+      ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ (characterSpace ℂ A) ℂ 1
+    refine ⟨(nonUnitalGelfandStarTransform A).symm oneC₀, fun a ↦ ?_⟩
+    have hleft : (nonUnitalGelfandStarTransform A).symm oneC₀ * a = a := by
+      apply EquivLike.injective (nonUnitalGelfandStarTransform A)
+      rw [map_mul, StarAlgEquiv.apply_symm_apply]
+      ext χ
+      simp [oneC₀]
+    exact ⟨hleft, (mul_comm a _).trans hleft⟩
+  · obtain ⟨e, he⟩ := IsUnital.isUnital (A := A)
+    exact WeakDual.CharacterSpace.compactSpace_of_forall_mul_eq fun a ↦ (he a).2
 
 /-- In a nonunital commutative complex C⋆-algebra `A`, the augmentation character is isolated in
 `characterSpace ℂ A⁺¹` if and only if `A` has a multiplicative identity (`IsUnital A`). -/
@@ -367,7 +355,7 @@ theorem onePointCongr_zeroAtInftyHomeoEval_trans_onePointHomeomorphUnitization :
 `WeakDual.CharacterSpace.zeroAtInftyHomeoEval Y ℂ` recovers the identity star-algebra equivalence
 on `C₀(Y, ℂ)`. -/
 @[simp]
-theorem nonUnitalGelfandStarTransform_zeroAtInfty_trans_congrLeft :
+theorem nonUnitalGelfandStarTransform_trans_congrLeftStarAlgEquiv_zeroAtInftyHomeoEval_symm :
     (TauCeti.nonUnitalGelfandStarTransform C₀(Y, ℂ)).trans
         (ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ ℂ (zeroAtInftyHomeoEval Y ℂ).symm) =
       StarAlgEquiv.refl ℂ C₀(Y, ℂ) := by

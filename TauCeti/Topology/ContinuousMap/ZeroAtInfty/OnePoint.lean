@@ -11,6 +11,8 @@ public import TauCeti.Topology.Compactification.OnePoint.ComplSingleton
 public import TauCeti.Topology.ContinuousMap.Ideals
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
+import TauCeti.Topology.Compactness.Compact
+
 /-!
 # Functions vanishing at infinity on one-point compactifications and punctured compact spaces
 
@@ -30,13 +32,13 @@ punctured compact space `{x : K // x ≠ x₀}` and the evaluation-kernel subalg
 * `ContinuousMap.restrictComplSingleton` and `ZeroAtInftyContinuousMap.extendZero`: restriction of
   `F : C(K, β)` with `F x₀ = 0` to `C₀({x : K // x ≠ x₀}, β)` (on any compact space `K`) and
   extension of `g : C₀({x : K // x ≠ x₀}, β)` by zero at `x₀` to `C(K, β)` (for compact Hausdorff
-  `K`), with continuity at `x₀`, algebraic simp lemmas, two-sided inverse identities, and metric
-  isometry / norm preservation;
+  `K`), with continuity of `Function.extend`, algebraic simp lemmas, two-sided inverse identities,
+  and metric isometry / norm preservation;
 * `ContinuousMap.restrictComplSingletonStarAlgEquiv`: the isometric star-algebra isomorphism
   `evalKerSubalgebra S A x₀ ≃⋆ₐ[S] C₀({x : K // x ≠ x₀}, A)`.
 -/
 
-@[expose] public section
+public section
 
 open Filter Function Set Topology OnePoint
 open scoped ZeroAtInfty BoundedContinuousFunction
@@ -185,12 +187,6 @@ theorem continuous_extend_zero [TopologicalSpace β] [Zero β] {x₀ : K}
   rw [← coe_extendZero_eq_extend]
   exact g.extendZero.continuous
 
-/-- Extending `g : C₀({x : K // x ≠ x₀}, β)` by `0` at `x₀` is continuous at `x₀`. -/
-theorem continuousAt_extend_zero [TopologicalSpace β] [Zero β] {x₀ : K}
-    (g : C₀({x : K // x ≠ x₀}, β)) :
-    ContinuousAt (Function.extend (Subtype.val : {x : K // x ≠ x₀} → K) g 0) x₀ :=
-  g.continuous_extend_zero.continuousAt
-
 /-- Restricting `g.extendZero` back to `{x : K // x ≠ x₀}` recovers `g`. -/
 @[simp]
 theorem restrictComplSingleton_extendZero [TopologicalSpace β] [Zero β] {x₀ : K}
@@ -241,40 +237,36 @@ theorem extendZero_add [TopologicalSpace β] [AddZeroClass β] [ContinuousAdd β
 theorem extendZero_neg [TopologicalSpace β] [AddGroup β] [IsTopologicalAddGroup β] {x₀ : K}
     (f : C₀({x : K // x ≠ x₀}, β)) :
     (-f).extendZero = -f.extendZero := by
-  rw [extendZero_def, toOnePoint_neg]
-  rfl
+  simp [extendZero, ContinuousMap.neg_comp]
 
 /-- `extendZero` distributes over subtraction. -/
 @[simp]
 theorem extendZero_sub [TopologicalSpace β] [AddGroup β] [IsTopologicalAddGroup β] {x₀ : K}
     (f g : C₀({x : K // x ≠ x₀}, β)) :
     (f - g).extendZero = f.extendZero - g.extendZero := by
-  rw [extendZero_def, toOnePoint_sub]
-  rfl
+  simp [extendZero, ContinuousMap.sub_comp]
 
 /-- `extendZero` distributes over multiplication. -/
 @[simp]
 theorem extendZero_mul [TopologicalSpace β] [MulZeroClass β] [ContinuousMul β] {x₀ : K}
     (f g : C₀({x : K // x ≠ x₀}, β)) :
     (f * g).extendZero = f.extendZero * g.extendZero := by
-  rw [extendZero_def, toOnePoint_mul]
-  rfl
+  simp [extendZero, ContinuousMap.mul_comp]
 
 /-- `extendZero` commutes with scalar multiplication. -/
 @[simp]
 theorem extendZero_smul {S : Type*} [TopologicalSpace β] [Zero β] [SMulZeroClass S β]
     [ContinuousConstSMul S β] {x₀ : K} (c : S) (f : C₀({x : K // x ≠ x₀}, β)) :
     (c • f).extendZero = c • f.extendZero := by
-  rw [extendZero_def, toOnePoint_smul]
-  rfl
+  simp [extendZero, ContinuousMap.smul_comp]
 
 /-- `extendZero` commutes with pointwise `star`. -/
 @[simp]
 theorem extendZero_star [TopologicalSpace β] [AddMonoid β] [StarAddMonoid β] [ContinuousStar β]
     {x₀ : K} (f : C₀({x : K // x ≠ x₀}, β)) :
     (star f).extendZero = star f.extendZero := by
-  rw [extendZero_def, toOnePoint_star]
-  rfl
+  ext x
+  simp [extendZero]
 
 /-- Extension by zero from `{x : K // x ≠ x₀}` to `K` is an isometry. -/
 theorem isometry_extendZero [PseudoMetricSpace β] [Zero β] (x₀ : K) :
@@ -324,23 +316,24 @@ noncomputable def restrictComplSingletonStarAlgEquiv [CommSemiring S] [NonUnital
     [TopologicalSpace A] [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [Module S A]
     [ContinuousConstSMul S A] (x₀ : K) :
     evalKerSubalgebra S A x₀ ≃⋆ₐ[S] C₀({x : K // x ≠ x₀}, A) where
-  toFun F := F.1.restrictComplSingleton F.2
-  invFun g := ⟨g.extendZero, g.extendZero_apply_self⟩
-  left_inv F := Subtype.ext <| ZeroAtInftyContinuousMap.extendZero_restrictComplSingleton F.2
+  toFun F := F.1.restrictComplSingleton (mem_evalKerSubalgebra.mp F.2)
+  invFun g := ⟨g.extendZero, mem_evalKerSubalgebra.mpr g.extendZero_apply_self⟩
+  left_inv F := Subtype.ext <|
+    ZeroAtInftyContinuousMap.extendZero_restrictComplSingleton (mem_evalKerSubalgebra.mp F.2)
   right_inv g := g.restrictComplSingleton_extendZero
   map_smul' _ _ := rfl
   map_add' _ _ := rfl
   map_mul' _ _ := rfl
   map_star' _ := rfl
 
-/-- `restrictComplSingletonStarAlgEquiv S A x₀` evaluates as the restricted function on
-`{x : K // x ≠ x₀}`. -/
+/-- `restrictComplSingletonStarAlgEquiv S A x₀` applies `ContinuousMap.restrictComplSingleton` to
+the underlying continuous map. -/
 @[simp]
 theorem restrictComplSingletonStarAlgEquiv_apply [CommSemiring S] [NonUnitalNonAssocSemiring A]
     [TopologicalSpace A] [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [Module S A]
-    [ContinuousConstSMul S A] (x₀ : K) (F : evalKerSubalgebra S A x₀)
-    (x : {x : K // x ≠ x₀}) :
-    restrictComplSingletonStarAlgEquiv S A x₀ F x = F.1 x.1 := (rfl)
+    [ContinuousConstSMul S A] (x₀ : K) (F : evalKerSubalgebra S A x₀) :
+    restrictComplSingletonStarAlgEquiv S A x₀ F =
+      F.1.restrictComplSingleton (mem_evalKerSubalgebra.mp F.2) := (rfl)
 
 /-- The inverse of `restrictComplSingletonStarAlgEquiv S A x₀` coerces to `extendZero`. -/
 @[simp]
@@ -351,12 +344,11 @@ theorem coe_restrictComplSingletonStarAlgEquiv_symm_apply [CommSemiring S]
     ((restrictComplSingletonStarAlgEquiv S A x₀).symm g : C(K, A)) = g.extendZero := (rfl)
 
 /-- `restrictComplSingletonStarAlgEquiv` preserves the supremum norm. -/
-@[simp]
 theorem norm_restrictComplSingletonStarAlgEquiv [CommRing S]
     [NonUnitalSeminormedRing E] [StarAddMonoid E] [ContinuousStar E] [Module S E]
     [ContinuousConstSMul S E] (x₀ : K) (F : evalKerSubalgebra S E x₀) :
     ‖restrictComplSingletonStarAlgEquiv S E x₀ F‖ = ‖F‖ :=
-  F.1.norm_restrictComplSingleton F.2
+  F.1.norm_restrictComplSingleton (mem_evalKerSubalgebra.mp F.2)
 
 /-- `restrictComplSingletonStarAlgEquiv` is an isometry. -/
 theorem isometry_restrictComplSingletonStarAlgEquiv [CommRing S]
