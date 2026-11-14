@@ -183,7 +183,7 @@ private theorem restrictScalars_coeIdeal_sup_conductor {I : Ideal O.toRingOfInte
   apply le_antisymm
   · refine sup_le (fun y hy => ?_) (fun y hy => ?_)
     · have h := FractionalIdeal.coeIdeal_le_one (S := O.toSubalgebra⁰) hy
-      rwa [← FractionalIdeal.mem_coe, FractionalIdeal.coe_one] at h
+      rwa [← FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.coeToSubmodule_one] at h
     · obtain ⟨c, hc, rfl⟩ := (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mp hy
       exact Submodule.mem_one.mpr ⟨⟨_, O.conductor_le_order hc⟩, rfl⟩
   · intro y hy
@@ -226,8 +226,8 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
   have hi : i * one = i := by rw [← Submodule.restrictScalars_mul, mul_one]
   have hbf : b * f = f := by rw [← Submodule.restrictScalars_mul, one_mul]
   have hMj : (M : Submodule (𝓞 K) K).restrictScalars ℤ * j = b := by
-    rw [← Submodule.restrictScalars_mul, ← FractionalIdeal.coe_mul, mul_inv_cancel₀ hM,
-      FractionalIdeal.coe_one]
+    rw [← Submodule.restrictScalars_mul, ← FractionalIdeal.coeToSubmodule_mul, mul_inv_cancel₀ hM,
+      FractionalIdeal.coeToSubmodule_one]
   -- `I + 𝔣 = O`, since `I` is coprime to the conductor and `𝔣 ⊆ O`.
   have hif : i ⊔ f = one := restrictScalars_coeIdeal_sup_conductor hI.2
   -- The `ℤ`-submodule `O + 𝔣 M⁻¹` is an inverse of `I`; it lies in `I⁻¹`, so `I * I⁻¹ = O`.

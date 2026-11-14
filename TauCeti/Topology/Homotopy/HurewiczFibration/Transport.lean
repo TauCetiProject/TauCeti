@@ -36,6 +36,10 @@ therefore a local coefficient system
 * `TauCeti.LiftingFunction.transport_homotopic_fiberHomotopyEquiv`: transport along a path is
   homotopic to the comparison `TauCeti.PathPullback.fiberHomotopyEquiv` of its endpoint fibres
   through the pullback over the interval, so it is a homotopy equivalence.
+* `TauCeti.LiftingFunction.transport_comp_homotopic`: transport commutes up to homotopy with the
+  fiber maps of any commutative square of fibrations.
+* `TauCeti.LiftingFunction.transport_homotopic_of_liftingFunction`: two lifting functions for the
+  same fibration induce homotopic transports along every path.
 
 ## References
 
@@ -47,7 +51,7 @@ public section
 
 open Set unitInterval
 
-universe w u v
+universe w u v u' v'
 
 namespace TauCeti
 
@@ -229,6 +233,65 @@ theorem transport_homotopic_fiberHomotopyEquiv (α : C(I, B)) :
   rw [hK₁]
   exact (hG₁ _).symm.trans
     (congrArg Subtype.val (PathPullback.fiberHomotopyEquiv_apply _ 0 1 y)).symm
+
+/-- Transport for the first projection `B × F → B` keeps the second coordinate fixed. -/
+@[simp]
+theorem fst_transport_apply_coe {F : Type u'} [TopologicalSpace F] (γ : Path b₀ b₁)
+    (x : (ContinuousMap.fst : C(B × F, B)) ⁻¹' {b₀}) :
+    ((LiftingFunction.fst B F).transport γ x).1 = (b₁, x.1.2) :=
+  (transport_apply_coe _ γ x).trans
+    ((LiftingFunction.fst_lift_apply x.1 γ.toContinuousMap _ 1).trans (Prod.ext γ.target rfl))
+
+/-- Transport for a lifting function transferred along `e : E' ≃ₜ E` applies `e`, transports in
+`E`, and applies `e.symm`. -/
+@[simp]
+theorem ofHomeomorphOver_transport_apply_coe {E' : Type u'} [TopologicalSpace E'] {p' : C(E', B)}
+    (e : E' ≃ₜ E) (h : ∀ x, p (e x) = p' x) (γ : Path b₀ b₁) (x : p' ⁻¹' {b₀}) :
+    ((Λ.ofHomeomorphOver e h).transport γ x).1 =
+      e.symm (Λ.transport γ ⟨e x.1, (h x.1).trans x.2⟩).1 :=
+  (transport_apply_coe _ γ x).trans
+    ((Λ.ofHomeomorphOver_lift_apply e h x.1 γ.toContinuousMap _ 1).trans
+      (congrArg e.symm (Λ.transport_apply_coe γ ⟨e x.1, (h x.1).trans x.2⟩).symm))
+
+/-- **Naturality of transport in commutative squares.** Let `p' : E' → B'` and `p : E → B` carry
+lifting functions `Λ'` and `Λ`, and let `g : E' → E` and `f : B' → B` commute with the projections.
+For any path `γ : Path b₀ b₁` in `B'`, transporting along `γ` and mapping the fiber over `b₁` by
+`g` is homotopic to mapping the fiber over `b₀` by `g` and transporting along `γ.map f`. -/
+theorem transport_comp_homotopic {E' : Type u'} {B' : Type v'} [TopologicalSpace E']
+    [TopologicalSpace B'] {p' : C(E', B')} (Λ' : LiftingFunction p')
+    {g : C(E', E)} {f : C(B', B)} (h : ∀ x, p (g x) = f (p' x))
+    {a₀ a₁ : B'} (γ : Path a₀ a₁)
+    {g₀ : C(p' ⁻¹' {a₀}, p ⁻¹' {f a₀})} {g₁ : C(p' ⁻¹' {a₁}, p ⁻¹' {f a₁})}
+    (hg₀ : ∀ x, (g₀ x).1 = g x.1) (hg₁ : ∀ x, (g₁ x).1 = g x.1) :
+    ((Λ.transport (γ.map f.continuous)).comp g₀).Homotopic (g₁.comp (Λ'.transport γ)) := by
+  let s₀ : C(p' ⁻¹' {a₀}, E) := ⟨fun x ↦ g x.1, by fun_prop⟩
+  let s₀' : C(p' ⁻¹' {a₀}, E') := ⟨Subtype.val, continuous_subtype_val⟩
+  let Γ' : C(p' ⁻¹' {a₀} × I, B') := γ.toContinuousMap.comp ContinuousMap.snd
+  let Γ : C(p' ⁻¹' {a₀} × I, B) := (γ.map f.continuous).toContinuousMap.comp ContinuousMap.snd
+  have hΓ' : ∀ x, Γ' (x, 0) = p' (s₀' x) := fun x ↦ γ.source.trans (x.2 : p' x.1 = a₀).symm
+  have hΓ : ∀ x, Γ (x, 0) = p (s₀ x) := fun x ↦
+    (γ.map f.continuous).source.trans ((congrArg f (x.2 : p' x.1 = a₀)).symm.trans (h x.1).symm)
+  let α' : C(p' ⁻¹' {a₀} × I, E) := g.comp (Λ'.liftFamily s₀' Γ' hΓ')
+  have hα' : ∀ x t, p (α' (x, t)) = Γ (x, t) := fun x t ↦
+    (h _).trans (congrArg f (Λ'.apply_liftFamily s₀' Γ' hΓ' x t))
+  obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u'}.exists_homotopy_endpoints Γ
+    (Λ.liftFamily s₀ Γ hΓ) α' (Λ.apply_liftFamily s₀ Γ hΓ) hα'
+    fun x ↦ (Λ.liftFamily_zero s₀ Γ hΓ x).trans (congrArg g (Λ'.liftFamily_zero s₀' Γ' hΓ' x)).symm
+  refine ContinuousMap.homotopic_of_fiber _ _ K (fun x ↦ ?_) (fun x ↦ ?_)
+    fun x s ↦ (hK x s).trans (γ.map f.continuous).target
+  · exact (hK₀ x).trans (Λ.liftFamily_comp_snd_one s₀ (γ.map f.continuous) hΓ x (g₀ x) (hg₀ x).symm)
+  · exact (hK₁ x).trans ((congrArg g (Λ'.liftFamily_comp_snd_one s₀' γ hΓ' x x rfl)).trans
+      (hg₁ (Λ'.transport γ x)).symm)
+
+/-- **Independence of the lifting function.** Any two lifting functions for `p` induce homotopic
+transports along every path. -/
+theorem transport_homotopic_of_liftingFunction (Λ' : LiftingFunction p) (γ : Path b₀ b₁) :
+    (Λ.transport γ).Homotopic (Λ'.transport γ) := by
+  have h : ((Λ.transport (γ.map continuous_id)).comp (ContinuousMap.id _)).Homotopic
+      ((ContinuousMap.id _).comp (Λ'.transport γ)) :=
+    Λ.transport_comp_homotopic Λ' (g := .id E) (f := .id B) (fun _ ↦ rfl) γ
+      (g₀ := .id _) (g₁ := .id _) (fun _ ↦ rfl) (fun _ ↦ rfl)
+  rwa [Path.map_id, ContinuousMap.comp_id, ContinuousMap.id_comp] at h
 
 end Transport
 

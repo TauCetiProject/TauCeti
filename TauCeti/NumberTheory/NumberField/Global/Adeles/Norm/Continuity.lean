@@ -28,7 +28,8 @@ and hence on idele classes.
 public section
 
 open IsDedekindDomain NumberField
-open scoped AdicCompletionExtension NumberField.LiesOver RestrictedProduct Valued
+open scoped AdicCompletionExtension RestrictedProduct Valued
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 

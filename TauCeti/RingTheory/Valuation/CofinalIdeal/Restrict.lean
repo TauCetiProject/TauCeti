@@ -456,12 +456,7 @@ theorem exists_mem_restrictToIdeal_ne_zero (v : Valuation A Γ₀) (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical)
     (hne : ∃ a ∈ I, v a ≠ 0) :
     ∃ a ∈ I, v.restrictToIdeal I hfg a ≠ 0 := by
-  have hex : ∃ γ ∈ valueSet v I, γ ∈ characteristicSubgroupOfIdeal v I hfg := by
-    by_cases hm : IdealMeetsCharacteristicSubgroup v I
-    · obtain ⟨γ, hγI, hγc⟩ := idealMeetsCharacteristicSubgroup_iff.mp hm
-      exact ⟨γ, hγI, characteristicSubgroup_le_characteristicSubgroupOfIdeal v I hfg hγc⟩
-    · exact exists_mem_valueSet_mem_characteristicSubgroupOfIdeal hfg hm hne
-  obtain ⟨γ, hγI, hγH⟩ := hex
+  obtain ⟨γ, hγI, hγH⟩ := exists_mem_valueSet_mem_characteristicSubgroupOfIdeal hfg hne
   obtain ⟨a, haI, hav⟩ := mem_valueSet.mp hγI
   have ha0 : v a ≠ 0 := fun h ↦ by
     rw [v.restrict_eq_zero_iff.mpr h] at hav

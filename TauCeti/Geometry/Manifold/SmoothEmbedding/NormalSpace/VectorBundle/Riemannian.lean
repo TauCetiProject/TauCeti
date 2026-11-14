@@ -6,16 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Representative
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import Mathlib.Geometry.Manifold.VectorBundle.Pullback
-import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Smooth orthogonal representatives in intrinsic normal bundles
@@ -25,10 +19,9 @@ and the normal vector. The metric is the ambient Riemannian metric; no normal fr
 compactness assumption is needed. This supplies the map from the normal bundle to the ambient
 tangent bundle used by the normal exponential.
 
-The construction uses the pullback metric on the embedded manifold. Inverting its flat map
-recovers the tangential component of an ambient vector from its pairings with tangent vectors.
-Subtracting this component gives the orthogonal representative, which descends through the
-smooth normal quotient.
+The construction applies the smooth normal-projection endomorphism field along an immersion
+to the ambient vector. For embeddings, this projection is the orthogonal representative of its
+intrinsic normal class, and it descends through the smooth normal quotient.
 
 ## References
 
@@ -57,34 +50,12 @@ variable {E V P H G M N : Type*}
 variable {m : ℕ∞ω} [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)]
 
-omit [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] in
-/-- Pointwise formula for the orthogonal representative of an intrinsic normal class, written
-with any `C^m` Riemannian metric `g` that has the ambient metric as its fiberwise inner product:
-the tangential component is recovered by inverting the pullback of `g` along `f`. -/
-private theorem normalRepresentative_normalClass_eq_sub_inverse_pullback
-    [IsManifold I 1 M]
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (g : ContMDiffRiemannianMetric J m V (fun y : N ↦ TangentSpace J y))
-    (hg : ∀ y, g.inner y = RiemannianBundle.g.inner y) (x : M) (v : TangentSpace J (f x)) :
-    f.normalRepresentative x hn (f.normalClass x hn v) = v -
-      mfderiv I J f x
-        (((g.pullback f (f.contMDiff.of_le (by simpa using hm))
-          (f.isImmersion.mfderiv_injective hn)).inner x).inverse
-            ((g.inner (f x) v).comp (mfderiv I J f x))) := by
-  have hflat : (g.pullback f (f.contMDiff.of_le (by simpa using hm))
-      (f.isImmersion.mfderiv_injective hn)).inner x =
-      (ContinuousLinearMap.precomp ℝ (mfderiv I J f x)).comp
-        ((g.inner (f x)).comp (mfderiv I J f x)) := by
-    ext w z
-    exact ContMDiffRiemannianMetric.pullback_inner _ _ _ _ _ _ _
-  simpa only [hflat, hg] using f.normalRepresentative_normalClass_eq_sub_mfderiv_inverse x hn v
-
 omit [FiniteDimensional ℝ E] in
 /-- Orthogonal normal projection is `C^m` on the pulled-back ambient tangent bundle for a
 `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. Both the base point and the
 ambient tangent vector may vary. -/
 theorem contMDiff_normalRepresentative_normalClass
-    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    [IsManifold I 1 M]
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
@@ -96,55 +67,17 @@ theorem contMDiff_normalRepresentative_normalClass
   have : FiniteDimensional ℝ E :=
     Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap
       (f.isImmersion.mfderiv_injective hn x₀)
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  -- The induced metric identifies tangent vectors with covectors on the source.
-  let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-    (IB := J) (n := m) (F := V) (V := fun y : N => TangentSpace J y)
-  let a := g.pullback f (f.contMDiff.of_le (by simpa using hm)) (f.isImmersion.mfderiv_injective hn)
-  have ha (x : M) : (a.inner x).IsInvertible :=
-    ContinuousLinearMap.isInvertible_of_pos (E := E) (a.pos x)
-  let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
-  let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
-  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
-  let : ContMDiffVectorBundle m V ((f : M → N) *ᵖ (TangentSpace J)) I :=
-    ContMDiffVectorBundle.pullback V (TangentSpace J) I fc
   have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I m
       (π V ((f : M → N) *ᵖ (TangentSpace J))) := contMDiff_proj _
   have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (Pullback.lift (f : M → N)) :=
-    ((Pullback.contMDiff_iff fc fc.contMDiff
-      (E := fun y : N => TangentSpace J y)).mp contMDiff_id).2
-  -- Pair the ambient vector with the differential, then pull the covector back.
-  let φ := fun (x : M) (v : TangentSpace J (f x)) =>
-    (g.inner (f x) v).comp (mfderiv I J f x)
-  have hφ : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
-      (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨p.proj, φ p.proj p.2⟩ : CotangentBundle I M)) :=
-    CotangentBundle.contMDiff_mk_comp_mfderiv
-      (Ψ := fun q : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨f q.proj, g.inner (f q.proj) q.2⟩ : CotangentBundle J N))
-      (fun _ => rfl) ((g.contMDiff.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift)
-      hbase f.contMDiff hm
-  -- Invert the induced metric and push the resulting tangential component forward.
-  let u := fun (x : M) (v : TangentSpace J (f x)) =>
-    (a.inner x).inverse (φ x v)
-  have hu : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E)) m
-      (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨p.proj, u p.proj p.2⟩ : TangentBundle I M)) :=
-    ((a.contMDiff.clm_bundle_inverse ha).comp hbase).clm_bundle_apply hφ
-  have ht := (f.contMDiff.contMDiff_tangentMap (by simpa using hm)).comp hu
-  have hneg := (contMDiff_const (c := (-1 : ℝ))).smul_totalSpace ht
-  have hsub := hlift.add_sectionAlong hneg
-  have hformula (x : M) (v : TangentSpace J (f x)) :
-      f.normalRepresentative x hn (f.normalClass x hn v) =
-        v + (-1 : ℝ) • mfderiv I J f x (u x v) := by
-    rw [neg_one_smul, ← sub_eq_add_neg]
-    exact normalRepresentative_normalClass_eq_sub_inverse_pullback f hn hm g
-      (fun y ↦ by
-        ext w z
-        exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner _ _ _) x v
-  exact hsub.congr fun p => congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.2)
+    Pullback.contMDiff_lift (E := TangentSpace J) f
+      (f.contMDiff.of_le (le_self_add.trans hm))
+  have hprojection := f.contMDiff.starProjection_orthogonal_range_mfderiv hm
+    (f.isImmersion.mfderiv_injective hn)
+  refine ((hprojection.comp hbase).clm_bundle_apply hlift).congr fun p ↦ ?_
+  exact congrArg (TotalSpace.mk (f p.proj))
+    (f.normalRepresentative_normalClass p.proj hn p.2)
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient
 tangent bundle is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. -/
@@ -158,10 +91,8 @@ theorem contMDiff_normalRepresentative
       (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn p.2⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [f.contMDiff_normalBundle_iff hn hm hdim]
-  convert f.contMDiff_normalRepresentative_normalClass hn hm using 1
-  funext p
-  rw [Function.comp_apply, normalQuotientMap_apply]
+  exact f.contMDiff_normalBundle_of_contMDiff_normalClass hn hm hdim
+    (fun x v ↦ f.normalRepresentative x hn v)
+    (f.contMDiff_normalRepresentative_normalClass hn hm)
 
 end TauCeti.SmoothEmbedding

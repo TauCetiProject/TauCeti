@@ -75,8 +75,8 @@ theorem bochner_charFun (F : V → ℂ) :
     rintro ν ⟨hν, hνF⟩
     exact Measure.ext_of_charFun
       (hνF.trans (charFun_map_neg_two_pi_smul_bochnerMeasure hcont hpd).symm)
-  · rintro ⟨μ, ⟨hμ, rfl⟩, -⟩
-    exact ⟨continuous_charFun, isPositiveDefiniteSub_charFun⟩
+  · rintro ⟨μ, ⟨-, rfl⟩, -⟩
+    exact ⟨continuous_charFun_of_opensMeasurableSpace, isPositiveDefiniteSub_charFun⟩
 
 /-- **The Bochner–Khinchin theorem.** A function `F` on a finite-dimensional real inner-product
 space is continuous, positive definite and normalized by `F 0 = 1` if and only if it is the
@@ -93,7 +93,7 @@ theorem bochner_charFun_probabilityMeasure (F : V → ℂ) :
       exact_mod_cast h0
     exact ⟨μ, ⟨hprob, hμF⟩, fun ν ⟨_, hνF⟩ => huniq ν ⟨inferInstance, hνF⟩⟩
   · rintro ⟨μ, ⟨hμ, rfl⟩, -⟩
-    exact ⟨continuous_charFun, isPositiveDefiniteSub_charFun, by simp⟩
+    exact ⟨continuous_charFun_of_opensMeasurableSpace, isPositiveDefiniteSub_charFun, by simp⟩
 
 /-- **Bochner's theorem on the real line**, in its classical form: a function `F : ℝ → ℂ` is
 continuous and positive definite if and only if `F x = ∫ ξ, exp (i x ξ) dμ(ξ)` for a unique

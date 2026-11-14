@@ -67,6 +67,8 @@ on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent ve
   tensor vanishing is equivalent to pointwise vanishing in the model-space instances.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
+* `TauCeti.AlmostComplexStructure.nijenhuis_constSmooth`: the same for the constant structure
+  `AlmostComplexStructure.constSmooth` of a pointwise almost complex structure.
 
 ## Conventions
 
@@ -538,6 +540,22 @@ theorem SmoothAlmostComplexStructure.nijenhuis_const (Jc : V →L[ℝ] V) (hJc :
     simp
   ext v w
   exact key v w
+
+/-- The constant smooth almost complex structure defined by a pointwise almost complex structure on
+a vector space is integrable. -/
+@[simp]
+theorem AlmostComplexStructure.nijenhuis_constSmooth (J : AlmostComplexStructure V) :
+    J.constSmooth.nijenhuis = 0 := by
+  -- `constSmooth` is `SmoothAlmostComplexStructure.const` by definition, but its body is not
+  -- exposed outside its module, so the equation is proved pointwise.
+  have h : J.constSmooth = SmoothAlmostComplexStructure.const
+      (LinearMap.toContinuousLinearMap J.toLinearMap) J.apply_apply := by
+    ext x v
+    exact (J.constSmooth_apply x v).trans
+      (SmoothAlmostComplexStructure.const_apply (LinearMap.toContinuousLinearMap J.toLinearMap)
+        J.apply_apply x v).symm
+  rw [h]
+  exact funext <| SmoothAlmostComplexStructure.nijenhuis_const _ _
 
 end Const
 

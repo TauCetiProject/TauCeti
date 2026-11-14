@@ -152,7 +152,7 @@ theorem functionFieldLaurentExpansion_fieldPullback (f : W₂.toAffine.FunctionF
   have hX : A W₂.toAffine.genericX = B W₂.toAffine.genericX := by
     have hy : B W₂.toAffine.genericY ≠ 0 :=
       (map_ne_zero_iff B B.injective).mpr W₂.toAffine.genericY_ne_zero
-    simpa only [map_div₀, map_neg, hY, div_left_inj' hy, neg_inj] using hparam
+    simpa only [map_div₀, map_neg, hY, div_left_inj₀ hy, neg_inj] using hparam
   have hAB : A = B := AlgHom.toRingHom_injective
     (Affine.FunctionField.ringHom_ext (fun c ↦ by simp) hX hY)
   exact DFunLike.congr_fun hAB f

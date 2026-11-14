@@ -32,7 +32,7 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 public section
 
 /-- The coordinates of `k[X]` in the standard basis are the coefficients. -/
-@[simp]
+@[to_additive (attr := simp)]
 theorem MonoidAlgebra.basis_repr {k : Type*} [Semiring k] {X : Type*} (v : MonoidAlgebra k X) :
     (MonoidAlgebra.basis X k).repr v = v.coeff :=
   rfl

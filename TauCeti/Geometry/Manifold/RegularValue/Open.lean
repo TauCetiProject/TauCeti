@@ -17,11 +17,16 @@ regularity is an open condition: the regular points are the points of maximal ra
 point (`TauCeti.eventually_mfderivRank_le_mfderivRank`). So the set of regular points of a `C¹` map
 is open, and a dense set of regular points is a dense open set.
 
+For a closed map the image of the closed critical-point set is closed, so the regular values
+also form an open set. In particular, this applies to proper maps.
+
 ## Main results
 
 * `TauCeti.IsRegularPoint.eventually_isRegularPoint`: the points near a regular point of a `C¹`
   map are regular.
 * `TauCeti.isOpen_setOf_isRegularPoint`: the regular points of a `C¹` map form an open set.
+* `TauCeti.isOpen_setOf_isRegularValue_of_isClosedMap`: the regular values of a closed `C¹`
+  map form an open set, in particular for a proper map.
 
 ## References
 
@@ -57,5 +62,12 @@ theorem IsRegularPoint.eventually_isRegularPoint (h : IsRegularPoint I J f x)
 theorem isOpen_setOf_isRegularPoint (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
     IsOpen {x | IsRegularPoint I J f x} :=
   isOpen_iff_mem_nhds.2 fun _ hx ↦ hx.eventually_isRegularPoint (hf _) hn
+
+/-- The regular values of a closed `C¹` map form an open set. This applies in particular to
+proper maps, including continuous maps from compact spaces to Hausdorff spaces. -/
+theorem isOpen_setOf_isRegularValue_of_isClosedMap (hf : ContMDiff I J n f) (hn : 1 ≤ n)
+    (hclosed : IsClosedMap f) : IsOpen {y | IsRegularValue I J f y} := by
+  rw [setOf_isRegularValue_eq_compl_image]
+  exact (hclosed _ (isOpen_setOf_isRegularPoint hf hn).isClosed_compl).isOpen_compl
 
 end TauCeti
