@@ -621,6 +621,20 @@ theorem fiberwiseCellReattachmentInvHomotopy_fiberwiseCellAttachmentIncl (t : I)
         (t, fiberwiseCellAttachmentIncl α₀ x) = (x.1, (x.2 : Y)) :=
   fiberwiseCellReattachmentHomotopy_fiberwiseCellAttachmentIncl _ _ _ _ _ _ _ _ _ _ t x
 
+/-- On the `i`-th cell over `p`, the homotopy from `Φ₁ ∘ E⁻¹` to `Φ₀` is the reversed homotopy
+`(s, x) ↦ K i (1 - s, (p, (e i p)⁻¹ x))` read along the straight-line homotopy
+`TauCeti.TopCat.reattachmentPath` in the cylinder `I × D^{k i}`. -/
+@[simp]
+theorem fiberwiseCellReattachmentInvHomotopy_fiberwiseCellAttachmentCell (t : I) (i : ι)
+    (x : P × TopCat.disk.{u} (k i)) :
+    fiberwiseCellReattachmentInvHomotopy α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h K hK e he
+        (t, fiberwiseCellAttachmentCell α₀ i x) =
+      (x.1, K i (σ (TopCat.reattachmentPath (x.2, t)).1,
+        (x.1, ULift.up ⟨(e i x.1).symm (TopCat.reattachmentPath (x.2, t)).2.down.1, by
+          rw [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map]
+          exact mem_closedBall_zero_iff.1 (TopCat.reattachmentPath (x.2, t)).2.down.2⟩))) :=
+  fiberwiseCellReattachmentHomotopy_fiberwiseCellAttachmentCell _ _ _ _ _ _ _ _ _ _ t i x
+
 /-- The homotopy from `Φ₁ ∘ E⁻¹` to `Φ₀` lies over `P` at all times. -/
 @[simp]
 theorem fst_fiberwiseCellReattachmentInvHomotopy (t : I) (y : fiberwiseCellAttachment α₀) :
