@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Fourier.LaplacianSymbol
 public import TauCeti.Analysis.Fourier.PhaseGroup
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # The half-wave propagators on `L²`
@@ -34,6 +36,8 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
 * `TauCeti.halfWavePropagator`: the propagator `W₊(t) = exp(itD)` on `L²(E, F)`.
 * `TauCeti.coeFn_fourier_halfWavePropagator`: `𝓕 (W₊(t) f) = exp(2πi t ‖·‖) • 𝓕 f`.
 * `TauCeti.halfWavePropagator_neg`: `W₊(-t) = W₋(t)`, the multiplier with phase `-2π ‖·‖`.
+* `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
+  away from the origin.
 
 ## References
 
@@ -45,7 +49,7 @@ public section
 
 noncomputable section
 
-open scoped FourierTransform
+open scoped FourierTransform ContDiff
 open MeasureTheory Complex Real
 
 namespace TauCeti
@@ -74,6 +78,18 @@ theorem coeFn_fourier_halfWavePropagator (t : ℝ) (f : Lp F 2 (volume : Measure
   rw [halfWavePropagator_def, h, phaseSymbol_apply, sqrtNegLaplacianSymbol_apply]
   congr 4
   ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The half-wave symbol `exp(2πi t ‖ξ‖)` is smooth away from the origin, where the norm is. -/
+theorem contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol {n : WithTop ℕ∞} (t : ℝ) :
+    ContDiffOn ℝ n (phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t) {0}ᶜ := fun ξ hξ ↦ by
+  have h : phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t =
+      fun η ↦ cexp (((t * (2 * π * ‖η‖) : ℝ) : ℂ) * I) :=
+    funext fun η ↦ by rw [phaseSymbol_apply, sqrtNegLaplacianSymbol_apply]
+  rw [h]
+  exact ((ofRealCLM.contDiff.contDiffAt.comp ξ (contDiffAt_const.mul (contDiffAt_const.mul
+    (contDiffAt_norm ℝ (Set.mem_compl_singleton_iff.1 hξ))))).mul
+      contDiffAt_const).cexp.contDiffWithinAt
 
 /-- The backward half-wave propagator `W₊(-t)` is `W₋(t) = exp(-itD)`, the Fourier multiplier with
 the phase `-2π ‖·‖`. -/
