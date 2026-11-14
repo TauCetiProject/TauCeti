@@ -28,6 +28,8 @@ velocity does, and reversing the curve reverses it.
   vector orthogonal to the velocity.
 * `TauCeti.Manifold.riemannianVolumeForm_curveVelocity_orientedUnitNormal`: the oriented area of
   the velocity and the normal is the speed.
+* `TauCeti.Manifold.orientedUnitNormal_comp`: reparametrization multiplies the normal by the
+  sign of the derivative.
 * `TauCeti.Manifold.orientedUnitNormal_comp_const_sub`: reversing the curve reverses the normal.
 
 ## References
@@ -100,6 +102,16 @@ theorem riemannianVolumeForm_curveVelocity_orientedUnitNormal
   by_cases h : ‖curveVelocity I γ t‖ = 0
   · simp [h]
   · field_simp
+
+/-- Under a differentiable reparametrization the oriented unit normal is multiplied by the
+sign of its derivative. A zero derivative gives the zero normal. -/
+theorem orientedUnitNormal_comp (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {t : ℝ} (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) (hφ : DifferentiableAt ℝ φ t) :
+    orientedUnitNormal o (γ ∘ φ) t =
+      (SignType.sign (deriv φ t) : ℝ) • orientedUnitNormal o γ (φ t) := by
+  let := o.fact_finrank_tangentSpace (γ (φ t))
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply,
+    curveVelocity_comp hφ.hasDerivAt hγ, NormedSpace.normalize_smul, map_smul, Function.comp_apply]
 
 /-- Reversing a curve reverses its oriented unit normal. -/
 theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
