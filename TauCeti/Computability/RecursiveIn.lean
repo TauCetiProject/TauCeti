@@ -29,9 +29,12 @@ join of two oracles.
 Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
 encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
 statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
-composition, pairing, primitive recursion, and forming finite initial segments of a sequence.
-These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, and
-`Computable.nat_rec` in `Mathlib.Computability.Partrec` to `Nat.RecursiveIn`.
+composition, pairing, primitive recursion, forming finite initial segments of a sequence, and
+total unbounded search (`ComputableIn.find`), derived from partial Boolean search
+(`RecursiveIn.rfind`). Empty and constant oracle sets reduce `ComputableIn` to `Computable`.
+These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, `Computable.nat_rec`,
+and `Partrec.rfind` in `Mathlib.Computability.Partrec`, and `Computable.find` in
+`Mathlib.Computability.RE`, to `Nat.RecursiveIn`.
 -/
 
 public section
@@ -168,6 +171,74 @@ theorem nat_rec {f : α → ℕ} {g : α → β} {h : α → ℕ × β → β}
     | succ k ih => simp [ih]
 
 end ComputableIn
+
+namespace RecursiveIn
+
+open Encodable
+
+/-- Unbounded search over an oracle-recursive partial Boolean relation. -/
+theorem rfind {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α → ℕ →. Bool}
+    (hp : RecursiveIn₂ O p) : RecursiveIn O (fun a => Nat.rfind (p a)) := by
+  unfold RecursiveIn₂ at hp
+  unfold RecursiveIn at hp ⊢
+  have hflip : Nat.Primrec fun m => 1 - m :=
+    Primrec.nat_iff.1 <| Primrec.nat_sub.comp (_root_.Primrec.const 1) _root_.Primrec.id
+  refine (Nat.RecursiveIn.rfind (hp.map_primrec hflip)).of_eq fun n => ?_
+  cases e : decode (α := α) n with
+  | none =>
+    simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
+  | some a =>
+    simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
+      Option.bind_some, Part.coe_some, Part.bind_some, Part.map_eq_map, Part.map_map]
+    congr 1
+    funext m
+    rcases (p a m).eq_none_or_eq_some with hm | ⟨b, hm⟩
+    · simp [hm]
+    · cases b <;> simp [hm]
+
+end RecursiveIn
+
+namespace ComputableIn
+
+/-- Total unbounded search: if `p` is computable in `O` and holds at some number for every
+parameter, then the least witness `Nat.find` is computable in `O`. -/
+theorem find {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α → ℕ → Bool}
+    (hp : ComputableIn₂ O p) (hex : ∀ a, ∃ n, p a n = true) :
+    ComputableIn O (fun a => Nat.find (hex a)) := by
+  have hr : RecursiveIn O (fun a => Nat.rfind fun n => (p a n : Part Bool)) :=
+    RecursiveIn.rfind hp.recursiveIn₂
+  unfold ComputableIn
+  refine hr.of_eq_tot fun a => ?_
+  exact Nat.mem_rfind.2 ⟨by simp [Nat.find_spec (hex a)],
+    fun hm => by simpa using Nat.find_min (hex a) hm⟩
+
+end ComputableIn
+
+section EmptyAndConst
+
+variable {α β γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+
+/-- Computability in the empty oracle set is ordinary computability. -/
+@[simp]
+theorem computableIn_empty_iff {f : α → β} : ComputableIn {} f ↔ Computable f :=
+  recursiveIn_empty_iff
+
+/-- Binary computability in the empty oracle set is ordinary binary computability. -/
+@[simp]
+theorem computableIn₂_empty_iff {f : α → β → γ} : ComputableIn₂ {} f ↔ Computable₂ f :=
+  recursiveIn_empty_iff
+
+/-- Computability in a constant partial function is ordinary computability. -/
+theorem computableIn_const_iff {s : Part ℕ} {f : α → β} :
+    ComputableIn {fun _ => s} f ↔ Computable f :=
+  ⟨fun hf => hf.partrec_of_const, Computable.computableIn⟩
+
+/-- Binary computability in a constant partial function is ordinary binary computability. -/
+theorem computableIn₂_const_iff {s : Part ℕ} {f : α → β → γ} :
+    ComputableIn₂ {fun _ => s} f ↔ Computable₂ f :=
+  computableIn_const_iff
+
+end EmptyAndConst
 
 namespace ComputableIn₂
 
