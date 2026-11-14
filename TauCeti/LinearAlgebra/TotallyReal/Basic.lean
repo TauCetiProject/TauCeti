@@ -13,9 +13,9 @@ public import Mathlib.LinearAlgebra.Projection
 
 This file supplies the linear-algebra notion of a (maximal) totally real subspace with respect to
 a linear endomorphism `J` over an arbitrary scalar semiring.  This is the algebraic pointwise
-model for totally real boundary conditions in the analytic Heegaard Floer roadmap: a boundary
-tangent space `L` is totally real when it is disjoint from its `J`-image, and maximal totally
-real when the two are moreover complementary.  The terminology is borrowed from the usual
+model for totally real boundary conditions in analytic Heegaard Floer theory: a boundary tangent
+space `L` is totally real when it is disjoint from its `J`-image, and maximal totally real when
+the two are moreover complementary.  The terminology is borrowed from the usual
 real-linear situation, but the complement API itself is purely module-theoretic.
 
 No integrability, topology, or symplectic form is bundled here.
@@ -270,6 +270,11 @@ theorem existsUnique_add (hL : IsMaximalTotallyReal J L) (x : E) :
     ∃! y : L × L.map J, (y.1 : E) + y.2 = x :=
   Submodule.existsUnique_add_of_isCompl_prod hL.isCompl x
 
+/-- The projection onto `L` along `J L` vanishes on the `J`-image of a vector of `L`. -/
+theorem projection_map_of_mem (hL : IsMaximalTotallyReal J L) {b : E} (hb : b ∈ L) :
+    L.projection (L.map J) hL.isCompl (J b) = 0 :=
+  Submodule.projection_apply_of_mem_right hL.isCompl (Submodule.mem_map_of_mem hb)
+
 variable (hJ : J ∘ₗ J = -LinearMap.id)
 include hJ
 
@@ -286,8 +291,7 @@ theorem sub_map_projection_map (hL : IsMaximalTotallyReal J L) (v : E) :
   have hJv : J v = J (P v) - b := by
     conv_lhs => rw [hv]
     rw [map_add, hJJ, sub_eq_add_neg]
-  rw [hJv, map_sub, Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.projection_apply_mem hL.isCompl v, rfl⟩,
+  rw [hJv, map_sub, hL.projection_map_of_mem (L.projection_apply_mem hL.isCompl v),
     Submodule.projection_apply_of_mem_left hL.isCompl hb, zero_sub, map_neg, sub_neg_eq_add, hbv,
     add_sub_cancel]
 

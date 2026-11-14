@@ -285,7 +285,6 @@ theorem hasDerivAt_yamabeQuotient_add_smul (hn : 2 < finrank ℝ E) {u v : M →
   convert hQ using 1
   have hQu : yamabeQuotient I u = E₀ / N ^ (2 / p) := yamabeQuotient_def I u
   rw [hQu, Real.rpow_sub_one hN0.ne']
-  have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   have hp0 : p ≠ 0 := by linarith
   field_simp
 
@@ -365,7 +364,6 @@ private theorem hasDerivAt_yamabeQuotient_add_smul_eq_integral (hn : 2 < finrank
     ring
   rw [hsplit, integral_sub hL (hJ.const_mul _), integral_const_mul,
     ← integral_mul_conformalLaplacian hv (HasCompactSupport.of_compactSpace v) hu]
-  have hpos : 0 < N ^ (2 / p) := Real.rpow_pos_of_pos hN0 _
   field_simp
 
 /-- **The Euler–Lagrange equation of the Yamabe quotient.** On a closed manifold of dimension

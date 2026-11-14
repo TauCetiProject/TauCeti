@@ -16,11 +16,11 @@ over `ℚ` whose minimal polynomial over `ℤ` is `X² - d` — this file constr
 `ℚ`-algebra automorphism of `K`, characterised by `θ ↦ -θ`, and restricts it to a ring
 automorphism of `𝓞 K`. This is the field-theoretic conjugation of `ℚ(√d)`.
 
-It is the field-theoretic conjugation underlying the genus theory of the multiquadratic roadmap
-(Layer 3): downstream (`Conjugation/ClassGroup.lean`), its induced action on the class group
-`Cl(𝓞 K)` is shown to be by **inversion** — the fact that `I · σI` is principal — the mechanism
-behind the summit isomorphism `Gal(K_gen/K) ≅ Cl(K)/Cl(K)²`. Here we build the automorphism and
-record that it is an involution on `K` and on `𝓞 K`.
+It is the field-theoretic conjugation underlying genus theory: downstream
+(`Conjugation/ClassGroup.lean`), its induced action on the class group `Cl(𝓞 K)` is shown to be by
+**inversion** — the fact that `I · σI` is principal — the mechanism behind the isomorphism
+`Gal(K_gen/K) ≅ Cl(K)/Cl(K)²`. Here we build the automorphism and record that it is an involution
+on `K` and on `𝓞 K`.
 
 See D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*, for the
 classical genus theory this supports.

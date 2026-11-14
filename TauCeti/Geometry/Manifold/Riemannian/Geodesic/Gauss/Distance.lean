@@ -357,14 +357,14 @@ from `p` to `exp_p v` is `‖v‖` for every `v` in that ball; see `edist_rieman
 theorem IsNormalDomain.dist_riemannianExp_eq (h : IsNormalDomain I M p U)
     (hU : closedBall 0 r ⊆ U) (hv : v ∈ closedBall 0 r) :
     dist p (riemannianExp I M p v) = ‖v‖ := by
-  rw [dist_edist, h.edist_riemannianExp_eq hU hv, toReal_enorm]
+  rw [dist_edist, h.edist_riemannianExp_eq hU hv, toReal_eNorm]
 
 /-- The ordinary distance identity for a vector strictly inside a tangent ball contained in a
 normal domain. -/
 theorem IsNormalDomain.dist_riemannianExp_eq_of_mem_ball (h : IsNormalDomain I M p U)
     (hU : Metric.ball 0 r ⊆ U) (hv : v ∈ Metric.ball 0 r) :
     dist p (riemannianExp I M p v) = ‖v‖ := by
-  rw [dist_edist, h.edist_riemannianExp_eq_of_mem_ball hU hv, toReal_enorm]
+  rw [dist_edist, h.edist_riemannianExp_eq_of_mem_ball hU hv, toReal_eNorm]
 
 /-- **The nearest point of a small geodesic sphere.**  About every point `x` there is a radius
 `ε > 0` such that, for every `0 ≤ δ < ε` with `δ ≤ dist x q`, some tangent vector `w` of norm `δ`

@@ -130,7 +130,7 @@ theorem substForm_substFormInv (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
   · subst hi
     simp only [AlgHom.comp_apply, substFormInv_X_self, map_mul, map_sub, map_sum, algHom_C,
       algebraMap_eq, substForm_X_self, AlgHom.id_apply,
-      sum_erase_C_mul_map_X fun i hi ↦ substForm_X_of_ne hi]
+      sum_erase_C_mul_map_X fun _ hi ↦ substForm_X_of_ne hi]
     rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h))]
     simp [← mul_assoc, ← C_mul, hM h]
   · simp [hi]
@@ -146,7 +146,7 @@ theorem substFormInv_substForm (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
   · subst hi
     rw [AlgHom.comp_apply, substForm_X_self, ← Finset.add_sum_erase _ _ (mem_univ (i₀ h))]
     simp only [map_add, map_sum, map_mul, algHom_C, algebraMap_eq, substFormInv_X_self,
-      AlgHom.id_apply, sum_erase_C_mul_map_X fun i hi ↦ substFormInv_X_of_ne hi]
+      AlgHom.id_apply, sum_erase_C_mul_map_X fun _ hi ↦ substFormInv_X_of_ne hi]
     simp [← mul_assoc, ← C_mul, hM h]
   · simp [hi]
 

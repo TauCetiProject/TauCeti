@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
 
 /-!
 # The full-weight Chevalley datum and the simply connected Chevalley group scheme
@@ -22,11 +24,15 @@ are exactly `TauCeti.DynkinType.scWeight`. Thus this datum supplies the full-wei
 Chevalley's construction without a change of torus coordinates. In particular its torus is a
 closed immersion, by `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_torus`.
 
+On points, every root subgroup of this datum is injective over every commutative ring: the
+fundamental summand at node `i` detects the parameter of the `i`-th simple root subgroup, and
+every root subgroup is a signed Weyl conjugate of a simple one.
+
 The representation, lattice, and weight basis are those constructed in
 the full-weight lattice module imported above;
 the assembly follows the Geck-datum construction in
-`TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck`. No identification of the resulting group scheme
-with an independently constructed reductive group is asserted here.
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck.Basic`. No identification of the resulting group
+scheme with an independently constructed reductive group is asserted here.
 
 The group scheme of this datum over `ℤ` is the **simply connected Chevalley group scheme**
 `G_sc(t)` (`TauCeti.DynkinType.chevalleyGroupScheme`), with its points over a commutative ring
@@ -47,6 +53,10 @@ point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`).
 * `TauCeti.DynkinType.coe_scChevalleyDatum_weightLatticeBasis`: the lattice basis consists of
   the fundamental weights in their standard coordinates.
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`: the coordinate weights are `scWeight`.
+* `TauCeti.DynkinType.scChevalleyDatum_coordinateRoot`: the coordinate roots are the roots, so
+  the torus acts on the root subgroup of `γ` through the character `γ`.
+* `TauCeti.DynkinType.scChevalleyDatum_rootSubgroupPoints_injective`: every root subgroup of the
+  full-weight datum is injective, over every commutative ring.
 * `TauCeti.DynkinType.chevalleyGroupScheme`: the simply connected Chevalley group scheme
   `G_sc(t)` over `ℤ`.
 * `TauCeti.DynkinType.chevalleyGroup`: its points with values in a commutative ring, as a
@@ -98,7 +108,6 @@ The basis of its weight lattice is the standard basis of fundamental weights. -/
     (LinearEquiv.ofTop _ (t.span_range_scWeight_eq_top ht)).symm
 
 /-- The dimension of the full-weight datum is the size of its existing weight basis. -/
-@[simp]
 theorem scChevalleyDatum_dim : (t.scChevalleyDatum ht).dim = t.scWeightBasisCard ht :=
   (rfl)
 
@@ -146,6 +155,35 @@ theorem scChevalleyDatum_coordinateWeight :
   ext j i
   have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateWeight_smul j) i
   simpa [Pi.single_apply] using h
+
+/-- For the full-weight datum, restriction from the full weight lattice is the identity on torus
+parameters. -/
+@[simp]
+theorem scChevalleyDatum_fullWeightTorusRestriction {A : Type v} [CommRing A]
+    (s : Fin t.rank → Aˣ) : (t.scChevalleyDatum ht).fullWeightTorusRestriction A s = s := by
+  funext i
+  rw [ChevalleyDatum.fullWeightTorusRestriction_apply, coe_scChevalleyDatum_weightLatticeBasis,
+    torusCharacter_single, zpow_one]
+
+/-- The coordinate roots of the full-weight datum are the roots themselves, in fundamental-weight
+coordinates: the torus acts on the root subgroup of `γ` through the character `γ`. -/
+@[simp]
+theorem scChevalleyDatum_coordinateRoot (γ : Fin t.numRoots) :
+    (t.scChevalleyDatum ht).coordinateRoot γ = (t.simplyConnectedRootDatum ht).root γ := by
+  ext i
+  have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateRoot_smul γ) i
+  simpa [Pi.single_apply] using h
+
+/-- **Every root subgroup of the full-weight datum is injective**, over every commutative ring,
+including nonreduced rings and rings of small characteristic. -/
+theorem scChevalleyDatum_rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v)
+    [CommRing A] :
+    Function.Injective ((t.scChevalleyDatum ht).rootSubgroupPoints γ A) := by
+  -- At a positive simple root the fundamental summand of that node detects the parameter.
+  refine (t.scChevalleyDatum ht).rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
+  refine ((t.scChevalleyDatum ht).rootSubgroupPoints_injective_iff _ A).2 ?_
+  rw [chevalleyRootSubgroup_simpleIndex]
+  exact t.kostantRootSubgroupParam_scLattice_injective ht A (.inl i)
 
 /-! ## The simply connected Chevalley group scheme -/
 

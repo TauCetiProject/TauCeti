@@ -13,9 +13,9 @@ public import Mathlib.Probability.Moments.Tilted
 Tilting a measure `μ` along a real statistic `X` with parameter `t` reweights it by
 `exp (t * X) / mgf X μ t`. Its moment-generating function in the variable `s` is therefore the
 moment-generating function of `μ` shifted by `t` and renormalized:
-`mgf X (μ.tilted (t * X ·)) s = mgf X μ (t + s) / mgf X μ t`. Consequently its
-exponential-integrability domain is the domain of `μ` translated by `-t`, and its
-cumulant-generating function is `s ↦ cgf X μ (t + s) - cgf X μ t` there.
+`mgf X (μ.tilted (t * X ·)) s = mgf X μ (t + s) / mgf X μ t`. When `exp (t * X)` is
+`μ`-integrable, its exponential-integrability domain is the domain of `μ` translated by `-t`, and
+its cumulant-generating function is `s ↦ cgf X μ (t + s) - cgf X μ t` there.
 
 Mathlib's `ProbabilityTheory.integral_tilted_mul_self` and
 `ProbabilityTheory.variance_tilted_mul` give the first two derivatives of the cumulant-generating
@@ -40,11 +40,11 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω → �
 needed: when `exp (t * X)` is not integrable both sides vanish. -/
 theorem mgf_tilted_mul (X : Ω → ℝ) (μ : Measure Ω) (t s : ℝ) :
     mgf X (μ.tilted (t * X ·)) s = mgf X μ (t + s) / mgf X μ t := by
-  simp_rw [mgf, integral_tilted_mul_eq_mgf, smul_eq_mul, div_mul_eq_mul_div, ← exp_add, ← add_mul,
-    integral_div, mgf]
+  simp [mgf, integral_tilted_mul_eq_mgf, div_mul_eq_mul_div, ← exp_add, ← add_mul, integral_div]
 
-/-- The exponential-integrability domain of the tilt `μ.tilted (t * X ·)` is that of `μ`
-translated by `-t`. -/
+/-- When `exp (t * X)` is `μ`-integrable, the exponential-integrability domain of the tilt
+`μ.tilted (t * X ·)` is that of `μ` translated by `-t`. Without this hypothesis the tilt is the
+zero measure, whose domain is all of `ℝ`. -/
 theorem integrableExpSet_tilted_mul (ht : Integrable (fun ω ↦ exp (t * X ω)) μ) :
     integrableExpSet X (μ.tilted (t * X ·)) = (t + ·) ⁻¹' integrableExpSet X μ := by
   ext s
@@ -53,11 +53,12 @@ theorem integrableExpSet_tilted_mul (ht : Integrable (fun ω ↦ exp (t * X ω))
 
 /-- **The cumulant-generating function of an exponential tilt.** When the exponential moments at
 `t` and `t + s` are both finite, tilting by `t` shifts the cumulant-generating function by `t` and
-recentres it at zero. -/
-theorem cgf_tilted_mul [NeZero μ] (ht : Integrable (fun ω ↦ exp (t * X ω)) μ)
+recentres it at zero. For the zero measure both sides vanish. -/
+theorem cgf_tilted_mul (ht : Integrable (fun ω ↦ exp (t * X ω)) μ)
     (hts : Integrable (fun ω ↦ exp ((t + s) * X ω)) μ) :
     cgf X (μ.tilted (t * X ·)) s = cgf X μ (t + s) - cgf X μ t := by
-  rw [cgf, mgf_tilted_mul, log_div (mgf_pos' (NeZero.ne μ) hts).ne' (mgf_pos' (NeZero.ne μ) ht).ne',
-    cgf, cgf]
+  obtain rfl | hμ := eq_or_ne μ 0
+  · simp
+  rw [cgf, mgf_tilted_mul, log_div (mgf_pos' hμ hts).ne' (mgf_pos' hμ ht).ne', cgf, cgf]
 
 end TauCeti

@@ -40,21 +40,7 @@ theorem map_internalEdges_union (h : G.Compatible H) [Fintype E(h.union)] (S : F
       (G.internalEdges (S.subtype (· ∈ V(G)))).map (.subtype _) ∪
         (H.internalEdges (S.subtype (· ∈ V(H)))).map (.subtype _) := by
   ext e
-  simp only [mem_map, mem_internalEdges, mem_subtype, Function.Embedding.subtype_apply,
-    mem_union, Subtype.exists]
-  constructor
-  · rintro ⟨e, he, ⟨x, hx, hxS, y, hy, hyS, hxy⟩, rfl⟩
-    rcases h.union_isLink.mp hxy with hxy | hxy
-    · exact Or.inl ⟨e, hxy.edge_mem, ⟨x, hxy.left_mem, hxS, y, hxy.right_mem, hyS, hxy⟩, Eq.refl _⟩
-    · exact Or.inr ⟨e, hxy.edge_mem, ⟨x, hxy.left_mem, hxS, y, hxy.right_mem, hyS, hxy⟩, Eq.refl _⟩
-  · rintro (⟨e, he, ⟨x, hx, hxS, y, hy, hyS, hxy⟩, rfl⟩ |
-      ⟨e, he, ⟨x, hx, hxS, y, hy, hyS, hxy⟩, rfl⟩)
-    · exact ⟨e, h.left_le_union.edgeSet_mono he,
-        ⟨x, h.left_le_union.vertexSet_mono hx, hxS, y,
-          h.left_le_union.vertexSet_mono hy, hyS, hxy.mono h.left_le_union⟩, Eq.refl _⟩
-    · exact ⟨e, h.right_le_union.edgeSet_mono he,
-        ⟨x, h.right_le_union.vertexSet_mono hx, hxS, y,
-          h.right_le_union.vertexSet_mono hy, hyS, hxy.mono h.right_le_union⟩, Eq.refl _⟩
+  simp only [mem_union, mem_map_internalEdges_subtype, h.union_isLink, and_or_left, exists_or]
 
 open Classical in
 /-- Incident edge identities of a compatible union come from the incident edges in its two
@@ -65,18 +51,7 @@ theorem map_incidentEdges_union (h : G.Compatible H) [Fintype E(h.union)] (S : F
       (G.incidentEdges (S.subtype (· ∈ V(G)))).map (.subtype _) ∪
         (H.incidentEdges (S.subtype (· ∈ V(H)))).map (.subtype _) := by
   ext e
-  simp only [mem_map, mem_incidentEdges, mem_subtype, Function.Embedding.subtype_apply,
-    mem_union, Subtype.exists]
-  constructor
-  · rintro ⟨e, he, ⟨x, hx, hxS, hex⟩, rfl⟩
-    rcases h.union_inc_iff.mp hex with hex | hex
-    · exact Or.inl ⟨e, hex.edge_mem, ⟨x, hex.vertex_mem, hxS, hex⟩, Eq.refl _⟩
-    · exact Or.inr ⟨e, hex.edge_mem, ⟨x, hex.vertex_mem, hxS, hex⟩, Eq.refl _⟩
-  · rintro (⟨e, he, ⟨x, hx, hxS, hex⟩, rfl⟩ | ⟨e, he, ⟨x, hx, hxS, hex⟩, rfl⟩)
-    · exact ⟨e, h.left_le_union.edgeSet_mono he,
-        ⟨x, h.left_le_union.vertexSet_mono hx, hxS, hex.mono h.left_le_union⟩, Eq.refl _⟩
-    · exact ⟨e, h.right_le_union.edgeSet_mono he,
-        ⟨x, h.right_le_union.vertexSet_mono hx, hxS, hex.mono h.right_le_union⟩, Eq.refl _⟩
+  simp only [mem_union, mem_map_incidentEdges_subtype, h.union_inc_iff, and_or_left, exists_or]
 
 open Classical in
 /-- Internal-edge counts add over a compatible union with disjoint edge sets. The graphs may

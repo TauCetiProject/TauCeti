@@ -59,6 +59,8 @@ canonically isomorphic to the chosen base change.
 
 * `TauCeti.AlgebraicGeometry.PrestableMap.ev_eq_of_hom`: morphisms of prestable maps preserve
   evaluations.
+* `TauCeti.AlgebraicGeometry.PrestableMap.Hom.factorsThrough_map`: the map of a prestable map
+  is constant on the fibres of every morphism of source curves out of it.
 * `TauCeti.AlgebraicGeometry.PrestableMap.isIso_iff_isIso_hom`: a morphism of prestable maps is
   an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PrestableMap.mem_range_autToCurve_iff`: an automorphism of the
@@ -133,6 +135,12 @@ theorem comp_curve (f : F ⟶ G) (g : G ⟶ H) : (f ≫ g).curve = f.curve ≫ g
 /-- A morphism of prestable maps preserves the evaluation at every marking. -/
 theorem ev_eq_of_hom (f : F ⟶ G) (i : Fin n) : F.ev i = G.ev i := by
   rw [← marking_comp_map, ← f.hom_comp_map, f.curve.marking_comp_hom_assoc, marking_comp_map]
+
+/-- The map of a prestable map is constant on the fibres of every morphism of source curves out
+of it: it factors through the morphism of total spaces. -/
+theorem Hom.factorsThrough_map (f : F ⟶ G) :
+    Function.FactorsThrough F.map f.curve.hom := fun a b hab ↦ by
+  rw [← f.hom_comp_map, Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hab]
 
 /-- The functor sending a prestable map to its pointed source curve, forgetting the map. -/
 @[expose, simps]

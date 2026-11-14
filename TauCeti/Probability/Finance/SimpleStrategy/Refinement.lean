@@ -86,8 +86,14 @@ theorem exists_simpleHolding_eq_sum_indicator_Ioc [OrderBot ι] {mΩ : Measurabl
   classical
   -- Sort the distinct endpoints, including the initial time.
   let d := insert ⊥ (s.image l ∪ s.image u)
-  obtain ⟨n, τ, hτ, -, hsurj⟩ :=
+  obtain ⟨τ, -, hτ, -, himage, -⟩ :=
     d.exists_strictMonoOn_Iic_surj ⟨⊥, mem_insert_self _ _⟩
+  let n := d.card - 1
+  have hsurj (x : ι) (hx : x ∈ d) : ∃ j ≤ n, τ j = x := by
+    have hximage : x ∈ τ '' Set.Iic n := by
+      rw [himage]
+      exact hx
+    exact hximage
   have hzero : τ 0 = ⊥ := by
     obtain ⟨j, hj, heq⟩ := hsurj ⊥ (mem_insert_self _ _)
     exact le_bot_iff.mp (heq ▸ hτ.monotoneOn (Nat.zero_le n) hj (Nat.zero_le j))

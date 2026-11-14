@@ -105,7 +105,6 @@ theorem IsEquipartition.exists_equipartition_card_eq_almostRefines (hP : P.IsEqu
   have hsA : (#s : ℝ) ≤ 2 * #P.parts * #A := by
     norm_cast
     nlinarith [Nat.mul_le_mul_left #P.parts hAavg, Nat.mul_le_mul_left #P.parts hA₁]
-  have hn' : (0 : ℝ) < n := by positivity
   calc (#(A \ {B ∈ (P.equitabilise hsum).parts | B ⊆ A}.biUnion id) : ℝ)
       ≤ (#s / n : ℕ) := mod_cast card_parts_equitabilise_subset_le _ _ hA
     _ ≤ #s / n := Nat.cast_div_le
