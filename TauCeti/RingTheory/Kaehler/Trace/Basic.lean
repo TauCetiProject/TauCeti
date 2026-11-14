@@ -104,6 +104,16 @@ lemma traceDerivForm_one_right [DecidableEq m] (X : Matrix m m R) :
   refine Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ ?_
   split_ifs <;> simp
 
+/-- `Tr(1 · D(Y)) = D(Tr(Y))`. -/
+@[simp]
+lemma traceDerivForm_one_left [DecidableEq m] (Y : Matrix m m R) :
+    traceDerivForm D (1 : Matrix m m R) Y = D Y.trace := by
+  simp only [traceDerivForm, Matrix.trace, diag, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [Matrix.one_apply_ne' hj])
+    (fun h ↦ (h (Finset.mem_univ _)).elim)]
+  simp
+
 /-- `Tr(X · D(c · 1)) = Tr(X) • D(c)`. -/
 lemma traceDerivForm_scalar_right [DecidableEq m] (X : Matrix m m R) (c : R) :
     traceDerivForm D X (Matrix.scalar m c) = X.trace • D c := by
@@ -215,6 +225,12 @@ lemma traceDeriv_algebraMap (r : R) (c : B) :
   rw [traceDeriv_def, traceDerivOfBasis_def, leftMulMatrix_algebraMap,
     traceDerivForm_scalar_right, trace_eq_matrix_trace (Module.Free.chooseBasis R B)]
 
+/-- Evaluating the trace derivation of `a` at `1` differentiates the algebraic trace of `a`. -/
+lemma traceDeriv_one_right (a : B) : traceDeriv D a 1 = D (trace R B a) := by
+  classical
+  rw [traceDeriv_def, traceDerivOfBasis_def, map_one, traceDerivForm_one_left,
+    trace_eq_matrix_trace (Module.Free.chooseBasis R B)]
+
 end Derivation
 
 namespace Derivation
@@ -300,5 +316,15 @@ lemma traceLin_smul_D (a c : B) :
 @[simp]
 lemma traceLin_D (a : B) : traceLin D (KaehlerDifferential.D k B a) = traceDeriv D a 1 := by
   rw [← traceLin_smul_D, one_smul]
+
+/-- **The trace of an exact differential is the derivative of the trace**:
+`traceLin D (d a) = D (Tr(a))`. -/
+lemma traceLin_D_eq (a : B) : traceLin D (KaehlerDifferential.D k B a) = D (trace R B a) := by
+  rw [traceLin_D, traceDeriv_one_right]
+
+/-- On a differential pulled back from `R`, the trace acts on the coefficient by `Algebra.trace`. -/
+lemma traceLin_smul_D_algebraMap (r : R) (c : B) :
+    traceLin D (c • KaehlerDifferential.D k B (algebraMap R B r)) = trace R B c • D r := by
+  rw [traceLin_smul_D, traceDeriv_algebraMap]
 
 end Derivation
