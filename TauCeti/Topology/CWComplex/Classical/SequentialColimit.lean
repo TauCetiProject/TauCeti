@@ -48,8 +48,8 @@ extension property in the next, carrying the topology coherent with them, and le
 `h k : F k ≃ₕ A k` be homotopy equivalences commuting strictly with the inclusions. Then the
 colimit is homotopy equivalent to `Y` by a homotopy equivalence restricting to `h k` on `F k`
 (`TauCeti.exists_homotopyEquiv_of_isColimit_cwComplex`). This is the comparison
-`TauCeti.exists_homotopyEquiv_of_isColimit` of a colimit of a tower of closed cofibrations with
-such a union.
+`TauCeti.exists_homotopyEquiv_of_isColimit` of a colimit of a tower of cofibrations with such a
+union.
 
 ## Main definitions
 
@@ -277,7 +277,7 @@ Inside the colimit, the range of `F k` has the homotopy extension property in th
 theorem hasHomotopyExtensionProperty_preimage_range_ι [∀ k, T2Space (F.obj k)] (k : ℕ) :
     HasHomotopyExtensionProperty
       ((↑) ⁻¹' (range (c.ι.app k) : Set c.pt) : Set ↥(range (c.ι.app (k + 1)) : Set c.pt)) :=
-  hasHomotopyExtensionProperty_preimage_range_ι_of_isColimit hF hc k
+  hasHomotopyExtensionProperty_preimage_range_ι_of_isColimit hc hF k
     (hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k))
 
 include hF hι hc in
@@ -305,7 +305,7 @@ theorem exists_homotopyEquiv_of_isColimit_cwComplex [∀ k, T2Space (F.obj k)] {
     (h : ∀ k, F.obj k ≃ₕ A k)
     (hh : ∀ k w, (h (k + 1) (F.map (homOfLE k.le_succ) w) : Y) = h k w) :
     ∃ H : c.pt ≃ₕ Y, ∀ k w, H (c.ι.app k w) = (h k w : Y) :=
-  exists_homotopyEquiv_of_isColimit hF hc
+  exists_homotopyEquiv_of_isColimit hc (fun k ↦ (hF k).isEmbedding)
     (fun k ↦ hasHomotopyExtensionProperty_range_of_coe_map_eq (ι k) (hι k)) hA hAY hAc hAH h hh
 
 end TauCeti
