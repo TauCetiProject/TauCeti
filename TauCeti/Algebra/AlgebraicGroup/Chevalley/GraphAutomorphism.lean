@@ -51,17 +51,25 @@ def chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A]
     (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm
       (t.scToralDiagramAutPoints ht hσ A)
 
+/-- The graph automorphism transports the full-weight toral action to Chevalley points. -/
+theorem chevalleyGraphAut_def (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A] :
+    t.chevalleyGraphAut ht hσ A =
+      MulAut.congr (MulEquiv.subgroupCongr
+        (t.chevalleyGroup_eq_kostantToralPointsSubgroup ht A)).symm
+          (t.scToralDiagramAutPoints ht hσ A) := (rfl)
+
 /-- On matrices the graph automorphism is conjugation by the integral lattice symmetry. -/
+-- Keep the matrix dimensions on the datum interface so simp needs no unfolding of the datum.
 @[simp]
 theorem coe_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry) (A : Type v) [CommRing A]
-    (g : t.chevalleyGroup ht A) :
-    ((t.chevalleyGraphAut ht hσ A g).val :
-        Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) A) =
-      kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+    (g : (t.scChevalleyDatum ht).points A) :
+    (t.chevalleyGraphAut ht hσ A g).val =
+      (show Matrix.GeneralLinearGroup (Fin (t.scChevalleyDatum ht).dim) A from
+        kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
           (t.scModuleDiagramEquiv ht hσ)
-          (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ) A *
-        (g : Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) A) *
-        (kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+          (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ) A) * g.val *
+      (show Matrix.GeneralLinearGroup (Fin (t.scChevalleyDatum ht).dim) A from
+        kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
           (t.scModuleDiagramEquiv ht hσ)
           (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ) A)⁻¹ :=
   t.coe_scToralDiagramAutPoints ht hσ A
@@ -152,7 +160,7 @@ theorem chevalleyGraphAut_rootSubgroupPoints (hσ : σ ∈ t.diagramSymmetry)
 
 /-- Positive simple-root parameters are unchanged by the pinned graph action. -/
 -- Apply the pinning formula before the general-root formula introduces its signed index.
-@[simp↓]
+@[simp high]
 theorem chevalleyGraphAut_rootSubgroupPoints_simpleIndex (hσ : σ ∈ t.diagramSymmetry)
     (i : Fin t.rank) (A : Type v) [CommRing A] (u : Multiplicative A) :
     t.chevalleyGraphAut ht hσ A
@@ -163,7 +171,7 @@ theorem chevalleyGraphAut_rootSubgroupPoints_simpleIndex (hσ : σ ∈ t.diagram
     t.chevalleyGraphAut_rootSubgroupPoints ht hσ (t.simpleIndex ht i) A u
 
 /-- Negative simple-root parameters are unchanged by the pinned graph action. -/
-@[simp↓]
+@[simp high]
 theorem chevalleyGraphAut_rootSubgroupPoints_reflectionPerm_simpleIndex
     (hσ : σ ∈ t.diagramSymmetry) (i : Fin t.rank) (A : Type v) [CommRing A]
     (u : Multiplicative A) :
