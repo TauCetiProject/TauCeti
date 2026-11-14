@@ -19,7 +19,8 @@ on closed points is exactly the closed-point part of its full topological image.
 The file also records the affine charts of a morphism `X ⟶ Spec A` locally of finite type:
 every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `A`
 (`Scheme.Hom.exists_isOpenImmersion_finiteType`), and the sections over every affine open are of
-finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`).
+finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`). For a quasi-compact
+source, `Scheme.Hom.exists_finite_affine_charts` gives a finite family of such charts.
 
 This complements Mathlib's `Scheme.Hom.closedPoints_subset_preimage_closedPoints` with the
 lifting direction, needed to compare rational and topological orbit images.
@@ -59,6 +60,30 @@ theorem finiteType_ΓSpecIso_inv_comp_appLE {U : X.Opens} (hU : IsAffineOpen U) 
     ((Scheme.ΓSpecIso A).inv ≫ f.appLE ⊤ U le_top).hom.FiniteType :=
   (f.finiteType_appLE (isAffineOpen_top _) hU le_top).comp
     (.of_surjective _ (Scheme.ΓSpecIso A).symm.commRingCatIsoToRingEquiv.surjective)
+
+/-- A quasi-compact scheme locally of finite type over `K` is covered by finitely many open
+charts `Spec (A i)`, each `A i` a finitely generated `K`-algebra compatibly with the structure
+morphism. -/
+theorem exists_finite_affine_charts {K : Type u} [CommRing K] {X : Scheme.{u}}
+    (f : X ⟶ Spec (.of K)) [QuasiCompact f] [LocallyOfFiniteType f] :
+    ∃ (ι : Type u) (_ : Finite ι) (A : ι → Type u) (_ : ∀ i, CommRing (A i))
+      (_ : ∀ i, Algebra K (A i)) (_ : ∀ i, Algebra.FiniteType K (A i))
+      (φ : ∀ i, Spec (.of (A i)) ⟶ X), (∀ i, IsOpenImmersion (φ i)) ∧
+        (∀ i, φ i ≫ f = Spec.algebraMap K (A i)) ∧ ∀ x, ∃ i y, φ i y = x := by
+  have := QuasiCompact.compactSpace_of_compactSpace f
+  let 𝒰 := X.affineCover.finiteSubcover
+  have (i : 𝒰.I₀) : IsAffine (𝒰.X i) :=
+    (OpenCover.finiteSubcover_X X.affineCover i).symm ▸ inferInstance
+  let φ (i : 𝒰.I₀) : Spec Γ(𝒰.X i, ⊤) ⟶ X := (𝒰.X i).isoSpec.inv ≫ 𝒰.f i
+  let _ (i : 𝒰.I₀) : Algebra K Γ(𝒰.X i, ⊤) := (Spec.preimage (φ i ≫ f)).hom.toAlgebra
+  have hφ (i : 𝒰.I₀) : φ i ≫ f = Spec.algebraMap K Γ(𝒰.X i, ⊤) := (Spec.map_preimage _).symm
+  refine ⟨𝒰.I₀, inferInstance, fun i ↦ Γ(𝒰.X i, ⊤), inferInstance, inferInstance,
+    fun i ↦ ?_, φ, fun i ↦ inferInstance, hφ, fun x ↦ ?_⟩
+  · have : LocallyOfFiniteType (Spec.algebraMap K Γ(𝒰.X i, ⊤)) := hφ i ▸ inferInstance
+    rw [HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)] at this
+    exact RingHom.finiteType_algebraMap.mp this
+  · obtain ⟨i, y, hy⟩ := 𝒰.exists_eq x
+    exact ⟨i, (𝒰.X i).isoSpec.hom y, by simp [φ, hy]⟩
 
 end Chart
 

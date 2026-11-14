@@ -21,7 +21,9 @@ irreducible components. For a continuous map between sober spaces, bijections on
 component-generic points are therefore equivalent to bijections on irreducible components by
 closure of image. Bijections on component-generic points restrict along open embeddings, and
 can be checked on an open cover of the target and its inverse-image cover of the source; this
-permits component labels obtained on affine charts to be glued.
+permits component labels obtained on affine charts to be glued. For a generalizing map, such as a
+flat morphism of schemes, a bijection on irreducible components by closure of image is inverted by
+taking preimages.
 -/
 
 public section
@@ -184,5 +186,47 @@ theorem TauCeti.bijOn_genericPoints_iff_of_isOpenEmbedding
     obtain ⟨i, z, rfl⟩ := hcover y
     obtain ⟨w, hw, hwz⟩ := (h i).surjOn ((hk i).mem_genericPoints_iff _ |>.mp hy)
     exact ⟨j i w, (hj i).mem_genericPoints_iff _ |>.mpr hw, by rw [hcomm, hwz]⟩
+
+/-- **Closure of image and preimage are inverse bijections on irreducible components.** Let
+`f` be a generalizing map into a quasi-sober space, for example a flat morphism of
+schemes, such that `Z ↦ closure (f '' Z)` maps the irreducible components of the source
+bijectively onto those of the target. Then `W ↦ f ⁻¹' W` maps the irreducible components of the
+target bijectively onto those of the source, inverting that bijection. -/
+theorem GeneralizingMap.invOn_preimage_closure_image_irreducibleComponents
+    [QuasiSober Y] {f : X → Y}
+    (hf : GeneralizingMap f)
+    (h : BijOn (fun Z ↦ closure (f '' Z)) (irreducibleComponents X)
+      (irreducibleComponents Y)) :
+    InvOn (f ⁻¹' ·) (fun Z ↦ closure (f '' Z))
+      (irreducibleComponents X) (irreducibleComponents Y) := by
+  have key : LeftInvOn (f ⁻¹' ·) (fun Z ↦ closure (f '' Z))
+      (irreducibleComponents X) := by
+    intro Z hZ
+    refine subset_antisymm (fun x hx ↦ ?_)
+      ((subset_preimage_image f Z).trans (preimage_mono subset_closure))
+    -- The generic point of the component `closure (f '' Z)` generalizes `f x`; lift it to a
+    -- generalization `x'` of `x`, which lies on a component `Z'` with the same closed image.
+    have hW := h.mapsTo hZ
+    have hη := hW.1.isGenericPoint_genericPoint (isClosed_of_mem_irreducibleComponents _ hW)
+    obtain ⟨x', hx'x, hx'⟩ := hf (hη.specializes hx)
+    obtain ⟨Z', hZ', hsub⟩ :=
+      exists_mem_irreducibleComponents_subset_of_isIrreducible (closure {x'})
+        isIrreducible_singleton.closure
+    have hle : closure (f '' Z) ⊆ closure (f '' Z') := by
+      rw [← hη.def]
+      exact closure_mono (singleton_subset_iff.mpr
+        ⟨x', hsub (subset_closure (mem_singleton x')), hx'⟩)
+    have hZZ' : Z' = Z := h.injOn hZ' hZ (subset_antisymm (hW.2 (h.mapsTo hZ').1 hle) hle)
+    exact hZZ' ▸ hsub (specializes_iff_mem_closure.mp hx'x)
+  exact ⟨key, h.surjOn.leftInvOn_of_rightInvOn key⟩
+
+/-- For a generalizing map into a quasi-sober space, a closure-of-image bijection on
+irreducible components induces a preimage bijection in the opposite direction. -/
+theorem GeneralizingMap.bijOn_preimage_irreducibleComponents [QuasiSober Y] {f : X → Y}
+    (hf : GeneralizingMap f)
+    (h : BijOn (fun Z ↦ closure (f '' Z)) (irreducibleComponents X)
+      (irreducibleComponents Y)) :
+    BijOn (f ⁻¹' ·) (irreducibleComponents Y) (irreducibleComponents X) :=
+  h.symm (hf.invOn_preimage_closure_image_irreducibleComponents h).symm
 
 end Maps
