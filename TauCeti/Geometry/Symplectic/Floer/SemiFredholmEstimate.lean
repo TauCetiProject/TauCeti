@@ -120,8 +120,8 @@ private theorem setIntegral_Icc_prod_eq_of_forall_notMem_Ioo
   have hts : tsupport η ⊆ Prod.fst ⁻¹' Icc c d :=
     closure_minimal (fun w hw ↦ Ioo_subset_Icc_self (not_not.1 (mt (hη w) hw)))
       (isClosed_Icc.preimage continuous_fst)
-  refine ⟨setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hc hd fun z hz ↦ ?_,
-    setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hc hd fun z hz ↦ ?_⟩ <;>
+  refine ⟨setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hc hd fun z _ hz ↦ ?_,
+    setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hc hd fun z _ hz ↦ ?_⟩ <;>
   · have hz' : z ∉ tsupport η := fun h ↦ by
       rcases hz with hz | hz <;> linarith [(hts h).1, (hts h).2]
     rw [fderiv_of_notMem_tsupport ℝ hz', image_eq_zero_of_notMem_tsupport hz']
@@ -188,7 +188,7 @@ private theorem setIntegral_norm_fderiv_add_sq_le_of_eq_smul
   -- The error term `β'² ‖ξ‖²` is supported in `[c, d] × [0, 1]` and bounded by `L² ‖ξ‖²`.
   have hE : 2 * ∫ z in Icc A B ×ˢ Icc 0 1, deriv β z.1 ^ 2 * ‖ξ z‖ ^ 2 ≤
       2 * L ^ 2 * ∫ z in Icc c d ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 := by
-    rw [setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hA hB fun z hz ↦ by
+    rw [setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hA hB fun z _ hz ↦ by
       rw [hβcd z.1 fun h ↦ by rcases hz with hz | hz <;> linarith [h.1, h.2]]
       simp, mul_assoc 2 (L ^ 2)]
     gcongr
@@ -292,14 +292,14 @@ private theorem setIntegral_norm_fderiv_sq_add_le_three_mul {ξ η₁ η₂ η�
 
 omit [FiniteDimensional ℝ V] in
 /-- **An end estimate on a piece.** Let `D = ∂s + J ∂t + S` satisfy an `L²` estimate with
-constant `C` on the maps of period one in `t` vanishing on two slices `s = c`, `s = d` with
-`[c, d] ⊆ U`. Then a piece `η = β(s) ξ` of a `C²` map `ξ` of period one in `t`, with `β` of class
-`C²` and `η` vanishing for `s ∉ (c, d)`, satisfies the estimate over every window
-`[c', d'] × [0, 1]` containing `[c, d] × [0, 1]`. -/
+constant `C` on the maps of period one in `t` vanishing for `s ∉ (c, d)`, where `[c, d] ⊆ U`.
+Then a piece `η = β(s) ξ` of a `C²` map `ξ` of period one in `t`, with `β` of class `C²` and `η`
+vanishing for `s ∉ (c, d)`, satisfies the estimate over every window `[c', d'] × [0, 1]`
+containing `[c, d] × [0, 1]`. -/
 private theorem setIntegral_le_of_eq_smul_of_forall_notMem_Ioo
     (J : ℝ × ℝ → AlmostComplexStructure V) (S : ℝ × ℝ → V →L[ℝ] V) {U : Set ℝ} {C : ℝ}
     (hU : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U → (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U → (∀ z : ℝ × ℝ, z.1 ∉ Ioo a b → ξ z = 0) →
         ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
           C * ∫ z in Icc a b ×ˢ Icc 0 1, ‖fderiv ℝ ξ z stdComplexLineReal +
@@ -314,8 +314,8 @@ private theorem setIntegral_le_of_eq_smul_of_forall_notMem_Ioo
         J z (fderiv ℝ η z stdComplexLineImag) + S z (η z)‖ ^ 2 := by
   obtain ⟨e₁, e₂⟩ := setIntegral_Icc_prod_eq_of_forall_notMem_Ioo J S hηcd hc hd
   rw [e₁, e₂]
-  refine hU (by rw [funext hη]; exact (hβ.comp contDiff_fst).smul hξ)
-    (fun s t ↦ by rw [hη, hη, hper]) hcd hcdU (fun t ↦ hηcd _ ?_) fun t ↦ hηcd _ ?_ <;> simp
+  exact hU (by rw [funext hη]; exact (hβ.comp contDiff_fst).smul hξ)
+    (fun s t ↦ by rw [hη, hη, hper]) hcd hcdU hηcd
 
 /-- The arithmetic of the patching: the three pieces' estimates, their cutoff errors and the
 factor `3` of the splitting combine to the semi-Fredholm estimate. -/
@@ -343,7 +343,7 @@ private theorem setIntegral_le_of_partition
     (hC₀ : 0 ≤ C₀) (hCp : 0 ≤ Cp) {Um Up : Set ℝ} (hUm : ∀ s ≤ -R, s ∈ Um)
     (hUp : ∀ s, R ≤ s → s ∈ Up)
     (hm : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Um → (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Um → (∀ z : ℝ × ℝ, z.1 ∉ Ioo a b → ξ z = 0) →
         ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
           Cm * ∫ z in Icc a b ×ˢ Icc 0 1, ‖fderiv ℝ ξ z stdComplexLineReal +
@@ -356,7 +356,7 @@ private theorem setIntegral_le_of_partition
         C₀ * ∫ z in Icc (-(R + 1)) (R + 1) ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal +
             J z (fderiv ℝ ξ z stdComplexLineImag) + S z (ξ z)‖ ^ 2 + ‖ξ z‖ ^ 2))
     (hp : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Up → (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Up → (∀ z : ℝ × ℝ, z.1 ∉ Ioo a b → ξ z = 0) →
         ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
           Cp * ∫ z in Icc a b ×ˢ Icc 0 1, ‖fderiv ℝ ξ z stdComplexLineReal +
@@ -430,7 +430,7 @@ private theorem setIntegral_le_of_partition
 let `J` and `S` be continuous on the cylinder `ℝ × [0, 1]`, and suppose that the operator
 `D = ∂s + J(z) ∂t + S(z)` satisfies `L²` estimates far out on both ends: there are constants
 `C₊, C₋ ≥ 0` and sets `U₊ ∈ atTop`, `U₋ ∈ atBot` such that every `C²` map `ξ` of period one in
-`t`, vanishing on the slices `s = a` and `s = b` with `[a, b] ⊆ U_±`, satisfies
+`t` that vanishes for `s ∉ (a, b)`, where `[a, b] ⊆ U_±`, satisfies
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C_± ∫ ‖D ξ‖²` over `[a, b] × [0, 1]`. Then there are constants
 `C ≥ 0` and `T` such that every `C²` map `ξ` of period one in `t` that vanishes for `s ∉ (a, b)`
 satisfies
@@ -445,13 +445,13 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_add_setIntegral_of_ends
     (hS : ContinuousOn S (univ ×ˢ Icc 0 1)) {Cp Cm : ℝ} (hCp : 0 ≤ Cp) (hCm : 0 ≤ Cm)
     {Up Um : Set ℝ} (hUp : Up ∈ atTop) (hUm : Um ∈ atBot)
     (hp : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Up → (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Up → (∀ z : ℝ × ℝ, z.1 ∉ Ioo a b → ξ z = 0) →
         ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
           Cp * ∫ z in Icc a b ×ˢ Icc 0 1, ‖fderiv ℝ ξ z stdComplexLineReal +
             J z (fderiv ℝ ξ z stdComplexLineImag) + S z (ξ z)‖ ^ 2)
     (hm : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
-      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Um → (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ Um → (∀ z : ℝ × ℝ, z.1 ∉ Ioo a b → ξ z = 0) →
         ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
             ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
           Cm * ∫ z in Icc a b ×ˢ Icc 0 1, ‖fderiv ℝ ξ z stdComplexLineReal +
@@ -554,6 +554,10 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_setI
       (fun _ _ ↦ (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
       (fun _ _ ↦ contDiffAt_const)
       (fun _ _ ↦ (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
-      fun z hz ↦ hu z.1 z.2 hz.2) hCp hCm hUp hUm hp hm
+      fun z hz ↦ hu z.1 z.2 hz.2) hCp hCm hUp hUm
+    (fun ξ hξ hper a b hab hab' hsupp ↦ hp hξ hper hab hab' (fun t ↦ hsupp _ (by simp))
+      fun t ↦ hsupp _ (by simp))
+    fun ξ hξ hper a b hab hab' hsupp ↦ hm hξ hper hab hab' (fun t ↦ hsupp _ (by simp))
+      fun t ↦ hsupp _ (by simp)
 
 end TauCeti.SymplecticForm

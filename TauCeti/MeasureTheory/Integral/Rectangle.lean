@@ -157,13 +157,14 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
   exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
 
 /-- **Enlarging a strip.** Widening the strip `[c, d] × I` to `[c', d'] × I` does not change the
-integral of a function vanishing at the points with first coordinate `s < c` or `s > d`. -/
+integral of a function vanishing at the points of `[c', d'] × I` with first coordinate `s < c` or
+`s > d`. -/
 theorem setIntegral_Icc_prod_eq_of_forall_eq_zero {f : ℝ × ℝ → E} {c d c' d' : ℝ} {I : Set ℝ}
     (hI : MeasurableSet I) (hc : c' ≤ c) (hd : d ≤ d')
-    (hf : ∀ z : ℝ × ℝ, z.1 < c ∨ d < z.1 → f z = 0) :
+    (hf : ∀ z ∈ Icc c' d' ×ˢ I, z.1 < c ∨ d < z.1 → f z = 0) :
     ∫ z in Icc c' d' ×ˢ I, f z = ∫ z in Icc c d ×ˢ I, f z :=
   setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (measurableSet_Icc.prod hI)
-    (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z (by
+    (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z hz.1 (by
       have h : z.1 ∉ Icc c d := fun h ↦ hz.2 ⟨h, hz.1.2⟩
       simpa only [mem_Icc, not_and_or, not_le] using h)
 
