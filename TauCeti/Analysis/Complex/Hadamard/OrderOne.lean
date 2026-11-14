@@ -299,7 +299,7 @@ theorem OrderLE.exists_eq_cexp_mul_divisorProductOne (h : OrderLE f 1) (hf : Dif
     rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
     exact hbound z hz
   obtain ⟨p, hp, hpL⟩ := hdL.exists_eq_polynomial_eval_of_isLittleO_pow (n := 0)
-    (hbigO.trans_isLittleO (isLittleO_sqrt_norm.congr_right fun z ↦ (pow_one z).symm))
+    (hbigO.trans_isLittleO (isLittleO_sqrt_norm_id_cobounded.congr_right fun z ↦ (pow_one z).symm))
   have hconst (z : ℂ) : deriv L z = deriv L 0 := by
     rw [congrFun hpL z, congrFun hpL 0, Polynomial.eq_C_of_natDegree_le_zero hp]
     simp
@@ -380,8 +380,9 @@ theorem OrderLE.hasSumLocallyUniformlyOn_logDeriv_sub (h : OrderLE f 1)
   have hsum := h.summable_divisor_toNat_mul_norm_inv_sq hf (by norm_num)
   have h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
     (hf.analyticAt _).notMem_divisor_support_of_ne_zero hf0
-  refine TendstoLocallyUniformlyOn.congr_right
-    (hasSumLocallyUniformlyOn_logDeriv_divisorProductOne h0 hsum) fun z hz ↦ ?_
+  refine hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mpr <|
+    (hasSumLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn.mp
+      (hasSumLocallyUniformlyOn_logDeriv_divisorProductOne h0 hsum)).congr_right fun z hz ↦ ?_
   have hfz : f z ≠ 0 := fun hfz ↦ divisorProductOne_ne_zero hsum h0 hz
     ((divisorProductOne_eq_zero_iff hf hf0 hsum z).mpr hfz)
   rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hfz, add_sub_cancel_left]

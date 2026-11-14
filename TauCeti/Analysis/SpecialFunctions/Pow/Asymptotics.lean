@@ -138,14 +138,14 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     rw [← Real.rpow_sub hx, neg_sub]
 
 /-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
-theorem isLittleO_norm_rpow_norm_rpow {a b : ℝ} (hab : a < b) :
+theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
   (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
-theorem isLittleO_sqrt_norm : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
+theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
   refine isLittleO_norm_right.mp ?_
-  refine (isLittleO_norm_rpow_norm_rpow (E := E) (show (1 / 2 : ℝ) < 1 by norm_num)).congr
+  refine (isLittleO_norm_rpow_norm_rpow_cobounded (E := E) (show (1 / 2 : ℝ) < 1 by norm_num)).congr
     (fun s ↦ (Real.sqrt_eq_rpow _).symm) fun s ↦ Real.rpow_one _
 
 /-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
