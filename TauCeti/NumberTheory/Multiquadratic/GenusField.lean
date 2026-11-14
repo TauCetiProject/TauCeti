@@ -127,7 +127,7 @@ theorem isGenusField_candidateGenusField {d : ℤ} (hd : Squarefree d) (hneg : d
   · rw [← candidateGenusFieldBase_def hd]
     exact finrank_candidateGenusFieldBase hd hnsq
   · rw [← candidateGenusFieldBase_def hd]
-    exact fun q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq q
+    exact fun q _ _ ↦ isUnramifiedIn_candidateGenusField hd q
   · rw [← candidateGenusFieldBase_def hd]
     exact isUnramifiedAtInfinitePlaces_candidateGenusField hd hneg
   · intro M _ _ _ z hz hfinite _
@@ -162,7 +162,7 @@ theorem isGenusField_candidateGenusFieldReal {d : ℤ} (hd : Squarefree d)
   · rw [candidateGenusFieldRealBaseRoot_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
     norm_num
   · intro q _ _
-    exact isUnramifiedIn_candidateGenusFieldReal hd hnsq hpos q
+    exact isUnramifiedIn_candidateGenusFieldReal hd hpos q
   · intro M _ _ _ z hz hfinite hinfinite
     exact exists_algHom_candidateGenusFieldReal hd hnsq hpos hz hfinite hinfinite
 
