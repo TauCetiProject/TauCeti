@@ -12,8 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 
 The double adjoint of a submodule is its topological closure, so the double
 adjoint of a closed submodule is the original submodule.
-As a consequence, the adjoint of a closable densely defined partial linear map
-has dense domain.
+As a consequence, the adjoint of a closable partial linear map has dense domain.
 
 ## Main results
 
@@ -21,8 +20,8 @@ has dense domain.
 * `Submodule.adjoint_adjoint_eq_topologicalClosure`: the double adjoint is the
   topological closure.
 * `Submodule.adjoint_adjoint`: equality for closed submodules.
-* `LinearPMap.dense_adjoint_domain`: a closable densely defined operator has a
-  densely defined adjoint.
+* `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
+  adjoint.
 
 ## Provenance
 
@@ -104,10 +103,13 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
-/-- **von Neumann's theorem.** The adjoint of a closable densely defined partial
-linear map between complete inner product spaces has dense domain. -/
-theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F}
-    (hT : Dense (T.domain : Set E)) (hTc : T.IsClosable) :
+/-- **von Neumann's theorem.** The adjoint of a closable partial linear map between
+complete inner product spaces has dense domain.
+
+No density of `T.domain` is needed: the domain of `T.adjoint` is
+`{y | Continuous ((innerₛₗ 𝕜 y).comp T.toFun)}` whether or not `T` is densely defined
+(only the values of `T.adjoint` are junk off the densely defined case). -/
+theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable) :
     Dense (T.adjoint.domain : Set F) := by
   rw [Submodule.dense_iff_topologicalClosure_eq_top,
     Submodule.topologicalClosure_eq_top_iff, Submodule.eq_bot_iff]
@@ -116,8 +118,13 @@ theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F}
   have hmem : ((0 : E), y) ∈ T.graph.adjoint.adjoint := by
     rw [Submodule.mem_adjoint_iff]
     intro a b hab
-    rw [← LinearPMap.adjoint_graph_eq_graph_adjoint hT] at hab
-    simpa using hy a (LinearPMap.mem_domain_of_mem_graph hab)
+    -- `(a, b)` in the graph adjoint means `⟪b, x⟫ = ⟪a, T x⟫` on `T.domain`, so
+    -- `x ↦ ⟪a, T x⟫` is continuous and `a` lies in the domain of `T.adjoint`.
+    have ha : a ∈ T.adjoint.domain := by
+      refine LinearPMap.mem_adjoint_domain_of_exists a ⟨b, fun x => ?_⟩
+      have h := sub_eq_zero.mp ((Submodule.mem_adjoint_iff _ _).mp hab _ _ (T.mem_graph x))
+      rw [← inner_conj_symm, ← h, inner_conj_symm]
+    simpa using hy a ha
   rw [Submodule.adjoint_adjoint_eq_topologicalClosure,
     hTc.graph_closure_eq_closure_graph] at hmem
   exact T.closure.graph_fst_eq_zero_snd hmem rfl
