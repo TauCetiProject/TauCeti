@@ -8,12 +8,20 @@ module
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.DerivedSet
+public import Mathlib.Topology.DiscreteSubset
+import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Perfect sets: homeomorphic images and products
+# Perfect sets and spaces: homeomorphic images, products, and discrete subsets
 
-A homeomorphism carries perfect sets exactly onto perfect sets (`Homeomorph.perfect_image`), so
-statements about perfect sets can be transported along homeomorphisms of the ambient spaces.
+A homeomorphism carries perfect sets onto perfect sets (`Homeomorph.perfect_image`) and perfect
+spaces onto perfect spaces (`Homeomorph.perfectSpace`), so statements about perfect sets and spaces
+can be transported along homeomorphisms of the ambient spaces.
+
+In a perfect space, removing a discrete subset from an open set leaves a dense subset of that open
+set (`IsOpen.subset_closure_sdiff_of_isDiscrete`), so continuous maps into a Hausdorff space are
+determined on an open set by their values off a discrete subset
+(`TauCeti.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`).
 
 A product of infinitely many nontrivial topological spaces has no isolated points: a
 neighbourhood of a point in the product topology constrains only finitely many coordinates, so
@@ -23,8 +31,11 @@ perfect.
 
 ## Main results
 
-* `Homeomorph.perfect_image`: the image of a set under a homeomorphism is perfect exactly when
-  the set is.
+* `Homeomorph.perfect_image`, `Homeomorph.perfectSpace`: perfect sets and perfect spaces are
+  preserved by homeomorphisms.
+* `IsOpen.subset_closure_sdiff_of_isDiscrete`,
+  `TauCeti.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`: density and continuous-extension
+  uniqueness across discrete subsets of open sets in perfect spaces.
 * `TauCeti.perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
 
 ## References
@@ -37,7 +48,7 @@ perfect.
 
 public section
 
-open Set Topology
+open Filter Set Topology
 
 universe u v
 
@@ -58,9 +69,39 @@ theorem perfect_image (h : X ≃ₜ Y) {C : Set X} : Perfect (h '' C) ↔ Perfec
   refine ⟨fun hC => ?_, perfect_image_of_perfect h⟩
   simpa [Set.image_image] using perfect_image_of_perfect h.symm hC
 
+/-- A homeomorphic image of a perfect space is a perfect space. -/
+protected theorem perfectSpace [PerfectSpace X] (h : X ≃ₜ Y) : PerfectSpace Y := by
+  have hU : Perfect (h '' (univ : Set X)) :=
+    h.perfect_image.2 (PerfectSpace.univ_perfect (α := X))
+  rw [Set.image_univ, h.surjective.range_eq] at hU
+  exact ⟨hU.acc⟩
+
 end Homeomorph
 
+/-- In a perfect space, every open set `U` is contained in the closure of `U \ S` whenever `U ∩ S`
+is discrete. -/
+theorem IsOpen.subset_closure_sdiff_of_isDiscrete {X : Type u} [TopologicalSpace X]
+    [PerfectSpace X] {U S : Set X} (hU : IsOpen U) (hS : IsDiscrete (U ∩ S)) :
+    U ⊆ closure (U \ S) := fun x hx ↦ by
+  by_cases hxS : x ∈ S
+  · rw [mem_closure_iff_nhdsWithin_neBot]
+    refine (PerfectSpace.not_isolated x).mono (nhdsWithin_le_iff.2 ?_)
+    have hdisj : (U ∩ S)ᶜ ∈ 𝓝[≠] x :=
+      disjoint_principal_right.1 (disjoint_iff.2 (isDiscrete_iff_nhdsNE.1 hS x ⟨hx, hxS⟩))
+    filter_upwards [nhdsWithin_le_nhds (hU.mem_nhds hx), hdisj] with y hyU hyS
+    exact ⟨hyU, fun h ↦ hyS ⟨hyU, h⟩⟩
+  · exact subset_closure ⟨hx, hxS⟩
+
 namespace TauCeti
+
+/-- **Uniqueness of continuous extensions across a discrete set.** In a perfect space, if `U` is
+open and `U ∩ S` is discrete, any two maps into a `T₂` space that are continuous on `U` and agree
+on `U \ S` agree on all of `U`. -/
+theorem eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [PerfectSpace X] [TopologicalSpace Y] [T2Space Y] {g₁ g₂ : X → Y}
+    {U S : Set X} (hU : IsOpen U) (hS : IsDiscrete (U ∩ S)) (hg₁ : ContinuousOn g₁ U)
+    (hg₂ : ContinuousOn g₂ U) (heq : EqOn g₁ g₂ (U \ S)) : EqOn g₁ g₂ U :=
+  heq.of_subset_closure hg₁ hg₂ sdiff_subset (hU.subset_closure_sdiff_of_isDiscrete hS)
 
 /-- **A product of infinitely many nontrivial spaces is perfect**, with no separation assumption on
 the factors. In particular Cantor space `ℕ → Bool` and Baire space `ℕ → ℕ` are perfect. -/

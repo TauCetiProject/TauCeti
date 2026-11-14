@@ -1,0 +1,428 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Topology.DiscreteSubset
+import Mathlib.Analysis.Analytic.Constructions
+import Mathlib.Analysis.Analytic.Linear
+import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+
+/-!
+# Hartogs' extension theorem across product shells and isolated singularities
+
+In complex dimension at least two, holomorphic functions have no isolated singularities: a map into
+a complete complex normed space that is complex differentiable on a punctured neighbourhood of a
+point has a limit there and extends analytically across the point, with no boundedness assumption.
+
+This file proves the local Cauchy-integral form of Hartogs' extension theorem on product shells in
+`V × ℂ`, for a nontrivial finite-dimensional complex normed space `V`, and deduces the removable
+singularity theorems for isolated, finite, and closed discrete sets in any finite-dimensional
+complex normed space `E` of dimension at least two, together with two classical consequences:
+holomorphic functions in dimension at least two have no isolated zeros, whereas on `ℂ` the function
+`z ↦ z⁻¹` on `{0}ᶜ` admits no continuous (hence no holomorphic) extension across `0`.
+
+Near a shell `(ball w₀ R₁ ×ˢ ball c R₂) \ (closedBall w₀ r₁ ×ˢ closedBall c r₂)` with
+`0 ≤ r₁ < R₁` and `0 ≤ r₂ < ρ < R₂`, the extension on `ball w₀ R₁ ×ˢ ball c ρ` is given by the
+one-variable Cauchy integral
+`(w, z) ↦ (2πi)⁻¹ • ∮ ζ in C(c, ρ), (ζ - z)⁻¹ • f (w, ζ)`,
+which is jointly analytic by `TauCeti.analyticAt_circleIntegral`, agrees with `f` when
+`w ∈ ball w₀ R₁ \ closedBall w₀ r₁` by `DifferentiableOn.circleIntegral_sub_inv_smul`, and agrees
+with `f` on the rest of the overlap by analytic continuation in `w` along the convex ball
+`ball w₀ R₁`.
+
+## Main results
+
+* `TauCeti.exists_analyticOnNhd_prod_ball_eqOn_sdiff_prod_closedBall`: **Hartogs' extension theorem
+  on product shells** in `V × ℂ` for nontrivial finite-dimensional `V`.
+* `TauCeti.eqOn_prod_ball_of_eqOn_sdiff_prod_closedBall`: uniqueness of analytic extensions across a
+  product shell.
+* `TauCeti.exists_analyticAt_and_eventuallyEq_nhdsNE`,
+  `TauCeti.tendsto_limUnder_of_eventually_differentiableAt`,
+  `TauCeti.analyticAt_update_limUnder_of_eventually_differentiableAt`: **local Hartogs removable
+  singularity** at a single point when `2 ≤ Module.finrank ℂ E`.
+* `TauCeti.exists_analyticOnNhd_eqOn_sdiff_of_isDiscrete`,
+  `TauCeti.exists_analyticOnNhd_eqOn_sdiff_of_finite`,
+  `TauCeti.exists_analyticOnNhd_eqOn_sdiff_singleton`,
+  `TauCeti.exists_differentiable_eqOn_compl_of_codiscrete`,
+  `TauCeti.exists_differentiable_eqOn_compl_singleton`: extension across closed discrete, finite,
+  and singleton subsets of open sets in `E`, and globally across codiscrete complements.
+* `TauCeti.frequently_nhdsNE_eq_zero_of_analyticAt`: **holomorphic functions in dimension at least
+  two have no isolated zeros.**
+* `TauCeti.not_exists_continuousAt_and_eqOn_inv_compl_zero`,
+  `TauCeti.not_exists_differentiable_and_eqOn_inv_compl_zero`: in dimension one, `z ↦ z⁻¹` on
+  `{0}ᶜ` has no continuous or complex-differentiable extension across `0`.
+
+## References
+
+* R. C. Gunning, H. Rossi, *Analytic Functions of Several Complex Variables*, Chapter I, §B,
+  Theorem 5.
+* L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, §2.3, Theorem 2.3.2.
+* J.-P. Demailly, *Complex Analytic and Differential Geometry*, Chapter II, §4.
+-/
+
+public section
+
+open Complex Filter Function Metric Real Set Topology
+
+namespace TauCeti
+
+/-! ### Product-shell extension -/
+
+section ProdShell
+
+variable {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nontrivial V]
+  [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **Uniqueness of analytic extensions across a product shell.** Two functions analytic on
+`ball w₀ R₁ ×ˢ ball c R₂`, with `V` nontrivial, `0 ≤ r₁ < R₁`, and `0 < R₂`, that agree outside
+`closedBall w₀ r₁ ×ˢ closedBall c r₂` agree on the entire product ball. -/
+theorem eqOn_prod_ball_of_eqOn_sdiff_prod_closedBall {g₁ g₂ : V × ℂ → F} {w₀ : V} {c : ℂ}
+    {r₁ R₁ r₂ R₂ : ℝ} (hr₁ : 0 ≤ r₁) (hR₁ : r₁ < R₁) (hR₂ : 0 < R₂)
+    (hg₁ : AnalyticOnNhd ℂ g₁ (ball w₀ R₁ ×ˢ ball c R₂))
+    (hg₂ : AnalyticOnNhd ℂ g₂ (ball w₀ R₁ ×ˢ ball c R₂))
+    (heq : EqOn g₁ g₂ ((ball w₀ R₁ ×ˢ ball c R₂) \ (closedBall w₀ r₁ ×ˢ closedBall c r₂))) :
+    EqOn g₁ g₂ (ball w₀ R₁ ×ˢ ball c R₂) := by
+  obtain ⟨w₁, hw₁_sp⟩ :=
+    (NormedSpace.sphere_nonempty (x := w₀) (r := (r₁ + R₁) / 2)).2 (by linarith)
+  have hw₁ : w₁ ∈ ball w₀ R₁ \ closedBall w₀ r₁ :=
+    ⟨mem_ball.2 (by rw [mem_sphere.1 hw₁_sp]; linarith),
+      fun h ↦ by linarith [mem_closedBall.1 h, mem_sphere.1 hw₁_sp]⟩
+  have hopen : IsOpen ((ball w₀ R₁ \ closedBall w₀ r₁) ×ˢ ball c R₂) :=
+    (isOpen_ball.sdiff isClosed_closedBall).prod isOpen_ball
+  have hc_mem : (w₁, c) ∈ ball w₀ R₁ ×ˢ ball c R₂ := ⟨hw₁.1, mem_ball_self hR₂⟩
+  have hc_open : (w₁, c) ∈ (ball w₀ R₁ \ closedBall w₀ r₁) ×ˢ ball c R₂ :=
+    ⟨hw₁, mem_ball_self hR₂⟩
+  refine hg₁.eqOn_of_preconnected_of_eventuallyEq hg₂
+    ((convex_ball w₀ R₁).prod (convex_ball c R₂)).isPreconnected hc_mem ?_
+  filter_upwards [hopen.mem_nhds hc_open] with p hp
+  exact heq ⟨⟨hp.1.1, hp.2⟩, fun hc ↦ hp.1.2 hc.1⟩
+
+variable [FiniteDimensional ℂ V] [CompleteSpace F]
+
+/-- **Hartogs' extension theorem on product shells.** Let `V` be a nontrivial finite-dimensional
+complex normed space and `F` a complete complex normed space. For `0 ≤ r₁ < R₁` and `0 ≤ r₂ < R₂`,
+every map `f : V × ℂ → F` complex differentiable on
+`(ball w₀ R₁ ×ˢ ball c R₂) \ (closedBall w₀ r₁ ×ˢ closedBall c r₂)` extends to an analytic map on
+`ball w₀ R₁ ×ˢ ball c R₂`. -/
+theorem exists_analyticOnNhd_prod_ball_eqOn_sdiff_prod_closedBall {f : V × ℂ → F} {w₀ : V} {c : ℂ}
+    {r₁ R₁ r₂ R₂ : ℝ} (hr₁ : 0 ≤ r₁) (hR₁ : r₁ < R₁) (hr₂ : 0 ≤ r₂) (hR₂ : r₂ < R₂)
+    (hf : DifferentiableOn ℂ f
+      ((ball w₀ R₁ ×ˢ ball c R₂) \ (closedBall w₀ r₁ ×ˢ closedBall c r₂))) :
+    ∃ g : V × ℂ → F, AnalyticOnNhd ℂ g (ball w₀ R₁ ×ˢ ball c R₂) ∧
+      EqOn g f ((ball w₀ R₁ ×ˢ ball c R₂) \ (closedBall w₀ r₁ ×ˢ closedBall c r₂)) := by
+  classical
+  set S := (ball w₀ R₁ ×ˢ ball c R₂) \ (closedBall w₀ r₁ ×ˢ closedBall c r₂)
+  have hS_open : IsOpen S :=
+    (isOpen_ball.prod isOpen_ball).sdiff (isClosed_closedBall.prod isClosed_closedBall)
+  have hfa : AnalyticOnNhd ℂ f S := hf.analyticOnNhd_of_finiteDimensional hS_open
+  -- Integrate `f` in the second variable along a circle of radius `ρ` between `r₂` and `R₂`.
+  set ρ : ℝ := (r₂ + R₂) / 2
+  have hr₂ρ : r₂ < ρ := left_lt_add_div_two.2 hR₂
+  have hρR₂ : ρ < R₂ := add_div_two_lt_right.2 hR₂
+  have hρ : 0 < ρ := hr₂.trans_lt hr₂ρ
+  set H : V × ℂ → F := fun x ↦ (2 * π * I)⁻¹ • ∮ ζ in C(c, ρ), (ζ - x.2)⁻¹ • f (x.1, ζ)
+  -- `H` is jointly analytic on `ball w₀ R₁ ×ˢ ball c ρ`.
+  have hH_an : AnalyticOnNhd ℂ H (ball w₀ R₁ ×ˢ ball c ρ) := by
+    rintro ⟨w, z⟩ ⟨hw, hz⟩
+    refine (analyticAt_circleIntegral (f := fun y : (V × ℂ) × ℂ ↦ (y.2 - y.1.2)⁻¹ • f (y.1.1, y.2))
+      fun ζ hζ ↦ ?_).const_smul
+    rw [abs_of_pos hρ] at hζ
+    have hζz : ζ - z ≠ 0 := sub_ne_zero.2 (sphere_disjoint_ball.ne_of_mem hζ hz)
+    have hζS : (w, ζ) ∈ S := by
+      refine ⟨⟨hw, ?_⟩, fun hc ↦ ?_⟩
+      · rw [mem_sphere] at hζ
+        simpa [mem_ball, hζ] using hρR₂
+      · have hle := hc.2
+        rw [mem_closedBall] at hle
+        rw [mem_sphere] at hζ
+        linarith
+    refine ((analyticAt_snd.sub (analyticAt_snd.comp analyticAt_fst)).inv hζz).smul ?_
+    exact (hfa (w, ζ) hζS).comp_of_eq ((analyticAt_fst.comp analyticAt_fst).prod analyticAt_snd) rfl
+  -- When `w ∉ closedBall w₀ r₁`, Cauchy's integral formula identifies `H (w, z)` with `f (w, z)`.
+  have hH_outer : ∀ w ∈ ball w₀ R₁ \ closedBall w₀ r₁, ∀ z ∈ ball c ρ, H (w, z) = f (w, z) := by
+    intro w hw z hz
+    have hslice : DifferentiableOn ℂ (fun ζ ↦ f (w, ζ)) (closedBall c ρ) := by
+      intro ζ hζ
+      have hmem : (w, ζ) ∈ S :=
+        ⟨⟨hw.1, closedBall_subset_ball hρR₂ hζ⟩, fun hc ↦ hw.2 hc.1⟩
+      exact ((hfa (w, ζ) hmem).comp_of_eq (analyticAt_const.prod analyticAt_id)
+        rfl).differentiableAt.differentiableWithinAt
+    dsimp only [H]
+    rw [hslice.circleIntegral_sub_inv_smul hz, inv_smul_smul₀ two_pi_I_ne_zero]
+  -- By analytic continuation along `ball w₀ R₁`, `H` and `f` agree on the whole overlap with `S`.
+  have hH_overlap : EqOn H f ((ball w₀ R₁ ×ˢ ball c ρ) ∩ S) := by
+    rintro ⟨w, z⟩ ⟨⟨hw, hz⟩, hwzS⟩
+    by_cases hw_in : w ∈ closedBall w₀ r₁
+    · have hz_out : z ∉ closedBall c r₂ := fun hz_in ↦ hwzS.2 ⟨hw_in, hz_in⟩
+      obtain ⟨w₁, hw₁_sp⟩ :=
+        (NormedSpace.sphere_nonempty (x := w₀) (r := (r₁ + R₁) / 2)).2 (by linarith)
+      have hw₁ : w₁ ∈ ball w₀ R₁ \ closedBall w₀ r₁ :=
+        ⟨mem_ball.2 (by rw [mem_sphere.1 hw₁_sp]; linarith),
+          fun h ↦ by linarith [mem_closedBall.1 h, mem_sphere.1 hw₁_sp]⟩
+      have h₁ : AnalyticOnNhd ℂ (fun w' ↦ H (w', z)) (ball w₀ R₁) := fun w' hw' ↦
+        (hH_an (w', z) ⟨hw', hz⟩).comp_of_eq (analyticAt_id.prod analyticAt_const) rfl
+      have h₂ : AnalyticOnNhd ℂ (fun w' ↦ f (w', z)) (ball w₀ R₁) := fun w' hw' ↦
+        (hfa (w', z) ⟨⟨hw', ball_subset_ball hρR₂.le hz⟩, fun hc ↦ hz_out hc.2⟩).comp_of_eq
+          (analyticAt_id.prod analyticAt_const) rfl
+      refine h₁.eqOn_of_preconnected_of_eventuallyEq h₂ (convex_ball w₀ R₁).isPreconnected hw₁.1 ?_
+        hw
+      filter_upwards [(isOpen_ball.sdiff isClosed_closedBall).mem_nhds hw₁] with w' hw'
+      exact hH_outer w' hw' z hz
+    · exact hH_outer w ⟨hw, hw_in⟩ z hz
+  -- Glue `H` on `ball w₀ R₁ ×ˢ ball c ρ` with `f` on `S`.
+  set g : V × ℂ → F := fun p ↦ if p ∈ ball w₀ R₁ ×ˢ ball c ρ then H p else f p
+  have hg_eq_f : EqOn g f S := by
+    intro p hp
+    simp only [g]
+    split_ifs with hp'
+    · exact hH_overlap ⟨hp', hp⟩
+    · rfl
+  refine ⟨g, ?_, hg_eq_f⟩
+  intro p hp
+  by_cases hp_in : p ∈ closedBall w₀ r₁ ×ˢ closedBall c r₂
+  · have hp_ball : p ∈ ball w₀ R₁ ×ˢ ball c ρ := ⟨hp.1, closedBall_subset_ball hr₂ρ hp_in.2⟩
+    refine (hH_an p hp_ball).congr ?_
+    filter_upwards [(isOpen_ball.prod isOpen_ball).mem_nhds hp_ball] with q hq
+    simp only [g, hq, ↓reduceIte]
+  · refine (hfa p ⟨hp, hp_in⟩).congr ?_
+    filter_upwards [hS_open.mem_nhds ⟨hp, hp_in⟩] with q hq
+    exact (hg_eq_f hq).symm
+
+end ProdShell
+
+/-! ### Isolated and discrete singularities in dimension at least two -/
+
+section IsolatedSingularity
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **Hartogs' local removable singularity theorem.** In a finite-dimensional complex normed space
+`E` of dimension at least two, any map `f : E → F` into a complete complex normed space that is
+complex differentiable on a punctured neighbourhood of `p` agrees on a punctured neighbourhood of
+`p` with a function analytic at `p`. -/
+theorem exists_analyticAt_and_eventuallyEq_nhdsNE (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    {p : E} (hf : ∀ᶠ z in 𝓝[≠] p, DifferentiableAt ℂ f z) :
+    ∃ g : E → F, AnalyticAt ℂ g p ∧ g =ᶠ[𝓝[≠] p] f := by
+  set m := Module.finrank ℂ E - 1
+  have hm : 1 ≤ m := by omega
+  have : Nonempty (Fin m) := ⟨⟨0, hm⟩⟩
+  have : Nontrivial (Fin m → ℂ) := Function.nontrivial
+  have hfin : Module.finrank ℂ E = Module.finrank ℂ ((Fin m → ℂ) × ℂ) := by
+    rw [Module.finrank_prod, Module.finrank_fin_fun, Module.finrank_self]
+    omega
+  set L : E ≃L[ℂ] (Fin m → ℂ) × ℂ := ContinuousLinearEquiv.ofFinrankEq hfin
+  set φ : (Fin m → ℂ) × ℂ → E := fun q ↦ p + L.symm q
+  obtain ⟨U, hUf, hU_open, hpU⟩ := _root_.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hf)
+  have hφ_cont : Continuous φ := continuous_const.add L.symm.continuous
+  have hpre : φ ⁻¹' U ∈ 𝓝 (0 : (Fin m → ℂ) × ℂ) := by
+    refine hφ_cont.continuousAt.preimage_mem_nhds ?_
+    simpa [φ] using hU_open.mem_nhds hpU
+  obtain ⟨R, hR, hRU⟩ := nhds_basis_ball.mem_iff.1 hpre
+  have hball_sub : ball (0 : Fin m → ℂ) R ×ˢ ball (0 : ℂ) R ⊆ φ ⁻¹' U := fun q hq ↦
+    hRU (mem_ball.2 (by rw [Prod.dist_eq]; exact max_lt (mem_ball.1 hq.1) (mem_ball.1 hq.2)))
+  have hdiff : DifferentiableOn ℂ (f ∘ φ)
+      ((ball 0 R ×ˢ ball 0 R) \ (closedBall 0 0 ×ˢ closedBall 0 0)) := by
+    intro q hq
+    have hq0 : q ≠ 0 := by
+      rintro rfl
+      exact hq.2 ⟨mem_closedBall_self le_rfl, mem_closedBall_self le_rfl⟩
+    have hφq_ne : φ q ≠ p := by
+      simp [φ, hq0]
+    have hφ_diff : DifferentiableAt ℂ φ q :=
+      (differentiableAt_const p).add (L.symm : (Fin m → ℂ) × ℂ →L[ℂ] E).differentiableAt
+    exact ((hUf (φ q) (hball_sub hq.1) hφq_ne).comp q hφ_diff).differentiableWithinAt
+  obtain ⟨G, hG_an, hG_eq⟩ :=
+    exists_analyticOnNhd_prod_ball_eqOn_sdiff_prod_closedBall le_rfl hR le_rfl hR hdiff
+  set g : E → F := fun z ↦ G (L (z - p))
+  have h0 : (0 : (Fin m → ℂ) × ℂ) ∈ ball 0 R ×ˢ ball 0 R := ⟨mem_ball_self hR, mem_ball_self hR⟩
+  have hg_an : AnalyticAt ℂ g p := by
+    have hL_an : AnalyticAt ℂ (fun z : E ↦ L (z - p)) p :=
+      (L : E →L[ℂ] (Fin m → ℂ) × ℂ).analyticAt _ |>.comp (analyticAt_id.sub analyticAt_const)
+    exact (hG_an 0 h0).comp_of_eq hL_an (by simp)
+  refine ⟨g, hg_an, ?_⟩
+  have hL_cont : Continuous (fun z : E ↦ L (z - p)) :=
+    L.continuous.comp (continuous_id.sub continuous_const)
+  have hnhds : (fun z : E ↦ L (z - p)) ⁻¹' (ball 0 R ×ˢ ball 0 R) ∈ 𝓝 p := by
+    refine hL_cont.continuousAt.preimage_mem_nhds ?_
+    simpa only [sub_self, map_zero] using (isOpen_ball.prod isOpen_ball).mem_nhds h0
+  filter_upwards [nhdsWithin_le_nhds hnhds, self_mem_nhdsWithin] with z hz hzp
+  have hzp' : z ≠ p := mem_compl_singleton_iff.1 hzp
+  have hLz0 : L (z - p) ≠ 0 := by simp [sub_eq_zero, hzp']
+  have hmem : L (z - p) ∈ (ball 0 R ×ˢ ball 0 R) \ (closedBall 0 0 ×ˢ closedBall 0 0) := by
+    refine ⟨hz, fun hc ↦ hLz0 (Prod.ext ?_ ?_)⟩
+    · exact norm_le_zero_iff.1 (mem_closedBall_zero_iff.1 hc.1)
+    · exact norm_le_zero_iff.1 (mem_closedBall_zero_iff.1 hc.2)
+  simpa [g, φ] using hG_eq hmem
+
+/-- In complex dimension at least two, a map into a complete complex normed space that is complex
+differentiable on a punctured neighbourhood of `p` automatically has a limit at `p`. -/
+theorem tendsto_limUnder_of_eventually_differentiableAt (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    {p : E} (hf : ∀ᶠ z in 𝓝[≠] p, DifferentiableAt ℂ f z) :
+    Tendsto f (𝓝[≠] p) (𝓝 (limUnder (𝓝[≠] p) f)) := by
+  obtain ⟨g, hg, hgf⟩ := exists_analyticAt_and_eventuallyEq_nhdsNE hE hf
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℂ E)
+  have : (𝓝[≠] p).NeBot := Module.punctured_nhds_neBot ℂ E p
+  have hlim : Tendsto f (𝓝[≠] p) (𝓝 (g p)) :=
+    (hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' hgf
+  rwa [hlim.limUnder_eq]
+
+/-- In complex dimension at least two, updating `f` at `p` by its punctured limit produces a map
+analytic at `p`, without any boundedness hypothesis. -/
+theorem analyticAt_update_limUnder_of_eventually_differentiableAt [DecidableEq E]
+    (hE : 2 ≤ Module.finrank ℂ E) {f : E → F} {p : E}
+    (hf : ∀ᶠ z in 𝓝[≠] p, DifferentiableAt ℂ f z) :
+    AnalyticAt ℂ (update f p (limUnder (𝓝[≠] p) f)) p := by
+  obtain ⟨g, hg, hgf⟩ := exists_analyticAt_and_eventuallyEq_nhdsNE hE hf
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℂ E)
+  have : (𝓝[≠] p).NeBot := Module.punctured_nhds_neBot ℂ E p
+  have hlim : Tendsto f (𝓝[≠] p) (𝓝 (g p)) :=
+    (hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' hgf
+  refine hg.congr ?_
+  rw [eventuallyEq_nhdsWithin_iff] at hgf
+  filter_upwards [hgf] with z hz
+  rcases eq_or_ne z p with rfl | hne
+  · simp [hlim.limUnder_eq]
+  · simp [hne, hz hne]
+
+/-- **Hartogs' extension theorem across a closed discrete set.** Let `E` be a finite-dimensional
+complex normed space with `2 ≤ Module.finrank ℂ E`, `U ⊆ E` an open set, and `S ⊆ E` a set such
+that `U \ S` is open and `U ∩ S` is discrete. Every map `f : E → F` into a complete complex normed
+space that is complex differentiable on `U \ S` extends to an analytic map on `U`. Such an
+extension is unique on `U` by `eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`. -/
+theorem exists_analyticOnNhd_eqOn_sdiff_of_isDiscrete (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    {U S : Set E} (hU : IsOpen U) (hUS : IsOpen (U \ S)) (hS : IsDiscrete (U ∩ S))
+    (hf : DifferentiableOn ℂ f (U \ S)) :
+    ∃ g : E → F, AnalyticOnNhd ℂ g U ∧ EqOn g f (U \ S) := by
+  classical
+  set g : E → F := fun x ↦ if x ∈ U ∩ S then limUnder (𝓝[≠] x) f else f x
+  have hgf : EqOn g f (U \ S) := fun x hx ↦ by
+    have hx' : x ∉ U ∩ S := fun h ↦ hx.2 h.2
+    simp only [g, hx', ↓reduceIte]
+  refine ⟨g, fun x hx ↦ ?_, hgf⟩
+  by_cases hxS : x ∈ S
+  · obtain ⟨W, hW_open, hW_eq⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hS x ⟨hx, hxS⟩
+    have hxW : x ∈ W := (hW_eq.symm ▸ mem_singleton x : x ∈ W ∩ (U ∩ S)).1
+    have hUW : ∀ y ∈ (U ∩ W) \ {x}, y ∈ U \ S := by
+      rintro y ⟨⟨hyU, hyW⟩, hyx⟩
+      refine ⟨hyU, fun hyS ↦ hyx ?_⟩
+      have : y ∈ W ∩ (U ∩ S) := ⟨hyW, hyU, hyS⟩
+      rwa [hW_eq, mem_singleton_iff] at this
+    have hdiff_nhds : ∀ᶠ y in 𝓝[≠] x, DifferentiableAt ℂ f y := by
+      filter_upwards [nhdsWithin_le_nhds ((hU.inter hW_open).mem_nhds ⟨hx, hxW⟩),
+        self_mem_nhdsWithin] with y hyU hyx
+      exact (hf y (hUW y ⟨hyU, hyx⟩)).differentiableAt (hUS.mem_nhds (hUW y ⟨hyU, hyx⟩))
+    refine (analyticAt_update_limUnder_of_eventually_differentiableAt hE hdiff_nhds).congr ?_
+    filter_upwards [(hU.inter hW_open).mem_nhds ⟨hx, hxW⟩] with y hy
+    rcases eq_or_ne y x with rfl | hyx
+    · simp [g, hx, hxS]
+    · rw [update_of_ne hyx, ← hgf (hUW y ⟨hy, hyx⟩)]
+  · refine ((hf.analyticOnNhd_of_finiteDimensional hUS) x ⟨hx, hxS⟩).congr ?_
+    filter_upwards [hUS.mem_nhds ⟨hx, hxS⟩] with y hy
+    exact (hgf hy).symm
+
+/-- **Hartogs' extension theorem across a finite set.** If `2 ≤ Module.finrank ℂ E`, `U ⊆ E` is
+open, and `S ⊆ E` is finite, every map `f : E → F` complex differentiable on `U \ S` extends to an
+analytic map on `U`. -/
+theorem exists_analyticOnNhd_eqOn_sdiff_of_finite (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    {U S : Set E} (hU : IsOpen U) (hS : S.Finite) (hf : DifferentiableOn ℂ f (U \ S)) :
+    ∃ g : E → F, AnalyticOnNhd ℂ g U ∧ EqOn g f (U \ S) :=
+  exists_analyticOnNhd_eqOn_sdiff_of_isDiscrete hE hU (hU.sdiff hS.isClosed)
+    (hS.subset inter_subset_right).isDiscrete hf
+
+/-- **Hartogs' extension theorem across a point in an open set.** If `2 ≤ Module.finrank ℂ E` and
+`U ⊆ E` is open, every map `f : E → F` complex differentiable on `U \ {p}` extends to an analytic
+map on `U`. -/
+theorem exists_analyticOnNhd_eqOn_sdiff_singleton (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    {U : Set E} (hU : IsOpen U) (p : E) (hf : DifferentiableOn ℂ f (U \ {p})) :
+    ∃ g : E → F, AnalyticOnNhd ℂ g U ∧ EqOn g f (U \ {p}) :=
+  exists_analyticOnNhd_eqOn_sdiff_of_finite hE hU (finite_singleton p) hf
+
+/-- **Global Hartogs extension across a closed discrete set.** If `2 ≤ Module.finrank ℂ E` and
+`Sᶜ ∈ codiscrete E`, every map `f : E → F` complex differentiable on `Sᶜ` extends to a globally
+complex-differentiable map on `E`. -/
+theorem exists_differentiable_eqOn_compl_of_codiscrete (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    {S : Set E} (hS : Sᶜ ∈ codiscrete E) (hf : DifferentiableOn ℂ f Sᶜ) :
+    ∃ g : E → F, Differentiable ℂ g ∧ EqOn g f Sᶜ := by
+  obtain ⟨hS_closed, hS_disc⟩ := compl_mem_codiscrete_iff.1 hS
+  have hf' : DifferentiableOn ℂ f (univ \ S) := by simpa [compl_eq_univ_sdiff] using hf
+  obtain ⟨g, hg, hgf⟩ := exists_analyticOnNhd_eqOn_sdiff_of_isDiscrete hE isOpen_univ
+    (isOpen_univ.sdiff hS_closed) (by simpa using hS_disc) hf'
+  exact ⟨g, differentiableOn_univ.1 hg.differentiableOn, by simpa [compl_eq_univ_sdiff] using hgf⟩
+
+/-- **Global Hartogs extension across a point.** If `2 ≤ Module.finrank ℂ E`, every map
+`f : E → F` complex differentiable on `{p}ᶜ` extends to a globally complex-differentiable map on
+`E`. -/
+theorem exists_differentiable_eqOn_compl_singleton (hE : 2 ≤ Module.finrank ℂ E) {f : E → F}
+    (p : E) (hf : DifferentiableOn ℂ f {p}ᶜ) :
+    ∃ g : E → F, Differentiable ℂ g ∧ EqOn g f {p}ᶜ :=
+  exists_differentiable_eqOn_compl_of_codiscrete hE (finite_singleton p).compl_mem_codiscrete hf
+
+end IsolatedSingularity
+
+/-! ### Nonexistence of isolated zeros and dimension-one sharpness -/
+
+section ZerosAndSharpness
+
+/-- **Holomorphic functions in complex dimension at least two have no isolated zeros.** If
+`2 ≤ Module.finrank ℂ E`, `f : E → ℂ` is analytic at `p`, and `f p = 0`, then `p` is an
+accumulation point of `{z | f z = 0}`. -/
+theorem frequently_nhdsNE_eq_zero_of_analyticAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [FiniteDimensional ℂ E] (hE : 2 ≤ Module.finrank ℂ E) {f : E → ℂ} {p : E}
+    (hf : AnalyticAt ℂ f p) (hfp : f p = 0) : ∃ᶠ z in 𝓝[≠] p, f z = 0 := by
+  by_contra hne
+  rw [Filter.not_frequently] at hne
+  have hinv : ∀ᶠ z in 𝓝[≠] p, DifferentiableAt ℂ (fun y ↦ (f y)⁻¹) z := by
+    filter_upwards [nhdsWithin_le_nhds hf.eventually_analyticAt, hne] with z hz hfz
+    exact hz.differentiableAt.inv hfz
+  obtain ⟨g, hg, hgf⟩ := exists_analyticAt_and_eventuallyEq_nhdsNE hE hinv
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℂ E)
+  have : (𝓝[≠] p).NeBot := Module.punctured_nhds_neBot ℂ E p
+  have hmul : Tendsto (fun z ↦ g z * f z) (𝓝[≠] p) (𝓝 (g p * f p)) :=
+    (hg.continuousAt.mul hf.continuousAt).tendsto.mono_left nhdsWithin_le_nhds
+  have hone : (fun z ↦ g z * f z) =ᶠ[𝓝[≠] p] fun _ ↦ (1 : ℂ) := by
+    filter_upwards [hgf, hne] with z hgz hfz
+    rw [hgz, inv_mul_cancel₀ hfz]
+  have h10 : (1 : ℂ) = g p * f p := tendsto_nhds_unique (tendsto_const_nhds.congr' hone.symm) hmul
+  simp [hfp] at h10
+
+/-- **Sharpness in complex dimension one:** the function `z ↦ z⁻¹` is complex differentiable on
+`{0}ᶜ ⊆ ℂ`, yet no function continuous at `0` agrees with `z ↦ z⁻¹` on `{0}ᶜ`. -/
+theorem not_exists_continuousAt_and_eqOn_inv_compl_zero :
+    DifferentiableOn ℂ Inv.inv {(0 : ℂ)}ᶜ ∧
+      ¬ ∃ g : ℂ → ℂ, ContinuousAt g 0 ∧ EqOn g Inv.inv {(0 : ℂ)}ᶜ := by
+  refine ⟨fun z hz ↦ (differentiableAt_inv hz).differentiableWithinAt, ?_⟩
+  rintro ⟨g, hg, hgf⟩
+  have : (𝓝[≠] (0 : ℂ)).NeBot := Module.punctured_nhds_neBot ℂ ℂ 0
+  have hlim : Tendsto Inv.inv (𝓝[≠] (0 : ℂ)) (𝓝 (g 0)) :=
+    (hg.tendsto.mono_left nhdsWithin_le_nhds).congr'
+      (Filter.eventuallyEq_iff_exists_mem.2 ⟨{(0 : ℂ)}ᶜ, self_mem_nhdsWithin, fun z hz ↦ hgf hz⟩)
+  have hmul : Tendsto (fun z : ℂ ↦ z * z⁻¹) (𝓝[≠] 0) (𝓝 (0 * g 0)) :=
+    (continuous_id.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).mul hlim
+  have hone : (fun z : ℂ ↦ z * z⁻¹) =ᶠ[𝓝[≠] 0] fun _ ↦ (1 : ℂ) := by
+    filter_upwards [self_mem_nhdsWithin] with z hz using mul_inv_cancel₀ hz
+  have h10 : (1 : ℂ) = 0 * g 0 := tendsto_nhds_unique (tendsto_const_nhds.congr' hone.symm) hmul
+  simp at h10
+
+/-- In complex dimension one, no globally complex-differentiable map `g : ℂ → ℂ` agrees with
+`z ↦ z⁻¹` on `{0}ᶜ`. -/
+theorem not_exists_differentiable_and_eqOn_inv_compl_zero :
+    ¬ ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ EqOn g Inv.inv {(0 : ℂ)}ᶜ := by
+  rintro ⟨g, hg, hgf⟩
+  exact not_exists_continuousAt_and_eqOn_inv_compl_zero.2 ⟨g, (hg 0).continuousAt, hgf⟩
+
+end ZerosAndSharpness
+
+end TauCeti
