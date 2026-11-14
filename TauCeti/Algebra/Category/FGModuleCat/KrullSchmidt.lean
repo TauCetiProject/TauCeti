@@ -26,6 +26,8 @@ is read off from the existence half of the Krull-Schmidt theorem,
 morphisms `a j : X ⟶ W j` and `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`, which needs no
 biproducts in `FGModuleCat A`. By Fitting's lemma, a finitely generated indecomposable module of
 finite length has a local endomorphism ring (`FGModuleCat.isLocalRing_end_of_indecomposable`).
+Over any ring, a finitely generated module is indecomposable as a module exactly when it is an
+indecomposable object of `FGModuleCat A` (`FGModuleCat.indecomposable_obj_iff`).
 
 Over a left Artinian ring `A`, for instance an Artin algebra, finitely generated modules have finite
 length, so `mod A = FGModuleCat A` is a Krull-Schmidt category
@@ -76,6 +78,24 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   have : IsLocalRing (End ((ObjectProperty.ι _).obj X)) :=
     (TauCeti.indecomposable_iff_isLocalRing_end X.obj hfl).mp hX
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
+
+/-- A finitely generated module is indecomposable in the category of all modules exactly when it
+is an indecomposable object of `mod A`, over any ring. Both categories are idempotent complete, and
+the inclusion is fully faithful, so both sides say that the module is nonzero and has no idempotent
+endomorphism other than `0` and the identity. -/
+theorem indecomposable_obj_iff (P : FGModuleCat.{w} A) :
+    Indecomposable P.obj ↔ Indecomposable P := by
+  have hz {Y : FGModuleCat.{w} A} : IsZero Y.obj ↔ IsZero Y := by
+    simp only [IsZero.iff_id_eq_zero]
+    exact ⟨fun h ↦ (ObjectProperty.fullyFaithfulι _).map_injective (by simpa using h),
+      fun h ↦ by simpa using congrArg (ObjectProperty.ι _).map h⟩
+  rw [TauCeti.indecomposable_iff_idempotent_eq_zero_or_id,
+    TauCeti.indecomposable_iff_idempotent_eq_zero_or_id, hz]
+  refine and_congr_right fun _ ↦ ⟨fun h e he ↦ ?_, fun h e he ↦ ?_⟩
+  · exact (h e.hom (by rw [← ObjectProperty.FullSubcategory.comp_hom, he])).imp
+      (ObjectProperty.hom_ext _) (ObjectProperty.hom_ext _)
+  · exact (h (ObjectProperty.homMk e) (ObjectProperty.hom_ext _ he)).imp
+      (congrArg InducedCategory.Hom.hom) (congrArg InducedCategory.Hom.hom)
 
 open TauCeti in
 /-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: the
