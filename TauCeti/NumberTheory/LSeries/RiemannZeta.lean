@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.Analysis.MellinTransform
+import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
@@ -16,7 +18,7 @@ import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
-# The Riemann zeta function at real arguments
+# The Riemann zeta function at real arguments and on the right half-plane
 
 For a real `s > 1`, Mathlib's `riemannZeta s` is the sum of the complex Dirichlet series
 `∑ 1 / n ^ s`. This file records the corresponding statements for the real series: the real
@@ -35,6 +37,10 @@ this integral is positive while `1 - 2 ^ (1 - σ)` is negative, so `ζ(σ) < 0`.
 of the zeta factor in the products of L-functions with nonnegative coefficients used in
 Siegel's theorem on real zeros.
 
+Euler–Maclaurin summation represents the regular part `riemannZeta₀ s = ζ(s) - (s - 1)⁻¹` across
+the whole right half-plane `Re s > 0` as `1 - s ∫_1^∞ {t} t^(-s-1) dt`, giving the explicit
+vertical-growth bound `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`.
+
 ## Main results
 
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
@@ -46,10 +52,14 @@ Siegel's theorem on real zeros.
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
   the alternating series represents `(1 - 2 ^ (1 - s)) ζ(s)` on `Re s > 0`, `s ≠ 1`.
 * `TauCeti.riemannZeta_lt_zero`: `ζ(σ)` is a negative real number for real `0 < σ < 1`.
+* `TauCeti.riemannZeta₀_eq_one_sub_mul_integral`: `riemannZeta₀ s = 1 - s ∫_1^∞ {t} t^(-s-1) dt`
+  for `Re s > 0`.
+* `TauCeti.norm_riemannZeta₀_le`: `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s` for `Re s > 0`.
 
 ## References
 
-* H. Davenport, *Multiplicative Number Theory*, the chapter on Siegel's theorem.
+* H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapters 12–13 and the chapter on
+  Siegel's theorem.
 -/
 
 public section
@@ -194,5 +204,128 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
     ring
   rw [hz]
   exact_mod_cast div_neg_of_pos_of_neg (mul_pos h₀ hg) hc
+
+private theorem differentiableOn_mul_integral_fract :
+    DifferentiableOn ℂ
+      (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
+      {s : ℂ | 0 < s.re} := by
+  set g : ℝ → ℂ := (Set.Ici (1 : ℝ)).indicator fun t ↦ ((Int.fract t : ℝ) : ℂ)
+  have hg_meas : Measurable g :=
+    (Complex.measurable_ofReal.comp measurable_fract).indicator measurableSet_Ici
+  have hg_bound (t : ℝ) : ‖g t‖ ≤ 1 := by
+    by_cases ht : 1 ≤ t
+    · simp only [g, Set.indicator_of_mem (Set.mem_Ici.mpr ht), norm_real, Real.norm_eq_abs,
+        abs_of_nonneg (Int.fract_nonneg t)]
+      exact (Int.fract_lt_one t).le
+    · simp [g, Set.indicator_of_notMem (show t ∉ Set.Ici (1 : ℝ) from ht)]
+  have hg_loc : MeasureTheory.LocallyIntegrableOn g (Set.Ioi 0) :=
+    ((MeasureTheory.locallyIntegrable_const (1 : ℝ)).mono hg_meas.aestronglyMeasurable
+      (.of_forall fun t ↦ by simpa using hg_bound t)).locallyIntegrableOn _
+  have hg_top : g =O[atTop] fun t : ℝ ↦ t ^ (-(0 : ℝ)) :=
+    Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by simpa using hg_bound t⟩
+  have hg_zero (r : ℝ) : g =O[𝓝[>] 0] fun t : ℝ ↦ t ^ (-r) :=
+    Asymptotics.IsBigO.of_bound 0 <| eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) fun t ht ↦ by
+      have hnt : t ∉ Set.Ici (1 : ℝ) := not_le.mpr ht.2
+      simp [g, Set.indicator_of_notMem hnt]
+  have hmellin (s : ℂ) :
+      ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) = mellin g (-s) := by
+    have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • g t)
+        ((Set.Ici (1 : ℝ)).indicator fun t ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
+        (Set.Ioi 0) := fun t _ ↦ by
+      dsimp only
+      by_cases h1 : 1 ≤ t
+      · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1)]
+        simp only [g, Set.indicator_of_mem (Set.mem_Ici.mpr h1), smul_eq_mul, mul_comm, neg_add']
+      · have hnt : t ∉ Set.Ici (1 : ℝ) := h1
+        simp [g, Set.indicator_of_notMem hnt]
+    rw [mellin, MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hEq,
+      MeasureTheory.setIntegral_indicator measurableSet_Ici,
+      Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one),
+      MeasureTheory.integral_Ici_eq_integral_Ioi]
+  intro s hs
+  have hd : DifferentiableAt ℂ (fun z : ℂ ↦ mellin g (-z)) s :=
+    (mellin_differentiableAt_of_isBigO_rpow (a := 0) hg_loc hg_top (by simpa using hs) (hg_zero _)
+      (sub_one_lt (-s).re)).comp s differentiableAt_id.neg
+  simp_rw [hmellin]
+  exact (differentiableAt_id.mul hd).differentiableWithinAt
+
+/-- **Euler–Maclaurin representation of `riemannZeta₀`.** On the open right half-plane `Re s > 0`,
+the regular part `riemannZeta₀ s = ζ(s) - (s - 1)⁻¹` equals
+`1 - s ∫_{t > 1} {t} t ^ (-(s + 1)) dt`. -/
+theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s =
+      1 - s * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  set F : ℂ → ℂ := fun z ↦
+    1 - z * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1))
+  have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
+  have hF : AnalyticOnNhd ℂ F {z : ℂ | 0 < z.re} :=
+    ((differentiableOn_const 1).sub differentiableOn_mul_integral_fract).analyticOnNhd hopen
+  have hZ : AnalyticOnNhd ℂ riemannZeta₀ {z : ℂ | 0 < z.re} :=
+    differentiable_riemannZeta₀.differentiableOn.analyticOnNhd hopen
+  have heq : riemannZeta₀ =ᶠ[𝓝 2] F := by
+    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+      (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
+    have hz1 : z ≠ 1 := fun h ↦ by simp [h] at hz
+    have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (1 : ℕ → ℂ) k) =O[atTop] fun n ↦ (n : ℝ) ^ (1 : ℝ) :=
+      Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by simp⟩
+    have hint₁ : MeasureTheory.IntegrableOn
+        (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) :=
+      TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ hO hz
+    have hint₂ : MeasureTheory.IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Ioi 1) :=
+      integrableOn_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one
+    have hdiff_eq : Set.EqOn (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)))
+        (fun t : ℝ ↦ (t : ℂ) ^ (-z) - (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1)))
+        (Set.Ioi 1) := fun t ht ↦ by
+      dsimp only
+      have ht0 : 0 < t := zero_lt_one.trans ht
+      have htc : (t : ℂ) ≠ 0 := mod_cast ht0.ne'
+      have hfl : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (t : ℂ) - ((Int.fract t : ℝ) : ℂ) := by
+        have hsum : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (⌊t⌋₊ : ℂ) := by simp
+        rw [hsum, Int.fract, ofReal_sub, ← Int.natCast_floor_eq_floor ht0.le]
+        push_cast; ring
+      rw [hfl, show -z = 1 + -(z + 1) by ring, cpow_add _ _ htc, cpow_one]; ring
+    have hI₂ : (z - 1) * ∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z) = 1 := by
+      rw [integral_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one, ofReal_one, one_cpow,
+        show -z + 1 = -(z - 1) by ring, neg_div_neg_eq, mul_div_cancel₀ _ (sub_ne_zero.mpr hz1)]
+    have hI₁ : z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) *
+        (t : ℂ) ^ (-(z + 1)) = (z - 1)⁻¹ + riemannZeta₀ z := by
+      rw [← LSeries_eq_mul_integral _ zero_le_one hz (LSeriesSummable_one_iff.mpr hz) hO,
+        LSeries_one_eq_riemannZeta hz, riemannZeta_eq_inv_sub_add hz1]
+    have hF_eq : F z = 1 - z * (∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z)) +
+        z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1)) := by
+      simp only [F]
+      rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hdiff_eq,
+        MeasureTheory.integral_sub hint₂ hint₁]; ring
+    rw [hF_eq, hI₁, eq_inv_of_mul_eq_one_right hI₂]; field_simp [sub_ne_zero.mpr hz1]; ring
+  exact hZ.eqOn_of_preconnected_of_eventuallyEq hF (convex_halfSpace_re_gt 0).isPreconnected
+    (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) heq hs
+
+/-- On the open right half-plane `Re s > 0`, the regular part `riemannZeta₀ s` satisfies
+`‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`. -/
+theorem norm_riemannZeta₀_le {s : ℂ} (hs : 0 < s.re) :
+    ‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / s.re := by
+  have hI :
+      ‖∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤ 1 / s.re := by
+    calc
+      _ ≤ ∫ t in Set.Ioi (1 : ℝ), t ^ (-(s.re + 1)) := by
+        refine MeasureTheory.norm_integral_le_of_norm_le
+          (integrableOn_Ioi_rpow_of_lt (by linarith) zero_lt_one) ?_
+        filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_Ioi] with t ht
+        have ht0 : 0 < t := zero_lt_one.trans ht
+        rw [norm_mul, norm_real, Real.norm_of_nonneg (Int.fract_nonneg t),
+          norm_cpow_eq_rpow_re_of_pos ht0]
+        simp only [neg_re, add_re, one_re]
+        exact mul_le_of_le_one_left (Real.rpow_nonneg ht0.le _) (Int.fract_lt_one t).le
+      _ = 1 / s.re := by
+        rw [integral_Ioi_rpow_of_lt (by linarith) zero_lt_one, Real.one_rpow]
+        ring
+  rw [riemannZeta₀_eq_one_sub_mul_integral hs]
+  calc
+    ‖1 - s * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖
+      ≤ 1 + ‖s‖ * ‖∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ := by
+        simpa [norm_mul] using norm_sub_le (1 : ℂ)
+          (s * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
+    _ ≤ 1 + ‖s‖ * (1 / s.re) := by gcongr
+    _ = 1 + ‖s‖ / s.re := by ring
 
 end TauCeti

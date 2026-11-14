@@ -25,8 +25,8 @@ continuation.
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
-* `TauCeti.meromorphic_riemannZeta`: the uncompleted function `riemannZeta` is meromorphic on `ℂ`
-  as well.
+* `TauCeti.meromorphic_riemannZeta` and `TauCeti.meromorphicOrderAt_riemannZeta_one`: the
+  uncompleted function `riemannZeta` is meromorphic on `ℂ` with a simple pole at `1`.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
@@ -90,6 +90,20 @@ theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
     filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
     rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply]
   · exact (analyticOn_riemannZeta z hz).meromorphicAt
+
+/-- The Riemann zeta function has a simple pole at `1`. -/
+theorem meromorphicOrderAt_riemannZeta_one :
+    meromorphicOrderAt riemannZeta 1 = (-1 : ℤ) := by
+  have heq : riemannZeta =ᶠ[𝓝[≠] 1] completedRiemannZeta * fun s ↦ (Gammaℝ s)⁻¹ := by
+    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+    rw [Pi.mul_apply, riemannZeta_def_of_ne_zero hs, div_eq_mul_inv]
+  have hΓ : meromorphicOrderAt (fun s ↦ (Gammaℝ s)⁻¹) 1 = 0 := by
+    rw [(Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicOrderAt_eq,
+      analyticOrderAt_eq_zero.2 (.inr (inv_ne_zero (by rw [Gammaℝ_one]; exact one_ne_zero)))]
+    rfl
+  rw [meromorphicOrderAt_congr heq, meromorphicOrderAt_mul (meromorphic_completedRiemannZeta 1)
+    (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt,
+    meromorphicOrderAt_completedRiemannZeta_one, hΓ, add_zero]
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/
 theorem completedRiemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
 # Uniform bounds for deleted Euler factors
@@ -18,8 +20,9 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are nonzero on `Re(s) > 0`, so this passage also preserves zeros there. At `s = 1`
-the L-function comparison requires nonprincipal characters, as in the native continuation API.
+The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
+meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
+pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -29,7 +32,8 @@ the treatment of imprimitive characters and Siegel's theorem.
 
 public section
 
-open Finset Complex
+open Finset Complex Filter
+open scoped Topology
 
 namespace DirichletCharacter
 
@@ -100,6 +104,33 @@ half-plane. At the possible pole `1`, require the original character to be nonpr
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
   simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs]
+
+/-- Raising the level preserves the meromorphic order of the continued L-function at every point of
+the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
+@[simp] theorem meromorphicOrderAt_LFunction_changeLevel {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re) :
+    meromorphicOrderAt (changeLevel hMN χ).LFunction s = meromorphicOrderAt χ.LFunction s := by
+  set P : ℂ → ℂ := ∏ p ∈ N.primeFactors, fun z ↦ 1 - χ p * (p : ℂ) ^ (-z)
+  have hPdiff : Differentiable ℂ P := by
+    refine prod_induction _ (Differentiable ℂ) (fun _ _ hf hg ↦ hf.mul hg)
+      (differentiable_const 1) fun p hp ↦ ?_
+    have hp0 : (p : ℂ) ≠ 0 := mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero
+    exact (differentiable_const 1).sub
+      ((differentiable_id.neg.const_cpow (.inl hp0)).const_mul (χ p))
+  have hPs : P s ≠ 0 := by
+    simpa [P, Finset.prod_apply] using prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs
+  have hPord : meromorphicOrderAt P s = 0 := by
+    rw [(hPdiff.analyticAt s).meromorphicOrderAt_eq, analyticOrderAt_eq_zero.2 (.inr hPs)]
+    rfl
+  have heq : (changeLevel hMN χ).LFunction =ᶠ[𝓝[≠] s] χ.LFunction * P := by
+    rcases eq_or_ne s 1 with rfl | hs1
+    · filter_upwards [self_mem_nhdsWithin] with z hz
+      simp [P, Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz)]
+    · filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds hs1)] with z hz
+      simp [P, Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz)]
+  rw [meromorphicOrderAt_congr heq,
+    meromorphicOrderAt_mul (χ.meromorphic_LFunction s) (hPdiff.analyticAt s).meromorphicAt,
+    hPord, add_zero]
 
 /-- Uniform comparison of the L-functions before and after a level change in either direction.
 In particular it applies to the primitive character at its conductor and the original character

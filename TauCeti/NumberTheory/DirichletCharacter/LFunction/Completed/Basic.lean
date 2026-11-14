@@ -83,6 +83,18 @@ theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
   rw [funext (ZMod.completedLFunction_eq (χ ·))]
   fun_prop
 
+/-- Every Dirichlet character has a meromorphic continued L-function on the whole plane. -/
+theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
+  intro z
+  rcases eq_or_ne z 1 with rfl | hz
+  · refine ((χ.meromorphic_completedLFunction 1).mul
+      (χ.differentiable_inv_gammaFactor.analyticAt 1).meromorphicAt).congr ?_
+    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+    rw [χ.LFunction_eq_completed_div_gammaFactor s (.inl hs), div_eq_mul_inv, Pi.mul_apply]
+  · refine (Complex.analyticAt_iff_eventually_differentiableAt.mpr ?_).meromorphicAt
+    filter_upwards [eventually_ne_nhds hz] with s hs
+    exact χ.differentiableAt_LFunction s (.inl hs)
+
 /-- For a nonprincipal character the completed L-function is the entire periodic completion
 `ZMod.completedLFunction₀` of the character values. -/
 theorem completedLFunction_eq_completedLFunction₀ (hχ : χ ≠ 1) :

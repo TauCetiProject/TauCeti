@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Convex.SimplyConnected
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Landau's local logarithmic-derivative lemma
@@ -40,6 +41,11 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`: the classical radii `R / 2` and
   `R / 4`, with the bound `48 / R * log M`.
+* `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_half_le`: the retained-zero real-part inequality
+  summing over an arbitrary `S : Finset ℂ` when all zeros in `closedBall z₀ (R / 2)` have real
+  part at most `z.re`.
+* `AnalyticOnNhd.coe_divisor_half_eq_meromorphicOrderAt`: on `closedBall z₀ (R / 2)`, the divisor
+  of `f` agrees with `meromorphicOrderAt f` whenever `f z₀ ≠ 0`.
 
 ## Implementation notes
 
@@ -183,6 +189,79 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
     _ = 48 / R := by
         field_simp
         ring
+
+/-- **Retained-zero real-part form of Landau's lemma.** Let `f` be analytic on `closedBall z₀ R`
+with `R ≠ 0` and `‖f w‖ ≤ M * ‖f z₀‖` on `sphere z₀ R`. Suppose `‖z - z₀‖ ≤ R / 4`, `f z ≠ 0`,
+and every zero `ρ` of `f` in `closedBall z₀ (R / 2)` satisfies `ρ.re ≤ z.re`. Then for any finite
+set `S : Finset ℂ`,
+`-(logDeriv f z).re + ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
+  48 / R * Real.log M`. -/
+theorem neg_re_logDeriv_add_sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hR : R ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
+    {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 4) (hfz : f z ≠ 0)
+    (hre : ∀ ρ ∈ closedBall z₀ (R / 2), f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
+    -(logDeriv f z).re +
+        ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
+      48 / R * Real.log M := by
+  classical
+  have hRpos : 0 < R := lt_of_le_of_ne (by linarith [norm_nonneg (z - z₀)]) hR.symm
+  have hz₀ : f z₀ ≠ 0 := fun h0 ↦ (norm_pos_iff.2 hfz).not_ge <| by
+    simpa [h0] using Complex.norm_le_of_forall_mem_sphere_norm_mul_le (P := fun _ ↦ 1) hRpos
+      (hf.differentiableOn.diffContOnCl_ball Subset.rfl) (fun _ _ ↦ one_ne_zero)
+      (fun _ _ ↦ le_rfl) (by simpa using hM) (by rw [mem_closedBall, dist_eq_norm]; linarith)
+  set D := divisor f (closedBall z₀ (R / 2))
+  have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
+  have hg_nonneg (ρ : ℂ) : 0 ≤ (D ρ : ℝ) * ((z - ρ)⁻¹).re := by
+    by_cases hD : D ρ = 0
+    · simp [hD]
+    have hρ_mem : ρ ∈ closedBall z₀ (R / 2) := D.supportWithinDomain hD
+    have hfρ : f ρ = 0 := by_contra fun hne ↦
+      hD ((hf ρ (closedBall_subset_closedBall (by linarith) hρ_mem)).divisor_apply_eq_zero hne)
+    have hD0 : 0 ≤ (D ρ : ℝ) :=
+      mod_cast (hf.mono (closedBall_subset_closedBall (by linarith))).divisor_nonneg ρ
+    rw [Complex.inv_re]
+    exact mul_nonneg hD0 (div_nonneg (by simpa using sub_nonneg.2 (hre ρ hρ_mem hfρ))
+      (Complex.normSq_nonneg _))
+  set T : Finset ℂ := S ∪ hfin.toFinset
+  have hsum : ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ) = ∑ ρ ∈ T, (D ρ : ℂ) / (z - ρ) :=
+    finsum_eq_sum_of_support_subset _ fun ρ hρ ↦
+      Finset.mem_coe.2 (Finset.mem_union_right _ (hfin.mem_toFinset.2 fun h0 ↦ hρ (by simp [h0])))
+  have hre_sum : (∑ ρ ∈ T, (D ρ : ℂ) / (z - ρ)).re = ∑ ρ ∈ T, (D ρ : ℝ) * ((z - ρ)⁻¹).re := by
+    simp [div_eq_mul_inv, Complex.re_sum, ← Complex.ofReal_intCast]
+  have hsub : ∑ ρ ∈ S, (D ρ : ℝ) * ((z - ρ)⁻¹).re ≤ ∑ ρ ∈ T, (D ρ : ℝ) * ((z - ρ)⁻¹).re :=
+    Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left fun ρ _ _ ↦ hg_nonneg ρ
+  have hmain := hf.norm_logDeriv_sub_finsum_divisor_half_le hRpos hz₀ hM hz hfz
+  have h1 : -(logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re ≤ 48 / R * Real.log M :=
+    (neg_le_abs _).trans ((Complex.abs_re_le_norm _).trans hmain)
+  rw [hsum, Complex.sub_re, hre_sum] at h1
+  linarith
+
+/-- On `closedBall z₀ (R / 2)`, if `f` is analytic on `closedBall z₀ R` with `f z₀ ≠ 0`, the
+divisor of `f` agrees with `meromorphicOrderAt f` (in particular, `meromorphicOrderAt f ρ ≠ ⊤`). -/
+theorem coe_divisor_half_eq_meromorphicOrderAt (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hz₀ : f z₀ ≠ 0) {ρ : ℂ} (hρ : ρ ∈ closedBall z₀ (R / 2)) :
+    (divisor f (closedBall z₀ (R / 2)) ρ : WithTop ℤ) = meromorphicOrderAt f ρ := by
+  rcases lt_trichotomy R 0 with hR | rfl | hR
+  · linarith [dist_nonneg (x := ρ) (y := z₀), mem_closedBall.1 hρ]
+  · have hρz : ρ = z₀ := by simpa using hρ
+    subst hρz
+    have ha : AnalyticAt ℂ f ρ := hf ρ (by simp)
+    rw [ha.divisor_apply_eq_zero hz₀, ha.meromorphicOrderAt_eq, ha.analyticOrderAt_eq_zero.2 hz₀]
+    rfl
+  · have hρb : ρ ∈ ball z₀ R := by rw [mem_ball]; linarith [mem_closedBall.1 hρ]
+    have ha : AnalyticAt ℂ f ρ := hf ρ (ball_subset_closedBall hρb)
+    have htop : meromorphicOrderAt f ρ ≠ ⊤ := by
+      rw [ha.meromorphicOrderAt_eq]
+      intro h
+      have ha_top : analyticOrderAt f ρ = ⊤ := by
+        cases ho : analyticOrderAt f ρ with
+        | top => rfl
+        | coe n => simp [ho] at h
+      exact hz₀ ((hf.mono ball_subset_closedBall).eqOn_zero_of_preconnected_of_eventuallyEq_zero
+        (convex_ball z₀ R).isPreconnected hρb (analyticOrderAt_eq_top.1 ha_top)
+        (mem_ball_self hR))
+    rw [(hf.mono (closedBall_subset_closedBall (by linarith))).meromorphicOn.divisor_apply hρ,
+      WithTop.coe_untop₀_of_ne_top htop]
 
 end AnalyticOnNhd
 
