@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Shapiro
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 
 /-!
@@ -58,8 +59,13 @@ restrictions.
   multiplication by `[G : S]`.
 * `TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero`: a class whose restriction to `S`
   vanishes is killed by `[G : S]`.
-* `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
-  by the order of the group.
+* `TauCeti.groupCohomology.eq_zero_of_nsmul_eq_zero_of_map_eq_zero`,
+  `TauCeti.groupCohomology.map_subtype_injective_of_bijective_nsmul`,
+  `TauCeti.groupCohomology.map_subtype_injective_of_coprime`, and
+  `TauCeti.groupCohomology.map_subtype_injective_of_coprime_natCard`: injectivity of restriction
+  when `[G : S]` acts bijectively on `A` or is prime to an annihilator (or `Nat.card A`).
+* `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a group is killed by
+  `Nat.card G`.
 * `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
   vanishes when the order of the group is a unit of the coefficient ring.
 * `groupCohomology.subsingleton_of_bijective_nsmul`: positive-degree cohomology of a finite group
@@ -175,11 +181,49 @@ theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
       CategoryTheory.Functor.map_id]
   exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
 
-/-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
-the index of `S`. -/
+omit [S.FiniteIndex] in
+/-- A class in `Hⁿ(G, A)` whose restriction to the subgroup `S` vanishes is killed by the index of
+`S` (when `S` has infinite index, `S.index = 0` and the statement is trivial). -/
 theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
     (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
-  rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
+  by_cases hS : S.FiniteIndex
+  · rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
+  · rw [S.not_finiteIndex_iff.1 hS, zero_smul]
+
+omit [S.FiniteIndex] in
+/-- An element of `Hⁿ(G, A)` annihilated by `m : ℕ` prime to `[G : S]` whose restriction to `S`
+vanishes is zero. -/
+theorem eq_zero_of_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n m : ℕ}
+    (hcop : Nat.Coprime S.index m) {x : groupCohomology A n} (hx : m • x = 0)
+    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : x = 0 :=
+  (nsmul_eq_zero_iff_of_coprime hcop).1 ⟨index_nsmul_eq_zero_of_map_eq_zero S h, hx⟩
+
+omit [S.FiniteIndex] in
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when multiplication
+by `[G : S]` is bijective on `A`. -/
+theorem map_subtype_injective_of_bijective_nsmul {A : Rep.{u} k G}
+    (hA : Function.Bijective fun a : A ↦ S.index • a) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  (injective_iff_map_eq_zero _).2 fun _ hx ↦
+    (nsmul_bijective hA n).1 ((index_nsmul_eq_zero_of_map_eq_zero S hx).trans (nsmul_zero _).symm)
+
+omit [S.FiniteIndex] in
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when `A` is
+annihilated by a natural number `m` prime to `[G : S]`. -/
+theorem map_subtype_injective_of_coprime {A : Rep.{u} k G} {m : ℕ}
+    (hA : ∀ a : A, m • a = 0) (hcop : Nat.Coprime S.index m) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦
+    eq_zero_of_nsmul_eq_zero_of_map_eq_zero S hcop
+      (nsmul_eq_zero_of_forall_nsmul_eq_zero hA x) hx
+
+omit [S.FiniteIndex] in
+/-- Restriction `Hⁿ(G, A) ⟶ Hⁿ(S, Res_S A)` is injective in every degree `n` when `[G : S]` is
+prime to `Nat.card A`. -/
+theorem map_subtype_injective_of_coprime_natCard {A : Rep.{u} k G}
+    (hcop : Nat.Coprime S.index (Nat.card A)) (n : ℕ) :
+    Function.Injective (map S.subtype (𝟙 (res S.subtype A)) n) :=
+  map_subtype_injective_of_coprime S (fun _ ↦ card_nsmul_eq_zero') hcop n
 
 /-- Corestriction from a finite-index subgroup commutes with the connecting maps of
 any short exact sequence of representations, in every ordinary cohomological degree. -/
@@ -436,8 +480,9 @@ variable {k G : Type u} [CommRing k] [Group G] [Finite G]
 
 open Limits
 
-/-- Positive-degree cohomology of a finite group is killed by the order of the group (Milne II
-1.31). -/
+omit [Finite G] in
+/-- Positive-degree cohomology of a group is killed by `Nat.card G` (Milne II 1.31; when `G` is
+infinite, `Nat.card G = 0` and the statement is trivial). -/
 theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n + 1)) :
     Nat.card G • x = 0 := by
   -- Restriction to the trivial subgroup lands in the vanishing cohomology of the trivial group.
