@@ -25,9 +25,9 @@ inhomogeneous Cauchy–Riemann equation of Hamiltonian Floer theory reads
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`,
 
 for a domain-dependent almost complex structure `J(z, x)` and a Hamiltonian one-form
-`X(z, x) : ℂ →L[ℝ] V`, as in `TauCeti.Geometry.Symplectic.Floer.Compactness`. This file proves
-that an isolated singularity of a finite-energy solution with compact image is removable, in the
-three forms already known for pseudoholomorphic curves in
+`X(z, x) : ℂ →L[ℝ] V`, as in `TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`. This file
+proves that an isolated singularity of a finite-energy solution with compact image is removable,
+in the three forms already known for pseudoholomorphic curves in
 `TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity`,
 `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative` and
 `TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability`. Let `u` be a `C³`
@@ -183,9 +183,12 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
   set l : ℝ := (M₀ + 1) * B₀ / min 1 c + 1 with hl
   have hl0 : 0 < l := by positivity
   have hlε : (M₀ + 1) * (l⁻¹ * B₀) ≤ min 1 c := by
-    have h : (M₀ + 1) * (l⁻¹ * B₀) = (M₀ + 1) * B₀ / l := by field_simp
-    rw [h, div_le_iff₀ hl0, hl, mul_add, mul_div_cancel₀ _ hm.ne', mul_one]
-    linarith
+    have hkey : (M₀ + 1) * B₀ = min 1 c * (l - 1) := by
+      rw [hl]
+      field_simp
+      ring
+    calc (M₀ + 1) * (l⁻¹ * B₀) = (M₀ + 1) * B₀ / l := by ring
+      _ ≤ min 1 c := (div_le_iff₀ hl0).2 (by linarith)
   set S : ℂ × V → ℂ × V := fun q ↦ (l⁻¹ • q.1, q.2)
   have hS {n : WithTop ℕ∞} : ContDiff ℝ n S := (contDiff_fst.const_smul l⁻¹).prodMk contDiff_snd
   set T : ℂ × V → WithLp 2 (ℂ × V) := fun q ↦ WithLp.toLp 2 (l • q.1, q.2)
@@ -195,6 +198,8 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
     simp only [S, T, inv_smul_smul₀ hl0.ne']
   set J' := graphStructure (fun q ↦ J (S q)) (fun q ↦ l⁻¹ • X (S q))
   set G : ℂ → WithLp 2 (ℂ × V) := fun z ↦ T (z, u z)
+  -- Unfolding `T` exhibits `G` as a pair of functions, for differentiating it componentwise.
+  have hGdef : G = fun w ↦ WithLp.toLp 2 (l • w, u w) := rfl
   have hGS (z : ℂ) : S (G z).ofLp = (z, u z) := hST (z, u z)
   have hdiff (z : ℂ) (hz : z ∈ ball z₀ (R / 2) \ {z₀}) : DifferentiableAt ℝ u z :=
     (hu.differentiableOn (by norm_num) z hz).differentiableAt
@@ -205,8 +210,7 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
     ((hasFDerivAt_id z).const_smul l).fderiv
   have hGd (z : ℂ) (hz : z ∈ ball z₀ (R / 2) \ {z₀}) (v : ℂ) :
       fderiv ℝ G z v = WithLp.toLp 2 (l • v, fderiv ℝ u z v) := by
-    rw [show G = fun w ↦ WithLp.toLp 2 (l • w, u w) from rfl,
-      fderiv_toLp_prodMk_apply (hsmul z) (hdiff z hz), hsmul']
+    rw [hGdef, fderiv_toLp_prodMk_apply (hsmul z) (hdiff z hz), hsmul']
     simp
   refine ⟨Ω, J₁, min 1 c / 2, J', WithLp.ofLp ⁻¹' (S ⁻¹' W), T '' (closedBall z₀ (R / 2) ×ˢ K), G,
     hΩJ, half_pos hm,
@@ -244,8 +248,7 @@ private theorem exists_graph (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc :
     refine (hi.congr_fun (fun z hz ↦ ?_)
       (measurableSet_ball.diff (measurableSet_singleton _))).congr_set_ae
       (sdiff_null_ae_eq_self (measure_singleton z₀)).symm
-    rw [show G = fun w ↦ WithLp.toLp 2 (l • w, u w) from rfl,
-      norm_fderiv_toLp_prodMk_apply_sq (hsmul z) (hdiff z hz), hsmul']
+    rw [hGdef, norm_fderiv_toLp_prodMk_apply_sq (hsmul z) (hdiff z hz), hsmul']
     simp [abs_of_pos hl0]
   · rintro _ ⟨q, hq, rfl⟩
     simpa [T] using hq.2
