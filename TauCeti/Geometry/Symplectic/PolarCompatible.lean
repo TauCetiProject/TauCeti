@@ -63,6 +63,8 @@ normalizations of smooth families of forms and metrics on a manifold are shown t
   `TauCeti.SymplecticForm.polarComplexStructure_transport`,
   `TauCeti.SymplecticForm.IsSymplectomorphism.polarComplexStructure_apply`: naturality under
   linear isometric equivalences.
+* `TauCeti.SymplecticForm.isComplexLinearMap_polarComplexStructure_of_inner`: a linear map
+  preserving the inner product and `ω` commutes with the polar normalization of `ω`.
 * `TauCeti.SymplecticForm.toContinuousLinearMap_polarComplexStructure`: polar normalization is
   `A (√(-A²))⁻¹` for a bounded operator `A` representing `ω`.
 * `TauCeti.SymplecticForm.conjContinuousAlgEquiv_toContinuousLinearMap_polarComplexStructure`:
@@ -301,6 +303,18 @@ theorem IsSymplectomorphism.polarComplexStructure_apply {ω₁ : SymplecticForm 
   rw [← isSymplectomorphism_iff_transport_eq.mp h, polarComplexStructure_transport,
     AlmostComplexStructure.transport_apply]
   simp
+
+/-- On a finite-dimensional real inner product space, a linear map preserving the inner product
+and a symplectic form `ω` commutes with the polar normalization of `ω`. -/
+theorem isComplexLinearMap_polarComplexStructure_of_inner (ω : SymplecticForm V) {f : V →ₗ[ℝ] V}
+    (hf : ∀ u v, inner ℝ (f u) (f v) = inner ℝ u v) (hω : ∀ u v, ω (f u) (f v) = ω u v) :
+    IsComplexLinearMap ω.polarComplexStructure ω.polarComplexStructure f := by
+  -- `f` is a linear isometric equivalence and a symplectomorphism.
+  let e : V ≃ₗᵢ[ℝ] V := (f.isometryOfInner hf).toLinearIsometryEquiv rfl
+  have he : IsSymplectomorphism ω ω e.toLinearEquiv :=
+    isSymplectomorphism_iff.2 fun u v ↦ hω u v
+  rw [isComplexLinearMap_iff_apply]
+  exact fun v ↦ (he.polarComplexStructure_apply v).symm
 
 /-! ### Polar normalization in coordinates
 

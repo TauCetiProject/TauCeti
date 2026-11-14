@@ -361,5 +361,10 @@ lemma chainComplexMapHomotopyEquivOfSubdivision_hom :
     (chainComplexMapHomotopyEquivOfSubdivision hs hh hfin).hom = SSet.chainComplexMap i R :=
   (rfl)
 
+@[simp]
+lemma chainComplexMapHomotopyEquivOfSubdivision_inv :
+    (chainComplexMapHomotopyEquivOfSubdivision hs hh hfin).inv = subdivisionRetraction hs hh hfin :=
+  (rfl)
+
 
 end TauCeti
