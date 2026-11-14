@@ -156,16 +156,7 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
       ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
     intro u
     filter_upwards [hA_bound, hC₁, hC₂] with t hAt h₁ h₂
-    calc ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖
-        ≤ ‖A t (u t) (φ t)‖ + ‖⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ := norm_sub_le _ _
-      _ ≤ ‖A t‖ * ‖u t‖ * ‖φ t‖ + ‖ι (u t)‖ * ‖ι (deriv φ t)‖ :=
-          add_le_add ((A t).le_opNorm₂ _ _) (norm_inner_le_norm _ _)
-      _ ≤ |Λ| * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) := by
-          gcongr
-          · exact hAt.trans (le_abs_self Λ)
-          · exact ι.le_opNorm _
-          · exact (ι.le_opNorm _).trans (by gcongr)
-      _ = K * ‖u t‖ := by ring
+    exact ι.norm_apply_sub_inner_le hAt h₁ h₂
   refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
   · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
     exact (((Lp.aestronglyMeasurable u).prodMk hφ.continuous.aestronglyMeasurable)
@@ -203,21 +194,9 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
       intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at h
     linarith
   -- `t ↦ A(t) φ(t) φ(t)` is bounded and strongly measurable, hence integrable.
-  have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
-    set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
-    have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
-      hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
-        measurableSet_Ioo Ioo_subset_Icc_self
-    refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
-      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuousAt
-        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
-        (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
-      (Λ * C * C) ?_).integrable le_rfl
-    filter_upwards [hA_bound, hC] with t hAt hφt
-    have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
-    have hC0 : 0 ≤ C := (norm_nonneg _).trans hφt
-    calc ‖A t (φ t) (φ t)‖ ≤ ‖A t‖ * ‖φ t‖ * ‖φ t‖ := (A t).le_opNorm₂ _ _
-      _ ≤ Λ * C * C := by gcongr
+  have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) :=
+    integrable_apply_apply_of_continuousOn hA hA_bound hφ.continuous.continuousOn isCompact_Icc
+      measurableSet_Ioo Ioo_subset_Icc_self
   calc α * (∫ t in Ioo a b, ‖φ t‖ ^ 2) + ‖ι (φ a)‖ ^ 2 / 2
       = ∫ t in Ioo a b, (α * ‖φ t‖ ^ 2 - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ) := by
         rw [integral_sub (hint hcont₁) (hint hcont₂), integral_const_mul, hftc]
