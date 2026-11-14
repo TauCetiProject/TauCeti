@@ -247,6 +247,31 @@ theorem pointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
 theorem generalLinearToPoint_one : generalLinearToPoint (R := R) (A := A) n 1 = 1 := by
   simpa only [pointsMulEquiv_symm_apply] using (pointsMulEquiv (R := R) (A := A) n).symm.map_one
 
+/-- The identity convolution point is read as the identity matrix. -/
+@[simp]
+theorem pointToGeneralLinear_one :
+    pointToGeneralLinear n (1 : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) = 1 :=
+  map_one (pointsMulEquiv (R := R) (A := A) n)
+
+/-- Reading the inverse of a point as a matrix gives the inverse matrix. -/
+@[simp]
+theorem pointToGeneralLinear_inv (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A)) :
+    pointToGeneralLinear n f⁻¹ = (pointToGeneralLinear n f)⁻¹ :=
+  map_inv (pointsMulEquiv (R := R) (A := A) n) f
+
+/-- The point of a product of invertible matrices is the convolution product of the points. -/
+@[simp]
+theorem generalLinearToPoint_mul (g h : Matrix.GeneralLinearGroup (Fin n) A) :
+    generalLinearToPoint (R := R) n (g * h) =
+      generalLinearToPoint (R := R) n g * generalLinearToPoint (R := R) n h :=
+  map_mul (pointsMulEquiv (R := R) (A := A) n).symm g h
+
+/-- The point of an inverse matrix is the convolution inverse of the point. -/
+@[simp]
+theorem generalLinearToPoint_inv (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    generalLinearToPoint (R := R) n g⁻¹ = (generalLinearToPoint (R := R) n g)⁻¹ :=
+  map_inv (pointsMulEquiv (R := R) (A := A) n).symm g
+
 /-- The entries of the invertible matrix of a point inverse are the values of the point on the
 antipodes of the generic entries. -/
 theorem coe_inv_pointsMulEquiv_apply (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
