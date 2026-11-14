@@ -163,6 +163,19 @@ theorem isRationalLinearMap_iff {N' V' : Type*} [AddCommGroup N'] [AddCommGroup 
       ∀ f : Module.Dual ℝ V', IsRationalFunctional h' f → IsRationalFunctional h (f.comp T) :=
   Iff.rfl
 
+/-- A rational functional on lattice vectors determines a rational rank-one map. -/
+theorem IsRationalFunctional.smulRight {N' V' : Type*} [AddCommGroup N'] [AddCommGroup V']
+    [Module ℝ V'] {i' : N' →+ V'} {h : IsIntegralLattice i} {h' : IsIntegralLattice i'}
+    {f : Module.Dual ℝ V} (hf : IsRationalFunctional h f) (n' : N') :
+    IsRationalLinearMap h h' (f.smulRight (i' n')) := by
+  intro f' hf'
+  obtain ⟨q, m, rfl⟩ := hf'
+  obtain ⟨r, hr⟩ := (IsRationalFunctional.realCharacter h' m).exists_rat_apply n'
+  convert hf.rat_smul (q * r) using 1
+  ext x
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.smulRight_apply, smul_eq_mul,
+    LinearMap.smul_apply, map_smul, hr, Rat.cast_mul, mul_comm, mul_assoc]
+
 namespace IsRationalLinearMap
 
 variable {N' N'' V' V'' : Type*} [AddCommGroup N'] [AddCommGroup N'']
@@ -176,11 +189,38 @@ theorem map_functional {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T)
     IsRationalFunctional h (f.comp T) :=
   hT f hf
 
+/-- The zero real-linear map is rational. -/
+@[simp]
+theorem zero (h : IsIntegralLattice i) (h' : IsIntegralLattice i') :
+    IsRationalLinearMap h h' (0 : V →ₗ[ℝ] V') := by
+  intro f _hf
+  simp [IsRationalFunctional.zero h]
+
+/-- Addition preserves rational linear maps. -/
+theorem add {S T : V →ₗ[ℝ] V'} (hS : IsRationalLinearMap h h' S)
+    (hT : IsRationalLinearMap h h' T) : IsRationalLinearMap h h' (S + T) := by
+  intro f hf
+  simpa [LinearMap.comp_add] using (hS.map_functional hf).add (hT.map_functional hf)
+
+/-- Negation preserves rational linear maps. -/
+theorem neg {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T) :
+    IsRationalLinearMap h h' (-T) := by
+  intro f hf
+  simpa [LinearMap.comp_neg] using (hT.map_functional hf).neg
+
 /-- Differences of rational linear maps are rational. -/
 theorem sub {S T : V →ₗ[ℝ] V'} (hS : IsRationalLinearMap h h' S)
     (hT : IsRationalLinearMap h h' T) : IsRationalLinearMap h h' (S - T) :=
   (isRationalLinearMap_iff h h' _).mpr fun f hf => by
     simpa [LinearMap.comp_sub] using (hS.map_functional hf).sub (hT.map_functional hf)
+
+/-- Multiplication by a rational scalar preserves rational linear maps. -/
+theorem rat_smul {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T) (q : ℚ) :
+    IsRationalLinearMap h h' ((q : ℝ) • T) := by
+  intro f hf
+  change IsRationalFunctional h (f.comp ((q : ℝ) • T))
+  rw [LinearMap.comp_smul]
+  exact (hT.map_functional hf).rat_smul q
 
 /-- The identity real-linear map is rational. -/
 theorem id (h : IsIntegralLattice i) : IsRationalLinearMap h h LinearMap.id := by

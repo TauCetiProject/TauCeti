@@ -28,9 +28,8 @@ namespace AffineMap
 variable {N N' N'' V W X : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
   [AddCommGroup V] [AddCommGroup W] [AddCommGroup X]
   [Module ℝ V] [Module ℝ W] [Module ℝ X]
-  [TopologicalSpace V] [TopologicalSpace W] [TopologicalSpace X]
+  [TopologicalSpace V] [TopologicalSpace X]
   [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
-  [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] [T2Space W]
   [IsTopologicalAddGroup X] [ContinuousSMul ℝ X] [T2Space X]
   {i : N →+ V} {i' : N' →+ W} {i'' : N'' →+ X}
   {h : TauCeti.Toric.IsIntegralLattice i} {h' : TauCeti.Toric.IsIntegralLattice i'}
@@ -43,15 +42,66 @@ theorem isRationalNormalPolyhedron_setOf_eq (f g : V →ᵃ[ℝ] W)
     (hg : Toric.IsRationalLinearMap h h' g.linear) :
     IsRationalNormalPolyhedron h {x | f x = g x} := by
   have := h.finiteDimensional
-  let δ : V →ᴬ[ℝ] W :=
-    ⟨f - g, AffineMap.continuous_linear_iff.1 (f - g).linear.continuous_of_finiteDimensional⟩
-  have hδ : Toric.IsRationalLinearMap h h' δ.toAffineMap.linear := by
-    simpa only [δ, AffineMap.sub_linear] using hf.sub hg
-  have he : δ ⁻¹' {0} = {x | f x = g x} := by
+  have := h'.free
+  have := h'.finite
+  let b := Module.Free.chooseBasis ℤ N'
+  let B := h'.isBaseChange.basis b
+  let χ (p : Module.Free.ChooseBasisIndex ℤ N') : W →ₗ[ℝ] ℝ :=
+    h'.realCharacter (b.coord p).toAddMonoidHom
+  let δ := f - g
+  let ψ (p : Module.Free.ChooseBasisIndex ℤ N') : V →ᵃ[ℝ] ℝ :=
+    (χ p).toAffineMap.comp δ
+  let F (p : Module.Free.ChooseBasisIndex ℤ N') : V →ᴬ[ℝ] ℝ :=
+    ⟨ψ p, AffineMap.continuous_linear_iff.1 (ψ p).linear.continuous_of_finiteDimensional⟩
+  let r (a : Module.Free.ChooseBasisIndex ℤ N' × Bool) : V →ᴬ[ℝ] ℝ :=
+    if a.2 = true then -F a.1 else F a.1
+  have hF (p : Module.Free.ChooseBasisIndex ℤ N') :
+      Toric.IsRationalFunctional h (F p).toAffineMap.linear :=
+    (hf.sub hg).map_functional (Toric.IsRationalFunctional.realCharacter h' (b.coord p))
+  have hr (a : Module.Free.ChooseBasisIndex ℤ N' × Bool) :
+      Toric.IsRationalFunctional h (r a).toAffineMap.linear := by
+    obtain ⟨p, s⟩ := a
+    cases s with
+    | false => exact hF p
+    | true => exact (hF p).neg
+  have heval (p) (s : Bool) (x : V) :
+      r (p, s) x = if s = true then -(χ p) (δ x) else (χ p) (δ x) := by
+    have hψ : (F p) x = (χ p) (δ x) := by
+      rw [show χ p (δ x) = (ψ p).linear x + (ψ p) 0 by
+        change χ p (δ x) = χ p (δ.linear x) + χ p (δ 0)
+        rw [← map_add]
+        congr 1
+        exact congrFun δ.decomp x]
+      exact congrFun (ψ p).decomp x
+    cases s
+    · exact hψ
+    · change -(F p) x = -(χ p) (δ x)
+      rw [hψ]
+  have he : {x | f x = g x} = {x | ∀ a, r a x ≤ 0} := by
     ext x
-    simp [δ, sub_eq_zero]
-  rw [← he]
-  exact (isRationalNormalPolyhedron_singleton h' (0 : W)).preimage δ hδ
+    simp only [Set.mem_ofPred_eq, Prod.forall, heval]
+    constructor
+    · intro hx p s
+      have hzero : δ x = 0 := sub_eq_zero.mpr hx
+      have hz : χ p (δ x) = 0 := by rw [hzero, map_zero]
+      cases s <;> simp [hz]
+    · intro hx
+      have hzero (p) : χ p (δ x) = 0 := by
+        have hp := hx p false
+        have hn := hx p true
+        simp only [Bool.false_eq_true, ↓reduceIte] at hp hn
+        have hn' := neg_le.mp hn
+        rw [neg_zero] at hn'
+        exact le_antisymm hp hn'
+      change f x = g x
+      rw [← sub_eq_zero]
+      refine B.ext_elem fun p => ?_
+      rw [← Module.Basis.coord_apply, ← h'.realCharacter_coord]
+      change χ p (f x - g x) = (B.repr 0) p
+      rw [map_zero, Finsupp.zero_apply]
+      exact hzero p
+  rw [he]
+  exact isRationalNormalPolyhedron_setOf_forall r hr
 
 /-- The matching locus of two rational affine maps with a common target is a
 rational-normal polyhedron in the product of their source spaces. -/
