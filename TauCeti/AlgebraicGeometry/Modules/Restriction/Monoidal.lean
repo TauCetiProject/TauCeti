@@ -45,7 +45,7 @@ local instance monoidalCategoryRestrictionEquivalence :
 /-- Identifying module sheaves on the slice over an open with module sheaves on its open
 subscheme is lax monoidal, through the canonical pushforward tensor comparison. -/
 instance overEquivFunctorLaxMonoidal : (overEquiv U).functor.LaxMonoidal :=
-  TauCeti.SheafOfModules.pushforwardLaxMonoidal
+  SheafOfModules.pushforwardLaxMonoidal
     (S := U.sheafRestrict.obj X.sheaf) (R := X.sheaf.over U)
     (U.overPullbackSheafEquivOver.app X.ringCatSheaf).inv
 
@@ -75,7 +75,7 @@ private theorem overFunctorEquiv_hom_tensor_direct (M N : X.Modules) :
     let F : X.Modules ⥤ SheafOfModules.{u} (X.ringCatSheaf.over U) :=
       SheafOfModules.overFunctor X.ringCatSheaf U
     letI : F.LaxMonoidal :=
-      TauCeti.SheafOfModules.pushforwardLaxMonoidal
+      SheafOfModules.pushforwardLaxMonoidal
         (S := X.sheaf.over U) (R := X.sheaf) (𝟙 (X.ringCatSheaf.over U))
     Functor.LaxMonoidal.μ
         (F ⋙ (overEquiv U).functor) M N ≫
@@ -85,7 +85,7 @@ private theorem overFunctorEquiv_hom_tensor_direct (M N : X.Modules) :
   let F : X.Modules ⥤ SheafOfModules.{u} (X.ringCatSheaf.over U) :=
     SheafOfModules.overFunctor X.ringCatSheaf U
   let : F.LaxMonoidal :=
-    TauCeti.SheafOfModules.pushforwardLaxMonoidal
+    SheafOfModules.pushforwardLaxMonoidal
       (S := X.sheaf.over U) (R := X.sheaf) (𝟙 (X.ringCatSheaf.over U))
   let : (restrictFunctor U.ι).LaxMonoidal := restrictFunctorLaxMonoidal U.ι
   have hα : NatTrans.IsMonoidal (C := X.Modules) (D := (U : Scheme).Modules)
@@ -108,15 +108,15 @@ private theorem overFunctorEquiv_hom_tensor_direct (M N : X.Modules) :
     refine @NatTrans.IsMonoidal.comp
       X.Modules _ (Scheme.Modules.instMonoidalCategory X)
       (U : Scheme).Modules _ (Scheme.Modules.instMonoidalCategory (U : Scheme)) _ _ _ _ _
-      (TauCeti.SheafOfModules.pushforwardLaxMonoidal
+      (SheafOfModules.pushforwardLaxMonoidal
         (S := U.sheafRestrict.obj X.sheaf) (R := X.sheaf)
         (F := (TopologicalSpace.Opens.overEquivalence U).symm.functor ⋙ Over.forget U) _)
       (restrictFunctorLaxMonoidal U.ι) _ ?_ ?_
-    · exact TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom
+    · exact SheafOfModules.isMonoidal_pushforwardComp_hom
         (S := U.sheafRestrict.obj X.sheaf) (R := X.sheaf.over U) (T := X.sheaf)
         (U.overPullbackSheafEquivOver.app X.ringCatSheaf).inv
         (𝟙 (X.ringCatSheaf.over U))
-    · exact TauCeti.SheafOfModules.isMonoidal_pushforwardCongr_hom
+    · exact SheafOfModules.isMonoidal_pushforwardCongr_hom
         (S := U.sheafRestrict.obj X.sheaf) (R := X.sheaf) _
   exact hα.tensor M N
 
@@ -138,7 +138,7 @@ theorem overFunctorEquiv_hom_tensor (M N : X.Modules) :
   dsimp only at h ⊢
   have hcomp := Functor.LaxMonoidal.comp_μ_congr F (overEquiv U).functor
     (SheafOfModules.overFunctorMonoidal (R := X.sheaf) (X := U)).toLaxMonoidal
-    (TauCeti.SheafOfModules.pushforwardLaxMonoidal
+    (SheafOfModules.pushforwardLaxMonoidal
       (S := X.sheaf.over U) (R := X.sheaf) (𝟙 (X.ringCatSheaf.over U))) M N hμ
   rw [hcomp]
   exact h
