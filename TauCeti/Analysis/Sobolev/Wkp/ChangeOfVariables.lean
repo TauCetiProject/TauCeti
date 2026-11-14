@@ -362,6 +362,16 @@ open scoped ENNReal ContDiff Topology
 
 namespace TauCeti.Wkp
 
+private theorem max_one_pos (L : ℝ) : 0 < max 1 L :=
+  zero_lt_one.trans_le (le_max_left 1 L)
+
+private theorem inv_max_one_pow_pos (L' : ℝ) (n : ℕ) : 0 < (max 1 L' ^ n)⁻¹ :=
+  inv_pos.2 (pow_pos (max_one_pos L') n)
+
+private theorem max_one_pow_mul_card_nonneg (L : ℝ) (i : ℕ) :
+    0 ≤ max 1 L ^ i * (Fintype.card (OrderedFinpartition i) : ℝ) :=
+  mul_nonneg (pow_nonneg (max_one_pos L).le i) (Nat.cast_nonneg _)
+
 section Hypotheses
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -546,7 +556,7 @@ theorem of_leftInvOn {Ψ : E → E} {L' : ℝ} (hk : 1 ≤ k) (hΦ : ContDiffOn 
       injOn := hΨΦ.injOn
       mapsTo := hmaps
       norm_iteratedFDeriv_le := hL
-      pos := inv_pos.2 (pow_pos (zero_lt_one.trans_le (le_max_left 1 L')) _)
+      pos := inv_max_one_pow_pos L' _
       le_abs_det := fun x hx => ?_ }
   have hΦx : DifferentiableAt ℝ Φ x := (hdiff x hx).differentiableAt (U.isOpen.mem_nhds hx)
   have hΨx : DifferentiableAt ℝ Ψ (Φ x) :=
@@ -591,38 +601,41 @@ def compLBound (p : ℝ≥0∞) (k : ℕ) (L c : ℝ) : ℝ :=
 
 /-- Defining formula for `compLBound`. -/
 theorem compLBound_def (p : ℝ≥0∞) (k : ℕ) (L c : ℝ) :
-    compLBound p k L c =
-      c⁻¹ ^ (1 / p).toReal *
-        ∑ i ∈ Finset.range (k + 1), max 1 L ^ i * (Fintype.card (OrderedFinpartition i) : ℝ) :=
+    compLBound p k L c = c⁻¹ ^ (1 / p).toReal *
+      ∑ i ∈ Finset.range (k + 1), max 1 L ^ i * (Fintype.card (OrderedFinpartition i) : ℝ) :=
   (rfl)
 
 /-- At order `0`, `compLBound p 0 L c` reduces to the `Lᵖ` Jacobian factor
 `c⁻¹ ^ (1 / p).toReal`. -/
 @[simp]
-theorem compLBound_zero (p : ℝ≥0∞) (L c : ℝ) :
-    compLBound p 0 L c = c⁻¹ ^ (1 / p).toReal := by
-  simp [compLBound, Fintype.card_unique]
+theorem compLBound_zero (p : ℝ≥0∞) (L c : ℝ) : compLBound p 0 L c = c⁻¹ ^ (1 / p).toReal := by
+  simp [compLBound_def, Fintype.card_unique]
+
+/-- Advancing `compLBound` from order `k` to `k + 1` adds
+`c⁻¹ ^ (1 / p).toReal * (max 1 L ^ (k + 1) * #{ordered partitions of k + 1})`. -/
+theorem compLBound_succ (p : ℝ≥0∞) (k : ℕ) (L c : ℝ) :
+    compLBound p (k + 1) L c = compLBound p k L c + c⁻¹ ^ (1 / p).toReal *
+      (max 1 L ^ (k + 1) * (Fintype.card (OrderedFinpartition (k + 1)) : ℝ)) := by
+  rw [compLBound_def, compLBound_def, Finset.sum_range_succ, mul_add]
 
 /-- The constant `compLBound p k L c` is positive when `0 < c`. -/
 theorem compLBound_pos (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0 < c) :
     0 < compLBound p k L c := by
-  unfold compLBound
-  refine mul_pos (Real.rpow_pos_of_pos (inv_pos.2 hc) _) (Finset.sum_pos' (fun _ _ => ?_)
-    ⟨0, Finset.mem_range.2 k.succ_pos, by simp [Fintype.card_unique]⟩)
-  have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
-  positivity
+  rw [compLBound_def]
+  exact mul_pos (Real.rpow_pos_of_pos (inv_pos.2 hc) _)
+    (Finset.sum_pos' (fun i _ => max_one_pow_mul_card_nonneg L i)
+      ⟨0, Finset.mem_range.2 k.succ_pos, by simp [Fintype.card_unique]⟩)
 
 /-- The constant `compLBound p k L c` is nonnegative. -/
 theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0 < c) :
-    0 ≤ compLBound p k L c :=
-  (compLBound_pos p k L hc).le
+    0 ≤ compLBound p k L c := (compLBound_pos p k L hc).le
 
 /-- For `0 < c ≤ 1`, `compLBound p k L c` is antitone in nonzero exponents `p`. -/
 theorem compLBound_anti_left {p q : ℝ≥0∞} (hp0 : p ≠ 0) (hpq : p ≤ q) (k : ℕ) (L : ℝ) {c : ℝ}
     (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound q k L c ≤ compLBound p k L c := by
-  unfold compLBound
-  refine mul_le_mul_of_nonneg_right ?_ (Finset.sum_nonneg fun _ _ => by
-    have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity)
+  rw [compLBound_def, compLBound_def]
+  refine mul_le_mul_of_nonneg_right ?_
+    (Finset.sum_nonneg fun i _ => max_one_pow_mul_card_nonneg L i)
   exact Real.rpow_le_rpow_of_exponent_le (one_le_inv₀ hc0 |>.2 hc1)
     (ENNReal.toReal_mono (by simp [hp0]) (ENNReal.div_le_div_left hpq 1))
 
@@ -664,7 +677,7 @@ private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ
           fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
     _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
           fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.eNorm_of_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _),
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (max_one_pos L).le i),
           ← eLpNorm_const_smul]
         congr 1
         funext x
@@ -699,7 +712,7 @@ private theorem eLpNorm_iteratedFDeriv_comp_le_norm (h : IsChangeOfVariables k U
     rw [← ENNReal.ofReal_inv_of_pos h.pos,
       ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 h.pos.le) ENNReal.toReal_nonneg]
   have hc' : 0 ≤ c⁻¹ ^ (1 / p).toReal := by have := h.pos; positivity
-  have hM : 0 ≤ max 1 L ^ i := pow_nonneg (zero_le_one.trans (le_max_left _ _)) _
+  have hM : 0 ≤ max 1 L ^ i := pow_nonneg (max_one_pos L).le i
   refine (eLpNorm_iteratedFDeriv_comp_le h hf hi).trans ?_
   calc ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
         (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
@@ -738,10 +751,10 @@ private theorem exists_comp_of_contDiffOn (h : IsChangeOfVariables k U V Φ L c)
           refine Finset.sum_le_sum fun i hi => ENNReal.toReal_le_of_le_ofReal ?_
             (hbound i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)))
           have := h.pos
-          have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
+          have := max_one_pow_mul_card_nonneg L i
           positivity
       _ = compLBound p k L c * ‖u‖ := by
-          rw [compLBound, Finset.mul_sum, Finset.sum_mul]
+          rw [compLBound_def, Finset.mul_sum, Finset.sum_mul]
           exact Finset.sum_congr rfl fun i _ => by ring
 
 end Smooth
@@ -808,7 +821,7 @@ private theorem norm_iteratedGradient_compSmooth_le (h : IsChangeOfVariables (k 
   refine ENNReal.toReal_le_of_le_ofReal ?_
     (eLpNorm_iteratedFDeriv_comp_le_norm h (u : Wkp mu V p (k + 1)) hf hu le_rfl)
   have := h.pos
-  have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
+  have := max_one_pow_mul_card_nonneg L (k + 1)
   positivity
 
 /-- Precomposition with `Φ` on the elements with a `Cᵏ` representative, as a linear map. -/
@@ -958,8 +971,7 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
           rw [ContinuousLinearMap.adjoint.norm_map]
       _ ≤ max 1 L * ‖u‖ :=
           mul_le_mul ((h.norm_fderiv_le x hxU).trans (le_max_right 1 L))
-            (hgu.trans (norm_iteratedGradient_le 0 u)) (norm_nonneg _)
-            (zero_le_one.trans (le_max_left 1 L))
+            (hgu.trans (norm_iteratedGradient_le 0 u)) (norm_nonneg _) (max_one_pos L).le
   have hg₀_mem : MemLp g₀ ⊤ (mu.restrict U) :=
     memLp_top_of_bound hweak₀.locallyIntegrableOn_gradient.aestronglyMeasurable _ hg₀_ae
   set g : Lp E ⊤ (mu.restrict U) := hg₀_mem.toLp g₀
@@ -967,24 +979,20 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
     hweak₀.congr_ae_deriv (by filter_upwards [hg₀_mem.coeFn_toLp] with x hx; rw [hx])
   set w : Wkp mu U ⊤ 1 := W1p.mk u₀ g hweak
   have hgn : ‖g‖ ≤ max 1 L * ‖u‖ := Lp.norm_top_le_of_ae_bound
-    (mul_nonneg (zero_le_one.trans (le_max_left 1 L)) (norm_nonneg u))
+    (mul_nonneg (max_one_pos L).le (norm_nonneg u))
     (hg₀_mem.coeFn_toLp.mp (hg₀_ae.mono fun _ hx hxy => hxy ▸ hx))
-  have hu₀n : ‖u₀‖ ≤ ‖u‖ := by
-    refine le_trans (norm_compLp_le h (value 1 u)) ?_
-    simpa [ENNReal.div_top] using norm_value_le 1 u
+  have hu₀n : ‖u₀‖ ≤ ‖u‖ :=
+    (norm_compLp_le h (value 1 u)).trans (by simpa using norm_value_le 1 u)
   have hval : value 1 w = u₀ := (value_one w).trans (W1p.value_mk u₀ g hweak)
   have hgrad : iteratedGradient 0 w = g :=
     (iteratedGradient_zero w).trans (W1p.gradient_mk u₀ g hweak)
   have hlow : lowerOrder 0 w = u₀ := (lowerOrder_zero w).trans (W1p.value_mk u₀ g hweak)
-  refine ⟨w, ?_, hgrad.symm ▸ hgn, ?_⟩
-  · rw [hval]
-    exact compLp_ae h (value 1 u)
-  · have hsum : compLBound ⊤ 1 L c = 1 + max 1 L := by
-      simp [compLBound, Finset.sum_range_succ, Fintype.card_unique]
-    have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 w
-    rw [hlow, hgrad] at hle
-    rw [hsum, add_mul, one_mul]
-    linarith
+  refine ⟨w, hval ▸ compLp_ae h (value 1 u), hgrad.symm ▸ hgn, ?_⟩
+  have hsum : compLBound ⊤ 1 L c = 1 + max 1 L := by simp [compLBound_succ, Fintype.card_unique]
+  have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 w
+  rw [hlow, hgrad] at hle
+  rw [hsum, add_mul, one_mul]
+  linarith
 
 /-- On finite-measure open sets `B` and `V'`, pulling back `u ∈ W^{m+2,∞}(V')` in `W^{m+2,q}` for
 `1 ≤ q < ∞` produces a weak derivative of `iteratedGradient m w_B` bounded almost everywhere by
@@ -999,7 +1007,7 @@ private theorem exists_local_deriv_comp_top {m : ℕ} {B V' : Opens E}
       ∀ᵐ y ∂mu.restrict B, ‖D_B y‖ ≤
         max 1 L ^ (m + 2) * Fintype.card (OrderedFinpartition (m + 2)) * ‖u‖ := by
   set M : ℝ := max 1 L ^ (m + 2) * Fintype.card (OrderedFinpartition (m + 2))
-  have hM : 0 ≤ M := by have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity
+  have hM : 0 ≤ M := max_one_pow_mul_card_nonneg L (m + 2)
   set v₁ : Wkp mu B 1 (m + 2) :=
     compLFinite h ENNReal.one_ne_top (ofExponentLEL le_top (m + 2) u)
   have hv₁_val : (value (m + 2) v₁ : E → ℝ) =ᵐ[mu.restrict B] fun y => value (m + 2) u (Φ y) :=
@@ -1074,13 +1082,11 @@ private theorem exists_ball_deriv_comp_top {m : ℕ} (h : IsChangeOfVariables (m
     rw [h1, h2, h3, value_succ (m + 1) u]
   obtain ⟨D_B, hD_weak, hD_ae⟩ := exists_local_deriv_comp_top (h.restrict hBU hBV')
     (restrictL hV'V (m + 2) u) (restrictL hBU (m + 1) w₀) hw_B
-  have hM : 0 ≤ max 1 L ^ (m + 2) * (Fintype.card (OrderedFinpartition (m + 2)) : ℝ) := by
-    have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
-    positivity
   refine ⟨B, D_B, Metric.mem_ball_self hr, hBU,
     hD_weak.congr_ae (iteratedGradient_restrictL_ae hBU m w₀), ?_⟩
   filter_upwards [hD_ae] with y hy
-  exact hy.trans (mul_le_mul_of_nonneg_left (norm_restrictL_le hV'V (m + 2) u) hM)
+  exact hy.trans (mul_le_mul_of_nonneg_left (norm_restrictL_le hV'V (m + 2) u)
+    (max_one_pow_mul_card_nonneg L (m + 2)))
 
 /-- Inductive step at order `m + 2` and exponent `p = ∞`, gluing the local weak derivatives
 produced by `exists_ball_deriv_comp_top` across an open cover by balls. -/
@@ -1095,7 +1101,7 @@ private theorem exists_comp_top_succ_succ {m : ℕ} (h : IsChangeOfVariables (m 
         max 1 L ^ (m + 2) * Fintype.card (OrderedFinpartition (m + 2)) * ‖u‖ ∧
       ‖w‖ ≤ compLBound ⊤ (m + 2) L c * ‖u‖ := by
   set M : ℝ := max 1 L ^ (m + 2) * Fintype.card (OrderedFinpartition (m + 2))
-  have hM : 0 ≤ M := by have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _); positivity
+  have hM : 0 ≤ M := max_one_pow_mul_card_nonneg L (m + 2)
   choose B D_B hxB hBU hD_weak hD_ae using exists_ball_deriv_comp_top h u w₀ hw₀
   have hsup : (⨆ x : U, B x) = U := le_antisymm (iSup_le hBU) fun y hy =>
     Opens.mem_iSup.2 ⟨⟨y, hy⟩, hxB ⟨y, hy⟩⟩
@@ -1112,37 +1118,38 @@ private theorem exists_comp_top_succ_succ {m : ℕ} (h : IsChangeOfVariables (m 
   have hDn : ‖D‖ ≤ M * ‖u‖ := Lp.norm_top_le_of_ae_bound (mul_nonneg hM (norm_nonneg u))
     (hD_mem.coeFn_toLp.mp (hD_bound.mono fun _ hy hxy => hxy ▸ hy))
   set w : Wkp mu U ⊤ (m + 2) := mk m w₀ D (hweak.congr_ae_deriv hD_mem.coeFn_toLp.symm)
-  refine ⟨w, ?_, ?_, ?_⟩
-  · rw [value_mk, value_succ (m + 1) u]
-    exact hw₀
-  · simpa only [w, iteratedGradient_mk] using hDn
-  · have hlow : ‖w₀‖ ≤ compLBound ⊤ (m + 1) L c * ‖u‖ :=
-      hw₀_norm.trans (mul_le_mul_of_nonneg_left (norm_lowerOrder_le (m + 1) u)
-        (compLBound_nonneg ⊤ (m + 1) L h.pos))
-    have hcb : compLBound ⊤ (m + 2) L c = compLBound ⊤ (m + 1) L c + M := by
-      simp [compLBound, M, Finset.sum_range_succ]
-    have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (m + 1) w
-    simp only [w, lowerOrder_mk, iteratedGradient_mk] at hle
-    rw [hcb, add_mul]
-    linarith
+  refine ⟨w, by simpa only [w, value_mk, value_succ (m + 1) u] using hw₀,
+    by simpa only [w, iteratedGradient_mk] using hDn, ?_⟩
+  have hlow : ‖w₀‖ ≤ compLBound ⊤ (m + 1) L c * ‖u‖ :=
+    hw₀_norm.trans (mul_le_mul_of_nonneg_left (norm_lowerOrder_le (m + 1) u)
+      (compLBound_nonneg ⊤ (m + 1) L h.pos))
+  have hcb : compLBound ⊤ (m + 2) L c = compLBound ⊤ (m + 1) L c + M := by simp [compLBound_succ, M]
+  have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (m + 1) w
+  simp only [w, lowerOrder_mk, iteratedGradient_mk] at hle
+  rw [hcb, add_mul]
+  linarith
 
 private theorem exists_comp_top :
     ∀ (k : ℕ) {U V : Opens E} {L c : ℝ}, IsChangeOfVariables k U V Φ L c →
       ∀ u : Wkp mu V ⊤ k,
       ∃ w : Wkp mu U ⊤ k,
         (value k w : E → ℝ) =ᵐ[mu.restrict U] (fun x => value k u (Φ x)) ∧
-        ‖w‖ ≤ compLBound ⊤ k L c * ‖u‖
+        ‖w‖ ≤ compLBound ⊤ k L c * ‖u‖ ∧
+        match k, w with
+        | 0, _ => True
+        | m + 1, w => ‖iteratedGradient m w‖ ≤
+            max 1 L ^ (m + 1) * Fintype.card (OrderedFinpartition (m + 1)) * ‖u‖
   | 0, _, _, _, _, h, u =>
-      ⟨compLp h u, by rw [value_zero, value_zero]; exact compLp_ae h u, by
-        simpa using norm_compLp_le h u⟩
+      ⟨compLp h u, by rw [value_zero, value_zero]; exact compLp_ae h u,
+        by simpa using norm_compLp_le h u, trivial⟩
   | 1, _, _, _, _, h, u =>
-      let ⟨w, hw, _, hn⟩ := exists_comp_top_one h u
-      ⟨w, hw, hn⟩
+      let ⟨w, hw, hg, hn⟩ := exists_comp_top_one h u
+      ⟨w, hw, hn, by simpa [Fintype.card_unique] using hg⟩
   | m + 2, _, _, _, _, h, u => by
-      obtain ⟨w₀, hw₀, hw₀n⟩ := exists_comp_top (m + 1) (h.mono (Nat.le_succ (m + 1)))
+      obtain ⟨w₀, hw₀, hw₀n, -⟩ := exists_comp_top (m + 1) (h.mono (Nat.le_succ (m + 1)))
         (lowerOrder (m + 1) u)
-      obtain ⟨w, hw, _, hn⟩ := exists_comp_top_succ_succ h u w₀ hw₀ hw₀n
-      exact ⟨w, hw, hn⟩
+      obtain ⟨w, hw, hg, hn⟩ := exists_comp_top_succ_succ h u w₀ hw₀ hw₀n
+      exact ⟨w, hw, hn, hg⟩
 
 private theorem exists_comp (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
     ∃ w : Wkp mu U p k,
@@ -1150,7 +1157,7 @@ private theorem exists_comp (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V
       ‖w‖ ≤ compLBound p k L c * ‖u‖ := by
   by_cases hp : p = ⊤
   · subst hp
-    exact exists_comp_top k h u
+    exact let ⟨w, hw, hn, _⟩ := exists_comp_top k h u; ⟨w, hw, hn⟩
   · exact ⟨compLFinite h hp u, value_compLFinite_ae h hp u, norm_compLFinite_le h hp u⟩
 
 private def compFun (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) : Wkp mu U p k :=
@@ -1213,20 +1220,10 @@ theorem norm_iteratedGradient_compL_le (h : IsChangeOfVariables (k + 1) U V Φ L
         c⁻¹ ^ (1 / p).toReal * ‖u‖ := by
   by_cases hp : p = ⊤
   · subst hp
-    cases k with
-    | zero =>
-        obtain ⟨w, hw, hg, -⟩ := exists_comp_top_one h u
-        rw [(compL_eq_iff h u w).2 hw]
-        simpa [Fintype.card_unique] using hg
-    | succ m =>
-        obtain ⟨w₀, hw₀, hw₀n⟩ := exists_comp_top (m + 1) (h.mono (Nat.le_succ (m + 1)))
-          (lowerOrder (m + 1) u)
-        obtain ⟨w, hw, hg, -⟩ := exists_comp_top_succ_succ h u w₀ hw₀ hw₀n
-        rw [(compL_eq_iff h u w).2 hw]
-        simpa using hg
-  · have heq : compL h u = compLFinite h hp u :=
-      (compL_eq_iff h u _).2 (value_compLFinite_ae h hp u)
-    rw [heq]
+    obtain ⟨w, hw, -, hg⟩ := exists_comp_top (k + 1) h u
+    rw [(compL_eq_iff h u w).2 hw]
+    simpa using hg
+  · rw [(compL_eq_iff h u _).2 (value_compLFinite_ae h hp u)]
     exact norm_iteratedGradient_compLFinite_le h hp u
 
 end Extension
@@ -1434,8 +1431,7 @@ theorem norm_compOfLeftInvOnL_le (hΦ : ContDiffOn ℝ k Φ U) (hΨ : Differenti
       compLBound p k L (max 1 L' ^ Module.finrank ℝ E)⁻¹ * ‖u‖ := by
   cases k with
   | zero =>
-      have hM : 0 ≤ max 1 L' ^ Module.finrank ℝ E :=
-        pow_nonneg (zero_le_one.trans (le_max_left 1 L')) _
+      have hM : 0 ≤ max 1 L' ^ Module.finrank ℝ E := pow_nonneg (max_one_pos L').le _
       refine (Lp.norm_compOfMapLeSmul_le
         (measurable_measurableExtension_of_continuousOn hΦ.continuousOn) ENNReal.ofReal_ne_top
         (map_measurableExtension_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL') u).trans
@@ -1454,7 +1450,7 @@ theorem opNorm_compOfLeftInvOnL_le (hΦ : ContDiffOn ℝ k Φ U) (hΨ : Differen
     ‖compOfLeftInvOnL (mu := mu) (p := p) hΦ hΨ hmaps hΨΦ hL hL'‖ ≤
       compLBound p k L (max 1 L' ^ Module.finrank ℝ E)⁻¹ :=
   ContinuousLinearMap.opNorm_le_bound _
-    (compLBound_nonneg p k L (inv_pos.2 (pow_pos (zero_lt_one.trans_le (le_max_left 1 L')) _)))
+    (compLBound_nonneg p k L (inv_max_one_pow_pos L' _))
     (norm_compOfLeftInvOnL_le hΦ hΨ hmaps hΨΦ hL hL')
 
 end LeftInvOn
@@ -1482,7 +1478,7 @@ theorem exists_norm_comp_le (E : Type*) [MeasurableSpace E] [NormedAddCommGroup 
       ∀ u : Wkp mu V p k, ∃ w : Wkp mu U p k,
         (value k w : E → ℝ) =ᵐ[mu.restrict U] (fun x => value k u (Φ x)) ∧ ‖w‖ ≤ C * ‖u‖ := by
   set c : ℝ := (max 1 L' ^ Module.finrank ℝ E)⁻¹
-  have hc0 : 0 < c := inv_pos.2 (pow_pos (zero_lt_one.trans_le (le_max_left 1 L')) _)
+  have hc0 : 0 < c := inv_max_one_pow_pos L' _
   have hc1 : c ≤ 1 := inv_le_one_of_one_le₀ (one_le_pow₀ (le_max_left 1 L'))
   refine ⟨compLBound 1 k L c, compLBound_pos 1 k L hc0,
     fun mu _ p _ {U V Φ Ψ} hΦ hΨ hmaps hΨΦ hL hL' u =>
