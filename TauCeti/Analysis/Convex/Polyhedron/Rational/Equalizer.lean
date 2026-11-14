@@ -53,55 +53,36 @@ theorem isRationalNormalPolyhedron_setOf_eq (f g : V →ᵃ[ℝ] W)
     (χ p).toAffineMap.comp δ
   let F (p : Module.Free.ChooseBasisIndex ℤ N') : V →ᴬ[ℝ] ℝ :=
     ⟨ψ p, AffineMap.continuous_linear_iff.1 (ψ p).linear.continuous_of_finiteDimensional⟩
-  let r (a : Module.Free.ChooseBasisIndex ℤ N' × Bool) : V →ᴬ[ℝ] ℝ :=
-    if a.2 = true then -F a.1 else F a.1
   have hF (p : Module.Free.ChooseBasisIndex ℤ N') :
       Toric.IsRationalFunctional h (F p).toAffineMap.linear :=
     (hf.sub hg).map_functional (Toric.IsRationalFunctional.realCharacter h' (b.coord p))
-  have hr (a : Module.Free.ChooseBasisIndex ℤ N' × Bool) :
-      Toric.IsRationalFunctional h (r a).toAffineMap.linear := by
-    obtain ⟨p, s⟩ := a
-    cases s with
-    | false => exact hF p
-    | true => exact (hF p).neg
-  have heval (p) (s : Bool) (x : V) :
-      r (p, s) x = if s = true then -(χ p) (δ x) else (χ p) (δ x) := by
-    have hψ : (F p) x = (χ p) (δ x) := by
-      rw [show χ p (δ x) = (ψ p).linear x + (ψ p) 0 by
-        change χ p (δ x) = χ p (δ.linear x) + χ p (δ 0)
-        rw [← map_add]
-        congr 1
-        exact congrFun δ.decomp x]
-      exact congrFun (ψ p).decomp x
-    cases s
-    · exact hψ
-    · change -(F p) x = -(χ p) (δ x)
-      rw [hψ]
-  have he : {x | f x = g x} = {x | ∀ a, r a x ≤ 0} := by
+  have hF_apply (p : Module.Free.ChooseBasisIndex ℤ N') (x : V) :
+      F p x = χ p (δ x) := rfl
+  have δ_apply (x : V) : δ x = f x - g x := rfl
+  have he : {x | f x = g x} = {x | ∀ p, F p x ≤ 0} ∩ {x | ∀ p, (-F p) x ≤ 0} := by
     ext x
-    simp only [Set.mem_ofPred_eq, Prod.forall, heval]
+    simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
     constructor
-    · intro hx p s
-      have hzero : δ x = 0 := sub_eq_zero.mpr hx
-      have hz : χ p (δ x) = 0 := by rw [hzero, map_zero]
-      cases s <;> simp [hz]
     · intro hx
-      have hzero (p) : χ p (δ x) = 0 := by
-        have hp := hx p false
-        have hn := hx p true
-        simp only [Bool.false_eq_true, ↓reduceIte] at hp hn
-        have hn' := neg_le.mp hn
-        rw [neg_zero] at hn'
-        exact le_antisymm hp hn'
-      change f x = g x
+      have hδ : δ x = 0 := sub_eq_zero.mpr hx
+      have hzero (p) : χ p (δ x) = 0 := by rw [hδ, map_zero]
+      simp only [hF_apply, hzero, ContinuousAffineMap.neg_apply, neg_zero, le_refl,
+        implies_true, and_self]
+    · rintro ⟨hp, hn⟩
       rw [← sub_eq_zero]
       refine B.ext_elem fun p => ?_
-      rw [← Module.Basis.coord_apply, ← h'.realCharacter_coord]
-      change χ p (f x - g x) = (B.repr 0) p
-      rw [map_zero, Finsupp.zero_apply]
-      exact hzero p
+      rw [← Module.Basis.coord_apply, ← h'.realCharacter_coord, map_zero, Finsupp.zero_apply]
+      have hle : χ p (δ x) ≤ 0 := by simpa only [hF_apply] using hp p
+      have hge : 0 ≤ χ p (δ x) := by
+        have := hn p
+        rw [ContinuousAffineMap.neg_apply, neg_le, neg_zero, hF_apply] at this
+        exact this
+      have hz := le_antisymm hle hge
+      rw [δ_apply] at hz
+      exact hz
   rw [he]
-  exact isRationalNormalPolyhedron_setOf_forall r hr
+  exact (isRationalNormalPolyhedron_setOf_forall F hF).inter
+    (isRationalNormalPolyhedron_setOf_forall (fun p => -F p) fun p => (hF p).neg)
 
 /-- The matching locus of two rational affine maps with a common target is a
 rational-normal polyhedron in the product of their source spaces. -/

@@ -48,36 +48,29 @@ theorem isLocallyClosedPolyhedron_setOf_exists_pos_lt_affine_le {κ : Type*} [Fi
     (hT : Toric.IsRationalFunctional h T.toAffineMap.linear) :
     IsLocallyClosedPolyhedron h
       {x | ∃ t : ℝ, 0 < t ∧ t < T x ∧ ∀ j, g j x + a j * t ≤ 0} := by
-  have hweak (F : W →ᴬ[ℝ] ℝ) (hF : Toric.IsRationalFunctional h F.toAffineMap.linear) :
-      IsLocallyClosedPolyhedron h {x | F x ≤ 0} := by
-    simpa using (isRationalNormalPolyhedron_setOf_forall (ι := Unit) (fun _ => F)
-      (fun _ => hF)).isLocallyClosedPolyhedron
-  have hstrict (F : W →ᴬ[ℝ] ℝ) (hF : Toric.IsRationalFunctional h F.toAffineMap.linear) :
-      IsLocallyClosedPolyhedron h {x | F x < 0} := by
-    simpa using isLocallyClosedPolyhedron_setOf_forall_neg
-      (κ := Unit) (fun _ => F) (fun _ => hF)
-  have hs := hstrict (-T) hT.neg
-  have hz := IsLocallyClosedPolyhedron.iInter (fun j : {j // a j = 0} =>
-    hweak (g j.val) (hg j.val))
-  have hp := IsLocallyClosedPolyhedron.iInter (fun j : {j // 0 < a j} =>
-    hstrict (g j.val) (hg j.val))
-  have hn := IsLocallyClosedPolyhedron.iInter (fun j : {j // a j < 0} =>
-    hstrict (g j.val + a j.val • T)
-      ((hg j.val).add (by
-        obtain ⟨q, hq⟩ := ha j.val
-        rw [hq]
-        have qm : (((q : ℝ) • T).toAffineMap.linear) = (q : ℝ) • T.toAffineMap.linear :=
-          AffineMap.smul_linear (q : ℝ) T.toAffineMap
-        rw [qm]
-        exact hT.rat_smul q)))
-  have hpair := IsLocallyClosedPolyhedron.iInter
-    (fun jk : {j // a j < 0} × {j // 0 < a j} =>
-      hweak (nonnegElimFamily g a (.inr jk))
-        (rational_linear_nonnegElimFamily g hg a ha (.inr jk)))
+  have hs : IsLocallyClosedPolyhedron h {x | -T x < 0} := by
+    simpa using isLocallyClosedPolyhedron_setOf_forall_neg (κ := Unit)
+      (fun _ => -T) (fun _ => hT.neg)
+  have hz := (isRationalNormalPolyhedron_setOf_forall
+    (fun j : {j // a j = 0} => g j.val) (fun j => hg j.val)).isLocallyClosedPolyhedron
+  have hp := isLocallyClosedPolyhedron_setOf_forall_neg
+    (fun j : {j // 0 < a j} => g j.val) (fun j => hg j.val)
+  have hn := isLocallyClosedPolyhedron_setOf_forall_neg
+    (fun j : {j // a j < 0} => g j.val + a j.val • T)
+    (fun j => (hg j.val).add (by
+      obtain ⟨q, hq⟩ := ha j.val
+      rw [hq]
+      have qm : (((q : ℝ) • T).toAffineMap.linear) = (q : ℝ) • T.toAffineMap.linear :=
+        AffineMap.smul_linear (q : ℝ) T.toAffineMap
+      rw [qm]
+      exact hT.rat_smul q))
+  have hpair := (isRationalNormalPolyhedron_setOf_forall
+    (fun jk : {j // a j < 0} × {j // 0 < a j} => nonnegElimFamily g a (.inr jk))
+    (fun jk => rational_linear_nonnegElimFamily g hg a ha (.inr jk))).isLocallyClosedPolyhedron
   convert (((hs.inter hz).inter hp).inter hn).inter hpair using 1
   ext x
-  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter,
-    ContinuousAffineMap.neg_apply, neg_lt_zero, ContinuousAffineMap.add_apply,
+  simp only [Set.mem_ofPred_eq, Set.mem_inter_iff,
+    neg_lt_zero, ContinuousAffineMap.add_apply,
     ContinuousAffineMap.smul_apply, smul_eq_mul, nonnegElimFamily_pair_apply,
     Subtype.forall, Prod.forall]
   have he := exists_pos_lt_mul_le_iff (a := a) (b := fun j => -g j x) (T := T x)

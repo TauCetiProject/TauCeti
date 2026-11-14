@@ -163,19 +163,17 @@ theorem isRationalLinearMap_iff {N' V' : Type*} [AddCommGroup N'] [AddCommGroup 
       ∀ f : Module.Dual ℝ V', IsRationalFunctional h' f → IsRationalFunctional h (f.comp T) :=
   Iff.rfl
 
-/-- A rational functional on lattice vectors determines a rational rank-one map. -/
-theorem IsRationalFunctional.smulRight {N' V' : Type*} [AddCommGroup N'] [AddCommGroup V']
-    [Module ℝ V'] {i' : N' →+ V'} {h : IsIntegralLattice i} {h' : IsIntegralLattice i'}
-    {f : Module.Dual ℝ V} (hf : IsRationalFunctional h f) (n' : N') :
+/-- Scaling a target lattice vector by a rational functional gives a rational linear map. -/
+theorem IsRationalFunctional.isRationalLinearMap_smulRight {N' V' : Type*} [AddCommGroup N']
+    [AddCommGroup V'] [Module ℝ V'] {i' : N' →+ V'} {h : IsIntegralLattice i}
+    {f : Module.Dual ℝ V} (hf : IsRationalFunctional h f) (h' : IsIntegralLattice i') (n' : N') :
     IsRationalLinearMap h h' (f.smulRight (i' n')) := by
   intro f' hf'
-  obtain ⟨q, m, rfl⟩ := hf'
-  obtain ⟨r, hr⟩ := (IsRationalFunctional.realCharacter h' m).exists_rat_apply n'
-  convert hf.rat_smul (q * r) using 1
+  obtain ⟨r, hr⟩ := hf'.exists_rat_apply n'
+  convert hf.rat_smul r using 1
   ext x
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.smulRight_apply, smul_eq_mul,
-    LinearMap.smul_apply, map_smul, hr, Rat.cast_mul, mul_comm, mul_assoc]
-
+    LinearMap.smul_apply, map_smul, hr, mul_comm]
 namespace IsRationalLinearMap
 
 variable {N' N'' V' V'' : Type*} [AddCommGroup N'] [AddCommGroup N'']
@@ -208,6 +206,18 @@ theorem neg {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T) :
   intro f hf
   simpa [LinearMap.comp_neg] using (hT.map_functional hf).neg
 
+/-- Every finite sum of rational linear maps is rational. -/
+theorem sum {ι : Type*} (s : Finset ι) (T : ι → (V →ₗ[ℝ] V'))
+    (hT : ∀ j ∈ s, IsRationalLinearMap h h' (T j)) :
+    IsRationalLinearMap h h' (∑ j ∈ s, T j) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact IsRationalLinearMap.zero h h'
+  | @insert j s hjs ih =>
+    rw [Finset.sum_insert hjs]
+    exact (hT j (Finset.mem_insert_self _ _)).add
+      (ih (fun k hk => hT k (Finset.mem_insert_of_mem hk)))
+
 /-- Differences of rational linear maps are rational. -/
 theorem sub {S T : V →ₗ[ℝ] V'} (hS : IsRationalLinearMap h h' S)
     (hT : IsRationalLinearMap h h' T) : IsRationalLinearMap h h' (S - T) :=
@@ -218,9 +228,7 @@ theorem sub {S T : V →ₗ[ℝ] V'} (hS : IsRationalLinearMap h h' S)
 theorem rat_smul {T : V →ₗ[ℝ] V'} (hT : IsRationalLinearMap h h' T) (q : ℚ) :
     IsRationalLinearMap h h' ((q : ℝ) • T) := by
   intro f hf
-  change IsRationalFunctional h (f.comp ((q : ℝ) • T))
-  rw [LinearMap.comp_smul]
-  exact (hT.map_functional hf).rat_smul q
+  simpa [LinearMap.comp_smul] using (hT.map_functional hf).rat_smul q
 
 /-- The identity real-linear map is rational. -/
 theorem id (h : IsIntegralLattice i) : IsRationalLinearMap h h LinearMap.id := by
