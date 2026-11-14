@@ -51,6 +51,17 @@ def doldKanPiAddEquivHomology (n : ℕ) :
     ((homologyFunctor _ _ (n + 1)).mapIso
       (Abelian.DoldKan.equivalence.counitIso.app K)).toLinearEquiv.toAddEquiv
 
+/-- The Dold–Kan homotopy comparison sends a class through the Moore-complex
+comparison and the homology map of the native Dold–Kan counit. -/
+lemma doldKanPiAddEquivHomology_apply (n : ℕ)
+    (a : Additive (SSet.KanComplex.π (n + 1)
+      (Idempotents.DoldKan.Γ.obj K ⋙ forget (ModuleCat R))
+      (0 : (Idempotents.DoldKan.Γ.obj K) _⦋0⦌))) :
+    K.doldKanPiAddEquivHomology n a =
+      homologyMap (Abelian.DoldKan.equivalence.counitIso.app K).hom (n + 1)
+        (piAddEquivNormalizedMooreComplexHomology (Idempotents.DoldKan.Γ.obj K) n a) :=
+  (rfl)
+
 /-- Path components of the Dold–Kan simplicial module are degree-zero homology. -/
 def doldKanPiZeroEquivHomology :
     SSet.KanComplex.π 0 (Idempotents.DoldKan.Γ.obj K ⋙ forget (ModuleCat R))
