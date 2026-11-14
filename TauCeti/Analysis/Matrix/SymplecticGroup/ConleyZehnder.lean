@@ -44,11 +44,15 @@ The index is invariant under homotopies with fixed endpoints, additive under cat
 under reversal. It is normalized by the rotations: for a path of rotations
 `t ↦ diag (e^{i θ_j t})` of `ℂⁿ`, each angle `θ_j` contributes minus twice the half-integer count
 of the multiples of `π` crossed by `θ_j / 2`
-(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_sum_of_diagonal`). In particular a counterclockwise
-rotation by an angle in `(0, 2π)` of each complex coordinate has index `-n`, and a clockwise one
-has index `n` (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_card_of_rotation`,
-`TauCeti.GLSymplectic.conleyZehnderIndex_eq_card_of_rotation`): a small positive rotation of `ℝ²`
-has index `-1`. On a loop it is minus twice the Maslov index of the loop
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_sum_of_realify_diagonal`). In particular
+a path of rotations from the identity whose angle `θ_j` ends in `(2 π k_j, 2 π (k_j + 1))` has
+index `-∑ j, (2 k_j + 1)`
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_sum_of_realify_diagonal_of_mem_Ioo`). So a
+counterclockwise rotation by an angle in `(0, 2π)` of each complex coordinate has index `-n`, and a
+clockwise one has index `n` (in `TauCeti.GLSymplectic`,
+`conleyZehnderIndex_eq_neg_card_of_realify_diagonal_of_mem_Ioo_zero_two_mul_pi` and
+`conleyZehnderIndex_eq_card_of_realify_diagonal_of_mem_Ioo_neg_two_mul_pi_zero`): a small positive
+rotation of `ℝ²` has index `-1`. On a loop it is minus twice the Maslov index of the loop
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_maslovIndex`).
 
 ## Main definitions
@@ -60,9 +64,11 @@ has index `-1`. On a loop it is minus twice the Maslov index of the loop
 
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
   `TauCeti.GLSymplectic.conleyZehnderIndex_trans`: homotopy invariance and catenation.
-* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_sum_of_diagonal`: the index of a path of rotations.
-* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_rotation`: a path of rotations from the identity
-  whose angles all end in `(2 π k, 2 π (k + 1))` has index `-(2 k + 1) n`.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_sum_of_realify_diagonal`: the index of a
+  path of rotations.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_sum_of_realify_diagonal_of_mem_Ioo`: a path of
+  rotations from the identity whose angle `θ_j` ends in `(2 π k_j, 2 π (k_j + 1))` has index
+  `-∑ j, (2 k_j + 1)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_two_mul_maslovIndex`: on a loop the index is
   minus twice the Maslov index.
 
@@ -139,7 +145,7 @@ theorem conleyZehnderIndex_symm {A B : GLSymplectic n ℝ} (γ : Path A B) :
 `A = diag (e^{2 i ψ_j})` of `ℂⁿ`, the frame of the graph of `A` relative to the diagonal is the
 diagonal frame `diag (e^{i ψ_j}, e^{i ψ_j})` times the real orthogonal matrix of the rotation
 `diag (e^{i ψ_j})`. -/
-private theorem coe_graphDiagonalFrame_of_diagonal {A : GLSymplectic n ℝ} (ψ : n → ℝ)
+private theorem coe_graphDiagonalFrame_of_realify_diagonal {A : GLSymplectic n ℝ} (ψ : n → ℝ)
     (hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (↑(2 * ψ j) * Complex.I)).realify) :
     (graphDiagonalFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
@@ -148,7 +154,7 @@ private theorem coe_graphDiagonalFrame_of_diagonal {A : GLSymplectic n ℝ} (ψ 
       (diagonal fun j => Complex.exp (ψ j * Complex.I)).realify.map ((↑) : ℝ → ℂ) := by
   have hAA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * (A : GL (n ⊕ n) ℝ) = 1 := by
     rw [hA, ← realify_conjTranspose, ← realify_mul, ← star_eq_conjTranspose,
-      Unitary.star_mul_self_of_mem (diagonal_exp_mem_unitaryGroup (2 * ψ ·)), realify_one]
+      Unitary.star_mul_self_of_mem (diagonal_exp_mul_I_mem_unitaryGroup (2 * ψ ·)), realify_one]
   -- Both sides are block matrices: `F(1)ᴴ F(A) / 2` for the graph frames
   -- `F(W.realify) = (1, -i; W, i W)`, and `diag (e^{i ψ}, e^{i ψ})` times the realification.
   rw [coe_graphDiagonalFrame_of_transpose_mul_self hAA, hA, ← realify_one (𝕜 := ℂ),
@@ -179,8 +185,8 @@ continuous angles `θ_j`, the Conley–Zehnder index is `-2 ∑ j, (c(θ_j 1 / 2
 where `c(x) = (⌊x / π⌋ + ⌈x / π⌉) / 2` is the half-integer step function with `c(k π) = k` and
 `c(x) = k + 1/2` on `(k π, (k + 1) π)`. So `c(θ_j 1 / 2) - c(θ_j 0 / 2)` is the signed
 half-integer count of the multiples of `π` crossed by `θ_j / 2`. -/
-theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : Path A B)
-    {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
+theorem conleyZehnderIndex_eq_neg_two_mul_sum_of_realify_diagonal {A B : GLSymplectic n ℝ}
+    (γ : Path A B) {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
     (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify) :
     conleyZehnderIndex γ = -2 * ∑ j,
@@ -205,11 +211,11 @@ theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : P
     simp only [δ, Path.coe_mk_mk, coe_unitaryTorusHom, Circle.coe_exp]
   have horth (t : I) :
       (diagonal fun j => Complex.exp (ψ j t * Complex.I)).realify ∈ orthogonalGroup (n ⊕ n) ℝ :=
-    realify_mem_orthogonalGroup_iff.2 (diagonal_exp_mem_unitaryGroup (ψ · t))
+    realify_mem_orthogonalGroup_iff.2 (diagonal_exp_mul_I_mem_unitaryGroup (ψ · t))
   have hframe (t : I) :
       graphDiagonalFrame (γ t) = δ t * ⟨_, map_ofReal_mem_unitaryGroup (horth t)⟩ := by
     refine Subtype.ext ?_
-    rw [coe_graphDiagonalFrame_of_diagonal (ψ · t) (hψ t), Submonoid.coe_mul, hδ]
+    rw [coe_graphDiagonalFrame_of_realify_diagonal (ψ · t) (hψ t), Submonoid.coe_mul, hδ]
     -- The diagonal factors agree entrywise on each summand of `n ⊕ n`.
     congr 2
     ext (k | k) <;> simp only [Sum.elim_inl, Sum.elim_inr]
@@ -223,51 +229,67 @@ theorem conleyZehnderIndex_eq_sum_of_diagonal {A B : GLSymplectic n ℝ} (γ : P
   refine Finset.sum_congr rfl fun j _ => ?_
   ring
 
+/-- **Rotations by angles in bands.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ` starting at
+the identity, whose angle `θ_j` ends in `(2 π k_j, 2 π (k_j + 1))` for each `j`, has
+Conley–Zehnder index `-∑ j, (2 k_j + 1)`. -/
+theorem conleyZehnderIndex_eq_neg_sum_of_realify_diagonal_of_mem_Ioo {A B : GLSymplectic n ℝ}
+    (γ : Path A B) {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
+    (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
+    (h0 : ∀ j, θ j 0 = 0) (k : n → ℤ)
+    (h1 : ∀ j, θ j 1 ∈ Set.Ioo (2 * Real.pi * k j) (2 * Real.pi * (k j + 1))) :
+    conleyZehnderIndex γ = -∑ j, (2 * (k j : ℝ) + 1) := by
+  have hπ : 0 < 2 * Real.pi := by positivity
+  have h1' (j : n) : θ j 1 / (2 * Real.pi) ∈ Set.Ioo (k j : ℝ) (k j + 1) :=
+    ⟨(lt_div_iff₀ hπ).2 (by rw [mul_comm]; exact (h1 j).1),
+      (div_lt_iff₀ hπ).2 (by rw [mul_comm]; exact (h1 j).2)⟩
+  have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
+      ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = k j + 1 / 2 := by
+    rw [floor_add_ceil_of_mem_Ioo (h1' j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero]
+    push_cast
+    ring
+  rw [conleyZehnderIndex_eq_neg_two_mul_sum_of_realify_diagonal γ hθ hγ,
+    Finset.sum_congr rfl fun j _ => key j, Finset.mul_sum, ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun j _ => by ring
+
 /-- **Rotations by angles in a band.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ` starting at
 the identity, whose angles all end in `(2 π k, 2 π (k + 1))`, has Conley–Zehnder index
 `-(2 k + 1) n`. -/
-theorem conleyZehnderIndex_eq_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
-    {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
+theorem conleyZehnderIndex_eq_neg_mul_card_of_realify_diagonal_of_mem_Ioo {A B : GLSymplectic n ℝ}
+    (γ : Path A B) {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
     (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (k : ℤ)
     (h1 : ∀ j, θ j 1 ∈ Set.Ioo (2 * Real.pi * k) (2 * Real.pi * (k + 1))) :
     conleyZehnderIndex γ = -(2 * k + 1) * Fintype.card n := by
-  have hπ : 0 < 2 * Real.pi := by positivity
-  have h1' (j : n) : θ j 1 / (2 * Real.pi) ∈ Set.Ioo (k : ℝ) (k + 1) :=
-    ⟨(lt_div_iff₀ hπ).2 (by rw [mul_comm]; exact (h1 j).1),
-      (div_lt_iff₀ hπ).2 (by rw [mul_comm]; exact (h1 j).2)⟩
-  have key (j : n) : (((⌊θ j 1 / (2 * Real.pi)⌋ + ⌈θ j 1 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2 -
-      ((⌊θ j 0 / (2 * Real.pi)⌋ + ⌈θ j 0 / (2 * Real.pi)⌉ : ℤ) : ℝ) / 2) = k + 1 / 2 := by
-    rw [floor_add_ceil_of_mem_Ioo (h1' j), h0 j, zero_div, Int.floor_zero, Int.ceil_zero]
-    push_cast
-    ring
-  rw [conleyZehnderIndex_eq_sum_of_diagonal γ hθ hγ, Finset.sum_congr rfl fun j _ => key j,
+  rw [conleyZehnderIndex_eq_neg_sum_of_realify_diagonal_of_mem_Ioo γ hθ hγ h0 (fun _ => k) h1,
     Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   ring
 
 /-- **A counterclockwise rotation has index `-n`.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ`
 starting at the identity, whose angles all end in `(0, 2π)`, has Conley–Zehnder index `-n`. In
 particular a small positive rotation of `ℝ² = ℂ` has index `-1`. -/
-theorem conleyZehnderIndex_eq_neg_card_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
-    {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
+theorem conleyZehnderIndex_eq_neg_card_of_realify_diagonal_of_mem_Ioo_zero_two_mul_pi
+    {A B : GLSymplectic n ℝ} (γ : Path A B) {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
     (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (h1 : ∀ j, θ j 1 ∈ Set.Ioo 0 (2 * Real.pi)) :
     conleyZehnderIndex γ = -Fintype.card n := by
-  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 0 fun j => by simpa using h1 j]
+  rw [conleyZehnderIndex_eq_neg_mul_card_of_realify_diagonal_of_mem_Ioo γ hθ hγ h0 0
+    fun j => by simpa using h1 j]
   norm_num
 
 /-- **A clockwise rotation has index `n`.** A path of rotations `diag (e^{i θ_j t})` of `ℂⁿ`
 starting at the identity, whose angles all end in `(-2π, 0)`, has Conley–Zehnder index `n`. In
 particular a small negative rotation of `ℝ² = ℂ` has index `1`. -/
-theorem conleyZehnderIndex_eq_card_of_rotation {A B : GLSymplectic n ℝ} (γ : Path A B)
-    {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
+theorem conleyZehnderIndex_eq_card_of_realify_diagonal_of_mem_Ioo_neg_two_mul_pi_zero
+    {A B : GLSymplectic n ℝ} (γ : Path A B) {θ : n → I → ℝ} (hθ : ∀ j, Continuous (θ j))
     (hγ : ∀ t, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
       (diagonal fun j => Complex.exp (θ j t * Complex.I)).realify)
     (h0 : ∀ j, θ j 0 = 0) (h1 : ∀ j, θ j 1 ∈ Set.Ioo (-(2 * Real.pi)) 0) :
     conleyZehnderIndex γ = Fintype.card n := by
-  rw [conleyZehnderIndex_eq_of_rotation γ hθ hγ h0 (-1) fun j => by simpa using h1 j]
+  rw [conleyZehnderIndex_eq_neg_mul_card_of_realify_diagonal_of_mem_Ioo γ hθ hγ h0 (-1)
+    fun j => by simpa using h1 j]
   norm_num
 
 /-! ### Loops -/
