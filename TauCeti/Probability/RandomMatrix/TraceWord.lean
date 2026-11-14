@@ -164,15 +164,9 @@ theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k n : ℕ}
     Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
   rcases eq_or_ne k 0 with rfl | hk
   · simp
-  · simp_rw [← wignerMatrix_ite_lt ξ η n, trace_pow_eq_sum_prod _ hk]
-    refine integrable_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
-      (fun ij ↦ ?_) (fun i ↦ ?_) _ _
-    · by_cases hij : ij.1.2 < n
-      · simpa [hij] using hξ ij hij
-      · simp [hij, MemLp.zero]
-    · by_cases hi : i < n
-      · simpa [hi] using hη i hi
-      · simp [hi, MemLp.zero]
+  · simp_rw [trace_pow_eq_sum_prod _ hk]
+    exact integrable_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
+      (fun ij hij ↦ by simpa using hξ ij hij) (fun i hi ↦ by simpa using hη i hi) _ _
 
 /-- **Trace-word expansion of Wigner moments.** Let the entries of the array be independent,
 centred and in `Lᵏ`, `k ≠ 0`. Then the expected trace of `Hₙᵏ` is the sum, over the closed walks
@@ -189,7 +183,7 @@ theorem integral_trace_pow_wignerMatrix [IsFiniteMeasure P]
         ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t)) ∂P := by
   simp_rw [trace_pow_eq_sum_prod _ hk]
   rw [integral_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
-    (by simpa using hξk) (by simpa using hηk) _ _]
+    (fun ij _ ↦ by simpa using hξk ij) (fun i _ ↦ by simpa using hηk i) _ _]
   refine (Finset.sum_filter_of_ne fun w _ hw t ↦ ?_).symm
   by_contra! h
   exact hw (integral_prod_wignerMatrix_apply_eq_zero
@@ -306,20 +300,19 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq {s : ℝ}
     ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
       ((n : ℂ)⁻¹ * s) ^ m := by
   let ξ' : StrictUpper → Ω → ℂ := fun ij ↦ if ij.1.2 < n then ξ ij else 0
-  have hcongr (ω : Ω) : wignerMatrix ξ η n ω = wignerMatrix ξ' η n ω :=
-    wignerMatrix_congr ω (fun _ hij ↦ by simp [ξ', hij]) (fun _ _ ↦ rfl)
+  let η' : ℕ → Ω → ℝ := fun i ↦ if i < n then η i else 0
   have hξ' (ij : StrictUpper) : AEStronglyMeasurable (fun ω ↦ ‖ξ' ij ω‖ ^ 2) P := by
     by_cases hij : ij.1.2 < n
     · simpa [ξ', hij] using hξ ij hij
     · simp only [ξ', hij, ↓reduceIte, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
         not_false_eq_true, zero_pow]
       exact aestronglyMeasurable_const
-  simp_rw [hcongr]
-  rw [integral_prod_wignerMatrix_apply_path hξ' (Probability.iIndepFun_ite_zero hξindep) v
-    hclosed hv he]
+  rw [← wignerMatrix_ite_lt ξ η n,
+    integral_prod_wignerMatrix_apply_path (ξ := ξ') (η := η') hξ'
+      (Probability.iIndepFun_ite_zero hξindep) v hclosed hv he]
   have hterm (i : Fin (2 * m)) (hi : i ∈
       ({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)) :
-      ∫ ω, ‖wignerMatrix ξ' η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
+      ∫ ω, ‖wignerMatrix ξ' η' n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
     have hne := ne_of_canonicalWalk_succ_eq v i (mem_filter.mp hi).2
     have hlt : (⟨(min (v i.castSucc).val (v i.succ).val, max (v i.castSucc).val (v i.succ).val),
         min_lt_max.mpr (Fin.val_ne_of_ne hne)⟩ : StrictUpper).1.2 < n :=

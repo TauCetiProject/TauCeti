@@ -93,8 +93,8 @@ theorem iIndepFun_ite_zero {f : ∀ i, Ω → β i} [∀ i, Zero (β i)] {p : ι
     (hp : iIndepFun (fun i : {i // p i} => f i) μ) :
     iIndepFun (fun i => if p i then f i else 0) μ :=
   iIndepFun_of_ae_eq_const_outside (s := {i | p i})
-    (hp.congr fun i => .of_forall fun _ => by simp [show p i.1 from i.2])
-    fun i hi => ⟨0, .of_forall fun _ => by simp [show ¬ p i from hi]⟩
+    (hp.congr fun i => .of_forall fun _ => by simp [Set.mem_ofPred.mp i.2])
+    fun i hi => ⟨0, .of_forall fun _ => by simp [Set.notMem_ofPred_iff.mp hi]⟩
 
 /-- A family on a probability space is independent if its coordinates are almost surely constant
 outside a subsingleton set of indices. The constants and the exceptional null sets may depend on

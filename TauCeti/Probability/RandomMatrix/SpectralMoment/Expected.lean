@@ -42,10 +42,10 @@ expected empirical spectral measure — has finite moments of every order and co
 * `TauCeti.Probability.abs_integral_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_le` and
   `TauCeti.Probability.abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le`:
   quantitative `O((n + 1)⁻¹)` and `O((√(n + 1))⁻¹)` error bounds against `semicircleReal 0 s`.
-* `TauCeti.Probability.tendsto_integral_integral_pow_spectralMeasure_wignerMatrix_of_array` and
+* `TauCeti.Probability.tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'` and
   `TauCeti.Probability.tendsto_integral_integral_pow_spectralMeasure_wignerMatrix`: convergence of
   expected empirical spectral moments of every order `k : ℕ` to `semicircleReal 0 s`.
-* `TauCeti.Probability.tendsto_bind_spectralMeasure_wignerMatrix_of_array` and
+* `TauCeti.Probability.tendsto_bind_spectralMeasure_wignerMatrix'` and
   `TauCeti.Probability.tendsto_bind_spectralMeasure_wignerMatrix`: weak convergence of the expected
   empirical spectral measure to `semicircleReal 0 s`, together with bounded-continuous test-function
   corollaries.
@@ -163,32 +163,10 @@ theorem abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_l
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P| ≤
       (m + 1 : ℝ) ^ (2 * m + 1) * B / Real.sqrt (n + 1 : ℕ) := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have hB : 0 ≤ B := (integral_nonneg fun _ ↦ by positivity).trans (hη 0 (Nat.zero_lt_succ n))
   rw [integral_integral_pow_spectralMeasure_wignerMatrix hξp hηp]
-  refine (Complex.abs_re_le_norm _).trans ?_
-  have hodd := norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le (n := n + 1)
-    (ξ := fun ij ↦ if ij.1.2 < n + 1 then ξ ij else 0)
-    (η := fun i ↦ if i < n + 1 then η i else 0)
-    (iIndepFun_sumElim_ofReal_ite_lt hindep)
-    (fun ij ↦ by by_cases h : ij.1.2 < n + 1 <;> simp [h, hξzero])
-    (fun i ↦ by by_cases h : i < n + 1 <;> simp [h, hηzero])
-    (fun ij ↦ by
-      by_cases h : ij.1.2 < n + 1
-      · simpa [h] using hξp ij h
-      · simp [h, MemLp.zero])
-    (fun i ↦ by
-      by_cases h : i < n + 1
-      · simpa [h] using hηp i h
-      · simp [h, MemLp.zero])
-    (fun ij ↦ by
-      by_cases h : ij.1.2 < n + 1
-      · simpa [h] using hξ ij h
-      · simpa [h, zero_pow (Nat.add_one_ne_zero (2 * m))] using hB)
-    (fun i ↦ by
-      by_cases h : i < n + 1
-      · simpa [h] using hη i h
-      · simpa [h, zero_pow (Nat.add_one_ne_zero (2 * m))] using hB)
-  simpa only [wignerMatrix_ite_lt] using hodd
+  exact (Complex.abs_re_le_norm _).trans
+    (norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le
+      hindep hξzero hηzero hξp hηp hξ hη)
 
 /-- The empirical spectral measure of the `(n + 1) × (n + 1)` Wigner matrix, viewed as a random
 measure on `ℝ`, is almost everywhere measurable whenever the corner entry coordinates are. -/
@@ -197,22 +175,9 @@ theorem aemeasurable_spectralMeasure_wignerMatrix {n : ℕ}
     (hη : ∀ i < n + 1, AEMeasurable (η i) P) :
     AEMeasurable (fun ω ↦ ((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) P := by
-  have hW : AEMeasurable (wignerMatrix ξ η (n + 1)) P :=
-    (aemeasurable_wignerMatrix
-      (ξ := fun ij ↦ if ij.1.2 < n + 1 then ξ ij else 0)
-      (η := fun i ↦ if i < n + 1 then η i else 0)
-      (fun ij ↦ by
-        by_cases h : ij.1.2 < n + 1
-        · simpa [h] using hξ ij h
-        · rw [ite_eq_right_iff.mpr fun h' ↦ (h h').elim]; exact aemeasurable_const)
-      (fun i ↦ by
-        by_cases h : i < n + 1
-        · simpa [h] using hη i h
-        · rw [ite_eq_right_iff.mpr fun h' ↦ (h h').elim]; exact aemeasurable_const)
-      (n + 1)).congr (.of_forall fun ω ↦ wignerMatrix_ite_lt ξ η (n + 1) ω)
   have hH : AEMeasurable (Set.codRestrict (wignerMatrix ξ η (n + 1)) {A | A.IsHermitian}
       fun ω ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) P :=
-    hW.subtype_mk
+    (aemeasurable_wignerMatrix hξ hη).subtype_mk
   exact (measurable_subtype_coe.comp Matrix.measurable_spectralMeasure).comp_aemeasurable hH
 
 /-- On a probability space, the mixture `P.bind L_{H_{n+1}}` — the expected empirical spectral
@@ -225,6 +190,35 @@ theorem isProbabilityMeasure_bind_spectralMeasure_wignerMatrix [IsProbabilityMea
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) :=
   isProbabilityMeasure_bind (aemeasurable_spectralMeasure_wignerMatrix hξ hη)
     (.of_forall fun _ ↦ inferInstance)
+
+private theorem lintegral_ofReal_norm_pow_spectralMeasure_le
+    {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m]
+    (A : Matrix m m ℂ) (hA : A.IsHermitian) (k : ℕ) :
+    ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂(A.spectralMeasure hA : Measure ℝ) ≤
+      ENNReal.ofReal (‖(Fintype.card m : ℝ) * ∑ i, ∑ j, ‖A i j‖‖ ^ k) := by
+  set S : ℝ := ∑ i, ∑ j, ‖A i j‖
+  set M : ℝ := (Fintype.card m : ℝ) * S
+  have hentry (i j : m) : ‖A i j‖ ≤ S :=
+    (Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ j)).trans
+      (Finset.single_le_sum (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+        (Finset.mem_univ i))
+  have heig (r : Fin (Fintype.card m)) : ‖hA.eigenvalues₀ r ^ k‖ ≤ ‖M‖ ^ k := by
+    have habs : |hA.eigenvalues₀ r| ≤ M := hA.abs_eigenvalues₀_le_of_entry_le hentry r
+    rw [norm_pow, Real.norm_eq_abs, Real.norm_eq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) (habs.trans (le_abs_self _)) k
+  rw [Matrix.spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    lintegral_empiricalMeasureOfFintype (by fun_prop), Fintype.card_fin]
+  calc ((Fintype.card m : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ r : Fin (Fintype.card m), ENNReal.ofReal ‖hA.eigenvalues₀ r ^ k‖
+      ≤ ((Fintype.card m : ℕ) : ℝ≥0∞)⁻¹ *
+          ∑ _r : Fin (Fintype.card m), ENNReal.ofReal (‖M‖ ^ k) := by
+        gcongr with r
+        exact heig r
+    _ = ((Fintype.card m : ℕ) : ℝ≥0∞)⁻¹ *
+          (((Fintype.card m : ℕ) : ℝ≥0∞) * ENNReal.ofReal (‖M‖ ^ k)) := by
+        simp [Fintype.card_fin]
+    _ = ENNReal.ofReal (‖M‖ ^ k) :=
+        ENNReal.inv_mul_cancel_left (by simp) (by simp)
 
 /-- On a finite measure space, the monomial `x ↦ x ^ k` is integrable against the expected
 empirical spectral measure `P.bind L_{H_{n+1}}` whenever the corner entry coordinates lie in
@@ -243,67 +237,20 @@ theorem integrable_pow_bind_spectralMeasure_wignerMatrix [IsFiniteMeasure P] {k 
     (fun i hi ↦ (hηp i hi).aestronglyMeasurable.aemeasurable)
   refine ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr ?_⟩
   rw [Measure.lintegral_bind hL (by fun_prop)]
-  let S : Ω → ℝ := fun ω ↦
-    ∑ i : Fin (n + 1), ∑ j : Fin (n + 1), ‖wignerMatrix ξ η (n + 1) ω i j‖
-  let M : Ω → ℝ := fun ω ↦ ((n + 1 : ℕ) : ℝ) * S ω
-  have hHij (i j : Fin (n + 1)) : MemLp (fun ω ↦ wignerMatrix ξ η (n + 1) ω i j) (k : ℕ) P := by
-    have h := memLp_wignerMatrix_apply (p := (k : ℕ))
-      (ξ := fun ij ↦ if ij.1.2 < n + 1 then ξ ij else 0)
-      (η := fun i ↦ if i < n + 1 then η i else 0)
-      (fun ij ↦ by
-        by_cases h : ij.1.2 < n + 1
-        · simpa [h] using hξp ij h
-        · simp [h, MemLp.zero])
-      (fun i ↦ by
-        by_cases h : i < n + 1
-        · simpa [h] using hηp i h
-        · simp [h, MemLp.zero])
-      i j
-    simpa only [wignerMatrix_ite_lt] using h
+  let M : Ω → ℝ := fun ω ↦
+    (Fintype.card (Fin (n + 1)) : ℝ) *
+      ∑ i : Fin (n + 1), ∑ j : Fin (n + 1), ‖wignerMatrix ξ η (n + 1) ω i j‖
   have hM : MemLp M (k : ℕ) P :=
     (memLp_finsetSum Finset.univ fun i _ ↦
-      memLp_finsetSum Finset.univ fun j _ ↦ (hHij i j).norm).const_mul _
-  have hMint : Integrable (fun ω ↦ ‖M ω‖ ^ k) P := hM.integrable_norm_pow'
-  have hcomp (ω : Ω) : ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂L ω ≤ ENNReal.ofReal (‖M ω‖ ^ k) := by
-    have hint_pow : Integrable (fun x : ℝ ↦ ‖x ^ k‖) (L ω) := by
-      dsimp only [L]
-      rw [Matrix.spectralMeasure_def, empiricalMeasureOfFintype_toMeasure]
-      exact integrable_finsetSum_measure.mpr fun _ _ ↦
-        (integrable_dirac (by simp)).smul_measure (ENNReal.inv_ne_top.mpr (by simp))
-    rw [← ofReal_integral_eq_lintegral_ofReal hint_pow (.of_forall fun _ ↦ norm_nonneg _)]
-    apply ENNReal.ofReal_le_ofReal
-    have hcard : (Fintype.card (Fin (n + 1)) : ℝ) = ((n + 1 : ℕ) : ℝ) := by simp
-    rw [Matrix.integral_spectralMeasure_eq_sum_eigenvalues₀, smul_eq_mul, hcard]
-    have hentry (i j : Fin (n + 1)) : ‖wignerMatrix ξ η (n + 1) ω i j‖ ≤ S ω :=
-      (Finset.single_le_sum (fun j' _ ↦ norm_nonneg _) (Finset.mem_univ j)).trans
-        (Finset.single_le_sum
-          (fun i' _ ↦ Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) (Finset.mem_univ i))
-    have heig (r : Fin (Fintype.card (Fin (n + 1)))) :
-        ‖(wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ r ^ k‖ ≤ ‖M ω‖ ^ k := by
-      have habs : |(wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ r| ≤ M ω := by
-        simpa only [Fintype.card_fin, M] using
-          (wignerMatrix_isHermitian ξ η ω (n + 1)).abs_eigenvalues₀_le_of_entry_le hentry r
-      rw [norm_pow, Real.norm_eq_abs, Real.norm_eq_abs]
-      exact pow_le_pow_left₀ (abs_nonneg _) (habs.trans (le_abs_self _)) k
-    have hsum : ∑ r : Fin (Fintype.card (Fin (n + 1))),
-        ‖(wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ r ^ k‖ ≤
-        ((n + 1 : ℕ) : ℝ) * ‖M ω‖ ^ k := by
-      calc ∑ r : Fin (Fintype.card (Fin (n + 1))),
-              ‖(wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ r ^ k‖
-          ≤ ∑ _r : Fin (Fintype.card (Fin (n + 1))), ‖M ω‖ ^ k :=
-            Finset.sum_le_sum fun r _ ↦ heig r
-        _ = ((n + 1 : ℕ) : ℝ) * ‖M ω‖ ^ k := by
-            simp [Fintype.card_fin]
-    have hn1 : ((n + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.add_one_ne_zero n)
-    calc (((n + 1 : ℕ) : ℝ)⁻¹ * ∑ r : Fin (Fintype.card (Fin (n + 1))),
-            ‖(wignerMatrix_isHermitian ξ η ω (n + 1)).eigenvalues₀ r ^ k‖)
-        ≤ ((n + 1 : ℕ) : ℝ)⁻¹ * (((n + 1 : ℕ) : ℝ) * ‖M ω‖ ^ k) :=
-          mul_le_mul_of_nonneg_left hsum (by positivity)
-      _ = ‖M ω‖ ^ k := inv_mul_cancel_left₀ hn1 _
+      memLp_finsetSum Finset.univ fun j _ ↦
+        (memLp_wignerMatrix_apply hξp hηp i j).norm).const_mul _
   calc ∫⁻ ω, ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂L ω ∂P
-      ≤ ∫⁻ ω, ENNReal.ofReal (‖M ω‖ ^ k) ∂P := lintegral_mono hcomp
+      ≤ ∫⁻ ω, ENNReal.ofReal (‖M ω‖ ^ k) ∂P :=
+        lintegral_mono fun ω ↦
+          lintegral_ofReal_norm_pow_spectralMeasure_le _ (wignerMatrix_isHermitian ξ η ω (n + 1)) k
     _ = ENNReal.ofReal (∫ ω, ‖M ω‖ ^ k ∂P) :=
-        (ofReal_integral_eq_lintegral_ofReal hMint (.of_forall fun _ ↦ by positivity)).symm
+        (ofReal_integral_eq_lintegral_ofReal hM.integrable_norm_pow'
+          (.of_forall fun _ ↦ by positivity)).symm
     _ < ⊤ := ENNReal.ofReal_lt_top
 
 /-- On a finite measure space with `Lᵏ` corner entries, the `k`th moment of the expected empirical
@@ -330,7 +277,7 @@ entries in the `(n + 1) × (n + 1)` corner on possibly varying probability space
 whose `k`th absolute moments are uniformly bounded by `B` and whose strictly upper entries have
 common second absolute moment `s`, the expected `k`th empirical spectral moment of `H_{n+1}`
 converges to the `k`th moment of `semicircleReal 0 s` (for every `k : ℕ`). -/
-theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix_of_array
+theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ}
     {k : ℕ} {B : ℝ} {s : ℝ≥0}
@@ -385,10 +332,8 @@ theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix
         ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
           (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P)
       atTop (𝓝 (∫ x, x ^ k ∂semicircleReal 0 s)) :=
-  tendsto_integral_integral_pow_spectralMeasure_wignerMatrix_of_array
-    (fun _ ↦ (iIndepFun.precomp
-        (Sum.map_injective.mpr ⟨Subtype.val_injective, Subtype.val_injective⟩) hindep).congr
-      fun r ↦ .of_forall fun _ ↦ by rcases r with ij | i <;> rfl)
+  tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
+    (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
     (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
     (fun _ ij _ ↦ hξp ij) (fun _ i _ ↦ hηp i)
     (fun _ ij _ ↦ hξ ij) (fun _ i _ ↦ hη i) (fun _ ij _ ↦ hξsq ij)
@@ -397,7 +342,7 @@ theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix
 For independent centered corner entries on varying spaces `(Ω n, P n)` with common off-diagonal
 second absolute moment `s` and uniformly bounded moments of every order, the expected empirical
 spectral measures `(P n).bind L_{H_{n+1}}` converge weakly to `semicircleReal 0 s`. -/
-theorem tendsto_bind_spectralMeasure_wignerMatrix_of_array
+theorem tendsto_bind_spectralMeasure_wignerMatrix'
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {s : ℝ≥0}
     (hindep : ∀ n, iIndepFun
@@ -427,7 +372,7 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix_of_array
     fun k ↦ ?_
   obtain ⟨B₁, hB₁⟩ := hξ k
   obtain ⟨B₂, hB₂⟩ := hη k
-  have hconv := tendsto_integral_integral_pow_spectralMeasure_wignerMatrix_of_array
+  have hconv := tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
     (B := max B₁ B₂) hindep hξzero hηzero (hξp k) (hηp k)
     (fun n ij hij ↦ (hB₁ n ij hij).trans (le_max_left _ _))
     (fun n i hi ↦ (hB₂ n i hi).trans (le_max_right _ _)) hξsq
@@ -455,10 +400,8 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix
           (fun ij _ ↦ (hξp 0 ij).aestronglyMeasurable.aemeasurable)
           (fun i _ ↦ (hηp 0 i).aestronglyMeasurable.aemeasurable)⟩)
       atTop (𝓝 ⟨semicircleReal 0 s, inferInstance⟩) :=
-  tendsto_bind_spectralMeasure_wignerMatrix_of_array
-    (fun _ ↦ (iIndepFun.precomp
-        (Sum.map_injective.mpr ⟨Subtype.val_injective, Subtype.val_injective⟩) hindep).congr
-      fun r ↦ .of_forall fun _ ↦ by rcases r with ij | i <;> rfl)
+  tendsto_bind_spectralMeasure_wignerMatrix'
+    (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
     (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
     (fun k _ ij _ ↦ hξp k ij) (fun k _ i _ ↦ hηp k i)
     (fun k ↦ let ⟨B, hB⟩ := hξ k; ⟨B, fun _ ij _ ↦ hB ij⟩)
@@ -467,7 +410,7 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix
 
 /-- For any bounded continuous test function `f : ℝ →ᵇ ℝ` and triangular Wigner array satisfying
 the corner moment hypotheses, `E[∫ f dL_{H_{n+1}}]` converges to `∫ f ∂semicircleReal 0 s`. -/
-theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wignerMatrix_of_array
+theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wignerMatrix'
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {s : ℝ≥0}
     (hindep : ∀ n, iIndepFun
@@ -485,7 +428,7 @@ theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wign
         ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
           (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n)
       atTop (𝓝 (∫ x, f x ∂semicircleReal 0 s)) := by
-  have hweak := tendsto_bind_spectralMeasure_wignerMatrix_of_array
+  have hweak := tendsto_bind_spectralMeasure_wignerMatrix'
     hindep hξzero hηzero hξp hηp hξ hη hξsq
   have hf := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hweak) f
   refine hf.congr fun n ↦ ?_
@@ -516,10 +459,8 @@ theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wign
         ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
           (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P)
       atTop (𝓝 (∫ x, f x ∂semicircleReal 0 s)) :=
-  tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wignerMatrix_of_array
-    (fun _ ↦ (iIndepFun.precomp
-        (Sum.map_injective.mpr ⟨Subtype.val_injective, Subtype.val_injective⟩) hindep).congr
-      fun r ↦ .of_forall fun _ ↦ by rcases r with ij | i <;> rfl)
+  tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wignerMatrix'
+    (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
     (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
     (fun k _ ij _ ↦ hξp k ij) (fun k _ i _ ↦ hηp k i)
     (fun k ↦ let ⟨B, hB⟩ := hξ k; ⟨B, fun _ ij _ ↦ hB ij⟩)

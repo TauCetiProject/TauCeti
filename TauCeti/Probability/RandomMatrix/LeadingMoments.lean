@@ -158,33 +158,10 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} 
       (∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t))) ∧
         #(univ.image w) = m + 1,
       ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P
-    have h2m : 2 * m ≠ 0 := Nat.mul_ne_zero (by decide) hm
     have hrem : ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - L)‖ ≤
-        (m : ℝ) ^ (2 * m) * B / n := by
-      have hrem' := norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le (n := n)
-        (ξ := fun ij ↦ if ij.1.2 < n then ξ ij else 0)
-        (η := fun i ↦ if i < n then η i else 0)
-        (iIndepFun_sumElim_ofReal_ite_lt hindep)
-        (fun ij ↦ by by_cases h : ij.1.2 < n <;> simp [h, hξzero])
-        (fun i ↦ by by_cases h : i < n <;> simp [h, hηzero])
-        hm
-        (fun ij ↦ by
-          by_cases h : ij.1.2 < n
-          · simpa [h] using hξp ij h
-          · simp [h, MemLp.zero])
-        (fun i ↦ by
-          by_cases h : i < n
-          · simpa [h] using hηp i h
-          · simp [h, MemLp.zero])
-        (fun ij ↦ by
-          by_cases h : ij.1.2 < n
-          · simpa [h] using hξ ij h
-          · simpa [h, zero_pow h2m] using hB)
-        (fun i ↦ by
-          by_cases h : i < n
-          · simpa [h] using hη i h
-          · simpa [h, zero_pow h2m] using hB)
-      simpa only [wignerMatrix_ite_lt] using hrem'
+        (m : ℝ) ^ (2 * m) * B / n :=
+      norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le
+        hm hindep hξzero hηzero hξp hηp hξ hη
     have hlead : ‖(n : ℂ)⁻¹ * L - (s : ℂ) ^ m * catalan m‖ ≤
         s ^ m * catalan m * (m + 1).choose 2 / n :=
       norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le hm hn hs
@@ -229,9 +206,7 @@ theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix {m : ℕ} {B s :
   refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hlim
   filter_upwards [eventually_ne_atTop 0] with n hn
   exact norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le hn hs
-    ((iIndepFun.precomp
-        (Sum.map_injective.mpr ⟨Subtype.val_injective, Subtype.val_injective⟩) hindep).congr
-      fun r ↦ .of_forall fun _ ↦ by rcases r with ij | i <;> rfl)
+    (iIndepFun_sumElim_ofReal_subtype_lt hindep)
     (fun ij _ ↦ hξzero ij) (fun i _ ↦ hηzero i)
     (fun ij _ ↦ hξp ij) (fun i _ ↦ hηp i)
     (fun ij _ ↦ hξ ij) (fun i _ ↦ hη i) (fun ij _ ↦ hξsq ij)
