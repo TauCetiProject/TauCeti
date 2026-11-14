@@ -52,8 +52,8 @@ lemmas of Heegaard Floer theory.
 * `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem for a
   finite family in a free `ℤ`-module.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
-* `Matrix.exists_forall_vecMul_pos_iff`: an integral covector is positive on every column
-  exactly when the nonnegative kernel over a linearly ordered ring is trivial.
+* `Matrix.exists_forall_vecMul_pos_iff`: an integral covector is strictly positive on every
+  column exactly when the nonnegative kernel over a partially ordered ring is trivial.
 * `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
 
@@ -289,8 +289,8 @@ namespace Matrix
 variable {m n : Type*} [Fintype m] [Fintype n]
 
 /-- An integer matrix has a covector strictly positive on every column exactly when its kernel
-over a linearly ordered ring contains no nonzero nonnegative vector. -/
-theorem exists_forall_vecMul_pos_iff (R : Type*) [Ring R] [LinearOrder R]
+over a partially ordered ring contains no nonzero nonnegative vector. -/
+theorem exists_forall_vecMul_pos_iff (R : Type*) [Ring R] [PartialOrder R]
     [IsStrictOrderedRing R] (A : Matrix m n ℤ) :
     (∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) ↔
       ∀ x : n → R, 0 ≤ x → A.map (Int.castRingHom R) *ᵥ x = 0 → x = 0 := by
@@ -300,8 +300,14 @@ theorem exists_forall_vecMul_pos_iff (R : Type*) [Ring R] [LinearOrder R]
       intro j
       simpa only [← Int.coe_castRingHom, RingHom.map_vecMul, Function.comp_def] using
         (Int.cast_pos.mpr (hh j) : (0 : R) < ((h ᵥ* A) j : R))
-    apply (TauCeti.dotProduct_eq_zero_iff_of_pos hhR hx).mp
-    rw [← dotProduct_mulVec, hAx, dotProduct_zero]
+    have hzero : ((fun i => (h i : R)) ᵥ* A.map (Int.castRingHom R)) ⬝ᵥ x = 0 := by
+      rw [← dotProduct_mulVec, hAx, dotProduct_zero]
+    have hterm := (Finset.sum_eq_zero_iff_of_nonneg
+      (fun j (_ : j ∈ Finset.univ) => mul_nonneg (hhR j).le (hx j))).mp hzero
+    ext j
+    by_contra hj
+    have hxj : 0 < x j := lt_of_le_of_ne (hx j) (Ne.symm hj)
+    exact (mul_pos (hhR j) hxj).ne' (hterm j (Finset.mem_univ j))
   · intro hA
     classical
     obtain ⟨c, f, hc, _, hcf⟩ :=

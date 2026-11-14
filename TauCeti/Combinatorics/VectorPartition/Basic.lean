@@ -15,19 +15,24 @@ public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Finite vector-partition fibers
 
 `Matrix.nonnegFiber A b` is the nonnegative solution set over a partially ordered semiring.
-Over an ordered semiring, a nonnegative covector bounds each coordinate contribution by the
-target height.
+When the row index type is finite, a covector nonnegative on every column bounds each coordinate
+contribution by the target height over an ordered semiring. A covector strictly positive on every
+column bounds each coordinate over an ordered field.
 
 For an integer matrix `A`, `Matrix.NatFiber A b` consists of decompositions of the target `b`
 as a natural linear combination of the columns of `A`. Distinct multiplicity vectors are counted
-separately, including when columns coincide. An integral covector strictly positive on every
-column bounds each multiplicity and gives a finite enumeration of the fiber. The count is defined
-for every matrix as the natural cardinality of its fiber, so it is zero for infinite fibers.
-Under a positive covector it counts the finite solution set and is independent of that covector.
+separately, including when columns coincide. When the row index type is finite, an integral
+covector strictly positive on every column bounds each multiplicity and gives a finite enumeration
+of the fiber. The count is defined for every matrix as the natural cardinality of its fiber, so it
+is zero for infinite fibers.
+For a finite row index type and an integral covector strictly positive on every column, it counts
+the finite solution set and is independent of that covector. Natural fibers are identified with
+the integer points of the corresponding nonnegative fibers over any strictly ordered ring; this
+identification does not require finitely many rows.
 
-The positive-covector criterion `Matrix.exists_forall_vecMul_pos_iff` in
-`TauCeti.Geometry.Convex.Cone.Alternative` characterizes the existence of such an integral
-covector by the absence of nonzero nonnegative vectors in the real kernel.
+The criterion `Matrix.exists_forall_vecMul_pos_iff` in
+`TauCeti.Geometry.Convex.Cone.Alternative` characterizes the existence of an integral covector
+strictly positive on every column by the absence of nonzero nonnegative vectors in the real kernel.
 Neither full row rank nor unimodularity is needed for these finiteness results.
 -/
 
@@ -55,7 +60,8 @@ theorem nonnegFiber_def {R : Type*} [Semiring R] [PartialOrder R]
   rw [nonnegFiber_def]
   rfl
 
-/-- A nonnegative height bounds the contribution of each coordinate of a nonnegative solution. -/
+/-- A covector nonnegative on every column bounds the contribution of each coordinate of a
+nonnegative solution. -/
 theorem mul_apply_le_dotProduct_of_mem_nonnegFiber {R : Type*} [Semiring R] [PartialOrder R]
     [IsOrderedRing R] [Fintype m] (A : Matrix m n R) {h : m → R}
     (hh : ∀ j, 0 ≤ (h ᵥ* A) j) {b : m → R} {x : n → R}
@@ -67,12 +73,23 @@ theorem mul_apply_le_dotProduct_of_mem_nonnegFiber {R : Type*} [Semiring R] [Par
   exact Finset.single_le_sum (fun k _ => mul_nonneg (hh k) (hx.1 k))
     (Finset.mem_univ j)
 
+/-- A covector strictly positive on every column bounds every coordinate of a nonnegative
+solution over an ordered field. -/
+theorem apply_le_div_of_mem_nonnegFiber {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] [Fintype m] (A : Matrix m n K) {h : m → K}
+    (hh : ∀ j, 0 < (h ᵥ* A) j) {b : m → K} {x : n → K}
+    (hx : x ∈ A.nonnegFiber b) (j : n) : x j ≤ (h ⬝ᵥ b) / (h ᵥ* A) j := by
+  apply (le_div_iff₀ (hh j)).mpr
+  rw [mul_comm]
+  exact A.mul_apply_le_dotProduct_of_mem_nonnegFiber (fun k => (hh k).le) hx j
+
 /-- The natural multiplicity vectors with image `b` under the integer matrix `A`. -/
 abbrev NatFiber (A : Matrix m n ℤ) (b : m → ℤ) :=
   {c : n → ℕ // A *ᵥ (fun j => (c j : ℤ)) = b}
 
 /-- The vector-partition count, counting distinct multiplicity vectors even when columns
-coincide. It is zero for infinite fibers; a positive integral covector guarantees finiteness. -/
+coincide. It is zero for infinite fibers; for finite `m`, an integral covector strictly positive
+on every column guarantees finiteness. -/
 noncomputable def natFiberCount (A : Matrix m n ℤ) (b : m → ℤ) : ℕ :=
   Nat.card (NatFiber A b)
 
@@ -80,6 +97,53 @@ noncomputable def natFiberCount (A : Matrix m n ℤ) (b : m → ℤ) : ℕ :=
 theorem natFiberCount_def (A : Matrix m n ℤ) (b : m → ℤ) :
     A.natFiberCount b = Nat.card (NatFiber A b) := by
   rfl
+
+/-- Integer points of a fiber over a strictly ordered ring are precisely the nonnegative
+integer solutions. -/
+theorem intCast_mem_nonnegFiber_iff {R : Type*} [Ring R] [PartialOrder R]
+    [IsStrictOrderedRing R] (A : Matrix m n ℤ) (b : m → ℤ) (x : n → ℤ) :
+    (fun j => (x j : R)) ∈ (A.map (Int.castRingHom R)).nonnegFiber
+      (fun i => (b i : R)) ↔
+      0 ≤ x ∧ A *ᵥ x = b := by
+  have he (i : m) : ((A *ᵥ x) i : R) =
+      (A.map (Int.castRingHom R) *ᵥ fun j => (x j : R)) i := by
+    simpa only [Int.coe_castRingHom, Function.comp_def] using
+      (Int.castRingHom R).map_mulVec A x i
+  rw [mem_nonnegFiber]
+  constructor
+  · rintro ⟨hx, hAx⟩
+    refine ⟨fun j => Int.cast_nonneg_iff.mp (hx j), funext fun i => ?_⟩
+    exact Int.cast_injective (α := R) ((he i).trans (congrFun hAx i))
+  · rintro ⟨hx, hAx⟩
+    refine ⟨fun j => Int.cast_nonneg (hx j), funext fun i => ?_⟩
+    rw [← he, hAx]
+
+/-- Natural solutions are exactly the integer points of the corresponding fiber over a
+strictly ordered ring. -/
+def natFiberEquivIntegerPoints (A : Matrix m n ℤ) (R : Type*) [Ring R] [PartialOrder R]
+    [IsStrictOrderedRing R] (b : m → ℤ) :
+    NatFiber A b ≃
+      {x : n → ℤ // (fun j => (x j : R)) ∈
+        (A.map (Int.castRingHom R)).nonnegFiber (fun i => (b i : R))} where
+  toFun c := ⟨fun j => (c.1 j : ℤ),
+    (A.intCast_mem_nonnegFiber_iff (R := R) b _).mpr ⟨fun _ => Int.natCast_nonneg _, c.2⟩⟩
+  invFun x := ⟨fun j => (x.1 j).toNat, by
+    have hx := (A.intCast_mem_nonnegFiber_iff (R := R) b x.1).mp x.2
+    simpa only [Int.toNat_of_nonneg (hx.1 _)] using hx.2⟩
+  left_inv c := by ext j; simp
+  right_inv x := by
+    ext j
+    exact Int.toNat_of_nonneg (((A.intCast_mem_nonnegFiber_iff (R := R) b x.1).mp x.2).1 j)
+
+@[simp, grind =] theorem natFiberEquivIntegerPoints_apply (A : Matrix m n ℤ) (R : Type*)
+    [Ring R] [PartialOrder R] [IsStrictOrderedRing R] (b : m → ℤ)
+    (c : NatFiber A b) (j : n) : (A.natFiberEquivIntegerPoints R b c).1 j = (c.1 j : ℤ) := (rfl)
+
+@[simp, grind =] theorem natFiberEquivIntegerPoints_symm_apply (A : Matrix m n ℤ) (R : Type*)
+    [Ring R] [PartialOrder R] [IsStrictOrderedRing R] (b : m → ℤ)
+    (x : {x : n → ℤ // (fun j => (x j : R)) ∈
+      (A.map (Int.castRingHom R)).nonnegFiber (fun i => (b i : R))})
+    (j : n) : ((A.natFiberEquivIntegerPoints R b).symm x).1 j = (x.1 j).toNat := (rfl)
 
 variable [Fintype m]
 
@@ -99,8 +163,8 @@ theorem NatFiber.apply_le_toNat_dotProduct {A : Matrix m n ℤ} {b : m → ℤ} 
         ⟨fun _ => Int.natCast_nonneg _, c.2⟩ j)
   omega
 
-/-- A bounded candidate enumeration for a natural fiber. If `h` is positive on every column,
-`mem_natFiberFinset_iff_of_vecMul_pos` identifies this enumeration with the entire fiber. -/
+/-- A bounded candidate enumeration for a natural fiber. If `h` is strictly positive on every
+column, `mem_natFiberFinset_iff_of_vecMul_pos` identifies this enumeration with the entire fiber. -/
 def natFiberFinset [DecidableEq n] (A : Matrix m n ℤ) (h b : m → ℤ) : Finset (n → ℕ) :=
   (Fintype.piFinset fun _ : n => Finset.Iic (h ⬝ᵥ b).toNat).filter
     (fun c => A *ᵥ (fun j => (c j : ℤ)) = b)
@@ -119,14 +183,16 @@ positivity assumption on the chosen covector. -/
       (∀ j, c j ≤ (h ⬝ᵥ b).toNat) ∧ A *ᵥ (fun j => (c j : ℤ)) = b := by
   simp only [natFiberFinset_def, Finset.mem_filter, Fintype.mem_piFinset, Finset.mem_Iic]
 
-/-- Under a positive height, the bounded enumeration contains exactly the solutions. -/
+/-- Under an integral covector strictly positive on every column, the bounded enumeration
+contains exactly the solutions. -/
 @[simp] theorem mem_natFiberFinset_iff_of_vecMul_pos [DecidableEq n] (A : Matrix m n ℤ) {h : m → ℤ}
     (hh : ∀ j, 0 < (h ᵥ* A) j) (b : m → ℤ) (c : n → ℕ) :
     c ∈ A.natFiberFinset h b ↔ A *ᵥ (fun j => (c j : ℤ)) = b := by
   rw [mem_natFiberFinset_iff]
   exact ⟨And.right, fun hc => ⟨fun j => NatFiber.apply_le_toNat_dotProduct ⟨c, hc⟩ hh j, hc⟩⟩
 
-/-- Natural fibers are finite whenever an integral height is strictly positive on all columns. -/
+/-- For finite `m`, natural fibers are finite whenever an integral covector is strictly positive
+on every column. -/
 theorem finite_natFiber (A : Matrix m n ℤ)
     (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) (b : m → ℤ) :
     Finite (NatFiber A b) := by
@@ -137,7 +203,8 @@ theorem finite_natFiber (A : Matrix m n ℤ)
       (fun c hc => (mem_natFiberFinset_iff_of_vecMul_pos A hh b c).mpr hc)
   exact hf.to_subtype
 
-/-- A positive height computes the count by filtering an explicit finite coordinate box. -/
+/-- An integral covector strictly positive on every column computes the count by filtering an
+explicit finite coordinate box. -/
 theorem card_natFiberFinset [DecidableEq n] (A : Matrix m n ℤ) {h : m → ℤ}
     (hh : ∀ j, 0 < (h ᵥ* A) j) (b : m → ℤ) :
     (A.natFiberFinset h b).card = A.natFiberCount b := by
