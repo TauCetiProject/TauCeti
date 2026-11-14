@@ -67,6 +67,9 @@ isolated, fixed points is finite.
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
+* `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`: a global
+  solution whose value at time `s` is isolated among the fixed points of the return map
+  `timeDependentFlowOf X s (s + T)` is isolated among the `T`-periodic solutions.
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
@@ -88,7 +91,7 @@ public section
 
 noncomputable section
 
-open Function Set
+open Filter Function Set Topology
 open scoped Manifold
 
 namespace TauCeti
@@ -272,6 +275,34 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
     ((periodicSolutionsEquivFixedPoints hX hT hT0 s).symm x).1 t =
       timeDependentFlowOf X s t x :=
   (rfl)
+
+omit [CompleteSpace E] in
+/-- **Periodic solutions through isolated fixed points are isolated.** If `γ` solves
+`γ' t = X t (γ t)` for all `t` and `γ s` is isolated among the fixed points of the return map
+`timeDependentFlowOf X s (s + T)`, then for `p` in a neighborhood of `γ s`, every `T`-periodic
+solution `η` of `X` with `η s = p` is `γ` itself. For a nondegenerate fixed point the isolation is
+`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`. -/
+theorem eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt {γ : ℝ → M}
+    (hγ : ∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t))))
+    (hiso : ∀ᶠ p in 𝓝[≠] γ s, ¬IsFixedPt (timeDependentFlowOf X s (s + T)) p) :
+    ∀ᶠ p in 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s = p → η = γ := by
+  refine (eventually_nhdsWithin_iff.1 hiso).mono fun p hp η hη hηp ↦ ?_
+  -- `η s` is a fixed point of the return map in the isolating neighborhood, hence equal to `γ s`.
+  have hs : s ∈ Ioo (s - |T| - 1) (s + |T| + 1) :=
+    ⟨by linarith [abs_nonneg T], by linarith [abs_nonneg T]⟩
+  have hsT : s + T ∈ Ioo (s - |T| - 1) (s + |T| + 1) :=
+    ⟨by linarith [neg_abs_le T], by linarith [le_abs_self T]⟩
+  have hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) p := by
+    rw [← hηp, IsFixedPt,
+      timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hη.1 u) hs hsT, hη.2 s]
+  have hps : p = γ s := by_contra fun hne ↦ hp hne hfix
+  funext t
+  have hst₁ : s ∈ Ioo (min s t - 1) (max s t + 1) :=
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+  have hst₂ : t ∈ Ioo (min s t - 1) (max s t + 1) :=
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  rw [← timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hη.1 u) hst₁ hst₂,
+    ← timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hγ u) hst₁ hst₂, hηp, hps]
 
 section Complete
 
