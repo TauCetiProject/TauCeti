@@ -64,7 +64,9 @@ those places: `v d * R v ≤ 1`. When a finite place `u` lies outside that finit
 `NumberField.FinitePlace.exists_apply_eq_one_forall_apply_le` and
 `NumberField.FinitePlace.exists_apply_eq_one_forall_mul_apply_le` choose `d` to have `u d = 1` as
 well. These follow Ralf Stephan's `DiophantineApproximation/FinitePlaceValues.lean` in
-`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
+`rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0). Globally,
+`NumberField.exists_smul_apply_le_one` scales any finite tuple over `K` by a nonzero scalar so that
+its coordinates are at most `1` at every finite place simultaneously.
 -/
 
 public section
@@ -283,6 +285,22 @@ theorem exists_apply_eq_one_forall_mul_apply_le (u : FinitePlace K) {T : Finset 
   exact ⟨d, hdu, fun v hv ↦ TauCeti.mul_le_one_of_le_inv_one_add (hR v hv) (hd v hv)⟩
 
 end NumberField.FinitePlace
+
+namespace NumberField
+
+/-- Every finite tuple over a number field has a nonzero scalar multiple whose coordinates have
+absolute value at most `1` at every finite place. -/
+theorem exists_smul_apply_le_one {K ι : Type*} [Field K] [NumberField K] [Finite ι] (x : ι → K) :
+    ∃ d : K, d ≠ 0 ∧ ∀ (v : FinitePlace K) (i : ι), v ((d • x) i) ≤ 1 := by
+  obtain ⟨⟨b, hb⟩, hbx⟩ :=
+    IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors (𝓞 K)) x
+  choose y hy using hbx
+  refine ⟨(b : K), by simpa using nonZeroDivisors.ne_zero hb, fun v i ↦ ?_⟩
+  have hbi : (b : K) * x i = (y i : K) := by simpa [Algebra.smul_def] using (hy i).symm
+  rw [Pi.smul_apply, smul_eq_mul, hbi]
+  exact v.apply_le_one (y i)
+
+end NumberField
 
 namespace NumberField.HeightOneSpectrum
 

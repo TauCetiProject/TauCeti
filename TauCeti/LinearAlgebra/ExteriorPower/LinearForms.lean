@@ -50,8 +50,9 @@ subspace found in `⋀^p` is converted back to a subspace of `K^ι` through `wed
 
 ## Main results
 
-* `TauCeti.wedgeForm_plucker`: Laplace's identity
-  `(l 0 ∧ ⋯ ∧ l (p - 1)) (y 0 ∧ ⋯ ∧ y (p - 1)) = det (l a (y b))`.
+* `TauCeti.wedgeForm_plucker` and `TauCeti.plucker_pi_apply`: Laplace's identity
+  `(l 0 ∧ ⋯ ∧ l (p - 1)) (y 0 ∧ ⋯ ∧ y (p - 1)) = det (l a (y b))`, reading the Plücker coordinates
+  of `(l k (x b))_{b, k}` as the values of `wedgeForms l p` at `plucker x`.
 * `TauCeti.wedgeForms_plucker_comp_eq_ite`: biorthogonality passes to the wedges.
 * `TauCeti.linearIndependent_wedgeForms` and `TauCeti.linearIndependent_plucker_comp`: the wedges
   of independent forms, and of independent vectors, are independent.
@@ -140,6 +141,14 @@ theorem wedgeForms_plucker (l : κ → Dual R (ι → R)) (p : ℕ) (T : powerse
     (y : Fin p → ι → R) :
     wedgeForms l p T (plucker y) = (Matrix.of fun a b ↦ l (ofFinEmbEquiv.symm T a) (y b)).det := by
   simp [wedgeForms_apply]
+
+/-- The Plücker coordinates of a family `x` transformed coordinatewise by linear forms `l` are the
+values of the wedge forms `wedgeForms l p` at `plucker x`. -/
+theorem plucker_pi_apply (l : κ → Dual R (ι → R)) (x : Fin p → ι → R)
+    (T : powersetCard κ p) :
+    plucker (fun b k ↦ l k (x b)) T = wedgeForms l p T (plucker x) := by
+  rw [plucker_apply, wedgeForms_plucker, ← Matrix.det_transpose]
+  rfl
 
 /-- **Biorthogonality passes to the wedges**: if `l i (y j) = δ i j`, then the wedge of the forms
 indexed by `T` takes the value `δ T T'` on the Plücker vector of the vectors indexed by `T'`. -/

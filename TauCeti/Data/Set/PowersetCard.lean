@@ -16,6 +16,8 @@ these induced maps respect identities and composition of embeddings.
 
 `Set.powersetCard.coe_ofSingleton` identifies the finite set underlying the singleton
 equivalence. It lets computations with fixed-cardinality subsets use the usual singleton API.
+For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
+`p`-element subset `Finset.univ.erase a` omitting `a`.
 
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
@@ -48,6 +50,42 @@ theorem map_map {α β γ : Type*} (n : ℕ) (f : α ↪ β) (g : β ↪ γ) (s 
 @[simp]
 theorem coe_ofSingleton {α : Type*} (a : α) :
     ((ofSingleton a : powersetCard α 1) : Finset α) = {a} := rfl
+
+section OmitOne
+
+variable {α : Type*} [DecidableEq α] [Fintype α] {p : ℕ}
+
+/-- The equivalence sending `a : α` to the `p`-element subset `Finset.univ.erase a` omitting `a`,
+where `p + 1 = Fintype.card α`. -/
+noncomputable def omitOne (hm : p + 1 = Fintype.card α) : α ≃ powersetCard α p :=
+  ofSingleton.trans (compl hm)
+
+/-- `omitOne hm a` is the complement of the singleton `{a}`. -/
+theorem omitOne_apply (hm : p + 1 = Fintype.card α) (a : α) :
+    omitOne hm a = compl hm (ofSingleton a) :=
+  (rfl)
+
+/-- The finite set underlying `omitOne hm a` is `Finset.univ.erase a`. -/
+@[simp]
+theorem coe_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
+    ((omitOne hm a : powersetCard α p) : Finset α) = Finset.univ.erase a := by
+  ext b
+  simp [omitOne_apply, Finset.mem_erase]
+
+/-- An element belongs to `omitOne hm a` precisely when it differs from `a`. -/
+@[simp]
+theorem mem_omitOne {hm : p + 1 = Fintype.card α} {a b : α} :
+    b ∈ omitOne hm a ↔ b ≠ a := by
+  rw [← mem_coe_iff, coe_omitOne, Finset.mem_erase]
+  simp
+
+/-- Taking the complement of `omitOne hm a` recovers the singleton `{a}`. -/
+@[simp]
+theorem compl_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
+    compl ((Nat.add_comm 1 p).trans hm) (omitOne hm a) = ofSingleton a := by
+  rw [omitOne_apply, ← compl_symm (hm := hm), Equiv.symm_apply_apply]
+
+end OmitOne
 
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=

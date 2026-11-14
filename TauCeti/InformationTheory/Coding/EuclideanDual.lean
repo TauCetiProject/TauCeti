@@ -17,7 +17,9 @@ Its Euclidean dual consists of the words whose dot product with every codeword v
 file gives that construction its order-theoretic API and proves that dot-product duality is an
 involution over a field. In particular, the dimensions of a code and its dual add to the number
 of coordinates, and over a finite field their cardinalities multiply to the cardinality of the
-whole word space.
+whole word space; in particular, the Euclidean dual of a hyperplane is spanned by any nonzero
+orthogonal vector (`Submodule.euclideanDual_eq_span_singleton`), which cuts out the hyperplane by a
+single dot-product equation (`Submodule.mem_iff_dotProduct_eq_zero_of_finrank_add_one`).
 
 A code is self-orthogonal when it lies in its Euclidean dual and self-dual when it equals it.
 These are predicates on the code itself rather than a new bundled type, so the full `Submodule`
@@ -250,6 +252,36 @@ theorem IsSelfDual.natCard_eq {C : Submodule K (ι → K)} (hC : IsSelfDual C) :
     Nat.card C = Nat.card K ^ (Fintype.card ι / 2) := by
   rw [Module.natCard_eq_pow_finrank (K := K), ← hC.two_mul_finrank_eq_card,
     Nat.mul_div_cancel_left _ two_pos]
+
+/-- The Euclidean dual of a hyperplane in `ι → K` is spanned by any nonzero vector orthogonal to
+every vector in the hyperplane. -/
+theorem euclideanDual_eq_span_singleton {C : Submodule K (ι → K)}
+    (hC : finrank K C + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) : euclideanDual C = K ∙ a := by
+  have hdim : finrank K (euclideanDual C) = 1 := by
+    have := finrank_add_finrank_euclideanDual C
+    omega
+  exact eq_span_singleton_of_mem_of_finrank_eq_one hdim (mem_euclideanDual.mpr hCa) ha
+
+/-- A hyperplane in `ι → K` consists of the vectors having dot product zero with any fixed nonzero
+vector orthogonal to it. -/
+theorem mem_iff_dotProduct_eq_zero_of_finrank_add_one {C : Submodule K (ι → K)}
+    (hC : finrank K C + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) {x : ι → K} :
+    x ∈ C ↔ x ⬝ᵥ a = 0 := by
+  conv_lhs => rw [← euclideanDual_euclideanDual C, euclideanDual_eq_span_singleton hC ha hCa]
+  simp [dotProduct_comm]
+
+/-- Any two vectors orthogonal to a hyperplane in `ι → K`, the first of which is nonzero, are
+scalar multiples of one another. -/
+theorem exists_smul_eq_of_forall_dotProduct_eq_zero {C : Submodule K (ι → K)}
+    (hC : finrank K C + 1 = Fintype.card ι) {a b : ι → K} (ha : a ≠ 0)
+    (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) (hCb : ∀ x ∈ C, x ⬝ᵥ b = 0) :
+    ∃ c : K, c • a = b := by
+  have hb : b ∈ K ∙ a := by
+    rw [← euclideanDual_eq_span_singleton hC ha hCa, mem_euclideanDual]
+    exact hCb
+  exact mem_span_singleton.mp hb
 
 end Field
 
