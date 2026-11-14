@@ -77,39 +77,6 @@ private theorem coeff_injOn_natDegree_le (d : ℕ) :
   rw [Set.mem_ofPred_eq] at hf hg
   exact (ext_iff_natDegree_le hf hg).2 fun i hi => congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
 
-/-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` number
-at most `#U ^ (d + 1)`: such a polynomial is determined by the `d + 1` coefficients
-`coeff 0, …, coeff d`, each ranging over `U`, so the coefficient map injects the set into the
-`(d + 1)`-fold product `Fin (d + 1) → U`. -/
-theorem ncard_natDegree_le_coeff_mem_le (d : ℕ) (U : Finset R) :
-    {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.ncard ≤ U.card ^ (d + 1) := by
-  classical
-  set S : Set R[X] := {f | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}
-  -- The coefficient map sends `S` into the finite product `Fin (d + 1) → U`.
-  set T : Finset (Fin (d + 1) → R) := Fintype.piFinset (fun _ => U) with hT
-  have hcard : (T : Set (Fin (d + 1) → R)).ncard = U.card ^ (d + 1) := by
-    rw [Set.ncard_coe_finset, hT, Fintype.card_piFinset_const]
-  rw [← hcard]
-  refine Set.ncard_le_ncard_of_injOn (fun f i => f.coeff i) ?_ ?_ T.finite_toSet
-  · intro f hf
-    rw [Finset.mem_coe, Fintype.mem_piFinset]
-    exact fun i => hf.2 i
-  · exact (coeff_injOn_natDegree_le d).mono fun f hf => hf.1
-
-/-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` form a
-finite set: the same coefficient map that gives the count above injects them into the finite
-product `Fin (d + 1) → U`. Finiteness needs no computable finset data, so `U` is an arbitrary
-finite `Set`. (Mathlib proves this only inline, inside `Polynomial.bUnion_roots_finite`.) -/
-theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) {U : Set R} (hU : U.Finite) :
-    {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.Finite := by
-  classical
-  let π : R[X] → Fin (d + 1) → R := fun f i => f.coeff i
-  refine ((Set.Finite.pi fun _ => hU).subset ?_).of_finite_image
-    (?_ : Set.InjOn π _)
-  · refine Set.image_subset_iff.2 fun f hf => ?_
-    exact fun i _ => hf.2 i
-  · exact (coeff_injOn_natDegree_le d).mono fun f hf => hf.1
-
 /-- The polynomials of degree at most `d` whose `i`-th coefficient lies in a finite set `s i`
 number exactly `∏ᵢ #(s i)`: the coefficient map is a bijection from them onto
 `Fintype.piFinset s`, with inverse `Polynomial.ofFn`. Unlike
@@ -144,15 +111,36 @@ theorem ncard_natDegree_le_coeff_mem_pi (d : ℕ) (s : Fin (d + 1) → Finset R)
     exact hc i
 
 /-- The polynomials of degree at most `d` whose `i`-th coefficient lies in a finite set `s i` form
-a finite set: the coefficient map injects them into `Fintype.piFinset s`. -/
-theorem finite_setOf_natDegree_le_coeff_mem_pi (d : ℕ) (s : Fin (d + 1) → Finset R) :
+a finite set: the coefficient map injects them into the finite box `Set.pi Set.univ s`. Finiteness
+needs no computable finset data, so each `s i` is an arbitrary finite `Set`. -/
+theorem finite_setOf_natDegree_le_coeff_mem_pi (d : ℕ) {s : Fin (d + 1) → Set R}
+    (hs : ∀ i, (s i).Finite) :
     {f : R[X] | f.natDegree ≤ d ∧ ∀ i : Fin (d + 1), f.coeff i ∈ s i}.Finite := by
-  classical
-  refine Set.Finite.of_finite_image ((Fintype.piFinset s).finite_toSet.subset ?_)
-    ((coeff_injOn_natDegree_le d).mono fun f hf => hf.1)
-  refine Set.image_subset_iff.2 fun f hf => ?_
-  rw [Set.mem_preimage, Finset.mem_coe, Fintype.mem_piFinset]
-  exact hf.2
+  refine ((Set.Finite.pi hs).subset ?_).of_finite_image
+    ((coeff_injOn_natDegree_le d).mono fun _ hf => hf.1)
+  exact Set.image_subset_iff.2 fun _ hf i _ => hf.2 i
+
+/-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` form a
+finite set: they lie among those whose first `d + 1` coefficients `coeff 0, …, coeff d` lie in `U`,
+which are finite by `TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem_pi`. Finiteness needs
+no computable finset data, so `U` is an arbitrary finite `Set`. (Mathlib proves this only inline,
+inside `Polynomial.bUnion_roots_finite`.) -/
+theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) {U : Set R} (hU : U.Finite) :
+    {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.Finite :=
+  (finite_setOf_natDegree_le_coeff_mem_pi d fun _ => hU).subset fun _ hf => ⟨hf.1, fun i => hf.2 i⟩
+
+/-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` number
+at most `#U ^ (d + 1)`: they lie among those whose first `d + 1` coefficients
+`coeff 0, …, coeff d` lie in `U`, which number exactly `#U ^ (d + 1)` by
+`TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi`. -/
+theorem ncard_natDegree_le_coeff_mem_le (d : ℕ) (U : Finset R) :
+    {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.ncard ≤ U.card ^ (d + 1) :=
+  calc {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.ncard
+      ≤ {f : R[X] | f.natDegree ≤ d ∧ ∀ i : Fin (d + 1), f.coeff i ∈ U}.ncard :=
+        Set.ncard_le_ncard (fun _ hf => ⟨hf.1, fun i => hf.2 i⟩)
+          (finite_setOf_natDegree_le_coeff_mem_pi d fun _ => U.finite_toSet)
+    _ = ∏ _i : Fin (d + 1), U.card := ncard_natDegree_le_coeff_mem_pi d fun _ => U
+    _ = U.card ^ (d + 1) := by rw [Finset.prod_const, Finset.card_fin]
 
 /-- Bounding an integer coefficient by `B` in absolute value is membership in the interval
 `[-B, B]`, and for a polynomial of degree at most `d` only `coeff 0, …, coeff d` need checking
@@ -184,6 +172,6 @@ absolute value form a finite set: their coefficients range over the finite inter
 theorem finite_setOf_natDegree_le_abs_intCoeff_le (d B : ℕ) :
     {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)}.Finite := by
   rw [setOf_abs_intCoeff_le_eq]
-  exact finite_setOf_natDegree_le_coeff_mem_pi d _
+  exact finite_setOf_natDegree_le_coeff_mem_pi d fun _ => (Finset.Icc (-(B : ℤ)) B).finite_toSet
 
 end TauCeti.Polynomial
