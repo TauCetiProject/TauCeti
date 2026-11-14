@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Quaternion
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Algebra.Order.Group.Pointwise.Interval
+import Mathlib.Order.Interval.Set.Pi
 
 /-!
 # The quaternionic forms `dq` and `Dq`
@@ -40,6 +42,13 @@ conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
 ## Main declarations
 
 * `TauCeti.Quaternion.dq`: the `1`-form `dq`, the inverse of the coordinate map `ℍ → (Fin 4 → ℝ)`.
+* `TauCeti.Quaternion.abs_apply_le_norm_dq`, `TauCeti.Quaternion.abs_sub_apply_le_norm_dq_sub`,
+  `TauCeti.Quaternion.norm_dq_le_two_mul_of_abs_le`,
+  `TauCeti.Quaternion.norm_dq_sub_le_two_mul_of_abs_sub_le`: comparisons between coordinates on
+  `Fin 4 → ℝ` and the Euclidean norm of `dq` in `ℍ`.
+* `TauCeti.Quaternion.star_dq`, `TauCeti.Quaternion.image_star_image_dq_Icc`,
+  `TauCeti.Quaternion.image_star_image_dq_pi_Ioo`: action of quaternionic conjugation on `dq` and
+  on closed and open coordinate boxes.
 * `TauCeti.Quaternion.Dq`: the `3`-form `Dq`, as a continuous alternating map.
 * `TauCeti.Quaternion.Dq_apply`: `Dq v` is the sum over the four coordinates `i` of
   `(-1) ^ i` times the `3 × 3` minor of `v` omitting coordinate `i`, times the `i`-th unit.
@@ -61,7 +70,7 @@ conjugation of the tangent vectors pulls `Dq` back to `-star Dq`.
 
 public section
 
-open scoped Quaternion RealInnerProductSpace
+open scoped Pointwise Quaternion RealInnerProductSpace
 
 namespace TauCeti.Quaternion
 
@@ -104,13 +113,103 @@ theorem dq_single (i : Fin 4) (r : ℝ) :
 theorem coe_dq : ⇑dq = (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm :=
   (rfl)
 
+/-- Evaluating `dq` on the coordinate tuple of `q` recovers `q`. -/
+theorem dq_linearEquivTuple (q : ℍ) :
+    dq (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) q) = q :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm_apply_apply q
+
+/-- Taking the coordinate tuple of `dq x` recovers `x`. -/
+theorem linearEquivTuple_dq (x : Fin 4 → ℝ) :
+    QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1) (dq x) = x :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+
+/-- The coordinate `1`-form `dq` is injective. -/
+theorem dq_injective : Function.Injective dq :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.injective
+
+/-- The coordinate `1`-form `dq` is surjective. -/
+theorem dq_surjective : Function.Surjective dq :=
+  (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).symm.surjective
+
 /-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
 `EuclideanSpace ℝ (Fin 4)`. -/
 theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
   rw [← _root_.Quaternion.norm_toLp_equivTuple]
   congr 2
-  simp only [coe_dq, _root_.Quaternion.equivTuple]
-  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
+  exact linearEquivTuple_dq x
+
+/-- Each coordinate of `x` is bounded in absolute value by the Euclidean norm of `dq x`. -/
+theorem abs_apply_le_norm_dq (x : Fin 4 → ℝ) (i : Fin 4) : |x i| ≤ ‖dq x‖ := by
+  rw [norm_dq, ← Real.norm_eq_abs]
+  exact PiLp.norm_apply_le (WithLp.toLp 2 x) i
+
+/-- Each coordinate difference `|x i - y i|` is bounded by the Euclidean distance
+`‖dq x - dq y‖`. -/
+theorem abs_sub_apply_le_norm_dq_sub (x y : Fin 4 → ℝ) (i : Fin 4) :
+    |x i - y i| ≤ ‖dq x - dq y‖ := by
+  simpa only [Pi.sub_apply, map_sub] using abs_apply_le_norm_dq (x - y) i
+
+/-- A uniform coordinate bound `|x i| ≤ r` on `Fin 4 → ℝ` implies the Euclidean bound
+`‖dq x‖ ≤ 2 * r` in `ℍ`. -/
+theorem norm_dq_le_two_mul_of_abs_le {x : Fin 4 → ℝ} {r : ℝ} (h : ∀ i, |x i| ≤ r) :
+    ‖dq x‖ ≤ 2 * r := by
+  have hr : 0 ≤ r := (abs_nonneg (x 0)).trans (h 0)
+  have hsq : ‖dq x‖ ^ 2 ≤ (2 * r) ^ 2 := by
+    rw [norm_dq, PiLp.norm_sq_eq_of_L2]
+    calc ∑ i : Fin 4, ‖x i‖ ^ 2
+      _ ≤ ∑ _ : Fin 4, r ^ 2 := Finset.sum_le_sum fun i _ ↦ by
+          rw [Real.norm_eq_abs]
+          exact sq_le_sq.mpr (by simpa [abs_of_nonneg hr] using h i)
+      _ = (2 * r) ^ 2 := by simp; ring
+  exact le_of_sq_le_sq hsq (by positivity)
+
+/-- A uniform coordinate-difference bound `|x i - y i| ≤ r` on `Fin 4 → ℝ` implies the Euclidean
+bound `‖dq x - dq y‖ ≤ 2 * r` in `ℍ`. -/
+theorem norm_dq_sub_le_two_mul_of_abs_sub_le {x y : Fin 4 → ℝ} {r : ℝ}
+    (h : ∀ i, |x i - y i| ≤ r) : ‖dq x - dq y‖ ≤ 2 * r := by
+  simpa only [map_sub] using norm_dq_le_two_mul_of_abs_le (x := x - y) h
+
+/-- Quaternionic conjugation of `dq x` preserves coordinate `0` and negates coordinates
+`1, 2, 3`. -/
+theorem star_dq (x : Fin 4 → ℝ) :
+    star (dq x) = dq (fun i ↦ if i = 0 then x 0 else -x i) := by
+  ext <;> simp [dq_apply]
+
+/-- Quaternionic conjugation maps the coordinate product `dq '' Set.univ.pi t` onto the product
+whose real-part factor is `t 0` and whose imaginary-coordinate factors are `-t i`. -/
+theorem image_star_image_dq_pi (t : Fin 4 → Set ℝ) :
+    star '' (dq '' Set.univ.pi t) =
+      dq '' Set.univ.pi (fun i ↦ if i = 0 then t 0 else -t i) := by
+  have hcomp : (star ∘ dq : (Fin 4 → ℝ) → ℍ) =
+      dq ∘ Pi.map (fun i : Fin 4 ↦ if i = 0 then id else Neg.neg) := by
+    ext x <;> simp [star_dq, Pi.map_apply]
+  rw [← Set.image_comp, hcomp, Set.image_comp, Set.piMap_image_univ_pi]
+  congr 2
+  ext i
+  by_cases hi : i = 0 <;> simp [hi]
+
+/-- Quaternionic conjugation maps the closed coordinate box `dq '' Set.Icc a b` onto the reflected
+closed coordinate box whose real-part interval is `[a 0, b 0]` and whose imaginary-coordinate
+intervals are `[-b i, -a i]`. -/
+theorem image_star_image_dq_Icc (a b : Fin 4 → ℝ) :
+    star '' (dq '' Set.Icc a b) =
+      dq '' Set.Icc (fun i ↦ if i = 0 then a 0 else -b i)
+        (fun i ↦ if i = 0 then b 0 else -a i) := by
+  rw [← Set.pi_univ_Icc, image_star_image_dq_pi, ← Set.pi_univ_Icc]
+  congr 2
+  ext i
+  by_cases hi : i = 0 <;> simp [hi]
+
+/-- Quaternionic conjugation maps the open coordinate box
+`dq '' Set.univ.pi (fun i ↦ Set.Ioo (a i) (b i))` onto the reflected open coordinate box. -/
+theorem image_star_image_dq_pi_Ioo (a b : Fin 4 → ℝ) :
+    star '' (dq '' Set.univ.pi (fun i ↦ Set.Ioo (a i) (b i))) =
+      dq '' Set.univ.pi (fun i ↦
+        Set.Ioo (if i = 0 then a 0 else -b i) (if i = 0 then b 0 else -a i)) := by
+  rw [image_star_image_dq_pi]
+  congr 2
+  ext i
+  by_cases hi : i = 0 <;> simp [hi]
 
 /-- Every quaternion is the sum of the units `1, i, j, k` weighted by its real inner products
 with them. -/
