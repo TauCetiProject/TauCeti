@@ -51,7 +51,8 @@ for instance in a braided category.
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.7. EGNO's
   Definition 4.7.14 calls a pivotal structure spherical when `dim V = dim V*` for every object
   `V`, which here is `leftDim_eq_rightDim` combined with `rightDim_rightDual`. The condition on
-  traces used in this file implies it; EGNO prove the converse for tensor categories over a field.
+  traces used in this file implies it; EGNO prove the converse for tensor categories over an
+  algebraically closed field.
 * [leanprover-community/mathlib4#42191](https://github.com/leanprover-community/mathlib4/pull/42191),
   for the names `SphericalCategory`, `leftTrace_eq_rightTrace`, `trace`, `trace_eq_leftTrace`
   and `trace_eq_rightTrace`
