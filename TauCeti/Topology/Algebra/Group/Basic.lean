@@ -26,6 +26,7 @@ every identity neighbourhood `U`, a smaller identity neighbourhood `V` satisfies
 
 * `Subgroup.separatelyContinuousMul`: a subgroup inherits `SeparatelyContinuousMul`.
 * `Subgroup.continuousMul`: a subgroup inherits `ContinuousMul`, without continuity of inversion.
+* `SubgroupClass.isTopologicalGroup`: any `SubgroupClass` carrier inherits `IsTopologicalGroup`.
 * `Set.isClosed_center`: the center of a Hausdorff magma with separately continuous
   multiplication is closed.
 * `IsCompact.exists_nhds_one_conj_subset` / `IsCompact.exists_nhds_zero_conj_subset`:
@@ -55,6 +56,16 @@ separately continuous addition. -/]
 instance Subgroup.separatelyContinuousMul {G : Type*} [TopologicalSpace G] [Group G]
     [SeparatelyContinuousMul G] (S : Subgroup G) : SeparatelyContinuousMul S :=
   S.toSubmonoid.separatelyContinuousMul
+
+/-- Any `SubgroupClass` carrier in a topological group is a topological group; Mathlib's instance in
+`Mathlib.Topology.Algebra.Group.Subgroup` only covers `Subgroup G`. -/
+@[to_additive /-- Any `AddSubgroupClass` carrier in a topological additive group is a topological
+additive group; Mathlib's instance in `Mathlib.Topology.Algebra.Group.Subgroup` only covers
+`AddSubgroup G`. -/]
+instance (priority := 75) SubgroupClass.isTopologicalGroup {G S : Type*} [TopologicalSpace G]
+    [Group G] [IsTopologicalGroup G] [SetLike S G] [SubgroupClass S G] (s : S) :
+    IsTopologicalGroup s :=
+  Topology.IsInducing.subtypeVal.isTopologicalGroup (SubgroupClass.subtype s)
 
 section
 
