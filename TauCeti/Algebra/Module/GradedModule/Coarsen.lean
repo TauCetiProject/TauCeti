@@ -210,6 +210,18 @@ theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
     exact le_iSup (fun k ↦ ℳ (2 * k + 1)) k
   · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
 
+/-- An integer-indexed family of submodules is supported in even degrees (`parityGrading ℳ 1 = ⊥`)
+if and only if every odd-degree piece `ℳ (2 * k + 1)` vanishes. -/
+theorem parityGrading_one_eq_bot_iff {ℳ : ℤ → Submodule R M} :
+    parityGrading ℳ 1 = ⊥ ↔ ∀ k : ℤ, ℳ (2 * k + 1) = ⊥ := by
+  rw [parityGrading_one, iSup_eq_bot]
+
+/-- In an even-supported family (`parityGrading ℳ 1 = ⊥`), every piece of odd degree vanishes. -/
+theorem eq_bot_of_parityGrading_one_eq_bot {ℳ : ℤ → Submodule R M}
+    (h : parityGrading ℳ 1 = ⊥) {n : ℤ} (hn : Odd n) : ℳ n = ⊥ := by
+  obtain ⟨k, rfl⟩ := hn
+  exact parityGrading_one_eq_bot_iff.mp h k
+
 end Parity
 
 namespace InternalGrading
