@@ -197,6 +197,21 @@ theorem signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal (v : R) :
   rw [signlessPreprojectiveIdeal_eq_span]
   exact TwoSidedIdeal.subset_span ⟨v, rfl⟩
 
+variable {R} in
+/-- A ring homomorphism out of the path algebra sending every signless relator into a two-sided
+ideal of the target pulls that ideal back above the signless ideal. -/
+theorem signlessPreprojectiveIdeal_asIdeal_le_comap [Finite R] {B F : Type*} [Ring B]
+    [FunLike F (pathAlgebra k R) B] [RingHomClass F (pathAlgebra k R) B] (f : F)
+    (I : TwoSidedIdeal B) (hf : ∀ v : R, f (signlessPreprojectiveRelator k v) ∈ I) :
+    (signlessPreprojectiveIdeal k R).asIdeal ≤ I.asIdeal.comap f := by
+  have h : signlessPreprojectiveIdeal k R ≤ I.comap (f : pathAlgebra k R →+* B) := by
+    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
+    rintro _ ⟨v, rfl⟩
+    exact (TwoSidedIdeal.mem_comap _).mpr (hf v)
+  exact fun _ hx => by
+    simpa only [Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal, TwoSidedIdeal.mem_comap,
+      RingHom.coe_coe] using h hx
+
 end Ideal
 
 section Algebra

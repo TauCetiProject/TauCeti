@@ -299,14 +299,8 @@ theorem preprojectiveMk_A_ofPath_eq_zero_of_le
     (hx : n ≤ x.2.2.length) :
     preprojectiveMk k (OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o)
       (ofPath x) = 0 := by
-  -- Every orientation of the bipartite `Aₙ` graph is compared with the signless algebra.
-  have hc : ∀ ⦃i j : OrientedQuiver (diagramGraph (DynkinType.A n).cartanMatrix) o⦄, (i ⟶ j) →
-      diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm i) ≠
-        diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm j) :=
-    fun _ _ a => (diagramGraphAColoring n).valid a.1
-  apply preprojectiveMk_ofPath_eq_zero_of_signless o k hc x
-  exact signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k _
-    (by rwa [Prefunctor.length_mapTotalPath])
+  exact (diagramGraphAColoring n).preprojectiveMk_ofPath_eq_zero_of_le k
+    (signlessPreprojectiveMk_A_ofPath_eq_zero_of_le k) o x hx
 
 /-- **The preprojective relation ideal of every orientation of `Aₙ` is admissible.** It lies in
 the square of the arrow ideal, and it contains every path of length at least `n`. -/
