@@ -48,9 +48,17 @@ lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
 
 /-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
 `Fin n → ℝ` into the ambient space; `TauCeti.cellMap` is the same map into the complex. The body
-is exposed so that its values are the characteristic map by definition. -/
+is exposed so that its values are the characteristic map by definition: types indexed by them,
+such as the fibres `E (ambientCellMap j y)` of a bundle pulled back along it, are then the fibres
+`E (map n j y)`, which the propositional `TauCeti.ambientCellMap_apply` cannot rewrite. -/
 @[expose] def ambientCellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, X) :=
   ⟨(closedBall 0 1).domRestrict (map n j), continuous_map_closedBall j⟩
+
+/-- The value of `TauCeti.ambientCellMap` is the characteristic map. -/
+@[simp]
+lemma ambientCellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
+    ambientCellMap j y = map n j y :=
+  (rfl)
 
 /-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
 `Fin n → ℝ` into the complex. -/

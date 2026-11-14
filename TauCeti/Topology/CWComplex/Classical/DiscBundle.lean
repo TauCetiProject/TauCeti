@@ -106,7 +106,7 @@ private theorem exists_cellFrame {n : ℕ} (j : cell (univ : Set B) n) :
         TotalSpace.mk' F (map n j p.1) (L p.1 p.2) := by
   let : ContractibleSpace (closedBall (0 : Fin n → ℝ) 1) :=
     (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
-  exact exists_continuous_linearIsometryEquiv_of_contractibleSpace F E (ambientCellMap j)
+  exact exists_continuous_linearIsometryEquiv_of_contractibleSpace ℝ F E (ambientCellMap j)
 
 /-- An orthonormal frame of `E` along the characteristic map of a cell of `B`. -/
 private def cellFrame {n : ℕ} (j : cell (univ : Set B) n) (y : closedBall (0 : Fin n → ℝ) 1) :
