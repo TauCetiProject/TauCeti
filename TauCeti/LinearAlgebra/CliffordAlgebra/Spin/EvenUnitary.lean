@@ -229,26 +229,19 @@ variable {M₁ : Type v'} {M₂ : Type w'} {M₃ : Type z'}
 
 /-- The Clifford-algebra map of a quadratic isometry restricts to the even unitary carriers. -/
 def evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂) :
-    CliffordAlgebra.evenUnitaryGroup Q₁ →* CliffordAlgebra.evenUnitaryGroup Q₂ where
-  toFun x := by
-    refine ⟨Units.map (CliffordAlgebra.map f).toMonoidHom x, ?_⟩
-    constructor
-    · exact CliffordAlgebra.map_mem_even f x.2.1
-    · rw [Unitary.mem_iff]
-      have hmap :
-          (↑(Units.map (CliffordAlgebra.map f).toMonoidHom (x : (CliffordAlgebra Q₁)ˣ)) :
-              CliffordAlgebra Q₂) = CliffordAlgebra.map f
-                ((x : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := by
-        simp only [Units.coe_map]
-        -- The algebra-map and ring-hom coercions coincide definitionally here.
-        rfl
-      constructor
-      · rw [hmap, ← CliffordAlgebra.map_star, ← map_mul,
-          Unitary.star_mul_self_of_mem x.2.2, map_one]
-      · rw [hmap, ← CliffordAlgebra.map_star, ← map_mul,
-          Unitary.mul_star_self_of_mem x.2.2, map_one]
-  map_one' := by simp
-  map_mul' x y := by simp
+    CliffordAlgebra.evenUnitaryGroup Q₁ →* CliffordAlgebra.evenUnitaryGroup Q₂ :=
+  ((Units.map (CliffordAlgebra.map f).toMonoidHom).comp
+      (CliffordAlgebra.evenUnitaryGroup Q₁).subtype).codRestrict _ fun x ↦ by
+    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, CliffordAlgebra.evenUnitaryGroup.mem_iff,
+      Units.coe_map, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+      AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_ofClass]
+    -- `map f` commutes with the canonical star (`CliffordAlgebra.map_star`), so it also bundles as
+    -- a star monoid homomorphism, whose underlying function is again `map f`.
+    exact ⟨CliffordAlgebra.map_mem_even f (CliffordAlgebra.evenUnitaryGroup.mem_even _ x.2),
+      Unitary.map_mem
+        ({ (CliffordAlgebra.map f).toMonoidHom with map_star' := CliffordAlgebra.map_star f } :
+          CliffordAlgebra Q₁ →⋆* CliffordAlgebra Q₂)
+        (CliffordAlgebra.evenUnitaryGroup.mem_unitary _ x.2)⟩
 
 /-- After coercion, the induced map is the `Units.map` of the Clifford-algebra map. -/
 @[simp]
