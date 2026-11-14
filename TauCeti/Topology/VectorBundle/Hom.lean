@@ -30,7 +30,10 @@ continuous Hom-bundle sections is continuous, and a `σ`-semilinear Hom-bundle s
 preferred-frame coordinate expression is locally constant around each frame centre is continuous
 (`TauCeti.continuous_hom_bundle_of_inCoordinates_eq_const`). Read in the trivializations at a
 fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
-base set (`TauCeti.continuousOn_inCoordinates`).
+base set (`TauCeti.continuousOn_inCoordinates`). Likewise, read in linear trivializations, a
+fibrewise continuous linear map of bundles over a continuous map of bases with continuous
+total-space map is a continuous family of linear maps between the model fibres
+(`TauCeti.continuousOn_fiberwise_inCoordinates`).
 
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
@@ -567,5 +570,44 @@ theorem continuous_hom_bundle_of_inCoordinates_eq_const
   exact hϕ a x hx₁ hx₂
 
 end ConstantCoordinates
+
+section Fiberwise
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  {B' : Type*} [TopologicalSpace B']
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {E' : B' → Type*} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+  [∀ b, Module 𝕜 (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E']
+  {g : C(B', B)} {φ : ∀ b', E' b' →L[𝕜] E (g b')}
+
+/-- **A fibrewise linear map is continuous in coordinates.** Read in linear trivializations `e'`
+of `E'` and `e` of `E`, a family of continuous linear maps `φ b' : E'_{b'} → E_{g b'}` over `g`
+with continuous total-space map is a continuous family of linear maps `F' → F` on the set of
+points `x` of the base set of `e'` with `g x` in the base set of `e`. -/
+theorem continuousOn_fiberwise_inCoordinates [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F']
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+    (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (e' : Trivialization F' (π F' E'))
+    [e'.IsLinear 𝕜] :
+    ContinuousOn (fun x ↦ (e.continuousLinearMapAt 𝕜 (g x)).comp
+      ((φ x).comp (e'.symmL 𝕜 x))) (e'.baseSet ∩ g ⁻¹' e.baseSet) := by
+  refine continuousOn_clm_apply.2 fun v ↦ ?_
+  -- Pointwise, the map is `x ↦ (e (φ (e'⁻¹ (x, v)))).2`, a composite of maps continuous on the
+  -- relevant sets.
+  have hsymm : ContinuousOn (fun x ↦ TotalSpace.mk' F' x (e'.symm x v)) e'.baseSet :=
+    e'.continuousOn_symm.comp (continuous_id.prodMk continuous_const).continuousOn
+      fun x hx ↦ ⟨hx, mem_univ v⟩
+  have hcomp : ContinuousOn (fun x ↦ (e (TotalSpace.mk' F (g x) (φ x (e'.symm x v)))).2)
+      (e'.baseSet ∩ g ⁻¹' e.baseSet) :=
+    continuous_snd.comp_continuousOn <| e.continuousOn.comp
+      ((hφ.comp_continuousOn hsymm).mono inter_subset_left) fun x hx ↦ e.mem_source.2 hx.2
+  refine hcomp.congr fun x hx ↦ ?_
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, e'.symmL_apply hx.1,
+    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e hx.2]
+
+end Fiberwise
 
 end TauCeti
