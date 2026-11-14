@@ -64,6 +64,8 @@ lemma factors_chainFiltration_arrow_comp_extendMap_app (q : ℤ) :
     (chainFiltration Ψ X q).Factors ((chainFiltration Φ X q).arrow ≫
       extendMap (τ.app Y) ComplexShape.embeddingDownNat) := by
   rw [chainFiltration_def Ψ]
+  -- The witness is assembled as a term: the target of `chainFiltrationι Ψ X q` is the
+  -- `Subobject.mk` source only up to defeq, which `rw`/`simp` do not see through.
   exact (Subobject.mk_factors_iff _ _).2 ⟨(chainFiltrationIso Φ X q).hom ≫
       extendMap (τ.app (TopPair.ofSubset (X q)).snd) ComplexShape.embeddingDownNat,
     (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
@@ -113,10 +115,8 @@ instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (τ.app Z)] (a : EInt)
   | bot =>
     have : IsIso ((chainFiltrationMap τ hX).app ⊥) :=
       isIso_of_source_target_iso_zero _
-        (CochainComplex.filtrationFunctorObjIso _ _ ⊥ ≪≫
-          Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_bot _) ≪≫ Subobject.botCoeIsoZero)
-        (CochainComplex.filtrationFunctorObjIso _ _ ⊥ ≪≫
-          Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_bot _) ≪≫ Subobject.botCoeIsoZero)
+        (CochainComplex.isZero_filtrationFunctor_obj_bot _ _).isoZero
+        (CochainComplex.isZero_filtrationFunctor_obj_bot _ _).isoZero
     infer_instance
   | coe q =>
     have : QuasiIso (extendMap (τ.app (TopPair.ofSubset (X q)).snd)

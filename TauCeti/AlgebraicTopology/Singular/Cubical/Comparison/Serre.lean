@@ -144,6 +144,9 @@ lemma arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_hom (k q : ℕ
         Limits.Sigma.map fun _ ↦ HomologicalComplex.homologyMap ((singularToCubical R).app _) q :=
   congrArg ((arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫ ·) <|
     Sigma.hom_ext _ _ fun j ↦ by
+      -- The summands are `singularHomologyFunctor` objects on one side and `homology` of the
+      -- singular chain complex on the other, equal only up to defeq, so `simp` does not apply
+      -- `Sigma.ι_mapIso_hom`/`Sigma.ι_map`; the two steps are spelled out.
       refine (Sigma.ι_mapIso_hom (fun _ ↦ singularCubicalHomologyIso R _ q) j).trans ?_
       rw [singularCubicalHomologyIso_hom]
       exact (Sigma.ι_map (fun x ↦ HomologicalComplex.homologyMap

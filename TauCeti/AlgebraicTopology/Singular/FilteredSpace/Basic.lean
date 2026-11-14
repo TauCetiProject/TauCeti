@@ -207,11 +207,6 @@ lemma singularChainFiltrationι_def (q : ℤ) :
   rw [singularChainFiltrationι, chainFiltrationι_def]
   rfl
 
-/-- The singular chains of `X q` form a subcomplex of those of `Y`, also after reindexing. -/
-instance (q : ℤ) : Mono (singularChainFiltrationι R X q) :=
-  inferInstanceAs (Mono (chainFiltrationι
-    ((AlgebraicTopology.singularChainComplexFunctor A).obj R) X q))
-
 /-- The filtration of the singular chains of `Y` by the singular chains of the subsets `X q`,
 with the chain complexes reindexed as cochain complexes in nonpositive degrees along `n ↦ -n`:
 the case of `TauCeti.chainFiltration` for singular chains. -/
@@ -275,11 +270,6 @@ lemma singularChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
     exact Set.isEmpty_coe_sort.2 rfl
   exact chainFiltration_eq_bot _
     (SSet.isZero_chainComplex (X := (TopPair.toSSetPair.obj (TopPair.ofSubset (X a))).left) R)
-
-/-- The stage of the filtration at the whole space is everything. -/
-lemma singularChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
-    singularChainFiltration R X b = ⊤ :=
-  chainFiltration_eq_top _ hb
 
 /-- The quotient `F_b / F_a` of two stages of the filtration of the singular chains of `Y` by
 the singular chains of the `X q` is the relative singular chain complex of the pair `(X b, X a)`,
@@ -406,7 +396,7 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (ha : X a = 
       cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
         (monotone_singularChainFiltration R hX))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
-    (singularChainFiltration_eq_bot R ha) (singularChainFiltration_eq_top R hb) r hr pq hra hrb
+    (singularChainFiltration_eq_bot R ha) (chainFiltration_eq_top _ hb) r hr pq hra hrb
 
 section FirstDifferential
 
