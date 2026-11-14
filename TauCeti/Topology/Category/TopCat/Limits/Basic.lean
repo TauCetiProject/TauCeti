@@ -96,6 +96,13 @@ def subspaceDiagram : J ⥤ TopCat.{u} where
   obj j := TopCat.of (A j)
   map u := TopCat.ofHom ⟨Set.inclusion (hA (leOfHom u)), continuous_inclusion _⟩
 
+/-- The range of a bonding map of the diagram of an increasing family of subsets is the smaller
+subset, seen inside the larger one. -/
+theorem range_subspaceDiagram_map {i j : J} (u : i ⟶ j) :
+    Set.range ((subspaceDiagram hA).map u) = ((↑) ⁻¹' A i : Set (A j)) := by
+  -- By definition, the bonding map is `Set.inclusion`.
+  exact Set.range_inclusion (hA (leOfHom u))
+
 /-- A space is a cocone over the diagram of an increasing family of its subsets, by the
 inclusions. -/
 @[expose, simps ι_app]

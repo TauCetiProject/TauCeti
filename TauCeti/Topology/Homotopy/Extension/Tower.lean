@@ -381,8 +381,7 @@ theorem exists_homotopyEquiv_of_isColimit
       ext w
       exact Subtype.ext (hh k w)
   refine ⟨cofibrationTowerHomotopyEquiv hF hFh (fun k ↦ .inclusion (hA k.le_succ)) (fun k ↦ by
-      change HasHomotopyExtensionProperty (range (Set.inclusion (hA k.le_succ)))
-      rw [range_inclusion]
+      rw [TopCat.range_subspaceDiagram_map]
       exact hAH k) f (fun k ↦ ⟨h k, rfl⟩) hc hcY, fun k w ↦ ?_⟩
   exact ConcreteCategory.congr_hom (hc.ι_map _ f k) w
 
