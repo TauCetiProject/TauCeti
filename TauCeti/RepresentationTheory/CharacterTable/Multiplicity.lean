@@ -10,6 +10,7 @@ import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
 import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Intrinsic multiplicities of the irreducible representations
@@ -78,7 +79,7 @@ namespace Representation
 
 open TauCeti
 
-variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G] [Finite G]
+variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
   [Invertible (Nat.card G : k)]
 variable {V : Type w} [AddCommGroup V] [Module k V] (ρ : Representation k G V)
 
@@ -194,6 +195,7 @@ theorem nonempty_regrouping [FiniteDimensional k V] :
       Π₀ i, Fin (ρ.intrinsicMultiplicity i) → (irreducibleRepresentation k i).asModule) := by
   classical
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have := finite_of_neZero_natCast_natCard k G
   have : Module.Finite k[G] ρ.asModule := .of_restrictScalars_finite k k[G] ρ.asModule
   -- Decompose `ρ` into simple submodules and identify each with a model.
   obtain ⟨n, S, e, hS⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp k[G] ρ.asModule
