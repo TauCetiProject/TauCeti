@@ -123,10 +123,12 @@ theorem mem_iff {x : (CliffordAlgebra Q)ˣ} :
       (x : CliffordAlgebra Q) ∈ even Q ∧
         (x : CliffordAlgebra Q) ∈ unitary (CliffordAlgebra Q) := Iff.rfl
 
+/-- The Clifford value of an even unitary unit is an even element. -/
 theorem mem_even {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q) :
     (x : CliffordAlgebra Q) ∈ even Q :=
   hx.1
 
+/-- The Clifford value of an even unitary unit is unitary. -/
 theorem mem_unitary {x : (CliffordAlgebra Q)ˣ} (hx : x ∈ evenUnitaryGroup Q) :
     (x : CliffordAlgebra Q) ∈ unitary (CliffordAlgebra Q) :=
   hx.2
