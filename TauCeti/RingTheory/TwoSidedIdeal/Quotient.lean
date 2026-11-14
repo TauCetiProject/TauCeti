@@ -14,15 +14,15 @@ public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 
 For a two-sided ideal `I : TwoSidedIdeal A` of a possibly nonunital ring `A`, we equip `A ⧸ I` with
 its quotient nonunital ring structure, built on the additive subgroup quotient
-`A ⧸ I.toAddSubgroup` so that additive and metric quotient instances transfer definitionally. When
-`A` is unital, `A ⧸ I` agrees definitionally with `A ⧸ I.asIdeal` and inherits its ring instance
-without diamonds at instance transparency. The algebra instance is not diamond free there: its
-module structure is not defeq at instance transparency to the `ℕ`- and `ℤ`-module structures of the
-additive group quotient, nor to other module structures put on the quotient.
+`A ⧸ AddSubgroup.ofClass I` so that additive and metric quotient instances transfer
+definitionally. When `A` is unital, `A ⧸ I` agrees definitionally with `A ⧸ I.asIdeal` and
+inherits its ring instance without diamonds at instance transparency. The algebra instance is not
+diamond free there: its module structure is not defeq at instance transparency to the `ℕ`- and
+`ℤ`-module structures of the additive group quotient, nor to other module structures put on the
+quotient.
 
 ## Main definitions and results
 
-* `TwoSidedIdeal.toAddSubgroup`: the additive subgroup underlying a two-sided ideal.
 * `TwoSidedIdeal.instHasQuotient` and `TwoSidedIdeal.Quotient.nonUnitalRing`: the quotient `A ⧸ I`
   of a possibly nonunital ring by a two-sided ideal.
 * `TwoSidedIdeal.Quotient.mk`: the canonical surjective nonunital ring homomorphism `A →ₙ+* A ⧸ I`,
@@ -40,41 +40,16 @@ section NonUnitalRing
 
 variable {A B C : Type*} [NonUnitalRing A]
 
-/-- The additive subgroup underlying a two-sided ideal: Mathlib's `AddSubgroup.ofClass I`. -/
-@[expose] def toAddSubgroup (I : TwoSidedIdeal A) : AddSubgroup A :=
-  AddSubgroup.ofClass I
-
-@[simp]
-theorem coe_toAddSubgroup (I : TwoSidedIdeal A) : (I.toAddSubgroup : Set A) = I :=
-  AddSubgroup.coe_ofClass I
-
-@[simp]
-theorem mem_toAddSubgroup {I : TwoSidedIdeal A} {x : A} : x ∈ I.toAddSubgroup ↔ x ∈ I :=
-  Iff.rfl
-
-theorem toAddSubgroup_injective : Function.Injective (toAddSubgroup (A := A)) :=
-  fun _ _ h => SetLike.coe_injective (congrArg (fun H : AddSubgroup A => (H : Set A)) h)
-
-@[simp]
-theorem toAddSubgroup_inj {I J : TwoSidedIdeal A} :
-    I.toAddSubgroup = J.toAddSubgroup ↔ I = J :=
-  toAddSubgroup_injective.eq_iff
-
-@[simp]
-theorem toAddSubgroup_le {I J : TwoSidedIdeal A} :
-    I.toAddSubgroup ≤ J.toAddSubgroup ↔ I ≤ J :=
-  Iff.rfl
-
 /-- The equivalence relation `x ≈ y ↔ -x + y ∈ I` associated to a two-sided ideal `I`, chosen to be
 definitionally equal to the `AddSubgroup` relation so that additive and normed quotient structures
 transfer directly. -/
 @[expose] def quotientRel (I : TwoSidedIdeal A) : Setoid A :=
-  QuotientAddGroup.leftRel I.toAddSubgroup
+  QuotientAddGroup.leftRel (AddSubgroup.ofClass I)
 
 theorem quotientRel_def {I : TwoSidedIdeal A} {x y : A} :
     I.quotientRel x y ↔ x - y ∈ I := by
-  rw [quotientRel, QuotientAddGroup.leftRel_apply, mem_toAddSubgroup,
-    ← neg_mem_iff, neg_add_rev, neg_neg, add_comm, ← sub_eq_add_neg]
+  rw [quotientRel, QuotientAddGroup.leftRel_apply, ← SetLike.mem_coe, AddSubgroup.coe_ofClass,
+    SetLike.mem_coe, ← neg_mem_iff, neg_add_rev, neg_neg, add_comm, ← sub_eq_add_neg]
 
 /-- The quotient `A ⧸ I` of a possibly nonunital ring `A` by a two-sided ideal `I`. -/
 instance instHasQuotient : HasQuotient A (TwoSidedIdeal A) :=
@@ -84,7 +59,7 @@ namespace Quotient
 
 /-- On a `TwoSidedIdeal`, `quotientRel` is a ring congruence relation. -/
 @[expose] protected def ringCon (I : TwoSidedIdeal A) : RingCon A where
-  __ := QuotientAddGroup.con I.toAddSubgroup
+  __ := QuotientAddGroup.con (AddSubgroup.ofClass I)
   mul' {a₁ b₁ a₂ b₂} (h₁ : I.quotientRel a₁ b₁) (h₂ : I.quotientRel a₂ b₂) :
       I.quotientRel (a₁ * a₂) (b₁ * b₂) := by
     rw [quotientRel_def] at h₁ h₂ ⊢
@@ -94,7 +69,7 @@ namespace Quotient
     exact I.add_mem (I.mul_mem_left a₁ _ h₂) (I.mul_mem_right _ b₂ h₁)
 
 instance addCommGroup (I : TwoSidedIdeal A) : AddCommGroup (A ⧸ I) :=
-  inferInstanceAs <| AddCommGroup (A ⧸ I.toAddSubgroup)
+  inferInstanceAs <| AddCommGroup (A ⧸ AddSubgroup.ofClass I)
 
 instance nonUnitalRing (I : TwoSidedIdeal A) : NonUnitalRing (A ⧸ I) :=
   inferInstanceAs <| NonUnitalRing (TwoSidedIdeal.Quotient.ringCon I).Quotient
@@ -135,7 +110,7 @@ protected theorem «forall» {I : TwoSidedIdeal A} {p : A ⧸ I → Prop} :
 @[simp]
 theorem eq_zero_iff_mem {I : TwoSidedIdeal A} {a : A} :
     mk I a = 0 ↔ a ∈ I :=
-  QuotientAddGroup.eq_zero_iff (N := I.toAddSubgroup) a
+  QuotientAddGroup.eq_zero_iff (N := AddSubgroup.ofClass I) a
 
 protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
     mk I x = mk I y ↔ x - y ∈ I := by
@@ -156,7 +131,7 @@ theorem nonUnitalRingHom_ext [NonUnitalNonAssocSemiring B] {I : TwoSidedIdeal A}
 /-- Descend a nonunital ring homomorphism `f : A →ₙ+* B` vanishing on `I` to `A ⧸ I →ₙ+* B`. -/
 def lift (I : TwoSidedIdeal A) [NonUnitalNonAssocSemiring B] (f : A →ₙ+* B)
     (hf : ∀ a ∈ I, f a = 0) : A ⧸ I →ₙ+* B :=
-  { QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf with
+  { QuotientAddGroup.lift (AddSubgroup.ofClass I) f.toAddMonoidHom hf with
     map_mul' := fun x y => Quotient.inductionOn₂' x y (map_mul f) }
 
 @[simp]

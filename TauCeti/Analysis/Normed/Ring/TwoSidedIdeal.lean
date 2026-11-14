@@ -36,42 +36,39 @@ section NonUnital
 
 variable {A : Type*} [NonUnitalSeminormedRing A] (I : TwoSidedIdeal A)
 
-instance isClosed_toAddSubgroup [hI : IsClosed (I : Set A)] :
-    IsClosed (I.toAddSubgroup : Set A) :=
-  hI
-
 noncomputable instance seminormedAddCommGroup : SeminormedAddCommGroup (A ⧸ I) :=
-  inferInstanceAs <| SeminormedAddCommGroup (A ⧸ I.toAddSubgroup)
+  inferInstanceAs <| SeminormedAddCommGroup (A ⧸ AddSubgroup.ofClass I)
 
 noncomputable instance normedAddCommGroup [IsClosed (I : Set A)] :
     NormedAddCommGroup (A ⧸ I) :=
-  inferInstanceAs <| NormedAddCommGroup (A ⧸ I.toAddSubgroup)
+  have : IsClosed (AddSubgroup.ofClass I : Set A) := ‹IsClosed (I : Set A)›
+  inferInstanceAs <| NormedAddCommGroup (A ⧸ AddSubgroup.ofClass I)
 
 instance completeSpace [CompleteSpace A] : CompleteSpace (A ⧸ I) :=
-  QuotientAddGroup.completeSpace_left A I.toAddSubgroup
+  QuotientAddGroup.completeSpace_left A (AddSubgroup.ofClass I)
 
 /-- The quotient projection `mk I : A →ₙ+* A ⧸ I` is contractive. -/
 theorem norm_mk_le (a : A) : ‖mk I a‖ ≤ ‖a‖ := by
   rw [← quotientAddGroupMk_eq_mk]
-  exact QuotientAddGroup.norm_mk_le_norm (S := I.toAddSubgroup)
+  exact QuotientAddGroup.norm_mk_le_norm (S := AddSubgroup.ofClass I)
 
 /-- Every class in `A ⧸ I` has a representative of norm within `ε` of its quotient norm. -/
 theorem exists_norm_mk_lt {I : TwoSidedIdeal A} (x : A ⧸ I) {ε : ℝ} (hε : 0 < ε) :
     ∃ a : A, mk I a = x ∧ ‖a‖ < ‖x‖ + ε := by
-  obtain ⟨a, ha, hlt⟩ := QuotientAddGroup.exists_norm_mk_lt (S := I.toAddSubgroup) x hε
+  obtain ⟨a, ha, hlt⟩ := QuotientAddGroup.exists_norm_mk_lt (S := AddSubgroup.ofClass I) x hε
   exact ⟨a, (quotientAddGroupMk_eq_mk I a).symm.trans ha, hlt⟩
 
 /-- The quotient norm of `mk I a` is the infimum of `‖a + y‖` over `y ∈ I`. -/
 theorem norm_mk_eq (a : A) : ‖mk I a‖ = sInf ((‖a + ·‖) '' (I : Set A)) := by
-  have hmk : (QuotientAddGroup.mk' I.toAddSubgroup a : A ⧸ I) = mk I a := by
+  have hmk : (QuotientAddGroup.mk' (AddSubgroup.ofClass I) a : A ⧸ I) = mk I a := by
     rw [QuotientAddGroup.mk'_apply, quotientAddGroupMk_eq_mk]
-  rw [← hmk, ← coe_toAddSubgroup]
-  exact quotient_norm_mk_eq I.toAddSubgroup a
+  rw [← hmk, ← AddSubgroup.coe_ofClass I]
+  exact quotient_norm_mk_eq (AddSubgroup.ofClass I) a
 
 /-- The quotient projection `mk I` is continuous. -/
 @[fun_prop]
 theorem continuous_mk : Continuous (mk I) := by
-  have hmk : (mk I : A → A ⧸ I) = (QuotientAddGroup.mk : A → A ⧸ I.toAddSubgroup) := by
+  have hmk : (mk I : A → A ⧸ I) = (QuotientAddGroup.mk : A → A ⧸ AddSubgroup.ofClass I) := by
     ext a
     exact (quotientAddGroupMk_eq_mk I a).symm
   rw [hmk]
