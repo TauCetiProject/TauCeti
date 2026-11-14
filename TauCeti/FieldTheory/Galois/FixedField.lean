@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Fixed fields and fixing subgroups
@@ -85,6 +86,11 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   exactly `K⟮x⟯`, in which `x` is a primitive element
 * `IntermediateField.apply_eq_apply_of_smul_eq_smul`: automorphisms with the same effect on a
   point of a Galois set agree on the field fixed by its stabilizer
+* `IntermediateField.fixedField_stabilizer_smul`,
+  `IntermediateField.apply_fixedField_stabilizer_smul`, and
+  `IntermediateField.finrank_fixedField_stabilizer_smul`: translating a point along an
+  `M ≃ₐ[K] M`-action maps its stabilizer's fixed field by the translating automorphism, leaving
+  every `K`-algebra isomorphism invariant (and in particular the degree) unchanged along orbits
 * `IntermediateField.apply_eq_self_of_forall_mem_inf`: inside a Galois extension `Ω / L`, an
   automorphism fixing `E ∩ F` fixes `F`, for `E` finite normal over a smaller base and `F ≤ L(E)`
 * `FixedPoints.isCyclic_algEquiv`
@@ -511,6 +517,68 @@ theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
       hH (IntermediateField.finite_of_finiteDimensional_fixedField H)
 
 end Subgroup
+
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- Translating a point along an action of `M ≃ₐ[K] M` maps the fixed field of its stabilizer by
+the translating automorphism. -/
+theorem fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    (σ : M ≃ₐ[K] M) (x : X) :
+    fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) =
+      (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).map σ.toAlgHom := by
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    Subgroup.fixedField_map_conj]
+
+/-- Any `K`-algebra isomorphism invariant on `IntermediateField K M` is constant on `M ≃ₐ[K] M`
+orbits through the fixed fields of point stabilizers. -/
+theorem apply_fixedField_stabilizer_smul {α X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {E F : IntermediateField K M}, (E ≃ₐ[K] F) → f E = f F)
+    (σ : M ≃ₐ[K] M) (x : X) :
+    f (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) =
+      f (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  rw [fixedField_stabilizer_smul]
+  exact (hf ((fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).equivMap σ.toAlgHom)).symm
+
+/-- For any `K`-algebra isomorphism invariant `f` on `IntermediateField K M`, evaluating `f` on
+the stabilizer fixed field of `ω.out` agrees with evaluating at any point `x` in the orbit `ω`. -/
+theorem apply_fixedField_stabilizer_out {α X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {E F : IntermediateField K M}, (E ≃ₐ[K] F) → f E = f F)
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X} {x : X}
+    (hx : (Quotient.mk'' x : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X) = ω) :
+    f (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      f (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  obtain ⟨σ, rfl⟩ := TauCeti.MulAction.exists_smul_out_eq hx
+  exact (apply_fixedField_stabilizer_smul hf σ ω.out).symm
+
+/-- Along an equivariant injection `g : X → Y`, any `K`-algebra isomorphism invariant `f` on
+`IntermediateField K M` takes the same value at the orbit representative of `g x` as at `x`. -/
+theorem apply_fixedField_stabilizer_out_of_injective {α X Y : Type*}
+    [MulAction (M ≃ₐ[K] M) X] [MulAction (M ≃ₐ[K] M) Y]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {E F : IntermediateField K M}, (E ≃ₐ[K] F) → f E = f F)
+    (g : X → Y) (hg : Function.Injective g)
+    (he : ∀ (σ : M ≃ₐ[K] M) (x : X), g (σ • x) = σ • g x)
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y} {x : X}
+    (hx : (Quotient.mk'' (g x) : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
+    f (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      f (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  rw [apply_fixedField_stabilizer_out hf hx,
+    TauCeti.MulAction.stabilizer_eq_of_injective g hg he]
+
+/-- Translating a point along an action of `M ≃ₐ[K] M` preserves the degree of the fixed field of
+its stabilizer. -/
+@[simp]
+theorem finrank_fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    (σ : M ≃ₐ[K] M) (x : X) :
+    Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) =
+      Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) :=
+  apply_fixedField_stabilizer_smul (fun e ↦ e.toLinearEquiv.finrank_eq) σ x
+
+end IntermediateField
 
 namespace FixedPoints
 
