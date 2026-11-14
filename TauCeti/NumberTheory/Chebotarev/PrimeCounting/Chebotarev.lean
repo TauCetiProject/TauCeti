@@ -85,7 +85,8 @@ private theorem eventually_lt_frobeniusPsi_div_of_lt_crossingConstant
   -- Cross with `M = L(μ_q)`, so that `Gal(M/K) ≃ Gal(L/K) × (ZMod q)ˣ`.
   let M := CyclotomicField q L
   have hζ := IsCyclotomicExtension.zeta_spec q L M
-  have : IsGalois K M := IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M q
+  have : IsGalois K M :=
+    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension K L M {q}
   set e := IsCyclotomicExtension.galEquivProd K L M q hcop hζ
   have hcard : Nat.card (M ≃ₐ[K] M) = Nat.card (L ≃ₐ[K] L) * Nat.card (ZMod q)ˣ := by
     rw [Nat.card_congr e.toEquiv, Nat.card_prod]
