@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-public import Mathlib.GroupTheory.Perm.Fin
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.RatFunc.Map
@@ -31,7 +31,7 @@ compositum of two Belyi pairs over `k` can enlarge the field of constants (for i
 `√t` and `√(c t)` adjoins `√c`). When `k` is algebraically closed, `k` is automatically integrally
 closed in every domain extension (`TauCeti.isIntegrallyClosedIn_of_isAlgClosed`), so being an
 algebraic Belyi pair reduces to unramifiedness outside `0`, `1` and `∞`
-(`TauCeti.isAlgebraicBelyiPair_of_isAlgClosed_iff`). Consequently, over an algebraically closed
+(`TauCeti.isAlgebraicBelyiPair_iff_of_isAlgClosed`). Consequently, over an algebraically closed
 field `k`:
 
 * finite Belyi subextensions of `M` are closed under binary and finite composita and under taking
@@ -40,19 +40,21 @@ field `k`:
 * finite Belyi subextensions form a directed system, so an element of `M` belongs to
   `maximalBelyiExtension k M` precisely when it lies in some finite Belyi subextension, and a
   finite subextension lies in `maximalBelyiExtension k M` precisely when it is itself a Belyi pair
-  (`TauCeti.mem_maximalBelyiExtension_iff`, `TauCeti.le_maximalBelyiExtension_iff`);
+  (`TauCeti.mem_maximalBelyiExtension_iff`, `TauCeti.le_maximalBelyiExtension_iff`,
+  `TauCeti.IsAlgebraicBelyiPair.of_algHom_maximalBelyiExtension`);
 * it coincides with the compositum of the normal closures of all finite Belyi subextensions of `M`
   (`TauCeti.maximalBelyiExtension_eq_iSup_normalClosure`).
 
-Over any field `k` of characteristic zero, when `M / k(t)` is normal, `maximalBelyiExtension k M` is
-an infinite-degree Galois extension of `k(t)` (`TauCeti.normal_maximalBelyiExtension`,
-`TauCeti.isGalois_maximalBelyiExtension`, `TauCeti.not_finiteDimensional_maximalBelyiExtension`).
+Over any field `k` of characteristic zero, `maximalBelyiExtension k M` is a Galois extension of
+`k(t)` whenever `M / k(t)` is normal (`TauCeti.normal_maximalBelyiExtension`,
+`TauCeti.isGalois_maximalBelyiExtension`), and has infinite degree over `k(t)` whenever `M` is
+algebraically closed (`TauCeti.not_finiteDimensional_maximalBelyiExtension`).
 
 Taking `M = AlgebraicClosure (RatFunc k)` for an algebraically closed field `k` of characteristic
 zero, the Galois group `Gal(maximalBelyiExtension k (AlgebraicClosure (RatFunc k)) / k(t))` is the
-algebraic **geometric fundamental group** `TauCeti.GeometricFundamentalGroup k` of
-`ℙ¹_k \ {0, 1, ∞}`: a profinite group of infinite order whose finite quotients along base-point
-embeddings classify finite Galois Belyi covers.
+algebraic **geometric fundamental group** `TauCeti.BelyiGeometricFundamentalGroup k` of
+`ℙ¹_k \ {0, 1, ∞}`: a profinite group of infinite order whose open subgroups and open normal
+subgroups correspond to finite and finite Galois algebraic Belyi extensions of `k(t)`.
 
 Both symmetries of the Belyi locus act on `maximalBelyiExtension`: semilinear ring isomorphisms of
 `M` lifting coefficient isomorphisms `σ : k ≃+* k'` carry `maximalBelyiExtension k M` onto
@@ -65,35 +67,43 @@ outer Galois action in `TauCeti.FieldTheory.FunctionField.Belyi.OuterAction`.
 
 * `TauCeti.maximalBelyiExtension`: the compositum in `M` of all finite subextensions over `k(t)`
   that are algebraic Belyi pairs over `k`.
-* `TauCeti.GeometricFundamentalGroup`: the Galois group of
-  `maximalBelyiExtension k (AlgebraicClosure (RatFunc k))` over `RatFunc k`, for algebraically
-  closed `k` of characteristic zero.
 * `TauCeti.liftMaximalBelyiExtension`: lifting a `k(t)`-embedding `F →ₐ[RatFunc k] M` of an
   algebraic Belyi pair `F` into `maximalBelyiExtension k M`.
+* `TauCeti.BelyiGeometricFundamentalGroup`: the Galois group of
+  `maximalBelyiExtension k (AlgebraicClosure (RatFunc k))` over `RatFunc k` (for algebraically
+  closed `k` of characteristic zero, `π₁^ét(ℙ¹_k \ {0, 1, ∞})`).
+* `TauCeti.BelyiGeometricFundamentalGroup.fixingOpenSubgroup`,
+  `TauCeti.BelyiGeometricFundamentalGroup.restrictNormalHom`,
+  `TauCeti.BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup`,
+  `TauCeti.BelyiGeometricFundamentalGroup.quotientKerRestrictNormalHomEquiv`: open (normal)
+  subgroups and finite Galois quotients cut out by embedded finite Belyi pairs.
 
 ## Main results
 
-* `TauCeti.IsAlgebraicBelyiPair.tower_bot`, `TauCeti.IsAlgebraicBelyiPair.of_le`: subextensions of
-  algebraic Belyi pairs are algebraic Belyi pairs.
-* `TauCeti.isAlgebraicBelyiPair_of_isAlgClosed_iff`, `TauCeti.isAlgebraicBelyiPair_sup_iff`,
-  `TauCeti.isAlgebraicBelyiPair_iSup_iff`, `TauCeti.isAlgebraicBelyiPair_normalClosure_iff`:
-  lattice and Galois-closure stability over an algebraically closed constant field.
-* `TauCeti.mem_maximalBelyiExtension_iff`, `TauCeti.le_maximalBelyiExtension_iff`: elementwise and
-  subextension characterizations of `maximalBelyiExtension`.
+* `TauCeti.mem_maximalBelyiExtension_iff`, `TauCeti.le_maximalBelyiExtension_iff`,
+  `TauCeti.IsAlgebraicBelyiPair.of_algHom_maximalBelyiExtension`,
+  `TauCeti.isAlgebraicBelyiPair_intermediateField_maximalBelyiExtension`: elementwise and
+  subextension characterizations of `maximalBelyiExtension` over algebraically closed `k`.
 * `TauCeti.normal_maximalBelyiExtension`, `TauCeti.isGalois_maximalBelyiExtension`: normality and
   Galoisness of `maximalBelyiExtension k M` over `RatFunc k` when `M / RatFunc k` is normal.
-* `TauCeti.mem_maximalBelyiExtension_of_pow_eq_X_zpow_mul_X_sub_one_zpow`,
-  `TauCeti.not_finiteDimensional_maximalBelyiExtension`, `GeometricFundamentalGroup.instInfinite`:
-  radical elements in `maximalBelyiExtension` and infinite degree / infinite order.
+* `TauCeti.mem_maximalBelyiExtension_of_pow_eq`,
+  `TauCeti.mem_maximalBelyiExtension_of_pow_eq_X_zpow_mul_X_sub_one_zpow`,
+  `TauCeti.not_finiteDimensional_maximalBelyiExtension`,
+  `TauCeti.BelyiGeometricFundamentalGroup.instInfinite`: radical elements in
+  `maximalBelyiExtension` and infinite degree / infinite order.
 * `TauCeti.map_maximalBelyiExtension_of_mapRingEquiv`,
   `TauCeti.map_maximalBelyiExtension_of_branchPointAut`: invariance under coefficient conjugation
   and `S₃` branch-point permutations.
+* `TauCeti.BelyiGeometricFundamentalGroup.exists_fixingOpenSubgroup_eq`,
+  `TauCeti.BelyiGeometricFundamentalGroup.exists_restrictNormalOpenNormalSubgroup_eq`: every open
+  (normal) subgroup of `BelyiGeometricFundamentalGroup k` over algebraically closed `k` comes from
+  a finite (Galois) Belyi subextension.
 
 ## References
 
 * A. Grothendieck, *Esquisse d'un Programme* (1984), in *Geometric Galois Actions*, Vol. 1, LMS
   Lecture Note Series 242, Cambridge University Press, 1997, pp. 5–48.
-* J. Szamuely, *Galois Groups and Fundamental Groups*, Cambridge Studies in Advanced Mathematics
+* T. Szamuely, *Galois Groups and Fundamental Groups*, Cambridge Studies in Advanced Mathematics
   117, Cambridge University Press, 2009, §4.6–4.7.
 -/
 
@@ -103,94 +113,6 @@ open Polynomial
 open scoped IntermediateField
 
 namespace TauCeti
-
-/-! ### Subextensions, composita, and Galois closures of algebraic Belyi pairs -/
-
-section Subextensions
-
-variable {k : Type*} [Field k] [CharZero k]
-
-/-- **A subextension of an algebraic Belyi pair is an algebraic Belyi pair**: in a tower
-`k(t) ⊆ E ⊆ F` of finite extensions, if `F / k(t)` is an algebraic Belyi pair over `k`, then so is
-`E / k(t)`. Both exactness of the constant field and unramifiedness away from `0`, `1` and `∞`
-descend from `F` to `E`. -/
-theorem IsAlgebraicBelyiPair.tower_bot {E F : Type*} [Field E] [Field F] [Algebra k E]
-    [Algebra k F] [Algebra (RatFunc k) E] [Algebra (RatFunc k) F] [Algebra E F]
-    [IsScalarTower k (RatFunc k) E] [IsScalarTower k (RatFunc k) F]
-    [IsScalarTower k E F] [IsScalarTower (RatFunc k) E F]
-    [FiniteDimensional (RatFunc k) E] [FiniteDimensional (RatFunc k) F]
-    (h : IsAlgebraicBelyiPair k F) : IsAlgebraicBelyiPair k E := by
-  obtain ⟨hF, hbr, -⟩ := (isAlgebraicBelyiPair_iff_of_isScalarTower (E := E) (F := F)).mp h
-  exact isAlgebraicBelyiPair_iff_branchPlaces_subset.mpr
-    ⟨(IsScalarTower.toAlgHom k E F).isIntegrallyClosedIn (algebraMap E F).injective hF, hbr⟩
-
-/-- Over an algebraically closed field `k` of characteristic zero, exactness of the constant field
-is automatic, so a finite extension `F / k(t)` is an algebraic Belyi pair precisely when every
-place of `k(t)` outside `0`, `1` and `∞` is unramified in `F`. -/
-theorem isAlgebraicBelyiPair_of_isAlgClosed_iff [IsAlgClosed k] {F : Type*} [Field F]
-    [Algebra k F] [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
-    [FiniteDimensional (RatFunc k) F] :
-    IsAlgebraicBelyiPair k F ↔
-      ∀ P ∉ Place.zeroOneInfty k, P.IsUnramified (k' := k) (F' := F) := by
-  rw [isAlgebraicBelyiPair_iff, and_iff_right isIntegrallyClosedIn_of_isAlgClosed]
-
-variable {M : Type*} [Field M] [Algebra k M] [Algebra (RatFunc k) M]
-  [IsScalarTower k (RatFunc k) M]
-
-variable (k M) in
-/-- The bottom intermediate field `⊥` of `M / k(t)` is an algebraic Belyi pair over `k`. -/
-theorem isAlgebraicBelyiPair_bot :
-    IsAlgebraicBelyiPair k ↥(⊥ : IntermediateField (RatFunc k) M) :=
-  (isAlgebraicBelyiPair_ratFunc k).of_algEquiv (IntermediateField.botEquiv (RatFunc k) M).symm
-
-/-- An intermediate field below a finite algebraic Belyi subextension is itself an algebraic Belyi
-pair. -/
-theorem IsAlgebraicBelyiPair.of_le {E₁ E₂ : IntermediateField (RatFunc k) M}
-    [FiniteDimensional (RatFunc k) E₁] [FiniteDimensional (RatFunc k) E₂]
-    (hle : E₁ ≤ E₂) (hE₂ : IsAlgebraicBelyiPair k E₂) : IsAlgebraicBelyiPair k E₁ :=
-  letI : Algebra E₁ E₂ := (IntermediateField.inclusion hle).toRingHom.toAlgebra
-  haveI : IsScalarTower (RatFunc k) E₁ E₂ := .of_algebraMap_eq' rfl
-  haveI : IsScalarTower k E₁ E₂ := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply k (RatFunc k) E₁,
-      IsScalarTower.algebraMap_apply k (RatFunc k) E₂]
-    exact (IntermediateField.inclusion hle).commutes _
-  hE₂.tower_bot
-
-/-- Over an algebraically closed field `k`, the compositum of two finite intermediate fields of
-`M / k(t)` is an algebraic Belyi pair precisely when each of them is. -/
-@[simp]
-theorem isAlgebraicBelyiPair_sup_iff [IsAlgClosed k]
-    (E₁ E₂ : IntermediateField (RatFunc k) M)
-    [FiniteDimensional (RatFunc k) E₁] [FiniteDimensional (RatFunc k) E₂] :
-    IsAlgebraicBelyiPair k ↥(E₁ ⊔ E₂) ↔
-      IsAlgebraicBelyiPair k E₁ ∧ IsAlgebraicBelyiPair k E₂ := by
-  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
-  simp only [isAlgebraicBelyiPair_of_isAlgClosed_iff,
-    Place.isUnramified_sup_iff (IsFunctionField.ratFunc k), forall_and]
-
-/-- Over an algebraically closed field `k`, the supremum of finitely many finite intermediate
-fields of `M / k(t)` is an algebraic Belyi pair precisely when each of them is. -/
-@[simp]
-theorem isAlgebraicBelyiPair_iSup_iff [IsAlgClosed k] {ι : Type*} [Finite ι]
-    (t : ι → IntermediateField (RatFunc k) M) [∀ i, FiniteDimensional (RatFunc k) (t i)] :
-    IsAlgebraicBelyiPair k ↥(⨆ i, t i) ↔ ∀ i, IsAlgebraicBelyiPair k (t i) := by
-  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
-  simp only [isAlgebraicBelyiPair_of_isAlgClosed_iff,
-    Place.isUnramified_iSup_iff (IsFunctionField.ratFunc k)]
-  exact ⟨fun h i P hP ↦ h P hP i, fun h P hP i ↦ h i P hP⟩
-
-/-- Over an algebraically closed field `k`, the normal closure in `M` of a finite intermediate
-field `E` of `M / k(t)` is an algebraic Belyi pair precisely when `E` is. -/
-@[simp]
-theorem isAlgebraicBelyiPair_normalClosure_iff [IsAlgClosed k]
-    (E : IntermediateField (RatFunc k) M) [FiniteDimensional (RatFunc k) E] :
-    IsAlgebraicBelyiPair k (IntermediateField.normalClosure (RatFunc k) E M) ↔
-      IsAlgebraicBelyiPair k E := by
-  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
-  simp only [isAlgebraicBelyiPair_of_isAlgClosed_iff,
-    Place.isUnramified_normalClosure_iff (IsFunctionField.ratFunc k)]
-
-end Subextensions
 
 /-! ### The maximal Belyi extension inside an ambient overfield -/
 
@@ -261,7 +183,10 @@ theorem fieldRange_le_maximalBelyiExtension {F : Type*} [Field F] [Algebra k F]
   exact le_maximalBelyiExtension (hF.of_algEquiv f.equivFieldRange)
 
 /-- Lift a `k(t)`-embedding `f : F →ₐ[RatFunc k] M` of an algebraic Belyi pair `F` to an embedding
-into `maximalBelyiExtension k M`. -/
+into `maximalBelyiExtension k M`. When `F / k(t)` is normal, `(liftMaximalBelyiExtension hF f)`
+induces continuous Galois restriction `(liftMaximalBelyiExtension hF f).restrictNormalHom` and, for
+`M / k(t)` normal, the topological quotient isomorphism
+`(liftMaximalBelyiExtension hF f).quotientKerRestrictNormalHomEquiv`. -/
 noncomputable def liftMaximalBelyiExtension {F : Type*} [Field F] [Algebra k F]
     [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] M) :
@@ -344,6 +269,28 @@ theorem le_maximalBelyiExtension_iff (E : IntermediateField (RatFunc k) M)
     exact (le_iSup F i) (hmem i)
   exact IsAlgebraicBelyiPair.of_le hEL ((isAlgebraicBelyiPair_iSup_iff F).mpr hBF)
 
+/-- Over an algebraically closed field `k`, any finite extension `F / k(t)` admitting a
+`k(t)`-embedding into `maximalBelyiExtension k M` is an algebraic Belyi pair. -/
+theorem IsAlgebraicBelyiPair.of_algHom_maximalBelyiExtension {F : Type*} [Field F] [Algebra k F]
+    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+    (f : F →ₐ[RatFunc k] ↥(maximalBelyiExtension k M)) :
+    IsAlgebraicBelyiPair k F := by
+  let g : F →ₐ[RatFunc k] M := (maximalBelyiExtension k M).val.comp f
+  have : FiniteDimensional (RatFunc k) g.fieldRange :=
+    g.equivFieldRange.toLinearEquiv.finiteDimensional
+  have hle : g.fieldRange ≤ maximalBelyiExtension k M := by
+    rintro _ ⟨x, rfl⟩
+    exact (f x).2
+  exact ((le_maximalBelyiExtension_iff g.fieldRange).mp hle).of_algEquiv g.equivFieldRange.symm
+
+/-- Over an algebraically closed field `k`, every finite intermediate field of
+`maximalBelyiExtension k M / k(t)` is an algebraic Belyi pair. -/
+theorem isAlgebraicBelyiPair_intermediateField_maximalBelyiExtension
+    (E : IntermediateField (RatFunc k) ↥(maximalBelyiExtension k M))
+    [FiniteDimensional (RatFunc k) E] :
+    IsAlgebraicBelyiPair k E :=
+  .of_algHom_maximalBelyiExtension E.val
+
 /-- Over an algebraically closed field `k`, `maximalBelyiExtension k M` coincides with the
 compositum of the normal closures in `M` of all finite Belyi subextensions of `M`. -/
 theorem maximalBelyiExtension_eq_iSup_normalClosure :
@@ -362,36 +309,15 @@ theorem maximalBelyiExtension_eq_iSup_normalClosure :
 
 /-! ### Radical elements and infinite degree -/
 
-/-- Over an algebraically closed field `k`, adjoining any `n`-th root `y` (`n ≠ 0`) of a rational
-function `c t ^ a (t - 1) ^ b` (`c ≠ 0`) produces a finite algebraic Belyi pair. Unlike
-`TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow` over a general base field, no
-coprimality hypothesis on `(n, a, b)` is needed because `k` cannot gain algebraic constants. -/
-theorem isAlgebraicBelyiPair_adjoin_of_pow_eq_X_zpow_mul_X_sub_one_zpow
-    {y : M} {n : ℕ} {c : k} (hn : n ≠ 0) (hc : c ≠ 0) (a b : ℤ)
-    (hy : y ^ n = algebraMap (RatFunc k) M
-      (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b)) :
-    ∃ _ : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯,
-      IsAlgebraicBelyiPair k ↥(RatFunc k)⟮y⟯ := by
-  set u : RatFunc k := algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b
-  have hy_int : IsIntegral (RatFunc k) y :=
-    ⟨X ^ n - C u, monic_X_pow_sub_C u hn, by simp [hy, u]⟩
-  have hfin : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯ :=
-    IntermediateField.adjoin.finiteDimensional hy_int
-  let E : IntermediateField (RatFunc k) M := (RatFunc k)⟮y⟯
-  let y₀ : E := IntermediateField.AdjoinSimple.gen (RatFunc k) y
-  have hgen : (RatFunc k)⟮y₀⟯ = (⊤ : IntermediateField (RatFunc k) E) := by
-    have hmap : ((RatFunc k)⟮y₀⟯).map E.val = E := by
-      rw [IntermediateField.adjoin_map, Set.image_singleton]
-      rfl
-    refine eq_top_iff.mpr fun z _ ↦ ?_
-    have hz : (z : M) ∈ ((RatFunc k)⟮y₀⟯).map E.val := hmap.symm ▸ z.2
-    obtain ⟨w, hw, hwz⟩ := hz
-    exact E.val.injective hwz ▸ hw
-  have hy₀ : y₀ ^ n = algebraMap (RatFunc k) E u := Subtype.ext hy
-  refine ⟨hfin, IsAlgebraicBelyiPair.of_pow_eq isIntegrallyClosedIn_of_isAlgClosed hgen hy₀ hn
-    fun P hP ↦ ?_⟩
-  rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
-  exact dvd_zero _
+/-- Over an algebraically closed field `k`, every `n`-th root (`n ≠ 0`) in `M` of a rational
+function `u ∈ k(t)` whose order at every unmarked place is divisible by `n` belongs to
+`maximalBelyiExtension k M`. -/
+theorem mem_maximalBelyiExtension_of_pow_eq {y : M} {n : ℕ} {u : RatFunc k} (hn : n ≠ 0)
+    (hy : y ^ n = algebraMap (RatFunc k) M u)
+    (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u) :
+    y ∈ maximalBelyiExtension k M := by
+  obtain ⟨hfin, hB⟩ := isAlgebraicBelyiPair_adjoin_of_pow_eq hn hy hdvd
+  exact le_maximalBelyiExtension hB (IntermediateField.mem_adjoin_simple_self (RatFunc k) y)
 
 /-- Over an algebraically closed field `k`, every `n`-th root (`n ≠ 0`) in `M` of
 `c t ^ a (t - 1) ^ b` (`c ≠ 0`) belongs to `maximalBelyiExtension k M`. -/
@@ -399,10 +325,10 @@ theorem mem_maximalBelyiExtension_of_pow_eq_X_zpow_mul_X_sub_one_zpow
     {y : M} {n : ℕ} {c : k} (hn : n ≠ 0) (hc : c ≠ 0) (a b : ℤ)
     (hy : y ^ n = algebraMap (RatFunc k) M
       (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b)) :
-    y ∈ maximalBelyiExtension k M := by
-  obtain ⟨hfin, hB⟩ :=
-    isAlgebraicBelyiPair_adjoin_of_pow_eq_X_zpow_mul_X_sub_one_zpow hn hc a b hy
-  exact le_maximalBelyiExtension hB (IntermediateField.mem_adjoin_simple_self (RatFunc k) y)
+    y ∈ maximalBelyiExtension k M :=
+  mem_maximalBelyiExtension_of_pow_eq hn hy fun _ hP ↦ by
+    rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
+    exact dvd_zero _
 
 /-- Over an algebraically closed field `k`, every `n`-th root (`n ≠ 0`) of `t` in `M` belongs to
 `maximalBelyiExtension k M`. -/
@@ -461,30 +387,23 @@ private theorem map_maximalBelyiExtension_le_of_mapRingEquiv
     (maximalBelyiExtension k M).toSubfield.map τ.toRingHom ≤
       (maximalBelyiExtension k' M').toSubfield := by
   let P : IntermediateField (RatFunc k) M :=
-    { __ := (maximalBelyiExtension k' M').toSubfield.comap τ.toRingHom
-      algebraMap_mem' := fun x ↦ by
-        change τ (algebraMap (RatFunc k) M x) ∈ maximalBelyiExtension k' M'
-        rw [hτ]
-        exact (maximalBelyiExtension k' M').algebraMap_mem _ }
+    ((maximalBelyiExtension k' M').toSubfield.comap τ.toRingHom).toIntermediateField fun x ↦ by
+      rw [Subfield.mem_comap, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, hτ]
+      exact (maximalBelyiExtension k' M').algebraMap_mem _
   suffices hleP : maximalBelyiExtension k M ≤ P from Subfield.map_le_iff_le_comap.mpr hleP
   refine maximalBelyiExtension_le_iff.mpr fun E hfin hE ↦ ?_
   let E' : IntermediateField (RatFunc k') M' :=
-    { __ := E.toSubfield.map τ.toRingHom
-      algebraMap_mem' := fun x' ↦
-        ⟨algebraMap (RatFunc k) M (RatFunc.mapRingEquiv σ.symm x'), E.algebraMap_mem _, by
+    (E.toSubfield.map τ.toRingHom).toIntermediateField fun x' ↦
+      Subfield.mem_map.mpr ⟨algebraMap (RatFunc k) M (RatFunc.mapRingEquiv σ.symm x'),
+        (E.mem_toSubfield _).mpr (E.algebraMap_mem _), by
           rw [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, hτ, ← RatFunc.mapRingEquiv_symm,
-            RingEquiv.apply_symm_apply]⟩ }
+            RingEquiv.apply_symm_apply]⟩
   let τE : E ≃+* E' :=
-    { toFun := fun y ↦ ⟨τ y, y, y.2, rfl⟩
-      invFun := fun z ↦
-        ⟨τ.symm z, by
-          obtain ⟨y, hy, hyz⟩ := z.2
-          have : τ.symm z = y := τ.symm_apply_eq.mpr hyz.symm
-          exact this ▸ hy⟩
-      left_inv := fun y ↦ Subtype.ext (τ.symm_apply_apply y)
-      right_inv := fun z ↦ Subtype.ext (τ.apply_symm_apply z)
-      map_mul' := fun x y ↦ Subtype.ext (map_mul τ (x : M) (y : M))
-      map_add' := fun x y ↦ Subtype.ext (map_add τ (x : M) (y : M)) }
+    τ.restrict E E' fun x ↦ by
+      dsimp only [E']
+      rw [← IntermediateField.mem_toSubfield, ← IntermediateField.mem_toSubfield (s := _),
+        Subfield.toIntermediateField_toSubfield, RingEquiv.toRingHom_eq_coe, ← RingHom.coe_coe,
+        Subfield.map_mem_map]
   have hτE (x : RatFunc k) :
       τE (algebraMap (RatFunc k) E x) = algebraMap (RatFunc k') E' (RatFunc.mapRingEquiv σ x) :=
     Subtype.ext (hτ x)
@@ -517,7 +436,7 @@ theorem map_maximalBelyiExtension_of_mapRingEquiv
   exact ⟨τ.symm z, hz', τ.apply_symm_apply z⟩
 
 /-- Elementwise form of `TauCeti.map_maximalBelyiExtension_of_mapRingEquiv`. -/
-theorem mem_maximalBelyiExtension_mapRingEquiv_iff
+theorem apply_mem_maximalBelyiExtension_iff_of_mapRingEquiv
     {k k' M M' : Type*} [Field k] [CharZero k] [Field k'] [CharZero k']
     [Field M] [Algebra k M] [Algebra (RatFunc k) M] [IsScalarTower k (RatFunc k) M]
     [Field M'] [Algebra k' M'] [Algebra (RatFunc k') M'] [IsScalarTower k' (RatFunc k') M']
@@ -526,35 +445,21 @@ theorem mem_maximalBelyiExtension_mapRingEquiv_iff
       algebraMap (RatFunc k') M' (RatFunc.mapRingEquiv σ x))
     {y : M} :
     τ y ∈ maximalBelyiExtension k' M' ↔ y ∈ maximalBelyiExtension k M := by
-  change τ y ∈ (maximalBelyiExtension k' M').toSubfield ↔ y ∈ (maximalBelyiExtension k M).toSubfield
-  rw [← map_maximalBelyiExtension_of_mapRingEquiv σ τ hτ]
-  exact ⟨fun ⟨x, hx, hxy⟩ ↦ τ.injective hxy ▸ hx, fun hy ↦ ⟨y, hy, rfl⟩⟩
+  rw [← IntermediateField.mem_toSubfield, ← map_maximalBelyiExtension_of_mapRingEquiv σ τ hτ,
+    RingEquiv.toRingHom_eq_coe, ← RingHom.coe_coe, Subfield.map_mem_map,
+    IntermediateField.mem_toSubfield]
 
 /-- When `M / k(t)` is normal (over any field `k` of characteristic zero),
 `maximalBelyiExtension k M` is normal over `k(t)`, since `Gal(M/k(t))` permutes the finite
 algebraic Belyi subextensions of `M`. -/
 instance normal_maximalBelyiExtension {k M : Type*} [Field k] [CharZero k]
     [Field M] [Algebra k M] [Algebra (RatFunc k) M] [IsScalarTower k (RatFunc k) M]
-    [hNM : Normal (RatFunc k) M] :
-    Normal (RatFunc k) ↥(maximalBelyiExtension k M) where
-  toIsAlgebraic := isAlgebraic_maximalBelyiExtension
-  splits' x := by
-    let Ω := maximalBelyiExtension k M
-    have hmin : minpoly (RatFunc k) (x : M) = minpoly (RatFunc k) x :=
-      minpoly.algHom_eq Ω.val Ω.val.injective x
-    have hpM : ((minpoly (RatFunc k) x).map (algebraMap (RatFunc k) M)).Splits :=
-      hmin ▸ hNM.splits (x : M)
-    refine IntermediateField.splits_of_splits hpM fun y hy ↦ ?_
-    have hint : IsIntegral (RatFunc k) x := Algebra.IsIntegral.isIntegral x
-    have hminy : minpoly (RatFunc k) y = minpoly (RatFunc k) (x : M) := by
-      rw [hmin]
-      exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint)
-        (Polynomial.mem_rootSet.mp hy).2 (minpoly.monic hint)).symm
-    obtain ⟨τ, hτ : τ y = x⟩ := (Normal.minpoly_eq_iff_mem_orbit M).mp hminy.symm
-    refine (mem_maximalBelyiExtension_mapRingEquiv_iff (RingEquiv.refl k) τ.toRingEquiv
-      (fun z ↦ ?_)).mp (hτ ▸ x.2)
-    rw [RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]
-    exact τ.commutes z
+    [Normal (RatFunc k) M] :
+    Normal (RatFunc k) ↥(maximalBelyiExtension k M) := by
+  refine IntermediateField.normal_iff_forall_map_le'.mpr ?_
+  rintro τ _ ⟨x, hx, rfl⟩
+  exact (apply_mem_maximalBelyiExtension_iff_of_mapRingEquiv (RingEquiv.refl k) τ.toRingEquiv
+    fun z ↦ by rw [RatFunc.mapRingEquiv_refl, RingEquiv.refl_apply]; exact τ.commutes z).mpr hx
 
 /-- When `M / k(t)` is normal (over any field `k` of characteristic zero),
 `maximalBelyiExtension k M` is a Galois extension of `k(t)`. -/
@@ -562,6 +467,7 @@ instance isGalois_maximalBelyiExtension {k M : Type*} [Field k] [CharZero k]
     [Field M] [Algebra k M] [Algebra (RatFunc k) M] [IsScalarTower k (RatFunc k) M]
     [Normal (RatFunc k) M] :
     IsGalois (RatFunc k) ↥(maximalBelyiExtension k M) :=
+  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
   ⟨⟩
 
 private theorem map_maximalBelyiExtension_le_of_branchPointAut
@@ -578,31 +484,28 @@ private theorem map_maximalBelyiExtension_le_of_branchPointAut
         algebraMap (RatFunc k) M' (RatFunc.branchPointAut k ρ⁻¹ x) := by
     rw [← he, ← AlgEquiv.mul_apply, ← map_mul, _root_.mul_inv_cancel, map_one, AlgEquiv.one_apply]
   let P : IntermediateField (RatFunc k) M :=
-    { __ := (maximalBelyiExtension k M').toSubfield.comap e.toRingHom
-      algebraMap_mem' := fun x ↦ by
-        change e (algebraMap (RatFunc k) M x) ∈ maximalBelyiExtension k M'
-        rw [he_inv]
-        exact (maximalBelyiExtension k M').algebraMap_mem _ }
+    ((maximalBelyiExtension k M').toSubfield.comap e.toRingHom).toIntermediateField fun x ↦ by
+      rw [Subfield.mem_comap, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+        AlgEquiv.coe_toRingEquiv, he_inv]
+      exact (maximalBelyiExtension k M').algebraMap_mem _
   suffices hleP : maximalBelyiExtension k M ≤ P from Subfield.map_le_iff_le_comap.mpr hleP
   refine maximalBelyiExtension_le_iff.mpr fun E hfin hE ↦ ?_
   let E' : IntermediateField (RatFunc k) M' :=
-    { __ := E.toSubfield.map e.toRingHom
-      algebraMap_mem' := fun x' ↦
-        ⟨algebraMap (RatFunc k) M (RatFunc.branchPointAut k ρ x'), E.algebraMap_mem _, he x'⟩ }
+    (E.toSubfield.map e.toRingHom).toIntermediateField fun x' ↦
+      Subfield.mem_map.mpr ⟨algebraMap (RatFunc k) M (RatFunc.branchPointAut k ρ x'),
+        (E.mem_toSubfield _).mpr (E.algebraMap_mem _), by
+          rw [RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, he]⟩
   let eE : E ≃ₐ[k] E' :=
-    { toFun := fun y ↦ ⟨e y, y, y.2, rfl⟩
-      invFun := fun z ↦
-        ⟨e.symm z, by
-          obtain ⟨y, hy, hyz⟩ := z.2
-          have : e.symm z = y := e.symm_apply_eq.mpr hyz.symm
-          exact this ▸ hy⟩
-      left_inv := fun y ↦ Subtype.ext (e.symm_apply_apply y)
-      right_inv := fun z ↦ Subtype.ext (e.apply_symm_apply z)
-      map_mul' := fun x y ↦ Subtype.ext (map_mul e (x : M) (y : M))
-      map_add' := fun x y ↦ Subtype.ext (map_add e (x : M) (y : M))
-      commutes' := fun c ↦ Subtype.ext (by
-        change e (algebraMap k M c) = algebraMap k M' c
-        exact e.commutes c) }
+    AlgEquiv.ofRingEquiv (f := e.toRingEquiv.restrict E E' fun x ↦ by
+      dsimp only [E']
+      rw [← IntermediateField.mem_toSubfield, ← IntermediateField.mem_toSubfield (s := _),
+        Subfield.toIntermediateField_toSubfield, RingEquiv.toRingHom_eq_coe, ← RingHom.coe_coe,
+        Subfield.map_mem_map]) fun c ↦ Subtype.ext <| by
+      rw [RingEquiv.restrict_apply_coe, AlgEquiv.coe_toRingEquiv,
+        IsScalarTower.algebraMap_apply k (RatFunc k) E, IntermediateField.coe_algebraMap_apply,
+        ← IsScalarTower.algebraMap_apply k (RatFunc k) M, e.commutes,
+        IsScalarTower.algebraMap_apply k (RatFunc k) M',
+        IsScalarTower.algebraMap_apply k (RatFunc k) E', IntermediateField.coe_algebraMap_apply]
   have heE (x : RatFunc k) :
       eE (algebraMap (RatFunc k) E (RatFunc.branchPointAut k ρ x)) = algebraMap (RatFunc k) E' x :=
     Subtype.ext (he x)
@@ -643,7 +546,7 @@ theorem map_maximalBelyiExtension_of_branchPointAut
   exact ⟨e.symm z, hz', e.apply_symm_apply z⟩
 
 /-- Elementwise form of `TauCeti.map_maximalBelyiExtension_of_branchPointAut`. -/
-theorem mem_maximalBelyiExtension_branchPointAut_iff
+theorem apply_mem_maximalBelyiExtension_iff_of_branchPointAut
     {k M M' : Type*} [Field k] [CharZero k]
     [Field M] [Algebra k M] [Algebra (RatFunc k) M] [IsScalarTower k (RatFunc k) M]
     [Field M'] [Algebra k M'] [Algebra (RatFunc k) M'] [IsScalarTower k (RatFunc k) M']
@@ -652,155 +555,253 @@ theorem mem_maximalBelyiExtension_branchPointAut_iff
       algebraMap (RatFunc k) M' x)
     {y : M} :
     e y ∈ maximalBelyiExtension k M' ↔ y ∈ maximalBelyiExtension k M := by
-  change e y ∈ (maximalBelyiExtension k M').toSubfield ↔ y ∈ (maximalBelyiExtension k M).toSubfield
-  rw [← map_maximalBelyiExtension_of_branchPointAut ρ e he]
-  exact ⟨fun ⟨x, hx, hxy⟩ ↦ e.injective hxy ▸ hx, fun hy ↦ ⟨y, hy, rfl⟩⟩
+  rw [← IntermediateField.mem_toSubfield, ← map_maximalBelyiExtension_of_branchPointAut ρ e he,
+    RingEquiv.toRingHom_eq_coe, ← AlgEquiv.coe_toRingEquiv, ← RingHom.coe_coe,
+    Subfield.map_mem_map, IntermediateField.mem_toSubfield]
 
 end Symmetries
 
 /-! ### The algebraic geometric fundamental group of `ℙ¹_k \ {0, 1, ∞}` -/
 
-/-- The algebraic **geometric fundamental group** of `ℙ¹_k \ {0, 1, ∞}`: the Krull-topologized
-Galois group `Gal(maximalBelyiExtension k (AlgebraicClosure (RatFunc k)) / RatFunc k)`.
+/-- The Galois group `Gal(maximalBelyiExtension k (AlgebraicClosure (RatFunc k)) / RatFunc k)` with
+its Krull topology.
 
 When `k` is algebraically closed of characteristic zero (such as `ℂ` or `AlgebraicClosure F`),
 `maximalBelyiExtension k (AlgebraicClosure (RatFunc k))` is the maximal algebraic extension of
 `k(t)` unramified outside `0`, `1` and `∞` (`TauCeti.mem_maximalBelyiExtension_iff`,
-`TauCeti.le_maximalBelyiExtension_iff`), so `GeometricFundamentalGroup k` is the étale geometric
-fundamental group `π₁^ét(ℙ¹_k \ {0, 1, ∞})`. Over a general field `F`, pass to
-`GeometricFundamentalGroup (AlgebraicClosure F)` (as in `TauCeti.absoluteGaloisGroupOuterAction`),
-just as `Field.absoluteGaloisGroup` omits `[PerfectField]`.
+`TauCeti.le_maximalBelyiExtension_iff`), so `BelyiGeometricFundamentalGroup k` is the étale
+**geometric fundamental group** `π₁^ét(ℙ¹_k \ {0, 1, ∞})`. Over a general field `F` of
+characteristic zero, the geometric fundamental group is
+`BelyiGeometricFundamentalGroup (AlgebraicClosure F)` (whose outer `Gal(F̄/F)`-action is
+`TauCeti.belyiAbsoluteGaloisGroupOuterAction F`).
 
 As an `abbrev` for `Gal(...)`, it inherits its profinite topological group structure directly from
 `Gal`. -/
 -- `[IsAlgClosed k]` is documented rather than assumed here: `maximalBelyiExtension` consumes no
 -- such argument, so carrying it on the `abbrev` is rejected by `unusedArguments`.
-abbrev GeometricFundamentalGroup (k : Type*) [Field k] [CharZero k] :=
+abbrev BelyiGeometricFundamentalGroup (k : Type*) [Field k] [CharZero k] :=
   Gal(↥(maximalBelyiExtension k (AlgebraicClosure (RatFunc k)))/RatFunc k)
 
-namespace GeometricFundamentalGroup
+namespace BelyiGeometricFundamentalGroup
 
 variable {k : Type*} [Field k] [CharZero k]
 
+/-- The open subgroup of `BelyiGeometricFundamentalGroup k` cut out by a `k(t)`-embedding
+`f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)` of a finite algebraic Belyi pair `F`: the
+automorphisms fixing the image of `F` in `maximalBelyiExtension k (AlgebraicClosure (RatFunc k))`.
+-/
+noncomputable def fixingOpenSubgroup {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
+    [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+    (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
+    OpenSubgroup (BelyiGeometricFundamentalGroup k) where
+  toSubgroup := (liftMaximalBelyiExtension hF f).fieldRange.fixingSubgroup
+  isOpen' := by
+    let g := liftMaximalBelyiExtension hF f
+    have : FiniteDimensional (RatFunc k) g.fieldRange :=
+      g.equivFieldRange.toLinearEquiv.finiteDimensional
+    exact g.fieldRange.fixingSubgroup_isOpen
+
+/-- The carrier subgroup of `fixingOpenSubgroup hF f` is the fixing subgroup of the lifted image of
+`f`. -/
+@[simp]
+theorem fixingOpenSubgroup_toSubgroup {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
+    [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+    (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
+    (fixingOpenSubgroup hF f).toSubgroup =
+      (liftMaximalBelyiExtension hF f).fieldRange.fixingSubgroup :=
+  (rfl)
+
+/-- An element of `BelyiGeometricFundamentalGroup k` lies in `fixingOpenSubgroup hF f` precisely
+when it fixes `liftMaximalBelyiExtension hF f x` for every `x : F`. -/
+@[simp]
+theorem mem_fixingOpenSubgroup_iff {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
+    [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+    (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k))
+    {γ : BelyiGeometricFundamentalGroup k} :
+    γ ∈ fixingOpenSubgroup hF f ↔
+      ∀ x : F, γ (liftMaximalBelyiExtension hF f x) = liftMaximalBelyiExtension hF f x := by
+  rw [← OpenSubgroup.mem_toSubgroup, fixingOpenSubgroup_toSubgroup,
+    IntermediateField.mem_fixingSubgroup_iff]
+  simp
+
 /-- Choosing a `k(t)`-embedding `f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)` of a finite
 normal algebraic Belyi pair `F` induces a continuous surjective restriction homomorphism from
-`GeometricFundamentalGroup k` onto `Gal(F/RatFunc k)`. -/
+`BelyiGeometricFundamentalGroup k` onto `Gal(F/RatFunc k)`. For a general ambient overfield `M`, see
+`(liftMaximalBelyiExtension hF f).restrictNormalHom`. -/
 noncomputable def restrictNormalHom {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
-    GeometricFundamentalGroup k →* Gal(F/RatFunc k) :=
+    BelyiGeometricFundamentalGroup k →* Gal(F/RatFunc k) :=
   (liftMaximalBelyiExtension hF f).restrictNormalHom
 
 @[simp]
 theorem restrictNormalHom_commutes {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k))
-    (γ : GeometricFundamentalGroup k) (x : F) :
+    (γ : BelyiGeometricFundamentalGroup k) (x : F) :
     f (restrictNormalHom hF f γ x) =
       (γ (liftMaximalBelyiExtension hF f x) : AlgebraicClosure (RatFunc k)) :=
   congrArg Subtype.val ((liftMaximalBelyiExtension hF f).restrictNormalHom_commutes γ x)
 
+/-- Restriction `restrictNormalHom hF f` onto the Galois group `Gal(F/RatFunc k)` of any finite
+normal algebraic Belyi pair `F` is surjective. -/
 theorem restrictNormalHom_surjective {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
     Function.Surjective (restrictNormalHom hF f) :=
   (liftMaximalBelyiExtension hF f).restrictNormalHom_surjective
 
+/-- The kernel of `restrictNormalHom hF f` is the fixing subgroup of the image of `F` in
+`maximalBelyiExtension k (AlgebraicClosure (RatFunc k))`. -/
 theorem ker_restrictNormalHom {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
     (restrictNormalHom hF f).ker = (liftMaximalBelyiExtension hF f).fieldRange.fixingSubgroup :=
   (liftMaximalBelyiExtension hF f).ker_restrictNormalHom
 
+/-- Restriction `restrictNormalHom hF f` to the Galois group of a finite normal algebraic Belyi
+pair is continuous for the Krull topologies. -/
 theorem continuous_restrictNormalHom {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
-    Continuous (restrictNormalHom hF f) := by
-  apply continuous_of_continuousAt_one _ (continuousAt_def.mpr fun U hU ↦ ?_)
-  rw [map_one, krullTopology_mem_nhds_one_iff] at hU
-  obtain ⟨E₀, _, hE₀U⟩ := hU
-  rw [krullTopology_mem_nhds_one_iff]
-  let g := liftMaximalBelyiExtension hF f
-  have : FiniteDimensional (RatFunc k) g.fieldRange :=
-    Module.Finite.equiv g.equivFieldRange.toLinearEquiv
-  refine ⟨g.fieldRange, inferInstance, fun γ hγ ↦ hE₀U ?_⟩
-  have h1 : restrictNormalHom hF f γ = 1 := by
-    rwa [← MonoidHom.mem_ker, ker_restrictNormalHom]
-  rw [h1]
-  exact one_mem _
+    Continuous (restrictNormalHom hF f) :=
+  (liftMaximalBelyiExtension hF f).continuous_restrictNormalHom
+
+/-- The kernel of `restrictNormalHom hF f` is an open subgroup of
+`BelyiGeometricFundamentalGroup k` in the Krull topology. -/
+theorem isOpen_ker_restrictNormalHom {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
+    [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
+    (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
+    IsOpen ((restrictNormalHom hF f).ker : Set (BelyiGeometricFundamentalGroup k)) :=
+  (liftMaximalBelyiExtension hF f).isOpen_ker_restrictNormalHom
+
+/-- The open normal subgroup of `BelyiGeometricFundamentalGroup k` cut out by an embedded finite
+normal algebraic Belyi pair `F`, namely the kernel of `restrictNormalHom hF f`. -/
+noncomputable def restrictNormalOpenNormalSubgroup {F : Type*} [Field F] [Algebra k F]
+    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+    [Normal (RatFunc k) F] (hF : IsAlgebraicBelyiPair k F)
+    (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
+    OpenNormalSubgroup (BelyiGeometricFundamentalGroup k) where
+  toSubgroup := (restrictNormalHom hF f).ker
+  isOpen' := isOpen_ker_restrictNormalHom hF f
+  isNormal' := (restrictNormalHom hF f).normal_ker
+
+/-- The underlying subgroup of `restrictNormalOpenNormalSubgroup hF f` is
+`(restrictNormalHom hF f).ker`. -/
+@[simp]
+theorem restrictNormalOpenNormalSubgroup_toSubgroup {F : Type*} [Field F] [Algebra k F]
+    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+    [Normal (RatFunc k) F] (hF : IsAlgebraicBelyiPair k F)
+    (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
+    (restrictNormalOpenNormalSubgroup hF f).toSubgroup = (restrictNormalHom hF f).ker :=
+  (rfl)
 
 /-- Precomposing the base-point embedding `f` with `τ ∈ Gal(F/RatFunc k)` conjugates the finite
 quotient projection `restrictNormalHom hF f` by `τ`. -/
 theorem restrictNormalHom_comp {F : Type*} [Field F] [Algebra k F] [Algebra (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F]
     (hF : IsAlgebraicBelyiPair k F) (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k))
-    (τ : Gal(F/RatFunc k)) (γ : GeometricFundamentalGroup k) :
+    (τ : Gal(F/RatFunc k)) (γ : BelyiGeometricFundamentalGroup k) :
     restrictNormalHom hF (f.comp (τ : F →ₐ[RatFunc k] F)) γ =
       τ⁻¹ * restrictNormalHom hF f γ * τ :=
   (liftMaximalBelyiExtension hF f).restrictNormalHom_comp τ γ
 
-private noncomputable def quotientKerRestrictNormalHomMulEquiv {F : Type*} [Field F] [Algebra k F]
-    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-    [Normal (RatFunc k) F] (hF : IsAlgebraicBelyiPair k F)
-    (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
-    GeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker ≃* Gal(F/RatFunc k) :=
-  QuotientGroup.liftEquiv _ (restrictNormalHom_surjective hF f) rfl
-
 /-- For any finite normal algebraic Belyi pair `F` and base-point embedding
-`f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)`, the quotient of `GeometricFundamentalGroup k`
-by the kernel of `restrictNormalHom hF f` is topologically isomorphic to `Gal(F/RatFunc k)`. -/
+`f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)`, the quotient of
+`BelyiGeometricFundamentalGroup k` by `(restrictNormalHom hF f).ker` is topologically isomorphic to
+`Gal(F/RatFunc k)`. For an arbitrary normal overfield `M`, see
+`(liftMaximalBelyiExtension hF f).quotientKerRestrictNormalHomEquiv`. -/
 noncomputable def quotientKerRestrictNormalHomEquiv {F : Type*} [Field F] [Algebra k F]
     [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
     [Normal (RatFunc k) F] (hF : IsAlgebraicBelyiPair k F)
     (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) :
-    GeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker ≃ₜ* Gal(F/RatFunc k) where
-  __ := quotientKerRestrictNormalHomMulEquiv hF f
-  __ := Continuous.homeoOfEquivCompactToT2
-    (f := (quotientKerRestrictNormalHomMulEquiv hF f).toEquiv)
-    ((QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr (continuous_restrictNormalHom hF f))
+    BelyiGeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker ≃ₜ* Gal(F/RatFunc k) :=
+  (liftMaximalBelyiExtension hF f).quotientKerRestrictNormalHomEquiv
 
 @[simp]
 theorem quotientKerRestrictNormalHomEquiv_mk {F : Type*} [Field F] [Algebra k F]
     [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
     [Normal (RatFunc k) F] (hF : IsAlgebraicBelyiPair k F)
-    (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) (γ : GeometricFundamentalGroup k) :
+    (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) (γ : BelyiGeometricFundamentalGroup k) :
     quotientKerRestrictNormalHomEquiv hF f
-        (γ : GeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker) =
+        (γ : BelyiGeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker) =
       restrictNormalHom hF f γ :=
-  (rfl)
+  (liftMaximalBelyiExtension hF f).quotientKerRestrictNormalHomEquiv_mk γ
 
-/-- `GeometricFundamentalGroup k` is infinite for every field `k` of characteristic zero. -/
-instance instInfinite : Infinite (GeometricFundamentalGroup k) := by
-  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
-  rw [← not_finite_iff_infinite]
-  intro hfin
+/-- The inverse of `quotientKerRestrictNormalHomEquiv hF f` sends `restrictNormalHom hF f γ` back
+to the quotient class of `γ`. -/
+@[simp]
+theorem quotientKerRestrictNormalHomEquiv_symm_restrictNormalHom {F : Type*} [Field F]
+    [Algebra k F] [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+    [FiniteDimensional (RatFunc k) F] [Normal (RatFunc k) F] (hF : IsAlgebraicBelyiPair k F)
+    (f : F →ₐ[RatFunc k] AlgebraicClosure (RatFunc k)) (γ : BelyiGeometricFundamentalGroup k) :
+    (quotientKerRestrictNormalHomEquiv hF f).symm (restrictNormalHom hF f γ) =
+      (γ : BelyiGeometricFundamentalGroup k ⧸ (restrictNormalHom hF f).ker) :=
+  (liftMaximalBelyiExtension hF f).quotientKerRestrictNormalHomEquiv_symm_restrictNormalHom γ
+
+/-- **Galois correspondence for open subgroups of `BelyiGeometricFundamentalGroup k`**: over an
+algebraically closed field `k`, every open subgroup `U` is `fixingOpenSubgroup` of its fixed field,
+a finite intermediate field of `maximalBelyiExtension k (AlgebraicClosure (RatFunc k)) / k(t)` that
+is an algebraic Belyi pair. -/
+theorem exists_fixingOpenSubgroup_eq [IsAlgClosed k]
+    (U : OpenSubgroup (BelyiGeometricFundamentalGroup k)) :
+    ∃ (E : IntermediateField (RatFunc k)
+        ↥(maximalBelyiExtension k (AlgebraicClosure (RatFunc k))))
+      (_ : FiniteDimensional (RatFunc k) E) (hE : IsAlgebraicBelyiPair k E),
+      fixingOpenSubgroup hE
+        ((maximalBelyiExtension k (AlgebraicClosure (RatFunc k))).val.comp E.val) = U := by
   let Ω := maximalBelyiExtension k (AlgebraicClosure (RatFunc k))
-  set n := Nat.card (GeometricFundamentalGroup k) + 1
-  have : NeZero n := ⟨Nat.succ_ne_zero _⟩
-  let A := AdjoinRoot (X ^ n - C (RatFunc.X : RatFunc k))
-  let φ : A →ₐ[RatFunc k] ↥Ω :=
-    liftMaximalBelyiExtension (isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X k n) IsAlgClosed.lift
-  have : FiniteDimensional (RatFunc k) φ.fieldRange :=
-    Module.Finite.equiv φ.equivFieldRange.toLinearEquiv
-  let N := IntermediateField.normalClosure (RatFunc k) φ.fieldRange ↥Ω
-  have : IsGalois (RatFunc k) N := ⟨⟩
-  have hsurj : Function.Surjective (AlgEquiv.restrictNormalHom ↥N :
-      GeometricFundamentalGroup k →* Gal(↥N/RatFunc k)) :=
-    AlgEquiv.restrictNormalHom_surjective ↥Ω
-  have hcard_le : Nat.card Gal(↥N/RatFunc k) ≤ Nat.card (GeometricFundamentalGroup k) :=
-    Nat.card_le_card_of_surjective _ hsurj
-  have hcard_eq : Nat.card Gal(↥N/RatFunc k) = Module.finrank (RatFunc k) N :=
-    IsGalois.card_aut_eq_finrank (RatFunc k) N
-  have hle : φ.fieldRange ≤ N := fun x hx ↦
-    φ.fieldRange.val.fieldRange_le_normalClosure ⟨⟨x, hx⟩, rfl⟩
-  have hdim_le : Module.finrank (RatFunc k) φ.fieldRange ≤ Module.finrank (RatFunc k) N :=
-    LinearMap.finrank_le_finrank_of_injective (f := (IntermediateField.inclusion hle).toLinearMap)
-      (IntermediateField.inclusion hle).injective
-  have hdim_eq : Module.finrank (RatFunc k) φ.fieldRange = n :=
-    (LinearEquiv.finrank_eq φ.equivFieldRange.toLinearEquiv.symm).trans
-      (finrank_adjoinRoot_X_pow_sub_C_X k n)
-  omega
+  let E : IntermediateField (RatFunc k) ↥Ω := IntermediateField.fixedField U.toSubgroup
+  have hE_fix : E.fixingSubgroup = U.toSubgroup :=
+    InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.isClosed⟩
+  have : FiniteDimensional (RatFunc k) E := by
+    rw [← InfiniteGalois.isOpen_iff_finite, hE_fix]
+    exact U.isOpen
+  have hB : IsAlgebraicBelyiPair k E :=
+    isAlgebraicBelyiPair_intermediateField_maximalBelyiExtension E
+  have hlift : liftMaximalBelyiExtension hB (Ω.val.comp E.val) = E.val :=
+    AlgHom.ext fun _ ↦ Ω.val.injective rfl
+  refine ⟨E, inferInstance, hB, OpenSubgroup.toSubgroup_injective ?_⟩
+  rw [fixingOpenSubgroup_toSubgroup, hlift, IntermediateField.fieldRange_val, hE_fix]
 
-end GeometricFundamentalGroup
+/-- **Galois correspondence for open normal subgroups of `BelyiGeometricFundamentalGroup k`**: over
+an algebraically closed field `k`, every open normal subgroup `U` is
+`restrictNormalOpenNormalSubgroup` of its fixed field, a finite Galois Belyi subextension of
+`maximalBelyiExtension k (AlgebraicClosure (RatFunc k)) / k(t)`. -/
+theorem exists_restrictNormalOpenNormalSubgroup_eq [IsAlgClosed k]
+    (U : OpenNormalSubgroup (BelyiGeometricFundamentalGroup k)) :
+    ∃ (E : IntermediateField (RatFunc k)
+        ↥(maximalBelyiExtension k (AlgebraicClosure (RatFunc k))))
+      (_ : FiniteDimensional (RatFunc k) E) (_ : IsGalois (RatFunc k) E)
+      (hE : IsAlgebraicBelyiPair k E),
+      restrictNormalOpenNormalSubgroup hE
+        ((maximalBelyiExtension k (AlgebraicClosure (RatFunc k))).val.comp E.val) = U := by
+  let Ω := maximalBelyiExtension k (AlgebraicClosure (RatFunc k))
+  let E : IntermediateField (RatFunc k) ↥Ω := IntermediateField.fixedField U.toSubgroup
+  have hE_fix : E.fixingSubgroup = U.toSubgroup :=
+    InfiniteGalois.fixingSubgroup_fixedField ⟨U.toSubgroup, U.toOpenSubgroup.isClosed⟩
+  have : FiniteDimensional (RatFunc k) E := by
+    rw [← InfiniteGalois.isOpen_iff_finite, hE_fix]
+    exact U.isOpen
+  have : IsGalois (RatFunc k) E := by
+    rw [← InfiniteGalois.normal_iff_isGalois, hE_fix]
+    exact U.isNormal'
+  have hB : IsAlgebraicBelyiPair k E :=
+    isAlgebraicBelyiPair_intermediateField_maximalBelyiExtension E
+  have hlift : liftMaximalBelyiExtension hB (Ω.val.comp E.val) = E.val :=
+    AlgHom.ext fun _ ↦ Ω.val.injective rfl
+  refine ⟨E, inferInstance, inferInstance, hB, OpenNormalSubgroup.toSubgroup_injective ?_⟩
+  dsimp only
+  rw [restrictNormalOpenNormalSubgroup_toSubgroup, ker_restrictNormalHom, hlift,
+    IntermediateField.fieldRange_val, hE_fix]
+
+/-- `BelyiGeometricFundamentalGroup k` is infinite for every field `k` of characteristic zero. -/
+instance instInfinite : Infinite (BelyiGeometricFundamentalGroup k) :=
+  not_finite_iff_infinite.mp fun _ ↦
+    not_finiteDimensional_maximalBelyiExtension
+      (IsGalois.finiteDimensional_of_finite (RatFunc k)
+        ↥(maximalBelyiExtension k (AlgebraicClosure (RatFunc k))))
+
+end BelyiGeometricFundamentalGroup
 
 end TauCeti

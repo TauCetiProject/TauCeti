@@ -9,7 +9,10 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.Algebra.Polynomial.Lifts
 public import TauCeti.FieldTheory.RatFunc.Map
 public import TauCeti.FieldTheory.RatFunc.NumDenom
--- Proof-only: `isIntegrallyClosedIn_ratFunc` shows `F(X)`-automorphisms of `K(X)` preserve `K`.
+-- Proof-only: `isIntegrallyClosedIn_ratFunc` shows `F(X)`-automorphisms of `K(X)` preserve `K`,
+-- and `ConstantExtension.Algebraic` supplies `isAlgebraic_of_constantCompositum_eq_top` and
+-- `isSeparable_of_constantCompositum_eq_top`.
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -36,8 +39,6 @@ for the Krull topologies (`TauCeti.RatFunc.mapAlgEquivContinuousMulEquiv`).
 
 ## Main definitions
 
-* `TauCeti.RatFunc.mapAlgebra`: the `F(X)`-algebra structure on `K(X)` induced by `F → K` fixing
-  `X`.
 * `TauCeti.RatFunc.mapAlgEquiv`, `TauCeti.RatFunc.mapAlgEquivHom`: the `F(X)`-automorphism of
   `K(X)` induced by `σ ∈ Gal(K/F)`, and the resulting homomorphism `Gal(K/F) →* Gal(K(X)/F(X))`.
 * `TauCeti.RatFunc.mapAlgEquivContinuousMulEquiv`: for algebraic `K / F`, the topological group
@@ -139,95 +140,19 @@ theorem forall_map_mapRingEquiv_eq_iff_mem_lifts
 
 /-! ### Algebraic extensions of constants and the Krull-topological Galois isomorphism -/
 
-/-- The `RatFunc F`-algebra structure on `RatFunc K` induced by `algebraMap F K` on coefficients
-and fixing `X`. This is not a global instance because for `K = F` it would compete with
-`Algebra.id (RatFunc F)`; install it locally together with `isScalarTower_mapAlgebra` and
-`algebraMap_mapAlgebra_X`. -/
-@[instance_reducible]
-noncomputable def mapAlgebra (F K : Type*) [Field F] [Field K] [Algebra F K] :
-    Algebra (RatFunc F) (RatFunc K) :=
-  (mapRingHom (Polynomial.mapRingHom (algebraMap F K))
-    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-      (Polynomial.map_injective _ (algebraMap F K).injective))).toAlgebra
-
-theorem algebraMap_mapAlgebra_algebraMap (F K : Type*) [Field F] [Field K] [Algebra F K]
-    (p : F[X]) :
-    letI := mapAlgebra F K
-    algebraMap (RatFunc F) (RatFunc K) (algebraMap F[X] (RatFunc F) p) =
-      algebraMap K[X] (RatFunc K) (p.map (algebraMap F K)) := by
-  let _ := mapAlgebra F K
-  rw [mapAlgebra, RingHom.algebraMap_toAlgebra, mapRingHom_algebraMap, Polynomial.coe_mapRingHom]
-
-theorem isScalarTower_mapAlgebra (F K : Type*) [Field F] [Field K] [Algebra F K] :
-    letI := mapAlgebra F K
-    IsScalarTower F (RatFunc F) (RatFunc K) := by
-  let _ := mapAlgebra F K
-  refine isScalarTower_of_algebraMap_C (F := F) (K := K) fun c ↦ ?_
-  rw [← algebraMap_C, ← algebraMap_C, algebraMap_mapAlgebra_algebraMap, Polynomial.map_C]
-
-theorem algebraMap_mapAlgebra_X (F K : Type*) [Field F] [Field K] [Algebra F K] :
-    letI := mapAlgebra F K
-    algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X := by
-  let _ := mapAlgebra F K
-  rw [← algebraMap_X, algebraMap_mapAlgebra_algebraMap, Polynomial.map_X, algebraMap_X]
-
-omit [Algebra F K] [IsScalarTower F (RatFunc F) (RatFunc K)] in
-/-- For any `F(X)`-algebra structure on `K(X)` fixing `X`, the constants `K` generate `K(X)` over
-`F(X)`. -/
-theorem adjoin_range_algebraMap_eq_top
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K))) = ⊤ := by
-  set S := IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K)))
-  have hpoly (r : K[X]) : algebraMap K[X] (RatFunc K) r ∈ S := by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq =>
-      rw [map_add]
-      exact S.add_mem hp hq
-    | monomial n a =>
-      rw [← Polynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow, algebraMap_C, algebraMap_X,
-        ← algebraMap_eq_C, ← hX]
-      exact S.mul_mem (IntermediateField.subset_adjoin _ _ ⟨a, rfl⟩)
-        (S.pow_mem (S.algebraMap_mem _) n)
-  refine eq_top_iff.mpr fun z _ ↦ ?_
-  induction z using RatFunc.induction_on with
-  | f p q _ => exact S.div_mem (hpoly p) (hpoly q)
-
 /-- If `K / F` is algebraic, then `K(X) / F(X)` is algebraic. -/
 theorem isAlgebraic_of_isAlgebraic
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) [Algebra.IsAlgebraic F K] :
-    Algebra.IsAlgebraic (RatFunc F) (RatFunc K) := by
-  have hS : ∀ x ∈ Set.range (algebraMap K (RatFunc K)), IsIntegral (RatFunc F) x := by
-    rintro _ ⟨c, rfl⟩
-    exact ((Algebra.IsIntegral.isIntegral (R := F) c).map
-      (IsScalarTower.toAlgHom F K (RatFunc K))).tower_top
-  have hadj : Algebra.IsAlgebraic (RatFunc F)
-      (IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K)))) :=
-    IntermediateField.isAlgebraic_adjoin hS
-  refine ⟨fun z ↦ ?_⟩
-  have hz : z ∈ IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K))) := by
-    rw [adjoin_range_algebraMap_eq_top hX]
-    trivial
-  exact ((Algebra.IsIntegral.isIntegral (R := RatFunc F)
-    (⟨z, hz⟩ : IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K))))).map
-      (IntermediateField.val _)).isAlgebraic
+    Algebra.IsAlgebraic (RatFunc F) (RatFunc K) :=
+  TauCeti.isAlgebraic_of_constantCompositum_eq_top (k := F) (k' := K)
+    ((TauCeti.constantCompositum_def _ _ _).trans (adjoin_range_algebraMap_eq_top hX))
 
 /-- If `K / F` is separable, then `K(X) / F(X)` is separable. -/
 theorem isSeparable_of_isSeparable
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) [Algebra.IsSeparable F K] :
-    Algebra.IsSeparable (RatFunc F) (RatFunc K) := by
-  have hS : ∀ x ∈ Set.range (algebraMap K (RatFunc K)), IsSeparable (RatFunc F) x := by
-    rintro _ ⟨c, rfl⟩
-    have hc : IsSeparable F (algebraMap K (RatFunc K) c) := by
-      change (minpoly F ((IsScalarTower.toAlgHom F K (RatFunc K)) c)).Separable
-      rw [minpoly.algHom_eq _ (algebraMap K (RatFunc K)).injective]
-      exact Algebra.IsSeparable.isSeparable F c
-    exact hc.tower_top (RatFunc F)
-  have hadj : Algebra.IsSeparable (RatFunc F)
-      (IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K)))) :=
-    (IntermediateField.isSeparable_adjoin_iff_isSeparable _ _).mpr hS
-  exact AlgEquiv.Algebra.isSeparable
-    ((IntermediateField.equivOfEq (adjoin_range_algebraMap_eq_top hX)).trans
-      IntermediateField.topEquiv)
+    Algebra.IsSeparable (RatFunc F) (RatFunc K) :=
+  TauCeti.isSeparable_of_constantCompositum_eq_top (k := F) (k' := K)
+    ((TauCeti.constantCompositum_def _ _ _).trans (adjoin_range_algebraMap_eq_top hX))
 
 /-- If `K / F` is normal, then `K(X) / F(X)` is normal. -/
 theorem normal_of_normal
@@ -303,12 +228,13 @@ noncomputable def mapAlgEquivHom
     Gal(K/F) →* Gal(RatFunc K/RatFunc F) where
   toFun := mapAlgEquiv hX
   map_one' := AlgEquiv.ext fun z ↦ by
-    change mapRingEquiv (RingEquiv.refl K) z = z
-    simp
+    have h1 : (1 : Gal(K/F)).toRingEquiv = RingEquiv.refl K := RingEquiv.ext fun _ ↦ rfl
+    rw [coe_mapAlgEquiv, h1, mapRingEquiv_refl]
+    rfl
   map_mul' σ τ := AlgEquiv.ext fun z ↦ by
-    change mapRingEquiv (τ.toRingEquiv.trans σ.toRingEquiv) z =
-      mapRingEquiv σ.toRingEquiv (mapRingEquiv τ.toRingEquiv z)
-    rw [mapRingEquiv_trans]
+    have hmul : (σ * τ).toRingEquiv = τ.toRingEquiv.trans σ.toRingEquiv :=
+      RingEquiv.ext fun _ ↦ rfl
+    rw [coe_mapAlgEquiv, hmul, mapRingEquiv_trans]
     rfl
 
 @[simp]
@@ -401,39 +327,31 @@ theorem continuous_mapAlgEquivHom
   classical
   let b := Module.finBasis (RatFunc F) E
   let S : Finset K := Finset.univ.biUnion fun i ↦
-    (Finset.range (((b i : RatFunc K).num).natDegree + 1)).image ((b i : RatFunc K).num.coeff) ∪
-      (Finset.range (((b i : RatFunc K).denom).natDegree + 1)).image
-        ((b i : RatFunc K).denom.coeff)
+    (b i : RatFunc K).num.coeffs ∪ (b i : RatFunc K).denom.coeffs
   let E₀ := IntermediateField.adjoin F (S : Set K)
   refine ⟨E₀, inferInstance, fun σ hσ ↦ hEU ?_⟩
   rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hσ ⊢
+  have hmap {p : K[X]} (hp : (p.coeffs : Set K) ⊆ E₀) :
+      p.map (σ.toRingEquiv : K →+* K) = p := by
+    ext m
+    rw [Polynomial.coeff_map]
+    by_cases hm : p.coeff m = 0
+    · rw [hm, map_zero]
+    · exact hσ _ (hp (Polynomial.coeff_mem_coeffs hm))
   have hbi (i : Fin (Module.finrank (RatFunc F) E)) :
       mapAlgEquivHom hX σ (b i : RatFunc K) = b i := by
-    have hnum : ((b i : RatFunc K).num).map σ.toRingHom = (b i : RatFunc K).num := by
-      ext m
-      rw [Polynomial.coeff_map]
-      rcases le_or_gt m ((b i : RatFunc K).num).natDegree with hm | hm
-      · refine hσ _ (IntermediateField.subset_adjoin F (S : Set K) ?_)
-        exact Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _,
-          Finset.mem_union_left _ <| Finset.mem_image.mpr
-            ⟨m, Finset.mem_range.mpr (Nat.lt_succ_of_le hm), rfl⟩⟩
-      · simp [Polynomial.coeff_eq_zero_of_natDegree_lt hm]
-    have hden : ((b i : RatFunc K).denom).map σ.toRingHom = (b i : RatFunc K).denom := by
-      ext m
-      rw [Polynomial.coeff_map]
-      rcases le_or_gt m ((b i : RatFunc K).denom).natDegree with hm | hm
-      · refine hσ _ (IntermediateField.subset_adjoin F (S : Set K) ?_)
-        exact Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _,
-          Finset.mem_union_right _ <| Finset.mem_image.mpr
-            ⟨m, Finset.mem_range.mpr (Nat.lt_succ_of_le hm), rfl⟩⟩
-      · simp [Polynomial.coeff_eq_zero_of_natDegree_lt hm]
+    have hnum : (b i : RatFunc K).num.map (σ.toRingEquiv : K →+* K) = (b i : RatFunc K).num :=
+      hmap fun c hc ↦ IntermediateField.subset_adjoin F (S : Set K) <|
+        Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr
+          ⟨i, Finset.mem_univ _, Finset.mem_union_left _ hc⟩
+    have hden : (b i : RatFunc K).denom.map (σ.toRingEquiv : K →+* K) =
+        (b i : RatFunc K).denom :=
+      hmap fun c hc ↦ IntermediateField.subset_adjoin F (S : Set K) <|
+        Finset.mem_coe.mpr <| Finset.mem_biUnion.mpr
+          ⟨i, Finset.mem_univ _, Finset.mem_union_right _ hc⟩
     conv_lhs => rw [← num_div_denom (b i : RatFunc K)]
     rw [mapAlgEquivHom_apply, coe_mapAlgEquiv, map_div₀, mapRingEquiv_algebraMap,
-      mapRingEquiv_algebraMap, show ((b i : RatFunc K).num.map σ.toRingEquiv) =
-        (b i : RatFunc K).num.map σ.toRingHom from rfl,
-      show ((b i : RatFunc K).denom.map σ.toRingEquiv) =
-        (b i : RatFunc K).denom.map σ.toRingHom from rfl,
-      hnum, hden, num_div_denom]
+      mapRingEquiv_algebraMap, hnum, hden, num_div_denom]
   intro y hy
   have hy' := congrArg Subtype.val (b.sum_repr ⟨y, hy⟩).symm
   push_cast at hy'
@@ -454,6 +372,7 @@ private theorem continuous_mapAlgEquivMulEquiv_symm
   let S : Set (RatFunc K) := Set.range fun i ↦ algebraMap K (RatFunc K) (b₀ i)
   let E := IntermediateField.adjoin (RatFunc F) S
   refine ⟨E, inferInstance, fun ψ hψ ↦ hE₀U ?_⟩
+  rw [MulEquiv.coe_toMonoidHom]
   rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hψ ⊢
   set σ := (mapAlgEquivMulEquiv hX).symm ψ
   have hσψ : mapAlgEquivHom hX σ = ψ := (mapAlgEquivMulEquiv hX).apply_symm_apply ψ
@@ -464,7 +383,6 @@ private theorem continuous_mapAlgEquivMulEquiv_symm
   intro c hc
   have hc' := congrArg Subtype.val (b₀.sum_repr ⟨c, hc⟩).symm
   push_cast at hc'
-  change σ c = c
   rw [hc', map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, hbi]
 
@@ -485,20 +403,33 @@ theorem mapAlgEquivContinuousMulEquiv_apply
     mapAlgEquivContinuousMulEquiv hX σ = mapAlgEquiv hX σ :=
   (rfl)
 
-theorem mapAlgEquivContinuousMulEquiv_symm_algebraMap_const
+@[simp]
+theorem mapAlgEquivContinuousMulEquiv_symm_mapAlgEquiv
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) (σ : Gal(K/F)) :
+    (mapAlgEquivContinuousMulEquiv hX).symm (mapAlgEquiv hX σ) = σ := by
+  rw [← mapAlgEquivContinuousMulEquiv_apply hX σ, ContinuousMulEquiv.symm_apply_apply]
+
+@[simp]
+theorem mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
+    (ψ : Gal(RatFunc K/RatFunc F)) :
+    mapAlgEquiv hX ((mapAlgEquivContinuousMulEquiv hX).symm ψ) = ψ :=
+  (mapAlgEquivContinuousMulEquiv hX).apply_symm_apply ψ
+
+theorem algebraMap_const_mapAlgEquivContinuousMulEquiv_symm
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
     algebraMap K (RatFunc K) ((mapAlgEquivContinuousMulEquiv hX).symm ψ c) =
       ψ (algebraMap K (RatFunc K) c) := by
-  have h := (mapAlgEquivContinuousMulEquiv hX).apply_symm_apply ψ
+  have h := mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm hX ψ
   exact (mapAlgEquiv_algebraMap_const hX _ c).symm.trans congr($(h) (algebraMap K (RatFunc K) c))
 
 @[simp]
-theorem mapAlgEquivContinuousMulEquiv_symm_C
+theorem C_mapAlgEquivContinuousMulEquiv_symm
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (ψ : Gal(RatFunc K/RatFunc F)) (c : K) :
     RatFunc.C ((mapAlgEquivContinuousMulEquiv hX).symm ψ c) = ψ (RatFunc.C c) := by
-  simpa only [algebraMap_eq_C] using mapAlgEquivContinuousMulEquiv_symm_algebraMap_const hX ψ c
+  simpa only [algebraMap_eq_C] using algebraMap_const_mapAlgEquivContinuousMulEquiv_symm hX ψ c
 
 end IsAlgebraic
 
@@ -522,7 +453,7 @@ theorem mem_range_mapRingHom_iff_fixed (z : RatFunc K) :
   let := TauCeti.RatFunc.mapAlgebra F K
   have := TauCeti.RatFunc.isScalarTower_mapAlgebra F K
   have hX := TauCeti.RatFunc.algebraMap_mapAlgebra_X F K
-  rw [← show algebraMap (RatFunc F) (RatFunc K) = mapRingHom _ _ from rfl,
+  rw [← TauCeti.RatFunc.algebraMap_mapAlgebra F K,
     ← TauCeti.RatFunc.forall_mapRingEquiv_eq_iff_mem_range hX (S := Set.range AlgEquiv.toRingEquiv)
       fun c ↦ by simpa using (InfiniteGalois.mem_range_algebraMap_iff_fixed c).symm]
   simp [TauCeti.RatFunc.coe_mapRingEquiv]

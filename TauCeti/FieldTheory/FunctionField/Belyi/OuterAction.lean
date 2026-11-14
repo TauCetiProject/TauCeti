@@ -36,7 +36,8 @@ of topological groups
 Specifically:
 * restriction of scalars embeds `Gal(Ω/K(t))` topologically onto the closed normal subgroup
   `TauCeti.belyiGeometricSubgroup F K M` of `Gal(Ω/F(t))`
-  (`TauCeti.belyiGeometricSubgroupEquiv`);
+  (`TauCeti.isClosed_belyiGeometricSubgroup`, `TauCeti.normal_belyiGeometricSubgroup`,
+  `TauCeti.belyiGeometricSubgroupEquiv`);
 * restriction to the constants `K ⊂ Ω` defines a continuous surjective homomorphism
   `TauCeti.belyiArithmeticRestrict : Gal(Ω/F(t)) →* Gal(K/F)` with kernel
   `belyiGeometricSubgroup F K M`, inducing a topological group isomorphism
@@ -49,11 +50,12 @@ Specifically:
 Specializing to algebraically closed `K` and `M = AlgebraicClosure (RatFunc K)` equipped with the
 canonical `F(t)`-algebra structure from `TauCeti.RatFunc.mapAlgebra` yields the canonical
 continuous arithmetic outer Galois representation
-`TauCeti.geometricFundamentalGroupOuterAction F K :
-  Gal(K/F) →* ContinuousOut (GeometricFundamentalGroup K)`
+`TauCeti.belyiGeometricFundamentalGroupOuterAction F K :
+  Gal(K/F) →* ContinuousOut (BelyiGeometricFundamentalGroup K)`
 and, for `K = AlgebraicClosure F`,
-`TauCeti.absoluteGaloisGroupOuterAction F :
-  Field.absoluteGaloisGroup F →* ContinuousOut (GeometricFundamentalGroup (AlgebraicClosure F))`.
+`TauCeti.belyiAbsoluteGaloisGroupOuterAction F :
+  Field.absoluteGaloisGroup F →*
+    ContinuousOut (BelyiGeometricFundamentalGroup (AlgebraicClosure F))`.
 
 ## Main definitions
 
@@ -66,30 +68,32 @@ and, for `K = AlgebraicClosure F`,
 * `TauCeti.belyiConjByLift`, `TauCeti.belyiOuterActionOfTower`: conjugation of `Gal(Ω/K(t))` by a
   lift `τ ∈ Gal(Ω/F(t))`, and the descended continuous outer action
   `Gal(K/F) →* ContinuousOut Gal(Ω/K(t))`.
-* `TauCeti.geometricFundamentalGroupOuterAction`, `TauCeti.absoluteGaloisGroupOuterAction`: the
-  canonical continuous outer Galois actions on `GeometricFundamentalGroup K`.
+* `TauCeti.belyiGeometricFundamentalGroupOuterAction`,
+  `TauCeti.belyiAbsoluteGaloisGroupOuterAction`: the canonical continuous outer Galois actions on
+  `BelyiGeometricFundamentalGroup K`.
 
 ## Main results
 
 * `TauCeti.normal_maximalBelyiExtension_of_tower`,
   `TauCeti.isGalois_maximalBelyiExtension_of_tower`: `maximalBelyiExtension K M` is Galois over
   `RatFunc F`.
-* `TauCeti.belyiArithmeticRestrict_surjective`, `TauCeti.ker_belyiArithmeticRestrict`,
-  `TauCeti.continuous_belyiArithmeticRestrict`: exactness and continuity of the fundamental
-  sequence.
+* `TauCeti.isClosed_belyiGeometricSubgroup`, `TauCeti.normal_belyiGeometricSubgroup`,
+  `TauCeti.belyiArithmeticRestrict_surjective`, `TauCeti.ker_belyiArithmeticRestrict`,
+  `TauCeti.continuous_belyiArithmeticRestrict`: closedness, normality, exactness, and continuity of
+  the fundamental sequence.
 * `TauCeti.belyiConjByLift_apply_apply`, `TauCeti.belyiOuterActionOfTower_belyiArithmeticRestrict`,
   `TauCeti.belyiOuterActionOfTower_smul_conjClasses_mk`: explicit computation of the outer action
   on automorphisms, field elements, and conjugacy classes.
 * `TauCeti.continuous_belyiOuterActionOfTower`,
-  `TauCeti.continuous_geometricFundamentalGroupOuterAction`,
-  `TauCeti.continuous_absoluteGaloisGroupOuterAction`: continuity for the Krull topology on the
-  source and the congruence-quotient topology on `ContinuousOut`.
+  `TauCeti.continuous_belyiGeometricFundamentalGroupOuterAction`,
+  `TauCeti.continuous_belyiAbsoluteGaloisGroupOuterAction`: continuity for the Krull topology on
+  the source and the congruence-quotient topology on `ContinuousOut`.
 
 ## References
 
 * A. Grothendieck, *Esquisse d'un Programme* (1984), in *Geometric Galois Actions*, Vol. 1, LMS
   Lecture Note Series 242, Cambridge University Press, 1997, pp. 5–48.
-* J. Szamuely, *Galois Groups and Fundamental Groups*, Cambridge Studies in Advanced Mathematics
+* T. Szamuely, *Galois Groups and Fundamental Groups*, Cambridge Studies in Advanced Mathematics
   117, Cambridge University Press, 2009, Proposition 4.7.1.
 -/
 
@@ -117,46 +121,34 @@ theorem map_maximalBelyiExtension_of_aut [Normal F K]
   have := RatFunc.normal_of_normal hX
   let σ : Gal(K/F) :=
     (RatFunc.mapAlgEquivContinuousMulEquiv hX).symm (τ.restrictNormal (RatFunc K))
-  have hσψ : RatFunc.mapAlgEquiv hX σ = τ.restrictNormal (RatFunc K) := by
-    simpa only [RatFunc.mapAlgEquivContinuousMulEquiv_apply] using
-      (RatFunc.mapAlgEquivContinuousMulEquiv hX).apply_symm_apply (τ.restrictNormal (RatFunc K))
+  have hσψ : RatFunc.mapAlgEquiv hX σ = τ.restrictNormal (RatFunc K) :=
+    RatFunc.mapAlgEquiv_mapAlgEquivContinuousMulEquiv_symm hX _
   refine map_maximalBelyiExtension_of_mapRingEquiv σ.toRingEquiv τ.toRingEquiv fun x ↦ ?_
-  change τ (algebraMap (RatFunc K) M x) =
-    algebraMap (RatFunc K) M (RatFunc.mapRingEquiv σ.toRingEquiv x)
-  rw [← AlgEquiv.restrictNormal_commutes τ (RatFunc K) x, ← hσψ, RatFunc.coe_mapAlgEquiv]
+  rw [AlgEquiv.coe_toRingEquiv, ← AlgEquiv.restrictNormal_commutes τ (RatFunc K) x, ← hσψ,
+    RatFunc.coe_mapAlgEquiv]
 
 /-- Elementwise form of `TauCeti.map_maximalBelyiExtension_of_aut`. -/
 @[simp]
-theorem mem_maximalBelyiExtension_aut_iff [Normal F K]
+theorem apply_mem_maximalBelyiExtension_iff_of_aut [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (τ : Gal(M/RatFunc F)) {y : M} :
     τ y ∈ maximalBelyiExtension K M ↔ y ∈ maximalBelyiExtension K M := by
-  change τ y ∈ (maximalBelyiExtension K M).toSubfield ↔ y ∈ (maximalBelyiExtension K M).toSubfield
-  conv_lhs => rw [← map_maximalBelyiExtension_of_aut hX τ]
-  exact ⟨fun ⟨x, hx, hxy⟩ ↦ τ.injective hxy ▸ hx, fun hy ↦ ⟨y, hy, rfl⟩⟩
+  rw [← IntermediateField.mem_toSubfield, ← map_maximalBelyiExtension_of_aut hX τ,
+    RingEquiv.toRingHom_eq_coe, ← AlgEquiv.coe_toRingEquiv, ← RingHom.coe_coe,
+    Subfield.map_mem_map, IntermediateField.mem_toSubfield]
 
 /-- When `K / F` and `M / F(t)` are normal and `F(t) → K(t)` fixes `X`,
 `maximalBelyiExtension K M` is normal over `F(t)`. -/
-theorem normal_maximalBelyiExtension_of_tower [Normal F K] [hNM : Normal (RatFunc F) M]
+theorem normal_maximalBelyiExtension_of_tower [Normal F K] [Normal (RatFunc F) M]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     Normal (RatFunc F) ↥(maximalBelyiExtension K M) := by
-  let Ω₀ : IntermediateField (RatFunc F) M :=
-    (maximalBelyiExtension K M).restrictScalars (RatFunc F)
-  have hΩ₀ : Normal (RatFunc F) ↥Ω₀ := by
-    refine { toIsAlgebraic := Algebra.IsAlgebraic.of_injective Ω₀.val Ω₀.val.injective
-             splits' := fun x ↦ ?_ }
-    have hmin : minpoly (RatFunc F) (x : M) = minpoly (RatFunc F) x :=
-      minpoly.algHom_eq Ω₀.val Ω₀.val.injective x
-    have hpM : ((minpoly (RatFunc F) x).map (algebraMap (RatFunc F) M)).Splits :=
-      hmin ▸ hNM.splits (x : M)
-    refine IntermediateField.splits_of_splits hpM fun y hy ↦ ?_
-    have hint : IsIntegral (RatFunc F) x := Algebra.IsIntegral.isIntegral x
-    have hminy : minpoly (RatFunc F) y = minpoly (RatFunc F) (x : M) := by
-      rw [hmin]
-      exact (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible hint)
-        (Polynomial.mem_rootSet.mp hy).2 (minpoly.monic hint)).symm
-    obtain ⟨τ, hτ : τ y = x⟩ := (Normal.minpoly_eq_iff_mem_orbit M).mp hminy.symm
-    exact (mem_maximalBelyiExtension_aut_iff hX τ).mp (hτ ▸ x.2)
+  have : Normal (RatFunc F)
+      ↥((maximalBelyiExtension K M).restrictScalars (RatFunc F)) := by
+    refine IntermediateField.normal_iff_forall_map_le'.mpr fun τ y hy ↦ ?_
+    rw [IntermediateField.mem_map] at hy
+    obtain ⟨x, hx, rfl⟩ := hy
+    rw [IntermediateField.mem_restrictScalars] at hx ⊢
+    exact (apply_mem_maximalBelyiExtension_iff_of_aut hX τ).mpr hx
   exact Normal.of_algEquiv
     (IntermediateField.restrictScalarsAlgEquiv (RatFunc F) (maximalBelyiExtension K M))
 
@@ -187,6 +179,8 @@ theorem mem_belyiGeometricSubgroup_iff {τ : Gal(↥(maximalBelyiExtension K M)/
       ∃ γ : Gal(↥(maximalBelyiExtension K M)/RatFunc K), γ.restrictScalars (RatFunc F) = τ :=
   Iff.rfl
 
+/-- For `K / F` normal with `F(t) → K(t)` fixing `X`, `belyiGeometricSubgroup F K M` coincides with
+the kernel of restriction to the normal subextension `K(t) / F(t)`. -/
 theorem belyiGeometricSubgroup_eq_ker_restrictNormalHom [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     letI : Normal (RatFunc F) (RatFunc K) := RatFunc.normal_of_normal hX
@@ -195,6 +189,8 @@ theorem belyiGeometricSubgroup_eq_ker_restrictNormalHom [Normal F K]
   exact AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom (RatFunc F) (RatFunc K)
     ↥(maximalBelyiExtension K M)
 
+/-- For `K / F` normal with `F(t) → K(t)` fixing `X`, `belyiGeometricSubgroup F K M` is a normal
+subgroup of `Gal(maximalBelyiExtension K M / RatFunc F)`. -/
 theorem normal_belyiGeometricSubgroup [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     (belyiGeometricSubgroup F K M).Normal := by
@@ -202,73 +198,62 @@ theorem normal_belyiGeometricSubgroup [Normal F K]
   rw [belyiGeometricSubgroup_eq_ker_restrictNormalHom hX]
   exact (AlgEquiv.restrictNormalHom (RatFunc K)).normal_ker
 
-omit [Algebra F K] [IsScalarTower F (RatFunc F) (RatFunc K)] in
-private theorem continuous_restrictScalarsHom_maximalBelyiExtension :
-    Continuous (AlgEquiv.restrictScalarsHom (RatFunc F) :
-      Gal(↥(maximalBelyiExtension K M)/RatFunc K) →*
-        Gal(↥(maximalBelyiExtension K M)/RatFunc F)) := by
-  apply continuous_of_continuousAt_one _ (continuousAt_def.mpr fun U hU ↦ ?_)
-  rw [map_one, krullTopology_mem_nhds_one_iff] at hU
-  obtain ⟨L, _, hLU⟩ := hU
-  rw [krullTopology_mem_nhds_one_iff]
-  let b := Module.finBasis (RatFunc F) L
-  let S : Set ↥(maximalBelyiExtension K M) := Set.range fun i ↦ (b i : ↥(maximalBelyiExtension K M))
-  let L' := IntermediateField.adjoin (RatFunc K) S
-  refine ⟨L', inferInstance, fun γ hγ ↦ hLU ?_⟩
-  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hγ ⊢
-  intro y hy
-  have hy' := congrArg Subtype.val (b.sum_repr ⟨y, hy⟩).symm
-  push_cast at hy'
-  change γ y = y
-  rw [hy', map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hbi : γ (b i : ↥(maximalBelyiExtension K M)) = b i :=
-    hγ _ (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)
-  change γ (b.repr ⟨y, hy⟩ i • (b i : ↥(maximalBelyiExtension K M))) = _
-  rw [Algebra.smul_def, map_mul, hbi]
-  congr 1
-  rw [IsScalarTower.algebraMap_apply (RatFunc F) (RatFunc K) ↥(maximalBelyiExtension K M),
-    AlgEquiv.commutes]
-
-variable (F K M) in
-omit [Algebra F K] [IsScalarTower F (RatFunc F) (RatFunc K)] in
-private noncomputable def belyiGeometricSubgroupMulEquiv :
-    Gal(↥(maximalBelyiExtension K M)/RatFunc K) ≃* belyiGeometricSubgroup F K M :=
-  MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective (RatFunc F))
+/-- For `K / F` algebraic with `F(t) → K(t)` fixing `X`, `belyiGeometricSubgroup F K M` is closed
+in `Gal(maximalBelyiExtension K M / RatFunc F)` for the Krull topology. -/
+theorem isClosed_belyiGeometricSubgroup [Algebra.IsAlgebraic F K]
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
+    IsClosed (belyiGeometricSubgroup F K M : Set Gal(↥(maximalBelyiExtension K M)/RatFunc F)) := by
+  have := RatFunc.isAlgebraic_of_isAlgebraic hX
+  exact AlgEquiv.isClosed_range_restrictScalarsHom (RatFunc F)
 
 variable (M) in
 /-- **Topological embedding of the geometric Galois group**: for algebraic `K / F` with
-`F(t) → K(t)` fixing `X` and `M / K(t)` normal, restriction of scalars identifies
+`F(t) → K(t)` fixing `X`, restriction of scalars identifies
 `Gal(maximalBelyiExtension K M / RatFunc K)` as a topological group with
 `belyiGeometricSubgroup F K M`. -/
-noncomputable def belyiGeometricSubgroupEquiv [Algebra.IsAlgebraic F K] [Normal (RatFunc K) M]
+noncomputable def belyiGeometricSubgroupEquiv [Algebra.IsAlgebraic F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     Gal(↥(maximalBelyiExtension K M)/RatFunc K) ≃ₜ* belyiGeometricSubgroup F K M :=
   haveI : Algebra.IsAlgebraic (RatFunc F) (RatFunc K) := RatFunc.isAlgebraic_of_isAlgebraic hX
-  haveI : Algebra.IsAlgebraic (RatFunc F) ↥(maximalBelyiExtension K M) :=
-    Algebra.IsAlgebraic.trans (RatFunc F) (RatFunc K) ↥(maximalBelyiExtension K M)
-  haveI : T2Space Gal(↥(maximalBelyiExtension K M)/RatFunc F) := krullTopology_t2
-  { __ := belyiGeometricSubgroupMulEquiv F K M
-    __ := Continuous.homeoOfEquivCompactToT2
-      (f := (belyiGeometricSubgroupMulEquiv F K M).toEquiv)
-      (continuous_restrictScalarsHom_maximalBelyiExtension.subtype_mk fun x ↦ ⟨x, rfl⟩) }
+  AlgEquiv.restrictScalarsHomRangeEquiv (RatFunc F) (RatFunc K) ↥(maximalBelyiExtension K M)
 
 @[simp]
-theorem coe_belyiGeometricSubgroupEquiv_apply [Algebra.IsAlgebraic F K] [Normal (RatFunc K) M]
+theorem coe_belyiGeometricSubgroupEquiv_apply [Algebra.IsAlgebraic F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (γ : Gal(↥(maximalBelyiExtension K M)/RatFunc K)) :
     (belyiGeometricSubgroupEquiv M hX γ : Gal(↥(maximalBelyiExtension K M)/RatFunc F)) =
-      γ.restrictScalars (RatFunc F) :=
-  (rfl)
+      γ.restrictScalars (RatFunc F) := by
+  have := RatFunc.isAlgebraic_of_isAlgebraic hX
+  exact AlgEquiv.coe_restrictScalarsHomRangeEquiv_apply γ
 
 @[simp]
 theorem belyiGeometricSubgroupEquiv_symm_restrictScalars [Algebra.IsAlgebraic F K]
-    [Normal (RatFunc K) M]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (γ : Gal(↥(maximalBelyiExtension K M)/RatFunc K))
     (hγ : γ.restrictScalars (RatFunc F) ∈ belyiGeometricSubgroup F K M) :
-    (belyiGeometricSubgroupEquiv M hX).symm ⟨γ.restrictScalars (RatFunc F), hγ⟩ = γ :=
-  (belyiGeometricSubgroupEquiv M hX).symm_apply_apply γ
+    (belyiGeometricSubgroupEquiv M hX).symm ⟨γ.restrictScalars (RatFunc F), hγ⟩ = γ := by
+  have := RatFunc.isAlgebraic_of_isAlgebraic hX
+  exact AlgEquiv.restrictScalarsHomRangeEquiv_symm_restrictScalars γ hγ
+
+/-- Restricting scalars on `(belyiGeometricSubgroupEquiv M hX).symm x` recovers `x`. -/
+@[simp]
+theorem restrictScalars_belyiGeometricSubgroupEquiv_symm [Algebra.IsAlgebraic F K]
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
+    (x : belyiGeometricSubgroup F K M) :
+    ((belyiGeometricSubgroupEquiv M hX).symm x).restrictScalars (RatFunc F) =
+      (x : Gal(↥(maximalBelyiExtension K M)/RatFunc F)) := by
+  have := RatFunc.isAlgebraic_of_isAlgebraic hX
+  exact AlgEquiv.restrictScalars_restrictScalarsHomRangeEquiv_symm x
+
+/-- `(belyiGeometricSubgroupEquiv M hX).symm x` acts on `maximalBelyiExtension K M` as `x`. -/
+@[simp]
+theorem belyiGeometricSubgroupEquiv_symm_apply_apply [Algebra.IsAlgebraic F K]
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
+    (x : belyiGeometricSubgroup F K M) (y : ↥(maximalBelyiExtension K M)) :
+    (belyiGeometricSubgroupEquiv M hX).symm x y =
+      (x : Gal(↥(maximalBelyiExtension K M)/RatFunc F)) y := by
+  have := RatFunc.isAlgebraic_of_isAlgebraic hX
+  exact AlgEquiv.restrictScalarsHomRangeEquiv_symm_apply_apply x y
 
 variable (M) in
 /-- The **arithmetic projection** `Gal(maximalBelyiExtension K M / RatFunc F) →* Gal(K/F)`,
@@ -290,7 +275,7 @@ theorem algebraMap_belyiArithmeticRestrict [Normal F K]
   let _ : Normal (RatFunc F) (RatFunc K) := RatFunc.normal_of_normal hX
   rw [IsScalarTower.algebraMap_apply K (RatFunc K) ↥(maximalBelyiExtension K M),
     belyiArithmeticRestrict, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
-    RatFunc.mapAlgEquivContinuousMulEquiv_symm_algebraMap_const,
+    RatFunc.algebraMap_const_mapAlgEquivContinuousMulEquiv_symm,
     AlgEquiv.restrictNormalHom_apply_eq_restrictNormal, AlgEquiv.restrictNormal_commutes,
     ← IsScalarTower.algebraMap_apply K (RatFunc K) ↥(maximalBelyiExtension K M)]
 
@@ -316,6 +301,8 @@ theorem belyiArithmeticRestrict_restrictScalars [Normal F K]
     IsScalarTower.algebraMap_apply K (RatFunc K) ↥(maximalBelyiExtension K M),
     AlgEquiv.commutes]
 
+/-- For `K / F` normal with `F(t) → K(t)` fixing `X`, the kernel of the arithmetic projection
+`belyiArithmeticRestrict M hX` is `belyiGeometricSubgroup F K M`. -/
 theorem ker_belyiArithmeticRestrict [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     (belyiArithmeticRestrict M hX).ker = belyiGeometricSubgroup F K M := by
@@ -328,6 +315,9 @@ theorem ker_belyiArithmeticRestrict [Normal F K]
       (RatFunc.mapAlgEquivContinuousMulEquiv hX).symm.injective (h.trans (map_one _).symm),
     fun h ↦ by rw [h, map_one]⟩
 
+/-- When `K / F` and `M / F(t)` are normal and `F(t) → K(t)` fixes `X`, the arithmetic projection
+`belyiArithmeticRestrict M hX : Gal(maximalBelyiExtension K M / RatFunc F) →* Gal(K/F)` is
+surjective. -/
 theorem belyiArithmeticRestrict_surjective [Normal F K] [Normal (RatFunc F) M]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     Function.Surjective (belyiArithmeticRestrict M hX) := by
@@ -336,33 +326,14 @@ theorem belyiArithmeticRestrict_surjective [Normal F K] [Normal (RatFunc F) M]
   exact (RatFunc.mapAlgEquivContinuousMulEquiv hX).symm.surjective.comp
     (AlgEquiv.restrictNormalHom_surjective ↥(maximalBelyiExtension K M))
 
+/-- For `K / F` normal with `F(t) → K(t)` fixing `X` (and no normality assumption on `M`),
+`belyiArithmeticRestrict M hX` is continuous for the Krull topologies. -/
 theorem continuous_belyiArithmeticRestrict [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     Continuous (belyiArithmeticRestrict M hX) := by
   let _ : Normal (RatFunc F) (RatFunc K) := RatFunc.normal_of_normal hX
-  refine (RatFunc.mapAlgEquivContinuousMulEquiv hX).symm.continuous.comp ?_
-  apply continuous_of_continuousAt_one _ (continuousAt_def.mpr fun U hU ↦ ?_)
-  rw [map_one, krullTopology_mem_nhds_one_iff] at hU
-  obtain ⟨E₀, _, hE₀U⟩ := hU
-  rw [krullTopology_mem_nhds_one_iff]
-  let f : RatFunc K →ₐ[RatFunc F] ↥(maximalBelyiExtension K M) :=
-    IsScalarTower.toAlgHom (RatFunc F) (RatFunc K) ↥(maximalBelyiExtension K M)
-  have : FiniteDimensional (RatFunc F) (E₀.map f) :=
-    Module.Finite.equiv (E₀.equivMap f).toLinearEquiv
-  refine ⟨E₀.map f, inferInstance, fun τ hτ ↦ hE₀U ?_⟩
-  rw [SetLike.mem_coe, IntermediateField.mem_fixingSubgroup_iff] at hτ ⊢
-  intro x hx
-  exact f.injective
-    ((AlgEquiv.restrictNormal_commutes τ (RatFunc K) x).trans (hτ (f x) ⟨x, hx, rfl⟩))
-
-variable (M) in
-private noncomputable def belyiArithmeticQuotientMulEquiv [Normal F K] [Normal (RatFunc F) M]
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
-    haveI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
-    Gal(↥(maximalBelyiExtension K M)/RatFunc F) ⧸ belyiGeometricSubgroup F K M ≃* Gal(K/F) :=
-  haveI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
-  QuotientGroup.liftEquiv _ (belyiArithmeticRestrict_surjective hX)
-    (ker_belyiArithmeticRestrict hX).symm
+  exact (RatFunc.mapAlgEquivContinuousMulEquiv hX).symm.continuous.comp
+    (AlgEquiv.continuous_restrictNormalHom (RatFunc K))
 
 variable (M) in
 /-- **The arithmetic quotient isomorphism**: for `K / F` and `M / F(t)` normal, the quotient of
@@ -372,14 +343,16 @@ noncomputable def belyiArithmeticQuotientEquiv [Normal F K] [Normal (RatFunc F) 
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     haveI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
     Gal(↥(maximalBelyiExtension K M)/RatFunc F) ⧸ belyiGeometricSubgroup F K M ≃ₜ* Gal(K/F) :=
+  letI : Normal (RatFunc F) (RatFunc K) := RatFunc.normal_of_normal hX
   haveI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
   haveI : Normal (RatFunc F) ↥(maximalBelyiExtension K M) :=
     normal_maximalBelyiExtension_of_tower hX
-  { __ := belyiArithmeticQuotientMulEquiv M hX
-    __ := Continuous.homeoOfEquivCompactToT2
-      (f := (belyiArithmeticQuotientMulEquiv M hX).toEquiv)
-      ((QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr
-        (continuous_belyiArithmeticRestrict hX)) }
+  (Subgroup.quotientContinuousMulEquivOfEq
+    ((belyiGeometricSubgroup_eq_ker_restrictNormalHom hX).trans
+      (congrArg MonoidHom.ker AlgHom.restrictNormalHom_toAlgHom.symm))).trans <|
+    ((IsScalarTower.toAlgHom (RatFunc F) (RatFunc K)
+      ↥(maximalBelyiExtension K M)).quotientKerRestrictNormalHomEquiv).trans
+      (RatFunc.mapAlgEquivContinuousMulEquiv hX).symm
 
 @[simp]
 theorem belyiArithmeticQuotientEquiv_mk [Normal F K] [Normal (RatFunc F) M]
@@ -388,8 +361,15 @@ theorem belyiArithmeticQuotientEquiv_mk [Normal F K] [Normal (RatFunc F) M]
     letI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
     belyiArithmeticQuotientEquiv M hX
         (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F) ⧸ belyiGeometricSubgroup F K M) =
-      belyiArithmeticRestrict M hX τ :=
-  (rfl)
+      belyiArithmeticRestrict M hX τ := by
+  have : Normal (RatFunc F) (RatFunc K) := RatFunc.normal_of_normal hX
+  have : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
+  have : Normal (RatFunc F) ↥(maximalBelyiExtension K M) :=
+    normal_maximalBelyiExtension_of_tower hX
+  rw [belyiArithmeticQuotientEquiv, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.trans_apply, Subgroup.quotientContinuousMulEquivOfEq_mk,
+    AlgHom.quotientKerRestrictNormalHomEquiv_mk, AlgHom.restrictNormalHom_toAlgHom]
+  rfl
 
 @[simp]
 theorem belyiArithmeticQuotientEquiv_symm_belyiArithmeticRestrict [Normal F K]
@@ -405,15 +385,25 @@ theorem belyiArithmeticQuotientEquiv_symm_belyiArithmeticRestrict [Normal F K]
 /-- Conjugation of `Gal(maximalBelyiExtension K M / RatFunc K)` by an `F(t)`-automorphism
 `τ ∈ Gal(maximalBelyiExtension K M / RatFunc F)`, as a continuous automorphism of
 `Gal(maximalBelyiExtension K M / RatFunc K)`. -/
-noncomputable def belyiConjByLift [Normal F K] [Normal (RatFunc K) M]
+noncomputable def belyiConjByLift [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F)) :
     ContinuousAut Gal(↥(maximalBelyiExtension K M)/RatFunc K) :=
   haveI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
   ContinuousAut.congr (belyiGeometricSubgroupEquiv M hX).symm (ContinuousAut.conjNormal τ)
 
+/-- Definitional unfolding of `belyiConjByLift` in terms of `ContinuousAut.conjNormal` and
+`belyiGeometricSubgroupEquiv`. -/
+theorem belyiConjByLift_def [Normal F K]
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
+    (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F)) :
+    letI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
+    belyiConjByLift hX τ =
+      ContinuousAut.congr (belyiGeometricSubgroupEquiv M hX).symm (ContinuousAut.conjNormal τ) :=
+  (rfl)
+
 @[simp]
-theorem restrictScalars_belyiConjByLift_apply [Normal F K] [Normal (RatFunc K) M]
+theorem restrictScalars_belyiConjByLift_apply [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F))
     (γ : Gal(↥(maximalBelyiExtension K M)/RatFunc K)) :
@@ -423,15 +413,16 @@ theorem restrictScalars_belyiConjByLift_apply [Normal F K] [Normal (RatFunc K) M
   rw [← coe_belyiGeometricSubgroupEquiv_apply hX (belyiConjByLift hX τ γ)]
   simp [belyiConjByLift]
 
+/-- Explicit action of the conjugated automorphism `belyiConjByLift hX τ γ` on an element `x` of
+`maximalBelyiExtension K M`: it maps `x` to `τ (γ (τ.symm x))`. -/
 @[simp]
-theorem belyiConjByLift_apply_apply [Normal F K] [Normal (RatFunc K) M]
+theorem belyiConjByLift_apply_apply [Normal F K]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F))
     (γ : Gal(↥(maximalBelyiExtension K M)/RatFunc K))
     (x : ↥(maximalBelyiExtension K M)) :
     belyiConjByLift hX τ γ x = τ (γ (τ.symm x)) := by
-  change (belyiConjByLift hX τ γ).restrictScalars (RatFunc F) x = τ (γ (τ.symm x))
-  rw [restrictScalars_belyiConjByLift_apply]
+  rw [← AlgEquiv.restrictScalars_apply (RatFunc F), restrictScalars_belyiConjByLift_apply]
   rfl
 
 variable (M) in
@@ -443,30 +434,41 @@ noncomputable def belyiOuterActionOfTower [Normal F K] [Normal (RatFunc F) M]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
     Gal(K/F) →* ContinuousOut Gal(↥(maximalBelyiExtension K M)/RatFunc K) :=
   haveI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
-  haveI : Normal (RatFunc K) M := Normal.tower_top_of_normal (RatFunc F) (RatFunc K) M
   (ContinuousOut.congr (belyiGeometricSubgroupEquiv M hX).symm).toMonoidHom.comp
     ((outerAction (belyiGeometricSubgroup F K M)).comp
       (belyiArithmeticQuotientEquiv M hX).symm.toMonoidHom)
 
+/-- Definitional unfolding of `belyiOuterActionOfTower` in terms of `outerAction`,
+`belyiArithmeticQuotientEquiv`, and `belyiGeometricSubgroupEquiv`. -/
+theorem belyiOuterActionOfTower_def [Normal F K] [Normal (RatFunc F) M]
+    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X) :
+    letI : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
+    belyiOuterActionOfTower M hX =
+      (ContinuousOut.congr (belyiGeometricSubgroupEquiv M hX).symm).toMonoidHom.comp
+        ((outerAction (belyiGeometricSubgroup F K M)).comp
+          (belyiArithmeticQuotientEquiv M hX).symm.toMonoidHom) :=
+  (rfl)
+
+/-- For `K / F` and `M / F(t)` normal, evaluating `belyiOuterActionOfTower M hX` on the arithmetic
+projection of a lift `τ ∈ Gal(maximalBelyiExtension K M / RatFunc F)` yields the outer automorphism
+class of `belyiConjByLift hX τ`. -/
 @[simp]
 theorem belyiOuterActionOfTower_belyiArithmeticRestrict [Normal F K] [Normal (RatFunc F) M]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F)) :
-    haveI : Normal (RatFunc K) M := Normal.tower_top_of_normal (RatFunc F) (RatFunc K) M
     belyiOuterActionOfTower M hX (belyiArithmeticRestrict M hX τ) =
       (belyiConjByLift hX τ : ContinuousOut Gal(↥(maximalBelyiExtension K M)/RatFunc K)) := by
   let _ : (belyiGeometricSubgroup F K M).Normal := normal_belyiGeometricSubgroup hX
-  have : Normal (RatFunc K) M := Normal.tower_top_of_normal (RatFunc F) (RatFunc K) M
   simp [belyiOuterActionOfTower, belyiConjByLift]
 
+/-- Under `belyiOuterActionOfTower M hX`, the arithmetic projection of a lift `τ` acts on the
+conjugacy class of `γ` by sending it to the conjugacy class of `belyiConjByLift hX τ γ`. -/
 theorem belyiOuterActionOfTower_smul_conjClasses_mk [Normal F K] [Normal (RatFunc F) M]
     (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
     (τ : Gal(↥(maximalBelyiExtension K M)/RatFunc F))
     (γ : Gal(↥(maximalBelyiExtension K M)/RatFunc K)) :
-    haveI : Normal (RatFunc K) M := Normal.tower_top_of_normal (RatFunc F) (RatFunc K) M
     belyiOuterActionOfTower M hX (belyiArithmeticRestrict M hX τ) • ConjClasses.mk γ =
       ConjClasses.mk (belyiConjByLift hX τ γ) := by
-  have : Normal (RatFunc K) M := Normal.tower_top_of_normal (RatFunc F) (RatFunc K) M
   rw [belyiOuterActionOfTower_belyiArithmeticRestrict, ContinuousOut.mk_smul_mk]
 
 /-- The outer Galois action `belyiOuterActionOfTower M hX` is continuous from the Krull topology on
@@ -484,40 +486,90 @@ theorem continuous_belyiOuterActionOfTower [Normal F K] [Normal (RatFunc F) M]
 
 end Tower
 
-/-! ### The canonical outer Galois action on `GeometricFundamentalGroup` -/
+/-! ### The canonical outer Galois action on `BelyiGeometricFundamentalGroup` -/
 
-section GeometricFundamentalGroup
+section BelyiGeometricFundamentalGroup
 
-private theorem normal_algebraicClosure_ratFunc (F K : Type*) [Field F] [Field K] [Algebra F K]
+/-- For any algebraic field extension `K / F`, `AlgebraicClosure (RatFunc K)` is normal over
+`RatFunc F` with respect to `RatFunc.mapAlgebra F K`. -/
+theorem normal_algebraicClosure_ratFunc (F K : Type*) [Field F] [Field K] [Algebra F K]
     [Algebra.IsAlgebraic F K] :
     letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
     Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) := by
   let _ : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
   have : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
-  have hX := RatFunc.algebraMap_mapAlgebra_X F K
-  have : Algebra.IsAlgebraic (RatFunc F) (RatFunc K) := RatFunc.isAlgebraic_of_isAlgebraic hX
-  have : Algebra.IsAlgebraic (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
-    Algebra.IsAlgebraic.trans (RatFunc F) (RatFunc K) (AlgebraicClosure (RatFunc K))
-  exact { toIsAlgebraic := inferInstance
-          splits' := fun _ ↦ IsAlgClosed.splits _ }
+  have : Algebra.IsAlgebraic (RatFunc F) (RatFunc K) :=
+    RatFunc.isAlgebraic_of_isAlgebraic (RatFunc.algebraMap_mapAlgebra_X F K)
+  exact IsAlgClosure.normal (RatFunc F) (AlgebraicClosure (RatFunc K))
 
-/-- **The canonical arithmetic outer Galois action** on `GeometricFundamentalGroup K` for any
+/-- **The canonical arithmetic outer Galois action** on `BelyiGeometricFundamentalGroup K` for any
 normal extension `K / F` in characteristic zero (when `K` is algebraically closed, the outer
 Galois action on `π₁^ét(ℙ¹_K \ {0, 1, ∞})`). -/
-noncomputable def geometricFundamentalGroupOuterAction (F K : Type*) [Field F] [Field K]
+noncomputable def belyiGeometricFundamentalGroupOuterAction (F K : Type*) [Field F] [Field K]
     [CharZero K] [Algebra F K] [Normal F K] :
-    Gal(K/F) →* ContinuousOut (GeometricFundamentalGroup K) :=
+    Gal(K/F) →* ContinuousOut (BelyiGeometricFundamentalGroup K) :=
   letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
   haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
   haveI : Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
     normal_algebraicClosure_ratFunc F K
   belyiOuterActionOfTower (AlgebraicClosure (RatFunc K)) (RatFunc.algebraMap_mapAlgebra_X F K)
 
-/-- `geometricFundamentalGroupOuterAction F K` is continuous from the Krull topology on `Gal(K/F)`
-to the congruence-quotient topology on `ContinuousOut (GeometricFundamentalGroup K)`. -/
-theorem continuous_geometricFundamentalGroupOuterAction (F K : Type*) [Field F] [Field K]
+/-- `belyiGeometricFundamentalGroupOuterAction F K` is `belyiOuterActionOfTower` specialized to
+`M = AlgebraicClosure (RatFunc K)` under `RatFunc.mapAlgebra F K`. -/
+theorem belyiGeometricFundamentalGroupOuterAction_def (F K : Type*) [Field F] [Field K]
     [CharZero K] [Algebra F K] [Normal F K] :
-    Continuous (geometricFundamentalGroupOuterAction F K) := by
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    haveI : Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
+      normal_algebraicClosure_ratFunc F K
+    belyiGeometricFundamentalGroupOuterAction F K =
+      belyiOuterActionOfTower (AlgebraicClosure (RatFunc K))
+        (RatFunc.algebraMap_mapAlgebra_X F K) :=
+  (rfl)
+
+/-- Evaluating `belyiGeometricFundamentalGroupOuterAction F K` on the arithmetic projection of a
+lift `τ` gives the outer class of `belyiConjByLift` on `BelyiGeometricFundamentalGroup K`. -/
+@[simp]
+theorem belyiGeometricFundamentalGroupOuterAction_belyiArithmeticRestrict (F K : Type*) [Field F]
+    [Field K] [CharZero K] [Algebra F K] [Normal F K] :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ τ : Gal(↥(maximalBelyiExtension K (AlgebraicClosure (RatFunc K)))/RatFunc F),
+      belyiGeometricFundamentalGroupOuterAction F K
+          (belyiArithmeticRestrict (AlgebraicClosure (RatFunc K))
+            (RatFunc.algebraMap_mapAlgebra_X F K) τ) =
+        (belyiConjByLift (RatFunc.algebraMap_mapAlgebra_X F K) τ :
+          ContinuousOut (BelyiGeometricFundamentalGroup K)) := by
+  let _ : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+  have : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+  have : Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
+    normal_algebraicClosure_ratFunc F K
+  intro τ
+  exact belyiOuterActionOfTower_belyiArithmeticRestrict (RatFunc.algebraMap_mapAlgebra_X F K) τ
+
+/-- Conjugacy-class action of `belyiGeometricFundamentalGroupOuterAction F K` along a lift `τ`. -/
+theorem belyiGeometricFundamentalGroupOuterAction_smul_conjClasses_mk (F K : Type*) [Field F]
+    [Field K] [CharZero K] [Algebra F K] [Normal F K] :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ (τ : Gal(↥(maximalBelyiExtension K (AlgebraicClosure (RatFunc K)))/RatFunc F))
+      (γ : BelyiGeometricFundamentalGroup K),
+      belyiGeometricFundamentalGroupOuterAction F K
+          (belyiArithmeticRestrict (AlgebraicClosure (RatFunc K))
+            (RatFunc.algebraMap_mapAlgebra_X F K) τ) • ConjClasses.mk γ =
+        ConjClasses.mk (belyiConjByLift (RatFunc.algebraMap_mapAlgebra_X F K) τ γ) := by
+  let _ : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+  have : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+  intro τ γ
+  rw [belyiGeometricFundamentalGroupOuterAction_belyiArithmeticRestrict F K τ,
+    ContinuousOut.mk_smul_mk]
+
+/-- `belyiGeometricFundamentalGroupOuterAction F K` is continuous from the Krull topology on
+`Gal(K/F)` to the congruence-quotient topology on
+`ContinuousOut (BelyiGeometricFundamentalGroup K)`. -/
+theorem continuous_belyiGeometricFundamentalGroupOuterAction (F K : Type*) [Field F] [Field K]
+    [CharZero K] [Algebra F K] [Normal F K] :
+    Continuous (belyiGeometricFundamentalGroupOuterAction F K) := by
   let _ : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
   have : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
   have : Normal (RatFunc F) (AlgebraicClosure (RatFunc K)) :=
@@ -526,23 +578,85 @@ theorem continuous_geometricFundamentalGroupOuterAction (F K : Type*) [Field F] 
     (RatFunc.algebraMap_mapAlgebra_X F K)
 
 /-- **The outer Galois action of the absolute Galois group** `Field.absoluteGaloisGroup F` on
-`GeometricFundamentalGroup (AlgebraicClosure F)`, for any field `F` of characteristic zero (in
+`BelyiGeometricFundamentalGroup (AlgebraicClosure F)`, for any field `F` of characteristic zero (in
 particular `F = ℚ`). -/
-noncomputable def absoluteGaloisGroupOuterAction (F : Type*) [Field F] [CharZero F] :
+noncomputable def belyiAbsoluteGaloisGroupOuterAction (F : Type*) [Field F] [CharZero F] :
     Field.absoluteGaloisGroup F →*
-      ContinuousOut (GeometricFundamentalGroup (AlgebraicClosure F)) :=
+      ContinuousOut (BelyiGeometricFundamentalGroup (AlgebraicClosure F)) :=
   haveI : CharZero (AlgebraicClosure F) :=
     charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
-  geometricFundamentalGroupOuterAction F (AlgebraicClosure F)
+  belyiGeometricFundamentalGroupOuterAction F (AlgebraicClosure F)
 
-/-- Continuity of `absoluteGaloisGroupOuterAction F` for the Krull and congruence-quotient
-topologies. -/
-theorem continuous_absoluteGaloisGroupOuterAction (F : Type*) [Field F] [CharZero F] :
-    Continuous (absoluteGaloisGroupOuterAction F) := by
+/-- `belyiAbsoluteGaloisGroupOuterAction F` is `belyiGeometricFundamentalGroupOuterAction`
+specialized to `K = AlgebraicClosure F`. -/
+theorem belyiAbsoluteGaloisGroupOuterAction_def (F : Type*) [Field F] [CharZero F] :
+    haveI : CharZero (AlgebraicClosure F) :=
+      charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
+    belyiAbsoluteGaloisGroupOuterAction F =
+      belyiGeometricFundamentalGroupOuterAction F (AlgebraicClosure F) :=
+  (rfl)
+
+/-- Evaluating `belyiAbsoluteGaloisGroupOuterAction F` at `σ` agrees with
+`belyiGeometricFundamentalGroupOuterAction F (AlgebraicClosure F) σ`. -/
+@[simp]
+theorem belyiAbsoluteGaloisGroupOuterAction_apply (F : Type*) [Field F] [CharZero F]
+    (σ : Field.absoluteGaloisGroup F) :
+    haveI : CharZero (AlgebraicClosure F) :=
+      charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
+    belyiAbsoluteGaloisGroupOuterAction F σ =
+      belyiGeometricFundamentalGroupOuterAction F (AlgebraicClosure F) σ :=
+  (rfl)
+
+/-- Evaluating `belyiAbsoluteGaloisGroupOuterAction F` on the arithmetic projection of a lift `τ`
+gives the outer class of `belyiConjByLift`. -/
+theorem belyiAbsoluteGaloisGroupOuterAction_belyiArithmeticRestrict (F : Type*) [Field F]
+    [CharZero F] :
+    haveI : CharZero (AlgebraicClosure F) :=
+      charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
+    letI : Algebra (RatFunc F) (RatFunc (AlgebraicClosure F)) :=
+      RatFunc.mapAlgebra F (AlgebraicClosure F)
+    haveI : IsScalarTower F (RatFunc F) (RatFunc (AlgebraicClosure F)) :=
+      RatFunc.isScalarTower_mapAlgebra F (AlgebraicClosure F)
+    ∀ τ : Gal(↥(maximalBelyiExtension (AlgebraicClosure F)
+        (AlgebraicClosure (RatFunc (AlgebraicClosure F))))/RatFunc F),
+      belyiAbsoluteGaloisGroupOuterAction F
+          (belyiArithmeticRestrict (AlgebraicClosure (RatFunc (AlgebraicClosure F)))
+            (RatFunc.algebraMap_mapAlgebra_X F (AlgebraicClosure F)) τ) =
+        (belyiConjByLift (RatFunc.algebraMap_mapAlgebra_X F (AlgebraicClosure F)) τ :
+          ContinuousOut (BelyiGeometricFundamentalGroup (AlgebraicClosure F))) := by
   have : CharZero (AlgebraicClosure F) :=
     charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
-  exact continuous_geometricFundamentalGroupOuterAction F (AlgebraicClosure F)
+  exact belyiGeometricFundamentalGroupOuterAction_belyiArithmeticRestrict F (AlgebraicClosure F)
 
-end GeometricFundamentalGroup
+/-- Conjugacy-class action of `belyiAbsoluteGaloisGroupOuterAction F` along a lift `τ`. -/
+theorem belyiAbsoluteGaloisGroupOuterAction_smul_conjClasses_mk (F : Type*) [Field F]
+    [CharZero F] :
+    haveI : CharZero (AlgebraicClosure F) :=
+      charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
+    letI : Algebra (RatFunc F) (RatFunc (AlgebraicClosure F)) :=
+      RatFunc.mapAlgebra F (AlgebraicClosure F)
+    haveI : IsScalarTower F (RatFunc F) (RatFunc (AlgebraicClosure F)) :=
+      RatFunc.isScalarTower_mapAlgebra F (AlgebraicClosure F)
+    ∀ (τ : Gal(↥(maximalBelyiExtension (AlgebraicClosure F)
+          (AlgebraicClosure (RatFunc (AlgebraicClosure F))))/RatFunc F))
+      (γ : BelyiGeometricFundamentalGroup (AlgebraicClosure F)),
+      belyiAbsoluteGaloisGroupOuterAction F
+          (belyiArithmeticRestrict (AlgebraicClosure (RatFunc (AlgebraicClosure F)))
+            (RatFunc.algebraMap_mapAlgebra_X F (AlgebraicClosure F)) τ) • ConjClasses.mk γ =
+        ConjClasses.mk
+          (belyiConjByLift (RatFunc.algebraMap_mapAlgebra_X F (AlgebraicClosure F)) τ γ) := by
+  have : CharZero (AlgebraicClosure F) :=
+    charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
+  exact belyiGeometricFundamentalGroupOuterAction_smul_conjClasses_mk F (AlgebraicClosure F)
+
+/-- Continuity of `belyiAbsoluteGaloisGroupOuterAction F` for the Krull and congruence-quotient
+topologies. -/
+theorem continuous_belyiAbsoluteGaloisGroupOuterAction (F : Type*) [Field F] [CharZero F] :
+    Continuous (belyiAbsoluteGaloisGroupOuterAction F) := by
+  have : CharZero (AlgebraicClosure F) :=
+    charZero_of_injective_algebraMap (algebraMap F (AlgebraicClosure F)).injective
+  exact continuous_belyiGeometricFundamentalGroupOuterAction F (AlgebraicClosure F)
+
+end BelyiGeometricFundamentalGroup
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Conjugacy
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.ConjClasses
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Quotient
 import Mathlib.Topology.Separation.Connected
 
@@ -62,6 +63,8 @@ discrete (`Multiplicative (ℤ × ℤ)` has the open characteristic subgroup `�
 * `TauCeti.ContinuousAut.isClosed_setOf_apply_eq`, `TauCeti.ContinuousAut.isClosed_isConj`: the
   automorphisms with a prescribed value, or a prescribed conjugacy class of a value, at a point
   form a closed set.
+* `TauCeti.ContinuousOut.congr_smul_conjClasses_map`: compatibility of `ContinuousOut.congr` with
+  the action on conjugacy classes.
 
 ## References
 
@@ -332,35 +335,34 @@ private def congrMulEquiv (e : G ≃ₜ* H) : ContinuousAut G ≃* ContinuousAut
   right_inv ψ := ContinuousMulEquiv.ext fun y ↦ by simp
   map_mul' φ ψ := ContinuousMulEquiv.ext fun y ↦ by simp
 
+@[simp]
+private theorem congrMulEquiv_apply (e : G ≃ₜ* H) (φ : ContinuousAut G) (y : H) :
+    congrMulEquiv e φ y = e (φ (e.symm y)) :=
+  rfl
+
 private theorem continuous_congrMulEquiv (e : G ≃ₜ* H) : Continuous (congrMulEquiv e) := by
   refine continuous_iff_forall_continuous_mapQuotient.mpr fun ⟨M, hM⟩ ↦ ?_
   let _ : TopologicalSpace (MulAut (H ⧸ (M : Subgroup H))) := ⊥
   have := discreteTopology_bot (MulAut (H ⧸ (M : Subgroup H)))
-  let N : OpenNormalSubgroup G :=
-    ⟨M.toOpenSubgroup.comap e.toMulEquiv.toMonoidHom e.continuous,
-      M.isNormal'.comap e.toMulEquiv.toMonoidHom⟩
+  obtain ⟨N, hmem⟩ : ∃ N : OpenNormalSubgroup G,
+      ∀ g : G, g ∈ (N : Subgroup G) ↔ e g ∈ (M : Subgroup H) :=
+    ⟨{ toOpenSubgroup := M.toOpenSubgroup.comap e.toMulEquiv.toMonoidHom e.continuous
+       isNormal' := M.isNormal'.comap e.toMulEquiv.toMonoidHom },
+      fun _ ↦ OpenSubgroup.mem_comap (hf := e.continuous)⟩
   have : (N : Subgroup G).Normal := N.isNormal'
   have hN : IsTopCharacteristic G N := by
-    rw [isTopCharacteristic_iff_le_comap]
-    intro φ g hg
-    have hφg := isTopCharacteristic_iff_le_comap.mp hM (congrMulEquiv e φ)
-      (show e g ∈ (M : Subgroup H) from hg)
-    simpa [N, congrMulEquiv] using hφg
-  refine ((mapQuotient hM).comp (congrMulEquiv e).toMonoidHom).continuous_iff_isOpen_ker.mpr ?_
-  have hker : ((mapQuotient hM).comp (congrMulEquiv e).toMonoidHom).ker = (mapQuotient hN).ker := by
-    ext φ
-    rw [MonoidHom.mem_ker, MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      ← map_one (mapQuotient hM), ← map_one (mapQuotient hN),
-      mapQuotient_eq_iff hM, mapQuotient_eq_iff hN]
-    refine ⟨fun h x ↦ ?_, fun h y ↦ ?_⟩
-    · rw [QuotientGroup.eq]
-      have hx := QuotientGroup.eq.mp (h (e x))
-      simpa [N, congrMulEquiv, ← map_inv, ← map_mul] using hx
-    · rw [QuotientGroup.eq]
-      have hy := QuotientGroup.eq.mp (h (e.symm y))
-      simpa [N, congrMulEquiv, map_mul, map_inv] using hy
-  rw [hker]
-  exact isOpen_ker_mapQuotient N hN
+    refine isTopCharacteristic_iff_le_comap.mpr fun φ g hg ↦ ?_
+    have hφg := isTopCharacteristic_iff_le_comap.mp hM (congrMulEquiv e φ) ((hmem g).mp hg)
+    simpa [hmem] using hφg
+  refine ((mapQuotient hM).comp (congrMulEquiv e).toMonoidHom).continuous_iff_isOpen_ker.mpr <|
+    Subgroup.isOpen_mono (fun φ hφ ↦ ?_) (isOpen_ker_mapQuotient N hN)
+  rw [MonoidHom.mem_ker, ← map_one (mapQuotient hN), mapQuotient_eq_iff hN] at hφ
+  rw [MonoidHom.mem_ker, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    ← map_one (mapQuotient hM), mapQuotient_eq_iff hM]
+  intro y
+  have hy := QuotientGroup.eq.mp (hφ (e.symm y))
+  rw [one_apply, hmem, map_mul, map_inv, ← congrMulEquiv_apply, e.apply_symm_apply] at hy
+  exact QuotientGroup.eq.mpr (by rwa [one_apply])
 
 /-- A topological group isomorphism `e : G ≃ₜ* H` induces a topological group isomorphism
 `ContinuousAut G ≃ₜ* ContinuousAut H` for the congruence topologies, sending `φ` to
@@ -384,10 +386,16 @@ theorem congr_refl : congr (ContinuousMulEquiv.refl G) = ContinuousMulEquiv.refl
   ext φ x
   rfl
 
+@[simp]
 theorem congr_trans (e₁ : G ≃ₜ* H) (e₂ : H ≃ₜ* K) :
-    congr (e₁.trans e₂) = (congr e₁).trans (congr e₂) := by
+    (congr e₁).trans (congr e₂) = congr (e₁.trans e₂) := by
   ext φ z
   rfl
+
+@[simp]
+theorem congr_congr (e₁ : G ≃ₜ* H) (e₂ : H ≃ₜ* K) (φ : ContinuousAut G) :
+    congr e₂ (congr e₁ φ) = congr (e₁.trans e₂) φ := by
+  rw [← ContinuousMulEquiv.trans_apply, congr_trans]
 
 @[simp]
 theorem congr_conj [SeparatelyContinuousMul G] [SeparatelyContinuousMul H]
@@ -439,11 +447,28 @@ theorem congr_refl : congr (ContinuousMulEquiv.refl G) = ContinuousMulEquiv.refl
   obtain ⟨φ, rfl⟩ := QuotientGroup.mk_surjective q
   simp
 
+@[simp]
 theorem congr_trans (e₁ : G ≃ₜ* H) (e₂ : H ≃ₜ* K) :
-    congr (e₁.trans e₂) = (congr e₁).trans (congr e₂) := by
+    (congr e₁).trans (congr e₂) = congr (e₁.trans e₂) := by
   ext q
   obtain ⟨φ, rfl⟩ := QuotientGroup.mk_surjective q
-  simp [ContinuousAut.congr_trans]
+  simp
+
+@[simp]
+theorem congr_congr (e₁ : G ≃ₜ* H) (e₂ : H ≃ₜ* K) (α : ContinuousOut G) :
+    congr e₂ (congr e₁ α) = congr (e₁.trans e₂) α := by
+  rw [← ContinuousMulEquiv.trans_apply, congr_trans]
+
+/-- Transporting a continuous outer automorphism along `e : G ≃ₜ* H` is compatible with the map on
+conjugacy classes induced by `e`. -/
+theorem congr_smul_conjClasses_map (e : G ≃ₜ* H) (α : ContinuousOut G) (c : ConjClasses G) :
+    congr e α • ConjClasses.map (e : G →* H) c =
+      ConjClasses.map (e : G →* H) (α • c) := by
+  induction α using QuotientGroup.induction_on with
+  | H φ =>
+    obtain ⟨g, rfl⟩ := ConjClasses.mk_surjective c
+    rw [congr_mk, mk_smul_conjClasses, mk_smul_conjClasses]
+    simp
 
 end ContinuousOut
 
