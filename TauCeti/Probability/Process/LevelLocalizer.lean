@@ -13,14 +13,15 @@ public import Mathlib.Topology.Order.IntermediateValue
 # Level localizers for increasing right-continuous processes
 
 A right-continuous increasing extended-nonnegative process can be stopped when it first reaches
-a finite level. Its entrance event is determined by its value at the current time, so these are
-stopping times on the original filtration, without completeness or right continuity of the
-filtration. Starting below the level makes the stopping time strictly later than the start.
+a finite level. Its entrance event is determined by its value at the current time. If the process
+is adapted (`Adapted`), these are stopping times on the original filtration, without completeness
+or right continuity of the filtration. Starting below the level makes the stopping time strictly
+later than the start.
 In densely ordered time, continuous paths starting at or below the level hit it exactly whenever
 the entrance time is finite. For increasing continuous paths starting at or below the level,
 the entire stopped process is bounded by the level.
-Increasing levels tending to the top element give a localizing sequence (`IsLocalizingSequence`)
-whenever the process is finite at every finite time almost surely.
+For an adapted process, increasing levels tending to the top element give a localizing sequence
+(`IsLocalizingSequence`) whenever the process is finite at every finite time almost surely.
 
 These results apply to continuous accumulated-energy processes used to localize stochastic
 integrands. Extended values are retained: a path may reach infinity in finite time, but such a
@@ -75,15 +76,16 @@ theorem hittingAfter_Ici_le_iff [Preorder β] [ClosedIciTopology β]
 
 variable [LinearOrder β]
 
-/-- Before the first level hit, either the process has not started or its value is strictly
-below the level. -/
+/-- A time `t` is strictly before the first level entrance time of an increasing right-continuous
+process if and only if `t` is before the starting time or its value at `t` is strictly below the
+level. -/
 theorem lt_hittingAfter_Ici_iff [ClosedIciTopology β] (hmono : Monotone (A · ω))
     (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) :
     (t : WithTop ι) < hittingAfter A (Ici c) n ω ↔ t < n ∨ A t ω < c := by
   simpa only [not_and_or, not_le] using not_congr (hittingAfter_Ici_le_iff hmono hcont)
 
-/-- Starting strictly below a level makes its entrance time strictly greater than the initial
-time. -/
+/-- For an increasing right-continuous process, starting strictly below a level makes its
+entrance time strictly greater than the initial time. -/
 theorem lt_hittingAfter_Ici [ClosedIciTopology β] (hmono : Monotone (A · ω))
     (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hstart : A n ω < c) :
     (n : WithTop ι) < hittingAfter A (Ici c) n ω := by
@@ -91,8 +93,8 @@ theorem lt_hittingAfter_Ici [ClosedIciTopology β] (hmono : Monotone (A · ω))
 
 variable [OrderClosedTopology β] [OrderTop β] {κ : Type*} {l : Filter κ} {c : κ → β}
 
-/-- At any time where the process is finite, level times for levels tending to infinity
-eventually exceed that time. -/
+/-- For an increasing right-continuous process, at any time where the process is finite,
+level times for levels tending to infinity eventually exceed that time. -/
 theorem eventually_lt_hittingAfter_Ici (hmono : Monotone (A · ω))
     (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : A t ω ≠ ⊤)
     (hc : Tendsto c l (𝓝 ⊤)) :
@@ -101,19 +103,15 @@ theorem eventually_lt_hittingAfter_Ici (hmono : Monotone (A · ω))
     with k hk
   exact (lt_hittingAfter_Ici_iff hmono hcont).2 (Or.inr hk)
 
-/-- If all finite-time values are finite, the first entrance times of any levels tending to
-infinity tend to infinity. This is a pathwise exhaustion statement. -/
+/-- For an increasing right-continuous process whose finite-time values are all finite, the first
+entrance times of any levels tending to infinity tend to infinity. This is a pathwise exhaustion
+statement. -/
 theorem tendsto_hittingAfter_Ici (hmono : Monotone (A · ω))
     (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : ∀ t, A t ω ≠ ⊤)
     (hc : Tendsto c l (𝓝 ⊤)) :
-    Tendsto (fun k => hittingAfter A (Ici (c k)) n ω) l (𝓝 ⊤) := by
-  apply tendsto_order.2
-  constructor
-  · intro b hb
-    lift b to ι using hb.ne with b
-    exact eventually_lt_hittingAfter_Ici hmono hcont (hfinite b) hc
-  · intro b hb
-    exact (not_lt_of_ge le_top hb).elim
+    Tendsto (fun k => hittingAfter A (Ici (c k)) n ω) l (𝓝 ⊤) :=
+  (WithTop.tendsto_nhds_top_iff _).2 fun t =>
+    eventually_lt_hittingAfter_Ici hmono hcont (hfinite t) hc
 
 end Monotone
 
