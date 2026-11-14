@@ -56,10 +56,13 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
   Sobolev inequality.
 * `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/p⋆ + 1/n = 1/p` of `W^{1,p}`
-  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
+  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`), `n ≥ 2`
+  when `p ≥ 1` and `p⋆` is finite (`TauCeti.two_le_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
   (`TauCeti.ne_top_of_inv_add_inv_eq_inv`), and
   multiplying by `n` gives `n/p⋆ + 1 = n/p`
-  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`).
+  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`). With `γ = p⋆ (1 - 1/n)` and `p'`
+  the conjugate exponent of `p`, `(γ - 1) p' = p⋆` and `1 - 1/n = 1/p⋆ + 1/p'`
+  (`TauCeti.exists_holderConjugate_sub_one_mul_eq`).
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
@@ -281,6 +284,21 @@ theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
   Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <|
     ne_top_of_le_ne_top (ENNReal.inv_ne_top.2 hp) (hexp ▸ le_add_self)
 
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A finite Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` and `p ≥ 1` exists only in dimension
+`n ≥ 2`. -/
+theorem two_le_of_inv_add_inv_eq_inv {n : ℕ} (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : 2 ≤ n := by
+  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+  have hn0 := ne_zero_of_inv_add_inv_eq_inv (zero_lt_one.trans_le hp1).ne' hexp
+  have h : (n : ℝ≥0∞)⁻¹ < 1 :=
+    calc (n : ℝ≥0∞)⁻¹ < pstar⁻¹ + (n : ℝ≥0∞)⁻¹ := add_comm (n : ℝ≥0∞)⁻¹ pstar⁻¹ ▸
+          ENNReal.lt_add_right (by simpa using hn0) (ENNReal.inv_ne_zero.2 hpstar)
+      _ = p⁻¹ := hexp
+      _ ≤ 1 := ENNReal.inv_le_one.2 hp1
+  rw [ENNReal.inv_lt_one] at h
+  exact_mod_cast h
+
 omit [Fact (1 ≤ p)] in
 /-- A Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` exists only for finite `p`. -/
 theorem ne_top_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : p ≠ ∞ := by
@@ -296,6 +314,26 @@ theorem natCast_div_toReal_add_one_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0
     (n : ℝ) / pstar.toReal + 1 = n / p.toReal := by
   rw [div_eq_mul_inv, div_eq_mul_inv, ← toReal_inv_add_inv_eq_inv hp hexp, mul_add,
     mul_inv_cancel₀ (Nat.cast_ne_zero.2 (ne_zero_of_inv_add_inv_eq_inv hp hexp))]
+
+/-- **The exponents of the power trick.** If `1/q + 1/N = 1/P` with `P > 1` and `q > 0`, then
+`γ = q (1 - 1/N)` and the conjugate exponent `P'` of `P` satisfy `(γ - 1) P' = q` and
+`1 - 1/N = 1/q + 1/P'`. Read with `q = p⋆` and `N = n`, these are the exponents with which
+Hölder's inequality turns the `L^{n/(n-1)}` estimate for `|u|^γ` into the `L^{p⋆}` estimate
+for `u`. -/
+theorem exists_holderConjugate_sub_one_mul_eq {P q N : ℝ} (hP1 : 1 < P) (hq0 : 0 < q)
+    (h : q⁻¹ + N⁻¹ = P⁻¹) :
+    ∃ P' : ℝ, P'.HolderConjugate P ∧ (q * (1 - N⁻¹) - 1) * P' = q ∧ 1 - N⁻¹ = q⁻¹ + P'⁻¹ := by
+  have hPinv : P⁻¹ < 1 := inv_lt_one_of_one_lt₀ hP1
+  refine ⟨(1 - P⁻¹)⁻¹, by simpa using
+    Real.HolderConjugate.one_sub_inv_inv (inv_pos.2 (by linarith)) hPinv, ?_, ?_⟩
+  · have hγ : q * (1 - N⁻¹) - 1 = q * (1 - P⁻¹) := by
+      have hN : N⁻¹ = P⁻¹ - q⁻¹ := by linarith
+      rw [hN, mul_sub, mul_sub, mul_sub, mul_one,
+        mul_inv_cancel₀ hq0.ne']
+      ring
+    rw [hγ, mul_assoc, mul_inv_cancel₀ (sub_pos.2 hPinv).ne', mul_one]
+  · rw [inv_inv]
+    linarith
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`
