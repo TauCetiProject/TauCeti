@@ -238,7 +238,8 @@ def framedVortexSubMulAction (m : ℕ) :
     rintro ⟨hx, hsol, hfr⟩
     obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.2
     simp only [Set.mem_ofPred_eq, framedGaugeGroup_smul]
-    refine ⟨contDiff_gaugeTransform hu hx, fun z ↦ ?_, tendsto_sectionValue_gaugeTransform hu1 hfr⟩
+    refine ⟨contDiff_gaugeTransform (by simpa using hu) hx, fun z ↦ ?_,
+      tendsto_sectionValue_gaugeTransform hu1 hfr⟩
     rw [equation_gaugeTransform_eq_zero_iff (hu.contDiffAt.of_le (by simp)) fun i ↦
       (((contDiff_piLp 2).1 hx i).differentiable (by simp)).differentiableAt]
     exact hsol z
@@ -259,11 +260,8 @@ private theorem exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction
   obtain ⟨hx, hsol, hfr⟩ := hx
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
   have hd (i : Fin 4) : Differentiable ℝ fun w ↦ x w i := (hxi i).differentiable (by simp)
-  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul (k := ⊤) le_top (hxi 0) (hxi 1)
-    (hd 2) (hd 3) (fun w ↦ by simp [hsol w]) hfr
-  exact ⟨D, isZeroMultiplicity_iff.2 fun z ↦
-    let ⟨v, hv, hv₀, hfac⟩ := hD z
-    ⟨v, hv.continuousAt, hv₀, hfac⟩⟩
+  exact exists_sym_isZeroMultiplicity_sectionValue (k := ⊤) le_top (hxi 0) (hxi 1) (hd 2) (hd 3)
+    (fun w ↦ by simp [hsol w]) hfr
 
 /-- **The zero divisor of a smooth framed degree-`m` vortex**, the point of `Sym ℂ m` listing the
 zeros of its section with multiplicity. It is characterized by `framedVortexDivisor_eq_iff`. -/
