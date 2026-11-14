@@ -106,6 +106,7 @@ theorem isDunfordPettis_iff_tendsto_zero {T : E →L[𝕜] F} :
     simpa [tendsto_sub_nhds_zero_iff] using this
 
 /-- The zero operator is Dunford–Pettis. -/
+@[simp]
 theorem isDunfordPettis_zero : (0 : E →L[𝕜] F).IsDunfordPettis := fun _ _ _ ↦ by
   simpa using tendsto_const_nhds
 
