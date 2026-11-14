@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Lie actions on exterior powers
@@ -17,8 +18,10 @@ import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 An endomorphism of a module acts infinitesimally on an exterior power by applying the
 endomorphism to one factor at a time. This construction is linear in the endomorphism and carries
 commutators to commutators, hence defines a Lie algebra representation. It is a derivation of the
-wedge product, and on the top exterior power of a free module of finite rank it is multiplication
-by the trace of the endomorphism: the infinitesimal form of the action of `⋀ⁿ f` by `det f`.
+wedge product, and in degree `Module.finrank K V` of a free module it is multiplication
+by the trace of the endomorphism: the infinitesimal form of the action of `⋀ⁿ f` by `det f`. For
+a finite free module this degree is the top exterior power; for an infinite free module it is
+degree zero and the trace is zero.
 
 ## Main definitions
 
@@ -31,7 +34,8 @@ by the trace of the endomorphism: the infinitesimal form of the action of `⋀�
 * `exteriorPower.lieMap_two_apply_ιMulti`: on two-vectors this is the derivation rule
   `f (u ∧ w) = f u ∧ w + u ∧ f w`.
 * `exteriorPower.lieMap_wedge`: the Leibniz rule `f (x ∧ y) = f x ∧ y + x ∧ f y`.
-* `exteriorPower.lieMap_finrank_apply`: on the top exterior power, `f` acts by `trace f`.
+* `exteriorPower.lieMap_finrank_apply`: in degree `Module.finrank K V` (the top exterior power
+  when `V` is finite), `f` acts by `trace f`.
 * `exteriorPower.wedgePairing_lieMap_add_wedgePairing_lieMap`: consequently, for a pairing of
   complementary exterior powers, `⟨f x, y⟩ + ⟨x, f y⟩ = trace f * ⟨x, y⟩`.
 -/
@@ -46,7 +50,7 @@ variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
 
 /-- The multilinear map `v ↦ ∑ i, ιMulti K d (update v i (f (v i)))`. -/
 private noncomputable def actionMultilinear (d : ℕ) (f : Module.End K V) :
-    MultilinearMap K (fun _ : Fin d => V) (⋀[K]^d V) :=
+    MultilinearMap (RingHom.id K) (fun _ : Fin d => V) (⋀[K]^d V) :=
   ∑ i : Fin d, (ιMulti K d).toMultilinearMap.compLinearMap
     (Function.update (fun _ => LinearMap.id) i f)
 
@@ -170,17 +174,27 @@ theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[
   simpa only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
     LinearMap.compl₂_apply, LinearMap.id_apply] using LinearMap.congr_fun₂ key x y
 
-/-- An endomorphism of a free module of finite rank acts on the top exterior power by
-multiplication by its trace: the infinitesimal form of
-`LinearMap.map_exteriorPower_finrank_eq_det_smul`. -/
+/-- An endomorphism of a free module acts in degree `Module.finrank K V` by multiplication by its
+trace: the infinitesimal form of `LinearMap.map_exteriorPower_finrank_eq_det_smul`. For a finite
+module this degree is the top exterior power; for an infinite free module it is degree zero, where
+the action and the trace both vanish. -/
 @[simp]
-theorem lieMap_finrank_apply [Module.Free K V] [Module.Finite K V]
+theorem lieMap_finrank_apply [Module.Free K V]
     (f : Module.End K V) (x : ⋀[K]^(Module.finrank K V) V) :
     lieMap _ f x = LinearMap.trace K V f • x := by
   classical
   cases subsingleton_or_nontrivial K
   · have := Module.subsingleton K (⋀[K]^(Module.finrank K V) V)
     exact Subsingleton.elim _ _
+  by_cases hfin : Module.Finite K V
+  swap
+  · have hzero : ∀ {d : ℕ}, d = 0 → lieMap (K := K) (V := V) d f = 0 := by
+      rintro d rfl
+      exact linearMap_ext (AlternatingMap.ext fun v ↦ by simp)
+    have htr : LinearMap.trace K V f = 0 := by
+      simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
+    rw [hzero (Module.finrank_of_not_finite hfin), htr]
+    simp
   let b := Module.finBasis K V
   -- Every element of the basis of the top exterior power is the wedge of `b`, on which `f`
   -- contributes the diagonal coefficient `b.repr (f (b i)) i` from the `i`-th factor.
@@ -202,9 +216,10 @@ theorem lieMap_finrank_apply [Module.Free K V] [Module.Finite K V]
   simpa using LinearMap.congr_fun this x
 
 /-- **Endomorphisms are infinitesimally conformal for wedge pairings**: for every trivialization
-`vol` of the top exterior power, `vol (f x ∧ y) + vol (x ∧ f y) = trace f * vol (x ∧ y)`. -/
+`vol` of the exterior power in degree `Module.finrank K V` (the top exterior power when `V` is
+finite), `vol (f x ∧ y) + vol (x ∧ f y) = trace f * vol (x ∧ y)`. -/
 theorem wedgePairing_lieMap_add_wedgePairing_lieMap [Module.Free K V]
-    [Module.Finite K V] (vol : ⋀[K]^(Module.finrank K V) V ≃ₗ[K] K) {k l : ℕ}
+    (vol : ⋀[K]^(Module.finrank K V) V ≃ₗ[K] K) {k l : ℕ}
     (hkl : k + l = Module.finrank K V) (f : Module.End K V) (x : ⋀[K]^k V) (y : ⋀[K]^l V) :
     wedgePairing vol hkl (lieMap k f x) y + wedgePairing vol hkl x (lieMap l f y) =
       LinearMap.trace K V f * wedgePairing vol hkl x y := by

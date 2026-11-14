@@ -33,7 +33,7 @@ In particular, a complex place above a real place contributes dimension two, rat
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, Proposition (8.3).
 
 The completion algebra structures and local degrees are Mathlib's
-`NumberField.LiesOver.completionMap` and `NumberField.InfinitePlace.inertiaDeg`.
+`AbsoluteValue.Completion.map` and `NumberField.InfinitePlace.inertiaDeg`.
 The argument parallels `TauCeti.semilocalEquiv`, the finite-place decomposition.
 -/
 
@@ -41,7 +41,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace Module
-open scoped TensorProduct NumberField.LiesOver
+open scoped TensorProduct
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -85,12 +86,16 @@ theorem denseRange_algebraMap_pi_infinitePlaceLiesOver :
   exact hp.denseRange.comp (InfiniteAdeleRing.denseRange_algebraMap L)
     (continuous_pi fun w ↦ continuous_apply w.1)
 
+omit [NumberField K] in
 open scoped Classical in
 /-- The sum of the archimedean completed degrees above `v` is the global degree. -/
 theorem sum_finrank_infiniteCompletion_eq_finrank :
     ∑ w : {w : InfinitePlace L // w.LiesOver v},
       finrank v.Completion w.1.Completion = finrank K L := by
   classical
+  -- `K` is a number field, as a subfield of the number field `L`.
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := .of_tower ℚ L K
   calc
     _ = ∑ w : {w : InfinitePlace L // w.LiesOver v}, v.inertiaDeg w.1 :=
       Finset.sum_congr rfl fun w _ ↦ (inertiaDeg_eq_finrank v w.1).symm
@@ -107,7 +112,7 @@ theorem infiniteSemilocalHom_surjective : Function.Surjective (infiniteSemilocal
     rintro _ ⟨x, rfl⟩
     exact ⟨1 ⊗ₜ x, funext fun w ↦ by simp⟩
   intro y
-  exact s.closed_of_finiteDimensional.closure_subset_iff.mpr hs
+  exact s.isClosed_of_finiteDimensional.closure_subset_iff.mpr hs
     (denseRange_algebraMap_pi_infinitePlaceLiesOver L v y)
 
 /-- The semilocal map is injective: the local degrees account for the whole scalar extension. -/
@@ -151,6 +156,7 @@ theorem infiniteSemilocalEquiv_symm_algebraMap (x : L) :
   rw [infiniteSemilocalEquiv_tmul]
   simp
 
+omit [NumberField K] in
 open scoped Classical in
 /-- **The norm is the product of the archimedean local norms.** For `x ∈ L` and an infinite place
 `v` of `K`, the image of `N_{L/K}(x)` in `K_v` is the product over the places `w ∣ v` of the norms
@@ -159,6 +165,8 @@ theorem algebraMap_norm_eq_prod_norm_infiniteCompletion (x : L) :
     algebraMap K v.Completion (Algebra.norm K x) =
       ∏ w : {w : InfinitePlace L // w.LiesOver v},
         Algebra.norm v.Completion (algebraMap L w.1.Completion x) := by
+  have : CharZero K := RingHom.charZero (algebraMap K L)
+  have : NumberField K := .of_tower ℚ L K
   rw [← Algebra.norm_baseChange_tmul (A := v.Completion) (B := L) x,
     ← Algebra.norm_eq_of_algEquiv (infiniteSemilocalEquiv L v), Algebra.norm_pi]
   refine Finset.prod_congr rfl fun w _ ↦ ?_

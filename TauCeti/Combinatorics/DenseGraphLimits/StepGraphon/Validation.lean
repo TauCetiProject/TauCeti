@@ -115,8 +115,6 @@ theorem coarse_parts : coarse.parts = {{2}, {2}ᶜ} := by
 theorem fine_parts : fine.parts = {{0}, {1}, {2}} := by
   classical
   have h02 : ({2} : Set (Fin 3)) ∩ {0} = ∅ := by ext x; fin_cases x <;> simp
-  have h2 : ({2} : Set (Fin 3)) ∩ {0}ᶜ = {2} := by ext x; fin_cases x <;> simp
-  have h0 : ({2}ᶜ : Set (Fin 3)) ∩ {0} = {0} := by ext x; fin_cases x <;> simp
   have h1 : ({2}ᶜ : Set (Fin 3)) ∩ {0}ᶜ = {1} := by ext x; fin_cases x <;> simp
   have hn : ({0}ᶜ : Set (Fin 3)) ≠ ∅ := Set.Nonempty.ne_empty ⟨1, by simp⟩
   rw [fine, Finpartition.parts_inf, coarse_parts, Finpartition.parts_bipartition]
@@ -239,8 +237,7 @@ theorem lt_cutNorm_adjacency_sub_coarseAvg :
       integral_weights_prod]
     norm_num [Set.indicator_of_mem, Set.indicator_of_notMem, adjacency_apply, coarseAvg_apply]
   have hbound := abs_rectIntegral_le_cutNorm weights
-    (adjacency.toSymmKernel - coarseAvg.toSymmKernel)
-    (MeasurableSet.singleton 0) (MeasurableSet.singleton 1)
+    (adjacency.toSymmKernel - coarseAvg.toSymmKernel) {0} {1}
   rw [hrect] at hbound
   exact lt_of_lt_of_le (by norm_num) hbound
 

@@ -49,7 +49,7 @@ derivative `φ.linearDeriv ((p l)(t)) ((p l)′(t)) = ∑ₖ φ((p 0)(t), …, (
 `t ↦ φ((p l)(t))` vanishes at every scalar `t`, then `φ((p l)(t))` takes the same value at all
 scalars. -/
 theorem apply_eval_algebraMap_eq_of_linearDeriv_eq_zero
-    (φ : MultilinearMap R (fun _ : ι ↦ A) M) (p : ι → A[X])
+    (φ : MultilinearMap (RingHom.id R) (fun _ : ι ↦ A) M) (p : ι → A[X])
     (h : ∀ t : R, φ.linearDeriv (fun l ↦ (p l).eval (algebraMap R A t))
       (fun l ↦ (p l).derivative.eval (algebraMap R A t)) = 0) (s t : R) :
     φ (fun l ↦ (p l).eval (algebraMap R A s)) = φ (fun l ↦ (p l).eval (algebraMap R A t)) := by
@@ -84,7 +84,8 @@ theorem apply_eval_algebraMap_eq_of_linearDeriv_eq_zero
       congr 1
       · simp
       · exact Finset.prod_congr rfl fun l hl ↦ by simp [Finset.ne_of_mem_erase hl]
-    simp_rw [hupd, φ.map_sum_finset, φ.map_smul_univ, hprod, _root_.map_sum, _root_.map_smul]
+    simp_rw [hupd, φ.map_sum_finset, φ.map_smul_univ, RingHom.id_apply, hprod, _root_.map_sum,
+        _root_.map_smul]
     rw [Finset.sum_comm]
     simp only [P, derivative_sum, derivative_C_mul, derivative_prod_finset, derivative_X_pow,
       eval_finsetSum, eval_mul, eval_C, eval_prod, eval_pow, eval_X, Finset.mul_sum, smul_eq_mul]

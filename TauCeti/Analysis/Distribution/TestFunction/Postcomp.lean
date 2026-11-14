@@ -15,15 +15,16 @@ of native test-function spaces. These maps preserve the exact support
 and commute with extension to a larger open domain. Continuity uses Mathlib's
 `TestFunction.postcompCLM`, hence the native locally convex inductive-limit topology.
 
-For complex-valued smooth functions supported in a compact set, postcomposition with the real and
-imaginary parts `Complex.reCLM` and `Complex.imCLM` gives real-valued ones. This file records how
-these parts transform under complex scalars, that they recover a real function viewed as a complex
-one through `Complex.ofRealCLM`, and that a complex function is `Re φ + i Im φ`.
+For complex test functions, postcomposition with the real and imaginary parts `Complex.reCLM` and
+`Complex.imCLM` gives real test functions. This file records how these parts transform under
+complex scalars, that they recover a real test function viewed as a complex one through
+`Complex.ofRealCLM`, and that a complex test function is `Re φ + i Im φ`. Both parts commute with
+`TestFunction.ofSupportedIn` (`TestFunction.postcompCLM_ofSupportedIn`).
 
-Postcomposition with `T` increases the `C^k` seminorms at most by the factor `‖T‖`
-(`ContDiffMapSupportedIn.supSeminorm_postcompCLM_le`), and these seminorms do not depend on the
-scalar field (`ContDiffMapSupportedIn.supSeminorm_eq_of_scalars`). In particular the real and
-imaginary parts do not increase them
+Postcomposition with `T` increases the `C^k` seminorms of functions supported in a compact set at
+most by the factor `‖T‖` (`ContDiffMapSupportedIn.supSeminorm_postcompCLM_le`), and these seminorms
+do not depend on the scalar field (`ContDiffMapSupportedIn.supSeminorm_eq_of_scalars`). In
+particular the real and imaginary parts do not increase them
 (`ContDiffMapSupportedIn.supSeminorm_postcompCLM_le_of_norm_le_one`).
 -/
 
@@ -103,11 +104,55 @@ theorem postcompCLE_monoCLM (e : F ≃L[𝕜] G) {m : ℕ∞}
   ext x
   by_cases h : m ≤ n ∧ Ω ≤ Ω' <;> simp [h]
 
+section Complex
+
+open Complex
+
+/-- Postcomposition commutes with reading a function supported in a compact set as a test
+function. -/
+theorem postcompCLM_ofSupportedIn [SMulCommClass ℝ 𝕜 F] [SMulCommClass ℝ 𝕜 G] (T : F →L[𝕜] G)
+    {K : TopologicalSpace.Compacts E} (hK : (K : Set E) ⊆ Ω) (f : 𝓓^{n}_{K}(E, F)) :
+    postcompCLM T (ofSupportedIn hK f) =
+      ofSupportedIn hK (ContDiffMapSupportedIn.postcompCLM T f) :=
+  rfl
+
+theorem postcompCLM_reCLM_smul (c : ℂ) (φ : 𝓓^{n}(Ω, ℂ)) :
+    postcompCLM (𝕜 := ℝ) reCLM (c • φ) =
+      c.re • postcompCLM (𝕜 := ℝ) reCLM φ - c.im • postcompCLM (𝕜 := ℝ) imCLM φ := by
+  ext x
+  simp
+
+theorem postcompCLM_imCLM_smul (c : ℂ) (φ : 𝓓^{n}(Ω, ℂ)) :
+    postcompCLM (𝕜 := ℝ) imCLM (c • φ) =
+      c.re • postcompCLM (𝕜 := ℝ) imCLM φ + c.im • postcompCLM (𝕜 := ℝ) reCLM φ := by
+  ext x
+  simp
+
+@[simp]
+theorem postcompCLM_reCLM_ofRealCLM (φ : 𝓓^{n}(Ω, ℝ)) :
+    postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
+  ext x
+  simp
+
+@[simp]
+theorem postcompCLM_imCLM_ofRealCLM (φ : 𝓓^{n}(Ω, ℝ)) :
+    postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
+  ext x
+  simp
+
+/-- A complex test function is the sum `Re φ + i Im φ` of its real and imaginary parts. -/
+theorem postcompCLM_re_add_I_smul_im (φ : 𝓓^{n}(Ω, ℂ)) :
+    postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) reCLM φ) +
+      I • postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) imCLM φ) = φ := by
+  ext x
+  simp [mul_comm I]
+
+end Complex
+
 end TestFunction
 
 namespace ContDiffMapSupportedIn
 
-open Complex
 open scoped Distributions
 
 section Scalars
@@ -116,7 +161,7 @@ variable {𝕜 E F F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
   [NormedAddCommGroup F'] [NormedSpace ℝ F'] [NormedSpace 𝕜 F'] [SMulCommClass ℝ 𝕜 F']
-  {K K₁ K₂ : TopologicalSpace.Compacts E} {n n₁ n₂ : ℕ∞}
+  {K : TopologicalSpace.Compacts E} {n : ℕ∞}
 
 variable (𝕜) in
 /-- The `C^k` seminorms do not depend on the scalar field over which they are considered. -/
@@ -135,51 +180,12 @@ theorem supSeminorm_postcompCLM_le [LinearMap.CompatibleSMul F F' ℝ 𝕜] (T :
   Seminorm.finset_sup_apply_le (by positivity) fun _ hi ↦ (seminorm_postcompLM_le 𝕜 T f).trans
     (by gcongr; exact Seminorm.le_finset_sup_apply hi)
 
-/-- Postcomposition commutes with enlarging the compact set and lowering regularity, including the
-zero-map case of `monoCLM` when the compact sets or orders are incompatible. -/
-theorem postcompCLM_monoCLM [LinearMap.CompatibleSMul F F' ℝ 𝕜] (T : F →L[𝕜] F')
-    (f : 𝓓^{n₁}_{K₁}(E, F)) :
-    postcompCLM T (monoCLM 𝕜 f : 𝓓^{n₂}_{K₂}(E, F)) = monoCLM 𝕜 (postcompCLM T f) := by
-  ext x
-  by_cases h : n₂ ≤ n₁ ∧ K₁ ≤ K₂ <;> simp [h]
-
 end Scalars
 
 section Complex
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : TopologicalSpace.Compacts E}
   {n : ℕ∞}
-
-theorem postcompCLM_reCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
-    postcompCLM (𝕜 := ℝ) reCLM (c • φ) =
-      c.re • postcompCLM (𝕜 := ℝ) reCLM φ - c.im • postcompCLM (𝕜 := ℝ) imCLM φ := by
-  ext x
-  simp
-
-theorem postcompCLM_imCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
-    postcompCLM (𝕜 := ℝ) imCLM (c • φ) =
-      c.re • postcompCLM (𝕜 := ℝ) imCLM φ + c.im • postcompCLM (𝕜 := ℝ) reCLM φ := by
-  ext x
-  simp
-
-@[simp]
-theorem postcompCLM_reCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
-    postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
-  ext x
-  simp
-
-@[simp]
-theorem postcompCLM_imCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
-    postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
-  ext x
-  simp
-
-/-- A complex function is the sum `Re φ + i Im φ` of its real and imaginary parts. -/
-theorem postcompCLM_re_add_I_smul_im (φ : 𝓓^{n}_{K}(E, ℂ)) :
-    postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) reCLM φ) +
-      I • postcompCLM (𝕜 := ℝ) ofRealCLM (postcompCLM (𝕜 := ℝ) imCLM φ) = φ := by
-  ext x
-  simp [mul_comm I]
 
 /-- Postcomposition with a real-linear map `ℂ →L[ℝ] ℝ` of norm at most one, such as the real and
 imaginary parts, does not increase the `C^k` seminorms. -/

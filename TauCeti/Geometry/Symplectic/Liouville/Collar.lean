@@ -84,12 +84,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (hZ : ContMDiff I I.tangent ∞ (T% Z)) {ι : S → M} (hι : ContMDiff J I ∞ ι)
 include hZ hι
 
-/-- The domain `{(t, s) | φₜ(ι s) is defined}` of the local Liouville flow map is open. -/
-private theorem isOpen_setOf_mem_flowDomain_comp :
-    IsOpen {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} :=
-  (isOpen_flowDomain (hZ.of_le (by simp))).preimage
-    (continuous_fst.prodMk (hι.continuous.comp continuous_snd))
-
 /-- The local flow map `(t, s) ↦ φₜ(ι s)` is smooth near every point of its domain. -/
 private theorem contMDiffAt_flowOf_comp_uncurry {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
     ContMDiffAt (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p :=
@@ -133,7 +127,8 @@ theorem mpullback_flowOf_comp_mextDeriv_apply (hZα : (mextDeriv α.1).interior 
     ((α.contMDiff _).of_le (by simp))]
   -- The two one-forms agree on the open domain of the flow map, a neighbourhood of `p`.
   refine mextDeriv_congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_setOf_mem_flowDomain_comp hZ hι).mem_nhds hp] with q hq
+  filter_upwards [(isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd)).mem_nhds hp] with q hq
   exact mpullback_flowOf_comp_apply_eq_symplectization hZ hι hZα hq
 
 /-- **The local Liouville flow map is an immersion.** Let the smooth vector field `Z` be the
@@ -168,7 +163,8 @@ theorem isLocalDiffeomorphAt_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryl
   have hinj := injective_mfderiv_flowOf_comp hZ hι hZα hα hp
   exact isLocalDiffeomorphAt_of_mfderiv_eq
     (fun q hq ↦ (contMDiffAt_flowOf_comp_uncurry hZ hι hq).contMDiffWithinAt)
-    (isOpen_setOf_mem_flowDomain_comp hZ hι) hp BoundarylessManifold.isInteriorPoint (by simp)
+    (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd)) hp BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearMap.linearEquivOfInjective _ hinj hdim').toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim' w)
 
@@ -195,14 +191,15 @@ theorem exists_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless]
     (f := fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
     (by
       rintro ⟨_, a⟩ ⟨rfl, -⟩ ⟨_, b⟩ ⟨rfl, -⟩ hab
-      simp only [flowOf_zero hZ1] at hab
+      simp only [flowOf_zero Z] at hab
       rw [hιi hab])
     (isCompact_singleton.prod isCompact_univ)
     fun p hp ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα (hD hp)
   -- By the tube lemma, the open set `U ∩ D` contains a product `u × S` with `u` a neighbourhood
   -- of `0`, and hence a collar of uniform width.
   obtain ⟨u, v, hu, -, h0u, hSv, huv⟩ := generalized_tube_lemma isCompact_singleton isCompact_univ
-    (hUo.inter (isOpen_setOf_mem_flowDomain_comp hZ hι)) (subset_inter hsU hD)
+    (hUo.inter (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd))) (subset_inter hsU hD)
   obtain ⟨ε, hε, hεu⟩ := Metric.isOpen_iff.mp hu 0 (h0u rfl)
   have hsub : Ioo (-ε) ε ×ˢ (univ : Set S) ⊆ U ∩ D := fun p hp ↦
     huv ⟨hεu (by simpa [Real.ball_eq_Ioo] using hp.1), hSv (mem_univ _)⟩
@@ -235,12 +232,13 @@ theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Bo
   -- is an open embedding on an open neighbourhood `U ⊆ D` of `{0} × S`.
   obtain ⟨U, hUo, hsU, hUD, hemb⟩ :=
     hloc.isLocalHomeomorphOn.exists_isOpenEmbedding_near_section
-      (isOpen_setOf_mem_flowDomain_comp hZ hι) (s := fun y : S ↦ ((0 : ℝ), y))
+      (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+        (hι.continuous.comp continuous_snd)) (s := fun y : S ↦ ((0 : ℝ), y))
       (by
         rintro _ ⟨y, rfl⟩
         exact mem_flowDomain_zero hZ1 (ι y))
       (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)
-      (by simpa only [Function.comp_def, flowOf_zero hZ1] using hιe)
+      (by simpa only [Function.comp_def, flowOf_zero] using hιe)
   -- A pseudometrizable space is normal and paracompact, so `U` contains a tube of positive
   -- continuous width.
   let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric S
