@@ -325,6 +325,13 @@ theorem continuous_of : Continuous (of α μ) :=
 theorem denseRange_of : DenseRange (of α μ) :=
   Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
 
+/-- Compactly supported continuous functions `C_c(G, A)` map densely into
+`FullCrossedProduct α μ`. -/
+theorem denseRange_of_comp_toConv :
+    DenseRange ((of α μ) ∘ ConvolutionAlgebra.toConv) := by
+  rw [DenseRange, (Function.RightInverse.surjective ConvolutionAlgebra.toConv_ofConv).range_comp]
+  exact denseRange_of
+
 /-- To prove a closed property of every element of the full crossed product, it suffices to
 prove it on the twisted convolution algebra. -/
 @[elab_as_elim]

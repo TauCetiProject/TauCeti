@@ -15,6 +15,8 @@ This lets constructions on densely spanning families apply to arbitrary closed s
 Conversely, a densely spanning family stays densely spanning when pushed forward along a
 continuous linear map with dense range, such as the projection onto a quotient module, so that a
 quotient of a module spanned densely by a countable family is again spanned densely by one.
+Restricting a point-continuous family of maps to a dense-range index map likewise preserves the
+closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`).
 No norm, separation, or completeness assumptions are needed.
 -/
 
@@ -54,3 +56,20 @@ theorem DenseRange.dense_span_range_comp {R M N ι : Type*} [Semiring R]
     Dense (Submodule.span R (Set.range (f ∘ v)) : Set N) := by
   rw [Set.range_comp, ← Submodule.map_span, Submodule.map_coe]
   exact hf.dense_image hfc hv
+
+/-- Restricting a point-continuous family of maps `L : α → X → Y` into a topological `R`-module `Y`
+to a dense range `Set.range g` generates the same closed `R`-span in `Y`. -/
+theorem DenseRange.topologicalClosure_span_iUnion_range_comp_eq {R α ι X Y : Type*} [Semiring R]
+    [TopologicalSpace α] [AddCommMonoid Y] [TopologicalSpace Y] [Module R Y] [ContinuousAdd Y]
+    [ContinuousConstSMul R Y] {g : ι → α} (hg : DenseRange g) {L : α → X → Y}
+    (hL : ∀ x, Continuous fun a => L a x) :
+    (Submodule.span R (⋃ i, Set.range (L (g i)))).topologicalClosure =
+      (Submodule.span R (⋃ a, Set.range (L a))).topologicalClosure := by
+  set S := Submodule.span R (⋃ i, Set.range (L (g i)))
+  refine le_antisymm (Submodule.topologicalClosure_mono <| Submodule.span_mono <|
+    Set.iUnion_subset fun i => Set.subset_iUnion (fun a => Set.range (L a)) (g i))
+    (Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_) S.isClosed_topologicalClosure)
+  rintro _ ⟨_, ⟨a, rfl⟩, x, rfl⟩
+  refine (S.isClosed_topologicalClosure.preimage (hL x)).closure_subset_iff.2 ?_ (hg a)
+  rintro _ ⟨i, rfl⟩
+  exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, x, rfl⟩))
