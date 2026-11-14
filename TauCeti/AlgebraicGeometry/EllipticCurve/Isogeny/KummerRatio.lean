@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
 import TauCeti.GroupTheory.Index.Comp
 
 /-!
@@ -80,5 +81,24 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
   have hrange : (AddMonoidHom.id W.Point).range = ⊤ :=
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
+
+/-- Any isogeny of degree one has Kummer ratio one. -/
+theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1) :
+    φ.kummerRatio = 1 := by
+  classical
+  obtain ⟨ψ, hψφ, hφψ⟩ := exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one φ hφ
+  have hlinv : Function.LeftInverse (Hom.ofIsogeny ψ).pointMapHom
+      (Hom.ofIsogeny φ).pointMapHom := fun P ↦ by
+    have h := congrArg (fun χ : Isogeny W₁ W₁ ↦ (Hom.ofIsogeny χ).pointMapHom P) hψφ
+    simpa [← Hom.ofIsogeny_comp_ofIsogeny, Hom.comp_pointMapHom, ← Hom.id_def] using h
+  have hrinv : Function.RightInverse (Hom.ofIsogeny ψ).pointMapHom
+      (Hom.ofIsogeny φ).pointMapHom := fun Q ↦ by
+    have h := congrArg (fun χ : Isogeny W₂ W₂ ↦ (Hom.ofIsogeny χ).pointMapHom Q) hφψ
+    simpa [← Hom.ofIsogeny_comp_ofIsogeny, Hom.comp_pointMapHom, ← Hom.id_def] using h
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
+    AddMonoidHom.range_eq_top.mpr hrinv.surjective
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    eq_bot_iff.mpr fun _ hP ↦ hlinv.injective (by simpa using AddMonoidHom.mem_ker.mp hP)
+  simp [kummerRatio_def, hrange, hker]
 
 end TauCeti.Isogeny

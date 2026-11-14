@@ -11,8 +11,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.AdicComp
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import Mathlib.Algebra.Field.ZMod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import Mathlib.Data.ZMod.QuotientRing
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 
 /-!
 # Reduction of integral equations at primes
@@ -24,10 +24,12 @@ and that order annihilates every reduced rational point. These comparisons let f
 counts supply torsion certificates for rational curves.
 
 Over the completion `F_u` at a height-one prime `u` with finite residue field, the ring of
-integers `𝒪[F_u]` of the valuative relation is `O_u`. So an elliptic equation over `O_u` has good
-reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and its
-reduction there has as many points as the reduction used by the reduction homomorphism
-(`WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`).
+integers `𝒪[F_u]` of the valuative relation is `O_u`. Minimality over `𝒪[F_u]` therefore agrees
+with minimality over `O_u` (`WeierstrassCurve.isMinimal_integer_adicCompletion_iff`), the reduced
+nonsingular point group over `𝒪[F_u]` of any minimal equation has the same cardinality as the
+reduction over `Valued.v.valuationSubring`
+(`WeierstrassCurve.natCard_point_reduction_adicCompletion`), and an elliptic equation over `O_u`
+has good reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`).
 -/
 
 public section
@@ -105,8 +107,64 @@ open ValuativeRel
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
-  {u : HeightOneSpectrum A} [Finite (A ⧸ u.asIdeal)]
-  (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic]
+
+/-- An equation integral over `u.adicCompletionIntegers F` is integral over the definitionally
+equal valuation subring `Valued.v.valuationSubring` used by the reduction and formal-group APIs. -/
+instance isIntegral_valuationSubring_of_adicCompletionIntegers {u : HeightOneSpectrum A}
+    (E : WeierstrassCurve (u.adicCompletion F)) [h : E.IsIntegral (u.adicCompletionIntegers F)] :
+    E.IsIntegral (Valued.v : Valuation (u.adicCompletion F)
+      (WithZero (Multiplicative ℤ))).valuationSubring :=
+  h
+
+section FiniteResidue
+
+variable {u : HeightOneSpectrum A} [Finite (A ⧸ u.asIdeal)]
+
+/-- Over an adic completion with finite residue field, minimality over `𝒪[F_u]` agrees with
+minimality over `u.adicCompletionIntegers F`. -/
+@[simp]
+theorem isMinimal_integer_adicCompletion_iff (E : WeierstrassCurve (u.adicCompletion F)) :
+    E.IsMinimal 𝒪[u.adicCompletion F] ↔ E.IsMinimal (u.adicCompletionIntegers F) := by
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T],
+      u.adicCompletionIntegers F = T →
+        (E.IsMinimal T ↔ E.IsMinimal (u.adicCompletionIntegers F)) by
+    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T _ rfl
+  exact Iff.rfl
+
+/-- A Weierstrass equation minimal over `u.adicCompletionIntegers F` is minimal over `𝒪[F_u]`. -/
+instance isMinimal_integer_adicCompletion (E : WeierstrassCurve (u.adicCompletion F))
+    [E.IsMinimal (u.adicCompletionIntegers F)] :
+    E.IsMinimal 𝒪[u.adicCompletion F] :=
+  (isMinimal_integer_adicCompletion_iff E).mpr inferInstance
+
+/-- For any minimal Weierstrass equation `E` over `F_u`, the reduction of `E` at `𝒪[F_u]` has the
+same point cardinality as the reduction of its integral model over `Valued.v.valuationSubring`
+(including at bad reduction). -/
+theorem natCard_point_reduction_adicCompletion (E : WeierstrassCurve (u.adicCompletion F))
+    [E.IsMinimal (u.adicCompletionIntegers F)] :
+    Nat.card (E.reduction 𝒪[u.adicCompletion F]).toAffine.Point =
+      Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
+        (WithZero (Multiplicative ℤ))).valuationSubring E).map (residue _)).toAffine.Point := by
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T]
+      [E.IsMinimal T], u.adicCompletionIntegers F = T →
+      Nat.card (E.reduction T).toAffine.Point =
+        Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
+          (WithZero (Multiplicative ℤ))).valuationSubring E).map (residue _)).toAffine.Point by
+    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
+    have hmin : E.IsMinimal (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (E.IsMinimal 𝒪[u.adicCompletion F])
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T _ _ rfl
+  rw [reduction]
+  rfl
+
+variable (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic]
 
 /-- An elliptic equation over `O_u` has good reduction at the ring of integers `𝒪[F_u]` of the
 valuative relation of `F_u`, which is `O_u`. -/
@@ -133,24 +191,12 @@ theorem natCard_point_reduction_baseChange_adicCompletion :
       Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
         (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
           (residue _)).toAffine.Point := by
-  -- as in `hasGoodReduction_baseChange_adicCompletion`, substitute `𝒪[F_u] = O_u`
-  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T]
-      [(C.baseChange (u.adicCompletion F)).IsMinimal T], u.adicCompletionIntegers F = T →
-      Nat.card ((C.baseChange (u.adicCompletion F)).reduction T).toAffine.Point =
-        Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
-          (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
-            (residue _)).toAffine.Point by
-    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
-      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
-    have hmin : (C.baseChange (u.adicCompletion F)).IsMinimal
-        (valuation (u.adicCompletion F)).valuationSubring :=
-      inferInstanceAs ((C.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F])
-    exact this (valuation (u.adicCompletion F)).valuationSubring
-      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
-  rintro T _ _ rfl
-  rw [reduction]
-  -- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`
-  rfl
+  have : (C.baseChange (u.adicCompletion F)).IsMinimal (u.adicCompletionIntegers F) :=
+    (isMinimal_integer_adicCompletion_iff _).mp
+      (C.hasGoodReduction_baseChange_adicCompletion.toIsMinimal)
+  exact natCard_point_reduction_adicCompletion (C.baseChange (u.adicCompletion F))
+
+end FiniteResidue
 
 end AdicCompletion
 
