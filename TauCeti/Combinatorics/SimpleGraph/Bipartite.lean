@@ -26,13 +26,16 @@ independent of the colouring up to exchanging the two classes.
 
 ## Main results
 
+* `SimpleGraph.card_edgeFinset_between`: the edges between disjoint finite sets `s` and `t` are
+  counted by the degrees from `s` into `t`; `SimpleGraph.card_edgeFinset_between_compl` is the
+  case of the cut of `s`.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
 -/
 
 public section
 
-open scoped symmDiff
+open scoped symmDiff Finset
 
 namespace SimpleGraph
 
@@ -54,6 +57,43 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
+
+/-- The edges of `G` between disjoint finite sets `s` and `t` are counted by the degrees from `s`
+into `t`. -/
+theorem card_edgeFinset_between (G : SimpleGraph V) [DecidableRel G.Adj] {s t : Finset V}
+    [Fintype (G.between ↑s ↑t).edgeSet] (h : Disjoint s t) :
+    #(G.between ↑s ↑t).edgeFinset = ∑ v ∈ s, #{w ∈ t | G.Adj v w} := by
+  have hpairs : ∑ v ∈ s, #{w ∈ t | G.Adj v w} = #{p ∈ s ×ˢ t | G.Adj p.1 p.2} := by
+    simp only [Finset.card_filter, Finset.sum_product]
+  rw [hpairs]
+  symm
+  refine Finset.card_bij (fun p _ ↦ s(p.1, p.2)) ?_ ?_ ?_
+  · rintro ⟨a, b⟩ hp
+    simp only [Finset.mem_filter, Finset.mem_product] at hp
+    rw [mem_edgeFinset, mem_edgeSet, between_adj]
+    exact ⟨hp.2, Or.inl hp.1⟩
+  · rintro ⟨a, b⟩ hp ⟨a', b'⟩ hp' he
+    simp only [Finset.mem_filter, Finset.mem_product] at hp hp'
+    rcases Sym2.eq_iff.mp he with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact absurd hp'.1.2 (Finset.disjoint_left.mp h hp.1.1)
+  · intro e he
+    induction e using Sym2.ind with
+    | _ a b =>
+      simp only [mem_edgeFinset, mem_edgeSet, between_adj, Finset.mem_coe] at he
+      obtain ⟨hab, ⟨ha, hb⟩ | ⟨ha, hb⟩⟩ := he
+      · exact ⟨(a, b), by simp [ha, hb, hab], rfl⟩
+      · exact ⟨(b, a), by simp [ha, hb, hab.symm], Sym2.eq_swap⟩
+
+/-- The edges of `G` across the cut of a finite set `s` are counted by the degrees from `s` into
+its complement. -/
+theorem card_edgeFinset_between_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (s : Finset V) [Fintype (G.between ↑s (↑s)ᶜ).edgeSet] :
+    #(G.between ↑s (↑s)ᶜ).edgeFinset = ∑ v ∈ s, #{w ∈ sᶜ | G.Adj v w} := by
+  classical
+  rw [← card_edgeFinset_between G disjoint_compl_right]
+  congr! 2
+  rw [Finset.coe_compl]
 
 end SimpleGraph
 

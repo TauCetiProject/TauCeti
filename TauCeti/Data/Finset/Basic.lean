@@ -95,6 +95,8 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.sq_mul_card_filter_ne_product_le` says that a rectangle with `ε`-fraction sides carries
   an `ε²`-fraction of the distinct pairs of a disjoint block, and `Finset.card_offDiag_le_sq`
   states `#s.offDiag ≤ #s ^ 2`.
+* `Finset.sum_sum_ite_eq_zero_one` counts the pairs in `s ×ˢ s'` on which two `Bool`-valued labels
+  differ.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -285,6 +287,17 @@ theorem card_filter_ne_product_mul_card_le {α : Type*} [DecidableEq α] {s t s'
   · rw [filter_ne_product_of_disjoint (hst.mono hs' ht'), filter_ne_product_of_disjoint hst,
       card_product, card_product, mul_right_comm, mul_assoc]
     exact Nat.mul_le_mul_left _ (Nat.mul_le_mul_left _ (card_le_card ht'))
+
+/-- Across `s ×ˢ s'`, the pairs on which two `Bool`-valued labels differ are the true-false pairs
+together with the false-true pairs. -/
+theorem sum_sum_ite_eq_zero_one {α β : Type*} (s : Finset α) (s' : Finset β) (x : α → Bool)
+    (y : β → Bool) : (∑ i ∈ s, ∑ j ∈ s', if x i = y j then 0 else 1) =
+      #{i ∈ s | x i} * #{j ∈ s' | ¬y j} + #{i ∈ s | ¬x i} * #{j ∈ s' | y j} := by
+  simp only [card_filter, sum_mul, ← sum_add_distrib]
+  refine sum_congr rfl fun i _ ↦ ?_
+  cases x i <;> simp only [Bool.false_eq_true, not_false_eq_true, not_true_eq_false, ite_true,
+    ite_false, one_mul, zero_mul, add_zero, zero_add] <;>
+    exact sum_congr rfl fun j _ ↦ by cases y j <;> rfl
 
 /-- **The symmetric difference and the intersection account for both cardinalities.** The
 symmetric difference is the union minus the intersection, and the union and the intersection
