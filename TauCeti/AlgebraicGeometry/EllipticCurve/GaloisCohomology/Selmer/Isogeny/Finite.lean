@@ -90,8 +90,8 @@ theorem card_selmerGroup :
   rw [← AddSubgroup.card_ker_mul_card_of_surjective (φ.selmerShaMap_surjective τ), hker,
     AddSubgroup.index_eq_card]
 
-/-- If `φ` induces the zero map on Sha, the order of its Selmer group is the rational point
-cokernel index times the order of the whole Shafarevich–Tate group of `W₁`. -/
+/-- If a separable isogeny `φ` induces the zero map on Sha, the order of its Selmer group is the
+rational point cokernel index times the order of the whole Shafarevich–Tate group of `W₁`. -/
 theorem card_selmerGroup_of_shafarevichTateMap_eq_zero
     (h : (ofIsogeny φ).shafarevichTateMap τ = 0) :
     Nat.card (φ.selmerGroup τ) =

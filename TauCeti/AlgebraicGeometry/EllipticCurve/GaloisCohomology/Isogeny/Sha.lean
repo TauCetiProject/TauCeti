@@ -172,6 +172,14 @@ theorem shafarevichTateMap_nsmul_eq_zero {n : ℕ}
   refine AddMonoidHom.ext fun c ↦ ?_
   rw [shafarevichTateMap_nsmul, AddMonoidHom.nsmul_apply, hn, AddMonoidHom.zero_apply]
 
+/-- If `n` kills `Sha(W₁)`, then `n • f` induces the zero map `Sha(W₁) → Sha(W₂)`. -/
+theorem shafarevichTateMap_nsmul_eq_zero_of_domain {n : ℕ}
+    (hn : ∀ c : W₁.shafarevichTateGroup τ, n • c = 0) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).shafarevichTateMap τ = 0 := by
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [shafarevichTateMap_nsmul, AddMonoidHom.nsmul_apply, ← AddMonoidHom.map_nsmul, hn, map_zero,
+    AddMonoidHom.zero_apply]
+
 /-! ### The dual isogeny -/
 
 /-- **A morphism followed by its dual is multiplication by the degree** on the Shafarevich–Tate
@@ -197,15 +205,6 @@ theorem ker_shafarevichTateMap_le_torsionBy (f : Hom W₁.toAffine W₂.toAffine
     (f.shafarevichTateMap τ).ker ≤ AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) f.degree :=
   fun c hc ↦ AddSubgroup.torsionBy.nsmul_iff.2 <| by
     rw [← dual_shafarevichTateMap_shafarevichTateMap, AddMonoidHom.mem_ker.1 hc, map_zero]
-
-/-- If `n` kills `Sha(W₂)`, then the dual of `n • f`, which is `n • f̂`, induces the zero map
-`Sha(W₂) → Sha(W₁)`. -/
-theorem dual_nsmul_shafarevichTateMap_eq_zero {n : ℕ}
-    (hn : ∀ c : W₂.shafarevichTateGroup τ, n • c = 0) (f : Hom W₁.toAffine W₂.toAffine) :
-    (n • f).dual.shafarevichTateMap τ = 0 := by
-  refine AddMonoidHom.ext fun c ↦ ?_
-  rw [dual_nsmul, shafarevichTateMap_nsmul, AddMonoidHom.nsmul_apply, ← AddMonoidHom.map_nsmul,
-    hn, map_zero, AddMonoidHom.zero_apply]
 
 /-! ### Finiteness -/
 
@@ -253,8 +252,8 @@ theorem exists_isogeny_shafarevichTateMap_eq_zero {f : Hom W₁.toAffine W₂.to
   refine ⟨toIsogeny hψ, ofIsogeny_toIsogeny hψ, ?_, ?_⟩
   · rw [ofIsogeny_toIsogeny]
     exact shafarevichTateMap_nsmul_eq_zero τ hn f
-  · rw [← dual_ofIsogeny, ofIsogeny_toIsogeny]
-    exact dual_nsmul_shafarevichTateMap_eq_zero τ hn f
+  · rw [← dual_ofIsogeny, ofIsogeny_toIsogeny, dual_nsmul]
+    exact shafarevichTateMap_nsmul_eq_zero_of_domain τ hn f.dual
 
 /-! ### Number fields -/
 
