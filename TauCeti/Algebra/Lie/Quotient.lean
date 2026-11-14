@@ -54,7 +54,8 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
 * `LieIdeal.factor_refl`, `LieIdeal.factor_comp` and `LieIdeal.factor_surjective`: the transitions
   between nested quotients are the identity at equal ideals, compose, and are surjective.
 * `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
-* `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
+* `LieIdeal.mkQ_comp_incl_surjective_iff`: a Lie subalgebra `P` maps onto `L ⧸ I` exactly when
+  `I + P = L`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
 * `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
   complement of `I` in `L`.
@@ -205,17 +206,16 @@ section Supplement
 
 variable {P : LieSubalgebra R L}
 
-/-- A Lie subalgebra `P` supplementing an ideal `I`, in the sense that `I + P = L`, maps onto the
-quotient `L ⧸ I`. -/
-theorem mkQ_comp_incl_surjective (hIP : Codisjoint I.toSubmodule P.toSubmodule) :
-    Function.Surjective (I.mkQ.comp P.incl) := by
-  intro y
-  obtain ⟨x, rfl⟩ := I.surjective_mkQ y
-  obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
-  refine ⟨⟨s, hs⟩, ?_⟩
-  rw [LieHom.comp_apply, LieSubalgebra.coe_incl, ← sub_eq_zero, ← map_sub, ← LieHom.mem_ker,
-    mkQ_ker, Subtype.coe_mk, sub_add_cancel_right]
-  exact I.neg_mem hi
+/-- A Lie subalgebra `P` maps onto the quotient `L ⧸ I` exactly when it supplements the ideal
+`I`, in the sense that `I + P = L`. -/
+theorem mkQ_comp_incl_surjective_iff :
+    Function.Surjective (I.mkQ.comp P.incl) ↔ Codisjoint I.toSubmodule P.toSubmodule := by
+  -- As a function, `P → L ⧸ I` is the restriction of the quotient map of submodules to `P`.
+  have hfun : ⇑(I.mkQ.comp P.incl) = I.toSubmodule.mkQ.domRestrict P.toSubmodule := by
+    ext x
+    simp
+  rw [hfun, LinearMap.surjective_domRestrict_iff I.toSubmodule.mkQ_surjective,
+    Submodule.ker_mkQ, codisjoint_comm]
 
 /-- The kernel of the map `P → L ⧸ I` induced by a Lie subalgebra `P` is the ideal `I ∩ P` of
 `P`. -/

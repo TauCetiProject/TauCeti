@@ -8,9 +8,9 @@ module
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
-# Images after removing finitely many inputs
+# Images after removing countably many inputs
 
-For a measure with null singletons, removing finitely many inputs changes the image of an
+For a measure with null singletons, removing countably many inputs changes the image of an
 arbitrary map only on a null set. Neither measurability nor injectivity of the map is needed.
 -/
 
@@ -18,12 +18,12 @@ public section
 
 open MeasureTheory Set
 
-/-- Removing finitely many inputs preserves an arbitrary image almost everywhere for a
+/-- Removing countably many inputs preserves an arbitrary image almost everywhere for a
 measure with null singletons. -/
-theorem Set.Finite.image_sdiff_ae_eq {α β : Type*} [MeasurableSpace β]
-    {Z : Set α} (hZ : Z.Finite) (f : α → β) (s : Set α)
-    (μ : Measure β) [NullSingletonClass μ] : f '' s =ᵐ[μ] f '' (s \ Z) := by
-  apply ae_eq_set.mpr
+theorem Set.Countable.image_sdiff_ae_eq {α β : Type*} [MeasurableSpace β]
+    {Z : Set α} (hZ : Z.Countable) (f : α → β) (s : Set α)
+    (μ : Measure β) [NullSingletonClass μ] : f '' (s \ Z) =ᵐ[μ] f '' s := by
+  refine (ae_eq_set.mpr ?_).symm
   constructor
   · apply measure_mono_null ?_ ((hZ.image f).measure_zero μ)
     rintro y ⟨⟨x, hx, rfl⟩, hn⟩

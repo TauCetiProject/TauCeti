@@ -41,7 +41,7 @@ level `0 < u < 1`. -/
 theorem quantile_logLogisticMeasure (ha : 0 < a) (hb : 0 < b) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     (logLogisticMeasure a b).quantile u = a * (u / (1 - u)) ^ b⁻¹ := by
   have := isProbabilityMeasure_logisticMeasure (inv_pos.mpr hb) (Real.log a)
-  rw [logLogisticMeasure_of_pos ha hb, Measure.quantile_map_exp hu.1 hu.2,
+  rw [logLogisticMeasure_of_pos ha, Measure.quantile_map_exp hu.1 hu.2,
     quantile_logisticMeasure (inv_pos.mpr hb) _ hu, Real.exp_add, Real.exp_log ha,
     Real.rpow_def_of_pos (div_pos hu.1 (sub_pos.mpr hu.2)), mul_comm b⁻¹]
 
