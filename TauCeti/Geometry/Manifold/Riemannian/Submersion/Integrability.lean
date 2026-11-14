@@ -90,6 +90,10 @@ variable
   {f : M → N} (h : IsRiemannianSubmersion I J f)
 
 -- These regularity indices are propositionally, but not definitionally, equal to two.
+local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+  rw [one_add_one_eq_two]
+  infer_instance
+
 local instance : IsManifold I (minSmoothness ℝ 2) M := by
   rw [minSmoothness_of_isRCLikeNormedField]
   exact .of_le (by norm_cast)
@@ -389,9 +393,6 @@ theorem mlieBracket_horizontalLift {X Y : Π y : N, TangentSpace J y}
         x =
       h.horizontalLift x (mlieBracket J X Y (f x)) +
         (2 : ℝ) • h.oneillA x (h.horizontalLift x (X (f x))) (h.horizontalLift x (Y (f x))) := by
-  have : IsManifold I (1 + 1) M := by
-    rw [one_add_one_eq_two]
-    infer_instance
   have hv := h.starProjection_ker_mlieBracket
     ((h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero)
     ((h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero)
@@ -410,9 +411,6 @@ theorem leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y}
         (h.horizontalLift x v) =
       h.horizontalLift x (CovariantDerivative.leviCivitaConnection J N Y (f x) v) +
         h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (Y (f x))) := by
-  have : IsManifold I (1 + 1) M := by
-    rw [one_add_one_eq_two]
-    infer_instance
   have hYd : MDiffAt (T% (fun y ↦ h.horizontalLift y (Y (f y)))) x :=
     (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
   rw [h.oneillA_apply_of_eventually_mem_orthogonal_ker hYd

@@ -130,6 +130,25 @@ private theorem inner_leviCivitaConnection_horizontalLift_of_mem_ker
       hw, ← sub_eq_zero, ← inner_sub_left, ← neg_sub, hT, inner_neg_left,
     Submodule.inner_right_of_mem_orthogonal hbr hw, neg_zero]
 
+/-- For basic horizontal fields `Y'` and `Z'`, lifting smooth fields `Y` and `Z` on the base, the
+vertical field `A_Y' Z'` is differentiable, being the difference of `∇_Y' Z'` and `(∇_Y Z)^~`. -/
+private theorem mdifferentiableAt_oneillA_horizontalLift {Y Z : Π y : N, TangentSpace J y}
+    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (x : M) :
+    MDiffAt (T% fun y ↦ h.oneillA y (h.horizontalLift y (Y (f y)))
+      (h.horizontalLift y (Z (f y)))) x := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hY' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (Y (f y))) :=
+    fun y ↦ h.contMDiffAt_horizontalLift (hY (f y)) (by simp)
+  have hZ' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (Z (f y))) :=
+    fun y ↦ h.contMDiffAt_horizontalLift (hZ (f y)) (by simp)
+  have hW : CMDiffAt 1 (T% fun z ↦ leviCivitaConnection J N Z z (Y z)) (f x) :=
+    ((leviCivitaConnection J N).contMDiff_apply hY hZ (f x)).of_le (by simp)
+  -- Pointwise, `A_Y' Z' = ∇_Y' Z' - (∇_Y Z)^~`.
+  convert mdifferentiableAt_sub_section
+    (((leviCivitaConnection I M).contMDiff_apply hY' hZ' x).mdifferentiableAt (by simp))
+    ((h.contMDiffAt_horizontalLift hW (by norm_num)).mdifferentiableAt one_ne_zero) using 3
+  exact (sub_eq_of_eq_add' (h.leviCivitaConnection_horizontalLift ((hZ _).of_le (by simp)) _)).symm
+
 /-- For basic horizontal fields `Y'` and `Z'`, lifting smooth fields `Y` and `Z` on the base, and
 lifts `v'` and `t'` of base vectors, `⟨∇_v' ∇_Y' Z', t'⟩ = ⟨∇_v ∇_Y Z, t⟩ + ⟨A_Y' Z', A_t' v'⟩`. -/
 private theorem inner_leviCivitaConnection_leviCivitaConnection_horizontalLift
@@ -146,27 +165,21 @@ private theorem inner_leviCivitaConnection_leviCivitaConnection_horizontalLift
   set covN := leviCivitaConnection J N
   set Y' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
   set Z' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Z (f y))
-  have hY' : CMDiff ∞ (T% Y') := fun y ↦ h.contMDiffAt_horizontalLift (hY (f y)) (by simp)
-  have hZ' : CMDiff ∞ (T% Z') := fun y ↦ h.contMDiffAt_horizontalLift (hZ (f y)) (by simp)
   -- `∇_Y' Z'` is the lift of `∇_Y Z` plus the vertical field `V = A_Y' Z'`.
   set W : Π z : N, TangentSpace J z := fun z ↦ covN Z z (Y z)
-  set V : Π y : M, TangentSpace I y := fun y ↦ covM Z' y (Y' y) - h.horizontalLift y (W (f y))
-  have hV (y : M) : V y = h.oneillA y (Y' y) (Z' y) :=
-    sub_eq_of_eq_add' (h.leviCivitaConnection_horizontalLift ((hZ (f y)).of_le (by simp)) _)
+  set V : Π y : M, TangentSpace I y := fun y ↦ h.oneillA y (Y' y) (Z' y)
   have hVv (y : M) : V y ∈ (mfderiv I J f y).ker :=
-    hV y ▸ h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _)
+    h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _)
   have hW : CMDiffAt 1 (T% W) (f x) := (covN.contMDiff_apply hY hZ (f x)).of_le (by simp)
   have hWd : MDiffAt (T% (fun y ↦ h.horizontalLift y (W (f y)))) x :=
     (h.contMDiffAt_horizontalLift hW (by norm_num)).mdifferentiableAt one_ne_zero
-  have hVd : MDiffAt (T% V) x := mdifferentiableAt_sub_section
-    ((covM.contMDiff_apply hY' hZ' x).mdifferentiableAt (by simp)) hWd
-  have hYZ : (fun y ↦ covM Z' y (Y' y)) = (fun y ↦ h.horizontalLift y (W (f y))) + V := by
-    funext y
-    simp only [V, Pi.add_apply, add_sub_cancel]
+  have hVd : MDiffAt (T% V) x := h.mdifferentiableAt_oneillA_horizontalLift hY hZ x
+  have hYZ : (fun y ↦ covM Z' y (Y' y)) = (fun y ↦ h.horizontalLift y (W (f y))) + V :=
+    funext fun y ↦ h.leviCivitaConnection_horizontalLift ((hZ (f y)).of_le (by simp)) _
   rw [hYZ, covM.isCovariantDerivativeOnUniv.add hWd hVd, add_apply, inner_add_left,
     h.inner_leviCivitaConnection_horizontalLift hW,
     h.inner_leviCivitaConnection_of_mem_ker hVd hVv (h.horizontalLift_mem_orthogonal_ker x v)
-      (h.horizontalLift_mem_orthogonal_ker x t), hV x]
+      (h.horizontalLift_mem_orthogonal_ker x t)]
 
 /-- O'Neill's horizontal curvature equation on basic horizontal fields `X'`, `Y'` and `Z'`, lifting
 smooth fields `X`, `Y` and `Z` on the base, paired with the lift `t'` of a base vector `t`. -/
@@ -193,20 +206,11 @@ private theorem inner_curvatureOperator_horizontalLift {X Y Z : Π y : N, Tangen
   have hX₁ (z : N) : CMDiffAt 1 (T% X) z := (hX z).of_le (by simp)
   have hY₁ (z : N) : CMDiffAt 1 (T% Y) z := (hY z).of_le (by simp)
   have hZ₁ (z : N) : CMDiffAt 1 (T% Z) z := (hZ z).of_le (by simp)
-  have hX' : CMDiff ∞ (T% X') := fun y ↦ h.contMDiffAt_horizontalLift (hX (f y)) (by simp)
-  have hY' : CMDiff ∞ (T% Y') := fun y ↦ h.contMDiffAt_horizontalLift (hY (f y)) (by simp)
-  -- The vertical part `V = A_X' Y'` of `∇_Y' X'`, which is half the vertical part of `[X', Y']`.
-  set W : Π z : N, TangentSpace J z := fun z ↦ covN Y z (X z)
-  set V : Π y : M, TangentSpace I y := fun y ↦ covM Y' y (X' y) - h.horizontalLift y (W (f y))
-  have hV (y : M) : V y = h.oneillA y (X' y) (Y' y) :=
-    sub_eq_of_eq_add' (h.leviCivitaConnection_horizontalLift (hY₁ (f y)) (X (f y)))
+  -- The vertical field `V = A_X' Y'`, which is half the vertical part of `[X', Y']`.
+  set V : Π y : M, TangentSpace I y := fun y ↦ h.oneillA y (X' y) (Y' y)
   have hVv (y : M) : V y ∈ (mfderiv I J f y).ker :=
-    hV y ▸ h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _)
-  have hW : CMDiffAt 1 (T% W) (f x) := (covN.contMDiff_apply hX hY (f x)).of_le (by simp)
-  have hWd : MDiffAt (T% (fun y ↦ h.horizontalLift y (W (f y)))) x :=
-    (h.contMDiffAt_horizontalLift hW (by norm_num)).mdifferentiableAt one_ne_zero
-  have hVd : MDiffAt (T% V) x := mdifferentiableAt_sub_section
-    ((covM.contMDiff_apply hX' hY' x).mdifferentiableAt (by simp)) hWd
+    h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _)
+  have hVd : MDiffAt (T% V) x := h.mdifferentiableAt_oneillA_horizontalLift hX hY x
   -- The three terms of `R(X', Y') Z' = ∇_X' ∇_Y' Z' - ∇_Y' ∇_X' Z' - ∇_[X',Y'] Z'`.
   have h₁ : ⟪covM (fun y ↦ covM Z' y (Y' y)) x (X' x), T⟫_ℝ =
       ⟪covN (fun z ↦ covN Z z (Y z)) (f x) (X (f x)), t⟫_ℝ +
@@ -221,7 +225,6 @@ private theorem inner_curvatureOperator_horizontalLift {X Y Z : Π y : N, Tangen
         2 * ⟪h.oneillA x (X' x) (Y' x), h.oneillA x T (Z' x)⟫_ℝ := by
     have hZV := h.inner_leviCivitaConnection_horizontalLift_of_mem_ker hVd hVv (hZ₁ (f x))
       (h.horizontalLift_mem_orthogonal_ker x t)
-    rw [hV x] at hZV
     rw [h.mlieBracket_horizontalLift (hX₁ (f x)) (hY₁ (f x)), map_add, map_smul, inner_add_left,
       real_inner_smul_left, hZV, h.inner_leviCivitaConnection_horizontalLift (hZ₁ (f x))]
   rw [curvatureOperator_apply, curvatureOperator_apply, inner_sub_left, inner_sub_left, h₁, h₂,
