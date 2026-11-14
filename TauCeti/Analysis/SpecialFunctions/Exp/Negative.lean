@@ -120,10 +120,14 @@ theorem coe_expNeg_toENNReal_neg_log {x : ℝ≥0∞} (hx : x ≤ 1) :
   rw [show ((-log x).toENNReal).toEReal = ((-log x).toENNReal : EReal) from rfl,
     EReal.coe_toENNReal hnn, neg_neg, exp_log]
 
+/-- The extended-real logarithm of the coerced negative exponential negates the argument,
+including at `∞` (`log 0 = ⊥ = -(∞ : EReal)`). -/
+@[simp] theorem log_coe_expNeg (x : ℝ≥0∞) : log (expNeg x : ℝ≥0∞) = -(x : EReal) := by
+  rw [coe_expNeg, EReal.log_exp]
+
 /-- Negating the logarithm inverts the extended negative exponential on `ℝ≥0∞`, including at `∞`. -/
-@[simp] theorem toENNReal_neg_log_coe_expNeg (x : ℝ≥0∞) :
+theorem toENNReal_neg_log_coe_expNeg (x : ℝ≥0∞) :
     (-log (expNeg x : ℝ≥0∞)).toENNReal = x := by
-  rw [coe_expNeg, EReal.log_exp, neg_neg]
-  exact EReal.toENNReal_coe
+  simp
 
 end ENNReal

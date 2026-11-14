@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.Independence.Process.Basic
 public import TauCeti.MeasureTheory.Measure.GiryMonad
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Independence of random measures from evaluations
@@ -18,9 +20,11 @@ masses are independent. Within each vector the test sets may overlap: individual
 These criteria extend independence from count coordinates to the entire evaluation
 sigma-algebra. In particular, they allow independent restrictions and color classes of
 point processes to be identified as independent random measures, not merely as processes
-with independent single counts. No topology, local finiteness, integrality, or finiteness
-of the masses is required. Almost-everywhere measurability suffices, and different random
-measures may have different state spaces.
+with independent single counts. Conversely, independent random measures on an ordered space
+induce independent natural-valued interval-count processes `t ↦ ⌊(M ω (Ioc a t)).toNNReal⌋₊`.
+No local finiteness, integrality, or finiteness of the masses is required for the Giry
+characterizations; almost-everywhere measurability suffices, and different random measures
+may have different state spaces.
 
 The proofs use Mathlib's finite-dimensional independence criteria for stochastic
 processes and the Giry evaluation measurable space on measures.
@@ -88,5 +92,28 @@ theorem indepFun_measure_iff [IsZeroOrProbabilityMeasure P]
     apply indep_of_indep_of_le he
     · exact (Measure.measurableSpace_comap_eq_comap_eval M).le
     · exact (Measure.measurableSpace_comap_eq_comap_eval L).le
+
+/-- Mutually independent random measures induce mutually independent natural-valued
+interval-count processes `t ↦ ⌊(M i ω (Ioc a t)).toNNReal⌋₊` on `(a, t]`. -/
+theorem iIndepFun.natFloor_toNNReal_Ioc {U : Type*} [TopologicalSpace U] [LinearOrder U]
+    [ClosedIicTopology U] [MeasurableSpace U] [OpensMeasurableSpace U]
+    {M : ι → Ω → Measure U} (h : iIndepFun M P) (a : U) :
+    iIndepFun (fun i ω t ↦ ⌊(M i ω (Set.Ioc a t)).toNNReal⌋₊) P := by
+  have hm : Measurable (fun μ : Measure U ↦ fun t : U ↦ ⌊(μ (Set.Ioc a t)).toNNReal⌋₊) :=
+    Measurable.of_eval fun t ↦
+      (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
+  exact h.comp (fun _ ↦ _) (fun _ ↦ hm)
+
+/-- Independent random measures induce independent natural-valued interval-count processes
+`t ↦ ⌊(M ω (Ioc a t)).toNNReal⌋₊` on `(a, t]`. -/
+theorem IndepFun.natFloor_toNNReal_Ioc {U : Type*} [TopologicalSpace U] [LinearOrder U]
+    [ClosedIicTopology U] [MeasurableSpace U] [OpensMeasurableSpace U]
+    {M₁ M₂ : Ω → Measure U} (h : IndepFun M₁ M₂ P) (a : U) :
+    IndepFun (fun ω t ↦ ⌊(M₁ ω (Set.Ioc a t)).toNNReal⌋₊)
+      (fun ω t ↦ ⌊(M₂ ω (Set.Ioc a t)).toNNReal⌋₊) P := by
+  have hm : Measurable (fun μ : Measure U ↦ fun t : U ↦ ⌊(μ (Set.Ioc a t)).toNNReal⌋₊) :=
+    Measurable.of_eval fun t ↦
+      (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
+  exact h.comp hm hm
 
 end ProbabilityTheory

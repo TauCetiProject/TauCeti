@@ -7,12 +7,14 @@ module
 
 public import TauCeti.MeasureTheory.Measure.ProductKernel
 public import TauCeti.MeasureTheory.Measure.Measurability
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import Mathlib.Probability.Kernel.Composition.Prod
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import TauCeti.Probability.RandomMeasure.AeEq
 
 /-!
 # Independent marking of optional occurrence sequences
@@ -281,19 +283,60 @@ required. -/
 theorem ae_map_fst_apply_optionalTupleMarking {ι : Type*} [Countable ι]
     (x : ι → Option X) {A : Set X} (hA : MeasurableSet A) :
     ∀ᵐ μ ∂κ.optionalTupleMarking ι x,
-      μ.map Prod.fst A = (Measure.sum fun i => (x i).elim 0 Measure.dirac) A := by
-  have hm : Measurable (fun μ : Measure (X × E) => μ.map Prod.fst A) :=
-    (Measure.measurable_coe hA).comp (Measure.measurable_map _ measurable_fst)
-  have hmap : (κ.optionalTupleMarking ι x).map (fun μ => μ.map Prod.fst A) =
-      Measure.dirac ((Measure.sum fun i => (x i).elim 0 Measure.dirac) A) := by
-    rw [show (fun μ : Measure (X × E) => μ.map Prod.fst A) =
-        (fun ν : Measure X => ν A) ∘ (fun μ => μ.map Prod.fst) from rfl,
-      ← Measure.map_map (Measure.measurable_coe hA) (Measure.measurable_map _ measurable_fst),
-      map_map_fst_optionalTupleMarking, Measure.map_dirac' (Measure.measurable_coe hA)]
-  have hmem : ∀ᵐ y ∂(κ.optionalTupleMarking ι x).map (fun μ => μ.map Prod.fst A),
-      y = (Measure.sum fun i => (x i).elim 0 Measure.dirac) A := by
-    rw [hmap]
-    simp
-  exact (ae_map_iff hm.aemeasurable (measurableSet_singleton _)).1 hmem
+      μ.map Prod.fst A = (Measure.sum fun i => (x i).elim 0 Measure.dirac) A :=
+  ae_of_ae_map (Measure.measurable_map _ measurable_fst).aemeasurable
+    (map_map_fst_optionalTupleMarking κ x ▸ ae_eq_dirac' (Measure.measurable_coe hA))
+
+/-- Setwise ground-projection recovery for optional tuple marking of an arbitrary random measure:
+if `e` is a measurable optional occurrence enumeration of `N` almost everywhere under `P`, then on
+any fixed measurable set `A`, projecting the marked realization back to `X` almost surely recovers
+`N z.1 A`. Neither s-finiteness of `P`, measurability of `N`, nor any Poisson assumption is
+required. -/
+theorem ae_map_fst_apply_compProd_optionalTupleMarking {Ω ι : Type*} [MeasurableSpace Ω]
+    [Countable ι] {P : Measure Ω} {N : Ω → Measure X}
+    {e : Ω → ι → Option X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => (e ω i).elim 0 Measure.dirac))
+    {A : Set X} (hA : MeasurableSet A) :
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst A = N z.1 A := by
+  by_cases hP : SFinite P
+  swap
+  · simp [Measure.compProd_of_not_sfinite _ _ hP]
+  let η := (κ.optionalTupleMarking ι).comap e he
+  let S : Ω → Measure X := fun ω => Measure.sum fun i => (e ω i).elim 0 Measure.dirac
+  have hS : Measurable S :=
+    TauCeti.MeasureTheory.measurable_measure_sum.comp <|
+      Measurable.of_eval fun i =>
+        (Option.measurable_elim _ Measure.measurable_dirac).comp ((measurable_pi_apply i).comp he)
+  have h₁ : ∀ᵐ z ∂(P ⊗ₘ η), z.2.map Prod.fst A = S z.1 A := by
+    refine Measure.ae_compProd_of_ae_ae ?_ (ae_of_all _ fun ω => ?_)
+    · exact measurableSet_eq_fun
+        ((Measure.measurable_coe hA).comp
+          ((Measure.measurable_map _ measurable_fst).comp measurable_snd))
+        ((Measure.measurable_coe hA).comp (hS.comp measurable_fst))
+    · simpa only [η, Kernel.comap_apply] using κ.ae_map_fst_apply_optionalTupleMarking (e ω) hA
+  have h₂ : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 = S z.1 :=
+    ae_of_ae_map measurable_fst.aemeasurable ((Measure.fst_compProd P η).symm ▸ hae)
+  filter_upwards [h₁, h₂] with z hz₁ hz₂
+  rw [hz₁, hz₂]
+
+/-- Measure-level ground-projection recovery for optional tuple marking on a countably generated
+ground space: if `N` is almost surely finite on each piece of a countable measurable cover of `X`,
+projecting the marked realization onto the first coordinate recovers `N z.1` almost surely. -/
+theorem ae_map_fst_compProd_optionalTupleMarking [MeasurableSpace.CountablyGenerated X]
+    {Ω ι ι' : Type*} [MeasurableSpace Ω] [Countable ι] [Countable ι']
+    {P : Measure Ω} {N : Ω → Measure X}
+    {e : Ω → ι → Option X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => (e ω i).elim 0 Measure.dirac))
+    {s : ι' → Set X} (hs : ∀ j, MeasurableSet (s j)) (hcover : ⋃ j, s j = Set.univ)
+    (hfin : ∀ j, ∀ᵐ ω ∂P, N ω (s j) ≠ ∞) :
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 := by
+  by_cases hP : SFinite P
+  swap
+  · simp [Measure.compProd_of_not_sfinite _ _ hP]
+  let η := (κ.optionalTupleMarking ι).comap e he
+  have hfin' (j : ι') : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 (s j) ≠ ∞ :=
+    ae_of_ae_map measurable_fst.aemeasurable ((Measure.fst_compProd P η).symm ▸ hfin j)
+  exact (Measure.ae_eq_of_forall_ae_eq_of_cover hs hcover hfin' fun A hA =>
+    (κ.ae_map_fst_apply_compProd_optionalTupleMarking he hae hA).mono fun _ h => h.symm).symm
 
 end ProbabilityTheory.Kernel

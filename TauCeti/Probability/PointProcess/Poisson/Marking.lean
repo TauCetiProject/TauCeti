@@ -10,6 +10,7 @@ public import TauCeti.Probability.PointProcess.Marking.Tuple
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 import Mathlib.MeasureTheory.Integral.Lebesgue.Sub
+import Mathlib.Probability.Kernel.Composition.MeasureComp
 import Mathlib.Probability.Kernel.MeasurableLIntegral
 import TauCeti.MeasureTheory.Measure.IntegerValued.Enumeration.LocallyFinite
 import TauCeti.Probability.PointProcess.Poisson.IntegerValued
@@ -33,11 +34,11 @@ Two levels of generality are provided:
   intensity `Λ` on an arbitrary measurable space `X`, with no standard Borel or simplicity
   assumption.
 * On a standard Borel ground space `X` with σ-finite intensity `Λ`,
-  `IsPoissonRandomMeasure.exists_markovKernel_marking` constructs a Markov kernel
-  `η : Kernel Ω (Measure (X × E))` from the realizations of `N` alone (without assuming an
-  enumeration in advance) by combining almost-sure integrality and measurable occurrence
-  enumeration on the spanning sets of `Λ`. Atomic intensities and repeated occurrences at one
-  location are allowed.
+  `IsPoissonRandomMeasure.exists_isMarkovKernel_marking` constructs a realization-level Markov
+  kernel `η : Kernel (Measure X) (Measure (X × E))` (without assuming an enumeration in advance) by
+  combining almost-sure integrality and measurable occurrence enumeration on the spanning sets of
+  `Λ`, applied to `(Ω, P)` via `P ⊗ₘ η.comap N hN.measurable`. Atomic intensities and repeated
+  occurrences at one location are allowed.
 
 ## References
 
@@ -98,12 +99,9 @@ theorem IsPoissonRandomMeasure.compProd_tupleMarking [SFinite Λ]
     {e : Ω → ι → X} (he : Measurable e)
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ Measure.dirac (e ω i))) :
     IsPoissonRandomMeasure (P ⊗ₘ (κ.tupleMarking ι).comap e he) Prod.snd (Λ ⊗ₘ κ) := by
-  have he' : Measurable (fun ω i ↦ some (e ω i)) := by fun_prop
-  have hker : (κ.tupleMarking ι).comap e he = (κ.optionalTupleMarking ι).comap _ he' := by
-    ext ω s _
-    simp only [Kernel.comap_apply, ← Kernel.optionalTupleMarking_some]
-  rw [hker]
-  exact hN.compProd_optionalTupleMarking κ he' (by simpa only [Option.elim_some] using hae)
+  rw [Kernel.tupleMarking_def, ← Kernel.comap_comp_right]
+  exact hN.compProd_optionalTupleMarking κ _
+    (by simpa only [Function.comp_apply, Option.elim_some] using hae)
 
 /-- Marginal form of `IsPoissonRandomMeasure.compProd_optionalTupleMarking`: the mixture of
 marked laws over `P` is a canonical Poisson random measure on `Measure (X × E)` with intensity
@@ -116,55 +114,65 @@ theorem IsPoissonRandomMeasure.bind_optionalTupleMarking [SFinite Λ]
   let := hN.isProbabilityMeasure
   let η := (κ.optionalTupleMarking ι).comap e he
   have hmap : (P ⊗ₘ η).map Prod.snd = P.bind (fun ω ↦ κ.optionalTupleMarking ι (e ω)) := by
-    ext s hs
-    rw [Measure.map_apply measurable_snd hs, Measure.compProd_apply (hs.preimage measurable_snd),
-      Measure.bind_apply hs (by fun_prop)]
-    rfl
+    rw [← Measure.snd, Measure.snd_compProd]
+    simp only [η, Kernel.coe_comap, Function.comp_def]
   exact (hN.compProd_optionalTupleMarking κ he hae).of_identDistrib measurable_id
     ⟨measurable_snd.aemeasurable, measurable_id.aemeasurable, by rw [Measure.map_id, hmap]⟩
 
-/-- Setwise ground-projection recovery for optional tuple marking on an arbitrary measurable space:
-on any fixed measurable set `A`, projecting the marked realization back to `X` almost surely
-recovers `N z.1 A`. -/
-theorem IsPoissonRandomMeasure.ae_map_fst_apply_compProd_optionalTupleMarking
+/-- Marginal form of `IsPoissonRandomMeasure.compProd_tupleMarking`: the mixture of marked tuple
+laws over `P` is a canonical Poisson random measure on `Measure (X × E)` with intensity
+`Λ ⊗ₘ κ`. -/
+theorem IsPoissonRandomMeasure.bind_tupleMarking [SFinite Λ]
     (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
-    {e : Ω → ι → Option X} (he : Measurable e)
-    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac))
-    {A : Set X} (hA : MeasurableSet A) :
-    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst A = N z.1 A := by
-  let := hN.isProbabilityMeasure
-  have hp : MeasurableSet {z : Ω × Measure (X × E) | z.2.map Prod.fst A = N z.1 A} :=
-    measurableSet_eq_fun
-      ((Measure.measurable_coe hA).comp
-        ((Measure.measurable_map _ measurable_fst).comp measurable_snd))
-      ((Measure.measurable_coe hA).comp (hN.measurable.comp measurable_fst))
-  rw [Measure.ae_compProd_iff hp]
-  filter_upwards [hae] with ω hω
-  simpa only [Kernel.comap_apply, ← hω] using
-    Kernel.ae_map_fst_apply_optionalTupleMarking κ (e ω) hA
+    {e : Ω → ι → X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ Measure.dirac (e ω i))) :
+    IsPoissonRandomMeasure (P.bind fun ω ↦ κ.tupleMarking ι (e ω)) id (Λ ⊗ₘ κ) := by
+  simpa only [Kernel.optionalTupleMarking_some] using
+    hN.bind_optionalTupleMarking κ (e := fun ω i ↦ some (e ω i))
+      (Measurable.of_eval fun i ↦ Option.measurable_some.comp ((measurable_pi_apply i).comp he))
+      (by simpa only [Option.elim_some] using hae)
 
-/-- On a countably generated ground space with σ-finite intensity `Λ`, projecting the marked
-realization onto the first coordinate recovers the entire ground realization `N z.1` almost
+/-- On a countably generated ground space with σ-finite intensity `Λ`, setwise almost-everywhere
+equality of a random measure `M` on `P ⊗ₘ η` with the ground realization `N z.1` upgrades to
+almost-everywhere equality of measures. -/
+theorem IsPoissonRandomMeasure.ae_eq_compProd_of_forall_ae_eq {β : Type*} [MeasurableSpace β]
+    [MeasurableSpace.CountablyGenerated X] [SigmaFinite Λ]
+    (hN : IsPoissonRandomMeasure P N Λ) {η : Kernel Ω β} [IsMarkovKernel η]
+    {M : Ω × β → Measure X}
+    (heq : ∀ A, MeasurableSet A → ∀ᵐ z ∂(P ⊗ₘ η), M z A = N z.1 A) :
+    ∀ᵐ z ∂(P ⊗ₘ η), M z = N z.1 := by
+  let := hN.isProbabilityMeasure
+  have hfin (n : ℕ) : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 (spanningSets Λ n) ≠ ∞ :=
+    ae_of_ae_map measurable_fst.aemeasurable
+      ((Measure.fst_compProd P η).symm ▸
+        (hN.ae_lt_top (measurableSet_spanningSets Λ n)
+          (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt)
+  exact (Measure.ae_eq_of_forall_ae_eq_of_cover (measurableSet_spanningSets Λ)
+    (iUnion_spanningSets Λ) hfin fun A hA ↦ (heq A hA).mono fun _ h ↦ h.symm).symm
+
+/-- On a countably generated ground space with σ-finite intensity `Λ`, projecting an optional-tuple
+marked realization onto the first coordinate recovers the entire ground realization `N z.1` almost
 surely. -/
 theorem IsPoissonRandomMeasure.ae_map_fst_compProd_optionalTupleMarking
     [MeasurableSpace.CountablyGenerated X] [SigmaFinite Λ]
     (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
     {e : Ω → ι → Option X} (he : Measurable e)
     (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e ω i).elim 0 Measure.dirac)) :
-    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 := by
-  let := hN.isProbabilityMeasure
-  let η := (κ.optionalTupleMarking ι).comap e he
-  have hfin (n : ℕ) : ∀ᵐ z ∂(P ⊗ₘ η), N z.1 (spanningSets Λ n) ≠ ∞ := by
-    have hm : MeasurableSet {ω : Ω | N ω (spanningSets Λ n) ≠ ∞} :=
-      (measurableSet_eq_fun
-        ((Measure.measurable_coe (measurableSet_spanningSets Λ n)).comp hN.measurable)
-        measurable_const).compl
-    exact Measure.ae_compProd_of_ae_fst η hm
-      ((hN.ae_lt_top (measurableSet_spanningSets Λ n)
-        (measure_spanningSets_lt_top Λ n)).mono fun _ h ↦ h.ne)
-  exact (Measure.ae_eq_of_forall_ae_eq_of_cover (measurableSet_spanningSets Λ)
-    (iUnion_spanningSets Λ) hfin fun A hA ↦
-      (hN.ae_map_fst_apply_compProd_optionalTupleMarking κ he hae hA).mono fun _ h ↦ h.symm).symm
+    ∀ᵐ z ∂(P ⊗ₘ (κ.optionalTupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
+  hN.ae_eq_compProd_of_forall_ae_eq fun _ hA ↦
+    κ.ae_map_fst_apply_compProd_optionalTupleMarking he hae hA
+
+/-- On a countably generated ground space with σ-finite intensity `Λ`, projecting a total-tuple
+marked realization onto the first coordinate recovers the entire ground realization `N z.1` almost
+surely. -/
+theorem IsPoissonRandomMeasure.ae_map_fst_compProd_tupleMarking
+    [MeasurableSpace.CountablyGenerated X] [SigmaFinite Λ]
+    (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
+    {e : Ω → ι → X} (he : Measurable e)
+    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ Measure.dirac (e ω i))) :
+    ∀ᵐ z ∂(P ⊗ₘ (κ.tupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 :=
+  hN.ae_eq_compProd_of_forall_ae_eq fun _ hA ↦
+    κ.ae_map_fst_apply_compProd_tupleMarking he hae hA
 
 end Enumeration
 
@@ -175,35 +183,44 @@ variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [StandardBore
 
 /-- **The Poisson Marking Theorem** (Last–Penrose, Theorem 5.6). For any Poisson random measure `N`
 with σ-finite intensity `Λ` on a standard Borel space `X` and any Markov kernel `κ : Kernel X E`,
-there exists a Markov kernel `η : Kernel Ω (Measure (X × E))` such that under `P ⊗ₘ η`, the second
-coordinate is a Poisson random measure with intensity `Λ ⊗ₘ κ` whose ground projection almost
-surely equals `N`. Atomic intensities and multiple occurrences at one location are allowed. -/
-theorem IsPoissonRandomMeasure.exists_markovKernel_marking
+there exists a realization-level Markov kernel `η : Kernel (Measure X) (Measure (X × E))` such that
+under `P ⊗ₘ η.comap N hN.measurable`, the second coordinate is a Poisson random measure with
+intensity `Λ ⊗ₘ κ` whose ground projection almost surely equals `N`. Because `η` acts on `Measure X`
+alone, the marked realization is conditionally independent of `Ω` given `N`. Atomic intensities and
+multiple occurrences at one location are allowed. -/
+theorem IsPoissonRandomMeasure.exists_isMarkovKernel_marking
     (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ] :
-    ∃ η : Kernel Ω (Measure (X × E)),
+    ∃ η : Kernel (Measure X) (Measure (X × E)),
       IsMarkovKernel η ∧
-      IsPoissonRandomMeasure (P ⊗ₘ η) Prod.snd (Λ ⊗ₘ κ) ∧
-      ∀ᵐ z ∂(P ⊗ₘ η), z.2.map Prod.fst = N z.1 := by
-  obtain ⟨e, he, hae⟩ := hN.measurable.aemeasurable.exists_ae_occurrence_enumeration_of_cover
-    hN.ae_isIntegerValued (spanningSets Λ) (measurableSet_spanningSets Λ) (iUnion_spanningSets Λ)
-    (fun n ↦ (hN.ae_lt_top (measurableSet_spanningSets Λ n)
-      (measure_spanningSets_lt_top Λ n)).mono fun _ h ↦ h.ne)
-  exact ⟨(κ.optionalTupleMarking ℕ).comap e he, inferInstance,
-    hN.compProd_optionalTupleMarking κ he hae,
-    hN.ae_map_fst_compProd_optionalTupleMarking κ he hae⟩
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) Prod.snd (Λ ⊗ₘ κ) ∧
+      ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.map Prod.fst = N z.1 := by
+  have hN' : IsPoissonRandomMeasure (P.map N) id Λ :=
+    hN.of_identDistrib measurable_id
+      ⟨hN.measurable.aemeasurable, measurable_id.aemeasurable, Measure.map_id.symm⟩
+  obtain ⟨e, he, hae⟩ := measurable_id.aemeasurable.exists_ae_occurrence_enumeration_of_cover
+    hN'.ae_isIntegerValued (spanningSets Λ) (measurableSet_spanningSets Λ) (iUnion_spanningSets Λ)
+    (fun n ↦ (hN'.ae_lt_top (measurableSet_spanningSets Λ n)
+      (measure_spanningSets_lt_top Λ n)).mono fun _ ↦ ne_of_lt)
+  have haeN : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i ↦ (e (N ω) i).elim 0 Measure.dirac) :=
+    ae_of_ae_map hN.measurable.aemeasurable hae
+  refine ⟨(κ.optionalTupleMarking ℕ).comap e he, inferInstance, ?_, ?_⟩
+  · rw [← Kernel.comap_comp_right]
+    exact hN.compProd_optionalTupleMarking κ (he.comp hN.measurable) haeN
+  · rw [← Kernel.comap_comp_right]
+    exact hN.ae_map_fst_compProd_optionalTupleMarking κ (he.comp hN.measurable) haeN
 
 /-- Independent i.i.d. marking specialization of
-`IsPoissonRandomMeasure.exists_markovKernel_marking`: attaching independent marks with common
-probability law `Q` produces a Poisson random measure with product intensity `Λ.prod Q` whose
-ground projection recovers `N` almost surely. -/
-theorem IsPoissonRandomMeasure.exists_markovKernel_marking_prod
+`IsPoissonRandomMeasure.exists_isMarkovKernel_marking`: attaching independent marks with common
+probability law `Q` via a realization-level Markov kernel produces a Poisson random measure with
+product intensity `Λ.prod Q` whose ground projection recovers `N` almost surely. -/
+theorem IsPoissonRandomMeasure.exists_isMarkovKernel_marking_prod
     (hN : IsPoissonRandomMeasure P N Λ) (Q : Measure E) [IsProbabilityMeasure Q] :
-    ∃ η : Kernel Ω (Measure (X × E)),
+    ∃ η : Kernel (Measure X) (Measure (X × E)),
       IsMarkovKernel η ∧
-      IsPoissonRandomMeasure (P ⊗ₘ η) Prod.snd (Λ.prod Q) ∧
-      ∀ᵐ z ∂(P ⊗ₘ η), z.2.map Prod.fst = N z.1 := by
+      IsPoissonRandomMeasure (P ⊗ₘ η.comap N hN.measurable) Prod.snd (Λ.prod Q) ∧
+      ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.map Prod.fst = N z.1 := by
   let := hN.isProbabilityMeasure
-  obtain ⟨η, hη, hP, hproj⟩ := hN.exists_markovKernel_marking (Kernel.const X Q)
+  obtain ⟨η, hη, hP, hproj⟩ := hN.exists_isMarkovKernel_marking (Kernel.const X Q)
   rw [Measure.compProd_const] at hP
   exact ⟨η, hη, hP, hproj⟩
 

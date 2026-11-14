@@ -11,6 +11,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Superposition.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
 # Counts of temporal Poisson random measures
@@ -132,6 +133,38 @@ theorem hasIndepIncrements_nat_count [IsLocallyFiniteMeasure Λ]
     (fun _ ↦ measurableSet_Ioc) (fun _ ↦ measure_Ioc_lt_top) hd
   have hfloor := hi.comp (fun _ x ↦ ⌊x.toNNReal⌋₊) (fun _ ↦ by fun_prop)
   exact hfloor.congr fun i ↦ (h.ae_nat_count_sub_eq (ht i.castSucc_le_succ)).symm
+
+/-- Any temporal Poisson random measure with zero intensity has identically zero cumulative counts
+simultaneously at all times `t` on a single event of probability one. -/
+theorem ae_forall_nat_count_eq_zero (h : IsPoissonRandomMeasure P M 0) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t)).toNNReal⌋₊ = 0 := by
+  filter_upwards [h.ae_eq_zero] with ω hω t
+  simp [hω]
+
+/-- If two temporal Poisson random measures with finite intensities on bounded `(0, n]` windows
+sum almost surely to `M₀`, then their natural cumulative counts add to those of `M₀`
+simultaneously at all times `t` on a single event of full probability. Neither local finiteness at
+`0` nor typeclass synthesis of `IsLocallyFiniteMeasure` is required. -/
+theorem ae_forall_nat_count_add_eq {M₁ M₂ M₀ : Ω → Measure ℝ≥0} {Λ₁ Λ₂ : Measure ℝ≥0}
+    (h₁ : IsPoissonRandomMeasure P M₁ Λ₁) (h₂ : IsPoissonRandomMeasure P M₂ Λ₂)
+    (hΛ₁ : ∀ n : ℕ, Λ₁ (Ioc 0 (n : ℝ≥0)) < ∞)
+    (hΛ₂ : ∀ n : ℕ, Λ₂ (Ioc 0 (n : ℝ≥0)) < ∞)
+    (hadd : ∀ᵐ ω ∂P, M₁ ω + M₂ ω = M₀ ω) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
+      ⌊(M₁ ω (Ioc 0 t)).toNNReal⌋₊ + ⌊(M₂ ω (Ioc 0 t)).toNNReal⌋₊ =
+        ⌊(M₀ ω (Ioc 0 t)).toNNReal⌋₊ := by
+  refine ae_forall_natFloor_toNNReal_Ioc_add_eq
+    (fun n ↦ by
+      have : IsFiniteMeasure (Λ₁.restrict (Ioc 0 (n : ℝ≥0))) := ⟨by simpa using hΛ₁ n⟩
+      exact (h₁.restrict measurableSet_Ioc).ae_isIntegerValued)
+    (fun n ↦ by
+      have : IsFiniteMeasure (Λ₂.restrict (Ioc 0 (n : ℝ≥0))) := ⟨by simpa using hΛ₂ n⟩
+      exact (h₂.restrict measurableSet_Ioc).ae_isIntegerValued)
+    (fun n ↦ ?_) hadd
+  filter_upwards [h₁.ae_lt_top measurableSet_Ioc (hΛ₁ n),
+    h₂.ae_lt_top measurableSet_Ioc (hΛ₂ n), hadd] with ω hω₁ hω₂ hωadd
+  rw [← hωadd, add_apply]
+  exact ENNReal.add_lt_top.2 ⟨hω₁, hω₂⟩
 
 end IsPoissonRandomMeasure
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.IntegerValued.Basic
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.Topology.Instances.NNReal.Lemmas
@@ -19,6 +20,10 @@ also generate its entire information sigma-algebra. Restricting a measure to `[0
 uses only cumulative masses at times at most `t`. Equality in law of the entire cumulative
 process characterizes equality in law of almost surely boundedly finite random measures,
 including realizations on different sample spaces.
+
+For random measures whose `(0, n]` restrictions are almost surely integer-valued and whose sum
+is almost surely finite on `(0, n]`, the natural-valued `(0, t]` cumulative counts add
+simultaneously at all times `t` almost surely, with no finiteness assumption at zero.
 
 These results allow a counting process to describe a random measure and its observed history
 without requiring finite total mass, simplicity, or the absence of an atom at zero.
@@ -152,5 +157,61 @@ theorem identDistrib_measure_iff_Iic {Ω' : Type*} [MeasurableSpace Ω']
       exact congrArg (fun A ↦ Sum.inr ⁻¹' A) heq
     rw [Measure.map_apply hM' hs, Measure.map_apply hN' hs, ← hleft, ← hright]
     exact h'.measure_preimage_eq hu
+
+/-- If a finite family of random measures on `ℝ≥0` has almost surely integer-valued restrictions
+on `(0, n]` for every `n : ℕ` and sums almost surely to `M₀` with almost surely finite mass on
+`(0, n]`, then the natural-valued `(0, t]` cumulative counts sum to those of `M₀` simultaneously
+for all `t : ℝ≥0` almost surely. Neither pathwise regularity nor finiteness at `0` is required. -/
+theorem ae_forall_natFloor_toNNReal_Ioc_finsetSum_eq {ι : Type*} (s : Finset ι)
+    {Q : Measure Ω} {M : ι → Ω → Measure ℝ≥0} {M₀ : Ω → Measure ℝ≥0}
+    (hint : ∀ i ∈ s, ∀ n : ℕ, ∀ᵐ z ∂Q, ((M i z).restrict (Ioc 0 (n : ℝ≥0))).IsIntegerValued)
+    (hfin : ∀ n : ℕ, ∀ᵐ z ∂Q, M₀ z (Ioc 0 (n : ℝ≥0)) < ∞)
+    (hsum : ∀ᵐ z ∂Q, ∑ i ∈ s, M i z = M₀ z) :
+    ∀ᵐ z ∂Q, ∀ t : ℝ≥0,
+      ∑ i ∈ s, ⌊(M i z (Ioc 0 t)).toNNReal⌋₊ = ⌊(M₀ z (Ioc 0 t)).toNNReal⌋₊ := by
+  classical
+  have hint' : ∀ᵐ z ∂Q, ∀ (i : s) (n : ℕ),
+      ((M i.1 z).restrict (Ioc 0 (n : ℝ≥0))).IsIntegerValued :=
+    ae_all_iff.2 fun i ↦ ae_all_iff.2 (hint i.1 i.2)
+  filter_upwards [hint', ae_all_iff.2 hfin, hsum] with z hzint hzfin hzsum t
+  have ht₀ : M₀ z (Ioc 0 t) < ∞ :=
+    (measure_mono (Ioc_subset_Ioc_right (Nat.le_ceil t))).trans_lt (hzfin ⌈t⌉₊)
+  have heq (i : s) :
+      M i.1 z (Ioc 0 t) = (⌊(M i.1 z (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) := by
+    have hsub : Ioc (0 : ℝ≥0) t ⊆ Ioc 0 (⌈t⌉₊ : ℝ≥0) :=
+      Ioc_subset_Ioc_right (Nat.le_ceil t)
+    have hle : M i.1 z (Ioc 0 t) ≤ M₀ z (Ioc 0 t) := by
+      rw [← hzsum, sum_apply]
+      exact Finset.single_le_sum (f := fun j ↦ M j z (Ioc 0 t)) (fun _ _ ↦ by positivity) i.2
+    have hrest : (M i.1 z).restrict (Ioc 0 (⌈t⌉₊ : ℝ≥0)) (Ioc 0 t) = M i.1 z (Ioc 0 t) :=
+      Measure.restrict_eq_self _ hsub
+    obtain ⟨k, hk⟩ := (hzint i ⌈t⌉₊).exists_eq_natCast measurableSet_Ioc
+      (hrest.trans_lt (hle.trans_lt ht₀))
+    rw [hrest] at hk
+    simp [hk]
+  have htot : M₀ z (Ioc 0 t) =
+      ((∑ i ∈ s, ⌊(M i z (Ioc 0 t)).toNNReal⌋₊ : ℕ) : ℝ≥0∞) := by
+    rw [← hzsum, sum_apply, Nat.cast_sum]
+    exact Finset.sum_congr rfl fun i hi ↦ heq ⟨i, hi⟩
+  rw [htot, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+
+/-- Binary specialization of `ae_forall_natFloor_toNNReal_Ioc_finsetSum_eq`: if two random
+measures on `ℝ≥0` have almost surely integer-valued restrictions on `(0, n]` and sum almost
+surely to `M₀` with almost surely finite mass on `(0, n]`, then their natural-valued `(0, t]`
+counts add to those of `M₀` simultaneously at all times `t` almost surely. -/
+theorem ae_forall_natFloor_toNNReal_Ioc_add_eq {Q : Measure Ω} {M₁ M₂ M₀ : Ω → Measure ℝ≥0}
+    (hint₁ : ∀ n : ℕ, ∀ᵐ z ∂Q, ((M₁ z).restrict (Ioc 0 (n : ℝ≥0))).IsIntegerValued)
+    (hint₂ : ∀ n : ℕ, ∀ᵐ z ∂Q, ((M₂ z).restrict (Ioc 0 (n : ℝ≥0))).IsIntegerValued)
+    (hfin : ∀ n : ℕ, ∀ᵐ z ∂Q, M₀ z (Ioc 0 (n : ℝ≥0)) < ∞)
+    (hadd : ∀ᵐ z ∂Q, M₁ z + M₂ z = M₀ z) :
+    ∀ᵐ z ∂Q, ∀ t : ℝ≥0,
+      ⌊(M₁ z (Ioc 0 t)).toNNReal⌋₊ + ⌊(M₂ z (Ioc 0 t)).toNNReal⌋₊ =
+        ⌊(M₀ z (Ioc 0 t)).toNNReal⌋₊ := by
+  let M : Bool → Ω → Measure ℝ≥0 := fun b ↦ cond b M₁ M₂
+  have h := ae_forall_natFloor_toNNReal_Ioc_finsetSum_eq (Finset.univ : Finset Bool)
+    (M := M) (M₀ := M₀)
+    (fun b _ ↦ by cases b <;> assumption) hfin
+    (by simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using hadd)
+  simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using h
 
 end TauCeti.Probability

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Marking.Tuple
-public import TauCeti.MeasureTheory.Measure.Count.Enumeration
 import TauCeti.Probability.RandomMeasure.Determination
 
 /-!
@@ -17,64 +16,25 @@ counting measure. Conversely, its ground projection recovers that measure, so eq
 marked laws is equivalent to equality of the original measures. This makes the tuple
 construction usable without retaining an arbitrary labeling of the occurrences.
 
-For optional occurrence sequences, Laplace-functional determinacy yields enumeration
-independence on any measurable ground space, with no measurable-singleton, standard Borel,
-nonemptiness, simplicity, or local-finiteness hypothesis, and with gaps (`none`) and infinite
-multiplicities allowed.
+Using Laplace-functional determinacy on `Kernel.optionalTupleMarking`, both optional and total
+occurrence enumerations enjoy enumeration independence on any measurable ground space, with no
+measurable-singleton, standard Borel, nonemptiness, simplicity, or local-finiteness hypothesis,
+and with gaps (`none`) and infinite multiplicities allowed. In particular,
+`Kernel.optionalTupleMarking_eq_tupleMarking` identifies optional tuple marking with ordinary
+tuple marking restricted to the subtype of present indices.
 
 ## References
 
 * G. Last and M. Penrose, *Lectures on the Poisson Process*, Cambridge University Press,
   2018, Chapter 5 (independent marking).
-
-The marked laws are `Kernel.tupleMarking` and `Kernel.optionalTupleMarking`; invariance of
-`tupleMarking` uses `Kernel.tupleMarking_comp_equiv` after matching occurrence fibers, while
-invariance of `optionalTupleMarking` uses Laplace-functional determinacy.
 -/
 
 public section
 
 open MeasureTheory ProbabilityTheory
+open scoped ENNReal
 
 namespace ProbabilityTheory.Kernel
-
-section Tuple
-
-variable {X E : Type*} [MeasurableSpace X] [MeasurableSingletonClass X]
-  [MeasurableSpace E] (κ : Kernel X E) [IsMarkovKernel κ]
-
-/-- Independently marking two enumerations of the same counting measure gives the same law,
-even when the enumerations use different countable index types. -/
-theorem tupleMarking_eq_of_sum_dirac_eq {ι ι' : Type*} [Countable ι] [Countable ι']
-    {x : ι → X} {y : ι' → X}
-    (h : (Measure.sum fun i => Measure.dirac (x i)) =
-      (Measure.sum fun j => Measure.dirac (y j))) :
-    κ.tupleMarking ι x = κ.tupleMarking ι' y := by
-  obtain ⟨e, he⟩ := TauCeti.sum_dirac_eq_sum_dirac_iff_exists_equiv.1 h
-  have hxy : y ∘ e = x := funext he
-  rw [← hxy]
-  exact κ.tupleMarking_comp_equiv e y
-
-/-- Marked tuple laws agree exactly when their underlying counting measures agree. Thus no
-information about ground multiplicities is lost by passing to the marked law. -/
-@[simp]
-theorem tupleMarking_eq_iff_sum_dirac_eq {ι ι' : Type*} [Countable ι] [Countable ι']
-    {x : ι → X} {y : ι' → X} :
-    κ.tupleMarking ι x = κ.tupleMarking ι' y ↔
-      (Measure.sum fun i => Measure.dirac (x i)) =
-        (Measure.sum fun j => Measure.dirac (y j)) := by
-  refine ⟨fun h => ?_, κ.tupleMarking_eq_of_sum_dirac_eq⟩
-  have hground := congrArg (fun ν : Measure (Measure (X × E)) =>
-    ν.map (fun μ => μ.map Prod.fst)) h
-  simp only [map_map_fst_tupleMarking] at hground
-  ext s hs
-  have heval := congrArg (fun ν : Measure (Measure X) => ν.map (fun μ => μ s)) hground
-  simpa only [Measure.map_dirac' (Measure.measurable_coe hs),
-    MeasureTheory.dirac_eq_dirac_iff] using heval
-
-end Tuple
-
-section Optional
 
 variable {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
   (κ : Kernel X E) [IsMarkovKernel κ]
@@ -111,6 +71,49 @@ theorem optionalTupleMarking_eq_iff_sum_elim_dirac_eq {ι ι' : Type*} [Countabl
   simpa only [Measure.map_dirac' (Measure.measurable_coe hs),
     MeasureTheory.dirac_eq_dirac_iff] using heval
 
-end Optional
+/-- Optional tuple marking coincides with ordinary tuple marking restricted to the subtype of
+present indices. No assumption on the ground measurable space is required. -/
+theorem optionalTupleMarking_eq_tupleMarking {ι : Type*} [Countable ι] (x : ι → Option X) :
+    κ.optionalTupleMarking ι x =
+      κ.tupleMarking {i : ι // (x i).isSome} (fun j => (x j.1).get j.2) := by
+  rw [← optionalTupleMarking_some]
+  refine κ.optionalTupleMarking_eq_of_sum_elim_dirac_eq ?_
+  ext s hs
+  simp only [Measure.sum_apply _ hs, Option.elim_some]
+  let f : ι → ℝ≥0∞ := fun i => ((x i).elim 0 Measure.dirac) s
+  have hsub : (∑' j : {i : ι // (x i).isSome}, Measure.dirac ((x j.1).get j.2) s) =
+      ∑' j : ({i : ι | (x i).isSome = true} : Set ι), f j.1 :=
+    tsum_congr fun j => by
+      dsimp only [f]
+      conv_rhs => rw [← Option.some_get j.2]
+      rw [Option.elim_some]
+  symm
+  rw [hsub, tsum_subtype {i : ι | (x i).isSome = true} f]
+  refine tsum_congr fun i => ?_
+  cases hx : x i <;> simp [f, hx]
+
+/-- Independently marking two enumerations of the same counting measure gives the same law,
+even when the enumerations use different countable index types. No assumption on the ground
+measurable space is required. -/
+theorem tupleMarking_eq_of_sum_dirac_eq {ι ι' : Type*} [Countable ι] [Countable ι']
+    {x : ι → X} {y : ι' → X}
+    (h : (Measure.sum fun i => Measure.dirac (x i)) =
+      (Measure.sum fun j => Measure.dirac (y j))) :
+    κ.tupleMarking ι x = κ.tupleMarking ι' y := by
+  simpa only [optionalTupleMarking_some, Option.elim_some] using
+    κ.optionalTupleMarking_eq_of_sum_elim_dirac_eq (x := fun i => some (x i))
+      (y := fun j => some (y j)) (by simpa only [Option.elim_some] using h)
+
+/-- Marked tuple laws agree exactly when their underlying counting measures agree. Thus no
+information about ground multiplicities is lost by passing to the marked law. -/
+@[simp]
+theorem tupleMarking_eq_iff_sum_dirac_eq {ι ι' : Type*} [Countable ι] [Countable ι']
+    {x : ι → X} {y : ι' → X} :
+    κ.tupleMarking ι x = κ.tupleMarking ι' y ↔
+      (Measure.sum fun i => Measure.dirac (x i)) =
+        (Measure.sum fun j => Measure.dirac (y j)) := by
+  simpa only [optionalTupleMarking_some, Option.elim_some] using
+    κ.optionalTupleMarking_eq_iff_sum_elim_dirac_eq (x := fun i => some (x i))
+      (y := fun j => some (y j))
 
 end ProbabilityTheory.Kernel
