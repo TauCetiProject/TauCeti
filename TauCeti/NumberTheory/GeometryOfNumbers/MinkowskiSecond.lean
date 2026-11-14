@@ -301,10 +301,6 @@ private theorem volume_fold_le_fold_succ {X : Set (Fin n → ℝ)} (hX : Measura
 private abbrev splitEquiv (n m : ℕ) :=
   MeasurableEquiv.piEquivPiSubtypeProd (fun _ : Fin n ↦ ℝ) (fun i : Fin n ↦ (i : ℕ) < m)
 
-private theorem splitEquiv_symm_apply (m : ℕ) (y : {i : Fin n // (i : ℕ) < m} → ℝ)
-    (z : {i : Fin n // ¬(i : ℕ) < m} → ℝ) (i : Fin n) :
-    (splitEquiv n m).symm (y, z) i = if h : (i : ℕ) < m then y ⟨i, h⟩ else z ⟨i, h⟩ := (rfl)
-
 /-- The fibre of the `m`-fold of `Y` over the last `n - m` coordinates is the full fold of the
 fibre of `Y`. -/
 private theorem fiber_fold (m : ℕ) (Y : Set (Fin n → ℝ)) (z : {i : Fin n // ¬(i : ℕ) < m} → ℝ) :
@@ -314,19 +310,19 @@ private theorem fiber_fold (m : ℕ) (Y : Set (Fin n → ℝ)) (z : {i : Fin n /
   simp only [fold, foldPi, mem_ofPred_eq]
   constructor
   · rintro ⟨hI, k, hk, hY⟩
-    refine ⟨fun i ↦ by simpa [splitEquiv_symm_apply, i.2] using hI i.1 i.2,
+    refine ⟨fun i ↦ by simpa [i.2] using hI i.1 i.2,
       fun i ↦ k i.1, ?_⟩
     convert hY using 1
     ext i
     by_cases h : (i : ℕ) < m
-    · simp [splitEquiv_symm_apply, h]
-    · simp [splitEquiv_symm_apply, h, hk i (not_lt.1 h)]
+    · simp [h]
+    · simp [h, hk i (not_lt.1 h)]
   · rintro ⟨hI, k, hY⟩
-    refine ⟨fun i hi ↦ by simpa [splitEquiv_symm_apply, hi] using hI ⟨i, hi⟩,
+    refine ⟨fun i hi ↦ by simpa [hi] using hI ⟨i, hi⟩,
       fun i ↦ if h : (i : ℕ) < m then k ⟨i, h⟩ else 0, fun i hi ↦ by simp [not_lt.2 hi], ?_⟩
     convert hY using 1
     ext i
-    by_cases h : (i : ℕ) < m <;> simp [splitEquiv_symm_apply, h]
+    by_cases h : (i : ℕ) < m <;> simp [h]
 
 /-- The linear map dividing the coordinates from the `m`-th on by `ρ`. -/
 private noncomputable def shrinkLast (m : ℕ) (ρ : ℝ) : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ) :=
@@ -381,7 +377,7 @@ private theorem convex_fiber {S : Set (Fin n → ℝ)} (hS : Convex ℝ S) (m : 
   rw [mem_ofPred_eq]
   convert hS hy hy' ha hb hab using 1
   ext i
-  by_cases h : (i : ℕ) < m <;> simp [splitEquiv_symm_apply, h, ← add_mul, hab]
+  by_cases h : (i : ℕ) < m <;> simp [h, ← add_mul, hab]
 
 /-- **Dilation.** Dilating a convex set by `ρ ≥ 1` multiplies the volume of its `m`-fold by at
 least `ρ ^ (n - m)`. Dividing the last `n - m` coordinates by `ρ` multiplies volumes by
