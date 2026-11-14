@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import TauCeti.Algebra.Order.BigOperators.Min
+public import TauCeti.Analysis.ExteriorPower.Plucker
 public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import Mathlib.Tactic.SplitIfs
+import TauCeti.Analysis.AbsoluteValue.LinearForms
 
 /-!
 # Local bounds for wedge forms
@@ -27,9 +29,15 @@ nonarchimedean absolute value, `AbsoluteValue.apply_wedgeForms_plucker_le_prod` 
 to wedge forms without any factorial loss. Together these are the local estimates needed to
 put Plücker vectors into an approximation domain for the wedge forms.
 
+Conversely, when evaluations `v (l i (x r))` are uniformly bounded by `M` and `l` controls all
+coordinates, `AbsoluteValue.iSup_plucker_le_of_forall_apply_le` bounds the Plücker sup norm by
+`p! * (C * M) ^ p`; in particular, for `#ι` linearly independent forms on `ι → K`, a degree-uniform
+constant `A ≥ 1` bounds `⨆ s, v (plucker x s)` by `A * M ^ p`
+(`AbsoluteValue.exists_one_le_forall_iSup_plucker_le`).
+
 ## References
 
-* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), §7.5.30,
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), §7.5 and §7.5.30,
   inequalities (7.44) and (7.45).
 * The refined estimate and its proof follow Ralf Stephan's
   `DiophantineApproximation/WedgeDomain.lean` in `rwst/Subspace-Theorems`, commit
@@ -42,6 +50,8 @@ public section
 open Finset Module Set Set.powersetCard TauCeti
 
 namespace AbsoluteValue
+
+section WedgeForms
 
 variable {R : Type*} [CommRing R]
   {ι κ : Type*} [Fintype ι] [LinearOrder ι] [LinearOrder κ]
@@ -144,5 +154,49 @@ theorem apply_wedgeForms_plucker_le_prod (v : AbsoluteValue R ℝ) (hv : IsNonar
     v (wedgeForms l p T (plucker y)) ≤ ∏ t ∈ (T : Finset κ), ν t := by
   rw [wedgeForms_plucker, ← prod_comp_ofFinEmbEquiv_symm T ν]
   exact Matrix.abv_det_le_prod_of_le _ hv fun i j ↦ hy _ _
+
+end WedgeForms
+
+/-- If every coordinate `v (x j)` is bounded by `C * ⨆ i, v (l i x)` (`0 ≤ C`) and each row
+satisfies `v (l i (x r)) ≤ M` (`0 ≤ M`), then every `p`-Plücker coordinate of `x` is bounded by
+`p! * (C * M) ^ p`. Empty index types and arbitrary exterior degrees `p` are included. -/
+theorem iSup_plucker_le_of_forall_apply_le {R ι κ : Type*} [CommRing R] [LinearOrder ι]
+    [Finite ι] {p : ℕ} (v : AbsoluteValue R ℝ) {l : κ → Dual R (ι → R)} {C M : ℝ}
+    (hC : 0 ≤ C) (hM : 0 ≤ M) (hl : ∀ (x : ι → R) (j : ι), v (x j) ≤ C * ⨆ i, v (l i x))
+    {x : Fin p → ι → R} (hx : ∀ (r : Fin p) (i : κ), v (l i (x r)) ≤ M) :
+    ⨆ s, v (plucker x s) ≤ p.factorial * (C * M) ^ p := by
+  refine Real.iSup_le (fun s ↦ ?_) (by positivity)
+  have hrow (r : Fin p) : ⨆ j, v (x r j) ≤ C * M :=
+    Real.iSup_le
+      (fun j ↦ (hl (x r) j).trans <| mul_le_mul_of_nonneg_left (Real.iSup_le (hx r) hM) hC)
+      (mul_nonneg hC hM)
+  exact (v.plucker_le_factorial_mul_prod_iSup x s).trans <|
+    (mul_le_mul_of_nonneg_left
+      (Finset.prod_le_prod₀ (fun _ _ ↦ Real.iSup_nonneg fun _ ↦ v.nonneg _) fun r _ ↦ hrow r)
+      (Nat.cast_nonneg _)).trans_eq (by simp)
+
+/-- At any real-valued absolute value where `#ι` linear forms `l` on `ι → K` are linearly
+independent, some `A ≥ 1` (independent of `M`, `p`, and `x`) bounds `⨆ s, v (plucker x s)` by
+`A * M ^ p` whenever `0 ≤ M` and `v (l i (x r)) ≤ M` for all `r` and `i`. -/
+theorem exists_one_le_forall_iSup_plucker_le {K ι : Type*} [Field K] [LinearOrder ι] [Finite ι]
+    (v : AbsoluteValue K ℝ) {l : ι → Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ A : ℝ, 1 ≤ A ∧ ∀ ⦃M : ℝ⦄, 0 ≤ M → ∀ {p : ℕ} {x : Fin p → ι → K},
+      (∀ r i, v (l i (x r)) ≤ M) → ⨆ s, v (plucker x s) ≤ A * M ^ p := by
+  cases nonempty_fintype ι
+  obtain ⟨C, hC1, hC⟩ := v.exists_one_le_forall_apply_le_mul_iSup hl
+  have hC0 : 0 ≤ C := zero_le_one.trans hC1
+  have hA1 : 1 ≤ (Fintype.card ι).factorial * C ^ Fintype.card ι :=
+    one_le_mul_of_one_le_of_one_le (by exact_mod_cast Nat.factorial_pos _) (one_le_pow₀ hC1)
+  refine ⟨(Fintype.card ι).factorial * C ^ Fintype.card ι, hA1, fun M hM p x hx ↦ ?_⟩
+  refine Real.iSup_le (fun s ↦ ?_) (mul_nonneg (zero_le_one.trans hA1) (pow_nonneg hM p))
+  have hp : p ≤ Fintype.card ι := by simpa using (s : Finset ι).card_le_univ
+  calc v (plucker x s)
+      ≤ ⨆ t, v (plucker x t) := Finite.le_ciSup_of_le s le_rfl
+    _ ≤ p.factorial * (C * M) ^ p := v.iSup_plucker_le_of_forall_apply_le hC0 hM hC hx
+    _ = (p.factorial * C ^ p) * M ^ p := by rw [mul_pow, mul_assoc]
+    _ ≤ ((Fintype.card ι).factorial * C ^ Fintype.card ι) * M ^ p := by
+        refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hM p)
+        exact mul_le_mul (by exact_mod_cast Nat.factorial_le hp) (pow_le_pow_right₀ hC1 hp)
+          (pow_nonneg hC0 p) (Nat.cast_nonneg _)
 
 end AbsoluteValue

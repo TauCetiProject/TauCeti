@@ -73,7 +73,7 @@ theorem coe_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
   simp [omitOne_apply, Finset.mem_erase]
 
 /-- An element belongs to `omitOne hm a` precisely when it differs from `a`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_omitOne {hm : p + 1 = Fintype.card α} {a b : α} :
     b ∈ omitOne hm a ↔ b ≠ a := by
   rw [← mem_coe_iff, coe_omitOne, Finset.mem_erase]
@@ -84,6 +84,24 @@ theorem mem_omitOne {hm : p + 1 = Fintype.card α} {a b : α} :
 theorem compl_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
     compl ((Nat.add_comm 1 p).trans hm) (omitOne hm a) = ofSingleton a := by
   rw [omitOne_apply, ← compl_symm (hm := hm), Equiv.symm_apply_apply]
+
+/-- `(omitOne hm).symm s` recovers the unique element outside `s` via `compl` and
+`ofSingleton.symm`. -/
+theorem omitOne_symm_apply (hm : p + 1 = Fintype.card α) (s : powersetCard α p) :
+    (omitOne hm).symm s = ofSingleton.symm (compl ((Nat.add_comm 1 p).trans hm) s) := by
+  simp [omitOne, compl_symm]
+
+/-- `(omitOne hm).symm s` equals `a` precisely when `a` does not belong to `s`. -/
+theorem omitOne_symm_apply_eq_iff {hm : p + 1 = Fintype.card α} {s : powersetCard α p} {a : α} :
+    (omitOne hm).symm s = a ↔ a ∉ s := by
+  rw [Equiv.symm_apply_eq, eq_iff_subset, coe_omitOne, Finset.subset_erase]
+  simp [mem_coe_iff]
+
+/-- The element `(omitOne hm).symm s` omitted by `s` does not belong to `s`. -/
+@[simp, grind .]
+theorem omitOne_symm_notMem (hm : p + 1 = Fintype.card α) (s : powersetCard α p) :
+    (omitOne hm).symm s ∉ s :=
+  omitOne_symm_apply_eq_iff.mp rfl
 
 end OmitOne
 

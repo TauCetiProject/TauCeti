@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.AbsoluteValue.Basic
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Data.Fintype.Order
+import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.Order.AbsoluteValue.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -27,15 +31,13 @@ coordinate bounds, dot-product pairings `y ⬝ᵥ x`, and evaluations of linear 
 * When a vector `z` lies in the span of the coefficient vectors `j ↦ l i (Pi.single j 1)` of a
   subfamily `s` of linear forms, a constant `B ≥ 1` independent of `x` and `M` bounds `v (z ⬝ᵥ x)`
   by `B * M` whenever `v (l i x) ≤ M` on `s`
-  (`AbsoluteValue.exists_one_le_forall_dotProduct_le_mul`), and in particular by `B * Q ^ e₀` on
-  power-bounded domains `{i | e i ≤ e₀}` for `Q ≥ 1`
-  (`AbsoluteValue.exists_one_le_forall_dotProduct_le_mul_rpow`).
+  (`AbsoluteValue.exists_one_le_forall_dotProduct_le_mul`).
 * Over a field, `#ι` linearly independent linear forms on `ι → K` span the dual space, so a
   constant `C ≥ 1` bounds every coordinate `v (x j)` by `C * ⨆ i, v (l i x)`
   (`AbsoluteValue.exists_one_le_forall_apply_le_mul_iSup`).
 
 In Diophantine approximation over a number field, these single-place estimates convert bounds on
-linear forms at archimedean and finite places into bounds on pairings with threshold vectors and on
+linear forms at archimedean and finite places into bounds on pairings with span vectors and on
 coordinates of domain points.
 
 ## References
@@ -57,11 +59,9 @@ theorem apply_dotProduct_le_mul_of_isNonarchimedean {R S ι : Type*} [Semiring R
     (hv : IsNonarchimedean v) {a b : S} (ha : 0 ≤ a) (hb : 0 ≤ b) {y x : ι → R}
     (hy : ∀ j, v (y j) ≤ a) (hx : ∀ j, v (x j) ≤ b) :
     v (y ⬝ᵥ x) ≤ a * b := by
-  classical
   rw [dotProduct]
-  refine Finset.induction_on Finset.univ (by simpa using mul_nonneg ha hb) fun j s hj hs ↦ ?_
-  rw [Finset.sum_insert hj]
-  refine (hv _ _).trans (max_le ?_ hs)
+  refine (v.apply_sum_le_pow_mul (c := 1) le_rfl (fun u w ↦ by simpa only [one_mul] using hv u w)
+    Finset.univ _ (mul_nonneg ha hb) fun j _ ↦ ?_).trans_eq (by simp)
   rw [map_mul]
   exact mul_le_mul (hy j) (hx j) (v.nonneg _) ha
 
@@ -105,19 +105,6 @@ theorem exists_one_le_forall_dotProduct_le_mul {R S ι κ : Type*} [CommSemiring
         ≤ v r * (B * M) := mul_le_mul_of_nonneg_left (h hM hx) (v.nonneg _)
       _ = v r * B * M := (mul_assoc _ _ _).symm
       _ ≤ max (v r * B) 1 * M := mul_le_mul_of_nonneg_right (le_max_left _ _) hM
-
-/-- If `z` lies in the span of the coefficient vectors of those forms `l i` with `e i ≤ e₀`, then
-some constant `B ≥ 1` bounds `v (z ⬝ᵥ x)` by `B * Q ^ e₀` whenever `1 ≤ Q` and
-`v (l i x) ≤ Q ^ e i` for all `i`. -/
-theorem exists_one_le_forall_dotProduct_le_mul_rpow {R ι κ : Type*} [CommSemiring R]
-    [DecidableEq ι] [Fintype ι] (v : AbsoluteValue R ℝ) (l : κ → Module.Dual R (ι → R))
-    (e : κ → ℝ) (e₀ : ℝ) {z : ι → R}
-    (hz : z ∈ Submodule.span R ((fun i j ↦ l i (Pi.single j 1)) '' {i | e i ≤ e₀})) :
-    ∃ B : ℝ, 1 ≤ B ∧ ∀ ⦃Q : ℝ⦄, 1 ≤ Q → ∀ ⦃x : ι → R⦄,
-      (∀ i, v (l i x) ≤ Q ^ e i) → v (z ⬝ᵥ x) ≤ B * Q ^ e₀ := by
-  obtain ⟨B, hB1, hB⟩ := v.exists_one_le_forall_dotProduct_le_mul l {i | e i ≤ e₀} hz
-  exact ⟨B, hB1, fun Q hQ x hx ↦ hB (Real.rpow_nonneg (zero_le_one.trans hQ) e₀)
-    fun i hi ↦ (hx i).trans (Real.rpow_le_rpow_of_exponent_le hQ hi)⟩
 
 /-- At any real-valued absolute value where `#ι` linear forms `l` on `ι → K` are linearly
 independent, some `C ≥ 1` bounds every coordinate `v (x j)` by `C * ⨆ i, v (l i x)`. -/

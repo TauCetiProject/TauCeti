@@ -127,11 +127,9 @@ theorem mem_span_of_forall_dotProduct_eq_zero (hm : p + 1 = Fintype.card ι)
     exact hxa r
   -- In the coordinates defined by `l`, the `i`-th coordinate of `a'` vanishes with the `i`-th
   -- omitting-one wedge form.
+  have hy_eq : y = fun b k ↦ l k (x b) := by ext; simp [y, Φ]
   have hzero (i : ι) : a' i = 0 ↔ wedgeForms l p (omitOne hm i) (plucker x) = 0 := by
-    rw [← plucker_omitOne_eq_zero_iff hm hy ha' hya' i]
-    have hpi : plucker y (omitOne hm i) = wedgeForms l p (omitOne hm i) (plucker x) :=
-      plucker_pi_apply l x (omitOne hm i)
-    rw [hpi]
+    rw [← plucker_omitOne_eq_zero_iff hm hy ha' hya' i, hy_eq, plucker_pi_apply]
   -- Expand `a` coordinatewise against the coefficient vectors of `l`.
   have ha_eq : a = ∑ i, a' i • fun j ↦ l i (Pi.single j 1) := by
     ext j

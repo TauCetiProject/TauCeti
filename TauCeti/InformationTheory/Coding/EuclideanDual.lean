@@ -272,8 +272,8 @@ theorem mem_iff_dotProduct_eq_zero_of_finrank_add_one {C : Submodule K (ι → K
   conv_lhs => rw [← euclideanDual_euclideanDual C, euclideanDual_eq_span_singleton hC ha hCa]
   simp [dotProduct_comm]
 
-/-- Any two vectors orthogonal to a hyperplane in `ι → K`, the first of which is nonzero, are
-scalar multiples of one another. -/
+/-- Any vector orthogonal to a hyperplane in `ι → K` is a scalar multiple of any fixed nonzero
+vector orthogonal to it. -/
 theorem exists_smul_eq_of_forall_dotProduct_eq_zero {C : Submodule K (ι → K)}
     (hC : finrank K C + 1 = Fintype.card ι) {a b : ι → K} (ha : a ≠ 0)
     (hCa : ∀ x ∈ C, x ⬝ᵥ a = 0) (hCb : ∀ x ∈ C, x ⬝ᵥ b = 0) :
