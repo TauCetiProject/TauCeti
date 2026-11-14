@@ -15,13 +15,12 @@ rule whose values are linearly independent over the scalar semiring. Its ambient
 algebra can be noncommutative and need not be a division ring. Faithfulness is
 separate from any requirement that the chart generate the ambient algebra.
 
-`BasedChart.eval` extends the monomial family to an injective algebra map from the
-based quantum torus. Conversely, an injective algebra map gives such a chart.
-`BasedChart.evalEquiv` identifies these two presentations when the integral form is
-alternating. `BasedChart.map` transports charts along injective ambient algebra maps,
-and `BasedChart.reindex` transports them along isomorphisms of exponent lattices.
-Coordinates in any lattice basis determine an alternating chart, and
-`BasedChart.zeroFormEquiv` recovers ordinary Laurent charts for the zero form.
+`BasedChart.eval` and `BasedChart.ofInjective` convert between charts and injective
+algebra maps from the based quantum torus, with `BasedChart.evalEquiv` identifying
+these two presentations. `BasedChart.map` transports charts along injective ambient
+algebra maps, and `BasedChart.comap` pulls them back along injective lattice maps
+preserving the integral form. Coordinates in any lattice basis determine a chart, and
+`BasedChart.untwistedEquiv` recovers ordinary Laurent charts when the twists are one.
 
 ## References
 
@@ -131,7 +130,8 @@ theorem map_id (M : BasedChart u Λ B) : M.map (AlgHom.id R B) Function.injectiv
   rfl
 
 /-- Ambient transport respects composition. -/
-theorem map_comp (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Injective f)
+@[simp]
+theorem map_map (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Injective f)
     (g : C →ₐ[R] D) (hg : Function.Injective g) :
     (M.map f hf).map g hg = M.map (g.comp f) (hg.comp hf) := by
   apply BasedChart.ext
@@ -140,82 +140,103 @@ theorem map_comp (M : BasedChart u Λ B) (f : B →ₐ[R] C) (hf : Function.Inje
   rfl
 
 /-- For alternating forms, negation of an exponent inverts its monomial. -/
-@[simp]
 theorem monomial_neg (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) :
     M.monomial (-a) = (M.monomial a)⁻¹ := by
   apply eq_inv_of_mul_eq_one_right
   simp [hΛ.self_eq_zero]
 
-/-- An injective map of based quantum tori gives a faithful based chart. -/
-noncomputable def ofInjective (hΛ : Λ.IsAlt) (f : QuantumTorus R L u Λ →ₐ[R] B)
-    (hf : Function.Injective f) : BasedChart u Λ B where
-  monomial a := Units.map f (QuantumTorus.monomialUnit u Λ hΛ a)
-  monomial_zero := by simp
-  monomial_mul a b := by
-    apply Units.ext
-    simpa only [Units.val_mul, Units.coe_map, QuantumTorus.val_monomialUnit,
-      MonoidHom.coe_ofClass, RingHom.coe_coe, AlgHom.coe_toMonoidHom,
-      map_mul, map_smul, AlgHom.commutes, Algebra.smul_def] using
-      congrArg f (QuantumTorus.monomial_mul_monomial u Λ a b)
+/-- Negation of an exponent inverts a monomial up to the diagonal factor. -/
+theorem monomial_neg_eq_inv (M : BasedChart u Λ B) (a : L) :
+    M.monomial (-a) = (Units.map (algebraMap R B) (u ^ (Λ a a)) * M.monomial a)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_right
+  rw [mul_assoc, M.monomial_mul, add_neg_cancel, M.monomial_zero, mul_one]
+  rw [map_neg (Λ a) a, zpow_neg, ← map_mul, mul_inv_cancel, map_one]
+
+/-- Alternation gives the usual quasi-commutation factor in the group of units. -/
+theorem monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a b : L) :
+    M.monomial a * M.monomial b =
+      Units.map (algebraMap R B) (u ^ (2 * Λ a b)) * (M.monomial b * M.monomial a) := by
+  rw [M.monomial_mul, M.monomial_mul, ← mul_assoc, ← hΛ.neg_eq]
+  simp only [← map_mul, ← zpow_add, add_comm b a]
+  congr 1
+  rw [show 2 * -(Λ b a) + Λ b a = -(Λ b a) by omega]
+
+/-- Alternation gives the usual quasi-commutation factor in the ambient algebra. -/
+theorem val_monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt)
+    (a b : L) : (M.monomial a : B) * M.monomial b =
+      ((u ^ (2 * Λ a b) : Rˣ) : R) • ((M.monomial b : B) * M.monomial a) := by
+  simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, RingHom.coe_coe,
+    Algebra.smul_def] using congrArg Units.val (M.monomial_mul_monomial_eq_smul_mul hΛ a b)
+
+/-- The identity map gives the canonical chart of the based torus in itself. -/
+noncomputable def canonical (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
+    BasedChart u Λ (QuantumTorus R L u Λ) where
+  monomial := QuantumTorus.monomialUnit u Λ
+  monomial_zero := QuantumTorus.monomialUnit_zero u Λ
+  monomial_mul := QuantumTorus.monomialUnit_mul u Λ
   linearIndependent := by
-    simpa only [Function.comp_def, AlgHom.toLinearMap_apply, QuantumTorus.basis_apply,
-      Units.coe_map, AlgHom.coe_toMonoidHom, QuantumTorus.val_monomialUnit] using
-      (QuantumTorus.basis u Λ).linearIndependent.map_injOn f.toLinearMap hf.injOn
+    have h : (fun a ↦ ((QuantumTorus.monomialUnit u Λ a) :
+        QuantumTorus R L u Λ)) = (QuantumTorus.basis u Λ) := by
+      funext a
+      simp
+    exact h.symm ▸ (QuantumTorus.basis u Λ).linearIndependent
 
 @[simp]
-theorem ofInjective_monomial (hΛ : Λ.IsAlt) (f : QuantumTorus R L u Λ →ₐ[R] B)
+theorem canonical_monomial (a : L) :
+    (canonical u Λ).monomial a = QuantumTorus.monomialUnit u Λ a :=
+  (rfl)
+
+/-- An injective algebra map from the based quantum torus into an ambient algebra
+gives a faithful based chart. -/
+noncomputable def ofInjective (f : QuantumTorus R L u Λ →ₐ[R] B)
+    (hf : Function.Injective f) : BasedChart u Λ B :=
+  (canonical u Λ).map f hf
+
+@[simp]
+theorem ofInjective_monomial (f : QuantumTorus R L u Λ →ₐ[R] B)
     (hf : Function.Injective f) (a : L) :
-    (ofInjective hΛ f hf).monomial a = Units.map f (QuantumTorus.monomialUnit u Λ hΛ a) :=
+    (ofInjective f hf).monomial a = Units.map f (QuantumTorus.monomialUnit u Λ a) :=
   (rfl)
 
 @[simp]
-theorem eval_ofInjective (hΛ : Λ.IsAlt) (f : QuantumTorus R L u Λ →ₐ[R] B)
-    (hf : Function.Injective f) : (ofInjective hΛ f hf).eval = f := by
+theorem map_eval_monomialUnit (M : BasedChart u Λ B) (a : L) :
+    Units.map M.eval (QuantumTorus.monomialUnit u Λ a) = M.monomial a := by
+  apply Units.ext
+  simp
+
+@[simp]
+theorem eval_ofInjective (f : QuantumTorus R L u Λ →ₐ[R] B)
+    (hf : Function.Injective f) : (ofInjective f hf).eval = f := by
   ext a
   simp
 
 @[simp]
-theorem ofInjective_eval (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) :
-    ofInjective hΛ M.eval M.eval_injective = M := by
+theorem ofInjective_eval (M : BasedChart u Λ B) : ofInjective M.eval M.eval_injective = M := by
   apply BasedChart.ext
   intro a
-  apply Units.ext
+  simp
+
+@[simp]
+theorem eval_canonical : (canonical u Λ).eval = AlgHom.id R _ := by
+  ext a
   simp
 
 /-- Faithful monomial families are equivalent to injective maps from the based torus. -/
-noncomputable def evalEquiv (hΛ : Λ.IsAlt) :
+noncomputable def evalEquiv :
     BasedChart u Λ B ≃ {f : QuantumTorus R L u Λ →ₐ[R] B // Function.Injective f} where
   toFun M := ⟨M.eval, M.eval_injective⟩
-  invFun f := ofInjective hΛ f.val f.property
-  left_inv M := M.ofInjective_eval hΛ
-  right_inv f := Subtype.ext (eval_ofInjective hΛ f.val f.property)
+  invFun f := ofInjective f.val f.property
+  left_inv := ofInjective_eval
+  right_inv f := Subtype.ext (eval_ofInjective f.val f.property)
 
 @[simp]
-theorem evalEquiv_apply (hΛ : Λ.IsAlt) (M : BasedChart u Λ B) :
-    (evalEquiv hΛ M).val = M.eval :=
+theorem evalEquiv_apply (M : BasedChart u Λ B) : (evalEquiv M).val = M.eval :=
   (rfl)
 
 @[simp]
-theorem evalEquiv_symm_apply (hΛ : Λ.IsAlt)
-    (f : {f : QuantumTorus R L u Λ →ₐ[R] B // Function.Injective f}) :
-    (evalEquiv hΛ).symm f = ofInjective hΛ f.val f.property :=
+theorem evalEquiv_symm_apply (f : {f : QuantumTorus R L u Λ →ₐ[R] B // Function.Injective f}) :
+    evalEquiv.symm f = ofInjective f.val f.property :=
   (rfl)
-
-/-- The identity map gives the canonical chart of the based torus in itself. -/
-noncomputable def canonical (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) (hΛ : Λ.IsAlt) :
-    BasedChart u Λ (QuantumTorus R L u Λ) :=
-  ofInjective hΛ (AlgHom.id R _) Function.injective_id
-
-@[simp]
-theorem canonical_monomial (hΛ : Λ.IsAlt) (a : L) :
-    (canonical u Λ hΛ).monomial a = QuantumTorus.monomialUnit u Λ hΛ a := by
-  apply Units.ext
-  rfl
-
-@[simp]
-theorem eval_canonical (hΛ : Λ.IsAlt) :
-    (canonical u Λ hΛ).eval = AlgHom.id R _ :=
-  eval_ofInjective hΛ _ _
 
 /-- Evaluation on finitely supported coefficients is their finite linear combination
 of chart monomials. -/
@@ -225,16 +246,44 @@ theorem eval_repr_symm (M : BasedChart u Λ B) (c : L →₀ R) :
   rw [← AlgHom.toLinearMap_apply, M.eval_toLinearMap, Module.Basis.constr_apply,
     LinearEquiv.apply_symm_apply]
 
-/-- Integer multiples of a single exponent give integer powers of its monomial. -/
+/-- The underlying monomial, including the diagonal correction for a non-alternating form. -/
 @[simp]
+theorem inv_monomial (M : BasedChart u Λ B) (a : L) :
+    (((M.monomial a)⁻¹ : Bˣ) : B) =
+      ((u ^ (Λ a a) : Rˣ) : R) • (M.monomial (-a) : B) := by
+  have h : (M.monomial a)⁻¹ = Units.map M.eval ((QuantumTorus.monomialUnit u Λ a)⁻¹) := by
+    rw [map_inv, map_eval_monomialUnit]
+  rw [← Units.inv_eq_val_inv]
+  change ((M.monomial a)⁻¹ : Bˣ).val = _
+  rw [h]
+  simp only [Units.coe_map, QuantumTorus.inv_monomialUnit, map_mul, AlgHom.coe_toMonoidHom,
+    eval_monomial, AlgHom.commutes, Algebra.smul_def]
+
+/-- For alternating forms, integer multiples of an exponent give integer powers
+of its monomial. -/
 theorem monomial_zsmul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
     M.monomial (n • a) = M.monomial a ^ n := by
-  let f : Multiplicative ℤ →* Bˣ :=
-    { toFun := fun m ↦ M.monomial (m.toAdd • a)
-      map_one' := by simp
-      map_mul' := fun m n ↦ by
-        simp [add_zsmul, M.monomial_mul, hΛ.self_eq_zero] }
-  simpa [f] using f.map_zpow (Multiplicative.ofAdd (1 : ℤ)) n
+  rw [← map_eval_monomialUnit, ← QuantumTorus.monomialUnit_zpow u Λ hΛ,
+    map_zpow, map_eval_monomialUnit]
+
+/-- For alternating forms, integer powers of a chart monomial simplify to monomials. -/
+@[simp]
+theorem monomial_zpow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
+    M.monomial a ^ n = M.monomial (n • a) := by
+  rw [← map_eval_monomialUnit, ← map_zpow, QuantumTorus.monomialUnit_zpow u Λ hΛ,
+    map_eval_monomialUnit]
+
+/-- For alternating forms, powers of a chart monomial simplify to monomials. -/
+@[simp]
+theorem monomial_pow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℕ) :
+    M.monomial a ^ n = M.monomial (n • a) := by
+  simpa using M.monomial_zpow hΛ a n
+
+/-- For alternating forms, powers of an underlying monomial simplify to monomials. -/
+@[simp]
+theorem val_monomial_pow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℕ) :
+    (M.monomial a : B) ^ n = (M.monomial (n • a) : B) := by
+  simpa only [Units.val_pow_eq_pow_val] using congrArg Units.val (M.monomial_pow hΛ a n)
 
 /-- The coordinate units of a chart relative to a lattice basis. -/
 noncomputable def coordinate {I : Type*} (M : BasedChart u Λ B)
@@ -246,21 +295,44 @@ theorem coordinate_def {I : Type*} (M : BasedChart u Λ B) (b : Module.Basis I �
     M.coordinate b i = M.monomial (b i) :=
   (rfl)
 
-/-- Coordinate agreement determines every normalized monomial of an alternating chart. -/
-theorem ext_coordinate {I : Type*} {M N : BasedChart u Λ B} (hΛ : Λ.IsAlt)
-    (b : Module.Basis I ℤ L) (h : ∀ i, M.coordinate b i = N.coordinate b i) : M = N := by
+/-- Agreement on a spanning set determines every normalized monomial of a chart. -/
+theorem ext_of_span_eq_top {M N : BasedChart u Λ B} (s : Set L)
+    (hs : Submodule.span ℤ s = ⊤) (h : ∀ a ∈ s, M.monomial a = N.monomial a) : M = N := by
+  let S : AddSubgroup L :=
+    { carrier := {a | M.monomial a = N.monomial a}
+      zero_mem' := by simp
+      add_mem' {x y} hx hy := by
+        apply mul_left_cancel (a := Units.map (algebraMap R B) (u ^ (Λ x y)))
+        rw [← M.monomial_mul, ← N.monomial_mul, hx, hy]
+      neg_mem' {x} hx :=
+        (M.monomial_neg_eq_inv x).trans (by rw [N.monomial_neg_eq_inv, hx]) }
   apply BasedChart.ext
   intro a
-  have ha : a ∈ Submodule.span ℤ (Set.range b) := by rw [b.span_eq]; trivial
+  suffices a ∈ S.toIntSubmodule from this
+  have ha : a ∈ Submodule.span ℤ s := by rw [hs]; trivial
   induction ha using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    exact h i
-  | zero => simp
-  | add x y _ _ hx hy =>
-    apply mul_left_cancel (a := Units.map (algebraMap R B) (u ^ (Λ x y)))
-    rw [← M.monomial_mul, ← N.monomial_mul, hx, hy]
-  | smul n x _ hx => simp [M.monomial_zsmul hΛ, N.monomial_zsmul hΛ, hx]
+  | mem x hx => exact h x hx
+  | zero => exact S.zero_mem
+  | add x y _ _ hx hy => exact S.add_mem hx hy
+  | smul n x _ hx => exact S.zsmul_mem hx n
+
+/-- Coordinate agreement determines every normalized monomial of a chart. -/
+theorem ext_coordinate {I : Type*} {M N : BasedChart u Λ B}
+    (b : Module.Basis I ℤ L) (h : ∀ i, M.coordinate b i = N.coordinate b i) : M = N := by
+  apply ext_of_span_eq_top (Set.range b) b.span_eq
+  rintro _ ⟨i, rfl⟩
+  exact h i
+
+@[simp]
+theorem coordinate_ofInjective {I : Type*} (f : QuantumTorus R L u Λ →ₐ[R] B)
+    (hf : Function.Injective f) (b : Module.Basis I ℤ L) (i : I) :
+    (ofInjective f hf).coordinate b i = Units.map f ((canonical u Λ).coordinate b i) :=
+  (rfl)
+
+@[simp]
+theorem coordinate_canonical {I : Type*} (b : Module.Basis I ℤ L) (i : I) :
+    (canonical u Λ).coordinate b i = QuantumTorus.monomialUnit u Λ (b i) :=
+  (rfl)
 
 /-- Ambient transport applies the ambient homomorphism to each coordinate. -/
 @[simp]
@@ -274,15 +346,46 @@ section Reindex
 variable {L' L'' : Type*} [AddCommGroup L'] [AddCommGroup L'']
   {Λ' : LinearMap.BilinForm ℤ L'} {Λ'' : LinearMap.BilinForm ℤ L''}
 
+/-- Pull back a chart along an injective lattice map preserving its integral form. -/
+noncomputable def comap (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
+    (hf : Function.Injective f) (hfΛ : ∀ a b, Λ (f a) (f b) = Λ' a b) : BasedChart u Λ' B where
+  monomial a := M.monomial (f a)
+  monomial_zero := by simp
+  monomial_mul a b := by simp [← hfΛ]
+  linearIndependent := M.linearIndependent.comp f hf
+
+@[simp] theorem comap_monomial (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
+    (hf : Function.Injective f) (hfΛ : ∀ a b, Λ (f a) (f b) = Λ' a b) (a : L') :
+    (M.comap f hf hfΛ).monomial a = M.monomial (f a) :=
+  (rfl)
+
+@[simp] theorem comap_id (M : BasedChart u Λ B) :
+    M.comap (LinearMap.id) Function.injective_id (fun _ _ ↦ rfl) = M := by
+  ext
+  rfl
+
+/-- Pulling back respects composition of lattice maps. -/
+@[simp] theorem comap_comap (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
+    (hf : Function.Injective f) (hfΛ : ∀ a b, Λ (f a) (f b) = Λ' a b)
+    (g : L'' →ₗ[ℤ] L') (hg : Function.Injective g)
+    (hgΛ : ∀ a b, Λ' (g a) (g b) = Λ'' a b) :
+    (M.comap f hf hfΛ).comap g hg hgΛ =
+      M.comap (f.comp g) (hf.comp hg) (fun a b ↦ (hfΛ (g a) (g b)).trans (hgΛ a b)) := by
+  ext
+  rfl
+
+/-- Lattice pullback commutes with injective ambient transport. -/
+@[simp] theorem comap_map (M : BasedChart u Λ B) (f : L' →ₗ[ℤ] L)
+    (hf : Function.Injective f) (hfΛ : ∀ a b, Λ (f a) (f b) = Λ' a b)
+    (g : B →ₐ[R] C) (hg : Function.Injective g) :
+    (M.map g hg).comap f hf hfΛ = (M.comap f hf hfΛ).map g hg := by
+  ext
+  rfl
+
 /-- Reindex a chart along a lattice isomorphism preserving its integral form. -/
 noncomputable def reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
-    (he : ∀ a b, Λ' (e a) (e b) = Λ a b) : BasedChart u Λ' B where
-  monomial a := M.monomial (e.symm a)
-  monomial_zero := by simp
-  monomial_mul a b := by
-    rw [M.monomial_mul, map_add]
-    rw [← he, e.apply_symm_apply, e.apply_symm_apply]
-  linearIndependent := M.linearIndependent.comp e.symm e.symm.injective
+    (he : ∀ a b, Λ' (e a) (e b) = Λ a b) : BasedChart u Λ' B :=
+  M.comap e.symm e.symm.injective (fun a b ↦ by simp [← he])
 
 @[simp]
 theorem reindex_monomial (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
@@ -298,7 +401,7 @@ theorem reindex_refl (M : BasedChart u Λ B) :
   rfl
 
 /-- Reindexing respects composition of lattice isomorphisms. -/
-theorem reindex_trans (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' ≃ₗ[ℤ] L'')
+theorem reindex_reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' ≃ₗ[ℤ] L'')
     (he : ∀ a b, Λ' (e a) (e b) = Λ a b)
     (he' : ∀ a b, Λ'' (e' a) (e' b) = Λ' a b) :
     (M.reindex e he).reindex e' he' =
@@ -308,7 +411,7 @@ theorem reindex_trans (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' �
   rfl
 
 @[simp]
-theorem reindex_symm (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
+theorem reindex_reindex_symm (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
     (he : ∀ a b, Λ' (e a) (e b) = Λ a b)
     (he' : ∀ a b, Λ (e.symm a) (e.symm b) = Λ' a b) :
     (M.reindex e he).reindex e.symm he' = M := by
@@ -333,38 +436,25 @@ theorem reindex_map (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
 
 end Reindex
 
-/-- Zero-form based charts are exactly injective maps from the ordinary lattice
-algebra. For `L = I →₀ ℤ` this is the Laurent-chart presentation. -/
-noncomputable def zeroFormEquiv :
-    BasedChart u (0 : LinearMap.BilinForm ℤ L) B ≃
-      {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f} := by
-  let e := QuantumTorus.untwistedEquiv u (0 : LinearMap.BilinForm ℤ L) (by simp)
-  refine (evalEquiv (LinearMap.BilinForm.isAlt_zero)).trans
-    { toFun := fun f ↦ ⟨f.val.comp e.symm.toAlgHom, f.property.comp e.symm.injective⟩
-      invFun := fun f ↦ ⟨f.val.comp e.toAlgHom, f.property.comp e.injective⟩
-      left_inv := ?_
-      right_inv := ?_ }
-  · intro f
-    apply Subtype.ext
-    ext a
-    simp
-  · intro f
-    apply Subtype.ext
-    ext a
-    simp
+/-- When all twist factors are one, based charts are exactly injective maps from the
+ordinary lattice algebra. For `L = I →₀ ℤ` this is the Laurent-chart presentation. -/
+noncomputable def untwistedEquiv (h : ∀ a b, u ^ (Λ a b) = 1) :
+    BasedChart u Λ B ≃ {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f} := by
+  let e := QuantumTorus.untwistedEquiv u Λ h
+  exact evalEquiv.trans ((e.arrowCongr (AlgEquiv.refl : B ≃ₐ[R] B)).subtypeEquiv
+    fun f ↦ by simp [e.symm.bijective])
 
 @[simp]
-theorem zeroFormEquiv_apply_single (M : BasedChart u (0 : LinearMap.BilinForm ℤ L) B)
-    (a : L) : (zeroFormEquiv M).val (AddMonoidAlgebra.single a 1) = M.monomial a := by
-  simp [zeroFormEquiv, evalEquiv]
+theorem untwistedEquiv_apply_single (h : ∀ a b, u ^ (Λ a b) = 1)
+    (M : BasedChart u Λ B) (a : L) (r : R) :
+    (untwistedEquiv h M).val (AddMonoidAlgebra.single a r) = r • (M.monomial a : B) := by
+  simp [untwistedEquiv, evalEquiv]
 
 @[simp]
-theorem zeroFormEquiv_symm_monomial
+theorem val_untwistedEquiv_symm_monomial (h : ∀ a b, u ^ (Λ a b) = 1)
     (f : {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f}) (a : L) :
-    (((zeroFormEquiv (u := u)).symm f).monomial a : B) =
-      f.val (AddMonoidAlgebra.single a 1) := by
-  simp [zeroFormEquiv, evalEquiv]
-
+    (((untwistedEquiv h).symm f).monomial a : B) = f.val (AddMonoidAlgebra.single a 1) := by
+  simp [untwistedEquiv, evalEquiv]
 end BasedChart
 
 end TauCeti

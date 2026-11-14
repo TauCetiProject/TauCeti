@@ -41,8 +41,8 @@ def factorSet (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
   u ^ (Λ a.toAdd b.toAdd)
 
 @[simp]
-theorem factorSet_apply (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) (a b : L) :
-    factorSet u Λ (Multiplicative.ofAdd a) (Multiplicative.ofAdd b) = u ^ (Λ a b) :=
+theorem factorSet_apply (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
+    (a b : Multiplicative L) : factorSet u Λ a b = u ^ (Λ a.toAdd b.toAdd) :=
   (rfl)
 
 instance (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) : IsFactorSet (factorSet u Λ) where
@@ -68,6 +68,11 @@ variable {R L : Type*} [CommSemiring R] [AddCommGroup L]
 noncomputable def monomial (a : L) : QuantumTorus R L u Λ :=
   TwistedMonoidAlgebra.of (Multiplicative.ofAdd a)
 
+/-- The normalized monomial is the standard generator of the twisted algebra. -/
+theorem monomial_def (a : L) :
+    monomial u Λ a = TwistedMonoidAlgebra.of (Multiplicative.ofAdd a) :=
+  (rfl)
+
 @[simp]
 theorem monomial_zero : monomial u Λ 0 = 1 :=
   TwistedMonoidAlgebra.of_one
@@ -87,6 +92,11 @@ noncomputable def basis : Module.Basis L R (QuantumTorus R L u Λ) :=
 @[simp]
 theorem basis_apply (a : L) : basis u Λ a = monomial u Λ a := by
   simp [basis, monomial]
+
+@[simp]
+theorem basis_repr_monomial (a : L) :
+    (basis u Λ).repr (monomial u Λ a) = Finsupp.single a 1 := by
+  rw [← basis_apply, Module.Basis.repr_self]
 
 /-- A map out of a based quantum torus is determined by its normalized monomials. -/
 @[ext]
@@ -110,38 +120,78 @@ theorem lift_monomial {B : Type*} [Semiring B] [Algebra R B]
     lift u Λ M hzero hmul (monomial u Λ a) = M a :=
   TwistedMonoidAlgebra.lift_of ..
 
-/-- Normalized monomials as units, with inverse given by negating the exponent. -/
-noncomputable def monomialUnit (hΛ : Λ.IsAlt) (a : L) : (QuantumTorus R L u Λ)ˣ where
+/-- Normalized monomials as units. Negating the exponent gives their inverse exactly
+when the form is alternating. -/
+noncomputable def monomialUnit (a : L) : (QuantumTorus R L u Λ)ˣ where
   val := monomial u Λ a
-  inv := monomial u Λ (-a)
-  val_inv := by simp [hΛ.self_eq_zero]
-  inv_val := by simp [hΛ.self_eq_zero]
+  inv := ((u ^ (Λ a a) : Rˣ) : R) • monomial u Λ (-a)
+  val_inv := by simp [map_neg, smul_smul]
+  inv_val := by simp [map_neg, smul_smul]
 
 @[simp]
-theorem val_monomialUnit (hΛ : Λ.IsAlt) (a : L) :
-    (monomialUnit u Λ hΛ a : QuantumTorus R L u Λ) = monomial u Λ a :=
+theorem val_monomialUnit (a : L) :
+    (monomialUnit u Λ a : QuantumTorus R L u Λ) = monomial u Λ a :=
   (rfl)
 
 @[simp]
-theorem monomialUnit_zero (hΛ : Λ.IsAlt) : monomialUnit u Λ hΛ 0 = 1 :=
+theorem monomialUnit_zero : monomialUnit u Λ 0 = 1 :=
   Units.ext (monomial_zero u Λ)
 
+/-- The underlying inverse of a normalized monomial, including the diagonal correction
+for a non-alternating form. -/
 @[simp]
+theorem inv_monomialUnit (a : L) :
+    (((monomialUnit u Λ a)⁻¹ : (QuantumTorus R L u Λ)ˣ) : QuantumTorus R L u Λ) =
+      ((u ^ (Λ a a) : Rˣ) : R) • monomial u Λ (-a) :=
+  (rfl)
+
+/-- For alternating forms, negation of an exponent inverts its monomial. -/
 theorem monomialUnit_neg (hΛ : Λ.IsAlt) (a : L) :
-    monomialUnit u Λ hΛ (-a) = (monomialUnit u Λ hΛ a)⁻¹ :=
-  Units.ext (by rfl)
+    monomialUnit u Λ (-a) = (monomialUnit u Λ a)⁻¹ := by
+  apply Units.ext
+  simp only [val_monomialUnit]
+  rw [← Units.inv_eq_val_inv]
+  change monomial u Λ (-a) = ((u ^ (Λ a a) : Rˣ) : R) • monomial u Λ (-a)
+  simp [hΛ.self_eq_zero]
 
 /-- The normalized monomial multiplication rule, in the group of units. -/
-theorem monomialUnit_mul (hΛ : Λ.IsAlt) (a b : L) :
-    monomialUnit u Λ hΛ a * monomialUnit u Λ hΛ b =
+@[simp]
+theorem monomialUnit_mul (a b : L) :
+    monomialUnit u Λ a * monomialUnit u Λ b =
       Units.map (algebraMap R (QuantumTorus R L u Λ)) (u ^ (Λ a b)) *
-        monomialUnit u Λ hΛ (a + b) := by
+        monomialUnit u Λ (a + b) := by
   apply Units.ext
   simp only [Units.val_mul, val_monomialUnit, Units.coe_map]
+  change monomial u Λ a * monomial u Λ b =
+    ((u ^ (Λ a b) : Rˣ) : R) • monomial u Λ (a + b)
   exact monomial_mul_monomial u Λ a b
 
+/-- For alternating forms, integer powers of a monomial unit simplify to monomial units. -/
+@[simp]
+theorem monomialUnit_zpow (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
+    monomialUnit u Λ a ^ n = monomialUnit u Λ (n • a) := by
+  let f : Multiplicative ℤ →* (QuantumTorus R L u Λ)ˣ :=
+    { toFun := fun m ↦ monomialUnit u Λ (m.toAdd • a)
+      map_one' := by simp
+      map_mul' := fun m n ↦ by
+        simp [add_zsmul, monomialUnit_mul, hΛ.self_eq_zero] }
+  simpa [f] using (f.map_zpow (Multiplicative.ofAdd (1 : ℤ)) n).symm
+
+/-- For alternating forms, powers of a monomial unit simplify to monomial units. -/
+@[simp]
+theorem monomialUnit_pow (hΛ : Λ.IsAlt) (a : L) (n : ℕ) :
+    monomialUnit u Λ a ^ n = monomialUnit u Λ (n • a) := by
+  simpa using monomialUnit_zpow u Λ hΛ a n
+
+/-- For alternating forms, powers of a monomial simplify to monomials. -/
+@[simp]
+theorem monomial_pow (hΛ : Λ.IsAlt) (a : L) (n : ℕ) :
+    monomial u Λ a ^ n = monomial u Λ (n • a) := by
+  simpa only [Units.val_pow_eq_pow_val, val_monomialUnit] using
+    congrArg Units.val (monomialUnit_pow u Λ hΛ a n)
+
 /-- Alternation gives the usual quasi-commutation factor `u ^ (2 * Λ(a,b))`. -/
-theorem monomial_mul_comm (hΛ : Λ.IsAlt) (a b : L) :
+theorem monomial_mul_monomial_eq_smul_mul (hΛ : Λ.IsAlt) (a b : L) :
     monomial u Λ a * monomial u Λ b =
       ((u ^ (2 * Λ a b) : Rˣ) : R) • (monomial u Λ b * monomial u Λ a) := by
   rw [monomial_mul_monomial, monomial_mul_monomial, smul_smul, ← Units.val_mul,
@@ -167,9 +217,12 @@ theorem untwistedEquiv_monomial (h : ∀ a b, u ^ (Λ a b) = 1) (a : L) :
   simp [untwistedEquiv, monomial, AddMonoidAlgebra.toMultiplicativeAlgEquiv_single]
 
 @[simp]
-theorem untwistedEquiv_symm_single (h : ∀ a b, u ^ (Λ a b) = 1) (a : L) :
-    (untwistedEquiv u Λ h).symm (AddMonoidAlgebra.single a 1) = monomial u Λ a :=
-  (untwistedEquiv u Λ h).symm_apply_eq.mpr (untwistedEquiv_monomial u Λ h a).symm
+theorem untwistedEquiv_symm_single (h : ∀ a b, u ^ (Λ a b) = 1) (a : L) (r : R) :
+    (untwistedEquiv u Λ h).symm (AddMonoidAlgebra.single a r) = r • monomial u Λ a := by
+  conv_lhs => rw [← mul_one r, ← AddMonoidAlgebra.smul_single']
+  rw [map_smul]
+  congr 1
+  exact (untwistedEquiv u Λ h).symm_apply_eq.mpr (untwistedEquiv_monomial u Λ h a).symm
 
 end QuantumTorus
 
