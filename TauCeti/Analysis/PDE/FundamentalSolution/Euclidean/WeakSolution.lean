@@ -21,8 +21,8 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Convolution
 /-!
 # The Newtonian potential of square-integrable data
 
-Let `n ≥ 3`, let `Gₙ = TauCeti.newtonianKernel n` be the Newtonian kernel of `ℝⁿ`, and let `f` be
-integrable with compact support. The Newtonian potential `Gₙ ⋆ f`,
+Let `n = 1` or `n ≥ 3`, let `Gₙ = TauCeti.newtonianKernel n` be the Newtonian kernel of `ℝⁿ`,
+and let `f` be integrable with compact support. The Newtonian potential `Gₙ ⋆ f`,
 `(Gₙ ⋆ f) x = ∫ Gₙ(x - y) f(y) dy`, of a `C²` function `f` is a classical solution of Poisson's
 equation `-Δu = f` (`TauCeti.laplacian_newtonianKernel_convolution`). This file shows that for
 rough data it is a weak solution:
@@ -109,26 +109,25 @@ theorem hasWeakFDerivOn_newtonianKernel_convolution (hf : Integrable f)
     (fun _ hg hgc v t ↦ integral_fderiv_mul_newtonianKernel_sub hg hgc v t) hf hfc Ω
 
 /-- **The Newtonian potential solves Poisson's equation in the sense of distributions.** For
-`n ≥ 3` and `f` integrable with compact support, `-Δ(Gₙ ⋆ f) = f` weakly: for every `C²` function
-`φ` with compact support, `∫ Δφ (Gₙ ⋆ f) = -∫ φ f`. -/
-theorem integral_laplacian_mul_newtonianKernel_convolution (hn : 3 ≤ n) (hf : Integrable f)
-    (hfc : HasCompactSupport f) {φ : EuclideanSpace ℝ (Fin n) → ℝ} (hφ : ContDiff ℝ 2 φ)
-    (hφc : HasCompactSupport φ) :
+`n = 1` or `n ≥ 3` and `f` integrable with compact support, `-Δ(Gₙ ⋆ f) = f` weakly: for every
+`C²` function `φ` with compact support, `∫ Δφ (Gₙ ⋆ f) = -∫ φ f`. -/
+theorem integral_laplacian_mul_newtonianKernel_convolution (hn : n ≠ 2) (hn0 : n ≠ 0)
+    (hf : Integrable f) (hfc : HasCompactSupport f) {φ : EuclideanSpace ℝ (Fin n) → ℝ}
+    (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     ∫ x, Δ φ x * (newtonianKernel n ⋆ f) x = -∫ x, φ x * f x := by
   rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous_laplacian
     hφc.laplacian (locallyIntegrable_newtonianKernel n) hf hfc, ← integral_neg]
-  simp_rw [integral_laplacian_mul_newtonianKernel_sub (by omega) (by omega) hφ hφc, mul_neg,
-    mul_comm]
+  simp_rw [integral_laplacian_mul_newtonianKernel_sub hn hn0 hφ hφc, mul_neg, mul_comm]
 
 namespace PDE
 
 /-- **The Newtonian potential of `L²` data is a weak solution of Poisson's equation in `H¹`.** Let
-`n ≥ 3`, let `Ω ⊆ ℝⁿ` be a bounded open set and let `f ∈ L²(ℝⁿ)` have compact support. Then the
-Newtonian potential `Gₙ ⋆ f` is represented on `Ω` by an element `w` of `H¹(Ω)`, whose weak
-gradient is the convolution `∇Gₙ ⋆ f`, and `w` solves `-Δw = f` weakly in `Ω`:
+`n = 1` or `n ≥ 3`, let `Ω ⊆ ℝⁿ` be a bounded open set and let `f ∈ L²(ℝⁿ)` have compact support.
+Then the Newtonian potential `Gₙ ⋆ f` is represented on `Ω` by an element `w` of `H¹(Ω)`, whose
+weak gradient is the convolution `∇Gₙ ⋆ f`, and `w` solves `-Δw = f` weakly in `Ω`:
 `∫_Ω ∇v · ∇w = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. No boundary condition is imposed on `w`. -/
-theorem exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq (hn : 3 ≤ n)
-    {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+theorem exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq (hn : n ≠ 2)
+    (hn0 : n ≠ 0) {Omega : Opens (EuclideanSpace ℝ (Fin n))}
     (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin n))))
     (hf : MemLp f 2) (hfc : HasCompactSupport f) :
     ∃ w : W1p volume Omega 2,
@@ -151,17 +150,18 @@ theorem exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq (hn :
   refine ⟨w, hwv, hwg,
     energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq hwv
       (hf.restrict _) fun φ ↦ ?_⟩
-  simpa only [smul_eq_mul] using integral_laplacian_mul_newtonianKernel_convolution hn hfi hfc
+  simpa only [smul_eq_mul] using integral_laplacian_mul_newtonianKernel_convolution hn hn0 hfi hfc
     (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
 
-/-- **The Green representation of the weak Dirichlet solution for `L²` data.** Let `n ≥ 3`, let
-`Ω ⊆ ℝⁿ` be a bounded open set, let `f ∈ L²(ℝⁿ)` have compact support and let `g ∈ L²(Ω)` agree
-with `f` on `Ω`. If `u ∈ H¹₀(Ω)` is the weak solution of `-Δu = g` in `Ω`, `u = 0` on `∂Ω`, then
-`u` is the Newtonian potential corrected by a harmonic function: there is `h`, harmonic on `Ω`,
-with `u = Gₙ ⋆ f - h` almost everywhere on `Ω`, and `h` has the boundary values of `Gₙ ⋆ f` in the
-Sobolev sense: both lie in `H¹(Ω)`, represented by some `w` and `H`, with `w - H ∈ H¹₀(Ω)`. -/
-theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp (hn : 3 ≤ n)
-    {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+/-- **The Green representation of the weak Dirichlet solution for `L²` data.** Let `n = 1` or
+`n ≥ 3`, let `Ω ⊆ ℝⁿ` be a bounded open set, let `f ∈ L²(ℝⁿ)` have compact support and let
+`g ∈ L²(Ω)` agree with `f` on `Ω`. If `u ∈ H¹₀(Ω)` is the weak solution of `-Δu = g` in `Ω`,
+`u = 0` on `∂Ω`, then `u` is the Newtonian potential corrected by a harmonic function: there is
+`h`, harmonic on `Ω`, with `u = Gₙ ⋆ f - h` almost everywhere on `Ω`, and `h` has the boundary
+values of `Gₙ ⋆ f` in the Sobolev sense: both lie in `H¹(Ω)`, represented by some `w` and `H`, with
+`w - H ∈ H¹₀(Ω)`. -/
+theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp (hn : n ≠ 2)
+    (hn0 : n ≠ 0) {Omega : Opens (EuclideanSpace ℝ (Fin n))}
     (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin n))))
     (hf : MemLp f 2) (hfc : HasCompactSupport f)
     {g : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n))))}
@@ -177,7 +177,7 @@ theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp (hn : 
         =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))]
           newtonianKernel n ⋆ f - h := by
   obtain ⟨w, hwv, -, hw⟩ :=
-    exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq hn hOmega hf hfc
+    exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq hn hn0 hOmega hf hfc
   -- The difference `w - u` of the potential and the solution is weakly harmonic.
   have hH : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 (w - (u : W1p volume Omega 2)) (v : W1p volume Omega 2) = 0 :=
