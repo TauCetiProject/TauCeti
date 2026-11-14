@@ -37,8 +37,8 @@ universe vM vN vP uk uA uB uC uD
 variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC} {D : Type uD}
   [CommRing k] [Ring A] [Ring B] [Ring C] [Ring D]
   [Algebra k A] [Algebra k B] [Algebra k C] [Algebra k D]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B)
-  (Θ : InternalGrading k C) (Ψ : InternalGrading k D)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ)
+  (Θ : InternalGrading k C ℤ) (Ψ : InternalGrading k D ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
   [GradedAlgebra Θ.piece] [GradedAlgebra Ψ.piece]
   (M : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece)
@@ -46,23 +46,23 @@ variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC} {D : Type uD}
   (P : GradedModuleCat.{vP} (Θ.tensorProduct Ψ.opposite).piece)
 
 private local instance assocLeftModule {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : Module S X :=
   TauCeti.Algebra.TensorProduct.moduleLeft (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance assocRightModule {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : Module Tᵐᵒᵖ X :=
   TauCeti.Algebra.TensorProduct.moduleRight (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance assocLeftTower {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : IsScalarTower k S X :=
   TauCeti.Algebra.TensorProduct.moduleLeftIsScalarTower (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance assocRightTower {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : IsScalarTower k Tᵐᵒᵖ X :=
   TauCeti.Algebra.TensorProduct.moduleRightIsScalarTower (k := k) (A := S) (B := Tᵐᵒᵖ) X
 private local instance assocComm {S T : Type*} [Ring S] [Ring T]
-    [Algebra k S] [Algebra k T] (G : InternalGrading k S) (H : InternalGrading k T)
+    [Algebra k S] [Algebra k T] (G : InternalGrading k S ℤ) (H : InternalGrading k T ℤ)
     (X : GradedModuleCat (G.tensorProduct H.opposite).piece) : SMulCommClass S Tᵐᵒᵖ X :=
   TauCeti.Algebra.TensorProduct.moduleSMulCommClass (k := k) (A := S) (B := Tᵐᵒᵖ) X
 

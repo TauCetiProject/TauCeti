@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Normal domains and the Riemannian logarithm
@@ -54,12 +55,17 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   differential of the exponential map along a fixed vector is smooth on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
+* `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
+  the normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
 * `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`: the logarithm is smooth on the
   normal neighbourhood.
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianExp_comp_mfderiv_riemannianLog`: the
   differentials of the logarithm and the exponential map are mutually inverse.
+* `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply` and
+  `TauCeti.Manifold.IsNormalDomain.mvfderiv_riemannianLog_self`: the differential of the logarithm
+  at the base point is the identity.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
   normal domain is defined at least up to time one.
 
@@ -290,6 +296,14 @@ variable {p : M} {U : Set (TangentSpace I p)} {v : TangentSpace I p} {q : M}
   rw [riemannianLog_def]
   exact h.injOn.leftInvOn_invFunOn hv
 
+/-- The logarithm does not depend on the normal domain: on the normal neighbourhood of a smaller
+set `U ⊆ V`, the logarithms relative to `U` and to the normal domain `V` agree. -/
+theorem riemannianLog_eq_of_subset {V : Set (TangentSpace I p)} (h : IsNormalDomain I M p V)
+    (hUV : U ⊆ V) (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianLog I M p U q = riemannianLog I M p V q := by
+  conv_rhs => rw [← riemannianExp_riemannianLog hq]
+  exact (h.riemannianLog_riemannianExp (hUV (riemannianLog_mem hq))).symm
+
 /-- **The Riemannian logarithm is smooth** on the normal neighbourhood it inverts. -/
 theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
     ContMDiffOn I 𝓘(ℝ, TangentSpace I p) ∞ (riemannianLog I M p U)
@@ -411,6 +425,26 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
     riemannianLog I M p U p = 0 := by
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
+
+/-- The differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U)
+    (v : TangentSpace I p) :
+    mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) p v = v := by
+  have hcomp := DFunLike.congr_fun
+    (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp h.zero_mem) v
+  -- The composite runs through `TangentSpace I (riemannianExp I M p 0)`, which is only
+  -- definitionally `TangentSpace I p`, so `ContinuousLinearMap.comp_apply` and `id_apply` do not
+  -- match syntactically under `rw` or `simp`; unfold the application by defeq instead.
+  change mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U) (riemannianExp I M p 0)
+    (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v) = v at hcomp
+  rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at hcomp
+
+/-- The vector-valued differential of the logarithm at the base point is the identity. -/
+@[simp] theorem mvfderiv_riemannianLog_self (h : IsNormalDomain I M p U) :
+    mvfderiv I (riemannianLog I M p U) p = ContinuousLinearMap.id ℝ (TangentSpace I p) := by
+  ext v
+  simp only [mvfderiv_apply_eq_mfderiv_apply, h.mfderiv_riemannianLog_self_apply,
+    ContinuousLinearMap.id_apply]
 
 end IsNormalDomain
 
