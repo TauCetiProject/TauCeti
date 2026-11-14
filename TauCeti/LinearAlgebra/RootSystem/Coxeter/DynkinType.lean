@@ -105,6 +105,48 @@ lemma cartanMatrix_mul_cartanMatrix_mem_of_ne (t : DynkinType) {i j : Fin t.rank
   case F4 => exact isFiniteType_cartanMatrix_F4.apply_mul_apply_mem_of_ne hij
   case G2 => exact isFiniteType_cartanMatrix_G2.apply_mul_apply_mem_of_ne hij
 
+/-- Outside type G₂, an off-diagonal Cartan entry is `0`, `-1` or `-2`. -/
+theorem cartanMatrix_entry_mem_of_ne_G2 {t : DynkinType}
+    (hs : t ≠ .G2) {k l : Fin t.rank} (hkl : k ≠ l) :
+    t.cartanMatrix k l ∈ ({0, -1, -2} : Set ℤ) := by
+  have hB (n : ℕ) (i j : Fin n) (hij : i ≠ j) :
+      CartanMatrix.B n i j ∈ ({0, -1, -2} : Set ℤ) := by
+    simp only [CartanMatrix.B, Matrix.of_apply]
+    split_ifs <;> simp_all
+  by_cases hsl : t.IsSimplyLaced
+  · rcases ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl hsl)) hkl with hk | hk <;>
+      simp [hk]
+  · cases t with
+    | B n => simpa only [cartanMatrix_B] using hB n k l hkl
+    | C n =>
+      -- Expose the reduced index type so the transpose entry lemma can match.
+      change Fin n at k l
+      rw [cartanMatrix_C, ← Matrix.transpose_apply (CartanMatrix.C n) l k,
+        CartanMatrix.C_transpose]
+      exact hB n l k (Ne.symm hkl)
+    | F4 =>
+      -- Reduce the dependent indices before checking the fixed finite matrix.
+      change Fin 4 at k l
+      rw [cartanMatrix_F4]
+      fin_cases k <;> fin_cases l <;> first | exact (hkl rfl).elim | decide
+    | G2 => exact (hs rfl).elim
+    | _ => exact (hsl (by simp)).elim
+
+/-- Outside type G₂, the two Cartan entries at distinct nodes form an orthogonal pair,
+a single bond, or one of the two orientations of a double bond. -/
+theorem cartanMatrix_pairs_of_ne_G2 {t : DynkinType}
+    (hs : t ≠ .G2) {i j : Fin t.rank} (h : i ≠ j) :
+    (t.cartanMatrix i j = 0 ∧ t.cartanMatrix j i = 0) ∨
+    (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -1) ∨
+    (t.cartanMatrix i j = -1 ∧ t.cartanMatrix j i = -2) ∨
+    (t.cartanMatrix i j = -2 ∧ t.cartanMatrix j i = -1) := by
+  have hp := t.cartanMatrix_mul_cartanMatrix_mem_of_ne h
+  have hz := t.cartanMatrix_apply_eq_zero_iff_symm i j
+  have hi := cartanMatrix_entry_mem_of_ne_G2 hs h
+  have hj := cartanMatrix_entry_mem_of_ne_G2 hs (Ne.symm h)
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hi hj hp
+  rcases hi with hi | hi | hi <;> rcases hj with hj | hj | hj <;> simp_all
+
 /-! ## The Coxeter matrix of a type -/
 
 /-- **The standard Coxeter matrix of a Dynkin type**, indexed by `Fin t.rank` in the Bourbaki node
