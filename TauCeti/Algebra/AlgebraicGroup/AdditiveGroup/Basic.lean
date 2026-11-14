@@ -87,6 +87,13 @@ theorem toAdd_pointsMulEquiv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     Multiplicative.toAdd (pointsMulEquiv F) = SymmetricAlgebra.lift.symm F.ofConv :=
   rfl
 
+/-- The converse of `toAdd_pointsMulEquiv`, so that `simp` is confluent with
+`Multiplicative.ofAdd_toAdd`. -/
+@[simp]
+theorem ofAdd_lift_symm_ofConv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
+    Multiplicative.ofAdd (SymmetricAlgebra.lift.symm F.ofConv) = pointsMulEquiv F :=
+  rfl
+
 /-- The linear map underlying a point evaluates as `x ↦ F (ι x)`. -/
 theorem toAdd_pointsMulEquiv_apply (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) (x : M) :
     Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) := by
@@ -168,6 +175,13 @@ theorem toAdd_gaPointsMulEquiv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A))
     Multiplicative.toAdd (gaPointsMulEquiv F) = F.ofConv (ι R R 1) := by
   rw [gaPointsMulEquiv]
   simp
+
+/-- The converse of `toAdd_gaPointsMulEquiv`, so that `simp` is confluent with
+`Multiplicative.ofAdd_toAdd`. -/
+@[simp]
+theorem ofAdd_ofConv_ι_one (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
+    Multiplicative.ofAdd (F.ofConv (ι R R 1)) = gaPointsMulEquiv F := by
+  rw [← toAdd_gaPointsMulEquiv, ofAdd_toAdd]
 
 /-- The universal additive point has parameter equal to the universal coordinate. -/
 @[simp]
