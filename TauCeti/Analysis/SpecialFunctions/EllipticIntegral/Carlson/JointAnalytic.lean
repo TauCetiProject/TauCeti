@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.Deriv
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 
 /-!

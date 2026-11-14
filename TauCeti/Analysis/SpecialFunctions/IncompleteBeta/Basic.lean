@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.Calculus.RealCharts
 import Mathlib.Topology.Order.MonotoneContinuity
 
@@ -26,7 +26,7 @@ makes the binomial-tail formula `(binomial n p).real {k | m ≤ k} = I_p(m, n - 
 `m = 0` without a separate case.
 
 The real-variable theory of Euler's beta integral that the construction rests on lives in
-`TauCeti/Analysis/SpecialFunctions/Beta.lean`.
+`TauCeti/Analysis/SpecialFunctions/Beta/Basic.lean`.
 
 ## Main results
 

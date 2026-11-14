@@ -11,7 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Choose
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Probability.Distributions.Dirac

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.HasLaw
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!

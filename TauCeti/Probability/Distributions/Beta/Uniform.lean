@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.Uniform.Basic
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # The unit uniform law as a beta law
