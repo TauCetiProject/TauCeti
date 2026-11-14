@@ -13,7 +13,7 @@ declaration the PR adds or changes, then replace each `…` below with `changed`
 `declined` or `n/a`, a dash, and a short note: for instance, for Q3, `changed — foo: [NeZero n]
 derived from hn : 1 < n, hn kept (false for n = 1)`, or for Q2, `checked — no change (looked for
 the defining formula of foo)`. A line with a finding you have not fixed begins `declined` and
-gives the reason, so review sees it. A PR that changes
+gives the reason, so review sees it; a check you did not run is `declined — not run`. A PR that changes
 no Lean declaration may answer `n/a` throughout. When later commits add or change declarations,
 for instance to answer review findings, run the checks again over those and update the lines. The
 `quality-pass` review angle reads this block. Agents: `gh pr create --body` does not apply this
