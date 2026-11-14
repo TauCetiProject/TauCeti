@@ -42,7 +42,9 @@ The initial case `c = 1` has the explicit value `exp(π i ((a + d) / 12 - 1/4))`
 * `TauCeti.ModularForm.eta_add_one`, `TauCeti.ModularForm.eta_add_intCast`: the translation law.
 * `TauCeti.ModularForm.eta_neg_one_div`: the inversion law with the root `√(-i τ)`.
 * `TauCeti.ModularForm.eta_smul`: `η(γ τ) = ε(γ) √(c τ + d) η(τ)` for `γ ∈ SL(2, ℤ)`.
-* `TauCeti.ModularForm.etaMultiplier_pow_twentyFour`: `ε(γ)²⁴ = 1`.
+* `TauCeti.ModularForm.etaMultiplier_pow_twentyFour`,
+  `TauCeti.ModularForm.etaMultiplier_ne_zero`, `TauCeti.ModularForm.norm_etaMultiplier`,
+  `TauCeti.ModularForm.conj_etaMultiplier`: `ε(γ)²⁴ = 1` and its unit-circle consequences.
 * `TauCeti.ModularForm.etaMultiplier_eq_of_eta_smul_eq`: `ε(γ)` is determined by the
   transformation law at a single point.
 * `TauCeti.ModularForm.etaMultiplier_T_zpow`, `TauCeti.ModularForm.etaMultiplier_S`,
@@ -166,6 +168,25 @@ theorem eta_smul (γ : SL(2, ℤ)) (τ : ℍ) :
 /-- The eta multiplier is a 24th root of unity. -/
 theorem etaMultiplier_pow_twentyFour (γ : SL(2, ℤ)) : etaMultiplier γ ^ 24 = 1 :=
   etaQuotient_pow_twentyFour γ _
+
+/-- The eta multiplier never vanishes, as a 24th root of unity. -/
+@[simp]
+theorem etaMultiplier_ne_zero (γ : SL(2, ℤ)) : etaMultiplier γ ≠ 0 := by
+  intro h
+  have h24 := etaMultiplier_pow_twentyFour γ
+  rw [h, zero_pow (by decide)] at h24
+  exact zero_ne_one h24
+
+/-- The eta multiplier has unit norm. -/
+@[simp]
+theorem norm_etaMultiplier (γ : SL(2, ℤ)) : ‖etaMultiplier γ‖ = 1 :=
+  Complex.norm_eq_one_of_pow_eq_one (etaMultiplier_pow_twentyFour γ) (by decide)
+
+/-- Complex conjugation inverts the eta multiplier. -/
+@[simp]
+theorem conj_etaMultiplier (γ : SL(2, ℤ)) :
+    (starRingEnd ℂ) (etaMultiplier γ) = (etaMultiplier γ)⁻¹ :=
+  (Complex.inv_eq_conj (norm_etaMultiplier γ)).symm
 
 /-- The eta multiplier is determined by the transformation law of `η` at a single point. -/
 theorem etaMultiplier_eq_of_eta_smul_eq {γ : SL(2, ℤ)} {ε : ℂ} {τ : ℍ}

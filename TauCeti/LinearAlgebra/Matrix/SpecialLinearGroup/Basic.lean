@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.RingTheory.Int.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
 
@@ -81,6 +82,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
+* `Matrix.SpecialLinearGroup.odd_apply_zero_zero_and_apply_one_one_of_even_apply_one_zero`: when
+  the lower-left entry of `γ ∈ SL₂(ℤ)` is even, both diagonal entries are odd.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
@@ -270,6 +273,12 @@ relation `a d - b c = 1`. -/
 lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL(2, R)}
     (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
+
+/-- If the lower-left entry of `γ ∈ SL₂(ℤ)` is even, both diagonal entries are odd. -/
+theorem odd_apply_zero_zero_and_apply_one_one_of_even_apply_one_zero {γ : SL(2, ℤ)}
+    (h : Even (γ 1 0)) : Odd (γ 0 0) ∧ Odd (γ 1 1) :=
+  ⟨Int.isCoprime_two_right.mp ((γ.isCoprime_col 0).of_isCoprime_of_dvd_right h.two_dvd),
+    Int.isCoprime_two_right.mp ((γ.isCoprime_row 1).symm.of_isCoprime_of_dvd_right h.two_dvd)⟩
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)
