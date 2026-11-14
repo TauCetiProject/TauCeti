@@ -104,8 +104,9 @@ allowing the entire path or loop to be read in one stereographic chart.
   chart of the maximal atlas along `Circle.exp`, and that velocity is nonzero for an immersion.
 * `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq`: two maps of the circle into a normed space
   with the same velocity at `t` along `Circle.exp` have the same derivative at `exp (t i)`.
-* `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
-  along `Circle.exp` gives a nonzero derivative spanning its tangent line.
+* `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting along `Circle.exp` a map of
+  the circle with injective derivative at `exp (t i)` gives a nonzero derivative at `t` spanning
+  its tangent line there.
 * `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
   whose lift along `Circle.exp` has nonzero derivative at `t` has injective derivative at
   `exp (t i)`.
@@ -600,11 +601,10 @@ theorem deriv_chart_comp_circleExp_ne_zero (hn : n ≠ 0) {f : Circle → M} {t 
 
 end ChartAlongCircleExp
 
-/-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
-spans the range of the derivative of `f`. -/
-theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
-    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 1 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z))
-    (t : ℝ) :
+/-- For a map `f` of the circle whose derivative is injective at `exp (t i)`, the derivative of
+`s ↦ f (exp (s i))` at `t` is nonzero and spans the range of the derivative of `f` there. -/
+theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V} {t : ℝ}
+    (hinj : Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t))) :
     deriv (f ∘ Circle.exp) t ≠ 0 ∧
       (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).range =
         ℝ ∙ deriv (f ∘ Circle.exp) t := by
@@ -612,9 +612,9 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
   set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
   have he_inj : Injective e := injective_mfderiv_circleExp t
   have he_surj : Surjective e := surjective_mfderiv_circleExp t
-  have hD_inj : Injective D := himm _
+  have hD_inj : Injective D := hinj
   have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e :=
-    toSpanSingleton_deriv_comp_circleExp (hf.mdifferentiableAt one_ne_zero)
+    toSpanSingleton_deriv_comp_circleExp (mdifferentiableAt_of_mfderiv_injective hinj)
   have hDe : D (e 1) = deriv (f ∘ Circle.exp) t := by
     simpa using (congrArg (fun L => L 1) hD).symm
   refine ⟨fun h0 => one_ne_zero (he_inj (hD_inj (by rw [hDe, h0, map_zero, map_zero]))), ?_⟩
@@ -693,10 +693,11 @@ theorem inner_deriv_coe_comp_circleExp_eq_zero
 /-- A loop in a sphere with injective derivative at `exp (t i)`, read along `Circle.exp` in the
 ambient space, has nonzero velocity at `t`. -/
 theorem deriv_coe_comp_circleExp_ne_zero
-    (hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t))
     (hinj : Injective (mfderiv (𝓡 1) (𝓡 n) f (Circle.exp t))) :
     deriv (fun s => (f (Circle.exp s) : E)) t ≠ 0 := by
   intro h0
+  have hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t) :=
+    mdifferentiableAt_of_mfderiv_injective hinj
   have h := smul_deriv_coe_comp_circleExp hf 1
   rw [h0, smul_zero] at h
   -- The derivatives of the inclusion, of `f` and of `Circle.exp` are injective, so the
@@ -793,11 +794,12 @@ derivative of `Γ` would kill a vector `(u, -c)`, with `u` tangent to the circle
 component of the slice velocity. -/
 theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 : E) 1 × ℝ}
     {θ t : ℝ} {y : sphere (0 : E) 1}
-    (hΓ : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t))
     (hinj : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t)))
     (hline : ∀ s, Γ (Circle.exp θ, s) = (y, s)) :
     deriv (fun θ' => ((Γ (Circle.exp θ', t)).1 : E)) θ ≠ 0 := by
   intro h0
+  have hΓ : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) :=
+    mdifferentiableAt_of_mfderiv_injective hinj
   set u : EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp θ (1 : ℝ)
   have hu : u ≠ 0 := fun h =>
     one_ne_zero (show (1 : ℝ) = 0 from injective_mfderiv_circleExp θ (h.trans (map_zero _).symm))
