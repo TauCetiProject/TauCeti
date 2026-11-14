@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Block
 
 /-!
@@ -28,11 +29,26 @@ public section
 
 open Set
 
-universe u v
+universe u v u' v'
 
 namespace Graph
 
-variable {α : Type u} {β : Type v} {G : Graph α β}
+variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'}
+variable {G : Graph α β} {H : Graph α' β'}
+
+namespace Iso
+
+/-- A native multigraph cut vertex is carried to a native cut vertex by a multigraph
+isomorphism. -/
+@[simp]
+theorem isCutVertex_vertexEquiv_iff (f : Iso G H) (x : V(G)) :
+    H.IsCutVertex (f.vertexEquiv x) ↔ G.IsCutVertex x := by
+  rw [H.isCutVertex_iff_toSimpleGraph_isCutVertex (f.vertexEquiv x).property,
+    G.isCutVertex_iff_toSimpleGraph_isCutVertex x.property]
+  simpa only [toSimpleGraphIso_apply] using
+    (f.toSimpleGraphIso.isCutVertex_iff (v := x))
+
+end Iso
 
 /-! ### Vertex blocks -/
 
