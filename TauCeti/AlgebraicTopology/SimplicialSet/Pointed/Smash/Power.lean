@@ -364,9 +364,9 @@ lemma smashPowToUnit_comp_smashPowUnitIso_hom [IsEmpty ι] :
 @[simp]
 lemma smashPowUnitIso_hom_app_tensorUnitSimplex [IsEmpty ι] :
     (smashPowUnitIso X ι).hom.right.app n (tensorUnitSimplex n) = smashPowMk isEmptyElim := by
-  simpa [-smashPowToUnit_comp_smashPowUnitIso_hom] using ConcreteCategory.congr_hom
-    (congr_app (congrArg Under.Hom.right (smashPowUnitIso X ι).inv_hom_id) n)
-    (smashPowMk (isEmptyElim : ι → X.right.obj n))
+  rw [← smashPowToUnit_app_smashPowMk (ι := ι) isEmptyElim, ← comp_right_app_apply,
+    smashPowToUnit_comp_smashPowUnitIso_hom]
+  rfl
 
 /-! ### Functoriality in the pointed simplicial set -/
 
