@@ -12,19 +12,21 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 /-!
 # The short exact sequence of cycles of a complex
 
-Let `K` be a homological complex in a category with homology and cokernels, for instance an
-abelian category, and write `Zᵢ` for its cycles.  The cycles form a complex `K.cyclesComplex` with
-zero differential, and so do the cokernels `Kᵢ / Zᵢ` of the inclusions of the cycles
+Let `K` be a homological complex in a category with homology, for instance an abelian category,
+and write `Zᵢ` for its cycles.  The cycles form a complex `K.cyclesComplex` with zero
+differential, and so do the cokernels `Kᵢ / Zᵢ` of the inclusions of the cycles
 (`K.cyclesCokernelComplex`).  Since the differential of `K` lands in the cycles, the inclusions
 and the projections are chain maps, and they form a short complex of complexes
 
 `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0`
 
-(`K.cyclesComplexShortComplex`), functorial in `K`, which is short exact when the category is
-abelian.  It is split in each degree where the cycles of `K` split off its term, as happens for a
-complex of projective modules over a principal ideal domain.  The map it induces on homology from
-`K` to `K / Z(K)` vanishes, so in the abelian case the long exact homology sequence shows that the
-map induced by the inclusion of the cycles is an epimorphism and that the connecting morphisms are
+(`K.cyclesComplexShortComplex`), functorial in `K`, whose first map is a monomorphism and whose
+second map is an epimorphism; it is short exact when the category is abelian.  In each degree
+where the inclusion of the cycles of `K` is a split monomorphism, so is the first map of this
+sequence; in an abelian category the sequence is then split in that degree, as happens for a
+complex of projective modules over a principal ideal domain.  The inclusion of the cycles induces
+an epimorphism on homology, and the projection onto `K / Z(K)` induces zero on homology, so in the
+abelian case the long exact homology sequence shows that the connecting morphisms are
 monomorphisms.  In a degree where the differential out of `K` vanishes, so does the homology of
 `K / Z(K)`.
 
@@ -39,6 +41,8 @@ tensor products of homology, which is how it enters the Künneth formula.
   category.
 * `HomologicalComplex.cyclesComplexShortComplexMap`: the morphism of short complexes induced by a
   chain map.
+* `HomologicalComplex.epi_homologyMap_cyclesComplexShortComplex_f`: the inclusion of the cycles
+  is an epimorphism on homology.
 * `HomologicalComplex.homologyMap_cyclesComplexShortComplex_g`: the projection is zero on
   homology.
 * `HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_of_d_eq_zero`: the homology of
@@ -69,8 +73,8 @@ namespace HomologicalComplex
 
 section
 
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasCokernels C] [CategoryWithHomology C]
-  {ι : Type*} {c : ComplexShape ι} (K : HomologicalComplex C c)
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [CategoryWithHomology C] {ι : Type*}
+  {c : ComplexShape ι} (K : HomologicalComplex C c)
 
 /-- The complex of cycles of `K`, with zero differential. -/
 abbrev cyclesComplex : HomologicalComplex C c :=
@@ -116,31 +120,65 @@ def cyclesComplexShortComplex : ShortComplex (HomologicalComplex C c) where
   (rfl)
 
 /-- In each degree, the first map of the cycle sequence is the inclusion of the cycles. -/
+@[simp]
 lemma cyclesComplexShortComplex_f_f (i : ι) :
     K.cyclesComplexShortComplex.f.f i = eqToHom (by simp) ≫ K.iCycles i ≫ eqToHom (by simp) :=
   (Category.comp_id _).symm.trans (Category.id_comp _).symm
 
 /-- In each degree, the second map of the cycle sequence is the projection onto the cokernel of
 the inclusion of the cycles. -/
+@[simp]
 lemma cyclesComplexShortComplex_g_f (i : ι) :
     K.cyclesComplexShortComplex.g.f i =
       eqToHom (by simp) ≫ cokernel.π (K.iCycles i) ≫ eqToHom (by simp) :=
   (Category.comp_id _).symm.trans (Category.id_comp _).symm
 
-/-- The cycle sequence of `K` is split in each degree where the cycles of `K` split off. -/
+/-- In each degree where the inclusion of the cycles of `K` is a split monomorphism, so is the
+first map of the cycle sequence. -/
 instance isSplitMono_cyclesComplexShortComplex_f_f (i : ι) [IsSplitMono (K.iCycles i)] :
     IsSplitMono (K.cyclesComplexShortComplex.f.f i) :=
   inferInstanceAs (IsSplitMono (K.iCycles i))
+
+/-- In each degree, the first map of the cycle sequence is a monomorphism. -/
+instance mono_cyclesComplexShortComplex_f_f (i : ι) : Mono (K.cyclesComplexShortComplex.f.f i) :=
+  inferInstanceAs (Mono (K.iCycles i))
+
+/-- The first map `Z(K) ⟶ K` of the cycle sequence is a monomorphism. -/
+instance mono_cyclesComplexShortComplex_f : Mono K.cyclesComplexShortComplex.f :=
+  mono_of_mono_f _ inferInstance
+
+/-- In each degree, the second map of the cycle sequence is an epimorphism. -/
+instance epi_cyclesComplexShortComplex_g_f (i : ι) : Epi (K.cyclesComplexShortComplex.g.f i) :=
+  inferInstanceAs (Epi (cokernel.π (K.iCycles i)))
+
+/-- The second map `K ⟶ K / Z(K)` of the cycle sequence is an epimorphism. -/
+instance epi_cyclesComplexShortComplex_g : Epi K.cyclesComplexShortComplex.g :=
+  epi_of_epi_f _ inferInstance
+
+/-- The inclusion of the cycles induces an epimorphism on homology: up to the identification of
+its source, it is the morphism `K.fromGraded` given by the identities of the cycles. -/
+instance epi_homologyMap_cyclesComplexShortComplex_f (i : ι) :
+    Epi (homologyMap K.cyclesComplexShortComplex.f i) := by
+  have hf : K.cyclesComplexShortComplex.f = K.fromGraded fun j ↦ 𝟙 (K.cycles j) := by
+    ext j
+    simp [cyclesComplexShortComplex]
+  rw [hf]
+  exact K.epi_homologyMap_fromGraded _ i
+
+/-- The projection of `K` onto `K / Z(K)` induces zero on cycles, since `K / Z(K)` has zero
+differential and the projection kills the cycles of `K`. -/
+@[simp]
+lemma cyclesMap_cyclesComplexShortComplex_g (i : ι) :
+    cyclesMap K.cyclesComplexShortComplex.g i = 0 := by
+  rw [← cancel_mono (K.cyclesComplexShortComplex.X₃.iCycles i), cyclesMap_i, zero_comp]
+  exact cokernel.condition _
 
 /-- The projection of `K` onto `K / Z(K)` induces zero on homology. -/
 @[simp]
 lemma homologyMap_cyclesComplexShortComplex_g (i : ι) :
     homologyMap K.cyclesComplexShortComplex.g i = 0 := by
-  have : cyclesMap K.cyclesComplexShortComplex.g i = 0 := by
-    rw [← cancel_mono (K.cyclesComplexShortComplex.X₃.iCycles i), cyclesMap_i, zero_comp]
-    exact cokernel.condition _
-  rw [← cancel_epi (K.cyclesComplexShortComplex.X₂.homologyπ i), homologyπ_naturality, this,
-    zero_comp, comp_zero]
+  rw [← cancel_epi (K.cyclesComplexShortComplex.X₂.homologyπ i), homologyπ_naturality,
+    cyclesMap_cyclesComplexShortComplex_g, zero_comp, comp_zero]
 
 section Map
 
@@ -229,14 +267,8 @@ variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι
 lemma cyclesComplexShortComplex_shortExact : K.cyclesComplexShortComplex.ShortExact :=
   shortExact_of_degreewise_shortExact _ fun i ↦
     ShortComplex.ShortExact.mk' (ShortComplex.exact_of_g_is_cokernel _
-      (cokernelIsCokernel (K.iCycles i))) (inferInstanceAs (Mono (K.iCycles i)))
-      (inferInstanceAs (Epi (cokernel.π (K.iCycles i))))
-
-/-- The inclusion of the cycles induces an epimorphism on homology. -/
-instance epi_homologyMap_cyclesComplexShortComplex_f (i : ι) :
-    Epi (homologyMap K.cyclesComplexShortComplex.f i) :=
-  (K.cyclesComplexShortComplex_shortExact.homology_exact₂ i).epi_f
-    (K.homologyMap_cyclesComplexShortComplex_g i)
+      (cokernelIsCokernel (K.iCycles i))) (K.mono_cyclesComplexShortComplex_f_f i)
+      (K.epi_cyclesComplexShortComplex_g_f i)
 
 /-- The connecting morphisms of `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` are monomorphisms. -/
 instance mono_δ_cyclesComplexShortComplex {i j : ι} (hij : c.Rel i j) :
