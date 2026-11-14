@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import Mathlib.Combinatorics.SimpleGraph.LineGraph
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 
 /-!
 # Line graphs and edge-colourings of multigraphs
