@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
-import Mathlib.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Relative twisted homology and homotopy equivalences
@@ -58,22 +57,12 @@ theorem quasiIso_relativeTwistedChainComplexMap (f : P ⟶ Q)
     have h := e.quasiIso_twistedChainComplexMap L
     rw [he, TopCat.ofHom_hom] at h
     exact h
-  have hSubspace : QuasiIso (TopPair.twistedSubspaceChainComplexMap f L) := by
-    have : QuasiIso (LocalCoefficientSystem.twistedChainComplexMap
-        (TopPair.Hom.snd f) (Q.subspaceSystem L)) := by
-      have h := eSub.quasiIso_twistedChainComplexMap (Q.subspaceSystem L)
-      rw [heSub, TopCat.ofHom_hom] at h
-      exact h
-    rw [TopPair.twistedSubspaceChainComplexMap_def]
-    infer_instance
-  have h := HomologicalComplex.HomologySequence.quasiIso_τ₃
-    (TopPair.twistedChainComplexShortComplexMap f L)
-    (P.shortExact_twistedChainComplexShortComplex _)
-    (Q.shortExact_twistedChainComplexShortComplex L)
-  simp only [TopPair.twistedChainComplexShortComplexMap_τ₁,
-    TopPair.twistedChainComplexShortComplexMap_τ₂,
-    TopPair.twistedChainComplexShortComplexMap_τ₃] at h
-  exact h hSubspace hAmbient
+  have hSubspace : QuasiIso (LocalCoefficientSystem.twistedChainComplexMap
+      (TopPair.Hom.snd f) (Q.subspaceSystem L)) := by
+    have h := eSub.quasiIso_twistedChainComplexMap (Q.subspaceSystem L)
+    rw [heSub, TopCat.ofHom_hom] at h
+    exact h
+  exact TopPair.quasiIso_twistedChainComplexMap_of_quasiIso f L
 
 /-- A map of pairs whose components are homotopy equivalences induces isomorphisms on relative
 singular homology with local coefficients in every degree, including degree zero. -/
