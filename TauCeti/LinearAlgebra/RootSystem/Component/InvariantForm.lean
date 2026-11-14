@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
-public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Hom
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.UniqueScale
 
 /-!
@@ -28,7 +28,9 @@ a reference invariant form `B₀`, an invariant form `B` therefore has one scale
 `C`. When `B₀` is positive definite, for instance the canonical form `P.RootForm`, which restricts
 to the canonical form of every component, this identifies the positive-definite invariant forms
 with the families of positive scalars, one per component: the invariant metrics of a root system
-have exactly one free positive parameter per irreducible component.
+have exactly one free positive parameter per irreducible component. This parametrisation is
+natural: pulling forms back along an equivalence of root systems reindexes the scales by the
+induced bijection of irreducible components.
 
 ## Main definitions
 
@@ -53,6 +55,9 @@ have exactly one free positive parameter per irreducible component.
   exactly when every component form is.
 * `RootPairing.InvariantForm.form_apply_eq_componentScale_mul`: on the component space of `C`, an
   invariant form is `componentScale B₀ B C` times the reference form.
+* `RootPairing.InvariantForm.componentScale_comap`,
+  `RootPairing.InvariantForm.posDefEquivScale_comap`: the component scales of forms pulled back
+  along an equivalence are the scales of the original forms on the corresponding components.
 
 ## References
 
@@ -306,6 +311,38 @@ theorem posDefEquivScale_apply_coe (B₀ : P.InvariantForm) (hB₀ : B₀.form.t
   (rfl)
 
 end Ordered
+
+/-! ### Transport along equivalences -/
+
+section Equiv
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module K M₂] [AddCommGroup N₂] [Module K N₂]
+  {Q : RootPairing ι₂ K M₂ N₂} [Finite ι₂] [Q.IsRootSystem]
+
+/-- **The component scales are natural under equivalences**: the scale of the pulled-back forms on
+a component of `P` is the scale of the original forms on the corresponding component of `Q`. -/
+@[simp]
+theorem componentScale_comap (e : P.Equiv Q) (B₀ B : Q.InvariantForm) (C : P.Component) :
+    componentScale (comap e.toHom B₀) (comap e.toHom B) C =
+      componentScale B₀ B (e.componentEquiv C) := by
+  obtain ⟨i, rfl⟩ : ∃ i, P.componentOf i = C := C.exists_rep
+  simp [componentScale_eq_div, Hom.root_weightMap_apply]
+
+variable [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- **The parametrisation of positive-definite invariant forms by component scales is natural
+under equivalences**: pulling a positive-definite form back along `e` reindexes its family of
+scales by the bijection `e.componentEquiv` of irreducible components. -/
+theorem posDefEquivScale_comap (e : P.Equiv Q) (B₀ : Q.InvariantForm)
+    (hB₀ : B₀.form.toQuadraticMap.PosDef)
+    (B : {B : Q.InvariantForm // B.form.toQuadraticMap.PosDef}) :
+    posDefEquivScale (comap e.toHom B₀) ((posDef_comap_iff e).mpr hB₀)
+        ⟨comap e.toHom B, (posDef_comap_iff e).mpr B.2⟩ =
+      posDefEquivScale B₀ hB₀ B ∘ e.componentEquiv := by
+  ext C
+  simp
+
+end Equiv
 
 end InvariantForm
 
