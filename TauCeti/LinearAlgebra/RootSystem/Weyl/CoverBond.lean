@@ -100,8 +100,11 @@ theorem reflectionBond_smul_add [IsDomain R] [P.IsReduced]
 
 /-! ### Bonds of covers -/
 
-variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
-  [P.IsReduced] [P.flip.IsReduced] {lam : M}
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+
+section
+
+variable [P.flip.IsReduced] {lam : M}
 
 /-- The two orbit weights of a cover `y ⋖ x` of `W / W_λ` are distinct: distinct minimal coset
 representatives move `λ` to distinct points. -/
@@ -176,7 +179,12 @@ theorem exists_nat_reflectionBond_eq_of_minimalCosetRepCovBy (hlam : lam ∈ dom
   have hz0 : 0 < z := Int.cast_pos.mp hpos
   exact ⟨z.toNat, by omega, by rw [← Int.cast_natCast, Int.toNat_of_nonneg hz0.le]⟩
 
-omit [P.flip.IsReduced] in
+end
+
+section
+
+variable {lam : M}
+
 /-- **A simple reflection off the walls through `λ` covers the identity in `W / W_λ`**: if
 `⟨λ, αᵢ^∨⟩ ≠ 0`, then `1 ⋖ sᵢ`. -/
 theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero {i : b.support}
@@ -196,7 +204,6 @@ theorem minimalCosetRepCovBy_one_simple_of_coroot'_ne_zero {i : b.support}
   rw [hfix] at h
   exact CharZero.eq_neg_self_iff.mp h
 
-omit [P.flip.IsReduced] in
 /-- **The bond of `x λ` and `sᵢ x λ` is `-⟨x λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `sᵢ` is a
 left descent of the minimal coset representative `x`, this is the bond of the cover `sᵢ x ⋖ x` of
 `W / W_λ`. -/
@@ -206,7 +213,6 @@ theorem reflectionBond_smul_simple_mul_smul (i : b.support) (x : P.weylGroup) :
   rw [simple_mul_smul_eq_reflection]
   exact reflectionBond_reflection (b.isPos_of_mem_support i.2) _
 
-omit [P.flip.IsReduced] in
 /-- **The bond of `sᵢ λ` and `λ` is `⟨λ, αᵢ^∨⟩`**, for a simple root `αᵢ`. When `⟨λ, αᵢ^∨⟩ ≠ 0`
 this is the bond of the cover `1 ⋖ sᵢ` of `W / W_λ`; otherwise `sᵢ λ = λ` and both sides vanish. -/
 theorem reflectionBond_simple_smul_one_smul (i : b.support) :
@@ -217,7 +223,6 @@ theorem reflectionBond_simple_smul_one_smul (i : b.support) :
   rw [h, weylCoxeterSystem_simple, weylGroup.ofIdx_smul, Equiv.reflection_smul,
     coroot'_reflection_self, neg_neg]
 
-omit [P.flip.IsReduced] in
 /-- **The bond of `(sᵢ u) λ` and `u λ` is `⟨u λ, αᵢ^∨⟩`**, for a simple root `αᵢ` and every `u` in
 the Weyl group. When `⟨u λ, αᵢ^∨⟩ > 0` this is the bond of the cover `u ⋖ sᵢ u` of `W / W_λ`
 (`TauCeti.minimalCosetRepCovBy_simple_mul_of_coroot'_pos`); when it vanishes, both sides vanish. -/
@@ -225,6 +230,10 @@ theorem reflectionBond_simple_mul_smul_smul (i : b.support) (u : P.weylGroup) :
     P.reflectionBond b (((weylCoxeterSystem P b).simple i * u) • lam) (u • lam) =
       P.coroot' i (u • lam) := by
   simpa only [mul_smul, one_smul] using reflectionBond_simple_smul_one_smul (lam := u • lam) i
+
+end
+
+variable [P.flip.IsReduced] {lam : M}
 
 /-- **A simple reflection preserves the bond of a cover it does not reverse.** If `y ⋖ x` in
 `W / W_λ` and `y λ ≠ (sᵢ x) λ`, then the bond of `(sᵢ x) λ` and `(sᵢ y) λ` is the bond

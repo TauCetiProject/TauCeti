@@ -95,7 +95,7 @@ namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
 variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : _root_.RootPairing ι R M N} {b : P.Base} [Finite ι]
-  [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] {lam : M}
+  [P.IsCrystallographic] [P.IsReduced] {lam : M}
 
 /-- The **reflection** `sᵢ x₀ ⋗ sᵢ x₁ ⋗ ⋯ ⋗ sᵢ x_l` of a saturated chain `x₀ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` lying strictly on one side of the wall of the simple root `αᵢ`: either
@@ -120,25 +120,21 @@ variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
   {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem length_simpleMul : (simpleMul hlam C i hC).length = C.length :=
   (rfl)
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem simpleMul_apply (k : Fin ((simpleMul hlam C i hC).length + 1)) :
     ((simpleMul hlam C i hC) k).1 =
       (weylCoxeterSystem P b).simple i * (C ⟨k, by simpa using k.2⟩).1 :=
   (rfl)
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem head_simpleMul :
     (simpleMul hlam C i hC).head.1 = (weylCoxeterSystem P b).simple i * C.head.1 :=
   (rfl)
 
-omit [P.flip.IsReduced] in
 @[simp]
 theorem last_simpleMul :
     (simpleMul hlam C i hC).last.1 = (weylCoxeterSystem P b).simple i * C.last.1 :=
@@ -151,11 +147,11 @@ end _root_.CoxeterSystem.MinimalCosetRepChain
 section RootDatum
 
 variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
-  [Finite ι] [P.IsReduced] [P.flip.IsReduced] {lam : M} {a : ℚ}
+  [Finite ι] [P.IsReduced]
 
 namespace _root_.CoxeterSystem.MinimalCosetRepChain
 
-variable {hlam : lam ∈ dominantChamber P b}
+variable [P.flip.IsReduced] {lam : M} {a : ℚ} {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
   {hC : (∀ k, 0 < P.coroot' i ((C k).1 • lam)) ∨ ∀ k, P.coroot' i ((C k).1 • lam) < 0}
 
@@ -192,7 +188,7 @@ theorem isAChain_simpleMul_iff :
 
 end _root_.CoxeterSystem.MinimalCosetRepChain
 
-omit [P.flip.IsReduced] in
+variable {lam : M} {a : ℚ} in
 /-- **The cover `u ⋖ sᵢ u` is an `a`-chain when `a ⟨u λ, αᵢ^∨⟩` is an integer.** For a minimal coset
 representative `u` of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, the saturated chain `sᵢ u ⋗ u` has the
 single bond `⟨u λ, αᵢ^∨⟩`. -/
@@ -207,6 +203,8 @@ theorem exists_isAChain_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantChambe
     (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc ⟨u, hu⟩ h,
     by simp, by simp, (isAChain_snoc_iff h).mpr ⟨isAChain_singleton _, ?_⟩⟩
   rwa [RelSeries.last_singleton, reflectionBond_simple_mul_smul_smul]
+
+variable [P.flip.IsReduced] {lam : M} {a : ℚ}
 
 /-- **Integrality where an `a`-chain enters the positive side of a simple wall.** Let
 `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of `W / W_λ` and `αᵢ` a simple root with
