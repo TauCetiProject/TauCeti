@@ -29,8 +29,8 @@ Where `∂bar_a α = 0`, the covariant derivative is complex linear,
 the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
 (`fderiv_normSq_apply_one_sq_add_apply_I_sq`), so `|d_a α (1)| ≤ |∇ |α|²|` where `|α|² ≥ 1 / 2`
 (`norm_covariantDerivative_one_le_norm_fderiv_normSq`).
-On a solution with continuous `b₁` and `C²` section, this linearity also makes the energy
-density measurable (`aestronglyMeasurable_energyDensity`).
+On a solution with continuous `b₁` and `C¹` section, this linearity and the curvature equation
+also make the energy density continuous (`continuous_energyDensity_of_equation_eq_zero`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -319,6 +319,18 @@ theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} 
       ((hxi 3).differentiable one_ne_zero _)]
   fun_prop
 
+/-- The covariant derivative of the section along `1` is continuous when `b₁` is continuous and
+the section is `C¹`; it does not involve `b₂`. -/
+theorem continuous_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hb : Continuous (fun w ↦ x w 0))
+    (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3)) :
+    Continuous fun z ↦ covariantDerivative x z 1 := by
+  have hα : ContDiff ℝ 1 (sectionValue x) := contDiff_sectionValue hp hq
+  have h : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
+    (hα.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
+  exact h.add ((continuous_const.mul (continuous_ofReal.comp hb)).mul hα.continuous)
+
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
@@ -445,32 +457,27 @@ theorem covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpa
       (v.re + v.im * I) * covariantDerivative x z 1 := by ring
     _ = v * covariantDerivative x z 1 := by rw [re_add_im]
 
-/-- On a vortex whose `b₁` is continuous and whose section is `C²`, the energy density is
-measurable: the equation gives `|d_a α (i)| = |d_a α (1)|`, which does not involve `b₂`. -/
-theorem aestronglyMeasurable_energyDensity {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+/-- On a vortex whose `b₁` is continuous and whose section is `C¹`, the energy density is
+continuous: the equation gives `|d_a α (i)| = |d_a α (1)|` and `curvature = -(1 - |α|²) / 8`,
+neither of which involves `b₂`. -/
+theorem continuous_energyDensity_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hb : Continuous (fun w ↦ x w 0))
-    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0) (μ : MeasureTheory.Measure ℂ) :
-    MeasureTheory.AEStronglyMeasurable (energyDensity x) μ := by
-  have hαcd : ContDiff ℝ 2 (sectionValue x) := contDiff_sectionValue hp hq
-  have h₁ : Continuous fun z ↦ covariantDerivative x z 1 := by
-    have h : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
-      (hαcd.continuous_fderiv (by norm_num)).clm_apply continuous_const
-    simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
-    exact h.add ((continuous_const.mul (continuous_ofReal.comp hb)).mul hαcd.continuous)
-  have heq : energyDensity x = fun z ↦ curvature x z ^ 2 +
+    (hp : ContDiff ℝ 1 (fun w ↦ x w 2)) (hq : ContDiff ℝ 1 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0) :
+    Continuous (energyDensity x) := by
+  have heq : energyDensity x = fun z ↦ (-((1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 8)) ^ 2 +
       2 * ‖covariantDerivative x z 1‖ ^ 2 + (1 - ‖sectionValue x z‖ ^ 2) ^ 2 := by
     funext z
-    rw [energyDensity_apply, covariantDerivative_eq_mul_of_equation_eq_zero
-      (hp.differentiable (by norm_num) z) (hq.differentiable (by norm_num) z)
-      (by simp [hsol z]) (by simp [hsol z]) I, norm_mul, norm_I, one_mul]
+    rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero (hsol z),
+      covariantDerivative_eq_mul_of_equation_eq_zero (hp.differentiable one_ne_zero z)
+        (hq.differentiable one_ne_zero z) (by simp [hsol z]) (by simp [hsol z]) I, norm_mul,
+      norm_I, one_mul]
     ring
-  have hcurv : Measurable (curvature x) := by
-    simp only [funext (curvature_apply x)]
-    fun_prop
   rw [heq]
-  exact (((hcurv.pow_const 2).add ((h₁.norm.pow 2).measurable.const_mul 2)).add
-    ((continuous_const.sub (hαcd.continuous.norm.pow 2)).pow 2).measurable).aestronglyMeasurable
+  exact (((continuous_const.sub (continuous_const.mul ((hp.continuous.pow 2).add
+    (hq.continuous.pow 2)))).div_const 8).neg.pow 2 |>.add
+    (((continuous_covariantDerivative_one hb hp hq).norm.pow 2).const_mul 2)).add
+    ((continuous_const.sub ((contDiff_sectionValue hp hq).continuous.norm.pow 2)).pow 2)
 
 /-- The squared modulus of `d_a α (1) = 2 ((∂_s p - b₁ q) + i (∂_s q + b₁ p))`. -/
 theorem sq_norm_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}

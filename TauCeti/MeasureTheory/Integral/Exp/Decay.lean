@@ -47,12 +47,16 @@ inclusion.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 * `TauCeti.integral_norm_mul_norm_le_mul_exp_neg_mul_norm`: two functions decaying
-  exponentially at rate `c` about points at distance `‖a‖` overlap, after integration, by
-  `O(exp (-(c' ‖a‖)))` for every `0 ≤ c' < c`, with an explicit constant depending only on the
-  two decay constants. `TauCeti.integrable_norm_mul_norm_comp_add` makes the overlap integrable,
-  and `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restates the bound for
+  exponentially at rates `c₁` and `c₂` about points at distance `‖a‖` overlap, after integration,
+  by `O(exp (-(c' ‖a‖)))` for every `0 ≤ c'` with `c' < c₁` and `c' ≤ c₂`, with an explicit
+  constant depending only on the two decay constants.
+  `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restates the bound for
   nonnegative functions decaying at every rate below a threshold. The pointwise overlap bounds
   are in `TauCeti.Analysis.SpecialFunctions.Exp.Overlap`.
+* `TauCeti.integrable_norm_mul_norm_comp_add`, `TauCeti.integrable_mul_comp_add`: the overlap of
+  an exponentially decaying function with a translate of a bounded one is integrable, and
+  `TauCeti.integrable_mul_comp_add_of_forall_lt` restates this for nonnegative functions decaying
+  at every rate below a threshold.
 -/
 
 public section
@@ -147,41 +151,57 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   [SeminormedAddCommGroup F] [SeminormedAddCommGroup G] {K L c : ℝ}
 
-/-- **Overlap of exponentially decaying functions, integrated.** If `‖f z‖ ≤ K exp (-(c ‖z‖))`
-and `‖g z‖ ≤ L exp (-(c ‖z‖))` on a finite-dimensional space, then for every rate
-`0 ≤ c' < c` the overlap integral `∫ ‖f z‖ ‖g (z + a)‖` of `f` with the translate `g (· + a)` is
-at most `K L (∫ exp (-((c - c') ‖z‖))) exp (-(c' ‖a‖))`, for every additive Haar measure. The
-constant depends on `f` and `g` only through `K` and `L`. -/
-theorem integral_norm_mul_norm_le_mul_exp_neg_mul_norm {f : E → F} {g : E → G} {c' : ℝ}
-    (hc'₀ : 0 ≤ c') (hc' : c' < c) (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)))
-    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c * ‖z‖))) (a : E) :
+/-- **Overlap of exponentially decaying functions, integrated.** If `‖f z‖ ≤ K exp (-(c₁ ‖z‖))`
+and `‖g z‖ ≤ L exp (-(c₂ ‖z‖))` on a finite-dimensional space, then for every rate `0 ≤ c'` with
+`c' < c₁` and `c' ≤ c₂` the overlap integral `∫ ‖f z‖ ‖g (z + a)‖` of `f` with the translate
+`g (· + a)` is at most `K L (∫ exp (-((c₁ - c') ‖z‖))) exp (-(c' ‖a‖))`, for every additive Haar
+measure. The constant depends on `f` and `g` only through `K` and `L`. -/
+theorem integral_norm_mul_norm_le_mul_exp_neg_mul_norm {f : E → F} {g : E → G} {c₁ c₂ c' : ℝ}
+    (hc'₀ : 0 ≤ c') (hc'₁ : c' < c₁) (hc'₂ : c' ≤ c₂)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c₁ * ‖z‖)))
+    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c₂ * ‖z‖))) (a : E) :
     ∫ z, ‖f z‖ * ‖g (z + a)‖ ∂μ ≤
-      K * L * (∫ z, Real.exp (-((c - c') * ‖z‖)) ∂μ) * Real.exp (-(c' * ‖a‖)) := by
-  have hint := integrable_exp_neg_mul_norm μ (sub_pos.2 hc')
+      K * L * (∫ z, Real.exp (-((c₁ - c') * ‖z‖)) ∂μ) * Real.exp (-(c' * ‖a‖)) := by
+  have hint := integrable_exp_neg_mul_norm μ (sub_pos.2 hc'₁)
   calc ∫ z, ‖f z‖ * ‖g (z + a)‖ ∂μ
-      ≤ ∫ z, K * L * Real.exp (-(c' * ‖a‖)) * Real.exp (-((c - c') * ‖z‖)) ∂μ :=
+      ≤ ∫ z, K * L * Real.exp (-(c' * ‖a‖)) * Real.exp (-((c₁ - c') * ‖z‖)) ∂μ :=
         integral_mono_of_nonneg (.of_forall fun z ↦ by positivity) (hint.const_mul _)
-          (.of_forall fun z ↦ norm_mul_norm_le_mul_exp_mul_exp hc'₀ hc'.le hf hg z a)
-    _ = K * L * Real.exp (-(c' * ‖a‖)) * ∫ z, Real.exp (-((c - c') * ‖z‖)) ∂μ :=
+          (.of_forall fun z ↦ norm_mul_norm_le_mul_exp_mul_exp hc'₀ hc'₂ hf hg z a)
+    _ = K * L * Real.exp (-(c' * ‖a‖)) * ∫ z, Real.exp (-((c₁ - c') * ‖z‖)) ∂μ :=
         integral_const_mul _ _
     _ = _ := by ring
 
-/-- **Integrability of the overlap of exponentially decaying functions.** If `f` and `g` are
-almost everywhere strongly measurable with `‖f z‖ ≤ K exp (-(c ‖z‖))` and
-`‖g z‖ ≤ L exp (-(c ‖z‖))` for some `0 < c` on a finite-dimensional space, then the overlap
-`‖f z‖ ‖g (z + a)‖` of `f` with the translate `g (· + a)` is integrable for every additive Haar
-measure. -/
+/-- **Integrability of the overlap of an exponentially decaying function with a bounded one.**
+If `f` and `g` are almost everywhere strongly measurable with `‖f z‖ ≤ K exp (-(c ‖z‖))` for some
+`0 < c` on a finite-dimensional space and `‖g z‖ ≤ L`, then the overlap `‖f z‖ ‖g (z + a)‖` of
+`f` with the translate `g (· + a)` is integrable for every additive Haar measure. -/
 theorem integrable_norm_mul_norm_comp_add {f : E → F} {g : E → G} (hc : 0 < c)
     (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
-    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)))
-    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c * ‖z‖))) (a : E) :
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖))) (hg : ∀ z, ‖g z‖ ≤ L) (a : E) :
     Integrable (fun z ↦ ‖f z‖ * ‖g (z + a)‖) μ := by
   refine ((integrable_exp_neg_mul_norm μ hc).const_mul (K * L)).mono'
     (hfm.norm.mul (hgm.comp_quasiMeasurePreserving
       (measurePreserving_add_right μ a).quasiMeasurePreserving).norm)
     (.of_forall fun z ↦ ?_)
+  have hK : 0 ≤ K * Real.exp (-(c * ‖z‖)) := (norm_nonneg _).trans (hf z)
   rw [Real.norm_of_nonneg (by positivity)]
-  simpa using norm_mul_norm_le_mul_exp_mul_exp le_rfl hc.le hf hg z a
+  calc ‖f z‖ * ‖g (z + a)‖ ≤ K * Real.exp (-(c * ‖z‖)) * L :=
+        mul_le_mul (hf z) (hg _) (norm_nonneg _) hK
+    _ = K * L * Real.exp (-(c * ‖z‖)) := by ring
+
+/-- **Integrability of the product of an exponentially decaying function with a bounded one.**
+In a normed ring, if `f` and `g` are almost everywhere strongly measurable with
+`‖f z‖ ≤ K exp (-(c ‖z‖))` for some `0 < c` on a finite-dimensional space and `‖g z‖ ≤ L`, then
+the product `f z * g (z + a)` of `f` with the translate `g (· + a)` is integrable for every
+additive Haar measure. -/
+theorem integrable_mul_comp_add {R : Type*} [NonUnitalNormedRing R] {f g : E → R} (hc : 0 < c)
+    (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖))) (hg : ∀ z, ‖g z‖ ≤ L) (a : E) :
+    Integrable (fun z ↦ f z * g (z + a)) μ :=
+  (integrable_norm_mul_norm_comp_add μ hc hfm hgm hf hg a).mono'
+    (hfm.mul (hgm.comp_quasiMeasurePreserving
+      (measurePreserving_add_right μ a).quasiMeasurePreserving))
+    (.of_forall fun _ ↦ norm_mul_le _ _)
 
 /-- **Overlap of nonnegative functions decaying at every rate below `r`, integrated.** If
 `0 ≤ f`, `0 ≤ g` and both are at most `K exp (-(c ‖z‖))` for every rate `c < r`, with `K`
@@ -197,7 +217,7 @@ theorem exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt {f g : E → �
   obtain ⟨Kf, hKf⟩ := hf c₁ hc₁r
   obtain ⟨Kg, hKg⟩ := hg c₁ hc₁r
   refine ⟨Kf * Kg * ∫ z, Real.exp (-((c₁ - max c 0) * ‖z‖)) ∂μ, fun a ↦ ?_⟩
-  have h := integral_norm_mul_norm_le_mul_exp_neg_mul_norm μ (le_max_right c 0) hc₁
+  have h := integral_norm_mul_norm_le_mul_exp_neg_mul_norm μ (le_max_right c 0) hc₁ hc₁.le
     (f := f) (g := g) (fun w ↦ (Real.norm_of_nonneg (hf₀ w)).trans_le (hKf w))
     (fun w ↦ (Real.norm_of_nonneg (hg₀ w)).trans_le (hKg w)) a
   simp only [Real.norm_of_nonneg (hf₀ _), Real.norm_of_nonneg (hg₀ _)] at h
@@ -207,6 +227,22 @@ theorem exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt {f g : E → �
   refine h.trans (mul_le_mul_of_nonneg_left ?_ hKfg)
   exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
     (norm_nonneg a)))
+
+/-- **Integrability of the overlap of nonnegative functions decaying at every rate below `r`.**
+If `f` and `g` are nonnegative and almost everywhere strongly measurable, and both are at most
+`K exp (-(c ‖z‖))` for every rate `c < r`, with `K` depending on `c`, then for `0 < r` the overlap
+`f z g (z + a)` is integrable on a finite-dimensional space with an additive Haar measure. -/
+theorem integrable_mul_comp_add_of_forall_lt {f g : E → ℝ} {r : ℝ}
+    (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
+    (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ c < r, ∃ K, ∀ z, f z ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ c < r, ∃ K, ∀ z, g z ≤ K * Real.exp (-(c * ‖z‖))) (hr : 0 < r) (a : E) :
+    Integrable (fun z ↦ f z * g (z + a)) μ := by
+  obtain ⟨Kf, hKf⟩ := hf (r / 2) (half_lt_self hr)
+  obtain ⟨Kg, hKg⟩ := hg 0 hr
+  exact integrable_mul_comp_add μ (half_pos hr) hfm hgm
+    (fun z ↦ (Real.norm_of_nonneg (hf₀ z)).trans_le (hKf z))
+    (fun z ↦ (Real.norm_of_nonneg (hg₀ z)).trans_le (by simpa using hKg z)) a
 
 end Overlap
 

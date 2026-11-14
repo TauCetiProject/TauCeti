@@ -6,22 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
-import Mathlib.Analysis.SpecialFunctions.Exp
 
 /-!
 # Pointwise overlap of exponentially decaying functions
 
-If `‖f z‖ ≤ K exp (-(c ‖z‖))` and `‖g z‖ ≤ L exp (-(c ‖z‖))`, then `f` decays about `0` and the
+If `‖f z‖ ≤ K exp (-(c₁ ‖z‖))` and `‖g z‖ ≤ L exp (-(c₂ ‖z‖))`, then `f` decays about `0` and the
 translate `g (· + a)` decays about `-a`. Since `‖a‖ ≤ ‖z‖ + ‖z + a‖`, their product is
-exponentially small in the separation `‖a‖`. Any part `b ≤ c` of the rate can be spent on the
-separation, and the rest `c - b` kept as decay in `z`.
+exponentially small in the separation `‖a‖`. Any part `0 ≤ b ≤ c₂` of the rates can be spent on
+the separation, and the rest `c₁ - b` kept as decay in `z`.
 
 ## Main results
 
 * `TauCeti.norm_mul_norm_le_mul_exp_mul_exp`: the overlap is at most
-  `K L exp (-(b ‖a‖)) exp (-((c - b) ‖z‖))` for every `0 ≤ b ≤ c`.
-* `TauCeti.norm_mul_norm_le_mul_exp_neg_mul_norm`: the case `b = c`, a bound `K L exp (-(c ‖a‖))`
-  uniform in `z`.
+  `K L exp (-(b ‖a‖)) exp (-((c₁ - b) ‖z‖))` for every `0 ≤ b ≤ c₂`.
+* `TauCeti.norm_mul_norm_le_mul_exp_neg_mul_norm`: for a common rate `c`, the case `b = c`, a
+  bound `K L exp (-(c ‖a‖))` uniform in `z`.
 * `TauCeti.exists_mul_le_mul_exp_neg_mul_norm_of_forall_lt`: the same for nonnegative functions
   decaying at every rate below a threshold.
 -/
@@ -34,31 +33,33 @@ variable {E F G : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
   [SeminormedAddCommGroup G] {f : E → F} {g : E → G} {K L c : ℝ}
 
 /-- **Overlap of exponentially decaying functions, splitting the rate.** If
-`‖f z‖ ≤ K exp (-(c ‖z‖))` and `‖g z‖ ≤ L exp (-(c ‖z‖))`, then for every `0 ≤ b ≤ c` the product
-of `f` and of the translate `g (· + a)` is at most `K L exp (-(b ‖a‖)) exp (-((c - b) ‖z‖))`:
-part `b` of the rate is spent on the separation `‖a‖` and the rest is kept as decay in `z`. -/
-theorem norm_mul_norm_le_mul_exp_mul_exp {b : ℝ} (hb : 0 ≤ b) (hbc : b ≤ c)
-    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖)))
-    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c * ‖z‖))) (z a : E) :
-    ‖f z‖ * ‖g (z + a)‖ ≤ K * L * Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖)) := by
-  have hK : 0 ≤ K * Real.exp (-(c * ‖z‖)) := (norm_nonneg _).trans (hf z)
+`‖f z‖ ≤ K exp (-(c₁ ‖z‖))` and `‖g z‖ ≤ L exp (-(c₂ ‖z‖))`, then for every `0 ≤ b ≤ c₂` the
+product of `f` and of the translate `g (· + a)` is at most
+`K L exp (-(b ‖a‖)) exp (-((c₁ - b) ‖z‖))`: part `b` of the rates is spent on the separation
+`‖a‖` and the rest is kept as decay in `z`. -/
+theorem norm_mul_norm_le_mul_exp_mul_exp {c₁ c₂ b : ℝ} (hb : 0 ≤ b) (hbc : b ≤ c₂)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c₁ * ‖z‖)))
+    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c₂ * ‖z‖))) (z a : E) :
+    ‖f z‖ * ‖g (z + a)‖ ≤ K * L * Real.exp (-(b * ‖a‖)) * Real.exp (-((c₁ - b) * ‖z‖)) := by
+  have hK : 0 ≤ K * Real.exp (-(c₁ * ‖z‖)) := (norm_nonneg _).trans (hf z)
   -- `‖a‖ ≤ ‖z‖ + ‖z + a‖`, so the two decay factors together beat `exp (-(b ‖a‖))`.
   have ha : ‖a‖ ≤ ‖z‖ + ‖z + a‖ := by
     simpa [add_comm ‖z‖] using norm_sub_le (z + a) z
-  have hexp : Real.exp (-(c * ‖z‖)) * Real.exp (-(c * ‖z + a‖)) ≤
-      Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖)) := by
+  have hexp : Real.exp (-(c₁ * ‖z‖)) * Real.exp (-(c₂ * ‖z + a‖)) ≤
+      Real.exp (-(b * ‖a‖)) * Real.exp (-((c₁ - b) * ‖z‖)) := by
     rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
-    nlinarith [norm_nonneg (z + a), mul_le_mul_of_nonneg_left ha hb]
+    nlinarith [mul_le_mul_of_nonneg_left ha hb,
+      mul_le_mul_of_nonneg_right hbc (norm_nonneg (z + a))]
   have hKL : 0 ≤ K * L := by
     have hK' : 0 ≤ K := nonneg_of_mul_nonneg_left hK (Real.exp_pos _)
     have hL' : 0 ≤ L :=
       nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hg z)) (Real.exp_pos _)
     positivity
   calc ‖f z‖ * ‖g (z + a)‖
-      ≤ K * Real.exp (-(c * ‖z‖)) * (L * Real.exp (-(c * ‖z + a‖))) :=
+      ≤ K * Real.exp (-(c₁ * ‖z‖)) * (L * Real.exp (-(c₂ * ‖z + a‖))) :=
         mul_le_mul (hf z) (hg _) (norm_nonneg _) hK
-    _ = K * L * (Real.exp (-(c * ‖z‖)) * Real.exp (-(c * ‖z + a‖))) := by ring
-    _ ≤ K * L * (Real.exp (-(b * ‖a‖)) * Real.exp (-((c - b) * ‖z‖))) :=
+    _ = K * L * (Real.exp (-(c₁ * ‖z‖)) * Real.exp (-(c₂ * ‖z + a‖))) := by ring
+    _ ≤ K * L * (Real.exp (-(b * ‖a‖)) * Real.exp (-((c₁ - b) * ‖z‖))) :=
         mul_le_mul_of_nonneg_left hexp hKL
     _ = _ := by ring
 

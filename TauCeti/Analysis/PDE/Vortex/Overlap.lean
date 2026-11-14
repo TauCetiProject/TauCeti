@@ -41,7 +41,8 @@ The rates are those of the decay of a single vortex
 `TauCeti.Vortex.exists_energyDensity_le_mul_exp`), and the constants depend on the two vortices.
 They come from the overlap estimates for nonnegative functions decaying at every rate below a
 threshold (`TauCeti.exists_mul_le_mul_exp_neg_mul_norm_of_forall_lt`,
-`TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt`).
+`TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt`,
+`TauCeti.integrable_mul_comp_add_of_forall_lt`).
 
 ## References
 
@@ -104,19 +105,14 @@ theorem exists_integral_one_sub_normSq_mul_one_sub_normSq_le_mul_exp (μ : Measu
 theorem integrable_one_sub_normSq_mul_one_sub_normSq (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     (a : ℂ) :
     Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) *
-      (1 - 4 * (y (z + a) 2 ^ 2 + y (z + a) 3 ^ 2))) μ := by
-  have hx₀ (z : ℂ) := sub_nonneg.2 (normSq_le_one_of_tendsto hpx hqx hsolx hlimx z)
-  have hy₀ (z : ℂ) := sub_nonneg.2 (normSq_le_one_of_tendsto hpy hqy hsoly hlimy z)
-  obtain ⟨Kx, hKx⟩ := exists_one_sub_normSq_le_mul_exp hpx hqx hsolx hlimx
-    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
-  obtain ⟨Ky, hKy⟩ := exists_one_sub_normSq_le_mul_exp hpy hqy hsoly hlimy
-    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
-  refine (TauCeti.integrable_norm_mul_norm_comp_add μ (by norm_num : (0 : ℝ) < 1 / 4)
+      (1 - 4 * (y (z + a) 2 ^ 2 + y (z + a) 3 ^ 2))) μ :=
+  TauCeti.integrable_mul_comp_add_of_forall_lt μ
     (integrable_one_sub_normSq μ hpx hqx hsolx hlimx).aestronglyMeasurable
     (integrable_one_sub_normSq μ hpy hqy hsoly hlimy).aestronglyMeasurable
-    (fun z ↦ (Real.norm_of_nonneg (hx₀ z)).trans_le (hKx z))
-    (fun z ↦ (Real.norm_of_nonneg (hy₀ z)).trans_le (hKy z)) a).congr (.of_forall fun z ↦ ?_)
-  simp only [Real.norm_of_nonneg (hx₀ z), Real.norm_of_nonneg (hy₀ (z + a))]
+    (fun z ↦ sub_nonneg.2 (normSq_le_one_of_tendsto hpx hqx hsolx hlimx z))
+    (fun z ↦ sub_nonneg.2 (normSq_le_one_of_tendsto hpy hqy hsoly hlimy z))
+    (fun _ hc ↦ exists_one_sub_normSq_le_mul_exp hpx hqx hsolx hlimx hc)
+    (fun _ hc ↦ exists_one_sub_normSq_le_mul_exp hpy hqy hsoly hlimy hc) (by norm_num) a
 
 variable (hbx : Continuous (fun w ↦ x w 0)) (hby : Continuous (fun w ↦ y w 0))
 
@@ -153,18 +149,15 @@ theorem exists_integral_energyDensity_mul_energyDensity_le_mul_exp (μ : Measure
 energy densities of `x` and of the translate `y (· + a)` is integrable for every additive Haar
 measure on the plane. -/
 theorem integrable_energyDensity_mul_energyDensity (μ : Measure ℂ) [μ.IsAddHaarMeasure] (a : ℂ) :
-    Integrable (fun z ↦ energyDensity x z * energyDensity y (z + a)) μ := by
-  have hx₀ (z : ℂ) : 0 ≤ energyDensity x z := by rw [energyDensity_apply]; positivity
-  have hy₀ (z : ℂ) : 0 ≤ energyDensity y z := by rw [energyDensity_apply]; positivity
-  obtain ⟨Kx, hKx⟩ := exists_energyDensity_le_mul_exp hbx hpx hqx hsolx hlimx
-    (by norm_num : (1 / 2 : ℝ) < 1)
-  obtain ⟨Ky, hKy⟩ := exists_energyDensity_le_mul_exp hby hpy hqy hsoly hlimy
-    (by norm_num : (1 / 2 : ℝ) < 1)
-  refine (TauCeti.integrable_norm_mul_norm_comp_add μ (by norm_num : (0 : ℝ) < 1 / 2)
-    (aestronglyMeasurable_energyDensity hbx hpx hqx hsolx μ)
-    (aestronglyMeasurable_energyDensity hby hpy hqy hsoly μ)
-    (fun z ↦ (Real.norm_of_nonneg (hx₀ z)).trans_le (hKx z))
-    (fun z ↦ (Real.norm_of_nonneg (hy₀ z)).trans_le (hKy z)) a).congr (.of_forall fun z ↦ ?_)
-  simp only [Real.norm_of_nonneg (hx₀ z), Real.norm_of_nonneg (hy₀ (z + a))]
+    Integrable (fun z ↦ energyDensity x z * energyDensity y (z + a)) μ :=
+  TauCeti.integrable_mul_comp_add_of_forall_lt μ
+    (continuous_energyDensity_of_equation_eq_zero hbx (hpx.of_le (by norm_num))
+      (hqx.of_le (by norm_num)) hsolx).aestronglyMeasurable
+    (continuous_energyDensity_of_equation_eq_zero hby (hpy.of_le (by norm_num))
+      (hqy.of_le (by norm_num)) hsoly).aestronglyMeasurable
+    (fun z ↦ by rw [energyDensity_apply]; positivity)
+    (fun z ↦ by rw [energyDensity_apply]; positivity)
+    (fun _ hc ↦ exists_energyDensity_le_mul_exp hbx hpx hqx hsolx hlimx hc)
+    (fun _ hc ↦ exists_energyDensity_le_mul_exp hby hpy hqy hsoly hlimy hc) one_pos a
 
 end TauCeti.Vortex
