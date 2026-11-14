@@ -49,7 +49,7 @@ private theorem inv_smul_tristramLevineForm_exp (V : Matrix ι ι ℝ) (θ : ℝ
 
 /-- The rescaled Tristram--Levine forms at `exp(iθ)` tend to `i(Vᵀ - V)` as `θ → 0`,
 with `θ ≠ 0`. Thus the singularity of the rescaled family at zero is removable. -/
-theorem tendsto_inv_smul_tristramLevineForm_exp_zero (V : Matrix ι ι ℝ) :
+theorem tendsto_inv_smul_tristramLevineForm_exp_nhdsNE_zero (V : Matrix ι ι ℝ) :
     Tendsto (fun θ : ℝ => θ⁻¹ • tristramLevineForm V (Circle.exp θ)) (𝓝[≠] 0)
       (𝓝 (Complex.I • (Vᵀ - V).map ((↑) : ℝ → ℂ))) := by
   have h := (Real.tendsto_one_sub_cos_div_nhdsNE_zero.smul_const
@@ -89,7 +89,7 @@ theorem eventually_tristramLevineSignature_exp_eq_zero (V : Matrix ι ι ℝ)
     dsimp only [A]
     rw [det_smul]
     exact (isUnit_iff_ne_zero.mpr (pow_ne_zero _ Complex.I_ne_zero)).mul hmap
-  have hlim := tendsto_inv_smul_tristramLevineForm_exp_zero V
+  have hlim := tendsto_inv_smul_tristramLevineForm_exp_nhdsNE_zero V
   have hev := hlim.eventually (hA.eventually_signature_eq hdet)
   have hzero : ∀ᶠ θ : ℝ in 𝓝[≠] 0, tristramLevineSignature V (Circle.exp θ) = 0 := by
     filter_upwards [hev, self_mem_nhdsWithin] with θ hθ hθ0
@@ -112,7 +112,8 @@ theorem eventually_tristramLevineSignature_eq_zero_nhds_one (V : Matrix ι ι �
   exact eventually_tristramLevineSignature_exp_eq_zero V hV
 
 /-- The averaged signature at `1` is zero whenever the skew part of the Seifert matrix is
-nonsingular. In particular the averaged knot signature extends to `1` by zero. -/
+nonsingular, so there it agrees with the raw signature, which is zero by
+`tristramLevineSignature_one`. -/
 @[simp]
 theorem averagedTristramLevineSignature_one (V : Matrix ι ι ℝ)
     (hV : (V - Vᵀ).det ≠ 0) : averagedTristramLevineSignature V 1 = 0 := by
