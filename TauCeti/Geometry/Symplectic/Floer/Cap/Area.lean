@@ -33,9 +33,10 @@ line `s = 0`, so that they glue smoothly. A smooth based cap has a raw cap
   by the concatenation of `u` run backwards and `u'`, which is smooth after the reparametrization
   of `TauCeti.rectangleTrans`; its integral is computed by
   `TauCeti.sphereIntegral_mk_of_contMDiff`.
-* **The area of a raw cap.** If `γ` has a smooth based cap `u₀`, the area of a raw cap `D` is
-  `RawCap.area φ D = ∫ u₀^* φ + ∫_{D -ᵥ u₀.rawCap} φ`. It does not depend on `u₀`: the area of the
-  raw cap of every smooth based cap `u` is `∫ u^* φ` (`TauCeti.Floer.RawCap.area_rawCap`).
+* **The area of a raw cap.** If `γ` has a smooth based cap `u₀` (witnessing `h`), the area of a
+  raw cap `D` is `RawCap.area φ h D = ∫ u₀^* φ + ∫_{D -ᵥ u₀.rawCap} φ`. The area is only defined
+  for loops with a smooth based cap. It does not depend on `u₀`: the area of the raw cap of every
+  smooth based cap `u` is `∫ u^* φ` (`TauCeti.Floer.RawCap.area_rawCap`).
 * **The recapping law.** Gluing a sphere `a ∈ π₂(M, x)` to a raw cap adds the integral of `φ` over
   `a` to its area, `area (a +ᵥ D) = ∫_a φ + area D` (`TauCeti.Floer.RawCap.area_vadd`), and the
   areas of two raw caps differ by the integral over the sphere by which they differ
@@ -45,14 +46,15 @@ The recapping law is the hypothesis of `TauCeti.Floer.CapClass.lift`, with the a
 `TauCeti.sphereIntegralHom` on the group `π₂(M, x)` of spheres. The area is measured with the cap
 oriented from `γ` to its centre, as for `TauCeti.capArea`; the capped action
 `TauCeti.cappedLoopAction` uses the disc oriented from its centre to `γ`, so for a smooth based cap
-`u` its area term is `-RawCap.area φ u.rawCap`
+`hu : IsSmoothBasedCap I γ u` its area term is `-RawCap.area φ ⟨u, hu⟩ hu.rawCap`
 (`TauCeti.Floer.IsSmoothBasedCap.cappedLoopAction_comp_prodMap_one_sub`).
 
 ## Main definitions
 
 * `TauCeti.Floer.IsSmoothBasedCap I γ u`: `u` is a smooth based cap of `γ`.
 * `TauCeti.Floer.IsSmoothBasedCap.rawCap`: the raw cap of a smooth based cap.
-* `TauCeti.Floer.RawCap.area φ D`: the integral of `φ` over a raw cap `D`.
+* `TauCeti.Floer.RawCap.area φ h D`: the integral of `φ` over a raw cap `D` of a loop with a
+  smooth based cap (`h`).
 
 ## Main results
 
@@ -291,40 +293,31 @@ section Area
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [CompactSpace M] [T2Space M]
   {φ : RoughForm I M F 2}
 
-open Classical in
-/-- The **area** of a raw cap `D` of a loop `γ` for a two-form `φ`: if `γ` has a smooth based cap
-`u₀`, the integral of `φ` over `u₀` plus its integral over the sphere `D -ᵥ u₀.rawCap` by which
-`D` differs from the raw cap of `u₀`, and `0` if `γ` has no smooth based cap. For a closed `C¹`
-form it is the integral over the raw cap of any smooth based cap
+/-- The **area** of a raw cap `D` of a loop `γ` with a smooth based cap `u₀`, for a two-form `φ`:
+the integral of `φ` over `u₀` plus its integral over the sphere `D -ᵥ u₀.rawCap` by which `D`
+differs from the raw cap of `u₀`. It is defined only for loops that have a smooth based cap. For a
+closed `C¹` form it is the integral over the raw cap of any smooth based cap
 (`TauCeti.Floer.RawCap.area_rawCap`), so it does not depend on `u₀`. The cap is oriented from `γ`
 to its centre. -/
-def RawCap.area (φ : RoughForm I M F 2) (D : RawCap γ) : F :=
-  if h : ∃ u, IsSmoothBasedCap I γ u then
-    rectangleIntegral φ h.choose (0, 0) (1, 1) +
-      sphereIntegral φ x (D -ᵥ h.choose_spec.rawCap).toMul
-  else 0
-
-/-- A raw cap of a loop without smooth based caps has area `0`. -/
-theorem RawCap.area_of_not_exists (h : ¬∃ u, IsSmoothBasedCap I γ u) (D : RawCap γ) :
-    RawCap.area φ D = 0 :=
-  dite_eq_right h
+def RawCap.area (φ : RoughForm I M F 2) (h : ∃ u, IsSmoothBasedCap I γ u) (D : RawCap γ) : F :=
+  rectangleIntegral φ h.choose (0, 0) (1, 1) +
+    sphereIntegral φ x (D -ᵥ h.choose_spec.rawCap).toMul
 
 /-- **The area of a smooth cap.** For a closed `C¹` two-form, the area of the raw cap of a smooth
 based cap `u` is the integral of the form over `u` on the unit square. -/
 theorem RawCap.area_rawCap (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {u : ℝ × ℝ → M}
     (hu : IsSmoothBasedCap I γ u) :
-    RawCap.area φ hu.rawCap = rectangleIntegral φ u (0, 0) (1, 1) := by
+    RawCap.area φ ⟨u, hu⟩ hu.rawCap = rectangleIntegral φ u (0, 0) (1, 1) := by
   have h : ∃ u, IsSmoothBasedCap I γ u := ⟨u, hu⟩
-  rw [RawCap.area, dite_eq_left h,
-    h.choose_spec.sphereIntegral_rawCap_vsub_rawCap hφ hdφ hu, add_sub_cancel]
+  rw [RawCap.area, h.choose_spec.sphereIntegral_rawCap_vsub_rawCap hφ hdφ hu, add_sub_cancel]
 
 /-- **The recapping law.** If `γ` has a smooth based cap, gluing a sphere `a ∈ π₂(M, x)` to a raw
 cap of `γ` adds the integral of a closed `C¹` two-form over `a` to the area. -/
 theorem RawCap.area_vadd (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
     (h : ∃ u, IsSmoothBasedCap I γ u) (a : Additive (π_ 2 M x)) (D : RawCap γ) :
-    RawCap.area φ (a +ᵥ D) = sphereIntegralHom x hφ hdφ a + RawCap.area φ D := by
+    RawCap.area φ h (a +ᵥ D) = sphereIntegralHom x hφ hdφ a + RawCap.area φ h D := by
   have : Nonempty (RawCap γ) := ⟨D⟩
-  rw [RawCap.area, RawCap.area, dite_eq_left h, dite_eq_left h, vadd_vsub_assoc,
+  rw [RawCap.area, RawCap.area, vadd_vsub_assoc,
     ← sphereIntegralHom_apply hφ hdφ, ← sphereIntegralHom_apply hφ hdφ, map_add]
   abel
 
@@ -332,7 +325,7 @@ theorem RawCap.area_vadd (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
 of `γ` differ by the integral of a closed `C¹` two-form over the sphere by which they differ. -/
 theorem RawCap.area_sub_area (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
     (h : ∃ u, IsSmoothBasedCap I γ u) (D' D : RawCap γ) :
-    RawCap.area φ D' - RawCap.area φ D = sphereIntegralHom x hφ hdφ (D' -ᵥ D) := by
+    RawCap.area φ h D' - RawCap.area φ h D = sphereIntegralHom x hφ hdφ (D' -ᵥ D) := by
   have : Nonempty (RawCap γ) := ⟨D⟩
   conv_lhs => rw [← vsub_vadd D' D, RawCap.area_vadd hφ hdφ h]
   exact add_sub_cancel_right _ _
@@ -344,7 +337,7 @@ theorem IsSmoothBasedCap.cappedLoopAction_comp_prodMap_one_sub {σ : RoughForm I
     (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0) (Ham : ℝ → M → ℝ) {u : ℝ × ℝ → M}
     (hu : IsSmoothBasedCap I γ u) :
     cappedLoopAction σ Ham (fun t ↦ u (0, t)) (u ∘ Prod.map (fun s ↦ 1 - s) id) =
-      -RawCap.area σ hu.rawCap + ∫ t in 0..1, Ham t (u (0, t)) := by
+      -RawCap.area σ ⟨u, hu⟩ hu.rawCap + ∫ t in 0..1, Ham t (u (0, t)) := by
   rw [cappedLoopAction_def, rectangleIntegral_comp_prodMap_one_sub (hσ.of_le (by simp))
     (hu.contMDiff.of_le (by simp)), RawCap.area_rawCap hσ hdσ hu]
 
