@@ -7,13 +7,18 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.Topology.Sets.Opens
 
 /-!
-# Event probabilities from restricted pushforwards
+# Restricted measures
 
 A restricted pushforward equal to a scalar multiple of a measure gives a factorization
 of preimage-event probabilities. This converts restricted distribution identities into
 independence identities without requiring the restricting event to be measurable.
+
+Restricting a measure to the whole space, written as the top open set, does not change it
+(`MeasureTheory.Measure.restrict_coe_opens_top`). Spaces of functions on an open set `Ω` are
+built on `μ.restrict Ω`, so this identifies their whole-space instances with the spaces for `μ`.
 
 On a finite type, the restriction of a measure to its points of finite mass is a finite measure
 (`MeasureTheory.Measure.isFiniteMeasure_restrict_setOf_measure_singleton_ne_top`).
@@ -23,6 +28,16 @@ public section
 
 open MeasureTheory Set
 open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+/-- Restricting a measure to the whole space, as the top open set, does not change it. -/
+theorem restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [TopologicalSpace α]
+    (μ : Measure α) :
+    μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α) = μ := by
+  rw [TopologicalSpace.Opens.coe_top, restrict_univ]
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 
