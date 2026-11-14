@@ -25,6 +25,15 @@ The discarded image is null by
 `LipschitzWith.euclideanHausdorffMeasure_image_compl_setOf_regular`, which combines Rademacher's
 theorem and the zero-Jacobian image theorem.
 
+## Main results
+
+* `TauCeti.CountablyRectifiable.exists_bilipschitz_cover` and
+  `TauCeti.countablyRectifiable_iff_exists_bilipschitz_cover`: countable bi-Lipschitz patch
+  characterization of countably `k`-rectifiable sets without measurability hypotheses.
+* `TauCeti.CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover`: when `s` is
+  `μHE[k]`-null-measurable, it contains a pairwise disjoint union of Borel bi-Lipschitz patches
+  `f n '' B n ⊆ s` equal to `s` up to a `μHE[k]`-null set.
+
 ## References
 
 * L. Simon, *Lectures on Geometric Measure Theory*, §11 (rectifiable sets).
@@ -33,8 +42,8 @@ theorem and the zero-Jacobian image theorem.
 
 public section
 
-open Set MeasureTheory
-open scoped ENNReal NNReal Function
+open Function Set MeasureTheory
+open scoped ENNReal NNReal symmDiff
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
@@ -106,5 +115,60 @@ theorem countablyRectifiable_iff_exists_bilipschitz_cover {k : ℕ} {s : Set V} 
   exact countablyRectifiable_iff.mpr
     ⟨A, fun n ↦ (A n).domRestrict (f n), fun n ↦ ⟨K n, (hLip n).restrict _⟩,
       by simpa only [range_domRestrict] using hnull⟩
+
+/-- **Disjoint Borel bi-Lipschitz patch decomposition.** Every `μHE[k]`-null-measurable, countably
+`k`-rectifiable subset `s ⊆ V` contains a union `⋃ n, f n '' B n` of pairwise disjoint Borel
+bi-Lipschitz images `f n '' B n ⊆ s` (`MeasurableSet (B n)`) that equals `s` up to a
+`μHE[k]`-null set. -/
+theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : ℕ} {s : Set V}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k]) :
+    ∃ (B : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V)
+      (K_f L_f : ℕ → ℝ≥0),
+      (∀ n, MeasurableSet (B n)) ∧
+      (∀ n, MeasurableSet (f n '' B n)) ∧
+      (∀ n, LipschitzWith (K_f n) (f n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧
+      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧
+      (⋃ n, f n '' B n) ⊆ s ∧
+      (⋃ n, f n '' B n : Set V) =ᵐ[μHE[k]] s := by
+  classical
+  let s₀ : Set V := (toMeasurable μHE[k] sᶜ)ᶜ
+  have hs₀m : MeasurableSet s₀ := (measurableSet_toMeasurable μHE[k] sᶜ).compl
+  have hs₀_sub : s₀ ⊆ s := compl_subset_comm.mp (subset_toMeasurable μHE[k] sᶜ)
+  have hs₀_ae : s₀ =ᵐ[μHE[k]] s := by
+    simpa only [s₀, compl_compl] using hsm.compl.toMeasurable_ae_eq.compl
+  obtain ⟨A, f, hAm, hbi, hcover⟩ := hs.exists_bilipschitz_cover
+  choose K_f L_f hLip hAnti using hbi
+  let S (n : ℕ) : Set V := (f n '' A n) ∩ s₀
+  have hSm (n : ℕ) : MeasurableSet (S n) :=
+    ((hAm n).image_of_continuousOn_injOn (hLip n).continuous.continuousOn
+      (injOn_iff_injective.mpr (hAnti n).injective)).inter hs₀m
+  let T (n : ℕ) : Set V := disjointed S n
+  have hTm (n : ℕ) : MeasurableSet (T n) := MeasurableSet.disjointed hSm n
+  let B (n : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := A n ∩ (f n) ⁻¹' T n
+  have hBm (n : ℕ) : MeasurableSet (B n) :=
+    (hAm n).inter ((hTm n).preimage (hLip n).continuous.measurable)
+  have himg (n : ℕ) : f n '' B n = T n := by
+    dsimp only [B]
+    rw [image_inter_preimage]
+    exact inter_eq_self_of_subset_right ((disjointed_subset S n).trans inter_subset_left)
+  have hUnion : (⋃ n, f n '' B n) = (⋃ n, f n '' A n) ∩ s₀ := by
+    simp_rw [himg]
+    rw [iUnion_disjointed, ← iUnion_inter]
+  have hsub_s : (⋃ n, f n '' B n) ⊆ s := by
+    rw [hUnion]
+    exact inter_subset_right.trans hs₀_sub
+  refine ⟨B, f, K_f, L_f, hBm, fun n ↦ (himg n).symm ▸ hTm n,
+    fun n ↦ ⟨hLip n, fun u v ↦ (hAnti n) ⟨u, u.2.1⟩ ⟨v, v.2.1⟩⟩, ?_, hsub_s, ?_⟩
+  · intro m n hmn
+    rw [onFun, himg m, himg n]
+    exact disjoint_disjointed S hmn
+  · rw [← measure_symmDiff_eq_zero_iff, symmDiff_of_le hsub_s, hUnion]
+    have hcov_diff : s \ ((⋃ n, f n '' A n) ∩ s₀) ⊆ (s \ ⋃ n, f n '' A n) ∪ (s₀ ∆ s) := by
+      intro x ⟨hxs, hnot⟩
+      by_cases hxs₀ : x ∈ s₀
+      · exact Or.inl ⟨hxs, fun hxU ↦ hnot ⟨hxU, hxs₀⟩⟩
+      · exact Or.inr (Or.inr ⟨hxs, hxs₀⟩)
+    refine nonpos_iff_eq_zero.mp ((measure_mono hcov_diff).trans ((measure_union_le _ _).trans ?_))
+    rw [hcover, measure_symmDiff_eq_zero_iff.mpr hs₀_ae, add_zero]
 
 end TauCeti
