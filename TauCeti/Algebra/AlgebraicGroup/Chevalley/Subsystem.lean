@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Subsystem
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
 
 /-!
 # Root-set subgroups of a Chevalley datum
@@ -22,6 +24,11 @@ transports its elements into `D.points A` in the weight basis.
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic` and
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite` specialize both constructions to positive
 and negative roots.
+
+An additive degree positive on the chosen roots makes either realization nilpotent.
+This uses the ordered-weight-basis construction and
+`isNilpotent_kostantSubsystemSubgroup_of_isPositive`; the two signs specialize it using
+opposite height degrees.
 -/
 
 public section
@@ -78,6 +85,21 @@ theorem subsystemSubgroup_le_iff {S : Set (Fin t.numRoots)} {A : CommAlgCat.{v} 
     kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
 
+/-- The root-set subgroup is the join of its root-subgroup ranges. -/
+theorem subsystemSubgroup_eq_iSup (A : CommAlgCat.{v} ℤ) :
+    D.subsystemSubgroup S A = ⨆ γ ∈ S,
+      (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator γ A).range := by
+  simp only [D.subsystemSubgroup_def, kostantSubsystemSubgroup_eq_iSup,
+    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator]
+
+/-- Taking a union of root sets corresponds to joining their lattice subgroups. -/
+theorem subsystemSubgroup_union (T : Set (Fin t.numRoots)) (A : CommAlgCat.{v} ℤ) :
+    D.subsystemSubgroup (S ∪ T) A = D.subsystemSubgroup S A ⊔ D.subsystemSubgroup T A := by
+  simp only [D.subsystemSubgroup_eq_iSup, Set.mem_union, iSup_or]
+  exact iSup_sup_eq
+
 /-- Each root element indexed by `S` belongs to the corresponding lattice subgroup. -/
 theorem chevalleyRootSubgroup_mem_subsystemSubgroup {S : Set (Fin t.numRoots)}
     (A : CommAlgCat.{v} ℤ) {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
@@ -114,6 +136,27 @@ theorem subsystemSubgroup_mono {S T : Set (Fin t.numRoots)} (hST : S ⊆ T)
 theorem subsystemSubgroup_empty (A : CommAlgCat.{v} ℤ) :
     D.subsystemSubgroup ∅ A = ⊥ := by
   rw [D.subsystemSubgroup_def, kostantSubsystemSubgroup_empty]
+
+/-- A root-set lattice subgroup is nilpotent if an additive degree is positive on its roots. -/
+theorem isNilpotent_subsystemSubgroup_of_degree_pos
+    (degree : (Fin t.rank → ℤ) →+ ℚ) {S : Set (Fin t.numRoots)}
+    (hS : ∀ γ ∈ S, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
+    (A : Type v) [CommRing A] :
+    Group.IsNilpotent (D.subsystemSubgroup S (CommAlgCat.of ℤ A)) := by
+  rw [D.subsystemSubgroup_def]
+  exact isNilpotent_kostantSubsystemSubgroup_of_isPositive
+    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+    (isNilpotent_apply_ι_chevalleySystem D.representation
+      D.isNilpotent_representation_rootGenerator)
+    (orderedWeightBasis degree D.weight D.basis)
+    (orderedWeight degree D.weight) (t.simplyConnectedRootDatum ht).root S
+    (isCartanWeightVector_coe_orderedWeightBasis (t.lieBasis ht).h D.representation
+      D.lattice D.basis D.weight degree D.isCartanWeightVector_basis)
+    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
+    (fun γ hγ {_ _ _} hn heq =>
+      orderedWeight_lt_of_eq_add_nsmul _ _ (hS γ hγ) hn heq) A
 
 /-- The matrix image of every root-set subgroup consists of datum points. -/
 theorem map_subsystemSubgroup_le_points (A : Type v) [CommRing A] :
@@ -186,6 +229,22 @@ theorem subsystemPoints_le_iff {S : Set (Fin t.numRoots)} {A : Type v} [CommRing
   · rintro h _ ⟨γ, hγ, u, rfl⟩
     exact h γ hγ u
 
+/-- The root-set point subgroup is the join of its root-subgroup ranges. -/
+theorem subsystemPoints_eq_iSup (A : Type v) [CommRing A] :
+    D.subsystemPoints S A = ⨆ γ ∈ S, (D.rootSubgroupPoints γ A).range := by
+  apply le_antisymm
+  · exact D.subsystemPoints_le_iff.mpr fun γ hγ u =>
+      Subgroup.mem_iSup_of_mem γ (Subgroup.mem_iSup_of_mem hγ ⟨u, rfl⟩)
+  · refine iSup₂_le fun γ hγ => ?_
+    rintro _ ⟨u, rfl⟩
+    exact (D.subsystemPoints_le_iff.mp le_rfl) γ hγ u
+
+/-- Taking a union of root sets corresponds to joining their point subgroups. -/
+theorem subsystemPoints_union (T : Set (Fin t.numRoots)) (A : Type v) [CommRing A] :
+    D.subsystemPoints (S ∪ T) A = D.subsystemPoints S A ⊔ D.subsystemPoints T A := by
+  simp only [D.subsystemPoints_eq_iSup, Set.mem_union, iSup_or]
+  exact iSup_sup_eq
+
 /-- Each root element indexed by `S` belongs to its point subgroup. -/
 @[simp]
 theorem rootSubgroupPoints_mem_subsystemPoints {S : Set (Fin t.numRoots)}
@@ -193,6 +252,15 @@ theorem rootSubgroupPoints_mem_subsystemPoints {S : Set (Fin t.numRoots)}
     (hγ : γ ∈ S) (u : Multiplicative A) :
     D.rootSubgroupPoints γ A u ∈ D.subsystemPoints S A :=
   (D.subsystemPoints_le_iff.mp le_rfl) γ hγ u
+
+/-- The actual character-lattice torus normalizes every root-set point subgroup. -/
+theorem range_torusPoints_le_normalizer_subsystemPoints (A : Type v) [CommRing A] :
+    (D.torusPoints A).range ≤ Subgroup.normalizer (D.subsystemPoints S A : Set _) := by
+  rw [D.subsystemPoints_eq_closure]
+  apply Subgroup.le_normalizer_closure_iff.mpr
+  rintro _ ⟨s, rfl⟩ _ ⟨γ, hγ, u, rfl⟩
+  rw [← ofAdd_toAdd u, D.torusPoints_conj_rootSubgroupPoints]
+  exact Subgroup.subset_closure ⟨γ, hγ, _, rfl⟩
 
 /-- Ring maps preserve the point subgroup generated by any fixed root set. -/
 theorem map_subsystemPoints_le {A : Type v} {B : Type w} [CommRing A] [CommRing B]
@@ -243,6 +311,39 @@ theorem coe_subsystemSubgroupMulEquivPoints_symm_apply (A : Type v) [CommRing A]
         (g : D.points A).val :=
   (rfl)
 
+/-- The lattice-to-points equivalence sends each root generator to its point realization. -/
+@[simp]
+theorem subsystemSubgroupMulEquivPoints_rootSubgroup (A : Type v) [CommRing A]
+    {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
+    D.subsystemSubgroupMulEquivPoints S A
+        ⟨chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u,
+            D.chevalleyRootSubgroup_mem_subsystemSubgroup (CommAlgCat.of ℤ A) hγ u⟩ =
+      ⟨D.rootSubgroupPoints γ A u, D.rootSubgroupPoints_mem_subsystemPoints A hγ u⟩ := by
+  apply Subtype.ext
+  apply Subtype.ext
+  rw [D.coe_subsystemSubgroupMulEquivPoints_apply, D.coe_rootSubgroupPoints]
+
+/-- The inverse equivalence sends a root point to its lattice root generator. -/
+@[simp]
+theorem subsystemSubgroupMulEquivPoints_symm_rootSubgroup (A : Type v) [CommRing A]
+    {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
+    (D.subsystemSubgroupMulEquivPoints S A).symm
+        ⟨D.rootSubgroupPoints γ A u, D.rootSubgroupPoints_mem_subsystemPoints A hγ u⟩ =
+      ⟨chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u,
+          D.chevalleyRootSubgroup_mem_subsystemSubgroup (CommAlgCat.of ℤ A) hγ u⟩ :=
+  (D.subsystemSubgroupMulEquivPoints S A).symm_apply_eq.mpr
+    (D.subsystemSubgroupMulEquivPoints_rootSubgroup S A hγ u).symm
+
+/-- A root-set point subgroup is nilpotent if an additive degree is positive on its roots. -/
+theorem isNilpotent_subsystemPoints_of_degree_pos
+    (degree : (Fin t.rank → ℤ) →+ ℚ) {S : Set (Fin t.numRoots)}
+    (hS : ∀ γ ∈ S, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
+    (A : Type v) [CommRing A] : Group.IsNilpotent (D.subsystemPoints S A) := by
+  let := D.isNilpotent_subsystemSubgroup_of_degree_pos degree hS A
+  exact Group.nilpotent_of_mulEquiv (D.subsystemSubgroupMulEquivPoints S A)
+
 /-- Change of value ring, restricted to a fixed root-set point subgroup. -/
 noncomputable def mapSubsystemPoints {A : Type v} {B : Type w} [CommRing A] [CommRing B]
     (f : A →+* B) : D.subsystemPoints S A →* D.subsystemPoints S B :=
@@ -258,6 +359,18 @@ theorem coe_mapSubsystemPoints_apply {A : Type v} {B : Type w} [CommRing A] [Com
       (D.pointsPresentation A).map (D.pointsPresentation B) f g.val :=
   (rfl)
 
+/-- Restricted ring maps apply the ring homomorphism to each root parameter. -/
+@[simp]
+theorem mapSubsystemPoints_rootSubgroup {A : Type v} {B : Type w}
+    [CommRing A] [CommRing B] (f : A →+* B) {γ : Fin t.numRoots}
+    (hγ : γ ∈ S) (u : Multiplicative A) :
+    D.mapSubsystemPoints S f
+        ⟨D.rootSubgroupPoints γ A u, D.rootSubgroupPoints_mem_subsystemPoints A hγ u⟩ =
+      ⟨D.rootSubgroupPoints γ B (Multiplicative.ofAdd (f u.toAdd)),
+        D.rootSubgroupPoints_mem_subsystemPoints B hγ _⟩ := by
+  apply Subtype.ext
+  simp only [D.coe_mapSubsystemPoints_apply, D.map_rootSubgroupPoints]
+
 /-- Identity ring maps act identically on root-set points. -/
 @[simp]
 theorem mapSubsystemPoints_id (A : Type v) [CommRing A] :
@@ -268,6 +381,7 @@ theorem mapSubsystemPoints_id (A : Type v) [CommRing A] :
     MonoidHom.id_apply]
 
 /-- Restricted point maps respect composition of ring homomorphisms. -/
+@[simp]
 theorem mapSubsystemPoints_comp {A : Type v} {B : Type w} {C : Type z}
     [CommRing A] [CommRing B] [CommRing C] (f : A →+* B) (g : B →+* C) :
     D.mapSubsystemPoints S (g.comp f) =

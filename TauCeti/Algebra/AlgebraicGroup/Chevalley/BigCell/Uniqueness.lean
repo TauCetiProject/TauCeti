@@ -103,7 +103,6 @@ noncomputable def bigCellMul
   x.1.val * D.torusPoints A x.2.1 * x.2.2.val
 
 /-- The big-cell multiplication uses the actual torus between the two unipotent factors. -/
-@[simp]
 theorem bigCellMul_apply
     (x : D.negativePoints A × ((Fin t.rank → Aˣ) × D.positivePoints A)) :
     D.bigCellMul A x = x.1.val * D.torusPoints A x.2.1 * x.2.2.val :=
@@ -136,6 +135,19 @@ theorem bigCellMul_injective : Function.Injective (D.bigCellMul A) := by
   exact congrArg (fun x => (D.negativeSubgroupMulEquivPoints A x.1, x.2.1,
     D.positiveSubgroupMulEquivPoints A x.2.2)) hcoords
 
+/-- Equality of big-cell products is equality of their three factors. -/
+@[simp]
+theorem bigCellMul_inj
+    {x y : D.negativePoints A × ((Fin t.rank → Aˣ) × D.positivePoints A)} :
+    D.bigCellMul A x = D.bigCellMul A y ↔ x = y :=
+  (D.bigCellMul_injective A).eq_iff
+
+/-- The identity factors multiply to the identity point. -/
+@[simp]
+theorem bigCellMul_one : D.bigCellMul A 1 = 1 := by
+  simp only [bigCellMul_apply, Prod.fst_one, Prod.snd_one, OneMemClass.coe_one,
+    map_one, mul_one]
+
 variable {A}
 
 /-- A point is in the big-cell image exactly when it admits three such factors. -/
@@ -162,6 +174,7 @@ theorem eq_of_mul_torusPoints_mul_eq {u u' v v' : D.points A}
     congrArg (fun x => x.2.2.val) heq⟩
 
 /-- Ring maps preserve big-cell multiplication and each of its three factors. -/
+@[simp]
 theorem map_bigCellMul {B : Type w} [CommRing B] (f : A →+* B)
     (x : D.negativePoints A × ((Fin t.rank → Aˣ) × D.positivePoints A)) :
     (D.pointsPresentation A).map (D.pointsPresentation B) f (D.bigCellMul A x) =
