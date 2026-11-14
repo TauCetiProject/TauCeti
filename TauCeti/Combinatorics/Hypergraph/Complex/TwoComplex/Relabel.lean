@@ -148,14 +148,14 @@ theorem relabel_complete [Fintype V] [Fintype W] (e : V ≃ W) :
   ext s <;> simp
 
 /-- Adjacency in a relabelled complex pulls back along the inverse bijection. -/
-@[simp]
+@[simp, grind =]
 theorem adj_relabel (X : TwoComplex V) (e : V ≃ W) (u v : W) :
     (X.relabel e).Adj u v ↔ X.Adj (e.symm u) (e.symm v) := by
   classical
   rw [adj_iff_pair_mem_edges, adj_iff_pair_mem_edges, mem_edges_relabel]
   simp
 
-@[simp 1100]
+@[simp 1100, grind =]
 theorem map_adj_relabel (X : TwoComplex V) (e : V ≃ W) (u v : V) :
     (X.relabel e).Adj (e u) (e v) ↔ X.Adj u v := by
   simp

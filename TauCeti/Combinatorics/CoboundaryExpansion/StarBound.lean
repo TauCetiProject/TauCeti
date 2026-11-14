@@ -22,21 +22,30 @@ For a 1-cochain `α` on `X` and a vertex `x : V`, the star gauge `α.starGauge x
   `{x, u, v}` whenever `ℓ` is conjugation invariant.
 
 Summing over `x : V` via `TwoComplex.sum_vertex_edges_complete` yields the star identity
-`∑ x : V, α.cost ℓ (α.starGauge x) = 3 * α.defect ℓ` (Beasley, *The Permutation Coboundary
-Constant of the Complete Complex Is k/3 for Every k ≥ 4*, Proposition 1; for permutation
-coefficients, Chapman–Lubotzky, *Stability of homomorphisms, coverings and cocycles II*,
+`∑ x : V, α.cost ℓ (α.starGauge x) = 3 * α.defect ℓ` (Jeromie Beasley, *The Permutation Coboundary
+Constant of the Complete Complex Is k/3 for Every k≥4*, Proposition 1; for permutation
+coefficients, M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles II*,
 Proposition 3.2).
 
 Because each star gauge has cost at least `α.gaugeDist ℓ`, it follows that:
 
 * `(Fintype.card V : ℝ) * α.gaugeDist ℓ ≤ 3 * α.defect ℓ` (`TauCeti.card_mul_gaugeDist_le`),
-  with equality if and only if every star gauge is optimal;
+  with equality if and only if every star gauge is optimal (Beasley, Corollary 2);
 * `(Fintype.card V : ℝ) / 3 ≤ h1 (complete V) ℓ` (`TauCeti.card_div_three_le_h1`) and
   `(Fintype.card V : ℝ) / (Fintype.card V - 2) ≤ h1Norm (complete V) ℓ` whenever a cochain at
   positive gauge distance exists;
-* when `3 ≤ Fintype.card V` and `G` is a nontrivial finite group, a single-edge cochain around a
-  filled triangle witnesses positive gauge distance, discharging that hypothesis unconditionally
-  and giving `(Fintype.card V : ℝ) / 3 ≤ h1Sym (complete V)` (`TauCeti.card_div_three_le_h1Sym`).
+* when `3 ≤ Fintype.card V` and `G` is any nontrivial group, a single-edge cochain around a filled
+  triangle witnesses positive gauge distance under conjugation invariance, discharging that
+  hypothesis unconditionally and giving `(Fintype.card V : ℝ) / 3 ≤ h1Sym (complete V)`
+  (`TauCeti.card_div_three_le_h1Sym`).
+
+## References
+
+* Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
+  k≥4*, Zenodo, doi:10.5281/zenodo.23245792, version 7, Proposition 1 and Corollary 2.
+* M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles II: examples,
+  applications and open problems*, arXiv:2311.06706v3, Adv. Math. 463 (2025), 110117,
+  Proposition 3.2.
 -/
 
 public section
@@ -60,7 +69,7 @@ pins `x` to `1` without requiring `DecidableEq V`. -/
 def starGauge (α : Cochain X G) (x : V) : V → G :=
   fun u => α u x
 
-@[simp]
+@[simp, grind =]
 theorem starGauge_apply (α : Cochain X G) (x u : V) : α.starGauge x u = α u x := (rfl)
 
 theorem starGauge_self (α : Cochain X G) (x : V) : α.starGauge x x = 1 :=
@@ -78,7 +87,7 @@ theorem edgeCost_starGauge_complete [Fintype V] [DecidableEq V] {ℓ : GroupNorm
     simp only [mem_insert, mem_singleton] at hx
     rcases hx with rfl | rfl
     · rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
-      simp [α.map_swap ((adj_complete v x).mpr huv.symm)]
+      simp [α.apply_swap x v]
     · rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp)]
       simp
   · simp only [hx, ↓reduceIte]
@@ -88,7 +97,7 @@ theorem edgeCost_starGauge_complete [Fintype V] [DecidableEq V] {ℓ : GroupNorm
       rw [mem_triangles_complete, card_insert_of_notMem hx, card_pair huv]
     rw [α.edgeCost_of_mem_edges ℓ (α.starGauge x) he huv (by simp) (by simp),
       α.triangleDefect_of_mem_triangles hℓ ht (by simp) (by simp) (by simp) hxu hxv huv]
-    have hinv : (α u x)⁻¹ = α x u := (α.map_swap ((adj_complete u x).mpr hxu.symm)).symm
+    have hinv : (α u x)⁻¹ = α x u := (α.apply_swap u x).symm
     simp [starGauge_apply, holonomy_def, hinv]
 
 /-- The star identity on the complete two-complex (Beasley, Proposition 1; Chapman–Lubotzky II,
@@ -155,7 +164,8 @@ theorem card_div_card_sub_two_le_h1Norm (hV : 3 ≤ Fintype.card V) (ℓ : Group
     _ ≤ (3 / ((Fintype.card V : ℝ) - 2)) * h1 (complete V) ℓ :=
         mul_le_mul_of_nonneg_left (card_div_three_le_h1 ℓ hℓ hne) hpos.le
 
-/-- Equality holds in `card_mul_gaugeDist_le` if and only if every star gauge is optimal for `α`. -/
+/-- Equality holds in `card_mul_gaugeDist_le` if and only if every star gauge is optimal for `α`
+(Beasley, Corollary 2). -/
 theorem Cochain.three_mul_defect_eq_card_mul_gaugeDist_iff {ℓ : GroupNorm G}
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain (complete V) G) :
     3 * α.defect ℓ = (Fintype.card V : ℝ) * α.gaugeDist ℓ ↔
@@ -166,7 +176,7 @@ theorem Cochain.three_mul_defect_eq_card_mul_gaugeDist_iff {ℓ : GroupNorm G}
   simp [eq_comm]
 
 /-- A cochain on `complete V` at positive gauge distance attains the star ratio `card V / 3` if and
-only if every star gauge is an optimal gauge for `α`. -/
+only if every star gauge is an optimal gauge for `α` (Beasley, Corollary 2). -/
 theorem Cochain.defect_div_gaugeDist_eq_card_div_three_iff {ℓ : GroupNorm G}
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) {α : Cochain (complete V) G}
     (hα : 0 < α.gaugeDist ℓ) :
@@ -177,79 +187,35 @@ theorem Cochain.defect_div_gaugeDist_eq_card_div_three_iff {ℓ : GroupNorm G}
 
 end StarBound
 
-/-! ### Existence of non-coboundaries and unconditional star bounds -/
+/-! ### Unconditional star bounds -/
 
-section Existence
+section Unconditional
 
-/-- Whenever `X` has at least one filled triangle and `G` is nontrivial, `X` admits a 1-cochain
-that is not a coboundary: supporting a non-identity element on one edge of that triangle gives a
-non-identity holonomy. -/
-theorem exists_not_isCoboundary_of_triangles_nonempty {V G : Type*} [Group G] [Nontrivial G]
-    {X : TwoComplex V} (htri : X.triangles.Nonempty) :
-    ∃ α : Cochain X G, ¬ α.IsCoboundary := by
-  classical
-  obtain ⟨t, ht⟩ := htri
-  obtain ⟨u, v, w, huv, huw, hvw, rfl⟩ := card_eq_three.mp (X.triangle_card t ht)
-  obtain ⟨g, hg⟩ := exists_ne (1 : G)
-  have hadj_uv : X.Adj u v := X.adj_of_mem_triangle ht (by simp) (by simp) huv
-  have hadj_vw : X.Adj v w := X.adj_of_mem_triangle ht (by simp) (by simp) hvw
-  have hadj_wu : X.Adj w u := X.adj_of_mem_triangle ht (by simp) (by simp) huw.symm
-  refine ⟨Cochain.singleEdge X u v g,
-    Cochain.not_isCoboundary_of_holonomy_ne_one hadj_uv hadj_vw hadj_wu ?_⟩
-  rwa [Cochain.holonomy_singleEdge hadj_uv huw.symm hvw.symm g]
-
-/-- Whenever `X` has at least one filled triangle and `G` is a nontrivial finite group, some
-1-cochain on `X` has strictly positive gauge distance. -/
-theorem exists_gaugeDist_pos_of_triangles_nonempty {V G : Type*} [Fintype V] [LinearOrder V]
-    [Group G] [Finite G] [Nontrivial G] {X : TwoComplex V} (htri : X.triangles.Nonempty)
-    (ℓ : GroupNorm G) :
-    ∃ α : Cochain X G, 0 < α.gaugeDist ℓ := by
-  obtain ⟨α, hα⟩ := exists_not_isCoboundary_of_triangles_nonempty (G := G) htri
-  exact ⟨α, (α.gaugeDist_pos_iff_not_isCoboundary ℓ).mpr hα⟩
-
-/-- On `complete V` with `3 ≤ Fintype.card V` and nontrivial `G`, there exists a cochain that is
-not a coboundary. -/
-theorem exists_not_isCoboundary_complete {V G : Type*} [Fintype V] [Group G] [Nontrivial G]
-    (hV : 3 ≤ Fintype.card V) :
-    ∃ α : Cochain (complete V) G, ¬ α.IsCoboundary := by
-  refine exists_not_isCoboundary_of_triangles_nonempty ?_
-  rw [← card_pos, card_triangles_complete]
-  exact Nat.choose_pos hV
-
-/-- On `complete V` with `3 ≤ Fintype.card V` and a nontrivial finite group `G`, there exists a
-cochain at strictly positive gauge distance. -/
-theorem exists_gaugeDist_pos_complete {V G : Type*} [Fintype V] [LinearOrder V]
-    [Group G] [Finite G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) (ℓ : GroupNorm G) :
-    ∃ α : Cochain (complete V) G, 0 < α.gaugeDist ℓ := by
-  refine exists_gaugeDist_pos_of_triangles_nonempty ?_ ℓ
-  rw [← card_pos, card_triangles_complete]
-  exact Nat.choose_pos hV
-
-/-- For `3 ≤ Fintype.card V` and any nontrivial finite group `G` equipped with a
-conjugation-invariant norm `ℓ`, `card V / 3 ≤ h1 (complete V) ℓ`. -/
+/-- For `3 ≤ Fintype.card V` and any nontrivial group `G` equipped with a conjugation-invariant
+norm `ℓ`, `card V / 3 ≤ h1 (complete V) ℓ`. -/
 theorem card_div_three_le_h1_of_nontrivial {V G : Type*} [Fintype V] [LinearOrder V]
-    [Group G] [Finite G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) (ℓ : GroupNorm G)
+    [Group G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) (ℓ : GroupNorm G)
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) :
     (Fintype.card V : ℝ) / 3 ≤ h1 (complete V) ℓ :=
-  card_div_three_le_h1 ℓ hℓ (exists_gaugeDist_pos_complete hV ℓ)
+  card_div_three_le_h1 ℓ hℓ (exists_gaugeDist_pos_complete_of_isConjInvariant hV hℓ)
 
-/-- Normalized star bound on `complete V` for `3 ≤ Fintype.card V` and any nontrivial finite group
-`G` equipped with a conjugation-invariant norm `ℓ`. -/
+/-- Normalized star bound on `complete V` for `3 ≤ Fintype.card V` and any nontrivial group `G`
+equipped with a conjugation-invariant norm `ℓ`. -/
 theorem card_div_card_sub_two_le_h1Norm_of_nontrivial {V G : Type*} [Fintype V] [LinearOrder V]
-    [Group G] [Finite G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) (ℓ : GroupNorm G)
+    [Group G] [Nontrivial G] (hV : 3 ≤ Fintype.card V) (ℓ : GroupNorm G)
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) :
     (Fintype.card V : ℝ) / (Fintype.card V - 2) ≤ h1Norm (complete V) ℓ :=
-  card_div_card_sub_two_le_h1Norm hV ℓ hℓ (exists_gaugeDist_pos_complete hV ℓ)
+  card_div_card_sub_two_le_h1Norm hV ℓ hℓ (exists_gaugeDist_pos_complete_of_isConjInvariant hV hℓ)
 
-/-- For `3 ≤ Fintype.card V`, every permutation degree `n + 2 ≥ 2` is nontrivial and finite, so the
-star bound yields `card V / 3 ≤ h1Sym (complete V)`. -/
+/-- For `3 ≤ Fintype.card V`, every permutation degree `n + 2 ≥ 2` has a nontrivial symmetric group,
+so the star bound yields `card V / 3 ≤ h1Sym (complete V)`. -/
 theorem card_div_three_le_h1Sym {V : Type*} [Fintype V] [LinearOrder V]
     (hV : 3 ≤ Fintype.card V) :
     (Fintype.card V : ℝ) / 3 ≤ h1Sym (complete V) :=
   (le_h1Sym_iff (complete V)).mpr fun _ =>
     card_div_three_le_h1_of_nontrivial hV _ Equiv.Perm.isConjInvariant_movedNorm
 
-end Existence
+end Unconditional
 
 end TauCeti
 

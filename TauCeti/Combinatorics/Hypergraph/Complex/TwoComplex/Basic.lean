@@ -11,6 +11,7 @@ public import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Edge and triangle carriers for group-valued cochains
@@ -21,10 +22,11 @@ vertices and the empty face, or forgetting those two levels, gives inverse conve
 when the graded complex contains all vertices. Thus an isolated vertex is retained by the
 ambient vertex type rather than by extra data in the carrier.
 
-The complete complex contains every pair and triple. Its face counts are provided both as
-binomial coefficients and as polynomial formulas in division rings, for use in normalizing sums over
-edges and triangles. `TwoComplex.Adj` expresses edge adjacency of two vertices without requiring
-decidable equality on the vertex type.
+The complete complex contains every pair and triple. Its face counts and edge-to-triangle ratio are
+provided both as binomial coefficients and as formulas in characteristic-zero division rings and
+fields, for use in normalizing sums over edges and triangles. `TwoComplex.Adj` expresses edge
+adjacency of two vertices without requiring decidable equality on the vertex type, alongside
+distinct-vertex and increasing-vertex decompositions for edges and triangles.
 -/
 
 public section
@@ -205,9 +207,56 @@ theorem natCast_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K
   rw [card_triangles_complete, Nat.cast_choose_eq_descPochhammer_div]
   norm_num [descPochhammer_succ_eval, Nat.factorial_succ]
 
+/-- On `complete V` with `3 ≤ Fintype.card V`, the edge-to-triangle ratio `#edges / #triangles` in a
+characteristic-zero field equals `3 / (Fintype.card V - 2)`. -/
+theorem card_edges_div_card_triangles_complete {K : Type*} [Field K] [CharZero K]
+    (hV : 3 ≤ Fintype.card V) :
+    ((complete V).edges.card : K) / (complete V).triangles.card =
+      3 / (Fintype.card V - 2) := by
+  rw [natCast_card_edges_complete, natCast_card_triangles_complete]
+  have hn0 : (Fintype.card V : K) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  have hn1 : (Fintype.card V : K) - 1 ≠ 0 := by
+    rw [← Nat.cast_one, ← Nat.cast_sub (by omega)]
+    exact Nat.cast_ne_zero.mpr (by omega)
+  have hn2 : (Fintype.card V : K) - 2 ≠ 0 := by
+    rw [← Nat.cast_ofNat, ← Nat.cast_sub (by omega)]
+    exact Nat.cast_ne_zero.mpr (by omega)
+  rw [div_eq_div_iff (div_ne_zero (mul_ne_zero (mul_ne_zero hn0 hn1) hn2) (by norm_num)) hn2]
+  ring
+
 end FiniteVertices
 
 section Adjacency
+
+/-- Every edge of `X` contains two distinct vertices. -/
+theorem exists_vertices_of_mem_edges (X : TwoComplex V) {e : Finset V} (he : e ∈ X.edges) :
+    ∃ u v, u ≠ v ∧ u ∈ e ∧ v ∈ e := by
+  classical
+  obtain ⟨u, v, huv, rfl⟩ := card_eq_two.mp (X.edge_card e he)
+  exact ⟨u, v, huv, by simp, by simp⟩
+
+/-- Every filled triangle of `X` contains three pairwise distinct vertices. -/
+theorem exists_vertices_of_mem_triangles (X : TwoComplex V) {t : Finset V}
+    (ht : t ∈ X.triangles) :
+    ∃ u v w, u ≠ v ∧ u ≠ w ∧ v ≠ w ∧ u ∈ t ∧ v ∈ t ∧ w ∈ t := by
+  classical
+  obtain ⟨u, v, w, huv, huw, hvw, rfl⟩ := card_eq_three.mp (X.triangle_card t ht)
+  exact ⟨u, v, w, huv, huw, hvw, by simp, by simp, by simp⟩
+
+/-- In a linear order on `V`, every edge of `X` is `{u, v}` for some `u < v`. -/
+theorem exists_increasing_of_mem_edges [LinearOrder V] (X : TwoComplex V) {e : Finset V}
+    (he : e ∈ X.edges) : ∃ u v, u < v ∧ ({u, v} : Finset V) = e := by
+  obtain ⟨u, v, huv, rfl⟩ := card_eq_two.mp (X.edge_card e he)
+  rcases lt_or_gt_of_ne huv with hlt | hgt
+  · exact ⟨u, v, hlt, rfl⟩
+  · exact ⟨v, u, hgt, pair_comm v u⟩
+
+/-- In a linear order on `V`, every filled triangle of `X` is `{u, v, w}` for some `u < v < w`. -/
+theorem exists_increasing_of_mem_triangles [LinearOrder V] (X : TwoComplex V) {t : Finset V}
+    (ht : t ∈ X.triangles) : ∃ u v w, u < v ∧ v < w ∧ ({u, v, w} : Finset V) = t := by
+  obtain ⟨u, v, w, huv, hvw, hset⟩ :=
+    Set.powersetCard.exists_lt_lt_val_eq ⟨t, X.triangle_card t ht⟩
+  exact ⟨u, v, w, huv, hvw, hset.symm⟩
 
 /-- Two vertices are adjacent in `X` when they are distinct and lie in a common edge of `X`.
 Unlike `{u, v} ∈ X.edges`, this requires no `DecidableEq V` instance. -/
@@ -218,6 +267,7 @@ theorem adj_iff (X : TwoComplex V) (u v : V) :
     X.Adj u v ↔ u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e :=
   Iff.rfl
 
+@[grind .]
 theorem Adj.ne {X : TwoComplex V} {u v : V} (h : X.Adj u v) : u ≠ v :=
   h.1
 
@@ -225,10 +275,11 @@ theorem Adj.exists_mem_edges {X : TwoComplex V} {u v : V} (h : X.Adj u v) :
     ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e :=
   h.2
 
-@[simp]
+@[simp, grind .]
 theorem not_adj_self (X : TwoComplex V) (u : V) : ¬ X.Adj u u :=
   fun h => h.1 rfl
 
+@[symm, grind →]
 theorem Adj.symm {X : TwoComplex V} {u v : V} (h : X.Adj u v) : X.Adj v u :=
   ⟨h.1.symm, let ⟨e, he, hu, hv⟩ := h.2; ⟨e, he, hv, hu⟩⟩
 
@@ -259,7 +310,7 @@ theorem adj_of_mem_triangle (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.tria
     (insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩) (card_pair huv)
 
 /-- In the complete complex, two vertices are adjacent if and only if they are distinct. -/
-@[simp]
+@[simp, grind =]
 theorem adj_complete [Fintype V] (u v : V) : (complete V).Adj u v ↔ u ≠ v := by
   classical
   rw [adj_iff_pair_mem_edges, mem_edges_complete]

@@ -8,17 +8,14 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Invariance
 public import TauCeti.GroupTheory.Perm.MovedNorm
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
 /-!
 # First coboundary Cheeger constants of a two-complex
 
 Given a two-complex `X` on a finite linearly ordered vertex type `V` and a group norm `ℓ` on `G`,
-this file defines the three first coboundary expansion constants studied by Chapman–Lubotzky
-(*Stability of homomorphisms, coverings and cocycles I, II*) and Beasley (*The Permutation
-Coboundary Constant of the Complete Complex Is k/3 for Every k ≥ 4*):
+this file defines the three first coboundary expansion constants studied by Chapman and Lubotzky
+(*Stability of homomorphisms, coverings and cocycles I, II*) and Jeromie Beasley (*The Permutation
+Coboundary Constant of the Complete Complex Is k/3 for Every k≥4*):
 
 * `TauCeti.h1 X ℓ`: the counting coboundary Cheeger constant, defined as the infimum of
   `α.defect ℓ / α.gaugeDist ℓ` over 1-cochains `α` at strictly positive gauge distance. When no
@@ -27,13 +24,24 @@ Coboundary Constant of the Complete Complex Is k/3 for Every k ≥ 4*):
   the complete complex `complete V` with `3 ≤ Fintype.card V`, the normalizing factor simplifies to
   `3 / (Fintype.card V - 2)`.
 * `TauCeti.h1Sym X`: the same-degree permutation Cheeger constant, defined as the infimum of
-  `h1 X (Equiv.Perm.movedNorm (Fin (n + 2)))` over all degrees `n + 2 ≥ 2`. Degree `1` is excluded
-  because `Equiv.Perm (Fin 1)` is trivial, where `h1` vanishes identically.
+  `h1 X (Equiv.Perm.movedNorm (Fin (n + 2)))` over all degrees `n + 2 ≥ 2` (Chapman–Lubotzky II,
+  §2.2, eq. (2.8)). Degree `1` is excluded because `Equiv.Perm (Fin 1)` is trivial, where `h1`
+  vanishes identically.
 
 We establish nonnegativity, finite-group attainment of the infimum when a positive-gauge-distance
 cochain exists, invariance under positive rescaling of the norm, independence of the vertex linear
 order and invariance under vertex relabelling when `ℓ` is conjugation invariant, and the degree-2
 comparison `h1Sym X ≤ h1 X (Equiv.Perm.movedNorm (Fin 2))`.
+
+## References
+
+* M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles I: equivalence*,
+  arXiv:2310.17474v2, Eur. J. Math. 11 (2025), art. 13, §5.1.
+* M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles II: examples,
+  applications and open problems*, arXiv:2311.06706v3, Adv. Math. 463 (2025), 110117, §2.2,
+  eq. (2.8), footnote 2.
+* Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
+  k≥4*, Zenodo, doi:10.5281/zenodo.23245792, version 7.
 -/
 
 public section
@@ -161,16 +169,7 @@ theorem h1_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] (X : 
   rw [h1_def, h1_def]
   congr 1
   ext r
-  constructor
-  · rintro ⟨α', hα', rfl⟩
-    let α := (Cochain.relabelEquiv X e).symm α'
-    have hα : α.relabel e = α' := by
-      rw [← Cochain.relabelEquiv_apply X e, (Cochain.relabelEquiv X e).apply_symm_apply]
-    refine ⟨α, ?_, ?_⟩
-    · rwa [← α.gaugeDist_relabel ℓ e, hα]
-    · rw [← α.defect_relabel hℓ e, ← α.gaugeDist_relabel ℓ e, hα]
-  · rintro ⟨α, hα, rfl⟩
-    exact ⟨α.relabel e, by simpa using hα, by simp [α.defect_relabel hℓ e]⟩
+  exact ((Cochain.relabelEquiv X e).exists_congr fun α => by simp [α.defect_relabel hℓ e]).symm
 
 /-- Under a conjugation-invariant norm, `h1` on the complete complex is preserved along any
 bijection `V ≃ W`. -/
@@ -208,6 +207,12 @@ theorem h1Norm_nonneg [Fintype V] [LinearOrder V] (X : TwoComplex V) (ℓ : Grou
     0 ≤ h1Norm X ℓ :=
   mul_nonneg (div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _)) (h1_nonneg X ℓ)
 
+/-- Over a trivial coefficient group every cochain is trivial, so `h1Norm X ℓ = 0`. -/
+@[simp]
+theorem h1Norm_subsingleton [Subsingleton G] [Fintype V] [LinearOrder V] (X : TwoComplex V)
+    (ℓ : GroupNorm G) : h1Norm X ℓ = 0 := by
+  simp [h1Norm_def]
+
 @[simp]
 theorem h1Norm_smulOfPos [Fintype V] [LinearOrder V] (X : TwoComplex V) (ℓ : GroupNorm G)
     {r : ℝ} (hr : 0 < r) : h1Norm X (ℓ.smulOfPos hr) = h1Norm X ℓ := by
@@ -223,19 +228,6 @@ theorem h1Norm_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] (
     {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (e : V ≃ W) :
     h1Norm (X.relabel e) ℓ = h1Norm X ℓ := by
   simp [h1Norm_def, h1_relabel X hℓ e]
-
-/-- On `complete V` with `3 ≤ Fintype.card V`, the edge-to-triangle ratio `#edges / #triangles`
-equals `3 / (Fintype.card V - 2)`. -/
-theorem card_edges_div_card_triangles_complete [Fintype V] (hV : 3 ≤ Fintype.card V) :
-    ((complete V).edges.card : ℝ) / (complete V).triangles.card =
-      3 / (Fintype.card V - 2) := by
-  rw [natCast_card_edges_complete, natCast_card_triangles_complete]
-  have hk3 : (3 : ℝ) ≤ Fintype.card V := Nat.ofNat_le_cast.mpr hV
-  have hk0 : (Fintype.card V : ℝ) ≠ 0 := by linarith
-  have hk1 : (Fintype.card V : ℝ) - 1 ≠ 0 := by linarith
-  have hk2 : (Fintype.card V : ℝ) - 2 ≠ 0 := by linarith
-  field_simp
-  ring
 
 /-- On `complete V` with `3 ≤ Fintype.card V`, `h1Norm` equals `(3 / (Fintype.card V - 2)) * h1`. -/
 theorem h1Norm_complete [Fintype V] [LinearOrder V] (hV : 3 ≤ Fintype.card V)
