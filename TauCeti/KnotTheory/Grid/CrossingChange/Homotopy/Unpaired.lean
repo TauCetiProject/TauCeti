@@ -161,9 +161,7 @@ theorem exists_pentagonPair_of_mem_crossingChangeUnpairedHexagonComposites
     {F : GridHexagonCompositeDecomposition a C.turnRow t x z}
     (hF : F ∈ G.crossingChangeUnpairedHexagonComposites C t x z) :
     ∃ D : GridPentagonPairDecomposition a C.turnRow a t x z,
-      (D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
-        D.second ∈ ((G.swapColumns a b).pentagons (C.withTurnRow t) D.middle z).disjSum
-          ((G.swapColumns a b).initialPentagons (C.withTurnRow t) D.middle z)) ∧
+      D ∈ G.pentagonPairDecompositions C (C.withTurnRow t) x z ∧
       (D.first.isLeft = D.second.isLeft ∧
           D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∨
         D.first.isLeft ≠ D.second.isLeft ∧
