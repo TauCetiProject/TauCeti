@@ -324,8 +324,6 @@ generator at the component of `y` corresponds to the class `[y] - [x]`
 def reducedSingularHomology₀Iso {X : TopCat.{w}} (x : X) :
     (reducedSingularHomologyFunctor R 0).obj X ≅
       ∐ fun _ : {c : ZerothHomotopy X // c ≠ ZerothHomotopy.mk x} ↦ R :=
-  haveI := hasCoproducts_shrink.{0, w} (C := C)
-  haveI : HasZeroObject C := ⟨_, initialIsInitial.isZero⟩
   eqToIso (reducedSingularHomologyFunctor_zero_obj R X) ≪≫
     kernelIsoOfEq (X.singularHomology₀Iso_sigma_desc_id R).symm ≪≫
     kernelIsIsoComp (X.singularHomology₀Iso R).hom (Sigma.desc fun _ ↦ 𝟙 R) ≪≫

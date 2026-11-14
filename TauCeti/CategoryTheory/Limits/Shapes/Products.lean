@@ -26,19 +26,19 @@ and no biproducts; it is how products of skyscraper presheaves are shown to be f
 ## Reindexing a coproduct along an injection is split
 
 Let `X : I → C` be a family of objects of a category with zero morphisms, and let `f : J → I` be
-injective.  When both coproducts exist, reindexing along `f` gives a map `∐ (X ∘ f) ⟶ ∐ X`, and
-this file shows that it is a split monomorphism (`TauCeti.isSplitMono_sigmaMap'`): the retraction
-sends the summand indexed by `f j` back to the one indexed by `j`, and kills the summands indexed
-outside the range of `f`.  The index types may live in any universes, and no other coproducts are
-needed.
+injective.  When both coproducts exist, reindexing along `f` gives a map
+`∐ (fun j ↦ X (f j)) ⟶ ∐ X`, and this file shows that it is a split monomorphism
+(`TauCeti.isSplitMono_sigmaMap'`): the retraction sends the summand indexed by `f j` back to the
+one indexed by `j`, and kills the summands indexed outside the range of `f`.  The index types may
+live in any universes, and no other coproducts are needed.
 
 Mathlib's `CategoryTheory.Limits.MonoCoprod.mono_map'_of_injective` proves the same map is a
 monomorphism in a category satisfying `MonoCoprod`; the splitting below needs zero morphisms
 instead, and is the stronger statement in the situations where both apply.
 
-Dually, reindexing a product `∏ X ⟶ ∏ (X ∘ f)` along an injective `f` is a split epimorphism
-(`TauCeti.isSplitEpi_piMap'`): the section extends by zero on the factors indexed outside the range
-of `f`.
+Dually, reindexing a product `∏ X ⟶ ∏ (fun j ↦ X (f j))` along an injective `f` is a split
+epimorphism (`TauCeti.isSplitEpi_piMap'`): the section extends by zero on the factors indexed
+outside the range of `f`.
 
 Chain complexes built as coproducts over a set of simplices, singular or simplicial, get their
 degreewise splittings this way: for a pair of spaces the singular simplices of the subspace form a
@@ -47,7 +47,7 @@ each degree, and therefore stays exact after applying a contravariant `Hom(-, M)
 
 ## The kernel of the codiagonal
 
-Let `R` be an object of a preadditive category with a zero object, and let `ι` be a type with a
+Let `R` be an object of a preadditive category, and let `ι` be a type with a
 distinguished element `i₀`.  The codiagonal `Sigma.desc (fun _ ↦ 𝟙 R) : ∐ (fun _ : ι ↦ R) ⟶ R`,
 the identity on every summand, is a split epimorphism with section the inclusion of the summand
 `i₀`, and its kernel is the coproduct of the summands indexed by `i ≠ i₀`, embedded through the
@@ -118,12 +118,12 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] {I J : Type*}
 open scoped Classical in
 /-- Reindexing a coproduct along an injective map of index types is a split monomorphism. -/
 theorem isSplitMono_sigmaMap' (X : I → C) (f : J → I) (hf : Function.Injective f)
-    [HasCoproduct X] [HasCoproduct (X ∘ f)] :
-    IsSplitMono (Sigma.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
+    [HasCoproduct X] [HasCoproduct fun j ↦ X (f j)] :
+    IsSplitMono (Sigma.map' f fun j ↦ 𝟙 (X (f j))) :=
   IsSplitMono.mk'
     { retraction := Sigma.desc fun i ↦
         if h : i ∈ Set.range f then
-          eqToHom (congrArg X h.choose_spec).symm ≫ Sigma.ι (X ∘ f) h.choose
+          eqToHom (congrArg X h.choose_spec).symm ≫ Sigma.ι (fun j ↦ X (f j)) h.choose
         else 0
       id := by
         refine Sigma.hom_ext _ _ fun j ↦ ?_
@@ -131,25 +131,25 @@ theorem isSplitMono_sigmaMap' (X : I → C) (f : J → I) (hf : Function.Injecti
         have hj : h.choose = j := hf h.choose_spec
         rw [← Category.assoc, Sigma.ι_comp_map', Category.id_comp, Sigma.ι_comp_desc,
           dite_eq_left h, Category.comp_id]
-        exact Sigma.eqToHom_comp_ι (X ∘ f) hj }
+        exact Sigma.eqToHom_comp_ι (fun j ↦ X (f j)) hj }
 
 open scoped Classical in
 /-- Reindexing a product along an injective map of index types is a split epimorphism. -/
 theorem isSplitEpi_piMap' (X : I → C) (f : J → I) (hf : Function.Injective f)
-    [HasProduct X] [HasProduct (X ∘ f)] :
-    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
+    [HasProduct X] [HasProduct fun j ↦ X (f j)] :
+    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 (X (f j))) :=
   IsSplitEpi.mk'
     { section_ := Pi.lift fun i ↦
         if h : i ∈ Set.range f then
-          Pi.π (X ∘ f) h.choose ≫ eqToHom (congrArg X h.choose_spec)
+          Pi.π (fun j ↦ X (f j)) h.choose ≫ eqToHom (congrArg X h.choose_spec)
         else 0
       id := by
         refine Pi.hom_ext _ _ fun j ↦ ?_
         have h : f j ∈ Set.range f := ⟨j, rfl⟩
         have hj : h.choose = j := hf h.choose_spec
-        simp only [Category.assoc, Pi.map'_comp_π, Function.comp_apply, Category.comp_id,
+        simp only [Category.assoc, Pi.map'_comp_π, Category.comp_id,
           Pi.lift_comp_π, dite_eq_left h, Category.id_comp]
-        exact Pi.π_comp_eqToHom (X ∘ f) hj }
+        exact Pi.π_comp_eqToHom (fun j ↦ X (f j)) hj }
 
 end Reindex
 
@@ -214,12 +214,18 @@ def sigmaDescIdSplitting : (sigmaDescIdShortComplex R i₀).Splitting where
       simp
     · simp [Preadditive.comp_add, h]
 
-variable [HasZeroObject C]
-
-/-- The differences of coproduct inclusions form a kernel of the codiagonal. -/
+/-- The differences of coproduct inclusions form a kernel of the codiagonal: a morphism killed by
+the codiagonal lifts through the retraction `TauCeti.sigmaιSubιRetraction`.  Unlike
+`CategoryTheory.ShortComplex.Splitting.fIsKernel`, this needs no zero object. -/
 def isKernelSigmaιSubι :
     IsLimit (KernelFork.ofι (sigmaιSubι R i₀) (sigmaιSubι_desc_id R i₀)) :=
-  (sigmaDescIdSplitting R i₀).fIsKernel
+  KernelFork.IsLimit.ofι _ _ (fun x _ ↦ x ≫ (sigmaDescIdSplitting R i₀).r)
+    (fun x hx ↦ by
+      -- `r ≫ f + g ≫ s = 𝟙`, and `x ≫ g = 0` kills the second summand.
+      simpa [Preadditive.comp_add, reassoc_of% hx] using x ≫= (sigmaDescIdSplitting R i₀).id)
+    (fun x _ m hm ↦ by
+      -- `f ≫ r = 𝟙`, so `m = m ≫ f ≫ r = x ≫ r`.
+      simpa [← hm] using m ≫= (sigmaDescIdSplitting R i₀).f_r.symm)
 
 /-- The kernel of the codiagonal `∐_ι R ⟶ R` is the coproduct of the copies of `R` indexed by
 `i ≠ i₀`. -/
