@@ -417,19 +417,9 @@ theorem monotone_successiveMin (L : Submodule ℤ E) [DiscreteTopology L] [IsZLa
     (hK : 0 ∈ interior (K : Set E)) : Monotone (successiveMin L K) := by
   have := ConvexBody.finiteDimensional_of_zero_mem_interior hK
   intro i j hij
-  obtain ⟨a, ha, haL, -⟩ :=
-    exists_linearIndependent_gauge_eq_successiveMin_aux L hK (j + 1) (by omega)
-  have hpos (k : Fin (j + 1)) : 0 < gauge (K : Set E) (a k) :=
-    (ConvexBody.gauge_pos_iff hK).2 (ha.ne_zero k)
-  have hle (k : Fin (j + 1)) :
-      gauge (K : Set E) (a k) ≤ ∑ l, gauge (K : Set E) (a l) :=
-    Finset.single_le_sum (fun l _ ↦ (hpos l).le) (Finset.mem_univ k)
-  have ht : 0 < ∑ l, gauge (K : Set E) (a l) := (hpos 0).trans_le (hle 0)
-  refine csInf_le_csInf ⟨0, fun _ hs ↦ hs.1⟩ ⟨_, ht.le, a, ha, fun k ↦
-    ⟨(haL k).1, (ConvexBody.gauge_le_iff_mem_smul hK ht).1 (hle k)⟩⟩ ?_
-  rintro s ⟨hs, v, hv, hvLK⟩
-  exact ⟨hs, v ∘ Fin.castLE (Nat.succ_le_succ hij), hv.comp _ (Fin.castLE_injective _),
-    fun k ↦ hvLK _⟩
+  rw [← MeasureTheory.coe_successiveMin, ← MeasureTheory.coe_successiveMin, NNReal.coe_le_coe]
+  exact MeasureTheory.successiveMin_mono (absorbent_nhds_zero (mem_interior_iff_mem_nhds.1 hK))
+    hij (j.isLt.trans_eq (ZLattice.rank ℝ L).symm)
 
 omit [FiniteDimensional ℝ E] in
 /-- The successive minima of a discrete lattice with respect to a bounded body are positive. -/
