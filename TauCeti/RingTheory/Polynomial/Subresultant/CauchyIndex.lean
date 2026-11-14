@@ -115,11 +115,13 @@ private theorem sign_mul_sign_signedPsc_scale {lc : K} {m n ρ : ℕ} (h : n < m
 /-- After the leading entry, the signed coefficients of `(p, q)` and of `(q, -(p % q))` have the
 same permanences minus variations. -/
 private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
-    (h : q.natDegree < p.natDegree) (hn : q.natDegree ≠ 0) :
+    (h : q.natDegree < p.natDegree) :
     ((List.range (q.natDegree + 1)).reverse.map
         (signedPsc p q p.natDegree q.natDegree)).permanencesMinusVariations =
       ((List.range (q.natDegree + 1)).reverse.map (signedPsc q (-(p % q)) q.natDegree
         (-(p % q)).natDegree)).permanencesMinusVariations := by
+  rcases eq_or_ne q.natDegree 0 with hn | hn
+  · simp [hn]
   set m := p.natDegree
   set n := q.natDegree with hn'
   set ρ := (-(p % q)).natDegree with hρ'
@@ -207,7 +209,7 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedP
       rw [eq_C_of_natDegree_eq_zero hn, cauchyIndex_C]
     rw [hq0, hn]
     simp
-  rw [permanencesMinusVariations_signedPsc_neg_mod h hn]
+  rw [permanencesMinusVariations_signedPsc_neg_mod h]
   have hr : (-(p % q)).natDegree < q.natDegree := by
     rw [natDegree_neg]
     exact natDegree_mod_lt p hn
