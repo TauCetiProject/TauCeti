@@ -17,31 +17,24 @@ public import TauCeti.GroupTheory.TriangleGroup.Regular
 Every subgroup `H` of `Δ(a, b, c)` of finite index `n ≠ 0`, together with a numbering
 `e : Δ(a, b, c) ⧸ H ≃ Fin n` of its left cosets, determines a connected permutation triple
 `TauCeti.TriangleGroup.cosetTriple H e` of degree `n` whose component orders divide `a`, `b`, `c`.
-Combining `TauCeti.TriangleGroup.permutationTripleEquiv` with the coset-representation theorems of
-`TauCeti.Algebra.GroupAction.CosetRepresentation`, this file establishes the full coset dictionary
-for arbitrary triangle groups `Δ(a, b, c)`:
+Combining `TauCeti.TriangleGroup.permutationTripleEquiv` with
+`TauCeti.Algebra.GroupAction.CosetRepresentation` gives the coset dictionary for `Δ(a, b, c)`:
 
 * **Millington's theorem (`TauCeti.TriangleGroup.cosetTriple_equivalent_cosetTriple_iff`,
-  `TauCeti.TriangleGroup.cosetIsoClassEquiv`).** Two coset triples of degree `n` are isomorphic if
-  and only if their subgroups are conjugate in `Δ(a, b, c)`, giving for `n ≠ 0` a bijection between
-  conjugacy classes of index-`n` subgroups of `Δ(a, b, c)` and isomorphism classes of connected
-  degree-`n` triples with component orders dividing `(a, b, c)`.
+  `TauCeti.TriangleGroup.cosetIsoClassEquiv`).** Two coset triples are isomorphic iff their
+  subgroups are conjugate in `Δ(a, b, c)`, identifying conjugacy classes of index-`n` subgroups for
+  `n ≠ 0` with `connectedIsoClasses a b c n`.
 * **Pointed Millington (`TauCeti.TriangleGroup.markedIsoClass_cosetTriple_eq_iff`,
-  `TauCeti.TriangleGroup.cosetMarkedIsoClassEquiv`).** Marking the base coset `e 1` removes the
-  conjugacy ambiguity: for `n ≠ 0`, subgroups of `Δ(a, b, c)` of index `n` are in bijection with
-  marked isomorphism classes of connected triples of degree `n` whose component orders divide
-  `a`, `b`, `c`.
-* **Monodromy, automorphisms, and conjugate count.** The monodromy group of `cosetTriple H e` is
-  canonically isomorphic to `Δ(a, b, c) ⧸ H.normalCore` via the first isomorphism theorem
+  `TauCeti.TriangleGroup.cosetMarkedIsoClassEquiv`).** Marking the base coset `e 1` identifies
+  index-`n` subgroups of `Δ(a, b, c)` for `n ≠ 0` with `markedIsoClasses a b c n`.
+* **Monodromy, automorphisms, and finiteness.** The monodromy group of `cosetTriple H e` is
+  `Δ(a, b, c) ⧸ H.normalCore`
   (`TauCeti.TriangleGroup.monodromyGroupCosetTripleMulEquivQuotientNormalCore`), its automorphism
-  group is isomorphic to `(H.normalizerQuotient)ᵐᵒᵖ`
-  (`TauCeti.TriangleGroup.automorphismGroupCosetTripleMulEquiv`), and the number of subgroups
-  realizing the isomorphism class of `cosetTriple H e` times the order of its automorphism group
-  equals `n`
-  (`TauCeti.TriangleGroup.ncard_subgroups_of_cosetTriple_class_mul_card_automorphismGroup`).
-* **Finiteness at fixed index (`TauCeti.TriangleGroup.finite_subgroups_of_index`,
-  `TauCeti.TriangleGroup.finite_orbitRel_quotient_ofIndex`).** Because `MarkedIsoClass n` is finite,
-  `Δ(a, b, c)` has only finitely many subgroups of any nonzero finite index `n`.
+  group is `(H.normalizerQuotient)ᵐᵒᵖ`
+  (`TauCeti.TriangleGroup.automorphismGroupCosetTripleMulEquiv`), the number of subgroups in its
+  class times `#Aut` equals `n`
+  (`TauCeti.TriangleGroup.ncard_subgroups_of_cosetTriple_class_mul_card_automorphismGroup`), and for
+  `n ≠ 0` there are finitely many index-`n` subgroups (`TauCeti.TriangleGroup.finite_ofIndex`).
 
 ## References
 
@@ -77,11 +70,9 @@ theorem cosetTriple_eq_permutationTripleEquiv (H : Subgroup (TriangleGroup a b c
 
 /-- Precomposing a permutation representation of `Δ(a, b, c)` with `TriangleGroup.mirror` mirrors
 its permutation triple. -/
-@[simp]
-theorem permutationTripleEquiv_comp_mirror (ρ : TriangleGroup a b c →* Perm (Fin n)) :
+@[simp] theorem permutationTripleEquiv_comp_mirror (ρ : TriangleGroup a b c →* Perm (Fin n)) :
     (permutationTripleEquiv
-      (ρ.comp (mirror (a := a) (b := b) (c := c) :
-        TriangleGroup a b c →* TriangleGroup a b c))).1 =
+      (ρ.comp ((mirror : TriangleGroup a b c ≃* _) : TriangleGroup a b c →* _))).1 =
       (permutationTripleEquiv ρ).1.mirror := by
   ext1 <;> simp
 
@@ -89,21 +80,18 @@ theorem permutationTripleEquiv_comp_mirror (ρ : TriangleGroup a b c →* Perm (
 precomposed with `TriangleGroup.mirror`. -/
 theorem toPerm_mirror (t : PermutationTriple n) (ha : t.σ0 ^ a = 1) (hb : t.σ1 ^ b = 1)
     (hc : t.σinf ^ c = 1) {ha' hb' hc'} :
-    toPerm t.mirror ha' hb' hc' =
-      (toPerm t ha hb hc).comp
-        (mirror (a := a) (b := b) (c := c) : TriangleGroup a b c →* TriangleGroup a b c) := by
+    toPerm t.mirror ha' hb' hc' = (toPerm t ha hb hc).comp
+      (mirror : TriangleGroup a b c ≃* TriangleGroup a b c).toMonoidHom := by
   ext <;> simp
 
 /-- Transporting a coset numbering along `TriangleGroup.mirror` mirrors the coset triple. -/
 theorem cosetTriple_congrOfMapEq_mirror {K H : Subgroup (TriangleGroup a b c)}
-    (h : K.map ((mirror (a := a) (b := b) (c := c)) :
-      TriangleGroup a b c →* TriangleGroup a b c) = H)
+    (h : K.map (mirror : TriangleGroup a b c ≃* TriangleGroup a b c).toMonoidHom = H)
     (e : TriangleGroup a b c ⧸ H ≃ Fin n) :
-    cosetTriple K
-        ((TauCeti.QuotientGroup.congrOfMapEq (mirror (a := a) (b := b) (c := c)) h).trans e) =
+    cosetTriple K ((TauCeti.QuotientGroup.congrOfMapEq mirror h).trans e) =
       (cosetTriple H e).mirror := by
   rw [cosetTriple_eq_permutationTripleEquiv, cosetTriple_eq_permutationTripleEquiv,
-    Equiv.permutationRepresentation_congrOfMapEq (mirror (a := a) (b := b) (c := c)) h e]
+    Equiv.permutationRepresentation_congrOfMapEq mirror h e]
   exact permutationTripleEquiv_comp_mirror _
 
 /-- For any coset numberings, the coset triple of the mirror subgroup `H.map mirror` is isomorphic
@@ -111,15 +99,11 @@ to the mirror of the coset triple of `H`. -/
 theorem equivalent_mirror_cosetTriple (H : Subgroup (TriangleGroup a b c))
     (e : TriangleGroup a b c ⧸ H ≃ Fin n)
     (e' : TriangleGroup a b c ⧸
-      H.map ((mirror (a := a) (b := b) (c := c)) :
-        TriangleGroup a b c →* TriangleGroup a b c) ≃ Fin n) :
-    (cosetTriple
-      (H.map ((mirror (a := a) (b := b) (c := c)) :
-        TriangleGroup a b c →* TriangleGroup a b c)) e').Equivalent
-      (cosetTriple H e).mirror := by
+      H.map (mirror : TriangleGroup a b c ≃* TriangleGroup a b c).toMonoidHom ≃ Fin n) :
+    (cosetTriple (H.map (mirror : TriangleGroup a b c ≃* TriangleGroup a b c).toMonoidHom)
+      e').Equivalent (cosetTriple H e).mirror := by
   let μ : TriangleGroup a b c ≃* TriangleGroup a b c := mirror
-  have hmap : (H.map (μ : TriangleGroup a b c →* TriangleGroup a b c)).map
-      (μ : TriangleGroup a b c →* TriangleGroup a b c) = H := by
+  have hmap : (H.map μ.toMonoidHom).map μ.toMonoidHom = H := by
     rw [Subgroup.map_map]
     convert Subgroup.map_id H
     exact MonoidHom.ext mirror_mirror
@@ -217,7 +201,7 @@ theorem exists_cosetTriple_equivalent {t : PermutationTriple n} (ht : t.IsConnec
       (e : TriangleGroup a b c ⧸ H ≃ Fin n),
       H.index = n ∧ (cosetTriple H e).Equivalent t := by
   obtain ⟨ha, hb, hc⟩ := (hasDividingOrders_iff t).mp hd
-  have hρ := (isConnected_iff_isPretransitive_range_toPerm t ha hb hc).mp ht |>.2
+  have hρ := ((isConnected_iff_isPretransitive_range_toPerm t ha hb hc).mp ht).2
   let i : Fin n := ⟨0, Nat.pos_of_ne_zero ht.ne_zero⟩
   let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t ha hb hc)
   let e : TriangleGroup a b c ⧸ H ≃ Fin n := (toPerm t ha hb hc).quotientComapStabilizerEquiv hρ i
@@ -232,8 +216,7 @@ def connectedIsoClasses : Set (IsoClass n) :=
 
 /-- The isomorphism class of `t` lies in `connectedIsoClasses a b c n` if and only if `t` is
 connected with component orders dividing `a`, `b`, and `c`. -/
-@[simp]
-theorem mk_mem_connectedIsoClasses_iff {t : PermutationTriple n} :
+@[simp] theorem mk_mem_connectedIsoClasses_iff {t : PermutationTriple n} :
     IsoClass.mk t ∈ connectedIsoClasses a b c n ↔ t.IsConnected ∧ t.HasDividingOrders a b c := by
   refine ⟨?_, fun h ↦ ⟨t, h, rfl⟩⟩
   rintro ⟨t', ⟨hc, hd⟩, h⟩
@@ -249,8 +232,7 @@ def markedIsoClasses : Set (MarkedIsoClass n) :=
 
 /-- The marked class of `(t, i)` lies in `markedIsoClasses a b c n` if and only if the component
 orders of `t` divide `a`, `b`, and `c`. -/
-@[simp]
-theorem mk_mem_markedIsoClasses_iff {t : ConnectedTriple n} {i : Fin n} :
+@[simp] theorem mk_mem_markedIsoClasses_iff {t : ConnectedTriple n} {i : Fin n} :
     MarkedIsoClass.mk t i ∈ markedIsoClasses a b c n ↔ t.1.HasDividingOrders a b c := by
   refine ⟨?_, fun hd ↦ ⟨t, i, hd, rfl⟩⟩
   rintro ⟨t', i', hd, h⟩
@@ -273,12 +255,10 @@ private noncomputable def cosetIsoClassAux [NeZero n]
     (fun H ↦ ⟨IsoClass.mk (cosetTriple H.1 (cosetEquivFinOfIndex H)),
       mk_mem_connectedIsoClasses_iff.mpr
         ⟨isConnected_cosetTriple _ _, hasDividingOrders_cosetTriple _ _⟩⟩)
-    fun H₁ H₂ hrel ↦ by
-      obtain ⟨g, hg⟩ := hrel
-      refine Subtype.ext (IsoClass.mk_eq_mk_iff.mpr ?_)
-      refine (cosetTriple_equivalent_cosetTriple_iff _ _).mpr ⟨g⁻¹, ?_⟩
+    fun H₁ H₂ ⟨g, hg⟩ ↦ by
       have hval : g • H₂.1 = H₁.1 := congrArg Subtype.val hg
-      rw [← hval, inv_smul_smul]
+      exact Subtype.ext <| IsoClass.mk_eq_mk_iff.mpr <|
+        (cosetTriple_equivalent_cosetTriple_iff _ _).mpr ⟨g⁻¹, by rw [← hval, inv_smul_smul]⟩
 
 private theorem coe_cosetIsoClassAux_mk [NeZero n]
     (H : Subgroup.ofIndex (TriangleGroup a b c) n) :
@@ -291,19 +271,15 @@ private theorem bijective_cosetIsoClassAux [NeZero n] :
   · induction q₁ using Quotient.inductionOn' with | h H₁ =>
     induction q₂ using Quotient.inductionOn' with | h H₂ =>
     have hmk : IsoClass.mk (cosetTriple H₁.1 (cosetEquivFinOfIndex H₁)) =
-        IsoClass.mk (cosetTriple H₂.1 (cosetEquivFinOfIndex H₂)) :=
-      congrArg Subtype.val h
-    obtain ⟨g, hg⟩ := (cosetTriple_equivalent_cosetTriple_iff _ _).mp
-      (IsoClass.mk_eq_mk_iff.mp hmk)
+        IsoClass.mk (cosetTriple H₂.1 (cosetEquivFinOfIndex H₂)) := congrArg Subtype.val h
+    obtain ⟨g, hg⟩ := (cosetTriple_equivalent_cosetTriple_iff _ _).mp (IsoClass.mk_eq_mk_iff.mp hmk)
     exact Quotient.eq''.mpr ⟨g⁻¹, Subtype.ext (by
       rw [SubMulAction.val_smul_of_tower, ← hg, inv_smul_smul])⟩
   · obtain ⟨t, ⟨ht, hd⟩, hC⟩ := C.2
     obtain ⟨H, _, e, hH, heq⟩ := exists_cosetTriple_equivalent ht hd
-    let H' : Subgroup.ofIndex (TriangleGroup a b c) n := ⟨H, Subgroup.mem_ofIndex.mpr hH⟩
-    refine ⟨Quotient.mk'' H', Subtype.ext ?_⟩
+    refine ⟨Quotient.mk'' ⟨H, Subgroup.mem_ofIndex.mpr hH⟩, Subtype.ext ?_⟩
     rw [coe_cosetIsoClassAux_mk, ← hC,
-      IsoClass.mk_eq_mk_iff.mpr (equivalent_cosetTriple H _ e),
-      IsoClass.mk_eq_mk_iff.mpr heq]
+      IsoClass.mk_eq_mk_iff.mpr (equivalent_cosetTriple H _ e), IsoClass.mk_eq_mk_iff.mpr heq]
 
 /-- **Millington's theorem for `Δ(a, b, c)` (bundled bijection).** For `n ≠ 0`, conjugacy classes
 of index-`n` subgroups of `Δ(a, b, c)` are in bijection with isomorphism classes of connected
@@ -318,8 +294,7 @@ noncomputable def cosetIsoClassEquiv [NeZero n] :
 theorem coe_cosetIsoClassEquiv_mk [NeZero n] (H : Subgroup.ofIndex (TriangleGroup a b c) n)
     (e : TriangleGroup a b c ⧸ H.1 ≃ Fin n) :
     (cosetIsoClassEquiv (Quotient.mk'' H) : IsoClass n) = IsoClass.mk (cosetTriple H.1 e) := by
-  rw [cosetIsoClassEquiv, Equiv.ofBijective_apply, coe_cosetIsoClassAux_mk,
-    IsoClass.mk_eq_mk_iff]
+  rw [cosetIsoClassEquiv, Equiv.ofBijective_apply, coe_cosetIsoClassAux_mk, IsoClass.mk_eq_mk_iff]
   exact equivalent_cosetTriple H.1 _ e
 
 private noncomputable def cosetMarkedIsoClassAux [NeZero n]
@@ -342,7 +317,7 @@ private theorem bijective_cosetMarkedIsoClassAux [NeZero n] :
     (congrArg Subtype.val h)), fun M ↦ ?_⟩
   obtain ⟨t, i, hd, hM⟩ := M.2
   obtain ⟨ha, hb, hc⟩ := (hasDividingOrders_iff t.1).mp hd
-  have hρ := (isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2 |>.2
+  have hρ := ((isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2).2
   let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc)
   let e : TriangleGroup a b c ⧸ H ≃ Fin n := (toPerm t.1 ha hb hc).quotientComapStabilizerEquiv hρ i
   let H' : Subgroup.ofIndex (TriangleGroup a b c) n :=
@@ -378,15 +353,14 @@ theorem coe_cosetMarkedIsoClassEquiv_apply [NeZero n]
 
 /-- The inverse of `cosetMarkedIsoClassEquiv` sends the marked class of `(t, i)` to the stabilizer
 of the marked sheet `i` under `toPerm t`. -/
-@[simp]
-theorem coe_cosetMarkedIsoClassEquiv_symm_mk [NeZero n] (t : ConnectedTriple n) (i : Fin n)
+@[simp] theorem coe_cosetMarkedIsoClassEquiv_symm_mk [NeZero n] (t : ConnectedTriple n) (i : Fin n)
     (ha : t.1.σ0 ^ a = 1) (hb : t.1.σ1 ^ b = 1) (hc : t.1.σinf ^ c = 1) :
     (cosetMarkedIsoClassEquiv.symm
       ⟨MarkedIsoClass.mk t i,
         mk_mem_markedIsoClasses_iff.mpr ((hasDividingOrders_iff t.1).mpr ⟨ha, hb, hc⟩)⟩ :
         Subgroup (TriangleGroup a b c)) =
       (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc) := by
-  have hρ := (isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2 |>.2
+  have hρ := ((isConnected_iff_isPretransitive_range_toPerm t.1 ha hb hc).mp t.2).2
   let H := (MulAction.stabilizer (Perm (Fin n)) i).comap (toPerm t.1 ha hb hc)
   let e : TriangleGroup a b c ⧸ H ≃ Fin n := (toPerm t.1 ha hb hc).quotientComapStabilizerEquiv hρ i
   let H' : Subgroup.ofIndex (TriangleGroup a b c) n :=
@@ -480,9 +454,9 @@ theorem finite_subgroups_of_index (a b c n : ℕ) [NeZero n] :
 index `n`. -/
 theorem finite_orbitRel_quotient_ofIndex (a b c n : ℕ) [NeZero n] :
     Finite (MulAction.orbitRel.Quotient (ConjAct (TriangleGroup a b c))
-      (Subgroup.ofIndex (TriangleGroup a b c) n)) := by
+      (Subgroup.ofIndex (TriangleGroup a b c) n)) :=
   have := finite_ofIndex a b c n
-  exact Quotient.finite _
+  Quotient.finite _
 
 end TriangleGroup
 

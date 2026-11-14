@@ -15,45 +15,29 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 /-!
 # The modular coset triple and Millington's theorem
 
-Through the presentation `TauCeti.ModularGroup.modularEquiv : TriangleGroup 3 2 0 ≃* PSL(2, ℤ)`
-sending `x, y, z` to `U = S T⁻¹`, `S`, and `T`, every subgroup `Γ'` of `PSL(2, ℤ)` together with a
-numbering `e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n` of its left cosets determines a connected permutation triple
-`TauCeti.ModularGroup.modularTriple Γ' e` of degree `n` satisfying `σ0 ^ 3 = 1`, `σ1 ^ 2 = 1`, and
-`σinf * σ1 * σ0 = 1`. Specializing the general triangle-group coset dictionary of
-`TauCeti.GroupTheory.TriangleGroup.CosetTriple` along `modularEquiv` yields Millington's
-classification of finite-index subgroups of `PSL(2, ℤ)`:
+Through `TauCeti.ModularGroup.modularEquiv : TriangleGroup 3 2 0 ≃* PSL(2, ℤ)` sending `x, y, z` to
+`U = S T⁻¹`, `S`, and `T`, every subgroup `Γ'` of `PSL(2, ℤ)` with a coset numbering
+`e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n` determines a connected permutation triple
+`TauCeti.ModularGroup.modularTriple Γ' e` of degree `n` with `σ0 ^ 3 = 1` and `σ1 ^ 2 = 1`.
+Specializing `TauCeti.GroupTheory.TriangleGroup.CosetTriple` along `modularEquiv` gives Millington's
+dictionary for `PSL(2, ℤ)`:
 
 * **The modular triple (`TauCeti.ModularGroup.modularTriple`).** Its components are the coset
-  permutations of `U`, `S`, and `T`, with `permS`, `permT`, and `permR` recording the permutations
-  of `S`, `T`, and `R = S T`. Transporting along `modularEquiv` identifies `modularTriple Γ' e`
-  with `TriangleGroup.cosetTriple` (`TauCeti.ModularGroup.modularTriple_eq_cosetTriple`), giving
-  connectedness, point stabilizer `Γ'` at `e 1`, kernel `Γ'.normalCore`, monodromy group
-  `PSL(2, ℤ) ⧸ Γ'.normalCore`, and the regularity criterion `IsRegular ↔ Γ'.Normal`.
-* **Opposite and mirror conventions.** Reading right multiplication on right cosets `Γ' g` through
-  the inversion bijection `g Γ' ↦ Γ' g⁻¹` gives the opposite-convention triple
-  `PermutationTriple.equivOppositeConvention` and the LMFDB row formulas
-  (`TauCeti.ModularGroup.equivOppositeConvention_modularTriple_quotientRightRel`,
-  `TauCeti.ModularGroup.modularTriple_quotientRightRel`), while conjugating by `diag(-1, 1)` on
-  `PSL(2, ℤ)` (`TauCeti.ModularGroup.conjJAut`) mirrors the modular triple
-  (`TauCeti.ModularGroup.modularTriple_congrOfMapEq_conjJAut`,
-  `TauCeti.ModularGroup.equivalent_mirror_modularTriple`).
-* **Millington's theorem (`TauCeti.ModularGroup.millington`,
-  `TauCeti.ModularGroup.modularIsoClassEquiv`,
-  `TauCeti.ModularGroup.modularMarkedIsoClassEquiv`).** Two modular triples are isomorphic if and
-  only if the subgroups are conjugate in `PSL(2, ℤ)`, every connected triple with `σ0 ^ 3 = 1` and
-  `σ1 ^ 2 = 1` arises from a finite-index subgroup
-  (`TauCeti.ModularGroup.exists_modularTriple_equivalent`), conjugacy classes of index-`n`
-  subgroups correspond to `modularIsoClasses n`, and index-`n` subgroups themselves correspond to
-  `modularMarkedIsoClasses n`, with each isomorphism class containing `n / |Aut|` subgroups
-  (`TauCeti.ModularGroup.card_subgroups_of_class`).
-* **Finiteness and small-index classification (`TauCeti.ModularGroup.finite_subgroups_of_index`,
-  `TauCeti.ModularGroup.infinite_orbitRel_quotient_ofIndex_zero`,
-  `TauCeti.ModularGroup.natCard_orbitRel_quotient_ofIndex_eq`,
-  `TauCeti.ModularGroup.natCard_conjClasses_index_one`, `natCard_conjClasses_index_two`,
-  `natCard_conjClasses_index_three`).** For `n ≠ 0`, `PSL(2, ℤ)` has finitely many subgroups (and
-  conjugacy classes of subgroups) of index `n`, whereas at `n = 0` (infinite index) there are
-  infinitely many conjugacy classes; in indices `1`, `2`, and `3` there are respectively `1`, `1`,
-  and `2` conjugacy classes.
+  permutations of `U`, `S`, and `T` (`permS`, `permT`, and `permR` for `S`, `T`, and `R = S T`).
+  Via `TauCeti.ModularGroup.modularTriple_eq_cosetTriple`, it is connected with stabilizer `Γ'` at
+  `e 1`, monodromy `PSL(2, ℤ) ⧸ Γ'.normalCore`, and `IsRegular ↔ Γ'.Normal`.
+* **Opposite and mirror conventions.** Passing from right cosets `Γ' g` to left cosets via
+  `g Γ' ↦ Γ' g⁻¹` gives the LMFDB formulas (`TauCeti.ModularGroup.modularTriple_quotientRightRel`),
+  and conjugation by `diag(-1, 1)` (`TauCeti.ModularGroup.conjJAut`) mirrors the modular triple
+  (`TauCeti.ModularGroup.equivalent_mirror_modularTriple`).
+* **Millington's theorem (`TauCeti.ModularGroup.millington`, `modularIsoClassEquiv`,
+  `modularMarkedIsoClassEquiv`).** Modular triples are isomorphic iff the subgroups are conjugate in
+  `PSL(2, ℤ)`, giving bijections with `modularIsoClasses n` and `modularMarkedIsoClasses n` for
+  `n ≠ 0` and the subgroup-count identity `TauCeti.ModularGroup.card_subgroups_of_class`.
+* **Finiteness and small indices (`TauCeti.ModularGroup.finite_subgroups_of_index`,
+  `infinite_orbitRel_quotient_ofIndex_zero`, `natCard_orbitRel_quotient_ofIndex_eq`).** `PSL(2, ℤ)`
+  has finitely many subgroups of each nonzero index `n`, infinitely many conjugacy classes of
+  infinite index (`n = 0`), and `1`, `1`, `2` conjugacy classes in indices `1`, `2`, `3`.
 
 ## References
 
@@ -84,22 +68,18 @@ noncomputable def modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) �
   σ0 := e.permutationRepresentation (U : PSL(2, ℤ))
   σ1 := e.permutationRepresentation (S : PSL(2, ℤ))
   σinf := e.permutationRepresentation (T : PSL(2, ℤ))
-  product_eq_one := by
-    rw [← map_mul, ← map_mul, coe_T_mul_coe_S_mul_coe_U, map_one]
+  product_eq_one := by rw [← map_mul, ← map_mul, coe_T_mul_coe_S_mul_coe_U, map_one]
 
 /-- The `0`-component of `modularTriple Γ' e` is the coset permutation of `U = S T⁻¹`. -/
-@[simp]
-theorem modularTriple_σ0 (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+@[simp] theorem modularTriple_σ0 (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     (modularTriple Γ' e).σ0 = e.permutationRepresentation (U : PSL(2, ℤ)) := (rfl)
 
 /-- The `1`-component of `modularTriple Γ' e` is the coset permutation of `S`. -/
-@[simp]
-theorem modularTriple_σ1 (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+@[simp] theorem modularTriple_σ1 (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     (modularTriple Γ' e).σ1 = e.permutationRepresentation (S : PSL(2, ℤ)) := (rfl)
 
 /-- The `∞`-component of `modularTriple Γ' e` is the coset permutation of `T`. -/
-@[simp]
-theorem modularTriple_σinf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+@[simp] theorem modularTriple_σinf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     (modularTriple Γ' e).σinf = e.permutationRepresentation (T : PSL(2, ℤ)) := (rfl)
 
 /-- The coset permutation of `S`, equal to `(modularTriple Γ' e).σ1`. -/
@@ -126,8 +106,7 @@ theorem permR_eq_permS_inv_mul_σ0_inv_mul_permS (Γ' : Subgroup PSL(2, ℤ))
     permR Γ' e = (permS Γ' e)⁻¹ * (modularTriple Γ' e).σ0⁻¹ * permS Γ' e := by
   rw [permR, permS, modularTriple_σ1, modularTriple_σ0, ← map_inv, ← map_inv, ← map_mul,
     ← map_mul, ← coe_S_mul_coe_R_inv_mul_coe_S_inv]
-  congr 1
-  group
+  exact congrArg _ (by group)
 
 /-- Transporting cosets along `modularEquiv : TriangleGroup 3 2 0 ≃* PSL(2, ℤ)` identifies
 `modularTriple Γ' e` with `TriangleGroup.cosetTriple`. -/
@@ -160,9 +139,8 @@ theorem index_eq_of_equiv (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' 
   rw [Subgroup.index_eq_card, Nat.card_congr e, Nat.card_fin]
 
 /-- A coset space `PSL(2, ℤ) ⧸ Γ'` is nonempty, so any `Fin n` numbering forces `n ≠ 0`. -/
-theorem ne_zero_of_equiv (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : n ≠ 0 := by
-  have := modularTriple_eq_cosetTriple Γ' e
-  exact TriangleGroup.ne_zero_of_equiv _
+theorem ne_zero_of_equiv (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : n ≠ 0 :=
+  TriangleGroup.ne_zero_of_equiv _
     ((TauCeti.QuotientGroup.congrOfMapEq modularEquiv
       (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ')).trans e)
 
@@ -205,8 +183,7 @@ theorem modularIsoClass_eq_mk (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex]
   IsoClass.mk_eq_mk_iff.mpr (equivalent_modularTriple Γ' _ e)
 
 /-- On the full modular group `⊤`, the modular triple is the trivial triple `1`. -/
-@[simp]
-theorem modularTriple_top (e : PSL(2, ℤ) ⧸ (⊤ : Subgroup PSL(2, ℤ)) ≃ Fin 1) :
+@[simp] theorem modularTriple_top (e : PSL(2, ℤ) ⧸ (⊤ : Subgroup PSL(2, ℤ)) ≃ Fin 1) :
     modularTriple ⊤ e = 1 :=
   Subsingleton.elim _ _
 
@@ -238,8 +215,8 @@ theorem natCard_monodromyGroup_modularTriple (Γ' : Subgroup PSL(2, ℤ))
   exact Nat.card_congr (monodromyGroupModularTripleMulEquivQuotientNormalCore Γ' e).toEquiv
 
 /-- `modularTriple Γ' e` is regular if and only if `Γ'` is normal in `PSL(2, ℤ)`. -/
-@[simp]
-theorem isRegular_modularTriple_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+@[simp] theorem isRegular_modularTriple_iff (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     (modularTriple Γ' e).IsRegular ↔ Γ'.Normal := by
   rw [modularTriple_eq_cosetTriple, TriangleGroup.isRegular_cosetTriple_iff]
   refine ⟨fun h ↦ ?_, fun _ ↦ inferInstance⟩
@@ -312,20 +289,17 @@ def conjJAut : MulAut PSL(2, ℤ) :=
 
 /-- `conjJAut` acts on the projective class of `γ : SL(2, ℤ)` via `SpecialLinearGroup.conjJ`. -/
 theorem conjJAut_mk (γ : SL(2, ℤ)) :
-    conjJAut (γ : PSL(2, ℤ)) = (SpecialLinearGroup.conjJ γ : PSL(2, ℤ)) := by
-  rw [conjJAut]
-  exact (MulAut.mapQuotient_mk (Subgroup.center SL(2, ℤ)) SpecialLinearGroup.conjJMulAut γ).trans
+    conjJAut (γ : PSL(2, ℤ)) = (SpecialLinearGroup.conjJ γ : PSL(2, ℤ)) :=
+  (MulAut.mapQuotient_mk (Subgroup.center SL(2, ℤ)) SpecialLinearGroup.conjJMulAut γ).trans
     (congrArg _ (SpecialLinearGroup.conjJMulAut_apply γ))
 
 /-- `conjJAut` is an involution of `PSL(2, ℤ)`. -/
-@[simp]
-theorem conjJAut_conjJAut (g : PSL(2, ℤ)) : conjJAut (conjJAut g) = g := by
-  induction g using QuotientGroup.induction_on with
-  | H γ => rw [conjJAut_mk, conjJAut_mk, SpecialLinearGroup.conjJ_conjJ]
+@[simp] theorem conjJAut_conjJAut (g : PSL(2, ℤ)) : conjJAut (conjJAut g) = g :=
+  QuotientGroup.induction_on g fun γ ↦ by
+    rw [conjJAut_mk, conjJAut_mk, SpecialLinearGroup.conjJ_conjJ]
 
 /-- `conjJAut` fixes `S` in `PSL(2, ℤ)`. -/
-@[simp]
-theorem conjJAut_S : conjJAut (S : PSL(2, ℤ)) = S := by
+@[simp] theorem conjJAut_S : conjJAut (S : PSL(2, ℤ)) = S := by
   have hS : SpecialLinearGroup.conjJ S = -S := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [coe_S]
@@ -333,22 +307,19 @@ theorem conjJAut_S : conjJAut (S : PSL(2, ℤ)) = S := by
   simp
 
 /-- `conjJAut` inverts `T` in `PSL(2, ℤ)`. -/
-@[simp]
-theorem conjJAut_T : conjJAut (T : PSL(2, ℤ)) = (T : PSL(2, ℤ))⁻¹ := by
+@[simp] theorem conjJAut_T : conjJAut (T : PSL(2, ℤ)) = (T : PSL(2, ℤ))⁻¹ := by
   have hT : SpecialLinearGroup.conjJ T = T⁻¹ := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [coe_T]
   rw [conjJAut_mk, hT, QuotientGroup.mk_inv]
 
 /-- `conjJAut` sends `U = S T⁻¹` to `R = S T`. -/
-@[simp]
-theorem conjJAut_U : conjJAut (U : PSL(2, ℤ)) = R := by
+@[simp] theorem conjJAut_U : conjJAut (U : PSL(2, ℤ)) = R := by
   rw [U_def, R_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv, conjJAut_S,
     conjJAut_T, inv_inv, QuotientGroup.mk_mul]
 
 /-- `conjJAut` sends `R = S T` to `U = S T⁻¹`. -/
-@[simp]
-theorem conjJAut_R : conjJAut (R : PSL(2, ℤ)) = U := by
+@[simp] theorem conjJAut_R : conjJAut (R : PSL(2, ℤ)) = U := by
   rw [← conjJAut_U, conjJAut_conjJAut]
 
 private theorem coe_S_mul_coe_U_inv_mul_coe_S :
@@ -370,22 +341,19 @@ theorem conjJAut_modularEquiv (x : TriangleGroup 3 2 0) :
 
 /-- Transporting a coset numbering along `conjJAut` mirrors the modular triple. -/
 theorem modularTriple_congrOfMapEq_conjJAut {Γ₁ Γ₂ : Subgroup PSL(2, ℤ)}
-    (h : Γ₁.map (conjJAut : PSL(2, ℤ) →* PSL(2, ℤ)) = Γ₂)
-    (e : PSL(2, ℤ) ⧸ Γ₂ ≃ Fin n) :
+    (h : Γ₁.map (conjJAut : PSL(2, ℤ) →* PSL(2, ℤ)) = Γ₂) (e : PSL(2, ℤ) ⧸ Γ₂ ≃ Fin n) :
     modularTriple Γ₁ ((TauCeti.QuotientGroup.congrOfMapEq conjJAut h).trans e) =
       (modularTriple Γ₂ e).mirror := by
   ext1
   · simp only [modularTriple_σ0, mirror_σ0, modularTriple_σ1,
       Equiv.permutationRepresentation_congrOfMapEq, MonoidHom.comp_apply]
     rw [← map_inv, ← map_inv, ← map_mul, ← map_mul]
-    congr 1
-    simpa [coe_S_inv] using coe_S_mul_coe_U_inv_mul_coe_S.symm
+    exact congrArg _ (by simpa [coe_S_inv] using coe_S_mul_coe_U_inv_mul_coe_S.symm)
   · simp [Equiv.permutationRepresentation_congrOfMapEq, ← map_inv]
 
 /-- For any coset numberings, the modular triple of the mirror subgroup `Γ'.map conjJAut` is
 isomorphic to the mirror of `modularTriple Γ' e`. -/
-theorem equivalent_mirror_modularTriple (Γ' : Subgroup PSL(2, ℤ))
-    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+theorem equivalent_mirror_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (e' : PSL(2, ℤ) ⧸ Γ'.map (conjJAut : PSL(2, ℤ) →* PSL(2, ℤ)) ≃ Fin n) :
     (modularTriple (Γ'.map (conjJAut : PSL(2, ℤ) →* PSL(2, ℤ))) e').Equivalent
       (modularTriple Γ' e).mirror := by
@@ -423,8 +391,6 @@ theorem markedIsoClass_modularTriple_eq_iff {Γ₁ Γ₂ : Subgroup PSL(2, ℤ)}
       MarkedIsoClass.mk ⟨modularTriple Γ₂ e₂, isConnected_modularTriple Γ₂ e₂⟩
         (e₂ ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ₂)) ↔
       Γ₁ = Γ₂ := by
-  have h1 := modularTriple_eq_cosetTriple Γ₁ e₁
-  have h2 := modularTriple_eq_cosetTriple Γ₂ e₂
   let f₁ := (TauCeti.QuotientGroup.congrOfMapEq modularEquiv
     (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ₁)).trans e₁
   let f₂ := (TauCeti.QuotientGroup.congrOfMapEq modularEquiv
@@ -435,10 +401,10 @@ theorem markedIsoClass_modularTriple_eq_iff {Γ₁ Γ₂ : Subgroup PSL(2, ℤ)}
       f₂ ((1 : TriangleGroup 3 2 0) : TriangleGroup 3 2 0 ⧸ _) := by simp [f₂]
   have hc₁ : (⟨modularTriple Γ₁ e₁, isConnected_modularTriple Γ₁ e₁⟩ : ConnectedTriple n) =
       ⟨TriangleGroup.cosetTriple _ f₁, TriangleGroup.isConnected_cosetTriple _ f₁⟩ :=
-    Subtype.ext h1
+    Subtype.ext (modularTriple_eq_cosetTriple Γ₁ e₁)
   have hc₂ : (⟨modularTriple Γ₂ e₂, isConnected_modularTriple Γ₂ e₂⟩ : ConnectedTriple n) =
       ⟨TriangleGroup.cosetTriple _ f₂, TriangleGroup.isConnected_cosetTriple _ f₂⟩ :=
-    Subtype.ext h2
+    Subtype.ext (modularTriple_eq_cosetTriple Γ₂ e₂)
   rw [hc₁, hc₂, hf₁, hf₂, TriangleGroup.markedIsoClass_cosetTriple_eq_iff,
     (Subgroup.comap_injective modularEquiv.surjective).eq_iff]
 
@@ -449,18 +415,15 @@ theorem exists_modularTriple_equivalent {t : PermutationTriple n} (ht : t.IsConn
     (h0 : t.σ0 ^ 3 = 1) (h1 : t.σ1 ^ 2 = 1) :
     ∃ (Γ' : Subgroup PSL(2, ℤ)) (_ : Γ'.FiniteIndex) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n),
       Γ'.index = n ∧ (modularTriple Γ' e).Equivalent t := by
-  obtain ⟨H, _, eH, -, heq⟩ :=
-    TriangleGroup.exists_cosetTriple_equivalent ht
-      ((hasDividingOrders_iff t).mpr ⟨h0, h1, pow_zero _⟩)
+  obtain ⟨H, _, eH, -, heq⟩ := TriangleGroup.exists_cosetTriple_equivalent ht
+    ((hasDividingOrders_iff t).mpr ⟨h0, h1, pow_zero _⟩)
   let Γ' := H.map (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ))
-  have hcomap : Γ'.comap (modularEquiv : TriangleGroup 3 2 0 →* PSL(2, ℤ)) = H :=
-    Subgroup.comap_map_eq_self_of_injective modularEquiv.injective H
   let e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n :=
     (TauCeti.QuotientGroup.congrOfMapEq modularEquiv (rfl : Γ' = Γ')).symm.trans eH
   refine ⟨Γ', finiteIndex_of_equiv Γ' e, e, index_eq_of_equiv Γ' e, ?_⟩
   rw [modularTriple_eq_cosetTriple Γ' e, ← IsoClass.mk_eq_mk_iff, ← IsoClass.mk_eq_mk_iff.mpr heq,
     IsoClass.mk_eq_mk_iff, TriangleGroup.cosetTriple_equivalent_cosetTriple_iff]
-  exact ⟨1, by rw [one_smul, hcomap]⟩
+  exact ⟨1, by rw [one_smul, Subgroup.comap_map_eq_self_of_injective modularEquiv.injective H]⟩
 
 /-- The isomorphism classes of connected permutation triples of degree `n` with `σ0 ^ 3 = 1` and
 `σ1 ^ 2 = 1`. -/
@@ -469,13 +432,11 @@ def modularIsoClasses (n : ℕ) : Set (IsoClass n) :=
 
 /-- The isomorphism class of `t` lies in `modularIsoClasses n` if and only if `t` is connected with
 `t.σ0 ^ 3 = 1` and `t.σ1 ^ 2 = 1`. -/
-@[simp]
-theorem mk_mem_modularIsoClasses_iff {t : PermutationTriple n} :
+@[simp] theorem mk_mem_modularIsoClasses_iff {t : PermutationTriple n} :
     IsoClass.mk t ∈ modularIsoClasses n ↔ t.IsConnected ∧ t.σ0 ^ 3 = 1 ∧ t.σ1 ^ 2 = 1 := by
   refine ⟨?_, fun h ↦ ⟨t, h, rfl⟩⟩
   rintro ⟨t', ⟨hc, h0, h1⟩, h⟩
-  obtain ⟨τ, hτ⟩ := equivalent_iff_exists_smul_eq.mp (IsoClass.mk_eq_mk_iff.mp h)
-  rw [← hτ]
+  obtain ⟨τ, rfl⟩ := equivalent_iff_exists_smul_eq.mp (IsoClass.mk_eq_mk_iff.mp h)
   exact ⟨(isConnected_smul_iff τ t').mpr hc, by simp [h0], by simp [h1]⟩
 
 /-- `modularIsoClasses n` agrees with `TriangleGroup.connectedIsoClasses 3 2 0 n`. -/
@@ -522,14 +483,12 @@ def modularMarkedIsoClasses (n : ℕ) : Set (MarkedIsoClass n) :=
 
 /-- The marked class of `(t, i)` lies in `modularMarkedIsoClasses n` if and only if
 `t.1.σ0 ^ 3 = 1` and `t.1.σ1 ^ 2 = 1`. -/
-@[simp]
-theorem mk_mem_modularMarkedIsoClasses_iff {t : ConnectedTriple n} {i : Fin n} :
+@[simp] theorem mk_mem_modularMarkedIsoClasses_iff {t : ConnectedTriple n} {i : Fin n} :
     MarkedIsoClass.mk t i ∈ modularMarkedIsoClasses n ↔ t.1.σ0 ^ 3 = 1 ∧ t.1.σ1 ^ 2 = 1 := by
   refine ⟨?_, fun ⟨h0, h1⟩ ↦ ⟨t, i, h0, h1, rfl⟩⟩
   rintro ⟨t', i', h0, h1, h⟩
   obtain ⟨τ, hτ, -⟩ := MarkedIsoClass.mk_eq_mk_iff_exists_smul.mp h.symm
-  have hval : (t : PermutationTriple n) = τ • t'.1 := by
-    rw [← hτ, ConnectedTriple.coe_smul]
+  have hval : (t : PermutationTriple n) = τ • t'.1 := by rw [← hτ, ConnectedTriple.coe_smul]
   rw [hval]
   exact ⟨by simp [h0], by simp [h1]⟩
 
@@ -561,9 +520,9 @@ theorem coe_modularMarkedIsoClassEquiv_apply [NeZero n] (Γ' : Subgroup.ofIndex 
       (Subgroup.comap_equiv_eq_map_symm modularEquiv Γ'.1).symm
   let f := (TauCeti.QuotientGroup.congrOfMapEq modularEquiv
     (Subgroup.map_comap_eq_self_of_surjective modularEquiv.surjective Γ'.1)).trans e
-  let f' := (Subgroup.quotientEquivOfEq hcomap).trans f
   rw [modularMarkedIsoClassEquiv, Equiv.trans_apply, Equiv.trans_apply, Set.equivOfEq_apply,
-    TriangleGroup.coe_cosetMarkedIsoClassEquiv_apply _ f']
+    TriangleGroup.coe_cosetMarkedIsoClassEquiv_apply _
+      ((Subgroup.quotientEquivOfEq hcomap).trans f)]
   have hf : e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'.1) =
       f ((1 : TriangleGroup 3 2 0) : TriangleGroup 3 2 0 ⧸ _) := by simp [f]
   have hc : (⟨modularTriple Γ'.1 e, isConnected_modularTriple Γ'.1 e⟩ : ConnectedTriple n) =
@@ -597,9 +556,8 @@ theorem natCard_automorphismGroup_modularTriple (Γ' : Subgroup PSL(2, ℤ))
 precisely the conjugates of `Γ'` in `PSL(2, ℤ)`. -/
 theorem setOf_exists_modularTriple_equivalent_eq_orbit (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    {Γ'' : Subgroup PSL(2, ℤ) |
-      ∃ e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin n,
-        (modularTriple Γ'' e'').Equivalent (modularTriple Γ' e)} =
+    {Γ'' : Subgroup PSL(2, ℤ) | ∃ e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin n,
+      (modularTriple Γ'' e'').Equivalent (modularTriple Γ' e)} =
       MulAction.orbit (ConjAct PSL(2, ℤ)) Γ' := by
   ext Γ''
   rw [Set.mem_ofPred, MulAction.mem_orbit_iff]
@@ -647,9 +605,9 @@ private theorem eq_or_eq_neg_of_pslMk_eq {a b : SL(2, ℤ)}
   rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp
       (QuotientGroup.eq.mp h) with h1 | hneg
   · exact Or.inl (inv_mul_eq_one.mp h1)
-  · exact Or.inr (by
+  · exact Or.inr <| by
       calc a = a * (-(a⁻¹ * b)) := by rw [hneg, neg_neg, mul_one]
-        _ = -b := by rw [mul_neg, ← mul_assoc, mul_inv_cancel, one_mul])
+        _ = -b := by rw [mul_neg, ← mul_assoc, mul_inv_cancel, one_mul]
 
 private theorem index_zpowers_T_pow (m : ℕ) :
     (Subgroup.zpowers ((T : PSL(2, ℤ)) ^ m)).index = 0 := by
@@ -657,8 +615,7 @@ private theorem index_zpowers_T_pow (m : ℕ) :
     refine Infinite.of_injective
       (fun j : ℕ ↦ (((T ^ (j : ℤ) * S : SL(2, ℤ)) : PSL(2, ℤ)) :
         PSL(2, ℤ) ⧸ Subgroup.zpowers ((T : PSL(2, ℤ)) ^ m))) fun i j hij ↦ ?_
-    rw [QuotientGroup.eq] at hij
-    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hij
+    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (QuotientGroup.eq.mp hij)
     have hpsl : (((T ^ (i : ℤ) * S)⁻¹ * (T ^ (j : ℤ) * S) : SL(2, ℤ)) : PSL(2, ℤ)) =
         ((T ^ ((m : ℤ) * k) : SL(2, ℤ)) : PSL(2, ℤ)) := by
       rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, ← hk, _root_.zpow_mul, zpow_natCast,
@@ -676,12 +633,12 @@ private theorem index_zpowers_T_pow (m : ℕ) :
       omega
     rcases eq_or_eq_neg_of_pslMk_eq hpsl with hmat | hmat
     · have h10 := congr_fun (congr_fun
-        (congrArg (fun x : SL(2, ℤ) ↦ (x : Matrix (Fin 2) (Fin 2) ℤ)) hmat) 1) 0
+        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 1) 0
       rw [lhs_eq, ModularGroup.coe_T_zpow] at h10
       simp at h10
       omega
     · have h00 := congr_fun (congr_fun
-        (congrArg (fun x : SL(2, ℤ) ↦ (x : Matrix (Fin 2) (Fin 2) ℤ)) hmat) 0) 0
+        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 0) 0
       rw [lhs_eq, Matrix.SpecialLinearGroup.coe_neg, ModularGroup.coe_T_zpow] at h00
       simp at h00
   rw [Subgroup.index_eq_card]
@@ -720,8 +677,8 @@ private theorem dvd_of_conj_zpowers_T_pow {a b : ℕ} {g : ConjAct PSL(2, ℤ)}
   have hmem : ((γ * T ^ (a : ℤ) * γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) ∈
       Subgroup.zpowers ((T : PSL(2, ℤ)) ^ b) := by
     rw [← h]
-    refine ⟨(T : PSL(2, ℤ)) ^ a, Subgroup.mem_zpowers _, ?_⟩
-    simp [ConjAct.smul_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv, zpow_natCast]
+    exact ⟨(T : PSL(2, ℤ)) ^ a, Subgroup.mem_zpowers _, by
+      simp [ConjAct.smul_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv, zpow_natCast]⟩
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hmem
   have hpsl : ((γ * T ^ (a : ℤ) * γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) =
       ((T ^ ((b : ℤ) * k) : SL(2, ℤ)) : PSL(2, ℤ)) := by
@@ -729,12 +686,12 @@ private theorem dvd_of_conj_zpowers_T_pow {a b : ℕ} {g : ConjAct PSL(2, ℤ)}
   have hc0 : γ 1 0 = 0 := by
     rcases eq_or_eq_neg_of_pslMk_eq hpsl with hmat | hmat
     · have h10 := congr_fun (congr_fun
-        (congrArg (fun x : SL(2, ℤ) ↦ (x : Matrix (Fin 2) (Fin 2) ℤ)) hmat) 1) 0
+        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 1) 0
       rw [conj_T_zpow_matrix, ModularGroup.coe_T_zpow] at h10
       simp at h10
       exact h10.resolve_right ha
     · have h10 := congr_fun (congr_fun
-        (congrArg (fun x : SL(2, ℤ) ↦ (x : Matrix (Fin 2) (Fin 2) ℤ)) hmat) 1) 0
+        (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 1) 0
       rw [conj_T_zpow_matrix, Matrix.SpecialLinearGroup.coe_neg, ModularGroup.coe_T_zpow] at h10
       simp at h10
       exact h10.resolve_right ha
@@ -744,11 +701,11 @@ private theorem dvd_of_conj_zpowers_T_pow {a b : ℕ} {g : ConjAct PSL(2, ℤ)}
     rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨h0, _⟩ | ⟨h0, _⟩ <;> simp [h0]
   rcases eq_or_eq_neg_of_pslMk_eq hpsl with hmat | hmat
   · have h01 := congr_fun (congr_fun
-      (congrArg (fun x : SL(2, ℤ) ↦ (x : Matrix (Fin 2) (Fin 2) ℤ)) hmat) 0) 1
+      (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 0) 1
     rw [conj_T_zpow_matrix, ModularGroup.coe_T_zpow, hp2, one_mul] at h01
     exact Int.natCast_dvd_natCast.mp ⟨k, by simpa using h01⟩
   · have h00 := congr_fun (congr_fun
-      (congrArg (fun x : SL(2, ℤ) ↦ (x : Matrix (Fin 2) (Fin 2) ℤ)) hmat) 0) 0
+      (congrArg (↑· : SL(2, ℤ) → Matrix (Fin 2) (Fin 2) ℤ) hmat) 0) 0
     rw [conj_T_zpow_matrix, Matrix.SpecialLinearGroup.coe_neg, ModularGroup.coe_T_zpow, hc0] at h00
     simp at h00
 
@@ -793,11 +750,9 @@ private noncomputable def modularConnectedIsoClassEquiv :
       fun C ↦ by
         obtain ⟨t₀, ⟨ht₀, h0, h1⟩, hC⟩ := C.2
         refine ⟨⟨ConnectedIsoClass.mk ⟨t₀, ht₀⟩, fun t ht ↦ ?_⟩, Subtype.ext ?_⟩
-        · obtain ⟨τ, hτ⟩ :=
-            ConnectedIsoClass.mk_eq_mk_iff_exists_smul.mp
-              (ConnectedIsoClass.mem_orbitFinset.mp ht)
-          have hval : (t : PermutationTriple n) = τ • t₀ := by
-            rw [← hτ, ConnectedTriple.coe_smul]
+        · obtain ⟨τ, hτ⟩ := ConnectedIsoClass.mk_eq_mk_iff_exists_smul.mp
+            (ConnectedIsoClass.mem_orbitFinset.mp ht)
+          have hval : (t : PermutationTriple n) = τ • t₀ := by rw [← hτ, ConnectedTriple.coe_smul]
           rw [hval]
           exact ⟨by simp [h0], by simp [h1]⟩
         · dsimp only
@@ -814,9 +769,7 @@ theorem natCard_orbitRel_quotient_ofIndex_eq (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · have := infinite_orbitRel_quotient_ofIndex_zero
     have : IsEmpty (ConnectedIsoClass 0) :=
-      ⟨fun c ↦ by
-        obtain ⟨t, _⟩ := ConnectedIsoClass.mk_surjective c
-        exact t.2.ne_zero rfl⟩
+      ⟨fun c ↦ let ⟨t, _⟩ := ConnectedIsoClass.mk_surjective c; t.2.ne_zero rfl⟩
     rw [Nat.card_eq_zero_of_infinite, Finset.univ_eq_empty, Finset.filter_empty, Finset.card_empty]
   · have : NeZero n := ⟨hn⟩
     rw [Nat.card_congr modularIsoClassEquiv, Nat.card_congr modularConnectedIsoClassEquiv.symm,
