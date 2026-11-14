@@ -160,8 +160,9 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
       _ ≤ K * n := by gcongr
   · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
     calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * ‖y - x‖ ^ 2 :=
-        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero
-          (fun w hw ↦ (hg w (hsub hw)).differentiableAt (by norm_num)) hsub hyε hy0
+        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero (convex_closedBall x r)
+          (fun w hw ↦ (hg w hw).differentiableAt (by norm_num)) (mem_closedBall_self hr.1.le)
+          (hsub hyε) hy0
       _ ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * (2 * C * n) ^ 2 := by
         gcongr; exact mem_closedBall_iff_norm.1 hyε
       _ = (2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring

@@ -37,9 +37,9 @@ Maps approximating a linear equivalence `L` on one ball with one constant below 
 targets containing one common ball around any point near their values at the centre
 (`TauCeti.exists_ball_subset_toOpenPartialHomeomorph_target`).
 
-If the derivative of a function `g` is approximated by a bilinear map `L` near `x`, a critical point
-`y` of `g` near `x` has a value within `(‖L‖ + κ) / 2 * ‖y - x‖ ^ 2` of that at `x`
-(`ApproximatesLinearOn.norm_sub_le_of_fderiv_eq_zero`).
+If the derivative of a function `g` is approximated by a bilinear map `L` on a convex set, a
+critical point `y` of `g` in that set has a value within `(‖L‖ + κ) / 2 * ‖y - x‖ ^ 2` of that at
+any other point `x` of the set (`ApproximatesLinearOn.norm_sub_le_of_fderiv_eq_zero`).
 
 When `f` approximates a continuous linear map `L` on `s` up to `δ` and `M` is a continuous linear
 operator in the opposite direction, the map `h x = x + M (f x - L x)` approximates the identity up
@@ -151,27 +151,23 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
       linarith [mul_le_mul_of_nonneg_left hf' c.coe_nonneg]
   exact ⟨a, ha, hfa, fun z hz hfz ↦ hinj hz (hsub ha) (hfz.trans hfa.symm)⟩
 
-open Metric in
-/-- If `fderiv 𝕜 g` is `κ`-approximated by `L` on a set containing the closed ball of radius `ρ`
-about `x`, `g` is differentiable on that ball, and `g` has a critical point `y` in the ball, then
-`g` changes by at most `(‖L‖ + κ) / 2 * ‖y - x‖ ^ 2` between `x` and `y`. -/
-theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜]
+/-- If `fderiv 𝕜 g` is `κ`-approximated by `L` on a convex set `s` on which `g` is differentiable,
+and `g` has a critical point `y` in `s`, then `g` changes by at most
+`(‖L‖ + κ) / 2 * ‖y - x‖ ^ 2` between any `x ∈ s` and `y`. -/
+theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜] [NormedSpace ℝ E]
     {g : E → F} {L : E →L[𝕜] E →L[𝕜] F} {s : Set E}
-    {κ : ℝ≥0} (happrox : ApproximatesLinearOn (fderiv 𝕜 g) L s κ) {x y : E} {ρ : ℝ}
-    (hg : ∀ w ∈ closedBall x ρ, DifferentiableAt 𝕜 g w) (hsub : closedBall x ρ ⊆ s)
-    (hy : y ∈ closedBall x ρ) (hy0 : fderiv 𝕜 g y = 0) :
+    {κ : ℝ≥0} (happrox : ApproximatesLinearOn (fderiv 𝕜 g) L s κ) (hs : Convex ℝ s)
+    (hg : ∀ w ∈ s, DifferentiableAt 𝕜 g w) {x y : E} (hx : x ∈ s) (hy : y ∈ s)
+    (hy0 : fderiv 𝕜 g y = 0) :
     ‖g y - g x‖ ≤ (‖L‖ + κ) / 2 * ‖y - x‖ ^ 2 := by
-  have hρ : 0 ≤ ρ := dist_nonneg.trans (mem_closedBall.1 hy)
   -- Since `fderiv 𝕜 g y = 0`, the differential of `g` grows at most linearly away from `y`.
-  have hbound (w) (hw : w ∈ closedBall x ρ) : ‖fderiv 𝕜 g w‖ ≤ (‖L‖ + κ) * ‖w - y‖ := by
+  have hbound (w) (hw : w ∈ s) : ‖fderiv 𝕜 g w‖ ≤ (‖L‖ + κ) * ‖w - y‖ := by
     simpa [hy0, Subtype.dist_eq, dist_eq_norm] using
-      happrox.lipschitzWith.dist_le_mul ⟨w, hsub hw⟩ ⟨y, hsub hy⟩
+      happrox.lipschitzWith.dist_le_mul ⟨w, hw⟩ ⟨y, hy⟩
   let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   let : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ 𝕜 F
   -- Along the segment from `y` to `x`, compare `g (y + t • (x - y)) - g y` with a quadratic in `t`.
-  have hmem (t) (ht : t ∈ Icc (0 : ℝ) 1) : y + t • (x - y) ∈ closedBall x ρ :=
-    (convex_closedBall x ρ).add_smul_sub_mem hy (mem_closedBall_self hρ) ht
+  have hmem (t) (ht : t ∈ Icc (0 : ℝ) 1) : y + t • (x - y) ∈ s := hs.add_smul_sub_mem hy hx ht
   have hD (t) (ht : t ∈ Icc (0 : ℝ) 1) : HasDerivAt (fun t ↦ g (y + t • (x - y)) - g y)
       (fderiv 𝕜 g (y + t • (x - y)) (x - y)) t := by
     simpa using HasDerivAt.sub_const (g y) <|
