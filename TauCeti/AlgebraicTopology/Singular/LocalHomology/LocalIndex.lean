@@ -361,14 +361,10 @@ private theorem localHomologyRestriction_compClass_of_ne {S : Set M} (hS : S.Fin
     (hx' : x' ∈ S) (hxx' : x ≠ x') :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx') n
       (o.compClass hS x) = 0 := by
-  have hempty : (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' {x'} ⊆ ∅ :=
-    fun z (hz : (z : M) = x') ↦ z.2 ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
-  rw [compClass, ← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
-    ← localHomologyRestriction_comp_localHomologyMap _ _ (empty_subset _) hempty,
-    ConcreteCategory.comp_apply,
-    (isZero_localHomology_empty (A := ModuleCat.{0} ℤ) _ n).eq_of_tgt
-      (localHomologyRestriction _ (empty_subset _) n) 0]
-  simp
+  have hx'S : x' ∉ range (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) :=
+    fun ⟨z, (hz : (z : M) = x')⟩ ↦ z.2 ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
+  rw [compClass]
+  exact localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx' hx'S n _
 
 /-- The classes of the points of a finite set `S` sum to the fundamental class along `S`. -/
 private theorem sum_compClass {S : Set M} (hS : S.Finite) :

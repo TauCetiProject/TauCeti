@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
@@ -16,7 +17,9 @@ import TauCeti.Topology.Algebra.Module.Determinant
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
+import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.DiscreteSubset
 
 /-!
@@ -62,8 +65,12 @@ A point where a map has an antilipschitz derivative, such as an invertible deriv
 finite-dimensional spaces, is isolated in its fibre (`HasFDerivAt.eventually_ne`). Hence a compact
 fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); this is the
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
-part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), as for the
-fibre of a map defined on an open subset `s`.
+part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), and so for a
+compact fibre of a map `g : s → F` agreeing on `s` with `f`
+(`IsCompact.finite_of_hasFDerivAt_subtype`), as for a map defined on an open subset `s`. In
+particular a compact set of fixed points `x` of `g : s → E` at which `g` agrees with a map `φ`
+having a derivative with `det (1 - Dφ(x)) ≠ 0` is finite
+(`IsCompact.finite_setOf_apply_eq_self_of_hasFDerivAt`).
 -/
 
 public section
@@ -248,3 +255,50 @@ theorem IsCompact.finite_of_hasFDerivAt {𝕜 : Type*} [NontriviallyNormedField 
     (hf' : ∀ x ∈ f ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (f ⁻¹' {y}).Finite := by
   simpa using IsCompact.finite_inter_preimage_of_hasFDerivAt (s := univ) (by simpa using hK)
     (by simpa using hf) (by simpa using hf')
+
+/-- **A compact fibre of regular points of a map on a subset is finite.** Let `g : s → F` agree on
+`s` with `f : E → F`. If the fibre of `g` over `y` is compact and `f` has an antilipschitz
+derivative at each of its points, for instance an invertible derivative between spaces of the same
+finite dimension, then this fibre is finite. -/
+theorem IsCompact.finite_of_hasFDerivAt_subtype {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {s : Set E} {g : s → F} {f : E → F} {f' : E → E →L[𝕜] F} {y : F}
+    (hK : IsCompact (g ⁻¹' {y})) (hfg : ∀ z : s, f z = g z)
+    (hf : ∀ x ∈ g ⁻¹' {y}, HasFDerivAt f (f' x) x)
+    (hf' : ∀ x ∈ g ⁻¹' {y}, ∃ C, AntilipschitzWith C (f' x)) : (g ⁻¹' {y}).Finite := by
+  -- Read in `E`, the fibre of `g` is the part `s ∩ f⁻¹(y)` of the fibre of `f`.
+  have himage : Subtype.val '' (g ⁻¹' {y}) = s ∩ f ⁻¹' {y} := by
+    ext w
+    constructor
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨z.2, (hfg z).trans hz⟩
+    · rintro ⟨hws, hw⟩
+      exact ⟨⟨w, hws⟩, (hfg ⟨w, hws⟩).symm.trans hw, rfl⟩
+  have hmem : ∀ w (hw : w ∈ s ∩ f ⁻¹' {y}), (⟨w, hw.1⟩ : s) ∈ g ⁻¹' {y} :=
+    fun w hw ↦ (hfg ⟨w, hw.1⟩).symm.trans hw.2
+  refine Finite.of_finite_image ?_ Subtype.val_injective.injOn
+  rw [himage]
+  exact (himage ▸ hK.image continuous_subtype_val).finite_inter_preimage_of_hasFDerivAt
+    (fun w hw ↦ hf _ (hmem w hw)) fun w hw ↦ hf' _ (hmem w hw)
+
+/-- **A compact set of nondegenerate fixed points is finite.** Let `f : s → E` agree on `s` with
+`φ : E → E`. If the fixed set of `f` is compact and at each fixed point `x` the map `φ` has a
+derivative `φ' x` with `det (1 - φ' x) ≠ 0`, then the fixed set of `f` is finite. -/
+theorem IsCompact.finite_setOf_apply_eq_self_of_hasFDerivAt {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {s : Set E} {f : s → E} {φ : E → E}
+    {φ' : E → E →L[𝕜] E} (hc : IsCompact {x | f x = x}) (hφ : ∀ z : s, φ z = f z)
+    (hd : ∀ x ∈ {x | f x = x}, HasFDerivAt φ (φ' x) x)
+    (hdet : ∀ x ∈ {x | f x = x}, (ContinuousLinearMap.id 𝕜 E - φ' x).det ≠ 0) :
+    {x | f x = x}.Finite := by
+  -- The fixed points of `f` are the zeros of `x ↦ x - f x`, which agrees on `s` with
+  -- `x ↦ x - φ x`, whose derivatives `1 - φ' x` are invertible there.
+  have hfix : {x | f x = x} = (fun z : s ↦ (z : E) - f z) ⁻¹' {0} := by
+    ext x
+    exact eq_comm.trans sub_eq_zero.symm
+  rw [hfix] at hc hd hdet ⊢
+  exact hc.finite_of_hasFDerivAt_subtype (f := fun z ↦ z - φ z)
+    (f' := fun x ↦ ContinuousLinearMap.id 𝕜 E - φ' x) (fun z ↦ by simp [hφ])
+    (fun x hx ↦ (hasFDerivAt_id _).sub (hd x hx)) fun x hx ↦
+      ⟨_, ((ContinuousLinearMap.id 𝕜 E - φ' x).toContinuousLinearEquivOfDetNeZero
+        (hdet x hx)).antilipschitzWith⟩

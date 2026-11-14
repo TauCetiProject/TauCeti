@@ -167,24 +167,16 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
     (o.comap U.isOpenEmbedding').degree (o.comap V.isOpenEmbedding') hE f =
       ((U : Set E) ∩ {x | 0 < (f' x).det} ∩ φ ⁻¹' {(y : E)}).ncard -
         ((U : Set E) ∩ {x | (f' x).det < 0} ∩ φ ⁻¹' {(y : E)}).ncard := by
-  -- The fibre of `f` is the fibre of `φ` in `U`, a compact set of points with invertible
-  -- derivative, hence finite.
-  have himage : Subtype.val '' (f ⁻¹' {y}) = (U : Set E) ∩ φ ⁻¹' {(y : E)} := by
-    ext w
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, (hφ z).trans (congrArg Subtype.val hz)⟩
-    · rintro ⟨hwU, hw⟩
-      exact ⟨⟨w, hwU⟩, Subtype.ext ((hφ ⟨w, hwU⟩).symm.trans hw), rfl⟩
-  have hmem : ∀ w (hw : w ∈ (U : Set E) ∩ φ ⁻¹' {(y : E)}), (⟨w, hw.1⟩ : U) ∈ f ⁻¹' {y} :=
-    fun w hw ↦ Subtype.ext ((hφ ⟨w, hw.1⟩).symm.trans hw.2)
-  have hK : IsCompact ((U : Set E) ∩ φ ⁻¹' {(y : E)}) :=
-    himage ▸ (hf.isCompact_preimage isCompact_singleton).image continuous_subtype_val
-  have hKfin : ((U : Set E) ∩ φ ⁻¹' {(y : E)}).Finite :=
-    hK.finite_inter_preimage_of_hasFDerivAt (fun w hw ↦ hderiv _ (hmem w hw)) fun w hw ↦
-      ⟨_, ((f' w).toContinuousLinearEquivOfDetNeZero (hdet _ (hmem w hw))).antilipschitzWith⟩
-  have hfin : (f ⁻¹' {y}).Finite :=
-    Finite.of_finite_image (himage ▸ hKfin) Subtype.val_injective.injOn
+  -- The fibre of `f` is the fibre over `y` of `f` read in `E`, which agrees on `U` with `φ`, a
+  -- compact set of points with invertible derivative, hence finite.
+  have hpre : f ⁻¹' {y} = (fun z ↦ (f z : E)) ⁻¹' {(y : E)} := by
+    ext z
+    exact Subtype.ext_iff
+  have hfin : (f ⁻¹' {y}).Finite := by
+    rw [hpre] at hderiv hdet ⊢
+    exact (hpre ▸ hf.isCompact_preimage isCompact_singleton).finite_of_hasFDerivAt_subtype hφ
+      hderiv fun x hx ↦
+        ⟨_, ((f' x).toContinuousLinearEquivOfDetNeZero (hdet x hx)).antilipschitzWith⟩
   rw [o.degree_comap_eq_sum_sign_det hE hf hφ hfin hderiv hdet]
   -- Split the signs, and read the two counts in `E` through the injective inclusion of `U`.
   have e (t : ℝ) :
@@ -200,7 +192,7 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
       Finite.mem_toFinset, mem_image]
     constructor
     · rintro ⟨⟨hwU, hp⟩, hw⟩
-      exact ⟨⟨w, hwU⟩, ⟨hmem w ⟨hwU, hw⟩, hp⟩, rfl⟩
+      exact ⟨⟨w, hwU⟩, ⟨Subtype.ext ((hφ ⟨w, hwU⟩).symm.trans hw), hp⟩, rfl⟩
     · rintro ⟨z, ⟨hz, hp⟩, rfl⟩
       exact ⟨⟨z.2, hp⟩, (hφ z).trans (congrArg Subtype.val hz)⟩
   simp_rw [e]

@@ -260,6 +260,26 @@ theorem localHomologyMap_fundamentalClassOn_comap {j : C(U, M)} (hj : IsOpenEmbe
 
 end OpenEmbedding
 
+section Comap
+
+variable {M' : Type} [TopologicalSpace M'] [T2Space M'] [ChartedSpace E M'] {j : M' → M}
+  (hj : Topology.IsOpenEmbedding j)
+
+/-- Along an open embedding `j : M' → M`, the image of the fundamental class of `M'` along `S`
+restricts at a point `j a` with `a ∈ S` to the local orientation of `M` at `j a`, for the
+orientation of `M'` pulled back along `j`. -/
+theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap {S : Set M'}
+    (hS : IsCompact S) {T : Set M} (h : j ⁻¹' T ⊆ S) {a : M'} (ha : j a ∈ T) :
+    localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 ha) n
+      (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨j, hj.continuous⟩ h n
+        ((o.comap hj).fundamentalClassOn hn hS)) = (o (j a)).val := by
+  rw [← ConcreteCategory.comp_apply,
+    localHomologyMap_comp_localHomologyRestriction_singleton _ hj h ha, ConcreteCategory.comp_apply,
+    (o.comap hj).localHomologyRestriction_fundamentalClassOn hn hS (h ha),
+    ← Topology.IsOpenEmbedding.coe_localOrientationEquiv, localOrientationEquiv_comap_apply]
+
+end Comap
+
 section Finite
 
 variable {Z : Set M}
@@ -305,17 +325,11 @@ theorem localHomologyRestriction_localOrientationAlong_of_ne {z : M} {U : Set M}
     (hz : z ∈ U) (hUZ : ∀ x ∈ U, x ∈ Z → x = z) {x : M} (hx : x ∈ Z) (hxz : x ≠ z) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n
       (o.localOrientationAlong hU hz hUZ) = 0 := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   -- No point of `U` lies over `x ≠ z`, so the map factors through `Hₙ(U, U) = 0`.
-  have h : (Subtype.val : U → M) ⁻¹' {x} ⊆ ∅ := fun y (hy : y.1 = x) ↦
-    hxz (hy.symm.trans (hUZ y.1 y.2 (hy ▸ hx)))
-  have h₁ := localHomologyMap_comp_localHomologyRestriction R ⟨Subtype.val, continuous_subtype_val⟩
-    (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hx) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
-  have h₂ := localHomologyRestriction_comp_localHomologyMap R ⟨Subtype.val, continuous_subtype_val⟩
-    (empty_subset {(⟨z, hz⟩ : U)}) h n
-  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,
-    (isZero_localHomology_empty R n).eq_zero_of_tgt (localHomologyRestriction R _ _)]
-  simp
+  have hxU : x ∉ range (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) :=
+    fun ⟨y, (hy : y.1 = x)⟩ ↦ hxz (hy.symm.trans (hUZ y.1 y.2 (hy ▸ hx)))
+  rw [localOrientationAlong]
+  exact localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx hxU n _
 
 /-- **The fundamental class along a finite set is a sum of local orientations.** For a finite set
 `Z` and open neighbourhoods `U z ∋ z` with `U z ∩ Z ⊆ {z}`, the fundamental class along `Z` is the
