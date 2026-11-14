@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -986,7 +987,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} [IsManifold I n M] [I.Boundaryless]
+  {n : ℕ∞ω} [IsManifold I n M] [BoundarylessManifold I M]
 
 /-- Every tangent vector to a boundaryless manifold is the velocity of a curve which is
 `C^n` near the prescribed parameter. No completeness or metric is required. -/
@@ -1002,16 +1003,18 @@ theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
   have hl : ContDiff 𝕜 n l := contDiff_const.add ((contDiff_id.sub contDiff_const).smul
     contDiff_const)
   have hlt : l t = c p := by simp [l]
+  -- `p` is an interior point, so the chart target is a neighbourhood of `c p`.
+  have htarget : c.target ∈ 𝓝 (c p) :=
+    mem_interior_iff_mem_nhds.mp (I.isInteriorPoint_iff.mp BoundarylessManifold.isInteriorPoint)
   have hc : ContMDiffAt 𝓘(𝕜, E) I n c.symm (c p) :=
-    (contMDiffWithinAt_extChartAt_symm_target_self p).contMDiffAt
-      (extChartAt_target_mem_nhds p)
+    (contMDiffWithinAt_extChartAt_symm_target_self p).contMDiffAt htarget
   have hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n (c.symm ∘ l) t :=
     (hlt ▸ hc).comp t hl.contMDiff.contMDiffAt
   have hγt : (c.symm ∘ l) t = p := by simp [Function.comp_apply, hlt, c]
   refine ⟨c.symm ∘ l, hγt, hγ, ?_⟩
   have heq : c ∘ (c.symm ∘ l) =ᶠ[𝓝 t] l := by
     filter_upwards [hl.continuous.continuousAt.preimage_mem_nhds
-      (hlt ▸ extChartAt_target_mem_nhds p)] with r hr
+      (hlt ▸ htarget)] with r hr
     exact c.right_inv hr
   have hderiv : HasDerivAt l v' t := by
     simpa only [l, Pi.add_apply, id_eq, zero_add, one_smul] using

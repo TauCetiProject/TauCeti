@@ -53,7 +53,8 @@ ambient covariant derivative.
 * `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
   ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
   case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
-  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative.
+  `CovariantDerivative.alongCurve_const_of_hasDerivAt` read off a known derivative, and
+  `CovariantDerivative.alongCurve_const_const` is the case of a constant field.
 * `CovariantDerivative.alongCurveWithin_inter`, `CovariantDerivative.alongCurveWithin_of_mem_nhds`,
   `CovariantDerivative.alongCurveWithin_subset`, `CovariantDerivative.alongCurveWithin_congr`, and
   `CovariantDerivative.alongCurveWithin_comp`: parameter-set and field locality and
@@ -391,6 +392,12 @@ theorem alongCurve_const_of_hasDerivAt (x : M) {W : 𝕜 → TangentSpace I x} {
   -- are `HasDerivAtFilter` at a filter, so rewriting `𝓝[univ] t` to `𝓝 t` turns the goal into
   -- `HasDerivAtFilter W W' t (𝓝 t)`, the definition of `HasDerivAt W W' t`.
   rwa [HasDerivWithinAt, nhdsWithin_univ]
+
+/-- Along a constant curve at `x`, a constant field has vanishing covariant derivative. -/
+theorem alongCurve_const_const (x : M) (w : TangentSpace I x) (t : 𝕜) :
+    alongCurve cov (fun _ ↦ x) (fun _ ↦ w) t = 0 :=
+  -- Read the constant field in the model space `E = T_x M`, where its derivative vanishes.
+  (alongCurve_const cov x (fun _ ↦ w) t).trans (deriv_const (F := E) t w)
 
 /-! ### Locality and reparametrization -/
 

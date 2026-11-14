@@ -299,9 +299,10 @@ theorem isExactLagrangianMap_generatingCorrespondence (hS : ContMDiff (I.prod J)
     (twistedProd_symplecticForm I M J N) (contMDiff_generatingCorrespondence hS) (fun x ↦ ?_)
     ?_).mpr ⟨hS, mpullback_generatingCorrespondence_liouvilleForm hS⟩
   · -- The pair of base points is a left inverse of the relation.
-    exact mfderiv_injective_of_leftInverse (g := Prod.map TotalSpace.proj TotalSpace.proj)
+    exact mfderiv_injective_of_comp_eventuallyEq_id (g := Prod.map TotalSpace.proj TotalSpace.proj)
       (((contMDiff_proj _).prodMap (contMDiff_proj _) _).mdifferentiableAt one_ne_zero)
-      ((contMDiff_generatingCorrespondence hS x).mdifferentiableAt (by simp)) fun _ ↦ rfl
+      ((contMDiff_generatingCorrespondence hS x).mdifferentiableAt (by simp))
+      (.of_forall fun _ ↦ rfl)
   · simp only [finrank_prod, ContinuousLinearMap.dual_finrank_eq]
     ring
 

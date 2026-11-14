@@ -67,6 +67,11 @@ isolated, fixed points is finite.
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
+* `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: in finite dimensions, the derivative of
+  the flow over one more period factors through the derivative of the return map, wherever both
+  are defined. At a fixed point of the return map in its domain, with `T ≠ 0`, a vector fixed by
+  the derivative of the return map therefore spreads to a periodic solution of the linearized
+  flow (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`).
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
@@ -89,7 +94,7 @@ public section
 noncomputable section
 
 open Function Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -272,6 +277,65 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
     ((periodicSolutionsEquivFixedPoints hX hT hT0 s).symm x).1 t =
       timeDependentFlowOf X s t x :=
   (rfl)
+
+omit [CompleteSpace E] in
+/-- **The derivative of the flow over one more period.** Let `X` be a `T`-periodic jointly `C¹`
+field on a finite-dimensional manifold, and let the flow from `(s, x)` be defined at time `s + T`,
+and the flow from `s` at time `t` at the image `φ_{s, s + T}(x)`. Then the derivative of the flow
+to time `t + T` is that of the return map followed by that of the flow to time `t`:
+`dφ_{s, t + T} v = dφ_{s, t} (dφ_{s, s + T} v)`. -/
+theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (hT : Periodic X T)
+    (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
+    (ht : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X)
+    (v : TangentSpace I x) :
+    mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
+      mfderiv I I (timeDependentFlowOf X s t) (timeDependentFlowOf X s (s + T) x)
+        (mfderiv I I (timeDependentFlowOf X s (s + T)) x v) := by
+  have hopen := isOpen_timeDependentFlowDomain hX
+  set R := timeDependentFlowOf X s (s + T)
+  have hR : ContMDiffAt I I 1 R x := contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX h
+  -- Near `x`, flowing to `t + T` is the return map followed by the flow to `t`.
+  have heq : timeDependentFlowOf X s (t + T) =ᶠ[𝓝 x] timeDependentFlowOf X s t ∘ R := by
+    filter_upwards [(continuousAt_const.prodMk continuousAt_id).preimage_mem_nhds
+        (hopen.mem_nhds h),
+      (continuousAt_const.prodMk hR.continuousAt).preimage_mem_nhds (hopen.mem_nhds ht)]
+      with y h₁ h₂
+    obtain ⟨hmem, hshift⟩ := timeDependentFlowOf_add_period_of_mem hX hT h₂
+    exact (timeDependentFlowOf_trans_of_mem hX h₁ hmem).2.symm.trans hshift
+  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) (R x) :=
+    (contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX ht).mdifferentiableAt one_ne_zero
+  rw [heq.mfderiv_eq, mfderiv_comp x hφ (hR.mdifferentiableAt one_ne_zero)]
+  -- `tangentSpaceCast` between the equal points `(φ_{s, t} ∘ R) x` and `φ_{s, t + T} x` is the
+  -- identity.
+  rfl
+
+omit [CompleteSpace E] in
+/-- **Periodic solutions of the linearized flow.** If `X` is `T`-periodic, `T ≠ 0`, `x` is a fixed
+point of the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative, then
+`t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
+theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq [FiniteDimensional ℝ E]
+    (hT : Periodic X T) (hT0 : T ≠ 0) (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
+    (hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) x) {v : TangentSpace I x}
+    (hv : mfderiv I I (timeDependentFlowOf X s (s + T)) x v = v) (t : ℝ) :
+    mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
+      mfderiv I I (timeDependentFlowOf X s t) x v := by
+  have hall := mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 h hfix t
+  have hRt : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X := by
+    rw [hfix.eq]
+    exact hall
+  have hR : MDifferentiableAt I I (timeDependentFlowOf X s (s + T)) x :=
+    (contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX h).mdifferentiableAt one_ne_zero
+  have hφR :
+      MDifferentiableAt I I (timeDependentFlowOf X s t) (timeDependentFlowOf X s (s + T) x) :=
+    (contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX hRt).mdifferentiableAt one_ne_zero
+  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
+    (contMDiffAt_timeDependentFlowOf (n := 1) le_rfl hX hall).mdifferentiableAt one_ne_zero
+  -- Both chain rules compute the derivative of `φ_{s, t} ∘ φ_{s, s + T}` at `x`: the first at the
+  -- image point, the second at `x`, which it equals.
+  exact (mfderiv_timeDependentFlowOf_add_period_apply hX hT h hRt v).trans
+    ((mfderiv_comp_apply x hφR hR v).symm.trans
+      ((DFunLike.congr_fun (mfderiv_comp_of_apply_eq_self hφ hR hfix.eq) v).trans
+        (congrArg (mfderiv I I (timeDependentFlowOf X s t) x) hv)))
 
 section Complete
 
