@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Adjugate
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
