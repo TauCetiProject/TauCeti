@@ -10,6 +10,7 @@ public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.EndpointLimit
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Endpoints
 import TauCeti.Analysis.Complex.Conformal.ClusterSet
+import TauCeti.Order.Interval.Set.Injective
 import TauCeti.Topology.Path.Extend.Ioo
 
 /-!
@@ -50,7 +51,8 @@ be identified. Interior injectivity uses only the injectivity of `f`, Mathlib's
 `Complex.injOn_circleMap_of_abs_sub_le`, the fact that `b - a < 2π`, and the injectivity of
 `AffineMap.lineMap a b`; the last step, that a curve injective on the interior and avoiding both
 endpoint values there can repeat only between its endpoints, is
-`TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` of the same file.
+`TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` of
+`TauCeti/Order/Interval/Set/Injective.lean`.
 
 ## Main result
 
