@@ -39,6 +39,13 @@ integers `[1], …, [m - 1]` are positive, `[m] = 0`, and the recurrence
 `[t] + [t + 2] = δ [t + 1]` says that they form an eigenvector of the adjacency matrix with
 eigenvalue `δ`.
 
+Below the first bad level: if `[1], …, [n + 1]` are positive, the form on `n` strands is positive
+semidefinite. The path model on `n` strands over the path graph with `n + 1` vertices, weighted by
+`√[t + 1]`, needs the recurrence only at the vertices that walks with fewer than `n` steps reach,
+which are all but the last, and by uniqueness of Markov traces up to level `n` its trace is the
+given one. At an inadmissible `0 < δ` this covers every `n < k`, so the form on `n` strands is
+positive semidefinite exactly when `n < k`.
+
 The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
 `TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
 Over `ℂ` the analytic adjoint is the instance `TauCeti.TemperleyLieb.instStarRing`, whose
@@ -67,6 +74,12 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
   at the loop values `2 cos (π / m)`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff`,
   `TauCeti.TemperleyLieb.markovTrace_nonneg_iff`: **Jones's positivity theorem**.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_qInt_pos`: positivity on `n`
+  strands when `[1], …, [n + 1]` are positive.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.forall_map_star_mul_self_nonneg_iff_lt_floor`,
+  `TauCeti.TemperleyLieb.markovTrace_nonneg_iff_lt_floor`: at an inadmissible positive loop
+  parameter, the form on `n` strands is positive semidefinite exactly when
+  `n < ⌊π / arccos (δ / 2)⌋`.
 
 ## References
 
@@ -135,14 +148,13 @@ theorem qInt_floor_add_one_neg_of_notMem_jonesLoopParameters (hδ : 0 < δ)
   rwa [hcos] at h
 
 open SimpleGraph in
-/-- At `δ = 2 cos (π / (k + 2))`, the quantum integers `[t + 1]` on the vertices `t` of the path
-graph on `k + 1` vertices, the Dynkin graph `A_(k+1)`, form an eigenvector of its adjacency
-matrix with eigenvalue `δ`: this is the recurrence `[t] + [t + 2] = δ [t + 1]`, with `[0] = 0` at
-one end of the graph and `[k + 2] = 0` at the other. -/
+/-- On the path graph on `k + 1` vertices, the quantum integers `[t + 1]` on the vertices `t`
+satisfy the eigenvector equation of the adjacency matrix with eigenvalue `δ` at every vertex but
+the last: this is the recurrence `[t] + [t + 2] = δ [t + 1]`, with `[0] = 0` at the first vertex.
+At the last vertex `k` the missing neighbour contributes the defect `[k + 2]`. -/
 private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
-    ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (u + 1) =
-      2 * cos (π / (k + 2 : ℕ)) * qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (v + 1) := by
-  set δ := 2 * cos (π / (k + 2 : ℕ))
+    ∑ u ∈ (pathGraph (k + 1)).neighborFinset v, qInt ℝ δ (u + 1) =
+      δ * qInt ℝ δ (v + 1) - if (v : ℕ) = k then qInt ℝ δ (k + 2) else 0 := by
   rw [neighborFinset_eq_filter, Finset.sum_filter]
   simp only [pathGraph_adj]
   rw [Fin.sum_univ_eq_sum_range
@@ -153,13 +165,15 @@ private theorem sum_neighborFinset_pathGraph_qInt {k : ℕ} (v : Fin (k + 1)) :
     split_ifs <;> first | ring1 | (exfalso; omega)
   simp_rw [h]
   rw [Finset.sum_add_distrib, Finset.sum_ite_eq]
-  -- The neighbour above `v` contributes `[v + 2]`, which vanishes when `v` is the top vertex.
+  -- The neighbour above `v` contributes `[v + 2]`, which is missing when `v` is the top vertex.
   have h1 : (if v.val + 1 ∈ Finset.range (k + 1) then qInt ℝ δ (v + 1 + 1) else 0) =
-      qInt ℝ δ (v + 2) := by
-    split_ifs with hv
-    · rfl
-    · rw [show v.val + 2 = k + 2 by simp at hv; omega]
-      exact (qInt_two_mul_cos_pi_div_eq_zero (by omega)).symm
+      qInt ℝ δ (v + 2) - if (v : ℕ) = k then qInt ℝ δ (k + 2) else 0 := by
+    have hv := v.isLt
+    split_ifs with hv₁ hv₂ hv₂ <;> simp only [Finset.mem_range] at hv₁
+    · omega
+    · rw [sub_zero]
+    · rw [hv₂, sub_self]
+    · omega
   -- The neighbour below `v` contributes `[v]`, which vanishes when `v` is the bottom vertex.
   have h2 : ∑ j ∈ Finset.range (k + 1), (if j + 1 = v.val then qInt ℝ δ (j + 1) else 0) =
       qInt ℝ δ v := by
@@ -265,12 +279,15 @@ theorem map_star_mul_self_nonneg_of_eq_two_mul_cos (htr : IsMarkovTrace ℂ (δ 
   subst hδ
   have hpos (t : Fin (k + 1)) : 0 < qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t + 1) :=
     qInt_two_mul_cos_pi_div_pos (by omega) (by omega)
-  refine htr.map_star_mul_self_nonneg_of_graph (G := SimpleGraph.pathGraph (k + 1))
+  refine htr.map_star_mul_self_nonneg_of_graph (G := SimpleGraph.pathGraph (k + 1)) (v₀ := 0)
     (r := fun t ↦ ((√(qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t + 1)) : ℝ) : ℂ))
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hpos t)).ne')
-    (fun t ↦ Complex.conj_ofReal _) (fun v ↦ ?_) x
+    (fun t ↦ Complex.conj_ofReal _) (isEigenWeighting_of_forall (fun v ↦ ?_) n) x
   simp only [← Complex.ofReal_pow, Real.sq_sqrt (hpos _).le]
-  exact_mod_cast sum_neighborFinset_pathGraph_qInt v
+  -- At the top vertex the defect `[k + 2]` vanishes.
+  have hsum := sum_neighborFinset_pathGraph_qInt (δ := 2 * cos (π / (k + 2 : ℕ))) v
+  rw [qInt_two_mul_cos_pi_div_eq_zero (by omega), ite_self, sub_zero] at hsum
+  exact_mod_cast hsum
 
 /-- **Jones's positivity theorem.** For `δ > 0`, the Hermitian forms `(x, y) ↦ tr n (x⋆ * y)` of a
 Markov trace are positive semidefinite on every number of strands exactly when `δ` is an admissible
@@ -283,6 +300,42 @@ theorem forall_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace ℂ (δ : ℂ) 
   · exact htr.map_star_mul_self_nonneg_of_eq_two_mul_cos (by omega) hδm x
   · exact htr.map_star_mul_self_nonneg_of_two_le h2 x
 
+/-- **Positivity up to the first nonpositive quantum integer.** If the quantum integers
+`[1], …, [n + 1]` at the real loop value `δ` are positive, then the Hermitian form
+`(x, y) ↦ tr n (x⋆ * y)` of a Markov trace on `n` strands is positive semidefinite. The trace is
+that of the path model on the path graph with `n + 1` vertices, the vertex `t` weighted by
+`√[t + 1]`: the recurrence `[t] + [t + 2] = δ [t + 1]` is the eigenvector equation at every vertex
+but the last, which no walk from the first vertex reaches in fewer than `n` steps. -/
+theorem map_star_mul_self_nonneg_of_qInt_pos (htr : IsMarkovTrace ℂ (δ : ℂ) tr) {n : ℕ}
+    (h : ∀ j ∈ Finset.Icc 1 (n + 1), 0 < qInt ℝ δ j) (x : TemperleyLieb ℂ (δ : ℂ) n) :
+    0 ≤ tr n (star x * x) := by
+  have hpos (t : Fin (n + 1)) : 0 < qInt ℝ δ (t + 1) :=
+    h _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
+  refine htr.map_star_mul_self_nonneg_of_graph (G := SimpleGraph.pathGraph (n + 1)) (v₀ := 0)
+    (r := fun t ↦ ((√(qInt ℝ δ (t + 1)) : ℝ) : ℂ))
+    (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hpos t)).ne')
+    (fun t ↦ Complex.conj_ofReal _) (isEigenWeighting_iff.2 fun m hm s hs ↦ ?_) x
+  simp only [← Complex.ofReal_pow, Real.sq_sqrt (hpos _).le]
+  -- A walk from the first vertex with `m < n` steps ends below the last vertex `n`.
+  have hlast : (s (Fin.last m) : ℕ) ≠ n := by
+    have := hs.val_le_of_pathGraph (Fin.last m)
+    simp only [Fin.val_zero, Fin.val_last, zero_add] at this
+    omega
+  have hsum := sum_neighborFinset_pathGraph_qInt (δ := δ) (s (Fin.last m))
+  rw [ite_eq_right hlast, sub_zero] at hsum
+  exact_mod_cast hsum
+
+/-- **Positivity at an inadmissible loop parameter.** For an inadmissible loop parameter `δ > 0`,
+the Hermitian form `(x, y) ↦ tr n (x⋆ * y)` of a Markov trace on `n` strands is positive
+semidefinite exactly when `n < ⌊π / arccos (δ / 2)⌋`, that is, when `n < k` for `δ = 2 cos θ`,
+`0 < θ < π / 2` and `k = ⌊π / θ⌋`. -/
+theorem forall_map_star_mul_self_nonneg_iff_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+    (hδ : 0 < δ) (hδJ : δ ∉ jonesLoopParameters) {n : ℕ} :
+    (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ tr n (star x * x)) ↔
+      n < ⌊π / arccos (δ / 2)⌋₊ :=
+  ⟨htr.lt_floor_of_forall_nonneg hδ hδJ, fun hn ↦ htr.map_star_mul_self_nonneg_of_qInt_pos
+    fun _ hj ↦ qInt_pos_of_notMem_jonesLoopParameters hδ hδJ (by grind) (by grind)⟩
+
 end IsMarkovTrace
 
 open scoped ComplexOrder in
@@ -294,5 +347,17 @@ theorem markovTrace_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ markovTrace q hq (star x * x)) ↔
       δ ∈ jonesLoopParameters :=
   (isMarkovTrace_markovTrace q hq).forall_map_star_mul_self_nonneg_iff hδ
+
+open scoped ComplexOrder in
+/-- **Positivity at an inadmissible loop parameter** for the spin-model trace. Let `δ > 0` be an
+inadmissible loop parameter and let `q` be a unit with `δ = -(q + q⁻¹)`. Then
+`TauCeti.TemperleyLieb.markovTrace q hq (x⋆ * x)` is real and nonnegative for every `x` on `n`
+strands exactly when `n < ⌊π / arccos (δ / 2)⌋`. -/
+theorem markovTrace_nonneg_iff_lt_floor {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : 0 < δ)
+    (hδJ : δ ∉ jonesLoopParameters) (q : ℂˣ)
+    (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) {n : ℕ} :
+    (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ markovTrace q hq (star x * x)) ↔
+      n < ⌊π / arccos (δ / 2)⌋₊ :=
+  (isMarkovTrace_markovTrace q hq).forall_map_star_mul_self_nonneg_iff_lt_floor hδ hδJ
 
 end TauCeti.TemperleyLieb

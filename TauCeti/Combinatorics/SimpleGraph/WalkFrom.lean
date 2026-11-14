@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
@@ -27,6 +27,9 @@ decidable subset of a finite function type.
   vertex is adjacent to the old endpoint.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
+* `SimpleGraph.IsWalkFrom.comp_castLE`: an initial segment of a walk is a walk.
+* `SimpleGraph.IsWalkFrom.val_le_of_pathGraph`: a walk with `i` steps on the path graph moves at
+  most `i` vertices up from its start.
 -/
 
 public section
@@ -106,5 +109,22 @@ theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]
     exact hs.2 i
+
+/-- An initial segment of a walk is a walk. -/
+theorem IsWalkFrom.comp_castLE {m k : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (h : k + 1 ≤ m + 1) : IsWalkFrom G v₀ (s ∘ Fin.castLE h) :=
+  ⟨hs.apply_zero, fun i ↦ hs.adj (by simp)⟩
+
+/-- On the path graph, the vertex at position `i` of a walk from `v₀` is at most `i` vertices above
+`v₀`. -/
+theorem IsWalkFrom.val_le_of_pathGraph {n m : ℕ} {v₀ : Fin n} {s : Fin (m + 1) → Fin n}
+    (hs : (pathGraph n).IsWalkFrom v₀ s) (i : Fin (m + 1)) : (s i : ℕ) ≤ v₀ + i := by
+  induction i using Fin.induction with
+  | zero => simp [hs.apply_zero]
+  | succ i ih =>
+    have h := pathGraph_adj.1 (hs.2 i)
+    simp only [Fin.val_castSucc] at ih
+    simp only [Fin.val_succ]
+    omega
 
 end SimpleGraph

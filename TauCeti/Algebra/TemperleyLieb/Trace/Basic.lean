@@ -24,12 +24,15 @@ compatibilities determine a Markov trace on `n + 2` strands from its values on `
 and the normalization determines it on at most one strand, where the algebra is the base ring.
 So there is at most one Markov trace at each loop parameter
 (`TauCeti.TemperleyLieb.IsMarkovTrace.unique`), over every commutative semiring. This file does
-not assert the existence of a Markov trace at every loop parameter.
+not assert the existence of a Markov trace at every loop parameter. The same induction stops at
+any level: a family of linear forms satisfying the conditions of a Markov trace on at most `N`
+strands agrees there with every Markov trace (`TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_le`).
 
 ## Main results
 
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_strandIncl_mul_e_last_mul`: the trace reduction for
   `strandIncl a * e δ (Fin.last n) * strandIncl b`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_le`: uniqueness of the Markov trace up to a level.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.unique`: uniqueness of the Markov trace.
 
 ## References
@@ -74,29 +77,43 @@ theorem map_strandIncl_mul_e_last_mul (htr : IsMarkovTrace R δ tr) {n : ℕ}
 
 /-- On at most one strand the algebra is the base ring, so a Markov trace is determined there by
 its normalization `tr n 1 = δ ^ n`. -/
-private theorem eq_of_le_one {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
-    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ tr') {n : ℕ} (hn : n ≤ 1) :
-    tr n = tr' n := by
+private theorem eq_of_le_one {n : ℕ} {tr' : TemperleyLieb R δ n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (h' : tr' 1 = δ ^ n) (hn : n ≤ 1) : tr n = tr' := by
   ext x
   rw [← (algEquivOfLeOne δ hn).symm_apply_apply x, algEquivOfLeOne_symm_apply,
-    Algebra.algebraMap_eq_smul_one, map_smul, map_smul, htr.map_one, htr'.map_one]
+    Algebra.algebraMap_eq_smul_one, map_smul, map_smul, htr.map_one, h']
 
-/-- **Uniqueness of the Markov trace.** Over every commutative semiring and at every loop parameter
-there is at most one unnormalized Markov trace on the Temperley–Lieb tower: on `n + 2` strands it
-is determined on the spanning elements `strandIncl a` and
-`strandIncl a * e δ (Fin.last n) * strandIncl b` by its values on `n + 1` strands. -/
-theorem unique {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMarkovTrace R δ tr)
-    (htr' : IsMarkovTrace R δ tr') : tr = tr' := by
-  funext n
+/-- **Uniqueness of the Markov trace up to a level.** If a family of linear forms satisfies the
+conditions of an unnormalized Markov trace on at most `N` strands, then it agrees with every
+Markov trace on at most `N` strands: on `n + 2` strands both are determined on the spanning
+elements `strandIncl a` and `strandIncl a * e δ (Fin.last n) * strandIncl b` by their values on
+`n + 1` strands. -/
+theorem eq_of_le {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} {N : ℕ}
+    (htr : IsMarkovTrace R δ tr) (map_one : ∀ n ≤ N, tr' n 1 = δ ^ n)
+    (map_mul_comm : ∀ n ≤ N, ∀ x y : TemperleyLieb R δ n, tr' n (x * y) = tr' n (y * x))
+    (map_strandIncl : ∀ n, n + 2 ≤ N → ∀ x : TemperleyLieb R δ (n + 1),
+      tr' (n + 2) (strandIncl x) = δ * tr' (n + 1) x)
+    (map_strandIncl_mul_e_last : ∀ n, n + 2 ≤ N → ∀ x : TemperleyLieb R δ (n + 1),
+      tr' (n + 2) (strandIncl x * e δ (Fin.last n)) = tr' (n + 1) x)
+    {n : ℕ} (hn : n ≤ N) : tr n = tr' n := by
   obtain _ | n := n
-  · exact eq_of_le_one htr htr' (by omega)
+  · exact htr.eq_of_le_one (map_one 0 hn) (by omega)
   induction n with
-  | zero => exact eq_of_le_one htr htr' le_rfl
+  | zero => exact htr.eq_of_le_one (map_one 1 hn) le_rfl
   | succ n ih =>
     refine LinearMap.ext_on (span_strandIncl_union_strandIncl_mul_e_last_mul_eq_top n) ?_
     rintro _ (⟨a, rfl⟩ | ⟨⟨a, b⟩, rfl⟩)
-    · rw [htr.map_strandIncl, htr'.map_strandIncl, ih]
-    · rw [htr.map_strandIncl_mul_e_last_mul, htr'.map_strandIncl_mul_e_last_mul, ih]
+    · rw [htr.map_strandIncl, map_strandIncl n hn, ih (by omega)]
+    · rw [htr.map_strandIncl_mul_e_last_mul, ih (by omega), map_mul_comm _ hn, ← mul_assoc,
+        ← map_mul, map_strandIncl_mul_e_last n hn, map_mul_comm _ (by omega)]
+
+/-- **Uniqueness of the Markov trace.** Over every commutative semiring and at every loop parameter
+there is at most one unnormalized Markov trace on the Temperley–Lieb tower. -/
+theorem unique {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMarkovTrace R δ tr)
+    (htr' : IsMarkovTrace R δ tr') : tr = tr' :=
+  funext fun n ↦ htr.eq_of_le (N := n) (fun m _ ↦ htr'.map_one m)
+    (fun m _ ↦ htr'.map_mul_comm m) (fun m _ ↦ htr'.map_strandIncl m)
+    (fun m _ ↦ htr'.map_strandIncl_mul_e_last m) le_rfl
 
 end IsMarkovTrace
 
