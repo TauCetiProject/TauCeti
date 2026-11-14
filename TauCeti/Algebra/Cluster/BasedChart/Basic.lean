@@ -438,6 +438,16 @@ theorem reindex_reindex_symm (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
   intro a
   simp
 
+/-- Reindexing in the opposite order also recovers the original chart. -/
+@[simp]
+theorem reindex_symm_reindex (M : BasedChart u Λ' B) (e : L ≃ₗ[ℤ] L')
+    (he : ∀ a b, Λ (e.symm a) (e.symm b) = Λ' a b)
+    (he' : ∀ a b, Λ' (e a) (e b) = Λ a b) :
+    (M.reindex e.symm he).reindex e he' = M := by
+  apply BasedChart.ext
+  intro a
+  simp
+
 /-- Coordinate reindexing uses the transported lattice basis. -/
 @[simp]
 theorem coordinate_reindex {I : Type*} (M : BasedChart u Λ B) (b : Module.Basis I ℤ L)
@@ -446,6 +456,7 @@ theorem coordinate_reindex {I : Type*} (M : BasedChart u Λ B) (b : Module.Basis
   simp [coordinate_def]
 
 /-- Lattice reindexing commutes with injective ambient transport. -/
+@[simp]
 theorem reindex_map (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
     (he : ∀ a b, Λ' (e a) (e b) = Λ a b) (f : B →ₐ[R] C) (hf : Function.Injective f) :
     (M.map f hf).reindex e he = (M.reindex e he).map f hf := by
