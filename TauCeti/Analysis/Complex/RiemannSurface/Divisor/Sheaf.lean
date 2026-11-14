@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The sheaf `𝒪_D` of a divisor on a Riemann surface
@@ -168,24 +169,18 @@ theorem indicator (hf : IsDivisorSectionAt D f x) {E : WeilDivisor X} (h : D ≤
 
 end IsDivisorSectionAt
 
-section IsManifold
-
-variable [IsManifold 𝓘(ℂ) 1 X]
-
 /-- Away from the support of `D`, the local sections of `𝒪_D` are the holomorphic germs. -/
 theorem isDivisorSectionAt_iff_of_eq_zero {D : WeilDivisor X} {f : X → ℂ} {x : X}
     (hD : D x = 0) :
     IsDivisorSectionAt D f x ↔ ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f x := by
   refine ⟨fun hf ↦ hf.contMDiffAt hD.le, fun hf ↦ ?_⟩
-  have hev := (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).1 hf
   exact
-  { meromorphicAt := meromorphicAt_of_eventually_mdifferentiableAt hev
+  { meromorphicAt :=
+      (meromorphicAt_def f x).2 hf.contDiffAt_comp_chartAt_symm.analyticAt.meromorphicAt
     neg_le_meromorphicOrderAt := by
       simpa [hD] using meromorphicOrderAt_nonneg_of_continuousAt hf.continuousAt
     contMDiffAt := fun _ ↦ hf
     apply_eq_zero := fun h ↦ absurd hD h.ne' }
-
-end IsManifold
 
 /-- The sections of `𝒪_D` over an open set `U`, as functions on `U`: near each point of `U` they
 agree with a local section of `𝒪_D` in the sense of `IsDivisorSectionAt`. -/
@@ -335,10 +330,6 @@ theorem eq_of_eventuallyEq_codiscrete {U : Opens X} {f g : U → ℂ}
       ((eventuallyEq_codiscreteWithin_iff_forall_eventually_nhdsNE.1 h x (mem_univ _)).mono
         fun y hy ↦ hy (mem_univ y))
 
-section Holomorphic
-
-variable [IsManifold 𝓘(ℂ) 1 X]
-
 /-- On an open set disjoint from the support of `D`, the sections of `𝒪_D` are the holomorphic
 functions. -/
 theorem mem_divisorSections_iff_contMDiff {U : Opens X} (hU : ∀ x ∈ U, D x = 0) {f : U → ℂ} :
@@ -351,8 +342,6 @@ theorem mem_divisorSections_iff_contMDiff {U : Opens X} (hU : ∀ x ∈ U, D x =
       .of_eq hext.symm⟩
     rw [← contMDiffAt_subtype_iff]
     exact (hf x).congr_of_eventuallyEq (.of_eq hext)
-
-end Holomorphic
 
 /-! ### Increasing the divisor -/
 
@@ -468,7 +457,7 @@ end
 
 section Zero
 
-variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
 
 /-- The sections of `𝒪_0` over `U` are the holomorphic sections of the structure sheaf. -/
 private def divisorSectionsZeroEquiv (U : Opens X) :
