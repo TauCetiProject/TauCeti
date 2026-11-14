@@ -23,11 +23,13 @@ equivalence, which is the form module-theoretic consumers need. There is no subm
 ## Main declarations
 
 * `Submodule.quotientProdEquiv`: `(M × N) ⧸ p.prod q ≃ₗ (M ⧸ p) × (N ⧸ q)`.
-* `Submodule.finrank_quotient_prod`: the ranks of the quotients add.
+* `Submodule.finrank_quotient_prod`: the ranks of the quotients add, and the quotient is finite
+  (`Submodule.finite_quotient_prod`) or free (`Submodule.free_quotient_prod`) when both
+  quotients are.
 * `LinearMap.cokerProdMapEquiv`: the cokernel of `f.prodMap g` is `coker f × coker g`.
 * `LinearMap.finrank_quotient_range_prodMap`: the cokernel of `f.prodMap g` has rank
   `rank coker f + rank coker g`, and is finite when those of `f` and `g` are
-  (`LinearMap.finite_quotient_range_prodMap`).
+  (`LinearMap.finite_quotient_range_prodMap`) or free (`LinearMap.free_quotient_range_prodMap`).
 
 ## Implementation notes
 
@@ -77,6 +79,16 @@ theorem finrank_quotient_prod [StrongRankCondition R] (p : Submodule R M) (q : S
       = Module.finrank R (M ⧸ p) + Module.finrank R (N ⧸ q) := by
   rw [(quotientProdEquiv p q).finrank_eq, Module.finrank_prod]
 
+/-- The quotient by a product of submodules is finite when the two quotients are. -/
+instance finite_quotient_prod (p : Submodule R M) (q : Submodule R N) [Module.Finite R (M ⧸ p)]
+    [Module.Finite R (N ⧸ q)] : Module.Finite R ((M × N) ⧸ p.prod q) :=
+  .equiv (quotientProdEquiv p q).symm
+
+/-- The quotient by a product of submodules is free when the two quotients are. -/
+instance free_quotient_prod (p : Submodule R M) (q : Submodule R N) [Module.Free R (M ⧸ p)]
+    [Module.Free R (N ⧸ q)] : Module.Free R ((M × N) ⧸ p.prod q) :=
+  .of_equiv (quotientProdEquiv p q).symm
+
 end Quotient
 
 end Submodule
@@ -118,7 +130,13 @@ instance finite_quotient_range_prodMap [Module.Finite R (N ⧸ range f)]
     [Module.Finite R (N' ⧸ range g)] : Module.Finite R ((N × N') ⧸ range (f.prodMap g)) :=
   .equiv (cokerProdMapEquiv f g).symm
 
+/-- The cokernel of `f.prodMap g` is free when those of `f` and `g` are. -/
+instance free_quotient_range_prodMap [Module.Free R (N ⧸ range f)]
+    [Module.Free R (N' ⧸ range g)] : Module.Free R ((N × N') ⧸ range (f.prodMap g)) :=
+  .of_equiv (cokerProdMapEquiv f g).symm
+
 /-- The cokernel of `f.prodMap g` has rank `rank coker f + rank coker g`. -/
+@[simp]
 theorem finrank_quotient_range_prodMap [StrongRankCondition R] [Module.Free R (N ⧸ range f)]
     [Module.Free R (N' ⧸ range g)] [Module.Finite R (N ⧸ range f)]
     [Module.Finite R (N' ⧸ range g)] :

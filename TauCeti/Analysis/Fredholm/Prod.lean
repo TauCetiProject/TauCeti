@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
-import TauCeti.LinearAlgebra.Dimension.Prod
+import TauCeti.LinearAlgebra.LinearMap.Prod
 import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!

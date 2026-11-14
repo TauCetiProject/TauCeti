@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.LinearAlgebra.LinearMap.Prod
 
 /-!
 # Dimensions of products
@@ -16,10 +16,10 @@ Mathlib's `Module.finrank_prod` computes the dimension of `M × M'` for finite f
 dimensions are `0` by convention. So `finrank (M × M) = 2 * finrank M` for every free module `M`
 over a semiring with the strong rank condition (`Module.finrank_prod_self`).
 
-For linear maps `f` and `g`, the kernel of `f.prodMap g` is `ker f × ker g`
-(`LinearMap.kerProdMapEquiv`), so it is finite when those of `f` and `g` are
-(`LinearMap.finite_ker_prodMap`), with rank `rank ker f + rank ker g` when they are free
-(`LinearMap.finrank_ker_prodMap`).
+A product `p.prod q` of finite free submodules has rank `rank p + rank q`
+(`Submodule.finrank_prod`). In particular, for linear maps `f` and `g` the kernel of
+`f.prodMap g`, which is `ker f × ker g` (`LinearMap.kerProdMapEquiv`), has rank
+`rank ker f + rank ker g` (`LinearMap.finrank_ker_prodMap`).
 -/
 
 public section
@@ -39,40 +39,31 @@ theorem finrank_prod_self : finrank R (M × M) = 2 * finrank R M := by
 
 end Module
 
+namespace Submodule
+
+variable {R M M' : Type*} [Semiring R] [StrongRankCondition R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid M'] [Module R M'] (p : Submodule R M) (q : Submodule R M')
+
+/-- A product of finite free submodules has rank the sum of their ranks. -/
+@[simp]
+theorem finrank_prod [Module.Free R p] [Module.Free R q] [Module.Finite R p] [Module.Finite R q] :
+    Module.finrank R (p.prod q) = Module.finrank R p + Module.finrank R q := by
+  rw [(p.prodEquiv q).finrank_eq, Module.finrank_prod]
+
+end Submodule
+
 namespace LinearMap
 
 variable {R : Type*} [Semiring R] {M N M' N' : Type*} [AddCommMonoid M] [Module R M]
   [AddCommMonoid N] [Module R N] [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
   (f : M →ₗ[R] N) (g : M' →ₗ[R] N')
 
-/-- The kernel of `f.prodMap g` is the product of the kernels of `f` and `g`. -/
-def kerProdMapEquiv : ker (f.prodMap g) ≃ₗ[R] ker f × ker g :=
-  (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv _ _)
-
-@[simp]
-theorem coe_kerProdMapEquiv_apply_fst (x : ker (f.prodMap g)) :
-    ((kerProdMapEquiv f g x).1 : M) = (x : M × M').1 := by
-  simp [kerProdMapEquiv]
-
-@[simp]
-theorem coe_kerProdMapEquiv_apply_snd (x : ker (f.prodMap g)) :
-    ((kerProdMapEquiv f g x).2 : M') = (x : M × M').2 := by
-  simp [kerProdMapEquiv]
-
-@[simp]
-theorem coe_kerProdMapEquiv_symm_apply (x : ker f × ker g) :
-    ((kerProdMapEquiv f g).symm x : M × M') = ((x.1 : M), (x.2 : M')) := by
-  simp [kerProdMapEquiv]
-
-/-- The kernel of `f.prodMap g` is finite when those of `f` and `g` are. -/
-instance finite_ker_prodMap [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
-    Module.Finite R (ker (f.prodMap g)) :=
-  .equiv (kerProdMapEquiv f g).symm
-
 /-- The kernel of `f.prodMap g` has rank `rank ker f + rank ker g`. -/
+@[simp]
 theorem finrank_ker_prodMap [StrongRankCondition R] [Module.Free R (ker f)]
     [Module.Free R (ker g)] [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
     Module.finrank R (ker (f.prodMap g)) = Module.finrank R (ker f) + Module.finrank R (ker g) := by
-  rw [(kerProdMapEquiv f g).finrank_eq, Module.finrank_prod]
+  rw [ker_prodMap]
+  exact Submodule.finrank_prod _ _
 
 end LinearMap

@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.Quotient.Prod
-import TauCeti.LinearAlgebra.Dimension.Prod
+import TauCeti.LinearAlgebra.LinearMap.Prod
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -307,9 +307,7 @@ theorem homologyProdEquiv_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     d.homologyProdEquiv e hd he (Submodule.Quotient.mk z) =
       (Submodule.Quotient.mk ⟨z.1.1, congrArg Prod.fst (mem_ker.mp z.2)⟩,
         Submodule.Quotient.mk ⟨z.1.2, congrArg Prod.snd (mem_ker.mp z.2)⟩) := by
-  simp only [homologyProdEquiv, LinearEquiv.trans_apply, Submodule.Quotient.equiv_apply,
-    Submodule.mapQ_apply, Submodule.quotientProdEquiv_apply_mk]
-  congr 2 <;> ext <;> simp
+  simp [homologyProdEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
 
 /-- The inverse product-homology equivalence sends two cycle classes to their product class. -/
 @[simp]

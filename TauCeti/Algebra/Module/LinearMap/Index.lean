@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.LinearAlgebra.LinearMap.Prod
 public import TauCeti.LinearAlgebra.Quotient.Prod
 import TauCeti.LinearAlgebra.Dimension.Prod
 

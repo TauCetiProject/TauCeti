@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Module.Projective.Schanuel
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Finiteness.Prod
-import TauCeti.LinearAlgebra.Dimension.Prod
+import TauCeti.LinearAlgebra.LinearMap.Prod
 
 /-!
 # Pseudocoherent modules
