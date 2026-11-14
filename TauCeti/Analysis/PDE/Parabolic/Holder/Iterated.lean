@@ -29,8 +29,9 @@ the continuous one-sided derivatives. In the parabolic scaling one time derivati
 spatial ones, which is why the order is `2 r + m` and why a map of order `k` also carries the
 fractional time regularity `(1 + α) / 2` one order below the top. Mathematically, `k = 0` gives
 the parabolic Hölder space `C_b^{α,α/2}` and `k = 2` the space `C_b^{2+α,1+α/2}` with its full
-norm; the comparison with the carriers `TauCeti.HolderSpace` and
-`TauCeti.ParabolicC2HolderSpace` of these orders is not part of this file. These are the solution
+norm; see `TauCeti/Analysis/PDE/Parabolic/Holder/LowOrder.lean` for the identifications with
+`TauCeti.HolderSpace`, `TauCeti.ParabolicC1HolderSpace` and `TauCeti.ParabolicC2HolderSpace`.
+These are the solution
 and data spaces of the classical Schauder theory of parabolic equations at every order of
 differentiability.
 
@@ -65,13 +66,20 @@ derivative in `x` of the `r`-th iterated derivative within `[a, b]` in `t`
   identities and the Hölder conditions.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL`: the bounded continuous field `D_t^r D_x^m u`,
   identified with iterated derivatives by `TauCeti.ParabolicCkHolderSpace.mixedDerivL_slabMk`.
+* `TauCeti.ParabolicCkHolderSpace.valueL` and `TauCeti.ParabolicCkHolderSpace.spatialFDerivBCF`:
+  the underlying map and the curried spatial gradient as bounded continuous fields, with the
+  norms of `D_t^0 D_x^0 u` and `D_t^0 D_x^1 u`.
 * `TauCeti.ParabolicCkHolderSpace.hasFDerivAt_mixedDerivL` and
   `TauCeti.ParabolicCkHolderSpace.hasDerivWithinAt_mixedDerivL`: the spatial and time derivative
   identities between the fields.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivHolderL` and
   `TauCeti.ParabolicCkHolderSpace.timeSliceL`: the top-order fields as bounded Hölder maps, and
   the families of Hölder time slices one order below.
-* `TauCeti.ParabolicCkHolderSpace.norm_eq`: the norm as a sum of the field norms.
+* `TauCeti.ParabolicCkHolderSpace.norm_eq`,
+  `TauCeti.ParabolicCkHolderSpace.timeEHolderNorm_mixedDerivL_le` and
+  `TauCeti.ParabolicCkHolderSpace.norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm`: the
+  norm as a sum of field norms and the two-sided comparison of the time-slice norms with the
+  temporal `(1 + α) / 2`-seminorms.
 
 ## References
 
@@ -143,6 +151,25 @@ theorem mem_parabolicDerivPairs {k : ℕ} {p : ℕ × ℕ} :
     p ∈ parabolicDerivPairs k ↔ 2 * p.1 + p.2 ≤ k := by
   simp only [parabolicDerivPairs, Finset.mem_filter, Finset.mem_product, Finset.mem_range,
     and_iff_right_iff_imp]
+  omega
+
+/-- At order zero, `(0, 0)` is the sole parabolic derivative index. -/
+@[simp]
+theorem parabolicDerivPairs_zero : parabolicDerivPairs 0 = {(0, 0)} := by
+  ext ⟨r, m⟩
+  simp only [mem_parabolicDerivPairs, Finset.mem_singleton, Prod.mk.injEq]
+  omega
+
+/-- At order one, the parabolic derivative indices are `(0, 0)` and `(0, 1)`. -/
+theorem parabolicDerivPairs_one : parabolicDerivPairs 1 = {(0, 0), (0, 1)} := by
+  ext ⟨r, m⟩
+  simp only [mem_parabolicDerivPairs, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
+  omega
+
+/-- At order two, the parabolic derivative indices are `(0, 0)`, `(0, 1)`, `(0, 2)` and `(1, 0)`. -/
+theorem parabolicDerivPairs_two : parabolicDerivPairs 2 = {(0, 0), (0, 1), (0, 2), (1, 0)} := by
+  ext ⟨r, m⟩
+  simp only [mem_parabolicDerivPairs, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
   omega
 
 variable (k α E F) in
@@ -662,6 +689,67 @@ theorem coe_smul (c : ℝ) (f : ParabolicCkHolderSpace k α E F hab) : ⇑(c •
   ext p
   simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
 
+/-- Forgetting the derivatives is a continuous linear map into bounded continuous maps on the
+slab, obtained by reading the order-zero field as an `F`-valued map. -/
+def valueL : ParabolicCkHolderSpace k α E F hab →L[ℝ] (slab (E := E) a b →ᵇ F) :=
+  ((continuousMultilinearCurryFin0 ℝ E F).toLinearIsometry.toContinuousLinearMap
+    |>.compLeftContinuousBounded (slab (E := E) a b)).comp (mixedDerivL 0 0)
+
+@[simp]
+theorem valueL_apply (f : ParabolicCkHolderSpace k α E F hab) (p : slab (E := E) a b) :
+    valueL f p = f p := by
+  rw [valueL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compLeftContinuousBounded_apply]
+  exact (rfl)
+
+@[simp]
+theorem coe_valueL (f : ParabolicCkHolderSpace k α E F hab) : ⇑(valueL f) = f :=
+  funext (valueL_apply f)
+
+/-- The supremum norm of the underlying map equals that of the order-zero derivative field. -/
+theorem norm_valueL (f : ParabolicCkHolderSpace k α E F hab) :
+    ‖valueL f‖ = ‖mixedDerivL 0 0 f‖ := by
+  simp only [valueL, ContinuousLinearMap.comp_apply, BoundedContinuousFunction.norm_eq_iSup_norm,
+    ContinuousLinearMap.compLeftContinuousBounded_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.norm_map]
+
+/-- The curried spatial gradient field `D_x u`, as a continuous linear map into bounded continuous
+gradient fields on the slab. It vanishes at order `k = 0`. -/
+def spatialFDerivBCF :
+    ParabolicCkHolderSpace k α E F hab →L[ℝ] (slab (E := E) a b →ᵇ (E →L[ℝ] F)) :=
+  ((continuousMultilinearCurryFin1 ℝ E F).toLinearIsometry.toContinuousLinearMap
+    |>.compLeftContinuousBounded (slab (E := E) a b)).comp (mixedDerivL 0 1)
+
+@[simp]
+theorem spatialFDerivBCF_apply (f : ParabolicCkHolderSpace k α E F hab)
+    (p : slab (E := E) a b) :
+    spatialFDerivBCF f p = continuousMultilinearCurryFin1 ℝ E F (mixedDerivL 0 1 f p) :=
+  (rfl)
+
+/-- The supremum norm of the curried spatial gradient equals that of the `(0, 1)` derivative
+field. -/
+theorem norm_spatialFDerivBCF (f : ParabolicCkHolderSpace k α E F hab) :
+    ‖spatialFDerivBCF f‖ = ‖mixedDerivL 0 1 f‖ := by
+  simp only [spatialFDerivBCF, ContinuousLinearMap.comp_apply,
+    BoundedContinuousFunction.norm_eq_iSup_norm,
+    ContinuousLinearMap.compLeftContinuousBounded_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.norm_map]
+
+/-- At positive order `k + 1`, `spatialFDerivBCF` is the Fréchet derivative of every spatial
+slice. -/
+theorem hasFDerivAt_spatialSlice (f : ParabolicCkHolderSpace (k + 1) α E F hab) (t : Icc a b)
+    (x : E) :
+    HasFDerivAt (fun y ↦ f (slabMk y t)) (spatialFDerivBCF f (slabMk x t)) x := by
+  let L : (E [×0]→L[ℝ] F) →L[ℝ] F :=
+    (continuousMultilinearCurryFin0 ℝ E F).toLinearIsometry.toContinuousLinearMap
+  have hd := L.hasFDerivAt.comp x (f.hasFDerivAt_mixedDerivL (r := 0) (m := 0) (by omega) t x)
+  have hfun : (L ∘ fun y ↦ mixedDerivL 0 0 f (slabMk y t)) = fun y ↦ f (slabMk y t) :=
+    funext fun y ↦ (rfl)
+  have hlin : L.comp (mixedDerivL 0 1 f (slabMk x t)).curryLeft =
+      spatialFDerivBCF f (slabMk x t) := by
+    ext v
+    simp [L, ContinuousMultilinearMap.curryLeft_apply]
+  rwa [hfun, hlin] at hd
+
 /-! ### Construction from the fields -/
 
 section Mk
@@ -818,6 +906,26 @@ theorem norm_mixedDerivL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ
   · rw [mixedDerivL_of_lt (by simpa using h), zero_apply, norm_zero]
     exact norm_nonneg f
 
+/-- The supremum norm of the underlying map is bounded by the `C_{par,b}^{k+α}` norm. -/
+theorem norm_valueL_le (f : ParabolicCkHolderSpace k α E F hab) : ‖valueL f‖ ≤ ‖f‖ :=
+  (norm_valueL f).trans_le (f.norm_mixedDerivL_le 0 0)
+
+/-- Every point value is bounded in norm by the `C_{par,b}^{k+α}` norm. -/
+theorem norm_apply_le (f : ParabolicCkHolderSpace k α E F hab) (p : slab (E := E) a b) :
+    ‖f p‖ ≤ ‖f‖ := by
+  rw [← valueL_apply]
+  exact ((valueL f).norm_coe_le_norm p).trans f.norm_valueL_le
+
+/-- Forgetting the derivatives has operator norm at most one. -/
+theorem norm_valueL_le_one :
+    ‖valueL (k := k) (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by simpa using f.norm_valueL_le
+
+/-- The supremum norm of the curried spatial gradient is bounded by the `C_{par,b}^{k+α}` norm. -/
+theorem norm_spatialFDerivBCF_le (f : ParabolicCkHolderSpace k α E F hab) :
+    ‖spatialFDerivBCF f‖ ≤ ‖f‖ :=
+  (norm_spatialFDerivBCF f).trans_le (f.norm_mixedDerivL_le 0 1)
+
 /-- Each family of time slices is bounded by the norm. -/
 theorem norm_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
     ‖timeSliceL r m f‖ ≤ ‖f‖ := by
@@ -837,6 +945,67 @@ theorem norm_mixedDerivHolderL_le (f : ParabolicCkHolderSpace k α E F hab) (r m
     exact (le_add_of_nonneg_left (norm_nonneg _)).trans (le_add_of_nonneg_left (norm_nonneg _))
   · rw [mixedDerivHolderL_of_ne (by simp at h; omega), zero_apply, norm_zero]
     exact norm_nonneg f
+
+/-- The Hölder norm of a top-order field `D_t^r D_x^m u` (`2 r + m = k`) is the sum of its
+supremum norm and its parabolic `α`-Hölder seminorm. -/
+theorem norm_mixedDerivHolderL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m = k) :
+    ‖mixedDerivHolderL r m f‖ = ‖mixedDerivL r m f‖ +
+      nnHolderNorm α (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) := by
+  rw [HolderSpace.norm_def, toBoundedContinuousFunction_mixedDerivHolderL f h]
+
+/-- Each time slice of a field of order `2 r + m = k - 1` has `(1 + α) / 2`-Hölder seminorm at
+most the norm of the family of time slices. -/
+private theorem eHolderNorm_mixedDerivL_slabMk_le (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m + 1 = k) (x : E) :
+    eHolderNorm ((1 + α) / 2) (fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t)) ≤
+      ‖timeSliceL r m f‖₊ := by
+  have hcoe : ((timeSliceL r m f x : HolderSpace ((1 + α) / 2) (Icc a b) (E [×m]→L[ℝ] F)) :
+      Icc a b → E [×m]→L[ℝ] F) = fun t ↦ mixedDerivL r m f (slabMk x t) :=
+    funext (timeSliceL_apply f h x)
+  have hm := f.memHolder_mixedDerivL_slabMk h x
+  rw [← hm.coe_nnHolderNorm_eq_eHolderNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
+  have hle := (timeSliceL r m f x).nnHolderNorm_le
+  rw [HolderSpace.coe_toBoundedContinuousFunction, hcoe] at hle
+  exact hle.trans (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
+
+/-- For `2 r + m + 1 = k`, the temporal `(1 + α) / 2`-seminorm of `D_t^r D_x^m u` is at most the
+norm of its family of time slices. -/
+theorem timeEHolderNorm_mixedDerivL_le (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m + 1 = k) :
+    timeEHolderNorm ((1 + α) / 2) (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) ≤
+      ‖timeSliceL r m f‖₊ :=
+  timeEHolderNorm_le_iff.2 fun x ↦ eHolderNorm_le_iff.1 (f.eHolderNorm_mixedDerivL_slabMk_le h x)
+
+/-- For `2 r + m + 1 = k`, the temporal `(1 + α) / 2`-seminorm of `D_t^r D_x^m u` is finite. -/
+theorem timeEHolderNorm_mixedDerivL_lt_top (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
+    (h : 2 * r + m + 1 = k) :
+    timeEHolderNorm ((1 + α) / 2) (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F) < ∞ :=
+  (f.timeEHolderNorm_mixedDerivL_le h).trans_lt ENNReal.coe_lt_top
+
+/-- The norm of the family of time slices at `(r, m)` is at most the supremum norm of
+`D_t^r D_x^m u` plus its temporal `(1 + α) / 2`-seminorm. -/
+theorem norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm
+    (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
+    ‖timeSliceL r m f‖ ≤ ‖mixedDerivL r m f‖ +
+      (timeEHolderNorm ((1 + α) / 2)
+        (mixedDerivL r m f : slab (E := E) a b → E [×m]→L[ℝ] F)).toReal := by
+  by_cases h : 2 * r + m + 1 = k
+  · refine lp.norm_le_of_forall_le (by positivity) fun x ↦ ?_
+    have hcoe : ((timeSliceL r m f x).toBoundedContinuousFunction : Icc a b → E [×m]→L[ℝ] F) =
+        fun t ↦ mixedDerivL r m f (slabMk x t) :=
+      funext fun t ↦ by rw [HolderSpace.toBoundedContinuousFunction_apply, timeSliceL_apply f h]
+    rw [HolderSpace.norm_def]
+    gcongr
+    · refine (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun t ↦ ?_
+      rw [HolderSpace.toBoundedContinuousFunction_apply, timeSliceL_apply f h]
+      exact (mixedDerivL r m f).norm_coe_le_norm _
+    · rw [hcoe, ← ENNReal.coe_toReal (r := nnHolderNorm _ _),
+        (f.memHolder_mixedDerivL_slabMk h x).coe_nnHolderNorm_eq_eHolderNorm]
+      exact ENNReal.toReal_mono (f.timeEHolderNorm_mixedDerivL_lt_top h).ne
+        (eHolderNorm_le_timeEHolderNorm _ _ x)
+  · rw [timeSliceL_of_ne h, zero_apply, norm_zero]
+    positivity
 
 /-! ### Completeness -/
 
