@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Contactomorphism
+public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
+import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Contact.Slice
 import TauCeti.Geometry.Contact.Symplectization.Linear
-import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
-import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.TwoForm.Kernel
 import TauCeti.Geometry.Symplectic.Manifold.Darboux
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The strict contact Darboux theorem
@@ -37,11 +37,11 @@ factor `g`: there are `n` with `dim E = 2 n + 1` and a smooth partial diffeomorp
 `α_std (chart x) (d chart_x v) = α x v`.
 
 For a globally smooth one-form `α`, this pointwise pullback identity on `chart.source` is
-equivalent to `chart.toDiffeomorphSourceTarget` being a strict contactomorphism
-(`Diffeomorph.IsStrictContactomorphism`) between the restrictions of `α` and `α_std` to the open
-source and target (`PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_iff`,
-`PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff`). Moreover,
-without assuming finite-dimensionality or global contactness, any partial diffeomorphism into
+equivalent to `chart.toDiffeomorphSourceTarget` being a strict contactomorphism between the
+restrictions of `α` and `α_std` to the open source and target (see
+`PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_iff` in
+`TauCeti/Geometry/Contact/Contactomorphism.lean`). Moreover, without assuming
+finite-dimensionality or global contactness, any `C^n` (`2 ≤ n`) partial diffeomorphism into
 `V × V × ℝ` pulling `dz - ⟪p, dq⟫` back to `α` on its source straightens the Reeb vector field of
 `α` to the coordinate field `∂_z = (0, 0, 1)` on that source
 (`TauCeti.SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq`).
@@ -71,13 +71,9 @@ of `TauCeti/Geometry/Contact/Darboux/Basic.lean`:
 
 ## Main results
 
-* `PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_iff`,
-  `PartialDiffeomorph.isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff`: a partial
-  diffeomorphism restricts to a strict contactomorphism between its source and target if and only
-  if it pulls the target one-form back to the source one-form at every point of its source.
-* `TauCeti.SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq`: a partial
-  diffeomorphism into `V × V × ℝ` pulling `dz - ⟪p, dq⟫` back to `α` straightens `α.reebVectorField`
-  to `(0, 0, 1)` on its source.
+* `TauCeti.SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq`: a `C^n`
+  (`2 ≤ n`) partial diffeomorphism into `V × V × ℝ` pulling `dz - ⟪p, dq⟫` back to `α` straightens
+  `α.reebVectorField` to `(0, 0, 1)` on its source.
 * `TauCeti.IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq`,
   `TauCeti.IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq_of_finrank_eq`:
   strict Darboux partial diffeomorphisms on finite-dimensional real normed spaces.
@@ -108,148 +104,41 @@ noncomputable section
 open Set Filter Bundle Module TopologicalSpace
 open scoped ContDiff Manifold Topology InnerProductSpace
 
-/-! ### Strict contactomorphisms on open domains -/
-
-namespace PartialDiffeomorph
-
-variable {E H M F H' N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
-
-/-- A smooth partial diffeomorphism `e` restricts to a strict contactomorphism between its open
-source and open target, for the restrictions of smooth one-forms `α` and `β`, if and only if at
-every point of `e.source` the differential of `e` pulls `β` back to `α`. -/
-theorem isStrictContactomorphism_toDiffeomorphSourceTarget_iff
-    (e : PartialDiffeomorph I J M N ∞) (α : TauCeti.SmoothForm I M ℝ 1)
-    (β : TauCeti.SmoothForm J N ℝ 1) :
-    e.toDiffeomorphSourceTarget.IsStrictContactomorphism
-        (TauCeti.SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
-        (TauCeti.SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
-      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mfderiv I J e x v] = α.1 x ![v] := by
-  let U : Opens M := ⟨e.source, e.open_source⟩
-  let W : Opens N := ⟨e.target, e.open_target⟩
-  have hcomp : (Subtype.val : W → N) ∘ e.toDiffeomorphSourceTarget = e ∘ (Subtype.val : U → M) :=
-    funext fun x ↦ e.toDiffeomorphSourceTarget_apply_coe x
-  have hpull (x : U) (v : TangentSpace I x) :
-      (TauCeti.SmoothForm.mpullback e.toDiffeomorphSourceTarget
-        e.toDiffeomorphSourceTarget.contMDiff
-        (TauCeti.SmoothForm.mpullback (Subtype.val : W → N) contMDiff_subtype_val β)).1 x ![v] =
-        β.1 (e x) ![mfderiv I J e x (TauCeti.Manifold.tangentSpaceOpenEquiv x v)] := by
-    have he : MDifferentiableAt I J e x := e.mdifferentiableAt (n := ∞) (by simp) x.2
-    rw [TauCeti.SmoothForm.mpullback_mpullback, TauCeti.SmoothForm.mpullback_apply_one, hcomp,
-      Function.comp_apply,
-      mfderiv_comp x he ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)),
-      ContinuousLinearMap.comp_apply, TauCeti.Manifold.mfderiv_subtype_val,
-      ContinuousLinearEquiv.coe_coe]
-  have hrhs (x : U) (v : TangentSpace I x) :
-      (TauCeti.SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val α).1 x ![v] =
-        α.1 x ![TauCeti.Manifold.tangentSpaceOpenEquiv x v] := by
-    rw [TauCeti.SmoothForm.mpullback_apply_one, TauCeti.Manifold.mfderiv_subtype_val,
-      ContinuousLinearEquiv.coe_coe]
-  rw [Diffeomorph.isStrictContactomorphism_def, Subtype.ext_iff, funext_iff]
-  refine ⟨fun h x hx w ↦ ?_, fun h x ↦ ContinuousAlternatingMap.ext fun m ↦ ?_⟩
-  · let x' : U := ⟨x, hx⟩
-    let v : TangentSpace I x' := (TauCeti.Manifold.tangentSpaceOpenEquiv x').symm w
-    have hv := congrArg (fun A ↦ A ![v]) (h x')
-    rwa [hpull, hrhs, ContinuousLinearEquiv.apply_symm_apply] at hv
-  · have hm : m = ![m 0] := funext fun i ↦ by fin_cases i; rfl
-    rw [hm, hpull, hrhs]
-    exact h x.1 x.2 _
-
-/-- For a partial diffeomorphism into a normed space, `e.toDiffeomorphSourceTarget` is a strict
-contactomorphism between the restrictions of `α` and `β` if and only if `mvfderiv I e` pulls `β`
-back to `α` on `e.source`. -/
-theorem isStrictContactomorphism_toDiffeomorphSourceTarget_modelSpace_iff
-    (e : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) (α : TauCeti.SmoothForm I M ℝ 1)
-    (β : TauCeti.SmoothForm 𝓘(ℝ, F) F ℝ 1) :
-    e.toDiffeomorphSourceTarget.IsStrictContactomorphism
-        (TauCeti.SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
-        (TauCeti.SmoothForm.mpullback Subtype.val contMDiff_subtype_val β) ↔
-      ∀ x ∈ e.source, ∀ v : TangentSpace I x, β.1 (e x) ![mvfderiv I e x v] = α.1 x ![v] := by
-  simp only [e.isStrictContactomorphism_toDiffeomorphSourceTarget_iff α β,
-    mvfderiv_apply_eq_mfderiv_apply]
-
-end PartialDiffeomorph
-
 namespace TauCeti
 
 /-! ### Straightening the Reeb vector field in a strict Darboux chart -/
 
 section ReebStraightening
 
-/-- The pointwise contact condition depends only on the germ of the rough one-form at `x`. -/
-private theorem isContactFormAt_of_eventuallyEq {E H M : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-    {α β : RoughForm I M ℝ 1} {x : M} (hc : IsContactFormAt α x)
-    (h : ∀ᶠ y in 𝓝 x, α y = β y) :
-    IsContactFormAt β x := by
-  have hx : α x = β x := h.self_of_nhds
-  have hker : α.ker x = β.ker x := by
-    ext v
-    simp only [RoughForm.mem_ker, hx]
-  have hd : mextDeriv α x = mextDeriv β x := mextDeriv_congr_of_eventuallyEq h
-  exact ⟨hx ▸ hc.ne_zero, fun v hv hvw ↦
-    hc.nondegenerate v (hker.symm ▸ hv) fun w hw ↦ hd ▸ hvw w (hker ▸ hw)⟩
-
-/-- **Reeb straightening in a strict Darboux chart.** If a smooth partial diffeomorphism `chart`
-from `M` into `V × V × ℝ` pulls the standard contact form `dz - ⟪p, dq⟫` back to `α` on
+/-- **Reeb straightening in a strict Darboux chart.** If a `C^n` (`2 ≤ n`) partial diffeomorphism
+`chart` from `M` into `V × V × ℝ` pulls the standard contact form `dz - ⟪p, dq⟫` back to `α` on
 `chart.source`, then at every `x ∈ chart.source` the differential of `chart` sends
 `α.reebVectorField x` to `(0, 0, 1)`. Neither finite-dimensionality nor global contactness of `α`
 is needed. -/
 theorem SmoothForm.mvfderiv_reebVectorField_of_forall_innerProductContactForm_eq
     {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
     {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] {α : SmoothForm I M ℝ 1}
-    {chart : PartialDiffeomorph I 𝓘(ℝ, V × V × ℝ) M (V × V × ℝ) ∞}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] {α : SmoothForm I M ℝ 1} {n : WithTop ℕ∞}
+    {chart : PartialDiffeomorph I 𝓘(ℝ, V × V × ℝ) M (V × V × ℝ) n} (hn : 2 ≤ n)
     (hchart : ∀ x ∈ chart.source, ∀ v : TangentSpace I x,
       (innerProductContactForm V).1 (chart x) ![mvfderiv I chart x v] = α.1 x ![v])
     {x : M} (hx : x ∈ chart.source) :
     mvfderiv I chart x (α.reebVectorField x) = (0, 0, 1) := by
-  let α_std := innerProductContactForm V
-  have hd : IsLocalDiffeomorphAt I 𝓘(ℝ, V × V × ℝ) ∞ chart x :=
-    chart.isLocalDiffeomorphAt I 𝓘(ℝ, V × V × ℝ) ∞ hx
-  have hev : ∀ᶠ y in 𝓝 x, TauCeti.mpullback I 𝓘(ℝ, V × V × ℝ) chart α_std.1 y = α.1 y := by
-    filter_upwards [chart.open_source.mem_nhds hx] with y hy
-    ext m
-    have hvec : (fun i ↦ mfderiv I 𝓘(ℝ, V × V × ℝ) chart y (m i)) =
-        (![mvfderiv I chart y (m 0)] : Fin 1 → TangentSpace 𝓘(ℝ, V × V × ℝ) (chart y)) :=
-      funext fun i ↦ by fin_cases i; exact (mvfderiv_apply_eq_mfderiv_apply chart y (m 0)).symm
-    have hm : m = ![m 0] := funext fun i ↦ by fin_cases i; rfl
-    dsimp only [α_std]
-    rw [TauCeti.mpullback_apply, hvec, hchart y hy (m 0), ← hm]
-  have hf2 : ContMDiffAt I 𝓘(ℝ, V × V × ℝ) 2 chart x := hd.contMDiffAt.of_le (by simp)
-  have hbij : Function.Bijective (mfderiv I 𝓘(ℝ, V × V × ℝ) chart x) :=
-    (hd.isInvertible_mfderiv (by simp)).bijective
-  have hc_pull : IsContactFormAt (TauCeti.mpullback I 𝓘(ℝ, V × V × ℝ) chart α_std.1) x :=
-    (isContactFormAt_mpullback_iff hf2 (α_std.contMDiff.of_le (by simp) (chart x)) hbij).2
-      (SmoothForm.isContactForm_iff_forall_isContactFormAt.1
-        (isContactForm_innerProductContactForm V) (chart x))
-  have hc_x : IsContactFormAt α.1 x := isContactFormAt_of_eventuallyEq hc_pull hev
-  obtain ⟨v₀, hv₀⟩ := hbij.2 ((NormedSpace.fromTangentSpace (chart x)).symm (0, 0, 1))
-  have hmvf : mvfderiv I chart x v₀ = (0, 0, 1) := by
-    rw [mvfderiv_apply_eq_mfderiv_apply, hv₀, NormedSpace.fromTangentSpace_symm_apply]
-  have hreeb : α.reebVectorField x = v₀ := by
-    refine hc_x.reebVectorField_eq_of_apply_eq_one ?_ fun w _ ↦ ?_
-    · rw [← hchart x hx v₀]
-      have h001 : (![mvfderiv I chart x v₀] : Fin 1 → TangentSpace 𝓘(ℝ, V × V × ℝ) (chart x)) =
-          ![(NormedSpace.fromTangentSpace (chart x)).symm (0, 0, 1)] :=
-        congrArg (fun u ↦ (![u] : Fin 1 → TangentSpace 𝓘(ℝ, V × V × ℝ) (chart x)))
-          ((mvfderiv_apply_eq_mfderiv_apply chart x v₀).trans hv₀)
-      rw [h001, innerProductContactForm_apply]
-      simp [NormedSpace.fromTangentSpace_symm_apply]
-    · rw [← mextDeriv_congr_of_eventuallyEq hev,
-        ← mpullback_mextDeriv_at hf2 (α_std.contMDiff.of_le (by simp) (chart x)),
-        TauCeti.mpullback_apply]
-      have hpair : (fun i ↦ mfderiv I 𝓘(ℝ, V × V × ℝ) chart x (![v₀, w] i)) =
-          ![mfderiv I 𝓘(ℝ, V × V × ℝ) chart x v₀, mfderiv I 𝓘(ℝ, V × V × ℝ) chart x w] :=
-        funext fun i ↦ by fin_cases i <;> rfl
-      rw [hpair, mextDeriv_innerProductContactForm_apply, hv₀,
-        NormedSpace.fromTangentSpace_symm_apply]
-      simp [stdSymplecticForm_apply]
-  rw [hreeb, hmvf]
+  have hd : IsLocalDiffeomorphAt I 𝓘(ℝ, V × V × ℝ) n chart x :=
+    chart.isLocalDiffeomorphAt I 𝓘(ℝ, V × V × ℝ) n hx
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have hc : IsContactFormAt (innerProductContactForm V).1 (chart x) :=
+    SmoothForm.isContactForm_iff_forall_isContactFormAt.1
+      (isContactForm_innerProductContactForm V) (chart x)
+  have hpull : ∀ᶠ y in 𝓝 x, ∀ v : TangentSpace I y,
+      (innerProductContactForm V).1 (chart y) ![mfderiv I 𝓘(ℝ, V × V × ℝ) chart y v] =
+        α.1 y ![v] := by
+    filter_upwards [chart.open_source.mem_nhds hx] with y hy v
+    simpa only [mvfderiv_apply_eq_mfderiv_apply] using hchart y hy v
+  rw [mvfderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    hc.mfderiv_reebVectorField_eq (hd.contMDiffAt.of_le hn)
+      (hd.isInvertible_mfderiv hn0).bijective hpull,
+    fromTangentSpace_reebVectorField_innerProductContactForm]
 
 end ReebStraightening
 
@@ -259,31 +148,61 @@ section PrimitiveShift
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- The flat one-form `y ↦ (u ↦ ⟪y.2, u.1⟫)` on `V × V`, whose exterior derivative is
-`-stdSymplecticForm`. -/
-private def momentumOneFormFun (y : V × V) : (V × V) [⋀^Fin 1]→L[ℝ] ℝ :=
-  ContinuousAlternatingMap.ofSubsingleton ℝ (V × V) ℝ (0 : Fin 1)
-    ((innerSL ℝ y.2).comp (ContinuousLinearMap.fst ℝ V V))
+/-- The zero-section embedding `(q, p) ↦ (q, p, 0)` of `V × V` into `V × V × ℝ`. -/
+private def momentumSectionCLM : V × V →L[ℝ] V × V × ℝ :=
+  (ContinuousLinearMap.fst ℝ V V).prod
+    ((ContinuousLinearMap.snd ℝ V V).prod (0 : V × V →L[ℝ] ℝ))
+
+/-- The smooth one-form `y ↦ (u ↦ ⟪y.2, u.1⟫)` on `V × V`, obtained by pulling
+`-innerProductContactForm V` back along `momentumSectionCLM`. -/
+private def momentumOneForm : SmoothForm 𝓘(ℝ, V × V) (V × V) ℝ 1 :=
+  SmoothForm.mpullback (momentumSectionCLM (V := V))
+    (momentumSectionCLM (V := V)).contDiff.contMDiff (-innerProductContactForm V)
+
+private def momentumOneFormFun : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ :=
+  (momentumOneForm (V := V)).1
 
 private theorem contDiff_momentumOneFormFun : ContDiff ℝ ∞ (momentumOneFormFun (V := V)) :=
-  (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V × V) (F := ℝ)
-    (0 : Fin 1)).contDiff.comp <|
-      ((innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ).contDiff.comp contDiff_snd).clm_comp contDiff_const
+  isSmoothForm_modelSpace_iff.1 (momentumOneForm (V := V)).isSmoothForm
+
+private theorem mfderiv_momentumSectionCLM_symm (y u : V × V) :
+    mfderiv 𝓘(ℝ, V × V) 𝓘(ℝ, V × V × ℝ) (momentumSectionCLM (V := V)) y
+        ((NormedSpace.fromTangentSpace y).symm u) =
+      (NormedSpace.fromTangentSpace (momentumSectionCLM y)).symm (u.1, u.2, 0) := by
+  apply (NormedSpace.fromTangentSpace (momentumSectionCLM y)).injective
+  rw [ContinuousLinearEquiv.apply_symm_apply, ← ContinuousLinearEquiv.coe_coe,
+    ← ContinuousLinearMap.comp_apply, ← mvfderiv, mvfderiv_eq_fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.fderiv]
+  rfl
+
+private theorem momentumOneFormFun_apply (y u : V × V) :
+    momentumOneFormFun y ![u] = ⟪y.2, u.1⟫_ℝ := by
+  have h := SmoothForm.mpullback_apply_one (momentumSectionCLM (V := V))
+    (momentumSectionCLM (V := V)).contDiff.contMDiff (-innerProductContactForm V) y
+    ((NormedSpace.fromTangentSpace y).symm u)
+  rw [mfderiv_momentumSectionCLM_symm, SmoothForm.neg_toRoughForm, Pi.neg_apply,
+    ContinuousAlternatingMap.neg_apply, innerProductContactForm_apply] at h
+  have hlhs : momentumOneFormFun y ![u] =
+      (momentumOneForm (V := V)).1 y ![(NormedSpace.fromTangentSpace y).symm u] := rfl
+  exact hlhs.trans (h.trans (by
+    simp only [NormedSpace.fromTangentSpace_symm_apply]
+    simp [momentumSectionCLM]))
 
 private theorem extDeriv_momentumOneFormFun_apply (y u w : V × V) :
     extDeriv (momentumOneFormFun (V := V)) y ![u, w] = -stdSymplecticForm u w := by
-  have hd (z : Fin 1 → V × V) : HasFDerivAt (fun x : V × V ↦ momentumOneFormFun x z)
-      ((innerSL ℝ (z 0).1).comp (ContinuousLinearMap.snd ℝ V V)) y := by
-    have hfun : (fun x : V × V ↦ momentumOneFormFun x z) =
-        ⇑((innerSL ℝ (z 0).1).comp (ContinuousLinearMap.snd ℝ V V)) := by
-      funext x
-      simp [momentumOneFormFun, real_inner_comm]
-    rw [hfun]
-    exact ContinuousLinearMap.hasFDerivAt _
-  rw [extDeriv_apply (contDiff_momentumOneFormFun.differentiable (by simp) y), Fin.sum_univ_two,
-    (hd _).fderiv, (hd _).fderiv]
-  simp [Fin.removeNth, stdSymplecticForm_apply, real_inner_comm w.1]
-  ring
+  have h := SmoothForm.mextDeriv_mpullback_apply_two (momentumSectionCLM (V := V))
+    (momentumSectionCLM (V := V)).contDiff.contMDiff (-innerProductContactForm V) y
+    ((NormedSpace.fromTangentSpace y).symm u) ((NormedSpace.fromTangentSpace y).symm w)
+  rw [mfderiv_momentumSectionCLM_symm, mfderiv_momentumSectionCLM_symm,
+    SmoothForm.neg_toRoughForm, mextDeriv_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
+    mextDeriv_innerProductContactForm_apply] at h
+  have hlhs : extDeriv (momentumOneFormFun (V := V)) y ![u, w] =
+      mextDeriv (momentumOneForm (V := V)).1 y
+        ![(NormedSpace.fromTangentSpace y).symm u, (NormedSpace.fromTangentSpace y).symm w] :=
+    (congrArg (fun A : (V × V) [⋀^Fin 2]→L[ℝ] ℝ ↦ (A ![u, w] : ℝ))
+      (mextDeriv_eq_extDeriv (momentumOneForm (V := V)).1 y).symm).trans rfl
+  exact hlhs.trans (h.trans (by simp [NormedSpace.fromTangentSpace_symm_apply]))
 
 /-- On a star-convex open subset `B` of `V × V` centred at `y₀`, any smooth one-form `β₁` whose
 exterior derivative is `stdSymplecticForm` differs from `-⟪p, dq⟫` by the differential of a smooth
@@ -295,16 +214,14 @@ private theorem exists_primitive_add_inner_eq {B : Set (V × V)} {y₀ : V × V}
     ∃ f : V × V → ℝ, ContDiffOn ℝ ∞ f B ∧ f y₀ = 0 ∧
       ∀ y ∈ B, ∀ u : V × V, fderiv ℝ f y u = β₁ y ![u] + ⟪y.2, u.1⟫_ℝ := by
   set η₀ : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ := β₁ + momentumOneFormFun
-  have hη₀ : ContDiffOn ℝ ∞ η₀ B := hβ₁.add contDiff_momentumOneFormFun.contDiffOn
+  have hη₀ : ContDiffOn ℝ ∞ η₀ B := hβ₁.add (contDiff_momentumOneFormFun (V := V)).contDiffOn
   have hdη₀ : ∀ y ∈ B, extDeriv η₀ y = 0 := by
     intro y hy
     have hdiff₁ : DifferentiableAt ℝ β₁ y :=
       (hβ₁.differentiableOn (by simp) y hy).differentiableAt (hB.mem_nhds hy)
     have hdiff₂ : DifferentiableAt ℝ (momentumOneFormFun (V := V)) y :=
-      contDiff_momentumOneFormFun.differentiable (by simp) y
-    ext m
-    have hm : m = ![m 0, m 1] := funext fun i ↦ by fin_cases i <;> rfl
-    rw [hm]
+      (contDiff_momentumOneFormFun (V := V)).differentiable (by simp) y
+    refine ContinuousAlternatingMap.ext_fin_two fun u w ↦ ?_
     dsimp only [η₀]
     simp [extDeriv_add hdiff₁ hdiff₂, hdβ₁ y hy, extDeriv_momentumOneFormFun_apply]
   obtain ⟨γ, hγ, hγ₀, hdγ⟩ :=
@@ -321,7 +238,7 @@ private theorem exists_primitive_add_inner_eq {B : Set (V × V)} {y₀ : V × V}
   have heq := congrArg (fun A : (V × V) [⋀^Fin 1]→L[ℝ] ℝ ↦ A ![u]) (hdγ y hy)
   rw [extDeriv_apply_fin_one] at heq
   rw [hdf.fderiv, ContinuousLinearMap.comp_apply]
-  simpa [ev₀, η₀, momentumOneFormFun] using heq
+  simpa [ev₀, η₀, momentumOneFormFun_apply] using heq
 
 /-- The smooth partial diffeomorphism `((q, p), t) ↦ (q, p, t + f (q, p))` from `(V × V) × ℝ`
 (with product model `𝓘(ℝ, V × V).prod 𝓘(ℝ)`) to `V × V × ℝ` (with self model `𝓘(ℝ, V × V × ℝ)`),
@@ -380,8 +297,9 @@ private theorem innerProductContactForm_primitiveShiftPartialDiffeomorph_apply
     (u : TangentSpace (𝓘(ℝ, V × V).prod 𝓘(ℝ)) p) :
     (innerProductContactForm V).1 (primitiveShiftPartialDiffeomorph hB hf p)
       ![mvfderiv (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (primitiveShiftPartialDiffeomorph hB hf) p u] =
-      NormedSpace.fromTangentSpace (𝕜 := ℝ) p.2 u.2 +
-        β₁ p.1 ![NormedSpace.fromTangentSpace (𝕜 := ℝ) p.1 u.1] := by
+      NormedSpace.fromTangentSpace (𝕜 := ℝ) p.2 (Manifold.tangentSpaceProdEquiv p u).2 +
+        β₁ p.1 ![NormedSpace.fromTangentSpace (𝕜 := ℝ) p.1
+          (Manifold.tangentSpaceProdEquiv p u).1] := by
   let Θ := primitiveShiftPartialDiffeomorph hB hf
   let g₁ : V × V → V × V × ℝ := fun y ↦ (y.1, y.2, f y)
   let g₂ : ℝ → V × V × ℝ := fun t ↦ (0, 0, t)
@@ -397,8 +315,8 @@ private theorem innerProductContactForm_primitiveShiftPartialDiffeomorph_apply
       ((0 : ℝ →L[ℝ] V).prod ((0 : ℝ →L[ℝ] V).prod (ContinuousLinearMap.id ℝ ℝ))) p.2 :=
     (hasFDerivAt_const (0 : V) p.2).prodMk
       ((hasFDerivAt_const (0 : V) p.2).prodMk (hasFDerivAt_id p.2))
-  let u₁' : TangentSpace 𝓘(ℝ, V × V) p.1 := u.1
-  let u₂' : TangentSpace 𝓘(ℝ) p.2 := u.2
+  let u₁' : TangentSpace 𝓘(ℝ, V × V) p.1 := (Manifold.tangentSpaceProdEquiv p u).1
+  let u₂' : TangentSpace 𝓘(ℝ) p.2 := (Manifold.tangentSpaceProdEquiv p u).2
   let u₁ : V × V := NormedSpace.fromTangentSpace (𝕜 := ℝ) p.1 u₁'
   let u₂ : ℝ := NormedSpace.fromTangentSpace (𝕜 := ℝ) p.2 u₂'
   have h1 : mvfderiv 𝓘(ℝ, V × V) g₁ p.1 u₁' = (u₁.1, u₁.2, fderiv ℝ f p.1 u₁) := by
@@ -411,10 +329,10 @@ private theorem innerProductContactForm_primitiveShiftPartialDiffeomorph_apply
       (u₁.1, u₁.2, fderiv ℝ f p.1 u₁ + u₂) := by
     have hsum : mvfderiv (𝓘(ℝ, V × V).prod 𝓘(ℝ)) Θ p u =
         mvfderiv 𝓘(ℝ, V × V) g₁ p.1 u₁' + mvfderiv 𝓘(ℝ) g₂ p.2 u₂' := by
-      rw [hΘ_eq]
-      exact mvfderiv_comp_fst_add_comp_snd_apply
+      rw [hΘ_eq, mvfderiv_comp_fst_add_comp_snd_apply
         (mdifferentiableAt_iff_differentiableAt.2 hg₁.differentiableAt)
-        (mdifferentiableAt_iff_differentiableAt.2 hg₂.differentiableAt) u
+        (mdifferentiableAt_iff_differentiableAt.2 hg₂.differentiableAt) u]
+      simp only [u₁', u₂', Manifold.tangentSpaceProdEquiv_apply]
     rw [hsum, h1, h2]
     ext <;> simp
   have h0 : (![mvfderiv (𝓘(ℝ, V × V).prod 𝓘(ℝ)) Θ p u] :
@@ -472,14 +390,9 @@ private theorem exists_opens_isContactForm {η : E → E [⋀^Fin 1]→L[ℝ] �
         ((contMDiff_subtype_val (I := 𝓘(ℝ, E)) (n := ∞)).contMDiffAt.of_le (by simp))
         ((hη_md x).of_le (by simp)) (hbij x)).2 (hW₁'_sub x.1 x.2.1)
   refine ⟨W₀, p₀, α₀, rfl, inter_subset_right, hα₀, fun p v ↦ ?_⟩
-  change mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : W₀ → E) ηR p ![v] = _
-  rw [mpullback_apply]
-  refine congrArg (η p.1) (funext fun i ↦ ?_)
-  fin_cases i
-  dsimp only [Matrix.cons_val_zero]
-  rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
-  exact (NormedSpace.fromTangentSpace_apply p.1
-    (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, E)) p v)).symm
+  dsimp only [α₀]
+  rw [mpullback_apply_one, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+  exact congrArg (fun w : E ↦ η p.1 ![w]) (NormedSpace.fromTangentSpace_apply p.1 _).symm
 
 /-- Construct the affine contact-hyperplane slice `ι_K : S_K → W₀` through `p₀` along
 `K = ker α₀(p₀)`, which has codimension one and is transverse to the Reeb vector field at `p₀`. -/
@@ -496,19 +409,15 @@ private theorem exists_contactHyperplaneSlice_opens {W₀ : Opens E} (p₀ : W�
   let L_at (x : W₀) : E →ₗ[ℝ] ℝ :=
     ((SmoothForm.degreeOneEquiv α₀ x).comp (e_at x).symm.toContinuousLinearMap).toLinearMap
   have hL_apply (x : W₀) (u : TangentSpace 𝓘(ℝ, E) x) : L_at x (e_at x u) = α₀.1 x ![u] := by
-    change SmoothForm.degreeOneEquiv α₀ x ((e_at x).symm (e_at x u)) = α₀.1 x ![u]
-    rw [ContinuousLinearEquiv.symm_apply_apply, SmoothForm.degreeOneEquiv_apply_apply_vec]
+    simp [L_at]
   let K : Submodule ℝ E := LinearMap.ker (L_at p₀)
   have hL_ne : L_at p₀ ≠ 0 := fun h0 ↦
-    (SmoothForm.isContactForm_iff_forall_isContactFormAt.1 hα₀ p₀).ne_zero <| by
-      ext m
-      have hm : m = ![m 0] := funext fun i ↦ by fin_cases i; rfl
-      rw [hm, ← hL_apply p₀ (m 0), h0]
-      rfl
+    (SmoothForm.isContactForm_iff_forall_isContactFormAt.1 hα₀ p₀).ne_zero <|
+      ContinuousAlternatingMap.ext_fin_one fun u ↦ by simp [← hL_apply p₀ u, h0]
   have hdimK : finrank ℝ K + 1 = finrank ℝ E := Module.Dual.finrank_ker_add_one_of_ne_zero hL_ne
   let S_K : Opens K := ⟨{w : K | (p₀ : E) + K.subtypeL w ∈ W₀},
     (continuous_const.add K.subtypeL.continuous).isOpen_preimage _ W₀.2⟩
-  let s₀ : S_K := ⟨0, by change (p₀ : E) + K.subtypeL 0 ∈ W₀; simp [p₀.2]⟩
+  let s₀ : S_K := ⟨0, by simp [S_K, p₀.2]⟩
   let ι_K : S_K → W₀ := fun w ↦ ⟨(p₀ : E) + K.subtypeL w.1, w.2⟩
   have hι_K : ContMDiff 𝓘(ℝ, K) 𝓘(ℝ, E) ∞ ι_K := (ContMDiff.subtypeVal_comp_iff W₀ _).1 <|
     contMDiff_const.add (K.subtypeL.contDiff.contMDiff.comp contMDiff_subtype_val)
@@ -591,16 +500,7 @@ private theorem exists_reebSliceChart_opens {W₀ : Opens E} (p₀ : W₀)
     rw [hev_F.symm.mpullback_eq]
     exact mpullback_flowOf_comp_apply_eq_contactization hα₀.contMDiff_reebVectorField hι_K
       hα₀.apply_reebVectorField hα₀.interior_mextDeriv_reebVectorField (hΦ'_src ▸ hΨp).2
-  have hid : Φ' ∘ Ψ =ᶠ[𝓝 p] id :=
-    eventually_of_mem (Ψ.open_source.mem_nhds hp) fun p' hp' ↦ Φ'.right_inv hp'
-  have hm := congrArg (fun A ↦ A ![v]) <| mpullback_comp_at (I := 𝓘(ℝ, E))
-    (I' := 𝓘(ℝ, K).prod 𝓘(ℝ)) (I'' := 𝓘(ℝ, E))
-    (Ψ.mdifferentiableAt (n := ∞) (by simp) hp) (Φ'.mdifferentiableAt (n := ∞) (by simp) hΨp) α₀.1
-  have hvec : (fun i ↦ mfderiv 𝓘(ℝ, E) (𝓘(ℝ, K).prod 𝓘(ℝ)) Ψ p (![v] i)) =
-      ![mfderiv 𝓘(ℝ, E) (𝓘(ℝ, K).prod 𝓘(ℝ)) Ψ p v] :=
-    funext fun i ↦ by fin_cases i; rfl
-  rw [hid.mpullback_eq, mpullback_id, mpullback_apply, hpull_symm, hvec] at hm
-  exact hm.symm
+  rw [← hpull_symm, ← mpullback_apply_one, Φ'.mpullback_symm_mpullback (by simp) α₀.1 hp]
 
 /-- Construct standard Euclidean symplectic Darboux coordinates `ψ : S_K → ℝⁿ × ℝⁿ` around a point
 `s₀` of an open subset `S_K : Opens K` where `dβ` is nondegenerate. -/
@@ -682,7 +582,7 @@ private theorem exists_primitive_of_symplecticSliceDarboux {K : Type*} [NormedAd
             (NormedSpace.fromTangentSpace z w)) :
     ∃ (B : Set (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)))
       (f : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) → ℝ),
-      IsOpen B ∧ 0 ∈ B ∧ B ⊆ ψ.target ∧ ContDiffOn ℝ ∞ f B ∧ f 0 = 0 ∧
+      IsOpen B ∧ 0 ∈ B ∧ ContDiffOn ℝ ∞ f B ∧ f 0 = 0 ∧
       ∀ y ∈ B, ∀ u : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n),
         fderiv ℝ f y u =
           mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, K)
@@ -704,50 +604,23 @@ private theorem exists_primitive_of_symplecticSliceDarboux {K : Type*} [NormedAd
       extDerivWithin_mpullbackWithin (φ := β.1) ((hψ_on y hy).of_le (by simp))
         hB_open.uniqueDiffOn (subset_closure (hB_open.interior_eq.symm ▸ hy))
         hy ((β.contMDiff (ψ.symm y)).mdifferentiableAt (by simp))
+    have hd_symm : MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm y :=
+      (hψ_on y hy).mdifferentiableWithinAt (by simp) |>.mdifferentiableAt (hB_open.mem_nhds hy)
+    rw [extDerivWithin_of_isOpen hB_open hy,
+      mpullbackWithin_eq_mpullback (hB_open.uniqueMDiffWithinAt hy) hd_symm] at h
     let u' : TangentSpace 𝓘(ℝ, V × V) y := (NormedSpace.fromTangentSpace y).symm u
     let w' : TangentSpace 𝓘(ℝ, V × V) y := (NormedSpace.fromTangentSpace y).symm w
-    have hpair : (fun i ↦ mfderivWithin 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm B y (![u', w'] i)) =
-        ![mfderiv 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm y u', mfderiv 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm y w'] :=
-      funext fun i ↦ by
-        fin_cases i <;>
-          exact congrFun (congrArg DFunLike.coe (mfderivWithin_of_isOpen hB_open hy)) _
-    have h1 : extDeriv β₁ y ![u, w] = extDerivWithin β₁ B y ![u, w] := by
-      rw [extDerivWithin_of_isOpen hB_open hy]
-    have h2 : extDerivWithin β₁ B y ![u, w] =
-        mpullbackWithin 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm B (mextDeriv β.1) y ![u', w'] :=
-      congrArg (fun A : (V × V) [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![u, w]) h
-    rw [h1, h2, mpullbackWithin_apply, hpair, ← mextDerivₗ_apply 𝓘(ℝ, K) 1 β,
+    have h2 : extDeriv β₁ y ![u', w'] =
+        mpullback 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm (mextDeriv β.1) y ![u', w'] :=
+      congrArg (fun A : (V × V) [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![u', w']) h
+    have huw : extDeriv β₁ y ![u, w] = extDeriv β₁ y ![u', w'] := by
+      simp only [u', w', NormedSpace.fromTangentSpace_symm_apply]
+    rw [huw, h2, mpullback_apply_pair, ← mextDerivₗ_apply 𝓘(ℝ, K) 1 β,
       ← SmoothBundleForm.eval₂_apply]
     simpa [u', w'] using hψ_symp y (hBr hy) u' w'
   obtain ⟨f, hf, hf₀, hdf⟩ := exists_primitive_add_inner_eq hB_open
     ((convex_ball (0 : V × V) r).starConvex (Metric.mem_ball_self hr)) hβ₁ hdβ₁
-  exact ⟨B, f, hB_open, Metric.mem_ball_self hr, hBr, hf, hf₀, hdf⟩
-
-/-- Evaluating `mpullbackWithin ψ.symm B β` at `ψ s` along `dψ_s u` recovers `β_s u` when `B` is
-an open subset of `ψ.target` containing `ψ s`. -/
-private theorem mpullbackWithin_symm_mfderiv_apply {K F : Type*} [NormedAddCommGroup K]
-    [NormedSpace ℝ K] [NormedAddCommGroup F] [NormedSpace ℝ F] {S_K : Opens K}
-    {ψ : PartialDiffeomorph 𝓘(ℝ, K) 𝓘(ℝ, F) S_K F ∞} {B : Set F}
-    (hB_open : IsOpen B) (hBr : B ⊆ ψ.target) (β : SmoothForm 𝓘(ℝ, K) S_K ℝ 1)
-    {s : S_K} (hs : s ∈ ψ.source) (hψs : ψ s ∈ B) (u : TangentSpace 𝓘(ℝ, K) s) :
-    (mpullbackWithin 𝓘(ℝ, F) 𝓘(ℝ, K) ψ.symm B β.1 (ψ s) : F [⋀^Fin 1]→L[ℝ] ℝ)
-      ![NormedSpace.fromTangentSpace (ψ s) (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, F) ψ s u)] = β.1 s ![u] := by
-  have hid_ψ : ψ.symm ∘ ψ =ᶠ[𝓝 s] id :=
-    eventually_of_mem (ψ.open_source.mem_nhds hs) fun s' hs' ↦ ψ.left_inv hs'
-  have hd_ψ := ψ.mdifferentiableAt (n := ∞) (by simp) hs
-  have hd_symm := ψ.symm.mdifferentiableAt (n := ∞) (by simp) (hBr hψs)
-  have hpull_ψ :
-      mpullback 𝓘(ℝ, K) 𝓘(ℝ, F) ψ (mpullback 𝓘(ℝ, F) 𝓘(ℝ, K) ψ.symm β.1) s = β.1 s := by
-    rw [← mpullback_comp_at hd_ψ hd_symm, hid_ψ.mpullback_eq, mpullback_id]
-  let dψu : TangentSpace 𝓘(ℝ, F) (ψ s) := mfderiv 𝓘(ℝ, K) 𝓘(ℝ, F) ψ s u
-  have h1 : (mpullbackWithin 𝓘(ℝ, F) 𝓘(ℝ, K) ψ.symm B β.1 (ψ s) : F [⋀^Fin 1]→L[ℝ] ℝ)
-      ![NormedSpace.fromTangentSpace (ψ s) dψu] =
-      mpullback 𝓘(ℝ, F) 𝓘(ℝ, K) ψ.symm β.1 (ψ s) ![dψu] :=
-    congrArg (fun A : F [⋀^Fin 1]→L[ℝ] ℝ ↦ A ![dψu])
-      (mpullbackWithin_eq_mpullback (hB_open.uniqueMDiffWithinAt hψs) hd_symm β.1)
-  have h2 : (fun i ↦ mfderiv 𝓘(ℝ, K) 𝓘(ℝ, F) ψ s (![u] i)) = ![dψu] :=
-    funext fun i ↦ by fin_cases i; rfl
-  rw [h1, ← h2, ← mpullback_apply, hpull_ψ]
+  exact ⟨B, f, hB_open, Metric.mem_ball_self hr, hf, hf₀, hdf⟩
 
 /-- Given slice Darboux coordinates `ψ : S_K → ℝⁿ × ℝⁿ` around `s₀` pulling `dβ` back to the
 standard symplectic form, combine `ψ × id` with the Poincaré primitive shift on an open ball around
@@ -774,17 +647,13 @@ private theorem exists_contactizationToInnerProductChart {K : Type*} [NormedAddC
         (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1 (Ω q)
           ![mvfderiv (𝓘(ℝ, K).prod 𝓘(ℝ)) Ω q u] = (-β).contactization.1 q ![u] := by
   let V := EuclideanSpace ℝ (Fin n)
-  obtain ⟨B, f, hB_open, h0B, hBr, hf, hf₀, hdf⟩ :=
+  obtain ⟨B, f, hB_open, h0B, hf, hf₀, hdf⟩ :=
     exists_primitive_of_symplecticSliceDarboux hs₀ψ hψs₀ hψ_symp
-  let β₁ : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ := mpullbackWithin 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm B β.1
+  set β₁ : V × V → (V × V) [⋀^Fin 1]→L[ℝ] ℝ := mpullbackWithin 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm B β.1
   let id_ℝ : PartialDiffeomorph 𝓘(ℝ) 𝓘(ℝ) ℝ ℝ ∞ :=
     (ContinuousLinearEquiv.refl ℝ ℝ).toPartialDiffeomorph
-  have hid_src : id_ℝ.source = univ := by
-    change ((ContinuousLinearEquiv.refl ℝ ℝ).toPartialDiffeomorph).toPartialEquiv.source = univ
-    simp
-  have hid_apply (t : ℝ) : id_ℝ t = t := by
-    change ((ContinuousLinearEquiv.refl ℝ ℝ).toPartialDiffeomorph).toPartialEquiv t = t
-    simp
+  have hid_src : id_ℝ.source = univ := by simp [id_ℝ]
+  have hid_apply (t : ℝ) : id_ℝ t = t := by simp [id_ℝ]
   have hprod_src : (ψ.prod id_ℝ).source = ψ.source ×ˢ univ := by
     rw [PartialDiffeomorph.prod_source, hid_src]
   have hprod_coe : ⇑(ψ.prod id_ℝ) = Prod.map ψ id :=
@@ -798,49 +667,42 @@ private theorem exists_contactizationToInnerProductChart {K : Type*} [NormedAddC
   have hΩ₀ : Ω (s₀, 0) = 0 := by
     rw [hΩ_coe, Function.comp_apply]
     simp [Θ, primitiveShiftPartialDiffeomorph, hψs₀, hf₀]
-  refine ⟨Ω, hs₀Ω, hΩ₀, fun q hq u ↦ ?_⟩
+  refine ⟨Ω, hs₀Ω, hΩ₀, fun ⟨s, t⟩ hq u ↦ ?_⟩
   rw [PartialDiffeomorph.trans_source, hprod_src, mem_inter_iff, mem_preimage, hprod_coe] at hq
   have hd_ψ := ψ.mdifferentiableAt (n := ∞) (by simp) hq.1.1
-  have hd_pm : MDifferentiableAt (𝓘(ℝ, K).prod 𝓘(ℝ)) (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (Prod.map ψ id) q :=
+  have hd_pm : MDifferentiableAt (𝓘(ℝ, K).prod 𝓘(ℝ)) (𝓘(ℝ, V × V).prod 𝓘(ℝ))
+      (Prod.map ψ id) (s, t) :=
     hprod_coe ▸ (ψ.prod id_ℝ).mdifferentiableAt (n := ∞) (by simp) (hprod_src ▸ hq.1)
   have hd_Θ := Θ.mdifferentiableAt (n := ∞) (by simp) hq.2
-  let u₁ : TangentSpace 𝓘(ℝ, K) q.1 := u.1
-  let u₂ : TangentSpace 𝓘(ℝ) q.2 := u.2
-  rw [hΩ_coe, Function.comp_apply, mvfderiv_comp_apply q hd_Θ hd_pm,
-    innerProductContactForm_primitiveShiftPartialDiffeomorph_apply hB_open hf hdf hq.2,
-    mfderiv_prodMap hd_ψ mdifferentiableAt_id, mfderiv_id]
-  have hβ₁ : β₁ (ψ q.1) ![NormedSpace.fromTangentSpace (ψ q.1)
-      (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ q.1 u₁)] = β.1 q.1 ![u₁] :=
-    mpullbackWithin_symm_mfderiv_apply hB_open hBr β hq.1.1 hq.2.1 u₁
-  change NormedSpace.fromTangentSpace q.2 u₂ +
-      β₁ (ψ q.1) ![NormedSpace.fromTangentSpace (ψ q.1)
-        (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ q.1 u₁)] = (-β).contactization.1 q ![u]
-  rw [hβ₁, SmoothForm.contactization_apply, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply]
-  simp [u₁, u₂, Manifold.tangentSpaceProdEquiv_apply]
-
-omit [FiniteDimensional ℝ E] in
-/-- If `Φ` extends a partial diffeomorphism `Ξ` defined on an open subset `W₀ : Opens E` to the
-ambient space `E`, then `Φ ∘ Subtype.val` agrees with `Ξ` on a neighborhood of `⟨y, hy⟩` for every
-`y ∈ Φ.source`. -/
-private theorem eventuallyEq_ambient_of_opens {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {W₀ : Opens E} {Ξ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, F) W₀ F ∞}
-    {Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, F) E F ∞}
-    (hΦW₀ : Φ.source ⊆ W₀) (hΦt : Φ.target ⊆ Ξ.target)
-    (hΦsymm : ∀ z ∈ Φ.target, Φ.symm z = ↑(Ξ.symm z)) {y : E} (hy : y ∈ Φ.source) :
-    ⟨y, hΦW₀ hy⟩ ∈ Ξ.source ∧ (Φ ∘ (Subtype.val : W₀ → E) =ᶠ[𝓝 ⟨y, hΦW₀ hy⟩] Ξ) := by
-  let p : W₀ := ⟨y, hΦW₀ hy⟩
-  have hsp : Ξ.symm (Φ y) = p :=
-    Subtype.ext ((hΦsymm (Φ y) (Φ.map_source hy)).symm.trans (Φ.left_inv hy))
-  have hpΞ : p ∈ Ξ.source := hsp ▸ Ξ.map_target (hΦt (Φ.map_source hy))
-  have hΞp_eq : Ξ p = Φ y := hsp ▸ Ξ.right_inv (hΦt (Φ.map_source hy))
-  refine ⟨hpΞ, ?_⟩
-  filter_upwards [Ξ.open_source.mem_nhds hpΞ,
-    (Ξ.contMDiffOn.continuousOn.continuousAt (Ξ.open_source.mem_nhds hpΞ)).preimage_mem_nhds
-      (Φ.open_target.mem_nhds (hΞp_eq ▸ Φ.map_source hy))] with p' hp' hΞp'
-  have hval : (p' : E) = Φ.symm (Ξ p') :=
-    (congrArg Subtype.val (Ξ.left_inv hp')).symm.trans (hΦsymm (Ξ p') hΞp').symm
-  exact (congrArg Φ hval).trans (Φ.right_inv hΞp')
+  let u' := Manifold.tangentSpaceProdEquiv (s, t) u
+  have hpm_d : Manifold.tangentSpaceProdEquiv (Prod.map ψ id (s, t))
+      (mfderiv (𝓘(ℝ, K).prod 𝓘(ℝ)) (𝓘(ℝ, V × V).prod 𝓘(ℝ)) (Prod.map ψ id) (s, t) u) =
+      (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ s u'.1, u'.2) := by
+    have := congrArg (Manifold.tangentSpaceProdEquiv (Prod.map ψ id (s, t)))
+      (Manifold.mfderiv_prodMap_apply hd_ψ mdifferentiableAt_id u')
+    simpa only [u', Prod.map_apply, id_eq, ContinuousLinearEquiv.symm_apply_apply,
+      ContinuousLinearEquiv.apply_symm_apply, mfderiv_id, ContinuousLinearMap.id_apply] using this
+  have hβ₁ : β₁ (ψ s) ![NormedSpace.fromTangentSpace (ψ s)
+      (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ s u'.1)] = β.1 s ![u'.1] := by
+    have h1 : β₁ (ψ s) ![NormedSpace.fromTangentSpace (ψ s)
+        (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ s u'.1)] =
+        mpullback 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ (mpullbackWithin 𝓘(ℝ, V × V) 𝓘(ℝ, K) ψ.symm B β.1)
+          s ![u'.1] := by
+      rw [mpullback_apply_one]
+      exact congrArg (fun w : V × V ↦ β₁ (ψ s) ![w])
+        (NormedSpace.fromTangentSpace_apply (ψ s) _)
+    rw [h1, ψ.mpullback_mpullbackWithin_symm (by simp) hB_open β.1 hq.1.1 hq.2.1]
+  have ht_eq : NormedSpace.fromTangentSpace (Prod.map ψ id (s, t)).2 u'.2 =
+      NormedSpace.fromTangentSpace t u'.2 := rfl
+  have hβ₁_eq : β₁ (Prod.map ψ id (s, t)).1 ![NormedSpace.fromTangentSpace (Prod.map ψ id (s, t)).1
+      (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ s u'.1)] = β₁ (ψ s) ![NormedSpace.fromTangentSpace (ψ s)
+      (mfderiv 𝓘(ℝ, K) 𝓘(ℝ, V × V) ψ s u'.1)] := rfl
+  rw [hΩ_coe, Function.comp_apply, mvfderiv_comp_apply (s, t) hd_Θ hd_pm,
+    innerProductContactForm_primitiveShiftPartialDiffeomorph_apply hB_open hf hdf hq.2, hpm_d,
+    ht_eq, hβ₁_eq, hβ₁, SmoothForm.contactization_apply]
+  simp only [SmoothForm.neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
+    sub_neg_eq_add]
+  rfl
 
 /-- **The strict contact Darboux theorem on normed spaces.** Let `η` be a smooth one-form on an
 open subset `W` of a finite-dimensional real normed space `E`, which is a contact form at `y₀ ∈ W`.
@@ -872,8 +734,13 @@ theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq
   refine ⟨n, Φ, by omega, hp₀_eq ▸ hy₀Φ, hΦW₀.trans hW₀W, (hp₀_eq ▸ hΦy₀).trans hΞp₀,
     fun y hy v ↦ ?_⟩
   let p : W₀ := ⟨y, hΦW₀ hy⟩
-  obtain ⟨hpΞ, hev_Φ⟩ := eventuallyEq_ambient_of_opens hΦW₀ hΦt hΦsymm hy
-  rw [PartialDiffeomorph.coe_trans] at hev_Φ
+  have hpΞ : p ∈ Ξ.source := Ξ.mem_source_of_symm_eq hΦW₀ hΦt hΦsymm hy
+  have hΦy : Φ y = Ω (Ψ p) := by
+    rw [Ξ.apply_eq_of_symm_eq hΦW₀ hΦt hΦsymm hy, PartialDiffeomorph.coe_trans,
+      Function.comp_apply]
+  have hev_Φ : (Φ ∘ (Subtype.val : W₀ → E)) =ᶠ[𝓝 p] ⇑Ω ∘ ⇑Ψ := by
+    rw [← PartialDiffeomorph.coe_trans]
+    exact Ξ.comp_subtype_val_eventuallyEq_of_symm_eq hΦW₀ hΦt hΦsymm hy
   obtain ⟨hpΨ, hpΩ⟩ : p ∈ Ψ.source ∧ Ψ p ∈ Ω.source := by
     rwa [PartialDiffeomorph.trans_source] at hpΞ
   let v_p : TangentSpace 𝓘(ℝ, E) p :=
@@ -896,7 +763,7 @@ theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq
   have h_eval : σ (Φ y) ![fderiv ℝ Φ y v] =
       σ (Ω (Ψ p)) ![mvfderiv (𝓘(ℝ, K).prod 𝓘(ℝ)) Ω (Ψ p)
         (mfderiv 𝓘(ℝ, E) (𝓘(ℝ, K).prod 𝓘(ℝ)) Ψ p v_p)] := by
-    rw [show Φ y = Ω (Ψ p) from hev_Φ.self_of_nhds, hchain]
+    rw [hΦy, hchain]
   exact (h_eval.trans (hΩ_pull (Ψ p) hpΩ _)).trans ((hΨ_pull p hpΨ _).trans (by
     rw [hα₀_coe]
     dsimp only [p, v_p]
@@ -981,10 +848,9 @@ theorem IsContactFormAt.exists_strictDarbouxChart_of_isInteriorPoint {α : Rough
     have hx_chart : x ∈ (chartAt H x₀).source := by simpa only [extChartAt_source] using hx.1.1
     have hΦd : DifferentiableAt ℝ Φ (e x) :=
       mdifferentiableAt_iff_differentiableAt.1 (Φ.mdifferentiableAt (n := ∞) (by simp) hx.2)
-    have hvec : (fun i ↦ mvfderiv I e x (![v] i)) = ![mvfderiv I e x v] :=
-      funext fun i ↦ by fin_cases i; rfl
     rw [hcoe, mvfderiv_comp_apply_of_differentiableAt hΦd (mdifferentiableAt_extChartAt hx_chart),
-      Function.comp_apply, hΦ (e x) hx.2, RoughForm.apply_eq_inChartAt_mvfderiv α hx.1.1, hvec]
+      Function.comp_apply, hΦ (e x) hx.2, RoughForm.apply_eq_inChartAt_mvfderiv α hx.1.1]
+    simp only [Matrix.vec_single_eq_const, e]
 
 omit [FiniteDimensional ℝ E] in
 /-- **The strict contact Darboux theorem at an interior point, in dimension `2 n + 1`.** On a

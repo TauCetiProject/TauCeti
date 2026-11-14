@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Algebra.Module.Contact
 
 /-!
 # The continuous symplectization form of a covector and a two-form
@@ -24,9 +25,10 @@ if the symplectization form of `α` and `dα` at `x` is invertible
 (`TauCeti.isInvertible_symplectizationFormCLM_iff`,
 `TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`), by
 `TauCeti.isContactFormAt_modelSpace_iff_isContact` and
-`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. Since invertibility is open, a
-one-form of class `C¹` at `x` that is a contact form at `x` remains a contact form on a
-neighbourhood of `x` (`TauCeti.IsContactFormAt.eventually`).
+`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. Since contactness of a continuous
+covector/bilinear-form family is open (`TauCeti.isOpen_setOf_isContact`), a one-form of class `C¹`
+at `x` that is a contact form at `x` remains a contact form on a neighbourhood of `x`
+(`TauCeti.IsContactFormAt.eventually`).
 
 This is the linear algebra of the contact Moser method: pairing a conformal factor and a vector
 field with `𝕜 × V` turns the contact Moser equations into a Moser contraction equation for the
@@ -119,19 +121,21 @@ that is `C¹` at `x` and is a contact form at `x` remains a contact form on a ne
 theorem IsContactFormAt.eventually {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V}
     (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) (hα : ContDiffAt ℝ 1 α x) :
     ∀ᶠ y in 𝓝 x, IsContactFormAt (I := 𝓘(ℝ, V)) α y := by
-  have hcont : ContinuousAt (fun y ↦ (α y).symplectizationFormCLM (extDeriv α y)) x := by
-    refine continuousAt_clm_apply.2 fun p ↦ continuousAt_clm_apply.2 fun q ↦ ?_
-    simp only [ContinuousAlternatingMap.symplectizationFormCLM_apply]
-    have hev₁ (m : Fin 1 → V) : ContinuousAt (fun y ↦ α y m) x :=
-      ((ContinuousAlternatingMap.apply ℝ V ℝ m).continuous.continuousAt).comp hα.continuousAt
-    have hev₂ (m : Fin 2 → V) : ContinuousAt (fun y ↦ extDeriv α y m) x :=
-      ((ContinuousAlternatingMap.apply ℝ V ℝ m).continuous.continuousAt).comp
-        (contDiffAt_extDeriv hα (r := 0) (by simp)).continuousAt
-    exact ((continuousAt_const.mul (hev₁ _)).sub (continuousAt_const.mul (hev₁ _))).add (hev₂ _)
-  filter_upwards [hcont.eventually_toBilinForm_nondegenerate
-    (ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm.1
-      hc.isInvertible_symplectizationFormCLM)] with y hy
-  exact isInvertible_symplectizationFormCLM_iff.1
-    (ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm.2 hy)
+  simp only [isContactFormAt_modelSpace_iff_isContact] at hc ⊢
+  have hopen : IsOpen {p : (V [⋀^Fin 1]→L[ℝ] ℝ) × (V [⋀^Fin 2]→L[ℝ] ℝ) |
+      Module.Dual.IsContact (ContinuousAlternatingMap.toDual p.1 : V →ₗ[ℝ] ℝ)
+        (ContinuousAlternatingMap.flatL ℝ V ℝ p.2).toLinearMap₁₂} :=
+    isOpen_setOf_isContact
+      (fun v ↦ by
+        simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply]
+        exact (ContinuousAlternatingMap.apply ℝ V ℝ (![v] : Fin 1 → V)).continuous.comp
+          continuous_fst)
+      (fun v w ↦ by
+        simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+          ContinuousAlternatingMap.flatL_apply_apply]
+        exact (ContinuousAlternatingMap.apply ℝ V ℝ (![v, w] : Fin 2 → V)).continuous.comp
+          continuous_snd)
+  exact (hα.continuousAt.prodMk
+    (contDiffAt_extDeriv hα (r := 0) (by simp)).continuousAt).eventually (hopen.mem_nhds hc)
 
 end TauCeti

@@ -51,6 +51,9 @@ pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω�
   injective.
 * `IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff`: a pullback along a local diffeomorphism
   vanishes at a point exactly when the form vanishes at its image.
+* `PartialDiffeomorph.mpullback_mpullback_symm`, `PartialDiffeomorph.mpullback_symm_mpullback`,
+  `PartialDiffeomorph.mpullback_mpullbackWithin_symm`: pullback along a `C^n` partial
+  diffeomorphism (`n ≠ 0`) and its inverse cancel on its source and target.
 * `IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff`,
   `IsLocalDiffeomorph.isSmoothForm_mpullback_iff`: a form is `C^m` exactly when its pullback
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
@@ -104,6 +107,44 @@ theorem IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff (hf : IsLocalDiffeomorp
     (hn : n ≠ 0) {ω : RoughForm I' M' F k} : mpullback I I' f ω x = 0 ↔ ω (f x) = 0 := by
   simpa only [mpullback_zero, Pi.zero_apply] using
     mpullback_apply_eq_mpullback_apply_iff (ω := ω) (η := 0) (hf.isInvertible_mfderiv hn).surjective
+
+namespace PartialDiffeomorph
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+
+/-- Pulling a rough form back along the inverse of a `C^n` partial diffeomorphism (`n ≠ 0`) and
+then along the partial diffeomorphism itself recovers the form at every point of its source. -/
+theorem mpullback_mpullback_symm (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
+    (ω : RoughForm I M V k) {x : M} (hx : x ∈ φ.source) :
+    mpullback I I' φ (mpullback I' I φ.symm ω) x = ω x := by
+  have hid : φ.symm ∘ φ =ᶠ[𝓝 x] id :=
+    eventually_of_mem (φ.open_source.mem_nhds hx) fun _ hx' ↦ φ.left_inv hx'
+  rw [← mpullback_comp_at (φ.mdifferentiableAt hn hx)
+      (φ.symm.mdifferentiableAt hn (φ.map_source hx)),
+    hid.mpullback_eq, mpullback_id]
+
+/-- Pulling a rough form back along a `C^n` partial diffeomorphism (`n ≠ 0`) and then along its
+inverse recovers the form at every point of its target. -/
+theorem mpullback_symm_mpullback (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
+    (ω : RoughForm I' M' V k) {y : M'} (hy : y ∈ φ.target) :
+    mpullback I' I φ.symm (mpullback I I' φ ω) y = ω y :=
+  φ.symm.mpullback_mpullback_symm hn ω hy
+
+/-- Pulling a rough form back within an open set `B` along `φ.symm` and then pulling back along
+`φ` at `x ∈ φ.source` with `φ x ∈ B` recovers the form at `x`. No inclusion `B ⊆ φ.target` is
+needed since `φ x ∈ φ.target` holds automatically for `x ∈ φ.source`. -/
+theorem mpullback_mpullbackWithin_symm (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
+    {B : Set M'} (hB : IsOpen B) (ω : RoughForm I M V k) {x : M} (hx : x ∈ φ.source)
+    (hφx : φ x ∈ B) :
+    mpullback I I' φ (mpullbackWithin I' I φ.symm B ω) x = ω x := by
+  have hB_eq : mpullback I I' φ (mpullbackWithin I' I φ.symm B ω) x =
+      mpullback I I' φ (mpullback I' I φ.symm ω) x := by
+    ext v
+    simp only [mpullback_apply, mpullbackWithin_eq_mpullback (hB.uniqueMDiffWithinAt hφx)
+      (φ.symm.mdifferentiableAt hn (φ.map_source hx)) ω]
+  rw [hB_eq, φ.mpullback_mpullback_symm hn ω hx]
+
+end PartialDiffeomorph
 
 section Descent
 

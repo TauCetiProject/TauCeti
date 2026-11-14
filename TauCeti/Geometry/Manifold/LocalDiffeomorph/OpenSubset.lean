@@ -43,7 +43,10 @@ subset can be carried, near any point of its source, to the ambient manifold.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
-  agrees near a point of its source with a partial diffeomorphism out of the ambient manifold.
+  agrees near a point of its source with a partial diffeomorphism out of the ambient manifold, with
+  forward source-membership and agreement lemmas `PartialDiffeomorph.mem_source_of_symm_eq`,
+  `PartialDiffeomorph.apply_eq_of_symm_eq`, and
+  `PartialDiffeomorph.comp_subtype_val_eventuallyEq_of_symm_eq`.
 -/
 
 public section
@@ -295,5 +298,41 @@ theorem exists_ambient_of_opens {U : TopologicalSpace.Opens M}
     rw [Ψ.right_inv hz'] at h
     rw [coe_trans_symm, Function.comp_apply]
     exact h.symm
+
+/-- If an ambient partial diffeomorphism `e` maps its source into `U`, maps its target into
+`Φ.target`, and agrees with `Subtype.val ∘ Φ.symm` on `e.target` (as produced by
+`PartialDiffeomorph.exists_ambient_of_opens`), then every point of `e.source`, viewed in `U`,
+lies in `Φ.source`. -/
+theorem mem_source_of_symm_eq {U : TopologicalSpace.Opens M}
+    (Φ : PartialDiffeomorph I J U N n) {e : PartialDiffeomorph I J M N n}
+    (heU : e.source ⊆ U) (het : e.target ⊆ Φ.target)
+    (hesymm : ∀ z ∈ e.target, e.symm z = Φ.symm z) {y : M} (hy : y ∈ e.source) :
+    (⟨y, heU hy⟩ : U) ∈ Φ.source := by
+  have hsp : Φ.symm (e y) = ⟨y, heU hy⟩ :=
+    Subtype.ext ((hesymm (e y) (e.map_source hy)).symm.trans (e.left_inv hy))
+  exact hsp ▸ Φ.map_target (het (e.map_source hy))
+
+/-- Under the hypotheses of `PartialDiffeomorph.mem_source_of_symm_eq`, `e` agrees with `Φ` on
+`e.source`. -/
+theorem apply_eq_of_symm_eq {U : TopologicalSpace.Opens M}
+    (Φ : PartialDiffeomorph I J U N n) {e : PartialDiffeomorph I J M N n}
+    (heU : e.source ⊆ U) (het : e.target ⊆ Φ.target)
+    (hesymm : ∀ z ∈ e.target, e.symm z = Φ.symm z) {y : M} (hy : y ∈ e.source) :
+    e y = Φ ⟨y, heU hy⟩ := by
+  have hsp : Φ.symm (e y) = ⟨y, heU hy⟩ :=
+    Subtype.ext ((hesymm (e y) (e.map_source hy)).symm.trans (e.left_inv hy))
+  exact (hsp ▸ Φ.right_inv (het (e.map_source hy))).symm
+
+open scoped Topology in
+/-- Under the hypotheses of `PartialDiffeomorph.mem_source_of_symm_eq`, `e ∘ Subtype.val` agrees
+with `Φ` on a neighborhood of `⟨y, heU hy⟩` in `U`. -/
+theorem comp_subtype_val_eventuallyEq_of_symm_eq {U : TopologicalSpace.Opens M}
+    (Φ : PartialDiffeomorph I J U N n) {e : PartialDiffeomorph I J M N n}
+    (heU : e.source ⊆ U) (het : e.target ⊆ Φ.target)
+    (hesymm : ∀ z ∈ e.target, e.symm z = Φ.symm z) {y : M} (hy : y ∈ e.source) :
+    (e ∘ (Subtype.val : U → M)) =ᶠ[𝓝 ⟨y, heU hy⟩] Φ :=
+  Filter.eventually_of_mem
+    ((e.open_source.preimage continuous_subtype_val).mem_nhds hy)
+    fun _ hp ↦ Φ.apply_eq_of_symm_eq heU het hesymm hp
 
 end PartialDiffeomorph

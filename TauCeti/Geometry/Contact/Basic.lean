@@ -61,6 +61,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
 * `TauCeti.SmoothForm.IsContactForm.exists_linearEquiv_eq_stdContact`: at each point, a contact
   form and its exterior derivative are standard in suitable linear coordinates.
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
+  `TauCeti.IsContactFormAt.congr_of_eventuallyEq`,
+  `TauCeti.isContactFormAt_congr_of_eventuallyEq`,
   `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff` and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
@@ -260,6 +262,29 @@ structure IsContactFormAt (α : RoughForm I M ℝ 1) (x : M) : Prop where
   ne_zero : α x ≠ 0
   /-- The exterior derivative of a contact form is nondegenerate on its kernel. -/
   nondegenerate : ∀ v ∈ α.ker x, (∀ w ∈ α.ker x, mextDeriv α x ![v, w] = 0) → v = 0
+
+open scoped Topology in
+/-- The pointwise contact condition depends only on the germ of the rough one-form at `x`. -/
+theorem IsContactFormAt.congr_of_eventuallyEq {α β : RoughForm I M ℝ 1} {x : M}
+    (hc : IsContactFormAt α x) (h : ∀ᶠ y in 𝓝 x, β y = α y) :
+    IsContactFormAt β x := by
+  have hx : α x = β x := h.self_of_nhds.symm
+  have hker : α.ker x = β.ker x := by
+    ext v
+    simp only [RoughForm.mem_ker, hx]
+  have hd : mextDeriv α x = mextDeriv β x :=
+    mextDeriv_congr_of_eventuallyEq (h.mono fun _ hy ↦ hy.symm)
+  exact ⟨hx ▸ hc.ne_zero, fun v hv hvw ↦
+    hc.nondegenerate v (hker.symm ▸ hv) fun w hw ↦ hd ▸ hvw w (hker ▸ hw)⟩
+
+open scoped Topology in
+/-- Two rough one-forms with the same germ at `x` satisfy `IsContactFormAt` at `x`
+simultaneously. -/
+theorem isContactFormAt_congr_of_eventuallyEq {α β : RoughForm I M ℝ 1} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, α y = β y) :
+    IsContactFormAt α x ↔ IsContactFormAt β x :=
+  ⟨fun hc ↦ hc.congr_of_eventuallyEq (h.mono fun _ hy ↦ hy.symm),
+    fun hc ↦ hc.congr_of_eventuallyEq h⟩
 
 /-- Reversing the coorientation, `α ↦ -α`, preserves the contact condition. -/
 @[simp]

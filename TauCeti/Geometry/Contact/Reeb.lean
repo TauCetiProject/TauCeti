@@ -81,6 +81,13 @@ def reebVectorField (α : SmoothForm I M ℝ 1) (x : M) : TangentSpace I x :=
   Module.Dual.reebVector (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
     ((mextDerivₗ I 1 α).bilinFormAt x)
 
+/-- Unfolding equation for `SmoothForm.reebVectorField`. -/
+theorem reebVectorField_def (α : SmoothForm I M ℝ 1) (x : M) :
+    α.reebVectorField x =
+      Module.Dual.reebVector (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+        ((mextDerivₗ I 1 α).bilinFormAt x) := by
+  rfl
+
 variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
 
 /-- **Characterization of the Reeb vector field**, tested on the contact distribution: `R_α(x)` is
@@ -216,6 +223,7 @@ theorem _root_.TauCeti.IsContactFormAt.reebVectorField_eq_of_apply_eq_one {x : M
     (hc : IsContactFormAt α.1 x) {v : TangentSpace I x} (hv : α.1 x ![v] = 1)
     (hvw : ∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) :
     α.reebVectorField x = v := by
+  rw [reebVectorField]
   set a := (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
   set B := (mextDerivₗ I 1 α).bilinFormAt x
   have ha (u : TangentSpace I x) : a u = α.1 x ![u] := degreeOneEquiv_coe_apply α x u
@@ -223,7 +231,6 @@ theorem _root_.TauCeti.IsContactFormAt.reebVectorField_eq_of_apply_eq_one {x : M
     (mextDeriv_eq_bilinFormAt α x u w).symm
   obtain ⟨hr, hrB⟩ := Module.Dual.reebVector_spec_of_exists (a := a) (B := B)
     ⟨v, (ha v).trans hv, fun w hw ↦ (hB v w).trans (hvw w ((ha w).symm.trans hw))⟩
-  change Module.Dual.reebVector a B = v
   refine sub_eq_zero.1 (hc.nondegenerate _ ?_ fun w hw ↦ ?_)
   · rw [RoughForm.mem_ker, ← ha, map_sub, hr, ha v, hv, sub_self]
   · rw [← hB, map_sub, LinearMap.sub_apply, hrB w ((ha w).trans (RoughForm.mem_ker.1 hw)),
