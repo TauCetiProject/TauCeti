@@ -317,29 +317,38 @@ private lemma locVal_congr (i : ι) {x y x' y' : X} (P : Path x y) (Q : Path x' 
   obtain rfl : P = Q := Path.ext (funext h)
   simp
 
-/-- Local values along the images of two homotopic paths with the same endpoints agree. -/
-private lemma locVal_eq_of_homotopic (i : ι) {Y : Type*} [TopologicalSpace Y]
-    (g : C(Y, X)) (hg : ∀ y, g y ∈ U i) {y₀ y₁ : Y}
-    (α β : Path y₀ y₁) (hαβ : α.Homotopic β) {x₀ x₁ : X} (P Q : Path x₀ x₁)
-    (hPα : ∀ t, P t = g (α t)) (hQβ : ∀ t, Q t = g (β t)) (hP : ∀ t, P t ∈ U i)
-    (hQ : ∀ t, Q t ∈ U i) :
-    locVal hU F hF i P hP = locVal hU F hF i Q hQ := by
-  have hx : x₀ = g y₀ := by rw [← P.source, hPα, α.source]
-  have hy : x₁ = g y₁ := by rw [← P.target, hPα, α.target]
-  subst hx hy
-  obtain rfl : P = α.map g.continuous := Path.ext (funext hPα)
-  obtain rfl : Q = β.map g.continuous := Path.ext (funext hQβ)
-  let g' : C(Y, U i) := ⟨fun y ↦ ⟨g y, hg y⟩, g.continuous.codRestrict hg⟩
-  have hα : (α.map g.continuous).codRestrict (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) hP =
-      α.map g'.continuous := by
+/-- The square relation for the local values along a homotopy of maps `f₀ ≃ f₁ : Y → U i`: the
+paths `P`, `Q`, `R`, `S` in `X` are the images of the four sides of the naturality square of
+`p : Path y₁ y₂` and `K`. -/
+private lemma locVal_comm_of_homotopy (i : ι) {Y : Type*} [TopologicalSpace Y]
+    {f₀ f₁ : C(Y, U i)} (K : f₀.Homotopy f₁) {y₁ y₂ : Y} (p : Path y₁ y₂)
+    {a b c d : X} (P : Path a b) (Q : Path b c) (R : Path a d) (S : Path d c)
+    (hP : ∀ t, P t = f₀ (p t)) (hQ : ∀ t, Q t = K (t, y₂)) (hR : ∀ t, R t = K (t, y₁))
+    (hS : ∀ t, S t = f₁ (p t)) (mP : ∀ t, P t ∈ U i) (mQ : ∀ t, Q t ∈ U i)
+    (mR : ∀ t, R t ∈ U i) (mS : ∀ t, S t ∈ U i) :
+    locVal hU F hF i P mP ≫ locVal hU F hF i Q mQ =
+      locVal hU F hF i R mR ≫ locVal hU F hF i S mS := by
+  have ha : a = f₀ y₁ := by rw [← P.source, hP, p.source]
+  have hb : b = f₀ y₂ := by rw [← P.target, hP, p.target]
+  have hc : c = f₁ y₂ := by rw [← S.target, hS, p.target]
+  have hd : d = f₁ y₁ := by rw [← S.source, hS, p.source]
+  subst ha hb hc hd
+  obtain rfl : P = (p.map f₀.continuous).map continuous_subtype_val := Path.ext (funext hP)
+  obtain rfl : Q = (K.evalAt y₂).map continuous_subtype_val := Path.ext (funext hQ)
+  obtain rfl : R = (K.evalAt y₁).map continuous_subtype_val := Path.ext (funext hR)
+  obtain rfl : S = (p.map f₁.continuous).map continuous_subtype_val := Path.ext (funext hS)
+  have hmem : ∀ {u v w : X} (A : Path u v) (B : Path v w), (∀ t, A t ∈ U i) →
+      (∀ t, B t ∈ U i) → ∀ t, (A.trans B) t ∈ U i := fun A B hA hB ↦
+    range_subset_iff.1 <| (Path.trans_range _ _).trans_subset <|
+      union_subset (range_subset_iff.2 hA) (range_subset_iff.2 hB)
+  rw [← locVal_trans hU F hF i _ _ mP mQ (hmem _ _ mP mQ),
+    ← locVal_trans hU F hF i _ _ mR mS (hmem _ _ mR mS)]
+  simp only [locVal, ← Path.map_trans]
+  have hcr : ∀ {u v : U i} (Z : Path u v) (h : ∀ t, (Z.map continuous_subtype_val) t ∈ U i),
+      (Z.map continuous_subtype_val).codRestrict (x := u) (y := v) h = Z := fun Z h ↦ by
     ext t
-    exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hP t
-  have hβ : (β.map g.continuous).codRestrict (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) hQ =
-      β.map g'.continuous := by
-    ext t
-    exact Path.codRestrict_coe (x := ⟨g y₀, hg y₀⟩) (y := ⟨g y₁, hg y₁⟩) _ hQ t
-  simp only [locVal, hα, hβ,
-    Path.Homotopic.Quotient.eq.2 (hαβ.map g')]
+    exact Path.codRestrict_coe (x := _) (y := _) _ h t
+  rw [hcr, hcr, Path.Homotopic.Quotient.eq.2 (Path.Homotopic.map_trans_evalAt K p)]
 
 private lemma locVal_refl (i : ι) (x : X) (h : ∀ t, Path.refl x t ∈ U i) :
     locVal hU F hF i (Path.refl x) h = 𝟙 _ := by
@@ -604,26 +613,29 @@ private lemma pathVal_cell {x y : X} {p q : Path x y} (H : p.Homotopy q) (N l k 
   have m₄ : ∀ t, (H.eval (pt N (l + 1))).subpath (pt N k) (pt N (k + 1)) t ∈ U i := fun t ↦ by
     simpa [Path.subpath] using hi _ mem_Icc_pt_succ _ (convexComb_mem_Icc_pt N k t)
   rw [pathVal_eq hU F hF i _ _ m₁, pathVal_eq hU F hF i _ _ m₂, pathVal_eq hU F hF i _ _ m₃,
-    pathVal_eq hU F hF i _ _ m₄, ← locVal_trans hU F hF i _ _ m₁ m₂ (range_subset_iff.1 <|
-      (Path.trans_range _ _).trans_subset <| union_subset (range_subset_iff.2 m₁)
-        (range_subset_iff.2 m₂)),
-    ← locVal_trans hU F hF i _ _ m₃ m₄ (range_subset_iff.1 <|
-      (Path.trans_range _ _).trans_subset <| union_subset (range_subset_iff.2 m₃)
-        (range_subset_iff.2 m₄))]
-  -- Both composites are images of paths from `(0, 0)` to `(1, 1)` in the square `I × I` under the
-  -- affine parametrisation of the cell by the square.
-  let g : C(I × I, X) := H.toContinuousMap.comp
-    ((ContinuousMap.mk _ (Icc.continuous_convexComb (pt N l) (pt N (l + 1)))).prodMap
-      (ContinuousMap.mk _ (Icc.continuous_convexComb (pt N k) (pt N (k + 1)))))
-  refine locVal_eq_of_homotopic hU F hF i g
-    (fun z ↦ hi _ (convexComb_mem_Icc_pt N l z.1) _ (convexComb_mem_Icc_pt N k z.2))
-    (((Path.refl 0).trans Path.id).prod (Path.id.trans (Path.refl 1)))
-    ((Path.id.trans (Path.refl 1)).prod ((Path.refl 0).trans Path.id))
-    ⟨Path.Homotopic.prodHomotopy (.trans (.reflTrans _) (.symm <| .transRefl _))
-      (.trans (.transRefl _) (.symm <| .reflTrans _))⟩ _ _ (fun t ↦ ?_)
-    (fun t ↦ ?_) _ _ <;>
-  · rw [Path.trans_apply]
-    split_ifs with h <;> rw [one_div] at h <;> simp [g, colSeg, Path.subpath, Path.trans_apply, h]
+    pathVal_eq hU F hF i _ _ m₄]
+  -- The cell is parametrised by the unit square; `K` is the homotopy between the two vertical
+  -- sides of the cell, through the maps `f₀` and `f₁` from the segment into `U i`.
+  have hmem (u v : I) : H (Icc.convexComb (pt N l) (pt N (l + 1)) u,
+      Icc.convexComb (pt N k) (pt N (k + 1)) v) ∈ U i := hi _ (convexComb_mem_Icc_pt N l u) _
+    (convexComb_mem_Icc_pt N k v)
+  let K : (ContinuousMap.mk (fun s : I ↦ (⟨H (pt N l, Icc.convexComb (pt N k) (pt N (k + 1)) s),
+        by simpa using hmem 0 s⟩ : U i)) (by fun_prop)).Homotopy
+      (ContinuousMap.mk (fun s : I ↦ (⟨H (pt N (l + 1),
+        Icc.convexComb (pt N k) (pt N (k + 1)) s), by simpa using hmem 1 s⟩ : U i))
+        (by fun_prop)) :=
+    { toFun := fun z ↦ ⟨H (Icc.convexComb (pt N l) (pt N (l + 1)) z.1,
+        Icc.convexComb (pt N k) (pt N (k + 1)) z.2), hmem z.1 z.2⟩
+      continuous_toFun := by fun_prop
+      map_zero_left := fun s ↦ by simp
+      map_one_left := fun s ↦ by simp }
+  exact locVal_comm_of_homotopy hU F hF i K Path.id _ _ _ _ (fun t ↦ by simp [Path.subpath])
+    (fun t ↦ (congrArg (fun v ↦ H (Icc.convexComb (pt N l) (pt N (l + 1)) t, v))
+      (Icc.convexComb_one (pt N k) (pt N (k + 1)))).symm)
+    (fun t ↦ (congrArg (fun v ↦ H (Icc.convexComb (pt N l) (pt N (l + 1)) t, v))
+      (Icc.convexComb_zero (pt N k) (pt N (k + 1)))).symm)
+    (fun t ↦ by simp [Path.subpath])
+    m₁ m₂ m₃ m₄
 
 /-- Homotopic paths have the same value. -/
 private lemma lift_eq_of_homotopy {x y : X} {p q : Path x y} (H : p.Homotopy q) :
