@@ -276,10 +276,10 @@ two abelianized Galois groups, and the norm subgroup of the refined layer lies i
 original one. -/
 theorem map_normSubgroup_eq_iff (T : LayerRefinement old new) :
     (old.normSubgroup F).map (T.groundEquiv F).toLinearMap = new.normSubgroup F ↔
-      Nat.card (Abelianization old.Gal) = Nat.card (Abelianization new.Gal) := by
+      Nat.card (Group.Abelianization old.Gal) = Nat.card (Group.Abelianization new.Gal) := by
   have hP : Nat.card (F.level new.ground ⧸
       (old.normSubgroup F).map (T.groundEquiv F).toLinearMap) =
-        Nat.card (Abelianization old.Gal) := by
+        Nat.card (Group.Abelianization old.Gal) := by
     rw [← cf.natCard_normQuotient_eq_natCard_abelianization old]
     exact Nat.card_congr (Submodule.Quotient.equiv _ _ (T.groundEquiv F) rfl).toEquiv.symm
   rw [← hP, ← cf.natCard_normQuotient_eq_natCard_abelianization new]

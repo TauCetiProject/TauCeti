@@ -81,11 +81,11 @@ theorem contMDiff_toContinuousLinearMap (h : IsRationalRep σ) :
 linear operators. Its carrier's finite dimensionality and completeness follow from rationality. -/
 theorem contMDiff_toHomUnits (h : IsRationalRep σ) :
     let _ : FiniteDimensional ℂ V := h.finite
-    let _ : CompleteSpace V := FiniteDimensional.complete ℂ V
+    let _ : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
     ContMDiff 𝓘(ℂ, Matrix (Fin n) (Fin n) ℂ) 𝓘(ℂ, V →L[ℂ] V) ω
       (((Module.End.toContinuousLinearMap V).toMonoidHom.comp σ).toHomUnits) := by
   let _ : FiniteDimensional ℂ V := h.finite
-  let _ : CompleteSpace V := FiniteDimensional.complete ℂ V
+  let _ : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
   dsimp only
   apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
   exact h.contMDiff_toContinuousLinearMap.congr fun g ↦

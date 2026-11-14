@@ -84,7 +84,7 @@ instance GradedLieModule.baseChange [DecidableEq ι] [AddCommMonoid ι]
 
 namespace TauCeti.PositiveDegrees
 
-variable {N : Type} [AddCommMonoid N] [DecidableEq N]
+variable {N : Type*} [AddCommMonoid N] [DecidableEq N]
   (ℒ : N → Submodule R L) [GradedLieAlgebra ℒ] (d : PositiveDegrees N) [IsPositiveGrading d ℒ]
 
 /-- Extending scalars commutes with the Lie ideal above a degree cutoff. -/

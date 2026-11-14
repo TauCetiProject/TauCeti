@@ -41,7 +41,7 @@ instance GradedLieAlgebra.restrictScalars [GradedLieAlgebra ℒ] :
 
 namespace TauCeti.PositiveDegrees
 
-variable {ι : Type} [DecidableEq ι] [AddCommMonoid ι]
+variable {ι : Type*} [DecidableEq ι] [AddCommMonoid ι]
   (ℒ : ι → Submodule S L) (d : TauCeti.PositiveDegrees ι)
   [GradedLieAlgebra ℒ] [TauCeti.IsPositiveGrading d ℒ]
 
