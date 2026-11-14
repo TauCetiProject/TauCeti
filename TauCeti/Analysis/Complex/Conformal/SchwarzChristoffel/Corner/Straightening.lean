@@ -134,7 +134,7 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     simp [g, ← mul_assoc]
   refine ⟨h, hhd, hhx, hdh, fun z hz => ?_, fun z hz => ?_⟩
   · rw [hhroot hz, mem_slitPlane_iff]
-    exact Or.inl (cpow_inv_re_pos_of_arg_mem_sector hβ.1
+    exact Or.inl (cpow_inv_re_pos_of_arg_mem_sector
       (mem_closed_and_ne_of_mem_upper hq_ne hz).2 (hsector_open z hz))
   · dsimp only
     rw [hhroot hz, hrecover z (mem_closed_and_ne_of_mem_upper hq_ne hz).1]
