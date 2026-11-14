@@ -172,11 +172,7 @@ theorem weightPow_nsmul (T : Fin k → Set A) (n : ℕ) (ν : Fin k →₀ ℕ) 
 `Tᵢ ^ m`. -/
 theorem weightPow_single (T : Fin k → Set A) (i : Fin k) (m : ℕ) :
     weightPow T (Finsupp.single i m) = T i ^ m := by
-  rw [weightPow, Finset.prod_eq_single i]
-  · simp
-  · intro j _ hj
-    simp [Ne.symm hj]
-  · simp
+  simp [weightPow_def, Finsupp.single_apply, pow_ite]
 
 /-- With every weight equal to `{1}`, the weight of any multi-index is `{1}`. -/
 @[simp]
@@ -429,7 +425,6 @@ theorem isWeightedRestricted_zero (T : Fin k → Set A) :
 @[simp]
 theorem isWeightedRestricted_one (T : Fin k → Set A) :
     IsWeightedRestricted T (1 : MvPowerSeries (Fin k) A) := by
-  classical
   intro U
   filter_upwards [(Set.finite_singleton (0 : Fin k →₀ ℕ)).compl_mem_cofinite] with ν hν
   rw [MvPowerSeries.coeff_one, ite_eq_right (by simpa using hν)]
@@ -520,7 +515,6 @@ theorem isWeightedRestricted_of_finite_support (T : Fin k → Set A)
 @[simp]
 theorem isWeightedRestricted_monomial (T : Fin k → Set A) (μ : Fin k →₀ ℕ) (a : A) :
     IsWeightedRestricted T (MvPowerSeries.monomial μ a) := by
-  classical
   refine isWeightedRestricted_of_finite_support T ((Set.finite_singleton μ).subset fun ν hν ↦ ?_)
   simp only [Set.mem_ofPred_eq, MvPowerSeries.coeff_monomial] at hν
   by_contra hne
@@ -537,7 +531,6 @@ theorem isWeightedRestricted_C (T : Fin k → Set A) (a : A) :
 @[simp]
 theorem isWeightedRestricted_X (T : Fin k → Set A) (i : Fin k) :
     IsWeightedRestricted T (MvPowerSeries.X i : MvPowerSeries (Fin k) A) := by
-  classical
   exact isWeightedRestricted_monomial T (Finsupp.single i 1) (1 : A)
 
 /-- A sum of `T`-restricted series is `T`-restricted. -/
@@ -568,7 +561,6 @@ theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
       ∀ ν, MvPowerSeries.coeff ν g =
         if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
         then MvPowerSeries.coeff ν f else u ν := by
-  classical
   let g : MvPowerSeries (Fin k) A := fun ν ↦
     if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
     then MvPowerSeries.coeff ν f else u ν
@@ -620,7 +612,6 @@ theorem IsWeightedRestricted.mul [NonarchimedeanRing A] {T : Fin k → Set A}
   -- into its own `Tα · U`.  Writing `F_Z`, `G_Z` for the bad sets against `Z`, the exceptional
   -- set is `E = (F + G_Z) ∪ (F_Z + G)`, which is finite; for `ν ∉ E` every splitting
   -- `α + β = ν` has `α` bad, `β` bad, or neither, and each case lands in `Tν · U`.
-  classical
   intro U
   obtain ⟨W, hWU⟩ := NonarchimedeanRing.mul_subset U
   have hF := hf.finite_coeff_notMem W
@@ -1045,14 +1036,14 @@ theorem coe_weightedPolynomialHom [NonarchimedeanRing A] {T : Fin k → Set A}
 theorem weightedPolynomialHom_C [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (a : A) :
     weightedPolynomialHom T hT (MvPolynomial.C a) = weightedC T hT a :=
-  Subtype.ext (by simp [coe_weightedC])
+  Subtype.ext (by simp)
 
 /-- The inclusion sends the polynomial variable `X i` to the weighted variable `weightedX i`. -/
 @[simp]
 theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     {hT : IsWeightFamily T} (i : Fin k) :
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
-  Subtype.ext (by simp [coe_weightedX])
+  Subtype.ext (by simp)
 
 /-- A monomial `a Xν` lies in `R⟨X⟩_T` exactly when its coefficient meets the `R` bound,
 `a ∈ Tν · R`. -/
