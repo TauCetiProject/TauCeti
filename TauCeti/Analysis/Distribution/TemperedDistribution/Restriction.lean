@@ -36,7 +36,7 @@ the topologies of pointwise and of compact convergence, which are not identified
 Schwartz function `f` and a test function `χ` equal to one near the support of `T`, `χ f` is a
 test function on `Ω` (`SchwartzMap.cutoffCLM`), and
 `Distribution.toTemperedDistribution T f = T (χ f)`
-does not depend on `χ` (`Distribution.toTemperedDistribution_apply_of_eventuallyEq`). This is a
+does not depend on `χ` (`Distribution.toTemperedDistribution_apply_of_eventually_eq_one`). This is a
 tempered distribution whose restriction to `Ω` is `T`
 (`Distribution.toDistribution_toTemperedDistribution`) and which vanishes on Schwartz functions
 vanishing near the support of `T` (`Distribution.toTemperedDistribution_apply_eq_zero`), and it
@@ -54,7 +54,7 @@ derivatives.
   `MeasureTheory.Lp.toDistribution_toTemperedDistribution`: derivatives and `Lᵖ` functions.
 * `TemperedDistribution.toDistribution_injective`: restriction to the whole space is injective.
 * `Distribution.toTemperedDistribution`: the tempered extension of a compactly supported
-  distribution, with `Distribution.toTemperedDistribution_apply_of_eventuallyEq`,
+  distribution, with `Distribution.toTemperedDistribution_apply_of_eventually_eq_one`,
   `Distribution.toTemperedDistribution_apply_eq_of_eventuallyEq`,
   `Distribution.toTemperedDistribution_apply_eq_zero`,
   `Distribution.toDistribution_toTemperedDistribution`, `Distribution.eq_toTemperedDistribution`
@@ -182,7 +182,7 @@ open Classical in
 /-- The **tempered extension** of a complex distribution `T` with compact support in `Ω`: the
 tempered distribution `f ↦ T (χ f)`, where `χ` is a test function equal to one on a neighbourhood
 of the support of `T`. It does not depend on `χ`
-(`Distribution.toTemperedDistribution_apply_of_eventuallyEq`), and it restricts to `T` on `Ω`
+(`Distribution.toTemperedDistribution_apply_of_eventually_eq_one`), and it restricts to `T` on `Ω`
 (`Distribution.toDistribution_toTemperedDistribution`). It is zero if no such `χ` exists, which
 does not happen when the support is a compact subset of `Ω`. -/
 def toTemperedDistribution (T : 𝓓'(Ω, ℂ)) : 𝓢'(E, ℂ) :=
@@ -192,7 +192,7 @@ def toTemperedDistribution (T : 𝓓'(Ω, ℂ)) : 𝓢'(E, ℂ) :=
 
 /-- **Independence of the cutoff.** The tempered extension of `T` is `f ↦ T (χ f)` for every test
 function `χ` equal to one on a neighbourhood of the support of `T`. -/
-theorem toTemperedDistribution_apply_of_eventuallyEq (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℝ)}
+theorem toTemperedDistribution_apply_of_eventually_eq_one (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℝ)}
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) {g : 𝓓(Ω, ℂ)} {f : 𝓢(E, ℂ)}
     (hg : ∀ x, g x = χ x * f x) : T.toTemperedDistribution f = T.complexPairing g := by
   have h : ∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1 := ⟨χ, hχ⟩
@@ -211,7 +211,7 @@ theorem toTemperedDistribution_apply_of_eventuallyEq (T : 𝓓'(Ω, ℂ)) {χ : 
 private theorem toTemperedDistribution_apply_cutoff (T : 𝓓'(Ω, ℂ)) {χ : 𝓓(Ω, ℝ)}
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (f : 𝓢(E, ℂ)) :
     T.toTemperedDistribution f = T.complexPairing (cutoff χ f) :=
-  toTemperedDistribution_apply_of_eventuallyEq T hχ fun x ↦ by rw [cutoff_apply, real_smul]
+  toTemperedDistribution_apply_of_eventually_eq_one T hχ fun x ↦ by rw [cutoff_apply, real_smul]
 
 /-- The tempered extension of `T` depends only on the germ of the Schwartz function along the
 support of `T`. -/
@@ -257,24 +257,18 @@ theorem toTemperedDistribution_add (S T : 𝓓'(Ω, ℂ)) (hS : IsCompact (dsupp
 /-- The tempered extension is homogeneous. -/
 theorem toTemperedDistribution_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) :
     (c • T).toTemperedDistribution = c • T.toTemperedDistribution := by
-  have hcT : ∀ (c : ℂ) (T : 𝓓'(Ω, ℂ)), dsupport (c • T) ⊆ dsupport T := fun c T ↦
-    dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]
+  rcases eq_or_ne c 0 with rfl | hc
+  · rw [zero_smul ℂ T, toTemperedDistribution_zero]
+    exact (zero_smul ℂ T.toTemperedDistribution).symm
+  have hcT : dsupport (c • T) = dsupport T := dsupport_smul_of_ne_zero hc ⇑T
   ext f
   rw [smul_apply, smul_eq_mul]
   by_cases h : ∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1
   · obtain ⟨χ, hχ⟩ := h
-    rw [toTemperedDistribution_apply_cutoff _ (hχ.filter_mono (nhdsSet_mono (hcT c T))),
-      toTemperedDistribution_apply_cutoff T hχ, complexPairing_smul]
-  rcases eq_or_ne c 0 with rfl | hc
-  · have h0 : (0 : ℂ) • T = 0 := by
-      ext φ
-      simp
-    rw [h0, toTemperedDistribution_zero, zero_mul, zero_apply]
-  -- For `c ≠ 0` neither `T` nor `c • T` admits a cutoff, so both sides are zero.
-  have h' : ¬∃ χ : 𝓓(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport (c • T)), χ x = 1 := by
-    refine fun ⟨χ, hχ⟩ ↦ h ⟨χ, hχ.filter_mono (nhdsSet_mono ?_)⟩
-    simpa [smul_smul, inv_mul_cancel₀ hc] using hcT c⁻¹ (c • T)
-  rw [toTemperedDistribution, dite_eq_right h', toTemperedDistribution, dite_eq_right h,
+    rw [toTemperedDistribution_apply_cutoff _ (hcT ▸ hχ), toTemperedDistribution_apply_cutoff T hχ,
+      complexPairing_smul]
+  -- Neither `T` nor `c • T` admits a cutoff, so both sides are zero.
+  rw [toTemperedDistribution, dite_eq_right (hcT ▸ h), toTemperedDistribution, dite_eq_right h,
     zero_apply, mul_zero]
 
 /-- The tempered extension of a distribution with compact support in `Ω` commutes with directional
