@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Deformation
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Subcomplex
 public import TauCeti.Topology.Homotopy.DeformationRetract
 public import Mathlib.Topology.Homotopy.Contractible
 
@@ -15,7 +16,9 @@ public import Mathlib.Topology.Homotopy.Contractible
 
 A finite simplicial collapse gives a strong deformation retraction of the original
 polyhedron onto the terminal polyhedron. Consequently a collapsible polyhedron is
-contractible. Polyhedra are the support-defined subspaces of any containing weak realization;
+contractible, and the inclusion of the terminal polyhedron is a homotopy equivalence; for abstract
+simplicial complexes this is the inclusion of realizations. Polyhedra are the support-defined
+subspaces of any containing weak realization;
 vertices removed by a collapse are absent from the target. Neither finiteness of the ambient
 complex nor local finiteness is required.
 
@@ -30,6 +33,7 @@ Reference: C. P. Rourke and B. J. Sanderson, *Introduction to Piecewise-Linear T
 public noncomputable section
 
 open Set Function AbstractSimplicialComplex
+open scoped ContinuousMap
 
 namespace PreAbstractSimplicialComplex
 
@@ -141,5 +145,65 @@ theorem Collapsible.contractibleSpace_realization
     eq_univ_of_forall fun x => support_mem _ x
   have := h.contractibleSpace le_rfl
   exact ((Homeomorph.setCongr huniv).trans (Homeomorph.Set.univ _)).symm.contractibleSpace
+
+namespace CollapsesTo
+
+/-- **A collapse is a homotopy equivalence.** If `K` collapses to `L`, the inclusion of the
+polyhedron of `L` into that of `K`, inside any containing weak realization, is a homotopy
+equivalence. -/
+theorem exists_homotopyEquiv (h : CollapsesTo K L) (hK : K ≤ A.toPreAbstractSimplicialComplex) :
+    ∃ e : {x : Realization A // x.1.support ∈ L} ≃ₕ {x : Realization A // x.1.support ∈ K},
+      (e : {x : Realization A // x.1.support ∈ L} → {x : Realization A // x.1.support ∈ K}) =
+        fun x => ⟨x.1, h.le x.2⟩ := by
+  obtain ⟨r, hr, hR⟩ := h.exists_strong_deformation_retraction hK
+  refine ⟨.ofDeformationRetraction (ContinuousMap.inclusion
+    (s := {x : Realization A | x.1.support ∈ L})
+    (t := {x : Realization A | x.1.support ∈ K}) fun _ hx => h.le hx) r hr
+    hR.homotopic.symm, ?_⟩
+  funext x
+  apply Subtype.ext
+  rw [ContinuousMap.HomotopyEquiv.ofDeformationRetraction_toFun]
+  exact ContinuousMap.inclusion_apply_coe (s := {x : Realization A | x.1.support ∈ L}) _ x
+
+/-- If `K` collapses to `L`, the polyhedron of `L` is contractible exactly when that of `K` is,
+inside any containing weak realization. -/
+theorem contractibleSpace_iff (h : CollapsesTo K L) (hK : K ≤ A.toPreAbstractSimplicialComplex) :
+    ContractibleSpace {x : Realization A // x.1.support ∈ L} ↔
+      ContractibleSpace {x : Realization A // x.1.support ∈ K} :=
+  let ⟨e, _⟩ := h.exists_homotopyEquiv hK
+  e.contractibleSpace_iff
+
+/-- **A collapse of abstract simplicial complexes is a homotopy equivalence.** If `K` collapses to
+`L`, the inclusion of the realization of `L` into that of `K` is a homotopy equivalence. -/
+theorem exists_homotopyEquiv_realization {K L : AbstractSimplicialComplex ι}
+    (h : CollapsesTo K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex) :
+    ∃ e : Realization L ≃ₕ Realization K, (e : Realization L → Realization K) =
+      realizationMap (toPreAbstractSimplicialComplex_le_iff.mp h.le) := by
+  have hLK : L ≤ K := toPreAbstractSimplicialComplex_le_iff.mp h.le
+  obtain ⟨e, he⟩ := h.exists_homotopyEquiv le_rfl
+  let eL : Realization L ≃ₜ {x : Realization K | x.1.support ∈ L.toPreAbstractSimplicialComplex} :=
+    (isClosedEmbedding_realizationMap hLK).isEmbedding.toHomeomorph.trans
+      (Homeomorph.setCongr (Set.ext fun x =>
+        (mem_range_realizationMap hLK x).trans mem_toPreAbstractSimplicialComplex.symm))
+  let eK : {x : Realization K | x.1.support ∈ K.toPreAbstractSimplicialComplex} ≃ₜ Realization K :=
+    (Homeomorph.setCongr (eq_univ_of_forall fun x : Realization K =>
+      mem_toPreAbstractSimplicialComplex.mpr (support_mem K x))).trans (Homeomorph.Set.univ _)
+  refine ⟨eL.toHomotopyEquiv.trans (e.trans eK.toHomotopyEquiv), ?_⟩
+  funext x
+  apply Subtype.ext
+  simp only [ContinuousMap.HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv, eK, eL,
+    Homeomorph.trans_apply, Homeomorph.Set.univ_apply, he, Homeomorph.setCongr,
+    Homeomorph.homeomorph_mk_coe]
+  rw [Set.equivOfEq_apply, Set.equivOfEq_apply, Topology.IsEmbedding.toHomeomorph_apply_coe]
+
+/-- If `K` collapses to `L`, the realization of `L` is contractible exactly when the realization
+of `K` is. -/
+theorem contractibleSpace_realization_iff {K L : AbstractSimplicialComplex ι}
+    (h : CollapsesTo K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex) :
+    ContractibleSpace (Realization L) ↔ ContractibleSpace (Realization K) :=
+  let ⟨e, _⟩ := h.exists_homotopyEquiv_realization
+  e.contractibleSpace_iff
+
+end CollapsesTo
 
 end PreAbstractSimplicialComplex
