@@ -81,8 +81,9 @@ local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
-/-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`
-with polynomial remainders `r, r'` of degree less than `s` in the separated variable, then
+/-- **Uniqueness in overconvergent Weierstrass division.** If `g` is distinguished of degree `s`
+in the separated variable at unit radius and `q * g + r = q' * g + r'` with polynomial
+remainders `r, r'` of degree less than `s` in that variable, then
 `q = q'` and `r = r'`. Neither completeness nor a unit distinguished coefficient is needed. -/
 theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
@@ -438,8 +439,9 @@ private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
     (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
   intro I _ x
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨p, hp⟩ := mk_apply_mem_range_of_polynomialsSurject h (renameEquiv (R := K) e).toAlgHom e
-    (renameEquiv_ofMvPolynomial e) I ((renameEquiv e).symm f)
+  obtain ⟨p, hp⟩ := mk_apply_mem_range_of_polynomialsSurject h
+    (renameAlgEquiv (R := K) e).toAlgHom e (renameAlgEquiv_ofMvPolynomial e) I
+    ((renameAlgEquiv e).symm f)
   exact ⟨p, by simpa using hp⟩
 
 omit [CompleteSpace K] in
