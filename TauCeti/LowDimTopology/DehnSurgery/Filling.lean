@@ -38,8 +38,9 @@ The slope of the gluing is computed from where `g` sends the meridian curve
 (`TauCeti.IsSolidTorusNeighborhood.fillingSlope_eq_of_apply_torusCurve`): the identity gives the
 meridian of `Φ` and the exchange of the two circle factors gives its longitude. Every knot
 exterior has the *trivial filling* along the meridian, the ambient space itself with `V` the solid
-torus neighbourhood (`TauCeti.IsSolidTorusNeighborhood.meridianDehnFilling`); since the framing
-of `Φ` and the preferred framing share the meridian, this is the `∞`-surgery on the knot.
+torus neighbourhood (`TauCeti.IsSolidTorusNeighborhood.meridianDehnFilling`); since every framing
+with this meridian shares it, this is the `∞`-surgery on the knot in every such framing, in
+particular in the preferred framing when it exists.
 
 ## Main definitions
 
