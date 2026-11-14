@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
+public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Cutting off a differential form that is regular on an open set
@@ -19,6 +23,12 @@ gives a globally `C^n` form that agrees with `φ` near `K` and vanishes near the
 
 This applies for instance to a form only defined, or only regular, away from a closed set, such
 as the logarithmic derivative `dlog u` of a function `u` away from its zeros.
+
+Within a single chart no σ-compactness is needed: a flat `C^r` form `α` on `s ∩ range I`, for an
+open set `s` containing the chart point of `x`, is pulled back along the chart at `x` and cut
+off by a smooth bump function at `x`. This gives a global `C^r` form whose expression in the chart
+at `x` agrees with `α` near the chart point of every point of a neighbourhood of `x`
+(`TauCeti.RoughForm.exists_isSmoothForm_inChartAt_eventuallyEq`).
 
 ## References
 
@@ -63,5 +73,39 @@ theorem exists_isSmoothForm_eventuallyEq_nhdsSet {n : ℕ∞} {φ : RoughForm I 
       |>.congr_of_eventuallyEq ?_
     filter_upwards [(nhds_le_nhdsSet (show x ∈ Uᶜ from hx)) hb0] with y hy
     simp only [hy, zero_smul, Pi.zero_apply]
+
+omit [SigmaCompactSpace M] in
+/-- **Cutting off a flat form in a chart.** Let `α` be a `C^r` flat form on `s ∩ range I`, for an
+open set `s` containing the chart point of `x`. There are a neighbourhood `U` of `x` and a
+globally `C^r` form `ψ` such that every `y ∈ U` lies in the chart at `x`, its chart point lies in
+`s ∩ range I`, and near that chart point, within the model range, the expression of `ψ` in the
+chart at `x` is `α`. The form `ψ` is the pullback of `α` along the chart cut off by a smooth bump
+function at `x`. -/
+theorem exists_isSmoothForm_inChartAt_eventuallyEq {r : ℕ∞} {x : M} {s : Set E} (hs : IsOpen s)
+    (hxs : extChartAt I x x ∈ s) {α : E → E [⋀^Fin k]→L[ℝ] F}
+    (hα : ContDiffOn ℝ r α (s ∩ range I)) :
+    ∃ U ∈ 𝓝 x, ∃ ψ : RoughForm I M F k, IsSmoothForm I r ψ ∧ ∀ y ∈ U,
+      y ∈ (extChartAt I x).source ∧ extChartAt I x y ∈ s ∩ range I ∧
+        ψ.inChartAt x =ᶠ[𝓝[range I] extChartAt I x y] α := by
+  have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
+    IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
+  obtain ⟨χ, -, hχs⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
+    ((isOpen_extChartAt_preimage x hs).mem_nhds ⟨mem_chart_source H x, hxs⟩)
+  refine ⟨interior {y | χ y = 1}, interior_mem_nhds.mpr χ.eventuallyEq_one, _,
+    isSmoothForm_smul_mpullback_extChartAt hs hα (χ.contMDiff.of_le (by exact_mod_cast le_top))
+      hχs, fun y hy ↦ ?_⟩
+  have hχy : χ y = 1 := interior_subset hy
+  obtain ⟨hys, hyr⟩ := mem_extChartAt_source_and_mem_of_mem_preimage
+    (hχs (subset_tsupport _ (Function.mem_support.mpr (by rw [hχy]; exact one_ne_zero))))
+  refine ⟨hys, hyr, ?_⟩
+  -- Near the chart point of `y` the bump is `1`, so the chart expression of the cut-off
+  -- pullback is `α`.
+  have hone : ∀ᶠ w in 𝓝[range I] extChartAt I x y, χ ((extChartAt I x).symm w) = 1 := by
+    have h : {y | χ y = 1} ∈ 𝓝 y := mem_of_superset (isOpen_interior.mem_nhds hy) interior_subset
+    rw [← map_extChartAt_symm_nhdsWithin_range' hys] at h
+    exact h
+  filter_upwards [extChartAt_target_mem_nhdsWithin' hys, hone] with w hw hw₁
+  rw [inChartAt_fun_smul, hw₁, one_smul]
+  exact inChartAt_mpullback_extChartAt _ x hw
 
 end TauCeti.RoughForm

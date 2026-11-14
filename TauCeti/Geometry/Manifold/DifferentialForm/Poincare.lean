@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import Mathlib.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.DifferentialForm.Cutoff
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -22,8 +22,9 @@ The form is read in the preferred extended chart at the point. Mathlib's `range 
 the intersection of a small ball about the chart point with `range I` is a convex set with unique
 derivatives inside the chart target, although it need not be open. The relative flat Poincaré
 lemma `Convex.exists_contDiffOn_forall_extDerivWithin_eq` gives a primitive there. Its pullback
-along the chart is cut off by a smooth bump function supported in the chart domain, which gives
-a primitive on all of `M` near the point.
+along the chart is cut off by a smooth bump function supported in the chart domain
+(`TauCeti.RoughForm.exists_isSmoothForm_inChartAt_eventuallyEq`), which gives a primitive on all
+of `M` near the point.
 
 The cutoff is the only place where `[FiniteDimensional ℝ E]` and `[T2Space M]` are used: smooth
 bump functions need both. The coefficient space is complete because the flat primitive is an
@@ -92,24 +93,6 @@ private theorem exists_primitive_inChartAt [IsManifold I ∞ M] {r : ℕ∞} (hr
   obtain ⟨α, hα, -, hdα⟩ := hconv.exists_contDiffOn_forall_extDerivWithin_eq hsu hxs hr hω hcl
   exact ⟨ε, hε, α, hα, hdα⟩
 
-omit [CompleteSpace F] in
-/-- A smooth bump function equal to `1` near `x` and supported in the chart preimage of a ball cuts
-the pullback of a `C^r` flat form on that ball off to a `C^r` form on the whole manifold. -/
-private theorem exists_isSmoothForm_smul_mpullback_extChartAt [FiniteDimensional ℝ E] [T2Space M]
-    [IsManifold I ∞ M] {r : ℕ∞} {x : M} {ε : ℝ} (hε : 0 < ε) {α : E → E [⋀^Fin k]→L[ℝ] F}
-    (hα : ContDiffOn ℝ r α (ball (extChartAt I x x) ε ∩ range I)) :
-    ∃ χ : SmoothBumpFunction I x,
-      tsupport χ ⊆ (chartAt H x).source ∩ extChartAt I x ⁻¹' ball (extChartAt I x x) ε ∧
-      IsSmoothForm I r (fun y ↦ χ y •
-        mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k) y) := by
-  have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
-    IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
-  obtain ⟨χ, -, hχu⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
-    ((isOpen_extChartAt_preimage x (isOpen_ball (x := extChartAt I x x) (ε := ε))).mem_nhds
-      ⟨mem_chart_source H x, mem_ball_self hε⟩)
-  exact ⟨χ, hχu, isSmoothForm_smul_mpullback_extChartAt isOpen_ball hα
-    (χ.contMDiff.of_le (by exact_mod_cast le_top)) hχu⟩
-
 /-- **The Poincaré lemma on manifolds.** A `C^r` form of positive degree, `r ≥ 1`, that is closed
 near a point `x` is, on a neighbourhood of `x`, the exterior derivative of a `C^r` form defined on
 the whole manifold. The manifold may have boundary or corners.
@@ -121,30 +104,13 @@ theorem exists_mextDeriv_eq_nhds [FiniteDimensional ℝ E] [T2Space M] [IsManifo
     {r : ℕ∞} (hr : 1 ≤ r) {φ : RoughForm I M F (k + 1)} (hφ : IsSmoothForm I r φ) {x : M}
     (hclosed : ∀ᶠ y in 𝓝 x, mextDeriv φ y = 0) :
     ∃ U ∈ 𝓝 x, ∃ ψ : RoughForm I M F k, IsSmoothForm I r ψ ∧ ∀ y ∈ U, mextDeriv ψ y = φ y := by
-  have : IsManifold I ((r : WithTop ℕ∞) + 1) M :=
-    IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   obtain ⟨ε, hε, α, hα, hdα⟩ := exists_primitive_inChartAt hr hφ hclosed
-  -- `p` is the pullback of the flat primitive along the chart; its chart expression is `α`.
-  let p : RoughForm I M F k :=
-    mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k)
-  obtain ⟨χ, hχu, hψ⟩ := exists_isSmoothForm_smul_mpullback_extChartAt (I := I) hε hα
-  have hψ₁ : IsSmoothForm I 1 (fun y ↦ χ y • p y) :=
-    hψ.of_le (by exact_mod_cast hr)
-  refine ⟨interior {y | χ y = 1}, interior_mem_nhds.mpr χ.eventuallyEq_one, _, hψ, fun y hy ↦ ?_⟩
-  have hχy : χ y = 1 := interior_subset hy
-  have hyu := hχu (subset_tsupport _ (Function.mem_support.mpr (by rw [hχy]; exact one_ne_zero)))
-  obtain ⟨hys, hyb⟩ := mem_extChartAt_source_and_mem_of_mem_preimage hyu
-  -- Near the chart point of `y` the bump is `1`, so the chart expression of the cut-off
-  -- pullback is the flat primitive `α`.
-  have hone : ∀ᶠ w in 𝓝[range I] extChartAt I x y, χ ((extChartAt I x).symm w) = 1 := by
-    have h : {y | χ y = 1} ∈ 𝓝 y := mem_of_superset (isOpen_interior.mem_nhds hy) interior_subset
-    rw [← map_extChartAt_symm_nhdsWithin_range' hys] at h
-    exact h
-  have hψα : RoughForm.inChartAt (I := I) (fun y ↦ χ y • p y) x =ᶠ[𝓝[range I] extChartAt I x y]
-      α := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin' hys, hone] with w hw hw₁
-    rw [RoughForm.inChartAt_fun_smul, hw₁, one_smul]
-    exact RoughForm.inChartAt_mpullback_extChartAt _ x hw
+  -- Cut the pullback of the flat primitive `α` off; near `x` its chart expression is `α`.
+  obtain ⟨U, hU, ψ, hψ, hUψ⟩ :=
+    RoughForm.exists_isSmoothForm_inChartAt_eventuallyEq isOpen_ball (mem_ball_self hε) hα
+  have hψ₁ : IsSmoothForm I 1 ψ := hψ.of_le (by exact_mod_cast hr)
+  refine ⟨U, hU, ψ, hψ, fun y hy ↦ ?_⟩
+  obtain ⟨hys, hyb, hψα⟩ := hUψ y hy
   have hset : ball (extChartAt I x x) ε ∩ range I =ᶠ[𝓝 (extChartAt I x y)] range I :=
     inter_eventuallyEqSet_right.mpr (eventually_of_mem (isOpen_ball.mem_nhds hyb.1) fun _ h _ ↦ h)
   rw [← RoughForm.inChartAt_chart_eq_iff hys,
