@@ -73,11 +73,14 @@ zero as `a → ∞`
   product field are the sums of those of the factors.
 * `TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul_mul_of_add`: `α_x = h α_{y₁} α_{y₂}` with
   `h` of class `C^k` and nowhere zero, for `C^k` solutions of the holomorphicity rows with
-  divisors `D₁ + D₂`, `D₁` and `D₂`.
+  zero multiplicities `m₁ + m₂`, `m₁` and `m₂`.
 * `TauCeti.Vortex.norm_sectionValue_le_mul_of_add`: `|α_x| ≤ |α_{y₁}| |α_{y₂}|` for vortices with
   divisors `D₁ + D₂`, `D₁` and `D₂`.
 * `TauCeti.Vortex.norm_sectionValue_le_of_add`: `|α_x| ≤ |α_{y₁}|` for vortices with divisors
   `D₁ + D₂` and `D₁`.
+* `TauCeti.Vortex.integrable_one_sub_sq_norm_sectionValue_mul_one_sub`,
+  `TauCeti.Vortex.integrable_sq_norm_sectionValue_sub_mul`: the overlap `(1 - s₁) (1 - s₂)` and
+  the comparison error `s_x - s₁ s₂` are integrable.
 * `TauCeti.Vortex.integral_abs_sq_norm_sectionValue_sub_mul_eq`:
   `∫ |s_x - s₁ s₂| = ∫ (1 - s₁) (1 - s₂)`.
 * `TauCeti.Vortex.tendsto_integral_abs_sq_norm_sectionValue_sub_mul`: the `L¹` distance between
@@ -375,9 +378,9 @@ private theorem norm_le_one_of_sectionValue_eq_mul {h : ℂ → ℂ}
 
 /-- **The zeros of a vortex with divisor `D₁ + D₂` against the two clusters.** Let `x`, `y₁`, `y₂`
 be fields on the plane with `C^k` connection and differentiable section components (`1 ≤ k`),
-solving the holomorphicity rows, with zero divisors `D₁ + D₂`, `D₁` and `D₂`. Then
+solving the holomorphicity rows, with zero multiplicities `m₁ + m₂`, `m₁` and `m₂`. Then
 `α_x = h α_{y₁} α_{y₂}` for a nowhere-vanishing `C^k` function `h`. -/
-theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {k : ℕ∞} (hk : 1 ≤ k) {D₁ D₂ : Multiset ℂ}
+theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {k : ℕ∞} (hk : 1 ≤ k) {m₁ m₂ : ℂ → ℕ}
     (hxb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hxb₂ : ContDiff ℝ k (fun w ↦ x w 1))
     (hxp : Differentiable ℝ (fun w ↦ x w 2)) (hxq : Differentiable ℝ (fun w ↦ x w 3))
     (hxhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
@@ -387,16 +390,11 @@ theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {k : ℕ∞} (hk : 1 ≤ 
     (hy₂b₁ : ContDiff ℝ k (fun w ↦ y₂ w 0)) (hy₂b₂ : ContDiff ℝ k (fun w ↦ y₂ w 1))
     (hy₂p : Differentiable ℝ (fun w ↦ y₂ w 2)) (hy₂q : Differentiable ℝ (fun w ↦ y₂ w 3))
     (hy₂hol : ∀ w, equation y₂ w 1 = 0 ∧ equation y₂ w 2 = 0)
-    (hD : IsZeroMultiplicity (sectionValue x) (Multiset.count · (D₁ + D₂)))
-    (hD₁ : IsZeroMultiplicity (sectionValue y₁) (Multiset.count · D₁))
-    (hD₂ : IsZeroMultiplicity (sectionValue y₂) (Multiset.count · D₂)) :
+    (hm : IsZeroMultiplicity (sectionValue x) (m₁ + m₂))
+    (hm₁ : IsZeroMultiplicity (sectionValue y₁) m₁)
+    (hm₂ : IsZeroMultiplicity (sectionValue y₂) m₂) :
     ∃ h : ℂ → ℂ, ContDiff ℝ k h ∧ (∀ z, h z ≠ 0) ∧
       ∀ z, sectionValue x z = h z * (sectionValue y₁ z * sectionValue y₂ z) := by
-  -- The product field has the section `α_{y₁} α_{y₂}`, whose zero multiplicities are those of
-  -- `D₁ + D₂`.
-  have hmul : IsZeroMultiplicity (sectionValue (mulField y₁ y₂)) (Multiset.count · (D₁ + D₂)) := by
-    convert isZeroMultiplicity_sectionValue_mulField hD₁ hD₂ using 1
-    exact funext fun z ↦ Multiset.count_add z D₁ D₂
   -- The connection components of the product field are the sums of those of the factors.
   have hb₁ : ContDiff ℝ k fun w ↦ mulField y₁ y₂ w 0 := by
     simpa only [mulField_apply_zero] using hy₁b₁.add hy₂b₁
@@ -407,7 +405,8 @@ theorem exists_contDiff_sectionValue_eq_mul_mul_of_add {k : ℕ∞} (hk : 1 ≤ 
     (fun w ↦ differentiableAt_mulField_apply_three (hy₁p w) (hy₁q w) (hy₂p w) (hy₂q w))
     (fun w ↦ equation_mulField_apply_one_eq_zero_and_apply_two_eq_zero (hy₁p w) (hy₁q w)
       (hy₂p w) (hy₂q w) (hy₁hol w) (hy₂hol w))
-    (isZeroMultiplicity_iff.1 hD) (isZeroMultiplicity_iff.1 hmul)
+    (isZeroMultiplicity_iff.1 hm)
+    (isZeroMultiplicity_iff.1 (isZeroMultiplicity_sectionValue_mulField hm₁ hm₂))
   exact ⟨h, hh, hh₀, fun z ↦ by rw [hα z, sectionValue_mulField]⟩
 
 /-- **A vortex is dominated by the vortices of its clusters.** Let `x`, `y₁`, `y₂` be `C²`
@@ -427,12 +426,14 @@ theorem norm_sectionValue_le_mul_of_add {D₁ D₂ : Multiset ℂ}
   have hhol (u : ℂ → EuclideanSpace ℝ (Fin 4)) (hsol : ∀ z, equation u z = 0) (w : ℂ) :
       equation u w 1 = 0 ∧ equation u w 2 = 0 := by
     simp [hsol w]
+  have hcount : (Multiset.count · (D₁ + D₂)) = (Multiset.count · D₁) + (Multiset.count · D₂) :=
+    funext fun z ↦ Multiset.count_add z D₁ D₂
   obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul_mul_of_add (k := 2) (by norm_num)
     (contDiff_apply hx 0) (contDiff_apply hx 1) (differentiable_apply hx 2)
     (differentiable_apply hx 3) (hhol x hxsol) (contDiff_apply hy₁ 0) (contDiff_apply hy₁ 1)
     (differentiable_apply hy₁ 2) (differentiable_apply hy₁ 3) (hhol y₁ hy₁sol)
     (contDiff_apply hy₂ 0) (contDiff_apply hy₂ 1) (differentiable_apply hy₂ 2)
-    (differentiable_apply hy₂ 3) (hhol y₂ hy₂sol) hD hD₁ hD₂
+    (differentiable_apply hy₂ 3) (hhol y₂ hy₂sol) (hcount ▸ hD) hD₁ hD₂
   -- The zeros of `α_{y₁} α_{y₂}` lie in the finite set `D₁ + D₂`, so they have empty interior.
   have hsub : {z | sectionValue y₁ z * sectionValue y₂ z = 0} ⊆ ↑(D₁ + D₂).toFinset := by
     intro z hz
@@ -495,8 +496,10 @@ private theorem integrable_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSp
   simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq (μ := volume)
     (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim
 
-/-- The overlap `(1 - |α_{y₁}|²) (1 - |α_{y₂}|²)` of two vortex defects is integrable. -/
-private theorem integrable_one_sub_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
+/-- The overlap `(1 - |α_{y₁}|²) (1 - |α_{y₂}|²)` of the defects of two vortices with `|α| → 1` at
+infinity is integrable. -/
+theorem integrable_one_sub_sq_norm_sectionValue_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁)
+    (hy₂ : ContDiff ℝ 2 y₂)
     (hy₁sol : ∀ z, equation y₁ z = 0) (hy₂sol : ∀ z, equation y₂ z = 0)
     (hy₁lim : Tendsto (fun z ↦ 4 * (y₁ z 2 ^ 2 + y₁ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
@@ -507,6 +510,25 @@ private theorem integrable_one_sub_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁) (hy
   have h₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim z
   rw [Real.norm_eq_abs, abs_le]
   constructor <;> nlinarith [sq_nonneg ‖sectionValue y₂ z‖]
+
+/-- The comparison error `|α_x|² - |α_{y₁}|² |α_{y₂}|²` of three vortices with `|α| → 1` at
+infinity is integrable: it is a combination of the three defects and the overlap. -/
+theorem integrable_sq_norm_sectionValue_sub_mul
+    (hx : ContDiff ℝ 2 x) (hy₁ : ContDiff ℝ 2 y₁) (hy₂ : ContDiff ℝ 2 y₂)
+    (hxsol : ∀ z, equation x z = 0) (hy₁sol : ∀ z, equation y₁ z = 0)
+    (hy₂sol : ∀ z, equation y₂ z = 0)
+    (hxlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hy₁lim : Tendsto (fun z ↦ 4 * (y₁ z 2 ^ 2 + y₁ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    Integrable fun z ↦
+      ‖sectionValue x z‖ ^ 2 - ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ z‖ ^ 2 := by
+  refine ((((integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim).add
+    (integrable_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim)).sub
+    (integrable_one_sub_norm_sectionValue_sq hx hxsol hxlim)).sub
+    (integrable_one_sub_sq_norm_sectionValue_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim
+      hy₂lim)).congr (.of_forall fun z ↦ ?_)
+  simp only [Pi.add_apply, Pi.sub_apply]
+  ring
 
 /-- **The overlap identity.** Let `x`, `y₁`, `y₂` be `C²` vortices on the plane with `|α| → 1` at
 infinity and zero divisors `D₁ + D₂`, `D₁` and `D₂`. The `L¹` distance between `|α_x|²` and the
@@ -547,7 +569,7 @@ theorem integral_abs_sq_norm_sectionValue_sub_mul_eq {D₁ D₂ : Multiset ℂ}
   have hi₄ : Integrable fun z ↦ (1 - ‖sectionValue x z‖ ^ 2) - (1 - ‖sectionValue y₁ z‖ ^ 2) :=
     hix.sub hi₁
   rw [funext hpt, integral_add hi₃
-      (integrable_one_sub_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim hy₂lim),
+      (integrable_one_sub_sq_norm_sectionValue_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim hy₂lim),
     integral_sub hi₄ hi₂, integral_sub hix hi₁,
     integral_one_sub_norm_sectionValue_sq hx hxsol hxlim hD,
     integral_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim hD₁,
