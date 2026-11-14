@@ -23,7 +23,8 @@ compatible with trivial cores and Whitney sums (`pullback_trivial`, `pullback_wh
 with the Whitney projections, inclusions, pairings, copairings, and direct sums of maps.
 The reconstructed bundle is identified with Mathlib's actual pullback by `pullbackHomeomorph`,
 which carries each core chart to Mathlib's pulled-back trivialization
-(`pullbackHomeomorph_localTriv`), and lifts to the original core total space via `pullbackLift`.
+(`pullbackHomeomorph_localTriv`, `pullback_trivializationAt_eq`), and lifts to the original core
+total space via `pullbackLift`.
 
 The construction uses Mathlib's vector-bundle cores and native pullback topology,
 and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle maps.
@@ -107,6 +108,12 @@ def pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y)) 
       dsimp only [pullback, pullbackMap, ContinuousMap.comp_apply, ContinuousMap.coe_mk, id_eq]
       convert a.coordChange_fiberMap (f i) (f j) x.2.1 x.2.2 v using 1 <;>
         simp only [A.indexAt_eq, D.indexAt_eq])) x
+
+/-- Pulling back a cocycle morphism with bijective fibre maps preserves fibrewise bijectivity. -/
+theorem bijective_fiberMap_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
+    (hbij : ∀ y, Function.Bijective (a.fiberMap y)) (f : C(X, Y)) (x : X) :
+    Function.Bijective ((pullbackMap a f).fiberMap x) := by
+  simpa only [fiberMap_pullbackMap] using hbij (f x)
 
 /-- Expressing a fibre operator in pulled-back charts `i` and `j` at `x` evaluates the expression
 in the original charts `f i` and `f j` at `f x`. -/
@@ -241,6 +248,22 @@ def pullbackLift (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (x : X) (v : (A.pullback f).core.Fiber x) :
     A.pullbackLift f ⟨x, v⟩ = ⟨f x, v⟩ := (rfl)
 
+/-- `A.pullbackLift f p` equals `⟨y, v⟩` whenever `f p.proj = y` and `p.2 = v` in preferred fibre
+coordinates. -/
+theorem pullbackLift_eq_mk (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (p : (A.pullback f).core.TotalSpace) {y : Y} {v : Fin A.rank → 𝕜}
+    (hy : f p.proj = y) (hv : p.2 = v) :
+    A.pullbackLift f p = ⟨y, v⟩ :=
+  TotalSpace.ext ((A.pullbackLift_proj f p).trans hy)
+    (heq_of_eq ((A.pullbackLift_snd f p).trans hv))
+
+/-- Along the identity map, `pullbackLift` acts as the identity on base points and preferred fibre
+coordinates. -/
+@[simp] theorem pullbackLift_id (A : FiniteRankBundleCore 𝕜 Y)
+    (p : (A.pullback (ContinuousMap.id Y)).core.TotalSpace) :
+    A.pullbackLift (ContinuousMap.id Y) p = ⟨p.proj, p.2⟩ :=
+  A.pullbackLift_eq_mk (ContinuousMap.id Y) p rfl rfl
+
 /-- The canonical lift of a composite pullback factors through the two individual lifts. -/
 theorem pullbackLift_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z))
     (p : (A.pullback (g.comp f)).core.TotalSpace) :
@@ -323,6 +346,15 @@ theorem pullbackLift_totalSpaceMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A �
   exact (congrArg (D.pullbackLift f) ((pullbackMap a f).totalSpaceMap_mk x v)).trans
     ((congrArg (fun m ↦ (⟨f x, m v⟩ : D.core.TotalSpace)) (fiberMap_pullbackMap a f x)).trans
       (a.totalSpaceMap_mk (f x) v).symm)
+
+/-- Mathlib's preferred trivialization of `((⇑f) *ᵖ A.core.Fiber)` at `x` is the pullback along `f`
+of the core chart `A.core.localTriv (f x)`. -/
+theorem pullback_trivializationAt_eq (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (x : X) :
+    trivializationAt (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber) x =
+      (A.core.localTriv (f x)).pullback f := by
+  refine (FiberBundle.pullback_trivializationAt' (F := Fin A.rank → 𝕜) (E := A.core.Fiber)
+    f x).trans ?_
+  rw [A.trivializationAt_core]
 
 /-- The comparison carries the chart at `i` to Mathlib's pullback of the chart at `f i`. -/
 theorem pullbackHomeomorph_localTriv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (i : X)
