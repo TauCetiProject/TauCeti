@@ -57,7 +57,8 @@ the positive orientation and `-1` for the negative one.
   `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
   positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
-  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module.
+  `CliffordAlgebra.lsmul_complexVolume_involutive`,
+  `CliffordAlgebra.involutive_apply_complexVolume`: `Γ` acts as an involution on every module.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
@@ -318,6 +319,13 @@ theorem lsmul_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ 
     [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M] :
     Function.Involutive (Algebra.lsmul ℂ ℂ M (complexVolume Q o)) :=
   complexVolume_smul_complexVolume_smul o hQ
+
+/-- In any endomorphism representation `ρ`, `ρ (complexVolume Q o)` is involutive. -/
+theorem involutive_apply_complexVolume {E : Type*} [AddCommGroup E] [Module ℂ E]
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E) :
+    Function.Involutive (ρ (complexVolume Q o)) := fun e ↦ by
+  rw [← LinearMap.comp_apply, ← Module.End.mul_eq_comp, ← map_mul, complexVolume_mul_self o hQ,
+    map_one, Module.End.one_eq_id, LinearMap.id_apply]
 
 /-- **In even dimension, conjugation by `Γ` is the grade involution**: `Γ x Γ = involute x`. -/
 theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
