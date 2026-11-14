@@ -562,11 +562,11 @@ variable (G : Type u) (M : Type v) [Group G] [TopologicalSpace G] [DiscreteTopol
 /-- For a discrete group `G`, a subgroup `U`, and an arbitrary `DistribMulAction U M`, the
 additive equivalence `DiscreteCoind G U M ≃+ Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)`.
 The coefficient action need not be restricted from `G`, and `M` needs no topology: every function
-on the discrete group `G` is locally constant, so the comparison is taken with the discrete
-topology on `M`. -/
+on the discrete group `G` is locally constant. -/
 noncomputable def discreteCoindAddEquivAlgebraic :
     DiscreteCoind G U M ≃+ Rep.coind U.subtype
       (Rep.ofDistribMulAction ℤ U M) :=
+  -- The topologically-flavoured comparison needs some topology on `M`; the discrete one is used.
   letI : TopologicalSpace M := ⊥
   haveI : DiscreteTopology M := ⟨rfl⟩
   haveI : ContinuousSMul U M := ⟨continuous_of_discreteTopology⟩
@@ -590,7 +590,10 @@ theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
     discreteCoindAddEquivAlgebraic G M U (g • f) =
       (Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)).ρ g
         (discreteCoindAddEquivAlgebraic G M U f) := by
-  rfl
+  let : TopologicalSpace M := ⊥
+  have : DiscreteTopology M := ⟨rfl⟩
+  have : ContinuousSMul U M := ⟨continuous_of_discreteTopology⟩
+  exact discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩ M g f
 
 end DiscreteAlgebraicComparison
 
