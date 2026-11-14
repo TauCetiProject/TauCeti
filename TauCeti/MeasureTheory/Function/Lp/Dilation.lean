@@ -26,17 +26,20 @@ inequality: dilating a homogeneous Sobolev function acts by the normalized dilat
 on its gradient and at the Sobolev-conjugate exponent `p⋆` on the function itself, so both the `Lᵖ`
 norm of the gradient and the critical `L^{p⋆}` norm are invariant.
 
-More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
-`|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
-the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuous extended norm.
+More generally, composing with a linear automorphism `e` or an affine automorphism `x ↦ e x + b`
+multiplies the `Lᵖ` seminorm by `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on the preimage of `s`
+by the same factor relative to the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a
+continuous extended norm.
 
 ## Main declarations
 
 * `MeasureTheory.Measure.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p`.
-* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`:
-  `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
-* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
-  for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
+* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`,
+  `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add`:
+  `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p` and `‖u (e · + b)‖_p = |det e|^(-1 / p) * ‖u‖_p`.
+* `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`,
+  `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage`: the same
+  identities for the `Lᵖ` seminorms on the preimage of `s` and on `s`.
 -/
 
 public section
@@ -86,6 +89,33 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
     eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
+
+/-- **Affine change of variables in the `Lᵖ` seminorm on a set:** composing with `x ↦ e x + b`,
+for a linear automorphism `e`, multiplies the `Lᵖ` seminorm on `(fun x ↦ e x + b) ⁻¹' s` by
+`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm on `s`. The set `s` need not be measurable. -/
+theorem eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage
+    (u : E → G) (e : E ≃L[ℝ] E) (b : E) (p : ℝ≥0∞) {s : Set E} :
+    eLpNorm (fun x ↦ u (e x + b)) p (μ.restrict ((fun x ↦ e x + b) ⁻¹' s)) =
+      ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+        eLpNorm u p (μ.restrict s) := by
+  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
+  have hmap : map (fun x ↦ e x + b) μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ := by
+    have := e.isAddHaarMeasure_map μ
+    have hcomp : (fun x ↦ e x + b) = (· + b) ∘ e := rfl
+    rw [hcomp, ← map_map (measurable_add_const b) e.continuous.measurable, map_add_right_eq_self]
+    exact map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have he : MeasurableEmbedding (fun x ↦ e x + b) :=
+    (e.toHomeomorph.trans (Homeomorph.addRight b)).measurableEmbedding
+  rw [← Function.comp_def u (fun x ↦ e x + b), ← he.eLpNorm_map_measure, ← he.restrict_map,
+    hmap, restrict_smul, eLpNorm_smul_measure_of_ne_zero (by simpa using hdet), smul_eq_mul]
+
+/-- **Affine change of variables in the `Lᵖ` seminorm:** composing with `x ↦ e x + b`, for a
+linear automorphism `e`, multiplies the `Lᵖ` seminorm against an additive Haar measure by
+`|det e|^(-1 / p)`. -/
+theorem eLpNorm_comp_continuousLinearEquiv_add (u : E → G) (e : E ≃L[ℝ] E) (b : E) (p : ℝ≥0∞) :
+    eLpNorm (fun x ↦ u (e x + b)) p μ =
+      ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * eLpNorm u p μ := by
+  simpa using eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ u e b p (s := Set.univ)
 
 variable {μ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
   {r s : ℝ}

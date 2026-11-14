@@ -17,10 +17,14 @@ in a positive-dimensional real inner product space. The identity applies to arbi
 sets and infinite outer volumes, and supplies the scaling law for volume inequalities.
 
 An affine map of a finite-dimensional real normed space multiplies every additive Haar measure
-by the absolute value of the determinant of its linear part
-(`MeasureTheory.Measure.addHaar_image_affineMap`, and
-`MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation `y ↦ x + r • y`,
+by the absolute value of the determinant of its linear part on images
+(`MeasureTheory.Measure.addHaar_image_affineMap`,
+`MeasureTheory.Measure.addHaar_image_affineEquiv`) and by the reciprocal factor on preimages when
+its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`,
+`MeasureTheory.Measure.addHaar_preimage_affineEquiv`,
+`MeasureTheory.Measure.addHaar_preimage_continuousLinearEquiv_add`), the affine forms of
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
+`MeasureTheory.Measure.addHaar_preimage_linearMap`. The affine dilation `y ↦ x + r • y`,
 `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
 (`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
 inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`), in
@@ -93,6 +97,53 @@ the determinant of the linear part times the measure of the set. -/
 theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
+
+/-- The preimage of a set under an affine map whose linear part has nonzero determinant has Haar
+measure equal to `|(det f.linear)⁻¹|` times the measure of the set. -/
+theorem addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F) (hf : LinearMap.det f.linear ≠ 0) (s : Set F) :
+    μ (f ⁻¹' s) = ENNReal.ofReal |(LinearMap.det f.linear)⁻¹| * μ s := by
+  have hpre : f ⁻¹' s = f.linear ⁻¹' ((fun y ↦ y + f 0) ⁻¹' s) := by
+    ext x
+    simpa [mem_preimage] using congrArg (· ∈ s) (f.map_vadd 0 x)
+  rw [hpre, addHaar_preimage_linearMap μ hf, measure_preimage_add_right]
+
+/-- The preimage of a set under an affine equivalence has Haar measure equal to `|(det f.linear)⁻¹|`
+times the measure of the set. -/
+theorem addHaar_preimage_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
+    μ (f ⁻¹' s) = ENNReal.ofReal |(LinearMap.det (f.linear : F →ₗ[ℝ] F))⁻¹| * μ s :=
+  addHaar_preimage_affineMap μ (f : F →ᵃ[ℝ] F) (LinearEquiv.isUnit_det' f.linear).ne_zero s
+
+/-- The preimage of a set under `x ↦ B x + b`, for a continuous linear equivalence `B`, has Haar
+measure equal to `|(det B)⁻¹|` times the measure of the set. -/
+theorem addHaar_preimage_continuousLinearEquiv_add (B : F ≃L[ℝ] F) (b : F) (s : Set F) :
+    μ ((fun x ↦ B x + b) ⁻¹' s) =
+      ENNReal.ofReal |(LinearMap.det (B : F →ₗ[ℝ] F))⁻¹| * μ s := by
+  have hpre : (fun x ↦ B x + b) ⁻¹' s = (B : F →ₗ[ℝ] F) ⁻¹' ((fun y ↦ y + b) ⁻¹' s) := rfl
+  rw [hpre, addHaar_preimage_linearMap μ (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero,
+    measure_preimage_add_right]
+
+/-- For every set `s` (including `∅` and sets of infinite measure) and continuous linear
+equivalence `B`, the Haar measure of `s` equals `|det B|` times the Haar measure of its affine
+preimage `(fun x ↦ B x + b) ⁻¹' s`. -/
+theorem addHaar_eq_abs_det_mul_addHaar_preimage (B : F ≃L[ℝ] F) (b : F) (s : Set F) :
+    μ s = ENNReal.ofReal |LinearMap.det (B : F →ₗ[ℝ] F)| * μ ((fun x ↦ B x + b) ⁻¹' s) := by
+  have hdet : LinearMap.det (B : F →ₗ[ℝ] F) ≠ 0 :=
+    (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero
+  rw [addHaar_preimage_continuousLinearEquiv_add, ← mul_assoc, ← ENNReal.ofReal_mul (abs_nonneg _),
+    ← abs_mul, mul_inv_cancel₀ hdet, abs_one, ENNReal.ofReal_one, one_mul]
+
+/-- When the affine preimage `s' = (fun x ↦ B x + b) ⁻¹' s` has positive finite Haar measure,
+`|det B|` equals the volume ratio `(μ s).toReal / (μ s').toReal`. -/
+theorem abs_det_eq_toReal_addHaar_div_preimage (B : F ≃L[ℝ] F) (b : F) {s : Set F}
+    (hs₀ : μ ((fun x ↦ B x + b) ⁻¹' s) ≠ 0) (hstop : μ ((fun x ↦ B x + b) ⁻¹' s) ≠ ∞) :
+    |LinearMap.det (B : F →ₗ[ℝ] F)| =
+      (μ s).toReal / (μ ((fun x ↦ B x + b) ⁻¹' s)).toReal := by
+  have hpos : 0 < (μ ((fun x ↦ B x + b) ⁻¹' s)).toReal := ENNReal.toReal_pos hs₀ hstop
+  have hmul : (μ s).toReal =
+      |LinearMap.det (B : F →ₗ[ℝ] F)| * (μ ((fun x ↦ B x + b) ⁻¹' s)).toReal := by
+    conv_lhs => rw [addHaar_eq_abs_det_mul_addHaar_preimage μ B b s]
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
+  rw [hmul, mul_div_cancel_right₀ _ hpos.ne']
 
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/

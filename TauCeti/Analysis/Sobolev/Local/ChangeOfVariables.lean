@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Sobolev.WeakDeriv.Affine
 
 /-!
 # Change of variables in local Sobolev classes on planar sets
