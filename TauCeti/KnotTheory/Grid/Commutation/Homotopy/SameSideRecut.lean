@@ -35,6 +35,10 @@ same-side overlap. Each homotopy instantiates this with its own counted hexagons
 
 ## Main results
 
+* `TauCeti.GridPentagonPairDecomposition.finRotate_mem_commonSideColumns` and
+  `TauCeti.GridPentagonPairDecomposition.finRotate_notMem_commonSideColumns_of_sameSide_isRecut`:
+  when both pentagons cut along the grid line after column `a`, that grid line is a common side of
+  the pair's rectangles and never a common side of the recut of a same-side pair.
 * `TauCeti.GridHexagonCompositeDecomposition.exists_hexagon_of_isRecut`: for a hexagon composite
   whose two empty rectangles have a same-side overlap, one piece of its recut underlies a
   commutation hexagon.
@@ -55,6 +59,49 @@ Proposition 3.2 (arXiv:math/0610559).
 -/
 
 public section
+
+namespace TauCeti.GridPentagonPairDecomposition
+
+variable {n : ℕ} {a s b t : Fin n} {x z : GridState n}
+
+/-- When both pentagons of a pentagon pair cut along the grid line after column `a`, that grid line
+is a common side of the two underlying rectangles. -/
+theorem finRotate_mem_commonSideColumns (D : GridPentagonPairDecomposition a s b t x z)
+    (hb : b = a) : finRotate n a ∈ D.toRectangleDecomposition.commonSideColumns := by
+  subst hb
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · simp [P.right_eq, Q.right_eq]
+  · simp [P.right_eq, Q.left_eq]
+  · simp [P.left_eq, Q.right_eq]
+  · simp [P.left_eq, Q.left_eq]
+
+/-- When both pentagons of a pentagon pair cut along the grid line after column `a` on the same
+side, a recut of its underlying rectangles never has that grid line as a common side. -/
+theorem finRotate_notMem_commonSideColumns_of_sameSide_isRecut
+    (D : GridPentagonPairDecomposition a s b t x z) {E : GridRectangleDecomposition x z}
+    (hb : b = a) (hside : D.first.isLeft = D.second.isLeft)
+    (hrecut : D.toRectangleDecomposition.IsRecut E) :
+    finRotate n a ∉ E.commonSideColumns := by
+  subst hb
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · have hcommon := hrecut.isRecutOfRightEqRight (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq])
+    intro hmem
+    apply hcommon.first_right_notMem_commonSideColumns
+    simpa only [toRectangleDecomposition,
+      GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq] using hmem
+  · simp at hside
+  · simp at hside
+  · have hcommon := hrecut.isRecutOfLeftEqLeft (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq])
+    intro hmem
+    apply hcommon.first_left_notMem_commonSideColumns
+    simpa only [toRectangleDecomposition,
+      GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq] using hmem
+
+end TauCeti.GridPentagonPairDecomposition
 
 namespace TauCeti.GridHexagonCompositeDecomposition
 

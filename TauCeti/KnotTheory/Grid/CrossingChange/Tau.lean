@@ -10,7 +10,6 @@ public import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
 public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
 public import TauCeti.KnotTheory.Grid.Move.Tau
-import TauCeti.KnotTheory.Grid.Homology.Transpose
 
 /-!
 # Crossing change maps, the invariant `τ`, and the unknotting bound
@@ -37,8 +36,8 @@ equations (`CrossingChange/Homotopy/Equation.lean`), `ΨΦ` and `ΦΨ` are chain
 multiplication by `V_b` and `V_a`, so `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
 (`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc`), while in the opposite cyclic order
 `τ(G) ≤ τ(G') ≤ τ(G) + 1` (`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`).
-Diagonal reflection preserves `τ` (`GridDiagram.IsKnot.tau_transpose`) and exchanges row and column
-cross-commutations, so any cross-commutation changes `τ` by at most `1`
+Diagonal reflection preserves `τ` (`GridDiagram.IsKnot.tau_transpose` in `Homology/Tau.lean`) and
+exchanges row and column cross-commutations, so any cross-commutation changes `τ` by at most `1`
 (`GridDiagram.IsKnot.natAbs_tau_sub_le_one_of_isCrossCommutation`).
 
 Passing to `GridLink` modulo grid moves, `τ` is `1`-Lipschitz along the crossing-change graph
@@ -47,12 +46,9 @@ characteristic two gives `|τ(L)| ≤ u(L)` (`GridLink.IsKnot.natAbs_tau_le_unkn
 
 ## Main results
 
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`: `τ(G) - 1 ≤ τ(G') ≤ τ(G)` from
-  abstract crossing-change homotopies.
 * `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_mem_columnArc` and
   `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_notMem_columnArc`: **the unconditional
   crossing-change inequalities** for interleaving adjacent columns.
-* `TauCeti.GridDiagram.IsKnot.tau_transpose`: diagonal reflection preserves `τ`.
 * `TauCeti.GridDiagram.IsKnot.natAbs_tau_sub_le_one_of_isCrossCommutation` and
   `TauCeti.GridLink.IsCrossingChange.natAbs_tau_sub_le_one`: a cross-commutation or crossing change
   changes `τ` by at most `1`.
@@ -90,20 +86,12 @@ private theorem tau_swapColumns_swapColumns {c d : Fin n} :
     rfl
   exact key _ (swapColumns_swapColumns ..)
 
-section Homotopy
-
-variable (C : ColumnTurn n)
-
-local notation "a" => C.column
-local notation "b" => finRotate n C.column
-local notation "G'" => G.swapColumns a b
-
 /-- Exchanging the same two columns twice returns the original knot grid, whose `GH⁻` is torsion
 exactly when it was before. -/
-private theorem isTorsion_swapColumns_swapColumns_iff :
+private theorem isTorsion_swapColumns_swapColumns_iff {c d : Fin n} :
     letI := hG.unblockedHomologyModule K
-    letI := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule K
-    Module.IsTorsion (Polynomial K) (((G').swapColumns a b).unblockedHomology K) ↔
+    letI := ((hG.swapColumns c d).swapColumns c d).unblockedHomologyModule K
+    Module.IsTorsion (Polynomial K) (((G.swapColumns c d).swapColumns c d).unblockedHomology K) ↔
       Module.IsTorsion (Polynomial K) (G.unblockedHomology K) := by
   have key : ∀ {G₁ : GridDiagram n} (h₁ : G₁.IsKnot), G₁ = G →
       (letI := hG.unblockedHomologyModule K
@@ -113,60 +101,6 @@ private theorem isTorsion_swapColumns_swapColumns_iff :
     rintro _ _ rfl
     exact Iff.rfl
   exact key _ (swapColumns_swapColumns ..)
-
-variable {K C}
-
-/-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
-`b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`, and let `C`
-turn in the row of `O_a`. Suppose that the crossing change maps, the commutation map `Φ` of `C`
-and the commutation map `Ψ` of `G' = G.swapColumns a b` turning in the row of `X_b`, have
-composites `ΨΦ` and `ΦΨ` chain homotopic to multiplication by `V_b` and `V_a`. Then
-`τ(G) - 1 ≤ τ(G') ≤ τ(G)`. -/
-theorem tau_swapColumns_mem_Icc_of_homotopy
-    (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b) (hs : C.turnRow = G.O a)
-    (hH : ∃ H : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n,
-      ∀ c, G.unblockedDifferential K (H c) + H (G.unblockedDifferential K c) =
-        (MvPolynomial.X b : MvPolynomial (Fin n) K) • c +
-          (G').commutationMap K (C.withTurnRow (G.X b)) (G.commutationMap K C c))
-    (hH' : ∃ H' : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n,
-      ∀ c, (G').unblockedDifferential K (H' c) + H' ((G').unblockedDifferential K c) =
-        (MvPolynomial.X a : MvPolynomial (Fin n) K) • c +
-          ((G').swapColumns a b).commutationMap K ((C.withTurnRow (G.X b)).withTurnRow (G.O a))
-            ((G').commutationMap K (C.withTurnRow (G.X b)) c)) :
-    (hG.swapColumns a b).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) := by
-  obtain ⟨H, hH⟩ := hH
-  obtain ⟨H', hH'⟩ := hH'
-  let _ := hG.unblockedHomologyModule K
-  let _ := (hG.swapColumns a b).unblockedHomologyModule K
-  let _ := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule K
-  have hp (c : Fin n) :
-      aeval (fun _ => (Polynomial.X : Polynomial K)) (MvPolynomial.X c : MvPolynomial (Fin n) K) =
-        Polynomial.X ^ 1 := by
-    rw [aeval_X, pow_one]
-  -- In `G'` the markings of the exchanged columns appear in the other cyclic order, so the
-  -- commutation map back has the bidegree of multiplication by `U`.
-  have hΦ := commutationBidegree_eq_zero_of_mem_columnArc C h hO hs
-  have hΨ := commutationBidegree_eq_of_notMem_columnArc (G := G') (C.withTurnRow (G.X b))
-    (((columnsInterleaving_swapColumns G _ _).mpr h.symm))
-    (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
-    (by simp [swapColumns_X, GridState.swapColumns_apply])
-  have hΨ' := (hG.swapColumns a b).not_isTorsion_swapColumns_of_homotopy K
-    (C.withTurnRow (G.X b)) (G.O a) H' (hp a) hH'
-  by_cases hT : Module.IsTorsion (Polynomial K) (G.unblockedHomology K)
-  · -- Both homologies are torsion, and both invariants vanish.
-    have hT' : Module.IsTorsion (Polynomial K) ((G').unblockedHomology K) := by
-      by_contra hT'
-      exact (hΨ' hT') ((isTorsion_swapColumns_swapColumns_iff hG K C).mpr hT)
-    rw [hG.tau_eq_zero_of_isTorsion K hT, (hG.swapColumns a b).tau_eq_zero_of_isTorsion K hT']
-    simp
-  · have h₁ := hG.tau_swapColumns_le_of_homotopy K C (G.X b) H (hp b) hH hT
-    have h₂ := (hG.swapColumns a b).tau_swapColumns_le_of_homotopy K (C.withTurnRow (G.X b))
-      (G.O a) H' (hp a) hH' (hG.not_isTorsion_swapColumns_of_homotopy K C (G.X b) H (hp b) hH hT)
-    rw [hΦ, Prod.snd_zero, sub_zero] at h₁
-    rw [hΨ, tau_swapColumns_swapColumns hG K, sub_neg_eq_add] at h₂
-    exact ⟨by linarith, h₁⟩
-
-end Homotopy
 
 /-! ### Unconditional crossing-change bounds on knot diagrams -/
 
@@ -179,17 +113,48 @@ theorem tau_swapColumns_mem_Icc_of_mem_columnArc {a : Fin n}
     (h : G.ColumnsInterleaving a (finRotate n a))
     (hO : G.O a ∈ G.columnArc (finRotate n a)) :
     (hG.swapColumns a (finRotate n a)).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) := by
+  let b := finRotate n a
+  let G' := G.swapColumns a b
   let C : ColumnTurn n := ⟨a, G.O a, h.ne⟩
-  refine hG.tau_swapColumns_mem_Icc_of_homotopy (C := C) h hO rfl
-    ⟨G.crossingChangeHomotopy K C (G.X (finRotate n a)),
-      unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K h hO rfl rfl⟩
-    ⟨(G.swapColumns a (finRotate n a)).crossingChangeHomotopy K
-        (C.withTurnRow (G.X (finRotate n a))) (G.O a),
-      unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc K
-        ((columnsInterleaving_swapColumns G a (finRotate n a)).mpr h.symm)
-        (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
-        (by simp [C, swapColumns_X, GridState.swapColumns_apply])
-        (by simp [C, swapColumns_O, GridState.swapColumns_apply])⟩
+  let H := G.crossingChangeHomotopy K C (G.X b)
+  let H' := G'.crossingChangeHomotopy K (C.withTurnRow (G.X b)) (G.O a)
+  have hH := unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K (C := C)
+    h hO rfl rfl
+  have hH' := unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc K
+    (G := G') (C := C.withTurnRow (G.X b)) (t := G.O a)
+    ((columnsInterleaving_swapColumns G a b).mpr h.symm)
+    (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
+    (by simp [G', b, C, swapColumns_X, GridState.swapColumns_apply])
+    (by simp [G', b, C, swapColumns_O, GridState.swapColumns_apply])
+  let _ := hG.unblockedHomologyModule K
+  let _ := (hG.swapColumns a b).unblockedHomologyModule K
+  let _ := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule K
+  have hp (c : Fin n) :
+      aeval (fun _ => (Polynomial.X : Polynomial K)) (MvPolynomial.X c : MvPolynomial (Fin n) K) =
+        Polynomial.X ^ 1 := by
+    rw [aeval_X, pow_one]
+  -- In `G'` the markings of the exchanged columns appear in the other cyclic order, so the
+  -- commutation map back has the bidegree of multiplication by `U`.
+  have hΦ := commutationBidegree_eq_zero_of_mem_columnArc C h hO rfl
+  have hΨ := commutationBidegree_eq_of_notMem_columnArc (G := G') (C.withTurnRow (G.X b))
+    ((columnsInterleaving_swapColumns G a b).mpr h.symm)
+    (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
+    (by simp [G', b, C, swapColumns_X, GridState.swapColumns_apply])
+  have hΨ' := (hG.swapColumns a b).not_isTorsion_swapColumns_of_homotopy K
+    (C.withTurnRow (G.X b)) (G.O a) H' (hp a) hH'
+  by_cases hT : Module.IsTorsion (Polynomial K) (G.unblockedHomology K)
+  · -- Both homologies are torsion, and both invariants vanish.
+    have hT' : Module.IsTorsion (Polynomial K) (G'.unblockedHomology K) := by
+      by_contra hT'
+      exact (hΨ' hT') ((isTorsion_swapColumns_swapColumns_iff hG K).mpr hT)
+    rw [hG.tau_eq_zero_of_isTorsion K hT, (hG.swapColumns a b).tau_eq_zero_of_isTorsion K hT']
+    simp
+  · have h₁ := hG.tau_swapColumns_le_of_homotopy K C (G.X b) H (hp b) hH hT
+    have h₂ := (hG.swapColumns a b).tau_swapColumns_le_of_homotopy K (C.withTurnRow (G.X b))
+      (G.O a) H' (hp a) hH' (hG.not_isTorsion_swapColumns_of_homotopy K C (G.X b) H (hp b) hH hT)
+    rw [hΦ, Prod.snd_zero, sub_zero] at h₁
+    rw [hΨ, tau_swapColumns_swapColumns hG K, sub_neg_eq_add] at h₂
+    exact ⟨by linarith, h₁⟩
 
 /-- **The crossing-change inequality for `O_a` off the arc of column `b`.** If the segments of the
 columns `a` and `b = finRotate n a` of a knot grid `G` interleave with `O_a` off the arc of column
@@ -214,13 +179,6 @@ theorem natAbs_tau_swapColumns_sub_le_one {a : Fin n}
     omega
   · obtain ⟨h₁, h₂⟩ := hG.tau_swapColumns_mem_Icc_of_notMem_columnArc K h hO
     omega
-
-omit hG in
-/-- Diagonal reflection of a knot grid preserves `τ`. -/
-@[simp]
-theorem tau_transpose (hGt : G.transpose.IsKnot) :
-    hGt.tau K = (G.isKnot_transpose.mp hGt).tau K :=
-  ((G.isKnot_transpose.mp hGt).unblockedHomologyIsomorphic_transpose K).symm.tau_eq
 
 /-- A column cross-commutation between knot grids changes `τ` by at most `1`. -/
 theorem natAbs_tau_sub_le_one_of_isColumnCrossCommutation {H : GridDiagram n} (hH : H.IsKnot)
@@ -262,22 +220,6 @@ end GridDiagram
 /-! ### Crossing changes, graph distance, and the unknotting bound on grid knots -/
 
 namespace GridLink
-
-/-- A crossing change preserves whether a grid link is a knot. -/
-theorem IsCrossingChange.isKnot_iff {L L' : GridLink} (h : IsCrossingChange L L') :
-    L'.IsKnot ↔ L.IsKnot := by
-  rw [isKnot_def, h.componentCount_eq, isKnot_def]
-
-/-- Diagonal reflection of a grid knot preserves `τ`. -/
-@[simp]
-theorem IsKnot.tau_transpose {L : GridLink} (hL : L.transpose.IsKnot)
-    (K : Type*) [CommRing K] [CharP K 2] :
-    hL.tau K = (isKnot_transpose.mp hL).tau K := by
-  induction L using GridLink.ind with
-  | h G =>
-    have hG : G.IsKnot := (isKnot_toGridLink G).mp (isKnot_transpose.mp hL)
-    rw [hL.tau_eq_of_toGridLink_eq K (G.isKnot_transpose.mpr hG) (transpose_toGridLink G).symm,
-      IsKnot.tau_toGridLink, GridDiagram.IsKnot.tau_transpose]
 
 /-- A single crossing change between grid knots changes `τ` by at most `1`. -/
 theorem IsCrossingChange.natAbs_tau_sub_le_one {L L' : GridLink} (h : IsCrossingChange L L')

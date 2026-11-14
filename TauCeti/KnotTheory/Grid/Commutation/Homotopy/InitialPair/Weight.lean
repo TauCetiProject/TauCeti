@@ -278,7 +278,8 @@ private theorem
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inr Q⟩ := by
   -- Express the reverse weight in the original variables before identifying its dependent
   -- polygon indices. Its marking constraints remain available in hQ.
   simp only [G.pentagonPairWeight_def, G.commutationPentagonWeight_inr,
@@ -326,7 +327,8 @@ private theorem
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inr Q⟩ := by
   simp only [G.pentagonPairWeight_def, G.commutationPentagonWeight_inr,
     (G.swapColumns a b).commutationPentagonWeight_inr, G.initialPentagonWeight_reverse]
   generalize hCr : C.reverse = Cr at *
@@ -375,7 +377,8 @@ theorem existsUnique_unpairedHexagonComposite_of_initialPentagonPair
         GridRectangleDecomposition.IsRecut
           (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ :
             GridRectangleDecomposition x z) F.toRectangleDecomposition ∧
-        G.hexagonCompositeWeight C R F = G.pentagonPairWeight C R ⟨y, .inr P, .inr Q⟩ := by
+        G.hexagonCompositeWeight C R F =
+          G.pentagonPairWeight C C.reverse R ⟨y, .inr P, .inr Q⟩ := by
   obtain ⟨hp, -⟩ := (G.mem_initialPentagons P).mp hP
   obtain ⟨hq, -⟩ := ((G.swapColumns a b).mem_initialPentagons Q).mp hQ
   let D : GridRectangleDecomposition x z :=

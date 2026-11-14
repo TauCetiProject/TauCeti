@@ -15,19 +15,20 @@ public import TauCeti.KnotTheory.Grid.TorusLink.UnknottingNumber
 This file proves the Milnor conjecture for the grid knots presented by the standard torus link
 grids: when `P = p + 1` and `Q = q + 1` are coprime, the unknotting number of the `(P, Q)` torus
 knot `(GridDiagram.torusLink p q).toGridLink` is `(P - 1) (Q - 1) / 2 = p q / 2`
-(`GridLink.unknottingNumber_toGridLink_torusLink`). When `P` and `Q` are not coprime, the grid link
-has multiple components and its unknotting number is `⊤`
-(`GridLink.unknottingNumber_toGridLink_torusLink_of_not_coprime`), giving a complete formula for
+(`GridLink.unknottingNumber_toGridLink_torusLink`). Combining with
+`GridLink.unknottingNumber_toGridLink_torusLink_of_not_coprime` from
+`TorusLink/UnknottingNumber.lean` when `P` and `Q` are not coprime gives a complete formula for
 every `(p, q)` (`GridLink.unknottingNumber_toGridLink_torusLink_eq_ite`).
 
 The upper bound `u ≤ p q / 2` is proved in `TorusLink/UnknottingNumber.lean` by removing full twists
 along Euclid's algorithm (`GridLink.unknottingNumber_toGridLink_torusLink_le`). For the matching
-lower bound (`GridLink.le_unknottingNumber_toGridLink_torusLink`), the `X`-marking state generates
-the non-torsion tower of `GH⁻` in top Alexander degree `p q / 2`, so over `ZMod 2` the grid knot
-invariant is `τ = -(p q / 2)` (`GridLink.tau_toGridLink_torusLink`) — negative because
-`GridDiagram.torusLink p q` has negative crossings and presents the mirror of the positive `(P, Q)`
-torus knot — while the crossing-change homotopy bound `|τ(L)| ≤ u(L)`
-(`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`) gives `p q / 2 = |τ| ≤ u`.
+lower bound (`GridLink.le_unknottingNumber_toGridLink_torusLink`), when `P` and `Q` are coprime the
+`X`-marking state generates the non-torsion tower of `GH⁻` in top Alexander degree `p q / 2`, so
+over `ZMod 2` the grid knot invariant is `τ = -(p q / 2)` (`GridLink.tau_toGridLink_torusLink`) —
+negative because `GridDiagram.torusLink p q` has negative crossings and presents the mirror of the
+positive `(P, Q)` torus knot — while the crossing-change homotopy bound `|τ(L)| ≤ u(L)`
+(`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`) gives `p q / 2 = |τ| ≤ u` (and `u = ⊤` when `P`
+and `Q` are not coprime).
 
 Here `GridLink.unknottingNumber` is the distance to the unknot in the crossing-change graph on grid
 diagrams modulo grid moves (`CrossingChange/UnknottingNumber.lean`); no identification with smooth
@@ -36,12 +37,10 @@ embedded knots in `S³` via Cromwell's theorem is claimed here.
 ## Main results
 
 * `TauCeti.GridLink.le_unknottingNumber_toGridLink_torusLink`: **the lower bound of the Milnor
-  conjecture**, `(p * q / 2 : ℕ) ≤ (torusLink p q).toGridLink.unknottingNumber` for coprime
-  `p + 1` and `q + 1`.
+  conjecture**, `(p * q / 2 : ℕ) ≤ (torusLink p q).toGridLink.unknottingNumber` for all `p` and `q`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink`: **the Milnor conjecture**,
   `(torusLink p q).toGridLink.unknottingNumber = (p * q / 2 : ℕ)` for coprime `p + 1` and `q + 1`.
-* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_eq_top_iff` and
-  `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_eq_ite`: complete characterization of the
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_eq_ite`: complete formula for the
   unknotting number of `(torusLink p q).toGridLink` for arbitrary `p` and `q`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_mul`,
   `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul`, and
@@ -72,21 +71,24 @@ namespace GridLink
 
 open GridDiagram
 
-/-- **The lower bound of the Milnor conjecture.** If `P = p + 1` and `Q = q + 1` are coprime, the
-`(P, Q)` torus knot, presented by its standard grid, has unknotting number at least
+/-- **The lower bound of the Milnor conjecture.** Every `(P, Q)` torus link (`P = p + 1`,
+`Q = q + 1`), presented by its standard grid, has unknotting number at least
 `(P - 1) (Q - 1) / 2 = p q / 2`.
 
-Over `ZMod 2`, the grid knot invariant satisfies `τ = -(p q / 2)`
+When `P` and `Q` are coprime, over `ZMod 2` the grid knot invariant satisfies `τ = -(p q / 2)`
 (`GridLink.tau_toGridLink_torusLink`), and `|τ| ≤ u`
-(`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`). -/
-theorem le_unknottingNumber_toGridLink_torusLink (p q : ℕ) (h : (p + 1).Coprime (q + 1)) :
+(`GridLink.IsKnot.natAbs_tau_le_unknottingNumber`); otherwise the unknotting number is `⊤`. -/
+theorem le_unknottingNumber_toGridLink_torusLink (p q : ℕ) :
     (p * q / 2 : ℕ) ≤ (torusLink p q).toGridLink.unknottingNumber := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hK : (torusLink p q).toGridLink.IsKnot :=
-    (isKnot_toGridLink _).mpr ((isKnot_torusLink_iff p q).mpr h)
-  have hτ : (hK.tau (ZMod 2)).natAbs = p * q / 2 := by
-    rw [tau_toGridLink_torusLink (ZMod 2) h, Int.natAbs_neg, Int.natAbs_natCast]
-  simpa only [hτ] using hK.natAbs_tau_le_unknottingNumber (ZMod 2)
+  by_cases h : (p + 1).Coprime (q + 1)
+  · have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+    have hK : (torusLink p q).toGridLink.IsKnot :=
+      (isKnot_toGridLink _).mpr ((isKnot_torusLink_iff p q).mpr h)
+    have hτ : (hK.tau (ZMod 2)).natAbs = p * q / 2 := by
+      rw [tau_toGridLink_torusLink (ZMod 2) hK, Int.natAbs_neg, Int.natAbs_natCast]
+    simpa only [hτ] using hK.natAbs_tau_le_unknottingNumber (ZMod 2)
+  · rw [unknottingNumber_toGridLink_torusLink_of_not_coprime h]
+    exact le_top
 
 /-- **The Milnor conjecture for grid knots.** If `P = p + 1` and `Q = q + 1` are coprime, the
 unknotting number of the `(P, Q)` torus knot, presented by its standard grid, is
@@ -94,25 +96,7 @@ unknotting number of the `(P, Q)` torus knot, presented by its standard grid, is
 theorem unknottingNumber_toGridLink_torusLink (p q : ℕ) (h : (p + 1).Coprime (q + 1)) :
     (torusLink p q).toGridLink.unknottingNumber = (p * q / 2 : ℕ) :=
   le_antisymm (unknottingNumber_toGridLink_torusLink_le p q h)
-    (le_unknottingNumber_toGridLink_torusLink p q h)
-
-/-- When `p + 1` and `q + 1` are not coprime, the `(p + 1, q + 1)` torus link has more than one
-component, so its unknotting number is `⊤`. -/
-theorem unknottingNumber_toGridLink_torusLink_of_not_coprime {p q : ℕ}
-    (h : ¬ (p + 1).Coprime (q + 1)) :
-    (torusLink p q).toGridLink.unknottingNumber = ⊤ := by
-  by_contra hne
-  have hK : (torusLink p q).IsKnot :=
-    (isKnot_toGridLink _).mp (isKnot_of_unknottingNumber_ne_top hne)
-  exact h ((isKnot_torusLink_iff p q).mp hK)
-
-/-- The standard `(p + 1, q + 1)` torus link has infinite unknotting number if and only if `p + 1`
-and `q + 1` are not coprime. -/
-theorem unknottingNumber_toGridLink_torusLink_eq_top_iff {p q : ℕ} :
-    (torusLink p q).toGridLink.unknottingNumber = ⊤ ↔ ¬ (p + 1).Coprime (q + 1) := by
-  refine ⟨fun htop hcop => ?_, unknottingNumber_toGridLink_torusLink_of_not_coprime⟩
-  rw [unknottingNumber_toGridLink_torusLink p q hcop] at htop
-  exact ENat.natCast_ne_top _ htop
+    (le_unknottingNumber_toGridLink_torusLink p q)
 
 /-- Complete formula for the unknotting number of the standard `(p + 1, q + 1)` torus link grid:
 `(p * q / 2 : ℕ)` when `p + 1` and `q + 1` are coprime, and `⊤` otherwise. -/

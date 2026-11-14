@@ -51,32 +51,30 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {p q : ℕ} (h : (p + 1).Coprime (q + 1)) (K : Type*) [Field K] [CharP K 2]
+variable {p q : ℕ} (hG : (torusLink p q).IsKnot) (K : Type*) [Field K] [CharP K 2]
 
 /-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
 `2 τ = -p q`. -/
 theorem two_mul_tau_torusLink :
-    2 * ((isKnot_torusLink_iff p q).mpr h).tau K = -(p * q : ℤ) := by
-  rw [IsKnot.tau_def, mul_neg, two_mul_supNonTorsionDegree_torusLink h K]
+    2 * hG.tau K = -(p * q : ℤ) := by
+  rw [IsKnot.tau_def, mul_neg,
+    two_mul_supNonTorsionDegree_torusLink ((isKnot_torusLink_iff p q).mp hG) K]
 
 /-- **`τ` of a torus knot grid**: on the standard grid of the `(p + 1, q + 1)` torus knot,
 `τ = -(p q / 2)`. -/
+@[simp]
 theorem tau_torusLink :
-    ((isKnot_torusLink_iff p q).mpr h).tau K = -((p * q / 2 : ℕ) : ℤ) := by
-  have h₂ := two_mul_tau_torusLink h K
+    hG.tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  have h₂ := two_mul_tau_torusLink hG K
   omega
 
 /-- On the `5 × 5` trefoil grid, `τ = -1`. -/
-@[simp]
 theorem tau_torusLink_one_two : ((isKnot_torusLink_iff 1 2).mpr (by decide)).tau K = -1 := by
-  have h := two_mul_tau_torusLink (p := 1) (q := 2) (by decide) K
-  omega
+  simp
 
 /-- On the `7 × 7` grid of the `(3, 4)` torus knot, `τ = -3`. -/
-@[simp]
 theorem tau_torusLink_two_three : ((isKnot_torusLink_iff 2 3).mpr (by decide)).tau K = -3 := by
-  have h := two_mul_tau_torusLink (p := 2) (q := 3) (by decide) K
-  omega
+  simp
 
 /-- **`τ` of an unknot grid is zero**: the unknot grids are the torus link grids with `q = 0`. -/
 @[simp]
@@ -85,8 +83,7 @@ theorem tau_unknot (hU : (unknot p).IsKnot) : hU.tau K = 0 := by
   revert hU
   rw [← torusLink_zero_right]
   intro hU
-  have h := two_mul_tau_torusLink (p := p) (q := 0) (Nat.coprime_one_right _) K
-  omega
+  simp
 
 end GridDiagram
 
