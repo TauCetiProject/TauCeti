@@ -65,7 +65,7 @@ monotone rearrangement is `TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory
 open scoped ENNReal Topology Gradient RealInnerProductSpace
 
 namespace TauCeti
@@ -175,12 +175,13 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩
   filter_upwards [ae_eq_comp hU hinv] with ω hω using hω.symm
 
-/-- **The measure-preserving factor is the unique cost minimiser.** Let `T : E → E` be an optimal
-transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U : α → E`, at finite optimal cost,
-the law of `U` being absolutely continuous with respect to an additive Haar measure. Let `s` have
-law `P` with `U = T ∘ s` almost everywhere. If a map `s'` of law `P` is at most as far from `U` as
-`s`, in the sense that `∫ ‖s' - U‖ ^ 2 / 2 dm ≤ ∫ ‖s - U‖ ^ 2 / 2 dm`, then `s' = s` almost
-everywhere. For the polar factorization, `T` is the gradient `∇u`. -/
+/-- **The measure-preserving factor is the unique cost minimiser.** On a finite measure space
+`(α, m)`, let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law
+of `U : α → E`, at finite optimal cost, the law of `U` being absolutely continuous with respect
+to an additive Haar measure. Let `s` have law `P` with `U = T ∘ s` almost everywhere. If a map `s'`
+of law `P` is at most as far from `U` as `s`, in the sense that
+`∫ ‖s' - U‖ ^ 2 / 2 dm ≤ ∫ ‖s - U‖ ^ 2 / 2 dm`, then `s' = s` almost everywhere. For the polar
+factorization, `T` is the gradient `∇u`. -/
 theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.map U ≪ ρ)
     {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
@@ -233,13 +234,14 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
       hgraph), hfactor hs hgraph] with ω h₁ h₂
   rw [h₁, h₂]
 
-/-- **The measure-preserving factor is the unique correlation maximiser.** Let `P` and the law of
-`U : α → E` have finite second moments, the law of `U` being absolutely continuous with respect
-to an additive Haar measure. Let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2`
-from `P` to the law of `U`, and let `s` have law `P` with `U = T ∘ s` almost everywhere. By
-`TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the correlation `∫ ⟪s', U⟫ dm` among maps
-`s'` of law `P`; it is the unique maximiser: if `s'` has law `P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`,
-then `s' = s` almost everywhere. For the polar factorization, `T` is the gradient `∇u`, optimal by
+/-- **The measure-preserving factor is the unique correlation maximiser.** On a finite measure
+space `(α, m)`, let `P` and the law of `U : α → E` have finite second moments, the law of `U`
+being absolutely continuous with respect to an additive Haar measure. Let `T : E → E` be an
+optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U`, and let `s` have law `P`
+with `U = T ∘ s` almost everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises
+the correlation `∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the unique maximiser: if `s'`
+has law `P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` almost everywhere. For the polar
+factorization, `T` is the gradient `∇u`, optimal by
 `TauCeti.isKantorovichOptimalTransportMap_gradient`. -/
 theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
     (hν : MemLp id 2 (m.map U)) (hUρ : m.map U ≪ ρ) {T : E → E}
