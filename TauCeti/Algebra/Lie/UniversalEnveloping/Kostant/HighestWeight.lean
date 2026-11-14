@@ -57,8 +57,6 @@ Together with the weight decomposition, these are the hypotheses under which
   `ℤ`-span of the lowering words applied to `v`.
 * `LieAlgebra.Basis.fg_orbitOfRep_kostantForm_singleton`: in a finite-dimensional representation,
   `U_ℤ v` is finitely generated over `ℤ`.
-* `LieAlgebra.Basis.mem_iSup_jointWeightSpace_of_mem_orbitOfRep_kostantForm_singleton`: `U_ℤ v`
-  lies in the span of the integral weight spaces.
 
 ## References
 
@@ -268,23 +266,6 @@ theorem orbitOfRep_kostantForm_singleton_eq_span_loweringWord
   · rw [Submodule.span_le]
     rintro _ ⟨l, rfl⟩
     exact Subring.apply_mem_orbitOfRep _ _ _ (b.loweringWord_mem_kostantForm l) rfl
-
-/-- **The Kostant orbit of a highest weight vector lies in the span of the integral weight
-spaces**: each of its lowering words applied to `v` is a weight vector of integral weight. -/
-theorem mem_iSup_jointWeightSpace_of_mem_orbitOfRep_kostantForm_singleton
-    (hv : IsCartanWeightVector b.h ρ μ v)
-    (he : ∀ i, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e i)) v = 0)
-    {x : V} (hx : x ∈ Subring.orbitOfRep b.kostantForm ρ {v}) :
-    x ∈ ⨆ ν : ι → ℤ, jointWeightSpace b.h ρ ν := by
-  rw [b.orbitOfRep_kostantForm_singleton_eq_span_loweringWord ρ hv he] at hx
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨l, rfl⟩ := hx
-    exact Submodule.mem_iSup_of_mem _
-      ((mem_jointWeightSpace_iff b.h ρ).2 (b.isCartanWeightVector_loweringWord ρ hv l))
-  | zero => exact zero_mem _
-  | add x y _ _ hx hy => exact add_mem hx hy
-  | smul z x _ hx => exact Submodule.smul_of_tower_mem _ z hx
 
 /-! ### Finite generation -/
 

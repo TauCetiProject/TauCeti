@@ -29,10 +29,15 @@ any system `S` lies in its radical over `K`, so `S` and `Rad_H(S)` have the same
 and evaluation at a solution of `S` in `K` is a `G`-homomorphism from the coordinate group
 `G_{R(S)}` to `K`.
 
-Three special cases are recorded. Every coordinate group `G_{R(S)}` is separated by `H`. The group
+Two special cases are recorded. Every coordinate group `G_{R(S)}` is separated by `H`. The group
 `G_S = G[X] ⧸ ncl(S)` of a system is separated by `H` exactly when the radical of `S` is its
-normal closure. Over `F(a, b)` the group of the system `x² = 1` is not separated by `F(a, b)`,
-because the radical of `x²` is the normal closure of `x`.
+normal closure. Three systems in one variable `x` illustrate the second criterion. Over `F(a, b)`
+the group of the system `x² = 1` is not separated by `F(a, b)`, because the radical of `x²` is the
+normal closure of `x`. For injective coefficients the group of the system `x = 1` is `G` itself
+and is separated by `H`. Over `F(a, b)` the system `{a, b, x}` has no solutions; its radical and
+its normal closure are both everything, so its group is trivial and separated by `F(a, b)`,
+although the coefficients do not embed in it and it has no coefficient-preserving homomorphism to
+`F(a, b)`.
 
 Combined with the characterization of irreducible algebraic sets by discrimination, this gives a
 recognition theorem for discriminated groups: if `H` is equationally Noetherian and `X` is finite,
@@ -40,7 +45,10 @@ then `K` is discriminated by `H` if and only if it is `G`-isomorphic to the coor
 irreducible algebraic set defined by a finite system. This applies for instance to a free group
 of finite rank over itself, which is equationally Noetherian. Over a domain `H`, discrimination is
 separation plus being a domain, so a nonempty algebraic set is irreducible exactly when its
-coordinate group is a domain over `G`.
+coordinate group is a domain over `G`. That a domain coordinate group makes a nonempty algebraic
+set irreducible needs no hypothesis on `H`. In particular a nonempty algebraic set with a CSA
+coordinate group is irreducible as soon as two coefficients do not commute in `H`, since a CSA
+group is a domain over any coefficients that do not commute.
 
 Separated groups also satisfy a descending chain condition. If `H` is equationally Noetherian,
 then in a sequence `K 0 ↠ K 1 ↠ ⋯` of surjective `G`-homomorphisms of groups separated by `H`,
@@ -87,6 +95,11 @@ also cover systems without solutions, whose coordinate group is trivial.
   to one.
 * `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_iff`: `G_S` is separated by `H` if and
   only if `Rad_H(S) = ncl(S)`.
+* `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl`: for injective
+  coefficients, the group of a system prescribing the value of every variable is separated by `H`.
+* `TauCeti.GroupAlgGeom.SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of`: the trivial group
+  of the system `{a, b, x}` over `F(a, b)` is separated by `F(a, b)`, although it has no
+  coefficient-preserving homomorphism to it.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_exists_coordGroup`: a group generated over `G` by the
   images of `X` is separated by `H` if and only if it is `G`-isomorphic to a coordinate group over
   `H` in the variables `X`.
@@ -96,6 +109,8 @@ also cover systems without solutions, whose coordinate group is trivial.
   system.
 * `TauCeti.GroupAlgGeom.isIrreducible_V_iff_isGDomain`: over a domain `H`, a nonempty algebraic
   set is irreducible if and only if its coordinate group is a domain over `G`.
+* `TauCeti.GroupAlgGeom.isIrreducible_V_of_isCSA`: a nonempty algebraic set with a CSA coordinate
+  group is irreducible, provided two coefficients do not commute in `H`.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_ker_eq`: increasing kernels of
   `G`-homomorphisms `G[X] →* K k` into groups separated by an equationally Noetherian `H`, with `X`
   finite, are eventually constant.
@@ -300,6 +315,32 @@ theorem SystemGroup.not_isSeparatedBy_coeff_sq :
   rw [SystemGroup.isSeparatedBy_coeff_iff, rad_sq.1]
   exact rad_sq.2.symm
 
+/-- For injective coefficients, the group of the system `x (g x)⁻¹`, `x ∈ X`, which prescribes
+the value `g x` of every variable, is separated by `H`. -/
+theorem SystemGroup.isSeparatedBy_coeff_range_inr_of_mul_inv_inl (hι : Function.Injective ι)
+    (g : X → G) :
+    IsSeparatedBy
+      (SystemGroup.coeff (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹)) ι :=
+  (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_range_inr_of_mul_inv_inl hι g)
+
+/-- For injective coefficients, the group of the one-variable equation `x = 1` is separated by
+`H`. -/
+theorem SystemGroup.isSeparatedBy_coeff_singleton_inr_of [Subsingleton X]
+    (hι : Function.Injective ι) (x : X) :
+    IsSeparatedBy (SystemGroup.coeff {(inr (FreeGroup.of x) : GX G X)}) ι :=
+  (SystemGroup.isSeparatedBy_coeff_iff _).2 (Rad_singleton_inr_of hι x)
+
+/-- Over `F(a, b)`, the group of the inconsistent system `{a, b, x}` is separated by `F(a, b)`,
+although it has no coefficient-preserving homomorphism to `F(a, b)`: it is trivial, so the empty
+intersection of kernels is trivial. -/
+theorem SystemGroup.isSeparatedBy_coeff_inl_of_inl_of_inr_of :
+    IsSeparatedBy
+      (SystemGroup.coeff ({inl (FreeGroup.of 0), inl (FreeGroup.of 1), inr (FreeGroup.of ())} :
+        Set (GX (FreeGroup (Fin 2)) Unit)))
+      (.id (FreeGroup (Fin 2))) := by
+  rw [SystemGroup.isSeparatedBy_coeff_iff, Rad_inl_of_inl_of_inr_of_eq_top,
+    normalClosure_inl_of_inl_of_inr_of_eq_top]
+
 /-- A group `K` generated over `G` by the images of the variables `X` is separated by `H` if and
 only if it is `G`-isomorphic to a coordinate group over `H` in the variables `X`. -/
 theorem isSeparatedBy_iff_exists_coordGroup (π : GHom (inl : G →* GX G X) κ)
@@ -333,17 +374,36 @@ theorem isDiscriminatedBy_iff_exists_coordGroup [Finite X] (hH : IsEquationallyN
   · rw [CoordGroup.coeff_def]
     exact ⟨ψ, hψ⟩
 
+/-- A nonempty algebraic set whose coordinate group is a domain over `G` is irreducible. No
+hypothesis on `H` is needed. Nonemptiness is needed: the empty set is not irreducible, while its
+trivial coordinate group is a domain. -/
+theorem isIrreducible_V_of_isGDomain {S : Set (GX G X)} (hS : (V ι S).Nonempty)
+    (h : IsGDomain (CoordGroup.coeff ι S)) :
+    @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) := by
+  obtain ⟨v, hv⟩ := hS
+  rw [isIrreducible_V_iff_isDiscriminatedBy]
+  exact (CoordGroup.isSeparatedBy_coeff S).isDiscriminatedBy h ⟨CoordGroup.evalGHom v hv⟩
+
 /-- Over a domain `H` over `G`, a nonempty algebraic set is irreducible if and only if its
 coordinate group is a domain over `G`. Nonemptiness is needed: the empty set is not irreducible,
 while its trivial coordinate group is a domain. -/
 theorem isIrreducible_V_iff_isGDomain {S : Set (GX G X)} (hH : IsGDomain ι)
     (hS : (V ι S).Nonempty) :
     @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) ↔
-      IsGDomain (CoordGroup.coeff ι S) := by
+      IsGDomain (CoordGroup.coeff ι S) :=
+  ⟨fun h => (isIrreducible_V_iff_isDiscriminatedBy.1 h).isGDomain hH,
+    isIrreducible_V_of_isGDomain hS⟩
+
+/-- A nonempty algebraic set whose coordinate group is CSA is irreducible, as soon as two
+coefficients do not commute in `H`. They then do not commute in the coordinate group either,
+which makes the CSA coordinate group a domain over `G`. This applies to fully residually free
+coordinate groups over a nonabelian free group. -/
+theorem isIrreducible_V_of_isCSA {S : Set (GX G X)} (hS : (V ι S).Nonempty)
+    (hCSA : Group.IsCSA (CoordGroup ι S)) {a b : G} (hab : ¬Commute (ι a) (ι b)) :
+    @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) := by
   obtain ⟨v, hv⟩ := hS
-  rw [isIrreducible_V_iff_isDiscriminatedBy]
-  exact ⟨fun h => h.isGDomain hH, fun h =>
-    (CoordGroup.isSeparatedBy_coeff S).isDiscriminatedBy h ⟨CoordGroup.evalGHom v hv⟩⟩
+  refine isIrreducible_V_of_isGDomain ⟨v, hv⟩ (.of_isCSA hCSA (a := a) (b := b) fun h => hab ?_)
+  simpa only [GHom.map_coeff] using h.map (CoordGroup.evalGHom v hv)
 
 section FreeGroup
 
