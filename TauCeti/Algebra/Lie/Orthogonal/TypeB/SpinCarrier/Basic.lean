@@ -120,11 +120,9 @@ noncomputable abbrev signSet (i : Fin (dimension n)) : Finset (Fin (n + 1)) :=
 noncomputable abbrev basisIndex (s : Finset (Fin (n + 1))) : Fin (dimension n) :=
   Fintype.equivFin (Finset (Fin (n + 1))) s
 
-@[simp]
 theorem signSet_basisIndex (s : Finset (Fin (n + 1))) : signSet n (basisIndex n s) = s :=
   (Fintype.equivFin (Finset (Fin (n + 1)))).symm_apply_apply s
 
-@[simp]
 theorem basisIndex_signSet (i : Fin (dimension n)) : basisIndex n (signSet n i) = i :=
   (Fintype.equivFin (Finset (Fin (n + 1)))).apply_symm_apply i
 
