@@ -127,7 +127,8 @@ instance [IsCancelAdd k] [IsCancelMulZero k] [UniqueProds G] :
     rw [ih ag hag eq]
     simp [Finset.erase_union_distrib]
 
-/-- A twisted monoid algebra over a domain semiring and a unique-product monoid is a domain. -/
+/-- A twisted monoid algebra over an additively cancellative domain semiring and a
+unique-product monoid is a domain. -/
 instance [IsCancelAdd k] [IsDomain k] [UniqueProds G] :
     IsDomain (twistedMonoidAlgebra k G α) where
   __ := (basis k G α).repr.symm.injective.nontrivial
