@@ -19,7 +19,8 @@ separate from any requirement that the chart generate the ambient algebra.
 algebra maps from the based quantum torus, with `BasedChart.evalEquiv` identifying
 these two presentations. `BasedChart.map` transports charts along injective ambient
 algebra maps, and `BasedChart.comap` pulls them back along injective lattice maps
-preserving the integral form. Coordinates in any lattice basis determine a chart, and
+preserving the integral form. `BasedChart.ext_coordinate` shows that a chart is uniquely
+determined by its `BasedChart.coordinate` values in any lattice basis, and
 `BasedChart.untwistedEquiv` recovers ordinary Laurent charts when the twists are one.
 
 ## References
@@ -145,35 +146,35 @@ theorem monomial_neg (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) :
   apply eq_inv_of_mul_eq_one_right
   simp [hΛ.self_eq_zero]
 
-/-- Negation of an exponent inverts a monomial up to the diagonal factor. -/
-theorem monomial_neg_eq_inv (M : BasedChart u Λ B) (a : L) :
+/-- The inverse of a chart monomial times the diagonal factor is its negated monomial. -/
+theorem monomial_neg_eq_inv_map_mul (M : BasedChart u Λ B) (a : L) :
     M.monomial (-a) = (Units.map (algebraMap R B) (u ^ (Λ a a)) * M.monomial a)⁻¹ := by
   apply eq_inv_of_mul_eq_one_right
-  rw [mul_assoc, M.monomial_mul, add_neg_cancel, M.monomial_zero, mul_one]
-  rw [map_neg (Λ a) a, zpow_neg, ← map_mul, mul_inv_cancel, map_one]
-
-/-- Alternation gives the usual quasi-commutation factor in the group of units. -/
-theorem monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a b : L) :
-    M.monomial a * M.monomial b =
-      Units.map (algebraMap R B) (u ^ (2 * Λ a b)) * (M.monomial b * M.monomial a) := by
-  rw [M.monomial_mul, M.monomial_mul, ← mul_assoc, ← hΛ.neg_eq]
-  simp only [← map_mul, ← zpow_add, add_comm b a]
-  congr 1
-  rw [show 2 * -(Λ b a) + Λ b a = -(Λ b a) by omega]
+  simp [mul_assoc]
 
 /-- Alternation gives the usual quasi-commutation factor in the ambient algebra. -/
 theorem val_monomial_mul_monomial_eq_smul_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt)
     (a b : L) : (M.monomial a : B) * M.monomial b =
       ((u ^ (2 * Λ a b) : Rˣ) : R) • ((M.monomial b : B) * M.monomial a) := by
-  simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, RingHom.coe_coe,
-    Algebra.smul_def] using congrArg Units.val (M.monomial_mul_monomial_eq_smul_mul hΛ a b)
+  simpa only [eval_monomial, map_mul, map_smul] using
+    congrArg M.eval (QuantumTorus.monomial_mul_monomial_eq_smul_mul hΛ a b)
+
+/-- Alternation gives the usual quasi-commutation factor in the group of units. -/
+theorem monomial_mul_monomial_eq_map_mul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a b : L) :
+    M.monomial a * M.monomial b =
+      Units.map (algebraMap R B) (u ^ (2 * Λ a b)) * (M.monomial b * M.monomial a) :=
+  Units.ext <| by
+    simp only [Units.val_mul, Units.coe_map]
+    simpa only [map_zpow, Algebra.smul_def,
+      MonoidHom.coe_ofClass (algebraMap R B)] using
+        M.val_monomial_mul_monomial_eq_smul_mul hΛ a b
 
 /-- The identity map gives the canonical chart of the based torus in itself. -/
 noncomputable def canonical (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
     BasedChart u Λ (QuantumTorus R L u Λ) where
   monomial := QuantumTorus.monomialUnit u Λ
-  monomial_zero := QuantumTorus.monomialUnit_zero u Λ
-  monomial_mul := QuantumTorus.monomialUnit_mul u Λ
+  monomial_zero := QuantumTorus.monomialUnit_zero
+  monomial_mul := QuantumTorus.monomialUnit_mul
   linearIndependent := by
     have h : (fun a ↦ ((QuantumTorus.monomialUnit u Λ a) :
         QuantumTorus R L u Λ)) = (QuantumTorus.basis u Λ) := by
@@ -246,31 +247,38 @@ theorem eval_repr_symm (M : BasedChart u Λ B) (c : L →₀ R) :
   rw [← AlgHom.toLinearMap_apply, M.eval_toLinearMap, Module.Basis.constr_apply,
     LinearEquiv.apply_symm_apply]
 
-/-- The underlying monomial, including the diagonal correction for a non-alternating form. -/
+/-- The underlying inverse of a chart monomial, including the diagonal correction
+for a non-alternating form. -/
 @[simp]
-theorem inv_monomial (M : BasedChart u Λ B) (a : L) :
+theorem val_inv_monomial (M : BasedChart u Λ B) (a : L) :
     (((M.monomial a)⁻¹ : Bˣ) : B) =
       ((u ^ (Λ a a) : Rˣ) : R) • (M.monomial (-a) : B) := by
   have h : (M.monomial a)⁻¹ = Units.map M.eval ((QuantumTorus.monomialUnit u Λ a)⁻¹) := by
     rw [map_inv, map_eval_monomialUnit]
-  rw [← Units.inv_eq_val_inv]
-  change ((M.monomial a)⁻¹ : Bˣ).val = _
   rw [h]
-  simp only [Units.coe_map, QuantumTorus.inv_monomialUnit, map_mul, AlgHom.coe_toMonoidHom,
-    eval_monomial, AlgHom.commutes, Algebra.smul_def]
+  simp only [Units.coe_map, QuantumTorus.val_inv_monomialUnit]
+  simp
 
-/-- For alternating forms, integer multiples of an exponent give integer powers
-of its monomial. -/
-theorem monomial_zsmul (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
-    M.monomial (n • a) = M.monomial a ^ n := by
-  rw [← map_eval_monomialUnit, ← QuantumTorus.monomialUnit_zpow u Λ hΛ,
-    map_zpow, map_eval_monomialUnit]
+/-- The inverse of a chart monomial, including the diagonal correction. -/
+theorem monomial_inv_eq_map_mul (M : BasedChart u Λ B) (a : L) :
+    (M.monomial a)⁻¹ = Units.map (algebraMap R B) (u ^ (Λ a a)) * M.monomial (-a) :=
+  Units.ext <| by
+    simp only [Units.val_mul, Units.coe_map]
+    simpa only [map_zpow, Algebra.smul_def,
+      MonoidHom.coe_ofClass (algebraMap R B)] using M.val_inv_monomial a
+
+/-- For alternating forms, negation of an exponent inverts its monomial. -/
+@[simp]
+theorem monomial_inv (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) :
+    (M.monomial a)⁻¹ = M.monomial (-a) := by
+  rw [M.monomial_inv_eq_map_mul, hΛ.self_eq_zero]
+  simp
 
 /-- For alternating forms, integer powers of a chart monomial simplify to monomials. -/
 @[simp]
 theorem monomial_zpow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
     M.monomial a ^ n = M.monomial (n • a) := by
-  rw [← map_eval_monomialUnit, ← map_zpow, QuantumTorus.monomialUnit_zpow u Λ hΛ,
+  rw [← map_eval_monomialUnit, ← map_zpow, QuantumTorus.monomialUnit_zpow hΛ,
     map_eval_monomialUnit]
 
 /-- For alternating forms, powers of a chart monomial simplify to monomials. -/
@@ -285,6 +293,19 @@ theorem val_monomial_pow (M : BasedChart u Λ B) (hΛ : Λ.IsAlt) (a : L) (n : �
     (M.monomial a : B) ^ n = (M.monomial (n • a) : B) := by
   simpa only [Units.val_pow_eq_pow_val] using congrArg Units.val (M.monomial_pow hΛ a n)
 
+/-- In a division semiring, inverses of underlying monomials simplify to negated monomials. -/
+@[simp]
+theorem val_monomial_inv {K : Type*} [DivisionSemiring K] [Algebra R K]
+    (M : BasedChart u Λ K) (hΛ : Λ.IsAlt) (a : L) :
+    (M.monomial a : K)⁻¹ = (M.monomial (-a) : K) := by
+  rw [← Units.val_inv_eq_inv_val, M.monomial_inv hΛ]
+
+/-- In a division semiring, integer powers of underlying monomials simplify to monomials. -/
+@[simp]
+theorem val_monomial_zpow {K : Type*} [DivisionSemiring K] [Algebra R K]
+    (M : BasedChart u Λ K) (hΛ : Λ.IsAlt) (a : L) (n : ℤ) :
+    (M.monomial a : K) ^ n = (M.monomial (n • a) : K) := by
+  rw [← Units.val_zpow_eq_zpow_val, M.monomial_zpow hΛ]
 /-- The coordinate units of a chart relative to a lattice basis. -/
 noncomputable def coordinate {I : Type*} (M : BasedChart u Λ B)
     (b : Module.Basis I ℤ L) (i : I) : Bˣ :=
@@ -305,16 +326,14 @@ theorem ext_of_span_eq_top {M N : BasedChart u Λ B} (s : Set L)
         apply mul_left_cancel (a := Units.map (algebraMap R B) (u ^ (Λ x y)))
         rw [← M.monomial_mul, ← N.monomial_mul, hx, hy]
       neg_mem' {x} hx :=
-        (M.monomial_neg_eq_inv x).trans (by rw [N.monomial_neg_eq_inv, hx]) }
+        (M.monomial_neg_eq_inv_map_mul x).trans (by rw [N.monomial_neg_eq_inv_map_mul, hx]) }
   apply BasedChart.ext
   intro a
-  suffices a ∈ S.toIntSubmodule from this
-  have ha : a ∈ Submodule.span ℤ s := by rw [hs]; trivial
-  induction ha using Submodule.span_induction with
-  | mem x hx => exact h x hx
-  | zero => exact S.zero_mem
-  | add x y _ _ hx hy => exact S.add_mem hx hy
-  | smul n x _ hx => exact S.zsmul_mem hx n
+  have ha : a ∈ S.toIntSubmodule :=
+    Submodule.span_le (p := S.toIntSubmodule).mpr h (hs ▸ Submodule.mem_top)
+  have ha' : a ∈ S := by
+    simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using ha
+  simpa [S] using ha'
 
 /-- Coordinate agreement determines every normalized monomial of a chart. -/
 theorem ext_coordinate {I : Type*} {M N : BasedChart u Λ B}
@@ -450,11 +469,31 @@ theorem untwistedEquiv_apply_single (h : ∀ a b, u ^ (Λ a b) = 1)
     (untwistedEquiv h M).val (AddMonoidAlgebra.single a r) = r • (M.monomial a : B) := by
   simp [untwistedEquiv, evalEquiv]
 
+/-- Untwisting evaluates after transporting along the quantum-torus equivalence. -/
+theorem untwistedEquiv_apply (h : ∀ a b, u ^ (Λ a b) = 1) (M : BasedChart u Λ B) :
+    (untwistedEquiv h M).val = M.eval.comp (QuantumTorus.untwistedEquiv u Λ h).symm.toAlgHom := by
+  rfl
+
 @[simp]
 theorem val_untwistedEquiv_symm_monomial (h : ∀ a b, u ^ (Λ a b) = 1)
     (f : {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f}) (a : L) :
     (((untwistedEquiv h).symm f).monomial a : B) = f.val (AddMonoidAlgebra.single a 1) := by
   simp [untwistedEquiv, evalEquiv]
+
+/-- The inverse chart comes from composition with the quantum-torus equivalence. -/
+theorem untwistedEquiv_symm_apply (h : ∀ a b, u ^ (Λ a b) = 1)
+    (f : {f : AddMonoidAlgebra R L →ₐ[R] B // Function.Injective f}) :
+    (untwistedEquiv h).symm f =
+      ofInjective (f.val.comp (QuantumTorus.untwistedEquiv u Λ h).toAlgHom) (by
+        intro x y hxy
+        apply (QuantumTorus.untwistedEquiv u Λ h).injective
+        rw [← AlgEquiv.coe_toAlgHom]
+        exact f.property hxy) := by
+  apply BasedChart.ext
+  intro a
+  apply Units.ext
+  rw [val_untwistedEquiv_symm_monomial]
+  simp
 end BasedChart
 
 end TauCeti
