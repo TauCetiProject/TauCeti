@@ -594,6 +594,15 @@ section Ray
 variable [AddCommMonoid H] {r : ι → ι → Prop} {cls : ι → H} {T : Set ι} {A₀ : H}
   {m : ι → ℕ+}
 
+/-- On a ray, an assignment `l` supported in a family `T` of tori, the torus `c` having class
+`m c • A₀`, has class `(∑ c, m c * l c) • A₀`. -/
+theorem linearCombination_eq_nsmul_of_support_subset (hcls : ∀ c ∈ T, cls c = (m c : ℕ) • A₀)
+    {l : ι →₀ ℕ} (hl : ↑l.support ⊆ T) :
+    Finsupp.linearCombination ℕ cls l = (∑ c ∈ l.support, (m c : ℕ) * l c) • A₀ := by
+  rw [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_smul]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  rw [hcls c (hl hc), smul_smul, mul_comm]
+
 /-- On a ray, the compatible configurations in class `j • A₀` of a pairwise compatible family
 `T` of tori, the torus `c` having class `m c • A₀`, are the assignments of the weighted
 antidiagonal `s.weightedFinsuppAntidiag m j`, for every finite subfamily `s` of `T` containing
@@ -602,18 +611,12 @@ theorem compatibleConfigurations_eq_weightedFinsuppAntidiag (hT : T.Pairwise r)
     (hcls : ∀ c ∈ T, cls c = (m c : ℕ) • A₀) (hA₀ : Function.Injective fun n : ℕ ↦ n • A₀)
     {s : Finset ι} (hsT : ↑s ⊆ T) {j : ℕ} (hs : ∀ c ∈ T, (m c : ℕ) ≤ j → c ∈ s) :
     compatibleConfigurations r cls T (j • A₀) = ↑(s.weightedFinsuppAntidiag m j) := by
-  -- An assignment supported in `T` has class `(∑ c, m c * l c) • A₀`.
-  have key {l : ι →₀ ℕ} (hl : ↑l.support ⊆ T) :
-      Finsupp.linearCombination ℕ cls l = (∑ c ∈ l.support, (m c : ℕ) * l c) • A₀ := by
-    rw [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_smul]
-    refine Finset.sum_congr rfl fun c hc ↦ ?_
-    rw [hcls c (hl hc), smul_smul, mul_comm]
   ext l
   simp only [mem_compatibleConfigurations, Finset.mem_coe, Finset.mem_weightedFinsuppAntidiag]
   constructor
   · rintro ⟨hlT, -, hlA⟩
     have hsum : ∑ c ∈ l.support, (m c : ℕ) * l c = j :=
-      hA₀ ((key hlT).symm.trans hlA)
+      hA₀ ((linearCombination_eq_nsmul_of_support_subset hcls hlT).symm.trans hlA)
     have hls : l.support ⊆ s := fun c hc ↦ hs c (hlT hc) <| by
       have := Finset.single_le_sum (f := fun c ↦ (m c : ℕ) * l c) (fun _ _ ↦ Nat.zero_le _) hc
       have := Nat.le_mul_of_pos_right (m c : ℕ) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 hc))
@@ -624,7 +627,7 @@ theorem compatibleConfigurations_eq_weightedFinsuppAntidiag (hT : T.Pairwise r)
   · rintro ⟨hls, hsum⟩
     have hlT : ↑l.support ⊆ T := (Finset.coe_subset.2 hls).trans hsT
     refine ⟨hlT, hT.mono hlT, ?_⟩
-    rw [key hlT, ← hsum,
+    rw [linearCombination_eq_nsmul_of_support_subset hcls hlT, ← hsum,
       Finset.sum_subset hls fun c _ hc ↦ by simp [Finsupp.notMem_support_iff.1 hc]]
 
 variable [CommRing R] {w : ι → ℕ → R}
