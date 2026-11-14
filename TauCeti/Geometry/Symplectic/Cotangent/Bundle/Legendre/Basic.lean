@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -339,22 +340,12 @@ theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
   rw [hπ, Bundle.mfderiv_proj, Bundle.mfderiv_proj] at hcomp
   exact hcomp.symm
 
-/-- Along a line through `a` in direction `w`, a map with derivative `D'` at `a` has derivative
-`D' w` at the origin of the line. -/
-private theorem hasDerivAt_comp_add_smul_zero {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] {D : E → G} {D' : E →L[𝕜] G} {a : E} (w : E) (hD : HasFDerivAt D D' a) :
-    HasDerivAt (fun r : 𝕜 ↦ D (a + r • w)) (D' w) 0 := by
-  have h1 : HasDerivAt (fun r : 𝕜 ↦ a + r • w) w 0 := by
-    have h := ((hasDerivAt_id' (0 : 𝕜)).smul_const w).const_add a
-    rwa [one_smul] at h
-  have h2 : HasFDerivAt D D' (a + (0 : 𝕜) • w) := by
-    rwa [zero_smul, add_zero]
-  exact h2.comp_hasDerivAt (0 : 𝕜) h1
-
+omit [IsManifold I 2 M] in
 /-- The Legendre map sends a line in a fibre of the tangent bundle to a line of covectors: if the
 derivative of the restricted Lagrangian has derivative `Hs w` along the line through `v` in
-direction `w`, then the line of covectors has velocity `(0, Hs w)` in the bundle chart. -/
-private theorem hasMFDerivAt_legendreMap_comp_line (v : TangentBundle I M)
+direction `w`, then the line of covectors has velocity `(0, Hs w)` in the bundle chart, its fibre
+component read through the trivialization of the cotangent bundle at `v.proj`. -/
+private theorem hasMFDerivAt_legendreMap_comp_line [IsManifold I 1 M] (v : TangentBundle I M)
     (w : TangentSpace I v.proj) {Hs : E →L[𝕜] E →L[𝕜] 𝕜}
     (hline : HasDerivAt (fun r : 𝕜 ↦
       fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u)) (v.2 + r • w)) (Hs w) 0) :
@@ -407,9 +398,9 @@ theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) 
   have hD : HasFDerivAt D Hs (id v.2 : E) :=
     (((contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
       ).fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
-  have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 :=
-    hasDerivAt_comp_add_smul_zero (id w : E) hD
-  -- So the Legendre map sends the line to a line of covectors, with velocity `(0, B (Hs w))`.
+  have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 := hD.hasLineDerivAt (id w : E)
+  -- So the Legendre map sends the line to a line of covectors, with velocity `(0, Hs w)` in the
+  -- bundle chart.
   have hFLγ := hasMFDerivAt_legendreMap_comp_line (L := L) v w hline
   have hTγ : HasMFDerivAt I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) (γ 0) T := by
     rw [hγ0, ← hT]
