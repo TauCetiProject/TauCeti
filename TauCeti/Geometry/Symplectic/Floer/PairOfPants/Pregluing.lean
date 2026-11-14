@@ -32,10 +32,13 @@ with the cutoff `ρ = TauCeti.Floer.pregluingCutoff`, equal to `1` on `(-∞, -1
 
 * it is `u` where `s ≤ R - 1` (`TauCeti.Floer.pairOfPantsPreglue_of_le`), and near every point
   of `S` where `s < R - 1` (`TauCeti.Floer.pairOfPantsPreglue_eventuallyEq_of_lt`);
+* it is `v(s - 2R, t)` where `s ≥ R + 1` (`TauCeti.Floer.pairOfPantsPreglue_of_add_one_le`), and
+  near every point of `S` where `s > R + 1`
+  (`TauCeti.Floer.pairOfPantsPreglue_eventuallyEq_of_add_one_lt`);
 * read in the positive end chart, it is the pre-glued map
   `TauCeti.Floer.preglue x (u ∘ φ'_q) v R` of the two cylinders, translated by `R`
-  (`TauCeti.Floer.pairOfPantsPreglue_comp_positiveEndChart`), so it is `v(s - 2R, t)` where
-  `s ≥ R + 1`, and the end `q` of the pre-glued map is the far end of `v`;
+  (`TauCeti.Floer.pairOfPantsPreglue_comp_positiveEndChart`), so the end `q` of the pre-glued
+  map is the far end of `v`;
 * it is as regular as `u`, `x` and `v` (`TauCeti.Floer.contDiffOn_pairOfPantsPreglue`): the
   angular end coordinate jumps by `1` across a ray, and periodicity of `x` and `v` removes the
   jump.
@@ -117,6 +120,32 @@ theorem pairOfPantsPreglue_eventuallyEq_of_lt
   ((continuousAt_fst_positiveEndCoord q hz).eventually_lt continuousAt_const hR).mono
     fun _ h ↦ pairOfPantsPreglue_of_le h.le
 
+/-- Where the longitudinal coordinate of the end is at least `R + 1`, the pre-glued map is
+`v(s - 2R, t)`. -/
+theorem pairOfPantsPreglue_of_add_one_le (hz : R + 1 ≤ (positiveEndCoord q z).1) :
+    pairOfPantsPreglue q x u v R z = v (positiveEndCoord q z - (2 * R, 0)) := by
+  rw [pairOfPantsPreglue_apply, pregluingCutoff_of_one_le (by linarith),
+    pregluingCutoff_of_le_neg_one (by linarith)]
+  simp
+
+/-- Near a point where the longitudinal coordinate of the end is greater than `R + 1`, the
+pre-glued map is `v(s - 2R, t)`. -/
+theorem pairOfPantsPreglue_eventuallyEq_of_add_one_lt
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) (hR : R + 1 < (positiveEndCoord q z).1) :
+    pairOfPantsPreglue q x u v R =ᶠ[𝓝 z] fun w ↦ v (positiveEndCoord q w - (2 * R, 0)) :=
+  (continuousAt_const.eventually_lt (continuousAt_fst_positiveEndCoord q hz) hR).mono
+    fun _ h ↦ pairOfPantsPreglue_of_add_one_le h.le
+
+/-- A map of period one in `t` does not see an integer shift of `t`. -/
+private theorem apply_add_intCast_sub_of_periodic {α : Type*} {f : ℝ × ℝ → α}
+    (hf : ∀ s, Periodic (fun t ↦ f (s, t)) 1) (p : ℝ × ℝ) (k : ℤ) (a : ℝ) :
+    f (p + (0, (k : ℝ)) - (a, 0)) = f (p - (a, 0)) := by
+  have h := (hf (p.1 - a)).int_mul k p.2
+  simp only [mul_one] at h
+  have e₁ : p + (0, (k : ℝ)) - (a, 0) = (p.1 - a, p.2 + k) := by ext <;> simp
+  have e₂ : p - (a, 0) = (p.1 - a, p.2) := by ext <;> simp
+  rw [e₁, e₂, h]
+
 /-- **The pre-glued pair of pants in the end chart.** For an orbit `x` and a cylinder `v` of period
 one in `t`, the pre-glued map read in the positive end chart of `q` is the pre-glued map of the
 two cylinders `u ∘ φ'_q` and `v`, translated by `R`. -/
@@ -127,12 +156,7 @@ theorem pairOfPantsPreglue_comp_positiveEndChart (hx : Periodic x 1)
   obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
   -- The angular coordinate is recovered up to the integer `k`, which `x` and `v` do not see.
   have hxk : x (ζ.2 + k) = x ζ.2 := by simpa using (hx.int_mul k) ζ.2
-  have hvk : v (ζ + (0, (k : ℝ)) - (2 * R, 0)) = v (ζ - (2 * R, 0)) := by
-    have h := (hv (ζ.1 - 2 * R)).int_mul k ζ.2
-    simp only [mul_one] at h
-    have e₁ : ζ + (0, (k : ℝ)) - (2 * R, 0) = (ζ.1 - 2 * R, ζ.2 + k) := by ext <;> simp
-    have e₂ : ζ - (2 * R, 0) = (ζ.1 - 2 * R, ζ.2) := by ext <;> simp
-    rw [e₁, e₂, h]
+  have hvk := apply_add_intCast_sub_of_periodic hv ζ k (2 * R)
   have hζ : ζ - (R, 0) - (R, 0) = ζ - (2 * R, 0) := by
     ext <;> simp only [Prod.fst_sub, Prod.snd_sub] <;> ring
   have hp := preglue_sub x (u ∘ positiveEndChart q) v R (ζ - (R, 0))
@@ -162,11 +186,7 @@ theorem contDiffOn_pairOfPantsPreglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hxp 
     hper (F := fun p ↦ x p.2) (hx.comp contDiff_snd) fun p ↦ by simpa using hxp p.2
   have hvz : ContDiffAt ℝ n (fun w ↦ v (positiveEndCoord q w - (2 * R, 0))) z :=
     hper (F := fun p ↦ v (p - (2 * R, 0))) (hv.comp (contDiff_id.sub contDiff_const))
-      fun p ↦ by
-        have e₁ : p + (0, 1) - (2 * R, 0) = (p.1 - 2 * R, p.2 + 1) := by ext <;> simp
-        have e₂ : p - (2 * R, 0) = (p.1 - 2 * R, p.2) := by ext <;> simp
-        rw [e₁, e₂]
-        exact hvp (p.1 - 2 * R) p.2
+      fun p ↦ by exact_mod_cast apply_add_intCast_sub_of_periodic hvp p 1 (2 * R)
   have huz := (hu z hz).contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)
   have h₁ := hcut (g := fun s ↦ 1 - pregluingCutoff (s - R))
     (contDiff_const.sub (contDiff_pregluingCutoff.comp (contDiff_id.sub contDiff_const)))
@@ -246,19 +266,11 @@ theorem exists_eventually_norm_floerOperator_pairOfPantsPreglue_comp_le
   obtain ⟨C', hC'⟩ :=
     ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
   refine ⟨C', hC'.mono fun R hR ζ hζ hζt ↦ ?_⟩
-  have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
-    (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
   rw [ω.floerOperator_pairOfPantsPreglue_comp_positiveEndChart J H hxp hvp]
   -- Left of the neck the pre-glued map is `u ∘ φ'_q`, right of it a translate of `v`.
-  rcases lt_or_ge (ζ - (R, 0)).1 (-1) with h₁ | h₁
-  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x _ v R h₁, sub_add_cancel, huF ζ hζ hζt,
-      norm_zero]
-    exact hpos
-  rcases lt_or_ge 1 (ζ - (R, 0)).1 with h₂ | h₂
-  · rw [ω.floerOperator_preglue_of_one_lt J H x _ v R h₂,
-      hvF _ ⟨mem_univ _, by simpa using hζt⟩, norm_zero]
-    exact hpos
-  exact hR _ ⟨⟨h₁, h₂⟩, by simpa using hζt⟩
+  exact ω.norm_floerOperator_preglue_le_of_neck J H hR (by simpa using hζt)
+    (fun _ ↦ by rw [sub_add_cancel]; exact huF ζ hζ hζt)
+    (fun _ ↦ hvF _ ⟨mem_univ _, by simpa using hζt⟩)
 
 /-- **The pre-gluing error of a Floer pair of pants.** Let `K` be a perturbation equal to
 `H_q(t) dt` beyond `T₀ > 0` on each end `q`, for one-periodic `C²` Hamiltonians `H_q`, and let `u`
