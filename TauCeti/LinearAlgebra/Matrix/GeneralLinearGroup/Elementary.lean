@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Elementary matrices over a ring and Whitehead's lemma
@@ -45,10 +46,28 @@ pairing with cyclic cohomology, descend to `K₁`.
   subgroup.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
+* `TauCeti.map_inr_elementarySubgroup_le_elementarySubgroup` and
+  `TauCeti.fromBlocksGL_mem_elementarySubgroup`: the lower-right block embedding and block sums
+  preserve elementary matrices.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
 * `TauCeti.map_commutator_le_elementarySubgroup`: the stabilized commutator subgroup is elementary.
 * `TauCeti.fromBlocksGL_conj_mem_elementarySubgroup`: the stabilization of a conjugate of an
   elementary matrix is elementary.
+* `TauCeti.coe_transvectionUnit_mul_apply` and `TauCeti.coe_transvectionWeylElement_mul_apply`:
+  left multiplication by an elementary matrix or standard Weyl representative over an arbitrary
+  ring as an elementary row operation.
+* `TauCeti.conj_diagGL_mem_elementarySubgroup`,
+  `TauCeti.diagGL_mulSingle_mul_inv_mem_elementarySubgroup` and
+  `TauCeti.diagGL_mulSingle_commutatorElement_mem_elementarySubgroup`: invertible diagonal matrices
+  normalize `E n A`, and two-coordinate `diag(d, d⁻¹)` and commutator diagonals lie in `E n A`.
+* `TauCeti.mapMatrix_transvectionUnit`, `TauCeti.mapMatrix_elementarySubgroup_le` and
+  `TauCeti.mapMatrix_elementarySubgroup_eq_of_surjective`: ring homomorphisms map `E n A` into
+  `E n B`, and surjectively when the ring homomorphism is surjective.
+* `TauCeti.map_toGL_closure_range_toSpecialLinearGroup`,
+  `TauCeti.elementarySubgroup_int_eq_ker_det` and
+  `TauCeti.elementarySubgroup_eq_ker_det_of_field`: over commutative rings `E n R` is the image in
+  `GL n R` of the transvection subgroup of `SL n R`, hence equals `ker det` over `ℤ` and over
+  fields.
 
 ## References
 
@@ -249,6 +268,28 @@ theorem map_elementarySubgroup_le_elementarySubgroup :
   ext (p | p) (q | q) <;>
     simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
 
+/-- Placing an elementary matrix in the lower right block gives an elementary matrix: the
+embedding `e ↦ 1 ⊕ e` maps the elementary subgroup into the elementary subgroup. -/
+theorem map_inr_elementarySubgroup_le_elementarySubgroup :
+    (elementarySubgroup k A).map (fromBlocksGL.comp (MonoidHom.inr (GL m A) (GL k A))) ≤
+      elementarySubgroup (m ⊕ k) A := by
+  refine Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_)
+  rw [Subgroup.mem_comap]
+  convert transvectionUnit_mem_elementarySubgroup (Sum.inr_injective.ne hij) a
+  ext (p | p) (q | q) <;>
+    simp [coe_transvectionUnit_eq_one_add_single, single_apply, Matrix.one_apply]
+
+/-- A block diagonal matrix whose two blocks are elementary is elementary. -/
+theorem fromBlocksGL_mem_elementarySubgroup {u : GL m A} {v : GL k A}
+    (hu : u ∈ elementarySubgroup m A) (hv : v ∈ elementarySubgroup k A) :
+    fromBlocksGL (u, v) ∈ elementarySubgroup (m ⊕ k) A := by
+  have h : fromBlocksGL (u, v) = fromBlocksGL (u, 1) * fromBlocksGL (1, v) := by
+    rw [← map_mul]
+    simp
+  rw [h]
+  exact mul_mem (map_elementarySubgroup_le_elementarySubgroup ⟨u, hu, rfl⟩)
+    (map_inr_elementarySubgroup_le_elementarySubgroup ⟨v, hv, rfl⟩)
+
 /-- **Whitehead's lemma.** For an invertible matrix `u`, the block diagonal matrix `u ⊕ u⁻¹` is
 elementary: it is the product of six block unipotent matrices,
 `u ⊕ u⁻¹ = U(u) L(-u⁻¹) U(u) U(-1) L(1) U(-1)`. -/
@@ -299,6 +340,240 @@ theorem fromBlocksGL_conj_mem_elementarySubgroup (g : GL m A) {e : GL m A}
   rw [h]
   exact mul_mem (mul_mem (fromBlocksGL_inv_mem_elementarySubgroup g) he')
     (inv_mem (fromBlocksGL_inv_mem_elementarySubgroup g))
+
+/-! ## Diagonal matrices and ring homomorphisms -/
+
+section DiagonalAndMap
+
+variable {n : Type*} [DecidableEq n] [Fintype n] {i j : n}
+
+/-- Left multiplication by the elementary matrix `1 + c Eᵢⱼ` adds `c` times row `j` to row `i` and
+leaves every other row unchanged. -/
+theorem coe_transvectionUnit_mul_apply (hij : i ≠ j) (c : A) (M : Matrix n n A) (a b : n) :
+    ((transvectionUnit hij c : Matrix n n A) * M) a b =
+      if a = i then M i b + c * M j b else M a b := by
+  rw [coe_transvectionUnit_eq_one_add_single, add_mul, one_mul, Matrix.add_apply, Matrix.mul_apply]
+  by_cases hai : a = i
+  · subst hai
+    simp [Matrix.single_apply]
+  · simp [hai, Ne.symm hai]
+
+/-- Left multiplication by the Weyl representative `xᵢⱼ(1) xⱼᵢ(-1) xᵢⱼ(1)` replaces row `i` by
+row `j`, replaces row `j` by `-`row `i`, and fixes every other row. -/
+theorem coe_transvectionWeylElement_mul_apply (hij : i ≠ j) (M : Matrix n n A) (a b : n) :
+    (((transvectionWeylElement (A := A) hij : GL n A) : Matrix n n A) * M) a b =
+      if a = i then M j b else if a = j then -M i b else M a b := by
+  rw [transvectionWeylElement_def, Units.val_mul, Units.val_mul, mul_assoc, mul_assoc]
+  by_cases hai : a = i
+  · subst hai
+    simp only [coe_transvectionUnit_mul_apply, one_mul, neg_one_mul, ↓reduceIte, hij, hij.symm]
+    abel
+  · by_cases haj : a = j
+    · subst haj
+      simp only [coe_transvectionUnit_mul_apply, one_mul, neg_one_mul, ↓reduceIte, hij.symm]
+      abel
+    · simp only [coe_transvectionUnit_mul_apply, hai, haj, ↓reduceIte]
+
+/-- The standard Weyl representative exchanging two distinct indices is elementary. -/
+theorem transvectionWeylElement_mem_elementarySubgroup (hij : i ≠ j) :
+    transvectionWeylElement (A := A) hij ∈ elementarySubgroup n A := by
+  rw [transvectionWeylElement_def]
+  exact mul_mem (mul_mem (transvectionUnit_mem_elementarySubgroup _ _)
+    (transvectionUnit_mem_elementarySubgroup _ _))
+    (transvectionUnit_mem_elementarySubgroup _ _)
+
+/-- Over an arbitrary ring, conjugating `xᵢⱼ(c)` by `diagGL t` rescales the parameter by
+`tᵢ c tⱼ⁻¹`. -/
+private theorem diagGL_mul_transvectionUnit_mul_inv_ring (hij : i ≠ j) (t : n → Aˣ) (c : A) :
+    diagGL t * transvectionUnit hij c * (diagGL t)⁻¹ =
+      transvectionUnit hij ((t i : A) * c * ((t j)⁻¹ : Aˣ)) := by
+  have hd : (diagonal fun a ↦ (t a : A)) * (diagonal fun a ↦ (((t a)⁻¹ : Aˣ) : A)) =
+      (1 : Matrix n n A) := by
+    rw [Matrix.diagonal_mul_diagonal]
+    exact Matrix.diagonal_eq_one.2 (funext fun a ↦ (t a).mul_inv)
+  refine Units.ext ?_
+  rw [Units.val_mul, Units.val_mul, ← map_inv diagGL t, diagGL_coe, diagGL_coe,
+    coe_transvectionUnit_eq_one_add_single, coe_transvectionUnit_eq_one_add_single]
+  simp only [Pi.inv_apply, Matrix.mul_add, Matrix.mul_one, Matrix.add_mul, hd,
+    diagonal_mul_single_mul_diagonal]
+
+/-- Invertible diagonal matrices normalize the elementary subgroup: conjugating an elementary
+matrix by `diagGL t` rescales each elementary generator by `tᵢ c tⱼ⁻¹`. -/
+theorem conj_diagGL_mem_elementarySubgroup (t : n → Aˣ) {g : GL n A}
+    (hg : g ∈ elementarySubgroup n A) :
+    diagGL t * g * (diagGL t)⁻¹ ∈ elementarySubgroup n A := by
+  change g ∈ (elementarySubgroup n A).comap (MulAut.conj (diagGL t)).toMonoidHom
+  refine elementarySubgroup_le_iff.2 (fun i j hij a ↦ ?_) hg
+  change diagGL t * transvectionUnit hij a * (diagGL t)⁻¹ ∈ elementarySubgroup n A
+  rw [diagGL_mul_transvectionUnit_mul_inv_ring]
+  exact transvectionUnit_mem_elementarySubgroup hij _
+
+/-- Conjugating by an invertible diagonal matrix preserves membership in the elementary
+subgroup. -/
+@[simp]
+theorem conj_diagGL_mem_elementarySubgroup_iff (t : n → Aˣ) (g : GL n A) :
+    diagGL t * g * (diagGL t)⁻¹ ∈ elementarySubgroup n A ↔ g ∈ elementarySubgroup n A := by
+  refine ⟨fun h ↦ ?_, conj_diagGL_mem_elementarySubgroup t⟩
+  convert conj_diagGL_mem_elementarySubgroup t⁻¹ h using 1
+  rw [map_inv]
+  group
+
+/-- **Whitehead's lemma on two diagonal coordinates.** For distinct indices `i ≠ j` and a unit
+`d : Aˣ`, the diagonal matrix with `d` at `i`, `d⁻¹` at `j`, and `1` elsewhere is elementary: it
+is `eᵢⱼ(d) eⱼᵢ(-d⁻¹) eᵢⱼ(d) wⱼᵢ`, where `wⱼᵢ` is the standard Weyl representative. -/
+theorem diagGL_mulSingle_mul_inv_mem_elementarySubgroup (hij : i ≠ j) (d : Aˣ) :
+    diagGL (Pi.mulSingle i d * Pi.mulSingle j d⁻¹) ∈ elementarySubgroup n A := by
+  have h : diagGL (Pi.mulSingle i d * Pi.mulSingle j d⁻¹) =
+      transvectionUnit hij (d : A) *
+        (transvectionUnit hij.symm (-((d⁻¹ : Aˣ) : A)) *
+          (transvectionUnit hij (d : A) * transvectionWeylElement hij.symm)) := by
+    ext a b
+    have hw : ∀ p q : n,
+        ((transvectionWeylElement (A := A) hij.symm : GL n A) : Matrix n n A) p q =
+          if p = j then (1 : Matrix n n A) i q
+          else if p = i then -(1 : Matrix n n A) j q
+          else (1 : Matrix n n A) p q := fun p q ↦ by
+      simpa using coe_transvectionWeylElement_mul_apply hij.symm (1 : Matrix n n A) p q
+    simp only [Units.val_mul, coe_transvectionUnit_mul_apply, hw, diagGL_apply, Pi.mul_apply]
+    clear hw
+    by_cases hai : a = i <;> by_cases haj : a = j <;>
+      by_cases hbi : b = i <;> by_cases hbj : b = j
+    all_goals
+      subst_vars
+      first
+      | contradiction
+      | simp_all [Matrix.one_apply, eq_comm, neg_mul, mul_neg, Units.inv_mul, Units.mul_inv]
+  rw [h]
+  exact mul_mem (transvectionUnit_mem_elementarySubgroup _ _)
+    (mul_mem (transvectionUnit_mem_elementarySubgroup _ _)
+      (mul_mem (transvectionUnit_mem_elementarySubgroup _ _)
+        (transvectionWeylElement_mem_elementarySubgroup _)))
+
+/-- Shifting a single diagonal unit from index `j` to a distinct index `i` multiplies by an
+elementary matrix. -/
+theorem diagGL_mulSingle_mul_diagGL_mulSingle_inv_mem_elementarySubgroup
+    (hij : i ≠ j) (d : Aˣ) :
+    diagGL (Pi.mulSingle i d) * (diagGL (Pi.mulSingle j d))⁻¹ ∈ elementarySubgroup n A := by
+  rw [← map_inv, ← map_mul, ← Pi.mulSingle_inv]
+  exact diagGL_mulSingle_mul_inv_mem_elementarySubgroup hij d
+
+/-- For distinct indices `i ≠ j` and units `u, v : Aˣ`, the diagonal matrix with `⁅u, v⁆` in
+coordinate `i` and `1` elsewhere is elementary: on coordinates `(i, j)` it factors as
+`diag(uv, (uv)⁻¹) · diag(u⁻¹, u) · diag(v⁻¹, v)`. -/
+theorem diagGL_mulSingle_commutatorElement_mem_elementarySubgroup
+    (hij : i ≠ j) (u v : Aˣ) :
+    diagGL (Pi.mulSingle i ⁅u, v⁆) ∈ elementarySubgroup n A := by
+  have h : Pi.mulSingle (M := fun _ : n ↦ Aˣ) i ⁅u, v⁆ =
+      (Pi.mulSingle i (u * v) * Pi.mulSingle j (u * v)⁻¹) *
+        (Pi.mulSingle i u⁻¹ * Pi.mulSingle j (u⁻¹)⁻¹) *
+        (Pi.mulSingle i v⁻¹ * Pi.mulSingle j (v⁻¹)⁻¹) := by
+    ext a
+    by_cases hai : a = i
+    · subst hai
+      simp [hij, commutatorElement_def, mul_assoc]
+    · by_cases haj : a = j
+      · subst haj
+        simp [hij.symm, mul_assoc]
+      · simp [hai, haj]
+  rw [h, map_mul, map_mul]
+  exact mul_mem (mul_mem (diagGL_mulSingle_mul_inv_mem_elementarySubgroup hij (u * v))
+    (diagGL_mulSingle_mul_inv_mem_elementarySubgroup hij u⁻¹))
+    (diagGL_mulSingle_mul_inv_mem_elementarySubgroup hij v⁻¹)
+
+/-- Applying a ring homomorphism entrywise to `xᵢⱼ(c)` over an arbitrary ring gives `xᵢⱼ(f c)`. -/
+@[simp]
+theorem mapMatrix_transvectionUnit {B : Type*} [Ring B] (f : A →+* B) (hij : i ≠ j) (c : A) :
+    Units.map (↑(f.mapMatrix : Matrix n n A →+* Matrix n n B)) (transvectionUnit hij c) =
+      transvectionUnit hij (f c) := by
+  ext a b
+  simp [coe_transvectionUnit_eq_one_add_single, Matrix.single_apply, Matrix.one_apply, apply_ite f]
+
+/-- Applying a ring homomorphism entrywise maps the elementary subgroup into the elementary
+subgroup. -/
+theorem mapMatrix_elementarySubgroup_le {B : Type*} [Ring B] (f : A →+* B) :
+    (elementarySubgroup n A).map (Units.map (f.mapMatrix (m := n)).toMonoidHom) ≤
+      elementarySubgroup n B := by
+  refine Subgroup.map_le_iff_le_comap.2 (elementarySubgroup_le_iff.2 fun i j hij a ↦ ?_)
+  rw [Subgroup.mem_comap, RingHom.toMonoidHom_eq_coe, mapMatrix_transvectionUnit]
+  exact transvectionUnit_mem_elementarySubgroup hij (f a)
+
+/-- Along a surjective ring homomorphism, the entrywise map sends `E n A` onto `E n B`: every
+elementary word over `B` lifts factor by factor to an elementary word over `A` of the same
+size. -/
+theorem mapMatrix_elementarySubgroup_eq_of_surjective {B : Type*} [Ring B] {f : A →+* B}
+    (hf : Function.Surjective f) :
+    (elementarySubgroup n A).map (Units.map (f.mapMatrix (m := n)).toMonoidHom) =
+      elementarySubgroup n B := by
+  refine le_antisymm (mapMatrix_elementarySubgroup_le f) (elementarySubgroup_le_iff.2 ?_)
+  intro i j hij b
+  obtain ⟨a, rfl⟩ := hf b
+  exact ⟨transvectionUnit hij a, transvectionUnit_mem_elementarySubgroup hij a,
+    mapMatrix_transvectionUnit f hij a⟩
+
+/-- Every elementary matrix over `B` lifts along a surjective ring homomorphism `f : A →+* B` to
+an elementary matrix of the same size over `A`. -/
+theorem exists_mem_elementarySubgroup_mapMatrix_eq {B : Type*} [Ring B] {f : A →+* B}
+    (hf : Function.Surjective f) {e : GL n B} (he : e ∈ elementarySubgroup n B) :
+    ∃ e' ∈ elementarySubgroup n A,
+      Units.map (f.mapMatrix (m := n)).toMonoidHom e' = e := by
+  rwa [← mapMatrix_elementarySubgroup_eq_of_surjective hf, Subgroup.mem_map] at he
+
+end DiagonalAndMap
+
+/-! ## Comparison with the special linear group -/
+
+section CommRing
+
+variable {n : Type*} [DecidableEq n] [Fintype n]
+
+/-- Over a commutative ring, the elementary subgroup is contained in the kernel of the
+determinant. -/
+theorem elementarySubgroup_le_ker_det {R : Type*} [CommRing R] :
+    elementarySubgroup n R ≤ (Matrix.GeneralLinearGroup.det (n := n) (R := R)).ker :=
+  elementarySubgroup_le_iff.2 fun _ _ hij c ↦ det_transvectionUnit hij c
+
+/-- Over a commutative ring, the elementary subgroup of `GL n R` is the image under
+`Matrix.SpecialLinearGroup.toGL` of the subgroup of `SL n R` generated by elementary
+transvections. -/
+theorem map_toGL_closure_range_toSpecialLinearGroup {R : Type*} [CommRing R] :
+    (Subgroup.closure (Set.range (TransvectionStruct.toSpecialLinearGroup :
+      TransvectionStruct n R → SpecialLinearGroup n R))).map SpecialLinearGroup.toGL =
+      elementarySubgroup n R := by
+  rw [elementarySubgroup_def, MonoidHom.map_closure]
+  congr 1
+  ext g
+  simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨t, rfl⟩
+    exact ⟨t.i, t.j, t.hij, t.c, (toGL_transvection_eq_transvectionUnit t.hij t.c).symm⟩
+  · rintro ⟨i, j, hij, c, rfl⟩
+    exact ⟨⟨i, j, hij, c⟩, toGL_transvection_eq_transvectionUnit hij c⟩
+
+/-- Over `ℤ`, the elementary subgroup of `GL n ℤ` is the image of `SL n ℤ`. -/
+theorem elementarySubgroup_int_eq_range_toGL :
+    elementarySubgroup n ℤ =
+      (SpecialLinearGroup.toGL : SpecialLinearGroup n ℤ →* GL n ℤ).range := by
+  rw [← map_toGL_closure_range_toSpecialLinearGroup,
+    SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top, Subgroup.map_top]
+
+/-- Over `ℤ`, an invertible matrix is elementary if and only if its determinant is `1`. -/
+theorem elementarySubgroup_int_eq_ker_det :
+    elementarySubgroup n ℤ = (Matrix.GeneralLinearGroup.det (n := n) (R := ℤ)).ker :=
+  elementarySubgroup_int_eq_range_toGL.trans SpecialLinearGroup.range_toGL_eq_ker_det
+
+/-- Over a field, the elementary subgroup of `GL n F` is the image of `SL n F`. -/
+theorem elementarySubgroup_eq_range_toGL_of_field {F : Type*} [Field F] :
+    elementarySubgroup n F =
+      (SpecialLinearGroup.toGL : SpecialLinearGroup n F →* GL n F).range := by
+  rw [← map_toGL_closure_range_toSpecialLinearGroup,
+    SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top_of_field, Subgroup.map_top]
+
+/-- Over a field, an invertible matrix is elementary if and only if its determinant is `1`. -/
+theorem elementarySubgroup_eq_ker_det_of_field {F : Type*} [Field F] :
+    elementarySubgroup n F = (Matrix.GeneralLinearGroup.det (n := n) (R := F)).ker :=
+  elementarySubgroup_eq_range_toGL_of_field.trans SpecialLinearGroup.range_toGL_eq_ker_det
+
+end CommRing
 
 end TauCeti
 
