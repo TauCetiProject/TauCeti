@@ -134,8 +134,6 @@ noncomputable abbrev cocharacterLatticeRepresentation (T : TorusCommHopfAlgCat k
 /-- The cocharacter representation of a torus is a continuous integral Galois lattice. -/
 private theorem cocharacterLatticeFunctor_mem (T : TorusCommHopfAlgCat k) :
     galoisLatticeProperty k (cocharacterLatticeRepresentation T) := by
-  let _ : Module.Free ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
-    characterLattice_module_free_of_torus k T.obj T.property
   let _ : Module.Finite ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
     characterLattice_module_finite_of_torus k T.obj T.property
   apply galoisLatticeProperty_contragredient

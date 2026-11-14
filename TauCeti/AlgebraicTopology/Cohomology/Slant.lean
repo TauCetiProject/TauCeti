@@ -257,11 +257,11 @@ theorem singularSlant_singularCohomologyMap_fst_eq_zero (X Y : TopCat.{w}) (u : 
       (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) n a) = 0 := by
   -- `pr₁ = pr₁ ∘ (𝟙 × g)` for the map `g` from `Y` to a point, and slant products of classes on
   -- `X × pt` lie in `H^q(pt) = 0`
-  let g : Y ⟶ TopCat.of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
-  rw [← CartesianMonoidalCategory.whiskerLeft_fst X g, TopCat.singularCohomologyMap_comp,
+  let g : Y ⟶ of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
+  rw [← CartesianMonoidalCategory.whiskerLeft_fst X g, singularCohomologyMap_comp,
     ConcreteCategory.comp_apply, ← id_tensorHom, singularSlant_naturality]
   have := ModuleCat.subsingleton_of_isZero
-    (TauCeti.isZero_singularCohomology_point S k M (TopCat.of PUnit.{w + 1}) hq)
+    (TauCeti.isZero_singularCohomology_point S k M (of PUnit.{w + 1}) hq)
   rw [Subsingleton.elim (singularSlant k M X _ u p q n h _ _) 0, map_zero]
 
 /-- **A class pulled back from the second factor has no slant products by classes of positive
@@ -275,12 +275,12 @@ theorem singularSlant_singularCohomologyMap_snd_eq_zero (X Y : TopCat.{w}) (u : 
     singularSlant k M X Y u p q n h x
       (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) n b) = 0 := by
   -- `pr₂ = pr₂ ∘ (f × 𝟙)` for the map `f` from `X` to a point, and `f_* x ∈ Hₚ(pt) = 0`
-  let f : X ⟶ TopCat.of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
-  rw [← CartesianMonoidalCategory.whiskerRight_snd f Y, TopCat.singularCohomologyMap_comp,
+  let f : X ⟶ of PUnit.{w + 1} := ofHom ⟨fun _ ↦ PUnit.unit, continuous_const⟩
+  rw [← CartesianMonoidalCategory.whiskerRight_snd f Y, singularCohomologyMap_comp,
     ConcreteCategory.comp_apply, ← tensorHom_id, singularSlant_naturality]
   have := ModuleCat.subsingleton_of_isZero
     (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace (ModuleCat.{w} k) p R
-      (TopCat.of PUnit.{w + 1}) hp)
+      (of PUnit.{w + 1}) hp)
   rw [Subsingleton.elim (((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).map f x) 0,
     map_zero, LinearMap.zero_apply, map_zero]
 
@@ -341,7 +341,7 @@ theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_se
     singularSlant k M X Y u 0 q q (zero_add q) (TauCeti.singularHomology₀Section R x₀ r)
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b) = b := by
   let z := ((toSSet.obj X).chainComplex R).liftCycles
-    ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp) r
+    ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp) r
   have hx : TauCeti.singularHomology₀Section R x₀ r =
       ((toSSet.obj X).chainComplex R).homologyπ 0 z := by
     rw [TauCeti.singularHomology₀Section_def, SSet.ιHomology₀_def]
@@ -349,9 +349,9 @@ theorem singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_se
     rfl
   rw [hx]
   exact singularSlant_homologyπ_singularCohomologyMap_snd_eq_self M X Y u q z
-    (TopCat.toSSetObj₀Equiv.symm x₀) r
+    (toSSetObj₀Equiv.symm x₀) r
     (ConcreteCategory.congr_hom (HomologicalComplex.liftCycles_i ((toSSet.obj X).chainComplex R)
-      ((toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) r)
+      ((toSSet.obj X).ιChainComplex (toSSetObj₀Equiv.symm x₀)) 0 (by simp) (by simp)) r)
     hu b
 
 
@@ -423,10 +423,7 @@ theorem singularSlant_singularCross_leftUnitor (X Y : TopCat.{w}) {N : ModuleCat
         exact (congrArg (ModuleCat.Hom.hom (λ_ N).hom)
           (TauCeti.ModuleCat.tensorMk_apply (N := N) r v)).trans
             (ModuleCat.MonoidalCategory.leftUnitor_hom_apply r v))
-    ext i (c : ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{w} k))).X i ⟶ _)
-    -- both sides send a cochain `c` to `r • c`
-    simp [hr]
-    rfl
+    rw [hr, ChainComplex.linearYonedaObjMap_smul, ChainComplex.linearYonedaObjMap_id]
   -- `r • 𝟙` on cohomology is `r • id`
   rw [hmap, HomologicalComplex.homologyMap_smul, homologyMap_id]
   rfl

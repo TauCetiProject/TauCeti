@@ -41,9 +41,7 @@ total function `TauCeti.SporadicName.presentation`. Each branch is the explicit,
 `TauCeti.SporadicName.Group` is the concrete group defined by the
 selected presentation.
 
-This is milestone S1 of `TauCetiRoadmap/CFSGStatement/README.md`. The dispatcher and its interface
-follow the target signatures in the human-authored roadmap's `CFSGStatement/Suggested.lean`; the
-mathematical and bibliographic sources for each presentation are recorded in the corresponding
+The mathematical and bibliographic sources for each presentation are recorded in the corresponding
 imported module.
 
 ## Main definitions

@@ -405,12 +405,7 @@ private theorem gradedMk_demushkinWordTwoEven_eq_gradedMk_symm (hn3 : 3 < n) (d 
       gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨(symplecticTransvection hn3 d).symm r, hr₂₁⟩ := by
   -- Apply the graded map of the transvection pair, which is injective and fixes the class of the
   -- normal-form word.
-  have hinj : Function.Injective (gradedMap 2
-      (symplecticTransvection hn3 d : freeProP 2 (Fin n) →* freeProP 2 (Fin n))
-      (map_continuous (symplecticTransvection hn3 d)) 1) :=
-    fun a b hab ↦ by
-      rw [← gradedMap_symm_gradedMap (symplecticTransvection hn3 d) 1 a,
-        ← gradedMap_symm_gradedMap (symplecticTransvection hn3 d) 1 b, hab]
+  have hinj := gradedMap_injective (p := 2) (symplecticTransvection hn3 d) 1
   have h : gradedMap 2
       (symplecticTransvection hn3 d : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom
       (symplecticTransvection hn3 d : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1
@@ -459,7 +454,7 @@ private theorem eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} 
     rintro rfl
     have h3 : χ (freeProPGen 2 n 3) = 1 := by simpa using h₃
     rw [h3, zpowers_one_eq_bot, sup_bot_eq] at hV
-    exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus hf ⟨_, hV⟩
+    exact not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus ⟨_, hV⟩
   obtain ⟨g, hg, rfl⟩ : ∃ g, 2 ≤ g ∧ q = 2 ^ g := hq.resolve_left hq0
   have h₃g : (χ (freeProPGen 2 n 3) : ℤ_[2]) * (1 - ((2 : ℕ) : ℤ_[2]) ^ g) = 1 := by
     push_cast at h₃ ⊢
