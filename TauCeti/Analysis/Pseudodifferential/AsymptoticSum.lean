@@ -57,7 +57,9 @@ families arise, for instance, from continuous homotopies of symbols.
 Applied to the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of a sequence of homogeneous symbols, asymptotic
 summation constructs a classical symbol with these homogeneous terms. So the homogeneous terms
 identify the classical symbols of order `m` modulo smoothing symbols with all sequences of
-homogeneous symbols of degrees `m - j`.
+homogeneous symbols of degrees `m - j`. Likewise an asymptotic sum of classical symbols of orders
+`m - k` is classical, its homogeneous terms collected by degree; this makes the symbols of
+compositions and adjoints classical.
 
 ## Main declarations
 
@@ -78,6 +80,9 @@ homogeneous symbols of degrees `m - j`.
 * `TauCeti.ClassicalSymbol.termsEquiv`: the classical symbols of order `m` modulo the smoothing
   ones (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`) are linearly equivalent to the sequences
   of their homogeneous terms.
+* `TauCeti.ClassicalSymbol.ofAsymptoticSum`: an asymptotic sum of classical symbols of orders
+  `m - k` is classical of order `m`, with the homogeneous terms
+  `TauCeti.ClassicalSymbol.asymptoticSumTerms` collected by degree.
 
 ## References
 
@@ -716,6 +721,81 @@ def termsEquiv : (ClassicalSymbol n V W m ⧸ LinearMap.ker (termsLinearMap n V 
 theorem termsEquiv_mk (a : ClassicalSymbol n V W m) :
     termsEquiv n V W m (Submodule.Quotient.mk a) = a.term :=
   (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a).trans (termsLinearMap_apply a)
+
+/-! ### Asymptotic sums of classical symbols -/
+
+section OfAsymptoticSum
+
+/-- The homogeneous terms of an asymptotic sum of classical symbols `c k` of orders `m - k`: the
+term of degree `m - j` is the sum over `k ≤ j` of the term of index `j - k` of `c k`, which has
+degree `m - j`. -/
+def asymptoticSumTerms (c : ∀ k : ℕ, ClassicalSymbol n V W (m - k)) (j : ℕ) :
+    HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) :=
+  ∑ k ∈ Finset.range (j + 1),
+    if h : k ≤ j then ((c k).term (j - k)).castDegree (by rw [Nat.cast_sub h]; ring) else 0
+
+/-- The coefficient of the term of degree `m - j` of an asymptotic sum of classical symbols `c k`
+is `∑_{k ≤ j} (c k)_{j - k}`. -/
+theorem coefficient_asymptoticSumTerms (c : ∀ k : ℕ, ClassicalSymbol n V W (m - k)) (j : ℕ)
+    (z : CoordinateSpace n × CoordinateSpace n) :
+    (asymptoticSumTerms c j).coefficient z =
+      ∑ k ∈ Finset.range (j + 1), ((c k).term (j - k)).coefficient z := by
+  rw [asymptoticSumTerms, HomogeneousSymbol.coefficient_sum, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  simp [Nat.le_of_lt_succ (Finset.mem_range.1 hk)]
+
+/-- The remainder of an asymptotic sum `s` of classical symbols `c k` after `N` terms has order
+`m - N`: it is the remainder `s - ∑_{k < N} c k`, plus the remainder after `N - k` homogeneous
+terms of each `c k`, `k < N`. -/
+private theorem exists_remainder_ofAsymptoticSum (s : Symbol n V W m)
+    (c : ∀ k : ℕ, ClassicalSymbol n V W (m - k))
+    (hs : Symbol.IsAsymptoticSum (m := fun k : ℕ ↦ m - k) (Symbol.inclusion (by simp) s)
+      fun k ↦ (c k).toSymbol)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    ∃ r : Symbol n V W (m - N), ∀ p, r.coefficient p =
+      s.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (asymptoticSumTerms c j).coefficient p := by
+  -- The remainder of `c k` after `N - k` terms has order `m - N` for `k ≤ N`, and order
+  -- `m - k ≤ m - N` for `k > N`.
+  have hord (k : ℕ) : m - k - ((N - k : ℕ) : ℝ) ≤ m - N := by
+    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
+    linarith
+  obtain ⟨r, hr⟩ := hs N
+  refine ⟨r + ∑ k ∈ Finset.range N, Symbol.inclusion (hord k) ((c k).remainder χ (N - k)),
+    fun p => ?_⟩
+  have hrp := congrFun hr p
+  simp only [Symbol.coefficient_inclusion, Pi.sub_apply, Finset.sum_apply] at hrp
+  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
+    Pi.add_apply, Finset.sum_apply, ← hrp, coefficient_remainder, coefficient_asymptoticSumTerms,
+    Finset.smul_sum, Finset.sum_sub_distrib]
+  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
+  rw [Finset.sum_range_diag_flip N fun k i => χ p.2 • ((c k).term i).coefficient p]
+  abel
+
+/-- **Asymptotic sums of classical symbols are classical.** A symbol `s` of order `m` that is an
+asymptotic sum `s ∼ ∑ₖ c k` of classical symbols `c k` of orders `m - k` is a classical symbol of
+order `m`. Its homogeneous term of degree `m - j` is `∑_{k ≤ j} (c k)_{j - k}`
+(`TauCeti.ClassicalSymbol.asymptoticSumTerms`). -/
+def ofAsymptoticSum (s : Symbol n V W m) (c : ∀ k : ℕ, ClassicalSymbol n V W (m - k))
+    (hs : Symbol.IsAsymptoticSum (m := fun k : ℕ ↦ m - k) (Symbol.inclusion (by simp) s)
+      fun k ↦ (c k).toSymbol) :
+    ClassicalSymbol n V W m where
+  toSymbol := s
+  term := asymptoticSumTerms c
+  exists_remainder' := ⟨default, exists_remainder_ofAsymptoticSum s c hs default⟩
+
+variable (s : Symbol n V W m) (c : ∀ k : ℕ, ClassicalSymbol n V W (m - k))
+  (hs : Symbol.IsAsymptoticSum (m := fun k : ℕ ↦ m - k) (Symbol.inclusion (by simp) s)
+    fun k ↦ (c k).toSymbol)
+
+@[simp]
+theorem toSymbol_ofAsymptoticSum : (ofAsymptoticSum s c hs).toSymbol = s :=
+  (rfl)
+
+@[simp]
+theorem term_ofAsymptoticSum (j : ℕ) : (ofAsymptoticSum s c hs).term j = asymptoticSumTerms c j :=
+  (rfl)
+
+end OfAsymptoticSum
 
 end ClassicalSymbol
 
