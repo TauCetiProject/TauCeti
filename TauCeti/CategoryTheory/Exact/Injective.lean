@@ -209,10 +209,6 @@ noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation
 
 @[simp] theorem split_K (X : C) : (split X).K = 0 := (rfl)
 
-@[simp] theorem split_i (X : C) : HEq (split X).i (𝟙 X) := (HEq.rfl)
-
-@[simp] theorem split_p (X : C) : HEq (split X).p (0 : X ⟶ (0 : C)) := (HEq.rfl)
-
 /-- Mathlib's injective presentation gives a relative injective presentation for the canonical
 exact structure of an abelian category. -/
 noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
@@ -233,14 +229,6 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
 @[simp] theorem abelian_K {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
     (abelian X).K = cokernel (Injective.ι X) := (rfl)
-
-@[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughInjectives A] (X : A) :
-    HEq (abelian X).i (Injective.ι X) := (HEq.rfl)
-
-@[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
-    [CategoryTheory.EnoughInjectives A] (X : A) :
-    HEq (abelian X).p (cokernel.π (Injective.ι X)) := (HEq.rfl)
 
 section Comparison
 
