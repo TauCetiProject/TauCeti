@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import Mathlib.Data.Nat.Pairing
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!
 # Countably rectifiable sets
@@ -17,7 +18,8 @@ Hausdorff measure `μHE[k]`, by countably many Lipschitz images of subsets of
 `EuclideanSpace ℝ (Fin k)`. The domains need not be measurable, and neither measurability
 nor local finiteness of Hausdorff measure is part of rectifiability.
 
-We prove closure under subsets, countable unions and null modifications, and transport
+We prove closure under subsets, countable unions and null modifications, upward monotonicity
+in the dimension `k`, countable sets in every dimension, and transport
 by maps Lipschitz on the set. These operations allow rectifiable sets to be localized
 and their parametrizations to be composed without imposing regularity on the exceptional set.
 Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
@@ -184,6 +186,50 @@ theorem isometryEquiv_image_iff {e : X ≃ᵢ Y} :
     CountablyRectifiable k (e '' s) ↔ CountablyRectifiable k s :=
   isometry_image_iff e.isometry
 
+/-- Every singleton is countably `k`-rectifiable, as the image of a constant patch. -/
+@[simp]
+theorem singleton (x : X) : CountablyRectifiable k ({x} : Set X) := by
+  simpa only [range_const] using
+    of_lipschitzWith (A := univ) (f := fun _ ↦ x) (K := 0) (LipschitzWith.const' x)
+
+/-- Countable rectifiability is monotone in the dimension: every countably `m`-rectifiable set is
+countably `k`-rectifiable for every `k ≥ m`, by precomposing each patch with the surjective
+`1`-Lipschitz coordinate restriction `ℝᵏ → ℝᵐ`. -/
+theorem mono_dim {m : ℕ} (hs : CountablyRectifiable m s) (hmk : m ≤ k) :
+    CountablyRectifiable k s := by
+  classical
+  obtain ⟨A, f, hf, hcover⟩ := hs
+  choose K hK using hf
+  let π : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin m) :=
+    fun x ↦ WithLp.toLp 2 (fun j ↦ x.ofLp (Fin.castLE hmk j))
+  have hπ_lip : LipschitzWith 1 π := fun x y ↦ by
+    rw [ENNReal.coe_one, one_mul, PiLp.edist_eq_of_L2, PiLp.edist_eq_of_L2]
+    refine ENNReal.rpow_le_rpow ?_ (by positivity)
+    simpa only [Finset.sum_map, Fin.castLEEmb_apply] using
+      Finset.sum_le_univ_sum_of_nonneg (s := Finset.univ.map (Fin.castLEEmb hmk))
+        (f := fun i : Fin k ↦ edist (x i) (y i) ^ 2) (fun _ ↦ zero_le)
+  have hπ_surj : Function.Surjective π := fun z ↦ by
+    refine ⟨WithLp.toLp 2 (fun i : Fin k ↦ if hi : (i : ℕ) < m then z.ofLp ⟨i, hi⟩ else 0), ?_⟩
+    ext j
+    simp [π, j.is_lt]
+  let B (i : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := π ⁻¹' A i
+  let g (i : ℕ) : B i → X := fun x ↦ f i ⟨π x, x.2⟩
+  refine ⟨B, g, fun i ↦ ⟨K i, ?_⟩, ?_⟩
+  · have hsub : LipschitzWith 1 (fun x : B i ↦ (⟨π x, x.2⟩ : A i)) := by
+      simpa only [mul_one, Function.comp_def] using
+        (hπ_lip.comp (LipschitzWith.subtype_val (B i))).subtype_mk fun x ↦ x.2
+    simpa only [mul_one, Function.comp_def, g] using (hK i).comp hsub
+  · have hrange (i : ℕ) : range (g i) = range (f i) := by
+      ext y
+      refine ⟨by rintro ⟨x, rfl⟩; exact ⟨⟨π x, x.2⟩, rfl⟩, ?_⟩
+      rintro ⟨u, rfl⟩
+      obtain ⟨x, hx⟩ := hπ_surj u
+      exact ⟨⟨x, by simp [B, hx]⟩, by simp [g, hx]⟩
+    simp_rw [hrange]
+    rw [Measure.euclideanHausdorffMeasure_eq_zero_iff] at hcover ⊢
+    exact nonpos_iff_eq_zero.1
+      ((Measure.hausdorffMeasure_mono (Nat.cast_le.2 hmk) _).trans hcover.le)
+
 end CountablyRectifiable
 
 /-- Countable rectifiability is invariant under equality almost everywhere for normalized
@@ -224,3 +270,13 @@ theorem CountablyRectifiable.exists_lipschitzWith_cover {k : ℕ} {s : Set V}
 end FiniteDimensional
 
 end TauCeti
+
+/-- Every countable set in an extended metric Borel space is countably `k`-rectifiable in every
+dimension `k`. -/
+protected theorem Set.Countable.countablyRectifiable {X : Type*} [EMetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] {k : ℕ} {s : Set X} (hs : s.Countable) :
+    TauCeti.CountablyRectifiable k s := by
+  have := hs.to_subtype
+  have h : s = ⋃ x : s, ({(x : X)} : Set X) := by ext; simp
+  rw [h]
+  exact TauCeti.CountablyRectifiable.iUnion fun x : s ↦ .singleton (x : X)
