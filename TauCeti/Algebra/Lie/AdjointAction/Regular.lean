@@ -84,12 +84,9 @@ open LinearMap Module MvPolynomial
 
 namespace LieAlgebra
 
-universe u v
+universe u
 
-variable (K : Type*) {L : Type u} {L' : Type v} [Field K] [LieRing L] [LieAlgebra K L] [LieRing L']
-  [LieAlgebra K L']
-
-attribute [local instance 100] LieRing.ofAssociativeRing
+variable (K : Type*) {L : Type u} [Field K] [LieRing L] [LieAlgebra K L]
 
 /-- An element `x` of a Lie algebra is **regular** when its centralizer `ker (ad x)` has minimal
 dimension among the centralizers of all elements. The dimension is the cardinal `Module.rank`, so
@@ -249,8 +246,6 @@ universe u v
 
 variable {K : Type*} {L : Type u} {L' : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [LieRing L'] [LieAlgebra K L']
-
-attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- The adjoint endomorphisms of corresponding elements under a Lie algebra isomorphism
 have ranges of the same dimension, even for infinite-dimensional Lie algebras. -/
