@@ -94,123 +94,68 @@ private theorem comul_antipode_eq_sum {a : H} {ι : Type*} (r : Coalgebra.Repr R
   rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, ← r.eq, map_sum, map_sum]
   rfl
 
+private def scalarConv (φ : H →ₗ[R] R) : WithConv (H →ₗ[R] H) :=
+  toConv (Algebra.linearMap R H ∘ₗ φ)
+
+private theorem isLeftInvariantIntegral_iff_id_mul (φ : H →ₗ[R] R) :
+    φ.IsLeftInvariantIntegral ↔ toConv LinearMap.id * scalarConv φ = scalarConv φ := by
+  rw [isLeftInvariantIntegral_iff, ← WithConv.ofConv_injective.eq_iff, LinearMap.ext_iff]
+  refine forall_congr' fun a ↦ ?_
+  let r := ℛ R a
+  have h1 : TensorProduct.rid R H (φ.lTensor H (Coalgebra.comul a)) =
+      (toConv LinearMap.id * scalarConv φ).ofConv a := by
+    rw [← r.eq, map_sum, map_sum, r.convMul_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [scalarConv, ← Algebra.commutes, Algebra.smul_def]
+  rw [h1]
+  simp [scalarConv, Algebra.algebraMap_eq_smul_one]
+
+private theorem isRightInvariantIntegral_iff_mul_id (φ : H →ₗ[R] R) :
+    φ.IsRightInvariantIntegral ↔ scalarConv φ * toConv LinearMap.id = scalarConv φ := by
+  rw [isRightInvariantIntegral_iff, ← WithConv.ofConv_injective.eq_iff, LinearMap.ext_iff]
+  refine forall_congr' fun a ↦ ?_
+  let r := ℛ R a
+  have h1 : TensorProduct.lid R H (φ.rTensor H (Coalgebra.comul a)) =
+      (scalarConv φ * toConv LinearMap.id).ofConv a := by
+    rw [← r.eq, map_sum, map_sum, r.convMul_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [scalarConv, Algebra.smul_def]
+  rw [h1]
+  simp [scalarConv, Algebra.algebraMap_eq_smul_one]
+
 /-- Precomposing a right invariant integral with the antipode produces a left invariant
 integral. -/
 theorem IsRightInvariantIntegral.comp_antipode (hh : h.IsRightInvariantIntegral) :
     (h ∘ₗ HopfAlgebra.antipode R).IsLeftInvariantIntegral := by
-  rw [isLeftInvariantIntegral_iff]
   let S : H →ₗ[R] H := HopfAlgebra.antipode R
-  let F : H →ₗ[R] H :=
-    (TensorProduct.rid R H).toLinearMap ∘ₗ (h ∘ₗ S).lTensor H ∘ₗ Coalgebra.comul
-  let G : H →ₗ[R] H := Algebra.linearMap R H ∘ₗ (h ∘ₗ S)
-  suffices F = G from fun a ↦ by
-    simpa [F, G, Algebra.algebraMap_eq_smul_one] using LinearMap.congr_fun this a
-  suffices hSF : toConv S * toConv F = toConv S * toConv G by
-    apply WithConv.toConv_injective
-    calc toConv F = (toConv LinearMap.id * toConv S) * toConv F := by
-          rw [LinearMap.id_mul_antipode, one_mul]
-      _ = toConv LinearMap.id * (toConv S * toConv G) := by rw [mul_assoc, hSF]
-      _ = toConv G := by rw [← mul_assoc, LinearMap.id_mul_antipode, one_mul]
-  apply WithConv.ofConv_injective
-  ext a
-  let r := ℛ R a
-  let T : (H ⊗[R] H) ⊗[R] H →ₗ[R] H :=
-    LinearMap.mul' R H ∘ₗ
-      TensorProduct.map S ((TensorProduct.rid R H).toLinearMap ∘ₗ (h ∘ₗ S).lTensor H) ∘ₗ
-        (TensorProduct.assoc R H H H).toLinearMap
-  have hT (t : H ⊗[R] H) (z : H) :
-      T (t ⊗ₜ[R] z) = h (S z) • LinearMap.mul' R H (S.rTensor H t) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul x y => simp [T]
-    | add x y hx hy => rw [TensorProduct.add_tmul, map_add, hx, hy, map_add, map_add, smul_add]
-  have hLHS : (toConv S * toConv F).ofConv a = h (S a) • (1 : H) := by
-    have hmap (t : H ⊗[R] H) :
-        TensorProduct.map S F t =
-          TensorProduct.map S ((TensorProduct.rid R H).toLinearMap ∘ₗ (h ∘ₗ S).lTensor H)
-            ((Coalgebra.comul (R := R)).lTensor H t) := by
-      induction t using TensorProduct.inductionOn with
-      | tmul x y => rfl
-      | add x y hx hy => rw [map_add, hx, hy, map_add, map_add]
-    have hconv : (toConv S * toConv F).ofConv a =
-        T ((Coalgebra.comul (R := R)).rTensor H (Coalgebra.comul a)) := by
-      rw [LinearMap.convMul_apply, hmap]
-      simp only [T, LinearMap.comp_apply, LinearEquiv.coe_coe, Coalgebra.coassoc_apply]
-    rw [hconv, ← r.eq, map_sum, map_sum]
-    calc ∑ i ∈ r.index, T (Coalgebra.comul (r.left i) ⊗ₜ[R] r.right i)
-        = ∑ i ∈ r.index, h (S (r.right i)) •
-            algebraMap R H (Coalgebra.counit (R := R) (r.left i)) := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [hT, HopfAlgebra.mul_antipode_rTensor_comul_apply]
-      _ = ∑ i ∈ r.index, (h (S (Coalgebra.counit (R := R) (r.left i) • r.right i))) • (1 : H) := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          simp only [Algebra.algebraMap_eq_smul_one, map_smul, smul_smul, smul_eq_mul, mul_comm]
-      _ = h (S a) • (1 : H) := by
-          rw [← Finset.sum_smul, ← map_sum, ← map_sum, sum_counit_smul r]
-  have hRHS : (toConv S * toConv G).ofConv a = h (S a) • (1 : H) := by
+  have hS : toConv S * scalarConv (h ∘ₗ S) = scalarConv (h ∘ₗ S) := by
+    apply WithConv.ofConv_injective
+    ext a
+    let r := ℛ R a
     have hhSa := isRightInvariantIntegral_iff.mp hh (S a)
     rw [comul_antipode_eq_sum r, map_sum, map_sum] at hhSa
     rw [r.convMul_apply]
-    simpa [G, S, Algebra.algebraMap_eq_smul_one] using hhSa
-  exact hLHS.trans hRHS.symm
+    simpa [scalarConv, S, ← Algebra.commutes, Algebra.smul_def] using hhSa
+  rw [isLeftInvariantIntegral_iff_id_mul]
+  calc toConv LinearMap.id * scalarConv (h ∘ₗ S)
+      = (toConv LinearMap.id * toConv S) * scalarConv (h ∘ₗ S) := by rw [mul_assoc, hS]
+    _ = scalarConv (h ∘ₗ S) := by rw [LinearMap.id_mul_antipode, one_mul]
 
 /-- Precomposing a left invariant integral with the antipode produces a right invariant
 integral. -/
 theorem IsLeftInvariantIntegral.comp_antipode (hh : h.IsLeftInvariantIntegral) :
     (h ∘ₗ HopfAlgebra.antipode R).IsRightInvariantIntegral := by
-  rw [isRightInvariantIntegral_iff]
   let S : H →ₗ[R] H := HopfAlgebra.antipode R
-  let F : H →ₗ[R] H :=
-    (TensorProduct.lid R H).toLinearMap ∘ₗ (h ∘ₗ S).rTensor H ∘ₗ Coalgebra.comul
-  let G : H →ₗ[R] H := Algebra.linearMap R H ∘ₗ (h ∘ₗ S)
-  suffices F = G from fun a ↦ by
-    simpa [F, G, Algebra.algebraMap_eq_smul_one] using LinearMap.congr_fun this a
-  suffices hFS : toConv F * toConv S = toConv G * toConv S by
-    apply WithConv.toConv_injective
-    calc toConv F = toConv F * (toConv S * toConv LinearMap.id) := by
-          rw [LinearMap.antipode_mul_id, mul_one]
-      _ = (toConv G * toConv S) * toConv LinearMap.id := by rw [← mul_assoc, hFS]
-      _ = toConv G := by rw [mul_assoc, LinearMap.antipode_mul_id, mul_one]
-  apply WithConv.ofConv_injective
-  ext a
-  let r := ℛ R a
-  let T : H ⊗[R] (H ⊗[R] H) →ₗ[R] H :=
-    LinearMap.mul' R H ∘ₗ
-      TensorProduct.map ((TensorProduct.lid R H).toLinearMap ∘ₗ (h ∘ₗ S).rTensor H) S ∘ₗ
-        (TensorProduct.assoc R H H H).symm.toLinearMap
-  have hT (z : H) (t : H ⊗[R] H) :
-      T (z ⊗ₜ[R] t) = h (S z) • LinearMap.mul' R H (S.lTensor H t) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul x y => simp [T]
-    | add x y hx hy => rw [TensorProduct.tmul_add, map_add, hx, hy, map_add, map_add, smul_add]
-  have hLHS : (toConv F * toConv S).ofConv a = h (S a) • (1 : H) := by
-    have hmap (t : H ⊗[R] H) :
-        TensorProduct.map F S t =
-          TensorProduct.map ((TensorProduct.lid R H).toLinearMap ∘ₗ (h ∘ₗ S).rTensor H) S
-            ((Coalgebra.comul (R := R)).rTensor H t) := by
-      induction t using TensorProduct.inductionOn with
-      | tmul x y => rfl
-      | add x y hx hy => rw [map_add, hx, hy, map_add, map_add]
-    have hconv : (toConv F * toConv S).ofConv a =
-        T ((Coalgebra.comul (R := R)).lTensor H (Coalgebra.comul a)) := by
-      rw [LinearMap.convMul_apply, hmap]
-      simp only [T, LinearMap.comp_apply, LinearEquiv.coe_coe, Coalgebra.coassoc_symm_apply]
-    rw [hconv, ← r.eq, map_sum, map_sum]
-    calc ∑ i ∈ r.index, T (r.left i ⊗ₜ[R] Coalgebra.comul (r.right i))
-        = ∑ i ∈ r.index, h (S (r.left i)) •
-            algebraMap R H (Coalgebra.counit (R := R) (r.right i)) := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [hT, HopfAlgebra.mul_antipode_lTensor_comul_apply]
-      _ = ∑ i ∈ r.index, (h (S (Coalgebra.counit (R := R) (r.right i) • r.left i))) • (1 : H) := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          simp only [Algebra.algebraMap_eq_smul_one, map_smul, smul_smul, smul_eq_mul, mul_comm]
-      _ = h (S a) • (1 : H) := by
-          rw [← Finset.sum_smul, ← map_sum, ← map_sum, sum_smul_counit r]
-  have hRHS : (toConv G * toConv S).ofConv a = h (S a) • (1 : H) := by
+  have hS : scalarConv (h ∘ₗ S) * toConv S = scalarConv (h ∘ₗ S) := by
+    apply WithConv.ofConv_injective
+    ext a
+    let r := ℛ R a
     have hhSa := isLeftInvariantIntegral_iff.mp hh (S a)
     rw [comul_antipode_eq_sum r, map_sum, map_sum] at hhSa
     rw [r.convMul_apply]
-    simpa [G, S, Algebra.algebraMap_eq_smul_one] using hhSa
-  exact hLHS.trans hRHS.symm
+    simpa [scalarConv, S, Algebra.smul_def] using hhSa
+  rw [isRightInvariantIntegral_iff_mul_id]
+  calc scalarConv (h ∘ₗ S) * toConv LinearMap.id
+      = scalarConv (h ∘ₗ S) * (toConv S * toConv LinearMap.id) := by rw [← mul_assoc, hS]
+    _ = scalarConv (h ∘ₗ S) := by rw [LinearMap.antipode_mul_id, mul_one]
 
 /-- A normalized right invariant integral on a Hopf algebra is invariant under the antipode. -/
 theorem IsRightInvariantIntegral.map_antipode (hr : h.IsRightInvariantIntegral) (h1 : h 1 = 1)
@@ -264,9 +209,7 @@ variable {A : Type*} [Ring A] [StarRing A] [Bialgebra ℂ A]
 
 instance : FunLike (AlgebraicHaar A) A ℂ where
   coe h := h.toLinearMap
-  coe_injective h₁ h₂ H := by
-    cases h₁
-    cases h₂
+  coe_injective := fun ⟨_, _, _, _, _⟩ ⟨_, _, _, _, _⟩ H ↦ by
     congr
     exact DFunLike.coe_injective H
 
@@ -282,22 +225,17 @@ theorem ext {h₁ h₂ : AlgebraicHaar A} (H : ∀ a, h₁ a = h₂ a) : h₁ = 
 /-- Applying the underlying linear map of an `AlgebraicHaar` functional agrees with function
 coercion. -/
 @[simp]
-theorem toLinearMap_apply (h : AlgebraicHaar A) (a : A) : h.toLinearMap a = h a :=
-  (rfl)
+theorem toLinearMap_apply (h : AlgebraicHaar A) (a : A) : h.toLinearMap a = h a := (rfl)
 
 /-- Applying a newly constructed `AlgebraicHaar` functional evaluates the underlying linear map. -/
 @[simp]
 theorem mk_apply (f : A →ₗ[ℂ] ℂ) (h1 hl hr hp) (a : A) :
-    (AlgebraicHaar.mk f h1 hl hr hp) a = f a :=
-  (rfl)
+    (AlgebraicHaar.mk f h1 hl hr hp) a = f a := (rfl)
 
 /-- An algebraic Haar functional is unique whenever it exists. -/
 instance : Subsingleton (AlgebraicHaar A) where
-  allEq h₁ h₂ := by
-    ext a
-    exact LinearMap.congr_fun
-      (h₁.left_invariant'.eq_of_isRightInvariantIntegral h₂.right_invariant'
-        h₁.map_one' h₂.map_one') a
+  allEq h₁ h₂ := ext <| LinearMap.congr_fun <|
+    h₁.left_invariant'.eq_of_isRightInvariantIntegral h₂.right_invariant' h₁.map_one' h₂.map_one'
 
 /-- Forget invariance and normalization to view an `AlgebraicHaar` functional as a
 `StarPositiveFunctional`. -/
@@ -308,19 +246,16 @@ def toStarPositiveFunctional (h : AlgebraicHaar A) : StarPositiveFunctional A wh
 /-- Coercing `toStarPositiveFunctional` to a function agrees with coercing `h`. -/
 @[simp]
 theorem toStarPositiveFunctional_apply (h : AlgebraicHaar A) (a : A) :
-    h.toStarPositiveFunctional a = h a :=
-  (rfl)
+    h.toStarPositiveFunctional a = h a := (rfl)
 
 /-- The underlying linear map of `toStarPositiveFunctional` is `h.toLinearMap`. -/
 @[simp]
 theorem toLinearMap_toStarPositiveFunctional (h : AlgebraicHaar A) :
-    h.toStarPositiveFunctional.toLinearMap = h.toLinearMap :=
-  (rfl)
+    h.toStarPositiveFunctional.toLinearMap = h.toLinearMap := (rfl)
 
 /-- An algebraic Haar functional takes the value `1` at `1`. -/
 @[simp]
-theorem map_one (h : AlgebraicHaar A) : h 1 = 1 :=
-  h.map_one'
+theorem map_one (h : AlgebraicHaar A) : h 1 = 1 := h.map_one'
 
 /-- Left invariance of an algebraic Haar functional. -/
 theorem isLeftInvariantIntegral (h : AlgebraicHaar A) : h.toLinearMap.IsLeftInvariantIntegral :=
@@ -341,10 +276,8 @@ theorem lid_rTensor_comul (h : AlgebraicHaar A) (a : A) :
   LinearMap.isRightInvariantIntegral_iff.mp h.right_invariant' a
 
 /-- The underlying linear map of an algebraic Haar functional is nonzero. -/
-theorem toLinearMap_ne_zero (h : AlgebraicHaar A) : h.toLinearMap ≠ 0 := fun h0 ↦ by
-  have h1 : h.toLinearMap 1 = 1 := h.map_one'
-  rw [h0, LinearMap.zero_apply] at h1
-  exact one_ne_zero h1.symm
+theorem toLinearMap_ne_zero (h : AlgebraicHaar A) : h.toLinearMap ≠ 0 :=
+  fun h0 ↦ one_ne_zero (h.map_one'.symm.trans (by simp [h0]))
 
 /-- Any algebra admitting an algebraic Haar functional is nontrivial. -/
 theorem nontrivial (h : AlgebraicHaar A) : Nontrivial A :=
@@ -379,8 +312,7 @@ def ofIsRightInvariantIntegral (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
 @[simp]
 theorem ofIsRightInvariantIntegral_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
     (hr : f.IsRightInvariantIntegral) (hpos : ∀ a, 0 ≤ f (star a * a)) (a : A) :
-    ofIsRightInvariantIntegral f h1 hr hpos a = f a :=
-  (rfl)
+    ofIsRightInvariantIntegral f h1 hr hpos a = f a := (rfl)
 
 /-- Construct an `AlgebraicHaar` functional on a complex Hopf algebra from a normalized positive
 left invariant integral, deducing right invariance automatically via the antipode. -/
@@ -396,8 +328,7 @@ def ofIsLeftInvariantIntegral (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
 @[simp]
 theorem ofIsLeftInvariantIntegral_apply (f : A →ₗ[ℂ] ℂ) (h1 : f 1 = 1)
     (hl : f.IsLeftInvariantIntegral) (hpos : ∀ a, 0 ≤ f (star a * a)) (a : A) :
-    ofIsLeftInvariantIntegral f h1 hl hpos a = f a :=
-  (rfl)
+    ofIsLeftInvariantIntegral f h1 hl hpos a = f a := (rfl)
 
 /-- An algebraic Haar functional on a Hopf algebra is invariant under the antipode. -/
 @[simp]

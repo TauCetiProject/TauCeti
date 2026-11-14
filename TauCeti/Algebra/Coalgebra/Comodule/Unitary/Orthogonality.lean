@@ -129,14 +129,9 @@ theorem mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff (b : Basis ι
   let _ : Comodule R A (ι → R) := conjugateMatrixComodule b
   rw [mem_matrixCoefficientSubmodule_iff_exists_matrix (Pi.basisFun R ι),
     mem_matrixCoefficientSubmodule_iff_exists_matrix b, coefficientMatrix_conjugateMatrixComodule]
-  constructor
-  · rintro ⟨X, rfl⟩
-    refine ⟨X.map star, ?_⟩
-    simp [star_sum, star_smul]
-  · intro ⟨X, hX⟩
-    refine ⟨X.map star, ?_⟩
-    have := congrArg star hX
-    simpa [star_sum, star_smul] using this
+  refine ⟨fun ⟨X, hX⟩ ↦ ⟨X.map star, ?_⟩, fun ⟨X, hX⟩ ↦ ⟨X.map star, ?_⟩⟩
+  · simp [hX, star_sum, star_smul]
+  · simpa [star_sum, star_smul] using congrArg star hX
 
 end ConjugateMatrixComodule
 
@@ -152,27 +147,18 @@ noncomputable def conjugateLinearEquiv (b : Basis ι R M) : M ≃ₛₗ[starRing
   toFun m i := star (b.repr m i)
   invFun x := ∑ i, star (x i) • b i
   left_inv m := by simp
-  right_inv x := by
-    classical
-    ext i
-    simp [Finsupp.single_apply]
-  map_add' x y := by
-    ext i
-    simp
-  map_smul' r x := by
-    ext i
-    simp [starRingEnd_apply]
+  right_inv x := funext fun i ↦ by classical simp [Finsupp.single_apply]
+  map_add' x y := funext fun _ ↦ by simp
+  map_smul' r x := funext fun _ ↦ by simp [starRingEnd_apply]
 
 /-- Evaluating `conjugateLinearEquiv b` at a vector returns its conjugated coordinate tuple. -/
 @[simp]
 theorem conjugateLinearEquiv_apply (b : Basis ι R M) (m : M) (i : ι) :
-    conjugateLinearEquiv b m i = star (b.repr m i) :=
-  (rfl)
+    conjugateLinearEquiv b m i = star (b.repr m i) := (rfl)
 
 /-- Evaluating `(conjugateLinearEquiv b).symm` reconstructs a vector from conjugated coordinates. -/
 theorem conjugateLinearEquiv_symm_apply (b : Basis ι R M) (x : ι → R) :
-    (conjugateLinearEquiv b).symm x = ∑ i, star (x i) • b i :=
-  (rfl)
+    (conjugateLinearEquiv b).symm x = ∑ i, star (x i) • b i := (rfl)
 
 /-- `conjugateLinearEquiv b` sends the `j`-th basis vector to the `j`-th standard basis vector. -/
 @[simp]
@@ -197,8 +183,7 @@ private theorem coactComponent_conjugateLinearEquiv (b : Basis ι R M) (f : A �
   conv_lhs => rw [← b.sum_repr m]
   conv_rhs => rw [← b.sum_repr m]
   simp only [map_sum, map_smulₛₗ, conjugateLinearEquiv_basis]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  congr 1
+  refine Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_
   rw [coactComponent_apply, coactComponent_apply, conjugateMatrixComodule_coact,
     matrixCoact_apply_basisFun, coact_basis_eq_sum_coefficientMatrix b j, map_sum, map_sum,
     map_sum]
@@ -219,11 +204,9 @@ private theorem map_conjugateLinearEquiv_coact_mem (b : Basis ι R M) (S : Subco
   rw [Submodule.tensor_mem_range_iff_forall_tensorComponent_mem]
   intro f
   rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply, coactComponent_conjugateLinearEquiv]
-  have hmem : coactComponent (R := R) (C := A) (M := M) (dualStar f) m ∈ S := by
-    rw [coactComponent_apply, LinearMap.tensorComponent_def, LinearMap.comp_apply,
-      LinearEquiv.coe_toLinearMap]
-    exact S.rid_lTensor_coact_mem (dualStar f) hm
-  exact ⟨_, hmem, rfl⟩
+  refine ⟨_, ?_, rfl⟩
+  rw [coactComponent_apply, LinearMap.tensorComponent_def]
+  exact S.rid_lTensor_coact_mem (dualStar f) hm
 
 private theorem map_conjugateLinearEquiv_symm_coact_mem (b : Basis ι R M) :
     letI : Comodule R A (ι → R) := conjugateMatrixComodule b
@@ -237,29 +220,17 @@ private theorem map_conjugateLinearEquiv_symm_coact_mem (b : Basis ι R M) :
   rintro T _ ⟨y, hy, rfl⟩
   rw [Submodule.tensor_mem_range_iff_forall_tensorComponent_mem]
   intro f
-  have hds : dualStar (dualStar f) = f := by
-    ext a
-    simp [dualStar]
+  have hds : dualStar (dualStar f) = f := LinearMap.ext fun _ ↦ by simp [dualStar]
   have hcomp : coactComponent (R := R) (C := A) (M := M) f ((conjugateLinearEquiv b).symm y) =
       (conjugateLinearEquiv b).symm
         (coactComponent (R := R) (C := A) (M := ι → R) (dualStar f) y) := by
-    calc coactComponent (R := R) (C := A) (M := M) f ((conjugateLinearEquiv b).symm y)
-        = (conjugateLinearEquiv b).symm (conjugateLinearEquiv b
-            (coactComponent (R := R) (C := A) (M := M) (dualStar (dualStar f))
-              ((conjugateLinearEquiv b).symm y))) := by
-            rw [hds, (conjugateLinearEquiv b).symm_apply_apply]
-      _ = (conjugateLinearEquiv b).symm (coactComponent (R := R) (C := A) (M := ι → R) (dualStar f)
-            (conjugateLinearEquiv b ((conjugateLinearEquiv b).symm y))) := by
-            rw [← coactComponent_conjugateLinearEquiv]
-      _ = (conjugateLinearEquiv b).symm
-            (coactComponent (R := R) (C := A) (M := ι → R) (dualStar f) y) := by
-            rw [(conjugateLinearEquiv b).apply_symm_apply]
+    apply (conjugateLinearEquiv b).injective
+    rw [LinearEquiv.apply_symm_apply, ← (conjugateLinearEquiv b).apply_symm_apply y,
+      coactComponent_conjugateLinearEquiv, hds, LinearEquiv.apply_symm_apply]
   rw [LinearEquiv.coe_toLinearMap, ← coactComponent_apply, hcomp]
-  have hmem : coactComponent (R := R) (C := A) (M := ι → R) (dualStar f) y ∈ T := by
-    rw [coactComponent_apply, LinearMap.tensorComponent_def, LinearMap.comp_apply,
-      LinearEquiv.coe_toLinearMap]
-    exact T.rid_lTensor_coact_mem (dualStar f) hy
-  exact ⟨_, hmem, rfl⟩
+  refine ⟨_, ?_, rfl⟩
+  rw [coactComponent_apply, LinearMap.tensorComponent_def]
+  exact T.rid_lTensor_coact_mem (dualStar f) hy
 
 /-- Coordinatewise conjugation in a finite basis `b` induces an order isomorphism between the
 subcomodule lattice of `M` and that of `conjugateMatrixComodule b`. -/
@@ -273,30 +244,12 @@ noncomputable def conjugateSubcomoduleOrderIso (b : Basis ι R M) :
     invFun T := Subcomodule.ofSubmodule
       (T.toSubmodule.map (conjugateLinearEquiv b).symm.toLinearMap)
       (map_conjugateLinearEquiv_symm_coact_mem b T)
-    left_inv S := by
-      ext m
-      simp
-    right_inv T := by
-      ext y
-      simp
+    left_inv S := Subcomodule.ext fun _ ↦ by simp
+    right_inv T := Subcomodule.ext fun _ ↦ by simp
     map_rel_iff' := by
-      intro S₁ S₂
-      constructor
-      · intro h m hm
-        obtain ⟨m', hm', heq⟩ := h ⟨m, hm, rfl⟩
-        exact (conjugateLinearEquiv b).injective heq ▸ hm'
-      · rintro h _ ⟨m, hm, rfl⟩
-        exact ⟨m, h hm, rfl⟩ }
-
-omit [Module.Projective R A] in
-private theorem mem_map_conjugateLinearEquiv_iff (b : Basis ι R M) (S : Submodule R M)
-    (y : ι → R) :
-    y ∈ S.map (conjugateLinearEquiv b).toLinearMap ↔ (conjugateLinearEquiv b).symm y ∈ S := by
-  constructor
-  · rintro ⟨m, hm, rfl⟩
-    simpa using hm
-  · intro hy
-    exact ⟨(conjugateLinearEquiv b).symm y, hy, by simp⟩
+      refine ⟨fun h m hm ↦ ?_, fun h _ ⟨m, hm, heq⟩ ↦ ⟨m, h hm, heq⟩⟩
+      obtain ⟨m', hm', heq⟩ := h ⟨m, hm, rfl⟩
+      exact (conjugateLinearEquiv b).injective heq ▸ hm' }
 
 /-- Membership in `conjugateSubcomoduleOrderIso b S` reduces to `(conjugateLinearEquiv b).symm`. -/
 @[simp]
@@ -304,21 +257,16 @@ theorem mem_conjugateSubcomoduleOrderIso_iff (b : Basis ι R M) (S : Subcomodule
     (y : ι → R) :
     letI : Comodule R A (ι → R) := conjugateMatrixComodule b
     y ∈ conjugateSubcomoduleOrderIso b S ↔ (conjugateLinearEquiv b).symm y ∈ S :=
-  mem_map_conjugateLinearEquiv_iff b S.toSubmodule y
+  ⟨fun ⟨_, hm, h⟩ ↦ h ▸ by simpa using hm, fun hy ↦ ⟨_, hy, by simp⟩⟩
 
 /-- Membership in `(conjugateSubcomoduleOrderIso b).symm T` reduces to `conjugateLinearEquiv b`. -/
 @[simp]
 theorem mem_conjugateSubcomoduleOrderIso_symm_iff (b : Basis ι R M) :
     letI : Comodule R A (ι → R) := conjugateMatrixComodule b
     ∀ (T : Subcomodule R A (ι → R)) (m : M),
-      m ∈ (conjugateSubcomoduleOrderIso b).symm T ↔ conjugateLinearEquiv b m ∈ T := by
-  let _ : Comodule R A (ι → R) := conjugateMatrixComodule b
-  intro T m
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    simpa using hy
-  · intro hm
-    exact ⟨conjugateLinearEquiv b m, hm, by simp⟩
+      m ∈ (conjugateSubcomoduleOrderIso b).symm T ↔ conjugateLinearEquiv b m ∈ T :=
+  letI : Comodule R A (ι → R) := conjugateMatrixComodule b
+  fun _ _ ↦ ⟨fun ⟨_, hy, h⟩ ↦ h ▸ by simpa using hy, fun hm ↦ ⟨_, hm, by simp⟩⟩
 
 /-- If `M` is a simple comodule, then `conjugateMatrixComodule b` is also simple. -/
 theorem isSimpleOrder_conjugateMatrixComodule [IsSimpleOrder (Subcomodule R A M)]
@@ -341,6 +289,12 @@ variable {R A M N ι κ : Type*} [CommSemiring R] [StarRing R]
 
 namespace LinearMap
 
+omit [StarRing R] [StarRing A] [StarModule R A] [StarCoalgebra R A] in
+private noncomputable def coeffRepr [Fintype ι] (b : Basis ι R M) (i j : ι) :
+    Coalgebra.Repr R (coefficientMatrix (C := A) b i j) ι :=
+  ⟨Finset.univ, fun m ↦ coefficientMatrix (C := A) b i m,
+    fun m ↦ coefficientMatrix (C := A) b m j, (comul_coefficientMatrix_eq_sum b i j).symm⟩
+
 /-- For a left invariant integral `h` and a basis `c` whose coefficient matrix `v` satisfies
 `vᴴ * v = 1`, the matrix `E m r := h (u m p * star (v r q))` intertwines `v` and `u`. -/
 theorem IsLeftInvariantIntegral.coefficientMatrix_mul_map_mul_star [Fintype ι] [Fintype κ]
@@ -358,26 +312,16 @@ theorem IsLeftInvariantIntegral.coefficientMatrix_mul_map_mul_star [Fintype ι] 
   set u := coefficientMatrix (C := A) b
   set v := coefficientMatrix (C := A) c
   set E : Matrix ι κ R := Matrix.of fun m r ↦ h (u m p * star (v r q))
-  let ru (i j : ι) : Coalgebra.Repr R (u i j) ι :=
-    ⟨Finset.univ, fun m ↦ u i m, fun m ↦ u m j, (comul_coefficientMatrix_eq_sum b i j).symm⟩
-  let rv (k l : κ) : Coalgebra.Repr R (v k l) κ :=
-    ⟨Finset.univ, fun r ↦ v k r, fun r ↦ v r l, (comul_coefficientMatrix_eq_sum c k l).symm⟩
   have hconj : u * E.map (algebraMap R A) * vᴴ = E.map (algebraMap R A) := by
     ext i k
-    have hsum := hh.sum_sum_mul (ru i p) (rv k q).star
-    calc (u * E.map (algebraMap R A) * vᴴ) i k
-        = ∑ m, ∑ r, h (u m p * star (v r q)) • (u i m * star (v k r)) := by
-          simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, Finset.sum_mul,
-            E, Matrix.of_apply, Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc,
-            mul_one]
-          exact Finset.sum_comm
-      _ = h (u i p * star (v k q)) • (1 : A) := by
-          simpa [ru, rv] using hsum
-      _ = (E.map (algebraMap R A)) i k := by
-          simp [Matrix.map_apply, E, Algebra.algebraMap_eq_smul_one]
+    have hsum := hh.sum_sum_mul (coeffRepr (A := A) b i p) (coeffRepr (A := A) c k q).star
+    simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, Finset.sum_mul,
+      E, Matrix.of_apply, Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one]
+    rw [Finset.sum_comm]
+    simpa [coeffRepr, u, v] using hsum
   calc u * E.map (algebraMap R A)
-      = u * E.map (algebraMap R A) * (vᴴ * v) := by rw [hv, Matrix.mul_one]
-    _ = (u * E.map (algebraMap R A) * vᴴ) * v := by simp only [Matrix.mul_assoc]
+      = (u * E.map (algebraMap R A) * vᴴ) * v := by
+          rw [Matrix.mul_assoc _ vᴴ, hv, Matrix.mul_one]
     _ = E.map (algebraMap R A) * v := by rw [hconj]
 
 /-- For a right invariant integral `h` and a basis `b` whose coefficient matrix `u` satisfies
@@ -397,27 +341,16 @@ theorem IsRightInvariantIntegral.coefficientMatrix_mul_map_star_mul [Fintype ι]
   set u := coefficientMatrix (C := A) b
   set v := coefficientMatrix (C := A) c
   set B : Matrix ι κ R := Matrix.of fun m n ↦ h (star (u i m) * v k n)
-  let ru (p q : ι) : Coalgebra.Repr R (u p q) ι :=
-    ⟨Finset.univ, fun m ↦ u p m, fun m ↦ u m q, (comul_coefficientMatrix_eq_sum b p q).symm⟩
-  let rv (r s : κ) : Coalgebra.Repr R (v r s) κ :=
-    ⟨Finset.univ, fun n ↦ v r n, fun n ↦ v n s, (comul_coefficientMatrix_eq_sum c r s).symm⟩
   have hconj : uᴴ * B.map (algebraMap R A) * v = B.map (algebraMap R A) := by
     ext r s
-    have hsum := hh.sum_sum_mul (ru i r).star (rv k s)
-    calc (uᴴ * B.map (algebraMap R A) * v) r s
-        = ∑ m, ∑ n, h (star (u i m) * v k n) • (star (u m r) * v n s) := by
-          simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, Finset.sum_mul,
-            B, Matrix.of_apply, Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc,
-            mul_one]
-          exact Finset.sum_comm
-      _ = h (star (u i r) * v k s) • (1 : A) := by
-          simpa [ru, rv] using hsum
-      _ = (B.map (algebraMap R A)) r s := by
-          simp [Matrix.map_apply, B, Algebra.algebraMap_eq_smul_one]
+    have hsum := hh.sum_sum_mul (coeffRepr (A := A) b i r).star (coeffRepr (A := A) c k s)
+    simp only [Matrix.mul_apply, Matrix.map_apply, conjTranspose_apply, Finset.sum_mul,
+      B, Matrix.of_apply, Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one]
+    rw [Finset.sum_comm]
+    simpa [coeffRepr, u, v] using hsum
   calc u * B.map (algebraMap R A)
       = u * (uᴴ * B.map (algebraMap R A) * v) := by rw [hconj]
-    _ = (u * uᴴ) * B.map (algebraMap R A) * v := by simp only [Matrix.mul_assoc]
-    _ = B.map (algebraMap R A) * v := by rw [hu, Matrix.one_mul]
+    _ = B.map (algebraMap R A) * v := by simp only [← Matrix.mul_assoc, hu, Matrix.one_mul]
 
 /-- **Cross-orthogonality for left invariant integrals.** If `vᴴ * v = 1` and there is no nonzero
 comodule morphism `N → M`, then `h (u i p * star (v k q)) = 0` for all basis indices. -/
@@ -436,9 +369,8 @@ theorem IsLeftInvariantIntegral.map_coefficientMatrix_mul_star_eq_zero [Finite �
         simpa [LinearMap.toMatrix_toLin, E] using
           hh.coefficientMatrix_mul_map_mul_star b c hv p q) }
   have hE : E = 0 := by
-    calc E = LinearMap.toMatrix c b g.toLinearMap := (LinearMap.toMatrix_toLin c b E).symm
-      _ = LinearMap.toMatrix c b 0 := by rw [hHom g, Comodule.Hom.zero_toLinearMap]
-      _ = 0 := map_zero _
+    rw [← LinearMap.toMatrix_toLin c b E]
+    simpa [g] using congrArg (LinearMap.toMatrix c b ∘ Comodule.Hom.toLinearMap) (hHom g)
   simpa [E] using congrFun (congrFun hE i) k
 
 /-- **Cross-orthogonality for right invariant integrals.** If `u * uᴴ = 1` and there is no nonzero
@@ -458,9 +390,8 @@ theorem IsRightInvariantIntegral.map_star_coefficientMatrix_mul_eq_zero [Fintype
         simpa [LinearMap.toMatrix_toLin, B] using
           hh.coefficientMatrix_mul_map_star_mul b c hu i k) }
   have hB : B = 0 := by
-    calc B = LinearMap.toMatrix c b g.toLinearMap := (LinearMap.toMatrix_toLin c b B).symm
-      _ = LinearMap.toMatrix c b 0 := by rw [hHom g, Comodule.Hom.zero_toLinearMap]
-      _ = 0 := map_zero _
+    rw [← LinearMap.toMatrix_toLin c b B]
+    simpa [g] using congrArg (LinearMap.toMatrix c b ∘ Comodule.Hom.toLinearMap) (hHom g)
   simpa [B] using congrFun (congrFun hB r) s
 
 /-- Subspace form of left-invariant cross-orthogonality: if `vᴴ * v = 1` and every comodule
@@ -520,39 +451,32 @@ theorem TauCeti.Comodule.map_antipode_map_antipode_mul_transpose_of_conjInvarian
         Gᵀ.map (algebraMap R A) =
       Gᵀ.map (algebraMap R A) * coefficientMatrix (C := A) b := by
   set u := coefficientMatrix (C := A) b
-  have huS : u.map (HopfAlgebra.antipode R) = uᴴ :=
+  set S : A →ₗ[R] A := HopfAlgebra.antipode R
+  have huS : u.map S = uᴴ :=
     left_inv_eq_right_inv (map_antipode_mul_coefficientMatrix b) (Unitary.mem_iff.mp hu).2
-  have hmulS (X Y : Matrix ι ι A) :
-      ((X * Y).map (HopfAlgebra.antipode R))ᵀ =
-        (Y.map (HopfAlgebra.antipode R))ᵀ * (X.map (HopfAlgebra.antipode R))ᵀ := by
+  have hmulS (X Y : Matrix ι ι A) : ((X * Y).map S)ᵀ = (Y.map S)ᵀ * (X.map S)ᵀ := by
     ext i j
-    simp [Matrix.mul_apply, _root_.HopfAlgebra.antipode_mul_antidistrib]
-  have h1 : (((u.map star)ᴴ * G.map (algebraMap R A) * u.map star).map
-      (HopfAlgebra.antipode R))ᵀ = ((G.map (algebraMap R A)).map (HopfAlgebra.antipode R))ᵀ :=
-    congrArg (fun M : Matrix ι ι A ↦ (M.map (HopfAlgebra.antipode R))ᵀ) hG
+    simp [Matrix.mul_apply, S, _root_.HopfAlgebra.antipode_mul_antidistrib]
+  have h1 := congrArg (fun X : Matrix ι ι A ↦ (X.map S)ᵀ) hG
   rw [hmulS, hmulS] at h1
-  have hf1 : ((u.map star).map (HopfAlgebra.antipode R))ᵀ =
-      (u.map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R) := by
+  have hf1 : ((u.map star).map S)ᵀ = (u.map S).map S := by
     ext i j
     have hij := congrFun (congrFun huS i) j
     simp only [Matrix.map_apply, conjTranspose_apply] at hij
     simp [Matrix.transpose_apply, Matrix.map_apply, ← hij]
-  have hf2 :
-      ((G.map (algebraMap R A)).map (HopfAlgebra.antipode R))ᵀ = Gᵀ.map (algebraMap R A) := by
+  have hf2 : ((G.map (algebraMap R A)).map S)ᵀ = Gᵀ.map (algebraMap R A) := by
     ext i j
-    simp [Algebra.algebraMap_eq_smul_one]
-  have hf3 : (((u.map star)ᴴ).map (HopfAlgebra.antipode R))ᵀ = uᴴ := by
+    simp [S, Algebra.algebraMap_eq_smul_one]
+  have hf3 : (((u.map star)ᴴ).map S)ᵀ = uᴴ := by
     ext i j
     have hij := congrFun (congrFun huS i) j
     simp only [Matrix.map_apply, conjTranspose_apply] at hij
     simp [Matrix.transpose_apply, Matrix.map_apply, conjTranspose_apply, hij]
   rw [hf1, hf2, hf3, ← Matrix.mul_assoc] at h1
-  calc (u.map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R) * Gᵀ.map (algebraMap R A)
-      = (u.map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R) *
-          Gᵀ.map (algebraMap R A) * (uᴴ * u) := by
-          rw [← star_eq_conjTranspose, (Unitary.mem_iff.mp hu).1, Matrix.mul_one]
-    _ = ((u.map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R) *
-          Gᵀ.map (algebraMap R A) * uᴴ) * u := by simp only [Matrix.mul_assoc]
+  calc (u.map S).map S * Gᵀ.map (algebraMap R A)
+      = ((u.map S).map S * Gᵀ.map (algebraMap R A) * uᴴ) * u := by
+          rw [Matrix.mul_assoc _ uᴴ, ← star_eq_conjTranspose, (Unitary.mem_iff.mp hu).1,
+            Matrix.mul_one]
     _ = Gᵀ.map (algebraMap R A) * u := by rw [h1]
 
 end DoubleAntipode
@@ -581,88 +505,52 @@ private theorem map_star_mul_inv_mul_conjTranspose_of_conjInvariant (b : Basis �
       (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A)) :
     (coefficientMatrix (C := A) b).map star * G⁻¹.map (algebraMap ℂ A) *
       ((coefficientMatrix (C := A) b).map star)ᴴ = G⁻¹.map (algebraMap ℂ A) := by
-  set u := coefficientMatrix (C := A) b
-  obtain ⟨P, hP⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp hG.posSemidef
-  have hGdet : IsUnit G.det := (isUnit_iff_isUnit_det _).mp hG.isUnit
-  have hPdet : IsUnit P.det := isUnit_of_mul_isUnit_right (by rwa [hP, det_mul] at hGdet)
+  set v := (coefficientMatrix (C := A) b).map star
   set f := algebraMap ℂ A
-  set Pf := P.map f
-  set Qf := P⁻¹.map f
-  have hstar : Function.Semiconj f star star := fun z ↦ algebraMap_star_comm z
-  have hPQ : Pf * Qf = 1 := by
-    rw [← Matrix.map_mul, mul_nonsing_inv _ hPdet, Matrix.map_one _ (map_zero f) (map_one f)]
-  have hQP : Qf * Pf = 1 := by
-    rw [← Matrix.map_mul, nonsing_inv_mul _ hPdet, Matrix.map_one _ (map_zero f) (map_one f)]
-  have hGf : G.map f = Pfᴴ * Pf := by
-    rw [hP, Matrix.map_mul, conjTranspose_map _ hstar]
-  have hGinv_eq : G⁻¹ = P⁻¹ * (P⁻¹)ᴴ := by
-    refine Matrix.inv_eq_left_inv ?_
-    rw [hP]
-    calc P⁻¹ * (P⁻¹)ᴴ * (Pᴴ * P)
-        = P⁻¹ * ((P * P⁻¹)ᴴ * P) := by rw [conjTranspose_mul]; simp only [Matrix.mul_assoc]
-      _ = 1 := by
-            rw [mul_nonsing_inv _ hPdet, conjTranspose_one, Matrix.one_mul,
-              nonsing_inv_mul _ hPdet]
-  have hGinvf : G⁻¹.map f = Qf * Qfᴴ := by
-    rw [hGinv_eq, Matrix.map_mul, conjTranspose_map _ hstar]
-  set w := Pf * u.map star * Qf
-  have hww1 : wᴴ * w = 1 := by
-    calc wᴴ * w = Qfᴴ * ((u.map star)ᴴ * (Pfᴴ * Pf) * u.map star) * Qf := by
-            simp only [w, conjTranspose_mul, Matrix.mul_assoc]
-      _ = (Pf * Qf)ᴴ * (Pf * Qf) := by
-            rw [← hGf, hGinv, hGf]
-            simp only [conjTranspose_mul, Matrix.mul_assoc]
-      _ = 1 := by rw [hPQ, conjTranspose_one, Matrix.one_mul]
+  have hGdet : IsUnit G.det := (isUnit_iff_isUnit_det _).mp hG.isUnit
+  have hGG : G.map f * G⁻¹.map f = 1 := by
+    rw [← Matrix.map_mul, mul_nonsing_inv _ hGdet, Matrix.map_one _ (map_zero f) (map_one f)]
+  have hGinvG : G⁻¹.map f * G.map f = 1 := by
+    rw [← Matrix.map_mul, nonsing_inv_mul _ hGdet, Matrix.map_one _ (map_zero f) (map_one f)]
   let _ : Comodule ℂ A (ι → ℂ) := conjugateMatrixComodule b
-  have hubar_inv : u.map star * (u.map star).map (HopfAlgebra.antipode ℂ) = 1 := by
-    rw [← coefficientMatrix_conjugateMatrixComodule b]
-    exact coefficientMatrix_mul_map_antipode (Pi.basisFun ℂ ι)
-  have hw_right : w * (Pf * (u.map star).map (HopfAlgebra.antipode ℂ) * Qf) = 1 := by
-    calc Pf * u.map star * Qf * (Pf * (u.map star).map (HopfAlgebra.antipode ℂ) * Qf)
-        = Pf * u.map star * (Qf * Pf) * (u.map star).map (HopfAlgebra.antipode ℂ) * Qf := by
-            simp only [Matrix.mul_assoc]
-      _ = Pf * (u.map star * (u.map star).map (HopfAlgebra.antipode ℂ)) * Qf := by
-            rw [hQP, Matrix.mul_one]
-            simp only [Matrix.mul_assoc]
-      _ = 1 := by rw [hubar_inv, Matrix.mul_one, hPQ]
-  have hww2 : w * wᴴ = 1 := by
-    rw [left_inv_eq_right_inv hww1 hw_right]
-    exact hw_right
-  calc u.map star * G⁻¹.map f * (u.map star)ᴴ
-      = (Qf * Pf) * u.map star * (Qf * Qfᴴ) * (u.map star)ᴴ * (Qf * Pf)ᴴ := by
-          rw [hQP, conjTranspose_one, Matrix.one_mul, Matrix.mul_one, hGinvf]
-    _ = Qf * (w * wᴴ) * Qfᴴ := by simp only [w, conjTranspose_mul, Matrix.mul_assoc]
-    _ = G⁻¹.map f := by rw [hww2, Matrix.mul_one, hGinvf]
+  have hv_right : v * v.map (HopfAlgebra.antipode ℂ) = 1 := by
+    simpa [v, coefficientMatrix_conjugateMatrixComodule] using
+      coefficientMatrix_mul_map_antipode (C := A) (Pi.basisFun ℂ ι)
+  have hleft : (G⁻¹.map f * vᴴ * G.map f) * v = 1 :=
+    calc (G⁻¹.map f * vᴴ * G.map f) * v
+        = G⁻¹.map f * (vᴴ * G.map f * v) := by simp only [Matrix.mul_assoc]
+      _ = 1 := by rw [hGinv, hGinvG]
+  have hright : v * (G⁻¹.map f * vᴴ * G.map f) = 1 := by
+    rwa [left_inv_eq_right_inv hleft hv_right]
+  calc v * G⁻¹.map f * vᴴ
+      = v * (G⁻¹.map f * vᴴ * G.map f) * G⁻¹.map f := by
+          simp only [Matrix.mul_assoc, hGG, Matrix.mul_one]
+    _ = G⁻¹.map f := by rw [hright, Matrix.one_mul]
+
+private theorem re_pos_and_coe {z : ℂ} (hz : 0 < z) : 0 < z.re ∧ (z.re : ℂ) = z :=
+  ⟨(Complex.lt_def.mp hz).1, Complex.ext rfl (Complex.lt_def.mp hz).2⟩
 
 private theorem exists_pos_smul_trace_eq_inv_trace [Nonempty ι] {G : Matrix ι ι ℂ}
     (hG : G.PosDef) :
     ∃ c : ℂ, 0 < c ∧ (c • G).PosDef ∧ (c • G)⁻¹ = c⁻¹ • G⁻¹ ∧ (c • G).trace = (c • G)⁻¹.trace := by
-  have hGtr_re : 0 < G.trace.re ∧ 0 = G.trace.im := Complex.lt_def.mp hG.trace_pos
-  have hGinvtr_re : 0 < G⁻¹.trace.re ∧ 0 = G⁻¹.trace.im := Complex.lt_def.mp hG.inv.trace_pos
-  have hGtr_eq : (G.trace.re : ℂ) = G.trace := Complex.ext rfl hGtr_re.2
-  have hGinvtr_eq : (G⁻¹.trace.re : ℂ) = G⁻¹.trace := Complex.ext rfl hGinvtr_re.2
+  obtain ⟨hG_re, hG_eq⟩ := re_pos_and_coe hG.trace_pos
+  obtain ⟨hGi_re, hGi_eq⟩ := re_pos_and_coe hG.inv.trace_pos
   set r : ℝ := Real.sqrt (G⁻¹.trace.re / G.trace.re)
-  have hr_pos : 0 < r := Real.sqrt_pos_of_pos (div_pos hGinvtr_re.1 hGtr_re.1)
-  have hr_sq : r * r = G⁻¹.trace.re / G.trace.re :=
-    Real.mul_self_sqrt (div_nonneg hGinvtr_re.1.le hGtr_re.1.le)
   set c : ℂ := (r : ℂ)
-  have hc_pos : 0 < c := Complex.zero_lt_real.mpr hr_pos
+  have hc_pos : 0 < c := Complex.zero_lt_real.mpr (Real.sqrt_pos_of_pos (div_pos hGi_re hG_re))
   have hc_ne : c ≠ 0 := hc_pos.ne'
-  have hFt_inv : (c • G)⁻¹ = c⁻¹ • G⁻¹ := by
-    have hGdet : IsUnit G.det := (isUnit_iff_isUnit_det _).mp hG.isUnit
-    refine Matrix.inv_eq_left_inv ?_
+  have hFt_inv : (c • G)⁻¹ = c⁻¹ • G⁻¹ := Matrix.inv_eq_left_inv (by
     rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, inv_mul_cancel₀ hc_ne, one_smul,
-      nonsing_inv_mul _ hGdet]
+      nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).mp hG.isUnit)])
   refine ⟨c, hc_pos, hG.smul hc_pos, hFt_inv, ?_⟩
-  rw [hFt_inv, Matrix.trace_smul, Matrix.trace_smul, smul_eq_mul, smul_eq_mul]
-  have h1' : (r : ℂ) * (r : ℂ) * G.trace = G⁻¹.trace := by
-    rw [← hGtr_eq, ← hGinvtr_eq]
-    exact_mod_cast (calc r * r * G.trace.re
-        = (G⁻¹.trace.re / G.trace.re) * G.trace.re := by rw [hr_sq]
-      _ = G⁻¹.trace.re := div_mul_cancel₀ _ hGtr_re.1.ne')
+  have hsq : (r : ℂ) * (r : ℂ) * G.trace = G⁻¹.trace := by
+    rw [← hG_eq, ← hGi_eq]
+    exact_mod_cast (congrArg (· * G.trace.re)
+      (Real.mul_self_sqrt (div_nonneg hGi_re.le hG_re.le))).trans (div_mul_cancel₀ _ hG_re.ne')
+  rw [hFt_inv, Matrix.trace_smul, Matrix.trace_smul, smul_eq_mul, smul_eq_mul, ← hsq]
   calc c * G.trace = c⁻¹ * (c * c * G.trace) := by
           rw [← mul_assoc, ← mul_assoc, inv_mul_cancel₀ hc_ne, one_mul]
-    _ = c⁻¹ * G⁻¹.trace := by rw [h1']
+    _ = c⁻¹ * ((r : ℂ) * (r : ℂ) * G.trace) := rfl
 
 omit [StarModule ℂ A] [StarCoalgebra ℂ A] in
 private theorem eq_of_posDef_schur_orthogonality {h : A →ₗ[ℂ] ℂ} (b : Basis ι ℂ M)
@@ -683,53 +571,33 @@ private theorem eq_of_posDef_schur_orthogonality {h : A →ₗ[ℂ] ℂ} (b : Ba
     Ft' = Ft := by
   have : Nonempty ι := index_nonempty_of_isSimpleOrder A b
   obtain ⟨i₀⟩ := ‹Nonempty ι›
-  have hFt'_tr_pos : 0 < Ft'.trace := hFt'_pos.trace_pos
-  have hFt'_tr_ne : Ft'.trace ≠ 0 := hFt'_tr_pos.ne'
-  have hFt_tr_pos : 0 < Ft.trace := hFt_pos.trace_pos
+  have hFt'_tr_ne : Ft'.trace ≠ 0 := hFt'_pos.trace_pos.ne'
   set α : ℂ := Ft'.trace / Ft.trace
-  have hFt'_eq : Ft' = α • Ft := by
-    ext j l
-    have hjl := (hFt'_orth2 i₀ j i₀ l).symm.trans (hFt_orth2 i₀ j i₀ l)
-    simp only [↓reduceIte] at hjl
-    rw [div_eq_iff hFt'_tr_ne] at hjl
-    rw [Matrix.smul_apply, smul_eq_mul, hjl]
-    dsimp [α]
+  have hFt'_eq : Ft' = α • Ft := Matrix.ext fun j l ↦ by
+    have hjl := (div_eq_iff hFt'_tr_ne).mp <| by
+      simpa using (hFt'_orth2 i₀ j i₀ l).symm.trans (hFt_orth2 i₀ j i₀ l)
+    simp only [Matrix.smul_apply, smul_eq_mul, hjl, α]
     ring
-  have hFt'_inv_eq : Ft'⁻¹ = α • Ft⁻¹ := by
-    ext i k
-    have hik := (hFt'_orth1 i i₀ k i₀).symm.trans (hFt_orth1 i i₀ k i₀)
-    simp only [↓reduceIte] at hik
-    rw [div_eq_iff (hFt'_tr ▸ hFt'_tr_ne)] at hik
-    rw [Matrix.smul_apply, smul_eq_mul, hik, ← hFt'_tr, ← hFt_tr]
-    dsimp [α]
+  have hFt'_inv_eq : Ft'⁻¹ = α • Ft⁻¹ := Matrix.ext fun i k ↦ by
+    have hik := (div_eq_iff (hFt'_tr ▸ hFt'_tr_ne)).mp <| by
+      simpa using (hFt'_orth1 i i₀ k i₀).symm.trans (hFt_orth1 i i₀ k i₀)
+    simp only [Matrix.smul_apply, smul_eq_mul, hik, ← hFt'_tr, ← hFt_tr, α]
     ring
   have hα_sq : α * α = 1 := by
-    have hFt'_det : IsUnit Ft'.det := (isUnit_iff_isUnit_det _).mp hFt'_pos.isUnit
-    have hFt_det : IsUnit Ft.det := (isUnit_iff_isUnit_det _).mp hFt_pos.isUnit
-    have hmul : Ft' * Ft'⁻¹ = 1 := mul_nonsing_inv _ hFt'_det
+    have hmul : Ft' * Ft'⁻¹ = 1 := mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hFt'_pos.isUnit)
     rw [hFt'_inv_eq, hFt'_eq, Matrix.smul_mul, Matrix.mul_smul, smul_smul,
-      mul_nonsing_inv _ hFt_det] at hmul
+      mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).mp hFt_pos.isUnit)] at hmul
     simpa using congrFun (congrFun hmul i₀) i₀
-  have hα_pos : 0 < α := by
-    have h1re : 0 < Ft'.trace.re ∧ 0 = Ft'.trace.im := Complex.lt_def.mp hFt'_tr_pos
-    have h2re : 0 < Ft.trace.re ∧ 0 = Ft.trace.im := Complex.lt_def.mp hFt_tr_pos
-    have h1eq : Ft'.trace = (Ft'.trace.re : ℂ) :=
-      Complex.ext (Complex.ofReal_re _).symm h1re.2.symm
-    have h2eq : Ft.trace = (Ft.trace.re : ℂ) :=
-      Complex.ext (Complex.ofReal_re _).symm h2re.2.symm
-    have hαeq : α = ((Ft'.trace.re / Ft.trace.re : ℝ) : ℂ) :=
-      calc α = (Ft'.trace.re : ℂ) / (Ft.trace.re : ℂ) := congrArg₂ (· / ·) h1eq h2eq
-        _ = ((Ft'.trace.re / Ft.trace.re : ℝ) : ℂ) := (Complex.ofReal_div _ _).symm
-    rw [hαeq, Complex.zero_lt_real]
-    exact div_pos h1re.1 h2re.1
-  have hα_one : α = 1 := by
-    rcases mul_self_eq_one_iff.mp hα_sq with h1 | hm1
-    · exact h1
-    · exfalso
-      rw [hm1] at hα_pos
-      have : (0 : ℝ) < (-1 : ℂ).re := (Complex.lt_def.mp hα_pos).1
-      norm_num at this
-  rw [hFt'_eq, hα_one, one_smul]
+  obtain ⟨h1re, h1eq⟩ := re_pos_and_coe hFt'_pos.trace_pos
+  obtain ⟨h2re, h2eq⟩ := re_pos_and_coe hFt_pos.trace_pos
+  have hα_re : 0 < α.re := by
+    dsimp [α]
+    rw [← h1eq, ← h2eq, ← Complex.ofReal_div, Complex.ofReal_re]
+    exact div_pos h1re h2re
+  rcases mul_self_eq_one_iff.mp hα_sq with h1 | hm1
+  · rw [hFt'_eq, h1, one_smul]
+  · exfalso
+    norm_num [hm1] at hα_re
 
 /-- **Weighted Schur orthogonality from a conjugate-invariant positive definite matrix.** Let `h`
 be a normalized two-sided invariant integral on a complex Hopf star algebra `A` (with no global
@@ -754,8 +622,8 @@ theorem existsUnique_posDef_schur_orthogonality_of_conjInvariant
         h (coefficientMatrix (C := A) b i j * star (coefficientMatrix (C := A) b k l)) =
           if i = k then Ft j l / Ft.trace else 0) := by
   set u := coefficientMatrix (C := A) b
-  have hu1 : uᴴ * u = 1 := by rw [← star_eq_conjTranspose]; exact (Unitary.mem_iff.mp hu).1
-  have hu2 : u * uᴴ = 1 := by rw [← star_eq_conjTranspose]; exact (Unitary.mem_iff.mp hu).2
+  have hu1 : uᴴ * u = 1 := by simpa [star_eq_conjTranspose] using (Unitary.mem_iff.mp hu).1
+  have hu2 : u * uᴴ = 1 := by simpa [star_eq_conjTranspose] using (Unitary.mem_iff.mp hu).2
   have : Nonempty ι := index_nonempty_of_isSimpleOrder A b
   have hC (j l : ι) : ∃ c : ℂ, ∀ i k, h (u i j * star (u k l)) = if i = k then c else 0 := by
     obtain ⟨c, hc⟩ := b.exists_eq_smul_one_of_commute_coefficientMatrix
@@ -791,21 +659,15 @@ theorem existsUnique_posDef_schur_orthogonality_of_conjInvariant
       h (star (u i j) * u k l) = if j = l then Ft⁻¹ i k / Ft⁻¹.trace else 0 := by
     rw [hD i k j l]
     split_ifs with hjl
-    · have hDval : D i k = G⁻¹ i k / G⁻¹.trace :=
-        eq_div_of_mul_eq hG.inv.trace_pos.ne' (by rw [mul_comm, hDG i k])
-      have hentry : Ft⁻¹ i k = c⁻¹ * G⁻¹ i k := by simp [hFt_inv]
-      have htr : Ft⁻¹.trace = c⁻¹ * G⁻¹.trace := by simp [hFt_inv]
-      rw [hDval, hentry, htr, mul_div_mul_left _ _ (inv_ne_zero hc_ne)]
+    · simp [hFt_inv, eq_div_of_mul_eq hG.inv.trace_pos.ne' (mul_comm (D i k) G⁻¹.trace ▸ hDG i k),
+        mul_div_mul_left _ _ (inv_ne_zero hc_ne)]
     · rfl
   have hFt_orth2 (i j k l : ι) :
       h (u i j * star (u k l)) = if i = k then Ft j l / Ft.trace else 0 := by
     rw [hC j l i k]
     split_ifs with hik
-    · have hCval : C j l = G j l / G.trace :=
-        eq_div_of_mul_eq hG.trace_pos.ne' (by rw [mul_comm, hCG j l])
-      have hentry : Ft j l = c * G j l := rfl
-      have htr : Ft.trace = c * G.trace := by simp [Ft]
-      rw [hCval, hentry, htr, mul_div_mul_left _ _ hc_ne]
+    · simp [Ft, eq_div_of_mul_eq hG.trace_pos.ne' (mul_comm (C j l) G.trace ▸ hCG j l),
+        mul_div_mul_left _ _ hc_ne]
     · rfl
   refine ⟨Ft, ⟨hFt_pos, hFt_tr, hFt_orth1, hFt_orth2⟩, ?_⟩
   rintro Ft' ⟨hFt'_pos, hFt'_tr, hFt'_orth1, hFt'_orth2⟩
@@ -827,46 +689,25 @@ theorem map_star_mul_self_nonneg_of_conjInvariant
   obtain ⟨Ft, ⟨hFt_pos, -, hFt_orth1, -⟩, -⟩ :=
     b.existsUnique_posDef_schur_orthogonality_of_conjInvariant hl hr h1 hu hG hGinv
   have : Nonempty ι := index_nonempty_of_isSimpleOrder A b
-  have hFtinv_pos : Ft⁻¹.PosDef := hFt_pos.inv
-  have htr_pos : 0 < Ft⁻¹.trace := hFtinv_pos.trace_pos
+  obtain ⟨htr_re, htr_eq⟩ := re_pos_and_coe hFt_pos.inv.trace_pos
   have htr_inv_nonneg : 0 ≤ (Ft⁻¹.trace)⁻¹ := by
-    have hre : 0 < Ft⁻¹.trace.re ∧ 0 = Ft⁻¹.trace.im := Complex.lt_def.mp htr_pos
-    have heq : ((Ft⁻¹.trace.re : ℝ) : ℂ) = Ft⁻¹.trace := Complex.ext rfl hre.2
-    rw [← heq, ← Complex.ofReal_inv, Complex.zero_le_real]
-    exact inv_nonneg.mpr hre.1.le
+    rw [← htr_eq, ← Complex.ofReal_inv, Complex.zero_le_real]
+    exact inv_nonneg.mpr htr_re.le
   obtain ⟨X, rfl⟩ := (mem_matrixCoefficientSubmodule_iff_exists_matrix b).mp hx
   have hexp : h (star (∑ i, ∑ j, X i j • coefficientMatrix (C := A) b i j) *
       ∑ k, ∑ l, X k l • coefficientMatrix (C := A) b k l) =
       (Ft⁻¹.trace)⁻¹ * ∑ j, star (fun i ↦ X i j) ⬝ᵥ (Ft⁻¹ *ᵥ fun k ↦ X k j) := by
-    calc h (star (∑ i, ∑ j, X i j • coefficientMatrix (C := A) b i j) *
-          ∑ k, ∑ l, X k l • coefficientMatrix (C := A) b k l)
-        = ∑ i, ∑ j, ∑ k, ∑ l,
-            star (X i j) * (X k l *
-              h (star (coefficientMatrix (C := A) b i j) * coefficientMatrix (C := A) b k l)) := by
-            simp only [star_sum, star_smul]
-            simp only [Finset.sum_mul]
-            simp only [Finset.mul_sum, smul_mul_assoc, mul_smul_comm, map_sum, map_smul,
-              smul_eq_mul]
-            refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
-              Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦ ?_
-            ring
-      _ = ∑ i, ∑ j, ∑ k, star (X i j) * (X k j * (Ft⁻¹ i k / Ft⁻¹.trace)) := by
-            refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
-              Finset.sum_congr rfl fun k _ ↦ ?_
-            rw [Finset.sum_eq_single j]
-            · simp [hFt_orth1]
-            · intro l _ hlj
-              simp [hFt_orth1, Ne.symm hlj]
-            · simp
-      _ = ∑ j, ∑ i, ∑ k, star (X i j) * (X k j * (Ft⁻¹ i k / Ft⁻¹.trace)) := Finset.sum_comm
-      _ = (Ft⁻¹.trace)⁻¹ * ∑ j, star (fun i ↦ X i j) ⬝ᵥ (Ft⁻¹ *ᵥ fun k ↦ X k j) := by
-            simp only [dotProduct, mulVec, Pi.star_apply, Finset.mul_sum, div_eq_mul_inv]
-            refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦
-              Finset.sum_congr rfl fun k _ ↦ ?_
-            ring
+    simp only [star_sum, star_smul]
+    simp only [Finset.sum_mul]
+    simp only [Finset.mul_sum, smul_mul_assoc, mul_smul_comm, map_sum, map_smul, smul_eq_mul,
+      hFt_orth1, mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+    rw [Finset.sum_comm]
+    simp only [dotProduct, mulVec, Pi.star_apply, Finset.mul_sum, div_eq_mul_inv]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+      Finset.sum_congr rfl fun _ _ ↦ by ring
   rw [hexp]
   exact mul_nonneg htr_inv_nonneg
-    (Finset.sum_nonneg fun j _ ↦ hFtinv_pos.posSemidef.dotProduct_mulVec_nonneg _)
+    (Finset.sum_nonneg fun _ _ ↦ hFt_pos.inv.posSemidef.dotProduct_mulVec_nonneg _)
 
 /-- **Weighted Schur orthogonality** for a basis `b` of a simple comodule `M` whose coefficient
 matrix `u` is unitary: for an `AlgebraicHaar` functional `h` on a complex Hopf star algebra `A`,
@@ -913,19 +754,15 @@ theorem conjInvariant_of_schur_orthogonality {h : A →ₗ[ℂ] ℂ}
       (coefficientMatrix (C := A) b).map star = G.map (algebraMap ℂ A) := by
     simpa [G, coefficientMatrix_conjugateMatrixComodule] using
       conjTranspose_coefficientMatrix_mul_haarGramMatrix_mul hr (Pi.basisFun ℂ ι)
-  have hFtG : Ft = (Ft.trace / (Fintype.card ι : ℂ)) • G := by
+  have hcard : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hmap : Ft.map (algebraMap ℂ A) =
+      (Ft.trace / (Fintype.card ι : ℂ)) • G.map (algebraMap ℂ A) := by
     ext j l
     have hGjl : G j l = (Fintype.card ι : ℂ) * (Ft j l / Ft.trace) := by
       simp [G, haarGramMatrix_apply, horth]
-    have hcard : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-    rw [Matrix.smul_apply, smul_eq_mul, hGjl]
+    simp only [Matrix.map_apply, Matrix.smul_apply, Algebra.smul_def, ← map_mul, hGjl]
+    congr 1
     field_simp
-  have hmap : Ft.map (algebraMap ℂ A) =
-      (Ft.trace / (Fintype.card ι : ℂ)) • G.map (algebraMap ℂ A) := by
-    conv_lhs => rw [hFtG]
-    ext p q
-    rw [Matrix.map_apply, Matrix.smul_apply, smul_eq_mul, map_mul, Matrix.smul_apply,
-      Matrix.map_apply, Algebra.smul_def]
   rw [hmap, Matrix.mul_smul, Matrix.smul_mul, hGinv]
 
 end WeightedSchurOrthogonality
