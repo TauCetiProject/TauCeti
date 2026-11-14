@@ -26,8 +26,8 @@ public noncomputable section
 
 namespace TauCeti.PointPicking
 
-/-- The constant-function weight on `[-1, 1]` is maximal at the origin. -/
-theorem isMaxOn_pointPickingWeight_const_Icc :
+/-- The constant-one weight on `[-1, 1]` is maximal at the origin. -/
+theorem isMaxOn_pointPickingWeight_one_Icc :
     IsMaxOn (pointPickingWeight (0 : ℝ) 1 (fun _ : ℝ ↦ 1))
       (Set.Icc (-1 : ℝ) 1) 0 := by
   intro q _hq
@@ -41,7 +41,7 @@ example :
   apply mem_upperBounds.mpr
   refine Set.forall_mem_image.mpr ?_
   intro q hq
-  simpa using isMaxOn_pointPickingWeight_const_Icc hq
+  simpa using isMaxOn_pointPickingWeight_one_Icc hq
 
 -- The constant-function weight equals one exactly at the origin.
 example (q : ℝ) :

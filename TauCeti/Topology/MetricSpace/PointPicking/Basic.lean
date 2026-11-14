@@ -15,11 +15,15 @@ public import Mathlib.Tactic.Ring
 /-!
 # Point picking in a metric space
 
-Point picking selects a centre for blow-up rescaling. If a continuous function on a compact
-subset `S` of a closed metric ball has positive distance-to-boundary weighted value at some
-point of `S`, that weight attains a positive maximum at `q ∈ S ∩ ball x₀ R`. The ball of half
-the remaining radius lies inside the original ball, and `f y ≤ 2 * f q` for
-`y ∈ S ∩ ball q ρ`. Scaling distances by `f q` gives the normalized estimate in
+Point picking selects a centre for blow-up rescaling. Let `X` be a pseudometric space,
+`x₀ : X` a centre, `R : ℝ` a radius, and `f : X → ℝ` continuous on a compact subset `S` of
+`closedBall x₀ R`. The weight `TauCeti.pointPickingWeight x₀ R f x` is
+`(R - dist x x₀) * f x`, the function value multiplied by the radial margin.
+If this weight is positive at some point of `S`,
+`IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight` gives a positive maximum at
+`q ∈ S ∩ ball x₀ R`. For `ρ = (R - dist q x₀) / 2`, the ball `ball q ρ` lies inside the
+original ball, and `f y ≤ 2 * f q` for `y ∈ S ∩ ball q ρ`.
+Scaling distances by `f q` gives the normalized estimate in
 `IsCompact.exists_pointPickingWeight_div_two_le_and_div_le_two`.
 
 ## References
@@ -35,9 +39,14 @@ namespace TauCeti
 
 variable {X : Type*} [PseudoMetricSpace X]
 
-/-- The distance-to-boundary weighted value used in point picking. -/
+/-- The point-picking weight `pointPickingWeight x₀ R f x = (R - dist x x₀) * f x`
+multiplies `f x` by the radial margin to radius `R` around the centre `x₀`. -/
 def pointPickingWeight (x₀ : X) (R : ℝ) (f : X → ℝ) (x : X) : ℝ :=
   (R - dist x x₀) * f x
+
+/-- The point-picking weight as a function. -/
+theorem pointPickingWeight_def (x₀ : X) (R : ℝ) (f : X → ℝ) :
+    pointPickingWeight x₀ R f = fun x ↦ (R - dist x x₀) * f x := (rfl)
 
 /-- The formula for the point-picking weight. -/
 theorem pointPickingWeight_apply (x₀ : X) (R : ℝ) (f : X → ℝ) (x : X) :
@@ -51,15 +60,34 @@ theorem pointPickingWeight_self (x₀ : X) (R : ℝ) (f : X → ℝ) :
 
 /-- The zero function has zero point-picking weight. -/
 @[simp]
-theorem pointPickingWeight_zero (x₀ : X) (R : ℝ) (x : X) :
-    pointPickingWeight x₀ R (fun _ ↦ 0) x = 0 := by
+theorem pointPickingWeight_zero (x₀ : X) (R : ℝ) :
+    pointPickingWeight x₀ R 0 = 0 := by
+  ext x
   simp [pointPickingWeight_apply]
+
+/-- The constantly zero function has zero point-picking weight. -/
+@[simp]
+theorem pointPickingWeight_fun_zero (x₀ : X) (R : ℝ) :
+    pointPickingWeight x₀ R (fun _ ↦ 0) = 0 := by
+  exact pointPickingWeight_zero x₀ R
+
+/-- The point-picking weight vanishes exactly on the sphere or at a zero of the function. -/
+@[simp]
+theorem pointPickingWeight_eq_zero_iff (x₀ x : X) (R : ℝ) (f : X → ℝ) :
+    pointPickingWeight x₀ R f x = 0 ↔ x ∈ sphere x₀ R ∨ f x = 0 := by
+  rw [pointPickingWeight_apply, mul_eq_zero, sub_eq_zero, mem_sphere, eq_comm (a := R)]
 
 /-- The point-picking weight vanishes on the boundary sphere. -/
 @[simp]
 theorem pointPickingWeight_eq_zero_of_mem_sphere {x₀ x : X} {R : ℝ} (f : X → ℝ)
     (hx : x ∈ sphere x₀ R) : pointPickingWeight x₀ R f x = 0 := by
   simp [pointPickingWeight_apply, mem_sphere.mp hx]
+
+/-- Nonnegative function values in the closed ball have nonnegative point-picking weight. -/
+theorem pointPickingWeight_nonneg {x₀ x : X} {R : ℝ} {f : X → ℝ}
+    (hx : x ∈ closedBall x₀ R) (hf : 0 ≤ f x) : 0 ≤ pointPickingWeight x₀ R f x := by
+  rw [pointPickingWeight_apply]
+  exact mul_nonneg (sub_nonneg.mpr (mem_closedBall.mp hx)) hf
 
 /-- Positive function values inside the open ball have positive point-picking weight. -/
 theorem pointPickingWeight_pos {x₀ x : X} {R : ℝ} {f : X → ℝ}
@@ -80,6 +108,13 @@ theorem pointPickingWeight_pos_iff_of_mem_closedBall {x₀ x : X} {R : ℝ} {f :
     exact ⟨mem_ball.mpr (sub_pos.mp (pos_of_mul_pos_left hpos hfpos.le)), hfpos⟩
   · rintro ⟨hxball, hf⟩
     exact pointPickingWeight_pos hxball hf
+
+/-- Functions agreeing on a set have point-picking weights agreeing on that set. -/
+theorem _root_.Set.EqOn.pointPickingWeight {f g : X → ℝ} {S : Set X}
+    (h : Set.EqOn f g S) (x₀ : X) (R : ℝ) :
+    Set.EqOn (pointPickingWeight x₀ R f) (pointPickingWeight x₀ R g) S := by
+  intro x hx
+  simp only [pointPickingWeight_apply, h hx]
 
 /-- A function continuous on a set has continuous point-picking weight on that set. -/
 theorem _root_.ContinuousOn.pointPickingWeight {f : X → ℝ} {S : Set X}
