@@ -157,18 +157,19 @@ theorem le_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2
   exact antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf (hx ht) (hx (ht.trans hs)) hs
 
 /-- **The energy along a trajectory converging to a nondegenerate critical point decays
-exponentially.** If the maximal integral curve `γ` of `-grad f` through `x` exists for all positive
-time and converges to a nondegenerate critical point `p`, then `f (γ t) - f p ≤ C * exp (-μ * t)`
-for some `μ, C > 0` and all large `t`. -/
+exponentially.** If the maximal integral curve `γ` of `-grad f` through `x` converges to a
+nondegenerate critical point `p`, then `f (γ t) - f p ≤ C * exp (-μ * t)` for some `μ, C > 0` and
+all large `t`. -/
 theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hp : IsManifoldNondegenerateCriticalPoint I f p)
-    (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
     (hconv : Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p)) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop,
       f (maximalIntegralCurve (-mgradient I f) x t) - f p ≤ C * Real.exp (-(μ * t)) := by
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
+  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    hp.mem_criticalPoints hconv
   set γ := maximalIntegralCurve (-mgradient I f) x
   obtain ⟨lam, hlam, hloj⟩ := hp.exists_mul_abs_sub_le_norm_mgradient_sq
   -- After some time `T ≥ 0` the trajectory stays where the Łojasiewicz inequality holds.
@@ -185,13 +186,12 @@ theorem exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff
 /-! ### Length of a trajectory and distance to its limit -/
 
 variable (hp : IsManifoldNondegenerateCriticalPoint I f p)
-  (hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x)
   (hconv : Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p))
-include hp hx hconv
+include hp hconv
 
 /-- **The tail length of a trajectory converging to a nondegenerate critical point is controlled
 by the square root of its energy.** If the maximal integral curve `γ` of `-grad f` through `x`
-exists for all positive time and converges to a nondegenerate critical point `p`, then for some
+converges to a nondegenerate critical point `p`, then for some
 `K > 0` and all large `t`, every piece of `γ` starting at time `t` has Riemannian length at most
 `K * sqrt (f (γ t) - f p)`. -/
 theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
@@ -202,6 +202,8 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
+  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    hp.mem_criticalPoints hconv
   set γ := maximalIntegralCurve (-mgradient I f) x
   set e : ℝ → ℝ := fun s ↦ f (γ s) - f p
   obtain ⟨lam, hlam, hloj⟩ := hp.exists_mul_abs_sub_le_norm_mgradient_sq
@@ -277,9 +279,9 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     (hlen ⌈s - t⌉₊ t ht)
 
 /-- **The Riemannian distance from a trajectory to its nondegenerate limit is controlled by the
-square root of its energy.** If the maximal integral curve `γ` of `-grad f` through `x` exists for
-all positive time and converges to a nondegenerate critical point `p`, then for some `K > 0` and
-all large `t`, the Riemannian distance from `γ t` to `p` is at most `K * sqrt (f (γ t) - f p)`. -/
+square root of its energy.** If the maximal integral curve `γ` of `-grad f` through `x` converges
+to a nondegenerate critical point `p`, then for some `K > 0` and all large `t`, the Riemannian
+distance from `γ t` to `p` is at most `K * sqrt (f (γ t) - f p)`. -/
 theorem exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     ∃ K > 0, ∀ᶠ t in atTop,
@@ -290,7 +292,9 @@ theorem exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   set γ := maximalIntegralCurve (-mgradient I f) x
   obtain ⟨K, hK, hlen⟩ := exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
-    hp hx hconv hf
+    hp hconv hf
+  have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto
+    hp.mem_criticalPoints hconv
   refine ⟨K, hK, ?_⟩
   filter_upwards [hlen, eventually_ge_atTop 0] with t ht ht0
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
@@ -310,9 +314,9 @@ theorem exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     _ ≤ ENNReal.ofReal (K * √(f (γ t) - f p)) + ε := by gcongr; exact ht s
 
 /-- **A trajectory converging to a nondegenerate critical point converges exponentially fast in
-the Riemannian distance.** If the maximal integral curve `γ` of `-grad f` through `x` exists for
-all positive time and converges to a nondegenerate critical point `p`, then the Riemannian
-distance from `γ t` to `p` is at most `C * exp (-μ * t)` for some `μ, C > 0` and all large `t`.
+the Riemannian distance.** If the maximal integral curve `γ` of `-grad f` through `x` converges to
+a nondegenerate critical point `p`, then the Riemannian distance from `γ t` to `p` is at most
+`C * exp (-μ * t)` for some `μ, C > 0` and all large `t`.
 This is the manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
 `IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. -/
 theorem exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
@@ -321,9 +325,9 @@ theorem exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
       Manifold.riemannianEDist I (maximalIntegralCurve (-mgradient I f) x t) p ≤
         ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
   obtain ⟨K, hK, hdist⟩ := exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
-    hp hx hconv hf
+    hp hconv hf
   obtain ⟨μ, hμ, C, hC, henergy⟩ :=
-    exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient hf hp hx hconv
+    exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient hf hp hconv
   refine ⟨μ / 2, by positivity, K * √C, by positivity, ?_⟩
   filter_upwards [hdist, henergy] with t ht hte
   refine ht.trans (ENNReal.ofReal_le_ofReal ?_)
@@ -365,7 +369,7 @@ theorem exists_tendsto_and_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_m
     (finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
       (hf.of_le (by norm_num)) hK hnd)
   exact ⟨p, hpK, hconv, exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
-    (hnd p hpK) (Ici_subset_maximalIntegralCurveInterval_neg_mgradient hK hmem hf) hconv hf⟩
+    (hnd p hpK) hconv hf⟩
 
 /-- **Negative gradient trajectories of a proper Morse function converge exponentially fast.** If
 `f` is a proper Morse function bounded below, the maximal integral curve of `-grad f` through any
