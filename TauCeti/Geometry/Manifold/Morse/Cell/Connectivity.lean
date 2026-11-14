@@ -458,11 +458,9 @@ end SublevelHomology
 section PairConnectivity
 
 variable {E H : Type*} {M X : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [TopologicalSpace X] [T2Space X]
-  {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [T2Space X] in
+variable [IsManifold I ∞ M] [TopologicalSpace X] {j : M → X} {F : X → ℝ} {A W : Set X} in
 /-- Choose a regular value `0 < a < δ` of `F ∘ j` and an upper bound `b > F` so `{F ≤ a} ⊆ W` and
 `{F ≤ b} = univ`. -/
 private theorem IsMorse.exists_sandwich_levels (hj : IsOpenEmbedding j)
@@ -489,6 +487,9 @@ private theorem IsMorse.exists_sandwich_levels (hj : IsOpenEmbedding j)
     fun x hx ↦ hδW (hx.out.trans (by linarith)), fun x hx ↦ (hA x hx).trans_lt ha_pos, hFb,
     ha_reg, isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (hFb (j p)).ne hp,
     hcompact a b ha_pos hab⟩
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
+  [TopologicalSpace X] [T2Space X] {j : M → X} {F : X → ℝ} {A W : Set X} {n : ℕ}
 
 /-- **Path connectivity of `(X, A)` from a high-index Morse function on the open manifold part.**
 If `0 < n`, every critical point of `F ∘ j` has index at least `n`, and `A ↪ W` is a weak homotopy
