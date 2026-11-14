@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.Height.SInteger
 public import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Primitive
 
+import TauCeti.Algebra.BigOperators.Finprod
+
 /-!
 # The height of a point through finitely many places
 
@@ -34,6 +36,9 @@ which Bombieri and Gubler open the proof of the `S`-integral form of the Subspac
   norms at the finite places outside `S` are `1`.
 * `NumberField.mulHeight_le_prod`: the height of a nonzero tuple of `S`-integers is at most the
   product of its local sup norms over the infinite places and `S`.
+* `NumberField.mulHeight_le_prod_of_forall_apply_le_one` and
+  `NumberField.logHeight_le_sum_of_forall_apply_le_one`: the same bound with `S₀` given as a finite
+  set of finite places, and its logarithmic form.
 * `NumberField.mulHeight_eq_prod_of_forall_iSup_eq_one` and
   `NumberField.mulHeight_eq_prod_of_isPrimitive`: equality when the local sup norms outside `S`
   are `1`, in particular for an `S`-primitive tuple.
@@ -137,6 +142,40 @@ theorem mulHeight_le_prod (S : Finset (HeightOneSpectrum (𝓞 K))) (hx : x ≠ 
         finprod_le_finprod₀ hFfin (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
           (S.finite_toSet.subset (Set.mulSupport_mulIndicator_subset)) hle
     _ = ∏ v ∈ S, F v := by rw [← finprod_mem_def, finprod_mem_coe_finset]
+
+/-- **The height of a nonzero tuple integral at the finite places outside a finite set `S₀` of
+finite places is at most the product of its local sup norms over the infinite places and the places
+of `S₀`.** This is `NumberField.mulHeight_le_prod` with `S₀` given as finite places and integrality
+read off the absolute values. -/
+theorem mulHeight_le_prod_of_forall_apply_le_one (S₀ : Finset (FinitePlace K)) (hx : x ≠ 0)
+    (hxS : ∀ v ∉ S₀, ∀ i, v (x i) ≤ 1) :
+    mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
+  rw [NumberField.mulHeight_eq hx]
+  exact mul_le_mul_of_nonneg_left (Finset.finprod_le_prod_of_le_one₀ S₀
+      (FinitePlace.hasFiniteMulSupport_iSup hx) (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
+      fun v hv ↦ Real.iSup_le (hxS v hv) zero_le_one)
+    (Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _)
+
+/-- The logarithmic form of `NumberField.mulHeight_le_prod_of_forall_apply_le_one`: the
+logarithmic height of a tuple integral at the finite places outside `S₀` is at most the sum of the
+logarithms of its local sup norms over the infinite places, weighted by `mult`, and the places of
+`S₀`. For the zero tuple both sides are `0`, through `Real.log 0 = 0`. -/
+theorem logHeight_le_sum_of_forall_apply_le_one (S₀ : Finset (FinitePlace K))
+    (hxS : ∀ v ∉ S₀, ∀ i, v (x i) ≤ 1) :
+    logHeight x ≤ ∑ v : InfinitePlace K, v.mult * Real.log (⨆ i, v (x i)) +
+      ∑ v ∈ S₀, Real.log (⨆ i, v (x i)) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Real.iSup_const_zero]
+  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
+  have hsup (w : AbsoluteValue K ℝ) : 0 < ⨆ i, w (x i) :=
+    (w.pos hi₀).trans_le (le_ciSup (f := fun i ↦ w (x i)) (Finite.bddAbove_range _) i₀)
+  rw [logHeight_eq_log_mulHeight]
+  refine (Real.log_le_log (mulHeight_pos _)
+    (mulHeight_le_prod_of_forall_apply_le_one S₀ hx hxS)).trans_eq ?_
+  rw [Real.log_mul (Finset.prod_pos fun v _ ↦ pow_pos (hsup v.1) _).ne'
+      (Finset.prod_pos fun v _ ↦ hsup v.1).ne',
+    Real.log_prod fun v _ ↦ (pow_pos (hsup v.1) _).ne', Real.log_prod fun v _ ↦ (hsup v.1).ne']
+  simp only [Real.log_pow]
 
 /-- **The height of an `S`-primitive tuple is the product of its local sup norms over the
 infinite places and the places of `S`.** -/

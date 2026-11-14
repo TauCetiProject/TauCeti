@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+
 /-!
 # Linear functionals and hyperplanes
 
@@ -58,6 +60,8 @@ and so separate points.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
   `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
   coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
+* `LinearIndependent.exists_forall_abv_apply_le_mul`: `#ι` linearly independent forms on `Kⁱ`
+  bound every coordinate at an absolute value by a constant times the largest value of the forms.
 * `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
   evaluating linear forms `l` on `ι → R` against vectors `x` multiplies `Matrix.of x` on the right
   by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`, so for `#ι` forms and `#ι` vectors its determinant
@@ -345,6 +349,28 @@ theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
   choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
     (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
   exact ⟨a, ha⟩
+
+/-- `#ι` linearly independent forms on `Kⁱ` control the coordinates at every absolute value: there
+is `A` such that whenever all the values `abv (l i x)` are at most `b`, so is every coordinate
+`abv (x j)` up to the factor `A`. -/
+theorem exists_forall_abv_apply_le_mul {K S ι : Type*} [Field K] [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [Finite ι] {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l)
+    (abv : AbsoluteValue K S) :
+    ∃ A : S, 0 ≤ A ∧ ∀ (x : ι → K) (b : S), (∀ i, abv (l i x) ≤ b) → ∀ j, abv (x j) ≤ A * b := by
+  have := Fintype.ofFinite ι
+  obtain ⟨a, ha⟩ := hl.exists_sum_smul_eq_proj
+  have hA (j : ι) : 0 ≤ ∑ i, abv (a j i) := Finset.sum_nonneg fun _ _ ↦ abv.nonneg _
+  refine ⟨∑ j, ∑ i, abv (a j i), Finset.sum_nonneg fun j _ ↦ hA j, fun x b hb j ↦ ?_⟩
+  have hxj : x j = ∑ i, a j i * l i x := by simpa using (LinearMap.congr_fun (ha j) x).symm
+  have hb0 : 0 ≤ b := (abv.nonneg _).trans (hb j)
+  calc abv (x j) ≤ ∑ i, abv (a j i) * abv (l i x) := by
+        rw [hxj]
+        exact (abv.sum_le _ _).trans_eq (by simp only [map_mul])
+    _ ≤ ∑ i, abv (a j i) * b := by gcongr with i; exact hb i
+    _ = (∑ i, abv (a j i)) * b := Finset.sum_mul .. |>.symm
+    _ ≤ (∑ j, ∑ i, abv (a j i)) * b := mul_le_mul_of_nonneg_right
+        (Finset.single_le_sum (f := fun j ↦ ∑ i, abv (a j i)) (fun j _ ↦ hA j)
+          (Finset.mem_univ j)) hb0
 
 /-- `#ι` linearly independent forms on `Kⁱ` assemble into a bijective endomorphism
 `LinearMap.pi l`. -/
