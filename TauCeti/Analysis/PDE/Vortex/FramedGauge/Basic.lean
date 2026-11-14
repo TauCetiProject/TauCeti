@@ -75,6 +75,13 @@ theorem mem_framedGaugeGroup (u : ℂ → Circle) :
     u ∈ framedGaugeGroup ↔
       ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) := Iff.rfl
 
+/-- A framed gauge composed with a smooth map that tends to infinity at infinity is a framed
+gauge. -/
+theorem comp_mem_framedGaugeGroup {g : ℂ → Circle} (hg : g ∈ framedGaugeGroup) {f : ℂ → ℂ}
+    (hf : ContDiff ℝ ∞ f) (hfc : Tendsto f (cocompact ℂ) (cocompact ℂ)) :
+    (fun w ↦ g (f w)) ∈ framedGaugeGroup :=
+  ⟨hg.1.comp hf, hg.2.comp hfc⟩
+
 /-- The real one-form `Im(u⁻¹ du)`. Multiplication by `i` recovers the imaginary connection
 increment; for a circle-valued map the inverse is complex conjugation. -/
 def gaugeForm (u : ℂ → Circle) (z : ℂ) : ℂ →L[ℝ] ℝ :=
