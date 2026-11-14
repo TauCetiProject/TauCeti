@@ -99,6 +99,8 @@ structure PartialXPow (P : Type*) [Group P] where
 
 namespace PartialXPow
 
+attribute [simp] one_mem xpow_conj
+
 variable {P : Type*} [Group P] (S : PartialXPow P)
 
 /-- An element `b` is a *top* element if its `t`-th power is not defined, in the strong sense
@@ -123,7 +125,7 @@ protected theorem inv_mem_iff {x : P} : x⁻¹ ∈ S.dom ↔ x ∈ S.dom :=
 /-- The domain is closed under natural powers. -/
 protected theorem pow_mem {x : P} (hx : x ∈ S.dom) (n : ℕ) : x ^ n ∈ S.dom := by
   induction n with
-  | zero => simpa using S.one_mem
+  | zero => simp
   | succ n ih => simpa [pow_succ] using S.mul_mem ih hx ((Commute.refl x).pow_left n)
 
 /-- The domain is closed under integer powers. -/
@@ -158,9 +160,24 @@ theorem xpow_zpow (x : P) (n : ℤ) : S.xpow (x ^ n) = S.xpow x ^ n := by
   obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg n <;> simp
 
 variable (S) in
+/-- An element commutes with the `t`-th power of every element it commutes with. -/
+theorem commute_xpow_right {x y : P} (h : Commute x y) : Commute x (S.xpow y) :=
+  (eq_mul_inv_iff_mul_eq.1 (by rw [← S.xpow_conj, h.mul_inv_cancel])).symm
+
+variable (S) in
+/-- The `t`-th power of an element commutes with every element it commutes with. -/
+theorem commute_xpow_left {x y : P} (h : Commute x y) : Commute (S.xpow x) y :=
+  (S.commute_xpow_right h.symm).symm
+
+variable (S) in
+/-- The `t`-th powers of commuting elements commute. -/
+theorem commute_xpow_xpow {x y : P} (h : Commute x y) : Commute (S.xpow x) (S.xpow y) :=
+  S.commute_xpow_left (S.commute_xpow_right h)
+
+variable (S) in
 /-- An element commutes with its `t`-th power. -/
 theorem commute_xpow (x : P) : Commute x (S.xpow x) :=
-  (eq_mul_inv_iff_mul_eq.1 (by simpa using S.xpow_conj x x)).symm
+  S.commute_xpow_right (Commute.refl x)
 
 /-- The defining property of a top element. -/
 theorem isTop_iff {b : P} : S.IsTop b ↔ S.xpow b = 1 ∧
@@ -172,38 +189,62 @@ theorem isTop_iff {b : P} : S.IsTop b ↔ S.xpow b = 1 ∧
 theorem exists_isTop_commute {x : P} (hx : x ≠ 1) : ∃ b : P, S.IsTop b ∧ Commute b x :=
   (S.exists_top hx).imp fun _ h ↦ ⟨h.2, h.1⟩
 
+/-- The map `xpow` takes the value `1` at a top element. -/
+theorem IsTop.xpow_eq_one {b : P} (hb : S.IsTop b) : S.xpow b = 1 :=
+  hb.1
+
+/-- Every element commuting with a top element `b` is `d * b ^ m` with `d` in the domain. -/
+theorem IsTop.exists_eq_mul_zpow {b y : P} (hb : S.IsTop b) (hy : Commute y b) :
+    ∃ d ∈ S.dom, ∃ m : ℤ, y = d * b ^ m :=
+  hb.2.1 y hy
+
+/-- No nonzero power of a top element is in the domain. -/
+theorem IsTop.eq_zero_of_zpow_mem {b : P} (hb : S.IsTop b) {m : ℤ} (hm : b ^ m ∈ S.dom) :
+    m = 0 :=
+  hb.2.2 m hm
+
+/-- A power of a top element is in the domain exactly when the exponent is zero. -/
+theorem IsTop.zpow_mem_iff {b : P} (hb : S.IsTop b) {m : ℤ} : b ^ m ∈ S.dom ↔ m = 0 :=
+  ⟨hb.eq_zero_of_zpow_mem, by rintro rfl; simp⟩
+
 /-- A top element is not in the domain. -/
-theorem IsTop.notMem_dom {b : P} (hb : S.IsTop b) : b ∉ S.dom := fun h ↦
-  one_ne_zero (hb.2.2 1 (by rwa [zpow_one]))
+theorem IsTop.notMem_dom {b : P} (hb : S.IsTop b) : b ∉ S.dom := by
+  simpa using hb.zpow_mem_iff (m := 1)
 
 /-- A top element is not the identity. -/
 theorem IsTop.ne_one {b : P} (hb : S.IsTop b) : b ≠ 1 := fun h ↦
   hb.notMem_dom (h ▸ S.one_mem)
 
-/-- A conjugate of a top element is a top element. -/
-theorem IsTop.conj {b : P} (hb : S.IsTop b) (g : P) : S.IsTop (g * b * g⁻¹) := by
-  refine ⟨by simp [S.xpow_conj, hb.1], fun y hy ↦ ?_, fun m hm ↦ hb.2.2 m ?_⟩
-  · have hy' : Commute (g⁻¹ * y * g) b := by
-      simpa [mul_assoc] using hy.map (MulAut.conj g⁻¹)
-    obtain ⟨d, hd, m, hdm⟩ := hb.2.1 _ hy'
-    refine ⟨g * d * g⁻¹, (conj_mem_iff g).2 hd, m, ?_⟩
-    calc y = g * (g⁻¹ * y * g) * g⁻¹ := by group
-      _ = _ := by rw [hdm, conj_zpow]; group
-  · rwa [conj_zpow, conj_mem_iff] at hm
+variable (S) in
+/-- The identity is not a top element. -/
+@[simp]
+theorem not_isTop_one : ¬S.IsTop 1 := fun h ↦ h.ne_one rfl
+
+/-- The inverse of a top element is a top element. -/
+theorem IsTop.inv {b : P} (hb : S.IsTop b) : S.IsTop b⁻¹ := by
+  refine ⟨by simp [hb.xpow_eq_one], fun y hy ↦ ?_, fun m hm ↦ hb.eq_zero_of_zpow_mem ?_⟩
+  · obtain ⟨d, hd, m, rfl⟩ := hb.exists_eq_mul_zpow (Commute.inv_right_iff.1 hy)
+    exact ⟨d, hd, -m, by simp⟩
+  · simpa using hm
+
+/-- An element is a top element exactly when its inverse is. -/
+@[simp]
+theorem isTop_inv_iff {b : P} : S.IsTop b⁻¹ ↔ S.IsTop b :=
+  ⟨fun h ↦ by simpa using h.inv, IsTop.inv⟩
 
 /-- A top element is not a proper power. -/
 theorem IsTop.not_isProperPower {b : P} (hb : S.IsTop b) : ¬Group.IsProperPower b := by
   rw [Group.isProperPower_iff]
   rintro ⟨y, n, hn, hyb⟩
   have hy : Commute y b := hyb ▸ (Commute.refl y).pow_right n
-  obtain ⟨d, hd, m, rfl⟩ := hb.2.1 y hy
+  obtain ⟨d, hd, m, rfl⟩ := hb.exists_eq_mul_zpow hy
   have hdb : Commute d b := by
     simpa using hy.mul_left ((Commute.refl b).zpow_left (-m))
   -- `b = (d * b ^ m) ^ n = d ^ n * b ^ (m * n)`, so `b ^ (1 - m * n) = d ^ n` is in the domain
   have h2 : b ^ (1 - m * n) = d ^ n := by
     rw [zpow_sub, zpow_one, mul_inv_eq_iff_eq_mul, zpow_mul, zpow_natCast,
       ← (hdb.zpow_right m).mul_pow, ← hyb]
-  have h3 := hb.2.2 _ (h2 ▸ S.pow_mem hd n)
+  have h3 := hb.eq_zero_of_zpow_mem (h2 ▸ S.pow_mem hd n)
   have := Int.eq_one_of_mul_eq_one_left (Int.natCast_nonneg n) (by omega : m * n = 1)
   omega
 
@@ -259,11 +300,12 @@ theorem isTop_trivial_iff [IsMulTorsionFree P] (h : ∀ g : P, g ≠ 1 → IsCyc
     {b : P} : (PartialXPow.trivial h).IsTop b ↔ b ≠ 1 ∧ centralizer {b} = zpowers b := by
   refine ⟨fun hb ↦ ⟨hb.ne_one, le_antisymm (fun y hy ↦ ?_) (zpowers_le_centralizer_singleton b)⟩,
     fun ⟨hb1, hb⟩ ↦ ⟨rfl, isTop_aux hb1 hb⟩⟩
-  obtain ⟨d, hd, m, rfl⟩ := hb.2.1 y (mem_centralizer_singleton_iff.1 hy)
+  obtain ⟨d, hd, m, rfl⟩ := hb.exists_eq_mul_zpow (mem_centralizer_singleton_iff.1 hy)
   simp_all
 
 /-- In the structure in which no power is defined, the top elements are the elements that are not
 proper powers. -/
+@[simp]
 theorem isTop_trivial_iff_not_isProperPower [IsMulTorsionFree P]
     (h : ∀ g : P, g ≠ 1 → IsCyclic (centralizer {g})) {b : P} :
     (PartialXPow.trivial h).IsTop b ↔ ¬Group.IsProperPower b := by
@@ -282,8 +324,8 @@ private theorem isTop_map_aux {Q : Type*} [Group Q] (S : PartialXPow P) (e : P �
     (hb : S.IsTop b) : e (S.xpow (e.symm (e b))) = 1 ∧
       (∀ y : Q, Commute y (e b) → ∃ d ∈ e '' S.dom, ∃ m : ℤ, y = d * e b ^ m) ∧
         ∀ m : ℤ, e b ^ m ∈ e '' S.dom → m = 0 := by
-  refine ⟨by simp [hb.1], fun y hy ↦ ?_, fun m ⟨d, hd, hdm⟩ ↦ hb.2.2 m ?_⟩
-  · obtain ⟨d, hd, m, hdm⟩ := hb.2.1 (e.symm y) (by simpa using hy.map e.symm)
+  refine ⟨by simp [hb.xpow_eq_one], fun y hy ↦ ?_, fun m ⟨d, hd, hdm⟩ ↦ hb.eq_zero_of_zpow_mem ?_⟩
+  · obtain ⟨d, hd, m, hdm⟩ := hb.exists_eq_mul_zpow (by simpa using hy.map e.symm)
     exact ⟨e d, ⟨d, hd, rfl⟩, m, by rw [← map_zpow, ← map_mul, ← hdm, e.apply_symm_apply]⟩
   · rw [← map_zpow, e.injective.eq_iff] at hdm
     exact hdm ▸ hd
@@ -311,24 +353,27 @@ def map {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) : PartialXPow Q
     obtain ⟨b, hb, hbx⟩ := S.exists_isTop_commute (x := e.symm _) (by simpa using hx)
     exact ⟨e b, by simpa using hbx.map e, isTop_map_aux S e hb⟩
 
-@[simp]
 theorem map_dom {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) :
     (S.map e).dom = e '' S.dom := (rfl)
 
 @[simp]
-theorem map_xpow_apply {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) (x : P) :
-    (S.map e).xpow (e x) = e (S.xpow x) := by
-  simp [map]
+theorem mem_map_dom {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) {y : Q} :
+    y ∈ (S.map e).dom ↔ e.symm y ∈ S.dom :=
+  Set.mem_image_equiv (f := e.toEquiv)
+
+@[simp]
+theorem map_xpow_apply {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) (y : Q) :
+    (S.map e).xpow y = e (S.xpow (e.symm y)) := (rfl)
 
 /-- Transport along the identity is the identity. -/
 @[simp]
 theorem map_refl (S : PartialXPow P) : S.map (MulEquiv.refl P) = S := by
-  ext <;> simp [map]
+  ext <;> simp
 
 /-- Transport along a composite of isomorphisms is the composite of the transports. -/
 theorem map_map {Q R : Type*} [Group Q] [Group R] (S : PartialXPow P) (e : P ≃* Q)
     (f : Q ≃* R) : (S.map e).map f = S.map (e.trans f) := by
-  ext <;> simp [map]
+  ext <;> simp
 
 /-- Transport along an isomorphism and back is the identity. -/
 @[simp]
@@ -342,16 +387,33 @@ theorem map_map_symm {Q : Type*} [Group Q] (S : PartialXPow Q) (e : P ≃* Q) :
     (S.map e.symm).map e = S := by
   rw [map_map, MulEquiv.symm_trans_self, map_refl]
 
-/-- An isomorphism carries the top elements of a partial exponentiation exactly to the top
-elements of the transported one. -/
+/-- An isomorphism carries a top element to a top element of the transported structure. -/
+theorem IsTop.map {Q : Type*} [Group Q] {b : P} (hb : S.IsTop b) (e : P ≃* Q) :
+    (S.map e).IsTop (e b) :=
+  isTop_map_aux S e hb
+
+/-- The top elements of a transported structure are the images of the top elements. -/
 @[simp]
-theorem isTop_map_iff {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) {b : P} :
-    (S.map e).IsTop (e b) ↔ S.IsTop b := by
-  refine ⟨fun hb ↦ ⟨?_, fun y hy ↦ ?_, fun m hm ↦ hb.2.2 m ?_⟩, isTop_map_aux S e⟩
-  · simpa using hb.1
-  · obtain ⟨_, ⟨d, hd, rfl⟩, m, hdm⟩ := hb.2.1 (e y) (by simpa using hy.map e)
-    exact ⟨d, hd, m, e.injective (by simpa using hdm)⟩
-  · simpa [← map_zpow] using hm
+theorem isTop_map_iff {Q : Type*} [Group Q] (S : PartialXPow P) (e : P ≃* Q) {c : Q} :
+    (S.map e).IsTop c ↔ S.IsTop (e.symm c) :=
+  ⟨fun h ↦ by simpa using h.map e.symm, fun h ↦ by simpa using h.map e⟩
+
+/-- Transport along an inner automorphism is the identity. -/
+@[simp]
+theorem map_conj (S : PartialXPow P) (g : P) : S.map (MulAut.conj g) = S := by
+  ext x
+  · simpa using conj_mem_iff (S := S) g⁻¹
+  · obtain ⟨y, rfl⟩ : ∃ y, g * y * g⁻¹ = x := ⟨g⁻¹ * x * g, by group⟩
+    simp [← mul_assoc]
+
+/-- A conjugate of a top element is a top element. -/
+theorem IsTop.conj {b : P} (hb : S.IsTop b) (g : P) : S.IsTop (g * b * g⁻¹) := by
+  simpa using hb.map (MulAut.conj g)
+
+/-- An element is a top element exactly when its conjugate by `g` is. -/
+@[simp]
+theorem isTop_conj_iff (g : P) {b : P} : S.IsTop (g * b * g⁻¹) ↔ S.IsTop b :=
+  ⟨fun h ↦ by simpa [mul_assoc] using h.conj g⁻¹, (·.conj g)⟩
 
 /-! ### The free group -/
 
