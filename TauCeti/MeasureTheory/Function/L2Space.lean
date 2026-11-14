@@ -65,6 +65,17 @@ public section
 open Function MeasureTheory
 open scoped ComplexConjugate ENNReal InnerProductSpace
 
+namespace Submodule
+
+/-- A square-integrable random vector has integrable squared distance to every submodule. -/
+theorem integrable_infDist_sq {Ω R E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [Semiring R] [NormedAddCommGroup E] [Module R E] (U : Submodule R E) {Y : Ω → E}
+    (hY : MemLp Y 2 P) : Integrable (fun ω ↦ Metric.infDist (Y ω) (U : Set E) ^ 2) P :=
+  ((Metric.lipschitz_infDist_pt (U : Set E)).comp_memLp
+    (Metric.infDist_zero_of_mem U.zero_mem) hY).integrable_sq
+
+end Submodule
+
 namespace MeasureTheory
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]

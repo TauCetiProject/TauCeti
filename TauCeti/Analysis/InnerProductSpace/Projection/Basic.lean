@@ -112,6 +112,15 @@ open scoped InnerProductSpace
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
+/-- Squared distance is the quadratic form of the orthogonal-complement projection. -/
+theorem re_inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
+    RCLike.re (inner 𝕜 x (Uᗮ.starProjection x)) = Metric.infDist x (U : Set E) ^ 2 := by
+  have hn : ‖Uᗮ.orthogonalProjectionOnto x‖ = Metric.infDist x (U : Set E) := by
+    rw [← Submodule.norm_coe, coe_orthogonalProjectionOnto_apply,
+      norm_starProjection_eq_infDist, orthogonal_orthogonal]
+  rw [← Uᗮ.inner_starProjection_left_eq_right]
+  simpa only [hn] using Uᗮ.re_inner_starProjection_eq_normSq x
+
 /-- One half of `norm_starProjection_comp_starProjection_comm`. -/
 private theorem norm_starProjection_comp_starProjection_le :
     ‖U.starProjection ∘L V.starProjection‖ ≤ ‖V.starProjection ∘L U.starProjection‖ := by
