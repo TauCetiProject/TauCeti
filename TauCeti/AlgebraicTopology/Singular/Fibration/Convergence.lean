@@ -138,9 +138,11 @@ theorem isZero_serreSpectralSequence_page_two_X_of_lt_neg_one (pq : ℤ × ℤ) 
   rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hneg
   · exact isZero_filteredSpaceSpectralSequence_page_two_X _ _ pq hpos
   · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (by lia : 0 ≤ -(pq.1 + pq.2))
-    exact (TopPair.isZero_singularHomology_ofInclusion_of_eq (ModuleCat.of R R) _
-      ((preimageSkeleton_of_neg p (by lia)).trans (preimageSkeleton_of_neg p (by lia)).symm)
-      n).of_iso (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+    exact ((TopPair.isZero_singularHomology_ofInclusion_congr (ModuleCat.of R R) _
+      (subset_refl (p ⁻¹' D)) (preimageSkeleton_of_neg (C := C) p (by lia))
+      (preimageSkeleton_of_neg (C := C) p (by lia)) n).2
+      (TopPair.isZero_singularHomology_ofInclusion_self (ModuleCat.of R R) (p ⁻¹' D) n)).of_iso
+      (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
         (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n (by lia))
 
 include hp in
