@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.Obstruction
+import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Symmetric 2-cocycles of a formal group law
@@ -21,7 +23,10 @@ Let `F` be a formal group law over a commutative ring `R`. A power series `Φ(X,
 These are the symmetric 2-cocycles of the formal group `F` with coefficients in the additive group
 `R`, as in Lubin and Tate. The cocycle identity is that of Lazard's additive 2-cocycles
 (`MvPolynomial.IsAddCocycle₂`), with the additive law `X + Y` replaced by `F` and polynomials by
-power series. They are closed under sums and scalar multiples.
+power series. They are closed under sums, scalar multiples, and base change, and setting either
+variable to `0` collapses a symmetric 2-cocycle to its constant term
+(`Φ(0, T) = Φ(T, 0) = Φ(0, 0)`), so every symmetric 2-cocycle without constant term automatically
+vanishes in degree `1` and has order at least `2` (`FormalGroup.IsSymmetricCocycle.two_le_order`).
 
 The **coboundary** of a power series `g` is its additivity defect `g(F(X, Y)) - g(X) - g(Y)`, the
 homomorphism defect `FormalGroup.homDefect F 𝔾ₐ g` towards the additive law
@@ -41,9 +46,14 @@ coboundaries. For a law of finite height in characteristic `p`, the degrees in w
 
 ## Main results
 
-* `FormalGroup.IsSymmetricCocycle.add`, `FormalGroup.IsSymmetricCocycle.smul`, and their
-  consequences: symmetric 2-cocycles are closed under sums and scalar multiples, and `-Φ` is a
-  symmetric 2-cocycle exactly when `Φ` is (`FormalGroup.IsSymmetricCocycle.neg_iff`).
+* `FormalGroup.IsSymmetricCocycle.add`, `FormalGroup.IsSymmetricCocycle.sum`,
+  `FormalGroup.IsSymmetricCocycle.smul`, `FormalGroup.IsSymmetricCocycle.map`, and their
+  consequences: symmetric 2-cocycles are closed under finite sums, scalar multiples, and base
+  change, and `-Φ` is a symmetric 2-cocycle exactly when `Φ` is
+  (`FormalGroup.IsSymmetricCocycle.neg_iff`).
+* `FormalGroup.IsSymmetricCocycle.subst_zero_X`, `FormalGroup.IsSymmetricCocycle.subst_X_zero`,
+  `FormalGroup.IsSymmetricCocycle.two_le_order`: setting either variable to `0` reduces `Φ` to its
+  constant term, so a symmetric 2-cocycle without constant term has order at least `2`.
 * `FormalGroup.isSymmetricCocycle_homDefect_𝔾ₐ`: coboundaries of a commutative formal group law are
   symmetric 2-cocycles.
 * `FormalGroup.IsSymmetricCocycle.exists_homogeneousComponent_eq_smul_lazardCocycle`: the degree-`n`
@@ -98,6 +108,18 @@ theorem add (hΦ : F.IsSymmetricCocycle Φ) (hΨ : F.IsSymmetricCocycle Ψ) :
       subst_add (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff), subst_add .X_X]
     linear_combination hΦ.subst_add_subst_eq + hΨ.subst_add_subst_eq
 
+/-- A finite sum of symmetric 2-cocycles is a symmetric 2-cocycle. -/
+theorem sum {ι : Type*} (s : Finset ι) {f : ι → MvPowerSeries (Fin 2) R}
+    (hf : ∀ i ∈ s, F.IsSymmetricCocycle (f i)) :
+    F.IsSymmetricCocycle (∑ i ∈ s, f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.sum_insert ha]
+    exact (hf a (Finset.mem_insert_self a s)).add
+      (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
+
 /-- A scalar multiple of a symmetric 2-cocycle is a symmetric 2-cocycle. -/
 theorem smul (hΦ : F.IsSymmetricCocycle Φ) (c : R) : F.IsSymmetricCocycle (c • Φ) where
   subst_swap := by
@@ -121,6 +143,120 @@ theorem neg_iff : F.IsSymmetricCocycle (-Φ) ↔ F.IsSymmetricCocycle Φ :=
 theorem sub (hΦ : F.IsSymmetricCocycle Φ) (hΨ : F.IsSymmetricCocycle Ψ) :
     F.IsSymmetricCocycle (Φ - Ψ) := by
   simpa only [sub_eq_add_neg] using hΦ.add hΨ.neg
+
+/-- Base change preserves symmetric 2-cocycles. -/
+theorem map {S : Type*} [CommRing S] (hΦ : F.IsSymmetricCocycle Φ) (φ : R →+* S) :
+    (F.map φ).IsSymmetricCocycle (Φ.map φ) where
+  subst_swap := by
+    have h := congrArg (MvPowerSeries.map φ) hΦ.subst_swap
+    rw [map_subst .X_X] at h
+    convert h using 2
+    funext i
+    fin_cases i <;> simp
+  subst_add_subst_eq := by
+    have h := congrArg (MvPowerSeries.map φ) hΦ.subst_add_subst_eq
+    rw [map_add, map_add, map_subst .X_X,
+      map_subst (.cons_subst_zero_left 0 1 2 F.zero_constantCoeff),
+      map_subst (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff),
+      map_subst .X_X] at h
+    have h01 : (fun i ↦ (MvPowerSeries.map φ) (![(X 0 : MvPowerSeries (Fin 3) R), X 1] i)) =
+        ![X 0, X 1] := by funext i; fin_cases i <;> simp
+    have h12 : (fun i ↦ (MvPowerSeries.map φ) (![(X 1 : MvPowerSeries (Fin 3) R), X 2] i)) =
+        ![X 1, X 2] := by funext i; fin_cases i <;> simp
+    have hF01 : (fun i ↦ (MvPowerSeries.map φ)
+        (![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2] i)) =
+        ![(F.map φ).toPowerSeries.subst ![X 0, X 1], X 2] := by
+      refine funext <| Fin.forall_fin_two.mpr ⟨?_, ?_⟩
+      · simp [map_subst .X_X, h01]
+      · simp
+    have h0F12 : (fun i ↦ (MvPowerSeries.map φ)
+        (![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]] i)) =
+        ![X 0, (F.map φ).toPowerSeries.subst ![X 1, X 2]] := by
+      refine funext <| Fin.forall_fin_two.mpr ⟨?_, ?_⟩
+      · simp
+      · simp [map_subst .X_X, h12]
+    rwa [h01, hF01, h0F12, h12] at h
+
+/-- Setting `X = 0` in a symmetric 2-cocycle collapses it to its constant term:
+`Φ(0, T) = Φ(0, 0)`. -/
+theorem subst_zero_X (hΦ : F.IsSymmetricCocycle Φ) :
+    Φ.subst ![0, PowerSeries.X] = PowerSeries.C (constantCoeff Φ) := by
+  -- Evaluate the cocycle identity at `(0, 0, T)`: `Φ(0, 0) + Φ(0, T) = Φ(0, T) + Φ(0, T)`.
+  have ha : HasSubst ![(0 : PowerSeries R), 0, PowerSeries.X] :=
+    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [PowerSeries.X]
+  have h := congrArg (subst ![(0 : PowerSeries R), 0, PowerSeries.X]) hΦ.subst_add_subst_eq
+  rw [subst_add ha, subst_add ha,
+    subst_comp_subst_apply .X_X ha,
+    subst_comp_subst_apply (.cons_subst_zero_left 0 1 2 F.zero_constantCoeff) ha,
+    subst_comp_subst_apply (.cons_subst_zero_right 0 1 2 F.zero_constantCoeff) ha,
+    subst_comp_subst_apply .X_X ha] at h
+  have h00 : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
+      (![(X 0 : MvPowerSeries (Fin 3) R), X 1] i)) = 0 := by
+    funext i; fin_cases i <;> simp [subst_X ha]
+  have h0X : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
+      (![(X 1 : MvPowerSeries (Fin 3) R), X 2] i)) = ![0, PowerSeries.X] := by
+    funext i; fin_cases i <;> simp [subst_X ha]
+  have hF00 : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
+      (![F.toPowerSeries.subst ![(X 0 : MvPowerSeries (Fin 3) R), X 1], X 2] i)) =
+      ![0, PowerSeries.X] := by
+    refine funext <| Fin.forall_fin_two.mpr ⟨?_, ?_⟩
+    · simp only [Matrix.cons_val_zero, subst_comp_subst_apply .X_X ha, h00,
+        subst_zero_of_constantCoeff_zero F.zero_constantCoeff]
+    · simp [subst_X ha]
+  have h0FX : (fun i ↦ subst ![(0 : PowerSeries R), 0, PowerSeries.X]
+      (![X 0, F.toPowerSeries.subst ![(X 1 : MvPowerSeries (Fin 3) R), X 2]] i)) =
+      ![0, PowerSeries.X] := by
+    refine funext <| Fin.forall_fin_two.mpr ⟨?_, ?_⟩
+    · simp [subst_X ha]
+    · simp only [Matrix.cons_val_one, Matrix.cons_val_fin_one, subst_comp_subst_apply .X_X ha, h0X,
+        F.zero_add PowerSeries.HasSubst.X']
+  rw [h00, hF00, h0FX, h0X, subst_zero_eq_C_constantCoeff, Algebra.algebraMap_self,
+    MvPowerSeries.map_id] at h
+  exact (add_right_cancel h).symm
+
+/-- Setting `Y = 0` in a symmetric 2-cocycle collapses it to its constant term:
+`Φ(T, 0) = Φ(0, 0)`. -/
+theorem subst_X_zero (hΦ : F.IsSymmetricCocycle Φ) :
+    Φ.subst ![PowerSeries.X, 0] = PowerSeries.C (constantCoeff Φ) := by
+  have ha : HasSubst ![PowerSeries.X (R := R), 0] :=
+    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp [PowerSeries.X]
+  nth_rw 1 [← hΦ.subst_swap]
+  rw [subst_comp_subst_apply .X_X ha]
+  have hswap : (fun i ↦ subst ![PowerSeries.X (R := R), 0]
+      (![(X 1 : MvPowerSeries (Fin 2) R), X 0] i)) = ![0, PowerSeries.X] := by
+    funext i; fin_cases i <;> simp [subst_X ha]
+  rw [hswap]
+  exact hΦ.subst_zero_X
+
+/-- Every pure power `Yⁿ` with `n ≠ 0` has coefficient `0` in a symmetric 2-cocycle. -/
+theorem coeff_single_one_eq_zero (hΦ : F.IsSymmetricCocycle Φ) {n : ℕ} (hn : n ≠ 0) :
+    coeff (Finsupp.single 1 n) Φ = 0 := by
+  rw [← coeff_subst_zero_X, hΦ.subst_zero_X, PowerSeries.coeff_C, ite_eq_right hn]
+
+/-- Every pure power `Xⁿ` with `n ≠ 0` has coefficient `0` in a symmetric 2-cocycle. -/
+theorem coeff_single_zero_eq_zero (hΦ : F.IsSymmetricCocycle Φ) {n : ℕ} (hn : n ≠ 0) :
+    coeff (Finsupp.single 0 n) Φ = 0 := by
+  rw [← coeff_subst_X_zero, hΦ.subst_X_zero, PowerSeries.coeff_C, ite_eq_right hn]
+
+/-- A symmetric 2-cocycle without constant term automatically vanishes in degree `1`, so has
+order at least `2`. -/
+theorem two_le_order (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) :
+    ((2 : ℕ) : ℕ∞) ≤ Φ.order := by
+  refine le_order fun d hd ↦ ?_
+  rw [Nat.cast_lt] at hd
+  have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by
+    ext i; fin_cases i <;> simp
+  have hdeg : d.degree = d 0 + d 1 := by
+    nth_rw 1 [hd']
+    rw [map_add, Finsupp.degree_single, Finsupp.degree_single]
+  obtain ⟨h0, h1⟩ | ⟨h0, h1⟩ | ⟨h0, h1⟩ :
+      (d 0 = 0 ∧ d 1 = 0) ∨ (d 0 = 1 ∧ d 1 = 0) ∨ (d 0 = 0 ∧ d 1 = 1) := by omega
+  · nth_rw 1 [hd']
+    simp [h0, h1, hΦ₀]
+  · nth_rw 1 [hd']
+    simp [h0, h1, hΦ.coeff_single_zero_eq_zero one_ne_zero]
+  · nth_rw 1 [hd']
+    simp [h0, h1, hΦ.coeff_single_one_eq_zero one_ne_zero]
 
 /-- **Leading terms of symmetric 2-cocycles.** If a symmetric 2-cocycle `Φ` vanishes below degree
 `n ≠ 0`, its degree-`n` part is a multiple `c C_n` of the Lazard cocycle. -/
