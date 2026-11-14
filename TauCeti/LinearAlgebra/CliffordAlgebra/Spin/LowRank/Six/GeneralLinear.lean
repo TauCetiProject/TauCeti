@@ -390,11 +390,9 @@ local instance hyperbolicSixInvertibleTwo : Invertible (2 : K) :=
 /-- The half-spin matrix-product model of the even Clifford algebra of three hyperbolic planes. -/
 noncomputable def hyperbolicSixEvenEquivMatrixProd :
     even (splitEvenForm K 3) ≃ₐ[K]
-      Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K := by
-  simpa using (splitEvenPolarization K 3).evenCliffordEquivProdMatrix
-    (l := 3)
-    (splitEvenPolarization_W_ne_bot K (by norm_num))
-      ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
+      Matrix (Fin 4) (Fin 4) K × Matrix (Fin 4) (Fin 4) K :=
+  (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
+    (splitEvenPolarization_W_ne_bot K (by norm_num)) (finrank_splitEvenSpace K 3)
 
 omit [NeZero (2 : K)] in
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
@@ -402,8 +400,8 @@ theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =
       (splitEvenPolarization K 3).evenCliffordEquivProdMatrix (l := 3)
         (splitEvenPolarization_W_ne_bot K (by norm_num))
-        (finrank_splitEvenSpace K 3) x := by
-  simp [hyperbolicSixEvenEquivMatrixProd]
+        (finrank_splitEvenSpace K 3) x :=
+  (rfl)
 
 /-- The even unitary group of three hyperbolic planes is the four-dimensional general linear
 group. In particular, specializing `K` to `ℚ` gives the split rational six-dimensional model. -/
