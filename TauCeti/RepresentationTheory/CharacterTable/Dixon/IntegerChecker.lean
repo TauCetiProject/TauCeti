@@ -28,6 +28,8 @@ identity, and preserves the integer-stage API used by the rational solver.
   certificate yields the complex character-table specification.
 * `TauCeti.ClassData.IsIntegerCharacterTableSpec.sum_characterDegree_eq_sum_degree`: the degrees
   of a successful certificate sum to the sum of the character degrees of the group.
+* `TauCeti.ClassData.IsIntegerCharacterTableSpec.exists_equiv_characterTable`: the rows of the
+  character table, numbered along a successful certificate, with their values and degrees.
 -/
 
 public section
@@ -120,6 +122,25 @@ theorem sum_characterDegree_eq_sum_degree :
     ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j := by
   exact IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree h (Int.castRingHom ℂ)
     fun x ↦ by simp
+
+/-- **The rows of the character table, numbered along a certified integer table**: some bijection
+`τ` from the numbering of `d` to the rows of `TauCeti.characterTable` sends each row `j` of `table`
+to a row of the character table whose value at `g` is `table j (d.index g)` and whose degree is
+`degree j`. -/
+theorem exists_equiv_characterTable :
+    ∃ τ : Fin d.numClasses ≃ Fin (Nat.card (ConjClasses G)),
+      (∀ j g, characterTable ℂ G (τ j) (ConjClasses.mk g) = (table j (d.index g) : ℂ)) ∧
+        ∀ j, characterDegree ℂ (τ j) = degree j := by
+  obtain ⟨σ, hσ⟩ := characterTable_unique_rows h.isCharacterTableSpec
+  let τ := (finCongr d.numClasses_eq_card_conjClasses).trans σ
+  have hval (j : Fin d.numClasses) (g : G) :
+      characterTable ℂ G (τ j) (ConjClasses.mk g) = (table j (d.index g) : ℂ) := by
+    have hj := congrFun (congrFun hσ (finCongr d.numClasses_eq_card_conjClasses j))
+      (d.classOf (d.index g))
+    rw [complexTableOfInteger_apply_classOf, d.classOf_index] at hj
+    exact hj.symm
+  refine ⟨τ, hval, fun j => Nat.cast_injective (R := ℂ) ?_⟩
+  rw [← characterTable_one, hval, h.table_index_one, Int.cast_natCast]
 
 end IsIntegerCharacterTableSpec
 
