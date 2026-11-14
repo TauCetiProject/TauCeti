@@ -8,10 +8,11 @@ module
 public import Mathlib.Order.Filter.Extr
 
 /-!
-# Minima on sublevels
+# Minima on sublevels and infimum characterizations
 
-A minimum on a sublevel transfers to the full admissible set. At a minimizer, the
-sublevel at the minimum value is exactly the set of all minimizers.
+A minimum on a sublevel transfers to the full admissible set. At an admissible minimizer, the
+sublevel at the minimum value is the full minimizer set, the attained value is the greatest lower
+bound of the image, and in a conditionally complete lattice it equals `sInf` of the image.
 -/
 
 public section
@@ -30,6 +31,13 @@ theorem isMinOn_sublevel_iff {X β : Type*} [LinearOrder β] {f : X → β}
   · exact h ⟨hx, hb⟩
   · exact hu.trans (le_of_not_ge hb)
 
+/-- An admissible point minimizes `f` on `S` if and only if its value is a greatest lower bound of
+`f '' S`. -/
+theorem isMinOn_iff_isGLB {X β : Type*} [Preorder β] {f : X → β}
+    {S : Set X} {u : X} (hu : u ∈ S) :
+    IsMinOn f S u ↔ IsGLB (f '' S) (f u) :=
+  ⟨IsMinOn.isGLB hu, fun h _ hx ↦ h.1 (mem_image_of_mem f hx)⟩
+
 end TauCeti
 
 /-- At an admissible minimizer, the sublevel at its value is the full minimizer set. -/
@@ -39,3 +47,22 @@ theorem IsMinOn.minimizers_eq_sublevel {X β : Type*} [Preorder β] {f : X → �
   ext x
   exact ⟨fun hx ↦ ⟨hx.1, hx.2 hu⟩,
     fun hx ↦ ⟨hx.1, fun y hy ↦ hx.2.trans (h hy)⟩⟩
+
+/-- At an admissible minimizer into a conditionally complete lattice, `sInf (f '' S)` equals the
+attained value `f u`. -/
+theorem IsMinOn.csInf_image_eq {X β : Type*} [ConditionallyCompleteLattice β] {f : X → β}
+    {S : Set X} {u : X} (h : IsMinOn f S u) (hu : u ∈ S) :
+    sInf (f '' S) = f u :=
+  (h.isGLB hu).csInf_eq ⟨f u, mem_image_of_mem f hu⟩
+
+namespace TauCeti
+
+/-- An admissible point minimizes `f` on `S` into a conditionally complete lattice if and only if
+`f '' S` is bounded below and `f u = sInf (f '' S)`. -/
+theorem isMinOn_iff_bddBelow_and_eq_csInf {X β : Type*} [ConditionallyCompleteLattice β]
+    {f : X → β} {S : Set X} {u : X} (hu : u ∈ S) :
+    IsMinOn f S u ↔ BddBelow (f '' S) ∧ f u = sInf (f '' S) :=
+  ⟨fun h ↦ ⟨h.bddBelow, (h.csInf_image_eq hu).symm⟩,
+    fun ⟨hb, heq⟩ _ hx ↦ heq ▸ csInf_le hb (mem_image_of_mem f hx)⟩
+
+end TauCeti
