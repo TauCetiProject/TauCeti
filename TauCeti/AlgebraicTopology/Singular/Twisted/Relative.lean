@@ -448,6 +448,22 @@ instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, 
     by rw [← twistedHomologyCoefficientMap_comp, IsIso.inv_hom_id,
       twistedHomologyCoefficientMap_id]⟩
 
+/-- The relative twisted homology maps of an isomorphism of local coefficient systems and of its
+inverse compose to the identity. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyCoefficientMap_hom_inv_id
+    {K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (e : L ≅ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap e.hom k ≫ P.twistedHomologyCoefficientMap e.inv k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.hom_inv_id, twistedHomologyCoefficientMap_id]
+
+/-- The relative twisted homology maps of the inverse of an isomorphism of local coefficient
+systems and of the isomorphism compose to the identity. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyCoefficientMap_inv_hom_id
+    {K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (e : L ≅ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap e.inv k ≫ P.twistedHomologyCoefficientMap e.hom k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.inv_hom_id, twistedHomologyCoefficientMap_id]
+
 @[reassoc (attr := simp)]
 lemma twistedHomologyMap_comp_twistedHomologyπ (k : ℕ) :
     LocalCoefficientSystem.twistedHomologyMap P.map L k ≫ P.twistedHomologyπ L k = 0 := by
