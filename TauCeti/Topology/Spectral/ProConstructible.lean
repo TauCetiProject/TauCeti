@@ -81,6 +81,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
   pro-constructible subset of a compact, quasi-sober, quasi-separated prespectral space that is
   stable under generalization is the intersection of the quasi-compact opens containing it. This
   is the pro-constructible case of `IsCompact.eq_sInter_of_stableUnderGeneralization`.
+* `IsSpectralMap.generalizingMap_of_isOpenMap` — an open spectral map out of a compact,
+  quasi-sober, quasi-separated prespectral space into a T₀ prespectral space lifts generalizations.
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
@@ -407,6 +409,18 @@ containing it. -/
 theorem IsProConstructible.eq_sInter_of_stableUnderGeneralization (hs : IsProConstructible s)
     (hg : StableUnderGeneralization s) : s = ⋂₀ {U | IsOpen U ∧ IsCompact U ∧ s ⊆ U} :=
   hs.isCompact.eq_sInter_of_stableUnderGeneralization hg
+
+/-- An open spectral map out of a compact, quasi-sober, quasi-separated prespectral space into a T₀
+prespectral space lifts generalizations. -/
+theorem _root_.IsSpectralMap.generalizingMap_of_isOpenMap [PrespectralSpace Y] [T0Space Y]
+    {f : X → Y} (hf : IsSpectralMap f) (ho : IsOpenMap f) : GeneralizingMap f := by
+  intro x y' hy'
+  have hx : x ∈ closure (f ⁻¹' {y'}) := by
+    rw [← ho.preimage_closure_eq_closure_preimage hf.continuous]
+    exact specializes_iff_mem_closure.mp hy'
+  rw [((isProConstructible_singleton y').preimage hf).closure_eq_setOfPred_specializes] at hx
+  obtain ⟨x', hx', hx'x⟩ := hx
+  exact ⟨x', hx'x, hx'⟩
 
 end CompactConstructible
 

@@ -21,6 +21,8 @@ This file records small generic additions to Mathlib's `Setoid` API.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
 * `Setoid.preimage_image_quotientMk_eq_relPreimage`: the saturation of a set is its preimage under
   the graph of the relation.
+* `Setoid.preimage_image_quotientMk_eq_image_fst_preimage_snd`: the saturation of a set is the
+  image under the first graph projection of its preimage under the second graph projection.
 -/
 
 public section
@@ -62,5 +64,19 @@ theorem preimage_image_quotientMk_eq_relPreimage {α : Type*} (r : Setoid α) (s
   ext x
   simp only [Set.mem_preimage, Set.mem_image, Quotient.eq, SetRel.mem_preimage, Set.mem_ofPred_eq]
   exact exists_congr fun y ↦ and_congr_right fun _ ↦ ⟨r.symm, r.symm⟩
+
+/-- The `r`-saturation `Quotient.mk r ⁻¹' (Quotient.mk r '' s)` of a subset `s ⊆ α` is obtained
+by pulling `s` back along the second projection of `{q : α × α | r q.1 q.2}` and taking its image
+under the first projection. -/
+theorem preimage_image_quotientMk_eq_image_fst_preimage_snd {α : Type*} (r : Setoid α)
+    (s : Set α) :
+    Quotient.mk r ⁻¹' (Quotient.mk r '' s) =
+      (fun q : {q : α × α | r q.1 q.2} ↦ q.1.1) ''
+        ((fun q : {q : α × α | r q.1 q.2} ↦ q.1.2) ⁻¹' s) := by
+  ext x
+  simp only [Set.mem_preimage, Set.mem_image, Quotient.eq, Subtype.exists, Prod.exists,
+    Set.mem_ofPred_eq]
+  exact ⟨fun ⟨y, hys, hyx⟩ ↦ ⟨x, y, r.symm hyx, hys, rfl⟩,
+    fun ⟨_, y, hxy, hys, rfl⟩ ↦ ⟨y, hys, r.symm hxy⟩⟩
 
 end Setoid

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.Separation.Basic
 import TauCeti.Topology.Spectral.Quotient
 import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Compactification.StoneCech
@@ -47,15 +48,18 @@ namespace TauCeti
 the constructible topology) and open first projection, so `Quotient (⊥ : Setoid X)` is spectral. -/
 example (X : Type*) [TopologicalSpace X] [SpectralSpace X] :
     SpectralSpace (Quotient (⊥ : Setoid X)) := by
-  have hR : IsProConstructible {q : X × X | (⊥ : Setoid X) q.1 q.2} :=
-    (isSpectralMap_id.comp isProperMap_fst_of_compactSpace.isSpectralMap).isProConstructible_eq
-      (isSpectralMap_id.comp isProperMap_snd_of_compactSpace.isSpectralMap)
+  have hbot : {q : X × X | (⊥ : Setoid X) q.1 q.2} = {q : X × X | q.1 = q.2} := by
+    ext
+    simp
+  have hR : IsProConstructible {q : X × X | (⊥ : Setoid X) q.1 q.2} := by
+    rw [hbot]
+    exact isProperMap_fst_of_compactSpace.isSpectralMap.isProConstructible_eq
+      isProperMap_snd_of_compactSpace.isSpectralMap
   let e : {q : X × X | (⊥ : Setoid X) q.1 q.2} ≃ₜ X :=
     { toFun := fun q ↦ q.1.1
-      invFun := fun x ↦ ⟨(x, x), rfl⟩
-      left_inv := fun q ↦ by
-        have hq : q.1.1 = q.1.2 := q.2
-        exact Subtype.ext (Prod.ext rfl hq)
+      invFun := fun x ↦ ⟨(x, x), (⊥ : Setoid X).refl x⟩
+      left_inv := fun q ↦ Subtype.ext <| Prod.ext rfl <| by
+        simpa only [mem_ofPred_eq, Setoid.bot_def] using q.2
       right_inv := fun _ ↦ rfl
       continuous_toFun := continuous_fst.comp continuous_subtype_val
       continuous_invFun := (continuous_id.prodMk continuous_id).subtype_mk _ }
@@ -65,15 +69,23 @@ example (X : Type*) [TopologicalSpace X] [SpectralSpace X] :
 `univ` and open first projection, so `Quotient (⊤ : Setoid X)` is spectral. -/
 example (X : Type*) [TopologicalSpace X] [SpectralSpace X] :
     SpectralSpace (Quotient (⊤ : Setoid X)) := by
-  have hR : IsProConstructible {q : X × X | (⊤ : Setoid X) q.1 q.2} := isProConstructible_univ
+  have htop : {q : X × X | (⊤ : Setoid X) q.1 q.2} = univ := by
+    ext
+    simp
+  have hR : IsProConstructible {q : X × X | (⊤ : Setoid X) q.1 q.2} := by
+    rw [htop]
+    exact isProConstructible_univ
+  have hR_open : IsOpen {q : X × X | (⊤ : Setoid X) q.1 q.2} := by
+    rw [htop]
+    exact isOpen_univ
   have hs_open : IsOpenMap (fun q : {q : X × X | (⊤ : Setoid X) q.1 q.2} ↦ q.1.1) :=
-    isOpenMap_fst.comp (Homeomorph.Set.univ (X × X)).isOpenMap
+    isOpenMap_fst.comp hR_open.isOpenEmbedding_subtypeVal.isOpenMap
   exact hR.spectralSpace_quotient_of_isOpenMap hs_open
 
 /-- Identifying `(0 : ℕ)` with `∞` in `OnePoint ℕ` gives a pro-constructible equivalence relation
 with generalizing projections for which the saturation of the compact open `{(0 : ℕ)}` is not open,
-while `TauCeti.exists_isOpen_quotientMk_preimage_subset_sInter` still produces a saturated open
-neighbourhood inside a saturated intersection of compact opens. -/
+while `TauCeti.IsProConstructible.exists_isOpen_quotientMk_preimage_subset_sInter` still produces a
+saturated open neighbourhood inside a saturated intersection of compact opens. -/
 example :
     let collapse : OnePoint ℕ → OnePoint ℕ :=
       fun x ↦ x.elim ((0 : ℕ) : OnePoint ℕ) fun n ↦ (n : OnePoint ℕ)
@@ -85,11 +97,12 @@ example :
           Quotient.mk r ⁻¹' (Quotient.mk r '' (⋂₀ 𝒮)) = ⋂₀ 𝒮 ∧
           W ⊆ Quotient.mk r ⁻¹' V ∧ Quotient.mk r ⁻¹' V ⊆ ⋂₀ 𝒮 := by
   intro collapse r W
-  have hSpec : SpectralSpace (OnePoint ℕ) :=
+  have _ : SpectralSpace (OnePoint ℕ) :=
     { toPrespectralSpace := .of_isTopologicalBasis isTopologicalBasis_isClopen
         fun _ hU ↦ hU.isClosed.isCompact }
   have hWo : IsOpen W := by
-    rw [show W = ((↑) : ℕ → OnePoint ℕ) '' {0} by simp [W]]
+    dsimp only [W]
+    rw [← image_singleton]
     exact OnePoint.isOpen_image_coe.mpr (isOpen_discrete _)
   have hsat : Quotient.mk r ⁻¹' (Quotient.mk r '' W) = {((0 : ℕ) : OnePoint ℕ), ∞} := by
     ext x
@@ -121,18 +134,11 @@ example :
         simp +contextual [r, collapse, Setoid.ker_def, eq_comm]
     have hpair : IsClosed ({((0 : ℕ) : OnePoint ℕ), ∞} : Set (OnePoint ℕ)) :=
       (finite_singleton ∞ |>.insert _).isClosed
-    have hR : IsLocallyProConstructible {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} := by
+    have hR : IsProConstructible {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} := by
       rw [hR_eq]
-      exact (isClosed_diagonal.union (hpair.prod hpair)).isLocallyProConstructible
-    have hs_qc : IsSpectralMap (fun q : {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} ↦ q.1.1) :=
-      isProperMap_fst_of_compactSpace.isSpectralMap.comp
-        (isLocallyProConstructible_iff_isProConstructible.mp hR).isSpectralMap_subtypeVal
-    have hs_gen : GeneralizingMap (fun q : {q : OnePoint ℕ × OnePoint ℕ | r q.1 q.2} ↦ q.1.1) := by
-      intro q x' hx'
-      obtain rfl := specializes_iff_eq.mp hx'
-      exact ⟨q, specializes_rfl, rfl⟩
-    exact exists_isOpen_quotientMk_preimage_subset_sInter SpectralSpace.isLocallySpectralSpace
-      hR hs_qc hs_gen hWo isCompact_singleton
+      exact (isClosed_diagonal.union (hpair.prod hpair)).isProConstructible
+    exact hR.exists_isOpen_quotientMk_preimage_subset_sInter generalizingMap_of_t1Space hWo
+      isCompact_singleton
 
 /-- On discrete `ℕ`, the total relation `⊤` has locally pro-constructible graph and open,
 generalizing, locally spectral first projection, yet neither the first projection nor
@@ -150,21 +156,26 @@ example :
   have hN : IsLocallySpectralSpace ℕ :=
     isLocallySpectralSpace_iff.mpr fun n ↦ ⟨{n}, isOpen_discrete _, rfl, {}⟩
   have hNN : IsLocallySpectralSpace (ℕ × ℕ) := hN.prod hN
-  have hR : IsLocallyProConstructible {q : ℕ × ℕ | r q.1 q.2} := isLocallyProConstructible_univ
+  have htop : {q : ℕ × ℕ | r q.1 q.2} = univ := by
+    ext
+    simp [r]
+  have hR : IsLocallyProConstructible {q : ℕ × ℕ | r q.1 q.2} := by
+    rw [htop]
+    exact isLocallyProConstructible_univ
+  have hR_open : IsOpen {q : ℕ × ℕ | r q.1 q.2} := by
+    rw [htop]
+    exact isOpen_univ
   have hs_open : IsOpenMap (fun q : {q : ℕ × ℕ | r q.1 q.2} ↦ q.1.1) :=
-    isOpenMap_fst.comp (Homeomorph.Set.univ (ℕ × ℕ)).isOpenMap
-  have hs_gen : GeneralizingMap (fun q : {q : ℕ × ℕ | r q.1 q.2} ↦ q.1.1) := by
-    intro q x' hx'
-    obtain rfl := specializes_iff_eq.mp hx'
-    exact ⟨q, specializes_rfl, rfl⟩
+    isOpenMap_fst.comp hR_open.isOpenEmbedding_subtypeVal.isOpenMap
+  have hs_gen : GeneralizingMap (fun q : {q : ℕ × ℕ | r q.1 q.2} ↦ q.1.1) :=
+    generalizingMap_of_t1Space
   have hs_ls : IsLocallySpectralMap (fun q : {q : ℕ × ℕ | r q.1 q.2} ↦ q.1.1) :=
-    IsLocallySpectralMap.comp hNN (hN.isLocallySpectralMap_fst hN)
-      (hR.isLocallySpectralMap_subtypeVal hNN)
+    IsLocallySpectralMap.comp hNN hN.isLocallySpectralMap_fst hR.isLocallySpectralMap_subtypeVal
   refine ⟨hN, hR, hs_open, hs_gen, hs_ls, fun hs_spec ↦ ?_, fun hπ_spec ↦ ?_⟩
   · have hc := hs_spec.isCompact_preimage_of_isOpen (isOpen_discrete {0}) isCompact_singleton
     rw [isCompact_iff_finite] at hc
     exact infinite_of_injective_forall_mem
-      (f := fun n : ℕ ↦ (⟨(0, n), trivial⟩ : {q : ℕ × ℕ | r q.1 q.2}))
+      (f := fun n : ℕ ↦ (⟨(0, n), by simp [r]⟩ : {q : ℕ × ℕ | r q.1 q.2}))
       (fun _ _ h ↦ congrArg (fun q ↦ q.1.2) h) (fun _ ↦ rfl) hc
   · have hVo : IsOpen ({Quotient.mk r 0} : Set (Quotient r)) := by
       have hq : IsQuotientMap (Quotient.mk r) := isQuotientMap_quot_mk
@@ -172,7 +183,7 @@ example :
       exact isOpen_discrete _
     have hc := hπ_spec.isCompact_preimage_of_isOpen hVo isCompact_singleton
     have hpre : Quotient.mk r ⁻¹' {Quotient.mk r 0} = univ :=
-      eq_univ_of_forall fun n ↦ Quotient.sound (s := r) trivial
+      eq_univ_of_forall fun n ↦ Quotient.sound (s := r) (by simp [r])
     rw [hpre, isCompact_iff_finite] at hc
     exact infinite_univ hc
 
@@ -199,10 +210,8 @@ example :
     (isClosed_eq (f.continuous.comp continuous_fst)
       (f.continuous.comp continuous_snd)).isProConstructible
   have hs_gen : GeneralizingMap
-      (fun q : {q : Ultrafilter unitInterval × Ultrafilter unitInterval | r q.1 q.2} ↦ q.1.1) := by
-    intro q x' hx'
-    obtain rfl := specializes_iff_eq.mp hx'
-    exact ⟨q, specializes_rfl, rfl⟩
+      (fun q : {q : Ultrafilter unitInterval × Ultrafilter unitInterval | r q.1 q.2} ↦ q.1.1) :=
+    generalizingMap_of_t1Space
   refine ⟨inferInstance, hR, hs_gen, hR.t0Space_quotient hs_gen,
     hR.generalizingMap_quotientMk hs_gen, fun hspec ↦ ?_⟩
   have hf_surj : Function.Surjective f := fun y ↦ ⟨pure y, ultrafilter_extend_pure id y⟩

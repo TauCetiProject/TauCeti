@@ -50,6 +50,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 * `TauCeti.spectralSpace_univ` : the full subspace of a spectral space is spectral.
 * `IsSpectralMap.isConstructible_preimage` : constructible sets pull back along spectral maps
   from quasiseparated spaces to compact spaces.
+* `IsSpectralMap.quasiSeparatedSpace_of_surjective` : quasiseparatedness descends along surjective
+  spectral maps.
 * `Homeomorph.spectralSpace` : spectrality transports along a homeomorphism.
 
 ## References
@@ -220,6 +222,16 @@ protected theorem _root_.Homeomorph.spectralSpace [SpectralSpace X] (e : X ≃�
 protected theorem _root_.Homeomorph.spectralSpace_iff (e : X ≃ₜ Y) :
     SpectralSpace X ↔ SpectralSpace Y :=
   ⟨fun _ ↦ e.spectralSpace, fun _ ↦ e.symm.spectralSpace⟩
+
+/-- Quasiseparatedness descends along any surjective spectral map. -/
+theorem _root_.IsSpectralMap.quasiSeparatedSpace_of_surjective [QuasiSeparatedSpace X] {f : X → Y}
+    (hf : IsSpectralMap f) (hsurj : Function.Surjective f) : QuasiSeparatedSpace Y where
+  inter_isCompact V₁ V₂ hV₁o hV₁c hV₂o hV₂c := by
+    have hpre : IsCompact (f ⁻¹' (V₁ ∩ V₂)) :=
+      QuasiSeparatedSpace.inter_isCompact _ _
+        (hV₁o.preimage hf.continuous) (hf.isCompact_preimage_of_isOpen hV₁o hV₁c)
+        (hV₂o.preimage hf.continuous) (hf.isCompact_preimage_of_isOpen hV₂o hV₂c)
+    simpa only [image_preimage_eq _ hsurj] using hpre.image hf.continuous
 
 end TauCeti
 

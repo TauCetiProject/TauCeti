@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Defs
+public import Mathlib.Topology.Inseparable
+import Mathlib.Topology.LocalAtTarget
+import TauCeti.Data.Setoid.Basic
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # Quotients by setoids and fibre products of topological spaces
@@ -21,6 +25,11 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `TauCeti.generalizingMap_fst_setoid_iff_snd`, `TauCeti.isOpenMap_fst_setoid_iff_snd`: symmetry
+  equivalences between the two projections of the graph of a setoid for `GeneralizingMap` and
+  `IsOpenMap`.
+* `IsOpenMap.quotientMk`, `IsOpen.isOpenMap_fst_setoid_comap`: openness of `Quotient.mk r` and
+  restriction of an open setoid graph projection to an open subspace.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
   fibre product are continuous.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
@@ -79,6 +88,59 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
 
 end Setoid
+
+namespace TauCeti
+
+variable {X : Type*} [TopologicalSpace X] {r : Setoid X}
+
+/-- For a setoid `r` on `X`, the first projection of `{q : X × X | r q.1 q.2}` lifts
+generalizations if and only if the second projection does. -/
+theorem generalizingMap_fst_setoid_iff_snd :
+    GeneralizingMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ↔
+      GeneralizingMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) := by
+  refine ⟨fun hs ↦ ?_, fun ht ↦ ?_⟩
+  · rw [← r.fst_comp_swapHomeomorph]
+    exact r.swapHomeomorph.isOpenEmbedding.generalizingMap.comp hs
+  · rw [← r.snd_comp_swapHomeomorph]
+    exact r.swapHomeomorph.isOpenEmbedding.generalizingMap.comp ht
+
+/-- For a setoid `r` on `X`, the first projection of `{q : X × X | r q.1 q.2}` is an open map if
+and only if the second projection is. -/
+theorem isOpenMap_fst_setoid_iff_snd :
+    IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ↔
+      IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) := by
+  refine ⟨fun hs ↦ ?_, fun ht ↦ ?_⟩
+  · rw [← r.fst_comp_swapHomeomorph]
+    exact hs.comp r.swapHomeomorph.isOpenMap
+  · rw [← r.snd_comp_swapHomeomorph]
+    exact ht.comp r.swapHomeomorph.isOpenMap
+
+/-- If the first projection of `{q : X × X | r q.1 q.2}` is an open map, then the quotient map
+`Quotient.mk r : X → Quotient r` is an open map. -/
+theorem _root_.IsOpenMap.quotientMk
+    (hs : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
+    IsOpenMap (Quotient.mk r) := by
+  have hq : IsQuotientMap (Quotient.mk r) := isQuotientMap_quot_mk
+  intro U hUo
+  rw [← hq.isOpen_preimage, r.preimage_image_quotientMk_eq_image_fst_preimage_snd]
+  exact hs _ (hUo.preimage (continuous_snd.comp continuous_subtype_val))
+
+/-- Restricting a setoid `r` to an open subset `U ⊆ X` preserves openness of the first projection
+of its graph. -/
+theorem _root_.IsOpen.isOpenMap_fst_setoid_comap {U : Set X} (hU : IsOpen U)
+    (hs : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
+    IsOpenMap (fun q : {q : U × U | (r.comap Subtype.val) q.1 q.2} ↦ q.1.1) := by
+  have heq : Subtype.val ∘ (fun q : {q : U × U | (r.comap Subtype.val) q.1 q.2} ↦ q.1.1) =
+      (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ∘
+        ({q : X × X | r q.1 q.2}.restrictPreimage (Prod.map Subtype.val Subtype.val)) := by
+    funext _
+    rfl
+  refine hU.isOpenEmbedding_subtypeVal.isOpenMap_iff.mpr ?_
+  rw [heq]
+  exact hs.comp ((hU.isOpenEmbedding_subtypeVal.prodMap
+    hU.isOpenEmbedding_subtypeVal).restrictPreimage {q : X × X | r q.1 q.2}).isOpenMap
+
+end TauCeti
 
 section Pullback
 

@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Topology.Spectral.LocallyProConstructible
 public import TauCeti.Topology.Spectral.Limits.Basic
+import TauCeti.Data.Setoid.Basic
+import TauCeti.Topology.Constructions.Basic
+import TauCeti.Topology.Homeomorph.Quotient
 import TauCeti.Topology.Sober
-import Mathlib.Topology.ContinuousMap.Basic
-import Mathlib.Topology.Homeomorph.Quotient
 import Mathlib.Topology.WithTopology
 
 /-!
@@ -35,11 +36,13 @@ Under these hypotheses:
   open; instead one encloses `E` in a compact open `W'`, removes the closure of the saturation of
   `W'ᶜ`, and sets `E'` to be the saturation of `W'`.
 
-These hypotheses alone do not make `Quotient r` spectral: every compact Hausdorff space arises as
-such a quotient of the Stone–Čech compactification of its underlying discrete set. Adding a
-topological basis of `Quotient r` with compact preimages under `Quotient.mk r` yields spectrality
-of `Quotient r` (`TauCeti.spectralSpace_quotient`) via the patch criterion applied to the quotient
-of the constructible topology of `X`, while `TauCeti.isSpectralMap_of_isTopologicalBasis` gives
+Even when `X` is a spectral space (so `R` is pro-constructible and its projections are
+automatically quasi-compact), these hypotheses alone do not make `Quotient r` spectral: every
+compact Hausdorff space arises as such a quotient of the Stone–Čech compactification of its
+underlying discrete set. On a spectral space `X`, adding a topological basis of `Quotient r` with
+compact preimages under `Quotient.mk r` yields spectrality of `Quotient r`
+(`TauCeti.spectralSpace_quotient`) via the patch criterion applied to the quotient of the
+constructible topology of `X`, while `TauCeti.isSpectralMap_of_isTopologicalBasis` gives
 spectrality of `Quotient.mk r`.
 
 In geometric applications, the basis hypothesis is supplied by openness of `q ↦ q.1.1`: on a
@@ -50,19 +53,19 @@ spectral, and `Quotient r` is quasiseparated and locally spectral
 
 ## Main results
 
-* `TauCeti.generalizingMap_fst_setoid_iff`, `TauCeti.isSpectralMap_fst_setoid_iff`,
-  `TauCeti.isOpenMap_fst_setoid_iff`: symmetry equivalences between the two projections of a
-  setoid graph.
-* `IsOpenMap.quotientMk`, `IsOpen.isOpenMap_fst_setoid_comap`, `IsOpen.quotientComapHomeomorph`:
-  openness of `Quotient.mk r`, open restriction of setoid projections, and the quotient
-  homeomorphism on saturated open preimages.
-* `TauCeti.IsLocallyProConstructible.preimage_image_quotientMk`: `r`-saturations preserve local
+* `TauCeti.isSpectralMap_fst_setoid_iff_snd`: symmetry equivalence between the two projections of a
+  setoid graph for `IsSpectralMap`.
+* `TauCeti.IsLocallyProConstructible.preimage_image_quotientMk`,
+  `TauCeti.IsProConstructible.preimage_image_quotientMk`: `r`-saturations preserve local and global
   pro-constructibility.
-* `TauCeti.generalizingMap_quotientMk`, `TauCeti.t0Space_quotient`: generalization lifting for
-  `Quotient.mk r` and T₀ separation of `Quotient r` (Scholze, Lemma 2.7(i)).
+* `TauCeti.generalizingMap_quotientMk`, `TauCeti.t0Space_quotient`,
+  `TauCeti.IsProConstructible.generalizingMap_quotientMk`,
+  `TauCeti.IsProConstructible.t0Space_quotient`: generalization lifting for `Quotient.mk r` and T₀
+  separation of `Quotient r` (Scholze, Lemma 2.7(i)).
 * `TauCeti.exists_isOpen_quotientMk_preimage_subset_of_subset`,
-  `TauCeti.exists_isOpen_quotientMk_preimage_subset_sInter`: saturated open neighbourhoods inside
-  saturated intersections of compact opens (Scholze, Lemma 2.7(ii)).
+  `TauCeti.exists_isOpen_quotientMk_preimage_subset_sInter`,
+  `TauCeti.IsProConstructible.exists_isOpen_quotientMk_preimage_subset_sInter`: saturated open
+  neighbourhoods inside saturated intersections of compact opens (Scholze, Lemma 2.7(ii)).
 * `TauCeti.spectralSpace_quotient`: basis criterion for spectrality of `Quotient r` (Scholze,
   Lemma 2.9).
 * `TauCeti.isSpectralMap_quotientMk_of_isOpenMap`,
@@ -88,96 +91,34 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] {r : Setoid X}
 
-/-! ### Symmetry of setoid projections, saturations, and open restrictions -/
-
-/-- Coordinate swap on `X × X` restricts to an involutive homeomorphism of the graph of any
-equivalence relation `r`. -/
-private def setoidSwapHomeomorph (r : Setoid X) :
-    {q : X × X | r q.1 q.2} ≃ₜ {q : X × X | r q.1 q.2} :=
-  (Homeomorph.prodComm X X).subtype fun _ ↦ ⟨fun h ↦ r.symm h, fun h ↦ r.symm h⟩
-
-/-- For a setoid `r` on `X`, the first projection of `{q : X × X | r q.1 q.2}` lifts
-generalizations if and only if the second projection does. -/
-theorem generalizingMap_fst_setoid_iff :
-    GeneralizingMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ↔
-      GeneralizingMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) := by
-  let e := setoidSwapHomeomorph r
-  refine ⟨fun hs q x' hx' ↦ ?_, fun ht q x' hx' ↦ ?_⟩
-  · obtain ⟨p, hp, hfp⟩ := @hs (e q) x' hx'
-    exact ⟨e p, hp.map e.continuous, hfp⟩
-  · obtain ⟨p, hp, hfp⟩ := @ht (e q) x' hx'
-    exact ⟨e p, hp.map e.continuous, hfp⟩
+/-! ### Symmetry of spectral setoid projections and saturations -/
 
 /-- For a setoid `r` on `X`, the first projection of `{q : X × X | r q.1 q.2}` is a spectral map
 if and only if the second projection is. -/
-theorem isSpectralMap_fst_setoid_iff :
+theorem isSpectralMap_fst_setoid_iff_snd :
     IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ↔
-      IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) :=
-  ⟨fun hs ↦ hs.comp (setoidSwapHomeomorph r).isProperMap.isSpectralMap,
-    fun ht ↦ ht.comp (setoidSwapHomeomorph r).isProperMap.isSpectralMap⟩
+      IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) := by
+  refine ⟨fun hs ↦ ?_, fun ht ↦ ?_⟩
+  · rw [← r.fst_comp_swapHomeomorph]
+    exact hs.comp r.swapHomeomorph.isProperMap.isSpectralMap
+  · rw [← r.snd_comp_swapHomeomorph]
+    exact ht.comp r.swapHomeomorph.isProperMap.isSpectralMap
 
-/-- For a setoid `r` on `X`, the first projection of `{q : X × X | r q.1 q.2}` is an open map if
-and only if the second projection is. -/
-theorem isOpenMap_fst_setoid_iff :
-    IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ↔
-      IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) :=
-  ⟨fun hs ↦ hs.comp (setoidSwapHomeomorph r).isOpenMap,
-    fun ht ↦ ht.comp (setoidSwapHomeomorph r).isOpenMap⟩
+/-- When the first projection of `{q : X × X | r q.1 q.2}` is a spectral map, the `r`-saturation of
+every compact open subset of `X` is compact. -/
+private theorem isCompact_preimage_image_quotientMk
+    (hs_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1))
+    {W : Set X} (hWo : IsOpen W) (hWc : IsCompact W) :
+    IsCompact (Quotient.mk r ⁻¹' (Quotient.mk r '' W)) := by
+  rw [r.preimage_image_quotientMk_eq_image_fst_preimage_snd]
+  exact ((isSpectralMap_fst_setoid_iff_snd.mp hs_qc).isCompact_preimage_of_isOpen hWo hWc).image
+    hs_qc.continuous
 
 omit [TopologicalSpace X] in
-/-- The `r`-saturation `Quotient.mk r ⁻¹' (Quotient.mk r '' s)` of a subset `s ⊆ X` is obtained
-by pulling `s` back along the second projection of `{q : X × X | r q.1 q.2}` and taking its image
-under the first projection. -/
-theorem preimage_image_quotientMk_eq {s : Set X} :
-    Quotient.mk r ⁻¹' (Quotient.mk r '' s) =
-      (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) ''
-        ((fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) ⁻¹' s) := by
-  ext x
-  simp only [mem_preimage, mem_image, Quotient.eq, Subtype.exists, Prod.exists, mem_ofPred_eq]
-  exact ⟨fun ⟨y, hys, hyx⟩ ↦ ⟨x, y, r.symm hyx, hys, rfl⟩,
-    fun ⟨_, y, hxy, hys, rfl⟩ ↦ ⟨y, hys, r.symm hxy⟩⟩
-
-/-- If the first projection of `{q : X × X | r q.1 q.2}` is an open map, then the quotient map
-`Quotient.mk r : X → Quotient r` is an open map. -/
-theorem _root_.IsOpenMap.quotientMk
-    (hs : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
-    IsOpenMap (Quotient.mk r) := by
-  have hq : IsQuotientMap (Quotient.mk r) := isQuotientMap_quot_mk
-  intro U hUo
-  rw [← hq.isOpen_preimage, preimage_image_quotientMk_eq]
-  exact hs _ (hUo.preimage (continuous_snd.comp continuous_subtype_val))
-
-/-- Restricting a setoid `r` to an open subset `U ⊆ X` preserves openness of the first projection
-of its graph. -/
-theorem _root_.IsOpen.isOpenMap_fst_setoid_comap {U : Set X} (hU : IsOpen U)
-    (hs : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
-    IsOpenMap (fun q : {q : U × U | (r.comap Subtype.val) q.1 q.2} ↦ q.1.1) := by
-  let ι : {q : U × U | (r.comap Subtype.val) q.1 q.2} → {q : X × X | r q.1 q.2} :=
-    fun q ↦ ⟨(q.1.1.1, q.1.2.1), q.2⟩
-  have hι_emb : IsEmbedding ι :=
-    IsEmbedding.subtypeVal.of_comp_iff.mp
-      ((hU.isOpenEmbedding_subtypeVal.prodMap
-        hU.isOpenEmbedding_subtypeVal).isEmbedding.comp IsEmbedding.subtypeVal)
-  have hι_rng : Set.range ι = Subtype.val ⁻¹' (U ×ˢ U) := by
-    ext ⟨⟨x, y⟩, hxy⟩
-    exact ⟨fun ⟨q, hq⟩ ↦ by cases hq; exact ⟨q.1.1.2, q.1.2.2⟩,
-      fun ⟨hx, hy⟩ ↦ ⟨⟨(⟨x, hx⟩, ⟨y, hy⟩), hxy⟩, rfl⟩⟩
-  have hι : IsOpenEmbedding ι :=
-    ⟨hι_emb, hι_rng ▸ (hU.prod hU).preimage continuous_subtype_val⟩
-  exact hU.isOpenEmbedding_subtypeVal.isOpenMap_iff.mpr (hs.comp hι.isOpenMap)
-
-/-- For an open subset `V` of `Quotient r`, the quotient of the saturated open preimage
-`Quotient.mk r ⁻¹' V` by the induced setoid `r.comap Subtype.val` is canonically homeomorphic to
-`V`. -/
-noncomputable def _root_.IsOpen.quotientComapHomeomorph {V : Set (Quotient r)} (hV : IsOpen V) :
-    Quotient (r.comap (Subtype.val : Quotient.mk r ⁻¹' V → X)) ≃ₜ V :=
-  let g : C(Quotient.mk r ⁻¹' V, V) :=
-    ⟨V.restrictPreimage (Quotient.mk r), continuous_quot_mk.restrictPreimage⟩
-  have hg : IsQuotientMap g := (isQuotientMap_quot_mk (r := r.r)).restrictPreimage_isOpen hV
-  (Homeomorph.Quotient.congrRight (r := r.comap Subtype.val) (r' := Setoid.ker g) fun _ _ ↦
-    ⟨fun h ↦ Setoid.ker_def.mpr (Subtype.ext (Quotient.sound h)),
-      fun h ↦ Quotient.exact (s := r) (congrArg Subtype.val (Setoid.ker_def.mp h))⟩).trans
-    hg.homeomorph
+/-- Any preimage along `Quotient.mk r` is `r`-saturated. -/
+private theorem mem_preimage_quotientMk_of_rel {T : Set (Quotient r)} ⦃u v : X⦄ (huv : r u v)
+    (hu : u ∈ Quotient.mk r ⁻¹' T) : v ∈ Quotient.mk r ⁻¹' T := by
+  simpa only [mem_preimage, ← Quotient.sound huv] using hu
 
 /-! ### Locally pro-constructible equivalence relations -/
 
@@ -192,12 +133,12 @@ theorem IsLocallyProConstructible.preimage_image_quotientMk {s : Set X}
   have hXX : IsLocallySpectralSpace (X × X) := hX.prod hX
   have hR_ls : IsLocallySpectralSpace {q : X × X | r q.1 q.2} := hR.isLocallySpectralSpace hXX
   have hsub : IsLocallySpectralMap ((↑) : {q : X × X | r q.1 q.2} → X × X) :=
-    hR.isLocallySpectralMap_subtypeVal hXX
+    hR.isLocallySpectralMap_subtypeVal
   have hfst : IsLocallySpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) :=
-    IsLocallySpectralMap.comp hXX (hX.isLocallySpectralMap_fst hX) hsub
+    IsLocallySpectralMap.comp hXX hX.isLocallySpectralMap_fst hsub
   have hsnd : IsLocallySpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) :=
-    IsLocallySpectralMap.comp hXX (hX.isLocallySpectralMap_snd hX) hsub
-  rw [preimage_image_quotientMk_eq]
+    IsLocallySpectralMap.comp hXX hX.isLocallySpectralMap_snd hsub
+  rw [r.preimage_image_quotientMk_eq_image_fst_preimage_snd]
   exact (hs.preimage hX hsnd).image hR_ls hfst hs_qc
 
 /-- If `s ⊆ X` is locally pro-constructible and `r`-saturated on a locally spectral space `X`,
@@ -241,12 +182,11 @@ theorem generalizingMap_quotientMk (hX : IsLocallySpectralSpace X)
   let Fz : Set X := Quotient.mk r ⁻¹' (Quotient.mk r '' {z})
   have hFz : IsLocallyProConstructible Fz :=
     (isLocallyProConstructible_singleton z).preimage_image_quotientMk hX hR hs_qc
-  have hFz_sat : ∀ ⦃u v : X⦄, r u v → u ∈ Fz → v ∈ Fz := fun _ _ huv hu ↦ by
-    simpa only [Fz, mem_preimage, ← Quotient.sound huv] using hu
   have hx : Quotient.mk r x ∈ Quotient.mk r '' closure Fz :=
-    hb.mem_closed (hFz.isClosed_image_quotientMk_closure hX hs_gen hFz_sat)
+    hb.mem_closed (hFz.isClosed_image_quotientMk_closure hX hs_gen mem_preimage_quotientMk_of_rel)
       (mem_image_of_mem _ (subset_closure ⟨z, rfl, rfl⟩))
-  rw [← mem_preimage, hFz.preimage_image_quotientMk_closure_eq hX hs_gen hFz_sat,
+  rw [← mem_preimage,
+    hFz.preimage_image_quotientMk_closure_eq hX hs_gen mem_preimage_quotientMk_of_rel,
     hFz.closure_eq_setOfPred_specializes hX] at hx
   obtain ⟨x', ⟨_, rfl, hzx'⟩, hx'x⟩ := hx
   exact ⟨x', hx'x, hzx'.symm⟩
@@ -268,9 +208,7 @@ theorem t0Space_quotient (hX : IsLocallySpectralSpace X)
       (isLocallyProConstructible_singleton z).preimage_image_quotientMk hX hR hs_qc
   have hF_cl (z : X) : ∀ ⦃u v : X⦄, r u v → u ∈ closure (F z) → v ∈ closure (F z) :=
     fun u v huv hu ↦ by
-      have hsat : ∀ ⦃a b : X⦄, r a b → a ∈ F z → b ∈ F z :=
-        fun _ _ hab ha ↦ (Quotient.sound hab).symm.trans ha
-      rw [← (hF z).preimage_image_quotientMk_closure_eq hX hs_gen hsat]
+      rw [← (hF z).preimage_image_quotientMk_closure_eq hX hs_gen mem_preimage_quotientMk_of_rel]
       exact ⟨u, hu, Quotient.sound huv⟩
   obtain ⟨x₀, hx₀y, hx₀x⟩ := @hπ_gen y (Quotient.mk r x) hab.specializes
   obtain ⟨y₀, hy₀x, hy₀y⟩ := @hπ_gen x (Quotient.mk r y) hab.symm.specializes
@@ -296,8 +234,9 @@ theorem t0Space_quotient (hX : IsLocallySpectralSpace X)
     ⟨hF_cl x (Quotient.exact hw.symm) hy_clx, subset_closure hw⟩
   exact hxη.symm.trans hyη
 
-/-- If an open set `W'` contains the `r`-saturation of an open set `W`, then removing the closure
-of the `r`-saturation of `W'ᶜ` produces an open subset `V` of `Quotient r` with
+/-- Along a locally pro-constructible equivalence relation `r` on a locally spectral space `X` with
+quasi-compact, generalizing projections, if an open set `W'` contains the `r`-saturation of an open
+set `W`, then there exists an open subset `V` of `Quotient r` such that
 `W ⊆ Quotient.mk r ⁻¹' V ⊆ W'`. -/
 theorem exists_isOpen_quotientMk_preimage_subset_of_subset (hX : IsLocallySpectralSpace X)
     (hR : IsLocallyProConstructible {q : X × X | r q.1 q.2})
@@ -306,15 +245,16 @@ theorem exists_isOpen_quotientMk_preimage_subset_of_subset (hX : IsLocallySpectr
     {W W' : Set X} (hWo : IsOpen W) (hW'o : IsOpen W')
     (hWW' : Quotient.mk r ⁻¹' (Quotient.mk r '' W) ⊆ W') :
     ∃ V : Set (Quotient r), IsOpen V ∧ W ⊆ Quotient.mk r ⁻¹' V ∧ Quotient.mk r ⁻¹' V ⊆ W' := by
+  -- Remove the closure of the `r`-saturation of `W'ᶜ`.
   let S : Set X := Quotient.mk r ⁻¹' (Quotient.mk r '' W'ᶜ)
   have hS : IsLocallyProConstructible S :=
     hW'o.isClosed_compl.isLocallyProConstructible.preimage_image_quotientMk hX hR hs_qc
-  have hS_sat : ∀ ⦃u v : X⦄, r u v → u ∈ S → v ∈ S := fun _ _ huv hu ↦ by
-    simpa only [S, mem_preimage, ← Quotient.sound huv] using hu
   let V : Set (Quotient r) := (Quotient.mk r '' closure S)ᶜ
-  have hVo : IsOpen V := (hS.isClosed_image_quotientMk_closure hX hs_gen hS_sat).isOpen_compl
+  have hVo : IsOpen V :=
+    (hS.isClosed_image_quotientMk_closure hX hs_gen mem_preimage_quotientMk_of_rel).isOpen_compl
   have hpre : Quotient.mk r ⁻¹' V = (closure S)ᶜ := by
-    rw [preimage_compl, hS.preimage_image_quotientMk_closure_eq hX hs_gen hS_sat]
+    rw [preimage_compl,
+      hS.preimage_image_quotientMk_closure_eq hX hs_gen mem_preimage_quotientMk_of_rel]
   refine ⟨V, hVo, ?_, ?_⟩
   · rw [hpre]
     intro x hxW hxcl
@@ -323,9 +263,11 @@ theorem exists_isOpen_quotientMk_preimage_subset_of_subset (hX : IsLocallySpectr
   · rw [hpre, compl_subset_comm]
     exact (subset_preimage_image _ W'ᶜ).trans subset_closure
 
-/-- **Scholze, Lemma 2.7(ii)**: for every compact open `W ⊆ X`, there exist an open subset `V` of
-`Quotient r` and a nonempty family `𝒮` of compact open subsets of `X` whose intersection `⋂₀ 𝒮` is
-`r`-saturated and satisfies `W ⊆ Quotient.mk r ⁻¹' V ⊆ ⋂₀ 𝒮`. -/
+/-- **Scholze, Lemma 2.7(ii)**: along a locally pro-constructible equivalence relation `r` on a
+locally spectral space `X` with quasi-compact, generalizing projections, for every compact open
+`W ⊆ X` there exist an open subset `V` of `Quotient r` and a nonempty family `𝒮` of compact open
+subsets of `X` whose intersection `⋂₀ 𝒮` is `r`-saturated and satisfies
+`W ⊆ Quotient.mk r ⁻¹' V ⊆ ⋂₀ 𝒮`. -/
 theorem exists_isOpen_quotientMk_preimage_subset_sInter (hX : IsLocallySpectralSpace X)
     (hR : IsLocallyProConstructible {q : X × X | r q.1 q.2})
     (hs_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1))
@@ -336,28 +278,19 @@ theorem exists_isOpen_quotientMk_preimage_subset_sInter (hX : IsLocallySpectralS
         Quotient.mk r ⁻¹' (Quotient.mk r '' (⋂₀ 𝒮)) = ⋂₀ 𝒮 ∧
         W ⊆ Quotient.mk r ⁻¹' V ∧ Quotient.mk r ⁻¹' V ⊆ ⋂₀ 𝒮 := by
   have _ : PrespectralSpace X := hX.prespectralSpace
-  have ht_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) :=
-    isSpectralMap_fst_setoid_iff.mp hs_qc
   -- Enclose the compact saturation `E` of `W` in a compact open `W'`.
-  have hEc : IsCompact (Quotient.mk r ⁻¹' (Quotient.mk r '' W)) := by
-    rw [preimage_image_quotientMk_eq]
-    exact (ht_qc.isCompact_preimage_of_isOpen hWo hWc).image hs_qc.continuous
+  have hEc : IsCompact (Quotient.mk r ⁻¹' (Quotient.mk r '' W)) :=
+    isCompact_preimage_image_quotientMk hs_qc hWo hWc
   obtain ⟨W', hW'c, hW'o, hEW', -⟩ :=
     PrespectralSpace.exists_isCompact_and_isOpen_between hEc isOpen_univ (subset_univ _)
   obtain ⟨V, hVo, hWV, hVW'⟩ :=
     exists_isOpen_quotientMk_preimage_subset_of_subset hX hR hs_qc hs_gen hWo hW'o hEW'
   -- The saturation `E'` of `W'` is compact and stable under generalization, hence `⋂₀ 𝒮`.
   let E' : Set X := Quotient.mk r ⁻¹' (Quotient.mk r '' W')
-  have hE'c : IsCompact E' := by
-    rw [show E' = _ from preimage_image_quotientMk_eq]
-    exact (ht_qc.isCompact_preimage_of_isOpen hW'o hW'c).image hs_qc.continuous
-  have hE'gen : StableUnderGeneralization E' := by
-    intro x x' hx'x hx
-    rw [show E' = _ from preimage_image_quotientMk_eq] at hx ⊢
-    obtain ⟨q, hqW', rfl⟩ := hx
-    obtain ⟨q', hq'q, hq'1⟩ := @hs_gen q x' hx'x
-    exact ⟨q', hW'o.stableUnderGeneralization
-      (hq'q.map (continuous_snd.comp continuous_subtype_val)) hqW', hq'1⟩
+  have hE'c : IsCompact E' := isCompact_preimage_image_quotientMk hs_qc hW'o hW'c
+  have hE'gen : StableUnderGeneralization E' :=
+    (hW'o.stableUnderGeneralization.image (generalizingMap_quotientMk hX hR hs_qc hs_gen)).preimage
+      continuous_quot_mk
   let 𝒮 : Set (Set X) := {O : Set X | IsOpen O ∧ IsCompact O ∧ E' ⊆ O}
   have hE'eq : E' = ⋂₀ 𝒮 := hE'c.eq_sInter_of_stableUnderGeneralization hE'gen
   obtain ⟨W'', hW''c, hW''o, hE'W'', -⟩ :=
@@ -373,6 +306,16 @@ theorem exists_isOpen_quotientMk_preimage_subset_sInter (hX : IsLocallySpectralS
 section GlobalSpectral
 
 variable [SpectralSpace X]
+
+/-- On a spectral space, the saturation of a pro-constructible subset along a pro-constructible
+equivalence relation is pro-constructible. -/
+theorem IsProConstructible.preimage_image_quotientMk {s : Set X} (hs : IsProConstructible s)
+    (hR : IsProConstructible {q : X × X | r q.1 q.2}) :
+    IsProConstructible (Quotient.mk r ⁻¹' (Quotient.mk r '' s)) :=
+  isLocallyProConstructible_iff_isProConstructible.mp <|
+    hs.isLocallyProConstructible.preimage_image_quotientMk SpectralSpace.isLocallySpectralSpace
+      hR.isLocallyProConstructible
+      (isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal)
 
 /-- On a spectral space, a pro-constructible equivalence relation with generalizing first
 projection has a T₀ quotient. -/
@@ -392,6 +335,23 @@ theorem IsProConstructible.generalizingMap_quotientMk
   TauCeti.generalizingMap_quotientMk SpectralSpace.isLocallySpectralSpace
     hR.isLocallyProConstructible
     (isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal) hs
+
+/-- Global spectral form of `TauCeti.exists_isOpen_quotientMk_preimage_subset_sInter`: on a
+spectral space `X`, if `r` is a pro-constructible equivalence relation whose first projection lifts
+generalizations, then every compact open `W ⊆ X` is contained in an `r`-saturated open subset
+`Quotient.mk r ⁻¹' V` inside a saturated intersection `⋂₀ 𝒮` of a nonempty family `𝒮` of compact
+opens. -/
+theorem IsProConstructible.exists_isOpen_quotientMk_preimage_subset_sInter
+    (hR : IsProConstructible {q : X × X | r q.1 q.2})
+    (hs : GeneralizingMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1))
+    {W : Set X} (hWo : IsOpen W) (hWc : IsCompact W) :
+    ∃ (V : Set (Quotient r)) (𝒮 : Set (Set X)),
+      IsOpen V ∧ 𝒮.Nonempty ∧ (∀ O ∈ 𝒮, IsOpen O ∧ IsCompact O) ∧
+        Quotient.mk r ⁻¹' (Quotient.mk r '' (⋂₀ 𝒮)) = ⋂₀ 𝒮 ∧
+        W ⊆ Quotient.mk r ⁻¹' V ∧ Quotient.mk r ⁻¹' V ⊆ ⋂₀ 𝒮 :=
+  TauCeti.exists_isOpen_quotientMk_preimage_subset_sInter SpectralSpace.isLocallySpectralSpace
+    hR.isLocallyProConstructible
+    (isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal) hs hWo hWc
 
 /-- **Scholze, Lemma 2.9**: let `X` be a spectral space and `r` a pro-constructible equivalence
 relation on `X` whose first projection lifts generalizations. If `Quotient r` admits a topological
@@ -428,45 +388,35 @@ end GlobalSpectral
 
 /-! ### Spectral and locally spectral quotients: the open-projection case -/
 
-/-- When `X` is locally spectral and the first projection of `{q : X × X | r q.1 q.2}` is open and
+/-- When `X` is prespectral and the first projection of `{q : X × X | r q.1 q.2}` is open and
 spectral (quasi-compact), the quotient projection `Quotient.mk r` is a spectral map. -/
-theorem isSpectralMap_quotientMk_of_isOpenMap (hX : IsLocallySpectralSpace X)
+theorem isSpectralMap_quotientMk_of_isOpenMap [PrespectralSpace X]
     (hs_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1))
     (hs_open : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
     IsSpectralMap (Quotient.mk r) := by
-  have _ : PrespectralSpace X := hX.prespectralSpace
-  have ht_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.2) :=
-    isSpectralMap_fst_setoid_iff.mp hs_qc
   have hπ_cont : Continuous (Quotient.mk r) := continuous_quot_mk
   refine ⟨hπ_cont, fun V hVo hVc ↦ ?_⟩
   obtain ⟨W, hWc, hWV⟩ := hs_open.quotientMk.exists_opens_image_eq_of_prespectralSpace
     hπ_cont (Quotient.mk_surjective.range_eq.symm ▸ subset_univ V) hVo hVc
-  rw [← hWV, preimage_image_quotientMk_eq]
-  exact (ht_qc.isCompact_preimage_of_isOpen W.2 hWc).image hs_qc.continuous
+  rw [← hWV]
+  exact isCompact_preimage_image_quotientMk hs_qc W.2 hWc
 
-/-- When `X` is a quasiseparated locally spectral space and the first projection of
+/-- When `X` is a quasiseparated prespectral space and the first projection of
 `{q : X × X | r q.1 q.2}` is open and spectral, `Quotient.mk r` is a locally spectral map. -/
-theorem isLocallySpectralMap_quotientMk_of_isOpenMap [QuasiSeparatedSpace X]
-    (hX : IsLocallySpectralSpace X)
+theorem isLocallySpectralMap_quotientMk_of_isOpenMap [PrespectralSpace X] [QuasiSeparatedSpace X]
     (hs_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1))
     (hs_open : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
     IsLocallySpectralMap (Quotient.mk r) :=
-  (isSpectralMap_quotientMk_of_isOpenMap hX hs_qc hs_open).isLocallySpectralMap
+  (isSpectralMap_quotientMk_of_isOpenMap hs_qc hs_open).isLocallySpectralMap
 
-/-- When `X` is a quasiseparated locally spectral space and the first projection of
+/-- When `X` is a quasiseparated prespectral space and the first projection of
 `{q : X × X | r q.1 q.2}` is open and spectral, `Quotient r` is quasiseparated. -/
-theorem quasiSeparatedSpace_quotient_of_isOpenMap [QuasiSeparatedSpace X]
-    (hX : IsLocallySpectralSpace X)
+theorem quasiSeparatedSpace_quotient_of_isOpenMap [PrespectralSpace X] [QuasiSeparatedSpace X]
     (hs_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1))
     (hs_open : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
-    QuasiSeparatedSpace (Quotient r) := by
-  have hπ : IsSpectralMap (Quotient.mk r) := isSpectralMap_quotientMk_of_isOpenMap hX hs_qc hs_open
-  refine ⟨fun V₁ V₂ hV₁o hV₁c hV₂o hV₂c ↦ ?_⟩
-  have hpre : IsCompact (Quotient.mk r ⁻¹' (V₁ ∩ V₂)) :=
-    QuasiSeparatedSpace.inter_isCompact _ _
-      (hV₁o.preimage hπ.continuous) (hπ.isCompact_preimage_of_isOpen hV₁o hV₁c)
-      (hV₂o.preimage hπ.continuous) (hπ.isCompact_preimage_of_isOpen hV₂o hV₂c)
-  simpa only [image_preimage_eq _ Quotient.mk_surjective] using hpre.image hπ.continuous
+    QuasiSeparatedSpace (Quotient r) :=
+  (isSpectralMap_quotientMk_of_isOpenMap hs_qc hs_open).quasiSeparatedSpace_of_surjective
+    Quotient.mk_surjective
 
 /-- Global spectral case of Scholze, Lemma 2.10: if `X` is a spectral space and `r` is a
 pro-constructible equivalence relation whose first projection is an open map, then `Quotient r` is
@@ -475,22 +425,15 @@ theorem IsProConstructible.spectralSpace_quotient_of_isOpenMap [SpectralSpace X]
     (hR : IsProConstructible {q : X × X | r q.1 q.2})
     (hs_open : IsOpenMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1)) :
     SpectralSpace (Quotient r) := by
-  have hX : IsLocallySpectralSpace X := SpectralSpace.isLocallySpectralSpace
-  have hXX : IsLocallySpectralSpace (X × X) := hX.prod hX
+  have _ : SpectralSpace {q : X × X | r q.1 q.2} := hR.spectralSpace
   have hs_qc : IsSpectralMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) :=
     isProperMap_fst_of_compactSpace.isSpectralMap.comp hR.isSpectralMap_subtypeVal
-  have hs_gen : GeneralizingMap (fun q : {q : X × X | r q.1 q.2} ↦ q.1.1) :=
-    (IsLocallySpectralMap.comp hXX (hX.isLocallySpectralMap_fst hX)
-      (hR.isLocallyProConstructible.isLocallySpectralMap_subtypeVal
-        hXX)).generalizingMap_of_isOpenMap
-      (hR.isLocallyProConstructible.isLocallySpectralSpace hXX) hX hs_open
   have hπ_open : IsOpenMap (Quotient.mk r) := hs_open.quotientMk
   have hπ_spec : IsSpectralMap (Quotient.mk r) :=
-    isSpectralMap_quotientMk_of_isOpenMap hX hs_qc hs_open
-  have hπ_oq : IsOpenQuotientMap (Quotient.mk r) :=
-    ⟨Quotient.mk_surjective, continuous_quot_mk, hπ_open⟩
-  refine spectralSpace_quotient hR hs_gen
-    (hπ_oq.isTopologicalBasis PrespectralSpace.isTopologicalBasis) ?_
+    isSpectralMap_quotientMk_of_isOpenMap hs_qc hs_open
+  let _ : Setoid X := r
+  refine spectralSpace_quotient hR (hs_qc.generalizingMap_of_isOpenMap hs_open)
+    (PrespectralSpace.isTopologicalBasis.quotient hπ_open) ?_
   rintro _ ⟨W, ⟨hWo, hWc⟩, rfl⟩
   exact hπ_spec.isCompact_preimage_of_isOpen (hπ_open W hWo) (hWc.image continuous_quot_mk)
 
@@ -506,7 +449,7 @@ theorem isLocallySpectralSpace_quotient_of_isOpenMap [QuasiSeparatedSpace X]
   have _ : PrespectralSpace X := hX.prespectralSpace
   have hπ_open : IsOpenMap (Quotient.mk r) := hs_open.quotientMk
   have hπ_spec : IsSpectralMap (Quotient.mk r) :=
-    isSpectralMap_quotientMk_of_isOpenMap hX hs_qc hs_open
+    isSpectralMap_quotientMk_of_isOpenMap hs_qc hs_open
   refine isLocallySpectralSpace_iff.mpr fun y ↦ ?_
   obtain ⟨x, rfl⟩ := Quotient.exists_rep y
   obtain ⟨W₀, ⟨hW₀o, hW₀c⟩, hxW₀, -⟩ :=

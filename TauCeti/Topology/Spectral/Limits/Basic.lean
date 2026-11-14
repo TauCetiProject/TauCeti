@@ -9,13 +9,15 @@ public import TauCeti.Topology.Spectral.LocallySpectral
 public import TauCeti.Topology.Spectral.PatchCriterion
 public import TauCeti.Topology.Spectral.ProConstructible
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
+import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.WithTopology
 
 /-!
 # Limits of spectral spaces
 
-Arbitrary and binary products of spectral spaces are spectral, and binary products of locally
-spectral spaces are locally spectral with locally spectral projections. Equalizers of spectral maps
+Arbitrary and binary products of spectral spaces are spectral, binary products of locally spectral
+spaces are locally spectral, and each projection of a binary product is locally spectral when the
+complementary factor is locally spectral. Equalizers of spectral maps
 into a T₀ prespectral space are pro-constructible, so the compatible locus of a diagram of spectral
 spaces with spectral transition maps is spectral as well. Its coordinate projections are spectral.
 These results apply to arbitrary small diagrams, including cofiltered inverse systems and the
@@ -93,27 +95,64 @@ theorem IsLocallySpectralSpace.prod {X : Type*} {Y : Type*} [TopologicalSpace X]
     have := hVs
     exact ⟨U ×ˢ V, hUo.prod hVo, ⟨hxU, hyV⟩, (Homeomorph.Set.prod U V).symm.spectralSpace⟩
 
-/-- The first projection of a product of locally spectral spaces is locally spectral. -/
+/-- The first projection `X × Y → X` is locally spectral whenever the second factor `Y` is locally
+spectral. -/
 theorem IsLocallySpectralSpace.isLocallySpectralMap_fst {X : Type*} {Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] (hX : IsLocallySpectralSpace X)
-    (hY : IsLocallySpectralSpace Y) : IsLocallySpectralMap (Prod.fst : X × Y → X) := by
-  refine IsLocallySpectralMap.of_forall_exists fun ⟨x, y⟩ ↦ ?_
-  obtain ⟨U, hUo, hxU, hUs⟩ := isLocallySpectralSpace_iff.mp hX x
-  obtain ⟨V, hVo, hyV, hVs⟩ := isLocallySpectralSpace_iff.mp hY y
-  have := hUs
-  have := hVs
-  have hWU : MapsTo (Prod.fst : X × Y → X) (U ×ˢ V) U := fun _ h ↦ h.1
-  have hWs : SpectralSpace ↥(U ×ˢ V) := (Homeomorph.Set.prod U V).symm.spectralSpace
-  refine ⟨U ×ˢ V, U, hWU, hUo.prod hVo, hUo, ⟨hxU, hyV⟩, hWs.toQuasiSeparatedSpace, ?_⟩
-  exact isProperMap_fst_of_compactSpace.isSpectralMap.comp
-    (Homeomorph.Set.prod U V).isProperMap.isSpectralMap
+    [TopologicalSpace X] [TopologicalSpace Y] (hY : IsLocallySpectralSpace Y) :
+    IsLocallySpectralMap (Prod.fst : X × Y → X) := by
+  refine .of_isSpectralMap_restrict continuous_fst fun W U hWU hWo hUo hWs hUs ↦ ?_
+  let _ : SpectralSpace W := hWs
+  let _ : SpectralSpace U := hUs
+  have hfstU : IsLocallySpectralMap (Prod.fst : U × Y → U) := by
+    refine IsLocallySpectralMap.of_forall_exists fun ⟨u, y⟩ ↦ ?_
+    obtain ⟨U', hU'o, huU', hU's⟩ :=
+      isLocallySpectralSpace_iff.mp SpectralSpace.isLocallySpectralSpace u
+    obtain ⟨V, hVo, hyV, hVs⟩ := isLocallySpectralSpace_iff.mp hY y
+    have := hU's
+    have := hVs
+    have hU'V : MapsTo (Prod.fst : U × Y → U) (U' ×ˢ V) U' := fun _ h ↦ h.1
+    have hU'Vs : SpectralSpace ↥(U' ×ˢ V) := (Homeomorph.Set.prod U' V).symm.spectralSpace
+    refine ⟨U' ×ˢ V, U', hU'V, hU'o.prod hVo, hU'o, ⟨huU', hyV⟩, hU'Vs.toQuasiSeparatedSpace, ?_⟩
+    have heq : hU'V.restrict Prod.fst (U' ×ˢ V) U' = Prod.fst ∘ Homeomorph.Set.prod U' V := by
+      funext _
+      rfl
+    rw [heq]
+    exact isProperMap_fst_of_compactSpace.isSpectralMap.comp
+      (Homeomorph.Set.prod U' V).isProperMap.isSpectralMap
+  let ι : W → U × Y := fun w ↦ (⟨w.1.1, hWU w.2⟩, w.1.2)
+  have hι : IsOpenEmbedding ι := by
+    refine IsOpenEmbedding.of_comp ι (hUo.isOpenEmbedding_subtypeVal.prodMap .id) ?_
+    have heq : (Prod.map (Subtype.val : U → X) id) ∘ ι = (Subtype.val : W → X × Y) := by
+      funext _
+      rfl
+    rw [heq]
+    exact hWo.isOpenEmbedding_subtypeVal
+  have hls : IsLocallySpectralMap (Prod.fst ∘ ι) :=
+    IsLocallySpectralMap.comp (SpectralSpace.isLocallySpectralSpace.prod hY)
+      hfstU hι.isLocallySpectralMap
+  have heq : hWU.restrict Prod.fst W U = Prod.fst ∘ ι := by
+    funext _
+    rfl
+  rw [heq]
+  exact hls.isSpectralMap
 
-/-- The second projection of a product of locally spectral spaces is locally spectral. -/
+/-- The second projection `X × Y → Y` is locally spectral whenever the first factor `X` is locally
+spectral. -/
 theorem IsLocallySpectralSpace.isLocallySpectralMap_snd {X : Type*} {Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] (hX : IsLocallySpectralSpace X)
-    (hY : IsLocallySpectralSpace Y) : IsLocallySpectralMap (Prod.snd : X × Y → Y) :=
-  IsLocallySpectralMap.comp (f := Homeomorph.prodComm X Y) (g := Prod.fst) (hY.prod hX)
-    (hY.isLocallySpectralMap_fst hX) (Homeomorph.prodComm X Y).isOpenEmbedding.isLocallySpectralMap
+    [TopologicalSpace X] [TopologicalSpace Y] (hX : IsLocallySpectralSpace X) :
+    IsLocallySpectralMap (Prod.snd : X × Y → Y) := by
+  refine .of_isSpectralMap_restrict continuous_snd fun W V hWV hWo hVo hWs hVs ↦ ?_
+  let _ : SpectralSpace W := hWs
+  let _ : SpectralSpace V := hVs
+  let e : W ≃ₜ (Prod.swap ⁻¹' W) := (Homeomorph.prodComm X Y).subtype fun _ ↦ Iff.rfl
+  have _ : SpectralSpace (Prod.swap ⁻¹' W) := e.spectralSpace
+  have hW'V : MapsTo (Prod.fst : Y × X → Y) (Prod.swap ⁻¹' W) V := fun _ h ↦ hWV h
+  have heq : hWV.restrict Prod.snd W V = (hW'V.restrict Prod.fst (Prod.swap ⁻¹' W) V) ∘ e := by
+    funext _
+    rfl
+  rw [heq]
+  exact (hX.isLocallySpectralMap_fst.isSpectralMap_restrict hW'V
+    (hWo.preimage continuous_swap) hVo).comp e.isProperMap.isSpectralMap
 
 end TauCeti
 
