@@ -180,6 +180,13 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
   the classical derivative exists and is locally integrable on `Ω`, the weak one agrees with it
   almost everywhere.
+* `TauCeti.HasWeakLineDerivOn.smul_const` and `TauCeti.HasWeakFDerivOn.smul_const`: a weakly
+  differentiable scalar factor multiplying a fixed vector has weak derivative given by
+  `ContinuousLinearMap.smulRight`.
+* `TauCeti.HasWeakLineDerivOn.smul_measure`, `TauCeti.HasWeakFDerivOn.smul_measure`,
+  `TauCeti.hasWeakFDerivOn_smul_measure_iff`, `TauCeti.HasWeakFDerivOn.of_isAddHaarMeasure`, and
+  `TauCeti.hasWeakFDerivOn_isAddHaarMeasure_iff`: weak derivatives are invariant under nonzero
+  finite scalar multiples of the measure, hence independent of the choice of additive Haar measure.
 -/
 
 public section
@@ -589,6 +596,21 @@ theorem HasWeakFDerivOn.clm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace
     [CompleteSpace G] {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) (L : F →L[ℝ] G) :
     HasWeakFDerivOn μ Ω (fun x => L (u x)) (fun x => L.comp (U x)) := fun v =>
   (h v).clm_comp L
+
+/-- A weakly differentiable real-valued function multiplying a fixed vector in a complete normed
+space has weak directional derivative given by multiplying the scalar weak derivative by that
+vector. -/
+theorem HasWeakLineDerivOn.smul_const [CompleteSpace F] {a a' : E → ℝ}
+    (h : HasWeakLineDerivOn μ Ω a a' v) (w : F) :
+    HasWeakLineDerivOn μ Ω (fun x => a x • w) (fun x => a' x • w) v := by
+  simpa using h.clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight w)
+
+/-- A weakly differentiable real-valued function multiplying a fixed vector in a complete normed
+space has weak Fréchet derivative `(Da x).smulRight w`. -/
+theorem HasWeakFDerivOn.smul_const [CompleteSpace F] {a : E → ℝ} {Da : E → E →L[ℝ] ℝ}
+    (h : HasWeakFDerivOn μ Ω a Da) (w : F) :
+    HasWeakFDerivOn μ Ω (fun x => a x • w) (fun x => (Da x).smulRight w) := fun v =>
+  (h v).smul_const w
 
 /-- **Weak derivatives of pairs.** The pair of two weakly differentiable maps is weakly
 differentiable, with the paired derivative. -/
@@ -1016,5 +1038,77 @@ theorem HasWeakFDerivOn.ae_eq_fderiv {U : E → E →L[ℝ] F} (h : HasWeakFDeri
   h.ae_eq (hasWeakFDerivOn_of_differentiableOn hd hdiff)
 
 end Comparison
+
+/-! ### Scaling the measure and additive Haar measures -/
+
+section MeasureScaling
+
+open scoped ENNReal
+
+section SmulMeasure
+
+variable [MeasurableSpace E] {μ : Measure E} {u u' : E → F} {U : E → E →L[ℝ] F} {c : ℝ≥0∞}
+
+/-- Scaling the measure by a finite constant preserves weak directional derivatives. -/
+theorem HasWeakLineDerivOn.smul_measure (h : HasWeakLineDerivOn μ Ω u u' v) (hc : c ≠ ⊤) :
+    HasWeakLineDerivOn (c • μ) Ω u u' v := by
+  refine ⟨h.completeSpace, h.locallyIntegrableOn.smul_measure hc,
+    h.locallyIntegrableOn_deriv.smul_measure hc, fun φ => ?_⟩
+  rw [integral_smul_measure, integral_smul_measure,
+    h.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]
+
+/-- Scaling the measure by a finite constant preserves weak Fréchet derivatives. -/
+theorem HasWeakFDerivOn.smul_measure (h : HasWeakFDerivOn μ Ω u U) (hc : c ≠ ⊤) :
+    HasWeakFDerivOn (c • μ) Ω u U := fun v =>
+  (h v).smul_measure hc
+
+/-- Scaling the measure by a nonzero finite constant preserves and reflects weak directional
+derivatives. -/
+theorem hasWeakLineDerivOn_smul_measure_iff (hc₀ : c ≠ 0) (hc : c ≠ ⊤) :
+    HasWeakLineDerivOn (c • μ) Ω u u' v ↔ HasWeakLineDerivOn μ Ω u u' v := by
+  refine ⟨fun h => ?_, fun h => h.smul_measure hc⟩
+  have h' := h.smul_measure (ENNReal.inv_ne_top.2 hc₀)
+  rwa [smul_smul, ENNReal.inv_mul_cancel hc₀ hc, one_smul] at h'
+
+/-- Scaling the measure by a nonzero finite constant preserves and reflects weak Fréchet
+derivatives. -/
+theorem hasWeakFDerivOn_smul_measure_iff (hc₀ : c ≠ 0) (hc : c ≠ ⊤) :
+    HasWeakFDerivOn (c • μ) Ω u U ↔ HasWeakFDerivOn μ Ω u U :=
+  forall_congr' fun _ => hasWeakLineDerivOn_smul_measure_iff hc₀ hc
+
+end SmulMeasure
+
+section AddHaar
+
+variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {u u' : E → F} {U : E → E →L[ℝ] F}
+
+/-- Weak directional derivatives on a finite-dimensional real normed space do not depend on the
+choice of additive Haar measure: any two differ by a positive finite scalar factor, which cancels
+from both sides of integration by parts. -/
+theorem HasWeakLineDerivOn.of_isAddHaarMeasure (h : HasWeakLineDerivOn μ Ω u u' v)
+    (ν : Measure E) [ν.IsAddHaarMeasure] : HasWeakLineDerivOn ν Ω u u' v := by
+  rw [Measure.isAddLeftInvariant_eq_smul ν μ]
+  exact h.smul_measure ENNReal.coe_ne_top
+
+/-- Weak Fréchet derivatives on a finite-dimensional real normed space do not depend on the choice
+of additive Haar measure. -/
+theorem HasWeakFDerivOn.of_isAddHaarMeasure (h : HasWeakFDerivOn μ Ω u U)
+    (ν : Measure E) [ν.IsAddHaarMeasure] : HasWeakFDerivOn ν Ω u U := fun v =>
+  (h v).of_isAddHaarMeasure ν
+
+/-- Equivalence of weak directional derivatives with respect to any two additive Haar measures. -/
+theorem hasWeakLineDerivOn_isAddHaarMeasure_iff (ν : Measure E) [ν.IsAddHaarMeasure] :
+    HasWeakLineDerivOn μ Ω u u' v ↔ HasWeakLineDerivOn ν Ω u u' v :=
+  ⟨fun h => h.of_isAddHaarMeasure ν, fun h => h.of_isAddHaarMeasure μ⟩
+
+/-- Equivalence of weak Fréchet derivatives with respect to any two additive Haar measures. -/
+theorem hasWeakFDerivOn_isAddHaarMeasure_iff (ν : Measure E) [ν.IsAddHaarMeasure] :
+    HasWeakFDerivOn μ Ω u U ↔ HasWeakFDerivOn ν Ω u U :=
+  ⟨fun h => h.of_isAddHaarMeasure ν, fun h => h.of_isAddHaarMeasure μ⟩
+
+end AddHaar
+
+end MeasureScaling
 
 end TauCeti
