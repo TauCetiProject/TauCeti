@@ -69,11 +69,10 @@ def cstarAlgebra (hφ : φ.nullSubmodule = ⊥) : CStarAlgebra A :=
   letI : CompleteSpace A := FiniteDimensional.completeSpace ℂ A
   { norm_mul_self_le a := by
       -- The induced norm is the operator norm, so the C*-identity pulls back along π.
-      have hnorm : ‖π a‖ * ‖π a‖ ≤ ‖π (star a * a)‖ := by
-        rw [map_mul, StarHomClass.map_star]
-        exact @CStarRing.norm_mul_self_le (φ.HilbertGNS →L[ℂ] φ.HilbertGNS)
-          inferInstance inferInstance inferInstance (π a)
-      exact hnorm }
+      change ‖π a‖ * ‖π a‖ ≤ ‖π (star a * a)‖
+      rw [map_mul, StarHomClass.map_star]
+      exact @CStarRing.norm_mul_self_le (φ.HilbertGNS →L[ℂ] φ.HilbertGNS)
+        inferInstance inferInstance inferInstance (π a) }
 
 /-- The chosen C*-norm is precisely the operator norm of left multiplication on the algebraic
 GNS space, which is already complete in finite dimension. -/
