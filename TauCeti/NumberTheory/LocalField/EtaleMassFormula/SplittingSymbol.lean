@@ -20,6 +20,8 @@ formulas for these symbols.
 
 * `TauCeti.splittingSymbolAut σ` is `#Aut(σ)`, the product of the residue degrees `f_i` times the
   number of permutations of the factors preserving `σ`.
+* `TauCeti.splittingSymbolExponent σ` is `∑ f_i (e_i - 1)`, the exponent of `Disc(σ)`
+  [Bhargava 2007, §2].
 * `TauCeti.ramificationPartition σ` repeats each `e_i - 1` exactly `f_i` times and drops zeros. The
   symbol has degree `n = k + #π + n₀`, where `k` is the sum of its ramification partition `π` and
   `n₀` the total residue degree of its unramified factors
@@ -56,7 +58,7 @@ open scoped Nat ENNReal NNReal
 
 namespace TauCeti
 
-/-! ### The automorphism count and the ramification partition -/
+/-! ### The automorphism count, discriminant exponent, and ramification partition -/
 
 /-- The order `#Aut(σ)` of the automorphism group of a splitting symbol `σ`, a multiset of pairs
 `(f, e)` of residue degrees and ramification indices [Bhargava 2007, §2]: the product of the
@@ -64,6 +66,11 @@ residue degrees, times the number `∏ₓ (count x)!` of permutations of the fac
 `σ`. -/
 def splittingSymbolAut (σ : Multiset (ℕ × ℕ)) : ℕ :=
   (σ.map Prod.fst).prod * ∏ x ∈ σ.toFinset, (σ.count x)!
+
+/-- The discriminant exponent `∑ f (e - 1)` attached to a splitting symbol `σ`, that is, the
+exponent of `Disc_p(σ)` in [Bhargava 2007, §2]. -/
+def splittingSymbolExponent (σ : Multiset (ℕ × ℕ)) : ℕ :=
+  (σ.map fun x => x.1 * (x.2 - 1)).sum
 
 /-- The ramification partition of a splitting symbol `σ` [Bhargava 2007, §2]: each `e - 1`
 repeated `f` times, over the factors `(f, e)` of `σ`, with the zeros dropped. For a symbol of degree
@@ -75,6 +82,11 @@ def ramificationPartition (σ : Multiset (ℕ × ℕ)) : Multiset ℕ :=
 /-- The defining formula of `splittingSymbolAut`. -/
 theorem splittingSymbolAut_def (σ : Multiset (ℕ × ℕ)) :
     splittingSymbolAut σ = (σ.map Prod.fst).prod * ∏ x ∈ σ.toFinset, (σ.count x)! :=
+  (rfl)
+
+/-- The defining formula of `splittingSymbolExponent`. -/
+theorem splittingSymbolExponent_def (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent σ = (σ.map fun x => x.1 * (x.2 - 1)).sum :=
   (rfl)
 
 /-- The defining formula of `ramificationPartition`. -/
@@ -110,6 +122,56 @@ theorem splittingSymbolAut_zero : splittingSymbolAut 0 = 1 := by
 @[simp]
 theorem splittingSymbolAut_singleton (x : ℕ × ℕ) : splittingSymbolAut {x} = x.1 := by
   simp [splittingSymbolAut]
+
+/-- Adding a factor `x = (f, e)` to `σ` multiplies `#Aut(σ)` by `f * (σ.count x + 1)`. -/
+theorem splittingSymbolAut_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolAut (x ::ₘ σ) = x.1 * (σ.count x + 1) * splittingSymbolAut σ := by
+  classical
+  let s : Finset (ℕ × ℕ) := insert x σ.toFinset
+  have hx : x ∈ s := Finset.mem_insert_self x σ.toFinset
+  rw [splittingSymbolAut_eq_prod_of_subset (x ::ₘ σ) (s := s) (by simp [s]),
+    splittingSymbolAut_eq_prod_of_subset σ (s := s) (Finset.subset_insert x σ.toFinset),
+    ← Finset.mul_prod_erase s _ hx, ← Finset.mul_prod_erase s _ hx]
+  have hprod : ∏ y ∈ s.erase x, y.1 ^ (x ::ₘ σ).count y * ((x ::ₘ σ).count y)! =
+      ∏ y ∈ s.erase x, y.1 ^ σ.count y * (σ.count y)! :=
+    Finset.prod_congr rfl fun y hy => by
+      rw [Multiset.count_cons_of_ne (Finset.ne_of_mem_erase hy)]
+  rw [hprod, Multiset.count_cons_self, pow_succ, Nat.factorial_succ]
+  ring
+
+/-- Removing a factor `x ∈ σ` divides `#Aut(σ)` by `x.1 * σ.count x`. -/
+theorem splittingSymbolAut_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
+    x.1 * σ.count x * splittingSymbolAut (σ.erase x) = splittingSymbolAut σ := by
+  have h := (splittingSymbolAut_cons x (σ.erase x)).symm
+  rwa [Multiset.cons_erase hx, Multiset.count_erase_self,
+    Nat.sub_add_cancel (Multiset.count_pos.2 hx)] at h
+
+/-- The empty splitting symbol has exponent zero. -/
+@[simp]
+theorem splittingSymbolExponent_zero : splittingSymbolExponent 0 = 0 := by
+  simp [splittingSymbolExponent]
+
+/-- A single factor `(f, e)` has splitting symbol exponent `f * (e - 1)`. -/
+@[simp]
+theorem splittingSymbolExponent_singleton (x : ℕ × ℕ) :
+    splittingSymbolExponent {x} = x.1 * (x.2 - 1) := by
+  simp [splittingSymbolExponent]
+
+/-- The splitting symbol exponent is additive under multiset sum. -/
+@[simp]
+theorem splittingSymbolExponent_add (σ τ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent (σ + τ) = splittingSymbolExponent σ + splittingSymbolExponent τ := by
+  simp [splittingSymbolExponent]
+
+/-- Adding a factor `x = (f, e)` adds `f * (e - 1)` to `splittingSymbolExponent`. -/
+theorem splittingSymbolExponent_cons (x : ℕ × ℕ) (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolExponent (x ::ₘ σ) = x.1 * (x.2 - 1) + splittingSymbolExponent σ := by
+  simp [splittingSymbolExponent]
+
+/-- Removing a factor `x ∈ σ` subtracts `x.1 * (x.2 - 1)` from `splittingSymbolExponent σ`. -/
+theorem splittingSymbolExponent_erase {σ : Multiset (ℕ × ℕ)} {x : ℕ × ℕ} (hx : x ∈ σ) :
+    x.1 * (x.2 - 1) + splittingSymbolExponent (σ.erase x) = splittingSymbolExponent σ := by
+  rw [← splittingSymbolExponent_cons, Multiset.cons_erase hx]
 
 /-- The empty splitting symbol has the empty ramification partition. -/
 @[simp]
