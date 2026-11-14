@@ -16,8 +16,8 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
 Let `K` be a number field and `L/F` a finite Galois layer inside `Kˢ`, cut out by open subgroups
 `V ◁ U` of `G_K`. The exact sequence `0 → (Kˢ)ˣ → I_{Kˢ} → C_{Kˢ} → 0` of discrete `G_K`-modules
 stays exact on `V`-invariants, because Hilbert 90 kills `H¹(V, (Kˢ)ˣ)`: every idele class fixed by
-`V` is the class of an idele fixed by `V` (`exists_ideleClassMk_eq_of_forall_smul_eq`). On the layer
-this is the short exact sequence of `Gal(L/F)`-modules
+`V` is the class of an idele fixed by `V` (`exists_forall_smul_eq_and_ideleClassMk_eq`). On the
+layer this is the short exact sequence of `Gal(L/F)`-modules
 
 ```text
 0 → Lˣ → I_L → C_L → 0
@@ -60,7 +60,7 @@ two-periodicity and the latter is zero by Hilbert 90.
 
 ## Main statements
 
-* `TauCeti.ClassFieldTheory.exists_ideleClassMk_eq_of_forall_smul_eq`: idele classes fixed by a
+* `TauCeti.ClassFieldTheory.exists_forall_smul_eq_and_ideleClassMk_eq`: idele classes fixed by a
   subgroup of `G_K` are classes of ideles fixed by it.
 * `TauCeti.ClassFieldTheory.ideleShortComplex_shortExact`: `0 → Lˣ → I_L → C_L → 0` is exact.
 * `TauCeti.ClassFieldTheory.ker_ideleToClassH2`: the kernel of `ideleToClassH2` is the image of
@@ -121,7 +121,7 @@ variable {K} in
 /-- **Idele classes fixed by a subgroup lift to fixed ideles.** If a subgroup `V` of `G_K` fixes an
 idele class `c`, then `c` is the class of an idele fixed by `V`. In field notation: the idele
 classes of the fixed field `L` of `V` are `I_L / Lˣ`. -/
-theorem exists_ideleClassMk_eq_of_forall_smul_eq (V : Subgroup (AbsoluteGaloisGroup K))
+theorem exists_forall_smul_eq_and_ideleClassMk_eq (V : Subgroup (AbsoluteGaloisGroup K))
     {c : IdeleClassCoeff K} (hc : ∀ v ∈ V, v • c = c) :
     ∃ x : IdeleCoeff K, (∀ v ∈ V, v • x = x) ∧ ideleClassMk K x = c := by
   have hcl : IsClosed
@@ -207,7 +207,8 @@ def ideleShortComplex : ShortComplex (Rep ℤ L.Gal) :=
     (L.repMap_comp_eq_zero (exact_principalIdeleHom_ideleClassHom K))
 
 /-- **The sequence `0 → Lˣ → I_L → C_L → 0` of a layer is exact.** Exactness on the right is
-Hilbert 90 for the top subgroup of the layer, through `exists_ideleClassMk_eq_of_forall_smul_eq`. -/
+Hilbert 90 for the top subgroup of the layer, through
+`exists_forall_smul_eq_and_ideleClassMk_eq`. -/
 theorem ideleShortComplex_shortExact : (ideleShortComplex K L).ShortExact := by
   refine L.shortExact_repMap (fun x y h ↦ ?_) (exact_principalIdeleHom_ideleClassHom K)
     fun y hy ↦ ?_
@@ -216,7 +217,7 @@ theorem ideleShortComplex_shortExact : (ideleShortComplex K L).ShortExact := by
     rw [principalIdeleHom_hom_apply, principalIdeleHom_hom_apply] at h
     rw [principalIdele_injective ((ideleCoeffEquivIdeleFormation K).injective h)]
   · obtain ⟨c, rfl⟩ := (ideleClassCoeffEquivGlobalFormation K).surjective y
-    obtain ⟨x, hx, rfl⟩ := exists_ideleClassMk_eq_of_forall_smul_eq L.top.toSubgroup
+    obtain ⟨x, hx, rfl⟩ := exists_forall_smul_eq_and_ideleClassMk_eq L.top.toSubgroup
       (c := c) fun v hv ↦ (ideleClassCoeffEquivGlobalFormation K).injective <| by
         rw [ideleClassCoeffEquivGlobalFormation_smul]
         exact (globalFormation K).mem_level.1 hy v hv

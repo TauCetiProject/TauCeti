@@ -29,8 +29,8 @@ finite Galois layer `L/F` of the idele formation of `K` has a refinement `L'/F` 
 `H²(Gal(L'/F), I_{L'})` whose local invariants sum to `1 / [L : F]`
 (`exists_refinement_ideleSumLocalInv_eq`).
 
-The class is first built over `G_K` (`exists_sumLocalInv_ideleLocalization_eq`). Fix a finite place
-`v` of `K` whose residue field has `q` elements, and `n ≥ 1`. The class of `q` in
+The class is first built over `G_K` (`AddCircle.exists_sumLocalInv_ideleLocalization_eq`). Fix a
+finite place `v` of `K` whose residue field has `q` elements, and `n ≥ 1`. The class of `q` in
 `(ℤ / (q ^ n - 1))ˣ` has order `n`, so some character `ψ` of this group sends it to `1 / n`. Let `χ`
 be `ψ` of the action of `G_K` on a primitive `(q ^ n - 1)`-th root of unity `ζ`: a character of
 the cyclotomic extension `K(ζ)/K`. Let `a` be the idele with a uniformizer `π` of `K_v` at `v` and
@@ -87,7 +87,7 @@ invariant `1 / [U : V]` (`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`).
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: every element of `ℚ/ℤ` is the
+* `AddCircle.exists_sumLocalInv_ideleLocalization_eq`: every element of `ℚ/ℤ` is the
   sum of the local invariants of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.ideleLocalization_surjective`: every family of local Brauer classes is
   the family of localizations of a class of `H²(G_K, I_{Kˢ})`.
@@ -371,7 +371,7 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection
   exact ⟨k • x, by rw [map_zsmul, hx, map_zsmul]⟩
 
 /-- **A class of `H²(G_K, I_{Kˢ})` with any prescribed sum of local invariants.** -/
-theorem exists_sumLocalInv_ideleLocalization_eq (r : AddCircle (1 : ℚ)) :
+theorem _root_.AddCircle.exists_sumLocalInv_ideleLocalization_eq (r : AddCircle (1 : ℚ)) :
     ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K), sumLocalInv K (ideleLocalization K x) = r := by
   classical
   obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection
@@ -406,7 +406,7 @@ theorem exists_refinement_ideleSumLocalInv_eq (L : NormalLayer (AbsoluteGaloisGr
       (y : L'.H (ideleFormation K) 2),
       ideleSumLocalInv K L' y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   have hd : L.ground.toSubgroup.index ≠ 0 := Subgroup.FiniteIndex.index_ne_zero
-  obtain ⟨x, hx⟩ := exists_sumLocalInv_ideleLocalization_eq (K := K)
+  obtain ⟨x, hx⟩ := AddCircle.exists_sumLocalInv_ideleLocalization_eq (K := K)
     ((1 / (L.degree * L.ground.toSubgroup.index : ℕ) : ℚ) : AddCircle (1 : ℚ))
   obtain ⟨L', T, y, hy⟩ := exists_refinement_ideleLayerCorInfl_eq_index_nsmul K L x
   refine ⟨L', T, y, ?_⟩
