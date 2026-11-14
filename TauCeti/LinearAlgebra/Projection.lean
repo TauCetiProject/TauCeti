@@ -35,6 +35,8 @@ remains injective.
 
 * `TauCeti.internalProjection`: the projection of `M` onto the summand `Q i` of an internal direct
   sum decomposition, as a linear map `M →ₗ[A] Q i`.
+* `Submodule.equivOfIsCompl`: the linear equivalence `p₁ ≃ₗ[R] p₂` between two complements of a
+  common submodule `q`, projecting along `q`.
 
 ## Main results
 
@@ -179,8 +181,38 @@ end DirectSum.IsInternal
 
 namespace Submodule
 
-variable {R : Type u} {V : Type v} {M : Type w} [Ring R] [AddCommGroup V] [Module R V]
-  [AddCommGroup M] [Module R M]
+variable {R : Type u} {V : Type v} [Ring R] [AddCommGroup V] [Module R V]
+
+/-- Two complements `p₁` and `p₂` of a common submodule `q` are linearly equivalent via `V ⧸ q`:
+the forward map projects onto `p₂` along `q`, and the inverse map projects onto `p₁` along `q`. -/
+noncomputable def equivOfIsCompl (p₁ p₂ q : Submodule R V) (h₁ : IsCompl p₁ q)
+    (h₂ : IsCompl p₂ q) : p₁ ≃ₗ[R] p₂ :=
+  (q.quotientEquivOfIsCompl p₁ h₁.symm).symm.trans (q.quotientEquivOfIsCompl p₂ h₂.symm)
+
+/-- Unfolds `Submodule.equivOfIsCompl` as the composition through `V ⧸ q`. -/
+theorem equivOfIsCompl_def (p₁ p₂ q : Submodule R V) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q) :
+    equivOfIsCompl p₁ p₂ q h₁ h₂ =
+      (q.quotientEquivOfIsCompl p₁ h₁.symm).symm.trans (q.quotientEquivOfIsCompl p₂ h₂.symm) :=
+  (rfl)
+
+/-- `Submodule.equivOfIsCompl` evaluates as `p₂.projectionOnto q h₂`. -/
+@[simp]
+theorem equivOfIsCompl_apply (p₁ p₂ q : Submodule R V) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q)
+    (x : p₁) : equivOfIsCompl p₁ p₂ q h₁ h₂ x = p₂.projectionOnto q h₂ x := by
+  simp [equivOfIsCompl]
+
+/-- Reversing `Submodule.equivOfIsCompl` swaps the two complements. -/
+@[simp]
+theorem equivOfIsCompl_symm (p₁ p₂ q : Submodule R V) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q) :
+    (equivOfIsCompl p₁ p₂ q h₁ h₂).symm = equivOfIsCompl p₂ p₁ q h₂ h₁ :=
+  (rfl)
+
+/-- The inverse of `Submodule.equivOfIsCompl` evaluates as `p₁.projectionOnto q h₁`. -/
+theorem equivOfIsCompl_symm_apply (p₁ p₂ q : Submodule R V) (h₁ : IsCompl p₁ q) (h₂ : IsCompl p₂ q)
+    (y : p₂) : (equivOfIsCompl p₁ p₂ q h₁ h₂).symm y = p₁.projectionOnto q h₁ y := by
+  simp
+
+variable {M : Type w} [AddCommGroup M] [Module R M]
 
 /-- A linear map vanishing on `F₀` is computed from its values on a basis `b` of a complement
 `F₁` of `F₀`, through the coordinates of the projection onto `F₁`. -/

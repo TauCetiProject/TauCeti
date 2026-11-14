@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Flat
-public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
+public import TauCeti.Geometry.Contact.Flow
 import TauCeti.Dynamics.Flow.PeriodBound
 
 /-!
@@ -44,19 +44,12 @@ uniformly bounded away from zero, including the periods of all their covers. -/
 theorem IsContactForm.exists_pos_period_le (hα : α.IsContactForm) :
     ∃ ε > 0, ∀ γ : ℝ → M, IsMIntegralCurve γ α.reebVectorField →
       ∀ T > 0, Function.Periodic γ T → ε ≤ T := by
-  have hv : ContMDiff I I.tangent 1 (fun x ↦
-      (⟨x, α.reebVectorField x⟩ : TangentBundle I M)) :=
-    hα.contMDiff_reebVectorField.of_le (by simp)
-  let hc := isCompleteVectorField_of_compactSpace hv
-  let ϕ := globalFlow α.reebVectorField hv hc
-  have hmove (x : M) : ∃ t, ϕ t x ≠ x := by
-    by_contra h
-    have hfix : ∀ t, ϕ t x = x := by simpa only [not_exists, not_not] using h
-    exact hα.reebVectorField_ne_zero x ((forall_globalFlow_eq_self_iff hv hc x).mp hfix)
-  obtain ⟨ε, hε, hbound⟩ := ϕ.exists_pos_period_le_of_isCompact isCompact_univ
-    (fun x _ ↦ hmove x)
+  let hc := hα.isCompleteVectorField_reebVectorField
+  obtain ⟨ε, hε, hbound⟩ := (hα.reebFlow hc).exists_pos_period_le_of_isCompact isCompact_univ
+    fun x _ ↦ hα.exists_reebFlow_ne_self hc x
   refine ⟨ε, hε, fun γ hγ T hT hperiod ↦ hbound (γ 0) (mem_univ _) T hT ?_⟩
-  rw [globalFlow_eq_of_isMIntegralCurve hv hc hγ T]
+  rw [hα.reebFlow_def hc,
+    globalFlow_eq_of_isMIntegralCurve (hα.contMDiff_reebVectorField.of_le (by simp)) hc hγ T]
   simpa only [zero_add] using hperiod 0
 
 end TauCeti.SmoothForm

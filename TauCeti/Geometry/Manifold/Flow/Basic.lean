@@ -449,6 +449,46 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
   rw [hvel] at key
   exact key.symm.trans hvel'
 
+omit [T2Space M] [BoundarylessManifold I M] [CompleteSpace E] in
+/-- The space differential of `flowOf v 0` at `x` is the identity on `TangentSpace I x`. -/
+theorem mfderiv_flowOf_zero_id {v : (x : M) → TangentSpace I x} (x : M) (w : TangentSpace I x) :
+    -- `TangentSpace I (flowOf v 0 x)` and `TangentSpace I x` are both definitionally `E`.
+    @Eq E (mfderiv I I (flowOf v 0) x w) w := by
+  have h0 : flowOf v 0 = id := funext (flowOf_zero v)
+  rw [h0, mfderiv_id]
+  rfl
+
+/-- **Local chain rule for `flowOf`.** If `flowOf v t x = y` with `(t, x) ∈ flowDomain v` and
+`(s, y) ∈ flowDomain v`, the differential of `flowOf v (t + s)` at `x` is the composite of the
+differentials of `flowOf v t` at `x` and `flowOf v s` at `y`. -/
+theorem mfderiv_flowOf_add_apply_of_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s t : ℝ} {x y : M}
+    (ht : (t, x) ∈ flowDomain v) (hs : (s, y) ∈ flowDomain v) (hy : flowOf v t x = y)
+    (w : TangentSpace I x) :
+    -- Both tangent spaces `TangentSpace I (flowOf v (t + s) x)` and `TangentSpace I (flowOf v s y)`
+    -- are definitionally the model space `E`.
+    @Eq E (mfderiv I I (flowOf v (t + s)) x w)
+      (mfderiv I I (flowOf v s) y (mfderiv I I (flowOf v t) x w)) := by
+  have hd_t : MDifferentiableAt I I (flowOf v t) x :=
+    (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id ht).mdifferentiableAt
+      one_ne_zero
+  have hd_s : MDifferentiableAt I I (flowOf v s) y :=
+    (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id hs).mdifferentiableAt
+      one_ne_zero
+  have hev : flowOf v (t + s) =ᶠ[𝓝 x] flowOf v s ∘ flowOf v t := by
+    have h₁ : ∀ᶠ z in 𝓝 x, (t, z) ∈ flowDomain v :=
+      (isOpen_setOf_mem_flowDomain hv continuous_const continuous_id).mem_nhds ht
+    have h₂ : ∀ᶠ z in 𝓝 x, (s, flowOf v t z) ∈ flowDomain v :=
+      (continuousAt_const.prodMk hd_t.continuousAt).preimage_mem_nhds
+        ((isOpen_flowDomain hv).mem_nhds (by rwa [hy]))
+    filter_upwards [h₁, h₂] with z htz hsz
+    exact ((flowOf_add hv htz hsz).2).symm
+  have h1 : @Eq E (mfderiv I I (flowOf v (t + s)) x w)
+      (mfderiv I I (flowOf v s ∘ flowOf v t) x w) := by
+    rw [hev.mfderiv_eq]
+    rfl
+  exact h1.trans (mfderiv_comp_apply_of_eq x hd_s hd_t hy w)
+
 /-- At a finite right endpoint of a maximal interval, the trajectory eventually leaves every
 compact set. -/
 theorem eventually_flowOf_notMem [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
