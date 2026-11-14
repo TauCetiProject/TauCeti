@@ -170,6 +170,23 @@ theorem substituteVars_map_inl (U : X → List (A × Bool)) (l : List X) :
     substituteVars U (l.map fun x => (Sum.inl x, true)) = l.flatMap U := by
   simp [substituteVars, List.flatMap_map]
 
+/-- Substitution without free reduction only depends on the words assigned to the variables that
+occur. -/
+theorem substituteVars_congr {U U' : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
+    (h : ∀ x b, (Sum.inl x, b) ∈ w → U x = U' x) : substituteVars U w = substituteVars U' w := by
+  refine flatMap_substituteLetter_congr ?_
+  rintro ⟨x | a, b⟩ hy
+  · exact h x b hy
+  · rfl
+
+/-- Renaming the variables of a word along `f` and then substituting `U` is substituting
+`U ∘ f`. -/
+@[simp]
+theorem substituteVars_map_sumMap {Y : Type*} (U : Y → List (A × Bool)) (f : X → Y)
+    (w : List ((X ⊕ A) × Bool)) :
+    substituteVars U (w.map (Prod.map (Sum.map f id) id)) = substituteVars (U ∘ f) w := by
+  simp [substituteVars, Sum.elim_comp_map]
+
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     substituteVars U (invRev w) = invRev (substituteVars U w) :=
@@ -189,6 +206,16 @@ theorem isReduced_substituteVars_cond (U : X → List (A × Bool)) (s : Bool)
     IsReduced (substituteVars U (cond s w (invRev w))) := by
   cases s <;> simpa
 
+/-- If substituting into a word gives a reduced word, every variable occurring in the word is
+assigned a reduced word. -/
+theorem IsReduced.of_substituteVars_of_mem {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
+    (h : IsReduced (substituteVars U w)) {x : X} {b : Bool} (hx : (Sum.inl x, b) ∈ w) :
+    IsReduced (U x) := by
+  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hx
+  rw [substituteVars_append, substituteVars_cons] at h
+  have := h.infix ⟨_, _, List.append_assoc ..⟩
+  cases b <;> simpa using this
+
 /-- Substitution followed by free reduction is evaluation in the free group. -/
 theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     mk (substituteVars U w) = lift (Sum.elim (fun x => mk (U x)) of) (mk w) := by
@@ -198,11 +225,13 @@ theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × B
   -- `of a` is the one-letter word `mk [(a, true)]` by definition.
   cases y <;> rfl
 
-/-- If substituting nonempty words for the variables, without free reduction, gives a reduced
-word, then the word in variables and letters was already reduced: a cancelling pair of letters
-is replaced by a nonempty word followed by its formal inverse. -/
-theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} (hU : ∀ x, U x ≠ [])
-    {w : List ((X ⊕ A) × Bool)} (h : IsReduced (substituteVars U w)) : IsReduced w := by
+/-- If substituting words for the variables, without free reduction, gives a reduced word, and
+the variables occurring in the word are assigned nonempty words, then the word in variables and
+letters was already reduced: a cancelling pair of letters is replaced by a nonempty word followed
+by its formal inverse. -/
+theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
+    (hU : ∀ x b, (Sum.inl x, b) ∈ w → U x ≠ []) (h : IsReduced (substituteVars U w)) :
+    IsReduced w := by
   refine IsReduced.of_forall_not_step fun w' hstep => ?_
   obtain @⟨L₁, L₂, y, b⟩ := hstep
   have hinv : substituteVars U [(y, !b)] = FreeGroup.invRev (substituteVars U [(y, b)]) := by
@@ -214,7 +243,10 @@ theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} (hU : ∀ x, U 
     simp
   have hnil := hred.eq_of_mk_eq .nil <| by
     rw [hinv, ← mul_mk, ← inv_mk, mul_inv_cancel, one_eq_mk]
-  obtain x | a := y <;> cases b <;> simp [hU] at hnil
+  obtain x | a := y
+  · have hx := hU x b (by simp)
+    cases b <;> simp [hx] at hnil
+  · cases b <;> simp at hnil
 
 end Vars
 

@@ -546,11 +546,8 @@ private theorem ne_inr_of_mem_toWords_var_ne_one (x : X)
 `x z⁻¹`, `z z⁻¹` and `y y⁻¹` of the system. -/
 example (x : X) : IsPartitionTable (⟨[], [FreeGroup.of (Sum.inl x)]⟩ : EqIneqSystem X A).toWords
     (fun _ => ([] : List ((Empty ⊕ A) × Bool))) :=
-  ⟨fun _ => .nil, fun _ => by
-    rw [List.flatMap_eq_nil_iff.2 fun _ _ => rfl]
-    exact FreeGroup.one_eq_mk.symm, fun _ => by simp,
-    fun o a h => absurd h (ne_inr_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)
-      (List.getElem_mem o.2.isLt) a), fun _ _ _ => Iff.rfl⟩
+  .nil fun o => ne_inr_of_mem_toWords_var_ne_one x (List.getElem_mem o.1.isLt)
+    (List.getElem_mem o.2.isLt)
 
 /-- For the inequation `x ≠ 1`, the table with empty words is not a cancellation scheme: it
 assigns the witness zero items. -/
