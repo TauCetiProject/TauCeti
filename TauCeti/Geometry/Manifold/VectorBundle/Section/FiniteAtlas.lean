@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WithSeminorms
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Geometry.Manifold.ExtChartAt
@@ -62,9 +61,8 @@ boundaryless model). Neither finite rank of the fibres nor Hausdorffness of the 
 
 ## Main results
 
-* `Bundle.Trivialization.chartDerivativeSeminorm_le_chartCkSeminorm` and
-  `Bundle.Trivialization.exists_chartCkSeminorm_le_coordChange`: derivative-order and simultaneous
-  frame-and-chart change bounds for compact chart-frame `C^k` seminorms.
+* `Bundle.Trivialization.exists_chartCkSeminorm_le_coordChange`: simultaneous frame-and-chart
+  change bound for compact chart-frame `C^k` seminorms on a compact overlap.
 * `ContMDiffSection.exists_chartCkSeminorm_le_finiteAtlasSeminorm` and
   `ContMDiffSection.exists_finiteAtlasSeminorm_le`: dominance of compact chart-frame `C^k`
   seminorms and equivalence of finite chart-frame `C^k` norms.
@@ -107,17 +105,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
-
-/-- Each compact chart-frame derivative seminorm of order `m ≤ k` is bounded by the compact
-chart-frame `C^k` seminorm. -/
-theorem chartDerivativeSeminorm_le_chartCkSeminorm
-    (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
-    {U : Opens M} (hU : (U : Set M) ⊆ e.baseSet)
-    (x : U) (K : Compacts (extChartAt I x).target) {m k : ℕ} (hmk : m ≤ k) (hk : k ≤ n) :
-    e.chartDerivativeSeminorm hU x K m ((Nat.cast_le.mpr hmk).trans hk) ≤
-      e.chartCkSeminorm hU x K k hk := fun s ↦
-  (e.chartDerivativeSeminorm_le_iff hU x K m _ s (apply_nonneg _ _)).mpr fun z hz ↦
-    (e.chartCkSeminorm_le_iff hU x K k hk s (apply_nonneg _ _)).mp le_rfl m hmk z hz
 
 omit [IsManifold I n M] in
 private theorem eqOn_frameCoordinates_comp_symm

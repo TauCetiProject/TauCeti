@@ -15,7 +15,10 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 A smooth bundle trivialization sends sections to vector-valued maps on its base set.
 Composing this linear coordinate map with `ContMDiffMap.chartDerivativeSeminorm` and
-`ContMDiffMap.chartCkSeminorm` gives the compact chart/frame seminorms of sections.
+`ContMDiffMap.chartCkSeminorm` gives the compact chart/frame seminorms of sections
+(`Bundle.Trivialization.chartDerivativeSeminorm`, `Bundle.Trivialization.chartCkSeminorm`),
+with each derivative seminorm of order `m ≤ k` bounded by the `C^k` seminorm
+(`Bundle.Trivialization.chartDerivativeSeminorm_le_chartCkSeminorm`).
 These measure the actual coordinate derivatives, including order zero, without requiring
 an ambient norm on the fibres or choosing a connection. They supply the local controls
 used in smooth-section and compactly supported test-section topologies.
@@ -195,6 +198,15 @@ theorem chartCkSeminorm_le_of_le (x : U) (K : Compacts (extChartAt I x).target)
     chartCkSeminorm (I := I) e hU x K k ((Nat.cast_le.mpr hkl).trans hl) ≤
       chartCkSeminorm e hU x K l hl :=
   Seminorm.comp_mono _ (ContMDiffMap.chartCkSeminorm_le_of_le x K hkl hl)
+
+/-- Each compact chart/frame derivative seminorm of order `m ≤ k` is bounded by the compact
+chart/frame `C^k` seminorm. -/
+theorem chartDerivativeSeminorm_le_chartCkSeminorm (x : U) (K : Compacts (extChartAt I x).target)
+    {m k : ℕ} (hmk : m ≤ k) (hk : k ≤ n) :
+    chartDerivativeSeminorm (I := I) e hU x K m ((Nat.cast_le.mpr hmk).trans hk) ≤
+      chartCkSeminorm e hU x K k hk := fun s ↦
+  (chartDerivativeSeminorm_le_iff e hU x K m _ s (apply_nonneg _ _)).mpr fun z hz ↦
+    (chartCkSeminorm_le_iff e hU x K k hk s (apply_nonneg _ _)).mp le_rfl m hmk z hz
 
 /-- The `C^k` seminorm on the empty compact set is zero. -/
 @[simp]
