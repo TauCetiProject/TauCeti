@@ -216,7 +216,8 @@ theorem alternatingFormInner_self_eq_zero {k : ℕ} {α : V [⋀^Fin k]→L[ℝ]
   rw [alternatingFormInner_apply, inner_self_eq_zero, LinearEquiv.map_eq_zero_iff]
 
 /-- The Hilbert norm `√⟨α, α⟩` of a form is the norm of the element of `⋀ᵏ V` representing it. -/
-theorem sqrt_alternatingFormInner_self {k : ℕ} (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+theorem _root_.ContinuousAlternatingMap.sqrt_alternatingFormInner_self {k : ℕ}
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) :
     √(alternatingFormInner V k α α) = ‖(alternatingFormEquiv V k).symm α‖ := by
   rw [alternatingFormInner_apply, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)]
 

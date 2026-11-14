@@ -51,6 +51,8 @@ relates that norm to the two norms of geometric measure theory.
   `k`-vectors is comparable with the inner product norm.
 * `TauCeti.norm_alternatingFormEquiv_ιMulti`, `TauCeti.norm_alternatingFormEquiv_one`: the comass
   of the form of a simple `k`-vector, or of any `1`-vector, is its norm.
+* `ContinuousAlternatingMap.sqrt_alternatingFormInner_self_one`: in degree one, the Hilbert norm of
+  a real form is its comass.
 * `ContinuousAlternatingMap.norm_le_sqrt_alternatingFormInner_self`,
   `ContinuousAlternatingMap.sqrt_alternatingFormInner_self_le`: comass and Hilbert norm of real
   forms are comparable, `‖φ‖ ≤ √⟨φ, φ⟩ ≤ √(n choose k) ‖φ‖`.
@@ -158,8 +160,9 @@ theorem norm_alternatingFormEquiv_le (η : ⋀[ℝ]^k E) : ‖alternatingFormEqu
     rw [alternatingFormEquiv_apply, Real.norm_eq_abs]
     exact (abs_real_inner_le_norm _ _).trans (by gcongr; exact norm_ιMulti_le_prod_norm v)
 
-/-- **The comass of a simple form is its norm**: the form `v ↦ ⟪u₁ ∧ ⋯ ∧ uₖ, v₁ ∧ ⋯ ∧ vₖ⟫` has
-comass `‖u₁ ∧ ⋯ ∧ uₖ‖`, so the bound `TauCeti.norm_alternatingFormEquiv_le` is attained. -/
+/-- **The comass of the form of a simple `k`-vector is its volume**: the form
+`v ↦ ⟪u₁ ∧ ⋯ ∧ uₖ, v₁ ∧ ⋯ ∧ vₖ⟫` has comass `‖u₁ ∧ ⋯ ∧ uₖ‖`, so the bound
+`TauCeti.norm_alternatingFormEquiv_le` is attained. -/
 @[simp]
 theorem norm_alternatingFormEquiv_ιMulti (u : Fin k → E) :
     ‖alternatingFormEquiv E k (ιMulti ℝ k u)‖ = ‖ιMulti ℝ k u‖ := by
@@ -173,7 +176,7 @@ theorem norm_alternatingFormEquiv_ιMulti (u : Fin k → E) :
     _ ≤ ‖alternatingFormEquiv E k (ιMulti ℝ k u) u‖ := Real.le_norm_self _
     _ ≤ _ := (alternatingFormEquiv E k (ιMulti ℝ k u)).le_opNorm_mul_norm_ιMulti u
 
-/-- **In degree one, comass and norm coincide**: every `1`-vector is simple, so the form
+/-- **In degree one, comass and Hilbert norm coincide**: for `η : ⋀[ℝ]^1 E`, the form
 `v ↦ ⟪η, v₁⟫` has comass `‖η‖`. -/
 @[simp]
 theorem norm_alternatingFormEquiv_one (η : ⋀[ℝ]^1 E) : ‖alternatingFormEquiv E 1 η‖ = ‖η‖ := by
@@ -261,8 +264,7 @@ end exteriorPower
 namespace TauCeti
 
 /-- The norm of a `k`-vector `η` is at most `√(n choose k)` times the comass of its form
-`v ↦ ⟪η, v₁ ∧ ⋯ ∧ vₖ⟫`, where `n = finrank ℝ E`: `‖η‖²` is the value of the mass of `η` on that
-form. -/
+`v ↦ ⟪η, v₁ ∧ ⋯ ∧ vₖ⟫`, where `n = finrank ℝ E`. -/
 theorem norm_le_sqrt_choose_mul_norm_alternatingFormEquiv (η : ⋀[ℝ]^k E) :
     ‖η‖ ≤ √((finrank ℝ E).choose k) * ‖alternatingFormEquiv E k η‖ := by
   rcases (norm_nonneg η).eq_or_lt with h | h
@@ -296,5 +298,18 @@ theorem sqrt_alternatingFormInner_self_le (φ : E [⋀^Fin k]→L[ℝ] ℝ) :
     √(alternatingFormInner E k φ φ) ≤ √((finrank ℝ E).choose k) * ‖φ‖ := by
   rw [sqrt_alternatingFormInner_self]
   simpa using norm_le_sqrt_choose_mul_norm_alternatingFormEquiv ((alternatingFormEquiv E k).symm φ)
+
+/-- In degree one, the `1`-vector representing a real `1`-form has norm equal to the comass of
+the form. -/
+@[simp]
+theorem norm_alternatingFormEquiv_symm_one (φ : E [⋀^Fin 1]→L[ℝ] ℝ) :
+    ‖(alternatingFormEquiv E 1).symm φ‖ = ‖φ‖ := by
+  rw [← norm_alternatingFormEquiv_one, LinearEquiv.apply_symm_apply]
+
+/-- **In degree one, the Hilbert norm of a real form is its comass**: `√⟨φ, φ⟩ = ‖φ‖` for every
+real `1`-form `φ`. -/
+theorem sqrt_alternatingFormInner_self_one (φ : E [⋀^Fin 1]→L[ℝ] ℝ) :
+    √(alternatingFormInner E 1 φ φ) = ‖φ‖ := by
+  rw [sqrt_alternatingFormInner_self, norm_alternatingFormEquiv_symm_one]
 
 end ContinuousAlternatingMap
