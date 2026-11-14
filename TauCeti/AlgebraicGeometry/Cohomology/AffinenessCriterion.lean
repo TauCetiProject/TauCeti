@@ -61,6 +61,15 @@ open Scheme.Modules
 
 variable {X : Scheme.{u}}
 
+/-- If the range of `ι : Z ⟶ X` is `(X ∖ U) ∪ {x}` for an open `U` containing the closed point `x`,
+then the preimages of `U` and of `X ∖ {x}` are complementary opens of `Z`. -/
+private theorem isCompl_preimage_of_range_eq {Z : Scheme.{u}} (ι : Z ⟶ X) {U : X.Opens} {x : X}
+    (hx : IsClosed ({x} : Set X)) (hxU : x ∈ U) (hrange : Set.range ι = (U : Set X)ᶜ ∪ {x}) :
+    IsCompl (ι ⁻¹ᵁ U) (ι ⁻¹ᵁ ⟨{x}ᶜ, hx.isOpen_compl⟩) := by
+  refine ⟨disjoint_iff.mpr (SetLike.ext' ?_), codisjoint_iff.mpr (SetLike.ext' ?_)⟩ <;> ext y <;>
+    have hy : ι y ∈ (U : Set X)ᶜ ∪ {x} := hrange ▸ ⟨y, rfl⟩ <;> clear hrange <;>
+    by_cases hyx : ι y = x <;> simp_all
+
 /-- If the first cohomology of every ideal sheaf on `X` vanishes, every closed point `x` of `X`
 lies in the basic open `X_f` of a global function `f` with `X_f` affine. Stacks, proof of
 Lemma 30.3.1 (01XF). -/
@@ -73,23 +82,7 @@ theorem exists_isAffineOpen_basicOpen_mem_of_isClosed
   let I := IdealSheafData.vanishingIdeal ⟨(U : Set X)ᶜ ∪ {x}, U.isOpen.isClosed_compl.union hx⟩
   have hrange : Set.range I.subschemeι = (U : Set X)ᶜ ∪ {x} := by
     simp [I, IdealSheafData.range_subschemeι]
-  let B : X.Opens := ⟨{x}ᶜ, hx.isOpen_compl⟩
-  have hUB : IsCompl (I.subschemeι ⁻¹ᵁ U) (I.subschemeι ⁻¹ᵁ B) := by
-    constructor
-    · rw [disjoint_iff]
-      ext y
-      simp only [Opens.coe_inf, Hom.coe_preimage, Set.mem_inter_iff, Set.mem_preimage,
-        SetLike.mem_coe, Opens.coe_bot, Set.mem_empty_iff_false, iff_false, not_and]
-      intro hyU hyB
-      have : I.subschemeι y ∈ Set.range I.subschemeι := ⟨y, rfl⟩
-      rw [hrange] at this
-      exact this.elim (· hyU) hyB
-    · rw [codisjoint_iff]
-      ext y
-      simp only [Opens.coe_sup, Opens.coe_top, Set.mem_univ, iff_true]
-      by_cases hy : I.subschemeι y = x
-      · exact Or.inl (show I.subschemeι y ∈ U from hy ▸ hxU)
-      · exact Or.inr (show I.subschemeι y ∈ B from hy)
+  have hUB := isCompl_preimage_of_range_eq I.subschemeι hx hxU hrange
   -- The function on `Z` that is `1` at `x` and `0` on `X ∖ U` lifts to `X`, as `H¹(X, I) = 0`.
   obtain ⟨e, he⟩ := exists_basicOpen_eq_of_isCompl hUB
   obtain ⟨g, hg⟩ : ∃ g : Γ(X, ⊤), I.subschemeι.app ⊤ g = e :=
@@ -101,10 +94,10 @@ theorem exists_isAffineOpen_basicOpen_mem_of_isClosed
     intro z hz
     by_contra hzU
     obtain ⟨y, rfl⟩ : z ∈ Set.range I.subschemeι := hrange ▸ Or.inl hzU
-    exact hzU (show y ∈ I.subschemeι ⁻¹ᵁ U from hpre ▸ hz)
+    exact hzU (I.subschemeι.mem_preimage.mp (hpre ▸ I.subschemeι.mem_preimage.mpr hz))
   obtain ⟨y, hy⟩ : x ∈ Set.range I.subschemeι := hrange ▸ Or.inr rfl
-  have hyU : y ∈ I.subschemeι ⁻¹ᵁ U := show I.subschemeι y ∈ U from hy ▸ hxU
-  refine ⟨g, hy ▸ (show y ∈ I.subschemeι ⁻¹ᵁ X.basicOpen g from hpre ▸ hyU), ?_⟩
+  have hyU : y ∈ I.subschemeι ⁻¹ᵁ U := I.subschemeι.mem_preimage.mpr (hy ▸ hxU)
+  refine ⟨g, hy ▸ I.subschemeι.mem_preimage.mp (hpre ▸ hyU), ?_⟩
   have := hU.basicOpen (X.presheaf.map (homOfLE le_top : U ⟶ ⊤).op g)
   rwa [basicOpen_res, inf_eq_right.mpr hle] at this
 
@@ -141,8 +134,8 @@ theorem isAffine_of_subsingleton_cohomology_one [CompactSpace X]
     rw [Ideal.eq_top_iff_one, Ideal.mem_span_range_iff_exists_fun]
     refine ⟨a, ?_⟩
     have h1 := ha.symm.trans hc
-    simp only [show (Opens.leTop ⊤ : (⊤ : X.Opens) ⟶ ⊤) = 𝟙 _ from rfl, op_id,
-      X.presheaf.map_id, ConcreteCategory.id_apply] at h1
+    simp only [Opens.leTop, homOfLE_refl, op_id, X.presheaf.map_id, ConcreteCategory.id_apply]
+      at h1
     exact h1
   exact isAffine_of_isAffineOpen_basicOpen _ hspan fun _ ⟨i, hi⟩ ↦ hi ▸ haff i
 

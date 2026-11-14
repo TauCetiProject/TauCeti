@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.CategoryTheory.Limits.Lattice
+public import TauCeti.Topology.Sheaves.DisjointGluing
 
 /-!
 # Open subsets of schemes
@@ -338,19 +339,14 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup
     rw [← Scheme.zeroLocus_span, Scheme.mem_zeroLocus_iff] at hxT
     exact hxT z hz hx
 
-/-- A clopen piece of a scheme is a basic open: if `U` and `V` are complementary opens of `X`,
-the global function that is `1` on `U` and `0` on `V` has basic open `U`. -/
+/-- A clopen piece of a scheme is a basic open: if `V` and `W` are complementary opens of `X`,
+the global function that is `1` on `V` and `0` on `W` has basic open `V`. -/
 theorem _root_.AlgebraicGeometry.Scheme.exists_basicOpen_eq_of_isCompl {V W : X.Opens}
     (h : IsCompl V W) : ∃ e : Γ(X, ⊤), X.basicOpen e = V := by
-  -- The sections over `V ⊔ W` are the product of the sections over `V` and over `W`.
   obtain ⟨a, hV, hW⟩ : ∃ a : Γ(X, V ⊔ W),
       X.presheaf.map (homOfLE le_sup_left : V ⟶ V ⊔ W).op a = 1 ∧
-      X.presheaf.map (homOfLE le_sup_right : W ⟶ V ⊔ W).op a = 0 := by
-    let hlim := X.sheaf.isProductOfDisjoint V W h.inf_eq_bot
-    let hprod := CommRingCat.prodFanIsLimit Γ(X, V) Γ(X, W)
-    exact ⟨(hlim.conePointUniqueUpToIso hprod).inv (1, 0),
-      (ConcreteCategory.congr_hom (hlim.conePointUniqueUpToIso_inv_comp hprod ⟨.left⟩) (1, 0) :),
-      (ConcreteCategory.congr_hom (hlim.conePointUniqueUpToIso_inv_comp hprod ⟨.right⟩) (1, 0) :)⟩
+      X.presheaf.map (homOfLE le_sup_right : W ⟶ V ⊔ W).op a = 0 :=
+    X.sheaf.exists_section_sup_of_disjoint h.disjoint 1 0
   refine ⟨X.presheaf.map (homOfLE h.sup_eq_top.ge).op a, ?_⟩
   have h1 := congrArg X.basicOpen hV
   have h0 := congrArg X.basicOpen hW

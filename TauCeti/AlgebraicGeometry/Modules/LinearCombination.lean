@@ -28,6 +28,8 @@ the `fᵢ` generate the unit ideal of `Γ(X, ⊤)`.
 
 * `AlgebraicGeometry.Scheme.Modules.linearCombination`: the morphism `𝒪_X^ι ⟶ 𝒪_X`,
   `(gᵢ) ↦ Σ fᵢ gᵢ`.
+* `AlgebraicGeometry.Scheme.Modules.linearCombination_app_sum_smul`: its value on `Σ aᵢ eᵢ`,
+  for the tautological sections `eᵢ` of `𝒪_X^ι`, is `Σ aᵢ fᵢ`.
 * `AlgebraicGeometry.Scheme.Modules.exists_linearCombination_app_eq` and
   `AlgebraicGeometry.Scheme.Modules.exists_linearCombination_app_eq_sum`: over an open `U`, its
   image consists of the combinations `Σ aᵢ fᵢ` with `aᵢ ∈ Γ(X, U)`.
@@ -60,18 +62,29 @@ def linearCombination (f : ι → Γ(X, ⊤)) :
     (SheafOfModules.unit X.ringCatSheaf).unitHomEquiv
       (globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) (f i))
 
-/-- The global section of `𝒪_X` corresponding to multiplication by `r` is `r`. -/
-private lemma eval_unitHomEquiv_globalSectionsSmul (r : Γ(X, ⊤)) (U : X.Opens) :
-    ((SheafOfModules.unit X.ringCatSheaf).unitHomEquiv
-      (globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) r)).eval (.op U) =
-      (X.presheaf.map U.leTop.op r : Γ(X, U)) := by
-  -- The section is the image of `1` under multiplication by `r`.
-  change ((globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) r).app U).hom (1 : Γ(X, U)) = _
-  exact (congrArg (fun φ ↦ φ.hom (1 : Γ(X, U)))
-    (globalSectionsSmul_app (SheafOfModules.unit X.ringCatSheaf) r U)).trans
-      (mul_one (X.presheaf.map U.leTop.op r : Γ(X, U)))
+/-- The section of `𝒪_X` attached by `linearCombination f` to the `i`-th basis element is
+multiplication by `f i`. -/
+@[simp]
+lemma freeHomEquiv_linearCombination (f : ι → Γ(X, ⊤)) :
+    SheafOfModules.freeHomEquiv _ (linearCombination f) = fun i ↦
+      (SheafOfModules.unit X.ringCatSheaf).unitHomEquiv
+        (globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) (f i)) :=
+  (SheafOfModules.freeHomEquiv _).apply_symm_apply _
 
 variable [Fintype ι]
+
+/-- Over an open `U`, `linearCombination f` sends `Σ aᵢ eᵢ`, for the tautological sections `eᵢ`
+of `𝒪_X^ι`, to `Σ aᵢ fᵢ`. The coefficients are sections of the ring sheaf `X.ringCatSheaf`, whose
+ring over `U` is `Γ(X, U)`. -/
+@[simp]
+lemma linearCombination_app_sum_smul (f : ι → Γ(X, ⊤)) (U : X.Opens)
+    (a : ι → X.ringCatSheaf.obj.obj (.op U)) :
+    (linearCombination f).app U
+        (∑ k, a k • (SheafOfModules.freeSection (R := X.ringCatSheaf) k).eval (.op U)) =
+      ∑ k, a k * X.ringCatSheaf.obj.map U.leTop.op (f k) :=
+  (TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul _ (.op U) a).trans
+    (Finset.sum_congr rfl fun k _ ↦
+      congrArg (a k * ·) (eval_unitHomEquiv_globalSectionsSmul (f k) U))
 
 /-- Over an open `U`, every section of `𝒪_X^ι` is sent by `linearCombination f` to a combination
 `Σ aᵢ fᵢ` with `aᵢ ∈ Γ(X, U)`. -/
@@ -81,21 +94,17 @@ lemma exists_linearCombination_app_eq (f : ι → Γ(X, ⊤)) (U : X.Opens)
       (∑ k, a k * X.presheaf.map U.leTop.op (f k) : Γ(X, U)) := by
   obtain ⟨a, rfl⟩ := TauCeti.SheafOfModules.exists_eq_sum_smul_freeSection
     (R := X.ringCatSheaf) (I := ι) (Y := .op U) c
-  -- The coefficients live in the ring of the site-level structure sheaf, which is `Γ(X, U)`.
-  let a' : ι → Γ(X, U) := a
-  refine ⟨a', (TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul _ (.op U) a).trans ?_⟩
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  exact congrArg (fun r : Γ(X, U) ↦ a' k * r) (eval_unitHomEquiv_globalSectionsSmul (f k) U)
+  -- `X.ringCatSheaf.obj.obj (.op U)` is `Γ(X, U)` viewed as a ring.
+  exact ⟨a, linearCombination_app_sum_smul f U a⟩
 
 /-- Over an open `U`, every combination `Σ aᵢ fᵢ` with `aᵢ ∈ Γ(X, U)` is the image under
 `linearCombination f` of a section of `𝒪_X^ι`. -/
 lemma exists_linearCombination_app_eq_sum (f : ι → Γ(X, ⊤)) (U : X.Opens)
     (a : ι → Γ(X, U)) :
     ∃ c : Γ(SheafOfModules.free (R := X.ringCatSheaf) ι, U), (linearCombination f).app U c =
-      (∑ k, a k * X.presheaf.map U.leTop.op (f k) : Γ(X, U)) := by
-  refine ⟨_, (TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul _ (.op U) a).trans ?_⟩
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  exact congrArg (fun r : Γ(X, U) ↦ a k * r) (eval_unitHomEquiv_globalSectionsSmul (f k) U)
+      (∑ k, a k * X.presheaf.map U.leTop.op (f k) : Γ(X, U)) :=
+  -- `X.ringCatSheaf.obj.obj (.op U)` is `Γ(X, U)` viewed as a ring.
+  ⟨_, linearCombination_app_sum_smul f U a⟩
 
 omit [Fintype ι] in
 /-- If the basic opens of finitely many global functions `fᵢ` cover `X`, then
@@ -119,6 +128,7 @@ theorem epi_linearCombination [Finite ι] (f : ι → Γ(X, ⊤))
   obtain ⟨d, hd⟩ := exists_linearCombination_app_eq_sum f U fun k ↦ t' * c k
   refine ⟨d, hd.trans ?_⟩
   simp_rw [mul_assoc, ← Finset.mul_sum, hc, mul_one]
+  -- `t'` is `t`, read as an element of `Γ(X, U)`, the ring of sections of `𝒪_X` over `U`.
   rfl
 
 end AlgebraicGeometry.Scheme.Modules
