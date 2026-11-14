@@ -376,8 +376,6 @@ end TauCeti
 
 namespace MonoidAlgebra
 
-open TauCeti.MonoidAlgebra
-
 variable (R : Type u) [Ring R] (K : Type v) [Monoid K]
 
 /-- The quotient of `R[K]` by the augmentation ideal is `R`, the trivial module. -/

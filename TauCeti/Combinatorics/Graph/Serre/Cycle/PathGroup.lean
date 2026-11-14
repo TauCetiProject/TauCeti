@@ -78,6 +78,13 @@ noncomputable def dartChain (e : Γ.E) : O →₀ R :=
 
 variable {Γ O}
 
+/-- The chain of a dart is the restriction to the chosen darts of the unit chain of the dart
+minus that of its reverse. -/
+theorem dartChain_eq_subtypeDomain (e : Γ.E) :
+    Γ.dartChain O R e =
+      (Finsupp.single e (1 : R) - Finsupp.single (Γ.rev e) 1).subtypeDomain (· ∈ O) :=
+  (rfl)
+
 /-- A coordinate of the chain of a dart: one at the dart itself, minus one at its reverse. -/
 theorem dartChain_apply (e : Γ.E) (f : O) :
     Γ.dartChain O R e f = Finsupp.single e (1 : R) f.1 - Finsupp.single (Γ.rev e) (1 : R) f.1 := by
@@ -381,6 +388,12 @@ not depend on the spanning tree. -/
     T.abelianizationEquivCycle v hO (Additive.ofMul (Group.Abelianization.of g)) =
       (PathGroup.cycleClass hO ℤ g).toAdd :=
   abCycleClass_of v hO g
+
+/-- The isomorphism of the abelianized path group with the integral cycle lattice does not
+depend on the spanning tree used to construct its inverse. -/
+theorem abelianizationEquivCycle_eq (T' : Γ.SpanningTree) (hO : Γ.IsOrientation O) :
+    T.abelianizationEquivCycle v hO = T'.abelianizationEquivCycle v hO :=
+  AddEquiv.toAddMonoidHom_injective <| by ext; simp
 
 /-- The inverse isomorphism sends the cycle class of a closed path back to its class. -/
 @[simp] theorem abelianizationEquivCycle_symm_cycleClass (hO : Γ.IsOrientation O)
