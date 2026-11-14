@@ -194,6 +194,21 @@ theorem infinite_discriminantGroup_of_span_ne_top [FiniteDimensional ℝ E]
   rw [inner_self_eq_zero, sub_eq_zero] at h0
   exact Subtype.ext h0
 
+/-- In a nontrivial space, the zero lattice `⊥` has an infinite discriminant group: its dual is
+the whole space. -/
+instance infinite_discriminantGroup_bot [Nontrivial E] :
+    Infinite (DiscriminantGroup (⊥ : Submodule ℤ E)) := by
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  refine Infinite.of_injective
+    (fun n : ℤ ↦ (Submodule.Quotient.mk ⟨n • x, mem_dual.2 fun y hy ↦ ?_⟩ :
+      DiscriminantGroup (⊥ : Submodule ℤ E)))
+    fun m n hmn ↦ ?_
+  · obtain rfl := (mem_bot ℤ).1 hy
+    exact ⟨0, by simp⟩
+  · have h := (discriminantGroup_mk_eq_mk_iff _ _).1 hmn
+    rw [mem_bot, ← sub_smul, ← Int.cast_smul_eq_zsmul ℝ] at h
+    exact sub_eq_zero.1 (Int.cast_eq_zero.1 ((smul_eq_zero.1 h).resolve_right hx))
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
@@ -317,12 +332,8 @@ theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fi
     (LinearMap.BilinForm.toMatrix b h.integralForm).det = Nat.card (DiscriminantGroup L) := by
   -- The statement involves no measure; the comparison with `det L` uses the Borel volume.
   borelize E
-  -- A full lattice with a finite `ℤ`-basis spans `E` over `ℝ` by finitely many vectors.
-  have : FiniteDimensional ℝ E := by
-    have : Module.Finite ℤ L := Module.Finite.of_basis b
-    have hfg := Submodule.FG.span (A := ℝ) (Module.Finite.iff_fg.mp this)
-    rw [IsZLattice.span_top] at hfg
-    exact ⟨hfg⟩
+  have : Module.Finite ℤ L := Module.Finite.of_basis b
+  have := finiteDimensional_of_isZLattice (K := ℝ) L
   refine Int.cast_injective (α := ℝ) ?_
   rw [Int.cast_natCast, ← h.det_eq_card_discriminantGroup, det_eq_det_gram L b, Int.cast_det]
   congr 1
