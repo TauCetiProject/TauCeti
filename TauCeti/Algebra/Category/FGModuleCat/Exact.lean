@@ -21,6 +21,8 @@ for the canonical exact structure of the abelian category `ModuleCat R`.
 ## Main statements
 
 * `TauCeti.isExtensionClosed_finiteModules`: `ModuleCat.isFG R` is extension closed.
+* `TauCeti.isClosedUnderExtensions_isFG`: `ObjectProperty.IsClosedUnderExtensions` instance for
+  `ModuleCat.isFG R`.
 -/
 
 public section
@@ -45,5 +47,9 @@ theorem isExtensionClosed_finiteModules :
       Module.Finite.of_exact (f := S.f.hom) (g := S.g.hom)
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact)
       hS.moduleCat_surjective_g
+
+/-- Finitely generated `R`-modules are closed under extensions in `ModuleCat R`. -/
+instance isClosedUnderExtensions_isFG : (ModuleCat.isFG.{v} R).IsClosedUnderExtensions :=
+  (ExactStructure.isExtensionClosed_abelian_iff _).1 (isExtensionClosed_finiteModules R)
 
 end TauCeti

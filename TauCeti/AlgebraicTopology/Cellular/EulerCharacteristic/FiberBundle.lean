@@ -19,12 +19,16 @@ spectral sequence finiteness and Euler characteristic theorems of
 `TauCeti.AlgebraicTopology.Singular.Fibration.EulerCharacteristic` therefore gives, over any
 (possibly disconnected and non-paracompact) base `B` of finite CW type:
 
-* **Homological finiteness for locally trivial maps and fibre bundles.** If `H_*(F; R)` vanishes in
-  large degrees, then so does `H_*(E; R)` over any ring `R`
-  (`TauCeti.eventually_isZero_singularHomology_of_exists_trivialization`,
-  `TauCeti.eventually_isZero_singularHomology_fiberBundle`); if `R` is Noetherian and `H_q(F; R)` is
-  finitely generated in every degree `q`, then `H_n(E; R)` is finitely generated in every degree `n`
-  (`TauCeti.finite_singularHomology_of_exists_trivialization`,
+* **Homological finiteness for locally trivial maps and fibre bundles.** For a locally trivial map,
+  if `H_*(F; R)` vanishes in large degrees then so does `H_*(E; R)` over any ring `R`
+  (`TauCeti.eventually_isZero_singularHomology_of_exists_trivialization_of_eventually_isZero`), and
+  if `R` is Noetherian and `H_q(F; R)` is finitely generated in every degree `q`, then `H_n(E; R)`
+  is finitely generated in every degree `n`
+  (`TauCeti.finite_singularHomology_of_exists_trivialization_of_finite`). In particular, when `F`
+  also has finite CW type (`[FiniteCWType F]`), both properties hold for locally trivial maps and
+  for fibre bundles (`TauCeti.eventually_isZero_singularHomology_of_exists_trivialization`,
+  `TauCeti.eventually_isZero_singularHomology_fiberBundle`,
+  `TauCeti.finite_singularHomology_of_exists_trivialization`,
   `TauCeti.finite_singularHomology_fiberBundle`).
 * **Multiplicativity of the homological Euler characteristic.** Over any division ring `k`, when `B`
   and `F` have finite CW type,
@@ -42,8 +46,11 @@ spectral sequence finiteness and Euler characteristic theorems of
 
 * Jean-Pierre Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54
   (1951), 425--505, Chapter II, Section 4, Proposition 3.
-* Allen Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 5.1.
+* John R. Klein, Cary Malkiewich, and Maxime Ramzi, *On the multiplicativity of the Euler
+  characteristic*, arXiv:2211.04992, Introduction, pp. 1--2.
+* Allen Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1.
 -/
 
 public section

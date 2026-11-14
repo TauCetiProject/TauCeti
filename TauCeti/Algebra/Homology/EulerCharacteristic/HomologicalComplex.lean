@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
-public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
 # Euler--Poincaré for homological complexes of arbitrary shape
@@ -24,17 +24,14 @@ complexes indexed by `ℤ × ℤ` whose differential direction changes from page
 This file proves the Euler--Poincaré identity for complexes of arbitrary shape `c` over any ring
 `R` satisfying the strong rank condition and rank--nullity (`[StrongRankCondition R]` and
 `[HasRankNullity R]`, covering division rings and commutative domains such as `ℤ`, with no
-Noetherian assumption):
+Noetherian assumption), using `HomologicalComplex.finrank_X_eq`:
 
-* `HomologicalComplex.finite_homology`: over any ring, if `K.X i` is a Noetherian `R`-module, then
-  `K.homology i` is finitely generated.
-* `HomologicalComplex.finrank_X_eq`: at any index `i` where `K.X i` is finitely generated,
-  `finrank (K.X i)` equals `finrank (K.homology i)` plus the ranks of the incoming and outgoing
-  boundary submodules.
 * `HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology`: on any finite set `s : Finset ι`
   whose boundary differentials into and out of `s` vanish, the signed sums of term finranks and
   homology finranks over `s` agree; the boundary ranks cancel pairwise across `s × s` via
   `c.χ_next`.
+* `HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology_of_isZero`: specialization to a
+  complex vanishing outside `s`.
 * `HomologicalComplex.eulerChar_eq_homologyEulerChar`: if every term `K.X i` is finitely generated
   and `K.X i` is nonzero for only finitely many indices `i`, then
   `K.eulerChar = K.homologyEulerChar`.
@@ -54,17 +51,10 @@ universe u v
 
 namespace HomologicalComplex
 
-section Finite
+section BoundarySums
 
 variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat.{v} R) c)
-
-/-- If the term `K.X i` of a homological complex of `R`-modules is a Noetherian module, then its
-homology `K.homology i` is finitely generated. -/
-theorem finite_homology (i : ι) [IsNoetherian R (K.X i)] :
-    Module.Finite R (K.homology i) :=
-  have : IsNoetherian R (K.sc i).X₂ := ‹IsNoetherian R (K.X i)›
-  (K.sc i).finite_homology
 
 /-- For an index `i`, if the incoming differential from `c.prev i` vanishes whenever
 `c.prev i ∉ s`, then the rank of `im (K.d (c.prev i) i)` equals the sum over `j ∈ s` of the ranks
@@ -94,33 +84,13 @@ private lemma finrank_range_d_next_eq_sum [Nontrivial R] {s : Finset ι} {i : ι
   · rw [hnext hmem, ModuleCat.hom_zero, LinearMap.range_zero]
     exact finrank_zero_of_subsingleton
 
-end Finite
+end BoundarySums
 
 section RankNullity
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
   {ι : Type*} {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c)
-
-/-- **Rank--nullity at one index of a homological complex.** Over a ring satisfying the strong rank
-condition and rank--nullity, if `K.X i` is finitely generated, its rank is the rank of
-`K.homology i` plus the ranks of the incoming and outgoing boundary submodules. -/
-theorem finrank_X_eq (i : ι) [Module.Finite R (K.X i)] :
-    finrank R (K.X i) = finrank R (K.homology i) +
-      finrank R (LinearMap.range (K.d (c.prev i) i).hom) +
-      finrank R (LinearMap.range (K.d i (c.next i)).hom) := by
-  have : Module.Finite R (K.sc' (c.prev i) i (c.next i)).X₂ := ‹Module.Finite R (K.X i)›
-  have hH : finrank R (K.sc' (c.prev i) i (c.next i)).homology +
-      finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
-        finrank R (LinearMap.ker (K.d i (c.next i)).hom) :=
-    (K.sc' (c.prev i) i (c.next i)).finrank_homology_add_finrank_range_f
-  have e : K.homology i ≅ (K.sc' (c.prev i) i (c.next i)).homology :=
-    ShortComplex.homologyMapIso (K.isoSc' (c.prev i) i (c.next i) rfl rfl)
-  have hker := (LinearMap.ker (K.d i (c.next i)).hom).finrank_quotient_add_finrank
-  rw [((K.d i (c.next i)).hom).quotKerEquivRange.finrank_eq] at hker
-  rw [← e.toLinearEquiv.finrank_eq] at hH
-  lia
-
-variable [c.EulerCharSigns]
+  [c.EulerCharSigns]
 
 /-- **Euler--Poincaré on a finite index set.** Let `s : Finset ι` be a finite set of indices on
 which the terms of `K` are finitely generated, and suppose that every differential entering `s` from

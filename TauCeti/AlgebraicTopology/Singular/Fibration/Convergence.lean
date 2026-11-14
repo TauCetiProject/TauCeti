@@ -27,8 +27,10 @@ fibration, read in the indexing of `TauCeti.preimageSkeleton`: a Serre fibration
 
 * **First quadrant.** The object at `(a, b)` on the first page (numbered `2`) is
   `Hₙ(E_{b+1}, E_b; R)` with `a + b = -n`, so it vanishes when `0 ≤ a + 2b`
-  (`TauCeti.TopCat.isZero_serreSpectralSequence_page_two_X`). In the classical homological indexing
-  `E¹_{d,t} = H_{d+t}(E_d, E_{d-1}; R)` with `d = b + 1`, this is the vanishing for `t < 0`.
+  (`TauCeti.TopCat.isZero_serreSpectralSequence_page_two_X`) and below row `-1` (`b < -1`,
+  `TauCeti.TopCat.isZero_serreSpectralSequence_page_two_X_of_lt_neg_one`). In the classical
+  homological indexing `E¹_{d,t} = H_{d+t}(E_d, E_{d-1}; R)` with `d = b + 1`, these are the
+  vanishing for `t < 0` and for `d < 0`.
 * **Finite filtration of the abutment.** Over a CW complex `K` containing the image of `p`, with no
   finiteness or dimension bound, the induced filtration `F_b Hₙ(E; R)` of the abutment is
   everything from `b = n` on
@@ -46,8 +48,9 @@ fibration, read in the indexing of `TauCeti.preimageSkeleton`: a Serre fibration
   425–505, Chapter II.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
   Theorem 2.6 and Section 5.1.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 5.1 (the Serre spectral sequence).
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, Section 1.1.
 -/
 
 public section
@@ -124,6 +127,20 @@ theorem isZero_serreSpectralSequence_page_two_X (pq : ℤ × ℤ) (h : 0 ≤ pq.
   · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (by lia : 0 ≤ -(pq.1 + pq.2))
     exact (isZero_singularHomology_preimageSkeleton_succ hp R pq.2 n (by lia)).of_iso
       (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+        (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n (by lia))
+
+omit hp in
+variable (C p) in
+/-- Over any relative CW complex `C ⊆ B`, the first page (numbered `2`) of `serreSpectralSequence`
+vanishes below row `-1` (`pq.2 < -1`), because `preimageSkeleton C p` is constant below `0`. -/
+theorem isZero_serreSpectralSequence_page_two_X_of_lt_neg_one (pq : ℤ × ℤ) (h : pq.2 < -1) :
+    IsZero (((serreSpectralSequence C p R).page 2).X pq) := by
+  rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hneg
+  · exact isZero_filteredSpaceSpectralSequence_page_two_X _ _ pq hpos
+  · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (by lia : 0 ≤ -(pq.1 + pq.2))
+    exact (TopPair.isZero_singularHomology_ofInclusion_of_eq (ModuleCat.of R R) _
+      ((preimageSkeleton_of_neg p (by lia)).trans (preimageSkeleton_of_neg p (by lia)).symm)
+      n).of_iso (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
         (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n (by lia))
 
 include hp in

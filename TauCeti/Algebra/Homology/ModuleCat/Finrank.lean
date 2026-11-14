@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Algebra.FiniteSupport.Defs
@@ -23,6 +24,9 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 
 In a homological complex of vector spaces, a homology group has dimension at most that of the
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`).
+Over any ring satisfying the strong rank condition and rank--nullity, the rank of a finitely
+generated term `K.X i` equals the rank of `K.homology i` plus the ranks of the incoming and
+outgoing boundary submodules (`HomologicalComplex.finrank_X_eq`).
 Bases of two terms of a complex joined by a bijective differential have the same size
 (`HomologicalComplex.card_eq_card_of_bijective_d`).
 
@@ -66,6 +70,28 @@ theorem finrank_homology_le_finrank_X {k : Type*} [DivisionRing k] {ι : Type*}
   -- The middle term of `K.sc i` is `K.X i` by construction.
   have : Module.Finite k (K.sc i).X₂ := ‹Module.Finite k (K.X i)›
   (K.sc i).finrank_homology_le_finrank_X₂
+
+/-- **Rank--nullity at one index of a homological complex.** Over a ring satisfying the strong rank
+condition and rank--nullity, if `K.X i` is finitely generated, its rank is the rank of
+`K.homology i` plus the ranks of the incoming and outgoing boundary submodules. -/
+theorem finrank_X_eq {R : Type*} [Ring R] [StrongRankCondition R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c) [HasRankNullity.{v} R]
+    (i : ι) [Module.Finite R (K.X i)] :
+    finrank R (K.X i) = finrank R (K.homology i) +
+      finrank R (LinearMap.range (K.d (c.prev i) i).hom) +
+      finrank R (LinearMap.range (K.d i (c.next i)).hom) := by
+  -- The middle term of `K.sc' (c.prev i) i (c.next i)` is `K.X i` by construction.
+  have : Module.Finite R (K.sc' (c.prev i) i (c.next i)).X₂ := ‹Module.Finite R (K.X i)›
+  have hH : finrank R (K.sc' (c.prev i) i (c.next i)).homology +
+      finrank R (LinearMap.range (K.d (c.prev i) i).hom) =
+        finrank R (LinearMap.ker (K.d i (c.next i)).hom) :=
+    (K.sc' (c.prev i) i (c.next i)).finrank_homology_add_finrank_range_f
+  have e : K.homology i ≅ (K.sc' (c.prev i) i (c.next i)).homology :=
+    ShortComplex.homologyMapIso (K.isoSc' (c.prev i) i (c.next i) rfl rfl)
+  have hker := (LinearMap.ker (K.d i (c.next i)).hom).finrank_quotient_add_finrank
+  rw [((K.d i (c.next i)).hom).quotKerEquivRange.finrank_eq] at hker
+  rw [← e.toLinearEquiv.finrank_eq] at hH
+  lia
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 

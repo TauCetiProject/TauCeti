@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Finsupp
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
+import TauCeti.Algebra.Category.FGModuleCat.Basic
+import TauCeti.Algebra.Category.FGModuleCat.Exact
 
 /-!
 # Finiteness and rank of the abutment of a spectral object of modules
@@ -53,23 +54,10 @@ is finitely generated, then `F_b H^m` is finitely generated. -/
 theorem finite_abutmentFiltration_of_finite_cokernel {a b m : ℤ} (hab : a ≤ b)
     (ha : IsZero (X.abutmentFiltration a m))
     (hfin : ∀ q ∈ Finset.Ico a b, Module.Finite R ↑(cokernel (X.abutmentFiltrationMap q m))) :
-    Module.Finite R (X.abutmentFiltration b m) := by
-  revert hfin
-  induction b, hab using Int.leInduction with
-  | base =>
-    intro _
-    have := ModuleCat.subsingleton_of_isZero ha
-    infer_instance
-  | succ s has ih =>
-    intro hfin
-    have hS := X.shortExact_cokernelSequence_abutmentFiltrationMap s m
-    have : Module.Finite R (ShortComplex.cokernelSequence (X.abutmentFiltrationMap s m)).X₁ :=
-      ih fun q hq ↦ hfin q (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hq)
-    have : Module.Finite R (ShortComplex.cokernelSequence (X.abutmentFiltrationMap s m)).X₃ :=
-      hfin s (Finset.mem_Ico.2 ⟨has, by lia⟩)
-    exact Module.Finite.of_exact
-      ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS.exact)
-      hS.moduleCat_surjective_g
+    Module.Finite R (X.abutmentFiltration b m) :=
+  (ModuleCat.isFG_iff _).mp <|
+    X.prop_abutmentFiltration_of_prop_cokernel (ModuleCat.isFG R) hab ha
+      fun q hq ↦ (ModuleCat.isFG_iff _).mpr (hfin q hq)
 
 /-- Over any ring, if the filtration of `X.abutment m` starts at `0` at `a`, reaches the whole
 abutment at `b`, and has finitely generated graded pieces for `a ≤ q < b`, then `X.abutment m` is
@@ -77,9 +65,10 @@ finitely generated. -/
 theorem finite_abutment_of_finite_cokernel {a b m : ℤ} (hab : a ≤ b)
     (ha : IsZero (X.abutmentFiltration a m)) [IsIso (X.abutmentFiltrationι b m)]
     (hfin : ∀ q ∈ Finset.Ico a b, Module.Finite R ↑(cokernel (X.abutmentFiltrationMap q m))) :
-    Module.Finite R (X.abutment m) := by
-  have := X.finite_abutmentFiltration_of_finite_cokernel hab ha hfin
-  exact Module.Finite.equiv (asIso (X.abutmentFiltrationι b m)).toLinearEquiv
+    Module.Finite R (X.abutment m) :=
+  (ModuleCat.isFG_iff _).mp <|
+    X.prop_abutment_of_prop_cokernel (ModuleCat.isFG R) hab ha
+      fun q hq ↦ (ModuleCat.isFG_iff _).mpr (hfin q hq)
 
 /-- Over a ring satisfying the strong rank condition and rank--nullity, if `F_a H^m = 0` and every
 graded piece `F_{q+1} H^m / F_q H^m` for `a ≤ q < b` is finitely generated, then the rank of
@@ -96,8 +85,9 @@ theorem finrank_abutmentFiltration_eq_sum_Ico [StrongRankCondition R] [HasRankNu
     simp [ModuleCat.finrank_eq_zero_of_isZero ha]
   | succ s has ih =>
     intro hfin
-    have : Module.Finite R (ShortComplex.cokernelSequence (X.abutmentFiltrationMap s m)).X₂ :=
-      X.finite_abutmentFiltration_of_finite_cokernel (Int.le_add_one has) ha hfin
+    have : Module.Finite R (ShortComplex.cokernelSequence (X.abutmentFiltrationMap s m)).X₂ := by
+      rw [ShortComplex.cokernelSequence_X₂]
+      exact X.finite_abutmentFiltration_of_finite_cokernel (Int.le_add_one has) ha hfin
     rw [show Finset.Ico a (s + 1) = insert s (Finset.Ico a s) by grind,
       Finset.sum_insert Finset.right_notMem_Ico,
       ← ih fun q hq ↦ hfin q (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hq)]

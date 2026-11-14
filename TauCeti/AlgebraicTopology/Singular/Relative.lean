@@ -362,6 +362,35 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- If the subspace inclusion `P.map` is an isomorphism, the relative singular homology
+`Hₙ(X, A)` vanishes in every degree `n`. -/
+lemma isZero_singularHomology_of_isIso_map [IsIso P.map] (n : ℕ) :
+    IsZero (P.singularHomology R n) := by
+  refine (IsZero.iff_id_eq_zero _).2 ?_
+  rw [← P.singularHomologyMap_id R n]
+  exact TopPair.singularHomologyMap_eq_zero_of_fac (𝟙 P) R (inv P.map)
+    ((IsIso.inv_hom_id P.map).trans (Hom.fst_id P).symm) n
+
+/-- The relative singular homology `Hₙ(S, S)` of a subset relative to itself vanishes in every
+degree `n`. -/
+lemma isZero_singularHomology_ofInclusion_rfl {X : TopCat.{w}} (S : Set X) (n : ℕ) :
+    IsZero ((ofInclusion (Set.Subset.rfl : S ⊆ S)).singularHomology R n) := by
+  have hmap : (ofInclusion (Set.Subset.rfl : S ⊆ S)).map = 𝟙 (TopCat.of S) := by
+    ext x
+    rfl
+  have : IsIso (ofInclusion (Set.Subset.rfl : S ⊆ S)).map := by
+    rw [hmap]
+    exact IsIso.id (TopCat.of S)
+  exact isZero_singularHomology_of_isIso_map _ R n
+
+/-- For nested subsets `S ⊆ A` with `S = A`, the relative singular homology `Hₙ(A, S)` vanishes
+in every degree `n`. -/
+lemma isZero_singularHomology_ofInclusion_of_eq {X : TopCat.{w}} {A S : Set X}
+    (h : S ⊆ A) (hSA : S = A) (n : ℕ) :
+    IsZero ((ofInclusion h).singularHomology R n) :=
+  (isZero_singularHomology_ofInclusion_congr R h (Set.Subset.rfl : S ⊆ S) hSA.symm rfl n).2
+    (isZero_singularHomology_ofInclusion_rfl R S n)
+
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=
