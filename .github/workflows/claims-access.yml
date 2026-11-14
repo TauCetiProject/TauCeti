@@ -60,10 +60,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@1c6b2a22772376372f775c589fd06cee4189152a
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 1c6b2a22772376372f775c589fd06cee4189152a
           project-directory: .
       - name: Reconcile access and sweep dead leases
         env:
