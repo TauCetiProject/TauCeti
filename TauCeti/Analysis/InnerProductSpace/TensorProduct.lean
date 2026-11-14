@@ -39,8 +39,8 @@ when endomorphisms are identified with tensors, without adding an instance on th
   finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
   on tensor products in adjoint statements for finite-dimensional factors.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
-* `ContinuousLinearMap.adjoint_rTensor_inner_right` and
-  `ContinuousLinearMap.adjoint_lTensor_inner_right`: `f† ⊗ 1` and `1 ⊗ g†` are formally adjoint
+* `ContinuousLinearMap.rTensor_adjoint_inner_right` and
+  `ContinuousLinearMap.lTensor_adjoint_inner_right`: `f† ⊗ 1` and `1 ⊗ g†` are formally adjoint
   to `f ⊗ 1` and `1 ⊗ g` on the algebraic tensor product, with no completeness assumption.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
   product of the inner product of `F` and the dual metric of `E`.
@@ -158,7 +158,7 @@ theorem rTensor_lTensor_apply_comm (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[�
 /-- `f† ⊗ 1` is formally adjoint to `f ⊗ 1` on the algebraic tensor product, which need not be
 complete. When the tensor products are complete this is Mathlib's
 `ContinuousLinearMap.adjoint_rTensor`. -/
-theorem adjoint_rTensor_inner_right [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+theorem rTensor_adjoint_inner_right [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
     (x : X₀ ⊗[𝕜] Y₀) (y : X₁ ⊗[𝕜] Y₀) :
     inner 𝕜 x (f.adjoint.rTensor Y₀ y) = inner 𝕜 (f.rTensor Y₀ x) y := by
   induction x with
@@ -171,7 +171,7 @@ theorem adjoint_rTensor_inner_right [CompleteSpace X₀] [CompleteSpace X₁] (f
 /-- `1 ⊗ g†` is formally adjoint to `1 ⊗ g` on the algebraic tensor product, which need not be
 complete. When the tensor products are complete this is Mathlib's
 `ContinuousLinearMap.adjoint_lTensor`. -/
-theorem adjoint_lTensor_inner_right [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+theorem lTensor_adjoint_inner_right [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
     (x : X₀ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₁) :
     inner 𝕜 x (g.adjoint.lTensor X₀ y) = inner 𝕜 (g.lTensor X₀ x) y := by
   induction x with

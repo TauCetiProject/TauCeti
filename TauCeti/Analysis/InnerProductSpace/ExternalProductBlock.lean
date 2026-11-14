@@ -70,9 +70,9 @@ here to the block on algebraic tensor products, for instance to the symbols.
   `ContinuousLinearMap.adjoint_externalProductBlock_eq_zero_iff`: the kernels of the block and of
   its adjoint.
 * `ContinuousLinearMap.kerExternalProductBlockEquiv`: the Künneth isomorphism
-  `(ker A ⊗ ker B) × (ker A† ⊗ ker B†) ≃ ker (externalProductBlock A B)`.
+  `ker (externalProductBlock A B) ≃ (ker A ⊗ ker B) × (ker A† ⊗ ker B†)`.
 * `ContinuousLinearMap.kerAdjointExternalProductBlockEquiv`: the Künneth isomorphism
-  `(ker A† ⊗ ker B) × (ker A ⊗ ker B†) ≃ ker (externalProductBlock A B)†`.
+  `ker (externalProductBlock A B)† ≃ (ker A† ⊗ ker B) × (ker A ⊗ ker B†)`.
 * `ContinuousLinearMap.finrank_ker_externalProductBlock`,
   `ContinuousLinearMap.finrank_ker_adjoint_externalProductBlock` and
   `ContinuousLinearMap.finrank_ker_sub_finrank_ker_adjoint_externalProductBlock`: the dimensions
@@ -230,10 +230,10 @@ theorem externalProductBlock_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ �
   have hsum : ‖A.rTensor W₀ w.fst‖ ^ 2 + ‖B.lTensor V₀ w.fst‖ ^ 2 = 0 := by
     have e₁ : inner 𝕜 (A.rTensor W₀ w.fst) (A.rTensor W₀ w.fst) =
         inner 𝕜 (B.lTensor V₁ (A.rTensor W₀ w.fst)) w.snd :=
-      (congrArg (inner 𝕜 _) h₁).trans (adjoint_lTensor_inner_right B _ _)
+      (congrArg (inner 𝕜 _) h₁).trans (lTensor_adjoint_inner_right B _ _)
     have e₂ : inner 𝕜 (B.lTensor V₀ w.fst) (B.lTensor V₀ w.fst) =
         -inner 𝕜 (B.lTensor V₁ (A.rTensor W₀ w.fst)) w.snd := by
-      rw [congrArg (inner 𝕜 _) h₂, inner_neg_right, adjoint_rTensor_inner_right,
+      rw [congrArg (inner 𝕜 _) h₂, inner_neg_right, rTensor_adjoint_inner_right,
         rTensor_lTensor_apply_comm]
     have : ((‖A.rTensor W₀ w.fst‖ ^ 2 + ‖B.lTensor V₀ w.fst‖ ^ 2 : ℝ) : 𝕜) = 0 := by
       rw [RCLike.ofReal_add, RCLike.ofReal_pow, RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
@@ -261,27 +261,27 @@ private theorem range_toLp_prodMap_mapIncl_ker (A : V₀ →L[𝕜] V₁) (B : W
     lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf, LinearMap.ker_rTensor_inf_ker_lTensor]
 
 /-- **The Künneth isomorphism for the kernel of the external product block**:
-`(ker A ⊗ ker B) × (ker A† ⊗ ker B†) ≃ ker (externalProductBlock A B)`, given by the inclusions of
-the tensor products of the kernels. The tensor products need not be complete. -/
+`ker (externalProductBlock A B) ≃ (ker A ⊗ ker B) × (ker A† ⊗ ker B†)`, whose inverse is given by
+the inclusions of the tensor products of the kernels. The tensor products need not be complete. -/
 noncomputable def kerExternalProductBlockEquiv (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
-    ((LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
+    LinearMap.ker (externalProductBlock A B :
+        WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) ≃ₗ[𝕜]
+      ((LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
         (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜]
-          LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) ≃ₗ[𝕜]
-      LinearMap.ker (externalProductBlock A B :
-        WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) :=
-  (LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
+          LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :=
+  ((LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
       (TensorProduct.mapIncl _ _).prodMap (TensorProduct.mapIncl _ _))
     ((WithLp.linearEquiv 2 𝕜 _).symm.injective.comp <| by
       rw [LinearMap.coe_prodMap]
       exact .prodMap (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _)
         (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _))).trans
-    (LinearEquiv.ofEq _ _ (range_toLp_prodMap_mapIncl_ker A B))
+    (LinearEquiv.ofEq _ _ (range_toLp_prodMap_mapIncl_ker A B))).symm
 
 @[simp]
-theorem coe_kerExternalProductBlockEquiv_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+theorem coe_kerExternalProductBlockEquiv_symm_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
     (st : (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
       (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :
-    (kerExternalProductBlockEquiv A B st : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) =
+    ((kerExternalProductBlockEquiv A B).symm st : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) =
       WithLp.toLp 2 (TensorProduct.mapIncl _ _ st.1, TensorProduct.mapIncl _ _ st.2) := by
   simp [kerExternalProductBlockEquiv]
 
@@ -298,7 +298,7 @@ theorem finrank_ker_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ �
           Module.finrank 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) +
         Module.finrank 𝕜 (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀)) *
           Module.finrank 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀)) := by
-  rw [← (kerExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
+  rw [(kerExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
     Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
 end Kernel
@@ -368,27 +368,27 @@ private theorem range_toLp_prodMap_mapIncl_ker_adjoint (A : V₀ →L[𝕜] V₁
     lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf, LinearMap.ker_rTensor_inf_ker_lTensor]
 
 /-- **The Künneth isomorphism for the kernel of the adjoint of the external product block**, which
-is its cokernel when the range is closed: `(ker A† ⊗ ker B) × (ker A ⊗ ker B†) ≃
-ker (externalProductBlock A B)†`, given by the inclusions of the tensor products of the
-kernels. -/
+is its cokernel when the range is closed: `ker (externalProductBlock A B)† ≃
+(ker A† ⊗ ker B) × (ker A ⊗ ker B†)`, whose inverse is given by the inclusions of the tensor
+products of the kernels. -/
 noncomputable def kerAdjointExternalProductBlockEquiv (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
-    ((LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
-        (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) ≃ₗ[𝕜]
-      LinearMap.ker ((externalProductBlock A B).adjoint :
-        WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) :=
-  (LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
+    LinearMap.ker ((externalProductBlock A B).adjoint :
+        WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) ≃ₗ[𝕜]
+      ((LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
+        (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :=
+  ((LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
       (TensorProduct.mapIncl _ _).prodMap (TensorProduct.mapIncl _ _))
     ((WithLp.linearEquiv 2 𝕜 _).symm.injective.comp <| by
       rw [LinearMap.coe_prodMap]
       exact .prodMap (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _)
         (Module.Flat.tensorProduct_mapIncl_injective_of_right _ _))).trans
-    (LinearEquiv.ofEq _ _ (range_toLp_prodMap_mapIncl_ker_adjoint A B))
+    (LinearEquiv.ofEq _ _ (range_toLp_prodMap_mapIncl_ker_adjoint A B))).symm
 
 @[simp]
-theorem coe_kerAdjointExternalProductBlockEquiv_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+theorem coe_kerAdjointExternalProductBlockEquiv_symm_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
     (st : (LinearMap.ker (A.adjoint : V₁ →ₗ[𝕜] V₀) ⊗[𝕜] LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) ×
       (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁) ⊗[𝕜] LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀))) :
-    (kerAdjointExternalProductBlockEquiv A B st : WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) =
+    ((kerAdjointExternalProductBlockEquiv A B).symm st : WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) =
       WithLp.toLp 2 (TensorProduct.mapIncl _ _ st.1, TensorProduct.mapIncl _ _ st.2) := by
   simp [kerAdjointExternalProductBlockEquiv]
 
@@ -405,7 +405,7 @@ theorem finrank_ker_adjoint_externalProductBlock (A : V₀ →L[𝕜] V₁) (B :
           Module.finrank 𝕜 (LinearMap.ker (B : W₀ →ₗ[𝕜] W₁)) +
         Module.finrank 𝕜 (LinearMap.ker (A : V₀ →ₗ[𝕜] V₁)) *
           Module.finrank 𝕜 (LinearMap.ker (B.adjoint : W₁ →ₗ[𝕜] W₀)) := by
-  rw [← (kerAdjointExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
+  rw [(kerAdjointExternalProductBlockEquiv A B).finrank_eq, Module.finrank_prod,
     Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
 /-- **Multiplicativity of the index for the external product block.** The dimension of the kernel
