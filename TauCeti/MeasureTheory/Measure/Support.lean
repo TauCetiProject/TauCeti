@@ -37,6 +37,9 @@ global continuity is unnecessary for this inclusion.
   measure has support equal to the closure of the map's range.
 * `MeasureTheory.Measure.support_map_homeomorph` — the support of a pushforward by a homeomorphism
   is the image of the original support.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_support` — in a hereditarily Lindelöf space
+  with measurable open sets, pulling a probability measure back to its support gives a probability
+  measure.
 -/
 
 public section
@@ -136,6 +139,16 @@ theorem support_restrict_of_isOpen {X : Type*} [TopologicalSpace X] [MeasurableS
   apply closure_minimal _ isClosed_support
   simpa only [hs.interior_eq, support_eq_univ, inter_univ] using
     (interior_inter_support (μ := μ) (s := s))
+
+/-- In a hereditarily Lindelöf space with measurable open sets, pulling a probability measure back
+to its topological support yields a probability measure. -/
+instance isProbabilityMeasure_comap_support {X : Type*} [TopologicalSpace X]
+    [HereditarilyLindelofSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    (μ : Measure X) [IsProbabilityMeasure μ] :
+    IsProbabilityMeasure (μ.comap ((↑) : μ.support → X)) :=
+  (MeasurableEmbedding.subtype_coe
+    (Measure.isClosed_support (μ := μ)).measurableSet).isProbabilityMeasure_comap
+      (by simpa using Measure.support_mem_ae (μ := μ))
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]

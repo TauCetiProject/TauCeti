@@ -96,6 +96,12 @@ theorem support_semicircleReal (a : ℝ) (v : ℝ≥0) :
     simpa [add_comm, sub_eq_add_neg] using
       (image_affine_Icc' (a := 2 * Real.sqrt (v : ℝ)) (by positivity) a (-1) 1)
 
+/-- Every centre/variance semicircle law has compact topological support. -/
+theorem isCompact_support_semicircleReal (a : ℝ) (v : ℝ≥0) :
+    IsCompact (semicircleReal a v).support := by
+  rw [support_semicircleReal]
+  exact isCompact_Icc
+
 /-- All exponential moments of a centre/variance semicircle exist. -/
 @[simp]
 theorem integrableExpSet_id_semicircleReal (a : ℝ) (v : ℝ≥0) :

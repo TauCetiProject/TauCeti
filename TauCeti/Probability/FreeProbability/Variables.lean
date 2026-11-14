@@ -50,6 +50,13 @@ theorem isFreelyIndependentElements_iff {a : ι → A} {φ : A →ₗ[R] R} :
       IsFreelyIndependent φ fun i ↦ Algebra.adjoin R {a i} :=
   Iff.rfl
 
+/-- Elements chosen one from each member of a freely independent family of subalgebras are freely
+independent. -/
+theorem IsFreelyIndependent.isFreelyIndependentElements {φ : A →ₗ[R] R}
+    {B : ι → Subalgebra R A} (h : IsFreelyIndependent φ B) {a : ι → A}
+    (ha : ∀ i, a i ∈ B i) : IsFreelyIndependentElements φ a :=
+  h.mono fun i => Algebra.adjoin_le (Set.singleton_subset_iff.mpr (ha i))
+
 /-- Elements are freely independent exactly when every nonempty centred polynomial word with
 alternating labels has zero expectation. -/
 theorem isFreelyIndependentElements_iff_polynomial {a : ι → A} {φ : A →ₗ[R] R} :

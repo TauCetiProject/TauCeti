@@ -51,19 +51,22 @@ theorem continuous_leftMul (ψ : StarPositiveFunctional (LinearAlgebra.FreeProdu
 
 variable (φ : ∀ i, StarPositiveFunctional (A i)) (hφ : ∀ i, φ i 1 = 1)
 
+-- Keep `HilbertSpace` semireducible rather than reducible so typeclass search on operator
+-- subalgebras treats it as an atomic Hilbert space without unfolding the GNS quotient, while
+-- definitions in this file still unify it with `HilbertGNS`.
 /-- The completed GNS Hilbert space of the algebraic free-product state. -/
-abbrev HilbertSpace := (freeProductPositiveFunctional φ hφ).HilbertGNS
+@[expose]
+def HilbertSpace : Type _ :=
+  (freeProductPositiveFunctional φ hφ).HilbertGNS
 
--- Fix the operator carrier before invoking the general topological instances: inferring
--- it from their topology projections otherwise unfolds the algebraic GNS quotient.
-private instance : IsTopologicalRing (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
-  NonUnitalSeminormedRing.toIsTopologicalRing
-    (α := HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
+instance : NormedAddCommGroup (HilbertSpace φ hφ) :=
+  inferInstanceAs (NormedAddCommGroup (freeProductPositiveFunctional φ hφ).HilbertGNS)
 
-private instance : ContinuousStar (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
-  ⟨(ContinuousLinearMap.adjoint :
-    (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) ≃ₗᵢ⋆[ℂ]
-      (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)).continuous⟩
+instance : InnerProductSpace ℂ (HilbertSpace φ hφ) :=
+  inferInstanceAs (InnerProductSpace ℂ (freeProductPositiveFunctional φ hφ).HilbertGNS)
+
+instance : CompleteSpace (HilbertSpace φ hφ) :=
+  inferInstanceAs (CompleteSpace (freeProductPositiveFunctional φ hφ).HilbertGNS)
 
 /-- The bounded left regular representation of the algebraic free product. -/
 def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
@@ -189,7 +192,8 @@ def state : algebra φ hφ →ₚ[ℂ] ℂ :=
 theorem state_apply (T : algebra φ hφ) :
     state φ hφ T = ⟪vacuum φ hφ, (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
       (vacuum φ hφ)⟫_ℂ := by
-  exact (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_apply T
+  exact (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_apply
+    (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
 
 @[simp]
 theorem state_ofAlgebraic (a : LinearAlgebra.FreeProduct ℂ A) :
