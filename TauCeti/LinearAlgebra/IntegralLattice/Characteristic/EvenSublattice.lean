@@ -187,4 +187,36 @@ theorem relIndex_evenSublattice_le_two :
     AddSubgroup.relIndex_top_right, AddSubgroup.index_ker]
   exact (Nat.card_le_card_of_injective _ Subtype.coe_injective).trans (Nat.card_zmod 2).le
 
+/-- The even sublattice has positive index in the lattice. -/
+theorem relIndex_evenSublattice_pos :
+    0 < L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by
+  have htop : (⊤ : AddSubgroup L).map (L.carrier.subtype : L →+ V) =
+      L.carrier.toAddSubgroup :=
+    (AddSubgroup.map_top _).trans (AddSubgroup.range_subtype L.carrier.toAddSubgroup)
+  have hker : L.evenSubmodule.toAddSubgroup = L.normParity.ker := by
+    ext x
+    simp [normParity_apply, ZMod.intCast_eq_zero_iff_even]
+  rw [evenSublattice_carrier, Submodule.map_toAddSubgroup, ← htop, hker,
+    AddSubgroup.relIndex_map_map_of_injective _ _ L.carrier.injective_subtype,
+    AddSubgroup.relIndex_top_right, AddSubgroup.index_ker]
+  exact Nat.card_pos
+
+/-- The even sublattice has index `1` or `2` in the lattice. -/
+theorem relIndex_evenSublattice_eq_one_or_two :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 1 ∨
+      L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 2 := by
+  have hpos := L.relIndex_evenSublattice_pos
+  have hle := L.relIndex_evenSublattice_le_two
+  omega
+
+/-- No odd number greater than `1` divides the index of `L.evenSublattice` in `L`. -/
+theorem not_dvd_relIndex_evenSublattice_of_odd {n : ℕ} (hn : Odd n) (hn1 : n ≠ 1) :
+    ¬n ∣ L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by
+  rcases L.relIndex_evenSublattice_eq_one_or_two with h | h <;> rw [h]
+  · exact fun hd ↦ hn1 (Nat.dvd_one.mp hd)
+  · intro hd
+    rcases (Nat.dvd_prime Nat.prime_two).mp hd with rfl | rfl
+    · exact hn1 rfl
+    · exact (Nat.not_even_iff_odd.mpr hn) even_two
+
 end TauCeti.IntegralLattice

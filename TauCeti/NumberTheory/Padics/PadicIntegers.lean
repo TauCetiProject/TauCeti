@@ -62,6 +62,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
+* `PadicInt.isSquare_mul_sq_iff`: for `b ≠ 0` in `ℤ_[p]`, `a * b ^ 2` is a square in `ℤ_[p]` if and
+  only if `a` is.
 * `PadicInt.exists_apply_eq_one_and_eq_smul`: a finite family in `ℤ_[p]` is `q • w` with
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
@@ -289,6 +291,20 @@ theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
   rw [Ideal.mem_span_singleton] at hx
   have := (Units.mul_left_dvd (u := unitCoeff hy)).2 hx
   rwa [← unitCoeff_spec hy] at this
+
+/-- Multiplying by a nonzero square `b ^ 2` in `ℤ_p` preserves squareness: if `r ^ 2 = a * b ^ 2`,
+then `‖r‖ ≤ ‖b‖` because `‖a‖ ≤ 1`, so `b ∣ r` and `b ^ 2` cancels in the domain `ℤ_p`. -/
+theorem isSquare_mul_sq_iff {a b : ℤ_[p]} (hb : b ≠ 0) :
+    IsSquare (a * b ^ 2) ↔ IsSquare a := by
+  refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun ⟨s, hs⟩ ↦ ⟨s * b, by rw [hs]; ring⟩⟩
+  have hnorm : ‖r‖ ≤ ‖b‖ :=
+    (sq_le_sq₀ (norm_nonneg r) (norm_nonneg b)).mp <| by
+      rw [sq, sq, ← norm_mul, ← hr, norm_mul, sq, norm_mul]
+      exact mul_le_of_le_one_left (mul_nonneg (norm_nonneg b) (norm_nonneg b)) (norm_le_one a)
+  obtain ⟨s, rfl⟩ := dvd_of_norm_le hnorm
+  refine ⟨s, mul_right_cancel₀ (pow_ne_zero 2 hb) ?_⟩
+  calc a * b ^ 2 = (b * s) * (b * s) := hr
+    _ = (s * s) * b ^ 2 := by ring
 
 /-- **A finite family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
 `v : ι → ℤ_p` with `ι` finite and nonempty there are an index `i₀`, a scalar `q` and a family `w`

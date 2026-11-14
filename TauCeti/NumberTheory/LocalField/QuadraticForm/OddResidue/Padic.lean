@@ -54,6 +54,8 @@ residues modulo `p`.
   `n` prime to `p`.
 * `TauCeti.Padic.isSquare_intCast_iff_legendreSym_eq_one`: an integer prime to `p` is a square in
   `ℚ_p` exactly when it is a square modulo `p`.
+* `PadicInt.isSquare_intCast_iff_legendreSym_eq_one`: an integer prime to `p` is a square in
+  `ℤ_p` exactly when it is a square modulo `p`.
 * `Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three`: `(-1, p)_p = -1` when
   `p ≡ 3 (mod 4)`.
 
@@ -208,3 +210,22 @@ theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
   · exact h
 
 end Padic
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- **Squares in `ℤ_p` of integers prime to `p`.** For an odd prime `p` and an integer `n` prime
+to `p`, the image of `n` in `ℤ_p` is a square in `ℤ_p` exactly when `n` is a square modulo `p`,
+that is `(n / p) = 1`. -/
+theorem isSquare_intCast_iff_legendreSym_eq_one (hp : p ≠ 2) {n : ℤ} (hn : ¬ (p : ℤ) ∣ n) :
+    IsSquare (n : ℤ_[p]) ↔ legendreSym p n = 1 := by
+  rw [← TauCeti.Padic.isSquare_intCast_iff_legendreSym_eq_one hp hn]
+  refine ⟨fun ⟨r, hr⟩ ↦ ⟨(r : ℚ_[p]), congrArg ((↑) : ℤ_[p] → ℚ_[p]) hr⟩, fun ⟨r, hr⟩ ↦ ?_⟩
+  have hr_le : ‖r‖ ≤ 1 :=
+    (sq_le_one_iff₀ (norm_nonneg r)).mp <| by
+      rw [sq, ← norm_mul, ← hr]
+      exact PadicInt.norm_le_one (n : ℤ_[p])
+  exact ⟨r.lift hr_le, PadicInt.ext hr⟩
+
+end PadicInt

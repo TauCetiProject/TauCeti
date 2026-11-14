@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.SpanRank
+public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import TauCeti.Algebra.Group.Primary.Card
-import TauCeti.Algebra.Group.Primary.Generators
 import TauCeti.Algebra.Module.SpanRank
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Generators
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.NumberTheory.IntegralLattice.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Diagonal
@@ -44,16 +43,15 @@ square class `∏_{kᵢ = m} uᵢ` over `ℤ_p`. Only the unimodular constituent
 `(A_L)_p`: its rank is recovered from `rank L` by subtracting the positive-scale counts, and its
 unit determinant square class is recovered from the `p`-adic square class of `det L` once the
 positive-scale contributions are divided out. Applying the Henselian unit-diagonal classification on
-each scale fiber constructs an integral `ℤ_p`-isometry `L_p ≃ M_p`.
+each scale fiber (`TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`) constructs an
+integral `ℤ_p`-isometry `L_p ≃ M_p`.
 
-Two consequences follow directly from the same diagonal analysis:
-
-* The least number of generators of `(A_L)_p` equals `#{i | kᵢ ≠ 0}`: each nontrivial cyclic
-  summand `ℤ/pᵏⁱ` contributes one generator modulo `p`, while `kᵢ = 0` contributes none.
-* When `rank L` and `rank M` attain this lower bound `ℓ((A_L)_p)` and `ℓ((A_M)_p)`, neither
-  localization has a unimodular constituent `kᵢ = 0`, so an isometry `(A_L)_p ≅ (A_M)_p` determines
-  `L_p ≃ M_p` without any determinant or rank hypothesis. This is the uniqueness clause of
-  Nikulin's Theorem 1.9.1 at odd primes.
+When `rank L` and `rank M` attain the minimal generator count `AddGroup.rank (A_L)_p` and
+`AddGroup.rank (A_M)_p`
+(`TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`), neither
+localization has a unimodular constituent `kᵢ = 0`, so an isometry `(A_L)_p ≅ (A_M)_p` determines
+`L_p ≃ M_p` without any determinant or rank hypothesis. This is the uniqueness clause of Nikulin's
+Theorem 1.9.1 at odd primes.
 
 At odd order, a bilinear isometry between finite quadratic modules automatically preserves the
 quadratic refinement
@@ -63,20 +61,16 @@ nondegenerate lattices via `q_L`.
 
 ## Main results
 
-* `TauCeti.IntegralLattice.spanFinrank_primaryComponent_discriminantGroup_le_finrank`: for any
-  prime `p`, `ℓ((A_L)_p) ≤ rank L`.
-* `TauCeti.IntegralLattice.spanFinrank_primaryComponent_discriminantGroup_eq_card_filter`: at an
-  odd prime `p`, `ℓ((A_L)_p) = #{i | kᵢ ≠ 0}` in any diagonal Jordan form `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`.
-* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_discriminantBilinear` and
-  `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinear`
+* `IntegralLattice.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule` and
+  `IntegralLattice.localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinearModule`
   classify `L_p ≃ M_p` at an odd prime `p` by `rank L = rank M`, `det L · det M` being a square in
   `ℤ_p` (equivalently `det L = u² det M` for `u ∈ ℤ_pˣ`), and `(A_L)_p ≅ (A_M)_p`.
-* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_discriminantQuadratic`: the even-lattice
-  counterpart in terms of the `p`-primary discriminant quadratic modules.
-* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank` and
-  `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_spanFinrank`:
-  minimal-rank `p`-adic localizations (`rank L = ℓ((A_L)_p)`) are isometric if and only if their
-  `p`-primary discriminant forms are isometric.
+* `IntegralLattice.localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModule`:
+  the even-lattice counterpart in terms of the `p`-primary discriminant quadratic modules.
+* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_of_finrank_eq_rank` and
+  `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_rank`:
+  minimal-rank `p`-adic localizations (`rank L = AddGroup.rank (A_L)_p`) are isometric if and only
+  if their `p`-primary discriminant forms are isometric.
 
 ## References
 
@@ -94,103 +88,6 @@ namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-/-! ### Generator count of a `p`-primary discriminant component -/
-
-/-- For every prime `p`, the `p`-primary component of the discriminant group of a nondegenerate
-integral lattice needs at most `rank L` generators. -/
-theorem spanFinrank_primaryComponent_discriminantGroup_le_finrank
-    (L : IntegralLattice V) [L.IsNondegenerate] (p : ℕ) [Fact p.Prime] :
-    (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank ≤ finrank ℤ L := by
-  classical
-  have hp : p.Prime := Fact.out
-  by_cases hmem : p ∈ (Nat.card L.DiscriminantGroup).primeFactors
-  · refine (Finset.le_sup (f := fun q : (Nat.card L.DiscriminantGroup).primeFactors ↦
-      (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup q.1)).spanFinrank)
-      (Finset.mem_univ (⟨p, hmem⟩ : (Nat.card L.DiscriminantGroup).primeFactors))).trans ?_
-    rw [← TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents]
-    exact L.spanFinrank_discriminantGroup_le_finrank
-  · have hfact : (Nat.card L.DiscriminantGroup).factorization p = 0 :=
-      Nat.factorization_eq_zero_of_not_dvd fun hdvd ↦
-        hmem (Nat.mem_primeFactors.mpr ⟨hp, hdvd, Nat.card_pos.ne'⟩)
-    have hcard : Nat.card (primaryComponent L.DiscriminantGroup p) = 1 := by
-      rw [TauCeti.AddCommGroup.natCard_primaryComponent _ hp, hfact, pow_zero]
-    have : Subsingleton (primaryComponent L.DiscriminantGroup p) :=
-      (Nat.card_eq_one_iff_unique.mp hcard).1
-    rw [Subsingleton.elim (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)) ⊥,
-      Submodule.spanFinrank_bot]
-    exact Nat.zero_le _
-
-/-- The generator number of a finite product `∏ᵢ ℤ/pᵏⁱ` over `ℤ` is the number of nonzero
-exponents `kᵢ ≠ 0`. -/
-private theorem spanFinrank_pi_zmod_pow {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι]
-    (k : ι → ℕ) :
-    (⊤ : Submodule ℤ (∀ i, ZMod (p ^ k i))).spanFinrank = #{i | k i ≠ 0} := by
-  classical
-  have hp : p.Prime := Fact.out
-  have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ hp.ne_zero⟩
-  apply le_antisymm
-  · -- Single-coordinate generators on `{i // k i ≠ 0}` span the product, as `ZMod 1` is trivial.
-    let g : {i // k i ≠ 0} → ∀ i, ZMod (p ^ k i) := fun j ↦ Pi.single j.1 1
-    have hspan : Submodule.span ℤ (Set.range g) = ⊤ := by
-      refine top_unique fun x _ ↦ ?_
-      rw [← Finset.univ_sum_single x]
-      refine Submodule.sum_mem _ fun i _ ↦ ?_
-      by_cases hi : k i = 0
-      · have : Subsingleton (ZMod (p ^ k i)) := by rw [hi, pow_zero]; infer_instance
-        rw [Subsingleton.elim (x i) 0, Pi.single_zero]
-        exact Submodule.zero_mem _
-      · have hx : Pi.single i (x i) = ((x i).val : ℤ) • g ⟨i, hi⟩ := by
-          ext j
-          by_cases hji : j = i
-          · subst hji
-            simp [g]
-          · simp [g, hji]
-        rw [hx]
-        exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨⟨i, hi⟩, rfl⟩)
-    rw [← hspan]
-    refine (Submodule.spanFinrank_span_le_ncard_of_finite (Set.finite_range g)).trans ?_
-    calc (Set.range g).ncard ≤ Fintype.card {i // k i ≠ 0} := by
-          simpa [Nat.card_eq_fintype_card] using Set.ncard_image_le (f := g) (s := Set.univ)
-      _ = #{i | k i ≠ 0} := Fintype.card_subtype _
-  · -- Reducing the nontrivial coordinates modulo `p` maps onto the `𝔽_p`-vector space `𝔽_p^S`.
-    let π : (∀ i, ZMod (p ^ k i)) →ₗ[ℤ] ({i // k i ≠ 0} → ZMod p) :=
-      LinearMap.pi fun j ↦
-        ((ZMod.castHom (dvd_pow_self p j.2) (ZMod p)).toAddMonoidHom.toIntLinearMap).comp
-          (LinearMap.proj j.1)
-    have hsurj : Function.Surjective π := fun y ↦ by
-      refine ⟨fun i ↦ if hi : k i ≠ 0 then ((y ⟨i, hi⟩).val : ZMod (p ^ k i)) else 0, ?_⟩
-      ext ⟨i, hi⟩
-      simp [π, hi]
-    have hle := Submodule.spanFinrank_map_le_of_fg π (Module.Finite.fg_top (R := ℤ))
-    rw [Submodule.map_top, LinearMap.range_eq_top.mpr hsurj] at hle
-    calc #{i | k i ≠ 0} = Fintype.card {i // k i ≠ 0} := (Fintype.card_subtype _).symm
-      _ = finrank (ZMod p) ({i // k i ≠ 0} → ZMod p) := (Module.finrank_pi (ZMod p)).symm
-      _ = (⊤ : Submodule (ZMod p) ({i // k i ≠ 0} → ZMod p)).spanFinrank :=
-          Module.finrank_eq_spanFinrank_of_free
-      _ = (⊤ : Submodule ℤ ({i // k i ≠ 0} → ZMod p)).spanFinrank :=
-          (Submodule.spanFinrank_restrictScalars_eq
-            (ZMod.ringHom_surjective (algebraMap ℤ (ZMod p))) ⊤).symm
-      _ ≤ (⊤ : Submodule ℤ (∀ i, ZMod (p ^ k i))).spanFinrank := hle
-
-/-- **Generator count of `(A_L)_p` from a diagonal Jordan form.** At an odd prime `p`, if `b` is an
-orthogonal basis of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), then the least number of
-generators of the `p`-primary discriminant group `(A_L)_p` is `#{i | kᵢ ≠ 0}`. -/
-theorem spanFinrank_primaryComponent_discriminantGroup_eq_card_filter
-    {L : IntegralLattice V} [L.IsNondegenerate] {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
-    {ι : Type*} [Fintype ι] {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {u : ι → ℤ_[p]ˣ} {k : ι → ℕ}
-    (hb : (L.localIntegralForm p).iIsOrtho b)
-    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
-    (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank = #{i | k i ≠ 0} := by
-  have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp
-  have hθ : ∀ i, (p : ℤ_[p]) ^ k i ∣ (u i : ℤ_[p]) - ((u i : ℤ_[p]).appr (k i) : ℤ) :=
-    fun i ↦ Ideal.mem_span_singleton.mp (PadicInt.appr_spec (k i) (u i : ℤ_[p]))
-  obtain ⟨f⟩ := L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu hθ
-  let e : (∀ i, ZMod (p ^ k i)) ≃ₗ[ℤ] primaryComponent L.DiscriminantGroup p :=
-    f.toAddEquiv.toIntLinearEquiv
-  have he := Submodule.spanFinrank_map_eq_of_injective e.toLinearMap e.injective (p := ⊤)
-  rw [Submodule.map_top, LinearEquiv.range] at he
-  exact he.trans (spanFinrank_pi_zmod_pow k)
-
 /-! ### `p`-adic unit squares and integer approximations -/
 
 /-- Canonical integer lift `θ ≡ u (mod p^{max(k, 1)})` of a `p`-adic unit `u`. -/
@@ -200,12 +97,12 @@ private noncomputable def approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k 
 private theorem pow_dvd_sub_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
     (p : ℤ_[p]) ^ k ∣ (u : ℤ_[p]) - approxInt u k :=
   (pow_dvd_pow (p : ℤ_[p]) (le_max_left k 1)).trans
-    (Ideal.mem_span_singleton.mp (PadicInt.appr_spec (max k 1) (u : ℤ_[p])))
+    (PadicInt.dvd_sub_appr (u : ℤ_[p]) (max k 1))
 
 private theorem dvd_sub_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
     (p : ℤ_[p]) ∣ (u : ℤ_[p]) - approxInt u k :=
   (pow_one (p : ℤ_[p]) ▸ pow_dvd_pow (p : ℤ_[p]) (le_max_right k 1)).trans
-    (Ideal.mem_span_singleton.mp (PadicInt.appr_spec (max k 1) (u : ℤ_[p])))
+    (PadicInt.dvd_sub_appr (u : ℤ_[p]) (max k 1))
 
 private theorem not_dvd_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
     ¬(p : ℤ) ∣ approxInt u k := by
@@ -241,32 +138,6 @@ private theorem isSquare_mul_approxInt {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) (
     (by exact_mod_cast PadicInt.isUnit_two hp) hθu hres
   exact ⟨x, by rw [← hx, sq]⟩
 
-/-- An integer prime to an odd prime `p` with Legendre symbol `1` is a square in `ℤ_p`. -/
-private theorem isSquare_padicInt_of_legendreSym_eq_one {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
-    {m : ℤ} (hm : ¬(p : ℤ) ∣ m) (hleg : legendreSym p m = 1) :
-    IsSquare (m : ℤ_[p]) := by
-  obtain ⟨r, hr⟩ := (TauCeti.Padic.isSquare_intCast_iff_legendreSym_eq_one hp hm).mpr hleg
-  have hr_le : ‖r‖ ≤ 1 := by
-    have hnorm : ‖r‖ * ‖r‖ ≤ 1 := by
-      rw [← norm_mul, ← hr]
-      exact PadicInt.norm_le_one (m : ℤ_[p])
-    nlinarith [norm_nonneg r]
-  exact ⟨r.lift hr_le, PadicInt.ext hr⟩
-
-/-- In `ℤ_p`, cancelling a nonzero square factor from `a * b ^ 2` preserves squareness of a unit
-`a`. -/
-private theorem isSquare_of_isSquare_mul_sq {p : ℕ} [Fact p.Prime] {a b : ℤ_[p]}
-    (ha : IsUnit a) (hb : b ≠ 0) (hsq : IsSquare (a * b ^ 2)) :
-    IsSquare a := by
-  obtain ⟨r, hr⟩ := hsq
-  have hnorm : ‖r‖ ≤ ‖b‖ := by
-    have h1 : ‖r‖ * ‖r‖ = ‖b‖ * ‖b‖ := by
-      rw [← norm_mul, ← hr, norm_mul, PadicInt.isUnit_iff.mp ha, one_mul, sq, norm_mul]
-    nlinarith [norm_nonneg r, norm_nonneg b]
-  obtain ⟨s, rfl⟩ := PadicInt.dvd_of_norm_le hnorm
-  refine ⟨s, mul_right_cancel₀ (pow_ne_zero 2 hb) ?_⟩
-  linear_combination hr
-
 /-- Positive-level Legendre-symbol agreement between integer lifts translates to `p`-adic squareness
 of the corresponding unit products. -/
 private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
@@ -276,26 +147,20 @@ private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] 
     IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v i) := by
   rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod]
   set S := ({i : Fin n | k i = m} : Finset (Fin n))
-  have hcop_v (i : Fin n) : IsCoprime (p : ℤ) (approxInt (v i) (k' i)) := isCoprime_approxInt _ _
-  have hleg_prod : ∀ (T : Finset (Fin n)) (g : Fin n → ℤ),
-      legendreSym p (∏ i ∈ T, g i) = ∏ i ∈ T, legendreSym p (g i) := by
-    intro T g
-    induction T using Finset.cons_induction with
-    | empty => simp
-    | cons a T ha ih => rw [Finset.prod_cons, Finset.prod_cons, legendreSym.mul, ih]
   have hsq_leg : legendreSym p (∏ i ∈ S, approxInt (u i) (k i) * approxInt (v i) (k' i)) = 1 := by
-    rw [hleg_prod, Finset.prod_congr rfl fun i _ ↦ legendreSym.mul p _ _,
-      Finset.prod_mul_distrib, hleg, ← Finset.prod_mul_distrib]
+    rw [← legendreSym.hom_apply, map_prod]
+    simp only [legendreSym.hom_apply, legendreSym.mul]
+    rw [Finset.prod_mul_distrib, hleg, ← Finset.prod_mul_distrib]
     refine Finset.prod_eq_one fun i _ ↦ ?_
     simpa [sq] using legendreSym.sq_one p
-      ((ZMod.isUnit_intCast_iff_isCoprime _ p).mpr (hcop_v i)).ne_zero
+      ((ZMod.isUnit_intCast_iff_isCoprime _ p).mpr (isCoprime_approxInt (v i) (k' i))).ne_zero
   have hndvd : ¬(p : ℤ) ∣ ∏ i ∈ S, approxInt (u i) (k i) * approxInt (v i) (k' i) := by
     rw [← PadicInt.isUnit_intCast_iff, Int.cast_prod]
     exact IsUnit.prod_iff.mpr fun i _ ↦ by
       rw [Int.cast_mul]
       exact (PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt _ _)).mul
         (PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt _ _))
-  have hZ := isSquare_padicInt_of_legendreSym_eq_one hp hndvd hsq_leg
+  have hZ := (PadicInt.isSquare_intCast_iff_legendreSym_eq_one hp hndvd).mpr hsq_leg
   rw [Int.cast_prod] at hZ
   have hu_sq : IsSquare (∏ i ∈ S, (u i : ℤ_[p]) * approxInt (u i) (k i)) :=
     Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
@@ -308,117 +173,13 @@ private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] 
     convert (hu_sq.mul hv_sq).mul hZ using 1
     simp only [Int.cast_mul, Finset.prod_mul_distrib, sq]
     ring
-  have hunit_uv : IsUnit ((∏ i ∈ S, (u i : ℤ_[p])) * ∏ i ∈ S, (v i : ℤ_[p])) :=
-    (IsUnit.prod_iff.mpr fun i _ ↦ (u i).isUnit).mul
-      (IsUnit.prod_iff.mpr fun i _ ↦ (v i).isUnit)
   have hne : (∏ i ∈ S, (approxInt (u i) (k i) : ℤ_[p]) * approxInt (v i) (k' i)) ≠ 0 := by
     have hu_int := PadicInt.isUnit_intCast_iff.mpr hndvd
     rw [Int.cast_prod] at hu_int
     simpa [Int.cast_mul] using hu_int.ne_zero
-  exact isSquare_of_isSquare_mul_sq hunit_uv hne hcomb
+  exact (PadicInt.isSquare_mul_sq_iff hne).mp hcomb
 
 /-! ### Assembling an integral `ℤ_p`-isometry from fiberwise unit-diagonal equivalences -/
-
-/-- If two diagonal `ℤ_p`-quadratic forms with matching scale exponents `k` have unit products in
-the same square class on every scale fiber `{i | k i = m}`, then they are integrally equivalent
-over `ℤ_p`. -/
-private theorem equivalent_weightedSumSquares_mul_pow_of_forall_fiber
-    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) {n : ℕ} (k : Fin n → ℕ) (u v : Fin n → ℤ_[p]ˣ)
-    (hfiber : ∀ m : ℕ, IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v i)) :
-    (QuadraticMap.weightedSumSquares ℤ_[p]
-        fun i ↦ (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i).Equivalent
-      (QuadraticMap.weightedSumSquares ℤ_[p]
-        fun i ↦ (v i : ℤ_[p]) * (p : ℤ_[p]) ^ k i) := by
-  classical
-  have h2 : IsUnit (2 : ℤ_[p]) := PadicInt.isUnit_two hp
-  let S : Finset ℕ := Finset.univ.image k
-  let κ : Fin n → S := fun i ↦ ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩
-  let σ : (Σ m : S, {i : Fin n // κ i = m}) ≃ Fin n := Equiv.sigmaFiberEquiv κ
-  -- On each scale fiber `m ∈ S`, Henselian unit-diagonal classification supplies a linear isometry.
-  have hstep (m : S) : ∃ e : ({i : Fin n // κ i = m} → ℤ_[p]) ≃ₗ[ℤ_[p]]
-      ({i : Fin n // κ i = m} → ℤ_[p]), ∀ z,
-      ∑ i : {i : Fin n // κ i = m}, (v i.1 : ℤ_[p]) * (e z i * e z i) =
-        ∑ i : {i : Fin n // κ i = m}, (u i.1 : ℤ_[p]) * (z i * z i) := by
-    let α := Fintype.equivFin {i : Fin n // κ i = m}
-    have hsq : IsSquare ((∏ j, u (α.symm j).1) * ∏ j, v (α.symm j).1) := by
-      have hsub : ∀ w : Fin n → ℤ_[p]ˣ,
-          ∏ j, w (α.symm j).1 = ∏ i with k i = m.1, w i := fun w ↦ by
-        rw [Equiv.prod_comp α.symm (fun i : {i : Fin n // κ i = m} ↦ w i.1),
-          ← Finset.prod_subtype ({i : Fin n | k i = m.1})
-            (fun i ↦ by simp [κ, Subtype.ext_iff]) (fun i ↦ w i)]
-      rw [hsub u, hsub v]
-      exact hfiber m.1
-    obtain ⟨f⟩ := (TauCeti.equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
-      h2 (fun j ↦ u (α.symm j).1) (fun j ↦ v (α.symm j).1)).mpr hsq
-    let c := LinearEquiv.funCongrLeft ℤ_[p] ℤ_[p] α.symm
-    refine ⟨c.trans (f.toLinearEquiv.trans c.symm), fun z ↦ ?_⟩
-    have hf := f.map_app (c z)
-    simp only [QuadraticMap.weightedSumSquares_units, QuadraticMap.weightedSumSquares_apply,
-      smul_eq_mul] at hf
-    calc ∑ i : {i : Fin n // κ i = m}, (v i.1 : ℤ_[p]) *
-            (c.symm (f (c z)) i * c.symm (f (c z)) i)
-        = ∑ j, (v (α.symm j).1 : ℤ_[p]) * (f (c z) j * f (c z) j) :=
-          (Equiv.sum_comp α.symm fun i ↦ (v i.1 : ℤ_[p]) *
-            (c.symm (f (c z)) i * c.symm (f (c z)) i)).symm.trans <|
-            Finset.sum_congr rfl fun j _ ↦ by simp [c]
-      _ = ∑ j, (u (α.symm j).1 : ℤ_[p]) * (c z j * c z j) := hf
-      _ = ∑ i : {i : Fin n // κ i = m}, (u i.1 : ℤ_[p]) * (z i * z i) :=
-          (Finset.sum_congr rfl fun j _ ↦ by simp [c]).trans <|
-            Equiv.sum_comp α.symm fun i ↦ (u i.1 : ℤ_[p]) * (z i * z i)
-  choose e he using hstep
-  -- Reassemble the fiberwise linear equivalences along `σ : (Σ m, fiber m) ≃ Fin n`.
-  let curryEquiv : ((Σ m : S, {i : Fin n // κ i = m}) → ℤ_[p]) ≃ₗ[ℤ_[p]]
-      (∀ m : S, {i : Fin n // κ i = m} → ℤ_[p]) :=
-    { toFun := fun f m i ↦ f ⟨m, i⟩
-      invFun := fun g p ↦ g p.1 p.2
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  let σEquiv : (Fin n → ℤ_[p]) ≃ₗ[ℤ_[p]] ((Σ m : S, {i : Fin n // κ i = m}) → ℤ_[p]) :=
-    LinearEquiv.funCongrLeft ℤ_[p] ℤ_[p] σ
-  let E : (Fin n → ℤ_[p]) ≃ₗ[ℤ_[p]] (Fin n → ℤ_[p]) :=
-    σEquiv.trans (curryEquiv.trans ((LinearEquiv.piCongrRight e).trans
-      (curryEquiv.symm.trans σEquiv.symm)))
-  refine ⟨{ toLinearEquiv := E, map_app' := fun x ↦ ?_ }⟩
-  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
-  rw [← Equiv.sum_comp σ, ← Equiv.sum_comp σ, Fintype.sum_sigma, Fintype.sum_sigma]
-  refine Finset.sum_congr rfl fun m _ ↦ ?_
-  have hk_eq (i : {i : Fin n // κ i = m}) : k (σ ⟨m, i⟩) = m.1 :=
-    congrArg Subtype.val i.2
-  have hE_eq (i : {i : Fin n // κ i = m}) :
-      E x (σ ⟨m, i⟩) = e m (fun j ↦ x (σ ⟨m, j⟩)) i := by
-    dsimp [E, σEquiv, curryEquiv]
-    rw [σ.symm_apply_apply]
-  calc ∑ i : {i : Fin n // κ i = m},
-          ((v (σ ⟨m, i⟩) : ℤ_[p]) * (p : ℤ_[p]) ^ k (σ ⟨m, i⟩)) *
-            (E x (σ ⟨m, i⟩) * E x (σ ⟨m, i⟩))
-      = (p : ℤ_[p]) ^ m.1 * ∑ i : {i : Fin n // κ i = m},
-          (v i.1 : ℤ_[p]) * (e m (fun j ↦ x (σ ⟨m, j⟩)) i * e m (fun j ↦ x (σ ⟨m, j⟩)) i) := by
-        rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [hk_eq i, hE_eq i]
-        simp only [σ, Equiv.sigmaFiberEquiv_apply]
-        ring
-    _ = (p : ℤ_[p]) ^ m.1 * ∑ i : {i : Fin n // κ i = m},
-          (u i.1 : ℤ_[p]) * (x (σ ⟨m, i⟩) * x (σ ⟨m, i⟩)) := by
-        rw [he m]
-    _ = ∑ i : {i : Fin n // κ i = m},
-          ((u (σ ⟨m, i⟩) : ℤ_[p]) * (p : ℤ_[p]) ^ k (σ ⟨m, i⟩)) *
-            (x (σ ⟨m, i⟩) * x (σ ⟨m, i⟩)) := by
-        rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [hk_eq i]
-        simp only [σ, Equiv.sigmaFiberEquiv_apply]
-        ring
-
-/-- Reindexing an orthogonal basis preserves orthogonality. -/
-private theorem iIsOrtho_reindex {R M ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    {B : LinearMap.BilinForm R M} {b : Basis ι R M} (hb : B.iIsOrtho b) (e : ι ≃ κ) :
-    B.iIsOrtho (b.reindex e) :=
-  LinearMap.BilinForm.iIsOrtho_def.mpr fun i j hij ↦ by
-    simpa [Basis.reindex_apply] using
-      LinearMap.BilinForm.iIsOrtho_def.mp hb (e.symm i) (e.symm j) (e.symm.injective.ne hij)
 
 /-- Diagonal Jordan form of `L_p` indexed by `Fin n` when `rank L = n`. -/
 private theorem exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow
@@ -432,7 +193,7 @@ private theorem exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow
   obtain ⟨b', u', k', hb', hbu'⟩ :=
     L.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp L.form_nondegenerate
   refine ⟨b'.reindex (finCongr hnL), fun i ↦ u' ((finCongr hnL).symm i),
-    fun i ↦ k' ((finCongr hnL).symm i), iIsOrtho_reindex hb' (finCongr hnL), fun i ↦ ?_⟩
+    fun i ↦ k' ((finCongr hnL).symm i), hb'.reindex (finCongr hnL), fun i ↦ ?_⟩
   simpa [Basis.reindex_apply] using hbu' ((finCongr hnL).symm i)
 
 /-- Given two diagonal Jordan forms of the same rank at an odd prime `p` whose `p`-primary
@@ -460,11 +221,9 @@ private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
   obtain ⟨fLM⟩ := hdisc
   have hodd_card : Odd (Nat.card (FiniteQuadraticModule.pi fun i ↦
       FiniteQuadraticModule.oddCyclic (p ^ k i) hp_odd.pow (approxInt (u i) (k i)))) := by
-    -- Unfold the carrier of `FiniteQuadraticModule.pi` to `∀ i, ZMod (p ^ k i)`.
-    change Odd (Nat.card (∀ i, ZMod (p ^ k i)))
     rw [Nat.card_pi]
     exact Finset.prod_induction _ Odd (fun _ _ ha hb ↦ ha.mul hb) odd_one fun i _ ↦ by
-      rw [Nat.card_zmod]
+      rw [FiniteQuadraticModule.natCard_oddCyclic]
       exact hp_odd.pow
   have hquad : Nonempty (FiniteQuadraticModule.Isometry
       (FiniteQuadraticModule.pi fun i ↦
@@ -476,27 +235,10 @@ private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
   have hclass := (FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff hp_odd k l
     (fun i ↦ isCoprime_approxInt (u i) (k i))
     (fun i ↦ isCoprime_approxInt (v i) (l i))).mp hquad
-  -- Positive-scale occurrence counts agree; subtracting from `n` matches `m = 0` as well.
-  have hocc : ∀ m, Function.occCount k m = Function.occCount l m := by
-    have hpos : ∀ m, 0 < m → Function.occCount k m = Function.occCount l m := fun m hm ↦ by
+  obtain ⟨σ, hσ⟩ :=
+    Function.exists_perm_of_occCount_eq_of_ne (u := k) (v := l) (z := 0) fun m hm ↦ by
       rw [Function.occCount_eq_card_filter, Function.occCount_eq_card_filter]
-      exact (hclass m hm).1
-    intro m
-    rcases Nat.eq_zero_or_pos m with rfl | hm
-    · let T : Finset ℕ := insert 0 (Finset.univ.image k ∪ Finset.univ.image l)
-      have hkT : ∑ a ∈ T, Function.occCount k a = Nat.card (Fin n) :=
-        Function.sum_occCount_eq_card k fun i ↦ Finset.mem_insert_of_mem
-          (Finset.mem_union_left _ (Finset.mem_image_of_mem k (Finset.mem_univ i)))
-      have hlT : ∑ a ∈ T, Function.occCount l a = Nat.card (Fin n) :=
-        Function.sum_occCount_eq_card l fun i ↦ Finset.mem_insert_of_mem
-          (Finset.mem_union_right _ (Finset.mem_image_of_mem l (Finset.mem_univ i)))
-      rw [← Finset.add_sum_erase T _ (Finset.mem_insert_self 0 _)] at hkT hlT
-      have herase : ∑ a ∈ T.erase 0, Function.occCount k a =
-          ∑ a ∈ T.erase 0, Function.occCount l a :=
-        Finset.sum_congr rfl fun a ha ↦ hpos a (Nat.pos_of_ne_zero (Finset.ne_of_mem_erase ha))
-      omega
-    · exact hpos m hm
-  obtain ⟨σ, hσ⟩ := Function.exists_perm_of_occCount_eq hocc
+      exact (hclass m (Nat.pos_of_ne_zero hm)).1
   have hσi : ∀ i, l (σ i) = k i := congrFun hσ
   refine ⟨σ, hσi, fun m hm ↦ ?_⟩
   have hleg_σ : ∏ i with k i = m, legendreSym p (approxInt (u i) (k i)) =
@@ -520,18 +262,48 @@ private theorem localIntegralForm_equivalent_of_forall_fiber
     (hfiber : ∀ m : ℕ, IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i))) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) := by
   let := (PadicInt.isUnit_two hp).invertible
-  have hdiag := equivalent_weightedSumSquares_mul_pow_of_forall_fiber hp k u (fun i ↦ v (σ i))
-    hfiber
+  have hdiag := TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber
+    (PadicInt.isUnit_two hp) k (fun m ↦ (p : ℤ_[p]) ^ m) u (fun i ↦ v (σ i)) hfiber
   have hL_quad : (L.localIntegralForm p).toQuadraticMap.Equivalent
       (QuadraticMap.weightedSumSquares ℤ_[p] fun i ↦ (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i) := by
     simpa only [hbu] using hb.equivalent_weightedSumSquares
   have hM_quad : (M.localIntegralForm p).toQuadraticMap.Equivalent
       (QuadraticMap.weightedSumSquares ℤ_[p] fun i ↦ (v (σ i) : ℤ_[p]) * (p : ℤ_[p]) ^ k i) := by
-    have hcσ : (M.localIntegralForm p).iIsOrtho (c.reindex σ.symm) := iIsOrtho_reindex hc σ.symm
     simpa only [Basis.reindex_apply, Equiv.symm_symm, hcv, hσ] using
-      hcσ.equivalent_weightedSumSquares
+      (hc.reindex σ.symm).equivalent_weightedSumSquares
   exact ((L.isSymm_localIntegralForm p).equivalent_iff_toQuadraticMap_equivalent
     (M.isSymm_localIntegralForm p)).mpr (hL_quad.trans (hdiag.trans hM_quad.symm))
+
+/-- In any commutative group, if `∏ i, u i * ∏ i, v i` is a square and every positive-level fiber
+`{i | k i = m}` (`m > 0`) has square product, then the `k i = 0` fiber also has square product. -/
+private theorem isSquare_prod_filter_eq_zero_of_isSquare_prod {G ι : Type*} [CommGroup G]
+    [Fintype ι] (k : ι → ℕ) (u v : ι → G)
+    (hfull : IsSquare ((∏ i, u i) * ∏ i, v i))
+    (hpos : ∀ m, 0 < m → IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v i)) :
+    IsSquare ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v i) := by
+  let P : Finset ℕ := (Finset.univ.image k).erase 0
+  have hsplit (w : ι → G) :
+      ∏ i, w i = (∏ i with k i = 0, w i) * ∏ m ∈ P, ∏ i with k i = m, w i := by
+    have hpart := (Finset.prod_fiberwise_of_maps_to (s := Finset.univ) (g := k) (t := insert 0 P)
+      (fun i _ ↦ by
+        by_cases hk0 : k i = 0
+        · simp [hk0]
+        · exact Finset.mem_insert_of_mem
+            (Finset.mem_erase.mpr ⟨hk0, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩))
+      w).symm
+    rw [hpart, Finset.prod_insert (Finset.notMem_erase 0 _)]
+  have hP_sq : IsSquare (∏ m ∈ P, ((∏ i with k i = m, u i) * ∏ i with k i = m, v i)) :=
+    Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
+      fun m hm ↦ hpos m (Nat.pos_of_ne_zero (Finset.ne_of_mem_erase hm))
+  rw [hsplit u, hsplit v] at hfull
+  have hrearr : ((∏ i with k i = 0, u i) * ∏ m ∈ P, ∏ i with k i = m, u i) *
+      ((∏ i with k i = 0, v i) * ∏ m ∈ P, ∏ i with k i = m, v i) =
+      ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v i) *
+        ∏ m ∈ P, ((∏ i with k i = m, u i) * ∏ i with k i = m, v i) := by
+    rw [Finset.prod_mul_distrib]
+    ac_rfl
+  rw [hrearr] at hfull
+  simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
 
 /-- The local determinant of `L` in `ℤ_p` differs by a unit square from `(∏ᵢ uᵢ) p^{∑ᵢ kᵢ}` in any
 orthogonal diagonal Jordan basis `b` of `L_p`. -/
@@ -556,12 +328,12 @@ private theorem exists_unit_sq_mul_det_eq {L : IntegralLattice V} {p : ℕ} [Fac
 
 /-! ### Odd-prime classification theorems -/
 
-/-- **Odd-prime local classification by the discriminant bilinear form.** Let `p` be an odd prime
+/-- **Odd-prime local classification by the discriminant bilinear module.** Let `p` be an odd prime
 and let `L` and `M` be nondegenerate integral lattices. Their localized integral forms over `ℤ_p`
 are isometric if and only if `L` and `M` have the same rank, the product of their signed
 determinants is a square in `ℤ_p`, and the `p`-primary components of their discriminant bilinear
 modules are isometric. -/
-theorem localIntegralForm_equivalent_iff_discriminantBilinear
+theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
@@ -583,7 +355,6 @@ theorem localIntegralForm_equivalent_iff_discriminantBilinear
       M.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp hrank.symm
     obtain ⟨σ, hσ, hpos⟩ :=
       exists_perm_and_isSquare_pos_of_isometry_primaryComponent hp hb hc hbu hcv hdisc
-    -- Compare the full unit products via the determinant square class.
     obtain ⟨dL, hdL⟩ := exists_unit_sq_mul_det_eq rfl hb hbu
     obtain ⟨dM, hdM⟩ := exists_unit_sq_mul_det_eq hrank.symm hc hcv
     have hsum_eq : ∑ j, l j = ∑ i, k i :=
@@ -591,53 +362,24 @@ theorem localIntegralForm_equivalent_iff_discriminantBilinear
     have hprod_v : ∏ j, (v j : ℤ_[p]) = ∏ i, (v (σ i) : ℤ_[p]) :=
       (Equiv.prod_comp (σ : Fin _ ≃ Fin _) fun j ↦ (v j : ℤ_[p])).symm
     have hfull : IsSquare ((∏ i, u i) * ∏ i, v (σ i)) := by
-      rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod]
-      have hsq_pow : IsSquare (((∏ i, (u i : ℤ_[p])) * ∏ i, (v (σ i) : ℤ_[p])) *
-          ((p : ℤ_[p]) ^ ∑ i, k i) ^ 2) := by
-        obtain ⟨z, hz⟩ := hsq
-        refine ⟨z * dL * dM, ?_⟩
-        have hmul := congrArg₂ (· * ·) hdL hdM
-        rw [hsum_eq, hprod_v] at hmul
-        rw [sq]
-        linear_combination -hmul + (dL : ℤ_[p]) ^ 2 * (dM : ℤ_[p]) ^ 2 * hz
-      exact isSquare_of_isSquare_mul_sq
-        ((IsUnit.prod_iff.mpr fun i _ ↦ (u i).isUnit).mul
-          (IsUnit.prod_iff.mpr fun i _ ↦ (v (σ i)).isUnit))
-        (pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) hsq_pow
-    -- Subtract the positive-scale fibers in `ℤ_pˣ` to obtain squareness on the `m = 0` fiber.
-    have hzero : IsSquare ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v (σ i)) := by
-      let P : Finset ℕ := (Finset.univ.image k).erase 0
-      have hsplit (w : Fin (finrank ℤ L) → ℤ_[p]ˣ) :
-          ∏ i, w i = (∏ i with k i = 0, w i) * ∏ m ∈ P, ∏ i with k i = m, w i := by
-        have hpart := (Finset.prod_fiberwise_of_maps_to
-          (s := Finset.univ) (g := k) (t := insert 0 P)
-          (fun i _ ↦ by
-            by_cases hk0 : k i = 0
-            · simp [hk0]
-            · exact Finset.mem_insert_of_mem
-                (Finset.mem_erase.mpr ⟨hk0, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩))
-          w).symm
-        rw [hpart, Finset.prod_insert (Finset.notMem_erase 0 _)]
-      have hP_sq : IsSquare (∏ m ∈ P, ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i))) :=
-        Finset.prod_induction _ IsSquare (fun _ _ ha hb ↦ ha.mul hb) IsSquare.one
-          fun m hm ↦ hpos m (Nat.pos_of_ne_zero (Finset.ne_of_mem_erase hm))
-      rw [hsplit u, hsplit (fun i ↦ v (σ i))] at hfull
-      have hrearr : ((∏ i with k i = 0, u i) * ∏ m ∈ P, ∏ i with k i = m, u i) *
-          ((∏ i with k i = 0, v (σ i)) * ∏ m ∈ P, ∏ i with k i = m, v (σ i)) =
-          ((∏ i with k i = 0, u i) * ∏ i with k i = 0, v (σ i)) *
-            ∏ m ∈ P, ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i)) := by
-        rw [Finset.prod_mul_distrib]
-        ac_rfl
-      rw [hrearr] at hfull
-      simpa [mul_inv_cancel_right] using hfull.mul hP_sq.inv
+      rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod,
+        ← PadicInt.isSquare_mul_sq_iff
+          (pow_ne_zero (∑ i, k i) (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))]
+      obtain ⟨z, hz⟩ := hsq
+      refine ⟨z * dL * dM, ?_⟩
+      have hmul := congrArg₂ (· * ·) hdL hdM
+      rw [hsum_eq, hprod_v] at hmul
+      rw [sq]
+      linear_combination -hmul + (dL : ℤ_[p]) ^ 2 * (dM : ℤ_[p]) ^ 2 * hz
+    have hzero := isSquare_prod_filter_eq_zero_of_isSquare_prod k u (fun i ↦ v (σ i)) hfull hpos
     exact localIntegralForm_equivalent_of_forall_fiber hp hb hc hbu hcv σ hσ fun m ↦ by
       rcases Nat.eq_zero_or_pos m with rfl | hm
       · exact hzero
       · exact hpos m hm
 
 /-- Unit-square determinant formulation of
-`localIntegralForm_equivalent_iff_discriminantBilinear`. -/
-theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinear
+`localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule`. -/
+theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinearModule
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
@@ -653,7 +395,8 @@ theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinear
       L.exists_determinant_eq_unit_sq_mul_of_localIntegralForm_equivalent M p h,
       h.map primaryDiscriminantBilinearIsometry⟩
   · rintro ⟨hrank, ⟨u, hu⟩, hdisc⟩
-    refine (L.localIntegralForm_equivalent_iff_discriminantBilinear M hp).mpr ⟨hrank, ?_, hdisc⟩
+    refine (L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp).mpr
+      ⟨hrank, ?_, hdisc⟩
     refine ⟨(u : ℤ_[p]) * (M.determinant : ℤ_[p]), ?_⟩
     rw [hu]
     ring
@@ -661,7 +404,7 @@ theorem localIntegralForm_equivalent_iff_exists_unit_sq_and_discriminantBilinear
 /-- **Odd-prime local classification for even lattices.** For even nondegenerate lattices `L` and
 `M` and an odd prime `p`, `L_p ≃ M_p` if and only if `rank L = rank M`, `det L · det M` is a square
 in `ℤ_p`, and the `p`-primary components of their discriminant quadratic modules are isometric. -/
-theorem localIntegralForm_equivalent_iff_discriminantQuadratic
+theorem localIntegralForm_equivalent_iff_isSquare_and_discriminantQuadraticModule
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     (hL : L.IsEven) (hM : M.IsEven) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
@@ -672,31 +415,28 @@ theorem localIntegralForm_equivalent_iff_discriminantQuadratic
             (primaryComponent (L.discriminantQuadraticModule hL) p))
           ((M.discriminantQuadraticModule hM).restrict
             (primaryComponent (M.discriminantQuadraticModule hM) p))) := by
-  have hp_prime : p.Prime := Fact.out
-  have hp_odd : Odd p := hp_prime.odd_of_ne_two hp
-  have hodd_L : Odd (Nat.card ((L.discriminantQuadraticModule hL).restrict
-      (primaryComponent (L.discriminantQuadraticModule hL) p))) := by
-    -- The carrier of the restricted discriminant quadratic module is `primaryComponent _ p`.
-    change Odd (Nat.card (primaryComponent L.DiscriminantGroup p))
-    rw [TauCeti.AddCommGroup.natCard_primaryComponent _ hp_prime]
-    exact hp_odd.pow
-  rw [L.localIntegralForm_equivalent_iff_discriminantBilinear M hp,
-    FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L]
-  rfl
+  have hodd_L :=
+    (L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent Fact.out hp
+  rw [L.localIntegralForm_equivalent_iff_isSquare_and_discriminantBilinearModule M hp,
+    FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
+    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
+    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
+    L.discriminantQuadraticModule_toFiniteBilinearModule hL,
+    M.discriminantQuadraticModule_toFiniteBilinearModule hM]
 
 /-! ### Minimal-rank uniqueness at odd primes (Nikulin Theorem 1.9.1) -/
 
 /-- **Uniqueness of minimal-rank `p`-adic localizations at odd primes (Nikulin, Theorem 1.9.1).**
-If `p` is an odd prime and both `L` and `M` achieve the minimal rank `rank L = ℓ((A_L)_p)` and
-`rank M = ℓ((A_M)_p)`, then `L_p` and `M_p` are isometric if and only if the `p`-primary
-components of their discriminant bilinear modules are isometric; neither equal rank nor a
-determinant hypothesis needs to be supplied separately. -/
-theorem localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank
+If `p` is an odd prime and both `L` and `M` achieve the minimal rank
+`finrank ℤ L = AddGroup.rank (A_L)_p` and `finrank ℤ M = AddGroup.rank (A_M)_p`, then `L_p` and
+`M_p` are isometric if and only if the `p`-primary components of their discriminant bilinear
+modules are isometric; neither equal rank nor a determinant hypothesis needs to be supplied
+separately. -/
+theorem localIntegralForm_equivalent_iff_of_finrank_eq_rank
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
-    (hLrank : finrank ℤ L = (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank)
-    (hMrank : finrank ℤ M =
-      (⊤ : Submodule ℤ (primaryComponent M.DiscriminantGroup p)).spanFinrank) :
+    (hLrank : finrank ℤ L = AddGroup.rank (primaryComponent L.DiscriminantGroup p))
+    (hMrank : finrank ℤ M = AddGroup.rank (primaryComponent M.DiscriminantGroup p)) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
       Nonempty (FiniteBilinearModule.Isometry
         (L.discriminantBilinearModule.restrict (primaryComponent L.discriminantBilinearModule p))
@@ -705,15 +445,11 @@ theorem localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank
   classical
   refine ⟨fun h ↦ h.map primaryDiscriminantBilinearIsometry, fun hdisc ↦ ?_⟩
   obtain ⟨fLM⟩ := hdisc
-  have hspan_eq :
-      (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank =
-        (⊤ : Submodule ℤ (primaryComponent M.DiscriminantGroup p)).spanFinrank := by
-    let e : primaryComponent L.DiscriminantGroup p ≃ₗ[ℤ] primaryComponent M.DiscriminantGroup p :=
-      fLM.toAddEquiv.toIntLinearEquiv
-    have he := Submodule.spanFinrank_map_eq_of_injective e.toLinearMap e.injective (p := ⊤)
-    rw [Submodule.map_top, LinearEquiv.range] at he
-    exact he.symm
-  have hrank : finrank ℤ L = finrank ℤ M := hLrank.trans (hspan_eq.trans hMrank.symm)
+  have hrank_eq : AddGroup.rank (primaryComponent L.DiscriminantGroup p) =
+      AddGroup.rank (primaryComponent M.DiscriminantGroup p) := by
+    rw [AddGroup.rank_eq_spanFinrank_top, AddGroup.rank_eq_spanFinrank_top]
+    exact Submodule.spanFinrank_eq_of_equiv fLM.toAddEquiv.toIntLinearEquiv
+  have hrank : finrank ℤ L = finrank ℤ M := hLrank.trans (hrank_eq.trans hMrank.symm)
   obtain ⟨b, u, k, hb, hbu⟩ :=
     L.exists_fin_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp (rfl : finrank ℤ L = _)
   obtain ⟨c, v, l, hc, hcv⟩ :=
@@ -722,7 +458,7 @@ theorem localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank
     exists_perm_and_isSquare_pos_of_isometry_primaryComponent hp hb hc hbu hcv ⟨fLM⟩
   -- Minimal rank forces every exponent `k i` to be nonzero, so the `m = 0` fiber is empty.
   have hk_card : #{i : Fin (finrank ℤ L) | k i ≠ 0} = finrank ℤ L := by
-    rw [← spanFinrank_primaryComponent_discriminantGroup_eq_card_filter hp hb hbu, ← hLrank]
+    rw [← L.rank_primaryComponent_discriminantGroup_eq_card_filter hb hbu, ← hLrank]
   have hk_all : ({i : Fin (finrank ℤ L) | k i ≠ 0} : Finset (Fin (finrank ℤ L))) = Finset.univ :=
     Finset.eq_of_subset_of_card_le (Finset.subset_univ _) (by simp [hk_card])
   have hk_ne_zero (i : Fin (finrank ℤ L)) : k i ≠ 0 := by
@@ -737,30 +473,25 @@ theorem localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank
     · simp [hzero_empty]
     · exact hpos m hm
 
-/-- Even-lattice counterpart of
-`localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank`. -/
-theorem localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_spanFinrank
+/-- Even-lattice counterpart of `localIntegralForm_equivalent_iff_of_finrank_eq_rank`. -/
+theorem localIntegralForm_equivalent_iff_of_isEven_of_finrank_eq_rank
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     (hL : L.IsEven) (hM : M.IsEven) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
-    (hLrank : finrank ℤ L = (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank)
-    (hMrank : finrank ℤ M =
-      (⊤ : Submodule ℤ (primaryComponent M.DiscriminantGroup p)).spanFinrank) :
+    (hLrank : finrank ℤ L = AddGroup.rank (primaryComponent L.DiscriminantGroup p))
+    (hMrank : finrank ℤ M = AddGroup.rank (primaryComponent M.DiscriminantGroup p)) :
     (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
       Nonempty (FiniteQuadraticModule.Isometry
         ((L.discriminantQuadraticModule hL).restrict
           (primaryComponent (L.discriminantQuadraticModule hL) p))
         ((M.discriminantQuadraticModule hM).restrict
           (primaryComponent (M.discriminantQuadraticModule hM) p))) := by
-  have hp_prime : p.Prime := Fact.out
-  have hp_odd : Odd p := hp_prime.odd_of_ne_two hp
-  have hodd_L : Odd (Nat.card ((L.discriminantQuadraticModule hL).restrict
-      (primaryComponent (L.discriminantQuadraticModule hL) p))) := by
-    -- The carrier of the restricted discriminant quadratic module is `primaryComponent _ p`.
-    change Odd (Nat.card (primaryComponent L.DiscriminantGroup p))
-    rw [TauCeti.AddCommGroup.natCard_primaryComponent _ hp_prime]
-    exact hp_odd.pow
-  rw [L.localIntegralForm_equivalent_iff_of_finrank_eq_spanFinrank M hp hLrank hMrank,
-    FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L]
-  rfl
+  have hodd_L :=
+    (L.discriminantQuadraticModule hL).odd_natCard_restrict_primaryComponent Fact.out hp
+  rw [L.localIntegralForm_equivalent_iff_of_finrank_eq_rank M hp hLrank hMrank,
+    FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_L,
+    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
+    FiniteQuadraticModule.restrict_toFiniteBilinearModule,
+    L.discriminantQuadraticModule_toFiniteBilinearModule hL,
+    M.discriminantQuadraticModule_toFiniteBilinearModule hM]
 
 end TauCeti.IntegralLattice
