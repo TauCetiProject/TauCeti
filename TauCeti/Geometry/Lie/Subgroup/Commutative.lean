@@ -56,6 +56,8 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
   the identity of a boundaryless commutative Lie group.
 * `TauCeti.Lie.image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`: a closed connected
   commutative subgroup is the exponential image of its Lie algebra.
+* `TauCeti.Lie.mem_lieSubalgebraOfSubgroup_centralizer_iff`: the Lie algebra of the centralizer
+  of any subgroup is its adjoint fixed subspace.
 * `TauCeti.Lie.mem_centralizer_iff_forall_Ad_apply_eq_self`: an element centralizes a closed
   preconnected subgroup exactly when its adjoint action fixes its Lie algebra pointwise.
 
@@ -93,6 +95,33 @@ theorem Ad_apply_eq_self_of_forall_commute {g : G} {X : LeftInvariantDerivation 
     rw [← map_smul, conj_lieExp (I := I) g (t • X)]
   rw [oneParameterSubgroup_apply, oneParameterSubgroup_apply, hconj, (h t).eq,
     mul_inv_cancel_right]
+
+omit [T2Space G] in
+/-- A derivation lies in the Lie algebra of a subgroup centralizer exactly when the subgroup
+fixes it under the adjoint action. No closedness or connectedness of `K` is required. -/
+@[simp]
+theorem mem_lieSubalgebraOfSubgroup_centralizer_iff (K : Subgroup G)
+    (X : LeftInvariantDerivation I G) :
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    X ∈ lieSubalgebraOfSubgroup (I := I) (Subgroup.centralizer (K : Set G)) ↔
+      ∀ k : K, Ad (I := I) (k : G) X = X := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  constructor
+  · intro hX k
+    apply Ad_apply_eq_self_of_forall_commute
+    intro t
+    exact Subgroup.mem_centralizer_iff.mp
+      (lieExp_smul_mem_of_mem_lieSubalgebraOfSubgroup
+        (Set.isClosed_centralizer (K : Set G)) hX t) k k.property
+  · intro hX
+    rw [mem_lieSubalgebraOfSubgroup (Set.isClosed_centralizer (K : Set G))]
+    intro t
+    rw [Subgroup.mem_centralizer_iff]
+    intro k hk
+    have h := conj_lieExp (I := I) k (t • X)
+    rw [map_smul, hX ⟨k, hk⟩] at h
+    simpa only [mul_assoc, inv_mul_cancel, mul_one] using congrArg (fun z : G ↦ z * k) h
 
 /-- **The adjoint action of the centralizer of `K` fixes `Lie(K)` pointwise.** -/
 theorem Ad_apply_eq_self_of_mem_centralizer {K : Subgroup G} {g : G}

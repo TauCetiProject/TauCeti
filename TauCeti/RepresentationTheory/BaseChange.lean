@@ -50,6 +50,10 @@ extension commutes with that kernel (`LinearMap.tensorKerEquiv`). Over a base fi
 to any nontrivial commutative algebra preserves its dimension; in particular an endomorphism space
 of dimension one retains that dimension.
 
+For any group, the whole invariant submodule commutes with scalar extension by an algebra
+projective over the base ring (`Representation.invariants_baseChange`). This follows by contracting
+tensors against coefficient linear forms and using the projective tensor-range criterion.
+
 For a finite group, the whole invariant submodule also commutes with a flat scalar extension.
 Indeed, invariants are the kernel of the finite family of maps `ρ(g) - 1`; flatness preserves that
 kernel, and the finite product comparison identifies the base-changed family with the invariance
@@ -72,6 +76,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
+* `Representation.invariants_baseChange`: projective scalar extension commutes with taking
+  invariants of an arbitrary group.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
@@ -147,6 +153,56 @@ theorem baseChange_comp {H : Type*} [Monoid H]
   simp only [baseChange, MonoidHom.comp_assoc]
 
 end BaseChange
+
+section ProjectiveInvariants
+
+variable {G : Type w} [Group G]
+variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module.Projective R A]
+
+/-- Projective scalar extension commutes with the invariant submodule of an arbitrary group.
+Unlike `invariantsBaseChangeEquiv`, the group need not be finite. -/
+theorem invariants_baseChange (ρ : _root_.Representation R G V) :
+    ρ.invariants.baseChange A = (ρ.baseChange A).invariants := by
+  rw [Submodule.baseChange]
+  ext z
+  constructor
+  · rintro ⟨w, rfl⟩
+    rw [Representation.mem_invariants]
+    intro g
+    induction w with
+    | tmul a v =>
+      simpa only [Representation.baseChange_apply, LinearMap.baseChange_tmul,
+        Submodule.subtype_apply] using
+        congrArg (fun x : V ↦ a ⊗ₜ[R] x) ((Representation.mem_invariants ρ v).mp v.property g)
+    | add x y hx hy => simp only [map_add, hx, hy]
+  · intro hz
+    have hc : _root_.TensorProduct.comm R A V z ∈ LinearMap.range
+        (_root_.TensorProduct.map ρ.invariants.subtype (LinearMap.id : A →ₗ[R] A)) := by
+      apply (ρ.invariants.tensor_mem_range_iff_forall_tensorComponent_mem _).mpr
+      intro f
+      rw [Representation.mem_invariants]
+      intro g
+      have hnat (x : A ⊗[R] V) :
+          _root_.TensorProduct.map (ρ g) (LinearMap.id : A →ₗ[R] A)
+              (_root_.TensorProduct.comm R A V x) =
+            _root_.TensorProduct.comm R A V (ρ.baseChange A g x) := by
+        simpa only [Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor,
+          LinearMap.lTensor_def] using _root_.TensorProduct.map_comm (ρ g) LinearMap.id x
+      have h := congrArg (LinearMap.tensorComponent f) <|
+        (hnat z).trans (congrArg (_root_.TensorProduct.comm R A V)
+          ((Representation.mem_invariants (ρ.baseChange A) z).mp hz g))
+      simpa only [LinearMap.tensorComponent_map, LinearMap.comp_id] using h
+    obtain ⟨w, hw⟩ := hc
+    refine ⟨_root_.TensorProduct.comm R ρ.invariants A w, ?_⟩
+    apply (_root_.TensorProduct.comm R A V).injective
+    rw [← hw]
+    clear hw
+    induction w with
+    | tmul v a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+end ProjectiveInvariants
 
 section Invariants
 
