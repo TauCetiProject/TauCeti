@@ -362,6 +362,7 @@ noncomputable def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {
   (IntermediateField.val _).comp ((RatFunc.algEquivOfTranscendental z hz).toAlgHom.comp
     (RatFunc.algEquivOfTranscendental x hx).symm.toAlgHom)
 
+/-- The `k`-algebra map `Transcendental.algHomAdjoin` sends the generator `x` of `k⟮x⟯` to `z`. -/
 @[simp]
 theorem _root_.Transcendental.algHomAdjoin_gen (hx : Transcendental k x) {E : Type*} [Field E]
     [Algebra k E] {z : E} (hz : Transcendental k z) :
