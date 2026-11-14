@@ -165,20 +165,19 @@ noncomputable def completedLieToU :
     d.completedLie ℒ →ₗ⁅R⁆
       completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ) where
   toFun := completedLieToUFun d ℒ
-  map_add' x y := by
-    refine (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completion_ext fun k => ?_
-    simp only [map_add, projection_completedLieToUFun]
+  map_add' x y := (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completion_ext
+    fun k => by simp only [map_add, projection_completedLieToUFun]
   map_smul' r x := by
     let 𝓕 := degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-    refine 𝓕.completion_ext fun k => ?_
-    rw [RingHom.id_apply, projection_completedLieToUFun, map_smul, map_smul,
-      ← 𝓕.projectionₐ_apply (R := R), map_smul, 𝓕.projectionₐ_apply,
-      projection_completedLieToUFun]
-  map_lie' {x y} := by
-    refine (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completion_ext fun k => ?_
-    rw [projection_completedLieToUFun, LieHom.map_lie, LieHom.map_lie,
-      LieRing.of_associative_ring_bracket, LieRing.of_associative_ring_bracket,
-      map_sub, map_mul, map_mul, projection_completedLieToUFun, projection_completedLieToUFun]
+    exact 𝓕.completion_ext fun k => by
+      rw [RingHom.id_apply, projection_completedLieToUFun, map_smul, map_smul,
+        ← 𝓕.projectionₐ_apply (R := R), map_smul, 𝓕.projectionₐ_apply,
+        projection_completedLieToUFun]
+  map_lie' {x y} := (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completion_ext
+    fun k => by
+      rw [projection_completedLieToUFun, LieHom.map_lie, LieHom.map_lie,
+        LieRing.of_associative_ring_bracket, LieRing.of_associative_ring_bracket,
+        map_sub, map_mul, map_mul, projection_completedLieToUFun, projection_completedLieToUFun]
 
 /-- At cutoff `k`, `completedLieToU` applies `truncatedLieToU` to the `k`-th Lie projection. -/
 @[simp]
@@ -443,19 +442,20 @@ private theorem primDefect_mem_tensorTotalDegree {m : N} {a : U}
         (SetLike.one_mem_graded (homogeneousSubmodule ℒ)))
 
 omit [GradedLieAlgebra ℒ] in
+private noncomputable def tensorComponentKer
+    [_root_.DirectSum.Decomposition (tensorGrading ℒ)] (p : N × N) : Submodule R (U ⊗[R] U) :=
+  LinearMap.ker ((tensorGrading ℒ p).subtype.comp
+    ((_root_.DirectSum.component R (N × N) (fun q => tensorGrading ℒ q) p).comp
+      (_root_.DirectSum.decomposeLinearEquiv (tensorGrading ℒ)).toLinearMap))
+
+omit [GradedLieAlgebra ℒ] in
 private theorem decompose_eq_zero_of_mem_tensorTotalDegree
     [_root_.DirectSum.Decomposition (tensorGrading ℒ)] {m : N} {z : U ⊗[R] U}
     (hz : z ∈ tensorTotalDegree ℒ m) {p : N × N} (hp : p.1 + p.2 ≠ m) :
-    (_root_.DirectSum.decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 := by
-  let K : Submodule R (U ⊗[R] U) := LinearMap.ker
-    ((tensorGrading ℒ p).subtype.comp
-      ((_root_.DirectSum.component R (N × N) (fun q => tensorGrading ℒ q) p).comp
-        (_root_.DirectSum.decomposeLinearEquiv (tensorGrading ℒ)).toLinearMap))
-  have hK : z ∈ K := by
-    refine Submodule.iSup_induction _ (motive := fun w => w ∈ K) hz (fun q w hw => ?_)
-      (zero_mem K) (fun _ _ h₁ h₂ => add_mem h₁ h₂)
-    exact _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) hw (fun h => hp (h ▸ q.2))
-  exact hK
+    (_root_.DirectSum.decompose (tensorGrading ℒ) z p : U ⊗[R] U) = 0 :=
+  Submodule.iSup_induction _ (motive := fun w => w ∈ tensorComponentKer ℒ p) hz
+    (fun q _ hw => _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) hw fun h => hp (h ▸ q.2))
+    (zero_mem _) (fun _ _ => add_mem)
 
 private theorem decompose_eq_zero_of_mem_tensorProduct_ideal
     [_root_.DirectSum.Decomposition (tensorGrading ℒ)] {k : ℕ} {t : U ⊗[R] U}
@@ -463,46 +463,32 @@ private theorem decompose_eq_zero_of_mem_tensorProduct_ideal
       (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ))).ideal (k + 1))
     {p : N × N} (hp : d.degree p.1 + d.degree p.2 ≤ k) :
     (_root_.DirectSum.decompose (tensorGrading ℒ) t p : U ⊗[R] U) = 0 := by
-  let K : Submodule R (U ⊗[R] U) := LinearMap.ker
-    ((tensorGrading ℒ p).subtype.comp
-      ((_root_.DirectSum.component R (N × N) (fun q => tensorGrading ℒ q) p).comp
-        (_root_.DirectSum.decomposeLinearEquiv (tensorGrading ℒ)).toLinearMap))
+  let K := tensorComponentKer ℒ p
   rw [TauCeti.AlgFiltration.mem_tensorProduct_ideal_iff, tensorFiltrationTail_def] at ht
-  have hK : t ∈ K := by
-    refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) ht (fun a z hz => ?_)
-      (zero_mem K) (fun _ _ h₁ h₂ => add_mem h₁ h₂)
-    refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun b z hz => ?_)
-      (zero_mem K) (fun _ _ h₁ h₂ => add_mem h₁ h₂)
-    refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun hab z hz => ?_)
-      (zero_mem K) (fun _ _ h₁ h₂ => add_mem h₁ h₂)
-    refine Submodule.map₂_le.mpr (fun u hu v hv => ?_) hz
-    rw [Submodule.restrictScalars_mem, degreeFiltration_ideal,
-      ← Submodule.restrictScalars_mem R, TauCeti.GradedAlgebra.degreeIdeal_restrictScalars,
-      TauCeti.DirectSum.degreeTail_def] at hu hv
-    refine Submodule.iSup_induction _ (motive := fun u => TensorProduct.mk R U U u v ∈ K) hu
-      (fun i u hu => ?_) (by simp [zero_mem K])
-      (fun _ _ h₁ h₂ => by
-        simpa only [TensorProduct.mk_apply, TensorProduct.add_tmul] using add_mem h₁ h₂)
-    refine Submodule.iSup_induction _ (motive := fun u => TensorProduct.mk R U U u v ∈ K) hu
-      (fun hi u hu => ?_) (by simp [zero_mem K])
-      (fun _ _ h₁ h₂ => by
-        simpa only [TensorProduct.mk_apply, TensorProduct.add_tmul] using add_mem h₁ h₂)
-    refine Submodule.iSup_induction _ (motive := fun v => TensorProduct.mk R U U u v ∈ K) hv
-      (fun j v hv => ?_) (by simp [zero_mem K])
-      (fun _ _ h₁ h₂ => by
-        simpa only [TensorProduct.mk_apply, TensorProduct.tmul_add] using add_mem h₁ h₂)
-    refine Submodule.iSup_induction _ (motive := fun v => TensorProduct.mk R U U u v ∈ K) hv
-      (fun hj v hv => ?_) (by simp [zero_mem K])
-      (fun _ _ h₁ h₂ => by
-        simpa only [TensorProduct.mk_apply, TensorProduct.tmul_add] using add_mem h₁ h₂)
-    have hijp : (i, j) ≠ p := by
-      intro heq
-      rw [Prod.ext_iff] at heq
-      rcases heq with ⟨rfl, rfl⟩
-      omega
-    exact _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ)
-      (Submodule.apply_mem_map₂ (TensorProduct.mk R U U) hu hv) hijp
-  exact hK
+  refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) ht (fun a z hz => ?_)
+    (zero_mem K) (fun _ _ => add_mem)
+  refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun b z hz => ?_)
+    (zero_mem K) (fun _ _ => add_mem)
+  refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun hab z hz => ?_)
+    (zero_mem K) (fun _ _ => add_mem)
+  refine Submodule.map₂_le.mpr (fun u hu v hv => ?_) hz
+  rw [Submodule.restrictScalars_mem, degreeFiltration_ideal,
+    ← Submodule.restrictScalars_mem R, TauCeti.GradedAlgebra.degreeIdeal_restrictScalars,
+    TauCeti.DirectSum.degreeTail_def] at hu hv
+  refine Submodule.iSup_induction _ (motive := fun u => TensorProduct.mk R U U u v ∈ K) hu
+    (fun i _ hu => Submodule.iSup_induction _ (motive := fun u => TensorProduct.mk R U U u v ∈ K)
+      hu (fun hi u hu => ?_) (by simp [zero_mem K])
+      fun _ _ h₁ h₂ => by simpa [TensorProduct.add_tmul] using add_mem h₁ h₂)
+    (by simp [zero_mem K]) (fun _ _ h₁ h₂ => by simpa [TensorProduct.add_tmul] using add_mem h₁ h₂)
+  refine Submodule.iSup_induction _ (motive := fun v => TensorProduct.mk R U U u v ∈ K) hv
+    (fun j _ hv => Submodule.iSup_induction _ (motive := fun v => TensorProduct.mk R U U u v ∈ K)
+      hv (fun hj v hv => ?_) (by simp [zero_mem K])
+      fun _ _ h₁ h₂ => by simpa [TensorProduct.tmul_add] using add_mem h₁ h₂)
+    (by simp [zero_mem K]) (fun _ _ h₁ h₂ => by simpa [TensorProduct.tmul_add] using add_mem h₁ h₂)
+  refine _root_.DirectSum.decompose_of_mem_ne (tensorGrading ℒ) (i := (i, j))
+    (Submodule.apply_mem_map₂ (TensorProduct.mk R U U) hu hv) fun heq => ?_
+  rcases Prod.ext_iff.mp heq with ⟨rfl, rfl⟩
+  omega
 
 private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid
     {u : completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ)}
@@ -667,42 +653,16 @@ theorem completedLieToU_completedPrimitiveLieEquiv_symm
 noncomputable def completedLieExpEquiv :
     d.completedLie ℒ ≃
       {u : completedEnveloping ℒ d.degree (d.eq_bot_of_degree_neg ℒ) //
-        IsCompletedGroupLike ℒ d.degree (d.eq_bot_of_degree_neg ℒ) u} where
-  toFun x :=
-    completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ)
-      ⟨⟨completedLieToU d ℒ x, completedLieToU_mem_completionIdeal_one d ℒ x⟩,
-        isCompletedPrimitive_completedLieToU d ℒ x⟩
-  invFun u :=
-    let p := (completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ)).symm u
-    (completedPrimitiveLieEquiv d ℒ).symm
-      ⟨p.1.1, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr p.2⟩
-  left_inv x := by
-    simp only [Equiv.symm_apply_apply]
-    have h : (⟨completedLieToU d ℒ x,
-        (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr
-          (isCompletedPrimitive_completedLieToU d ℒ x)⟩ :
-        completedPrimitiveLieSubalgebra ℒ d.degree (d.eq_bot_of_degree_neg ℒ)) =
-        completedPrimitiveLieEquiv d ℒ x :=
-      Subtype.ext (coe_completedPrimitiveLieEquiv_apply d ℒ x).symm
-    rw [h]
-    exact (completedPrimitiveLieEquiv d ℒ).symm_apply_apply x
-  right_inv u :=
-    let p := (completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ)).symm u
-    let hp : completedLieToU d ℒ
-        ((completedPrimitiveLieEquiv d ℒ).symm
-          ⟨p.1.1, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr p.2⟩) = p.1.1 :=
-      completedLieToU_completedPrimitiveLieEquiv_symm d ℒ _
-    let hsub :
-        (⟨⟨completedLieToU d ℒ
-              ((completedPrimitiveLieEquiv d ℒ).symm
-                ⟨p.1.1, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr p.2⟩),
-            completedLieToU_mem_completionIdeal_one d ℒ _⟩,
-          isCompletedPrimitive_completedLieToU d ℒ _⟩ :
-          {x : (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completionIdeal 1 //
-            IsCompletedPrimitive ℒ d.degree (d.eq_bot_of_degree_neg ℒ) x.1}) = p :=
-      Subtype.ext (Subtype.ext hp)
-    (congrArg (completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ)) hsub).trans
-      ((completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ)).apply_symm_apply u)
+        IsCompletedGroupLike ℒ d.degree (d.eq_bot_of_degree_neg ℒ) u} :=
+  ((completedPrimitiveLieEquiv d ℒ).toLinearEquiv.toEquiv.trans
+    { toFun := fun u =>
+        ⟨⟨u.1, ((mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp u.2).mem_completionIdeal_one
+          ℒ d.degree (hpos := d.eq_bot_of_degree_nonpos ℒ)⟩,
+          (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mp u.2⟩
+      invFun := fun p => ⟨p.1.1, (mem_completedPrimitiveLieSubalgebra_iff _ _ _).mpr p.2⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }).trans
+    (completedPrimitiveExpEquiv ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ))
 
 @[simp]
 theorem coe_completedLieExpEquiv_apply (x : d.completedLie ℒ) :
@@ -719,10 +679,9 @@ theorem completedLieToU_completedLieExpEquiv_symm
     completedLieToU d ℒ ((completedLieExpEquiv d ℒ).symm u) =
       (degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)).completedLog
         ⟨u.1, u.2.sub_one_mem_completionIdeal_one ℒ d.degree
-          (hpos := d.eq_bot_of_degree_nonpos ℒ)⟩ := by
-  rw [completedLieExpEquiv, Equiv.coe_fn_symm_mk,
-    completedLieToU_completedPrimitiveLieEquiv_symm]
-  exact coe_completedPrimitiveExpEquiv_symm ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ) u
+          (hpos := d.eq_bot_of_degree_nonpos ℒ)⟩ :=
+  (completedLieToU_completedPrimitiveLieEquiv_symm d ℒ _).trans
+    (coe_completedPrimitiveExpEquiv_symm ℒ d.degree (d.eq_bot_of_degree_nonpos ℒ) u)
 
 end Rational
 

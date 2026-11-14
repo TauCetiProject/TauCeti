@@ -207,94 +207,43 @@ noncomputable def bchElement (c : ℕ) :
       (PositiveDegrees.naturals.degreeIdeal_antitone (homogeneousSubmodule ℚ (Fin 2)))
       c bchCompleted)
 
-private theorem eEnv_projection_completedLieExpEquiv_toCompletion (c : ℕ) (x : FreeLieTwo) :
-    Ideal.quotientEquivAlgOfEq ℚ
-        (naturals_degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
-        ((UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
-            PositiveDegrees.naturals.degree
-            (PositiveDegrees.naturals.eq_bot_of_degree_neg
-              (homogeneousSubmodule ℚ (Fin 2)))).projection c
-          (UniversalEnvelopingAlgebra.completedLieExpEquiv PositiveDegrees.naturals
-            (homogeneousSubmodule ℚ (Fin 2))
-            (LieIdeal.toCompletion
-              (PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule ℚ (Fin 2)))
-              (PositiveDegrees.naturals.degreeIdeal_antitone (homogeneousSubmodule ℚ (Fin 2)))
-              x)).1) =
+private noncomputable abbrev freeDegreeFiltration :=
+  UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ (Fin 2))
+    PositiveDegrees.naturals.degree
+    (PositiveDegrees.naturals.eq_bot_of_degree_neg (homogeneousSubmodule ℚ (Fin 2)))
+
+private noncomputable abbrev bchEnvEquiv (c : ℕ) :=
+  Ideal.quotientEquivAlgOfEq ℚ (naturals_degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
+
+private theorem bchEnvEquiv_projection_bchGroupLikeFactor (c : ℕ) (i : Fin 2) :
+    bchEnvEquiv c (freeDegreeFiltration.projection c (bchGroupLikeFactor i).1) =
       IsNilpotent.exp
         (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
-          (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) := by
+          (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ i))) := by
   let d := PositiveDegrees.naturals
   let ℒ := homogeneousSubmodule ℚ (Fin 2)
-  let 𝓕 := UniversalEnvelopingAlgebra.degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-  let eEnv := Ideal.quotientEquivAlgOfEq ℚ
-    (naturals_degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
   let xHat : d.completedLie ℒ :=
-    LieIdeal.toCompletion (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) x
+    LieIdeal.toCompletion (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ)
+      (_root_.FreeLieAlgebra.of ℚ i)
   have hmem := UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one d ℒ xHat
-  have hnil :
-      IsNilpotent (𝓕.projection c (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat)) :=
-    𝓕.isNilpotent_projection hmem c
+  have hnil := freeDegreeFiltration.isNilpotent_projection hmem c
   calc
-    eEnv (𝓕.projection c (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ xHat).1)
-      = eEnv (𝓕.projection c
-          (𝓕.completedExp
+    bchEnvEquiv c (freeDegreeFiltration.projection c (bchGroupLikeFactor i).1)
+      = bchEnvEquiv c (freeDegreeFiltration.projection c
+          (freeDegreeFiltration.completedExp
             ⟨UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat, hmem⟩)) := by
-          rw [UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply]; rfl
-    _ = eEnv (IsNilpotent.exp
-          (𝓕.projection c (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat))) :=
-          congrArg eEnv (𝓕.projection_completedExp ⟨_, hmem⟩ c)
-    _ = IsNilpotent.exp
-          (eEnv (𝓕.projection c (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat))) :=
-          hnil.map_exp eEnv
-    _ = IsNilpotent.exp
-          (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
-            (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) := by
-          simp [d, ℒ, eEnv, 𝓕, xHat, freeAugmentation]
-
-/-- Under `lowerCentralQuotientι`, `bchElement c` maps to the finite logarithm of `exp X * exp Y`
-modulo `freeAugmentation ^ (c + 1)`. -/
-theorem lowerCentralQuotientι_bchElement (c : ℕ) :
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c) =
-      IsNilpotent.log
-        (IsNilpotent.exp
-            (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
-              (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 0))) *
-          IsNilpotent.exp
-            (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
-              (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 1)))) := by
-  let d := PositiveDegrees.naturals
-  let ℒ := homogeneousSubmodule ℚ (Fin 2)
-  let 𝓕 := UniversalEnvelopingAlgebra.degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-  let eEnv := Ideal.quotientEquivAlgOfEq ℚ
-    (naturals_degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
-  have hsub1 : (bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1 - 1 ∈ 𝓕.completionIdeal 1 :=
-    ((bchGroupLikeFactor 0).2.mul ℒ d.degree
-      (bchGroupLikeFactor 1).2).sub_one_mem_completionIdeal_one ℒ d.degree
-      (hpos := d.eq_bot_of_degree_nonpos ℒ)
-  have hnil : IsNilpotent
-      (𝓕.projection c ((bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1) - 1) := by
-    simpa using 𝓕.isNilpotent_projection hsub1 c
-  calc
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c)
-      = eEnv (𝓕.projection c
-          (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted)) := by
-          rw [bchElement, ← quotientEquivAlgOfEq_truncatedLieToU ℚ (Fin 2) c,
-            ← UniversalEnvelopingAlgebra.projection_completedLieToU d ℒ c bchCompleted]
-    _ = eEnv (𝓕.projection c
-          (𝓕.completedLog
-            ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1, hsub1⟩)) := by
-          rw [bchCompleted, UniversalEnvelopingAlgebra.completedLieToU_completedLieExpEquiv_symm]
+          rw [bchGroupLikeFactor, UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply]
           rfl
-    _ = eEnv (IsNilpotent.log
-          (𝓕.projection c ((bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1))) :=
-          congrArg eEnv (𝓕.projection_completedLog ⟨_, hsub1⟩ c)
-    _ = IsNilpotent.log
-          (eEnv (𝓕.projection c ((bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1))) :=
-          hnil.map_log eEnv
+    _ = bchEnvEquiv c (IsNilpotent.exp
+          (freeDegreeFiltration.projection c
+            (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat))) :=
+          congrArg (bchEnvEquiv c) (freeDegreeFiltration.projection_completedExp ⟨_, hmem⟩ c)
+    _ = IsNilpotent.exp (bchEnvEquiv c
+          (freeDegreeFiltration.projection c
+            (UniversalEnvelopingAlgebra.completedLieToU d ℒ xHat))) :=
+          hnil.map_exp (bchEnvEquiv c)
     _ = _ := by
-          rw [map_mul, map_mul, bchGroupLikeFactor, bchGroupLikeFactor,
-            eEnv_projection_completedLieExpEquiv_toCompletion c (_root_.FreeLieAlgebra.of ℚ 0),
-            eEnv_projection_completedLieExpEquiv_toCompletion c (_root_.FreeLieAlgebra.of ℚ 1)]
+          simp [d, ℒ, xHat, bchEnvEquiv, freeDegreeFiltration, freeAugmentation]
 
 /-- Exponentiating the image of `bchElement c` in `U(FreeLieTwo) ⧸ freeAugmentation ^ (c + 1)`
 recovers `exp X * exp Y`. -/
@@ -309,16 +258,10 @@ theorem exp_lowerCentralQuotientι_bchElement (c : ℕ) :
             (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 1))) := by
   let d := PositiveDegrees.naturals
   let ℒ := homogeneousSubmodule ℚ (Fin 2)
-  let 𝓕 := UniversalEnvelopingAlgebra.degreeFiltration ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
-  let eEnv := Ideal.quotientEquivAlgOfEq ℚ
-    (naturals_degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
   have hmem := UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one d ℒ bchCompleted
-  have hnil : IsNilpotent
-      (𝓕.projection c (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted)) :=
-    𝓕.isNilpotent_projection hmem c
-  have happ :
-      (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ bchCompleted).1 =
-        (bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1 :=
+  have hnil := freeDegreeFiltration.isNilpotent_projection hmem c
+  have happ : (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ bchCompleted).1 =
+      (bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1 :=
     congrArg Subtype.val <|
       (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ).apply_symm_apply
         ⟨(bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1,
@@ -326,27 +269,42 @@ theorem exp_lowerCentralQuotientι_bchElement (c : ℕ) :
   calc
     IsNilpotent.exp
         (UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c))
-      = IsNilpotent.exp
-          (eEnv (𝓕.projection c
-            (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted))) := by
+      = IsNilpotent.exp (bchEnvEquiv c (freeDegreeFiltration.projection c
+          (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted))) := by
           rw [bchElement, ← quotientEquivAlgOfEq_truncatedLieToU ℚ (Fin 2) c,
             ← UniversalEnvelopingAlgebra.projection_completedLieToU d ℒ c bchCompleted]
-    _ = eEnv (IsNilpotent.exp
-          (𝓕.projection c (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted))) :=
-          (hnil.map_exp eEnv).symm
-    _ = eEnv (𝓕.projection c
-          (𝓕.completedExp
+    _ = bchEnvEquiv c (IsNilpotent.exp (freeDegreeFiltration.projection c
+          (UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted))) :=
+          (hnil.map_exp (bchEnvEquiv c)).symm
+    _ = bchEnvEquiv c (freeDegreeFiltration.projection c
+          (freeDegreeFiltration.completedExp
             ⟨UniversalEnvelopingAlgebra.completedLieToU d ℒ bchCompleted, hmem⟩)) :=
-          congrArg eEnv (𝓕.projection_completedExp ⟨_, hmem⟩ c).symm
-    _ = eEnv (𝓕.projection c
+          congrArg (bchEnvEquiv c) (freeDegreeFiltration.projection_completedExp ⟨_, hmem⟩ c).symm
+    _ = bchEnvEquiv c (freeDegreeFiltration.projection c
           (UniversalEnvelopingAlgebra.completedLieExpEquiv d ℒ bchCompleted).1) := by
-          rw [UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply]; rfl
-    _ = eEnv (𝓕.projection c ((bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1)) :=
-          congrArg (fun u => eEnv (𝓕.projection c u)) happ
+          rw [UniversalEnvelopingAlgebra.coe_completedLieExpEquiv_apply]
+          rfl
+    _ = bchEnvEquiv c (freeDegreeFiltration.projection c
+          ((bchGroupLikeFactor 0).1 * (bchGroupLikeFactor 1).1)) :=
+          congrArg (fun u => bchEnvEquiv c (freeDegreeFiltration.projection c u)) happ
     _ = _ := by
-          rw [map_mul, map_mul, bchGroupLikeFactor, bchGroupLikeFactor,
-            eEnv_projection_completedLieExpEquiv_toCompletion c (_root_.FreeLieAlgebra.of ℚ 0),
-            eEnv_projection_completedLieExpEquiv_toCompletion c (_root_.FreeLieAlgebra.of ℚ 1)]
+          rw [map_mul, map_mul, bchEnvEquiv_projection_bchGroupLikeFactor c 0,
+            bchEnvEquiv_projection_bchGroupLikeFactor c 1]
+
+/-- Under `lowerCentralQuotientι`, `bchElement c` maps to the finite logarithm of `exp X * exp Y`
+modulo `freeAugmentation ^ (c + 1)`. -/
+theorem lowerCentralQuotientι_bchElement (c : ℕ) :
+    UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ FreeLieTwo c (bchElement c) =
+      IsNilpotent.log
+        (IsNilpotent.exp
+            (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
+              (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 0))) *
+          IsNilpotent.exp
+            (Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
+              (_root_.UniversalEnvelopingAlgebra.ι ℚ (_root_.FreeLieAlgebra.of ℚ 1)))) := by
+  rw [← exp_lowerCentralQuotientι_bchElement c,
+    (UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ FreeLieTwo c
+      (bchElement c)).log_exp]
 
 /-- Existence of a representative in `FreeLieTwo` whose exponential modulo
 `freeAugmentation ^ (c + 1)` equals `exp X * exp Y`. -/
@@ -427,48 +385,35 @@ theorem factor_bchElement {c₁ c₂ : ℕ} (h : c₁ ≤ c₂) :
 
 private noncomputable def quotAugmentationIdeal (c : ℕ) :
     Ideal (_root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo ⧸ freeAugmentation ^ (c + 1)) :=
-  RingHom.ker (Ideal.Quotient.factor
-    (Ideal.pow_le_pow_right (Nat.succ_pos c) :
-      freeAugmentation ^ (c + 1) ≤ freeAugmentation ^ 1))
+  freeAugmentation.map (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)))
 
-private theorem mk_mem_quotAugmentationIdeal_iff (c : ℕ)
-    (u : _root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo) :
-    Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) u ∈ quotAugmentationIdeal c ↔
-      u ∈ freeAugmentation := by
-  rw [quotAugmentationIdeal, RingHom.mem_ker, Ideal.Quotient.factor_mk,
-    Ideal.Quotient.eq_zero_iff_mem, Submodule.pow_one]
-
-private theorem exists_rep_of_mem_quotAugmentationIdeal_pow (c : ℕ) :
-    ∀ {m : ℕ}
-      {z : _root_.UniversalEnvelopingAlgebra ℚ FreeLieTwo ⧸ freeAugmentation ^ (c + 1)},
-      z ∈ quotAugmentationIdeal c ^ m →
-        ∃ u ∈ freeAugmentation ^ m, Ideal.Quotient.mk (freeAugmentation ^ (c + 1)) u = z
-  | 0, z, _ => by
+private theorem quotAugmentationIdeal_pow_le_map (c : ℕ) :
+    ∀ m : ℕ, quotAugmentationIdeal c ^ m ≤
+      (freeAugmentation ^ m).map (Ideal.Quotient.mk (freeAugmentation ^ (c + 1)))
+  | 0 => fun z _ => by
     obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective z
-    exact ⟨u, by simp [Submodule.pow_zero, Ideal.one_eq_top], rfl⟩
-  | m + 1, z, hz => by
-    rw [Submodule.pow_succ (quotAugmentationIdeal c)] at hz
-    refine Submodule.mul_induction_on hz (fun x hx y hy => ?_)
-      fun _ _ ⟨u₁, hu₁, h₁⟩ ⟨u₂, hu₂, h₂⟩ =>
-        ⟨u₁ + u₂, add_mem hu₁ hu₂, by rw [map_add, h₁, h₂]⟩
-    obtain ⟨u, hu, rfl⟩ := exists_rep_of_mem_quotAugmentationIdeal_pow c hx
-    obtain ⟨v, rfl⟩ := Ideal.Quotient.mk_surjective y
-    have hv : v ∈ freeAugmentation := (mk_mem_quotAugmentationIdeal_iff c v).mp hy
-    exact ⟨u * v, by rw [Submodule.pow_succ]; exact Ideal.mul_mem_mul hu hv, map_mul _ u v⟩
+    exact Ideal.mem_map_of_mem _ (by simp [Submodule.pow_zero, Ideal.one_eq_top])
+  | m + 1 => by
+    rw [Submodule.pow_succ (quotAugmentationIdeal c), Submodule.mul_le]
+    intro x hx y hy
+    obtain ⟨u, hu, rfl⟩ := Ideal.mem_image_of_mem_map_of_surjective _
+      Ideal.Quotient.mk_surjective (quotAugmentationIdeal_pow_le_map c m hx)
+    obtain ⟨v, hv, rfl⟩ := Ideal.mem_image_of_mem_map_of_surjective _
+      Ideal.Quotient.mk_surjective hy
+    rw [← map_mul]
+    exact Ideal.mem_map_of_mem _ (Submodule.pow_succ freeAugmentation ▸ Ideal.mul_mem_mul hu hv)
 
 private theorem quotAugmentationIdeal_pow_eq_bot (c : ℕ) :
-    quotAugmentationIdeal c ^ (c + 1) = ⊥ := by
-  rw [eq_bot_iff]
-  intro z hz
-  obtain ⟨u, hu, rfl⟩ := exists_rep_of_mem_quotAugmentationIdeal_pow c hz
-  simpa only [Submodule.mem_bot] using Ideal.Quotient.eq_zero_iff_mem.mpr hu
+    quotAugmentationIdeal c ^ (c + 1) = ⊥ :=
+  eq_bot_iff.mpr <| (quotAugmentationIdeal_pow_le_map c (c + 1)).trans <|
+    Ideal.map_le_iff_le_comap.mpr fun _ hu =>
+      Ideal.mem_bot.mpr (Ideal.Quotient.eq_zero_iff_mem.mpr hu)
 
 private theorem mk_ι_mem_quotAugmentationIdeal (c : ℕ) (x : FreeLieTwo) :
     Ideal.Quotient.mk (freeAugmentation ^ (c + 1))
         (_root_.UniversalEnvelopingAlgebra.ι ℚ x) ∈ quotAugmentationIdeal c :=
-  (mk_mem_quotAugmentationIdeal_iff c _).mpr
-    (HopfIdeal.mem_toIdeal.mpr
-      (UniversalEnvelopingAlgebra.ι_mem_augmentation ℚ FreeLieTwo x))
+  Ideal.mem_map_of_mem _
+    (HopfIdeal.mem_toIdeal.mpr (UniversalEnvelopingAlgebra.ι_mem_augmentation ℚ FreeLieTwo x))
 
 /-- At class `0`, `bchElement 0` vanishes. -/
 @[simp]

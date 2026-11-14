@@ -113,64 +113,51 @@ private theorem comul_prod_mem_tensorProduct (hneg : ∀ n, d n < 0 → ℒ n = 
           (d (l.map Sigma.fst).sum).toNat
   | [], _ => by simp [Submodule.mem_top]
   | a :: l, hnonneg => by
+    let 𝓕 := degreeFiltration ℒ d hneg
+    let 𝒯 := 𝓕.tensorProduct R 𝓕
     have ha0 : 0 ≤ d a.1 := hnonneg a List.mem_cons_self
-    have hl_each : ∀ b ∈ l, 0 ≤ d b.1 := fun b hb => hnonneg b (List.mem_cons_of_mem a hb)
+    have hl : ∀ b ∈ l, 0 ≤ d b.1 := fun b hb => hnonneg b (List.mem_cons_of_mem a hb)
     have hsum0 : 0 ≤ d (l.map Sigma.fst).sum := by
-      rw [map_list_sum]
-      refine List.sum_nonneg ?_
-      intro z hz
-      obtain ⟨m, hm, rfl⟩ := List.mem_map.mp hz
-      obtain ⟨b, hb, rfl⟩ := List.mem_map.mp hm
-      exact hl_each b hb
-    have hι : ι R (a.2 : L) ∈ (degreeFiltration ℒ d hneg).ideal (d a.1).toNat :=
+      rw [map_list_sum, List.map_map]
+      refine List.sum_nonneg fun _ hz => ?_
+      obtain ⟨b, hb, rfl⟩ := List.mem_map.mp hz
+      exact hl b hb
+    have hι : ι R (a.2 : L) ∈ 𝓕.ideal (d a.1).toNat :=
       ι_mem_degreeFiltration ℒ d hneg a.2.property (by omega)
-    have hhead : Bialgebra.comulAlgHom R U (ι R (a.2 : L)) ∈
-        ((degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)).ideal
-          (d a.1).toNat := by
+    have hhead : Bialgebra.comulAlgHom R U (ι R (a.2 : L)) ∈ 𝒯.ideal (d a.1).toNat := by
       rw [Bialgebra.comulAlgHom_apply, comul_ι]
-      refine Ideal.add_mem _ ?_ ?_
-      · exact (degreeFiltration ℒ d hneg).tmul_mem_tensorProduct_ideal R
-          (degreeFiltration ℒ d hneg) (a := (d a.1).toNat) (b := 0) (by omega) hι (by simp)
-      · exact (degreeFiltration ℒ d hneg).tmul_mem_tensorProduct_ideal R
-          (degreeFiltration ℒ d hneg) (a := 0) (b := (d a.1).toNat) (by omega) (by simp) hι
-    have htail := comul_prod_mem_tensorProduct hneg l hl_each
+      exact Ideal.add_mem _
+        (𝓕.tmul_mem_tensorProduct_ideal R 𝓕 (a := (d a.1).toNat) (b := 0) (by omega) hι (by simp))
+        (𝓕.tmul_mem_tensorProduct_ideal R 𝓕 (a := 0) (b := (d a.1).toNat) (by omega) (by simp) hι)
     have htoNat : (d ((a :: l).map Sigma.fst).sum).toNat =
         (d a.1).toNat + (d (l.map Sigma.fst).sum).toNat := by
       simp only [List.map_cons, List.sum_cons, map_add]
       omega
-    rw [htoNat]
-    simp only [List.map_cons, List.prod_cons, map_mul]
-    exact ((degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)).mul_mem
-      hhead htail
+    rw [htoNat, List.map_cons, List.prod_cons, map_mul]
+    exact 𝒯.mul_mem hhead (comul_prod_mem_tensorProduct hneg l hl)
 
 /-- Comultiplication preserves the total-degree filtration on a graded enveloping algebra. -/
 theorem degreeFiltration_le_comap_comulAlgHom (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (k : ℕ) :
     (degreeFiltration ℒ d hneg).ideal k ≤
       (((degreeFiltration ℒ d hneg).tensorProduct R
         (degreeFiltration ℒ d hneg)).ideal k).comap (Bialgebra.comulAlgHom R U) := by
+  let 𝒯 := (degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)
   rw [degreeFiltration_ideal_le_iff]
-  intro n hn
-  have hle := (homogeneousSubmodule_le_iff ℒ n
-    ((((degreeFiltration ℒ d hneg).tensorProduct R
-      (degreeFiltration ℒ d hneg)).ideal k).comap
-        (Bialgebra.comulAlgHom R U) |>.restrictScalars R)).mpr fun l hl => by
-    rw [Submodule.restrictScalars_mem, Ideal.mem_comap]
-    by_cases hnonneg : ∀ a ∈ l, 0 ≤ d a.1
-    · have hk : k ≤ (d (l.map Sigma.fst).sum).toNat := by
-        rw [hl]
-        omega
-      exact ((degreeFiltration ℒ d hneg).tensorProduct R
-        (degreeFiltration ℒ d hneg)).antitone hk
-          (comul_prod_mem_tensorProduct ℒ d hneg l hnonneg)
-    · push Not at hnonneg
-      obtain ⟨a, hal, haneg⟩ := hnonneg
-      have ha0 : (a.2 : L) = 0 := by
-        simpa only [hneg a.1 haneg, Submodule.mem_bot] using a.2.property
-      have hprod : (l.map (fun x => ι R (x.2 : L))).prod = 0 :=
-        List.prod_eq_zero <| List.mem_map.mpr ⟨a, hal, by simp [ha0]⟩
-      rw [hprod, map_zero]
-      exact zero_mem _
-  exact fun a ha => (Submodule.restrictScalars_mem R _ _).mp (hle ha)
+  intro n hn a ha
+  refine (Submodule.restrictScalars_mem R _ _).mp <|
+    (homogeneousSubmodule_le_iff ℒ n
+      ((𝒯.ideal k).comap (Bialgebra.comulAlgHom R U) |>.restrictScalars R)).mpr (fun l hl => ?_) ha
+  rw [Submodule.restrictScalars_mem, Ideal.mem_comap]
+  by_cases hnonneg : ∀ a ∈ l, 0 ≤ d a.1
+  · have hk : k ≤ (d (l.map Sigma.fst).sum).toNat := by
+      rw [hl]
+      omega
+    exact 𝒯.antitone hk (comul_prod_mem_tensorProduct ℒ d hneg l hnonneg)
+  · push Not at hnonneg
+    obtain ⟨b, hbl, hbneg⟩ := hnonneg
+    have hb0 : (b.2 : L) = 0 := by simpa [hneg b.1 hbneg] using b.2.property
+    rw [List.prod_eq_zero (List.mem_map.mpr ⟨b, hbl, by simp [hb0]⟩), map_zero]
+    exact zero_mem _
 
 /-- The completion of a graded universal enveloping algebra along its total-degree filtration. -/
 noncomputable abbrev completedEnveloping (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :=
@@ -338,77 +325,60 @@ private theorem tensorProduct_one_le_ker_tensorCounitAlgHom
     (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
     ((degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)).ideal 1 ≤
       RingHom.ker (tensorCounitAlgHom (R := R) (L := L)) := by
-  intro t ht
-  rw [TauCeti.AlgFiltration.mem_tensorProduct_ideal_iff, tensorFiltrationTail_def] at ht
+  let 𝓕 := degreeFiltration ℒ d hneg
   let K : Submodule R (U ⊗[R] U) :=
     (RingHom.ker (tensorCounitAlgHom (R := R) (L := L))).restrictScalars R
-  change t ∈ K
+  intro t ht
+  rw [TauCeti.AlgFiltration.mem_tensorProduct_ideal_iff, tensorFiltrationTail_def] at ht
   refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) ht (fun a z hz => ?_)
-    (by simp) (fun _ _ hx hy => add_mem hx hy)
+    (zero_mem K) (fun _ _ => add_mem)
   refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun b z hz => ?_)
-    (by simp) (fun _ _ hx hy => add_mem hx hy)
+    (zero_mem K) (fun _ _ => add_mem)
   refine Submodule.iSup_induction _ (motive := fun z => z ∈ K) hz (fun hab z hz => ?_)
-    (by simp) (fun _ _ hx hy => add_mem hx hy)
+    (zero_mem K) (fun _ _ => add_mem)
   refine Submodule.map₂_le.mpr (fun u hu v hv => ?_) hz
   rw [Submodule.restrictScalars_mem, RingHom.mem_ker, TensorProduct.mk_apply,
     tensorCounitAlgHom, AlgHom.comp_apply, Algebra.TensorProduct.map_tmul,
     AlgEquiv.toAlgHom_apply, Algebra.TensorProduct.lid_tmul, smul_eq_mul]
   by_cases ha : 0 < a
-  · have hu0 : Bialgebra.counitAlgHom R U u = 0 :=
-      RingHom.mem_ker.mp
-        (degreeFiltration_one_le_ker_counitAlgHom ℒ d hneg
-          ((degreeFiltration ℒ d hneg).antitone ha hu))
-    rw [hu0, zero_mul]
+  · rw [RingHom.mem_ker.mp (degreeFiltration_one_le_ker_counitAlgHom ℒ d hneg (𝓕.antitone ha hu)),
+      zero_mul]
   · have hb : 0 < b := by omega
-    have hv0 : Bialgebra.counitAlgHom R U v = 0 :=
-      RingHom.mem_ker.mp
-        (degreeFiltration_one_le_ker_counitAlgHom ℒ d hneg
-          ((degreeFiltration ℒ d hneg).antitone hb hv))
-    rw [hv0, mul_zero]
+    rw [RingHom.mem_ker.mp (degreeFiltration_one_le_ker_counitAlgHom ℒ d hneg (𝓕.antitone hb hv)),
+      mul_zero]
 
 /-- Every completed primitive element has completed counit zero. -/
 theorem IsCompletedPrimitive.completedCounit_eq_zero {hneg : ∀ n, d n < 0 → ℒ n = ⊥}
     {x : completedEnveloping ℒ d hneg} (hx : IsCompletedPrimitive ℒ d hneg x) :
     completedCounit ℒ d hneg x = 0 := by
-  let 𝒯 := (degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)
+  let 𝓕 := degreeFiltration ℒ d hneg
+  let 𝒯 := 𝓕.tensorProduct R 𝓕
   let ε₂ : 𝒯.completion →ₐ[R] R :=
     (Ideal.Quotient.liftₐ (𝒯.ideal 1) (tensorCounitAlgHom (R := R) (L := L))
       (fun _ ht => RingHom.mem_ker.mp
         (tensorProduct_one_le_ker_tensorCounitAlgHom ℒ d hneg ht))).comp (𝒯.projectionₐ 0)
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((degreeFiltration ℒ d hneg).projection 0 x)
-  have h1 : Ideal.Quotient.mk ((degreeFiltration ℒ d hneg).ideal (0 + 1)) 1 =
-      (degreeFiltration ℒ d hneg).projection 0 1 :=
-    (map_one ((degreeFiltration ℒ d hneg).projection 0)).symm
-  have hL :
-      ε₂ ((degreeFiltration ℒ d hneg).completedTensor R (degreeFiltration ℒ d hneg) x 1) =
-        completedCounit ℒ d hneg x := by
-    have hp := (degreeFiltration ℒ d hneg).projection_completedTensor_of_representatives
-      R (degreeFiltration ℒ d hneg) 0 x 1 a 1 ha h1
-    simp only [ε₂, 𝒯, AlgHom.comp_apply, TauCeti.AlgFiltration.projectionₐ_apply, hp,
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (𝓕.projection 0 x)
+  have h1 : Ideal.Quotient.mk (𝓕.ideal (0 + 1)) 1 = 𝓕.projection 0 1 :=
+    (map_one (𝓕.projection 0)).symm
+  have hL : ε₂ (𝓕.completedTensor R 𝓕 x 1) = completedCounit ℒ d hneg x := by
+    have hp := 𝓕.projection_completedTensor_of_representatives R 𝓕 0 x 1 a 1 ha h1
+    simp only [ε₂, 𝒯, 𝓕, AlgHom.comp_apply, TauCeti.AlgFiltration.projectionₐ_apply, hp,
       Ideal.Quotient.liftₐ_apply]
     simpa [tensorCounitAlgHom] using (completedCounit_of_representative ℒ d hneg x a ha).symm
-  have hR :
-      ε₂ ((degreeFiltration ℒ d hneg).completedTensor R (degreeFiltration ℒ d hneg) 1 x) =
-        completedCounit ℒ d hneg x := by
-    have hp := (degreeFiltration ℒ d hneg).projection_completedTensor_of_representatives
-      R (degreeFiltration ℒ d hneg) 0 1 x 1 a h1 ha
-    simp only [ε₂, 𝒯, AlgHom.comp_apply, TauCeti.AlgFiltration.projectionₐ_apply, hp,
+  have hR : ε₂ (𝓕.completedTensor R 𝓕 1 x) = completedCounit ℒ d hneg x := by
+    have hp := 𝓕.projection_completedTensor_of_representatives R 𝓕 0 1 x 1 a h1 ha
+    simp only [ε₂, 𝒯, 𝓕, AlgHom.comp_apply, TauCeti.AlgFiltration.projectionₐ_apply, hp,
       Ideal.Quotient.liftₐ_apply]
     simpa [tensorCounitAlgHom] using (completedCounit_of_representative ℒ d hneg x a ha).symm
   have hΔ : ε₂ (completedCoproduct ℒ d hneg x) = completedCounit ℒ d hneg x := by
-    simp only [ε₂, 𝒯, AlgHom.comp_apply, TauCeti.AlgFiltration.projectionₐ_apply,
+    simp only [ε₂, 𝒯, 𝓕, AlgHom.comp_apply, TauCeti.AlgFiltration.projectionₐ_apply,
       projection_completedCoproduct, ← ha, Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk,
       Ideal.Quotient.liftₐ_apply]
-    have hcomp := AlgHom.congr_fun (tensorCounitAlgHom_comp_comulAlgHom (R := R) (L := L)) a
-    exact hcomp.trans (completedCounit_of_representative ℒ d hneg x a ha).symm
-  have heq : completedCounit ℒ d hneg x =
-      completedCounit ℒ d hneg x + completedCounit ℒ d hneg x := by
-    have hε := congrArg ε₂ hx
-    rwa [hΔ, map_add, hL, hR] at hε
-  calc completedCounit ℒ d hneg x
-      = (completedCounit ℒ d hneg x + completedCounit ℒ d hneg x) -
-          completedCounit ℒ d hneg x := by abel
-    _ = 0 := by rw [← heq, sub_self]
+    exact (AlgHom.congr_fun (tensorCounitAlgHom_comp_comulAlgHom (R := R) (L := L)) a).trans
+      (completedCounit_of_representative ℒ d hneg x a ha).symm
+  have hε := congrArg ε₂ hx
+  rw [hΔ, map_add, hL, hR] at hε
+  exact left_eq_add.mp hε
 
 /-- For a strictly positive Lie grading, every completed primitive element lies in the first
 completion ideal. -/
@@ -601,47 +571,6 @@ theorem completedCoproduct_completedExp (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
   simp only [projection_completedCoproduct, TauCeti.AlgFiltration.projection_completedExp]
   exact ((degreeFiltration ℒ d hneg).isNilpotent_projection x.property k).map_exp _
 
-private theorem completedTensor_completedExp_self (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
-    (x : (degreeFiltration ℒ d hneg).completionIdeal 1) :
-    (degreeFiltration ℒ d hneg).completedTensor R (degreeFiltration ℒ d hneg)
-        ((degreeFiltration ℒ d hneg).completedExp x)
-        ((degreeFiltration ℒ d hneg).completedExp x) =
-      ((degreeFiltration ℒ d hneg).tensorProduct R
-        (degreeFiltration ℒ d hneg)).completedExp
-          (⟨(degreeFiltration ℒ d hneg).includeLeftCompletion R
-                (degreeFiltration ℒ d hneg) x,
-              (degreeFiltration ℒ d hneg).includeLeftCompletion_mem_completionIdeal
-                R (degreeFiltration ℒ d hneg) x.property⟩ +
-            ⟨(degreeFiltration ℒ d hneg).includeRightCompletion R
-                (degreeFiltration ℒ d hneg) x,
-              (degreeFiltration ℒ d hneg).includeRightCompletion_mem_completionIdeal
-                R (degreeFiltration ℒ d hneg) x.property⟩) := by
-  let 𝒯 := (degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)
-  have hL : (degreeFiltration ℒ d hneg).includeLeftCompletion R (degreeFiltration ℒ d hneg)
-        ((degreeFiltration ℒ d hneg).completedExp x) =
-      𝒯.completedExp ⟨(degreeFiltration ℒ d hneg).includeLeftCompletion R
-          (degreeFiltration ℒ d hneg) x,
-        (degreeFiltration ℒ d hneg).includeLeftCompletion_mem_completionIdeal
-          R (degreeFiltration ℒ d hneg) x.property⟩ := by
-    refine 𝒯.completion_ext fun k => ?_
-    simp only [𝒯, TauCeti.AlgFiltration.projection_includeLeftCompletion,
-      TauCeti.AlgFiltration.projection_completedExp]
-    exact ((degreeFiltration ℒ d hneg).isNilpotent_projection x.property k).map_exp _
-  have hR : (degreeFiltration ℒ d hneg).includeRightCompletion R (degreeFiltration ℒ d hneg)
-        ((degreeFiltration ℒ d hneg).completedExp x) =
-      𝒯.completedExp ⟨(degreeFiltration ℒ d hneg).includeRightCompletion R
-          (degreeFiltration ℒ d hneg) x,
-        (degreeFiltration ℒ d hneg).includeRightCompletion_mem_completionIdeal
-          R (degreeFiltration ℒ d hneg) x.property⟩ := by
-    refine 𝒯.completion_ext fun k => ?_
-    simp only [𝒯, TauCeti.AlgFiltration.projection_includeRightCompletion,
-      TauCeti.AlgFiltration.projection_completedExp]
-    exact ((degreeFiltration ℒ d hneg).isNilpotent_projection x.property k).map_exp _
-  have hcomm :=
-    (degreeFiltration ℒ d hneg).commute_includeLeftCompletion_includeRightCompletion
-      R (degreeFiltration ℒ d hneg) (x : completedEnveloping ℒ d hneg) x
-  rw [TauCeti.AlgFiltration.completedTensor_apply, hL, hR, ← 𝒯.completedExp_add _ _ hcomm]
-
 /-- Over a commutative `ℚ`-algebra, the completed exponential of an element of the first
 completion ideal is completed grouplike if and only if that element is completed primitive. -/
 @[simp]
@@ -649,29 +578,41 @@ theorem isCompletedGroupLike_completedExp_iff (hneg : ∀ n, d n < 0 → ℒ n =
     (x : (degreeFiltration ℒ d hneg).completionIdeal 1) :
     IsCompletedGroupLike ℒ d hneg ((degreeFiltration ℒ d hneg).completedExp x) ↔
       IsCompletedPrimitive ℒ d hneg (x : completedEnveloping ℒ d hneg) := by
-  let 𝒯 := (degreeFiltration ℒ d hneg).tensorProduct R (degreeFiltration ℒ d hneg)
-  have hcounit : completedCounit ℒ d hneg ((degreeFiltration ℒ d hneg).completedExp x) = 1 := by
-    have h0 := completedCounit_eq_zero_of_mem_completionIdeal_one ℒ d hneg
-      ((degreeFiltration ℒ d hneg).completedExp_sub_one_mem x)
-    rwa [map_sub, map_one, sub_eq_zero] at h0
-  rw [isCompletedGroupLike_iff, isCompletedPrimitive_iff_includeCompletion, hcounit,
-    completedCoproduct_completedExp, completedTensor_completedExp_self]
-  simp only [true_and]
-  refine ⟨fun h => ?_, fun h => congrArg 𝒯.completedExp (Subtype.ext h)⟩
+  let 𝓕 := degreeFiltration ℒ d hneg
+  let 𝒯 := 𝓕.tensorProduct R 𝓕
   let a : 𝒯.completionIdeal 1 := ⟨completedCoproduct ℒ d hneg x,
     completedCoproduct_mem_completionIdeal ℒ d hneg x.property⟩
-  let b : 𝒯.completionIdeal 1 :=
-    ⟨(degreeFiltration ℒ d hneg).includeLeftCompletion R (degreeFiltration ℒ d hneg) x,
-      (degreeFiltration ℒ d hneg).includeLeftCompletion_mem_completionIdeal
-        R (degreeFiltration ℒ d hneg) x.property⟩ +
-    ⟨(degreeFiltration ℒ d hneg).includeRightCompletion R (degreeFiltration ℒ d hneg) x,
-      (degreeFiltration ℒ d hneg).includeRightCompletion_mem_completionIdeal
-        R (degreeFiltration ℒ d hneg) x.property⟩
-  have hlog :
-      𝒯.completedLog ⟨𝒯.completedExp a, 𝒯.completedExp_sub_one_mem a⟩ =
-        𝒯.completedLog ⟨𝒯.completedExp b, 𝒯.completedExp_sub_one_mem b⟩ :=
+  let bL : 𝒯.completionIdeal 1 := ⟨𝓕.includeLeftCompletion R 𝓕 x,
+    𝓕.includeLeftCompletion_mem_completionIdeal R 𝓕 x.property⟩
+  let bR : 𝒯.completionIdeal 1 := ⟨𝓕.includeRightCompletion R 𝓕 x,
+    𝓕.includeRightCompletion_mem_completionIdeal R 𝓕 x.property⟩
+  have hcounit : completedCounit ℒ d hneg (𝓕.completedExp x) = 1 := by
+    have h0 := completedCounit_eq_zero_of_mem_completionIdeal_one ℒ d hneg
+      (𝓕.completedExp_sub_one_mem x)
+    rwa [map_sub, map_one, sub_eq_zero] at h0
+  have hL : 𝓕.includeLeftCompletion R 𝓕 (𝓕.completedExp x) = 𝒯.completedExp bL :=
+    𝒯.completion_ext fun k => by
+      simp only [𝒯, 𝓕, bL, TauCeti.AlgFiltration.projection_includeLeftCompletion,
+        TauCeti.AlgFiltration.projection_completedExp]
+      exact (𝓕.isNilpotent_projection x.property k).map_exp _
+  have hR : 𝓕.includeRightCompletion R 𝓕 (𝓕.completedExp x) = 𝒯.completedExp bR :=
+    𝒯.completion_ext fun k => by
+      simp only [𝒯, 𝓕, bR, TauCeti.AlgFiltration.projection_includeRightCompletion,
+        TauCeti.AlgFiltration.projection_completedExp]
+      exact (𝓕.isNilpotent_projection x.property k).map_exp _
+  have hcomm := 𝓕.commute_includeLeftCompletion_includeRightCompletion R 𝓕
+    (x : completedEnveloping ℒ d hneg) x
+  have hself : 𝓕.completedTensor R 𝓕 (𝓕.completedExp x) (𝓕.completedExp x) =
+      𝒯.completedExp (bL + bR) := by
+    rw [TauCeti.AlgFiltration.completedTensor_apply, hL, hR, ← 𝒯.completedExp_add bL bR hcomm]
+  rw [isCompletedGroupLike_iff, isCompletedPrimitive_iff_includeCompletion, hcounit,
+    completedCoproduct_completedExp, hself]
+  simp only [true_and]
+  refine ⟨fun h => ?_, fun h => congrArg 𝒯.completedExp (Subtype.ext h)⟩
+  have hlog : 𝒯.completedLog ⟨𝒯.completedExp a, 𝒯.completedExp_sub_one_mem a⟩ =
+      𝒯.completedLog ⟨𝒯.completedExp (bL + bR), 𝒯.completedExp_sub_one_mem (bL + bR)⟩ :=
     congrArg 𝒯.completedLog (Subtype.ext h)
-  simpa only [TauCeti.AlgFiltration.completedLog_completedExp, a, b, AddMemClass.coe_add]
+  simpa only [TauCeti.AlgFiltration.completedLog_completedExp, a, bL, bR, AddMemClass.coe_add]
     using hlog
 
 /-- Over a commutative `ℚ`-algebra, the completed logarithm of an element congruent to `1` modulo
@@ -706,14 +647,9 @@ noncomputable def completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n 
     ⟨⟨(degreeFiltration ℒ d (fun n hn => hpos n hn.le)).completedLog u',
       (degreeFiltration ℒ d (fun n hn => hpos n hn.le)).completedLog_mem u'⟩,
       (isCompletedPrimitive_completedLog_iff ℒ d _ u').mpr u.2⟩
-  left_inv x := by
-    apply Subtype.ext
-    apply Subtype.ext
-    exact (degreeFiltration ℒ d _).completedLog_completedExp x.1
-  right_inv u := by
-    apply Subtype.ext
-    exact (degreeFiltration ℒ d _).completedExp_completedLog
-      ⟨u.1, u.2.sub_one_mem_completionIdeal_one ℒ d⟩
+  left_inv x := Subtype.ext <| Subtype.ext <| (degreeFiltration ℒ d _).completedLog_completedExp x.1
+  right_inv u := Subtype.ext <| (degreeFiltration ℒ d _).completedExp_completedLog
+    ⟨u.1, u.2.sub_one_mem_completionIdeal_one ℒ d⟩
 
 @[simp]
 theorem coe_completedPrimitiveExpEquiv (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥)
