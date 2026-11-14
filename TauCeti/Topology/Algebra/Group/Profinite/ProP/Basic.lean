@@ -15,9 +15,10 @@ import TauCeti.Topology.Algebra.Group.Profinite.Basic
 /-!
 # Pro-p groups
 
-A topological group is pro-`p` when each of its continuous finite quotients is a `p`-group.
+A profinite group is pro-`p` when each of its continuous finite quotients is a `p`-group.
 For the unbundled profinite groups used in Tau Ceti, these quotients are represented by the
-quotients by open normal subgroups. This file introduces that quotient-form predicate and its
+quotients by open normal subgroups. This file introduces that quotient-form predicate, which is
+defined for every topological group and a natural number `p` (meant to be prime), and its
 basic covariant API: abstract `p`-groups are pro-`p`, continuous surjective images of pro-`p`
 groups are pro-`p`, and hence so are topological quotients. It also records invariance under
 topological group isomorphism and agreement with `IsPGroup` for a discrete topology.
@@ -64,7 +65,11 @@ namespace TauCeti
 universe u v
 
 /-- A topological group is **pro-`p`** when every quotient by an open normal subgroup is a
-`p`-group. For a profinite group these are exactly its continuous finite quotients. -/
+`p`-group. For a profinite group these are exactly its continuous finite quotients, so this is
+the pro-`p` notion of Ribes-Zalesskii only for profinite groups: the predicate is defined for
+every topological group and holds, for instance, for every connected group, whose only open
+subgroup is the whole group. The number `p` is meant to be prime; `p = 0` gives the trivial
+condition, since every group is a `0`-group. -/
 def IsProP (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Prop :=
   ∀ U : OpenNormalSubgroup G, IsPGroup p (G ⧸ U.toSubgroup)
 
@@ -108,7 +113,9 @@ theorem isProP_iff_isPGroup : IsProP p G ↔ IsPGroup p G := by
       QuotientGroup.quotientBot)
 
 /-- The cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
-pro-`p`. This holds for every natural number `p`, including composite numbers. -/
+pro-`p`. This holds for every natural number `p`, including composite numbers. For
+`p = 0` the group `ℤ/pⁿ` is infinite when `n ≠ 0`, and the statement is only the trivial
+condition. -/
 theorem isProP_multiplicative_zmod_pow (p n : ℕ) :
     IsProP p (Multiplicative (ZMod (p ^ n))) :=
   (ZModModule.isPGroup_multiplicative (n := p ^ n) (G := ZMod (p ^ n))).of_pow.isProP
