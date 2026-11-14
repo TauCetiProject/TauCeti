@@ -182,20 +182,28 @@ weaken them for no gain.
 * `TauCeti.contDiffOn_sum_innerSL_and_hasWeakFDerivOn`: `Cᵏ` weak derivatives along an orthonormal
   basis assemble into a `Cᵏ` weak Fréchet derivative.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
-  `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
-  on `Ω` are weak derivatives.
-* `ContDiffOn.hasWeakFDerivOn_fderiv`: a `C¹` function on `Ω` has its classical derivative as
-  weak derivative.
-* `TauCeti.hasWeakFDerivOn_of_forall_integral_fderiv_smul`: for any `μ`, integration by parts on
+  `TauCeti.hasWeakFDerivOn_of_differentiableOn`: for an additive Haar measure `μ` on a
+  finite-dimensional `E` with its Borel σ-algebra and a complete `F`, a function with a classical
+  derivative at every point of `Ω` whose classical derivative is locally integrable on `Ω` (for
+  `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt`, the function `u` as well) has it as a weak
+  derivative.
+* `ContDiffOn.hasWeakFDerivOn_fderiv`: for an additive Haar measure on a finite-dimensional `E`
+  with its Borel σ-algebra and a complete `F`, a `C¹` function on `Ω` has its classical derivative
+  as weak derivative.
+* `TauCeti.hasWeakFDerivOn_of_forall_integral_fderiv_smul`: for a complete `F`, any `μ` and
+  functions `u` and `U` that are locally integrable on the whole space, integration by parts on
   the whole space against every `C¹` function with compact support makes `U` a weak derivative of
   `u` on every open set, which is how a function with an integrable singularity, such as a
   fundamental solution, is shown to be weakly differentiable.
-* `TauCeti.hasWeakLineDerivOn_const`: against a Haar measure, a constant has weak derivative `0`.
-* `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_gradient`: a weak gradient is locally integrable.
-* `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: a `C¹` function on `Ω` has weak derivative
-  the linear functional represented by its gradient.
-* `TauCeti.hasWeakFDerivOn_testFunction`: a test function has weak derivative the linear
-  functional represented by its gradient.
+* `TauCeti.hasWeakLineDerivOn_const`: against an additive Haar measure on a finite-dimensional
+  `E` with its Borel σ-algebra and for complete `F`, a constant has weak derivative `0`.
+* `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_gradient`: in finite dimension, a weak gradient is
+  locally integrable on `Ω`.
+* `TauCeti.hasWeakFDerivOn_gradient_of_contDiffOn`: for an additive Haar measure on a
+  finite-dimensional inner product space `E` with its Borel σ-algebra, a `C¹` function on `Ω` has
+  weak derivative the linear functional represented by its gradient.
+* `TauCeti.hasWeakFDerivOn_testFunction`: under the same assumptions, a test function has weak
+  derivative the linear functional represented by its gradient.
 * `TestFunction.setIntegral_inner_gradient_eq_integral_inner_gradient`: the gradient of a test
   function vanishes off its support, so pairings with it may be integrated over any set
   containing it.
@@ -241,10 +249,11 @@ pairs that are not weakly differentiable at all; see the module docstring. They 
 `TauCeti.HasWeakLineDerivOn.locallyIntegrableOn`, `.locallyIntegrableOn_deriv` and
 `.completeSpace`, the last of which is how a proof gets the `CompleteSpace F` instance.
 
-For the intended `μ`, an additive Haar measure, this says exactly that `u'` represents the
-distributional derivative `∂_v u` on `Ω`, and `[μ.IsAddHaarMeasure]` is the hypothesis of every
-result identifying the two (`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
-`TauCeti.hasWeakLineDerivOn_const` among them). For a `μ` that is not translation invariant the
+For the intended `μ`, an additive Haar measure on a finite-dimensional `E` with its Borel
+σ-algebra, this says exactly that `u'` represents the distributional derivative `∂_v u` on `Ω`,
+and `[μ.IsAddHaarMeasure]` on such an `E` is the hypothesis of every result identifying the two
+(`TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and `TauCeti.hasWeakLineDerivOn_const` among
+them). For a `μ` that is not translation invariant the
 identity is instead the adjoint of `∂_v` relative to `μ` — with a weight `w` it describes
 `∂_v (w • u)`, so a constant need not have weak derivative `0`; see the module docstring. -/
 def HasWeakLineDerivOn (μ : Measure E) (Ω : Opens E) (u u' : E → F) (v : E) : Prop :=
@@ -357,7 +366,8 @@ theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U :
   rwa [hU]
 
 /-- Integration by parts on the whole space against every `C¹` function with compact support
-makes `U` a weak derivative of `u` on every open set. This is how a function with an integrable
+makes `U` a weak derivative of `u` on every open set, provided `F` is complete and `u` and `U`
+are locally integrable on the whole space. This is how a function with an integrable
 singularity, such as a fundamental solution, is shown to be weakly differentiable. -/
 theorem hasWeakFDerivOn_of_forall_integral_fderiv_smul [CompleteSpace F] {U : E → E →L[ℝ] F}
     (hu : LocallyIntegrable u μ) (hU : LocallyIntegrable U μ)
@@ -813,9 +823,10 @@ theorem contDiffOn_sum_innerSL_and_hasWeakFDerivOn
 
 /-! ### Classical derivatives are weak derivatives
 
-This is where the measure has to be an additive Haar measure: integration by parts is available
-only for a translation-invariant `μ`, and it is what makes the weak derivative of this section
-the classical one. -/
+This is where the measure is taken to be an additive Haar measure on a finite-dimensional `E` with
+its Borel σ-algebra: Mathlib's integration by parts is available for such a `μ`, and it is what
+makes the weak derivative of this section the classical one. Translation invariance is sufficient,
+not necessary (see *The measure* in the module docstring). -/
 
 section Classical
 
@@ -846,9 +857,10 @@ theorem hasWeakLineDerivOn_of_hasLineDerivAt (hu : LocallyIntegrableOn u Ω μ)
   simpa using key
 
 /-- A constant function has weak derivative `0` in every direction, for `μ` an additive Haar
-measure: the first sanity check that `TauCeti.HasWeakLineDerivOn` is not vacuous. Translation
-invariance of `μ` is needed — against a weighted measure a constant pairs with `∂_v` of the
-weight. -/
+measure on a finite-dimensional `E` with its Borel σ-algebra: the first sanity check that
+`TauCeti.HasWeakLineDerivOn` is not vacuous. Translation invariance of `μ` is sufficient but not
+necessary (only the weight on `Ω` matters), and some such hypothesis is needed: against a weighted
+measure a constant pairs with `∂_v` of the weight. -/
 theorem hasWeakLineDerivOn_const (c : F) :
     HasWeakLineDerivOn μ Ω (fun _ => c) (fun _ => 0) v :=
   hasWeakLineDerivOn_of_hasLineDerivAt (locallyIntegrableOn_const c) locallyIntegrableOn_zero
@@ -894,8 +906,9 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 open scoped Gradient InnerProductSpace
 
 omit [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- **A weak gradient is locally integrable.** If the functionals `⟪g x, ·⟫` form a weak
-derivative of `u` on `Ω`, then the vector field `g` is locally integrable on `Ω`. -/
+/-- **A weak gradient is locally integrable.** If `E` is finite dimensional and the functionals
+`⟪g x, ·⟫` form a weak derivative of `u` on `Ω`, then the vector field `g` is locally integrable
+on `Ω`. -/
 theorem HasWeakFDerivOn.locallyIntegrableOn_gradient {u : E → ℝ} {g : E → E}
     (h : HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (g x)) : LocallyIntegrableOn g Ω μ := by
   have hg := ((InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv :
