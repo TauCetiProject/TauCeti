@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ParametricIntegral
-public import TauCeti.Analysis.Calculus.Deriv.Const
-public import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Compactness.Normed
+import TauCeti.Analysis.Calculus.FDeriv.Const
 
 /-!
 # Parametric integrals with a fixed compact support
@@ -90,10 +90,10 @@ theorem integrable_of_hasDerivAt_of_compact_support
     (hK : IsCompact K) (hD₁ : Continuous D₁)
     (hderiv : ∀ x, HasDerivAt (D · x) (D₁ x) t₀)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) : Integrable D₁ μ := by
-  apply hD₁.integrable_of_support_subset_isCompact hK
-  exact support_subset_iff'.2 fun x hx ↦ by
-    simpa using DFunLike.congr_fun
-      (fderiv_eq_zero_of_support hU (hderiv x).hasFDerivAt hsupp hx) 1
+  let e := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := E)
+  exact e.integrable_comp_iff.1 (integrable_of_hasFDerivAt_of_compact_support
+    (D₁ := fun x ↦ e (D₁ x)) hU hK (e.continuous.comp hD₁)
+    (fun x ↦ (hderiv x).hasFDerivAt) hsupp)
 
 /-- A continuous second scalar parameter derivative of a family supported in a fixed compact
 set near the parameter is integrable, without a completeness assumption on the codomain. -/
@@ -103,12 +103,15 @@ theorem integrable_of_hasDerivAt_of_hasDerivAt_of_compact_support
     (hderiv₁ : ∀ t ∈ U, ∀ x, HasDerivAt (D · x) (D₁ t x) t)
     (hderiv₂ : ∀ x, HasDerivAt (D₁ · x) (D₂ x) t₀)
     (hsupp : ∀ t ∈ U, ∀ x ∉ K, D t x = 0) : Integrable D₂ μ := by
-  apply integrable_of_hasDerivAt_of_compact_support
-    (interior_mem_nhds.2 hU) hK hD₂ hderiv₂
-  exact fun t ht x hx ↦ by
-    simpa using DFunLike.congr_fun
-      (fderiv_eq_zero_of_support (mem_interior_iff_mem_nhds.1 ht)
-        (hderiv₁ t (interior_subset ht) x).hasFDerivAt hsupp hx) 1
+  let e := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := E)
+  let e₁ := ContinuousLinearMap.toSpanSingletonCLE (𝕜 := 𝕜) (E := 𝕜 →L[𝕜] E)
+  have h := integrable_of_hasFDerivAt_of_hasFDerivAt_of_compact_support (μ := μ)
+    (D₁ := fun t x ↦ e (D₁ t x)) (D₂ := fun x ↦ e₁ (e (D₂ x))) hU hK
+    (e₁.continuous.comp (e.continuous.comp hD₂))
+    (fun t ht x ↦ (hderiv₁ t ht x).hasFDerivAt)
+    (fun x ↦ (e.hasFDerivAt.comp_hasDerivAt t₀ (hderiv₂ x)).hasFDerivAt) hsupp
+  apply e.integrable_comp_iff.1
+  simpa [e₁] using h.apply_continuousLinearMap (1 : 𝕜)
 
 end Integrability
 
