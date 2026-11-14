@@ -465,10 +465,8 @@ theorem mem_smul_top_iff (b : Basis ι R M) {I : Ideal R} [I.IsTwoSided] {x : M}
 
 end Module.Basis
 
-universe u
-
 /-- A supremum of two two-sided ideals is two-sided. -/
-instance (priority := low) Ideal.isTwoSided_sup {R : Type u} [Semiring R] (I J : Ideal R)
+instance (priority := low) Ideal.isTwoSided_sup {R : Type*} [Semiring R] (I J : Ideal R)
     [I.IsTwoSided] [J.IsTwoSided] : (I ⊔ J).IsTwoSided where
   mul_mem_of_left b ha := by
     obtain ⟨i, hi, j, hj, rfl⟩ := Submodule.mem_sup.mp ha
@@ -478,7 +476,7 @@ instance (priority := low) Ideal.isTwoSided_sup {R : Type u} [Semiring R] (I J :
 
 /-- The `n`-th power of the supremum of a two-sided ideal and a left ideal is contained in
 the first ideal plus the `n`-th power of the second. -/
-theorem Ideal.sup_pow_le_sup_pow_right {R : Type u} [Semiring R] (I J : Ideal R)
+theorem Ideal.sup_pow_le_sup_pow_right {R : Type*} [Semiring R] (I J : Ideal R)
     [I.IsTwoSided] (n : ℕ) :
     (I ⊔ J) ^ n ≤ I ⊔ J ^ n := by
   induction n with
@@ -499,7 +497,7 @@ theorem Ideal.sup_pow_le_sup_pow_right {R : Type u} [Semiring R] (I J : Ideal R)
 The two-sidedness hypotheses hold automatically in a commutative ring.
 Modulo `z`, the ideal `(x, z)` becomes `(x)`, whose `n`-th power vanishes; conversely
 `z = x ^ n (1 + t + ⋯ + t ^ (n - 1)) + z t ^ n`. -/
-theorem Ideal.span_pair_pow_eq_span_singleton {R : Type u} [Ring R] {x z t : R} {n : ℕ}
+theorem Ideal.span_pair_pow_eq_span_singleton {R : Type*} [Ring R] {x z t : R} {n : ℕ}
     [(Ideal.span {x, z}).IsTwoSided] [(Ideal.span {z}).IsTwoSided]
     (hz : z * (1 - t) = x ^ n) (ht : t ∈ Ideal.span {x, z}) :
     Ideal.span {x, z} ^ n = Ideal.span {z} := by
@@ -539,7 +537,7 @@ theorem Ideal.span_pair_pow_eq_span_singleton {R : Type u} [Ring R] {x z t : R} 
 /-- **A pair whose square is principal.** In a commutative semiring, if `x ^ 2 = z m` with `z`
 and `m` coprime, then `(z, x) ^ 2 = (z)`. For a squarefree integer `d = p m` with `p` prime,
 applied to a square root `x` of `d`, this is the ramified factorization `(p) = (p, √d) ^ 2`. -/
-theorem Ideal.span_pair_sq_eq_span_singleton_of_isCoprime {R : Type u} [CommSemiring R]
+theorem Ideal.span_pair_sq_eq_span_singleton_of_isCoprime {R : Type*} [CommSemiring R]
     {z x m : R} (hx : x ^ 2 = z * m) (hm : IsCoprime z m) :
     Ideal.span {z, x} ^ 2 = Ideal.span {z} := by
   refine le_antisymm ?_ ?_
