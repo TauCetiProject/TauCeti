@@ -819,15 +819,9 @@ module, with the action read off from its operators by `TopRep.distribMulAction`
 @[expose] def ofSmoothDiscrete :
     SmoothDiscreteTopRep.{u, v, w} R G ⥤ DiscreteRep.{u, v, w} R G where
   obj X := { V := X.obj.V }
-  -- Equivariance for the derived actions is `TopRep.distribMulAction_smul` on each side of the
-  -- intertwining identity that `φ` already carries.
-  map {X Y} φ :=
-    φ.hom.hom.toContinuousLinearMap.toLinearMap.intertwiningMap_of_isIntertwiningMap _ _
-      fun g x ↦ (congrArg _ (TopRep.distribMulAction_smul X.obj g x)).trans
-        ((φ.hom.hom.isIntertwining g x).trans
-          (TopRep.distribMulAction_smul Y.obj g (φ.hom.hom x)).symm)
-  map_id _ := Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
-  map_comp _ _ := Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
+  map φ := φ.hom.hom.toIntertwiningMap
+  map_id _ := rfl
+  map_comp _ _ := rfl
 
 /-- `ofSmoothDiscrete` keeps the underlying module of a smooth discrete representation. -/
 @[simp] lemma ofSmoothDiscrete_obj_V (X : SmoothDiscreteTopRep.{u, v, w} R G) :
