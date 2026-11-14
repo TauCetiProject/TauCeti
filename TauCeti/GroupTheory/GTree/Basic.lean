@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Group actions on trees
@@ -57,6 +58,8 @@ exchanges the endpoints of a dart.
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
 * `TauCeti.GTree.IsMinimal`, `TauCeti.GTree.IsRelative`: minimal and relative trees.
+* `TauCeti.GTree.incidentSubgroups`: the stabilizers of the darts at a vertex and the
+  intersections of its stabilizer with the conjugates of the members of a family `ℋ`.
 * `TauCeti.GTree.Dominates`, `TauCeti.GTree.SameDeformationSpace`: domination and deformation
   spaces, with `TauCeti.GTree.dominates_iff`.
 * `TauCeti.GTree.point`: the one-vertex tree.
@@ -65,7 +68,7 @@ exchanges the endpoints of a dart.
 
 * J.-P. Serre, *Trees*, Chapter I, §3.1 and §6.
 * V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.1,
-  Definition 2.1 and §2.2.
+  Definition 2.1, §2.2 and Definitions 4.3–4.5.
 -/
 
 public section
@@ -398,6 +401,21 @@ theorem stabilizer_dart_le_stabilizer_tgt (e : T.E) :
   ext g
   rw [mem_stabilizer_iff, mem_stabilizer_iff, ← rev_smul, T.rev_injective.eq_iff]
 
+/-- The elements fixing two distinct vertices `v` and `w` fix the first dart of the reduced path
+from `v` to `w`, which starts at `v`. -/
+theorem exists_src_eq_and_stabilizer_inf_le {v w : T.V} (h : v ≠ w) :
+    ∃ e : T.E, T.src e = v ∧ stabilizer G v ⊓ stabilizer G w ≤ stabilizer G e := by
+  obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced v w
+  obtain ⟨e, he⟩ : ∃ e, e ∈ (Path.darts T.toSerreGraph p).head? := by
+    cases hd : Path.darts T.toSerreGraph p with
+    | nil => exact absurd (p.eq_of_darts_eq_nil _ hd) h
+    | cons e _ => exact ⟨e, rfl⟩
+  refine ⟨e, Path.src_eq_of_mem_head?_darts _ p he, fun g hg => ?_⟩
+  rw [Subgroup.mem_inf, mem_stabilizer_iff, mem_stabilizer_iff, smul_vertex_def,
+    smul_vertex_def] at hg
+  rw [mem_stabilizer_iff, smul_dart_def]
+  exact Aut.smul_eq_of_mem_darts T.isTree.isAcyclic _ hg.1 hg.2 hp (List.mem_of_mem_head? he)
+
 variable (T) in
 /-- Dart stabilizers are elliptic. -/
 theorem isEllipticSubgroup_stabilizer_dart (e : T.E) : T.IsEllipticSubgroup (stabilizer G e) :=
@@ -569,6 +587,94 @@ theorem isRelative_of_forall_stabilizer_eq_bot {𝒜 ℋ : Set (Subgroup G)} (h�
     (hℋ : ℋ ⊆ {⊥}) (h : ∀ v : T.V, stabilizer G v = ⊥) : T.IsRelative 𝒜 ℋ :=
   ⟨fun e => (isEllipticSubgroup_iff_eq_bot h).mp (T.isEllipticSubgroup_stabilizer_dart e) ▸ h𝒜,
     fun _ hH => (isEllipticSubgroup_iff_eq_bot h).mpr (hℋ hH)⟩
+
+/-! ### Incident subgroups -/
+
+variable (T) in
+/-- The incident subgroups at a vertex `v`, relative to a family `ℋ` of subgroups: the
+stabilizers of the darts starting at `v` and the intersections of the stabilizer `Q` of `v` with
+the conjugates of the members of `ℋ`, as subgroups of `Q`. Guirardel and Levitt's family
+`Inc^ℋ_v` uses, instead of these intersections, the conjugates of members of `ℋ` that fix `v`
+and no other vertex. -/
+def incidentSubgroups (ℋ : Set (Subgroup G)) (v : T.V) : Set (Subgroup (stabilizer G v)) :=
+  {K | ∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)} ∪
+    {K | ∃ H ∈ ℋ, ∃ g : G,
+      K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v)}
+
+theorem mem_incidentSubgroups_iff {ℋ : Set (Subgroup G)} {v : T.V}
+    {K : Subgroup (stabilizer G v)} :
+    K ∈ T.incidentSubgroups ℋ v ↔
+      (∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)) ∨
+        ∃ H ∈ ℋ, ∃ g : G,
+          K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v) := Iff.rfl
+
+variable (T) in
+/-- A `G`-tree with at most one vertex has no darts, so its incident subgroups are the
+intersections of the vertex stabilizer with the conjugates of the members of `ℋ`. -/
+theorem incidentSubgroups_of_subsingleton [Subsingleton T.V] (ℋ : Set (Subgroup G)) (x : T.V) :
+    T.incidentSubgroups ℋ x = {K | ∃ H ∈ ℋ, ∃ g : G,
+      K = (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G x)} :=
+  Set.union_eq_right.mpr fun _ ⟨e, _⟩ => (T.isEmpty_dart_of_subsingleton.false e).elim
+
+variable (T) in
+/-- The stabilizer of a dart starting at `v` is an incident subgroup at `v`. -/
+theorem stabilizer_subgroupOf_mem_incidentSubgroups (ℋ : Set (Subgroup G)) {v : T.V} {e : T.E}
+    (he : T.src e = v) : (stabilizer G e).subgroupOf (stabilizer G v) ∈ T.incidentSubgroups ℋ v :=
+  mem_incidentSubgroups_iff.mpr (.inl ⟨e, he, rfl⟩)
+
+variable (T) in
+/-- The intersection of the stabilizer of `v` with a conjugate of a member of `ℋ` is an incident
+subgroup at `v`. -/
+theorem map_subgroupOf_mem_incidentSubgroups {ℋ : Set (Subgroup G)} {H : Subgroup G} (hH : H ∈ ℋ)
+    (g : G) (v : T.V) :
+    (H.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G v) ∈ T.incidentSubgroups ℋ v :=
+  mem_incidentSubgroups_iff.mpr (.inr ⟨H, hH, g, rfl⟩)
+
+variable (T) in
+/-- The intersection of the stabilizer of `v` with a member of `ℋ` is an incident subgroup at
+`v`. -/
+theorem subgroupOf_mem_incidentSubgroups {ℋ : Set (Subgroup G)} {H : Subgroup G} (hH : H ∈ ℋ)
+    (v : T.V) : H.subgroupOf (stabilizer G v) ∈ T.incidentSubgroups ℋ v := by
+  simpa [MulAut.one_def] using T.map_subgroupOf_mem_incidentSubgroups hH 1 v
+
+variable (T) in
+/-- The incident subgroups grow with the family `ℋ`. -/
+theorem incidentSubgroups_mono {ℋ ℋ' : Set (Subgroup G)} (h : ℋ ⊆ ℋ') (v : T.V) :
+    T.incidentSubgroups ℋ v ⊆ T.incidentSubgroups ℋ' v :=
+  Set.union_subset_union_right _ fun _ ⟨H, hH, g, hK⟩ => ⟨H, h hH, g, hK⟩
+
+variable (T) in
+/-- Relative to the empty family, the incident subgroups are the stabilizers of the darts. -/
+theorem incidentSubgroups_empty (v : T.V) :
+    T.incidentSubgroups ∅ v =
+      {K | ∃ e : T.E, T.src e = v ∧ K = (stabilizer G e).subgroupOf (stabilizer G v)} := by
+  simp [incidentSubgroups]
+
+variable (T) in
+/-- The incident subgroups at `g • v` are the images of those at `v` under the isomorphism of
+stabilizers given by conjugation by `g`. -/
+theorem incidentSubgroups_smul (ℋ : Set (Subgroup G)) (g : G) (v : T.V) :
+    T.incidentSubgroups ℋ (g • v) = Subgroup.map
+      (stabilizerEquivStabilizer (rfl : g • v = g • v)).toMonoidHom '' T.incidentSubgroups ℋ v := by
+  -- Conjugation by `g` carries `B ∩ Stab(v)` to `gBg⁻¹ ∩ Stab(g • v)`.
+  have key (B : Subgroup G) : (B.subgroupOf (stabilizer G v)).map
+      (stabilizerEquivStabilizer (rfl : g • v = g • v)).toMonoidHom =
+        (B.map (MulAut.conj g).toMonoidHom).subgroupOf (stabilizer G (g • v)) := by
+    ext x
+    rw [Subgroup.mem_map_equiv, Subgroup.mem_subgroupOf, Subgroup.mem_subgroupOf,
+      stabilizerEquivStabilizer_symm_apply, Subgroup.mem_map_equiv]
+    simp
+  ext K
+  simp only [Set.mem_image, mem_incidentSubgroups_iff]
+  constructor
+  · rintro (⟨e, he, rfl⟩ | ⟨H, hH, h, rfl⟩)
+    · refine ⟨_, .inl ⟨g⁻¹ • e, by rw [src_smul, he, inv_smul_smul], rfl⟩, ?_⟩
+      rw [key, ← stabilizer_smul_eq_stabilizer_map_conj, smul_inv_smul]
+    · refine ⟨_, .inr ⟨H, hH, g⁻¹ * h, rfl⟩, ?_⟩
+      rw [key, Subgroup.map_conj_map_conj, mul_inv_cancel_left]
+  · rintro ⟨_, ⟨e, rfl, rfl⟩ | ⟨H, hH, h, rfl⟩, rfl⟩
+    · exact .inl ⟨g • e, T.src_smul g e, by rw [key, ← stabilizer_smul_eq_stabilizer_map_conj]⟩
+    · exact .inr ⟨H, hH, g * h, by rw [key, Subgroup.map_conj_map_conj]⟩
 
 /-! ### Domination and deformation spaces -/
 
