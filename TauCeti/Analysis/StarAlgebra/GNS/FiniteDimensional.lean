@@ -60,19 +60,20 @@ faithful positive functional on a finite-dimensional complex star algebra.
 
 This is not an instance: use `letI := φ.cstarAlgebra hφ` to choose this norm explicitly.
 The ring, algebra and involution are the original ones. -/
-@[implicit_reducible]
-def cstarAlgebra (hφ : φ.nullSubmodule = ⊥) : CStarAlgebra A := by
+@[expose, implicit_reducible]
+def cstarAlgebra (hφ : φ.nullSubmodule = ⊥) : CStarAlgebra A :=
   let π := φ.boundedRepresentation fun a ↦ (φ.leftMul a).continuous_of_finiteDimensional
   letI := NormedRing.induced A (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) π
     (φ.boundedRepresentation_injective_of_nullSubmodule_eq_bot _ hφ)
   letI := NormedAlgebra.induced ℂ A (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) π
   letI : CompleteSpace A := FiniteDimensional.completeSpace ℂ A
-  -- The induced norm is the operator norm, so the C*-identity pulls back along π.
-  have hnorm (a : A) : ‖π a‖ * ‖π a‖ ≤ ‖π (star a * a)‖ := by
-    rw [map_mul, StarHomClass.map_star]
-    exact @CStarRing.norm_mul_self_le (φ.HilbertGNS →L[ℂ] φ.HilbertGNS)
-      inferInstance inferInstance inferInstance (π a)
-  exact { norm_mul_self_le := hnorm }
+  { norm_mul_self_le a := by
+      -- The induced norm is the operator norm, so the C*-identity pulls back along π.
+      have hnorm : ‖π a‖ * ‖π a‖ ≤ ‖π (star a * a)‖ := by
+        rw [map_mul, StarHomClass.map_star]
+        exact @CStarRing.norm_mul_self_le (φ.HilbertGNS →L[ℂ] φ.HilbertGNS)
+          inferInstance inferInstance inferInstance (π a)
+      exact hnorm }
 
 /-- The chosen C*-norm is precisely the operator norm of left multiplication on the algebraic
 GNS space, which is already complete in finite dimension. -/
