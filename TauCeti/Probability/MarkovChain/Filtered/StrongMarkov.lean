@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.Integral.Bind
 /-!
 # Filtration-relative strong Markov laws for the whole future
 
-For a countable-state process satisfying `IsMarkovChain ℱ X κ μ`, the future path
+For a process satisfying `IsMarkovChain ℱ X κ μ`, on any measurable state space, the future path
 at an `ℱ`-stopping time, conditional on the stopped sigma-algebra, has the law of
 the chain started at the stopped state. The future includes that state as its
 zeroth coordinate. We give restricted path laws, event identities and conditional
@@ -22,7 +22,8 @@ Every assertion at a possibly infinite stopping time is restricted to its finite
 event. Thus the arbitrary stopped values on nontermination do not enter the laws.
 The almost-surely finite specialization removes this restriction. The filtration is
 the one in the Markov hypothesis: it need not be the natural history, and no claim
-is made for arbitrary enlargements. Only finiteness of the sample measure is needed.
+is made for arbitrary enlargements. The sample measure need not be normalized: its finiteness
+follows from `IsMarkovChain ℱ X κ μ`.
 
 ## References
 
@@ -41,7 +42,6 @@ open MeasureTheory ProbabilityTheory Filter Set
 namespace TauCeti.Probability.IsMarkovChain
 
 variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
-  [Countable S] [MeasurableSingletonClass S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
   [IsMarkovKernel κ] {τ : Ω → WithTop ℕ}
 

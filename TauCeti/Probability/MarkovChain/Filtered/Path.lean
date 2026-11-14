@@ -11,7 +11,7 @@ import TauCeti.Probability.Process.Filtration.Comp
 /-!
 # Future-path laws relative to a filtration
 
-For a countable-state chain satisfying `IsMarkovChain ℱ X κ μ`, the conditional law
+For a chain satisfying `IsMarkovChain ℱ X κ μ`, on any measurable state space, the conditional law
 of the entire future `processShift X n`, given `ℱ n`, is the chain started at `X n`.
 The future includes the current state as coordinate zero. We give the restricted
 pushforward law, an event identity, and conditional-expectation identities for
@@ -20,7 +20,8 @@ bounded measurable path tests and indicators.
 Unlike a statement about the natural history alone, these results retain the
 specified filtration. They therefore apply when its additional information is
 compatible with the one-step Markov hypothesis, not to arbitrary enlargements.
-The measure on the sample space need only be finite.
+The measure on the sample space need not be a probability measure: its finiteness follows from
+`IsMarkovChain ℱ X κ μ` (`TauCeti.Probability.IsMarkovChain.isFiniteMeasure`).
 
 ## References
 
@@ -34,7 +35,6 @@ open MeasureTheory ProbabilityTheory Filter
 namespace TauCeti.Probability.IsMarkovChain
 
 variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
-  [Countable S] [MeasurableSingletonClass S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
   [IsMarkovKernel κ]
 
@@ -46,17 +46,10 @@ theorem map_processShift_restrict (h : IsMarkovChain ℱ X κ μ) (n : ℕ)
     (μ.restrict A).map (processShift X n) =
       markovChainLaw ((μ.restrict A).map (X n)) κ := by
   have := h.isFiniteMeasure
-  -- Discrete topology is used only to invoke the natural-filtration characterization.
-  let : TopologicalSpace S := ⊥
-  let : DiscreteTopology S := ⟨rfl⟩
-  let : BorelSpace S := ⟨by
-    rw [borel_eq_top_of_discrete]
-    exact top_unique fun s _ => s.to_countable.measurableSet⟩
   let Y : ℕ → Ω → S := fun k => X (n + k)
   have hshift : Monotone (fun k : ℕ ↦ n + k) := fun _ _ hkl ↦ Nat.add_le_add_left hkl n
   let 𝒢 : Filtration ℕ mΩ := ℱ.comp hshift
-  have hY : ∀ k, StronglyMeasurable (Y k) :=
-    fun k => h.adapted.measurable.stronglyMeasurable
+  -- On the event `A`, the shifted process is a chain for the shifted filtration.
   have hg : IsMarkovChain 𝒢 Y κ (μ.restrict A) := by
     refine ⟨h.adapted.comp _, fun k f hf hb => ?_⟩
     dsimp only [𝒢]
@@ -69,15 +62,8 @@ theorem map_processShift_restrict (h : IsMarkovChain ℱ X κ μ) (n : ℕ)
       (ℱ.mono (Nat.le_add_right n k) _ hA) hi
     simpa only [Y, Nat.add_assoc] using
       hr.trans (ae_restrict_of_ae (h.condExp_eq (n + k) f hf ⟨C, hC⟩))
-  have hle : Filtration.natural Y hY ≤ 𝒢 := by
-    intro k
-    dsimp only [𝒢]
-    rw [Filtration.comp_apply]
-    exact iSup_le fun j => iSup_le fun hj =>
-      ((h.adapted (n + j)).mono (ℱ.mono (Nat.add_le_add_left hj n)) le_rfl).comap_le
-  have hlaw := (hasLaw_markovChainLaw_iff_isMarkovChain_natural
-    ((μ.restrict A).map (Y 0)) hY).2 ⟨rfl, hg.mono hle
-      (Filtration.stronglyAdapted_natural hY).adapted⟩
+  have hlaw := (hasLaw_markovChainLaw_iff ((μ.restrict A).map (Y 0)) κ
+    fun k => h.adapted.measurable.aemeasurable).2 ⟨rfl, hg.map_prefix_succ_eq_compProd⟩
   have hp : (fun ω k => Y k ω) = processShift X n := by
     ext ω k
     simp only [Y, processShift_apply]
