@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.EpiMono
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
+import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 -- The degreewise formulas below compute through the native undercategory presentation.
 import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
@@ -15,13 +18,17 @@ import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
 
 The functor `K ↦ K₊` adjoins a disjoint basepoint degreewise to a simplicial set. It is left
 adjoint to forgetting the basepoint of a pointed simplicial set: based maps `K₊ ⟶ X` are the
-same as unpointed maps `K ⟶ X`.
+same as unpointed maps `K ⟶ X`. On underlying simplicial sets, `K₊` is the disjoint union of `K`
+with a point, so `K ↦ K₊` preserves monomorphisms and sends every map `K ⟶ L` to a pushout of `K`
+along the inclusion `K ⟶ K₊`.
 
 ## Main definitions
 
 * `PointedSSet.addBasepoint`: adjoin a disjoint basepoint to a simplicial set.
 * `PointedSSet.addBasepointHomEquiv`: based maps from `K₊` are unpointed maps from `K`.
 * `PointedSSet.addBasepointForgetAdjunction`: the adjunction `(-)₊ ⊣ forget`.
+* `PointedSSet.addBasepointι`: the inclusion `K ⟶ K₊` of non-basepoint simplices, with
+  `PointedSSet.isPushout_addBasepoint_map`.
 -/
 
 public section
@@ -157,5 +164,78 @@ def addBasepointForgetAdjunction :
       homEquiv_naturality_left_symm := fun f g ↦ by
         ext n x
         cases x <;> rfl }
+
+instance : addBasepoint.{u}.IsLeftAdjoint :=
+  addBasepointForgetAdjunction.isLeftAdjoint
+
+instance : forgetBasepoint.{u}.IsRightAdjoint :=
+  addBasepointForgetAdjunction.isRightAdjoint
+
+/-- The inclusion `K ⟶ K₊` of a simplicial set as the non-basepoint simplices of `K₊`: the unit of
+`addBasepointForgetAdjunction`. -/
+def addBasepointι (K : SSet.{u}) : K ⟶ (addBasepoint.obj K).right :=
+  addBasepointHomEquiv K (addBasepoint.obj K) (𝟙 _)
+
+@[simp]
+lemma addBasepointForgetAdjunction_unit_app (K : SSet.{u}) :
+    addBasepointForgetAdjunction.unit.app K = addBasepointι K :=
+  Adjunction.mkOfHomEquiv_unit_app _ K
+
+@[simp]
+lemma addBasepointι_app (K : SSet.{u}) (n : SimplexCategoryᵒᵖ) (x : K.obj n) :
+    (addBasepointι K).app n x = some x :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma addBasepointι_naturality {K L : SSet.{u}} (f : K ⟶ L) :
+    f ≫ addBasepointι L = addBasepointι K ≫ (addBasepoint.map f).right :=
+  (rfl)
+
+instance (K : SSet.{u}) : Mono (addBasepointι K) :=
+  ⟨fun _ _ e ↦ by
+    ext n z
+    exact Option.some.inj (congr_hom (congr_app e n) z)⟩
+
+/-- On underlying simplicial sets, `L₊` is the pushout of `K₊` and `L` along `K`, identifying the
+non-basepoint simplices of `K₊` with `K` and retaining the disjoint basepoint. -/
+lemma isPushout_addBasepoint_map {K L : SSet.{u}} (f : K ⟶ L) :
+    IsPushout (addBasepointι K) f (addBasepoint.map f).right (addBasepointι L) where
+  w := (addBasepointι_naturality f).symm
+  isColimit' := ⟨Limits.PushoutCocone.isColimitAux' _ fun s ↦
+    ⟨{ app n := ↾fun x ↦ x.elim (s.inl.app n none) (s.inr.app n)
+       naturality n m g := by
+         ext x
+         cases x with
+         | none => exact congr_hom (s.inl.naturality g) (none : Option (K.obj n))
+         | some y => exact congr_hom (s.inr.naturality g) y },
+     by
+       ext n x
+       cases x with
+       | none => rfl
+       | some x => exact (congr_hom (congr_app s.condition n) x).symm,
+     rfl,
+     fun hm₁ hm₂ ↦ by
+       ext n x
+       cases x with
+       | none => exact congr_hom (congr_app hm₁ n) (none : Option (K.obj n))
+       | some y => exact congr_hom (congr_app hm₂ n) y⟩⟩
+
+instance {K L : SSet.{u}} (f : K ⟶ L) [Mono f] : Mono (addBasepoint.map f).right := by
+  rw [NatTrans.mono_iff_mono_app]
+  intro n
+  rw [mono_iff_injective]
+  have hf : Function.Injective (f.app n) :=
+    (mono_iff_injective (f.app n)).1 ((NatTrans.mono_iff_mono_app f).1 inferInstance n)
+  rintro (_ | x) (_ | y) h
+  · rfl
+  · cases h
+  · cases h
+  · exact congrArg some (hf (Option.some.inj h))
+
+instance {K L : SSet.{u}} (f : K ⟶ L) [Mono f] : Mono (addBasepoint.map f) :=
+  (Under.forget _).mono_of_mono_map (inferInstance : Mono (addBasepoint.map f).right)
+
+instance : addBasepoint.{u}.PreservesMonomorphisms where
+  preserves _ _ := inferInstance
 
 end TauCeti.PointedSSet

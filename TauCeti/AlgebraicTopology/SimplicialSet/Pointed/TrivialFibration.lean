@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.WeakHomotopyEquivalence
+public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.AddBasepoint
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Fibration
 public import TauCeti.CategoryTheory.Adhesive.PullbackHom
 import Mathlib.CategoryTheory.Monoidal.Closed.Braided
@@ -101,5 +102,10 @@ lemma rlp_monomorphisms_ihom_map (X : PointedSSet.{u}) (p : E ⟶ B)
   have : Mono i.right := SSet.stdSimplex.isTerminalObj₀.mono_from X.hom
   exact rlp_monomorphisms_pullbackObjObjπ_of_rlp i p hp
     (Functor.PullbackObjObj.ofIsInitial internalHom i p Under.mkIdInitial)
+
+/-- Adjoining a disjoint basepoint preserves anodyne extensions on underlying simplicial sets. -/
+lemma anodyneExtensions_addBasepoint_map_right {K L : SSet.{u}} {i : K ⟶ L}
+    (hi : SSet.anodyneExtensions i) : SSet.anodyneExtensions (addBasepoint.map i).right :=
+  MorphismProperty.of_isPushout (isPushout_addBasepoint_map i) hi
 
 end TauCeti.PointedSSet
