@@ -282,24 +282,6 @@ theorem eulerCorrection_one (𝔫 : Modulus K) (s : ℂ) :
   refine Finset.prod_congr rfl fun 𝔭 _ ↦ ?_
   simp [𝔭.ne_bot]
 
-/-- The Euler correction has no zero on `Re s > 0`: each deleted factor has the form `1 - a` with
-`‖a‖ ≤ N(𝔭) ^ (-Re s) < 1`. -/
-theorem eulerCorrection_ne_zero (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) {s : ℂ}
-    (hs : 0 < s.re) : χ.eulerCorrection 𝔫 s ≠ 0 := by
-  refine Finset.prod_ne_zero_iff.mpr fun 𝔭 _ h ↦ ?_
-  have hlt : ‖(Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)‖ < 1 := by
-    rw [Complex.cpow_neg, norm_inv]
-    exact inv_lt_one_of_one_lt₀ (𝔭.one_lt_norm_absNorm_cpow hs)
-  have hle : ‖χ.toMultiplicativeIdealWeight 𝔭.asIdeal‖ ≤ 1 := by
-    simpa using χ.toUnitaryIdealWeight.norm_le_one 𝔭.asIdeal
-  have h1 : ‖χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)‖ <
-      1 := by
-    rw [norm_mul]
-    calc _ ≤ 1 * ‖(Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)‖ := by gcongr
-      _ < 1 := by rwa [one_mul]
-  rw [sub_eq_zero] at h
-  simp [← h] at h1
-
 /-- **Inducing deletes Euler factors.** On `Re s > 1`, the `L`-series of the character induced
 from `χ` to a multiple `𝔫` of its modulus is the `L`-series of `χ` times the Euler factors at the
 primes dividing `𝔫₀` but not `𝔪₀`. -/

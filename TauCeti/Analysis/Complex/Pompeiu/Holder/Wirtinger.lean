@@ -42,7 +42,7 @@ theorem exists_holderOnWith_wirtingerDeriv_pi_inv_smul_integral_sub_inv_smul
       (F := F) hα hα1 c hr hR
   refine ⟨C, fun {f H M} hs hf hM ↦ ?_⟩
   obtain ⟨-, hH, hN, hI⟩ := hC hs hf hM
-  refine ⟨by simpa only [nnnorm_one, mul_one] using hH.wirtingerDeriv_apply 1, ?_, hI⟩
+  refine ⟨by simpa only [nnNorm_one, mul_one] using hH.wirtingerDeriv_apply 1, ?_, hI⟩
   intro x hx
   have h := norm_wirtingerDeriv_apply_le
     (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) x 1

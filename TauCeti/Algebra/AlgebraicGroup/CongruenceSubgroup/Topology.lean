@@ -109,11 +109,15 @@ theorem hasBasis_nhds_one_congruenceSubgroup [IsTopologicalAddGroup R] [Algebra.
 
 /-- For an `I`-adic topology on `R` and `H` of finite type over `k`, the congruence subgroups of
 the levels `I ^ n` form a basis of neighbourhoods of the identity point. -/
-theorem hasBasis_nhds_one_congruenceSubgroup_pow [IsTopologicalRing R] [Algebra.FiniteType k H]
+theorem hasBasis_nhds_one_congruenceSubgroup_pow [Algebra.FiniteType k H]
     {I : Ideal R} (hI : IsAdic I) :
     (𝓝 (1 : WithConv (H →ₐ[k] R))).HasBasis (fun _ : ℕ ↦ True)
-      fun n ↦ (congruenceSubgroup k H (I ^ n) : Set (WithConv (H →ₐ[k] R))) :=
-  hasBasis_nhds_one_congruenceSubgroup hI.hasBasis_nhds_zero
+      fun n ↦ (congruenceSubgroup k H (I ^ n) : Set (WithConv (H →ₐ[k] R))) := by
+  have : IsTopologicalAddGroup R := by
+    subst hI
+    have := (Ideal.nonarchimedean I).toIsTopologicalRing
+    infer_instance
+  exact hasBasis_nhds_one_congruenceSubgroup hI.hasBasis_nhds_zero
 
 variable (k H R) in
 /-- Over a compact Hausdorff noetherian local ring `R`, for instance the valuation ring of a

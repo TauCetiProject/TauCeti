@@ -118,13 +118,13 @@ private theorem ofReal_mul_measure_le_eLpNorm_value_truncation (u : W1p mu Omega
       W1p.value w x = max (W1p.value u x - k) 0 - max (W1p.value u x - l) 0) :
     ENNReal.ofReal (l - k) * (mu.restrict (Omega : Set E)) {x | l ≤ W1p.value u x} ≤
       eLpNorm (W1p.value w) 1 (mu.restrict (Omega : Set E)) := by
-  rw [eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
+  rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _),
     ← lintegral_indicator_const hA]
   refine lintegral_mono_ae ?_
   filter_upwards [hwval] with x hx
   by_cases hxA : l ≤ W1p.value u x
   · rw [indicator_of_mem (s := {x | l ≤ W1p.value u x}) hxA, hx, max_eq_left (by linarith),
-      max_eq_left (by linarith), Real.enorm_eq_ofReal (by linarith)]
+      max_eq_left (by linarith), Real.eNorm_eq_ofReal (by linarith)]
     exact ENNReal.ofReal_le_ofReal (by linarith)
   · rw [indicator_of_notMem (s := {x | l ≤ W1p.value u x}) hxA]
     exact zero_le
@@ -141,8 +141,8 @@ private theorem enorm_gradient_truncation_eq [IsFiniteMeasure (mu.restrict (Omeg
     ‖W1p.gradient w‖ₑ = ENNReal.ofReal
       (∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖
         ∂mu.restrict (Omega : Set E)) := by
-  rw [Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-    lintegral_congr_ae hwgrad, lintegral_indicator hC, ofReal_integral_norm_eq_lintegral_enorm]
+  rw [Lp.eNorm_def, eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _),
+    lintegral_congr_ae hwgrad, lintegral_indicator hC, ofReal_integral_norm_eq_lintegral_eNorm]
   exact ((Lp.memLp (W1p.gradient u)).integrable Fact.out).integrableOn
 
 /-- **De Giorgi's isoperimetric inequality.**  Let `Ω` be a bounded convex open set in a
@@ -166,7 +166,6 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
   set nu := mu.restrict (Omega : Set E) with hnu
   set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
   set I : ℝ := ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖ ∂nu
-    with hI
   have hK0 : 0 ≤ K := by positivity
   have hI0 : 0 ≤ I := integral_nonneg fun x ↦ norm_nonneg _
   -- The sets involved are measurable, as `W1p.value u` has a measurable representative.
