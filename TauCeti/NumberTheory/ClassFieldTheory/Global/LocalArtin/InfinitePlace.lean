@@ -82,7 +82,7 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open _root_.NumberField _root_.NumberField.InfinitePlace
-open scoped _root_.NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable (K : Type) [Field K] (L : Type) [Field L] [Algebra K L]
 
@@ -167,7 +167,7 @@ theorem infiniteLocalArtinAt_eq_of_decompositionHom {x : v.Completionˣ}
   refine infiniteLocalArtinAt_eq_of_mk_eq_infiniteArtinAt v τ hτ
     ((ι.restrictScalars K).comp (IsScalarTower.toAlgHom K L w.Completion)) σ fun y ↦ ?_
   simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, IsScalarTower.coe_toAlgHom',
-    Completion.algebraMap_apply]
+    NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
   rw [← decompositionHom_algebraMap (v := v) σ y, hσ]
 
 include w in

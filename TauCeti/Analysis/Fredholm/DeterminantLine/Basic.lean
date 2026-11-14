@@ -60,8 +60,6 @@ the other operator's cokernel through its class
 
 ## Main results
 
-* `ContinuousLinearMap.IsFredholm.finrank_detLine`: the determinant line of a Fredholm operator is
-  one-dimensional.
 * `ContinuousLinearMap.detLineCoprodEquiv`: for a surjective stabilization `D₁.coprod D₂` by a
   finite-dimensional space `Λ`, the isomorphism
   `det (ker (D₁.coprod D₂)) ⊗ (det Λ)^* ≃ det (ker D₁) ⊗ (det (F ⧸ range D₁))^*`.
@@ -99,14 +97,6 @@ namespace ContinuousLinearMap
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
 
-/-- The determinant line `det (ker T) ⊗ (det (F ⧸ range T))^*` of a Fredholm operator is
-one-dimensional. -/
-theorem IsFredholm.finrank_detLine {T : E →L[𝕜] F} (hT : IsFredholm T) :
-    finrank 𝕜 (T : E →ₗ[𝕜] F).detLine = 1 :=
-  have := hT.finite_ker
-  have := hT.finite_coker
-  LinearMap.finrank_detLine _
-
 section Stabilization
 
 variable {𝕜 E Λ F : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
@@ -128,6 +118,15 @@ noncomputable def detLineCoprodEquiv (h : Function.Surjective (D₁.coprod D₂)
   TauCeti.detLineFourTermEquiv (kerCoprodHom_injective D₁ D₂)
     (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
     ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h)
+
+/-- `ContinuousLinearMap.detLineCoprodEquiv` is the four-term isomorphism
+`TauCeti.detLineFourTermEquiv` of the exact sequence
+`0 → ker D₁ → ker (D₁.coprod D₂) → Λ → F ⧸ range D₁ → 0`. -/
+theorem detLineCoprodEquiv_def (h : Function.Surjective (D₁.coprod D₂)) :
+    detLineCoprodEquiv D₁ D₂ h = TauCeti.detLineFourTermEquiv (kerCoprodHom_injective D₁ D₂)
+      (exact_kerCoprodHom_parameterProj D₁ D₂) (exact_parameterProj_parameterToCoker D₁ D₂)
+      ((parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 h) :=
+  (rfl)
 
 /-- **The value of `ContinuousLinearMap.detLineCoprodEquiv` on exterior products.** Let `u` be a
 family of `dim (ker D₁)` vectors of `ker D₁`, let `v` be a family of `dim (range p)` vectors of

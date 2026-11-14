@@ -65,6 +65,8 @@ elementary transformations of the process act on generalised equations.
 * `TauCeti.GenEq.Solution.toHom`: the `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution.
 * `TauCeti.GenEq.Solution.ofMemV`: the solution given by a tuple of nonempty reduced words which
   is a point of `Ω*` and makes every side reduced as written.
+* `TauCeti.GenEq.Solution.ofNumBasesEqZero`: without variable or constant bases, every tuple of
+  nonempty reduced words is a solution.
 * `TauCeti.GenEq.Solution.prefixLength`: the position of a boundary in the words of a solution.
 * `TauCeti.GenEq.ofBases`: the generalised equation without boundary connections whose variable
   bases are indexed by a finite type with an involution.
@@ -78,6 +80,10 @@ elementary transformations of the process act on generalised equations.
   are equal as words as soon as both are reduced as written.
 * `TauCeti.GenEq.Solution.isFormallyConsistent`: a generalised equation with a solution is
   formally consistent.
+* `TauCeti.GenEq.Solution.substituteVars_boundaryEquation_eq_iff`: under a solution, the
+  boundary equation of a triple `(p, μ, q)` with `p ≤ β(μ)` holds exactly when its two sides have
+  the same length; for a boundary `q` of `Δ(μ)`, when `p` and `q` lie at the same position of the
+  words of `μ` and `Δ(μ)`.
 
 ## References
 
@@ -166,6 +172,10 @@ theorem length_segment (i j : ℕ) (s : Bool) :
     (Ω.segment i j s).length = min j Ω.numItems - i := by
   cases s <;> simp [segment, FreeGroup.invRev_length]
 
+/-- The word `h[i, j] ^ ±1` is empty for `j ≤ i`. -/
+theorem segment_eq_nil_of_le {i j : ℕ} (h : j ≤ i) (s : Bool) : Ω.segment i j s = [] :=
+  List.eq_nil_of_length_eq_zero (by simp; omega)
+
 /-- The word of a single item: `h[k, k + 1] ^ ±1 = hₖ ^ ±1`. -/
 @[simp]
 theorem segment_succ (k : Fin Ω.numItems) (s : Bool) :
@@ -187,6 +197,47 @@ theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤
   rw [hM]
   conv_rhs => rw [← List.take_append_drop j M]
   rw [List.drop_append_of_le_length (by simp [M]; omega)]
+
+/-- The word `h[i, j]` is a prefix of `h[i, k]` for `j ≤ k`. -/
+theorem segment_prefix_segment {i j k : ℕ} (hjk : j ≤ k) :
+    Ω.segment i j true <+: Ω.segment i k true := by
+  simp only [segment_true]
+  exact ((List.take_prefix_take_left hjk).drop i).map _
+
+/-- The word `h[j, k]` is a suffix of `h[i, k]` for `i ≤ j`. -/
+theorem segment_suffix_segment {i j k : ℕ} (hij : i ≤ j) :
+    Ω.segment j k true <:+ Ω.segment i k true := by
+  simp only [segment_true]
+  exact (List.drop_suffix_drop_left _ hij).map _
+
+/-- The letters of `A` used by a word `h[i, j] ^ ±1` after substitution of words for the items
+are the letters used by the words of the items between the boundaries `i` and `j`. -/
+theorem exists_mem_substituteVars_segment_iff (u : Fin Ω.numItems → List (A × Bool))
+    {i j : ℕ} {s : Bool} {a : A} :
+    (∃ l ∈ substituteVars u (Ω.segment i j s), l.1 = a) ↔
+      ∃ k : Fin Ω.numItems, i ≤ k ∧ (k : ℕ) < j ∧ ∃ l ∈ u k, l.1 = a := by
+  have hmem (k : Fin Ω.numItems) :
+      k ∈ ((List.finRange Ω.numItems).take j).drop i ↔ i ≤ k ∧ (k : ℕ) < j := by
+    simp only [List.mem_iff_getElem, List.getElem_drop, List.getElem_take, List.getElem_finRange,
+      List.length_drop, List.length_take, List.length_finRange, Fin.ext_iff, Fin.val_cast]
+    exact ⟨by grind, fun h => ⟨k - i, by grind⟩⟩
+  have htrue : (∃ l ∈ substituteVars u (Ω.segment i j true), l.1 = a) ↔
+      ∃ k : Fin Ω.numItems, i ≤ k ∧ (k : ℕ) < j ∧ ∃ l ∈ u k, l.1 = a := by
+    simp only [segment_true, substituteVars_map_inl, List.mem_flatMap, hmem]
+    grind
+  cases s
+  · rw [← htrue, segment_false, substituteVars_invRev]
+    simp [FreeGroup.invRev, or_comm]
+  · exact htrue
+
+/-- After substituting words for the items, `h[i, j] ^ ±1` is reduced exactly when `h[i, j]` is,
+since a formal inverse is reduced exactly when the word is. -/
+theorem isReduced_substituteVars_segment_iff (U : Fin Ω.numItems → List (A × Bool)) (i j : ℕ)
+    (s : Bool) : FreeGroup.IsReduced (substituteVars U (Ω.segment i j s)) ↔
+      FreeGroup.IsReduced (substituteVars U (Ω.segment i j true)) := by
+  cases s
+  · rw [segment_false, substituteVars_invRev, FreeGroup.isReduced_invRev]
+  · rfl
 
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
@@ -323,12 +374,13 @@ structure Solution where
 /-- The system `Ω*` of group equations over `F(A)` in the items: `L R⁻¹` for each equation
 `L = R` of `Ω`. -/
 def toSystem : Set (GX (FreeGroup A) (Fin Ω.numItems)) :=
-  (fun e => EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) '' Ω.equations
+  (fun e => EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) ''
+    Ω.equations
 
 /-- The elements of `Ω*` are the words `L R⁻¹` for the equations `L = R` of `Ω`. -/
 theorem mem_toSystem_iff {w : GX (FreeGroup A) (Fin Ω.numItems)} :
     w ∈ Ω.toSystem ↔ ∃ e ∈ Ω.equations,
-      EqIneqSystem.toGX _ A (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
+      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹) = w :=
   Iff.rfl
 
 /-- The points of `Ω*` are the group solutions of the equations of `Ω`: the assignments under
@@ -369,18 +421,43 @@ def point : Fin Ω.numItems → FreeGroup A :=
 @[simp]
 theorem point_apply (k : Fin Ω.numItems) : U.point k = FreeGroup.mk (U.word k) := (rfl)
 
+/-- A solution is determined by its point, since a reduced word is determined by the element of
+`F(A)` it represents. -/
+theorem point_injective : Function.Injective (point : Ω.Solution → Fin Ω.numItems → FreeGroup A) :=
+  fun U U' h => Solution.ext <| funext fun k =>
+    (U.isReduced_word k).eq_of_mk_eq (U'.isReduced_word k) (congrFun h k)
+
+/-- Evaluating a word in the items and the letters of `A` at the point of a solution is
+substituting the words of the items and reducing. -/
+@[simp]
+theorem eval_point_mk (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
+    EqIneqSystem.eval U.point FreeGroup.of (FreeGroup.mk w) =
+      FreeGroup.mk (substituteVars U.word w) := by
+  rw [mk_substituteVars, EqIneqSystem.eval_eq_lift]
+  rfl
+
 /-- A solution of a generalised equation is a solution of the system `Ω*` in `F(A)`. -/
 theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := by
   refine Ω.mem_V_toSystem_iff.2 fun e he => ?_
-  have h (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-      FreeGroup.lift (Sum.elim U.point (MonoidHom.id (FreeGroup A) ∘ FreeGroup.of))
-        (FreeGroup.mk w) = FreeGroup.mk (substituteVars U.word w) := by
-    have hU : Sum.elim U.point FreeGroup.of =
-        Sum.elim (fun k => FreeGroup.mk (U.word k)) FreeGroup.of := by
-      funext y
-      cases y <;> simp
-    rw [mk_substituteVars, MonoidHom.coe_id, Function.id_comp, hU]
-  rw [h, h, U.subst_eq e he]
+  rw [MonoidHom.coe_id, Function.id_comp, ← EqIneqSystem.eval_eq_lift, U.eval_point_mk,
+    U.eval_point_mk, U.subst_eq e he]
+
+/-- In a solution, a nonempty word in the items and the letters of `A` has a nonempty substituted
+word: every item carries a nonempty word. -/
+theorem substituteVars_word_ne_nil {w : List ((Fin Ω.numItems ⊕ A) × Bool)} (hw : w ≠ []) :
+    substituteVars U.word w ≠ [] := by
+  obtain ⟨⟨c | a, s⟩, w, rfl⟩ := List.exists_cons_of_ne_nil hw
+  · rw [FreeGroup.substituteVars_cons]
+    cases s <;> simp [U.word_ne_nil c, FreeGroup.invRev]
+  · rw [FreeGroup.substituteVars_cons]
+    simp
+
+/-- In a solution, the substituted word of a word in the items and the letters of `A` is empty
+exactly when the word is empty. -/
+@[simp]
+theorem substituteVars_word_eq_nil_iff {w : List ((Fin Ω.numItems ⊕ A) × Bool)} :
+    substituteVars U.word w = [] ↔ w = [] :=
+  ⟨not_imp_not.1 U.substituteVars_word_ne_nil, fun h => h ▸ FreeGroup.substituteVars_nil _⟩
 
 /-- The solution given by a tuple of nonempty reduced words which is a point of `Ω*` in `F(A)` and
 makes both sides of every equation reduced as written. -/
@@ -404,6 +481,26 @@ theorem ofMemV_word (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, Free
       FreeGroup.IsReduced (substituteVars w e.2))
     (hV : (fun k => FreeGroup.mk (w k)) ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem) :
     (ofMemV w hw hw' hred hV).word = w :=
+  (rfl)
+
+/-- A generalised equation without variable or constant bases imposes no condition: every tuple of
+nonempty reduced words is a solution. -/
+def ofNumBasesEqZero (h : Ω.numBases = 0) (hb : Ω.constBases = ∅)
+    (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, FreeGroup.IsReduced (w k))
+    (hw' : ∀ k, w k ≠ []) : Ω.Solution where
+  word := w
+  isReduced_word := hw
+  word_ne_nil := hw'
+  isReduced_subst := (forall_mem_equations _).2 ⟨fun μ => (Fin.cast h μ).elim0,
+    fun _ h' => absurd h' (hb ▸ Finset.notMem_empty _), fun c _ => (Fin.cast h c.2.1).elim0⟩
+  subst_eq := (forall_mem_equations _).2 ⟨fun μ => (Fin.cast h μ).elim0,
+    fun _ h' => absurd h' (hb ▸ Finset.notMem_empty _), fun c _ => (Fin.cast h c.2.1).elim0⟩
+
+/-- The words of the solution of a generalised equation without bases are the given words. -/
+@[simp]
+theorem ofNumBasesEqZero_word (h : Ω.numBases = 0) (hb : Ω.constBases = ∅)
+    (w : Fin Ω.numItems → List (A × Bool)) (hw : ∀ k, FreeGroup.IsReduced (w k))
+    (hw' : ∀ k, w k ≠ []) : (ofNumBasesEqZero h hb w hw hw').word = w :=
   (rfl)
 
 /-- The `F(A)`-homomorphism `F_{R(Ω)} → F(A)` of a solution, sending each item to its word. -/
@@ -466,6 +563,27 @@ theorem isFormallyConsistent_iff : Ω.IsFormallyConsistent ↔
 instance [DecidableEq A] : Decidable Ω.IsFormallyConsistent :=
   decidable_of_iff _ Ω.isFormallyConsistent_iff.symm
 
+variable {Ω} in
+/-- In a formally consistent generalised equation, dual bases starting at the same boundary (a
+matched pair) have the same sign, since they overlap. -/
+theorem IsFormallyConsistent.sign_eq_of_left_eq (hΩ : Ω.IsFormallyConsistent) {μ : Fin Ω.numBases}
+    (hl : Ω.left μ = Ω.left (Ω.dual μ)) : Ω.sign μ = Ω.sign (Ω.dual μ) := by
+  by_contra hs
+  rcases hΩ.disjoint_of_sign_ne μ hs with h | h
+  · exact absurd (h.trans_lt (hl ▸ Ω.left_lt_right μ)) (lt_irrefl _)
+  · exact absurd (h.trans_lt (hl ▸ Ω.left_lt_right (Ω.dual μ))) (lt_irrefl _)
+
+variable {Ω} in
+/-- A generalised equation without constant bases or boundary connections whose dual bases have
+equal signs is formally consistent. -/
+theorem isFormallyConsistent_of_sign_eq (hs : ∀ μ, Ω.sign μ = Ω.sign (Ω.dual μ))
+    (hb : Ω.constBases = ∅) (hc : Ω.connections = ∅) : Ω.IsFormallyConsistent where
+  disjoint_of_sign_ne μ h := absurd (hs μ) h
+  connections_monotone_or_antitone _ h := absurd h (hc ▸ Finset.notMem_empty _)
+  eq_of_left_eq _ h := absurd h (hc ▸ Finset.notMem_empty _)
+  label_eq _ h := absurd h (hb ▸ Finset.notMem_empty _)
+  connections_adjacent _ h := absurd h (hb ▸ Finset.notMem_empty _)
+
 /-! ### Solutions force formal consistency -/
 
 namespace Solution
@@ -476,6 +594,15 @@ variable {Ω} (U : Ω.Solution)
 in the words of a solution. -/
 def prefixLength (i : ℕ) : ℕ :=
   (((List.finRange Ω.numItems).take i).map fun k => (U.word k).length).sum
+
+theorem prefixLength_def (i : ℕ) :
+    U.prefixLength i = (((List.finRange Ω.numItems).take i).map fun k => (U.word k).length).sum :=
+  (rfl)
+
+/-- Boundary `0` sits at the start of the words of a solution. -/
+@[simp]
+theorem prefixLength_zero : U.prefixLength 0 = 0 := by
+  simp [prefixLength]
 
 /-- The length of the substituted word `h[i, j] ^ ±1` is the total length of the words of the
 items between the boundaries `i` and `j`. -/
@@ -488,6 +615,53 @@ theorem length_substituteVars_segment (s : Bool) (i j : ℕ) :
   cases s
   · rw [segment_false, substituteVars_invRev, FreeGroup.invRev_length, h]
   · exact h
+
+/-- The word `U[α(μ), β(μ)]` of a variable base is reduced as written. -/
+theorem isReduced_substituteVars_segment (μ : Fin Ω.numBases) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true)) :=
+  (Ω.isReduced_substituteVars_segment_iff U.word _ _ (Ω.sign μ)).1
+    (U.isReduced_subst _ (Ω.basicEquation_mem_equations μ)).1
+
+/-- Inside a variable base the words of a solution are reduced as written: for
+`α(ν) ≤ i ≤ j ≤ β(ν)`, the word `U[i, j]` is a factor of `U[α(ν), β(ν)]`, and for `j < i` it is
+empty. -/
+theorem isReduced_substituteVars_segment_of_le (ν : Fin Ω.numBases) {i j : ℕ}
+    (hi : Ω.left ν ≤ i) (hj : j ≤ Ω.right ν) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j true)) := by
+  rcases le_total i j with hij | hji
+  · have h := U.isReduced_substituteVars_segment ν
+    rw [← Ω.segment_append hi (hij.trans hj) (Ω.right ν).is_le,
+      ← Ω.segment_append hij hj (Ω.right ν).is_le, substituteVars_append,
+      substituteVars_append, ← List.append_assoc] at h
+    exact h.infix (List.infix_append _ _ _)
+  · rw [Ω.segment_eq_nil_of_le hji, FreeGroup.substituteVars_nil]
+    exact FreeGroup.IsReduced.nil
+
+/-- When `ε(μ) = ε(Δμ)`, a solution assigns the same word to the bases `μ` and `Δ(μ)`. -/
+theorem substituteVars_segment_eq_of_sign_eq {μ : Fin Ω.numBases}
+    (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) :
+    substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true) =
+      substituteVars U.word (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true) := by
+  have e := U.subst_eq _ (Ω.basicEquation_mem_equations μ)
+  rw [basicEquation_fst, basicEquation_snd, ← hs] at e
+  cases h : Ω.sign μ <;> rw [h] at e
+  · rw [segment_false, segment_false, substituteVars_invRev, substituteVars_invRev] at e
+    exact FreeGroup.invRev_injective e
+  · exact e
+
+/-- When `ε(μ) ≠ ε(Δμ)`, a solution assigns to the base `μ` the formal inverse of the word of
+`Δ(μ)`. -/
+theorem substituteVars_segment_eq_invRev_of_sign_ne {μ : Fin Ω.numBases}
+    (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
+    substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true) = FreeGroup.invRev
+      (substituteVars U.word (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)) := by
+  have e := U.subst_eq _ (Ω.basicEquation_mem_equations μ)
+  rw [basicEquation_fst, basicEquation_snd] at e
+  cases h : Ω.sign μ <;> cases h' : Ω.sign (Ω.dual μ) <;> rw [h, h'] at e <;>
+    simp only [h, h', ne_eq, not_true_eq_false] at hs
+  · rw [segment_false, substituteVars_invRev] at e
+    rw [← e, FreeGroup.invRev_invRev]
+  · rwa [segment_false, substituteVars_invRev] at e
 
 /-- The substituted word `h[i, j] ^ ±1` spans the words of a solution from boundary `i` to
 boundary `j`. -/
@@ -521,6 +695,29 @@ theorem prefixLength_mono : Monotone U.prefixLength := fun i j hij => by
   have := U.length_substituteVars_segment_add_prefixLength true hij
   omega
 
+/-- The substituted word `h[i, j] ^ ±1` has length `P(j) - P(i)` for the prefix length `P` of a
+solution; for `j ≤ i` both are zero. -/
+theorem length_substituteVars_segment_eq_sub (s : Bool) (i j : ℕ) :
+    (substituteVars U.word (Ω.segment i j s)).length = U.prefixLength j - U.prefixLength i := by
+  rcases le_total i j with hij | hji
+  · have := U.length_substituteVars_segment_add_prefixLength s hij
+    omega
+  · rw [Ω.segment_eq_nil_of_le hji, FreeGroup.substituteVars_nil, List.length_nil]
+    have := U.prefixLength_mono hji
+    omega
+
+/-- The basic equation of a base `μ` of a generalised equation with a solution, as an identity
+between prefix lengths: the words of the dual bases `μ` and `Δ(μ)` have the same length. -/
+theorem prefixLength_right_add_prefixLength_left_dual (μ : Fin Ω.numBases) :
+    U.prefixLength (Ω.right μ) + U.prefixLength (Ω.left (Ω.dual μ)) =
+      U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ) := by
+  have e := congrArg List.length (U.subst_eq _ (Ω.basicEquation_mem_equations μ))
+  have l₁ := U.length_substituteVars_segment_add_prefixLength (Ω.sign μ) (Ω.left_lt_right μ).le
+  have l₂ := U.length_substituteVars_segment_add_prefixLength (Ω.sign (Ω.dual μ))
+    (Ω.left_lt_right (Ω.dual μ)).le
+  rw [basicEquation_fst, basicEquation_snd] at e
+  omega
+
 /-- Distinct boundaries have distinct prefix lengths. -/
 theorem prefixLength_injOn : Set.InjOn U.prefixLength (Set.Iic Ω.numItems) := by
   intro i hi j hj h
@@ -549,7 +746,6 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
       substituteVars_append, substituteVars_append, FreeGroup.invRev_append] at heq
     have hX := U.length_substituteVars_segment_add_prefixLength true hac
     have hZ := U.length_substituteVars_segment_add_prefixLength true hbd
-    have hC := U.length_substituteVars_segment_add_prefixLength true hcb.le
     have hXZ : (substituteVars U.word (Ω.segment a c true)).length =
         (FreeGroup.invRev (substituteVars U.word (Ω.segment b d true))).length := by
       rw [FreeGroup.invRev_length]
@@ -558,11 +754,8 @@ private theorem not_overlap {a b c d : ℕ} (hab : a < b) (hb : b ≤ Ω.numItem
     have hCred : FreeGroup.IsReduced (substituteVars U.word (Ω.segment c b true)) := by
       refine hred.infix ⟨substituteVars U.word (Ω.segment a c true), [], ?_⟩
       rw [List.append_nil, ← substituteVars_append, Ω.segment_append hac hcb.le hb]
-    have hCne : substituteVars U.word (Ω.segment c b true) ≠ [] := by
-      have := U.prefixLength_lt hcb hb
-      intro h
-      rw [h, List.length_nil] at hC
-      omega
+    have hCne : substituteVars U.word (Ω.segment c b true) ≠ [] :=
+      U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by rw [length_segment]; omega))
     exact hCred.invRev_ne_self hCne hCC.symm
   · -- The base `[c, d]` lies strictly inside `[a, b]`, so its word is shorter.
     have := U.prefixLength_mono hac
@@ -721,6 +914,110 @@ theorem isFormallyConsistent : Ω.IsFormallyConsistent :=
 
 end Solution
 
+/-! ### Boundary equations under a solution
+
+For a boundary `p` of a variable base `μ` and a boundary `q` of `Δ(μ)`, the boundary equation of
+the triple `(p, μ, q)` makes sense whether or not `(p, μ, q)` is a boundary connection of `Ω`.
+Under a solution `U`, its two sides are factors of the words of `μ` and `Δ(μ)`, so it holds
+exactly when `p` and `q` lie at the same position of these words. -/
+
+namespace Solution
+
+variable {Ω} (U : Ω.Solution) {p : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases}
+  {q : Fin (Ω.numItems + 1)}
+
+/-- Under a solution, the left side `h[α(μ), p]` of the boundary equation of `(p, μ, q)` is
+reduced as written for `p ≤ β(μ)`: it is a prefix of the word of `μ`. -/
+theorem isReduced_substituteVars_boundaryEquation_fst (hp : p ≤ Ω.right μ) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.boundaryEquation (p, μ, q)).1) := by
+  rw [boundaryEquation_fst]
+  exact U.isReduced_substituteVars_segment_of_le μ le_rfl hp
+
+/-- Under a solution, the right side of the boundary equation of `(p, μ, q)` is reduced as
+written for a boundary `q` of `Δ(μ)`: it is a factor of the word of `Δ(μ)`, or the formal inverse
+of one. -/
+theorem isReduced_substituteVars_boundaryEquation_snd (hq₁ : Ω.left (Ω.dual μ) ≤ q)
+    (hq₂ : q ≤ Ω.right (Ω.dual μ)) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.boundaryEquation (p, μ, q)).2) := by
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · rw [Ω.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs]
+    exact U.isReduced_substituteVars_segment_of_le _ le_rfl hq₂
+  · rw [Ω.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs,
+      isReduced_substituteVars_segment_iff]
+    exact U.isReduced_substituteVars_segment_of_le _ hq₁ le_rfl
+
+/-- Under a solution and for `p ≤ β(μ)`, the boundary equation of `(p, μ, q)` holds letter by
+letter exactly when its two sides have the same length: `|U[α(μ), p]| = |U[α(Δμ), q]|` when
+`ε(μ) = ε(Δμ)`, and `|U[α(μ), p]| = |U[q, β(Δμ)]|` otherwise. For a boundary `q` of `Δ(μ)`, this
+says that `p` and `q` lie at the same position of the words of `μ` and `Δ(μ)`, counted from the
+left end of both when `ε(μ) = ε(Δμ)` and from the right end of `Δ(μ)` otherwise. -/
+theorem substituteVars_boundaryEquation_eq_iff (hp : p ≤ Ω.right μ) :
+    substituteVars U.word (Ω.boundaryEquation (p, μ, q)).1 =
+        substituteVars U.word (Ω.boundaryEquation (p, μ, q)).2 ↔
+      U.prefixLength p - U.prefixLength (Ω.left μ) =
+        if Ω.sign μ = Ω.sign (Ω.dual μ) then
+          U.prefixLength q - U.prefixLength (Ω.left (Ω.dual μ))
+        else U.prefixLength (Ω.right (Ω.dual μ)) - U.prefixLength q := by
+  -- The left side is a prefix of the word of `μ`, which is as long as the word of `Δ(μ)`.
+  have h₁ : substituteVars U.word (Ω.segment (Ω.left μ) p true) <+:
+      substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true) :=
+    (Ω.segment_prefix_segment hp).flatMap _
+  have e := U.prefixLength_right_add_prefixLength_left_dual μ
+  have l₁ := U.length_substituteVars_segment_eq_sub true (Ω.left μ) p
+  have lμ := U.length_substituteVars_segment_eq_sub true (Ω.left μ) (Ω.right μ)
+  have hΔ := U.prefixLength_mono (Ω.left_lt_right (Ω.dual μ)).le
+  have hlen := h₁.length_le
+  rw [boundaryEquation_fst]
+  split_ifs with hs
+  · rw [Ω.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs]
+    dsimp only
+    have l₂ := U.length_substituteVars_segment_eq_sub true (Ω.left (Ω.dual μ)) q
+    refine ⟨fun h => by have := congrArg List.length h; omega, fun h => ?_⟩
+    rcases le_or_gt q (Ω.right (Ω.dual μ)) with hq | hq
+    · -- Both sides are prefixes of the word of `μ = Δ(μ)` of the same length.
+      have h₂ : substituteVars U.word (Ω.segment (Ω.left (Ω.dual μ)) q true) <+:
+          substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true) := by
+        rw [U.substituteVars_segment_eq_of_sign_eq hs]
+        exact (Ω.segment_prefix_segment hq).flatMap _
+      exact (List.prefix_of_prefix_length_le h₁ h₂ (by omega)).eq_of_length (by omega)
+    · -- The right side is longer than the word of `Δ(μ)`.
+      have := U.prefixLength_lt hq q.is_le
+      omega
+  · rw [Ω.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs]
+    dsimp only
+    have l₂ := U.length_substituteVars_segment_eq_sub false q (Ω.right (Ω.dual μ))
+    refine ⟨fun h => by have := congrArg List.length h; omega, fun h => ?_⟩
+    rcases le_or_gt (Ω.left (Ω.dual μ)) q with hq | hq
+    · -- Both sides are prefixes of the word of `μ = Δ(μ)⁻¹` of the same length.
+      have h₂ : substituteVars U.word (Ω.segment q (Ω.right (Ω.dual μ)) false) <+:
+          substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true) := by
+        rw [segment_false, substituteVars_invRev, U.substituteVars_segment_eq_invRev_of_sign_ne hs]
+        exact (((Ω.segment_suffix_segment hq).flatMap _).map _).reverse
+      exact (List.prefix_of_prefix_length_le h₁ h₂ (by omega)).eq_of_length (by omega)
+    · -- The right side is longer than the word of `Δ(μ)`.
+      have := U.prefixLength_lt hq (Ω.left (Ω.dual μ)).is_le
+      omega
+
+/-- Under a solution, the boundary equation of the dual triple `(q, Δ(μ), p)` holds exactly when
+the boundary equation of `(p, μ, q)` holds, for a boundary `p` of `μ` and a boundary `q` of
+`Δ(μ)`: the words of `μ` and `Δ(μ)` have the same length. -/
+theorem substituteVars_boundaryEquation_dual_eq_iff (hp₁ : Ω.left μ ≤ p) (hp₂ : p ≤ Ω.right μ)
+    (hq₁ : Ω.left (Ω.dual μ) ≤ q) (hq₂ : q ≤ Ω.right (Ω.dual μ)) :
+    substituteVars U.word (Ω.boundaryEquation (q, Ω.dual μ, p)).1 =
+        substituteVars U.word (Ω.boundaryEquation (q, Ω.dual μ, p)).2 ↔
+      substituteVars U.word (Ω.boundaryEquation (p, μ, q)).1 =
+        substituteVars U.word (Ω.boundaryEquation (p, μ, q)).2 := by
+  rw [U.substituteVars_boundaryEquation_eq_iff hq₂, U.substituteVars_boundaryEquation_eq_iff hp₂]
+  have e := U.prefixLength_right_add_prefixLength_left_dual μ
+  have m₁ := U.prefixLength_mono hp₁
+  have m₂ := U.prefixLength_mono hp₂
+  have m₃ := U.prefixLength_mono hq₁
+  have m₄ := U.prefixLength_mono hq₂
+  simp only [Ω.dual_involutive μ, eq_comm (a := Ω.sign (Ω.dual μ))]
+  split_ifs <;> omega
+
+end Solution
+
 /-! ### Generalised equations with bases indexed by a finite type -/
 
 section OfBases
@@ -805,16 +1102,7 @@ theorem eq_empty_of_numItems_eq_zero {Ω : GenEq A} (h : Ω.numItems = 0) : Ω =
 /-- The generalised equation with no items and no bases has exactly one solution, the empty
 tuple. -/
 instance : Unique (empty : GenEq A).Solution where
-  default :=
-    { word := Fin.elim0
-      isReduced_word := fun k => k.elim0
-      word_ne_nil := fun k => k.elim0
-      isReduced_subst := (forall_mem_equations _).2 ⟨fun μ => μ.elim0,
-        fun _ hb => absurd hb (Finset.notMem_empty _),
-        fun _ hc => absurd hc (Finset.notMem_empty _)⟩
-      subst_eq := (forall_mem_equations _).2 ⟨fun μ => μ.elim0,
-        fun _ hb => absurd hb (Finset.notMem_empty _),
-        fun _ hc => absurd hc (Finset.notMem_empty _)⟩ }
+  default := Solution.ofNumBasesEqZero rfl rfl Fin.elim0 (fun k => k.elim0) fun k => k.elim0
   uniq _ := Solution.ext (funext fun k => k.elim0)
 
 /-- The generalised equation of Kharlampovich–Myasnikov, Fig. 2, read off a cancellation tree of

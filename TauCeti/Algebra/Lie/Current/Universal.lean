@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Current.Perfect
 public import TauCeti.Algebra.Lie.Extension.Topology
 public import TauCeti.Algebra.Lie.Perfect
 
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
@@ -51,7 +52,7 @@ namespace TauCeti.CurrentAlgebra
 open _root_.LieAlgebra _root_.LieModule.Cohomology TauCeti.LieModule.Cohomology
 
 variable {K L Z : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [IsKilling K L] [AddCommGroup Z] [Module K Z]
+  [IsKilling K L] [AddCommGroup Z] [Module K Z]
   {Φ : LinearMap.BilinForm K L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
 
 local notation "C" => currentAlgebra K L
@@ -146,6 +147,7 @@ theorem existsUnique_killingExtensionLift [IsAlgClosed K]
         →ₗ⁅K⁆ ofTwoCocycle c,
       (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj _ := by
   have _i := _root_.LieModule.nontrivial_of_isIrreducible K L L
+  have _j := TauCeti.finite_of_isKilling (R := K) (L := L)
   exact existsUnique_residueExtensionLift
     (_root_.LieModule.traceForm_lieInvariant K L L)
     (LinearMap.BilinForm.isSymm_iff.mpr (_root_.LieModule.traceForm_isSymm K L L))

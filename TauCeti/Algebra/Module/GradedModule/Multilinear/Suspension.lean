@@ -47,7 +47,7 @@ variable {R : Type uR} [CommRing R] {ι : Type*} [Fintype ι]
   {M : ι → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+  (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 /-- Precomposing the inputs by arbitrary Koszul twists preserves and reflects homogeneity.
 The input modules and twist parameters may vary from slot to slot. -/
@@ -74,7 +74,7 @@ end KoszulTwists
 variable {R : Type uR} [CommRing R] {n : ℕ} {M : Fin n → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+  (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 /-- Suspension identifies arity-`n` operations of degree `q + 1 - n` with operations of
 degree `q` on the suspended pieces. Both directions twist input `i` by `n - 1 - i`

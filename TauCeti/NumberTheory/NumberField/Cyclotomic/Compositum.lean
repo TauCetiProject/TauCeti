@@ -59,16 +59,17 @@ proof from `IsGalois K L` and the cyclotomic tower). Both are pure field theory 
 `discr L`, take number fields.
 
 `isGalois_of_isGalois_of_isCyclotomicExtension` is a theorem and not an `instance` because
-neither `L` nor `m` can be recovered from the goal `IsGalois K M`, so there is no synthesization
-order for it; call sites introduce it with `have`.
+neither `L` nor the set of orders `S` can be recovered from the goal `IsGalois K M`, so there is
+no synthesization order for it; call sites introduce it with `have`.
 
-That `M / K` is Galois is *derived*, not assumed: `M` is the compositum of `L` with `K(ζ)`,
-both of which are normal over `K`, and the engine for a compositum of two normal extensions is
+That `M / K` is Galois is *derived*, not assumed, for any set `S` of orders: `M` is the compositum
+of `L` with the field `K(μ_S)` generated over `K` by the roots of unity of the orders in `S`, both
+of which are normal over `K`, and the engine for a compositum of two normal extensions is
 Mathlib's `IntermediateField.normal_sup`. So `Gal(M/K)` below rests on no hypothesis beyond
 `IsGalois K L` and the cyclotomic tower. Separability comes from transitivity along the same
 tower: `L / K` is separable because it is Galois, and `M / L` because a cyclotomic extension is
 (`IsCyclotomicExtension.isSeparable`). No characteristic assumption is needed, since a primitive
-`m`-th root of unity exists in `M` only if the characteristic does not divide `m`.
+`n`-th root of unity exists in `M` only if the characteristic does not divide `n`.
 
 Faithfulness of the joint restriction is *not* re-derived here: it is Mathlib's compositum
 engine `IntermediateField.fixingSubgroup_sup` (with `fixingSubgroup_top`), applied to `K(ζ)`
@@ -172,36 +173,39 @@ end Faithful
 
 variable [IsGalois K L]
 
-include L m in
 /-- **The cyclotomic compositum of a Galois extension is Galois.** If `L / K` is Galois and
-`M = L(μ_m)`, then `M / K` is Galois, so `Gal(M/K)` is available without a further hypothesis.
+`M = L(μ_S)` is obtained from `L` by adjoining the roots of unity of the orders in `S`, then `M / K`
+is Galois, so `Gal(M/K)` is available without a further hypothesis.
 
 Both tower hypotheses are needed, which is what the name records: the cyclotomic extension is
 `M / L`, and `L / K` is Galois. Mathlib's `IsCyclotomicExtension.isGalois` is the one-step
 statement, for a cyclotomic extension of the base itself. Call sites introduce this with
 `have`; see the module Implementation notes. -/
-theorem isGalois_of_isGalois_of_isCyclotomicExtension : IsGalois K M := by
-  obtain ⟨ζ, hζ⟩ := IsCyclotomicExtension.exists_isPrimitiveRoot (S := {m}) L M
-    (Set.mem_singleton m) (NeZero.ne m)
-  -- `M / K` is algebraic: `L / K` is Galois hence algebraic, and `M / L` is a cyclotomic
-  -- extension for the single modulus `m`, hence finite. This is what the dropped `NumberField`
-  -- instances used to supply.
-  have : FiniteDimensional L M := IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
+theorem isGalois_of_isGalois_of_isCyclotomicExtension (S : Set ℕ) [IsCyclotomicExtension S L M] :
+    IsGalois K M := by
+  -- `M / K` is algebraic: `L / K` is Galois hence algebraic, and `M / L` is cyclotomic, hence
+  -- integral. This is what the dropped `NumberField` instances used to supply.
+  have : Algebra.IsIntegral L M := IsCyclotomicExtension.integral S L M
   have : Algebra.IsIntegral K M := Algebra.IsIntegral.trans L
-  have hcyc : IsCyclotomicExtension {m} K (IntermediateField.adjoin K {ζ}) :=
-    hζ.intermediateField_adjoin_isCyclotomicExtension (K := K)
-  have : IsGalois K (IntermediateField.adjoin K {ζ}) :=
-    IsCyclotomicExtension.isGalois (S := {m}) (K := K) (L := IntermediateField.adjoin K {ζ})
+  -- The roots of unity of the orders in `S` generate an `S`-cyclotomic, hence Galois,
+  -- extension of `K` inside `M`.
+  have : IsCyclotomicExtension S K
+      (IntermediateField.adjoin K {b : M | ∃ n ∈ S, n ≠ 0 ∧ b ^ n = 1}) :=
+    IntermediateField.isCyclotomicExtension_adjoin_of_exists_isPrimitiveRoot S K M
+      fun _ hn hn0 ↦ IsCyclotomicExtension.exists_isPrimitiveRoot L M hn hn0
+  have : IsGalois K (IntermediateField.adjoin K {b : M | ∃ n ∈ S, n ≠ 0 ∧ b ^ n = 1}) :=
+    IsCyclotomicExtension.isGalois S K _
   have : Normal K ((IsScalarTower.toAlgHom K L M).fieldRange) :=
     Normal.of_algEquiv (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom K L M))
   have hsup : Normal K
-      (IntermediateField.adjoin K {ζ} ⊔ (IsScalarTower.toAlgHom K L M).fieldRange :
-        IntermediateField K M) := IntermediateField.normal_sup K M _ _
+      (IntermediateField.adjoin K {b : M | ∃ n ∈ S, n ≠ 0 ∧ b ^ n = 1} ⊔
+        (IsScalarTower.toAlgHom K L M).fieldRange : IntermediateField K M) :=
+    IntermediateField.normal_sup K M _ _
   rw [TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top K L M
     (IntermediateField.adjoin_eq_top_of_algebra _ _
-        (IsCyclotomicExtension.adjoin_primitive_root_eq_top (n := m) hζ))] at hsup
+      ((IsCyclotomicExtension.iff_adjoin_eq_top S L M).1 ‹_›).2)] at hsup
   have : Normal K M := Normal.of_algEquiv (h := hsup) IntermediateField.topEquiv
-  have : Algebra.IsSeparable L M := IsCyclotomicExtension.isSeparable (S := {m}) (K := L) (L := M)
+  have : Algebra.IsSeparable L M := IsCyclotomicExtension.isSeparable S L M
   have : Algebra.IsSeparable K M := Algebra.IsSeparable.trans K L M
   exact ⟨⟩
 
@@ -225,7 +229,7 @@ private theorem restrictNormalHom_prod_autToPow_bijective
   have : FiniteDimensional L M := IsCyclotomicExtension.finiteDimensional (S := {m}) (K := L) M
   have : FiniteDimensional K M := FiniteDimensional.trans K L M
   have : IsGalois L M := IsCyclotomicExtension.isGalois (S := {m}) (K := L) (L := M)
-  have : IsGalois K M := isGalois_of_isGalois_of_isCyclotomicExtension K L M m
+  have : IsGalois K M := isGalois_of_isGalois_of_isCyclotomicExtension K L M {m}
   have hcard : Nat.card Gal(M/K) = Nat.card (Gal(L/K) × (ZMod m)ˣ) := by
     rw [Nat.card_prod, IsGalois.card_aut_eq_finrank K M, IsGalois.card_aut_eq_finrank K L,
       ← Module.finrank_mul_finrank K L M, IsCyclotomicExtension.finrank_eq_totient L M m hcop,

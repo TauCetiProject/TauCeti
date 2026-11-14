@@ -38,8 +38,16 @@ theorem addHaar_basisFun (ι : Type*) [Fintype ι] :
     (Pi.basisFun ℝ ι).addHaar = (volume : Measure (ι → ℝ)) := by
   rw [addHaar_def, parallelepiped_basisFun, addHaarMeasure_eq_volume_pi]
 
-/-- The additive Haar measure attached to the standard basis of `ℝ` is Lebesgue measure. -/
-theorem addHaar_singleton : (Basis.singleton (Fin 1) ℝ).addHaar = volume := by
+/-- The additive Haar measure attached to the standard basis of `ℝ`, indexed by any type with
+exactly one element, is Lebesgue measure.
+
+The `Fintype ι` instance is a separate argument, rather than the one derived from `Unique ι`, so
+that the lemma rewrites `addHaar` whatever finiteness instance it carries (e.g. `Fin.fintype 1`). -/
+@[simp]
+theorem addHaar_singleton {ι : Type*} [Fintype ι] [Unique ι] :
+    (Basis.singleton ι ℝ).addHaar = volume := by
+  -- `addHaar` depends on the `Fintype` instance only up to `Subsingleton (Fintype ι)`.
+  obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
   rw [← OrthonormalBasis.toBasis_singleton]
   exact OrthonormalBasis.addHaar_eq_volume _
 

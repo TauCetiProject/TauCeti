@@ -79,7 +79,7 @@ private lemma mgf_mul_sin_logisticMeasure (hs : 0 < s) :
     apply mt (sin_eq_zero_iff_of_lt_of_lt (by nlinarith [pi_pos])
       (by nlinarith [pi_pos])).mp
     exact mul_ne_zero pi_ne_zero hst
-  rw [mgf_id_logisticMeasure hs ht, add_comm 1 (s * t), Gamma_add_one hst]
+  rw [mgf_id_logisticMeasure ht, add_comm 1 (s * t), Gamma_add_one hst]
   calc
     exp (m * t) * Gamma (1 - s * t) * (s * t * Gamma (s * t)) * sin (π * s * t) =
         exp (m * t) * (s * t) * (Gamma (s * t) * Gamma (1 - s * t)) *

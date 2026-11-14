@@ -40,7 +40,7 @@ namespace TauCeti
 namespace TensorWords
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-variable {G : InternalGrading R M} {q : ℤ}
+variable {G : InternalGrading R M ℤ} {q : ℤ}
 variable {b : TensorWords R M →ₗ[R] TensorWords R M}
 
 /-- A signed coderivation annihilating the empty word restricts to a signed coderivation
@@ -142,7 +142,7 @@ theorem IsGradedCoderivation.isHomogeneous_iff
 /-- The submodule of signed coderivations annihilating the coaugmentation.
 Homogeneity is not included: the twist parameter determines the co-Leibniz sign. -/
 noncomputable def coaugmentationPreservingGradedCoderivations
-    (G : InternalGrading R M) (q : ℤ) :
+    (G : InternalGrading R M ℤ) (q : ℤ) :
     Submodule R (TensorWords R M →ₗ[R] TensorWords R M) where
   carrier := {b | IsGradedCoderivation G q b ∧ b 1 = 0}
   zero_mem' := by
@@ -173,7 +173,7 @@ noncomputable def coaugmentationPreservingGradedCoderivations
 /-- Membership means the signed co-Leibniz rule and annihilation of the empty word. -/
 @[simp]
 theorem mem_coaugmentationPreservingGradedCoderivations
-    (G : InternalGrading R M) (q : ℤ) (b : TensorWords R M →ₗ[R] TensorWords R M) :
+    (G : InternalGrading R M ℤ) (q : ℤ) (b : TensorWords R M →ₗ[R] TensorWords R M) :
     b ∈ coaugmentationPreservingGradedCoderivations G q ↔
       IsGradedCoderivation G q b ∧ b 1 = 0 :=
   Iff.rfl
@@ -181,7 +181,7 @@ theorem mem_coaugmentationPreservingGradedCoderivations
 /-- The positive-arity Taylor correspondence for coaugmentation-preserving signed
 coderivations. Its inverse is reduced Taylor expansion followed by extension by zero
 on the empty word. -/
-noncomputable def gradedCoderivEquivTaylor (G : InternalGrading R M) (q : ℤ) :
+noncomputable def gradedCoderivEquivTaylor (G : InternalGrading R M ℤ) (q : ℤ) :
     coaugmentationPreservingGradedCoderivations G q ≃ₗ[R]
       (ReducedTensorWords R M →ₗ[R] M) where
   toFun b := ReducedTensorWords.letter R M ∘ₗ restrictReduced b.val
@@ -206,7 +206,7 @@ noncomputable def gradedCoderivEquivTaylor (G : InternalGrading R M) (q : ℤ) :
 
 /-- The forward correspondence reads off the letter component of the reduced restriction. -/
 @[simp]
-theorem gradedCoderivEquivTaylor_apply (G : InternalGrading R M) (q : ℤ)
+theorem gradedCoderivEquivTaylor_apply (G : InternalGrading R M ℤ) (q : ℤ)
     (b : coaugmentationPreservingGradedCoderivations G q) :
     gradedCoderivEquivTaylor G q b =
       ReducedTensorWords.letter R M ∘ₗ restrictReduced b.val :=
@@ -214,7 +214,7 @@ theorem gradedCoderivEquivTaylor_apply (G : InternalGrading R M) (q : ℤ)
 
 /-- The inverse correspondence is the extension of the reduced graded Taylor expansion. -/
 @[simp]
-theorem gradedCoderivEquivTaylor_symm_apply (G : InternalGrading R M) (q : ℤ)
+theorem gradedCoderivEquivTaylor_symm_apply (G : InternalGrading R M ℤ) (q : ℤ)
     (F : ReducedTensorWords R M →ₗ[R] M) :
     ((gradedCoderivEquivTaylor G q).symm F).val =
       extendReduced (ReducedTensorWords.gradedCoderiv G F q) :=

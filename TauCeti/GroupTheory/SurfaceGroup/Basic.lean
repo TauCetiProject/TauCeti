@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Data.Fintype.Sum
 public import Mathlib.GroupTheory.PresentedGroup
+public import Mathlib.Tactic.DeriveFintype
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Surface groups with boundary
@@ -47,6 +50,9 @@ out of a surface group correspond to tuples of elements at which the surface wor
   universal properties, and `TauCeti.SurfaceGroup.Orientable.homEquiv` and
   `TauCeti.SurfaceGroup.Nonorientable.homEquiv`, the bijections between homomorphisms out of a
   surface group and the tuples satisfying its relation.
+* `TauCeti.SurfaceGroup.OrientableGenerator.equivSum` and
+  `TauCeti.SurfaceGroup.NonorientableGenerator.equivSum`: the generators of the presentations as
+  sums of finite types.
 
 ## References
 
@@ -81,6 +87,14 @@ theorem orientableWord_def (α β : Fin g → G) (γ : Fin m → G) :
     orientableWord α β γ =
       (List.ofFn fun i ↦ (α i)⁻¹ * (β i)⁻¹ * α i * β i).prod * (List.ofFn γ).prod := (rfl)
 
+/-- If each `α i` commutes with `β i`, the commutators in the orientable surface word are trivial
+and only the product of the boundary elements remains. -/
+theorem orientableWord_of_commute {α β : Fin g → G} (h : ∀ i, Commute (α i) (β i))
+    (γ : Fin m → G) : orientableWord α β γ = (List.ofFn γ).prod := by
+  have (i : Fin g) : (α i)⁻¹ * (β i)⁻¹ * α i * β i = 1 := by
+    rw [(h i).inv_left.inv_right.eq, inv_mul_cancel_right, inv_mul_cancel]
+  simp [orientableWord_def, this, List.ofFn_const]
+
 /-- A homomorphism carries the orientable surface word to the surface word of the images. -/
 theorem map_orientableWord (f : G →* H) (α β : Fin g → G) (γ : Fin m → G) :
     f (orientableWord α β γ) =
@@ -105,6 +119,12 @@ def nonorientableWord (κ : Fin g → M) (γ : Fin m → M) : M :=
 
 theorem nonorientableWord_def (κ : Fin g → M) (γ : Fin m → M) :
     nonorientableWord κ γ = (List.ofFn fun i ↦ κ i ^ 2).prod * (List.ofFn γ).prod := (rfl)
+
+/-- In a commutative monoid the nonorientable surface word is the square of the product of the
+crosscap elements times the product of the boundary elements. -/
+theorem nonorientableWord_eq_pow_two_mul {M : Type*} [CommMonoid M] (κ : Fin g → M)
+    (γ : Fin m → M) : nonorientableWord κ γ = (List.ofFn κ).prod ^ 2 * (List.ofFn γ).prod := by
+  simp [nonorientableWord_def, List.prod_ofFn, Finset.prod_pow]
 
 /-- A homomorphism carries the nonorientable surface word to the surface word of the images. -/
 theorem map_nonorientableWord (f : M →* N) (κ : Fin g → M) (γ : Fin m → M) :
@@ -131,6 +151,7 @@ inductive OrientableGenerator (g m : ℕ) : Type
   | b (i : Fin g) : OrientableGenerator g m
   /-- The peripheral generator `pⱼ`, a loop around the `j`-th boundary component. -/
   | peripheral (j : Fin m) : OrientableGenerator g m
+  deriving DecidableEq, Fintype
 
 /-- The generators `c₁, …, c_g, p₁, …, p_m` of the nonorientable surface group `S⁻(g, m)`. -/
 inductive NonorientableGenerator (g m : ℕ) : Type
@@ -138,16 +159,89 @@ inductive NonorientableGenerator (g m : ℕ) : Type
   | c (i : Fin g) : NonorientableGenerator g m
   /-- The peripheral generator `pⱼ`, a loop around the `j`-th boundary component. -/
   | peripheral (j : Fin m) : NonorientableGenerator g m
+  deriving DecidableEq, Fintype
+
+/-- The generators of `S⁺(g, m)` are the two families `a₁, …, a_g` and `b₁, …, b_g` together with
+the peripheral generators `p₁, …, p_m`. -/
+def OrientableGenerator.equivSum (g m : ℕ) :
+    OrientableGenerator g m ≃ (Fin g ⊕ Fin g) ⊕ Fin m where
+  toFun
+    | .a i => .inl (.inl i)
+    | .b i => .inl (.inr i)
+    | .peripheral j => .inr j
+  invFun := Sum.elim (Sum.elim .a .b) .peripheral
+  left_inv := by rintro (i | i | j) <;> rfl
+  right_inv := by rintro ((i | i) | j) <;> rfl
+
+/-- The generators of `S⁻(g, m)` are the family `c₁, …, c_g` together with the peripheral
+generators `p₁, …, p_m`. -/
+def NonorientableGenerator.equivSum (g m : ℕ) : NonorientableGenerator g m ≃ Fin g ⊕ Fin m where
+  toFun
+    | .c i => .inl i
+    | .peripheral j => .inr j
+  invFun := Sum.elim .c .peripheral
+  left_inv := by rintro (i | j) <;> rfl
+  right_inv := by rintro (i | j) <;> rfl
+
+namespace OrientableGenerator
+
+variable {g m : ℕ}
+
+@[simp]
+theorem equivSum_a (i : Fin g) : equivSum g m (.a i) = .inl (.inl i) := (rfl)
+
+@[simp]
+theorem equivSum_b (i : Fin g) : equivSum g m (.b i) = .inl (.inr i) := (rfl)
+
+@[simp]
+theorem equivSum_peripheral (j : Fin m) : equivSum g m (.peripheral j) = .inr j := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inl (i : Fin g) : (equivSum g m).symm (.inl (.inl i)) = .a i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl_inr (i : Fin g) : (equivSum g m).symm (.inl (.inr i)) = .b i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
+
+end OrientableGenerator
+
+namespace NonorientableGenerator
+
+variable {g m : ℕ}
+
+@[simp]
+theorem equivSum_c (i : Fin g) : equivSum g m (.c i) = .inl i := (rfl)
+
+@[simp]
+theorem equivSum_peripheral (j : Fin m) : equivSum g m (.peripheral j) = .inr j := (rfl)
+
+@[simp]
+theorem equivSum_symm_inl (i : Fin g) : (equivSum g m).symm (.inl i) = .c i := (rfl)
+
+@[simp]
+theorem equivSum_symm_inr (j : Fin m) : (equivSum g m).symm (.inr j) = .peripheral j := (rfl)
+
+end NonorientableGenerator
 
 /-- The defining relator `[a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m` of `S⁺(g, m)` in the free group on its
 generators. -/
 def orientableRelator (g m : ℕ) : FreeGroup (OrientableGenerator g m) :=
   orientableWord (fun i ↦ of (.a i)) (fun i ↦ of (.b i)) fun j ↦ of (.peripheral j)
 
+theorem orientableRelator_def (g m : ℕ) :
+    orientableRelator g m =
+      orientableWord (fun i ↦ of (.a i)) (fun i ↦ of (.b i)) fun j ↦ of (.peripheral j) := (rfl)
+
 /-- The defining relator `c₁ ^ 2 ⋯ c_g ^ 2 p₁ ⋯ p_m` of `S⁻(g, m)` in the free group on its
 generators. -/
 def nonorientableRelator (g m : ℕ) : FreeGroup (NonorientableGenerator g m) :=
   nonorientableWord (fun i ↦ of (.c i)) fun j ↦ of (.peripheral j)
+
+theorem nonorientableRelator_def (g m : ℕ) :
+    nonorientableRelator g m =
+      nonorientableWord (fun i ↦ of (.c i)) fun j ↦ of (.peripheral j) := (rfl)
 
 /-- The orientable surface group
 `S⁺(g, m) = ⟨a₁, b₁, …, a_g, b_g, p₁, …, p_m | [a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m⟩`, the fundamental
@@ -177,6 +271,12 @@ def b (i : Fin g) : Orientable g m := PresentedGroup.of (.b i)
 
 /-- The peripheral element `pⱼ` of `S⁺(g, m)`, a loop around the `j`-th boundary component. -/
 def peripheral (j : Fin m) : Orientable g m := PresentedGroup.of (.peripheral j)
+
+theorem a_def (i : Fin g) : a g m i = PresentedGroup.of (.a i) := (rfl)
+
+theorem b_def (i : Fin g) : b g m i = PresentedGroup.of (.b i) := (rfl)
+
+theorem peripheral_def (j : Fin m) : peripheral g m j = PresentedGroup.of (.peripheral j) := (rfl)
 
 /-- The defining relation `[a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m = 1` of `S⁺(g, m)`. -/
 @[simp]
@@ -271,6 +371,10 @@ def c (i : Fin g) : Nonorientable g m := PresentedGroup.of (.c i)
 
 /-- The peripheral element `pⱼ` of `S⁻(g, m)`, a loop around the `j`-th boundary component. -/
 def peripheral (j : Fin m) : Nonorientable g m := PresentedGroup.of (.peripheral j)
+
+theorem c_def (i : Fin g) : c g m i = PresentedGroup.of (.c i) := (rfl)
+
+theorem peripheral_def (j : Fin m) : peripheral g m j = PresentedGroup.of (.peripheral j) := (rfl)
 
 /-- The defining relation `c₁ ^ 2 ⋯ c_g ^ 2 p₁ ⋯ p_m = 1` of `S⁻(g, m)`. -/
 @[simp]
