@@ -29,7 +29,7 @@ followed by `r_*` through `H~ₘ(Dᵐ⁺¹; ℤ)`, which vanishes as the disk is
 (`TauCeti.isZero_reducedSingularHomologyFunctor_of_contractibleSpace`).
 
 A self-map `f` of the disk without fixed points gives a retraction of the boundary inclusion,
-sending `x` to the point where the ray from `f x` through `x` meets the boundary sphere
+sending `x` to the point where the ray from `f x` through `x` leaves the disk
 (`ContinuousMap.closedBallRayRetraction`), so no such `f` exists.
 
 A nonempty compact convex set `C` has a point `c` of its intrinsic interior, and is then
@@ -126,7 +126,8 @@ theorem brouwerFixedPoint_compactConvex (hC : IsCompact C) (hconv : Convex ℝ C
     (hne : C.Nonempty) (f : C(C, C)) : ∃ x, IsFixedPt f x := by
   obtain ⟨c, hc⟩ := hne.intrinsicInterior hconv
   let V := (affineSpan ℝ C).direction
-  -- `C` is a closed ball of `V` around `c`, and that ball is the disk of dimension `finrank ℝ V`.
+  -- `C` is homeomorphic to the closed unit ball of `V`, which is the disk of dimension
+  -- `finrank ℝ V`.
   let e : TopCat.disk.{0} (Module.finrank ℝ V) ≃ₜ C :=
     (Homeomorph.ulift.trans (closedBallHomeomorphOfFinrankEq (F := V) (by simp))).trans
       (convexClosedBallHomeomorph hconv hC.isClosed hC.isBounded hc)
