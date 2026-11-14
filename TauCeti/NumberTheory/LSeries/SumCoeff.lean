@@ -39,9 +39,11 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.differentiableOn_integral_mul_cpow_of_isBigO`,
   `TauCeti.LSeries.integrableOn_mul_cpow_of_isBigO` and
   `TauCeti.LSeries.norm_integral_mul_cpow_le_of_bound`: holomorphy, absolute convergence and an
-  explicit bound for `∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))` with a general kernel `g` that is
-  locally integrable on `[1, ∞)` and `O(t ^ r)` (or bounded) at infinity. The partial-sum results
-  below are their instances at the step function `g t = A(⌊t⌋₊)`.
+  explicit bound for `∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))` with a general kernel `g`.
+  Holomorphy requires only `O(t ^ r)` at infinity: when local integrability fails, the totalized
+  integrals are all zero. Absolute convergence additionally requires local integrability on
+  `[1, ∞)`; the quantitative bound assumes boundedness. The partial-sum results below are their
+  instances at the step function `g t = A(⌊t⌋₊)`.
 * `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
   the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
@@ -103,21 +105,42 @@ private theorem isBigO_indicator_Ici_one_nhdsGT_zero (g : ℝ → ℂ) (b : ℝ)
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
   exact (Set.indicator_of_notMem (not_le.mpr ht.2) g).symm
 
-/-- **Holomorphy of an integral against `t ^ (-(s + 1))`.** If `g` is locally integrable on
-`[1, ∞)` and `O(t ^ r)` at infinity, then `s ↦ ∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))` is
-complex-differentiable on the half-plane `r < Re s`. -/
+/-- **Holomorphy of an integral against `t ^ (-(s + 1))`.** If `g` is `O(t ^ r)` at infinity,
+then `s ↦ ∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))` is complex-differentiable on `r < Re s`.
+No local-integrability hypothesis is needed: if it fails, all these Bochner integrals are zero. -/
 theorem differentiableOn_integral_mul_cpow_of_isBigO {g : ℝ → ℂ} {r : ℝ}
-    (hg : LocallyIntegrableOn g (Set.Ici 1)) (hO : g =O[atTop] fun t ↦ t ^ r) :
+    (hO : g =O[atTop] fun t ↦ t ^ r) :
     DifferentiableOn ℂ (fun s : ℂ ↦ ∫ t in Set.Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(s + 1)))
       {s | r < s.re} := by
-  intro s hs
-  have hmellin : DifferentiableAt ℂ (fun z : ℂ ↦ mellin ((Set.Ici 1).indicator g) (-z)) s :=
-    (mellin_differentiableAt_of_isBigO_rpow (a := -r) (locallyIntegrableOn_indicator_Ici_one hg)
-      (by rw [neg_neg]; exact isBigO_indicator_Ici_one_atTop hO) (by simpa using hs)
-      (isBigO_indicator_Ici_one_nhdsGT_zero g _) (sub_one_lt (-s).re)).comp s
-      differentiableAt_id.neg
-  simp_rw [integral_Ioi_one_eq_mellin_indicator]
-  exact hmellin.differentiableWithinAt
+  classical
+  by_cases hg : LocallyIntegrableOn g (Set.Ici 1)
+  · intro s hs
+    have hmellin : DifferentiableAt ℂ (fun z : ℂ ↦ mellin ((Set.Ici 1).indicator g) (-z)) s :=
+      (mellin_differentiableAt_of_isBigO_rpow (a := -r) (locallyIntegrableOn_indicator_Ici_one hg)
+        (by rw [neg_neg]; exact isBigO_indicator_Ici_one_atTop hO) (by simpa using hs)
+        (isBigO_indicator_Ici_one_nhdsGT_zero g _) (sub_one_lt (-s).re)).comp s
+        differentiableAt_id.neg
+    simp_rw [integral_Ioi_one_eq_mellin_indicator]
+    exact hmellin.differentiableWithinAt
+  · have hzero (s : ℂ) :
+        (∫ t in Set.Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(s + 1))) = 0 := by
+      apply integral_undef
+      intro hi
+      apply hg
+      have hi' : IntegrableOn (fun t : ℝ ↦ g t * (t : ℂ) ^ (-(s + 1))) (Set.Ici 1) :=
+        (integrableOn_Ici_iff_integrableOn_Ioi (by finiteness)).mpr hi
+      have hc : ContinuousOn (fun t : ℝ ↦ (t : ℂ) ^ (s + 1)) (Set.Ici 1) :=
+        Complex.continuous_ofReal.continuousOn.cpow_const fun t ht ↦
+          Or.inl (by simpa using (zero_lt_one.trans_le (Set.mem_Ici.mp ht)))
+      refine (hi'.locallyIntegrableOn.mul_continuousOn hc isClosed_Ici.isLocallyClosed).congr ?_
+      filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht
+      rw [mul_assoc, ← Complex.cpow_add _ _ (Complex.ofReal_ne_zero.mpr
+        (zero_lt_one.trans_le (Set.mem_Ici.mp ht)).ne')]
+      simp
+    have heq : (fun s : ℂ ↦ ∫ t in Set.Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(s + 1))) =
+        fun _ ↦ (0 : ℂ) := funext hzero
+    rw [heq]
+    exact differentiableOn_const 0
 
 /-- If `g` is locally integrable on `[1, ∞)` and `O(t ^ r)` at infinity, then
 `t ↦ g t * t ^ (-(s + 1))` is integrable on `(1, ∞)` for `r < Re s`. -/
@@ -167,9 +190,7 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
       {s | r < s.re} :=
-  differentiableOn_id.mul <| differentiableOn_integral_mul_cpow_of_isBigO
-    ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set (Set.Ici_subset_Ici.mpr zero_le_one))
-    hO.comp_natFloor_rpow
+  differentiableOn_id.mul <| differentiableOn_integral_mul_cpow_of_isBigO hO.comp_natFloor_rpow
 
 /-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the partial-summation integral
 converges absolutely on the half-plane `r < Re s`. -/

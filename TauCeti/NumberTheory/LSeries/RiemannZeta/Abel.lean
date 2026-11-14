@@ -25,11 +25,16 @@ function and for `ζ` away from its pole.
 
 ## Main results
 
+* `TauCeti.integrableOn_fract_mul_cpow`, `TauCeti.norm_integral_fract_mul_cpow_le` and
+  `TauCeti.differentiableAt_integral_fract_mul_cpow`: absolute convergence, a quantitative bound
+  and holomorphy of the fractional-part integral on `0 < re s`, including `s = 1`.
+
 * `TauCeti.riemannZeta₀_eq_one_sub_mul_integral_fract`: on `0 < re s`, including `s = 1`,
   the entire pole-subtracted function satisfies `ζ₀(s) = 1 - s ∫₁^∞ {t} t^(-s-1) dt`.
 * `TauCeti.norm_riemannZeta₀_le_of_re_pos`: `‖ζ₀(s)‖ ≤ 1 + ‖s‖ / re s` on that half-plane.
 * `TauCeti.riemannZeta_eq_sub_integral_fract` and `TauCeti.norm_riemannZeta_le_of_re_pos`:
-  the ordinary Abel formula and bound for `ζ(s)` when `0 < re s` and `s ≠ 1`.
+  the ordinary Abel formula when `0 < re s`, `s ≠ 1`, and a bound including the totalized value
+  at `s = 1`.
 
 ## References
 
@@ -64,6 +69,27 @@ private theorem isBigO_fract :
   IsBigO.of_bound 1 (Eventually.of_forall fun t ↦ by
     simpa only [Real.rpow_zero, norm_one, one_mul] using norm_fract_le t)
 
+/-- For `0 < s.re`, the fractional-part kernel in the Abel formula is integrable on
+`(1, ∞)`, including when `s = 1`. -/
+theorem integrableOn_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
+    IntegrableOn (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
+      (Ioi 1) :=
+  LSeries.integrableOn_mul_cpow_of_isBigO locallyIntegrableOn_fract isBigO_fract hs
+
+/-- The fractional-part integral in the Abel formula has norm at most `1 / s.re`
+on the right half-plane, including at `s = 1`. -/
+theorem norm_integral_fract_mul_cpow_le {s : ℂ} (hs : 0 < s.re) :
+    ‖∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤ 1 / s.re :=
+  LSeries.norm_integral_mul_cpow_le_of_bound (fun t _ ↦ norm_fract_le t) hs
+
+/-- The fractional-part integral in the Abel formula is complex-differentiable throughout
+the right half-plane, including at `s = 1`. -/
+theorem differentiableAt_integral_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
+    DifferentiableAt ℂ (fun z : ℂ ↦
+      ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1))) s :=
+  (LSeries.differentiableOn_integral_mul_cpow_of_isBigO isBigO_fract).differentiableAt
+    ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
+
 private theorem abel_initial (s : ℂ) (hs : 1 < s.re) :
     riemannZeta s = s / (s - 1) - s *
       ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
@@ -97,8 +123,7 @@ private theorem abel_initial (s : ℂ) (hs : 1 < s.re) :
       _ = _ := by congr 1; ring
   rw [integral_congr_ae hfloor, integral_sub
     (integrableOn_Ioi_cpow_of_lt (by simpa using hs) zero_lt_one)
-      (LSeries.integrableOn_mul_cpow_of_isBigO locallyIntegrableOn_fract isBigO_fract
-        (zero_lt_one.trans hs)),
+      (integrableOn_fract_mul_cpow (zero_lt_one.trans hs)),
     integral_Ioi_cpow_of_lt (by simpa using hs) zero_lt_one] at H
   simp only [ofReal_one, one_cpow] at H
   rw [show -s + 1 = -(s - 1) by ring, neg_div_neg_eq] at H
@@ -113,9 +138,9 @@ theorem riemannZeta₀_eq_one_sub_mul_integral_fract {s : ℂ} (hs : 0 < s.re) :
   let G : ℂ → ℂ := fun z ↦ 1 - z *
     ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1))
   have hG : DifferentiableOn ℂ G {z : ℂ | 0 < z.re} :=
-    (differentiableOn_const (1 : ℂ)).sub (differentiableOn_id.mul
-      (LSeries.differentiableOn_integral_mul_cpow_of_isBigO locallyIntegrableOn_fract
-        isBigO_fract))
+    fun z hz ↦ ((differentiableAt_const (1 : ℂ)).sub
+      (differentiableAt_id.mul
+        (differentiableAt_integral_fract_mul_cpow hz))).differentiableWithinAt
   have heq : EqOn G riemannZeta₀ {z : ℂ | 1 < z.re} := by
     intro z hz
     have hz1 : z ≠ 1 := by intro h; subst z; norm_num at hz
@@ -140,7 +165,7 @@ theorem norm_riemannZeta₀_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
         (s * ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
     _ ≤ 1 + ‖s‖ * (1 / s.re) :=
       add_le_add le_rfl (mul_le_mul_of_nonneg_left
-        (LSeries.norm_integral_mul_cpow_le_of_bound (fun t _ ↦ norm_fract_le t) hs)
+        (norm_integral_fract_mul_cpow_le hs)
         (norm_nonneg s))
     _ = _ := by ring
 
@@ -153,11 +178,33 @@ theorem riemannZeta_eq_sub_integral_fract {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠
   field_simp [sub_ne_zero.mpr hs1]
   ring
 
-/-- On the punctured right half-plane `0 < s.re`, `s ≠ 1`,
-`‖ζ(s)‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / s.re`. -/
-theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠ 1) :
+/-- On the right half-plane `0 < s.re`,
+`‖ζ(s)‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / s.re`, including Mathlib's totalized value at `s = 1`. -/
+theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     ‖riemannZeta s‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / s.re := by
-  rw [riemannZeta_eq_inv_sub_add hs1]
-  exact (norm_add_le _ _).trans (by linarith [norm_riemannZeta₀_le_of_re_pos hs])
+  by_cases hs1 : s = 1
+  · subst s
+    simp only [sub_self, inv_zero, norm_zero, add_zero, norm_one, one_re, div_one,
+      one_add_one_eq_two]
+    have hlog0 : 0 ≤ Real.log (4 * Real.pi) :=
+      Real.log_nonneg (by nlinarith [Real.two_le_pi])
+    have hlog4 : Real.log (4 * Real.pi) ≤ 4 := by
+      calc
+        _ ≤ Real.log (2 ^ 4 : ℝ) :=
+          Real.log_le_log (by positivity) (by nlinarith [Real.pi_le_four])
+        _ = 4 * Real.log 2 := by rw [Real.log_pow]; norm_num
+        _ ≤ 4 := by linarith [Real.log_le_sub_one_of_pos (by norm_num : (0 : ℝ) < 2)]
+    have habs : |Real.eulerMascheroniConstant - Real.log (4 * Real.pi)| ≤ 4 :=
+      abs_le.mpr ⟨by linarith [Real.one_half_lt_eulerMascheroniConstant],
+        by linarith [Real.eulerMascheroniConstant_lt_two_thirds]⟩
+    have hdiv : |Real.eulerMascheroniConstant - Real.log (4 * Real.pi)| / 2 ≤ 2 := by
+      linarith
+    have hlog : Complex.log (4 * (Real.pi : ℂ)) = (Real.log (4 * Real.pi) : ℂ) := by
+      simpa only [Complex.ofReal_mul, Complex.ofReal_ofNat] using
+        (Complex.ofReal_log (by positivity : (0 : ℝ) ≤ 4 * Real.pi)).symm
+    simpa only [riemannZeta_one, hlog, ← Complex.ofReal_sub, norm_div, norm_real,
+      Real.norm_eq_abs, Complex.norm_ofNat] using hdiv
+  · rw [riemannZeta_eq_inv_sub_add hs1]
+    exact (norm_add_le _ _).trans (by linarith [norm_riemannZeta₀_le_of_re_pos hs])
 
 end TauCeti
