@@ -30,6 +30,8 @@ indefinite integral, including all its observation times, with one error estimat
 * `MeasureTheory.VectorMeasure.integral_fun_smul_of_smul_left` and
   `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure_of_smul_right`: homogeneity in the
   integrand and in the measure.
+* `MeasureTheory.VectorMeasure.tendstoUniformly_setIntegral_of_L1`: uniform convergence of
+  set integrals under L¹ convergence for the variation measure.
 -/
 
 public section
@@ -120,11 +122,22 @@ theorem tendstoUniformly_setIntegral_of_L1
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     [NormedAddCommGroup G] [NormedSpace ℝ G]
     {μ : VectorMeasure X F} {B : E →L[ℝ] F →L[ℝ] G}
-    {f : X → E} (hf : μ.Integrable f) {u : ι → X → E} {l : Filter ι}
+    {f : X → E} (hf : AEStronglyMeasurable f μ.variation) {u : ι → X → E} {l : Filter ι}
     (hu : ∀ᶠ i in l, μ.Integrable (u i))
     (hlim : Tendsto (fun i ↦ ∫⁻ x, ‖u i x - f x‖ₑ ∂μ.variation) l (𝓝 0)) :
     TendstoUniformly (fun i s ↦ ∫ᵛ x in s, u i x ∂[B; μ])
       (fun s ↦ ∫ᵛ x in s, f x ∂[B; μ]) l := by
+  rcases eq_or_neBot l with rfl | hl
+  · simp [EMetric.tendstoUniformly_iff]
+  -- Recover integrability as in MeasureTheory.tendsto_setToFun_of_L1.
+  have hf : μ.Integrable f := by
+    obtain ⟨i, hsmall, hi⟩ : ∃ i, ∫⁻ x, ‖u i x - f x‖ₑ ∂μ.variation < 1 ∧
+        μ.Integrable (u i) :=
+      (((tendsto_order.1 hlim).2 _ zero_lt_one).and hu).exists
+    have hsub : μ.Integrable (u i - f) :=
+      ⟨hi.aestronglyMeasurable.sub hf, hsmall.trans ENNReal.one_lt_top⟩
+    convert hi.sub hsub using 1
+    abel
   have hbound := ENNReal.Tendsto.const_mul (a := ‖B‖ₑ) hlim (by simp)
   rw [mul_zero] at hbound
   apply EMetric.tendstoUniformly_iff.mpr

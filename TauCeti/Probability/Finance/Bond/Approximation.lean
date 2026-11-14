@@ -13,8 +13,8 @@ public import TauCeti.MeasureTheory.VectorMeasure.Integral
 
 Elementary bond gains converge uniformly in observation time to the pathwise bond
 integral when the holdings converge in L¹ of the bond's variation measure. The limiting
-holding need only be integrable against that measure; it need not be continuous or
-bounded. Grids may vary, need not be nested, and may contain repeated dates.
+holding need only be almost everywhere strongly measurable for that measure; it need
+not be continuous or bounded. Grids may vary, need not be nested, and may contain repeated dates.
 
 The result is pathwise, so it applies to random holdings without an initial or terminal
 moment assumption. The same full-horizon variation norm controls all observation times,
@@ -52,7 +52,8 @@ theorem tendstoUniformlyOn_simpleGains_bondPrice_of_L1
     (hr : ContinuousOn r (Icc 0 T)) (hT : 0 ≤ T)
     (hτ : ∀ k, MonotoneOn (τ k) (Iic (n k))) (hzero : ∀ k, 0 ≤ τ k 0)
     (ω : Ω) {b : ℝ → ℝ}
-    (hb : ((boundedVariationOn_bondPrice hr hT β₀).vectorMeasureIcc hT).Integrable b)
+    (hb : AEStronglyMeasurable b
+      ((boundedVariationOn_bondPrice hr hT β₀).vectorMeasureIcc hT).variation)
     (hlim : Tendsto (fun k ↦ ∫⁻ u,
       ‖simpleHolding (τ k) (n k) (a k) u ω - b u‖ₑ
         ∂((boundedVariationOn_bondPrice hr hT β₀).vectorMeasureIcc hT).variation)
