@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Contour.Curve.DiskCrosscut
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
-import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Concat
 import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
@@ -42,8 +41,8 @@ The construction and its regularity, integral and topological API are in
   positively oriented.
 * `TauCeti.Contour.jordanSign_arcLoop_eq_neg_one`: the loop closed by the clockwise arc
   is negatively oriented.
-* `TauCeti.Contour.mem_filledHull_arcLoop_iff_notMem`: each point of the open disk off the arc lies
-  in exactly one of the two filled hulls.
+* `TauCeti.Contour.mem_filledHull_image_arcLoop_iff_notMem`: each point of the open disk off the
+  arc lies in exactly one of the two filled hulls.
 
 ## References
 
@@ -151,17 +150,6 @@ private theorem jordanSign_arcLoop_eq_one_or_neg_one (hab : a < b)
     |>.jordanSign_eq_one_or_neg_one (by linarith) (arcLoop_eq_arcLoop_add_one hab.le ha)
       (injOn_arcLoop hab hinj hin ha hb hδα)
 
-private theorem exists_mem_ball_arcLoop (hab : a < b) (hc : ContinuousOn c (Icc a b))
-    (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
-    (ha : c a = circleMap z₀ r δ) (hb : c b = circleMap z₀ r α)
-    (hδα : |δ - α| < 2 * π) :
-    ∃ z ∈ ball z₀ r, z ∉ c '' Icc a b ∧
-      z ∈ filledHull (arcLoop c b z₀ r α δ '' uIcc a (b + 1)) := by
-  obtain ⟨z, hz⟩ :=
-    (isJordanCurve_image_arcLoop hab hc hinj hin ha hb hδα).nonempty_filledHull_sdiff
-  have h := (mem_filledHull_sdiff_image_arcLoop_iff hab hc hinj hin ha hb hδα).mp hz
-  exact ⟨z, h.1.1, h.1.2, h.2⟩
-
 private theorem jordanSign_arcLoop_and_mem_filledHull_iff (hab : a < b)
     (hc : AbsolutelyContinuousOnInterval c a b) (hinj : InjOn c (Icc a b))
     (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r) (ha : c a = circleMap z₀ r β)
@@ -240,7 +228,8 @@ theorem jordanSign_arcLoop_eq_neg_one (hab : a < b) (hc : AbsolutelyContinuousOn
 
 /-- Every point of the open disk off the arc `c` lies in exactly one of the filled hulls of the
 loops closed by the counterclockwise and the clockwise circle arcs. -/
-theorem mem_filledHull_arcLoop_iff_notMem (hab : a < b) (hc : AbsolutelyContinuousOnInterval c a b)
+theorem mem_filledHull_image_arcLoop_iff_notMem (hab : a < b)
+    (hc : AbsolutelyContinuousOnInterval c a b)
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
     (ha : c a = circleMap z₀ r β) (hb : c b = circleMap z₀ r α) (hαβ : α < β)
     (hβα : β < α + 2 * π) {z : ℂ} (hz : z ∈ ball z₀ r) (hzc : z ∉ c '' Icc a b) :

@@ -16,6 +16,9 @@ The trace of a circular parametrization over `[0,2π]` is the sphere, for arbitr
 Consequently the exponential `t ↦ exp (2π i t / L)` and its conjugate cover the unit circle over
 `[0, L]` (`Complex.image_exp_two_pi_I_div_Icc`, `Complex.image_exp_neg_two_pi_I_div_Icc`).
 
+The affine circular arc `TauCeti.Contour.circleCap` runs between prescribed angles on a
+parameter interval, with endpoint, smoothness and avoidance lemmas.
+
 Substituting `w = 1/z` in a circle integral reverses the orientation of the circle:
 `∮_{|w| = r} -g(1/w)/w² dw = -∮_{|z| = 1/r} g(z) dz`
 (`TauCeti.Contour.circleIntegral_neg_inv_sq_smul_comp_inv`).
@@ -84,6 +87,61 @@ end Complex
 namespace TauCeti.Contour
 
 open Complex Function
+
+noncomputable section CircleCap
+
+variable {s : ℂ} {l u r θ θ' t : ℝ}
+
+/-- **The circular cap** with signed radial scale `r` about `s`: the arc of the circle
+`|z - s| = |r|` parametrised affinely over the window `[l, u]`, running from angle `θ` at `l`
+(`circleCap_left`) to angle `θ'` at `u` (`circleCap_right`) whenever the window is nondegenerate,
+`l ≠ u`. For `l = u` the affine
+change of parameter divides by zero, so the cap is constantly `circleMap s r θ` and does not reach
+angle `θ'`; every result below that needs the far endpoint assumes `l < u` or `l ≠ u`.
+
+It is written as `circleMap s r` precomposed with an affine change of parameter, which is the shape
+the reparametrisation and principal-value lemmas for circular arcs consume. -/
+def circleCap (s : ℂ) (r l u θ θ' : ℝ) : ℝ → ℂ :=
+  circleMap s r ∘ fun t => (θ' - θ) / (u - l) * t + (θ - (θ' - θ) / (u - l) * l)
+
+/-- **Characteristic value lemma** for the circular cap: at parameter `t` it is the point of the
+circle at angle `θ` advanced by the fraction `(t - l) / (u - l)` of the sweep `θ' - θ`.
+
+Deliberately not `@[simp]`: it rewrites the left-hand sides of the endpoint lemmas `circleCap_left`
+and `circleCap_right`, which are the simp-normal forms this file's consumers actually meet. -/
+theorem circleCap_apply (s : ℂ) (r l u θ θ' t : ℝ) :
+    circleCap s r l u θ θ' t = circleMap s r (θ + (θ' - θ) / (u - l) * (t - l)) := by
+  simp only [circleCap, Function.comp_apply]
+  congr 1
+  ring
+
+/-- The cap starts at the point of angle `θ`. -/
+@[simp]
+theorem circleCap_left (s : ℂ) (r l u θ θ' : ℝ) :
+    circleCap s r l u θ θ' l = circleMap s r θ := by
+  rw [circleCap_apply]
+  congr 1
+  ring
+
+/-- The cap ends at the point of angle `θ'`, the window being nondegenerate. -/
+@[simp]
+theorem circleCap_right (s : ℂ) (r : ℝ) (hlu : l ≠ u) (θ θ' : ℝ) :
+    circleCap s r l u θ θ' u = circleMap s r θ' := by
+  have hul : u - l ≠ 0 := sub_ne_zero.mpr (Ne.symm hlu)
+  rw [circleCap_apply]
+  congr 1
+  field_simp
+  ring
+
+/-- The cap is `C¹` (indeed smooth): the circle map is, and the change of parameter is affine. -/
+theorem contDiff_circleCap (s : ℂ) (r l u θ θ' : ℝ) : ContDiff ℝ 1 (circleCap s r l u θ θ') :=
+  (contDiff_circleMap s r).comp ((contDiff_const.mul contDiff_id).add contDiff_const)
+
+/-- The cap misses the centre when its signed radial scale is nonzero. -/
+theorem circleCap_ne_center (hr : r ≠ 0) : circleCap s r l u θ θ' t ≠ s :=
+  circleMap_ne_center hr
+
+end CircleCap
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 

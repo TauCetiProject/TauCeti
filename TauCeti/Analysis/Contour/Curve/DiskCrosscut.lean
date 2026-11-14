@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-public import TauCeti.Analysis.Contour.Crossing.Excision
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
+public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
-import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.Topology.JordanCurve.Interval
@@ -30,7 +30,7 @@ in `TauCeti/Analysis/Contour/Winding/AbsolutelyContinuous/DiskCrosscut.lean`.
 
 * `TauCeti.Contour.arcLoop`: the arc `c` followed by a circle arc.
 * `AbsolutelyContinuousOnInterval.arcLoop`: closing the arc preserves absolute continuity.
-* `TauCeti.Contour.isPiecewiseC1On_arcLoop`: closing the arc preserves piecewise `C¹` regularity.
+* `TauCeti.IsPiecewiseC1On.arcLoop`: closing the arc preserves piecewise `C¹` regularity.
 * `TauCeti.Contour.isJordanCurve_image_arcLoop`: the trace of the loop is a Jordan curve.
 * `TauCeti.Contour.integral_arcLoop_left` and `TauCeti.Contour.integral_arcLoop_circle`: integrals
   along the two pieces for an arbitrary complex integrand.
@@ -63,7 +63,7 @@ theorem arcLoop_of_le {s : ℝ} (hs : s ≤ b) : arcLoop c b z₀ r α β s = c 
 
 /-- After the parameter `b`, the loop is the affinely reparametrized circle. -/
 @[simp]
-theorem arcLoop_of_lt {s : ℝ} (hs : b < s) :
+theorem arcLoop_of_gt {s : ℝ} (hs : b < s) :
     arcLoop c b z₀ r α β s = circleMap z₀ r (α + (s - b) * (β - α)) := by
   simp [arcLoop, hs.not_ge, circleCap_apply, mul_comm]
 
@@ -79,7 +79,7 @@ theorem arcLoop_eventuallyEq_of_lt {s : ℝ} (hs : s < b) : arcLoop c b z₀ r �
 /-- The loop agrees with the affinely reparametrized circle near every parameter after `b`. -/
 theorem arcLoop_eventuallyEq_of_gt {s : ℝ} (hs : b < s) :
     arcLoop c b z₀ r α β =ᶠ[𝓝 s] fun s => circleMap z₀ r (α + (s - b) * (β - α)) :=
-  (eventually_gt_nhds hs).mono fun _ h => arcLoop_of_lt h
+  (eventually_gt_nhds hs).mono fun _ h => arcLoop_of_gt h
 
 /-- Before the joining parameter, the derivative of the loop is that of the original arc. -/
 @[simp]
@@ -124,7 +124,7 @@ theorem integral_arcLoop_circle (f : ℂ → ℂ) :
     rw [uIoo_of_le (lt_add_one b).le] at hs
     have hθ : (β - α) * s + (α - b * (β - α)) = α + (s - b) * (β - α) := by ring
     simp only [g, hθ, deriv_circleMap]
-    rw [deriv_arcLoop_of_gt hs.1, arcLoop_of_lt hs.1, Complex.real_smul]
+    rw [deriv_arcLoop_of_gt hs.1, arcLoop_of_gt hs.1, Complex.real_smul]
     ring
   rw [intervalIntegral.integral_congr_uIoo hcongr, intervalIntegral.integral_const_mul,
     ← Complex.real_smul, intervalIntegral.smul_integral_comp_mul_add]
@@ -138,8 +138,9 @@ theorem arcLoop_eq_arcLoop_add_one (hab : a ≤ b) (ha : c a = circleMap z₀ r 
   rw [arcLoop_of_le hab, arcLoop_add_one, ha]
 
 /-- Closing a piecewise `C¹` arc by a circle arc gives a piecewise `C¹` loop. -/
-theorem isPiecewiseC1On_arcLoop (hc : IsPiecewiseC1On c a b) (hab : a ≤ b)
-    (hb : c b = circleMap z₀ r α) : IsPiecewiseC1On (arcLoop c b z₀ r α β) a (b + 1) := by
+theorem _root_.TauCeti.IsPiecewiseC1On.arcLoop (hc : IsPiecewiseC1On c a b) (hab : a ≤ b)
+    (hb : c b = circleMap z₀ r α) :
+    IsPiecewiseC1On (TauCeti.Contour.arcLoop c b z₀ r α β) a (b + 1) := by
   have harc : IsPiecewiseC1On (circleCap z₀ r b (b + 1) α β) b (b + 1) :=
     IsPiecewiseC1On.of_contDiffOn (contDiff_circleCap z₀ r b (b + 1) α β).contDiffOn
   exact hc.if_le harc hab (by linarith) (by simpa using hb)
@@ -168,8 +169,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.arcLoop (hc : AbsolutelyContinuous
     exact (eqOn_arcLoop_Ici hb hs.1).symm)
 
 /-- Closing a continuous arc by a circle arc gives a continuous loop. -/
-theorem continuousOn_arcLoop (hc : ContinuousOn c (Icc a b)) (hab : a ≤ b)
-    (hb : c b = circleMap z₀ r α) : ContinuousOn (arcLoop c b z₀ r α β) (Icc a (b + 1)) := by
+theorem _root_.ContinuousOn.arcLoop (hc : ContinuousOn c (Icc a b)) (hab : a ≤ b)
+    (hb : c b = circleMap z₀ r α) :
+    ContinuousOn (TauCeti.Contour.arcLoop c b z₀ r α β) (Icc a (b + 1)) := by
   rw [← Icc_union_Icc_eq_Icc hab (le_add_of_nonneg_right zero_le_one)]
   refine ContinuousOn.union_of_isClosed (hc.congr fun s hs => arcLoop_of_le hs.2) ?_
     isClosed_Icc isClosed_Icc
@@ -282,7 +284,7 @@ theorem injOn_arcLoop (hab : a < b) (hinj : InjOn c (Icc a b))
   -- The original arc meets the cap only at its endpoints.
   have hcross : ∀ s ∈ Ico a (b + 1), ∀ s' ∈ Ico a (b + 1), s ≤ b → b < s' →
       arcLoop c b z₀ r α β s ≠ arcLoop c b z₀ r α β s' := fun s hs s' hs' hsb hs'b h => by
-    rw [arcLoop_of_le hsb, arcLoop_of_lt hs'b] at h
+    rw [arcLoop_of_le hsb, arcLoop_of_gt hs'b] at h
     rcases hend s ⟨hs.1, hsb⟩ (h ▸ hsph _) with rfl | rfl
     · exact hθβ s' hs'b hs'.2 (h.symm.trans ha)
     · exact hθα s' hs'b hs'.2 (h.symm.trans hb)
@@ -304,7 +306,7 @@ theorem isJordanCurve_image_arcLoop (hab : a < b) (hc : ContinuousOn c (Icc a b)
     (hβα : |β - α| < 2 * π) :
     IsJordanCurve (arcLoop c b z₀ r α β '' uIcc a (b + 1)) := by
   rw [uIcc_of_le (by linarith)]
-  exact isJordanCurve_image_Icc (by linarith) (continuousOn_arcLoop hc hab.le hb)
+  exact isJordanCurve_image_Icc (by linarith) (hc.arcLoop hab.le hb)
     (arcLoop_eq_arcLoop_add_one hab.le ha) (injOn_arcLoop hab hinj hin ha hb hβα)
 
 /-- The inside of the closed-up crosscut is precisely its filled hull in the open disk off
@@ -330,5 +332,18 @@ theorem mem_filledHull_sdiff_image_arcLoop_iff (hab : a < b) (hc : ContinuousOn 
     exact Or.inl h
   · rintro ⟨⟨hz, hzc⟩, hzH⟩
     exact ⟨hzH, notMem_image_arcLoop hab.le hb hz hzc⟩
+
+/-- The inside of a crosscut closed by a circle arc contains a point of the open disk off
+the crosscut. -/
+theorem exists_mem_ball_arcLoop (hab : a < b) (hc : ContinuousOn c (Icc a b))
+    (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
+    (ha : c a = circleMap z₀ r β) (hb : c b = circleMap z₀ r α)
+    (hβα : |β - α| < 2 * π) :
+    ∃ z ∈ ball z₀ r, z ∉ c '' Icc a b ∧
+      z ∈ filledHull (arcLoop c b z₀ r α β '' uIcc a (b + 1)) := by
+  obtain ⟨z, hz⟩ :=
+    (isJordanCurve_image_arcLoop hab hc hinj hin ha hb hβα).nonempty_filledHull_sdiff
+  have h := (mem_filledHull_sdiff_image_arcLoop_iff hab hc hinj hin ha hb hβα).mp hz
+  exact ⟨z, h.1.1, h.1.2, h.2⟩
 
 end TauCeti.Contour
