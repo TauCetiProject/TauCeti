@@ -10,8 +10,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.IsRealClosed.Basic
 import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
-import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.IsAlgClosed.OddDegreeRoot
 import TauCeti.FieldTheory.RealClosure.AlgebraicClosed
 
@@ -24,17 +24,17 @@ algebraically closed. In particular, when `X ^ 2 + 1` is irreducible, `R` is rea
 when `R(√-1) = AdjoinRoot (X ^ 2 + 1)` is algebraically closed.
 
 For the forward direction, a quadratic extension embeds into the algebraically closed
-`QuadraticAlgebra R (-1) 0` of the same dimension, so all its elements are squares. For the
-converse, first `-1` is not a square in `R`: writing `K ≅ QuadraticAlgebra R a b`, suppose `-1`
-is a square. If `2 ≠ 0`, every element of `K` being a square (in particular `-b + 2ω`) makes the
-discriminant a square, so the algebra is not a field. In characteristic two with `b ≠ 0`,
-algebraic closure gives a root in `K` of the Artin–Schreier polynomial `X ^ 2 + b X - (a / b) ω`,
-which yields a zero divisor; with `b = 0`, the generator `ω` is not a square. Each case
-contradicts that `K` is a field. Hence an algebraically closed extension `K` of degree two
-identifies `K` with `R(√-1)`. Writing a
-square root of `x + y √-1` in coordinates shows that every element or its negative is a
-square, and that a sum of two squares is a square. Every irreducible polynomial over `R`
-has degree dividing two, so a polynomial of odd degree has a root.
+`QuadraticAlgebra R (-1) 0` of the same dimension, so the embedding is surjective and transfers the
+splitting of polynomials to the extension. For the converse, first `-1` is not a square in `R`:
+writing `K ≅ QuadraticAlgebra R a b`, suppose `-1` is a square. If `2 ≠ 0`, every element of `K`
+being a square (in particular `-b + 2ω`) makes the discriminant a square, so the algebra is not a
+field. In characteristic two with `b ≠ 0`, algebraic closure gives a root in `K` of the
+Artin–Schreier polynomial `X ^ 2 + b X - (a / b) ω`, which yields a zero divisor; with `b = 0`, the
+generator `ω` is not a square. Each case contradicts that `K` is a field. Hence an algebraically
+closed extension `K` of degree two identifies `K` with `R(√-1)`. Writing a square root of
+`x + y √-1` in coordinates shows that every element or its negative is a square, and that a sum of
+two squares is a square. Every irreducible polynomial over `R` has degree dividing two, so a
+polynomial of odd degree has a root.
 
 ## Main results
 
@@ -66,7 +66,7 @@ public section
 
 namespace TauCeti.RealClosure
 
-open Module Polynomial IntermediateField
+open Module Polynomial _root_.IntermediateField
 
 variable {R K : Type*} [Field R] [Field K] [Algebra R K]
 
@@ -221,16 +221,9 @@ theorem isRealClosed_iff_isAlgClosed_of_isQuadraticExtension
 taken in some extension, gives an algebraically closed field. -/
 theorem isRealClosed_of_isAlgClosed_adjoin (hR : ¬IsSquare (-1 : R)) {i : K} (hi : i ^ 2 = -1)
     [IsAlgClosed R⟮i⟯] : IsRealClosed R := by
-  have hroot : aeval i (X ^ 2 + 1 : R[X]) = 0 := by simp [hi]
-  have hdeg : (X ^ 2 + 1 : R[X]).natDegree = 2 := by rw [← C_1, natDegree_X_pow_add_C]
-  have hirr : Irreducible (X ^ 2 + 1 : R[X]) := by
-    simpa using (irreducible_X_pow_sub_C_iff_of_prime (K := R) Nat.prime_two (a := -1)).mpr
-      fun b hb => hR ⟨b, by rw [← hb, sq]⟩
-  have hint : IsIntegral R i := ⟨_, monic_X_pow_add_C 1 two_ne_zero, hroot⟩
-  have hmin : minpoly R i = X ^ 2 + 1 :=
-    (minpoly.eq_of_irreducible_of_monic hirr hroot (monic_X_pow_add_C 1 two_ne_zero)).symm
   have : Algebra.IsQuadraticExtension R R⟮i⟯ :=
-    { finrank_eq_two' := by rw [adjoin.finrank hint, hmin, hdeg] }
+    { finrank_eq_two' := TauCeti.IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare
+        (a := -1) (by simpa using hi) hR }
   exact isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := R⟮i⟯)
 
 /-- A field over which `X ^ 2 + 1` is irreducible is real closed exactly when
