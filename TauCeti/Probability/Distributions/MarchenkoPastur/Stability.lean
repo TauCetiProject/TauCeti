@@ -146,18 +146,19 @@ theorem tendsto_resolventTransform_marchenkoPastur_iff_quadratic_tendsto_zero
 
 end ApproximateSolutions
 
-variable {ys : ℕ → ℝ≥0}
+variable {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {ys : ι → ℝ≥0}
 
-/-- Weak convergence to a Marchenko–Pastur law is equivalent to vanishing quadratic residuals
-on an upper-half-plane determining set. The aspect ratio may tend to zero. -/
+/-- Along a countably generated filter, weak convergence to a Marchenko–Pastur law is equivalent
+to vanishing quadratic residuals on an upper-half-plane determining set. The aspect ratio may
+tend to zero. -/
 theorem tendsto_marchenkoPastur_iff_quadratic_tendsto_zero_of_subset_closure
-    {μs : ℕ → ProbabilityMeasure ℝ} {D : Set ℂ} (hy : Tendsto ys atTop (𝓝 y))
+    {μs : ι → ProbabilityMeasure ℝ} {D : Set ℂ} (hy : Tendsto ys l (𝓝 y))
     (hDupper : D ⊆ {z : ℂ | 0 < z.im}) (hD : {z : ℂ | 0 < z.im} ⊆ closure D) :
-    Tendsto μs atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) ↔
+    Tendsto μs l (𝓝 (marchenkoPastur y).toProbabilityMeasure) ↔
       ∀ z ∈ D, Tendsto (fun i ↦
         (ys i : ℂ) * z * (resolventTransform (μs i : Measure ℝ) z *
           resolventTransform (μs i : Measure ℝ) z) +
-        (z + ys i - 1) * resolventTransform (μs i : Measure ℝ) z + 1) atTop (𝓝 0) := by
+        (z + ys i - 1) * resolventTransform (μs i : Measure ℝ) z + 1) l (𝓝 0) := by
   have he (z : ℂ) (hz : z ∈ D) :=
     tendsto_resolventTransform_marchenkoPastur_iff_quadratic_tendsto_zero (hDupper hz) hy
       (Eventually.of_forall fun i ↦ (im_resolventTransform_pos
@@ -172,30 +173,32 @@ theorem tendsto_marchenkoPastur_iff_quadratic_tendsto_zero_of_subset_closure
     intro z hz
     simpa only [Measure.coe_toProbabilityMeasure] using (he z hz).2 (h z hz)
 
-/-- Weak Marchenko–Pastur convergence is equivalent to vanishing quadratic residuals at every
-upper-half-plane parameter. The input measures need not have moments or nonnegative support. -/
+/-- Along a countably generated filter, weak Marchenko–Pastur convergence is equivalent to
+vanishing quadratic residuals at every upper-half-plane parameter. The input measures need not
+have moments or nonnegative support. -/
 theorem tendsto_marchenkoPastur_iff_quadratic_tendsto_zero
-    {μs : ℕ → ProbabilityMeasure ℝ} (hy : Tendsto ys atTop (𝓝 y)) :
-    Tendsto μs atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) ↔
+    {μs : ι → ProbabilityMeasure ℝ} (hy : Tendsto ys l (𝓝 y)) :
+    Tendsto μs l (𝓝 (marchenkoPastur y).toProbabilityMeasure) ↔
       ∀ z : ℂ, 0 < z.im → Tendsto (fun i ↦
         (ys i : ℂ) * z * (resolventTransform (μs i : Measure ℝ) z *
           resolventTransform (μs i : Measure ℝ) z) +
-        (z + ys i - 1) * resolventTransform (μs i : Measure ℝ) z + 1) atTop (𝓝 0) :=
+        (z + ys i - 1) * resolventTransform (μs i : Measure ℝ) z + 1) l (𝓝 0) :=
   tendsto_marchenkoPastur_iff_quadratic_tendsto_zero_of_subset_closure hy Subset.rfl subset_closure
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
-/-- Almost-sure Marchenko–Pastur convergence is equivalent to almost-sure vanishing of each
-residual on a determining set. The set need not be countable and exceptional null sets may
-depend on the spectral parameter. No independence across indices is assumed. -/
+/-- Along a countably generated filter, almost-sure Marchenko–Pastur convergence is equivalent
+to almost-sure vanishing of each residual on a determining set. The set need not be countable and
+exceptional null sets may depend on the spectral parameter. No independence across indices is
+assumed. -/
 theorem ae_tendsto_marchenkoPastur_iff_ae_quadratic_tendsto_zero_of_subset_closure
-    {μs : ℕ → Ω → ProbabilityMeasure ℝ} {D : Set ℂ} (hy : Tendsto ys atTop (𝓝 y))
+    {μs : ι → Ω → ProbabilityMeasure ℝ} {D : Set ℂ} (hy : Tendsto ys l (𝓝 y))
     (hDupper : D ⊆ {z : ℂ | 0 < z.im}) (hD : {z : ℂ | 0 < z.im} ⊆ closure D) :
-    (∀ᵐ ω ∂P, Tendsto (fun i ↦ μs i ω) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure)) ↔
+    (∀ᵐ ω ∂P, Tendsto (fun i ↦ μs i ω) l (𝓝 (marchenkoPastur y).toProbabilityMeasure)) ↔
       ∀ z ∈ D, ∀ᵐ ω ∂P, Tendsto (fun i ↦
         (ys i : ℂ) * z * (resolventTransform (μs i ω : Measure ℝ) z *
           resolventTransform (μs i ω : Measure ℝ) z) +
-        (z + ys i - 1) * resolventTransform (μs i ω : Measure ℝ) z + 1) atTop (𝓝 0) := by
+        (z + ys i - 1) * resolventTransform (μs i ω : Measure ℝ) z + 1) l (𝓝 0) := by
   constructor
   · intro h z hz
     filter_upwards [h] with ω hω
@@ -210,15 +213,16 @@ theorem ae_tendsto_marchenkoPastur_iff_ae_quadratic_tendsto_zero_of_subset_closu
     exact (tendsto_marchenkoPastur_iff_quadratic_tendsto_zero_of_subset_closure
       hy (hED.trans hDupper) hE).2 hω
 
-/-- Almost-sure weak Marchenko–Pastur convergence is equivalent to residuals vanishing almost
-surely at each upper-half-plane parameter. No measurability of the random measures is required. -/
+/-- Along a countably generated filter, almost-sure weak Marchenko–Pastur convergence is equivalent
+to residuals vanishing almost surely at each upper-half-plane parameter. No measurability of the
+random measures is required. -/
 theorem ae_tendsto_marchenkoPastur_iff_ae_quadratic_tendsto_zero
-    {μs : ℕ → Ω → ProbabilityMeasure ℝ} (hy : Tendsto ys atTop (𝓝 y)) :
-    (∀ᵐ ω ∂P, Tendsto (fun i ↦ μs i ω) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure)) ↔
+    {μs : ι → Ω → ProbabilityMeasure ℝ} (hy : Tendsto ys l (𝓝 y)) :
+    (∀ᵐ ω ∂P, Tendsto (fun i ↦ μs i ω) l (𝓝 (marchenkoPastur y).toProbabilityMeasure)) ↔
       ∀ z : ℂ, 0 < z.im → ∀ᵐ ω ∂P, Tendsto (fun i ↦
         (ys i : ℂ) * z * (resolventTransform (μs i ω : Measure ℝ) z *
           resolventTransform (μs i ω : Measure ℝ) z) +
-        (z + ys i - 1) * resolventTransform (μs i ω : Measure ℝ) z + 1) atTop (𝓝 0) :=
+        (z + ys i - 1) * resolventTransform (μs i ω : Measure ℝ) z + 1) l (𝓝 0) :=
   ae_tendsto_marchenkoPastur_iff_ae_quadratic_tendsto_zero_of_subset_closure
     hy Subset.rfl subset_closure
 
