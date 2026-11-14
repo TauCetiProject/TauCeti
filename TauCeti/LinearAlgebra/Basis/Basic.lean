@@ -11,10 +11,10 @@ import Mathlib.LinearAlgebra.StdBasis
 /-!
 # Basic lemmas about bases
 
-A vector whose coordinates in a basis vanish outside a single index is that one coordinate times
-the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`, which it runs
-through in the same direction, for the common situation where what one holds is a bound on the
-support rather than an explicit `Finsupp.single`.
+A vector whose coordinates in a basis vanish outside a finite index set `s` expands as the
+coordinate sum over `s` (`Module.Basis.sum_repr_of_support_subset`); in particular, a vector
+supported on a single index is that one coordinate times the corresponding basis vector
+(`Module.Basis.eq_smul_of_repr_support_subset_singleton`).
 
 The coordinate and linear-map lemmas hold over a semiring of scalars. For a finite integer basis of
 an additive group, we also express an additive map in coordinates. A ring homomorphism's values on
@@ -25,6 +25,8 @@ vectors indexed by `ι`.
 
 ## Main results
 
+* `Module.Basis.sum_repr_of_support_subset`: a vector whose coordinates in a basis are supported on
+  a finite set expands as the coordinate sum over that set.
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
@@ -56,14 +58,22 @@ namespace Module.Basis
 
 variable {ι K V : Type*} [Semiring K] [AddCommMonoid V] [Module K V]
 
+/-- A vector whose coordinates in a basis `b` are supported on a finite set `s` expands as the
+coordinate sum over `s`. -/
+theorem sum_repr_of_support_subset (b : Module.Basis ι K V) {w : V} {s : Finset ι}
+    (h : (b.repr w).support ⊆ s) : ∑ i ∈ s, b.repr w i • b i = w :=
+  calc
+    ∑ i ∈ s, b.repr w i • b i = (b.repr w).sum fun i c ↦ c • b i :=
+      (Finsupp.sum_of_support_subset (b.repr w) h (fun i c ↦ c • b i) fun _ _ ↦ zero_smul _ _).symm
+    _ = Finsupp.linearCombination K b (b.repr w) :=
+      (Finsupp.linearCombination_apply K (b.repr w)).symm
+    _ = w := b.linearCombination_repr w
+
 /-- **A vector whose only possibly nonzero coordinate is the `i`-th one is that coordinate times
 the `i`-th basis vector.** -/
 theorem eq_smul_of_repr_support_subset_singleton (b : Module.Basis ι K V) {w : V} {i : ι}
     (h : (b.repr w).support ⊆ {i}) : w = b.repr w i • b i :=
-  calc w = b.repr.symm (b.repr w) := (b.repr.symm_apply_apply w).symm
-    _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
-        congrArg _ (Finsupp.support_subset_singleton.1 h)
-    _ = b.repr w i • b i := b.repr_symm_single i _
+  (b.sum_repr_of_support_subset h).symm.trans (Finset.sum_singleton _ _)
 
 /-- A linear map carrying one basis to another preserves the corresponding coordinates. -/
 theorem repr_map_eq_of_map_basis

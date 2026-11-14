@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 public import TauCeti.Algebra.Module.Torsion.Subgroup
-import Mathlib.GroupTheory.Finiteness
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.RingTheory.Polynomial.IsIntegral
@@ -145,26 +144,17 @@ and a ring homomorphism `φ : A →+* B`, the coefficients of an element of `B[G
 over `A[G]` are integral over `A`. -/
 theorem isIntegralElem_coeff [Module.IsTorsionFree ℤ G] (φ : A →+* B) {y : AddMonoidAlgebra B G}
     (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) : φ.IsIntegralElem (y.coeff g) := by
-  classical
   obtain ⟨p, hp, hpy⟩ := hy
-  -- Restrict to the finitely generated (hence free) subgroup spanned by `g` and the supports of
-  -- `y` and the coefficients of `p`.
-  let F : Finset G :=
-    insert g (y.coeff.support ∪ p.support.biUnion fun i ↦ (p.coeff i).coeff.support)
-  let H : AddSubgroup G := AddSubgroup.closure (F : Set G)
+  obtain ⟨H, hH, hsH, p₀, hp₀, -, hp₀_monic⟩ :=
+    exists_fg_addSubgroup_lifts (y.coeff.support.finite_toSet.insert g) hp
+  have : H.FG := hH
   obtain ⟨y₀, hy₀⟩ : y ∈ Set.range (mapDomainRingHom B H.subtype) :=
-    (mem_range_mapDomain_iff H.subtype_injective y).mpr fun a ha ↦
-      ⟨⟨a, AddSubgroup.subset_closure (Finset.mem_insert_of_mem (Finset.mem_union_left _ ha))⟩, rfl⟩
-  have hlifts : p ∈ Polynomial.lifts (mapDomainRingHom A H.subtype) :=
-    (mem_lifts_mapDomainRingHom_iff H.subtype_injective p).mpr fun i hi a ha ↦
-      ⟨⟨a, AddSubgroup.subset_closure (Finset.mem_insert_of_mem
-        (Finset.mem_union_right _ (Finset.mem_biUnion.mpr ⟨i, hi, ha⟩)))⟩, rfl⟩
-  obtain ⟨p₀, hp₀, -, hp₀_monic⟩ := lifts_and_natDegree_eq_and_monic hlifts hp
+    (mem_range_mapDomain_iff H.subtype_injective y).mpr fun a ha ↦ ⟨⟨a, hsH (.inr ha)⟩, rfl⟩
   have hy₀_int : (mapRingHom H φ).IsIntegralElem y₀ :=
     RingHom.IsIntegralElem.of_map (g := mapDomainRingHom B H.subtype)
       (mapDomain_injective H.subtype_injective) ⟨p₀, hp₀_monic, by
         rw [← mapRingHom_comp_mapDomainRingHom, ← Polynomial.eval₂_map, hp₀, hy₀, hpy]⟩
-  have hgH : g ∈ H := AddSubgroup.subset_closure (Finset.mem_insert_self g _)
+  have hgH : g ∈ H := hsH (.inl rfl)
   have hcoeff : y.coeff g = y₀.coeff ⟨g, hgH⟩ := by
     rw [← hy₀, mapDomainRingHom_apply, coeff_mapDomain]
     exact Finsupp.mapDomain_apply_of_injective H.subtype_injective y₀.coeff ⟨g, hgH⟩

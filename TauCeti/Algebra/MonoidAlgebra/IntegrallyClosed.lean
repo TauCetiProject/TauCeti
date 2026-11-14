@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Group.UniqueProds.TorsionFree
 public import TauCeti.Algebra.Module.Torsion.Subgroup
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
-import Mathlib.GroupTheory.Finiteness
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 import Mathlib.RingTheory.Finiteness.Defs
@@ -89,31 +88,21 @@ torsion-free abelian group `G` over an integrally closed domain `R` is integrall
 instance isIntegrallyClosed {R G : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
     [AddCommGroup G] [Module.IsTorsionFree ℤ G] :
     IsIntegrallyClosed (AddMonoidAlgebra R G) := by
-  classical
   refine (isIntegrallyClosed_iff (FractionRing (AddMonoidAlgebra R G))).mpr
     fun {z} ⟨p, hp, hpz⟩ ↦ ?_
   obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors (AddMonoidAlgebra R G)) z
-  -- Restrict to the finitely generated (hence free) subgroup spanned by the supports of `a`, `b`
-  -- and the coefficients of `p`.
-  let F : Finset G :=
-    a.coeff.support ∪ b.1.coeff.support ∪ p.support.biUnion fun i ↦ (p.coeff i).coeff.support
-  let H : AddSubgroup G := AddSubgroup.closure (F : Set G)
+  obtain ⟨H, hH, hsH, p₀, hp₀, -, hp₀_monic⟩ := exists_fg_addSubgroup_lifts
+    (a.coeff.support.finite_toSet.union b.1.coeff.support.finite_toSet) hp
+  have : H.FG := hH
   have : IsIntegrallyClosed (AddMonoidAlgebra R H) := isIntegrallyClosed_of_free
   let j : AddMonoidAlgebra R H →+* AddMonoidAlgebra R G := mapDomainRingHom R H.subtype
   have hj : Function.Injective j := mapDomain_injective H.subtype_injective
-  have hlift (w : AddMonoidAlgebra R G) (hw : w.coeff.support ⊆ F) : w ∈ Set.range j :=
-    (mem_range_mapDomain_iff H.subtype_injective w).mpr fun g hg ↦
-      ⟨⟨g, AddSubgroup.subset_closure (hw hg)⟩, rfl⟩
-  obtain ⟨a₀, ha₀⟩ := hlift a (Finset.subset_union_left.trans Finset.subset_union_left)
-  obtain ⟨b₀, hb₀⟩ := hlift b.1 (Finset.subset_union_right.trans Finset.subset_union_left)
+  obtain ⟨a₀, ha₀⟩ : a ∈ Set.range j :=
+    (mem_range_mapDomain_iff H.subtype_injective a).mpr fun g hg ↦ ⟨⟨g, hsH (.inl hg)⟩, rfl⟩
+  obtain ⟨b₀, hb₀⟩ : b.1 ∈ Set.range j :=
+    (mem_range_mapDomain_iff H.subtype_injective b.1).mpr fun g hg ↦ ⟨⟨g, hsH (.inr hg)⟩, rfl⟩
   have hb₀_nzd : b₀ ∈ nonZeroDivisors (AddMonoidAlgebra R H) :=
     mem_nonZeroDivisors_of_injective hj (hb₀.symm ▸ b.2)
-  have hlifts : p ∈ Polynomial.lifts j :=
-    (mem_lifts_mapDomainRingHom_iff H.subtype_injective p).mpr fun i hi g hg ↦
-      ⟨⟨g, AddSubgroup.subset_closure
-        ((Finset.subset_biUnion_of_mem (fun k ↦ (p.coeff k).coeff.support) hi).trans
-          Finset.subset_union_right hg)⟩, rfl⟩
-  obtain ⟨p₀, hp₀, -, hp₀_monic⟩ := Polynomial.lifts_and_natDegree_eq_and_monic hlifts hp
   have hnzd := nonZeroDivisors_le_comap_nonZeroDivisors_of_injective j hj
   let f : FractionRing (AddMonoidAlgebra R H) →+* FractionRing (AddMonoidAlgebra R G) :=
     IsLocalization.map _ j hnzd

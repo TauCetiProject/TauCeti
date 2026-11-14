@@ -19,9 +19,9 @@ forces `n = 0` or `x ∈ t`). Applying saturation to an already `PowSaturated` s
 All declarations are stated multiplicatively and translated with `@[to_additive]` to their
 additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmulSaturation` and
 `Submonoid.mem_powSaturation` becomes `AddSubmonoid.mem_nsmulSaturation`. For an additive submonoid
-`S` of an abelian group `G`, `AddSubmonoid.saturationInfClosureToGroupClosure` embeds the saturation
-of `S` inside `AddSubgroup.closure S` into `AddSubgroup.closure S`, identifying its image with the
-saturation of `AddMonoidHom.mrange S.toGroupClosure`.
+`S` of an abelian group `G`, `AddSubmonoid.nsmulSaturationInfClosureToGroupClosure` embeds the
+saturation of `S` inside `AddSubgroup.closure S` into `AddSubgroup.closure S`, identifying its image
+with the saturation of `AddMonoidHom.mrange S.toGroupClosure`.
 
 ## Main results
 
@@ -40,8 +40,9 @@ saturation of `AddMonoidHom.mrange S.toGroupClosure`.
 * `Submonoid.powSaturation_comap`: saturation commutes with preimage along a monoid homomorphism.
 * `Submonoid.powSaturated_comap_subtype_iff`: for `s ≤ t`, the pullback of `s` to `t` is
   `PowSaturated` iff `s.powSaturation ⊓ t = s`.
-* `AddSubmonoid.saturationInfClosureToGroupClosure` and
-  `AddSubmonoid.mrange_saturationInfClosureToGroupClosure`: the canonical inclusion of
+* `AddSubmonoid.nsmulSaturationInfClosureToGroupClosure`,
+  `AddSubmonoid.mrange_nsmulSaturationInfClosureToGroupClosure`, and
+  `AddSubmonoid.map_nsmulSaturation_mrange_toGroupClosure`: the canonical inclusion of
   `S.nsmulSaturation ⊓ AddSubgroup.closure S` into `AddSubgroup.closure S` and its range.
 -/
 
@@ -182,7 +183,7 @@ variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
 
 /-- The canonical inclusion of `S.nsmulSaturation ⊓ AddSubgroup.closure S` into
 `AddSubgroup.closure S`. -/
-def saturationInfClosureToGroupClosure :
+def nsmulSaturationInfClosureToGroupClosure :
     ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →+
       ↥(AddSubgroup.closure (S : Set G)) :=
   (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype.codRestrict
@@ -190,55 +191,69 @@ def saturationInfClosureToGroupClosure :
 
 /-- The inclusion into `AddSubgroup.closure S` preserves the underlying element of `G`. -/
 @[simp]
-theorem coe_saturationInfClosureToGroupClosure_apply
+theorem coe_nsmulSaturationInfClosureToGroupClosure_apply
     (x : ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :
-    (S.saturationInfClosureToGroupClosure x : G) = x.1 :=
+    (S.nsmulSaturationInfClosureToGroupClosure x : G) = x.1 :=
   (rfl)
 
-/-- The inclusion `S.saturationInfClosureToGroupClosure` is injective. -/
-theorem saturationInfClosureToGroupClosure_injective :
-    Function.Injective S.saturationInfClosureToGroupClosure :=
+/-- The inclusion `S.nsmulSaturationInfClosureToGroupClosure` is injective. -/
+theorem nsmulSaturationInfClosureToGroupClosure_injective :
+    Function.Injective S.nsmulSaturationInfClosureToGroupClosure :=
   ((S.nsmulSaturation ⊓
     (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype.injective_codRestrict _ _).mpr
     (subtype_injective _)
 
-/-- Restricting `S.saturationInfClosureToGroupClosure` to `S` gives `S.toGroupClosure`. -/
+/-- Restricting `S.nsmulSaturationInfClosureToGroupClosure` to `S` gives `S.toGroupClosure`. -/
 @[simp]
-theorem saturationInfClosureToGroupClosure_comp_inclusion :
-    S.saturationInfClosureToGroupClosure.comp
+theorem nsmulSaturationInfClosureToGroupClosure_comp_inclusion :
+    S.nsmulSaturationInfClosureToGroupClosure.comp
         (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) =
       S.toGroupClosure := by
   ext x
   simp
 
-/-- On an element included from `S`, `S.saturationInfClosureToGroupClosure` agrees with
+/-- On an element included from `S`, `S.nsmulSaturationInfClosureToGroupClosure` agrees with
 `S.toGroupClosure`. -/
 @[simp]
-theorem saturationInfClosureToGroupClosure_inclusion (a : S) :
-    S.saturationInfClosureToGroupClosure
+theorem nsmulSaturationInfClosureToGroupClosure_inclusion (a : S) :
+    S.nsmulSaturationInfClosureToGroupClosure
         (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) a) =
       S.toGroupClosure a :=
-  DFunLike.congr_fun S.saturationInfClosureToGroupClosure_comp_inclusion a
+  DFunLike.congr_fun S.nsmulSaturationInfClosureToGroupClosure_comp_inclusion a
 
-/-- As functions, composing `S.saturationInfClosureToGroupClosure` with the inclusion from `S` gives
-`S.toGroupClosure`. -/
+/-- As functions, composing `S.nsmulSaturationInfClosureToGroupClosure` with the inclusion from `S`
+gives `S.toGroupClosure`. -/
 @[simp]
-theorem coe_saturationInfClosureToGroupClosure_comp_inclusion :
-    (S.saturationInfClosureToGroupClosure : _ → _) ∘
+theorem coe_nsmulSaturationInfClosureToGroupClosure_comp_inclusion :
+    (S.nsmulSaturationInfClosureToGroupClosure : _ → _) ∘
         inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) =
       S.toGroupClosure :=
-  funext S.saturationInfClosureToGroupClosure_inclusion
+  funext S.nsmulSaturationInfClosureToGroupClosure_inclusion
 
-/-- Inside `AddSubgroup.closure S`, the image of `S.saturationInfClosureToGroupClosure` is the
+/-- Inside `AddSubgroup.closure S`, the image of `S.nsmulSaturationInfClosureToGroupClosure` is the
 saturation of the image of `S.toGroupClosure`. -/
 @[simp]
-theorem mrange_saturationInfClosureToGroupClosure :
-    AddMonoidHom.mrange S.saturationInfClosureToGroupClosure =
+theorem mrange_nsmulSaturationInfClosureToGroupClosure :
+    AddMonoidHom.mrange S.nsmulSaturationInfClosureToGroupClosure =
       (AddMonoidHom.mrange S.toGroupClosure).nsmulSaturation := by
   refine AddSubmonoid.ext fun ⟨x, hx⟩ ↦ ?_
   rw [S.mrange_toGroupClosure, S.nsmulSaturation_comap, mem_comap, AddMonoidHom.mem_mrange]
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun hxS ↦ ⟨⟨x, hxS, hx⟩, rfl⟩⟩
   have hyx : y.1 = x := by simpa using congrArg Subtype.val hy
   exact hyx ▸ y.2.1
+
+/-- Mapping the saturation of `AddMonoidHom.mrange S.toGroupClosure` back into `G` along
+`(AddSubgroup.closure S).subtype` gives `S.nsmulSaturation ⊓ AddSubgroup.closure S`. -/
+theorem map_nsmulSaturation_mrange_toGroupClosure :
+    ((AddMonoidHom.mrange S.toGroupClosure).nsmulSaturation).map
+        (AddSubgroup.closure (S : Set G)).subtype =
+      S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid := by
+  have hcomp : (AddSubgroup.closure (S : Set G)).subtype.comp
+      S.nsmulSaturationInfClosureToGroupClosure =
+        (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype := by
+    ext x
+    simp
+  rw [← S.mrange_nsmulSaturationInfClosureToGroupClosure, AddMonoidHom.map_mrange, hcomp,
+    mrange_subtype]
 
 end AddSubmonoid

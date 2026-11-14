@@ -49,7 +49,7 @@ if `R` is integrally closed and `S.nsmulSaturation ⊓ L_S = S`.
 
 ## Main definitions
 
-* `AddSubmonoid.saturationInfClosureToFractionRing`: canonical embedding of
+* `AddSubmonoid.nsmulSaturationInfClosureToFractionRing`: canonical embedding of
   `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` into any fraction ring `K` of `R[S]`.
 * `AddSubmonoid.integralClosureEquiv`: `(AddMonoidAlgebra R S)`-algebra isomorphism between
   `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` and `integralClosure (AddMonoidAlgebra R S) K`.
@@ -241,66 +241,97 @@ variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G) (R : Type*) [CommRing
 
 /-- The canonical ring homomorphism from `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` into any
 fraction ring `K` of `R[S]`. -/
-noncomputable def saturationInfClosureToFractionRing
+noncomputable def nsmulSaturationInfClosureToFractionRing
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K] :
     AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →+*
       K :=
   (S.groupClosureToFractionRing R K).comp
-    (mapDomainRingHom R S.saturationInfClosureToGroupClosure)
+    (mapDomainRingHom R S.nsmulSaturationInfClosureToGroupClosure)
 
-/-- `S.saturationInfClosureToFractionRing R K` factors through `R[AddSubgroup.closure S]`. -/
-theorem saturationInfClosureToFractionRing_apply
+/-- `S.nsmulSaturationInfClosureToFractionRing R K` factors through `R[AddSubgroup.closure S]`. -/
+theorem nsmulSaturationInfClosureToFractionRing_apply
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K]
     (x : AddMonoidAlgebra R
       ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :
-    S.saturationInfClosureToFractionRing R K x =
-      S.groupClosureToFractionRing R K (mapDomain S.saturationInfClosureToGroupClosure x) :=
+    S.nsmulSaturationInfClosureToFractionRing R K x =
+      S.groupClosureToFractionRing R K (mapDomain S.nsmulSaturationInfClosureToGroupClosure x) :=
   (rfl)
 
-/-- Restricting `S.saturationInfClosureToFractionRing R K` to `R[S]` recovers
+/-- Restricting `S.nsmulSaturationInfClosureToFractionRing R K` to `R[S]` recovers
 `algebraMap R[S] K`. -/
 @[simp]
-theorem saturationInfClosureToFractionRing_comp_inclusion
+theorem nsmulSaturationInfClosureToFractionRing_comp_inclusion
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K] :
-    (S.saturationInfClosureToFractionRing R K).comp
+    (S.nsmulSaturationInfClosureToFractionRing R K).comp
         (mapDomainRingHom R (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) =
       algebraMap (AddMonoidAlgebra R S) K := by
-  rw [saturationInfClosureToFractionRing, RingHom.comp_assoc, ← mapDomainRingHom_comp,
-    S.saturationInfClosureToGroupClosure_comp_inclusion,
+  rw [nsmulSaturationInfClosureToFractionRing, RingHom.comp_assoc, ← mapDomainRingHom_comp,
+    S.nsmulSaturationInfClosureToGroupClosure_comp_inclusion,
     S.groupClosureToFractionRing_comp_mapDomainRingHom]
 
-/-- On elements pushed forward from `R[S]`, `S.saturationInfClosureToFractionRing R K` agrees with
-`algebraMap R[S] K`. -/
+/-- On elements pushed forward from `R[S]`, `S.nsmulSaturationInfClosureToFractionRing R K` agrees
+with `algebraMap R[S] K`. -/
 @[simp]
-theorem saturationInfClosureToFractionRing_mapDomain_inclusion
+theorem nsmulSaturationInfClosureToFractionRing_mapDomain_inclusion
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K] (x : AddMonoidAlgebra R S) :
-    S.saturationInfClosureToFractionRing R K
+    S.nsmulSaturationInfClosureToFractionRing R K
         (mapDomain (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) x) =
       algebraMap (AddMonoidAlgebra R S) K x :=
-  RingHom.congr_fun (S.saturationInfClosureToFractionRing_comp_inclusion R K) x
+  RingHom.congr_fun (S.nsmulSaturationInfClosureToFractionRing_comp_inclusion R K) x
 
-/-- On monomials included from `S`, `S.saturationInfClosureToFractionRing R K` agrees with
+/-- On monomials included from `S`, `S.nsmulSaturationInfClosureToFractionRing R K` agrees with
 `algebraMap R[S] K`. -/
 @[simp]
-theorem saturationInfClosureToFractionRing_single_inclusion
+theorem nsmulSaturationInfClosureToFractionRing_single_inclusion
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K] (a : S) (r : R) :
-    S.saturationInfClosureToFractionRing R K
+    S.nsmulSaturationInfClosureToFractionRing R K
         (single (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) a) r) =
       algebraMap (AddMonoidAlgebra R S) K (single a r) := by
-  rw [← mapDomain_single, S.saturationInfClosureToFractionRing_mapDomain_inclusion R K]
+  rw [← mapDomain_single, S.nsmulSaturationInfClosureToFractionRing_mapDomain_inclusion R K]
 
 /-- The canonical homomorphism `R[S.nsmulSaturation ⊓ AddSubgroup.closure S] →+* K` is injective. -/
-theorem saturationInfClosureToFractionRing_injective
+theorem nsmulSaturationInfClosureToFractionRing_injective
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K] :
-    Function.Injective (S.saturationInfClosureToFractionRing R K) :=
+    Function.Injective (S.nsmulSaturationInfClosureToFractionRing R K) :=
   (S.groupClosureToFractionRing_injective R K).comp
-    (mapDomain_injective S.saturationInfClosureToGroupClosure_injective)
+    (mapDomain_injective S.nsmulSaturationInfClosureToGroupClosure_injective)
+
+private theorem isScalarTower_nsmulSaturationInfClosure_groupClosure
+    (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
+    [IsFractionRing (AddMonoidAlgebra R S) K] :
+    letI := (mapDomainRingHom R S.nsmulSaturationInfClosureToGroupClosure).toAlgebra
+    letI := (S.groupClosureToFractionRing R K).toAlgebra
+    letI := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
+    IsScalarTower
+      (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
+      (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K := by
+  let := (mapDomainRingHom R S.nsmulSaturationInfClosureToGroupClosure).toAlgebra
+  let := (S.groupClosureToFractionRing R K).toAlgebra
+  let := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
+  refine IsScalarTower.of_algebraMap_eq fun x ↦ ?_
+  simp only [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
+    S.nsmulSaturationInfClosureToFractionRing_apply]
+
+private theorem isScalarTower_nsmulSaturationInfClosure_fractionRing
+    (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
+    [IsFractionRing (AddMonoidAlgebra R S) K] :
+    letI := (mapDomainRingHom R
+      (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+    letI := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
+    IsScalarTower (AddMonoidAlgebra R S)
+      (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
+      K :=
+  let := (mapDomainRingHom R
+    (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+  let := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
+  IsScalarTower.of_algebraMap_eq'
+    (S.nsmulSaturationInfClosureToFractionRing_comp_inclusion R K).symm
 
 end GroupClosureLocalization
 
@@ -352,18 +383,18 @@ theorem isIntegrallyClosedIn_iff_nsmulSaturated [Nontrivial R] [IsReduced R] :
 algebra of the subgroup generated by `S`. -/
 theorem isIntegralClosure_nsmulSaturation_inf_closure_groupClosure [IsReduced R] :
     letI := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-    letI := (mapDomainRingHom R S.saturationInfClosureToGroupClosure).toAlgebra
+    letI := (mapDomainRingHom R S.nsmulSaturationInfClosureToGroupClosure).toAlgebra
     IsIntegralClosure
       (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
       (AddMonoidAlgebra R S)
       (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) := by
   let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  let := (mapDomainRingHom R S.saturationInfClosureToGroupClosure).toAlgebra
-  refine ⟨mapDomain_injective S.saturationInfClosureToGroupClosure_injective, fun {x} ↦ ?_⟩
+  let := (mapDomainRingHom R S.nsmulSaturationInfClosureToGroupClosure).toAlgebra
+  refine ⟨mapDomain_injective S.nsmulSaturationInfClosureToGroupClosure_injective, fun {x} ↦ ?_⟩
   rw [IsIntegral, RingHom.algebraMap_toAlgebra, isIntegralElem_iff_forall_mem_support,
-    ← S.mrange_saturationInfClosureToGroupClosure, RingHom.algebraMap_toAlgebra]
+    ← S.mrange_nsmulSaturationInfClosureToGroupClosure, RingHom.algebraMap_toAlgebra]
   simp only [mapDomainRingHom_apply, ← Set.mem_range,
-    mem_range_mapDomain_iff S.saturationInfClosureToGroupClosure_injective,
+    mem_range_mapDomain_iff S.nsmulSaturationInfClosureToGroupClosure_injective,
     AddMonoidHom.mem_mrange]
 
 /-- **The integral closure of a semigroup algebra in its fraction field.** For a submonoid `S` of a
@@ -373,14 +404,14 @@ ring `K` of `R[S]`. -/
 theorem isIntegralClosure_nsmulSaturation_inf_closure [IsDomain R] [IsIntegrallyClosed R]
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
     [IsFractionRing (AddMonoidAlgebra R S) K] :
-    letI := (S.saturationInfClosureToFractionRing R K).toAlgebra
+    letI := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
     IsIntegralClosure
       (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
       (AddMonoidAlgebra R S) K := by
   let := (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  let := (mapDomainRingHom R S.saturationInfClosureToGroupClosure).toAlgebra
+  let := (mapDomainRingHom R S.nsmulSaturationInfClosureToGroupClosure).toAlgebra
   let := (S.groupClosureToFractionRing R K).toAlgebra
-  let := (S.saturationInfClosureToFractionRing R K).toAlgebra
+  let := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
   have : IsFractionRing (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K :=
     S.isFractionRing_addMonoidAlgebra_groupClosure R K
   have : IsIntegrallyClosedIn (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K :=
@@ -388,10 +419,7 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure [IsDomain R] [IsIntegrally
   have : IsScalarTower (AddMonoidAlgebra R S)
       (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K :=
     IsScalarTower.of_algebraMap_eq' (S.groupClosureToFractionRing_comp_mapDomainRingHom R K).symm
-  have : IsScalarTower
-      (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
-      (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K :=
-    IsScalarTower.of_algebraMap_eq' rfl
+  have := S.isScalarTower_nsmulSaturationInfClosure_groupClosure R K
   have := S.isIntegralClosure_nsmulSaturation_inf_closure_groupClosure R
   exact IsIntegralClosure.of_isIntegralClosure_of_isIntegrallyClosedIn
     (AddMonoidAlgebra R S)
@@ -410,18 +438,15 @@ noncomputable def integralClosureEquiv [IsDomain R] [IsIntegrallyClosed R]
       ≃ₐ[AddMonoidAlgebra R S] integralClosure (AddMonoidAlgebra R S) K := by
   let := (mapDomainRingHom R
     (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  let := (S.saturationInfClosureToFractionRing R K).toAlgebra
-  have : IsScalarTower (AddMonoidAlgebra R S)
-      (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
-      K :=
-    IsScalarTower.of_algebraMap_eq' (S.saturationInfClosureToFractionRing_comp_inclusion R K).symm
+  let := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
+  have := S.isScalarTower_nsmulSaturationInfClosure_fractionRing R K
   have := S.isIntegralClosure_nsmulSaturation_inf_closure R K
   exact IsIntegralClosure.equiv (AddMonoidAlgebra R S)
     (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
     K (integralClosure (AddMonoidAlgebra R S) K)
 
 /-- In the ambient fraction ring `K`, `S.integralClosureEquiv R K` acts by
-`S.saturationInfClosureToFractionRing R K`. -/
+`S.nsmulSaturationInfClosureToFractionRing R K`. -/
 @[simp]
 theorem coe_integralClosureEquiv_apply [IsDomain R] [IsIntegrallyClosed R]
     (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
@@ -430,14 +455,11 @@ theorem coe_integralClosureEquiv_apply [IsDomain R] [IsIntegrallyClosed R]
       ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :
     letI := (mapDomainRingHom R
       (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-    ((S.integralClosureEquiv R K x) : K) = S.saturationInfClosureToFractionRing R K x := by
+    ((S.integralClosureEquiv R K x) : K) = S.nsmulSaturationInfClosureToFractionRing R K x := by
   let := (mapDomainRingHom R
     (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  let := (S.saturationInfClosureToFractionRing R K).toAlgebra
-  have : IsScalarTower (AddMonoidAlgebra R S)
-      (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
-      K :=
-    IsScalarTower.of_algebraMap_eq' (S.saturationInfClosureToFractionRing_comp_inclusion R K).symm
+  let := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
+  have := S.isScalarTower_nsmulSaturationInfClosure_fractionRing R K
   have := S.isIntegralClosure_nsmulSaturation_inf_closure R K
   exact IsIntegralClosure.algebraMap_equiv (AddMonoidAlgebra R S)
     (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
@@ -468,7 +490,7 @@ theorem isIntegrallyClosed_addMonoidAlgebra_iff [IsDomain R] :
   refine ⟨fun _ ↦ ⟨.of_addMonoidAlgebra R S, S.nsmulSaturation_inf_closure_eq R⟩,
     fun ⟨_, hS⟩ ↦ ?_⟩
   let K := FractionRing (AddMonoidAlgebra R S)
-  let := (S.saturationInfClosureToFractionRing R K).toAlgebra
+  let := (S.nsmulSaturationInfClosureToFractionRing R K).toAlgebra
   have := S.isIntegralClosure_nsmulSaturation_inf_closure R K
   refine (isIntegrallyClosed_iff K).mpr fun {z} hz ↦ ?_
   obtain ⟨y, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := AddMonoidAlgebra R
@@ -477,7 +499,7 @@ theorem isIntegrallyClosed_addMonoidAlgebra_iff [IsDomain R] :
       (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) :=
     fun t ↦ ⟨⟨t.1, hS.le t.2⟩, rfl⟩
   obtain ⟨x, rfl⟩ := mapDomain_surjective (R := R) hsurj y
-  exact ⟨x, (S.saturationInfClosureToFractionRing_mapDomain_inclusion R K x).symm⟩
+  exact ⟨x, (S.nsmulSaturationInfClosureToFractionRing_mapDomain_inclusion R K x).symm⟩
 
 /-- Over an integrally closed domain `R`, a semigroup algebra `R[S]` is integrally closed if and
 only if `S` is saturated inside `AddSubgroup.closure S`. -/
