@@ -92,14 +92,14 @@ theorem OrderLE.summable_divisor_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
     rw [heq]
     simp [MeromorphicOn.divisor_const]
 
-/-- The zeros of an entire function of order less than two, nonzero at the origin, are
-inverse-square summable with their natural multiplicities. This is the summability hypothesis of
-the genus-one product `TauCeti.divisorProductOne`. -/
+/-- The zeros of an entire function of order less than two are inverse-square summable with their
+natural multiplicities. This is the summability hypothesis of the genus-one product
+`TauCeti.divisorProductOne`. -/
 theorem OrderLE.summable_divisor_toNat_mul_norm_inv_sq {f : ℂ → ℂ} {A : ℝ} (h : OrderLE f A)
-    (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (hA : A < 2) :
+    (hf : Differentiable ℂ f) (hA : A < 2) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
-  refine (h.summable_divisor_mul_norm_rpow hf hf0 hA).congr fun ρ ↦ ?_
+  refine (h.summable_divisor_mul_norm_rpow hf hA).congr fun ρ ↦ ?_
   have hd := MeromorphicOn.AnalyticOnNhd.divisor_nonneg (U := Set.univ)
     (fun z _ ↦ hf.analyticAt z) ρ
   rw [norm_inv, inv_pow, Real.rpow_neg (norm_nonneg _), Real.rpow_two]
