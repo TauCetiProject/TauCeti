@@ -66,11 +66,16 @@ along straight lines. Over the closed unit ball, the radial deformation
 ## Main results
 
 * `TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero`,
-  `TauCeti.TopCat.singularHomologyPreimageNeZeroIso`: the relative homology of `E` modulo the part
-  over `K ∖ {0}`.
+  `TauCeti.TopCat.singularHomologyPreimageNeZeroIso`,
+  `TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_naturality`,
+  `TauCeti.TopCat.singularHomologyPreimageNeZeroIso_inv_naturality`: the relative homology of `E`
+  modulo the part over `K ∖ {0}`, and its naturality in maps over `K`.
 * `TauCeti.TopCat.isZero_singularHomology_preimage_sphere`,
-  `TauCeti.TopCat.singularHomologyPreimageSphereIso`: the relative homology of `E` modulo the part
-  over the boundary sphere, for a Serre fibration over the closed unit ball.
+  `TauCeti.TopCat.singularHomologyPreimageSphereIso`,
+  `TauCeti.TopCat.singularHomologyPreimageSphereIso_hom_naturality`,
+  `TauCeti.TopCat.singularHomologyPreimageSphereIso_inv_naturality`: the relative homology of `E`
+  modulo the part over the boundary sphere, for a Serre fibration over the closed unit ball, and
+  its naturality in maps over the ball.
 
 ## References
 
@@ -160,6 +165,68 @@ private def botIso (p : E ⟶ _root_.TopCat.of K) :
     simp only [mem_preimage, mem_ofPred_eq, mem_compl_iff, SetLike.mem_coe, Submodule.mem_bot]
     rfl
 
+private lemma emptyIso_inv (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V) ∈ K) (n : ℕ) :
+    (emptyIso R hp hK h₀ n).inv =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+        (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map ≫
+      (pair p (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n :=
+  (rfl)
+
+private lemma emptyIso_hom_naturality {E' : _root_.TopCat.{u}} {p' : E' ⟶ _root_.TopCat.of K}
+    (hp : serreFibrations p) (hp' : serreFibrations p') (hK : Convex ℝ K) (h₀ : (0 : V) ∈ K)
+    {f : E ⟶ E'} (hf : ∀ e, p' (f e) = p e)
+    {f₀ : _root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0}) ⟶
+      _root_.TopCat.of (p' ⁻¹' {x : K | (x : V) = 0})}
+    (hf₀ : ∀ x, (f₀ x : E') = f x.1) (n : ℕ) :
+    (emptyIso R hp hK h₀ n).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map f₀ =
+      TopPair.singularHomologyMap
+        (subspaceComplPairMap (q := proj p) (q' := proj p') f
+          (fun e ↦ congrArg Subtype.val (hf e)) ⊤)
+        (ModuleCat.of R R) n ≫ (emptyIso R hp' hK h₀ n).hom := by
+  rw [← Iso.comp_inv_eq, Category.assoc, ← Iso.eq_inv_comp]
+  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)
+  let ι := (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map
+  let ι' := (TopPair.ofSubset (p' ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map
+  have hcomm : f₀ ≫ ι' = ι ≫ f := _root_.TopCat.ext hf₀
+  have h₁ : H.map f₀ ≫ H.map ι' = H.map ι ≫ H.map f :=
+    (H.map_comp _ _).symm.trans ((congrArg H.map hcomm).trans (H.map_comp _ _))
+  have h₂ : H.map f ≫ (pair p' ⊤).singularHomologyπ (ModuleCat.of R R) n =
+      (pair p ⊤).singularHomologyπ (ModuleCat.of R R) n ≫
+        TopPair.singularHomologyMap
+          (subspaceComplPairMap (q := proj p) (q' := proj p') f
+            (fun e ↦ congrArg Subtype.val (hf e)) ⊤) (ModuleCat.of R R) n :=
+    (congrArg (fun g ↦ SSet.homologyMap (TopCat.toSSet.map g) (ModuleCat.of R R) n ≫
+        (pair p' ⊤).singularHomologyπ (ModuleCat.of R R) n)
+      (subspaceComplPairMap_fst (q := proj p) (q' := proj p') f
+        (fun e ↦ congrArg Subtype.val (hf e)) ⊤).symm).trans
+      (TopPair.singularHomologyπ_naturality
+        (subspaceComplPairMap (q := proj p) (q' := proj p') f
+          (fun e ↦ congrArg Subtype.val (hf e)) ⊤) (ModuleCat.of R R) n)
+  exact (congrArg (H.map f₀ ≫ ·) (emptyIso_inv R hp' hK h₀ n)).trans
+    ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h₁).trans
+      ((Category.assoc _ _ _).trans ((congrArg (H.map ι ≫ ·) h₂).trans
+        ((Category.assoc _ _ _).symm.trans
+          (congrArg (· ≫ _) (emptyIso_inv R hp hK h₀ n).symm))))))
+
+private lemma botIso_hom_naturality {E' : _root_.TopCat.{u}} {p' : E' ⟶ _root_.TopCat.of K}
+    {f : E ⟶ E'} (hf : ∀ e, p' (f e) = p e)
+    (hm : MapsTo f (p ⁻¹' {x : K | (x : V) ≠ 0}) (p' ⁻¹' {x : K | (x : V) ≠ 0})) :
+    (botIso p).hom ≫
+        subspaceComplPairMap (q := proj p) (q' := proj p') f
+          (fun e ↦ congrArg Subtype.val (hf e)) ⊥ =
+      TopPair.ofSubsetMap f hm ≫ (botIso p').hom := by
+  have h : subspaceComplPairMap (q := proj p) (q' := proj p') f
+        (fun e ↦ congrArg Subtype.val (hf e)) (⊥ : Submodule ℝ V) =
+      TopPair.ofSubsetMap f fun e he ↦ by
+        change (p' (f e) : V) ∈ ((⊥ : Submodule ℝ V) : Set V)ᶜ
+        rw [hf e]
+        exact he :=
+    subspaceComplPairMap_eq_ofSubsetMap _ _ _ _
+  simp only [botIso, h, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+
 end SerreDisk
 
 open SerreDisk
@@ -195,6 +262,48 @@ def singularHomologyPreimageNeZeroIso (hp : serreFibrations p) (hK : Convex ℝ 
     subspaceComplPairSingularHomologyIso (ModuleCat.of R R) (proj p) (isZero_half R hp hK hK₀)
       (finrank ℝ V) ⊥ (by simp) n m h ≪≫
     emptyIso R hp hK (mem_of_mem_nhds hK₀) n
+
+/-- **Naturality of `singularHomologyPreimageNeZeroIso` in maps over the base.** Let `p : E ⟶ K`
+and `p' : E' ⟶ K` be Serre fibrations over a convex neighbourhood `K` of `0` in `V`, and let
+`f : E ⟶ E'` satisfy `p' ∘ f = p`. Then `singularHomologyPreimageNeZeroIso` intertwines the map
+induced by `f` on `Hₘ(E, p⁻¹(K ∖ {0}); R)` with the map induced by `f` on `Hₙ(p⁻¹(0); R)`. -/
+@[reassoc]
+theorem singularHomologyPreimageNeZeroIso_hom_naturality {E' : _root_.TopCat.{u}}
+    {p' : E' ⟶ _root_.TopCat.of K} (hp : serreFibrations p) (hp' : serreFibrations p')
+    (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) {f : E ⟶ E'} (hf : ∀ e, p' (f e) = p e)
+    (hm : MapsTo f (p ⁻¹' {x : K | (x : V) ≠ 0}) (p' ⁻¹' {x : K | (x : V) ≠ 0}))
+    {f₀ : _root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0}) ⟶
+      _root_.TopCat.of (p' ⁻¹' {x : K | (x : V) = 0})}
+    (hf₀ : ∀ x, (f₀ x : E') = f x.1) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    TopPair.singularHomologyMap (TopPair.ofSubsetMap f hm) (ModuleCat.of R R) m ≫
+        (singularHomologyPreimageNeZeroIso R hp' hK hK₀ n m h).hom =
+      (singularHomologyPreimageNeZeroIso R hp hK hK₀ n m h).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map f₀ := by
+  simp only [singularHomologyPreimageNeZeroIso, Iso.trans_hom, asIso_hom, Category.assoc]
+  rw [emptyIso_hom_naturality R hp hp' hK (mem_of_mem_nhds hK₀) hf hf₀ n,
+    subspaceComplPairSingularHomologyIso_hom_naturality_assoc (ModuleCat.of R R)
+      (isZero_half R hp hK hK₀) (isZero_half R hp' hK hK₀) f
+      (fun e ↦ congrArg Subtype.val (hf e)),
+    ← TopPair.singularHomologyMap_comp_assoc (botIso p).hom, botIso_hom_naturality hf hm,
+    TopPair.singularHomologyMap_comp_assoc]
+
+/-- The inverse of `singularHomologyPreimageNeZeroIso` is natural in maps over the base. -/
+@[reassoc]
+theorem singularHomologyPreimageNeZeroIso_inv_naturality {E' : _root_.TopCat.{u}}
+    {p' : E' ⟶ _root_.TopCat.of K} (hp : serreFibrations p) (hp' : serreFibrations p')
+    (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) {f : E ⟶ E'} (hf : ∀ e, p' (f e) = p e)
+    (hm : MapsTo f (p ⁻¹' {x : K | (x : V) ≠ 0}) (p' ⁻¹' {x : K | (x : V) ≠ 0}))
+    {f₀ : _root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0}) ⟶
+      _root_.TopCat.of (p' ⁻¹' {x : K | (x : V) = 0})}
+    (hf₀ : ∀ x, (f₀ x : E') = f x.1) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    (singularHomologyPreimageNeZeroIso R hp hK hK₀ n m h).inv ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap f hm) (ModuleCat.of R R) m =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map f₀ ≫
+        (singularHomologyPreimageNeZeroIso R hp' hK hK₀ n m h).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
+  exact singularHomologyPreimageNeZeroIso_hom_naturality R hp hp' hK hK₀ hf hm hf₀ n m h
 
 section Sphere
 
@@ -277,6 +386,71 @@ def singularHomologyPreimageSphereIso (hp : serreFibrations p) (n m : ℕ)
   @asIso _ _ _ _ _ (isIso_totalToOuter R hp m) ≪≫
     singularHomologyPreimageNeZeroIso R hp (convex_closedBall 0 1)
       (closedBall_mem_nhds 0 one_pos) n m h
+
+private lemma singularHomologyPreimageSphereIso_hom (hp : serreFibrations p) (n m : ℕ)
+    (h : n + finrank ℝ V = m) :
+    (singularHomologyPreimageSphereIso R hp n m h).hom =
+      TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap (𝟙 E) fun _ hx ↦
+          preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V)) hx)
+        (ModuleCat.of R R) m ≫
+      (singularHomologyPreimageNeZeroIso R hp (convex_closedBall 0 1)
+        (closedBall_mem_nhds 0 one_pos) n m h).hom := by
+  change TopPair.singularHomologyMap (TopTriple.totalToOuter.app _) _ m ≫ _ = _
+  rw [TopTriple.totalToOuter_app_ofSubset]
+  rfl
+
+/-- **Naturality of `singularHomologyPreimageSphereIso` in maps over the closed unit ball.** Let
+`p : E ⟶ Dʳ` and `p' : E' ⟶ Dʳ` be Serre fibrations over the closed unit ball of `V`, and let
+`f : E ⟶ E'` satisfy `p' ∘ f = p`. Then `singularHomologyPreimageSphereIso` intertwines the map
+induced by `f` on `Hₘ(E, p⁻¹(Sʳ⁻¹); R)` with the map induced by `f` on `Hₙ(p⁻¹(0); R)`. -/
+@[reassoc]
+theorem singularHomologyPreimageSphereIso_hom_naturality {E' : _root_.TopCat.{u}}
+    {p' : E' ⟶ _root_.TopCat.of (closedBall (0 : V) 1)} (hp : serreFibrations p)
+    (hp' : serreFibrations p') {f : E ⟶ E'} (hf : ∀ e, p' (f e) = p e)
+    (hm : MapsTo f (p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1})
+      (p' ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1}))
+    {f₀ : _root_.TopCat.of (p ⁻¹' {x | (x : V) = 0}) ⟶
+      _root_.TopCat.of (p' ⁻¹' {x | (x : V) = 0})}
+    (hf₀ : ∀ x, (f₀ x : E') = f x.1) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    TopPair.singularHomologyMap (TopPair.ofSubsetMap f hm) (ModuleCat.of R R) m ≫
+        (singularHomologyPreimageSphereIso R hp' n m h).hom =
+      (singularHomologyPreimageSphereIso R hp n m h).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map f₀ := by
+  have hm_ne : MapsTo f (p ⁻¹' {x | (x : V) ≠ 0}) (p' ⁻¹' {x | (x : V) ≠ 0}) :=
+    fun e he ↦ by simpa [hf e] using he
+  have houter : TopPair.ofSubsetMap f hm ≫
+        TopPair.ofSubsetMap (𝟙 E') (fun _ hx ↦
+          preimage_mono (f := p') (unitSphere_subset_puncturedBall (V := V)) hx) =
+      TopPair.ofSubsetMap (𝟙 E) (fun _ hx ↦
+          preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V)) hx) ≫
+        TopPair.ofSubsetMap f hm_ne :=
+    TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
+      ((Category.comp_id f).trans (Category.id_comp f).symm)
+  rw [singularHomologyPreimageSphereIso_hom, singularHomologyPreimageSphereIso_hom,
+    ← TopPair.singularHomologyMap_comp_assoc, houter, TopPair.singularHomologyMap_comp_assoc,
+    singularHomologyPreimageNeZeroIso_hom_naturality R hp hp' (convex_closedBall 0 1)
+      (closedBall_mem_nhds 0 one_pos) hf hm_ne hf₀ n m h, Category.assoc]
+
+/-- The inverse of `singularHomologyPreimageSphereIso` is natural in maps over the closed unit
+ball. -/
+@[reassoc]
+theorem singularHomologyPreimageSphereIso_inv_naturality {E' : _root_.TopCat.{u}}
+    {p' : E' ⟶ _root_.TopCat.of (closedBall (0 : V) 1)} (hp : serreFibrations p)
+    (hp' : serreFibrations p') {f : E ⟶ E'} (hf : ∀ e, p' (f e) = p e)
+    (hm : MapsTo f (p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1})
+      (p' ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1}))
+    {f₀ : _root_.TopCat.of (p ⁻¹' {x | (x : V) = 0}) ⟶
+      _root_.TopCat.of (p' ⁻¹' {x | (x : V) = 0})}
+    (hf₀ : ∀ x, (f₀ x : E') = f x.1) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    (singularHomologyPreimageSphereIso R hp n m h).inv ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap f hm) (ModuleCat.of R R) m =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map f₀ ≫
+        (singularHomologyPreimageSphereIso R hp' n m h).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
+  exact singularHomologyPreimageSphereIso_hom_naturality R hp hp' hf hm hf₀ n m h
 
 end Sphere
 
