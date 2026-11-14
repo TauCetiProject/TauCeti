@@ -202,12 +202,19 @@ instance : SMul ℝ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 instance : SMul ℕ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 instance : SMul ℤ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 
+/-- The `L¹` class of the zero BV class is zero. -/
 @[simp] theorem toL1_zero : (0 : BV μ Ω).toL1 = 0 := (rfl)
+/-- The `L¹` class of a sum of BV classes is the sum of the `L¹` classes. -/
 @[simp] theorem toL1_add (u v : BV μ Ω) : (u + v).toL1 = u.toL1 + v.toL1 := (rfl)
+/-- The `L¹` class of the negative of a BV class is the negative of its `L¹` class. -/
 @[simp] theorem toL1_neg (u : BV μ Ω) : (-u).toL1 = -u.toL1 := (rfl)
+/-- The `L¹` class of a difference of BV classes is the difference of the `L¹` classes. -/
 @[simp] theorem toL1_sub (u v : BV μ Ω) : (u - v).toL1 = u.toL1 - v.toL1 := (rfl)
+/-- The `L¹` class of a real multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_smul (c : ℝ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
+/-- The `L¹` class of a natural multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_nsmul (c : ℕ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
+/-- The `L¹` class of an integer multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_zsmul (c : ℤ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
 
 instance : AddCommGroup (BV μ Ω) :=
@@ -296,6 +303,7 @@ def toL1CLM : BV μ Ω →L[ℝ] (E →₁[μ.restrict Ω] ℝ) :=
       intro u
       simpa using norm_toL1_le u)
 
+/-- The continuous linear inclusion `toL1CLM` agrees with `toL1` on every BV class. -/
 @[simp]
 theorem toL1CLM_apply (u : BV μ Ω) : toL1CLM u = u.toL1 := (rfl)
 
