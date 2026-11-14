@@ -32,7 +32,7 @@ The second fact is what makes coordinates with respect to a moving family of lin
 independent vectors depend continuously on the base point, as in the local trivializations of a
 subbundle spanned by local frames.
 
-Inversion is also continuous along a continuous family of invertible operators between normed
+Inversion is also continuous along a continuous family of invertible operators between seminormed
 spaces without completeness, even when continuity and invertibility hold only near one point.
 This gives continuity of quotient-range coordinates for families of valid splittings.
 
@@ -47,7 +47,7 @@ This gives continuity of quotient-range coordinates for families of valid splitt
 * `ContinuousAt.clm_inverse_of_eventually_isInvertible`: inversion preserves continuity at a point
   where the family is eventually invertible, without completeness.
 * `Continuous.clm_inverse`: inversion is continuous along a continuous family
-  of invertible operators between normed spaces, with no completeness assumption.
+  of invertible operators between seminormed spaces, with no completeness assumption.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
 -/
@@ -64,8 +64,7 @@ namespace ContinuousLinearMap
 
 variable {G : Type*} [TopologicalSpace G] [AddCommGroup G] [Module 𝕜 G] [IsTopologicalAddGroup G]
   [ContinuousSMul 𝕜 G]
-  {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [IsTopologicalAddGroup F]
-  [ContinuousSMul 𝕜 F] [T2Space F]
+  {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module 𝕜 F] [T2Space F]
 
 /-- Over `ℝ` or `ℂ`, a continuous linear map `f` of finite rank (for instance, one out of a
 finite-dimensional space) from a topological vector space into a Hausdorff locally convex
@@ -75,6 +74,9 @@ opposite direction with `f ∘ g ∘ f = f`. This is the continuous counterpart 
 theorem exists_comp_comp_eq_self [IsRCLikeNormedField 𝕜] [PolynormableSpace 𝕜 F]
     (f : G →L[𝕜] F) [FiniteDimensional 𝕜 f.range] : ∃ g : F →L[𝕜] G, f ∘L g ∘L f = f := by
   let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  -- Mathlib's Hahn–Banach lemma below assumes `IsTopologicalAddGroup F`, which follows from
+  -- `PolynormableSpace 𝕜 F` but is not found by instance search.
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜 F
   -- A continuous projection `p` onto the range, followed by a continuous right inverse `σ` of
   -- `f` on its range, which is finite-dimensional.
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional f.range
@@ -99,7 +101,7 @@ end ContinuousLinearMap
 /-- Inversion preserves continuity at a point of an eventually invertible operator family,
 without completeness of either space. -/
 theorem ContinuousAt.clm_inverse_of_eventually_isInvertible {X E F : Type*} [TopologicalSpace X]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : X → E →L[𝕜] F} {x₀ : X} (hf : ContinuousAt f x₀)
     (h : ∀ᶠ y in 𝓝 x₀, (f y).IsInvertible) :
     ContinuousAt (fun x => (f x).inverse) x₀ := by
@@ -139,7 +141,7 @@ theorem ContinuousAt.clm_inverse_of_eventually_isInvertible {X E F : Type*} [Top
 /-- Inversion is continuous along a continuous family of invertible operators, without
 completeness of either space. -/
 theorem Continuous.clm_inverse {X E F : Type*} [TopologicalSpace X]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : X → E →L[𝕜] F} (hf : Continuous f) (h : ∀ x, (f x).IsInvertible) :
     Continuous (fun x => (f x).inverse) :=
   continuous_iff_continuousAt.mpr fun _ =>
