@@ -32,6 +32,9 @@ eigenvector of each of its powers.
 The `σ`-sesquilinear form `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` of a matrix `Q` scales by `σ c * c` along a
 line.
 
+A scaled rank-one perturbation `1 - c v wᵀ` of the identity, such as a Householder reflection,
+sends `x` to `x - c v (w ⬝ᵥ x)`.
+
 ## Main results
 
 * `TauCeti.mulVec_mulVec_eq_zero_of_pow_two_eq_zero`: a square-zero matrix annihilates every
@@ -48,6 +51,8 @@ line.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ` sends `x` to
+  `x - c v (w ⬝ᵥ x)`.
 -/
 
 public section
@@ -119,6 +124,18 @@ theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matri
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
+
+section Algebra
+
+variable {R α : Type*} [CommRing R] [Ring α] [Algebra R α] [DecidableEq n]
+
+/-- The matrix `1 - c v wᵀ` sends `x` to `x - c v (w ⬝ᵥ x)`, with the scalar `w ⬝ᵥ x` acting on
+the right of `v`. -/
+theorem one_sub_smul_vecMulVec_mulVec (c : R) (v w x : n → α) :
+    (1 - c • vecMulVec v w) *ᵥ x = x - c • MulOpposite.op (w ⬝ᵥ x) • v := by
+  rw [sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec]
+
+end Algebra
 
 section OrderedSemiring
 
