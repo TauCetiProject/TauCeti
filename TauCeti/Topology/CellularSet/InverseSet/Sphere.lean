@@ -54,7 +54,7 @@ applies. The fibre `A` is cellular by exchanging `p` and `q`.
 * `TauCeti.isCellularSet_closedBall_inter_preimage`: **Brown's theorem on inverse sets**: the only
   inverse set of a map of an `n`-cell into `Sⁿ` is cellular.
 * `TauCeti.isCellularSet_preimage_singleton_of_injOn`: **Brown's theorem on two inverse sets**:
-  if a map of `Sⁿ`, `n ≥ 2`, onto itself is injective off its fibres over `p ≠ q`, its fibre over
+  if a map of `Sⁿ`, `n ≥ 1`, onto itself is injective off its fibres over `p ≠ q`, its fibre over
   `q` is cellular (and, exchanging `p` and `q`, so is its fibre over `p`).
 
 ## References
@@ -258,12 +258,12 @@ private theorem exists_continuousOn_injOn_preimage_singleton [FiniteDimensional 
     exact (hki hqs (hgQ hx) h').symm
   · rw [hφ (h ▸ hpq.symm), h]
 
-/-- **Brown's theorem on two inverse sets.** Let `E` be a real normed space of dimension `n ≥ 2`,
+/-- **Brown's theorem on two inverse sets.** Let `E` be a real normed space of dimension `n ≥ 1`,
 and let `g` be a continuous surjection of the unit sphere `Sⁿ` of a real inner product space of
 dimension `n + 1` onto itself. Suppose that `g` is injective off the fibres over two points
 `p ≠ q`, so that these are its only inverse sets. Then the fibre over `q` is cellular; exchanging
 `p` and `q`, so is the fibre over `p`. -/
-theorem isCellularSet_preimage_singleton_of_injOn (hn : 2 ≤ finrank ℝ E)
+theorem isCellularSet_preimage_singleton_of_injOn (hn : 1 ≤ finrank ℝ E)
     (hEF : finrank ℝ F = finrank ℝ E + 1) (hg : Continuous g) (hgs : Surjective g) (hpq : p ≠ q)
     (hinj : InjOn g (g ⁻¹' {p, q})ᶜ) : IsCellularSet E (g ⁻¹' {q}) := by
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
