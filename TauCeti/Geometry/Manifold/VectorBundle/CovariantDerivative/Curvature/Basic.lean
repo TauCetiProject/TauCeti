@@ -36,6 +36,8 @@ of a connection on the tangent bundle.
   vector-field arguments.
 * `CovariantDerivative.contMDiff_curvatureOperator`: a smooth connection has smooth
   curvature on smooth fields and sections.
+* `CovariantDerivative.covariantDerivative_curvatureOperator`: for a smooth connection, the
+  covariant derivative of `R(X, Y) σ` is `∇ (∇_X (∇_Y σ)) - ∇ (∇_Y (∇_X σ)) - ∇ (∇_[X, Y] σ)`.
 * `CovariantDerivative.curvatureOperator_smul_first`,
   `CovariantDerivative.curvatureOperator_smul_second`, and
   `CovariantDerivative.curvatureOperator_smul_section`: curvature is linear over smooth
@@ -209,6 +211,41 @@ theorem contMDiff_curvatureOperator
   exact ((cov.contMDiff_apply hX hYσ).sub_section
     (cov.contMDiff_apply hY hXσ)).sub_section
       (cov.contMDiff_apply (contMDiff_mlieBracket hX hY) hσ)
+
+/-- For smooth vector fields `B`, `C` and a smooth section `σ`, the covariant derivative of the
+curvature section `R(B, C) σ` at `x` expands, as a continuous linear map on the tangent space, into
+`∇ (∇_B (∇_C σ)) - ∇ (∇_C (∇_B σ)) - ∇ (∇_[B, C] σ)`. -/
+theorem covariantDerivative_curvatureOperator
+    {B C : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
+    (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    cov (curvatureOperator cov B C σ) x =
+      cov (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) x -
+        cov (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) x -
+          cov (fun y ↦ cov σ y (mlieBracket I B C y)) x := by
+  have hCσ := cov.contMDiff_apply hC hσ
+  have hBσ := cov.contMDiff_apply hB hσ
+  have hBC := cov.contMDiff_apply hB hCσ
+  have hCB := cov.contMDiff_apply hC hBσ
+  have hbrσ := cov.contMDiff_apply (contMDiff_mlieBracket hB hC) hσ
+  rw [← cov.isCovariantDerivativeOnUniv.sub (hBC.mdifferentiable (by simp) x)
+      (hCB.mdifferentiable (by simp) x),
+    ← cov.isCovariantDerivativeOnUniv.sub ((hBC.sub_section hCB).mdifferentiable (by simp) x)
+      (hbrσ.mdifferentiable (by simp) x)]
+  -- `R(B, C) σ` is by definition the difference of the three sections.
+  rfl
+
+/-- For smooth vector fields `B`, `C` and a smooth section `σ`, the covariant derivative of the
+curvature section `R(B, C) σ` along a tangent vector `v` at `x` expands as
+`∇_v (R(B, C) σ) = ∇_v (∇_B (∇_C σ)) - ∇_v (∇_C (∇_B σ)) - ∇_v (∇_[B, C] σ)`. -/
+theorem covariantDerivative_curvatureOperator_apply
+    {B C : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
+    (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) (hσ : CMDiff ∞ (T% σ)) (x : M)
+    (v : TangentSpace I x) :
+    cov (curvatureOperator cov B C σ) x v =
+      cov (fun y ↦ cov (fun y ↦ cov σ y (C y)) y (B y)) x v -
+        cov (fun y ↦ cov (fun y ↦ cov σ y (B y)) y (C y)) x v -
+          cov (fun y ↦ cov σ y (mlieBracket I B C y)) x v := by
+  rw [cov.covariantDerivative_curvatureOperator hB hC hσ x, sub_apply, sub_apply]
 
 variable {cov}
   {X X' Y Y' : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x} {f : M → ℝ}
