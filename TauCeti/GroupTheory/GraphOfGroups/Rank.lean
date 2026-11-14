@@ -162,23 +162,22 @@ namespace TauCeti.GraphOfGroups.π₁Tree
 universe v w x
 
 variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
-  [∀ a, Subsingleton (𝔸.vertexGroup a)] (T : (SerreGraph.rose α).SpanningTree)
+  [∀ a, Subsingleton (𝔸.vertexGroup a)] (T : Set (SerreGraph.rose α).E) [IsEmpty T]
 
 /-- The fundamental group of a graph of groups with trivial vertex groups over a rose is
 finitely generated exactly when the rose has finitely many petals. -/
-theorem fg_rose_iff_finite : Group.FG (π₁Tree 𝔸 T.darts) ↔ Finite α :=
+theorem fg_rose_iff_finite : Group.FG (π₁Tree 𝔸 T) ↔ Finite α :=
   (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 T)).fg_iff_finite
 
 /-- The fundamental group of a graph of groups with trivial vertex groups over a rose with
 finitely many petals is finitely generated. -/
-instance [Finite α] : Group.FG (π₁Tree 𝔸 T.darts) :=
+instance [Finite α] : Group.FG (π₁Tree 𝔸 T) :=
   (fg_rose_iff_finite 𝔸 T).2 inferInstance
 
 /-- The fundamental group of a graph of groups with trivial vertex groups over a rose, when
 finitely generated, has rank the number of petals: for the rose with `n` petals it is free of
 rank `n`. -/
-theorem rank_rose [Group.FG (π₁Tree 𝔸 T.darts)] :
-    Group.rank (π₁Tree 𝔸 T.darts) = Nat.card α :=
+theorem rank_rose [Group.FG (π₁Tree 𝔸 T)] : Group.rank (π₁Tree 𝔸 T) = Nat.card α :=
   (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 T)).rank_eq_nat_card
 
 end TauCeti.GraphOfGroups.π₁Tree

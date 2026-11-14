@@ -34,7 +34,7 @@ virtual characters induced from `p`-elementary subgroups.
   single `v`; `TauCeti.pow_eq_pow_iff_of_coprime'` and
   `TauCeti.nsmul_eq_nsmul_iff_of_coprime'` specialize this to commutative groups.
 * `Commute.zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow` and its additive form
-  `AddCommute.zsmul_add_zsmul_zsmul_eq_of_zsmul_eq_zsmul`: the explicit common root for integer
+  `AddCommute.zsmul_zsmul_add_zsmul_eq_of_zsmul_eq_zsmul`: the explicit common root for integer
   exponents: if `x ^ m = y ^ n` and `u * m + v * n = 1`, then `x ^ v * y ^ u` is an `n`-th root of
   `x`, and, exchanging `x` and `y`, an `m`-th root of `y`.
 * `TauCeti.mem_of_forall_prime_exists_pow_mem` and its additive form
@@ -94,7 +94,8 @@ theorem pow_eq_pow_iff_of_coprime' {G : Type*} [CommGroup G] {x y : G} {m n : �
 /-- **The common root from a Bézout identity.** If commuting elements `x` and `y` of a group
 satisfy `x ^ m = y ^ n` for integers `m` and `n`, and `u * m + v * n = 1`, then `x ^ v * y ^ u` is
 an `n`-th root of `x`. Exchanging `x` and `y` shows that it is also an `m`-th root of `y`. -/
-@[to_additive /-- **The common division from a Bézout identity.** If commuting elements `x` and
+@[to_additive AddCommute.zsmul_zsmul_add_zsmul_eq_of_zsmul_eq_zsmul
+/-- **The common division from a Bézout identity.** If commuting elements `x` and
 `y` of an additive group satisfy `m • x = n • y` for integers `m` and `n`, and
 `u * m + v * n = 1`, then `n • (v • x + u • y) = x`. -/]
 theorem _root_.Commute.zpow_mul_zpow_zpow_eq_of_zpow_eq_zpow {G : Type*} [Group G] {x y : G}
