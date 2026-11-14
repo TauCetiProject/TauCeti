@@ -38,7 +38,7 @@ local notation "B" => ModelWithCorners.boundary (I := (𝓡∂ (1 + 1))) D
 local notation "S" => (sphereDiffeomorphBoundaryClosedBall (E := ℂ) (n := 1) :
   Circle ≃ₘ^ω⟮𝓡 1, 𝓡 1⟯ B)
 
-local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D (by simp)
+local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D
 
 private theorem exp_pi_eq_exp_neg_pi : Circle.exp π = Circle.exp (-π) := by
   convert Circle.periodic_exp (-π) using 1
@@ -190,8 +190,7 @@ private theorem exists_unitDiskBoundaryLoop_tangentEquiv (z : EuclideanSpace ℝ
       (by simp)
   have hA : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) A (q t) :=
     ((contMDiff_subtypeVal_closedBall (n := 2) (k := 1)).comp
-      (isSmoothEmbedding_subtypeVal_boundary (n := 1) D
-        (by simp : (1 : ℕ∞ω) ≠ 0)).contMDiff).mdifferentiableAt
+      (isSmoothEmbedding_subtypeVal_boundary (n := 1) (k := 1) D).contMDiff).mdifferentiableAt
       one_ne_zero
   let L : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ) (𝓡 1) q t
   have hL : (show EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ from
@@ -266,8 +265,8 @@ theorem exists_unitDiskBoundaryLoop_positive_tangentEquiv
           (mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun y : B ↦ y.val.val) x w) := by
     have h := mfderiv_comp x
       ((contMDiff_subtypeVal_closedBall (n := 2) (k := 1)).mdifferentiableAt one_ne_zero)
-      ((isSmoothEmbedding_subtypeVal_boundary (n := 1) D
-        (by simp : (1 : ℕ∞ω) ≠ 0)).contMDiff.mdifferentiableAt one_ne_zero)
+      ((isSmoothEmbedding_subtypeVal_boundary (n := 1) (k := 1) D).contMDiff.mdifferentiableAt
+        one_ne_zero)
     have hF := subtypeValClosedBallTangentEquiv_toContinuousLinearMap (n := 2) x.val
     have hh := congrArg (fun T ↦ T w) h
     calc

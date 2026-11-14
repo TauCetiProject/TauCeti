@@ -49,8 +49,7 @@ theorem tangentCoordChange_normal_nonneg {α β x : M}
   have hz (γ : M) (hγ : x ∈ (extChartAt I γ).source) : (extChartAt I γ x) 0 = 0 := by
     have hc : x ∈ (chartAt (EuclideanHalfSpace (n + 1)) γ).source := by
       simpa only [extChartAt_source] using hγ
-    have hb := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-      one_ne_zero (chart_mem_atlas _ γ) hc).mp hx
+    have hb := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hc).mp hx
     simpa only [I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
       modelWithCornersEuclideanHalfSpace_toFun] using hb
   have hy0 : y 0 = 0 := hz α hα

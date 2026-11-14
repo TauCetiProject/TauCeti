@@ -37,7 +37,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 local instance boundaryRestriction_isManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- Restricting a pulled-back form to the actual boundary is pullback along the restricted map. -/
 theorem boundaryRestriction_mpullback {E' H' N : Type*}
@@ -48,7 +48,7 @@ theorem boundaryRestriction_mpullback {E' H' N : Type*}
       mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J
         (fun x : (𝓡∂ (n + 1)).boundary M ↦ f x) φ := by
   rw [boundaryRestriction_eq_mpullback]
-  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 1) M one_ne_zero).contMDiff
+  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 1) M).contMDiff
     |>.mdifferentiable one_ne_zero
   exact (mpullback_comp hinc hf φ).symm
 
@@ -132,9 +132,9 @@ theorem boundaryRestriction_mextDeriv [IsManifold (𝓡∂ (n + 1)) 2 M]
     {φ : RoughForm (𝓡∂ (n + 1)) M F k} (hφ : IsSmoothForm (𝓡∂ (n + 1)) 1 φ) :
     boundaryRestriction (mextDeriv φ) = mextDeriv (boundaryRestriction φ) := by
   have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 2
-      ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M (by norm_num : (2 : ℕ∞ω) ≠ 0)
+      ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
   simpa only [boundaryRestriction_eq_mpullback] using mpullback_mextDeriv
-    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 2) M (by norm_num)).contMDiff
+    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := 2) M).contMDiff
     ((isSmoothBundleForm_def 1 φ).mpr hφ.contMDiff)
 
 end Boundary

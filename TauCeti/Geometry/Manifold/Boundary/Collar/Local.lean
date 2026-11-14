@@ -492,7 +492,7 @@ neighbourhood basis.
 
 This is the local half of the collar neighbourhood theorem; the global statement patches these
 boxes along the whole boundary. -/
-theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
+theorem exists_isProductCollarChart_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (φ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1))
       (V : Set (EuclideanSpace ℝ (Fin n))) (ε : ℝ),
@@ -503,7 +503,7 @@ theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
   -- the boundary point is read in the collar chart as a point of the zero slice
   have hx0 : (collarChart e x).2 = 0 :=
     EuclideanHalfSpace.eq_zero_iff.2
-      ((mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hk (chart_mem_atlas _ x) hxe).1 hx)
+      ((mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hxe).1 hx)
   have hxt : ((collarChart e x).1, (collarChart e x).2) ∈ (collarChart e).target :=
     (collarChart e).map_source hxs
   -- shrink an ambient box to a box of the form `V × [0, ε)`
@@ -540,19 +540,20 @@ theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
     exact (contMDiffOn_collarChart_symm (IsManifold.chart_mem_maximalAtlas x)).mono hBsub
   · intro y hy
     rw [hcoe]
-    exact mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hk (chart_mem_atlas _ x) (hsub hy)
+    exact mem_boundary_iff_collarChart_snd_apply_zero_eq_zero (hsub hy)
 
-/-- **A local collar neighbourhood of a boundary point.** Every boundary point of a `C^k`
-manifold with boundary, `k ≠ 0`, has an open neighbourhood `U` homeomorphic to the product of its
-part `U ∩ ∂M` of the boundary with a half-open interval `[0, ε)`.
+/-- **A local collar neighbourhood of a boundary point.** Every boundary point of a charted
+space modeled on a Euclidean half-space has an open neighbourhood `U` homeomorphic to the product
+of its part `U ∩ ∂M` of the boundary with a half-open interval `[0, ε)`.
 
 This is the local collar; the collar neighbourhood theorem is the statement that the `U` can be
 taken to be a single neighbourhood of the whole boundary, with `U ∩ ∂M = ∂M`. -/
-theorem exists_homeomorph_prod_Ico_of_mem_boundary (hk : k ≠ 0) {x : M}
+theorem exists_homeomorph_prod_Ico_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (U : Set M) (ε : ℝ), IsOpen U ∧ x ∈ U ∧ 0 < ε ∧
       Nonempty (↥U ≃ₜ ↥(U ∩ (𝓡∂ (n + 1)).boundary M) × ↥(Set.Ico (0 : ℝ) ε)) := by
-  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary hk hx
+  -- Take `k = 0`: every charted space is a `C^0` manifold, so no smoothness of `M` is assumed.
+  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) hx
   exact ⟨φ.source, ε, φ.open_source, hxφ, h.height_pos,
     ⟨h.homeomorphProd.trans
       ((Homeomorph.refl _).prodCongr (EuclideanHalfSpace.homeomorphNormalIio ε))⟩⟩

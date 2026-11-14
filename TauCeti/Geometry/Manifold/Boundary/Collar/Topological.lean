@@ -12,7 +12,7 @@ public import TauCeti.Topology.Instances.Real.IcoScale
 /-!
 # The topological collar of the boundary of a manifold
 
-Let `M` be a `C^k` manifold with boundary modelled on the half-space `𝓡∂ (n + 1)`, with `k ≠ 0`.
+Let `M` be a charted space modelled on the half-space `𝓡∂ (n + 1)`.
 Every boundary point has a product collar chart
 (`TauCeti.exists_isProductCollarChart_of_mem_boundary`), whose source is homeomorphic to its part
 of the boundary times a half-open interval
@@ -26,7 +26,9 @@ When the boundary is compact and `M` is Hausdorff, Brown's collaring theorem
 (`TauCeti.IsLocallyCollared.isCollared`) assembles these local collars into a single collar: an
 open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`
 (`TauCeti.isCollared_subtypeVal_boundary`). This holds in particular for compact `M`, whose
-boundary is closed (`TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`).
+boundary is closed by invariance of domain
+(`ModelWithCorners.isClosed_boundary_of_finiteDimensional`,
+`TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`).
 
 The collar is only a topological one. It is what comparisons of the relative homology
 `H_*(M, ∂M)` with the homology of `M` relative to an open neighbourhood of the boundary use, for
@@ -37,12 +39,12 @@ smooth collar, a diffeomorphism onto its image, is a stronger statement not trea
 
 * `TauCeti.IsProductCollarChart.exists_isCollar`: the boundary points of the source of a product
   collar chart have a collar meeting the boundary only at depth zero.
-* `TauCeti.isLocallyCollared_subtypeVal_boundary`: the boundary of a `C^k` manifold, `k ≠ 0`, is
-  locally collared.
-* `TauCeti.isCollared_subtypeVal_boundary`: a compact boundary of a Hausdorff `C^k` manifold,
-  `k ≠ 0`, is collared.
+* `TauCeti.isLocallyCollared_subtypeVal_boundary`: the boundary of a charted space over the
+  half-space is locally collared.
+* `TauCeti.isCollared_subtypeVal_boundary`: a compact boundary of a Hausdorff charted space over the
+  half-space is collared.
 * `TauCeti.isCollared_subtypeVal_boundary_of_compactSpace`: the boundary of a compact Hausdorff
-  `C^k` manifold, `k ≠ 0`, is collared.
+  charted space over the half-space is collared.
 
 ## References
 
@@ -129,33 +131,31 @@ theorem exists_isCollar (h : IsProductCollarChart k φ V ε) :
 
 end IsProductCollarChart
 
-variable [IsManifold (𝓡∂ (n + 1)) k M]
-
-/-- **The boundary of a manifold is locally collared.** For a `C^k` manifold with boundary,
-`k ≠ 0`, every boundary point has an open neighbourhood in the boundary with a collar in `M` whose
+/-- **The boundary of a manifold is locally collared.** For a charted space over the half-space,
+every boundary point has an open neighbourhood in the boundary with a collar in `M` whose
 points of positive depth are interior points: the local collar of a product collar chart. -/
-theorem isLocallyCollared_subtypeVal_boundary (hk : k ≠ 0) :
+theorem isLocallyCollared_subtypeVal_boundary :
     IsLocallyCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) := by
   refine isLocallyCollared_iff.2 fun x ↦ ?_
-  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary hk x.2
+  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) x.2
   obtain ⟨c, hc, hc0⟩ := h.exists_isCollar
   exact ⟨h.sourceBoundaryOpens, h.sourceBoundaryOpens.isOpen, h.mem_sourceBoundaryOpens.2 hxφ,
     c, hc,
     fun p ⟨y, hy⟩ ↦ hc0 p (hy ▸ y.2)⟩
 
-/-- **The collar of a compact boundary.** If the boundary of a Hausdorff `C^k` manifold, `k ≠ 0`,
-is compact, then it is collared: there is an open embedding `c : ∂M × [0, 1) → M` with
+/-- **The collar of a compact boundary.** If the boundary of a Hausdorff charted space over the
+half-space is compact, then it is collared: there is an open embedding `c : ∂M × [0, 1) → M` with
 `c (x, 0) = x`. This is Brown's collaring theorem applied to the local collars. -/
-theorem isCollared_subtypeVal_boundary (hk : k ≠ 0) [T2Space M]
+theorem isCollared_subtypeVal_boundary [T2Space M]
     (hK : IsCompact ((𝓡∂ (n + 1)).boundary M)) :
     IsCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) :=
   have := isCompact_iff_compactSpace.1 hK
-  (isLocallyCollared_subtypeVal_boundary hk).isCollared Subtype.val_injective
+  isLocallyCollared_subtypeVal_boundary.isCollared Subtype.val_injective
 
-/-- **The boundary of a compact manifold is collared.** For a compact Hausdorff `C^k` manifold
-with boundary, `k ≠ 0`, there is an open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`. -/
-theorem isCollared_subtypeVal_boundary_of_compactSpace (hk : k ≠ 0) [CompactSpace M] [T2Space M] :
+/-- **The boundary of a compact manifold is collared.** For a compact Hausdorff charted space over
+the half-space, there is an open embedding `c : ∂M × [0, 1) → M` with `c (x, 0) = x`. -/
+theorem isCollared_subtypeVal_boundary_of_compactSpace [CompactSpace M] [T2Space M] :
     IsCollared ((↑) : (𝓡∂ (n + 1)).boundary M → M) :=
-  isCollared_subtypeVal_boundary hk ((𝓡∂ (n + 1)).isClosed_boundary hk).isCompact
+  isCollared_subtypeVal_boundary (𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional.isCompact
 
 end TauCeti
