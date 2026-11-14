@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GCDMonoid.Finset
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -37,6 +38,10 @@ span.
   integral kernel.
 * `Submodule.toLp_mem_realSpan_iff`: the rational points of `V.realSpan` are the points of `V`.
 * `Submodule.mem_intPoints_of_smul_mem`: the integral points of `V` are saturated in `ℤ^ι`.
+* `Submodule.gcd_eq_one_of_mem_intPoints`: a primitive integral point of `V` has coprime
+  coordinates.
+* `Submodule.gcd_intPointsEquivIntLattice_symm_eq_one`: a primitive vector of `V.intLattice`
+  corresponds to an integral point of `V` with coprime coordinates.
 * `Submodule.linearIndependent_intCast_basis_intPoints`,
   `Submodule.span_intCast_basis_intPoints`: a `ℤ`-basis of the integral points of `V` is a
   `ℚ`-basis of `V`.
@@ -90,6 +95,21 @@ theorem mem_intPoints_of_smul_mem {V : Submodule ℚ (ι → ℚ)} {c : ℤ} {z 
   ext i
   simp [hc]
 
+/-- **A primitive integral point has coprime coordinates.** If an integral point `z` of `V` is not
+a proper integral multiple of another integral point of `V`, the gcd of its coordinates is `1`:
+dividing `z` by that gcd `g` gives an integral point `y` of `V` with `g • y = z`, by saturation. -/
+theorem gcd_eq_one_of_mem_intPoints [Fintype ι] {V : Submodule ℚ (ι → ℚ)} {z : ι → ℤ}
+    (hz : z ∈ V.intPoints) (hprim : ∀ y ∈ V.intPoints, ∀ c : ℤ, c • y = z → IsUnit c) :
+    Finset.univ.gcd z = 1 := by
+  choose y hy using fun j ↦ Finset.gcd_dvd (f := z) (Finset.mem_univ j)
+  set g := Finset.univ.gcd z
+  have hgy : g • y = z := funext fun j ↦ (hy j).symm
+  have hg : g ≠ 0 := fun h ↦ not_isUnit_zero <| hprim 0 (zero_mem _) 0 <| by
+    rw [zero_smul]
+    exact (funext fun j ↦ Finset.gcd_eq_zero_iff.1 h j (Finset.mem_univ j)).symm
+  exact Finset.normalize_gcd.symm.trans
+    (normalize_eq_one.2 (hprim y (mem_intPoints_of_smul_mem hg (hgy ▸ hz)) g hgy))
+
 /-- The coordinatewise inclusion of `ℚ^ι` in the Euclidean space `ℝ^ι`. -/
 private def ratCastEuclidean (ι : Type*) : (ι → ℚ) →ₗ[ℚ] EuclideanSpace ℝ ι :=
   (WithLp.linearEquiv 2 ℚ (ι → ℝ)).symm.toLinearMap ∘ₗ (Algebra.linearMap ℚ ℝ).compLeft ι
@@ -136,6 +156,8 @@ def intLattice (V : Submodule ℚ (ι → ℚ)) : Submodule ℤ V.realSpan where
 theorem mem_intLattice {V : Submodule ℚ (ι → ℚ)} {w : V.realSpan} :
     w ∈ V.intLattice ↔ ∀ i, ∃ z : ℤ, (w : EuclideanSpace ℝ ι) i = z :=
   Iff.rfl
+
+section FiniteIndex
 
 variable [Finite ι]
 
@@ -352,6 +374,22 @@ theorem intCast_intPointsEquivIntLattice_symm_apply (V : Submodule ℚ (ι → �
       ((w : V.realSpan) : EuclideanSpace ℝ ι) i := by
   conv_rhs => rw [← V.intPointsEquivIntLattice.apply_symm_apply w,
     coe_intPointsEquivIntLattice_apply]
+
+end FiniteIndex
+
+/-- **A primitive lattice vector has coprime coordinates.** If a point `x` of `V.intLattice` is not
+a proper integral multiple of another lattice point, the gcd of the coordinates of the
+corresponding integral point of `V` is `1`. This is `gcd_eq_one_of_mem_intPoints` transported
+along `V.intPointsEquivIntLattice`. -/
+theorem gcd_intPointsEquivIntLattice_symm_eq_one [Fintype ι] (V : Submodule ℚ (ι → ℚ))
+    {x : V.intLattice}
+    (hprim : ∀ y ∈ V.intLattice, ∀ c : ℤ, c • y = (x : V.realSpan) → IsUnit c) :
+    Finset.univ.gcd ((V.intPointsEquivIntLattice.symm x : V.intPoints) : ι → ℤ) = 1 := by
+  refine gcd_eq_one_of_mem_intPoints (V.intPointsEquivIntLattice.symm x).2 fun y hy c hc ↦ ?_
+  have h : c • (⟨y, hy⟩ : V.intPoints) = V.intPointsEquivIntLattice.symm x := Subtype.ext hc
+  refine hprim _ (V.intPointsEquivIntLattice ⟨y, hy⟩).2 c ?_
+  rw [← Submodule.coe_smul_of_tower, ← V.intPointsEquivIntLattice.map_smul, h,
+    LinearEquiv.apply_symm_apply]
 
 end Submodule
 
