@@ -14,7 +14,7 @@ import TauCeti.Analysis.Normed.Module.DoubleDual
 
 A real or complex seminormed space is reflexive if and only if its closed unit ball is
 weakly compact. More generally, every norm-closed bounded real-convex set in a reflexive space is
-weakly compact. This rests on `TauCeti.isCompact_closure_toWeakSpace` from
+weakly compact. This rests on `TauCeti.isCompact_closure_toWeakSpace_of_isBounded` from
 `TauCeti.Analysis.Normed.Module.DoubleDual`: over any proper nontrivially normed field, every
 bounded set in a reflexive space has weakly compact closure.
 
@@ -71,7 +71,7 @@ theorem isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
     IsCompact (toWeakSpace 𝕜 E '' s) := by
   have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
   rw [← hclosed.closure_eq, hconv.toWeakSpace_closure 𝕜]
-  exact isCompact_closure_toWeakSpace hE hbound
+  exact isCompact_closure_toWeakSpace_of_isBounded hE hbound
 
 /-- Every closed ball in a reflexive seminormed space is weakly compact, including balls
 of zero or negative radius. -/
