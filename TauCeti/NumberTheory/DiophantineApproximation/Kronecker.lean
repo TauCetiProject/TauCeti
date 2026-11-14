@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
-public import TauCeti.LinearAlgebra.LinearIndependent.Rat
 import TauCeti.Algebra.Module.ZLattice.DenseSubgroup
 
 /-!
@@ -21,7 +20,8 @@ even with the multiplier `y` a positive integer as large as we please.
 
 The hypothesis is stated as the absence of integer relations;
 `TauCeti.linearIndependent_rat_option_one_iff` and `TauCeti.linearIndependent_rat_finCons_one_iff`
-translate it to linear independence of `1, α₁, …, αₙ` over `ℚ`.
+(in `TauCeti.LinearAlgebra.LinearIndependent.Rat`, which this file does not import) translate it
+to linear independence of `1, α₁, …, αₙ` over `ℚ`.
 
 This is the inhomogeneous companion of Dirichlet's theorem (`TauCeti.simultaneous_dirichlet`),
 which approximates the target `θ = 0` with an explicit rate and needs no hypothesis on `α`.
