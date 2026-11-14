@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
+public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport
 public import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
@@ -30,13 +30,20 @@ The typical family is the skeleta of a relative CW complex, which absorb its com
 this gives the twisted homology of an infinite-dimensional complex as a colimit over its skeleta.
 
 The maps `subsetTwistedChainComplexMap` induced by inclusions of subsets are monomorphisms and
-compose as the inclusions do, so they form the diagram over the family.
+compose as the inclusions do (`TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap_self`,
+`TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap_comp_subsetTwistedChainComplexMap`),
+so they form the diagram over the family.
+
+For `V = X` the homology statement is
+`TauCeti.LocalCoefficientSystem.isColimitSubsetTwistedHomologyCocone`, proved elementwise on
+homology classes. Here the colimit is first established for the chain complexes, relative to an
+arbitrary subset `V`, which is the form needed for the skeleta of a relative CW complex inside its
+ambient space.
 
 ## Main definitions and results
 
-* `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap_self`,
-  `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap_comp_subsetTwistedChainComplexMap`:
-  functoriality of the maps induced by inclusions of subsets.
+* `TauCeti.LocalCoefficientSystem.mono_subsetTwistedChainComplexMap`: the maps induced by
+  inclusions of subsets are monomorphisms.
 * `TauCeti.LocalCoefficientSystem.exists_subsetTwistedChainComplexMap_f_eq`: every twisted chain
   of `V` comes from a member of a family absorbing the compact subsets of `V`.
 * `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexDiagram`,
@@ -44,8 +51,8 @@ compose as the inclusions do, so they form the diagram over the family.
   a monotone family of subsets, with the restricted systems, over the twisted chains of `V`.
 * `TauCeti.LocalCoefficientSystem.isColimitSubsetTwistedChainComplexCocone`: when the family is
   directed and absorbs the compact subsets of `V`, the twisted chains of `V` are their colimit.
-* `TauCeti.LocalCoefficientSystem.isColimitSubsetTwistedHomologyCocone`: twisted singular homology
-  of `V` is then the colimit of twisted singular homology of the members.
+* `TauCeti.LocalCoefficientSystem.isColimitSubsetTwistedHomologyMapCocone`: twisted singular
+  homology of `V` is then the colimit of twisted singular homology of the members.
 
 ## References
 
@@ -80,25 +87,6 @@ lemma twistedChainComplexMap_f_subsetTwistedChainComplexMap_f_apply {A B : Set X
 instance mono_subsetTwistedChainComplexMap {A B : Set X} (h : A ⊆ B) :
     Mono (subsetTwistedChainComplexMap L h) :=
   mono_of_mono_fac (subsetTwistedChainComplexMap_twistedChainComplexMap L h)
-
-/-- The identity inclusion induces the identity of twisted chains. -/
-@[simp]
-lemma subsetTwistedChainComplexMap_self (A : Set X) :
-    subsetTwistedChainComplexMap L (subset_refl A) = 𝟙 _ := by
-  rw [← cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L),
-    subsetTwistedChainComplexMap_twistedChainComplexMap, Category.id_comp]
-
-/-- The maps of twisted chains induced by two successive inclusions compose to the map induced by
-the composite inclusion. -/
-@[reassoc (attr := simp)]
-lemma subsetTwistedChainComplexMap_comp_subsetTwistedChainComplexMap {A B C : Set X}
-    (hAB : A ⊆ B) (hBC : B ⊆ C) :
-    subsetTwistedChainComplexMap L hAB ≫ subsetTwistedChainComplexMap L hBC =
-      subsetTwistedChainComplexMap L (hAB.trans hBC) := by
-  rw [← cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal C)) L),
-    Category.assoc, subsetTwistedChainComplexMap_twistedChainComplexMap,
-    subsetTwistedChainComplexMap_twistedChainComplexMap,
-    subsetTwistedChainComplexMap_twistedChainComplexMap]
 
 variable {ι : Type*} {U : ι → Set X} {V : Set X} (hUV : ∀ i, U i ⊆ V)
   (hK : ∀ K : Set X, IsCompact K → K ⊆ V → ∃ i, K ⊆ U i)
@@ -209,7 +197,7 @@ include hK in
 /-- **Twisted singular homology has compact supports.** For a monotone directed family `U` of
 subsets of `V` absorbing the compact subsets of `V`, twisted singular homology of `V` is the
 colimit of twisted singular homology of the members, with `L` restricted to each. -/
-def isColimitSubsetTwistedHomologyCocone (k : ℕ) :
+def isColimitSubsetTwistedHomologyMapCocone (k : ℕ) :
     IsColimit ((HomologicalComplex.homologyFunctor _ _ k).mapCocone
       (subsetTwistedChainComplexCocone L hU hUV)) :=
   have : Nonempty J := let ⟨j, _⟩ := hK ∅ isCompact_empty (Set.empty_subset _); ⟨j⟩

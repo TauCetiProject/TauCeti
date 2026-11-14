@@ -74,7 +74,7 @@ the twisted homology groups `Hₖ(skeletonLT C n; L)` under the maps induced by 
 def isColimitSkeletonTwistedHomologyCocone (k : ℕ) :
     IsColimit ((HomologicalComplex.homologyFunctor _ _ k).mapCocone
       (skeletonTwistedChainComplexCocone C L)) :=
-  isColimitSubsetTwistedHomologyCocone L _ _
+  isColimitSubsetTwistedHomologyMapCocone L _ _
     (fun _ hK hKC ↦ exists_subset_skeletonLT_of_isCompact hK hKC) k
 
 /-- **Attaching cells of one dimension in twisted homology.** The inclusion
