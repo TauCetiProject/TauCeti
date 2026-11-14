@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.LocalAtTarget
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Topology.Homeomorph.Extend
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Deformation retractions
@@ -28,6 +30,15 @@ Strong deformation retractions of subsets also transport along homeomorphisms
 
 A homotopy from the identity that fixes a subset `S` at all times and ends in `S` gives a strong
 deformation retraction onto `S` (`TauCeti.exists_strong_deformation_retraction_of_homotopy`).
+
+Strong deformation retractions of model spaces glue along open partial homeomorphisms with
+disjoint sources. If `φ i : M → Y i` have pairwise disjoint sources and `G i` deforms `Y i` onto
+`Q i`, reading `G i` in the chart `φ i` and extending by the identity gives a deformation of a set
+`X ⊆ M`, provided the points of `X` that the model deformations move stay in `X` and in compact
+subsets of the chart targets. It retracts `X` onto the points of `X` whose image in every chart
+containing them lies in `Q i` (`TauCeti.exists_inter_deformation_of_charts`). This is how Milnor's
+handle retraction in a quadratic model is carried to a manifold, both in Morse charts and in
+tubular neighbourhoods of Morse–Bott critical submanifolds.
 
 A deformation retraction — a map `i : Y → Z` with a continuous left inverse `r : Z → Y` such that
 `i ∘ r` is homotopic to the identity — exhibits `i` as a homotopy equivalence `Y ≃ₕ Z`
@@ -357,5 +368,160 @@ theorem exists_strong_deformation_retraction_of_homotopy {X : Type*} [Topologica
       map_zero_left := hzero
       map_one_left := fun _ => rfl
       prop' := hfix }
+
+section ChartGluing
+
+open unitInterval
+
+variable {M ι : Type*} [TopologicalSpace M] {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
+  {φ : ∀ i, OpenPartialHomeomorph M (Y i)} {r : ∀ i, C(Y i, Y i)} {Q : ∀ i, Set (Y i)}
+  {G : ∀ i, (r i).HomotopyRel (ContinuousMap.id (Y i)) (Q i)} {t : I} {x : M} {i : ι}
+
+/-- The deformations `G i` read in the charts `φ i`, and extended by the identity outside their
+sources. -/
+private noncomputable def chartDeformation (φ : ∀ i, OpenPartialHomeomorph M (Y i))
+    (G : ∀ i, (r i).HomotopyRel (ContinuousMap.id (Y i)) (Q i)) (t : I) (x : M) : M := by
+  classical
+  exact if h : ∃ i, x ∈ (φ i).source then (φ h.choose).symm (G h.choose (t, φ h.choose x)) else x
+
+private theorem chartDeformation_of_mem (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source))
+    (hx : x ∈ (φ i).source) : chartDeformation φ G t x = (φ i).symm (G i (t, φ i x)) := by
+  have h : ∃ j, x ∈ (φ j).source := ⟨i, hx⟩
+  have hi : h.choose = i := hφ.eq (not_disjoint_iff.2 ⟨x, h.choose_spec, hx⟩)
+  rw [chartDeformation, dite_eq_left h]
+  generalize h.choose = j at hi ⊢
+  subst hi
+  rfl
+
+private theorem chartDeformation_of_forall_notMem (hx : ∀ i, x ∉ (φ i).source) :
+    chartDeformation φ G t x = x := by
+  rw [chartDeformation, dite_eq_right (not_exists.2 hx)]
+
+section Hypotheses
+
+variable {C : ∀ i, Set (Y i)} {X : Set M}
+  (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source)) (hCφ : ∀ i, C i ⊆ (φ i).target)
+  (hX : ∀ i, ∀ x ∈ X ∩ (φ i).source, φ i x ∉ Q i →
+    ∀ t, G i (t, φ i x) ∈ C i ∧ (φ i).symm (G i (t, φ i x)) ∈ X)
+include hX
+
+include hCφ in
+/-- In a chart, the model deformation of a point of `X` stays in the chart target, and returns to
+`X`. -/
+private theorem deformation_mem_target_and_mem (hxX : x ∈ X) (hx : x ∈ (φ i).source) (t : I) :
+    G i (t, φ i x) ∈ (φ i).target ∧ (φ i).symm (G i (t, φ i x)) ∈ X := by
+  by_cases hQ : φ i x ∈ Q i
+  · rw [(G i).eq_snd t hQ, ContinuousMap.id_apply, (φ i).left_inv hx]
+    exact ⟨(φ i).map_source hx, hxX⟩
+  · obtain ⟨hC, hmem⟩ := hX i x ⟨hxX, hx⟩ hQ t
+    exact ⟨hCφ i hC, hmem⟩
+
+include hφ hCφ in
+private theorem chartDeformation_mem (hx : x ∈ X) (t : I) : chartDeformation φ G t x ∈ X := by
+  by_cases h : ∃ i, x ∈ (φ i).source
+  · obtain ⟨i, hi⟩ := h
+    rw [chartDeformation_of_mem hφ hi]
+    exact (deformation_mem_target_and_mem hCφ hX hx hi t).2
+  · rwa [chartDeformation_of_forall_notMem (not_exists.1 h)]
+
+include hφ in
+/-- A point of `X` in a chart whose image lies outside `C i` is not moved. -/
+private theorem chartDeformation_eq_self_of_notMem (hxX : x ∈ X) (hx : x ∈ (φ i).source)
+    (hxC : φ i x ∉ C i) (t : I) : chartDeformation φ G t x = x := by
+  have hQ : φ i x ∈ Q i := by
+    by_contra hQ
+    exact hxC (by simpa using (hX i x ⟨hxX, hx⟩ hQ 1).1)
+  rw [chartDeformation_of_mem hφ hx, (G i).eq_snd t hQ, ContinuousMap.id_apply, (φ i).left_inv hx]
+
+include hφ hCφ in
+/-- The glued deformation is continuous on `X`: near a point of a chart source it is the model
+deformation read in that chart, and away from the compact sets `(φ i).symm '' C i` it is the
+identity. -/
+private theorem continuous_chartDeformation [T2Space M] [Finite ι] (hC : ∀ i, IsCompact (C i)) :
+    Continuous fun p : I × X ↦ chartDeformation φ G p.1 p.2 := by
+  have hval : Continuous fun q : I × X ↦ (q.2 : M) := continuous_subtype_val.comp continuous_snd
+  set K := ⋃ i, (φ i).symm '' C i
+  have hK : IsClosed K := isClosed_iUnion_of_finite fun i ↦
+    (φ i).isClosed_image_symm_of_isCompact (hC i) (hCφ i)
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  by_cases h : ∃ i, (p.2 : M) ∈ (φ i).source
+  · obtain ⟨i, hi⟩ := h
+    have hU : IsOpen {q : I × X | (q.2 : M) ∈ (φ i).source} := (φ i).open_source.preimage hval
+    have hcU : ContinuousOn (fun q : I × X ↦ (φ i).symm (G i (q.1, φ i q.2)))
+        {q : I × X | (q.2 : M) ∈ (φ i).source} :=
+      (φ i).continuousOn_symm.comp ((G i).continuous.comp_continuousOn
+        (continuousOn_fst.prodMk ((φ i).continuousOn.comp hval.continuousOn fun _ hq ↦ hq)))
+        fun q hq ↦ (deformation_mem_target_and_mem hCφ hX q.2.2 hq q.1).1
+    exact (hcU.continuousAt (hU.mem_nhds hi)).congr
+      (Filter.eventually_of_mem (hU.mem_nhds hi) fun q hq ↦ (chartDeformation_of_mem hφ hq).symm)
+  · have hpK : (p.2 : M) ∉ K := by
+      simp only [K, mem_iUnion, not_exists]
+      rintro i ⟨z, hz, hzp⟩
+      exact not_exists.1 h i (hzp ▸ (φ i).map_target (hCφ i hz))
+    refine hval.continuousAt.congr (Filter.eventually_of_mem
+      ((hK.isOpen_compl.preimage hval).mem_nhds hpK) fun q hq ↦ ?_)
+    by_cases hq' : ∃ i, (q.2 : M) ∈ (φ i).source
+    · obtain ⟨i, hi⟩ := hq'
+      refine (chartDeformation_eq_self_of_notMem hφ hX q.2.2 hi
+        (fun hqC ↦ hq (mem_iUnion.2 ⟨i, φ i q.2, hqC, ?_⟩)) q.1).symm
+      exact (φ i).left_inv hi
+    · exact (chartDeformation_of_forall_notMem (not_exists.1 hq')).symm
+
+include hφ hCφ in
+/-- **Strong deformation retractions glue along charts with disjoint sources.** Let `φ i` be open
+partial homeomorphisms of `M` with pairwise disjoint sources, and let `G i` be a homotopy from a
+retraction `r i` of `Y i` onto `Q i` to the identity which fixes `Q i`. Let `X ⊆ M` be a set
+whose points `x` in a chart with `φ i x ∉ Q i` are moved by `G i` only within a compact set
+`C i` inside the chart target, and back into `X`. Then `X ∩ S` is a strong deformation retract of
+`X`, where `S` consists, among the points of `X`, of those whose image in every chart containing
+them lies in `Q i`: the deformation is `G i` read in the chart `φ i`, and the identity outside the
+chart sources. -/
+theorem exists_inter_deformation_of_charts [T2Space M] [Finite ι] (hC : ∀ i, IsCompact (C i))
+    (hr : ∀ i y, r i y ∈ Q i) {S : Set M}
+    (hS : ∀ x ∈ X, x ∈ S ↔ ∀ i, x ∈ (φ i).source → φ i x ∈ Q i) :
+    ∃ r : C(X, ↥(X ∩ S)),
+      (∀ x, r (ContinuousMap.inclusion inter_subset_left x) = x) ∧
+      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
+        (ContinuousMap.id X) {x | (x : M) ∈ S}) := by
+  -- Points of `S` are not moved, at any time.
+  have hfixS {x : M} (hxX : x ∈ X) (hxS : x ∈ S) (t : I) : chartDeformation φ G t x = x := by
+    by_cases h : ∃ i, x ∈ (φ i).source
+    · obtain ⟨i, hi⟩ := h
+      rw [chartDeformation_of_mem hφ hi, (G i).eq_snd t ((hS x hxX).1 hxS i hi),
+        ContinuousMap.id_apply, (φ i).left_inv hi]
+    · exact chartDeformation_of_forall_notMem (not_exists.1 h)
+  -- At time `1` the deformation is the identity.
+  have hG1 (x : M) : chartDeformation φ G 1 x = x := by
+    by_cases h : ∃ i, x ∈ (φ i).source
+    · obtain ⟨i, hi⟩ := h
+      rw [chartDeformation_of_mem hφ hi, (G i).apply_one, ContinuousMap.id_apply,
+        (φ i).left_inv hi]
+    · exact chartDeformation_of_forall_notMem (not_exists.1 h)
+  -- At time `0` it lands in `S`, since the model retractions land in the model sets.
+  have hG0S {x : M} (hxX : x ∈ X) : chartDeformation φ G 0 x ∈ S := by
+    refine (hS _ (chartDeformation_mem hφ hCφ hX hxX 0)).2 fun j hj ↦ ?_
+    by_cases h : ∃ i, x ∈ (φ i).source
+    · obtain ⟨i, hi⟩ := h
+      have hmem := (deformation_mem_target_and_mem hCφ hX hxX hi 0).1
+      rw [chartDeformation_of_mem hφ hi] at hj ⊢
+      obtain rfl : j = i := hφ.eq (not_disjoint_iff.2 ⟨_, hj, (φ i).map_target hmem⟩)
+      rw [(φ j).right_inv hmem, (G j).apply_zero]
+      exact hr j _
+    · rw [chartDeformation_of_forall_notMem (not_exists.1 h)] at hj
+      exact absurd hj (not_exists.1 h j)
+  have hcont := continuous_chartDeformation hφ hCφ hX hC
+  refine ⟨⟨fun x ↦ ⟨chartDeformation φ G 0 x, chartDeformation_mem hφ hCφ hX x.2 0, hG0S x.2⟩,
+      (hcont.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩,
+    fun x ↦ Subtype.ext (hfixS x.2.1 x.2.2 0), ⟨?_⟩⟩
+  exact
+    { toFun p := ⟨chartDeformation φ G p.1 p.2, chartDeformation_mem hφ hCφ hX p.2.2 p.1⟩
+      continuous_toFun := hcont.subtype_mk _
+      map_zero_left x := rfl
+      map_one_left x := Subtype.ext (hG1 x)
+      prop' t x hx := Subtype.ext ((hfixS x.2 hx t).trans (hfixS x.2 hx 0).symm) }
+
+end Hypotheses
+
+end ChartGluing
 
 end TauCeti

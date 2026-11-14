@@ -8,11 +8,12 @@ module
 public import TauCeti.Geometry.Manifold.Morse.AdmissibleCharts
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Geometry.Manifold.Morse.HandleRetraction
+public import TauCeti.Geometry.Manifold.Morse.MilnorFunction
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.Morse.QuadraticHandle
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Topology.Homotopy.DeformationRetract
+import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Cell and handle attachment across a critical level
@@ -96,12 +97,12 @@ variable
   {k : ι → ℕ} {μ : ℝ → ℝ} {i : ι} {x : M}
 
 /-- Milnor's function `f - μ(‖u‖² + 2‖v‖²)`, lowered in each chart `ψ i` and equal to `f` outside
-the chart sources. Where `f` has the normal form `c - ‖u‖² + ‖v‖²` in the chart, the argument
-`(3‖ψ i x‖² + (f x - c)) / 2` of `μ` is `‖u‖² + 2‖v‖²`. -/
+the chart sources (`TauCeti.lowerOn`). Where `f` has the normal form `c - ‖u‖² + ‖v‖²` in the
+chart, the argument `(3‖ψ i x‖² + (f x - c)) / 2` of `μ` is `‖u‖² + 2‖v‖²`. -/
 private def milnorFunction [Fintype ι]
     (ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
-    (f : M → ℝ) (c : ℝ) (μ : ℝ → ℝ) (x : M) : ℝ :=
-  f x - ∑ i, (ψ i).source.indicator (fun y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2)) x
+    (f : M → ℝ) (c : ℝ) (μ : ℝ → ℝ) : M → ℝ :=
+  lowerOn (fun i ↦ (ψ i).source) (fun i y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2)) f
 
 /-- The handle of the chart `ψ i`: the points of its source whose coordinates `(u, v)`, split into
 the first `k i` and the remaining coordinates, lie in Milnor's handle
@@ -116,16 +117,15 @@ variable [Fintype ι]
 
 private theorem milnorFunction_of_mem (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source))
     (hx : x ∈ (ψ i).source) :
-    milnorFunction ψ f c μ x = f x - μ ((3 * ‖ψ i x‖ ^ 2 + (f x - c)) / 2) := by
-  rw [milnorFunction, Finset.sum_eq_single i (fun j _ hji ↦ indicator_of_notMem
-    (fun hj ↦ (hψ hji).ne_of_mem hj hx rfl) _) (by simp), indicator_of_mem hx]
+    milnorFunction ψ f c μ x = f x - μ ((3 * ‖ψ i x‖ ^ 2 + (f x - c)) / 2) :=
+  lowerOn_of_mem hψ hx
 
 private theorem milnorFunction_of_forall_notMem (hx : ∀ i, x ∉ (ψ i).source) :
-    milnorFunction ψ f c μ x = f x := by
-  simp [milnorFunction, indicator_of_notMem (hx _)]
+    milnorFunction ψ f c μ x = f x :=
+  lowerOn_of_forall_notMem hx
 
 private theorem milnorFunction_le (hμ : ∀ r, 0 ≤ μ r) (x : M) : milnorFunction ψ f c μ x ≤ f x :=
-  sub_le_self _ (Finset.sum_nonneg fun _ _ ↦ indicator_nonneg (fun _ _ ↦ hμ _) _)
+  lowerOn_le (fun _ _ _ ↦ hμ _) x
 
 variable (k) in
 /-- In the coordinates `(u, v)` of a chart in which `f` has the normal form, `f` is
@@ -187,14 +187,18 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   set γ : ℝ → M := fun t ↦ (ψ i).symm (L t)
   have hL1 : L 1 = ψ i x := by simp [L]
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
+  -- The inverse of the partial diffeomorphism `ψ i` is the inverse of `φ`: both are the inverse
+  -- function of `ψ i`.
+  have hγ1 : γ 1 = x := by
+    simp only [γ, hL1]
+    exact φ.left_inv hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
-  rw [← show γ 1 = x from (congrArg φ.symm hL1).trans (φ.left_inv hx)] at hF h0
+  rw [← hγ1] at hF h0
   have hd : HasFDerivAt (milnorFunction ψ f c μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    -- The inverse of `φ` is the inverse function `(ψ i).invFun` of the partial diffeomorphism.
-    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := (((ψ i).contMDiffOn_invFun.contMDiffAt
-      ((ψ i).open_target.mem_nhds hLt)).mdifferentiableAt (by simp)).comp 1
-      (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
-        ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
+    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 :=
+      ((ψ i).symm.mdifferentiableAt (by simp) (by simpa using hLt)).comp 1
+        (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
+          ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
     have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
     rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
   -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
@@ -203,13 +207,9 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
     filter_upwards [(e.symm.continuous.comp (continuous_const.prodMk (continuous_id.smul
       continuous_const))).continuousAt.preimage_mem_nhds ((ψ i).open_target.mem_nhds hLt)] with t ht
     simpa [L, e, γ, norm_smul, mul_pow] using (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
-  have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
-  have hg := ((hq.const_add (-a)).const_add c).sub
-    (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
-  have hval := (hg.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
-  have h : b * (2 - 4 * deriv μ (a + 2 * (1 ^ 2 * b))) = 0 := by linear_combination hval
-  have := hμa.deriv_nonpos (x := a + 2 * (1 ^ 2 * b))
-  simpa [b] using (mul_eq_zero.1 h).resolve_right (by linarith)
+  simpa [b] using eq_zero_of_hasDerivAt_add_sq_mul_sub_comp (a := a) (b := b) (C := c - a)
+    (hμ.differentiable (by simp)) hμa (heq.trans (.of_eq (funext fun t ↦ by ring)))
+    (by simpa using hd.hasDerivAt)
 
 /-- **Milnor's function has no critical points at chart points of the band.** At a critical
 point in a chart, the positive coordinates vanish, and there Milnor's function is
@@ -281,21 +281,19 @@ private theorem milnorFunction_eq_of_sqrt_lt (hx : x ∈ (ψ i).source) (hxε : 
     (fun j : Fin n ↦ j.val < k i) (ψ i x)).2‖]), sub_zero]
 
 omit [Fintype ι] in
-/-- Each lowering term of Milnor's function vanishes outside the image of the closed ball of
-radius `√(2ε)` in its chart. -/
-private theorem indicator_eq_zero_of_notMem_image [Finite ι] (i : ι) {y : M}
-    (hy : y ∉ (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :
-    (ψ i).source.indicator (fun y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2)) y = 0 := by
+/-- Each lowering term of Milnor's function vanishes in its chart outside the image of the closed
+ball of radius `√(2ε)`. -/
+private theorem eqOn_zero_of_notMem_image [Finite ι] (i : ι) :
+    EqOn (fun y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2)) 0
+      ((ψ i).source \ (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) := by
   have := Fintype.ofFinite ι
-  by_cases hys : y ∈ (ψ i).source
-  · have hlt : √(2 * ε) < ‖ψ i y‖ := by
-      by_contra h
-      exact hy ⟨ψ i y, mem_closedBall_zero_iff.2 (not_lt.1 h),
-        (ψ i).toOpenPartialHomeomorph.left_inv hys⟩
-    have h := milnorFunction_of_mem (f := f) (c := c) (μ := μ) hψ hys
-    rw [milnorFunction_eq_of_sqrt_lt hψ hf hμ₀ hys hlt, eq_comm, sub_eq_self] at h
-    rwa [indicator_of_mem hys]
-  · exact indicator_of_notMem hys _
+  rintro y ⟨hys, hy⟩
+  have hlt : √(2 * ε) < ‖ψ i y‖ := by
+    by_contra h
+    exact hy ⟨ψ i y, mem_closedBall_zero_iff.2 (not_lt.1 h),
+      (ψ i).toOpenPartialHomeomorph.left_inv hys⟩
+  have h := milnorFunction_of_mem (f := f) (c := c) (μ := μ) hψ hys
+  rwa [milnorFunction_eq_of_sqrt_lt hψ hf hμ₀ hys hlt, eq_comm, sub_eq_self] at h
 
 /-- **The sublevel `{F ≤ c - ε}` is the lower sublevel with the handles attached.** A point with
 `F ≤ c - ε` and `f > c - ε` lies in a chart, where its coordinates satisfy the inequalities of
@@ -379,50 +377,27 @@ private theorem milnorFunction_eq_add_iff (hμ_nonneg : ∀ r, 0 ≤ μ r) :
 variable (hball : ∀ i, closedBall 0 √(2 * ε) ⊆ (ψ i).target)
 include hball
 
-omit [Fintype ι] hψ hf hμ₀ in
-private theorem isCompact_image_closedBall (i : ι) :
-    IsCompact ((ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
-  (isCompact_closedBall _ _).image_of_continuousOn
-    ((ψ i).toOpenPartialHomeomorph.continuousOn_symm.mono (hball i))
-
 variable [T2Space M]
 
-/-- Away from the images of the closed balls of radius `√(2ε)`, Milnor's function agrees with `f`
-on a neighbourhood. -/
-private theorem milnorFunction_eventuallyEq
-    (hx : x ∉ ⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :
-    milnorFunction ψ f c μ =ᶠ[𝓝 x] f := by
-  have hclosed : IsClosed (⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
-    isClosed_iUnion_of_finite fun i ↦ (isCompact_image_closedBall hball i).isClosed
-  filter_upwards [hclosed.isOpen_compl.mem_nhds hx] with y hy
-  rw [milnorFunction, Finset.sum_eq_zero fun i _ ↦
-    indicator_eq_zero_of_notMem_image hψ hf hμ₀ i fun h ↦ hy (mem_iUnion.2 ⟨i, h⟩), sub_zero]
+omit [Fintype ι] hψ hf hμ₀ in
+/-- The image of the closed ball of radius `√(2ε)` of a chart is closed, as the ball is compact. -/
+private theorem isClosed_image_closedBall (i : ι) :
+    IsClosed ((ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
+  (ψ i).toOpenPartialHomeomorph.isClosed_image_symm_of_isCompact (isCompact_closedBall _ _)
+    (hball i)
 
 /-- **Milnor's function is smooth.** -/
 private theorem contMDiff_milnorFunction (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hμ : ContDiff ℝ ∞ μ) :
-    ContMDiff I 𝓘(ℝ) ∞ (milnorFunction ψ f c μ) := by
-  refine ContMDiff.sub hfs (ContMDiff.sum fun i _ ↦ contMDiff_of_tsupport fun y hy ↦ ?_)
-  -- The lowering term is supported in the compact image of the ball, inside the chart source.
-  have hK : tsupport ((ψ i).source.indicator fun y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2)) ⊆
-      (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε) :=
-    closure_minimal (fun y hy ↦ not_not.1 fun h ↦ hy
-      (indicator_eq_zero_of_notMem_image hψ hf hμ₀ i h))
-      (isCompact_image_closedBall hball i).isClosed
-  obtain ⟨z, hz, rfl⟩ := hK hy
-  have hs : (ψ i).toOpenPartialHomeomorph.symm z ∈ (ψ i).source :=
-    (ψ i).toOpenPartialHomeomorph.map_target (hball i hz)
-  have hψ' : ContMDiffAt I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ∞ (ψ i)
-      ((ψ i).toOpenPartialHomeomorph.symm z) :=
-    (ψ i).contMDiffOn.contMDiffAt ((ψ i).open_source.mem_nhds hs)
-  have hterm : ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ μ ((3 * ‖ψ i y‖ ^ 2 + (f y - c)) / 2))
-      ((ψ i).toOpenPartialHomeomorph.symm z) :=
+    ContMDiff I 𝓘(ℝ) ∞ (milnorFunction ψ f c μ) :=
+  contMDiff_lowerOn (eqOn_zero_of_notMem_image hψ hf hμ₀)
+    (isClosed_image_closedBall hball) (fun i ↦ (ψ i).open_source)
+    (fun i ↦ ((ψ i).toOpenPartialHomeomorph.mapsTo_symm.mono_left (hball i)).image_subset) hfs
+    fun i ↦
     -- `μ ((3 s + (t - c)) / 2)` is a smooth function of `(s, t) = (‖ψ i y‖², f y)`.
     have hg : ContDiff ℝ ∞ fun p : ℝ × ℝ ↦ μ ((3 * p.1 + (p.2 - c)) / 2) :=
       hμ.comp (by fun_prop)
-    hg.contMDiff.contMDiffAt.comp _ (((contDiff_norm_sq ℝ).contMDiff.contMDiffAt.comp _
-      hψ').prodMk_space (hfs _))
-  exact hterm.congr_of_eventuallyEq
-    (eventuallyEq_of_mem ((ψ i).open_source.mem_nhds hs) fun y hy ↦ indicator_of_mem hy _)
+    hg.contMDiff.comp_contMDiffOn (((contDiff_norm_sq ℝ).contMDiff.comp_contMDiffOn
+      (ψ i).contMDiffOn).prodMk_space hfs.contMDiffOn)
 
 omit hball [T2Space M] in
 /-- Milnor's function has the same sublevel `{F ≤ c + ε}` as `f`: inside Milnor's ellipsoid
@@ -466,17 +441,10 @@ private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
   · obtain ⟨i, hi⟩ := hxs
     exact mfderiv_milnorFunction_ne_zero hψ hf hε hμ hμa hμ_nonneg hμ_eq
       ((contMDiff_milnorFunction hψ hf hμ₀ hball hfs hμ).mdifferentiableAt (by simp)) hi h₁
-  · replace hxs := not_exists.1 hxs
-    have hK : x ∉ ⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε) := by
-      intro h
-      obtain ⟨i, z, hz, rfl⟩ := mem_iUnion.1 h
-      exact hxs i ((ψ i).toOpenPartialHomeomorph.map_target (hball i hz))
-    have hfx := milnorFunction_of_forall_notMem (f := f) (c := c) (μ := μ) hxs
-    rw [(milnorFunction_eventuallyEq hψ hf hμ₀ hball hK).mfderiv_eq]
-    intro h0
-    obtain ⟨i, hi⟩ := mem_iUnion.1
-      (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, hfx ▸ h₁, hfx ▸ h₂⟩)
-    exact hxs i hi
+  · exact mfderiv_lowerOn_ne_zero_of_forall_notMem (eqOn_zero_of_notMem_image hψ hf hμ₀)
+      (isClosed_image_closedBall hball)
+      (fun i ↦ ((ψ i).toOpenPartialHomeomorph.mapsTo_symm.mono_left (hball i)).image_subset) hcrit
+      (not_exists.1 hxs) ⟨h₁, h₂⟩
 
 end MilnorFunction
 
