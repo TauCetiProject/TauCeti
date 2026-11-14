@@ -119,7 +119,7 @@ theorem ramificationDegree_eq_two_mul_degree_sub_two
 example : -2 * (degree (spherePow two_ne_zero) : ℤ) + ramificationDegree (spherePow two_ne_zero) =
     -2 := by
   rw [coe_spherePow, ramificationDegree_onePointMap_pow two_ne_zero,
-    degree_onePointMap_pow two_ne_zero]
+    degree_onePointMap_pow]
   norm_num
 
 /-- The identity `z ↦ z ^ 1` of the sphere has degree `1` and ramification degree `0`, matching
@@ -127,7 +127,7 @@ example : -2 * (degree (spherePow two_ne_zero) : ℤ) + ramificationDegree (sphe
 example : -2 * (degree (spherePow one_ne_zero) : ℤ) + ramificationDegree (spherePow one_ne_zero) =
     -2 := by
   rw [coe_spherePow, ramificationDegree_onePointMap_pow one_ne_zero,
-    degree_onePointMap_pow one_ne_zero]
+    degree_onePointMap_pow]
   norm_num
 
 end FiniteHolomorphicMap
