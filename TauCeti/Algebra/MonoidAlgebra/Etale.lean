@@ -10,12 +10,13 @@ public import Mathlib.RingTheory.Smooth.Fiber
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 /-!
-# Étaleness of finite commutative group algebras
+# Étaleness of commutative group algebras
 
-A finite commutative group algebra is étale when the group order is invertible in the
-base ring. Over a field this condition is also necessary: torsion of prime order equal
-to the characteristic produces a nonzero nilpotent. Applied to character groups, this
-detects the infinitesimal structure of finite diagonalizable groups.
+A commutative group algebra is étale when the group order is invertible in the
+base ring. Over a field this condition is also necessary: an étale algebra over a
+field is finite, and torsion of prime order equal to the characteristic produces a
+nonzero nilpotent. Applied to character groups, this detects the infinitesimal
+structure of diagonalizable groups.
 
 ## References
 
@@ -30,9 +31,8 @@ open MonoidAlgebra
 
 namespace TauCeti.MonoidAlgebra
 
-variable (R G : Type*) [CommRing R] [CommGroup G] [Finite G]
+variable (R G : Type*) [CommRing R] [CommGroup G]
 
-omit [Finite G] in
 /-- A commutative group algebra is formally unramified if its group order is
 invertible in the base ring. -/
 theorem formallyUnramified_of_isUnit_card (h : IsUnit (Nat.card G : R)) :
@@ -61,7 +61,6 @@ theorem formallyUnramified_of_isUnit_card (h : IsUnit (Nat.card G : R)) :
         (D.map_smul r (single g 1)).trans (by rw [hsingle, smul_zero])
   exact hzero x
 
-omit [Finite G] in
 /-- A commutative group algebra is étale if its group order is invertible in the base ring. This
 includes arbitrary, possibly non-Noetherian, base rings. For an infinite group the order
 `Nat.card G` is `0`, so the hypothesis forces the base ring to be trivial. -/
@@ -77,7 +76,6 @@ theorem etale_of_isUnit_card (h : IsUnit (Nat.card G : R)) :
   let := Module.finitePresentation_of_projective R (MonoidAlgebra R G)
   exact Algebra.Etale.of_formallyUnramified_of_flat
 
-omit [Finite G] in
 /-- Over a field, a commutative group algebra is étale exactly when its group order is
 invertible, equivalently when the group is finite and the characteristic does not divide its
 order. -/

@@ -36,6 +36,17 @@ variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 noncomputable section
 
+/-- Forgetting a comodule to its underlying module preserves finite colimits. -/
+instance : PreservesFiniteColimits
+    (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)) := by
+  have : HasBinaryBiproducts (ComoduleCat.{u, v, w} R C) :=
+    HasBinaryBiproducts.of_hasBinaryProducts
+  have : HasFiniteBiproducts (ComoduleCat.{u, v, w} R C) :=
+    HasFiniteBiproducts.of_hasFiniteProducts
+  have : HasCoequalizers (ComoduleCat.{u, v, w} R C) :=
+    Preadditive.hasCoequalizers_of_hasCokernels
+  exact Functor.preservesFiniteColimits_of_preservesCokernels _
+
 variable [Module.Flat R C]
 
 instance {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
@@ -53,17 +64,6 @@ instance : Abelian (ComoduleCat.{u, v, w} R C) :=
 instance : PreservesFiniteLimits
     (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)) :=
   Functor.preservesFiniteLimits_of_preservesKernels _
-
-omit [Module.Flat R C] in
-/-- Forgetting a comodule to its underlying module preserves finite colimits. -/
-instance : PreservesFiniteColimits
-    (forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)) :=
-  by
-    let : HasFiniteBiproducts (ComoduleCat.{u, v, w} R C) :=
-      HasFiniteBiproducts.of_hasFiniteProducts
-    let : HasCoequalizers (ComoduleCat.{u, v, w} R C) :=
-      Preadditive.hasCoequalizers_of_hasCokernels
-    exact Functor.preservesFiniteColimits_of_preservesCokernels _
 
 end
 
