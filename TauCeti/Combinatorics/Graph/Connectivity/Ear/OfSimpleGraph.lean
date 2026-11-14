@@ -512,6 +512,9 @@ def earDecompositionEquivOfSimpleGraph {H : G.Subgraph} {K : Graph α (Sym2 α)}
   toFun d := d.toGraph.copy h
   invFun d := d.toSimpleGraph h
   left_inv d := by
+    -- Both wrappers transport along `h`, so unfolding them cancels their dependent casts and
+    -- exposes the canonical `rfl` transport expected by the round-trip lemma. Rewriting cannot
+    -- remove `copy h` directly because its result type is indexed by the transported graph.
     change d.toGraph.toSimpleGraph rfl = d
     exact EarDecomposition.toSimpleGraph_toGraph d
   right_inv d := Graph.EarDecomposition.toGraph_toSimpleGraph d h
