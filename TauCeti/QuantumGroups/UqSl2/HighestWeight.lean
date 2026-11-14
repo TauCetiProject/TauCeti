@@ -180,8 +180,8 @@ private theorem f_pow_smul_eq_zero_of_f_pow_succ_smul_eq_zero (hq : IsGenericQua
 variable (hq : IsGenericQuantumParameter q)
 include hq
 
-/-- A generalized weight vector of weight `ε q^m` killed by `E` and by `F^r` for some `r ≤ m`
-is zero: `F^r` is injective on such vectors. -/
+/-- At a generic parameter, a generalized weight vector of weight `ε q^m` killed by `E` and by
+`F^r` for some `r ≤ m` is zero: `F^r` is injective on such vectors. -/
 theorem eq_zero_of_f_pow_smul_eq_zero {r : ℕ} (hr : r ≤ m) {w : V}
     (hw : w ∈ genWeightSpace q V (ε * q ^ m)) (he : e q • w = 0) (hf : f q ^ r • w = 0) :
     w = 0 := by
