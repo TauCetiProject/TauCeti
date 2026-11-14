@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.WeilRestriction.Basic
-public import TauCeti.Topology.Algebra.PointTopology.Basic
+public import TauCeti.Algebra.HopfAlgebra.WeilRestriction
+public import TauCeti.Topology.Algebra.PointTopology.Group
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # The point topology and Weil restriction
@@ -20,6 +21,14 @@ For a topological ring `A` and `B` with its `A`-module topology, `pointsHomeomor
 this to a homeomorphism between `A`-points of the Weil restriction and `B`-points of `C`.
 This identifies rational point topologies under restriction of scalars, for example for finite
 extensions of local fields and for the real points of the Deligne torus.
+
+When `H` is a finitely presented commutative `B`-bialgebra (or Hopf algebra), these homeomorphisms
+upgrade to topological multiplicative equivalences of convolution monoids (or topological groups)
+`pointsContinuousMulEquiv` and `basePointsContinuousMulEquiv`. Given a continuous scalar-extension
+equivalence `T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`,
+`pointsContinuousMulEquivOfBaseChange` combines `pointsContinuousMulEquiv` with the continuous
+factor swap `baseChangeRightContinuousEquiv` to identify `(Res_{B/A} G)(T)` with `G(S)` as
+topological monoids (or topological groups).
 
 The comparison uses `TauCeti.Algebra.WeilRestriction.homEquiv` and the right tensor unitor.
 The inverse is continuous because the linear coefficients of the universal point generate the
@@ -36,6 +45,8 @@ open TensorProduct Topology
 open scoped TauCeti.PointTopology
 
 namespace TauCeti.Algebra.WeilRestriction
+
+section Ring
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
@@ -166,5 +177,240 @@ theorem pointsHomeomorph_symm_apply_universalCoefficient (x : C →ₐ[B] B)
     (pointsHomeomorph A B C).symm x (universalCoefficient φ c) = φ (x c) := by
   rw [map_universalCoefficient, homEquiv_pointsHomeomorph_symm]
   simp
+
+end Ring
+
+section Bialgebra
+
+section General
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
+variable (A B H T : Type*) [CommRing A] [CommRing B] [CommRing H] [CommRing T]
+  [Algebra A B] [Module.Finite A B] [Module.Projective A B]
+  [Bialgebra B H] [Algebra.FinitePresentation B H]
+  [Algebra A T] [TopologicalSpace T] [IsTopologicalRing T]
+  [TopologicalSpace (B ⊗[A] T)] [IsModuleTopology T (B ⊗[A] T)]
+
+/-- **The Weil restriction adjunction as a topological multiplicative equivalence.** When `H` is a
+finitely presented commutative `B`-bialgebra and `B ⊗[A] T` carries its right `T`-module topology,
+`WeilRestriction.pointsMulEquiv` is a topological multiplicative equivalence (hence a topological
+group isomorphism when `H` is a Hopf algebra). -/
+def pointsContinuousMulEquiv :
+    WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] B ⊗[A] T) where
+  toMulEquiv := pointsMulEquiv A B H T
+  continuous_toFun :=
+    PointTopology.isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+      ((homHomeomorph A B H T).continuous.comp
+        PointTopology.isHomeomorph_ofConv.continuous).congr
+        fun f ↦ (pointsMulEquiv_apply f).symm
+  continuous_invFun :=
+    PointTopology.isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+      ((homHomeomorph A B H T).symm.continuous.comp
+        PointTopology.isHomeomorph_ofConv.continuous).congr
+        fun g ↦ (pointsMulEquiv_symm_apply g).symm
+
+variable {A B H T}
+
+/-- Forgetting continuity from `pointsContinuousMulEquiv` recovers `pointsMulEquiv`. -/
+@[simp]
+theorem toMulEquiv_pointsContinuousMulEquiv :
+    (pointsContinuousMulEquiv A B H T :
+        WithConv (WeilRestriction A B H →ₐ[A] T) ≃* WithConv (H →ₐ[B] B ⊗[A] T)) =
+      pointsMulEquiv A B H T := (rfl)
+
+/-- Evaluating `pointsContinuousMulEquiv` applies `homEquiv`. -/
+@[simp]
+theorem pointsContinuousMulEquiv_apply (f : WithConv (WeilRestriction A B H →ₐ[A] T)) :
+    (pointsContinuousMulEquiv A B H T f).ofConv = homEquiv A B H T f.ofConv :=
+  pointsMulEquiv_apply f
+
+/-- Evaluating the inverse of `pointsContinuousMulEquiv` applies `(homEquiv A B H T).symm`. -/
+@[simp]
+theorem pointsContinuousMulEquiv_symm_apply (g : WithConv (H →ₐ[B] B ⊗[A] T)) :
+    ((pointsContinuousMulEquiv A B H T).symm g).ofConv = (homEquiv A B H T).symm g.ofConv :=
+  pointsMulEquiv_symm_apply g
+
+end General
+
+section BasePoints
+
+variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H]
+  [Algebra A B] [Module.Finite A B] [Module.Projective A B]
+  [Bialgebra B H] [Algebra.FinitePresentation B H]
+  [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsModuleTopology A B]
+
+/-- **Rational points of the Weil restriction as a topological monoid or group.** When `B` carries
+its `A`-module topology, `WeilRestriction.basePointsMulEquiv` is a topological multiplicative
+equivalence `WithConv (WeilRestriction A B H →ₐ[A] A) ≃ₜ* WithConv (H →ₐ[B] B)`. -/
+def basePointsContinuousMulEquiv :
+    WithConv (WeilRestriction A B H →ₐ[A] A) ≃ₜ* WithConv (H →ₐ[B] B) where
+  toMulEquiv := basePointsMulEquiv A B H
+  continuous_toFun :=
+    (PointTopology.isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+      (pointsHomeomorph A B H).continuous.comp PointTopology.isHomeomorph_ofConv.continuous).congr
+      fun f ↦ WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by simp
+  continuous_invFun := by
+    have hc : Continuous fun g : WithConv (H →ₐ[B] B) ↦
+        WithConv.toConv ((pointsHomeomorph A B H).symm g.ofConv) :=
+      PointTopology.isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
+        (pointsHomeomorph A B H).symm.continuous.comp PointTopology.isHomeomorph_ofConv.continuous
+    refine hc.congr fun g ↦ (pointsMulEquiv A B H A).injective ?_
+    rw [MulEquiv.invFun_eq_symm, pointsMulEquiv_basePointsMulEquiv_symm]
+    refine WithConv.ofConv_injective ?_
+    rw [pointsMulEquiv_apply, WithConv.ofConv_toConv, homEquiv_pointsHomeomorph_symm,
+      AlgHom.mapValue_apply, WithConv.ofConv_toConv]
+
+variable {A B H}
+
+/-- Forgetting continuity from `basePointsContinuousMulEquiv` recovers `basePointsMulEquiv`. -/
+@[simp]
+theorem toMulEquiv_basePointsContinuousMulEquiv :
+    (basePointsContinuousMulEquiv A B H :
+        WithConv (WeilRestriction A B H →ₐ[A] A) ≃* WithConv (H →ₐ[B] B)) =
+      basePointsMulEquiv A B H := (rfl)
+
+/-- Evaluating `basePointsContinuousMulEquiv` applies `pointsMulEquiv` followed by the right tensor
+unitor. -/
+@[simp]
+theorem basePointsContinuousMulEquiv_apply (f : WithConv (WeilRestriction A B H →ₐ[A] A)) (h : H) :
+    (basePointsContinuousMulEquiv A B H f).ofConv h =
+      Algebra.TensorProduct.rid A B B ((pointsMulEquiv A B H A f).ofConv h) :=
+  basePointsMulEquiv_apply f h
+
+end BasePoints
+
+section BaseChange
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+
+section Swap
+
+variable {A B T S : Type*} [CommRing A] [CommRing B] [CommRing T] [CommRing S]
+  [Algebra A B] [Algebra A T] [Algebra B S] [Algebra T S]
+  [TopologicalSpace T] [TopologicalSpace S]
+  [TopologicalSpace (B ⊗[A] T)] [IsModuleTopology T (B ⊗[A] T)]
+  [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
+
+/-- Continuous upgrade of `WeilRestriction.baseChangeRightAlgEquiv`: when `B ⊗[A] T` and `T ⊗[A] B`
+carry their `T`-module topologies, swapping tensor factors and applying `e : T ⊗[A] B ≃A[T] S` is a
+continuous `B`-algebra equivalence `B ⊗[A] T ≃A[B] S`. -/
+def baseChangeRightContinuousEquiv (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) : B ⊗[A] T ≃A[B] S where
+  toAlgEquiv := baseChangeRightAlgEquiv e.toAlgEquiv he
+  continuous_toFun := by
+    let hcomm := (Algebra.TensorProduct.commRight A T B).symm.toLinearEquiv
+      |>.toContinuousLinearEquivOfIsModuleTopology
+    have hswap (z : B ⊗[A] T) :
+        (Algebra.TensorProduct.commRight A T B).symm z =
+          Algebra.TensorProduct.comm A B T z := by
+      induction z using TensorProduct.inductionOn with
+      | tmul b t => rfl
+      | add x y hx hy => simp only [map_add, hx, hy]
+    refine (e.continuous.comp hcomm.continuous).congr fun z ↦ ?_
+    change e (hcomm z) = baseChangeRightAlgEquiv e.toAlgEquiv he z
+    rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, AlgEquiv.toLinearEquiv_apply,
+      hswap, baseChangeRightAlgEquiv_apply]
+    rfl
+  continuous_invFun := by
+    let hcomm := (Algebra.TensorProduct.commRight A T B).symm.toLinearEquiv
+      |>.toContinuousLinearEquivOfIsModuleTopology
+    have hswap (w : T ⊗[A] B) :
+        (Algebra.TensorProduct.commRight A T B).symm.toLinearEquiv.symm w =
+          (Algebra.TensorProduct.comm A B T).symm w := by
+      induction w using TensorProduct.inductionOn with
+      | tmul t b => rfl
+      | add x y hx hy => simp only [map_add, hx, hy]
+    refine (hcomm.symm.continuous.comp e.symm.continuous).congr fun s ↦ ?_
+    change hcomm.symm (e.symm s) = (baseChangeRightAlgEquiv e.toAlgEquiv he).symm s
+    rw [LinearEquiv.symm_toContinuousLinearEquivOfIsModuleTopology,
+      LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, hswap,
+      baseChangeRightAlgEquiv_symm_apply]
+    rfl
+
+/-- Forgetting continuity from `baseChangeRightContinuousEquiv` recovers
+`baseChangeRightAlgEquiv`. -/
+@[simp]
+theorem baseChangeRightContinuousEquiv_toAlgEquiv (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
+    (baseChangeRightContinuousEquiv e he).toAlgEquiv =
+      baseChangeRightAlgEquiv e.toAlgEquiv he := (rfl)
+
+/-- `baseChangeRightContinuousEquiv` swaps tensor factors and applies `e`. -/
+@[simp]
+theorem baseChangeRightContinuousEquiv_apply (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) (z : B ⊗[A] T) :
+    baseChangeRightContinuousEquiv e he z = e (Algebra.TensorProduct.comm A B T z) :=
+  baseChangeRightAlgEquiv_apply e.toAlgEquiv he z
+
+end Swap
+
+variable (A B H : Type*) [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
+  [Module.Finite A B] [Module.Projective A B] [Bialgebra B H] [Algebra.FinitePresentation B H]
+variable {T S : Type*} [CommRing T] [CommRing S] [Algebra A T] [Algebra B S] [Algebra T S]
+  [TopologicalSpace T] [IsTopologicalRing T] [TopologicalSpace S]
+  [TopologicalSpace (T ⊗[A] B)] [IsModuleTopology T (T ⊗[A] B)]
+
+private def pointsContinuousMulEquivOfBaseChangeAux (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
+    WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) :=
+  letI : TopologicalSpace (B ⊗[A] T) := moduleTopology T (B ⊗[A] T)
+  haveI : IsModuleTopology T (B ⊗[A] T) := ⟨rfl⟩
+  (pointsContinuousMulEquiv A B H T).trans
+    (baseChangeRightContinuousEquiv e he).mapValueContinuousMulEquiv
+
+private theorem toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
+    (pointsContinuousMulEquivOfBaseChangeAux A B H e he).toMulEquiv =
+      pointsMulEquivOfBaseChange A B H e.toAlgEquiv he := by
+  let _ : TopologicalSpace (B ⊗[A] T) := moduleTopology T (B ⊗[A] T)
+  have _ : IsModuleTopology T (B ⊗[A] T) := ⟨rfl⟩
+  change (pointsContinuousMulEquiv A B H T).toMulEquiv.trans
+    (baseChangeRightContinuousEquiv e he).mapValueContinuousMulEquiv.toMulEquiv = _
+  simp only [ContinuousMulEquiv.toMulEquiv_eq_coe, toMulEquiv_pointsContinuousMulEquiv,
+    ContinuousAlgEquiv.toMulEquiv_mapValueContinuousMulEquiv,
+    baseChangeRightContinuousEquiv_toAlgEquiv, pointsMulEquivOfBaseChange_eq_trans]
+
+/-- **Topological points of a Weil restriction along a scalar-extension equivalence.** Given a
+continuous `T`-algebra equivalence `e : T ⊗[A] B ≃A[T] S` sending `1 ⊗ b` to `algebraMap B S b`
+for the `T`-module topology on `T ⊗[A] B`, `WeilRestriction.pointsMulEquivOfBaseChange` is a
+topological multiplicative equivalence `(Res_{B/A} G)(T) ≃ₜ* G(S)`. -/
+def pointsContinuousMulEquivOfBaseChange (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
+    WithConv (WeilRestriction A B H →ₐ[A] T) ≃ₜ* WithConv (H →ₐ[B] S) where
+  toMulEquiv := pointsMulEquivOfBaseChange A B H e.toAlgEquiv he
+  continuous_toFun :=
+    (pointsContinuousMulEquivOfBaseChangeAux A B H e he).continuous.congr fun x ↦
+      DFunLike.congr_fun (toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux A B H e he) x
+  continuous_invFun := by
+    refine (pointsContinuousMulEquivOfBaseChangeAux A B H e he).symm.continuous.congr fun y ↦ ?_
+    rw [MulEquiv.invFun_eq_symm,
+      ← toMulEquiv_pointsContinuousMulEquivOfBaseChangeAux A B H e he]
+    rfl
+
+variable {A B H}
+
+/-- Forgetting continuity from `pointsContinuousMulEquivOfBaseChange` recovers
+`pointsMulEquivOfBaseChange`. -/
+@[simp]
+theorem toMulEquiv_pointsContinuousMulEquivOfBaseChange (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b) :
+    (pointsContinuousMulEquivOfBaseChange A B H e he :
+        WithConv (WeilRestriction A B H →ₐ[A] T) ≃* WithConv (H →ₐ[B] S)) =
+      pointsMulEquivOfBaseChange A B H e.toAlgEquiv he := (rfl)
+
+/-- Evaluating `pointsContinuousMulEquivOfBaseChange` swaps the tensor factors of `pointsMulEquiv`
+and applies `e`. -/
+@[simp]
+theorem pointsContinuousMulEquivOfBaseChange_apply (e : T ⊗[A] B ≃A[T] S)
+    (he : ∀ b : B, e (1 ⊗ₜ[A] b) = algebraMap B S b)
+    (x : WithConv (WeilRestriction A B H →ₐ[A] T)) (h : H) :
+    (pointsContinuousMulEquivOfBaseChange A B H e he x).ofConv h =
+      e (Algebra.TensorProduct.comm A B T ((pointsMulEquiv A B H T x).ofConv h)) :=
+  pointsMulEquivOfBaseChange_apply e.toAlgEquiv he x h
+
+end BaseChange
+
+end Bialgebra
 
 end TauCeti.Algebra.WeilRestriction
