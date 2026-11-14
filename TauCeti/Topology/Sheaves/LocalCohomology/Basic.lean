@@ -85,7 +85,8 @@ of the sheaf of hyperfunctions.
 * `CategoryTheory.Sheaf.isZero_supportedHSheaf_succ_of_isFlasque`: `𝓗_Sⁿ⁺¹(F) = 0` for a flasque
   sheaf `F`.
 * `CategoryTheory.Sheaf.supportedSectionsFunctor S`: the supported-section functor `Γ_S`, which
-  is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`) and through which
+  is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`; as an instance,
+  `CategoryTheory.Sheaf.preservesFiniteLimits_supportedSectionsFunctor`) and through which
   `H_S⁰(W, F) ≃+ Γ_S(W, F)` is natural in `F`
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.shortExact_map_supportedSectionsFunctor`: `Γ_S` preserves a short exact
@@ -429,6 +430,15 @@ theorem exact_map_supportedSectionsFunctor (hT : T.Exact) [Mono T.f] :
     simp
   · rw [← cancel_mono (T.X₁.supportedSectionsι S), ← cancel_mono T.f]
     simp [← hm]
+
+/-- The supported-section functor `Γ_S` is left exact: it preserves finite limits, since it
+preserves monomorphisms and the exactness of `F₁ ⟶ F₂ ⟶ F₃` when `F₁ ⟶ F₂` is a monomorphism. -/
+instance preservesFiniteLimits_supportedSectionsFunctor :
+    PreservesFiniteLimits (supportedSectionsFunctor S) := by
+  rw [Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono]
+  intro T hT
+  have := hT.mono_f
+  exact ⟨exact_map_supportedSectionsFunctor S hT.exact, mono_supportedSectionsFunctor_map S T.f⟩
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact and the local cohomology sheaf `𝓗_S¹(F₁)` vanishes,
 then `Γ_S(F₂) ⟶ Γ_S(F₃)` is an epimorphism: a section of `F₃` supported in `S` lifts locally to a
