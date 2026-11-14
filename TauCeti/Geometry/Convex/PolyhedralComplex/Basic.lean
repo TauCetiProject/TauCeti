@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
+public import Mathlib.Geometry.Convex.Cone.Pointed
 public import TauCeti.Analysis.Convex.Exposed
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
 
@@ -26,12 +27,16 @@ point of the intrinsic interior of another cell contains it entirely. The cells 
 and two are its walls and joints. A complex `C` is a weak
 refinement of `D` when each cell of `C` lies in a cell of `D`, and a subdivision when moreover the
 supports agree. Both relations are reflexive, transitive and antisymmetric. A subcomplex is a
-complex whose cells are among the cells of another. The simplest example is
+complex whose cells are among the cells of another. A conical complex
+(`TauCeti.FinitePolyhedralComplex.IsConical`) has cone carriers as cells, and each subcomplex
+of a conical complex is conical. The simplest example is
 `TauCeti.FinitePolyhedralComplex.univ`, whose only cell is the whole space.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` and `Subcomplex.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
-commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
+commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0). The conicality predicate
+is adapted from `Mei/Geometry/Convex/PolyhedralComplex/Basic.lean` at commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f` in the same repository.
 -/
 
 public section
@@ -195,6 +200,14 @@ theorem IsSubdivision.exists_mem_cells_subset {C D : FinitePolyhedralComplex h}
   exact ⟨(R ∩ P) ∩ Q, C.face_closed Q hQ _ ⟨⟨x, ⟨hQR hxQ, hx⟩, hxQ⟩, hF⟩,
     fun _ hy => hy.1.2, ⟨hQR hxQ, hx⟩, hxQ⟩
 
+/-- Every cell is the carrier of a pointed cone with apex zero. -/
+def IsConical (C : FinitePolyhedralComplex h) : Prop :=
+  ∀ P ∈ C.cells, ∃ σ : PointedCone ℝ V, (σ : Set V) = P
+
+/-- Conicality means that each actual cell carrier is a cone. -/
+theorem isConical_iff {C : FinitePolyhedralComplex h} :
+    C.IsConical ↔ ∀ P ∈ C.cells, ∃ σ : PointedCone ℝ V, (σ : Set V) = P := Iff.rfl
+
 /-- `C` is a subcomplex of `D` when every cell of `C` is a cell of `D`. -/
 def IsSubcomplex (C D : FinitePolyhedralComplex h) : Prop := C.cells ⊆ D.cells
 
@@ -213,6 +226,11 @@ theorem IsSubcomplex.trans {C D E : FinitePolyhedralComplex h}
 theorem IsSubcomplex.antisymm {C D : FinitePolyhedralComplex h}
     (hCD : C.IsSubcomplex D) (hDC : D.IsSubcomplex C) : C = D :=
   FinitePolyhedralComplex.ext (Finset.Subset.antisymm hCD hDC)
+
+/-- A subcomplex inherits conicality from its ambient complex. -/
+theorem IsSubcomplex.isConical {C D : FinitePolyhedralComplex h}
+    (hCD : C.IsSubcomplex D) (hD : D.IsConical) : C.IsConical :=
+  isConical_iff.mpr fun P hP => isConical_iff.mp hD P (isSubcomplex_iff.mp hCD hP)
 
 /-- A subcomplex is a weak refinement of its ambient complex. -/
 theorem IsSubcomplex.isWeakRefinement {C D : FinitePolyhedralComplex h}
@@ -246,6 +264,12 @@ theorem cells_univ : (univ h).cells = {Set.univ} := by
 
 theorem mem_cells_univ {P : Set V} : P ∈ (univ h).cells ↔ P = Set.univ := by
   simp
+
+/-- The whole-space complex is conical. -/
+@[simp]
+theorem isConical_univ : (univ h).IsConical := by
+  refine isConical_iff.mpr fun P hP => ?_
+  exact ⟨⊤, (mem_cells_univ.mp hP).symm⟩
 
 @[simp]
 theorem support_univ : (univ h).support = Set.univ := by
