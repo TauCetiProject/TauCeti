@@ -10,6 +10,8 @@ public import TauCeti.Combinatorics.TreeWalk.Product
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.RandomMatrix.Wigner
 
+import TauCeti.Probability.Independence.Basic
+
 /-!
 # Trace words of Wigner matrices
 
@@ -27,25 +29,30 @@ walks are then classified by their numbers of vertices and distinct edges.
 
 For a leading word of length `2 * m`, the maximal `m + 1` visited vertices force a
 double-traversal tree. Pairing each discovery with its reverse reduces the entry product
-to independent squared absolute values. Unit off-diagonal second moments then give exactly
-`n⁻ᵐ`, without centering, higher moments, or any assumptions on the diagonal entries.
-The path formulation includes the zero-step case and proves integrability first.
+to independent squared absolute values. Common off-diagonal second moment `s` then gives
+`((n : ℂ)⁻¹ * s) ^ m` (in particular `n⁻ᵐ` when `s = 1`), without centering, higher moments, or
+any assumptions on the diagonal entries. The path formulation includes the zero-step case and
+proves integrability first.
 
 ## Main results
 
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred entries, a product
   of entries reading some edge exactly once has expectation zero.
-* `TauCeti.integral_trace_pow_wignerMatrix`: for independent centred entries in `Lᵏ`, the
-  expected trace of `Hₙᵏ` is the sum, over the closed walks of length `k` traversing each of
-  their edges at least twice, of the expected products of entries along the walk.
+* `TauCeti.integrable_trace_pow_wignerMatrix` and `TauCeti.integral_trace_pow_wignerMatrix`: on a
+  finite measure space with entries in `Lᵏ`, `(Hₙ ^ k).trace` is integrable, and when the entries
+  are independent and centred its expectation is the sum, over the closed walks of length `k`
+  traversing each of their edges at least twice, of the expected products of entries along the walk.
 
-* `TauCeti.integrable_prod_wignerMatrix_apply_path` and
-  `TauCeti.integral_prod_wignerMatrix_apply_path`: integrability and a second-moment product
-  formula for double-traversal tree paths.
-* `TauCeti.integral_prod_wignerMatrix_apply_leading`: a second-moment product formula for
-  leading cyclic Wigner words.
-* `TauCeti.integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`: every leading
-  cyclic Wigner word contributes `n⁻ᵐ` under independence and unit off-diagonal second moments.
+* `TauCeti.integrable_prod_wignerMatrix_apply_path`,
+  `TauCeti.integral_prod_wignerMatrix_apply_path`, and
+  `TauCeti.integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq`: integrability and
+  second-moment product formulas for double-traversal tree paths (including `m = 0`).
+* `TauCeti.integral_prod_wignerMatrix_apply_leading`,
+  `TauCeti.integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq`, and
+  `TauCeti.integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one`: second-moment
+  product formulas for leading cyclic Wigner words, giving `((n : ℂ)⁻¹ * s) ^ m` under
+  independence and common off-diagonal second moment `s` in the `n × n` corner (and `n⁻ᵐ` when
+  `s = 1`).
 
 ## References
 
@@ -148,6 +155,19 @@ theorem integral_prod_wignerMatrix_apply_eq_zero {ι : Type*} [Fintype ι]
   simp only [Function.comp_apply] at hmul
   rw [hmul, hφt, zero_mul]
 
+/-- On a finite measure space, the trace of the `k`th power of a Wigner matrix of size `n` is
+integrable whenever all coordinates of the `n × n` corner lie in `Lᵏ`. Neither independence nor
+centering is required, and `k = 0` is included. -/
+theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → MemLp (ξ ij) k P)
+    (hη : ∀ i < n, MemLp (η i) k P) :
+    Integrable (fun ω ↦ (wignerMatrix ξ η n ω ^ k).trace) P := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · simp_rw [trace_pow_eq_sum_prod _ hk]
+    exact integrable_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
+      (fun ij hij ↦ by simpa using hξ ij hij) (fun i hi ↦ by simpa using hη i hi) _ _
+
 /-- **Trace-word expansion of Wigner moments.** Let the entries of the array be independent,
 centred and in `Lᵏ`, `k ≠ 0`. Then the expected trace of `Hₙᵏ` is the sum, over the closed walks
 `w : Fin k → Fin n` that traverse each of their edges `s(w t, w (t + 1))` at least twice, of the
@@ -163,7 +183,7 @@ theorem integral_trace_pow_wignerMatrix [IsFiniteMeasure P]
         ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t)) ∂P := by
   simp_rw [trace_pow_eq_sum_prod _ hk]
   rw [integral_finsetSum _ fun w _ ↦ integrable_prod_wignerMatrix_apply
-    (by simpa using hξk) (by simpa using hηk) _ _]
+    (fun ij _ ↦ by simpa using hξk ij) (fun i _ ↦ by simpa using hηk i) _ _]
   refine (Finset.sum_filter_of_ne fun w _ hw t ↦ ?_).symm
   by_contra! h
   exact hw (integral_prod_wignerMatrix_apply_eq_zero
@@ -264,6 +284,45 @@ theorem integral_prod_wignerMatrix_apply_path
   rw [Finset.prod_coe_sort _ (fun i : Fin (2 * m) ↦
     ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P)]
 
+/-- Along any closed double-traversal tree path `v : Fin (2 * m + 1) → Fin n`, the expected product
+of Wigner entries equals `((n : ℂ)⁻¹ * s) ^ m` whenever the strictly upper coordinates `ξ` in the
+`n × n` corner are independent, have almost-everywhere strongly measurable squared norms, and have
+common second absolute moment `s`. The zero-step path (`m = 0`) contributes `1`, and neither
+centering nor any assumption on the diagonal entries `η` is needed. -/
+theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq {s : ℝ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
+    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
+    (v : Fin (2 * m + 1) → Fin n) (hclosed : v (Fin.last (2 * m)) = v 0)
+    (hv : #(univ.image v) = m + 1)
+    (he : ∀ i : Fin (2 * m),
+      #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
+    ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
+      ((n : ℂ)⁻¹ * s) ^ m := by
+  let ξ' : StrictUpper → Ω → ℂ := fun ij ↦ if ij.1.2 < n then ξ ij else 0
+  let η' : ℕ → Ω → ℝ := fun i ↦ if i < n then η i else 0
+  have hξ' (ij : StrictUpper) : AEStronglyMeasurable (fun ω ↦ ‖ξ' ij ω‖ ^ 2) P := by
+    by_cases hij : ij.1.2 < n
+    · simpa [ξ', hij] using hξ ij hij
+    · simp only [ξ', hij, ↓reduceIte, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
+        not_false_eq_true, zero_pow]
+      exact aestronglyMeasurable_const
+  rw [← wignerMatrix_ite_lt ξ η n,
+    integral_prod_wignerMatrix_apply_path (ξ := ξ') (η := η') hξ'
+      (Probability.iIndepFun_ite_zero hξindep) v hclosed hv he]
+  have hterm (i : Fin (2 * m)) (hi : i ∈
+      ({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)) :
+      ∫ ω, ‖wignerMatrix ξ' η' n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ * s := by
+    have hne := ne_of_canonicalWalk_succ_eq v i (mem_filter.mp hi).2
+    have hlt : (⟨(min (v i.castSucc).val (v i.succ).val, max (v i.castSucc).val (v i.succ).val),
+        min_lt_max.mpr (Fin.val_ne_of_ne hne)⟩ : StrictUpper).1.2 < n :=
+      max_lt (v i.castSucc).isLt (v i.succ).isLt
+    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, ξ', ite_eq_left hlt, integral_const_mul,
+      hξsq _ hlt]
+  rw [prod_congr rfl hterm, prod_const, card_filter_canonicalWalk_succ_eq, hv,
+    Nat.add_sub_cancel]
+  simp only [Complex.ofReal_pow, Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast]
+
 /-- With unit off-diagonal second moments, every double-traversal tree path of length
 `2 * m` has expected entry product `n⁻ᵐ`. The zero-step path contributes `1`. -/
 theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
@@ -275,18 +334,9 @@ theorem integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
       #{j : Fin (2 * m) | s(v j.castSucc, v j.succ) = s(v i.castSucc, v i.succ)} = 2) :
     ∫ ω, ∏ i : Fin (2 * m), wignerMatrix ξ η n ω (v i.castSucc) (v i.succ) ∂P =
       (n : ℂ)⁻¹ ^ m := by
-  have hξ (ij : StrictUpper) : AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P :=
-    (integrable_of_integral_eq_one (hsecond ij)).aestronglyMeasurable
-  rw [integral_prod_wignerMatrix_apply_path hξ hindep v hclosed hv he]
-  have hterm (i : Fin (2 * m)) (hi : i ∈
-      ({i : Fin (2 * m) | canonicalWalk v i.succ = i.succ} : Finset _)) :
-      ∫ ω, ‖wignerMatrix ξ η n ω (v i.castSucc) (v i.succ)‖ ^ 2 ∂P = (n : ℝ)⁻¹ := by
-    have hne := ne_of_canonicalWalk_succ_eq v i (mem_filter.mp hi).2
-    simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hne, integral_const_mul,
-      hsecond, mul_one]
-  rw [prod_congr rfl hterm, prod_const, card_filter_canonicalWalk_succ_eq, hv,
-    Nat.add_sub_cancel]
-  simp only [Complex.ofReal_pow, Complex.ofReal_inv, Complex.ofReal_natCast]
+  simpa using integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq (η := η)
+    (fun ij _ ↦ (integrable_of_integral_eq_one (hsecond ij)).aestronglyMeasurable)
+    (iIndepFun.precomp Subtype.val_injective hindep) (fun ij _ ↦ hsecond ij) v hclosed hv he
 
 /-- A leading cyclic Wigner word is integrable when the upper entries are independent
 and their squared absolute values are integrable. The diagonal entries may be arbitrary. -/
@@ -323,6 +373,25 @@ theorem integral_prod_wignerMatrix_apply_leading [NeZero m]
     integral_prod_wignerMatrix_apply_path (η := η) hξ hindep (cyclicPath w)
       (by simp) (by simpa using hv) (card_edge_fiber_cyclicPath w h hv)
 
+/-- Along any leading cyclic word `w : Fin (2 * m) → Fin n`, the expected product of Wigner entries
+equals `((n : ℂ)⁻¹ * s) ^ m` whenever the strictly upper coordinates `ξ` in the `n × n` corner are
+independent, have almost-everywhere strongly measurable squared norms, and have common second
+absolute moment `s`. Neither centering nor any assumption on the diagonal entries `η` is needed,
+because leading words have no self-loops. -/
+theorem integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq {s : ℝ}
+    (hξ : ∀ ij : StrictUpper, ij.1.2 < n → AEStronglyMeasurable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P)
+    (hξindep : iIndepFun (fun ij : {ij : StrictUpper // ij.1.2 < n} ↦ ξ ij.1) P)
+    (hξsq : ∀ ij : StrictUpper, ij.1.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s)
+    (w : Fin (2 * m) → Fin n)
+    (h : ∀ t, ∃ r ≠ t, s(w r, w (finRotate (2 * m) r)) = s(w t, w (finRotate (2 * m) t)))
+    (hv : #(univ.image w) = m + 1) :
+    ∫ ω, ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate (2 * m) t)) ∂P =
+      ((n : ℂ)⁻¹ * s) ^ m := by
+  have : NeZero m := ⟨by rintro rfl; simp at hv⟩
+  simpa only [cyclicPath_castSucc, cyclicPath_succ] using
+    integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq (η := η) hξ hξindep hξsq
+      (cyclicPath w) (by simp) (by simpa using hv) (card_edge_fiber_cyclicPath w h hv)
+
 /-- **Leading Wigner words.** A cyclic word of length `2 * m`, with no singleton unordered
 edge and `m + 1` distinct vertices, contributes exactly `n⁻ᵐ` to the expected trace.
 Only independence and unit second absolute moments of the upper entries are required;
@@ -335,13 +404,8 @@ theorem integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq_one
     (hv : #(univ.image w) = m + 1) :
     ∫ ω, ∏ i, wignerMatrix ξ η n ω (w i) (w (finRotate (2 * m) i)) ∂P =
       (n : ℂ)⁻¹ ^ m := by
-  have hm : m ≠ 0 := by
-    rintro rfl
-    simp at hv
-  have := NeZero.mk hm
-  have hp := integral_prod_wignerMatrix_apply_path_of_integral_norm_sq_eq_one
-    (η := η) hindep hsecond (cyclicPath w) (by simp) (by simpa using hv)
-    (card_edge_fiber_cyclicPath w h hv)
-  simpa only [cyclicPath_castSucc, cyclicPath_succ] using hp
+  simpa using integral_prod_wignerMatrix_apply_leading_of_integral_norm_sq_eq (η := η)
+    (fun ij _ ↦ (integrable_of_integral_eq_one (hsecond ij)).aestronglyMeasurable)
+    (iIndepFun.precomp Subtype.val_injective hindep) (fun ij _ ↦ hsecond ij) w h hv
 
 end TauCeti
