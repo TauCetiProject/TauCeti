@@ -46,7 +46,8 @@ end Restrict
 
 section IntrinsicInterior
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {P F : Set V}
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [ContinuousSMul ℝ V] {P F : Set V}
 
 /-- An exposed subset meeting the intrinsic interior of its ambient set is the whole set.
 Neither convexity nor finite dimensionality is required. -/
@@ -59,6 +60,13 @@ theorem eq_of_mem_intrinsicInterior (hF : IsExposed ℝ P F) {x : V} (hxF : x �
     (fun y hy => by simpa using hxF.2 y hy) hx (by simp) hp
   simp only [FunLike.coe_sub, Pi.sub_apply, AffineMap.const_apply, sub_eq_zero] at hg
   simpa [hg] using hxF.2 q hq
+
+/-- Every proper exposed subset lies in the relative frontier of its ambient set. -/
+theorem subset_intrinsicFrontier (hF : IsExposed ℝ P F) (hne : F ≠ P) :
+    F ⊆ intrinsicFrontier ℝ P := by
+  rw [← intrinsicClosure_sdiff_intrinsicInterior]
+  exact fun _ hx => ⟨subset_intrinsicClosure (hF.subset hx),
+    fun hi => hne (hF.eq_of_mem_intrinsicInterior hx hi)⟩
 
 end IntrinsicInterior
 
