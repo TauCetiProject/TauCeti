@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.Linear
+public import Mathlib.Data.Finset.Union
+public import TauCeti.GroupTheory.FreeGroup.ConjugateBasis
+import Mathlib.Algebra.Ring.Int.Defs
+import Mathlib.Basic.Countable.Defs
+import Mathlib.Data.Fintype.EquivFin
 
 /-!
 # Free groups are discriminated by the free group of rank two
