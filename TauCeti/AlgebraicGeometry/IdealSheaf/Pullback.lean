@@ -82,11 +82,16 @@ theorem mem_sections_of_app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶
     (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso ((I.comapIso g).hom.app _)).1).mp hs
   -- Hence so does the pullback to `P` of the restriction of `s` to `V(I)`.
   have h2 : (pullback.snd g I.subschemeι).app (I.subschemeι ⁻¹ᵁ U) (I.subschemeι.app U s) = 0 := by
-    have h := congrArg (fun φ ↦ φ s) (Scheme.Hom.congr_app (pullback.condition (f := g)
-      (g := I.subschemeι)) U)
-    change (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) =
-      (pullback g I.subschemeι).presheaf.map _ ((pullback.snd g I.subschemeι).app
-        (I.subschemeι ⁻¹ᵁ U) (I.subschemeι.app U s)) at h
+    have h : (pullback.fst g I.subschemeι).app (g ⁻¹ᵁ U) (g.app U s) =
+        (pullback g I.subschemeι).presheaf.map (eqToHom (by
+          rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, pullback.condition])).op
+          ((pullback.snd g I.subschemeι).app (I.subschemeι ⁻¹ᵁ U) (I.subschemeι.app U s)) := by
+      -- This is `pullback.condition` on sections over `U`, after `Scheme.Hom.comp_app`.
+      rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+        ← ConcreteCategory.comp_apply, ← Scheme.Hom.comp_app, ← Category.assoc,
+        ← Scheme.Hom.comp_app]
+      exact congrArg (fun φ ↦ φ s)
+        (Scheme.Hom.congr_app (pullback.condition (f := g) (g := I.subschemeι)) U)
     rw [h1] at h
     have key : ∀ {A B : (pullback g I.subschemeι).Opens} (e : A = B)
         (x : Γ(pullback g I.subschemeι, B)),
@@ -97,8 +102,7 @@ theorem mem_sections_of_app_mem_sections_comap (I : Y.IdealSheafData) (g : X ⟶
   -- The open immersion `P ⟶ V(I)` is an isomorphism over the preimage of `U ≤ g.opensRange`.
   have hle : I.subschemeι ⁻¹ᵁ U ≤ (pullback.snd g I.subschemeι).opensRange := by
     intro x hx
-    change x ∈ Set.range (pullback.snd g I.subschemeι)
-    rw [Scheme.Pullback.range_snd]
+    rw [← SetLike.mem_coe, Scheme.Hom.coe_opensRange, Scheme.Pullback.range_snd]
     exact hU hx
   have := Scheme.Hom.isIso_app (pullback.snd g I.subschemeι) _ hle
   exact (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso

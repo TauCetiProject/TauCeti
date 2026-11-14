@@ -231,7 +231,12 @@ theorem isZero_normalConeAlgebra_obj_X [IsOpenImmersion i] {n : ℕ} (hn : n ≠
   refine IsZero.of_iso ?_ ((Scheme.Modules.restrictFunctorIsoPullback j).app _).symm
   refine (IsZero.iff_id_eq_zero _).mpr
     (Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_)
-  change @Eq Γ((j.ker ^ n).sheaf, j ''ᵁ U) t 0
+  simp only [Scheme.Modules.Hom.id_app, Scheme.Modules.Hom.zero_app, ConcreteCategory.id_apply,
+    AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply]
+  -- Sections of the restriction of `Iⁿ` over `U` are sections of `Iⁿ` over `j ''ᵁ U`.
+  refine (ConcreteCategory.bijective_of_isIso ((j.ker ^ n).sheaf.restrictAppIso j U).hom).1 ?_
+  rw [map_zero]
+  generalize ((j.ker ^ n).sheaf.restrictAppIso j U).hom t = t
   have hle : j.ker ^ n ≤ j.ker := fun V ↦ by
     rw [IdealSheafData.ideal_pow, Pi.pow_apply]
     exact Ideal.pow_le_self hn
