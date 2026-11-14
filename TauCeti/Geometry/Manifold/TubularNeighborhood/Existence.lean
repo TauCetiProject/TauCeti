@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.TubularNeighborhood.DeformationRetract
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
+import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # Tubular neighbourhoods without a prescribed metric
@@ -26,6 +28,13 @@ Projecting the tubular neighbourhood to the base gives a smooth retraction of an
 neighbourhood of the image onto the embedded manifold
 (`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`).
 
+The tubular neighbourhood also supplies `TauCeti.IsTubularNeighborhood` data on the whole normal
+bundle (`TauCeti.SmoothEmbedding.exists_isTubularNeighborhood_subset`). Its straight-line
+contraction in the fibres shows that the image of `f` is a strong deformation retract of an open
+neighbourhood inside any prescribed one
+(`TauCeti.SmoothEmbedding.exists_deformation_subset`), and that `f` is a homotopy equivalence
+onto such a neighbourhood (`TauCeti.SmoothEmbedding.exists_homotopyEquiv_subset`).
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 6.24.
@@ -35,7 +44,7 @@ neighbourhood of the image onto the embedded manifold
 public noncomputable section
 
 open Bundle Manifold Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold ContinuousMap
 
 namespace TauCeti.SmoothEmbedding
 
@@ -102,5 +111,59 @@ theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ 
   · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
       Φ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
     rw [hrW ⟨f x, hfW x⟩, h, zeroSection_proj]
+
+/-- **Smooth tubular neighbourhoods as tubular-neighbourhood data.** The entire intrinsic normal
+bundle of a smooth embedding parametrizes, as `TauCeti.IsTubularNeighborhood` data, an open
+neighbourhood of its image inside any prescribed open neighbourhood. -/
+theorem exists_isTubularNeighborhood_subset
+    (f : SmoothEmbedding I J ∞ M N)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
+    {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
+    let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+    ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) → N,
+      IsTubularNeighborhood f univ (univ.domRestrict Φ) ∧ range Φ ⊆ O := by
+  intro hn
+  let := f.normalSpaceFiberBundle hn hdim
+  have := f.normalSpaceVectorBundle hn hdim
+  obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
+  refine ⟨fun v ↦ Φ v, ⟨isOpen_univ, fun _ ↦ mem_univ _, fun x ↦ ?_, ?_, f.isEmbedding,
+    fun x ↦ hΦ x, ?_⟩, ?_⟩
+  · simpa using starConvex_univ (𝕜 := ℝ) (0 : f.NormalSpace x hn)
+  · exact W.isOpen.isOpenEmbedding_subtypeVal.comp
+      (Φ.toHomeomorph.isOpenEmbedding.comp isOpen_univ.isOpenEmbedding_subtypeVal)
+  · exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
+      (continuous_subtype_val.comp continuous_snd)
+  · rintro _ ⟨v, rfl⟩
+    exact hWO (Φ v).2
+
+/-- **The image of a smooth embedding is a strong deformation retract of a tubular
+neighbourhood.** Every open neighbourhood `O` of the image of a smooth embedding `f : M → N`
+contains an open neighbourhood `W` of that image which deformation retracts onto it, fixing the
+image throughout; the deformation is the straight-line contraction of the normal fibres. -/
+theorem exists_deformation_subset (f : SmoothEmbedding I J ∞ M N) {O : Set N} (hO : IsOpen O)
+    (hfO : range f ⊆ O) :
+    ∃ W : Set N, IsOpen W ∧ W ⊆ O ∧ ∃ hfW : range f ⊆ W,
+      ∃ r : C(W, range f), (∀ b, r (ContinuousMap.inclusion hfW b) = b) ∧
+        Nonempty (((ContinuousMap.inclusion hfW).comp r).HomotopyRel (ContinuousMap.id W)
+          {w | (w : N) ∈ range f}) := by
+  let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
+  obtain ⟨Φ, T, hΦO⟩ := f.exists_isTubularNeighborhood_subset (P := P)
+    finrank_euclideanSpace_fin hO hfO
+  refine ⟨_, T.isOpenEmbedding.isOpen_range, ?_, T.range_f_subset, T.exists_deformation_range⟩
+  rintro _ ⟨v, rfl⟩
+  exact hΦO (mem_range_self _)
+
+/-- **A smooth embedding is a homotopy equivalence onto a tubular neighbourhood.** Every open
+neighbourhood `O` of the image of a smooth embedding `f : M → N` contains an open neighbourhood
+`W` of that image such that `f`, corestricted to `W`, is a homotopy equivalence. -/
+theorem exists_homotopyEquiv_subset (f : SmoothEmbedding I J ∞ M N) {O : Set N} (hO : IsOpen O)
+    (hfO : range f ⊆ O) :
+    ∃ W : Set N, IsOpen W ∧ W ⊆ O ∧ ∃ e : M ≃ₕ W, ∀ x, (e x : N) = f x := by
+  let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
+  obtain ⟨Φ, T, hΦO⟩ := f.exists_isTubularNeighborhood_subset (P := P)
+    finrank_euclideanSpace_fin hO hfO
+  refine ⟨_, T.isOpenEmbedding.isOpen_range, ?_, T.homotopyEquiv, fun x ↦ by simp⟩
+  rintro _ ⟨v, rfl⟩
+  exact hΦO (mem_range_self _)
 
 end TauCeti.SmoothEmbedding
