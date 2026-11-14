@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Omega
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
+import Mathlib.Algebra.MvPolynomial.Monad
 
 /-!
 # Change of coefficients for the symmetric functions
@@ -15,15 +16,21 @@ symmetric functions: applying `MvPolynomial.map f` to every member of a compatib
 symmetric polynomials gives a compatible family over `S`. This file constructs the resulting
 `f`-semilinear map in each degree and the ring homomorphism `Λ_R →+* Λ_S`, and proves that they
 commute with the specializations to finite alphabets, fix the Schur, elementary, complete and
-power-sum symmetric functions, act on Schur coordinates by `f`, and commute with the free
-generators and the involution `ω`.
+power-sum symmetric functions, and commute with polynomial evaluation at the elementary symmetric
+functions. For commutative rings `R` and `S`, they act on Schur coordinates by `f` and commute with
+the inverse of the free generation by the elementary symmetric functions. The naturality of the
+complete homogeneous symmetric functions and of `ω` is in
+`TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Omega`.
 
-Since the Schur functions are a basis of `Λ_R` over every ring and are fixed by the change of
-coefficients, the symmetric functions over `S` coming from `R` are exactly those whose Schur
-coordinates come from `R` (`TauCeti.mem_range_stableSymmetricMap_iff`). For the inclusion
-`ℤ → ℂ` this identifies the integral symmetric functions `Λ_ℤ` with the lattice of integral Schur
-coordinates in `Λ_ℂ`, which is how virtual characters of the symmetric groups are matched with
-`Λ_ℤ` under the Frobenius characteristic.
+Since the Schur functions of degree `n` are a basis of the symmetric functions of degree `n` over
+every commutative ring and are fixed by the change of coefficients, the symmetric functions of
+degree `n` over `S` coming from `R` are exactly those whose Schur coordinates come from `R`
+(`TauCeti.mem_range_stableSymmetricMap_iff`); a symmetric function over `S` comes from `R` exactly
+when each of its homogeneous components does (`TauCeti.SymmetricFunction.mem_range_map_iff`). For
+the inclusion `ℤ → ℂ`, which is injective, this identifies the integral symmetric functions of
+degree `n` with the lattice of integral Schur coordinates among the complex ones, which is how
+virtual characters of the symmetric groups are matched with `Λ_ℤ` under the Frobenius
+characteristic.
 
 ## Main definitions
 
@@ -36,15 +43,22 @@ coordinates in `Λ_ℂ`, which is how virtual characters of the symmetric groups
 
 * `TauCeti.SymmetricFunction.specialization_map`: changing coefficients and then specializing to
   `d` variables is specializing and then changing the coefficients of the polynomial.
-* `TauCeti.stableSchurBasis_repr_stableSymmetricMap`: the Schur coordinates of the image of a
-  symmetric function are the images of its Schur coordinates.
-* `TauCeti.mem_range_stableSymmetricMap_iff`: a symmetric function over `S` comes from `R` exactly
-  when its Schur coordinates lie in the range of `f`.
-* `TauCeti.SymmetricFunction.map_injective`, `TauCeti.SymmetricFunction.map_surjective`: the change
-  of coefficients is injective or surjective when `f` is.
-* `TauCeti.SymmetricFunction.map_esymmAlgHom`, `TauCeti.SymmetricFunction.map_hsymmAlgHom`,
-  `TauCeti.SymmetricFunction.map_omega`: naturality of the free generation by the `e_r` and by the
-  `h_r`, and of `ω`.
+* `TauCeti.stableSchurBasis_repr_stableSymmetricMap`: over commutative rings, the Schur
+  coordinates of the image of a symmetric function of degree `n` are the images of its Schur
+  coordinates.
+* `TauCeti.mem_range_stableSymmetricMap_iff`: over commutative rings, a symmetric function of
+  degree `n` over `S` comes from `R` exactly when its Schur coordinates lie in the range of `f`.
+* `TauCeti.SymmetricFunction.mem_range_map_iff`: a symmetric function over `S` comes from `R`
+  exactly when each of its homogeneous components does.
+* `TauCeti.SymmetricFunction.map_injective`: the change of coefficients is injective when `f` is.
+* `TauCeti.SymmetricFunction.map_surjective`: over commutative rings, the change of coefficients is
+  surjective when `f` is.
+* `TauCeti.SymmetricFunction.map_aeval`, `TauCeti.SymmetricFunction.map_esymmAlgHom`: the change
+  of coefficients commutes with polynomial evaluation, in particular at the elementary symmetric
+  functions.
+* `TauCeti.SymmetricFunction.esymmAlgEquiv_symm_map`: over commutative rings, the change of
+  coefficients commutes with the inverse of the free generation by the elementary symmetric
+  functions.
 
 ## References
 
@@ -72,16 +86,13 @@ private noncomputable def stableSymmetricMapAux (x : stableSymmetricSubmodule R 
         ⟨(mem_symmetricHomogeneousSubmodule.mp (Subtype.prop _)).1.map f,
           (mem_symmetricHomogeneousSubmodule.mp (Subtype.prop _)).2.map f⟩⟩,
     mem_stableSymmetricSubmodule.mpr fun d => by
-      have key (p : MvPolynomial (Fin (d + 1)) R) :
-          aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) S) 0) (MvPolynomial.map f p) =
-            MvPolynomial.map f (aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0) p) := by
-        rw [map_aeval, aeval_def, eval₂_map, coe_eval₂Hom]
-        congr 1
-        · ext
-          simp
-        · funext i
-          refine Fin.lastCases ?_ (fun i => ?_) i <;> simp
-      exact (key _).trans (congrArg _ (aeval_snoc_zero_stableSymmetricProj d x))⟩
+      refine Eq.trans ?_
+        (congrArg (MvPolynomial.map f) (aeval_snoc_zero_stableSymmetricProj d x))
+      dsimp only
+      rw [aeval_eq_bind₁, aeval_eq_bind₁, map_bind₁]
+      congr 2
+      funext i
+      refine Fin.lastCases ?_ (fun i => ?_) i <;> simp⟩
 
 private theorem coe_stableSymmetricProj_stableSymmetricMapAux (d : ℕ)
     (x : stableSymmetricSubmodule R n) :
@@ -224,31 +235,43 @@ theorem map_algebraMap (r : R) :
     map f (algebraMap R (SymmetricFunction R) r) = algebraMap S (SymmetricFunction S) (f r) :=
   ext_specialization fun d => by simp
 
+/-- **Changing coefficients sends `r • x` to `f r • map f x`.** -/
+@[simp]
+protected theorem map_smul (r : R) (x : SymmetricFunction R) :
+    map f (r • x) = f r • map f x := by
+  rw [Algebra.smul_def, map_mul, map_algebraMap, Algebra.smul_def]
+
 /-- **The change of coefficients is injective when `f` is.** -/
 theorem map_injective (hf : Function.Injective f) : Function.Injective (map f) :=
   (DirectSum.map_injective _).2 fun _ => stableSymmetricMap_injective f hf
 
-/-- **Changing coefficients commutes with the free generation by the elementary symmetric
-functions**: it changes the coefficients of the polynomial in the generators. -/
+/-- **A symmetric function over `S` comes from `R` exactly when each of its homogeneous components
+does.** -/
+theorem mem_range_map_iff {y : SymmetricFunction S} :
+    y ∈ Set.range (map f) ↔ ∀ n, y n ∈ Set.range (stableSymmetricMap f n) := by
+  have h := SetLike.ext_iff.mp
+    (DirectSum.mrange_map fun n => (stableSymmetricMap f n).toAddMonoidHom) y
+  change (∃ x, DirectSum.map (fun n => (stableSymmetricMap f n).toAddMonoidHom) x = y) ↔ _
+  simpa [AddSubmonoid.mem_pi] using h
+
+/-- **Changing coefficients commutes with polynomial evaluation**: it changes the coefficients of
+the polynomial and the values of the variables. -/
+protected theorem map_aeval {ι : Type*} (x : ι → SymmetricFunction R) (p : MvPolynomial ι R) :
+    map f (aeval x p) = aeval (fun i => map f (x i)) (MvPolynomial.map f p) := by
+  have h : (map f).comp (aeval x).toRingHom =
+      (aeval fun i => map f (x i)).toRingHom.comp (MvPolynomial.map f) :=
+    MvPolynomial.ringHom_ext (fun r => by simp [← algebraMap_eq]) (fun i => by simp)
+  exact DFunLike.congr_fun h p
+
+/-- **Changing coefficients commutes with polynomial evaluation at the elementary symmetric
+functions**: it changes the coefficients of the polynomial. -/
 @[simp]
 theorem map_esymmAlgHom (p : MvPolynomial ℕ R) :
     map f (esymmAlgHom R p) = esymmAlgHom S (MvPolynomial.map f p) := by
-  have h : (map f).comp (esymmAlgHom R).toRingHom =
-      (esymmAlgHom S).toRingHom.comp (MvPolynomial.map f) :=
-    MvPolynomial.ringHom_ext (fun r => by simp [← algebraMap_eq])
-      (fun r => by simp)
-  exact DFunLike.congr_fun h p
-
-/-- **Changing coefficients commutes with the free generation by the complete homogeneous
-symmetric functions**: it changes the coefficients of the polynomial in the generators. -/
-@[simp]
-theorem map_hsymmAlgHom (p : MvPolynomial ℕ R) :
-    map f (hsymmAlgHom R p) = hsymmAlgHom S (MvPolynomial.map f p) := by
-  have h : (map f).comp (hsymmAlgHom R).toRingHom =
-      (hsymmAlgHom S).toRingHom.comp (MvPolynomial.map f) :=
-    MvPolynomial.ringHom_ext (fun r => by simp [← algebraMap_eq])
-      (fun r => by simp)
-  exact DFunLike.congr_fun h p
+  rw [aeval_unique (esymmAlgHom R), aeval_unique (esymmAlgHom S), SymmetricFunction.map_aeval]
+  congr 2
+  funext r
+  simp
 
 end SymmetricFunction
 
@@ -258,25 +281,21 @@ section CommRing
 
 variable {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) {n : ℕ}
 
-/-- The change of coefficients of the symmetric function of degree `n` with prescribed Schur
-coordinates in `R`. -/
-private theorem stableSymmetricMap_sum_smul_stableSchur (c : n.Partition → R) :
-    stableSymmetricMap f n (∑ μ, c μ • stableSchur R μ) = ∑ μ, f (c μ) • stableSchur S μ := by
-  simp [map_smulₛₗ]
-
 /-- **Changing coefficients acts on Schur coordinates by `f`.** -/
 @[simp]
 theorem stableSchurBasis_repr_stableSymmetricMap (x : stableSymmetricSubmodule R n)
     (μ : n.Partition) :
     (stableSchurBasis S n).repr (stableSymmetricMap f n x) μ =
       f ((stableSchurBasis R n).repr x μ) := by
-  have h := stableSymmetricMap_sum_smul_stableSchur f ((stableSchurBasis R n).repr x)
+  have h : stableSymmetricMap f n (∑ μ, (stableSchurBasis R n).repr x μ • stableSchur R μ) =
+      ∑ μ, f ((stableSchurBasis R n).repr x μ) • stableSchur S μ := by
+    simp [map_smulₛₗ]
   simp only [← stableSchurBasis_apply, Module.Basis.sum_repr] at h
   rw [h, Module.Basis.repr_sum_self]
 
-/-- **A symmetric function over `S` comes from `R` exactly when its Schur coordinates lie in the
-range of `f`.** For the inclusion `ℤ → ℂ`, the integral symmetric functions are the lattice of
-integral Schur coordinates. -/
+/-- **A symmetric function of degree `n` over `S` comes from `R` exactly when its Schur coordinates
+lie in the range of `f`.** For the inclusion `ℤ → ℂ`, the integral symmetric functions of degree `n`
+are the lattice of integral Schur coordinates. -/
 theorem mem_range_stableSymmetricMap_iff {y : stableSymmetricSubmodule S n} :
     y ∈ Set.range (stableSymmetricMap f n) ↔
       ∀ μ, (stableSchurBasis S n).repr y μ ∈ f.range := by
@@ -285,7 +304,6 @@ theorem mem_range_stableSymmetricMap_iff {y : stableSymmetricSubmodule S n} :
     simp
   · choose c hc using h
     refine ⟨∑ μ, c μ • stableSchur R μ, ?_⟩
-    rw [stableSymmetricMap_sum_smul_stableSchur]
     conv_rhs => rw [← (stableSchurBasis S n).sum_repr y]
     simp [hc]
 
@@ -300,11 +318,14 @@ namespace SymmetricFunction
 theorem map_surjective (hf : Function.Surjective f) : Function.Surjective (map f) :=
   (DirectSum.map_surjective _).2 fun _ => stableSymmetricMap_surjective f hf
 
-/-- **Changing coefficients commutes with the involution `ω`.** -/
+/-- **Changing coefficients commutes with the inverse of the free generation by the elementary
+symmetric functions**: the polynomial in the `e_r` representing the image of `x` is the image of the
+polynomial representing `x`. -/
 @[simp]
-theorem map_omega (x : SymmetricFunction R) : map f (omega R x) = omega S (map f x) := by
-  obtain ⟨p, rfl⟩ := esymmAlgHom_surjective R x
-  rw [omega_esymmAlgHom, map_hsymmAlgHom, map_esymmAlgHom, omega_esymmAlgHom]
+theorem esymmAlgEquiv_symm_map (x : SymmetricFunction R) :
+    (esymmAlgEquiv S).symm (map f x) = MvPolynomial.map f ((esymmAlgEquiv R).symm x) := by
+  rw [AlgEquiv.symm_apply_eq, esymmAlgEquiv_apply, ← map_esymmAlgHom, ← esymmAlgEquiv_apply,
+    AlgEquiv.apply_symm_apply]
 
 end SymmetricFunction
 
