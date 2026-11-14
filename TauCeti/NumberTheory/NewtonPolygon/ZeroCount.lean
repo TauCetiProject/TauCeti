@@ -234,7 +234,7 @@ theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq {σ : ℝ} {
     (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
   obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hfr) hface
+    hface
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
     TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq hu hl
       (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr]

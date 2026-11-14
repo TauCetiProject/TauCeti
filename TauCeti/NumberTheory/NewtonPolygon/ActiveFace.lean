@@ -63,13 +63,33 @@ theorem exists_isFiniteFace_newtonPolygon_of_hasGaussNorm
     ((he.isSupportingLine_iff.mpr (isSupportingLine_iff_forall.mpr hd)).finite_supportingFace hστ c)
     ⟨i, he.supportingFace_subset hc hi⟩
 
+/-- A finite Newton face makes the series restricted at its slope radius. -/
+theorem isRestricted_of_isFiniteFace_newtonPolygon {l u : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) : f.IsRestricted (b ^ σ) := by
+  have hadm : IsAdmissible fun n ↦ v (coeff n f) :=
+    isAdmissible_of_lowerConvexEnvelope_ne_top (f.newtonPolygon_def v ▸ hface.left_ne_top)
+  obtain ⟨ε, hε, heq⟩ :=
+    hface.exists_pos_supportingValue_eq_right (f.isConvexSeq_newtonPolygon v)
+  have hd : IsSupportingLine (f.newtonPolygon v) (σ + ε)
+      ((f.newtonPolygon v u).untop₀ - (σ + ε) * u) :=
+    TauCeti.isSupportingLine_iff.mpr (heq _ ⟨by linarith, le_rfl⟩).ge
+  have hG : f.HasGaussNorm norm (b ^ (σ + ε)) :=
+    (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv _).mpr <| ne_bot_of_le_ne_bot
+      (EReal.coe_ne_bot _) (TauCeti.isSupportingLine_iff.mp
+        ((f.isLowerConvexEnvelope_newtonPolygon hadm).isSupportingLine_iff.mp hd))
+  exact hG.isRestricted_of_abs_lt
+    ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)).trans_lt
+      (Real.rpow_lt_rpow_of_exponent_lt hb (by linarith)))
+
 /-- A finite Newton face identifies the first and last active coefficients even at a
-convergence boundary. Only bounded weighted coefficients at the given radius are needed. -/
+convergence boundary. The face itself supplies bounded weighted coefficients. -/
 theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
-    (hG : f.HasGaussNorm norm (b ^ σ)) {l u : ℕ}
+    {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f := by
+  have hG := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
+    (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)
   have hf0 : f ≠ 0 := by
     intro hf
     have hl := hface.left_ne_top
@@ -102,12 +122,8 @@ theorem isFiniteFace_newtonPolygon_iff (hf : f.HasGaussNorm norm (b ^ τ))
     IsFiniteFace (f.newtonPolygon v) σ l u ↔
       TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f := by
-  have hr := hf.isRestricted_of_abs_lt
-    ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)).trans_lt
-      (Real.rpow_lt_rpow_of_exponent_lt hb hστ))
-  have hG := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hr
   have hactive {i j : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ i j) :=
-    isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hG hface
+    isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hface
   refine ⟨hactive, fun ⟨hl, hu⟩ => ?_⟩
   obtain ⟨l', u', hface⟩ :=
     exists_isFiniteFace_newtonPolygon_of_hasGaussNorm f v hb hv hf hl.ne_zero hστ
