@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.WeightedSequence
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
-import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
+import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
