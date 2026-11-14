@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 
 /-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
 
@@ -42,6 +43,9 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
   (`TendstoInMeasure.mul`) preserve convergence in measure along an arbitrary filter when the
   limits are almost-everywhere strongly measurable (without measurability assumptions on the
   approximating families).
+
+Convergence in measure transfers to an absolutely continuous finite measure, and is unchanged
+between equivalent finite measures.
 
 ## Main results
 
@@ -300,6 +304,25 @@ theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
     (fun _ ↦ ν Set.univ) (hs.mono fun _ hi ↦ measurable_measure_prodMk_left hi)
     (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
     (by rw [lintegral_const]; finiteness) hlim
+
+/-- Convergence in measure transfers to an absolutely continuous finite measure. No
+measurability of the functions, finiteness of the original measure, or countability of the
+index filter is required. In particular, convergence in probability survives an absolutely
+continuous change of probability measure. -/
+theorem TendstoInMeasure.mono_ac {α E ι : Type*} {_ : MeasurableSpace α}
+    {μ ν : Measure α} [IsFiniteMeasure ν] [EDist E] {l : Filter ι}
+    {f : ι → α → E} {g : α → E} (hf : TendstoInMeasure μ f l g) (hνμ : ν ≪ μ) :
+    TendstoInMeasure ν f l g :=
+  fun ε hε ↦ hνμ.tendsto_measure_zero (hf ε hε)
+
+/-- Equivalent finite measures have the same convergent-in-measure families. This does not
+assert preservation of any Lᵖ moment. -/
+theorem tendstoInMeasure_iff_of_mutuallyAbsolutelyContinuous {α E ι : Type*}
+    {_ : MeasurableSpace α} {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [EDist E] {l : Filter ι} {f : ι → α → E} {g : α → E}
+    (hμν : μ ≪ ν) (hνμ : ν ≪ μ) :
+    TendstoInMeasure μ f l g ↔ TendstoInMeasure ν f l g :=
+  ⟨fun h ↦ h.mono_ac hνμ, fun h ↦ h.mono_ac hμν⟩
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
