@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Normed
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
-public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
+public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
 # Jets of derivative fields for `C^{k,α}` spaces
@@ -16,18 +16,21 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 The spaces `C^{k,α}` of `TauCeti.CkHolderSpace` (on the whole space) and
 `TauCeti.CkHolderSpaceOn` (on an open set) are both closed subspaces of a space of jets: bounded
 continuous derivative fields on a metric space `X` of orders below `k`, with the `ℓ¹` norm,
-together with a bounded Hölder field of order `k`. This file provides the jet space, its field
-projections, and left currying of multilinear maps as a continuous linear map, which together
-state the derivative identities cutting out both spaces. The field domain `X` is `E` for the
-whole space and the open set for `TauCeti.CkHolderSpaceOn`.
+together with a bounded Hölder field of order `k`. This file provides the jet space, its
+construction from fields, its field projections, through which both spaces state the derivative
+identities cutting them out, and the description of equality and of the norm of jets through the
+fields. The field domain `X` is `E` for the whole space and the open set for
+`TauCeti.CkHolderSpaceOn`.
 
 ## Main declarations
 
 * `TauCeti.CkHolderJet k α X E F`: the jet space.
+* `TauCeti.CkHolderJet.ofFields`: the jet with given fields.
 * `TauCeti.CkHolderJet.fieldL`: the derivative field of order `i ≤ k`, as a continuous linear
   map.
-* `TauCeti.CkHolderJet.curryLeftL`: left currying of `(j + 1)`-multilinear maps, as a
-  continuous linear map.
+* `TauCeti.CkHolderJet.ext`, `TauCeti.CkHolderJet.norm_eq`: a jet is determined by its fields,
+  and its norm is the sum of the supremum norms of the fields and the Hölder seminorm of the top
+  field.
 -/
 
 public section
@@ -77,8 +80,8 @@ def fieldL (i : Fin (k + 1)) : CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×
 /-- The derivative fields below order `k` are the components of the first factor. -/
 theorem fieldL_castSucc (j : Fin k) (J : CkHolderJet k α X E F) :
     fieldL j.castSucc J = J.ofLp.1 j :=
-  congrArg (· J) (Fin.lastCases_castSucc (motive := fun i : Fin (k + 1) ↦
-    CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F))) j)
+  (congrArg (· J) (Fin.lastCases_castSucc (motive := fun i : Fin (k + 1) ↦
+    CkHolderJet k α X E F →L[ℝ] (X →ᵇ (E [×i]→L[ℝ] F))) j)).trans (by simp)
 
 /-- The derivative field of order `k` is the Hölder field. -/
 theorem fieldL_last (J : CkHolderJet k α X E F) :
@@ -88,15 +91,41 @@ theorem fieldL_last (J : CkHolderJet k α X E F) :
     (last := HolderSpace.toBoundedContinuousFunctionCLM.comp (WithLp.sndL 1 ℝ _ _))
     (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
 
-variable (E F) in
-/-- Left currying of `(j + 1)`-multilinear maps, as a continuous linear map. -/
-def curryLeftL (j : ℕ) : (E [×j + 1]→L[ℝ] F) →L[ℝ] E →L[ℝ] (E [×j]→L[ℝ] F) :=
-  (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F).toContinuousLinearEquiv
+/-- A jet is determined by its derivative fields. -/
+theorem ext {J K : CkHolderJet k α X E F} (h : ∀ i, fieldL i J = fieldL i K) : J = K := by
+  apply WithLp.ofLp_injective 1
+  apply Prod.ext
+  · apply WithLp.ofLp_injective 1
+    funext j
+    simpa only [fieldL_castSucc] using h j.castSucc
+  · apply HolderSpace.toBoundedContinuousFunction_injective
+    simpa only [fieldL_last] using h (Fin.last k)
 
-theorem curryLeftL_apply (j : ℕ) (g : E [×j + 1]→L[ℝ] F) :
-    curryLeftL E F j g = g.curryLeft := by
-  ext x v
-  simp [curryLeftL]
+/-- The norm of a jet is the sum of the supremum norms of its fields and the `α`-Hölder seminorm
+of its field of order `k`. -/
+theorem norm_eq (J : CkHolderJet k α X E F) :
+    ‖J‖ = ∑ i : Fin (k + 1), ‖fieldL i J‖ + nnHolderNorm α ⇑(fieldL (Fin.last k) J) := by
+  rw [WithLp.prod_norm_eq_of_L1, PiLp.norm_eq_of_L1, Fin.sum_univ_castSucc, HolderSpace.norm_def,
+    add_assoc]
+  simp only [fieldL_castSucc, fieldL_last, HolderSpace.coe_toBoundedContinuousFunction,
+    WithLp.ofLp_fst, WithLp.ofLp_snd]
+
+/-- The jet with fields `g j` below order `k` and Hölder field `h` of order `k`. -/
+def ofFields (g : ∀ j : Fin k, X →ᵇ (E [×j]→L[ℝ] F)) (h : HolderSpace α X (E [×k]→L[ℝ] F)) :
+    CkHolderJet k α X E F :=
+  WithLp.toLp 1 (WithLp.toLp 1 g, h)
+
+/-- The fields below order `k` of `ofFields g h` are the `g j`. -/
+theorem fieldL_castSucc_ofFields (g : ∀ j : Fin k, X →ᵇ (E [×j]→L[ℝ] F))
+    (h : HolderSpace α X (E [×k]→L[ℝ] F)) (j : Fin k) :
+    fieldL j.castSucc (ofFields g h) = g j := by
+  rw [ofFields, fieldL_castSucc]
+
+/-- The field of order `k` of `ofFields g h` is `h`. -/
+theorem fieldL_last_ofFields (g : ∀ j : Fin k, X →ᵇ (E [×j]→L[ℝ] F))
+    (h : HolderSpace α X (E [×k]→L[ℝ] F)) :
+    fieldL (Fin.last k) (ofFields g h) = h.toBoundedContinuousFunction := by
+  rw [ofFields, fieldL_last]
 
 end CkHolderJet
 
