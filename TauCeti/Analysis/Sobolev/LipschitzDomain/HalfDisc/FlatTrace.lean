@@ -46,11 +46,11 @@ continuous boundary value at `1`.
 ## Main declarations
 
 * `TauCeti.W1p.halfDiscFlatTrace`: the trace on the flat segment, a bounded linear map.
-* `TauCeti.W1p.halfDiscFlatTraceL_ae_eq`, `TauCeti.W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn`:
+* `TauCeti.W1p.halfDiscFlatTrace_ae_eq`, `TauCeti.W1p.halfDiscFlatTrace_ae_eq_of_continuousOn`:
   it is the restriction of the frontier trace, and of a representative continuous up to the
   boundary.
 * `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule`: its kernel, the functions of zero trace on the
-  flat segment (`TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero`).
+  flat segment (`TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero`).
 * `TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff`: membership in terms of the trace operator
   of any Lipschitz constant of the half-disc.
 * `TauCeti.W1p.isClosed_halfDiscFlatTraceZeroSubmodule`,
@@ -108,12 +108,12 @@ def W1p.halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ)
 /-- **The flat trace is the restricted frontier trace.** For any Lipschitz constant of the
 half-disc, `TauCeti.W1p.halfDiscFlatTrace` agrees almost everywhere on the flat segment, for
 surface measure, with the boundary trace `TauCeti.W1p.frontierTrace`. -/
-theorem W1p.halfDiscFlatTraceL_ae_eq (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r) {L : ℝ≥0}
+theorem W1p.halfDiscFlatTrace_ae_eq (hp : p ≠ (∞ : ℝ≥0∞)) {L : ℝ≥0}
     (hΩ : (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomainWith L)
     (u : W1p volume (halfDisc r) p) :
     W1p.halfDiscFlatTrace hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
       (halfDiscFlatSegment r)] W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u := by
-  rw [← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr), W1p.halfDiscFlatTrace,
+  rw [← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r), W1p.halfDiscFlatTrace,
     ContinuousLinearMap.comp_apply,
     W1p.frontierTrace_eq_of_isLipschitzDomainWith hp _ hΩ (isBounded_halfDisc r)]
   exact LpToLpRestrictCLM_coeFn ℝ (halfDiscFlatSegment r) _
@@ -122,22 +122,22 @@ theorem W1p.halfDiscFlatTraceL_ae_eq (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r
 `u ∈ W^{1,p}(halfDisc r)` agrees almost everywhere with a function `f` continuous on the closed
 half-disc, then `TauCeti.W1p.halfDiscFlatTrace` sends `u` to `f` almost everywhere on the flat
 segment for surface measure. -/
-theorem W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r)
+theorem W1p.halfDiscFlatTrace_ae_eq_of_continuousOn (hp : p ≠ (∞ : ℝ≥0∞))
     {u : W1p volume (halfDisc r) p} {f : WithLp 2 (ℝ × ℝ) → ℝ}
     (hf : ContinuousOn f (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))))
     (hu : W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] f) :
     W1p.halfDiscFlatTrace hp r u =ᵐ[(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
       (halfDiscFlatSegment r)] f := by
   obtain ⟨L, hΩ⟩ := exists_isLipschitzDomainWith_halfDisc r
-  refine (W1p.halfDiscFlatTraceL_ae_eq hp hr hΩ u).trans ?_
-  rw [Filter.EventuallyEq, ← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr)]
+  refine (W1p.halfDiscFlatTrace_ae_eq hp hΩ u).trans ?_
+  rw [Filter.EventuallyEq, ← congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)]
   exact ae_restrict_of_ae
     (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ (isBounded_halfDisc r) hf hu)
 
 /-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its flat trace
 `TauCeti.W1p.halfDiscFlatTrace` is zero. -/
 @[simp]
-theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero
+theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero
     (hp : p ≠ (∞ : ℝ≥0∞)) {u : W1p volume (halfDisc r) p} :
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ W1p.halfDiscFlatTrace hp r u = 0 :=
   LinearMap.mem_ker
@@ -145,16 +145,16 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero
 /-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its trace, for
 any Lipschitz constant of the half-disc, vanishes almost everywhere on the flat segment for
 surface measure. -/
-theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : ℝ≥0∞)) (hr : 0 < r)
+theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : ℝ≥0∞))
     {L : ℝ≥0} (hΩ : (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomainWith L)
     {u : W1p volume (halfDisc r) p} :
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔
       ∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r),
         W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u x = 0 := by
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero,
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
     Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr)]
-  have htr := W1p.halfDiscFlatTraceL_ae_eq hp hr hΩ u
+    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)]
+  have htr := W1p.halfDiscFlatTrace_ae_eq hp hΩ u
   constructor
   · intro h
     filter_upwards [htr, h] with x hx hx'
@@ -186,10 +186,10 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn (hp : p ≠ (
     (hf : ContinuousOn f (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))))
     (hu : W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] f) :
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ ∀ x ∈ halfDiscFlatSegment r, f x = 0 := by
-  have htr := W1p.halfDiscFlatTraceL_ae_eq_of_continuousOn hp hr hf hu
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTraceL_eq_zero,
+  have htr := W1p.halfDiscFlatTrace_ae_eq_of_continuousOn hp hf hu
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
     Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment hr)]
+    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)]
   constructor
   · intro h
     refine eqOn_halfDiscFlatSegment_of_ae_eq (g := 0) hr

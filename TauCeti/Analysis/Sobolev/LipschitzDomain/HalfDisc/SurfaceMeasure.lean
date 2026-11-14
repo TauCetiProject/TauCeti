@@ -88,11 +88,17 @@ theorem eqOn_halfDiscFlatSegment_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Sp
 /-- Surface measure on the frontier of the half-disc, restricted to the flat segment, is surface
 measure on the flat segment. This identifies the measure of the codomain of
 `TauCeti.W1p.halfDiscFlatTrace`. -/
-theorem restrict_frontier_restrict_halfDiscFlatSegment {r : ℝ} (hr : 0 < r) :
+theorem restrict_frontier_restrict_halfDiscFlatSegment (r : ℝ) :
     ((μHE[finrank ℝ ℝ] : Measure (WithLp 2 (ℝ × ℝ))).restrict
         (frontier (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))).restrict (halfDiscFlatSegment r) =
       (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r) := by
-  rw [Measure.restrict_restrict (measurableSet_halfDiscFlatSegment r),
-    inter_eq_left.2 (halfDiscFlatSegment_subset_frontier hr), finrank_self]
+  rw [Measure.restrict_restrict (measurableSet_halfDiscFlatSegment r), finrank_self]
+  rcases lt_or_ge 0 r with hr | hr
+  · rw [inter_eq_left.2 (halfDiscFlatSegment_subset_frontier hr)]
+  · have h0 : (μHE[1] : Measure (WithLp 2 (ℝ × ℝ))) (halfDiscFlatSegment r) = 0 := by
+      rw [euclideanHausdorffMeasure_halfDiscFlatSegment, ENNReal.ofReal_eq_zero]
+      linarith
+    rw [Measure.restrict_eq_zero.2 h0, Measure.restrict_eq_zero.2 (measure_mono_null
+      inter_subset_left h0)]
 
 end TauCeti
