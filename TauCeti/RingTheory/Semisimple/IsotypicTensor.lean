@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 public import TauCeti.RingTheory.Semisimple.Multiplicity
 -- Non-public: the rank criterion for a self-map to be injective is used only inside the proof of
--- injectivity on a finite-dimensional target; no exported statement mentions a dimension.
+-- injectivity on a finite-dimensional target, and the splitting of a dependent product along a
+-- predicate only inside the proof of the dimension formula.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.DirectSum.Finsupp
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # An isotypic component is its type tensored with its multiplicity space
@@ -54,7 +57,10 @@ arbitrary module `N` is determined by what it does to the multiplicity spaces, a
 
 This is the tensor-hom adjunction applied summand by summand. Taking `N = M` gives the commutant
 `Module.End A M ≃ₐ[k] ∏ⱼ Module.End k (S j →ₗ[A] M)`: the endomorphisms of a semisimple module
-are the families of arbitrary endomorphisms of its multiplicity spaces.
+are the families of arbitrary endomorphisms of its multiplicity spaces. With finite-dimensional
+multiplicity spaces this gives the dimension formula
+`dim Hom_A(M, N) = ∑ⱼ dim (S j →ₗ[A] M) · dim (S j →ₗ[A] N)` and the description of the commutant
+as a product of full matrix algebras over `k`.
 
 ## Main definitions
 
@@ -88,6 +94,12 @@ are the families of arbitrary endomorphisms of its multiplicity spaces.
 * `TauCeti.directSumIsotypicEval_comp`, `TauCeti.directSumIsotypicTensorEquiv_map` and
   `TauCeti.directSumIsotypicTensorEquiv_symm_apply_map`: naturality of the decomposition in the
   target, so that `A`-linear maps act on the multiplicity spaces alone.
+* `TauCeti.finite_support_finrank_linearMap`: only finitely many of the pairwise non-isomorphic
+  simple modules `S j` occur in a finite-dimensional module.
+* `TauCeti.finrank_linearMap_eq_finsum`: **the dimension formula**
+  `dim Hom_A(M, N) = ∑ⱼ dim (S j →ₗ[A] M) · dim (S j →ₗ[A] N)`.
+* `TauCeti.nonempty_end_algEquiv_pi_matrix`: **the commutant is a product of matrix algebras**
+  `M_a(k)`, of the sizes `a = dim (S j →ₗ[A] M)` of the multiplicity spaces.
 
 ## References
 
@@ -561,6 +573,108 @@ theorem isotypicEndAlgEquiv_apply (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) �
     isotypicEndAlgEquiv k S hS hcover g j φ = g ∘ₗ φ :=
   (rfl)
 
+@[simp]
+theorem isotypicEndAlgEquiv_toLinearEquiv (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    (isotypicEndAlgEquiv k S hS hcover).toLinearEquiv = isotypicHomEquiv k S hS hcover :=
+  (rfl)
+
+/-- The endomorphism that the inverse of `TauCeti.isotypicEndAlgEquiv` assigns to a family `T`
+composes with `φ : S j →ₗ[A] M` to `T j φ`. -/
+@[simp]
+theorem isotypicEndAlgEquiv_symm_apply_comp (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (T : Π j, Module.End k (S j →ₗ[A] M)) (j : κ) (φ : S j →ₗ[A] M) :
+    (isotypicEndAlgEquiv k S hS hcover).symm T ∘ₗ φ = T j φ :=
+  isotypicHomEquiv_symm_apply_comp k S hS hcover T j φ
+
+/-- The map that the inverse of `TauCeti.isotypicHomEquiv` assigns to a family `T` sends `φ s` to
+`T j φ s`, for `φ : S j →ₗ[A] M` and `s : S j`. -/
+@[simp]
+theorem isotypicHomEquiv_symm_apply_apply (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (T : Π j, (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)) (j : κ) (φ : S j →ₗ[A] M) (s : S j) :
+    (isotypicHomEquiv k S hS hcover).symm T (φ s) = T j φ s :=
+  LinearMap.congr_fun (isotypicHomEquiv_symm_apply_comp k S hS hcover T j φ) s
+
+/-- The endomorphism that the inverse of `TauCeti.isotypicEndAlgEquiv` assigns to a family `T`
+sends `φ s` to `T j φ s`, for `φ : S j →ₗ[A] M` and `s : S j`. -/
+@[simp]
+theorem isotypicEndAlgEquiv_symm_apply_apply (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m))
+    (T : Π j, Module.End k (S j →ₗ[A] M)) (j : κ) (φ : S j →ₗ[A] M) (s : S j) :
+    (isotypicEndAlgEquiv k S hS hcover).symm T (φ s) = T j φ s :=
+  isotypicHomEquiv_symm_apply_apply k S hS hcover T j φ s
+
+open Module in
+/-- **The commutant of a semisimple module is a product of matrix algebras.** Under the
+hypotheses of `TauCeti.isotypicEndAlgEquiv`, if every multiplicity space `S j →ₗ[A] M` is
+finite-dimensional then `End_A(M)` is isomorphic to the product over `j` of the full matrix
+algebras `M_a(k)` with `a = dim (S j →ₗ[A] M)` the multiplicity of `S j` in `M`. -/
+theorem nonempty_end_algEquiv_pi_matrix [∀ j, FiniteDimensional k (S j →ₗ[A] M)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    Nonempty (Module.End A M ≃ₐ[k] Π j,
+      Matrix (Fin (finrank k (S j →ₗ[A] M))) (Fin (finrank k (S j →ₗ[A] M))) k) :=
+  ⟨(isotypicEndAlgEquiv k S hS hcover).trans
+    (AlgEquiv.piCongrRight fun _ ↦ LinearMap.toMatrixAlgEquiv (Module.finBasis k _))⟩
+
 end HomEquiv
+
+/-! ### Dimension formulas -/
+
+section Finrank
+
+open Module
+
+variable (k : Type*) {A : Type*} [Field k] [Ring A] [Algebra k A]
+  {κ : Type*} (S : κ → Type*) [∀ j, AddCommGroup (S j)] [∀ j, Module A (S j)]
+  [∀ j, IsSimpleModule A (S j)]
+  {M : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [FiniteDimensional k M]
+
+/-- **Only finitely many simple modules occur in a finite-dimensional module.** For pairwise
+non-isomorphic simple modules `S j`, only finitely many multiplicity spaces `S j →ₗ[A] M` of a
+finite-dimensional module `M` are nonzero, since the isotypic components of `M` are independent. -/
+theorem finite_support_finrank_linearMap (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j) :
+    (Function.support fun j ↦ finrank k (S j →ₗ[A] M)).Finite := by
+  have : IsNoetherian A M := isNoetherian_of_tower k inferInstance
+  refine (Submodule.finite_ne_bot_of_iSupIndep (iSupIndep_isotypicComponent A M S hS)).subset
+    fun j hj ↦ ?_
+  have := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hj)
+  obtain ⟨φ, hφ⟩ := exists_ne (0 : S j →ₗ[A] M)
+  obtain ⟨s, hs⟩ := not_forall.mp fun h ↦ hφ (LinearMap.ext h)
+  exact (Submodule.ne_bot_iff _).mpr ⟨φ s, φ.apply_mem_isotypicComponent s, hs⟩
+
+variable [IsAlgClosed k] [∀ j, Module k (S j)] [∀ j, IsScalarTower k A (S j)]
+  [∀ j, FiniteDimensional k (S j)] [IsSemisimpleModule A M]
+  {N : Type*} [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+/-- **The dimension of a space of maps out of a semisimple module.** Under the hypotheses of
+`TauCeti.isotypicHomEquiv`, for finite-dimensional `M` and an `A`-module `N` whose multiplicity
+spaces are finite-dimensional,
+`dim Hom_A(M, N) = ∑ⱼ dim (S j →ₗ[A] M) · dim (S j →ₗ[A] N)`, a sum with finitely many nonzero
+terms. -/
+theorem finrank_linearMap_eq_finsum [∀ j, FiniteDimensional k (S j →ₗ[A] N)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[A] S j) → i = j)
+    (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
+    finrank k (M →ₗ[A] N) =
+      ∑ᶠ j, finrank k (S j →ₗ[A] M) * finrank k (S j →ₗ[A] N) := by
+  classical
+  set s := (finite_support_finrank_linearMap k S hS (M := M)).toFinset
+  let X (j : κ) := (S j →ₗ[A] M) →ₗ[k] (S j →ₗ[A] N)
+  -- Off the support the multiplicity space of `M`, hence the factor `X j`, is zero, so the
+  -- product over all `j` is the product over the finite support.
+  have (j : {j // j ∉ s}) : Subsingleton (X j) := by
+    rw [← Module.finrank_zero_iff (R := k), Module.finrank_linearMap, mul_eq_zero]
+    exact Or.inl (by simpa [s] using j.2)
+  let : Unique (Π j : {j // j ∉ s}, X j) := uniqueOfSubsingleton 0
+  rw [(isotypicHomEquiv k S hS hcover).finrank_eq,
+    ((LinearEquiv.piEquivPiSubtypeProd k (· ∈ s) X).trans LinearEquiv.prodUnique).finrank_eq,
+    Module.finrank_pi_fintype, finsum_eq_sum_of_support_subset _ (s := s) fun j hj ↦ by
+      simpa [s] using left_ne_zero_of_mul hj, ← Finset.sum_coe_sort s]
+  simp only [X, Module.finrank_linearMap]
+
+end Finrank
 
 end TauCeti
