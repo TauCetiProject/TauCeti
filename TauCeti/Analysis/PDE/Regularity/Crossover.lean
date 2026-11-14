@@ -70,6 +70,27 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+/-- The dimensionless size `(Λ/λ)² + (βρ/λ)² + γρ²/λ` of the coefficients on balls of radius `ρ`
+is nondecreasing in `ρ ≥ 0`. -/
+private lemma lowerOrderSize_le_of_le {lam Lam beta gamma ρ ρ' : ℝ} (hlam : 0 ≤ lam)
+    (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma) (hρ : 0 ≤ ρ) (hρρ' : ρ ≤ ρ') :
+    (Lam / lam) ^ 2 + (beta * ρ / lam) ^ 2 + gamma * ρ ^ 2 / lam ≤
+      (Lam / lam) ^ 2 + (beta * ρ' / lam) ^ 2 + gamma * ρ' ^ 2 / lam := by
+  gcongr
+
+/-- Scaling the radius by `t ≥ 1` multiplies `√((Λ/λ)² + (βρ/λ)² + γρ²/λ)` by at most `t`. -/
+private lemma sqrt_lowerOrderSize_mul_le {lam Lam beta gamma ρ t : ℝ} (ht : 1 ≤ t) :
+    √((Lam / lam) ^ 2 + (beta * (t * ρ) / lam) ^ 2 + gamma * (t * ρ) ^ 2 / lam) ≤
+      t * √((Lam / lam) ^ 2 + (beta * ρ / lam) ^ 2 + gamma * ρ ^ 2 / lam) := by
+  have key : (Lam / lam) ^ 2 + (beta * (t * ρ) / lam) ^ 2 + gamma * (t * ρ) ^ 2 / lam ≤
+      t ^ 2 * ((Lam / lam) ^ 2 + (beta * ρ / lam) ^ 2 + gamma * ρ ^ 2 / lam) := by
+    have e1 : (beta * (t * ρ) / lam) ^ 2 = t ^ 2 * (beta * ρ / lam) ^ 2 := by ring
+    have e2 : gamma * (t * ρ) ^ 2 / lam = t ^ 2 * (gamma * ρ ^ 2 / lam) := by ring
+    rw [e1, e2]
+    nlinarith [one_le_pow₀ (n := 2) ht, sq_nonneg (Lam / lam)]
+  exact (Real.sqrt_le_sqrt key).trans_eq
+    (by rw [Real.sqrt_mul (sq_nonneg t), Real.sqrt_sq (by linarith)])
+
 /-- **Moser's crossover estimate with lower-order terms.** There are constants `c₀ > 0` and `K`,
 depending only on the dimension `n ≥ 1`, with the following property. Let `a` be measurable and
 uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`
@@ -124,17 +145,8 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le_lowerOrder [Nonempty �
   have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ hx₀)
   -- The dimensionless size of the coefficients on balls of radius `ρ`, nondecreasing in `ρ ≥ 0`.
   set Q : ℝ → ℝ := fun ρ => (Lam / lam) ^ 2 + (beta * ρ / lam) ^ 2 + gamma * ρ ^ 2 / lam
-  have hQmono : ∀ ρ, 0 ≤ ρ → ρ ≤ R → Q ρ ≤ Q R := fun ρ hρ hρR => by
-    simp only [Q]
-    gcongr
-  have hQR : Q R ≤ (2 * s) ^ 2 * Q r := by
-    have h4 : 1 ≤ (2 * s) ^ 2 := by nlinarith
-    simp only [Q, R]
-    have : 0 ≤ (Lam / lam) ^ 2 := sq_nonneg _
-    have e1 : (beta * (2 * s * r) / lam) ^ 2 = (2 * s) ^ 2 * (beta * r / lam) ^ 2 := by ring
-    have e2 : gamma * (2 * s * r) ^ 2 / lam = (2 * s) ^ 2 * (gamma * r ^ 2 / lam) := by ring
-    rw [e1, e2]
-    nlinarith
+  have hQmono : ∀ ρ, 0 ≤ ρ → ρ ≤ R → Q ρ ≤ Q R := fun ρ hρ hρR =>
+    lowerOrderSize_le_of_le hlam.le hbeta hgamma hρ hρR
   -- `log u` has mean oscillation at most `C₀ √(Q R)` on every ball inside `B(x₀, R)`.
   set M : ℝ≥0 := (C₀ * √(Q R)).toNNReal
   have hMc : (M : ℝ) = C₀ * √(Q R) := Real.coe_toNNReal _ (by positivity)
@@ -161,9 +173,7 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le_lowerOrder [Nonempty �
   -- For `|p| √(Q r) ≤ c₀` the John–Nirenberg crossover estimate applies to `log u` with `σ = p`.
   have hσ : |p| * M ≤ A := by
     rw [hMc]
-    have hsqrt : √(Q R) ≤ 2 * s * √(Q r) := by
-      rw [← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ 2 * s), ← Real.sqrt_mul (sq_nonneg _)]
-      exact Real.sqrt_le_sqrt hQR
+    have hsqrt : √(Q R) ≤ 2 * s * √(Q r) := sqrt_lowerOrderSize_mul_le (by linarith)
     calc |p| * (C₀ * √(Q R)) ≤ |p| * (C₀ * (2 * s * √(Q r))) := by gcongr
       _ = 2 * s * C₀ * (|p| * √(Q r)) := by ring
       _ ≤ 2 * s * C₀ * (A / (2 * s * (C₀ + 1))) := by gcongr
