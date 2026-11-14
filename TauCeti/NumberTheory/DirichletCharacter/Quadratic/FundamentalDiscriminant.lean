@@ -41,14 +41,19 @@ The results hold for characters with values in any commutative ring.
 * `DirichletCharacter.IsPrimitive.exists_isFundamentalDiscr_apply_eq`: a primitive quadratic
   character of level `N ≠ 0` is the character of a fundamental discriminant of absolute
   value `N`.
+* `DirichletCharacter.IsPrimitive.exists_squarefree_apply_eq_jacobiSym`: for a nonprincipal
+  primitive quadratic character of level `N ≠ 0`, there is a squarefree integer `d ≠ 1` with
+  `|d| ≤ N` such that `χ n = jacobiSym d n` at every odd natural number `n`.
 * `DirichletCharacter.IsPrimitive.isFundamentalDiscr_ite`,
   `DirichletCharacter.IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite`: when `2 ≠ 0`,
   that fundamental discriminant is `χ (-1) N`.
 
 ## References
 
-H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical Theory*,
-Cambridge University Press, 2007, §9.3, pp. 295–297 (Theorem 9.13).
+* H. Davenport, *Multiplicative Number Theory*, 2nd ed., Graduate Texts in Mathematics 74,
+  Springer, 1980, Chapter 5.
+* H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical Theory*,
+  Cambridge University Press, 2007, §9.3, pp. 295–297 (Theorem 9.13).
 -/
 
 public section
@@ -163,6 +168,36 @@ theorem IsPrimitive.exists_isFundamentalDiscr_apply_eq {N : ℕ} [NeZero N]
   rw [← hval, ← hu, changeLevel_eq_cast_of_dvd' _ _ hn, (hP p hp).2.2,
     fundamentalDiscriminantCharCast_apply,
     fundamentalDiscriminantChar_apply_primeDiscriminant (hP p hp).1]
+
+/-- **Radicand form of the classification of primitive quadratic characters.** For a nonprincipal
+primitive quadratic character `χ` of level `N ≠ 0` over any commutative ring `R`, there is a
+squarefree integer `d ≠ 1` with `|d| ≤ N` such that `χ n = jacobiSym d n` at every odd natural
+number `n`, including integers not coprime to `N`. -/
+theorem IsPrimitive.exists_squarefree_apply_eq_jacobiSym {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) (h1 : χ ≠ 1) :
+    ∃ d : ℤ, Squarefree d ∧ d ≠ 1 ∧ |d| ≤ N ∧
+      ∀ n : ℕ, _root_.Odd n → χ n = (jacobiSym d n : R) := by
+  obtain ⟨D, hD, hDN, hval⟩ := hχ.exists_isFundamentalDiscr_apply_eq hq
+  have hD1 : D ≠ 1 := by
+    rintro rfl
+    obtain rfl : N = 1 := hDN.symm
+    exact h1 (MulChar.ext fun x ↦ by simp [Subsingleton.elim x 1])
+  have hval_odd {n : ℕ} (hn : _root_.Odd n) : χ n = (jacobiSym D n : R) := by
+    have h := hval n
+    rwa [fundamentalDiscriminantCharCast_apply,
+      fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn, Int.cast_natCast] at h
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨-, hsf⟩ | ⟨h0, hdsf, hd4⟩
+  · refine ⟨D, hsf, hD1, ?_, fun n hn ↦ hval_odd hn⟩
+    rw [Int.abs_eq_natAbs, hDN]
+  · obtain ⟨d, rfl⟩ : (4 : ℤ) ∣ D := Int.dvd_of_emod_eq_zero h0
+    rw [Int.mul_ediv_cancel_left d (by decide : (4 : ℤ) ≠ 0)] at hdsf hd4
+    refine ⟨d, hdsf, by omega, ?_, fun n hn ↦ ?_⟩
+    · have habs : 4 * d.natAbs = N := by simpa [Int.natAbs_mul] using hDN
+      rw [Int.abs_eq_natAbs]
+      omega
+    · have h4 : (4 : ℤ) * d = 2 ^ 2 * d := by ring
+      have hcop : (2 : ℤ).gcd n = 1 := Nat.coprime_two_left.mpr hn
+      rw [hval_odd hn, h4, jacobiSym.mul_left, jacobiSym.sq_one' hcop, one_mul]
 
 section Sign
 
