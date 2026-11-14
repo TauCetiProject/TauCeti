@@ -233,6 +233,12 @@ theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
 
+/-- The section reading as the constant `v` in the trivialization of chart `i` reads as `v` on the
+image of chart `i`. -/
+theorem coord_triv_symm [∀ x, Zero (V x)] {i : Fin A.n} (v : F) {z : E} (hz : z ∈ A.image i) :
+    A.coord i (fun x ↦ (A.triv i).symm x v) z = v := by
+  rw [coord_def, (A.triv i).apply_mk_symm (A.dom_subset_baseSet i (A.symm_mem_dom hz))]
+
 /-- The inverse of chart `i` is continuous on the chart image `A.image i`. -/
 theorem continuousOn_chart_symm (i : Fin A.n) : ContinuousOn (A.chart i).symm (A.image i) :=
   (A.chart i).continuousOn_symm.mono fun y hy ↦ by
@@ -318,6 +324,12 @@ theorem image_ofBaseSet (i : Fin A.n) : (A.ofBaseSet h).image i = A.image i :=
 theorem overlap_ofBaseSet (i i' : Fin A.n) : (A.ofBaseSet h).overlap i i' = A.overlap i i' :=
   Set.ext fun _ ↦ (mem_overlap (A := A.ofBaseSet h) (i := i) (i' := i')).trans
     (mem_overlap (A := A)).symm
+
+@[simp]
+theorem transition_ofBaseSet (i i' : Fin A.n) :
+    (A.ofBaseSet h).transition i i' = A.transition i i' := by
+  funext y
+  rfl
 
 end OfBaseSet
 

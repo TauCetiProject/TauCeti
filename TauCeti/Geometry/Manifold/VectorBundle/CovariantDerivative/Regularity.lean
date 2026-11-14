@@ -26,6 +26,9 @@ local frame.
 
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
+* `ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq`: on a smooth real manifold, an
+  operator from sections to one-forms which is `C^n` on a set and local at the points of an open
+  subset is `C^n` on that subset.
 * `ContMDiffCovariantDerivativeOn.mono_of_isOpen`: on a smooth real manifold, a covariant
   derivative which is `C^n` on a set is `C^n` on each open subset where it is a covariant
   derivative.
@@ -76,6 +79,36 @@ variable
   [∀ x, ContinuousSMul ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
 
+/-- **Locality of regularity.**  On a smooth real manifold, let `cov` send sections of `V` to
+`V`-valued one-forms, and suppose that at each point of an open set `u` its value on a section
+differentiable there depends only on the germ of the section. If `cov` is `C^n` on a set `s ⊇ u`,
+then it is `C^n` on `u`: it sends sections which are `C^(n + 1)` on `u` to one-forms which are
+`C^n` on `u`. -/
+theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq {n : ℕ∞ω}
+    [ENat.LEInfty n] {cov : (Π x : M, V x) → (Π x : M, TangentSpace I x →L[ℝ] V x)}
+    {s u : Set M} (h : ContMDiffCovariantDerivativeOn F n cov s)
+    (hloc : ∀ ⦃σ σ' : Π x : M, V x⦄ ⦃x : M⦄, x ∈ u → MDiffAt (T% σ) x → MDiffAt (T% σ') x →
+      (∀ᶠ y in 𝓝 x, σ y = σ' y) → cov σ x = cov σ' x)
+    (hu : IsOpen u) (hus : u ⊆ s) :
+    ContMDiffCovariantDerivativeOn F n cov u where
+  contMDiff {σ} hσ y hy := by
+    lift n to ℕ∞ using ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
+    -- Cut `σ` off by a bump function equal to one near `y` and supported in `u`.
+    obtain ⟨ρ, -, hρ⟩ :=
+      (SmoothBumpFunction.nhds_basis_tsupport (I := I) y).mem_iff.mp (hu.mem_nhds hy)
+    have hρσ : CMDiff (n + 1) (T% ((ρ : M → ℝ) • σ)) :=
+      (ρ.contMDiff.of_le (mod_cast le_top)).contMDiffOn.smul_section_of_tsupport hu hρ hσ
+    have hρσ' := (h.contMDiff hρσ.contMDiffOn y (hus hy)).contMDiffAt
+      (Filter.mem_of_superset (hu.mem_nhds hy) hus)
+    -- Near `y` the cut-off section agrees with `σ`, so `cov` agrees on them there.
+    have heq : ∀ᶠ z in 𝓝 y, cov ((ρ : M → ℝ) • σ) z = cov σ z := by
+      filter_upwards [hu.mem_nhds hy, ρ.eventuallyEq_one.eventually_nhds] with z hz hρz
+      refine hloc hz ((hρσ z).mdifferentiableAt (by simp))
+        (((hσ z hz).contMDiffAt (hu.mem_nhds hz)).mdifferentiableAt (by simp)) ?_
+      filter_upwards [hρz] with w hw
+      simp [hw]
+    exact (hρσ'.congr_of_eventuallyEq (heq.mono fun z hz ↦ by simp only [hz])).contMDiffWithinAt
+
 /-- **Locality of the regularity of a connection.**  On a smooth real manifold, if `cov` is `C^n`
 on a set `s` and is a covariant derivative on an open subset `u ⊆ s`, then `cov` is also `C^n`
 on `u`: it sends sections which are `C^(n + 1)` on `u` to covariant derivatives which are `C^n`
@@ -84,24 +117,9 @@ theorem _root_.ContMDiffCovariantDerivativeOn.mono_of_isOpen {n : ℕ∞}
     {cov : (Π x : M, V x) → (Π x : M, TangentSpace I x →L[ℝ] V x)} {s u : Set M}
     (h : ContMDiffCovariantDerivativeOn F n cov s) (hcov : IsCovariantDerivativeOn F cov u)
     (hu : IsOpen u) (hus : u ⊆ s) :
-    ContMDiffCovariantDerivativeOn F n cov u where
-  contMDiff {σ} hσ y hy := by
-    -- Cut `σ` off by a bump function equal to one near `y` and supported in `u`.
-    obtain ⟨ρ, -, hρ⟩ :=
-      (SmoothBumpFunction.nhds_basis_tsupport (I := I) y).mem_iff.mp (hu.mem_nhds hy)
-    have hρσ : CMDiff (n + 1) (T% ((ρ : M → ℝ) • σ)) :=
-      (ρ.contMDiff.of_le (mod_cast le_top)).contMDiffOn.smul_section_of_tsupport hu hρ hσ
-    have hρσ' := (h.contMDiff hρσ.contMDiffOn y (hus hy)).contMDiffAt
-      (Filter.mem_of_superset (hu.mem_nhds hy) hus)
-    -- Near `y` the cut-off section agrees with `σ`, so their covariant derivatives agree there.
-    have heq : ∀ᶠ z in 𝓝 y, cov ((ρ : M → ℝ) • σ) z = cov σ z := by
-      filter_upwards [hu.mem_nhds hy, ρ.eventuallyEq_one.eventually_nhds] with z hz hρz
-      refine hcov.congr_of_eventuallyEq ((hρσ z).mdifferentiableAt (by simp))
-        (((hσ z hz).contMDiffAt (hu.mem_nhds hz)).mdifferentiableAt (by simp))
-        (hu.mem_nhds hz) ?_
-      filter_upwards [hρz] with w hw
-      simp [hw]
-    exact (hρσ'.congr_of_eventuallyEq (heq.mono fun z hz ↦ by simp only [hz])).contMDiffWithinAt
+    ContMDiffCovariantDerivativeOn F n cov u :=
+  h.mono_of_isOpen_of_eventuallyEq
+    (fun _ _ _ hx hσ hσ' hσσ' ↦ hcov.congr_of_eventuallyEq hσ hσ' (hu.mem_nhds hx) hσσ') hu hus
 
 /-- **Locality of the regularity of a connection.**  A `C^n` covariant derivative on a smooth
 real manifold is `C^n` on every open set `u`: it sends sections which are `C^(n + 1)` on `u` to
