@@ -754,17 +754,19 @@ theorem isZero_reflectRep {i : Q} (hi : IsSink i)
 
 /-- **Reflection preserves finite-dimensionality.** The reflected space at the sink is a subspace
 of a finite product of vertex spaces of `M`, and away from the sink the vertex spaces are those of
-`M`. This is what carries the finite-dimensionality hypothesis of
-`TauCeti.dimVector_reflectRep` through a sequence of reflections. -/
+`M`; the vertex space of `M` at the sink itself plays no role. This is what carries the
+finite-dimensionality hypothesis of `TauCeti.dimVector_reflectRep` through a sequence of
+reflections. -/
 theorem finiteDimensional_reflectRep_obj {i : Q} (hi : IsSink i)
-    (h : ∀ a : Q, FiniteDimensional k (M.obj a)) (j : Q) :
+    (h : ∀ a : Q, a ≠ i → FiniteDimensional k (M.obj a)) (j : Q) :
     FiniteDimensional k ((reflectRep M hi).obj j) := by
   rcases eq_or_ne j i with rfl | hj
-  · have hpi : ∀ e : Σ b : Q, (b ⟶ j), FiniteDimensional k (M.obj e.1) := fun e ↦ h e.1
+  · have hpi : ∀ e : Σ b : Q, (b ⟶ j), FiniteDimensional k (M.obj e.1) :=
+      fun e ↦ h e.1 (hi.ne_of_hom e.2)
     rw [reflectRep_obj_self M hi]
     exact FiniteDimensional.finiteDimensional_submodule _
   · rw [reflectRep_obj_of_ne M hi hj]
-    exact h j
+    exact h j hj
 
 /-- If every source of an arrow into the sink vanishes, the reflected dimension at the sink is
 zero. -/

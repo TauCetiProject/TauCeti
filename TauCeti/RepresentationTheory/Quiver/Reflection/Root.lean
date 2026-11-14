@@ -129,7 +129,7 @@ theorem titsForm_dimVector_eq_one_of_isZero_reflectionFunctorList :
           (Quiver.reflectAt q i) (@instFintypeReflectHom V q hq i) hl' (reflectRep M hi)
           (indecomposable_reflectRep hi hM hs)
           ((@isFinDim_iff.{u, v, w, max v w x} k V fld (Quiver.reflectAt q i) _).mpr
-            (finiteDimensional_reflectRep_obj M hi hfd')) hz
+            (finiteDimensional_reflectRep_obj M hi fun a _ ↦ hfd' a)) hz
         calc @titsForm V q fV hq (fun j : V ↦ (@dimVector k V fld q M j : ℤ))
             = @titsForm V q fV hq (@vertexPreReflection V q fV hq _ i
                 fun j : V ↦ (@dimVector k V fld q M j : ℤ)) :=
