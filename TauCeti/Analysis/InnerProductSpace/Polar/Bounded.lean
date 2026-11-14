@@ -48,7 +48,9 @@ on `T`.
 * `ContinuousLinearMap.polarFactor_adjoint`: the polar factor of `T†` is `U†`.
 * `ContinuousLinearMap.modulus_adjoint_comp_polarFactor`: the left polar decomposition
   `|T†| U = T`.
-* `ContinuousLinearMap.polarFactor_eq_comp_inverse`: `U = T |T|⁻¹` when `|T|` is invertible.
+* `ContinuousLinearMap.polarFactor_eq_comp_inverse`: `U = T |T|⁻¹` when `|T|` is invertible, and
+  `ContinuousLinearMap.polarFactor_mem_unitary`: `U` is unitary when `T` is an invertible
+  endomorphism.
 * `ContinuousLinearMap.norm_sub_polarFactor_le`: `‖T - U‖ ≤ ‖|T| - 1‖` for an endomorphism `T`.
 * `ContinuousLinearMap.continuousOn_polarFactor`: on real Hilbert spaces, `U` depends
   continuously on `T` where `|T|` is invertible.
@@ -275,6 +277,16 @@ theorem polarFactor_eq_comp_inverse (hT : IsUnit T.modulus) :
 theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polarFactor := by
   have hP := (isStrictlyPositive_modulus_of_isInvertible (isInvertible_iff_isUnit.mpr hT)).isUnit
   exact hP.mul_right_iff.mp (by simpa only [mul_def, polarFactor_comp_modulus] using hT)
+
+/-- The polar factor of an invertible endomorphism is unitary: `U† U = 1` and `U U† = 1`. -/
+theorem polarFactor_mem_unitary {T : E →L[𝕜] E} (hT : IsUnit T) :
+    T.polarFactor ∈ unitary (E →L[𝕜] E) := by
+  have hbij := isUnit_iff_bijective.mp hT
+  refine Unitary.mem_iff.mpr ⟨?_, ?_⟩
+  · simpa only [star_eq_adjoint, mul_def] using
+      T.adjoint_polarFactor_comp_polarFactor_of_injective hbij.injective
+  · simpa only [star_eq_adjoint, mul_def] using
+      T.polarFactor_comp_adjoint_polarFactor_of_denseRange hbij.surjective.denseRange
 
 /-- The polar factor `U` of an endomorphism `T` satisfies `‖T - U‖ ≤ ‖|T| - 1‖`. -/
 theorem norm_sub_polarFactor_le (T : E →L[𝕜] E) : ‖T - T.polarFactor‖ ≤ ‖T.modulus - 1‖ :=

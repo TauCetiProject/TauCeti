@@ -15,7 +15,9 @@ import TauCeti.Algebra.BigOperators.Intervals
 Let `f : ι → G` be a sequence in `ℓᵖ` and let `g : ι' → ι` be injective on a set `s ⊆ ι'`. The
 sequence `s.indicator (f ∘ g)`, which reads `f` along `g` on `s` and vanishes off `s`, takes each
 value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
-(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
+(`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). When `g` is a bijection of
+index types, membership and the `ℓᵖ` norm are preserved (`Memℓp.comp_equiv`), giving a linear
+isometric equivalence `lp.congrLeft` of `ℓᵖ` spaces for `1 ≤ p`. Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
 (`TauCeti.memℓp_nat_add_iff`).
@@ -88,6 +90,79 @@ theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : �
     simp_rw [h]
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp'.ne']) hg t).trans_le (lp.sum_rpow_le_norm_rpow hp' f _)
+
+/-- Reindexing along a bijection preserves membership in `ℓᵖ`. -/
+@[simp]
+theorem Memℓp.comp_equiv (e : ι' ≃ ι) {f : ι → G} : Memℓp (f ∘ e) p ↔ Memℓp f p := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · simpa [Function.comp_def] using
+      hf.indicator_comp (g := e.symm) (s := Set.univ) e.symm.injective.injOn
+  · simpa using hf.indicator_comp (g := e) (s := Set.univ) e.injective.injOn
+
+namespace lp
+
+section CongrLeft
+
+variable (p) (𝕜 E : Type*) [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+  [Fact (1 ≤ p)]
+
+/-- An equivalence of index types induces a linear isometric equivalence of `ℓᵖ` spaces, sending a
+coordinate vector at `i` to the same vector at `e i`. -/
+def congrLeft (e : ι ≃ ι') : lp (fun _ : ι ↦ E) p ≃ₗᵢ[𝕜] lp (fun _ : ι' ↦ E) p where
+  toLinearEquiv :=
+    { toFun f := ⟨f ∘ e.symm, (Memℓp.comp_equiv e.symm).2 (lp.memℓp f)⟩
+      invFun g := ⟨g ∘ e, (Memℓp.comp_equiv e).2 (lp.memℓp g)⟩
+      map_add' _ _ := by ext; rfl
+      map_smul' _ _ := by ext; rfl
+      left_inv f := by ext i; simp
+      right_inv g := by ext j; simp }
+  norm_map' f := by
+    have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+    let g : lp (fun _ : ι' ↦ E) p := ⟨f ∘ e.symm, (Memℓp.comp_equiv e.symm).2 (lp.memℓp f)⟩
+    exact le_antisymm
+      (lp.norm_le_of_forall_eq_indicator_comp (f := f) (f' := g) (s := Set.univ) hp
+        e.symm.injective.injOn fun _ ↦ by simp [g])
+      (lp.norm_le_of_forall_eq_indicator_comp (f := g) (f' := f) (s := Set.univ) hp
+        e.injective.injOn fun _ ↦ by simp [g])
+
+variable {p 𝕜 E}
+
+/-- Evaluating `lp.congrLeft` pulls coordinates back along `e.symm`. -/
+@[simp]
+theorem congrLeft_apply (e : ι ≃ ι') (f : lp (fun _ : ι ↦ E) p) (j : ι') :
+    congrLeft p 𝕜 E e f j = f (e.symm j) := (rfl)
+
+/-- The inverse of `lp.congrLeft` for `e` is `lp.congrLeft` for `e.symm`. -/
+@[simp]
+theorem congrLeft_symm (e : ι ≃ ι') :
+    (congrLeft p 𝕜 E e).symm = congrLeft p 𝕜 E e.symm := by
+  ext f i
+  rfl
+
+/-- `lp.congrLeft` moves a single-coordinate vector from `i` to `e i`. -/
+@[simp]
+theorem congrLeft_single [DecidableEq ι] [DecidableEq ι'] (e : ι ≃ ι') (i : ι) (v : E) :
+    congrLeft p 𝕜 E e (lp.single p i v) = lp.single p (e i) v := by
+  ext j
+  simp [lp.single_apply, Pi.single_apply, Equiv.symm_apply_eq]
+
+/-- `lp.congrLeft` along the identity equivalence is the identity linear isometry equivalence. -/
+@[simp]
+theorem congrLeft_refl :
+    congrLeft p 𝕜 E (Equiv.refl ι) = LinearIsometryEquiv.refl 𝕜 (lp (fun _ : ι ↦ E) p) := by
+  ext f i
+  rfl
+
+/-- `lp.congrLeft` turns composition of equivalences into composition of linear isometry
+equivalences. -/
+theorem congrLeft_trans {ι'' : Type*} (e : ι ≃ ι') (e' : ι' ≃ ι'') :
+    congrLeft p 𝕜 E (e.trans e') = (congrLeft p 𝕜 E e).trans (congrLeft p 𝕜 E e') := by
+  ext f k
+  rfl
+
+end CongrLeft
+
+end lp
 
 namespace TauCeti
 

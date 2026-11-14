@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.lpSpace
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFunc
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
@@ -28,9 +29,10 @@ space equipped with its Borel measurable space these are bounded Borel functions
 be empty, in which case every norm vanishes; on a nonempty domain the unit has norm one.
 
 These symbols form the source algebra for bounded Borel functional calculus: constants,
-measurable simple functions and restrictions to measurable sets are bounded symbols, pullback
-along a measurable map is a star algebra homomorphism (hence norm-nonincreasing, as is every star
-homomorphism between C⋆-algebras), and convergence in norm is uniform convergence.
+measurable simple functions and restrictions to measurable sets are bounded symbols, point
+evaluation and pullback along a measurable map are star algebra homomorphisms (hence
+norm-nonincreasing, as is every star homomorphism between C⋆-algebras), the Banach-algebra
+exponential is computed pointwise (`exp_apply`), and convergence in norm is uniform convergence.
 
 Simple functions embed as a star subalgebra of symbols, and this subalgebra is dense: every symbol
 is the uniform limit of simple symbols bounded by its norm (`exists_seq_tendsto_ofSimpleFunc`).
@@ -225,6 +227,32 @@ def ofFunction (f : X → ℂ) (hf : Measurable f)
 /-- Evaluation of the star operation is complex conjugation. -/
 @[simp] theorem star_apply (f : BoundedBorelFunction X) (x : X) :
     (star f) x = star (f x) := (rfl)
+
+/-- Point evaluation at `x` as a unital star algebra homomorphism on bounded Borel symbols. -/
+def evalStarAlgHom (x : X) : BoundedBorelFunction X →⋆ₐ[ℂ] ℂ where
+  toFun f := f x
+  map_one' := (rfl)
+  map_mul' _ _ := (rfl)
+  map_zero' := (rfl)
+  map_add' _ _ := (rfl)
+  commutes' _ := (rfl)
+  map_star' _ := (rfl)
+
+/-- Evaluating `evalStarAlgHom x` evaluates the symbol at `x`. -/
+@[simp] theorem evalStarAlgHom_apply (x : X) (f : BoundedBorelFunction X) :
+    evalStarAlgHom x f = f x := (rfl)
+
+/-- Point evaluation on bounded Borel symbols is continuous for the supremum norm. -/
+@[fun_prop] theorem continuous_eval (x : X) :
+    Continuous fun f : BoundedBorelFunction X ↦ f x :=
+  AddMonoidHomClass.continuous_of_bound (evalStarAlgHom x) 1 fun f ↦ by
+    simpa using norm_coe_le_norm f x
+
+/-- The Banach-algebra exponential of a bounded Borel symbol is computed pointwise. -/
+@[simp] theorem exp_apply (f : BoundedBorelFunction X) (x : X) :
+    NormedSpace.exp f x = NormedSpace.exp (f x) :=
+  let +nondep : NormedAlgebra ℚ (BoundedBorelFunction X) := .restrictScalars ℚ ℂ _
+  NormedSpace.map_exp (evalStarAlgHom x) (continuous_eval x) f
 
 variable {Y Z : Type*} [MeasurableSpace Y] [MeasurableSpace Z]
 

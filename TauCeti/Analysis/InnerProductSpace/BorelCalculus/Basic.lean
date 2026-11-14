@@ -39,6 +39,7 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.spectralPVM a`: the spectral measure of a normal operator `a`.
 * `ContinuousLinearMap.borelCalculus a`: the Borel functional calculus of `a`, the integral
   against `a.spectralPVM`.
+* `ContinuousLinearMap.borelCalculus_exp`: the Borel calculus commutes with `NormedSpace.exp`.
 * `ContinuousLinearMap.borelCalculus_ofContinuousMap`: the Borel calculus extends `cfcHom`.
 * `ContinuousLinearMap.borelCalculus_restrict_id`: the coordinate function recovers `a`.
 * `ContinuousLinearMap.borelCalculus_indicator`: indicators give the spectral projections.
@@ -84,6 +85,18 @@ theorem integral_spectralPVM : a.spectralPVM.integral = a.borelCalculus :=
 theorem spectralPVM_eq_ofRepresentation :
     a.spectralPVM = ProjValMeasure.ofRepresentation (cfcHom (a := a) ‹_›) :=
   (rfl)
+
+/-- The Borel functional calculus is continuous for the supremum norm on symbols and the operator
+norm. -/
+@[fun_prop]
+theorem continuous_borelCalculus : Continuous a.borelCalculus :=
+  a.spectralPVM.continuous_integral
+
+/-- The Borel functional calculus commutes with the Banach-algebra exponential. -/
+@[simp]
+theorem borelCalculus_exp (f : BoundedBorelFunction (spectrum ℂ a)) :
+    a.borelCalculus (NormedSpace.exp f) = NormedSpace.exp (a.borelCalculus f) :=
+  a.spectralPVM.integral_exp f
 
 /-- **The Borel calculus extends the continuous calculus.** On a continuous function on the
 spectrum, the Borel functional calculus agrees with `cfcHom`. -/

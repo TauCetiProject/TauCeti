@@ -45,6 +45,7 @@ continuous extension `LinearMap.extendOfNorm`.
   its values times the projections of its fibres.
 * `ProjValMeasure.eq_integral_of_continuous`: a continuous map agreeing with the integral on
   simple symbols is the integral.
+* `ProjValMeasure.integral_exp`: integration commutes with the Banach-algebra exponential.
 * `ProjValMeasure.integral_indicator`: the integral of a measurable indicator is the projection.
 * `ProjValMeasure.forall_commute_integral_iff`: an operator commutes with every integral iff it
   commutes with every projection.
@@ -249,6 +250,15 @@ private theorem integral_ofSimpleFunc_eq_simpleIntegral (P : ProjValMeasure X H)
 symbols have the limiting integral. -/
 theorem continuous_integral (P : ProjValMeasure X H) : Continuous P.integral :=
   P.integralCLM.continuous
+
+/-- Integration against a projection-valued measure commutes with the Banach-algebra
+exponential. -/
+@[simp]
+theorem integral_exp (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :
+    P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f) :=
+  let +nondep : NormedAlgebra ℚ (BoundedBorelFunction X) := .restrictScalars ℚ ℂ _
+  let +nondep : Algebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
+  NormedSpace.map_exp P.integral P.continuous_integral f
 
 /-- A continuous map on bounded Borel symbols that agrees with `P.integral` on simple symbols is
 `P.integral`, since simple symbols are dense. -/
