@@ -20,18 +20,22 @@ field is the rational function field `k(X)`, the function `X₁ / X₀` going to
 proper curves (`AlgebraicGeometry.Scheme.isoTwoChartModel`), it is therefore isomorphic over `k` to
 the two-chart model of `k(X)` built from `X`, the scheme glued from `Spec k[X]` and `Spec k[X⁻¹]`.
 
+For a function field `F` finite over `k(X)`, the two-chart model of `F` built from the image `x` of
+`X` maps finitely to the two-chart model of `k(X)`
+(`TauCeti.AlgebraicGeometry.twoChartModel.isFinite_map`), and is the normalization of the latter in
+`F` (`TauCeti.AlgebraicGeometry.twoChartModel.normalizationIso`). Composing with the inverse of
+the isomorphism `TauCeti.AlgebraicGeometry.projectiveLine.isoTwoChartModel` of `ℙ¹_k` with the
+two-chart model of `k(X)` gives the projection `ν_F` of the two-chart model of `F` onto `ℙ¹_k`
+itself: a finite morphism over `k` whose pullback of rational functions is the inclusion
+`k(X) → F`.
+
 Conversely, `ℙ¹_k` is the only regular proper curve over `k` with rational function field: for an
 integral scheme proper over `k` whose local rings at codimension-one points are discrete valuation
 rings, a `k`-isomorphism of `k(X)` with its function field induces an isomorphism with `ℙ¹_k` over
 `k` (`AlgebraicGeometry.Scheme.isoProjectiveLine`), whose pullback of rational functions is the
-given isomorphism (`AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`).
-
-For a function field `F` finite over `k(X)`, the two-chart model of `F` built from the image `x` of
-`X` maps finitely to the two-chart model of `k(X)`
-(`TauCeti.AlgebraicGeometry.twoChartModel.isFinite_map`), and is the normalization of the latter in
-`F` (`TauCeti.AlgebraicGeometry.twoChartModel.normalizationIso`). Composing with the isomorphism
-above gives the projection `ν_F` of the two-chart model of `F` onto `ℙ¹_k` itself: a finite
-morphism over `k` whose pullback of rational functions is the inclusion `k(X) → F`.
+given isomorphism (`AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`). It is the
+only dominant morphism to `ℙ¹_k` with this pullback
+(`AlgebraicGeometry.Scheme.eq_isoProjectiveLine_hom_iff`).
 
 ## Main definitions
 
@@ -54,8 +58,13 @@ morphism over `k` whose pullback of rational functions is the inclusion `k(X) �
 * `TauCeti.AlgebraicGeometry.twoChartModel.isFinite_toProjectiveLine`: `ν_F` is finite.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_functionFieldMap_toProjectiveLine`:
   the pullback of rational functions along `ν_F` is the inclusion `k(X) → F`.
-* `AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`: the pullback of rational
-  functions along `X.isoProjectiveLine e` is `e`.
+* `AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom` and
+  `AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_inv`: the pullbacks of rational
+  functions along `isoProjectiveLine` and along its inverse are the given isomorphism of `k(X)`
+  with the function field and its inverse.
+* `AlgebraicGeometry.Scheme.eq_isoProjectiveLine_hom_iff` and
+  `AlgebraicGeometry.Scheme.eq_isoProjectiveLine_inv_iff`: `isoProjectiveLine` and its inverse are
+  the only dominant morphisms with these pullbacks of rational functions.
 
 ## References
 
@@ -248,9 +257,37 @@ instance (e : RatFunc k ≃ₐ[k] X.functionField) :
 function field of `ℙ¹_k` with `RatFunc k`, the pullback along `X.isoProjectiveLine e` is `e`. -/
 @[simp]
 theorem functionFieldMap_isoProjectiveLine_hom (e : RatFunc k ≃ₐ[k] X.functionField)
-    (z : RatFunc k) :
-    (X.isoProjectiveLine e).hom.functionFieldMap ((projectiveLine.functionFieldEquiv k).symm z) =
-      e z := by
+    (a : (projectiveLine k).functionField) :
+    (X.isoProjectiveLine e).hom.functionFieldMap a = e (projectiveLine.functionFieldEquiv k a) := by
   simp [isoProjectiveLine]
+
+/-- **The pullback of rational functions along `ℙ¹_k ≅ X` is `e⁻¹`**: under the identification of
+the function field of `ℙ¹_k` with `RatFunc k`, the pullback along the inverse of
+`X.isoProjectiveLine e` is the inverse of `e`. -/
+@[simp]
+theorem functionFieldMap_isoProjectiveLine_inv (e : RatFunc k ≃ₐ[k] X.functionField)
+    (x : X.functionField) :
+    (X.isoProjectiveLine e).inv.functionFieldMap x =
+      (projectiveLine.functionFieldEquiv k).symm (e.symm x) := by
+  simp [isoProjectiveLine]
+
+/-- **`X.isoProjectiveLine e` is determined by its pullback of rational functions**: a dominant
+morphism `f : X ⟶ ℙ¹_k` is `X.isoProjectiveLine e` exactly when its pullback of rational functions
+is `e`, the function field of `ℙ¹_k` being identified with `RatFunc k`. -/
+theorem eq_isoProjectiveLine_hom_iff (e : RatFunc k ≃ₐ[k] X.functionField)
+    (f : X ⟶ projectiveLine k) [IsDominant f] :
+    f = (X.isoProjectiveLine e).hom ↔
+      ∀ a, f.functionFieldMap a = e (projectiveLine.functionFieldEquiv k a) := by
+  simp [isoProjectiveLine, eq_homOfFunctionFieldAlgHom_iff]
+
+/-- **The inverse of `X.isoProjectiveLine e` is determined by its pullback of rational
+functions**: a dominant morphism `g : ℙ¹_k ⟶ X` is the inverse of `X.isoProjectiveLine e` exactly
+when its pullback of rational functions is the inverse of `e`, the function field of `ℙ¹_k` being
+identified with `RatFunc k`. -/
+theorem eq_isoProjectiveLine_inv_iff (e : RatFunc k ≃ₐ[k] X.functionField)
+    (g : projectiveLine k ⟶ X) [IsDominant g] :
+    g = (X.isoProjectiveLine e).inv ↔
+      ∀ x, g.functionFieldMap x = (projectiveLine.functionFieldEquiv k).symm (e.symm x) := by
+  simp [isoProjectiveLine, eq_homOfFunctionFieldAlgHom_iff]
 
 end AlgebraicGeometry.Scheme
