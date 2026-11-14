@@ -272,7 +272,7 @@ this is the integrality of the component. -/
 theorem valued_snd_sub_one_le_of_pow_dvd (hx : x ∈ ideleCongruenceSubgroup 𝔪)
     {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (hn : v.asIdeal ^ n ∣ 𝔪.finitePart) :
     Valued.v ((x : 𝔸[K]).2 v - 1) ≤ WithZero.exp (-(n : ℤ)) := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn0
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · have h := sub_mem (snd_mem_adicCompletionIntegers hx v) (one_mem (v.adicCompletionIntegers K))
     rw [mem_adicCompletionIntegers] at h
     simpa using h
@@ -411,7 +411,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
   have hAopen : IsOpen A := isOpen_setOf_congruenceConditions 𝔪
   have hmemA : ∀ x ∈ ideleCongruenceSubgroup 𝔪, (x : 𝔸[K]) ∈ A := by
     intro x hx
-    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine ⟨FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · exact ideleCongruenceSubgroup.snd_mem_adicCompletionIntegers hx v
     · exact ideleCongruenceSubgroup.valued_snd_sub_one_le_of_pow_dvd hx
         (𝔪.pow_exponent_dvd_finitePart v)
@@ -456,7 +456,7 @@ theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ}
         InfinitePlace.embedding_of_isReal w.2 (x : K) := by
     intro w
     rw [InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-    simp
+    simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
   simp only [mem_ideleCongrOneSubgroup_iff, valued_ideleFiniteCoord_unitEmbedding_sub_one, hinf,
     isCongrOne_iff]
 
@@ -593,7 +593,7 @@ theorem ideleCongruenceSubgroup_gcd (𝔪 𝔫 : Modulus K) :
       · exact extensionEmbeddingOfIsReal_pos_of_mem_inter hx hw
           (not_not.mp fun h𝔫 ↦ hwT (hmemT.mpr ⟨hw, h𝔫⟩))
   · -- The components of `y` satisfy the conditions of `𝔫`.
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · rw [hyf]
       split_ifs
       · exact hunit v

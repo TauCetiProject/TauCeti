@@ -10,6 +10,7 @@ import TauCeti.NumberTheory.HilbertSymbol.IsAlgClosed
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 public import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
 # The archimedean Hilbert symbol
@@ -150,7 +151,7 @@ theorem units_map_ringEquivRealOfIsReal_algebraMap (w : {w : InfinitePlace K // 
     (b : Kˣ) :
     Units.map (Completion.ringEquivRealOfIsReal w.2 : w.1.Completion →* ℝ)
       (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = unitAtRealPlace w b :=
-  Units.ext (by simp)
+  Units.ext (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
 
 /-- At a real place `w`, the Hilbert symbol of the images of two global units in the completion
 `K_w` is the real Hilbert symbol of their images under the real embedding at `w`. -/

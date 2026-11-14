@@ -58,7 +58,7 @@ theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm 
     (hT : Continuous T) {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
     ∃ S : Submodule 𝕜 F, S ≤ D ∧ ∃ hS : FiniteDimensional 𝕜 S,
       letI := hS
-      letI := FiniteDimensional.complete 𝕜 S
+      letI := FiniteDimensional.completeSpace 𝕜 S
       ∃ _ : FiniteDimensional 𝕜 ((T x₀).coprod S.subtypeL).ker,
         ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
           ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
@@ -70,7 +70,7 @@ theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm 
   obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
     hT₀.exists_stabilization_kernel_coordinates hT.continuousAt hD
   let := hS
-  let := FiniteDimensional.complete 𝕜 S
+  let := FiniteDimensional.completeSpace 𝕜 S
   exact ⟨S, hSD, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
     q, U, hU, hx₀, fun x ↦ hinv x x.property,
     TauCeti.kernelVectorBundle (X := U)
@@ -91,7 +91,7 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
     {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
     ∃ S : Submodule 𝕜 F, S ≤ D ∧ ∃ hS : FiniteDimensional 𝕜 S,
       letI := hS
-      letI := FiniteDimensional.complete 𝕜 S
+      letI := FiniteDimensional.completeSpace 𝕜 S
       ∃ _ : FiniteDimensional 𝕜 ((T x₀).coprod S.subtypeL).ker,
         ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
           ∃ U : TopologicalSpace.Opens X, x₀ ∈ U ∧
@@ -110,7 +110,7 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
   obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
     hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt hD
   let := hS
-  let := FiniteDimensional.complete 𝕜 S
+  let := FiniteDimensional.completeSpace 𝕜 S
   let V : TopologicalSpace.Opens X := ⟨U, hU⟩
   have hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
       (fun x : V ↦ (T x).coprod S.subtypeL) :=

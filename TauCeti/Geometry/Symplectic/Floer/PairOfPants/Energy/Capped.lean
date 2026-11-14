@@ -60,8 +60,10 @@ regularity required only near that support. For a finite-energy solution with ta
 structures it gives the lower area bound `-2 (B₀ + B₁ + B_∞) ≤ ∫ u^* ω`
 (`SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`).
 These statements retain explicit integrability hypotheses on the energy and curvature. This is
-the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
-family is to be proved.
+the energy bound, uniform in `R` for a fixed area, from which compactness of the comparison family
+over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`).
+Compactness near the pole `∞` and along the long-neck end `R → ∞` is still to be proved.
 
 ## Main results
 
@@ -153,7 +155,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedPerturbation [FiniteDi
 `C¹` Hamiltonians `H_q` on a finite-dimensional manifold with a nondegenerate two-form, with
 components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`.
 Let `u` be `C¹` over an open neighbourhood `U` of the truncation `S_{L + 3}`. Then for every
-measurable set `D ⊇ S_{L + 3}` over which the energy density and the curvature `R_K(u)` are
+set `D ⊇ S_{L + 3}` over which the energy density and the curvature `R_K(u)` are
 integrable,
 
 `∫_D E = ∫_D u^* ω - ∫_D R_K(u)`. -/
@@ -162,7 +164,7 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_cappedPerturbation [Finit
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (a L : ℝ)
     {U D : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation (L + 3) ⊆ U)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hD : MeasurableSet D)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
     (hTD : Complex.equivRealProdCLM.symm ⁻¹' truncation (L + 3) ⊆ D)
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
@@ -187,7 +189,7 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_cappedPerturbation [Finit
     (isCompact_preimage_truncation _) hTU
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz 1)
     (fun _ hz ↦ cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation hz Complex.I)
-    hD hTD hE hR
+    hTD hE hR
 
 /-- **The energy identity along the comparison family.** For every `R`, the energy of a map of the
 plane for the datum `K_R` of the comparison family is its symplectic area minus the integral of
@@ -271,7 +273,7 @@ theorem IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPertu
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
     {U D : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation (comparisonNeckLength R + 3) ⊆ U)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hD : MeasurableSet D)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
     (hTD : Complex.equivRealProdCLM.symm ⁻¹' truncation (comparisonNeckLength R + 3) ⊆ D)
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
@@ -290,7 +292,7 @@ theorem IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPertu
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
   rw [cappedComparisonPerturbation_def] at hE hR
   have hid := hω.setIntegral_floerEnergyDensity_cappedPerturbation hH hHs
-    (comparisonCutoff R) (comparisonNeckLength R) hU hTU hu hD hTD hE hR
+    (comparisonCutoff R) (comparisonNeckLength R) hU hTU hu hTD hE hR
   rw [← cappedComparisonPerturbation_def] at hid
   rw [hid, sub_sub_cancel_left, abs_neg]
   exact ω.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le hH hHs hB hR₀ u D
@@ -320,7 +322,7 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturba
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
   simpa only [Measure.restrict_univ] using
     hω.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB hR₀
-      isOpen_univ (subset_univ _) hu.contMDiffOn MeasurableSet.univ (subset_univ _)
+      isOpen_univ (subset_univ _) hu.contMDiffOn (subset_univ _)
       hE.integrableOn hR.integrableOn
 
 /-- A finite-energy Floer solution of the capped comparison family, with tame almost complex

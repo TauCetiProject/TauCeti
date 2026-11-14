@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 
 /-!
 # The degree of a constant diagonal double coset

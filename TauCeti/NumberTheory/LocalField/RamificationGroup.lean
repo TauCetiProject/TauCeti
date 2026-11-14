@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Equiv
 public import TauCeti.NumberTheory.LocalField.GaloisAction
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.NumberTheory.RamificationInertia.Galois
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
+import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
 # Lower ramification groups of a local field extension
@@ -67,6 +69,11 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
   when the adjacent lower groups differ.
 * `TauCeti.LocalFieldsRamification.map_restrictScalarsHom_lowerRamificationGroup`: for a tower
   `L/K'/K`, the filtration of `H = Gal(L/K')` is `H ∩ G_i`.
+* `TauCeti.LocalFieldsRamification.comap_algAutCongr_lowerRamificationGroup_of_vle_iff`,
+  `TauCeti.LocalFieldsRamification.map_algAutCongr_lowerRamificationGroup`, and
+  `TauCeti.LocalFieldsRamification.map_autCongr_lowerRamificationGroup`: transport of the lower
+  filtration along valuation-preserving or base-continuous ring equivalences and `K`-algebra
+  equivalences.
 
 ## References
 
@@ -438,5 +445,95 @@ theorem map_restrictScalarsHom_lowerRamificationGroupReal (u : ℝ) :
   rw [← comap_restrictScalarsHom_lowerRamificationGroupReal K L K', Subgroup.map_comap_eq]
 
 end Tower
+
+/-! ### Transport along ring and algebra equivalences -/
+
+section Transport
+
+section RingEquiv
+
+variable {K L} {K' L' : Type*}
+  [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K' L'] [ValuativeExtension K' L'] [Module.Finite K' L']
+
+/-- **Transport of lower ramification groups along a valuation-preserving ring isomorphism.** Given
+ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap` such that `e`
+preserves `≤ᵥ`, conjugation `e.algAutCongr eL heL` pulls `G_i(L'/K')` back to `G_i(L/K)`. -/
+theorem comap_algAutCongr_lowerRamificationGroup_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K' L' i).comap (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K L i := by
+  have hvle (x y : L) : eL x ≤ᵥ eL y ↔ x ≤ᵥ y :=
+    eL.toRingHom.map_vle_map_iff_of_vle_iff e.toRingHom he heL x y
+  have hmem (x : L) : x ∈ 𝒪[L] ↔ eL x ∈ 𝒪[L'] := by
+    rw [Valuation.mem_integer_iff, Valuation.mem_integer_iff, ← map_one (valuation L),
+      ← map_one (valuation L'), ← (valuation L).vle_iff_le, ← (valuation L').vle_iff_le,
+      ← map_one eL, hvle]
+  let fInt : 𝒪[L] ≃+* 𝒪[L'] := eL.restrict 𝒪[L] 𝒪[L'] hmem
+  have hpow (n : ℕ) :
+      (IsLocalRing.maximalIdeal 𝒪[L'] ^ n).comap (fInt : 𝒪[L] →+* 𝒪[L']) =
+        IsLocalRing.maximalIdeal 𝒪[L] ^ n := by
+    rw [Ideal.comap_coe, ← Ideal.map_symm, Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
+  symm
+  rw [lowerRamificationGroup_def, lowerRamificationGroup_def]
+  refine TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow
+    (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) (fInt : 𝒪[L] →+* 𝒪[L'])
+    (fun σ x ↦ ?_) hpow (fun _ y ↦ ⟨fInt.symm y, ?_⟩) i
+  · exact Subtype.ext (by simp [fInt])
+  · simp
+
+/-- Image form of `comap_algAutCongr_lowerRamificationGroup_of_vle_iff`. -/
+theorem map_algAutCongr_lowerRamificationGroup_of_vle_iff
+    (e : K ≃+* K') (he : ∀ a b : K, e a ≤ᵥ e b ↔ a ≤ᵥ b)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K L i).map (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K' L' i := by
+  rw [← comap_algAutCongr_lowerRamificationGroup_of_vle_iff e he eL heL i,
+    Subgroup.map_comap_eq_self_of_surjective (e.algAutCongr eL heL).surjective]
+
+/-- **Transport of lower ramification groups along a base-continuous ring isomorphism.** -/
+theorem comap_algAutCongr_lowerRamificationGroup (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K' L' i).comap (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K L i :=
+  comap_algAutCongr_lowerRamificationGroup_of_vle_iff e
+    (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL i
+
+/-- Image form of `comap_algAutCongr_lowerRamificationGroup`. -/
+theorem map_algAutCongr_lowerRamificationGroup (e : K ≃+* K') (he : Continuous e)
+    (eL : L ≃+* L') (heL : ∀ c : K, eL (algebraMap K L c) = algebraMap K' L' (e c)) (i : ℤ) :
+    (lowerRamificationGroup K L i).map (e.algAutCongr eL heL : (L ≃ₐ[K] L) →* (L' ≃ₐ[K'] L')) =
+      lowerRamificationGroup K' L' i :=
+  map_algAutCongr_lowerRamificationGroup_of_vle_iff e
+    (e.toRingHom.map_vle_map_iff_of_continuous he) eL heL i
+
+end RingEquiv
+
+section AlgEquiv
+
+variable {K L} {L' : Type*}
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K L'] [ValuativeExtension K L'] [Module.Finite K L']
+
+/-- **Transport of lower ramification groups along a `K`-algebra isomorphism `φ : L ≃ₐ[K] L'`.** -/
+theorem comap_autCongr_lowerRamificationGroup (φ : L ≃ₐ[K] L') (i : ℤ) :
+    (lowerRamificationGroup K L' i).comap (AlgEquiv.autCongr φ : (L ≃ₐ[K] L) →* (L' ≃ₐ[K] L')) =
+      lowerRamificationGroup K L i := by
+  rw [← RingEquiv.algAutCongr_refl_toRingEquiv φ φ.commutes]
+  exact comap_algAutCongr_lowerRamificationGroup (RingEquiv.refl K) continuous_id
+    (φ : L ≃+* L') φ.commutes i
+
+/-- Image form of `comap_autCongr_lowerRamificationGroup`. -/
+theorem map_autCongr_lowerRamificationGroup (φ : L ≃ₐ[K] L') (i : ℤ) :
+    (lowerRamificationGroup K L i).map (AlgEquiv.autCongr φ : (L ≃ₐ[K] L) →* (L' ≃ₐ[K] L')) =
+      lowerRamificationGroup K L' i := by
+  rw [← comap_autCongr_lowerRamificationGroup φ i,
+    Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.autCongr φ).surjective]
+
+end AlgEquiv
+
+end Transport
 
 end TauCeti.LocalFieldsRamification

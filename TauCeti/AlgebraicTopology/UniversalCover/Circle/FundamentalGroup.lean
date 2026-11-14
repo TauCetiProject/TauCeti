@@ -13,6 +13,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.Topology.Circle.AddCircle
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.Loop
@@ -61,8 +62,14 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
   once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.zpowers_fromPath_eq_top_iff`, `Circle.isOfFinOrder_fromPath_iff`: a loop generates
+  `π₁(Circle, x)` iff its degree is `±1`, and has finite order there iff its degree is `0`.
+* `Circle.zpowers_fromPath_expLoop`, `Circle.not_isOfFinOrder_fromPath_expLoop`: the class of
+  `Circle.expLoop` generates `π₁(Circle, 1)` and has infinite order.
 * `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
   of `Circle.expLoop` to the class of `γ`.
+* `Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one`: given `π₁(X, x) ≃* ℤ`, a loop
+  representing the generator, read as a map from the circle, is bijective on fundamental groups.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
   `Circle.degree`, computed from angle lifts.
 * `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
@@ -423,6 +430,45 @@ theorem fundamentalGroupMulEquiv_expLoop :
       Multiplicative.ofAdd 1 := by
   rw [fundamentalGroupMulEquiv_fromPath, degree_expLoop]
 
+/-- The fundamental group of the circle is torsion-free, being isomorphic to `ℤ`. -/
+instance (x : Circle) : IsMulTorsionFree (FundamentalGroup Circle x) :=
+  (fundamentalGroupMulEquiv x).injective.isMulTorsionFree (fundamentalGroupMulEquiv x).toMonoidHom
+
+/-- **A loop generates `π₁(S¹)` iff its degree is `±1`.** -/
+theorem zpowers_fromPath_eq_top_iff {x : Circle} (γ : Path x x) :
+    Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = ⊤ ↔
+      IsUnit (degree γ) := by
+  refine ⟨fun h ↦ ?_, fun hγ ↦ ?_⟩
+  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
+      (h ▸ Subgroup.mem_top ((fundamentalGroupMulEquiv x).symm (Multiplicative.ofAdd 1)))
+    rw [(fundamentalGroupMulEquiv x).eq_symm_apply, map_zpow, fundamentalGroupMulEquiv_fromPath,
+      ← ofAdd_zsmul, EmbeddingLike.apply_eq_iff_eq, smul_eq_mul] at hk
+    exact .of_mul_eq_one_right _ hk
+  rcases Int.isUnit_iff.mp hγ with hγ | hγ
+  · exact (fundamentalGroupMulEquiv x).zpowers_eq_top_of_apply_eq_ofAdd_one
+      (by rw [fundamentalGroupMulEquiv_fromPath, hγ])
+  · rw [← Subgroup.zpowers_inv]
+    exact (fundamentalGroupMulEquiv x).zpowers_eq_top_of_apply_eq_ofAdd_one
+      (by rw [map_inv, fundamentalGroupMulEquiv_fromPath, hγ, ofAdd_neg, inv_inv])
+
+/-- **A loop class in `π₁(S¹)` has finite order iff the loop has degree `0`.** -/
+@[simp]
+theorem isOfFinOrder_fromPath_iff {x : Circle} (γ : Path x x) :
+    IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) ↔ degree γ = 0 := by
+  rw [isOfFinOrder_iff_eq_one, ← (fundamentalGroupMulEquiv x).map_eq_one_iff,
+    fundamentalGroupMulEquiv_fromPath, ofAdd_eq_one]
+
+/-- **The counterclockwise loop generates `π₁(S¹)`.** Every class in `π₁(Circle, 1)` is a power
+of the class of `t ↦ exp(2πit)`. -/
+theorem zpowers_fromPath_expLoop :
+    Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) = ⊤ :=
+  (zpowers_fromPath_eq_top_iff expLoop).mpr (degree_expLoop ▸ isUnit_one)
+
+/-- **The counterclockwise loop has infinite order in `π₁(S¹)`.** -/
+theorem not_isOfFinOrder_fromPath_expLoop :
+    ¬IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) := by
+  simp [degree_expLoop]
+
 /-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
 counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is
 the image of the generator of `π₁(S¹)` under a based map from the circle. -/
@@ -436,6 +482,45 @@ theorem mapOfEq_toCircle_expLoop {X : Type*} [TopologicalSpace X] {x : X} (γ : 
     simpa using γ.toCircle_exp t
   conv_rhs => rw [← h, Path.Homotopic.Quotient.mk_cast, Path.Homotopic.Quotient.mk_map]
   exact FundamentalGroup.mapOfEq_apply _ _ _
+
+/-- **A generating loop, read as a map from the circle, induces the identity of `ℤ`.** Given an
+identification `e : π₁(X, x) ≃* ℤ`, a loop representing the class sent to the generator
+`ofAdd 1`, read as a map from the circle by `Path.toCircle`, induces on fundamental groups the
+map that `e` and `fundamentalGroupMulEquiv` identify with the identity of `ℤ`. -/
+theorem apply_mapOfEq_toCircle_out_symm_ofAdd_one {X : Type*} [TopologicalSpace X] {x : X}
+    (e : FundamentalGroup X x ≃* Multiplicative ℤ) (γ : FundamentalGroup Circle 1) :
+    e (FundamentalGroup.mapOfEq
+        (Quotient.out (FundamentalGroup.toPath (e.symm (Multiplicative.ofAdd 1)))).toCircle
+        (Path.toCircle_one _) γ) =
+      fundamentalGroupMulEquiv 1 γ := by
+  -- Both sides are homomorphisms out of `π₁(S¹) ≅ ℤ`, so it suffices to compare them on the
+  -- counterclockwise loop, which the circle identification sends to the generator.
+  suffices h : (e.toMonoidHom.comp (FundamentalGroup.mapOfEq _ (Path.toCircle_one _))).comp
+      (fundamentalGroupMulEquiv 1).symm.toMonoidHom = MonoidHom.id _ by
+    simpa using congrArg (· (fundamentalGroupMulEquiv 1 γ)) h
+  refine MonoidHom.ext_mint ?_
+  have hgen : (fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd 1) =
+      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop) := by
+    rw [MulEquiv.symm_apply_eq, fundamentalGroupMulEquiv_expLoop]
+  simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply, hgen,
+    MonoidHom.id_apply]
+  -- The loop wrapped around is a representative of the class sent to the generator.
+  rw [mapOfEq_toCircle_expLoop, FundamentalGroup.fromPath_mk_out, MulEquiv.apply_symm_apply]
+
+/-- A loop representing the class sent to the generator by an identification `π₁(X, x) ≃* ℤ`,
+read as a map from the circle, induces a bijection on fundamental groups. -/
+theorem bijective_mapOfEq_toCircle_out_symm_ofAdd_one {X : Type*} [TopologicalSpace X] {x : X}
+    (e : FundamentalGroup X x ≃* Multiplicative ℤ) :
+    Function.Bijective (FundamentalGroup.mapOfEq
+      (Quotient.out (FundamentalGroup.toPath (e.symm (Multiplicative.ofAdd 1)))).toCircle
+      (Path.toCircle_one _)) := by
+  have h : ⇑(FundamentalGroup.mapOfEq
+      (Quotient.out (FundamentalGroup.toPath (e.symm (Multiplicative.ofAdd 1)))).toCircle
+      (Path.toCircle_one _)) = e.symm ∘ fundamentalGroupMulEquiv 1 := by
+    funext γ
+    rw [Function.comp_apply, MulEquiv.eq_symm_apply, apply_mapOfEq_toCircle_out_symm_ofAdd_one]
+  rw [h]
+  exact e.symm.bijective.comp (fundamentalGroupMulEquiv 1).bijective
 
 /-- **The `n`-th power map of the circle acts on `π₁(S¹) ≅ ℤ` as multiplication by `n`.** The
 isomorphism `fundamentalGroupMulEquiv` sends the image of a loop class under `z ↦ z ^ n` to the

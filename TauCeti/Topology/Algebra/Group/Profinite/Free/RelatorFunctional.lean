@@ -116,7 +116,7 @@ theorem ContCohomology.IsHeisenbergCochain.apply_eq_heisenbergFunctional
         hh.gradedRestrict_gradedBracket_gradedMkZero htriv haN hbN hpM htriv htriv,
         AddMonoidHom.mul_apply, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd]
     · simp only [AddMonoidHom.coe_toZModLinearMap,
-        hh.gradedRestrict_gradedPow_gradedMkZero htriv haN hbN hpM htriv htriv,
+        hh.gradedRestrict_gradedPow_gradedMkZero htriv haN hbN hpM htriv,
         AddMonoidHom.mul_apply, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd]
   rw [← key, AddMonoidHom.coe_toZModLinearMap, gradedRestrict_gradedMk]
 

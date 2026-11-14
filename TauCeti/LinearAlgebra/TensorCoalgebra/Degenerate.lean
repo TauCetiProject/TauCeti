@@ -174,7 +174,7 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
     have hb : 0 < b := by omega
     have hvanish : ∀ c, 1 < c → a + c ≤ n → i.1 < a + c →
         f (subword R x a c) = 0 := by
-      intro c hc hac hic
+      intro c hc _ hic
       rw [apply_eq_comp_letter_of_mem_degenerateWords f hf
         (subword_mem_degenerateWords x ⟨i, hai, hic, hi⟩),
         letter_subword_of_ne_one R M x a (by omega), map_zero, map_zero]
@@ -252,7 +252,7 @@ theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
 
 /-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
 is the homogeneous element `e` with its degree. -/
-theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M) {e : M} {E : ℤ}
+theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
     (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
     degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ)
       (i : Fin n.1), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
@@ -292,7 +292,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 /-- The graded Taylor expansion of a map vanishing on the degenerate words of a homogeneous `e`
 preserves those words: a collapsed block containing `e` is killed, and every other collapse keeps
 the letter `e`, possibly twisted by a sign. -/
-theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
+theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M ℤ)
     {F : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {e : M} {E : ℤ} (he : e ∈ G.piece E)
     (hF : degenerateWords R M e ≤ LinearMap.ker F) {z : ReducedTensorWords R M}
     (hz : z ∈ degenerateWords R M e) : gradedCoderiv G F q z ∈ degenerateWords R M e := by
@@ -331,7 +331,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The brace of two maps vanishing on the degenerate words of a homogeneous `e` vanishes on
 them. -/
-theorem degenerateWords_le_ker_brace (G : InternalGrading R M)
+theorem degenerateWords_le_ker_brace (G : InternalGrading R M ℤ)
     {F g : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {e : M} {E : ℤ} (he : e ∈ G.piece E)
     (hF : degenerateWords R M e ≤ LinearMap.ker F)
     (hg : degenerateWords R M e ≤ LinearMap.ker g) :
@@ -341,7 +341,7 @@ theorem degenerateWords_le_ker_brace (G : InternalGrading R M)
 
 /-- The Gerstenhaber bracket of two maps vanishing on the degenerate words of a homogeneous `e`
 vanishes on them. -/
-theorem degenerateWords_le_ker_gerstenhaberBracket (G : InternalGrading R M)
+theorem degenerateWords_le_ker_gerstenhaberBracket (G : InternalGrading R M ℤ)
     {F g : ReducedTensorWords R M →ₗ[R] M} (p q : ℤ) {e : M} {E : ℤ} (he : e ∈ G.piece E)
     (hF : degenerateWords R M e ≤ LinearMap.ker F)
     (hg : degenerateWords R M e ≤ LinearMap.ker g) :

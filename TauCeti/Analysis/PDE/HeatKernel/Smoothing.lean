@@ -85,7 +85,7 @@ theorem enorm_heatKernel_convolution_le {t : ℝ} (ht : 0 < t) {p : ℝ≥0∞}
         eLpNorm f p volume := by
   let q := ENNReal.conjExponent p
   have : q.HolderConjugate p := (ENNReal.HolderConjugate.conjExponent hp).symm
-  have h := enorm_convolution_le (p := q) (q := p) (.lsmul ℝ ℝ)
+  have h := eNorm_convolution_le (p := q) (q := p) (.lsmul ℝ ℝ)
     ((contDiff_heatKernel (k := ⊤) t).continuous.aestronglyMeasurable) hf x
   have hi : 1 / q.toReal + 1 / p.toReal = 1 := by
     have hi := congrArg ENNReal.toReal (ENNReal.HolderConjugate.inv_add_inv_eq_one q p)
@@ -116,7 +116,7 @@ theorem eLpNorm_heatSemigroup_top_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1
       ENNReal.ofReal ((4 * π * (t : ℝ)) ^
         (-(Module.finrank ℝ E : ℝ) / (2 * p.toReal))) * eLpNorm f p volume := by
   rw [eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  apply eLpNormEssSup_le_of_ae_enorm_bound
+  apply eLpNormEssSup_le_of_ae_eNorm_bound
   filter_upwards [heatSemigroup_ae_eq_convolution_coeFn hp ht f] with x hx
   rw [hx]
   exact enorm_heatKernel_convolution_le (by positivity) Fact.out (Lp.aestronglyMeasurable f) x
@@ -149,8 +149,8 @@ theorem eLpNorm_iteratedFDeriv_heatKernel_convolution_le {t M : ℝ} (ht : 0 < t
           eLpNorm g p volume := by gcongr
     _ = ENNReal.ofReal (∫ z, ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) z‖) *
           eLpNorm g p volume := by
-        rw [one_mul, eLpNorm_one_eq_lintegral_enorm hK.aestronglyMeasurable,
-          ofReal_integral_norm_eq_lintegral_enorm hK]
+        rw [one_mul, eLpNorm_one_eq_lintegral_eNorm hK.aestronglyMeasurable,
+          ofReal_integral_norm_eq_lintegral_eNorm hK]
 
 /-- **Heat smoothing of essentially bounded data, in every `Lᵖ`.** For each order `m` there is a
 constant `C`, depending only on `m` and the dimension, such that for every `t > 0`, every
@@ -201,7 +201,7 @@ theorem exists_contDiff_ae_eq_heatSemigroup {p : ℝ≥0∞} [Fact (1 ≤ p)]
     ∃ u : E → F, ContDiff ℝ (⊤ : ℕ∞) u ∧
       (heatSemigroup hp t f : E → F) =ᵐ[volume] u :=
   -- The first half-step makes the datum essentially bounded, the second smooths it.
-  ⟨_, contDiff_heatKernel_convolution (by positivity) (Lp.aestronglyMeasurable _)
+  ⟨_, contDiff_heatKernel_convolution (by positivity)
     (ae_norm_heatSemigroup_le hp (by positivity) f),
     heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f⟩
 
@@ -225,12 +225,11 @@ theorem exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup (m : ℕ) :
   have hbound := ae_norm_heatSemigroup_le hp (NNReal.coe_ne_zero.1 hs.ne') f
   -- `u` is the smooth function `K_s ⋆ g`, two continuous functions being equal almost everywhere.
   have hug : u = heatKernel (s : ℝ) ⋆ (g : E → F) :=
-    (Continuous.ae_eq_iff_eq volume hu (contDiff_heatKernel_convolution hs
-      (Lp.aestronglyMeasurable g) hbound).continuous).1
+    (Continuous.ae_eq_iff_eq volume hu (contDiff_heatKernel_convolution hs hbound).continuous).1
       (hfu.symm.trans (heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f))
   -- The semigroup is a contraction, so `‖g‖_p ≤ ‖f‖_p`.
   have hgf : eLpNorm (g : E → F) p volume ≤ eLpNorm f p volume := by
-    rw [← Lp.enorm_def, ← Lp.enorm_def, enorm_le_iff_norm_le]
+    rw [← Lp.eNorm_def, ← Lp.eNorm_def, eNorm_le_iff_norm_le]
     exact ContinuousLinearMap.le_of_opNorm_le _ ((heatSemigroup hp).contracting s) f |>.trans_eq
       (one_mul _)
   have hs2 : (s : ℝ) = (t : ℝ) / 2 := by simp [s]

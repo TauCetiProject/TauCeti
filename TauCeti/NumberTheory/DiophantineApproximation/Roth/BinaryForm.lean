@@ -79,7 +79,6 @@ theorem _root_.IsAlgebraic.exists_pos_mul_max_abs_rpow_le_norm_sub_mul {α : ℂ
     ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, (x : ℂ) - α * y ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ (1 - κ) ≤ ‖(x : ℂ) - α * y‖ := by
   obtain ⟨c₀, hc₀, h⟩ := hα.exists_pos_mul_mulHeight₁_rpow_neg_le_norm_sub hκ
-  have hA : 1 ≤ ‖α‖ + 1 := by linarith [norm_nonneg α]
   refine ⟨min (1 / 2) (c₀ / (2 * (‖α‖ + 1))), by positivity, fun x y hxy ↦ ?_⟩
   have hM : 1 ≤ max |(x : ℝ)| |(y : ℝ)| := Int.one_le_max_abs_cast <| by
     by_contra! h0
@@ -165,7 +164,7 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     {κ : ℝ} (hκ : 2 < κ) :
     ∃ c : ℝ, 0 < c ∧ ∀ x y : ℤ, MvPolynomial.eval ![x, y] F ≠ 0 →
       c * max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - κ) ≤ |(MvPolynomial.eval ![x, y] F : ℝ)| := by
-  rcases eq_or_ne F 0 with rfl | hF₀
+  rcases eq_or_ne F 0 with rfl | _
   · exact ⟨1, one_pos, fun x y h ↦ absurd (map_zero _) h⟩
   -- Over `ℂ`, `F` splits into pairwise non-proportional linear factors.
   obtain ⟨a, ha, T, hTd, hT, hTL, hFT⟩ :=

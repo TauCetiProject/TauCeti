@@ -44,8 +44,8 @@ elements on which that calculus is defined.
 * `StarSubalgebra.continuousFunctionalCalculus`: a closed star subalgebra inherits the continuous
   functional calculus.
 * `StarSubalgebra.coe_cfc`: the inherited calculus is computed in the ambient algebra.
-* `StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding`: spectral permanence along a closed
-  embedding of `⋆`-algebras.
+* `StarAlgHom.spectrum_apply_eq_of_injective_of_isClosed_range`: spectral permanence along an
+  injective `⋆`-homomorphism with closed range.
 * `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding`: a closed embedding of
   `⋆`-algebras pulls the continuous functional calculus back.
 -/
@@ -82,15 +82,16 @@ theorem spectrum_eq_of_predicate (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set 
 
 end StarSubalgebra
 
-variable {A : Type*} [Ring A] [StarRing A] [Algebra 𝕜 A] [TopologicalSpace A]
+variable {A : Type*} [Ring A] [StarRing A] [Algebra 𝕜 A]
 
-/-- **Spectral permanence** along a unital `⋆`-homomorphism `φ` which is a closed embedding: if the
-continuous functional calculus of `B` is defined at `φ a`, then `φ a` has the same spectrum as
-`a`. -/
-theorem StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜] B)
-    (hφ : IsClosedEmbedding φ) {a : A} (ha : q (φ a)) : spectrum 𝕜 (φ a) = spectrum 𝕜 a := by
-  have : IsClosed (φ.range : Set B) := hφ.isClosed_range
-  let e := StarAlgEquiv.ofInjective φ hφ.injective
+/-- **Spectral permanence** along an injective unital `⋆`-homomorphism `φ` with closed range: if
+the continuous functional calculus of `B` is defined at `φ a`, then `φ a` has the same spectrum
+as `a`. No topology on the domain of `φ` is involved. -/
+theorem StarAlgHom.spectrum_apply_eq_of_injective_of_isClosed_range (φ : A →⋆ₐ[𝕜] B)
+    (hφ : Function.Injective φ) (hφr : IsClosed (Set.range φ)) {a : A} (ha : q (φ a)) :
+    spectrum 𝕜 (φ a) = spectrum 𝕜 a := by
+  have : IsClosed (φ.range : Set B) := hφr
+  let e := StarAlgEquiv.ofInjective φ hφ
   rw [← AlgEquiv.spectrum_eq e a]
   exact (φ.range.spectrum_eq_of_predicate (x := e a) ha).symm
 

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cellular.CharacteristicMap
 public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.DiskSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # The cellular chain group is a coproduct of copies of the coefficients, one per cell
@@ -16,9 +17,11 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 For a relative CW complex and coefficients `R` in an abelian category in which coproducts indexed
 by the `n`-cells are exact (for instance modules over a ring), the cellular chain group
 `Hₙ(Xⁿ, Xⁿ⁻¹)` is the coproduct of one copy of `R` for each `n`-cell
-(`TauCeti.cellularChainGroupIso`).  For modules over a ring `k`, this is the direct sum of copies
-of the coefficient module `R`, one per `n`-cell; when `R = k`, it is the free `k`-module on the
-`n`-cells.
+(`TauCeti.cellularChainGroupIso`), so both it and the degree-`n` term of the cellular chain complex
+are projective when `R` is (`TauCeti.projective_cellularChainGroup`,
+`TauCeti.projective_cellularChainComplex_X`).  For modules over a ring `k`, this is the direct sum
+of copies of the coefficient module `R`, one per `n`-cell; when `R = k`, it is the free `k`-module
+on the `n`-cells.
 
 The identification is induced by maps: the summand of the cell `j` is the image of the relative
 homology `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` of the Euclidean disk pair under the characteristic map of `j`
@@ -164,5 +167,21 @@ lemma ι_cellularChainGroupIso_inv (n : ℕ) [HasExactColimitsOfShape (Discrete 
   congr 1
   rw [colimit.comp_coconePointUniqueUpToIso_inv_assoc]
   simp [TopPair.singularHomologyMap_comp]
+
+/-- With projective coefficients, the cellular chain group in degree `n` is projective whenever
+coproducts indexed by the `n`-cells are exact in `A`. -/
+instance projective_cellularChainGroup [Projective R] (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C n)) A] :
+    Projective (cellularChainGroup C R n) :=
+  Projective.of_iso (cellularChainGroupIso C R n).symm
+    (Projective.of_isColimit_cofan (coproductIsCoproduct _))
+
+/-- With projective coefficients, the degree-`n` term of the cellular chain complex is projective
+whenever coproducts indexed by the `n`-cells are exact in `A`. -/
+instance projective_cellularChainComplex_X [Projective R] (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C n)) A] :
+    Projective ((cellularChainComplex C R).X n) := by
+  rw [cellularChainComplex_X]
+  infer_instance
 
 end TauCeti
