@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.JordanChevalley.Multiplicative
 # Raw Weil–Deligne parameters
 
 Let `E` be a field of characteristic zero, `V` a finite-dimensional `E`-vector space, `W` a
-topological group with an *arithmetic degree* `deg : W →* ℤ` and `q` a natural number. A
+topological group with an *arithmetic degree* `deg : W →* Multiplicative ℤ` (a homomorphism
+`W → ℤ`, read through `(deg w).toAdd`) and `q` a natural number. A
 **raw Weil–Deligne parameter** `(V, r, N)` consists of
 
 * a linear representation `r : W → GL(V)` whose kernel is open, and
@@ -74,9 +75,9 @@ open Module
 open LinearMap (GeneralLinearGroup)
 
 /-- **A raw Weil–Deligne parameter** `(V, r, N)` for a topological group `W` with arithmetic degree
-`deg : W →* ℤ` and a natural number `q`: a linear representation `r` of `W` on `V` with open
-kernel, and a nilpotent endomorphism `N` of `V` with `r(w) N r(w)⁻¹ = q ^ deg w • N`. Frobenius
-semisimplicity is the separate predicate `WeilDeligneParameter.IsFrobeniusSemisimple`
+`deg : W →* Multiplicative ℤ` and a natural number `q`: a linear representation `r` of `W` on `V`
+with open kernel, and a nilpotent endomorphism `N` of `V` with `r(w) N r(w)⁻¹ = q ^ deg w • N`.
+Frobenius semisimplicity is the separate predicate `WeilDeligneParameter.IsFrobeniusSemisimple`
 (Deligne 1973, §8.4.1, p. 568). -/
 @[ext]
 structure WeilDeligneParameter (E W V : Type*) [Field E] [CharZero E] [Group W]
@@ -275,7 +276,7 @@ theorem coe_toHom (f : Iso D D') : ⇑f.toHom = f :=
 
 /-- The isomorphism given by a morphism whose underlying map is bijective. -/
 @[expose] def ofBijective (f : Hom D D') (hf : Function.Bijective f) : Iso D D' where
-  toRepresentationEquiv := .mk (LinearEquiv.ofBijective f.toLinearMap hf) f.comp_r
+  toRepresentationEquiv := f.toIntertwiningMap.ofBijective hf
   comp_N := f.comp_N
 
 @[simp]
@@ -333,6 +334,26 @@ theorem trans_refl (f : Iso D D') : f.trans (refl D') = f :=
 theorem trans_assoc (f : Iso D D') (g : Iso D' D'') (h : Iso D'' D''') :
     (f.trans g).trans h = f.trans (g.trans h) :=
   rfl
+
+@[simp]
+theorem refl_apply (v : V) : refl D v = v :=
+  rfl
+
+@[simp]
+theorem trans_apply (f : Iso D D') (g : Iso D' D'') (v : V) : f.trans g v = g (f v) :=
+  rfl
+
+/-- The inverse of an isomorphism acts by the inverse of its underlying linear equivalence. -/
+theorem symm_apply (f : Iso D D') (v : V') : f.symm v = f.toLinearEquiv.symm v :=
+  rfl
+
+@[simp]
+theorem apply_symm_apply (f : Iso D D') (v : V') : f (f.symm v) = v :=
+  f.toLinearEquiv.apply_symm_apply v
+
+@[simp]
+theorem symm_apply_apply (f : Iso D D') (v : V) : f.symm (f v) = v :=
+  f.toLinearEquiv.symm_apply_apply v
 
 @[simp]
 theorem symm_symm (f : Iso D D') : f.symm.symm = f :=
@@ -394,12 +415,16 @@ theorem transport_transport : (D.transport e).transport e' = D.transport (e.tran
   rfl
 
 /-- The isomorphism from a parameter to its transport along `e`, given by `e` itself. -/
-@[expose] def isoTransport : Iso D (D.transport e) where
+@[expose] def transportIso : Iso D (D.transport e) where
   toRepresentationEquiv := .mk e fun w ↦ by ext v; simp
   comp_N := by ext v; simp
 
 @[simp]
-theorem isoTransport_toLinearEquiv : (D.isoTransport e).toLinearEquiv = e :=
+theorem transportIso_toLinearEquiv : (D.transportIso e).toLinearEquiv = e :=
+  rfl
+
+@[simp]
+theorem coe_transportIso : ⇑(D.transportIso e) = e :=
   rfl
 
 variable {D} in
@@ -420,7 +445,7 @@ theorem Iso.isFrobeniusSemisimple_iff {D' : WeilDeligneParameter E W V' deg q} (
 @[simp]
 theorem isFrobeniusSemisimple_transport :
     (D.transport e).IsFrobeniusSemisimple ↔ D.IsFrobeniusSemisimple :=
-  (D.isoTransport e).isFrobeniusSemisimple_iff.symm
+  (D.transportIso e).isFrobeniusSemisimple_iff.symm
 
 /-! ### Unramified parameters -/
 
