@@ -223,8 +223,7 @@ theorem span_natCast_integralSqrt_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - d) :
       (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
   rw [← span_natCast_integralSqrt_sub_eq_span_natCast_integralSqrt_add_iff hsf hd4 hr, sq,
     ← span_natCast_integralSqrt_sub_mul_span_natCast_integralSqrt_add hsf hd4 hr]
-  refine ⟨fun h => mul_left_cancel₀ ?_ h, fun h => by rw [← h]⟩
-  exact (isMaximal_span_natCast_integralSqrt_sub hsf hd4 hr).ne_bot_of_isIntegral_int
+  exact mul_right_inj' (isMaximal_span_natCast_integralSqrt_sub hsf hd4 hr).ne_bot_of_isIntegral_int
 
 end ModFourNeOne
 
@@ -232,7 +231,6 @@ end ModFourNeOne
 theorem span_two_integralSqrt_sub_one_sq_eq_span_two (hsf : Squarefree d) (hd : d % 4 = 3) :
     Ideal.span {(2 : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - 1} ^ 2 = Ideal.span {2} := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   have h := (span_natCast_integralSqrt_sub_sq_eq_iff (p := 2) (r := 1) hsf (by omega)
     (by norm_num; omega)).mpr (by
       rw [discr_eq_four_mul_of_mod_four_ne_one hsf (by omega)]
@@ -346,8 +344,7 @@ theorem span_natCast_halfGen_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - r - (d - 
       (p : ℤ) ∣ NumberField.discr (QuadraticAlgebra ℚ (d : ℚ) 0) := by
   rw [← span_natCast_halfGen_sub_eq_span_natCast_halfGen_sub_iff hsf hd4 hr, sq,
     ← span_natCast_halfGen_sub_mul_span_natCast_halfGen_sub hsf hd4 hr]
-  refine ⟨fun h => mul_left_cancel₀ ?_ h, fun h => by rw [← h]⟩
-  exact (isMaximal_span_natCast_halfGen_sub hsf hd4 hr).ne_bot_of_isIntegral_int
+  exact mul_right_inj' (isMaximal_span_natCast_halfGen_sub hsf hd4 hr).ne_bot_of_isIntegral_int
 
 end ModFourEqOne
 
