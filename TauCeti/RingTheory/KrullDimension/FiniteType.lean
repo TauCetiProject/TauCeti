@@ -99,8 +99,8 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 * `TauCeti.height_eq_ringKrullDim_of_isMaximal`: every maximal ideal of a finitely generated
   algebra `A` with irreducible spectrum over `k` has height `dim A`.
 * `Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField`: `dim (A ⧸ p) = trdeg_k κ(p)`.
-* `TauCeti.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`,
-  `TauCeti.topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_residueField`: the
+* `PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient`,
+  `PrimeSpectrum.topologicalKrullDimAt_eq_localization_add_trdeg`: the
   local Krull dimension of `Spec A` at `p` is `ht p + dim (A ⧸ p) = dim A_p + trdeg_k κ(p)`.
 
 ## References
@@ -455,8 +455,8 @@ variable (k) in
 /-- **Local dimension of an affine scheme of finite type over a field.** For a finitely generated
 algebra `A` over a field `k`, the local Krull dimension of `Spec A` at a prime `p` is
 `ht p + dim (A ⧸ p)`. -/
-theorem topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient {A : Type*} [CommRing A]
-    [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
+theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient
+    {A : Type*} [CommRing A] [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
     topologicalKrullDimAt (PrimeSpectrum A) p =
       p.asIdeal.height + ringKrullDim (A ⧸ p.asIdeal) := by
   have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
@@ -497,11 +497,11 @@ variable (k) in
 /-- **Local dimension of an affine scheme of finite type over a field, via the stalk.** For a
 finitely generated algebra `A` over a field `k`, the local Krull dimension of `Spec A` at a prime
 `p` is `dim A_p + trdeg_k κ(p)`. -/
-theorem topologicalKrullDimAt_eq_ringKrullDim_localization_add_toNat_trdeg_residueField
+theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_localization_add_trdeg
     {A : Type*} [CommRing A] [Algebra k A] [Algebra.FiniteType k A] (p : PrimeSpectrum A) :
     topologicalKrullDimAt (PrimeSpectrum A) p = ringKrullDim (Localization.AtPrime p.asIdeal) +
       (Algebra.trdeg k p.asIdeal.ResidueField).toNat := by
-  rw [topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k,
+  rw [p.topologicalKrullDimAt_eq_height_add_ringKrullDim_quotient k,
     IsLocalization.AtPrime.ringKrullDim_eq_height p.asIdeal (Localization.AtPrime p.asIdeal),
     Ideal.ringKrullDim_quotient_eq_toNat_trdeg_residueField k]
 
