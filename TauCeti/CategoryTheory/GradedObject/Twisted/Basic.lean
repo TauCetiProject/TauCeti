@@ -96,6 +96,18 @@ lemma ω_zero_right (i₁ i₂ : I) : c.ω i₁ i₂ 0 = 1 := by
 
 end TwistingCocycle
 
+namespace TwistingCocycle
+
+variable {I : Type*} [AddGroup I] {R : Type*} [Monoid R] (c : TwistingCocycle I R)
+
+/-- The cocycle identity at `(i, -i, i, -i)`: the values of a twisting cocycle at `(-i, i, -i)` and
+`(i, -i, i)` are inverse to each other. These are the scalars met by the two zigzag identities of
+a graded dual pairing. -/
+lemma ω_neg_mul_ω (i : I) : c.ω (-i) i (-i) * c.ω i (-i) i = 1 := by
+  simpa using (c.cocycle i (-i) i (-i)).symm
+
+end TwistingCocycle
+
 /-- A multiplicative `3`-cocycle `f` of a monoid `G` acting trivially on `Rˣ`, in the sense of
 `TauCeti.groupCohomology.IsMulCocycle₃`, which is normalized in the middle variable, as a twisting
 cocycle on `Additive G`. By `TauCeti.groupCohomology.exists_normalized_of_isMulCocycle₃`, every

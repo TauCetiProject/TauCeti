@@ -11,7 +11,9 @@ public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.CategoryTheory.GradedObject.Module
-public import TauCeti.CategoryTheory.GradedObject.Twisted.Basic
+public import TauCeti.Algebra.Category.FGModuleCat.Rigid
+public import TauCeti.CategoryTheory.GradedObject.Twisted.Rigid
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Subcategory
 
 /-!
 # Finitely supported cocycle-twisted graded vector spaces
@@ -26,9 +28,21 @@ The category is realized inside graded modules, which have arbitrary coproducts;
 proofs ensure that convolution remains in the finite-dimensional subcategory. Objects concentrated
 in one degree, including the one-dimensional objects `VecTwisted.delta`, belong to it.
 
+When `G` is a group, `VecTwisted k G c` is rigid. The left and right dual of `X` are both the
+graded dual `VecTwisted.dual X`, whose component in degree `g` is the dual space of the component
+of `X` in degree `g⁻¹`; the pairings are assembled from those of the components by
+`TauCeti.TwistedGradedObject.exactPairing`, with the evaluation twisted by the cocycle. In
+particular the dual of `δ_g` is `δ_{g⁻¹}` (`VecTwisted.dualDeltaIso`).
+
+## Main declarations
+
+* `TauCeti.VecTwisted.instMonoidalCategory`: the cocycle-twisted monoidal structure;
+* `TauCeti.VecTwisted.dual` and `TauCeti.VecTwisted.instRigidCategory`: the graded dual and the
+  rigid structure it defines, with `TauCeti.VecTwisted.dualDeltaIso : dual (delta g) ≅ delta g⁻¹`.
+
 ## References
 
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §2.3.
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§2.3, 2.10.
 -/
 
 public section
@@ -156,3 +170,89 @@ theorem support_delta (g : G) : (delta (c := c) g).obj.support = {Additive.ofMul
 end VecTwisted
 
 end TauCeti
+
+/-! ### Duals -/
+
+namespace TauCeti.VecTwisted
+
+variable {k G : Type u} [Field k] [Group G] {c : GradedObject.TwistingCocycle (Additive G) k}
+
+/-- The graded dual of `X`: its component in degree `g` is the dual space of the component of `X`
+in degree `g⁻¹`. It is both the left and the right dual of `X`. -/
+def dual (X : VecTwisted k G c) : VecTwisted k G c :=
+  of (fun g ↦ ModuleCat.of k (Module.Dual k (X.obj (-g)))) <| by
+    classical
+    obtain ⟨s, hs⟩ := (CategoryTheory.GradedObject.hasFiniteSupport_iff _).1 X.hasFiniteSupport
+    refine (CategoryTheory.GradedObject.hasFiniteSupport_iff _).2 ⟨s.image (-·), fun g hg ↦ ?_⟩
+    have := ModuleCat.isZero_iff_subsingleton.1
+      (hs _ fun h ↦ hg (Finset.mem_image.2 ⟨-g, h, neg_neg g⟩))
+    exact ModuleCat.isZero_of_subsingleton _
+
+/-- The component of the graded dual in degree `g` is the dual space of the component in
+degree `g⁻¹`. -/
+@[simp]
+theorem dual_obj (X : VecTwisted k G c) (g : Additive G) :
+    (dual X).obj g = ModuleCat.of k (Module.Dual k (X.obj (-g))) :=
+  (rfl)
+
+variable [DecidableEq G]
+
+/-- The pairing of `X` with its graded dual: componentwise the pairing of a finite-dimensional
+space with its dual, twisted by the cocycle through `TauCeti.TwistedGradedObject.exactPairing`. -/
+instance instHasRightDual (X : VecTwisted k G c) : HasRightDual X where
+  rightDual := dual X
+  exact :=
+    letI : ExactPairing X.obj (dual X).obj :=
+      TwistedGradedObject.exactPairing c X.obj (dual X).obj X.hasFiniteSupport fun i j h ↦
+        letI := ModuleCat.exactPairingDual (X.obj i)
+        exactPairingCongrRight (Y' := ModuleCat.of k (Module.Dual k (X.obj i)))
+          (eqToIso (by rw [dual_obj, neg_eq_of_add_eq_zero_left h]))
+    inferInstance
+
+/-- The pairing of the graded dual with `X`: componentwise the pairing of the dual of a
+finite-dimensional space with the space, twisted by the cocycle through
+`TauCeti.TwistedGradedObject.exactPairing`. -/
+instance instHasLeftDual (X : VecTwisted k G c) : HasLeftDual X where
+  leftDual := dual X
+  exact :=
+    letI : ExactPairing (dual X).obj X.obj :=
+      TwistedGradedObject.exactPairing c (dual X).obj X.obj (dual X).hasFiniteSupport
+        fun i j h ↦
+          letI := ModuleCat.leftExactPairingDual (X.obj j)
+          exactPairingCongrLeft (X' := ModuleCat.of k (Module.Dual k (X.obj j)))
+            (eqToIso (by rw [dual_obj, neg_eq_of_add_eq_zero_right h]))
+    inferInstance
+
+/-- Finitely supported finite-dimensional graded vector spaces with cocycle-twisted associator
+form a rigid monoidal category. -/
+instance instRigidCategory : RigidCategory (VecTwisted k G c) where
+
+/-- The graded dual of `δ_g` is `δ_{g⁻¹}`. In degree `g⁻¹` the isomorphism is the identification
+of the dual of the field with the field; in the other degrees both objects are zero. -/
+def dualDeltaIso (g : G) : dual (delta (c := c) g) ≅ delta g⁻¹ :=
+  ObjectProperty.isoMk _ <| CategoryTheory.GradedObject.isoMk _ _ fun h ↦
+    if hh : h = Additive.ofMul g⁻¹ then
+      (LinearEquiv.dualMap (CategoryTheory.GradedObject.singleObjApplyIsoOfEq
+          (Additive.ofMul g) (ModuleCat.of k k) (-h)
+          (by rw [hh, ofMul_inv, neg_neg])).symm.toLinearEquiv ≪≫ₗ
+        LinearMap.ringLmapEquivSelf k k k).toModuleIso ≪≫
+        (CategoryTheory.GradedObject.singleObjApplyIsoOfEq _ (ModuleCat.of k k) h hh).symm
+    else
+      have : Subsingleton ((delta (c := c) g).obj (-h)) := ModuleCat.isZero_iff_subsingleton.1
+        (CategoryTheory.GradedObject.isInitialSingleObjApply (Additive.ofMul g) (ModuleCat.of k k)
+          (-h) (by rwa [ne_eq, neg_eq_iff_eq_neg, ← ofMul_inv])).isZero
+      (ModuleCat.isZero_of_subsingleton
+          (ModuleCat.of k (Module.Dual k ((delta (c := c) g).obj (-h))))).iso
+        (CategoryTheory.GradedObject.isInitialSingleObjApply _ _ _ hh).isZero
+
+/-- The right dual of `X` is its graded dual. -/
+@[simp]
+theorem rightDual_eq (X : VecTwisted k G c) : (Xᘁ : VecTwisted k G c) = dual X :=
+  (rfl)
+
+/-- The left dual of `X` is its graded dual. -/
+@[simp]
+theorem leftDual_eq (X : VecTwisted k G c) : (ᘁX : VecTwisted k G c) = dual X :=
+  (rfl)
+
+end TauCeti.VecTwisted

@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Dual
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
-# Left duals of finite-dimensional vector spaces
+# Left duals of finite-dimensional vector spaces, and their duals in `ModuleCat`
 
 The algebraic dual is both a left and a right dual in `FGModuleCat K`. Mathlib supplies the
 right pairing. Here the left pairing is obtained from the right pairing of the dual space by
@@ -23,6 +24,15 @@ contraction `contractLeft` and the coevaluation `coevaluation` of linear algebra
 
 The resulting `LeftRigidCategory` and `RigidCategory` instances also give rigidity of
 categories of group actions through Mathlib's existing instances.
+
+Both pairings are also transported along the inclusion of `FGModuleCat K` into `ModuleCat K` by
+`CategoryTheory.Functor.mapExactPairing`: a finite-dimensional space `V` is exactly paired with its
+dual space on the right (`ModuleCat.exactPairingDual`) and on the left
+(`ModuleCat.leftExactPairingDual`) in `ModuleCat K`, with the same contractions and coevaluations
+(`ModuleCat.exactPairingDual_evaluation_apply`, `ModuleCat.exactPairingDual_coevaluation_hom`,
+`ModuleCat.leftExactPairingDual_evaluation_apply` and
+`ModuleCat.leftExactPairingDual_coevaluation_hom`). These are the componentwise pairings of graded
+duals such as `TauCeti.VecTwisted.dual`.
 -/
 
 public section
@@ -118,3 +128,78 @@ theorem leftAdjointMate_hom {V W : FGModuleCat.{u} K} (f : V ⟶ W) :
   exact h
 
 end FGModuleCat
+
+namespace ModuleCat
+
+universe u
+
+variable {K : Type u} [Field K]
+
+/-- A finite-dimensional vector space is exactly paired with its dual space in `ModuleCat K`:
+the image of the pairing `FGModuleCat.exactPairing` under the inclusion of `FGModuleCat K`. -/
+@[instance_reducible]
+def exactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
+    ExactPairing V (ModuleCat.of K (Module.Dual K V)) :=
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  (ModuleCat.isFG K).ι.mapExactPairing V' (FGModuleCat.FGModuleCatDual K V')
+
+/-- The dual space of a finite-dimensional vector space is exactly paired with the space in
+`ModuleCat K`: the image of `FGModuleCat.leftExactPairing` under the inclusion of
+`FGModuleCat K`. -/
+@[instance_reducible]
+def leftExactPairingDual (V : ModuleCat.{u} K) [Module.Finite K V] :
+    ExactPairing (ModuleCat.of K (Module.Dual K V)) V :=
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  letI := FGModuleCat.leftExactPairing K V'
+  (ModuleCat.isFG K).ι.mapExactPairing (FGModuleCat.dual K V') V'
+
+/-- The evaluation of `ModuleCat.exactPairingDual` is the contraction of a linear functional with
+a vector. -/
+@[simp]
+theorem exactPairingDual_evaluation_apply (V : ModuleCat.{u} K) [Module.Finite K V]
+    (f : Module.Dual K V) (v : V) :
+    (@ExactPairing.evaluation _ _ _ V (ModuleCat.of K (Module.Dual K V))
+      (exactPairingDual V)).hom (A := ModuleCat.of K (Module.Dual K V) ⊗ V) (f ⊗ₜ v) = f v := by
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  -- `exactPairingDual V` is the image of the `FGModuleCat` pairing of `V'`, whose evaluation is
+  -- computed by `Functor.mapExactPairing_evaluation`; the comparison maps of the inclusion are
+  -- identities.
+  have h := (ModuleCat.isFG K).ι.mapExactPairing_evaluation V' (FGModuleCat.FGModuleCatDual K V')
+  exact (congrArg (fun φ ↦ φ.hom (f ⊗ₜ v)) h).trans (contractLeft_apply f v)
+
+/-- The coevaluation of `ModuleCat.exactPairingDual` is the coevaluation of linear algebra. -/
+@[simp]
+theorem exactPairingDual_coevaluation_hom (V : ModuleCat.{u} K) [Module.Finite K V] :
+    (@ExactPairing.coevaluation _ _ _ V (ModuleCat.of K (Module.Dual K V))
+      (exactPairingDual V)).hom = coevaluation K V := by
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  have h := (ModuleCat.isFG K).ι.mapExactPairing_coevaluation V' (FGModuleCat.FGModuleCatDual K V')
+  exact (congrArg (fun φ ↦ φ.hom) h).trans (FGModuleCat.coevaluation_hom_hom V')
+
+/-- The evaluation of `ModuleCat.leftExactPairingDual` is ordinary evaluation of a linear
+functional. -/
+@[simp]
+theorem leftExactPairingDual_evaluation_apply (V : ModuleCat.{u} K) [Module.Finite K V]
+    (v : V) (f : Module.Dual K V) :
+    (@ExactPairing.evaluation _ _ _ (ModuleCat.of K (Module.Dual K V)) V
+      (leftExactPairingDual V)).hom (A := V ⊗ ModuleCat.of K (Module.Dual K V)) (v ⊗ₜ f) =
+      f v := by
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  let := FGModuleCat.leftExactPairing K V'
+  have h := (ModuleCat.isFG K).ι.mapExactPairing_evaluation (FGModuleCat.dual K V') V'
+  exact (congrArg (fun φ ↦ φ.hom (v ⊗ₜ f)) h).trans (FGModuleCat.leftEvaluation_apply V' v f)
+
+/-- The coevaluation of `ModuleCat.leftExactPairingDual` is coevaluation of the dual, with its
+double-dual factor identified with the original space by inverse evaluation. -/
+@[simp]
+theorem leftExactPairingDual_coevaluation_hom (V : ModuleCat.{u} K) [Module.Finite K V] :
+    (@ExactPairing.coevaluation _ _ _ (ModuleCat.of K (Module.Dual K V)) V
+      (leftExactPairingDual V)).hom =
+      (Module.evalEquiv K V).symm.toLinearMap.lTensor (Module.Dual K V) ∘ₗ
+        coevaluation K (Module.Dual K V) := by
+  let V' : FGModuleCat K := ⟨V, (ModuleCat.isFG_iff V).2 inferInstance⟩
+  let := FGModuleCat.leftExactPairing K V'
+  have h := (ModuleCat.isFG K).ι.mapExactPairing_coevaluation (FGModuleCat.dual K V') V'
+  exact (congrArg (fun φ ↦ φ.hom) h).trans (FGModuleCat.leftCoevaluation_hom V')
+
+end ModuleCat

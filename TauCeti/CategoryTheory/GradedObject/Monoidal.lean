@@ -35,6 +35,11 @@ facts about these coproducts which are used to compare homology of tensor produc
   `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
   a connecting morphism between tensor products.
+* The degree `n` of the tensor unit is `𝟙_ C` whenever `n = 0`
+  (`CategoryTheory.GradedObject.Monoidal.tensorUnitIsoOfEq`), and the inclusions of the summands
+  `X n ⊗ 𝟙_ C` and `𝟙_ C ⊗ Y n` of a tensor product with the unit do not depend on how that degree
+  is written (`CategoryTheory.GradedObject.Monoidal.whiskerLeft_tensorUnitIsoOfEq_inv_ιTensorObj`
+  and `CategoryTheory.GradedObject.Monoidal.tensorUnitIsoOfEq_inv_whiskerRight_ιTensorObj`).
 -/
 
 public section
@@ -149,6 +154,40 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
   dsimp [tensorHom, mapBifunctorMapMap]
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
   rfl
+
+section Unit
+
+variable [AddMonoid I] [DecidableEq I] [MonoidalCategory C] [HasInitial C]
+
+/-- The canonical isomorphism `tensorUnit n ≅ 𝟙_ C` in a degree `n` equal to `0`. -/
+def tensorUnitIsoOfEq (n : I) (hn : n = 0) : (tensorUnit : GradedObject I C) n ≅ 𝟙_ C :=
+  singleObjApplyIsoOfEq 0 (𝟙_ C) n hn
+
+@[simp]
+lemma tensorUnitIsoOfEq_zero : tensorUnitIsoOfEq (C := C) (0 : I) rfl = tensorUnit₀ :=
+  (rfl)
+
+/-- The inclusion of `X n ⊗ 𝟙_ C` into the degree `n` of `X ⊗ 𝟙` does not depend on how the
+degree `0` of the unit is written. -/
+@[reassoc]
+lemma whiskerLeft_tensorUnitIsoOfEq_inv_ιTensorObj (X : GradedObject I C) [HasTensor X tensorUnit]
+    (n m : I) (hm : m = 0) (h : n + m = n) :
+    X n ◁ (tensorUnitIsoOfEq m hm).inv ≫ ιTensorObj X tensorUnit n m n h =
+      X n ◁ tensorUnit₀.inv ≫ ιTensorObj X tensorUnit n 0 n (add_zero n) := by
+  subst hm
+  rfl
+
+/-- The inclusion of `𝟙_ C ⊗ Y n` into the degree `n` of `𝟙 ⊗ Y` does not depend on how the
+degree `0` of the unit is written. -/
+@[reassoc]
+lemma tensorUnitIsoOfEq_inv_whiskerRight_ιTensorObj (Y : GradedObject I C)
+    [HasTensor tensorUnit Y] (n m : I) (hm : m = 0) (h : m + n = n) :
+    (tensorUnitIsoOfEq m hm).inv ▷ Y n ≫ ιTensorObj tensorUnit Y m n n h =
+      tensorUnit₀.inv ▷ Y n ≫ ιTensorObj tensorUnit Y 0 n n (zero_add n) := by
+  subst hm
+  rfl
+
+end Unit
 
 variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
   [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))
