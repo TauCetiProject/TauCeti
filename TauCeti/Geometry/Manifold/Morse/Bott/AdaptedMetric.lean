@@ -70,7 +70,7 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 
 public section
 
-open Bundle Set Module
+open Bundle Module
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -247,7 +247,7 @@ private theorem negativeNormalSpace_le_adaptedMetric (s : S) :
       ring
   rw [IsCriticalSubmanifold.negativeNormalSpace_def]
   exact LinearMap.BilinForm.relativeEigenspace_le_relativeSpectralSubspace
-    (show (-2 : ℝ) ∈ Iio 0 by norm_num) hv'
+    (by norm_num) hv'
 
 /-- The normal Hessian acts as `2` times the adapted metric on the positive normal space. -/
 private theorem positiveNormalSpace_le_adaptedMetric (s : S) :
@@ -261,7 +261,7 @@ private theorem positiveNormalSpace_le_adaptedMetric (s : S) :
       ring
   rw [IsCriticalSubmanifold.positiveNormalSpace_def]
   exact LinearMap.BilinForm.relativeEigenspace_le_relativeSpectralSubspace
-    (show (2 : ℝ) ∈ Ioi 0 by norm_num) hv'
+    (by norm_num) hv'
 
 /-- **The adapted metric has the same negative normal spaces as `g`.** -/
 @[simp]
