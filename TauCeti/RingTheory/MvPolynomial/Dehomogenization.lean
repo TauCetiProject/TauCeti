@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Field.Fin.Tuple
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
 # Dehomogenization and the affine gradient criterion
@@ -27,7 +28,12 @@ Conversely, a homogeneous polynomial is recovered from its degree and its equati
 (`TauCeti.dehomogenize_injOn`), and every polynomial of total degree at most `N` is the equation of
 some homogeneous polynomial of degree `N` (`TauCeti.exists_isHomogeneous_dehomogenize_eq`).
 Together they lift a factorization in an affine chart to a factorization of the homogeneous
-equation, up to a power of the omitted coordinate.
+equation, up to a power of the omitted coordinate. In particular, the top homogeneous component of
+a nonzero polynomial remains nonzero in every standard chart
+(`TauCeti.dehomogenize_homogeneousComponent_totalDegree_ne_zero`), so over an infinite integral
+domain any finite family of nonzero polynomials admits a simultaneous direction with `i`-th
+coordinate `1` on which all top homogeneous components are nonzero
+(`TauCeti.exists_forall_eval_insertNth_homogeneousComponent_ne_zero`).
 
 Combined with the weak Nullstellensatz, the pointwise criterion gives an identity of ideals:
 if every point of a projective hypersurface over an algebraically closed extension `K` of `k`
@@ -166,6 +172,28 @@ theorem dehomogenize_injOn (i : Fin (n + 1)) (d : ℕ) :
       ← coeff_dehomogenize_of_isHomogeneous hq i hs, h]
   · rw [hp.coeff_eq_zero hs, hq.coeff_eq_zero hs]
 
+/-- A homogeneous polynomial vanishes in a standard affine chart if and only if it is zero. -/
+theorem dehomogenize_eq_zero_iff_of_isHomogeneous {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
+    (hp : p.IsHomogeneous d) (i : Fin (n + 1)) :
+    dehomogenize i p = 0 ↔ p = 0 :=
+  ⟨fun h ↦ dehomogenize_injOn i d hp (isHomogeneous_zero (Fin (n + 1)) R d)
+    (h.trans (map_zero _).symm), fun h ↦ h ▸ map_zero _⟩
+
+/-- A nonzero homogeneous polynomial remains nonzero in every standard affine chart. -/
+theorem dehomogenize_ne_zero_of_isHomogeneous {p : MvPolynomial (Fin (n + 1)) R} {d : ℕ}
+    (hp : p.IsHomogeneous d) (hp0 : p ≠ 0) (i : Fin (n + 1)) :
+    dehomogenize i p ≠ 0 :=
+  mt (dehomogenize_eq_zero_iff_of_isHomogeneous hp i).mp hp0
+
+/-- The top homogeneous component of a nonzero polynomial remains nonzero in every standard
+affine chart. -/
+theorem dehomogenize_homogeneousComponent_totalDegree_ne_zero (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} (hp : p ≠ 0) :
+    dehomogenize i (homogeneousComponent p.totalDegree p) ≠ 0 :=
+  dehomogenize_ne_zero_of_isHomogeneous
+    (homogeneousComponent_isHomogeneous p.totalDegree p)
+    (homogeneousComponent_totalDegree_ne_zero p hp) i
+
 /-- **Homogenization**: every polynomial `p` in `n` variables of total degree at most `N` is the
 equation in the `i`-th standard affine chart of a homogeneous polynomial of degree `N` in `n + 1`
 variables, obtained by padding each homogeneous component of `p` with a power of `X_i`. -/
@@ -271,6 +299,36 @@ theorem eval_pderiv_eq_neg_sum_dehomogenize (i : Fin (n + 1))
   exact eq_neg_of_add_eq_zero_left (eval_pderiv_add_sum_dehomogenize i hp a ha)
 
 end CommRing
+
+section IsDomain
+
+variable {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- Over an infinite integral domain, any finite family of nonzero polynomials admits a common
+point in the `i`-th standard affine chart at which all of their top homogeneous components take
+nonzero values. -/
+theorem exists_forall_eval_insertNth_homogeneousComponent_ne_zero {ι : Type*} [Finite ι]
+    (i : Fin (n + 1)) {p : ι → MvPolynomial (Fin (n + 1)) R} (hp : ∀ j, p j ≠ 0) :
+    ∃ a : Fin n → R,
+      ∀ j, eval (i.insertNth 1 a) (homogeneousComponent (p j).totalDegree (p j)) ≠ 0 := by
+  cases nonempty_fintype ι
+  let q : MvPolynomial (Fin n) R :=
+    ∏ j, dehomogenize i (homogeneousComponent (p j).totalDegree (p j))
+  have hq : q ≠ 0 := Finset.prod_ne_zero_iff.mpr fun j _ ↦
+    dehomogenize_homogeneousComponent_totalDegree_ne_zero i (hp j)
+  obtain ⟨a, ha⟩ : ∃ a, eval a q ≠ 0 := by simpa [MvPolynomial.funext_iff] using hq
+  refine ⟨a, fun j ↦ ?_⟩
+  rw [map_prod] at ha
+  simpa only [eval_dehomogenize] using (Finset.prod_ne_zero_iff.mp ha) j (Finset.mem_univ j)
+
+/-- Over an infinite integral domain, the top homogeneous component of any nonzero polynomial is
+nonzero at some point with `i`-th coordinate equal to `1`. -/
+theorem exists_eval_insertNth_homogeneousComponent_ne_zero (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} (hp : p ≠ 0) :
+    ∃ a : Fin n → R, eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p) ≠ 0 := by
+  simpa using exists_forall_eval_insertNth_homogeneousComponent_ne_zero i (fun _ : Unit ↦ hp)
+
+end IsDomain
 
 section Semifield
 

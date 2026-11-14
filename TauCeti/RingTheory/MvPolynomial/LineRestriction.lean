@@ -16,7 +16,9 @@ Restricting a multivariate polynomial to an affine line does not increase its to
 Its coefficient in the original top degree is the top homogeneous component evaluated at
 the direction, independently of the starting point. The coefficient homomorphism may take
 values in another commutative semiring, so the starting point can itself consist of polynomial
-variables. This gives constant leading coefficients for generic shears.
+variables. This gives constant leading coefficients for generic shears, algebra-valued evaluation
+of `MvPolynomial.shearToPolynomial`, and monic univariate polynomials after rescaling by an inverse
+of that top homogeneous value (`MvPolynomial.monic_C_mul_shearToPolynomial`).
 -/
 
 public section
@@ -153,6 +155,29 @@ theorem shearToPolynomial_X_succAbove (i : Fin (n + 1)) (a : Fin n → R) (j : F
       Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X := by
   simp [shearToPolynomial_def]
 
+/-- Evaluating the sheared polynomial in an `R`-algebra `A` at a tuple `y` of remaining
+coordinates and a value `t` for the distinguished coordinate evaluates the original polynomial at
+the sheared tuple. -/
+@[simp]
+theorem eval₂_aeval_shearToPolynomial {A : Type*} [CommSemiring A] [Algebra R A]
+    (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (a : Fin n → R) (y : Fin n → A)
+    (t : A) :
+    Polynomial.eval₂ (↑(aeval (R := R) y)) t (shearToPolynomial i a p) =
+      aeval (i.insertNth t (fun j ↦ y j + a j • t)) p := by
+  rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
+  have hC :
+      (Polynomial.eval₂RingHom (↑(aeval (R := R) y) : MvPolynomial (Fin n) R →+* A) t).comp
+          (Polynomial.C.comp C) =
+        algebraMap R A := by
+    ext c
+    simp
+  rw [hC, coe_eval₂Hom, ← aeval_def]
+  congr 2
+  funext k
+  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k
+  · simp
+  · simp [Algebra.smul_def]
+
 /-- Evaluating the sheared polynomial at a base point and a height is evaluation of the
 original polynomial at the sheared point. -/
 @[simp]
@@ -160,19 +185,12 @@ theorem eval₂_shearToPolynomial (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a y : Fin n → R) (t : R) :
     Polynomial.eval₂ (eval y) t (shearToPolynomial i a p) =
       eval (i.insertNth t (y + t • a)) p := by
-  rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
-  have hC : (Polynomial.eval₂RingHom (eval y) t).comp (Polynomial.C.comp C) =
-      RingHom.id R := by
-    ext c
-    simp
-  rw [hC, coe_eval₂Hom, eval₂_id]
-  congr 2
-  funext k
-  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k
-  · simp only [Fin.insertNth_apply_same, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
-  · simp only [Fin.insertNth_apply_succAbove, Polynomial.coe_eval₂RingHom,
-      Polynomial.eval₂_add, Polynomial.eval₂_C, Polynomial.eval₂_mul, Polynomial.eval₂_X,
-      eval_X, eval_C, Pi.add_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
+  have heval : (↑(aeval (R := R) y) : MvPolynomial (Fin n) R →+* R) = eval y :=
+    RingHom.ext (congrFun (aeval_eq_eval y))
+  have hpt : (fun j ↦ y j + a j • t) = y + t • a := by
+    funext j
+    simp [mul_comm]
+  rw [← heval, eval₂_aeval_shearToPolynomial, aeval_eq_eval, hpt]
 
 private theorem shear_variables (i : Fin (n + 1)) (a : Fin n → R) :
     i.insertNth Polynomial.X
@@ -221,6 +239,17 @@ theorem leadingCoeff_shearToPolynomial_of_eval_ne_zero
       C (eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p)) := by
   rw [Polynomial.leadingCoeff, p.natDegree_shearToPolynomial_eq_of_eval_ne_zero i a ha,
     coeff_shearToPolynomial_totalDegree]
+
+/-- Scaling `shearToPolynomial i a p` by a left inverse `c` of the top homogeneous component
+evaluated at `i.insertNth 1 a` produces a monic univariate polynomial over the remaining
+variables. -/
+theorem monic_C_mul_shearToPolynomial
+    (p : MvPolynomial (Fin (n + 1)) R) (i : Fin (n + 1)) (a : Fin n → R) {c : R}
+    (hc : c * eval (i.insertNth 1 a) (homogeneousComponent p.totalDegree p) = 1) :
+    (Polynomial.C (C c) * shearToPolynomial i a p).Monic := by
+  refine Polynomial.monic_of_natDegree_le_of_coeff_eq_one p.totalDegree
+    ((Polynomial.natDegree_C_mul_le _ _).trans (p.natDegree_shearToPolynomial_le i a)) ?_
+  rw [Polynomial.coeff_C_mul, coeff_shearToPolynomial_totalDegree, ← map_mul, hc, C_1]
 
 end Shear
 
