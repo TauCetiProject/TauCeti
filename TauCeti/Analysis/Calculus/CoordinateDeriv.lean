@@ -682,13 +682,8 @@ theorem norm_mixedDeriv_comp_prodMap_le (α β : List (Fin n))
       (fun i => ((0 : CoordinateSpace n), EuclideanSpace.single (β.get i) (1 : ℝ))) i)) =
       fun i => ∑ j, c i j • b i j := by
     funext i
-    refine Fin.addCases (fun i => ?_) (fun i => ?_) i
-    · refine Prod.ext ?_ ?_
-      · simp [L, b, c, Prod.fst_sum, hsum]
-      · simp [L, b, c, Prod.snd_sum]
-    · refine Prod.ext ?_ ?_
-      · simp [L, b, c, Prod.fst_sum]
-      · simp [L, b, c, Prod.snd_sum, hsum]
+    refine Fin.addCases (fun i => ?_) (fun i => ?_) i <;> refine Prod.ext ?_ ?_ <;>
+      simp [L, b, c, Prod.fst_sum, Prod.snd_sum, hsum]
   have hbt (t : Fin (α.length + β.length) → Fin n) : (fun i => b i (t i)) =
       Fin.append (fun i => (EuclideanSpace.single (t (Fin.castAdd β.length i)) (1 : ℝ),
           (0 : CoordinateSpace n)))

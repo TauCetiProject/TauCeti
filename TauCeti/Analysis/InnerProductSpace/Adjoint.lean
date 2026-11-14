@@ -626,11 +626,21 @@ end LinearMap
 
 namespace ContinuousLinearEquiv
 
+omit [FiniteDimensional 𝕜 E] in
 /-- The determinant of the adjoint equivalence is the conjugate of the determinant. -/
 @[simp]
 theorem det_adjointEquiv [CompleteSpace E] (A : E ≃L[𝕜] E) :
     LinearMap.det (A.adjointEquiv : E →ₗ[𝕜] E) = star (LinearMap.det (A : E →ₗ[𝕜] E)) := by
-  rw [← LinearMap.det_adjoint]
-  congr 1
+  -- In infinite dimensions both determinants are `1`.
+  by_cases hE : FiniteDimensional 𝕜 E
+  swap
+  · simp [LinearMap.det_eq_one_of_not_module_finite hE]
+  have h : (A.adjointEquiv : E →ₗ[𝕜] E) = LinearMap.adjoint (A : E →ₗ[𝕜] E) := by
+    have hA : LinearMap.toContinuousLinearMap (A : E →ₗ[𝕜] E) = (A : E →L[𝕜] E) := by
+      ext; simp
+    ext x
+    rw [LinearMap.adjoint_eq_toCLM_adjoint, hA]
+    simp [adjointEquiv_apply]
+  rw [h, LinearMap.det_adjoint]
 
 end ContinuousLinearEquiv
