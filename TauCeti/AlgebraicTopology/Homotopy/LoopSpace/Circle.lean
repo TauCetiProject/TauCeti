@@ -153,14 +153,14 @@ variable {k : Type u} [Ring k] (M : ModuleCat.{u} k)
 def singularHomologyZeroFreeLoopLinearEquiv :
     ((singularHomologyFunctor (ModuleCat.{u} k) 0).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
       (ℤ →₀ M) :=
-  (singularHomologyZeroFreeLoopIso M).toLinearEquiv.trans (coprodLinearEquivFinsupp M ℤ)
+  (singularHomologyZeroFreeLoopIso M).toLinearEquiv.trans (M.coprodLinearEquivFinsupp ℤ)
 
 /-- `H₁(𝓛S¹; M)` is the module `ℤ →₀ M` of finitely supported families indexed by the degree; for
 `M = k` this is the group algebra `k[ℤ]`. -/
 def singularHomologyOneFreeLoopLinearEquiv :
     ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj M).obj (TopCat.of C(Circle, Circle)) ≃ₗ[k]
       (ℤ →₀ M) :=
-  (singularHomologyOneFreeLoopIso M).toLinearEquiv.trans (coprodLinearEquivFinsupp M ℤ)
+  (singularHomologyOneFreeLoopIso M).toLinearEquiv.trans (M.coprodLinearEquivFinsupp ℤ)
 
 /-- On the component of degree `m`, `Circle.singularHomologyZeroFreeLoopLinearEquiv` sends a class
 to its augmentation placed at `m`. -/
@@ -173,7 +173,7 @@ theorem singularHomologyZeroFreeLoopLinearEquiv_map (m : ℤ)
       Finsupp.single m ((TopCat.of Circle).singularHomology₀ε M x) := by
   rw [singularHomologyZeroFreeLoopLinearEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
     ← ModuleCat.comp_apply, map_freeLoopComponentInclusion_singularHomologyZeroFreeLoopIso_hom,
-    ModuleCat.comp_apply, coprodLinearEquivFinsupp_ι_apply]
+    ModuleCat.comp_apply, ModuleCat.coprodLinearEquivFinsupp_ι_apply]
 
 /-- On the component of degree `m`, `Circle.singularHomologyOneFreeLoopLinearEquiv` sends a class
 to its image under `Circle.singularHomologyOneIso` placed at `m`. -/
@@ -186,7 +186,7 @@ theorem singularHomologyOneFreeLoopLinearEquiv_map (m : ℤ)
       Finsupp.single m ((singularHomologyOneIso M).hom x) := by
   rw [singularHomologyOneFreeLoopLinearEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
     ← ModuleCat.comp_apply, map_freeLoopComponentInclusion_singularHomologyOneFreeLoopIso_hom,
-    ModuleCat.comp_apply, coprodLinearEquivFinsupp_ι_apply]
+    ModuleCat.comp_apply, ModuleCat.coprodLinearEquivFinsupp_ι_apply]
 
 end ModuleCat
 

@@ -202,6 +202,10 @@ private theorem degreeEval_apply (f : C(Circle, Circle)) :
 private theorem degreeEval_powLoop (p : ℤ × Circle) : degreeEval (powLoop p) = p := by
   simp [degreeEval_apply, circleDegree_powLoop, powLoop_apply]
 
+private theorem degreeEval_comp_powLoop :
+    degreeEval.comp ⟨powLoop, continuous_powLoop⟩ = ContinuousMap.id _ :=
+  ContinuousMap.ext degreeEval_powLoop
+
 /-- The **free loop space of the circle** is homotopy equivalent to `ℤ × S¹`. A loop `f` goes to
 its degree and its value `f 1`; the homotopy inverse sends `(n, z)` to the loop `w ↦ z * w ^ n`. -/
 def freeLoopHomotopyEquiv : ContinuousMap.HomotopyEquiv C(Circle, Circle) (ℤ × Circle) where
@@ -216,9 +220,7 @@ def freeLoopHomotopyEquiv : ContinuousMap.HomotopyEquiv C(Circle, Circle) (ℤ �
     map_one_left f := ContinuousMap.ext_unitToCircle fun t ↦ by
       rw [ContinuousMap.toFun_eq_coe, straighteningHomotopy_unitToCircle]
       simp [straighteningAngle, exp_freeLoopAngle] }⟩
-  right_inv := by
-    rw [show degreeEval.comp ⟨powLoop, continuous_powLoop⟩ = ContinuousMap.id _ from
-      ContinuousMap.ext degreeEval_powLoop]
+  right_inv := by rw [degreeEval_comp_powLoop]
 
 /-- The homotopy inverse of `Circle.freeLoopHomotopyEquiv` sends `(n, z)` to `w ↦ z * w ^ n`. -/
 @[simp]

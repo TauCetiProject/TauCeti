@@ -20,8 +20,8 @@ The categorical coproduct `∐_ι M` of copies of a module `M` in `ModuleCat R` 
 
 ## Main declarations
 
-* `TauCeti.coprodLinearEquivFinsupp`: the linear equivalence `∐_ι M ≃ₗ[R] (ι →₀ M)`.
-* `TauCeti.coprodLinearEquivFinsupp_ι_apply`, `TauCeti.coprodLinearEquivFinsupp_symm_single`: it
+* `ModuleCat.coprodLinearEquivFinsupp`: the linear equivalence `∐_ι M ≃ₗ[R] (ι →₀ M)`.
+* `ModuleCat.coprodLinearEquivFinsupp_ι_apply`, `ModuleCat.coprodLinearEquivFinsupp_symm_single`: it
   sends the summand inclusion of index `i` to `Finsupp.single i`.
 -/
 
@@ -33,31 +33,31 @@ open CategoryTheory Limits
 
 universe u v w
 
-namespace TauCeti
+namespace ModuleCat
 
 variable {R : Type u} [Ring R] (M : ModuleCat.{max v w} R) (ι : Type v) [DecidableEq ι]
 
 /-- The coproduct `∐_ι M` of copies of a module `M` is the module `ι →₀ M` of finitely supported
 families, the summand of index `i` going to the families supported at `i`. -/
 def coprodLinearEquivFinsupp : (∐ fun _ : ι ↦ M : ModuleCat.{max v w} R) ≃ₗ[R] (ι →₀ M) :=
-  (ModuleCat.coprodIsoDirectSum fun _ : ι ↦ M).toLinearEquiv.trans
+  (coprodIsoDirectSum fun _ : ι ↦ M).toLinearEquiv.trans
     (finsuppLEquivDirectSum R M ι).symm
 
 variable {M ι}
 
-/-- `TauCeti.coprodLinearEquivFinsupp` sends `x` in the summand of index `i` to the family
+/-- `ModuleCat.coprodLinearEquivFinsupp` sends `x` in the summand of index `i` to the family
 supported at `i` with value `x`. -/
 @[simp]
 theorem coprodLinearEquivFinsupp_ι_apply (i : ι) (x : M) :
     coprodLinearEquivFinsupp M ι (Sigma.ι (fun _ : ι ↦ M) i x) = Finsupp.single i x := by
   rw [coprodLinearEquivFinsupp, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
-    ModuleCat.ι_coprodIsoDirectSum_hom_apply, finsuppLEquivDirectSum_symm_lof]
+    ι_coprodIsoDirectSum_hom_apply, finsuppLEquivDirectSum_symm_lof]
 
-/-- The inverse of `TauCeti.coprodLinearEquivFinsupp` sends the family supported at `i` with
+/-- The inverse of `ModuleCat.coprodLinearEquivFinsupp` sends the family supported at `i` with
 value `x` to `x` in the summand of index `i`. -/
 @[simp]
 theorem coprodLinearEquivFinsupp_symm_single (i : ι) (x : M) :
     (coprodLinearEquivFinsupp M ι).symm (Finsupp.single i x) = Sigma.ι (fun _ : ι ↦ M) i x := by
   rw [LinearEquiv.symm_apply_eq, coprodLinearEquivFinsupp_ι_apply]
 
-end TauCeti
+end ModuleCat
