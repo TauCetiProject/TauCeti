@@ -13,6 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.PSeries
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.Analysis.Fourier.FourierTransformDeriv
 
 /-!
 # Decay of Fourier transforms and Fourier coefficients of smooth functions
@@ -21,8 +22,9 @@ A smooth compactly supported function is a Schwartz function, so its Fourier tra
 Schwartz function and therefore decays faster than every negative power of `‖v‖`. This file records
 that decay in the elementary form `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C`, which is the shape a Fourier transform
 is used in when it weights a comparison test. Without smoothness or compact support, integrating by
-parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` for a `C^N` function
-whose derivatives up to order `N` are integrable. The file also records the angular-frequency form
+parts `N` times gives the explicit bound `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖` when the
+derivatives below order `N` are differentiable and those up to order `N` are integrable. The file
+also records the angular-frequency form
 `∫ exp(-i ⟪v, ξ⟫) f v dv = 𝓕 f ((2π)⁻¹ ξ)` of the Fourier transform, whose integrand is
 integrable whenever `f` is.
 
@@ -40,10 +42,11 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le`: the same decay with the weight
   `(1 + ‖v‖) ^ k`.
-* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
-  derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if derivatives below order `N`
+  are differentiable and those up to order `N` are integrable, then
+  `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
-  support `tsupport f` is contained in a measurable set `S` of finite volume and its derivatives of
+  support `tsupport f` is contained in any set `S` of finite outer volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
 * `TauCeti.fourier_fderiv_apply`: the Fourier transform of the directional derivative `∂_v f` of an
   integrable differentiable function with integrable derivative is `2πi ⟪w, v⟫ 𝓕 f w`.
@@ -99,13 +102,14 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f)
   rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe] at h
 
 open MeasureTheory Real in
-/-- **Integration by parts.** If `f` is `C^N` and its derivatives of order at most `N` are
-integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
-theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : ContDiff ℝ N f)
+/-- **Integration by parts.** If the derivatives of `f` below order `N` are differentiable
+and its derivatives of order at most `N` are integrable, then
+`(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
+theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ}
+    (hf : ∀ n < N, Differentiable ℝ (iteratedFDeriv ℝ n f))
     (hf' : ∀ n ≤ N, Integrable (iteratedFDeriv ℝ n f)) (w : V) :
     (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ ≤ ∫ v, ‖iteratedFDeriv ℝ N f v‖ := by
-  have key := congrFun (Real.fourier_iteratedFDeriv (N := N) hf
-    (fun n hn ↦ hf' n (mod_cast hn)) le_rfl) w
+  have key := congrFun (Real.fourier_iteratedFDeriv_of_differentiable hf hf') w
   have hle : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ ≤
       (∫ v, ‖iteratedFDeriv ℝ N f v‖) * ‖w‖ ^ N := by
     refine ((𝓕 (iteratedFDeriv ℝ N f) w).le_opNorm _).trans ?_
@@ -128,34 +132,42 @@ theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : Con
 
 open MeasureTheory Real in
 /-- **Explicit decay of the Fourier transform.** If `f` is `C^N`, its closed support `tsupport f`
-is contained in a measurable set `S` of finite volume, and its derivatives of order at most `N` are
+is contained in any set `S` of finite outer volume, and its derivatives of order at most `N` are
 bounded by `C`, then
 `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N * (C * vol(S))`. The constant depends on `f` only through `C`
 and `S`, so the bound is uniform over families of functions with common such data. -/
 theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : ContDiff ℝ N f)
-    {S : Set V} (hS : MeasurableSet S) (hS' : volume S ≠ ⊤) (hfS : tsupport f ⊆ S) {C : ℝ}
+    {S : Set V} (hS' : volume S ≠ ⊤) (hfS : tsupport f ⊆ S) {C : ℝ}
     (hC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C) (w : V) :
     (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ 2 ^ N * (C * volume.real S) := by
+  have hC0 : 0 ≤ C := (norm_nonneg (iteratedFDeriv ℝ 0 f 0)).trans
+    (hC 0 (Nat.zero_le _) 0)
+  have hT : MeasurableSet (tsupport f) := (isClosed_tsupport f).measurableSet
+  have hT' : volume (tsupport f) ≠ ⊤ := measure_ne_top_of_subset hfS hS'
+  suffices h : (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ 2 ^ N * (C * volume.real (tsupport f)) by
+    exact h.trans (mul_le_mul_of_nonneg_left
+      (mul_le_mul_of_nonneg_left (measureReal_mono hfS hS') hC0) (by positivity))
   have hbound (p : ℕ) (hp : p ≤ N) (x : V) :
-      ‖iteratedFDeriv ℝ p f x‖ ≤ S.indicator (fun _ ↦ C) x := by
-    by_cases hx : x ∈ S
+      ‖iteratedFDeriv ℝ p f x‖ ≤ (tsupport f).indicator (fun _ ↦ C) x := by
+    by_cases hx : x ∈ tsupport f
     · simpa [hx] using hC p hp x
     · rw [Set.indicator_of_notMem hx, Function.notMem_support.1
-        fun h ↦ hx (hfS (support_iteratedFDeriv_subset p h)), norm_zero]
-  have hind : Integrable (S.indicator fun _ ↦ C) := (integrable_indicator_iff hS).2
-    (integrableOn_const hS')
+        fun h ↦ hx (support_iteratedFDeriv_subset p h), norm_zero]
+  have hind : Integrable ((tsupport f).indicator fun _ ↦ C) := (integrable_indicator_iff hT).2
+    (integrableOn_const hT')
   have hint : ∀ p ≤ N, Integrable (iteratedFDeriv ℝ p f) := fun p hp ↦
     hind.mono' (hf.continuous_iteratedFDeriv (by exact_mod_cast hp)).aestronglyMeasurable
       (ae_of_all _ (hbound p hp))
-  have hle : ∀ p ≤ N, ∫ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * volume.real S := fun p hp ↦ by
+  have hle : ∀ p ≤ N, ∫ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * volume.real (tsupport f) := fun p hp ↦ by
     refine (integral_mono (hint p hp).norm hind (hbound p hp)).trans_eq ?_
-    rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
-  have h0 : ‖𝓕 f w‖ ≤ C * volume.real S :=
+    rw [integral_indicator_const _ hT, smul_eq_mul, mul_comm]
+  have h0 : ‖𝓕 f w‖ ≤ C * volume.real (tsupport f) :=
     (norm_fourier_le_integral_norm f w).trans (by simpa using hle 0 (Nat.zero_le _))
   rcases le_total ‖w‖ 1 with hw | hw
   · have h2 : (1 + ‖w‖) ^ N ≤ 2 ^ N := by gcongr; linarith
     exact mul_le_mul h2 h0 (norm_nonneg _) (by positivity)
-  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv hf hint w).trans
+  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv
+      (fun n hn ↦ hf.differentiable_iteratedFDeriv (by exact_mod_cast hn)) hint w).trans
       (hle N le_rfl)
     calc (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ (2 * ‖w‖) ^ N * ‖𝓕 f w‖ := by
           gcongr
@@ -164,7 +176,7 @@ theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : 
       _ ≤ 2 ^ N * ((2 * π * ‖w‖) ^ N * ‖𝓕 f w‖) := by
           gcongr
           nlinarith [two_le_pi]
-      _ ≤ 2 ^ N * (C * volume.real S) := by gcongr
+      _ ≤ 2 ^ N * (C * volume.real (tsupport f)) := by gcongr
 
 open MeasureTheory Real in
 open scoped RealInnerProductSpace in
