@@ -78,14 +78,8 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
   let a := lkjPartialCorrelationShape p η ij
   have ha : 0 < a := lkjPartialCorrelationShape_pos hη ij
   let _ := coordinate_probability hη ij
-  have hsq : ∫ x, x ^ 2 ∂coordinateLaw η ij = 1 / (2 * a + 1) := by
-    have h := integral_id_betaMeasure (by norm_num : (0 : ℝ) < 1 / 2) ha
-    rw [← betaMeasure_map_centered_sq,
-      integral_map (by fun_prop) (by fun_prop)] at h
-    rw [integral_map (by fun_prop) (by fun_prop)]
-    convert h using 1
-    field_simp
-    ring
+  have hsq : ∫ x, x ^ 2 ∂coordinateLaw η ij = 1 / (2 * a + 1) :=
+    integral_sq_map_centered_betaMeasure ha
   have hint : Integrable (fun x : ℝ ↦ x ^ 2) (coordinateLaw η ij) :=
     ((integrable_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure_iff (r := 0) ha 2).2
       (by simpa using ha)).congr (by simp)

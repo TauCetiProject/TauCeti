@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 public import Mathlib.Data.Nat.Choose.Multinomial
+import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!
@@ -448,25 +449,27 @@ theorem partialCorrelationGramCholeskyPower_def
 
 /-- The zero column-split family induces the zero Cholesky multi-index. -/
 @[simp]
-theorem partialCorrelationGramCholeskyPower_zero (q : Fin p × Fin p) :
-    partialCorrelationGramCholeskyPower (0 : Fin p × Fin p → Fin p → ℕ) q = 0 := by
+theorem partialCorrelationGramCholeskyPower_zero :
+    partialCorrelationGramCholeskyPower (0 : Fin p × Fin p → Fin p → ℕ) = 0 := by
+  ext q
   simp [partialCorrelationGramCholeskyPower_def]
 
 /-- Induced Cholesky exponents are additive in the column-split family. -/
 @[simp]
 theorem partialCorrelationGramCholeskyPower_add
-    (K L : Fin p × Fin p → Fin p → ℕ) (q : Fin p × Fin p) :
-    partialCorrelationGramCholeskyPower (K + L) q =
-      partialCorrelationGramCholeskyPower K q + partialCorrelationGramCholeskyPower L q := by
+    (K L : Fin p × Fin p → Fin p → ℕ) :
+    partialCorrelationGramCholeskyPower (K + L) =
+      partialCorrelationGramCholeskyPower K + partialCorrelationGramCholeskyPower L := by
+  ext q
   simp only [partialCorrelationGramCholeskyPower_def, Pi.add_apply, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun _ _ ↦ by omega
 
 /-- Induced Cholesky exponents commute with finite sums of column-split families. -/
 @[simp]
 theorem partialCorrelationGramCholeskyPower_sum {ι : Type*}
-    (s : Finset ι) (K : ι → Fin p × Fin p → Fin p → ℕ) (q : Fin p × Fin p) :
-    partialCorrelationGramCholeskyPower (∑ x ∈ s, K x) q =
-      ∑ x ∈ s, partialCorrelationGramCholeskyPower (K x) q := by
+    (s : Finset ι) (K : ι → Fin p × Fin p → Fin p → ℕ) :
+    partialCorrelationGramCholeskyPower (∑ x ∈ s, K x) =
+      ∑ x ∈ s, partialCorrelationGramCholeskyPower (K x) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
@@ -474,32 +477,27 @@ theorem partialCorrelationGramCholeskyPower_sum {ι : Type*}
 
 /-- A column-split family supported at a single matrix entry `ab` contributes `f q.2` to row
 `ab.1` and `f q.2` to row `ab.2` in column `q.2`. -/
+@[simp]
 theorem partialCorrelationGramCholeskyPower_single
     (ab : Fin p × Fin p) (f : Fin p → ℕ) (q : Fin p × Fin p) :
     partialCorrelationGramCholeskyPower (Pi.single ab f) q =
       (if ab.1 = q.1 then f q.2 else 0) + (if ab.2 = q.1 then f q.2 else 0) := by
-  rw [partialCorrelationGramCholeskyPower_def, Finset.sum_add_distrib]
-  congr 1
-  · by_cases h1 : ab.1 = q.1
-    · rw [ite_eq_left h1, Fintype.sum_eq_single ab.2]
-      · rw [← Prod.eta ab, h1, Pi.single_eq_same]
-      · intro j hj
-        have hne : (q.1, j) ≠ ab := fun h ↦ hj (congrArg Prod.snd h)
-        simp [Pi.single_eq_of_ne hne]
-    · rw [ite_eq_right h1]
-      refine Finset.sum_eq_zero fun j _ ↦ ?_
-      have hne : (q.1, j) ≠ ab := fun h ↦ h1 (congrArg Prod.fst h).symm
-      simp [Pi.single_eq_of_ne hne]
-  · by_cases h2 : ab.2 = q.1
-    · rw [ite_eq_left h2, Fintype.sum_eq_single ab.1]
-      · rw [← Prod.eta ab, h2, Pi.single_eq_same]
-      · intro j hj
-        have hne : (j, q.1) ≠ ab := fun h ↦ hj (congrArg Prod.fst h)
-        simp [Pi.single_eq_of_ne hne]
-    · rw [ite_eq_right h2]
-      refine Finset.sum_eq_zero fun j _ ↦ ?_
-      have hne : (j, q.1) ≠ ab := fun h ↦ h2 (congrArg Prod.snd h).symm
-      simp [Pi.single_eq_of_ne hne]
+  simp only [partialCorrelationGramCholeskyPower_def, Finset.sum_add_distrib, Pi.single_apply,
+    ite_apply, Pi.zero_apply, Prod.ext_iff, ite_and, Finset.sum_ite_irrel, Finset.sum_ite_eq',
+    Finset.mem_univ, ↓reduceIte, Finset.sum_const_zero]
+  simp only [eq_comm]
+
+/-- A column-split family supported at a single matrix entry `ab` and column `k` induces the sum
+of the two singleton Cholesky exponents at `(ab.1, k)` and `(ab.2, k)`. -/
+@[simp]
+theorem partialCorrelationGramCholeskyPower_single_single
+    (ab : Fin p × Fin p) (k : Fin p) (c : ℕ) :
+    partialCorrelationGramCholeskyPower (Pi.single ab (Pi.single k c)) =
+      Pi.single (ab.1, k) c + Pi.single (ab.2, k) c := by
+  ext ⟨i, j⟩
+  simp only [partialCorrelationGramCholeskyPower_single, Pi.add_apply, Pi.single_apply,
+    Prod.ext_iff, ite_and]
+  simp only [eq_comm]
 
 /-- For every column-split family `K` whose entrywise sums match `n`, the total Cholesky exponent
 in row `i` equals the total degree of axis `i` in `n`. -/
@@ -514,15 +512,15 @@ theorem sum_partialCorrelationGramCholeskyPower_row
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hsum (ab : Fin p × Fin p) : ∑ k, K ab k = n ab := by
-    obtain ⟨h1, h2⟩ := Finset.mem_piAntidiag.mp (Fintype.mem_piFinset.mp hK ab)
-    rw [← h1]
+    have hab := Fintype.mem_piFinset.mp hK ab
+    rw [← (Finset.mem_piAntidiag.mp hab).1]
     exact (Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦
-      not_imp_comm.mp (h2 k) hk).symm
+      Finset.eq_zero_of_notMem_of_mem_piAntidiag hk hab).symm
   rw [Finset.sum_add_distrib, hsum (i, j), hsum (j, i)]
 
 /-- When each column-split vector `K ab` is supported on `Finset.Iic (min ab.1 ab.2)`, the
 induced Cholesky multi-index is supported on or below the diagonal. -/
-theorem partialCorrelationGramCholeskyPower_le_of_mem_piFinset
+theorem snd_le_fst_of_mem_piFinset_of_partialCorrelationGramCholeskyPower_ne_zero
     {n : Fin p × Fin p → ℕ} {K : Fin p × Fin p → Fin p → ℕ}
     (hK : K ∈ Fintype.piFinset fun ab : Fin p × Fin p ↦
       Finset.piAntidiag (Finset.Iic (min ab.1 ab.2)) (n ab))
@@ -536,16 +534,6 @@ theorem partialCorrelationGramCholeskyPower_le_of_mem_piFinset
   · have hright : K (j, q.1) q.2 ≠ 0 := by omega
     have hmem := (Finset.mem_piAntidiag.mp (Fintype.mem_piFinset.mp hK (j, q.1))).2 q.2 hright
     exact (le_min_iff.mp (Finset.mem_Iic.mp hmem)).2
-
-/-- Every entry of the partial-correlation Gram matrix sums only over Cholesky columns at most
-`min i j`. -/
-theorem partialCorrelationGram_apply_eq_sum_Iic_min
-    (z : strictLowerTriangle p → ℝ) (i j : Fin p) :
-    partialCorrelationGram z i j =
-      ∑ k ∈ Finset.Iic (min i j),
-        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
-  rw [partialCorrelationGram_def]
-  exact (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic i j
 
 /-- Every natural monomial in the entries of `partialCorrelationGram z` expands as a multinomial
 sum of lower-triangular monomials in `partialCorrelationCholesky z`. -/
@@ -579,6 +567,6 @@ theorem prod_pow_partialCorrelationGram_eq_sum_prod
   rw [prod_pow_partialCorrelationGram_eq_sum_prod_pow_partialCorrelationCholesky]
   refine Finset.sum_congr rfl fun K hK ↦ ?_
   rw [prod_pow_partialCorrelationCholesky_eq_prod hz _
-    fun _ ↦ partialCorrelationGramCholeskyPower_le_of_mem_piFinset hK]
+    fun _ ↦ snd_le_fst_of_mem_piFinset_of_partialCorrelationGramCholeskyPower_ne_zero hK]
 
 end TauCeti
