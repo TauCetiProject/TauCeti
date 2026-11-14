@@ -29,7 +29,9 @@ The completed projective tensor product has the norm-preserving universal proper
 targets: bounded bilinear maps `E →L[𝕜] F →L[𝕜] G` into a Banach space `G` correspond
 isometrically to bounded operators `E ⊗̂π F →L[𝕜] G`. When `𝕜` is complete, for instance `ℝ` or
 `ℂ`, taking `G = 𝕜` identifies the dual of `E ⊗̂π F` isometrically with the space of bounded
-bilinear forms on `E × F`.
+bilinear forms on `E × F`; for `StrongDual 𝕜 E ⊗̂π E`, the evaluation pairing defines the
+contractive tensor trace `TauCeti.CompletedProjectiveTensor.trace 𝕜 E : E* ⊗̂π E →L[𝕜] 𝕜` sending
+`f ⊗ₜ x` to `f x`, without completeness assumptions on `E`.
 
 ## Main definitions
 
@@ -37,6 +39,8 @@ bilinear forms on `E × F`.
   completed projective and injective tensor products.
 * `TauCeti.CompletedProjectiveTensor.liftIsometry`: the isometric universal property of the
   completed projective tensor product.
+* `TauCeti.CompletedProjectiveTensor.trace`: the tensor trace `E* ⊗̂π E →L[𝕜] 𝕜` sending `f ⊗ₜ x`
+  to `f x`.
 * `TauCeti.CompletedProjectiveTensor.mapL` and `TauCeti.CompletedInjectiveTensor.mapL`: the
   operators induced by a pair of bounded operators.
 * `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor`: the contraction
@@ -55,6 +59,7 @@ bilinear forms on `E × F`.
   contraction from the completed projective to the completed injective tensor product, and
   `TauCeti.CompletedProjectiveTensor.injective_toCompletedInjectiveTensor_of_leftInverse` for
   descent of its injectivity along bounded linear retractions.
+* `TauCeti.CompletedProjectiveTensor.trace_mapL_precomp`: cyclicity of the tensor trace.
 
 ## References
 
@@ -350,5 +355,42 @@ theorem injective_toCompletedInjectiveTensor_of_leftInverse_right
     Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
   injective_toCompletedInjectiveTensor_of_leftInverse (i₁ := .id 𝕜 E) (r₁ := .id 𝕜 E)
     (fun _ ↦ rfl) h hinj
+
+section Trace
+
+variable {𝕜 D E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+variable (𝕜 E) in
+/-- The **tensor trace** `E* ⊗̂π E →L[𝕜] 𝕜` sending `f ⊗ₜ x` to `f x`: the bounded linear
+functional induced by the evaluation pairing `(f, x) ↦ f x`. -/
+noncomputable def trace : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E →L[𝕜] 𝕜 :=
+  liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜 (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E))
+
+/-- The tensor trace sends a pure tensor `f ⊗ₜ x` to `f x`. -/
+@[simp]
+theorem trace_coe_tmul (f : StrongDual 𝕜 E) (x : E) :
+    trace 𝕜 E (⟨f ⊗ₜ x⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) = f x := by
+  simp [trace]
+
+/-- The tensor trace is a contraction. -/
+theorem norm_trace_le : ‖trace 𝕜 E‖ ≤ 1 := by
+  rw [trace, LinearIsometryEquiv.norm_map]
+  exact ContinuousLinearMap.norm_id_le
+
+/-- Cyclicity of the tensor trace: for `A : E →L[𝕜] D` and `u ∈ D* ⊗̂π E`, pulling the left factor
+back along `A` and tracing on `E` agrees with pushing the right factor forward along `A` and
+tracing on `D`. -/
+theorem trace_mapL_precomp (A : E →L[𝕜] D)
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 D) E) :
+    trace 𝕜 E (mapL (ContinuousLinearMap.precomp 𝕜 A) (ContinuousLinearMap.id 𝕜 E) u) =
+      trace 𝕜 D (mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A u) := by
+  have h : trace 𝕜 E ∘L mapL (ContinuousLinearMap.precomp 𝕜 A) (ContinuousLinearMap.id 𝕜 E) =
+      trace 𝕜 D ∘L mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A :=
+    continuousLinearMap_ext fun g x ↦ by simp
+  exact congr($h u)
+
+end Trace
 
 end TauCeti.CompletedProjectiveTensor

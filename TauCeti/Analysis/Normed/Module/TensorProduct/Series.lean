@@ -39,6 +39,8 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
 * `TauCeti.CompletedProjectiveTensor.exists_hasSum_tmul_tendsto_zero`: over `ℝ` and `ℂ`, a series
   representation `u = ∑ n, x n ⊗ₜ y n` with `∑ n, ‖x n‖` finite and `y n → 0`, obtained by
   rescaling the factors of a series of finite cost.
+* `TauCeti.CompletedProjectiveTensor.hasSum_trace`: the tensor trace of `u = ∑ i, f i ⊗ₜ x i` is
+  `∑ i, f i (x i)`.
 
 ## References
 
@@ -193,5 +195,19 @@ theorem exists_hasSum_tmul_tendsto_zero (u : CompletedProjectiveTensor 𝕜 E F)
       simp [norm_smul, hnt, field]
 
 end RCLike
+
+section Trace
+
+variable {ι : Type*} [CompleteSpace 𝕜]
+
+/-- If `u = ∑ i, f i ⊗ₜ x i` in `E* ⊗̂π E`, then `trace 𝕜 E u = ∑ i, f i (x i)`. -/
+theorem hasSum_trace {f : ι → StrongDual 𝕜 E} {x : ι → E}
+    {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E}
+    (hu : HasSum (fun i ↦ ((⟨f i ⊗ₜ x i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) :
+      CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)) u) :
+    HasSum (fun i ↦ f i (x i)) (trace 𝕜 E u) := by
+  simpa [Function.comp_def] using hu.map (trace 𝕜 E) (trace 𝕜 E).continuous
+
+end Trace
 
 end TauCeti.CompletedProjectiveTensor

@@ -24,9 +24,6 @@ contraction `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E F`, 
 closed. Its range is the submodule `TauCeti.nuclearOperators 𝕜 E F` of *nuclear operators*.
 Over `ℝ` or `ℂ` it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding
 of `E* ⊗̂ε F` into the bounded operators, so it is injective exactly when that contraction is.
-When `F = E` and `𝕜` is complete, without completeness assumptions on `E`, the evaluation pairing
-defines the *tensor trace* `TauCeti.CompletedProjectiveTensor.trace 𝕜 E : E* ⊗̂π E →L[𝕜] 𝕜` sending
-`f ⊗ₜ x` to `f x`.
 
 The *nuclear norm* `ν(T)` of a bounded operator `T` is the infimum of the projective norms of the
 tensors representing `T`, and `∞` when `T` is not nuclear. As `TauCeti.nuclearGauge 𝕜 E F` it is
@@ -64,8 +61,6 @@ factors appear in the order `F ⊗ E*`.
 * `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap_mapL` and
   `TauCeti.CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply`: its naturality and
   pointwise evaluation on pure-tensor series.
-* `TauCeti.CompletedProjectiveTensor.trace`: the tensor trace `E* ⊗̂π E →L[𝕜] 𝕜` sending
-  `f ⊗ₜ x` to `f x`, and `TauCeti.CompletedProjectiveTensor.trace_mapL_precomp` for its cyclicity.
 * `TauCeti.CompletedProjectiveTensor.toOperator_comp_toCompletedInjectiveTensor`: over `ℝ` and
   `ℂ`, it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding of
   `E* ⊗̂ε F` into the bounded operators.
@@ -574,56 +569,9 @@ end NuclearOperator
 
 end TauCeti
 
-/-! ### The tensor trace -/
+/-! ### Factorization through the injective tensor product -/
 
 namespace TauCeti.CompletedProjectiveTensor
-
-section Trace
-
-variable {𝕜 D E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-variable (𝕜 E) in
-/-- The **tensor trace** `E* ⊗̂π E →L[𝕜] 𝕜` sending `f ⊗ₜ x` to `f x`: the bounded linear
-functional induced by the evaluation pairing `(f, x) ↦ f x`. -/
-def trace : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E →L[𝕜] 𝕜 :=
-  liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜 (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E))
-
-/-- The tensor trace sends a pure tensor `f ⊗ₜ x` to `f x`. -/
-@[simp]
-theorem trace_coe_tmul (f : StrongDual 𝕜 E) (x : E) :
-    trace 𝕜 E (⟨f ⊗ₜ x⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) = f x := by
-  simp [trace]
-
-/-- The tensor trace is a contraction. -/
-theorem norm_trace_le : ‖trace 𝕜 E‖ ≤ 1 := by
-  rw [trace, LinearIsometryEquiv.norm_map]
-  exact ContinuousLinearMap.norm_id_le
-
-/-- If `u = ∑ i, f i ⊗ₜ x i` in `E* ⊗̂π E`, then `trace 𝕜 E u = ∑ i, f i (x i)`. -/
-theorem hasSum_trace {ι : Type*} {f : ι → StrongDual 𝕜 E} {x : ι → E}
-    {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E}
-    (hu : HasSum (fun i ↦ ((⟨f i ⊗ₜ x i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) :
-      CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)) u) :
-    HasSum (fun i ↦ f i (x i)) (trace 𝕜 E u) := by
-  simpa using (trace 𝕜 E).hasSum hu
-
-/-- Cyclicity of the tensor trace: for `A : E →L[𝕜] D` and `u ∈ D* ⊗̂π E`, pulling the left factor
-back along `A` and tracing on `E` agrees with pushing the right factor forward along `A` and
-tracing on `D`. -/
-theorem trace_mapL_precomp (A : E →L[𝕜] D)
-    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 D) E) :
-    trace 𝕜 E (mapL (ContinuousLinearMap.precomp 𝕜 A) (ContinuousLinearMap.id 𝕜 E) u) =
-      trace 𝕜 D (mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A u) := by
-  have h : trace 𝕜 E ∘L mapL (ContinuousLinearMap.precomp 𝕜 A) (ContinuousLinearMap.id 𝕜 E) =
-      trace 𝕜 D ∘L mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A :=
-    continuousLinearMap_ext fun g x ↦ by simp
-  exact congr($h u)
-
-end Trace
-
-/-! ### Factorization through the injective tensor product -/
 
 section Factorization
 
