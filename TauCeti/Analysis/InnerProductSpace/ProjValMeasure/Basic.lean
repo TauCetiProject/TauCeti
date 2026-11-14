@@ -14,19 +14,9 @@ Released under the Apache 2.0 license.
 module
 
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
-public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import Mathlib.Analysis.InnerProductSpace.Subspace
-public import Mathlib.MeasureTheory.Measure.Basic
-public import Mathlib.MeasureTheory.Measure.CompleteLattice
-public import Mathlib.MeasureTheory.Measure.Continuity
-public import Mathlib.MeasureTheory.Measure.Filter
-public import Mathlib.MeasureTheory.Measure.OuterMeasure
-public import Mathlib.MeasureTheory.Measure.Sum
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.MeasureTheory.Measure.DisjointUnion
-public import Mathlib.MeasureTheory.Measure.NullMeasurable
-public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
 # Projection-valued measures
@@ -34,8 +24,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 A projection-valued measure on the measurable sets of an arbitrary measurable
 space `X`, acting on a complex Hilbert space `H`.
 
-The finite diagonal scalar measures are provided by the DKPS donor's `diag`
-field. Their measure-theoretic countable additivity supplies strong
+The finite diagonal scalar measures `diag ξ`, `B ↦ ⟪ξ, P(B)ξ⟫`, are carried by the structure as
+data, and are determined by `proj`. Their measure-theoretic countable additivity supplies strong
 countable additivity of the projections.
 Idempotence, self-adjointness, positivity, and finite additivity are proved
 from the structure's laws.
@@ -43,8 +33,8 @@ from the structure's laws.
 ## Main declarations
 
 * `ProjValMeasure X H`: the structure — a map `proj` from measurable sets to
-  operators, the diagonal measures `diag : H → Measure X`, the weld
-  `inner_proj`, the normalization `proj_univ : P(X) = 1`, and the
+  operators, the diagonal measures `diag : H → Measure X`, the relation
+  `inner_proj` between them and `proj`, the normalization `proj_univ : P(X) = 1`, and the
   multiplicativity law `proj_inter`.
 * `proj_idem`, `isSelfAdjoint_proj`, `isPositive_proj`, `proj_mul_eq_left_of_subset`,
   `proj_range_mono`, `proj_union`, `proj_compl`, `norm_proj_apply_le`:
@@ -59,6 +49,10 @@ from the structure's laws.
 
 ## References
 
+* B. C. Hall, *Quantum Theory for Mathematicians*, Springer GTM 267, Chapter 7 (projection-valued
+  measures).
+* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*,
+  Chapter VII.
 * Adam Bornemann, *Spectra*, `Spectra/ProjValMeasure/Basic.lean`,
   https://github.com/adambornemann-glitch/Spectra
   (commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63`).
@@ -84,9 +78,8 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 complex Hilbert space `H`.
 
 The diagonal scalar measures `diag ξ` are supplied as finite measures,
-related to the projections by `inner_proj`. This follows the donor's carrier
-representation, in which the diagonal measures are uniquely determined by
-`proj`. Idempotence, self-adjointness,
+related to the projections by `inner_proj`. They are carried as data but are
+uniquely determined by `proj` (see `ext`). Idempotence, self-adjointness,
 positivity, finite additivity, contraction, and strong countable additivity
 follow from these laws. -/
 structure ProjValMeasure (X : Type*) [MeasurableSpace X] (H : Type*)
@@ -97,7 +90,7 @@ structure ProjValMeasure (X : Type*) [MeasurableSpace X] (H : Type*)
   diag : H → Measure X
   /-- Each diagonal measure is finite (its mass is `‖ξ‖ ^ 2`, by `diag_univ_toReal`). -/
   diag_finite : ∀ ξ : H, IsFiniteMeasure (diag ξ)
-  /-- The weld: diagonal matrix elements of the projections are the diagonal measures. -/
+  /-- Diagonal matrix elements of the projections are the diagonal measures. -/
   inner_proj : ∀ (B : Set X) (hB : MeasurableSet B) (ξ : H),
     ⟪ξ, proj B hB ξ⟫_ℂ = (((diag ξ) B).toReal : ℂ)
   /-- The whole space carries the identity. -/
@@ -425,7 +418,7 @@ theorem tendsto_sum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ 
 
 /-- **Unconditional** strong countable additivity: disjoint measurable-set
 projections form a summable family of vectors, and their sum is the projection
-of the union. This is the `HasSum` interface needed by the spectral integral. -/
+of the union. -/
 theorem hasSum_proj_of_pairwise_disjoint {P : ProjValMeasure X H} {f : ℕ → Set X}
     (hf : ∀ n, MeasurableSet (f n)) (hdisj : Pairwise (Disjoint on f)) (ξ : H) :
     HasSum (fun n => P.proj (f n) (hf n) ξ)
