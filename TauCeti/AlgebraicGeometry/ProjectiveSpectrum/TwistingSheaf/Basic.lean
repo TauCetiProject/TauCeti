@@ -65,7 +65,7 @@ noncomputable section
 
 namespace AlgebraicGeometry
 
-open TopCat TopologicalSpace CategoryTheory Opposite
+open TopCat TopologicalSpace CategoryTheory
 
 universe u
 
@@ -113,6 +113,7 @@ theorem isLocallyFraction_zero (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜
     (i + n).toNat, by omega, 0, ⟨s, hs⟩, fun y ↦ y.2.2, fun y ↦ ?_⟩
   exact (Localization.mk_zero _).symm
 
+/-- The sum of two local fractions of degree `n` is a local fraction of degree `n`. -/
 theorem isLocallyFraction_add {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
     {f g : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 n).pred f)
     (hg : (isLocallyFraction 𝒜 n).pred g) : (isLocallyFraction 𝒜 n).pred (f + g) := by
@@ -131,6 +132,7 @@ theorem isLocallyFraction_add {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)
   -- `⟨sa * sb, _⟩` agree by `Submonoid.mk_mul_mk`, which `congr 1` closes
   congr 1
 
+/-- The negative of a local fraction of degree `n` is a local fraction of degree `n`. -/
 theorem isLocallyFraction_neg {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
     {f : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 n).pred f) :
     (isLocallyFraction 𝒜 n).pred (-f) := by
@@ -266,27 +268,33 @@ variable {𝒜} {n : ℤ} {U V : (Proj 𝒜).Opens}
 theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x, s.1 x = t.1 x) : s = t :=
   Subtype.ext (funext h)
 
+/-- Restriction of sections of `𝒪(n)` is restriction of the underlying functions. -/
 @[simp]
 theorem res_apply (i : V ⟶ U) (s : Γ(twistingSheaf 𝒜 n, U)) (x : V) :
     ((twistingSheaf 𝒜 n).presheaf.map i.op s).1 x = s.1 (i x) :=
   (rfl)
 
+/-- The zero section of `𝒪(n)` has value `0` at every point. -/
 @[simp]
 theorem zero_apply (x : U) : (0 : Γ(twistingSheaf 𝒜 n, U)).1 x = 0 :=
   (rfl)
 
+/-- Sections of `𝒪(n)` are added pointwise. -/
 @[simp]
 theorem add_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s + t).1 x = s.1 x + t.1 x :=
   (rfl)
 
+/-- Sections of `𝒪(n)` are negated pointwise. -/
 @[simp]
 theorem neg_apply (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (-s).1 x = -s.1 x :=
   (rfl)
 
+/-- Sections of `𝒪(n)` are subtracted pointwise. -/
 @[simp]
 theorem sub_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s - t).1 x = s.1 x - t.1 x :=
   (rfl)
 
+/-- Finite sums of sections of `𝒪(n)` are computed pointwise. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (t : ι → Γ(twistingSheaf 𝒜 n, U)) (x : U) :
     (∑ i ∈ s, t i).1 x = ∑ i ∈ s, (t i).1 x := by
@@ -309,12 +317,15 @@ def const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs 
   ⟨fun x ↦ Localization.mk r ⟨s, hU x.2⟩, fun x ↦ ⟨U, x.2, 𝟙 U, i, j, h, ⟨r, hr⟩, ⟨s, hs⟩,
     fun y ↦ hU y.2, fun _ ↦ rfl⟩⟩
 
+/-- The value of the section `r / s` at a point `x` is the fraction `r / s` in the
+localization at `x`. -/
 @[simp]
 theorem const_apply {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) (x : U) :
     (const h r s hr hs U hU).1 x = Localization.mk r ⟨s, hU x.2⟩ :=
   (rfl)
 
+/-- The restriction of the section `r / s` to a smaller open is the section `r / s` there. -/
 @[simp]
 theorem res_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) (iVU : V ⟶ U) :
@@ -322,11 +333,13 @@ theorem res_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜
       const h r s hr hs V (iVU.le.trans hU) :=
   (rfl)
 
+/-- The section `0 / s` is the zero section. -/
 @[simp]
 theorem const_zero {i j : ℕ} (h : (j : ℤ) = i + n) (s : A) (hr : (0 : A) ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) : const h 0 s hr hs U hU = 0 :=
   ext fun _ ↦ Localization.mk_zero _
 
+/-- The negative of the section `r / s` is the section `(-r) / s`. -/
 @[simp]
 theorem neg_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) : -const h r s hr hs U hU = const h (-r) s (neg_mem hr) hs U hU :=
@@ -404,6 +417,7 @@ def mul (m n : ℤ) :
     (fun _ _ _ ↦ ext fun _ ↦ mul_add _ _ _)
     (fun _ _ _ ↦ ext fun _ ↦ mul_left_comm _ _ _)
 
+/-- Sections of twisting sheaves are multiplied pointwise. -/
 @[simp]
 theorem mul_apply {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
     (mul 𝒜 U m n s t).1 x = s.1 x * t.1 x :=
@@ -431,6 +445,7 @@ theorem res_mul {m : ℤ} (i : V ⟶ U) (s : Γ(twistingSheaf 𝒜 m, U))
         ((twistingSheaf 𝒜 n).presheaf.map i.op t) :=
   (rfl)
 
+/-- The product of the sections `r / s` and `r' / s'` is the section `(r * r') / (s * s')`. -/
 @[simp]
 theorem mul_const {m : ℤ} {i j i' j' : ℕ} (h : (j : ℤ) = i + m) (h' : (j' : ℤ) = i' + n)
     (r s r' s' : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i) (hr' : r' ∈ 𝒜 j') (hs' : s' ∈ 𝒜 i')
@@ -458,11 +473,13 @@ def toTwistingSheaf {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) :
   map_zero' := twistingSheaf.ext fun _ ↦ Localization.mk_zero _
   map_add' r r' := twistingSheaf.ext fun _ ↦ (Localization.add_mk_self _ _ _).symm
 
+/-- The section `toTwistingSheaf 𝒜 h U r` is the section `r / 1`. -/
 theorem toTwistingSheaf_eq_const {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) (r : 𝒜 j) :
     toTwistingSheaf 𝒜 h U r = twistingSheaf.const (i := 0) (by omega) (r : A) 1 r.2
       SetLike.GradedOne.one_mem U (by simp [basicOpen_one]) :=
   (rfl)
 
+/-- The value of `toTwistingSheaf 𝒜 h U r` at a point is the fraction `r / 1`. -/
 @[simp]
 theorem toTwistingSheaf_apply_apply {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) (r : 𝒜 j)
     (x : U) : (toTwistingSheaf 𝒜 h U r).1 x = Localization.mk (r : A) 1 :=
@@ -503,6 +520,8 @@ def sectionsLinearEquivTwistingSheafZero (U : (Proj 𝒜).Opens) :
     (exists_val_eq (isLocallyFraction_val a) x).choose_spec
   right_inv f := twistingSheaf.ext fun x ↦ (exists_val_eq f.2 x).choose_spec
 
+/-- The comparison of the structure sheaf with `𝒪(0)` preserves the value in each
+localization. -/
 @[simp]
 theorem sectionsLinearEquivTwistingSheafZero_apply_apply (U : (Proj 𝒜).Opens) (a : Γ(Proj 𝒜, U))
     (x : U) : (sectionsLinearEquivTwistingSheafZero 𝒜 U a).1 x = (a.1 x).val :=
@@ -529,12 +548,16 @@ def unitIsoTwistingSheafZero : SheafOfModules.unit (Proj 𝒜).ringCatSheaf ≅ 
   (SheafOfModules.fullyFaithfulForget _).preimageIso <| PresheafOfModules.isoMk
     (fun U ↦ (sectionsLinearEquivTwistingSheafZero 𝒜 U.unop).toModuleIso) fun _ _ _ ↦ rfl
 
+/-- The forward map of `unitIsoTwistingSheafZero` on sections over `U` is
+`sectionsLinearEquivTwistingSheafZero`. -/
 @[simp]
 theorem unitIsoTwistingSheafZero_hom_app_apply (U : (Proj 𝒜).Opens) (a : Γ(Proj 𝒜, U)) :
     Scheme.Modules.Hom.app (unitIsoTwistingSheafZero 𝒜).hom U a =
       sectionsLinearEquivTwistingSheafZero 𝒜 U a :=
   (rfl)
 
+/-- The backward map of `unitIsoTwistingSheafZero` on sections over `U` is the inverse of
+`sectionsLinearEquivTwistingSheafZero`. -/
 @[simp]
 theorem unitIsoTwistingSheafZero_inv_app_apply (U : (Proj 𝒜).Opens)
     (f : Γ(twistingSheaf 𝒜 0, U)) :
