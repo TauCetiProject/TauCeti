@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Combinatorics.Hive.Lattice
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 import Mathlib.Algebra.Order.Ring.Int
@@ -664,15 +665,8 @@ theorem apply_ofChart_right (h : Hive n R) {i : ℕ} (hi : i ≤ n) :
 /-- Along `C → A` (`i = j`), `h(j, j) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev)`. -/
 theorem apply_ofChart_self (h : Hive n R) {j : ℕ} (hj : j ≤ n) :
     h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j (fun r => -h.boundary 2 r.rev) := by
-  rw [Vertex.ofChart_self, h.apply_edgePoint_two, Fin.val_mk, Finset.sum_filter,
-    TauCeti.prefixSum_def, Finset.sum_filter, ← Finset.sum_neg_distrib]
-  refine (Equiv.sum_comp Fin.revPerm
-    (fun k : Fin n => -(if n - j ≤ k.val then h.boundary 2 k else 0))).symm.trans
-    (Finset.sum_congr rfl fun r _ => ?_)
-  simp only [Fin.revPerm_apply, Fin.val_rev]
-  by_cases hr : r.val < j
-  · rw [ite_eq_left (by omega), ite_eq_left hr]
-  · rw [ite_eq_right (by have := r.isLt; omega), ite_eq_right hr, neg_zero]
+  rw [Vertex.ofChart_self, h.apply_edgePoint_two, Fin.val_mk,
+    TauCeti.prefixSum_comp_rev hj (fun r => -h.boundary 2 r), Finset.sum_neg_distrib]
 
 /-- Side `0` edge differences of any rhombus-concave function are antitone. -/
 theorem antitone_boundaryLinear_zero_of_isRhombusConcave [IsOrderedAddMonoid R]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
-public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
 
@@ -142,16 +141,19 @@ instance : Add (DominantWeight n) :=
   ⟨fun l₁ l₂ => ⟨l₁.1 + l₂.1, fun _ _ h => Int.add_le_add (l₁.antitone h) (l₂.antitone h)⟩⟩
 instance : SMul ℕ (DominantWeight n) :=
   ⟨fun k l => ⟨k • l.1, fun _ _ h => nsmul_le_nsmul_right (l.antitone h) k⟩⟩
-instance : AddCommMonoid (DominantWeight n) :=
-  Subtype.coe_injective.addCommMonoid Subtype.val rfl (fun _ _ => rfl) fun _ _ => rfl
+@[simp] theorem coe_zero : ((0 : DominantWeight n) : Fin n → ℤ) = 0 := (rfl)
+@[simp] theorem coe_add (l₁ l₂ : DominantWeight n) :
+    ((l₁ + l₂ : DominantWeight n) : Fin n → ℤ) = l₁.1 + l₂.1 := (rfl)
+@[simp] theorem coe_nsmul (k : ℕ) (l : DominantWeight n) :
+    ((k • l : DominantWeight n) : Fin n → ℤ) = k • l.1 := (rfl)
 
-@[simp] theorem zero_apply (i : Fin n) : (0 : DominantWeight n).1 i = 0 := (rfl)
-@[simp] theorem prefixSum_coe_zero (k : ℕ) :
-    TauCeti.prefixSum k (0 : DominantWeight n).1 = 0 := by
-  simp [TauCeti.prefixSum_def]
-@[simp] theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) :
+instance : AddCommMonoid (DominantWeight n) :=
+  Subtype.coe_injective.addCommMonoid Subtype.val coe_zero coe_add fun _ _ => coe_nsmul _ _
+
+theorem zero_apply (i : Fin n) : (0 : DominantWeight n).1 i = 0 := (rfl)
+theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) :
     (l₁ + l₂).1 i = l₁.1 i + l₂.1 i := (rfl)
-@[simp] theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) :
+theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) :
     (k • l).1 i = k • l.1 i := (rfl)
 @[simp] theorem dual_zero : (0 : DominantWeight n).dual = 0 := by ext i; simp
 @[simp] theorem dual_add (l₁ l₂ : DominantWeight n) : (l₁ + l₂).dual = l₁.dual + l₂.dual := by

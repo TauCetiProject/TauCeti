@@ -239,18 +239,26 @@ theorem gtCompletion_succ_left (lam : DominantWeight n) (P : GTPattern n) (i j :
     gtCompletion lam P (i + 1) j = gtCompletion lam P i j + P i j := by
   rw [gtCompletion_def, gtCompletion_def, Finset.sum_range_succ, add_assoc]
 
+/-- Advancing the column index from `j` to `j + 1` (`j < n`) adds `lam.1 ⟨j, hj⟩` and the
+row-to-row entry differences below `i`. -/
+theorem gtCompletion_succ_right (lam : DominantWeight n) (P : GTPattern n) (i : ℕ) {j : ℕ}
+    (hj : j < n) :
+    gtCompletion lam P i (j + 1) =
+      gtCompletion lam P i j + lam.1 ⟨j, hj⟩ + ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) := by
+  rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_succ hj, Finset.sum_sub_distrib]
+  abel
+
 @[simp] theorem gtCompletion_add (lam₁ lam₂ : DominantWeight n) (P₁ P₂ : GTPattern n) (i j : ℕ) :
     gtCompletion (lam₁ + lam₂) (P₁ + P₂) i j =
       gtCompletion lam₁ P₁ i j + gtCompletion lam₂ P₂ i j := by
-  have hlam : (lam₁ + lam₂).1 = lam₁.1 + lam₂.1 := rfl
-  simp only [gtCompletion_def, hlam, TauCeti.prefixSum_add, GTPattern.add_apply,
-    Finset.sum_add_distrib]; abel
+  simp only [gtCompletion_def, DominantWeight.coe_add, TauCeti.prefixSum_add, GTPattern.add_apply,
+    Finset.sum_add_distrib]
+  abel
 
 @[simp] theorem gtCompletion_nsmul (k : ℕ) (lam : DominantWeight n) (P : GTPattern n) (i j : ℕ) :
     gtCompletion (k • lam) (k • P) i j = k • gtCompletion lam P i j := by
-  have hlam : (k • lam).1 = k • lam.1 := rfl
-  simp only [gtCompletion_def, hlam, TauCeti.prefixSum_smul, GTPattern.nsmul_apply,
-    ← Finset.smul_sum, smul_add]
+  simp only [gtCompletion_def, DominantWeight.coe_nsmul, TauCeti.prefixSum_smul,
+    GTPattern.nsmul_apply, ← Finset.smul_sum, smul_add]
 
 theorem gtCompletion_shift_dominantWeight (lam : DominantWeight n) (m : ℤ) (P : GTPattern n)
     (i : ℕ) {j : ℕ} (hj : j ≤ n) :
@@ -292,12 +300,7 @@ theorem gtCompletion_self_of_weight {lam : DominantWeight n} {P : GTPattern n} {
 
 theorem gtCompletion_right (lam : DominantWeight n) (P : GTPattern n) (i : ℕ) :
     gtCompletion lam P i n = (∑ r : Fin n, lam.1 r) + TauCeti.prefixSum i P.topRow := by
-  rw [gtCompletion_def, TauCeti.prefixSum_of_le le_rfl,
-    show P.topRow = fun r : Fin n => P r.val n from funext P.topRow_apply,
-    TauCeti.prefixSum_eq_sum_range i (fun k => P k n)]
-  congr 1
-  exact (Finset.sum_subset (Finset.range_mono (min_le_left i n)) fun k hk' hk =>
-    P.entry_eq_zero_of_le (by simp only [Finset.mem_range, lt_min_iff] at hk' hk; omega)).symm
+  rw [gtCompletion_def, TauCeti.prefixSum_of_le le_rfl, P.prefixSum_topRow]
 
 /-- Every hive value in the product chart is recovered from `h.boundaryWeight 0` and
 `h.toGTPattern` via `gtCompletion`. -/
@@ -356,14 +359,8 @@ theorem gtCompletion_add_gtCompletion_le_iff_sum_sub_le (lam : DominantWeight n)
       (∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P k (j + 1))) ≤
         (lam.1 ⟨j, by omega⟩ - lam.1 ⟨j + 1, by omega⟩) +
           ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) := by
-  have : gtCompletion lam P i (j + 1) - gtCompletion lam P i j =
-      lam.1 ⟨j, by omega⟩ + ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) := by
-    rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_succ (by omega),
-      Finset.sum_sub_distrib]; abel
-  have : gtCompletion lam P (i + 1) (j + 2) - gtCompletion lam P (i + 1) (j + 1) =
-      lam.1 ⟨j + 1, by omega⟩ + ∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P k (j + 1)) := by
-    rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_succ (by omega),
-      Finset.sum_sub_distrib]; abel
+  rw [gtCompletion_succ_right lam P i (by omega),
+    gtCompletion_succ_right lam P (i + 1) (by omega)]
   constructor <;> intro _ <;> linarith
 
 /-- **Difference-sum characterization of `IsGTCompletable`**. -/
@@ -397,21 +394,13 @@ theorem IsGTCompletable.nsmul {lam : DominantWeight n} {P : GTPattern n}
 
 @[simp] theorem isGTCompletable_shift_right_iff (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) :
     IsGTCompletable lam (P.shift m) ↔ IsGTCompletable lam P := by
-  simp only [isGTCompletable_iff_sum_sub_le]
-  refine forall₄_congr fun i j _ hj => ?_
-  have hs1 : (∑ k ∈ Finset.range (i + 1), ((P.shift m) k (j + 2) - (P.shift m) k (j + 1))) =
-      ∑ k ∈ Finset.range (i + 1), (P k (j + 2) - P k (j + 1)) :=
-    Finset.sum_congr rfl fun k hk => by
-      have := Finset.mem_range.mp hk
-      rw [P.shift_apply_of_lt_of_le m (by omega) hj,
-        P.shift_apply_of_lt_of_le m (by omega) (by omega), add_sub_add_right_eq_sub]
-  have hs2 : (∑ k ∈ Finset.range i, ((P.shift m) k (j + 1) - (P.shift m) k j)) =
-      ∑ k ∈ Finset.range i, (P k (j + 1) - P k j) :=
-    Finset.sum_congr rfl fun k hk => by
-      have := Finset.mem_range.mp hk
-      rw [P.shift_apply_of_lt_of_le m (by omega) (by omega),
-        P.shift_apply_of_lt_of_le m (by omega) (by omega), add_sub_add_right_eq_sub]
-  rw [hs1, hs2]
+  simp only [isGTCompletable_def]
+  refine forall₄_congr fun i j hij hj => ?_
+  rw [gtCompletion_shift_gtPattern lam P m hij (by omega),
+    gtCompletion_shift_gtPattern lam P m (Nat.succ_le_succ (Nat.le_succ_of_le hij)) hj,
+    gtCompletion_shift_gtPattern lam P m (Nat.le_succ_of_le hij) (by omega),
+    gtCompletion_shift_gtPattern lam P m (Nat.succ_le_succ hij) (by omega)]
+  constructor <;> intro _ <;> linarith
 
 @[simp] theorem isGTCompletable_const (lam : DominantWeight n) (m : ℤ) :
     IsGTCompletable lam (GTPattern.const n m) := by
@@ -493,12 +482,12 @@ theorem ofGTPattern_shift {lam : DominantWeight n} {P : GTPattern n} (a b : ℤ)
 @[simp] theorem ofGTPattern_const (a b : ℤ)
     (h : IsGTCompletable ((0 : DominantWeight n).shift a) (GTPattern.const n b)) :
     ofGTPattern ((0 : DominantWeight n).shift a) (GTPattern.const n b) h = affine n a (a + b) := by
-  ext p; have := p.sum_eq
-  have hsub : ((n - p.x : ℕ) : ℤ) = (p.y : ℤ) + p.z := by omega
-  rw [ofGTPattern_apply, gtCompletion_const _ b (by omega) (Nat.sub_le n p.x),
-    TauCeti.prefixSum_eq_sum_castLE (Nat.sub_le n p.x)]
-  simp only [DominantWeight.shift_apply, DominantWeight.zero_apply, zero_add, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hsub, affine_apply]; ring
+  have hc : GTPattern.const n b = (0 : GTPattern n).shift b := by
+    rw [GTPattern.shift_eq_add_const, zero_add]
+  revert h
+  rw [hc]
+  intro h
+  rw [ofGTPattern_shift a b (isGTCompletable_zero_right 0) h, ofGTPattern_zero, zero_add]
 
 @[simp] theorem toGTPattern_ofGTPattern (lam : DominantWeight n) (P : GTPattern n)
     (hP : IsGTCompletable lam P) : (ofGTPattern lam P hP).toGTPattern = P := by
@@ -913,7 +902,7 @@ theorem hiveCount_one_productBoundary (lam μ γ : DominantWeight 1) :
   rw [hiveCount_eq_card_gtPattern_of_uniform_input_gap lam μ γ (fun r => r.elim0)]
   let P₀ : {P : GTPattern 1 // P.topRow = μ.1} := default
   have hw₀ : P₀.1.weight 0 = μ.1 0 := by
-    simpa only [Fin.sum_univ_one, P₀.2] using P₀.1.sum_weight
+    rw [P₀.1.weight_eq_topRow, P₀.2]
   have : Subsingleton {P : GTPattern 1 // P.topRow = μ.1 ∧ P.weight = γ.1 - lam.1} :=
     ⟨fun P Q => Subtype.ext <| Subtype.mk.inj <|
       Subsingleton.elim (⟨P.1, P.2.1⟩ : {R : GTPattern 1 // R.topRow = μ.1}) ⟨Q.1, Q.2.1⟩⟩
@@ -933,7 +922,7 @@ theorem hiveCount_one_productBoundary (lam μ γ : DominantWeight 1) :
 theorem isGTCompletable_two_iff (lam : DominantWeight 2) (P : GTPattern 2) :
     IsGTCompletable lam P ↔ lam.1 1 + P.topRow 0 ≤ lam.1 0 + P.weight 0 := by
   rw [isGTCompletable_iff_sum_sub_le]
-  have : P.weight 0 = P 0 1 := by simp [GTPattern.weight_apply, GTPattern.rowSum_def]
+  have := P.weight_apply_zero
   have : P.topRow 0 = P 0 2 := P.topRow_apply 0
   refine ⟨fun h => ?_, fun _ i j _ _ => ?_⟩
   · have h00 := h 0 0 le_rfl le_rfl
@@ -1011,14 +1000,13 @@ theorem hiveCount_three_zero_adjoint_zero :
     hiveCount (productBoundary (0 : DominantWeight 3) ⟨![1, 0, -1], by decide⟩ 0) = 0 := by
   rw [hiveCount_eq_zero_iff]; refine ⟨fun h => ?_⟩
   obtain ⟨P, hTop, hW, hComp⟩ := fixedIntegerHiveEquivGTPattern 0 ⟨![1, 0, -1], by decide⟩ 0 h
-  have hzero : (0 : DominantWeight 3).1 = 0 := by ext; simp
   have h00 := hComp 0 0 le_rfl (by decide)
   have h01 := hComp 0 1 (Nat.zero_le 1) le_rfl
   have h03 : P 0 3 = 1 := by simpa [GTPattern.topRow_apply] using congrFun hTop 0
   have hP01 : P 0 1 = 0 := by
-    simpa [GTPattern.weight_apply, GTPattern.rowSum_def, hzero] using congrFun hW 0
-  simp only [gtCompletion_def, hzero, TauCeti.prefixSum_def, Pi.zero_apply, Finset.sum_const_zero,
-    zero_add, Nat.reduceAdd, Finset.sum_range_zero, Finset.sum_range_one, h03, hP01] at h00 h01
+    simpa [P.weight_apply_zero, DominantWeight.coe_zero] using congrFun hW 0
+  simp only [gtCompletion_zero_dominantWeight, Nat.reduceAdd, Finset.sum_range_zero,
+    Finset.sum_range_one, zero_add, h03, hP01] at h00 h01
   omega
 
 end LowRankAndChecks
