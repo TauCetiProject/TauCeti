@@ -19,11 +19,20 @@ This file constructs the inverse of `balancedOfBraidedPivotal`, proves both roun
 equalities of structures, and packages them as `pivotalBalancedEquiv`. No semisimplicity,
 sphericity, or compatibility of the twist with duals is required.
 
+## Main declarations
+
+* `TauCeti.pivotalOfBalanced`: the pivotal structure of a balanced rigid category, with pivotal
+  isomorphism `φ_X = θ_X ≫ u_X`;
+* `TauCeti.pivotalOfBalanced_balancedOfBraidedPivotal` and
+  `TauCeti.balancedOfBraidedPivotal_pivotalOfBalanced`: the two round trips;
+* `TauCeti.pivotalBalancedEquiv`: the resulting equivalence between pivotal and balanced
+  structures on a braided rigid category.
+
 ## References
 
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
-  braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1,
-  equation (3) and Appendix A.2
+  braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.1 and §2.3,
+  equation (3); Appendix A.2, Corollary A.3
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §8.10
 -/
 
@@ -100,7 +109,6 @@ theorem pivotalOfBalanced_balancedOfBraidedPivotal (P : PivotalCategory C) :
 @[simp]
 theorem balancedOfBraidedPivotal_pivotalOfBalanced (B : BalancedCategory C) :
     @balancedOfBraidedPivotal C _ _ _ _ (@pivotalOfBalanced C _ _ _ _ B) = B := by
-  let := B
   apply BalancedCategory.ext
   ext X
   -- Keep the new pivotal instance explicit, and bridge its functor-valued component to the
