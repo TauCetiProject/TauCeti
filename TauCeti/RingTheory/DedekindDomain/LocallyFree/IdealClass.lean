@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.ClassGroup
 public import TauCeti.RingTheory.FractionalIdeal.Projective
+import Mathlib.Algebra.Module.StablyFree.FreeOfInvertible
 import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
 import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
@@ -24,7 +25,10 @@ resulting homomorphism. Its computation on nonzero integral ideals identifies it
 the assignment `[I] ↦ [I] - [A]`. The map is surjective: a pseudo-basis expresses every
 finite projective module as a product of nonzero ideals, so its reduced class comes from the
 product of their ideal classes. This includes the zero module, represented by the empty
-product. Injectivity is the remaining direction of the ideal-class comparison.
+product. The map is injective: an invertible fractional ideal `I` with `[I] - [A] = 0` is stably
+free and invertible, hence free (`Module.free_of_isStablyFree_of_invertible`), hence principal.
+Together these give `TauCeti.LocallyFree.classGroupSelfEquiv`, identifying the locally free class
+group of `A` as an order over itself with the ideal class group of `A`.
 
 ## References
 
@@ -79,6 +83,30 @@ theorem classOf_toPrincipalIdeal (x : Kˣ) :
 
 end FractionalIdeal
 
+/-- An invertible fractional ideal has zero reduced projective class exactly when it is
+principal. -/
+theorem classOf_eq_zero_iff_isPrincipal (I : (FractionalIdeal A⁰ K)ˣ) :
+    classOf A (I : FractionalIdeal A⁰ K) 1 = 0 ↔ (I : Submodule A K).IsPrincipal := by
+  constructor
+  · rw [classOf_eq_zero_iff]
+    rintro ⟨k, ⟨e⟩⟩
+    -- A stably free invertible module is free, hence isomorphic to `A`.
+    have := Module.Free.of_equiv e.symm
+    have : Module.IsStablyFree A (I : FractionalIdeal A⁰ K) := .of_free_prod A _ (Fin k → A)
+    obtain ⟨f⟩ := Module.Invertible.free_iff_linearEquiv.mp
+      (Module.free_of_isStablyFree_of_invertible A (I : FractionalIdeal A⁰ K))
+    exact ⟨_, Submodule.eq_span_singleton_of_surjective f.symm.surjective⟩
+  · rintro ⟨x, hx⟩
+    have := IsDomain.of_faithfulSMul A K
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      exact I.ne_zero (FractionalIdeal.coeToSubmodule_injective (by simpa using hx))
+    have hI : toPrincipalIdeal A K (Units.mk0 x hx0) = I := by
+      ext1
+      apply FractionalIdeal.coeToSubmodule_injective
+      simp [hx]
+    rw [← hI, classOf_toPrincipalIdeal]
+
 variable [IsDedekindDomain A]
 
 variable (A K) in
@@ -123,6 +151,17 @@ theorem idealClassHom_mk0 (I : (Ideal A)⁰) [Module.Projective A (I : Ideal A)]
     idealClassHom A (Additive.ofMul (ClassGroup.mk0 I)) = classOf A (I : Ideal A) 1 := by
   rw [← ClassGroup.mk_mk0 (FractionRing A), idealClassHom_mk]
   exact classOf_congr (FractionalIdeal.coeIdealEquiv (I : Ideal A)) 1
+
+/-- The homomorphism `[I] ↦ [I] - [A]` from the ideal class group to projective `K₀(A)` is
+injective: an ideal class with zero reduced projective class is trivial. -/
+theorem idealClassHom_injective : Function.Injective (idealClassHom A) := by
+  refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_
+  obtain ⟨I, rfl⟩ : ∃ I, Additive.ofMul (ClassGroup.mk (FractionRing A) I) = c :=
+    ClassGroup.induction (FractionRing A)
+      (P := fun x ↦ ∃ I, Additive.ofMul (ClassGroup.mk (FractionRing A) I) = Additive.ofMul x)
+      (fun I ↦ ⟨I, rfl⟩) c.toMul
+  rw [idealClassHom_mk, classOf_eq_zero_iff_isPrincipal] at hc
+  rwa [ofMul_eq_zero, ClassGroup.mk_eq_one_iff]
 
 variable (K) in
 /-- Every reduced class of a finite projective module over a Dedekind domain comes from an
@@ -210,6 +249,23 @@ theorem ofIdealClass_surjective (hA : ¬IsField A) : Function.Surjective (ofIdea
   intro x
   obtain ⟨c, hc⟩ := hle x.property
   exact ⟨c, Subtype.ext hc⟩
+
+/-- The homomorphism from ideal classes to locally free classes is injective. -/
+theorem ofIdealClass_injective (hA : ¬IsField A) : Function.Injective (ofIdealClass A K hA) :=
+  fun _ _ h ↦ idealClassHom_injective (congrArg Subtype.val h)
+
+variable (A K) in
+/-- Over a Dedekind domain `A` that is not a field, the locally free class group `Cl(A)` of `A`
+as an order over itself is the ideal class group of `A`, through `[I] ↦ [I] - [A]`. -/
+noncomputable def classGroupSelfEquiv (hA : ¬IsField A) :
+    Additive (ClassGroup A) ≃+ classGroup A K A :=
+  .ofBijective (ofIdealClass A K hA) ⟨ofIdealClass_injective hA, ofIdealClass_surjective hA⟩
+
+/-- The identification of ideal classes with locally free classes is `ofIdealClass`. -/
+@[simp]
+theorem coe_classGroupSelfEquiv (hA : ¬IsField A) :
+    ⇑(classGroupSelfEquiv A K hA) = ofIdealClass A K hA :=
+  (rfl)
 
 end LocallyFree
 
