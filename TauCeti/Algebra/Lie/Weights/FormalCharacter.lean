@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.Weights.Prod
 public import TauCeti.Algebra.Lie.Weights.TensorProduct
 public import TauCeti.Algebra.Lie.Weights.WeylInvariance
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
+public import TauCeti.LinearAlgebra.Dimension.TensorProduct
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 -- Non-public: this supplies the inputs of the direct-sum additivity proof, never the vocabulary of
 -- a statement.
@@ -372,47 +373,12 @@ section TensorProduct
 
 open TensorProduct
 
-/-- The tensor product of two subspaces has dimension the product of their dimensions. -/
-private theorem finrank_map₂_mk {K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
-    [AddCommGroup N] [Module K N] (P : Submodule K M) (Q : Submodule K N) :
-    finrank K (Submodule.map₂ (TensorProduct.mk K M N) P Q) = finrank K P * finrank K Q := by
-  rw [← TensorProduct.range_mapIncl,
-    LinearMap.finrank_range_of_inj (Module.Flat.tensorProduct_mapIncl_injective_of_right P Q),
-    Module.finrank_tensorProduct]
-
 variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁} [Field K] [LieRing L]
   [LieAlgebra K L] [LieRing.IsNilpotent L]
   [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [LinearWeights K L M]
   [FiniteDimensional K M] [IsTriangularizable K L M]
   [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N] [LinearWeights K L N]
   [FiniteDimensional K N] [IsTriangularizable K L N]
-
-open scoped Classical in
-/-- The generalized `χ`-weight space of a tensor product is the supremum of the tensor products of
-generalized weight spaces over the pairs of weights summing to `χ`. -/
-private theorem genWeightSpace_toSubmodule_tensorProduct (χ : Dual K L) :
-    (genWeightSpace (M ⊗[K] N) (χ : L → K)).toSubmodule =
-      ⨆ p : {p : Weight K L M × Weight K L N // (p.1 : Dual K L) + (p.2 : Dual K L) = χ},
-        Submodule.map₂ (TensorProduct.mk K M N) (genWeightSpace M p.1.1).toSubmodule
-          (genWeightSpace N p.1.2).toSubmodule := by
-  apply le_antisymm
-  · rw [genWeightSpace_tensorProduct_eq_iSup]
-    refine iSup₂_le fun μ ν ↦ iSup_le fun hμν ↦ ?_
-    by_cases hμ : genWeightSpace M μ = ⊥
-    · simp [hμ]
-    by_cases hν : genWeightSpace N ν = ⊥
-    · simp [hν]
-    let m : Weight K L M := ⟨μ, hμ⟩
-    let n : Weight K L N := ⟨ν, hν⟩
-    have hadd : (m : Dual K L) + (n : Dual K L) = χ := by
-      ext x
-      simpa [m, n] using congrFun hμν x
-    exact le_iSup_of_le ⟨(m, n), hadd⟩ le_rfl
-  · refine iSup_le fun p ↦ ?_
-    have hp : (p.1.1 : L → K) + (p.1.2 : L → K) = (χ : L → K) := by
-      exact congrArg (fun f : Dual K L ↦ (f : L → K)) p.property
-    rw [← hp]
-    exact map₂_mk_genWeightSpace_le M N p.1.1 p.1.2
 
 open scoped Classical in
 /-- **Weight multiplicities in a tensor product are the convolution of the multiplicities in its
@@ -455,7 +421,7 @@ theorem finrank_genWeightSpace_tensorProduct (χ : Dual K L) :
     -- `finrank`; restating the goal makes those instances use the displayed `map₂` submodule.
     change finrank K (Submodule.map₂ (TensorProduct.mk K M N)
       (genWeightSpace M p.1).toSubmodule (genWeightSpace N p.2).toSubmodule) = _
-    rw [finrank_map₂_mk]
+    rw [Submodule.finrank_map₂_mk]
     rfl
   · simp only [hp, ite_false]
 
