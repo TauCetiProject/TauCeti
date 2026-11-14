@@ -49,8 +49,8 @@ pairs by their finite algebras, and by their integral algebras.
   idempotents.
 * `TauCeti.IsIntegralClosure.isLocalRing` and `TauCeti.IsIntegralClosure.henselianLocalRing`: any
   model of the integral closure of a henselian local ring in a domain is a henselian local ring.
-* `TauCeti.HenselianLocalRing.of_isIntegral` and `TauCeti.HenselianLocalRing.of_finite`: an
-  integral (in particular finite) local algebra over a henselian local ring is henselian.
+* `TauCeti.HenselianLocalRing.of_isIntegral`: an integral (in particular finite) local algebra over
+  a henselian local ring is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
   `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
   if and only if reduction modulo `IS` is a bijection on idempotents for every finite, or every
@@ -260,12 +260,6 @@ theorem HenselianLocalRing.of_isIntegral (R S : Type*) [CommRing R] [CommRing S]
   have : HenselianRing S I.radical := inferInstance
   rw [hrad] at this
   exact HenselianRing.henselianLocalRing S
-
-/-- A finite local algebra over a henselian local ring is henselian. -/
-@[stacks 04GH "(2)"]
-theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
-    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S] : HenselianLocalRing S :=
-  of_isIntegral R S
 
 /-- A domain integral over a henselian local ring is a henselian local ring. -/
 theorem HenselianLocalRing.of_isDomain_of_isIntegral (R S : Type*) [CommRing R]

@@ -105,6 +105,34 @@ theorem algEquivOfIsStrictlyHenselianLocalRing_symm_apply (r : R) :
     (algEquivOfIsStrictlyHenselianLocalRing R Ω).symm r = algebraMap R (algebra R Ω) r :=
   (rfl)
 
+/-- Applying `algebraMap R (algebra R Ω)` after `algEquivOfIsStrictlyHenselianLocalRing` is the
+identity on `algebra R Ω`. -/
+@[simp]
+theorem algebraMap_algEquivOfIsStrictlyHenselianLocalRing (x : algebra R Ω) :
+    algebraMap R (algebra R Ω) (algEquivOfIsStrictlyHenselianLocalRing R Ω x) = x :=
+  (algEquivOfIsStrictlyHenselianLocalRing R Ω).symm_apply_apply x
+
+/-- Under `ResidueField R → Ω`, the residue of `algEquivOfIsStrictlyHenselianLocalRing R Ω x` is
+`toTarget R Ω x`. -/
+@[simp]
+theorem algebraMap_residue_algEquivOfIsStrictlyHenselianLocalRing (x : algebra R Ω) :
+    algebraMap (ResidueField R) Ω (residue R (algEquivOfIsStrictlyHenselianLocalRing R Ω x)) =
+      toTarget R Ω x := by
+  have := IsStrictlyHenselianLocalRing.isSepClosed_residueField (S := R)
+  let f := AlgEquiv.ofBijective (IsScalarTower.toAlgHom R (ResidueField R) Ω)
+    (IsSepClosed.algebraMap_bijective (ResidueField R) Ω)
+  have hf (y : ResidueField R) : algebraMap (ResidueField R) Ω y = f y := rfl
+  rw [hf]
+  simp [algEquivOfIsStrictlyHenselianLocalRing, f]
+
+/-- Sending `algEquivOfIsStrictlyHenselianLocalRing R Ω x` along `algebraMap R Ω` recovers
+`toTarget R Ω x`. -/
+@[simp]
+theorem algebraMap_algEquivOfIsStrictlyHenselianLocalRing_eq_toTarget (x : algebra R Ω) :
+    algebraMap R Ω (algEquivOfIsStrictlyHenselianLocalRing R Ω x) = toTarget R Ω x := by
+  rw [IsScalarTower.algebraMap_apply R (ResidueField R) Ω, ResidueField.algebraMap_eq,
+    algebraMap_residue_algEquivOfIsStrictlyHenselianLocalRing]
+
 end StrictlyHenselian
 
 end TauCeti.StrictHenselization
