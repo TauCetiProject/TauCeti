@@ -7,12 +7,12 @@ module
 
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Isogeny
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Supersingular
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
-import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Formal-group height two for elliptic curves and Landweber regularity
@@ -191,9 +191,10 @@ universe u
 
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic] {p : ℕ}
 
-/-- **Higher Landweber height ideals vanish for elliptic curves**: for any elliptic Weierstrass
-curve over a commutative ring `R`, any prime `p`, and any `n ≥ 3`, the height ideal `I_n(Ê)` is the
-unit ideal, since every specialization to a field of characteristic `p` has height at most `2`. -/
+/-- **Higher Landweber height ideals are the unit ideal for elliptic curves**: for any elliptic
+Weierstrass curve over a commutative ring `R`, any prime `p`, and any `n ≥ 3`, the height ideal
+`I_n(Ê)` is the unit ideal, since every specialization to a field of characteristic `p` has height
+at most `2`. -/
 theorem heightIdeal_formalGroup_eq_top (hp : p.Prime) {n : ℕ} (hn : 3 ≤ n) :
     (formalGroup W).heightIdeal p n = ⊤ := by
   have : Fact p.Prime := ⟨hp⟩
@@ -212,42 +213,16 @@ theorem isUnit_mk_coeff_nsmulSeries_formalGroup_pow_two (hp : p.Prime) :
   ((formalGroup W).heightIdeal_succ_eq_top_iff hp 2).mp
     (W.heightIdeal_formalGroup_eq_top hp le_rfl)
 
-/-- **Landweber's `v₂` is a unit modulo `(p, A)`**, where `A` is the Hasse invariant (the
-coefficient of `Tᵖ⁻¹` in the invariant differential of `Ê`). -/
+/-- **Landweber's `v₂` is a unit modulo `(p, A)`**: for any elliptic Weierstrass curve `W` over a
+commutative ring `R` and any prime `p`, the coefficient of `T^(p²)` in `[p]_Ê` is a unit modulo
+`(p, A)`, where `A` is the Hasse invariant (the coefficient of `Tᵖ⁻¹` in the invariant differential
+of `Ê`). -/
 theorem isUnit_mk_span_coeff_nsmulSeries_formalGroup_pow_two (hp : p.Prime) :
     IsUnit (Ideal.Quotient.mk
       (Ideal.span {(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential})
       (PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p))) := by
   rw [← W.heightIdeal_formalGroup_two hp]
   exact W.isUnit_mk_coeff_nsmulSeries_formalGroup_pow_two hp
-
-/-- On a module annihilated by an ideal `I`, any list whose head is a unit modulo `I` is weakly
-regular, since multiplication by the head is invertible and its quotient is trivial. -/
-private theorem isWeaklyRegular_cons_of_isUnit_mk {I : Ideal R} {M : Type*} [AddCommGroup M]
-    [Module R M] {v : R} (hv : IsUnit (Ideal.Quotient.mk I v)) (rs : List R) :
-    IsWeaklyRegular (M ⧸ (I • ⊤ : Submodule R M)) (v :: rs) := by
-  obtain ⟨u, hu⟩ := hv
-  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective u.inv
-  have hmem : 1 - r * v ∈ I := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, map_mul, hr, ← hu, u.inv_val,
-      sub_self]
-  have hann (x : M ⧸ (I • ⊤ : Submodule R M)) : (1 - r * v) • x = 0 := by
-    induction x using Submodule.Quotient.induction_on with
-    | H m =>
-      exact (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.smul_mem_smul hmem trivial)
-  have hinv (x : M ⧸ (I • ⊤ : Submodule R M)) : r • (v • x) = x := by
-    calc r • (v • x) = (1 - r * v) • x + (r * v) • x := by rw [hann, zero_add, mul_smul]
-      _ = ((1 - r * v) + r * v) • x := (add_smul _ _ x).symm
-      _ = x := by rw [sub_add_cancel, one_smul]
-  refine (isWeaklyRegular_cons_iff _ v rs).mpr ⟨fun x y hxy ↦ ?_, ?_⟩
-  · dsimp only at hxy
-    rw [← hinv x, hxy, hinv y]
-  · have : Subsingleton (QuotSMulTop v (M ⧸ (I • ⊤ : Submodule R M))) := by
-      rw [Submodule.Quotient.subsingleton_iff, eq_top_iff]
-      intro x _
-      rw [show x = v • (r • x) by rw [smul_comm, hinv]]
-      exact Submodule.smul_mem_pointwise_smul (r • x) v ⊤ trivial
-    exact IsWeaklyRegular.of_subsingleton rs
 
 /-- **Direct regular-sequence Landweber criterion for an elliptic curve.** For `m ≥ 2`, a prime
 `p`, an elliptic curve `W` over `R`, and an `R`-module `M`, the Landweber sequence
@@ -260,47 +235,16 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff (hp : p.Prime) (M
           PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) ↔
       IsWeaklyRegular M
         [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  set g : ℕ → R := fun j ↦ PowerSeries.coeff (p ^ j) ((formalGroup W).nsmulSeries p)
-  have hg0 : g 0 = (p : R) := by simp [g, pow_zero, (formalGroup W).coeff_one_nsmulSeries]
-  have hg1 : g 1 = PowerSeries.coeff p ((formalGroup W).nsmulSeries p) := by simp [g]
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hm
-  have hsplit : (List.ofFn fun i : Fin (2 + k) ↦ g i) =
-      [(p : R), PowerSeries.coeff p ((formalGroup W).nsmulSeries p)] ++
-        List.ofFn fun j : Fin k ↦ g (2 + j) := by
-    rw [List.ofFn_add, List.ofFn_succ, List.ofFn_succ, List.ofFn_zero]
-    simp [hg0, hg1]
-  change IsWeaklyRegular M (List.ofFn fun i : Fin (2 + k) ↦ g i) ↔ _
-  rw [hsplit, isWeaklyRegular_append_iff, ← W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M]
-  refine and_iff_left ?_
-  have hI : Ideal.ofList [(p : R), PowerSeries.coeff p ((formalGroup W).nsmulSeries p)] =
-      (formalGroup W).heightIdeal p 2 := by
-    rw [Ideal.ofList_cons, Ideal.ofList_singleton, (formalGroup W).heightIdeal_succ hp 1,
-      pow_one, (formalGroup W).heightIdeal_one hp]
-  rw [hI]
-  rcases k with _ | k
-  · exact IsWeaklyRegular.nil R _
-  · rw [List.ofFn_succ]
-    exact isWeaklyRegular_cons_of_isUnit_mk
-      (W.isUnit_mk_coeff_nsmulSeries_formalGroup_pow_two hp) _
+  rw [(formalGroup W).isWeaklyRegular_ofFn_coeff_nsmulSeries_iff_of_heightIdeal_succ_eq_top
+    hp M hm (W.heightIdeal_formalGroup_eq_top hp le_rfl),
+    List.ofFn_succ, List.ofFn_succ, List.ofFn_zero]
+  simp only [Fin.val_zero, Fin.val_succ, zero_add, pow_zero, pow_one,
+    (formalGroup W).coeff_one_nsmulSeries]
+  exact W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M
 
 end Ring
 
 namespace Universal
-
-/-- On `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`, the sequence `(p, A)` formed by `p` and the Hasse invariant of
-the universal elliptic Weierstrass curve is weakly regular for every prime `p`. -/
-theorem isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve {p : ℕ} (hp : p.Prime) :
-    IsWeaklyRegular EllipticRing
-      [(p : EllipticRing),
-        PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential] := by
-  have hreg := (isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular
-  have hloc := hreg.of_isLocalization EllipticRing (Submonoid.powers curve.Δ)
-  have hA : algebraMap (MvPolynomial Coeff ℤ) EllipticRing
-      (PowerSeries.coeff (p - 1) (formalGroup curve).invariantDifferential) =
-      PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential := by
-    rw [← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, ← map_formalGroup]
-    rfl
-  simpa [hA] using hloc
 
 /-- **Landweber regularity of the universal elliptic Weierstrass curve.** For every prime `p` and
 every `m : ℕ`, the Landweber sequence `(v₀, v₁, …, v_(m-1))` of `formalGroup ellipticCurve` is
@@ -340,8 +284,7 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat {R : Type*} [
     IsWeaklyRegular R
       (List.ofFn fun i : Fin m ↦
         PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) := by
-  let _ : Algebra Universal.EllipticRing R := W.specializeElliptic.toAlgebra
-  have : Module.Flat Universal.EllipticRing R := hflat
+  algebraize [W.specializeElliptic]
   have h :=
     (Universal.isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_ellipticCurve hp m).of_flat
       (S := R)
@@ -349,8 +292,7 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_of_flat {R : Type*} [
       algebraMap Universal.EllipticRing R
         (PowerSeries.coeff (p ^ j) ((formalGroup Universal.ellipticCurve).nsmulSeries p)) =
       PowerSeries.coeff (p ^ j) ((formalGroup W).nsmulSeries p) := by
-    change W.specializeElliptic _ = _
-    rw [← PowerSeries.coeff_map, FormalGroup.map_nsmulSeries,
+    rw [RingHom.algebraMap_toAlgebra, ← PowerSeries.coeff_map, FormalGroup.map_nsmulSeries,
       ← Universal.ellipticCurve.map_formalGroup W.specializeElliptic, W.map_specializeElliptic]
   simpa [List.map_ofFn, Function.comp_def, hmap] using h
 

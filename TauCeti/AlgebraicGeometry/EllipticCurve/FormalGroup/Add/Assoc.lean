@@ -506,7 +506,7 @@ private theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
 
 The `y`-coordinate `-1 / w(q)` already pins down `w(q)`, and the `x`-coordinate `q / w(q)` then
 pins down `q`. -/
-private theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
+theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q₁ q₂ : MvPowerSeries σ O} (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0)
     (hq₁0 : q₁ ≠ 0) (hq₂0 : q₂ ≠ 0)
     (h : W.thetaPoint hΔ h₁ hq₁0 = W.thetaPoint hΔ h₂ hq₂0) : q₁ = q₂ := by

@@ -43,6 +43,9 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   span of a range.
 * `RingTheory.Sequence.IsWeaklyRegular.of_subsingleton`: every finite sequence is weakly regular
   on a module with at most one element.
+* `RingTheory.Sequence.IsWeaklyRegular.cons_of_isUnit` and
+  `RingTheory.Sequence.IsWeaklyRegular.cons_of_isUnit_mk`: any finite sequence whose head is a
+  unit (or a unit modulo `I`, on `M ⧸ I • ⊤`) is weakly regular.
 * `TauCeti.isSMulRegular_quotSMulTop_iff`: `b` is regular on `M ⧸ a M` exactly when `a c = b m`
   forces `m ∈ a M`.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow`: for a weakly `M`-regular
@@ -98,6 +101,22 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
 theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton [Subsingleton M] (rs : List R) :
     IsWeaklyRegular M rs :=
   ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
+
+/-- Any finite sequence whose head is a unit is weakly regular: the head acts regularly and
+annihilates the quotient `M ⧸ v • ⊤`. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.cons_of_isUnit {v : R} (hv : IsUnit v) (rs : List R) :
+    IsWeaklyRegular M (v :: rs) := by
+  have : Subsingleton (QuotSMulTop v M) :=
+    Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hv)
+  exact (isWeaklyRegular_cons_iff M v rs).2 ⟨hv.isSMulRegular M, .of_subsingleton rs⟩
+
+/-- On the quotient `M ⧸ I • ⊤`, any finite sequence whose head is a unit modulo `I` is weakly
+regular. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.cons_of_isUnit_mk {I : Ideal R} {v : R}
+    (hv : IsUnit (Ideal.Quotient.mk I v)) (rs : List R) :
+    IsWeaklyRegular (M ⧸ (I • ⊤ : Submodule R M)) (v :: rs) :=
+  (isWeaklyRegular_map_algebraMap_iff (R ⧸ I) (M ⧸ (I • ⊤ : Submodule R M)) (v :: rs)).1
+    (IsWeaklyRegular.cons_of_isUnit hv _)
 
 /-- An element `b` is regular on `M ⧸ a M` exactly when `a c = b m` forces `m ∈ a M`. -/
 theorem TauCeti.isSMulRegular_quotSMulTop_iff {a b : R} :

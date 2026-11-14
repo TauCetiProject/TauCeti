@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.Regular.Flat
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
@@ -61,8 +62,10 @@ conditions in heights `0` and `1` for the formal group of the universal curve.
 * `WeierstrassCurve.Universal.not_natCast_dvd_coeff_invariantDifferential` and
   `WeierstrassCurve.Universal.heightIdeal_formalGroup_ne_top`: the universal Hasse invariant is
   nonzero modulo `p`, and the height ideals of the universal curve are proper.
-* `WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential`: `p` and the Hasse
-  invariant form a regular sequence on `ℤ[a₁, a₂, a₃, a₄, a₆]`.
+* `WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential` and
+  `WeierstrassCurve.Universal.isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve`:
+  `p` and the Hasse invariant form a regular sequence on `ℤ[a₁, a₂, a₃, a₄, a₆]` and a weakly
+  regular sequence on `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`.
 
 ## References
 
@@ -100,15 +103,9 @@ theorem heightIdeal_formalGroup_two_eq_top_iff (hp : p.Prime) :
     (formalGroup W).heightIdeal p 2 = ⊤ ↔
       IsUnit (Ideal.Quotient.mk (Ideal.span {(p : R)})
         (PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential)) := by
-  set A := PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential
-  set I := Ideal.span {(p : R)}
-  -- `(p, A)` is the preimage of the ideal `(A)` of `R ⧸ (p)`
-  have h : Ideal.span {(p : R), A} = (Ideal.span {Ideal.Quotient.mk I A}).comap
-      (Ideal.Quotient.mk I) := by
-    rw [← Set.image_singleton (f := Ideal.Quotient.mk I), ← Ideal.map_span,
-      Ideal.comap_map_of_surjective'
-      _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, Ideal.span_insert, sup_comm]
-  rw [heightIdeal_formalGroup_two W hp, h, ← Ideal.span_singleton_eq_top, Ideal.comap_eq_top_iff]
+  rw [(formalGroup W).heightIdeal_succ_eq_top_iff hp 1, (formalGroup W).heightIdeal_one hp,
+    pow_one, Ideal.Quotient.eq.mpr (Ideal.mem_span_singleton.mpr
+      (W.natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferential hp))]
 
 /-- **Landweber's conditions in heights `0` and `1` through the Hasse invariant.** For a prime
 `p` and an `R`-module `M`, the sequence `(p, v₁)` of the formal group of a Weierstrass curve is
@@ -219,5 +216,20 @@ theorem isRegular_natCast_coeff_invariantDifferential (hp : p.Prime) :
     rw [Ideal.ofList_cons, Ideal.ofList_singleton, ← Ideal.span_insert,
       ← heightIdeal_formalGroup_two curve hp, Ideal.smul_eq_mul, Ideal.mul_top]
     exact (heightIdeal_formalGroup_ne_top hp.one_lt 2).symm
+
+/-- On `ℤ[a₁, a₂, a₃, a₄, a₆][Δ⁻¹]`, the sequence `(p, A)` formed by `p` and the Hasse invariant of
+the universal elliptic Weierstrass curve is weakly regular for every prime `p`. -/
+theorem isWeaklyRegular_natCast_coeff_invariantDifferential_ellipticCurve (hp : p.Prime) :
+    IsWeaklyRegular EllipticRing
+      [(p : EllipticRing),
+        PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential] := by
+  have hreg := (isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular
+  have hloc := hreg.of_isLocalization EllipticRing (Submonoid.powers curve.Δ)
+  have hA : algebraMap (MvPolynomial Coeff ℤ) EllipticRing
+      (PowerSeries.coeff (p - 1) (formalGroup curve).invariantDifferential) =
+      PowerSeries.coeff (p - 1) (formalGroup ellipticCurve).invariantDifferential := by
+    rw [← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, ← map_formalGroup]
+    rfl
+  simpa [hA] using hloc
 
 end WeierstrassCurve.Universal

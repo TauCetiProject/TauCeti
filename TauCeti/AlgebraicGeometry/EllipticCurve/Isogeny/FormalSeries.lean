@@ -6,26 +6,41 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Basic
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IsElliptic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RelativeFrobenius.Factorisation
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Unramified
 
 /-!
 # The formal power series of an isogeny
 
-For an isogeny `φ : W₁ → W₂`, expand `φ*(-x₂/y₂)` at infinity on `W₁` in the
-parameter `z₁ = -x₁/y₁`. Pointedness implies that this Laurent series is a power series
-with zero constant coefficient. It is nonzero, including for inseparable isogenies.
+For an isogeny `φ : W₁ → W₂` of Weierstrass curves over a field `K`, expand `φ*(-x₂/y₂)` at
+infinity on `W₁` in the parameter `z₁ = -x₁/y₁`. Pointedness implies that this Laurent series is a
+power series with zero constant coefficient. It is nonzero, including for inseparable isogenies.
 
-`Isogeny.formalSeries` is this actual expansion, characterized by
-`Isogeny.coe_formalSeries`. Pullback of every rational function is Laurent substitution
-by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), and identity and
-composition induce identity and composition of series. This supplies the local action
-from the actual function-field map, without assuming a formal-group homomorphism or a
-convergence theorem.
+`Isogeny.formalSeries` is this actual expansion, characterized by `Isogeny.coe_formalSeries`.
+Pullback of every rational function is Laurent substitution by this series
+(`Isogeny.functionFieldLaurentExpansion_fieldPullback`), so an isogeny is determined by its formal
+series (`Isogeny.formalSeries_injective`), identity and composition induce identity and composition
+of series, base change along `σ : K →+* L` maps the coefficients (`Isogeny.formalSeries_map`), and
+the `n`-fold relative Frobenius induces `X ^ p ^ n`
+(`Isogeny.formalSeries_iterateRelativeFrobeniusIsogeny`), all without assuming ellipticity.
+
+When the target curve `W₂` is elliptic, a separable isogeny is unramified at infinity
+(`TauCeti.Isogeny.ramificationIdx_eq_one`), so `φ.formalSeries` has order `1`. Factoring an
+arbitrary isogeny as `φ = χ ∘ F^r` with `χ` separable and `p ^ r = deg_i φ` gives
+`φ.formalSeries.order = φ.inseparableDegree` (`Isogeny.order_formalSeries`), in all characteristics
+and without assuming `K` is perfect; in particular `φ` is separable if and only if the linear
+coefficient of `φ.formalSeries` is nonzero
+(`Isogeny.coeff_one_formalSeries_ne_zero_iff_isSeparable`).
 
 ## References
 
-* J. H. Silverman, *The Arithmetic of Elliptic Curves*, IV.4.
+* [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.11–12, II.4.2,
+  III.4.10, III.5 and IV.4.
 -/
 
 public section
@@ -34,6 +49,8 @@ open WeierstrassCurve HahnSeries
 open scoped LaurentSeries PowerSeries WithZero
 
 namespace TauCeti.Isogeny
+
+section Basic
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K}
   (φ : Isogeny W₁.toAffine W₂.toAffine)
@@ -157,6 +174,28 @@ theorem functionFieldLaurentExpansion_fieldPullback (f : W₂.toAffine.FunctionF
     (Affine.FunctionField.ringHom_ext (fun c ↦ by simp) hX hY)
   exact DFunLike.congr_fun hAB f
 
+/-- An isogeny is determined by its formal power series. -/
+theorem formalSeries_injective :
+    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
+  intro φ₁ φ₂ h
+  have hsub {g₁ g₂ : K⟦X⟧} (hg : g₁ = g₂) (hc₁ : PowerSeries.constantCoeff g₁ = 0) (hn₁ : g₁ ≠ 0)
+      (hc₂ : PowerSeries.constantCoeff g₂ = 0) (hn₂ : g₂ ≠ 0) :
+      LaurentSeries.substAlgHom hc₁ hn₁ = LaurentSeries.substAlgHom hc₂ hn₂ := by
+    subst hg
+    rfl
+  refine Isogeny.ext (AlgHom.ext fun x ↦ W₁.functionFieldLaurentExpansion.injective ?_)
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  rw [← fieldPullback_algebraMap, ← fieldPullback_algebraMap,
+    φ₁.functionFieldLaurentExpansion_fieldPullback,
+    φ₂.functionFieldLaurentExpansion_fieldPullback,
+    hsub h]
+
+/-- Two isogenies are equal if and only if they have the same formal power series. -/
+@[simp]
+theorem formalSeries_inj {φ₁ φ₂ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ₁.formalSeries = φ₂.formalSeries ↔ φ₁ = φ₂ :=
+  formalSeries_injective.eq_iff
+
 /-- Composition of isogenies induces composition of their formal series. -/
 @[simp]
 theorem formalSeries_comp {W₃ : WeierstrassCurve K}
@@ -166,5 +205,117 @@ theorem formalSeries_comp {W₃ : WeierstrassCurve K}
   rw [coe_formalSeries, comp_fieldPullback, AlgHom.comp_apply,
     φ.functionFieldLaurentExpansion_fieldPullback,
     ← ψ.coe_formalSeries, LaurentSeries.substAlgHom_coe]
+
+end Basic
+
+/-! ### Base change and relative Frobenius -/
+
+section BaseChangeAndFrobenius
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- **Base change of an isogeny maps the coefficients of its formal series.** -/
+@[simp]
+theorem formalSeries_map {W₁ W₂ : WeierstrassCurve K} (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (σ : K →+* L) :
+    (φ.map σ).formalSeries = PowerSeries.map σ φ.formalSeries := by
+  apply (formalSeries_eq_iff _ _).mpr
+  rw [← Affine.FunctionField.map_neg_genericX_div_genericY, map_fieldPullback_map,
+    functionFieldLaurentExpansion_map, ← φ.coe_formalSeries, HahnSeries.mapRingHom_apply,
+    map_ofPowerSeries]
+
+/-- **The `n`-fold relative Frobenius induces `X ^ p ^ n` on the formal parameter.** -/
+@[simp]
+theorem formalSeries_iterateRelativeFrobeniusIsogeny (p : ℕ) [ExpChar K p]
+    (W : WeierstrassCurve K) (n : ℕ) :
+    (iterateRelativeFrobeniusIsogeny p W.toAffine n).formalSeries = PowerSeries.X ^ p ^ n := by
+  apply (formalSeries_eq_iff _ _).mpr
+  rw [← Affine.FunctionField.map_neg_genericX_div_genericY,
+    fieldPullback_iterateRelativeFrobeniusIsogeny_map, map_pow, map_pow,
+    functionFieldLaurentExpansion_neg_genericX_div_genericY]
+
+/-- **The relative Frobenius isogeny induces `X ^ p` on the formal parameter.** -/
+@[simp]
+theorem formalSeries_relativeFrobeniusIsogeny (p : ℕ) [ExpChar K p] (W : WeierstrassCurve K) :
+    (relativeFrobeniusIsogeny p W.toAffine).formalSeries = PowerSeries.X ^ p := by
+  apply (formalSeries_eq_iff _ _).mpr
+  rw [← Affine.FunctionField.map_neg_genericX_div_genericY,
+    fieldPullback_relativeFrobeniusIsogeny_map, map_pow, map_pow,
+    functionFieldLaurentExpansion_neg_genericX_div_genericY]
+
+end BaseChangeAndFrobenius
+
+/-! ### Order and inseparable degree -/
+
+section Order
+
+variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₂.IsElliptic]
+  (φ : Isogeny W₁.toAffine W₂.toAffine)
+
+/-- **A separable isogeny onto an elliptic curve has formal series of order `1`**, since it is
+unramified at infinity. -/
+theorem order_formalSeries_eq_one_of_isSeparable
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] :
+    φ.formalSeries.order = 1 := by
+  have := φ.isElliptic
+  let _ : Algebra W₂.toAffine.FunctionField W₁.toAffine.FunctionField :=
+    φ.fieldPullback.toRingHom.toAlgebra
+  have hfp : ∀ z, algebraMap W₂.toAffine.FunctionField W₁.toAffine.FunctionField z =
+      φ.fieldPullback z := fun _ ↦ rfl
+  have := φ.isScalarTower_of_algebraMap_eq_fieldPullback hfp
+  have := φ.finiteDimensional_functionField hfp
+  have hrest : (Place.infinity W₁.toAffine).restrict K W₂.toAffine.FunctionField =
+      Place.infinity W₂.toAffine := by
+    rw [Place.restrict_eq_iff_isEquiv_comap, Place.valuation_infinity, Place.valuation_infinity]
+    exact φ.isEquiv_comap_infinityPlace
+  have hval := Place.valuation_algebraMap_restrict K W₂.toAffine.FunctionField
+    (Place.infinity W₁.toAffine) (-W₂.toAffine.genericX / W₂.toAffine.genericY)
+  rw [hfp, hrest, φ.ramificationIdx_eq_one hfp (Place.infinity W₁.toAffine), pow_one,
+    Place.valuation_infinity, Place.valuation_infinity,
+    Affine.infinityPlace_neg_genericX_div_genericY,
+    ← W₁.valuation_functionFieldLaurentExpansion, ← φ.coe_formalSeries,
+    TauCeti.LaurentSeries.valuation_coe φ.formalSeries_ne_zero] at hval
+  have hord : φ.formalSeries.order.toNat = 1 := by
+    have hinj := WithZero.exp_inj.mp hval
+    omega
+  rw [← PowerSeries.coe_toNat_order φ.formalSeries_ne_zero, hord, Nat.cast_one]
+
+/-- **For an elliptic target `W₂`, the order of an isogeny's formal power series equals its
+inseparable degree** (Silverman II.2.12, III.4.10(c) and IV.4). -/
+@[simp]
+theorem order_formalSeries : φ.formalSeries.order = φ.inseparableDegree := by
+  set p := ringExpChar K
+  obtain ⟨r, χ, hsep, hχ⟩ := exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq p φ
+  rw [φ.inseparableDegree_eq_pow_of_comp_iterateRelativeFrobeniusIsogeny_eq hχ, ← hχ,
+    formalSeries_comp (iterateRelativeFrobeniusIsogeny p W₁.toAffine r) χ,
+    PowerSeries.order_subst
+      (iterateRelativeFrobeniusIsogeny p W₁.toAffine r).constantCoeff_formalSeries,
+    formalSeries_iterateRelativeFrobeniusIsogeny, χ.order_formalSeries_eq_one_of_isSeparable,
+    mul_one, PowerSeries.order_X_pow]
+
+/-- **An isogeny onto an elliptic curve has formal series of order `1` if and only if it is
+separable.** -/
+theorem order_formalSeries_eq_one_iff_isSeparable :
+    φ.formalSeries.order = 1 ↔
+      Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField := by
+  rw [φ.order_formalSeries, ← Nat.cast_one, Nat.cast_inj,
+    φ.inseparableDegree_eq_one_iff_isSeparable]
+
+/-- **An isogeny onto an elliptic curve is separable if and only if the linear coefficient of its
+formal series is nonzero** (Silverman II.4.2(c), III.5 and IV.4.2(b)). -/
+theorem coeff_one_formalSeries_ne_zero_iff_isSeparable :
+    PowerSeries.coeff 1 φ.formalSeries ≠ 0 ↔
+      Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField := by
+  rw [← φ.order_formalSeries_eq_one_iff_isSeparable]
+  constructor
+  · intro h1
+    refine le_antisymm ?_ (PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr
+      φ.constantCoeff_formalSeries)
+    exact PowerSeries.order_le (n := 1) h1
+  · intro hord
+    have hto : φ.formalSeries.order.toNat = 1 := by simp [hord]
+    exact hto ▸ PowerSeries.coeff_order φ.formalSeries_ne_zero
+
+end Order
 
 end TauCeti.Isogeny
