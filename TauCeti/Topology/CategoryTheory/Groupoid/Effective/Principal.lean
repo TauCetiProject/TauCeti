@@ -21,15 +21,18 @@ effective (`ineffectiveKernel hs x = ⊥` for all `x`), this simply means `Subsi
 For a Hausdorff proper étale topological groupoid, the principal stratum is open and dense in the
 object space (`TauCeti.isOpen_setOf_ineffectiveKernel_eq_top`,
 `TauCeti.dense_setOf_ineffectiveKernel_eq_top`), and its image in the coarse space is open and
-dense (`TauCeti.isOpen_image_setOf_ineffectiveKernel_eq_top`,
-`TauCeti.dense_image_setOf_ineffectiveKernel_eq_top`). Passing to `TauCeti.EffectiveQuotient C`
-turns this locus into the open dense set of objects with trivial automorphism group
-(`TauCeti.EffectiveQuotient.isOpen_setOf_subsingleton_aut`,
+dense (`TauCeti.isOpen_image_isomorphismClassesMk_setOf_ineffectiveKernel_eq_top`,
+`TauCeti.dense_image_isomorphismClassesMk_setOf_ineffectiveKernel_eq_top`). Passing to
+`TauCeti.EffectiveQuotient C` turns this locus into the open dense set of objects with trivial
+automorphism group (`TauCeti.EffectiveQuotient.isOpen_setOf_subsingleton_aut`,
 `TauCeti.EffectiveQuotient.dense_setOf_subsingleton_aut`).
 
-No manifold structure is needed: openness and density hold purely topologically for any Hausdorff
-proper étale topological groupoid, without assuming smooth charts or closedness of ineffective
-arrows.
+No manifold structure is needed: local isotropy charts
+(`TauCeti.exists_isotropy_action_of_proper_source_target`) transport openness and density of the
+principal locus of a continuous finite group action on a Hausdorff space
+(`TauCeti.MulAction.isOpen_setOf_stabilizer_eq_germKernel`,
+`TauCeti.MulAction.dense_setOf_stabilizer_eq_germKernel`) directly to any Hausdorff proper étale
+topological groupoid, without assuming smooth charts or closedness of ineffective arrows.
 
 ## Main results
 
@@ -38,9 +41,9 @@ arrows.
 * `TauCeti.isOpen_setOf_ineffectiveKernel_eq_top` and
   `TauCeti.dense_setOf_ineffectiveKernel_eq_top`: the principal objects form a dense open subset in
   any Hausdorff proper étale topological groupoid.
-* `TauCeti.isOpen_image_setOf_ineffectiveKernel_eq_top` and
-  `TauCeti.dense_image_setOf_ineffectiveKernel_eq_top`: the principal coarse stratum is open and
-  dense in the coarse space.
+* `TauCeti.isOpen_image_isomorphismClassesMk_setOf_ineffectiveKernel_eq_top` and
+  `TauCeti.dense_image_isomorphismClassesMk_setOf_ineffectiveKernel_eq_top`: the principal coarse
+  stratum is open and dense in the coarse space.
 * `TauCeti.isOpen_setOf_subsingleton_aut` and `TauCeti.dense_setOf_subsingleton_aut`: when every
   ineffective kernel is trivial, the objects with trivial automorphism group form a dense open set.
 * `TauCeti.EffectiveQuotient.isOpen_setOf_subsingleton_aut` and
@@ -79,7 +82,7 @@ theorem ineffectiveKernel_eq_top_iff_subsingleton_aut {x : C} :
 
 /-- Under the object bijection with the effective quotient, the objects with trivial automorphism
 group pull back to the objects whose ineffective kernel is the whole isotropy group. -/
-theorem preimage_setOf_subsingleton_aut :
+theorem preimage_toEffectiveQuotient_obj_setOf_subsingleton_aut :
     (toEffectiveQuotient C).obj ⁻¹' {y : EffectiveQuotient C | Subsingleton (Aut y)} =
       {x : C | ineffectiveKernel hs x = ⊤} := by
   ext x
@@ -167,7 +170,7 @@ theorem dense_setOf_ineffectiveKernel_eq_top :
 
 /-- In a Hausdorff proper étale topological groupoid, the coarse image of the principal objects is
 open in the space of isomorphism classes. -/
-theorem isOpen_image_setOf_ineffectiveKernel_eq_top :
+theorem isOpen_image_isomorphismClassesMk_setOf_ineffectiveKernel_eq_top :
     IsOpen (_root_.Quotient.mk (isIsomorphicSetoid C) ''
       {x : C | ineffectiveKernel hs x = ⊤}) :=
   (isOpenQuotientMap_isomorphismClassesMk hs.continuous
@@ -176,7 +179,7 @@ theorem isOpen_image_setOf_ineffectiveKernel_eq_top :
 
 /-- In a Hausdorff proper étale topological groupoid, the coarse image of the principal objects is
 dense in the space of isomorphism classes. -/
-theorem dense_image_setOf_ineffectiveKernel_eq_top :
+theorem dense_image_isomorphismClassesMk_setOf_ineffectiveKernel_eq_top :
     Dense (_root_.Quotient.mk (isIsomorphicSetoid C) ''
       {x : C | ineffectiveKernel hs x = ⊤}) :=
   _root_.Quotient.mk_surjective.denseRange.dense_image continuous_quotient_mk'
@@ -214,7 +217,7 @@ theorem EffectiveQuotient.dense_setOf_subsingleton_aut :
 
 /-- In the effective quotient of a Hausdorff proper étale topological groupoid, the coarse image of
 the objects with trivial automorphism group is open. -/
-theorem EffectiveQuotient.isOpen_image_setOf_subsingleton_aut :
+theorem EffectiveQuotient.isOpen_image_isomorphismClassesMk_setOf_subsingleton_aut :
     IsOpen (_root_.Quotient.mk (isIsomorphicSetoid (EffectiveQuotient C)) ''
       {y : EffectiveQuotient C | Subsingleton (Aut y)}) := by
   let := EffectiveQuotient.isTopologicalGroupoid hs
@@ -225,7 +228,7 @@ theorem EffectiveQuotient.isOpen_image_setOf_subsingleton_aut :
 
 /-- In the effective quotient of a Hausdorff proper étale topological groupoid, the coarse image of
 the objects with trivial automorphism group is dense. -/
-theorem EffectiveQuotient.dense_image_setOf_subsingleton_aut :
+theorem EffectiveQuotient.dense_image_isomorphismClassesMk_setOf_subsingleton_aut :
     Dense (_root_.Quotient.mk (isIsomorphicSetoid (EffectiveQuotient C)) ''
       {y : EffectiveQuotient C | Subsingleton (Aut y)}) :=
   _root_.Quotient.mk_surjective.denseRange.dense_image continuous_quotient_mk'

@@ -58,7 +58,7 @@ groupoid.
   map is a local homeomorphism.
 * `IsLocalHomeomorph.of_isEmbedding_of_range_eq`: a local homeomorphism restricts to one along a
   pullback square of embeddings, such as the restriction to the full preimage of any subspace.
-* `isLocalHomeomorph_of_discreteTopology`: every map between discrete spaces is a local
+* `TauCeti.isLocalHomeomorph_of_discreteTopology`: every map between discrete spaces is a local
   homeomorphism.
 -/
 
@@ -278,7 +278,7 @@ theorem of_comp_of_surjective {X Y Z : Type*}
   rwa [Set.image_univ, hsurj.range_eq, ← isLocalHomeomorph_iff_isLocalHomeomorphOn_univ] at h
 
 /-- Every map between discrete spaces is a local homeomorphism. -/
-theorem _root_.isLocalHomeomorph_of_discreteTopology {X Y : Type*} [TopologicalSpace X]
+theorem _root_.TauCeti.isLocalHomeomorph_of_discreteTopology {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] [DiscreteTopology X] [DiscreteTopology Y] {f : X → Y} :
     IsLocalHomeomorph f :=
   isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun x ↦

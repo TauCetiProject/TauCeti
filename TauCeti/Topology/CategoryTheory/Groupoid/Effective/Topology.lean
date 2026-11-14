@@ -23,8 +23,10 @@ No Hausdorffness or properness is needed for the local-homeomorphism statements.
 countability descends directly along the open arrow quotient. The effective arrow space is
 Hausdorff precisely when the object space is Hausdorff and the ineffective arrows of `C` form
 a closed set (`TauCeti.EffectiveQuotient.t2Space_arrows_iff`). Because only unit arrows remain
-ineffective in the quotient, its ineffective kernels are trivial and effective reduction is
-idempotent (`TauCeti.EffectiveQuotient.isEquivalence_toEffectiveQuotient`).
+ineffective in the quotient, its ineffective kernels are trivial
+(`TauCeti.EffectiveQuotient.ineffectiveKernel_eq_bot`). Moreover, for any groupoid whose total
+arrows carry a topology, effective reduction is idempotent
+(`TauCeti.EffectiveQuotient.isEquivalence_toEffectiveQuotient`).
 
 ## References
 
@@ -351,18 +353,36 @@ theorem coarseCardIneffectiveKernel_eq_one
   induction q using _root_.Quotient.inductionOn with
   | h y => simp [ineffectiveKernel_eq_bot hs y]
 
-/-- Effective reduction of an already-reduced étale groupoid is faithful. -/
-theorem faithful_toEffectiveQuotient :
+omit hs [TopologicalSpace C] [IsTopologicalGroupoid C] in
+/-- Effective reduction of an effective quotient is faithful. -/
+instance faithful_toEffectiveQuotient :
     (toEffectiveQuotient (EffectiveQuotient C)).Faithful := by
-  let := isTopologicalGroupoid hs
-  exact (toEffectiveQuotient_faithful_iff (isLocalHomeomorph_source hs)).mpr
-    (ineffectiveKernel_eq_bot hs)
+  have hrel : ∀ (x y : EffectiveQuotient C) (f g : x ⟶ y),
+      germRel (EffectiveQuotient C) f g →
+        (𝟭 (EffectiveQuotient C)).map f = (𝟭 (EffectiveQuotient C)).map g := by
+    rintro ⟨x₀⟩ ⟨y₀⟩
+    change ∀ (f g : (toEffectiveQuotient C).obj x₀ ⟶ (toEffectiveQuotient C).obj y₀),
+      germRel (EffectiveQuotient C) f g →
+        (𝟭 (EffectiveQuotient C)).map f = (𝟭 (EffectiveQuotient C)).map g
+    intro f g hfg
+    obtain ⟨f₀, rfl⟩ := (toEffectiveQuotient C).map_surjective f
+    obtain ⟨g₀, rfl⟩ := (toEffectiveQuotient C).map_surjective g
+    refine CategoryTheory.Quotient.sound (germRel C) (germRel_iff.mpr ?_)
+    have ha : (toEffectiveQuotient C).toPrefunctor.mapTotal ⟨x₀, x₀, f₀ ≫ inv g₀⟩ ∈
+        ineffectiveArrows (EffectiveQuotient C) := by
+      simpa [Prefunctor.mapTotal, Functor.map_inv] using germRel_iff.mp hfg
+    exact mem_ineffectiveArrows_iff.mpr <|
+      (((isQuotientMap_mapTotal (C := C)).continuous.continuousAt.tendsto.eventually
+        (mem_ineffectiveArrows_iff.mp ha)).mono fun _ hc ↦
+          (objEquiv C).injective (by simpa using hc))
+  exact (CategoryTheory.Quotient.lift_spec (germRel (EffectiveQuotient C))
+    (𝟭 (EffectiveQuotient C)) hrel).faithful_of_comp
 
-/-- **Idempotence of effective reduction.** Applying `toEffectiveQuotient` a second time to an
-étale topological groupoid gives an equivalence of categories. -/
-theorem isEquivalence_toEffectiveQuotient :
+omit hs [TopologicalSpace C] [IsTopologicalGroupoid C] in
+/-- **Idempotence of effective reduction.** Applying `toEffectiveQuotient` a second time gives an
+equivalence of categories. -/
+instance isEquivalence_toEffectiveQuotient :
     (toEffectiveQuotient (EffectiveQuotient C)).IsEquivalence :=
-  have := faithful_toEffectiveQuotient hs
   {}
 
 end EffectiveQuotient

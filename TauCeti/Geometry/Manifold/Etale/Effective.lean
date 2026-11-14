@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Etale.IneffectiveKernel
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Principal
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Topology
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -423,9 +423,8 @@ theorem t2Space_arrows
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
     (ht : IsLocalDiffeomorph J I n (Quiver.Total.right : Quiver.Total C → C))
     (hn : 1 ≤ n) :
-    T2Space (Quiver.Total (EffectiveQuotient C)) := by
-  have : T2Space C := (IsTopologicalGroupoid.isEmbedding_unit C).t2Space
-  exact t2Space_arrows_of_isClosed_ineffectiveArrows hs.isLocalHomeomorph
+    T2Space (Quiver.Total (EffectiveQuotient C)) :=
+  t2Space_arrows_of_isClosed_ineffectiveArrows hs.isLocalHomeomorph
     (isClosed_ineffectiveArrows hp hs ht
       IsTopologicalGroupoid.continuous_unit IsTopologicalGroupoid.continuous_comp hn)
 

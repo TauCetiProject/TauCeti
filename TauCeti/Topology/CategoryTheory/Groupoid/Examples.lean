@@ -162,8 +162,10 @@ theorem target_eq_source :
 
 /-- The source map of the unit groupoid is a local homeomorphism. -/
 theorem isLocalHomeomorph_source :
-    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) :=
-  ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isLocalHomeomorph
+    IsLocalHomeomorph (Quiver.Total.left : Quiver.Total (Discrete X) → Discrete X) := by
+  convert ((arrowHomeomorph X).trans (objectHomeomorph X).symm).isLocalHomeomorph using 1
+  funext a
+  simp
 
 /-- The target map of the unit groupoid is a local homeomorphism. -/
 theorem isLocalHomeomorph_target :
@@ -174,9 +176,9 @@ theorem isLocalHomeomorph_target :
 theorem isProperMap_source_target [T2Space X] :
     IsProperMap fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right) := by
   have hli : Function.LeftInverse
-      (fun p : Discrete X × Discrete X ↦ (arrowHomeomorph X).symm p.1.as)
-      (fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right)) :=
-    fun a ↦ (arrowHomeomorph X).left_inv a
+      (fun p : Discrete X × Discrete X ↦ (arrowHomeomorph X).symm (objectHomeomorph X p.1))
+      (fun a : Quiver.Total (Discrete X) ↦ (a.left, a.right)) := fun a ↦ by
+    simp only [objectHomeomorph_apply, ← arrowHomeomorph_apply, Homeomorph.symm_apply_apply]
   refine (hli.isClosedEmbedding ?_ ?_).isProperMap
   · exact (arrowHomeomorph X).symm.continuous.comp
       ((objectHomeomorph X).continuous.comp continuous_fst)
