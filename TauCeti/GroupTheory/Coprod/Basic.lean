@@ -10,21 +10,49 @@ public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 
 /-!
-# Quotients of free products of two groups
+# Trivial factors and quotients of free products of two monoids
 
-Killing relators that lie in one free factor of a free product `G ∗ H` only affects that factor:
-for a set `R` of elements of `H`, the quotient of `G ∗ H` by the normal closure of `R` is the free
-product of `G` and the quotient of `H` by the normal closure of `R`.
+If one factor of a free product `M ∗ N` is trivial, the inclusion of the other factor is onto.
+
+Killing relators that lie in one free factor of a free product `G ∗ H` of groups only affects that
+factor: for a set `R` of elements of `H`, the quotient of `G ∗ H` by the normal closure of `R` is
+the free product of `G` and the quotient of `H` by the normal closure of `R`.
 
 ## Main definitions
 
 * `Monoid.Coprod.quotientNormalClosureInrEquiv R`: the isomorphism
   `(G ∗ H) ⧸ ncl(R) ≃* G ∗ (H ⧸ ncl(R))` for `R ⊆ H`.
+
+## Main results
+
+* `Monoid.Coprod.inl_surjective`, `Monoid.Coprod.inr_surjective`: if one factor of a free product
+  `M ∗ N` is trivial, the inclusion of the other one is onto.
 -/
 
 public section
 
 namespace Monoid.Coprod
+
+section TrivialFactor
+
+variable {M N : Type*} [MulOneClass M] [MulOneClass N]
+
+/-- If `N` is trivial, every element of the free product `M ∗ N` comes from `M`. -/
+theorem inl_surjective [Subsingleton N] : Function.Surjective (inl : M →* Coprod M N) := fun x ↦ by
+  induction x using induction_on with
+  | inl m => exact ⟨m, rfl⟩
+  | inr n => exact ⟨1, by simp [Subsingleton.elim n 1]⟩
+  | mul x y hx hy =>
+    obtain ⟨a, rfl⟩ := hx
+    obtain ⟨b, rfl⟩ := hy
+    exact ⟨a * b, map_mul _ _ _⟩
+
+/-- If `M` is trivial, every element of the free product `M ∗ N` comes from `N`. -/
+theorem inr_surjective [Subsingleton M] : Function.Surjective (inr : N →* Coprod M N) := by
+  rw [← swap_comp_inl, MonoidHom.coe_comp]
+  exact swap_surjective.comp inl_surjective
+
+end TrivialFactor
 
 open Subgroup
 
