@@ -33,6 +33,8 @@ in `[-1/2, 1/2)` (`Puncture.im_endCoord_mem_Ico`); it jumps by `1` across a ray,
 period-one functions of it are smooth (`Puncture.contMDiffAt_comp_im_endCoord`). The angular
 one-form `dt` of the end is `v ↦ Im (v / (-2π (w - c_q)))` (`Puncture.endAngularForm`), and it
 pulls back to `dt` along the end lift (`Puncture.endAngularForm_cylindricalEndLift`).
+The closed annulus `2 exp (2πr) ≤ ‖w‖ ≤ 2 exp (2πR)` is the image of the part `-R ≤ s ≤ -r`,
+`t ∈ [-1/2, 1/2)` of the end at `∞` (`Puncture.exists_cylindricalEndLift_inf_eq`).
 
 The ends at `0` and `1` are positive, parameterized by `s > 0`, and the end at `∞` is negative,
 parameterized by `s < 0`; `Puncture.endSign` records the sign. Points with positive signed
@@ -403,6 +405,26 @@ theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
   have h₂ := Complex.arg_le_pi ((w - q.endCenter) / q.endScale)
   rw [im_endCoord, mem_Ico, le_div_iff₀ (by positivity), div_lt_iff₀ (by positivity)]
   constructor <;> linarith
+
+/-- A point of the closed annulus `2 exp (2πr) ≤ ‖w‖ ≤ 2 exp (2πR)` is the image of a point with
+`-R ≤ s ≤ -r` and `t ∈ [-1/2, 1/2)` on the output end. -/
+theorem exists_cylindricalEndLift_inf_eq {r R : ℝ} {w : ℂ}
+    (h₁ : 2 * Real.exp (2 * π * r) ≤ ‖w‖) (h₂ : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) :
+    ∃ z : ℂ, z.re ∈ Icc (-R) (-r) ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2) ∧
+      inf.cylindricalEndLift z = w := by
+  have hw₀ : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) h₁
+  have hw : w ≠ inf.endCenter := by
+    rw [endCenter_inf]
+    exact norm_pos_iff.1 hw₀
+  refine ⟨inf.endCoord w, ⟨?_, ?_⟩, inf.im_endCoord_mem_Ico w, inf.cylindricalEndLift_endCoord hw⟩
+  · rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat,
+      neg_div, neg_le_neg_iff, div_le_iff₀ Real.two_pi_pos,
+      Real.log_le_iff_le_exp (by positivity), div_le_iff₀ two_pos, mul_comm R]
+    linarith
+  · rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat,
+      neg_div, neg_le_neg_iff, le_div_iff₀ Real.two_pi_pos,
+      Real.le_log_iff_exp_le (by positivity), le_div_iff₀ two_pos, mul_comm r]
+    linarith
 
 /-- An end lift is injective on every horizontal strip `t₀ ≤ Im z < t₀ + 1` of height one: two
 points with the same image differ by an integer multiple of `i`. -/

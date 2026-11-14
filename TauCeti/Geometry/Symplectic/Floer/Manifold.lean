@@ -126,6 +126,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
+* `SmoothTwoForm.hamiltonianCurvature_eq_deriv_mul_of_eventuallyEq`: a datum which is the
+  continuation datum `β(s) H(t) dt` near a point has curvature `β'(s) H(t)` there.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
@@ -261,14 +263,23 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
 
+/-- At a point where the perturbation vanishes, the Floer energy density is the symplectic area
+density `ω(∂_s u, ∂_t u)`. -/
+theorem floerEnergyDensity_of_eq_zero (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = fun _ ↦ 0) (ht : Kt z = fun _ ↦ 0) :
+    ω.floerEnergyDensity Ks Kt u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def, hs, ht, hamiltonianVectorField_const]
+
 /-- For the zero perturbation the Floer energy density is the symplectic area density
 `ω(∂_s u, ∂_t u)`. -/
 @[simp]
 theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
-  simp [floerEnergyDensity_def]
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
+  ω.floerEnergyDensity_of_eq_zero u rfl rfl
 
 /-- Translating a map and its perturbation data by `v` translates the Floer energy density by
 `v`. -/
@@ -565,6 +576,16 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
   simp only [hamiltonianCurvature_def, poissonBracket_const_left, fderiv_const_apply,
     zero_apply, sub_zero]
   exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
+
+/-- A datum `K = K_s ds + K_t dt` which near `z` is the continuation datum `β(s) H(t) dt` has
+curvature `β'(s) H(t)` at `z`. -/
+theorem hamiltonianCurvature_eq_deriv_mul_of_eventuallyEq (ω : SmoothTwoForm I M)
+    {Ks Kt : ℝ × ℝ → M → ℝ} {β : ℝ → ℝ} {H : ℝ → M → ℝ} {z : ℝ × ℝ} {x : M}
+    (hs : Ks =ᶠ[𝓝 z] 0) (ht : Kt =ᶠ[𝓝 z] fun w y ↦ β w.1 * H w.2 y)
+    (hβ : DifferentiableAt ℝ β z.1) (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
+    ω.hamiltonianCurvature Ks Kt z x = deriv β z.1 * H z.2 x := by
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  exact ω.hamiltonianCurvature_continuation hβ hH
 
 /-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
 `s = c` has zero curvature along that line. -/
