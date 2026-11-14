@@ -111,23 +111,12 @@ theorem balancedOfBraidedPivotal_pivotalOfBalanced (B : BalancedCategory C) :
 
 /-- Pivotal structures on a braided rigid category correspond to balanced structures via
 `θ_X = φ_X ≫ u_X⁻¹`, with inverse `φ_X = θ_X ≫ u_X`. -/
+@[expose, simps]
 noncomputable def pivotalBalancedEquiv (C : Type u) [Category.{v} C] [MonoidalCategory C]
     [BraidedCategory C] [RigidCategory C] : PivotalCategory C ≃ BalancedCategory C where
   toFun P := @balancedOfBraidedPivotal C _ _ _ _ P
   invFun B := @pivotalOfBalanced C _ _ _ _ B
   left_inv := pivotalOfBalanced_balancedOfBraidedPivotal
   right_inv := balancedOfBraidedPivotal_pivotalOfBalanced
-
-/-- The forward map of the correspondence constructs the twist of a pivotal structure. -/
-@[simp]
-theorem pivotalBalancedEquiv_apply (P : PivotalCategory C) :
-    pivotalBalancedEquiv C P = @balancedOfBraidedPivotal C _ _ _ _ P :=
-  (rfl)
-
-/-- The inverse correspondence constructs the pivotal structure of a twist. -/
-@[simp]
-theorem pivotalBalancedEquiv_symm_apply (B : BalancedCategory C) :
-    (pivotalBalancedEquiv C).symm B = @pivotalOfBalanced C _ _ _ _ B :=
-  (rfl)
 
 end TauCeti
