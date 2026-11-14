@@ -18,7 +18,7 @@ logarithm by `m`, which gives unipotent units canonical roots of every nonzero i
 
 For a unipotent unit `u` and a nonzero integer `m`, this file proves:
 
-* `Units.zpow_nilpotentExpUnit_inv_smul_log`: the unipotent unit `exp (m⁻¹ • log u)` is an
+* `Units.nilpotentExpUnit_inv_smul_log_zpow`: the unipotent unit `exp (m⁻¹ • log u)` is an
   `m`-th root of `u`;
 * `Units.eq_exp_inv_smul_log_of_zpow_eq`: every unipotent `m`-th root of a unit `u` is
   `exp (m⁻¹ • log u)`; here only the root, not `u`, is assumed unipotent;
@@ -46,7 +46,7 @@ variable {A : Type*} [Ring A] [Algebra ℚ A]
 
 /-- For a nonzero integer `m`, the unipotent unit `exp (m⁻¹ • log u)` is an `m`-th root of the
 unipotent unit `u`. -/
-theorem zpow_nilpotentExpUnit_inv_smul_log (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) {m : ℤ}
+theorem nilpotentExpUnit_inv_smul_log_zpow (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) {m : ℤ}
     (hm : m ≠ 0) : nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)) ^ m = u := by
   set w := nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹))
   have hw : IsNilpotent ((w : A) - 1) := by
@@ -68,7 +68,7 @@ theorem existsUnique_isNilpotent_sub_one_and_zpow_eq (u : Aˣ) (hu : IsNilpotent
     {m : ℤ} (hm : m ≠ 0) : ∃! w : Aˣ, IsNilpotent ((w : A) - 1) ∧ w ^ m = u := by
   refine ⟨nilpotentExpUnit ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)),
     ⟨by simpa using isNilpotent_exp_sub_one ((isNilpotent_log hu).smul ((m : ℚ)⁻¹)),
-      zpow_nilpotentExpUnit_inv_smul_log u hu hm⟩, fun w ⟨hw, h⟩ ↦ Units.ext ?_⟩
+      nilpotentExpUnit_inv_smul_log_zpow u hu hm⟩, fun w ⟨hw, h⟩ ↦ Units.ext ?_⟩
   rw [eq_exp_inv_smul_log_of_zpow_eq hw hm h, coe_nilpotentExpUnit]
 
 end Units
