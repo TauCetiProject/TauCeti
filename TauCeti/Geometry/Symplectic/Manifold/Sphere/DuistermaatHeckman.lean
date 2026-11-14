@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman
-public import TauCeti.Geometry.Symplectic.Manifold.Sphere
+public import TauCeti.Geometry.Symplectic.Manifold.Sphere.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Symplectic.Darboux.Basis
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
 # The Duistermaat–Heckman measure of the height on the two-sphere
@@ -45,8 +46,18 @@ poles are null because the Liouville measure has no atoms
 Lean indexes the coordinates of `ℝ³ = EuclideanSpace ℝ (Fin 3)` by `0, 1, 2`, so the height is
 `x 2`.
 
+## Main definitions
+
+* `TauCeti.planeAreaForm`: the area form `dθ ∧ dh` of the plane.
+* `TauCeti.sphereCylinderStrip`: the strip `(a, a + 2π) × (-1, 1)` of cylindrical coordinates.
+* `TauCeti.sphereCylinder`: Archimedes' cylindrical coordinates
+  `(θ, h) ↦ (√(1 - h²) cos θ, √(1 - h²) sin θ, h)` on this strip, as a map to `S²`.
+
 ## Main results
 
+* `TauCeti.liouvilleMeasure_planeAreaForm`: the Liouville measure of `dθ ∧ dh` is Lebesgue measure.
+* `TauCeti.mpullback_sphereCylinder_sphereAreaForm`: in cylindrical coordinates the area form of
+  the sphere is `dθ ∧ dh`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm`: the Duistermaat–Heckman measure of the height
   on `S²` is `2π` times Lebesgue measure on `[-1, 1]`.
 * `TauCeti.liouvilleMeasure_sphereAreaForm_setOf_mem_Icc`: **Archimedes' theorem**, the zone
@@ -79,14 +90,13 @@ private def planeEquiv : (ℝ × ℝ) ≃ₗ[ℝ] ℝ² :=
   (LinearEquiv.finTwoArrow ℝ ℝ).symm.trans (EuclideanSpace.equiv (Fin 2) ℝ).symm.toLinearEquiv
 
 /-- The area form `dθ ∧ dh` of the Euclidean plane, the standard symplectic form of `ℝ × ℝ`. -/
-private def planeAreaForm : SymplecticForm ℝ² :=
+def planeAreaForm : SymplecticForm ℝ² :=
   (stdSymplecticForm (V := ℝ)).transport planeEquiv
 
-private theorem planeAreaForm_apply (u v : ℝ²) : planeAreaForm u v = u 0 * v 1 - u 1 * v 0 := by
+/-- The area form `dθ ∧ dh` of the plane evaluates `u, v` to `u₀ v₁ - u₁ v₀`. -/
+theorem planeAreaForm_apply (u v : ℝ²) : planeAreaForm u v = u 0 * v 1 - u 1 * v 0 := by
   simp [planeAreaForm, planeEquiv]
   ring
-
-private instance : Fact (finrank ℝ ℝ² = 2 * 1) := ⟨by simp⟩
 
 /-- The standard basis of the plane, indexed as a Darboux basis `(q₁, p₁)`. -/
 private def planeBasis : Basis (Fin 1 × Fin 2) ℝ ℝ² :=
@@ -102,7 +112,7 @@ private theorem isDarbouxBasis_planeBasis : planeAreaForm.IsDarbouxBasis planeBa
     fin_cases i; fin_cases j; simp [planeBasis, planeAreaForm_apply, finProdFinEquiv]
 
 /-- The Liouville measure of `dθ ∧ dh` is Lebesgue measure. -/
-private theorem liouvilleMeasure_planeAreaForm :
+theorem liouvilleMeasure_planeAreaForm :
     planeAreaForm.constSmooth.liouvilleMeasure 1 = volume := by
   rw [SymplecticForm.liouvilleMeasure_constSmooth _ isDarbouxBasis_planeBasis, planeBasis,
     Basis.addHaar_reindex, OrthonormalBasis.addHaar_eq_volume]
@@ -110,18 +120,19 @@ private theorem liouvilleMeasure_planeAreaForm :
 /-! ### Cylindrical coordinates on the sphere -/
 
 /-- The strip `(a, a + 2π) × (-1, 1)` of cylindrical coordinates `(θ, h)`. -/
-private def strip (a : ℝ) : TopologicalSpace.Opens ℝ² :=
+def sphereCylinderStrip (a : ℝ) : TopologicalSpace.Opens ℝ² :=
   ⟨{p | p 0 ∈ Ioo a (a + 2 * π) ∧ p 1 ∈ Ioo (-1) 1},
     (isOpen_Ioo.preimage (EuclideanSpace.proj (0 : Fin 2)).continuous).inter
       (isOpen_Ioo.preimage (EuclideanSpace.proj (1 : Fin 2)).continuous)⟩
 
-private theorem mem_strip {a : ℝ} {p : ℝ²} :
-    p ∈ strip a ↔ p 0 ∈ Ioo a (a + 2 * π) ∧ p 1 ∈ Ioo (-1) 1 :=
+/-- Membership in the strip `(a, a + 2π) × (-1, 1)`. -/
+theorem mem_sphereCylinderStrip {a : ℝ} {p : ℝ²} :
+    p ∈ sphereCylinderStrip a ↔ p 0 ∈ Ioo a (a + 2 * π) ∧ p 1 ∈ Ioo (-1) 1 :=
   Iff.rfl
 
 /-- Archimedes' cylindrical coordinates `(θ, h) ↦ (√(1 - h²) cos θ, √(1 - h²) sin θ, h)`, read
 in `ℝ³`. -/
-private def sphereCylinderCoord (p : ℝ²) : ℝ³ :=
+def sphereCylinderCoord (p : ℝ²) : ℝ³ :=
   !₂[√(1 - p 1 ^ 2) * cos (p 0), √(1 - p 1 ^ 2) * sin (p 0), p 1]
 
 private theorem norm_sphereCylinderCoord {p : ℝ²} (hp : |p 1| ≤ 1) :
@@ -149,20 +160,22 @@ private theorem contDiffAt_sphereCylinderCoord {p : ℝ²} (hp : p 1 ∈ Ioo (-1
 
 /-- Archimedes' cylindrical coordinates on the strip `(a, a + 2π) × (-1, 1)`, as a map to the
 sphere. -/
-private def sphereCylinder (a : ℝ) : strip a → S² :=
-  Set.codRestrict (fun p : strip a ↦ sphereCylinderCoord p) _ fun p ↦
+def sphereCylinder (a : ℝ) : sphereCylinderStrip a → S² :=
+  Set.codRestrict (fun p : sphereCylinderStrip a ↦ sphereCylinderCoord p) _ fun p ↦
     mem_sphere_zero_iff_norm.2 (norm_sphereCylinderCoord (abs_le.2 ⟨p.2.2.1.le, p.2.2.2.le⟩))
 
-private theorem coe_sphereCylinder (a : ℝ) (p : strip a) :
+/-- Cylindrical coordinates on the strip, read in `ℝ³`. -/
+theorem coe_sphereCylinder (a : ℝ) (p : sphereCylinderStrip a) :
     (sphereCylinder a p : ℝ³) = sphereCylinderCoord p :=
-  rfl
+  (rfl)
 
-private theorem contMDiff_sphereCylinder (a : ℝ) : ContMDiff (𝓡 2) (𝓡 2) ∞ (sphereCylinder a) :=
+/-- Cylindrical coordinates are smooth on the strip. -/
+theorem contMDiff_sphereCylinder (a : ℝ) : ContMDiff (𝓡 2) (𝓡 2) ∞ (sphereCylinder a) :=
   ContMDiff.codRestrict_sphere (fun p ↦
     (contDiffAt_sphereCylinderCoord p.2.2).contMDiffAt.comp p (contMDiff_subtype_val p)) _
 
 /-- Cylindrical coordinates are injective on a strip of width `2π`. -/
-private theorem injective_sphereCylinder (a : ℝ) : Function.Injective (sphereCylinder a) := by
+theorem injective_sphereCylinder (a : ℝ) : Function.Injective (sphereCylinder a) := by
   intro p q hpq
   have hpq' := congrArg (fun x : S² ↦ (x : ℝ³)) hpq
   simp only [coe_sphereCylinder, sphereCylinderCoord] at hpq'
@@ -175,15 +188,10 @@ private theorem injective_sphereCylinder (a : ℝ) : Function.Injective (sphereC
   rw [h2] at h0 h1 hr
   have hc := mul_left_cancel₀ hr.ne' h0
   have hs := mul_left_cancel₀ hr.ne' h1
-  obtain ⟨k, hk⟩ := Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.cos_sin_inj hc hs)
-  have hp0 := p.2.1
-  have hq0 := q.2.1
-  have hk0 : k = 0 := by
-    have hlt : |(k : ℝ)| < 1 := by
-      rw [abs_lt]
-      constructor <;> nlinarith [hp0.1, hp0.2, hq0.1, hq0.2, Real.pi_pos]
-    exact Int.abs_lt_one_iff.1 (by exact_mod_cast hlt)
-  rw [hk0, Int.cast_zero, mul_zero, sub_eq_zero] at hk
+  have : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+  have hk : (p : ℝ²) 0 = (q : ℝ²) 0 :=
+    (AddCircle.coe_eq_coe_iff_of_mem_Ico (Ioo_subset_Ico_self p.2.1)
+      (Ioo_subset_Ico_self q.2.1)).1 (Real.Angle.cos_sin_inj hc hs)
   refine Subtype.ext (PiLp.ext fun i ↦ ?_)
   fin_cases i
   · exact hk
@@ -244,9 +252,9 @@ private theorem dotProduct_cross_fderiv_sphereCylinderCoord {p : ℝ²} (hp : p 
 
 /-- **Archimedes' map preserves area**: cylindrical coordinates pull the area form of the sphere
 back to `dθ ∧ dh`. -/
-private theorem mpullback_sphereCylinder_sphereAreaForm (a : ℝ) :
+theorem mpullback_sphereCylinder_sphereAreaForm (a : ℝ) :
     SmoothForm.mpullback (sphereCylinder a) (contMDiff_sphereCylinder a) sphereAreaForm =
-      SmoothForm.mpullback (Subtype.val : strip a → ℝ²) contMDiff_subtype_val
+      SmoothForm.mpullback (Subtype.val : sphereCylinderStrip a → ℝ²) contMDiff_subtype_val
         planeAreaForm.constSmooth := by
   refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
   have hΦ : MDifferentiableAt (𝓡 2) (𝓡 2) (sphereCylinder a) x :=
@@ -255,7 +263,7 @@ private theorem mpullback_sphereCylinder_sphereAreaForm (a : ℝ) :
     (contMDiff_coe_sphere (n := 2)).mdifferentiableAt (n := 1) one_ne_zero
   have hd : DifferentiableAt ℝ sphereCylinderCoord (x : ℝ²) :=
     (contDiffAt_sphereCylinderCoord x.2.2).differentiableAt (by simp)
-  have hval : MDifferentiableAt (𝓡 2) 𝓘(ℝ, ℝ²) (Subtype.val : strip a → ℝ²) x :=
+  have hval : MDifferentiableAt (𝓡 2) 𝓘(ℝ, ℝ²) (Subtype.val : sphereCylinderStrip a → ℝ²) x :=
     contMDiff_subtype_val.mdifferentiableAt (n := 1) one_ne_zero
   have key (u : TangentSpace (𝓡 2) x) :
       mvfderiv (𝓡 2) ((↑) : S² → ℝ³) (sphereCylinder a x)
@@ -268,58 +276,45 @@ private theorem mpullback_sphereCylinder_sphereAreaForm (a : ℝ) :
     TauCeti.Manifold.mvfderiv_subtype_val_apply, key, key, coe_sphereCylinder]
   exact (dotProduct_cross_fderiv_sphereCylinderCoord x.2.2 v w).trans (planeAreaForm_apply v w).symm
 
-private theorem measurableEmbedding_sphereCylinder (a : ℝ) :
+/-- Cylindrical coordinates are a measurable embedding of the strip into the sphere. -/
+theorem measurableEmbedding_sphereCylinder (a : ℝ) :
     MeasurableEmbedding (sphereCylinder a) := by
-  have : PolishSpace (strip a) := (strip a).isOpen.polishSpace
+  have : PolishSpace (sphereCylinderStrip a) := (sphereCylinderStrip a).isOpen.polishSpace
   exact (contMDiff_sphereCylinder a).continuous.measurableEmbedding (injective_sphereCylinder a)
 
-/-- Cylindrical coordinates carry Lebesgue measure on the strip to the area of their image. -/
-private theorem map_comap_volume_sphereCylinder (a : ℝ) :
-    ((volume : Measure ℝ²).comap Subtype.val).map (sphereCylinder a) =
-      (sphereAreaForm.liouvilleMeasure 1).restrict (range (sphereCylinder a)) := by
-  have h := (measurableEmbedding_sphereCylinder a).map_liouvilleMeasure (n := 1)
+/-- Lebesgue measure on the strip is the pullback of the area of the sphere along cylindrical
+coordinates. -/
+private theorem comap_volume_sphereCylinder (a : ℝ) :
+    (volume : Measure ℝ²).comap Subtype.val =
+      (sphereAreaForm.liouvilleMeasure 1).comap (sphereCylinder a) := by
+  have h := (measurableEmbedding_sphereCylinder a).liouvilleMeasure_eq_comap (n := 1)
     ((contMDiff_sphereCylinder a).mdifferentiable (by simp))
     ((SmoothForm.coe_mpullback _ _ _).symm.trans
       (congrArg Subtype.val (mpullback_sphereCylinder_sphereAreaForm a)))
   rwa [SmoothTwoForm.liouvilleMeasure_mpullback_subtypeVal, liouvilleMeasure_planeAreaForm] at h
 
-/-- The Lebesgue measure of a coordinate rectangle of the plane. -/
-private theorem volume_setOf_apply_mem_and (A B : Set ℝ) (hA : MeasurableSet A)
-    (hB : MeasurableSet B) :
-    volume {p : ℝ² | p 0 ∈ A ∧ p 1 ∈ B} = volume A * volume B := by
-  have h : {p : ℝ² | p 0 ∈ A ∧ p 1 ∈ B} = ofLp ⁻¹' (univ.pi ![A, B]) := by
-    ext p
-    simp [Fin.forall_fin_two]
-  rw [h, (PiLp.volume_preserving_ofLp (Fin 2)).measure_preimage
-    (MeasurableSet.univ_pi fun i ↦ by fin_cases i <;> simpa).nullMeasurableSet, volume_pi_pi,
-    Fin.prod_univ_two]
-  simp
+/-- Cylindrical coordinates carry Lebesgue measure on the strip to the area of their image. -/
+private theorem map_comap_volume_sphereCylinder (a : ℝ) :
+    ((volume : Measure ℝ²).comap Subtype.val).map (sphereCylinder a) =
+      (sphereAreaForm.liouvilleMeasure 1).restrict (range (sphereCylinder a)) := by
+  rw [comap_volume_sphereCylinder, (measurableEmbedding_sphereCylinder a).map_comap]
 
-/-- The area of the image of a measurable subset of the strip is its Lebesgue measure. -/
-private theorem liouvilleMeasure_sphereCylinder_image (a : ℝ) {s : Set (strip a)}
-    (hs : MeasurableSet s) :
+/-- The area of the image of a subset of the strip is its Lebesgue measure. -/
+private theorem liouvilleMeasure_sphereCylinder_image (a : ℝ) (s : Set (sphereCylinderStrip a)) :
     sphereAreaForm.liouvilleMeasure 1 (sphereCylinder a '' s) = volume (Subtype.val '' s) := by
-  have hΦ := measurableEmbedding_sphereCylinder a
-  have hv : MeasurableEmbedding (Subtype.val : strip a → ℝ²) :=
-    MeasurableEmbedding.subtype_coe (strip a).isOpen.measurableSet
-  have h := congrArg (· (sphereCylinder a '' s)) (map_comap_volume_sphereCylinder a)
-  rw [Measure.restrict_apply (hΦ.measurableSet_image' hs),
-    inter_eq_left.2 (image_subset_range _ _), hΦ.map_apply,
-    preimage_image_eq _ (injective_sphereCylinder a), hv.comap_apply] at h
-  exact h.symm
+  rw [← (measurableEmbedding_sphereCylinder a).comap_apply, ← comap_volume_sphereCylinder]
+  exact (MeasurableEmbedding.subtype_coe (sphereCylinderStrip a).isOpen.measurableSet).comap_apply
+    _ _
 
-/-- A point of `S²` has coordinates with squares summing to `1`. -/
-private theorem sq_add_sq_add_sq (x : S²) :
-    (x : ℝ³) 0 ^ 2 + (x : ℝ³) 1 ^ 2 + (x : ℝ³) 2 ^ 2 = 1 := by
-  have h := norm_eq_of_mem_sphere x
-  rw [EuclideanSpace.norm_eq, Real.sqrt_eq_one, Fin.sum_univ_three] at h
-  simpa only [Real.norm_eq_abs, sq_abs] using h
+/-- The height on the sphere is measurable. -/
+private theorem measurable_coe_sphere_apply_two : Measurable fun x : S² ↦ (x : ℝ³) 2 := by
+  fun_prop
 
 /-- Off the poles and the half-meridian `x 1 = 0`, `x 0 < 0`, every point of the sphere has
 cylindrical coordinates in the strip `(-π, π) × (-1, 1)`. -/
 private theorem mem_range_sphereCylinder_of_ne (x : S²) (h2 : (x : ℝ³) 2 ∈ Ioo (-1) 1)
     (h01 : ¬((x : ℝ³) 1 = 0 ∧ (x : ℝ³) 0 < 0)) : x ∈ range (sphereCylinder (-π)) := by
-  have hx := sq_add_sq_add_sq x
+  have hx := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
   set z : ℂ := ⟨(x : ℝ³) 0, (x : ℝ³) 1⟩
   have hz2 : ‖z‖ ^ 2 = 1 - (x : ℝ³) 2 ^ 2 := by
     rw [Complex.sq_norm, Complex.normSq_apply]
@@ -350,7 +345,7 @@ private theorem liouvilleMeasure_sphereAreaForm_setOf_apply_two_eq {c : ℝ} (hc
   have hsub : {x : S² | (x : ℝ³) 2 = c}.Subsingleton := by
     -- A point at height `±1` has vanishing horizontal coordinates.
     have h01 {x : S²} (hx : (x : ℝ³) 2 = c) : (x : ℝ³) 0 = 0 ∧ (x : ℝ³) 1 = 0 := by
-      have h := sq_add_sq_add_sq x
+      have h := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
       rw [hx, hc] at h
       exact ⟨pow_eq_zero_iff two_ne_zero |>.1
           (by linarith [sq_nonneg ((x : ℝ³) 0), sq_nonneg ((x : ℝ³) 1)]),
@@ -362,15 +357,14 @@ private theorem liouvilleMeasure_sphereAreaForm_setOf_apply_two_eq {c : ℝ} (hc
     · exact (h01 hx).1.trans (h01 hy).1.symm
     · exact (h01 hx).2.trans (h01 hy).2.symm
     · exact (hx : (x : ℝ³) 2 = c).trans (hy : (y : ℝ³) 2 = c).symm
-  exact hsub.induction_on (p := fun s ↦ sphereAreaForm.liouvilleMeasure 1 s = 0) measure_empty
-    fun x ↦ measure_singleton x
+  exact hsub.measure_zero _
 
 /-- The half-meridian `x 1 = 0`, `x 0 < 0` off the poles is the image of the segment `θ = π` under
 cylindrical coordinates on the strip `(0, 2π) × (-1, 1)`. -/
 private theorem mem_image_sphereCylinder_of_apply_one_eq_zero (x : S²)
     (h2 : (x : ℝ³) 2 ∈ Ioo (-1) 1) (h1 : (x : ℝ³) 1 = 0) (h0 : (x : ℝ³) 0 < 0) :
     x ∈ sphereCylinder 0 '' {p | (p : ℝ²) 0 = π} := by
-  have hsq := sq_add_sq_add_sq x
+  have hsq := EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2
   rw [h1] at hsq
   have hr : √(1 - (x : ℝ³) 2 ^ 2) = -(x : ℝ³) 0 := by
     rw [show 1 - (x : ℝ³) 2 ^ 2 = (-(x : ℝ³) 0) ^ 2 by linarith, Real.sqrt_sq (by linarith)]
@@ -386,18 +380,16 @@ private theorem mem_image_sphereCylinder_of_apply_one_eq_zero (x : S²)
 zero: they are the two poles and a half-meridian. -/
 private theorem liouvilleMeasure_compl_range_sphereCylinder :
     sphereAreaForm.liouvilleMeasure 1 (range (sphereCylinder (-π)))ᶜ = 0 := by
-  set T : Set (strip 0) := {p | (p : ℝ²) 0 = π}
-  have hT : MeasurableSet T :=
-    (measurableSet_singleton π).preimage ((PiLp.continuous_apply 2 _ 0).comp
-      continuous_subtype_val).measurable
+  set T : Set (sphereCylinderStrip 0) := {p | (p : ℝ²) 0 = π}
   -- The half-meridian is the image of a segment, which is Lebesgue-null.
   have hcut : sphereAreaForm.liouvilleMeasure 1 (sphereCylinder 0 '' T) = 0 := by
-    rw [liouvilleMeasure_sphereCylinder_image 0 hT]
-    refine measure_mono_null (t := {p : ℝ² | p 0 ∈ ({π} : Set ℝ) ∧ p 1 ∈ (univ : Set ℝ)}) ?_ ?_
+    rw [liouvilleMeasure_sphereCylinder_image 0 T]
+    refine measure_mono_null (t := ofLp ⁻¹' univ.pi ![{π}, univ]) ?_ ?_
     · rintro _ ⟨p, hp, rfl⟩
-      exact ⟨hp, mem_univ _⟩
-    · rw [volume_setOf_apply_mem_and _ _ (measurableSet_singleton π) MeasurableSet.univ,
-        Real.volume_singleton, zero_mul]
+      simp only [T, mem_ofPred_eq] at hp
+      simp [Fin.forall_fin_two, hp]
+    · rw [EuclideanSpace.volume_preimage_ofLp_pi, Fin.prod_univ_two]
+      simp
   refine measure_mono_null (t := {x : S² | (x : ℝ³) 2 = 1} ∪ {x : S² | (x : ℝ³) 2 = -1} ∪
     sphereCylinder 0 '' T) ?_ (measure_union_null (measure_union_null
       (liouvilleMeasure_sphereAreaForm_setOf_apply_two_eq (by norm_num))
@@ -409,7 +401,8 @@ private theorem liouvilleMeasure_compl_range_sphereCylinder :
     · exact absurd (mem_range_sphereCylinder_of_ne x h2 h01) hx
   · -- Off the open band the height is `±1`, since it lies in `[-1, 1]`.
     have h1 : (x : ℝ³) 2 ^ 2 ≤ 1 := by
-      nlinarith [sq_add_sq_add_sq x, sq_nonneg ((x : ℝ³) 0), sq_nonneg ((x : ℝ³) 1)]
+      nlinarith [EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere x.2, sq_nonneg ((x : ℝ³) 0),
+        sq_nonneg ((x : ℝ³) 1)]
     rcases (show (x : ℝ³) 2 = 1 ∨ (x : ℝ³) 2 = -1 by
       by_contra hne
       push Not at hne
@@ -431,27 +424,28 @@ theorem duistermaatHeckmanMeasure_sphereAreaForm :
       ((volume : Measure ℝ²).comap Subtype.val).map (sphereCylinder (-π)) := by
     rw [map_comap_volume_sphereCylinder, Measure.restrict_eq_self_of_ae_mem]
     exact ae_iff.2 liouvilleMeasure_compl_range_sphereCylinder
-  have hh : Measurable fun x : S² ↦ (x : ℝ³) 2 := by fun_prop
   have hcomp : (fun x : S² ↦ (x : ℝ³) 2) ∘ sphereCylinder (-π) =
       (fun p : ℝ² ↦ p 1) ∘ Subtype.val := by
     funext p
     simp [coe_sphereCylinder, sphereCylinderCoord]
-  have hv : MeasurableEmbedding (Subtype.val : strip (-π) → ℝ²) :=
-    MeasurableEmbedding.subtype_coe (strip (-π)).isOpen.measurableSet
+  have hv : MeasurableEmbedding (Subtype.val : sphereCylinderStrip (-π) → ℝ²) :=
+    MeasurableEmbedding.subtype_coe (sphereCylinderStrip (-π)).isOpen.measurableSet
   have h1 : Measurable fun p : ℝ² ↦ p 1 := (PiLp.continuous_apply 2 _ 1).measurable
-  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, hL, Measure.map_map hh hΦ.measurable, hcomp,
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, hL,
+    Measure.map_map measurable_coe_sphere_apply_two hΦ.measurable, hcomp,
     ← Measure.map_map h1 hv.measurable, hv.map_comap, Subtype.range_coe,
     Measure.restrict_congr_set Ioo_ae_eq_Icc.symm]
   ext s hs
   rw [Measure.map_apply h1 hs, Measure.restrict_apply (h1 hs), smul_apply,
     Measure.restrict_apply hs, smul_eq_mul]
-  have hset : (fun p : ℝ² ↦ p 1) ⁻¹' s ∩ (strip (-π) : Set ℝ²) =
-      {p : ℝ² | p 0 ∈ Ioo (-π) (-π + 2 * π) ∧ p 1 ∈ s ∩ Ioo (-1) 1} := by
+  have hset : (fun p : ℝ² ↦ p 1) ⁻¹' s ∩ (sphereCylinderStrip (-π) : Set ℝ²) =
+      ofLp ⁻¹' univ.pi ![Ioo (-π) (-π + 2 * π), s ∩ Ioo (-1) 1] := by
     ext p
-    simp only [mem_inter_iff, mem_preimage, SetLike.mem_coe, mem_strip, mem_ofPred_eq]
+    simp only [mem_inter_iff, mem_preimage, SetLike.mem_coe, mem_sphereCylinderStrip,
+      mem_univ_pi, Fin.forall_fin_two, cons_val_zero, cons_val_one]
     tauto
-  rw [hset, volume_setOf_apply_mem_and _ _ measurableSet_Ioo (hs.inter measurableSet_Ioo),
-    Real.volume_Ioo]
+  rw [hset, EuclideanSpace.volume_preimage_ofLp_pi, Fin.prod_univ_two, cons_val_zero, cons_val_one,
+    cons_val_zero, Real.volume_Ioo]
   ring_nf
 
 /-- **Archimedes' theorem.** The zone of the unit sphere between the heights `a` and `b`, with
@@ -460,15 +454,10 @@ sphere. -/
 theorem liouvilleMeasure_sphereAreaForm_setOf_mem_Icc {a b : ℝ} (ha : -1 ≤ a) (hb : b ≤ 1) :
     sphereAreaForm.liouvilleMeasure 1 {x : S² | (x : ℝ³) 2 ∈ Icc a b} =
       ENNReal.ofReal (2 * π * (b - a)) := by
-  have hh : Measurable fun x : S² ↦ (x : ℝ³) 2 := by fun_prop
-  have h := congrArg (· (Icc a b)) duistermaatHeckmanMeasure_sphereAreaForm
-  simp only at h
-  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def, Measure.map_apply hh measurableSet_Icc] at h
-  have hset : {x : S² | (x : ℝ³) 2 ∈ Icc a b} = (fun x : S² ↦ (x : ℝ³) 2) ⁻¹' Icc a b := by
-    ext x
-    simp
-  rw [hset, h,
-    smul_apply, Measure.restrict_apply measurableSet_Icc,
+  change sphereAreaForm.liouvilleMeasure 1 ((fun x : S² ↦ (x : ℝ³) 2) ⁻¹' Icc a b) = _
+  rw [← SmoothTwoForm.duistermaatHeckmanMeasure_apply measurable_coe_sphere_apply_two
+    measurableSet_Icc, duistermaatHeckmanMeasure_sphereAreaForm, smul_apply,
+    Measure.restrict_apply measurableSet_Icc,
     inter_eq_left.2 (Icc_subset_Icc ha hb), Real.volume_Icc, smul_eq_mul,
     ← ENNReal.ofReal_mul (by positivity)]
 

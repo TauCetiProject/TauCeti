@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.UnitSphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
-public import TauCeti.Geometry.Symplectic.Manifold.Sphere
+public import TauCeti.Geometry.Symplectic.Manifold.Sphere.Basic
 
 /-!
 # The two-sphere as a coadjoint orbit of `SO(3)`
@@ -24,7 +24,7 @@ symplectic manifold on the unit sphere `S² ⊂ ℝ³`, parametrizing the orbit 
 
 The **area form** of `S²` is `σ_x(v, w) = x ⬝ (v × w)` (`TauCeti.sphereAreaForm`), the symplectic
 volume form of the sphere with its outward-normal orientation, defined in
-`TauCeti.Geometry.Symplectic.Manifold.Sphere`.
+`TauCeti.Geometry.Symplectic.Manifold.Sphere.Basic`.
 
 The infinitesimal rotation `A ∈ so(3)` moves `x ∈ S²` with velocity `A x = ξ × x`, where `A = ξ̂`.
 These rotation fields are the Hamiltonian vector fields of the height functions

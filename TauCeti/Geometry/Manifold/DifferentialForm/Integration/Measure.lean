@@ -255,11 +255,12 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
   · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
   · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
 
-/-- **A top form gives points measure zero** on a `T₁` manifold of positive dimension: the
-coordinate image of a point is a single point, which is Lebesgue-null. -/
-instance nullSingletonClass_measure [Nontrivial E] [T1Space M] (φ : RoughForm I M ℝ k) :
+/-- **A top form gives points measure zero** on a manifold of positive dimension: the coordinate
+image of a point is a single point, which is Lebesgue-null. -/
+instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
     NullSingletonClass φ.measure :=
   ⟨fun x ↦ by
+    have : T1Space M := I.t1Space M
     rw [φ.measure_apply_of_subset (measurableSet_singleton x)
       (singleton_subset_iff.2 (mem_extChartAt_source x)), image_singleton]
     exact setLIntegral_measure_zero _ _ (measure_singleton _)⟩

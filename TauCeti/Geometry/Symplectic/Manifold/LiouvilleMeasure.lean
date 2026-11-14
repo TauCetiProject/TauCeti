@@ -133,8 +133,8 @@ manifold. -/
 instance isLocallyFiniteMeasure_liouvilleMeasure : IsLocallyFiniteMeasure (σ.liouvilleMeasure n) :=
   RoughForm.isLocallyFiniteMeasure_measure ((σ.volumeForm n).isSmoothForm.of_le bot_le)
 
-/-- The Liouville measure gives points measure zero on a `T₁` manifold of positive dimension. -/
-instance nullSingletonClass_liouvilleMeasure [Nontrivial E] [T1Space M] :
+/-- The Liouville measure gives points measure zero on a manifold of positive dimension. -/
+instance nullSingletonClass_liouvilleMeasure [Nontrivial E] :
     NullSingletonClass (σ.liouvilleMeasure n) :=
   RoughForm.nullSingletonClass_measure _
 
