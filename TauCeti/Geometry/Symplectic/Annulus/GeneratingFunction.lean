@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.ContDiff.IsOpen
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.LinearAlgebra.Determinant.Prod
 
