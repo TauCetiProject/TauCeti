@@ -6,17 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
-public import TauCeti.RepresentationTheory.Spin.Representation
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Center
-import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
-import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
-import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
-import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Spin groups of polarized six-dimensional quadratic spaces
@@ -82,8 +75,6 @@ public section
 namespace TauCeti
 
 open _root_.CliffordAlgebra Module
-
-universe u v
 
 /-! ### Coordinate data -/
 
@@ -912,7 +903,7 @@ private noncomputable def spinGroupToSpecialLinear (P : SpinPolarizationData Q)
 
 private theorem spinGroupToSpecialLinear_bijective (P : SpinPolarizationData Q)
     (hV : finrank K V = 6) : Function.Bijective (spinGroupToSpecialLinear P hV) := by
-  let hline := P.line_eq_bot_of_finrank_eq_six hV
+  have hline := P.line_eq_bot_of_finrank_eq_six hV
   refine ⟨fun s t h ↦ ?_, fun A ↦ ?_⟩
   · -- The half-spin matrix of a Spin element is the first factor of its image in the matrix model
     -- of the even Clifford algebra, and that factor determines its even unitary image.
@@ -1085,7 +1076,6 @@ theorem spinSixBasisChange_transvection {i j : Fin 4} (hij : i ≠ j) (c : K) :
   exact toMatrix_spinPlusAction_spinSixTransvectionLift
     (P := splitEvenPolarization K 3) (hline := splitEvenPolarization_line K 3)
     (b := splitEvenBasis K 3) hij c
-
 
 /-- The inverse Spin equivalence is the inverse general linear equivalence on determinant-one
 matrices. -/
