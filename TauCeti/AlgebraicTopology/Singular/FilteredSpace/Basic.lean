@@ -277,7 +277,6 @@ lemma singularChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
     (SSet.isZero_chainComplex (X := (TopPair.toSSetPair.obj (TopPair.ofSubset (X a))).left) R)
 
 /-- The stage of the filtration at the whole space is everything. -/
-@[simp]
 lemma singularChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
     singularChainFiltration R X b = ⊤ :=
   chainFiltration_eq_top _ hb
