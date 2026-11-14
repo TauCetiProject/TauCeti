@@ -12,6 +12,8 @@ import TauCeti.Analysis.Sobolev.LipschitzDomain.MeasureDensity
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Sobolev
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Gehring
+import TauCeti.MeasureTheory.Integral.Indicator
+import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
@@ -84,10 +86,10 @@ higher integrability is the input of the `W^{1,p}` theory of the Dirichlet probl
   `B(x₀, R/2)` whenever `F ∈ L^{2 + ε}` on `B(x₀, R) ⊆ Ω`.
 * `TauCeti.PDE.exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence`: Meyers' estimate
   up to the boundary for `u ∈ H¹₀(Ω)`, on every ball of radius at most `R₀`.
-* `TauCeti.PDE.exists_lintegral_enorm_gradient_rpow_le_divergence`: the global estimate
+* `TauCeti.PDE.exists_setLIntegral_enorm_gradient_rpow_le_divergence`: the global estimate
   `∫_Ω ‖∇u‖ ^ (2 + ε) ≤ C ((∫_Ω ‖∇u‖²) ^ ((2 + ε)/2) + ∫_Ω (‖F‖/λ) ^ (2 + ε))` on a bounded domain
   with the exterior measure density condition.
-* `TauCeti.PDE.exists_lintegral_enorm_gradient_rpow_le_divergence_of_isLipschitzDomain`: the same
+* `TauCeti.PDE.exists_setLIntegral_enorm_gradient_rpow_le_divergence_of_isLipschitzDomain`: the same
   on a bounded Lipschitz domain.
 
 ## References
@@ -356,18 +358,6 @@ theorem exists_memLp_gradient_ball_divergence [Nonempty ι] (K : ℝ) :
 
 /-! ### Up to the boundary -/
 
-omit [Fintype ι] [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- An integral over the whole space of an expression in the zero extension of `g` from `Ω` is the
-integral over `Ω` of the same expression in `g`, when the expression vanishes at `0`. -/
-private theorem integral_indicator_eq_setIntegral {V : Type*} [Zero V]
-    {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S) (h : EuclideanSpace ℝ ι → V → ℝ)
-    (h0 : ∀ x, h x 0 = 0) (g : EuclideanSpace ℝ ι → V) :
-    ∫ x, h x (S.indicator g x) ∂mu = ∫ x in S, h x (g x) ∂mu := by
-  rw [← integral_indicator hS]
-  congr 1
-  funext x
-  by_cases hx : x ∈ S <;> simp [hx, h0]
-
 /-- **The reverse Hölder inequality for the gradient near the boundary.** Let `n ≥ 1` be the
 dimension, let `1 ≤ s ≤ 2` with `1/s - 1/2 < 1/n`, let `K` bound the ellipticity ratio and let
 `M ≥ 0`. There is `b`, independent of the domain, the coefficients, the solution, the datum and
@@ -457,15 +447,15 @@ private theorem exists_setLAverage_enorm_indicator_gradient_sq_le_of_measure_le 
         (.inr hu0)
       have e1 : ∫ x, ψ x ^ 2 * ‖W1p.gradient U x‖ ^ 2 ∂mu =
           ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu := by
-        rw [← integral_indicator_eq_setIntegral hΩ (fun x g => ψ x ^ 2 * ‖g‖ ^ 2)
+        rw [← integral_comp_indicator hΩ (fun x g => ψ x ^ 2 * ‖g‖ ^ 2)
           (fun x => by simp)]
         exact integral_congr_ae (hgU.mono fun x hx => by simp only [hx])
       have e2 : ∫ x, ‖∇ ψ x‖ ^ 2 * W1p.value U x ^ 2 ∂mu =
           ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu := by
-        rw [← integral_indicator_eq_setIntegral hΩ (fun x g => ‖∇ ψ x‖ ^ 2 * g ^ 2)
+        rw [← integral_comp_indicator hΩ (fun x g => ‖∇ ψ x‖ ^ 2 * g ^ 2)
           (fun x => by simp)]
         exact integral_congr_ae (hvU.mono fun x hx => by simp only [hx])
-      rw [hT, hT, hT, e1, e2, integral_indicator_eq_setIntegral hΩ
+      rw [hT, hT, hT, e1, e2, integral_comp_indicator hΩ
         (fun x g => ψ x ^ 2 * (12 / lam ^ 2 * ‖g‖ ^ 2)) (fun x => by simp)]
       simp_rw [mul_left_comm (ψ _ ^ 2), integral_const_mul]
       exact hdiv
@@ -572,7 +562,6 @@ theorem exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence [Nonempty
   have hs1 : 1 ≤ s := by exact_mod_cast hs1'
   have hs2 : s ≤ 2 := by exact_mod_cast hs2'.le
   have hs0 : (0 : ℝ) < s := one_pos.trans_le hs1'
-  have h2s : 1 ≤ 2 / (s : ℝ) := (one_le_div hs0).2 hs2'.le
   -- The interior reverse Hölder inequality, read between `B(y, ρ)` and `B(y, 4ρ)`.
   obtain ⟨b₀, hb₀⟩ := exists_setLAverage_enorm_gradient_sq_le_divergence (mu := mu) hs1 hs2 hsn K
   -- The reverse Hölder inequality near the boundary, for the exterior proportion `θ / 2ⁿ`.
@@ -618,32 +607,18 @@ theorem exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence [Nonempty
         fun q hr => laverage_congr (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
           simp only [φ, indicator_of_mem (hr hx)])
       have h24 : ball y (2 * ρ) ⊆ ball y (4 * ρ) := ball_subset_ball (by linarith)
-      have hK2 : ENNReal.ofReal ((4 * ρ / (2 * ρ)) ^ n) = ((2 : ℝ≥0) ^ n : ℝ≥0) := by
+      have hK2 : ENNReal.ofReal ((4 * ρ / (2 * ρ)) ^ finrank ℝ (EuclideanSpace ℝ ι)) =
+          ((2 : ℝ≥0) ^ n : ℝ≥0) := by
         rw [show 4 * ρ / (2 * ρ) = 2 by field_simp; norm_num, ← ENNReal.ofReal_coe_nnreal]
-        simp
-      have hAf : ⨍⁻ x in ball y (2 * ρ), f x ^ (s : ℝ) ∂mu ≤ ((2 : ℝ≥0) ^ n : ℝ≥0) * Af :=
-        hK2 ▸ setLAverage_ball_le _ (by positivity) h24
-      have hAφ : ⨍⁻ x in ball y (2 * ρ), φ x ^ (2 : ℝ) ∂mu ≤ ((2 : ℝ≥0) ^ n : ℝ≥0) * Aφ :=
-        hK2 ▸ setLAverage_ball_le _ (by positivity) h24
-      have hK1 : (((2 : ℝ≥0) ^ n : ℝ≥0) : ℝ≥0∞) ≤
-          (((2 : ℝ≥0) ^ n : ℝ≥0) : ℝ≥0∞) ^ (2 / (s : ℝ)) := by
-        simpa using ENNReal.rpow_le_rpow_of_exponent_le
-          (by exact_mod_cast one_le_pow₀ (by norm_num : (1 : ℝ≥0) ≤ 2)) h2s
+        simp [n]
       rw [hf' _ hρΩ]
       refine (hb₀ h hK ha hF hu hρ hin).trans ?_
       rw [← hf' _ hin, ← hφ' _ hin]
-      calc (b₀ : ℝ≥0∞) * (⨍⁻ x in ball y (2 * ρ), f x ^ (s : ℝ) ∂mu) ^ (2 / (s : ℝ)) +
-            b₀ * ⨍⁻ x in ball y (2 * ρ), φ x ^ (2 : ℝ) ∂mu
-          ≤ b₀ * ((((2 : ℝ≥0) ^ n : ℝ≥0) : ℝ≥0∞) * Af) ^ (2 / (s : ℝ)) +
-              b₀ * ((((2 : ℝ≥0) ^ n : ℝ≥0) : ℝ≥0∞) * Aφ) := by gcongr
-        _ ≤ b₀ * ((((2 : ℝ≥0) ^ n : ℝ≥0) : ℝ≥0∞) ^ (2 / (s : ℝ)) * Af ^ (2 / (s : ℝ))) +
-              b₀ * ((((2 : ℝ≥0) ^ n : ℝ≥0) : ℝ≥0∞) ^ (2 / (s : ℝ)) * Aφ) := by
-            rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
-            gcongr
-        _ = b₂ * Af ^ (2 / (s : ℝ)) + b₂ * Aφ := by
-            simp only [b₂, ENNReal.coe_mul,
-              ENNReal.coe_rpow_of_nonneg _ (by positivity : (0 : ℝ) ≤ 2 / (s : ℝ))]
-            ring
+      refine (mul_setLAverage_rpow_add_mul_setLAverage_ball_le hs0 hs2'.le _ f φ (by positivity)
+        h24).trans_eq ?_
+      simp only [hK2, b₂, ENNReal.coe_mul,
+        ENNReal.coe_rpow_of_nonneg _ (by positivity : (0 : ℝ) ≤ 2 / (s : ℝ))]
+      ring
     · -- Near the boundary: `B(y, 4ρ)` contains `B(z, 2ρ)` for some `z ∉ Ω`.
       refine le_trans ?_ (hmono b₁ le_add_self)
       obtain ⟨z, hzy, hzΩ⟩ := not_subset.1 hin
@@ -655,27 +630,10 @@ theorem exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence [Nonempty
       have hdens := hΩ z hzΩ (2 * ρ) (by positivity) (by linarith)
       have hzsub : ball z (2 * ρ) ⊆ ball y (4 * ρ) :=
         ball_subset_ball' (by linarith [mem_ball.1 hzy])
-      have hμ : mu (ball y (4 * ρ)) = ENNReal.ofReal (2 ^ n) * mu (ball z (2 * ρ)) := by
-        rw [show 4 * ρ = 2 * (2 * ρ) by ring,
-          Measure.addHaar_ball_mul_of_pos mu y (by norm_num : (0 : ℝ) < 2),
-          Measure.addHaar_ball_center mu z]
-      have hθ0 : (θ : ℝ≥0∞) ≠ 0 := by exact_mod_cast hθ.ne'
       have hmeas : mu (ball y (4 * ρ)) ≤
           ENNReal.ofReal M * mu (ball y (4 * ρ) \ (Omega : Set (EuclideanSpace ℝ ι))) := by
-        have hz : mu (ball z (2 * ρ)) ≤ (θ : ℝ≥0∞)⁻¹ *
-            mu (ball y (4 * ρ) \ (Omega : Set (EuclideanSpace ℝ ι))) :=
-          calc mu (ball z (2 * ρ)) = (θ : ℝ≥0∞)⁻¹ * ((θ : ℝ≥0∞) * mu (ball z (2 * ρ))) := by
-                rw [← mul_assoc, ENNReal.inv_mul_cancel hθ0 ENNReal.coe_ne_top, one_mul]
-            _ ≤ (θ : ℝ≥0∞)⁻¹ * mu (ball y (4 * ρ) \ (Omega : Set (EuclideanSpace ℝ ι))) := by
-                gcongr
-                exact hdens.trans (measure_mono (sdiff_subset_sdiff_left hzsub))
-        rw [hμ]
-        calc ENNReal.ofReal (2 ^ n) * mu (ball z (2 * ρ))
-            ≤ ENNReal.ofReal (2 ^ n) * ((θ : ℝ≥0∞)⁻¹ *
-                mu (ball y (4 * ρ) \ (Omega : Set (EuclideanSpace ℝ ι)))) := by gcongr
-          _ = ENNReal.ofReal M * mu (ball y (4 * ρ) \ (Omega : Set (EuclideanSpace ℝ ι))) := by
-              rw [← mul_assoc, ENNReal.ofReal_mul (by positivity),
-                ENNReal.ofReal_inv_of_pos (by exact_mod_cast hθ), ENNReal.ofReal_coe_nnreal]
+        have hm := measure_ball_le_ofReal_mul_measure_ball_sdiff hθ.ne' (by positivity) hzsub hdens
+        rwa [show 4 * ρ / (2 * ρ) = 2 by field_simp; norm_num] at hm
       exact hb₁ h hK ha hF hu hu0 hρ hmeas
   -- Gehring's lemma.
   have hf : AEMeasurable f (mu.restrict (ball x₀ R)) :=
@@ -686,17 +644,6 @@ theorem exists_setLAverage_enorm_indicator_gradient_rpow_le_divergence [Nonempty
     (((memLp_indicator_iff_restrict hΩm.nullMeasurableSet).2
       hF).aestronglyMeasurable.eNorm.div_const _).mono_measure Measure.restrict_le_self
   exact hC hf hφ fun y ρ hρ hsub => hb' hRH4 y ρ hρ hsub
-
-omit [Fintype ι] [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- The integral of a power of the extension by zero of `‖g‖` from `Ω` is the integral over `Ω`. -/
-private theorem lintegral_enorm_indicator_rpow {V : Type*} [NormedAddCommGroup V]
-    {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S) (g : EuclideanSpace ℝ ι → V) (c : ℝ≥0∞)
-    {p : ℝ} (hp : 0 < p) :
-    ∫⁻ x, (‖S.indicator g x‖ₑ / c) ^ p ∂mu = ∫⁻ x in S, (‖g x‖ₑ / c) ^ p ∂mu := by
-  rw [← lintegral_indicator hS]
-  congr 1
-  funext x
-  by_cases hx : x ∈ S <;> simp [hx, ENNReal.zero_rpow_of_pos hp]
 
 /-- **Meyers' global higher integrability estimate.** Let `n ≥ 1` be the dimension, let `K`
 bound the ellipticity ratio and let `θ > 0`, and let `ε₀ > 0` be the gain of
@@ -713,7 +660,7 @@ measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ ≤ K λ
 
 In particular `∇u ∈ L^{2 + ε}(Ω)` whenever `F ∈ L^{2 + ε}(Ω)`. Finitely many balls of radius
 `R₀ / 2` cover `Ω`, and the local estimate up to the boundary applies on each. -/
-theorem exists_lintegral_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : ℝ) {θ : ℝ≥0}
+theorem exists_setLIntegral_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : ℝ) {θ : ℝ≥0}
     (hθ : 0 < θ) :
     ∃ ε₀ : ℝ, 0 < ε₀ ∧ ∀ ε : ℝ, 0 < ε → ε ≤ ε₀ →
       ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {R₀ : ℝ}, 0 < R₀ →
@@ -739,21 +686,8 @@ theorem exists_lintegral_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : �
   have hp : 0 < p := by positivity
   -- A cover of `Ω` by finitely many balls `B(z, R₀/2)`.
   obtain ⟨D, hD⟩ := (isBounded_iff_subset_closedBall (0 : EuclideanSpace ℝ ι)).1 hb
-  set δ : ℝ≥0 := ⟨R₀ / 4, by positivity⟩
-  obtain ⟨N, -, hNcov, -⟩ := exists_finset_isCover_of_subset_closedBall
-    (x := 0) (r := D.toNNReal) (ε := δ)
-    (by rw [← NNReal.coe_ne_zero]; exact (by positivity : (0 : ℝ) < R₀ / 4).ne')
-    (hD.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal D)))
-  have hcover : (Omega : Set (EuclideanSpace ℝ ι)) ⊆ ⋃ z : N, ball (z : EuclideanSpace ℝ ι)
-      (R₀ / 2) := by
-    intro x hx
-    obtain ⟨z, hzN, hxz⟩ := hNcov hx
-    refine mem_iUnion.2 ⟨⟨z, hzN⟩, mem_ball.2 ?_⟩
-    have hxz : nndist x z ≤ δ := edist_le_coe.1 hxz
-    have : dist x z ≤ R₀ / 4 := by
-      rw [← coe_nndist]
-      exact_mod_cast hxz
-    linarith
+  obtain ⟨N, -, hcover, -⟩ := exists_finset_subset_biUnion_ball (r := D.toNNReal)
+    (δ := R₀ / 2) (by positivity) (hD.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal D)))
   -- The measures of the balls of radii `R₀/2` and `R₀`, which do not depend on the centre.
   set m₁ := mu (ball (0 : EuclideanSpace ℝ ι) (R₀ / 2))
   set m₂ := mu (ball (0 : EuclideanSpace ℝ ι) R₀)
@@ -772,15 +706,11 @@ theorem exists_lintegral_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : �
     fun x => ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.gradient u) x‖ₑ
   let φ : EuclideanSpace ℝ ι → ℝ≥0∞ :=
     fun x => ‖(Omega : Set (EuclideanSpace ℝ ι)).indicator F x‖ₑ / ENNReal.ofReal lam
-  have hX : ∫⁻ x, f x ^ (2 : ℝ) ∂mu = X := by
-    have := lintegral_enorm_indicator_rpow (mu := mu) hΩm (W1p.gradient u) 1 two_pos
-    simp only [div_one] at this
-    exact this
-  have hY : ∫⁻ x, φ x ^ p ∂mu = Y := lintegral_enorm_indicator_rpow hΩm F _ hp
-  have hfp : ∫⁻ x, f x ^ p ∂mu = ∫⁻ x in Omega, ‖W1p.gradient u x‖ₑ ^ p ∂mu := by
-    have := lintegral_enorm_indicator_rpow (mu := mu) hΩm (W1p.gradient u) 1 hp
-    simp only [div_one] at this
-    exact this
+  have hX : ∫⁻ x, f x ^ (2 : ℝ) ∂mu = X :=
+    lintegral_comp_indicator hΩm (fun _ v => ‖v‖ₑ ^ (2 : ℝ)) (fun _ => by simp) _
+  have hY : ∫⁻ x, φ x ^ p ∂mu = Y :=
+    lintegral_comp_indicator hΩm (fun _ v => (‖v‖ₑ / ENNReal.ofReal lam) ^ p)
+      (fun _ => by simp [ENNReal.zero_rpow_of_pos hp]) _
   -- The local estimate on each ball, with the averages over `B(z, R₀)` bounded by integrals.
   have hball : ∀ z : EuclideanSpace ℝ ι, ∫⁻ x in ball z (R₀ / 2), f x ^ p ∂mu ≤
       m₁ * C₁ * (m₂⁻¹ ^ (p / 2) * X ^ (p / 2) + m₂⁻¹ * Y) := by
@@ -800,21 +730,10 @@ theorem exists_lintegral_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : �
       rw [hX, ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
     · exact (hav _).trans_eq (by rw [hY])
   calc ∫⁻ x in Omega, ‖W1p.gradient u x‖ₑ ^ p ∂mu
-      = ∫⁻ x in Omega, f x ^ p ∂mu := by
-        rw [← hfp, ← lintegral_indicator hΩm]
-        congr 1
-        funext x
-        by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) <;>
-          simp [f, hx, ENNReal.zero_rpow_of_pos hp]
-    _ ≤ ∫⁻ x in ⋃ z : N, ball (z : EuclideanSpace ℝ ι) (R₀ / 2), f x ^ p ∂mu :=
-        lintegral_mono_set hcover
-    _ ≤ ∑' z : N, ∫⁻ x in ball (z : EuclideanSpace ℝ ι) (R₀ / 2), f x ^ p ∂mu :=
-        lintegral_iUnion_le _ _
-    _ = ∑ z : N, ∫⁻ x in ball (z : EuclideanSpace ℝ ι) (R₀ / 2), f x ^ p ∂mu := tsum_fintype _
-    _ ≤ ∑ _z : N, m₁ * C₁ * (m₂⁻¹ ^ (p / 2) * X ^ (p / 2) + m₂⁻¹ * Y) :=
-        Finset.sum_le_sum fun z _ => hball z
-    _ = N.card * (m₁ * C₁ * (m₂⁻¹ ^ (p / 2) * X ^ (p / 2) + m₂⁻¹ * Y)) := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul]
+      = ∫⁻ x in Omega, f x ^ p ∂mu :=
+        setLIntegral_congr_fun hΩm fun x hx => by simp only [f, indicator_of_mem hx]
+    _ ≤ N.card * (m₁ * C₁ * (m₂⁻¹ ^ (p / 2) * X ^ (p / 2) + m₂⁻¹ * Y)) :=
+        setLIntegral_le_card_mul_of_subset_biUnion hcover fun z _ => hball z
     _ ≤ C * (X ^ (p / 2) + Y) := by
         simp only [C]
         rw [mul_add, mul_add, mul_add]
@@ -836,9 +755,9 @@ following property. Whenever `a` is measurable and uniformly elliptic on `Ω` wi
 `∫_Ω ‖∇u‖ ^ (2 + ε) ≤ C ((∫_Ω ‖∇u‖²) ^ ((2 + ε)/2) + ∫_Ω (‖F‖/λ) ^ (2 + ε))`.
 
 A bounded Lipschitz domain satisfies the exterior measure density condition of
-`TauCeti.PDE.exists_lintegral_enorm_gradient_rpow_le_divergence`
+`TauCeti.PDE.exists_setLIntegral_enorm_gradient_rpow_le_divergence`
 (`Set.IsLipschitzDomain.exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure`). -/
-theorem exists_lintegral_enorm_gradient_rpow_le_divergence_of_isLipschitzDomain [Nonempty ι]
+theorem exists_setLIntegral_enorm_gradient_rpow_le_divergence_of_isLipschitzDomain [Nonempty ι]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (K : ℝ)
     {Omega : Opens (EuclideanSpace ℝ ι)}
     (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
@@ -858,7 +777,7 @@ theorem exists_lintegral_enorm_gradient_rpow_le_divergence_of_isLipschitzDomain 
     hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure
   obtain ⟨θ, hθ, hdens⟩ :=
     hΩ.exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure (μ := mu) hK one_pos
-  obtain ⟨ε₀, hε₀, hglob⟩ := exists_lintegral_enorm_gradient_rpow_le_divergence (mu := mu) K hθ
+  obtain ⟨ε₀, hε₀, hglob⟩ := exists_setLIntegral_enorm_gradient_rpow_le_divergence (mu := mu) K hθ
   exact ⟨ε₀, hε₀, fun ε hε hεle => hglob ε hε hεle one_pos hb fun z hz r hr hr1 =>
     (hdens z hz r hr hr1).trans (measure_mono (sdiff_subset_sdiff_right subset_closure))⟩
 

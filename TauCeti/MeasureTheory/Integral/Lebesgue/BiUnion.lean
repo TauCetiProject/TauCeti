@@ -19,6 +19,8 @@ covering a compact space becomes a global one.
 ## Main statements
 
 * `TauCeti.lintegral_biUnion_finset_le`: `∫_{⋃ b ∈ s, t b} f ≤ ∑ b ∈ s, ∫_{t b} f`.
+* `TauCeti.setLIntegral_le_card_mul_of_subset_biUnion`: if `u ⊆ ⋃ b ∈ s, t b` and each
+  `∫_{t b} f ≤ c`, then `∫_u f ≤ #s * c`.
 -/
 
 public section
@@ -37,5 +39,13 @@ theorem lintegral_biUnion_finset_le (s : Finset β) (t : β → Set α) (f : α 
   refine (lintegral_iUnion_le _ _).trans_eq ?_
   rw [tsum_fintype]
   exact Finset.sum_coe_sort s fun b ↦ ∫⁻ a in t b, f a ∂μ
+
+/-- If a set `u` is covered by the sets `t b`, `b ∈ s`, for a finite `s`, and the integral of `f`
+over each `t b` is at most `c`, then the integral of `f` over `u` is at most `#s * c`. -/
+theorem setLIntegral_le_card_mul_of_subset_biUnion {s : Finset β} {t : β → Set α} {u : Set α}
+    (hu : u ⊆ ⋃ b ∈ s, t b) {f : α → ℝ≥0∞} {c : ℝ≥0∞} (hc : ∀ b ∈ s, ∫⁻ a in t b, f a ∂μ ≤ c) :
+    ∫⁻ a in u, f a ∂μ ≤ s.card * c :=
+  (lintegral_mono_set hu).trans <| (lintegral_biUnion_finset_le s t f).trans <|
+    (Finset.sum_le_card_nsmul s _ c hc).trans_eq (nsmul_eq_mul _ _)
 
 end TauCeti

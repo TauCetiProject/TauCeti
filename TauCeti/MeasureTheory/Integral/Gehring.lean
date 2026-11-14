@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Covering.Vitali
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 import TauCeti.MeasureTheory.Measure.Haar.Average
 
 /-!
@@ -43,7 +44,9 @@ which it arises for gradients of weak solutions, is
 `TauCeti.exists_setLAverage_rpow_add_le_of_rpow`. A reverse Hölder inequality between `B(y, ρ)`
 and `B(y, 4ρ)`, the form in which it arises near a boundary, implies one between `B(y, ρ)` and
 `B(y, 2ρ)` by covering `B(y, ρ)` with boundedly many balls of radius `ρ / 4`
-(`TauCeti.exists_setLAverage_rpow_le_of_forall_ball_four`).
+(`TauCeti.exists_setLAverage_rpow_le_of_forall_ball_four`). The right-hand side of a reverse Hölder
+inequality only grows by a dimensional factor when its ball is enlarged
+(`TauCeti.mul_setLAverage_rpow_add_mul_setLAverage_ball_le`).
 
 ## The argument
 
@@ -942,6 +945,41 @@ theorem exists_setLAverage_rpow_add_le_of_rpow {s p : ℝ} (hs : 0 < s) (hsp : s
         add_le_add le_self_add (by gcongr; exact le_add_self)
     _ = (1 + (b : ℝ≥0∞) ^ ((p + ε) / p)) * (X + Y) := by ring
 
+/-- **Enlarging the ball on the right of a reverse Hölder inequality.** Let `0 < s ≤ p` and let
+`B(z, r) ⊆ B(y, R)`. The right-hand side of a reverse Hölder inequality between the exponents `s`
+and `p` over `B(z, r)` is at most `K ^ (p/s)` times the same expression over `B(y, R)`, where
+`K = (R / r) ^ dim E` is the ratio of the measures of the two balls:
+
+`b (⨍_{B(z, r)} f ^ s) ^ (p/s) + b ⨍_{B(z, r)} φ ^ p ≤`
+`b K ^ (p/s) ((⨍_{B(y, R)} f ^ s) ^ (p/s) + ⨍_{B(y, R)} φ ^ p)`. -/
+theorem mul_setLAverage_rpow_add_mul_setLAverage_ball_le {s p : ℝ} (hs : 0 < s) (hsp : s ≤ p)
+    (b : ℝ≥0∞) (f φ : E → ℝ≥0∞) {z y : E} {r R : ℝ} (hr : 0 < r) (hsub : ball z r ⊆ ball y R) :
+    b * (⨍⁻ x in ball z r, f x ^ s ∂μ) ^ (p / s) + b * ⨍⁻ x in ball z r, φ x ^ p ∂μ ≤
+      b * ENNReal.ofReal ((R / r) ^ finrank ℝ E) ^ (p / s) *
+        ((⨍⁻ x in ball y R, f x ^ s ∂μ) ^ (p / s) + ⨍⁻ x in ball y R, φ x ^ p ∂μ) := by
+  set K := ENNReal.ofReal ((R / r) ^ finrank ℝ E)
+  -- `K ≥ 1`, since `μ(B(y, R)) = K μ(B(z, r))` and `B(z, r) ⊆ B(y, R)`.
+  have hK : 1 ≤ K := by
+    have hR : 0 < R := dist_nonneg.trans_lt (mem_ball.1 (hsub (mem_ball_self hr)))
+    have hball : μ (ball y R) = K * μ (ball z r) := by
+      conv_lhs => rw [← div_mul_cancel₀ R hr.ne']
+      rw [Measure.addHaar_ball_mul_of_pos μ y (div_pos hR hr), Measure.addHaar_ball_center μ z]
+    have h := measure_mono (μ := μ) hsub
+    rw [hball] at h
+    exact (ENNReal.mul_le_mul_iff_left (measure_ball_pos μ z hr).ne' measure_ball_lt_top.ne).1
+      (by rwa [one_mul])
+  have hps : 1 ≤ p / s := (one_le_div hs).2 hsp
+  calc b * (⨍⁻ x in ball z r, f x ^ s ∂μ) ^ (p / s) + b * ⨍⁻ x in ball z r, φ x ^ p ∂μ
+      ≤ b * (K * ⨍⁻ x in ball y R, f x ^ s ∂μ) ^ (p / s) +
+          b * (K * ⨍⁻ x in ball y R, φ x ^ p ∂μ) := by
+        gcongr <;> exact setLAverage_ball_le _ hr hsub
+    _ ≤ b * (K ^ (p / s) * (⨍⁻ x in ball y R, f x ^ s ∂μ) ^ (p / s)) +
+          b * (K ^ (p / s) * ⨍⁻ x in ball y R, φ x ^ p ∂μ) := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by linarith)]
+        gcongr
+        simpa using ENNReal.rpow_le_rpow_of_exponent_le hK hps
+    _ = _ := by ring
+
 /-- **A reverse Hölder inequality between `B(y, ρ)` and `B(y, 4ρ)` gives one between `B(y, ρ)` and
 `B(y, 2ρ)`.** Let `0 < s ≤ p` and `b ≥ 0`. There is `b'`, depending only on `b`, `p / s` and the
 dimension, with the following property. If
@@ -958,7 +996,7 @@ naturally come with the larger ratio, since the ball on the right must contain a
 of the exterior.
 
 The ball `B(y, ρ)` is covered by at most `17 ^ dim E` balls `B(z, ρ/4)` with `z ∈ B(y, ρ)`
-(`TauCeti.exists_finset_isCover_of_subset_closedBall`), and `B(z, ρ) ⊆ B(y, 2ρ)` for each. -/
+(`TauCeti.exists_finset_subset_biUnion_ball`), and `B(z, ρ) ⊆ B(y, 2ρ)` for each. -/
 theorem exists_setLAverage_rpow_le_of_forall_ball_four {s p : ℝ} (hs : 0 < s) (hsp : s ≤ p)
     (b : ℝ≥0) :
     ∃ b' : ℝ≥0, ∀ {f φ : E → ℝ≥0∞} {U : Set E},
@@ -979,9 +1017,6 @@ theorem exists_setLAverage_rpow_le_of_forall_ball_four {s p : ℝ} (hs : 0 < s) 
     simp only [K]
     rw [mul_div_assoc, div_self hρ.ne', mul_one, ← ENNReal.ofReal_coe_nnreal]
     simp
-  have hK1 : 1 ≤ K := by
-    rw [hK]
-    exact_mod_cast one_le_pow₀ (by norm_num : (1 : ℝ≥0) ≤ 2)
   set A := ⨍⁻ x in ball y (2 * ρ), f x ^ s ∂μ
   set Φ := ⨍⁻ x in ball y (2 * ρ), φ x ^ p ∂μ
   set T : ℝ≥0∞ := b * K ^ (p / s) * (A ^ (p / s) + Φ)
@@ -993,52 +1028,24 @@ theorem exists_setLAverage_rpow_le_of_forall_ball_four {s p : ℝ} (hs : 0 < s) 
     have h4 : 4 * (ρ / 4) = ρ := mul_div_cancel₀ _ four_ne_zero
     have h := hRH z (ρ / 4) (by positivity) (by rw [h4]; exact hzsub.trans hsub)
     rw [h4] at h
-    refine h.trans ?_
-    have hA : ⨍⁻ x in ball z ρ, f x ^ s ∂μ ≤ K * A := setLAverage_ball_le _ hρ hzsub
-    have hΦ : ⨍⁻ x in ball z ρ, φ x ^ p ∂μ ≤ K * Φ := setLAverage_ball_le _ hρ hzsub
-    calc (b : ℝ≥0∞) * (⨍⁻ x in ball z ρ, f x ^ s ∂μ) ^ (p / s) +
-          b * ⨍⁻ x in ball z ρ, φ x ^ p ∂μ
-        ≤ b * (K * A) ^ (p / s) + b * (K * Φ) := by gcongr
-      _ ≤ b * (K ^ (p / s) * A ^ (p / s)) + b * (K ^ (p / s) * Φ) := by
-          rw [ENNReal.mul_rpow_of_nonneg _ _ (by linarith)]
-          gcongr
-          simpa using ENNReal.rpow_le_rpow_of_exponent_le hK1 hps
-      _ = T := by ring
+    exact h.trans (mul_setLAverage_rpow_add_mul_setLAverage_ball_le hs hsp _ _ _ hρ hzsub)
   -- A cover of `B(y, ρ)` by at most `17ⁿ` balls `B(z, ρ/4)` centred in `B(y, ρ)`.
-  set ε : ℝ≥0 := ⟨ρ / 8, by positivity⟩
-  have hε : (ε : ℝ) = ρ / 8 := rfl
-  obtain ⟨N, hNsub, hNcov, hNcard⟩ := exists_finset_isCover_of_subset_closedBall
-    (x := y) (r := ⟨ρ, hρ.le⟩) (ε := ε)
-    (by rw [← NNReal.coe_ne_zero, hε]; positivity) (ball_subset_closedBall (x := y))
-  have hcover : ball y ρ ⊆ ⋃ z : N, ball (z : E) (ρ / 4) := by
-    intro x hx
-    obtain ⟨z, hzN, hxz⟩ := hNcov hx
-    refine mem_iUnion.2 ⟨⟨z, hzN⟩, mem_ball.2 ?_⟩
-    have hxz : nndist x z ≤ ε := edist_le_coe.1 hxz
-    have : dist x z ≤ ρ / 8 := by
-      rw [← coe_nndist, ← hε]
-      exact_mod_cast hxz
-    linarith
+  obtain ⟨N, hNsub, hcover, hNcard⟩ := exists_finset_subset_biUnion_ball
+    (r := ρ.toNNReal) (δ := ρ / 4) (by positivity)
+    ((ball_subset_closedBall (x := y)).trans
+      (closedBall_subset_closedBall (Real.le_coe_toNNReal ρ)))
   have hcard : (N.card : ℝ≥0∞) ≤ (17 : ℝ≥0) ^ n := by
-    have h17 : (1 + 2 * ρ / (ρ / 8) : ℝ) = 17 := by field_simp; norm_num
-    change (N.card : ℝ) ≤ (1 + 2 * ρ / (ρ / 8)) ^ n at hNcard
-    rw [h17] at hNcard
+    have h17 : (1 + 4 * ρ / (ρ / 4) : ℝ) = 17 := by field_simp; norm_num
+    rw [Real.coe_toNNReal _ hρ.le, h17] at hNcard
     exact_mod_cast hNcard
   -- Integrate over the cover, using `μ(B(z, ρ/4)) ≤ μ(B(y, ρ))`.
   have hint : ∫⁻ x in ball y ρ, f x ^ p ∂μ ≤ N.card * T * μ (ball y ρ) := by
-    calc ∫⁻ x in ball y ρ, f x ^ p ∂μ
-        ≤ ∫⁻ x in ⋃ z : N, ball (z : E) (ρ / 4), f x ^ p ∂μ := lintegral_mono_set hcover
-      _ ≤ ∑' z : N, ∫⁻ x in ball (z : E) (ρ / 4), f x ^ p ∂μ := lintegral_iUnion_le _ _
-      _ = ∑ z : N, ∫⁻ x in ball (z : E) (ρ / 4), f x ^ p ∂μ := tsum_fintype _
-      _ ≤ ∑ _z : N, T * μ (ball y ρ) := by
-          refine Finset.sum_le_sum fun z _ => ?_
-          rw [← measure_mul_setLAverage _ measure_ball_lt_top.ne, mul_comm]
-          refine mul_le_mul' (hsmall z (hNsub z.2)) ?_
-          rw [Measure.addHaar_ball_center μ (z : E), Measure.addHaar_ball_center μ y]
-          exact measure_mono (ball_subset_ball (by linarith))
-      _ = N.card * T * μ (ball y ρ) := by
-          rw [Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul]
-          ring
+    rw [mul_assoc]
+    refine setLIntegral_le_card_mul_of_subset_biUnion hcover fun z hz => ?_
+    rw [← measure_mul_setLAverage _ measure_ball_lt_top.ne, mul_comm]
+    refine mul_le_mul' (hsmall z (hNsub hz)) ?_
+    rw [Measure.addHaar_ball_center μ z, Measure.addHaar_ball_center μ y]
+    exact measure_mono (ball_subset_ball (by linarith))
   rw [setLAverage_eq]
   refine (ENNReal.div_le_of_le_mul hint).trans ?_
   calc (N.card : ℝ≥0∞) * T
