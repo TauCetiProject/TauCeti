@@ -104,8 +104,7 @@ The basis of its weight lattice is the standard basis of fundamental weights. -/
   basis := t.scWeightBasis ht
   weight := t.scWeight ht
   isCartanWeightVector_basis := t.isCartanWeightVector_scWeightBasis ht
-  weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map
-    (LinearEquiv.ofTop _ (t.span_range_scWeight_eq_top ht)).symm
+  weightLatticeBasis := ChevalleyDatum.fullWeightLatticeBasis (t.span_range_scWeight_eq_top ht)
 
 /-- The dimension of the full-weight datum is the size of its existing weight basis. -/
 theorem scChevalleyDatum_dim : (t.scChevalleyDatum ht).dim = t.scWeightBasisCard ht :=
@@ -144,17 +143,15 @@ coordinates. -/
 @[simp]
 theorem coe_scChevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
     ((t.scChevalleyDatum ht).weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1 := by
-  rw [scChevalleyDatum, Module.Basis.map_apply]
-  simp [Pi.basisFun_apply]
+  exact ChevalleyDatum.coe_fullWeightLatticeBasis (t.span_range_scWeight_eq_top ht) i
 
 /-- The torus coordinates of the full-weight datum are the original fundamental-weight
 coordinates: no lattice-index correction is needed. -/
 @[simp]
 theorem scChevalleyDatum_coordinateWeight :
     (t.scChevalleyDatum ht).coordinateWeight = t.scWeight ht := by
-  ext j i
-  have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateWeight_smul j) i
-  simpa [Pi.single_apply] using h
+  exact (t.scChevalleyDatum ht).coordinateWeight_eq_weight_of_coe_weightLatticeBasis
+    (t.coe_scChevalleyDatum_weightLatticeBasis ht)
 
 /-- For the full-weight datum, restriction from the full weight lattice is the identity on torus
 parameters. -/
@@ -170,9 +167,8 @@ coordinates: the torus acts on the root subgroup of `γ` through the character `
 @[simp]
 theorem scChevalleyDatum_coordinateRoot (γ : Fin t.numRoots) :
     (t.scChevalleyDatum ht).coordinateRoot γ = (t.simplyConnectedRootDatum ht).root γ := by
-  ext i
-  have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateRoot_smul γ) i
-  simpa [Pi.single_apply] using h
+  exact (t.scChevalleyDatum ht).coordinateRoot_eq_root_of_coe_weightLatticeBasis
+    (t.coe_scChevalleyDatum_weightLatticeBasis ht) γ
 
 /-- **Every root subgroup of the full-weight datum is injective**, over every commutative ring,
 including nonreduced rings and rings of small characteristic. -/
