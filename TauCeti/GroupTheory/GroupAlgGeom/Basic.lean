@@ -109,6 +109,9 @@ theorem coe_mk (φ : H →* K) (h : ∀ g, φ.toFun (ιH g) = ιK g) : ⇑(⟨φ
 theorem ext {φ ψ : GHom ιH ιK} (h : ∀ x, φ x = ψ x) : φ = ψ :=
   DFunLike.ext _ _ h
 
+theorem toMonoidHom_injective : Function.Injective ((↑) : GHom ιH ιK → H →* K) :=
+  Function.Injective.of_comp (f := DFunLike.coe) DFunLike.coe_injective
+
 @[simp]
 theorem map_coeff (φ : GHom ιH ιK) (g : G) : φ (ιH g) = ιK g :=
   φ.map_coeff' g

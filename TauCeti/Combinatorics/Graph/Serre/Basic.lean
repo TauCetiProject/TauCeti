@@ -18,7 +18,9 @@ a Serre graph keeps those directed edge identities, so its paths can be used for
 graph groups, and labelled-graph arguments.
 
 The geometric edges of a Serre graph are the reversal pairs `{e, rev e}`; data attached to an
-unoriented edge, such as the edge groups of a graph of groups, is indexed by them.
+unoriented edge, such as the edge groups of a graph of groups, is indexed by them, and
+`GeomEdge.out` chooses a dart representing each of them. An orientation chooses one dart above
+each geometric edge; orientations pull back along morphisms of Serre graphs.
 
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
 and the darts in `S`. More generally, a set `A` of vertices together with a reversal-closed set
@@ -129,6 +131,27 @@ def GeomEdge.lift {β : Sort*} (f : Γ.E → β) (hf : ∀ e, f (Γ.rev e) = f e
 @[simp] theorem GeomEdge.lift_toGeomEdge {β : Sort*} (f : Γ.E → β)
     (hf : ∀ e, f (Γ.rev e) = f e) (e : Γ.E) : GeomEdge.lift Γ f hf (Γ.toGeomEdge e) = f e :=
   (rfl)
+
+/-- A chosen dart representing a geometric edge. -/
+noncomputable def GeomEdge.out (y : Γ.GeomEdge) : Γ.E :=
+  Quot.out y
+
+/-- The chosen dart of a geometric edge lies on it. -/
+@[simp] theorem toGeomEdge_out (y : Γ.GeomEdge) : Γ.toGeomEdge (GeomEdge.out Γ y) = y :=
+  Quot.out_eq y
+
+/-- Distinct geometric edges have distinct chosen darts. -/
+theorem GeomEdge.out_injective : Function.Injective (GeomEdge.out Γ) :=
+  Function.LeftInverse.injective Γ.toGeomEdge_out
+
+@[simp] theorem GeomEdge.out_inj {x y : Γ.GeomEdge} :
+    GeomEdge.out Γ x = GeomEdge.out Γ y ↔ x = y :=
+  (GeomEdge.out_injective Γ).eq_iff
+
+/-- The dart representing the geometric edge of a dart `e` is `e` or its reverse. -/
+theorem GeomEdge.out_toGeomEdge_eq_or_eq_rev (e : Γ.E) :
+    GeomEdge.out Γ (Γ.toGeomEdge e) = e ∨ GeomEdge.out Γ (Γ.toGeomEdge e) = Γ.rev e :=
+  Γ.toGeomEdge_eq_toGeomEdge_iff.mp (Γ.toGeomEdge_out _).symm
 
 /-- A bijection of darts commuting with reversal induces a bijection of geometric edges. -/
 def GeomEdge.congr {Δ : SerreGraph.{w, x}} (f : Γ.E ≃ Δ.E)
@@ -264,6 +287,12 @@ theorem eq_of_path_of_forall_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) {a b : 
   | nil => rfl
   | cons _ e ih => exact ih.trans (e.2.1.symm.trans ((h e.1).trans e.2.2))
 
+/-- A preconnected Serre graph without darts has at most one vertex. -/
+theorem Preconnected.subsingleton_of_isEmpty {Γ : SerreGraph.{u, v}} [IsEmpty Γ.E]
+    (hΓ : Γ.Preconnected) : Subsingleton Γ.V :=
+  ⟨fun a b => (Γ.preconnected_iff.mp hΓ a b).elim
+    (Γ.eq_of_path_of_forall_src_eq_tgt fun e => isEmptyElim e)⟩
+
 /-- A Serre graph is connected when it is nonempty and path-connected. -/
 def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
 
@@ -330,6 +359,20 @@ theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, 
   obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h
   · rfl
   · rw [f.map_rev, Δ.toGeomEdge_rev]
+
+/-- The preimage of an orientation under a morphism of Serre graphs is an orientation. -/
+theorem Hom.isOrientation_preimage {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) {O' : Set Δ.E} (hO' : Δ.IsOrientation O') : Γ.IsOrientation (f.mapE ⁻¹' O') :=
+  (isOrientation_iff Γ _).2 fun e => by simpa using (isOrientation_iff Δ O').1 hO' (f.mapE e)
+
+/-- A morphism carrying an orientation `O` of the source into an orientation `O'` of the target
+sends a dart into `O'` exactly when the dart lies in `O`: so `O` is the preimage of `O'`. -/
+theorem Hom.mapE_mem_iff {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {O : Set Γ.E} {O' : Set Δ.E} (hO : Γ.IsOrientation O) (hO' : Δ.IsOrientation O')
+    (hf : Set.MapsTo f.mapE O O') (e : Γ.E) : f.mapE e ∈ O' ↔ e ∈ O := by
+  refine ⟨fun he => ?_, fun he => hf he⟩
+  by_contra h
+  exact hO'.rev_notMem_of_mem Δ _ he (f.map_rev e ▸ hf ((hO.mem_rev_iff Γ e).mpr h))
 
 /-- The quiver prefunctor underlying a Serre-graph morphism. -/
 @[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
