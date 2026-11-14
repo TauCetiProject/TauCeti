@@ -52,6 +52,19 @@ public section
 
 namespace PreAbstractSimplicialComplex
 
+/-- A finite complex with a face missing `v` has one that is maximal among the faces missing
+`v`. -/
+private theorem exists_maximal_notMem_of_mem {ι : Type*}
+    {K : _root_.PreAbstractSimplicialComplex ι} {v : ι} {σ : Finset ι} (hfin : K.faces.Finite)
+    (hσ : σ ∈ K) (hv : v ∉ σ) :
+    ∃ τ ∈ K, v ∉ τ ∧ ∀ ⦃ω : Finset ι⦄, ω ∈ K → v ∉ ω → τ ⊆ ω → ω = τ := by
+  obtain ⟨τ, -, hτ⟩ :=
+    (hfin.subset fun _ hρ => hρ.1 : {ρ : Finset ι | ρ ∈ K ∧ v ∉ ρ}.Finite).exists_le_maximal
+      ⟨hσ, hv⟩
+  exact ⟨τ, hτ.prop.1, hτ.prop.2, fun _ hω hvω hτω => hτ.eq_of_ge ⟨hω, hvω⟩ hτω⟩
+
+section IsCone
+
 variable {ι : Type*} [DecidableEq ι] {K : _root_.PreAbstractSimplicialComplex ι}
   {v : ι} {σ : Finset ι}
 
@@ -75,16 +88,6 @@ private theorem IsCone.isFreePair (h : IsCone K v) (hσ : σ ∈ K) (hv : v ∉ 
           (((K.isRelLowerSet_faces hσ).1).mono hsub)
       rw [← hmax hmem (Finset.notMem_erase _ _) hsub, Finset.insert_erase hvω]
     · exact Or.inl (hmax hω hvω hσω)
-
-omit [DecidableEq ι] in
-/-- A finite complex with a face missing `v` has one that is maximal among the faces missing
-`v`. -/
-private theorem exists_maximal_notMem_of_mem (hfin : K.faces.Finite) (hσ : σ ∈ K) (hv : v ∉ σ) :
-    ∃ τ ∈ K, v ∉ τ ∧ ∀ ⦃ω : Finset ι⦄, ω ∈ K → v ∉ ω → τ ⊆ ω → ω = τ := by
-  obtain ⟨τ, -, hτ⟩ :=
-    (hfin.subset fun _ hρ => hρ.1 : {ρ : Finset ι | ρ ∈ K ∧ v ∉ ρ}.Finite).exists_le_maximal
-      ⟨hσ, hv⟩
-  exact ⟨τ, hτ.prop.1, hτ.prop.2, fun _ hω hvω hτω => hτ.eq_of_ge ⟨hω, hvω⟩ hτω⟩
 
 /-- A cone with apex `v` that is not the one-vertex complex at `v` has a face missing `v`. -/
 theorem IsCone.exists_notMem_of_ne_point (h : IsCone K v) (hne : K ≠ point v) :
@@ -153,17 +156,17 @@ theorem collapsible_stellarSubdivision_simplex_self (hV : V.Nonempty) :
 
 end StellarSubdivision
 
+end IsCone
+
 section Simplex
 
-variable {V : Finset ι}
+variable {ι : Type*} {v : ι} {V : Finset ι}
 
-omit [DecidableEq ι] in
 /-- An abstract simplex collapses to any of its vertices. -/
 theorem collapsesTo_point_simplex (hv : v ∈ V) : CollapsesTo (simplex V) (point v) := by
   classical
   exact (isCone_simplex hv).collapsesTo_point (finite_faces_simplex V)
 
-omit [DecidableEq ι] in
 /-- An abstract simplex on a nonempty spanning set is collapsible.  Its face count grows with
 the spanning set, so this exhibits collapsible complexes with arbitrarily many faces, beyond the
 one-vertex complexes of `Collapsible.point`. -/
@@ -174,6 +177,9 @@ theorem collapsible_simplex (hV : V.Nonempty) : Collapsible (simplex V) := by
 end Simplex
 
 section ClosedStar
+
+variable {ι : Type*} [DecidableEq ι] {K : _root_.PreAbstractSimplicialComplex ι}
+  {v : ι} {σ : Finset ι}
 
 /-- A finite closed star of a face collapses to any vertex of that face. -/
 theorem collapsesTo_point_closedStar (hfin : (closedStar K σ).faces.Finite) (hσ : σ ∈ K)
@@ -190,16 +196,14 @@ end ClosedStar
 
 section Cone
 
-variable {α : Type*} [DecidableEq α] {L : _root_.PreAbstractSimplicialComplex α}
+variable {α : Type*} {L : _root_.PreAbstractSimplicialComplex α}
 
-omit [DecidableEq α] in
 /-- The cone on a finite complex collapses to its apex. -/
 theorem collapsesTo_point_cone (hfin : L.faces.Finite) :
     CollapsesTo (cone L) (point (Sum.inr PUnit.unit)) := by
   classical
   exact (isCone_cone L).collapsesTo_point (finite_faces_cone hfin)
 
-omit [DecidableEq α] in
 /-- The cone on a finite complex is collapsible. -/
 theorem collapsible_cone (hfin : L.faces.Finite) : Collapsible (cone L) :=
   collapsible_iff.mpr ⟨_, collapsesTo_point_cone hfin⟩
