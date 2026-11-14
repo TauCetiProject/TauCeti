@@ -194,8 +194,7 @@ lemma Subgroup.integerCuspWidth_mem_strictPeriods :
 a positive strict period. -/
 lemma Subgroup.isCusp_infty_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ] :
     IsCusp OnePoint.infty 𝒢 :=
-  Subgroup.isCusp_of_mem_strictPeriods (Nat.cast_pos.mpr Subgroup.integerCuspWidth_pos)
-    Subgroup.integerCuspWidth_mem_strictPeriods
+  (Fact.out : IsCusp OnePoint.infty 𝒮ℒ).of_isFiniteRelIndex
 
 /-- The integer cusp width is minimal among positive integer strict periods. -/
 lemma Subgroup.integerCuspWidth_le {n : ℕ} (hpos : 0 < n)
