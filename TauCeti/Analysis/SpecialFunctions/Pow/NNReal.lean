@@ -74,6 +74,9 @@ Marcinkiewicz interpolation at the height `t / 2` produces the constant
 `p * 2⁻¹ ^ (1 - p) / (p - 1)` times twice the weak-type constant; this simplifies to
 `2 * p * 2 ^ (p - 1) / (p - 1)` times that constant.
 
+For a positive exponent `r`, `0 ^ r = 0`, so raising a function to the power `r` commutes with
+restricting it to a set by `Set.indicator`.
+
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
@@ -117,6 +120,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   finite `x`.
 * `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul`: the Marcinkiewicz constant at height `t / 2`,
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
+* `ENNReal.indicator_rpow_apply`: `V.indicator (g ^ r) x = V.indicator g x ^ r` for `0 < r`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 * `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
@@ -408,6 +412,11 @@ theorem ofReal_toReal_mul_rpow {x : ℝ≥0∞} {q : ℝ} (h : q < 0 ∨ x ≠ �
   · simp
   rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx, ENNReal.toReal_rpow,
     ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero hx₀ hx)]
+
+/-- For `0 < r`, raising to the power `r` commutes with restriction to a set. -/
+theorem indicator_rpow_apply {α : Type*} {V : Set α} {g : α → ℝ≥0∞} {r : ℝ} (hr : 0 < r)
+    (x : α) : V.indicator (fun y => g y ^ r) x = V.indicator g x ^ r :=
+  congrFun (Set.indicator_comp_of_zero (g := fun a : ℝ≥0∞ => a ^ r) (zero_rpow_of_pos hr)) x
 
 end ENNReal
 

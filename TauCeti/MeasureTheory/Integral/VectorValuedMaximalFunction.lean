@@ -397,11 +397,6 @@ section Main
 
 variable {F : Type*} [ENorm F] {f : κ → (ι → ℝ) → F} {r : ℝ}
 
-/-- For `0 < r`, raising to the power `r` commutes with restriction to a set. -/
-private theorem indicator_rpow_apply {α : Type*} {V : Set α} {g : α → ℝ≥0∞} {r : ℝ}
-    (hr : 0 < r) (x : α) : V.indicator (fun y => g y ^ r) x = V.indicator g x ^ r :=
-  congrFun (indicator_comp_of_zero (g := fun a : ℝ≥0∞ => a ^ r) (ENNReal.zero_rpow_of_pos hr)) x
-
 /-- The part of a measurable family on a measurable set `V`, through the diagonal `Lʳ` bound and
 Chebyshev's inequality: the `ℓʳ` norm of its maximal functions reaches `t / 2` on a set of measure
 at most `2 ^ r cᵣ 4ⁿ t ^ (-r) ∫_V G ^ r`, where `G` is the `ℓʳ` norm of the family. -/
@@ -416,7 +411,7 @@ private theorem volume_half_rpow_le_setLIntegral {g : κ → (ι → ℝ) → �
   have hpow (x : ι → ℝ) : ∑' i, V.indicator (g i) x ^ r =
       V.indicator (fun y => ((∑' i, g i y ^ r) ^ (1 / r)) ^ r) x := by
     simp only [one_div, ENNReal.rpow_inv_rpow hr0.ne', indicator_tsum_apply,
-      indicator_rpow_apply hr0]
+      ENNReal.indicator_rpow_apply hr0]
   have h := ENNReal.le_two_rpow_mul_inv_rpow_mul (ENNReal.ofReal_pos.2 ht).ne' ENNReal.ofReal_ne_top
     (mul_volume_le_tsum_maximalFunction_rpow (fun i => (hg i).indicator hV) hr
       ((ENNReal.ofReal t / 2) ^ r))
@@ -492,8 +487,8 @@ private theorem volume_lt_half_le_setLIntegral {g : κ → (ι → ℝ) → ℝ�
   have h := mul_volume_lt_rpow_tsum_maximalFunction_rpow_le
     (fun i => ((hg i).indicator hV).eNorm.aemeasurable) hr (ENNReal.ofReal t / 2)
   -- The `ℓʳ` norm of the family restricted to `V` is the restriction of its `ℓʳ` norm.
-  simp only [eNorm_eq_self, ← indicator_rpow_apply hr0, ← indicator_tsum_apply,
-    ← indicator_rpow_apply (one_div_pos.2 hr0), lintegral_indicator hV] at h
+  simp only [eNorm_eq_self, ← ENNReal.indicator_rpow_apply hr0, ← indicator_tsum_apply,
+    ← ENNReal.indicator_rpow_apply (one_div_pos.2 hr0), lintegral_indicator hV] at h
   rw [← ENNReal.rpow_one (ENNReal.ofReal t / 2)] at h
   have h' := ENNReal.le_two_rpow_mul_inv_rpow_mul (ENNReal.ofReal_pos.2 ht).ne'
     ENNReal.ofReal_ne_top h
