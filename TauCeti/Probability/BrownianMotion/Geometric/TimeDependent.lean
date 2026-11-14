@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Geometric.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.Wiener
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Independence.Integration
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Geometric Brownian motion with time-dependent coefficients
@@ -44,7 +45,7 @@ filtration is assumed, adaptedness of the chosen representatives is not asserted
   the Gaussian law of `log S_t`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_abs_rpow_timeDependentGeometricBrownianMotion`:
   the absolute moments of every real order.
-* `ProbabilityTheory.IsPreBrownianReal.timeDependentGeometricBrownianMotion_const`: agreement
+* `ProbabilityTheory.IsPreBrownianReal.timeDependentGeometricBrownianMotion_const_ae_eq`: agreement
   with geometric Brownian motion for constant coefficients.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.condExp_timeDependentGeometricBrownianMotion`:
   `E[S_t | ℱ_u] = exp (∫ᵤᵗ μ) S_u`.
@@ -103,6 +104,62 @@ theorem timeDependentGeometricBrownianMotion_def (hB : IsPreBrownianReal B P) (s
       s * exp ((∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t) +
         hB.wienerIntegral t ((hσ t).toLp σ) ω) := (rfl)
 
+/-- At each fixed time, the chosen representative of the process is measurable. -/
+@[fun_prop]
+theorem measurable_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) (s : ℝ)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
+    Measurable (hB.timeDependentGeometricBrownianMotion s μ σ hσ t) := by
+  unfold timeDependentGeometricBrownianMotion
+  exact measurable_const.mul (measurable_exp.comp
+    (measurable_const.add (Lp.stronglyMeasurable _).measurable))
+
+/-- The process is almost everywhere measurable for any sub-sigma-algebra making the
+Brownian values up to the horizon almost everywhere measurable. -/
+theorem aestronglyMeasurable_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
+    {m : MeasurableSpace Ω} (hm : m ≤ mΩ) (s : ℝ) (μ σ : ℝ≥0 → ℝ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) {t : ℝ≥0}
+    (hBm : ∀ u ≤ t, AEStronglyMeasurable[m] (B u) P) :
+    AEStronglyMeasurable[m] (hB.timeDependentGeometricBrownianMotion s μ σ hσ t) P := by
+  unfold timeDependentGeometricBrownianMotion
+  exact (continuous_const.mul (continuous_exp.comp (continuous_const.add continuous_id)))
+    |>.comp_aestronglyMeasurable (hB.aestronglyMeasurable_wienerIntegral hm hBm _)
+
+/-- Scaling the initial value scales the whole process. -/
+theorem timeDependentGeometricBrownianMotion_mul_left (hB : IsPreBrownianReal B P) (c s : ℝ)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
+    hB.timeDependentGeometricBrownianMotion (c * s) μ σ hσ t ω =
+      c * hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω := by
+  simp only [timeDependentGeometricBrownianMotion_def, mul_assoc]
+
+/-- A zero initial value gives the zero process. -/
+@[simp]
+theorem timeDependentGeometricBrownianMotion_zero_left (hB : IsPreBrownianReal B P)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
+    hB.timeDependentGeometricBrownianMotion 0 μ σ hσ t ω = 0 := by
+  simp [timeDependentGeometricBrownianMotion_def]
+
+/-- The process vanishes exactly when its initial value vanishes. -/
+@[simp]
+theorem timeDependentGeometricBrownianMotion_eq_zero_iff (hB : IsPreBrownianReal B P) (s : ℝ)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
+    hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω = 0 ↔ s = 0 := by
+  simp [timeDependentGeometricBrownianMotion_def, (exp_pos _).ne']
+
+/-- The process is positive exactly when its initial value is positive. -/
+@[simp]
+theorem timeDependentGeometricBrownianMotion_pos_iff (hB : IsPreBrownianReal B P) (s : ℝ)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
+    0 < hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω ↔ 0 < s := by
+  rw [timeDependentGeometricBrownianMotion_def, mul_pos_iff_of_pos_right (exp_pos _)]
+
+/-- Taking absolute values replaces the initial value by its absolute value. -/
+@[simp]
+theorem abs_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) (s : ℝ)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
+    |hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω| =
+      hB.timeDependentGeometricBrownianMotion |s| μ σ hσ t ω := by
+  simp only [timeDependentGeometricBrownianMotion_def, abs_mul, abs_of_pos (exp_pos _)]
+
 /-- For a positive initial value, the process is positive at every time and sample point. -/
 theorem timeDependentGeometricBrownianMotion_pos (hB : IsPreBrownianReal B P) (hs : 0 < s)
     (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
@@ -130,6 +187,16 @@ theorem timeDependentGeometricBrownianMotion_eq_mul (hB : IsPreBrownianReal B P)
     mul_assoc, ← exp_add]
   ring_nf
 
+/-- Every real power of the process factors into a power of its initial value and an
+exponential of an affine function of the Wiener integral, even for signed initial values. -/
+theorem rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) (s q : ℝ)
+    (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) (ω : Ω) :
+    hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω ^ q =
+      s ^ q * exp (q * (∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t) +
+        q * hB.wienerIntegral t ((hσ t).toLp σ) ω) := by
+  rw [timeDependentGeometricBrownianMotion_def, mul_comm s,
+    Real.mul_rpow_of_nonneg_left (exp_pos _).le, ← exp_mul, mul_comm _ q, mul_add, mul_comm]
+
 /-- An absolute power of the process is `|s| ^ q` times an exponential of an affine function
 of the Wiener integral. This holds for every initial value and every real exponent. -/
 theorem abs_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) (s q : ℝ)
@@ -137,8 +204,7 @@ theorem abs_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B 
     |hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω| ^ q =
       |s| ^ q * exp (q * (∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t) +
         q * hB.wienerIntegral t ((hσ t).toLp σ) ω) := by
-  rw [timeDependentGeometricBrownianMotion_def, abs_mul, abs_of_pos (exp_pos _),
-    mul_rpow (abs_nonneg s) (exp_pos _).le, ← exp_mul, mul_comm _ q, mul_add]
+  rw [abs_timeDependentGeometricBrownianMotion, rpow_timeDependentGeometricBrownianMotion]
 
 /-- **The Gaussian law of the logarithm.** For `s > 0`, `log S_t` is Gaussian with mean
 `log s + ∫₀ᵗ (μ - σ² / 2)` and variance `∫₀ᵗ σ²`. -/
@@ -173,12 +239,31 @@ theorem hasLaw_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
   exact HasLaw.comp ⟨by fun_prop, rfl⟩
     (hB.hasLaw_log_timeDependentGeometricBrownianMotion hs μ σ hσ t)
 
+/-- Every real power of the process is integrable, including for signed initial values. -/
+theorem integrable_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
+    (s q : ℝ) (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
+    Integrable (fun ω ↦ hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω ^ q) P := by
+  simp_rw [rpow_timeDependentGeometricBrownianMotion, exp_add]
+  exact ((hB.integrable_exp_mul_wienerIntegral t ((hσ t).toLp σ) q).const_mul _).const_mul _
+
+/-- **Real moments of geometric Brownian motion with time-dependent coefficients.** The
+formula holds for every real initial value and exponent, using real powers for signed values. -/
+theorem integral_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
+    (s q : ℝ) {μ σ : ℝ≥0 → ℝ} (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) {t : ℝ≥0}
+    (hμ : Integrable μ (timeMeasure t)) :
+    ∫ ω, hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω ^ q ∂P =
+      s ^ q * exp (q * (∫ u, μ u ∂timeMeasure t) +
+        q * (q - 1) * (∫ u, σ u ^ 2 ∂timeMeasure t) / 2) := by
+  simp_rw [rpow_timeDependentGeometricBrownianMotion, exp_add, integral_const_mul,
+    hB.integral_exp_mul_wienerIntegral_toLp, ← exp_add, integral_sub_sq_div_two hμ (hσ t)]
+  ring_nf
+
 /-- Every real absolute power of the process is integrable. -/
 theorem integrable_abs_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P)
     (s q : ℝ) (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
     Integrable (fun ω ↦ |hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω| ^ q) P := by
-  simp_rw [abs_rpow_timeDependentGeometricBrownianMotion, exp_add]
-  exact ((hB.integrable_exp_mul_wienerIntegral (hσ t) q).const_mul _).const_mul _
+  simpa only [abs_timeDependentGeometricBrownianMotion] using
+    hB.integrable_rpow_timeDependentGeometricBrownianMotion |s| q μ σ hσ t
 
 /-- **The moments of geometric Brownian motion with time-dependent coefficients.** For every
 initial value and real exponent `q`,
@@ -189,18 +274,15 @@ theorem integral_abs_rpow_timeDependentGeometricBrownianMotion (hB : IsPreBrowni
     ∫ ω, |hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω| ^ q ∂P =
       |s| ^ q * exp (q * (∫ u, μ u ∂timeMeasure t) +
         q * (q - 1) * (∫ u, σ u ^ 2 ∂timeMeasure t) / 2) := by
-  simp_rw [abs_rpow_timeDependentGeometricBrownianMotion, exp_add, integral_const_mul,
-    hB.integral_exp_mul_wienerIntegral, ← exp_add, integral_sub_sq_div_two hμ (hσ t)]
-  ring_nf
+  simpa only [abs_timeDependentGeometricBrownianMotion] using
+    hB.integral_rpow_timeDependentGeometricBrownianMotion |s| q hσ hμ
 
 /-- The process is integrable at every time. -/
 theorem integrable_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) (s : ℝ)
     (μ σ : ℝ≥0 → ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
     Integrable (hB.timeDependentGeometricBrownianMotion s μ σ hσ t) P := by
-  have h := (hB.integrable_exp_mul_wienerIntegral (hσ t) 1).const_mul
-    (s * exp (∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t))
-  refine h.congr (ae_of_all _ fun ω ↦ ?_)
-  simp only [timeDependentGeometricBrownianMotion_def, one_mul, exp_add, mul_assoc]
+  simpa only [rpow_one] using
+    hB.integrable_rpow_timeDependentGeometricBrownianMotion s 1 μ σ hσ t
 
 /-- **The mean of geometric Brownian motion with time-dependent coefficients.**
 `E[S_t] = s exp (∫₀ᵗ μ)`. -/
@@ -209,11 +291,7 @@ theorem integral_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B 
     (hμ : Integrable μ (timeMeasure t)) :
     ∫ ω, hB.timeDependentGeometricBrownianMotion s μ σ hσ t ω ∂P =
       s * exp (∫ u, μ u ∂timeMeasure t) := by
-  have h := hB.integral_exp_mul_wienerIntegral (hσ t) 1
-  simp only [one_mul, one_pow] at h
-  simp_rw [timeDependentGeometricBrownianMotion_def, exp_add, ← mul_assoc, integral_const_mul,
-    h, mul_assoc, ← exp_add, integral_sub_sq_div_two hμ (hσ t)]
-  ring_nf
+  simpa using hB.integral_rpow_timeDependentGeometricBrownianMotion s 1 hσ hμ
 
 /-- The process has finite moments of every finite order. -/
 theorem memLp_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) (s : ℝ)
@@ -230,8 +308,9 @@ theorem memLp_timeDependentGeometricBrownianMotion (hB : IsPreBrownianReal B P) 
 /-- **Constant coefficients.** With constant drift `μ` and volatility `σ`, the process agrees
 almost surely at each time with the geometric Brownian motion
 `s * exp ((μ - σ² / 2) t + σ B_t)`. -/
-theorem timeDependentGeometricBrownianMotion_const (hB : IsPreBrownianReal B P) (s μ σ : ℝ)
-    (hσ : ∀ t, MemLp (fun _ : ℝ≥0 ↦ σ) 2 (timeMeasure t)) (t : ℝ≥0) :
+theorem timeDependentGeometricBrownianMotion_const_ae_eq (hB : IsPreBrownianReal B P) (s μ σ : ℝ)
+    (t : ℝ≥0) (hσ : ∀ t, MemLp (fun _ : ℝ≥0 ↦ σ) 2 (timeMeasure t) :=
+      fun _ ↦ memLp_const _) :
     hB.timeDependentGeometricBrownianMotion s (fun _ ↦ μ) (fun _ ↦ σ) hσ t =ᵐ[P]
       geometricBrownianMotion s μ σ B t := by
   have hc : (hσ t).toLp (fun _ ↦ σ) = Lp.const 2 (timeMeasure t) σ := MemLp.toLp_const _ _ _
@@ -240,12 +319,129 @@ theorem timeDependentGeometricBrownianMotion_const (hB : IsPreBrownianReal B P) 
     wienerIntegral_const, h₁, Pi.smul_apply, h₂, integral_const, smul_eq_mul, smul_eq_mul]
   simp [measureReal_def, mul_comm]
 
+/-- With zero volatility the process agrees almost surely with deterministic drift growth. -/
+theorem timeDependentGeometricBrownianMotion_zero_volatility_ae_eq (hB : IsPreBrownianReal B P)
+    (s : ℝ) (μ : ℝ≥0 → ℝ) (t : ℝ≥0)
+    (hσ : ∀ t, MemLp (fun _ : ℝ≥0 ↦ (0 : ℝ)) 2 (timeMeasure t) := fun _ ↦ memLp_const _) :
+    hB.timeDependentGeometricBrownianMotion s μ (fun _ ↦ 0) hσ t =ᵐ[P]
+      fun _ ↦ s * exp (∫ u, μ u ∂timeMeasure t) := by
+  have hc : (hσ t).toLp (fun _ ↦ 0) = 0 := by
+    apply Lp.ext
+    exact (hσ t).coeFn_toLp.trans (Lp.coeFn_zero ℝ 2 (timeMeasure t)).symm
+  filter_upwards [Lp.coeFn_zero ℝ 2 P] with ω hω
+  rw [timeDependentGeometricBrownianMotion_def, hc, map_zero, hω]
+  simp
+
+/-- Changing coefficients almost everywhere on the horizon, or the Brownian version at each
+time up to the horizon, preserves the process almost surely at that time. -/
+theorem timeDependentGeometricBrownianMotion_congr (hB : IsPreBrownianReal B P)
+    {B' : ℝ≥0 → Ω → ℝ} (hB' : IsPreBrownianReal B' P) (s : ℝ)
+    {μ' σ' : ℝ≥0 → ℝ} (hσ : ∀ t, MemLp σ 2 (timeMeasure t))
+    (hσ' : ∀ t, MemLp σ' 2 (timeMeasure t)) {t : ℝ≥0}
+    (hμ : μ =ᵐ[timeMeasure t] μ') (hσσ' : σ =ᵐ[timeMeasure t] σ')
+    (hBB' : ∀ u ≤ t, B u =ᵐ[P] B' u) :
+    hB.timeDependentGeometricBrownianMotion s μ σ hσ t =ᵐ[P]
+      hB'.timeDependentGeometricBrownianMotion s μ' σ' hσ' t := by
+  have hi : (∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t) =
+      ∫ u, (μ' u - σ' u ^ 2 / 2) ∂timeMeasure t :=
+    integral_congr_ae (by
+      filter_upwards [hμ, hσσ'] with u hμu hσu
+      rw [hμu, hσu])
+  have hf : (hσ t).toLp σ = (hσ' t).toLp σ' :=
+    Lp.ext ((hσ t).coeFn_toLp.trans (hσσ'.trans (hσ' t).coeFn_toLp.symm))
+  unfold timeDependentGeometricBrownianMotion
+  rw [hi, hf, hB.wienerIntegral_congr hB' t hBB']
+
 end ProbabilityTheory.IsPreBrownianReal
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {W : ℝ≥0 → Ω → ℝ} {μ σ : ℝ≥0 → ℝ}
+
+/-- At each time the process is almost everywhere measurable for the filtration. -/
+theorem aestronglyMeasurable_timeDependentGeometricBrownianMotion
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ) (μ σ : ℝ≥0 → ℝ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
+    AEStronglyMeasurable[ℱ t] (hW.timeDependentGeometricBrownianMotion s μ σ hσ t) P :=
+  hW.toIsPreBrownianReal.aestronglyMeasurable_timeDependentGeometricBrownianMotion
+    (ℱ.le t) s μ σ hσ
+      (fun u hu ↦ ((hW.adapted u).mono (ℱ.mono hu) le_rfl).aestronglyMeasurable)
+
+/-- With deterministic initial value, the process is independent of every random variable
+known at time zero. -/
+theorem indepFun_timeDependentGeometricBrownianMotion_of_measurable_zero
+    (hW : IsFilteredPreBrownianReal ℱ W P) {E : Type*} [MeasurableSpace E] {ξ : Ω → E}
+    (hξ : Measurable[ℱ 0] ξ) (s : ℝ) (μ σ : ℝ≥0 → ℝ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) :
+    IndepFun (hW.timeDependentGeometricBrownianMotion s μ σ hσ t) ξ P := by
+  have hS := funext (hW.timeDependentGeometricBrownianMotion_def s μ σ hσ t)
+  rw [hS]
+  simpa only [Function.comp_def, id_eq] using
+    (hW.indepFun_wienerIntegral_of_measurable_zero hξ t ((hσ t).toLp σ)).comp
+      (φ := fun x ↦ s * exp ((∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t) + x))
+      (ψ := id) (by fun_prop) measurable_id
+
+/-- **Conditional real moments.** For `u ≤ t`, conditioning a real power of the process
+multiplies its value at `u` by the deterministic growth factor for that power. -/
+theorem condExp_rpow_timeDependentGeometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ W P)
+    (s q : ℝ) (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) {u t : ℝ≥0} (hut : u ≤ t)
+    (hμ : Integrable μ (timeMeasure t)) :
+    P[fun ω ↦ hW.timeDependentGeometricBrownianMotion s μ σ hσ t ω ^ q | ℱ u] =ᵐ[P]
+      fun ω ↦ exp (q * ((∫ v, μ v ∂timeMeasure t) - ∫ v, μ v ∂timeMeasure u) +
+        q * (q - 1) * ((∫ v, σ v ^ 2 ∂timeMeasure t) - ∫ v, σ v ^ 2 ∂timeMeasure u) / 2) *
+          hW.timeDependentGeometricBrownianMotion s μ σ hσ u ω ^ q := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  set Φ : Ω → ℝ :=
+    ⇑(hW.wienerIntegral t ((hσ t).toLp σ)) - ⇑(hW.wienerIntegral u ((hσ u).toLp σ)) with hΦ
+  set c := (∫ v, (μ v - σ v ^ 2 / 2) ∂timeMeasure t) - ∫ v, (μ v - σ v ^ 2 / 2) ∂timeMeasure u
+  set Y : Ω → ℝ := fun ω ↦ exp (q * c + q * Φ ω)
+  -- The power at `t` factors into its value at `u` and an independent Gaussian exponential.
+  have hsplit : (fun ω ↦ hW.timeDependentGeometricBrownianMotion s μ σ hσ t ω ^ q) =
+      (fun ω ↦ hW.timeDependentGeometricBrownianMotion s μ σ hσ u ω ^ q) * Y := by
+    funext ω
+    simp only [IsPreBrownianReal.rpow_timeDependentGeometricBrownianMotion, Y, Pi.mul_apply]
+    rw [mul_assoc, ← exp_add]
+    congr 1
+    congr 1
+    dsimp [c, Φ]
+    ring
+  have hind := hW.indep_wienerIntegral_sub hut
+    (((hσ t).coeFn_toLp.filter_mono (ae_mono (timeMeasure_mono hut))).trans
+      (hσ u).coeFn_toLp.symm)
+  have hlaw := hW.hasLaw_wienerIntegral_toLp_sub hut (hσ t) (hσ u)
+  have hY : Integrable Y P := by
+    refine ((mgf_pos_iff.mp (mgf_gaussianReal hlaw q ▸ exp_pos _)).const_mul
+      (exp (q * c))).congr (ae_of_all _ fun ω ↦ ?_)
+    simp [Y, hΦ, exp_add]
+  obtain ⟨g, hg, hSg⟩ := hW.aestronglyMeasurable_timeDependentGeometricBrownianMotion s μ σ hσ u
+  have hSu : AEStronglyMeasurable[ℱ u]
+      (fun ω ↦ hW.timeDependentGeometricBrownianMotion s μ σ hσ u ω ^ q) P :=
+    ⟨fun ω ↦ g ω ^ q, (hg.measurable.pow_const q).stronglyMeasurable,
+      hSg.mono (fun _ h ↦ congrArg (fun x : ℝ ↦ x ^ q) h)⟩
+  -- The Gaussian MGF evaluates the deterministic conditional growth factor.
+  have hintY : ∫ ω, Y ω ∂P = exp (q * ((∫ v, μ v ∂timeMeasure t) -
+      ∫ v, μ v ∂timeMeasure u) + q * (q - 1) * ((∫ v, σ v ^ 2 ∂timeMeasure t) -
+        ∫ v, σ v ^ 2 ∂timeMeasure u) / 2) := by
+    have hle : (∫ v, σ v ^ 2 ∂timeMeasure u) ≤ ∫ v, σ v ^ 2 ∂timeMeasure t :=
+      integral_mono_measure (timeMeasure_mono hut) (ae_of_all _ fun _ ↦ sq_nonneg _)
+        (hσ t).integrable_sq
+    simp_rw [Y, exp_add, integral_const_mul]
+    rw [← mgf, mgf_gaussianReal hlaw q, Real.coe_toNNReal _ (sub_nonneg.2 hle)]
+    simp only [c, integral_sub_sq_div_two hμ (hσ t),
+      integral_sub_sq_div_two (hμ.mono_measure (timeMeasure_mono hut)) (hσ u)]
+    simp_rw [← exp_add]
+    congr 1
+    ring
+  have hΦmeas : Measurable Φ :=
+    (Lp.stronglyMeasurable _).measurable.sub (Lp.stronglyMeasurable _).measurable
+  rw [hsplit]
+  filter_upwards [condExp_mul_of_aestronglyMeasurable_left hSu
+      (hsplit ▸ hW.integrable_rpow_timeDependentGeometricBrownianMotion s q μ σ hσ t) hY,
+    condExp_indep_eq (f := Y) hΦmeas.comap_le (ℱ.le u)
+      (measurable_exp.comp (measurable_const.add
+        (measurable_const.mul (comap_measurable Φ)))).stronglyMeasurable hind] with ω h₁ h₂
+  rw [h₁, Pi.mul_apply, h₂, hintY, mul_comm]
 
 /-- **Conditional expectation of geometric Brownian motion with time-dependent coefficients.**
 For a Brownian motion relative to `ℱ` and `u ≤ t`, `E[S_t | ℱ_u] = exp (∫ᵤᵗ μ) S_u`, with
@@ -257,48 +453,78 @@ theorem condExp_timeDependentGeometricBrownianMotion (hW : IsFilteredPreBrownian
     P[hW.timeDependentGeometricBrownianMotion s μ σ hσ t | ℱ u] =ᵐ[P]
       fun ω ↦ exp ((∫ v, μ v ∂timeMeasure t) - ∫ v, μ v ∂timeMeasure u) *
         hW.timeDependentGeometricBrownianMotion s μ σ hσ u ω := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  set Φ : Ω → ℝ :=
-    ⇑(hW.wienerIntegral t ((hσ t).toLp σ)) - ⇑(hW.wienerIntegral u ((hσ u).toLp σ)) with hΦ
-  set c := (∫ v, (μ v - σ v ^ 2 / 2) ∂timeMeasure t) - ∫ v, (μ v - σ v ^ 2 / 2) ∂timeMeasure u
-  set Y : Ω → ℝ := fun ω ↦ exp (c + Φ ω)
-  -- `S_t = S_u Y`, where `S_u` is known at `u` and `Y` is independent of `ℱ u`.
-  have hsplit : hW.timeDependentGeometricBrownianMotion s μ σ hσ t =
-      hW.timeDependentGeometricBrownianMotion s μ σ hσ u * Y :=
-    funext (hW.timeDependentGeometricBrownianMotion_eq_mul s μ σ hσ u t)
-  have hind := hW.indep_wienerIntegral_sub hut
-    (((hσ t).coeFn_toLp.filter_mono (ae_mono (timeMeasure_mono hut))).trans
-      (hσ u).coeFn_toLp.symm)
-  have hlaw := hW.hasLaw_wienerIntegral_toLp_sub hut (hσ t) (hσ u)
-  have hY : Integrable Y P := by
-    refine ((mgf_pos_iff.mp (mgf_gaussianReal hlaw 1 ▸ exp_pos _)).const_mul (exp c)).congr
-      (ae_of_all _ fun ω ↦ ?_)
-    simp [Y, hΦ, exp_add]
-  have hSu : AEStronglyMeasurable[ℱ u] (hW.timeDependentGeometricBrownianMotion s μ σ hσ u) P :=
-    (continuous_const.mul (continuous_exp.comp (continuous_const.add continuous_id)))
-      |>.comp_aestronglyMeasurable (hW.aestronglyMeasurable_wienerIntegral (ℱ.le u)
-        (fun v hv ↦ ((hW.adapted v).mono (ℱ.mono hv) le_rfl).aestronglyMeasurable) _)
-  -- The Gaussian increment `Φ` has variance `∫ᵤᵗ σ²`, so `E[Y] = exp (∫ᵤᵗ μ)`.
-  have hintY : ∫ ω, Y ω ∂P = exp ((∫ v, μ v ∂timeMeasure t) - ∫ v, μ v ∂timeMeasure u) := by
-    have h : ∫ ω, exp (Φ ω) ∂P = exp (((∫ v, σ v ^ 2 ∂timeMeasure t) -
-        ∫ v, σ v ^ 2 ∂timeMeasure u).toNNReal / 2) := by
-      simpa [mgf, hΦ] using mgf_gaussianReal hlaw 1
-    have hle : (∫ v, σ v ^ 2 ∂timeMeasure u) ≤ ∫ v, σ v ^ 2 ∂timeMeasure t :=
-      integral_mono_measure (timeMeasure_mono hut) (ae_of_all _ fun _ ↦ sq_nonneg _)
-        (hσ t).integrable_sq
-    simp_rw [Y, exp_add, integral_const_mul, h, ← exp_add,
-      Real.coe_toNNReal _ (sub_nonneg.2 hle), c, integral_sub_sq_div_two hμ (hσ t),
-      integral_sub_sq_div_two (hμ.mono_measure (timeMeasure_mono hut)) (hσ u)]
-    ring_nf
-  have hΦmeas : Measurable Φ :=
-    (Lp.stronglyMeasurable _).measurable.sub (Lp.stronglyMeasurable _).measurable
-  rw [hsplit]
-  filter_upwards [condExp_mul_of_aestronglyMeasurable_left hSu
-      (hsplit ▸ hW.integrable_timeDependentGeometricBrownianMotion s μ σ hσ t) hY,
-    condExp_indep_eq (f := Y) hΦmeas.comap_le (ℱ.le u)
-      (measurable_exp.comp (measurable_const.add (comap_measurable Φ))).stronglyMeasurable
-      hind] with ω h₁ h₂
-  rw [h₁, Pi.mul_apply, h₂, hintY, mul_comm]
+  simpa using hW.condExp_rpow_timeDependentGeometricBrownianMotion s 1 hσ hut hμ
+
+/-- A real power of the process with a time-zero measurable random initial value is integrable
+whenever that power of the initial value is integrable. No drift integrability is needed. -/
+theorem integrable_rpow_timeDependentGeometricBrownianMotion_random_initial
+    (hW : IsFilteredPreBrownianReal ℱ W P) {ξ : Ω → ℝ} (hξ : Measurable[ℱ 0] ξ) (q : ℝ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0)
+    (hint : Integrable (fun ω ↦ ξ ω ^ q) P) :
+    Integrable (fun ω ↦ hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω ^ q) P := by
+  have hind : IndepFun (fun ω ↦ ξ ω ^ q)
+      (fun ω ↦ hW.timeDependentGeometricBrownianMotion 1 μ σ hσ t ω ^ q) P := by
+    simpa only [Function.comp_def] using
+      (hW.indepFun_timeDependentGeometricBrownianMotion_of_measurable_zero
+        hξ 1 μ σ hσ t).symm.comp (φ := fun x : ℝ ↦ x ^ q) (ψ := fun x : ℝ ↦ x ^ q)
+          (by fun_prop) (by fun_prop)
+  simpa only [Pi.mul_def,
+    IsPreBrownianReal.rpow_timeDependentGeometricBrownianMotion, one_rpow, one_mul] using
+    hind.integrable_mul hint (hW.integrable_rpow_timeDependentGeometricBrownianMotion 1 q μ σ hσ t)
+
+/-- An absolute power with random initial value is integrable whenever the corresponding
+absolute power of the initial value is integrable. -/
+theorem integrable_abs_rpow_timeDependentGeometricBrownianMotion_random_initial
+    (hW : IsFilteredPreBrownianReal ℱ W P) {ξ : Ω → ℝ} (hξ : Measurable[ℱ 0] ξ) (q : ℝ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0)
+    (hint : Integrable (fun ω ↦ |ξ ω| ^ q) P) :
+    Integrable (fun ω ↦ |hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω| ^ q) P := by
+  simpa only [IsPreBrownianReal.abs_timeDependentGeometricBrownianMotion, Function.comp_def]
+    using hW.integrable_rpow_timeDependentGeometricBrownianMotion_random_initial
+      ((by fun_prop : Measurable fun x : ℝ ↦ |x|).comp hξ) q hσ t hint
+
+/-- Finite `Lᵖ` membership of a time-zero measurable initial value is preserved by the process. -/
+theorem memLp_timeDependentGeometricBrownianMotion_random_initial
+    (hW : IsFilteredPreBrownianReal ℱ W P) {ξ : Ω → ℝ} (hξ : Measurable[ℱ 0] ξ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) (t : ℝ≥0) {p : ℝ≥0∞} (hp : p ≠ ⊤)
+    (hξp : MemLp ξ p P) :
+    MemLp (fun ω ↦ hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω) p P := by
+  have hm : AEStronglyMeasurable
+      (fun ω ↦ hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω) P := by
+    simp only [IsPreBrownianReal.timeDependentGeometricBrownianMotion_def]
+    exact hξp.aestronglyMeasurable.mul
+      ((continuous_exp.comp (continuous_const.add continuous_id)).comp_aestronglyMeasurable
+        (Lp.aestronglyMeasurable _))
+  by_cases hp0 : p = 0
+  · simpa [hp0] using hm
+  · apply (integrable_norm_rpow_iff hm hp0 hp).mp
+    exact hW.integrable_abs_rpow_timeDependentGeometricBrownianMotion_random_initial
+      hξ p.toReal hσ t (by simpa only [Real.norm_eq_abs] using
+        (integrable_norm_rpow_iff hξp.aestronglyMeasurable hp0 hp).mpr hξp)
+
+/-- **Real moments with a random initial value.** The deterministic growth factor multiplies
+the real moment of the time-zero measurable initial value, for every real exponent. The Bochner
+convention makes both sides zero when the initial power is not integrable. -/
+theorem integral_rpow_timeDependentGeometricBrownianMotion_random_initial
+    (hW : IsFilteredPreBrownianReal ℱ W P) {ξ : Ω → ℝ} (hξ : Measurable[ℱ 0] ξ) (q : ℝ)
+    (hσ : ∀ t, MemLp σ 2 (timeMeasure t)) {t : ℝ≥0} (hμ : Integrable μ (timeMeasure t)) :
+    ∫ ω, hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω ^ q ∂P =
+      (∫ ω, ξ ω ^ q ∂P) * exp (q * (∫ u, μ u ∂timeMeasure t) +
+        q * (q - 1) * (∫ u, σ u ^ 2 ∂timeMeasure t) / 2) := by
+  have hind : IndepFun (fun ω ↦ ξ ω ^ q)
+      (fun ω ↦ hW.timeDependentGeometricBrownianMotion 1 μ σ hσ t ω ^ q) P := by
+    simpa only [Function.comp_def] using
+      (hW.indepFun_timeDependentGeometricBrownianMotion_of_measurable_zero
+        hξ 1 μ σ hσ t).symm.comp (φ := fun x : ℝ ↦ x ^ q) (ψ := fun x : ℝ ↦ x ^ q)
+          (by fun_prop) (by fun_prop)
+  have hsplit : (fun ω ↦ hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω ^ q) =
+      (fun ω ↦ ξ ω ^ q) * (fun ω ↦ hW.timeDependentGeometricBrownianMotion 1 μ σ hσ t ω ^ q) := by
+    simp only [IsPreBrownianReal.rpow_timeDependentGeometricBrownianMotion, one_rpow,
+      one_mul, Pi.mul_def]
+  rw [hsplit, hind.integral_mul_eq_mul_integral
+    (((hξ.mono (ℱ.le 0) le_rfl).pow_const q).aestronglyMeasurable)
+    (hW.integrable_rpow_timeDependentGeometricBrownianMotion 1 q μ σ hσ t).aestronglyMeasurable,
+    hW.integral_rpow_timeDependentGeometricBrownianMotion 1 q hσ hμ, one_rpow, one_mul]
 
 /-- **Moments with a random initial value.** For an initial value `ξ` known at time zero and
 every real `q`, `E|S_t|^q = E|ξ|^q exp (q ∫₀ᵗ μ + q (q - 1) / 2 ∫₀ᵗ σ²)`. No moment of `ξ`
@@ -310,38 +536,8 @@ theorem integral_abs_rpow_timeDependentGeometricBrownianMotion_random_initial
     ∫ ω, |hW.timeDependentGeometricBrownianMotion (ξ ω) μ σ hσ t ω| ^ q ∂P =
       (∫ ω, |ξ ω| ^ q ∂P) * exp (q * (∫ u, μ u ∂timeMeasure t) +
         q * (q - 1) * (∫ u, σ u ^ 2 ∂timeMeasure t) / 2) := by
-  set A := ∫ u, (μ u - σ u ^ 2 / 2) ∂timeMeasure t
-  set X : Ω → ℝ := ⇑(hW.wienerIntegral t ((hσ t).toLp σ))
-  set Φ : Ω → ℝ := X - ⇑(hW.wienerIntegral 0 ((hσ 0).toLp σ)) with hΦ
-  have hind : Indep (MeasurableSpace.comap Φ inferInstance) (ℱ 0) P :=
-    hW.indep_wienerIntegral_sub (zero_le : (0 : ℝ≥0) ≤ t)
-      (ae_iff.2 (by simp))
-  have hXΦ : X =ᵐ[P] Φ := by
-    filter_upwards [Lp.coeFn_zero ℝ 2 P] with ω hω
-    simp only [hΦ, Pi.sub_apply, IsPreBrownianReal.wienerIntegral_zero]
-    rw [hω, Pi.zero_apply, sub_zero]
-  have hξm : Measurable fun ω ↦ |ξ ω| ^ q :=
-    (by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).comp (hξ.mono (ℱ.le 0) le_rfl)
-  have hZm : Measurable[MeasurableSpace.comap Φ inferInstance] fun ω ↦ exp (q * A + q * Φ ω) :=
-    measurable_exp.comp (measurable_const.add (measurable_const.mul (comap_measurable Φ)))
-  have hindep : IndepFun (fun ω ↦ |ξ ω| ^ q) (fun ω ↦ exp (q * A + q * Φ ω)) P := by
-    rw [IndepFun_iff_Indep]
-    exact indep_of_indep_of_le_right (indep_of_indep_of_le_left hind.symm
-      (((by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).comp hξ).comap_le)) hZm.comap_le
-  have hΦm : Measurable Φ :=
-    (Lp.stronglyMeasurable _).measurable.sub (Lp.stronglyMeasurable _).measurable
-  have hcongr : (fun ω ↦ |ξ ω| ^ q * exp (q * A + q * X ω)) =ᵐ[P]
-      fun ω ↦ |ξ ω| ^ q * exp (q * A + q * Φ ω) := by
-    filter_upwards [hXΦ] with ω hω
-    rw [hω]
-  simp_rw [IsPreBrownianReal.abs_rpow_timeDependentGeometricBrownianMotion]
-  rw [integral_congr_ae hcongr, hindep.integral_fun_mul_eq_mul_integral hξm.aestronglyMeasurable
-    (measurable_exp.comp (measurable_const.add (measurable_const.mul hΦm))).aestronglyMeasurable]
-  congr 1
-  have hX : ∫ ω, exp (q * A + q * Φ ω) ∂P = ∫ ω, exp (q * A + q * X ω) ∂P :=
-    integral_congr_ae (by filter_upwards [hXΦ] with ω hω; rw [hω])
-  simp_rw [hX, exp_add, integral_const_mul, X, hW.integral_exp_mul_wienerIntegral, ← exp_add, A,
-    integral_sub_sq_div_two hμ (hσ t)]
-  ring_nf
+  simpa only [IsPreBrownianReal.abs_timeDependentGeometricBrownianMotion, Function.comp_def]
+    using hW.integral_rpow_timeDependentGeometricBrownianMotion_random_initial
+      ((by fun_prop : Measurable fun x : ℝ ↦ |x|).comp hξ) q hσ hμ
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

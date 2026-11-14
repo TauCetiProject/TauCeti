@@ -391,12 +391,16 @@ theorem aestronglyMeasurable_of_indicatorConstLp_Iic
     {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [SecondCountableTopology α]
     [LinearOrder α] [OrderTopology α] [BorelSpace α] {μ : Measure α}
     (hμ : ∀ a, μ (Set.Iic a) ≠ ∞) {Ω : Type*} {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
-    (hm : m ≤ mΩ) (A : Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 P)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hm : m ≤ mΩ) (A : Lp ℝ 2 μ →L[ℝ] Lp F p P)
     (hA : ∀ a, AEStronglyMeasurable[m] (A (indicatorConstLp 2 measurableSet_Iic (hμ a) 1)) P)
     (f : Lp ℝ 2 μ) : AEStronglyMeasurable[m] (A f) P := by
-  let V : Submodule ℝ (Lp ℝ 2 μ) := (lpMeas ℝ ℝ m 2 P).comap A.toLinearMap
-  have hV : IsClosed (V : Set (Lp ℝ 2 μ)) :=
-    (isClosed_aestronglyMeasurable (F := ℝ) (p := 2) (μ := P) hm).preimage A.continuous
+  let V : Submodule ℝ (Lp ℝ 2 μ) := (lpMeas F ℝ m p P).comap A.toLinearMap
+  have hV : IsClosed (V : Set (Lp ℝ 2 μ)) := by
+    convert (isClosed_aestronglyMeasurable (F := F) (p := p) (μ := P) hm).preimage
+      A.continuous using 1
+    ext g
+    simp [V, mem_lpMeas_iff_aestronglyMeasurable]
   have hspan : Submodule.span ℝ (Set.range fun a : α ↦
       indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ)) ≤ V := by
     rw [Submodule.span_le]
