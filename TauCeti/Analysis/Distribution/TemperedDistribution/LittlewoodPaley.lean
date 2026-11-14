@@ -92,6 +92,11 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_lineDerivOp`,
   `TemperedDistribution.littlewoodPaleyBlock_iteratedLineDerivOp`: the blocks commute with
   derivatives.
+* `TemperedDistribution.littlewoodPaleyLowPass`: the low-frequency truncation `Sⱼ = ∑_{k < j} Δₖ`,
+  the Fourier multiplier by `φ (2^{1-j} ·)` for `j ≥ 1`, with its uniform `Lᵖ` bound
+  (`exists_littlewoodPaleyLowPass_eq_and_norm_le`) and its expression as an average against the
+  dilates of the kernel `𝓕⁻ φ` (`ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq`), whose
+  integral is `1` (`ContDiffBump.integral_fourierInv`).
 * `TemperedDistribution.littlewoodPaleyBlock_eq_zero_of_isVanishingOn`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_compl_closedBall`,
   `TemperedDistribution.exists_littlewoodPaleyBlock_eq_zero_of_isVanishingOn_ball`,
@@ -192,6 +197,36 @@ theorem exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPale
           rw [pow_succ, mul_pow, mul_inv, mul_assoc, inv_mul_cancel_left₀ (by positivity)]
           exact φ.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ k j
       _ ≤ _ := by gcongr; exact le_max_right _ _
+
+/-- The bump function `φ`, as a complex Schwartz function. -/
+private noncomputable def toSchwartzMap : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ ξ : ℂ))
+    (φ.hasCompactSupport.comp_left Complex.ofReal_zero) (Complex.ofRealCLM.contDiff.comp φ.contDiff)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem coe_toSchwartzMap : (φ.toSchwartzMap : E → ℂ) = fun ξ ↦ (φ ξ : ℂ) :=
+  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+
+private theorem fourierInv_eq_toSchwartzMap :
+    𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) = ⇑(𝓕⁻ φ.toSchwartzMap : 𝓢(E, ℂ)) := by
+  rw [SchwartzMap.fourierInv_coe, coe_toSchwartzMap]
+
+/-- The inverse Fourier transform `𝓕⁻ φ` of a bump function, the kernel of the low-frequency
+truncations, is integrable. -/
+theorem integrable_fourierInv : MeasureTheory.Integrable (𝓕⁻ (fun ξ ↦ (φ ξ : ℂ))) := by
+  rw [fourierInv_eq_toSchwartzMap]
+  exact (𝓕⁻ φ.toSchwartzMap : 𝓢(E, ℂ)).integrable
+
+/-- The inverse Fourier transform `𝓕⁻ φ` of a bump function has integral `φ 0 = 1`. -/
+theorem integral_fourierInv : ∫ x, 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x = 1 := by
+  -- `∫ 𝓕⁻ φ = 𝓕 (𝓕⁻ φ) 0 = φ 0`.
+  have h0 : (𝓕 (𝓕⁻ φ.toSchwartzMap : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) = φ.toSchwartzMap :=
+    FourierTransform.fourier_fourierInv_eq _
+  have h := congrArg (fun g : 𝓢(E, ℂ) ↦ g 0) h0
+  simp only [SchwartzMap.fourier_coe, Real.fourier_eq, inner_zero_right, neg_zero,
+    AddChar.map_zero_eq_one, one_smul] at h
+  rw [fourierInv_eq_toSchwartzMap, h, coe_toSchwartzMap]
+  simp [φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)]
 
 open MeasureTheory in
 /-- **The `Lʳ` norms of the dyadic kernels.** Since `𝓕⁻ ψ_{j+1} = 2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in
@@ -338,6 +373,40 @@ theorem littlewoodPaleyBlock_iteratedLineDerivOp (j : ℕ) {k : ℕ} (m : Fin k 
   | succ k ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left,
       littlewoodPaleyBlock_lineDerivOp, ih]
+
+variable (F) in
+/-- The **low-frequency truncation** `Sⱼ = ∑_{k < j} Δₖ`, the sum of the Littlewood–Paley blocks of
+index below `j`. For `j ≥ 1` it is the Fourier multiplier by `φ (2^{1-j} ·)`
+(`TemperedDistribution.littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM`), and `S₀ = 0`. These
+are the truncations from which Bony's paraproducts are built. -/
+noncomputable def littlewoodPaleyLowPass (φ : ContDiffBump (0 : E)) (j : ℕ) :
+    𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
+  ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k
+
+theorem littlewoodPaleyLowPass_def (j : ℕ) :
+    littlewoodPaleyLowPass F φ j = ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k :=
+  (rfl)
+
+@[simp]
+theorem littlewoodPaleyLowPass_zero : littlewoodPaleyLowPass F φ 0 = 0 := by
+  simp [littlewoodPaleyLowPass_def]
+
+theorem littlewoodPaleyLowPass_succ (j : ℕ) :
+    littlewoodPaleyLowPass F φ (j + 1) =
+      littlewoodPaleyLowPass F φ j + littlewoodPaleyBlock F φ j := by
+  simp only [littlewoodPaleyLowPass_def, Finset.sum_range_succ]
+
+/-- `S_{j+1}` is the Fourier multiplier by `φ (2^{-j} ·)`. -/
+theorem littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM (j : ℕ) :
+    littlewoodPaleyLowPass F φ (j + 1) =
+      fourierMultiplierCLM F fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
+  sum_littlewoodPaleyBlock_range φ j
+
+/-- The low-frequency truncations converge to the identity: `Sⱼ u → u` in `𝓢'(E, F)`. -/
+theorem tendsto_littlewoodPaleyLowPass (u : 𝓢'(E, F)) :
+    Tendsto (fun j ↦ littlewoodPaleyLowPass F φ j u) atTop (𝓝 u) := by
+  simpa only [littlewoodPaleyLowPass_def, _root_.sum_apply] using
+    tendsto_sum_littlewoodPaleyBlock φ u
 
 /-- A tempered distribution whose blocks vanish outside a finite set of indices is the sum of
 its blocks over that set. -/
@@ -682,6 +751,67 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r 
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
 
+/-- The symbol `φ (2^{-j} ·)` of `S_{j+1}`, as a Schwartz function. -/
+private noncomputable def lowPassSymbol (j : ℕ) : 𝓢(E, ℂ) :=
+  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ))
+    ((φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero j two_ne_zero))).comp_left
+      Complex.ofReal_zero)
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem coe_lowPassSymbol (j : ℕ) :
+    (lowPassSymbol φ j : E → ℂ) = fun ξ ↦ (φ (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
+  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+
+/-- **The low-frequency truncations are bounded on `Lᵖ` uniformly in `j`.** For every
+`1 ≤ p ≤ ∞`, every `j` and every `f ∈ Lᵖ`, the truncation `Sⱼ f` is a function in `Lᵖ` with
+`‖Sⱼ f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. The kernel of `S_{j+1}` is the `L¹`-normalised dilate
+`2^{jn} 𝓕⁻ φ (2^j ·)` of `𝓕⁻ φ`. -/
+theorem exists_littlewoodPaleyLowPass_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (j : ℕ) (f : Lp F p (volume : Measure E)) :
+    ∃ g : Lp F p (volume : Measure E), littlewoodPaleyLowPass F φ j (f : 𝓢'(E, F)) = g ∧
+      ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
+  rcases j with _ | j
+  · refine ⟨0, ?_, ?_⟩
+    · rw [littlewoodPaleyLowPass_zero, _root_.zero_apply,
+        ← Lp.toTemperedDistributionCLM_apply, map_zero]
+    · rw [norm_zero]
+      exact mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
+  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le (lowPassSymbol φ j) f
+  rw [coe_lowPassSymbol, TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ))
+    (inv_ne_zero (pow_ne_zero j two_ne_zero))] at hgf
+  rw [coe_lowPassSymbol] at hg
+  exact ⟨g, by rw [littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, hg], hgf⟩
+
+/-- **`S_{j+1}` averages against the dilates of `𝓕⁻ φ`.** If `f ∈ Lᵖ` and the truncation
+`S_{j+1} f` is the `Lᵖ` function `g`, then almost everywhere
+
+`g x = ∫ 𝓕⁻ φ (s) • f (x - 2^{-j} s) ds`.
+
+Since `∫ 𝓕⁻ φ = φ 0 = 1`, this exhibits `S_{j+1}` as an approximate identity. -/
+theorem ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (j : ℕ) {f g : Lp F p (volume : Measure E)}
+    (hg : littlewoodPaleyLowPass F φ (j + 1) (f : 𝓢'(E, F)) = g) :
+    g =ᵐ[volume] fun x ↦ ∫ s, 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) s • f (x - ((2 : ℝ) ^ j)⁻¹ • s) := by
+  obtain ⟨g', hg', hconv, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
+    (lowPassSymbol φ j) f (q := p) (r := 1) le_rfl (by rw [inv_one, add_comm])
+  rw [coe_lowPassSymbol, ← littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, hg] at hg'
+  have hgg' : g = g' := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    simpa only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply] using hg'
+  rw [hgg']
+  refine hconv.trans (Eventually.of_forall fun x ↦ ?_)
+  -- Substitute `t = 2^{-j} s` in the convolution integral.
+  set c : ℝ := ((2 : ℝ) ^ j)⁻¹ with hc_def
+  have hc : c ≠ 0 := inv_ne_zero (pow_ne_zero j two_ne_zero)
+  rw [coe_lowPassSymbol, convolution_def, ← hc_def]
+  dsimp only
+  simp only [ContinuousLinearMap.lsmul_apply]
+  simp_rw [TauCeti.fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ)) c, smul_assoc]
+  rw [integral_smul]
+  have h := Measure.integral_comp_smul volume
+    (fun t ↦ 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) (c⁻¹ • t) • f (x - t)) c
+  simp only [smul_smul, inv_mul_cancel₀ hc, one_smul] at h
+  rw [h, abs_inv]
 
 section L2
 
