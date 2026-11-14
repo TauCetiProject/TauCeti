@@ -14,26 +14,28 @@ import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
-# Laws and conjugation invariance of the GOE and GUE
+# Laws, moments, conjugation invariance, and entry characterizations of the GOE and GUE
 
 `TauCeti.Probability.gaussianEnsemble` builds an `n × n` matrix over `ℂ` from
-`g : Fin n × Fin n → ℝ`: for `β = 1` a real symmetric matrix `TauCeti.Probability.goeMatrix n g` in
-`selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)`, and for `β ≠ 1` a complex Hermitian matrix
-`TauCeti.Probability.gueMatrix n g` in `selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)`.
-Pushing standard Gaussian product measure forward gives `TauCeti.Probability.goeMeasure n`,
-`TauCeti.Probability.gueMeasure n`, and `TauCeti.Probability.gaussianEnsembleLaw β n`, each a
-scalar multiple of `ProbabilityTheory.stdGaussian` invariant under orthogonal/unitary conjugation.
+`g : Fin n × Fin n → ℝ`: for `β = 1` a real symmetric matrix `TauCeti.Probability.goeMatrix n g`,
+and for `β ≠ 1` a complex Hermitian matrix `TauCeti.Probability.gueMatrix n g`, bundled as
+continuous ℝ-linear maps. Pushing standard Gaussian product measure forward gives `goeMeasure n`,
+`gueMeasure n`, and `gaussianEnsembleLaw β n`, each a centered Gaussian law (with explicit
+`covarianceBilin` and `charFun`) invariant under orthogonal/unitary conjugation and characterized by
+mutually independent Gaussian entries.
 
 ## Main definitions and results
 
 * `TauCeti.Probability.goeMatrix`, `TauCeti.Probability.gueMatrix`,
-  `TauCeti.Probability.goeMeasure`, `TauCeti.Probability.gueMeasure`,
-  `TauCeti.Probability.gaussianEnsembleLaw` — subspace matrix maps and ensemble laws.
-* `TauCeti.Probability.goeMeasure_eq_map_pi_upperTriangle`,
-  `TauCeti.Probability.goeMeasure_eq_map_stdGaussian`,
+  `TauCeti.Probability.goeMeasure`, `TauCeti.Probability.gueMeasure`, `gaussianEnsembleLaw`.
+* `TauCeti.Probability.goeMeasure_eq_map_stdGaussian`,
   `TauCeti.Probability.gueMeasure_eq_map_stdGaussian`,
-  `TauCeti.Probability.measurePreserving_symmetricConj_goeMeasure`,
-  `TauCeti.Probability.measurePreserving_hermitianConj_gueMeasure`.
+  `TauCeti.Probability.covarianceBilin_goeMeasure`,
+  `TauCeti.Probability.covarianceBilin_gueMeasure`, `TauCeti.Probability.charFun_goeMeasure`,
+  `TauCeti.Probability.charFun_gueMeasure`.
+* `TauCeti.Probability.measurePreserving_symmetricConj_goeMeasure`,
+  `TauCeti.Probability.measurePreserving_hermitianConj_gueMeasure`,
+  `TauCeti.Probability.hasLaw_goeMeasure_iff`, `TauCeti.Probability.hasLaw_gueMeasure_iff`.
 
 ## References
 
@@ -49,50 +51,18 @@ open scoped ComplexConjugate ENNReal NNReal RealInnerProductSpace
 
 namespace TauCeti.Probability
 
-/-! ### Entry properties, continuity, and subspace-valued ensemble maps -/
-
-/-- Every entry of the `β = 1` Gaussian ensemble has zero imaginary part. -/
-@[simp] theorem im_gaussianEnsemble_one {n : ℕ} (g : Fin n × Fin n → ℝ) (i j : Fin n) :
-    (gaussianEnsemble 1 n g i j).im = 0 := by
-  rcases lt_trichotomy i j with h | rfl | h <;>
-    simp [*, ← Complex.ofReal_inv, ← Complex.ofReal_mul]
-
-/-- All `β ≠ 1` branches of `TauCeti.Probability.gaussianEnsemble` coincide with `β = 2`. -/
-theorem gaussianEnsemble_eq_two_of_ne_one {β n : ℕ} (hβ : β ≠ 1) (g : Fin n × Fin n → ℝ) :
-    gaussianEnsemble β n g = gaussianEnsemble 2 n g := by
-  ext i j; rw [gaussianEnsemble_apply, gaussianEnsemble_apply, ite_eq_right hβ,
-    ite_eq_right (by decide : (2 : ℕ) ≠ 1)]
-
-/-- For `β = 2` and `n = 2`, the imaginary part of the `(0, 1)` entry is `g (1, 0) / 2`. -/
-theorem im_gaussianEnsemble_two_zero_one (g : Fin 2 × Fin 2 → ℝ) :
-    (gaussianEnsemble 2 2 g 0 1).im = g (1, 0) / 2 := by
-  rw [gaussianEnsemble_apply_of_lt_of_ne_one g (by decide) (by decide : (0 : Fin 2) < 1),
-    Nat.cast_ofNat, ← Complex.ofReal_inv,
-    show (((Real.sqrt 2)⁻¹ : ℝ) : ℂ) * (((g (0, 1) : ℂ) + Complex.I * g (1, 0)) / (Real.sqrt 2 : ℝ))
-      = ((g (0, 1) / (Real.sqrt 2 * Real.sqrt 2) : ℝ) : ℂ) +
-        Complex.I * ((g (1, 0) / (Real.sqrt 2 * Real.sqrt 2) : ℝ) : ℂ) by push_cast; ring,
-    Real.mul_self_sqrt (by norm_num)]; simp
-
-/-- `TauCeti.Probability.gaussianEnsemble` depends continuously on the input array. -/
-theorem continuous_gaussianEnsemble (β n : ℕ) : Continuous (gaussianEnsemble β n) := by
-  refine continuous_matrix fun i j ↦ ?_
-  simp only [fun g ↦ gaussianEnsemble_apply (β := β) g i j]
-  rcases lt_trichotomy i j with h | rfl | h
-  · by_cases hβ : β = 1 <;> simp only [hβ, h, h.ne, ↓reduceIte] <;> fun_prop
-  · by_cases hβ : β = 1 <;> simp only [hβ, ↓reduceIte] <;> fun_prop
-  · by_cases hβ : β = 1 <;> simp only [hβ, h.ne', h.not_gt, ↓reduceIte] <;> fun_prop
-
-/-- `TauCeti.Probability.gaussianEnsemble` is measurable in the input array. -/
-@[fun_prop] theorem measurable_gaussianEnsemble (β n : ℕ) : Measurable (gaussianEnsemble β n) :=
-  (continuous_gaussianEnsemble β n).measurable
-
-/-- The real symmetric matrix of the Gaussian orthogonal ensemble (`β = 1`), bundled into
-`selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)`: diagonal entries `(√2 * g (i, i)) / √n` and
-off-diagonal entries `g (min i j, max i j) / √n`. -/
-def goeMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) :
-    selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) :=
-  (symmetricCoordinates n).symm fun ij ↦
-    (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1)
+/-- The continuous ℝ-linear map building the GOE (`β = 1`) symmetric matrix: diagonal entries
+`(√2 * g (i, i)) / √n` and off-diagonal entries `g (min i j, max i j) / √n`. -/
+def goeMatrix (n : ℕ) :
+    (Fin n × Fin n → ℝ) →L[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) :=
+  LinearMap.toContinuousLinearMap
+    { toFun g := (symmetricCoordinates n).symm fun ij ↦
+        (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1)
+      map_add' g₁ g₂ := by
+        rw [← map_add]; refine congrArg _ (funext fun ij ↦ ?_); simp [mul_add]
+      map_smul' c g := by
+        rw [RingHom.id_apply, ← map_smul]; refine congrArg _ (funext fun ij ↦ ?_)
+        simp only [Pi.smul_apply, smul_eq_mul]; ring }
 
 /-- Defining formula for `TauCeti.Probability.goeMatrix`. -/
 theorem goeMatrix_def (n : ℕ) (g : Fin n × Fin n → ℝ) :
@@ -108,44 +78,45 @@ theorem symmetricCoordinates_goeMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) (i
 /-- Diagonal entries of `TauCeti.Probability.goeMatrix`. -/
 @[simp] theorem coe_goeMatrix_apply_self {n : ℕ} (g : Fin n × Fin n → ℝ) (i : Fin n) :
     (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) i i =
-      (Real.sqrt n)⁻¹ * (Real.sqrt 2 * g (i, i)) := by simp [goeMatrix]
+      (Real.sqrt n)⁻¹ * (Real.sqrt 2 * g (i, i)) := by simp [goeMatrix_def]
 
 /-- Strict upper-triangular entries (`i < j`) of `TauCeti.Probability.goeMatrix`. -/
 @[simp] theorem coe_goeMatrix_apply_of_lt {n : ℕ} (g : Fin n × Fin n → ℝ) {i j : Fin n}
-    (h : i < j) :
-    (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) i j = (Real.sqrt n)⁻¹ * g (i, j) := by
-  rw [goeMatrix, coe_symmetricCoordinates_symm_apply_of_le n _ h.le]; simp [h.ne]
+    (h : i < j) : (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) i j = (Real.sqrt n)⁻¹ * g (i, j) := by
+  rw [goeMatrix_def, coe_symmetricCoordinates_symm_apply_of_le n _ h.le]; simp [h.ne]
 
 /-- Strict lower-triangular entries (`j < i`) of `TauCeti.Probability.goeMatrix`. -/
 @[simp] theorem coe_goeMatrix_apply_of_gt {n : ℕ} (g : Fin n × Fin n → ℝ) {i j : Fin n}
-    (h : j < i) :
-    (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) i j = (Real.sqrt n)⁻¹ * g (j, i) := by
-  rw [goeMatrix, coe_symmetricCoordinates_symm_apply_of_ge n _ h.le]; simp [h.ne]
+    (h : j < i) : (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) i j = (Real.sqrt n)⁻¹ * g (j, i) := by
+  rw [goeMatrix_def, coe_symmetricCoordinates_symm_apply_of_ge n _ h.le]; simp [h.ne]
 
 /-- Casting `TauCeti.Probability.goeMatrix` from `ℝ` to `ℂ` recovers `gaussianEnsemble 1 n g`. -/
-theorem map_ofReal_coe_goeMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) :
+@[simp] theorem map_ofReal_coe_goeMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) :
     (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal = gaussianEnsemble 1 n g := by
   ext i j; rcases lt_trichotomy i j with h | rfl | h <;> simp [*]
 
-/-- Each entry of `TauCeti.Probability.goeMatrix` is the real part of the corresponding entry of
-`gaussianEnsemble 1 n g`. -/
-theorem coe_goeMatrix_apply_eq_re (n : ℕ) (g : Fin n × Fin n → ℝ) (i j : Fin n) :
+/-- Each entry of `goeMatrix n g` is the real part of `(gaussianEnsemble 1 n g i j)`. -/
+theorem coe_goeMatrix_apply_eq_re_gaussianEnsemble_one (n : ℕ) (g : Fin n × Fin n → ℝ)
+    (i j : Fin n) :
     (goeMatrix n g : Matrix (Fin n) (Fin n) ℝ) i j = (gaussianEnsemble 1 n g i j).re := by
   rw [← map_ofReal_coe_goeMatrix]; simp
 
 /-- `TauCeti.Probability.goeMatrix` is continuous in the input array. -/
-theorem continuous_goeMatrix (n : ℕ) : Continuous (goeMatrix n) := by unfold goeMatrix; fun_prop
+@[fun_prop] theorem continuous_goeMatrix (n : ℕ) : Continuous (goeMatrix n) :=
+  (goeMatrix n).continuous
 
 /-- `TauCeti.Probability.goeMatrix` is measurable in the input array. -/
 @[fun_prop] theorem measurable_goeMatrix (n : ℕ) : Measurable (goeMatrix n) :=
-  (continuous_goeMatrix n).measurable
+  (goeMatrix n).measurable
 
-/-- The complex Hermitian matrix of the Gaussian unitary ensemble (`β = 2`), bundled into
-`selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)`. -/
-def gueMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) :
-    selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) :=
-  ⟨gaussianEnsemble 2 n g,
-    Matrix.isHermitian_iff_isSelfAdjoint.mp (isHermitian_gaussianEnsemble 2 n g)⟩
+/-- The continuous ℝ-linear map building the GUE (`β = 2`) complex Hermitian matrix. -/
+def gueMatrix (n : ℕ) :
+    (Fin n × Fin n → ℝ) →L[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ) :=
+  LinearMap.toContinuousLinearMap
+    { toFun g := ⟨gaussianEnsemble 2 n g,
+        Matrix.isHermitian_iff_isSelfAdjoint.mp (isHermitian_gaussianEnsemble 2 n g)⟩
+      map_add' g₁ g₂ := Subtype.ext (gaussianEnsemble_add 2 n g₁ g₂)
+      map_smul' c g := Subtype.ext (gaussianEnsemble_smul 2 n c g) }
 
 /-- Defining formula for `TauCeti.Probability.gueMatrix`. -/
 theorem gueMatrix_def (n : ℕ) (g : Fin n × Fin n → ℝ) :
@@ -160,39 +131,30 @@ theorem gueMatrix_def (n : ℕ) (g : Fin n × Fin n → ℝ) :
 theorem hermitianCoordinates_gueMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) (ij : Fin n × Fin n) :
     hermitianCoordinates n (gueMatrix n g) ij =
       (Real.sqrt n)⁻¹ * ((if ij.1 = ij.2 then 1 else (Real.sqrt 2)⁻¹) * g ij) := by
-  have hsplit (a b : ℝ) :
-      (((Real.sqrt n)⁻¹ : ℝ) : ℂ) * (((a : ℂ) + Complex.I * b) / (Real.sqrt 2 : ℝ)) =
-        (((Real.sqrt n)⁻¹ * ((Real.sqrt 2)⁻¹ * a) : ℝ) : ℂ) +
-          Complex.I * (((Real.sqrt n)⁻¹ * ((Real.sqrt 2)⁻¹ * b) : ℝ) : ℂ) := by push_cast; ring
-  obtain ⟨i, j⟩ := ij
-  rcases lt_trichotomy i j with h | rfl | h
+  obtain ⟨i, j⟩ := ij; rcases lt_trichotomy i j with h | rfl | h
   · rw [hermitianCoordinates_apply_of_le n _ h.le, coe_gueMatrix,
-      gaussianEnsemble_apply_of_lt_of_ne_one g (by decide) h, ← Complex.ofReal_inv, hsplit]
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.I_im,
-      Complex.ofReal_im, zero_mul, mul_zero, sub_zero, add_zero, h.ne, ↓reduceIte]
+      gaussianEnsemble_apply_of_lt_of_ne_one g (by decide) h, ← Complex.ofReal_inv,
+      div_eq_mul_inv, ← Complex.ofReal_inv]
+    simp only [Complex.mul_re, Complex.add_re, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+      Complex.I_im, h.ne, ↓reduceIte]; ring
   · rw [hermitianCoordinates_apply_of_le n _ le_rfl, coe_gueMatrix,
       gaussianEnsemble_apply_self_of_ne_one g (by decide) i, ← Complex.ofReal_inv,
-      ← Complex.ofReal_mul, Complex.ofReal_re]
-    simp only [↓reduceIte, one_mul]
+      ← Complex.ofReal_mul, Complex.ofReal_re]; simp only [↓reduceIte, one_mul]
   · rw [hermitianCoordinates_apply_of_gt n _ h, coe_gueMatrix,
-      gaussianEnsemble_apply_of_lt_of_ne_one g (by decide) h, ← Complex.ofReal_inv, hsplit]
-    simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.I_re, Complex.I_im,
-      Complex.ofReal_re, zero_mul, one_mul, zero_add, h.ne', ↓reduceIte]
+      im_gaussianEnsemble_of_lt_of_ne_one g (by decide) h]; simp only [h.ne', ↓reduceIte]
 
 /-- `TauCeti.Probability.gueMatrix` is continuous in the input array. -/
-theorem continuous_gueMatrix (n : ℕ) : Continuous (gueMatrix n) :=
-  continuous_induced_rng.2 (continuous_gaussianEnsemble 2 n)
+@[fun_prop] theorem continuous_gueMatrix (n : ℕ) : Continuous (gueMatrix n) :=
+  (gueMatrix n).continuous
 
 /-- `TauCeti.Probability.gueMatrix` is measurable in the input array. -/
 @[fun_prop] theorem measurable_gueMatrix (n : ℕ) : Measurable (gueMatrix n) :=
-  (continuous_gueMatrix n).measurable
+  (gueMatrix n).measurable
 
-/-- `TauCeti.Probability.goeMatrix` expands in the Frobenius orthonormal basis
-`TauCeti.symmetricOrthonormalBasis` with global scale `√2 / √n`. -/
+/-- `goeMatrix` expands in `symmetricOrthonormalBasis` with global scale `√2 / √n`. -/
 theorem goeMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n → ℝ) :
-    goeMatrix n g =
-      (Real.sqrt 2 / Real.sqrt n) •
-        ∑ ij : upperTriangle n, g ij.1 • symmetricOrthonormalBasis n ij := by
+    goeMatrix n g = (Real.sqrt 2 / Real.sqrt n) •
+      ∑ ij : upperTriangle n, g ij.1 • symmetricOrthonormalBasis n ij := by
   refine (symmetricCoordinates n).injective (funext fun kl ↦ ?_)
   rw [symmetricCoordinates_goeMatrix, map_smul, map_sum]
   simp only [Pi.smul_apply, Finset.sum_apply, smul_eq_mul, symmetricOrthonormalBasis_apply,
@@ -206,8 +168,7 @@ theorem goeMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n →
           rw [mul_inv_cancel₀ (by positivity), one_mul]
       _ = Real.sqrt 2 * (Real.sqrt n)⁻¹ * (g kl.1 * (Real.sqrt 2)⁻¹) := by ring
 
-/-- `TauCeti.Probability.gueMatrix` expands in the Frobenius orthonormal basis
-`TauCeti.hermitianOrthonormalBasis` with global scale `(√n)⁻¹`. -/
+/-- `gueMatrix` expands in `hermitianOrthonormalBasis` with global scale `(√n)⁻¹`. -/
 theorem gueMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n → ℝ) :
     gueMatrix n g =
       (Real.sqrt n)⁻¹ • ∑ ij : Fin n × Fin n, g ij • hermitianOrthonormalBasis n ij := by
@@ -218,11 +179,7 @@ theorem gueMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n →
     mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
   by_cases hd : kl.1 = kl.2 <;> simp only [hd, ↓reduceIte] <;> ring
 
-/-! ### The GOE and GUE probability measures -/
-
-/-- The **Gaussian orthogonal ensemble** (`β = 1`) law on `n × n` real symmetric matrices: the
-pushforward of the standard Gaussian product measure on `Fin n × Fin n → ℝ` along
-`TauCeti.Probability.goeMatrix`. -/
+/-- The **Gaussian orthogonal ensemble** (`β = 1`) law on `n × n` real symmetric matrices. -/
 def goeMeasure (n : ℕ) : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :=
   (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (goeMatrix n)
 
@@ -230,9 +187,7 @@ def goeMeasure (n : ℕ) : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (F
 theorem goeMeasure_def (n : ℕ) :
     goeMeasure n = (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (goeMatrix n) := (rfl)
 
-/-- The **Gaussian unitary ensemble** (`β = 2`) law on `n × n` complex Hermitian matrices: the
-pushforward of the standard Gaussian product measure on `Fin n × Fin n → ℝ` along
-`TauCeti.Probability.gueMatrix`. -/
+/-- The **Gaussian unitary ensemble** (`β = 2`) law on `n × n` complex Hermitian matrices. -/
 def gueMeasure (n : ℕ) : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
   (Measure.pi fun _ : Fin n × Fin n ↦ gaussianReal 0 1).map (gueMatrix n)
 
@@ -261,8 +216,7 @@ instance isProbabilityMeasure_gaussianEnsembleLaw (β n : ℕ) :
   rw [gaussianEnsembleLaw_def]; infer_instance
 
 private abbrev castSym (n : ℕ) (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
-    Matrix (Fin n) (Fin n) ℂ :=
-  (A : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal
+    Matrix (Fin n) (Fin n) ℂ := (A : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal
 
 private theorem measurable_castSym (n : ℕ) : Measurable (castSym n) :=
   (continuous_matrix fun i j ↦
@@ -277,22 +231,19 @@ theorem gaussianEnsembleLaw_one_eq_map_goeMeasure (n : ℕ) :
     Measure.map_map (measurable_castSym n) (measurable_goeMatrix n)]
   exact congrArg (Measure.map · _) (funext fun g ↦ (map_ofReal_coe_goeMatrix n g).symm)
 
-/-- For `β ≠ 1`, `TauCeti.Probability.gaussianEnsembleLaw β n` is the subtype-coercion pushforward
-of `TauCeti.Probability.gueMeasure n`. -/
+/-- For `β ≠ 1`, `gaussianEnsembleLaw β n` is the subtype-coercion pushforward of `gueMeasure n`. -/
 theorem gaussianEnsembleLaw_eq_map_gueMeasure {β : ℕ} (hβ : β ≠ 1) (n : ℕ) :
     gaussianEnsembleLaw β n = (gueMeasure n).map Subtype.val := by
   rw [gaussianEnsembleLaw_def, gueMeasure_def,
     Measure.map_map measurable_subtype_coe (measurable_gueMatrix n)]
-  exact congrArg (Measure.map · _) (funext (gaussianEnsemble_eq_two_of_ne_one hβ))
+  exact congrArg (Measure.map · _) (funext (gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one hβ))
 
-/-- The ambient `β = 2` law is the subtype-coercion pushforward of
-`TauCeti.Probability.gueMeasure`. -/
+/-- The ambient `β = 2` law is the subtype-coercion pushforward of `gueMeasure`. -/
 theorem gaussianEnsembleLaw_two_eq_map_gueMeasure (n : ℕ) :
     gaussianEnsembleLaw 2 n = (gueMeasure n).map Subtype.val :=
   gaussianEnsembleLaw_eq_map_gueMeasure (by decide) n
 
-/-- `TauCeti.Probability.goeMeasure n` is the pushforward of the standard Gaussian product measure
-on `TauCeti.upperTriangle n → ℝ` along the upper-triangular entry reconstruction. -/
+/-- `goeMeasure n` is the pushforward of standard Gaussian product measure on `upperTriangle n`. -/
 theorem goeMeasure_eq_map_pi_upperTriangle (n : ℕ) :
     goeMeasure n =
       (Measure.pi fun _ : upperTriangle n ↦ gaussianReal 0 1).map fun x ↦
@@ -303,8 +254,7 @@ theorem goeMeasure_eq_map_pi_upperTriangle (n : ℕ) :
   rw [← hproj.map_eq, Measure.map_map (by fun_prop) hproj.measurable, goeMeasure_def]
   exact congrArg (Measure.map · _) (funext fun g ↦ (goeMatrix_def n g).symm)
 
-/-- Building `TauCeti.Probability.goeMatrix` from a family of real random variables whose
-upper-triangular entries are independent standard Gaussians produces `goeMeasure n`. -/
+/-- Independent standard Gaussian upper-triangular entries give `goeMeasure n`. -/
 theorem hasLaw_goeMatrix_of_upperTriangle {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
     (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun (fun (ij : upperTriangle n) ω ↦ g ij.1 ω) P)
     (hlaw : ∀ ij : upperTriangle n, HasLaw (g ij.1) (gaussianReal 0 1) P) :
@@ -318,34 +268,28 @@ theorem hasLaw_goeMatrix_of_upperTriangle {Ω : Type*} [MeasurableSpace Ω] {P :
       from funext fun ω ↦ goeMatrix_def n _]
   exact (hasLaw_map hf.aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
 
-/-- Building `TauCeti.Probability.goeMatrix` from independent standard Gaussian entries produces
-`goeMeasure n`. -/
+/-- Independent standard Gaussian entries give `goeMeasure n`. -/
 theorem hasLaw_goeMatrix {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
     (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun g P)
     (hlaw : ∀ ij : Fin n × Fin n, HasLaw (g ij) (gaussianReal 0 1) P) :
     HasLaw (fun ω ↦ goeMatrix n (fun p ↦ g p ω)) (goeMeasure n) P :=
   (hasLaw_map (measurable_goeMatrix n).aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
 
-/-- Building `TauCeti.Probability.gueMatrix` from independent standard Gaussian entries produces
-`gueMeasure n`. -/
+/-- Independent standard Gaussian entries give `gueMeasure n`. -/
 theorem hasLaw_gueMatrix {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
     (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun g P)
     (hlaw : ∀ ij : Fin n × Fin n, HasLaw (g ij) (gaussianReal 0 1) P) :
     HasLaw (fun ω ↦ gueMatrix n (fun p ↦ g p ω)) (gueMeasure n) P :=
   (hasLaw_map (measurable_gueMatrix n).aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
 
-/-- Building `TauCeti.Probability.gaussianEnsemble` from independent standard Gaussian entries
-produces `gaussianEnsembleLaw β n`. -/
+/-- Independent standard Gaussian entries give `gaussianEnsembleLaw β n`. -/
 theorem hasLaw_gaussianEnsemble {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {β n : ℕ}
     (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun g P)
     (hlaw : ∀ ij : Fin n × Fin n, HasLaw (g ij) (gaussianReal 0 1) P) :
     HasLaw (fun ω ↦ gaussianEnsemble β n (fun p ↦ g p ω)) (gaussianEnsembleLaw β n) P :=
   (hasLaw_map (measurable_gaussianEnsemble β n).aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
 
-/-! ### Standard Gaussian representation, low dimensions, and Gaussianity -/
-
-/-- `TauCeti.Probability.goeMeasure n` is `ProbabilityTheory.stdGaussian` on the real symmetric
-subspace rescaled by `√2 / √n`. -/
+/-- `goeMeasure n` is `stdGaussian` on the real symmetric subspace rescaled by `√2 / √n`. -/
 theorem goeMeasure_eq_map_stdGaussian (n : ℕ) :
     goeMeasure n =
       (stdGaussian (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ))).map
@@ -359,8 +303,7 @@ theorem goeMeasure_eq_map_stdGaussian (n : ℕ) :
   simpa [goeMatrix_def, hx] using
     goeMatrix_eq_smul_sum_orthonormalBasis n fun p ↦ if h : p.1 ≤ p.2 then x ⟨p, h⟩ else 0
 
-/-- `TauCeti.Probability.gueMeasure n` is `ProbabilityTheory.stdGaussian` on the complex Hermitian
-subspace rescaled by `(√n)⁻¹`. -/
+/-- `gueMeasure n` is `stdGaussian` on the complex Hermitian subspace rescaled by `(√n)⁻¹`. -/
 theorem gueMeasure_eq_map_stdGaussian (n : ℕ) :
     gueMeasure n =
       (stdGaussian (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))).map
@@ -371,15 +314,75 @@ theorem gueMeasure_eq_map_stdGaussian (n : ℕ) :
 
 /-- `TauCeti.Probability.goeMeasure` is a Gaussian measure on the real symmetric subspace. -/
 instance isGaussian_goeMeasure (n : ℕ) : IsGaussian (goeMeasure n) := by
-  let E := selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)
-  rw [goeMeasure_eq_map_stdGaussian, show (((Real.sqrt 2 / Real.sqrt n) • ·) : E → E) =
-    ⇑((Real.sqrt 2 / Real.sqrt n) • ContinuousLinearMap.id ℝ E) by funext x; simp]; infer_instance
+  rw [goeMeasure_eq_map_stdGaussian,
+    show (((Real.sqrt 2 / Real.sqrt n) • ·) : _ → _) =
+      ⇑((Real.sqrt 2 / Real.sqrt n) • ContinuousLinearMap.id ℝ _) by ext; simp]
+  infer_instance
 
 /-- `TauCeti.Probability.gueMeasure` is a Gaussian measure on the complex Hermitian subspace. -/
 instance isGaussian_gueMeasure (n : ℕ) : IsGaussian (gueMeasure n) := by
-  let E := selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)
-  rw [gueMeasure_eq_map_stdGaussian, show (((Real.sqrt n)⁻¹ • ·) : E → E) =
-    ⇑((Real.sqrt n)⁻¹ • ContinuousLinearMap.id ℝ E) by funext x; simp]; infer_instance
+  rw [gueMeasure_eq_map_stdGaussian,
+    show (((Real.sqrt n)⁻¹ • ·) : _ → _) =
+      ⇑((Real.sqrt n)⁻¹ • ContinuousLinearMap.id ℝ _) by ext; simp]
+  infer_instance
+
+/-- Characteristic function of `TauCeti.Probability.goeMeasure n`. -/
+theorem charFun_goeMeasure (n : ℕ)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) :
+    charFun (goeMeasure n) Θ = Complex.exp (-(‖Θ‖ : ℂ) ^ 2 / n) := by
+  rw [goeMeasure_eq_map_stdGaussian, charFun_map_smul, charFun_stdGaussian,
+    ← Complex.ofReal_pow, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow, div_pow,
+    Real.sq_sqrt (by positivity), Real.sq_sqrt (Nat.cast_nonneg n)]
+  push_cast; simp only [div_eq_mul_inv]; exact congrArg Complex.exp (by ring)
+
+/-- Characteristic function of `TauCeti.Probability.gueMeasure n`. -/
+theorem charFun_gueMeasure (n : ℕ)
+    (Θ : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :
+    charFun (gueMeasure n) Θ = Complex.exp (-(‖Θ‖ : ℂ) ^ 2 / (2 * n)) := by
+  rw [gueMeasure_eq_map_stdGaussian, charFun_map_smul, charFun_stdGaussian,
+    ← Complex.ofReal_pow, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow, inv_pow,
+    Real.sq_sqrt (Nat.cast_nonneg n)]
+  push_cast; simp only [div_eq_mul_inv, mul_inv]; exact congrArg Complex.exp (by ring)
+
+private theorem gaussian_charFun_goeMeasure (n : ℕ) :
+    (0 : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)) = ∫ H, H ∂goeMeasure n ∧
+      (2 / (n : ℝ)) • innerSL ℝ = covarianceBilin (goeMeasure n) := by
+  refine gaussian_charFun_congr 0 _
+    ⟨⟨fun x y ↦ by simp [innerSL_apply_apply ℝ, real_inner_comm]⟩,
+      ⟨fun x ↦ by simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
+        innerSL_apply_apply ℝ, smul_eq_mul, real_inner_self_eq_norm_sq]; positivity⟩⟩ fun Θ ↦ ?_
+  rw [charFun_goeMeasure]; simp only [inner_zero_right, Complex.ofReal_zero, zero_mul, zero_sub,
+    smul_apply, innerSL_apply_apply ℝ, smul_eq_mul, real_inner_self_eq_norm_sq]
+  push_cast; simp only [div_eq_mul_inv]; exact congrArg Complex.exp (by ring)
+
+private theorem gaussian_charFun_gueMeasure (n : ℕ) :
+    (0 : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) = ∫ H, H ∂gueMeasure n ∧
+      (n : ℝ)⁻¹ • innerSL ℝ = covarianceBilin (gueMeasure n) := by
+  refine gaussian_charFun_congr 0 _
+    ⟨⟨fun x y ↦ by simp [innerSL_apply_apply ℝ, real_inner_comm]⟩,
+      ⟨fun x ↦ by simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply,
+        innerSL_apply_apply ℝ, smul_eq_mul, real_inner_self_eq_norm_sq]; positivity⟩⟩ fun Θ ↦ ?_
+  rw [charFun_gueMeasure]; simp only [inner_zero_right, Complex.ofReal_zero, zero_mul, zero_sub,
+    smul_apply, innerSL_apply_apply ℝ, smul_eq_mul, real_inner_self_eq_norm_sq]
+  push_cast; simp only [div_eq_mul_inv, mul_inv]; exact congrArg Complex.exp (by ring)
+
+/-- `TauCeti.Probability.goeMeasure` is centered. -/
+@[simp] theorem integral_id_goeMeasure (n : ℕ) : ∫ H, H ∂goeMeasure n = 0 :=
+  (gaussian_charFun_goeMeasure n).1.symm
+
+/-- `TauCeti.Probability.gueMeasure` is centered. -/
+@[simp] theorem integral_id_gueMeasure (n : ℕ) : ∫ H, H ∂gueMeasure n = 0 :=
+  (gaussian_charFun_gueMeasure n).1.symm
+
+/-- Covariance bilinear form of `TauCeti.Probability.goeMeasure n`. -/
+theorem covarianceBilin_goeMeasure (n : ℕ) :
+    covarianceBilin (goeMeasure n) = (2 / (n : ℝ)) • innerSL ℝ :=
+  (gaussian_charFun_goeMeasure n).2.symm
+
+/-- Covariance bilinear form of `TauCeti.Probability.gueMeasure n`. -/
+theorem covarianceBilin_gueMeasure (n : ℕ) :
+    covarianceBilin (gueMeasure n) = (n : ℝ)⁻¹ • innerSL ℝ :=
+  (gaussian_charFun_gueMeasure n).2.symm
 
 /-- In dimension zero, `TauCeti.Probability.goeMeasure` is the Dirac mass at zero. -/
 @[simp] theorem goeMeasure_zero : goeMeasure 0 = Measure.dirac 0 := by
@@ -388,6 +391,12 @@ instance isGaussian_gueMeasure (n : ℕ) : IsGaussian (gueMeasure n) := by
 /-- In dimension zero, `TauCeti.Probability.gueMeasure` is the Dirac mass at zero. -/
 @[simp] theorem gueMeasure_zero : gueMeasure 0 = Measure.dirac 0 := by
   rw [gueMeasure_eq_map_stdGaussian]; simp
+
+/-- In dimension zero, `TauCeti.Probability.gaussianEnsembleLaw` is the Dirac mass at zero. -/
+@[simp] theorem gaussianEnsembleLaw_zero (β : ℕ) : gaussianEnsembleLaw β 0 = Measure.dirac 0 := by
+  by_cases hβ : β = 1
+  · subst hβ; simp [gaussianEnsembleLaw_one_eq_map_goeMeasure]
+  · simp [gaussianEnsembleLaw_eq_map_gueMeasure hβ]
 
 /-- In dimension one, reading the single entry of `goeMeasure 1` gives `N(0, 2)`. -/
 @[simp] theorem map_symmetricFinOneEquiv_goeMeasure :
@@ -408,8 +417,6 @@ instance isGaussian_gueMeasure (n : ℕ) : IsGaussian (gueMeasure n) := by
     show (hermitianFinOneEquiv ∘ gueMatrix 1 : (Fin 1 × Fin 1 → ℝ) → ℝ) = fun g ↦ g (0, 0)
       from funext fun g ↦ by simp,
     (measurePreserving_eval (fun _ : Fin 1 × Fin 1 ↦ gaussianReal 0 1) (0, 0)).map_eq]
-
-/-! ### Orthogonal and unitary conjugation invariance -/
 
 /-- Orthogonal conjugation `A ↦ U * A * Uᵀ` preserves `TauCeti.Probability.goeMeasure n`. -/
 theorem measurePreserving_symmetricConj_goeMeasure {n : ℕ} (U : Matrix.orthogonalGroup (Fin n) ℝ) :
@@ -466,7 +473,8 @@ theorem _root_.ProbabilityTheory.HasLaw.hermitianConj_gueMeasure {Ω : Type*} [M
     fun h ↦ h.hermitianConj_gueMeasure U⟩
 
 /-- Ambient orthogonal conjugation preserves `TauCeti.Probability.gaussianEnsembleLaw 1 n`. -/
-theorem map_orthogonalConj_gaussianEnsembleLaw_one {n : ℕ} (U : Matrix.orthogonalGroup (Fin n) ℝ) :
+theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_one {n : ℕ}
+    (U : Matrix.orthogonalGroup (Fin n) ℝ) :
     (gaussianEnsembleLaw 1 n).map (fun H ↦ (U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H *
       ((U : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ) = gaussianEnsembleLaw 1 n := by
   have hconj : Measurable fun H : Matrix (Fin n) (Fin n) ℂ ↦
@@ -482,7 +490,8 @@ theorem map_orthogonalConj_gaussianEnsembleLaw_one {n : ℕ} (U : Matrix.orthogo
       (Matrix.UnitaryGroup.symmetricConj U).continuous.measurable, map_symmetricConj_goeMeasure]
 
 /-- Ambient unitary conjugation preserves `TauCeti.Probability.gaussianEnsembleLaw 2 n`. -/
-theorem map_unitaryConj_gaussianEnsembleLaw_two {n : ℕ} (U : Matrix.unitaryGroup (Fin n) ℂ) :
+theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
+    (U : Matrix.unitaryGroup (Fin n) ℂ) :
     (gaussianEnsembleLaw 2 n).map
         (fun H ↦ (U : Matrix (Fin n) (Fin n) ℂ) * H * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ) =
       gaussianEnsembleLaw 2 n := by
@@ -496,5 +505,133 @@ theorem map_unitaryConj_gaussianEnsembleLaw_two {n : ℕ} (U : Matrix.unitaryGro
       from funext fun A ↦ (Matrix.UnitaryGroup.coe_hermitianConj_apply U A).symm,
     ← Measure.map_map measurable_subtype_coe
       (Matrix.UnitaryGroup.hermitianConj U).continuous.measurable, map_hermitianConj_gueMeasure]
+
+/-- Under `goeMeasure n`, the upper-triangular coordinates are independent Gaussians:
+`N(0, 2 / n)` on the diagonal and `N(0, 1 / n)` above it. -/
+theorem map_symmetricCoordinates_goeMeasure (n : ℕ) :
+    (goeMeasure n).map (symmetricCoordinates n) =
+      Measure.pi fun ij : upperTriangle n ↦
+        if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
+  let scale : upperTriangle n → ℝ → ℝ := fun ij t ↦
+    (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * t)
+  have hfactor (ij : upperTriangle n) : (gaussianReal 0 1).map (scale ij) =
+      if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
+    simp only [scale, ← mul_assoc]
+    split_ifs with hd <;> refine gaussianReal_zero_one_map_const_mul _ ?_
+    · simp [mul_pow, div_eq_inv_mul]
+    · simp [one_div]
+  have : ∀ ij : upperTriangle n, SigmaFinite ((gaussianReal 0 1).map (scale ij)) :=
+    fun ij ↦ by rw [hfactor ij]; infer_instance
+  rw [goeMeasure_eq_map_pi_upperTriangle,
+    Measure.map_map (symmetricCoordinates n).continuous.measurable (by fun_prop),
+    show (symmetricCoordinates n ∘ fun x : upperTriangle n → ℝ ↦
+        (symmetricCoordinates n).symm fun ij ↦ scale ij (x ij)) =
+      fun x ij ↦ scale ij (x ij) from funext fun x ↦ (symmetricCoordinates n).apply_symm_apply _,
+    Measure.pi_map_pi fun ij ↦ by fun_prop]
+  exact congrArg Measure.pi (funext hfactor)
+
+/-- Under `gueMeasure n`, `hermitianCoordinates n` has independent Gaussian coordinates:
+`N(0, 1 / n)` on the diagonal and `N(0, 1 / (2 * n))` off the diagonal. -/
+theorem map_hermitianCoordinates_gueMeasure (n : ℕ) :
+    (gueMeasure n).map (hermitianCoordinates n) =
+      Measure.pi fun ij : Fin n × Fin n ↦
+        if ij.1 = ij.2 then gaussianReal 0 (1 / n) else gaussianReal 0 (1 / (2 * n)) := by
+  let scale : Fin n × Fin n → ℝ → ℝ := fun ij t ↦
+    (Real.sqrt n)⁻¹ * ((if ij.1 = ij.2 then 1 else (Real.sqrt 2)⁻¹) * t)
+  have hfactor (ij : Fin n × Fin n) : (gaussianReal 0 1).map (scale ij) =
+      if ij.1 = ij.2 then gaussianReal 0 (1 / n) else gaussianReal 0 (1 / (2 * n)) := by
+    simp only [scale, ← mul_assoc]
+    split_ifs with hd <;> refine gaussianReal_zero_one_map_const_mul _ ?_
+    · simp [one_div]
+    · simp [mul_pow, one_div]
+  have : ∀ ij : Fin n × Fin n, SigmaFinite ((gaussianReal 0 1).map (scale ij)) :=
+    fun ij ↦ by rw [hfactor ij]; infer_instance
+  rw [gueMeasure_def, Measure.map_map (hermitianCoordinates n).continuous.measurable
+    (measurable_gueMatrix n),
+    show (hermitianCoordinates n ∘ gueMatrix n : (Fin n × Fin n → ℝ) → Fin n × Fin n → ℝ) =
+      fun g ij ↦ scale ij (g ij) from funext fun g ↦ funext (hermitianCoordinates_gueMatrix n g),
+    Measure.pi_map_pi fun ij ↦ by fun_prop]
+  exact congrArg Measure.pi (funext hfactor)
+
+/-- **Characterization of the GOE by independent Gaussian entries.** A random symmetric matrix `H`
+has law `goeMeasure n` iff its on-or-above-diagonal entries are mutually independent with
+`H i i ~ N(0, 2 / n)` and `H i j ~ N(0, 1 / n)` for `i < j`. -/
+theorem hasLaw_goeMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
+    {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)} :
+    HasLaw H (goeMeasure n) P ↔
+      iIndepFun (fun (ij : upperTriangle n) ω ↦
+          (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) P ∧
+        (∀ i : Fin n, HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) i i)
+          (gaussianReal 0 (2 / n)) P) ∧
+        (∀ ⦃i j : Fin n⦄, i < j →
+          HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) i j)
+            (gaussianReal 0 (1 / n)) P) := by
+  let μ : upperTriangle n → Measure ℝ := fun ij ↦
+    if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n)
+  have hm :
+      MeasurePreserving (symmetricCoordinatesMeasurableEquiv n) (goeMeasure n) (Measure.pi μ) :=
+    ⟨(symmetricCoordinatesMeasurableEquiv n).measurable,
+      symmetricCoordinatesMeasurableEquiv_coe n ▸ map_symmetricCoordinates_goeMeasure n⟩
+  have hsc : (fun ω (ij : upperTriangle n) ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) =
+      fun ω ↦ symmetricCoordinates n (H ω) :=
+    funext fun ω ↦ funext fun ij ↦ (symmetricCoordinates_apply n (H ω) ij).symm
+  constructor
+  · intro hH; let _ := hH.isProbabilityMeasure
+    have hcoord : HasLaw (fun ω (ij : upperTriangle n) ↦
+        (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) (Measure.pi μ) P :=
+      hsc ▸ by simpa using hm.fun_comp_hasLaw hH
+    have heach (ij : upperTriangle n) := (measurePreserving_eval μ ij).fun_comp_hasLaw hcoord
+    exact ⟨(iIndepFun_iff_hasLaw_pi_pi heach).2 hcoord,
+      fun i ↦ by simpa [μ] using heach ⟨(i, i), le_rfl⟩,
+      fun i j hij ↦ by simpa [μ, hij.ne] using heach ⟨(i, j), hij.le⟩⟩
+  · rintro ⟨hindep, hdiag, hoff⟩
+    have heach (ij : upperTriangle n) :
+        HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) (μ ij) P := by
+      rcases ij.2.eq_or_lt with h | hlt
+      · obtain ⟨⟨i, j⟩, _⟩ := ij; cases h; simpa [μ] using hdiag i
+      · simpa [μ, hlt.ne] using hoff hlt
+    have hcoord : HasLaw (fun ω ↦ symmetricCoordinates n (H ω)) (Measure.pi μ) P :=
+      hsc ▸ hindep.hasLaw_pi heach
+    simpa using (hm.symm (symmetricCoordinatesMeasurableEquiv n)).fun_comp_hasLaw hcoord
+
+/-- **Characterization of the GUE by independent Gaussian entries.** A random Hermitian matrix `H`
+has law `gueMeasure n` iff `hermitianCoordinates n (H ω)` has mutually independent entries with
+`(H i i).re ~ N(0, 1 / n)` and `(H i j).re, (H i j).im ~ N(0, 1 / (2 * n))` for `i < j`. -/
+theorem hasLaw_gueMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
+    {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)} :
+    HasLaw H (gueMeasure n) P ↔
+      iIndepFun (fun (ij : Fin n × Fin n) ω ↦ hermitianCoordinates n (H ω) ij) P ∧
+        (∀ i : Fin n, HasLaw (fun ω ↦ ((H ω : Matrix (Fin n) (Fin n) ℂ) i i).re)
+          (gaussianReal 0 (1 / n)) P) ∧
+        (∀ ⦃i j : Fin n⦄, i < j →
+          HasLaw (fun ω ↦ ((H ω : Matrix (Fin n) (Fin n) ℂ) i j).re)
+            (gaussianReal 0 (1 / (2 * n))) P ∧
+          HasLaw (fun ω ↦ ((H ω : Matrix (Fin n) (Fin n) ℂ) i j).im)
+            (gaussianReal 0 (1 / (2 * n))) P) := by
+  let μ : Fin n × Fin n → Measure ℝ := fun ij ↦
+    if ij.1 = ij.2 then gaussianReal 0 (1 / n) else gaussianReal 0 (1 / (2 * n))
+  have hm :
+      MeasurePreserving (hermitianCoordinatesMeasurableEquiv n) (gueMeasure n) (Measure.pi μ) :=
+    ⟨(hermitianCoordinatesMeasurableEquiv n).measurable,
+      hermitianCoordinatesMeasurableEquiv_coe n ▸ map_hermitianCoordinates_gueMeasure n⟩
+  constructor
+  · intro hH; let _ := hH.isProbabilityMeasure
+    have hcoord : HasLaw (fun ω ↦ hermitianCoordinates n (H ω)) (Measure.pi μ) P := by
+      simpa using hm.fun_comp_hasLaw hH
+    have heach (ij : Fin n × Fin n) := (measurePreserving_eval μ ij).fun_comp_hasLaw hcoord
+    exact ⟨(iIndepFun_iff_hasLaw_pi_pi heach).2 hcoord,
+      fun i ↦ by simpa [μ] using heach (i, i),
+      fun i j hij ↦ ⟨by simpa [μ, hij.le, hij.ne] using heach (i, j),
+        by simpa [μ, hij, hij.ne'] using heach (j, i)⟩⟩
+  · rintro ⟨hindep, hdiag, hoff⟩
+    have heach : ∀ ij : Fin n × Fin n,
+        HasLaw (fun ω ↦ hermitianCoordinates n (H ω) ij) (μ ij) P
+      | (i, j) => by
+        rcases lt_trichotomy i j with h | rfl | h
+        · simpa [μ, h.le, h.ne] using (hoff h).1
+        · simpa [μ] using hdiag i
+        · simpa [μ, h, h.ne'] using (hoff h).2
+    simpa using (hm.symm (hermitianCoordinatesMeasurableEquiv n)).fun_comp_hasLaw
+      (hindep.hasLaw_pi heach)
 
 end TauCeti.Probability

@@ -25,7 +25,10 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 
 ## Main results
 
-* `TauCeti.Probability.isHermitian_gaussianEnsemble`: the matrix is Hermitian.
+* `TauCeti.Probability.isHermitian_gaussianEnsemble`, `TauCeti.Probability.im_gaussianEnsemble_one`,
+  `TauCeti.Probability.im_gaussianEnsemble_of_lt_of_ne_one`,
+  `TauCeti.Probability.gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one`, ℝ-linearity, and
+  continuity/measurability of `gaussianEnsemble β n`.
 * `TauCeti.Probability.gaussianEnsemble_one_zero_zero_hasLaw` and
   `TauCeti.Probability.gaussianEnsemble_two_zero_zero_hasLaw`: the laws of the `1 × 1` ensembles,
   `N(0, 2)` and `N(0, 1)`.
@@ -170,6 +173,72 @@ theorem isHermitian_gaussianEnsemble (β n : ℕ) (g : Fin n × Fin n → ℝ) :
   have := gaussianEnsemble_eq_wignerMatrix β n (fun p (_ : Unit) ↦ g p) ()
   rw [this]
   exact wignerMatrix_isHermitian _ _ _ n
+
+/-- Every entry of the `β = 1` Gaussian ensemble has zero imaginary part. -/
+@[simp] theorem im_gaussianEnsemble_one {n : ℕ} (g : Fin n × Fin n → ℝ) (i j : Fin n) :
+    (gaussianEnsemble 1 n g i j).im = 0 := by
+  rcases lt_trichotomy i j with h | rfl | h <;>
+    simp [*, ← Complex.ofReal_inv, ← Complex.ofReal_mul]
+
+/-- Above the diagonal, the `β ≠ 1` Gaussian ensemble has imaginary part `g (j, i) / √(2n)`. -/
+theorem im_gaussianEnsemble_of_lt_of_ne_one {β n : ℕ} (g : Fin n × Fin n → ℝ) (hβ : β ≠ 1)
+    {i j : Fin n} (h : i < j) :
+    (gaussianEnsemble β n g i j).im = (Real.sqrt n)⁻¹ * ((Real.sqrt 2)⁻¹ * g (j, i)) := by
+  rw [gaussianEnsemble_apply_of_lt_of_ne_one g hβ h, ← Complex.ofReal_inv, div_eq_mul_inv,
+    ← Complex.ofReal_inv]
+  simp only [Complex.mul_im, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im]; ring
+
+/-- For `β = 2` and `n = 2`, the imaginary part of the `(0, 1)` entry is `g (1, 0) / 2`. -/
+theorem im_gaussianEnsemble_two_zero_one (g : Fin 2 × Fin 2 → ℝ) :
+    (gaussianEnsemble 2 2 g 0 1).im = g (1, 0) / 2 := by
+  rw [im_gaussianEnsemble_of_lt_of_ne_one g (by decide) (by decide : (0 : Fin 2) < 1),
+    Nat.cast_ofNat, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), div_eq_inv_mul]
+
+/-- All `β ≠ 1` branches of `TauCeti.Probability.gaussianEnsemble` coincide with `β = 2`. -/
+theorem gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    (g : Fin n × Fin n → ℝ) : gaussianEnsemble β n g = gaussianEnsemble 2 n g := by
+  ext i j; rw [gaussianEnsemble_apply, gaussianEnsemble_apply, ite_eq_right hβ,
+    ite_eq_right (by decide : (2 : ℕ) ≠ 1)]
+
+/-- `TauCeti.Probability.gaussianEnsemble` is additive in the input array. -/
+theorem gaussianEnsemble_add (β n : ℕ) (g₁ g₂ : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (g₁ + g₂) = gaussianEnsemble β n g₁ + gaussianEnsemble β n g₂ := by
+  ext i j; simp only [Matrix.add_apply, gaussianEnsemble_apply, Pi.add_apply]
+  split_ifs <;> push_cast <;> ring
+
+/-- `TauCeti.Probability.gaussianEnsemble` commutes with real scalar multiplication. -/
+theorem gaussianEnsemble_smul (β n : ℕ) (c : ℝ) (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (c • g) = c • gaussianEnsemble β n g := by
+  ext i j; simp only [Matrix.smul_apply, gaussianEnsemble_apply, Pi.smul_apply, smul_eq_mul,
+    Complex.real_smul]; split_ifs <;> push_cast <;> ring
+
+/-- `TauCeti.Probability.gaussianEnsemble` maps the zero array to the zero matrix. -/
+@[simp] theorem gaussianEnsemble_zero (β n : ℕ) : gaussianEnsemble β n 0 = 0 := by
+  simpa using gaussianEnsemble_smul β n 0 0
+
+/-- `TauCeti.Probability.gaussianEnsemble` commutes with negation. -/
+@[simp] theorem gaussianEnsemble_neg (β n : ℕ) (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (-g) = -gaussianEnsemble β n g := by
+  simpa using gaussianEnsemble_smul β n (-1) g
+
+/-- `TauCeti.Probability.gaussianEnsemble` commutes with subtraction. -/
+theorem gaussianEnsemble_sub (β n : ℕ) (g₁ g₂ : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (g₁ - g₂) = gaussianEnsemble β n g₁ - gaussianEnsemble β n g₂ := by
+  simp [sub_eq_add_neg, gaussianEnsemble_add]
+
+/-- `TauCeti.Probability.gaussianEnsemble` depends continuously on the input array. -/
+@[fun_prop] theorem continuous_gaussianEnsemble (β n : ℕ) : Continuous (gaussianEnsemble β n) := by
+  refine continuous_matrix fun i j ↦ ?_
+  simp only [fun g ↦ gaussianEnsemble_apply (β := β) g i j]
+  rcases lt_trichotomy i j with h | rfl | h
+  · by_cases hβ : β = 1 <;> simp only [hβ, h, h.ne, ↓reduceIte] <;> fun_prop
+  · by_cases hβ : β = 1 <;> simp only [hβ, ↓reduceIte] <;> fun_prop
+  · by_cases hβ : β = 1 <;> simp only [hβ, h.ne', h.not_gt, ↓reduceIte] <;> fun_prop
+
+/-- `TauCeti.Probability.gaussianEnsemble` is measurable in the input array. -/
+@[fun_prop] theorem measurable_gaussianEnsemble (β n : ℕ) : Measurable (gaussianEnsemble β n) :=
+  (continuous_gaussianEnsemble β n).measurable
 
 /-- For `n = 1` and `β = 1`, the single entry `√2 * g (0, 0)` of the ensemble is `N(0, 2)` when
 `g (0, 0)` is a standard Gaussian. -/

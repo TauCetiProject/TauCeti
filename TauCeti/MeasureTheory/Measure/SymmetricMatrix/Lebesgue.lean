@@ -97,7 +97,7 @@ private theorem sum_mul_single (p : ℕ) (A : Matrix (Fin p) (Fin p) ℝ) (k l :
 
 /-- The coordinate basis vector at `kl` pairs with a symmetric matrix through its `kl` entry,
 doubled off the diagonal. -/
-private theorem inner_symmetricBasis (p : ℕ)
+theorem inner_symmetricBasis (p : ℕ)
     (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (kl : upperTriangle p) :
     ⟪A, symmetricBasis p kl⟫ =
       (if kl.1.1 = kl.1.2 then 1 else 2) * (A : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2 := by
@@ -153,6 +153,18 @@ theorem symmetricOrthonormalBasis_apply (p : ℕ) (ij : upperTriangle p) :
       (if ij.1.1 = ij.1.2 then (1 : ℝ) else (Real.sqrt 2)⁻¹) • symmetricBasis p ij := by
   rw [symmetricOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
     Units.smul_def, symScale_coe]
+
+/-- Coordinates in `TauCeti.symmetricOrthonormalBasis` rescale off-diagonal entries by `√2`. -/
+@[simp] theorem symmetricOrthonormalBasis_repr (p : ℕ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (ij : upperTriangle p) :
+    (symmetricOrthonormalBasis p).repr A ij =
+      (if ij.1.1 = ij.1.2 then 1 else Real.sqrt 2) *
+        (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+  have h2 : (Real.sqrt 2)⁻¹ * 2 = Real.sqrt 2 :=
+    (inv_mul_eq_iff_eq_mul₀ (by positivity)).2 (Real.mul_self_sqrt (by norm_num)).symm
+  rw [(symmetricOrthonormalBasis p).repr_apply_apply, symmetricOrthonormalBasis_apply,
+    real_inner_smul_left, real_inner_comm, inner_symmetricBasis, ← mul_assoc]
+  by_cases hd : ij.1.1 = ij.1.2 <;> simp [hd, h2]
 
 private theorem addHaar_symScaled (p : ℕ) :
     ((symmetricBasis p).unitsSMul (symScale p)).addHaar =

@@ -12,8 +12,7 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
 
 For `U : Matrix.orthogonalGroup (Fin p) ℝ`, conjugation `A ↦ U * A * Uᵀ` is the `𝕜 = ℝ`
 specialization `Matrix.UnitaryGroup.symmetricConj` of `Matrix.UnitaryGroup.selfAdjointConj`: a
-linear isometry equivalence of `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)` whose
-underlying continuous linear equivalence is
+linear isometry equivalence whose underlying continuous linear equivalence is
 `Matrix.GeneralLinearGroup.symmetricCongruence (Unitary.toUnits U)`.
 
 ## Main declarations
@@ -38,8 +37,7 @@ abbrev symmetricConj {p : ℕ} (U : Matrix.orthogonalGroup (Fin p) ℝ) :
     selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ≃ₗᵢ[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) := selfAdjointConj U
 
-/-- Forgetting the metric, `Matrix.UnitaryGroup.symmetricConj U` agrees with
-`Matrix.GeneralLinearGroup.symmetricCongruence (Unitary.toUnits U)`. -/
+/-- Forgetting the metric, `symmetricConj U` is `symmetricCongruence (Unitary.toUnits U)`. -/
 theorem toContinuousLinearEquiv_symmetricConj {p : ℕ} (U : Matrix.orthogonalGroup (Fin p) ℝ) :
     (symmetricConj U).toContinuousLinearEquiv =
       Matrix.GeneralLinearGroup.symmetricCongruence (Unitary.toUnits U) :=
@@ -58,15 +56,6 @@ theorem coe_symmetricConj_symm_apply {p : ℕ} (U : Matrix.orthogonalGroup (Fin 
     ((symmetricConj U).symm A : Matrix (Fin p) (Fin p) ℝ) =
       (U : Matrix (Fin p) (Fin p) ℝ)ᵀ * A * (U : Matrix (Fin p) (Fin p) ℝ) := by
   simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using coe_selfAdjointConj_symm_apply U A
-
-/-- Conjugating by the identity orthogonal matrix is the identity isometry. -/
-theorem symmetricConj_one {p : ℕ} :
-    symmetricConj (1 : Matrix.orthogonalGroup (Fin p) ℝ) = LinearIsometryEquiv.refl ℝ _ :=
-  selfAdjointConj_one
-
-/-- Orthogonal conjugation is a left action of `Matrix.orthogonalGroup`. -/
-theorem symmetricConj_mul {p : ℕ} (U V : Matrix.orthogonalGroup (Fin p) ℝ) :
-    symmetricConj (U * V) = (symmetricConj V).trans (symmetricConj U) := selfAdjointConj_mul U V
 
 /-- Conjugating by `U⁻¹` is the inverse linear isometry equivalence. -/
 theorem symmetricConj_inv {p : ℕ} (U : Matrix.orthogonalGroup (Fin p) ℝ) :
