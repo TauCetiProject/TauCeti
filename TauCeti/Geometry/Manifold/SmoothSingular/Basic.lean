@@ -41,6 +41,8 @@ singular cohomology. Only a charted space is required for the definitions.
 ## Main definitions and results
 
 * `TauCeti.smoothSingularSubcomplex`: the subcomplex of smooth singular simplices.
+* `TauCeti.smoothSingularSubcomplex_eq_top`: on a totally disconnected manifold every singular
+  simplex is smooth; its inclusion is an isomorphism, also found by instance resolution.
 * `TauCeti.smoothSingularSubcomplex_le_preimage`: smooth maps preserve smooth simplices.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
 * `TauCeti.SmoothSimplex`: the smooth singular `p`-simplices, the `p`-simplices of
@@ -106,6 +108,24 @@ theorem mem_smoothSingularSubcomplex_iff {k : SimplexCategoryᵒᵖ}
     σ ∈ (smoothSingularSubcomplex I M).obj k ↔ ContMDiffOnSubset I ∞
       ((TopCat.of M).toSSetObjEquiv k σ ∘ fullSimplexEquivStdSimplex k.unop.len) :=
   Iff.rfl
+
+/-- Every singular simplex of a totally disconnected manifold is constant, hence smooth. -/
+@[simp]
+theorem smoothSingularSubcomplex_eq_top [TotallyDisconnectedSpace M] :
+    smoothSingularSubcomplex I M = ⊤ := by
+  apply top_unique
+  intro k σ _
+  rw [mem_smoothSingularSubcomplex_iff]
+  let f := (TopCat.of M).toSSetObjEquiv k σ
+  have hf : (f ∘ fullSimplexEquivStdSimplex k.unop.len) = fun _ ↦ f (StdSimplex.single 0) :=
+    funext fun x ↦ TotallyDisconnectedSpace.eq_of_continuous f f.continuous _ _
+  rw [hf]
+  exact contMDiffOnSubset_const I ∞ _
+
+/-- Smooth and continuous singular simplices coincide on a totally disconnected manifold. -/
+instance isIso_smoothSingularSubcomplex_ι [TotallyDisconnectedSpace M] :
+    IsIso (smoothSingularSubcomplex I M).ι :=
+  (Subfunctor.eq_top_iff_isIso _).mp smoothSingularSubcomplex_eq_top
 
 /-- A singular simplex which, read on the full-dimensional standard simplex, is the restriction of
 a map that is smooth on a neighbourhood of the simplex in `ℝᵏ` is smooth. -/

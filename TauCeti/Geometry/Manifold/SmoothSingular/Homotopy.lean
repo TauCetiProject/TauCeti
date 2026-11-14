@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
+public import TauCeti.Topology.Homotopy.Real
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
@@ -57,12 +58,12 @@ Both complexes retract onto the chains of a point: a homotopy inverse sends ever
 to the constant simplex at `c`, and the two composites are joined to the identities by the smooth
 prism operator of `F` and by the singular prism operator of the continuous homotopy underlying `F`.
 The inclusion is also a quasi-isomorphism on the empty manifold, where both complexes vanish
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`). Together these cover
+(`TauCeti.smoothSingularSubcomplex_eq_top`). Together these cover
 every *star-convex chart domain* of a manifold over a model with corners: for an open `s ⊆ E`
 with `s ∩ range I` star-convex and contained in the target of the extended chart at `x`, the chart
 identifies `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` with `s ∩ range I`, and the straight-line
 contraction of `s ∩ range I`, read through the chart, is smooth on the chart domain
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage`).
+(`TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex`).
 The contraction stays in `range I`, so boundary and corners are allowed.
 
 These are the inputs, homotopy invariance and the comparison on convex coordinate domains, of the
@@ -73,6 +74,9 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
 * `TauCeti.smoothSingularSubcomplexHomotopy`: a smooth homotopy induces a simplicial homotopy of
   the maps of smooth singular subcomplexes, restricting the homotopy of singular simplicial sets.
 * `TauCeti.smoothSingularChainHomotopy`: the induced chain homotopy of smooth singular chains.
+* `TauCeti.smoothSingularSubcomplexHomotopyOfContMDiff`,
+  `TauCeti.smoothSingularChainHomotopyOfContMDiff`: the same constructions directly from a jointly
+  smooth real-parameter family and its endpoint equations.
 * `TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`: smoothly homotopic maps induce the same map
   on smooth singular homology.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
@@ -83,10 +87,9 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff`: on a smoothly
   contractible manifold, smooth singular chains include into singular chains by a chain homotopy
   equivalence, hence by a quasi-isomorphism.
-* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`: the same on the empty
-  manifold.
-* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage`:
-  the same on a star-convex chart domain, and on a convex one by its `_of_convex` variant.
+* `TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex`,
+  `TauCeti.smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex`: chain homotopy
+  equivalences on star-convex and convex chart domains, respectively.
 
 ## References
 
@@ -202,15 +205,40 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq [CategoryWithHomology C] (n :
   (smoothSingularSubcomplexHomotopy hf hg H hF hFH).congr_homologyMap R n
 
 omit hf hg in
-/-- The homotopy from `f` to `g` obtained by restricting to `[0, 1] × M` a continuous map
-`F : ℝ × M → N` with `F (0, ·) = f` and `F (1, ·) = g`. -/
-private def homotopyOfContinuous (hfc : Continuous f) (hgc : Continuous g) (hFc : Continuous F)
+/-- A jointly smooth real-parameter family induces a homotopy of smooth singular subcomplexes. -/
+def smoothSingularSubcomplexHomotopyOfContMDiff
+    (hf : ContMDiff I J ∞ f) (hg : ContMDiff I J ∞ g)
+    (hF : ContMDiff (𝓘(ℝ).prod I) J ∞ F)
     (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
-    TopCat.Homotopy (TopCat.ofHom ⟨f, hfc⟩) (TopCat.ofHom ⟨g, hgc⟩) where
-  toFun p := F (p.1, p.2)
-  continuous_toFun := hFc.comp (continuous_subtype_val.prodMap continuous_id)
-  map_zero_left := h₀
-  map_one_left := h₁
+    SSet.Homotopy (smoothSingularSubcomplexMap f hf) (smoothSingularSubcomplexMap g hg) :=
+  smoothSingularSubcomplexHomotopy hf hg
+    (ContinuousMap.Homotopy.ofReal hF.continuous h₀ h₁) hF
+    (fun p ↦ (ContinuousMap.Homotopy.ofReal_apply hF.continuous h₀ h₁ p).symm)
+
+omit hf hg in
+/-- The homotopy from a jointly smooth family restricts the underlying singular homotopy. -/
+@[reassoc (attr := simp)]
+theorem smoothSingularSubcomplexHomotopyOfContMDiff_h_ι
+    (hf : ContMDiff I J ∞ f) (hg : ContMDiff I J ∞ g)
+    (hF : ContMDiff (𝓘(ℝ).prod I) J ∞ F)
+    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
+    (smoothSingularSubcomplexHomotopyOfContMDiff hf hg hF h₀ h₁).h ≫
+        (smoothSingularSubcomplex J N).ι =
+      ((smoothSingularSubcomplex I M).ι ▷ Δ[1]) ≫
+        (TopCat.Homotopy.toSSet (f := TopCat.ofHom ⟨f, hf.continuous⟩)
+          (g := TopCat.ofHom ⟨g, hg.continuous⟩)
+          (ContinuousMap.Homotopy.ofReal hF.continuous h₀ h₁)).h :=
+  smoothSingularSubcomplexHomotopy_h_ι _ _ _ _ _
+
+omit hf hg in
+/-- The smooth prism operator of a jointly smooth real-parameter family. -/
+def smoothSingularChainHomotopyOfContMDiff
+    (hf : ContMDiff I J ∞ f) (hg : ContMDiff I J ∞ g)
+    (hF : ContMDiff (𝓘(ℝ).prod I) J ∞ F)
+    (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
+    Homotopy (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R)
+      (SSet.chainComplexMap (smoothSingularSubcomplexMap g hg) R) :=
+  (smoothSingularSubcomplexHomotopyOfContMDiff hf hg hF h₀ h₁).chainComplexMap R
 
 omit hf hg in
 /-- Smooth maps `f` and `g` joined by a smooth map `F : ℝ × M → N`, with `F (0, ·) = f` and
@@ -220,8 +248,7 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHom
     (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) (n : ℕ) :
     SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n =
       SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n :=
-  homologyMap_smoothSingularSubcomplexMap_eq hf hg
-    (homotopyOfContinuous hf.continuous hg.continuous hF.continuous h₀ h₁) hF (fun _ ↦ rfl) R n
+  (smoothSingularSubcomplexHomotopyOfContMDiff hf hg hF h₀ h₁).congr_homologyMap R n
 
 end SmoothHomotopy
 
@@ -305,17 +332,19 @@ def smoothSingularChainHomotopyEquivOfContMDiff {F : ℝ × M → M}
   homotopyHomInvId := by
     -- The composite on smooth chains is induced by the constant map `c`, and the smooth prism
     -- operator of `F` joins it to the identity.
-    refine (Homotopy.ofEq ?_).trans ((smoothSingularChainHomotopy contMDiff_id contMDiff_const
-      (homotopyOfContinuous continuous_id continuous_const hF.continuous h₀ h₁) hF (fun _ ↦ rfl)
-      R).symm.trans (Homotopy.ofEq ?_))
+    refine (Homotopy.ofEq ?_).trans ((smoothSingularChainHomotopyOfContMDiff R
+      contMDiff_id contMDiff_const hF h₀ h₁).symm.trans (Homotopy.ofEq ?_))
     · rw [← Functor.map_comp, ι_toPoint_smoothSingularSubcomplexOfPoint]
     · rw [smoothSingularSubcomplexMap_id]
       exact ((SSet.chainComplexFunctor C).obj R).map_id _
   homotopyInvHomId := by
     -- The composite on singular chains is induced by the constant map `c`, and the homotopy
     -- underlying `F` joins it to the identity.
-    refine (Homotopy.ofEq ?_).trans (((homotopyOfContinuous continuous_id continuous_const
-      hF.continuous h₀ h₁).toSSet.chainComplexMap R).symm.trans (Homotopy.ofEq ?_))
+    let H : TopCat.Homotopy (TopCat.ofHom ⟨id, continuous_id⟩)
+        (TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩) :=
+      ContinuousMap.Homotopy.ofReal hF.continuous h₀ h₁
+    refine (Homotopy.ofEq ?_).trans
+      ((H.toSSet.chainComplexMap R).symm.trans (Homotopy.ofEq ?_))
     · rw [← Functor.map_comp, Category.assoc, smoothSingularSubcomplexOfPoint_ι,
         ← Functor.map_comp, toPoint_comp_const]
     · -- `TopCat.ofHom_id` is stated for `ContinuousMap.id`, which is `⟨id, continuous_id⟩`.
@@ -346,19 +375,19 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff [Categ
 The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
 smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
 vanishes in every positive degree. -/
-theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomology C]
+theorem isZero_homology_smoothSingularSubcomplex_of_starConvex
+    [CategoryWithHomology C]
     {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V}
     (hU : StarConvex ℝ c (U : Set V)) {n : ℕ} (hn : n ≠ 0) :
     IsZero ((smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).homology R n) := by
   rcases (U : Set V).eq_empty_or_nonempty with hempty | hne
   · -- An empty open set has no smooth simplices at all.
-    have : (smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).HasDimensionLT 0 := by
-      refine (SSet.notNonempty_iff_hasDimensionLT_zero _).1 fun ⟨σ⟩ ↦ ?_
-      have hx : ((TopCat.of U).toSSetObjEquiv _ σ.1 (StdSimplex.single 0) : V) ∈ (U : Set V) :=
-        ((TopCat.of U).toSSetObjEquiv _ σ.1 (StdSimplex.single 0)).2
-      rw [hempty] at hx
-      exact hx
-    exact (HomologicalComplex.homologyFunctor C _ n).map_isZero (SSet.isZero_chainComplex _ R)
+    have : IsEmpty U := Set.isEmpty_coe_sort.2 hempty
+    let e := (SSet.homologyFunctor R n).mapIso
+      (asIso (smoothSingularSubcomplex 𝓘(ℝ, V) U).ι)
+    exact IsZero.of_iso
+      (AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R
+        (TopCat.of U) hn) e
   have hmem : ∀ p : ℝ × U, c + (1 - Real.smoothTransition p.1) • ((p.2 : V) - c) ∈ U :=
     fun p ↦ hU.add_smul_sub_mem p.2.2 (by linarith [Real.smoothTransition.le_one p.1])
       (by linarith [Real.smoothTransition.nonneg p.1])
@@ -375,97 +404,132 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
     (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.zero]))
     (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.one])) hn
 
-/-! ### The empty manifold -/
-
-section Empty
-
-variable (I M) in
-/-- On the empty manifold the inclusion of smooth singular chains into singular chains is a
-quasi-isomorphism, both chain complexes being zero. -/
-theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty [CategoryWithHomology C]
-    [IsEmpty M] :
-    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) := by
-  -- The singular simplicial set of the empty space has no simplices, nor does its subcomplex.
-  have hT : (TopCat.toSSet.obj (TopCat.of M)).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).1 fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-  have hS : (smoothSingularSubcomplex I M : SSet).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).1 fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ.1)
-  have : IsIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) :=
-    ⟨0, (SSet.isZero_chainComplex _ R).eq_of_src _ _, (SSet.isZero_chainComplex _ R).eq_of_src _ _⟩
-  infer_instance
-
-end Empty
-
 /-! ### Convex chart domains -/
 
 section ChartDomain
 
-variable [IsManifold I ∞ M] [CategoryWithHomology C]
+variable [IsManifold I ∞ M]
 
 /-- **Smooth singular chains of a star-convex chart domain.** Let `s ⊆ E` be open, with
 `s ∩ range I` star-convex and contained in the target of the extended chart at `x`. On the open
 set `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s`, which the chart identifies with `s ∩ range I`,
-the inclusion of smooth singular chains into singular chains is a quasi-isomorphism. -/
-theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage
+the inclusion of smooth singular chains into singular chains is a chain homotopy equivalence. -/
+def smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex
+    (x : M) {s : Set E} (hs : IsOpen s) {c : E} (hsc : StarConvex ℝ c (s ∩ range I))
+    (hst : s ∩ range I ⊆ (extChartAt I x).target) :
+    HomotopyEquiv ((smoothSingularSubcomplex I
+      (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
+        TopologicalSpace.Opens M) : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of
+        (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
+          TopologicalSpace.Opens M))).chainComplex R) := by
+  classical
+  let D : TopologicalSpace.Opens M :=
+    ⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩
+  let e := extChartAt I x
+  exact if hD : IsEmpty D then
+    HomotopyEquiv.ofIso (asIso (SSet.chainComplexMap (smoothSingularSubcomplex I D).ι R))
+  else by
+    let y₀ : D := Classical.choice (not_isEmpty_iff.mp hD)
+    -- The chart sends `D` into `s ∩ range I`.
+    have hmem : ∀ y : D, e y ∈ s ∩ range I := fun y ↦
+      ⟨y.2.2, extChartAt_target_subset_range x
+        (e.map_source (by rw [extChartAt_source]; exact y.2.1))⟩
+    -- The straight-line contraction of `s ∩ range I` onto `c`, read through the chart.
+    let G : ℝ × D → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (e p.2 - c)
+    have hG : ∀ p, G p ∈ s ∩ range I := fun p ↦
+      hsc.add_smul_sub_mem (hmem p.2) (by linarith [Real.smoothTransition.le_one p.1])
+        (by linarith [Real.smoothTransition.nonneg p.1])
+    have hGD : ∀ p, e.symm (G p) ∈ (D : Set M) := fun p ↦
+      ⟨by rw [← extChartAt_source I]; exact e.map_target (hst (hG p)),
+        by rw [mem_preimage, e.right_inv (hst (hG p))]; exact (hG p).1⟩
+    let F : ℝ × D → D := fun p ↦ ⟨e.symm (G p), hGD p⟩
+    have hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F := by
+      rw [← ContMDiff.subtypeVal_comp_iff]
+      have he : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × D ↦ e p.2 :=
+        contMDiffOn_extChartAt.comp_contMDiff (contMDiff_subtype_val.comp contMDiff_snd)
+          fun p ↦ p.2.2.1
+      have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × D ↦ Real.smoothTransition p.1 :=
+        Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
+      exact (contMDiffOn_extChartAt_symm x).comp_contMDiff
+        (contMDiff_const.add ((contMDiff_const.sub hψ).smul (he.sub contMDiff_const)))
+        fun p ↦ hst (hG p)
+    have hc' : e.symm c ∈ (D : Set M) := by
+      simpa [G, Real.smoothTransition.one] using hGD (1, y₀)
+    refine smoothSingularChainHomotopyEquivOfContMDiff R hF ⟨e.symm c, hc'⟩
+      (fun y ↦ Subtype.ext ?_) (fun y ↦ Subtype.ext ?_)
+    · simp only [F, G, Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
+      exact e.left_inv (by rw [extChartAt_source]; exact y.2.1)
+    · simp [F, G, Real.smoothTransition.one]
+
+/-- The equivalence on a star-convex chart domain uses the inclusion of smooth chains. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_hom
+    (x : M) {s : Set E} (hs : IsOpen s) {c : E} (hsc : StarConvex ℝ c (s ∩ range I))
+    (hst : s ∩ range I ⊆ (extChartAt I x).target) :
+    (smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex R x hs hsc hst).hom =
+      SSet.chainComplexMap (smoothSingularSubcomplex I
+        (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
+          TopologicalSpace.Opens M)).ι R := by
+  unfold smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex
+  dsimp only
+  split <;> rfl
+
+/-- On a star-convex chart domain the inclusion of smooth chains is a quasi-isomorphism. -/
+theorem
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage_of_starConvex
+    [CategoryWithHomology C]
     (x : M) {s : Set E} (hs : IsOpen s) {c : E} (hsc : StarConvex ℝ c (s ∩ range I))
     (hst : s ∩ range I ⊆ (extChartAt I x).target) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I
       (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
         TopologicalSpace.Opens M)).ι R) := by
-  set D : TopologicalSpace.Opens M :=
-    ⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩
-  set e := extChartAt I x
-  rcases (D : Set M).eq_empty_or_nonempty with hD | ⟨y₀, hy₀⟩
-  · have : IsEmpty D := Set.isEmpty_coe_sort.2 hD
-    exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty I D R
-  -- The chart sends `D` into `s ∩ range I`.
-  have hmem : ∀ y : D, e y ∈ s ∩ range I := fun y ↦
-    ⟨y.2.2, extChartAt_target_subset_range x
-      (e.map_source (by rw [extChartAt_source]; exact y.2.1))⟩
-  -- The straight-line contraction of `s ∩ range I` onto `c`, read through the chart.
-  let G : ℝ × D → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (e p.2 - c)
-  have hG : ∀ p, G p ∈ s ∩ range I := fun p ↦
-    hsc.add_smul_sub_mem (hmem p.2) (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  have hGD : ∀ p, e.symm (G p) ∈ (D : Set M) := fun p ↦
-    ⟨by rw [← extChartAt_source I]; exact e.map_target (hst (hG p)),
-      by rw [mem_preimage, e.right_inv (hst (hG p))]; exact (hG p).1⟩
-  let F : ℝ × D → D := fun p ↦ ⟨e.symm (G p), hGD p⟩
-  have hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F := by
-    rw [← ContMDiff.subtypeVal_comp_iff]
-    have he : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × D ↦ e p.2 :=
-      contMDiffOn_extChartAt.comp_contMDiff (contMDiff_subtype_val.comp contMDiff_snd)
-        fun p ↦ p.2.2.1
-    have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × D ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    exact (contMDiffOn_extChartAt_symm x).comp_contMDiff
-      (contMDiff_const.add ((contMDiff_const.sub hψ).smul (he.sub contMDiff_const)))
-      fun p ↦ hst (hG p)
-  have hc' : e.symm c ∈ (D : Set M) := by
-    simpa [G, Real.smoothTransition.one] using hGD (1, ⟨y₀, hy₀⟩)
-  refine quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contMDiff R hF ⟨e.symm c, hc'⟩
-    (fun y ↦ Subtype.ext ?_) (fun y ↦ Subtype.ext ?_)
-  · simp only [F, G, Real.smoothTransition.zero, sub_zero, one_smul, add_sub_cancel]
-    exact e.left_inv (by rw [extChartAt_source]; exact y.2.1)
-  · simp [F, G, Real.smoothTransition.one]
+  rw [← smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_hom R x hs hsc hst]
+  infer_instance
 
 /-- **Smooth singular chains of a convex chart domain.** Let `s ⊆ E` be open, with `s ∩ range I`
 convex and contained in the target of the extended chart at `x`. On the open set
 `(chartAt H x).source ∩ (extChartAt I x)⁻¹' s` the inclusion of smooth singular chains into
-singular chains is a quasi-isomorphism. -/
+singular chains is a chain homotopy equivalence. -/
+def smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex
+    (x : M) {s : Set E} (hs : IsOpen s) (hsc : Convex ℝ (s ∩ range I))
+    (hst : s ∩ range I ⊆ (extChartAt I x).target) :
+    HomotopyEquiv ((smoothSingularSubcomplex I
+      (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
+        TopologicalSpace.Opens M) : SSet).chainComplex R)
+      ((TopCat.toSSet.obj (TopCat.of
+        (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
+          TopologicalSpace.Opens M))).chainComplex R) := by
+  classical
+  exact if h : (s ∩ range I).Nonempty then
+    smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex R x hs
+      (hsc.starConvex h.choose_spec) hst
+  else
+    smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex R x hs
+      (c := 0) (Set.not_nonempty_iff_eq_empty.mp h ▸ starConvex_empty 0) hst
+
+/-- The equivalence on a convex chart domain uses the inclusion of smooth chains. -/
+@[simp]
+theorem smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex_hom
+    (x : M) {s : Set E} (hs : IsOpen s) (hsc : Convex ℝ (s ∩ range I))
+    (hst : s ∩ range I ⊆ (extChartAt I x).target) :
+    (smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex R x hs hsc hst).hom =
+      SSet.chainComplexMap (smoothSingularSubcomplex I
+        (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
+          TopologicalSpace.Opens M)).ι R := by
+  unfold smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex
+  split <;> simp only [smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfStarConvex_hom]
+
+/-- On a convex chart domain the inclusion of smooth chains is a quasi-isomorphism. -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage_of_convex
+    [CategoryWithHomology C]
     (x : M) {s : Set E} (hs : IsOpen s) (hsc : Convex ℝ (s ∩ range I))
     (hst : s ∩ range I ⊆ (extChartAt I x).target) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I
       (⟨(chartAt H x).source ∩ extChartAt I x ⁻¹' s, isOpen_extChartAt_preimage x hs⟩ :
         TopologicalSpace.Opens M)).ι R) := by
-  rcases (s ∩ range I).eq_empty_or_nonempty with h | ⟨c, hc⟩
-  · exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage R x hs
-      (c := 0) (h ▸ starConvex_empty 0) hst
-  · exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_chartAt_source_inter_preimage R x hs
-      (hsc.starConvex hc) hst
+  rw [← smoothSingularChainHomotopyEquivChartAtSourceInterPreimageOfConvex_hom R x hs hsc hst]
+  infer_instance
 
 end ChartDomain
 
