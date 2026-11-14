@@ -212,21 +212,20 @@ theorem shortExactDifferential_exact {S : ShortComplex (GradedModuleCat.{v} 𝒜
     ∀ n : ℕ, Function.Exact (shortExactDifferential S (n + 1)).hom
       (shortExactDifferential S n).hom
   | 0 => by
-    have hmono := hS.mono_f
-    have hinj := (GradedModuleCat.mono_iff_injective S.f).mp hmono
-    rw [LinearMap.exact_iff]
-    change LinearMap.ker S.f.hom = LinearMap.range (0 : shortExactTerm S 2 ⟶ S.X₁).hom
-    rw [GradedModuleCat.hom_zero, LinearMap.range_zero, LinearMap.ker_eq_bot]
-    exact hinj
+    dsimp only [shortExactDifferential]
+    rw [LinearMap.exact_iff, GradedModuleCat.hom_zero, LinearMap.range_zero, LinearMap.ker_eq_bot]
+    exact (GradedModuleCat.mono_iff_injective S.f).mp hS.mono_f
   | _ + 1 => by
     rw [LinearMap.exact_iff]
     exact Subsingleton.elim _ _
 
+variable {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
+  [Module.Projective A S.X₁] [Module.Projective A S.X₂]
+
 /-- Build a length-one `GradedProjectiveResolution` of `S.X₃` from a short exact sequence
 `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` in `GradedModuleCat 𝒜` whose first two terms are projective over `A`,
 padding homological degrees `n ≥ 2` by the empty graded direct sum. -/
-noncomputable abbrev ofShortExact {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
-    [Module.Projective A S.X₁] [Module.Projective A S.X₂] :
+noncomputable abbrev ofShortExact :
     GradedProjectiveResolution.{uk, uA, v, v} 𝒜 S.X₃.grading where
   X n := shortExactTerm S n
   grading n := (shortExactTerm S n).grading
@@ -243,30 +242,19 @@ noncomputable abbrev ofShortExact {S : ShortComplex (GradedModuleCat.{v} 𝒜)} 
   exact_d_d := shortExactDifferential_exact hS
 
 /-- The degree-zero categorical term of `ofShortExact hS` is `S.X₂`. -/
-@[simp]
-theorem ofShortExact_termObj_zero {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
-    [Module.Projective A S.X₁] [Module.Projective A S.X₂] :
-    (ofShortExact hS).termObj 0 = S.X₂ :=
-  (rfl)
+@[simp] theorem ofShortExact_termObj_zero : (ofShortExact hS).termObj 0 = S.X₂ := (rfl)
 
 /-- The degree-one categorical term of `ofShortExact hS` is `S.X₁`. -/
-@[simp]
-theorem ofShortExact_termObj_one {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
-    [Module.Projective A S.X₁] [Module.Projective A S.X₂] :
-    (ofShortExact hS).termObj 1 = S.X₁ :=
-  (rfl)
+@[simp] theorem ofShortExact_termObj_one : (ofShortExact hS).termObj 1 = S.X₁ := (rfl)
 
 /-- Every term of `ofShortExact hS` from homological degree `2` onwards is a subsingleton. -/
-theorem subsingleton_ofShortExact_X_of_two_le {S : ShortComplex (GradedModuleCat.{v} 𝒜)}
-    (hS : S.ShortExact) [Module.Projective A S.X₁] [Module.Projective A S.X₂] {n : ℕ}
-    (hn : 2 ≤ n) : Subsingleton ((ofShortExact hS).X n) := by
+theorem subsingleton_ofShortExact_X_of_two_le {n : ℕ} (hn : 2 ≤ n) :
+    Subsingleton ((ofShortExact hS).X n) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
   exact inferInstanceAs (Subsingleton (DirectSum (Fin 0) fun _ => S.X₂))
 
 /-- Every term of `ofShortExact hS` is finitely generated over `A` when `S.X₁` and `S.X₂` are. -/
-instance finite_ofShortExact_X {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
-    [Module.Projective A S.X₁] [Module.Projective A S.X₂]
-    [Module.Finite A S.X₁] [Module.Finite A S.X₂] :
+instance finite_ofShortExact_X [Module.Finite A S.X₁] [Module.Finite A S.X₂] :
     ∀ n : ℕ, Module.Finite A ((ofShortExact hS).X n)
   | 0 => inferInstanceAs (Module.Finite A S.X₂)
   | 1 => inferInstanceAs (Module.Finite A S.X₁)
@@ -278,8 +266,7 @@ instance finite_ofShortExact_X {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS
 /-- A length-one resolution built from `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is minimal iff `S.f` lands in
 `A₊ S.X₂`. -/
 @[simp]
-theorem isMinimal_ofShortExact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
-    [Module.Projective A S.X₁] [Module.Projective A S.X₂] :
+theorem isMinimal_ofShortExact_iff :
     (ofShortExact hS).IsMinimal ↔
       ∀ x : S.X₁, S.f.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k S.X₂) := by
   rw [isMinimal_iff]
@@ -287,15 +274,14 @@ theorem isMinimal_ofShortExact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)}
   rcases n with _ | n
   · exact h
   · intro x
-    change (0 : shortExactTerm S (n + 2) ⟶ shortExactTerm S (n + 1)).hom x ∈ _
+    dsimp only [ofShortExact, shortExactDifferential]
     rw [GradedModuleCat.hom_zero, LinearMap.zero_apply]
     exact zero_mem _
 
 /-- A length-one resolution built from `0 ⟶ S.X₁ ⟶ S.X₂ ⟶ S.X₃ ⟶ 0` is linear iff `S.X₂` is
 generated in degree `0` and `S.X₁` is generated in degree `1`. -/
 @[simp]
-theorem isLinear_ofShortExact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} (hS : S.ShortExact)
-    [Module.Projective A S.X₁] [Module.Projective A S.X₂] :
+theorem isLinear_ofShortExact_iff :
     (ofShortExact hS).IsLinear ↔
       S.X₂.grading.IsGeneratedInDegree A 0 ∧ S.X₁.grading.IsGeneratedInDegree A 1 := by
   rw [isLinear_iff]

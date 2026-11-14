@@ -251,6 +251,7 @@ theorem isGeneratedInDegree_gradedVertexProjective :
 theorem isGeneratedInDegree_gradedArrowSum :
     (gradedArrowSum k Q i).grading.IsGeneratedInDegree (pathAlgebra k Q) 1 := by
   refine InternalGrading.isGeneratedInDegree_directSum _ 1 fun a => ?_
+  -- `shiftObj 1` shifts the internal grading by `-1`.
   change ((gradedVertexProjective k Q a.1).grading.shift (-1)).IsGeneratedInDegree
     (pathAlgebra k Q) 1
   rw [InternalGrading.isGeneratedInDegree_shift_iff, add_neg_cancel]
