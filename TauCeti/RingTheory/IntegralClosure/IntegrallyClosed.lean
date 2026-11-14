@@ -55,6 +55,10 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le` and
+  `IsIntegrallyClosed.of_leftInverse`: a ring retract of an integrally closed commutative ring
+  whose section preserves nonzerodivisors (in particular when the ambient ring has no zero divisors)
+  is integrally closed.
 -/
 
 public section
@@ -237,3 +241,33 @@ theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn
     exact ⟨a, Subring.isIntegrallyClosedIn_iff.mp inferInstance ha, rfl⟩
 
 end Subring
+
+/-- **A ring retract of an integrally closed ring along a nonzerodivisor-preserving section is
+integrally closed.** If `i : R →+* A` admits a left inverse `π : A →+* R`, carries nonzerodivisors
+of `R` to nonzerodivisors of `A`, and `A` is integrally closed, then `R` is integrally closed: a
+fraction `a / b` in `FractionRing R` integral over `R` maps to `y ∈ A` with `y * i b = i a`, and
+applying `π` yields `π y * b = a`. -/
+theorem IsIntegrallyClosed.of_leftInverse_of_nonZeroDivisors_le {R A : Type*} [CommRing R]
+    [CommRing A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R} (h : Function.LeftInverse π i)
+    (hnzd : nonZeroDivisors R ≤ (nonZeroDivisors A).comap i) : IsIntegrallyClosed R := by
+  let f : FractionRing R →+* FractionRing A := IsLocalization.map (FractionRing A) i hnzd
+  have hf (r : R) : f (algebraMap R (FractionRing R) r) = algebraMap A (FractionRing A) (i r) :=
+    IsLocalization.map_eq hnzd r
+  refine (isIntegrallyClosed_iff (FractionRing R)).mpr fun {z} hz ↦ ?_
+  obtain ⟨y, hy⟩ := IsIntegrallyClosed.isIntegral_iff.mp
+    (hz.map_of_comp_eq i f (IsLocalization.map_comp hnzd).symm)
+  obtain ⟨⟨a, b⟩, hzb⟩ := IsLocalization.surj (nonZeroDivisors R) z
+  dsimp only at hzb
+  have hyb : y * i b.1 = i a := IsFractionRing.injective A (FractionRing A) <| by
+    rw [map_mul, hy, ← hf b.1, ← map_mul, hzb, hf a]
+  refine ⟨π y, (IsLocalization.map_units (FractionRing R) b).mul_right_cancel ?_⟩
+  rw [hzb, ← h a, ← hyb, map_mul, h b.1, map_mul]
+
+/-- **A ring retract of an integrally closed ring without zero divisors is integrally closed.** If
+`i : R →+* A` admits a left inverse `π : A →+* R` and `A` is integrally closed without zero
+divisors, then `R` is integrally closed. -/
+theorem IsIntegrallyClosed.of_leftInverse {R A : Type*} [CommRing R] [CommRing A]
+    [NoZeroDivisors A] [IsIntegrallyClosed A] {i : R →+* A} {π : A →+* R}
+    (h : Function.LeftInverse π i) : IsIntegrallyClosed R :=
+  of_leftInverse_of_nonZeroDivisors_le h
+    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective i h.injective)
