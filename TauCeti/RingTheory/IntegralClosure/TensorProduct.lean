@@ -29,7 +29,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-variable {A K L K' : Type*} [CommRing A] [IsDomain A] [Field K] [Algebra A K]
+variable {A K L K' : Type*} [CommRing A] [Field K] [Algebra A K]
   [IsFractionRing A K] [CommRing L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
   [Algebra.IsAlgebraic K L]
 
@@ -37,6 +37,7 @@ variable {A K L K' : Type*} [CommRing A] [IsDomain A] [Field K] [Algebra A K]
 the integral closure divided by a nonzero element of `A`. -/
 theorem span_integralClosure_eq_top :
     Submodule.span K (integralClosure A L : Set L) = ⊤ := by
+  have := IsDomain.of_faithfulSMul A K
   refine eq_top_iff.2 fun x _ => ?_
   obtain ⟨a, ha, hint⟩ := ((IsFractionRing.isAlgebraic_iff A K L).mpr
     (Algebra.IsAlgebraic.isAlgebraic x)).exists_integral_multiple

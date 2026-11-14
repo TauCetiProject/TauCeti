@@ -20,6 +20,9 @@ curvature:
   times the corresponding rank-one operators.
 * `OrthonormalBasis.sum_sum_inner_mul_inner_mul_inner`: the two-basis expansion
   `⟪x, T y⟫ = ∑ᵢ ∑ⱼ ⟪x, uᵢ⟫ ⟪uᵢ, T vⱼ⟫ ⟪vⱼ, y⟫`.
+* `OrthonormalBasis.inner_sum_inner_smul`: expanding two vectors in `b` and reassembling along an
+  orthonormal family `e` preserves their inner product,
+  `⟪∑ i, ⟪b i, x⟫ • e i, ∑ i, ⟪b i, y⟫ • e i⟫ = ⟪x, y⟫`.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
@@ -88,6 +91,13 @@ theorem sum_sum_inner_mul_inner_mul_inner (u : OrthonormalBasis ι 𝕜 E)
   conv_rhs => rw [← v.sum_repr' y]
   simp only [map_sum, map_smul, inner_sum, inner_smul_right, Finset.mul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- Expanding two vectors in an orthonormal basis `b` and reassembling their coordinates along an
+orthonormal family `e` preserves their inner product. -/
+theorem inner_sum_inner_smul (b : OrthonormalBasis ι 𝕜 E) {e : ι → F} (he : Orthonormal 𝕜 e)
+    (x y : E) :
+    ⟪∑ i, ⟪b i, x⟫_𝕜 • e i, ∑ i, ⟪b i, y⟫_𝕜 • e i⟫_𝕜 = ⟪x, y⟫_𝕜 := by
+  simp_rw [he.inner_sum, inner_conj_symm, b.sum_inner_mul_inner]
 
 end OrthonormalBasis
 
