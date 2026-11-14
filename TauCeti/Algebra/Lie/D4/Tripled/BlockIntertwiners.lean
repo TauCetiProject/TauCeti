@@ -347,115 +347,118 @@ theorem blockCartanGeneratorMatrix_eq_submatrixQ (j : Fin 3) (i : Fin 4) :
 
 /-! ## Concrete generator transports -/
 
+/-- Any block equivalence lying over triality intertwines the rational positive generators. -/
+private theorem piCongrLeft'_raisingMatrixQ_mulVec {j k : Fin 3} (e : Block j ≃ Block k)
+    (he : ∀ a, (e a).1 = d4TripledTrialityPerm a.1) (i : Fin 4) (v : Block j → ℚ) :
+    LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) e
+        ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
+      (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
+          Subtype.val Subtype.val *ᵥ LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) e v := by
+  apply LinearEquiv.piCongrLeft'_mulVec e
+  intro a b
+  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
+  simp only [blockRaisingMatrix_apply, he]
+  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+
+/-- Any block equivalence lying over triality intertwines the rational negative generators. -/
+private theorem piCongrLeft'_loweringMatrixQ_mulVec {j k : Fin 3} (e : Block j ≃ Block k)
+    (he : ∀ a, (e a).1 = d4TripledTrialityPerm a.1) (i : Fin 4) (v : Block j → ℚ) :
+    LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) e
+        ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
+      (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
+          Subtype.val Subtype.val *ᵥ LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) e v := by
+  apply LinearEquiv.piCongrLeft'_mulVec e
+  intro a b
+  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
+  simp only [blockLoweringMatrix_apply, he]
+  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+
+/-- Any block equivalence lying over triality intertwines the rational Cartan generators. -/
+private theorem piCongrLeft'_cartanGeneratorMatrixQ_mulVec {j k : Fin 3} (e : Block j ≃ Block k)
+    (he : ∀ a, (e a).1 = d4TripledTrialityPerm a.1) (i : Fin 4) (v : Block j → ℚ) :
+    LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) e
+        ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
+      (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
+          Subtype.val Subtype.val *ᵥ LinearEquiv.piCongrLeft' ℚ (fun _ => ℚ) e v := by
+  apply LinearEquiv.piCongrLeft'_mulVec e
+  intro a b
+  rw [← blockCartanGeneratorMatrix_eq_submatrixQ, ← blockCartanGeneratorMatrix_eq_submatrixQ]
+  simp only [blockCartanGeneratorMatrix_apply, he]
+  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+
 /-- Triality from block zero to block one intertwines the rational positive generators. -/
 theorem d4BlockZeroToOneEquiv_raising_mulVec (i : Fin 4) (v : Block 0 → ℚ) :
     d4BlockZeroToOneEquiv
         ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockZeroToOneIndexEquiv
-  intro a b
-  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
-  simp only [blockRaisingMatrix_apply, coe_d4BlockZeroToOneIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v :=
+  piCongrLeft'_raisingMatrixQ_mulVec d4BlockZeroToOneIndexEquiv coe_d4BlockZeroToOneIndexEquiv i v
 
 /-- Triality from block one to block two intertwines the rational positive generators. -/
 theorem d4BlockOneToTwoEquiv_raising_mulVec (i : Fin 4) (v : Block 1 → ℚ) :
     d4BlockOneToTwoEquiv
         ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockOneToTwoIndexEquiv
-  intro a b
-  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
-  simp only [blockRaisingMatrix_apply, coe_d4BlockOneToTwoIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v :=
+  piCongrLeft'_raisingMatrixQ_mulVec d4BlockOneToTwoIndexEquiv coe_d4BlockOneToTwoIndexEquiv i v
 
 /-- Triality from block two to block zero intertwines the rational positive generators. -/
 theorem d4BlockTwoToZeroEquiv_raising_mulVec (i : Fin 4) (v : Block 2 → ℚ) :
     d4BlockTwoToZeroEquiv
         ((weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.raisingMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockTwoToZeroIndexEquiv
-  intro a b
-  rw [← blockRaisingMatrix_eq_submatrixQ, ← blockRaisingMatrix_eq_submatrixQ]
-  simp only [blockRaisingMatrix_apply, coe_d4BlockTwoToZeroIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (raisingMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v :=
+  piCongrLeft'_raisingMatrixQ_mulVec d4BlockTwoToZeroIndexEquiv coe_d4BlockTwoToZeroIndexEquiv i v
 
 /-- Triality from block zero to block one intertwines the rational negative generators. -/
 theorem d4BlockZeroToOneEquiv_lowering_mulVec (i : Fin 4) (v : Block 0 → ℚ) :
     d4BlockZeroToOneEquiv
         ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockZeroToOneIndexEquiv
-  intro a b
-  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
-  simp only [blockLoweringMatrix_apply, coe_d4BlockZeroToOneIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v :=
+  piCongrLeft'_loweringMatrixQ_mulVec d4BlockZeroToOneIndexEquiv coe_d4BlockZeroToOneIndexEquiv i v
 
 /-- Triality from block one to block two intertwines the rational negative generators. -/
 theorem d4BlockOneToTwoEquiv_lowering_mulVec (i : Fin 4) (v : Block 1 → ℚ) :
     d4BlockOneToTwoEquiv
         ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockOneToTwoIndexEquiv
-  intro a b
-  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
-  simp only [blockLoweringMatrix_apply, coe_d4BlockOneToTwoIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v :=
+  piCongrLeft'_loweringMatrixQ_mulVec d4BlockOneToTwoIndexEquiv coe_d4BlockOneToTwoIndexEquiv i v
 
 /-- Triality from block two to block zero intertwines the rational negative generators. -/
 theorem d4BlockTwoToZeroEquiv_lowering_mulVec (i : Fin 4) (v : Block 2 → ℚ) :
     d4BlockTwoToZeroEquiv
         ((weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.loweringMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockTwoToZeroIndexEquiv
-  intro a b
-  rw [← blockLoweringMatrix_eq_submatrixQ, ← blockLoweringMatrix_eq_submatrixQ]
-  simp only [blockLoweringMatrix_apply, coe_d4BlockTwoToZeroIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (loweringMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v :=
+  piCongrLeft'_loweringMatrixQ_mulVec d4BlockTwoToZeroIndexEquiv coe_d4BlockTwoToZeroIndexEquiv i v
 
 /-- Triality from block zero to block one intertwines the rational Cartan generators. -/
 theorem d4BlockZeroToOneEquiv_cartanGenerator_mulVec (i : Fin 4) (v : Block 0 → ℚ) :
     d4BlockZeroToOneEquiv
         ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockZeroToOneIndexEquiv
-  intro a b
-  rw [← blockCartanGeneratorMatrix_eq_submatrixQ,
-    ← blockCartanGeneratorMatrix_eq_submatrixQ]
-  simp only [blockCartanGeneratorMatrix_apply, coe_d4BlockZeroToOneIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockZeroToOneEquiv v :=
+  piCongrLeft'_cartanGeneratorMatrixQ_mulVec d4BlockZeroToOneIndexEquiv
+    coe_d4BlockZeroToOneIndexEquiv i v
 
 /-- Triality from block one to block two intertwines the rational Cartan generators. -/
 theorem d4BlockOneToTwoEquiv_cartanGenerator_mulVec (i : Fin 4) (v : Block 1 → ℚ) :
     d4BlockOneToTwoEquiv
         ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockOneToTwoIndexEquiv
-  intro a b
-  rw [← blockCartanGeneratorMatrix_eq_submatrixQ,
-    ← blockCartanGeneratorMatrix_eq_submatrixQ]
-  simp only [blockCartanGeneratorMatrix_apply, coe_d4BlockOneToTwoIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockOneToTwoEquiv v :=
+  piCongrLeft'_cartanGeneratorMatrixQ_mulVec d4BlockOneToTwoIndexEquiv
+    coe_d4BlockOneToTwoIndexEquiv i v
 
 /-- Triality from block two to block zero intertwines the rational Cartan generators. -/
 theorem d4BlockTwoToZeroEquiv_cartanGenerator_mulVec (i : Fin 4) (v : Block 2 → ℚ) :
     d4BlockTwoToZeroEquiv
         ((weightTable.cartanGeneratorMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ v) =
       (weightTable.cartanGeneratorMatrixQ (trialityPermD4 i)).submatrix
-          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v := by
-  apply LinearEquiv.piCongrLeft'_mulVec d4BlockTwoToZeroIndexEquiv
-  intro a b
-  rw [← blockCartanGeneratorMatrix_eq_submatrixQ,
-    ← blockCartanGeneratorMatrix_eq_submatrixQ]
-  simp only [blockCartanGeneratorMatrix_apply, coe_d4BlockTwoToZeroIndexEquiv]
-  exact congrArg (Int.castRingHom ℚ) (cartanGeneratorMatrix_trialityPerm i a.1 b.1)
+          Subtype.val Subtype.val *ᵥ d4BlockTwoToZeroEquiv v :=
+  piCongrLeft'_cartanGeneratorMatrixQ_mulVec d4BlockTwoToZeroIndexEquiv
+    coe_d4BlockTwoToZeroIndexEquiv i v
 
 end TauCeti.D4Tripled
