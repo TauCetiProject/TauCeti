@@ -439,7 +439,6 @@ namespace CommHopfAlgCat
 
 /-- Quotienting a commutative Hopf algebra by the zero Hopf ideal gives an isomorphic object
 of `CommHopfAlgCat`. -/
-@[expose, simps]
 noncomputable def quotientBotIso (H : _root_.CommHopfAlgCat.{v} R) :
     quotient H (⊥ : HopfIdeal R H) ≅ H where
   hom := liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le
@@ -450,6 +449,19 @@ noncomputable def quotientBotIso (H : _root_.CommHopfAlgCat.{v} R) :
     simp only [Category.id_comp, Category.comp_id]
   inv_hom_id := mkQuotient_comp_liftQuotient
     (⊥ : HopfIdeal R H) (𝟙 H) bot_le
+
+/-- The forward map of the quotient-by-zero isomorphism is the lift of the identity. -/
+@[simp]
+lemma quotientBotIso_hom (H : _root_.CommHopfAlgCat.{v} R) :
+    (quotientBotIso H).hom =
+      liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le :=
+  (rfl)
+
+/-- The inverse map of the quotient-by-zero isomorphism is the quotient morphism. -/
+@[simp]
+lemma quotientBotIso_inv (H : _root_.CommHopfAlgCat.{v} R) :
+    (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) :=
+  (rfl)
 
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by its Hopf-ideal
 kernel with its target. -/
@@ -704,6 +716,16 @@ theorem mkQuotient_hom_ext {H X : FiniteTypeCommHopfAlgCat.{u, v} R}
   apply CommHopfAlgCat.mkQuotient_hom_ext
   rw [← forget₂_commHopfAlgCat_map_mkQuotient]
   exact congrArg (fun q ↦ q.hom) h
+
+/-- The forward map of the finite-type quotient-by-zero isomorphism is the lift of the identity. -/
+@[simp]
+lemma quotientBotIso_hom (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
+    (quotientBotIso H).hom =
+      ObjectProperty.homMk
+        (CommHopfAlgCat.liftQuotient (⊥ : HopfIdeal R H) (𝟙 H.obj) bot_le) := by
+  rw [quotientBotIso]
+  apply ObjectProperty.hom_ext
+  exact CommHopfAlgCat.quotientBotIso_hom H.obj
 
 /-- The inverse map of the finite-type quotient-by-zero isomorphism is the quotient morphism. -/
 @[simp]
