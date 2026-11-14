@@ -54,6 +54,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`: composing on the left with a
+  continuous linear map preserves a bound on the `k`-th derivative by a multiple of a weight.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
@@ -235,6 +237,19 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
     exact hfg y hy
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
+
+/-- Composing on the left with a continuous linear map `L` preserves a bound
+`‖D^k g x‖ ≤ C w x` on the `k`-th derivative of a `C^k` map `g` by a multiple of a weight `w`. -/
+theorem ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le (L : F →L[𝕜] G) {g : E → F}
+    {k : ℕ} (hg : ContDiff 𝕜 k g) {w : E → ℝ}
+    (hgk : ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 k g x‖ ≤ C * w x) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 k (fun x ↦ L (g x)) x‖ ≤ C * w x := by
+  obtain ⟨C, hC⟩ := hgk
+  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
+  calc ‖iteratedFDeriv 𝕜 k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv 𝕜 k g x‖ :=
+        L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
+    _ ≤ ‖L‖ * (C * w x) := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
+    _ = ‖L‖ * C * w x := (mul_assoc _ _ _).symm
 
 /-- **Leibniz bound with uniform constants.** If the derivatives of order at most `N` of `f` and
 `g` are bounded by `C` and `D` everywhere, those of `x ↦ B (f x) (g x)` of order `p ≤ N` are

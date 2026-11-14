@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -65,7 +66,7 @@ def besselPotential (s : ℝ) : Symbol n V V s :=
       (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
           (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
           ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
           (exists_norm_iteratedFDeriv_besselWeight_le s k)
@@ -99,7 +100,7 @@ def ofInner (v : CoordinateSpace n) : Symbol n V V 1 :=
     ((Complex.ofRealCLM.contDiff.comp (contDiff_id.inner ℝ contDiff_const)).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
           (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V)) (g := fun ξ ↦ ⟪ξ, v⟫)
           ((contDiff_id.inner ℝ contDiff_const).of_le (mod_cast le_top))
           (exists_norm_iteratedFDeriv_inner_le v k)

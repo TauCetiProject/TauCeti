@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!

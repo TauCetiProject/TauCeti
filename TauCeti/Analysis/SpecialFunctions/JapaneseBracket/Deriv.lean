@@ -48,13 +48,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   of order `m`, such as a bracket power, times a `C^N` cutoff `χ` localized where
   `1 + ‖x‖ ^ 2 ≍ R ^ 2` and adapted to the scale `R`: for `k ≤ N`, the product is
   `O(R ^ m / R ^ k)` in its `k`-th derivative.
-* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
-  `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
-  rescaled argument `c x` and its derivative bounds.
-* `TauCeti.one_add_norm_smul_sq_rpow_half_le`: on an annulus `0 < c ≤ ‖ζ‖ ≤ d`, the bracket power
-  `(1 + ‖t ζ‖ ^ 2) ^ (u / 2)` is `O(t ^ u)` for `t ≥ 1`.
-* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow`: composing
-  on the left with a continuous linear map preserves bracket bounds on derivatives.
+* `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the derivative bounds for the
+  bracket power `(1 + ‖c x‖ ^ 2) ^ r` of a rescaled argument.
 
 ## References
 
@@ -116,20 +111,6 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
         rw [← hexp]
         ring
 
-/-- Composing on the left with a continuous linear map `L` preserves a bracket bound
-`‖D^k g x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ρ` on the `k`-th derivative of a `C^k` function `g`. -/
-theorem exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (L : F →L[ℝ] G) {g : E → F} {k : ℕ}
-    (hg : ContDiff ℝ k g) {ρ : ℝ}
-    (hgk : ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
-    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ := by
-  obtain ⟨C, hC⟩ := hgk
-  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
-  calc ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ k g x‖ :=
-        L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
-    _ ≤ ‖L‖ * (C * (1 + ‖x‖ ^ 2) ^ ρ) := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
-    _ = ‖L‖ * C * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
-
 end ContinuousLinearMap
 
 namespace TauCeti
@@ -177,7 +158,7 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
     by_cases hξ : ξ ∈ tsupport χ
     · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤ W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
         (hW (k - i) hkiN ξ).trans (mul_le_mul_of_nonneg_left
-          (one_add_norm_sq_rpow_half_le ha hR (hsupp ξ hξ) _) (hW0 hkiN))
+          (one_add_norm_sq_rpow_le_max_mul_rpow ha hR (hsupp ξ hξ) _) (hW0 hkiN))
       have hχi : ‖iteratedFDeriv ℝ i χ ξ‖ ≤ max (B i) 0 / R ^ i :=
         (hB i (hik.trans hk) ξ).trans (by gcongr; exact le_max_left _ _)
       have hpow : 1 / R ^ i * R ^ (m - (k - i : ℕ)) = R ^ m / R ^ k := by
@@ -199,39 +180,6 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
   rw [← Finset.sum_mul, mul_div_assoc]
   gcongr
   exact Finset.single_le_sum (fun k hk ↦ hS0 hk) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
-
-/-- Rescaling the argument by `c ≠ 0` changes `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor. -/
-theorem exists_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
-    ∃ C, ∀ x : E, (1 + ‖c • x‖ ^ 2) ^ r ≤ C * (1 + ‖x‖ ^ 2) ^ r := by
-  have hc2 : 0 < c ^ 2 := by positivity
-  refine ⟨max (max 1 (c ^ 2) ^ r) (min 1 (c ^ 2) ^ r), fun x ↦ ?_⟩
-  have hx : 0 < 1 + ‖x‖ ^ 2 := by positivity
-  rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  rcases le_total 0 r with hr | hr
-  · calc (1 + c ^ 2 * ‖x‖ ^ 2) ^ r ≤ (max 1 (c ^ 2) * (1 + ‖x‖ ^ 2)) ^ r :=
-          Real.rpow_le_rpow (by positivity)
-            (by nlinarith [le_max_left 1 (c ^ 2), le_max_right 1 (c ^ 2), sq_nonneg ‖x‖]) hr
-      _ = max 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r := Real.mul_rpow (by positivity) hx.le
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · calc (1 + c ^ 2 * ‖x‖ ^ 2) ^ r ≤ (min 1 (c ^ 2) * (1 + ‖x‖ ^ 2)) ^ r :=
-          Real.rpow_le_rpow_of_nonpos (mul_pos (lt_min one_pos hc2) hx)
-            (by nlinarith [min_le_left 1 (c ^ 2), min_le_right 1 (c ^ 2), sq_nonneg ‖x‖]) hr
-      _ = min 1 (c ^ 2) ^ r * (1 + ‖x‖ ^ 2) ^ r :=
-          Real.mul_rpow (lt_min one_pos hc2).le hx.le
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
-
-/-- On the annulus `0 < c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
-at most a multiple of `t ^ u`: `(1 + ‖t ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2))
-((1 + d ^ 2) ^ (u / 2)) t ^ u`. -/
-theorem one_add_norm_smul_sq_rpow_half_le {c d t : ℝ} (hc : 0 < c) (ht : 1 ≤ t) {ζ : E}
-    (hζ : c ≤ ‖ζ‖ ∧ ‖ζ‖ ≤ d) (u : ℝ) :
-    (1 + ‖t • ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2)) ((1 + d ^ 2) ^ (u / 2)) * t ^ u := by
-  have ht0 : 0 < t := one_pos.trans_le ht
-  have htζ : ‖t • ζ‖ = t * ‖ζ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
-  have hlo := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.1 ht0.le)
-  have hhi := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.2 ht0.le)
-  exact one_add_norm_sq_rpow_half_le (by positivity) ht0
-    ⟨by rw [htζ]; nlinarith, by rw [htζ]; nlinarith [one_le_pow₀ (n := 2) ht]⟩ u
 
 end NormedSpace
 
