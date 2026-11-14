@@ -38,6 +38,8 @@ Fully residually free groups are CSA, hence commutative transitive with abelian 
 nonidentity elements: one homomorphism to a free group can keep any two nonidentity elements
 nontrivial, and the CSA property is witnessed by pairs of elements. Consequently a nonabelian
 fully residually free group is a domain in the sense of algebraic geometry over groups.
+Every power `ℤ^ι` of the infinite cyclic group, in particular the free abelian group `ℤⁿ`, is
+discriminated by `ℤ` through integer linear forms, hence fully residually free.
 Residual freeness passes to arbitrary products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is
 residually free; like every product of a nonabelian group and a nontrivial group it is not
 commutative transitive, hence not fully residually free. Thus the two notions differ. For the
@@ -77,6 +79,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
   groups are domains.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isBP`: fully residually free groups have the big
   powers property.
+* `TauCeti.LimitGroup.isFullyResiduallyFree_multiplicative_pi_int`: every power `ℤ^ι` of `ℤ`, in
+  particular `ℤⁿ`, is fully residually free.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_freeGroup`: `F₂ × F₂` is
@@ -315,6 +319,19 @@ consecutive entries nontrivial. -/
 theorem IsFullyResiduallyFree.isBP (h : IsFullyResiduallyFree G) : IsBP G :=
   FreeGroup.isBP.of_forall_finset_exists_monoidHom (isFullyResiduallyFree_iff_fin_two.1 h)
 
+/-- The infinite cyclic group `ℤ` is fully residually free: it is the free group of rank one. -/
+theorem isFullyResiduallyFree_multiplicative_int : IsFullyResiduallyFree (Multiplicative ℤ) :=
+  (isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup Unit)).of_injective
+    (f := FreeGroup.mulEquivIntOfUnique.symm.toMonoidHom)
+    FreeGroup.mulEquivIntOfUnique.symm.injective
+
+/-- Every power `ℤ^ι` of the infinite cyclic group, in particular the free abelian group `ℤⁿ` of
+rank `n`, is fully residually free. -/
+theorem isFullyResiduallyFree_multiplicative_pi_int (ι : Type*) :
+    IsFullyResiduallyFree (Multiplicative (ι → ℤ)) :=
+  isFullyResiduallyFree_multiplicative_int.of_isDiscriminatedBy
+    (isDiscriminatedBy_multiplicative_pi_int ι)
+
 /-- The product of a nonabelian group and a nontrivial group is not fully residually free, since
 it is not commutative transitive. -/
 theorem not_isFullyResiduallyFree_prod_of_nontrivial [Nontrivial H] (hG : ¬IsMulCommutative G) :
@@ -325,9 +342,7 @@ theorem not_isFullyResiduallyFree_prod_of_nontrivial [Nontrivial H] (hG : ¬IsMu
 theorem isResiduallyFree_freeGroup_prod_int :
     IsResiduallyFree (FreeGroup (Fin 2) × Multiplicative ℤ) :=
   isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree.prod
-    ((isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup Unit)).isResiduallyFree.of_injective
-      (f := FreeGroup.mulEquivIntOfUnique.symm.toMonoidHom)
-      FreeGroup.mulEquivIntOfUnique.symm.injective)
+    isFullyResiduallyFree_multiplicative_int.isResiduallyFree
 
 /-- `F₂ × ℤ` is not fully residually free, since it is not commutative transitive. Together with
 `isResiduallyFree_freeGroup_prod_int` this separates the two notions. -/
