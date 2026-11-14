@@ -109,10 +109,9 @@ lemma StronglyContinuousSemigroup.integrableOn_resolvent_integrand
 /-- The resolvent `R(λ) x = ∫₀^∞ e^{-λt} S(t)x dt` of a C₀-semigroup with growth bound
 `(ω, M)`, for `λ > ω`. A pointwise `X`-valued Bochner integral (so it is well-defined for
 the merely strongly continuous `t ↦ S t`), with built-in norm bound `‖R λ‖ ≤ M/(λ-ω)`.
-
-Completeness is assumed even though no step of the construction uses it, because on an incomplete
-space the Bochner integral takes the junk value `0`. -/
-noncomputable def StronglyContinuousSemigroup.resolvent [_hX : CompleteSpace X]
+No completeness is assumed: on an incomplete space the Bochner integral, and hence the
+resolvent, takes the junk value `0`. -/
+noncomputable def StronglyContinuousSemigroup.resolvent
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) : X →L[ℝ] X :=
   LinearMap.mkContinuous
@@ -152,8 +151,6 @@ noncomputable def StronglyContinuousSemigroup.resolvent [_hX : CompleteSpace X]
             rw [h_eval, div_eq_mul_inv]
             ring)
 
-variable [CompleteSpace X]
-
 /-- The resolvent in integral form (characteristic lemma). -/
 theorem StronglyContinuousSemigroup.resolvent_apply
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
@@ -165,9 +162,8 @@ theorem StronglyContinuousSemigroup.resolvent_apply
 /-! ## Resolvent-Generator Interface
 
 The resolvent maps into the generator domain and satisfies the right-inverse identity
-from [EN] Thm. II.1.10(i) / [Linares] eq. 0.15. -/
+from [EN] Thm. II.1.10(i) / [Linares] eq. 0.15. These results need `X` to be complete. -/
 
-omit [CompleteSpace X] in
 /-- Translation of set integral: `∫_{Ioi 0} f(t + h) = ∫_{Ioi h} f(u)`. -/
 private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
     ∫ t in Set.Ioi 0, f (t + h) = ∫ u in Set.Ioi h, f u := by
@@ -182,6 +178,10 @@ private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
   simp_rw [key]
   -- Apply translation invariance of Lebesgue measure
   exact MeasureTheory.integral_add_right_eq_self _ h
+
+section CompleteSpace
+
+variable [CompleteSpace X]
 
 /-- The resolvent shift identity for a nonnegative time increment. -/
 private theorem StronglyContinuousSemigroup.resolvent_shift_identity
@@ -300,6 +300,8 @@ theorem StronglyContinuousSemigroup.resolventRightInv
     (S.resolvent_generator_tendsto hb lambda hlam x)]
   abel
 
+end CompleteSpace
+
 /-- **Hille–Yosida resolvent bound**: `‖R λ‖ ≤ M/(λ-ω)` for a C₀ semigroup with
 growth bound `(ω, M)` and `λ > ω` (Hille 1948, Yosida 1948; Engel–Nagel Ch. II). -/
 theorem StronglyContinuousSemigroup.resolvent_norm_le
@@ -376,6 +378,10 @@ theorem ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent
   rw [ContractionSemigroup.resolvent_apply,
     StronglyContinuousSemigroup.resolvent_apply]
 
+section CompleteSpace
+
+variable [CompleteSpace X]
+
 /-- The contraction resolvent maps into the generator domain. -/
 theorem ContractionSemigroup.resolvent_mem_domain (S : ContractionSemigroup X)
     (lambda : ℝ) (hlam : 0 < lambda) (x : X) :
@@ -394,6 +400,8 @@ theorem ContractionSemigroup.resolventRightInv (S : ContractionSemigroup X)
             exact S.resolvent_mem_domain lambda hlam x⟩ = x :=
   S.toStronglyContinuousSemigroup.resolventRightInv S.hasGrowthBound lambda
     (by simpa using hlam) x
+
+end CompleteSpace
 
 /-- The contraction resolvent bound `‖R λ‖ ≤ 1/λ`, the `(0, 1)` case. -/
 theorem ContractionSemigroup.resolvent_norm_le (S : ContractionSemigroup X)

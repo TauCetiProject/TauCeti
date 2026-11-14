@@ -161,6 +161,7 @@ private theorem hasDerivAt_resolventMoment (hb : S.HasGrowthBound omega M) (n : 
     hbound_int hdiff
   simpa only [resolventMoment, F, F', neg_smul, integral_neg] using h.2
 
+omit [CompleteSpace X] in
 /-- Pointwise iterated derivatives of the resolvent are the signed weighted Laplace moments. -/
 private theorem iteratedDeriv_resolventFun_apply_eq_resolventMoment
     (hb : S.HasGrowthBound omega M) (n : ℕ) {lambda : ℝ} (hlambda : omega < lambda) (x : X) :
