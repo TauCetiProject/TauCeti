@@ -125,7 +125,7 @@ theorem integral_fderiv_stdComplexLine_eq_zero (ω : SymplecticForm V) {u : ℝ 
     ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) = 0 := by
   -- `equivRealProdCLM` and `measurableEquivRealProd` are the same map `z ↦ (z.re, z.im)`.
   have h := ω.integral_fderiv_apply_eq_zero (hu.comp equivRealProdCLM.contDiff)
-    ((integrable_norm_fderiv_comp_sq_iff equivRealProdCLM volume_preserving_equiv_real_prod).2
+    ((equivRealProdCLM.integrable_norm_fderiv_comp_sq_iff volume_preserving_equiv_real_prod).2
       henergy)
   simp only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I] at h
   rwa [← volume_preserving_equiv_real_prod.integral_comp' fun z ↦

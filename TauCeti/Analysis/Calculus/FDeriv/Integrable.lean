@@ -46,8 +46,9 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
-* `TauCeti.integrable_norm_fderiv_comp_sq_iff`: integrability of `‖fderiv (u ∘ e)‖ ^ 2` for a
-  measure-preserving continuous linear equivalence `e` is that of `‖fderiv u‖ ^ 2`.
+* `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
+  `‖fderiv (u ∘ e)‖ ^ 2` for a measure-preserving continuous linear equivalence `e` is that of
+  `‖fderiv u‖ ^ 2`.
 * `TauCeti.integrable_fderiv_apply_prod`: the directional derivative of a compactly supported
   `C¹` function on `ℝ × V` is integrable on the product of `Ioi a` with `V`.
 -/
@@ -148,8 +149,8 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace 
 /-- Precomposing a map with a measure-preserving continuous linear equivalence `e` does not change
 whether the squared norm of its derivative is integrable: the two derivatives differ by
 composition with `e` or with its inverse, which change norms by at most `‖e‖` and `‖e.symm‖`. -/
-theorem integrable_norm_fderiv_comp_sq_iff (e : E ≃L[𝕜] F) (he : MeasurePreserving e μ ν)
-    {u : F → G} :
+theorem _root_.ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff (e : E ≃L[𝕜] F)
+    (he : MeasurePreserving e μ ν) {u : F → G} :
     Integrable (fun w ↦ ‖fderiv 𝕜 (u ∘ e) w‖ ^ 2) μ ↔
       Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν := by
   have hemb : MeasurableEmbedding e := by
