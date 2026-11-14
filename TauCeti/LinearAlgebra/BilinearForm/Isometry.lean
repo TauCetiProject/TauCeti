@@ -725,7 +725,7 @@ section BaseChange
 variable (A : Type*) [CommRing A] [Algebra R A] [Module.Free R M] [Module.Finite R M]
 
 /-- Base change preserves determinant-one isometries. -/
-noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
+def specialIsometryGroupBaseChange (B : BilinForm R M) :
     specialIsometryGroup B →* specialIsometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun g := ⟨isometryGroupBaseChange A B
       ⟨g, specialIsometryGroup_le_isometryGroup B g.2⟩, by
