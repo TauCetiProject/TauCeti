@@ -11,7 +11,12 @@ public import TauCeti.GroupTheory.SurfaceGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 
 /-!
-# The closed surface group of genus two is fully residually free
+# Residual freeness of the closed surface groups `S⁺(2, 0)` and `S⁻(3, 0)`
+
+The closed surface groups that are not fully residually free are those of the projective plane,
+the Klein bottle and the nonorientable surface of genus three; all others are. This file proves
+that the orientable surface group of genus two is fully residually free and that the nonorientable
+surface group of genus three is not even residually free.
 
 Let `F₂` be the free group on `a = FreeGroup.of 0` and `b = FreeGroup.of 1`, and let
 `c = a⁻¹ b⁻¹ a b` be their commutator in the surface convention `[x, y] = x⁻¹ y⁻¹ x y`. The closed
@@ -26,6 +31,15 @@ fully residually free, hence so is `S⁺(2, 0)`. This is the argument of Champet
 for B. Baumslag's theorem that the double of a free group along a maximal cyclic subgroup is fully
 residually free, applied to genus two as in G. Baumslag's work on surface groups.
 
+The nonorientable surface group `S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` behaves
+differently. By Lyndon's theorem, three elements `x`, `y`, `z` of a free group with
+`x ^ 2 y ^ 2 z ^ 2 = 1` commute pairwise: free groups satisfy Vaught's condition, hence so do
+residually free groups (`TauCeti.LimitGroup.IsResiduallyFree.isVaught`). In `S⁻(3, 0)` the
+generators satisfy `c₁ ^ 2 c₂ ^ 2 c₃ ^ 2 = 1`, but `c₁` and `c₂` do not commute
+(`TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`). So `S⁻(3, 0)` fails Vaught's condition and is
+not residually free: every homomorphism to a free group kills the nontrivial commutator of `c₁` and
+`c₂`.
+
 ## Main definitions
 
 * `TauCeti.SurfaceGroup.Orientable.genusTwoToCentralizerExt`: the embedding
@@ -37,6 +51,8 @@ residually free, applied to genus two as in G. Baumslag's work on surface groups
   extension of the centralizer of `[a, b]` in `F₂`.
 * `TauCeti.LimitGroup.isFullyResiduallyFree_orientable_two_zero`: `S⁺(2, 0)` is fully residually
   free.
+* `TauCeti.LimitGroup.not_isResiduallyFree_nonorientable_three_zero`: `S⁻(3, 0)` is not
+  residually free.
 
 ## References
 
@@ -44,6 +60,9 @@ residually free, applied to genus two as in G. Baumslag's work on surface groups
 * B. Baumslag, *Residually free groups*, Proc. London Math. Soc. (3) 17 (1967), 402–418.
 * C. Champetier, V. Guirardel, *Limit groups as limits of free groups*, Israel J. Math. 146
   (2005), §3.2, Corollary 3.6 and the paragraph on surface groups that follows it.
+* R. C. Lyndon, *The equation `a²b² = c²` in free groups*, Michigan Math. J. 6 (1959).
+* O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
+  (2005), §3.1, Definition 7 and the proof of Lemma 2.
 -/
 
 public section
@@ -165,6 +184,22 @@ theorem isFullyResiduallyFree_orientable_two_zero :
     (Group.ne_one_of_not_isProperPower
       (FreeGroup.not_isProperPower_inv_mul_inv_mul_mul (by decide)))).of_injective
     SurfaceGroup.Orientable.genusTwoToCentralizerExt_injective
+
+section Nonorientable
+
+open SurfaceGroup.Nonorientable
+
+/-- **Lyndon.** The fundamental group `S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` of the closed
+nonorientable surface of genus three is not residually free: residually free groups satisfy Vaught's
+condition, while `c₁ ^ 2 c₂ ^ 2 c₃ ^ 2 = 1` in `S⁻(3, 0)` although `c₁` and `c₂` do not commute. -/
+theorem not_isResiduallyFree_nonorientable_three_zero :
+    ¬IsResiduallyFree (SurfaceGroup.Nonorientable 3 0) := fun h ↦ by
+  have hc : c 3 0 0 ^ 2 * c 3 0 1 ^ 2 * c 3 0 2 ^ 2 = 1 := by
+    simpa [List.ofFn_succ, mul_assoc] using
+      (SurfaceGroup.nonorientableWord_def _ _).symm.trans (nonorientableWord_c_peripheral 3 0)
+  simpa using ((Group.isVaught_iff _).1 h.isVaught _ _ _ hc).1
+
+end Nonorientable
 
 end LimitGroup
 
