@@ -35,8 +35,9 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
-* `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
-  over a field with independent rows.
+* `Matrix.finrank_ker_mulVecLin` and
+  `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
+  over a field, in general and when its rows are linearly independent.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
@@ -190,14 +191,21 @@ end LinearIndependent
 
 section KernelDimension
 
+/-- Over a field, the kernel of a matrix has dimension equal to its number of columns minus its
+rank. The row index type need not be finite. -/
+theorem finrank_ker_mulVecLin {K m ι : Type*} [Field K] [Fintype ι]
+    (A : Matrix m ι K) :
+    Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - A.rank := by
+  have h := A.mulVecLin.finrank_range_add_finrank_ker
+  rw [← rank, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
 /-- The kernel of a matrix over a field with independent rows has dimension equal to its
 number of columns minus its number of rows. -/
 theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field K]
     [Fintype m] [Fintype ι] {A : Matrix m ι K} (hA : LinearIndependent K A.row) :
     Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
-  have h := A.mulVecLin.finrank_range_add_finrank_ker
-  rw [← rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
-  omega
+  rw [A.finrank_ker_mulVecLin, hA.rank_matrix]
 
 end KernelDimension
 
