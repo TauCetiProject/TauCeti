@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.Normed.Ring.Commensurable
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Commensurable
 import TauCeti.NumberTheory.Padics.Complex.Basic
@@ -42,6 +43,9 @@ For example a cube root of `p` has valuation `1 / 3`.
 * `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
 * `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.exists_lt_norm_lt`, `PadicComplex.instDenselyNormedField`, and
+  `PadicComplex.Ioi_subset_closure_image_norm`: `ℂ_[p]` is a densely normed field and its positive
+  norms are dense in `(0, ∞)`.
 
 ## References
 
@@ -154,5 +158,31 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
   | coe q =>
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
+
+variable (p) in
+/-- **Positive norms of `ℂ_[p]` separate any two radii**: for `0 ≤ r₁ < r₂`, some `x : ℂ_[p]`
+satisfies `r₁ < ‖x‖ < r₂`, because the rational powers `p ^ (-q)` are dense in `(0, ∞)` and
+`PadicComplex.addValuation p` takes every rational value. -/
+theorem exists_lt_norm_lt {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁) (hlt : r₁ < r₂) :
+    ∃ x : ℂ_[p], r₁ < ‖x‖ ∧ ‖x‖ < r₂ :=
+  PseudoUniformizer.exists_lt_norm_lt_of_surjective_ratAddValuation (isCommensurable p _)
+    (addValuation_def p ▸ addValuation_surjective) hr₁ hlt
+
+/-- **`ℂ_[p]` is a densely normed field**, as its rational-valued valuation is surjective onto
+`ℚ`. -/
+noncomputable instance instDenselyNormedField : DenselyNormedField ℂ_[p] where
+  lt_norm_lt _ _ := exists_lt_norm_lt p
+
+-- Verify that `DenselyNormedField.toNontriviallyNormedField` agrees definitionally with
+-- `PadicComplex.nontriviallyNormedField`.
+example : (DenselyNormedField.toNontriviallyNormedField : NontriviallyNormedField ℂ_[p]) =
+    PadicComplex.nontriviallyNormedField p := by
+  with_reducible_and_instances rfl
+
+variable (p) in
+/-- **The positive norms of `ℂ_[p]` are dense in `(0, ∞)`.** -/
+theorem Ioi_subset_closure_image_norm :
+    Set.Ioi (0 : ℝ) ⊆ closure ((‖·‖) '' {x : ℂ_[p] | 0 < ‖x‖}) :=
+  NormedField.Ioi_subset_closure_image_norm ℂ_[p]
 
 end PadicComplex

@@ -58,6 +58,10 @@ through real numbers.
   with this property.
 * `TauCeti.NormedRing.PseudoUniformizer.ratAddValuation_eq_map_mul`: the rational valuations for
   two pseudo-uniformisers differ by the factor `v_ϖ(ϖ')`.
+* `TauCeti.NormedRing.PseudoUniformizer.exists_lt_norm_lt_of_forall_exists_ratAddValuation_eq` and
+  `TauCeti.NormedRing.PseudoUniformizer.exists_lt_norm_lt_of_surjective_ratAddValuation`: if the
+  rational valuation takes every rational value, any two radii `0 ≤ r₁ < r₂` are separated by a
+  norm.
 
 ## References
 
@@ -267,6 +271,35 @@ theorem ratAddValuation_eq_map_mul {ϖ' : PseudoUniformizer R} (hϖ' : ϖ'.IsCom
   congr 1
   ext t
   simp
+
+/-- **Surjectivity onto `ℚ` of the rational valuation separates all positive radii**: if every
+rational number is a value of `ϖ.ratAddValuation hϖ`, then any two radii `0 ≤ r₁ < r₂` are
+separated by the norm of an element of `R`. -/
+theorem exists_lt_norm_lt_of_forall_exists_ratAddValuation_eq
+    (hq : ∀ q : ℚ, ∃ x : R, ϖ.ratAddValuation hϖ x = q) {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁)
+    (hlt : r₁ < r₂) : ∃ x : R, r₁ < ‖x‖ ∧ ‖x‖ < r₂ := by
+  set s := max r₁ (r₂ / 2)
+  have hs : 0 < s := lt_max_of_lt_right (by linarith)
+  have hsr₂ : s < r₂ := max_lt hlt (by linarith)
+  have hlogϖ : Real.log ‖(ϖ.unit : R)‖ < 0 := Real.log_neg ϖ.norm_pos ϖ.norm_lt_one
+  have hdiv : Real.log r₂ / Real.log ‖(ϖ.unit : R)‖ < Real.log s / Real.log ‖(ϖ.unit : R)‖ :=
+    div_lt_div_of_neg_of_lt hlogϖ (Real.log_lt_log hs hsr₂)
+  obtain ⟨q, hq₁, hq₂⟩ := exists_rat_btwn hdiv
+  obtain ⟨x, hx⟩ := hq q
+  rw [ratAddValuation_eq_coe_iff hϖ] at hx
+  have hr₁s : r₁ ≤ s := le_max_left r₁ (r₂ / 2)
+  refine ⟨x, hr₁s.trans_lt ?_, ?_⟩
+  · rw [hx, Real.rpow_def_of_pos ϖ.norm_pos, ← Real.exp_log hs, Real.exp_lt_exp]
+    exact (lt_div_iff_of_neg' hlogϖ).mp hq₂
+  · rw [hx, Real.rpow_def_of_pos ϖ.norm_pos, ← Real.exp_log (hs.trans hsr₂), Real.exp_lt_exp]
+    exact (div_lt_iff_of_neg' hlogϖ).mp hq₁
+
+/-- If `ϖ.ratAddValuation hϖ` is surjective, any two radii `0 ≤ r₁ < r₂` are separated by the norm
+of an element of `R`. -/
+theorem exists_lt_norm_lt_of_surjective_ratAddValuation
+    (hsurj : Function.Surjective (ϖ.ratAddValuation hϖ)) {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁)
+    (hlt : r₁ < r₂) : ∃ x : R, r₁ < ‖x‖ ∧ ‖x‖ < r₂ :=
+  exists_lt_norm_lt_of_forall_exists_ratAddValuation_eq hϖ (fun q ↦ hsurj q) hr₁ hlt
 
 end RatAddValuation
 

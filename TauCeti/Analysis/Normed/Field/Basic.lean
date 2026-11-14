@@ -34,7 +34,11 @@ side is the Gauss norm at radius `‖d‖` of the polynomial with roots `s`, so 
 which that Gauss norm equals `‖c‖`.
 
 A normed field whose norm takes every positive real value is densely normed
-(`DenselyNormedField.ofForallExistsNormEq`).
+(`DenselyNormedField.ofForallExistsNormEq`). Separating open subintervals of `(0, ∞)` by norms is
+equivalent to the positive norms being dense in `(0, ∞)`
+(`NormedField.forall_exists_lt_norm_lt_iff_Ioi_subset_closure`), so in a densely normed field the
+positive norms are dense in `(0, ∞)` (`NormedField.Ioi_subset_closure_image_norm`) and the range of
+the norm has closure `[0, ∞)` (`NormedField.closure_range_norm`).
 
 Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
 into a relative error bound for `F - w / c`.
@@ -189,6 +193,47 @@ def DenselyNormedField.ofForallExistsNormEq {𝕜 : Type*} [h' : NormedField �
   lt_norm_lt r₁ r₂ h₀ hr := by
     obtain ⟨x, hx⟩ := h ((r₁ + r₂) / 2) (by linarith)
     exact ⟨x, by linarith, by linarith⟩
+
+namespace NormedField
+
+/-- Positive norms separate open subintervals `(r₁, r₂)` of `(0, ∞)` if and only if they are
+dense in `(0, ∞)`. -/
+theorem forall_exists_lt_norm_lt_iff_Ioi_subset_closure {α : Type*} [Norm α] :
+    (∀ r₁ r₂ : ℝ, 0 < r₁ → r₁ < r₂ → ∃ x : α, r₁ < ‖x‖ ∧ ‖x‖ < r₂) ↔
+      Set.Ioi (0 : ℝ) ⊆ closure ((‖·‖) '' {x : α | 0 < ‖x‖}) := by
+  refine ⟨fun h r hr ↦ Metric.mem_closure_iff.mpr fun ε hε ↦ ?_,
+    fun h r₁ r₂ hr₁ hlt ↦ ?_⟩
+  · have hr₀ : 0 < r := hr
+    obtain ⟨x, hx₁, hx₂⟩ := h (max (r / 2) (r - ε)) (r + ε) (lt_max_of_lt_left (half_pos hr₀))
+      (max_lt (by linarith) (by linarith))
+    refine ⟨‖x‖, ⟨x, (lt_max_of_lt_left (half_pos hr₀)).trans hx₁, rfl⟩, ?_⟩
+    rw [Real.dist_eq, abs_lt]
+    exact ⟨by linarith, by linarith [le_max_right (r / 2) (r - ε)]⟩
+  · have hm : (r₁ + r₂) / 2 ∈ Set.Ioi (0 : ℝ) := by
+      rw [Set.mem_Ioi]
+      linarith
+    obtain ⟨_, ⟨x, -, rfl⟩, hdist⟩ :=
+      Metric.mem_closure_iff.mp (h hm) ((r₂ - r₁) / 2) (by linarith)
+    rw [Real.dist_eq, abs_lt] at hdist
+    exact ⟨x, by linarith, by linarith⟩
+
+/-- In a densely normed field, the positive norms are dense in `(0, ∞)`. -/
+theorem Ioi_subset_closure_image_norm (𝕜 : Type*) [DenselyNormedField 𝕜] :
+    Set.Ioi (0 : ℝ) ⊆ closure ((‖·‖) '' {x : 𝕜 | 0 < ‖x‖}) :=
+  forall_exists_lt_norm_lt_iff_Ioi_subset_closure.mp fun _ _ hr₁ ↦ exists_lt_norm_lt 𝕜 hr₁.le
+
+/-- In a densely normed field, the closure of the range of the norm is `[0, ∞)`. -/
+@[simp]
+theorem closure_range_norm (𝕜 : Type*) [DenselyNormedField 𝕜] :
+    closure (Set.range (‖·‖ : 𝕜 → ℝ)) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (closure_minimal ?_ isClosed_Ici) fun r hr ↦ ?_
+  · rintro _ ⟨x, rfl⟩
+    exact norm_nonneg x
+  · rcases eq_or_lt_of_le (Set.mem_Ici.mp hr) with rfl | hr₀
+    · exact subset_closure ⟨0, norm_zero⟩
+    · exact closure_mono (Set.image_subset_range _ _) (Ioi_subset_closure_image_norm 𝕜 hr₀)
+
+end NormedField
 
 namespace TauCeti
 

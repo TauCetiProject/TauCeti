@@ -121,6 +121,26 @@ theorem radius_coe (p : Polynomial R) : (p : R⟦X⟧).radius = ⊤ :=
 theorem radius_zero : (0 : R⟦X⟧).radius = ⊤ :=
   radius_eq_top_iff.mpr isEntire_zero
 
+/-- The constant series `1` has infinite radius. -/
+@[simp]
+theorem radius_one : (1 : R⟦X⟧).radius = ⊤ :=
+  radius_eq_top_iff.mpr isEntire_one
+
+/-- Constant series have infinite radius. -/
+@[simp]
+theorem radius_C (a : R) : (C a : R⟦X⟧).radius = ⊤ :=
+  radius_eq_top_iff.mpr (isEntire_C a)
+
+/-- Monomials have infinite radius. -/
+@[simp]
+theorem radius_monomial (n : ℕ) (a : R) : (monomial n a : R⟦X⟧).radius = ⊤ :=
+  radius_eq_top_iff.mpr (isEntire_monomial n a)
+
+/-- The variable `X` has infinite radius. -/
+@[simp]
+theorem radius_X : (X : R⟦X⟧).radius = ⊤ :=
+  radius_eq_top_iff.mpr isEntire_X
+
 /-- The radius is positive exactly when the series is restricted at some positive radius. -/
 theorem radius_pos_iff : 0 < f.radius ↔ ∃ r : ℝ, 0 < r ∧ f.IsRestricted r := by
   refine ⟨fun h ↦ ?_, fun ⟨r, hr, hf⟩ ↦ ?_⟩
