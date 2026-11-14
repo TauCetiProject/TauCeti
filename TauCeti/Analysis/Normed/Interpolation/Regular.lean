@@ -16,48 +16,27 @@ import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 /-!
 # Regular couples, regularization, and the dual couple
 
-A compatible couple `(X₀, X₁)` of normed spaces is *regular* (also called a *density couple*) if
-its intersection `X₀ ∩ X₁` is dense in both `X₀` and `X₁`. Regularity is the exact condition under
-which restriction to the intersection embeds both continuous duals `X₀*` and `X₁*` injectively into
-`(X₀ ∩ X₁)*`, so that `(X₀*, X₁*)` is itself a compatible couple.
+A compatible couple `(X₀, X₁)` of normed spaces is *regular* (a *density couple*) if its
+intersection `X₀ ∩ X₁` is dense in both `X₀` and `X₁`. Regularity is the condition under which
+restriction to `X₀ ∩ X₁` embeds both continuous duals `X₀*` and `X₁*` injectively into
+`(X₀ ∩ X₁)*`, making `(X₀*, X₁*)` itself a compatible couple (`CompatibleCouple.dual`).
 
-Every compatible couple `(X₀, X₁)` admits a *regularization* `(X₀°, X₁°)`: the closures
-`CompatibleCouple.fstClosure` and `CompatibleCouple.sndClosure` of `X₀ ∩ X₁` inside `X₀` and `X₁`,
-embedded into the same ambient space. Passing to the regularization isometrically preserves the
-intersection (`CompatibleCouple.regularizeInterEquiv`), produces a regular couple
-(`CompatibleCouple.isRegular_regularize`), and induces a norm-nonincreasing injection on sum spaces
-(`CompatibleCouple.regularizeSumMap`).
+Every compatible couple `(X₀, X₁)` admits a *regularization* `(X₀°, X₁°)` (`regularize`), given by
+the closures `fstClosure` and `sndClosure` of `X₀ ∩ X₁` inside `X₀` and `X₁`. Passing to the
+regularization preserves the intersection isometrically (`regularizeInterEquiv`), produces a regular
+couple (`isRegular_regularize`), and induces a contractive injection `regularizeSumMap` on sum
+spaces.
 
-For a regular couple `C`, precomposition with `C.interFst` and `C.interSnd` embeds `StrongDual 𝕜 X₀`
-and `StrongDual 𝕜 X₁` injectively into `StrongDual 𝕜 C.inter`, forming the dual couple `C.dual`.
-The continuous duals of the sum and intersection of `C` are then identified isometrically with the
-intersection and sum of `C.dual`:
+For a regular couple `C`, the continuous duals of the sum and intersection of `C` are identified
+isometrically with the intersection and sum of `C.dual`:
+* `sumDualEquivDualInter`: `StrongDual 𝕜 C.SumSpace ≃ₗᵢ[𝕜] (C.dual hC).inter` over any nontrivially
+  normed field;
+* `dualSumEquivInterDual`: `(C.dual hC).SumSpace ≃ₗᵢ[𝕜] StrongDual 𝕜 C.inter` over `RCLike` scalars
+  via Hahn–Banach extension on `C.inter ≤ X₀ × X₁`.
 
-* `CompatibleCouple.sumDualEquivDualInter`: `StrongDual 𝕜 C.SumSpace ≃ₗᵢ[𝕜] (C.dual hC).inter`,
-  valid over any nontrivially normed field without completeness hypotheses;
-* `CompatibleCouple.dualSumEquivInterDual`: `(C.dual hC).SumSpace ≃ₗᵢ[𝕜] StrongDual 𝕜 C.inter`,
-  proved over `RCLike` scalars by extending a functional on `C.inter ≤ X₀ × X₁` without increasing
-  its norm via Hahn–Banach and splitting the extension across the `ℓ^∞`-normed product.
-
-Finally, for any nontrivial normed space `E`, the couple `(C₀(ℕ, E), ℓ^∞(ℕ, E))` embedded in
-`ℓ^∞(ℕ, E)` (`c0LpInftyCouple`) witnesses that density in one endpoint does not imply regularity:
-its intersection surjects onto `C₀(ℕ, E)` yet is closed and proper in `ℓ^∞(ℕ, E)`, so the couple is
-not regular and restriction from `(ℓ^∞(ℕ, E))*` to the dual of the intersection is not injective.
-
-## Main declarations
-
-* `TauCeti.CompatibleCouple.IsRegular`: density of `X₀ ∩ X₁` in both `X₀` and `X₁`.
-* `TauCeti.CompatibleCouple.fstClosure`, `TauCeti.CompatibleCouple.sndClosure`,
-  `TauCeti.CompatibleCouple.regularize`: the endpoint closures `(X₀°, X₁°)` and regularized couple.
-* `TauCeti.CompatibleCouple.regularizeInterEquiv`: isometric identification of `(X₀° ∩ X₁°)` with
-  `X₀ ∩ X₁`.
-* `TauCeti.CompatibleCouple.isRegular_iff_injective_precomp`: over `RCLike` scalars, a couple is
-  regular iff both restriction maps `X_j* → (X₀ ∩ X₁)*` are injective.
-* `TauCeti.CompatibleCouple.dual`: the dual couple `(X₀*, X₁*)` inside `(X₀ ∩ X₁)*`.
-* `TauCeti.CompatibleCouple.sumDualEquivDualInter`: `(X₀ + X₁)* ≃ₗᵢ[𝕜] X₀* ∩ X₁*`.
-* `TauCeti.CompatibleCouple.dualSumEquivInterDual`: `X₀* + X₁* ≃ₗᵢ[𝕜] (X₀ ∩ X₁)*`.
-* `TauCeti.CompatibleCouple.c0LpInftyCouple`,
-  `TauCeti.CompatibleCouple.not_isRegular_c0LpInftyCouple`: the non-regular couple `(c₀, ℓ^∞)`.
+Finally, `c0LpInftyCouple` `(C₀(ℕ, E), ℓ^∞(ℕ, E))` witnesses that density in one endpoint alone
+neither implies regularity nor makes dual restriction injective (`not_isRegular_c0LpInftyCouple`,
+`not_injective_precomp_c0LpInftyCouple_interSnd`).
 
 ## References
 
@@ -83,27 +62,22 @@ variable {𝕜 X₀ X₁ V : Type*} [NormedField 𝕜]
 /-- Exchanging the endpoints of a compatible couple exchanges the coordinates of its intersection
 isometrically. -/
 def swapInterEquiv : C.swap.inter ≃ₗᵢ[𝕜] C.inter where
-  toFun x := ⟨(x.1.2, x.1.1), (C.mem_inter_iff.2 (C.swap.mem_inter_iff.1 x.2).symm)⟩
-  invFun x := ⟨(x.1.2, x.1.1), (C.swap.mem_inter_iff.2 (C.mem_inter_iff.1 x.2).symm)⟩
-  left_inv x := by apply Subtype.ext; ext <;> rfl
-  right_inv x := by apply Subtype.ext; ext <;> rfl
+  toFun x := ⟨(x.1.2, x.1.1), C.mem_inter_iff.2 (C.swap.mem_inter_iff.1 x.2).symm⟩
+  invFun x := ⟨(x.1.2, x.1.1), C.swap.mem_inter_iff.2 (C.mem_inter_iff.1 x.2).symm⟩
+  left_inv _ := by apply Subtype.ext; ext <;> rfl
+  right_inv _ := by apply Subtype.ext; ext <;> rfl
   map_add' _ _ := by apply Subtype.ext; ext <;> rfl
   map_smul' _ _ := by apply Subtype.ext; ext <;> rfl
-  norm_map' x := by
-    rw [C.norm_inter, C.swap.norm_inter]
-    exact max_comm _ _
+  norm_map' x := by rw [C.norm_inter, C.swap.norm_inter]; exact max_comm _ _
 
 theorem interFst_swapInterEquiv (x : C.swap.inter) :
-    C.interFst (C.swapInterEquiv x) = C.swap.interSnd x := by
-  simp [swapInterEquiv]
+    C.interFst (C.swapInterEquiv x) = C.swap.interSnd x := by simp [swapInterEquiv]
 
 theorem interSnd_swapInterEquiv (x : C.swap.inter) :
-    C.interSnd (C.swapInterEquiv x) = C.swap.interFst x := by
-  simp [swapInterEquiv]
+    C.interSnd (C.swapInterEquiv x) = C.swap.interFst x := by simp [swapInterEquiv]
 
 @[simp]
-theorem swapInterEquiv_symm : C.swapInterEquiv.symm = C.swap.swapInterEquiv := by
-  ext x <;> rfl
+theorem swapInterEquiv_symm : C.swapInterEquiv.symm = C.swap.swapInterEquiv := by ext x <;> rfl
 
 /-- A compatible couple is *regular* (or a *density couple*) if its intersection `X₀ ∩ X₁` is
 dense in both `X₀` and `X₁`. -/
@@ -121,19 +95,16 @@ variable {C} in
 /-- Reversing the endpoints of a regular couple preserves regularity. -/
 theorem IsRegular.swap (hC : C.IsRegular) : C.swap.IsRegular where
   denseRange_interFst := by
-    have hcomp : ⇑C.swap.interFst = ⇑C.interSnd ∘ ⇑C.swapInterEquiv :=
-      funext fun x => (C.interSnd_swapInterEquiv x).symm
-    rw [DenseRange, hcomp, Set.range_comp, C.swapInterEquiv.surjective.range_eq, Set.image_univ]
-    exact hC.denseRange_interSnd
+    rw [show ⇑C.swap.interFst = ⇑C.interSnd ∘ ⇑C.swapInterEquiv from
+      funext fun x => (C.interSnd_swapInterEquiv x).symm]
+    exact hC.denseRange_interSnd.comp C.swapInterEquiv.surjective.denseRange C.interSnd.continuous
   denseRange_interSnd := by
-    have hcomp : ⇑C.swap.interSnd = ⇑C.interFst ∘ ⇑C.swapInterEquiv :=
-      funext fun x => (C.interFst_swapInterEquiv x).symm
-    rw [DenseRange, hcomp, Set.range_comp, C.swapInterEquiv.surjective.range_eq, Set.image_univ]
-    exact hC.denseRange_interFst
+    rw [show ⇑C.swap.interSnd = ⇑C.interFst ∘ ⇑C.swapInterEquiv from
+      funext fun x => (C.interFst_swapInterEquiv x).symm]
+    exact hC.denseRange_interFst.comp C.swapInterEquiv.surjective.denseRange C.interFst.continuous
 
 @[simp]
-theorem isRegular_swap_iff : C.swap.IsRegular ↔ C.IsRegular :=
-  ⟨fun h => h.swap, fun h => h.swap⟩
+theorem isRegular_swap_iff : C.swap.IsRegular ↔ C.IsRegular := ⟨IsRegular.swap, IsRegular.swap⟩
 
 /-- For the diagonal couple `(X, X)`, both projections from the intersection are surjective, so the
 couple is regular. -/
@@ -148,18 +119,14 @@ theorem isRegular_refl (𝕜 X : Type*) [NormedField 𝕜] [NormedAddCommGroup X
 /-! ### Regularization -/
 
 /-- The norm closure `X₀°` of the intersection `X₀ ∩ X₁` inside the first endpoint `X₀`. -/
-def fstClosure : Submodule 𝕜 X₀ :=
-  C.interFst.range.topologicalClosure
+def fstClosure : Submodule 𝕜 X₀ := C.interFst.range.topologicalClosure
 
 /-- The norm closure `X₁°` of the intersection `X₀ ∩ X₁` inside the second endpoint `X₁`. -/
-def sndClosure : Submodule 𝕜 X₁ :=
-  C.interSnd.range.topologicalClosure
+def sndClosure : Submodule 𝕜 X₁ := C.interSnd.range.topologicalClosure
 
-instance : IsClosed (C.fstClosure : Set X₀) :=
-  Submodule.isClosed_topologicalClosure _
+instance : IsClosed (C.fstClosure : Set X₀) := Submodule.isClosed_topologicalClosure _
 
-instance : IsClosed (C.sndClosure : Set X₁) :=
-  Submodule.isClosed_topologicalClosure _
+instance : IsClosed (C.sndClosure : Set X₁) := Submodule.isClosed_topologicalClosure _
 
 theorem interFst_mem_fstClosure (x : C.inter) : C.interFst x ∈ C.fstClosure :=
   C.interFst.range.le_topologicalClosure ⟨x, rfl⟩
@@ -167,8 +134,7 @@ theorem interFst_mem_fstClosure (x : C.inter) : C.interFst x ∈ C.fstClosure :=
 theorem interSnd_mem_sndClosure (x : C.inter) : C.interSnd x ∈ C.sndClosure :=
   C.interSnd.range.le_topologicalClosure ⟨x, rfl⟩
 
-/-- A compatible couple is regular if and only if both endpoint closures equal the whole endpoint
-spaces. -/
+/-- A compatible couple is regular if and only if both endpoint closures equal `⊤`. -/
 theorem isRegular_iff_fstClosure_eq_top_and_sndClosure_eq_top :
     C.IsRegular ↔ C.fstClosure = ⊤ ∧ C.sndClosure = ⊤ := by
   rw [isRegular_iff, fstClosure, sndClosure, ← Submodule.dense_iff_topologicalClosure_eq_top,
@@ -191,83 +157,56 @@ theorem regularize_embed₁ : C.regularize.embed₁ = C.embed₁.comp C.sndClosu
 
 private theorem regularize_inter_to_inter (y : C.regularize.inter) :
     (y.1.1.1, y.1.2.1) ∈ C.inter := by
-  have hy := C.regularize.mem_inter_iff.1 y.2
-  rw [regularize_embed₀, regularize_embed₁, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Submodule.subtypeL_apply] at hy
-  exact C.mem_inter_iff.2 hy
-
-private theorem fst_mem_fstClosure (x : C.inter) : x.1.1 ∈ C.fstClosure := by
-  rw [← C.interFst_apply x]
-  exact C.interFst_mem_fstClosure x
-
-private theorem snd_mem_sndClosure (x : C.inter) : x.1.2 ∈ C.sndClosure := by
-  rw [← C.interSnd_apply x]
-  exact C.interSnd_mem_sndClosure x
+  simpa [C.mem_inter_iff] using C.regularize.mem_inter_iff.1 y.2
 
 private theorem inter_to_regularize_inter (x : C.inter) :
-    ((⟨x.1.1, fst_mem_fstClosure C x⟩ : C.fstClosure),
-      (⟨x.1.2, snd_mem_sndClosure C x⟩ : C.sndClosure)) ∈ C.regularize.inter := by
-  rw [C.regularize.mem_inter_iff, regularize_embed₀, regularize_embed₁,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-    Submodule.subtypeL_apply]
-  exact C.mem_inter_iff.1 x.2
+    ((⟨x.1.1, C.interFst_apply x ▸ C.interFst_mem_fstClosure x⟩ : C.fstClosure),
+      (⟨x.1.2, C.interSnd_apply x ▸ C.interSnd_mem_sndClosure x⟩ : C.sndClosure)) ∈
+      C.regularize.inter := by
+  simpa [C.regularize.mem_inter_iff] using C.mem_inter_iff.1 x.2
 
 /-- Passing to the regularization does not change the intersection: `(X₀° ∩ X₁°) ≃ₗᵢ[𝕜] X₀ ∩ X₁`. -/
 def regularizeInterEquiv : C.regularize.inter ≃ₗᵢ[𝕜] C.inter where
   toFun y := ⟨(y.1.1.1, y.1.2.1), regularize_inter_to_inter C y⟩
-  invFun x := ⟨(⟨x.1.1, fst_mem_fstClosure C x⟩, ⟨x.1.2, snd_mem_sndClosure C x⟩),
-    inter_to_regularize_inter C x⟩
+  invFun x := ⟨(⟨x.1.1, C.interFst_apply x ▸ C.interFst_mem_fstClosure x⟩,
+    ⟨x.1.2, C.interSnd_apply x ▸ C.interSnd_mem_sndClosure x⟩), inter_to_regularize_inter C x⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  norm_map' y := by
-    rw [C.norm_inter, C.regularize.norm_inter]
-    rfl
+  norm_map' y := by rw [C.norm_inter, C.regularize.norm_inter]; rfl
 
 theorem interFst_regularizeInterEquiv (y : C.regularize.inter) :
     C.interFst (C.regularizeInterEquiv y) = (C.regularize.interFst y : X₀) := by
-  rw [C.interFst_apply, C.regularize.interFst_apply]
-  rfl
+  rw [C.interFst_apply, C.regularize.interFst_apply]; rfl
 
 theorem interSnd_regularizeInterEquiv (y : C.regularize.inter) :
     C.interSnd (C.regularizeInterEquiv y) = (C.regularize.interSnd y : X₁) := by
-  rw [C.interSnd_apply, C.regularize.interSnd_apply]
-  rfl
+  rw [C.interSnd_apply, C.regularize.interSnd_apply]; rfl
 
 theorem coe_interFst_regularizeInterEquiv_symm (x : C.inter) :
     (C.regularize.interFst (C.regularizeInterEquiv.symm x) : X₀) = C.interFst x := by
-  rw [C.regularize.interFst_apply, C.interFst_apply]
-  rfl
+  rw [C.regularize.interFst_apply, C.interFst_apply]; rfl
 
 theorem coe_interSnd_regularizeInterEquiv_symm (x : C.inter) :
     (C.regularize.interSnd (C.regularizeInterEquiv.symm x) : X₁) = C.interSnd x := by
-  rw [C.regularize.interSnd_apply, C.interSnd_apply]
-  rfl
+  rw [C.regularize.interSnd_apply, C.interSnd_apply]; rfl
 
 /-- The regularization of any compatible couple is regular. -/
 @[simp]
 theorem isRegular_regularize : C.regularize.IsRegular where
-  denseRange_interFst := by
-    refine C.fstClosure.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z => ?_
-    have hz : (z : X₀) ∈ closure (Set.range C.interFst) := by
-      have hz' : (z : X₀) ∈ (C.interFst.range.topologicalClosure : Set X₀) := z.2
-      rwa [Submodule.topologicalClosure_coe] at hz'
-    have hrange : (⇑C.fstClosure.subtypeL ∘ ⇑C.regularize.interFst) =
-        ⇑C.interFst ∘ ⇑C.regularizeInterEquiv :=
-      funext fun y => (C.interFst_regularizeInterEquiv y).symm
-    rwa [← Set.range_comp, hrange, Set.range_comp, C.regularizeInterEquiv.surjective.range_eq,
-      Set.image_univ]
-  denseRange_interSnd := by
-    refine C.sndClosure.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z => ?_
-    have hz : (z : X₁) ∈ closure (Set.range C.interSnd) := by
-      have hz' : (z : X₁) ∈ (C.interSnd.range.topologicalClosure : Set X₁) := z.2
-      rwa [Submodule.topologicalClosure_coe] at hz'
-    have hrange : (⇑C.sndClosure.subtypeL ∘ ⇑C.regularize.interSnd) =
-        ⇑C.interSnd ∘ ⇑C.regularizeInterEquiv :=
-      funext fun y => (C.interSnd_regularizeInterEquiv y).symm
-    rwa [← Set.range_comp, hrange, Set.range_comp, C.regularizeInterEquiv.surjective.range_eq,
-      Set.image_univ]
+  denseRange_interFst := C.fstClosure.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z => by
+    rw [← Set.range_comp, show ⇑C.fstClosure.subtypeL ∘ ⇑C.regularize.interFst =
+      ⇑C.interFst ∘ ⇑C.regularizeInterEquiv from funext fun y =>
+        (C.interFst_regularizeInterEquiv y).symm,
+      Set.range_comp, C.regularizeInterEquiv.surjective.range_eq, Set.image_univ]
+    exact Submodule.topologicalClosure_coe C.interFst.range ▸ z.2
+  denseRange_interSnd := C.sndClosure.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z => by
+    rw [← Set.range_comp, show ⇑C.sndClosure.subtypeL ∘ ⇑C.regularize.interSnd =
+      ⇑C.interSnd ∘ ⇑C.regularizeInterEquiv from funext fun y =>
+        (C.interSnd_regularizeInterEquiv y).symm,
+      Set.range_comp, C.regularizeInterEquiv.surjective.range_eq, Set.image_univ]
+    exact Submodule.topologicalClosure_coe C.interSnd.range ▸ z.2
 
 section RegularizeSum
 
@@ -299,19 +238,17 @@ theorem regularizeSumMap_sndToSum (x₁ : C.sndClosure) :
 @[simp]
 theorem sumSpaceEmbed_regularizeSumMap (u : C.regularize.SumSpace) :
     C.sumSpaceEmbed (C.regularizeSumMap u) = C.regularize.sumSpaceEmbed u := by
-  obtain ⟨x₀, x₁, rfl⟩ := C.regularize.exists_fstToSum_add_sndToSum_eq u
-  simp
+  obtain ⟨x₀, x₁, rfl⟩ := C.regularize.exists_fstToSum_add_sndToSum_eq u; simp
 
-theorem regularizeSumMap_injective : Function.Injective C.regularizeSumMap := fun u v h =>
+theorem regularizeSumMap_injective : Function.Injective C.regularizeSumMap := fun _ _ h =>
   C.regularize.sumSpace_ext <| by
     rw [← C.sumSpaceEmbed_regularizeSumMap, h, C.sumSpaceEmbed_regularizeSumMap]
 
 theorem norm_regularizeSumMap_le [T1Space V] (u : C.regularize.SumSpace) :
-    ‖C.regularizeSumMap u‖ ≤ ‖u‖ := by
-  refine le_of_forall_gt fun r hr => ?_
-  obtain ⟨x₀, x₁, rfl, hx⟩ := C.regularize.norm_sumSpace_lt_iff.1 hr
-  rw [map_add, regularizeSumMap_fstToSum, regularizeSumMap_sndToSum]
-  exact (C.norm_fstToSum_add_sndToSum_le x₀ x₁).trans_lt hx
+    ‖C.regularizeSumMap u‖ ≤ ‖u‖ :=
+  le_of_forall_gt fun _ hr => by
+    obtain ⟨x₀, x₁, rfl, hx⟩ := C.regularize.norm_sumSpace_lt_iff.1 hr
+    simpa using (C.norm_fstToSum_add_sndToSum_le x₀ x₁).trans_lt hx
 
 end RegularizeSum
 
@@ -384,16 +321,13 @@ variable [ContinuousAdd V]
 
 private theorem sumDual_mem_inter (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
     (Λ.comp C.fstToSum, Λ.comp C.sndToSum) ∈ (C.dual hC).inter := by
-  rw [mem_inter_iff, dual_embed₀, dual_embed₁]
-  ext x
-  exact congrArg Λ (C.fstToSum_interFst x)
+  rw [mem_inter_iff, dual_embed₀, dual_embed₁]; ext x; exact congrArg Λ (C.fstToSum_interFst x)
 
 private theorem sumDual_left_inv (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
     (let g : (C.dual hC).inter :=
       ⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩
     C.sumLift ((C.dual hC).interFst g) ((C.dual hC).interSnd g) (dualInter_compat C hC g)) = Λ :=
-  let g : (C.dual hC).inter :=
-    ⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩
+  let g : (C.dual hC).inter := ⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩
   (C.sumLift_unique _ _ (dualInter_compat C hC g)
     ((C.dual hC).interFst_apply g).symm ((C.dual hC).interSnd_apply g).symm).symm
 
@@ -402,58 +336,48 @@ private theorem sumDual_right_inv (hC : C.IsRegular) (f : (C.dual hC).inter) :
         (dualInter_compat C hC f)).comp C.fstToSum,
       (C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f)
         (dualInter_compat C hC f)).comp C.sndToSum),
-      sumDual_mem_inter C hC _⟩ : (C.dual hC).inter) = f := by
-  apply Subtype.ext
-  refine Prod.ext ?_ ?_
-  · dsimp only
-    rw [C.sumLift_comp_fstToSum, (C.dual hC).interFst_apply]
-  · dsimp only
-    rw [C.sumLift_comp_sndToSum, (C.dual hC).interSnd_apply]
+      sumDual_mem_inter C hC _⟩ : (C.dual hC).inter) = f :=
+  Subtype.ext <| Prod.ext
+    (by dsimp only; rw [C.sumLift_comp_fstToSum, (C.dual hC).interFst_apply])
+    (by dsimp only; rw [C.sumLift_comp_sndToSum, (C.dual hC).interSnd_apply])
 
 private theorem norm_sumDual_to_dualInter_le (hC : C.IsRegular) (Λ : StrongDual 𝕜 C.SumSpace) :
     ‖(⟨(Λ.comp C.fstToSum, Λ.comp C.sndToSum), sumDual_mem_inter C hC Λ⟩ :
       (C.dual hC).inter)‖ ≤ ‖Λ‖ := by
   rw [norm_inter]
-  refine max_le ?_ ?_
-  · exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₀ =>
-      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_fstToSum_le x₀) (norm_nonneg Λ))
-  · exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₁ =>
-      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_sndToSum_le x₁) (norm_nonneg Λ))
+  exact max_le
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₀ =>
+      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_fstToSum_le x₀) (norm_nonneg Λ)))
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg Λ) fun x₁ =>
+      (Λ.le_opNorm _).trans (mul_le_mul_of_nonneg_left (C.norm_sndToSum_le x₁) (norm_nonneg Λ)))
 
 private theorem norm_sumLift_dualInter_le [T1Space V] (hC : C.IsRegular) (f : (C.dual hC).inter) :
     ‖C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f) (dualInter_compat C hC f)‖ ≤
       ‖f‖ := by
   set Λ := C.sumLift ((C.dual hC).interFst f) ((C.dual hC).interSnd f) (dualInter_compat C hC f)
-  refine Λ.opNorm_le_bound (norm_nonneg f) fun u => ?_
-  refine le_of_forall_pos_lt_add fun ε hε => ?_
+  refine Λ.opNorm_le_bound (norm_nonneg f) fun u => le_of_forall_pos_lt_add fun ε hε => ?_
   by_cases hf0 : ‖f‖ = 0
   · have hf₀ : (C.dual hC).interFst f = 0 :=
       norm_le_zero_iff.1 (((C.dual hC).norm_interFst_le f).trans_eq hf0)
     have hf₁ : (C.dual hC).interSnd f = 0 :=
       norm_le_zero_iff.1 (((C.dual hC).norm_interSnd_le f).trans_eq hf0)
     obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
-    rw [hf0, zero_mul, zero_add]
-    simpa [Λ, hf₀, hf₁] using hε
+    simpa [Λ, hf0, hf₀, hf₁] using hε
   have hfpos : 0 < ‖f‖ := (norm_nonneg f).lt_of_ne' hf0
   obtain ⟨x₀, x₁, rfl, hlt⟩ :=
     C.norm_sumSpace_lt_iff.1 (lt_add_of_pos_right ‖u‖ (div_pos hε hfpos))
-  have hval : Λ (C.fstToSum x₀ + C.sndToSum x₁) =
-      (C.dual hC).interFst f x₀ + (C.dual hC).interSnd f x₁ := by
-    simp [Λ]
   calc ‖Λ (C.fstToSum x₀ + C.sndToSum x₁)‖
       ≤ ‖(C.dual hC).interFst f x₀‖ + ‖(C.dual hC).interSnd f x₁‖ := by
-        rw [hval]
-        exact norm_add_le _ _
+        simpa [Λ] using norm_add_le ((C.dual hC).interFst f x₀) ((C.dual hC).interSnd f x₁)
     _ ≤ ‖(C.dual hC).interFst f‖ * ‖x₀‖ + ‖(C.dual hC).interSnd f‖ * ‖x₁‖ :=
         add_le_add (((C.dual hC).interFst f).le_opNorm x₀) (((C.dual hC).interSnd f).le_opNorm x₁)
-    _ ≤ ‖f‖ * ‖x₀‖ + ‖f‖ * ‖x₁‖ :=
-        add_le_add (mul_le_mul_of_nonneg_right ((C.dual hC).norm_interFst_le f) (norm_nonneg x₀))
+    _ ≤ ‖f‖ * (‖x₀‖ + ‖x₁‖) := by
+        rw [mul_add]
+        exact add_le_add (mul_le_mul_of_nonneg_right ((C.dual hC).norm_interFst_le f)
+            (norm_nonneg x₀))
           (mul_le_mul_of_nonneg_right ((C.dual hC).norm_interSnd_le f) (norm_nonneg x₁))
-    _ = ‖f‖ * (‖x₀‖ + ‖x₁‖) := (mul_add _ _ _).symm
-    _ < ‖f‖ * (‖C.fstToSum x₀ + C.sndToSum x₁‖ + ε / ‖f‖) :=
-        mul_lt_mul_of_pos_left hlt hfpos
-    _ = ‖f‖ * ‖C.fstToSum x₀ + C.sndToSum x₁‖ + ε := by
-        rw [mul_add, mul_div_cancel₀ _ hfpos.ne']
+    _ < ‖f‖ * (‖C.fstToSum x₀ + C.sndToSum x₁‖ + ε / ‖f‖) := mul_lt_mul_of_pos_left hlt hfpos
+    _ = ‖f‖ * ‖C.fstToSum x₀ + C.sndToSum x₁‖ + ε := by rw [mul_add, mul_div_cancel₀ _ hfpos.ne']
 
 /-- **Duality of the sum space (Bergh–Löfström, Theorem 2.7.1).** For a regular couple `C`,
 restricting a continuous linear functional on `X₀ + X₁` to `X₀` and `X₁` identifies
@@ -473,14 +397,12 @@ def sumDualEquivDualInter [T1Space V] (hC : C.IsRegular) :
 theorem interFst_sumDualEquivDualInter [T1Space V] (hC : C.IsRegular)
     (Λ : StrongDual 𝕜 C.SumSpace) :
     (C.dual hC).interFst (C.sumDualEquivDualInter hC Λ) = Λ.comp C.fstToSum := by
-  rw [(C.dual hC).interFst_apply]
-  rfl
+  rw [(C.dual hC).interFst_apply]; rfl
 
 theorem interSnd_sumDualEquivDualInter [T1Space V] (hC : C.IsRegular)
     (Λ : StrongDual 𝕜 C.SumSpace) :
     (C.dual hC).interSnd (C.sumDualEquivDualInter hC Λ) = Λ.comp C.sndToSum := by
-  rw [(C.dual hC).interSnd_apply]
-  rfl
+  rw [(C.dual hC).interSnd_apply]; rfl
 
 @[simp]
 theorem sumDualEquivDualInter_symm_fstToSum [T1Space V] (hC : C.IsRegular)
@@ -504,25 +426,18 @@ private theorem exists_unit_apply_eq_ofReal {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     (f : StrongDual 𝕜 E) (hf : 0 < ‖f‖) {δ : ℝ} (hδ : 0 < δ) :
     ∃ y : E, ‖y‖ ≤ 1 ∧ ∃ c : ℝ, 0 ≤ c ∧ ‖f‖ - δ < c ∧ f y = (c : 𝕜) := by
-  set r := max 0 (‖f‖ - δ / 2)
-  have hr₀ : 0 ≤ r := le_max_left _ _
-  have hr : r < ‖f‖ := max_lt hf (by linarith)
-  obtain ⟨x, hx⟩ := f.exists_mul_lt_of_lt_opNorm hr₀ hr
+  obtain ⟨x, hx⟩ := f.exists_mul_lt_of_lt_opNorm (le_max_left 0 (‖f‖ - δ / 2))
+    (max_lt hf (by linarith))
   have hx0 : 0 < ‖x‖ := by
-    by_contra hle
-    have hxz : ‖x‖ = 0 := le_antisymm (not_lt.1 hle) (norm_nonneg x)
-    have hfx : f x = 0 := by rw [norm_eq_zero.1 hxz, map_zero]
-    rw [hxz, mul_zero, hfx, norm_zero] at hx
-    exact lt_irrefl 0 hx
+    refine (norm_nonneg x).lt_of_ne' fun h => ?_
+    obtain rfl : x = 0 := norm_eq_zero.1 h
+    simp at hx
   obtain ⟨a, ha, hfa⟩ := RCLike.exists_norm_eq_mul_self (f x)
   refine ⟨((‖x‖⁻¹ : ℝ) : 𝕜) • a • x, ?_, ‖f x‖ / ‖x‖, by positivity, ?_, ?_⟩
   · rw [norm_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hx0), ha, one_mul,
       inv_mul_cancel₀ hx0.ne']
-  · have hlt : r < ‖f x‖ / ‖x‖ := (lt_div_iff₀ hx0).2 hx
-    have hle : ‖f‖ - δ / 2 ≤ r := le_max_right _ _
-    linarith
-  · rw [map_smul, map_smul, smul_eq_mul, smul_eq_mul, ← hfa, div_eq_inv_mul,
-      RCLike.ofReal_mul]
+  · linarith [(lt_div_iff₀ hx0).2 hx, le_max_right 0 (‖f‖ - δ / 2)]
+  · rw [map_smul, map_smul, smul_eq_mul, smul_eq_mul, ← hfa, div_eq_inv_mul, RCLike.ofReal_mul]
 
 /-- On an `ℓ^∞`-normed product `X₀ × X₁`, the operator norm of a continuous linear functional is
 at least the sum of the norms of its restrictions to the two factors. -/
@@ -537,28 +452,20 @@ private theorem norm_comp_inl_add_norm_comp_inr_le {𝕜 X₀ X₁ : Type*} [RCL
     f₀.opNorm_le_bound (norm_nonneg Ψ) fun x₀ => by simpa [f₀] using Ψ.le_opNorm (x₀, 0)
   have hf₁_le : ‖f₁‖ ≤ ‖Ψ‖ :=
     f₁.opNorm_le_bound (norm_nonneg Ψ) fun x₁ => by simpa [f₁] using Ψ.le_opNorm (0, x₁)
-  rcases (norm_nonneg f₀).eq_or_lt with h0 | h0
-  · linarith
-  rcases (norm_nonneg f₁).eq_or_lt with h1 | h1
-  · linarith
+  rcases (norm_nonneg f₀).eq_or_lt with h0 | h0; · linarith
+  rcases (norm_nonneg f₁).eq_or_lt with h1 | h1; · linarith
   refine le_of_forall_pos_lt_add fun ε hε => ?_
   obtain ⟨y₀, hy₀, c₀, hc₀, hlt₀, hval₀⟩ := exists_unit_apply_eq_ofReal f₀ h0 (half_pos hε)
   obtain ⟨y₁, hy₁, c₁, hc₁, hlt₁, hval₁⟩ := exists_unit_apply_eq_ofReal f₁ h1 (half_pos hε)
-  have hy : ‖(y₀, y₁)‖ ≤ 1 := by simp [Prod.norm_def, hy₀, hy₁]
   have hΨy : Ψ (y₀, y₁) = ((c₀ + c₁ : ℝ) : 𝕜) := by
-    have hsplit : ((y₀, y₁) : X₀ × X₁) =
-        ContinuousLinearMap.inl 𝕜 X₀ X₁ y₀ + ContinuousLinearMap.inr 𝕜 X₀ X₁ y₁ := by
-      ext <;> simp
-    have hadd : Ψ (y₀, y₁) = f₀ y₀ + f₁ y₁ := by
-      rw [hsplit, map_add]
-      rfl
-    rw [hadd, hval₀, hval₁, RCLike.ofReal_add]
+    rw [show ((y₀, y₁) : X₀ × X₁) = ContinuousLinearMap.inl 𝕜 X₀ X₁ y₀ +
+      ContinuousLinearMap.inr 𝕜 X₀ X₁ y₁ by ext <;> simp, map_add]
+    exact (congrArg₂ (· + ·) hval₀ hval₁).trans (RCLike.ofReal_add c₀ c₁).symm
   have hnorm : c₀ + c₁ ≤ ‖Ψ‖ := by
-    calc c₀ + c₁ = ‖((c₀ + c₁ : ℝ) : 𝕜)‖ := by
-          rw [RCLike.norm_ofReal, abs_of_nonneg (add_nonneg hc₀ hc₁)]
-      _ = ‖Ψ (y₀, y₁)‖ := by rw [hΨy]
+    calc c₀ + c₁ = ‖Ψ (y₀, y₁)‖ := by
+          rw [hΨy, RCLike.norm_ofReal, abs_of_nonneg (add_nonneg hc₀ hc₁)]
       _ ≤ ‖Ψ‖ * ‖(y₀, y₁)‖ := Ψ.le_opNorm _
-      _ ≤ ‖Ψ‖ * 1 := mul_le_mul_of_nonneg_left hy (norm_nonneg Ψ)
+      _ ≤ ‖Ψ‖ * 1 := mul_le_mul_of_nonneg_left (by simp [Prod.norm_def, hy₀, hy₁]) (norm_nonneg Ψ)
       _ = ‖Ψ‖ := mul_one _
   linarith
 
@@ -583,17 +490,16 @@ theorem isRegular_iff_injective_precomp :
 private theorem norm_dualSum_sumSpaceEmbed_le (hC : C.IsRegular) (u : (C.dual hC).SumSpace) :
     ‖(C.dual hC).sumSpaceEmbed u‖ ≤ ‖u‖ := by
   refine ((C.dual hC).le_norm_sumSpace_iff).2 fun f₀ f₁ h => ?_
-  subst h
-  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]
+  subst h; rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x => ?_
   calc ‖((C.dual hC).embed₀ f₀ + (C.dual hC).embed₁ f₁) x‖
       ≤ ‖f₀ (C.interFst x)‖ + ‖f₁ (C.interSnd x)‖ := norm_add_le _ _
     _ ≤ ‖f₀‖ * ‖C.interFst x‖ + ‖f₁‖ * ‖C.interSnd x‖ :=
         add_le_add (f₀.le_opNorm _) (f₁.le_opNorm _)
-    _ ≤ ‖f₀‖ * ‖x‖ + ‖f₁‖ * ‖x‖ :=
-        add_le_add (mul_le_mul_of_nonneg_left (C.norm_interFst_le x) (norm_nonneg f₀))
+    _ ≤ (‖f₀‖ + ‖f₁‖) * ‖x‖ := by
+        rw [add_mul]
+        exact add_le_add (mul_le_mul_of_nonneg_left (C.norm_interFst_le x) (norm_nonneg f₀))
           (mul_le_mul_of_nonneg_left (C.norm_interSnd_le x) (norm_nonneg f₁))
-    _ = (‖f₀‖ + ‖f₁‖) * ‖x‖ := (add_mul _ _ _).symm
 
 private theorem exists_dualSum_eq_and_norm_le (hC : C.IsRegular) (φ : StrongDual 𝕜 C.inter) :
     ∃ u : (C.dual hC).SumSpace, (C.dual hC).sumSpaceEmbed u = φ ∧ ‖u‖ ≤ ‖φ‖ := by
@@ -601,33 +507,18 @@ private theorem exists_dualSum_eq_and_norm_le (hC : C.IsRegular) (φ : StrongDua
   set f₀ : StrongDual 𝕜 X₀ := Ψ.comp (ContinuousLinearMap.inl 𝕜 X₀ X₁)
   set f₁ : StrongDual 𝕜 X₁ := Ψ.comp (ContinuousLinearMap.inr 𝕜 X₀ X₁)
   refine ⟨(C.dual hC).fstToSum f₀ + (C.dual hC).sndToSum f₁, ?_, ?_⟩
-  · rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]
-    ext x
-    have hsplit : (x : X₀ × X₁) =
-        ContinuousLinearMap.inl 𝕜 X₀ X₁ (C.interFst x) +
-          ContinuousLinearMap.inr 𝕜 X₀ X₁ (C.interSnd x) := by
-      ext <;> simp
-    calc ((C.dual hC).embed₀ f₀ + (C.dual hC).embed₁ f₁) x
-        = f₀ (C.interFst x) + f₁ (C.interSnd x) := rfl
-      _ = Ψ (x : X₀ × X₁) := by rw [hsplit, map_add]; rfl
-      _ = φ x := hΨ x
-  · calc ‖(C.dual hC).fstToSum f₀ + (C.dual hC).sndToSum f₁‖
-        ≤ ‖f₀‖ + ‖f₁‖ := (C.dual hC).norm_fstToSum_add_sndToSum_le f₀ f₁
-      _ ≤ ‖Ψ‖ := norm_comp_inl_add_norm_comp_inr_le Ψ
-      _ = ‖φ‖ := hnorm
+  · rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum]; ext x
+    have hsplit : (x : X₀ × X₁) = ContinuousLinearMap.inl 𝕜 X₀ X₁ (C.interFst x) +
+        ContinuousLinearMap.inr 𝕜 X₀ X₁ (C.interSnd x) := by ext <;> simp
+    exact (by rw [hsplit, map_add]; rfl : f₀ (C.interFst x) + f₁ (C.interSnd x) = Ψ x).trans (hΨ x)
+  · exact ((C.dual hC).norm_fstToSum_add_sndToSum_le f₀ f₁).trans
+      ((norm_comp_inl_add_norm_comp_inr_le Ψ).trans_eq hnorm)
 
 private def dualSumLinearEquiv (hC : C.IsRegular) :
     (C.dual hC).SumSpace ≃ₗ[𝕜] StrongDual 𝕜 C.inter :=
   LinearEquiv.ofBijective ((C.dual hC).sumSpaceEmbed.toLinearMap)
     ⟨(C.dual hC).sumSpaceEmbed_injective,
       fun φ => let ⟨u, hu, _⟩ := exists_dualSum_eq_and_norm_le C hC φ; ⟨u, hu⟩⟩
-
-private theorem norm_dualSumLinearEquiv_symm_le (hC : C.IsRegular) (φ : StrongDual 𝕜 C.inter) :
-    ‖(dualSumLinearEquiv C hC).symm φ‖ ≤ ‖φ‖ := by
-  obtain ⟨u, rfl, hu⟩ := exists_dualSum_eq_and_norm_le C hC φ
-  have hsymm : (dualSumLinearEquiv C hC).symm ((C.dual hC).sumSpaceEmbed u) = u :=
-    (dualSumLinearEquiv C hC).symm_apply_apply u
-  exact (congrArg norm hsymm).le.trans hu
 
 /-- **Duality of the intersection (Bergh–Löfström, Theorem 2.7.1).** For a regular couple `C` over
 `RCLike` scalars, the ambient embedding `(X₀* + X₁*) → (X₀ ∩ X₁)*` is a surjective linear isometry:
@@ -636,7 +527,9 @@ every continuous linear functional on `X₀ ∩ X₁` decomposes as `f₀|_inter
 def dualSumEquivInterDual (hC : C.IsRegular) :
     (C.dual hC).SumSpace ≃ₗᵢ[𝕜] StrongDual 𝕜 C.inter :=
   LinearIsometryEquiv.ofBounds (dualSumLinearEquiv C hC)
-    (norm_dualSum_sumSpaceEmbed_le C hC) (norm_dualSumLinearEquiv_symm_le C hC)
+    (norm_dualSum_sumSpaceEmbed_le C hC) fun φ => by
+      obtain ⟨u, rfl, hu⟩ := exists_dualSum_eq_and_norm_le C hC φ
+      exact (congrArg norm ((dualSumLinearEquiv C hC).symm_apply_apply u)).le.trans hu
 
 @[simp]
 theorem dualSumEquivInterDual_apply (hC : C.IsRegular) (u : (C.dual hC).SumSpace) :
@@ -681,9 +574,8 @@ theorem denseRange_c0LpInftyCouple_interFst :
     DenseRange (c0LpInftyCouple 𝕜 E).interFst :=
   (surjective_c0LpInftyCouple_interFst 𝕜 E).denseRange
 
-/-- When `E` is nontrivial, the intersection of `(c₀(ℕ, E), ℓ^∞(ℕ, E))` is not dense in the second
-endpoint `ℓ^∞(ℕ, E)`: any nonzero constant sequence `e` has distance at least `‖e‖ / 2` from every
-null sequence. -/
+/-- When `E` is nontrivial, the intersection of `(c₀(ℕ, E), ℓ^∞(ℕ, E))` is not dense in `ℓ^∞(ℕ, E)`:
+any nonzero constant sequence `e` has distance at least `‖e‖ / 2` from every null sequence. -/
 theorem not_denseRange_c0LpInftyCouple_interSnd [Nontrivial E] :
     ¬ DenseRange (c0LpInftyCouple 𝕜 E).interSnd := by
   intro hd
@@ -691,23 +583,16 @@ theorem not_denseRange_c0LpInftyCouple_interSnd [Nontrivial E] :
   have he0 : 0 < ‖e‖ := norm_pos_iff.2 he
   let u : lp (fun _ : ℕ ↦ E) ∞ :=
     ⟨fun _ => e, memℓp_infty ⟨‖e‖, by rintro _ ⟨_, rfl⟩; exact le_rfl⟩⟩
-  obtain ⟨y, ⟨x, rfl⟩, hy⟩ := Metric.mem_closure_iff.1 (hd u) (‖e‖ / 2) (half_pos he0)
+  obtain ⟨_, ⟨x, rfl⟩, hy⟩ := Metric.mem_closure_iff.1 (hd u) (‖e‖ / 2) (half_pos he0)
   have hx : ZeroAtInftyContinuousMap.toLpInfty 𝕜 x.1.1 = x.1.2 :=
     (c0LpInftyCouple 𝕜 E).mem_inter_iff.1 x.2
-  have hlim : Tendsto (fun n : ℕ => ‖x.1.1 n‖) atTop (𝓝 0) := by
-    simpa using (zero_at_infty x.1.1).norm
-  obtain ⟨n, hn⟩ := (hlim.eventually (gt_mem_nhds (half_pos he0))).exists
-  have hcoord :
-      ‖(u - (c0LpInftyCouple 𝕜 E).interSnd x) n‖ ≤ ‖u - (c0LpInftyCouple 𝕜 E).interSnd x‖ :=
-    lp.norm_apply_le_norm ENNReal.top_ne_zero _ n
+  obtain ⟨n, hn⟩ := (((by simpa using (zero_at_infty x.1.1).norm :
+    Tendsto (fun n : ℕ => ‖x.1.1 n‖) atTop (𝓝 0))).eventually (gt_mem_nhds (half_pos he0))).exists
+  have hcoord := lp.norm_apply_le_norm ENNReal.top_ne_zero (u - (c0LpInftyCouple 𝕜 E).interSnd x) n
   have hsub : ‖e‖ - ‖x.1.1 n‖ ≤ ‖(u - (c0LpInftyCouple 𝕜 E).interSnd x) n‖ := by
-    have hval : (u - (c0LpInftyCouple 𝕜 E).interSnd x) n = e - x.1.1 n := by
-      rw [lp.coeFn_sub, Pi.sub_apply, interSnd_apply, ← hx,
-        ZeroAtInftyContinuousMap.toLpInfty_apply]
-    rw [hval]
+    rw [lp.coeFn_sub, Pi.sub_apply, interSnd_apply, ← hx, ZeroAtInftyContinuousMap.toLpInfty_apply]
     exact norm_sub_norm_le e (x.1.1 n)
-  rw [dist_eq_norm] at hy
-  linarith
+  rw [dist_eq_norm] at hy; linarith
 
 /-- When `E` is nontrivial, the couple `(c₀(ℕ, E), ℓ^∞(ℕ, E))` is not regular. -/
 theorem not_isRegular_c0LpInftyCouple [Nontrivial E] : ¬ (c0LpInftyCouple 𝕜 E).IsRegular :=
