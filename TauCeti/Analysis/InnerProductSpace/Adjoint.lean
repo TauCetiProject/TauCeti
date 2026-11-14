@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
@@ -21,7 +22,8 @@ orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orth
 An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). Likewise an operator between two Hilbert spaces is
-invertible exactly when its adjoint is (`ContinuousLinearMap.isInvertible_adjoint_iff`).
+invertible (`ContinuousLinearMap.isInvertible_adjoint_iff`) or of finite rank
+(`ContinuousLinearMap.hasFiniteRange_adjoint_iff`) exactly when its adjoint is.
 An operator on a Hilbert space that is bounded below by `M⁻¹` and has injective adjoint is
 invertible with `‖T⁻¹‖ ≤ M`
 (`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`); in particular a real
@@ -414,6 +416,48 @@ theorem IsInvertible.adjoint {A : E →L[𝕜] F} (hA : A.IsInvertible) : (adjoi
 @[simp]
 theorem isInvertible_adjoint_iff {A : E →L[𝕜] F} : (adjoint A).IsInvertible ↔ A.IsInvertible :=
   ⟨fun h ↦ adjoint_adjoint A ▸ h.adjoint, IsInvertible.adjoint⟩
+
+/-- The Hilbert-space adjoint of a finite-rank bounded operator has finite rank. -/
+theorem _root_.LinearMap.HasFiniteRange.adjoint {A : E →L[𝕜] F}
+    (hA : (A : E →ₗ[𝕜] F).HasFiniteRange) :
+    ((ContinuousLinearMap.adjoint A : F →L[𝕜] E) : F →ₗ[𝕜] E).HasFiniteRange := by
+  let W : Submodule 𝕜 F := LinearMap.range (A : E →ₗ[𝕜] F)
+  have : FiniteDimensional 𝕜 W := .of_fg hA
+  have hWA : W.starProjection ∘L A = A :=
+    ext fun x ↦ W.starProjection_eq_self_iff.mpr (LinearMap.mem_range_self _ x)
+  have hWadj : ContinuousLinearMap.adjoint W.starProjection = W.starProjection :=
+    isSelfAdjoint_iff'.mp (isSelfAdjoint_iff_isSymmetric.mpr W.starProjection_isSymmetric)
+  have hadj : ContinuousLinearMap.adjoint A =
+      (ContinuousLinearMap.adjoint A ∘L W.subtypeL) ∘L W.orthogonalProjectionOnto := by
+    calc ContinuousLinearMap.adjoint A
+        = ContinuousLinearMap.adjoint (W.starProjection ∘L A) := by rw [hWA]
+      _ = ContinuousLinearMap.adjoint A ∘L
+            ContinuousLinearMap.adjoint W.starProjection := adjoint_comp _ _
+      _ = ContinuousLinearMap.adjoint A ∘L W.starProjection := by rw [hWadj]
+      _ = (ContinuousLinearMap.adjoint A ∘L W.subtypeL) ∘L W.orthogonalProjectionOnto := rfl
+  rw [hadj]
+  exact LinearMap.HasFiniteRange.of_finite_dom.comp_right _
+
+/-- A bounded operator between Hilbert spaces has finite rank if and only if its adjoint does. -/
+@[simp]
+theorem hasFiniteRange_adjoint_iff {A : E →L[𝕜] F} :
+    ((adjoint A : F →L[𝕜] E) : F →ₗ[𝕜] E).HasFiniteRange ↔ (A : E →ₗ[𝕜] F).HasFiniteRange :=
+  ⟨fun h ↦ adjoint_adjoint A ▸ h.adjoint, LinearMap.HasFiniteRange.adjoint⟩
+
+omit [CompleteSpace F] in
+/-- On a Hilbert space, the star (adjoint) of a finite-rank bounded operator has finite rank. -/
+theorem _root_.LinearMap.HasFiniteRange.star {A : E →L[𝕜] E}
+    (hA : (A : E →ₗ[𝕜] E).HasFiniteRange) :
+    ((star A : E →L[𝕜] E) : E →ₗ[𝕜] E).HasFiniteRange := by
+  rw [star_eq_adjoint]
+  exact hA.adjoint
+
+omit [CompleteSpace F] in
+/-- On a Hilbert space, a bounded operator has finite rank if and only if its star does. -/
+@[simp]
+theorem hasFiniteRange_star_iff {A : E →L[𝕜] E} :
+    ((star A : E →L[𝕜] E) : E →ₗ[𝕜] E).HasFiniteRange ↔ (A : E →ₗ[𝕜] E).HasFiniteRange := by
+  rw [star_eq_adjoint, hasFiniteRange_adjoint_iff]
 
 end ContinuousLinearMap
 

@@ -17,9 +17,14 @@ Composition preserves pointwise convergence when the outer operators are uniform
 in operator norm. Only that family needs a bound, and neither space needs completeness.
 For sequences on a Banach space the bound follows automatically from Banach–Steinhaus.
 
+Operator norm bounds also pass to pointwise limits
+(`ContinuousLinearMap.opNorm_le_of_tendsto_pointwise`), so closed operator-norm balls are closed
+in the strong operator topology
+(`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
+
 On a complete real or complex Hilbert space, orthogonal projections form a strongly closed
 set. Their uniform norm bound lets idempotence pass to the strong limit; self-adjointness
-passes through inner products. The closedness statement uses Mathlib's
+passes through inner products. The closedness statements use Mathlib's
 `PointwiseConvergenceCLM` copy, leaving the norm topology on continuous linear maps unchanged.
 
 ## References
@@ -37,6 +42,20 @@ variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **Norm lower semicontinuity of strong limits.** If a net of continuous linear maps is
+eventually bounded in operator norm by `C` along a nontrivial filter and converges pointwise to
+`T₀`, then `‖T₀‖ ≤ C`. Neither space needs completeness. -/
+theorem opNorm_le_of_tendsto_pointwise {l : Filter ι} [l.NeBot]
+    {T : ι → E →L[𝕜] F} {T₀ : E →L[𝕜] F} {C : ℝ}
+    (hC : ∀ᶠ i in l, ‖T i‖ ≤ C)
+    (hT : ∀ x, Tendsto (fun i => T i x) l (𝓝 (T₀ x))) :
+    ‖T₀‖ ≤ C := by
+  have hC0 : 0 ≤ C := by
+    obtain ⟨i, hi⟩ := hC.exists
+    exact (norm_nonneg _).trans hi
+  exact T₀.opNorm_le_bound hC0 fun x =>
+    le_of_tendsto (hT x).norm (hC.mono fun i hi => (T i).le_of_opNorm_le hi x)
 
 /-- A strongly convergent sequence of operators on a Banach space is uniformly norm bounded. -/
 theorem exists_norm_le_of_tendsto_pointwise [CompleteSpace E]
@@ -120,6 +139,35 @@ theorem of_tendsto_pointwise {l : Filter ι} [l.NeBot]
 end IsStarProjection
 
 namespace PointwiseConvergenceCLM
+
+section ClosedBall
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ] [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Every closed operator-norm ball is closed in the topology of pointwise convergence (the strong
+operator topology). Neither space needs completeness. -/
+theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] F) (r : ℝ) :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F ''
+      Metric.closedBall f₀ r) := by
+  rcases lt_or_ge r 0 with hr | hr
+  · simp [Metric.closedBall_eq_empty.2 hr]
+  · have heq : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F '' Metric.closedBall f₀ r =
+        ⋂ x : E, {g : E →SLₚₜ[σ] F | ‖g x - f₀ x‖ ≤ r * ‖x‖} := by
+      ext g
+      let g' : E →SL[σ] F := g
+      have hg' : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F g' = g := rfl
+      simp only [Set.mem_image, Metric.mem_closedBall, dist_eq_norm, Set.mem_iInter,
+        Set.mem_ofPred_eq]
+      refine ⟨fun ⟨f, hf, hfg⟩ x => hfg ▸ (f - f₀).le_of_opNorm_le hf x, fun h => ?_⟩
+      exact ⟨g', (g' - f₀).opNorm_le_bound hr h, hg'⟩
+    rw [heq]
+    refine isClosed_iInter fun x => isClosed_le ?_ continuous_const
+    exact (((continuous_apply x).comp
+      (PointwiseConvergenceCLM.isEmbedding_coeFn σ E F).continuous).sub continuous_const).norm
+
+end ClosedBall
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
   [InnerProductSpace 𝕜 H] [CompleteSpace H]
