@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.Algebra.Ring.NonZeroDivisors
 
@@ -24,9 +25,10 @@ scaling two forms by the same non-zero-divisor preserves whether they are isomet
 map the kernel of one form onto the kernel of the other
 (`LinearMap.BilinForm.IsometryEquiv.map_ker`).
 Isometric bilinear forms have isometric associated quadratic maps
-(`LinearMap.BilinForm.Equivalent.toQuadraticMap`). The isometry group and the determinant,
-base-change, and orthogonal-complement API are developed in
-`TauCeti.LinearAlgebra.BilinearForm.Isometry`.
+(`LinearMap.BilinForm.Equivalent.toQuadraticMap`); for symmetric forms the converse holds when `2`
+is a non-zero-divisor (`LinearMap.BilinForm.IsSymm.equivalent_iff_toQuadraticMap_equivalent`).
+The isometry group and the determinant, base-change, and orthogonal-complement API are developed
+in `TauCeti.LinearAlgebra.BilinearForm.Isometry`.
 -/
 
 public section
@@ -151,5 +153,27 @@ theorem Equivalent.toQuadraticMap {R M₁ M₂ : Type*} [CommSemiring R] [AddCom
     [AddCommMonoid M₂] [Module R M₁] [Module R M₂] {B₁ : BilinForm R M₁} {B₂ : BilinForm R M₂}
     (h : B₁.Equivalent B₂) : B₁.toQuadraticMap.Equivalent B₂.toQuadraticMap :=
   h.map fun f ↦ { f.toLinearEquiv with map_app' := fun x ↦ by simp }
+
+/-- When `2` is a non-zero-divisor, symmetric bilinear forms are equivalent exactly when their
+associated quadratic maps are equivalent. The underlying modules need not be finite or free. Some
+hypothesis on `2` is needed: over `ZMod 2`, the identity matrix and the all-ones matrix on
+`Fin 2 → ZMod 2` define symmetric forms with the same quadratic map `x 0 + x 1`, and only the
+first is nondegenerate. -/
+theorem IsSymm.equivalent_iff_toQuadraticMap_equivalent
+    {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+    {B : BilinForm R M} {C : BilinForm R N} (hB : B.IsSymm) (hC : C.IsSymm)
+    (h2 : (2 : R) ∈ nonZeroDivisors R) :
+    B.Equivalent C ↔ B.toQuadraticMap.Equivalent C.toQuadraticMap := by
+  refine ⟨Equivalent.toQuadraticMap, ?_⟩
+  rintro ⟨f⟩
+  -- Polarization recovers `2 • B` from the quadratic map, and `2` can be cancelled.
+  refine ⟨{ toLinearEquiv := f.toLinearEquiv
+            map_app' := fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors h2).mp ?_ }⟩
+  have h : QuadraticMap.polar C.toQuadraticMap (f x) (f y) =
+      QuadraticMap.polar B.toQuadraticMap x y := by
+    simp only [QuadraticMap.polar, ← map_add, f.map_app]
+  rw [BilinMap.polar_toQuadraticMap, BilinMap.polar_toQuadraticMap, hB.eq y x, hC.eq (f y) (f x),
+    ← two_mul, ← two_mul] at h
+  exact h
 
 end LinearMap.BilinForm

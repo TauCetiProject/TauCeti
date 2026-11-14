@@ -10,10 +10,10 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.Algebra.Group.Even
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Even.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.LocalRing.Basic
 
