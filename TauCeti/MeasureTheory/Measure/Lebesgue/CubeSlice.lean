@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.Lebesgue.GaussianBall
 -- Proof-only: negation-invariant restrictions and densities, the product comparison on symmetric
 -- convex sets, Tonelli along an orthogonal decomposition, products of densities, the volume of
 -- `PiLp 2` as a product and the area of a disc.
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Integral.SymmetricConvexComparison
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
