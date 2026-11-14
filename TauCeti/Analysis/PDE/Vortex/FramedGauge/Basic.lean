@@ -427,10 +427,10 @@ theorem contDiffAt_gaugeForm {u : ℂ → Circle} {z : ℂ} {n : WithTop ℕ∞}
       (conjCLE.contDiff.contDiffAt.comp z (hu.of_le le_self_add)) |>.clm_comp
       (hu.fderiv_right le_rfl))
 
-/-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
-theorem contDiff_gaugeForm {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ))) : ContDiff ℝ ∞ (gaugeForm u) :=
-  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_gaugeForm (hu.of_le (by simp)).contDiffAt
+/-- The logarithmic derivative of a `C^(n+1)` gauge is a `C^n` one-form. -/
+theorem contDiff_gaugeForm {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ))) : ContDiff ℝ n (gaugeForm u) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_gaugeForm hu.contDiffAt
 
 /-- **A gauge is one order smoother than its logarithmic derivative.** If `u` is differentiable
 and `Im (u⁻¹ du)` is `C^n`, `n ≤ ∞`, then `u` is `C^(n+1)`, because `du = i u Im (u⁻¹ du)`. -/
@@ -480,13 +480,13 @@ theorem contDiffAt_gaugeTransform {u : ℂ → Circle} {x : ℂ → EuclideanSpa
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
 
-/-- Smooth gauges preserve smooth fields. -/
-theorem contDiff_gaugeTransform {u : ℂ → Circle}
-    (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ)))
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
-    ContDiff ℝ ∞ (gaugeTransform u x) :=
-  contDiff_iff_contDiffAt.2 fun _ ↦
-    contDiffAt_gaugeTransform (hu.of_le (by simp)).contDiffAt hx.contDiffAt
+/-- A `C^(n+1)` gauge preserves `C^n` fields: the connection loses one derivative of the gauge
+through `u⁻¹ du`, the section none. -/
+theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ (n + 1) (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (gaugeTransform u x) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_gaugeTransform hu.contDiffAt hx.contDiffAt
 
 /-- The logarithmic derivative of a `C²` circle-valued gauge is closed. -/
 theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}

@@ -281,7 +281,8 @@ theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace {x : ℂ → Euclidean
   refine ⟨u, fun s ↦ ?_⟩
   obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 u.property
   rw [framedGaugeGroup_smul] at hu ⊢
-  have hux : ContDiff ℝ ∞ (gaugeTransform u.val x) := contDiff_gaugeTransform huc hx
+  have hux : ContDiff ℝ ∞ (gaugeTransform u.val x) :=
+    contDiff_gaugeTransform (by simpa using huc) hx
   have hsol' (z : ℂ) : equation (gaugeTransform u.val x) z = 0 :=
     (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
       fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
