@@ -31,7 +31,7 @@ so that a degree, a sum of local indices over a fibre, is defined for it.
 
 ## Main results
 
-* `ContinuousOn.exists_isProperMap_eqOn_closedBall`: the proper radial extension.
+* `ContinuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub`: the proper radial extension.
 -/
 
 public section
@@ -45,8 +45,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E
 `x₀` and stays at distance at least `δ > 0` from `y₀` on its boundary sphere, then `f` agrees on
 the closed ball with a proper continuous map `g` which stays at distance at least `δ` from `y₀`
 outside the open ball. -/
-theorem ContinuousOn.exists_isProperMap_eqOn_closedBall {f : E → F} {x₀ : E} {y₀ : F} {r δ : ℝ}
-    (hf : ContinuousOn f (closedBall x₀ r)) (hr : 0 < r) (hδ : 0 < δ)
+theorem ContinuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub {f : E → F} {x₀ : E}
+    {y₀ : F} {r δ : ℝ} (hf : ContinuousOn f (closedBall x₀ r)) (hr : 0 < r) (hδ : 0 < δ)
     (hfδ : ∀ x ∈ sphere x₀ r, δ ≤ ‖f x - y₀‖) :
     ∃ g : C(E, F), IsProperMap g ∧ EqOn g f (closedBall x₀ r) ∧
       ∀ x, r ≤ dist x x₀ → δ ≤ ‖g x - y₀‖ := by
