@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
@@ -12,6 +13,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Topology.Bases
 import TauCeti.Analysis.InnerProductSpace.ExtremalRpow
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
@@ -19,6 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Norming `Lᵖ` functions by test functions
@@ -44,7 +47,10 @@ For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`,
 a version for `q < ∞` that does not assume `h ∈ L^q` in advance: the test functions are bounded
 and vanish off a set of finite measure, and the extremal function `|h| ^ (q - 2) h` is truncated
 where `h` is large and outside a spanning set of a σ-finite measure. This is the form needed to
-prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality.
+prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality. For `h ∈ L²` and
+every `1 ≤ q ≤ ∞`, the `L^q` norm of `h` is then the supremum of the real parts of the `L²`
+pairings `⟪h, g⟫` over the `g ∈ L²` in the unit ball of `L^{q'}`, the form used to norm mixed
+norms `L^p_t L^q_x`.
 
 The integral Hölder bounds apply to arbitrary functions, using the convention that `eLpNorm`
 is `∞` outside the almost everywhere strongly measurable functions.
@@ -67,6 +73,11 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
   finite-measure support, without assuming `h ∈ L^q`.
+* `MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`: for `1 ≤ q ≤ ∞` on a σ-finite
+  measure space, the `L^q` norm of `h ∈ L²`, finite or not, is the supremum of `re ⟪h, g⟫` over the
+  `g ∈ L²` in the unit ball of `L^{q'}`.
+* `TopologicalSpace.IsSeparable.exists_seq_eLpNorm_eq_iSup_ofReal_re_inner`: a countable family
+  of such `g` norms every element of a separable subset of `L²` in `L^q`.
 
 ## References
 
@@ -361,7 +372,192 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     hh'.aestronglyMeasurable
     (ae_of_all _ fun x => tendsto_indicator_spanningSets_inter_norm_le h' x)
 
+/-- Under a bound `re ⟪h, g⟫ ≤ c` on the pairings of `h ∈ L²` with the functions `g ∈ L²` of
+`L^{q'}` norm at most one, every `g ∈ L²` of finite `L^{q'}` norm satisfies
+`‖⟪h, g⟫‖ ≤ c ‖g‖_{q'}`: rescale `g` to norm one and rotate the pairing onto the real axis. -/
+private theorem Lp.enorm_inner_le_of_forall_re_inner_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {q' : ℝ≥0∞} (hq' : q' ≠ 0) {h : Lp E 2 μ} {c : ℝ} (hc : 0 ≤ c)
+    (H : ∀ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c) (g : Lp E 2 μ)
+    (hg : eLpNorm g q' μ ≠ ∞) :
+    ‖⟪h, g⟫_𝕜‖ₑ ≤ ENNReal.ofReal c * eLpNorm g q' μ := by
+  set a := eLpNorm g q' μ
+  rcases eq_or_ne a 0 with ha0 | ha0
+  · have hg0 : g = 0 := Lp.ext ((eLpNorm_eq_zero_iff hq').1 ha0
+      |>.trans (Lp.coeFn_zero E 2 μ).symm)
+    simp [hg0]
+  set z := ⟪h, g⟫_𝕜
+  rcases eq_or_ne z 0 with hz0 | hz0
+  · simp [hz0]
+  have hapos : 0 < a.toReal := ENNReal.toReal_pos ha0 hg
+  have : 0 < ‖z‖ := norm_pos_iff.2 hz0
+  -- The rescaled and rotated test function `k • g` has norm one and pairing `‖z‖ / ‖g‖_{q'}`.
+  set k : 𝕜 := ((a.toReal⁻¹ * ‖z‖⁻¹ : ℝ) : 𝕜) * (starRingEnd 𝕜) z
+  have hk : ‖k‖ = a.toReal⁻¹ := by
+    rw [norm_mul, RCLike.norm_ofReal, RCLike.norm_conj, abs_of_pos (by positivity)]
+    field_simp
+  have hkg : eLpNorm (k • g) q' μ ≤ 1 := by
+    have ha : ENNReal.ofReal a.toReal = a := ENNReal.ofReal_toReal hg
+    rw [eLpNorm_congr_ae (Lp.coeFn_smul k g), eLpNorm_const_smul, ← ofReal_norm, hk]
+    calc ENNReal.ofReal a.toReal⁻¹ * a = ENNReal.ofReal a.toReal⁻¹ * ENNReal.ofReal a.toReal := by
+          rw [ha]
+      _ = 1 := by
+          rw [← ENNReal.ofReal_mul (by positivity), inv_mul_cancel₀ hapos.ne', ENNReal.ofReal_one]
+      _ ≤ 1 := le_rfl
+  have hre : RCLike.re ⟪h, k • g⟫_𝕜 = ‖z‖ / a.toReal := by
+    rw [inner_smul_right, mul_assoc, RCLike.conj_mul, RCLike.re_ofReal_mul]
+    norm_cast
+    field_simp
+  have hle : ‖z‖ ≤ c * a.toReal := by
+    have := H _ hkg
+    rw [hre, div_le_iff₀ hapos] at this
+    exact this
+  calc ‖z‖ₑ = ENNReal.ofReal ‖z‖ := (ofReal_norm z).symm
+    _ ≤ ENNReal.ofReal (c * a.toReal) := ENNReal.ofReal_le_ofReal hle
+    _ = ENNReal.ofReal c * a := by rw [ENNReal.ofReal_mul hc, ENNReal.ofReal_toReal hg]
+
+/-- Under the bound of `Lp.enorm_inner_le_of_forall_re_inner_le`, every bounded `g` vanishing off
+a set of finite measure satisfies `‖∫ ⟪h, g⟫‖ ≤ c ‖g‖_{q'}`: such a `g` is square integrable, and
+the integral is its pairing with `h` in `L²`. -/
+private theorem Lp.enorm_integral_inner_le_of_forall_re_inner_le {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {q' : ℝ≥0∞} (hq' : q' ≠ 0) {h : Lp E 2 μ}
+    {c : ℝ} (hc : 0 ≤ c) (H : ∀ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c)
+    {g : α → E} {s : Set α} (hs : μ s ≠ ∞) (hgs : ∀ x, x ∉ s → g x = 0) (hg : MemLp g ∞ μ) :
+    ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ ≤ ENNReal.ofReal c * eLpNorm g q' μ := by
+  have hg2 : MemLp g 2 μ := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
+  have hnorm : eLpNorm (hg2.toLp g) q' μ = eLpNorm g q' μ := eLpNorm_congr_ae hg2.coeFn_toLp
+  rw [← L2.inner_toLp h hg2, ← hnorm]
+  exact Lp.enorm_inner_le_of_forall_re_inner_le hq' hc H _
+    (hnorm ▸ (hg.mono_exponent_of_measure_support_ne_top hgs hs le_top).eLpNorm_ne_top)
+
+/-- The case `q = ∞` of `Lp.exists_eLpNorm_le_one_and_lt_re_inner`: if `re ⟪h, g⟫ ≤ c` for every
+`g ∈ L²` in the unit ball of `L¹`, then `‖h‖_∞ ≤ c`. Test `‖h‖` against simple functions `g ∈ L¹`
+through `g • (h / ‖h‖)`. -/
+private theorem Lp.eLpNorm_top_le_of_forall_re_inner_le [SigmaFinite μ] {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {h : Lp E 2 μ} {c : ℝ} (hc : 0 ≤ c)
+    (H : ∀ g : Lp E 2 μ, eLpNorm g 1 μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c) :
+    eLpNorm h ∞ μ ≤ ENNReal.ofReal c := by
+  have hn : AEStronglyMeasurable (fun x ↦ ((‖h x‖ : ℝ) : 𝕜)) μ :=
+    (RCLike.continuous_ofReal.comp continuous_norm).comp_aestronglyMeasurable
+      (Lp.aestronglyMeasurable h)
+  rw [← eLpNorm_congr_norm_ae hn (Lp.aestronglyMeasurable h)
+    (ae_of_all _ fun x ↦ by simp)]
+  refine hn.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun g hg ↦ ?_
+  set g₁ : α → E := fun x ↦ g x • ((‖h x‖⁻¹ : ℝ) : 𝕜) • h x
+  -- `‖h x‖⁻¹ • h x` is the extremal vector `‖h x‖ ^ (r - 2) • h x` of the case `r = 1`.
+  have hext : ∀ x, ((‖h x‖⁻¹ : ℝ) : 𝕜) • h x = ((‖h x‖ ^ ((1 : ℝ) - 2) : ℝ) : 𝕜) • h x :=
+    fun x ↦ by norm_num [Real.rpow_neg_one]
+  have hg₁ : ∀ x, ‖g₁ x‖ ≤ ‖g x‖ := fun x ↦ by
+    dsimp only [g₁]
+    rw [norm_smul, hext]
+    refine mul_le_of_le_one_right (norm_nonneg _)
+      ((norm_ofReal_rpow_sub_two_smul_le (𝕜 := 𝕜) 1 (h x)).trans ?_)
+    norm_num
+  have hinv : AEStronglyMeasurable (fun x ↦ ((‖h x‖⁻¹ : ℝ) : 𝕜)) μ :=
+    (RCLike.continuous_ofReal.measurable.comp_aemeasurable
+      (Lp.aestronglyMeasurable h).norm.aemeasurable.inv).aestronglyMeasurable
+  have hg₁m : AEStronglyMeasurable g₁ μ :=
+    g.aestronglyMeasurable.smul (hinv.smul (Lp.aestronglyMeasurable h))
+  have hint : ∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ = ∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ := by
+    congr 1 with x
+    dsimp only [g₁]
+    rw [hext, inner_smul_right, inner_ofReal_rpow_sub_two_smul one_ne_zero, Real.rpow_one,
+      mul_comm]
+  calc ‖∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ‖ₑ = ‖∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ‖ₑ := by rw [hint]
+    _ ≤ ENNReal.ofReal c * eLpNorm g₁ 1 μ :=
+        Lp.enorm_integral_inner_le_of_forall_re_inner_le one_ne_zero hc H
+          (g.measure_support_lt_top_of_memLp hg one_ne_zero ENNReal.one_ne_top).ne
+          (fun x hx ↦ by simp [g₁, Function.notMem_support.1 hx])
+          ((g.memLp_top μ).of_le hg₁m (ae_of_all _ hg₁))
+    _ ≤ ENNReal.ofReal c * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
+
+/-- **Norming `Lᵠ` norms by square-integrable functions.** On a σ-finite measure space, let `q`
+and `q'` be Hölder conjugate, `1 ≤ q ≤ ∞`. For every `h ∈ L²`, the `L^q` norm of `h`, finite or
+not, is the supremum of `re ⟪h, g⟫` over the functions `g ∈ L²` in the unit ball of `L^{q'}`:
+below every `c` with `c < ‖h‖_q` there is such a `g` with `c < re ⟪h, g⟫`. The converse bound
+`re ⟪h, g⟫ ≤ ‖h‖_q ‖g‖_{q'}` is Hölder's inequality (`TauCeti.enorm_integral_inner_le`). -/
+theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner [SigmaFinite μ] {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
+    (h : Lp E 2 μ) {c : ℝ} (hc : ENNReal.ofReal c < eLpNorm h q μ) :
+    ∃ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 ∧ c < RCLike.re ⟪h, g⟫_𝕜 := by
+  rcases lt_or_ge c 0 with hc0 | hc0
+  · exact ⟨0, Lp.eLpNorm_coeFn_zero.trans_le zero_le_one, by simpa using hc0⟩
+  by_contra! H
+  refine hc.not_ge ?_
+  rcases eq_or_ne q ∞ with rfl | hq
+  · obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
+    exact Lp.eLpNorm_top_le_of_forall_re_inner_le hc0 H
+  · exact (Lp.aestronglyMeasurable h).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜)
+      (q' := q') hq fun g s hs hgs hg ↦
+        Lp.enorm_integral_inner_le_of_forall_re_inner_le hqq.symm.ne_zero hc0 H hs hgs hg
+
 end MeasureTheory
+
+namespace TopologicalSpace.IsSeparable
+
+variable {X 𝕜 E : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- **Countable norming families.** On a σ-finite measure space, let `q` and `q'` be Hölder
+conjugate. For every separable set `S` of square-integrable functions there is a sequence `gₙ` of
+square-integrable functions in the unit ball of `L^{q'}` which norms every element of `S` in
+`L^q`:
+
+`‖h‖_q = supₙ re ⟪h, gₙ⟫` for every `h ∈ S`,
+
+whether `‖h‖_q` is finite or not. -/
+theorem exists_seq_eLpNorm_eq_iSup_ofReal_re_inner [SigmaFinite μ] {q q' : ℝ≥0∞}
+    [hqq : q.HolderConjugate q'] {S : Set (Lp E 2 μ)} (hS : IsSeparable S) :
+    ∃ g : ℕ → Lp E 2 μ, (∀ n, eLpNorm (g n) q' μ ≤ 1) ∧
+      ∀ h ∈ S, eLpNorm h q μ = ⨆ n, ENNReal.ofReal (RCLike.re ⟪h, g n⟫_𝕜) := by
+  have := hS.separableSpace
+  set Γ := {g : Lp E 2 μ // eLpNorm g q' μ ≤ 1}
+  -- For each rational level `c`, countably many test functions cover `{h ∈ S | c < ‖h‖_q}`.
+  have hcount : ∀ c : ℚ, ∃ D : Set Γ, D.Countable ∧
+      ⋃ g ∈ D, {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (g : Lp E 2 μ)⟫_𝕜} =
+        ⋃ g : Γ, {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (g : Lp E 2 μ)⟫_𝕜} := by
+    intro c
+    refine isOpen_iUnion_countable _ fun g ↦ isOpen_lt continuous_const ?_
+    exact RCLike.continuous_re.comp ((continuous_subtype_val).inner continuous_const)
+  choose D hDc hD using hcount
+  set D' : Set (Lp E 2 μ) := insert 0 (⋃ c : ℚ, Subtype.val '' D c)
+  have hD'c : D'.Countable :=
+    (Set.countable_iUnion fun c ↦ (hDc c).image _).insert 0
+  obtain ⟨g, hg⟩ := hD'c.exists_eq_range (Set.insert_nonempty _ _)
+  have hgΓ : ∀ n, eLpNorm (g n) q' μ ≤ 1 := by
+    intro n
+    have hn : g n ∈ D' := hg ▸ Set.mem_range_self n
+    rcases hn with hn | hn
+    · exact hn ▸ Lp.eLpNorm_coeFn_zero.trans_le zero_le_one
+    · obtain ⟨c, hc⟩ := Set.mem_iUnion.1 hn
+      obtain ⟨γ, -, hγ⟩ := hc
+      exact hγ ▸ γ.2
+  refine ⟨g, hgΓ, fun h hh ↦ le_antisymm ?_ (iSup_le fun n ↦ ?_)⟩
+  · -- Below `‖h‖_q`, a rational level is exceeded by the pairing with some `gₙ`.
+    refine le_of_forall_lt fun b hb ↦ ?_
+    obtain ⟨c, hc0, hbc, hch⟩ := ENNReal.lt_iff_exists_rat_btwn.1 hb
+    obtain ⟨γ, hγ, hcγ⟩ := Lp.exists_eLpNorm_le_one_and_lt_re_inner (𝕜 := 𝕜) (q' := q') h
+      (c := c) hch
+    have hmem : (⟨h, hh⟩ : S) ∈ ⋃ γ : Γ,
+        {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (γ : Lp E 2 μ)⟫_𝕜} :=
+      Set.mem_iUnion.2 ⟨⟨γ, hγ⟩, hcγ⟩
+    rw [← hD c] at hmem
+    obtain ⟨γ', hγ'D, hγ'⟩ := Set.mem_iUnion₂.1 hmem
+    have hγ'mem : (γ' : Lp E 2 μ) ∈ Set.range g :=
+      hg ▸ Set.mem_insert_of_mem _ (Set.mem_iUnion.2 ⟨c, γ', hγ'D, rfl⟩)
+    obtain ⟨n, hn⟩ := hγ'mem
+    refine lt_iSup_iff.2 ⟨n, hbc.trans ?_⟩
+    rw [hn]
+    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by exact_mod_cast hc0)).2 hγ'
+  · -- Hölder's inequality bounds each pairing.
+    calc ENNReal.ofReal (RCLike.re ⟪h, g n⟫_𝕜) ≤ ‖⟪h, g n⟫_𝕜‖ₑ := by
+          rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (RCLike.re_le_norm _)
+      _ ≤ eLpNorm h q μ * eLpNorm (g n) q' μ := by
+          rw [L2.inner_def]
+          exact TauCeti.enorm_integral_inner_le
+      _ ≤ eLpNorm h q μ := mul_le_of_le_one_right' (hgΓ n)
+
+end TopologicalSpace.IsSeparable
 
 namespace MeasureTheory.Lp
 
