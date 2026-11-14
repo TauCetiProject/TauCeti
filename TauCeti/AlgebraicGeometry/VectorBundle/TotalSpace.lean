@@ -269,7 +269,7 @@ lemma totalSpaceSchemeBaseChangeIso_inv_app (E : FiniteLocallyFreeSheaf X) :
           ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).hom.app (dual E))).op ≫
           (relativeSpec Y).map
             ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).inv)).op :=
-  (rfl)
+  Category.assoc _ _ _
 
 variable (E : FiniteLocallyFreeSheaf X)
 
