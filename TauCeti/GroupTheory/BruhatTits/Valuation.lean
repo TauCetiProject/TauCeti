@@ -56,6 +56,8 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 * `TauCeti.BruhatTits.Valuation.apply_reflectionPerm_right_eq_neg_of_mul_mul_mem_reflectionCoset`:
   the value form of (V5) for the right factor.
 * `TauCeti.BruhatTits.Valuation.valueSet_neg`: `Γ (-a) = -Γ a`.
+* `TauCeti.BruhatTits.Valuation.shift_eq_shift_iff`: `φ + v = φ + w` if and only if every root
+  takes the same value on `v` and `w`.
 * `TauCeti.BruhatTits.Valuation.equivalence_equipollent`: equipollence is an equivalence relation.
 * `TauCeti.BruhatTits.Valuation.isCompatible_iff_filtration`: `φ` is compatible with `ν` if and
   only if each `z ∈ T` conjugates `U (a, k)` onto `U (a, k - a (ν z))`.
@@ -399,6 +401,16 @@ theorem shift_zero : φ.shift 0 = φ := by
 theorem shift_shift (v w : N) : (φ.shift v).shift w = φ.shift (v + w) := by
   ext
   simp [add_assoc]
+
+/-- Two shifts of a valuation agree if and only if every root takes the same value on the two
+vectors: a vector annihilated by every root shifts no value. -/
+theorem shift_eq_shift_iff {v w : N} : φ.shift v = φ.shift w ↔ ∀ i, P.root' i v = P.root' i w := by
+  refine ⟨fun h i ↦ ?_, fun h ↦ ext fun i u ↦ by simp [h i]⟩
+  obtain ⟨k, u, hu⟩ := (φ.valueSet_nontrivial i).nonempty
+  have := congrArg (fun ψ : Valuation D ↦ ψ i u) h
+  simp only [shift_apply, hu] at this
+  norm_cast at this
+  linarith
 
 /-- Shifting by `v` moves the filtration: `U (φ + v) (a, k) = U φ (a, k - a v)`. -/
 @[simp]
