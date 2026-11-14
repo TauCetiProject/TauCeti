@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -34,6 +35,8 @@ along such maps.
   pointwise inner products.
 * `TauCeti.IsLocalRiemannianIsometry.exists_contMDiff_mpullback_apply_eq`: every tangent vector is
   the value of the pullback of a smooth vector field.
+* `TauCeti.IsLocalRiemannianIsometry.isLocalDiffeomorph`: out of a boundaryless manifold, a local
+  Riemannian isometry is a local diffeomorphism, by the inverse function theorem.
 * `TauCeti.IsLocalRiemannianIsometry.id` and `TauCeti.IsLocalRiemannianIsometry.comp`: the identity
   and composites.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
@@ -162,6 +165,19 @@ theorem exists_contMDiff_mpullback_apply_eq (hf : IsLocalRiemannianIsometry I J 
   exact ⟨X, hX, (hf.mpullback_apply_eq_iff X u).2 hXu, hXu⟩
 
 end Extension
+
+section LocalDiffeomorph
+
+variable [CompleteSpace E] [BoundarylessManifold I M]
+
+/-- A local Riemannian isometry out of a boundaryless manifold is a `C^n` local diffeomorphism for
+every `1 ≤ n ≤ ∞`, by the inverse function theorem. -/
+theorem isLocalDiffeomorph (hf : IsLocalRiemannianIsometry I J f) {n : ℕ∞ω}
+    [IsManifold I n M] [IsManifold J n N] (hn : 1 ≤ n) (hn' : n ≤ ∞) :
+    IsLocalDiffeomorph I J n f :=
+  isLocalDiffeomorph_of_mfderiv_eq (hf.contMDiff.of_le hn') hn hf.isInvertible_mfderiv
+
+end LocalDiffeomorph
 
 variable (I M) in
 /-- The identity map is a local Riemannian isometry. -/
