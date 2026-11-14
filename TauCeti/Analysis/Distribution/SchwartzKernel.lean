@@ -374,31 +374,20 @@ theorem existsUnique_schwartzKernel_distribution (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 
   let K : 𝓓'(V, ℂ) := T.restrictScalars ℝ ∘L postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
   have hK : K.complexPairing = T := by
     ext Φ
-    have hΦ : postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (postcompCLM (𝕜 := ℝ) Complex.reCLM Φ) +
-        Complex.I • postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
-          (postcompCLM (𝕜 := ℝ) Complex.imCLM Φ) = Φ := by
-      ext p
-      simp [mul_comm Complex.I, Complex.re_add_im]
     have hKapp (φ : 𝓓(V, ℝ)) : K φ = T (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ) := rfl
     rw [Distribution.complexPairing_apply, hKapp, hKapp, ← smul_eq_mul, ← map_smul, ← map_add,
-      hΦ]
+      postcompCLM_re_add_I_smul_im Φ]
   refine ⟨K, fun φ ψ ↦ by rw [hK, hT], fun K' hK' ↦ ?_⟩
   have h := hTuniq K'.complexPairing hK'
   ext φ
   rw [← Distribution.complexPairing_postcompCLM_ofRealCLM, h, ← hK,
     Distribution.complexPairing_postcompCLM_ofRealCLM]
 
-
 /-- **The Schwartz kernel theorem on open sets, for real test functions.** Let `B` be a real
 bilinear map on the real test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`, with values in a real
 Banach space `G`, such that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C` and `k` give
 `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for `φ` supported in `K₁` and `ψ` supported in `K₂`. Then there is a
-unique `G`-valued distribution `T` on `V = Ω × O` with `T (φ ⊗ ψ) = B φ ψ` for all `φ` and `ψ`.
-
-The kernel is the real part of the kernel of the complex-bilinear extension
-`LinearMap.complexifyTestFunction` of `B` with values in the complexification of `G`, given by
-`LinearMap.existsUnique_schwartzKernel_testFunction`, on real test functions. Uniqueness is the
-density of tensor products (`TestFunction.ext_prodSMulCLM`). -/
+unique `G`-valued distribution `T` on `V = Ω × O` with `T (φ ⊗ ψ) = B φ ψ` for all `φ` and `ψ`. -/
 theorem existsUnique_schwartzKernel_prodSMulCLM {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [CompleteSpace G] (B : 𝓓(Ω, ℝ) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] G)
     (hB : ∀ (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ)) (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω)
@@ -437,6 +426,7 @@ theorem existsUnique_schwartzKernel_prodSMulCLM {G : Type*} [NormedAddCommGroup 
       rfl
     rw [hSapp, h, hT]
     simp [BC]
+  -- Uniqueness is the density of tensor products.
   exact ⟨S, hS, fun S' hS' ↦ ext_prodSMulCLM hV fun ψ φ ↦ by rw [hS', hS]⟩
 
 end LinearMap
