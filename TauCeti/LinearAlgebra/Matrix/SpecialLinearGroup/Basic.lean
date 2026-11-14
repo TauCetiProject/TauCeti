@@ -582,55 +582,16 @@ theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
     Function.Surjective
       ((map (Int.castRingHom (ZMod d))).prod (map (Int.castRingHom (ZMod d'))) :
         SL(2, ℤ) →* SL(2, ZMod d) × SL(2, ZMod d')) := by
-  -- `map_intCast_zmod_surjective` is the one-modulus statement, applied here at `d * d'`: the
-  -- Chinese remainder theorem glues the pair of targets into one matrix over `ZMod (d * d')`,
-  -- whose determinant is `1` because it is `1` in each factor separately.
-  rintro ⟨A, B⟩
-  set e := ZMod.chineseRemainder hcop with hE
-  -- The two targets, glued entrywise into a single matrix over `ZMod (d * d')`.
-  set C : Matrix (Fin 2) (Fin 2) (ZMod (d * d')) :=
-    .of fun i j => e.symm (A i j, B i j) with hC
-  -- `e` carries `C.det` to the determinant of the glued matrix, and each coordinate ring hom
-  -- carries that to the determinant of the corresponding target, which is `1`.
-  have hfst : (RingHom.fst (ZMod d) (ZMod d')).mapMatrix (e.mapMatrix C) =
-      (A : Matrix (Fin 2) (Fin 2) (ZMod d)) := by ext i j; simp [hC]
-  have hsnd : (RingHom.snd (ZMod d) (ZMod d')).mapMatrix (e.mapMatrix C) =
-      (B : Matrix (Fin 2) (Fin 2) (ZMod d')) := by ext i j; simp [hC]
-  have hdet : C.det = 1 := by
-    refine e.injective ?_
-    rw [map_one, e.map_det]
-    -- each coordinate projection is a ring hom (`RingHom.coe_fst`/`coe_snd` name the identity
-    -- with `Prod.fst`/`Prod.snd`), so `RingHom.map_det` applies to it
-    have hp1 : ∀ x : ZMod d × ZMod d', x.1 = RingHom.fst (ZMod d) (ZMod d') x :=
-      fun x => congrFun RingHom.coe_fst.symm x
-    have hp2 : ∀ x : ZMod d × ZMod d', x.2 = RingHom.snd (ZMod d) (ZMod d') x :=
-      fun x => congrFun RingHom.coe_snd.symm x
-    have h1 : ((e.mapMatrix C).det).1 = 1 := by
-      rw [hp1, RingHom.map_det, hfst, A.det_coe]
-    have h2 : ((e.mapMatrix C).det).2 = 1 := by
-      rw [hp2, RingHom.map_det, hsnd, B.det_coe]
-    exact Prod.ext h1 h2
-  obtain ⟨γ, hγ⟩ := map_intCast_zmod_surjective (d := d * d') ⟨C, hdet⟩
-  -- Reading the glued matrix back off in each factor is applying a ring hom to an integer cast.
-  have hentry : ∀ i j, ((γ i j : ℤ) : ZMod (d * d')) = e.symm (A i j, B i j) := fun i j => by
-    have := congrArg (fun M : SL(2, ZMod (d * d')) => M i j) hγ
-    simpa only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, hC, Matrix.of_apply,
-      Int.coe_castRingHom] using this
-  -- the two prescribed reductions, read off together: `e` is a ring hom, so `map_intCast`
-  -- carries the class of an integer modulo `d * d'` to the pair of its classes, and cancelling
-  -- `e` against `e.symm` in `hentry` then gives both components at once
-  have hpair : ∀ i j, ((((γ i j : ℤ) : ZMod d)), (((γ i j : ℤ) : ZMod d'))) = (A i j, B i j) :=
-    fun i j => by
-      rw [show ((((γ i j : ℤ) : ZMod d)), (((γ i j : ℤ) : ZMod d'))) =
-          e (((γ i j : ℤ) : ZMod (d * d'))) from by rw [hE, map_intCast]; rfl,
-        hentry i j, RingEquiv.apply_symm_apply]
-  refine ⟨γ, Prod.ext ?_ ?_⟩
-  · ext i j
-    simpa only [MonoidHom.prod_apply, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-      Int.coe_castRingHom] using congrArg Prod.fst (hpair i j)
-  · ext i j
-    simpa only [MonoidHom.prod_apply, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-      Int.coe_castRingHom] using congrArg Prod.snd (hpair i j)
+  -- `map_intCast_zmod_surjective` is the one-modulus statement, applied here at `d * d'`: by the
+  -- Chinese remainder theorem `SL₂(ℤ/dd'ℤ) ≃* SL₂(ℤ/dℤ × ℤ/d'ℤ) ≃* SL₂(ℤ/dℤ) × SL₂(ℤ/d'ℤ)`, and
+  -- the joint reduction is reduction modulo `d * d'` followed by this equivalence.
+  set E := (mapEquiv (Fin 2) (ZMod.chineseRemainder hcop)).trans
+    (prodEquiv (Fin 2) (ZMod d) (ZMod d'))
+  have h : E.toMonoidHom.comp (map (Int.castRingHom (ZMod (d * d')))) =
+      (map (Int.castRingHom (ZMod d))).prod (map (Int.castRingHom (ZMod d'))) := by
+    ext γ i j <;> simp [E]
+  rw [← h, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
+  exact E.surjective.comp map_intCast_zmod_surjective
 
 /-- **Entrywise kernel test**: `γ ∈ SL(ι, ℤ)` lies in the principal congruence subgroup of level
 `N`, the kernel of reduction modulo `N`, iff it is congruent to the identity modulo `N`
