@@ -25,7 +25,9 @@ transpose.
 The same identity cancels a square matrix `A` with `A * B = c • 1` for a non-zero-divisor `c`, so
 that `B * A = c • 1` as well (`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is
 `mul_eq_one_comm`; for general `c` it compares a form with its `c`-scaled dual, whose Gram matrix
-is `c` times the inverse Gram matrix.
+is `c` times the inverse Gram matrix. Such inverses up to `c` are transported by congruence: if
+`B₁ = Pᵀ * B₂ * P` where `P` has a right inverse `P'`, and `B₁ * D₁ = B₂ * D₂ = c • 1`, then
+`D₁ = P' * D₂ * P'ᵀ` (`Matrix.mul_mul_transpose_eq_of_mul_eq_smul`).
 
 Cramer's rule expresses the determinant of `A` with one row or one column replaced through the
 adjugate. Summing over the replaced row, or over the replaced column, gives in both cases
@@ -84,6 +86,38 @@ theorem mul_eq_smul_one_comm {n : Type*} [Fintype n] [DecidableEq n] {A B : Matr
   apply (isRegular_of_isLeftRegular_det hdet).left
   simp only [← Matrix.mul_assoc, h, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
     Matrix.mul_one]
+
+/-- **Congruence transports inverses up to a scalar.** If `P` has a right inverse `P'` and
+`B₁ = Pᵀ * B₂ * P`, and both `B₁ * D₁` and `B₂ * D₂` are the scalar matrix `c • 1` for a
+non-zero-divisor `c`, then `P' * D₂ * P'ᵀ = D₁`. The right inverse `P'` is then also a left
+inverse of `P`, since `D₁ * Pᵀ * B₂` is a left inverse of `P` up to `c`. -/
+theorem mul_mul_transpose_eq_of_mul_eq_smul {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] {c : R} (hc : c ∈ nonZeroDivisors R) {P : Matrix κ ι R}
+    {P' : Matrix ι κ R} {B₁ D₁ : Matrix ι ι R} {B₂ D₂ : Matrix κ κ R} (hPP' : P * P' = 1)
+    (hG : B₁ = Pᵀ * B₂ * P) (h₁ : B₁ * D₁ = c • 1) (h₂ : B₂ * D₂ = c • 1) :
+    P' * D₂ * P'ᵀ = D₁ := by
+  have hHG := (mul_eq_smul_one_comm hc).mp h₁
+  have hcancel {X Y : Matrix ι ι R} (h : c • X = c • Y) : X = Y := by
+    ext i j
+    have := congrFun (congrFun h i) j
+    rwa [Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul,
+      mul_cancel_left_mem_nonZeroDivisors hc] at this
+  -- `D₁ * Pᵀ * B₂` is `c • P'`, and it is a left inverse of `P` up to `c`, so `P' * P = 1`.
+  have hQ : D₁ * Pᵀ * B₂ = c • P' := by
+    calc D₁ * Pᵀ * B₂ = D₁ * Pᵀ * B₂ * (P * P') := by rw [hPP', Matrix.mul_one]
+      _ = D₁ * B₁ * P' := by rw [hG]; simp only [Matrix.mul_assoc]
+      _ = c • P' := by rw [hHG, Matrix.smul_mul, Matrix.one_mul]
+  have hP'P : P' * P = 1 := hcancel <| by
+    rw [← Matrix.smul_mul, ← hQ, ← hHG, hG]
+    simp only [Matrix.mul_assoc]
+  refine hcancel ?_
+  calc c • (P' * D₂ * P'ᵀ)
+      = D₁ * Pᵀ * (B₂ * D₂) * P'ᵀ := by
+        rw [← Matrix.smul_mul, ← Matrix.smul_mul, ← hQ]
+        simp only [Matrix.mul_assoc]
+    _ = c • D₁ := by
+        rw [h₂, Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
+          ← Matrix.transpose_mul, hP'P, Matrix.transpose_one, Matrix.mul_one]
 
 /-- **Jacobi's formula, by rows.** Replacing the `i`-th row of `A` by the `i`-th row of `B` and
 summing the determinants over `i` gives `trace (adj A * B)`, the derivative of `det` at `A` in the
