@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Pushforward of compactly supported currents along smooth maps
@@ -337,7 +338,7 @@ theorem IsNormal.comp_cutoffHomotopyPullbackCLM [FiniteDimensional ℝ E]
     (hT : IsNormal T) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
     IsNormal (T ∘L (cutoffHomotopyPullbackCLM χ hH :
       𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) := by
-  -- Replace `χ` by a cutoff with values in `[0, 1]`; this does not change the current.
+  -- Replace `χ` by a cutoff `ψ` with `|ψ| ≤ 1`; this does not change the current.
   obtain ⟨ψ, hψ1, hψ, -, hχψ⟩ := exists_cutoff_abs_le_one hχ
   rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_congr T hχψ]
   obtain ⟨M, hM⟩ := (ψ.hasCompactSupport.isCompact.prod isCompact_Icc).exists_norm_fderiv_le
@@ -349,16 +350,12 @@ theorem IsNormal.comp_cutoffHomotopyPullbackCLM [FiniteDimensional ℝ E]
     rw [Prod.norm_mk, norm_zero, norm_one, max_eq_right zero_le_one, mul_one]
     exact hM p hp
   have hL : ∀ p ∈ tsupport ψ ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ M :=
-    fun p hp ↦ ContinuousLinearMap.opNorm_le_bound _ M.coe_nonneg fun v ↦ by
-      refine ((fderiv ℝ H p).le_opNorm (v, 0)).trans ?_
-      rw [Prod.norm_mk, norm_zero, max_eq_left (norm_nonneg v)]
-      exact mul_le_mul_of_nonneg_right (hM p hp) (norm_nonneg v)
+    fun p hp ↦ ((fderiv ℝ H p).opNorm_comp_le _).trans
+      ((mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_inl_le_one ℝ E ℝ)).trans
+        (hM p hp))
   have hslice {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
       ∀ x ∈ tsupport ψ, ‖fderiv ℝ (fun y ↦ H (y, t)) x‖ ≤ M := fun x hx ↦ by
-    have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
-      (((hH _ ⟨ψ.tsupport_subset hx, ht⟩).differentiableAt (by simp)).hasFDerivAt.comp x
-        (hasFDerivAt_prodMk_left x t)).fderiv
-    rw [hD]
+    rw [fderiv_slice_left ((hH _ ⟨ψ.tsupport_subset hx, ht⟩).differentiableAt (by simp))]
     exact hL _ ⟨hx, ht⟩
   have hmass {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V} (hS : mass S ≠ ⊤) :
       mass (S ∘ (cutoffHomotopyPullbackCLM ψ hH :

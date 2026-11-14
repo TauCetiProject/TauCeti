@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The homotopy operator on a cylinder over a subset of a normed space
@@ -258,9 +259,8 @@ theorem norm_cylinderHomotopy_pullback_le {E' : Type*} [NormedAddCommGroup E'] [
     have hcomp : contractInl ((ω (Φ (x, t))).compContinuousLinearMap (fderiv ℝ Φ (x, t))) =
         ((ω (Φ (x, t))).curryLeft (fderiv ℝ Φ (x, t) (0, 1))).compContinuousLinearMap
           ((fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)) := by
-      rw [contractInl_apply, ContinuousAlternatingMap.curryLeft_compContinuousLinearMap]
-      ext v
-      rfl
+      rw [contractInl_apply, ContinuousAlternatingMap.curryLeft_compContinuousLinearMap,
+        ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap]
     rw [hcomp]
     calc _ ≤ ‖(ω (Φ (x, t))).curryLeft (fderiv ℝ Φ (x, t) (0, 1))‖ *
           ‖(fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)‖ ^ n :=

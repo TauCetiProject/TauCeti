@@ -40,7 +40,7 @@ Riemannian manifold the segments would have to be replaced by short geodesics.
 
 * `ContinuousLinearMap.normalFlatMass_comp_cutoffPullbackCLM_sub_le`: the flat estimate
   `F(g_# T - f_# T) ≤ A (L ^ (k + 1) M(T) + L ^ k M(∂ T))`, and
-  `ContinuousLinearMap.normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero` in degree zero.
+  `ContinuousLinearMap.normalFlatMass_comp_cutoffPullbackCLM_sub_finZero_le` in degree zero.
 * `ContinuousLinearMap.tendsto_normalFlatMass_comp_cutoffPullbackCLM_sub`: flat convergence of the
   pushforwards along uniformly convergent maps with bounded derivatives.
 * `ContinuousLinearMap.tendsto_comp_cutoffPullbackCLM_apply`: the corresponding convergence on each
@@ -110,24 +110,21 @@ private theorem norm_fderiv_lineHomotopy_le (hf : ContDiffOn ℝ (⊤ : ℕ∞) 
   refine ⟨fun ⟨x, t⟩ ⟨hx, _⟩ ↦ ?_, fun ⟨x, t⟩ ⟨hx, ht⟩ ↦ ?_⟩
   · rw [fderiv_lineHomotopy_apply (hd hx).1 (hd hx).2]
     simpa using hA x hx
-  · refine ContinuousLinearMap.opNorm_le_bound _ L.coe_nonneg fun v ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
-      fderiv_lineHomotopy_apply (hd hx).1 (hd hx).2, zero_smul, add_zero]
-    have h : fderiv ℝ f x v + t • (fderiv ℝ g x v - fderiv ℝ f x v) =
-        (1 - t) • fderiv ℝ f x v + t • fderiv ℝ g x v := by
-      rw [smul_sub, sub_smul, one_smul]
-      abel
-    rw [h]
-    calc ‖(1 - t) • fderiv ℝ f x v + t • fderiv ℝ g x v‖
-        ≤ (1 - t) * (L * ‖v‖) + t * (L * ‖v‖) := by
-          refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-          · rw [norm_smul, Real.norm_of_nonneg (sub_nonneg.2 ht.2)]
-            exact mul_le_mul_of_nonneg_left (((fderiv ℝ f x).le_opNorm v).trans
-              (mul_le_mul_of_nonneg_right (hfL x hx) (norm_nonneg v))) (sub_nonneg.2 ht.2)
-          · rw [norm_smul, Real.norm_of_nonneg ht.1]
-            exact mul_le_mul_of_nonneg_left (((fderiv ℝ g x).le_opNorm v).trans
-              (mul_le_mul_of_nonneg_right (hgL x hx) (norm_nonneg v))) ht.1
-      _ = L * ‖v‖ := by ring
+  · -- The spatial derivative is a convex combination of `Df` and `Dg`.
+    have h : (fderiv ℝ (lineHomotopy f g) (x, t)).comp (.inl ℝ E ℝ) =
+        fderiv ℝ f x + t • (fderiv ℝ g x - fderiv ℝ f x) := by
+      ext v
+      simp [fderiv_lineHomotopy_apply (hd hx).1 (hd hx).2]
+    rw [h, ← mem_closedBall_zero_iff]
+    exact (convex_closedBall (0 : E →L[ℝ] E') L).add_smul_sub_mem
+      (mem_closedBall_zero_iff.2 (hfL x hx)) (mem_closedBall_zero_iff.2 (hgL x hx)) ht
+
+omit [FiniteDimensional ℝ E] in
+/-- The derivative of a map smooth on `Ω` is bounded on the compact support of `χ`. -/
+private theorem exists_norm_fderiv_le_of_contDiffOn (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Ω) :
+    ∃ M : ℝ≥0, ∀ x ∈ tsupport χ, ‖fderiv ℝ f x‖ ≤ M :=
+  χ.hasCompactSupport.isCompact.exists_norm_fderiv_le (by simp) fun x hx ↦
+    hf.contDiffAt (Ω.isOpen.mem_nhds (χ.tsupport_subset hx))
 
 omit [FiniteDimensional ℝ E] in
 private theorem cutoffPullbackCLM_lineHomotopy_one {m : ℕ}
@@ -178,7 +175,7 @@ private theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_of_abs_le_one
     _ = A * (L ^ (k + 1) * mass T + L ^ k * mass (T ∘L extDerivCLM)) := by ring
 
 /-- The degree-zero flat estimate for a cutoff with values in `[-1, 1]`. -/
-private theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero_of_abs_le_one
+private theorem normalFlatMass_comp_cutoffPullbackCLM_sub_finZero_le_of_abs_le_one
     (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ) (hT : IsNormal T)
     (hχ1 : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (hχ : ∀ x, |χ x| ≤ 1) {A : ℝ≥0}
     (hA : ∀ x ∈ tsupport χ, ‖g x - f x‖ ≤ A) :
@@ -187,28 +184,11 @@ private theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero_of_abs_le_o
   have hH := contDiffAt_lineHomotopy hf hg
   -- Only the time derivative enters the mass bound in degree zero; the spatial one is bounded on
   -- the compact support of `χ`.
-  obtain ⟨M, hM⟩ := (χ.hasCompactSupport.isCompact.prod isCompact_Icc).exists_norm_fderiv_le
-    (by simp) fun p (hp : p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1) ↦
-      hH p ⟨χ.tsupport_subset hp.1, hp.2⟩
-  have hD {x : E} (hx : x ∈ tsupport χ) : ‖fderiv ℝ f x‖ ≤ M ∧ ‖fderiv ℝ g x‖ ≤ M := by
-    have hfx := (hf.contDiffAt (Ω.isOpen.mem_nhds (χ.tsupport_subset hx))).differentiableAt
-      (by simp)
-    have hgx := (hg.contDiffAt (Ω.isOpen.mem_nhds (χ.tsupport_subset hx))).differentiableAt
-      (by simp)
-    have h0 := hM (x, 0) ⟨hx, le_rfl, zero_le_one⟩
-    have h1 := hM (x, 1) ⟨hx, zero_le_one, le_rfl⟩
-    refine ⟨ContinuousLinearMap.opNorm_le_bound _ M.coe_nonneg fun v ↦ ?_,
-      ContinuousLinearMap.opNorm_le_bound _ M.coe_nonneg fun v ↦ ?_⟩
-    · have h := (fderiv ℝ (lineHomotopy f g) (x, 0)).le_opNorm (v, 0)
-      rw [fderiv_lineHomotopy_apply hfx hgx, Prod.norm_mk, norm_zero,
-        max_eq_left (norm_nonneg v)] at h
-      simpa using h.trans (mul_le_mul_of_nonneg_right h0 (norm_nonneg v))
-    · have h := (fderiv ℝ (lineHomotopy f g) (x, 1)).le_opNorm (v, 0)
-      rw [fderiv_lineHomotopy_apply hfx hgx, Prod.norm_mk, norm_zero,
-        max_eq_left (norm_nonneg v)] at h
-      simpa using h.trans (mul_le_mul_of_nonneg_right h1 (norm_nonneg v))
-  obtain ⟨hA', hL'⟩ := norm_fderiv_lineHomotopy_le hf hg χ.tsupport_subset hA
-    (fun x hx ↦ (hD hx).1) fun x hx ↦ (hD hx).2
+  obtain ⟨Mf, hMf⟩ := exists_norm_fderiv_le_of_contDiffOn (χ := χ) hf
+  obtain ⟨Mg, hMg⟩ := exists_norm_fderiv_le_of_contDiffOn (χ := χ) hg
+  obtain ⟨hA', hL'⟩ := norm_fderiv_lineHomotopy_le (L := max Mf Mg) hf hg χ.tsupport_subset hA
+    (fun x hx ↦ (hMf x hx).trans (mod_cast le_max_left _ _))
+    fun x hx ↦ (hMg x hx).trans (mod_cast le_max_right _ _)
   have heq : T ∘L (cutoffPullbackCLM χ g hg : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] _) -
         T ∘L cutoffPullbackCLM χ f hf =
       0 + (T ∘L cutoffHomotopyPullbackCLM χ hH) ∘L extDerivCLM := by
@@ -243,7 +223,7 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le
 `0`-current whose support lies in the interior of `{χ = 1}`. If `‖g - f‖ ≤ A` on the support of
 `χ`, then `F(g_# T - f_# T) ≤ A M(T)`, where `F` is the real normal flat mass and
 `f_# T = T ∘ (χ f^*)`. -/
-theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero
+theorem normalFlatMass_comp_cutoffPullbackCLM_sub_finZero_le
     (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ) (hT : IsNormal T)
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) {A : ℝ≥0}
     (hA : ∀ x ∈ tsupport χ, ‖g x - f x‖ ≤ A) :
@@ -251,42 +231,46 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero
         T ∘L cutoffPullbackCLM χ f hf).normalFlatMass ≤ A * mass T := by
   obtain ⟨ψ, hψ1, hψ, hψχ, hχψ⟩ := exists_cutoff_abs_le_one hχ
   rw [comp_cutoffPullbackCLM_congr T hχψ, comp_cutoffPullbackCLM_congr T hχψ]
-  exact normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero_of_abs_le_one T hT hψ1 hψ
+  exact normalFlatMass_comp_cutoffPullbackCLM_sub_finZero_le_of_abs_le_one T hT hψ1 hψ
     fun x hx ↦ hA x (hψχ hx)
 
 /-- **Flat convergence of pushforwards along uniformly convergent maps**: let `T` be a normal
 current whose support lies in the interior of `{χ = 1}`. If smooth maps `fᵢ` converge to `f`
-uniformly on the support of `χ`, and `‖Dfᵢ‖, ‖Df‖ ≤ L` there, then
+uniformly on the support of `χ`, and eventually `‖Dfᵢ‖ ≤ L` there, then
 `F(fᵢ# T - f_# T) → 0`, where `F` is the real normal flat mass and `f_# T = T ∘ (χ f^*)`. -/
 theorem tendsto_normalFlatMass_comp_cutoffPullbackCLM_sub {ι : Type*} {l : Filter ι}
     {fs : ι → E → E'} {hfs : ∀ i, ContDiffOn ℝ (⊤ : ℕ∞) (fs i) Ω}
     (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) (hT : IsNormal T)
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) {L : ℝ≥0}
-    (hfsL : ∀ i, ∀ x ∈ tsupport χ, ‖fderiv ℝ (fs i) x‖ ≤ L)
-    (hfL : ∀ x ∈ tsupport χ, ‖fderiv ℝ f x‖ ≤ L)
+    (hfsL : ∀ᶠ i in l, ∀ x ∈ tsupport χ, ‖fderiv ℝ (fs i) x‖ ≤ L)
     (hconv : TendstoUniformlyOn fs f l (tsupport χ)) :
     Tendsto (fun i ↦ (T ∘L (cutoffPullbackCLM χ (fs i) (hfs i) :
         𝓓(Ω', E' [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) - T ∘L cutoffPullbackCLM χ f hf).normalFlatMass)
       l (𝓝 0) := by
-  -- The flat distance is at most a fixed finite constant times the uniform distance of the maps.
-  obtain ⟨C, hC, hbound⟩ : ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ i (A : ℝ≥0),
+  -- Eventually, the flat distance is at most a fixed finite constant times the uniform distance
+  -- of the maps.
+  obtain ⟨C, hC, hbound⟩ : ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ᶠ i in l, ∀ A : ℝ≥0,
       (∀ x ∈ tsupport χ, ‖fs i x - f x‖ ≤ A) →
         (T ∘L (cutoffPullbackCLM χ (fs i) (hfs i) : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) -
           T ∘L cutoffPullbackCLM χ f hf).normalFlatMass ≤ A * C := by
     cases k with
     | zero =>
-      exact ⟨mass T, hT.mass_ne_top, fun i A hA ↦
-        normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero T hT hχ hA⟩
+      exact ⟨mass T, hT.mass_ne_top, .of_forall fun i A hA ↦
+        normalFlatMass_comp_cutoffPullbackCLM_sub_finZero_le T hT hχ hA⟩
     | succ k =>
+      obtain ⟨M, hM⟩ := exists_norm_fderiv_le_of_contDiffOn (χ := χ) hf
       have h1 := hT.mass_ne_top
       have h2 := (isNormal_succ_iff.1 hT).2
-      exact ⟨L ^ (k + 1) * mass T + L ^ k * mass (T ∘L extDerivCLM), by finiteness,
-        fun i A hA ↦ normalFlatMass_comp_cutoffPullbackCLM_sub_le T hT hχ hA hfL (hfsL i)⟩
+      refine ⟨max L M ^ (k + 1) * mass T + max L M ^ k * mass (T ∘L extDerivCLM), by finiteness,
+        hfsL.mono fun i hi A hA ↦ normalFlatMass_comp_cutoffPullbackCLM_sub_le T hT hχ hA
+          (fun x hx ↦ (hM x hx).trans (mod_cast le_max_right _ _))
+          fun x hx ↦ (hi x hx).trans (mod_cast le_max_left _ _)⟩
   rw [ENNReal.tendsto_nhds_zero]
   intro ε hε
   obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hC hε.ne'
-  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hconv δ (NNReal.coe_pos.2 hδ)] with i hi
-  refine (hbound i δ fun x hx ↦ ?_).trans hδε.le
+  filter_upwards [hbound, Metric.tendstoUniformlyOn_iff.1 hconv δ (NNReal.coe_pos.2 hδ)]
+    with i hb hi
+  refine (hb δ fun x hx ↦ ?_).trans hδε.le
   rw [← dist_eq_norm, dist_comm]
   exact (hi x hx).le
 
@@ -297,12 +281,11 @@ theorem tendsto_comp_cutoffPullbackCLM_apply {ι : Type*} {l : Filter ι}
     {fs : ι → E → E'} {hfs : ∀ i, ContDiffOn ℝ (⊤ : ℕ∞) (fs i) Ω}
     (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) (hT : IsNormal T)
     (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) {L : ℝ≥0}
-    (hfsL : ∀ i, ∀ x ∈ tsupport χ, ‖fderiv ℝ (fs i) x‖ ≤ L)
-    (hfL : ∀ x ∈ tsupport χ, ‖fderiv ℝ f x‖ ≤ L)
+    (hfsL : ∀ᶠ i in l, ∀ x ∈ tsupport χ, ‖fderiv ℝ (fs i) x‖ ≤ L)
     (hconv : TendstoUniformlyOn fs f l (tsupport χ)) (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] ℝ)) :
     Tendsto (fun i ↦ T (cutoffPullbackCLM χ (fs i) (hfs i) ω)) l
       (𝓝 (T (cutoffPullbackCLM χ f hf ω))) :=
   tendsto_apply_of_normalFlatMass_sub_tendsto_zero _
-    (tendsto_normalFlatMass_comp_cutoffPullbackCLM_sub (hf := hf) T hT hχ hfsL hfL hconv) ω
+    (tendsto_normalFlatMass_comp_cutoffPullbackCLM_sub (hf := hf) T hT hχ hfsL hconv) ω
 
 end ContinuousLinearMap

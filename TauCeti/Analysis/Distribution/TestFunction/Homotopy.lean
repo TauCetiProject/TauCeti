@@ -12,6 +12,7 @@ public import TauCeti.Topology.Compactness.Compact
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
@@ -77,7 +78,7 @@ corresponding statements for currents are in `TauCeti.Analysis.Distribution.Cuto
   `TestFunction.tsupport_cutoffHomotopyPullbackCLM_subset` and its pointwise bound
   `TestFunction.norm_cutoffHomotopyPullbackCLM_apply_le`.
 * `TestFunction.cutoffHomotopyPullbackCLM_extDerivCLM_apply`: `K_χ ∘ d = χ H₁^* - χ H₀^* - d ∘ K_χ`
-  near every point where `χ` is one, and
+  at every point near which `χ` is one, and
   `TestFunction.cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero` in degree zero.
 
 ## References
@@ -360,11 +361,9 @@ private theorem pullbackCLM_prodMk_left_cutoffPullback {t : ℝ} (ht : t = 0 ∨
   rw [pullbackCLM_prodMk_left_apply (fun _ hp _ ↦ Opens.mem_cylinder.1 hp) htI]
   by_cases hx : x ∈ Ω
   · have hxt : ((x, t) : E × ℝ).1 ∈ Ω := hx
-    have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
-      (((hH _ ⟨hx, htI⟩).differentiableAt (by simp)).hasFDerivAt.comp x
-        (hasFDerivAt_prodMk_left x t)).fderiv
     rw [pullbackCLM_apply_of_mem _ hx, cutoffPullback_apply hH hHp ω hxt, timeCutoff_eq_one htI,
-      one_smul, fderiv_reparam hH hxt, hD]
+      one_smul, fderiv_reparam hH hxt,
+      fderiv_slice_left ((hH _ ⟨hx, htI⟩).differentiableAt (by simp))]
     ext v
     simp [reparam, hσ, Function.comp_def]
   · rw [pullbackCLM_apply_of_notMem _ hx, cutoffPullback_apply_of_notMem hHp ω hx]
@@ -533,17 +532,14 @@ private theorem pullbackCLM_prodMk_left_cutoffReparamPullback {t : ℝ} (ht : t 
     cutoffReparamPullback_apply ω htI, cutoffPullbackCLM_apply]
   by_cases hx : x ∈ Ω
   · have hxt : ((x, t) : E × ℝ).1 ∈ Ω := hx
-    have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
-      (((hH _ ⟨hx, htI⟩).differentiableAt (by simp)).hasFDerivAt.comp x
-        (hasFDerivAt_prodMk_left x t)).fderiv
-    rw [fderiv_reparam hH hxt, hD]
+    rw [fderiv_reparam hH hxt, fderiv_slice_left ((hH _ ⟨hx, htI⟩).differentiableAt (by simp))]
     ext v
     simp [reparam, hσ, Function.comp_def]
   · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (χ.tsupport_subset h)]
     ext v
     simp
 
-/-- Near a point where `χ` is one, the cut-off reparametrized pullback commutes with `d` along
+/-- At a point near which `χ` is one, the cut-off reparametrized pullback commutes with `d` along
 `{x} × [0, 1]`; so the cylinder homotopy operator does not see the difference at `x`. -/
 private theorem cylinderHomotopyCLM_cutoffReparamPullback_extDerivCLM_apply
     (hW : ∀ p ∈ Ω.cylinder, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω) (ω : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F))
@@ -578,8 +574,8 @@ theorem cutoffHomotopyPullbackCLM_extDerivCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin 
   rw [cutoffHomotopyPullbackCLM, ContinuousLinearMap.comp_apply,
     cylinderHomotopyCLM_cutoffReparamPullback_extDerivCLM_apply hW ω hx, h,
     pullbackCLM_prodMk_left_cutoffReparamPullback (Or.inr rfl),
-    pullbackCLM_prodMk_left_cutoffReparamPullback (Or.inl rfl)]
-  rfl
+    pullbackCLM_prodMk_left_cutoffReparamPullback (Or.inl rfl), cutoffHomotopyPullbackCLM,
+    ContinuousLinearMap.comp_apply]
 
 /-- **The homotopy formula on `0`-forms where the cutoff is one**: at every point near which `χ`
 is equal to one, `K_χ (d ω) = χ H₁^* ω - χ H₀^* ω` for a test `0`-form `ω`. -/

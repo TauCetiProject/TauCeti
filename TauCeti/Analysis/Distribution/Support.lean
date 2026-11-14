@@ -51,7 +51,7 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
   smooth multiples, open/regularity restriction, existence of a test cutoff equal to one near the
   support, and compactness of point-evaluation support.
 * `Distribution.exists_cutoff_abs_le_one`: a cutoff equal to one near the support of `T` can be
-  replaced by one with values in `[0, 1]` and the same germ along the support of `T`.
+  replaced by one with `|ψ| ≤ 1` and the same germ along the support of `T`.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`,
@@ -260,20 +260,20 @@ end SmoothMultiple
 
 section Cutoff
 
-variable [FiniteDimensional ℝ E] [AddCommMonoid V]
+variable [FiniteDimensional ℝ E] [Zero V]
 
-/-- A cutoff equal to one near the support of `T` can be replaced by one with values in `[0, 1]`,
-equal to one near the support of `T` and supported in the support of the original cutoff. The two
+/-- A cutoff equal to one near the support of `T` can be replaced by one `ψ` with `|ψ| ≤ 1`, equal
+to one near the support of `T` and supported in the support of the original cutoff. The two
 cutoffs have the same germ along the support of `T`. -/
-theorem exists_cutoff_abs_le_one {T : 𝓓(Ω, F) → V} {χ : 𝓓(Ω, ℝ)}
-    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
-    ∃ ψ : 𝓓(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
+theorem exists_cutoff_abs_le_one {β : Type*} [Zero β] [FunLike 𝓕 E β] {T : 𝓕 → V}
+    {χ : 𝓓^{n}(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    ∃ ψ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
       tsupport ψ ⊆ tsupport χ ∧ (χ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] ψ := by
   have hW : interior {x | χ x = 1} ⊆ tsupport χ := fun x hx ↦ by
     have h : χ x = 1 := interior_subset hx
     exact subset_tsupport _ (by simp [h])
   have hTW : dsupport T ⊆ interior {x | χ x = 1} := subset_interior_iff_mem_nhdsSet.2 hχ
-  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤)
+  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := n)
     (χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport (hTW.trans hW)) isOpen_interior
     hTW (hW.trans χ.tsupport_subset)
   exact ⟨ψ, hψ1, fun x ↦ abs_le.2 ⟨by linarith [(hψ01 x).1], (hψ01 x).2⟩, hψW.trans hW,
