@@ -107,11 +107,11 @@ theorem exists_quasiFiniteAt_and_forall_isSeparable_adjoin
     [CommRing B] [Algebra R B] [Algebra k B] [IsScalarTower R k B] [Ring.KrullDimLE 1 B]
     (f : A →ₐ[R] B) (hf : Function.Surjective f) {π : R} (hπ : π ≠ 0)
     (hπB : algebraMap R B π = 0) (m : Ideal B) [m.IsMaximal]
-    (hker : RingHom.ker f.toRingHom ≤ ((m.comap f.toRingHom).under R).map (algebraMap R A))
+    (hker : RingHom.ker f ≤ ((m.comap f).under R).map (algebraMap R A))
     (hdim : ∀ i, Module.finrank (F i) Ω[F i⁄K] = 1) :
     ∃ x : A, f x ∈ m ∧
       (letI := (aeval (R := R) x).toAlgebra;
-        Algebra.QuasiFiniteAt R[X] (m.comap f.toRingHom)) ∧
+        Algebra.QuasiFiniteAt R[X] (m.comap f)) ∧
       ∀ i, Transcendental K (algebraMap A (F i) x) ∧
         Algebra.IsSeparable K⟮algebraMap A (F i) x⟯ (F i) := by
   have : Algebra.FiniteType R B := .of_surjective f hf
@@ -123,8 +123,7 @@ theorem exists_quasiFiniteAt_and_forall_isSeparable_adjoin
   have : Algebra.QuasiFinite k (B ⧸ Ideal.span {f (a + π • b)}) := hfx ▸ inferInstance
   have : Algebra.QuasiFinite R (B ⧸ Ideal.span {f (a + π • b)}) := .trans R k _
   refine ⟨a + π • b, hfx ▸ hym, ?_, hb⟩
-  exact f.quasiFiniteAt_aeval hf _ (m.comap f.toRingHom)
-    (by simpa only [Ideal.mem_comap, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom, hfx] using hym) hker
+  exact f.quasiFiniteAt_aeval hf _ (m.comap f)
+    (by simpa only [Ideal.mem_comap, AlgHom.coe_toRingHom, hfx] using hym) hker
 
 end TauCeti

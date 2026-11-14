@@ -58,7 +58,7 @@ theorem quasiFiniteAt_aeval [Algebra.FiniteType k A]
     {B : Type*} [CommRing B] [Algebra k B] (f : A →ₐ[k] B)
     (hf : Function.Surjective f) (x : A)
     [Algebra.QuasiFinite k (B ⧸ Ideal.span {f x})] (q : Ideal A) [q.IsPrime]
-    (hx : x ∈ q) (hker : RingHom.ker f.toRingHom ≤ (q.under k).map (algebraMap k A)) :
+    (hx : x ∈ q) (hker : RingHom.ker f ≤ (q.under k).map (algebraMap k A)) :
     letI := (aeval (R := k) x).toAlgebra
     Algebra.QuasiFiniteAt k[X] q := by
   let := (aeval (R := k) x).toAlgebra
@@ -80,7 +80,7 @@ theorem quasiFiniteAt_aeval [Algebra.FiniteType k A]
   have hxmap : x ∈ (q.under k[X]).map (algebraMap k[X] A) := by
     simpa [RingHom.algebraMap_toAlgebra] using
       Ideal.mem_map_of_mem (algebraMap k[X] A) hX
-  have hkg : RingHom.ker g = Ideal.span {x} ⊔ RingHom.ker f.toRingHom := by
+  have hkg : RingHom.ker g = Ideal.span {x} ⊔ RingHom.ker f := by
     rw [← AlgHom.comap_ker, AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker, ← Set.image_singleton,
       ← Ideal.map_span]
     exact Ideal.comap_map_of_surjective' f hf _
@@ -104,8 +104,7 @@ theorem exists_mem_quasiFiniteAt_aeval {k A : Type*} [CommRing k] [IsArtinianRin
     infer_instance
   exact ⟨x, hxm, (AlgHom.id k A).quasiFiniteAt_aeval
     Function.surjective_id x m hxm (by
-      rw [AlgHom.toRingHom_eq_coe, AlgHom.id_toRingHom,
-        (RingHom.injective_iff_ker_eq_bot _).mp Function.injective_id]
+      rw [(RingHom.injective_iff_ker_eq_bot _).mp Function.injective_id]
       exact bot_le)⟩
 
 end Ideal
