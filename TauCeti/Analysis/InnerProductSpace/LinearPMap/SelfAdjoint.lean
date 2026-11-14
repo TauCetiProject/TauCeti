@@ -396,6 +396,14 @@ theorem isSelfAdjoint_smul_of_adjoint_eq_neg [CompleteSpace E] {G : E →ₗ.[�
   rw [LinearPMap.isSelfAdjoint_def, adjoint_smul G hc, hG, hconj,
     LinearPMap.smul_neg, LinearPMap.neg_smul, neg_neg]
 
+/-- **Shifts of formal adjoints are formal adjoints.** If `B` is a formal adjoint of `A`, then
+`c • x - A x` and `conj c • y - B y` pair as `x` and `y` do after the shift. -/
+theorem IsFormalAdjoint.inner_smul_sub_eq {A B : E →ₗ.[𝕜] E} (hAB : A.IsFormalAdjoint B) (c : 𝕜)
+    (x : A.domain) (y : B.domain) :
+    inner 𝕜 (c • (x : E) - A x) (y : E) =
+      inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) := by
+  rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hAB x y]
+
 /-- **Conjugate-shift surjectivity makes the domain dense.** If `B` is a formal adjoint of `A` and
 both `x ↦ c • x - A x` and `y ↦ conj c • y - B y` are surjective, then `A` is densely defined. -/
 theorem IsFormalAdjoint.dense_domain_of_smul_sub_surjective [CompleteSpace E] {A B : E →ₗ.[𝕜] E}
@@ -413,8 +421,7 @@ theorem IsFormalAdjoint.dense_domain_of_smul_sub_surjective [CompleteSpace E] {A
     (Submodule.mem_orthogonal _ _).mp hz (x : E) x.property
   have hyy : inner 𝕜 (y : E) y = 0 := by
     calc inner 𝕜 (y : E) y = inner 𝕜 (c • (x : E) - A x) y := by rw [hx']
-      _ = inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) := by
-        rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hAB x y]
+      _ = inner 𝕜 (x : E) ((starRingEnd 𝕜) c • (y : E) - B y) := hAB.inner_smul_sub_eq c x y
       _ = 0 := hxz
   have hy0 : y = 0 := Subtype.ext (inner_self_eq_zero.mp hyy)
   simp [hy0]
@@ -436,14 +443,11 @@ theorem IsFormalAdjoint.adjoint_eq_of_smul_sub_surjective [CompleteSpace E] {A B
   have hyx : y = (x : E) := by
     refine ext_inner_left 𝕜 fun w => ?_
     obtain ⟨v, rfl⟩ := hA w
-    have hv : inner 𝕜 (A v) y = inner 𝕜 (v : E) (A† ya) :=
-      (adjoint_isFormalAdjoint hdense).symm v ya
     calc inner 𝕜 (c • (v : E) - A v) y
-        = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • y - A† ya) := by
-          rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hv]
+        = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • y - A† ya) :=
+          (adjoint_isFormalAdjoint hdense).symm.inner_smul_sub_eq c v ya
       _ = inner 𝕜 (v : E) ((starRingEnd 𝕜) c • (x : E) - B x) := by rw [hx']
-      _ = inner 𝕜 (c • (v : E) - A v) x := by
-          rw [inner_sub_left, inner_smul_left, inner_sub_right, inner_smul_right, hAB v x]
+      _ = inner 𝕜 (c • (v : E) - A v) x := (hAB.inner_smul_sub_eq c v x).symm
   simpa only [hyx] using x.property
 
 /-- **A skew-symmetric map with surjective shifts `1 - G` and `1 + G` is skew-adjoint.** If `-G`
