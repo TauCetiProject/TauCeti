@@ -88,6 +88,8 @@ traciality are never assumed. For `s = ∅` the cumulant
 * `TauCeti.partitionMoment_congr`, `TauCeti.partitionCumulant_congr` and
   `TauCeti.freeCumulant_congr` — block moments and cumulants depend only on the letters at the
   positions of `s`.
+* `TauCeti.map_partitionMoment`, `TauCeti.map_partitionCumulant` and `TauCeti.map_freeCumulant` —
+  monoid and ring homomorphisms commute with block moments and free cumulants.
 
 ## References
 
@@ -147,6 +149,13 @@ word, read in increasing order. -/
 theorem partitionMoment_top (φ : A → R) (a : α → A) (hs : s.Nonempty) :
     partitionMoment φ a (⊤ : Finpartition s) = φ ((s.sort.map a).prod) := by
   rw [partitionMoment_def, Finpartition.parts_top hs.ne_empty, prod_singleton]
+
+/-- A monoid homomorphism commutes with block moments. -/
+theorem map_partitionMoment {S F : Type*} [CommMonoid S] [FunLike F R S] [MonoidHomClass F R S]
+    (g : F) (φ : A → R) (a : α → A) (P : Finpartition s) :
+    g (partitionMoment φ a P) = partitionMoment (g ∘ φ) a P := by
+  rw [partitionMoment_def, partitionMoment_def, map_prod]
+  rfl
 
 end Moment
 
@@ -482,5 +491,23 @@ theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o Noncrossing
   rw [freeCumulant_def, partitionCumulant_eq_of_orderIso φ e h, e.map_top, freeCumulant_def]
 
 end OrderIso
+
+section RingHom
+
+variable {S F : Type*} [CommRing R] [CommRing S] [Monoid A] [FunLike F R S] [RingHomClass F R S]
+
+/-- A ring homomorphism commutes with noncrossing partition cumulants. -/
+theorem map_partitionCumulant (g : F) (φ : A → R) (a : α → A) (π : NoncrossingPartition s) :
+    g (partitionCumulant φ a π) = partitionCumulant (g ∘ φ) a π := by
+  refine congrFun (eq_partitionCumulant_of_forall_sum_Iic (g ∘ φ) a
+    (fun σ => g (partitionCumulant φ a σ)) fun σ => ?_) π
+  rw [← map_sum, sum_Iic_partitionCumulant, map_partitionMoment]
+
+/-- A ring homomorphism commutes with free cumulants. -/
+theorem map_freeCumulant (g : F) (φ : A → R) (a : α → A) (s : Finset α) :
+    g (freeCumulant φ a s) = freeCumulant (g ∘ φ) a s := by
+  rw [freeCumulant_def, freeCumulant_def, map_partitionCumulant]
+
+end RingHom
 
 end TauCeti
