@@ -45,7 +45,8 @@ section Blocks
 variable {κ η D : Type*} [Finite η]
 variable [AddCommGroup D] [LinearOrder D]
 
-private noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
+/-- An equivalence numbering the distinct weights in `Set.range wt` by decreasing `degree`. -/
+noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
     (wt : η → κ → ℤ) : Set.range wt ≃ Fin (Nat.card (Set.range wt)) := by
   classical
   letI := Fintype.ofFinite (Set.range wt)
@@ -57,6 +58,15 @@ private noncomputable def weightBlockEquiv (degree : (κ → ℤ) →+ D)
 noncomputable def orderedWeightBlock (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
     (x : η) : Fin (Nat.card (Set.range wt)) :=
   weightBlockEquiv degree wt ⟨wt x, ⟨x, rfl⟩⟩
+
+/-- Evaluating `weightBlockEquiv` at the weight of a basis index recovers `orderedWeightBlock`.
+
+Not a `simp` lemma because `Nat.card_coe_set_eq` rewrites `Nat.card (Set.range wt)` inside the
+dependent codomain type `Fin (Nat.card (Set.range wt))`. -/
+theorem weightBlockEquiv_mk (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ) (x : η)
+    (hx : wt x ∈ Set.range wt := ⟨x, rfl⟩) :
+    weightBlockEquiv degree wt ⟨wt x, hx⟩ = orderedWeightBlock degree wt x :=
+  (rfl)
 
 /-- Two basis indices belong to the same weight block exactly when their weights are equal. -/
 @[simp]
