@@ -197,40 +197,6 @@ theorem euclideanWeightedZerothOrderCoeff_apply (p : slab (E := EuclideanSpace �
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff]
 
-/-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `B`, `C` for the
-coefficients, `L = ∂ℓ`, `M = ∂²ℓ`, and `T`, `D`, `H`, `V` for the time derivative, gradient,
-Hessian and value of `v`, applying `∂ₜ - Aⁱʲ ∂ᵢ∂ⱼ - Bⁱ ∂ᵢ - C` to `W v` gives `W` times the operator
-with first order coefficient `Bⁱ + ∑ⱼ (Aⁱʲ + Aʲⁱ) Lⱼ` and zeroth order coefficient
-`C + ∑ Aⁱʲ (Mᵢⱼ + Lᵢ Lⱼ) + ∑ Bⁱ Lᵢ` applied to `v`. -/
-private theorem weighted_parabolic_expression_eq {R : Type*} [CommRing R] (W T V C : R)
-    (A H M : ι → ι → R) (B L D : ι → R) :
-    W * (T - (∑ i, ∑ j, A i j * H i j + ∑ i, (B i + ∑ j, (A i j + A j i) * L j) * D i +
-      (C + ∑ i, ∑ j, A i j * (M i j + L i * L j) + ∑ i, B i * L i) * V)) =
-    W * T - (∑ i, ∑ j, A i j * (W * (H i j + L i * D j + L j * D i +
-        (M i j + L i * L j) * V)) + ∑ i, B i * (W * (D i + L i * V)) + C * (W * V)) := by
-  have hswap : ∑ i, ∑ j, A i j * (L i * D j) = ∑ i, ∑ j, A j i * (L j * D i) := Finset.sum_comm
-  have h₂ : ∑ i, ∑ j, A i j * (W * (H i j + L i * D j + L j * D i + (M i j + L i * L j) * V)) =
-      W * (∑ i, ∑ j, A i j * H i j + ∑ i, (∑ j, (A i j + A j i) * L j) * D i +
-        (∑ i, ∑ j, A i j * (M i j + L i * L j)) * V) := by
-    calc _ = W * (∑ i, ∑ j, A i j * H i j + ∑ i, ∑ j, A i j * (L i * D j) +
-          ∑ i, ∑ j, A i j * (L j * D i) + ∑ i, ∑ j, A i j * (M i j + L i * L j) * V) := by
-          simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
-          exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-      _ = _ := by
-          rw [hswap]
-          congr 1
-          simp only [Finset.sum_mul, ← Finset.sum_add_distrib]
-          exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-  have h₁ : ∑ i, B i * (W * (D i + L i * V)) = W * (∑ i, B i * D i + (∑ i, B i * L i) * V) := by
-    rw [Finset.sum_mul, ← Finset.sum_add_distrib, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  have h₀ : ∑ i, (B i + ∑ j, (A i j + A j i) * L j) * D i =
-      ∑ i, B i * D i + ∑ i, (∑ j, (A i j + A j i) * L j) * D i := by
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ add_mul _ _ _
-  rw [h₂, h₁, h₀]
-  ring
-
 /-- **Conjugation by a spatial weight.** Let `ℓ` be `C²` on `ℝⁿ`, with partial derivatives
 `∂ᵢℓ = dℓ i` and `∂ᵢ∂ⱼℓ = d2ℓ i j` bounded and `α`-Hölder, and let `u = exp ℓ • v` on the slab
 for some `v ∈ C_b^{2+α,1+α/2}`. Then the classical parabolic operator
@@ -255,19 +221,10 @@ theorem exp_mul_euclideanParabolicOperatorL_eq [DecidableEq ι] (hα : α ≤ 1)
           ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
           c (slabMk x t) * u x t) := by
   have hslice : (fun y ↦ u y t) = fun y ↦ exp (ℓ y) * v (slabMk y t) := funext fun y ↦ hu y t
-  -- The spatial derivatives of `u` at time `t`, from those of the weighted map.
-  have hD₁ : fderiv ℝ (fun y ↦ u y t) x = exp (ℓ x) • (spatialFDerivL v (slabMk x t) +
-      (fderiv ℝ ℓ x).smulRight (v (slabMk x t))) := by
-    rw [hslice]
-    simpa only [smul_eq_mul] using
-      (hasFDerivAt_exp_smul (hℓ.differentiable two_ne_zero x) v t).fderiv
-  have hD₂ (h k : EuclideanSpace ℝ ι) : fderiv ℝ (fderiv ℝ fun y ↦ u y t) x h k =
-      exp (ℓ x) * (spatialSecondFDerivL v (slabMk x t) h k +
-        fderiv ℝ ℓ x h * spatialFDerivL v (slabMk x t) k +
-        fderiv ℝ ℓ x k * spatialFDerivL v (slabMk x t) h +
-        (fderiv ℝ (fderiv ℝ ℓ) x h k + fderiv ℝ ℓ x h * fderiv ℝ ℓ x k) * v (slabMk x t)) := by
-    rw [hslice]
-    simpa only [smul_eq_mul] using fderiv_fderiv_exp_smul_apply hℓ v t x h k
+  -- The spatial part is the pointwise conjugation identity applied to the slice of `v` at `t`.
+  have hspace := PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq
+    (Matrix.of fun i j ↦ a i j (slabMk x t)) (∑ i, b i (slabMk x t) • EuclideanSpace.single i 1)
+    (c (slabMk x t)) (hℓ.contDiffAt (x := x)) (v.contDiff_spatialSlice t).contDiffAt
   -- In time, `u x` agrees on the closed interval with the weighted time extension of `v`.
   have htime : derivWithin (u x) (Icc t₀ t₁) t = exp (ℓ x) * timeDerivL v (slabMk x t) := by
     rw [derivWithin_congr (f := fun s ↦ exp (ℓ x) • timeExtension ht.le v x s)
@@ -276,15 +233,12 @@ theorem exp_mul_euclideanParabolicOperatorL_eq [DecidableEq ι] (hα : α ≤ 1)
         exact hu x ⟨s, hs⟩)
       (by simp only [timeExtension_def, projIcc_val, smul_eq_mul]; exact hu x t),
       (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.2), smul_eq_mul]
-  rw [htime, hD₁, hu x t]
-  simp only [hD₂, euclideanParabolicOperatorL_apply,
-    euclideanWeightedFirstOrderCoeff_apply, euclideanWeightedZerothOrderCoeff_apply,
-    space_slabMk, _root_.smul_apply, _root_.add_apply, ContinuousLinearMap.smulRight_apply, hdℓ,
-    hd2ℓ, smul_eq_mul]
-  exact weighted_parabolic_expression_eq (exp (ℓ x)) _ _ _ (fun i j ↦ a i j (slabMk x t))
-    (fun i j ↦ spatialSecondFDerivL v (slabMk x t) (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1)) (fun i j ↦ d2ℓ i j x) (fun i ↦ b i (slabMk x t))
-    (fun i ↦ dℓ i x) (fun i ↦ spatialFDerivL v (slabMk x t) (EuclideanSpace.single i 1))
+  rw [htime, hslice, hu x t]
+  simp only [euclideanParabolicOperatorL_apply, euclideanWeightedFirstOrderCoeff_apply,
+    euclideanWeightedZerothOrderCoeff_apply, space_slabMk, fderiv_eq, fderiv_fderiv_eq, hdℓ, hd2ℓ,
+    Matrix.of_apply, map_add, map_sum, map_smul, smul_eq_mul, add_mul,
+    Finset.sum_add_distrib] at hspace ⊢
+  linear_combination -hspace
 
 end Euclidean
 

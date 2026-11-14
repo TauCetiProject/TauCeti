@@ -278,8 +278,7 @@ noncomputable def puncturedDiscPowDeckMulEquiv (he : e ≠ 0) :
       (0 : ℂ) one_pos)
   have : Nonempty ↥(ball (0 : ℂ) 1 \ {0}) :=
     ⟨⟨(1 / 2 : ℂ), by norm_num [mem_ball_zero_iff]⟩⟩
-  Deck.IsQuotientCoveringMap.deckMulEquiv
-    (isQuotientCoveringMap_puncturedDiscPow (e := e))
+  (isQuotientCoveringMap_puncturedDiscPow (e := e)).deckMulEquiv
 
 /-- A root of unity acts through `puncturedDiscPowDeckMulEquiv` by multiplying points of the
 punctured disc. -/
@@ -289,7 +288,7 @@ theorem puncturedDiscPowDeckMulEquiv_apply (he : e ≠ 0) (ζ : rootsOfUnity e �
     ((puncturedDiscPowDeckMulEquiv he ζ).1 z : ℂ) = ζ • (z : ℂ) := by
   let _ : NeZero e := ⟨he⟩
   rw [puncturedDiscPowDeckMulEquiv,
-    Deck.IsQuotientCoveringMap.deckMulEquiv_apply,
+    IsQuotientCoveringMap.deckMulEquiv_apply,
     coe_rootsOfUnity_smul_puncturedDisc]
 
 /-- Every deck transformation of the punctured-disc power map is rotation by the corresponding

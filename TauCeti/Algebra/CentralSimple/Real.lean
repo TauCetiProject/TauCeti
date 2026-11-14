@@ -46,13 +46,15 @@ combination of `1` and `y` (`TauCeti.exists_mul_self_eq_algebraMap_add_smul`). C
 and rescaling turn any `y` outside `ℝ` into an `i` with `i * i = -1`
 (`TauCeti.exists_mul_self_eq_neg_one`).
 
-*A second imaginary unit anticommutes with the first.* Centrality gives an `x` not commuting with
-`i`, and then `j = x + i * x * i` satisfies `i * j = i * x - x * i = -(j * i)`, so it is nonzero and
-anticommutes with `i`. Anticommutation forces `j * j` to be a real scalar, necessarily negative
-because a nonnegative one would factor in the division ring `D` and put `j` in `ℝ`; rescaling `j`
-makes `j * j = -1`. The pair `(i, j)` is a `QuaternionAlgebra.Basis`, so `ℍ[ℝ]` maps to `D`, and the
-map is injective because `ℍ[ℝ]` is a division ring and surjective because both sides have
-dimension `4`.
+*A second imaginary unit anticommutes with the first.* Some `x` does not commute with `i`: if every
+element did, every `y` outside the plane `span {1, i}` would recentre and rescale to a square root
+of `-1` commuting with `i`, hence equal to `±i`, which puts `y` in the plane, and the plane is too
+small for a four-dimensional algebra. Then `j = x + i * x * i` satisfies
+`i * j = i * x - x * i = -(j * i)`, so it is nonzero and anticommutes with `i`. Anticommutation
+forces `j * j` to be a real scalar, necessarily negative because a nonnegative one would factor in
+the division ring `D` and put `j` in `ℝ`; rescaling `j` makes `j * j = -1`. The pair `(i, j)` is a
+`QuaternionAlgebra.Basis`, so `ℍ[ℝ]` maps to `D`, and the map is injective because `ℍ[ℝ]` is a
+division ring and surjective because both sides have dimension `4`.
 
 Beyond the degree bound no maximal subfield, centralizer theorem or Skolem-Noether argument is
 needed; the rest is the elementary Frobenius argument.
@@ -66,8 +68,8 @@ needed; the rest is the elementary Frobenius argument.
 * `TauCeti.exists_mul_self_eq_neg_one_and_mul_eq_neg_mul`: a square root of `-1` that is not
   central has an anticommuting partner, again a square root of `-1`.
 * `TauCeti.Algebra.deg_le_two`: **a real central division algebra has degree at most `2`.**
-* `TauCeti.nonempty_algEquiv_quaternion_of_finrank_eq_four`: a four-dimensional real central
-  division algebra is `ℍ[ℝ]`.
+* `TauCeti.nonempty_algEquiv_quaternion_of_finrank_eq_four`: a four-dimensional real algebra
+  that is a domain is `ℍ[ℝ]`.
 * `TauCeti.nonempty_algEquiv_real_or_quaternion`: **Frobenius' theorem**, a real central division
   algebra is `ℝ` or `ℍ[ℝ]`.
 
@@ -180,19 +182,9 @@ private theorem exists_smul_mul_self_eq_neg_one {u : D} {r : ℝ}
   exact ⟨(Real.sqrt (-r))⁻¹, by
     rw [smul_mul_smul_comm, hu, Algebra.smul_def, ← map_mul, hscal, map_neg, map_one]⟩
 
-/-- **A finite-dimensional real algebra that is a domain and is not `ℝ` contains a square root
-of `-1`.**
-
-Take any `y` outside the copy of `ℝ`, write `y * y = a + b * y`, and complete the square: the
-element `u = y - b / 2` has `u * u` a real scalar, and `u` is again outside `ℝ`, so
-`exists_smul_mul_self_eq_neg_one` rescales it to a square root of `-1`. -/
-theorem exists_mul_self_eq_neg_one (h : finrank ℝ D ≠ 1) : ∃ i : D, i * i = -1 := by
-  -- Some `y` is not a real scalar.
-  obtain ⟨y, hy⟩ : ∃ y : D, y ∉ (⊥ : Subalgebra ℝ D) := by
-    by_contra hc
-    refine h (Subalgebra.bot_eq_top_iff_finrank_eq_one.1 (top_le_iff.1 fun x _ ↦ ?_))
-    by_contra hx
-    exact hc ⟨x, hx⟩
+/-- **Every non-real element can be recentred and rescaled to a square root of `-1`.** -/
+private theorem exists_smul_sub_mul_self_eq_neg_one {y : D} (hy : y ∉ (⊥ : Subalgebra ℝ D)) :
+    ∃ b c : ℝ, (c • (y - algebraMap ℝ D (b / 2))) * (c • (y - algebraMap ℝ D (b / 2))) = -1 := by
   obtain ⟨a, b, hab⟩ := exists_mul_self_eq_algebraMap_add_smul y
   obtain ⟨u, hudef⟩ : ∃ u : D, u = y - algebraMap ℝ D (b / 2) := ⟨_, rfl⟩
   obtain ⟨r, hrdef⟩ : ∃ r : ℝ, r = a + b / 2 * (b / 2) := ⟨_, rfl⟩
@@ -211,7 +203,60 @@ theorem exists_mul_self_eq_neg_one (h : finrank ℝ D ≠ 1) : ∃ i : D, i * i 
     have hyu : y = u + algebraMap ℝ D (b / 2) := by rw [hudef]; abel
     exact hy (hyu ▸ add_mem hmem (Subalgebra.algebraMap_mem _ _))
   obtain ⟨c, hc⟩ := exists_smul_mul_self_eq_neg_one hu hune
-  exact ⟨c • u, hc⟩
+  exact ⟨b, c, hudef ▸ hc⟩
+
+/-- **A finite-dimensional real algebra that is a domain and is not `ℝ` contains a square root
+of `-1`.** -/
+theorem exists_mul_self_eq_neg_one (h : finrank ℝ D ≠ 1) : ∃ i : D, i * i = -1 := by
+  -- Some `y` is not a real scalar.
+  obtain ⟨y, hy⟩ : ∃ y : D, y ∉ (⊥ : Subalgebra ℝ D) := by
+    by_contra hc
+    refine h (Subalgebra.bot_eq_top_iff_finrank_eq_one.1 (top_le_iff.1 fun x _ ↦ ?_))
+    by_contra hx
+    exact hc ⟨x, hx⟩
+  obtain ⟨b, c, hc⟩ := exists_smul_sub_mul_self_eq_neg_one hy
+  exact ⟨_, hc⟩
+
+/-- **A square root of `-1` in a real domain of dimension more than `2` is not central.** -/
+private theorem exists_mul_ne_mul_of_two_lt_finrank {i : D} (hi : i * i = -1)
+    (h : 2 < finrank ℝ D) : ∃ x : D, x * i ≠ i * x := by
+  by_contra hc
+  push Not at hc
+  -- Otherwise `i` is central, and then every element lies in the plane `span {1, i}`: a recentred
+  -- and rescaled non-real element is a square root of `-1` commuting with `i`, so it is `±i`.
+  obtain ⟨y, hy⟩ : ∃ y : D, y ∉ Submodule.span ℝ (Set.range ![(1 : D), i]) := by
+    by_contra hy
+    push Not at hy
+    have hle := finrank_range_le_card (R := ℝ) ![(1 : D), i]
+    have htop : Submodule.span ℝ (Set.range ![(1 : D), i]) = ⊤ := eq_top_iff.2 fun y _ ↦ hy y
+    rw [Set.finrank, htop, finrank_top] at hle
+    simp at hle
+    omega
+  have hybot : y ∉ (⊥ : Subalgebra ℝ D) := fun hmem ↦ by
+    obtain ⟨t, rfl⟩ := Algebra.mem_bot.1 hmem
+    exact hy (by
+      rw [Algebra.algebraMap_eq_smul_one]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
+  obtain ⟨b, c, hjsq⟩ := exists_smul_sub_mul_self_eq_neg_one hybot
+  obtain ⟨j, hjdef⟩ : ∃ j : D, j = c • (y - algebraMap ℝ D (b / 2)) := ⟨_, rfl⟩
+  rw [← hjdef] at hjsq
+  have hij : j = i ∨ j = -i :=
+    ((commute_iff_eq j i).2 (hc j)).mul_self_eq_mul_self_iff.mp (hjsq.trans hi.symm)
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    simp [hjdef] at hjsq
+  have hyj : y = (b / 2) • (1 : D) + c⁻¹ • j := by
+    rw [hjdef, smul_smul, inv_mul_cancel₀ hc0, one_smul, ← Algebra.algebraMap_eq_smul_one]
+    abel
+  refine hy ?_
+  rw [hyj]
+  refine Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
+    (Submodule.smul_mem _ _ ?_)
+  rcases hij with h | h
+  · rw [h]
+    exact Submodule.subset_span ⟨1, rfl⟩
+  · rw [h]
+    exact Submodule.neg_mem _ (Submodule.subset_span ⟨1, rfl⟩)
 
 /-- **A square root of `-1` that does not commute with everything has an anticommuting partner**:
 if `i * i = -1` and some `x` fails to commute with `i`, then there is a `j` with `j * j = -1` and
@@ -274,10 +319,14 @@ end Quadratic
 
 namespace Algebra
 
-/-- **A real central division algebra has degree at most `2`.** It has a subfield of degree
-`deg ℝ D`, and a finite extension of `ℝ` is `ℝ` or `ℂ`, so that degree is `1` or `2`. -/
-theorem deg_le_two (D : Type*) [DivisionRing D] [Algebra ℝ D] [Algebra.IsCentral ℝ D]
-    [FiniteDimensional ℝ D] : deg ℝ D ≤ 2 := by
+/-- **A real central division algebra has degree at most `2`.** When `D` is finite dimensional its
+degree is `1` or `2`; otherwise `finrank ℝ D = 0`, so the degree is `0`. -/
+theorem deg_le_two (D : Type*) [DivisionRing D] [Algebra ℝ D] [Algebra.IsCentral ℝ D] :
+    deg ℝ D ≤ 2 := by
+  by_cases hD : FiniteDimensional ℝ D
+  swap
+  · rw [deg_eq_of_finrank_eq_sq (n := 0) (by simp [Module.finrank_of_not_finite hD])]
+    norm_num
   obtain ⟨L, hL, _, hdeg⟩ := exists_subalgebra_isField_isSeparable_finrank_eq_deg ℝ D
   let _ : Field L := hL.toField
   have _ : Algebra.IsAlgebraic ℝ L := Algebra.IsAlgebraic.of_finite ℝ L
@@ -317,7 +366,7 @@ end Examples
 
 /-! ### Frobenius' theorem -/
 
-/-- A four-dimensional central `ℝ`-algebra without zero divisors is `ℝ`-isomorphic to the Hamilton
+/-- A four-dimensional `ℝ`-algebra without zero divisors is `ℝ`-isomorphic to the Hamilton
 quaternions `ℍ[ℝ]`. Such an algebra is automatically a division algebra, being a domain of finite
 dimension over a field.
 
@@ -326,24 +375,11 @@ known: `TauCeti.nonempty_algEquiv_real_or_quaternion` re-derives the degree boun
 disjunction that still has to be eliminated. The absence of zero divisors is what rules out the
 split central simple algebra `Matrix (Fin 2) (Fin 2) ℝ`. -/
 theorem nonempty_algEquiv_quaternion_of_finrank_eq_four (D : Type*) [Ring D] [IsDomain D]
-    [Algebra ℝ D] [Algebra.IsCentral ℝ D] (h4 : finrank ℝ D = 4) :
+    [Algebra ℝ D] (h4 : finrank ℝ D = 4) :
     Nonempty (D ≃ₐ[ℝ] ℍ[ℝ]) := by
   have : FiniteDimensional ℝ D := .of_finrank_pos (by omega)
   obtain ⟨i, hi⟩ := exists_mul_self_eq_neg_one (D := D) (by omega)
-  -- `i` is not central, because `-1` is not a square in `ℝ`.
-  have hinotbot : i ∉ (⊥ : Subalgebra ℝ D) := by
-    intro hmem
-    obtain ⟨t, ht⟩ := Algebra.mem_bot.1 hmem
-    have ht2 : algebraMap ℝ D (t * t) = algebraMap ℝ D (-1) := by
-      rw [map_mul, ht, hi, map_neg, map_one]
-    nlinarith [mul_self_nonneg t, (algebraMap ℝ D).injective ht2]
-  obtain ⟨x, hx⟩ : ∃ x : D, x * i ≠ i * x := by
-    by_contra hc
-    refine hinotbot ?_
-    have hmem : i ∈ Subalgebra.center ℝ D := Subalgebra.mem_center_iff.2 fun c ↦ by
-      by_contra hcc
-      exact hc ⟨c, hcc⟩
-    rwa [Algebra.IsCentral.center_eq_bot] at hmem
+  obtain ⟨x, hx⟩ := exists_mul_ne_mul_of_two_lt_finrank hi (by omega)
   -- The anticommuting partner, and the quaternion basis the pair forms.
   obtain ⟨j, hj, hanti⟩ := exists_mul_self_eq_neg_one_and_mul_eq_neg_mul hi hx
   have hanti' : j * i = -(i * j) := by rw [hanti]; abel

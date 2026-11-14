@@ -106,7 +106,8 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
   -- Prepare all three formal coefficient polynomials with the same centers and evaluator.
   let P : Fin 3 → MvPolynomial σ ℝ := ![p.leadingCoeff, p.coeff 0, p.discr]
   let v : Fin 3 → σ →₀ ℕ := ![vLead, vConst, vDiscr]
-  have hval (i : Fin 3) : ∀ᶠ x in 𝓝 a, (P i).lazardValuation (φ x) = toLex (v i) := by
+  have hval : ∀ i : Fin 3, ∀ᶠ x in 𝓝 a, (P i).lazardValuation (φ x) = toLex (v i) := by
+    intro i
     fin_cases i
     · simpa [P, v] using hlead
     · simpa [P, v] using hconst
@@ -118,42 +119,32 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     TauCeti.exists_complexification_isLazardEvaluator_analytic_units P hφ v hval hV
   let F : (ι → ℂ) × ℂ → ℂ[X] := fun b ↦
     p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (fun j ↦ Φ b.1 j + b.2 ^ c j))
-  have hcoeff (b : (ι → ℂ) × ℂ) (i : ℕ) : (F b).coeff i =
-      MvPolynomial.eval (fun j ↦ Φ b.1 j + b.2 ^ c j)
-        ((p.coeff i).map Complex.ofRealHom) := by
-    simp only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
-  have hFA (i : ℕ) : AnalyticOnNhd ℂ (fun b ↦ (F b).coeff i)
-      (ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) := by
-    intro b hb
-    simp only [hcoeff]
-    have h := AnalyticAt.aeval_mvPolynomial
-      (f := fun b : (ι → ℂ) × ℂ ↦ fun j ↦ Φ b.1 j + b.2 ^ c j)
-      (fun j ↦ ((analyticAt_pi_iff.1 (hΦ b.1 hb.1)) j).comp analyticAt_fst |>.add
-        (analyticAt_snd.pow (c j))) ((p.coeff i).map Complex.ofRealHom)
-    simpa only [MvPolynomial.aeval_eq_eval] using h
   have hL (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) :
       (F b).coeff p.natDegree = b.2 ^ Finsupp.weight c vLead * u 0 b := by
-    simpa [hcoeff, P, v] using
-      (hforms b hb 0).2
+    simp only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
+    simpa [P, v] using (hforms b hb 0).2
   have hC (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) :
       (F b).coeff 0 = b.2 ^ Finsupp.weight c vConst * u 1 b := by
-    simpa [hcoeff, P, v] using (hforms b hb 1).2
+    simp only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
+    simpa [P, v] using (hforms b hb 1).2
   -- Nonzero leading coefficient preserves the formal degree off the hyperplane.
+  have hnz (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 ρ \ {0})) (k : Fin 3) :
+      MvPolynomial.eval₂ Complex.ofRealHom
+        (fun j ↦ Φ b.1 j + b.2 ^ c j) (P k) ≠ 0 := by
+    rw [MvPolynomial.eval₂_eq_eval_map, (hforms b ⟨hb.1, hb.2.1⟩ k).2]
+    exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hforms b ⟨hb.1, hb.2.1⟩ k).1
   have hdeg (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 ρ \ {0})) :
       (F b).natDegree = p.natDegree := by
-    apply natDegree_map_of_leadingCoeff_ne_zero
-    have h := hL b ⟨hb.1, hb.2.1⟩
-    rw [hcoeff, coeff_natDegree] at h
-    rw [MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map, h]
-    exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hforms b ⟨hb.1, hb.2.1⟩ 0).1
+    refine natDegree_map_of_leadingCoeff_ne_zero _ ?_
+    simpa only [P, Matrix.cons_val_zero, MvPolynomial.coe_eval₂Hom] using hnz b hb 0
   have hD (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 ρ \ {0})) :
       (F b).discr ≠ 0 := by
-    -- The degree-preserving discriminant map theorem is used only on this punctured set.
     rw [discr_map_of_natDegree_eq _ (hdeg b hb)]
-    have h := (hforms b ⟨hb.1, hb.2.1⟩ 2).2
-    simp only [P, v, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at h
-    rw [MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map, h]
-    exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hforms b ⟨hb.1, hb.2.1⟩ 2).1
+    simpa only [P, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons,
+      MvPolynomial.coe_eval₂Hom] using hnz b hb 2
+  have hcoord (j : σ) : AnalyticOnNhd ℂ (fun b : (ι → ℂ) × ℂ ↦ Φ b.1 j + b.2 ^ c j)
+      (ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 ρ) := fun b hb ↦
+    (((analyticAt_pi_iff.1 (hΦ b.1 hb.1)) j).comp analyticAt_fst).add (analyticAt_snd.pow (c j))
   -- A complex parameter ball is simply connected, allowing the constructed Laurent splitting.
   let : ContractibleSpace (ball (fun j ↦ (a j : ℂ)) ρ) :=
     (convex_ball _ ρ).contractibleSpace ⟨_, mem_ball_self hρ⟩
@@ -161,7 +152,12 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     SimplyConnectedSpace.ofContractible _
   obtain ⟨R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hform⟩ :=
     TauCeti.Polynomial.exists_analyticOnNhd_nonmonic_laurent isOpen_ball hρ
-      (fun i _ ↦ hFA i) hdeg hD (hu 0) (fun b hb ↦ (hforms b hb 0).1)
+      (fun i _ ↦ by
+        simpa only [F, coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map,
+          MvPolynomial.aeval_eq_eval] using
+          AnalyticOnNhd.aeval_mvPolynomial hcoord ((p.coeff i).map Complex.ofRealHom))
+      hdeg hD (hu 0)
+      (fun b hb ↦ (hforms b hb 0).1)
       (hu 1) (fun b hb ↦ (hforms b hb 1).1) hL hC
   refine ⟨ρ, hρ, Φ, c, hrange ▸ hc, hΦ, hreal, hstar,
     u 0, u 2, hu 0, ?_, hu 2, ?_, R, hR, hfit, r, g, hr, hg, ?_, e, w, he, hw, hw0, hform⟩

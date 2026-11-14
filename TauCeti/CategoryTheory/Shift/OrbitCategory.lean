@@ -29,12 +29,13 @@ morphisms), and the periodicity isomorphism `[n] ⋙ π ≅ π`. Its component a
 identity of `X⟦n⟧`, read as a morphism `X⟦n⟧ ⟶ X` of degree `1`, with inverse in degree `-1`.
 More generally `X⟦n * i⟧ ≅ X` in `D/[n]` for every `i`.
 
-It also proves Keller's universal property. An additive functor `G : D ⥤ E` to a preadditive
-category with a periodicity isomorphism `φ : [n] ⋙ G ≅ G` descends to `lift G φ : D/[n] ⥤ E`,
-which sends a homogeneous piece `f : X ⟶ Y⟦n * i⟧` to `G.map f` followed by the `i`-th power of
-`φ` at `Y` (`CategoryTheory.Iso.periodicityZPow`). The descent restricts to `G` along the
-projection and carries the periodicity isomorphism of the projection to `φ`, and every additive
-functor with these two properties is isomorphic to it.
+It also proves the existence and uniqueness-up-to-isomorphism parts of Keller's 2-universal
+property. An additive functor `G : D ⥤ E` to a preadditive category with a periodicity isomorphism
+`φ : [n] ⋙ G ≅ G` descends to `lift G φ : D/[n] ⥤ E`, which sends a homogeneous piece
+`f : X ⟶ Y⟦n * i⟧` to `G.map f` followed by the `i`-th power of `φ` at `Y`
+(`CategoryTheory.Iso.periodicityZPow`). The descent restricts to `G` along the projection and
+carries the periodicity isomorphism of the projection to `φ`, and every additive functor with
+these two properties is isomorphic to it.
 
 Descent is compatible with composition. Postcomposing `lift G φ` with an additive functor `H`
 gives the descent of `G ⋙ H`. An additive functor `F : D ⥤ D'` commuting with the shifts induces

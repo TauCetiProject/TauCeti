@@ -72,31 +72,31 @@ section Defs
 variable {k M : Type*} [CommSemiring k] [AddCommMonoid M] [Module k M] [Module k[X] M]
 
 /-- The degrees in which a graded `k[X]`-module has a homogeneous element that is not torsion. -/
-def nonTorsionDegrees (G : InternalGrading k M) : Set ℤ :=
+def nonTorsionDegrees (G : InternalGrading k M ℤ) : Set ℤ :=
   {p | ∃ x ∈ G.piece p, x ∉ Submodule.torsion k[X] M}
 
 /-- The supremum of the degrees in which a graded `k[X]`-module has a homogeneous non-torsion
 element. When that set is nonempty and bounded above, this is its maximal element; those conditions
 hold for a finitely generated module that is not torsion and on which `X` lowers degree
 (`InternalGrading.isGreatest_supNonTorsionDegree`). -/
-noncomputable def supNonTorsionDegree (G : InternalGrading k M) : ℤ :=
+noncomputable def supNonTorsionDegree (G : InternalGrading k M ℤ) : ℤ :=
   sSup G.nonTorsionDegrees
 
 /-- The supremal non-torsion degree is the supremum of the degrees of homogeneous non-torsion
 elements. -/
-theorem supNonTorsionDegree_def (G : InternalGrading k M) :
+theorem supNonTorsionDegree_def (G : InternalGrading k M ℤ) :
     G.supNonTorsionDegree = sSup G.nonTorsionDegrees :=
   (rfl)
 
 /-- Membership in `G.nonTorsionDegrees`. -/
 @[simp]
-theorem mem_nonTorsionDegrees {G : InternalGrading k M} {p : ℤ} :
+theorem mem_nonTorsionDegrees {G : InternalGrading k M ℤ} {p : ℤ} :
     p ∈ G.nonTorsionDegrees ↔ ∃ x ∈ G.piece p, x ∉ Submodule.torsion k[X] M :=
   Iff.rfl
 
 /-- Shifting a grading by `c` subtracts `c` from every non-torsion degree. -/
 @[simp]
-theorem nonTorsionDegrees_shift (G : InternalGrading k M) (c : ℤ) :
+theorem nonTorsionDegrees_shift (G : InternalGrading k M ℤ) (c : ℤ) :
     (G.shift c).nonTorsionDegrees = OrderIso.addRight (-c) '' G.nonTorsionDegrees := by
   ext p
   simp only [mem_nonTorsionDegrees, shift_piece, Set.mem_image]
@@ -115,7 +115,7 @@ theorem nonTorsionDegrees_shift (G : InternalGrading k M) (c : ℤ) :
 
 /-- The supremal non-torsion degree decreases by `c` when the grading is shifted by `c`. -/
 @[simp]
-theorem supNonTorsionDegree_shift (G : InternalGrading k M) (c : ℤ)
+theorem supNonTorsionDegree_shift (G : InternalGrading k M ℤ) (c : ℤ)
     (hne : G.nonTorsionDegrees.Nonempty) (hbdd : BddAbove G.nonTorsionDegrees) :
     (G.shift c).supNonTorsionDegree = G.supNonTorsionDegree - c := by
   rw [supNonTorsionDegree_def, nonTorsionDegrees_shift, ← OrderIso.map_csSup' _ hne hbdd,
@@ -124,7 +124,7 @@ theorem supNonTorsionDegree_shift (G : InternalGrading k M) (c : ℤ)
 /-- A graded `k[X]`-module has a homogeneous non-torsion element exactly when it is not torsion:
 if every homogeneous component of `x` is torsion, then so is their sum `x`. -/
 @[simp]
-theorem nonTorsionDegrees_nonempty_iff (G : InternalGrading k M) :
+theorem nonTorsionDegrees_nonempty_iff (G : InternalGrading k M ℤ) :
     G.nonTorsionDegrees.Nonempty ↔ ¬Module.IsTorsion k[X] M := by
   classical
   constructor
@@ -146,7 +146,7 @@ section Degree
 variable {k M N : Type*} [CommSemiring k]
   [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
   [AddCommMonoid N] [Module k N] [Module k[X] N] [IsScalarTower k k[X] N]
-  {G : InternalGrading k M} {H : InternalGrading k N} {d : ℕ}
+  {G : InternalGrading k M ℤ} {H : InternalGrading k N ℤ} {d : ℕ}
 
 /-- In a finitely generated graded `k[X]`-module on which `X` lowers degree, the degrees of the
 homogeneous non-torsion elements are bounded above. -/
@@ -230,7 +230,7 @@ section Domain
 variable {k M : Type*} [CommSemiring k] [IsDomain k]
   [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
   [Module.IsTorsionFree k M]
-  {G : InternalGrading k M} {d : ℕ}
+  {G : InternalGrading k M ℤ} {d : ℕ}
 
 /-- When the coefficients `k` form a domain over which `M` is torsion-free, a homogeneous element
 of a graded `k[X]`-module on which `X` lowers degree by a nonzero `d` is torsion exactly when some

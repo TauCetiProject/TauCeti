@@ -18,6 +18,10 @@ The tail over `(1, ∞)` of `u^R exp(-c u^α) du/u` converges for every real `R`
 `c, α > 0`, and is bounded by the positive Gamma moment at `(R+1)/α` when `R > -1`.
 In particular this bound remains finite at `R = 0`. These estimates provide the quantitative
 ingredient for the split Mellin method of proving order-one growth for completed L-functions.
+On a half-plane `Re s ≤ R` the upper Mellin integral is bounded by the tail at the fixed
+exponent `R`, independently of `Im s`; this gives boundedness on vertical strips.
+A kernel continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies the
+exponential bound `C exp (-p u ^ 1)` on all of `(1, ∞)` that these estimates take.
 
 ## References
 
@@ -126,6 +130,39 @@ theorem norm_integral_cpow_smul_le_mul_Gamma {f : ℝ → E} {C₀ c α : ℝ}
     _ = C₀ * ∫ u in Ioi 1, u ^ ‖s‖ * exp (-c * u ^ α) / u := integral_const_mul _ _
     _ ≤ _ := mul_le_mul_of_nonneg_left
       (integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma (by linarith [norm_nonneg s]) hc hα) hC₀
+
+/-- On the half-plane `Re s ≤ R`, the upper Mellin integral of an exponentially decaying kernel
+is bounded by the tail moment at the fixed exponent `R`, uniformly in `Im s`. -/
+theorem norm_integral_cpow_smul_le_of_re_le {f : ℝ → E} {C₀ c α R : ℝ}
+    (hc : 0 < c) (hα : 0 < α)
+    (hbound : ∀ u ∈ Ioi 1, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) {s : ℂ} (hs : s.re ≤ R) :
+    ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u‖ ≤
+      C₀ * ∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) / u := by
+  rw [← integral_const_mul]
+  apply norm_integral_le_of_norm_le
+    ((integrableOn_rpow_mul_exp_neg_mul_rpow_div (R := R) hc hα).const_mul C₀)
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
+  have hu0 : 0 < u := zero_lt_one.trans hu
+  rw [norm_smul, Complex.norm_cpow_eq_rpow_re_of_pos hu0, Complex.sub_re, Complex.one_re,
+    rpow_sub hu0, rpow_one]
+  calc
+    u ^ s.re / u * ‖f u‖ ≤ (u ^ R / u) * (C₀ * exp (-c * u ^ α)) := by
+      apply mul_le_mul _ (hbound u hu) (norm_nonneg _) (by positivity)
+      exact div_le_div_of_nonneg_right (rpow_le_rpow_of_exponent_le hu.le hs) hu0.le
+    _ = _ := by ring
+
+/-- A function continuous on `[1, ∞)` with an eventual bound `O(exp (-p u))` satisfies
+`‖f u‖ ≤ C exp (-p u ^ 1)` for every `u > 1`, with `C ≥ 0`. -/
+theorem exists_norm_le_mul_exp_neg_mul_rpow_one_of_isBigO {F : Type*} [NormedAddCommGroup F]
+    {f : ℝ → F} {p : ℝ} (hf : ContinuousOn f (Ici 1)) (h : f =O[atTop] fun u ↦ exp (-p * u)) :
+    ∃ C ≥ 0, ∀ u ∈ Ioi 1, ‖f u‖ ≤ C * exp (-p * u ^ (1 : ℝ)) := by
+  obtain ⟨C, hC⟩ := isBigO_principal.mp (h.isBigO_principal_Ici_of_continuousOn hf
+    (by fun_prop) fun u _ ↦ (exp_pos _).ne')
+  refine ⟨max C 0, le_max_right _ _, fun u hu ↦ ?_⟩
+  have hCu := hC u (mem_Ici.mpr hu.le)
+  rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)] at hCu
+  rw [rpow_one]
+  exact hCu.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (exp_pos _).le)
 
 /-- An exponentially decaying kernel gives logarithmic-exponential growth of its upper Mellin
 integral, uniformly over the whole complex plane. -/

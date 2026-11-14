@@ -82,7 +82,7 @@ theorem one_le_logSeries_radius : 1 ≤ (logSeries 𝕂 A).radius := by
     simpa only [hratio, norm_one, NNReal.coe_one] using
       (tendsto_natCast_div_add_atTop (1 : 𝕂)).norm
   simpa [logSeries_eq_ofScalars, c] using
-    FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A c one_ne_zero hc
+    FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A c hc
 
 variable [CompleteSpace A]
 

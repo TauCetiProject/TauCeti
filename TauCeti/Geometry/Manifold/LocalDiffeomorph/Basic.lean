@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -41,7 +43,10 @@ homeomorphism to the model space which is a local diffeomorphism on its source i
 maximal atlas.
 
 The extended-chart constructor lets maximal-atlas coordinates, including Frobenius flat charts,
-serve as partial diffeomorphisms in constructions of local submanifolds.
+serve as partial diffeomorphisms in constructions of local submanifolds. A partial
+diffeomorphism of the model space read through it has explicit source and forward map
+(`TauCeti.mem_extChartPartialDiffeomorph_trans_trans_symm_source`,
+`TauCeti.extChartPartialDiffeomorph_trans_trans_symm_apply`).
 
 ## Main results
 
@@ -93,6 +98,11 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
   local diffeomorphism.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
 
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 4.5 (the inverse
+  function theorem for manifolds): a smooth map whose differential at a point is invertible is a
+  local diffeomorphism near that point.
 -/
 
 public section
@@ -152,8 +162,8 @@ theorem coe_toPartialDiffeomorphOfMemMaximalAtlas :
 /-- The extended maximal-atlas chart evaluates as the model applied to the original chart. -/
 @[simp]
 theorem toPartialDiffeomorphOfMemMaximalAtlas_apply (x : M) :
-    e.toPartialDiffeomorphOfMemMaximalAtlas he x = I (e x) := by
-  exact congrFun (e.extend_coe (I := I)) x
+    e.toPartialDiffeomorphOfMemMaximalAtlas he x = I (e x) :=
+  congrFun (e.extend_coe (I := I)) x
 
 /-- The inverse extended chart is the inverse model followed by the inverse chart. -/
 @[simp]
@@ -192,9 +202,9 @@ theorem _root_.IsLocalDiffeomorph.coe_diffeomorphOfBijective
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
 
-/-- Precomposing a map with a local diffeomorphism does not change the image of its differential.
-No differentiability of `g` is assumed: when `g` is not differentiable at `φ x`, neither is
-`g ∘ φ` at `x`, and both differentials are zero. -/
+/-- Precomposing a map with a `C^n` local diffeomorphism, `n ≠ 0`, does not change the image of its
+differential. No differentiability of `g` is assumed: when `g` is not differentiable at `φ x`,
+neither is `g ∘ φ` at `x`, and both differentials are zero. -/
 theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
     {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
     {E' H' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E']
@@ -207,13 +217,7 @@ theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
   · rw [mfderiv_comp x hg (hφ.mdifferentiableAt hn), ContinuousLinearMap.toLinearMap_comp]
     exact LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 (hφ.isInvertible_mfderiv hn).surjective)
-  · have hgφ : ¬MDifferentiableAt I K (g ∘ φ) x := fun h => hg <| by
-      have hx : hφ.localInverse (φ x) = x := hφ.localInverse_left_inv hφ.localInverse_mem_target
-      have hinv : MDifferentiableAt J I hφ.localInverse (φ x) :=
-        (hφ.localInverse_isLocalDiffeomorphAt).mdifferentiableAt hn
-      refine (MDifferentiableAt.comp (φ x) (by rwa [hx]) hinv).congr_of_eventuallyEq ?_
-      filter_upwards [hφ.localInverse.open_source.mem_nhds hφ.localInverse_mem_source] with y hy
-      simp [hφ.localInverse_right_inv hy]
+  · have hgφ : ¬MDifferentiableAt I K (g ∘ φ) x := (hφ.mdifferentiableAt_comp_iff hn).not.mpr hg
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgφ]
     simp
 
@@ -299,6 +303,34 @@ theorem extChartPartialDiffeomorph_symm_apply (x : M) (y : E) :
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_symm_apply]
 
+variable {n} in
+/-- A point lies in the source of a partial diffeomorphism `Θ` of the model space read through the
+restricted extended chart at `x` exactly when it lies in the source of that chart, its coordinate
+lies in the source of `Θ`, and the image of the coordinate under `Θ` lies in the interior of the
+chart target. -/
+theorem mem_extChartPartialDiffeomorph_trans_trans_symm_source (x : M)
+    (Θ : PartialDiffeomorph 𝓘(𝕂, E) 𝓘(𝕂, E) E E n) {y : M} :
+    y ∈ (((extChartPartialDiffeomorph I n x).trans Θ).trans
+        (extChartPartialDiffeomorph I n x).symm).source ↔
+      y ∈ (extChartPartialDiffeomorph I n x).source ∧ extChartAt I x y ∈ Θ.source ∧
+        Θ (extChartAt I x y) ∈ interior (extChartAt I x).target := by
+  simp only [PartialDiffeomorph.trans_source, PartialDiffeomorph.coe_trans,
+    PartialDiffeomorph.symm_toPartialEquiv, PartialEquiv.symm_source,
+    extChartPartialDiffeomorph_target, coe_extChartPartialDiffeomorph, mem_inter_iff, mem_preimage,
+    Function.comp_apply, and_assoc]
+
+variable {n} in
+/-- A partial diffeomorphism `Θ` of the model space read through the restricted extended chart at
+`x` sends `y` to the inverse chart applied to `Θ` of the coordinate of `y`. -/
+theorem extChartPartialDiffeomorph_trans_trans_symm_apply (x : M)
+    (Θ : PartialDiffeomorph 𝓘(𝕂, E) 𝓘(𝕂, E) E E n) (y : M) :
+    (((extChartPartialDiffeomorph I n x).trans Θ).trans
+        (extChartPartialDiffeomorph I n x).symm) y =
+      (extChartAt I x).symm (Θ (extChartAt I x y)) := by
+  rw [PartialDiffeomorph.coe_trans, PartialDiffeomorph.coe_trans, Function.comp_apply,
+    Function.comp_apply, coe_extChartPartialDiffeomorph,
+    ← extChartPartialDiffeomorph_symm_apply I n x, ← PartialDiffeomorph.symm_toPartialEquiv]
+
 /-- A diffeomorphism from the model space onto a normed space `F`, composed with the extended chart
 at `x₀` restricted to the preimage of an open set `V₀` inside the interior of the chart target, is a
 `C^n` partial diffeomorphism with source the restricted chart source, and its differential at a
@@ -345,6 +377,8 @@ def PartialDiffeomorph.ofOpenPartialHomeomorph {n : WithTop ℕ∞} (Θ : OpenPa
   contMDiffOn_toFun := contMDiffOn_iff_contDiffOn.2 hΘ
   contMDiffOn_invFun := contMDiffOn_iff_contDiffOn.2 hΘsymm
 
+/-- The partial equivalence underlying `PartialDiffeomorph.ofOpenPartialHomeomorph Θ hΘ hΘsymm` is
+that of `Θ`. -/
 @[simp]
 theorem PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv {n : WithTop ℕ∞}
     (Θ : OpenPartialHomeomorph E F) (hΘ : ContDiffOn 𝕂 n Θ Θ.source)
@@ -479,8 +513,8 @@ theorem _root_.IsLocalDiffeomorphAt.eventually {f : M → N} {x : M}
 injective on a neighbourhood of `x`, where its local inverse is a left inverse. -/
 theorem _root_.IsLocalDiffeomorphAt.exists_mem_nhds_injOn {f : M → N} {x : M}
     (hf : IsLocalDiffeomorphAt I J n f x) : ∃ t ∈ 𝓝 x, InjOn f t :=
-  ⟨_, hf.localInverse_eventuallyEq_left, fun _ ha _ hb hab ↦
-    ha.symm.trans ((congrArg hf.localInverse hab).trans hb)⟩
+  ⟨_, hf.localInverse.open_target.mem_nhds hf.localInverse_mem_target,
+    Set.LeftInvOn.injOn hf.localInverse_eqOn_left⟩
 
 /-- **A local diffeomorphism injective on a compact set is injective near it.** A map into a
 Hausdorff manifold which is injective on a compact set `K` and a `C^n` local diffeomorphism at every

@@ -51,6 +51,7 @@ symplectic coordinate Hopf algebra and group scheme live in
 * `TauCeti.GLSymplectic`: the symplectic matrices as a subgroup of `GL (l ⊕ l) R`.
 * `TauCeti.GLSymplectic.mem_iff` and `TauCeti.GLSymplectic.mem_iff'`: the two standard forms of
   the defining condition, `M J Mᵀ = J` and `Mᵀ J M = J`.
+* `TauCeti.GLSymplectic.star_mem`: the subgroup is closed under transposition.
 * `TauCeti.GLSymplectic.ofSymplecticGroup`: Mathlib's symplectic group, read into the general
   linear group as a monoid homomorphism.
 * `TauCeti.GLSymplectic.mulEquivSymplecticGroup`: the group identification with
@@ -134,6 +135,14 @@ theorem mem_iff' {M : GL (l ⊕ l) R} :
     M ∈ GLSymplectic l R ↔
       (M : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R * (M : Matrix (l ⊕ l) (l ⊕ l) R) = J l R :=
   SymplecticGroup.mem_iff'
+
+/-- The symplectic subgroup is closed under transposition, written `star` on the units of a
+matrix ring over a ring with trivial star. -/
+theorem star_mem [StarRing R] [TrivialStar R] {M : GL (l ⊕ l) R} (hM : M ∈ GLSymplectic l R) :
+    star M ∈ GLSymplectic l R := by
+  rw [mem_iff_mem_symplecticGroup, Units.coe_star, star_eq_conjTranspose,
+    conjTranspose_eq_transpose_of_trivial]
+  exact SymplecticGroup.transpose_mem (mem_iff_mem_symplecticGroup.1 hM)
 
 variable (l R)
 

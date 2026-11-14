@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.Abelian.Maximal
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
-import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
@@ -74,6 +74,9 @@ for instance from a completion of a number field to a concrete model such as `�
   comparison of absolute Galois groups.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
+* `TauCeti.ClassFieldTheory.abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap`:
+  restricting `artinMap K x` from `K^{ab}` to a finite subextension `M` computes
+  `normResidue K M x`.
 * `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_fixes`: an element whose Artin
   symbol fixes a finite Galois extension `M/K` is a norm from `M`.
 * `TauCeti.ClassFieldTheory.mem_normGroup_fixedField_iff`: for a finite abelian extension `M/K`,
@@ -139,7 +142,7 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
     localArtinMap K L ι (Additive.ofMul x) =
       Additive.ofMul
-        (Abelianization.of (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))) := by
+        (Group.Abelianization.of (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))) := by
   set V := fixingOpenNormalSubgroup K L
   set a := unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
     (fixedField_toSubgroup_top_eq_fieldRange K)
@@ -160,7 +163,46 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
   rw [localArtinMap_apply, localArtinEquiv_mk, ← hground,
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    abelianizationCongr_of, layerGalEquiv_mk]
+    Group.abelianizationCongr_of, layerGalEquiv_mk]
+
+/-- **Finite restrictions of `artinMap K` on `K^{ab}/K`.** Let `M` be a finite intermediate field
+of `maximalAbelianExtension K (AlgebraicClosure K) / K`. Reading `artinMap K x` as an automorphism
+of `K^{ab}` via `topologicalAbelianizationEquivMaximalAbelianExtension` and restricting to `M`
+computes `normResidue K M x`. -/
+theorem abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap
+    (M : IntermediateField K (maximalAbelianExtension K (AlgebraicClosure K)))
+    [FiniteDimensional K M] (x : Kˣ) :
+    Group.Abelianization.of
+        (AlgEquiv.restrictNormalHom M
+          (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+            (artinMap K x))) =
+      normResidue K M (x : Kˣ ⧸ normGroup K M) := by
+  let Kab := maximalAbelianExtension K (AlgebraicClosure K)
+  let ιSep : Kab →ₐ[K] SeparableClosure K :=
+    IntermediateField.inclusion
+      (maximalAbelianExtension_le_separableClosure K (AlgebraicClosure K))
+  let ι : M →ₐ[K] SeparableClosure K := ιSep.comp M.val
+  obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K x)
+  let σ₀ : Gal(AlgebraicClosure K/K) := σ
+  have hmk :
+      topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+          (artinMap K x) =
+        AlgEquiv.restrictNormalHom Kab σ₀ := by
+    rw [← hσ]
+    exact AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_mk σ₀
+  have hcomp : Kab.val.comp M.val = (separableClosure K (AlgebraicClosure K)).val.comp ι :=
+    AlgHom.ext fun _ ↦ rfl
+  have hres :
+      AlgEquiv.restrictNormalHom M
+          (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+            (artinMap K x)) =
+        ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) := by
+    rw [hmk, absoluteGaloisGroupRestrictEquiv_apply K σ₀,
+      ← IntermediateField.restrictNormalHom_val M, ← IntermediateField.restrictNormalHom_val Kab,
+      ← IntermediateField.restrictNormalHom_val (separableClosure K (AlgebraicClosure K)),
+      AlgHom.restrictNormalHom_restrictNormalHom, AlgHom.restrictNormalHom_restrictNormalHom,
+      hcomp]
+  rw [hres, normResidue_mk K M ι x, artinMap_restrict K M ι x σ hσ, toMul_ofMul]
 
 /-- **An Artin symbol that fixes a finite Galois extension comes from a norm.** If
 `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ` and fixes
@@ -193,7 +235,7 @@ variable {K} {M : Type*} [Field M] [Algebra K M] [FiniteDimensional K M] [IsAbel
 and `H` a subgroup of `Gal(M/K)`. If `σ ∈ Gal(M/K)` is the norm residue symbol of `u ∈ Kˣ`, then
 `u` is a norm from the fixed field of `H` exactly when `σ ∈ H`. -/
 theorem mem_normGroup_fixedField_iff (H : Subgroup Gal(M/K)) {u : Kˣ} {σ : Gal(M/K)}
-    (hσ : Abelianization.of σ = normResidue K M u) :
+    (hσ : Group.Abelianization.of σ = normResidue K M u) :
     u ∈ normGroup K (IntermediateField.fixedField H) ↔ σ ∈ H := by
   have := IsAbelianGalois.tower_bot K (IntermediateField.fixedField H) M
   let ι : M →ₐ[K] SeparableClosure K := IsSepClosed.lift
@@ -201,7 +243,7 @@ theorem mem_normGroup_fixedField_iff (H : Subgroup Gal(M/K)) {u : Kˣ} {σ : Gal
   -- `σ` is the restriction of a representative `τ` of the absolute Artin symbol of `u`, and the
   -- Artin symbol of `u` for the fixed field is the restriction of `σ`.
   have hστ : σ = ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K τ) := by
-    refine Abelianization.of_injective ?_
+    refine Group.Abelianization.of_injective ?_
     rw [hσ, normResidue_mk K M ι, artinMap_restrict K M ι u τ hτ, toMul_ofMul]
   rw [← localArtinMap_eq_zero_iff K _ (ι.comp (IntermediateField.fixedField H).val),
     artinMap_restrict K _ _ u τ hτ, ← AlgHom.restrictNormalHom_restrictNormalHom, ← hστ,
@@ -337,7 +379,7 @@ private theorem abelianizationRestrict_absoluteArtinMap_normUnits
   -- In the layer `V' ◁ G_L`, the finite Artin symbol of `x` is the class of `τ`.
   have hL : (localClassFormation L).artinMap (ofOpenNormal V')
         (localGroundEquiv L V' (Additive.ofMul x)) =
-      Additive.ofMul (Abelianization.of
+      Additive.ofMul (Group.Abelianization.of
         ((⟨τ, hτV'⟩ : (ofOpenNormal V').ground) : (ofOpenNormal V').Gal)) :=
     (congrArg _ (groundEquivOfOpenNormal_unitsLevelEquiv L V' x).symm).trans
       (((localClassFormation L).abelianizationRestrict_absoluteArtinMap V' _).symm.trans
@@ -351,10 +393,10 @@ private theorem abelianizationRestrict_absoluteArtinMap_normUnits
   refine (congrArg T.inclusionHom ((artinMap_localFormationLayerEquiv K L iota _ _).trans
     (congrArg _ hL))).trans ?_
   refine Eq.trans ?_ (abelianizationRestrict_mk V ⟨localFormationHom K L iota τ, by simp⟩).symm
-  rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, abelianizationCongr_of,
+  rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, Group.abelianizationCongr_of,
     localFormationLayerEquiv_galEquiv_mk K L iota _ _ ⟨_, hτs⟩ rfl,
     LayerRestriction.inclusionHom_of, LayerRestriction.galHom_mk]
-  exact congrArg (fun w ↦ Additive.ofMul (Abelianization.of
+  exact congrArg (fun w ↦ Additive.ofMul (Group.Abelianization.of
     (QuotientGroup.mk w : (ofOpenNormal V).Gal))) (Subtype.ext (Subgroup.coe_inclusion _ _))
 
 /-- **Norm functoriality of the absolute local Artin map.** Let `L/K` be a finite extension of

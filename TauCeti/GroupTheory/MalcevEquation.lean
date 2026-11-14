@@ -5,21 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import TauCeti.GroupTheory.CSA
+import TauCeti.GroupTheory.Abelianization.Basic
+import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
 /-!
 # Vaught's condition and Malcev's equation
 
 A group `H` satisfies *Vaught's condition* when `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces `x`, `y` and
-`z` to commute pairwise; by Lyndon's theorem every free group does. In a torsion-free CSA group
-satisfying Vaught's condition and containing two noncommuting elements `a` and `b`, Malcev's
-equation `x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2` has only the trivial solution
-`x = y = 1`. Thus the single word `malcevWord a b x y` vanishes exactly when both `x` and `y` do.
-In a CSA group, `x = 1 ∨ y = 1` holds exactly when `x` commutes with `y`, `a * y * a⁻¹` and
+`z` to commute pairwise. By Lyndon's theorem every free group does (`IsFreeGroup.isVaught`, in
+`TauCeti.GroupTheory.FreeGroup.Vaught`), while the dihedral group of order `8` does not. In a
+torsion-free CSA group satisfying Vaught's condition and containing two noncommuting elements `a`
+and `b`, Malcev's equation `x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2` has only the trivial
+solution `x = y = 1`. Thus the single word `malcevWord a b x y` vanishes exactly when both `x` and
+`y` do. In a CSA group, `x = 1 ∨ y = 1` holds exactly when `x` commutes with `y`, `a * y * a⁻¹` and
 `b * y * b⁻¹` (`Group.IsCSA.eq_one_or_eq_one_iff_commute_conj`); combining these three
 commutators with Malcev's word gives one word `malcevOrWord a b x y` that vanishes exactly when
 `x` or `y` does. These words reduce conjunctions and disjunctions of equations to a single
 equation; see `TauCeti.GroupTheory.GroupAlgGeom.SingleEquation`.
+
+Two facts about the equation `x ^ 2 * y ^ 2 * z ^ 2 = 1` in arbitrary groups lead to Lyndon's
+theorem. If `x * y * z` commutes with `x` and `y` and squares to the identity, then `x`, `y` and
+`z` commute pairwise. If the abelianization of the group is torsion-free, then `x * y * z` lies
+in the commutator subgroup; since the commutators of the dihedral group of order `8` are central
+and square to the identity, every homomorphism to that dihedral group sends `x`, `y` and `z` to
+pairwise commuting elements.
 
 ## Main definitions
 
@@ -29,6 +41,16 @@ equation; see `TauCeti.GroupTheory.GroupAlgGeom.SingleEquation`.
 
 ## Main results
 
+* `Group.not_isVaught_dihedralGroup_four`: the dihedral group of order `8` does not satisfy
+  Vaught's condition.
+* `Group.IsVaught.isMulCommutative_closure`: in a group satisfying Vaught's condition, a solution
+  of `x ^ 2 * y ^ 2 * z ^ 2 = 1` generates a commutative subgroup.
+* `TauCeti.pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute`: if
+  `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` commutes with `a` and `b` and squares to the
+  identity, then `a`, `b` and `c` commute pairwise.
+* `TauCeti.pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one`: in a group with
+  torsion-free abelianization, every homomorphism to the dihedral group of order `8` sends a
+  solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` to pairwise commuting elements.
 * `Group.IsVaught.malcevWord_eq_one_iff`: Malcev's equation has only the trivial solution.
 * `Group.IsVaught.malcevOrWord_eq_one_iff`: the disjunction as a single word.
 
@@ -50,7 +72,8 @@ namespace Group
 variable (G : Type*) [Group G]
 
 /-- A group satisfies *Vaught's condition* when `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces `x`, `y` and
-`z` to commute pairwise. By Lyndon's theorem every free group satisfies it. -/
+`z` to commute pairwise. By Lyndon's theorem every free group satisfies it
+(`IsFreeGroup.isVaught`). -/
 def IsVaught : Prop :=
   ∀ x y z : G, x ^ 2 * y ^ 2 * z ^ 2 = 1 → Commute x y ∧ Commute x z ∧ Commute y z
 
@@ -59,6 +82,23 @@ theorem isVaught_iff : IsVaught G ↔
     ∀ x y z : G, x ^ 2 * y ^ 2 * z ^ 2 = 1 → Commute x y ∧ Commute x z ∧ Commute y z :=
   Iff.rfl
 
+/-- The dihedral group of order `8` does not satisfy Vaught's condition: for the rotation `r 1` and
+the reflection `sr 0`, the product `r 1 ^ 2 * sr 0 ^ 2 * r 1 ^ 2` is trivial although `r 1` and
+`sr 0` do not commute. -/
+theorem not_isVaught_dihedralGroup_four : ¬IsVaught (DihedralGroup 4) := fun h =>
+  absurd (h (DihedralGroup.r 1) (DihedralGroup.sr 0) (DihedralGroup.r 1) (by decide)).1.eq
+    (by decide)
+
+variable {G}
+
+/-- In a group satisfying Vaught's condition, elements `x`, `y` and `z` with
+`x ^ 2 * y ^ 2 * z ^ 2 = 1` generate a commutative subgroup. -/
+theorem IsVaught.isMulCommutative_closure (hG : IsVaught G) {x y z : G}
+    (h : x ^ 2 * y ^ 2 * z ^ 2 = 1) : IsMulCommutative (Subgroup.closure ({x, y, z} : Set G)) := by
+  obtain ⟨hxy, hxz, hyz⟩ := hG x y z h
+  exact Subgroup.isMulCommutative_closure <| by
+    simp [Set.pairwise_insert, hxy, hxz, hyz, hxy.symm, hxz.symm, hyz.symm]
+
 end Group
 
 namespace TauCeti
@@ -66,6 +106,46 @@ namespace TauCeti
 open Group
 
 variable {G H : Type*} [Group G] [Group H]
+
+/-- If `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` commutes with `a` and `b` and squares to the
+identity, then `a`, `b` and `c` commute pairwise. -/
+theorem pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute {a b c : G}
+    (ha : Commute a (a * b * c)) (hb : Commute b (a * b * c)) (hc2 : (a * b * c) ^ 2 = 1)
+    (h : a ^ 2 * b ^ 2 * c ^ 2 = 1) : ({a, b, c} : Set G).Pairwise Commute := by
+  have hck : c = (a * b)⁻¹ * (a * b * c) := by group
+  have hab : Commute a b := by
+    have hc' : c ^ 2 = (a * b)⁻¹ ^ 2 := by
+      rw [hck, (ha.mul_left hb).inv_left.mul_pow, hc2, mul_one]
+    have : a ^ 2 * b ^ 2 * c ^ 2 = a * ⁅a, b⁆ * a⁻¹ := by
+      rw [hc']
+      simp only [commutatorElement_def, sq]
+      group
+    rw [← commutatorElement_eq_one_iff_commute]
+    simpa [h] using this.symm
+  have hac : Commute a c := hck ▸ ((Commute.refl a).mul_right hab).inv_right.mul_right ha
+  have hbc : Commute b c := hck ▸ (hab.symm.mul_right (Commute.refl b)).inv_right.mul_right hb
+  simp [Set.pairwise_insert, hab, hac, hbc, hab.symm, hac.symm, hbc.symm]
+
+/-- In a group with torsion-free abelianization, every homomorphism to the dihedral group of order
+`8` sends a solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` to pairwise commuting elements. -/
+theorem pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one
+    [IsMulTorsionFree (Group.Abelianization G)] {x y z : G} (h : x ^ 2 * y ^ 2 * z ^ 2 = 1)
+    (π : G →* DihedralGroup 4) : ({π x, π y, π z} : Set (DihedralGroup 4)).Pairwise Commute := by
+  have h2 : Group.Abelianization.of (x * y * z) ^ 2 = 1 := by
+    rw [← map_one Group.Abelianization.of, ← h]
+    simp [mul_pow]
+  have hk : x * y * z ∈ commutator G :=
+    Group.Abelianization.of_eq_one_iff.1 ((pow_eq_one_iff_left two_ne_zero).1 h2)
+  have hc : π (x * y * z) ∈ Subgroup.center (DihedralGroup 4) := by
+    have := Subgroup.mem_map_of_mem π hk
+    rw [map_commutator_eq] at this
+    apply commutator_le_center_dihedralGroup_iff.2 dvd_rfl
+    rw [commutator_def]
+    exact Subgroup.commutator_mono le_top le_top this
+  have hc' : π x * π y * π z ∈ Subgroup.center (DihedralGroup 4) := by simpa using hc
+  exact pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute (Subgroup.mem_center_iff.1 hc' _)
+    (Subgroup.mem_center_iff.1 hc' _) (by simpa using sq_eq_one_of_mem_center_dihedralGroup hc)
+    (by simpa using congrArg π h)
 
 /-- Malcev's word `x ^ 2 * a * x ^ 2 * a⁻¹ * ((y * b * y * b⁻¹) ^ 2)⁻¹`. It vanishes exactly when
 `x ^ 2 * a * x ^ 2 * a⁻¹ = (y * b * y * b⁻¹) ^ 2`, which in a torsion-free CSA group satisfying

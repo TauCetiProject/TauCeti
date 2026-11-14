@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Periodic
-public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
+public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -135,7 +135,8 @@ theorem exists_forall_norm_sub_le_mul_integral_of_nondegenerate (hH : ContDiff �
     rw [hε₁, div_le_iff₀ (by positivity)]
     linarith
   obtain ⟨δ, hδ, hlin⟩ := IsCompact.exists_pos_forall_norm_sub_sub_fderiv_le
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hXc hxc.continuousOn (ε := ε₁) (by positivity)
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) (fun _ _ ↦ hXc.contDiffAt) hxc.continuousOn (ε := ε₁)
+    (by positivity)
   refine ⟨δ, hδ, 2 * C₀, by positivity, fun {γ γ'} hγ' hγ hγ1 hγx ↦ ?_⟩
   set ξ : ℝ → V := fun t ↦ γ t - x t with hξdef
   set η : ℝ → V := fun t ↦ γ' t - X t (γ t) with hηdef
@@ -192,7 +193,8 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
     exists_forall_norm_sub_le_mul_integral_of_nondegenerate hH hx hx1 hnd
   -- Near `x`, the vector field is Lipschitz at `x t` with constant `|L|`.
   obtain ⟨δ₂, hδ₂, L, hlip⟩ :=
-    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul hXc hxc.continuousOn
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul
+      (fun _ _ ↦ hXc.contDiffAt) hxc.continuousOn
   have hXlip (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (y : V) (hy : ‖y - x t‖ ≤ δ₂) :
       ‖X t y - X t (x t)‖ ≤ |L| * ‖y - x t‖ :=
     (hlip t ht y hy).trans (mul_le_mul_of_nonneg_right (le_abs_self _) (norm_nonneg _))
