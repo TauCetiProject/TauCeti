@@ -9,9 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 public import TauCeti.Analysis.Calculus.Jet.Nonlinear
-import TauCeti.Analysis.Calculus.ContDiff.TaylorInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.Jet.Realization
 
@@ -39,10 +37,11 @@ The main results are:
 * `TauCeti.jetCoordChange_id`, `TauCeti.jetCoordChange_comp`, `TauCeti.jetCoordChange_inverse`:
   identity, cocycle, and local germ-inverse laws for arbitrary jet tuples;
 * `TauCeti.jetCoordChange_comp_perm`: preservation of slot symmetry;
-* `TauCeti.jetCoordChange_sub_of_eq_lt` and `TauCeti.jetCoordChange_last_sub`: when two jets agree
-  strictly below a positive order, all nonlinear partition terms cancel and their difference at
-  that order transforms linearly by the vertical derivative of `g` and the base derivative of `h`
-  (exhibiting the affine bundle model `J^{r+1}E → J^rE`);
+* `TauCeti.jetCoordChange_sub_of_eq_lt`, `TauCeti.jetCoordChange_last_sub`, and
+  `TauCeti.jetCoordChange_jetSnoc_last_eq`: when two jets agree strictly below a positive order, all
+  nonlinear partition terms cancel and their difference at that order transforms linearly by the
+  vertical derivative of `g` and the base derivative of `h` (exhibiting the affine bundle model
+  `J^{r+1}E → J^rE`);
 * `TauCeti.jetCoordChange_last_bijective` and `TauCeti.jetCoordChange_last_symm_bijective`:
   bijectivity of the top-order transition over a fixed lower `r`-jet;
 * `TauCeti.contDiffOn_jetCoordChange`: `C^m` smoothness on open bundle-chart domains when `h` and
@@ -97,6 +96,7 @@ theorem jetTruncate_refl (r : ℕ) (j : (i : Fin (r + 1)) → E [×i.val]→L[�
   funext i
   simp
 
+@[simp]
 theorem jetTruncate_trans {r₁ r₂ r₃ : ℕ} (h₁₂ : r₁ ≤ r₂) (h₂₃ : r₂ ≤ r₃)
     (j : (i : Fin (r₃ + 1)) → E [×i.val]→L[𝕜] F) :
     jetTruncate h₁₂ (jetTruncate h₂₃ j) = jetTruncate (h₁₂.trans h₂₃) j :=
@@ -173,45 +173,6 @@ theorem jetSeries_iteratedFDeriv (r : ℕ) (s : E → F) (x : E) {n : ℕ} (hn :
   have h : n < r + 1 := Nat.lt_succ_of_le hn
   simp [jetSeries, h, ftaylorSeries]
 
-/-! ### Auxiliary lemmas on formal Taylor series of continuous linear maps -/
-
-private theorem ftaylorSeries_clm_taylorComp (L : F →L[𝕜] G)
-    (p : FormalMultilinearSeries 𝕜 E F) :
-    (ftaylorSeries 𝕜 L (p 0 0)).taylorComp p = L.compFormalMultilinearSeries p := by
-  classical
-  funext m
-  rcases m.eq_zero_or_pos with rfl | hm
-  · ext v
-    simp [ftaylorSeries, Subsingleton.elim v 0]
-  · rw [FormalMultilinearSeries.taylorComp,
-      Finset.sum_eq_single (OrderedFinpartition.indiscrete m hm)]
-    · rw [FormalMultilinearSeries.compAlongOrderedFinpartition_indiscrete]
-      ext v
-      simp [ftaylorSeries, continuousMultilinearCurryFin1_iteratedFDeriv_one]
-    · intro c _ hc
-      have hlen_pos : 0 < c.length := by
-        by_contra! h0
-        have hsum : ∑ i, c.partSize i = m := OrderedFinpartition.sum_partSize c
-        obtain hlen0 : c.length = 0 := Nat.eq_zero_of_le_zero h0
-        rw [Finset.sum_eq_zero fun i _ ↦ (Fin.elim0 (hlen0 ▸ i))] at hsum
-        omega
-      have hlen_ne : c.length ≠ 1 := mt (c.length_eq_one_iff hm).mp hc
-      obtain ⟨d, hd⟩ : ∃ d, c.length = d + 2 := ⟨c.length - 2, by omega⟩
-      have hzero : ftaylorSeries 𝕜 L (p 0 0) c.length = 0 := by
-        rw [ftaylorSeries, hd, L.iteratedFDeriv_add_two]
-      ext v
-      rw [FormalMultilinearSeries.compAlongOrderedFinpartition_apply, hzero]
-      rfl
-    · simp
-
-private theorem ftaylorSeries_id (x : E) :
-    ftaylorSeries 𝕜 (id : E → E) x = FormalMultilinearSeries.id 𝕜 E x := by
-  have h := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.id 𝕜 E)
-    (FormalMultilinearSeries.id 𝕜 E x)
-  rw [FormalMultilinearSeries.id_apply_zero, FormalMultilinearSeries.taylorComp_id,
-    ContinuousLinearMap.coe_id'] at h
-  exact h.trans (by funext m; ext v; rfl)
-
 /-! ### Nonlinear higher-order jet coordinate changes -/
 
 /-- Transform an `r`-jet coordinate tuple `j` along a base map `h : E' → E` and a possibly
@@ -223,6 +184,14 @@ def jetCoordChange (r : ℕ) (h : E' → E) (g : E' × F → G) (x : E')
   fun i ↦ ((ftaylorSeries 𝕜 g (x, j 0 0)).taylorComp
     ((FormalMultilinearSeries.id 𝕜 E' x).prod
       ((jetSeries r j).taylorComp (ftaylorSeries 𝕜 h x)))) i.val
+
+/-- Unfold `jetCoordChange` at order `i` into its Faà di Bruno formal series expression. -/
+theorem jetCoordChange_apply (r : ℕ) (h : E' → E) (g : E' × F → G) (x : E')
+    (j : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (i : Fin (r + 1)) :
+    jetCoordChange r h g x j i = ((ftaylorSeries 𝕜 g (x, j 0 0)).taylorComp
+      ((FormalMultilinearSeries.id 𝕜 E' x).prod
+        ((jetSeries r j).taylorComp (ftaylorSeries 𝕜 h x)))) i.val :=
+  (rfl)
 
 theorem jetCoordChange_zero_apply (r : ℕ) (h : E' → E) (g : E' × F → G) (x : E')
     (j : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
@@ -243,11 +212,9 @@ theorem jetCoordChange_one_apply {r : ℕ} (hr : 1 ≤ r) (h : E' → E) (g : E'
       fderiv 𝕜 g (x, j 0 0) (v 0, j ⟨1, Nat.lt_succ_of_le hr⟩ ![fderiv 𝕜 h x (v 0)]) := by
   have hj1 : jetSeries r j 1 = j ⟨1, Nat.lt_succ_of_le hr⟩ :=
     jetSeries_apply r j ⟨1, Nat.lt_succ_of_le hr⟩
-  simp only [jetCoordChange, FormalMultilinearSeries.taylorComp_one_apply,
-    FormalMultilinearSeries.prod, ContinuousMultilinearMap.prod_apply,
-    FormalMultilinearSeries.id_apply_one, hj1]
-  simp only [ftaylorSeries, iteratedFDeriv_one_apply]
-  congr 3
+  rw [jetCoordChange_apply]
+  simp [FormalMultilinearSeries.ftaylorSeries_apply, FormalMultilinearSeries.id_apply_one,
+    iteratedFDeriv_one_apply, hj1]
 
 /-- At order `1`, `TauCeti.jetCoordChange` agrees with `TauCeti.firstJetCoordChange` under currying
 of order-zero and order-one multilinear maps. -/
@@ -269,7 +236,7 @@ theorem jetCoordChange_congr {r : ℕ} {h h' : E' → E} {g g' : E' × F → G} 
   funext i
   refine FormalMultilinearSeries.taylorComp_congr
     (fun k _ ↦ (hg.iteratedFDeriv 𝕜 k).eq_of_nhds) (fun k _ _ ↦ ?_)
-  simp only [FormalMultilinearSeries.prod]
+  simp only [FormalMultilinearSeries.prod_apply]
   congr 1
   exact FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl)
     (fun m _ _ ↦ (hh.iteratedFDeriv 𝕜 m).eq_of_nhds)
@@ -283,7 +250,7 @@ theorem jetTruncate_jetCoordChange {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂)
       jetCoordChange r₁ h g x (jetTruncate hle j) := by
   funext i
   refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun k _ hk ↦ ?_)
-  simp only [FormalMultilinearSeries.prod]
+  simp only [FormalMultilinearSeries.prod_apply]
   congr 1
   exact FormalMultilinearSeries.taylorComp_congr
     (fun m hm ↦ (jetSeries_jetTruncate hle j (hm.trans (hk.trans (Nat.le_of_lt_succ i.isLt)))).symm)
@@ -301,15 +268,19 @@ theorem jetCoordChange_iteratedFDeriv {r : ℕ} {h : E' → E} {g : E' × F → 
   have hi : (i.val : ℕ∞ω) ≤ r := Nat.cast_le.mpr hi_le
   have hsh : ContDiffAt 𝕜 r (s ∘ h) x := hs.comp x hh
   have hgraph : ContDiffAt 𝕜 r (fun y ↦ (y, (s ∘ h) y)) x := contDiffAt_id.prodMk hsh
-  change _ = iteratedFDeriv 𝕜 i.val (g ∘ fun y ↦ (y, (s ∘ h) y)) x
-  rw [iteratedFDeriv_comp (f := fun y ↦ (y, (s ∘ h) y)) hg hgraph hi]
+  have hcomp_eq : (fun y ↦ g (y, s (h y))) = g ∘ fun y ↦ (y, (s ∘ h) y) := rfl
+  rw [jetCoordChange_apply, hcomp_eq,
+    iteratedFDeriv_comp (f := fun y ↦ (y, (s ∘ h) y)) hg hgraph hi]
   have hv0 : iteratedFDeriv 𝕜 ((0 : Fin (r + 1)).val) s (h x) 0 = s (h x) :=
     iteratedFDeriv_zero_apply _
   refine FormalMultilinearSeries.taylorComp_congr
-    (fun k _ ↦ by rw [hv0]; rfl) (fun k _ hk ↦ ?_)
+    (fun k _ ↦ by
+      rw [FormalMultilinearSeries.ftaylorSeries_apply, FormalMultilinearSeries.ftaylorSeries_apply,
+        hv0, Function.comp_apply])
+    (fun k _ hk ↦ ?_)
   have hk_r : (k : ℕ∞ω) ≤ r := Nat.cast_le.mpr (hk.trans hi_le)
   refine (congrArg₂ ContinuousMultilinearMap.prod
-    (congrFun (ftaylorSeries_id x).symm k) ?_).trans
+    (congrFun (FormalMultilinearSeries.ftaylorSeries_id x).symm k) ?_).trans
       (iteratedFDeriv_prodMk contDiffAt_id hsh hk_r).symm
   rw [iteratedFDeriv_comp hs hh hk_r]
   exact FormalMultilinearSeries.taylorComp_congr
@@ -321,16 +292,136 @@ theorem jetCoordChange_iteratedFDeriv {r : ℕ} {h : E' → E} {g : E' × F → 
 theorem jetCoordChange_id (r : ℕ) (x : E) (j : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
     jetCoordChange r (id : E → E) (Prod.snd : E × F → F) x j = j := by
   funext i
-  simp only [jetCoordChange, ftaylorSeries_id, FormalMultilinearSeries.taylorComp_id]
-  let P : FormalMultilinearSeries 𝕜 E (E × F) :=
-    (FormalMultilinearSeries.id 𝕜 E x).prod (jetSeries r j)
-  have hP0 : P 0 0 = (x, j 0 0) := rfl
-  have hsnd := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.snd 𝕜 E F) P
-  rw [hP0] at hsnd
-  change ((ftaylorSeries 𝕜 (ContinuousLinearMap.snd 𝕜 E F) (x, j 0 0)).taylorComp P) i.val = j i
-  rw [hsnd]
-  ext v
-  simp [P, FormalMultilinearSeries.prod]
+  rw [jetCoordChange_apply, FormalMultilinearSeries.ftaylorSeries_id,
+    FormalMultilinearSeries.taylorComp_id]
+  have hsnd := FormalMultilinearSeries.ftaylorSeries_snd_taylorComp_prod
+    (FormalMultilinearSeries.id 𝕜 E x) (jetSeries r j)
+  rw [FormalMultilinearSeries.id_apply_zero, jetSeries_zero] at hsnd
+  exact (congrFun hsnd i.val).trans (jetSeries_apply r j i)
+
+/-- Common Faà di Bruno series normal form for the two sides of `jetCoordChange_comp`. -/
+private def jetCoordChangeCompSeries (r : ℕ) (h : E' → E) (k : E'' → E')
+    (g : E' × F → G) (l : E'' × G → H) (y : E'')
+    (j : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
+    FormalMultilinearSeries 𝕜 E'' H :=
+  (ftaylorSeries 𝕜 l (y, g (k y, j 0 0))).taylorComp
+    ((FormalMultilinearSeries.id 𝕜 E'' y).prod
+      ((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp
+        ((ftaylorSeries 𝕜 k y).prod
+          ((jetSeries r j).taylorComp (ftaylorSeries 𝕜 (h ∘ k) y)))))
+
+private theorem jetCoordChange_comp_lhs {r : ℕ} {h : E' → E} {k : E'' → E'}
+    {g : E' × F → G} {l : E'' × G → H} {y : E''}
+    (j : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
+    (hh : ContDiffAt 𝕜 r h (k y)) (hk : ContDiffAt 𝕜 r k y) (i : Fin (r + 1)) :
+    jetCoordChange r k l y (jetCoordChange r h g (k y) j) i =
+      jetCoordChangeCompSeries r h k g l y j i.val := by
+  have hi_le : i.val ≤ r := Nat.le_of_lt_succ i.isLt
+  let J₁ := jetCoordChange r h g (k y) j
+  let G₁ : FormalMultilinearSeries 𝕜 E' (E' × F) :=
+    (FormalMultilinearSeries.id 𝕜 E' (k y)).prod
+      ((jetSeries r j).taylorComp (ftaylorSeries 𝕜 h (k y)))
+  have hJ₁_zero : J₁ 0 0 = g (k y, j 0 0) := jetCoordChange_zero_apply r h g (k y) j 0
+  have hJ₁_series (m : ℕ) (hm : m ≤ r) :
+      jetSeries r J₁ m = ((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp G₁) m := by
+    have hlt : m < r + 1 := Nat.lt_succ_of_le hm
+    simp [jetSeries, hlt, J₁, jetCoordChange_apply, G₁]
+  rw [jetCoordChange_apply, hJ₁_zero, jetCoordChangeCompSeries]
+  refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun m _ hm ↦ ?_)
+  simp only [FormalMultilinearSeries.prod_apply]
+  congr 1
+  have h1 : ((jetSeries r J₁).taylorComp (ftaylorSeries 𝕜 k y)) m =
+      (((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp G₁).taylorComp
+        (ftaylorSeries 𝕜 k y)) m :=
+    FormalMultilinearSeries.taylorComp_congr
+      (fun a ha ↦ hJ₁_series a (ha.trans (hm.trans hi_le))) (fun _ _ _ ↦ rfl)
+  rw [h1, FormalMultilinearSeries.taylorComp_assoc]
+  refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun n _ hn_le ↦ ?_)
+  have hk0 : ftaylorSeries 𝕜 k y 0 ![] = k y := iteratedFDeriv_zero_apply _
+  have hG₁ : (G₁.taylorComp (ftaylorSeries 𝕜 k y)) n =
+      ((ftaylorSeries 𝕜 k y).prod
+        ((jetSeries r j).taylorComp
+          ((ftaylorSeries 𝕜 h (k y)).taylorComp (ftaylorSeries 𝕜 k y)))) n := by
+    simp only [G₁, FormalMultilinearSeries.prod_taylorComp, ← hk0,
+      FormalMultilinearSeries.id_taylorComp, FormalMultilinearSeries.taylorComp_assoc]
+  rw [hG₁, FormalMultilinearSeries.prod_apply, FormalMultilinearSeries.prod_apply]
+  congr 1
+  exact FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) fun a _ ha ↦
+    (iteratedFDeriv_comp hh hk (Nat.cast_le.mpr (ha.trans (hn_le.trans (hm.trans hi_le))))).symm
+
+private theorem jetCoordChange_comp_rhs {r : ℕ} {h : E' → E} {k : E'' → E'}
+    {g : E' × F → G} {l : E'' × G → H} {y : E''}
+    (j : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
+    (hk : ContDiffAt 𝕜 r k y) (hg : ContDiffAt 𝕜 r g (k y, j 0 0))
+    (hl : ContDiffAt 𝕜 r l (y, g (k y, j 0 0))) (i : Fin (r + 1)) :
+    jetCoordChange r (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) y j i =
+      jetCoordChangeCompSeries r h k g l y j i.val := by
+  have hi_le : i.val ≤ r := Nat.le_of_lt_succ i.isLt
+  let P : FormalMultilinearSeries 𝕜 E'' F :=
+    (jetSeries r j).taylorComp (ftaylorSeries 𝕜 (h ∘ k) y)
+  let Q : FormalMultilinearSeries 𝕜 E'' (E'' × F) :=
+    (FormalMultilinearSeries.id 𝕜 E'' y).prod P
+  have hP0 : P 0 0 = j 0 0 :=
+    (FormalMultilinearSeries.taylorComp_zero_apply (jetSeries r j) _ 0).trans
+      (by rw [jetSeries_zero]; exact congrArg (j 0) (funext fun a ↦ Fin.elim0 a))
+  have hfstQ : (ftaylorSeries 𝕜 (Prod.fst : E'' × F → E'') (y, j 0 0)).taylorComp Q =
+      FormalMultilinearSeries.id 𝕜 E'' y := by
+    have h := FormalMultilinearSeries.ftaylorSeries_fst_taylorComp_prod
+      (FormalMultilinearSeries.id 𝕜 E'' y) P
+    rwa [FormalMultilinearSeries.id_apply_zero, hP0] at h
+  have hsndQ : (ftaylorSeries 𝕜 (Prod.snd : E'' × F → F) (y, j 0 0)).taylorComp Q = P := by
+    have h := FormalMultilinearSeries.ftaylorSeries_snd_taylorComp_prod
+      (FormalMultilinearSeries.id 𝕜 E'' y) P
+    rwa [FormalMultilinearSeries.id_apply_zero, hP0] at h
+  let ψ : E'' × F → E' × F := fun p ↦ ((k ∘ Prod.fst) p, p.2)
+  let Φ : E'' × F → E'' × G := fun p ↦ (p.1, (g ∘ ψ) p)
+  have hψ : ContDiffAt 𝕜 r ψ (y, j 0 0) :=
+    (hk.comp (y, j 0 0) contDiffAt_fst).prodMk contDiffAt_snd
+  have hgψ : ContDiffAt 𝕜 r (g ∘ ψ) (y, j 0 0) := hg.comp (y, j 0 0) hψ
+  have hΦ : ContDiffAt 𝕜 r Φ (y, j 0 0) := contDiffAt_fst.prodMk hgψ
+  have hlΦ : (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) = l ∘ Φ := rfl
+  have hcomp_l : ((ftaylorSeries 𝕜 (l ∘ Φ) (y, j 0 0)).taylorComp Q) i.val =
+      (((ftaylorSeries 𝕜 l (y, g (k y, j 0 0))).taylorComp
+        (ftaylorSeries 𝕜 Φ (y, j 0 0))).taylorComp Q) i.val :=
+    FormalMultilinearSeries.taylorComp_congr
+      (fun a ha ↦ iteratedFDeriv_comp (f := Φ) hl hΦ (Nat.cast_le.mpr (ha.trans hi_le)))
+      (fun _ _ _ ↦ rfl)
+  rw [jetCoordChange_apply, hlΦ, jetCoordChangeCompSeries, hcomp_l,
+    FormalMultilinearSeries.taylorComp_assoc]
+  refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun m _ hm ↦ ?_)
+  have hΦ_m : ((ftaylorSeries 𝕜 Φ (y, j 0 0)).taylorComp Q) m =
+      (((ftaylorSeries 𝕜 (Prod.fst : E'' × F → E'') (y, j 0 0)).prod
+        (ftaylorSeries 𝕜 (g ∘ ψ) (y, j 0 0))).taylorComp Q) m :=
+    FormalMultilinearSeries.taylorComp_congr
+      (fun a ha ↦ iteratedFDeriv_prodMk contDiffAt_fst hgψ
+        (Nat.cast_le.mpr (ha.trans (hm.trans hi_le))))
+      (fun _ _ _ ↦ rfl)
+  rw [hΦ_m, FormalMultilinearSeries.prod_taylorComp, hfstQ, FormalMultilinearSeries.prod_apply,
+    FormalMultilinearSeries.prod_apply]
+  congr 1
+  have hgψ_m : ((ftaylorSeries 𝕜 (g ∘ ψ) (y, j 0 0)).taylorComp Q) m =
+      (((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp
+        (ftaylorSeries 𝕜 ψ (y, j 0 0))).taylorComp Q) m :=
+    FormalMultilinearSeries.taylorComp_congr
+      (fun a ha ↦ iteratedFDeriv_comp (f := ψ) hg hψ
+        (Nat.cast_le.mpr (ha.trans (hm.trans hi_le))))
+      (fun _ _ _ ↦ rfl)
+  rw [hgψ_m, FormalMultilinearSeries.taylorComp_assoc]
+  refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun n _ hn ↦ ?_)
+  have hψ_n : ((ftaylorSeries 𝕜 ψ (y, j 0 0)).taylorComp Q) n =
+      ((((ftaylorSeries 𝕜 k y).taylorComp
+          (ftaylorSeries 𝕜 (Prod.fst : E'' × F → E'') (y, j 0 0))).prod
+        (ftaylorSeries 𝕜 (Prod.snd : E'' × F → F) (y, j 0 0))).taylorComp Q) n :=
+    FormalMultilinearSeries.taylorComp_congr
+      (fun b hb ↦ by
+        have hb_r : (b : ℕ∞ω) ≤ r := Nat.cast_le.mpr (hb.trans (hn.trans (hm.trans hi_le)))
+        rw [FormalMultilinearSeries.ftaylorSeries_apply, FormalMultilinearSeries.prod_apply,
+          FormalMultilinearSeries.ftaylorSeries_apply,
+          iteratedFDeriv_prodMk (hk.comp (y, j 0 0) contDiffAt_fst) contDiffAt_snd hb_r,
+          iteratedFDeriv_comp (f := Prod.fst) hk contDiffAt_fst hb_r])
+      (fun _ _ _ ↦ rfl)
+  rw [hψ_n, FormalMultilinearSeries.prod_taylorComp, FormalMultilinearSeries.taylorComp_assoc,
+    hfstQ, FormalMultilinearSeries.taylorComp_id, hsndQ]
 
 /-- **Cocycle law for nonlinear higher-order jet coordinate changes.** Composing two nonlinear
 bundle coordinate changes agrees with the coordinate change of the composite base and fibre maps,
@@ -344,118 +435,7 @@ theorem jetCoordChange_comp {r : ℕ} {h : E' → E} {k : E'' → E'}
     jetCoordChange r k l y (jetCoordChange r h g (k y) j) =
       jetCoordChange r (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) y j := by
   funext i
-  have hi_le : i.val ≤ r := Nat.le_of_lt_succ i.isLt
-  let J₁ := jetCoordChange r h g (k y) j
-  let G₁ : FormalMultilinearSeries 𝕜 E' (E' × F) :=
-    (FormalMultilinearSeries.id 𝕜 E' (k y)).prod
-      ((jetSeries r j).taylorComp (ftaylorSeries 𝕜 h (k y)))
-  let P : FormalMultilinearSeries 𝕜 E'' F :=
-    (jetSeries r j).taylorComp (ftaylorSeries 𝕜 (h ∘ k) y)
-  let Q : FormalMultilinearSeries 𝕜 E'' (E'' × F) :=
-    (FormalMultilinearSeries.id 𝕜 E'' y).prod P
-  have hQ0 : Q 0 0 = (y, j 0 0) :=
-    Prod.ext rfl ((FormalMultilinearSeries.taylorComp_zero_apply (jetSeries r j) _ 0).trans
-      (by rw [jetSeries_zero]; rfl))
-  have hJ₁_zero : J₁ 0 0 = g (k y, j 0 0) := jetCoordChange_zero_apply r h g (k y) j 0
-  have hJ₁_series (m : ℕ) (hm : m ≤ r) :
-      jetSeries r J₁ m = ((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp G₁) m := by
-    have hlt : m < r + 1 := Nat.lt_succ_of_le hm
-    simp [jetSeries, hlt, J₁, jetCoordChange, G₁]
-  -- Simplify the left-hand side into a single nested `taylorComp`.
-  have hLHS : jetCoordChange r k l y J₁ i =
-      ((ftaylorSeries 𝕜 l (y, g (k y, j 0 0))).taylorComp
-        ((FormalMultilinearSeries.id 𝕜 E'' y).prod
-          ((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp ((ftaylorSeries 𝕜 k y).prod P)))) i.val := by
-    dsimp only [jetCoordChange]
-    rw [hJ₁_zero]
-    refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun m _ hm ↦ ?_)
-    simp only [FormalMultilinearSeries.prod]
-    congr 1
-    have h1 : ((jetSeries r J₁).taylorComp (ftaylorSeries 𝕜 k y)) m =
-        (((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp G₁).taylorComp
-          (ftaylorSeries 𝕜 k y)) m :=
-      FormalMultilinearSeries.taylorComp_congr
-        (fun a ha ↦ hJ₁_series a (ha.trans (hm.trans hi_le))) (fun _ _ _ ↦ rfl)
-    rw [h1, FormalMultilinearSeries.taylorComp_assoc]
-    refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun n _ hn_le ↦ ?_)
-    have hk0 : ftaylorSeries 𝕜 k y 0 ![] = k y := iteratedFDeriv_zero_apply _
-    have hG₁ : (G₁.taylorComp (ftaylorSeries 𝕜 k y)) n =
-        ((ftaylorSeries 𝕜 k y).prod
-          ((jetSeries r j).taylorComp
-            ((ftaylorSeries 𝕜 h (k y)).taylorComp (ftaylorSeries 𝕜 k y)))) n := by
-      simp only [G₁, FormalMultilinearSeries.prod_taylorComp,
-        ← hk0, FormalMultilinearSeries.id_taylorComp, FormalMultilinearSeries.taylorComp_assoc]
-    rw [hG₁]
-    simp only [FormalMultilinearSeries.prod]
-    congr 1
-    exact FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) fun a _ ha ↦
-      (iteratedFDeriv_comp hh hk (Nat.cast_le.mpr (ha.trans (hn_le.trans (hm.trans hi_le))))).symm
-  -- Simplify the right-hand side to the exact same series.
-  let ψ : E'' × F → E' × F := fun p ↦ ((k ∘ Prod.fst) p, p.2)
-  let Φ : E'' × F → E'' × G := fun p ↦ (p.1, (g ∘ ψ) p)
-  have hψ : ContDiffAt 𝕜 r ψ (y, j 0 0) :=
-    (hk.comp (y, j 0 0) contDiffAt_fst).prodMk contDiffAt_snd
-  have hgψ : ContDiffAt 𝕜 r (g ∘ ψ) (y, j 0 0) := hg.comp (y, j 0 0) hψ
-  have hΦ : ContDiffAt 𝕜 r Φ (y, j 0 0) := contDiffAt_fst.prodMk hgψ
-  have hfstQ : (ftaylorSeries 𝕜 (Prod.fst : E'' × F → E'') (y, j 0 0)).taylorComp Q =
-      FormalMultilinearSeries.id 𝕜 E'' y := by
-    have h := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.fst 𝕜 E'' F) Q
-    rw [hQ0] at h
-    refine h.trans ?_
-    funext m; ext v; simp [Q, FormalMultilinearSeries.prod]
-  have hsndQ : (ftaylorSeries 𝕜 (Prod.snd : E'' × F → F) (y, j 0 0)).taylorComp Q = P := by
-    have h := ftaylorSeries_clm_taylorComp (ContinuousLinearMap.snd 𝕜 E'' F) Q
-    rw [hQ0] at h
-    refine h.trans ?_
-    funext m; ext v; simp [Q, FormalMultilinearSeries.prod]
-  have hRHS : jetCoordChange r (h ∘ k) (l ∘ Φ) y j i =
-      ((ftaylorSeries 𝕜 l (y, g (k y, j 0 0))).taylorComp
-        ((FormalMultilinearSeries.id 𝕜 E'' y).prod
-          ((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp ((ftaylorSeries 𝕜 k y).prod P)))) i.val := by
-    dsimp only [jetCoordChange]
-    have hcomp_l : ((ftaylorSeries 𝕜 (l ∘ Φ) (y, j 0 0)).taylorComp Q) i.val =
-        (((ftaylorSeries 𝕜 l (y, g (k y, j 0 0))).taylorComp
-          (ftaylorSeries 𝕜 Φ (y, j 0 0))).taylorComp Q) i.val :=
-      FormalMultilinearSeries.taylorComp_congr
-        (fun a ha ↦ iteratedFDeriv_comp (f := Φ) hl hΦ (Nat.cast_le.mpr (ha.trans hi_le)))
-        (fun _ _ _ ↦ rfl)
-    change ((ftaylorSeries 𝕜 (l ∘ Φ) (y, j 0 0)).taylorComp Q) i.val = _
-    rw [hcomp_l, FormalMultilinearSeries.taylorComp_assoc]
-    refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun m _ hm ↦ ?_)
-    have hΦ_m : ((ftaylorSeries 𝕜 Φ (y, j 0 0)).taylorComp Q) m =
-        (((ftaylorSeries 𝕜 (Prod.fst : E'' × F → E'') (y, j 0 0)).prod
-          (ftaylorSeries 𝕜 (g ∘ ψ) (y, j 0 0))).taylorComp Q) m :=
-      FormalMultilinearSeries.taylorComp_congr
-        (fun a ha ↦ iteratedFDeriv_prodMk contDiffAt_fst hgψ
-          (Nat.cast_le.mpr (ha.trans (hm.trans hi_le))))
-        (fun _ _ _ ↦ rfl)
-    rw [hΦ_m, FormalMultilinearSeries.prod_taylorComp, hfstQ]
-    simp only [FormalMultilinearSeries.prod]
-    congr 1
-    have hgψ_m : ((ftaylorSeries 𝕜 (g ∘ ψ) (y, j 0 0)).taylorComp Q) m =
-        (((ftaylorSeries 𝕜 g (k y, j 0 0)).taylorComp
-          (ftaylorSeries 𝕜 ψ (y, j 0 0))).taylorComp Q) m :=
-      FormalMultilinearSeries.taylorComp_congr
-        (fun a ha ↦ iteratedFDeriv_comp (f := ψ) hg hψ
-          (Nat.cast_le.mpr (ha.trans (hm.trans hi_le))))
-        (fun _ _ _ ↦ rfl)
-    rw [hgψ_m, FormalMultilinearSeries.taylorComp_assoc]
-    refine FormalMultilinearSeries.taylorComp_congr (fun _ _ ↦ rfl) (fun n _ hn ↦ ?_)
-    have hψ_n : ((ftaylorSeries 𝕜 ψ (y, j 0 0)).taylorComp Q) n =
-        ((((ftaylorSeries 𝕜 k y).taylorComp
-            (ftaylorSeries 𝕜 (Prod.fst : E'' × F → E'') (y, j 0 0))).prod
-          (ftaylorSeries 𝕜 (Prod.snd : E'' × F → F) (y, j 0 0))).taylorComp Q) n :=
-      FormalMultilinearSeries.taylorComp_congr
-        (fun b hb ↦ by
-          have hb_r : (b : ℕ∞ω) ≤ r := Nat.cast_le.mpr (hb.trans (hn.trans (hm.trans hi_le)))
-          change iteratedFDeriv 𝕜 b ψ (y, j 0 0) = _
-          rw [iteratedFDeriv_prodMk (hk.comp (y, j 0 0) contDiffAt_fst) contDiffAt_snd hb_r,
-            iteratedFDeriv_comp (f := Prod.fst) hk contDiffAt_fst hb_r]
-          rfl)
-        (fun _ _ _ ↦ rfl)
-    rw [hψ_n, FormalMultilinearSeries.prod_taylorComp, FormalMultilinearSeries.taylorComp_assoc,
-      hfstQ, FormalMultilinearSeries.taylorComp_id, hsndQ]
-  exact hLHS.trans hRHS.symm
+  exact (jetCoordChange_comp_lhs j hh hk i).trans (jetCoordChange_comp_rhs j hk hg hl i).symm
 
 /-- Coordinate maps that are inverse as germs induce inverse transformations of `r`-jets. -/
 theorem jetCoordChange_inverse {r : ℕ} {h : E' → E} {k : E → E'}
@@ -523,53 +503,36 @@ theorem jetCoordChange_sub_of_eq_lt {r : ℕ} (h : E' → E) (g : E' × F → G)
     jetCoordChange r h g x j₁ i - jetCoordChange r h g x j₂ i =
       ((fderiv 𝕜 g (x, j₁ 0 0)).comp (inr 𝕜 E' F)).compContinuousMultilinearMap
         ((j₁ i - j₂ i).compContinuousLinearMap fun _ ↦ fderiv 𝕜 h x) := by
-  classical
   have hj0 : j₁ 0 = j₂ 0 := hj 0 hi
   let Q := ftaylorSeries 𝕜 g (x, j₁ 0 0)
   let H := ftaylorSeries 𝕜 h x
   let G₁ := (FormalMultilinearSeries.id 𝕜 E' x).prod ((jetSeries r j₁).taylorComp H)
   let G₂ := (FormalMultilinearSeries.id 𝕜 E' x).prod ((jetSeries r j₂).taylorComp H)
   have hG_lt (k : ℕ) (_ : 1 ≤ k) (hk : k < i.val) : G₁ k = G₂ k := by
-    simp only [G₁, G₂, FormalMultilinearSeries.prod]
+    simp only [G₁, G₂, FormalMultilinearSeries.prod_apply]
     congr 1
     refine FormalMultilinearSeries.taylorComp_congr (fun m hm ↦ ?_) (fun _ _ _ ↦ rfl)
     have hm_lt : m < r + 1 := (hm.trans_lt hk).trans i.isLt
     simp only [jetSeries, hm_lt, ↓reduceDIte]
     exact hj ⟨m, hm_lt⟩ (hm.trans_lt hk)
-  change Q.taylorComp G₁ i.val -
-      (ftaylorSeries 𝕜 g (x, j₂ 0 0)).taylorComp G₂ i.val = _
-  rw [← hj0, FormalMultilinearSeries.taylorComp_sub_of_eq_lt Q hi hG_lt]
-  have hQ1 : continuousMultilinearCurryFin1 𝕜 (E' × F) G (Q 1) = fderiv 𝕜 g (x, j₁ 0 0) :=
-    continuousMultilinearCurryFin1_iteratedFDeriv_one g (x, j₁ 0 0)
-  rw [hQ1]
+  rw [jetCoordChange_apply, jetCoordChange_apply, ← hj0]
+  have houter := FormalMultilinearSeries.taylorComp_sub_of_eq_lt Q hi hG_lt
+  rw [houter, show continuousMultilinearCurryFin1 𝕜 (E' × F) G (Q 1) = fderiv 𝕜 g (x, j₁ 0 0) from
+    continuousMultilinearCurryFin1_iteratedFDeriv_one g (x, j₁ 0 0)]
   have hinner : (jetSeries r j₁).taylorComp H i.val - (jetSeries r j₂).taylorComp H i.val =
       (j₁ i - j₂ i).compContinuousLinearMap fun _ ↦ fderiv 𝕜 h x := by
-    let c₀ := OrderedFinpartition.atomic i.val
-    rw [FormalMultilinearSeries.taylorComp, FormalMultilinearSeries.taylorComp,
-      ← Finset.add_sum_erase _ _ (Finset.mem_univ c₀),
-      ← Finset.add_sum_erase _ _ (Finset.mem_univ c₀)]
-    have hrest : ∑ c ∈ Finset.univ.erase c₀, (jetSeries r j₁).compAlongOrderedFinpartition H c =
-        ∑ c ∈ Finset.univ.erase c₀, (jetSeries r j₂).compAlongOrderedFinpartition H c := by
-      refine Finset.sum_congr rfl fun c hc ↦ ?_
-      have hlt : c.length < i.val :=
-        c.length_lt_of_ne_atomic (Finset.mem_erase.mp hc).1
-      have hlt_r : c.length < r + 1 := hlt.trans i.isLt
-      unfold FormalMultilinearSeries.compAlongOrderedFinpartition
-      simp only [jetSeries, hlt_r, ↓reduceDIte, hj ⟨c.length, hlt_r⟩ hlt]
-    rw [hrest, add_sub_add_right_eq_sub,
-      FormalMultilinearSeries.compAlongOrderedFinpartition_atomic,
-      FormalMultilinearSeries.compAlongOrderedFinpartition_atomic,
-      jetSeries_apply, jetSeries_apply]
-    have hH1 : continuousMultilinearCurryFin1 𝕜 E' E (H 1) = fderiv 𝕜 h x :=
-      continuousMultilinearCurryFin1_iteratedFDeriv_one h x
-    rw [hH1]
-    ext v
-    rfl
+    rw [FormalMultilinearSeries.sub_taylorComp_of_eq_lt H fun m hm ↦ by
+      have hm_lt : m < r + 1 := hm.trans i.isLt
+      simp only [jetSeries, hm_lt, ↓reduceDIte]
+      exact hj ⟨m, hm_lt⟩ hm]
+    rw [jetSeries_apply, jetSeries_apply,
+      show continuousMultilinearCurryFin1 𝕜 E' E (H 1) = fderiv 𝕜 h x from
+        continuousMultilinearCurryFin1_iteratedFDeriv_one h x]
   ext v
   have hG_diff : (G₁ i.val - G₂ i.val) v =
       (0, ((j₁ i - j₂ i).compContinuousLinearMap (fun _ ↦ fderiv 𝕜 h x)) v) := by
     rw [_root_.sub_apply]
-    simp only [G₁, G₂, FormalMultilinearSeries.prod, ContinuousMultilinearMap.prod_apply,
+    simp only [G₁, G₂, FormalMultilinearSeries.prod_apply, ContinuousMultilinearMap.prod_apply,
       Prod.mk_sub_mk, sub_self, ← _root_.sub_apply, hinner]
   simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply, hG_diff,
     comp_apply, inr_apply]
@@ -592,8 +555,22 @@ theorem jetCoordChange_last_sub {r : ℕ} (h : E' → E) (g : E' × F → G) (x 
 private theorem jetSnoc_zero_zero {r : ℕ} (j₀ : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
     (A : E [×(r + 1)]→L[𝕜] F) :
     jetSnoc j₀ A 0 0 = j₀ 0 0 := by
-  change (jetSnoc j₀ A (0 : Fin (r + 1)).castSucc) 0 = j₀ 0 0
-  rw [jetSnoc_castSucc]
+  rw [jetSnoc_zero]
+  exact congrArg (j₀ 0) (funext fun a ↦ Fin.elim0 a)
+
+/-- Over a fixed lower `r`-jet `j₀`, the top-order coordinate of `jetCoordChange` on `jetSnoc j₀ A`
+equals its linear action on `A` plus the inhomogeneous term at `A = 0`. -/
+theorem jetCoordChange_jetSnoc_last_eq {r : ℕ} (h : E' → E) (g : E' × F → G) (x : E')
+    (j₀ : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (A : E [×(r + 1)]→L[𝕜] F) :
+    jetCoordChange (r + 1) h g x (jetSnoc j₀ A) (Fin.last (r + 1)) =
+      ((fderiv 𝕜 g (x, j₀ 0 0)).comp (inr 𝕜 E' F)).compContinuousMultilinearMap
+        (A.compContinuousLinearMap fun _ : Fin (Fin.last (r + 1)).val ↦ fderiv 𝕜 h x) +
+        jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1)) := by
+  have htr : jetTruncate (Nat.le_succ r) (jetSnoc j₀ A) =
+      jetTruncate (Nat.le_succ r) (jetSnoc j₀ 0) := by simp
+  have hd := jetCoordChange_last_sub h g x htr
+  rw [jetSnoc_zero_zero, jetSnoc_last, jetSnoc_last, sub_zero] at hd
+  exact sub_eq_iff_eq_add.mp hd
 
 /-- Over a fixed lower `r`-jet `j₀`, if the vertical derivative of `g` and the base derivative of
 `h` are invertible continuous linear maps, the affine map on the top-order multilinear coordinate
@@ -615,17 +592,15 @@ theorem jetCoordChange_last_bijective {r : ℕ} (h : E' → E) (g : E' × F → 
         jetCoordChange (r + 1) h g x (jetSnoc j₀ A) (Fin.last (r + 1))) =
       fun A ↦ linEquiv A + jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1)) := by
     funext A
-    have htr : jetTruncate (Nat.le_succ r) (jetSnoc j₀ A) =
-        jetTruncate (Nat.le_succ r) (jetSnoc j₀ 0) := by simp
-    have hd := jetCoordChange_last_sub h g x htr
-    rw [jetSnoc_zero_zero, jetSnoc_last, jetSnoc_last, sub_zero, ha, hc] at hd
-    exact sub_eq_iff_eq_add.mp hd
+    rw [jetCoordChange_jetSnoc_last_eq h g x j₀ A, ha, hc]
+    simp [linEquiv]
   rw [heq]
   exact (Equiv.addRight _).bijective.comp linEquiv.bijective
 
-/-- Over a fixed symmetric lower `r`-jet `j₀`, if `h` and `g` preserve top-order symmetry and have
-invertible base and vertical derivatives, the induced affine map on symmetric `(r + 1)`-multilinear
-maps (the model fibre of `J^{r+1}E → J^rE`) is bijective. -/
+/-- Over a field of characteristic zero, if `h` and `g` have smoothness at least
+`minSmoothness 𝕜 (r + 1)` and invertible base and vertical derivatives, then over a fixed symmetric
+lower `r`-jet `j₀` the induced affine map on symmetric `(r + 1)`-multilinear maps (the model fibre
+of `J^{r+1}E → J^rE`) is bijective. -/
 theorem jetCoordChange_last_symm_bijective [CharZero 𝕜] {r : ℕ} {n : ℕ∞ω}
     {h : E' → E} {g : E' × F → G} {x : E'}
     {j₀ : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F}
@@ -652,10 +627,12 @@ theorem jetCoordChange_last_symm_bijective [CharZero 𝕜] {r : ℕ} {n : ℕ∞
   have hbij := jetCoordChange_last_bijective h g x j₀ a c ha hc
   refine ⟨fun A₁ A₂ hEq ↦ Subtype.ext (hbij.1 (congrArg Subtype.val hEq)), fun B ↦ ?_⟩
   obtain ⟨A, hA⟩ := hbij.2 B.1
-  have htr : jetTruncate (Nat.le_succ r) (jetSnoc j₀ A) =
-      jetTruncate (Nat.le_succ r) (jetSnoc j₀ 0) := by simp
-  have hd := jetCoordChange_last_sub h g x htr
-  rw [jetSnoc_zero_zero, jetSnoc_last, jetSnoc_last, sub_zero, ha, hc] at hd
+  dsimp only at hA
+  have hd : B.1 - jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1)) =
+      a.toContinuousLinearMap.compContinuousMultilinearMap
+        (A.compContinuousLinearMap
+          fun _ : Fin (Fin.last (r + 1)).val ↦ c.toContinuousLinearMap) := by
+    rw [← hA, jetCoordChange_jetSnoc_last_eq h g x j₀ A, ha, hc, add_sub_cancel_right]
   have hB0_symm : ∀ (w : Fin (Fin.last (r + 1)).val → E')
       (σ : Equiv.Perm (Fin (Fin.last (r + 1)).val)),
       jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1)) (w ∘ σ) =
@@ -670,11 +647,11 @@ theorem jetCoordChange_last_symm_bijective [CharZero 𝕜] {r : ℕ} {n : ℕ∞
     have hv1 : a (A (v ∘ σ)) =
         (B.1 - jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1)))
           ((c.symm ∘ v) ∘ σ) := by
-      rw [← hA, hd]
+      rw [hd]
       simp [Function.comp_def]
     have hv2 : a (A v) =
         (B.1 - jetCoordChange (r + 1) h g x (jetSnoc j₀ 0) (Fin.last (r + 1))) (c.symm ∘ v) := by
-      rw [← hA, hd]
+      rw [hd]
       simp [Function.comp_def]
     rw [hv1, hv2, _root_.sub_apply, _root_.sub_apply]
     exact congrArg₂ (· - ·) (B.2 (c.symm ∘ v) σ) (hB0_symm (c.symm ∘ v) σ)

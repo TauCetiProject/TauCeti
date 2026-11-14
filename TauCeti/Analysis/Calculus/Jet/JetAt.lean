@@ -21,11 +21,12 @@ extending arbitrarily outside a neighborhood of `x` (`TauCeti.JetAt.mk_eq_mk_of_
 
 Typeclass assumptions follow the exact analytic boundaries of each construction:
 
-* Over any `[NontriviallyNormedField 𝕜]`, we define the quotient `JetAt`, its coordinate map
-  `JetAt.coordinates`, order-zero evaluation `JetAt.value`, truncation maps `JetAt.truncate` for
-  `r₁ ≤ r₂`, and the equivalences `JetAt.equivZero` (`JetAt 𝕜 F 0 x ≃ F`) and
+* Over any `[NontriviallyNormedField 𝕜]`, we define the quotient `JetAt`, its representative
+  surjectivity and elimination principles (`JetAt.mk_surjective`, `JetAt.inductionOn`), its
+  coordinate map `JetAt.coordinates`, order-zero evaluation `JetAt.value`, truncation maps
+  `JetAt.truncate` for `r₁ ≤ r₂`, and the equivalences `JetAt.equivZero` (`JetAt 𝕜 F 0 x ≃ F`) and
   `JetAt.equivFirstJetAt` (`JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x`).
-* Over `[CharZero 𝕜]`, every symmetric derivative tuple is realized by a global analytic polynomial
+* Over `[CharZero 𝕜]`, every symmetric derivative tuple is realized by a global `C^∞` polynomial
   section (`JetAt.exists_section_coordinates`), whose graph stays inside any prescribed open bundle
   chart around `(x, A 0 0)` near `x` (`JetAt.exists_section_coordinates_mem`).
 * Over `[IsRCLikeNormedField 𝕜]` (such as `ℝ` or `ℂ`, where `minSmoothness 𝕜 r = r ≤ ∞` gives
@@ -77,6 +78,19 @@ namespace JetAt
 /-- The `r`-jet at `x` of a map `s` that is `C^∞` at `x`. -/
 def mk (r : ℕ) {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) : JetAt 𝕜 F r x :=
   Quotient.mk'' ⟨s, hs⟩
+
+/-- Every `r`-jet at `x` is the `r`-jet of some section that is `C^∞` at `x`. -/
+theorem mk_surjective (r : ℕ) (x : E) :
+    ∀ j : JetAt 𝕜 F r x, ∃ (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x), mk r s hs = j :=
+  Quotient.ind fun s ↦ ⟨s.1, s.2, rfl⟩
+
+/-- Dependent elimination principle for `TauCeti.JetAt` over any `[NontriviallyNormedField 𝕜]`. -/
+@[elab_as_elim]
+protected theorem inductionOn {r : ℕ} {x : E} {motive : JetAt 𝕜 F r x → Prop}
+    (j : JetAt 𝕜 F r x)
+    (hmk : ∀ (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x), motive (mk r s hs)) :
+    motive j :=
+  Quotient.inductionOn j fun s ↦ hmk s.1 s.2
 
 /-- Derivative coordinates through order `r` of an `r`-jet in the chosen bundle chart. -/
 def coordinates {r : ℕ} {x : E} :
@@ -146,24 +160,29 @@ theorem truncate_mk {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (s : E → F
 @[simp]
 theorem coordinates_truncate {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (j : JetAt 𝕜 F r₂ x) :
     coordinates (truncate hle j) = jetTruncate hle (coordinates j) := by
-  refine Quotient.inductionOn j fun _ ↦ funext fun _ ↦ ?_
-  rw [jetTruncate_apply]
-  rfl
+  induction j using JetAt.inductionOn with
+  | hmk s hs =>
+    funext i
+    simp
 
 @[simp]
 theorem value_truncate {r₁ r₂ : ℕ} (hle : r₁ ≤ r₂) {x : E} (j : JetAt 𝕜 F r₂ x) :
-    value (truncate hle j) = value j :=
-  Quotient.inductionOn j fun _ ↦ rfl
+    value (truncate hle j) = value j := by
+  induction j using JetAt.inductionOn with
+  | hmk s hs => simp
 
 @[simp]
 theorem truncate_refl {r : ℕ} {x : E} (j : JetAt 𝕜 F r x) :
-    truncate (le_refl r) j = j :=
-  Quotient.inductionOn j fun _ ↦ rfl
+    truncate (le_refl r) j = j := by
+  induction j using JetAt.inductionOn with
+  | hmk s hs => simp
 
+@[simp]
 theorem truncate_trans {r₁ r₂ r₃ : ℕ} (h₁₂ : r₁ ≤ r₂) (h₂₃ : r₂ ≤ r₃)
     {x : E} (j : JetAt 𝕜 F r₃ x) :
-    truncate h₁₂ (truncate h₂₃ j) = truncate (h₁₂.trans h₂₃) j :=
-  Quotient.inductionOn j fun _ ↦ rfl
+    truncate h₁₂ (truncate h₂₃ j) = truncate (h₁₂.trans h₂₃) j := by
+  induction j using JetAt.inductionOn with
+  | hmk s hs => simp
 
 /-! ### Identification at orders `0` and `1` -/
 
@@ -274,9 +293,10 @@ under arbitrary permutations of its multilinear slots. -/
 theorem coordinates_comp_perm [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E} (j : JetAt 𝕜 F r x)
     (i : Fin (r + 1)) (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)) :
     coordinates j i (v ∘ σ) = coordinates j i v := by
-  refine Quotient.inductionOn j (fun s ↦ ?_)
-  exact s.2.iteratedFDeriv_comp_perm_of_minSmoothness
-    (by rw [minSmoothness_of_isRCLikeNormedField]; simp) v σ
+  induction j using JetAt.inductionOn with
+  | hmk s hs =>
+    simpa only [coordinates_mk] using hs.iteratedFDeriv_comp_perm_of_minSmoothness
+      (by rw [minSmoothness_of_isRCLikeNormedField]; simp) v σ
 
 /-- Over `ℝ` or `ℂ`, `JetAt.coordinates` identifies `r`-jets at `x` bijectively with all tuples of
 slot-symmetric continuous multilinear maps through order `r`. This identification depends on the
@@ -330,7 +350,9 @@ theorem truncate_surjective [IsRCLikeNormedField 𝕜] {r₁ r₂ : ℕ} (hle : 
 
 /-- Transform an `r`-jet at `h x` along a base map `h : E' → E` and a possibly nonlinear,
 base-dependent fibre map `g : E' × F → G`. When `h` is `C^r` at `x` and `g` is `C^r` at
-`(x, j.value)`, the output has coordinates `TauCeti.jetCoordChange r h g x (coordinates j)`. -/
+`(x, j.value)`, the output has coordinates `TauCeti.jetCoordChange r h g x (coordinates j)`.
+Otherwise it is defined as the jet of the constant section with value `g (x, value j)`, so
+`value_map` holds unconditionally. -/
 def map [IsRCLikeNormedField 𝕜] {r : ℕ} {x : E'} (h : E' → E) (g : E' × F → G)
     (j : JetAt 𝕜 F r (h x)) : JetAt 𝕜 G r x :=
   open Classical in
