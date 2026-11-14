@@ -669,9 +669,9 @@ theorem integralDividedPower_f4RootAdjointDerivation_one_apply_eq_lie
     Module.End.smul_def, LieSubalgebra.coe_bracket, coe_f4IntegralRootVector,
     f4RootAdjointDerivation_toLinearMap, ad_apply]
 
-/-- On every integral pure tensor, the root exponential is its three-term divided-power
+/-- On every unit pure tensor `1 ⊗ₜ[ℤ] y`, the root exponential is its three-term divided-power
 polynomial over any parameter ring. -/
-theorem f4RootExponential_tmul {A : Type*} [CommRing A] [Algebra ℤ A]
+theorem f4RootExponential_one_tmul {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t : A) (y : f4ChevalleyLieLattice) :
     f4RootExponential k t (1 ⊗ₜ[ℤ] y) =
       (1 ⊗ₜ[ℤ] y) +
