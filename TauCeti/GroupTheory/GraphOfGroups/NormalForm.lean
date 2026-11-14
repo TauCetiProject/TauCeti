@@ -212,7 +212,7 @@ theorem length_eq_zero_iff {p : 𝔸.AlternatingPath a a} : p.length = 0 ↔ ∃
 /-- The vertex `c_j` at position `j` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` from `a` to
 `b`: the start `c₀ = a` of the path and the end `c_j` of the dart `e_j` for `1 ≤ j ≤ k`, so that
 `c_k = b`; by convention it is `b` for `j > k`. -/
-@[expose] def vertex : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → ℕ → Γ.V
+def vertex : ∀ {b : Γ.V}, 𝔸.AlternatingPath a b → ℕ → Γ.V
   | _, single _, _ => a
   | c, cons p _ _, j => if j ≤ p.length then p.vertex j else c
 
@@ -220,11 +220,11 @@ theorem length_eq_zero_iff {p : 𝔸.AlternatingPath a a} : p.length = 0 ↔ ∃
     (single g : 𝔸.AlternatingPath a a).vertex j = a :=
   (rfl)
 
-theorem vertex_cons_of_le {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+@[simp] theorem vertex_cons_of_le_length {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
     (g : 𝔸.vertexGroup c) {j : ℕ} (hj : j ≤ p.length) : (cons p e g).vertex j = p.vertex j :=
   ite_eq_left hj
 
-theorem vertex_cons_of_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+@[simp] theorem vertex_cons_of_length_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
     (g : 𝔸.vertexGroup c) {j : ℕ} (hj : p.length < j) : (cons p e g).vertex j = c :=
   ite_eq_right (not_le.2 hj)
 
@@ -232,14 +232,14 @@ theorem vertex_cons_of_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶
 @[simp] theorem vertex_zero {b : Γ.V} (p : 𝔸.AlternatingPath a b) : p.vertex 0 = a := by
   induction p with
   | single g => rfl
-  | cons p e g ih => rw [vertex_cons_of_le p e g (Nat.zero_le _), ih]
+  | cons p e g ih => rw [vertex_cons_of_le_length p e g (Nat.zero_le _), ih]
 
 /-- An alternating path of length `k` ends at its vertices at the positions `j ≥ k`. -/
 theorem vertex_of_length_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) {j : ℕ} (hj : p.length ≤ j) :
     p.vertex j = b := by
   cases p with
   | single g => rfl
-  | cons p e g => exact vertex_cons_of_lt p e g (Nat.lt_of_succ_le hj)
+  | cons p e g => exact vertex_cons_of_length_lt p e g (Nat.lt_of_succ_le hj)
 
 @[simp] theorem vertex_length {b : Γ.V} (p : 𝔸.AlternatingPath a b) : p.vertex p.length = b :=
   p.vertex_of_length_le le_rfl
@@ -250,22 +250,24 @@ def elem : ∀ {b : Γ.V} (p : 𝔸.AlternatingPath a b) (j : ℕ), 𝔸.vertexG
   | _, single g, _ => g
   | _, cons p e g, j =>
     if hj : j ≤ p.length then
-      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_le p e g hj).symm (p.elem j)
-    else MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_lt p e g (not_le.1 hj)).symm g
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_le_length p e g hj).symm (p.elem j)
+    else MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_length_lt p e g (not_le.1 hj)).symm g
 
 @[simp] theorem elem_single (g : 𝔸.vertexGroup a) (j : ℕ) :
-    (single g : 𝔸.AlternatingPath a a).elem j = g :=
+    (single g : 𝔸.AlternatingPath a a).elem j =
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_single g j).symm g :=
   (rfl)
 
-theorem elem_cons_of_le {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+@[simp] theorem elem_cons_of_le_length {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
     (g : 𝔸.vertexGroup c) {j : ℕ} (hj : j ≤ p.length) :
     (cons p e g).elem j =
-      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_le p e g hj).symm (p.elem j) :=
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_le_length p e g hj).symm (p.elem j) :=
   dite_eq_left hj
 
-theorem elem_cons_of_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
+@[simp] theorem elem_cons_of_length_lt {b c : Γ.V} (p : 𝔸.AlternatingPath a b) (e : b ⟶ c)
     (g : 𝔸.vertexGroup c) {j : ℕ} (hj : p.length < j) :
-    (cons p e g).elem j = MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_lt p e g hj).symm g :=
+    (cons p e g).elem j =
+      MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_cons_of_length_lt p e g hj).symm g :=
   dite_eq_right (not_le.2 hj)
 
 /-- The element at a position `j ≥ k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` is its last
@@ -274,7 +276,7 @@ theorem elem_of_length_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) {j : ℕ} (h
     p.elem j = MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_of_length_le p hj).symm p.last := by
   cases p with
   | single g => rfl
-  | cons p e g => exact elem_cons_of_lt p e g (Nat.lt_of_succ_le hj)
+  | cons p e g => exact elem_cons_of_length_lt p e g (Nat.lt_of_succ_le hj)
 
 /-- The element at the last position `k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` is its
 last element `g_k`. -/
@@ -289,8 +291,8 @@ theorem elem_length {b : Γ.V} (p : 𝔸.AlternatingPath a b) :
 
 /-- Replacing the last element `g_k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` does not
 change its elements `g_j` with `j < k`. -/
-theorem elem_setLast_of_lt {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) {j : ℕ}
-    (hj : j < p.length) :
+theorem elem_setLast_of_lt_length {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b)
+    {j : ℕ} (hj : j < p.length) :
     (p.setLast g).elem j =
       MulEquiv.cast (M := 𝔸.vertexGroup) (vertex_setLast p g j).symm (p.elem j) := by
   cases p with
@@ -299,14 +301,14 @@ theorem elem_setLast_of_lt {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.v
     have hj : j ≤ p.length := Nat.le_of_lt_succ hj
     -- `(cons p e h).setLast g` is `cons p e g`, with the same vertices, by definition of `setLast`,
     -- so both sides are `p.elem j` transported along equalities of the same vertices.
-    refine (elem_cons_of_le p e g hj).trans ?_
-    rw [elem_cons_of_le p e h hj]
+    refine (elem_cons_of_le_length p e g hj).trans ?_
+    rw [elem_cons_of_le_length p e h hj]
     rfl
 
 /-- Replacing the last element `g_k` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` by `g` puts
 `g` at the positions `j ≥ k`. -/
-theorem elem_setLast_of_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b) {j : ℕ}
-    (hj : p.length ≤ j) :
+theorem elem_setLast_of_length_le {b : Γ.V} (p : 𝔸.AlternatingPath a b) (g : 𝔸.vertexGroup b)
+    {j : ℕ} (hj : p.length ≤ j) :
     (p.setLast g).elem j = MulEquiv.cast (M := 𝔸.vertexGroup)
       (vertex_of_length_le (p.setLast g) ((length_setLast p g).trans_le hj)).symm g :=
   ((p.setLast g).elem_of_length_le ((length_setLast p g).trans_le hj)).trans
@@ -347,8 +349,8 @@ alternating path has darts. -/
       SerreGraph.Path.darts_cons, List.getElem_append, List.length_append,
       List.length_singleton] at hj ⊢
     split_ifs with h
-    · rw [ih h, vertex_cons_of_le p e g (hp ▸ h.le)]
-    · rw [List.getElem_singleton, e.2.1, vertex_cons_of_le p e g (by omega),
+    · rw [ih h, vertex_cons_of_le_length p e g (hp ▸ h.le)]
+    · rw [List.getElem_singleton, e.2.1, vertex_cons_of_le_length p e g (by omega),
         show j = p.length by omega, vertex_length]
 
 /-- The dart `e_{j+1}` of an alternating path `g₀, e₁, g₁, …, e_k, g_k` ends at its vertex
@@ -363,8 +365,8 @@ alternating path has darts. -/
     simp only [toPath_cons, Path.edgePath_cons_vertex, Path.edgePath_cons_dart,
       SerreGraph.Path.darts_cons, List.getElem_append] at hj ⊢
     split_ifs with h
-    · rw [ih h, vertex_cons_of_le p e g (hp ▸ h)]
-    · rw [List.getElem_singleton, e.2.2, vertex_cons_of_lt p e g (by omega)]
+    · rw [ih h, vertex_cons_of_le_length p e g (hp ▸ h)]
+    · rw [List.getElem_singleton, e.2.2, vertex_cons_of_length_lt p e g (by omega)]
 
 /-- Multiplying the last element of an alternating path by `g` amounts, up to homotopy, to
 appending the vertex group letter `g`. -/

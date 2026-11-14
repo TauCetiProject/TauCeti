@@ -31,7 +31,8 @@ around the circle of `p i` reads `p i`.
 
 ## Main results
 
-* `TauCeti.GraphOfGroups.AGraph.src_wedgeDart`, `TauCeti.GraphOfGroups.AGraph.tgt_wedgeDart_of_lt`,
+* `TauCeti.GraphOfGroups.AGraph.src_wedgeDart`,
+  `TauCeti.GraphOfGroups.AGraph.tgt_wedgeDart_of_add_one_lt_length`,
   `TauCeti.GraphOfGroups.AGraph.exists_eq_wedgeDart_or_eq_rev`: the edges of a circle join its
   consecutive vertices, and the circles cover the wedge.
 * `TauCeti.GraphOfGroups.AGraph.wedgeDart_eq_wedgeDart_iff`,
@@ -40,12 +41,10 @@ around the circle of `p i` reads `p i`.
 * `TauCeti.GraphOfGroups.AGraph.typ_mapE_wedgeDart`,
   `TauCeti.GraphOfGroups.AGraph.typ_mapV_wedgeVertex`,
   `TauCeti.GraphOfGroups.AGraph.cast_labelα_wedgeDart`,
-  `TauCeti.GraphOfGroups.AGraph.cast_labelω_wedgeDart_of_add_one_eq`: the types and labels of the
-  circle of `p i` read `p i`.
+  `TauCeti.GraphOfGroups.AGraph.cast_labelω_wedgeDart_of_add_one_eq_length`: the types and labels
+  of the circle of `p i` read `p i`.
 * `TauCeti.GraphOfGroups.AGraph.π₁Hom_mk_wedgeLoop`: the loop around the circle of a path
   represents the class of the path.
-* `TauCeti.GraphOfGroups.AGraph.isFinite_wedge_iff`: the wedge is a finite `𝔸`-graph exactly when
-  finitely many paths have positive length and its base vertex group is finitely generated.
 
 ## Implementation notes
 
@@ -138,10 +137,10 @@ private theorem get_prepend (p : 𝔸.AlternatingPath x z) (t : IndexedPath 𝔸
   | cons p e g ih =>
     rw [prepend, ih, AlternatingPath.length_cons]
     rcases lt_trichotomy k p.length with hk | rfl | hk
-    · rw [ite_eq_left hk, ite_eq_left (by omega), AlternatingPath.elem_cons_of_le p e g hk.le,
-        sigma_mk_cast]
+    · rw [ite_eq_left hk, ite_eq_left (by omega),
+        AlternatingPath.elem_cons_of_le_length p e g hk.le, sigma_mk_cast]
     · rw [ite_eq_right (lt_irrefl _), ite_eq_left (Nat.lt_succ_self _), Nat.sub_self,
-        get_step_zero, AlternatingPath.elem_cons_of_le p e g le_rfl, sigma_mk_cast,
+        get_step_zero, AlternatingPath.elem_cons_of_le_length p e g le_rfl, sigma_mk_cast,
         AlternatingPath.elem_length, sigma_mk_cast]
     · rw [ite_eq_right (by omega), ite_eq_right (by omega),
         show k - p.length = k - (p.length + 1) + 1 by omega, get_step_succ]
@@ -155,12 +154,12 @@ private theorem get_ofAlternatingPath (p : 𝔸.AlternatingPath x y) (h : p.leng
   | cons q e g =>
     rw [ofAlternatingPath, get_prepend, get_single]
     rcases lt_trichotomy k q.length with hk | rfl | hk
-    · rw [ite_eq_left hk, AlternatingPath.elem_cons_of_le q e g hk.le, sigma_mk_cast]
+    · rw [ite_eq_left hk, AlternatingPath.elem_cons_of_le_length q e g hk.le, sigma_mk_cast]
     · rw [ite_eq_right (lt_irrefl _), Nat.sub_self, ite_eq_left rfl,
-        AlternatingPath.elem_cons_of_le q e g le_rfl, sigma_mk_cast, AlternatingPath.elem_length,
-        sigma_mk_cast]
+        AlternatingPath.elem_cons_of_le_length q e g le_rfl, sigma_mk_cast,
+        AlternatingPath.elem_length, sigma_mk_cast]
     · rw [ite_eq_right (by omega), ite_eq_right (by omega),
-        AlternatingPath.elem_cons_of_lt q e g hk, sigma_mk_cast]
+        AlternatingPath.elem_cons_of_length_lt q e g hk, sigma_mk_cast]
 
 /-- The initial segment of length `k` has `k` darts. -/
 private theorem length_darts_pre (t : IndexedPath 𝔸 x y n) (k : Fin (n + 1)) :
@@ -347,8 +346,8 @@ private theorem wedgeDart_cast_last (p : ι → 𝔸.AlternatingPath v₀ v₀)
 
 /-- The edge at position `k` of a circle, for `k + 1` less than its length, ends at the vertex at
 position `k + 1`. -/
-theorem tgt_wedgeDart_of_lt (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
-    {k : Fin (p i).length} (hk : (k : ℕ) + 1 < (p i).length) :
+theorem tgt_wedgeDart_of_add_one_lt_length (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) + 1 < (p i).length) :
     (wedge p).graph.tgt (wedgeDart p i k) = wedgeVertex p i ⟨k + 1, hk⟩ := by
   have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
@@ -360,7 +359,7 @@ theorem tgt_wedgeDart_of_lt (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i 
     rfl
 
 /-- The edge at the last position of a circle ends at the base vertex. -/
-theorem tgt_wedgeDart_of_add_one_eq (p : ι → 𝔸.AlternatingPath v₀ v₀)
+theorem tgt_wedgeDart_of_add_one_eq_length (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) + 1 = (p i).length) :
     (wedge p).graph.tgt (wedgeDart p i k) = (wedge p).base := by
   have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
@@ -396,8 +395,8 @@ theorem grp_wedgeVertex_of_ne_zero (p : ι → 𝔸.AlternatingPath v₀ v₀) (
   grp_wedge_of_ne_base p (mt (wedgeVertex_eq_base_iff p i k).1 hk)
 
 /-- The edges of a circle other than the last one have the end label `1`. -/
-theorem labelω_wedgeDart_of_lt (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : {i // (p i).length ≠ 0})
-    {k : Fin (p i).length} (hk : (k : ℕ) + 1 < (p i).length) :
+theorem labelω_wedgeDart_of_add_one_lt_length (p : ι → 𝔸.AlternatingPath v₀ v₀)
+    (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) + 1 < (p i).length) :
     (wedge p).labelω (wedgeDart p i k) = 1 := by
   have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
@@ -640,10 +639,10 @@ theorem cast_labelα_wedgeDart (p : ι → 𝔸.AlternatingPath v₀ v₀) (i : 
 
 /-- The end label of the last edge of the circle of `p i`, read in `A_{v₀}`, is the last element
 `g_k` of `p i`. -/
-theorem cast_labelω_wedgeDart_of_add_one_eq (p : ι → 𝔸.AlternatingPath v₀ v₀)
+theorem cast_labelω_wedgeDart_of_add_one_eq_length (p : ι → 𝔸.AlternatingPath v₀ v₀)
     (i : {i // (p i).length ≠ 0}) {k : Fin (p i).length} (hk : (k : ℕ) + 1 = (p i).length) :
     MulEquiv.cast (M := 𝔸.vertexGroup)
-      (by rw [SerreGraph.Hom.map_tgt, tgt_wedgeDart_of_add_one_eq p i hk, typ_base])
+      (by rw [SerreGraph.Hom.map_tgt, tgt_wedgeDart_of_add_one_eq_length p i hk, typ_base])
       ((wedge p).labelω (wedgeDart p i k)) = (p i).last := by
   have h := IndexedPath.ofAlternatingPath_fst_add_one (p i) i.2
   obtain ⟨k, rfl⟩ := (Fin.rightInverse_cast h).surjective k
@@ -655,20 +654,6 @@ theorem cast_labelω_wedgeDart_of_add_one_eq (p : ι → 𝔸.AlternatingPath v�
     refine (labelω_circleWedge_none (wedgeCircles p) (wedgeGroup p) i).trans ?_
     rw [← IndexedPath.get_of_lt _ (Nat.lt_add_one _), IndexedPath.get_ofAlternatingPath, h,
       AlternatingPath.elem_length, sigma_mk_cast]
-
-/-- The wedge is a finite `𝔸`-graph exactly when finitely many paths have positive length and its
-base vertex group is finitely generated. -/
-theorem isFinite_wedge_iff (p : ι → 𝔸.AlternatingPath v₀ v₀) :
-    (wedge p).IsFinite ↔ Finite {i // (p i).length ≠ 0} ∧ (wedgeGroup p).FG := by
-  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨_, h⟩ => ?_⟩
-  · have := h.finite_E
-    exact Finite.of_injective (fun i => wedgeDart p i ⟨0, Nat.pos_of_ne_zero i.2⟩)
-      fun _ _ hi => ((wedgeDart_eq_wedgeDart_iff p).1 hi).1
-  · rw [← map_grp_wedge_base]
-    have : Group.FG ((wedge p).grp (wedge p).base) := (Group.fg_iff_subgroup_fg _).2 (h.fg _)
-    exact (Group.fg_iff_subgroup_fg _).1 inferInstance
-  · have : Group.FG (wedgeGroup p) := (Group.fg_iff_subgroup_fg _).2 h
-    exact isFinite_wedge p
 
 end AGraph
 
