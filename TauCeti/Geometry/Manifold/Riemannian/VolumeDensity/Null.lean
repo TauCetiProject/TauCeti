@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.Measure
+public import TauCeti.Geometry.Manifold.Measure.AE
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -25,6 +25,8 @@ boundary or corners.
   zero exactly when its image in the chart is null for an additive Haar measure.
 * `TauCeti.isNullSet_iff_riemannianVolume_eq_zero`: a set is chartwise null exactly when it has
   Riemannian volume zero.
+* `TauCeti.ae_riemannianVolume`: almost everywhere for the Riemannian volume of any continuous
+  metric means almost everywhere for the chartwise null sets, `TauCeti.Manifold.ae I M`.
 * `TauCeti.nullSingletonClass_riemannianVolume`: on a manifold of positive dimension, every point
   has Riemannian volume zero.
 -/
@@ -157,6 +159,11 @@ theorem isNullSet_iff_riemannianVolume_eq_zero {s : Set M} :
 /-- A chartwise null set has Riemannian volume zero. -/
 theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
     riemannianVolume I M s = 0 := isNullSet_iff_riemannianVolume_eq_zero.mp hs
+
+/-- **Almost everywhere does not depend on the metric.** The almost-everywhere filter of the
+Riemannian volume of a continuous metric is the almost-everywhere filter of chartwise null sets. -/
+theorem ae_riemannianVolume : ae (riemannianVolume I M) = Manifold.ae I M :=
+  Manifold.ae_eq_of_forall_measure_eq_zero_iff fun _ ↦ isNullSet_iff_riemannianVolume_eq_zero.symm
 
 end Null
 
