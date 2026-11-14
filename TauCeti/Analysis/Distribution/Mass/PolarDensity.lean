@@ -213,7 +213,7 @@ def polarDensity (T : 𝓓(Ω, F) →L[ℝ] ℝ) : Ω → StrongDual ℝ F :=
       ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T then h.choose
   else 0
 
-omit [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The polar density is measurable. -/
 @[fun_prop]
 theorem measurable_polarDensity : Measurable (polarDensity T) := by
@@ -221,7 +221,7 @@ theorem measurable_polarDensity : Measurable (polarDensity T) := by
   split_ifs with h
   exacts [h.choose_spec.1, measurable_const]
 
-omit [FiniteDimensional ℝ F] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- The polar density of a functional without locally finite mass is `0`, by convention. -/
 @[simp]
 theorem polarDensity_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :

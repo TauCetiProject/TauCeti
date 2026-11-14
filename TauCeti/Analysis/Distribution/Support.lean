@@ -21,17 +21,20 @@ vanishes. For an additive map on test functions, such as a distribution or a cur
 support. Consequently `T φ` depends only on the germ of `φ` along `dsupport T`, `T` vanishes
 exactly when its support is empty, and the support of a sum lies in the union of the supports.
 
-When `dsupport T` is a compact subset of `Ω`, a test `χ` equal to one near `dsupport T` exists, and
+When `E` is finite-dimensional and `dsupport T` is a compact subset of `Ω`, a test `χ` equal to one
+near `dsupport T` exists (`Distribution.exists_eventually_eq_one_nhdsSet_dsupport_iff`), and
 `T (χ • c)` is independent of that cutoff for every vector `c`. This value is the *augmentation*
 `augmentation T c`: the pairing of a compactly supported distribution with the constant function
 `c`. For degree-zero currents and `c` the unit `0`-form it is the augmentation of the current, the
 total coefficient of a finite sum of point masses. No constant test function is inserted into the
-domain of `T`: when the support of `T` is not a compact subset of `Ω`, no such cutoff exists and
-`augmentation T c` is the junk value zero. The augmentation of an additive map is additive in `c`,
-and that of a linear map is homogeneous in `c`. The augmentation is homogeneous in the map, and on
-maps whose supports are compact subsets of `Ω` it is also additive in the map. It sends the point
-evaluation `φ ↦ ℓ (φ x)` to `ℓ c`, and it vanishes on the boundary `T ∘ d` of a current, because
-the exterior derivative of a cutoff equal to one vanishes near the support.
+domain of `T`: when no such cutoff exists, for instance when the support of `T` is not a compact
+subset of `Ω`, `augmentation T c` is the junk value zero. On an infinite-dimensional space every
+test function is zero, so every augmentation is zero. The augmentation of an additive map is
+additive in `c`, and that of a linear map is homogeneous in `c`. The augmentation is homogeneous in
+the map, and on maps whose supports are compact subsets of `Ω` it is also additive in the map. When
+`E` is finite-dimensional it sends the point evaluation `φ ↦ ℓ (φ x)` to `ℓ c`. It vanishes on the
+boundary `T ∘ d` of a current, because the exterior derivative of a cutoff equal to one vanishes
+near the support.
 
 ## Main declarations
 
@@ -52,13 +55,15 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
   support, and compactness of point-evaluation support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
+* `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
+  every augmentation is zero.
 * `Distribution.augmentation_comp_extDerivCLM`,
   `Distribution.not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero`,
   `Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`: the augmentation of a boundary is
   zero, obstructing compactly supported fillings of currents with nonzero augmentation (in
-  particular nonzero point currents).
-* `Distribution.subset_dsupport_ofFun_const`: a nonzero constant function is supported on all
-  of `Ω`.
+  particular, for finite-dimensional `E`, nonzero point currents).
+* `Distribution.subset_dsupport_ofFun_const`: for finite-dimensional `E`, a nonzero constant
+  function is supported on all of `Ω`.
 
 ## References
 

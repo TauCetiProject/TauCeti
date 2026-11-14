@@ -27,14 +27,16 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 This module provides smooth, compactly supported cutoffs for compact subsets of a
 finite-dimensional real normed space. The cutoff is equal to one on a neighborhood of the compact
 set and has topological support in a prescribed open set, which is the localization step used for
-compact exhaustions in domain arguments. Taking differences of consecutive cutoffs along a compact
-exhaustion gives a nonnegative decomposition of unity of an open set by compactly supported smooth
-functions, with partial sums at most one, together with cutoffs equal to one on their supports which
-are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
-gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
-is `C^k` on an open set containing its support into a `C^k` function on the whole space
-(`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a function `C^k` on `U × G` agrees,
-at positions near a compact subset of `U`, with a function `C^k` on the whole product
+compact exhaustions in domain arguments. A compact set covered by open sets carries finitely many
+smooth functions, each with topological support in a member of the cover, summing to one on it
+(`IsCompact.exists_finset_sum_contDiff_eq_one`). Taking differences of consecutive cutoffs along a
+compact exhaustion gives a nonnegative decomposition of unity of an open set by compactly supported
+smooth functions, with partial sums at most one, together with cutoffs equal to one on their
+supports which are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`);
+this is the gluing device for global approximation on a domain. Multiplying by a cutoff turns a
+function which is `C^k` on an open set containing its support into a `C^k` function on the whole
+space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a function `C^k` on `U × G`
+agrees, at positions near a compact subset of `U`, with a function `C^k` on the whole product
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
@@ -128,6 +130,23 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_eventuallyEq_one [NormedSpace �
         (∀ x ∈ K, ∀ᶠ y in 𝓝 x, ψ y = 1) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U := by
   obtain ⟨ψ, hψ, hr, h1, hc, hs⟩ := hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ, hr, fun x hx => mem_interior_iff_mem_nhds.1 (h1 hx), hc, hs⟩
+
+/-- **A finite smooth partition of unity on a compact set.** A compact subset `K` of a
+finite-dimensional real normed space covered by open sets `U i` carries finitely many smooth
+functions `χ i`, with topological support in `U i`, whose sum is one on `K`. -/
+theorem _root_.IsCompact.exists_finset_sum_contDiff_eq_one [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ι : Type*} {K : Set E} {U : ι → Set E} (hK : IsCompact K)
+    (hU : ∀ i, IsOpen (U i)) (hKU : K ⊆ ⋃ i, U i) :
+    ∃ (s : Finset ι) (χ : ι → E → ℝ), (∀ i, ContDiff ℝ ∞ (χ i)) ∧
+      (∀ i, tsupport (χ i) ⊆ U i) ∧ ∀ x ∈ K, ∑ i ∈ s, χ i x = 1 := by
+  classical
+  obtain ⟨ρ, hρ⟩ :=
+    SmoothPartitionOfUnity.exists_isSubordinate (modelWithCornersSelf ℝ E) hK.isClosed U hU hKU
+  have hfin := ρ.locallyFinite.finite_nonempty_inter_compact hK
+  refine ⟨hfin.toFinset, fun i => ρ i, fun i => (ρ i).contMDiff.contDiff, hρ, fun x hx => ?_⟩
+  refine ρ.toPartitionOfUnity.sum_finsupport' hx fun i hi => ?_
+  rw [PartitionOfUnity.mem_finsupport] at hi
+  exact hfin.mem_toFinset.2 ⟨x, hi, hx⟩
 
 /-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
 bounded by a common nonnegative constant. -/
