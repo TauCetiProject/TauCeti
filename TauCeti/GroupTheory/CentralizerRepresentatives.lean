@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.Algebra.Group.Subgroup.Conjugates
 
 /-!
@@ -151,18 +152,10 @@ example [Subsingleton G] : IsCentralizerRepresentatives (∅ : Set G) :=
 
 /-- In `ℤ²`, the empty set is a set of representatives of the cyclic centralizers: every
 centralizer is the whole group, which is not cyclic. -/
-example : IsCentralizerRepresentatives (∅ : Set (Multiplicative (ℤ × ℤ))) := by
-  refine isCentralizerRepresentatives_empty_iff.2 fun g _ hcg ↦ ?_
-  have htop : zpowers g = ⊤ := hcg ▸ by
-    simp [centralizer_eq_top_iff_subset, CommGroup.center_eq_top]
-  obtain ⟨k, hk⟩ := mem_zpowers_iff.1 (htop ▸ mem_top (Multiplicative.ofAdd (1, 0)))
-  obtain ⟨m, hm⟩ := mem_zpowers_iff.1 (htop ▸ mem_top (Multiplicative.ofAdd (0, 1)))
-  have hk' := congrArg Multiplicative.toAdd hk
-  have hm' := congrArg Multiplicative.toAdd hm
-  simp only [toAdd_zpow, toAdd_ofAdd, Prod.ext_iff, Prod.smul_fst, Prod.smul_snd,
-    smul_eq_mul] at hk' hm'
-  rcases Int.mul_eq_zero.1 hk'.2 with rfl | h
-  · simp at hk'
-  · simp [h] at hm'
+example : IsCentralizerRepresentatives (∅ : Set (Multiplicative (ℤ × ℤ))) :=
+  isCentralizerRepresentatives_empty_iff.2 fun g _ hcg ↦
+    not_isAddCyclic_prod_of_infinite_nontrivial ℤ ℤ <| isCyclic_multiplicative_iff.1 <|
+      isCyclic_iff_exists_zpowers_eq_top.2
+        ⟨g, hcg ▸ by simp [centralizer_eq_top_iff_subset, CommGroup.center_eq_top]⟩
 
 end TauCeti
