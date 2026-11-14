@@ -65,6 +65,12 @@ either side vanishes.
   `DoubleCentralizer.norm_coe_snd_of_tendsto_mul_right`: the contractive case.
 * `DoubleCentralizer.eq_zero_of_forall_mul_coe_eq_zero`,
   `DoubleCentralizer.eq_zero_of_forall_coe_mul_eq_zero`: the image of `A` is an essential ideal.
+* `DoubleCentralizer.forall_commute_iff_forall_fst_eq_snd`,
+  `DoubleCentralizer.mem_center_iff_forall_fst_eq_snd`: with zero annihilators, a multiplier is
+  central precisely when its left and right centralizers agree on `A`.
+* `DoubleCentralizer.continuous_fst_apply_of_norm_le`,
+  `DoubleCentralizer.continuous_snd_apply_of_norm_le`: joint norm continuity of products of a
+  strictly continuous norm-bounded multiplier family with a continuously varying element of `A`.
 
 ## References
 
@@ -422,6 +428,69 @@ theorem eq_zero_of_forall_coe_mul_eq_zero {m : 𝓜(𝕜, A)} (h : ∀ a : A, (a
   rw [op_smul_eq_mul, op_smul_eq_mul]
   simp [← m.central, hsnd]
 
+/-- With zero annihilators, a multiplier commutes with every multiplier precisely when its left and
+right centralizers agree on `A`. -/
+theorem forall_commute_iff_forall_fst_eq_snd {m : 𝓜(𝕜, A)} :
+    (∀ n : 𝓜(𝕜, A), Commute m n) ↔ ∀ a : A, m.fst a = m.snd a := by
+  refine ⟨fun h a => coe_injective (𝕜 := 𝕜) ?_, fun h n => ext_fst fun a => ?_⟩
+  · rw [← mul_coe_eq_coe_fst, ← coe_mul_eq_coe_snd]
+    exact h (a : 𝓜(𝕜, A))
+  · refine FaithfulSMul.eq_of_smul_eq_smul fun b : A => ?_
+    simp only [smul_eq_mul]
+    calc m.fst (n.fst a) * b = m.snd (n.fst a) * b := by rw [h (n.fst a)]
+      _ = n.fst a * m.fst b := m.central (n.fst a) b
+      _ = n.fst (a * m.fst b) := (n.fst_mul a (m.fst b)).symm
+      _ = n.fst (m.snd a * b) := by rw [← m.central]
+      _ = n.fst (m.fst a * b) := by rw [h a]
+      _ = n.fst (m.fst a) * b := n.fst_mul (m.fst a) b
+
+/-- With zero annihilators, a multiplier lies in the center of `𝓜(𝕜, A)` precisely when its left
+and right centralizers agree on `A`. -/
+theorem mem_center_iff_forall_fst_eq_snd {m : 𝓜(𝕜, A)} :
+    m ∈ Subalgebra.center 𝕜 𝓜(𝕜, A) ↔ ∀ a : A, m.fst a = m.snd a := by
+  rw [Subalgebra.mem_center_iff]
+  simpa only [Commute, SemiconjBy, eq_comm] using forall_commute_iff_forall_fst_eq_snd (m := m)
+
 end Essential
+
+/-! ### Joint strict continuity on bounded multiplier families -/
+
+section StrictContinuity
+
+variable {X : Type*} [TopologicalSpace X] {C : ℝ}
+
+/-- If `u : X → 𝓜(𝕜, A)` has uniformly bounded left centralizers and `x ↦ (u x).fst a` is
+continuous for each `a`, then `(x, a) ↦ (u x).fst a` is jointly continuous. -/
+theorem continuous_fst_of_norm_le {u : X → 𝓜(𝕜, A)}
+    (hu : ∀ a : A, Continuous fun x => (u x).fst a) (hC : ∀ x, ‖(u x).fst‖ ≤ C) :
+    Continuous fun p : X × A => (u p.1).fst p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ C.toNNReal
+    (fun x => (u x).fst.lipschitzWith.weaken <| by
+      exact_mod_cast (hC x).trans (Real.le_coe_toNNReal C)) hu
+
+/-- If `u : X → 𝓜(𝕜, A)` has uniformly bounded right centralizers and `x ↦ (u x).snd a` is
+continuous for each `a`, then `(x, a) ↦ (u x).snd a` is jointly continuous. -/
+theorem continuous_snd_of_norm_le {u : X → 𝓜(𝕜, A)}
+    (hu : ∀ a : A, Continuous fun x => (u x).snd a) (hC : ∀ x, ‖(u x).snd‖ ≤ C) :
+    Continuous fun p : X × A => (u p.1).snd p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ C.toNNReal
+    (fun x => (u x).snd.lipschitzWith.weaken <| by
+      exact_mod_cast (hC x).trans (Real.le_coe_toNNReal C)) hu
+
+/-- Joint norm continuity of `x ↦ (u x).fst (f x)` for a norm-bounded strictly left-continuous
+multiplier family `u` and a continuous `f : X → A`. -/
+theorem continuous_fst_apply_of_norm_le {u : X → 𝓜(𝕜, A)} {f : X → A}
+    (hu : ∀ a : A, Continuous fun x => (u x).fst a) (hC : ∀ x, ‖(u x).fst‖ ≤ C)
+    (hf : Continuous f) : Continuous fun x => (u x).fst (f x) :=
+  (continuous_fst_of_norm_le hu hC).comp (continuous_id.prodMk hf)
+
+/-- Joint norm continuity of `x ↦ (u x).snd (f x)` for a norm-bounded strictly right-continuous
+multiplier family `u` and a continuous `f : X → A`. -/
+theorem continuous_snd_apply_of_norm_le {u : X → 𝓜(𝕜, A)} {f : X → A}
+    (hu : ∀ a : A, Continuous fun x => (u x).snd a) (hC : ∀ x, ‖(u x).snd‖ ≤ C)
+    (hf : Continuous f) : Continuous fun x => (u x).snd (f x) :=
+  (continuous_snd_of_norm_le hu hC).comp (continuous_id.prodMk hf)
+
+end StrictContinuity
 
 end DoubleCentralizer

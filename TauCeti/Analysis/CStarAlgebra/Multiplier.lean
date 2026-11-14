@@ -38,7 +38,9 @@ records that `e ↦ congr e` is a monoid homomorphism of automorphism groups.
 
 Since `A` is an ideal of `𝓜(ℂ, A)`, conjugation `a ↦ u * a * u⋆` by a unitary multiplier `u`
 maps `A` to itself; `DoubleCentralizer.conjStarAlgAut` records it as a monoid homomorphism from
-the unitary multipliers to the automorphisms of `A`. As the inclusion of `A` is a linear isometry,
+the unitary multipliers to the automorphisms of `A`. Left and right multiplication of a C⋆-ring by
+a unitary multiplier preserve norms (`DoubleCentralizer.norm_unitary_fst_apply` and
+`DoubleCentralizer.norm_unitary_snd_apply`). As the inclusion of `A` is a linear isometry,
 a real path in `A` has derivative `v` exactly when its image in `𝓜(ℂ, A)` has derivative `↑v`,
 `DoubleCentralizer.hasDerivAt_coe_iff`, so derivatives may be computed in the multiplier algebra.
 Consequently, conjugating a path in `A` by a path of multipliers `U` with `U 0 = 1` and
@@ -271,6 +273,25 @@ theorem coe_conjStarAlgAut_apply (u : unitary 𝓜(ℂ, A)) (a : A) :
   (coeHom_conjAux_apply u a).trans (Unitary.conjStarAlgAut_apply u _)
 
 end Conj
+
+section DenselyNormed
+
+variable {𝕜 A : Type*} [DenselyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A] [StarRing A]
+  [CStarRing A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [StarModule 𝕜 A]
+
+/-- Left multiplication of a C⋆-ring by a unitary multiplier is norm-preserving. -/
+@[simp]
+theorem norm_unitary_fst_apply (u : unitary 𝓜(𝕜, A)) (a : A) :
+    ‖(u : 𝓜(𝕜, A)).fst a‖ = ‖a‖ := by
+  rw [← norm_coe (𝕜 := 𝕜), ← mul_coe_eq_coe_fst, CStarRing.norm_coe_unitary_mul, norm_coe]
+
+/-- Right multiplication of a C⋆-ring by a unitary multiplier is norm-preserving. -/
+@[simp]
+theorem norm_unitary_snd_apply (u : unitary 𝓜(𝕜, A)) (a : A) :
+    ‖(u : 𝓜(𝕜, A)).snd a‖ = ‖a‖ := by
+  rw [← norm_coe (𝕜 := 𝕜), ← coe_mul_eq_coe_snd, CStarRing.norm_mul_coe_unitary, norm_coe]
+
+end DenselyNormed
 
 /-- A real path in `A` has derivative `v` exactly when its image in the multiplier algebra has
 derivative `v`: the inclusion `A → 𝓜(ℂ, A)` is a linear isometry. -/
