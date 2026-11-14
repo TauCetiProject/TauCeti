@@ -245,10 +245,7 @@ theorem integrableOn_mul_inv_mul_log_div_sq {c R : ℝ} (hR : R < c) :
     rintro r ⟨h0, hr⟩
     have hc : 0 < c := h0.trans (hr.trans hR)
     have hL := Real.log_div_pos h0 (hr.trans hR)
-    have hdiv : HasDerivAt (fun s : ℝ => c / s) (-(c / r ^ 2)) r := by
-      simpa only [div_eq_mul_inv, neg_mul_eq_mul_neg, ← inv_pow] using
-        (hasDerivAt_inv h0.ne').const_mul c
-    have h := (hdiv.log (by positivity)).inv hL.ne'
+    have h := (Real.hasDerivAt_log_div hc.ne' h0.ne').inv hL.ne'
     convert h using 1
     field_simp
   have hnonneg : ∀ r ∈ Set.Ioo (0 : ℝ) R, 0 ≤ r * ((r * Real.log (c / r))⁻¹) ^ 2 :=

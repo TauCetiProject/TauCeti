@@ -24,6 +24,7 @@ It also records the calculus of the radial profile `r ↦ log log (c / r)`, whic
 singularity at the origin:
 
 * `Real.log_div_pos`: for `0 < r < c` the inner logarithm `log (c / r)` is positive;
+* `Real.hasDerivAt_log_div`: the derivative of the inner logarithm `log (c / r)` is `-r⁻¹`;
 * `Real.hasDerivAt_log_log_div`: the derivative of `log log (c / r)` is `-(r log (c / r))⁻¹`
   wherever `c / r ∉ {0, 1, -1}`;
 * `Real.tendsto_log_log_div`: `log log (c / r) → ∞` as `r → 0`, for `c ≠ 0`.
@@ -56,17 +57,24 @@ theorem abs_log_log_inv_le {x : ℝ} (hx : 0 ≤ x) (hx1 : x < exp (-1)) :
 theorem log_div_pos {c r : ℝ} (h0 : 0 < r) (hr : r < c) : 0 < log (c / r) :=
   log_pos ((one_lt_div h0).2 hr)
 
+/-- The derivative of the inner logarithm: `d/dr log (c / r) = -r⁻¹` for `c ≠ 0` and `r ≠ 0`. -/
+theorem hasDerivAt_log_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
+    HasDerivAt (fun s : ℝ => log (c / s)) (-r⁻¹) r := by
+  have hdiv : HasDerivAt (fun s : ℝ => c / s) (-(c / r ^ 2)) r := by
+    simpa only [div_eq_mul_inv, neg_mul_eq_mul_neg, ← inv_pow] using
+      (hasDerivAt_inv hr).const_mul c
+  refine (hdiv.log (div_ne_zero hc hr)).congr_deriv ?_
+  field_simp
+
 /-- The derivative of the radial profile: `d/dr log log (c / r) = -(r log (c / r))⁻¹` wherever
 `c / r ∉ {0, 1, -1}`. -/
 theorem hasDerivAt_log_log_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) (hrc : r ≠ c)
     (hrc' : r ≠ -c) :
     HasDerivAt (fun s : ℝ => log (log (c / s))) (-(r * log (c / r))⁻¹) r := by
-  have hdiv : HasDerivAt (fun s : ℝ => c / s) (-(c / r ^ 2)) r := by
-    simpa only [div_eq_mul_inv, neg_mul_eq_mul_neg, ← inv_pow] using
-      (hasDerivAt_inv hr).const_mul c
   have h1 : c / r ≠ 1 := fun h => hrc ((div_eq_one_iff_eq hr).1 h).symm
   have h2 : c / r ≠ -1 := fun h => hrc' (by rw [div_eq_iff hr] at h; linarith)
-  refine ((hasDerivAt_log_log (div_ne_zero hc hr) h1 h2).comp r hdiv).congr_deriv ?_
+  have hL : log (c / r) ≠ 0 := log_ne_zero.2 ⟨div_ne_zero hc hr, h1, h2⟩
+  refine ((hasDerivAt_log_div hc hr).log hL).congr_deriv ?_
   field_simp
 
 /-- The radial profile `log log (c / r)` tends to `∞` as `r → 0`, for `c ≠ 0`. -/

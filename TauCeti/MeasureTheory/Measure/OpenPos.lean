@@ -25,7 +25,9 @@ continuous function on the closure of an open set is determined by its values al
 the set.
 
 On a discrete space, such a measure charges every point, so the only null set is empty and
-almost everywhere means everywhere.
+almost everywhere means everywhere. If such a measure gives every point measure zero, on the other
+hand, it charges every punctured neighbourhood of a point, so a function tending to `∞` at a point
+agrees almost everywhere near it with no function continuous there.
 
 ## Main results
 
@@ -44,6 +46,8 @@ almost everywhere means everywhere.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
+* `TauCeti.not_continuousAt_of_ae_eq_of_tendsto_atTop`: a function tending to `∞` at a point has
+  no almost everywhere representative continuous there.
 -/
 
 public section
@@ -160,6 +164,29 @@ theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [Topolog
     [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
     ae μ = ⊤ :=
   ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
+
+/-- A function tending to `∞` at `x` agrees almost everywhere near `x` with no function continuous
+at `x`, for a measure positive on nonempty open sets that gives every point measure zero: such a
+measure charges every punctured neighbourhood of `x`. -/
+theorem not_continuousAt_of_ae_eq_of_tendsto_atTop {X β : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] [NullSingletonClass μ] [LinearOrder β]
+    [TopologicalSpace β] [OrderTopology β] [NoMaxOrder β] {f g : X → β} {x : X} {s : Set X}
+    (hf : Tendsto f (𝓝[≠] x) atTop) (hs : s ∈ 𝓝 x) (hg : g =ᵐ[μ.restrict s] f) :
+    ¬ ContinuousAt g x := by
+  intro hc
+  obtain ⟨b, hb⟩ := exists_gt (g x)
+  have hgb : ∀ᶠ y in 𝓝[≠] x, g y < b := nhdsWithin_le_nhds (hc.eventually (gt_mem_nhds hb))
+  have hfb : ∀ᶠ y in 𝓝[≠] x, b < f y := hf.eventually_gt_atTop _
+  obtain ⟨o, ho, hxo, hos⟩ := mem_nhdsWithin.1 ((hgb.and hfb).and (nhdsWithin_le_nhds hs))
+  -- The punctured neighbourhood `o \ {x}` has positive measure and lies in `{g ≠ f} ∩ s`.
+  have hpos : 0 < μ (o \ {x}) := by
+    rw [measure_sdiff_null (measure_singleton _)]
+    exact ho.measure_pos μ ⟨x, hxo⟩
+  have hsub : o \ {x} ⊆ {y | ¬ g y = f y} ∩ s := fun y hy => by
+    obtain ⟨⟨h1, h2⟩, h3⟩ := hos ⟨hy.1, hy.2⟩
+    exact ⟨(h1.trans h2).ne, h3⟩
+  exact hpos.ne' (le_antisymm ((measure_mono hsub).trans
+    ((Measure.le_restrict_apply _ _).trans (ae_iff.1 hg).le)) zero_le)
 
 end TauCeti
 

@@ -26,6 +26,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Analysis.SpecialFunctions.Log.InvLog
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # An unbounded function in the local class `W^{1,2}` of a planar disc
@@ -55,10 +56,10 @@ to `u` almost everywhere near the origin is continuous at the origin
 (`TauCeti.not_continuousAt_of_ae_eq_logLogInterior`). Cutting `u` off with a bump function and
 translating it, every planar set `U` with nonempty interior carries, for `p ≤ 2`, a member of the
 local class `W^{1,p}` of `U` with no continuous representative on `U`
-(`TauCeti.exists_memWkpLoc_one_not_continuousOn_of_ae_eq`). For `p > 2` there is always one, by
-Morrey's inequality `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative`. So continuity of
-`W^{1,p}_loc` functions, needed to define Sobolev maps into a manifold through charts, requires
-`p > 2`.
+(`TauCeti.exists_memWkpLoc_one_not_continuousOn_of_ae_eq`). For `p > 2` and `U` open there is
+always one, by Morrey's inequality `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative`. So
+continuity of `W^{1,p}_loc` functions, needed to define Sobolev maps into a manifold through
+charts, requires `p > 2`.
 
 ## Implementation notes
 
@@ -170,7 +171,8 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
   have hlog : MemWkpLoc 1 (⊤ : Opens ℂ) 1 (fun z : ℂ => Real.log ‖z‖) :=
     (memWkpLoc_one_log_norm_iff (by simp)).2 (by norm_num)
   have hBc : IsCompact (closure (B : Set ℂ)) := by
-    rw [show (B : Set ℂ) = ball (0 : ℂ) (1 / 2) from rfl, closure_ball _ (by norm_num)]
+    simp only [B, Opens.coe_mk]
+    rw [closure_ball _ (by norm_num)]
     exact isCompact_closedBall _ _
   obtain ⟨v, hvv, hvg⟩ := hlog.exists_w1p (hasWeakFDerivOn_log_norm ⊤) hBc (subset_univ _)
   -- `a = log 4 - log ‖z‖`, bounded below by `log 4` on `B`.
@@ -202,8 +204,10 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
       linarith
     have hd : (InnerProductSpace.toDual ℝ ℂ).symm ((‖z‖ ^ 2)⁻¹ • innerSL ℝ z) =
         (‖z‖ ^ 2)⁻¹ • z := by
-      rw [map_smul]
-      exact congrArg _ ((InnerProductSpace.toDual ℝ ℂ).symm_apply_apply z)
+      have hz : innerSL ℝ z = InnerProductSpace.toDual ℝ ℂ z :=
+        ContinuousLinearMap.ext fun _ => by
+          rw [innerSL_apply_apply, InnerProductSpace.toDual_apply_apply]
+      rw [hz, map_smul, LinearIsometryEquiv.symm_apply_apply]
     rw [(hasFDerivAt_logLogInterior_log_norm hz4 hz.2).fderiv, h1, h2, h3, hd]
     simp only [map_smul, map_neg]
 
@@ -283,45 +287,18 @@ theorem tendsto_logLogInterior : Tendsto logLogInterior (𝓝[≠] 0) atTop :=
   (Real.tendsto_log_log_div four_ne_zero).comp
     ((tendsto_norm_nhdsNE_zero (E := ℂ)).mono_right (nhdsGT_le_nhdsNE 0))
 
-namespace LogLogInterior
-
-/-- A function tending to `∞` at `z₀` agrees almost everywhere near `z₀` with no function
-continuous at `z₀`: punctured neighbourhoods of `z₀` have positive measure. -/
-private theorem not_continuousAt_of_ae_eq_of_tendsto {f g : ℂ → ℝ} {z₀ : ℂ} {s : Set ℂ}
-    (hf : Tendsto f (𝓝[≠] z₀) atTop) (hs : s ∈ 𝓝 z₀) (hg : g =ᵐ[volume.restrict s] f) :
-    ¬ ContinuousAt g z₀ := by
-  intro hc
-  have hb : ∀ᶠ z in 𝓝[≠] z₀, g z < g z₀ + 1 :=
-    nhdsWithin_le_nhds (hc.eventually (gt_mem_nhds (lt_add_one _)))
-  have hf : ∀ᶠ z in 𝓝[≠] z₀, g z₀ + 1 < f z := hf.eventually_gt_atTop _
-  have hball : ∀ᶠ z in 𝓝[≠] z₀, z ∈ s := nhdsWithin_le_nhds hs
-  obtain ⟨o, ho, ho0, hos⟩ := mem_nhdsWithin.1 ((hb.and hf).and hball)
-  -- The punctured neighbourhood `o \ {z₀}` has positive measure and lies in `{g ≠ f} ∩ s`.
-  have hpos : 0 < volume (o \ {z₀}) := by
-    rw [measure_sdiff_null (measure_singleton _)]
-    exact ho.measure_pos _ ⟨z₀, ho0⟩
-  have hsub : o \ {z₀} ⊆ {z | ¬ g z = f z} ∩ s := by
-    intro z hz
-    obtain ⟨⟨h1, h2⟩, h3⟩ := hos ⟨hz.1, hz.2⟩
-    exact ⟨fun h => by linarith, h3⟩
-  have hzero := ae_iff.1 hg
-  exact hpos.ne' (le_antisymm ((measure_mono hsub).trans
-    ((Measure.le_restrict_apply _ _).trans hzero.le)) zero_le)
-
-end LogLogInterior
-
 /-- No function equal almost everywhere on a neighbourhood `s` of the origin to
 `u(z) = log log (4 / ‖z‖)` is continuous at the origin. -/
 theorem not_continuousAt_of_ae_eq_logLogInterior {s : Set ℂ} {g : ℂ → ℝ} (hs : s ∈ 𝓝 0)
     (hg : g =ᵐ[volume.restrict s] logLogInterior) :
     ¬ ContinuousAt g 0 :=
-  not_continuousAt_of_ae_eq_of_tendsto tendsto_logLogInterior hs hg
+  not_continuousAt_of_ae_eq_of_tendsto_atTop tendsto_logLogInterior hs hg
 
 /-- **For `p ≤ 2` some member of the local class `W^{1,p}` has no continuous representative.**
 For every `p ≤ 2` and every planar set `U` with nonempty interior, some function in the local
 class `W^{1,p}` of `U` agrees almost everywhere on `U` with no function continuous on `U`; one
 example is `u(z - z₀) = log log (4 / ‖z - z₀‖)`, cut off by a bump function about a point `z₀` of
-the interior of `U`. For `p > 2` Morrey's inequality
+the interior of `U`. For `p > 2` and `U` open, Morrey's inequality
 `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative` gives a continuous representative. -/
 theorem exists_memWkpLoc_one_not_continuousOn_of_ae_eq {p : ℝ≥0∞} {U : Set ℂ} (hp : p ≤ 2)
     (hU : (interior U).Nonempty) :
@@ -342,7 +319,7 @@ theorem exists_memWkpLoc_one_not_continuousOn_of_ae_eq {p : ℝ≥0∞} {U : Set
   have hf := htr.contDiff_smul_of_tsupport_subset (χ.contDiff (n := 1)) (by simp) hsupp
   refine ⟨fun z => χ z • logLogInterior (z - z₀), hf.mono (subset_univ U), fun g hg hc => ?_⟩
   have hU0 : U ∈ 𝓝 z₀ := mem_interior_iff_mem_nhds.1 hz₀
-  refine not_continuousAt_of_ae_eq_of_tendsto ?_ hU0 hg (hc.continuousAt hU0)
+  refine not_continuousAt_of_ae_eq_of_tendsto_atTop ?_ hU0 hg (hc.continuousAt hU0)
   have hsub : Tendsto (fun z => z - z₀) (𝓝[≠] z₀) (𝓝[≠] 0) :=
     tendsto_nhdsWithin_iff.2 ⟨((continuous_id.sub continuous_const).tendsto' z₀ 0
       (sub_self z₀)).mono_left nhdsWithin_le_nhds,
