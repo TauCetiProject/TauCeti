@@ -64,7 +64,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 private theorem rpow_heatKernel_const_eq {t : ℝ} :
     (4 * π * t) ^ (-(finrank ℝ E : ℝ) / 2) =
       2 ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) := by
-  rw [show 4 * π * (2 * t) = 2 * (4 * π * t) by ring, mul_rpow_of_pos_left two_pos,
+  rw [show 4 * π * (2 * t) = 2 * (4 * π * t) by ring, mul_rpow_of_nonneg_left two_pos.le,
     ← mul_assoc, ← rpow_add two_pos]
   simp [neg_div]
 
