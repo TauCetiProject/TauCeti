@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopCat.GlueData.Reindex
-public import TauCeti.Geometry.Manifold.Gluing.GlueData
+public import TauCeti.Geometry.Manifold.Gluing.Map
 
 /-!
 # Restricting compatible manifold gluings to subfamilies
@@ -56,12 +56,9 @@ theorem IsCompatible.isLocalDiffeomorph_reindexMap (h : D.IsCompatible I n) (r :
     IsLocalDiffeomorph I I n (D.reindexMap r) := by
   let := D.chartedSpace H
   let := (D.reindex r).chartedSpace H
-  apply ((h.reindex r).isLocalDiffeomorph_iff).2
-  intro i
-  have heq : D.reindexMap r ∘ (D.reindex r).toGlueData.ι i = D.toGlueData.ι (r i) :=
-    funext (D.reindexMap_ι r i)
-  rw [heq]
-  exact h.isLocalDiffeomorph_ι (r i)
+  rw [reindexMap_eq_gluedMap]
+  exact ((h.reindex r).isLocalDiffeomorph_gluedMap_iff h _ _).2 fun i ↦
+    (Diffeomorph.refl I (D.U (r i)) n).isLocalDiffeomorph
 
 /-- A selected family that still covers gives the same manifold, through the canonical map
 on the existing glued carriers. -/
