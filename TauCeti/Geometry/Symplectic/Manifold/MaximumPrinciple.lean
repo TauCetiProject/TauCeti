@@ -111,8 +111,6 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
   have hrange : range I = univ := I.range_eq_univ
   have hsrc : ∀ᶠ w in 𝓝 z, u w ∈ (extChartAt I (u z)).source :=
     hu.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (u z))
-  have htgt : (extChartAt I (u z)).target ∈ 𝓝 (extChartAt I (u z) (u z)) :=
-    extChartAt_target_mem_nhds (u z)
   -- Regularity of the coordinate expressions.
   have huc : ContDiffAt ℝ 2 (extChartAt I (u z) ∘ u) z :=
     contMDiffAt_iff_contDiffAt.1 ((contMDiffAt_extChartAt (x := u z)).comp z hu)
@@ -133,7 +131,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
         (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
     filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu two_ne_zero]
       with w hw hws hwd
-    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
+    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd.continuousAt hws hw
   have hρJc : ∀ᶠ w in 𝓝 z,
       (fderiv ℝ (ρ ∘ (extChartAt I (u z)).symm) ((extChartAt I (u z) ∘ u) w)).comp
         ((J w).inChart (u z) ((extChartAt I (u z) ∘ u) w)) =
@@ -164,7 +162,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     rfl
   -- The chart at `u z` has the identity as derivative there.
   have hD₀ (v : ℂ) : fderiv ℝ (extChartAt I (u z) ∘ u) z v = mfderiv 𝓘(ℝ, ℂ) I u z v := by
-    rw [(hu.mdifferentiableAt (by norm_num)).fderiv_extChartAt_comp_apply
+    rw [hu.continuousAt.fderiv_extChartAt_comp_apply
       (mem_extChartAt_source (u z)), mfderiv_extChartAt_self]
     -- The identity of the tangent space at `u z` applied to `mfderiv u z v`.
     rfl

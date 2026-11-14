@@ -89,10 +89,6 @@ statement.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, the **Chi-squared** target,
-  together with the chi-squared case of items 1–4 of "What every distribution must provide", and
-  the completion check `chiSquaredMeasure 2 = expMeasure (1 / 2)`.
-* Formal declaration scaffold: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, Layer 3.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
   Wiley (1994), ch. 18.
 -/
@@ -405,7 +401,7 @@ theorem integrable_prod_rpow_pi_chiSquaredMeasure_iff {ι : Type*} [Fintype ι]
           chiSquaredMeasure (k i) Set.univ :=
         measure_congr ((ae_pos_chiSquaredMeasure (hk i)).mono fun x hx ↦ by
           simp only [Function.mem_support, Set.mem_univ]
-          exact propext (iff_true_intro (ENNReal.ofReal_ne_zero_iff.mpr (rpow_pos_of_pos hx q))))
+          exact (iff_true_intro (ENNReal.ofReal_ne_zero_iff.mpr (rpow_pos_of_pos hx q))))
       _ = 1 := measure_univ
       _ > 0 := zero_lt_one
   classical
