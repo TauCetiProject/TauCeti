@@ -50,7 +50,7 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-variable {m s p q x : ℝ}
+variable {m s p q : ℝ}
 
 /-! ### The density -/
 

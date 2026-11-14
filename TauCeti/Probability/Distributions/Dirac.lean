@@ -19,7 +19,7 @@ Mathlib as `ProbabilityTheory.mgf_dirac'`.
 
 ## Main results
 
-* `TauCeti.Probability.cdf_dirac` — the cdf of a real Dirac measure;
+* `cdf_dirac` — the cdf of a real Dirac measure;
 * `MeasureTheory.Measure.quantile_dirac` and `MeasureTheory.Measure.upperQuantile_dirac` — the
   lower and upper quantile functions of a Dirac measure;
 * `TauCeti.Probability.integrableExpSet_dirac` — every exponential moment exists under a Dirac
@@ -68,10 +68,10 @@ theorem quantile_dirac (a : ℝ) {t : ℝ} (h0 : 0 < t) (h1 : t ≤ 1) : (dirac 
   rw [quantile_def]
   refine le_antisymm (csInf_le (bddBelow_setOf_le_cdf (dirac a) h0) ?_)
     (le_csInf ⟨a, ?_⟩ fun x hx ↦ ?_)
-  · simpa [TauCeti.Probability.cdf_dirac] using h1
-  · simpa [TauCeti.Probability.cdf_dirac] using h1
+  · simpa [cdf_dirac] using h1
+  · simpa [cdf_dirac] using h1
   · by_contra hxa
-    exact absurd hx (by simpa [TauCeti.Probability.cdf_dirac, not_le.mpr (not_le.mp hxa)] using h0)
+    exact absurd hx (by simpa [cdf_dirac, not_le.mpr (not_le.mp hxa)] using h0)
 
 /-- At every level in `Ico 0 1`, including the endpoint level `0`, the upper quantile function of
 a Dirac law is its atom. -/

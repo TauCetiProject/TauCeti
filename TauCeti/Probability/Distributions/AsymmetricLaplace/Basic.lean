@@ -6,11 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Measure.Support
-public import TauCeti.Probability.Distributions.Exponential.Basic
+public import Mathlib.Probability.Distributions.Exponential
 public import TauCeti.Probability.Distributions.Laplace.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Probability.Independence.Basic
 import TauCeti.Probability.Cdf.Density
+import TauCeti.Probability.Distributions.Exponential.Basic
 
 /-!
 # The asymmetric Laplace distribution

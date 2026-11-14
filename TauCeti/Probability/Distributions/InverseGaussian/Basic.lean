@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
-public import TauCeti.Probability.Density
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Probability.Density
 import TauCeti.Probability.Distributions.Affine
 
 /-!
