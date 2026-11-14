@@ -27,7 +27,7 @@ disconnected. Its identity component `C_G(x)°` is the closed subgroup
   `TauCeti.HopfIdeal.componentGroupConjugationMulEquiv` applied to the equality of Hopf ideals
   `TauCeti.centralizerHopfIdeal_basePointsRepresentation`, and it sends the component of a
   rational point `y` of `C_G(x)` to the component of `gyg⁻¹`.
-* A homomorphism `φ : G̃ → G` carries `C_G̃(x)` into `C_G(dφ x)`, and so induces a homomorphism
+* A homomorphism `φ : G' → G` carries `C_G'(x)` into `C_G(dφ x)`, and so induces a homomorphism
   `A(x) → A(dφ x)` of component groups (`TauCeti.centralizerComponentGroupMap`). For an isogeny
   with injective differential, for instance any isogeny in characteristic zero, it is surjective.
   It need not be injective: component groups of centralizers are not invariant under isogeny.
