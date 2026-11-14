@@ -41,6 +41,7 @@ nonnegative entries, after a shift by a natural number.
 ## Main results
 
 * `TauCeti.GTPattern.topWeight_shift`: shifting a pattern shifts its top weight.
+* `TauCeti.GTPattern.rowWeight_shift`: shifting adds the same integer to every weight coordinate.
 * `TauCeti.GTPattern.card_topWeight_shift`: determinant translation preserves the pattern count.
 * `TauCeti.GTPattern.card_topWeight_eq_card_boundedSSYT_detShiftShape`: the corresponding pattern
   and tableau fibers have the same cardinality.
@@ -301,6 +302,13 @@ theorem shift_eq_add_const (P : GTPattern n) (m : ℤ) : P.shift m = P + const n
   split_ifs with h
   · rfl
   · rw [P.entry_eq_zero (by omega), add_zero]
+
+/-- A determinant shift adds its parameter to every row-weight coordinate. -/
+@[simp]
+theorem rowWeight_shift (P : GTPattern n) (m : ℤ) :
+    (P.shift m).rowWeight = fun r => P.rowWeight r + m := by
+  rw [shift_eq_add_const, rowWeight_add, rowWeight_const]
+  rfl
 
 /-- **Every pattern is a polynomial pattern up to a determinant shift**: some shift by a natural
 number makes all of its entries nonnegative. -/
