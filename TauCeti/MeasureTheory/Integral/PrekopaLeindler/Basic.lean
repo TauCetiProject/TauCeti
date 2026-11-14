@@ -422,10 +422,8 @@ namespace TauCeti
 /-- The **Prékopa–Leindler inequality** on `ι → ℝ`: Lebesgue measure on a finite power of `ℝ` has
 the Prékopa–Leindler property at every weight `0 ≤ θ ≤ 1`. -/
 theorem hasPrekopaLeindler_volume_pi (ι : Type*) [Fintype ι] {θ : ℝ} (hθ₀ : 0 ≤ θ)
-    (hθ₁ : θ ≤ 1) : (volume : Measure (ι → ℝ)).HasPrekopaLeindler θ := by
-  intro f g h hf hg hh hfgh
-  exact Measure.HasPrekopaLeindler.pi (fun _ ↦ Real.hasPrekopaLeindler_volume hθ₀ hθ₁)
-    hf hg hh hfgh
+    (hθ₁ : θ ≤ 1) : (volume : Measure (ι → ℝ)).HasPrekopaLeindler θ :=
+  Measure.HasPrekopaLeindler.pi fun _ ↦ Real.hasPrekopaLeindler_volume hθ₀ hθ₁
 
 end TauCeti
 
