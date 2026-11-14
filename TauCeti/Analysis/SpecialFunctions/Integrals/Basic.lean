@@ -21,6 +21,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
+* `TauCeti.integral_div_pow`: `∫ s in 0..c, (s / c)^m = c / (m + 1)` for every real `c`.
+
 * `TauCeti.intervalIntegrable_sub_const_rpow`: the weight `(x - c)^r` is interval integrable on
   every interval, for `r > -1`;
 * `TauCeti.integral_sub_const_rpow`: `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for
@@ -66,6 +68,18 @@ public section
 open scoped Nat
 
 namespace TauCeti
+
+/-- The normalized integer power integrates to `c / (m + 1)` from zero to `c`,
+including a zero or negative endpoint. -/
+theorem integral_div_pow (c : ℝ) (m : ℕ) :
+    (∫ s in 0..c, (s / c) ^ m) = c / (m + 1 : ℝ) := by
+  by_cases hc : c = 0
+  · simp [hc]
+  simp_rw [div_pow]
+  rw [intervalIntegral.integral_div, integral_pow]
+  simp only [zero_pow (Nat.succ_ne_zero _), sub_zero, pow_succ]
+  field_simp [hc]
+
 
 /-- The weight `(x - c)^r`, singular at `x = c`, is interval integrable between `a` and `b` for
 `r > -1`, wherever `c` lies. -/
