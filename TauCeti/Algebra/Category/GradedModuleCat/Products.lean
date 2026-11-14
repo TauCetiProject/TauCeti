@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.Module.GradedModule.Product
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
+public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -139,5 +140,10 @@ noncomputable instance hasProductDegreewise (X : J → GradedModuleCat.{v} 𝒜)
 
 instance : HasProducts.{v} (GradedModuleCat.{v} 𝒜) :=
   fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+
+/-- The degreewise product of injective graded modules is injective. -/
+instance injective_product [∀ j, Injective (M j)] : Injective (product M) :=
+  Injective.of_iso (limit.isoLimitCone ⟨degreewiseProductFan M, degreewiseProductFanIsLimit M⟩)
+    inferInstance
 
 end TauCeti.GradedModuleCat

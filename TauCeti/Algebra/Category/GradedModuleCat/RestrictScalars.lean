@@ -23,6 +23,10 @@ Restriction of scalars along a surjective map preserves and reflects finite gene
 underlying module, and restriction along a graded isomorphism preserves and reflects
 projectivity.
 
+Along any scalar tower `k₀ → k → A`, viewing the pieces of `𝒜` as `k₀`-submodules restricts the
+base ring without changing the `A`-action; when `1 ∈ 𝒜₀`, the `k`-action is recovered via
+`algebraMap k A : k → 𝒜₀`, giving an equivalence of categories.
+
 ## Main definitions
 
 * `TauCeti.GradedModuleCat.restrictScalars`: restriction of scalars along a grading-preserving
@@ -33,6 +37,9 @@ projectivity.
   ungraded module, the ungraded restriction of scalars of the original module.
 * `TauCeti.GradedModuleCat.restrictScalarsEquivalenceOfAlgEquiv`: the equivalence of graded module
   categories induced by a graded algebra isomorphism.
+* `TauCeti.GradedModuleCat.restrictBase`, `TauCeti.GradedModuleCat.extendBase`, and
+  `TauCeti.GradedModuleCat.restrictBaseEquivalence`: base-ring change and equivalence along
+  `k₀ → k → A`.
 
 ## Main results
 
@@ -56,9 +63,12 @@ open CategoryTheory
 universe v uk uA uB
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {B : Type uB} [Ring B] [Algebra k B] {𝒜 : ℤ → Submodule k A} {ℬ : ℤ → Submodule k B}
 
 namespace GradedModuleCat
+
+section ChangeOfRings
+
+variable {B : Type uB} [Ring B] [Algebra k B] {𝒜 : ℤ → Submodule k A} {ℬ : ℤ → Submodule k B}
 
 section RestrictScalars
 
@@ -225,6 +235,94 @@ theorem projective_restrictScalarsObj_iff (M : GradedModuleCat.{v} ℬ) :
     (e.toRingEquiv.projective_restrictScalars_iff (ModuleCat.of B M))
 
 end AlgEquiv
+
+end ChangeOfRings
+
+section RestrictBase
+
+variable (k₀ : Type*) [CommRing k₀] [Algebra k₀ k] [Algebra k₀ A] [IsScalarTower k₀ k A]
+
+/-- **Restriction of the base ring** along a scalar tower `k₀ → k → A`: a graded `𝒜`-module becomes
+a graded module over `(𝒜 · |>.restrictScalars k₀)` with the same underlying `A`-module. -/
+@[expose]
+def restrictBase (𝒜 : ℤ → Submodule k A) :
+    GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) where
+  obj M :=
+    letI : Module k₀ M := Module.compHom M (algebraMap k₀ k)
+    haveI : IsScalarTower k₀ k M :=
+      ⟨fun c₀ c m ↦ (congrArg (· • m) (Algebra.smul_def c₀ c)).trans (mul_smul _ c m)⟩
+    haveI : IsScalarTower k₀ A M :=
+      ⟨fun c₀ a m ↦ by rw [← IsScalarTower.algebraMap_smul k c₀ a, smul_assoc]; rfl⟩
+    { carrier := M
+      grading := { piece := fun p ↦ (M.grading.piece p).restrictScalars k₀
+                   isInternal := M.grading.isInternal }
+      gradedSMul := ⟨fun _ _ _ _ ha hm ↦ M.gradedSMul.smul_mem ha hm⟩ }
+  map g := ofHom g.hom (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+    rw [add_zero]; exact map_mem g hx)
+
+/-- Restricting the base ring leaves the underlying `A`-linear map of a morphism unchanged. -/
+@[simp]
+theorem restrictBase_map_hom {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜} (g : M ⟶ N) :
+    ((restrictBase k₀ 𝒜).map g).hom = g.hom := rfl
+
+instance (𝒜 : ℤ → Submodule k A) : (restrictBase.{v} k₀ 𝒜).Additive where
+  map_add := by intros; ext; rfl
+
+/-- **Extension of the base ring** along `k₀ → k → A` when `1 ∈ 𝒜₀`: every graded module over
+`(𝒜 · |>.restrictScalars k₀)` is a graded `𝒜`-module with `k` acting via `algebraMap k A`. -/
+@[expose]
+def extendBase (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
+    GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) ⥤ GradedModuleCat.{v} 𝒜 where
+  obj N :=
+    letI : Module k N := Module.compHom N (algebraMap k A)
+    haveI : IsScalarTower k A N :=
+      ⟨fun c a x ↦ (congrArg (· • x) (Algebra.smul_def c a)).trans (mul_smul _ a x)⟩
+    { carrier := N
+      grading :=
+        { piece := fun p ↦
+            { carrier := N.grading.piece p
+              zero_mem' := (N.grading.piece p).zero_mem
+              add_mem' := (N.grading.piece p).add_mem
+              smul_mem' := fun c x hx ↦ by
+                have hc : algebraMap k A c ∈ 𝒜 0 := Algebra.algebraMap_eq_smul_one (A := A) c ▸
+                  (𝒜 0).smul_mem c (SetLike.GradedOne.one_mem (A := 𝒜))
+                exact zero_vadd ℤ p ▸ N.gradedSMul.smul_mem hc hx }
+          isInternal := N.grading.isInternal }
+      gradedSMul := ⟨fun _ _ _ _ ha hx ↦ N.gradedSMul.smul_mem ha hx⟩ }
+  map g := ofHom g.hom (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+    rw [add_zero]; exact map_mem g hx)
+
+/-- Extending the base ring leaves the underlying `A`-linear map of a morphism unchanged. -/
+@[simp]
+theorem extendBase_map_hom {𝒜 : ℤ → Submodule k A} [SetLike.GradedOne 𝒜]
+    {M N : GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀)} (g : M ⟶ N) :
+    ((extendBase k₀ 𝒜).map g).hom = g.hom := rfl
+
+instance (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] : (extendBase.{v} k₀ 𝒜).Additive where
+  map_add := by intros; ext; rfl
+
+/-- **Base-ring independence of graded modules.** When `1 ∈ 𝒜₀`, restricting the base ring of `𝒜`
+along a scalar tower `k₀ → k → A` is an equivalence of graded module categories. -/
+@[expose]
+def restrictBaseEquivalence (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
+    GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} (fun i ↦ (𝒜 i).restrictScalars k₀) where
+  functor := restrictBase k₀ 𝒜
+  inverse := extendBase k₀ 𝒜
+  unitIso := NatIso.ofComponents (fun _ ↦ isoMk (.refl A _) fun _ _ ↦ Iff.rfl) fun _ ↦ rfl
+  counitIso := NatIso.ofComponents (fun _ ↦ isoMk (.refl A _) fun _ _ ↦ Iff.rfl) fun _ ↦ rfl
+  functor_unitIso_comp _ := rfl
+
+/-- The forward functor of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is `restrictBase`. -/
+@[simp]
+theorem restrictBaseEquivalence_functor (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
+    (restrictBaseEquivalence.{v} k₀ 𝒜).functor = restrictBase k₀ 𝒜 := (rfl)
+
+/-- The inverse functor of `TauCeti.GradedModuleCat.restrictBaseEquivalence` is `extendBase`. -/
+@[simp]
+theorem restrictBaseEquivalence_inverse (𝒜 : ℤ → Submodule k A) [SetLike.GradedOne 𝒜] :
+    (restrictBaseEquivalence.{v} k₀ 𝒜).inverse = extendBase k₀ 𝒜 := (rfl)
+
+end RestrictBase
 
 end GradedModuleCat
 
