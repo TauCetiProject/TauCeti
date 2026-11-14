@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.CircleContinuation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import TauCeti.Analysis.Calculus.Morse.IntervalBase
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.CriticalPoints
 
 /-!
 # The index-preserving trajectories of a small-amplitude circle continuation
@@ -168,8 +169,9 @@ private theorem exists_endSolution (δ r₀ v t₁ : ℝ) :
   -- Use the critical point `m` of `δ cos (2 (θ - r₀))` nearest to `v`, within `π / 4`.
   set m := r₀ + π / 2 * round ((v - r₀) / (π / 2))
   have hπ : 0 < π / 2 := by positivity
+  have h2m : 2 * (m - r₀) = (round ((v - r₀) / (π / 2)) : ℤ) * π := by simp only [m]; ring
   have hm : sin (2 * (m - r₀)) = 0 := by
-    rw [show 2 * (m - r₀) = (round ((v - r₀) / (π / 2)) : ℤ) * π by simp only [m]; ring]
+    rw [h2m]
     exact sin_int_mul_pi _
   have hv : |v - m| < π / 2 := by
     have h := abs_sub_round ((v - r₀) / (π / 2))
@@ -259,7 +261,7 @@ theorem tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope_of_abs_su
       (fun s hs' ↦ (hΘ s (hsub hs')).mono hsub) hΘm ⟨ht.1, le_rfl⟩
   refine (tendsto_endSolution (δ := δ) (r₀ := r₁) (c := tan (Θ a₀ - m) *
     exp (-(4 * (δ * cos (2 * (m - r₁))) * intervalBaseTimeCoordinate a₀))) ?_).congr' ?_
-  · rw [hm, show 4 * (δ * -1) = -(4 * δ) by ring]
+  · rw [hm, mul_neg_one, mul_neg]
     exact tendsto_intervalBaseTimeCoordinate_nhdsLT_one.const_mul_atTop_of_neg (by linarith)
   · filter_upwards [Ico_mem_nhdsLT ha₀'] with t ht
     exact (heq t ht).symm
@@ -274,20 +276,6 @@ private theorem eqOn_const_of_hasDerivWithinAt_circleContinuationSlope {δ r₀ 
   eqOn_Icc_of_hasDerivWithinAt_circleContinuationSlope hs hu ht₁ hΘ
     (fun t ht ↦
       (hasDerivAt_const_circleContinuationSlope (by rw [hr t ht]; exact hm)).hasDerivWithinAt) hΘm
-
-/-- An angle `θ` within `π / 2` of a critical point `m` of `cos (2 (θ - ρ))` is `m` itself, if it
-is not within `π / 2` of any critical point `m'` of the opposite kind. -/
-private theorem eq_of_forall_cos_eq_neg_not_abs_sub_lt {θ m ρ : ℝ}
-    (hθ : θ ∈ Ioo (m - π / 2) (m + π / 2))
-    (h : ∀ m', cos (2 * (m' - ρ)) = -cos (2 * (m - ρ)) → ¬ |θ - m'| < π / 2) : θ = m := by
-  rcases lt_trichotomy θ m with hlt | heq | hgt
-  · refine (h (m - π / 2) ?_ ?_).elim
-    · rw [show 2 * (m - π / 2 - ρ) = 2 * (m - ρ) - π by ring, cos_sub_pi]
-    · rw [abs_lt]; constructor <;> linarith [hθ.1]
-  · exact heq
-  · refine (h (m + π / 2) ?_ ?_).elim
-    · rw [show 2 * (m + π / 2 - ρ) = 2 * (m - ρ) + π by ring, cos_add_pi]
-    · rw [abs_lt]; constructor <;> linarith [hθ.2]
 
 /-- **Only the constant trajectory leaves a source minimum.** On an interval `0 < t ≤ b₀` where
 the path is constant, `r = r₀`, a solution converging as `t → 0` to a minimum `m` of
@@ -304,7 +292,7 @@ theorem eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsGT_zero {�
   intro t ht
   have hπ : 0 < π / 2 := by positivity
   obtain ⟨s, hs, hsm⟩ := Filter.nonempty_of_mem (inter_mem (Ioc_mem_nhdsGT ht.1)
-    (hlim (Ioo_mem_nhds (show m - π / 2 < m by linarith) (show m < m + π / 2 by linarith))))
+    (hlim (Ioo_mem_nhds (sub_lt_self m hπ) (lt_add_of_pos_right m hπ))))
   have hsub : Ioc 0 s ⊆ Ioc 0 b₀ := fun u hu ↦ ⟨hu.1, hu.2.trans (hs.2.trans ht.2)⟩
   have hsb : s < 1 := hs.2.trans_lt (ht.2.trans_lt hb₀')
   -- A neighbouring maximum `m'` with `Θ s` in its basin would be the limit instead.
@@ -334,7 +322,7 @@ theorem eq_of_hasDerivWithinAt_circleContinuationSlope_of_tendsto_nhdsLT_one {δ
   intro t ht
   have hπ : 0 < π / 2 := by positivity
   obtain ⟨s, hs, hsm⟩ := Filter.nonempty_of_mem (inter_mem (Ico_mem_nhdsLT ht.2)
-    (hlim (Ioo_mem_nhds (show m - π / 2 < m by linarith) (show m < m + π / 2 by linarith))))
+    (hlim (Ioo_mem_nhds (sub_lt_self m hπ) (lt_add_of_pos_right m hπ))))
   have hsub : Ico s 1 ⊆ Ico a₀ 1 := fun u hu ↦ ⟨ht.1.trans (hs.1.trans hu.1), hu.2⟩
   have hs₀' : 0 < s := ha₀.trans_le (ht.1.trans hs.1)
   -- A neighbouring minimum `m'` with `Θ s` in its basin would be the limit instead.
