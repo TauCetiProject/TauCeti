@@ -214,6 +214,8 @@ def isometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) where
 theorem mem_isometryGroup {e : M ≃ₗ[R] M} :
     e ∈ isometryGroup B ↔ IsIsometry B (e : M →ₗ[R] M) := Iff.rfl
 
+/-- A self-equivalence lies in `Aut(M, B)` exactly when it preserves `B` on every pair of
+vectors. -/
 @[simp]
 theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ isometryGroup B ↔ ∀ x y, B (e x) (e y) = B x y :=
@@ -230,10 +232,14 @@ def isometryGroupEquivIsometryEquiv (B : BilinForm R M) :
   left_inv _ := rfl
   right_inv _ := rfl
 
+/-- The isometry equivalence attached to an element of `Aut(M, B)` has the same underlying
+function. -/
 @[simp]
 theorem coe_isometryGroupEquivIsometryEquiv (B : BilinForm R M) (e : isometryGroup B) :
     ⇑(isometryGroupEquivIsometryEquiv B e) = ⇑(e : M ≃ₗ[R] M) := (rfl)
 
+/-- The element of `Aut(M, B)` attached to an isometry equivalence has the same underlying
+function. -/
 @[simp]
 theorem coe_isometryGroupEquivIsometryEquiv_symm (B : BilinForm R M) (e : B.IsometryEquiv B) :
     (((isometryGroupEquivIsometryEquiv B).symm e : M ≃ₗ[R] M) : M → M) = ⇑e := (rfl)
@@ -263,11 +269,13 @@ def isometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     isometryGroup B ≃* isometryGroup (LinearMap.BilinForm.congr e B) :=
   TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e) (map_isometryGroup B e)
 
+/-- Conjugation by `e` acts on `Aut(M, B)` as `x ↦ e (a (e⁻¹ x))`. -/
 @[simp]
 theorem coe_isometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M') (a : isometryGroup B)
     (x : M') : (isometryGroupCongr B e a : M' ≃ₗ[R] M') x = e ((a : M ≃ₗ[R] M) (e.symm x)) := by
   simp [isometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply]
 
+/-- The inverse of conjugation by `e` acts as `x ↦ e⁻¹ (a (e x))`. -/
 @[simp]
 theorem coe_isometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (a : isometryGroup (LinearMap.BilinForm.congr e B)) (x : M) :
@@ -314,11 +322,15 @@ noncomputable def _root_.Module.Basis.isometryEquivOfToMatrixEq (v : Basis ι R 
         simpa [LinearMap.BilinForm.toMatrix_apply] using (congrFun₂ h i j).symm
     simpa using LinearMap.congr_fun₂ key x y
 
+/-- The linear equivalence underlying `Module.Basis.isometryEquivOfToMatrixEq` is the one
+sending the basis `v` to the basis `w`. -/
 @[simp]
 theorem _root_.Module.Basis.toLinearEquiv_isometryEquivOfToMatrixEq (v : Basis ι R M)
     (w : Basis ι R M') (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') :
     (v.isometryEquivOfToMatrixEq w h : M ≃ₗ[R] M') = v.equiv w (Equiv.refl ι) := (rfl)
 
+/-- `Module.Basis.isometryEquivOfToMatrixEq` agrees with the basis equivalence `v.equiv w
+(Equiv.refl ι)` on every vector. -/
 @[simp]
 theorem _root_.Module.Basis.isometryEquivOfToMatrixEq_apply (v : Basis ι R M) (w : Basis ι R M')
     (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') (x : M) :
@@ -390,6 +402,8 @@ def isometryGroupBaseChange (B : BilinForm R M) :
   map_one' := Subtype.ext (by simp)
   map_mul' a b := Subtype.ext (by simp [_root_.LinearEquiv.baseChange_mul])
 
+/-- Base change of an element of `Aut(M, B)` is the base change of its underlying linear
+equivalence. -/
 @[simp]
 theorem coe_isometryGroupBaseChange (B : BilinForm R M) (e : isometryGroup B) :
     (isometryGroupBaseChange A B e : A ⊗[R] M ≃ₗ[A] A ⊗[R] M)
@@ -484,12 +498,14 @@ noncomputable def toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
     LinearMap.BilinForm.mem_isometryGroup.mpr
       (isIsometry_iff.mpr fun x y => by simpa using hf.apply x y)⟩
 
+/-- The linear map underlying the isometry built from a determinant unit is the original map. -/
 @[simp]
 theorem coe_toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
     (hdet : IsUnit (LinearMap.det f)) :
     ((hf.toIsometryGroupOfIsUnitDet hdet : B.isometryGroup) : M →ₗ[R] M) = f :=
   LinearMap.coe_equivOfIsUnitDet hdet
 
+/-- The element of `Aut(M, B)` built from a determinant unit acts as the original map. -/
 @[simp]
 theorem toIsometryGroupOfIsUnitDet_apply (hf : IsIsometry B f)
     (hdet : IsUnit (LinearMap.det f)) (x : M) :
@@ -521,11 +537,15 @@ noncomputable def toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) 
     B.isometryGroup :=
   hf.toIsometryGroupOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
 
+/-- For a left-separating form, the linear map underlying the element of `Aut(M, B)` built from
+an isometry is the original map. -/
 @[simp]
 theorem coe_toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
     ((hf.toIsometryGroup hB : B.isometryGroup) : M →ₗ[R] M) = f :=
   LinearMap.coe_equivOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
 
+/-- For a left-separating form, the element of `Aut(M, B)` built from an isometry acts as the
+original map. -/
 @[simp]
 theorem toIsometryGroup_apply (hB : B.SeparatingLeft) (hf : IsIsometry B f) (x : M) :
     (hf.toIsometryGroup hB : M ≃ₗ[R] M) x = f x :=
@@ -587,6 +607,8 @@ finite free; on such a module this subgroup is therefore all of `isometryGroup B
 noncomputable def specialIsometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) :=
   isometryGroup B ⊓ (LinearEquiv.det (R := R) (M := M)).ker
 
+/-- A self-equivalence lies in the special isometry group exactly when it is an isometry of
+determinant one. -/
 @[simp]
 theorem mem_specialIsometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ specialIsometryGroup B ↔ e ∈ isometryGroup B ∧ LinearEquiv.det e = 1 :=
@@ -607,6 +629,8 @@ instance specialIsometryGroup_normal (B : BilinForm R M) :
 noncomputable def isometryDet (B : BilinForm R M) : isometryGroup B →* Rˣ :=
   LinearEquiv.det.comp (isometryGroup B).subtype
 
+/-- The determinant homomorphism on `Aut(M, B)` is the determinant of the underlying linear
+equivalence. -/
 @[simp]
 theorem isometryDet_apply (g : isometryGroup B) :
     isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := by
@@ -616,6 +640,8 @@ theorem isometryDet_apply (g : isometryGroup B) :
 noncomputable def specialIsometryWithin (B : BilinForm R M) : Subgroup (isometryGroup B) :=
   (isometryDet B).ker
 
+/-- An element of `Aut(M, B)` lies in `specialIsometryWithin B` exactly when its determinant is
+one. -/
 @[simp]
 theorem mem_specialIsometryWithin_iff {g : isometryGroup B} :
     g ∈ specialIsometryWithin B ↔ LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
@@ -632,6 +658,7 @@ noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
     specialIsometryGroup B →* isometryGroup B :=
   Subgroup.inclusion (specialIsometryGroup_le_isometryGroup B)
 
+/-- Forgetting the determinant-one condition does not change the underlying linear equivalence. -/
 @[simp]
 theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
     ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := by
@@ -663,12 +690,15 @@ noncomputable def specialIsometryWithinEquiv (B : BilinForm R M) :
   (MulEquiv.subgroupCongr specialIsometryWithin_eq_subgroupOf).trans
     (Subgroup.subgroupOfEquivOfLe (specialIsometryGroup_le_isometryGroup B))
 
+/-- The equivalence `specialIsometryWithinEquiv` does not change the underlying linear
+equivalence. -/
 @[simp]
 theorem coe_specialIsometryWithinEquiv_apply (g : specialIsometryWithin B) :
     ((specialIsometryWithinEquiv B g : specialIsometryGroup B) : M ≃ₗ[R] M) =
       ((g : isometryGroup B) : M ≃ₗ[R] M) := by
   simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
+/-- The inverse of `specialIsometryWithinEquiv` is `specialIsometryToIsometry`. -/
 @[simp]
 theorem coe_specialIsometryWithinEquiv_symm_apply (g : specialIsometryGroup B) :
     (((specialIsometryWithinEquiv B).symm g : specialIsometryWithin B) : isometryGroup B) =
@@ -700,6 +730,7 @@ noncomputable def specialIsometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R]
     specialIsometryGroup B ≃* specialIsometryGroup (LinearMap.BilinForm.congr e B) :=
   TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e) (map_specialIsometryGroup B e)
 
+/-- Conjugation by `e` acts on the special isometry group by `x ↦ e (g (e⁻¹ x))`. -/
 @[simp]
 theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (g : specialIsometryGroup B) :
@@ -708,6 +739,7 @@ theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R]
   rw [specialIsometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
     LinearEquiv.autCongr_apply]
 
+/-- The inverse of conjugation by `e` acts on the special isometry group by `x ↦ e⁻¹ (g (e x))`. -/
 @[simp]
 theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (g : specialIsometryGroup (LinearMap.BilinForm.congr e B)) :
@@ -735,6 +767,8 @@ noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
   map_one' := Subtype.ext (by simp [isometryGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [isometryGroupBaseChange, LinearEquiv.baseChange_mul])
 
+/-- Base change of a determinant-one isometry is the base change of its underlying linear
+equivalence. -/
 @[simp]
 theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
     (g : specialIsometryGroup B) :
