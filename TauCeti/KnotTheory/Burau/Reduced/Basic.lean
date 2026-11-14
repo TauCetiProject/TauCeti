@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.KnotTheory.Burau.Basic
 public import TauCeti.KnotTheory.Burau.OneSubVecMulVec
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # The reduced Burau representation
@@ -496,15 +497,6 @@ theorem reducedBurauColMatrix_braid (t : R) {i j : Fin (n - 1)}
     (fun h => by
       simpa only [dotProduct_single_one] using reducedBurauColRow_of_succ_rev t h)
     h
-
-/-- A scalar on the right factor of the rank-one term of an elementary reduced Burau matrix may be
-pulled out to the left, because the entries of `Pi.single i 1` are central. -/
-private theorem vecMulVec_single_one_smul (c : R) (i : Fin (n - 1)) (v : Fin (n - 1) → R) :
-    vecMulVec (Pi.single i 1) (c • v) = c • vecMulVec (Pi.single i 1) v := by
-  ext a b
-  rcases eq_or_ne a i with rfl | h
-  · simp [vecMulVec_apply]
-  · simp [vecMulVec_apply, h]
 
 /-- **The quadratic relation** for the elementary reduced Burau matrices, equivalently
 `(x - 1) * (x + t) = 0`. This is the Iwahori-Hecke quadratic relation in the normalisation with
