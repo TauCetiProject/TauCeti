@@ -23,12 +23,15 @@ Hölder with every smaller exponent, with a constant depending on the scale; in 
 function which is Lipschitz between nearby points. Local Hölder bounds around the points of a
 compact set are uniform on a thickening of the set.
 
-A function which is Hölder continuous, with positive exponent, on a dense subset `s` of a
-pseudo-emetric space and takes values in a complete emetric space extends to a function which is
-Hölder continuous on the whole space, with the same constant and exponent.
+A function which is Hölder continuous on a dense subset `s` of a pseudo-emetric space and takes
+values in a complete emetric space extends to a function which is Hölder continuous on the whole
+space, with the same constant and exponent.
 
-The extension is the uniformly continuous extension along the dense inclusion `s → X`, and the
-Hölder inequality passes from `s × s` to its closure because both of its sides are continuous.
+For a positive exponent, the extension is the uniformly continuous extension along the dense
+inclusion `s → X`, and the Hölder inequality passes from `s × s` to its closure because both of its
+sides are continuous. For exponent zero the Hölder condition only bounds the distances by the
+constant, and the extension is the function itself on `s` and a constant off `s`, which need not
+be continuous.
 
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
@@ -106,7 +109,8 @@ variable {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y] [CompleteSpace Y]
 /-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
 exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
 continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`. For
-`r = 0` the Hölder condition only bounds the distances by `C`, and completeness is not used.
+`r = 0` the Hölder condition only bounds the distances by `C`, so the extension need not be
+continuous.
 Compare `LipschitzOnWith.extend_real`, which needs no density but only applies to real values. -/
 theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s)
     (hs : Dense s) : ∃ g : X → Y, HolderWith C r g ∧ EqOn f g s := by
