@@ -15,8 +15,9 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact and σ-compact subsets of topological spaces, and limits along
-ultrafilters of families eventually in a compact set.
+General lemmas about compact and σ-compact subsets of topological spaces, neighborhood eventualities
+along `coclosedCompact` and `cocompact`, and limits along ultrafilters of families eventually in a
+compact set.
 -/
 
 public section
@@ -165,6 +166,19 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
+
+/-- A predicate holds eventually on neighborhoods along `coclosedCompact X` if and only if it holds
+eventually along `coclosedCompact X`, since every closed compact set is already closed. -/
+theorem eventually_coclosedCompact_nhds {P : X → Prop} :
+    (∀ᶠ x in coclosedCompact X, ∀ᶠ y in 𝓝 x, P y) ↔ ∀ᶠ x in coclosedCompact X, P x := by
+  simp only [eventually_iff, ← mem_interior_iff_mem_nhds, ofPred_mem_eq, mem_coclosedCompact_iff,
+    ← closure_compl, closure_closure]
+
+/-- In an `R₁` space, a predicate holds eventually on neighborhoods along `cocompact X` if and only
+if it holds eventually along `cocompact X`. -/
+theorem eventually_cocompact_nhds [R1Space X] {P : X → Prop} :
+    (∀ᶠ x in cocompact X, ∀ᶠ y in 𝓝 x, P y) ↔ ∀ᶠ x in cocompact X, P x := by
+  simp only [← coclosedCompact_eq_cocompact, eventually_coclosedCompact_nhds]
 
 end TauCeti
 

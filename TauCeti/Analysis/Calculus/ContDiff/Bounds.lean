@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Normed.Operator.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -62,6 +63,11 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n` derivative of
   `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`.
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
+* `ContinuousLinearEquiv.isBigO_iteratedFDeriv_comp_left_iff`: left composition with a continuous
+  linear equivalence preserves `IsBigO` bounds on iterated derivatives.
+* `TauCeti.isBigO_iteratedFDeriv_pi`, `ContDiff.isBigO_iteratedFDeriv_pi`: the order-`n` derivative
+  of an eventually (or globally) `C^n` map into a finite product is `O(ρ)` if and only if the
+  order-`n` derivative of each coordinate is `O(ρ)`.
 -/
 
 public section
@@ -303,6 +309,19 @@ theorem ContDiff.isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup
   simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
     hfn hgn
 
+open Asymptotics in
+/-- Left composition with a continuous linear equivalence preserves `IsBigO` bounds on iterated
+derivatives along any filter, without differentiability hypotheses. -/
+theorem ContinuousLinearEquiv.isBigO_iteratedFDeriv_comp_left_iff {D M : Type*}
+    [NormedAddCommGroup D] [NormedSpace 𝕜 D] [Norm M] (e : F ≃L[𝕜] G) {f : D → F} {n : ℕ}
+    {l : Filter D} {ρ : D → M} :
+    iteratedFDeriv 𝕜 n (e ∘ f) =O[l] ρ ↔ iteratedFDeriv 𝕜 n f =O[l] ρ := by
+  let e' := e.continuousMultilinearMapCongrRight (fun _ : Fin n ↦ D)
+  have he : iteratedFDeriv 𝕜 n (e ∘ f) = fun x ↦ e' (iteratedFDeriv 𝕜 n f x) :=
+    funext fun _ ↦ e.iteratedFDeriv_comp_left
+  rw [he]
+  exact ⟨(e'.isBigO_comp_rev _ l).trans, (e'.isBigO_comp _ l).trans⟩
+
 namespace TauCeti
 
 open Set Filter
@@ -338,4 +357,36 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
     rw [iteratedFDerivWithin_of_isOpen j hU hxU]
     exact hD j hj₁ hj
 
+open Asymptotics in
+/-- Along any filter where `f` is eventually `C^n`, the order-`n` derivative of a map into a finite
+product is `O(ρ)` if and only if the order-`n` derivative of each coordinate is `O(ρ)`. -/
+theorem isBigO_iteratedFDeriv_pi {ι D M : Type*} [Fintype ι] [NormedAddCommGroup D]
+    [NormedSpace 𝕜 D] [SeminormedAddCommGroup M] {E' : ι → Type*}
+    [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)] {N : WithTop ℕ∞}
+    {f : D → ∀ i, E' i} {l : Filter D} (hf : ∀ᶠ x in l, ContDiffAt 𝕜 N f x) {n : ℕ}
+    (hn : (n : WithTop ℕ∞) ≤ N) {ρ : D → M} :
+    iteratedFDeriv 𝕜 n f =O[l] ρ ↔ ∀ i, iteratedFDeriv 𝕜 n (fun x ↦ f x i) =O[l] ρ := by
+  let g : D → ∀ i, D [×n]→L[𝕜] E' i := fun x i ↦ iteratedFDeriv 𝕜 n (fun y ↦ f y i) x
+  have hnorm : (fun x ↦ ‖iteratedFDeriv 𝕜 n f x‖) =ᶠ[l] fun x ↦ ‖g x‖ := by
+    filter_upwards [hf] with x hx
+    have hpi : ContinuousMultilinearMap.piₗᵢ 𝕜 (fun _ : Fin n ↦ D) (g x) =
+        iteratedFDeriv 𝕜 n f x := by
+      ext m i
+      have hproj :=
+        (ContinuousLinearMap.proj (R := 𝕜) (φ := E') i).iteratedFDeriv_comp_left hx hn
+      exact congrArg (fun L ↦ L m) hproj
+    rw [← hpi, LinearIsometryEquiv.norm_map]
+  rw [← isBigO_norm_left, isBigO_congr hnorm EventuallyEq.rfl, isBigO_norm_left, isBigO_pi]
+
 end TauCeti
+
+open Asymptotics in
+/-- For a `C^n` map `f` into a finite product, the order-`n` derivative of `f` is `O(ρ)` along any
+filter if and only if the order-`n` derivative of each coordinate is `O(ρ)`. -/
+theorem ContDiff.isBigO_iteratedFDeriv_pi {ι D M : Type*} [Fintype ι]
+    [NormedAddCommGroup D] [NormedSpace 𝕜 D] [SeminormedAddCommGroup M] {E' : ι → Type*}
+    [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)] {N : WithTop ℕ∞}
+    {f : D → ∀ i, E' i} (hf : ContDiff 𝕜 N f) {n : ℕ} (hn : (n : WithTop ℕ∞) ≤ N)
+    {l : Filter D} {ρ : D → M} :
+    iteratedFDeriv 𝕜 n f =O[l] ρ ↔ ∀ i, iteratedFDeriv 𝕜 n (fun x ↦ f x i) =O[l] ρ :=
+  TauCeti.isBigO_iteratedFDeriv_pi (.of_forall fun _ ↦ hf.contDiffAt) hn
