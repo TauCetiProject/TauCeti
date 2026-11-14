@@ -36,9 +36,9 @@ most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_ls
 For `p ≠ ∞`, every sequence in `ℓᵖ` has countable support (`Memℓp.countable_dsupport`,
 `lp.countable_dsupport`). For a finite exponent `p` and a countable index type, `lp E p` is
 separable as soon as every `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors
-with entries in countable dense subsets are dense. Conversely, for `1 ≤ p` and a nontrivial fibre
-`G`, separability of `ℓᵖ(ι, G)` forces `ι` to be countable because the open balls of radius
-`‖v‖ / 2` around `lp.single p i v` (`v ≠ 0`) are pairwise disjoint
+with entries in countable dense subsets are dense. Conversely, for `1 ≤ p`, if every fibre `E i` is
+nontrivial, separability of `lp E p` forces `ι` to be countable because the open balls of radius
+`‖v i‖ / 2` around `lp.single p i (v i)` (`v i ≠ 0`) are pairwise disjoint
 (`lp.countable_of_separableSpace`, `lp.separableSpace_iff_countable`).
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
@@ -280,31 +280,37 @@ theorem countable_support {ι : Type*} {G : Type*} [NormedAddCommGroup G] {p : �
     (hp : p ≠ ∞) (f : lp (fun _ : ι ↦ G) p) : (Function.support f).Countable :=
   (lp.memℓp f).countable_support hp
 
-/-- If `lp (fun _ ↦ G) p` (`1 ≤ p`) is separable for a nontrivial normed group `G`, then the index
-type `ι` is countable. -/
-theorem countable_of_separableSpace {ι : Type*} {G : Type*} [NormedAddCommGroup G] [Nontrivial G]
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] [TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ G) p)] :
-    Countable ι := by
+/-- If `lp E p` (`1 ≤ p`) is separable and every fibre `E i` is nontrivial, then the index type `ι`
+is countable. -/
+theorem countable_of_separableSpace {ι : Type*} (E : ι → Type*) [∀ i, NormedAddCommGroup (E i)]
+    [∀ i, Nontrivial (E i)] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    [TopologicalSpace.SeparableSpace (lp E p)] : Countable ι := by
   classical
-  obtain ⟨v, hv⟩ := exists_ne (0 : G)
+  let v : ∀ i, E i := fun i ↦ (exists_ne (0 : E i)).choose
+  have hv (i : ι) : v i ≠ 0 := (exists_ne (0 : E i)).choose_spec
   have hd : Pairwise (Function.onFun Disjoint
-      fun i : ι ↦ Metric.ball (lp.single (E := fun _ : ι ↦ G) p i v) (‖v‖ / 2)) := by
+      fun i : ι ↦ Metric.ball (lp.single p i (v i)) (‖v i‖ / 2)) := by
     intro i j hij
     refine Metric.ball_disjoint_ball ?_
-    have h1 := (lp.lipschitzWith_one_eval (E := fun _ : ι ↦ G) p i).dist_le_mul
-      (lp.single p i v) (lp.single p j v)
+    have hi := (lp.lipschitzWith_one_eval p i).dist_le_mul
+      (lp.single p i (v i)) (lp.single p j (v j))
+    have hj := (lp.lipschitzWith_one_eval p j).dist_le_mul
+      (lp.single p i (v i)) (lp.single p j (v j))
     rw [NNReal.coe_one, one_mul, lp.single_apply_self,
-      lp.single_apply_ne (E := fun _ : ι ↦ G) p j v hij, dist_zero_right] at h1
-    linarith [add_halves ‖v‖]
+      lp.single_apply_ne p j (v j) hij, dist_zero_right] at hi
+    rw [NNReal.coe_one, one_mul, lp.single_apply_ne p i (v i) hij.symm,
+      lp.single_apply_self, dist_zero_left] at hj
+    linarith
   exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-    (fun i ↦ ⟨_, Metric.mem_ball_self (half_pos (norm_pos_iff.2 hv))⟩)
+    (fun i ↦ ⟨_, Metric.mem_ball_self (half_pos (norm_pos_iff.2 (hv i)))⟩)
 
-/-- For `1 ≤ p < ∞` and a nontrivial separable fibre `G`, `lp (fun _ ↦ G) p` is separable if and
-only if the index type `ι` is countable. -/
-theorem separableSpace_iff_countable {ι : Type*} {G : Type*} [NormedAddCommGroup G] [Nontrivial G]
-    [TopologicalSpace.SeparableSpace G] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) :
-    TopologicalSpace.SeparableSpace (lp (fun _ : ι ↦ G) p) ↔ Countable ι :=
-  ⟨fun _ ↦ countable_of_separableSpace (p := p) (G := G), fun _ ↦ separableSpace hp⟩
+/-- For `1 ≤ p < ∞` and nontrivial separable fibres `E i`, `lp E p` is separable if and only if the
+index type `ι` is countable. -/
+theorem separableSpace_iff_countable {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
+    [∀ i, Nontrivial (E i)] [∀ i, TopologicalSpace.SeparableSpace (E i)] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp : p ≠ ∞) :
+    TopologicalSpace.SeparableSpace (lp E p) ↔ Countable ι :=
+  ⟨fun _ ↦ countable_of_separableSpace E p, fun _ ↦ separableSpace hp⟩
 
 end lp
 

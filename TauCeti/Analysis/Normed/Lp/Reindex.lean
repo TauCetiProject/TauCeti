@@ -39,8 +39,10 @@ sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1
 shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
 geometrically decaying weights.
 
-When `e : ι ≃ ι'` is a bijection between index types (possibly in different universes), composing
-with `e` preserves `ℓᵖ` membership (`Memℓp.comp_equiv`, `memℓp_comp_equiv_iff`) and the `ℓᵖ` norm
+When `g : ι' → ι` is injective, composing with `g` preserves `ℓᵖ` membership without increasing the
+norm (`Memℓp.comp_injective`, `lp.norm_le_of_forall_eq_comp`). In particular, when `e : ι ≃ ι'` is
+a bijection between index types (possibly in different universes), composing with `e` preserves `ℓᵖ`
+membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
 (`lp.norm_eq_of_forall_eq_comp_equiv`), inducing the linear isometric equivalence
 `LinearIsometryEquiv.lpCongrLeft` between `ℓᵖ(ι, G)` and `ℓᵖ(ι', G)`.
 -/
@@ -236,43 +238,38 @@ theorem lp.exists_forall_hasSum_pow_smul_add_and_norm_le [Fact (1 ≤ p)] [Norme
 
 section Equiv
 
+/-- Composing a sequence in `ℓᵖ` with an injective map (possibly between different universes)
+preserves membership in `ℓᵖ`. -/
+theorem Memℓp.comp_injective {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
+    {f : β → H} (hf : Memℓp f q) {g : α → β} (hg : Function.Injective g) : Memℓp (f ∘ g) q := by
+  simpa only [Set.indicator_univ] using hf.indicator_comp (s := Set.univ) hg.injOn
+
 /-- Composing a sequence in `ℓᵖ` with an equivalence of index types (possibly in different
 universes) preserves membership in `ℓᵖ`. -/
 theorem Memℓp.comp_equiv {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
-    {f : β → H} (hf : Memℓp f q) (e : α ≃ β) : Memℓp (f ∘ e) q := by
-  rcases q.trichotomy with rfl | rfl | hq
-  · exact memℓp_zero (hf.finite_dsupport.preimage e.injective.injOn)
-  · have hrange : Set.range (fun i ↦ ‖(f ∘ e) i‖) = Set.range (fun j ↦ ‖f j‖) :=
-      EquivLike.range_comp (fun j ↦ ‖f j‖) e
-    exact memℓp_infty (hrange ▸ hf.bddAbove)
-  · exact memℓp_gen (e.summable_iff.2 (hf.summable hq))
+    {f : β → H} (hf : Memℓp f q) (e : α ≃ β) : Memℓp (f ∘ e) q :=
+  hf.comp_injective e.injective
 
 /-- Composing with an equivalence of index types preserves `ℓᵖ` membership in both directions. -/
 @[simp]
-theorem memℓp_comp_equiv_iff {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H]
+theorem Equiv.memℓp_comp_iff {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H]
     {q : ℝ≥0∞} {f : β → H} (e : α ≃ β) : Memℓp (f ∘ e) q ↔ Memℓp f q :=
   ⟨fun h ↦ by simpa [Function.comp_def] using h.comp_equiv e.symm, fun h ↦ h.comp_equiv e⟩
 
-private theorem norm_le_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
+/-- Reindexing a sequence in `ℓᵖ` (`p ≠ 0`) along an injective map does not increase the `ℓᵖ`
+norm. -/
+theorem lp.norm_le_of_forall_eq_comp {α : Type*} {β : Type*} {H : Type*}
     [NormedAddCommGroup H] {q : ℝ≥0∞} (hq : q ≠ 0) {f : lp (fun _ : β ↦ H) q}
-    {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ ≤ ‖f‖ := by
-  rcases q.trichotomy with rfl | rfl | hq'
-  · exact absurd rfl hq
-  · exact lp.norm_le_of_forall_le (lp.norm_nonneg' f) fun i ↦
-      (h i).symm ▸ lp.norm_apply_le_norm hq f (e i)
-  · refine lp.norm_le_of_forall_sum_le hq' (lp.norm_nonneg' f) fun t ↦ ?_
-    calc ∑ i ∈ t, ‖g i‖ ^ q.toReal
-        = ∑ i ∈ t, ‖f (e i)‖ ^ q.toReal := Finset.sum_congr rfl fun i _ ↦ by rw [h i]
-      _ = ∑ j ∈ t.map e.toEmbedding, ‖f j‖ ^ q.toReal :=
-          (Finset.sum_map t e.toEmbedding fun j ↦ ‖f j‖ ^ q.toReal).symm
-      _ ≤ ‖f‖ ^ q.toReal := lp.sum_rpow_le_norm_rpow hq' f _
+    {g : lp (fun _ : α ↦ H) q} {e : α → β} (he : Function.Injective e) (h : ∀ i, g i = f (e i)) :
+    ‖g‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp hq (s := Set.univ) he.injOn fun i ↦ by simpa using h i
 
 /-- Reindexing a sequence in `ℓᵖ` (`p ≠ 0`) along an equivalence preserves the `ℓᵖ` norm. -/
 theorem lp.norm_eq_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
     [NormedAddCommGroup H] {q : ℝ≥0∞} (hq : q ≠ 0) {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ = ‖f‖ :=
-  le_antisymm (norm_le_of_forall_eq_comp_equiv hq e h)
-    (norm_le_of_forall_eq_comp_equiv hq e.symm fun j ↦ by simp [h (e.symm j)])
+  le_antisymm (lp.norm_le_of_forall_eq_comp hq e.injective h)
+    (lp.norm_le_of_forall_eq_comp hq e.symm.injective fun j ↦ by simp [h (e.symm j)])
 
 namespace LinearIsometryEquiv
 

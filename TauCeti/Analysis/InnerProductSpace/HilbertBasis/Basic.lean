@@ -63,11 +63,9 @@ theorem ext_continuousLinearMap {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜
 of a Hilbert basis of `E`. -/
 theorem ext_linearIsometry {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
     [NormedAddCommGroup M] [Module 𝕜' M] (b : _root_.HilbertBasis ι 𝕜 E)
-    {f g : E →ₛₗᵢ[σ] M} (h : ∀ i, f (b i) = g (b i)) : f = g := by
-  have hfg : Set.EqOn f g (closure (Submodule.span 𝕜 (Set.range b) : Set E)) :=
-    (LinearMap.eqOn_span' (by rintro _ ⟨i, rfl⟩; exact h i)).closure f.continuous g.continuous
-  exact LinearIsometry.ext fun x ↦
-    hfg (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span x)
+    {f g : E →ₛₗᵢ[σ] M} (h : ∀ i, f (b i) = g (b i)) : f = g :=
+  LinearIsometry.toContinuousLinearMap_injective <| b.ext_continuousLinearMap fun i ↦ by
+    simpa only [LinearIsometry.coe_toContinuousLinearMap] using h i
 
 /-- Two semilinear isometric equivalences out of `E` into a normed module agree when they agree on
 every vector of a Hilbert basis of `E`. -/
@@ -75,9 +73,8 @@ theorem ext_linearIsometryEquiv {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜
     [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
     [NormedAddCommGroup M] [Module 𝕜' M] (b : _root_.HilbertBasis ι 𝕜 E)
     {U V : E ≃ₛₗᵢ[σ] M} (h : ∀ i, U (b i) = V (b i)) : U = V :=
-  LinearIsometryEquiv.ext fun x ↦
-    DFunLike.congr_fun (b.ext_linearIsometry (f := U.toLinearIsometry) (g := V.toLinearIsometry) h)
-      x
+  LinearIsometryEquiv.toLinearIsometry_injective <| b.ext_linearIsometry fun i ↦ by
+    simpa only [LinearIsometryEquiv.coe_toLinearIsometry] using h i
 
 /-- Two continuous linear maps between Hilbert spaces are equal when their matrix entries
 `⟪c i, A (b j)⟫` in Hilbert bases `b` of the source and `c` of the target agree. -/

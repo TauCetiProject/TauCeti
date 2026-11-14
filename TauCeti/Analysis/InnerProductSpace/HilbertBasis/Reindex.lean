@@ -23,6 +23,11 @@ yields the unique linear isometric equivalence `b.equiv c e : E ≃ₗᵢ[𝕜] 
 `c (e i)` for every `i` (`HilbertBasis.equiv_apply_basis`,
 `HilbertBasis.existsUnique_linearIsometryEquiv`).
 
+Together, these constructions extend `OrthonormalBasis.reindex` and `OrthonormalBasis.equiv` from
+finite bases to arbitrary Hilbert bases across universes, enabling universe-lifting and
+`ℕ`-reindexing of bases and supplying the basis-preserving unitaries needed for Hilbert-dimension
+invariance and the unitary classification of Hilbert spaces.
+
 ## Main declarations
 
 * `HilbertBasis.reindex`: reindex a Hilbert basis along `e : ι ≃ κ`.
@@ -32,13 +37,13 @@ yields the unique linear isometric equivalence `b.equiv c e : E ≃ₗᵢ[𝕜] 
 
 ## References
 
-* J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Chapter I, §4.
-* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.2.
+* J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Chapter I, §§4–5.
+* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.3.
 -/
 
 public section
 
-open scoped InnerProductSpace
+open scoped InnerProductSpace lp
 
 namespace HilbertBasis
 
@@ -117,26 +122,50 @@ protected noncomputable def equiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis
     (e : ι ≃ κ) : E ≃ₗᵢ[𝕜] F :=
   b.repr.trans ((LinearIsometryEquiv.lpCongrLeft 2 𝕜 𝕜 e).trans c.repr.symm)
 
+/-- `HilbertBasis.equiv` is the composition of `b.repr`, `LinearIsometryEquiv.lpCongrLeft`, and
+`c.repr.symm`. -/
+theorem equiv_def (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) :
+    b.equiv c e = b.repr.trans ((LinearIsometryEquiv.lpCongrLeft 2 𝕜 𝕜 e).trans c.repr.symm) :=
+  (rfl)
+
 /-- `b.equiv c e` maps the `i`-th basis vector of `b` to the `e i`-th basis vector of `c`. -/
 @[simp]
 theorem equiv_apply_basis (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) (i : ι) :
     b.equiv c e (b i) = c (e i) := by
   classical
-  simp [HilbertBasis.equiv, b.repr_self]
+  simp [b.equiv_def, b.repr_self]
+
+/-- The coordinate representation of `b.equiv c e x` in `c` is `b.repr x` reindexed along `e`. -/
+@[simp]
+theorem repr_equiv (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) (x : E) :
+    c.repr (b.equiv c e x) = LinearIsometryEquiv.lpCongrLeft 2 𝕜 𝕜 e (b.repr x) := by
+  simp [b.equiv_def]
 
 /-- The `j`-th coordinate of `b.equiv c e x` in `c` is the `e.symm j`-th coordinate of `x` in `b`.
 -/
-@[simp]
 theorem repr_equiv_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
     (x : E) (j : κ) :
     c.repr (b.equiv c e x) j = b.repr x (e.symm j) := by
-  simp [HilbertBasis.equiv]
+  simp
 
-/-- Pairing `b.equiv c e x` against `c j` gives the inner product `⟪b (e.symm j), x⟫_𝕜`. -/
-theorem inner_equiv_left (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
+/-- Applying `b.equiv c e` to `b.repr.symm v` reindexes `v` along `e` and applies `c.repr.symm`. -/
+@[simp]
+theorem equiv_repr_symm (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
+    (v : ℓ²(ι, 𝕜)) :
+    b.equiv c e (b.repr.symm v) = c.repr.symm (LinearIsometryEquiv.lpCongrLeft 2 𝕜 𝕜 e v) := by
+  simp [b.equiv_def]
+
+/-- Pairing `c j` on the left against `b.equiv c e x` gives `⟪b (e.symm j), x⟫_𝕜`. -/
+theorem inner_equiv_right (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
     (x : E) (j : κ) :
     ⟪c j, b.equiv c e x⟫_𝕜 = ⟪b (e.symm j), x⟫_𝕜 := by
   rw [← c.repr_apply_apply, b.repr_equiv_apply c e, b.repr_apply_apply]
+
+/-- Pairing `b.equiv c e x` on the left against `c j` gives `⟪x, b (e.symm j)⟫_𝕜`. -/
+theorem inner_equiv_left (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ)
+    (x : E) (j : κ) :
+    ⟪b.equiv c e x, c j⟫_𝕜 = ⟪x, b (e.symm j)⟫_𝕜 := by
+  rw [← inner_conj_symm, b.inner_equiv_right c e, inner_conj_symm]
 
 /-- Series expansion of `b.equiv c e x` in the target Hilbert basis `c`:
 `b.equiv c e x = ∑ᵢ ⟪b i, x⟫_𝕜 • c (e i)`. -/

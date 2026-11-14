@@ -19,12 +19,15 @@ orthonormal family is countable (`Orthonormal.countable_of_separableSpace`).
 
 Independently of separability, Bessel's inequality `Orthonormal.inner_products_summable` implies
 that any vector pairs nontrivially with at most countably many members of an orthonormal family
-(`Orthonormal.countable_support_inner_left`, `Orthonormal.countable_support_inner_right`).
+(`Orthonormal.countable_support_inner_left`, `Orthonormal.countable_support_inner_right`). Together,
+these two countability properties characterize separability of inner product spaces carrying a
+Hilbert basis and bound basis-overlap supports in arbitrary Hilbert spaces to prove invariance of
+Hilbert-basis cardinality.
 
 ## References
 
 * J. B. Conway, *A Course in Functional Analysis*, 2nd ed., Chapter I, §4.
-* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.2.
+* M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, §II.3.
 -/
 
 public section
