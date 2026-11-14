@@ -167,10 +167,6 @@ theorem integrable_law (a : A) (f : ℝ → ℝ)
   rw [← restrict_spectrum_law]
   exact hf.integrableOn_compact (ContinuousFunctionalCalculus.isCompact_spectrum a)
 
-/-- Every real polynomial is integrable against the law `μ_a`. -/
-theorem integrable_eval_law (a : A) (p : ℝ[X]) : Integrable (fun x ↦ p.eval x) (law φ a) :=
-  integrable_law φ a (fun x ↦ p.eval x)
-
 /-- Every power `x ^ n` is integrable against the law `μ_a`. -/
 theorem integrable_pow_law (a : A) (n : ℕ) : Integrable (· ^ n) (law φ a) :=
   integrable_law φ a (· ^ n)
