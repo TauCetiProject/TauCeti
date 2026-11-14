@@ -47,6 +47,11 @@ in two stages:
 * `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_add_mul`: the coordinate form
   `(π₂ / π₁)_4 = (π₁ / π₂)_4 · (-1) ^ (((a - 1) / 2) * ((c - 1) / 2))` for primary `π₁ = a + b i`
   and `π₂ = c + d i`.
+* `TauCeti.IsPrimaryGaussian.even_absNorm_sub_one_div_four_iff`,
+  `TauCeti.IsPrimaryGaussian.odd_absNorm_sub_one_div_four_iff`,
+  `TauCeti.IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_one`,
+  `TauCeti.IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_five`,
+  `TauCeti.IsPrimaryGaussian.quartic_reciprocity_ite`: the modulo-`8` norm sign rules.
 
 ## References
 
@@ -415,6 +420,69 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_add_mul {ζ : K} {hζ : IsPrim
   exact zpow_eq_zpow_of_modEq (n := 2) (by norm_num)
     (by simpa [mul_comm] using hπ₁.norm_sub_one_div_four.mul hπ₂.norm_sub_one_div_four)
 
+/-! ### Modulo-`8` norm sign rules -/
+
+/-- For a primary Gaussian integer `x`, the exponent `(N(x 𝓞 K) - 1) / 4` is even if and only if
+`N(x 𝓞 K) ≡ 1 (mod 8)`. -/
+theorem IsPrimaryGaussian.even_absNorm_sub_one_div_four_iff {x : 𝓞 K} (hx : IsPrimaryGaussian x) :
+    Even ((absNorm (span {x}) - 1) / 4) ↔ absNorm (span {x}) ≡ 1 [MOD 8] := by
+  have h1 : absNorm (span {x}) ≡ 1 [MOD 4] :=
+    absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  simp only [Nat.even_iff, Nat.ModEq] at h1 ⊢
+  omega
+
+/-- For a primary Gaussian integer `x`, the exponent `(N(x 𝓞 K) - 1) / 4` is odd if and only if
+`N(x 𝓞 K) ≡ 5 (mod 8)`. -/
+theorem IsPrimaryGaussian.odd_absNorm_sub_one_div_four_iff {x : 𝓞 K} (hx : IsPrimaryGaussian x) :
+    Odd ((absNorm (span {x}) - 1) / 4) ↔ absNorm (span {x}) ≡ 5 [MOD 8] := by
+  have h1 : absNorm (span {x}) ≡ 1 [MOD 4] :=
+    absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  simp only [Nat.odd_iff, Nat.ModEq] at h1 ⊢
+  omega
+
+/-- If `π₁` and `π₂` are primary and `N(π₁ 𝓞 K) ≡ 1 (mod 8)`, the sign in biquadratic reciprocity
+is `+1`, so `(π₂ / π₁)_4 = (π₁ / π₂)_4`. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_one {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂)
+    (hN : absNorm (span {π₁}) ≡ 1 [MOD 8]) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  rw [hπ₁.quartic_reciprocity hπ₂,
+    ((hπ₁.even_absNorm_sub_one_div_four_iff.mpr hN).mul_left _).neg_one_pow, mul_one]
+
+/-- If `π₁` and `π₂` are primary and `N(π₁ 𝓞 K) ≡ N(π₂ 𝓞 K) ≡ 5 (mod 8)`, the sign in biquadratic
+reciprocity is `-1`, so `(π₂ / π₁)_4 = -(π₁ / π₂)_4`. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_of_absNorm_modEq_five {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂)
+    (hN₁ : absNorm (span {π₁}) ≡ 5 [MOD 8]) (hN₂ : absNorm (span {π₂}) ≡ 5 [MOD 8]) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      -powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  have hodd : Odd (((absNorm (span {π₂}) - 1) / 4) * ((absNorm (span {π₁}) - 1) / 4)) :=
+    (hπ₂.odd_absNorm_sub_one_div_four_iff.mpr hN₂).mul
+      (hπ₁.odd_absNorm_sub_one_div_four_iff.mpr hN₁)
+  rw [hπ₁.quartic_reciprocity hπ₂, hodd.neg_one_pow, mul_neg_one]
+
+/-- **Biquadratic reciprocity by norms modulo `8`.** For primary elements `π₁` and `π₂` of
+`𝓞 K = ℤ[i]`, `(π₂ / π₁)_4` equals `-(π₁ / π₂)_4` when both `N(π₁ 𝓞 K)` and `N(π₂ 𝓞 K)` are
+congruent to `5` modulo `8`, and `(π₁ / π₂)_4` otherwise. -/
+theorem IsPrimaryGaussian.quartic_reciprocity_ite {π₁ π₂ : 𝓞 K}
+    (hπ₁ : IsPrimaryGaussian π₁) (hπ₂ : IsPrimaryGaussian π₂) :
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      if absNorm (span {π₁}) ≡ 5 [MOD 8] ∧ absNorm (span {π₂}) ≡ 5 [MOD 8] then
+        -powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁)
+      else
+        powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  split_ifs with h
+  · exact hπ₁.quartic_reciprocity_of_absNorm_modEq_five hπ₂ h.1 h.2
+  · have h1 : absNorm (span {π₁}) ≡ 1 [MOD 4] :=
+      absNorm_modEq_one hπ₁.absNorm_span_singleton_coprime_four
+    have h2 : absNorm (span {π₂}) ≡ 1 [MOD 4] :=
+      absNorm_modEq_one hπ₂.absNorm_span_singleton_coprime_four
+    rcases (by simp only [Nat.ModEq] at h h1 h2 ⊢; omega :
+        absNorm (span {π₁}) ≡ 1 [MOD 8] ∨ absNorm (span {π₂}) ≡ 1 [MOD 8]) with hN₁ | hN₂
+    · exact hπ₁.quartic_reciprocity_of_absNorm_modEq_one hπ₂ hN₁
+    · exact (hπ₂.quartic_reciprocity_of_absNorm_modEq_one hπ₁ hN₂).symm
+
 /-! ### Examples -/
 
 section Examples
@@ -434,6 +502,20 @@ example :
   have hπ₂ : IsPrimaryGaussian π₂ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
   have hsign : (-1 : K) ^ (((-1 - 1 : ℤ) / 2) * ((3 - 1) / 2)) = -1 := by norm_num
   rw [hπ₁.coe_quartic_reciprocity_add_mul hπ₂, hsign, mul_neg_one]
+
+/- Directly in `𝓞 K`, for `π₁ = -1 + 2i` (norm `5 ≡ 5 (mod 8)`) and `π₂ = 3 + 2i`
+(norm `13 ≡ 5 (mod 8)`), the mod-`8` rule gives `(π₂ / π₁)_4 = -(π₁ / π₂)_4`. -/
+example :
+    let π₁ : 𝓞 K := ((-1 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger
+    let π₂ : 𝓞 K := ((3 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger
+    powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) =
+      -powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) := by
+  intro π₁ π₂
+  have hπ₁ : IsPrimaryGaussian π₁ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  have hπ₂ : IsPrimaryGaussian π₂ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  refine hπ₁.quartic_reciprocity_of_absNorm_modEq_five hπ₂ ?_ ?_
+  · rw [absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_four]; decide
+  · rw [absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_four]; decide
 
 /- For `π₁ = -1 + 2i` (norm `5`) and `π₂ = -3` (norm `9`, where `gcd(-3, 0) = 3 ≠ 1`), the general
 biquadratic reciprocity law gives `(π₂ / π₁)_4 = (π₁ / π₂)_4`. -/
