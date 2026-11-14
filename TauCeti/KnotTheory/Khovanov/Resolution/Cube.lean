@@ -69,8 +69,6 @@ open CategoryTheory Finset
 
 namespace TauCeti.PDCode
 
-universe u
-
 variable {n : ℕ}
 
 /-! ### The states of the vertices -/
@@ -138,6 +136,8 @@ end TauCeti.OrientedPDCode
 
 namespace TauCeti.PDCode
 
+universe u
+
 variable {n : ℕ}
 
 /-- The vertex `S` is recovered from its state. -/
@@ -154,7 +154,7 @@ theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
 crossing `a ∈ T \ S`. -/
 theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) (j : Fin n) (hj : j ≠ a) : cubeState S j = cubeState T j := by
-  obtain ⟨b, hbS, rfl⟩ := h.exists_finset_insert
+  obtain ⟨b, -, rfl⟩ := h.exists_finset_insert
   obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
   simp [cubeState, hj]
 
