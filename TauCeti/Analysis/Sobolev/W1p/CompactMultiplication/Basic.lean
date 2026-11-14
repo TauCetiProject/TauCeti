@@ -41,7 +41,7 @@ dense in `Lᵖ` (`ContinuousLinearMap.isCompactOperator_holderL_comp_of_ae_eq`).
   statements for a coefficient given as a function `α` with `MemLp α r`.
 * `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_memLp_top` and
   `TauCeti.W1p.exists_isCompactOperator_value_smul_of_memLp_top_of_isLipschitzDomainWith`:
-  compact multiplication by a bounded coefficient `α ∈ L^∞(Ω, G)` at every `q`, which is
+  compact multiplication by a bounded coefficient `α ∈ L^∞(Ω, G)` at every finite `q ≥ 1`, which is
   Hölder multiplication `L^∞ × L^q → L^q` after the Rellich--Kondrachov embedding.
 
 ## References
@@ -192,21 +192,22 @@ theorem W1p.exists_isCompactOperator_value_smul_of_memLp_of_isLipschitzDomainWit
 omit [Nontrivial E] in
 /-- **Compact multiplication by bounded coefficients on `W^{1,q}_0`.** For a bounded open `Ω`
 and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact operator `W^{1,q}_0(Ω) → L^q(Ω, G)`
-for every `q ≥ 1`. -/
+for every finite `q ≥ 1`. -/
 theorem W1p0.exists_isCompactOperator_value_smul_of_memLp_top {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω : Opens E} (hΩ : IsBounded (Ω : Set E))
     {α : E → G} (hα : MemLp α ∞ (μ.restrict Ω)) :
     ∃ M : W1p0 μ Ω q →L[ℝ] Lp G q (μ.restrict Ω),
       (∀ u, M u =ᵐ[μ.restrict Ω] fun x => W1p.value (u : W1p μ Ω q) x • α x) ∧
         IsCompactOperator M := by
-  obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_smul_of_memLp_top (q := (q : ℝ≥0∞))
-    (W1p0.isCompactOperator_valueL (mu := μ) (Omega := Ω) ENNReal.coe_ne_top hΩ) hα
+  obtain ⟨M, hM, hMc⟩ := IsCompactOperator.exists_isCompactOperator_smul_of_memLp_top
+    (q := (q : ℝ≥0∞)) (W1p0.isCompactOperator_valueL (mu := μ) (Omega := Ω) ENNReal.coe_ne_top hΩ)
+    hα
   exact ⟨M, fun u => by simpa only [W1p0.valueL_apply] using hM u, hMc⟩
 
 omit [Nontrivial E] in
 /-- **Compact multiplication by bounded coefficients on bounded Lipschitz domains.** For a
 bounded Lipschitz domain `Ω ⊆ ℝ × E` and `α ∈ L^∞(Ω, G)`, multiplication `u ↦ u α` is a compact
-operator `W^{1,q}(Ω) → L^q(Ω, G)` for every `q ≥ 1`. -/
+operator `W^{1,q}(Ω) → L^q(Ω, G)` for every finite `q ≥ 1`. -/
 theorem W1p.exists_isCompactOperator_value_smul_of_memLp_top_of_isLipschitzDomainWith {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
@@ -215,7 +216,7 @@ theorem W1p.exists_isCompactOperator_value_smul_of_memLp_top_of_isLipschitzDomai
     ∃ M : W1p volume Ω q →L[ℝ] Lp G q (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))),
       (∀ u, M u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))]
         fun x => W1p.value u x • α x) ∧ IsCompactOperator M := by
-  obtain ⟨M, hM, hMc⟩ := exists_isCompactOperator_smul_of_memLp_top
+  obtain ⟨M, hM, hMc⟩ := IsCompactOperator.exists_isCompactOperator_smul_of_memLp_top
     (V := W1p.valueL (mu := volume) (Omega := Ω) (p := q))
     (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb) hα
   exact ⟨M, fun u => by simpa only [W1p.valueL_apply] using hM u, hMc⟩

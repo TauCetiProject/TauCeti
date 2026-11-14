@@ -16,15 +16,15 @@ Let `Ω` be a bounded open subset of a finite-dimensional real inner product spa
 only for `q ≤ r` (`TauCeti.W1p0.exists_isCompactOperator_value_smul`). A coefficient of class
 `W^{1,p}` with `n ≤ p` is better: on a set whose closure is a compact subset of its domain it lies
 in `L^s` for every finite `s` (and is bounded when `n < p`, by Morrey), so multiplication by it is
-compact `W^{1,q}_0(Ω) → L^q(Ω)` for *every* `q ≥ 1`, including `q > p`. The same holds on all of
-`W^{1,q}(Ω)` for a bounded Lipschitz domain `Ω ⊆ ℝ × E` and `n ≤ p`, and for a coefficient of
-class `W^{m+1,p}(Ω)` with `n ≤ (m + 1) p`, which embeds in `W^{1,(m+1)p}(Ω)`.
+compact `W^{1,q}_0(Ω) → L^q(Ω)` for *every* finite `q ≥ 1`, including `q > p`. The same holds on
+all of `W^{1,q}(Ω)` for a bounded Lipschitz domain `Ω ⊆ ℝ × E` and `n ≤ p`, and for a coefficient
+of class `W^{m+1,p}(Ω)` with `n ≤ (m + 1) p`, which embeds in `W^{1,(m+1)p}(Ω)`.
 
 ## Main declarations
 
 * `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_w1p`: compact multiplication on
-  `W^{1,q}_0(Ω)` at every `q` by a `W^{1,p}` coefficient, `n ≤ p`, defined on a neighbourhood of
-  `closure Ω`.
+  `W^{1,q}_0(Ω)` at every finite `q ≥ 1` by a `W^{1,p}` coefficient, `n ≤ p`, defined on a
+  neighbourhood of `closure Ω`.
 * `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_wkp`: the same for a `W^{m+1,p}`
   coefficient.
 * `TauCeti.W1p.exists_isCompactOperator_value_smul_of_w1p_of_isLipschitzDomainWith` and
@@ -55,11 +55,11 @@ section Interior
 
 variable {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- **Compact multiplication by `W^{1,p}` coefficients on `W^{1,q}_0`, every `q`.** Let `Ω` be
-a bounded open set whose closure lies in an open set `Ω'`, let `n ≤ p < ∞` and
-`α ∈ W^{1,p}(Ω')`. Then multiplication `u ↦ u α` is a compact operator
-`W^{1,q}_0(Ω) → L^q(Ω)` for every `q ≥ 1`, including `q > p`: `α` lies in `L^s(Ω)` for every
-finite `s`. -/
+/-- **Compact multiplication by `W^{1,p}` coefficients on `W^{1,q}_0`, every finite `q`.** Let
+`Ω` be a bounded open set whose closure lies in an open set `Ω'`, let `n = dim E`,
+`1 ≤ p < ∞` with `n ≤ p`, and `α ∈ W^{1,p}(Ω')`. Then multiplication `u ↦ u α` is a compact
+operator `W^{1,q}_0(Ω) → L^q(Ω)` for every finite `q ≥ 1`, including `q > p`: `α` lies in
+`L^s(Ω)` for every finite `s`. -/
 theorem W1p0.exists_isCompactOperator_value_smul_of_w1p {Ω Ω' : Opens E}
     (hΩ : IsBounded (Ω : Set E)) (hΩΩ' : closure (Ω : Set E) ⊆ Ω') {p : ℝ≥0}
     [Fact (1 ≤ (p : ℝ≥0∞))] (hnp : (finrank ℝ E : ℝ≥0) ≤ p) (α : W1p μ Ω' p) :
@@ -89,8 +89,9 @@ theorem W1p0.exists_isCompactOperator_value_smul_of_w1p {Ω Ω' : Opens E}
     ((le_max_left _ _).trans (le_max_right _ _))
     ((hC α).trans_lt (by finiteness))
 
-/-- **Compact multiplication by `W^{m+1,p}` coefficients on `W^{1,q}_0`, every `q`.** The
-higher-order form of `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_w1p`. -/
+/-- **Compact multiplication by `W^{m+1,p}` coefficients on `W^{1,q}_0`, every finite `q`.**
+The higher-order form of `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_w1p`, under the
+same hypothesis `n ≤ p`. -/
 theorem W1p0.exists_isCompactOperator_value_smul_of_wkp {Ω Ω' : Opens E}
     (hΩ : IsBounded (Ω : Set E)) (hΩΩ' : closure (Ω : Set E) ⊆ Ω') {p : ℝ≥0}
     [Fact (1 ≤ (p : ℝ≥0∞))] (hnp : (finrank ℝ E : ℝ≥0) ≤ p) (m : ℕ)
@@ -109,9 +110,10 @@ section LipschitzDomain
 variable {Ω : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
 
 /-- **Compact multiplication by `W^{1,p}` coefficients on bounded Lipschitz domains, every
-`q`.** Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `n = dim (ℝ × E)`, `n ≤ p < ∞` and
-`α ∈ W^{1,p}(Ω)`. Then multiplication `u ↦ u α` is a compact operator `W^{1,q}(Ω) → L^q(Ω)` for
-every `q ≥ 1`, including `q > p`: `α` lies in `L^s(Ω)` for every finite `s`. -/
+finite `q`.** Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `n = dim (ℝ × E)`, `1 ≤ p < ∞`
+with `n ≤ p`, and `α ∈ W^{1,p}(Ω)`. Then multiplication `u ↦ u α` is a compact operator
+`W^{1,q}(Ω) → L^q(Ω)` for every finite `q ≥ 1`, including `q > p`: `α` lies in `L^s(Ω)` for
+every finite `s`. -/
 theorem W1p.exists_isCompactOperator_value_smul_of_w1p_of_isLipschitzDomainWith
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
@@ -136,9 +138,9 @@ theorem W1p.exists_isCompactOperator_value_smul_of_w1p_of_isLipschitzDomainWith
     ((hC α).trans_lt (by finiteness))
 
 /-- **Compact multiplication by `W^{m+1,p}` coefficients on bounded Lipschitz domains, every
-`q`.** Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `n = dim (ℝ × E)`, `1 ≤ p < ∞` with
+finite `q`.** Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `n = dim (ℝ × E)`, `1 ≤ p < ∞` with
 `n ≤ (m + 1) p`, and `α ∈ W^{m+1,p}(Ω)`. Then multiplication `u ↦ u α` is a compact operator
-`W^{1,q}(Ω) → L^q(Ω)` for every `q ≥ 1`: `α` lies in `W^{1,(m+1)p}(Ω)`, and
+`W^{1,q}(Ω) → L^q(Ω)` for every finite `q ≥ 1`: `α` lies in `W^{1,(m+1)p}(Ω)`, and
 `TauCeti.W1p.exists_isCompactOperator_value_smul_of_w1p_of_isLipschitzDomainWith` applies. -/
 theorem W1p.exists_isCompactOperator_value_smul_of_wkp_of_isLipschitzDomainWith
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)

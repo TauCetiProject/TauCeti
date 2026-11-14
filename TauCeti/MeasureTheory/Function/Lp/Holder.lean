@@ -109,6 +109,10 @@ theorem tendsto_setLIntegral_enorm_bilin_sub {E F G H ι : Type*} [MeasurableSpa
     exact h₁.trans (congrArg₂ (fun u v => B u v) h₂ h₃)
   · exact B.holderL_ae_eq_of_measure_le Measure.restrict_le_self A₀ C₀ ha₀ hc₀
 
+end TauCeti
+
+namespace IsCompactOperator
+
 /-- **Compact multiplication by a bounded coefficient.** For a compact operator `V : X → L^q(ν)`
 and `α ∈ L^∞(ν, G)`, the operator `u ↦ (V u) α : X → L^q(ν, G)` is compact: it is Hölder
 multiplication `L^∞ × L^q → L^q` composed with `V`. -/
@@ -125,4 +129,4 @@ theorem exists_isCompactOperator_smul_of_memLp_top {X Y G : Type*}
   · rw [ContinuousLinearMap.coe_comp]
     exact hV.clm_comp _
 
-end TauCeti
+end IsCompactOperator

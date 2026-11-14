@@ -11,12 +11,12 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactMultiplication.Sobolev
 /-!
 # Compact multiplication at admissible exponents in the plane
 
-This is the `k = 1` row of McDuff--Salamon, Lemma C.2.2: for a real Cauchy--Riemann operator of
-class `W^{ℓ-1,p}` on a surface, `p > 2`, multiplication by the zeroth-order term
-`α ∈ W^{ℓ-1,p}` is compact `W^{1,q} → L^q` at every admissible exponent
-(`TauCeti.IsAdmissibleRealizationExponent ℓ p 1 q`). For `ℓ = 1` admissibility means `q ≤ p`
-and the `Lᵖ` statement `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_memLp` applies;
-for `ℓ ≥ 2` every `q > 1` is admissible and the Sobolev coefficient statement
+This is the local planar scalar form of the `k = 1` row of McDuff--Salamon, Lemma C.2.2: on a
+bounded open subset of a two-dimensional space, for `p > 2`, multiplication by a real
+zeroth-order term `α ∈ W^{ℓ-1,p}` is compact `W^{1,q} → L^q` at every admissible exponent
+(`TauCeti.IsAdmissibleRealizationExponent ℓ p 1 q`). For `ℓ = 1` admissibility means
+`1 < q ≤ p` and the `Lᵖ` statement `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_memLp`
+applies; for `ℓ ≥ 2` it means `1 < q < ∞` and the Sobolev coefficient statement
 `TauCeti.W1p0.exists_isCompactOperator_value_smul_of_wkp` applies.
 
 ## Main declarations
@@ -55,8 +55,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 subset of a two-dimensional space whose closure lies in an open set `Ω'`, let `2 < p < ∞`, and
 let `α ∈ W^{ℓ-1,p}(Ω')` with `ℓ = m + 1 ≥ 1`. If `(1, q)` is an admissible exponent pair for a
 real Cauchy--Riemann operator of class `W^{ℓ-1,p}`, multiplication `u ↦ u α` is a compact
-operator `W^{1,q}_0(Ω) → L^q(Ω)` (McDuff--Salamon, Lemma C.2.2 at `k = 1`). For `ℓ = 1`
-admissibility means `q ≤ p`; for `ℓ ≥ 2` every `q > 1` is admissible. -/
+operator `W^{1,q}_0(Ω) → L^q(Ω)` (the local planar scalar form of McDuff--Salamon,
+Lemma C.2.2 at `k = 1`). For `ℓ = 1` admissibility means `1 < q ≤ p`; for `ℓ ≥ 2` it means
+`1 < q < ∞`. -/
 theorem W1p0.exists_isCompactOperator_value_smul_of_isAdmissibleRealizationExponent
     {μ : Measure E} [μ.IsAddHaarMeasure] (hE : finrank ℝ E = 2) {Ω Ω' : Opens E}
     (hΩ : IsBounded (Ω : Set E)) (hΩΩ' : closure (Ω : Set E) ⊆ Ω') (hp : 2 < (p : ℝ))
