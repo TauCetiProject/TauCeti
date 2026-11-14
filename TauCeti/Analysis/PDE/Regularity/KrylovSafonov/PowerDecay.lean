@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
 import Mathlib.Analysis.SpecialFunctions.Log.Base
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 
@@ -138,7 +138,7 @@ private theorem exists_volume_setOf_mul_le_inter_dyadicCube_le {κ : ℝ} (hκ :
     rw [h]
     refine eLpNorm_const_smul_le.trans (mul_le_of_le_one_of_le ?_
       (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)))
-    rw [Real.enorm_eq_ofReal (by positivity)]
+    rw [Real.eNorm_eq_ofReal (by positivity)]
     exact ENNReal.ofReal_le_one.2 (inv_le_one_of_one_le₀ hs)
   have key := H (u := fun x ↦ s⁻¹ * u x) (f := fun x ↦ s⁻¹ * f x) hR (ha.mono_set hball) hLam
     (continuousOn_const.mul (hcont.mono hcball)) (contDiffOn_const.mul (hu.mono hball))
