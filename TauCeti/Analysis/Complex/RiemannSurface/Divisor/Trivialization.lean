@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Normalize
 public import TauCeti.Analysis.Complex.RiemannSurface.SphereMap
 public import Mathlib.Topology.Sheaves.Functors
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Local trivializations of divisor sheaves
@@ -70,13 +71,6 @@ private def multiplySection {D E : WeilDivisor X} {U : Opens X} (h : X → ℂ)
     comp_val_mem_divisorSections fun x hx ↦ isDivisorSectionAt_toDivisorSection_mul
       (hh x hx) (ho x hx) (isDivisorSectionAt_extend f.property ⟨x, hx⟩)⟩
 
-omit [ChartedSpace ℂ X] in
-/-- The inclusion of an open set maps punctured neighbourhoods to punctured neighbourhoods. -/
-private theorem tendsto_val_nhdsNE {U : Opens X} (x : U) :
-    Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
-  continuous_subtype_val.continuousAt.continuousWithinAt.tendsto_nhdsWithin
-    (fun _ hy hxy ↦ hy (Subtype.ext hxy))
-
 private theorem multiplySection_eventuallyEq {D E : WeilDivisor X} {U : Opens X}
     (h : X → ℂ) (hh : ∀ x ∈ U, MeromorphicAt h x)
     (ho : ∀ x ∈ U, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
@@ -84,7 +78,7 @@ private theorem multiplySection_eventuallyEq {D E : WeilDivisor X} {U : Opens X}
     (multiplySection h hh ho f).1 =ᶠ[𝓝[≠] x] fun y ↦ h y * f.1 y := by
   filter_upwards [(toDivisorSection_eventuallyEq E ((hh x x.2).mul
     (isDivisorSectionAt_extend f.property x).meromorphicAt)).comp_tendsto
-      (tendsto_val_nhdsNE x)] with y hy
+      (tendsto_subtype_val_nhdsNE x)] with y hy
   simpa [multiplySection, Subtype.val_injective.extend_apply] using hy
 
 private theorem section_ext_nhdsNE {D : WeilDivisor X} {U : Opens X}
@@ -129,7 +123,7 @@ private def multiplySectionEquiv {D E : WeilDivisor X} {U : Opens X} (h : X → 
       have hn := (hh x x.2).eventually_ne_zero (by rw [ho x x.2]; exact WithTop.coe_ne_top)
       filter_upwards [multiplySection_eventuallyEq h hh ho _ x,
         multiplySection_eventuallyEq h⁻¹ (fun x hx ↦ (hh x hx).inv)
-          (fun x hx ↦ inverse_order (ho x hx)) f x, (tendsto_val_nhdsNE x).eventually hn]
+          (fun x hx ↦ inverse_order (ho x hx)) f x, (tendsto_subtype_val_nhdsNE x).eventually hn]
         with y hy hy' hn
       -- The linear maps have the explicitly constructed section functions as their values.
       change (multiplySection h hh ho
@@ -144,7 +138,7 @@ private def multiplySectionEquiv {D E : WeilDivisor X} {U : Opens X} (h : X → 
       have hn := (hh x x.2).eventually_ne_zero (by rw [ho x x.2]; exact WithTop.coe_ne_top)
       filter_upwards [multiplySection_eventuallyEq h⁻¹ (fun x hx ↦ (hh x hx).inv)
           (fun x hx ↦ inverse_order (ho x hx)) _ x,
-        multiplySection_eventuallyEq h hh ho f x, (tendsto_val_nhdsNE x).eventually hn]
+        multiplySection_eventuallyEq h hh ho f x, (tendsto_subtype_val_nhdsNE x).eventually hn]
         with y hy hy' hn
       -- The linear maps have the explicitly constructed section functions as their values.
       change (multiplySection h⁻¹ (fun x hx ↦ (hh x hx).inv)
@@ -225,8 +219,7 @@ private theorem multiplyComponent_naturality {D E : WeilDivisor X} {V W : Opens 
   -- Both composites are sections over the smaller open. Their punctured germs are
   -- multiplication by the same function; normalization determines the remaining values.
   have ht : Tendsto (Opens.inclusion i.le) (𝓝[≠] x) (𝓝[≠] (Opens.inclusion i.le x)) :=
-    (continuous_inclusion _).continuousAt.continuousWithinAt.tendsto_nhdsWithin
-      (fun _ hy hxy ↦ hy (Set.inclusion_injective _ hxy))
+    (continuous_inclusion _).continuousAt.tendsto_nhdsNE (Set.inclusion_injective _)
   filter_upwards [multiplySection_eventuallyEq h _ _ _ x,
     (multiplySection_eventuallyEq h _ _ (divisorSheafSectionsEquiv D V f)
       (Opens.inclusion i.le x)).comp_tendsto ht] with y hy hy'
@@ -407,7 +400,7 @@ theorem divisorSheafGlobalMulIso_congr {D E : WeilDivisor X} {h k : X → ℂ}
   refine Iso.ext (divisorSheaf_hom_ext_nhdsNE fun U f x ↦ ?_)
   filter_upwards [divisorSheafGlobalMulIso_hom_app_eventuallyEq h hh ho U f x,
     divisorSheafGlobalMulIso_hom_app_eventuallyEq k hk hok U f x,
-    (tendsto_val_nhdsNE x).eventually (heq x)] with y hy hy' hhk
+    (tendsto_subtype_val_nhdsNE x).eventually (heq x)] with y hy hy' hhk
   rw [hy, hy', hhk]
 
 /-- Multiplication by a generator which is `1` on punctured neighbourhoods is the identity of
@@ -419,7 +412,7 @@ theorem divisorSheafGlobalMulIso_eq_refl {D : WeilDivisor X} {h : X → ℂ}
     divisorSheafGlobalMulIso D D h hh ho = Iso.refl _ := by
   refine Iso.ext (divisorSheaf_hom_ext_nhdsNE fun U f x ↦ ?_)
   filter_upwards [divisorSheafGlobalMulIso_hom_app_eventuallyEq h hh ho U f x,
-    (tendsto_val_nhdsNE x).eventually (h₁ x)] with y hy hy₁
+    (tendsto_subtype_val_nhdsNE x).eventually (h₁ x)] with y hy hy₁
   simp [hy, hy₁]
 
 /-- The inverse of multiplication by `h` is multiplication by any generator which agrees with
@@ -434,7 +427,7 @@ theorem divisorSheafGlobalMulIso_symm {D E : WeilDivisor X} {h k : X → ℂ}
   refine Iso.ext (divisorSheaf_hom_ext_nhdsNE fun U f x ↦ ?_)
   filter_upwards [divisorSheafGlobalMulIso_inv_app_eventuallyEq h hh ho U f x,
     divisorSheafGlobalMulIso_hom_app_eventuallyEq k hk hok U f x,
-    (tendsto_val_nhdsNE x).eventually (heq x)] with y hy hy' hkh
+    (tendsto_subtype_val_nhdsNE x).eventually (heq x)] with y hy hy' hkh
   rw [Iso.symm_hom, hy, hy', hkh, Pi.inv_apply]
 
 /-- Composing multiplication by `h` and by `g` is multiplication by any generator which agrees
@@ -454,7 +447,7 @@ theorem divisorSheafGlobalMulIso_trans {D E F : WeilDivisor X} {h g k : X → �
   filter_upwards [divisorSheafGlobalMulIso_hom_app_eventuallyEq h hh ho U f x,
     divisorSheafGlobalMulIso_hom_app_eventuallyEq g hg hog U _ x,
     divisorSheafGlobalMulIso_hom_app_eventuallyEq k hk hok U f x,
-    (tendsto_val_nhdsNE x).eventually (heq x)] with y hy hy' hy'' hkhg
+    (tendsto_subtype_val_nhdsNE x).eventually (heq x)] with y hy hy' hy'' hkhg
   rw [hy', hy, hy'', hkhg, Pi.mul_apply, mul_left_comm, mul_assoc]
 
 section Coordinate

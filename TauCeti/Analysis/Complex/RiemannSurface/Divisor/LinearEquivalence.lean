@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Trivialization
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # Divisor sheaves of linearly equivalent divisors
@@ -191,8 +192,7 @@ private theorem toMeromorphic_eq_mul_of_eventuallyEq {D E : WeilDivisor X}
   refine MeromorphicFunction.eq_of_eventuallyEq_finitePart fun x ↦ ?_
   have hx : Tendsto (fun y : X ↦ (⟨y, trivial⟩ : (⊤ : Opens X))) (𝓝[≠] x)
       (𝓝[≠] ⟨x, trivial⟩) :=
-    (continuous_id.subtype_mk _).continuousAt.continuousWithinAt.tendsto_nhdsWithin
-      (fun _ hy hxy ↦ hy (congrArg Subtype.val hxy))
+    (continuous_id.subtype_mk _).continuousAt.tendsto_nhdsNE fun _ _ hxy ↦ congrArg Subtype.val hxy
   filter_upwards [divisorSections.finitePart_toMeromorphic_eventuallyEq t x,
     MeromorphicFunction.finitePart_mul_eventuallyEq k (divisorSections.toMeromorphic D s) x,
     hk x, divisorSections.finitePart_toMeromorphic_eventuallyEq s x,
