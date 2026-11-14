@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.IsPerfect
 public import TauCeti.Algebra.Colimit.DirectLimit
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
@@ -54,6 +55,7 @@ induces a homomorphism of algebraic `K₁`, functorially.
   when some stabilization of it is elementary.
 * `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
   functoriality of algebraic `K₁`.
+* `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
 
 ## References
 
@@ -305,6 +307,34 @@ theorem elementarySubgroup_eq_commutator :
     (map_stabilizeGL_elementarySubgroup_le (A := A) (Nat.le_add_right n 3) ⟨u, hu, rfl⟩)
   exact Subgroup.map_le_iff_le_comap.1 ((Subgroup.map_commutator _ _ _).trans_le
     (Subgroup.commutator_mono le_top le_top)) h
+
+/-- **The stable elementary subgroup is perfect**: every stably elementary matrix is represented at
+some size `n + 3` by an elementary matrix, where every elementary matrix is a commutator of
+elementary matrices (`TauCeti.commutator_elementarySubgroup_self`). -/
+instance elementarySubgroup_isPerfect : Group.IsPerfect (elementarySubgroup A) := by
+  rw [Subgroup.isPerfect_iff]
+  refine le_antisymm (Subgroup.commutator_le.2 fun g hg h hh ↦ ?_) fun x hx ↦ ?_
+  · rw [commutatorElement_def]
+    exact mul_mem (mul_mem (mul_mem hg hh) (inv_mem hg)) (inv_mem hh)
+  obtain ⟨n, u, hu, rfl⟩ := mem_elementarySubgroup_iff.1 hx
+  -- Stabilize to size `n + 3`, where `E (n + 3) A` is perfect.
+  rw [← of_stabilizeGL (Nat.le_add_right n 3)]
+  have h : stabilizeGL A (Nat.le_add_right n 3) u ∈
+      ⁅TauCeti.elementarySubgroup (Fin (n + 3)) A, TauCeti.elementarySubgroup (Fin (n + 3)) A⁆ := by
+    rw [commutator_elementarySubgroup_self (by simp)]
+    exact map_stabilizeGL_elementarySubgroup_le (A := A) (Nat.le_add_right n 3) ⟨u, hu, rfl⟩
+  have hle : (TauCeti.elementarySubgroup (Fin (n + 3)) A).map (of A (n + 3)) ≤
+      elementarySubgroup A := by
+    rintro _ ⟨v, hv, rfl⟩
+    exact of_mem_elementarySubgroup hv
+  exact Subgroup.map_le_iff_le_comap.1 ((Subgroup.map_commutator _ _ _).trans_le
+    (Subgroup.commutator_mono hle hle)) h
+
+/-- **The quotient `GL_∞(A) / E_∞(A)` is commutative**, since `E_∞(A)` contains the commutator
+subgroup of `GL_∞(A)`. -/
+instance instIsMulCommutativeQuotientElementarySubgroup :
+    IsMulCommutative (StableGeneralLinearGroup A ⧸ elementarySubgroup A) :=
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr commutator_le_elementarySubgroup
 
 end StableGeneralLinearGroup
 
