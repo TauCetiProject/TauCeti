@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.RingTheory.Localization.Basic
 
@@ -18,8 +19,9 @@ and unramifiedness at `q` is equivalent to unramifiedness at `q.comap ψ`.
 
 More generally, a commuting square of ring equivalences `(e₁ : R₁ ≃+* R₂, e₂ : A₁ ≃+* A₂)`
 transports formal unramifiedness (`Algebra.FormallyUnramified.of_equiv_equiv`) and hence
-unramifiedness at corresponding primes (`RingEquiv.isUnramifiedAt_iff_of_eq_comap`), allowing the
-base ring to vary by an isomorphism as well.
+unramifiedness at corresponding primes (`RingEquiv.isUnramifiedAt_iff_of_eq_comap`) and across the
+height-one spectra (`RingEquiv.forall_heightOneSpectrum_isUnramifiedAt_iff`), allowing the base
+ring to vary by an isomorphism as well.
 
 ## Main results
 
@@ -29,6 +31,8 @@ base ring to vary by an isomorphism as well.
   formal unramifiedness transports across a commuting square of ring equivalences.
 * `RingEquiv.isUnramifiedAt_iff_of_eq_comap`: `A₁` is unramified over `R₁` at a prime equal to
   `q.comap e₂` if and only if `A₂` is unramified over `R₂` at `q`.
+* `RingEquiv.forall_heightOneSpectrum_isUnramifiedAt_iff`: unramifiedness at every height-one
+  prime is invariant under a commuting square of ring equivalences.
 -/
 
 public section
@@ -82,6 +86,8 @@ end Algebra.FormallyUnramified
 
 namespace RingEquiv
 
+open IsDedekindDomain
+
 variable {R₁ A₁ R₂ A₂ : Type*} [CommRing R₁] [CommRing A₁] [Algebra R₁ A₁]
   [CommRing R₂] [CommRing A₂] [Algebra R₂ A₂]
 
@@ -100,5 +106,13 @@ theorem isUnramifiedAt_iff_of_eq_comap (e₁ : R₁ ≃+* R₂) (e₂ : A₁ ≃
     IsScalarTower.algebraMap_apply R₂ A₂ (Localization.AtPrime q)]
   exact (congrArg (algebraMap A₂ (Localization.AtPrime q)) (RingHom.congr_fun he r)).trans
     (IsLocalization.ringEquivOfRingEquiv_eq _ (algebraMap R₁ A₁ r)).symm
+
+/-- **Unramifiedness at every height-one prime transports across compatible ring equivalences.** -/
+theorem forall_heightOneSpectrum_isUnramifiedAt_iff (e₁ : R₁ ≃+* R₂) (e₂ : A₁ ≃+* A₂)
+    (he : (algebraMap R₂ A₂).comp (e₁ : R₁ →+* R₂) = (e₂ : A₁ →+* A₂).comp (algebraMap R₁ A₁)) :
+    (∀ w : HeightOneSpectrum A₁, Algebra.IsUnramifiedAt R₁ w.asIdeal) ↔
+      ∀ w : HeightOneSpectrum A₂, Algebra.IsUnramifiedAt R₂ w.asIdeal :=
+  (HeightOneSpectrum.equivOfRingEquiv e₂).forall_congr' fun _ ↦
+    isUnramifiedAt_iff_of_eq_comap e₁ e₂ he rfl
 
 end RingEquiv

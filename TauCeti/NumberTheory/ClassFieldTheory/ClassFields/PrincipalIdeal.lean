@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClass.Field
 import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.HilbertTower
 import TauCeti.NumberTheory.NumberField.Global.Ideles.IdealExtension
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.ClassGroup.Extension
 
 /-!
@@ -28,20 +29,23 @@ of `H` realized inside `SeparableClosure K`.
 
 1. Because `H / K` is Galois and unramified at all finite and infinite places, `H₂ / K` is also
    finite, Galois, and everywhere unramified (`isGalois_hilbertClassFieldOver`,
-   `isUnramifiedAt_hilbertClassFieldOver`, `isUnramifiedAtInfinitePlaces_hilbertClassFieldOver`),
-   and its maximal abelian subextension over `K` is `H`.
+   `isUnramifiedAt_hilbertClassFieldOver_of_isUnramifiedAt`,
+   `isUnramifiedAtInfinitePlaces_hilbertClassFieldOver`), and its maximal abelian subextension over
+   `K` is `H`.
 2. Applying the class-formation principal ideal theorem (Artin–Furtwängler transfer) to the tower
-   `K ⊆ H ⊆ H₂` (`ideleClassExtension_mem_range_ideleClassNormMap_of_isGalois`) shows that every
-   idele class of `K`, extended to `H`, lies in the idele-class norm group `N_{H₂/H}(C_{H₂})`.
+   `K ⊆ H ⊆ H₂` (`ideleClassExtension_mem_range_ideleClassNormMap_of_isGalois_of_unramified`)
+   shows that every idele class of `K`, extended to `H`, lies in the idele-class norm group
+   `N_{H₂/H}(C_{H₂})`.
 3. By global class field theory over `H`, that norm group is the trivial-modulus ray subgroup of
    `H` (`range_ideleClassNormMap_rayClassFieldOver`), so every extended idele class lies in
    `raySubgroup (Modulus.one H)` (`ideleClassExtension_hilbertClassField_mem_raySubgroup`).
 4. Reading the trivial-modulus ray-class quotient on class groups
    (`extendedHom_eq_one_iff_forall_ideleClassExtension_mem_raySubgroup`) yields
    `ClassGroup.extendedHom (𝓞 K) (𝓞 H) = 1`, and factoring through `K`-embeddings gives
-   principalization of both integral and fractional ideals in `hilbertClassField K` and in every
-   number-field extension admitting a `K`-embedding of `hilbertClassField K` (in particular, all
-   ray class fields, the narrow Hilbert class field, and all ring class fields).
+   principalization of ideals in `hilbertClassField K` and in every field `L` admitting a
+   `K`-algebra homomorphism from `hilbertClassField K` (and of extended fractional ideals whenever
+   `L` is the fraction field of `𝓞 L`; in particular, in all ray class fields, the narrow Hilbert
+   class field, and all ring class fields).
 
 ## Main results
 
@@ -98,8 +102,9 @@ theorem ideleClassExtension_hilbertClassField_mem_raySubgroup (K : Type) [Field 
   have : IsScalarTower H H₂ (SeparableClosure K) :=
     IsScalarTower.of_algebraMap_eq fun x ↦ by simp [RingHom.algebraMap_toAlgebra]
   rw [← range_ideleClassNormMap_rayClassFieldOver K (Modulus.one H)]
-  exact ideleClassExtension_mem_range_ideleClassNormMap_of_isGalois H₂
-    (isUnramifiedAt_hilbertClassFieldOver K H (isUnramifiedAt_hilbertClassField K)) c
+  exact ideleClassExtension_mem_range_ideleClassNormMap_of_isGalois_of_unramified H₂
+    (fun w ↦ isUnramifiedAt_hilbertClassFieldOver_of_isUnramifiedAt K H
+      (isUnramifiedAt_hilbertClassField K _)) c
 
 -- Not `@[simp]`: `hilbertClassField K` is an `abbrev` for `rayClassField (Modulus.one K)`, so
 -- `extendedHom_rayClassField_eq_one` already simplifies this left-hand side.
@@ -116,9 +121,8 @@ theorem extendedHom_hilbertClassField_eq_one (K : Type) [Field K] [NumberField K
 theorem extendedHom_eq_one_of_algHom_hilbertClassField {K : Type} [Field K] [NumberField K]
     {L : Type*} [Field L] [Algebra K L] (ι : hilbertClassField K →ₐ[K] L) :
     ClassGroup.extendedHom (𝓞 K) (𝓞 L) = 1 := by
-  have hι : Function.Injective (RingOfIntegers.mapAlgHom ι) :=
-    fun _ _ h ↦ RingOfIntegers.ext (ι.injective (congrArg Subtype.val h))
-  rw [← ClassGroup.extendedHom_eq_map_comp_extendedHom (RingOfIntegers.mapAlgHom ι) hι,
+  rw [← ClassGroup.map_comp_extendedHom (RingOfIntegers.mapAlgHom ι)
+      (RingOfIntegers.mapAlgHom_injective ι),
     extendedHom_hilbertClassField_eq_one K, MonoidHom.comp_one]
 
 /-- Ideal classes of `𝓞 K` become trivial in every ray class field of `K` (including the ordinary
@@ -146,10 +150,10 @@ theorem extendedHom_ringClassField_eq_one {K : Type} [Field K] [NumberField K]
 
 /-! ### Principalization of integral and fractional ideals -/
 
-/-- Every ideal of `𝓞 K` becomes principal in `𝓞 L` for any number field `L` admitting a
-`K`-algebra homomorphism from `hilbertClassField K`. -/
+/-- Every ideal of `𝓞 K` becomes principal in `𝓞 L` for any field `L` admitting a `K`-algebra
+homomorphism from `hilbertClassField K`. -/
 theorem isPrincipal_map_of_algHom_hilbertClassField {K : Type} [Field K] [NumberField K]
-    {L : Type*} [Field L] [NumberField L] [Algebra K L] (ι : hilbertClassField K →ₐ[K] L)
+    {L : Type*} [Field L] [Algebra K L] (ι : hilbertClassField K →ₐ[K] L)
     (I : Ideal (𝓞 K)) :
     (I.map (algebraMap (𝓞 K) (𝓞 L))).IsPrincipal :=
   (ClassGroup.extendedHom_eq_one_iff_forall_isPrincipal (𝓞 K) (𝓞 L)).mp
@@ -185,11 +189,12 @@ theorem isPrincipal_map_ringClassField {K : Type} [Field K] [NumberField K]
   isPrincipal_map_of_algHom_hilbertClassField
     (IntermediateField.inclusion (hilbertClassField_le_ringClassField O)) I
 
-/-- Every fractional ideal of `𝓞 K` extends to a principal `𝓞 L`-submodule of `L` for any number
-field `L` admitting a `K`-algebra homomorphism from `hilbertClassField K`. -/
+/-- Every fractional ideal of `𝓞 K` extends to a principal `𝓞 L`-submodule of `L` for any field `L`
+that is the fraction field of `𝓞 L` and admits a `K`-algebra homomorphism from
+`hilbertClassField K`. -/
 theorem isPrincipal_extendedHom_of_algHom_hilbertClassField {K : Type} [Field K] [NumberField K]
-    {L : Type*} [Field L] [NumberField L] [Algebra K L] (ι : hilbertClassField K →ₐ[K] L)
-    (I : FractionalIdeal (𝓞 K)⁰ K) :
+    {L : Type*} [Field L] [IsFractionRing (𝓞 L) L] [Algebra K L]
+    (ι : hilbertClassField K →ₐ[K] L) (I : FractionalIdeal (𝓞 K)⁰ K) :
     (FractionalIdeal.extendedHom L (𝓞 L) I : Submodule (𝓞 L) L).IsPrincipal :=
   (ClassGroup.extendedHom_eq_one_iff_forall_fractionalIdeal_isPrincipal (𝓞 K) (𝓞 L) K L).mp
     (extendedHom_eq_one_of_algHom_hilbertClassField ι) I

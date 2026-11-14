@@ -18,8 +18,9 @@ This file supplies:
 
 * `ClassGroup.extendedHom_mk_of_isFractionRing`: evaluation of `ClassGroup.extendedHom` on a
   fractional ideal over arbitrary fraction fields;
-* `ClassGroup.extendedHom_eq_map_comp_extendedHom`: factorization of `ClassGroup.extendedHom`
-  along an injective algebra homomorphism without a `IsScalarTower` assumption;
+* `ClassGroup.map_comp_extendedHom`, `ClassGroup.map_extendedHom`: factorization of
+  `ClassGroup.extendedHom` along an injective algebra homomorphism without an `IsScalarTower`
+  assumption;
 * `ClassGroup.map_mk0_eq_one_iff`, `ClassGroup.map_eq_one_iff_forall_isPrincipal`,
   `ClassGroup.extendedHom_mk0_eq_one_iff`, `ClassGroup.extendedHom_eq_one_iff_forall_isPrincipal`,
   and `ClassGroup.extendedHom_eq_one_iff_forall_fractionalIdeal_isPrincipal`: equivalences between
@@ -55,7 +56,7 @@ theorem extendedHom_eq_map (R B : Type*) [CommRing R] [IsDomain R]
 
 /-- Factorization of `ClassGroup.extendedHom` through an injective `R`-algebra homomorphism
 `f : B →ₐ[R] C`, without requiring an intermediate `Algebra B C` instance. -/
-theorem extendedHom_eq_map_comp_extendedHom [CommRing C] [IsDomain C] [Algebra R C]
+theorem map_comp_extendedHom [CommRing C] [IsDomain C] [Algebra R C]
     [Module.IsTorsionFree R C] (f : B →ₐ[R] C) (hf : Function.Injective f) :
     (map (f : B →+* C) hf).comp (extendedHom R B) = extendedHom R C := by
   rw [extendedHom_eq_map R B, extendedHom_eq_map R C]
@@ -63,11 +64,11 @@ theorem extendedHom_eq_map_comp_extendedHom [CommRing C] [IsDomain C] [Algebra R
   exact (map_map (algebraMap R B) (FaithfulSMul.algebraMap_injective R B) (f : B →+* C) hf x).trans
     (DFunLike.congr_fun (map_congr f.comp_algebraMap _ _) x)
 
-/-- Pointwise form of `ClassGroup.extendedHom_eq_map_comp_extendedHom`. -/
-theorem extendedHom_eq_map_comp_extendedHom_apply [CommRing C] [IsDomain C] [Algebra R C]
+/-- Pointwise form of `ClassGroup.map_comp_extendedHom`. -/
+theorem map_extendedHom [CommRing C] [IsDomain C] [Algebra R C]
     [Module.IsTorsionFree R C] (f : B →ₐ[R] C) (hf : Function.Injective f) (x : ClassGroup R) :
     map (f : B →+* C) hf (extendedHom R B x) = extendedHom R C x :=
-  DFunLike.congr_fun (extendedHom_eq_map_comp_extendedHom f hf) x
+  DFunLike.congr_fun (map_comp_extendedHom f hf) x
 
 variable [Field K] [Algebra R K] [IsFractionRing R K]
   [Field L] [Algebra B L] [IsFractionRing B L]
@@ -111,17 +112,28 @@ end Domains
 
 section DedekindDomain
 
-variable {A B K L : Type*} [CommRing A] [CommRing B] [IsDedekindDomain A] [IsDedekindDomain B]
+variable {A B K L : Type*} [CommRing A] [CommRing B] [IsDedekindDomain A] [IsDomain B]
 
-/-- A nonzero integral ideal becomes principal along an injective ring homomorphism `f : A →+* B`
-of Dedekind domains if and only if its class lies in the kernel of `ClassGroup.map f hf`. -/
+/-- A nonzero integral ideal of a Dedekind domain `A` becomes principal along an injective ring
+homomorphism `f : A →+* B` into a domain `B` if and only if its class lies in the kernel of
+`ClassGroup.map f hf`. -/
 theorem map_mk0_eq_one_iff (f : A →+* B) (hf : Function.Injective f) (I : (Ideal A)⁰) :
     map f hf (mk0 I) = 1 ↔ (I.1.map f).IsPrincipal := by
-  rw [map_mk0, mk0_eq_one_iff]
+  have hmk : map f hf (mk0 I) = mk (FractionRing B)
+      (Units.map (FractionalIdeal.extendedHom' (FractionRing B)
+        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective f hf)).toMonoidHom
+          (FractionalIdeal.mk0 (FractionRing A) I)) := by
+    rw [mk0_eq_quotientMk, ← Quot_mk_eq_mk]
+    exact map_quotientMk f hf _
+  rw [hmk, mk_eq_one_iff]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    FractionalIdeal.coe_mk0, FractionalIdeal.extendedHom'_apply,
+    FractionalIdeal.extended_coeIdeal_eq_map, FractionalIdeal.coeToSubmodule_coeIdeal,
+    IsFractionRing.coeSubmodule_isPrincipal]
 
 /-- **Principalization criterion for `ClassGroup.map`.** For an injective ring homomorphism
-`f : A →+* B` of Dedekind domains, the induced map on class groups is trivial if and only if every
-ideal of `A` extends to a principal ideal of `B`. -/
+`f : A →+* B` from a Dedekind domain `A` into a domain `B`, the induced map on class groups is
+trivial if and only if every ideal of `A` extends to a principal ideal of `B`. -/
 theorem map_eq_one_iff_forall_isPrincipal (f : A →+* B) (hf : Function.Injective f) :
     map f hf = 1 ↔ ∀ I : Ideal A, (I.map f).IsPrincipal := by
   constructor
@@ -138,24 +150,24 @@ theorem map_eq_one_iff_forall_isPrincipal (f : A →+* B) (hf : Function.Injecti
 
 variable (A B) [Algebra A B] [Module.IsTorsionFree A B]
 
-/-- A nonzero integral ideal becomes principal in an extension of Dedekind domains if and only if
-its class lies in the kernel of `ClassGroup.extendedHom A B`. -/
+/-- A nonzero integral ideal of a Dedekind domain `A` becomes principal in a torsion-free domain
+extension `B` if and only if its class lies in the kernel of `ClassGroup.extendedHom A B`. -/
 theorem extendedHom_mk0_eq_one_iff (I : (Ideal A)⁰) :
     extendedHom A B (mk0 I) = 1 ↔ (I.1.map (algebraMap A B)).IsPrincipal := by
   rw [extendedHom_eq_map A B]
   exact map_mk0_eq_one_iff (algebraMap A B) (FaithfulSMul.algebraMap_injective A B) I
 
-/-- **Principalization criterion for `ClassGroup.extendedHom` on ideals.** In an injective
-extension `A → B` of Dedekind domains, `ClassGroup.extendedHom A B` is trivial if and only if
-every ideal of `A` extends to a principal ideal of `B`. This upgrades Mathlib's
+/-- **Principalization criterion for `ClassGroup.extendedHom` on ideals.** For a Dedekind domain
+`A` and a torsion-free domain `A`-algebra `B`, `ClassGroup.extendedHom A B` is trivial if and only
+if every ideal of `A` extends to a principal ideal of `B`. This upgrades Mathlib's
 `ClassGroup.extendedHom_eq_one_of_forall_isPrincipal` to an equivalence. -/
 theorem extendedHom_eq_one_iff_forall_isPrincipal :
     extendedHom A B = 1 ↔ ∀ I : Ideal A, (I.map (algebraMap A B)).IsPrincipal := by
   rw [extendedHom_eq_map A B]
   exact map_eq_one_iff_forall_isPrincipal (algebraMap A B) (FaithfulSMul.algebraMap_injective A B)
 
-/-- **Principalization criterion for `ClassGroup.extendedHom` on fractional ideals.** In an
-injective extension `A → B` of Dedekind domains with fraction fields `K` and `L`,
+/-- **Principalization criterion for `ClassGroup.extendedHom` on fractional ideals.** For a
+Dedekind domain `A` and a torsion-free domain `A`-algebra `B` with fraction fields `K` and `L`,
 `ClassGroup.extendedHom A B` is trivial if and only if every fractional ideal of `A` extends to a
 principal `B`-submodule of `L`. -/
 theorem extendedHom_eq_one_iff_forall_fractionalIdeal_isPrincipal (K L : Type*)
