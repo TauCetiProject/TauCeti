@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
-public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.InteriorEstimate
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
 /-!
 # Interior elliptic regularity
@@ -22,7 +24,7 @@ spatial support that agrees with `p` near the support of a compactly supported S
 parametrix identity `(φ b) # a = φ + r` with `r` smoothing
 (`TauCeti.Symbol.isSmoothing_sharp_sub_ofSpatial`) gives `Op(φ b) Op(a) = φ + Op(r)` on
 the Bessel-potential spaces `H^s = H^{s,2}(ℝⁿ; V)`. This file proves this operator identity and
-its consequence:
+the regularity of solutions of elliptic equations:
 
 * `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add`
   is the operator identity: for an elliptic `p`, there are a symbol `q` of order `-m` and a
@@ -30,6 +32,16 @@ its consequence:
   for every `u ∈ H^s` and every real `s`.
 * `TauCeti.Symbol.IsEllipticAbove.memSobolev_smulLeftCLM`: **interior elliptic regularity**. If
   `u ∈ H^t` and `Op(a) u ∈ H^{s - m}`, then `φ u ∈ H^s`, whatever the real numbers `s` and `t`.
+  It is the case of a globally elliptic `p` of the regularity theorem for symbols that are only
+  elliptic near `tsupport φ`, `TauCeti.Symbol.memSobolev_smulLeftCLM_of_eventually_comp_eq_id`.
+* `TauCeti.Symbol.exists_contDiff_smulLeftCLM_of_eventually_comp_eq_id` and
+  `TauCeti.Symbol.IsEllipticAbove.exists_contDiff_smulLeftCLM`: **hypoellipticity**. If `u ∈ H^t`
+  and `Op(a) u` lies in every `H^σ`, for instance if `Op(a) u = 0`, then `φ u` is a smooth
+  function; for the first, it suffices that `χ Op(a) u` does, for a cutoff `χ` equal to `1` near
+  `tsupport φ`. By the Sobolev embedding `H^s ⊆ C^k` for `s > k + n / 2`
+  (`TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`), this follows from
+  regularity at every order `s`. Since `t` may be negative, this applies to distributions that are
+  not functions.
 
 The corresponding interior estimate
 `‖φ u‖_{H^s} ≤ C (‖Op(a) u‖_{H^{s - m}} + ‖u‖_{H^r})` is
@@ -44,10 +56,7 @@ those of `p` (`TauCeti.Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq`)
 `1 - ∑_{k < N} sharpTerm b p k` has order `-N` since `b` is a left parametrix symbol. Hence
 `φ ((b # a) - 1)` is `φ` times a symbol of order `-N` at every position, for every `N`. On
 Bessel-potential spaces, the composition theorem `TauCeti.Symbol.toDistr_quantizeSobolev_sharp`
-turns this into the operator identity, and the compatibility of the extensions of `Op(q)` to
-different `H^s` (`TauCeti.Symbol.toDistr_quantizeSobolev_congr`) lets `Op(q)` gain `m`
-derivatives on `Op(a) u ∈ H^{s - m}`, while `Op(r)` gains any number of derivatives on `u ∈ H^t`
-(`TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq`).
+turns this into the operator identity.
 
 ## References
 
@@ -113,17 +122,46 @@ theorem IsEllipticAbove.memSobolev_smulLeftCLM (hp : p.IsEllipticAbove R)
     {s t : ℝ} {u : H^{t}(CoordinateSpace n, V)}
     (hu : (a.quantizeSobolev ha t u).toDistr.MemSobolev (s - m) 2) :
     (BesselPotentialSpace.smulLeftCLM t φ u).toDistr.MemSobolev s 2 := by
-  obtain ⟨q, hq, r, hr, hrS, h⟩ :=
-    hp.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add ha hφ hap
-  have h₁ : (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t u)).toDistr.MemSobolev s 2 := by
-    rw [toDistr_quantizeSobolev_congr rfl hq hq (v := hu.toBesselPotentialSpace)
-      hu.toBesselPotentialSpace_toDistr.symm]
-    exact (BesselPotentialSpace.memSobolev_toDistr _).mono (le_of_eq (by ring))
-  obtain ⟨T, hT⟩ := hrS.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hr t s
-  have h₂ : (r.quantizeSobolev hr t u).toDistr.MemSobolev s 2 := by
-    rw [hT rfl]
-    exact BesselPotentialSpace.memSobolev_toDistr _
-  simpa [h t u] using h₁.sub h₂
+  obtain ⟨e, R', he⟩ := exists_isEllipticAbove_iff.1 ⟨R, hp⟩
+  obtain ⟨χ, -, -, hχφ⟩ := hφ.isCompact.exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ _)
+  refine memSobolev_smulLeftCLM_of_eventually_comp_eq_id (e := e) (R := R') ha hφ
+    (hap.mono fun x hx ξ hξ ↦ by rw [hx]; exact (he x ξ hξ).1) hχφ ?_
+  rw [BesselPotentialSpace.toDistr_smulLeftCLM, ← hu.toBesselPotentialSpace_toDistr,
+    ← BesselPotentialSpace.toDistr_smulLeftCLM]
+  exact BesselPotentialSpace.memSobolev_toDistr _
+
+/-- **Hypoellipticity of locally elliptic symbols.** Let `a` be a symbol of order `m` with compact
+spatial support and `φ` a compactly supported Schwartz function, and suppose that a symbol `e` of
+order `-m` is a left inverse of `a(x, ξ)` at all frequencies `‖ξ‖ ≥ R` and all positions `x` near
+`tsupport φ`. Let `χ` be a Schwartz function equal to `1` near `tsupport φ`. If `u ∈ H^t` and
+`χ Op(a) u` lies in every `H^σ`, then `φ u` is a smooth function `g`: it pairs with every Schwartz
+function `ψ` as `∫ ψ • g`. -/
+theorem exists_contDiff_smulLeftCLM_of_eventually_comp_eq_id {e : Symbol n W V (-m)}
+    (ha : a.HasCompactSpatialSupport) {φ χ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (he : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, R ≤ ‖ξ‖ →
+      e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V)
+    (hχφ : ∀ᶠ x in 𝓝ˢ (tsupport φ), χ x = 1) {t : ℝ} {u : H^{t}(CoordinateSpace n, V)}
+    (hu : ∀ σ : ℝ, (BesselPotentialSpace.smulLeftCLM (t - m) χ
+      (a.quantizeSobolev ha t u)).toDistr.MemSobolev σ 2) :
+    ∃ g : CoordinateSpace n → V, ContDiff ℝ ∞ g ∧ ∀ ψ : 𝓢(CoordinateSpace n, ℂ),
+      (BesselPotentialSpace.smulLeftCLM t φ u).toDistr ψ = ∫ x, ψ x • g x :=
+  TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦
+    memSobolev_smulLeftCLM_of_eventually_comp_eq_id ha hφ he hχφ (hu (s - m))
+
+/-- **Hypoellipticity of elliptic symbols.** Let `p` be elliptic of order `m`, let `φ` be a
+compactly supported Schwartz function, and let `a` be a symbol with compact spatial support that
+agrees with `p` on a neighbourhood of `tsupport φ`. If `u ∈ H^t` and `Op(a) u` lies in every
+`H^σ`, for instance if `Op(a) u = 0`, then `φ u` is a smooth function `g`: it pairs with every
+Schwartz function `ψ` as `∫ ψ • g`. -/
+theorem IsEllipticAbove.exists_contDiff_smulLeftCLM (hp : p.IsEllipticAbove R)
+    (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ))
+    {t : ℝ} {u : H^{t}(CoordinateSpace n, V)}
+    (hu : ∀ σ : ℝ, (a.quantizeSobolev ha t u).toDistr.MemSobolev σ 2) :
+    ∃ g : CoordinateSpace n → V, ContDiff ℝ ∞ g ∧ ∀ ψ : 𝓢(CoordinateSpace n, ℂ),
+      (BesselPotentialSpace.smulLeftCLM t φ u).toDistr ψ = ∫ x, ψ x • g x :=
+  TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev fun s ↦
+    hp.memSobolev_smulLeftCLM ha hφ hap (hu (s - m))
 
 end Symbol
 
