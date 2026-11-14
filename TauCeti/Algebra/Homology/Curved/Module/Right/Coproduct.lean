@@ -28,6 +28,8 @@ coacyclic objects of the second kind are closed.
 
 * `TauCeti.CurvedDGRightModuleCat.directSum`: the direct sum of a family of curved right modules.
 * `TauCeti.CurvedDGRightModuleCat.closedDirectSumCofan`: the cofan of closed summand inclusions.
+* `TauCeti.CurvedDGRightModuleCat.closedDirectSumMap`: the summandwise closed morphism between
+  direct sums.
 * `TauCeti.CurvedDGRightModuleCat.homotopyDirectSumCofan`: its image in the curved homotopy
   category.
 
@@ -37,6 +39,8 @@ coacyclic objects of the second kind are closed.
   in the closed degree-zero category.
 * `TauCeti.CurvedDGRightModuleCat.dgClosedToHomotopy_map_directSum_ext`: closed maps out of a
   direct sum are homotopic as soon as their restrictions to all summands are.
+* `TauCeti.CurvedDGRightModuleCat.isZero_homotopy_directSum`: the direct sum of a family of
+  contractible curved right modules is contractible.
 * `TauCeti.CurvedDGRightModuleCat.homotopyDirectSumCofanIsColimit`: the direct sum is a coproduct
   in the curved homotopy category.
 * The `HasCoproducts` instances on the closed and homotopy categories, and the preservation of
@@ -276,6 +280,79 @@ instance : HasCoproducts.{u}
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
   fun _ ↦ ⟨fun _ ↦ hasColimit_of_iso Discrete.natIsoFunctor⟩
 
+variable {M} in
+/-- The closed morphism between direct sums applying a family of closed morphisms summand by
+summand. -/
+noncomputable def closedDirectSumMap {K : J → CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (K j) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j)) :
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (directSum K) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (directSum M) :=
+  closedDirectSumDesc fun j ↦ f j ≫ closedDirectSumι M j
+
+variable {M} in
+/-- Restricting `closedDirectSumMap` to a summand applies that summand's closed morphism followed
+by the target summand inclusion. -/
+@[reassoc (attr := simp)]
+theorem closedDirectSumι_map {K : J → CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (K j) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j)) (j : J) :
+    closedDirectSumι K j ≫ closedDirectSumMap f = f j ≫ closedDirectSumι M j :=
+  closedDirectSumι_desc K _ j
+
+/-- Mapping summandwise identities gives the identity on the direct sum. -/
+@[simp]
+theorem closedDirectSumMap_id :
+    closedDirectSumMap (fun j ↦ 𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j))) =
+      𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (directSum M)) :=
+  closedDirectSum_hom_ext M fun j ↦ by simp
+
+variable {M} in
+/-- Mapping summandwise composites composes the induced maps on direct sums. -/
+@[reassoc (attr := simp)]
+theorem closedDirectSumMap_comp {K L : J → CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (K j) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (L j))
+    (g : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (L j) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j)) :
+    closedDirectSumMap f ≫ closedDirectSumMap g =
+      closedDirectSumMap fun j ↦ f j ≫ g j :=
+  closedDirectSum_hom_ext K fun j ↦ by simp
+
+variable {M} in
+/-- Mapping summandwise zero morphisms gives the zero morphism between direct sums. -/
+@[simp]
+theorem closedDirectSumMap_zero {K : J → CurvedDGRightModuleCat.{u, u, u} h} :
+    closedDirectSumMap (fun j ↦ (0 : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (K j) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j))) = 0 :=
+  closedDirectSum_hom_ext K fun j ↦ by simp
+
+variable {M} in
+/-- Each coordinate of `closedDirectSumMap` applies that summand's closed morphism. -/
+@[simp]
+theorem closedHom_closedDirectSumMap_apply {K : J → CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (K j) ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j))
+    (x : ⨁ j, K j) (j : J) :
+    DFunLike.coe (F := ⨁ j, M j) (closedHom (closedDirectSumMap f) x) j =
+      closedHom (f j) (x j) := by
+  classical
+  let lhs : (⨁ i, K i) →ₗ[R] M j :=
+    (DirectSum.component R J (fun i ↦ M i) j).comp
+      ((closedHom (closedDirectSumMap f)).restrictScalars R)
+  let rhs : (⨁ i, K i) →ₗ[R] M j :=
+    ((closedHom (f j)).restrictScalars R).comp (DirectSum.component R J (fun i ↦ K i) j)
+  refine LinearMap.congr_fun (?_ : lhs = rhs) x
+  refine DirectSum.linearMap_ext R fun i ↦ LinearMap.ext fun y ↦ ?_
+  have hι := congrArg (fun l ↦ closedHom l y) (closedDirectSumι_map f i)
+  simp only [closedHom_comp, LinearMap.comp_apply, closedHom_closedDirectSumι] at hι
+  simp only [lhs, rhs, LinearMap.comp_apply, LinearMap.restrictScalars_apply]
+  rw [DirectSum.lof_eq_of R, ← DirectSum.lof_eq_of Aᵐᵒᵖ, hι, DirectSum.lof_eq_of Aᵐᵒᵖ,
+    ← DirectSum.lof_eq_of R, DirectSum.lof_eq_of Aᵐᵒᵖ, ← DirectSum.lof_eq_of R]
+  by_cases hij : i = j
+  · subst hij
+    simp only [DirectSum.component.of, dite_true]
+  · simp only [DirectSum.component.of, dite_eq_right hij, map_zero]
 end Closed
 
 section Homotopy
@@ -331,6 +408,14 @@ noncomputable def homotopyDirectSumCofanIsColimit : IsColimit (homotopyDirectSum
       refine dgClosedToHomotopy_map_directSum_ext M fun j ↦ ?_
       rw [closedDirectSumι_desc, Functor.map_preimage, Functor.map_comp]
       exact hm j)
+
+variable {M} in
+/-- The direct sum of a family of contractible curved right modules is contractible. -/
+theorem isZero_homotopy_directSum
+    (hM : ∀ j, IsZero (DGHomotopyCategory.of R (M j))) :
+    IsZero (DGHomotopyCategory.of R (directSum M)) :=
+  (IsZero.iff_id_eq_zero _).mpr <|
+    (homotopyDirectSumCofanIsColimit M).hom_ext fun ⟨j⟩ ↦ (hM j).eq_of_src _ _
 
 /-- The quotient functor to the curved homotopy category preserves the direct-sum coproducts. -/
 instance : PreservesColimit

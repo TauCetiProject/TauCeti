@@ -57,6 +57,8 @@ consequences for Verdier quotients:
 * `CategoryTheory.ObjectProperty.TrWLocalization.exists_map_comp_eq_map` and
   `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
   out of an object approximated by morphisms `δᵢ` as above, and their kernel.
+* `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE`: when `P ≤ Q`
+  and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence.
 
 ## References
 
@@ -191,6 +193,14 @@ instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.CommShift ℤ :=
 /-- The identity functor underlying `trWLocalizerMorphismOfLE h` is a triangle functor. -/
 instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.IsTriangulated :=
   inferInstanceAs (𝟭 C).IsTriangulated
+
+/-- If `P ≤ Q` and `Q ≤ P`, the localizer morphism `trWLocalizerMorphismOfLE` is a localized
+equivalence, so the induced comparison functor between any localizations at `P.trW` and `Q.trW`
+is an equivalence of categories. -/
+theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE {h : P ≤ Q} (h' : Q ≤ P) :
+    (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence := by
+  obtain rfl := le_antisymm h h'
+  exact inferInstanceAs (LocalizerMorphism.id P.trW).IsLocalizedEquivalence
 
 end ObjectProperty
 
