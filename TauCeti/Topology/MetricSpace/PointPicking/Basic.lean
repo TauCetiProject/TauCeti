@@ -15,9 +15,12 @@ public import Mathlib.Tactic.Ring
 /-!
 # Point picking in a metric space
 
-A continuous function on a compact subset of a metric ball has a point at which its
-distance-to-boundary weighted value is maximal. A ball of half the remaining radius around
-that point lies inside the original ball, and the function is at most twice its value there.
+Point picking selects a centre for blow-up rescaling. If a continuous function on a compact
+subset `S` of a closed metric ball has positive distance-to-boundary weighted value at some
+point of `S`, that weight attains a positive maximum at `q ∈ S ∩ ball x₀ R`. The ball of half
+the remaining radius lies inside the original ball, and `f y ≤ 2 * f q` for
+`y ∈ S ∩ ball q ρ`. Scaling distances by `f q` gives the normalized estimate in
+`IsCompact.exists_pointPickingWeight_div_two_le_and_div_le_two`.
 
 ## References
 
@@ -30,55 +33,87 @@ open Metric
 
 namespace TauCeti
 
-variable {X : Type*} [MetricSpace X]
+variable {X : Type*} [PseudoMetricSpace X]
 
 /-- The distance-to-boundary weighted value used in point picking. -/
-@[expose]
 def pointPickingWeight (x₀ : X) (R : ℝ) (f : X → ℝ) (x : X) : ℝ :=
   (R - dist x x₀) * f x
 
-/-- A positive weighted value inside a closed ball has a positive distance from the
-boundary and a positive function value. -/
-theorem pointPickingWeight_pos_of_mem_closedBall {x₀ x : X} {R : ℝ} {f : X → ℝ}
-    (hx : x ∈ closedBall x₀ R) (hpos : 0 < pointPickingWeight x₀ R f x) :
-    0 < R - dist x x₀ ∧ 0 < f x := by
-  have hnonneg : 0 ≤ R - dist x x₀ := sub_nonneg.mpr (mem_closedBall.mp hx)
-  have hmul : 0 < (R - dist x x₀) * f x := hpos
-  have hδ : 0 < R - dist x x₀ := by
-    by_contra hh
-    have heq : R - dist x x₀ = 0 := le_antisymm (le_of_not_gt hh) hnonneg
-    simp [heq] at hmul
-  have hfpos : 0 < f x := by
-    by_contra hh
-    have hmul_nonpos := mul_nonpos_of_nonneg_of_nonpos hδ.le (le_of_not_gt hh)
-    exact (not_lt_of_ge hmul_nonpos) hmul
-  exact ⟨hδ, hfpos⟩
+/-- The formula for the point-picking weight. -/
+theorem pointPickingWeight_apply (x₀ : X) (R : ℝ) (f : X → ℝ) (x : X) :
+    pointPickingWeight x₀ R f x = (R - dist x x₀) * f x := (rfl)
 
-/-- The compact metric-space point-picking lemma. The weight attains a positive maximum
-at an interior point; on half its remaining radius the function is at most twice its
-value at that point. -/
-theorem exists_pointPicking {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
+/-- At the centre the point-picking weight is the radius times the function value. -/
+@[simp]
+theorem pointPickingWeight_self (x₀ : X) (R : ℝ) (f : X → ℝ) :
+    pointPickingWeight x₀ R f x₀ = R * f x₀ := by
+  simp [pointPickingWeight_apply]
+
+/-- The zero function has zero point-picking weight. -/
+@[simp]
+theorem pointPickingWeight_zero (x₀ : X) (R : ℝ) (x : X) :
+    pointPickingWeight x₀ R (fun _ ↦ 0) x = 0 := by
+  simp [pointPickingWeight_apply]
+
+/-- The point-picking weight vanishes on the boundary sphere. -/
+@[simp]
+theorem pointPickingWeight_eq_zero_of_mem_sphere {x₀ x : X} {R : ℝ} (f : X → ℝ)
+    (hx : x ∈ sphere x₀ R) : pointPickingWeight x₀ R f x = 0 := by
+  simp [pointPickingWeight_apply, mem_sphere.mp hx]
+
+/-- Positive function values inside the open ball have positive point-picking weight. -/
+theorem pointPickingWeight_pos {x₀ x : X} {R : ℝ} {f : X → ℝ}
+    (hx : x ∈ ball x₀ R) (hf : 0 < f x) : 0 < pointPickingWeight x₀ R f x := by
+  rw [pointPickingWeight_apply]
+  exact mul_pos (sub_pos.mpr (mem_ball.mp hx)) hf
+
+/-- On the closed ball, positive weight is equivalent to open-ball membership and a positive
+function value. -/
+@[simp]
+theorem pointPickingWeight_pos_iff_of_mem_closedBall {x₀ x : X} {R : ℝ} {f : X → ℝ}
+    (hx : x ∈ closedBall x₀ R) :
+    0 < pointPickingWeight x₀ R f x ↔ x ∈ ball x₀ R ∧ 0 < f x := by
+  constructor
+  · intro hpos
+    rw [pointPickingWeight_apply] at hpos
+    have hfpos := pos_of_mul_pos_right hpos (sub_nonneg.mpr (mem_closedBall.mp hx))
+    exact ⟨mem_ball.mpr (sub_pos.mp (pos_of_mul_pos_left hpos hfpos.le)), hfpos⟩
+  · rintro ⟨hxball, hf⟩
+    exact pointPickingWeight_pos hxball hf
+
+/-- A function continuous on a set has continuous point-picking weight on that set. -/
+theorem _root_.ContinuousOn.pointPickingWeight {f : X → ℝ} {S : Set X}
+    (hf : ContinuousOn f S) (x₀ : X) (R : ℝ) :
+    ContinuousOn (pointPickingWeight x₀ R f) S := by
+  exact ((continuous_const.sub (continuous_id.dist continuous_const)).continuousOn).mul hf
+
+/-- A continuous function has continuous point-picking weight. -/
+theorem _root_.Continuous.pointPickingWeight {f : X → ℝ}
+    (hf : Continuous f) (x₀ : X) (R : ℝ) : Continuous (pointPickingWeight x₀ R f) := by
+  exact (continuous_const.sub (continuous_id.dist continuous_const)).mul hf
+
+/-- If the weight is positive somewhere on the compact set `S`, it attains a positive maximum
+at `q ∈ S ∩ ball x₀ R`, with `0 < f q`. For `ρ = (R - dist q x₀) / 2`, the ball `ball q ρ`
+lies in `ball x₀ R`, its scaled radius is at least half the starting weight, and
+`f y ≤ 2 * f q` for `y ∈ S ∩ ball q ρ`. -/
+theorem _root_.IsCompact.exists_mem_ball_isMaxOn_pointPickingWeight
+    {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
     (hS : IsCompact S) (hSball : S ⊆ closedBall x₀ R)
     (hf : ContinuousOn f S) {x : X} (hx : x ∈ S)
     (hM : 0 < pointPickingWeight x₀ R f x) :
-    ∃ q ∈ S, q ∈ ball x₀ R ∧
-      (∀ y ∈ S, pointPickingWeight x₀ R f y ≤
-        pointPickingWeight x₀ R f q) ∧
+    ∃ q ∈ S, q ∈ ball x₀ R ∧ 0 < f q ∧
+      IsMaxOn (pointPickingWeight x₀ R f) S q ∧
       pointPickingWeight x₀ R f x ≤ pointPickingWeight x₀ R f q ∧
       ∃ ρ : ℝ, 0 < ρ ∧ ρ = (R - dist q x₀) / 2 ∧
         ball q ρ ⊆ ball x₀ R ∧
         ρ * f q = pointPickingWeight x₀ R f q / 2 ∧
         pointPickingWeight x₀ R f x / 2 ≤ ρ * f q ∧
         ∀ y ∈ S, y ∈ ball q ρ → f y ≤ 2 * f q := by
-  have hwcont : ContinuousOn (pointPickingWeight x₀ R f) S := by
-    exact ((continuous_const.sub (continuous_id.dist continuous_const)).continuousOn).mul hf
-  obtain ⟨q, hqS, hqmax⟩ := hS.exists_isMaxOn ⟨x, hx⟩ hwcont
+  obtain ⟨q, hqS, hqmax⟩ := hS.exists_isMaxOn ⟨x, hx⟩ (hf.pointPickingWeight x₀ R)
   have hMle : pointPickingWeight x₀ R f x ≤ pointPickingWeight x₀ R f q := hqmax hx
   have hqpos : 0 < pointPickingWeight x₀ R f q := lt_of_lt_of_le hM hMle
-  obtain ⟨hδ, hfq⟩ := pointPickingWeight_pos_of_mem_closedBall (hSball hqS) hqpos
-  have hqball : q ∈ ball x₀ R := by
-    rw [mem_ball]
-    linarith [dist_comm x₀ q]
+  obtain ⟨hqball, hfq⟩ := (pointPickingWeight_pos_iff_of_mem_closedBall (hSball hqS)).mp hqpos
+  have hδ : 0 < R - dist q x₀ := sub_pos.mpr (mem_ball.mp hqball)
   let ρ : ℝ := (R - dist q x₀) / 2
   have hρ : 0 < ρ := by dsimp [ρ]; positivity
   have hρf : ρ * f q = pointPickingWeight x₀ R f q / 2 := by
@@ -87,13 +122,8 @@ theorem exists_pointPicking {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
   have hMhalf : pointPickingWeight x₀ R f x / 2 ≤ ρ * f q := by
     rw [hρf]
     linarith
-  refine ⟨q, hqS, hqball, (fun y hy ↦ hqmax hy), hMle, ρ, hρ, rfl, ?_,
-    hρf, hMhalf, ?_⟩
-  · intro y hy
-    rw [mem_ball] at hy ⊢
-    have htri := dist_triangle y q x₀
-    dsimp [ρ] at hy
-    linarith
+  refine ⟨q, hqS, hqball, hfq, hqmax, hMle, ρ, hρ, rfl, ?_, hρf, hMhalf, ?_⟩
+  · exact ball_subset_ball' (by dsimp [ρ]; linarith)
   · intro y hyS hyball
     have hδy : ρ < R - dist y x₀ := by
       rw [mem_ball] at hyball
@@ -113,25 +143,22 @@ theorem exists_pointPicking {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
       exact le_of_mul_le_mul_left hhalf hρ
     · linarith
 
-/-- At the point selected by point picking, rescaling distances by `f q` gives a ball
-of radius at least half the initial weighted value, on which the normalized function
-equals one at the centre and is at most two. -/
-theorem exists_pointPicking_rescaled {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
+/-- There are `q ∈ S ∩ ball x₀ R` and `ρ = (R - dist q x₀) / 2 > 0` with `0 < f q`,
+`ball q ρ ⊆ ball x₀ R`, and scaled radius `f q * ρ` at least half the starting weight.
+The normalized value `f y / f q` is at most two for `y ∈ S` whose distance from `q`,
+scaled by `f q`, is less than this scaled radius. -/
+theorem _root_.IsCompact.exists_pointPickingWeight_div_two_le_and_div_le_two
+    {x₀ : X} {R : ℝ} {S : Set X} {f : X → ℝ}
     (hS : IsCompact S) (hSball : S ⊆ closedBall x₀ R)
     (hf : ContinuousOn f S) {x : X} (hx : x ∈ S)
     (hM : 0 < pointPickingWeight x₀ R f x) :
-    ∃ q ∈ S, ∃ ρ : ℝ, 0 < f q ∧ 0 < ρ ∧
-      ρ = (R - dist q x₀) / 2 ∧
+    ∃ q ∈ S, q ∈ ball x₀ R ∧ ∃ ρ : ℝ, 0 < f q ∧ 0 < ρ ∧
+      ρ = (R - dist q x₀) / 2 ∧ ball q ρ ⊆ ball x₀ R ∧
       pointPickingWeight x₀ R f x / 2 ≤ f q * ρ ∧
-      f q / f q = 1 ∧
       ∀ y ∈ S, f q * dist y q < f q * ρ → f y / f q ≤ 2 := by
-  obtain ⟨q, hqS, _hqball, _hmax, hMle, ρ, hρ, hρeq, _hball, _hρf, hMhalf,
-    hlocal⟩ :=
-    exists_pointPicking hS hSball hf hx hM
-  have hqpos : 0 < pointPickingWeight x₀ R f q := lt_of_lt_of_le hM hMle
-  have hfq : 0 < f q :=
-    (pointPickingWeight_pos_of_mem_closedBall (hSball hqS) hqpos).2
-  refine ⟨q, hqS, ρ, hfq, hρ, hρeq, ?_, by field_simp, ?_⟩
+  obtain ⟨q, hqS, hqball, hfq, _hmax, _hMle, ρ, hρ, hρeq, hball, _hρf, hMhalf,
+    hlocal⟩ := hS.exists_mem_ball_isMaxOn_pointPickingWeight hSball hf hx hM
+  refine ⟨q, hqS, hqball, ρ, hfq, hρ, hρeq, hball, ?_, ?_⟩
   · rw [mul_comm]
     exact hMhalf
   · intro y hyS hyScaled
