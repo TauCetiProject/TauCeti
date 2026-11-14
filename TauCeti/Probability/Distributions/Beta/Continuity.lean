@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Weak continuity of beta laws

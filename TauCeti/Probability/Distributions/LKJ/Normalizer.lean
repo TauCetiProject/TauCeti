@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Probability.Distributions.Beta.Measurability
 
 /-!

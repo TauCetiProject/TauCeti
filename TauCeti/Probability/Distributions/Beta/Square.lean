@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 
 /-!
 # Squaring a centered symmetric Beta variable

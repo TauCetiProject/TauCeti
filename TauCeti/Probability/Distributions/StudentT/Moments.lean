@@ -11,7 +11,7 @@ public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Distributions.StudentT.WeightedIntegral
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
