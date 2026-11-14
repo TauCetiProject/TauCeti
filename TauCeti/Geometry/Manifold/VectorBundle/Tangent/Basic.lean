@@ -229,6 +229,19 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (v : TangentSpace I 
   rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
 
+/-- In its own preferred chart, a tangent vector `z` has coordinates the chart image of its base
+point and its own fibre coordinate. -/
+theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
+    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (z.2 : E)) := by
+  simp only [FiberBundle.extChartAt, PartialEquiv.coe_trans, Function.comp_apply,
+    PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq,
+    OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
+    TangentBundle.trivializationAt_fst]
+  refine Prod.ext rfl ?_
+  exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.2).symm.trans
+    (continuousLinearMapAt_trivializationAt_self z.proj z.2)
+
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
 @[simp]

@@ -27,8 +27,9 @@ component at a tangent vector `v` is `v` itself,
 where `π : TM → M` is the bundle projection
 (`TauCeti.IsRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy`). Hence every
 integral curve `γ` of `X_E` is the velocity lift `t ↦ (c t, c' t)` of its base curve
-`c = π ∘ γ` (`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`): the
-Lagrangian equations of motion are a second-order equation on `M`.
+`c = π ∘ γ` (`TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`, and within
+parameter sets `TauCeti.IsRegularLagrangian.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn`):
+the Lagrangian equations of motion are a second-order equation on `M`.
 
 The proof pairs `X_E(v)` with the vertical vector `u^v` at `v` in a direction `u ∈ T_x M`. Along
 the fibre `FL` is the fibre derivative of `L`, so its differential sends `u^v` to the vertical
@@ -49,8 +50,10 @@ vector field `X_H` of `H = E_L ∘ FL⁻¹` on `T*M`
 (`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`). So along every
 integral curve `δ` of `X_H` the momentum is the Legendre transform of the velocity of the base
 curve, `δ(t) = FL(c'(t))` for `c = π ∘ δ`
-(`TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`): this is
-Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
+(`TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`, and
+within parameter sets
+`TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn`):
+this is Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
 
 ## Main results
 
@@ -60,9 +63,13 @@ Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
   Lagrangian vector field of a smooth regular Lagrangian is second order.
 * `TauCeti.IsRegularLagrangian.eq_curveVelocityLift_of_isMIntegralCurve`: its integral curves are
   velocity lifts of their base curves.
+* `TauCeti.IsRegularLagrangian.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn`: the same within
+  parameter sets with unique derivatives.
 * `TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`: along
   a Hamiltonian trajectory of a hyperregular Lagrangian, the momentum is the Legendre transform of
   the base velocity.
+* `TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn`:
+  the same within parameter sets with unique derivatives.
 
 ## References
 
@@ -145,15 +152,28 @@ theorem mfderiv_proj_eq_snd_of_isHamiltonianVectorField
   mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm hL (isRegularLagrangian_iff.1 hreg v)
     (SmoothTwoForm.isHamiltonianVectorField_iff.1 hX v)
 
+/-- **Integral curves of the Lagrangian vector field are velocity lifts, within a parameter
+set.** For a smooth regular Lagrangian, an integral curve `γ` on `s` of a Hamiltonian vector field
+of the energy for the Cartan two-form is, at each `t ∈ s` where `s` has unique derivatives, the
+within-`s` velocity lift of its base curve `c = π ∘ γ`. -/
+theorem eq_curveVelocityLiftWithin_of_isMIntegralCurveOn
+    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
+    {γ : ℝ → TangentBundle I M} {s : Set ℝ} {t : ℝ} (hs : UniqueDiffWithinAt ℝ s t)
+    (hγ : IsMIntegralCurveOn γ X s) (ht : t ∈ s) :
+    γ t = Manifold.curveVelocityLiftWithin I (fun r ↦ (γ r).proj) s t :=
+  Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt hs (hγ t ht)
+    (hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t))
+
 /-- **Integral curves of the Lagrangian vector field are velocity lifts.** For a smooth regular
 Lagrangian, an integral curve `γ` of a Hamiltonian vector field of the energy for the Cartan
 two-form is the velocity lift `t ↦ (c t, c' t)` of its base curve `c = π ∘ γ`. -/
 theorem eq_curveVelocityLift_of_isMIntegralCurve
     (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
     {γ : ℝ → TangentBundle I M} (hγ : IsMIntegralCurve γ X) (t : ℝ) :
-    γ t = Manifold.curveVelocityLift I (fun s ↦ (γ s).proj) t :=
-  Manifold.eq_curveVelocityLift_of_hasMFDerivAt (hγ t)
-    (hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t))
+    γ t = Manifold.curveVelocityLift I (fun s ↦ (γ s).proj) t := by
+  rw [← Manifold.curveVelocityLiftWithin_univ]
+  exact hreg.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn hL hX uniqueDiffWithinAt_univ
+    (hγ.isMIntegralCurveOn _) (Set.mem_univ t)
 
 variable [FiniteDimensional ℝ E]
   [BoundarylessManifold I.tangent (TangentBundle I M)]
@@ -177,6 +197,29 @@ variable [FiniteDimensional ℝ E]
   (h : IsHyperregularLagrangian L) (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
 include hL
 
+/-- **Hamilton's first equation for a hyperregular Lagrangian, within a parameter set.** Along an
+integral curve `δ` on `s` of the Hamiltonian vector field of `H = E_L ∘ FL⁻¹` on `T*M`, at each
+`t ∈ s` where `s` has unique derivatives, the covector `δ t` is the Legendre transform of the
+within-`s` velocity of the base curve `c = π ∘ δ`. -/
+theorem eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn
+    {δ : ℝ → CotangentBundle I M} {s : Set ℝ} {t : ℝ} (hs : UniqueDiffWithinAt ℝ s t)
+    (hδ : IsMIntegralCurveOn δ
+      ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) s)
+    (ht : t ∈ s) :
+    δ t = legendreMap L (Manifold.curveVelocityLiftWithin I (fun r ↦ (δ r).proj) s t) := by
+  -- Pull `δ` back to an integral curve of the Lagrangian vector field.
+  set γ : ℝ → TangentBundle I M := fun r ↦ (h.legendreDiffeomorph hL).symm (δ r)
+  have hFγ : legendreMap L ∘ γ = δ :=
+    funext fun r ↦ h.legendreMap_legendreDiffeomorph_symm_apply hL (δ r)
+  have hγ : IsMIntegralCurveOn γ
+      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) s :=
+    (h.isMIntegralCurveOn_legendreMap_comp_iff hL).1 (hFγ ▸ hδ)
+  have hproj : (fun r ↦ (γ r).proj) = fun r ↦ (δ r).proj :=
+    funext fun r ↦ h.proj_legendreDiffeomorph_symm_apply hL (δ r)
+  rw [← hproj, ← Manifold.eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt hs (hγ t ht)
+    (h.isRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy hL (γ t))]
+  exact (congrFun hFγ t).symm
+
 /-- **Hamilton's first equation for a hyperregular Lagrangian.** Along an integral curve `δ` of the
 Hamiltonian vector field of `H = E_L ∘ FL⁻¹` on `T*M`, the covector `δ t` is the Legendre transform
 `FL(c'(t))` of the velocity of the base curve `c = π ∘ δ`. -/
@@ -185,18 +228,9 @@ theorem eq_legendreMap_curveVelocityLift_of_isMIntegralCurve {δ : ℝ → Cotan
       ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian))
     (t : ℝ) :
     δ t = legendreMap L (Manifold.curveVelocityLift I (fun s ↦ (δ s).proj) t) := by
-  -- Pull `δ` back to an integral curve of the Lagrangian vector field.
-  set γ : ℝ → TangentBundle I M := fun s ↦ (h.legendreDiffeomorph hL).symm (δ s)
-  have hFγ : legendreMap L ∘ γ = δ :=
-    funext fun s ↦ h.legendreMap_legendreDiffeomorph_symm_apply hL (δ s)
-  have hγ : IsMIntegralCurve γ
-      ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) :=
-    (h.isMIntegralCurve_legendreMap_comp_iff hL).1 (hFγ ▸ hδ)
-  have hproj : (fun s ↦ (γ s).proj) = fun s ↦ (δ s).proj :=
-    funext fun s ↦ h.proj_legendreDiffeomorph_symm_apply hL (δ s)
-  rw [← hproj, ← Manifold.eq_curveVelocityLift_of_hasMFDerivAt (hγ t)
-    (h.isRegularLagrangian.mfderiv_proj_hamiltonianVectorField_lagrangianEnergy hL (γ t))]
-  exact (congrFun hFγ t).symm
+  rw [← Manifold.curveVelocityLiftWithin_univ]
+  exact h.eq_legendreMap_curveVelocityLiftWithin_of_isMIntegralCurveOn hL uniqueDiffWithinAt_univ
+    (hδ.isMIntegralCurveOn _) (Set.mem_univ t)
 
 end IsHyperregularLagrangian
 
