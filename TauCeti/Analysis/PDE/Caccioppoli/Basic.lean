@@ -270,10 +270,12 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
   -- On `B(x₀, r)` the cutoff is one.
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
-      (ae_of_all _ fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable
-      (ae_of_all _ fun x => hrange (mem_range_self x)) measurableSet_ball
-      (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
+    MeasureTheory.setIntegral_le_setIntegral_mul (W1p.integrable_norm_gradient_sq w)
+      (ae_of_all _ fun x => sq_nonneg _) (hψ.continuous.pow 2).aestronglyMeasurable
+      (ae_of_all _ fun x => sq_nonneg _) (ae_of_all _ hψ1)
+      (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
+        simp [hone (ball_subset_closedBall hx)])
+      ((ball_subset_ball hrR.le).trans hball).eventuallySubset
   -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=

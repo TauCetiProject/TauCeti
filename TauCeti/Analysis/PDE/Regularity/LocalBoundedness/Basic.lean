@@ -264,8 +264,6 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
           max (W1p.value u x - k) 0 ^ 2 ∂mu) / (l - k) ^ 2) ^ (1 - 2 / q.toReal) := by
   set T := tsupport ψ
   set I := ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ T, max (W1p.value u x - k) 0 ^ 2 ∂mu
-  have hmeasO := Omega.isOpen.measurableSet
-  have hT : MeasurableSet T := (isClosed_tsupport ψ).measurableSet
   have hTfin : mu T ≠ (∞ : ℝ≥0∞) := hcpt.measure_lt_top.ne
   obtain ⟨z, hz, hgradz, hz2, hvA⟩ :=
     exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli hkl hwLp hψ hcpt hts hG hA hcacc
@@ -277,7 +275,7 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
-    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div (hmeasO.inter hT) hkl
+    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div hkl
       (IntegrableOn.mono_set hwLp.integrable_sq inter_subset_left)
   rw [integral_congr_ae (hz2.mono fun x hx => hx.symm)]
   refine hsob.trans ?_
@@ -505,12 +503,14 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   -- The left-hand side is below the cutoff integral, since `ψ = 1` on the smaller ball.
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
-      (ae_of_all _ fun x => hnn l x) hψ.continuous.aestronglyMeasurable
-      (ae_of_all _ fun x => hψ01 (mem_range_self x)) measurableSet_ball
-      (hψ1.mono Metric.ball_subset_closedBall)
+    MeasureTheory.setIntegral_le_setIntegral_mul (hint l (hk0.trans hkl.le))
+      (ae_of_all _ fun x => hnn l x) (hψ.continuous.pow 2).aestronglyMeasurable
+      (ae_of_all _ fun x => sq_nonneg _)
+      (ae_of_all _ fun x => pow_le_one₀ (hψ01 (mem_range_self x)).1 (hψ01 (mem_range_self x)).2)
+      (ae_restrict_of_forall_mem measurableSet_ball fun x hx => by
+        simp [hψ1 (Metric.ball_subset_closedBall hx)])
       ((Metric.ball_subset_ball (hr₁ρ.trans hρr₀).le).trans
-        ((Metric.ball_subset_ball hr₀R).trans hball))
+        ((Metric.ball_subset_ball hr₀R).trans hball)).eventuallySubset
   -- The integral over `Ω ∩ supp ψ` is below `Y`.
   have hI : ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
       max (W1p.value u x - k) 0 ^ 2 ∂mu ≤ Y :=
