@@ -72,7 +72,7 @@ section FixedOrder
 
 variable [Fintype V] [LinearOrder V]
 
-private theorem bddBelow_ratioSet (X : TwoComplex V) (ℓ : GroupNorm G) :
+theorem bddBelow_ratioSet (X : TwoComplex V) (ℓ : GroupNorm G) :
     BddBelow {r : ℝ | ∃ α : Cochain X G, 0 < α.gaugeDist ℓ ∧ r = α.defect ℓ / α.gaugeDist ℓ} :=
   ⟨0, by rintro r ⟨α, hα, rfl⟩; exact div_nonneg (α.defect_nonneg ℓ) hα.le⟩
 
@@ -94,6 +94,15 @@ theorem le_h1_iff {X : TwoComplex V} {ℓ : GroupNorm G}
   rw [h1_def, le_csInf_iff (bddBelow_ratioSet X ℓ) ⟨α₀.defect ℓ / α₀.gaugeDist ℓ, α₀, hα₀, rfl⟩]
   exact ⟨fun h α hα => h _ ⟨α, hα, rfl⟩, fun h _ ⟨α, hα, hr⟩ => hr ▸ h α hα⟩
 
+/-- When some cochain has positive gauge distance, `h1 X ℓ < c` holds iff some cochain at
+positive gauge distance has expansion ratio strictly below `c`. -/
+theorem h1_lt_iff {X : TwoComplex V} {ℓ : GroupNorm G}
+    (hne : ∃ α : Cochain X G, 0 < α.gaugeDist ℓ) {c : ℝ} :
+    h1 X ℓ < c ↔ ∃ α : Cochain X G, 0 < α.gaugeDist ℓ ∧ α.defect ℓ / α.gaugeDist ℓ < c := by
+  obtain ⟨α₀, hα₀⟩ := hne
+  rw [h1_def, csInf_lt_iff (bddBelow_ratioSet X ℓ) ⟨α₀.defect ℓ / α₀.gaugeDist ℓ, α₀, hα₀, rfl⟩]
+  exact ⟨fun ⟨_, ⟨α, hα, hr⟩, hlt⟩ => ⟨α, hα, hr ▸ hlt⟩, fun ⟨α, hα, hlt⟩ => ⟨_, ⟨α, hα, rfl⟩, hlt⟩⟩
+
 /-- Lower-bound criterion for `h1 X ℓ` in the presence of a cochain at positive gauge distance. -/
 theorem le_h1_of_forall {X : TwoComplex V} {ℓ : GroupNorm G}
     (hne : ∃ α : Cochain X G, 0 < α.gaugeDist ℓ) {c : ℝ}
@@ -106,8 +115,8 @@ theorem h1_eq_zero_of_forall_gaugeDist_eq_zero {X : TwoComplex V} {ℓ : GroupNo
     (h : ∀ α : Cochain X G, α.gaugeDist ℓ = 0) : h1 X ℓ = 0 := by simp [h1_def, h]
 
 /-- Over a trivial coefficient group every cochain is trivial, so `h1 X ℓ = 0`. -/
-@[simp]
-theorem h1_subsingleton [Subsingleton G] (X : TwoComplex V) (ℓ : GroupNorm G) : h1 X ℓ = 0 :=
+@[simp] theorem h1_subsingleton [Subsingleton G] (X : TwoComplex V) (ℓ : GroupNorm G) :
+    h1 X ℓ = 0 :=
   h1_eq_zero_of_forall_gaugeDist_eq_zero fun α => by simp [Subsingleton.elim α 1]
 
 /-- When `G` is finite and some cochain has positive gauge distance, the infimum defining `h1 X ℓ`
@@ -127,8 +136,7 @@ theorem exists_div_eq_h1 [Finite G] {X : TwoComplex V} {ℓ : GroupNorm G}
 /-! ### Invariance under norm scaling, vertex ordering, and relabelling -/
 
 /-- Multiplying a group norm by a positive real leaves `h1` unchanged. -/
-@[simp]
-theorem h1_smulOfPos (X : TwoComplex V) (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) :
+@[simp] theorem h1_smulOfPos (X : TwoComplex V) (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) :
     h1 X (ℓ.smulOfPos hr) = h1 X ℓ := by
   rw [h1_def, h1_def]
   congr 1; ext x
@@ -147,9 +155,8 @@ theorem h1_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) (X : TwoCom
     Cochain.gaugeDist_congr_linearOrder l₁ l₂ ℓ, Cochain.defect_congr_linearOrder l₁ l₂ hℓ]
 
 /-- Under a conjugation-invariant norm, relabelling `X` along `e : V ≃ W` preserves `h1`. -/
-@[simp]
-theorem h1_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] (X : TwoComplex V)
-    {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (e : V ≃ W) :
+@[simp] theorem h1_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (X : TwoComplex V) {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (e : V ≃ W) :
     h1 (X.relabel e) ℓ = h1 X ℓ := by
   rw [h1_def, h1_def]; congr 1; ext r
   exact ((Cochain.relabelEquiv X e).exists_congr fun α => by simp [α.defect_relabel hℓ e]).symm
@@ -191,12 +198,10 @@ theorem h1Norm_nonneg [Fintype V] [LinearOrder V] (X : TwoComplex V) (ℓ : Grou
   mul_nonneg (div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _)) (h1_nonneg X ℓ)
 
 /-- Over a trivial coefficient group every cochain is trivial, so `h1Norm X ℓ = 0`. -/
-@[simp]
-theorem h1Norm_subsingleton [Subsingleton G] [Fintype V] [LinearOrder V] (X : TwoComplex V)
+@[simp] theorem h1Norm_subsingleton [Subsingleton G] [Fintype V] [LinearOrder V] (X : TwoComplex V)
     (ℓ : GroupNorm G) : h1Norm X ℓ = 0 := by simp [h1Norm_def]
 
-@[simp]
-theorem h1Norm_smulOfPos [Fintype V] [LinearOrder V] (X : TwoComplex V) (ℓ : GroupNorm G)
+@[simp] theorem h1Norm_smulOfPos [Fintype V] [LinearOrder V] (X : TwoComplex V) (ℓ : GroupNorm G)
     {r : ℝ} (hr : 0 < r) : h1Norm X (ℓ.smulOfPos hr) = h1Norm X ℓ := by simp [h1Norm_def]
 
 theorem h1Norm_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) (X : TwoComplex V)
@@ -204,9 +209,8 @@ theorem h1Norm_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) (X : Tw
     @h1Norm V G _ _ l₁ X ℓ = @h1Norm V G _ _ l₂ X ℓ := by
   rw [@h1Norm_def V G _ _ l₁ X ℓ, @h1Norm_def V G _ _ l₂ X ℓ, h1_congr_linearOrder l₁ l₂ X hℓ]
 
-@[simp]
-theorem h1Norm_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] (X : TwoComplex V)
-    {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (e : V ≃ W) :
+@[simp] theorem h1Norm_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (X : TwoComplex V) {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (e : V ≃ W) :
     h1Norm (X.relabel e) ℓ = h1Norm X ℓ := by simp [h1Norm_def, h1_relabel X hℓ e]
 
 /-- On `complete V` with `3 ≤ Fintype.card V`, `h1Norm` equals `(3 / (Fintype.card V - 2)) * h1`. -/
@@ -266,6 +270,10 @@ theorem le_h1Sym_iff [Fintype V] [LinearOrder V] (X : TwoComplex V) {c : ℝ} :
     c ≤ h1Sym X ↔ ∀ n : ℕ, c ≤ h1 X (Equiv.Perm.movedNorm (Fin (n + 2))) :=
   le_ciInf_iff (bddBelow_range_h1_movedNorm X)
 
+theorem h1Sym_lt_iff [Fintype V] [LinearOrder V] (X : TwoComplex V) {c : ℝ} :
+    h1Sym X < c ↔ ∃ n : ℕ, h1 X (Equiv.Perm.movedNorm (Fin (n + 2))) < c :=
+  ciInf_lt_iff (bddBelow_range_h1_movedNorm X)
+
 /-- Degree `1` has trivial permutation group, so `h1 X (movedNorm (Fin 1)) = 0`. -/
 theorem h1_movedNorm_fin_one [Fintype V] [LinearOrder V] (X : TwoComplex V) :
     h1 X (Equiv.Perm.movedNorm (Fin 1)) = 0 :=
@@ -276,9 +284,8 @@ theorem h1Sym_congr_linearOrder [Fintype V] (l₁ l₂ : LinearOrder V) (X : Two
   simp only [@h1Sym_def V _ l₁ X, @h1Sym_def V _ l₂ X,
     h1_congr_linearOrder l₁ l₂ X Equiv.Perm.isConjInvariant_movedNorm]
 
-@[simp]
-theorem h1Sym_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W] (X : TwoComplex V)
-    (e : V ≃ W) : h1Sym (X.relabel e) = h1Sym X := by
+@[simp] theorem h1Sym_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+    (X : TwoComplex V) (e : V ≃ W) : h1Sym (X.relabel e) = h1Sym X := by
   simp only [h1Sym_def, h1_relabel X Equiv.Perm.isConjInvariant_movedNorm e]
 
 theorem h1Sym_complete_eq_of_card_eq [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]

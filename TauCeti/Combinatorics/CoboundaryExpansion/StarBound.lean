@@ -68,10 +68,35 @@ variable {V G : Type*} [Group G] {X : TwoComplex V}
 pins `x` to `1` without requiring `DecidableEq V`. -/
 def starGauge (α : Cochain X G) (x : V) : V → G := fun u => α u x
 
-@[simp, grind =]
-theorem starGauge_apply (α : Cochain X G) (x u : V) : α.starGauge x u = α u x := (rfl)
+@[simp, grind =] theorem starGauge_apply (α : Cochain X G) (x u : V) :
+    α.starGauge x u = α u x := (rfl)
 
 theorem starGauge_self (α : Cochain X G) (x : V) : α.starGauge x x = 1 := α.apply_self x
+
+@[simp] theorem starGauge_one (x : V) : (1 : Cochain X G).starGauge x = 1 := by ext; simp
+
+/-- Transforming `α` by its star gauge at `x` replaces each edge value by the holonomy from `x`. -/
+theorem starGauge_smul_apply_of_adj (α : Cochain X G) (x : V) {u v : V} (h : X.Adj u v) :
+    (α.starGauge x • α) u v = α.holonomy x u v := by
+  rw [smul_apply_of_adj _ _ h, starGauge_apply, starGauge_apply, ← α.apply_swap u x, holonomy_def]
+
+/-- On the complete complex, `(α.starGauge x • α) u v = α.holonomy x u v` holds for all vertex
+pairs, including `u = v`. -/
+theorem starGauge_smul_apply_complete [Fintype V] (α : Cochain (complete V) G) (x u v : V) :
+    (α.starGauge x • α) u v = α.holonomy x u v := by
+  rcases eq_or_ne u v with rfl | huv
+  · simp
+  · exact α.starGauge_smul_apply_of_adj x ((adj_complete u v).mpr huv)
+
+@[simp] theorem starGauge_relabel {W : Type*} (α : Cochain X G) (e : V ≃ W) (x : W) :
+    (α.relabel e).starGauge x = α.starGauge (e.symm x) ∘ e.symm := by ext; simp
+
+@[simp] theorem starGauge_relabelComplete {W : Type*} [Fintype V] [Fintype W]
+    (α : Cochain (complete V) G) (e : V ≃ W) (x : W) :
+    (α.relabelComplete e).starGauge x = α.starGauge (e.symm x) ∘ e.symm := by ext; simp
+
+@[simp] theorem starGauge_map {H : Type*} [Group H] (φ : G →* H) (α : Cochain X G) (x : V) :
+    (α.map φ).starGauge x = φ ∘ α.starGauge x := by ext; simp
 
 /-- On `complete V` under a conjugation-invariant norm, the edge cost of `α.starGauge x` on any
 finset `e` vanishes when `x ∈ e` and equals `α.triangleDefect ℓ (insert x e)` when `x ∉ e`. -/

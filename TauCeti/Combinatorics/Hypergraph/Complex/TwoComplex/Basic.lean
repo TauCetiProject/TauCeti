@@ -290,6 +290,10 @@ theorem adj_iff_pair_mem_edges [DecidableEq V] (X : TwoComplex V) (u v : V) :
 instance [DecidableEq V] (X : TwoComplex V) : DecidableRel X.Adj :=
   fun u v => decidable_of_iff _ (X.adj_iff_pair_mem_edges u v).symm
 
+/-- Any two distinct vertices of an edge are adjacent. -/
+theorem adj_of_mem_edges (X : TwoComplex V) {e : Finset V} (he : e ∈ X.edges)
+    {u v : V} (hu : u ∈ e) (hv : v ∈ e) (huv : u ≠ v) : X.Adj u v := ⟨huv, e, he, hu, hv⟩
+
 /-- Any two distinct vertices of a filled triangle are adjacent. -/
 theorem adj_of_mem_triangles (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.triangles)
     {u v : V} (hu : u ∈ t) (hv : v ∈ t) (huv : u ≠ v) : X.Adj u v := by

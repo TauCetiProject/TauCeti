@@ -79,8 +79,8 @@ theorem ext {α α' : Cochain X G} (h : ∀ u v, X.Adj u v → α u v = α' u v)
   · exact h u v huv
   · rw [hnot u v huv, hnot' u v huv]
 
-@[grind =]
-theorem apply_eq_one_of_not_adj (α : Cochain X G) {u v : V} (h : ¬ X.Adj u v) : α u v = 1 :=
+@[grind =] theorem apply_eq_one_of_not_adj (α : Cochain X G) {u v : V} (h : ¬ X.Adj u v) :
+    α u v = 1 :=
   α.apply_eq_one_of_not_adj' u v h
 
 /-- Reversing any pair of vertices inverts the cochain value, both on edges and off edges (where
@@ -90,8 +90,7 @@ theorem apply_swap (α : Cochain X G) (u v : V) : α v u = (α u v)⁻¹ := by
   · exact α.inv_symm u v huv
   · rw [α.apply_eq_one_of_not_adj (mt Adj.symm huv), α.apply_eq_one_of_not_adj huv, inv_one]
 
-@[simp, grind =]
-theorem apply_self (α : Cochain X G) (u : V) : α u u = 1 :=
+@[simp, grind =] theorem apply_self (α : Cochain X G) (u : V) : α u u = 1 :=
   α.apply_eq_one_of_not_adj (X.not_adj_self u)
 
 /-- With a linear order on vertices, a cochain is determined by its values on positively oriented
@@ -109,8 +108,7 @@ instance : One (Cochain X G) := ⟨⟨fun _ _ => 1, fun _ _ _ => inv_one.symm, f
 
 instance : Inhabited (Cochain X G) := ⟨1⟩
 
-@[simp, grind =]
-theorem one_apply (u v : V) : (1 : Cochain X G) u v = 1 := (rfl)
+@[simp, grind =] theorem one_apply (u v : V) : (1 : Cochain X G) u v = 1 := (rfl)
 
 /-- Over a trivial coefficient group, `1` is the unique cochain. -/
 instance [Subsingleton G] : Unique (Cochain X G) where
@@ -136,13 +134,13 @@ noncomputable def ofFn (X : TwoComplex V) (f : V → V → G)
           inv_symm := fun u v huv => by simp [huv, huv.symm, hf u v huv]
           apply_eq_one_of_not_adj' := fun u v huv => by simp [huv] }
 
-@[simp, grind =]
-theorem ofFn_apply_of_adj {f : V → V → G} (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹)
-    {u v : V} (h : X.Adj u v) : ofFn X f hf u v = f u v := by classical simp [ofFn, h]
+@[simp, grind =] theorem ofFn_apply_of_adj {f : V → V → G}
+    (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹) {u v : V} (h : X.Adj u v) :
+    ofFn X f hf u v = f u v := by classical simp [ofFn, h]
 
-@[simp, grind =]
-theorem ofFn_apply_of_not_adj {f : V → V → G} (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹)
-    {u v : V} (h : ¬ X.Adj u v) : ofFn X f hf u v = 1 :=
+@[simp, grind =] theorem ofFn_apply_of_not_adj {f : V → V → G}
+    (hf : ∀ u v, X.Adj u v → f v u = (f u v)⁻¹) {u v : V} (h : ¬ X.Adj u v) :
+    ofFn X f hf u v = 1 :=
   (ofFn X f hf).apply_eq_one_of_not_adj h
 
 /-- Build a cochain from unconstrained values on positively oriented pairs `u < v`. -/
@@ -153,17 +151,14 @@ noncomputable def ofLt [LinearOrder V] (X : TwoComplex V) (f : V → V → G) : 
     · exact (huv.ne rfl).elim
     · simp [hgt, asymm hgt]
 
-@[simp, grind =]
-theorem ofLt_apply_of_lt [LinearOrder V] (f : V → V → G) {u v : V} (h : X.Adj u v)
+@[simp, grind =] theorem ofLt_apply_of_lt [LinearOrder V] (f : V → V → G) {u v : V} (h : X.Adj u v)
     (hlt : u < v) : ofLt X f u v = f u v := by simp [ofLt, h, hlt]
 
-@[simp, grind =]
-theorem ofLt_apply_of_gt [LinearOrder V] (f : V → V → G) {u v : V} (h : X.Adj u v)
+@[simp, grind =] theorem ofLt_apply_of_gt [LinearOrder V] (f : V → V → G) {u v : V} (h : X.Adj u v)
     (hgt : v < u) : ofLt X f u v = (f v u)⁻¹ := by simp [ofLt, h, asymm hgt]
 
-@[simp, grind =]
-theorem ofLt_apply_of_not_adj [LinearOrder V] (f : V → V → G) {u v : V} (h : ¬ X.Adj u v) :
-    ofLt X f u v = 1 :=
+@[simp, grind =] theorem ofLt_apply_of_not_adj [LinearOrder V] (f : V → V → G) {u v : V}
+    (h : ¬ X.Adj u v) : ofLt X f u v = 1 :=
   (ofLt X f).apply_eq_one_of_not_adj h
 
 /-- The cochain supported on a single edge `(u₀, v₀)`, taking value `g` on `(u₀, v₀)`, `g⁻¹` on
@@ -181,31 +176,26 @@ noncomputable def singleEdge (X : TwoComplex V) (u₀ v₀ : V) (g : G) : Cochai
           have h₂' : ¬ (v = u₀ ∧ u = v₀) := fun ⟨hv, hu⟩ => h₂ ⟨hu, hv⟩
           simp [h₁, h₂, h₁', h₂']
 
-@[simp, grind =]
-theorem singleEdge_apply_self {u₀ v₀ : V} (h : X.Adj u₀ v₀) (g : G) :
+@[simp, grind =] theorem singleEdge_apply_self {u₀ v₀ : V} (h : X.Adj u₀ v₀) (g : G) :
     singleEdge X u₀ v₀ g u₀ v₀ = g := by classical simp [singleEdge, h]
 
-@[simp, grind =]
-theorem singleEdge_apply_swap {u₀ v₀ : V} (h : X.Adj u₀ v₀) (g : G) :
+@[simp, grind =] theorem singleEdge_apply_swap {u₀ v₀ : V} (h : X.Adj u₀ v₀) (g : G) :
     singleEdge X u₀ v₀ g v₀ u₀ = g⁻¹ := by classical simp [singleEdge, h.symm, h.ne.symm]
 
-@[simp, grind =]
-theorem singleEdge_apply_of_ne {u₀ v₀ u v : V} (g : G)
+@[simp, grind =] theorem singleEdge_apply_of_ne {u₀ v₀ u v : V} (g : G)
     (h₁ : ¬ (u = u₀ ∧ v = v₀)) (h₂ : ¬ (u = v₀ ∧ v = u₀)) :
     singleEdge X u₀ v₀ g u v = 1 := by
   classical
   by_cases huv : X.Adj u v <;> simp [singleEdge, huv, h₁, h₂]
 
-@[simp]
-theorem singleEdge_of_not_adj {u₀ v₀ : V} (h : ¬ X.Adj u₀ v₀) (g : G) :
+@[simp] theorem singleEdge_of_not_adj {u₀ v₀ : V} (h : ¬ X.Adj u₀ v₀) (g : G) :
     singleEdge X u₀ v₀ g = 1 := by
   ext u v huv
   have h₁ : ¬ (u = u₀ ∧ v = v₀) := by rintro ⟨rfl, rfl⟩; exact h huv
   have h₂ : ¬ (u = v₀ ∧ v = u₀) := by rintro ⟨rfl, rfl⟩; exact h huv.symm
   simp [h₁, h₂]
 
-@[simp]
-theorem singleEdge_one (u₀ v₀ : V) : singleEdge X u₀ v₀ (1 : G) = 1 := by
+@[simp] theorem singleEdge_one (u₀ v₀ : V) : singleEdge X u₀ v₀ (1 : G) = 1 := by
   classical
   ext u v huv; simp [singleEdge, huv]
 
@@ -216,32 +206,27 @@ and `1` off edges. -/
 noncomputable instance : SMul (V → G) (Cochain X G) where
   smul β α := ofFn X (fun u v => (β u)⁻¹ * α u v * β v) fun u v _ => by rw [α.apply_swap u v]; group
 
-@[simp, grind =]
-theorem smul_apply_of_adj (β : V → G) (α : Cochain X G) {u v : V} (h : X.Adj u v) :
-    (β • α) u v = (β u)⁻¹ * α u v * β v :=
+@[simp, grind =] theorem smul_apply_of_adj (β : V → G) (α : Cochain X G) {u v : V}
+    (h : X.Adj u v) : (β • α) u v = (β u)⁻¹ * α u v * β v :=
   ofFn_apply_of_adj _ h
 
-@[simp, grind =]
-theorem smul_apply_of_not_adj (β : V → G) (α : Cochain X G) {u v : V} (h : ¬ X.Adj u v) :
-    (β • α) u v = 1 :=
+@[simp, grind =] theorem smul_apply_of_not_adj (β : V → G) (α : Cochain X G) {u v : V}
+    (h : ¬ X.Adj u v) : (β • α) u v = 1 :=
   (β • α).apply_eq_one_of_not_adj h
 
 /-- On the complete complex, `(β • α) u v = (β u)⁻¹ * α u v * β v` holds for all vertex pairs,
 including the diagonal. -/
-@[simp, grind =]
-theorem smul_apply_complete [Fintype V] (β : V → G) (α : Cochain (complete V) G) (u v : V) :
-    (β • α) u v = (β u)⁻¹ * α u v * β v := by
+@[simp, grind =] theorem smul_apply_complete [Fintype V] (β : V → G) (α : Cochain (complete V) G)
+    (u v : V) : (β • α) u v = (β u)⁻¹ * α u v * β v := by
   rcases eq_or_ne u v with rfl | huv
   · simp
   · exact smul_apply_of_adj β α ((adj_complete u v).mpr huv)
 
-@[simp]
-protected theorem one_smul (α : Cochain X G) : (1 : V → G) • α = α := by
+@[simp] protected theorem one_smul (α : Cochain X G) : (1 : V → G) • α = α := by
   ext u v huv; simp [huv]
 
 /-- Successive gauge transformations compose in reverse order: `β • (γ • α) = (γ * β) • α`. -/
-@[simp]
-theorem smul_smul_eq_mul_smul (β γ : V → G) (α : Cochain X G) :
+@[simp] theorem smul_smul_eq_mul_smul (β γ : V → G) (α : Cochain X G) :
     β • (γ • α) = (γ * β) • α := by
   ext u v huv; simp [huv, mul_assoc]
 
@@ -251,19 +236,18 @@ def holonomy (α : Cochain X G) (u v w : V) : G := α u v * α v w * α w u
 theorem holonomy_def (α : Cochain X G) (u v w : V) :
     α.holonomy u v w = α u v * α v w * α w u := (rfl)
 
-@[simp]
-theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by simp [holonomy_def]
+@[simp, grind =] theorem holonomy_one (u v w : V) : (1 : Cochain X G).holonomy u v w = 1 := by
+  simp [holonomy_def]
 
-@[simp, grind =]
-theorem holonomy_self_left (α : Cochain X G) (u w : V) : α.holonomy u u w = 1 := by
+@[simp, grind =] theorem holonomy_self_left (α : Cochain X G) (u w : V) : α.holonomy u u w = 1 := by
   simp [holonomy_def, α.apply_swap w u]
 
-@[simp, grind =]
-theorem holonomy_self_right (α : Cochain X G) (u v : V) : α.holonomy u v v = 1 := by
+@[simp, grind =] theorem holonomy_self_right (α : Cochain X G) (u v : V) :
+    α.holonomy u v v = 1 := by
   simp [holonomy_def, α.apply_swap v u]
 
-@[simp, grind =]
-theorem holonomy_self_left_right (α : Cochain X G) (u v : V) : α.holonomy u v u = 1 := by
+@[simp, grind =] theorem holonomy_self_left_right (α : Cochain X G) (u v : V) :
+    α.holonomy u v u = 1 := by
   simp [holonomy_def, α.apply_swap v u]
 
 /-- Exchanging the second and third vertices of a triple inverts the holonomy. -/
@@ -271,17 +255,31 @@ theorem inv_holonomy (α : Cochain X G) (u v w : V) :
     (α.holonomy u v w)⁻¹ = α.holonomy u w v := by
   rw [holonomy_def, holonomy_def, α.apply_swap w u, α.apply_swap v w, α.apply_swap u v]; group
 
+theorem holonomy_rotate_eq_one_iff (α : Cochain X G) (u v w : V) :
+    α.holonomy v w u = 1 ↔ α.holonomy u v w = 1 := by
+  rw [holonomy_def, holonomy_def, mul_assoc (α u v), mul_eq_one_iff_eq_inv, mul_eq_one_iff_eq_inv']
+
+theorem holonomy_swap_eq_one_iff (α : Cochain X G) (u v w : V) :
+    α.holonomy v u w = 1 ↔ α.holonomy u v w = 1 := by
+  rw [← inv_eq_one, inv_holonomy, holonomy_rotate_eq_one_iff]
+
 /-- Under a gauge `β`, the holonomy around three mutually adjacent vertices is conjugated by
 `β u`. -/
-theorem holonomy_smul (β : V → G) (α : Cochain X G) {u v w : V}
+@[simp, grind =] theorem holonomy_smul (β : V → G) (α : Cochain X G) {u v w : V}
     (huv : X.Adj u v) (hvw : X.Adj v w) (hwu : X.Adj w u) :
     (β • α).holonomy u v w = (β u)⁻¹ * α.holonomy u v w * β u := by
   simp only [holonomy_def, smul_apply_of_adj β α huv, smul_apply_of_adj β α hvw,
     smul_apply_of_adj β α hwu]; group
 
+/-- On the complete complex, a gauge `β` conjugates every triple holonomy by `β u`, including
+degenerate triples. -/
+@[simp, grind =] theorem holonomy_smul_complete [Fintype V] (β : V → G) (α : Cochain (complete V) G)
+    (u v w : V) : (β • α).holonomy u v w = (β u)⁻¹ * α.holonomy u v w * β u := by
+  simp only [holonomy_def, smul_apply_complete]; group
+
 /-- The holonomy of `singleEdge X u₀ v₀ g` around `(u₀, v₀, w)` for any third vertex `w` is `g`. -/
-theorem holonomy_singleEdge {u₀ v₀ w : V} (h : X.Adj u₀ v₀) (hw₁ : w ≠ u₀) (hw₂ : w ≠ v₀)
-    (g : G) : (singleEdge X u₀ v₀ g).holonomy u₀ v₀ w = g := by
+@[simp, grind =] theorem holonomy_singleEdge {u₀ v₀ w : V} (h : X.Adj u₀ v₀) (hw₁ : w ≠ u₀)
+    (hw₂ : w ≠ v₀) (g : G) : (singleEdge X u₀ v₀ g).holonomy u₀ v₀ w = g := by
   simp [holonomy_def, h, h.ne.symm, hw₁, hw₂]
 
 /-- A cochain is a coboundary when some gauge `β : V → G` satisfies `α u v = β u * (β v)⁻¹` on
@@ -423,15 +421,41 @@ theorem le_gaugeDist_iff (ℓ : GroupNorm G) (α : Cochain X G) {c : ℝ} :
     c ≤ α.gaugeDist ℓ ↔ ∀ β : V → G, c ≤ α.cost ℓ β :=
   le_ciInf_iff (α.bddBelow_range_cost ℓ)
 
-@[simp]
-theorem defect_one (ℓ : GroupNorm G) : (1 : Cochain X G).defect ℓ = 0 := by simp [defect_def]
+theorem gaugeDist_lt_iff (ℓ : GroupNorm G) (α : Cochain X G) {c : ℝ} :
+    α.gaugeDist ℓ < c ↔ ∃ β : V → G, α.cost ℓ β < c :=
+  ciInf_lt_iff (α.bddBelow_range_cost ℓ)
 
-@[simp]
-theorem cost_one_one (ℓ : GroupNorm G) : (1 : Cochain X G).cost ℓ 1 = 0 := by simp [cost_def]
+@[simp] theorem defect_one (ℓ : GroupNorm G) : (1 : Cochain X G).defect ℓ = 0 := by
+  simp [defect_def]
 
-@[simp]
-theorem gaugeDist_one (ℓ : GroupNorm G) : (1 : Cochain X G).gaugeDist ℓ = 0 :=
+@[simp] theorem cost_one_one (ℓ : GroupNorm G) : (1 : Cochain X G).cost ℓ 1 = 0 := by
+  simp [cost_def]
+
+@[simp] theorem gaugeDist_one (ℓ : GroupNorm G) : (1 : Cochain X G).gaugeDist ℓ = 0 :=
   le_antisymm ((gaugeDist_le_cost ℓ 1 1).trans_eq (cost_one_one ℓ)) (gaugeDist_nonneg ℓ 1)
+
+/-- The defect of `α` vanishes if and only if every filled triangle has trivial holonomy, for
+every group norm `ℓ` (even without conjugation invariance). -/
+theorem defect_eq_zero_iff (ℓ : GroupNorm G) (α : Cochain X G) :
+    α.defect ℓ = 0 ↔ ∀ u v w, ({u, v, w} : Finset V) ∈ X.triangles → α.holonomy u v w = 1 := by
+  rw [defect_def, sum_eq_zero_iff_of_nonneg (fun _ _ => apply_nonneg ℓ _)]
+  simp only [mem_filter, mem_univ, true_and, map_eq_zero_iff_eq_one, Prod.forall]
+  refine ⟨fun h u v w ht => ?_, fun h u v w ⟨_, _, ht⟩ => h u v w ht⟩
+  obtain ⟨a, b, c, hab, hbc, hset⟩ := X.exists_increasing_of_mem_triangles ht
+  have habc : α.holonomy a b c = 1 := h a b c ⟨hab, hbc, hset ▸ ht⟩
+  have hmem {x : V} (hx : x ∈ ({u, v, w} : Finset V)) : x = a ∨ x = b ∨ x = c := by
+    simpa [← hset] using hx
+  have := hmem (x := u) (by simp); have := hmem (x := v) (by simp); have := hmem (x := w) (by simp)
+  grind [holonomy_rotate_eq_one_iff, holonomy_swap_eq_one_iff]
+
+/-- On the complete complex, `defect` vanishes if and only if every triple holonomy is `1`. -/
+theorem defect_complete_eq_zero_iff (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
+    α.defect ℓ = 0 ↔ ∀ u v w, α.holonomy u v w = 1 := by
+  rw [α.defect_eq_zero_iff ℓ]
+  refine ⟨fun h u v w => ?_, fun h u v w _ => h u v w⟩
+  by_cases hd : u ≠ v ∧ u ≠ w ∧ v ≠ w
+  · exact h u v w ((mem_triangles_complete _).mpr (card_triple_eq_three_iff.mpr hd))
+  · grind
 
 /-- The cost of a gauge `β` vanishes if and only if `β` trivializes `α`. -/
 theorem cost_eq_zero_iff (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
@@ -462,8 +486,7 @@ theorem IsCoboundary.gaugeDist_eq_zero {α : Cochain X G} (hα : α.IsCoboundary
     (α.gaugeDist_nonneg ℓ)
 
 /-- Gauge equivariance of cost: `cost (β • α) γ = cost α (β * γ)`, for every group norm `ℓ`. -/
-@[simp]
-theorem cost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) :
+@[simp] theorem cost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) :
     (β • α).cost ℓ γ = α.cost ℓ (β * γ) := by
   rw [cost_def, cost_def]
   refine sum_congr rfl fun p hp => ?_
@@ -471,14 +494,13 @@ theorem cost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) :
     mul_assoc]
 
 /-- Gauge distance is invariant under the gauge action for every group norm `ℓ`. -/
-@[simp]
-theorem gaugeDist_smul (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
+@[simp] theorem gaugeDist_smul (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
     (β • α).gaugeDist ℓ = α.gaugeDist ℓ := by
   simp_rw [gaugeDist_def, cost_smul]
   exact (Equiv.mulLeft β).iInf_congr fun _ => rfl
 
 /-- Under a conjugation-invariant group norm, the triangle defect is gauge invariant. -/
-theorem defect_smul {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
+@[simp] theorem defect_smul {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain X G) (β : V → G) : (β • α).defect ℓ = α.defect ℓ := by
   rw [defect_def, defect_def]
   refine sum_congr rfl fun p hp => ?_

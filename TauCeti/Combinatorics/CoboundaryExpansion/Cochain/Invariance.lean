@@ -131,14 +131,12 @@ theorem edgeCost_of_mem_edges (ℓ : GroupNorm G) (α : Cochain X G) (β : V →
   · rw [h₂, h₁]; exact α.norm_inv_mul_apply_mul_swap ℓ β u v
 
 /-- Evaluating `edgeCost` directly on a pair `{u, v} ∈ X.edges`. -/
-@[simp, grind =]
-theorem edgeCost_pair [DecidableEq V] (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G)
-    {u v : V} (he : ({u, v} : Finset V) ∈ X.edges) :
+@[simp, grind =] theorem edgeCost_pair [DecidableEq V] (ℓ : GroupNorm G) (α : Cochain X G)
+    (β : V → G) {u v : V} (he : ({u, v} : Finset V) ∈ X.edges) :
     α.edgeCost ℓ β {u, v} = ℓ ((β u)⁻¹ * α u v * β v) :=
   α.edgeCost_of_mem_edges ℓ β he ((X.adj_iff_pair_mem_edges u v).mpr he).ne (by simp) (by simp)
 
-@[simp]
-theorem edgeCost_of_notMem_edges (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G)
+@[simp] theorem edgeCost_of_notMem_edges (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G)
     {e : Finset V} (he : e ∉ X.edges) : α.edgeCost ℓ β e = 0 := by classical simp [edgeCost, he]
 
 theorem edgeCost_nonneg (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) (e : Finset V) :
@@ -146,20 +144,18 @@ theorem edgeCost_nonneg (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) (e
   classical
   by_cases he : e ∈ X.edges <;> simp [edgeCost, he, apply_nonneg]
 
-@[simp]
-theorem edgeCost_one_one (ℓ : GroupNorm G) (e : Finset V) :
+@[simp] theorem edgeCost_one_one (ℓ : GroupNorm G) (e : Finset V) :
     (1 : Cochain X G).edgeCost ℓ 1 e = 0 := by
   classical
   by_cases he : e ∈ X.edges <;> simp [edgeCost, he]
 
-@[simp]
-theorem edgeCost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) (e : Finset V) :
+@[simp] theorem edgeCost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) (e : Finset V) :
     (β • α).edgeCost ℓ γ e = α.edgeCost ℓ (β * γ) e := by
   by_cases he : e ∈ X.edges
   · obtain ⟨u, v, huv, hu, hv⟩ := X.exists_vertices_of_mem_edges he
     rw [(β • α).edgeCost_of_mem_edges ℓ γ he huv hu hv,
       α.edgeCost_of_mem_edges ℓ (β * γ) he huv hu hv]
-    simp [smul_apply_of_adj β α ((X.adj_iff u v).mpr ⟨huv, e, he, hu, hv⟩), mul_assoc]
+    simp [smul_apply_of_adj β α (X.adj_of_mem_edges he hu hv huv), mul_assoc]
   · simp [he]
 
 /-- The holonomy defect of an unoriented triangle `t`, or `0` if `t ∉ X.triangles`. Well-defined
@@ -206,8 +202,7 @@ theorem triangleDefect_triple [DecidableEq V] {ℓ : GroupNorm G}
   obtain ⟨huv, huw, hvw⟩ := card_triple_eq_three_iff.mp (X.triangle_card _ ht)
   exact α.triangleDefect_of_mem_triangles hℓ ht (by simp) (by simp) (by simp) huv huw hvw
 
-@[simp]
-theorem triangleDefect_of_notMem_triangles (ℓ : GroupNorm G) (α : Cochain X G)
+@[simp] theorem triangleDefect_of_notMem_triangles (ℓ : GroupNorm G) (α : Cochain X G)
     {t : Finset V} (ht : t ∉ X.triangles) : α.triangleDefect ℓ t = 0 := by
   classical simp [triangleDefect, ht]
 
@@ -216,13 +211,12 @@ theorem triangleDefect_nonneg (ℓ : GroupNorm G) (α : Cochain X G) (t : Finset
   classical
   by_cases ht : t ∈ X.triangles <;> simp [triangleDefect, ht, apply_nonneg]
 
-@[simp]
-theorem triangleDefect_one (ℓ : GroupNorm G) (t : Finset V) :
+@[simp] theorem triangleDefect_one (ℓ : GroupNorm G) (t : Finset V) :
     (1 : Cochain X G).triangleDefect ℓ t = 0 := by
   classical
   by_cases ht : t ∈ X.triangles <;> simp [triangleDefect, ht]
 
-theorem triangleDefect_smul {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
+@[simp] theorem triangleDefect_smul {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain X G) (β : V → G) (t : Finset V) :
     (β • α).triangleDefect ℓ t = α.triangleDefect ℓ t := by
   by_cases ht : t ∈ X.triangles
@@ -355,15 +349,12 @@ def relabel (α : Cochain X G) (e : V ≃ W) : Cochain (X.relabel e) G where
   inv_symm u v _ := α.apply_swap (e.symm u) (e.symm v)
   apply_eq_one_of_not_adj' u v huv := α.apply_eq_one_of_not_adj (mt (X.adj_relabel e u v).mpr huv)
 
-@[simp, grind =]
-theorem relabel_apply (α : Cochain X G) (e : V ≃ W) (u v : W) :
+@[simp, grind =] theorem relabel_apply (α : Cochain X G) (e : V ≃ W) (u v : W) :
     α.relabel e u v = α (e.symm u) (e.symm v) := (rfl)
 
-@[simp]
-theorem relabel_one (e : V ≃ W) : (1 : Cochain X G).relabel e = 1 := by ext u v _; rfl
+@[simp] theorem relabel_one (e : V ≃ W) : (1 : Cochain X G).relabel e = 1 := by ext u v _; rfl
 
-@[simp]
-theorem relabel_smul (β : V → G) (α : Cochain X G) (e : V ≃ W) :
+@[simp] theorem relabel_smul (β : V → G) (α : Cochain X G) (e : V ≃ W) :
     (β • α).relabel e = (β ∘ e.symm) • α.relabel e := by
   ext u v huv
   simp [smul_apply_of_adj _ _ huv, smul_apply_of_adj _ _ ((X.adj_relabel e u v).mp huv)]
@@ -379,22 +370,18 @@ def relabelEquiv (X : TwoComplex V) (e : V ≃ W) : Cochain X G ≃ Cochain (X.r
   left_inv α := by ext u v _; simp
   right_inv α := by ext u v _; simp
 
-@[simp]
-theorem relabelEquiv_apply (X : TwoComplex V) (e : V ≃ W) (α : Cochain X G) :
+@[simp] theorem relabelEquiv_apply (X : TwoComplex V) (e : V ≃ W) (α : Cochain X G) :
     relabelEquiv X e α = α.relabel e := (rfl)
 
-@[simp, grind =]
-theorem relabelEquiv_symm_apply (X : TwoComplex V) (e : V ≃ W)
+@[simp, grind =] theorem relabelEquiv_symm_apply (X : TwoComplex V) (e : V ≃ W)
     (α : Cochain (X.relabel e) G) (u v : V) :
     (relabelEquiv X e).symm α u v = α (e u) (e v) := (rfl)
 
-@[simp]
-theorem holonomy_relabel (α : Cochain X G) (e : V ≃ W) (u v w : W) :
+@[simp, grind =] theorem holonomy_relabel (α : Cochain X G) (e : V ≃ W) (u v w : W) :
     (α.relabel e).holonomy u v w = α.holonomy (e.symm u) (e.symm v) (e.symm w) := by
   simp [holonomy_def]
 
-@[simp]
-theorem edgeCost_relabel (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G) (e : V ≃ W)
+@[simp] theorem edgeCost_relabel (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G) (e : V ≃ W)
     (s : Finset W) :
     (α.relabel e).edgeCost ℓ γ s = α.edgeCost ℓ (γ ∘ e) (s.map e.symm.toEmbedding) := by
   by_cases hs : s ∈ (X.relabel e).edges
@@ -413,22 +400,20 @@ theorem edgeCost_relabel_map (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → 
   congr 1; ext; simp
 
 /-- Relabelling a cochain along `e : V ≃ W` pulls the gauge back along `e` in `cost`. -/
-@[simp]
-theorem cost_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+@[simp] theorem cost_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G) (e : V ≃ W) :
     (α.relabel e).cost ℓ γ = α.cost ℓ (γ ∘ e) := by
   rw [cost_eq_sum_edges, cost_eq_sum_edges, X.sum_edges_relabel e]
   exact sum_congr rfl fun s _ => α.edgeCost_relabel_map ℓ γ e s
 
 /-- Relabelling a cochain along `e : V ≃ W` preserves `gaugeDist` for every group norm `ℓ`. -/
-@[simp]
-theorem gaugeDist_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+@[simp] theorem gaugeDist_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (ℓ : GroupNorm G) (α : Cochain X G) (e : V ≃ W) :
     (α.relabel e).gaugeDist ℓ = α.gaugeDist ℓ := by
   rw [gaugeDist_def, gaugeDist_def]
   exact (Equiv.arrowCongr e.symm (Equiv.refl G)).iInf_congr fun γ => (α.cost_relabel ℓ γ e).symm
 
-theorem triangleDefect_relabel {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
+@[simp] theorem triangleDefect_relabel {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain X G) (e : V ≃ W) (t : Finset W) :
     (α.relabel e).triangleDefect ℓ t = α.triangleDefect ℓ (t.map e.symm.toEmbedding) := by
   by_cases ht : t ∈ (X.relabel e).triangles
@@ -450,14 +435,13 @@ theorem triangleDefect_relabel_map {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSemino
 
 /-- Under a conjugation-invariant norm, relabelling a cochain along `e : V ≃ W` preserves
 `defect`. -/
-theorem defect_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+@[simp] theorem defect_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) (e : V ≃ W) :
     (α.relabel e).defect ℓ = α.defect ℓ := by
   rw [defect_eq_sum_triangles hℓ, defect_eq_sum_triangles hℓ, X.sum_triangles_relabel e]
   exact sum_congr rfl fun t _ => α.triangleDefect_relabel_map hℓ e t
 
-@[simp]
-theorem isCoboundary_relabel (α : Cochain X G) (e : V ≃ W) :
+@[simp] theorem isCoboundary_relabel (α : Cochain X G) (e : V ≃ W) :
     (α.relabel e).IsCoboundary ↔ α.IsCoboundary := by
   simp only [isCoboundary_def]
   exact ⟨fun ⟨β, hβ⟩ => ⟨β ∘ e, fun u v huv => by
@@ -474,31 +458,25 @@ def relabelComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G) (e : V
   apply_eq_one_of_not_adj' u v huv := by
     obtain rfl : u = v := not_ne_iff.mp (mt (adj_complete u v).mpr huv); simp
 
-@[simp, grind =]
-theorem relabelComplete_apply [Fintype V] [Fintype W] (α : Cochain (complete V) G) (e : V ≃ W)
-    (u v : W) : α.relabelComplete e u v = α (e.symm u) (e.symm v) := (rfl)
+@[simp, grind =] theorem relabelComplete_apply [Fintype V] [Fintype W] (α : Cochain (complete V) G)
+    (e : V ≃ W) (u v : W) : α.relabelComplete e u v = α (e.symm u) (e.symm v) := (rfl)
 
-@[simp]
-theorem relabelComplete_one [Fintype V] [Fintype W] (e : V ≃ W) :
+@[simp] theorem relabelComplete_one [Fintype V] [Fintype W] (e : V ≃ W) :
     (1 : Cochain (complete V) G).relabelComplete e = 1 := by ext u v _; rfl
 
-@[simp]
-theorem relabelComplete_smul [Fintype V] [Fintype W] (β : V → G)
+@[simp] theorem relabelComplete_smul [Fintype V] [Fintype W] (β : V → G)
     (α : Cochain (complete V) G) (e : V ≃ W) :
     (β • α).relabelComplete e = (β ∘ e.symm) • α.relabelComplete e := by ext u v _; simp
 
-@[simp]
-theorem holonomy_relabelComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G) (e : V ≃ W)
-    (u v w : W) :
+@[simp, grind =] theorem holonomy_relabelComplete [Fintype V] [Fintype W]
+    (α : Cochain (complete V) G) (e : V ≃ W) (u v w : W) :
     (α.relabelComplete e).holonomy u v w = α.holonomy (e.symm u) (e.symm v) (e.symm w) := by
   simp [holonomy_def]
 
-@[simp]
-theorem relabelComplete_refl [Fintype V] (α : Cochain (complete V) G) :
+@[simp] theorem relabelComplete_refl [Fintype V] (α : Cochain (complete V) G) :
     α.relabelComplete (Equiv.refl V) = α := by ext u v _; rfl
 
-@[simp]
-theorem relabelComplete_relabelComplete {U : Type*} [Fintype V] [Fintype W] [Fintype U]
+@[simp] theorem relabelComplete_relabelComplete {U : Type*} [Fintype V] [Fintype W] [Fintype U]
     (α : Cochain (complete V) G) (e : V ≃ W) (f : W ≃ U) :
     (α.relabelComplete e).relabelComplete f = α.relabelComplete (e.trans f) := by ext u v _; rfl
 
@@ -510,12 +488,10 @@ def relabelCompleteEquiv [Fintype V] [Fintype W] (e : V ≃ W) :
   left_inv α := by simp
   right_inv α := by simp
 
-@[simp]
-theorem relabelCompleteEquiv_apply [Fintype V] [Fintype W] (e : V ≃ W)
+@[simp] theorem relabelCompleteEquiv_apply [Fintype V] [Fintype W] (e : V ≃ W)
     (α : Cochain (complete V) G) : relabelCompleteEquiv e α = α.relabelComplete e := (rfl)
 
-@[simp]
-theorem relabelCompleteEquiv_symm_apply [Fintype V] [Fintype W] (e : V ≃ W)
+@[simp, grind =] theorem relabelCompleteEquiv_symm_apply [Fintype V] [Fintype W] (e : V ≃ W)
     (α : Cochain (complete W) G) :
     (relabelCompleteEquiv e).symm α = α.relabelComplete e.symm := (rfl)
 
@@ -526,16 +502,14 @@ private theorem congr_complex {γ : Sort*} (F : ∀ X : TwoComplex W, Cochain X 
 
 /-- Relabelling a cochain on `complete V` along `e : V ≃ W` pulls the gauge back along `e` in
 `cost`. -/
-@[simp]
-theorem cost_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+@[simp] theorem cost_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (ℓ : GroupNorm G) (α : Cochain (complete V) G) (γ : W → G) (e : V ≃ W) :
     (α.relabelComplete e).cost ℓ γ = α.cost ℓ (γ ∘ e) :=
   (congr_complex (fun _ δ => δ.cost ℓ γ) (relabel_complete e).symm
     fun _ _ => rfl).trans (α.cost_relabel ℓ γ e)
 
 /-- Relabelling a cochain on `complete V` along `e : V ≃ W` preserves `gaugeDist`. -/
-@[simp]
-theorem gaugeDist_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+@[simp] theorem gaugeDist_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     (ℓ : GroupNorm G) (α : Cochain (complete V) G) (e : V ≃ W) :
     (α.relabelComplete e).gaugeDist ℓ = α.gaugeDist ℓ :=
   (congr_complex (fun _ γ => γ.gaugeDist ℓ) (relabel_complete e).symm
@@ -543,15 +517,14 @@ theorem gaugeDist_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [Linea
 
 /-- Under a conjugation-invariant norm, relabelling a cochain on `complete V` along `e : V ≃ W`
 preserves `defect`. -/
-theorem defect_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
+@[simp] theorem defect_relabelComplete [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
     {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
     (α : Cochain (complete V) G) (e : V ≃ W) :
     (α.relabelComplete e).defect ℓ = α.defect ℓ :=
   (congr_complex (fun _ γ => γ.defect ℓ) (relabel_complete e).symm
     fun _ _ => rfl).trans (α.defect_relabel hℓ e)
 
-@[simp]
-theorem isCoboundary_relabelComplete [Fintype V] [Fintype W]
+@[simp] theorem isCoboundary_relabelComplete [Fintype V] [Fintype W]
     (α : Cochain (complete V) G) (e : V ≃ W) :
     (α.relabelComplete e).IsCoboundary ↔ α.IsCoboundary :=
   (congr_complex (fun _ γ => γ.IsCoboundary) (relabel_complete e).symm
@@ -571,21 +544,17 @@ def map (φ : G →* H) (α : Cochain X G) : Cochain X H where
   inv_symm u v _ := by rw [α.apply_swap u v, map_inv]
   apply_eq_one_of_not_adj' u v huv := by rw [α.apply_eq_one_of_not_adj huv, map_one]
 
-@[simp, grind =]
-theorem map_apply (φ : G →* H) (α : Cochain X G) (u v : V) : α.map φ u v = φ (α u v) := (rfl)
+@[simp, grind =] theorem map_apply (φ : G →* H) (α : Cochain X G) (u v : V) :
+    α.map φ u v = φ (α u v) := (rfl)
 
-@[simp]
-theorem map_id (α : Cochain X G) : α.map (MonoidHom.id G) = α := by ext u v _; rfl
+@[simp] theorem map_id (α : Cochain X G) : α.map (MonoidHom.id G) = α := by ext u v _; rfl
 
-@[simp]
-theorem map_map (ψ : H →* K) (φ : G →* H) (α : Cochain X G) :
+@[simp] theorem map_map (ψ : H →* K) (φ : G →* H) (α : Cochain X G) :
     (α.map φ).map ψ = α.map (ψ.comp φ) := by ext u v _; rfl
 
-@[simp]
-theorem map_one (φ : G →* H) : (1 : Cochain X G).map φ = 1 := by ext u v _; simp
+@[simp] theorem map_one (φ : G →* H) : (1 : Cochain X G).map φ = 1 := by ext u v _; simp
 
-@[simp]
-theorem map_smul (φ : G →* H) (β : V → G) (α : Cochain X G) :
+@[simp] theorem map_smul (φ : G →* H) (β : V → G) (α : Cochain X G) :
     (β • α).map φ = (φ ∘ β) • α.map φ := by ext u v huv; simp [huv]
 
 theorem map_relabel {W : Type*} (φ : G →* H) (α : Cochain X G) (e : V ≃ W) :
@@ -595,8 +564,7 @@ theorem map_relabelComplete {W : Type*} [Fintype V] [Fintype W] (φ : G →* H)
     (α : Cochain (complete V) G) (e : V ≃ W) :
     (α.relabelComplete e).map φ = (α.map φ).relabelComplete e := by ext u v _; rfl
 
-@[simp]
-theorem holonomy_map (φ : G →* H) (α : Cochain X G) (u v w : V) :
+@[simp, grind =] theorem holonomy_map (φ : G →* H) (α : Cochain X G) (u v w : V) :
     (α.map φ).holonomy u v w = φ (α.holonomy u v w) := by simp [holonomy_def]
 
 theorem IsCoboundary.map {α : Cochain X G} (hα : α.IsCoboundary) (φ : G →* H) :
@@ -646,15 +614,13 @@ theorem cost_map_eq {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
 
 /-- Embedding an `L`-valued cochain into `G` along a subgroup `L ≤ G` preserves `defect` relative
 to the restricted norm `ℓ.comp L.subtype_injective`. -/
-@[simp]
-theorem defect_map_subtype (ℓ : GroupNorm G) (L : Subgroup G) (α : Cochain X L) :
+@[simp] theorem defect_map_subtype (ℓ : GroupNorm G) (L : Subgroup G) (α : Cochain X L) :
     (α.map L.subtype).defect ℓ = α.defect (ℓ.comp L.subtype_injective) :=
   α.defect_map_eq fun x => (ℓ.comp_apply L.subtype_injective x).symm
 
 /-- Embedding an `L`-valued cochain and gauge into `G` along a subgroup `L ≤ G` preserves `cost`
 relative to the restricted norm `ℓ.comp L.subtype_injective`. -/
-@[simp]
-theorem cost_map_subtype (ℓ : GroupNorm G) (L : Subgroup G) (α : Cochain X L) (β : V → L) :
+@[simp] theorem cost_map_subtype (ℓ : GroupNorm G) (L : Subgroup G) (α : Cochain X L) (β : V → L) :
     (α.map L.subtype).cost ℓ (Subtype.val ∘ β) = α.cost (ℓ.comp L.subtype_injective) β :=
   α.cost_map_eq (fun x => (ℓ.comp_apply L.subtype_injective x).symm) β
 
@@ -665,18 +631,15 @@ theorem gaugeDist_map_subtype_le (ℓ : GroupNorm G) (L : Subgroup G) (α : Coch
   α.gaugeDist_map_le fun x => (ℓ.comp_apply L.subtype_injective x).symm.le
 
 /-- Scaling a group norm by a positive real `r` scales `defect` by `r`. -/
-@[simp]
-theorem defect_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (α : Cochain X G) :
+@[simp] theorem defect_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (α : Cochain X G) :
     α.defect (ℓ.smulOfPos hr) = r * α.defect ℓ := by simp [defect_def, mul_sum]
 
 /-- Scaling a group norm by a positive real `r` scales `cost` by `r`. -/
-@[simp]
-theorem cost_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (α : Cochain X G) (β : V → G) :
-    α.cost (ℓ.smulOfPos hr) β = r * α.cost ℓ β := by simp [cost_def, mul_sum]
+@[simp] theorem cost_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (α : Cochain X G)
+    (β : V → G) : α.cost (ℓ.smulOfPos hr) β = r * α.cost ℓ β := by simp [cost_def, mul_sum]
 
 /-- Scaling a group norm by a positive real `r` scales `gaugeDist` by `r`. -/
-@[simp]
-theorem gaugeDist_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (α : Cochain X G) :
+@[simp] theorem gaugeDist_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (α : Cochain X G) :
     α.gaugeDist (ℓ.smulOfPos hr) = r * α.gaugeDist ℓ := by
   simp_rw [gaugeDist_def, cost_smulOfPos, ← Real.mul_iInf_of_nonneg hr.le]
 
