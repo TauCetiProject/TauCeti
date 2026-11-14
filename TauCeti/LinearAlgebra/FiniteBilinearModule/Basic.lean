@@ -32,6 +32,13 @@ restriction to a subgroup can be degenerate.
 * `TauCeti.FiniteBilinearModule.IsNondegenerate`: bijectivity of the adjoint pairing.
 * `TauCeti.FiniteBilinearModule.Hom`: a pairing-preserving additive homomorphism.
 * `TauCeti.FiniteBilinearModule.Isometry`: a pairing-preserving additive equivalence.
+* `TauCeti.FiniteBilinearModule.adjointEquiv`: the adjoint pairing of a nondegenerate module as an
+  additive equivalence with its character module.
+* `TauCeti.FiniteBilinearModule.restrict`: the restriction of the pairing to a subgroup, with
+  `TauCeti.FiniteBilinearModule.restrictHom` the inclusion into the ambient module.
+* `TauCeti.FiniteBilinearModule.neg`: the module with the negated pairing.
+* `TauCeti.FiniteBilinearModule.prod`: the orthogonal direct sum of two modules.
+* `TauCeti.FiniteBilinearModule.radical`: the kernel of the adjoint pairing.
 * `TauCeti.FiniteBilinearModule.Isometry.prod`: the orthogonal direct sum of two isometries.
 * `TauCeti.FiniteBilinearModule.orthogonalComplement`: the orthogonal complement of a subgroup.
 * `TauCeti.FiniteBilinearModule.IsIsotropicElem`: vanishing of the self-pairing on an element.
