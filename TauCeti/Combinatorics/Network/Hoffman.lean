@@ -132,10 +132,11 @@ theorem val_toAuxFlow (f : ExcessFlow 0 cap b) : f.toAuxFlow.val = ∑ v, max (b
   simp only [AuxTerminalHom.sum_sink (mem_univ _), toAuxFlow_sink]
 
 /-- Extending a prescribed-excess assignment preserves subgroup values in both directions. -/
-theorem toAuxFlow_mem_iff (f : ExcessFlow 0 cap b) (H : AddSubgroup K) (hb : ∀ v, b v ∈ H) :
+theorem toAuxFlow_mem_iff (f : ExcessFlow 0 cap b) (H : AddSubgroup K) :
     (∀ ⦃x y⦄ (e : AuxTerminalHom Q univ univ x y), f.toAuxFlow.toFun e ∈ H) ↔
       ∀ ⦃x y⦄ (e : Q x y), f.val e ∈ H := by
   refine ⟨fun h _ _ e ↦ by simpa using h (AuxTerminalHom.original e), fun h ↦ ?_⟩
+  have hb (v : V) : b v ∈ H := by simpa [f.excessAt_eq v] using excessAt_mem h v
   simpa only [toAuxFlow, excessCapacity] using excessCapacity_mem H h hb
 
 end ExcessFlow
@@ -292,12 +293,12 @@ theorem auxFlowEquiv_apply_sink (hb : ∑ v, b v = 0) (f : ExcessFlow lo hi b) (
 
 /-- The signed auxiliary reduction preserves subgroup values in both directions. -/
 theorem auxFlowEquiv_mem_iff (hb : ∑ v, b v = 0) (f : ExcessFlow lo hi b)
-    (H : AddSubgroup K) (hloH : ∀ ⦃x y⦄ (e : Q x y), lo e ∈ H) (hbH : ∀ v, b v ∈ H) :
+    (H : AddSubgroup K) (hloH : ∀ ⦃x y⦄ (e : Q x y), lo e ∈ H) :
     (∀ ⦃x y⦄ (e : AuxTerminalHom Q univ univ x y),
       (auxFlowEquiv lo hi b hb f).val.toFun e ∈ H) ↔
         ∀ ⦃x y⦄ (e : Q x y), f.val e ∈ H := by
   rw [auxFlowEquiv, Equiv.trans_apply, zeroAuxFlowEquiv_apply_val,
-    toAuxFlow_mem_iff _ H (fun v ↦ H.sub_mem (hbH v) (excessAt_mem hloH v))]
+    toAuxFlow_mem_iff _ H]
   exact forall_congr' fun x ↦ forall_congr' fun y ↦ forall_congr' fun e ↦ by
     rw [shiftLowerEquiv_apply_val]
     exact Assignment.sub_apply_mem_iff e (hloH e)

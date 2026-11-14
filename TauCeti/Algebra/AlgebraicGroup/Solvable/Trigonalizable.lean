@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Triangular
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
 /-!
@@ -33,7 +34,7 @@ enters, is not proved here.
 
 * `TauCeti.Comodule.hasNonzeroWeightVector_of_pairwise_commute`: commuting point actions produce a
   weight vector.
-* `TauCeti.Comodule.hasNonzeroWeightVector_of_isCocomm`: every nonzero finite-dimensional
+* `TauCeti.Comodule.hasNonzeroWeightVector_of_isCocomm`: every nonzero
   representation of a commutative affine group has a weight vector.
 * `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isCocomm`: every
   finite-dimensional representation of a commutative affine group has an upper-triangular basis
@@ -87,14 +88,24 @@ theorem hasNonzeroWeightVector_of_pairwise_commute
   intro g m hm
   exact hact g m hm ▸ p.smul_mem _ hm
 
-/-- Every nonzero finite-dimensional representation of a commutative affine group, reduced and of
-finite type over an algebraically closed field, has a nonzero weight vector. -/
+/-- Every nonzero representation of a commutative affine group, reduced and of finite type over
+an algebraically closed field, has a nonzero weight vector. -/
 theorem hasNonzeroWeightVector_of_isCocomm
     [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H] [Coalgebra.IsCocomm k H]
-    [FiniteDimensional k M] [Nontrivial M] :
-    HasNonzeroWeightVector k H M :=
-  hasNonzeroWeightVector_of_pairwise_commute fun g h _ ↦
-    (Commute.all g h).map (basePointsRepresentation (R := k) (H := H) M)
+    [Nontrivial M] :
+    HasNonzeroWeightVector k H M := by
+  -- A nonzero vector lies in a finite-dimensional subcomodule, which has a weight vector.
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  obtain ⟨N, hfin, hmN⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) m
+  have : FiniteDimensional k N := hfin
+  have : Nontrivial N := ⟨⟨⟨m, hmN⟩, 0, fun h ↦ hm (congrArg Subtype.val h)⟩⟩
+  obtain ⟨v, c, hv, hc, hvc⟩ := hasNonzeroWeightVector_iff.mp
+    (hasNonzeroWeightVector_of_pairwise_commute (k := k) (H := H) (M := N) fun g h _ ↦
+      (Commute.all g h).map (basePointsRepresentation (R := k) (H := H) N))
+  exact hasNonzeroWeightVector_iff.mpr
+    ⟨N.subtype v, c, fun h ↦ hv (Subtype.ext (by simpa using h)), hc,
+      _root_.GroupLike.mem_weightSpace.mp (N.subtype.map_mem_groupLikeWeightSpace (c := ⟨c, hc⟩)
+        (_root_.GroupLike.mem_weightSpace.mpr hvc))⟩
 
 /-- **Every finite-dimensional representation of a commutative affine group is trigonalizable.**
 For a reduced finite-type cocommutative Hopf algebra over an algebraically closed field, every
