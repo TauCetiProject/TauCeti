@@ -110,12 +110,12 @@ section Convolution
 private theorem mem_support_of_integrand_ne_zero (f g : C_c(G, A)) {s r : G}
     (hsr : (ω.value r (r⁻¹ * s) : 𝓜(ℂ, A)).snd (f r * α r (g (r⁻¹ * s))) ≠ 0) :
     r ∈ support f ∧ r⁻¹ * s ∈ support g :=
-  ⟨mem_support.2 fun hf => hsr (by simp [hf]), mem_support.2 fun hg => hsr (by simp [hg])⟩
+  mem_support_and_inv_mul_mem_support hsr (by intro h; simp [h]) (by intro h; simp [h])
 
 private theorem mem_tsupport_of_integrand_ne_zero (f g : C_c(G, A)) {s r : G}
     (hsr : (ω.value r (r⁻¹ * s) : 𝓜(ℂ, A)).snd (f r * α r (g (r⁻¹ * s))) ≠ 0) :
     r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-  (ω.mem_support_of_integrand_ne_zero f g hsr).imp (subset_tsupport _ ·) (subset_tsupport _ ·)
+  mem_tsupport_and_inv_mul_mem_tsupport hsr (by intro h; simp [h]) (by intro h; simp [h])
 
 variable [IsTopologicalGroup G]
 
@@ -215,24 +215,11 @@ private theorem convolution_assoc_integrand_eq (r u s : G) (a b c : A) :
   have huw : u * w = r⁻¹ * s := mul_inv_cancel_left u (r⁻¹ * s)
   rw [hw, ← huw, α.mul_apply r u c]
   apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
-  have hα :
-      (α r ((ω.value u w : 𝓜(ℂ, A)).snd (b * α u c)) : 𝓜(ℂ, A)) =
-        (α r b : 𝓜(ℂ, A)) * (α r (α u c) : 𝓜(ℂ, A)) *
-          α.multiplier r (ω.value u w : 𝓜(ℂ, A)) := by
-    rw [← α.multiplier_coe, ← DoubleCentralizer.coe_mul_eq_coe_snd, map_mul,
-      DoubleCentralizer.coe_mul, map_mul, α.multiplier_coe, α.multiplier_coe]
-  simp only [← DoubleCentralizer.coe_mul_eq_coe_snd, DoubleCentralizer.coe_mul, hα]
-  calc ((a : 𝓜(ℂ, A)) * (α r b : 𝓜(ℂ, A)) * (ω.value r u : 𝓜(ℂ, A))) *
-          (α r (α u c) : 𝓜(ℂ, A)) * (ω.value (r * u) w : 𝓜(ℂ, A))
-      = (a : 𝓜(ℂ, A)) * (α r b : 𝓜(ℂ, A)) * (α r (α u c) : 𝓜(ℂ, A)) *
-          ((ω.value r u : 𝓜(ℂ, A)) * (ω.value (r * u) w : 𝓜(ℂ, A))) := by
-        simp only [mul_assoc]
-        congr 2
-        rw [← mul_assoc, (ω.central r u _).eq, mul_assoc]
-    _ = (a : 𝓜(ℂ, A)) * ((α r b : 𝓜(ℂ, A)) * (α r (α u c) : 𝓜(ℂ, A)) *
-          α.multiplier r (ω.value u w : 𝓜(ℂ, A))) * (ω.value r (u * w) : 𝓜(ℂ, A)) := by
-        rw [← ω.multiplier_value_mul_value]
-        simp only [mul_assoc]
+  -- Push the `A → 𝓜(ℂ, A)` coercion inward, then commute central `ω(r, u)` past `α'_r(α'_u(c))`
+  -- and apply the multiplier `2`-cocycle identity.
+  simp only [← DoubleCentralizer.coe_mul_eq_coe_snd, ← α.multiplier_coe,
+    DoubleCentralizer.coe_mul, map_mul, mul_assoc]
+  rw [(ω.central r u _).left_comm, ← ω.multiplier_value_mul_value]
 
 /-- Cocycle-twisted convolution with respect to a left-invariant measure is associative. -/
 theorem convolution_assoc (f g h : C_c(G, A)) :
@@ -258,8 +245,8 @@ theorem convolution_assoc (f g h : C_c(G, A)) :
             α t (h (t⁻¹ * s))) ∂μ ∂μ := by
         refine integral_integral_swap_of_hasCompactSupport ?_
           (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport
-            fun t r htr => ω.mem_tsupport_of_integrand_ne_zero f g
-              (left_ne_zero_of_mul fun hz => htr (by rw [hz, map_zero])))
+            fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h
+              (by intro hf; simp [hf]) (by intro hg; simp [hg]))
         rw [uncurry_def]
         fun_prop
     _ = ∫ r, (ω.value r (r⁻¹ * s) : 𝓜(ℂ, A)).snd (f r *
@@ -283,35 +270,14 @@ theorem convolution_assoc (f g h : C_c(G, A)) :
 /-- The `L¹` norm is submultiplicative for cocycle-twisted convolution with respect to a
 left-invariant measure. -/
 theorem integral_norm_convolution_le (f g : C_c(G, A)) :
-    ∫ s, ‖ω.convolution μ f g s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
-  have hsupp : ∀ s r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-    fun s r hsr => ⟨subset_tsupport _ (mem_support.2 fun hf => hsr (by simp [hf])),
-      subset_tsupport _ (mem_support.2 fun hg => hsr (by simp [hg]))⟩
-  have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
-    rw [uncurry_def]
-    fun_prop
-  have hNcont := continuous_integral_of_compact_support μ f.hasCompactSupport hcont
-    fun s r h => (hsupp s r h).1
-  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
-    g.hasCompactSupport hsupp
-  calc ∫ s, ‖ω.convolution μ f g s‖ ∂μ
-      ≤ ∫ s, ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ := by
-        refine integral_mono ((ω.convolution μ f g).continuous.norm.integrable_of_hasCompactSupport
-          (ω.convolution μ f g).hasCompactSupport.norm)
-          (hNcont.integrable_of_hasCompactSupport hNsupp) fun s => ?_
-        rw [convolution_apply]
-        refine norm_integral_le_of_norm_le
-          ((hcont.comp (.prodMk_right s)).integrable_of_hasCompactSupport
-            (f.hasCompactSupport.mono' fun r hr => (hsupp s r hr).1)) (.of_forall fun r => ?_)
+    ∫ s, ‖ω.convolution μ f g s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ :=
+  integral_norm_le_mul_of_norm_le_integral μ (ω.convolution μ f g) f g fun s =>
+    norm_integral_le_of_norm_le
+      ((by fun_prop : Continuous fun r => ‖f r‖ * ‖g (r⁻¹ * s)‖).integrable_of_hasCompactSupport
+        f.hasCompactSupport.norm.mul_right)
+      (.of_forall fun r => by
         simpa [DoubleCentralizer.norm_unitary_snd, StarAlgEquiv.norm_map] using
-          norm_mul_le (f r) (α r (g (r⁻¹ * s)))
-    _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont
-          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
-    _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
-        congr 1 with r
-        rw [integral_const_mul, integral_mul_left_eq_self (fun s => ‖g s‖) r⁻¹]
-    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := integral_mul_const _ _
+          norm_mul_le (f r) (α r (g (r⁻¹ * s))))
 
 end LeftInvariant
 
@@ -339,7 +305,7 @@ def involution : C_c(G, A) →ₗ⋆[ℂ] C_c(G, A) where
           continuous_modularCharacter)).smul hω
       hasCompactSupport' :=
         (f.hasCompactSupport.comp_homeomorph (Homeomorph.inv G)).mono fun s hs hz => by
-          have hfs : f s⁻¹ = 0 := hz
+          have hfs : f s⁻¹ = 0 := by simpa using hz
           exact hs (by simp [hfs]) }
   map_add' f g := by
     ext s
@@ -361,6 +327,18 @@ theorem one_involution : (1 : CentralCocycle α).involution = α.twistedInvoluti
   ext f s
   simp
 
+private theorem coe_involution_apply (f : C_c(G, A)) (s : G) :
+    (ω.involution f s : 𝓜(ℂ, A)) =
+      ((Measure.modularCharacter s : ℝ) : ℂ) •
+        (star (ω.value s s⁻¹ : 𝓜(ℂ, A)) * α.multiplier s (star (f s⁻¹ : 𝓜(ℂ, A)))) := by
+  simp only [involution_apply, DoubleCentralizer.coe_smul,
+    ← DoubleCentralizer.mul_coe_eq_coe_fst, ← α.multiplier_coe, DoubleCentralizer.coe_star]
+
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] in
+private theorem multiplier_apply_multiplier_apply {α : CStarAction G A} (r s : G) (m : 𝓜(ℂ, A)) :
+    α.multiplier r (α.multiplier s m) = α.multiplier (r * s) m := by
+  rw [map_mul, StarAlgEquiv.mul_apply]
+
 /-- Applying the cocycle-twisted involution twice recovers `f`, using `α'_s(ω(s⁻¹, s)) = ω(s, s⁻¹)`.
 -/
 @[simp]
@@ -369,47 +347,50 @@ theorem involution_involution (f : C_c(G, A)) : ω.involution (ω.involution f) 
   have hc : ((Measure.modularCharacter s : ℝ) : ℂ) *
       ((Measure.modularCharacter s⁻¹ : ℝ) : ℂ) = 1 := by
     exact_mod_cast modularCharacter_mul_inv s
-  have hinner :
-      (α s (star ((star (ω.value s⁻¹ s : 𝓜(ℂ, A))).fst (α s⁻¹ (star (f s))))) : 𝓜(ℂ, A)) =
-        (f s : 𝓜(ℂ, A)) * (ω.value s s⁻¹ : 𝓜(ℂ, A)) := by
-    rw [← α.multiplier_coe, DoubleCentralizer.coe_star, ← DoubleCentralizer.mul_coe_eq_coe_fst,
-      star_mul, map_mul, ← DoubleCentralizer.coe_star, ← map_star, star_star, star_star,
-      α.multiplier_coe, apply_inv_apply, ω.multiplier_value_inv_left]
   apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
-  simp only [involution_apply, inv_inv, star_smul, Complex.star_def, Complex.conj_ofReal,
-    map_smul, ← DoubleCentralizer.mul_coe_eq_coe_fst, hinner, smul_smul, hc, one_smul]
-  rw [← mul_assoc, (ω.commute_star_value s s⁻¹ (f s : 𝓜(ℂ, A))).eq, mul_assoc,
+  -- Push the `A → 𝓜(ℂ, A)` coercion inward through both involutions, then cancel the cocycle via
+  -- `α'_s(ω(s⁻¹, s)) = ω(s, s⁻¹)` and centrality of `ω(s, s⁻¹)*`.
+  simp only [coe_involution_apply, inv_inv, star_smul, Complex.star_def, Complex.conj_ofReal,
+    star_mul, ← map_star, star_star, map_smul, map_mul, multiplier_apply_multiplier_apply,
+    mul_inv_cancel, map_one, StarAlgEquiv.one_apply, mul_smul_comm, smul_smul, hc, one_smul]
+  rw [ω.multiplier_value_inv_left, (ω.commute_star_value s s⁻¹ _).left_comm,
     Unitary.coe_star_mul_self, mul_one]
+
+/-- Pointwise, the unitary cocycle twist preserves the norm of `α.twistedInvolution`. -/
+theorem norm_involution_eq_norm_twistedInvolution (f : C_c(G, A)) (s : G) :
+    ‖ω.involution f s‖ = ‖α.twistedInvolution f s‖ := by
+  rw [involution_apply, twistedInvolution_apply, norm_smul, norm_smul, ← Unitary.coe_star,
+    DoubleCentralizer.norm_unitary_fst]
 
 /-- The norm of `ω.involution f s` equals the modular character times `‖f s⁻¹‖`. -/
 @[simp↓]
 theorem norm_involution_apply (f : C_c(G, A)) (s : G) :
     ‖ω.involution f s‖ = (Measure.modularCharacter s : ℝ) * ‖f s⁻¹‖ := by
-  rw [involution_apply, norm_smul, ← Unitary.coe_star, DoubleCentralizer.norm_unitary_fst]
-  simp [StarAlgEquiv.norm_map]
+  rw [ω.norm_involution_eq_norm_twistedInvolution, α.norm_twistedInvolution_apply]
 
 /-- The cocycle-twisted involution vanishes at `s` if and only if `f` vanishes at `s⁻¹`. -/
 @[simp↓]
 theorem involution_apply_eq_zero_iff (f : C_c(G, A)) (s : G) :
     ω.involution f s = 0 ↔ f s⁻¹ = 0 := by
-  rw [← norm_eq_zero, norm_involution_apply]
-  have hc : (Measure.modularCharacter s : ℝ) ≠ 0 := by
-    rw [modularCharacter_apply]
-    exact NNReal.coe_ne_zero.mpr (Measure.modularCharacterFun_pos s).ne'
-  simp [hc]
+  rw [← norm_eq_zero, ω.norm_involution_eq_norm_twistedInvolution, norm_eq_zero,
+    α.twistedInvolution_apply_eq_zero_iff]
 
 /-- The support of `ω.involution f` is the inverse of `support f`. -/
 @[simp]
 theorem support_involution (f : C_c(G, A)) :
     support (ω.involution f) = (support f)⁻¹ := by
-  ext s
-  exact not_congr (ω.involution_apply_eq_zero_iff f s)
+  have h : support (ω.involution f) = support (α.twistedInvolution f) := by
+    ext s
+    simp only [mem_support, ne_eq, ω.involution_apply_eq_zero_iff,
+      α.twistedInvolution_apply_eq_zero_iff]
+  exact h.trans (α.support_twistedInvolution f)
 
 /-- The topological support of `ω.involution f` is the inverse of `tsupport f`. -/
 @[simp]
 theorem tsupport_involution (f : C_c(G, A)) :
     tsupport (ω.involution f) = (tsupport f)⁻¹ := by
-  simp only [tsupport, support_involution, ← inv_closure]
+  rw [tsupport, ω.support_involution, ← α.support_twistedInvolution, ← tsupport,
+    α.tsupport_twistedInvolution]
 
 /-- Against any Haar measure, `ω.involution` preserves the `L¹` norm. -/
 theorem integral_norm_involution [MeasurableSpace G] [BorelSpace G] (μ : Measure G)
@@ -453,39 +434,26 @@ private theorem involution_convolution_integrand_eq (f g : C_c(G, A)) (s r : G) 
           (α s (star ((ω.value r (r⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f r * α r (g (r⁻¹ * s⁻¹)))))) =
       (ω.value (s * r) ((s * r)⁻¹ * s) : 𝓜(ℂ, A)).snd
         (ω.involution g (s * r) * α (s * r) (ω.involution f ((s * r)⁻¹ * s))) := by
-  have hc : ((Measure.modularCharacter (s * r) : ℝ) : ℂ) *
-      ((Measure.modularCharacter r⁻¹ : ℝ) : ℂ) = (Measure.modularCharacter s : ℝ) := by
+  have hc : ((Measure.modularCharacter r⁻¹ : ℝ) : ℂ) *
+      ((Measure.modularCharacter (s * r) : ℝ) : ℂ) = (Measure.modularCharacter s : ℝ) := by
+    rw [mul_comm]
     exact_mod_cast modularCharacter_mul_inv_cancel_right s r
   have hidx : (s * r)⁻¹ * s = r⁻¹ := by simp [mul_inv_rev, mul_assoc]
   rw [hidx]
-  set X : 𝓜(ℂ, A) := (α s (α r (star (g (r⁻¹ * s⁻¹)))) : 𝓜(ℂ, A)) * (α s (star (f r)) : 𝓜(ℂ, A))
-  have hL :
-      (α s (star ((ω.value r (r⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f r * α r (g (r⁻¹ * s⁻¹))))) :
-        𝓜(ℂ, A)) = α.multiplier s (star (ω.value r (r⁻¹ * s⁻¹) : 𝓜(ℂ, A))) * X := by
-    rw [← α.multiplier_coe, DoubleCentralizer.coe_star, ← DoubleCentralizer.coe_mul_eq_coe_snd,
-      DoubleCentralizer.coe_mul, star_mul, star_mul, map_mul, map_mul, ← DoubleCentralizer.coe_star,
-      ← DoubleCentralizer.coe_star, ← map_star (α r), α.multiplier_coe, α.multiplier_coe]
-  have hRg : (ω.involution g (s * r) : 𝓜(ℂ, A)) = ((Measure.modularCharacter (s * r) : ℝ) : ℂ) •
-      (star (ω.value (s * r) (r⁻¹ * s⁻¹) : 𝓜(ℂ, A)) *
-        (α s (α r (star (g (r⁻¹ * s⁻¹)))) : 𝓜(ℂ, A))) := by
-    rw [involution_apply, mul_inv_rev, α.mul_apply, DoubleCentralizer.coe_smul,
-      ← DoubleCentralizer.mul_coe_eq_coe_fst]
-  have hRf : (α (s * r) (ω.involution f r⁻¹) : 𝓜(ℂ, A)) =
-      ((Measure.modularCharacter r⁻¹ : ℝ) : ℂ) •
-        (α.multiplier (s * r) (star (ω.value r⁻¹ r : 𝓜(ℂ, A))) * (α s (star (f r)) : 𝓜(ℂ, A))) := by
-    rw [involution_apply, inv_inv, map_smul, DoubleCentralizer.coe_smul, ← α.multiplier_coe,
-      ← DoubleCentralizer.mul_coe_eq_coe_fst, map_mul, α.multiplier_coe, α.mul_apply,
-      apply_inv_apply]
   apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
-  rw [DoubleCentralizer.coe_smul, ← DoubleCentralizer.mul_coe_eq_coe_fst, hL,
-    ← DoubleCentralizer.coe_mul_eq_coe_snd, DoubleCentralizer.coe_mul, hRg, hRf,
-    smul_mul_smul_comm, hc, smul_mul_assoc]
+  -- Push the `A → 𝓜(ℂ, A)` coercion inward on both sides, apply
+  -- `involution_convolution_cocycle_eq`, and commute the central cocycle factors past `g` and `f`.
+  simp only [coe_involution_apply, ← DoubleCentralizer.mul_coe_eq_coe_fst,
+    ← DoubleCentralizer.coe_mul_eq_coe_snd, ← α.multiplier_coe, DoubleCentralizer.coe_smul,
+    DoubleCentralizer.coe_mul, DoubleCentralizer.coe_star, mul_inv_rev, inv_inv, star_mul,
+    ← map_star, map_smul, map_mul (α.multiplier s), map_mul (α.multiplier (s * r)),
+    multiplier_apply_multiplier_apply, mul_assoc, mul_inv_cancel, mul_one, smul_mul_assoc,
+    mul_smul_comm, smul_smul, hc]
   congr 1
-  rw [← mul_assoc (star (ω.value s s⁻¹ : 𝓜(ℂ, A))), ω.involution_convolution_cocycle_eq,
-    mul_assoc (star _ * _), (ω.central (s * r) r⁻¹ X).eq]
-  simp only [X, ← mul_assoc]
-  congr 2
-  rw [mul_assoc, (ω.commute_multiplier_star_value (s * r) r⁻¹ r _).eq, ← mul_assoc]
+  rw [← mul_assoc, ω.involution_convolution_cocycle_eq]
+  simp only [mul_assoc]
+  rw [(ω.central (s * r) r⁻¹ _).left_comm, (ω.central (s * r) r⁻¹ _).eq,
+    (ω.commute_multiplier_star_value (s * r) r⁻¹ r _).left_comm]
 
 variable [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G] (μ : Measure G)
   [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]

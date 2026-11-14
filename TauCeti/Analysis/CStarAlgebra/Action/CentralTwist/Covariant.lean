@@ -23,14 +23,15 @@ trivial, `U` is not a group homomorphism.
 
 For a compactly supported continuous coefficient function `f : C_c(G, A)` and a measure `μ` finite
 on compacts, the *integrated form* is the bounded operator defined by Hilbert-space vector
-integration
+integration (`NonUnitalStarAlgHom.integratedOperator`)
 
 `P.integratedOperator μ f v = ∫ s, P.pi (f s) (U_s v) ∂μ`,
 
 bounded in operator norm by `∫ s, ‖f s‖ ∂μ`. No operator-norm continuity of `U`, unitality of `A`,
-separability, second countability, or σ-finiteness of `μ` is assumed. When `μ` is left-invariant,
-covariance and the projective law yield `P.pi (f r) U_r P.pi (g t) U_t = P.pi (f r * α_r(g t) *
-ω(r, t)) U_{r * t}`, and compact-support Fubini together with left-translation invariance makes
+separability, second countability, or σ-finiteness of `μ` is assumed. Covariance and the
+projective law combine into the algebraic identity `P.pi (f r) U_r P.pi (g t) U_t =
+P.pi (f r * α_r(g t) * ω(r, t)) U_{r * t}` (`CentralCovariantPair.pi_mul_unitaryMap_mul`). When `μ`
+is left-invariant, compact-support Fubini together with left-translation invariance makes
 `P.integratedOperator μ` multiplicative for `twistedConvolution`
 (`centralIntegrated_twistedConvolution`). Against any Haar measure, the modular factor in
 `ω.involution` cancels Haar inversion so that `P.integratedOperator μ` sends `ω.involution` to the
@@ -287,109 +288,76 @@ variable [MeasurableSpace G] [OpensMeasurableSpace G] (P : CentralCovariantPair 
   (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
+/-- Every unitary operator `P.unitaryMap s` has operator norm at most `1`. -/
+theorem norm_unitaryMap_le_one (s : G) : ‖(P.unitaryMap s : H →L[ℂ] H)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by simp [Unitary.norm_map]
+
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
+/-- The projective unitary family `P.unitaryMap` is uniformly bounded in operator norm. -/
+theorem exists_norm_unitaryMap_le : ∃ C, ∀ s, ‖(P.unitaryMap s : H →L[ℂ] H)‖ ≤ C :=
+  ⟨1, P.norm_unitaryMap_le_one⟩
+
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The Hilbert-space integrand of the integrated form is continuous. -/
 @[fun_prop]
 theorem continuous_integrand (f : C_c(G, A)) (v : H) :
     Continuous fun s => P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v) :=
-  (map_continuous P.pi |>.comp f.continuous).clm_apply (P.strong_continuous v)
+  P.pi.continuous_integrand P.strong_continuous f v
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The Hilbert-space integrand vanishes outside the support of `f`. -/
 theorem hasCompactSupport_integrand (f : C_c(G, A)) (v : H) :
     HasCompactSupport fun s => P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v) :=
-  f.hasCompactSupport.mono fun _ hg hzero => hg (by simp [hzero])
+  P.pi.hasCompactSupport_integrand (fun s => (P.unitaryMap s : H →L[ℂ] H)) f v
 
 /-- Compact support makes every Hilbert-space integrand integrable. -/
 theorem integrable_integrand (f : C_c(G, A)) (v : H) :
     Integrable (fun s => P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v)) μ :=
-  (P.continuous_integrand f v).integrable_of_hasCompactSupport (P.hasCompactSupport_integrand f v)
-
-private theorem norm_integral_le (f : C_c(G, A)) (v : H) :
-    ‖∫ s, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v) ∂μ‖ ≤ (∫ s, ‖f s‖ ∂μ) * ‖v‖ := by
-  calc
-    _ ≤ ∫ s, ‖f s‖ * ‖v‖ ∂μ := by
-      refine norm_integral_le_of_norm_le (f.integrable.norm.mul_const _) (.of_forall fun s => ?_)
-      calc
-        _ ≤ ‖P.pi (f s)‖ * ‖(P.unitaryMap s : H →L[ℂ] H) v‖ := (P.pi (f s)).le_opNorm _
-        _ ≤ ‖f s‖ * ‖v‖ := by
-          rw [Unitary.norm_map]
-          exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
-    _ = _ := integral_mul_const _ _
+  P.pi.integrable_integrand P.strong_continuous μ f v
 
 /-- The vector-valued integrated form `v ↦ ∫ s, P.pi (f s) (U_s v) ∂μ` on `C_c(G, A)`. -/
-def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) where
-  toFun f := LinearMap.mkContinuous
-    { toFun v := ∫ s, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v) ∂μ
-      map_add' v w := by
-        simp_rw [map_add]
-        exact integral_add (P.integrable_integrand μ f v) (P.integrable_integrand μ f w)
-      map_smul' c v := by
-        simp_rw [map_smul]
-        exact integral_smul c _ }
-    (∫ s, ‖f s‖ ∂μ) (P.norm_integral_le μ f)
-  map_add' f g := by
-    ext v
-    simp only [LinearMap.mkContinuous_apply, CompactlySupportedContinuousMap.add_apply, map_add,
-      add_apply]
-    exact integral_add (P.integrable_integrand μ f v) (P.integrable_integrand μ g v)
-  map_smul' c f := by
-    ext v
-    simp only [LinearMap.mkContinuous_apply, CompactlySupportedContinuousMap.smul_apply, map_smul,
-      smul_apply, RingHom.id_apply]
-    exact integral_smul c _
+@[expose]
+def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) :=
+  P.pi.integratedOperator (fun s => (P.unitaryMap s : H →L[ℂ] H)) P.strong_continuous
+    P.exists_norm_unitaryMap_le μ
 
 /-- Defining vector formula for `CentralCovariantPair.integratedOperator`. -/
 theorem integratedOperator_apply (f : C_c(G, A)) (v : H) :
     P.integratedOperator μ f v = ∫ s, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v) ∂μ :=
-  (rfl)
+  P.pi.integratedOperator_apply P.strong_continuous P.exists_norm_unitaryMap_le μ f v
 
 /-- The operator norm of `P.integratedOperator μ f` is bounded by `∫ s, ‖f s‖ ∂μ`. Neither
 covariance nor the projective law is used in this estimate. -/
 theorem norm_integratedOperator_le (f : C_c(G, A)) :
     ‖P.integratedOperator μ f‖ ≤ ∫ s, ‖f s‖ ∂μ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (integral_nonneg fun _ => norm_nonneg _) fun v => ?_
-  rw [integratedOperator_apply]
-  exact P.norm_integral_le μ f v
+  simpa [integratedOperator] using P.pi.norm_integratedOperator_le P.strong_continuous
+    P.exists_norm_unitaryMap_le μ P.norm_unitaryMap_le_one f
 
 /-- Matrix coefficients of `P.integratedOperator μ f` are integrals of pointwise matrix
 coefficients. -/
 theorem inner_integratedOperator_apply (f : C_c(G, A)) (w v : H) :
     ⟪w, P.integratedOperator μ f v⟫_ℂ =
-      ∫ s, ⟪w, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v)⟫_ℂ ∂μ := by
-  rw [integratedOperator_apply, integral_inner (P.integrable_integrand μ f v)]
+      ∫ s, ⟪w, P.pi (f s) ((P.unitaryMap s : H →L[ℂ] H) v)⟫_ℂ ∂μ :=
+  P.pi.inner_integratedOperator_apply P.strong_continuous P.exists_norm_unitaryMap_le μ f w v
 
 /-- Left multiplication of `f` by `a : A` becomes left multiplication by `P.pi a`. -/
 @[simp]
 theorem integratedOperator_smul (a : A) (f : C_c(G, A)) :
-    P.integratedOperator μ (a • f) = P.pi a * P.integratedOperator μ f := by
-  ext v
-  simp only [integratedOperator_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
-    map_mul, mul_apply_eq_comp]
-  exact (P.pi a).integral_comp_comm (P.integrable_integrand μ f v)
+    P.integratedOperator μ (a • f) = P.pi a * P.integratedOperator μ f :=
+  P.pi.integratedOperator_smul P.strong_continuous P.exists_norm_unitaryMap_le μ a f
 
 /-- A represented coefficient on the right moves inside the integral with the action twist. -/
 theorem integratedOperator_pi_apply (f : C_c(G, A)) (a : A) (v : H) :
     P.integratedOperator μ f (P.pi a v) =
-      ∫ s, P.pi (f s * α s a) ((P.unitaryMap s : H →L[ℂ] H) v) ∂μ := by
-  rw [integratedOperator_apply]
-  simp_rw [P.unitaryMap_apply_pi_apply, map_mul, mul_apply_eq_comp]
-
-omit [MeasurableSpace G] [OpensMeasurableSpace G] in
-/-- Vector evaluation of `P.pi` commutes with Bochner integration. -/
-theorem integral_pi_apply {X : Type*} [MeasurableSpace X] {ν : Measure X} {F : X → A}
-    (hF : Integrable F ν) (w : H) :
-    ∫ x, P.pi (F x) w ∂ν = P.pi (∫ x, F x ∂ν) w := by
-  let L : A →L[ℂ] H := (ContinuousLinearMap.apply ℂ H w).comp
-    { toLinearMap := (P.pi : A →ₗ[ℂ] (H →L[ℂ] H)), cont := map_continuous _ }
-  have hL (a : A) : L a = P.pi a w := rfl
-  simpa only [hL] using L.integral_comp_comm hF
+      ∫ s, P.pi (f s * α s a) ((P.unitaryMap s : H →L[ℂ] H) v) ∂μ :=
+  P.pi.integratedOperator_apply_apply P.strong_continuous P.exists_norm_unitaryMap_le μ
+    (fun s => P.unitaryMap_apply_pi_apply s a v) f
 
 /-- For `ω = 1`, the integrated form agrees with `CovariantRepresentation.integratedOperator`. -/
 @[simp]
 theorem toCovariantRepresentation_integratedOperator (P : CentralCovariantPair H α 1) :
-    P.toCovariantRepresentation.integratedOperator μ = P.integratedOperator μ := by
-  ext f v
-  simp [CovariantRepresentation.integratedOperator_apply, integratedOperator_apply]
+    P.toCovariantRepresentation.integratedOperator μ = P.integratedOperator μ :=
+  (rfl)
 
 /-! ### Multiplicativity and involution preservation -/
 
@@ -416,14 +384,14 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
       (by fun_prop)
   have hsupp : HasCompactSupport (Function.uncurry Ψ) :=
     hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport
-      fun s r h => ⟨subset_tsupport _ fun hf => h (by simp [Ψ, hf]),
-        subset_tsupport _ fun hg => h (by simp [Ψ, hg])⟩
+      fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h
+        (by intro hf; simp [Ψ, hf]) (by intro hg; simp [Ψ, hg])
   calc P.integratedOperator μ (ω.convolution μ f g) v
       = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
         rw [integratedOperator_apply]
         congr 1 with s
         rw [CentralCocycle.convolution_apply,
-          ← P.integral_pi_apply (ω.integrable_integrand μ f g s)]
+          ← P.pi.integral_apply_apply (ω.integrable_integrand μ f g s)]
     _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
     _ = ∫ r, (P.pi (f r) * (P.unitaryMap r : H →L[ℂ] H)) (P.integratedOperator μ g v) ∂μ := by
         congr 1 with r
@@ -548,10 +516,8 @@ preserves its vector-valued integrated form. -/
 theorem toCentralCovariantPair_integratedOperator [MeasurableSpace G] [OpensMeasurableSpace G]
     (P : CovariantRepresentation α H) (hπ : P.coefficient.IsNondegenerate)
     (μ : Measure G) [IsFiniteMeasureOnCompacts μ] :
-    (P.toCentralCovariantPair hπ).integratedOperator μ = P.integratedOperator μ := by
-  ext f v
-  simp [CentralCovariantPair.integratedOperator_apply,
-    CovariantRepresentation.integratedOperator_apply]
+    (P.toCentralCovariantPair hπ).integratedOperator μ = P.integratedOperator μ :=
+  (rfl)
 
 end CovariantRepresentation
 

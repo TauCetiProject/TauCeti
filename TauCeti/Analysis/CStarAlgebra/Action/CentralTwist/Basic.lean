@@ -217,18 +217,14 @@ instance : Mul (CentralCocycle α) where
           calc α.multiplier r (ω₁.value s t : 𝓜(ℂ, A)) * α.multiplier r (ω₂.value s t : 𝓜(ℂ, A)) *
                 ((ω₁.value r (s * t) : 𝓜(ℂ, A)) * (ω₂.value r (s * t) : 𝓜(ℂ, A)))
               = (α.multiplier r (ω₁.value s t : 𝓜(ℂ, A)) * (ω₁.value r (s * t) : 𝓜(ℂ, A))) *
-                  (α.multiplier r (ω₂.value s t : 𝓜(ℂ, A)) * (ω₂.value r (s * t) : 𝓜(ℂ, A))) := by
-                simp only [mul_assoc]
-                congr 1
-                rw [← mul_assoc, (ω₁.central r (s * t) _).symm.eq, mul_assoc]
+                  (α.multiplier r (ω₂.value s t : 𝓜(ℂ, A)) * (ω₂.value r (s * t) : 𝓜(ℂ, A))) :=
+                (ω₁.central r (s * t) _).symm.mul_mul_mul_comm _ _
             _ = ((ω₁.value r s : 𝓜(ℂ, A)) * (ω₁.value (r * s) t : 𝓜(ℂ, A))) *
                   ((ω₂.value r s : 𝓜(ℂ, A)) * (ω₂.value (r * s) t : 𝓜(ℂ, A))) := by
                 rw [ω₁.multiplier_value_mul_value, ω₂.multiplier_value_mul_value]
             _ = (ω₁.value r s : 𝓜(ℂ, A)) * (ω₂.value r s : 𝓜(ℂ, A)) *
-                  ((ω₁.value (r * s) t : 𝓜(ℂ, A)) * (ω₂.value (r * s) t : 𝓜(ℂ, A))) := by
-                simp only [mul_assoc]
-                congr 1
-                rw [← mul_assoc, (ω₁.central (r * s) t _).eq, mul_assoc]
+                  ((ω₁.value (r * s) t : 𝓜(ℂ, A)) * (ω₂.value (r * s) t : 𝓜(ℂ, A))) :=
+                (ω₁.central (r * s) t _).mul_mul_mul_comm _ _
         simpa [DoubleCentralizer.mul_fst, mul_apply_eq_comp] using congr(($hmul).fst a)
       strict_left a := by
         simp only [Submonoid.coe_mul, DoubleCentralizer.mul_fst, mul_apply_eq_comp]
@@ -372,32 +368,25 @@ theorem conjugate_snd (ω : CentralCocycle α) (e : A ≃⋆ₐ[ℂ] B) (s t : G
       e ((ω.value s t : 𝓜(ℂ, A)).snd (e.symm b)) := by
   simp
 
+/-- Reindex a central cocycle along an equality of actions, leaving `value` definitionally
+unchanged. -/
+private def copy {α₁ α₂ : CStarAction G A} (ω : CentralCocycle α₁) (h : α₁ = α₂) :
+    CentralCocycle α₂ where
+  value := ω.value
+  central := ω.central
+  one_left := ω.one_left
+  one_right := ω.one_right
+  cocycle := h ▸ ω.cocycle
+  strict_left := ω.strict_left
+  strict_right := ω.strict_right
+
 /-- Transport of central cocycles along `e : A ≃⋆ₐ[ℂ] B`, as a multiplicative isomorphism. -/
 def conjugateEquiv (α : CStarAction G A) (e : A ≃⋆ₐ[ℂ] B) :
     CentralCocycle α ≃* CentralCocycle (α.conjugate e) where
   toFun ω := ω.conjugate e
-  invFun ω' :=
-    { value s t := Unitary.map (StarMonoidHom.ofClass (DoubleCentralizer.congr e.symm))
-        (ω'.value s t)
-      central s t m := by
-        have h := (ω'.central s t ((DoubleCentralizer.congr e.symm).symm m)).map
-          (DoubleCentralizer.congr e.symm)
-        rwa [StarAlgEquiv.apply_symm_apply] at h
-      one_left s := Subtype.ext (by simp)
-      one_right s := Subtype.ext (by simp)
-      cocycle r s t a := by
-        have h := ω'.cocycle r s t (e a)
-        simp only [conjugate_apply] at h
-        simpa [Unitary.coe_map, StarMonoidHom.ofClass_coe, DoubleCentralizer.congr_apply_fst] using
-          congr(e.symm $h)
-      strict_left a := by
-        simp only [Unitary.coe_map, StarMonoidHom.ofClass_coe, DoubleCentralizer.congr_apply_fst]
-        exact (StarAlgEquiv.isometry e.symm).continuous.comp (ω'.strict_left (e a))
-      strict_right a := by
-        simp only [Unitary.coe_map, StarMonoidHom.ofClass_coe, DoubleCentralizer.congr_apply_snd]
-        exact (StarAlgEquiv.isometry e.symm).continuous.comp (ω'.strict_right (e a)) }
-  left_inv ω := ext fun s t => Subtype.ext <| DoubleCentralizer.ext_fst fun a => by simp
-  right_inv ω' := ext fun s t => Subtype.ext <| DoubleCentralizer.ext_fst fun b => by simp
+  invFun ω' := (ω'.conjugate e.symm).copy (α.conjugate_symm e)
+  left_inv ω := ext fun s t => Subtype.ext <| DoubleCentralizer.ext_fst fun a => by simp [copy]
+  right_inv ω' := ext fun s t => Subtype.ext <| DoubleCentralizer.ext_fst fun b => by simp [copy]
   map_mul' _ _ := ext fun _ _ => Subtype.ext <| by simp [map_mul]
 
 @[simp]

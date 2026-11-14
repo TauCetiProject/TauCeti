@@ -22,10 +22,10 @@ and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `Doub
 is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
 proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
-(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric;
-unitary multipliers act isometrically on `A` (`DoubleCentralizer.norm_unitary_fst`,
-`DoubleCentralizer.norm_unitary_snd`) and have norm at most `1`
-(`DoubleCentralizer.norm_coe_unitary_le_one`).
+(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric.
+For complex C⋆-algebras, unitary multipliers act isometrically on `A`
+(`DoubleCentralizer.norm_unitary_fst`, `DoubleCentralizer.norm_unitary_snd`) and have norm at most
+`1` (`DoubleCentralizer.norm_coe_unitary_le_one`).
 
 A bounded operator `L` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y` is the left
 centralizer of the multiplier `DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is
