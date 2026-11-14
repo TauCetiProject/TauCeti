@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.RingQuot
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.Module
 
@@ -45,11 +46,13 @@ nontrivial base ring (`TauCeti.TemperleyLieb.e_ne_zero_two`, from an explicit
 two-dimensional representation). The latter assumes `[Nontrivial R]`, as it must: over the zero
 ring the whole algebra is zero.
 
-That `e i ≠ 0` for *every* `n` over a nontrivial base ring — indeed that `TemperleyLieb R δ n` is
-free of rank the Catalan number `catalan n` on the planar-matching diagrams, so that `TL_1` has
-basis `1` and `TL_2` has basis `1, e 0` — is the fundamental structure theorem of the algebra, and
-it is not proved here: it needs the diagram basis, which is a separate construction. The
-two-strand case above is the part of it that the presentation alone can see.
+On at most one strand, `algEquivOfLeOne` transports the singleton basis of `R` to a singleton free
+`R`-basis `TauCeti.TemperleyLieb.basisOfLeOne` (`TauCeti.TemperleyLieb.finrank_of_le_one`), and on
+two strands `twoStrandRep` certifies that `1` and `e 0` are `R`-linearly independent
+(`TauCeti.TemperleyLieb.linearIndependent_two`). That `e i ≠ 0` for *every* `n` over a nontrivial
+base ring — indeed that `TemperleyLieb R δ n` is free of rank the Catalan number `catalan n` on the
+planar-matching diagrams — is the fundamental structure theorem of the algebra, which needs the
+diagram basis developed separately.
 
 ## Main definitions
 
@@ -63,6 +66,8 @@ two-strand case above is the part of it that the presentation alone can see.
 * `TauCeti.TemperleyLieb.aug`: the augmentation killing every generator.
 * `TauCeti.TemperleyLieb.algEquivOfLeOne`: the algebra on at most one strand is the
   base ring.
+* `TauCeti.TemperleyLieb.basisOfLeOne`: the singleton free `R`-basis on at most one
+  strand.
 * `TauCeti.TemperleyLieb.crossing`: the Kauffman-bracket expansion `α • 1 + β • e i`
   of a crossing.
 
@@ -77,7 +82,10 @@ two-strand case above is the part of it that the presentation alone can see.
 * `TauCeti.TemperleyLieb.crossing_mul_crossing_swap_eq_one` and
   `TauCeti.TemperleyLieb.crossing_braid`: a crossing is invertible and crossings satisfy the braid
   relation under their respective scalar hypotheses.
-* `TauCeti.TemperleyLieb.e_ne_zero_two`: non-degeneracy on two strands.
+* `TauCeti.TemperleyLieb.finrank_of_le_one`: the algebra on at most one strand has `finrank` equal
+  to `1`.
+* `TauCeti.TemperleyLieb.linearIndependent_two` and `TauCeti.TemperleyLieb.e_ne_zero_two`: linear
+  independence of `![1, e δ 0]` and non-degeneracy on two strands.
 
 ## References
 
@@ -253,7 +261,7 @@ theorem commute_e_last_strandIncl_strandIncl (x : TemperleyLieb R δ (n + 1)) :
   apply Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx
   rintro _ ⟨i, rfl⟩
   simp only [Function.comp_apply, AlgHom.comp_apply, strandIncl_e]
-  exact commute_e (Or.inr (by simp; omega))
+  exact commute_e (Or.inr (by simp))
 
 section Augmentation
 
@@ -307,6 +315,23 @@ theorem algEquivOfLeOne_symm_apply (h : n ≤ 1) (r : R) :
     (algEquivOfLeOne δ h).symm r = algebraMap R (TemperleyLieb R δ n) r := by
   simp only [algEquivOfLeOne, AlgEquiv.ofAlgHom_symm_apply, Algebra.ofId_apply]
 
+/-- On at most one strand, `1` forms a singleton free `R`-basis of `TemperleyLieb R δ n`. -/
+noncomputable def basisOfLeOne (hn : n ≤ 1) :
+    Module.Basis (Fin 1) R (TemperleyLieb R δ n) :=
+  (Module.Basis.singleton (Fin 1) R).map (algEquivOfLeOne δ hn).symm.toLinearEquiv
+
+/-- The single basis vector of `basisOfLeOne` is `1`. -/
+@[simp]
+theorem basisOfLeOne_apply (hn : n ≤ 1) (i : Fin 1) :
+    basisOfLeOne (R := R) δ hn i = 1 := by
+  simp [basisOfLeOne]
+
+/-- On at most one strand, `TemperleyLieb R δ n` has `finrank` equal to `1` over every commutative
+semiring `R`. -/
+theorem finrank_of_le_one (hn : n ≤ 1) :
+    Module.finrank R (TemperleyLieb R δ n) = 1 :=
+  (algEquivOfLeOne δ hn).toLinearEquiv.finrank_eq.trans (CommSemiring.finrank_self R)
+
 /-- A two-dimensional representation of the two-strand Temperley-Lieb algebra, sending the
 generator to `!![0, 0; 1, δ]`, the matrix of left multiplication by the generator in the pair
 `(1, e)`. On two strands there is a single generator and the adjacency and distance relations are
@@ -320,6 +345,23 @@ def twoStrandRep : TemperleyLieb R δ 2 →ₐ[R] Matrix (Fin 2) (Fin 2) R :=
 @[simp]
 theorem twoStrandRep_e (i : Fin (2 - 1)) : twoStrandRep δ (e δ i) = !![0, 0; 1, δ] :=
   lift_e _ _ _ _ i
+
+/-- On two strands, `![1, e δ 0]` is `R`-linearly independent over every commutative
+semiring `R`. -/
+theorem linearIndependent_two :
+    LinearIndependent R ![1, e (R := R) (n := 2) δ 0] := by
+  intro g₁ g₂ hg
+  have hrep := congrArg (twoStrandRep δ) hg
+  have hcol (x : Fin 2 →₀ R) :
+      twoStrandRep δ (Finsupp.linearCombination R ![1, e (R := R) (n := 2) δ 0] x) =
+        x 0 • (1 : Matrix (Fin 2) (Fin 2) R) + x 1 • !![0, 0; 1, δ] := by
+    rw [Finsupp.linearCombination_apply, Finsupp.sum_fintype _ _ (by simp), Fin.sum_univ_two]
+    simp [twoStrandRep_e]
+  rw [hcol, hcol] at hrep
+  ext i
+  fin_cases i
+  · simpa using congr_fun₂ hrep 0 0
+  · simpa using congr_fun₂ hrep 1 0
 
 variable {δ}
 
