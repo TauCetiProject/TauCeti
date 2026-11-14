@@ -240,4 +240,21 @@ theorem map_positivePoints_le {A : Type v} {B : Type v'} [CommRing A] [CommRing 
   simpa only [Subgroup.mem_comap, D.map_rootSubgroupPoints] using
     D.rootSubgroupPoints_mem_positivePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
 
+/-- Scalar change restricted to the positive point subgroups. -/
+noncomputable def mapPositivePoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) : D.positivePoints A →* D.positivePoints B :=
+  MonoidHom.codRestrict
+    (((D.pointsPresentation A).map (D.pointsPresentation B) f).comp
+      (D.positivePoints A).subtype)
+    (D.positivePoints B)
+    (fun g => D.map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.2, rfl⟩))
+
+/-- The positive-point scalar-change map agrees with scalar change on datum points. -/
+@[simp]
+theorem coe_mapPositivePoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) (g : D.positivePoints A) :
+    (D.mapPositivePoints f g : D.points B) =
+      (D.pointsPresentation A).map (D.pointsPresentation B) f (g : D.points A) :=
+  (rfl)
+
 end TauCeti.DynkinType.ChevalleyDatum
