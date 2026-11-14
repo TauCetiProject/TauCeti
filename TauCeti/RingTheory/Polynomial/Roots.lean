@@ -10,6 +10,7 @@ public import TauCeti.Data.Multiset.Rel
 public import TauCeti.RingTheory.Polynomial.Vieta
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.FieldTheory.Separable
+import TauCeti.Data.Multiset.Filter
 
 /-!
 # Root sets and multiplicities
@@ -70,6 +71,8 @@ the gcd with the derivative as the number of distinct roots.
   at least `k` roots exactly when it is divisible by a product of `k` linear factors.
 * `Polynomial.roots_prod_X_sub_C_map`: the roots of a product of linear factors over a finite
   family are the values of the family.
+* `Polynomial.rootMultiplicity_prod_X_sub_C`: the multiplicity of `a` in a product of linear
+  factors over a finite family is the cardinality of the fiber over `a`.
 * `Polynomial.roots_C_mul_prod_X_sub_C`: the roots of a nonzero constant times a product of
   linear factors over a finite family are the values of the family.
 * `Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C`: the same for a nonzero polynomial presented
@@ -283,6 +286,13 @@ family, with multiplicity. -/
 theorem roots_prod_X_sub_C_map {ι : Type*} (s : Finset ι) (x : ι → F) :
     (∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
   simp [roots_prod, X_sub_C_ne_zero, prod_ne_zero_iff]
+
+/-- The multiplicity of `a` as a root of `∏ i ∈ s, (X - C (x i))` is the number of indices in `s`
+at which `x` takes the value `a`. -/
+theorem rootMultiplicity_prod_X_sub_C [DecidableEq F] {ι : Type*} (s : Finset ι) (x : ι → F)
+    (a : F) :
+    (∏ i ∈ s, (X - C (x i))).rootMultiplicity a = (s.filter fun i ↦ x i = a).card := by
+  rw [← count_roots, roots_prod_X_sub_C_map, s.count_map_val]
 
 /-- The roots of a nonzero constant times the product of the linear factors of a finite family are
 the values of the family, with multiplicity. -/

@@ -5,12 +5,16 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
-# Smoothness from derivative towers
+# Iterated derivatives of towers and shifted power sums
 
-A sequence of functions linked by ordinary derivatives gives a smooth initial function.
+A sequence of functions linked by ordinary derivatives gives a smooth initial function
+(`TauCeti.contDiff_of_derivative_tower`). We also record closed formulas for the iterated
+derivatives of shifted monomials `t ↦ (t - t₀) ^ m` (`TauCeti.iteratedDeriv_sub_const_pow`) and of
+finite linear combinations `t ↦ ∑ i ∈ s, c i * (t - t₀) ^ e i`
+(`TauCeti.iteratedDeriv_sum_mul_sub_pow`).
 -/
 
 public section
@@ -36,5 +40,22 @@ theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
   intro k _
   rw [hiter k]
   exact fun x ↦ (hF k x).differentiableAt
+
+/-- The `k`-th iterated derivative of `t ↦ (t - t₀) ^ m` at `z` is
+`m.descFactorial k * (z - t₀) ^ (m - k)`. -/
+theorem iteratedDeriv_sub_const_pow (k m : ℕ) (t₀ z : 𝕜) :
+    iteratedDeriv k (fun t ↦ (t - t₀) ^ m) z = m.descFactorial k * (z - t₀) ^ (m - k) := by
+  simpa only [Function.comp_def, iteratedDeriv_pow] using
+    congrFun (iteratedDeriv_comp_sub_const k (· ^ m : 𝕜 → 𝕜) t₀) z
+
+/-- The `k`-th iterated derivative of a finite linear combination
+`t ↦ ∑ i ∈ s, c i * (t - t₀) ^ e i` of shifted powers. -/
+theorem iteratedDeriv_sum_mul_sub_pow {ι : Type*} (k : ℕ) (s : Finset ι) (c : ι → 𝕜)
+    (e : ι → ℕ) (t₀ z : 𝕜) :
+    iteratedDeriv k (fun t ↦ ∑ i ∈ s, c i * (t - t₀) ^ e i) z =
+      ∑ i ∈ s, c i * (e i).descFactorial k * (z - t₀) ^ (e i - k) := by
+  rw [iteratedDeriv_fun_sum fun i _ ↦ by fun_prop]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [iteratedDeriv_const_mul_field, iteratedDeriv_sub_const_pow, mul_assoc]
 
 end TauCeti

@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
+import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Complex.RealIdentity
@@ -22,6 +23,7 @@ import TauCeti.Geometry.RealAlgebraic.Nash.Derivative
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Complex
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.RingTheory.Polynomial.Vieta
+import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
 # The Nash Weierstrass preparation and division theorems
@@ -160,218 +162,12 @@ private theorem eventually_exists_roots_mem_ball {d : ℕ} {x₀ : σ → ℝ} (
     exact hbR j
   · simp [hb]
 
-/-- Analytic order of a shifted polynomial `ζ ↦ P.eval (ζ - t₀)` at `ζ₀`. -/
-private theorem analyticOrderAt_eval_sub {P : ℂ[X]} (hP : P ≠ 0) (t₀ ζ₀ : ℂ) :
-    analyticOrderAt (fun ζ : ℂ ↦ P.eval (ζ - t₀)) ζ₀ = P.rootMultiplicity (ζ₀ - t₀) := by
-  obtain ⟨Q, hPQ, hQ⟩ := P.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hP (ζ₀ - t₀)
-  have hanP : AnalyticAt ℂ (fun ζ : ℂ ↦ P.eval (ζ - t₀)) ζ₀ :=
-    ((AnalyticOnNhd.eval_polynomial P) _ (mem_univ _)).comp_of_eq
-      (analyticAt_id.sub analyticAt_const) rfl
-  have hanQ : AnalyticAt ℂ (fun ζ : ℂ ↦ Q.eval (ζ - t₀)) ζ₀ :=
-    ((AnalyticOnNhd.eval_polynomial Q) _ (mem_univ _)).comp_of_eq
-      (analyticAt_id.sub analyticAt_const) rfl
-  refine hanP.analyticOrderAt_eq_natCast.2 ⟨fun ζ ↦ Q.eval (ζ - t₀), hanQ,
-    fun h0 ↦ hQ (dvd_iff_isRoot.2 h0), .of_forall fun ζ ↦ ?_⟩
-  conv_lhs => rw [hPQ]
-  simp only [eval_mul, eval_pow, eval_sub, eval_X, eval_C, sub_sub_sub_cancel_right, smul_eq_mul]
-
-/-- If `F₁ = P(· - t₀) * U₁` on `ball t₀ R` with `U₁` nonvanishing there, then the root
-multiplicity of `ζ₀ - t₀` in `P` is characterized by the iterated derivatives of `F₁` at `ζ₀`. -/
-private theorem rootMultiplicity_eq_iff_iteratedDeriv {P : ℂ[X]} (hP : P ≠ 0) {F₁ U₁ : ℂ → ℂ}
-    {t₀ : ℂ} {R : ℝ} (hF₁ : AnalyticOnNhd ℂ F₁ (ball t₀ R))
-    (hU₁ : AnalyticOnNhd ℂ U₁ (ball t₀ R)) (hU₀ : ∀ ζ ∈ ball t₀ R, U₁ ζ ≠ 0)
-    (hfac : ∀ ζ ∈ ball t₀ R, F₁ ζ = P.eval (ζ - t₀) * U₁ ζ) {ζ₀ : ℂ} (hζ₀ : ζ₀ ∈ ball t₀ R)
-    (m : ℕ) :
-    P.rootMultiplicity (ζ₀ - t₀) = m ↔
-      (∀ k < m, iteratedDeriv k F₁ ζ₀ = 0) ∧ iteratedDeriv m F₁ ζ₀ ≠ 0 := by
-  have hanP : AnalyticAt ℂ (fun ζ : ℂ ↦ P.eval (ζ - t₀)) ζ₀ :=
-    ((AnalyticOnNhd.eval_polynomial P) _ (mem_univ _)).comp_of_eq
-      (analyticAt_id.sub analyticAt_const) rfl
-  have heq : F₁ =ᶠ[𝓝 ζ₀] (fun ζ ↦ P.eval (ζ - t₀)) * U₁ := by
-    filter_upwards [isOpen_ball.mem_nhds hζ₀] with ζ hζ
-    exact hfac ζ hζ
-  have hord : analyticOrderAt F₁ ζ₀ = P.rootMultiplicity (ζ₀ - t₀) := by
-    rw [analyticOrderAt_congr heq, analyticOrderAt_mul hanP (hU₁ ζ₀ hζ₀),
-      analyticOrderAt_eval_sub hP, (hU₁ ζ₀ hζ₀).analyticOrderAt_eq_zero.2 (hU₀ ζ₀ hζ₀), add_zero]
-  rw [← analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero (hF₁ ζ₀ hζ₀), hord, Nat.cast_inj]
-
-/-- Multiplicity of `w j - t₀` in the multiset `Finset.univ.val.map (w · - t₀)`. -/
-private theorem count_map_sub_univ {d : ℕ} (w : Fin d → ℂ) (t₀ : ℂ) (j : Fin d) :
-    Multiset.count (w j - t₀) (Finset.univ.val.map fun l : Fin d ↦ w l - t₀) =
-      (Finset.univ.filter fun l : Fin d ↦ w l = w j).card := by
-  rw [Multiset.count_eq_card_filter_eq, Multiset.filter_map, Multiset.card_map, Finset.card_def]
-  congr 1
-  exact Multiset.filter_congr fun l _ ↦ by
-    simp only [Function.comp_apply, sub_left_inj]
-    tauto
-
-/-- Root-cluster characterization of a Weierstrass polynomial `P`: a tuple `w : Fin d → ℂ` in
-`ball t₀ R` lists the roots of `P(· - t₀)` with multiplicity if and only if for each `j` the
-cluster `{l | w l = w j}` has cardinality equal to the order of vanishing of `F₁` at `w j`. -/
-private theorem eq_prod_X_sub_C_iff_iteratedDeriv {d : ℕ} {P : ℂ[X]} (hPm : P.Monic)
-    (hPd : P.natDegree = d) {F₁ U₁ : ℂ → ℂ} {t₀ : ℂ} {R : ℝ}
-    (hF₁ : AnalyticOnNhd ℂ F₁ (ball t₀ R)) (hU₁ : AnalyticOnNhd ℂ U₁ (ball t₀ R))
-    (hU₀ : ∀ ζ ∈ ball t₀ R, U₁ ζ ≠ 0) (hfac : ∀ ζ ∈ ball t₀ R, F₁ ζ = P.eval (ζ - t₀) * U₁ ζ)
-    (w : Fin d → ℂ) (hw : ∀ j, w j ∈ ball t₀ R) :
-    P = ∏ j : Fin d, (X - C (w j - t₀)) ↔
-      ∀ (j : Fin d) (S : Finset (Fin d)), S.Nonempty → (∀ l, l ∈ S ↔ w l = w j) →
-        (∀ k < S.card, iteratedDeriv k F₁ (w j) = 0) ∧ iteratedDeriv S.card F₁ (w j) ≠ 0 := by
-  constructor
-  · rintro hP j S - hS
-    have hScard : S = Finset.univ.filter (fun l : Fin d ↦ w l = w j) := by
-      ext l; simp [hS l]
-    refine (rootMultiplicity_eq_iff_iteratedDeriv hPm.ne_zero hF₁ hU₁ hU₀ hfac (hw j) S.card).1 ?_
-    rw [← count_roots, hP, Polynomial.roots_prod_X_sub_C_map, count_map_sub_univ, hScard]
-  · intro hcond
-    have hmult (j : Fin d) :
-        P.rootMultiplicity (w j - t₀) = (Finset.univ.filter fun l : Fin d ↦ w l = w j).card := by
-      set S := Finset.univ.filter fun l : Fin d ↦ w l = w j
-      have hne : S.Nonempty := ⟨j, by simp [S]⟩
-      exact (rootMultiplicity_eq_iff_iteratedDeriv hPm.ne_zero hF₁ hU₁ hU₀ hfac (hw j) S.card).2
-        (hcond j S hne fun l ↦ by simp [S])
-    have hle : (Finset.univ.val.map fun l : Fin d ↦ w l - t₀) ≤ P.roots := by
-      rw [Multiset.le_iff_count]
-      intro α
-      by_cases hα : α ∈ Finset.univ.val.map fun l : Fin d ↦ w l - t₀
-      · obtain ⟨j, -, rfl⟩ := Multiset.mem_map.1 hα
-        rw [count_map_sub_univ, ← hmult j, count_roots]
-      · rw [Multiset.count_eq_zero_of_notMem hα]
-        exact Nat.zero_le _
-    have hroots : P.roots = Finset.univ.val.map fun l : Fin d ↦ w l - t₀ :=
-      (Multiset.eq_of_le_of_card_le hle ((card_roots' P).trans (by simp [hPd]))).symm
-    exact Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq hPm (by simp [hPd]) hroots
-
-/-- Explicit formula for the `k`-th iterated derivative of `ζ ↦ ∑ i : Fin d, y i * (ζ - t₀) ^ i`. -/
-private theorem iteratedDeriv_sum_pow_sub {d : ℕ} (y : Fin d → ℂ) (t₀ ζ₀ : ℂ) (k : ℕ) :
-    iteratedDeriv k (fun ζ : ℂ ↦ ∑ i : Fin d, y i * (ζ - t₀) ^ (i : ℕ)) ζ₀ =
-      ∑ i : Fin d, y i * ((i : ℕ).descFactorial k : ℂ) * (ζ₀ - t₀) ^ ((i : ℕ) - k) := by
-  rw [iteratedDeriv_fun_sum fun i _ ↦ by fun_prop]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hshift := congrFun
-    (iteratedDeriv_comp_sub_const k (fun z : ℂ ↦ (z : ℂ) ^ (i : ℕ)) t₀) ζ₀
-  rw [iteratedDeriv_const_mul_field, hshift, iteratedDeriv_pow, mul_assoc]
-
-/-- Hermite interpolation characterization of the Weierstrass remainder: if `G₁ = P(· - t₀) * Q₁ +
-∑ i, r₀ i * (· - t₀) ^ i` on `ball t₀ R`, then `y = r₀` if and only if there is a root cluster `w`
-of `P(· - t₀)` in `ball t₀ R` at which the derivatives of `∑ i, y i * (· - t₀) ^ i` up to each
-cluster size match those of `G₁`. -/
-private theorem eq_rem_iff_iteratedDeriv {d : ℕ} {P : ℂ[X]} (hPm : P.Monic)
-    {G₁ Q₁ : ℂ → ℂ} {t₀ : ℂ} {R : ℝ}
-    (hQ₁ : AnalyticOnNhd ℂ Q₁ (ball t₀ R)) {r₀ : Fin d → ℂ}
-    (hdiv : ∀ ζ ∈ ball t₀ R,
-      G₁ ζ = P.eval (ζ - t₀) * Q₁ ζ + ∑ i : Fin d, r₀ i * (ζ - t₀) ^ (i : ℕ))
-    (hw₀ : ∃ w₀ : Fin d → ℂ, (∀ j, w₀ j ∈ ball t₀ R) ∧ P = ∏ j : Fin d, (X - C (w₀ j - t₀)))
-    (y : Fin d → ℂ) :
-    y = r₀ ↔ ∃ w : Fin d → ℂ, (∀ j, w j ∈ ball t₀ R) ∧ P = ∏ j : Fin d, (X - C (w j - t₀)) ∧
-      ∀ (j : Fin d) (S : Finset (Fin d)), (∀ l ∈ S, w l = w j) → ∀ k : Fin d, (k : ℕ) < S.card →
-        iteratedDeriv (k : ℕ) G₁ (w j) =
-          ∑ i : Fin d, y i * ((i : ℕ).descFactorial (k : ℕ) : ℂ) *
-            (w j - t₀) ^ ((i : ℕ) - (k : ℕ)) := by
-  have hG_jet (ζ₀ : ℂ) (hζ₀ : ζ₀ ∈ ball t₀ R) (k : ℕ) (hk : k < P.rootMultiplicity (ζ₀ - t₀)) :
-      iteratedDeriv k G₁ ζ₀ =
-        ∑ i : Fin d, r₀ i * ((i : ℕ).descFactorial k : ℂ) * (ζ₀ - t₀) ^ ((i : ℕ) - k) := by
-    have hanP : AnalyticAt ℂ (fun ζ : ℂ ↦ P.eval (ζ - t₀)) ζ₀ :=
-      ((AnalyticOnNhd.eval_polynomial P) _ (mem_univ _)).comp_of_eq
-        (analyticAt_id.sub analyticAt_const) rfl
-    have hanPQ : AnalyticAt ℂ (fun ζ : ℂ ↦ P.eval (ζ - t₀) * Q₁ ζ) ζ₀ :=
-      hanP.fun_mul (hQ₁ ζ₀ hζ₀)
-    have hPQ0 : iteratedDeriv k (fun ζ : ℂ ↦ P.eval (ζ - t₀) * Q₁ ζ) ζ₀ = 0 := by
-      refine ((natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hanPQ).1 ?_) k hk
-      rw [show (fun ζ : ℂ ↦ P.eval (ζ - t₀) * Q₁ ζ) = (fun ζ ↦ P.eval (ζ - t₀)) * Q₁ from rfl,
-        analyticOrderAt_mul hanP (hQ₁ ζ₀ hζ₀), analyticOrderAt_eval_sub hPm.ne_zero]
-      exact le_self_add
-    have heq : G₁ =ᶠ[𝓝 ζ₀]
-        (fun ζ ↦ P.eval (ζ - t₀) * Q₁ ζ) + (fun ζ ↦ ∑ i : Fin d, r₀ i * (ζ - t₀) ^ (i : ℕ)) := by
-      filter_upwards [isOpen_ball.mem_nhds hζ₀] with ζ hζ
-      exact hdiv ζ hζ
-    rw [heq.iteratedDeriv_eq k, iteratedDeriv_add hanPQ.contDiffAt (by fun_prop), hPQ0, zero_add,
-      iteratedDeriv_sum_pow_sub]
-  constructor
-  · rintro rfl
-    obtain ⟨w₀, hw₀R, hPw₀⟩ := hw₀
-    refine ⟨w₀, hw₀R, hPw₀, fun j S hS k hk ↦ hG_jet (w₀ j) (hw₀R j) k ?_⟩
-    have hsub : S ⊆ Finset.univ.filter (fun l : Fin d ↦ w₀ l = w₀ j) := fun l hl ↦ by
-      simp [hS l hl]
-    have hcnt : (Finset.univ.filter fun l : Fin d ↦ w₀ l = w₀ j).card =
-        P.rootMultiplicity (w₀ j - t₀) := by
-      rw [← count_roots, hPw₀, Polynomial.roots_prod_X_sub_C_map, count_map_sub_univ]
-    exact hk.trans_le ((Finset.card_le_card hsub).trans_eq hcnt)
-  · rintro ⟨w, hwR, hPw, hjet⟩
-    set D : ℂ[X] := ∑ i : Fin d, monomial (i : ℕ) (y i - r₀ i)
-    by_cases hD : D = 0
-    · ext i
-      have hi : D.coeff (i : ℕ) = 0 := by simp [hD]
-      simp only [D, finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply, Fin.val_inj,
-        Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte] at hi
-      exact sub_eq_zero.1 hi
-    exfalso
-    have hdeg : D.natDegree < d := by
-      have hlt : D.degree < d := by
-        simpa only [D, C_mul_X_pow_eq_monomial] using degree_sum_fin_lt fun i : Fin d ↦ y i - r₀ i
-      exact WithBot.coe_lt_coe.1 ((degree_eq_natDegree hD).symm.trans_lt hlt)
-    have hle : P.roots ≤ D.roots := by
-      rw [Multiset.le_iff_count]
-      intro α
-      by_cases hα : α ∈ P.roots
-      · rw [hPw, Polynomial.roots_prod_X_sub_C_map, Multiset.mem_map] at hα
-        obtain ⟨j, -, rfl⟩ := hα
-        rw [count_roots, count_roots]
-        set S := Finset.univ.filter fun l : Fin d ↦ w l = w j
-        have hScard : P.rootMultiplicity (w j - t₀) = S.card := by
-          rw [← count_roots, hPw, Polynomial.roots_prod_X_sub_C_map, count_map_sub_univ]
-        have hanD : AnalyticAt ℂ (fun ζ : ℂ ↦ D.eval (ζ - t₀)) (w j) :=
-          ((AnalyticOnNhd.eval_polynomial D) _ (mem_univ _)).comp_of_eq
-            (analyticAt_id.sub analyticAt_const) rfl
-        have hordD : (P.rootMultiplicity (w j - t₀) : ℕ∞) ≤
-            analyticOrderAt (fun ζ : ℂ ↦ D.eval (ζ - t₀)) (w j) := by
-          refine (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hanD).2 fun k hk ↦ ?_
-          have hkd : k < d := hk.trans_le (hScard.trans_le
-            (S.card_le_univ.trans_eq (Fintype.card_fin d)))
-          have hy_eq := hjet j S (fun l hl ↦ (Finset.mem_filter.1 hl).2) ⟨k, hkd⟩ (hScard ▸ hk)
-          have hr_eq := hG_jet (w j) (hwR j) k hk
-          have hDeval : (fun ζ : ℂ ↦ D.eval (ζ - t₀)) =
-              (fun ζ ↦ ∑ i : Fin d, y i * (ζ - t₀) ^ (i : ℕ)) -
-                (fun ζ ↦ ∑ i : Fin d, r₀ i * (ζ - t₀) ^ (i : ℕ)) := by
-            ext ζ; simp [D, eval_finsetSum, Finset.sum_sub_distrib]
-          rw [hDeval, iteratedDeriv_sub (by fun_prop) (by fun_prop), iteratedDeriv_sum_pow_sub,
-            iteratedDeriv_sum_pow_sub, ← hy_eq, ← hr_eq, sub_self]
-        rw [analyticOrderAt_eval_sub hD] at hordD
-        exact Nat.cast_le.1 hordD
-      · rw [Multiset.count_eq_zero_of_notMem hα]
-        exact Nat.zero_le _
-    have hcardP : P.roots.card = d := by
-      rw [hPw, Polynomial.roots_prod_X_sub_C_map]
-      simp
-    exact absurd ((hcardP ▸ Multiset.card_le_card hle).trans (card_roots' D)) (not_le_of_gt hdeg)
-
 /-! ### Semialgebraic building blocks without finiteness of `σ` -/
 
 /-- The `k`-th iterated derivative of `F : (σ ⊕ Unit → ℂ) → ℂ` in the vertical coordinate. -/
 private noncomputable def verticalIteratedDeriv (F : (σ ⊕ Unit → ℂ) → ℂ) (k : ℕ)
     (z : σ ⊕ Unit → ℂ) : ℂ :=
   iteratedDeriv k (fun ζ : ℂ ↦ F (Sum.elim (z ∘ Sum.inl) (fun _ ↦ ζ))) (z (.inr ()))
-
-/-- A constant-proposition guard `P → a ∈ s` preserves semialgebraicity. -/
-private theorem IsSemialgebraic.imp_of_const {τ : Type*} (P : Prop) {s : Set (τ → ℝ)}
-    (hs : IsSemialgebraic s) : IsSemialgebraic {a : τ → ℝ | P → a ∈ s} := by
-  by_cases hP : P <;> simp [hP, hs]
-
-/-- A complex polynomial `q : MvPolynomial τ ℂ` evaluated at real points defines a semialgebraic
-map into `Unit ⊕ Unit → ℝ` via `complexToRealPi Unit`. -/
-private theorem isSemialgebraicMap_complexToRealPi_eval {τ : Type*} (q : MvPolynomial τ ℂ) :
-    IsSemialgebraicMap (fun a : τ → ℝ ↦
-      complexToRealPi Unit (fun _ ↦ MvPolynomial.eval (fun s ↦ (a s : ℂ)) q)) := by
-  rw [← isSemialgebraicOn_univ, isSemialgebraicOn_iff_graph]
-  let r : MvPolynomial (τ ⊕ (Unit ⊕ Unit)) ℂ :=
-    MvPolynomial.rename Sum.inl q -
-      (MvPolynomial.X (.inr (.inl ())) + MvPolynomial.X (.inr (.inr ())) * MvPolynomial.C I)
-  convert isSemialgebraic_setOf_eval_ofReal_eq_zero r using 1
-  ext z
-  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
-  simp only [mem_univ, true_and, mem_ofPred_eq, r, map_sub, MvPolynomial.eval_rename, map_add,
-    map_mul, MvPolynomial.eval_X, MvPolynomial.eval_C, sub_eq_zero]
-  rw [← ContinuousLinearEquiv.eq_symm_apply]
-  simp [funext_iff, Function.comp_def, Unique.forall_iff]
 
 /-- Abbreviation for the combined real coordinate index `(σ ⊕ Fin d) ⊕ (Fin d ⊕ Fin d)`. -/
 private abbrev RootClusterIdx (σ : Type*) (d : ℕ) := (σ ⊕ Fin d) ⊕ (Fin d ⊕ Fin d)
@@ -540,29 +336,6 @@ section AuxFintype
 
 variable {σ : Type*} [Fintype σ]
 
-/-- Combining parameter and vertical coordinates `(x, t) ↦ Sum.elim x (fun _ ↦ t)` is analytic. -/
-private theorem analyticAt_sumElim_prod {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    (x₀ : σ → 𝕜) (t₀ : 𝕜) :
-    AnalyticAt 𝕜 (fun q : (σ → 𝕜) × 𝕜 ↦ Sum.elim q.1 (fun _ : Unit ↦ q.2)) (x₀, t₀) :=
-  analyticAt_pi_iff.2 <| Sum.rec
-    (fun i ↦ ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ↦ 𝕜) i).analyticAt x₀).comp_of_eq
-      analyticAt_fst rfl)
-    (fun _ ↦ analyticAt_snd)
-
-/-- Splitting `p : σ ⊕ Unit → 𝕜` into `(p ∘ Sum.inl, p (Sum.inr ()))` is analytic. -/
-private theorem analyticAt_prod_comp_inl_inr {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    (p₀ : σ ⊕ Unit → 𝕜) :
-    AnalyticAt 𝕜 (fun p : σ ⊕ Unit → 𝕜 ↦ (p ∘ Sum.inl, p (Sum.inr ()))) p₀ :=
-  (analyticAt_pi_iff.2 fun i ↦
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ⊕ Unit ↦ 𝕜) (.inl i)).analyticAt p₀).prod
-    ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ⊕ Unit ↦ 𝕜) (.inr ())).analyticAt p₀)
-
-/-- Reindexing coordinates along an equivalence is analytic. -/
-private theorem analyticAt_comp_equiv {α β : Type*} [Fintype α] [Fintype β] (e : α ≃ β)
-    (y₀ : β → ℝ) : AnalyticAt ℝ (fun y : β → ℝ ↦ y ∘ e) y₀ :=
-  analyticAt_pi_iff.2 fun a ↦
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : β ↦ ℝ) (e a)).analyticAt y₀
-
 /-- Identifies `(Fin (Fintype.card σ) → ℝ) × ℝ` with `σ ⊕ Unit → ℝ` via `Fintype.equivFin σ`. -/
 private noncomputable def finProdToSumArrow (σ : Type*) [Fintype σ]
     (q : (Fin (Fintype.card σ) → ℝ) × ℝ) : σ ⊕ Unit → ℝ :=
@@ -575,74 +348,40 @@ private noncomputable def sumArrowToFinProd (σ : Type*) [Fintype σ]
 
 private theorem analyticAt_finProdToSumArrow (q₀ : (Fin (Fintype.card σ) → ℝ) × ℝ) :
     AnalyticAt ℝ (finProdToSumArrow σ) q₀ :=
-  analyticAt_pi_iff.2 fun idx ↦ by
-    cases idx with
-    | inl s =>
-      exact ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ)
-        (Fintype.equivFin σ s)).analyticAt q₀.1).comp_of_eq analyticAt_fst rfl
-    | inr _ => exact analyticAt_snd
+  analyticAt_sumElim_const.comp₂ ((analyticAt_comp_right (Fintype.equivFin σ)).comp analyticAt_fst)
+    analyticAt_snd
 
 private theorem analyticAt_sumArrowToFinProd (p₀ : σ ⊕ Unit → ℝ) :
     AnalyticAt ℝ (sumArrowToFinProd σ) p₀ :=
-  (analyticAt_pi_iff.2 fun j ↦
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ⊕ Unit ↦ ℝ)
-      (.inl ((Fintype.equivFin σ).symm j))).analyticAt p₀).prod
-    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : σ ⊕ Unit ↦ ℝ) (.inr ())).analyticAt p₀)
+  (((analyticAt_comp_right (Fintype.equivFin σ).symm).comp analyticAt_fst).prod
+    analyticAt_snd).comp (analyticAt_prod_comp_inl_apply_inr ())
 
 private theorem finProdToSumArrow_sumArrowToFinProd (p : σ ⊕ Unit → ℝ) :
     finProdToSumArrow σ (sumArrowToFinProd σ p) = p := by
   ext (s | ⟨⟩) <;> simp [finProdToSumArrow, sumArrowToFinProd]
-
-/-- Vertical slice `ζ ↦ H (Sum.elim z_x (fun _ ↦ ζ))` is analytic on `ball w₀ R` if `H` is analytic
-at every `(z_x, ζ)` for `ζ ∈ ball w₀ R`. -/
-private theorem analyticOnNhd_verticalSlice {H : (σ ⊕ Unit → ℂ) → ℂ} {z_x : σ → ℂ} {w₀ : ℂ}
-    {R : ℝ} (hH : ∀ ζ ∈ ball w₀ R, AnalyticAt ℂ H (Sum.elim z_x (fun _ ↦ ζ))) :
-    AnalyticOnNhd ℂ (fun ζ : ℂ ↦ H (Sum.elim z_x (fun _ ↦ ζ))) (ball w₀ R) := by
-  intro ζ hζ
-  have hline : AnalyticAt ℂ (fun ζ' : ℂ ↦ Sum.elim z_x (fun _ : Unit ↦ ζ')) ζ :=
-    analyticAt_pi_iff.2 fun idx ↦ by
-      cases idx with
-      | inl _ => exact analyticAt_const
-      | inr _ => exact analyticAt_id
-  exact (hH ζ hζ).comp_of_eq hline rfl
-
-/-- Complexifies a finite family of real analytic germs at `x₀`. -/
-private theorem exists_complexification_pi_family {κ : Type*} [Finite κ] {x₀ : σ → ℝ}
-    {c : κ → (σ → ℝ) → ℝ} (hc : ∀ i, AnalyticAt ℝ (c i) x₀) :
-    ∃ c_cpx : κ → (σ → ℂ) → ℂ, (∀ i, AnalyticAt ℂ (c_cpx i) (fun j ↦ (x₀ j : ℂ))) ∧
-      ∀ᶠ x in 𝓝 x₀, ∀ i, c_cpx i (fun j ↦ (x j : ℂ)) = c i x := by
-  choose ρ hρ c_cpx hc_cpx hcc _ using fun i ↦ (hc i).exists_complexification
-  exact ⟨c_cpx, fun i ↦ hc_cpx i _ (mem_ball_self (hρ i)),
-    eventually_all.2 fun i ↦ mem_of_superset (ball_mem_nhds x₀ (hρ i)) (hcc i)⟩
 
 /-- Analyticity of `z ↦ (monicOfCoeff (c_cpx · (z ∘ Sum.inl))).eval (z (Sum.inr ()) - w₀)`. -/
 private theorem analyticAt_eval_monicOfCoeff_sumElim {d : ℕ} {z₀ : σ ⊕ Unit → ℂ} {w₀ : ℂ}
     {c_cpx : Fin d → (σ → ℂ) → ℂ} (hc_cpx : ∀ i, AnalyticAt ℂ (c_cpx i) (z₀ ∘ Sum.inl)) :
     AnalyticAt ℂ (fun z : σ ⊕ Unit → ℂ ↦
       (Polynomial.monicOfCoeff (fun i ↦ c_cpx i (z ∘ Sum.inl))).eval (z (.inr ()) - w₀)) z₀ := by
-  have hproj : AnalyticAt ℂ (fun z : σ ⊕ Unit → ℂ ↦ z ∘ Sum.inl) z₀ :=
-    analyticAt_pi_iff.2 fun i ↦
-      (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : σ ⊕ Unit ↦ ℂ) (.inl i)).analyticAt z₀
   have hlast : AnalyticAt ℂ (fun z : σ ⊕ Unit → ℂ ↦ z (.inr ()) - w₀) z₀ :=
-    ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : σ ⊕ Unit ↦ ℂ) (.inr ())).analyticAt
-      z₀).fun_sub analyticAt_const
+    ((analyticAt_pi_iff.1 analyticAt_id) (Sum.inr ())).fun_sub analyticAt_const
   simp_rw [Polynomial.eval_monicOfCoeff]
   refine (hlast.fun_pow d).fun_add (Finset.analyticAt_fun_sum _ fun i _ ↦ ?_)
-  exact ((hc_cpx i).comp_of_eq hproj rfl).fun_mul (hlast.fun_pow (i : ℕ))
+  exact ((hc_cpx i).fun_comp_of_eq (analyticAt_comp_right Sum.inl) rfl).fun_mul
+    (hlast.fun_pow (i : ℕ))
 
 /-- Analyticity of `z ↦ ∑ i : Fin d, r_cpx i (z ∘ Sum.inl) * (z (Sum.inr ()) - w₀) ^ i`. -/
 private theorem analyticAt_sum_rem_sumElim {d : ℕ} {z₀ : σ ⊕ Unit → ℂ} {w₀ : ℂ}
     {r_cpx : Fin d → (σ → ℂ) → ℂ} (hr_cpx : ∀ i, AnalyticAt ℂ (r_cpx i) (z₀ ∘ Sum.inl)) :
     AnalyticAt ℂ (fun z : σ ⊕ Unit → ℂ ↦
       ∑ i : Fin d, r_cpx i (z ∘ Sum.inl) * (z (.inr ()) - w₀) ^ (i : ℕ)) z₀ := by
-  have hproj : AnalyticAt ℂ (fun z : σ ⊕ Unit → ℂ ↦ z ∘ Sum.inl) z₀ :=
-    analyticAt_pi_iff.2 fun i ↦
-      (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : σ ⊕ Unit ↦ ℂ) (.inl i)).analyticAt z₀
   have hlast : AnalyticAt ℂ (fun z : σ ⊕ Unit → ℂ ↦ z (.inr ()) - w₀) z₀ :=
-    ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : σ ⊕ Unit ↦ ℂ) (.inr ())).analyticAt
-      z₀).fun_sub analyticAt_const
+    ((analyticAt_pi_iff.1 analyticAt_id) (Sum.inr ())).fun_sub analyticAt_const
   exact Finset.analyticAt_fun_sum _ fun i _ ↦
-    ((hr_cpx i).comp_of_eq hproj rfl).fun_mul (hlast.fun_pow (i : ℕ))
+    ((hr_cpx i).fun_comp_of_eq (analyticAt_comp_right Sum.inl) rfl).fun_mul
+      (hlast.fun_pow (i : ℕ))
 
 /-- Nashness of `p ↦ (monicOfCoeff (c · (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀)`. -/
 private theorem isNashAt_eval_monicOfCoeff {d : ℕ} {x₀ : σ → ℝ} {t₀ : ℝ}
@@ -682,14 +421,6 @@ private theorem isNashAt_sum_rem {d : ℕ} {x₀ : σ → ℝ} {t₀ : ℝ}
   exact hfn ▸ Finset.isNashAt_sum (Finset.univ : Finset (Fin d)) fun i _ ↦
     (hproj i).fun_mul (hlast.fun_pow (i : ℕ))
 
-/-- Membership of `(x_ℂ, ζ)` in the complex `L^∞` ball of radius `R` around `(x₀, t₀)`. -/
-private theorem sumElim_ofReal_mem_ball {x₀ x : σ → ℝ} {t₀ : ℝ} {ζ : ℂ} {R : ℝ} (hR : 0 < R)
-    (hx : dist x x₀ < R) (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-    Sum.elim (fun s : σ ↦ (x s : ℂ)) (fun _ : Unit ↦ ζ) ∈
-      ball (fun idx ↦ ((Sum.elim x₀ (fun _ : Unit ↦ t₀) : σ ⊕ Unit → ℝ) idx : ℂ)) R := by
-  refine mem_ball.2 ((dist_pi_lt_iff hR).2 <| Sum.rec (fun s ↦ ?_) (fun _ ↦ mem_ball.1 hζ))
-  simpa [Complex.isometry_ofReal.dist_eq] using (dist_le_pi_dist x x₀ s).trans_lt hx
-
 /-! ### Complex vertical slice jets of Nash germs -/
 
 /-- `verticalIteratedDeriv F k` is holomorphic wherever `F` is. -/
@@ -698,8 +429,8 @@ private theorem analyticAt_verticalIteratedDeriv {F : (σ ⊕ Unit → ℂ) → 
     AnalyticAt ℂ (verticalIteratedDeriv F k) z₀ := by
   have hF_prod : AnalyticAt ℂ (fun q : (σ → ℂ) × ℂ ↦ F (Sum.elim q.1 (fun _ ↦ q.2)))
       (z₀ ∘ Sum.inl, z₀ (.inr ())) :=
-    hF.comp_of_eq (analyticAt_sumElim_prod _ _) (by ext (_ | _) <;> rfl)
-  exact (hF_prod.iteratedDeriv_snd k).comp_of_eq (analyticAt_prod_comp_inl_inr z₀) rfl
+    hF.comp_of_eq analyticAt_sumElim_const (by ext (_ | _) <;> rfl)
+  exact (hF_prod.iteratedDeriv_snd k).comp_of_eq (analyticAt_prod_comp_inl_apply_inr ()) rfl
 
 /-- On real points near `p₀`, `verticalIteratedDeriv F k` agrees with the real vertical
 iterated derivative of `f`. -/
@@ -722,13 +453,8 @@ private theorem verticalIteratedDeriv_eventually_real {f : (σ ⊕ Unit → ℝ)
       (y (.inr ())) := by
     have hyr₀ : y ∈ ball p₀ r₀ :=
       mem_ball.2 (hy_lt.trans ((half_lt_self hr).trans_le (min_le_left _ _)))
-    have hline : AnalyticAt ℝ (fun s : ℝ ↦ Sum.elim (y ∘ Sum.inl) (fun _ : Unit ↦ s))
-        (y (.inr ())) :=
-      analyticAt_pi_iff.2 fun idx ↦ by
-        cases idx with
-        | inl _ => exact analyticAt_const
-        | inr _ => exact analyticAt_id
-    exact (hballf hyr₀).comp_of_eq hline (by ext (_ | _) <;> rfl)
+    have hy_eq : (Sum.elim (y ∘ Sum.inl) fun _ : Unit ↦ y (.inr ())) = y := by ext (_ | _) <;> rfl
+    exact (hy_eq.symm ▸ hballf hyr₀).comp_sumElim_const
   have hslice_an : AnalyticAt ℂ (fun ζ : ℂ ↦ F (Sum.elim (yℂ ∘ Sum.inl) (fun _ ↦ ζ)))
       (y (.inr ()) : ℂ) := by
     have hyz : dist yℂ z₀ < r₁ := by
@@ -736,13 +462,9 @@ private theorem verticalIteratedDeriv_eventually_real {f : (σ ⊕ Unit → ℝ)
       have hlt₁ : dist y p₀ < r₁ :=
         hy_lt.trans ((half_lt_self hr).trans_le ((min_le_right _ _).trans (min_le_left _ _)))
       simpa [yℂ, z₀, Complex.isometry_ofReal.dist_eq] using (dist_le_pi_dist y p₀ idx).trans_lt hlt₁
-    have hline : AnalyticAt ℂ (fun ζ : ℂ ↦ Sum.elim (yℂ ∘ Sum.inl) (fun _ : Unit ↦ ζ))
-        (y (.inr ()) : ℂ) :=
-      analyticAt_pi_iff.2 fun idx ↦ by
-        cases idx with
-        | inl _ => exact analyticAt_const
-        | inr _ => exact analyticAt_id
-    exact (hballF (mem_ball.2 hyz)).comp_of_eq hline (by ext (_ | _) <;> rfl)
+    have hyℂ_eq : (Sum.elim (yℂ ∘ Sum.inl) fun _ : Unit ↦ (y (.inr ()) : ℂ)) = yℂ := by
+      ext (_ | _) <;> rfl
+    exact (hyℂ_eq.symm ▸ hballF (mem_ball.2 hyz)).comp_sumElim_const
   have hr_le_r₂ : r ≤ r₂ := (min_le_right _ _).trans (min_le_right _ _)
   have hslice_eq : (fun s : ℝ ↦ F (Sum.elim (yℂ ∘ Sum.inl) (fun _ ↦ (s : ℂ)))) =ᶠ[𝓝 (y (.inr ()))]
       Complex.ofRealCLM ∘ (fun s : ℝ ↦ f (Sum.elim (y ∘ Sum.inl) (fun _ ↦ s))) := by
@@ -856,7 +578,7 @@ private theorem isSemialgebraic_inter_coeff_eq_vieta {d : ℕ} {x₀ : σ → �
     (hci_pull.sumElim (isSemialgebraicOn_const 0 hD)).congr fun a _ ↦ by
       ext (_ | _) <;> simp
   have hvieta :=
-    (isSemialgebraicMap_complexToRealPi_eval (P_mv.coeff (i : ℕ))).isSemialgebraicOn hD
+    (isSemialgebraicMap_complexToRealPi_eval fun _ : Unit ↦ P_mv.coeff (i : ℕ)).isSemialgebraicOn hD
   convert hci_cpx.isSemialgebraic_inter_setOf_eq hvieta using 2
   ext a
   have hmap : P_mv.map (MvPolynomial.eval fun idx ↦ (a idx : ℂ)) =
@@ -882,7 +604,7 @@ private theorem isSemialgebraic_prepClusterLocus {d : ℕ} {D : Set (RootCluster
     ext a
     simp [funext_iff]
   refine (hD.inter (.iInter fun i ↦ isSemialgebraic_coeff_eq_vieta t₀ i)).inter
-    (.iInter fun j ↦ .iInter fun S ↦ IsSemialgebraic.imp_of_const _ ?_)
+    (.iInter fun j ↦ .iInter fun S ↦ IsSemialgebraic.imp_of_const ?_ _)
   have hS_le : S.card ≤ d := S.card_le_univ.trans_eq (Fintype.card_fin d)
   have hcl : IsSemialgebraic (⋂ l : Fin d,
       if l ∈ S then {a | rootClusterOf σ a l = rootClusterOf σ a j}
@@ -892,7 +614,7 @@ private theorem isSemialgebraic_prepClusterLocus {d : ℕ} {D : Set (RootCluster
         exact (isSemialgebraic_rootVar_eq l j).compl]
   exact hcl.compl.union
     ((IsSemialgebraic.iInter fun k : Fin (d + 1) ↦
-      IsSemialgebraic.imp_of_const _ (hJ0 j (k : ℕ) (Nat.le_of_lt_succ k.2))).inter
+      (hJ0 j (k : ℕ) (Nat.le_of_lt_succ k.2)).imp_of_const _).inter
       (hD.sdiff (hJ0 j S.card hS_le)))
 
 private theorem isSemialgebraic_divClusterLocus {d : ℕ} {x₀ : σ → ℝ} {δ : ℝ} (t₀ : ℝ)
@@ -914,8 +636,8 @@ private theorem isSemialgebraic_divClusterLocus {d : ℕ} {x₀ : σ → ℝ} {�
         ∑ i : Fin d, (a (.inl (.inr i)) : ℂ) * ((i : ℕ).descFactorial (k : ℕ) : ℂ) *
           (rootClusterOf σ a j - t₀) ^ ((i : ℕ) - (k : ℕ))}) := by
     have hpull := isSemialgebraicOn_jet_comp_slice hD (hJW (k : ℕ) k.2.le) j fun a ha ↦ hmaps a ha j
-    have hrhs :=
-      (isSemialgebraicMap_complexToRealPi_eval (hermitePoly j (k : ℕ))).isSemialgebraicOn hD
+    have hrhs := (isSemialgebraicMap_complexToRealPi_eval fun _ : Unit ↦
+      hermitePoly j (k : ℕ)).isSemialgebraicOn hD
     convert hpull.isSemialgebraic_inter_setOf_eq hrhs using 2
     ext a
     simp [hermitePoly, rootVarPoly, rootClusterOf, funext_iff]
@@ -924,8 +646,8 @@ private theorem isSemialgebraic_divClusterLocus {d : ℕ} {x₀ : σ → ℝ} {�
     (.iInter fun j ↦ .iInter fun S ↦ ?_)
   have hcl : IsSemialgebraic (⋂ l : Fin d,
       {a : RootClusterIdx σ d → ℝ | l ∈ S → rootClusterOf σ a l = rootClusterOf σ a j}) :=
-    .iInter fun l ↦ IsSemialgebraic.imp_of_const _ (isSemialgebraic_rootVar_eq l j)
-  exact hcl.compl.union (.iInter fun k ↦ IsSemialgebraic.imp_of_const _ (hJherm j k))
+    .iInter fun l ↦ (isSemialgebraic_rootVar_eq l j).imp_of_const _
+  exact hcl.compl.union (.iInter fun k ↦ (hJherm j k).imp_of_const _)
 
 end AuxFintype
 
@@ -955,7 +677,8 @@ theorem IsNashAt.of_weierstrassPreparation {d : ℕ} {f u : (σ ⊕ Unit → ℝ
   -- Complexify `f`, `u`, and `c`, and lift the factorization to a complex ball around `z₀`.
   obtain ⟨rf, hrf, F, hFon, hFf, -⟩ := hf.analyticAt.exists_complexification
   obtain ⟨ru, hru, U, hUon, hUu, -⟩ := hu.exists_complexification
-  obtain ⟨c_cpx, hc_an, hc_ev⟩ := exists_complexification_pi_family hc
+  obtain ⟨rc, hrc, C_cpx, hCon, hCc, -⟩ := (AnalyticAt.pi hc).exists_complexification_pi
+  let c_cpx (i : Fin d) (z : σ → ℂ) : ℂ := C_cpx z i
   set z₀ : σ ⊕ Unit → ℂ := fun idx ↦ (p₀ idx : ℂ)
   have hF : AnalyticAt ℂ F z₀ := hFon z₀ (mem_ball_self hrf)
   have hU : AnalyticAt ℂ U z₀ := hUon z₀ (mem_ball_self hru)
@@ -964,8 +687,11 @@ theorem IsNashAt.of_weierstrassPreparation {d : ℕ} {f u : (σ ⊕ Unit → ℝ
     mem_of_superset (ball_mem_nhds p₀ hrf) hFf
   have hU_ev : ∀ᶠ y in 𝓝 p₀, U (fun s ↦ (y s : ℂ)) = u y :=
     mem_of_superset (ball_mem_nhds p₀ hru) hUu
+  have hc_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, c_cpx i (fun s ↦ (x s : ℂ)) = c i x :=
+    mem_of_superset (ball_mem_nhds x₀ hrc) fun x hx i ↦ congrFun (hCc x hx) i
   have hc_an' : ∀ i, AnalyticAt ℂ (c_cpx i) (z₀ ∘ Sum.inl) := fun i ↦ by
-    simpa [z₀, p₀, Function.comp_def] using hc_an i
+    have hz₀_inl : z₀ ∘ Sum.inl = fun s ↦ (x₀ s : ℂ) := by ext s; rfl
+    exact hz₀_inl ▸ (analyticAt_pi_iff.1 (hCon _ (mem_ball_self hrc))) i
   have hFfac : ∀ᶠ z in 𝓝 z₀, F z =
       (Polynomial.monicOfCoeff (fun i ↦ c_cpx i (z ∘ Sum.inl))).eval (z (.inr ()) - t₀) *
         U z := by
@@ -982,8 +708,7 @@ theorem IsNashAt.of_weierstrassPreparation {d : ℕ} {f u : (σ ⊕ Unit → ℝ
   obtain ⟨ρW, hρW, hJW⟩ := exists_ball_isSemialgebraicOn_verticalIteratedDeriv hf hF hF_ev d
   let e := complexToRealPi (σ ⊕ Unit)
   obtain ⟨R, hR, hballR⟩ := Metric.mem_nhds_iff.1 <| inter_mem
-    (inter_mem hF.eventually_analyticAt (inter_mem hU.eventually_analyticAt
-      (hU.continuousAt.eventually_ne hUz₀)))
+    (inter_mem hU.eventually_analyticAt (hU.continuousAt.eventually_ne hUz₀))
     (inter_mem hFfac ((e.continuous.tendsto z₀).eventually (ball_mem_nhds (e z₀) hρW)))
   obtain ⟨δ, hδ, hballδ⟩ := Metric.mem_nhds_iff.1 <| inter_mem (ball_mem_nhds x₀ hR) <|
     inter_mem hc_ev (eventually_exists_roots_mem_ball t₀ hR (fun i ↦ (hc i).continuousAt) hc0)
@@ -993,9 +718,14 @@ theorem IsNashAt.of_weierstrassPreparation {d : ℕ} {f u : (σ ⊕ Unit → ℝ
   let D : Set (RootClusterIdx σ d → ℝ) :=
     {a | (fun s ↦ a (.inl (.inl s))) ∈ ball x₀ δ ∧
       ∀ j : Fin d, rootClusterOf σ a j ∈ ball (t₀ : ℂ) R}
+  have hz₀_eq : z₀ = Sum.elim (fun s : σ ↦ (x₀ s : ℂ)) fun _ : Unit ↦ (t₀ : ℂ) := by
+    ext (_ | _) <;> rfl
   have hz_mem {x : σ → ℝ} (hx : x ∈ ball x₀ δ) {ζ : ℂ} (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-      Sum.elim (fun s : σ ↦ (x s : ℂ)) (fun _ : Unit ↦ ζ) ∈ ball z₀ R :=
-    sumElim_ofReal_mem_ball hR (mem_ball.1 (hballδ hx).1) hζ
+      Sum.elim (fun s : σ ↦ (x s : ℂ)) (fun _ : Unit ↦ ζ) ∈ ball z₀ R := by
+    rw [hz₀_eq, Pi.sumElim_mem_ball, Pi.mem_ball_unique (ι := Unit)]
+    refine ⟨mem_ball.2 ((dist_pi_lt_iff hR).2 fun s ↦ ?_), hζ⟩
+    simpa only [Complex.isometry_ofReal.dist_eq] using
+      (dist_le_pi_dist x x₀ s).trans_lt (mem_ball.1 (hballδ hx).1)
   have hΦ : IsSemialgebraic (prepClusterLocus D t₀ F) :=
     isSemialgebraic_prepClusterLocus (isSemialgebraic_rootClusterTube x₀ t₀ δ R hR) t₀
       (fun a ha j ↦ (hballR (hz_mem ha.1 (ha.2 j))).2.2) hJW
@@ -1004,52 +734,49 @@ theorem IsNashAt.of_weierstrassPreparation {d : ℕ} {f u : (σ ⊕ Unit → ℝ
   rw [mem_preimage_sumArrowEquivProdArrow_graphOn, mem_ofPred_eq]
   set x : σ → ℝ := xy ∘ Sum.inl
   set y : Fin d → ℝ := xy ∘ Sum.inr
+  have hPw_iff (hx : x ∈ ball x₀ δ) {w : Fin d → ℂ} (hw_mem : ∀ j, w j ∈ ball (t₀ : ℂ) R) :
+      Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ)) = ∏ j : Fin d, (X - C (w j - t₀)) ↔
+        ∀ (j : Fin d) (S : Finset (Fin d)), S.Nonempty → (∀ l, l ∈ S ↔ w l = w j) →
+          (∀ k < S.card,
+            verticalIteratedDeriv F k (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ w j)) = 0) ∧
+          verticalIteratedDeriv F S.card (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ w j)) ≠ 0 := by
+    have hcx' : (fun i : Fin d ↦ c_cpx i (fun s ↦ (x s : ℂ))) = fun i ↦ (c i x : ℂ) :=
+      funext (hballδ hx).2.1
+    have hU_an (j : Fin d) :
+        AnalyticAt ℂ (fun ζ ↦ U (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ))) (w j) :=
+      (hballR (hz_mem hx (hw_mem j))).1.1.comp_sumElim_const
+    have hU_ne (j : Fin d) : U (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ w j)) ≠ 0 :=
+      (hballR (hz_mem hx (hw_mem j))).1.2
+    have hfac_x (j : Fin d) :
+        (fun ζ ↦ F (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ))) =ᶠ[𝓝 (w j)]
+          (fun ζ : ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ))).eval (ζ - t₀)) *
+            fun ζ ↦ U (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) := by
+      filter_upwards [isOpen_ball.mem_nhds (hw_mem j)] with ζ hζ
+      simpa only [Pi.mul_apply, mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_inr, hcx'] using
+        (hballR (hz_mem hx hζ)).2.1
+    simpa only [verticalIteratedDeriv, Sum.elim_comp_inl, Sum.elim_inr] using
+      (Polynomial.monic_monicOfCoeff _).eq_prod_X_sub_C_iff_iteratedDeriv
+        ((Polynomial.natDegree_monicOfCoeff _).trans (Fintype.card_fin d).symm)
+        w hU_an hU_ne hfac_x
   constructor
   · rintro ⟨hx, hxy⟩
-    obtain ⟨-, hcx, -, w, hwR, hPw⟩ := hballδ hx
+    obtain ⟨-, -, -, w, hwR, hPw⟩ := hballδ hx
     have hw_mem (j : Fin d) : w j ∈ ball (t₀ : ℂ) R := by
       simpa [mem_ball, dist_eq_norm] using hwR j
-    have hcx' : (fun i : Fin d ↦ c_cpx i (fun s ↦ (x s : ℂ))) = fun i ↦ (c i x : ℂ) := funext hcx
-    have hfac_x (ζ : ℂ) (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-        F (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) =
-          (Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ))).eval (ζ - t₀) *
-            U (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) := by
-      simpa only [mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_inr, hcx'] using
-        (hballR (hz_mem hx hζ)).2.1
-    have hF_an := analyticOnNhd_verticalSlice fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1.1
-    have hU_an := analyticOnNhd_verticalSlice fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1.2.1
-    have hcond := (eq_prod_X_sub_C_iff_iteratedDeriv (Polynomial.monic_monicOfCoeff _)
-      (Polynomial.natDegree_monicOfCoeff _) hF_an hU_an
-      (fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1.2.2) hfac_x w hw_mem).1 hPw
     refine ⟨complexToRealPi (Fin d) w, (mem_prepClusterLocus_iff xy _).2 ?_⟩
     simp only [ContinuousLinearEquiv.symm_apply_apply]
     refine ⟨⟨hx, fun j ↦ by simpa [rootClusterOf] using hw_mem j⟩, fun i ↦ ?_,
-      fun j S hSne hS ↦ ?_⟩
-    · rw [← hPw, Polynomial.coeff_monicOfCoeff]
-      exact congrArg Complex.ofReal (congrFun hxy i).symm
-    · simpa [verticalIteratedDeriv, Sum.elim_comp_inl, x] using hcond j S hSne hS
+      (hPw_iff hx hw_mem).1 hPw⟩
+    rw [← hPw, Polynomial.coeff_monicOfCoeff]
+    exact congrArg Complex.ofReal (congrFun hxy i).symm
   · rintro ⟨ω, hω⟩
     obtain ⟨haD, hvieta, hjet⟩ := (mem_prepClusterLocus_iff xy ω).1 hω
     have hx : x ∈ ball x₀ δ := haD.1
     set w : Fin d → ℂ := (complexToRealPi (Fin d)).symm ω
     have hw_mem (j : Fin d) : w j ∈ ball (t₀ : ℂ) R := by
       simpa [w, rootClusterOf] using haD.2 j
-    obtain ⟨-, hcx, -⟩ := hballδ hx
-    have hcx' : (fun i : Fin d ↦ c_cpx i (fun s ↦ (x s : ℂ))) = fun i ↦ (c i x : ℂ) := funext hcx
-    have hfac_x (ζ : ℂ) (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-        F (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) =
-          (Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ))).eval (ζ - t₀) *
-            U (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) := by
-      simpa only [mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_inr, hcx'] using
-        (hballR (hz_mem hx hζ)).2.1
-    have hF_an := analyticOnNhd_verticalSlice fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1.1
-    have hU_an := analyticOnNhd_verticalSlice fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1.2.1
-    have hPw : Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ)) =
-        ∏ j : Fin d, (X - C (w j - t₀)) :=
-      (eq_prod_X_sub_C_iff_iteratedDeriv (Polynomial.monic_monicOfCoeff _)
-        (Polynomial.natDegree_monicOfCoeff _) hF_an hU_an
-        (fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1.2.2) hfac_x w hw_mem).2 fun j S hSne hS ↦ by
-          simpa [verticalIteratedDeriv, Sum.elim_comp_inl, x, w] using hjet j S hSne hS
+    have hPw : Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ)) = ∏ j : Fin d, (X - C (w j - t₀)) :=
+      (hPw_iff hx hw_mem).2 hjet
     refine ⟨hx, funext fun i ↦ Complex.ofReal_injective ?_⟩
     have hi : (y i : ℂ) = (∏ j : Fin d, (X - C (w j - t₀))).coeff (i : ℕ) := hvieta i
     rw [hi, ← hPw, Polynomial.coeff_monicOfCoeff]
@@ -1087,7 +814,7 @@ theorem IsNashAt.exists_weierstrassPreparation {f : (σ ⊕ Unit → ℝ) → �
   let c : Fin d → (σ → ℝ) → ℝ := fun i x ↦ c' i (x ∘ e.symm)
   let u : (σ ⊕ Unit → ℝ) → ℝ := fun p ↦ u' (sumArrowToFinProd σ p)
   have hc (i : Fin d) : AnalyticAt ℝ (c i) x₀ :=
-    (hc' i).comp_of_eq (analyticAt_comp_equiv e.symm x₀) rfl
+    (hc' i).comp_of_eq (analyticAt_comp_right e.symm) rfl
   have hc0 (i : Fin d) : c i x₀ = 0 := hc'0 i
   have hu : AnalyticAt ℝ u p₀ := hu'.comp_of_eq (analyticAt_sumArrowToFinProd p₀) hψ0
   have hu0 : u p₀ ≠ 0 := by simpa [u, hψ0] using hu'0
@@ -1129,8 +856,11 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {d : ℕ} {g q : (σ ⊕ Un
   -- Complexify `g`, `q`, `c`, and `r`, and lift the division to a complex ball around `z₀`.
   obtain ⟨rg, hrg, G, hGon, hGg, -⟩ := hg.analyticAt.exists_complexification
   obtain ⟨rq, hrq, Q, hQon, hQq, -⟩ := hq.exists_complexification
-  obtain ⟨c_cpx, hc_an, hc_ev⟩ := exists_complexification_pi_family fun i ↦ (hc i).analyticAt
-  obtain ⟨r_cpx, hr_an, hr_ev⟩ := exists_complexification_pi_family hr
+  obtain ⟨rc, hrc, C_cpx, hCon, hCc, -⟩ :=
+    (AnalyticAt.pi fun i ↦ (hc i).analyticAt).exists_complexification_pi
+  obtain ⟨rr, hrr, R_cpx, hRon, hRr, -⟩ := (AnalyticAt.pi hr).exists_complexification_pi
+  let c_cpx (i : Fin d) (z : σ → ℂ) : ℂ := C_cpx z i
+  let r_cpx (i : Fin d) (z : σ → ℂ) : ℂ := R_cpx z i
   set z₀ : σ ⊕ Unit → ℂ := fun idx ↦ (p₀ idx : ℂ)
   have hG : AnalyticAt ℂ G z₀ := hGon z₀ (mem_ball_self hrg)
   have hQ : AnalyticAt ℂ Q z₀ := hQon z₀ (mem_ball_self hrq)
@@ -1138,10 +868,15 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {d : ℕ} {g q : (σ ⊕ Un
     mem_of_superset (ball_mem_nhds p₀ hrg) hGg
   have hQ_ev : ∀ᶠ y in 𝓝 p₀, Q (fun s ↦ (y s : ℂ)) = q y :=
     mem_of_superset (ball_mem_nhds p₀ hrq) hQq
-  have hc_an' : ∀ i, AnalyticAt ℂ (c_cpx i) (z₀ ∘ Sum.inl) := fun i ↦ by
-    simpa [z₀, p₀, Function.comp_def] using hc_an i
-  have hr_an' : ∀ i, AnalyticAt ℂ (r_cpx i) (z₀ ∘ Sum.inl) := fun i ↦ by
-    simpa [z₀, p₀, Function.comp_def] using hr_an i
+  have hc_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, c_cpx i (fun s ↦ (x s : ℂ)) = c i x :=
+    mem_of_superset (ball_mem_nhds x₀ hrc) fun x hx i ↦ congrFun (hCc x hx) i
+  have hr_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, r_cpx i (fun s ↦ (x s : ℂ)) = r i x :=
+    mem_of_superset (ball_mem_nhds x₀ hrr) fun x hx i ↦ congrFun (hRr x hx) i
+  have hz₀_inl : z₀ ∘ Sum.inl = fun s ↦ (x₀ s : ℂ) := by ext s; rfl
+  have hc_an' : ∀ i, AnalyticAt ℂ (c_cpx i) (z₀ ∘ Sum.inl) := fun i ↦
+    hz₀_inl ▸ (analyticAt_pi_iff.1 (hCon _ (mem_ball_self hrc))) i
+  have hr_an' : ∀ i, AnalyticAt ℂ (r_cpx i) (z₀ ∘ Sum.inl) := fun i ↦
+    hz₀_inl ▸ (analyticAt_pi_iff.1 (hRon _ (mem_ball_self hrr))) i
   have hGdiv : ∀ᶠ z in 𝓝 z₀, G z =
       (Polynomial.monicOfCoeff (fun i ↦ c_cpx i (z ∘ Sum.inl))).eval (z (.inr ()) - t₀) * Q z +
         ∑ i : Fin d, r_cpx i (z ∘ Sum.inl) * (z (.inr ()) - t₀) ^ (i : ℕ) := by
@@ -1172,9 +907,14 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {d : ℕ} {g q : (σ ⊕ Un
   let D : Set (RootClusterIdx σ d → ℝ) :=
     {a | (fun s ↦ a (.inl (.inl s))) ∈ ball x₀ δ ∧
       ∀ j : Fin d, rootClusterOf σ a j ∈ ball (t₀ : ℂ) R}
+  have hz₀_eq : z₀ = Sum.elim (fun s : σ ↦ (x₀ s : ℂ)) fun _ : Unit ↦ (t₀ : ℂ) := by
+    ext (_ | _) <;> rfl
   have hz_mem {x : σ → ℝ} (hx : x ∈ ball x₀ δ) {ζ : ℂ} (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-      Sum.elim (fun s : σ ↦ (x s : ℂ)) (fun _ : Unit ↦ ζ) ∈ ball z₀ R :=
-    sumElim_ofReal_mem_ball hR (mem_ball.1 (hballδ hx).1) hζ
+      Sum.elim (fun s : σ ↦ (x s : ℂ)) (fun _ : Unit ↦ ζ) ∈ ball z₀ R := by
+    rw [hz₀_eq, Pi.sumElim_mem_ball, Pi.mem_ball_unique (ι := Unit)]
+    refine ⟨mem_ball.2 ((dist_pi_lt_iff hR).2 fun s ↦ ?_), hζ⟩
+    simpa only [Complex.isometry_ofReal.dist_eq] using
+      (dist_le_pi_dist x x₀ s).trans_lt (mem_ball.1 (hballδ hx).1)
   have hΨ : IsSemialgebraic (divClusterLocus D t₀ c G) :=
     isSemialgebraic_divClusterLocus t₀ (isSemialgebraic_rootClusterTube x₀ t₀ δ R hR)
       (fun _ ha ↦ ha.1)
@@ -1185,41 +925,49 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {d : ℕ} {g q : (σ ⊕ Un
   rw [mem_preimage_sumArrowEquivProdArrow_graphOn, mem_ofPred_eq]
   set x : σ → ℝ := xy ∘ Sum.inl
   set y : Fin d → ℝ := xy ∘ Sum.inr
-  constructor
-  · rintro ⟨hx, hxy⟩
+  have hy_rem_iff (hx : x ∈ ball x₀ δ) :
+      (fun i : Fin d ↦ (y i : ℂ)) = (fun i ↦ (r i x : ℂ)) ↔
+        ∃ w : Fin d → ℂ, (∀ j, w j ∈ ball (t₀ : ℂ) R) ∧
+          Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ)) = ∏ j : Fin d, (X - C (w j - t₀)) ∧
+          ∀ (j : Fin d) (S : Finset (Fin d)), (∀ l ∈ S, w l = w j) → ∀ k < S.card,
+            verticalIteratedDeriv G k (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ w j)) =
+              ∑ i : Fin d, (y i : ℂ) * ((i : ℕ).descFactorial k : ℂ) *
+                (w j - t₀) ^ ((i : ℕ) - k) := by
     obtain ⟨-, -, ⟨hcx, hrx⟩, -, w₀, hw₀R, hPw₀⟩ := hballδ hx
     have hw₀_mem (j : Fin d) : w₀ j ∈ ball (t₀ : ℂ) R := by
       simpa [mem_ball, dist_eq_norm] using hw₀R j
+    have hcx' : (fun i : Fin d ↦ c_cpx i (fun s ↦ (x s : ℂ))) = fun i ↦ (c i x : ℂ) :=
+      funext hcx
+    have hQ_an : AnalyticOnNhd ℂ (fun ζ ↦ Q (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)))
+        (ball (t₀ : ℂ) R) :=
+      analyticOnNhd_comp_sumElim_const fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1
     have hdiv_x (ζ : ℂ) (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-        G (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) =
-          (Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ))).eval (ζ - t₀) *
-            Q (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) +
-            ∑ i : Fin d, (r i x : ℂ) * (ζ - t₀) ^ (i : ℕ) := by
-      have hcx' : (fun i : Fin d ↦ c_cpx i (fun s ↦ (x s : ℂ))) = fun i ↦ (c i x : ℂ) :=
-        funext hcx
+        (fun ζ' ↦ G (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ'))) =ᶠ[𝓝 ζ]
+          (fun ζ' : ℂ ↦ (Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ))).eval (ζ' - t₀)) *
+            (fun ζ' ↦ Q (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ'))) +
+            fun ζ' ↦ ∑ i : Fin d, (r i x : ℂ) * (ζ' - t₀) ^ (i : ℕ) := by
+      filter_upwards [isOpen_ball.mem_nhds hζ] with ζ' hζ'
       have hrx' (i : Fin d) : r_cpx i (fun s ↦ (x s : ℂ)) = r i x := hrx i
-      simpa only [mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_inr, hcx', hrx'] using
-        (hballR (hz_mem hx hζ)).2.1
-    have hQ_an := analyticOnNhd_verticalSlice fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1
+      simpa only [Pi.add_apply, Pi.mul_apply, mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_inr,
+        hcx', hrx'] using (hballR (hz_mem hx hζ')).2.1
+    simpa only [verticalIteratedDeriv, Sum.elim_comp_inl, Sum.elim_inr] using
+      (Polynomial.monic_monicOfCoeff _).eq_iff_exists_prod_X_sub_C_and_iteratedDeriv
+        hQ_an hdiv_x ⟨w₀, hw₀_mem, hPw₀⟩ (fun i ↦ (y i : ℂ))
+  constructor
+  · rintro ⟨hx, hxy⟩
     have hy_eq : (fun i : Fin d ↦ (y i : ℂ)) = fun i ↦ (r i x : ℂ) := by
       ext i; exact congrArg Complex.ofReal (congrFun hxy i).symm
-    obtain ⟨w, hw_mem, hPw, hjet⟩ :=
-      (eq_rem_iff_iteratedDeriv (Polynomial.monic_monicOfCoeff _) hQ_an hdiv_x
-        ⟨w₀, hw₀_mem, hPw₀⟩ (fun i ↦ (y i : ℂ))).1 hy_eq
+    obtain ⟨w, hw_mem, hPw, hjet⟩ := (hy_rem_iff hx).1 hy_eq
     refine ⟨complexToRealPi (Fin d) w, (mem_divClusterLocus_iff xy _).2 ?_⟩
     simp only [ContinuousLinearEquiv.symm_apply_apply]
     refine ⟨⟨hx, fun j ↦ by simpa [rootClusterOf] using hw_mem j⟩,
-      fun i ↦ by rw [← hPw, Polynomial.coeff_monicOfCoeff], fun j S hS k hk ↦ ?_⟩
-    simpa [verticalIteratedDeriv, Sum.elim_comp_inl, x, y] using hjet j S hS k hk
+      fun i ↦ by rw [← hPw, Polynomial.coeff_monicOfCoeff], fun j S hS k hk ↦ hjet j S hS k hk⟩
   · rintro ⟨ω, hω⟩
     obtain ⟨haD, hvieta, hjet⟩ := (mem_divClusterLocus_iff xy ω).1 hω
     have hx : x ∈ ball x₀ δ := haD.1
     set w : Fin d → ℂ := (complexToRealPi (Fin d)).symm ω
     have hw_mem (j : Fin d) : w j ∈ ball (t₀ : ℂ) R := by
       simpa [w, rootClusterOf] using haD.2 j
-    obtain ⟨-, -, ⟨hcx, hrx⟩, -, w₀, hw₀R, hPw₀⟩ := hballδ hx
-    have hw₀_mem (j : Fin d) : w₀ j ∈ ball (t₀ : ℂ) R := by
-      simpa [mem_ball, dist_eq_norm] using hw₀R j
     have hPw : Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ)) =
         ∏ j : Fin d, (X - C (w j - t₀)) := by
       have hprod_monic : (∏ j : Fin d, (X - C (w j - t₀))).Monic :=
@@ -1232,21 +980,9 @@ theorem IsNashAt.of_weierstrassDivision_monicOfCoeff {d : ℕ} {g q : (σ ⊕ Un
       congr 1
       ext i
       exact hvieta i
-    have hdiv_x (ζ : ℂ) (hζ : ζ ∈ ball (t₀ : ℂ) R) :
-        G (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) =
-          (Polynomial.monicOfCoeff (fun i ↦ (c i x : ℂ))).eval (ζ - t₀) *
-            Q (Sum.elim (fun s ↦ (x s : ℂ)) (fun _ ↦ ζ)) +
-            ∑ i : Fin d, (r i x : ℂ) * (ζ - t₀) ^ (i : ℕ) := by
-      have hcx' : (fun i : Fin d ↦ c_cpx i (fun s ↦ (x s : ℂ))) = fun i ↦ (c i x : ℂ) :=
-        funext hcx
-      have hrx' (i : Fin d) : r_cpx i (fun s ↦ (x s : ℂ)) = r i x := hrx i
-      simpa only [mem_ofPred_eq, Sum.elim_comp_inl, Sum.elim_inr, hcx', hrx'] using
-        (hballR (hz_mem hx hζ)).2.1
-    have hQ_an := analyticOnNhd_verticalSlice fun ζ hζ ↦ (hballR (hz_mem hx hζ)).1
     have hy_eq : (fun i : Fin d ↦ (y i : ℂ)) = fun i ↦ (r i x : ℂ) :=
-      (eq_rem_iff_iteratedDeriv (Polynomial.monic_monicOfCoeff _) hQ_an hdiv_x
-        ⟨w₀, hw₀_mem, hPw₀⟩ (fun i ↦ (y i : ℂ))).2 ⟨w, hw_mem, hPw, fun j S hS k hk ↦ by
-          simpa [verticalIteratedDeriv, Sum.elim_comp_inl, x, y, w] using hjet j S hS k hk⟩
+      (hy_rem_iff hx).2 ⟨w, hw_mem, hPw, fun j S hS k hk ↦
+        hjet j S hS ⟨k, hk.trans_le (S.card_le_univ.trans_eq (Fintype.card_fin d))⟩ hk⟩
     exact ⟨hx, funext fun i ↦ Complex.ofReal_injective (congrFun hy_eq i).symm⟩
 
 /-- **Nash Weierstrass division by a Weierstrass polynomial.** Let `g : (σ ⊕ Unit → ℝ) → ℝ` be a
@@ -1273,7 +1009,7 @@ theorem IsNashAt.exists_weierstrassDivision_monicOfCoeff {d : ℕ} {g : (σ ⊕ 
     hg.analyticAt.comp_of_eq (analyticAt_finProdToSumArrow (x₀', t₀)) hφ0
   let c' : Fin d → (Fin (Fintype.card σ) → ℝ) → ℝ := fun i y ↦ c i (y ∘ e)
   have hc' (i : Fin d) : AnalyticAt ℝ (c' i) x₀' :=
-    (hc i).analyticAt.comp_of_eq (analyticAt_comp_equiv e x₀') (by ext s; simp [x₀', e])
+    (hc i).analyticAt.comp_of_eq (analyticAt_comp_right e) (by ext s; simp [x₀', e])
   have hc'0 (i : Fin d) : c' i x₀' = 0 := by
     have hx₀ : x₀' ∘ e = x₀ := by ext s; simp [x₀', e]
     simpa [c', hx₀] using hc0 i
@@ -1284,7 +1020,7 @@ theorem IsNashAt.exists_weierstrassDivision_monicOfCoeff {d : ℕ} {g : (σ ⊕ 
   let r : Fin d → (σ → ℝ) → ℝ := fun i x ↦ r' i (x ∘ e.symm)
   have hq : AnalyticAt ℝ q p₀ := hq'.comp_of_eq (analyticAt_sumArrowToFinProd p₀) hψ0
   have hr (i : Fin d) : AnalyticAt ℝ (r i) x₀ :=
-    (hr' i).comp_of_eq (analyticAt_comp_equiv e.symm x₀) rfl
+    (hr' i).comp_of_eq (analyticAt_comp_right e.symm) rfl
   have hdiv : g =ᶠ[𝓝 p₀] fun p ↦
       (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (.inr ()) - t₀) * q p +
         ∑ i : Fin d, r i (p ∘ Sum.inl) * (p (.inr ()) - t₀) ^ (i : ℕ) := by

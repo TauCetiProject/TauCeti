@@ -30,6 +30,8 @@ The real coordinates of `z : κ → ℂ` are indexed by `κ ⊕ κ`: `Sum.inl k`
   complex coordinates and their conjugates is semialgebraic in the real coordinates.
 * `TauCeti.isSemialgebraicOn_complexToRealPi_of_forall_eq_iff`: a map between complex coordinate
   spaces whose graph is cut out by such equations is semialgebraic in the real coordinates.
+* `TauCeti.isSemialgebraicMap_complexToRealPi_eval`: evaluating a finite family of complex
+  polynomials at real points is semialgebraic in the real coordinates.
 -/
 
 public section
@@ -118,5 +120,21 @@ theorem isSemialgebraicOn_complexToRealPi_of_forall_eq_iff {σ τ ι : Type*} [F
   refine forall_congr' fun k ↦ Eq.congr_left (congr_arg (eval · (R k)) ?_)
   funext t
   rcases t with (t | t) | (t | t) <;> simp [f]
+
+/-- Evaluating a finite family of complex polynomials at real points `a : σ → ℝ` defines a
+semialgebraic map in the real coordinates given by `TauCeti.complexToRealPi`. -/
+theorem isSemialgebraicMap_complexToRealPi_eval [Fintype κ] (q : κ → MvPolynomial σ ℂ) :
+    IsSemialgebraicMap fun a : σ → ℝ ↦
+      complexToRealPi κ fun k ↦ eval (fun s ↦ (a s : ℂ)) (q k) := by
+  rw [isSemialgebraicMap_def]
+  let r (k : κ) : MvPolynomial (σ ⊕ (κ ⊕ κ)) ℂ :=
+    rename Sum.inl (q k) - (X (.inr (.inl k)) + X (.inr (.inr k)) * C I)
+  convert IsSemialgebraic.iInter fun k ↦ isSemialgebraic_setOf_eval_ofReal_eq_zero (r k) using 1
+  ext z
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [Set.mem_univ, true_and, Set.mem_iInter, Set.mem_ofPred_eq, r, map_sub, eval_rename,
+    map_add, map_mul, eval_X, eval_C, sub_eq_zero]
+  rw [← ContinuousLinearEquiv.eq_symm_apply]
+  simp [funext_iff, Function.comp_def]
 
 end TauCeti

@@ -27,7 +27,8 @@ recovers `μ i` (`Multiset.map_fst_filter_sum_map_prodMk`).
 
 Summing the multiplicities of the distinct elements satisfying `p` counts the elements satisfying
 `p` (`Multiset.sum_filter_count_eq_countP`), the multiset form of Mathlib's
-`Finset.sum_filter_count_eq_countP` for lists.
+`Finset.sum_filter_count_eq_countP` for lists. Counting a value in the multiset image of a finite
+set gives the cardinality of its fiber (`Finset.count_map_val`).
 -/
 
 public section
@@ -115,3 +116,15 @@ theorem map_fst_filter_sum_map_prodMk (hg : Function.Injective g) (i : ι) :
 end Tagged
 
 end Multiset
+
+namespace Finset
+
+/-- Counting `b` in the multiset of values of `f` on a finite set `s` gives the cardinality of the
+fiber `{x ∈ s | f x = b}`. -/
+theorem count_map_val {α β : Type*} [DecidableEq β] (s : Finset α) (f : α → β) (b : β) :
+    (s.val.map f).count b = (s.filter fun x ↦ f x = b).card := by
+  rw [Multiset.count_map, ← Finset.filter_val, Finset.card_val]
+  congr 1
+  exact Finset.filter_congr fun _ _ ↦ eq_comm
+
+end Finset

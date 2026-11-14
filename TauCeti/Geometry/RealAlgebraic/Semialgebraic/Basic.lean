@@ -193,6 +193,12 @@ theorem IsSemialgebraic.iInter {ι : Type*} [Finite ι] {s : ι → Set (σ → 
     (hs : ∀ i, IsSemialgebraic (s i)) : IsSemialgebraic (⋂ i, s i) := by
   simpa using IsSemialgebraic.biInter finite_univ fun i _ => hs i
 
+/-- Guarding membership in a semialgebraic set by a constant proposition preserves
+semialgebraicity. -/
+theorem IsSemialgebraic.imp_of_const {s : Set (σ → R)} (hs : IsSemialgebraic s) (P : Prop) :
+    IsSemialgebraic {x : σ → R | P → x ∈ s} := by
+  by_cases hP : P <;> simp [hP, hs]
+
 /-! ### Polynomial sign conditions -/
 
 /-- The set where a polynomial does not vanish is semialgebraic. -/

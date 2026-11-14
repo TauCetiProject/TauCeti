@@ -8,14 +8,19 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 
 /-!
-# Analytic constructions: products and finite sums
+# Analytic constructions: products, slices, and finite sums
 
 Mathlib's `AnalyticAt.curry_right` says that a function analytic at `p` on a product has an
 analytic slice `y ↦ f (p.1, y)` at `p.2`. Since the analytic locus is open, the same holds for the
 slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_curry_right`).
 
 Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
-(`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`).
+(`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as are concatenating a family with
+a constant family (`TauCeti.analyticAt_sumElim_const`), reindexing coordinates along a map
+(`TauCeti.analyticAt_comp_right`), splitting a family on `ι ⊕ ι'`
+(`TauCeti.analyticAt_prod_comp_inl_inr`, `TauCeti.analyticAt_prod_comp_inl_apply_inr`), and taking
+slices `t ↦ f (Sum.elim x (fun _ ↦ t))` (`AnalyticAt.comp_sumElim_const`,
+`TauCeti.analyticOnNhd_comp_sumElim_const`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
@@ -53,6 +58,48 @@ theorem analyticOnNhd_sumElim {ι ι' : Type*} [Fintype ι] [Fintype ι']
     {s : Set ((ι → E) × (ι' → E))} :
     AnalyticOnNhd 𝕜 (fun p : (ι → E) × (ι' → E) ↦ Sum.elim p.1 p.2) s :=
   fun _ _ ↦ analyticAt_sumElim
+
+/-- Concatenating a finite family of vectors with a constant family,
+`p ↦ Sum.elim p.1 (fun _ ↦ p.2)`, is analytic. -/
+theorem analyticAt_sumElim_const {ι ι' : Type*} [Fintype ι] [Fintype ι'] {p : (ι → E) × E} :
+    AnalyticAt 𝕜 (fun p : (ι → E) × E ↦ Sum.elim p.1 fun _ : ι' ↦ p.2) p :=
+  analyticAt_sumElim.comp₂ analyticAt_fst (analyticAt_pi_iff.2 fun _ ↦ analyticAt_snd)
+
+/-- Reindexing coordinates along a map `e : ι → ι'`, sending `y : ι' → E` to `y ∘ e`, is
+analytic. -/
+theorem analyticAt_comp_right {ι ι' : Type*} [Fintype ι] [Fintype ι'] (e : ι → ι')
+    {y : ι' → E} : AnalyticAt 𝕜 (fun y : ι' → E ↦ y ∘ e) y :=
+  analyticAt_pi_iff.2 fun i ↦ (analyticAt_pi_iff.1 analyticAt_id) (e i)
+
+/-- Splitting a family on a disjoint union `p : ι ⊕ ι' → E` into `(p ∘ Sum.inl, p ∘ Sum.inr)` is
+analytic. -/
+theorem analyticAt_prod_comp_inl_inr {ι ι' : Type*} [Fintype ι] [Fintype ι'] {p : ι ⊕ ι' → E} :
+    AnalyticAt 𝕜 (fun p : ι ⊕ ι' → E ↦ (p ∘ Sum.inl, p ∘ Sum.inr)) p :=
+  (analyticAt_comp_right Sum.inl).prod (analyticAt_comp_right Sum.inr)
+
+/-- Splitting a family `p : ι ⊕ ι' → E` into `(p ∘ Sum.inl, p (Sum.inr j))` is analytic. -/
+theorem analyticAt_prod_comp_inl_apply_inr {ι ι' : Type*} [Fintype ι] [Fintype ι'] (j : ι')
+    {p : ι ⊕ ι' → E} :
+    AnalyticAt 𝕜 (fun p : ι ⊕ ι' → E ↦ (p ∘ Sum.inl, p (.inr j))) p :=
+  (analyticAt_fst.prod ((analyticAt_pi_iff.1 analyticAt_snd) j)).comp analyticAt_prod_comp_inl_inr
+
+omit [CompleteSpace F] in
+/-- If `f : (ι ⊕ ι' → E) → F` is analytic at `Sum.elim x (fun _ ↦ t₀)`, then its slice
+`t ↦ f (Sum.elim x (fun _ ↦ t))` is analytic at `t₀`. -/
+theorem _root_.AnalyticAt.comp_sumElim_const {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {f : (ι ⊕ ι' → E) → F} {x : ι → E} {t₀ : E}
+    (hf : AnalyticAt 𝕜 f (Sum.elim x fun _ ↦ t₀)) :
+    AnalyticAt 𝕜 (fun t ↦ f (Sum.elim x fun _ ↦ t)) t₀ :=
+  hf.fun_comp_of_eq (analyticAt_sumElim_const.comp (analyticAt_const.prod analyticAt_id)) rfl
+
+omit [CompleteSpace F] in
+/-- If `f : (ι ⊕ ι' → E) → F` is analytic at `Sum.elim x (fun _ ↦ t)` for every `t ∈ s`, then its
+slice `t ↦ f (Sum.elim x (fun _ ↦ t))` is analytic on `s`. -/
+theorem analyticOnNhd_comp_sumElim_const {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {f : (ι ⊕ ι' → E) → F} {x : ι → E} {s : Set E}
+    (hf : ∀ t ∈ s, AnalyticAt 𝕜 f (Sum.elim x fun _ ↦ t)) :
+    AnalyticOnNhd 𝕜 (fun t ↦ f (Sum.elim x fun _ ↦ t)) s :=
+  fun t ht ↦ (hf t ht).comp_sumElim_const
 
 end TauCeti
 
