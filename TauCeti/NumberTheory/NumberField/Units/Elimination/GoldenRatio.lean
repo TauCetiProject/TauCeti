@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
-public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
-import TauCeti.NumberTheory.NumberField.Units.Normalization
-import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # The elimination certificate at the golden ratio
@@ -87,18 +84,7 @@ theorem log_goldenRatio_le_regulator [IsTotallyReal K] (hdeg : Module.finrank �
     Real.log Real.goldenRatio ≤ NumberField.Units.regulator K := by
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
   have hw : w.IsReal := IsTotallyReal.isReal w
-  have hr : NumberField.Units.rank K = 1 :=
-    NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal hdeg hw
-  obtain ⟨u, hu⟩ := NumberField.Units.exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
-  have hreg := regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w
-  rw [hw.mult_eq_one, Nat.cast_one, one_mul] at hreg
-  rw [hreg]
-  by_contra! hlt
-  have hpos : 0 < |Real.log (w u)| := hreg ▸ NumberField.Units.regulator_pos K
-  have hne : w u ≠ 1 := fun h1 ↦ by simp [h1] at hpos
-  obtain ⟨ε, δ, -, hlo, hhi⟩ :=
-    exists_normalized_unit_between Real.goldenRatio u w hw Real.goldenRatio_pos hne hlt
-  exact (unitCandidateEliminationCertificate_goldenRatio hdeg).no_unit_between_real hr hw
-    ⟨ε.1 * δ, hlo, hhi⟩
+  exact (unitCandidateEliminationCertificate_goldenRatio hdeg).log_le_regulator
+    (NumberField.Units.rank_eq_one_of_finrank_eq_two_of_isReal hdeg hw) hw Real.goldenRatio_pos
 
 end TauCeti.NumberField.Units

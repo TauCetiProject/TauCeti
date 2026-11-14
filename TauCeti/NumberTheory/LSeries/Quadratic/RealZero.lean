@@ -12,55 +12,50 @@ public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realiz
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Complex.RealDeriv
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogBound
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
-import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.LFunction
 
 /-!
 # Effective distance of a quadratic real zero from one
 
-For a nonprincipal quadratic Dirichlet character `χ` of level `N`, `L(s, χ)` is real on the real
-axis and strictly positive on `[1, ∞)`. Every real zero `β` of `L(s, χ)` therefore satisfies
-`β < 1`, and its distance `1 - β` from `1` is controlled unconditionally by `L(1, χ)`:
+Siegel's bound `1 - β ≥ c(ε) N ^ (-ε)` on real zeros of quadratic Dirichlet `L`-functions has an
+ineffective implied constant, while effective asymptotic zero-repulsion arguments apply only above a
+large explicit conductor threshold. To exclude or separate real zeros across bounded small-conductor
+ranges unconditionally, this file establishes explicit effective `N ^ (-1/2 - ε)` and `N⁻¹`
+zero-distance bounds valid for **every** primitive nonprincipal quadratic character of conductor
+`N ≥ 3`.
 
-* if `β ∈ [1 - 1 / log N, 1)`, Lagrange's mean value theorem on `[β, 1]` combined with the uniform
-  near-one derivative bound `‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` yields
-  `1 - β ≥ Re L(1, χ) / (81 (log N) ^ 2)`;
-* if `β < 1 - 1 / log N`, the logarithmic boundary bound `‖L(1, χ)‖ ≤ 2 + log N ≤ 81 log N` gives
-  `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 / log N < 1 - β`.
+Throughout, `N` is a nonzero level (`[NeZero N]`) and `DirichletCharacter.LFunction` is the analytic
+continuation of `L(s, χ)`. For any nonprincipal complex character `χ` of level `N` (neither
+primitivity nor quadraticity is needed), nonvanishing on `Re(s) ≥ 1`, the near-one derivative bound
+`‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` on `[1 - 1 / log N, 1]`, and the boundary bound
+`‖L(1, χ)‖ ≤ 2 + log N` give the unconditional separation
+`Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of `L(s, χ)`.
 
-Hence `1 - β ≥ Re L(1, χ) / (81 (log N) ^ 2)` holds for every real zero `β` without restriction to
-an interval.
-
-When `χ` is also primitive, `χ` is the Kronecker character of a fundamental discriminant `D ≠ 1` of
-absolute value `|D| = N`, so the analytic class-number formula and the sharp golden-ratio regulator
-lower bound `log φ ≤ R_K` supply the effective lower bound `Re L(1, χ) ≥ 2 log φ / √N`. Absorbing
-`(log N) ^ 2` into `N ^ ε` via `log N ≤ (2 / ε) N ^ (ε / 2)` yields the explicit effective
-exponent-`1/2 + ε` zero-repulsion bounds:
-
-* `1 - β ≥ (log φ · ε ^ 2 / 162) N ^ (-1/2 - ε)` for primitive nonprincipal quadratic `χ` of
-  conductor `N`, and in particular `1 - β ≥ log φ / (648 N)` at `ε = 1 / 2`;
-* `1 - β ≥ (log φ · ε ^ 2 / 162) |D| ^ (-1/2 - ε)` for every fundamental discriminant `D ≠ 1`;
-* `1 - β ≥ (log φ · ε ^ 2 / (324 · 4 ^ ε)) |d| ^ (-1/2 - ε)` for the primitive quadratic field
-  character attached to any squarefree integer `d ≠ 1`, retaining the conductor factor `4` when
-  `d ≢ 1 (mod 4)`.
+When `χ` is primitive (`χ.IsPrimitive`, so the level `N` equals `χ.conductor`) and quadratic, `χ`
+coincides with the Kronecker character of a fundamental discriminant `D ≠ 1` with `|D| = N`. The
+quadratic class-number formula and the sharp golden-ratio regulator bound `log φ ≤ R_K` then supply
+`2 log φ / √N ≤ Re L(1, χ)`, yielding explicit effective zero-distance bounds in terms of the
+conductor `N`, a fundamental discriminant `D ≠ 1`, or a squarefree radicand `d ≠ 1`.
 
 ## Main results
 
 * `DirichletCharacter.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re`:
   `2 log φ / √N ≤ Re L(1, χ)` for primitive nonprincipal quadratic `χ` of level `N`.
 * `DirichletCharacter.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
-  `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for any real zero `β` of nonprincipal quadratic `χ`.
+  `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for any real zero `β` of any nonprincipal character `χ`
+  of nonzero level `N`.
 * `DirichletCharacter.div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero`:
   `2 log φ / (81 √N (log N) ^ 2) ≤ 1 - β` for primitive nonprincipal quadratic `χ`.
 * `DirichletCharacter.mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero` and
   `DirichletCharacter.div_level_le_one_sub_of_LFunction_eq_zero`: explicit `N ^ (-1/2 - ε)` and
   `N⁻¹` zero-distance bounds for primitive nonprincipal quadratic `χ`.
 * `TauCeti.Multiquadratic.mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero` and
-  `TauCeti.Multiquadratic.mul_rpow_neg_half_sub_le_one_sub_of_squarefree_LFunction_eq_zero`:
+  `TauCeti.Multiquadratic.mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero`:
   effective real-zero distance bounds in terms of a fundamental discriminant `D ≠ 1` and of a
   squarefree radicand `d ≠ 1`.
 
@@ -82,10 +77,9 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
-/-- **Effective class-number lower bound on `L(1, χ)` for primitive quadratic characters.**
-Identifying a primitive nonprincipal quadratic character `χ` of conductor `N` with the Kronecker
-character of a fundamental discriminant `D ≠ 1` of absolute value `N` transfers the quadratic
-class-number and golden-ratio regulator bound `2 log φ / √N ≤ Re L(1, χ)`. -/
+/-- **Effective class-number lower bound on `L(1, χ)` for primitive quadratic characters.** For
+every primitive nonprincipal quadratic character `χ` of nonzero level `N`,
+`2 log φ / √N ≤ Re L(1, χ)`. -/
 theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re
     (hprim : χ.IsPrimitive) (hq : χ.IsQuadratic) (hχ : χ ≠ 1) :
     2 * Real.log Real.goldenRatio / √(N : ℝ) ≤ (χ.LFunction 1).re := by
@@ -99,26 +93,18 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re
   rw [hχ_eq, Nat.cast_natAbs, Int.cast_abs]
   exact TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hD hD1
 
-/-- Every real zero of the continued `L`-function of a nonprincipal quadratic character lies
-strictly to the left of `1`. -/
-theorem lt_one_of_LFunction_eq_zero (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ}
-    (hβ : χ.LFunction β = 0) : β < 1 := by
-  by_contra! h
-  exact (LFunction_pos_of_one_le hq hχ h).ne' hβ
-
-/-- **Unconditional quadratic real-zero separation from `L(1, χ)`** (Koukoulopoulos, (12.11)).
-For any nonprincipal quadratic character `χ` of level `N` (not necessarily primitive) and any real
-zero `β` of `L(s, χ)`, `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β`. -/
+/-- **Unconditional real-zero separation from `L(1, χ)`** (Koukoulopoulos, (12.11)). For any
+nonprincipal character `χ` of nonzero level `N` (not necessarily primitive or quadratic) and any
+real zero `β` of `L(s, χ)`, `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β`. -/
 theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
-    (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
+    (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
     (χ.LFunction 1).re / (81 * Real.log N ^ 2) ≤ 1 - β := by
-  have hβ1 : β < 1 := lt_one_of_LFunction_eq_zero hq hχ hβ
-  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_of_ne_one hχ
-  have hL1 : 1 < Real.log N := by
-    calc
-      (1 : ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
-      _ < Real.log 3 := Real.log_lt_log (Real.exp_pos 1) (by linarith [Real.exp_one_lt_d9])
-      _ ≤ Real.log N := Real.log_le_log (by norm_num) hN3
+  have hβ1 : β < 1 :=
+    not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hχ) (by simpa using h) hβ
+  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
+  have hL1 : 1 < Real.log N :=
+    (by linarith [Real.log_three_gt_d9] : (1 : ℝ) < Real.log 3).trans_le
+      (Real.log_le_log (by norm_num) hN3)
   have : 0 < Real.log N := zero_lt_one.trans hL1
   rcases le_or_gt (1 - 1 / Real.log N) β with hnear | hfar
   · -- Near `1`, apply Lagrange's mean value theorem to `σ ↦ Re L(σ, χ)` on `[β, 1]`.
@@ -151,7 +137,7 @@ theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
 
 /-- **Effective logarithmic-square real-zero gap for primitive quadratic characters**
 (Koukoulopoulos, (12.12)). Every real zero `β` of a primitive nonprincipal quadratic character `χ`
-of conductor `N` satisfies `2 log φ / (81 √N (log N) ^ 2) ≤ 1 - β`. -/
+of nonzero level `N` satisfies `2 log φ / (81 √N (log N) ^ 2) ≤ 1 - β`. -/
 theorem div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     (hprim : χ.IsPrimitive) (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
@@ -162,17 +148,16 @@ theorem div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     _ ≤ (χ.LFunction 1).re / (81 * Real.log N ^ 2) :=
       div_le_div_of_nonneg_right
         (two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hprim hq hχ) (by positivity)
-    _ ≤ 1 - β := LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero hq hχ hβ
+    _ ≤ 1 - β := LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero hχ hβ
 
-/-- **Effective `N ^ (-1/2 - ε)` distance of a quadratic real zero from one.**
-For any `ε > 0` and any real zero `β` of a primitive nonprincipal quadratic character `χ` of
-conductor `N`, absorbing `(log N) ^ 2` into `N ^ ε` yields
-`(log φ · ε ^ 2 / 162) N ^ (-1/2 - ε) ≤ 1 - β`. -/
+/-- **Effective `N ^ (-1/2 - ε)` distance of a quadratic real zero from one.** For every primitive
+nonprincipal quadratic character `χ` of nonzero level `N`, every `ε > 0`, and every real zero `β`
+of `L(s, χ)`, `(log φ · ε ^ 2 / 162) N ^ (-1/2 - ε) ≤ 1 - β`. -/
 theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
     (hprim : χ.IsPrimitive) (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {ε : ℝ} (hε : 0 < ε) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio * ε ^ 2 / 162 * (N : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ 1 - β := by
-  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_of_ne_one hχ
+  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
   have hN0 : (0 : ℝ) < N := by linarith
   have hL0 : 0 < Real.log N := Real.log_pos (by linarith)
   have hφ0 : 0 < Real.log Real.goldenRatio := Real.log_pos Real.one_lt_goldenRatio
@@ -197,10 +182,10 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
         (mul_le_mul_of_nonneg_left hlog_sq (by positivity))
     _ ≤ 1 - β := div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero hprim hq hχ hβ
 
-/-- **Effective inverse-conductor distance of a quadratic real zero from one.**
-Specializing `mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero` to `ε = 1 / 2` gives
-`log φ / (648 N) ≤ 1 - β` for every real zero `β` of a primitive nonprincipal quadratic character
-`χ` of conductor `N`. -/
+/-- **Effective inverse-conductor distance of a quadratic real zero from one.** Every real zero `β`
+of a primitive nonprincipal quadratic character `χ` of nonzero level `N` satisfies
+`log φ / (648 N) ≤ 1 - β` (the `ε = 1 / 2` case of
+`mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero`). -/
 theorem div_level_le_one_sub_of_LFunction_eq_zero
     (hprim : χ.IsPrimitive) (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
@@ -232,11 +217,11 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
       (fundamentalDiscriminantCharCast_isQuadratic hD) hχ hε hβ
 
 /-- **Effective distance of a quadratic real zero from one for a squarefree radicand `d ≠ 1`**
-(Koymans–Pagano, §7.2, Proposition 7.6). For any squarefree integer `d ≠ 1` and `ε > 0`, the
-primitive field character attached to `ℚ(√d)` has conductor `|fundamentalDiscriminant d| ≤ 4 |d|`,
-and every real zero `β` of its continued `L`-function satisfies
+(Koymans–Pagano, §7.2, proof of Proposition 7.6, p. 62). For any squarefree integer `d ≠ 1`, any
+`ε > 0`, and any real zero `β` of the continued `L`-function of
+`fundamentalDiscriminantCharCast ℂ (fundamentalDiscriminant d)`,
 `(log φ · ε ^ 2 / (324 · 4 ^ ε)) |d| ^ (-1/2 - ε) ≤ 1 - β`. -/
-theorem mul_rpow_neg_half_sub_le_one_sub_of_squarefree_LFunction_eq_zero
+theorem mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero
     {d : ℤ} [NeZero (fundamentalDiscriminant d).natAbs] (hd : Squarefree d) (hd1 : d ≠ 1)
     {ε : ℝ} (hε : 0 < ε) {β : ℝ}
     (hβ : (fundamentalDiscriminantCharCast ℂ (fundamentalDiscriminant d)

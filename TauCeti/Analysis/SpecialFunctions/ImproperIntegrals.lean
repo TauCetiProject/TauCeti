@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -354,26 +355,13 @@ theorem integrableOn_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < 
     IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi c) := by
   set M := max c 1
   have hM1 : 1 ≤ M := le_max_right c 1
-  have hM0 : 0 < M := zero_lt_one.trans_le hM1
-  -- On `(c, M]` the integrand is continuous on `[c, M]`; beyond `M ≥ 1` absorb `log t` into
-  -- half of the spare power decay `-(a + 1) > 0`.
   have h_cpt : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioc c M) := by
     refine (ContinuousOn.integrableOn_Icc (a := c) (b := M) ?_).mono_set Ioc_subset_Icc_self
     exact (continuousOn_id.rpow_const fun t (ht : t ∈ Icc c M) ↦ Or.inl (hc.trans_le ht.1).ne').mul
       (continuousOn_log.mono fun t (ht : t ∈ Icc c M) ↦ (hc.trans_le ht.1).ne')
   have h_tail : IntegrableOn (fun t : ℝ ↦ t ^ a * Real.log t) (Ioi M) := by
-    set δ := -(a + 1) / 2
-    have hδ : 0 < δ := div_pos (by linarith) two_pos
-    have haδ : a + δ < -1 := by simp only [δ]; linarith
-    refine ((integrableOn_Ioi_rpow_of_lt haδ hM0).div_const δ).mono' (by fun_prop) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : M < t)
-    have ht0 : 0 < t := hM0.trans ht
-    rw [norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg ht0.le _),
-      Real.norm_of_nonneg (Real.log_nonneg (hM1.trans ht.le))]
-    calc
-      t ^ a * Real.log t ≤ t ^ a * (t ^ δ / δ) :=
-        mul_le_mul_of_nonneg_left (Real.log_le_rpow_div ht0.le hδ) (Real.rpow_nonneg ht0.le _)
-      _ = t ^ (a + δ) / δ := by rw [← mul_div_assoc, ← Real.rpow_add ht0]
+    simpa only [sub_sub_cancel] using
+      (integrableOn_rpow_mul_log (η := -1 - a) (by linarith)).mono_set (Ioi_subset_Ioi hM1)
   rw [← Ioc_union_Ioi_eq_Ioi (le_max_left c 1)]
   exact h_cpt.union h_tail
 

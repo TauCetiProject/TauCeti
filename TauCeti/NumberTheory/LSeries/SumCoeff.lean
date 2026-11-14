@@ -62,20 +62,17 @@ open scoped Topology
 
 namespace TauCeti.LSeries
 
-/-- The integral in `LSeries_eq_mul_integral` is a Mellin transform of the partial-sum step
-function, evaluated at `-s`. -/
-private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
-    ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)) =
-      mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) := by
-  set A : ℝ → ℂ := fun t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k
-  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • A t)
-      ((Set.Ici (1 : ℝ)).indicator fun t ↦ A t * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 0) := by
+/-- For any `g : ℝ → ℂ` vanishing on `(0, 1)`, `∫_1^∞ g(t) t ^ (-(s + 1)) dt` equals the Mellin
+transform `mellin g (-s)`. -/
+private theorem integral_Ioi_one_eq_mellin {g : ℝ → ℂ} (hg : ∀ ⦃t⦄, t < 1 → g t = 0) (s : ℂ) :
+    ∫ t in Set.Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(s + 1)) = mellin g (-s) := by
+  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • g t)
+      ((Set.Ici (1 : ℝ)).indicator fun t ↦ g t * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 0) := by
     intro t _
     dsimp only
     by_cases h1 : 1 ≤ t
     · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1), smul_eq_mul, mul_comm, neg_add']
-    · have hA : A t = 0 := sum_Icc_one_natFloor_eq_zero f (not_le.mp h1)
-      rw [Set.indicator_of_notMem (by simpa using h1), hA, smul_zero]
+    · rw [Set.indicator_of_notMem (by simpa using h1), hg (not_le.mp h1), smul_zero]
   rw [mellin, setIntegral_congr_fun measurableSet_Ioi hEq,
     setIntegral_indicator measurableSet_Ici,
     Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
@@ -100,7 +97,8 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
       (by rw [neg_neg]; exact hO.comp_natFloor_rpow) (by simpa using hs)
       (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)).comp s
       differentiableAt_id.neg
-  simp_rw [integral_Ioi_one_eq_mellin]
+  simp_rw [integral_Ioi_one_eq_mellin (g := fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k)
+    (fun _ ↦ sum_Icc_one_natFloor_eq_zero f)]
   exact (differentiableAt_id.mul hmellin).differentiableWithinAt
 
 /-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the partial-summation integral
@@ -118,27 +116,6 @@ theorem integrableOn_sum_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     measurableSet_Ioi
   dsimp only
   rw [smul_eq_mul, mul_comm, neg_add']
-
-/-- The log-weighted partial-summation integral is the Mellin transform of `t ↦ log t • A(⌊t⌋₊)`
-evaluated at `-s`. -/
-private theorem integral_Ioi_one_log_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
-    ∫ t in Set.Ioi (1 : ℝ),
-        (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (Real.log t : ℂ) * (t : ℂ) ^ (-(s + 1)) =
-      mellin (fun t : ℝ ↦ Real.log t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) := by
-  set A : ℝ → ℂ := fun t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k
-  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • (Real.log t • A t))
-      ((Set.Ici (1 : ℝ)).indicator fun t ↦ A t * (Real.log t : ℂ) * (t : ℂ) ^ (-(s + 1)))
-      (Set.Ioi 0) := by
-    intro t _
-    dsimp only
-    by_cases h1 : 1 ≤ t
-    · rw [Set.indicator_of_mem (Set.mem_Ici.mpr h1), Complex.real_smul, smul_eq_mul, neg_add']
-      ring
-    · have hA : A t = 0 := sum_Icc_one_natFloor_eq_zero f (not_le.mp h1)
-      rw [Set.indicator_of_notMem (by simpa using h1), hA, smul_zero, smul_zero]
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi hEq,
-    setIntegral_indicator measurableSet_Ici,
-    Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
 
 /-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the log-weighted partial-summation
 integral converges absolutely on the half-plane `r < Re s`. -/
@@ -177,18 +154,28 @@ theorem hasDerivAt_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
       (fun z : ℂ ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(z + 1)))
       (1 * mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) +
         s * (mellin (fun t : ℝ ↦ Real.log t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) * -1)) s := by
-    simp_rw [integral_Ioi_one_eq_mellin]
+    simp_rw [integral_Ioi_one_eq_mellin (g := fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k)
+      (fun _ ↦ sum_Icc_one_natFloor_eq_zero f)]
     exact (hasDerivAt_id s).mul (hm.comp s (hasDerivAt_id s).neg)
   suffices h_eq :
       1 * mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) +
         s * (mellin (fun t : ℝ ↦ Real.log t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) * -1) =
       ∫ t in Set.Ioi (1 : ℝ),
         (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)) from h_eq ▸ hd
-  rw [← integral_Ioi_one_eq_mellin, ← integral_Ioi_one_log_eq_mellin, one_mul, mul_neg, mul_one,
-    mul_neg, ← sub_eq_add_neg, ← integral_const_mul,
-    ← integral_sub (integrableOn_sum_mul_cpow_of_isBigO f hO hs)
-      ((integrableOn_sum_mul_log_mul_cpow_of_isBigO f hO hs).const_mul s)]
+  have hlog_eq := integral_Ioi_one_eq_mellin (g := fun t : ℝ ↦ Real.log t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k)
+    (fun _ ht ↦ by simp [sum_Icc_one_natFloor_eq_zero f ht]) s
+  rw [← integral_Ioi_one_eq_mellin (g := fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k)
+      (fun _ ↦ sum_Icc_one_natFloor_eq_zero f),
+    ← hlog_eq, one_mul, mul_neg, mul_one, mul_neg, ← sub_eq_add_neg, ← integral_const_mul]
+  have hlog_int : IntegrableOn
+      (fun t : ℝ ↦ (Real.log t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 1) := by
+    refine (integrableOn_sum_mul_log_mul_cpow_of_isBigO f hO hs).congr_fun (fun t _ ↦ ?_)
+      measurableSet_Ioi
+    rw [Complex.real_smul]
+    ring
+  rw [← integral_sub (integrableOn_sum_mul_cpow_of_isBigO f hO hs) (hlog_int.const_mul s)]
   refine setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
+  simp only [Complex.real_smul]
   ring
 
 /-- If partial sums are bounded by `C`, their partial-summation continuation has norm at most

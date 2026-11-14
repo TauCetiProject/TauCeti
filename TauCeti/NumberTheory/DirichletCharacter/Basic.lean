@@ -30,8 +30,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 ## Main results
 
 * `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
-* `DirichletCharacter.three_le_of_ne_one`: any nonprincipal character at a nonzero level has level
-  at least `3`.
+* `DirichletCharacter.three_le_level_of_ne_one`: any nonprincipal character at a nonzero level has
+  level at least `3`.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
@@ -114,7 +114,7 @@ theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : �
 
 /-- Any nonprincipal Dirichlet character at a nonzero level has level at least `3`, since
 `(ZMod 1)ˣ` and `(ZMod 2)ˣ` are trivial. -/
-theorem three_le_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
     {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
   match N, NeZero.ne N, χ, hχ with
   | 1, _, χ, hχ => exact absurd χ.level_one hχ

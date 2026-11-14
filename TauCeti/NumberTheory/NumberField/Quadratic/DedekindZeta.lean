@@ -12,19 +12,20 @@ public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
-import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
+import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.NumberTheory.LSeries.ZetaMul
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
+import TauCeti.NumberTheory.Real.GoldenRatio
 
 /-!
 # The Dedekind zeta function of a quadratic field and the class number formula
@@ -81,11 +82,9 @@ ratio bound holds uniformly for every quadratic field `K`.
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_eq_neg_three`,
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_eq_neg_four` and
   `TauCeti.NumberField.classNumber_eq_LFunction_one_of_discr_ne`.
-* `TauCeti.NumberField.classNumber_mul_regulator_eq_LFunction_one`,
-  `TauCeti.NumberField.LFunction_one_eq_two_mul_classNumber_mul_regulator_div`, and
-  `TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re_of_isTotallyReal`:
-  for a real quadratic field, `h R = √|D| L(1, χ_D) / 2`, `L(1, χ_D) = 2 h R / √|D|`, and
-  `2 log φ / √|D| ≤ Re L(1, χ_D)`.
+* `TauCeti.NumberField.classNumber_mul_regulator_eq_LFunction_one` and
+  `TauCeti.NumberField.LFunction_one_eq_two_mul_classNumber_mul_regulator_div`:
+  for a real quadratic field, `h R = √|D| L(1, χ_D) / 2` and `L(1, χ_D) = 2 h R / √|D|`.
 * `TauCeti.NumberField.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re`: uniform sharp lower
   bound `2 log φ / √|D| ≤ Re L(1, χ_D)` for every quadratic number field `K`.
 
@@ -348,14 +347,13 @@ theorem sqrt_mul_LFunction_one_re_div_le_classNumber :
   have := mul_le_mul_of_nonneg_left hw (by positivity : (0 : ℝ) ≤ π * classNumber K)
   linarith
 
-/-- **Effective lower bound on `L(1, χ_D)` for an imaginary quadratic field.** Since `h ≥ 1` and
-`w ≤ 6` (attained at `D = -3`), `π / (3 √|D|) ≤ Re L(1, χ_D)`. -/
+/-- **Effective lower bound on `L(1, χ_D)` for an imaginary quadratic field.** If `K` is imaginary
+quadratic of discriminant `D`, then `π / (3 √|D|) ≤ Re L(1, χ_D)` (attained at `D = -3`). -/
 theorem pi_div_three_mul_sqrt_le_LFunction_one_re :
     π / (3 * √|(discr K : ℝ)|) ≤ (DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
-  have hD : 0 < √|(discr K : ℝ)| :=
-    Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))
+  have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
   have hw_pos : (0 : ℝ) < Nat.card (𝓞 K)ˣ := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]; split_ifs <;> norm_num
   have hw_le : (Nat.card (𝓞 K)ˣ : ℝ) ≤ 6 := by
@@ -410,10 +408,6 @@ end ImaginaryQuadratic
 
 section RealQuadratic
 
-omit hK in
-private lemma sqrt_abs_discr_pos : 0 < √|(discr K : ℝ)| :=
-  Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))
-
 variable [IsTotallyReal K]
 
 /-- **The analytic class number formula of a real quadratic field.** If `K` is real quadratic of
@@ -425,16 +419,11 @@ theorem classNumber_mul_regulator_eq_LFunction_one :
         ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
           (Int.castRingHom ℂ)) 1 / 2 := by
   have hr : nrRealPlaces K = 2 := (IsTotallyReal.finrank (K := K)).symm.trans hK
-  have hpos : 0 < discr K :=
-    (even_nrComplexPlaces_iff_zero_lt_discr K).mp
-      (IsTotallyReal.nrComplexPlaces_eq_zero (K := K) ▸ ⟨0, rfl⟩)
-  have hw : NumberField.Units.torsionOrder K = 2 := by
-    rw [Units.torsionOrder_eq_of_finrank_eq_two hK]
-    have h4 : discr K ≠ -4 := by omega
-    have h3 : discr K ≠ -3 := by omega
-    simp [h4, h3]
+  obtain ⟨v⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  have hw : NumberField.Units.torsionOrder K = 2 :=
+    Units.torsionOrder_eq_two_of_isReal (IsTotallyReal.isReal v)
   have hD : ((√|(discr K : ℝ)| : ℝ) : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (sqrt_abs_discr_pos (K := K)).ne'
+    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (abs_cast_discr_pos K)).ne'
   rw [← dedekindZeta_residue_eq_LFunction_one hK, dedekindZeta_residue_def,
     hr, IsTotallyReal.nrComplexPlaces_eq_zero, hw]
   push_cast
@@ -448,44 +437,16 @@ theorem LFunction_one_eq_two_mul_classNumber_mul_regulator_div :
         (Int.castRingHom ℂ)) 1 =
       ((2 * classNumber K * NumberField.Units.regulator K / √|(discr K : ℝ)| : ℝ) : ℂ) := by
   have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (sqrt_abs_discr_pos (K := K)).ne'
+    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (abs_cast_discr_pos K)).ne'
   push_cast
   rw [mul_assoc (2 : ℂ), classNumber_mul_regulator_eq_LFunction_one hK]
   field_simp
 
-/-- **Sharp lower bound on `L(1, χ_D)` for a real quadratic field.** Combining `h ≥ 1` with the
-golden-ratio regulator bound `log φ ≤ R` gives `2 log φ / √|D| ≤ Re L(1, χ_D)` (attained at
-`ℚ(√5)`). -/
-theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re_of_isTotallyReal :
-    2 * Real.log Real.goldenRatio / √|(discr K : ℝ)| ≤ (DirichletCharacter.LFunction
-      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
-        (Int.castRingHom ℂ)) 1).re := by
-  have hD := sqrt_abs_discr_pos (K := K)
-  have hh : (1 : ℝ) ≤ classNumber K := Nat.one_le_cast.mpr (classNumber_pos K)
-  have hreg : Real.log Real.goldenRatio ≤ NumberField.Units.regulator K :=
-    Units.log_goldenRatio_le_regulator hK
-  have hlog_pos : 0 < Real.log Real.goldenRatio := Real.log_pos Real.one_lt_goldenRatio
-  rw [LFunction_one_eq_two_mul_classNumber_mul_regulator_div hK, Complex.ofReal_re]
-  refine div_le_div_of_nonneg_right ?_ hD.le
-  nlinarith [NumberField.Units.regulator_pos K]
-
 end RealQuadratic
 
-omit [Field K] [NumberField K] hK in
-private lemma two_mul_log_goldenRatio_le_pi_div_three :
-    2 * Real.log Real.goldenRatio ≤ π / 3 := by
-  have hφ_sq : Real.goldenRatio ^ 2 < Real.exp 1 := by
-    have h21 : Real.goldenRatio ^ 2 < 21 / 8 := by
-      have h5 : √(5 : ℝ) < 9 / 4 := (Real.sqrt_lt' (by norm_num)).mpr (by norm_num)
-      rw [Real.goldenRatio_sq, Real.goldenRatio]; linarith
-    exact h21.trans (by linarith [Real.exp_one_gt_d9])
-  have hlog : 2 * Real.log Real.goldenRatio < 1 := by
-    have h := (Real.log_lt_log_iff (pow_pos Real.goldenRatio_pos 2) (Real.exp_pos 1)).mpr hφ_sq
-    rwa [Real.log_pow, Nat.cast_ofNat, Real.log_exp] at h
-  linarith [Real.pi_gt_three]
-
-/-- **Sharp uniform lower bound on `L(1, χ_D)` across all quadratic number fields.** Whether `K` is
-real or imaginary quadratic, `2 log φ / √|discr K| ≤ Re L(1, χ_D)` (attained at `ℚ(√5)`). -/
+/-- **Sharp uniform lower bound on `L(1, χ_D)` across all quadratic number fields.** If `K` is a
+quadratic number field of discriminant `D`, then `2 log φ / √|D| ≤ Re L(1, χ_D)` (attained at
+`ℚ(√5)`). -/
 theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
     2 * Real.log Real.goldenRatio / √|(discr K : ℝ)| ≤ (DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
@@ -497,11 +458,19 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
       omega
     have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.mp hr
     have hD : 0 ≤ √|(discr K : ℝ)| := Real.sqrt_nonneg _
-    refine (le_trans ?_ (pi_div_three_mul_sqrt_le_LFunction_one_re hK))
+    have hφπ : 2 * Real.log Real.goldenRatio ≤ π / 3 := by
+      linarith [TauCeti.log_goldenRatio_lt_one_half, Real.pi_gt_three]
+    refine le_trans ?_ (pi_div_three_mul_sqrt_le_LFunction_one_re hK)
     rw [div_eq_mul_inv, ← div_div, div_eq_mul_inv (π / 3)]
-    exact mul_le_mul_of_nonneg_right two_mul_log_goldenRatio_le_pi_div_three (inv_nonneg.mpr hD)
+    exact mul_le_mul_of_nonneg_right hφπ (inv_nonneg.mpr hD)
   · exact absurd hd (discr_ne_zero K)
   · have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hd (by omega)
-    exact two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re_of_isTotallyReal hK
+    have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
+    have hh : (1 : ℝ) ≤ classNumber K := Nat.one_le_cast.mpr (classNumber_pos K)
+    have hreg : Real.log Real.goldenRatio ≤ NumberField.Units.regulator K :=
+      Units.log_goldenRatio_le_regulator hK
+    rw [LFunction_one_eq_two_mul_classNumber_mul_regulator_div hK, Complex.ofReal_re]
+    refine div_le_div_of_nonneg_right ?_ hD.le
+    nlinarith [NumberField.Units.regulator_pos K]
 
 end TauCeti.NumberField
