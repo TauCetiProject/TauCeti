@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 import TauCeti.Analysis.ODE.Frobenius
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
-import TauCeti.Geometry.Manifold.Instances.OpenBall
+import TauCeti.Geometry.Manifold.Instances.OpenBall.Diffeomorph
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.ConformalCurvature
