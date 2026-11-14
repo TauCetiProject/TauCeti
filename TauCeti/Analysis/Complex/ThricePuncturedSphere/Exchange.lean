@@ -42,7 +42,10 @@ Capping the input at `0` by a plane fills in the puncture at `0`, and the domain
 capped family is truncated by `TauCeti.ThricePuncturedSphere.cappedExchangeTruncation c R`: the same
 closed disc with only the part `s > R` of the input end at `1` removed. It is a compact subset of
 `ℂ ∖ {1}` (`TauCeti.ThricePuncturedSphere.isCompact_cappedExchangeTruncation`,
-`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_subset`). For `|c| ≤ 1` and `R ≥ 0` it is
+`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_subset`). These capped truncations
+increase with `R` and exhaust `ℂ ∖ {1}`
+(`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_mono`,
+`TauCeti.ThricePuncturedSphere.iUnion_cappedExchangeTruncation`). For `|c| ≤ 1` and `R ≥ 0` it is
 the disjoint union of the truncation with recentred output end and the open disc of radius
 `exp (-2πR) / 2` about `0` that the latter leaves out
 (`TauCeti.ThricePuncturedSphere.cappedExchangeTruncation_eq_union`,
@@ -223,6 +226,31 @@ theorem cappedExchangeTruncation_subset (c R : ℝ) : cappedExchangeTruncation c
     have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
     simp [h] at h₁
     linarith
+
+/-- The capped truncations increase with the cutoff. -/
+theorem cappedExchangeTruncation_mono (c : ℝ) : Monotone (cappedExchangeTruncation c) := by
+  intro R R' hRR' w hw
+  obtain ⟨h₁, hc⟩ := mem_cappedExchangeTruncation.1 hw
+  have hπ : 2 * π * R ≤ 2 * π * R' := by gcongr
+  have hin : Real.exp (-(2 * π * R')) ≤ Real.exp (-(2 * π * R)) := Real.exp_le_exp.2 (by linarith)
+  have hout : Real.exp (2 * π * R) ≤ Real.exp (2 * π * R') := Real.exp_le_exp.2 hπ
+  exact mem_cappedExchangeTruncation.2 ⟨by linarith, by linarith⟩
+
+/-- The capped truncations exhaust the capped sphere `ℂ ∖ {1}`. -/
+theorem iUnion_cappedExchangeTruncation (c : ℝ) :
+    ⋃ R, cappedExchangeTruncation c R = {w : ℂ | w ≠ 1} := by
+  refine Set.Subset.antisymm (Set.iUnion_subset (cappedExchangeTruncation_subset c)) ?_
+  intro w (h₁ : w ≠ 1)
+  have hR : Filter.Tendsto (fun R : ℝ ↦ 2 * π * R) Filter.atTop Filter.atTop :=
+    Filter.tendsto_id.const_mul_atTop (by positivity)
+  have hin : Filter.Tendsto (fun R : ℝ ↦ Real.exp (-(2 * π * R)) / 2) Filter.atTop
+      (nhds 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp hR).div_const 2
+  have hout := ((Real.tendsto_exp_atTop.comp hR).const_mul_atTop two_pos).eventually_ge_atTop
+    ‖w - c‖
+  obtain ⟨R, hR₁, hRc⟩ :=
+    ((hin.eventually (ge_mem_nhds (norm_pos_iff.2 (sub_ne_zero.2 h₁)))).and hout).exists
+  exact Set.mem_iUnion.2 ⟨R, mem_cappedExchangeTruncation.2 ⟨hR₁, hRc⟩⟩
 
 /-- For `|c| ≤ 1` and `R ≥ 0`, the capped truncation is the truncation with recentred output end
 together with the disc of radius `exp (-2πR) / 2` about the capped puncture `0`. -/
