@@ -31,6 +31,9 @@ are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`).
 
+Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other than
+`k` (`Set.ncard_preimage_succAbove`).
+
 For an injective map `f` from a finite type into a linear order, the number of indices whose value
 lies below `f a` determines `a` (`Set.injective_ncard_setOf_lt`): it is the rank of `f a` among
 the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
@@ -181,5 +184,12 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   rw [two_mul, ← ncard_sumEquiv_symm_apply]
   congr 1
   ext (i | i) <;> simp
+
+/-- Reading a set of indices of `Fin (n + 1)` through `k.succAbove` counts its elements other
+than `k`. -/
+theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 1))) :
+    (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
+  rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
+    Fin.range_succAbove, ← sdiff_eq]
 
 end Set

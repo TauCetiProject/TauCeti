@@ -47,6 +47,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `TauCeti.isInvertible_mvfderiv_extend`: the derivative of an extended chart of the maximal
+  atlas, read as a map into the model space, is invertible on the chart source.
 * `TauCeti.mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
   some chart locally agree with maps having equal Fréchet derivatives have equal differentials.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
@@ -282,6 +284,18 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · obtain ⟨w, rfl⟩ := L.surjective v
     exact DFunLike.congr_fun h w
   · exact DFunLike.congr_fun h (L w)
+
+omit [IsManifold I 1 M] in
+/-- The derivative of an extended chart of the `C¹` maximal atlas, read as a map into the model
+space, is invertible at every point of the chart source. -/
+theorem isInvertible_mvfderiv_extend {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (hx : x ∈ e.source) :
+    (mvfderiv I (e.extend I) x).IsInvertible := by
+  -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
+  -- space of `E` with `E`; both factors are invertible.
+  unfold mvfderiv
+  exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
+    (isInvertible_mfderiv_extend he hx)
 
 /-- Read in a chart whose source contains `y`, two maps into a normed space have the same
 differential at `y` when, near the chart image of `y`, their coordinate expressions agree with maps

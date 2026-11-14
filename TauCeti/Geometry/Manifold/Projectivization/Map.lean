@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.LinearAlgebra.Projectivization.Action
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Maps of projective spaces given in homogeneous coordinates are analytic
@@ -33,6 +36,11 @@ general linear group, acts on `ℙ 𝕜 (Fin (n + 1) → 𝕜)` by analytic maps
 holomorphic maps of complex projective spaces induced by linear maps, and the projective linear
 transformations act on `ℂℙⁿ` by biholomorphisms.
 
+Over `ℝ` and `ℂ` the map induced by an injective linear map is moreover a closed embedding, since
+projective space is compact (`Projectivization.isClosedEmbedding_map`), and a `C^r` embedding for
+every `r ≥ 1`, also for the underlying real structures (`Projectivization.isSmoothEmbedding_map`): a
+linear left inverse induces a `C^r` left inverse near its image.
+
 A linear map `G : 𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` which is not injective still induces the map `[v] ↦ [G v]` on the
 open set where `G` does not vanish, and it is `C^r` there
 (`Projectivization.contMDiffOn_linearProjection`).
@@ -45,6 +53,8 @@ open set where `G` does not vanish, and it is `C^r` there
   `r`.
 * `Projectivization.contMDiffOn_linearProjection`: the map induced by a linear map is `C^r` where
   the linear map does not vanish.
+* `Projectivization.isSmoothEmbedding_map`: over `ℝ` or `ℂ`, the map induced by an injective
+  linear map is a `C^r` embedding for every `r ≥ 1`.
 * `Projectivization.mapDiffeomorph`: the `C^r` diffeomorphism induced by a linear equivalence.
 * `Projectivization.instContMDiffConstSMul`, `Projectivization.instContMDiffConstSMulPGL`: linear
   group actions on projective space are by analytic maps.
@@ -196,5 +206,44 @@ instance instContMDiffConstSMulPGL (r : ℕ∞ω) :
     obtain ⟨g, rfl⟩ := Matrix.ProjGenLinGroup.mk_surjective g
     simpa only [Matrix.ProjGenLinGroup.mk_smul] using
       contMDiff_const_smul (I := 𝓘(𝕜, Fin n → 𝕜)) (n := r) g
+
+end Projectivization
+
+/-! ### Linear embeddings -/
+
+namespace Projectivization
+
+variable {𝕜 𝕜' : Type*} [RCLike 𝕜] [RCLike 𝕜'] [NormedAlgebra 𝕜' 𝕜] [FiniteDimensional 𝕜' 𝕜]
+  {m n : ℕ}
+
+/-- **Linear embeddings of projective spaces.** Over `ℝ` or `ℂ`, the map `ℙᵐ → ℙⁿ` induced by an
+injective linear map `𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` is a `C^r` embedding for every `r ≥ 1`, for the manifold
+structures over `𝕜` as well as for the underlying ones over a subfield `𝕜'` such as `ℝ`. Its image
+is closed by `Projectivization.isClosedEmbedding_map`. -/
+theorem isSmoothEmbedding_map (f : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜)
+    (hf : Function.Injective f) {r : ℕ∞ω} (hr : 1 ≤ r) :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜', Fin m → 𝕜) 𝓘(𝕜', Fin n → 𝕜) r (map f hf) := by
+  have : IsManifold 𝓘(𝕜', Fin m → 𝕜) r (ℙ 𝕜 (Fin (m + 1) → 𝕜)) :=
+    (instIsManifold r).restrictScalars 𝕜'
+  have : IsManifold 𝓘(𝕜', Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
+    (instIsManifold r).restrictScalars 𝕜'
+  have hr0 : r ≠ 0 := by
+    rintro rfl
+    simp at hr
+  have hsmooth : ContMDiff 𝓘(𝕜', Fin m → 𝕜) 𝓘(𝕜', Fin n → 𝕜) r (map f hf) := by
+    simpa using (contMDiff_map f hf r).restrictScalars 𝕜'
+  -- A linear left inverse `g` of `f` induces a left inverse of `map f`, smooth where `g ≠ 0`.
+  obtain ⟨g, hg⟩ := f.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hf)
+  have hgf (v : Fin (m + 1) → 𝕜) : g (f v) = v := LinearMap.congr_fun hg v
+  have hg' : ContMDiffOn 𝓘(𝕜', Fin n → 𝕜) 𝓘(𝕜', Fin m → 𝕜) r (linearProjection g)
+      (linearProjectionDomain g) := by
+    simpa using (contMDiffOn_linearProjection g r).restrictScalars 𝕜'
+  have hmem (x : ℙ 𝕜 (Fin (m + 1) → 𝕜)) : map f hf x ∈ linearProjectionDomain g := by
+    induction x using ind with | h v hv => simp [map_mk, hgf, hv]
+  have hleft (x : ℙ 𝕜 (Fin (m + 1) → 𝕜)) : linearProjection g (map f hf x) = x := by
+    induction x using ind with | h v hv => simp [map_mk, hgf, hv]
+  exact ⟨hsmooth.isImmersion_of_leftInverse hr (fun x ↦ (hg'.contMDiffAt
+    ((isOpen_linearProjectionDomain (LinearMap.continuous_on_pi g)).mem_nhds
+      (hmem x))).mdifferentiableAt hr0) hleft, (isClosedEmbedding_map f hf).isEmbedding⟩
 
 end Projectivization
