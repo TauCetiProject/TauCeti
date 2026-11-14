@@ -60,11 +60,15 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `∂(c g) = c ∂g + (∂c) g` and `\bar∂(c g) = c \bar∂g + (\bar∂c) g` for a complex-valued factor `c`.
 * `TauCeti.norm_wirtingerDeriv_smul_sub_smul_le`,
   `TauCeti.norm_conjWirtingerDeriv_smul_sub_smul_le`: for a real factor `χ`,
-  `‖∂(χ u)(x) v - χ ∂u(x) v‖ ≤ ‖Dχ(x)‖ ‖v‖ ‖u(x)‖`, and likewise for `\bar∂`.
+  `‖∂(χ u)(x) v - χ ∂u(x) v‖ ≤ ‖Dχ(x)‖ ‖v‖ ‖u(x)‖`, and likewise for `\bar∂`;
+  `DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset` gives `\bar∂(χ • f) = (\bar∂χ) • f`
+  globally when `f` is holomorphic on an open neighbourhood of `tsupport χ`.
 * `ContDiffAt.conjWirtingerDeriv_apply`: the conjugate Wirtinger derivative of a `C^(m+1)` map is
   `C^m`; in particular it is continuous for a `C¹` map
   (`ContDiff.continuous_conjWirtingerDeriv_apply`).
-* `TauCeti.conjWirtingerDeriv_of_notMem_tsupport`: `\bar∂g` vanishes off the topological support.
+* `TauCeti.conjWirtingerDeriv_of_notMem_tsupport`,
+  `TauCeti.tsupport_conjWirtingerDeriv_apply_subset_sdiff_interior_preimage_singleton`: `\bar∂g`
+  vanishes off `tsupport g` and inside the interior of every level set of `g`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.conjWirtingerDeriv_const_smul`: `\bar∂` commutes with complex scalar multiplication.
@@ -334,6 +338,25 @@ theorem conjWirtingerDeriv_ofReal_comp_apply_eq_lineDeriv {f : V → ℝ} {x : V
 
 end Wirtinger
 
+/-- The conjugate Wirtinger derivative `\bar∂g(·) v` is supported inside `tsupport g` and misses the
+interior of every level set `g ⁻¹' {c}`: outside `tsupport g` the map vanishes locally, and inside
+`interior (g ⁻¹' {c})` it is locally constant. -/
+theorem tsupport_conjWirtingerDeriv_apply_subset_sdiff_interior_preimage_singleton
+    (g : V → W) (v : V) (c : W) :
+    tsupport (fun z ↦ conjWirtingerDeriv g z v) ⊆ tsupport g \ interior (g ⁻¹' {c}) := by
+  intro z hz
+  refine ⟨by_contra fun hnot ↦ ?_, fun hin ↦ ?_⟩
+  · refine absurd hz (notMem_tsupport_iff_eventuallyEq.mpr ?_)
+    filter_upwards [(isClosed_tsupport g).isOpen_compl.mem_nhds hnot] with y hy
+    simp [conjWirtingerDeriv_of_notMem_tsupport hy]
+  · refine absurd hz (notMem_tsupport_iff_eventuallyEq.mpr ?_)
+    filter_upwards [isOpen_interior.mem_nhds hin] with y hy
+    have hconst : g =ᶠ[𝓝 y] fun _ ↦ c := by
+      filter_upwards [isOpen_interior.mem_nhds hy] with x hx
+      exact interior_subset hx
+    rw [hconst.conjWirtingerDeriv_eq]
+    simp
+
 /-- **The product rule for the Wirtinger derivative**: for a complex-valued factor `c`,
 `∂(c g) = c ∂g + (∂c) g`. -/
 theorem wirtingerDeriv_smul_apply {c : V → ℂ} {g : V → W} {x : V}
@@ -378,6 +401,28 @@ theorem norm_conjWirtingerDeriv_smul_sub_smul_le {χ : V → ℝ} {u : V → W} 
   gcongr
   exact (norm_conjWirtingerDeriv_apply_le _ _ _).trans
     (by gcongr; exact norm_fderiv_ofReal_comp_le χ x)
+
+/-- If `f` is holomorphic on an open set `U ⊆ V` and a real-differentiable cutoff `χ` has
+`tsupport χ ⊆ U`, then `\bar∂(χ • f) = (\bar∂χ) • f` everywhere on `V`, with no regularity or
+redefinition needed of `f` outside `U`. -/
+theorem _root_.DifferentiableOn.conjWirtingerDeriv_smul_of_tsupport_subset
+    {U : Set V} {f : V → W} {χ : V → ℝ} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
+    (hχ : Differentiable ℝ χ) (hχU : tsupport χ ⊆ U) (x : V) (v : V) :
+    conjWirtingerDeriv (fun y ↦ χ y • f y) x v =
+      conjWirtingerDeriv (fun y ↦ (χ y : ℂ)) x v • f x := by
+  by_cases hx : x ∈ U
+  · have hfx : DifferentiableAt ℂ f x := (hf x hx).differentiableAt (hU.mem_nhds hx)
+    simp_rw [← Complex.coe_smul]
+    rw [conjWirtingerDeriv_smul_apply (hχ x).ofReal_comp (hfx.restrictScalars ℝ) v,
+      hfx.conjWirtingerDeriv_eq_zero, zero_apply, smul_zero, zero_add]
+  · have hnot : x ∉ tsupport χ := fun h ↦ hx (hχU h)
+    have hnot_smul : x ∉ tsupport (fun y ↦ χ y • f y) :=
+      fun h ↦ hnot (tsupport_smul_subset_left χ f h)
+    have hnot_coe : x ∉ tsupport (fun y ↦ (χ y : ℂ)) := by
+      simpa [tsupport, Function.support] using hnot
+    rw [conjWirtingerDeriv_of_notMem_tsupport hnot_smul,
+      conjWirtingerDeriv_of_notMem_tsupport hnot_coe]
+    simp
 
 /-- The conjugate Wirtinger derivative depends complex-linearly on the real derivative: if
 `Df(x) = ∑ cᵢ Dgᵢ(x)` with complex coefficients, then `\bar∂f(x) = ∑ cᵢ \bar∂gᵢ(x)`. -/

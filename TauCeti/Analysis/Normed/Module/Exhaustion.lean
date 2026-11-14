@@ -29,10 +29,16 @@ a point of `Ωᶜ` by a short segment avoiding it.
 
 ## Main declarations
 
+* `IsOpen.isFilledIn_empty`: the empty set is filled in every open set of a nontrivial proper real
+  normed space.
 * `IsOpen.isFilledIn_closedBall_sdiff_thickening`: a closed ball with a thickening of `Ωᶜ`
   removed is filled in `Ω`.
 * `IsOpen.exists_isFilledIn_compact_exhaustion`: an open set in a proper real normed space has a
   compact exhaustion by sets filled in it.
+* `TauCeti.not_isFilledIn_closedBall_sdiff_ball_ball` and
+  `TauCeti.isFilledIn_closedBall_sdiff_ball_sdiff_closedBall`: a closed annulus is not filled in a
+  larger open ball, because its inner hole is trapped inside the ball, whereas puncturing the ball
+  by a smaller concentric closed ball makes the annulus filled in the punctured ball.
 
 ## References
 
@@ -49,6 +55,13 @@ section Exhaustion
 open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+
+/-- The empty set is filled in every open subset of a nontrivial proper real normed space. -/
+theorem IsOpen.isFilledIn_empty [Nontrivial E] {Ω : Set E} (hΩ : IsOpen Ω) :
+    IsFilledIn ∅ Ω := by
+  rw [isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
+    isClosed_empty hΩ (empty_subset Ω), filledHull_empty]
+  simp
 
 /-- **A closed ball minus a thickening of `Ωᶜ` is filled in `Ω`.** A point outside
 `K = closedBall a r \ thickening δ Ωᶜ` either lies outside the ball, hence outside the filled hull
@@ -114,5 +127,61 @@ theorem IsOpen.exists_isFilledIn_compact_exhaustion {Ω : Set E} (hΩ : IsOpen �
     rw [mem_ball, dist_comm]
     exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
   · exact hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)
+
+namespace TauCeti
+
+/-- A closed annulus `closedBall c R \ ball c r` (`0 < r ≤ R`) is **not** filled in any larger
+concentric open ball `ball c R'` (`R < R'`). -/
+theorem not_isFilledIn_closedBall_sdiff_ball_ball {c : E} {r R R' : ℝ}
+    (hr : 0 < r) (hrR : r ≤ R) (hRR' : R < R') :
+    ¬ IsFilledIn (closedBall c R \ ball c r) (ball c R') := by
+  set K := closedBall c R \ ball c r
+  have hKΩ : K ⊆ ball c R' := sdiff_subset.trans (closedBall_subset_ball hRR')
+  rw [isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
+    (isClosed_closedBall.sdiff isOpen_ball) isOpen_ball hKΩ]
+  intro h
+  have hsph : sphere c r ⊆ K := fun y hy =>
+    ⟨closedBall_subset_closedBall hrR (sphere_subset_closedBall hy),
+      fun hyb => (mem_ball.mp hyb).ne (mem_sphere.mp hy)⟩
+  have hcH : c ∈ filledHull K \ K :=
+    ⟨filledHull_mono hsph (by rw [filledHull_sphere c hr.le]; exact mem_closedBall_self hr.le),
+      fun hcK => hcK.2 (mem_ball_self hr)⟩
+  refine h c hcH fun y hy => ball_subset_ball (hrR.trans hRR'.le) ?_
+  by_contra hyr
+  have hconn : IsPreconnected ((fun z => dist z c) '' connectedComponentIn Kᶜ c) :=
+    isPreconnected_connectedComponentIn.image _ (continuous_id.dist continuous_const).continuousOn
+  have h0 : (0 : ℝ) ∈ (fun z => dist z c) '' connectedComponentIn Kᶜ c :=
+    ⟨c, mem_connectedComponentIn hcH.2, dist_self c⟩
+  obtain ⟨z, hzC, hzr⟩ := hconn.Icc_subset h0 ⟨y, hy, rfl⟩ ⟨hr.le, not_lt.mp hyr⟩
+  exact connectedComponentIn_subset Kᶜ c hzC (hsph (mem_sphere.mpr hzr))
+
+/-- Puncturing the outer open ball by a concentric closed ball inside the inner hole makes the
+closed annulus `closedBall c R \ ball c r` filled in `ball c R' \ closedBall c r₀`
+(`0 ≤ r₀ < r ≤ R < R'`). -/
+theorem isFilledIn_closedBall_sdiff_ball_sdiff_closedBall {c : E} {r₀ r R R' : ℝ}
+    (hr₀ : 0 ≤ r₀) (hr₀r : r₀ < r) (hrR : r ≤ R) (hRR' : R < R') :
+    IsFilledIn (closedBall c R \ ball c r) (ball c R' \ closedBall c r₀) := by
+  set K := closedBall c R \ ball c r
+  set Ω := ball c R' \ closedBall c r₀
+  have hKΩ : K ⊆ Ω := fun z hz =>
+    ⟨closedBall_subset_ball hRR' hz.1,
+      fun hzr₀ => hz.2 (closedBall_subset_ball hr₀r hzr₀)⟩
+  rw [isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
+    (isClosed_closedBall.sdiff isOpen_ball) (isOpen_ball.sdiff isClosed_closedBall) hKΩ]
+  rintro x ⟨hxH, hxK⟩ hDΩ
+  have hr : 0 < r := hr₀.trans_lt hr₀r
+  have hxR : x ∈ closedBall c R :=
+    closedConvexHull_min subset_rfl (convex_closedBall c R) isClosed_closedBall
+      (filledHull_subset_closedConvexHull (nonempty_closedBall.mpr (hr.le.trans hrR))
+        (filledHull_mono sdiff_subset hxH))
+  have hxr : x ∈ ball c r := by
+    by_contra hxr
+    exact hxK ⟨hxR, hxr⟩
+  have hseg : segment ℝ x c ⊆ connectedComponentIn Kᶜ x :=
+    (convex_segment x c).isPreconnected.subset_connectedComponentIn (left_mem_segment ℝ x c)
+      fun z hz hzK => hzK.2 ((convex_ball c r).segment_subset hxr (mem_ball_self hr) hz)
+  exact (hDΩ (hseg (right_mem_segment ℝ x c))).2 (mem_closedBall_self hr₀)
+
+end TauCeti
 
 end Exhaustion

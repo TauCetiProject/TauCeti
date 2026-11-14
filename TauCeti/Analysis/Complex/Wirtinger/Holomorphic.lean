@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
 # Holomorphy and the conjugate Wirtinger derivative
@@ -28,6 +31,12 @@ that is locally a `Cⁿ` function plus a holomorphic one is `Cⁿ` with the same
 derivatives (`TauCeti.contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add`). This glues the
 local solutions in exhaustion proofs of the `\bar∂`-lemma.
 
+For a jointly sufficiently smooth family `H : P → V → W` over an open set `s ×ˢ U` whose slices
+`H p` are holomorphic on `U`, symmetry of mixed second derivatives implies that every parameter
+Fréchet derivative `z ↦ fderiv ℝ (fun q ↦ H q z) p` and, by induction, every iterated parameter
+Fréchet derivative `z ↦ iteratedFDeriv ℝ k (fun q ↦ H q z) p` remains holomorphic on `U`
+(`TauCeti.differentiableOn_fderiv_partial`, `TauCeti.differentiableOn_iteratedFDeriv_partial`).
+
 These statements connect the real differential and its type decomposition with holomorphy.
 
 ## References
@@ -37,8 +46,8 @@ These statements connect the real differential and its type decomposition with h
 
 public noncomputable section
 
-open Complex Set
-open scoped ComplexConjugate
+open Complex Filter Set Topology
+open scoped ComplexConjugate ContDiff
 
 namespace TauCeti
 
@@ -102,3 +111,152 @@ theorem contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add {ι : Type*} {n :
       add_zero, haf z hzO j]
 
 end TauCeti
+
+section ParameterDerivatives
+
+universe u v
+
+namespace TauCeti
+
+/-- **Parameter Fréchet derivatives preserve spatial holomorphy (first order).** If `H : P → V → W`
+is jointly `C²` over `ℝ` on `s ×ˢ U`, for open sets `s ⊆ P` and `U ⊆ V`, and `H p` is holomorphic
+on `U` for every `p ∈ s`, then `z ↦ fderiv ℝ (fun q ↦ H q z) p` is holomorphic on `U` for every
+`p ∈ s`. -/
+theorem differentiableOn_fderiv_partial {P V W : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+    {H : P → V → W} {s : Set P} {U : Set V} (hs : IsOpen s) (hU : IsOpen U)
+    (hH : ContDiffOn ℝ 2 ↿H (s ×ˢ U)) (hHol : ∀ p ∈ s, DifferentiableOn ℂ (H p) U)
+    {p : P} (hp : p ∈ s) :
+    DifferentiableOn ℂ (fun z ↦ fderiv ℝ (fun q ↦ H q z) p) U := by
+  intro z₀ hz₀
+  refine DifferentiableAt.differentiableWithinAt ?_
+  set ψ : V → P →L[ℝ] W := fun z ↦ fderiv ℝ (fun q ↦ H q z) p
+  have hHat : ContDiffAt ℝ 2 ↿H (p, z₀) := hH.contDiffAt ((hs.prod hU).mem_nhds ⟨hp, hz₀⟩)
+  have hD2 : DifferentiableAt ℝ (fderiv ℝ ↿H) (p, z₀) :=
+    (hHat.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  let R : (P × V →L[ℝ] W) →L[ℝ] P →L[ℝ] W :=
+    (ContinuousLinearMap.compL ℝ P (P × V) W).flip (ContinuousLinearMap.inl ℝ P V)
+  have hψeq : ψ =ᶠ[𝓝 z₀] fun z ↦ R (fderiv ℝ ↿H (p, z)) := by
+    filter_upwards [hU.mem_nhds hz₀] with z hz
+    exact fderiv_slice_left
+      ((hH.differentiableOn (by norm_num)).differentiableAt ((hs.prod hU).mem_nhds ⟨hp, hz⟩))
+  have hψ : HasFDerivAt ψ
+      (R.comp ((fderiv ℝ (fderiv ℝ ↿H) (p, z₀)).comp (ContinuousLinearMap.inr ℝ P V))) z₀ :=
+    (R.hasFDerivAt.comp z₀ (hD2.hasFDerivAt.comp z₀
+      (hasFDerivAt_prodMk_right (𝕜 := ℝ) p z₀))).congr_of_eventuallyEq hψeq
+  have hθ (w' : V) : HasFDerivAt (fun q ↦ fderiv ℝ ↿H (q, z₀) (0, w'))
+      ((ContinuousLinearMap.apply ℝ W (0, w')).comp
+        ((fderiv ℝ (fderiv ℝ ↿H) (p, z₀)).comp (ContinuousLinearMap.inl ℝ P V))) p := by
+    simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
+      (ContinuousLinearMap.apply ℝ W (0, w')).hasFDerivAt.comp p
+        (hD2.hasFDerivAt.comp p (hasFDerivAt_prodMk_left (𝕜 := ℝ) p z₀))
+  have hmixed (w : V) (u : P) :
+      fderiv ℝ ψ z₀ w u = fderiv ℝ (fun q ↦ fderiv ℝ ↿H (q, z₀) (0, w)) p u := by
+    rw [hψ.fderiv, (hθ w).fderiv]
+    simpa [R] using (hHat.isSymmSndFDerivAt (by simp)).eq (0, w) (u, 0)
+  rw [differentiableAt_iff_conjWirtingerDeriv_eq_zero hψ.differentiableAt]
+  ext w u
+  have hθeq : (fun q ↦ fderiv ℝ ↿H (q, z₀) (0, I • w)) =ᶠ[𝓝 p]
+      (I • fun q ↦ fderiv ℝ ↿H (q, z₀) (0, w)) := by
+    filter_upwards [hs.mem_nhds hp] with q hq
+    have hqH : DifferentiableAt ℝ ↿H (q, z₀) :=
+      (hH.differentiableOn (by norm_num)).differentiableAt ((hs.prod hU).mem_nhds ⟨hq, hz₀⟩)
+    have hqC : DifferentiableAt ℂ (H q) z₀ := (hHol q hq z₀ hz₀).differentiableAt (hU.mem_nhds hz₀)
+    have hunc : (fun y ↦ ↿H (q, y)) = H q := rfl
+    have hsr (w' : V) : fderiv ℝ (H q) z₀ w' = fderiv ℝ ↿H (q, z₀) (0, w') := by
+      simpa [hunc] using congrArg (· w') (fderiv_slice_right hqH)
+    simp only [Pi.smul_apply, ← hsr (I • w), ← hsr w, hqC.fderiv_restrictScalars ℝ,
+      ContinuousLinearMap.coe_restrictScalars', map_smul]
+  have hI : fderiv ℝ ψ z₀ (I • w) u = I • fderiv ℝ ψ z₀ w u := by
+    rw [hmixed (I • w) u, hmixed w u, hθeq.fderiv_eq, ((hθ w).const_smul I).fderiv, (hθ w).fderiv]
+    rfl
+  simp only [conjWirtingerDeriv_apply, zero_apply, add_apply, smul_apply, hI, smul_smul, I_mul_I,
+    neg_one_smul, add_neg_cancel, smul_zero]
+
+private def curryFin0SymmCLM (P W : Type*) [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup W] [NormedSpace ℂ W] :
+    W →L[ℂ] ContinuousMultilinearMap ℝ (fun _ : Fin 0 ↦ P) W :=
+  LinearMap.mkContinuous
+    { toFun := (continuousMultilinearCurryFin0 ℝ P W).symm
+      map_add' := map_add _
+      map_smul' c x := by ext m; simp }
+    1 fun x ↦ by simp
+
+private def curryRightSymmCLM (P W : Type*) [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup W] [NormedSpace ℂ W] (k : ℕ) :
+    ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ P) (P →L[ℝ] W) →L[ℂ]
+      ContinuousMultilinearMap ℝ (fun _ : Fin (k + 1) ↦ P) W :=
+  LinearMap.mkContinuous
+    { toFun := (continuousMultilinearCurryRightEquiv' ℝ k P W).symm
+      map_add' := map_add _
+      map_smul' c Φ := by ext m; simp }
+    1 fun Φ ↦ by
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, one_mul]
+      exact le_of_eq ((continuousMultilinearCurryRightEquiv' ℝ k P W).symm.norm_map Φ)
+
+private theorem differentiableOn_iteratedFDeriv_partial_aux {P : Type u} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+    {W : Type (max u v)} [NormedAddCommGroup W] [NormedSpace ℂ W] (k : ℕ)
+    {s : Set P} {U : Set V} (hs : IsOpen s) (hU : IsOpen U) {p : P} (hp : p ∈ s)
+    {H : P → V → W} (hH : ContDiffOn ℝ (k + 1 : ℕ) ↿H (s ×ˢ U))
+    (hHol : ∀ p ∈ s, DifferentiableOn ℂ (H p) U) :
+    DifferentiableOn ℂ (fun z ↦ iteratedFDeriv ℝ k (fun q ↦ H q z) p) U := by
+  induction k generalizing W with
+  | zero =>
+    refine ((curryFin0SymmCLM P W).differentiable.comp_differentiableOn (hHol p hp)).congr
+      fun z _ ↦ ?_
+    ext _
+    simp [curryFin0SymmCLM]
+  | succ k ih =>
+    let H' : P → V → P →L[ℝ] W := fun q z ↦ fderiv ℝ (fun r ↦ H r z) q
+    have hk' : (((k + 1 : ℕ) : WithTop ℕ∞) + 1) ≤ ((k + 1 + 1 : ℕ) : WithTop ℕ∞) := by
+      exact_mod_cast le_rfl
+    have hH' : ContDiffOn ℝ (k + 1 : ℕ) ↿H' (s ×ˢ U) :=
+      (hH.of_le hk').fderiv_partial_of_isOpen (hs.prod hU)
+    have h2_nat : 2 ≤ k + 1 + 1 := by omega
+    have h2 : (2 : WithTop ℕ∞) ≤ ((k + 1 + 1 : ℕ) : WithTop ℕ∞) := by exact_mod_cast h2_nat
+    have hHol' : ∀ q ∈ s, DifferentiableOn ℂ (H' q) U := fun q hq ↦
+      differentiableOn_fderiv_partial hs hU (hH.of_le h2) hHol hq
+    refine (Differentiable.comp_differentiableOn (F := P [×k]→L[ℝ] P →L[ℝ] W)
+      (curryRightSymmCLM P W k).differentiable (ih hH' hHol')).congr fun z _ ↦ ?_
+    simp [H', curryRightSymmCLM, iteratedFDeriv_succ_eq_comp_right]
+
+/-- **Iterated parameter Fréchet derivatives preserve spatial holomorphy.** If `H : P → V → W` is
+jointly `C^n` over `ℝ` on `s ×ˢ U`, for open sets `s ⊆ P` and `U ⊆ V`, with `(k + 1 : ℕ) ≤ n`
+(in particular for `n = ∞` and every `k : ℕ`), and `H p` is holomorphic on `U` for every `p ∈ s`,
+then `z ↦ iteratedFDeriv ℝ k (fun q ↦ H q z) p` is holomorphic on `U` for every `p ∈ s`. -/
+theorem differentiableOn_iteratedFDeriv_partial {P : Type u} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+    {W : Type v} [NormedAddCommGroup W] [NormedSpace ℂ W] (k : ℕ)
+    {n : WithTop ℕ∞} {H : P → V → W} {s : Set P} {U : Set V}
+    (hs : IsOpen s) (hU : IsOpen U) (hk : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ n)
+    (hH : ContDiffOn ℝ n ↿H (s ×ˢ U)) (hHol : ∀ p ∈ s, DifferentiableOn ℂ (H p) U)
+    {p : P} (hp : p ∈ s) :
+    DifferentiableOn ℂ (fun z ↦ iteratedFDeriv ℝ k (fun q ↦ H q z) p) U := by
+  let eW : Type (max u v) := ULift.{u} W
+  let isoW : eW ≃L[ℂ] W := ContinuousLinearEquiv.ulift
+  let L_ℝ : eW →L[ℝ] W := isoW.toContinuousLinearMap.restrictScalars ℝ
+  let M_ℂ : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ P) eW →L[ℂ]
+      ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ P) W :=
+    LinearMap.mkContinuous
+      { toFun Φ := L_ℝ.compContinuousMultilinearMap Φ
+        map_add' Φ Ψ := by ext m; simp
+        map_smul' c Φ := by ext m; simp [L_ℝ] }
+      ‖L_ℝ‖ fun Φ ↦ L_ℝ.norm_compContinuousMultilinearMap_le Φ
+  have hH' : ContDiffOn ℝ (k + 1 : ℕ) ↿(fun q z ↦ isoW.symm (H q z)) (s ×ˢ U) :=
+    (isoW.symm.contDiff.restrict_scalars ℝ).comp_contDiffOn (hH.of_le hk)
+  have hHol' : ∀ q ∈ s, DifferentiableOn ℂ (fun z ↦ isoW.symm (H q z)) U :=
+    fun q hq ↦ isoW.symm.differentiable.comp_differentiableOn (hHol q hq)
+  refine (M_ℂ.differentiable.comp_differentiableOn
+    (differentiableOn_iteratedFDeriv_partial_aux k hs hU hp hH' hHol')).congr fun z hz ↦ ?_
+  have hk0 : (k : WithTop ℕ∞) ≤ ((k + 1 : ℕ) : WithTop ℕ∞) := by exact_mod_cast Nat.le_succ k
+  have hkp : ContDiffAt ℝ k (fun q ↦ isoW.symm (H q z)) p :=
+    ((hH'.of_le hk0).contDiffAt ((hs.prod hU).mem_nhds ⟨hp, hz⟩)).comp p
+      (contDiffAt_id.prodMk contDiffAt_const)
+  have hcomp : (isoW ∘ fun q ↦ isoW.symm (H q z)) = fun q ↦ H q z := by
+    ext q; exact isoW.apply_symm_apply _
+  simpa [M_ℂ, L_ℝ, hcomp] using L_ℝ.iteratedFDeriv_comp_left hkp le_rfl
+
+end TauCeti
+
+end ParameterDerivatives
