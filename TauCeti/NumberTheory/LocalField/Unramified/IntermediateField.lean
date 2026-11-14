@@ -28,6 +28,9 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
 * `IntermediateField.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
 * `IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one`: a subextension is totally
   ramified exactly when its residue degree is one.
+* `IntermediateField.inertiaDegree_dvd_finrank`: `f(L/K) ∣ [L : K]`, including the infinite case.
+* `IntermediateField.finrank_div_inertiaDegree_eq`: on a finite subextension, `[L : K] / f(L/K)`
+  is the canonical ramification index `e(L/K)`.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
 
@@ -189,5 +192,45 @@ theorem inf_maximalUnramifiedExtension (L : IntermediateField K (SeparableClosur
           (Dvd.intro _ (TauCeti.inertiaDegree_tower (K := K) (L := E) L).symm)
   · exact le_inf (unramifiedExtension_inertiaDegree_le L)
       (unramifiedExtension_le_maximalUnramifiedExtension K (SeparableClosure K) _)
+
+/-- The totalized residue degree divides the extension degree, including on infinite
+subextensions where both invariants vanish. -/
+theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K)) :
+    L.inertiaDegree ∣ Module.finrank K L := by
+  by_cases h : Module.Finite K L
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact Dvd.intro_left (ramificationIndex K L) (ramificationIndex_mul_inertiaDegree K L)
+  · rw [inertiaDegree_of_not_finite h, Module.finrank_of_not_finite h]
+
+/-- On a finite subextension, `[L : K] / f(L/K)` agrees with the ramification index for the
+canonical local-field structure. -/
+theorem finrank_div_inertiaDegree_eq (L : IntermediateField K (SeparableClosure K))
+    [Module.Finite K L] :
+    Module.finrank K L / L.inertiaDegree =
+      (letI := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+      letI := finiteIntermediateFieldTopology K (SeparableClosure K) L
+      haveI := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+      haveI := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+      TauCeti.ramificationIndex K L) := by
+  rw [inertiaDegree_eq]
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+  rw [← ramificationIndex_mul_inertiaDegree K L, Nat.mul_div_left _ TauCeti.inertiaDegree_pos]
+
+/-- On a finite subextension, the quotient `[L : K] / f(L/K)` is positive. -/
+theorem finrank_div_inertiaDegree_pos (L : IntermediateField K (SeparableClosure K))
+    [Module.Finite K L] : 0 < Module.finrank K L / L.inertiaDegree := by
+  rw [finrank_div_inertiaDegree_eq]
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+  exact ramificationIndex_pos
 
 end IntermediateField
