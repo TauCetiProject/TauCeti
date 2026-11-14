@@ -14,9 +14,10 @@ Under a Ricci flow `∂ₜg = -2 Ric` on a closed three-manifold, the scalar cur
 `∂ₜR = ΔR + 2|Ric|²`, and `|Ric|² ≥ R² / 3`. So at every spatial minimum `∂ₜR ≥ (2/3) R²`. For
 normalized initial metrics `R ≥ -6` at time zero, and the quadratic-reaction comparison
 `TauCeti.div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin` with `c = 2/3` and `ρ = -6`
-propagates this to `R ≥ -6 / (1 + 4t)`. The comparison restarts at any nonnegative time `a`: the
-bound `R ≥ -6 / (1 + 4a)` at time `a` propagates to the same bound `-6 / (1 + 4t)` at later times,
-which is the form needed on each smooth epoch of a Ricci flow with surgery.
+propagates this to `R ≥ -6 / (1 + 4t)`. The comparison restarts at any nonnegative time `a`: with
+`ρ = -6 / (1 + 4a)`, the bound `R ≥ -6 / (1 + 4a)` at time `a` propagates to the same bound
+`-6 / (1 + 4t)` at later times, which is the form needed on each smooth epoch of a Ricci flow with
+surgery.
 
 This is a scalar statement about a function satisfying the differential inequality at spatial
 local minima: no existence of a geometric flow or evolution equation is asserted here.
@@ -57,26 +58,18 @@ theorem neg_six_div_one_add_four_mul_le_of_mul_sq_le_deriv_of_isLocalMin [Compac
     (hinit : ∀ x, -6 / (1 + 4 * a) ≤ u a x) :
     ∀ ⦃t⦄, t ∈ Icc a b → ∀ x, -6 / (1 + 4 * t) ≤ u t x := by
   intro t ht x
-  -- Shift `[a, b]` to `[0, b - a]` and apply the comparison with `ρ = -6 / (1 + 4a)`.
+  -- Apply the comparison with `c = 2/3` and `ρ = -6 / (1 + 4a)`, whose barrier is `-6 / (1 + 4t)`.
   have ha' : 0 < 1 + 4 * a := by linarith
-  have hden (s : ℝ) : 1 - 2 / 3 * (-6 / (1 + 4 * a)) * s = (1 + 4 * (a + s)) / (1 + 4 * a) := by
+  have hden (s : ℝ) : 1 - 2 / 3 * (-6 / (1 + 4 * a)) * (s - a) = (1 + 4 * s) / (1 + 4 * a) := by
     field_simp
     ring
   have hbar (s : ℝ) :
-      -6 / (1 + 4 * a) / (1 - 2 / 3 * (-6 / (1 + 4 * a)) * s) = -6 / (1 + 4 * (a + s)) := by
+      -6 / (1 + 4 * a) / (1 - 2 / 3 * (-6 / (1 + 4 * a)) * (s - a)) = -6 / (1 + 4 * s) := by
     rw [hden, div_div_div_cancel_right₀ ha'.ne']
-  have hcont' : ContinuousOn (Function.uncurry fun s y ↦ u (a + s) y) (Icc 0 (b - a) ×ˢ univ) :=
-    hcont.comp (f := fun p : ℝ × X ↦ (a + p.1, p.2)) (by fun_prop) fun p hp ↦
-      ⟨⟨by linarith [hp.1.1], by linarith [hp.1.2]⟩, mem_univ _⟩
-  have h := div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin (u := fun s y ↦ u (a + s) y)
-    (c := 2 / 3) (by norm_num) (by rw [hden]; exact div_pos (by linarith [ht.1, ht.2]) ha') hcont'
-    (fun s hs y ↦ ((hdiff ⟨by linarith [hs.1], by linarith [hs.2]⟩ y).hasDerivAt.comp_const_add
-      a s).differentiableAt)
-    (fun s hs y hmin hlt ↦ by
-      rw [deriv_comp_const_add (fun r ↦ u r y)]
-      exact hloc ⟨by linarith [hs.1], by linarith [hs.2]⟩ y hmin (by rwa [hbar] at hlt))
-    (fun y ↦ by simpa using hinit y) (t := t - a) ⟨by linarith [ht.1], by linarith [ht.2]⟩ x
-  rwa [hbar, add_sub_cancel] at h
+  have h := div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin (c := 2 / 3) (by norm_num)
+    (by rw [hden]; exact div_pos (by linarith [ht.1, ht.2]) ha') hcont hdiff
+    (fun s hs y hmin hlt ↦ hloc hs y hmin (by rwa [hbar] at hlt)) hinit ht x
+  rwa [hbar] at h
 
 /-- **The scalar curvature lower bound in dimension three.**
 
