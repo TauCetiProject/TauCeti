@@ -228,14 +228,25 @@ theorem span_natCast_integralSqrt_sub_sq_eq_iff (hr : (p : ℤ) ∣ r ^ 2 - d) :
 end ModFourNeOne
 
 /-- **The ramified prime above `2` for `d ≡ 3 (mod 4)`.** Then `2 𝓞 ℚ(√d) = (2, √d - 1) ^ 2`. -/
-theorem span_two_integralSqrt_sub_one_sq_eq_span_two (hsf : Squarefree d) (hd : d % 4 = 3) :
+theorem span_two_integralSqrt_sub_one_sq_eq_span_two (hd : d % 4 = 3) :
     Ideal.span {(2 : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)),
         integralSqrt (omega_sq_eq_algebraMap_int (d := d)) - 1} ^ 2 = Ideal.span {2} := by
-  have h := (span_natCast_integralSqrt_sub_sq_eq_iff (p := 2) (r := 1) hsf (by omega)
-    (by norm_num; omega)).mpr (by
-      rw [discr_eq_four_mul_of_mod_four_ne_one hsf (by omega)]
-      exact Dvd.dvd.mul_right (by norm_num) _)
-  simpa using h
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, d = 4 * k + 3 := ⟨d / 4, by omega⟩
+  set s := integralSqrt (omega_sq_eq_algebraMap_int (d := d))
+  have hs : s * s = 4 * k + 3 := by
+    rw [← sq, integralSqrt_sq, eq_intCast]
+    simpa using congrArg (Int.cast : ℤ → 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) hk
+  rw [sq, Ideal.span_pair_mul_span_pair]
+  refine le_antisymm (Ideal.span_le.2 ?_) (Ideal.span_singleton_le_iff_mem _ |>.2 ?_)
+  · simp only [Set.subset_def, Set.mem_insert_iff, Set.mem_singleton_iff, SetLike.mem_coe,
+      Ideal.mem_span_singleton]
+    rintro x (rfl | rfl | rfl | rfl)
+    exacts [⟨2, by norm_num⟩, ⟨s - 1, rfl⟩, ⟨s - 1, mul_comm _ _⟩,
+      ⟨2 * k + 2 - s, by linear_combination hs⟩]
+  · have h : (2 : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) =
+        (s - 1) * (s - 1) + 2 * (s - 1) - k * (2 * 2) := by linear_combination -hs
+    refine (congrArg (· ∈ Ideal.span _) h).mpr (sub_mem (add_mem ?_ ?_) (Ideal.mul_mem_left _ _ ?_))
+    all_goals exact Ideal.subset_span (by simp)
 
 /-! ### The case `d ≡ 1 (mod 4)` -/
 
