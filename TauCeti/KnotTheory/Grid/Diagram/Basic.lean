@@ -97,19 +97,12 @@ theorem subdiagonal_apply (c : Fin n) :
     subdiagonal n c = (finRotate n)⁻¹ c :=
   rfl
 
-/-- Moving the subdiagonal point of a column up one row reaches the diagonal. -/
-theorem subdiagonal_apply_add_one (c : Fin n) :
-    haveI := c.neZero
-    subdiagonal n c + 1 = c := by
-  rw [← finRotate_apply, subdiagonal_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
-
 /-- The subdiagonal state sends each column to the preceding row. -/
 @[simp]
 theorem subdiagonal_apply_eq_sub_one (c : Fin n) :
     haveI := c.neZero
-    subdiagonal n c = c - 1 :=
-  haveI := c.neZero
-  eq_sub_iff_add_eq.mpr (subdiagonal_apply_add_one c)
+    subdiagonal n c = c - 1 := by
+  rw [subdiagonal_apply, Equiv.Perm.inv_def, finRotate_symm_apply]
 
 /-- The finite set of occupied grid points of a grid state. The first coordinate is the column and
 the second coordinate is the row. -/
@@ -338,11 +331,23 @@ theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
 
+/-- The permutation underlying a row swap is the old permutation followed by the
+transposition of the two rows. -/
+theorem swapRows_toPerm (a b : Fin n) (x : GridState n) :
+    (x.swapRows a b).toPerm = Equiv.swap a b * x.toPerm := by
+  rw [swapRows, relabelRows_toPerm]
+
+/-- The permutation underlying a column swap is the transposition of the two columns followed by
+the old permutation. -/
+theorem swapColumns_toPerm (a b : Fin n) (x : GridState n) :
+    (x.swapColumns a b).toPerm = x.toPerm * Equiv.swap a b := by
+  rw [swapColumns, relabelColumns_toPerm, Equiv.swap_inv]
+
 /-- Swapping rows `a`, `b` and then columns `c`, `d` multiplies the underlying permutation by
 the row transposition on the left and the column transposition on the right. -/
 theorem swapRows_swapColumns_toPerm (a b c d : Fin n) (x : GridState n) :
     ((x.swapRows a b).swapColumns c d).toPerm = Equiv.swap a b * x.toPerm * Equiv.swap c d := by
-  rw [swapColumns, relabelColumns_toPerm, swapRows, relabelRows_toPerm, Equiv.swap_inv]
+  rw [swapColumns_toPerm, swapRows_toPerm]
 
 /-- A column read off the row it occupies after a column swap. -/
 theorem eq_swap_of_swapColumns_apply_eq {x : GridState n} {a b c d : Fin n}
@@ -444,6 +449,7 @@ theorem card_columnSwapNeighbors (x : GridState n) :
   rintro _ hz _ hw hzw
   obtain ⟨⟨a, b⟩, hab, rfl⟩ := Finset.mem_image.mp hz
   obtain ⟨⟨c, d⟩, -, rfl⟩ := Finset.mem_image.mp hw
+  simp only [f, Function.uncurry_apply_pair, Sym2.lift_mk] at hzw ⊢
   exact sym2_mk_eq_of_swapColumns_eq (Finset.mem_offDiag.mp hab).2.2 hzw
 
 -- Not `@[simp]`: `mem_columnSwapNeighbors` already rewrites the left-hand side.
