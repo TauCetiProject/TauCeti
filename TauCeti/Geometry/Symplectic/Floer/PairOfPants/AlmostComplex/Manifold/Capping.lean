@@ -230,6 +230,14 @@ theorem _root_.TauCeti.SmoothTwoForm.tames_update_inf (h₀ : σ.Tames J₀)
   (forall_update_iff (fun _ _ => J₀) fun _ f => ∀ t, σ.Tames (f t)).2 ⟨hK, fun _ _ _ => h₀⟩ q t
 
 omit [FiniteDimensional ℝ E] in
+/-- Dually, the end families of the input part of a pair of pants, `K` at the inputs and a tame base
+structure `J₀` at `∞`, are tame when `K` is. -/
+theorem _root_.TauCeti.SmoothTwoForm.tames_update_inf_base (hJ₀ : σ.Tames J₀)
+    {K : Puncture → ℝ → SmoothAlmostComplexStructure I M} (hK : ∀ q t, σ.Tames (K q t))
+    (q : Puncture) (t : ℝ) : σ.Tames (update K inf (fun _ => J₀) q t) :=
+  (forall_update_iff K fun _ f => ∀ t, σ.Tames (f t)).2 ⟨fun _ => hJ₀, fun q _ => hK q⟩ q t
+
+omit [FiniteDimensional ℝ E] in
 /-- The end families of the negative plane, `K` at `∞` and the constant family `J₀` at the inputs,
 have period one when `K` does. -/
 theorem _root_.TauCeti.SmoothAlmostComplexStructure.periodic_update_inf
@@ -264,6 +272,19 @@ private theorem almostComplexStructureAt_update_inf (K : ℝ → SmoothAlmostCom
     (fun q t (_ : Unit) => (update (fun _ _ => J₀) inf K q t).almostComplexStructureAt x) =
       update (fun _ _ _ => J₀.almostComplexStructureAt x) inf
         (fun t (_ : Unit) => (K t).almostComplexStructureAt x) := by
+  funext q t u
+  rcases eq_or_ne q inf with rfl | hq
+  · simp
+  · simp [update_of_ne hq]
+
+omit [FiniteDimensional ℝ E] in
+/-- On a tangent fiber, the end families of the input part of a pair of pants, `K` at the inputs
+and `J₀` at `∞`, are the linear end families of the input part. -/
+theorem _root_.TauCeti.SmoothAlmostComplexStructure.almostComplexStructureAt_update_inf_base
+    (K : Puncture → ℝ → SmoothAlmostComplexStructure I M) (x : M) :
+    (fun q t (_ : Unit) => (update K inf (fun _ => J₀) q t).almostComplexStructureAt x) =
+      update (fun q t (_ : Unit) => (K q t).almostComplexStructureAt x) inf
+        (fun _ _ => J₀.almostComplexStructureAt x) := by
   funext q t u
   rcases eq_or_ne q inf with rfl | hq
   · simp
@@ -407,6 +428,26 @@ theorem cappingAlmostComplex_eq_negativePlaneAlmostComplex (hq : q ≠ inf) {w :
     plumbedAlmostComplex_eq_inserted _ _ _ _ _ _ hq
       (update_self inf (Jb q) fun _ _ => J₀).symm hw h2,
     pairOfPantsAlmostComplex_update_inf h₀ (Jb q) (hJb q)]
+
+/-- **The capped input part is the base structure between the inputs.** For `L ≥ 2`, at distance at
+least `1/2` from both inputs, the capping structure at `0` of the pair of pants with input families
+`Jb` and output family `J₀` is `J₀`. -/
+theorem cappingAlmostComplex_update_inf_base_eq (hL : 2 ≤ L) {w : ℂ} (hw₀ : 1 / 2 ≤ ‖w‖)
+    (hw₁ : 1 / 2 ≤ ‖w - 1‖) :
+    h₀.cappingAlmostComplex (update Jb inf fun _ => J₀) (tames_update_inf_base h₀.tames hJb) zero
+      L w = J₀ := by
+  have hρ : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1 :=
+    mem_plumbedSphere_of_le_norm_sub_endCenter
+      (Or.inr ⟨fun h => by norm_num [h] at hw₀, fun h => by norm_num [h] at hw₁⟩)
+      (by rw [endCenter_zero, sub_zero]; linarith)
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+  rw [almostComplexStructureAt_cappingAlmostComplex h₀ _ _ hw, Floer.plumbedAlmostComplex_def,
+    ite_eq_right (not_lt.2 (re_endCoord_zero_le_div_two hL hw₀))]
+  simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_update_inf_base Jb x]
+  exact Floer.pairOfPantsAlmostComplex_update_inf_base_eq
+    (hJb := fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJb q t) x) (h₀.compatibleAt x) hw₀ hw₁ ()
 
 /-- **The capping structure is smooth.** For end structures which have period one in `t` and are
 `C^n` on `ℝ × M`, and neck lengths `L > 4`, the capping structure is `C^n` jointly in the neck

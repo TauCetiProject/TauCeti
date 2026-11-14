@@ -78,10 +78,6 @@ namespace TauCeti.Floer
 
 variable {M V : Type*}
 
-/-- The radius `2 exp (2π)` of the disc on which the negative plane data are trivial exceeds `3`. -/
-private theorem three_lt_two_mul_exp_two_pi : 3 < 2 * Real.exp (2 * π) := by
-  nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
-
 section Algebraic
 
 variable [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]

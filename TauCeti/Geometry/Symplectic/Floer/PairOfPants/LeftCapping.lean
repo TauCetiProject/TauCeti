@@ -51,9 +51,11 @@ At `c = 0` it is the capping family at `0`
 (`TauCeti.Floer.cappedExchangePerturbation_zero`). At `c = 1` it is the pullback along the
 exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with exchanged inputs
 (`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing at `0` to the
-plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the cylinder
-coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
-exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
+plumbing at `1`. In the real coordinates of `ℂ` this is the pullback of perturbation data along
+`σ` (`TauCeti.Floer.perturbationPullback_plumbedPerturbation_exchangeEndData`). As `σ` carries
+the end lift of `1` to the end lift of `0`, in the cylinder coordinates of the end lift `φ_1` the
+datum at `c = 1` is the capped cylinder datum of the exchanged Hamiltonians
+(`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
 the standard cylinder, and the energy identity and action bounds of
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it.
@@ -91,13 +93,6 @@ theorem cappedExchangePerturbation_def (H : Puncture → ℝ → M → ℝ) (L c
         negativePlanePerturbation (H inf) (w - c) x :=
   (rfl)
 
-/-- For `L ≥ 2`, at distance at least `1/2` from `0` the longitudinal coordinate of the end at `0`
-is at most `L / 2`, so the plumbing at `0` leaves the receiving datum unchanged there. -/
-private theorem re_endCoord_zero_le_half (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
-    (zero.endCoord w).re ≤ L / 2 := by
-  have h : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  linarith [re_endCoord_zero_le_one (w := w) (by linarith)]
-
 /-- The translated output datum vanishes within distance `1/2` of `0`, for `0 ≤ c ≤ 1`. -/
 private theorem negativePlanePerturbation_sub_eq_zero_of_norm_le {H : ℝ → M → ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {w : ℂ} (hw : ‖w‖ ≤ 1 / 2) (x : M) :
@@ -124,7 +119,7 @@ theorem cappedExchangePerturbation_of_lt_re_endCoord (hL : 2 ≤ L) (hc₀ : 0 �
       plumbedPerturbation (Pi.single inf (H zero)) H zero L w x := by
   have hn : ‖w‖ ≤ 1 / 2 := by
     by_contra! h
-    linarith [re_endCoord_zero_le_half hL h.le]
+    linarith [re_endCoord_zero_le_div_two hL h.le]
   rw [cappedExchangePerturbation_def, negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn,
     add_zero, plumbedPerturbation_def, plumbedPerturbation_def, ite_eq_left hw, ite_eq_left hw]
 
@@ -174,6 +169,29 @@ theorem cappedCylinderComponent_exchangeEndData (hH : Periodic (H inf) 1) (hL : 
   rw [cappedExchangePerturbation_one hH hL, one_sub_cylindricalEndLift_one, hd,
     cappedCylinderComponent_def, exchangeEndData_one, neg_apply, neg_mul, map_neg, neg_neg]
 
+/-- **The perturbation at the end of the family is a pullback.** In the real coordinates
+`ℝ × ℝ ≃ ℂ`, the pullback along the exchange `σ(z) = (1, 0) - z` of the datum obtained by plumbing
+the negative plane with Hamiltonian `H_0` into the end at `1` of the pair of pants with exchanged
+Hamiltonians is the member `c = 1` of the input-exchange family capped at `0`. -/
+theorem perturbationPullback_plumbedPerturbation_exchangeEndData (hH : Periodic (H inf) 1)
+    (hL : 2 ≤ L) (v z : ℝ × ℝ) (x : M) :
+    perturbationPullback (fun z => (1, 0) - z)
+        (fun z x => plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x => plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+          (Complex.equivRealProdCLM.symm z) x Complex.I) v z x =
+      cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x
+        (Complex.equivRealProdCLM.symm v) := by
+  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - z) = 1 - Complex.equivRealProdCLM.symm z := by
+    apply Complex.ext <;> simp
+  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
+    apply Complex.ext <;> simp
+  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id,
+    cappedExchangePerturbation_one hH hL, hσ, hv]
+  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg, Prod.snd_neg, map_add,
+    map_smul, smul_eq_mul]
+  ring
+
 /-- **The family on the remaining input end.** For `L ≥ 0` and `0 ≤ c ≤ 1`, on the part `s ≥ 2`
 of the input end at `1`, the pullback of the capped datum along the end lift `φ_1` sends a tangent
 vector `v` of the cylinder to `Im v · H_1(Im z)`. -/
@@ -212,7 +230,7 @@ theorem cappedExchangePerturbation_add_cylindricalEndLift_inf (hH : Periodic (H 
     have h := norm_sub_norm_le (inf.cylindricalEndLift z) (-(c : ℂ))
     rw [sub_neg_eq_add, norm_neg, Complex.norm_real, Real.norm_of_nonneg hc₀, add_comm] at h
     linarith
-  rw [cappedExchangePerturbation_of_re_endCoord_le (re_endCoord_zero_le_half hL hn),
+  rw [cappedExchangePerturbation_of_re_endCoord_le (re_endCoord_zero_le_div_two hL hn),
     exchangePerturbation_add_cylindricalEndLift_inf hH hc₀ hc₁ hz]
 
 /-- **The family near the inputs.** Within distance `2 exp (2π)` of `c`, the translated output
@@ -233,7 +251,7 @@ theorem cappedExchangePerturbation_of_le_norm_sub (hL : 2 ≤ L) (hc₀ : 0 ≤ 
     have h := norm_sub_le w (c : ℂ)
     rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at h
     linarith
-  rw [cappedExchangePerturbation_of_re_endCoord_le (re_endCoord_zero_le_half hL hn),
+  rw [cappedExchangePerturbation_of_re_endCoord_le (re_endCoord_zero_le_div_two hL hn),
     exchangePerturbation_def, pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw,
     zero_add]
 

@@ -82,20 +82,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (h₀ : σ.Compatible J₀)
   (J : Puncture → ℝ → SmoothAlmostComplexStructure I M) (hJ : ∀ q t, σ.Tames (J q t))
 
-omit [FiniteDimensional ℝ E] in
-include h₀ hJ in
-/-- The input structures of `J`, with the output structure replaced by `J₀`, are tame. -/
-private theorem tames_update_inf (q : Puncture) (t : ℝ) :
-    σ.Tames (update J inf (fun _ => J₀) q t) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using h₀.tames
-  · simpa [update_of_ne hq] using hJ q t
-
 /-- The input part of the family at `w ∈ ℂ`: the pair-of-pants structure of the input structures
 of `J`, with output structure `J₀`, written as an end-weighted structure so that it is defined at
 every point of `ℂ`. -/
 private def inputAlmostComplex (w : ℂ) : SmoothAlmostComplexStructure I M :=
-  h₀.endWeightedAlmostComplex (update J inf fun _ => J₀) (tames_update_inf h₀ J hJ)
+  h₀.endWeightedAlmostComplex (update J inf fun _ => J₀) (tames_update_inf_base h₀.tames hJ)
     (fun q w => smoothTransition (q.endSign * (q.endCoord w).re - 1))
     (fun _ _ => mem_Icc.2 ⟨smoothTransition.nonneg _, smoothTransition.le_one _⟩)
     (fun _ _ hq => zero_lt_one.trans (Floer.one_lt_endSign_mul_re_endCoord hq).1) w
@@ -344,7 +335,7 @@ theorem contMDiffAt_exchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
           (f := fun y => ((f y - c y : ℂ), b y)) y₀ (hfc.prodMk hb)
     refine hpl.congr_of_eventuallyEq ?_
     have h3 : 3 < ‖f y₀ - c y₀‖ :=
-      lt_of_lt_of_le (by nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]) hge
+      three_lt_two_mul_exp_two_pi.trans_le hge
     filter_upwards [hdist.eventually (lt_mem_nhds h3),
       hc.continuousAt.eventually (isOpen_Ioo.mem_nhds hcy)] with y hy hcy'
     rcases le_or_gt ‖f y - c y‖ (2 * Real.exp (2 * π)) with hle | hgt

@@ -352,6 +352,13 @@ theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖
   norm_num at hlog ⊢
   linarith
 
+/-- For `L ≥ 2`, off the disc `‖w‖ < 1/2` the longitudinal coordinate of the end at `0` is at most
+`L / 2`, so a plumbing at `0` along a neck of length `L` changes nothing there. -/
+theorem re_endCoord_zero_le_div_two {L : ℝ} (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
+    (zero.endCoord w).re ≤ L / 2 := by
+  have h : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
+  linarith [re_endCoord_zero_le_one (w := w) (by linarith)]
+
 /-- A point with nonzero longitudinal coordinate is not the center of the end. -/
 theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
     (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by
