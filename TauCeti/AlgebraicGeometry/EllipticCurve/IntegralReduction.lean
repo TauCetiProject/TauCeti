@@ -8,11 +8,11 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.AdicCompletion
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.QuotientRing
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 
 /-!
 # Reduction of integral equations at primes
@@ -24,10 +24,11 @@ and that order annihilates every reduced rational point. These comparisons let f
 counts supply torsion certificates for rational curves.
 
 Over the completion `F_u` at a height-one prime `u` with finite residue field, the ring of
-integers `𝒪[F_u]` of the valuative relation is `O_u`. So an elliptic equation over `O_u` has good
-reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and its
-reduction there has as many points as the reduction used by the reduction homomorphism
-(`WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`).
+integers `𝒪[F_u]` of the valuative relation is `O_u`. Integrality and minimality of an equation
+over `F_u` therefore agree between `O_u` and `𝒪[F_u]`, an elliptic equation over `O_u` has good
+reduction at `𝒪[F_u]` (`WeierstrassCurve.hasGoodReduction_baseChange_adicCompletion`), and the
+reduction at `𝒪[F_u]` of any minimal model over `O_u` has as many points as the reduction used by
+the reduction homomorphism (`WeierstrassCurve.natCard_point_reduction_baseChange_adicCompletion`).
 -/
 
 public section
@@ -105,12 +106,50 @@ open ValuativeRel
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
-  {u : HeightOneSpectrum A} [Finite (A ⧸ u.asIdeal)]
-  (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic]
+  {u : HeightOneSpectrum A}
+
+/-- Integrality of a Weierstrass curve over `F_u` at the valuative ring of integers `𝒪[F_u]` agrees
+with integrality at `O_u`. -/
+theorem isIntegral_adicCompletion_iff (V : WeierstrassCurve (u.adicCompletion F)) :
+    V.IsIntegral 𝒪[u.adicCompletion F] ↔ IsIntegral (u.adicCompletionIntegers F) V := by
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)),
+      u.adicCompletionIntegers F = T →
+        (V.IsIntegral T ↔ IsIntegral (u.adicCompletionIntegers F) V) by
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T rfl
+  exact Iff.rfl
+
+/-- A curve over `F_u` that is integral over `O_u` is integral over `𝒪[F_u]`. -/
+instance isIntegral_adicCompletion (V : WeierstrassCurve (u.adicCompletion F))
+    [IsIntegral (u.adicCompletionIntegers F) V] : V.IsIntegral 𝒪[u.adicCompletion F] :=
+  (isIntegral_adicCompletion_iff V).mpr inferInstance
+
+variable [Finite (A ⧸ u.asIdeal)]
+
+/-- Minimality of a Weierstrass curve over `F_u` at the valuative ring of integers `𝒪[F_u]` agrees
+with minimality at `O_u`. -/
+theorem isMinimal_adicCompletion_iff (V : WeierstrassCurve (u.adicCompletion F)) :
+    V.IsMinimal 𝒪[u.adicCompletion F] ↔ IsMinimal (u.adicCompletionIntegers F) V := by
+  suffices ∀ (T : ValuationSubring (u.adicCompletion F)) [IsDiscreteValuationRing T],
+      u.adicCompletionIntegers F = T →
+        (V.IsMinimal T ↔ IsMinimal (u.adicCompletionIntegers F) V) by
+    have hR : IsDiscreteValuationRing (valuation (u.adicCompletion F)).valuationSubring :=
+      inferInstanceAs (IsDiscreteValuationRing 𝒪[u.adicCompletion F])
+    exact this (valuation (u.adicCompletion F)).valuationSubring
+      (ValuationSubring.toSubring_injective (u.integer_eq_adicCompletionIntegers (K := F)).symm)
+  rintro T _ rfl
+  exact Iff.rfl
+
+/-- A curve over `F_u` that is minimal over `O_u` is minimal over `𝒪[F_u]`. -/
+instance isMinimal_adicCompletion (V : WeierstrassCurve (u.adicCompletion F))
+    [IsMinimal (u.adicCompletionIntegers F) V] : V.IsMinimal 𝒪[u.adicCompletion F] :=
+  (isMinimal_adicCompletion_iff V).mpr inferInstance
 
 /-- An elliptic equation over `O_u` has good reduction at the ring of integers `𝒪[F_u]` of the
 valuative relation of `F_u`, which is `O_u`. -/
-instance hasGoodReduction_baseChange_adicCompletion :
+instance hasGoodReduction_baseChange_adicCompletion
+    (C : WeierstrassCurve (u.adicCompletionIntegers F)) [C.IsElliptic] :
     (C.baseChange (u.adicCompletion F)).HasGoodReduction 𝒪[u.adicCompletion F] := by
   -- Stating this for every valuation subring `T` equal to `O_u` lets the equality
   -- `integer_eq_adicCompletionIntegers` be substituted. The coercion of `valuationSubring` to a
@@ -126,9 +165,11 @@ instance hasGoodReduction_baseChange_adicCompletion :
   rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self]
   exact C.isUnit_Δ
 
-/-- The reduction at `𝒪[F_u]` of an elliptic equation over `O_u` has as many points as its
+/-- The reduction at `𝒪[F_u]` of a minimal equation over `O_u` has as many points as its
 reduction at `Valued.v.valuationSubring`, the ring used by the reduction homomorphism. -/
-theorem natCard_point_reduction_baseChange_adicCompletion :
+theorem natCard_point_reduction_baseChange_adicCompletion
+    (C : WeierstrassCurve (u.adicCompletionIntegers F))
+    [(C.baseChange (u.adicCompletion F)).IsMinimal 𝒪[u.adicCompletion F]] :
     Nat.card ((C.baseChange (u.adicCompletion F)).reduction 𝒪[u.adicCompletion F]).toAffine.Point =
       Nat.card ((integralModel (Valued.v : Valuation (u.adicCompletion F)
         (WithZero (Multiplicative ℤ))).valuationSubring (C.baseChange (u.adicCompletion F))).map
