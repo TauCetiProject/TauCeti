@@ -117,6 +117,36 @@ theorem algebraMap_apply (f : K⸨X⸩) :
 theorem ringEquivLaurentSeries_ofLaurentSeries (f : K⸨X⸩) :
     ringEquivLaurentSeries K d (.ofLaurentSeries f) = f := (rfl)
 
+/-- Level `d` is a `K`-algebra through its base Laurent-series field. -/
+noncomputable instance : Algebra K (Level K d) :=
+  ((algebraMap K d).comp (Algebra.algebraMap K K⸨X⸩)).toAlgebra
+
+instance : IsScalarTower K K⸨X⸩ (Level K d) where
+  smul_assoc r f x := by
+    rw [← C_mul_eq_smul, ← _root_.LaurentSeries.algebraMap_apply, Algebra.smul_def,
+      Algebra.smul_def, Algebra.smul_def, map_mul, mul_assoc]
+    rfl
+
+/-- Constants embed into a ramified level as constant Laurent series. -/
+@[simp]
+theorem ringEquivLaurentSeries_algebraMap_const (c : K) :
+    ringEquivLaurentSeries K d (Algebra.algebraMap K (Level K d) c) =
+      Algebra.algebraMap K K⸨X⸩ c := by
+  rw [IsScalarTower.algebraMap_apply K K⸨X⸩ (Level K d), algebraMap_apply, AlgHom.commutes]
+
+/-- Reading a ramified level in its Laurent variable is a `K`-algebra equivalence. -/
+noncomputable def algEquivLaurentSeries : Level K d ≃ₐ[K] K⸨X⸩ where
+  __ := ringEquivLaurentSeries K d
+  commutes' := ringEquivLaurentSeries_algebraMap_const K d
+
+@[simp]
+theorem algEquivLaurentSeries_apply (f : Level K d) :
+    algEquivLaurentSeries K d f = ringEquivLaurentSeries K d f := (rfl)
+
+@[simp]
+theorem algEquivLaurentSeries_symm_apply (f : K⸨X⸩) :
+    (algEquivLaurentSeries K d).symm f = (ringEquivLaurentSeries K d).symm f := (rfl)
+
 end Level
 
 variable {K : Type*} [Field K]

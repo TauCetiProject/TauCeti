@@ -18,10 +18,11 @@ A derivation `D` differentiates a finite product termwise (`Derivation.leibniz_p
 a determinant by **Jacobi's formula** `D (det M) = tr (adj M * D M)`, where `D M` applies `D` to
 every entry of the square matrix `M` (`Derivation.leibniz_det`).
 
-Let `S` be a finite free algebra over a commutative ring `A`, and let `D'` be a derivation of `S`
-extending a derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`.
-Then the norm of a unit `u` of `S` has logarithmic derivative the trace of the logarithmic
-derivative of `u` (`Derivation.leibniz_norm`):
+Let `S` be an algebra over a commutative ring `A`, and let `D'` be a derivation of `S` extending a
+derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`. Then `D`
+commutes with the algebraic trace (`Derivation.map_trace`). When `S` is finite and free over `A`,
+the norm of a unit `u` of `S` has logarithmic derivative the trace of the logarithmic derivative of
+`u` (`Derivation.leibniz_norm`):
 
 `D (Algebra.norm A u) = Algebra.norm A u * Algebra.trace A S (u⁻¹ * D' u)`.
 
@@ -69,6 +70,18 @@ variable {S : Type*} [CommRing S] [Algebra A S] [Algebra R S] (D' : Derivation R
   (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
 
 include hD
+
+/-- **Derivations commute with the algebraic trace**: if `D'` is a derivation of an `A`-algebra `S`
+extending the derivation `D` of `A`, then `D (Tr s) = Tr (D' s)`. -/
+theorem map_trace (s : S) :
+    D (Algebra.trace A S s) = Algebra.trace A S (D' s) := by
+  classical
+  by_cases H : ∃ t : Finset S, Nonempty (Module.Basis t A S)
+  · let b := H.choose_spec.some
+    rw [Algebra.trace_eq_matrix_trace b, Algebra.trace_eq_matrix_trace b, AddMonoidHom.map_trace,
+      map_leftMulMatrix D D' hD b s, Matrix.trace_add, Matrix.trace_sub, Matrix.trace_mul_comm,
+      sub_self, add_zero]
+  · simp [Algebra.trace_eq_zero_of_not_exists_basis A H]
 
 /-- **Logarithmic derivative of the norm**: if `D'` is a derivation of a finite free `A`-algebra
 `S` extending the derivation `D` of `A`, then for every unit `u` of `S`,

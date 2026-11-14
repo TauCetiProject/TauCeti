@@ -129,6 +129,20 @@ instance : IsScalarTower K⸨X⸩ (Level K d) (Level.ContinuousKaehlerDifferenti
   -- `f • ω` is `algebraMap f • ω` by definition of the restricted action.
   ⟨fun f g ω ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
 
+/-- Constants act on the one-forms of level `d` through the level. -/
+noncomputable instance : Module K (Level.ContinuousKaehlerDifferential K d) :=
+  Module.compHom _ (Algebra.algebraMap K (Level K d))
+
+instance : IsScalarTower K (Level K d) (Level.ContinuousKaehlerDifferential K d) :=
+  ⟨fun c g ω ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
+
+instance : IsScalarTower K K⸨X⸩ (Level.ContinuousKaehlerDifferential K d) where
+  smul_assoc c f ω := by
+    rw [← IsScalarTower.algebraMap_smul (Level K d) (c • f),
+      ← IsScalarTower.algebraMap_smul (Level K d) f, ← C_mul_eq_smul,
+      ← _root_.LaurentSeries.algebraMap_apply, map_mul,
+      ← IsScalarTower.algebraMap_apply K K⸨X⸩ (Level K d), ← Algebra.smul_def, smul_assoc]
+
 variable {K d}
 
 /-- The scalar action of the level on its one-forms is that of the underlying Laurent series. -/
