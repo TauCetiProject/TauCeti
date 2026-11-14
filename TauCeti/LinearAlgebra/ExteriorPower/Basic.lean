@@ -50,7 +50,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
   antisymmetrization operator on the tensor power.
-* `exteriorPower.map_bijective`: a bijective linear map induces bijections of exterior powers.
+* `exteriorPower.map_apply_ιMulti_two` and `exteriorPower.map_bijective`: the map induced by `f`
+  sends a two-vector `u ∧ w` to `f u ∧ f w`, and bijective maps induce bijections of exterior
+  powers.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -272,11 +274,19 @@ theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
 
 end Field
 
-/-! ### Bijectivity of induced maps -/
+/-! ### Induced maps -/
 
 section Bijective
 
 variable [CommRing R] [AddCommGroup M] [Module R M] {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Mapping a decomposable two-vector `u ∧ w` by `exteriorPower.map 2 f` gives `f u ∧ f w`. -/
+theorem map_apply_ιMulti_two (f : M →ₗ[R] N) (u w : M) :
+    map 2 f (ιMulti R 2 ![u, w]) = ιMulti R 2 ![f u, f w] := by
+  rw [map_apply_ιMulti]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
 /-- A bijective linear map induces a bijective map on every exterior power. -/
 theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) :

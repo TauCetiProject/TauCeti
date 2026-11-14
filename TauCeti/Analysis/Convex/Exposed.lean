@@ -57,7 +57,7 @@ theorem eq_of_mem_intrinsicInterior (hF : IsExposed ℝ P F) {x : V} (hxF : x �
   have hg := TauCeti.eq_zero_of_nonneg_of_mem_intrinsicInterior
     (g := AffineMap.const ℝ V (l x) - l.toLinearMap.toAffineMap)
     (fun y hy => by simpa using hxF.2 y hy) hx (by simp) hp
-  simp only [AffineMap.coe_sub, Pi.sub_apply, AffineMap.const_apply, sub_eq_zero] at hg
+  simp only [FunLike.coe_sub, Pi.sub_apply, AffineMap.const_apply, sub_eq_zero] at hg
   simpa [hg] using hxF.2 q hq
 
 end IntrinsicInterior
