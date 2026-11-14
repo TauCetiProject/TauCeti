@@ -227,51 +227,6 @@ theorem mfderiv_smul_mulRightInvariantVectorField [ContMDiffMul I 1 G] [ContMDif
   funext h
   simp [mul_smul]
 
-/-- The fundamental field of a diagonal action is the product of the fundamental fields on
-its two factors. The actions are `C¹`; no Lie group regularity assumption is needed. -/
-theorem fundamentalVectorField_prod
-    {F K : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace K]
-    {J : ModelWithCorners 𝕜 F K} {N : Type*} [TopologicalSpace N] [ChartedSpace K N]
-    [MulAction G N] [ContMDiffSMul I I' 1 G M] [ContMDiffSMul I J 1 G N]
-    (ξ : GroupLieAlgebra I G) :
-    fundamentalVectorField (I'.prod J) ξ =
-      Manifold.prodVectorField (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x)
-        (fundamentalVectorField J ξ : ∀ y : N, TangentSpace J y) := by
-  funext p
-  have hM : MDifferentiableAt I I' (fun g : G ↦ g • p.1) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := 1) p.1).mdifferentiableAt
-      one_ne_zero
-  have hN : MDifferentiableAt I J (fun g : G ↦ g • p.2) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := J) (n := 1) p.2).mdifferentiableAt
-      one_ne_zero
-  have h := DFunLike.congr_fun (mfderiv_prodMk hM hN) ξ
-  -- The derivative's target tangent space is the product of the two model spaces.
-  erw [ContinuousLinearMap.prod_apply] at h
-  apply Prod.ext
-  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_fst, Prod.smul_def] using
-      congrArg Prod.fst h
-  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_snd, Prod.smul_def] using
-      congrArg Prod.snd h
-
-/-- **Fundamental vector fields along a homomorphism.** Let `K` act on `M` through a homomorphism
-`φ : K →* G` that is differentiable at the identity, `k • x = φ k • x`. Then the fundamental vector
-field of `ξ ∈ Lie(K)` is that of its image `dφ ξ ∈ Lie(G)`. For instance, the fundamental vector
-fields of the restriction of an action to a Lie subgroup are those of the ambient action. -/
-theorem _root_.MonoidHom.fundamentalVectorField_groupLieAlgebraMap
-    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
-    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
-    [MulAction K M] [ContMDiffSMul I I' 1 G M] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
-    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (ξ : GroupLieAlgebra J K) :
-    fundamentalVectorField I' (φ.groupLieAlgebraMap J I ξ) =
-      (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x) := by
-  funext x
-  have horbit : (fun k : K ↦ k • x) = (fun g : G ↦ g • x) ∘ φ := funext fun k ↦ hsmul k x
-  have hcomp := mfderiv_comp_apply_of_eq (1 : K) ((ContMDiffSMul.contMDiff_smul_const (I := I)
-    (I' := I') (n := 1) x).mdifferentiableAt one_ne_zero) hφ (map_one φ) ξ
-  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, φ.groupLieAlgebraMap_apply,
-    horbit]
-  exact hcomp.symm
-
 /-- **Fundamental vector fields of a factorwise action.** Let `K` act on `M × N` through
 homomorphisms `φ : K →* G` and `ψ : K →* G'` that are differentiable at the identity,
 `k • (x, y) = (φ k • x, ψ k • y)`. Then the fundamental vector field of `ξ ∈ Lie(K)` is the
@@ -321,6 +276,40 @@ theorem fundamentalVectorField_prod_of_smul_eq
     exact congrArg Prod.fst h
   · rw [Manifold.prodVectorField_snd, fundamentalVectorField_apply, ← e₂]
     exact congrArg Prod.snd h
+
+/-- The fundamental field of a diagonal action is the product of the fundamental fields on
+its two factors. The actions are `C¹`; no Lie group regularity assumption is needed. -/
+theorem fundamentalVectorField_prod
+    {F K : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace K]
+    {J : ModelWithCorners 𝕜 F K} {N : Type*} [TopologicalSpace N] [ChartedSpace K N]
+    [MulAction G N] [ContMDiffSMul I I' 1 G M] [ContMDiffSMul I J 1 G N]
+    (ξ : GroupLieAlgebra I G) :
+    fundamentalVectorField (I'.prod J) ξ =
+      Manifold.prodVectorField (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x)
+        (fundamentalVectorField J ξ : ∀ y : N, TangentSpace J y) := by
+  have h := fundamentalVectorField_prod_of_smul_eq (I' := I') (J := J) (M := M) (N := N)
+    (MonoidHom.id G) (MonoidHom.id G) mdifferentiableAt_id mdifferentiableAt_id
+    (fun _ _ ↦ rfl) ξ
+  rwa [MonoidHom.groupLieAlgebraMap_id, ContinuousLinearMap.id_apply] at h
+
+/-- **Fundamental vector fields along a homomorphism.** Let `K` act on `M` through a homomorphism
+`φ : K →* G` that is differentiable at the identity, `k • x = φ k • x`. Then the fundamental vector
+field of `ξ ∈ Lie(K)` is that of its image `dφ ξ ∈ Lie(G)`. For instance, the fundamental vector
+fields of the restriction of an action to a Lie subgroup are those of the ambient action. -/
+theorem _root_.MonoidHom.fundamentalVectorField_groupLieAlgebraMap
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [MulAction K M] [ContMDiffSMul I I' 1 G M] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1)
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (ξ : GroupLieAlgebra J K) :
+    fundamentalVectorField I' (φ.groupLieAlgebraMap J I ξ) =
+      (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x) := by
+  funext x
+  have horbit : (fun k : K ↦ k • x) = (fun g : G ↦ g • x) ∘ φ := funext fun k ↦ hsmul k x
+  have hcomp := mfderiv_comp_apply_of_eq (1 : K) ((ContMDiffSMul.contMDiff_smul_const (I := I)
+    (I' := I') (n := 1) x).mdifferentiableAt one_ne_zero) hφ (map_one φ) ξ
+  rw [fundamentalVectorField_apply, fundamentalVectorField_apply, φ.groupLieAlgebraMap_apply,
+    horbit]
+  exact hcomp.symm
 
 end Field
 

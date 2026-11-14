@@ -90,31 +90,33 @@ variable (G K) (J : ModelWithCorners 𝕜 F HK)
 
 /-- The differential of the first projection `G × K → G` is the first linear projection. -/
 theorem groupLieAlgebraMap_fst :
-    (fst G K).groupLieAlgebraMap (I.prod J) I = ContinuousLinearMap.fst 𝕜 E F := by
+    (fst G K).groupLieAlgebraMap (I.prod J) I =
+      ContinuousLinearMap.fst 𝕜 (GroupLieAlgebra I G) (GroupLieAlgebra J K) := by
   rw [groupLieAlgebraMap, coe_fst, mfderiv_fst]
   rfl
 
 /-- The differential of the second projection `G × K → K` is the second linear projection. -/
 theorem groupLieAlgebraMap_snd :
-    (snd G K).groupLieAlgebraMap (I.prod J) J = ContinuousLinearMap.snd 𝕜 E F := by
+    (snd G K).groupLieAlgebraMap (I.prod J) J =
+      ContinuousLinearMap.snd 𝕜 (GroupLieAlgebra I G) (GroupLieAlgebra J K) := by
   rw [groupLieAlgebraMap, coe_snd, mfderiv_snd]
   rfl
 
 /-- The differential of the inclusion `G → G × K` of the first factor is the first linear
 inclusion. -/
 theorem groupLieAlgebraMap_inl :
-    (inl G K).groupLieAlgebraMap I (I.prod J) = ContinuousLinearMap.inl 𝕜 E F := by
+    (inl G K).groupLieAlgebraMap I (I.prod J) =
+      ContinuousLinearMap.inl 𝕜 (GroupLieAlgebra I G) (GroupLieAlgebra J K) := by
   rw [groupLieAlgebraMap, show ⇑(inl G K) = fun x ↦ (x, 1) from funext inl_apply,
     mfderiv_prod_left]
-  rfl
 
 /-- The differential of the inclusion `K → G × K` of the second factor is the second linear
 inclusion. -/
 theorem groupLieAlgebraMap_inr :
-    (inr G K).groupLieAlgebraMap J (I.prod J) = ContinuousLinearMap.inr 𝕜 E F := by
+    (inr G K).groupLieAlgebraMap J (I.prod J) =
+      ContinuousLinearMap.inr 𝕜 (GroupLieAlgebra I G) (GroupLieAlgebra J K) := by
   rw [groupLieAlgebraMap, show ⇑(inr G K) = fun y ↦ (1, y) from funext inr_apply,
     mfderiv_prod_right]
-  rfl
 
 variable {G K J}
 
@@ -152,7 +154,9 @@ theorem groupLieAlgebraMap_snd_groupLieAlgebraMap_inr (ξ : GroupLieAlgebra J K)
 
 /-- An element of the Lie algebra of `G × K` is the sum of the inclusions of its two
 projections. -/
-theorem groupLieAlgebraMap_inl_add_groupLieAlgebraMap_inr
+@[simp]
+theorem
+    groupLieAlgebraMap_inl_groupLieAlgebraMap_fst_add_groupLieAlgebraMap_inr_groupLieAlgebraMap_snd
     (ξ : GroupLieAlgebra (I.prod J) (G × K)) :
     (inl G K).groupLieAlgebraMap I (I.prod J) ((fst G K).groupLieAlgebraMap (I.prod J) I ξ) +
       (inr G K).groupLieAlgebraMap J (I.prod J) ((snd G K).groupLieAlgebraMap (I.prod J) J ξ) =
@@ -183,8 +187,8 @@ def groupLieAlgebraProdEquiv :
     (((MonoidHom.inl G K).groupLieAlgebraMap I (I.prod J)).coprod
       ((MonoidHom.inr G K).groupLieAlgebraMap J (I.prod J)))
     (fun ξ ↦ by
-      rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.prod_apply,
-        MonoidHom.groupLieAlgebraMap_inl_add_groupLieAlgebraMap_inr])
+      rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.prod_apply]
+      simp)
     fun ν ↦ by
       ext <;>
       simp only [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.prod_apply, map_add,

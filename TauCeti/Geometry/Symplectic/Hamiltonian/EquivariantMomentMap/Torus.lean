@@ -42,8 +42,10 @@ groups, with moment map `x ↦ μ x ∘ dφ`
 reparametrizations of the torus. They are compatible with the diagonal action of one group on
 a product (`TauCeti.SmoothTwoForm.HamiltonianTorusData.prod`) and with external products: if
 `T₁` acts on `(M₁, σ₁)` with moment map `μ₁` and `T₂` on `(M₂, σ₂)` with moment map `μ₂`, then
-`T₁ × T₂` acts on `M₁ × M₂` with moment map `(x₁, x₂) ↦ μ₁(x₁) ∘ pr₁ + μ₂(x₂) ∘ pr₂`
-(`TauCeti.SmoothTwoForm.HamiltonianTorusData.prodMap`), where `pr₁` and `pr₂` are the
+`T₁ × T₂` acts on `M₁ × M₂` with moment map `(x₁, x₂) ↦ (μ₁(x₁), μ₂(x₂))`
+(`TauCeti.SmoothTwoForm.HamiltonianTorusData.prodMap`), where the dual of the Lie algebra of
+`T₁ × T₂` is identified with `𝔱₁* × 𝔱₂*` by `TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`,
+so that `(x₁, x₂)` is sent to `μ₁(x₁) ∘ pr₁ + μ₂(x₂) ∘ pr₂` with `pr₁` and `pr₂` the
 differentials at the identity of the projections of `T₁ × T₂`.
 
 This is the structure carried by the compact Hamiltonian torus manifolds of the convexity
@@ -220,16 +222,18 @@ variable {E₂ HG₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [
 /-- **External products.** If `G` acts on `(M, σ)` with Hamiltonian torus data `μ` and `G₂` acts on
 `(N, τ)` with Hamiltonian torus data `ν`, then the componentwise action of `G × G₂` on `M × N`,
 `(g, g₂) • (x, y) = (g • x, g₂ • y)`, carries Hamiltonian torus data for the product form, with
-moment map `(x, y) ↦ μ x ∘ pr₁ + ν y ∘ pr₂`. Here `pr₁` and `pr₂` are the differentials at the
-identity of the projections of `G × G₂`. -/
+moment map `(x, y) ↦ (μ x, ν y)`. Here the dual of the Lie algebra of `G × G₂` is identified with
+the product of the duals by `TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`, so that `(x, y)`
+is sent to `μ x ∘ pr₁ + ν y ∘ pr₂`, where `pr₁` and `pr₂` are the differentials at the identity of
+the projections of `G × G₂`. -/
 theorem prodMap [inst : MulAction (G × G₂) (M × N)]
-    [ContMDiffSMul (I.prod I₂) (I'.prod J) ∞ (G × G₂) (M × N)]
-    (hsmul : ∀ (g : G × G₂) (p : M × N), g • p = (g.1 • p.1, g.2 • p.2)) {τ : SmoothTwoForm J N}
+    [ContMDiffSMul (I.prod I₂) (I'.prod J) ∞ (G × G₂) (M × N)] {τ : SmoothTwoForm J N}
     {ν : N → Module.Dual ℝ (GroupLieAlgebra I₂ G₂)} (h : σ.HamiltonianTorusData μ)
-    (h' : τ.HamiltonianTorusData ν) :
+    (h' : τ.HamiltonianTorusData ν)
+    (hsmul : ∀ (g : G × G₂) (p : M × N), g • p = (g.1 • p.1, g.2 • p.2)) :
     (σ.prod τ).HamiltonianTorusData fun p ↦
-      (μ p.1).comp ((MonoidHom.fst G G₂).groupLieAlgebraMap (I.prod I₂) I).toLinearMap +
-        (ν p.2).comp ((MonoidHom.snd G G₂).groupLieAlgebraMap (I.prod I₂) I₂).toLinearMap := by
+      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I₂ G₂ (μ p.1, ν p.2) := by
+  refine ⟨h.toIsEquivariantMomentMap.prodMap h'.toIsEquivariantMomentMap hsmul, ?_⟩
   -- Let `G × G₂` act on each factor through the corresponding projection; the given action is
   -- then the diagonal action of `G × G₂` on `M × N`.
   let _ : MulAction (G × G₂) M := MulAction.compHom M (MonoidHom.fst G G₂)
@@ -240,8 +244,8 @@ theorem prodMap [inst : MulAction (G × G₂) (M × N)]
     MulAction.contMDiffSMul_compHom (I := I₂) (f := MonoidHom.snd G G₂) contMDiff_snd
   -- By definition of `MulAction.compHom`, `g • x = g.1 • x` on `M` and `g • y = g.2 • y` on `N`.
   obtain rfl : inst = Prod.mulAction := MulAction.ext (funext₂ hsmul)
-  exact (h.comp_monoidHom (MonoidHom.fst G G₂) mdifferentiableAt_fst fun _ _ ↦ rfl).prod
-    (h'.comp_monoidHom (MonoidHom.snd G G₂) mdifferentiableAt_snd fun _ _ ↦ rfl)
+  exact ((h.comp_monoidHom (MonoidHom.fst G G₂) mdifferentiableAt_fst fun _ _ ↦ rfl).prod
+    (h'.comp_monoidHom (MonoidHom.snd G G₂) mdifferentiableAt_snd fun _ _ ↦ rfl)).mpullback_smul
 
 end Prod
 
