@@ -94,7 +94,6 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
   refine ⟨fun h => ⟨fun i => by simpa using h (Pi.single i 1)⟩, fun hn x => ?_⟩
   simp [Subsingleton.elim x 0]
 
-
 section BilinearAlternation
 
 variable {R I J : Type*} [CommSemiring R] [DecidableEq I] [Fintype I]
