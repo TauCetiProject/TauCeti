@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 import Mathlib.Analysis.Normed.Operator.Mul
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
 /-!
@@ -20,17 +21,16 @@ identification `(ℓ¹)* = ℓ∞` (for `q = 1`) and the reflexive range `(ℓ^q
 is chosen.
 
 `lp.dualEquiv` uses Mathlib's `lp.dualPairing` for the pairing, whose norm bound is Hölder's
-inequality, and `lp.hasSum_single` for the coordinate expansion. The pairing is bilinear,
-including over complex scalars: the coefficients of a functional are its values on coordinate
-vectors, without conjugation.
+inequality, and the coordinate expansion `ContinuousLinearMap.hasSum_smul_lp_single` of
+continuous linear maps on `ℓ^q`. The pairing is bilinear, including over complex scalars: the
+coefficients of a functional are its values on coordinate vectors, without conjugation.
 
 This identification describes the dual of the sequence spaces `ℓ^q` and makes its norm and the
-action of its functionals accessible through coordinates.
+action of its functionals accessible through coordinates. For `q = 1` the norm formula holds for
+continuous linear maps into any normed space (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`).
 
 ## Main declarations
 
-* `ContinuousLinearMap.hasSum_lp_single_mul`: every continuous linear functional on `ℓ^q`,
-  `q < ∞`, is given by its coordinate series.
 * `ContinuousLinearMap.sum_norm_lp_single_rpow_le`: for `p < ∞`, the coordinate values of a
   functional on `ℓ^q` have finite partial sums of `p`-th powers of norms bounded by the `p`-th
   power of its norm.
@@ -39,8 +39,6 @@ action of its functionals accessible through coordinates.
 * `ContinuousLinearMap.norm_le_opNorm_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate
   values of a functional on `ℓ^q` has norm at most the norm of the functional.
 * `lp.dualEquiv`: the isometric equivalence `ℓᵖ ≃ₗᵢ (ℓ^q)*`.
-* `ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`: the norm of a functional on ℓ¹ is the
-  supremum of the norms of its coordinate values.
 * `ContinuousLinearMap.norm_rpow_eq_tsum_norm_lp_single_rpow`: for `1 < q < ∞`, the `p`-th
   power of the norm of a functional on `ℓ^q` is the sum of the `p`-th powers of the norms of its
   coordinate values.
@@ -55,33 +53,6 @@ public section
 noncomputable section
 
 open scoped ENNReal ComplexConjugate ZeroAtInfty
-
-namespace ContinuousLinearMap
-
-variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι] {q : ℝ≥0∞} [Fact (1 ≤ q)]
-
-/-- The value of a continuous linear functional on `ℓ^q` at a unit coordinate vector has norm at
-most the norm of the functional. -/
-theorem norm_apply_lp_single_le (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) (i : ι) :
-    ‖f (lp.single q i 1)‖ ≤ ‖f‖ := by
-  simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
-    f.le_opNorm (lp.single q i (1 : 𝕜))
-
-/-- A continuous linear functional on `ℓ^q` scales its value on a unit coordinate vector:
-`f (z • eᵢ) = f eᵢ * z`. -/
-theorem apply_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) (i : ι) (z : 𝕜) :
-    f (lp.single q i z) = f (lp.single q i 1) * z := by
-  simpa [← lp.single_smul, mul_comm] using (f.map_smul z (lp.single q i 1))
-
-/-- Every continuous linear functional on `ℓ^q`, `q < ∞`, is given by its coordinate series. -/
-theorem hasSum_lp_single_mul (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
-    (x : lp (fun _ : ι ↦ 𝕜) q) :
-    HasSum (fun i ↦ f (lp.single q i 1) * x i) (f x) := by
-  convert (lp.hasSum_single hq x).map f f.continuous using 1
-  ext i
-  exact (f.apply_lp_single i (x i)).symm
-
-end ContinuousLinearMap
 
 namespace ContinuousLinearMap
 
@@ -147,7 +118,8 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (f : StrongDual 𝕜 (lp (fu
   have hv : ‖v‖ ^ q.toReal = S := by
     rw [lp.norm_sum_single (zero_lt_one.trans hq₁)]
     exact Finset.sum_congr rfl fun i _ ↦ hx i
-  have hfx (i : ι) : f (lp.single q i (x i)) = c i * x i := f.apply_lp_single i (x i)
+  have hfx (i : ι) : f (lp.single q i (x i)) = c i * x i := by
+    rw [f.apply_lp_single, smul_eq_mul, mul_comm]
   have hfv : f v = (S : 𝕜) := by
     simp [v, S, map_sum, hfx, hcx]
   have hSv : ‖v‖ ^ q.toReal ≤ ‖f‖ * ‖v‖ := by
@@ -215,7 +187,7 @@ def dualEquiv (hq : q ≠ ∞) :
   refine ⟨⟨fun i ↦ f (lp.single q i 1), f.memℓp_lp_single⟩, ContinuousLinearMap.ext fun x ↦ ?_⟩
   simp only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, P, dualPairing_apply,
     ContinuousLinearMap.mul_apply']
-  exact (f.hasSum_lp_single_mul hq x).tsum_eq
+  simpa only [smul_eq_mul, mul_comm] using (f.hasSum_smul_lp_single hq x).tsum_eq
 
 variable {𝕜 ι p q}
 
@@ -245,10 +217,9 @@ end lp
 
 namespace ContinuousLinearMap
 
-variable {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+variable {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ q)]
   [p.HolderConjugate q]
 
-omit [Fact (1 ≤ p)] in
 /-- For Hölder conjugate exponents `1 < p, q < ∞`, the `p`-th power of the norm of a functional
 on `ℓ^q` is the sum of the `p`-th powers of the norms of its coordinate values. -/
 theorem norm_rpow_eq_tsum_norm_lp_single_rpow (hp : p ≠ ∞) (hq : q ≠ ∞)
@@ -257,12 +228,6 @@ theorem norm_rpow_eq_tsum_norm_lp_single_rpow (hp : p ≠ ∞) (hq : q ≠ ∞)
   have : Fact (1 ≤ p) := ⟨ENNReal.HolderConjugate.one_le p q⟩
   rw [← (lp.dualEquiv 𝕜 ι p q hq).symm.norm_map f,
     lp.norm_rpow_eq_tsum (ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp)]
-  simp only [lp.dualEquiv_symm_apply]
-
-/-- The norm of a functional on ℓ¹ is the supremum of the norms of its coordinate values. -/
-theorem norm_eq_ciSup_norm_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) 1)) :
-    ‖f‖ = ⨆ i, ‖f (lp.single 1 i 1)‖ := by
-  rw [← (lp.dualEquiv 𝕜 ι ∞ 1 ENNReal.one_ne_top).symm.norm_map f, lp.norm_eq_ciSup]
   simp only [lp.dualEquiv_symm_apply]
 
 end ContinuousLinearMap

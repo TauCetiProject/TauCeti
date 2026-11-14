@@ -39,7 +39,10 @@ dense subsets are dense.
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`).
+(`lp.tendsto_apply_of_tendsto_apply_single`). In the scalar case such an operator `T` is given by
+its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), and
+on ℓ¹ its norm is the supremum of the norms `‖T eᵢ‖`
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`): this is the universal property of ℓ¹.
 -/
 
 public section
@@ -336,3 +339,59 @@ theorem memℓp_const_mul_pow_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] {C r 
 end TauCeti
 
 end Geometric
+
+namespace ContinuousLinearMap
+
+section Coordinates
+
+variable {𝕜 ι E : Type*} [DecidableEq ι] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+
+section NormedRing
+
+variable [NormedRing 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- A continuous linear map on `ℓ^q` scales its value on a unit coordinate vector:
+`T (z • eᵢ) = z • T eᵢ`. -/
+theorem apply_lp_single (T : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E) (i : ι) (z : 𝕜) :
+    T (lp.single q i z) = z • T (lp.single q i 1) := by
+  rw [← T.map_smul, ← lp.single_smul, smul_eq_mul, mul_one]
+
+/-- For `q < ∞`, every continuous linear map `T` on `ℓ^q` is given by its coordinate series:
+`T x = ∑ i, xᵢ • T eᵢ`. -/
+theorem hasSum_smul_lp_single (hq : q ≠ ∞) (T : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E)
+    (x : lp (fun _ : ι ↦ 𝕜) q) :
+    HasSum (fun i ↦ x i • T (lp.single q i 1)) (T x) := by
+  convert (lp.hasSum_single hq x).map T T.continuous using 1
+  ext i
+  exact (T.apply_lp_single i (x i)).symm
+
+end NormedRing
+
+variable [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The value of a continuous linear map on `ℓ^q` at a unit coordinate vector has norm at most
+the norm of the map. -/
+theorem norm_apply_lp_single_le (T : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E) (i : ι) :
+    ‖T (lp.single q i 1)‖ ≤ ‖T‖ := by
+  simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
+    T.le_opNorm (lp.single q i (1 : 𝕜))
+
+/-- **The universal property of ℓ¹**, in norm: the norm of a continuous linear map on ℓ¹ is the
+supremum of the norms of its values on the unit coordinate vectors. For an empty index type both
+sides are `0`. -/
+theorem norm_eq_ciSup_norm_lp_single (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) :
+    ‖T‖ = ⨆ i, ‖T (lp.single 1 i 1)‖ := by
+  have hbdd : BddAbove (Set.range fun i ↦ ‖T (lp.single 1 i 1)‖) :=
+    ⟨‖T‖, Set.forall_mem_range.2 T.norm_apply_lp_single_le⟩
+  refine le_antisymm (T.opNorm_le_bound (Real.iSup_nonneg fun _ ↦ norm_nonneg _) fun x ↦ ?_)
+    (Real.iSup_le T.norm_apply_lp_single_le (norm_nonneg T))
+  -- Bound each term of `T x = ∑ i, xᵢ • T eᵢ` by `‖xᵢ‖` times the supremum; these sum to
+  -- `‖x‖` times the supremum.
+  rw [mul_comm]
+  exact (T.hasSum_smul_lp_single ENNReal.one_ne_top x).norm_le_of_bounded
+    ((lp.hasSum_norm_one x).mul_right _) fun i ↦
+      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (le_ciSup hbdd i) (norm_nonneg _))
+
+end Coordinates
+
+end ContinuousLinearMap
