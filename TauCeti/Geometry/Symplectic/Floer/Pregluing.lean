@@ -41,7 +41,7 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
   error is supported in the neck, so a bound on the neck bounds it everywhere
-  (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le_of_neck`).
+  (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le`).
@@ -461,27 +461,26 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
         mul_le_mul_of_nonneg_left (by linarith) hK
     _ = _ := by ring
 
-/-- **The pre-gluing error off the neck.** If the Floer operator of the pre-glued map `w_R` is at
-most `c` on the neck `[-1, 1] × [0, 1]`, then it is at most `c` at every `z = (s, t)` with
-`t ∈ [0, 1]` such that `u` solves the Floer equation at `(s + R, t)` if `s < -1`, and `v` solves it
-at `(s - R, t)` if `s > 1`. -/
-theorem norm_floerOperator_preglue_le_of_neck (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
-    (H : ℝ → V → ℝ) {x : ℝ → V} {u v : ℝ × ℝ → V} {R c : ℝ} {z : ℝ × ℝ}
-    (hc : ∀ z ∈ Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
-      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤ c)
-    (hz : z.2 ∈ Icc (0 : ℝ) 1)
+/-- **The pre-gluing error off the neck.** Let `z = (s, t)`. If the Floer operator of the
+pre-glued map `w_R` is at most `c` on the segment `[-1, 1] × {t}` of the neck, `u` solves the Floer
+equation at `(s + R, t)` if `s < -1`, and `v` solves it at `(s - R, t)` if `s > 1`, then the Floer
+operator of `w_R` is at most `c` at `z`. -/
+theorem norm_floerOperator_preglue_le_of_floerOperator_eq_zero (ω : SymplecticForm V)
+    (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ) {x : ℝ → V} {u v : ℝ × ℝ → V} {R c : ℝ} {z : ℝ × ℝ}
+    (hc : ∀ s ∈ Icc (-1 : ℝ) 1,
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) (s, z.2)‖ ≤
+        c)
     (huF : z.1 < -1 →
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (z + (R, 0)) = 0)
     (hvF : 1 < z.1 →
       ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) = 0) :
     ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤ c := by
-  have hpos : 0 ≤ c :=
-    (norm_nonneg _).trans (hc (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
+  have hpos : 0 ≤ c := (norm_nonneg _).trans (hc 0 ⟨by norm_num, by norm_num⟩)
   rcases lt_or_ge z.1 (-1) with h₁ | h₁
   · rwa [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁, huF h₁, norm_zero]
   rcases lt_or_ge 1 z.1 with h₂ | h₂
   · rwa [ω.floerOperator_preglue_of_one_lt J H x u v R h₂, hvF h₂, norm_zero]
-  exact hc z ⟨⟨h₁, h₂⟩, hz⟩
+  exact hc z.1 ⟨h₁, h₂⟩
 
 /-- **The pre-gluing error of two Floer cylinders.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
@@ -511,9 +510,10 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
         C' * Real.exp (-(κ * R)) := by
   obtain ⟨C', hC'⟩ :=
     ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
-  exact ⟨C', hC'.mono fun R hR z hz ↦ ω.norm_floerOperator_preglue_le_of_neck J H hR hz.2
-    (fun _ ↦ huF _ ⟨mem_univ _, by simpa using hz.2⟩)
-    (fun _ ↦ hvF _ ⟨mem_univ _, by simpa using hz.2⟩)⟩
+  exact ⟨C', hC'.mono fun R hR z hz ↦
+    ω.norm_floerOperator_preglue_le_of_floerOperator_eq_zero J H
+      (fun s hs ↦ hR (s, z.2) ⟨hs, hz.2⟩) (fun _ ↦ huF _ ⟨mem_univ _, by simpa using hz.2⟩)
+      (fun _ ↦ hvF _ ⟨mem_univ _, by simpa using hz.2⟩)⟩
 
 end SymplecticForm
 

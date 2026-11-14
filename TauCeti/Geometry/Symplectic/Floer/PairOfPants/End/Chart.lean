@@ -95,6 +95,8 @@ apply to all three ends.
   the positive end chart, up to an integer shift of `t`.
 * `TauCeti.Floer.contDiffAt_comp_positiveEndCoord`: a `Cⁿ` function on the cylinder of period one
   in `t`, read in the positive end coordinates, is `Cⁿ` away from the center of the end.
+* `TauCeti.Floer.contDiffAt_fst_positiveEndCoord`: the longitudinal positive end coordinate is
+  smooth away from the center of the end.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -705,11 +707,17 @@ theorem contDiffAt_comp_positiveEndCoord {E : Type*} [NormedAddCommGroup E] [Nor
   refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ ?_)
   simp [f, positiveEndCoord_apply]
 
+/-- The longitudinal positive end coordinate is smooth away from the center of the end. -/
+theorem contDiffAt_fst_positiveEndCoord (q : Puncture) {n : WithTop ℕ∞} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContDiffAt ℝ n (fun w ↦ (positiveEndCoord q w).1) z :=
+  contDiffAt_comp_positiveEndCoord q contDiff_fst (fun _ ↦ by simp) hz
+
 /-- The longitudinal positive end coordinate is continuous away from the center of the end. -/
 theorem continuousAt_fst_positiveEndCoord (q : Puncture) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
     ContinuousAt (fun w ↦ (positiveEndCoord q w).1) z :=
-  (contDiffAt_comp_positiveEndCoord q (n := 0) contDiff_fst (fun _ ↦ by simp) hz).continuousAt
+  (contDiffAt_fst_positiveEndCoord q (n := 0) hz).continuousAt
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/
