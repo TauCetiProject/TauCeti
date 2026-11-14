@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +22,9 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`.
+of `TauCeti.ConvolutionDual`. For a Hopf algebra, precomposition with the antipode sends
+right cointegrals to left cointegrals and vice versa; no finiteness or bijectivity of the
+antipode is needed.
 
 ## References
 
@@ -33,6 +36,8 @@ public section
 open scoped TensorProduct Coalgebra
 
 namespace TauCeti
+
+section Coalgebra
 
 variable {k H : Type*} [CommSemiring k] [AddCommMonoid H] [One H] [Module k H]
   [Coalgebra k H]
@@ -178,5 +183,73 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
   rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
   simpa [mul_comm] using heq
+
+end Coalgebra
+
+section HopfAlgebra
+
+open WithConv
+
+variable {k H : Type*} [CommSemiring k] [Semiring H] [HopfAlgebra k H]
+
+/-- For `v = φ ∘ S`, the convolution `S * v` is `x ↦ Σ φ(S x₂) S x₁`, the right-cointegral
+contraction at `S x`. -/
+private theorem convMul_antipode_comp_antipode_apply (φ : Module.Dual k H) (x : H) :
+    (toConv (HopfAlgebra.antipode k (A := H)) *
+      toConv (Algebra.linearMap k H ∘ₗ φ ∘ₗ HopfAlgebra.antipode k) : WithConv (H →ₗ[k] H)) x =
+      TensorProduct.lid k H (φ.rTensor H (Coalgebra.comul (HopfAlgebra.antipode k x))) := by
+  rw [LinearMap.convMul_apply, TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply]
+  induction Coalgebra.comul (R := k) x with
+  | add u w hu hw => simp only [map_add, hu, hw]
+  | tmul a b => simp [Algebra.smul_def, Algebra.commutes]
+
+/-- For `v = φ ∘ S`, the convolution `v * S` is `x ↦ Σ φ(S x₁) S x₂`, the left-cointegral
+contraction at `S x`. -/
+private theorem convMul_comp_antipode_antipode_apply (φ : Module.Dual k H) (x : H) :
+    (toConv (Algebra.linearMap k H ∘ₗ φ ∘ₗ HopfAlgebra.antipode k) *
+      toConv (HopfAlgebra.antipode k (A := H)) : WithConv (H →ₗ[k] H)) x =
+      TensorProduct.rid k H (φ.lTensor H (Coalgebra.comul (HopfAlgebra.antipode k x))) := by
+  rw [LinearMap.convMul_apply, TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply]
+  induction Coalgebra.comul (R := k) x with
+  | add u w hu hw => simp only [map_add, hu, hw]
+  | tmul a b => simp [Algebra.smul_def]
+
+/-- Precomposition with the antipode sends right cointegrals to left cointegrals. -/
+theorem isLeftCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsRightCointegral φ) :
+    IsLeftCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
+  set v : WithConv (H →ₗ[k] H) := toConv (Algebra.linearMap k H ∘ₗ φ ∘ₗ HopfAlgebra.antipode k)
+  have hS : toConv (HopfAlgebra.antipode k (A := H)) * v = v := by
+    ext x
+    rw [convMul_antipode_comp_antipode_apply, hφ]
+    simp [v, Algebra.smul_def]
+  have hid : toConv LinearMap.id * v = v := by
+    conv_lhs => rw [← hS, ← mul_assoc, LinearMap.id_mul_antipode, one_mul]
+  intro x
+  have hw (w : H ⊗[k] H) : LinearMap.mul' k H (TensorProduct.map LinearMap.id v.ofConv w) =
+      TensorProduct.rid k H ((φ ∘ₗ HopfAlgebra.antipode k).lTensor H w) := by
+    induction w with
+    | add u w hu hw => simp only [map_add, hu, hw]
+    | tmul a b => simp [v, Algebra.smul_def, Algebra.commutes]
+  simpa [v, hw, Algebra.smul_def] using congrArg (fun f ↦ f x) hid
+
+/-- Precomposition with the antipode sends left cointegrals to right cointegrals. -/
+theorem isRightCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsLeftCointegral φ) :
+    IsRightCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
+  set v : WithConv (H →ₗ[k] H) := toConv (Algebra.linearMap k H ∘ₗ φ ∘ₗ HopfAlgebra.antipode k)
+  have hS : v * toConv (HopfAlgebra.antipode k (A := H)) = v := by
+    ext x
+    rw [convMul_comp_antipode_antipode_apply, hφ]
+    simp [v, Algebra.smul_def]
+  have hid : v * toConv LinearMap.id = v := by
+    conv_lhs => rw [← hS, mul_assoc, LinearMap.antipode_mul_id, mul_one]
+  intro x
+  have hw (w : H ⊗[k] H) : LinearMap.mul' k H (TensorProduct.map v.ofConv LinearMap.id w) =
+      TensorProduct.lid k H ((φ ∘ₗ HopfAlgebra.antipode k).rTensor H w) := by
+    induction w with
+    | add u w hu hw => simp only [map_add, hu, hw]
+    | tmul a b => simp [v, Algebra.smul_def]
+  simpa [v, hw, Algebra.smul_def] using congrArg (fun f ↦ f x) hid
+
+end HopfAlgebra
 
 end TauCeti

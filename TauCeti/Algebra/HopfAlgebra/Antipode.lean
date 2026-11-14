@@ -25,6 +25,9 @@ endomorphism, representing inversion on a commutative affine group.
 
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib`: the identity as an equality of linear maps.
 * `TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply`: the pointwise form.
+* `TauCeti.HopfAlgebra.lTensor_mul'_leftComm_comul_antipode_comul` and
+  `TauCeti.HopfAlgebra.mul'_rTensor_mul'_map_antipode_comul`: the tensor identities
+  `Σ (S c₂)₁ ⊗ c₁ (S c₂)₂ = S c ⊗ 1` and `Σ g(c₁) S(c₂) c₃ = g(c)`.
 * `TauCeti.HopfAlgebra.antipode_antipode`: the antipode of a commutative Hopf algebra is
   involutive.
 * `TauCeti.HopfAlgebra.antipodeAlgEquiv`: the antipode as an algebra equivalence in the
@@ -233,6 +236,45 @@ theorem antipode_comul_antidistrib_apply (c : C) :
       TensorProduct.map (antipode R) (antipode R)
         ((TensorProduct.comm R C C) (Coalgebra.comul c)) :=
   LinearMap.congr_fun antipode_comul_antidistrib c
+
+/-- The identity `Σ (S c₂)₁ ⊗ c₁ (S c₂)₂ = S c ⊗ 1`: comultiplying the antipode of the second
+leg, moving its first factor to the first leg, and multiplying its second factor on the left by
+the original first leg leaves `S c ⊗ 1`. -/
+theorem lTensor_mul'_leftComm_comul_antipode_comul (c : C) :
+    (LinearMap.mul' R C).lTensor C (TensorProduct.leftComm R C C C
+      ((Coalgebra.comul ∘ₗ antipode R).lTensor C (Coalgebra.comul c))) =
+      antipode R c ⊗ₜ 1 := by
+  have hu (u : C ⊗[R] C) :
+      (LinearMap.mul' R C).lTensor C (TensorProduct.leftComm R C C C
+        ((TensorProduct.map (antipode R) (antipode R) ∘ₗ
+          (TensorProduct.comm R C C).toLinearMap).lTensor C
+            (TensorProduct.assoc R C C C (Coalgebra.comul.rTensor C u)))) =
+        TensorProduct.comm R C C (TensorProduct.map (Algebra.linearMap R C)
+          (antipode R) (Coalgebra.counit.rTensor C u)) := by
+    induction u with
+    | add u v hu hv => simp only [map_add, hu, hv]
+    | tmul a d =>
+      have hx (x : C ⊗[R] C) :
+          (LinearMap.mul' R C).lTensor C (TensorProduct.leftComm R C C C
+            ((TensorProduct.map (antipode R) (antipode R) ∘ₗ
+              (TensorProduct.comm R C C).toLinearMap).lTensor C
+                (TensorProduct.assoc R C C C (x ⊗ₜ d)))) =
+            antipode R d ⊗ₜ LinearMap.mul' R C ((antipode R).lTensor C x) := by
+        induction x with
+        | add x y hx hy => simp only [add_tmul, map_add, tmul_add, hx, hy]
+        | tmul x y => simp
+      simp [hx]
+  rw [antipode_comul_antidistrib, ← LinearMap.comp_assoc, LinearMap.lTensor_comp_apply,
+    ← Coalgebra.coassoc_apply, hu, Coalgebra.rTensor_counit_comul]
+  simp
+
+/-- The identity `Σ g(c₁) S(c₂) c₃ = g(c)` for any linear map `g`. -/
+theorem mul'_rTensor_mul'_map_antipode_comul {g : C →ₗ[R] C} (c : C) :
+    LinearMap.mul' R C ((LinearMap.mul' R C ∘ₗ TensorProduct.map g (antipode R) ∘ₗ
+      Coalgebra.comul).rTensor C (Coalgebra.comul c)) = g c := by
+  have h : toConv g * toConv (antipode R) * toConv LinearMap.id = toConv g := by
+    rw [mul_assoc, LinearMap.antipode_mul_id, mul_one]
+  exact congrArg (fun f : WithConv (C →ₗ[R] C) ↦ f c) h
 
 /-- The antipode of a commutative and cocommutative Hopf algebra, as a bialgebra
 endomorphism. Contravariantly, this represents inversion on a commutative affine group. -/
