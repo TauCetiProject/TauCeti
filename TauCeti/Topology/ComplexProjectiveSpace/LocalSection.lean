@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 public import TauCeti.Topology.ComplexProjectiveSpace.Homogeneous
 public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
 
