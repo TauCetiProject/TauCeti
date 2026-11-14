@@ -9,8 +9,8 @@ public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Algebra.Group.Conj
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
-public import TauCeti.GroupTheory.FreeGroup.Reduce
 
+import TauCeti.GroupTheory.FreeGroup.Reduce
 import Mathlib.Tactic.Group
 
 /-!

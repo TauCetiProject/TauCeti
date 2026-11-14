@@ -7,9 +7,12 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import TauCeti.GroupTheory.FreeGroup.Linear
+public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+
+import TauCeti.GroupTheory.FreeGroup.Linear
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Polynomial.Basic
+import Mathlib.Algebra.EuclideanDomain.Int
 
 /-!
 # Linear groups and free groups are equationally Noetherian
