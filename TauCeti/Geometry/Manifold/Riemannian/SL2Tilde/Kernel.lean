@@ -37,14 +37,6 @@ namespace TauCeti.SL2Tilde
 local notation "P" => ℝ × ℝ × ℝ
 local notation "J" => 𝓘(ℝ, P)
 
-private def coordinateMap (Φ : Isom J SL2Tilde) : P → P :=
-  toProd ∘ Φ ∘ toProd.symm
-
-private theorem differentiable_coordinateMap (Φ : Isom J SL2Tilde) :
-    Differentiable ℝ (coordinateMap Φ) := by
-  -- SL2Tilde has exactly the charts of P; its coordinate equivalence is the identity.
-  exact Φ.toDiffeomorph.contMDiff.contDiff.differentiable (by simp)
-
 -- This coordinate calculation follows the inherited-chart method of
 -- TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Connection.
 private theorem coordinate_derivative (Φ : Isom J SL2Tilde) (p u : P) :
@@ -79,8 +71,8 @@ private theorem coordinate_derivative_base (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (p u : P) :
     (fderiv ℝ (coordinateMap Φ) p u).1 = u.1 ∧
       (fderiv ℝ (coordinateMap Φ) p u).2.1 = u.2.1 := by
-  have hdx := ((differentiable_coordinateMap Φ p).hasFDerivAt.fst)
-  have hdy := ((differentiable_coordinateMap Φ p).hasFDerivAt.snd.fst)
+  have hdx := (((contDiff_coordinateMap Φ).differentiable (by simp) p).hasFDerivAt.fst)
+  have hdy := (((contDiff_coordinateMap Φ).differentiable (by simp) p).hasFDerivAt.snd.fst)
   have hfx : (fun q => (coordinateMap Φ q).1) = fun q => q.1 :=
     funext fun q => hx (toProd.symm q)
   have hfy : (fun q => (coordinateMap Φ q).2.1) = fun q => q.2.1 :=
@@ -103,7 +95,8 @@ private theorem coordinateMap_z_independent_y (Φ : Isom J SL2Tilde)
     (hx : ∀ p, (Φ p).x = p.x) (hy : ∀ p, (Φ p).y = p.y) (a b c : ℝ) :
     (coordinateMap Φ (a, b, c)).2.2 = (coordinateMap Φ (a, 0, c)).2.2 := by
   have hd (t : ℝ) : HasDerivAt (fun t => (coordinateMap Φ (a, t, c)).2.2) 0 t := by
-    have h := ((differentiable_coordinateMap Φ (a, t, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
+    have h := (((contDiff_coordinateMap Φ).differentiable (by simp)
+      (a, t, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
       ((hasDerivAt_const t a).prodMk ((hasDerivAt_id t).prodMk (hasDerivAt_const t c)))
     simpa only [Function.comp_def, id_eq, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.coe_snd', coordinate_derivative_y Φ hx hy] using h
@@ -118,7 +111,8 @@ private theorem coordinate_derivative_x_independent_y (Φ : Isom J SL2Tilde)
       (fderiv ℝ (coordinateMap Φ) (t, b, c) (1, 0, 0)).2.2 t := by
     simpa only [Function.comp_def, id_eq, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.coe_snd'] using
-      ((differentiable_coordinateMap Φ (t, b, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
+      (((contDiff_coordinateMap Φ).differentiable (by simp)
+        (t, b, c)).hasFDerivAt.snd.snd).comp_hasDerivAt t
         ((hasDerivAt_id t).prodMk ((hasDerivAt_const t b).prodMk (hasDerivAt_const t c)))
   have heq : (fun t => (coordinateMap Φ (t, b, c)).2.2) =
       (fun t => (coordinateMap Φ (t, 0, c)).2.2) :=
@@ -188,7 +182,7 @@ theorem eq_translate_of_base_eq (Φ : Isom J SL2Tilde)
     · apply Prod.ext
       · simpa [coordinateMap, mk] using hy (mk 0 0 0)
       · simp [coordinateMap, c, mk]
-  have heq := eq_of_fderiv_eq (differentiable_coordinateMap Φ) hg (fun p => by
+  have heq := eq_of_fderiv_eq ((contDiff_coordinateMap Φ).differentiable (by simp)) hg (fun p => by
     simp only [coordinate_derivative_eq_id Φ hx hy,
       fderiv_add_const, fderiv_fun_id]) (0, 0, 0) hzero
   apply RiemannianIsometry.ext

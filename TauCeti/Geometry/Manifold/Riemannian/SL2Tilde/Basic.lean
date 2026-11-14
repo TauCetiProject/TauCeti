@@ -415,6 +415,32 @@ instance isPretransitive_isom :
     MulAction.IsPretransitive (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) SL2Tilde :=
   ⟨fun p q ↦ ⟨_, translate_apply_eq p q⟩⟩
 
+/-! ### Isometries in global coordinates -/
+
+/-- An isometry of `SL₂ℝ~` read in the global coordinates `ℝ × ℝ × ℝ`. -/
+def coordinateMap (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) : ℝ × ℝ × ℝ → ℝ × ℝ × ℝ :=
+  toProd ∘ Φ ∘ toProd.symm
+
+/-- An isometry of `SL₂ℝ~` is smooth in global coordinates. -/
+theorem contDiff_coordinateMap (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) :
+    ContDiff ℝ ∞ (coordinateMap Φ) :=
+  -- `SL2Tilde` has exactly the charts of `ℝ × ℝ × ℝ`, so both coordinate maps are identities.
+  Φ.contMDiff.contDiff
+
+/-- The ordinary derivative of an isometry of `SL₂ℝ~` in global coordinates is its manifold
+derivative, read through the canonical tangent-space identifications. -/
+theorem fderiv_coordinateMap_apply (Φ : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) SL2Tilde) (p : SL2Tilde)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    fderiv ℝ (coordinateMap Φ) (toProd p) (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (Φ p)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) Φ p u) := by
+  -- The inherited model-space atlas identifies the coordinate derivative and the tangent casts
+  -- with Mathlib's normed-space derivative.
+  change fderiv ℝ (coordinateMap Φ) (toProd p) u =
+    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (coordinateMap Φ) (toProd p) u
+  rw [mfderiv_eq_fderiv]
+  rfl
+
 end SL2Tilde
 
 end TauCeti
