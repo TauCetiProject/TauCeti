@@ -41,8 +41,8 @@ idempotent cutting out `L` keeps it integral.
 * `AlgHom.integralClosure_eq_range_of_surjective`: the integral closure of `R` in a quotient `L`
   of `K ⊗[R] S` is the image of `S`.
 * `AlgHom.etale_integralClosure_of_surjective`: this integral closure is étale over `R`.
-* `IsIntegralClosure.equivPiIntegralClosureQuotient`: if `R` is integrally closed in a field `K`,
-  `S` is étale over `R`, and `C` is the integral closure of `A` in `S`, then
+* `TauCeti.IsIntegralClosure.equivPiIntegralClosureQuotient`: if `R` is integrally closed in a
+  field `K`, `S` is étale over `R`, and `C` is the integral closure of `A` in `S`, then
   `C ≃ₐ[A] ∀ m : MaximalSpectrum (K ⊗[R] S), integralClosure A ((K ⊗[R] S) ⧸ m.asIdeal)`.
 
 ## References
@@ -141,56 +141,70 @@ end IntegralClosure
 
 end AlgHom
 
-namespace IsIntegralClosure
+namespace TauCeti.IsIntegralClosure
 
 section EquivPi
 
-variable (A : Type*) {R : Type*} (K : Type*) {S C : Type*}
+variable (A R K S C : Type*)
   [CommRing A] [CommRing R] [Algebra A R]
   [Field K] [Algebra A K] [Algebra R K] [IsScalarTower A R K] [IsIntegrallyClosedIn R K]
   [CommRing S] [Algebra A S] [Algebra R S] [IsScalarTower A R S] [Algebra.Etale R S]
   [CommRing C] [Algebra A C] [Algebra C S] [IsScalarTower A C S] [IsIntegralClosure C A S]
 
+private noncomputable def toIntegralClosureTensor :
+    C →ₐ[A] integralClosure A (K ⊗[R] S) :=
+  let j : C →ₐ[A] K ⊗[R] S :=
+    ((Algebra.TensorProduct.includeRight (R := R) (A := K) (B := S)).restrictScalars A).comp
+      (IsScalarTower.toAlgHom A C S)
+  j.codRestrict (integralClosure A (K ⊗[R] S)) fun c ↦
+    (mem_integralClosure_iff A (K ⊗[R] S)).mpr ((IsIntegralClosure.isIntegral A S c).map j)
+
+omit [IsIntegrallyClosedIn R K] [Algebra.Etale R S] in
+@[simp]
+private theorem coe_toIntegralClosureTensor_apply (c : C) :
+    (toIntegralClosureTensor A R K S C c : K ⊗[R] S) = 1 ⊗ₜ[R] algebraMap C S c := by
+  simp [toIntegralClosureTensor]
+
+private theorem bijective_toIntegralClosureTensor :
+    Function.Bijective (toIntegralClosureTensor A R K S C) := by
+  have hinc : Function.Injective
+      (Algebra.TensorProduct.includeRight (R := R) (A := K) (B := S)) :=
+    Algebra.TensorProduct.includeRight_injective (isIntegrallyClosedIn_iff.mp ‹_›).1
+  refine ⟨fun a b h ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
+  · apply IsIntegralClosure.algebraMap_injective C A S
+    apply hinc
+    simpa using congrArg Subtype.val h
+  · obtain ⟨s, rfl⟩ := (hx.tower_top (A := R)).exists_includeRight_eq
+    have hs : IsIntegral A s :=
+      (isIntegral_algHom_iff
+        ((Algebra.TensorProduct.includeRight (R := R) (A := K) (B := S)).restrictScalars A)
+        hinc).mp hx
+    obtain ⟨c, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := C)).mp hs
+    exact ⟨c, Subtype.ext (by simp)⟩
+
 /-- **Product decomposition of an integral closure in an étale algebra.** Let `R` be an
 `A`-algebra that is integrally closed in a field `K`, let `S` be an étale `R`-algebra, and let `C`
-be the integral closure of `A` in `S`. Because `S` is integrally closed in the Artinian reduced
-ring `K ⊗[R] S` (`IsIntegral.exists_includeRight_eq`), `C` is also the integral closure of `A` in
-`K ⊗[R] S`, which splits via `IsArtinianRing.equivPi` as the finite product of its residue fields
-`(K ⊗[R] S) ⧸ m.asIdeal`. -/
+be the integral closure of `A` in `S`. Then `C` is `A`-isomorphic to the product
+`∀ m : MaximalSpectrum (K ⊗[R] S), integralClosure A ((K ⊗[R] S) ⧸ m.asIdeal)` of the integral
+closures of `A` in the field factors of `K ⊗[R] S`, sending `c : C` at `m` to the class of
+`1 ⊗ₜ[R] algebraMap C S c`. -/
 noncomputable def equivPiIntegralClosureQuotient :
-    C ≃ₐ[A] ∀ m : MaximalSpectrum (K ⊗[R] S), integralClosure A ((K ⊗[R] S) ⧸ m.asIdeal) := by
-  let inc : S →ₐ[A] K ⊗[R] S :=
-    (Algebra.TensorProduct.includeRight (R := R) (A := K) (B := S)).restrictScalars A
-  have hinc : Function.Injective inc :=
-    Algebra.TensorProduct.includeRight_injective (isIntegrallyClosedIn_iff.mp ‹_›).1
-  let j : C →ₐ[A] K ⊗[R] S := inc.comp (IsScalarTower.toAlgHom A C S)
-  let j₀ : C →ₐ[A] integralClosure A (K ⊗[R] S) :=
-    j.codRestrict (integralClosure A (K ⊗[R] S)) fun c ↦ (IsIntegralClosure.isIntegral A S c).map j
-  have hj₀ : Function.Bijective j₀ := by
-    refine ⟨fun a b h ↦
-      IsIntegralClosure.algebraMap_injective C A S (hinc (congrArg Subtype.val h)),
-      fun ⟨x, hx⟩ ↦ ?_⟩
-    obtain ⟨s, rfl⟩ := (hx.tower_top (A := R)).exists_includeRight_eq
-    obtain ⟨c, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := C)).mp
-      ((isIntegral_algHom_iff inc hinc).mp hx)
-    exact ⟨c, rfl⟩
-  exact (AlgEquiv.ofBijective j₀ hj₀).trans <|
+    C ≃ₐ[A] ∀ m : MaximalSpectrum (K ⊗[R] S), integralClosure A ((K ⊗[R] S) ⧸ m.asIdeal) :=
+  (AlgEquiv.ofBijective (toIntegralClosureTensor A R K S C)
+    (bijective_toIntegralClosureTensor A R K S C)).trans <|
     (((IsArtinianRing.equivPi (K ⊗[R] S)).restrictScalars A).mapIntegralClosure).trans <|
       TauCeti.integralClosurePiAlgEquiv A
         (fun m : MaximalSpectrum (K ⊗[R] S) ↦ (K ⊗[R] S) ⧸ m.asIdeal)
 
-variable {A K} in
-/-- Evaluating `IsIntegralClosure.equivPiIntegralClosureQuotient` at a maximal ideal `m` of
-`K ⊗[R] S` sends `c : C` to the class of `1 ⊗ algebraMap C S c` in `(K ⊗[R] S) ⧸ m.asIdeal`. -/
+variable {A R K S C} in
+/-- Evaluating `TauCeti.IsIntegralClosure.equivPiIntegralClosureQuotient` at a maximal ideal `m` of
+`K ⊗[R] S` sends `c : C` to the class of `1 ⊗ₜ[R] algebraMap C S c` in `(K ⊗[R] S) ⧸ m.asIdeal`. -/
 @[simp]
 theorem coe_equivPiIntegralClosureQuotient_apply (c : C) (m : MaximalSpectrum (K ⊗[R] S)) :
-    (equivPiIntegralClosureQuotient A K c m : (K ⊗[R] S) ⧸ m.asIdeal) =
-      Ideal.Quotient.mk m.asIdeal (Algebra.TensorProduct.includeRight (algebraMap C S c)) := by
-  simp only [equivPiIntegralClosureQuotient, AlgEquiv.trans_apply,
-    TauCeti.integralClosurePiAlgEquiv_apply, AlgEquiv.coe_mapIntegralClosure,
-    AlgEquiv.restrictScalars_apply, IsArtinianRing.equivPi_apply]
-  rfl
+    (equivPiIntegralClosureQuotient A R K S C c m : (K ⊗[R] S) ⧸ m.asIdeal) =
+      Ideal.Quotient.mk m.asIdeal (1 ⊗ₜ[R] algebraMap C S c) := by
+  simp [equivPiIntegralClosureQuotient, AlgEquiv.restrictScalars_apply]
 
 end EquivPi
 
-end IsIntegralClosure
+end TauCeti.IsIntegralClosure

@@ -63,8 +63,9 @@ there only through sections of faithfully flat covers and roots of separable pol
 * `TauCeti.Algebra.IsTotallySplit.baseChange`: total splitting is stable under base change.
 * `Algebra.IsFiniteSplit.of_surjective`: over a field, a quotient of a totally split algebra is
   totally split.
-* `Algebra.IsFiniteSplit.nonempty_algHom_of_surjective`: if `K' ⊗[K] B` is totally split over a
-  field extension `K' / K`, every nontrivial quotient of `B` admits a `K`-algebra map to `K'`.
+* `TauCeti.Algebra.IsFiniteSplit.nonempty_algHom_of_surjective`: if `K' ⊗[K] B` is totally split
+  over a field extension `K' / K`, every nontrivial quotient of `B` admits a `K`-algebra map to
+  `K'`.
 * `TauCeti.IsFiniteEtaleSplit.nonempty_algHom`: a faithfully flat finite étale `R`-algebra maps to
   every `R`-algebra without nonsplit finite étale covers.
 * `TauCeti.IsFiniteEtaleSplit.pi`, `TauCeti.IsFiniteEtaleSplit.prod`: products of rings without
@@ -319,7 +320,7 @@ open TensorProduct in
 extension.** If `K' ⊗[K] B` is totally split over a field extension `K' / K` and `g : B →ₐ[K] C`
 is surjective with `C` nontrivial, then `C` admits a `K`-algebra map into `K'`: the base-changed
 quotient `K' ⊗[K] C` is nontrivial and totally split over `K'`, so it has a `K'`-point. -/
-theorem _root_.Algebra.IsFiniteSplit.nonempty_algHom_of_surjective {K K' B C : Type*} [Field K]
+theorem Algebra.IsFiniteSplit.nonempty_algHom_of_surjective {K K' B C : Type*} [Field K]
     [Field K'] [Algebra K K'] [CommRing B] [CommRing C] [Nontrivial C] [Algebra K B] [Algebra K C]
     [Algebra.IsFiniteSplit K' (K' ⊗[K] B)] (g : B →ₐ[K] C) (hg : Function.Surjective g) :
     Nonempty (C →ₐ[K] K') := by

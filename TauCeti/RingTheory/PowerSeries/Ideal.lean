@@ -40,7 +40,8 @@ its coefficients and shows that it is prime when `I` is.
 
 ## Main results
 
-* `PowerSeries.ker_constantCoeff`: the kernel of the constant coefficient is `(X)`.
+* `PowerSeries.ker_constantCoeff`, `PowerSeries.quotientSpanXAlgEquiv`: the kernel of the constant
+  coefficient is `(X)`, giving the `R`-algebra isomorphism `R⟦X⟧ ⧸ (X) ≃ₐ[R] R`.
 * `PowerSeries.isLocalHom_constantCoeff`: the constant coefficient is a local homomorphism.
 * `PowerSeries.ker_map_of_fg`: `ker (map f) = (ker f).map C` when `ker f` is finitely generated.
 * `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.isPrime_map_C_of_fg`: for a finitely generated
@@ -66,6 +67,38 @@ theorem ker_constantCoeff [CommSemiring R] :
     RingHom.ker (constantCoeff (R := R)) = Ideal.span {X} := by
   ext f
   simp [Ideal.mem_span_singleton, X_dvd_iff]
+
+private noncomputable def constantCoeffAlgHom (R : Type*) [CommRing R] : R⟦X⟧ →ₐ[R] R where
+  toRingHom := constantCoeff
+  commutes' r := by simp
+
+@[simp]
+private theorem constantCoeffAlgHom_apply [CommRing R] (f : R⟦X⟧) :
+    constantCoeffAlgHom R f = constantCoeff f :=
+  rfl
+
+private theorem ker_constantCoeffAlgHom [CommRing R] :
+    Ideal.span {(X : R⟦X⟧)} = RingHom.ker (constantCoeffAlgHom R) :=
+  ker_constantCoeff.symm
+
+/-- The constant coefficient induces an `R`-algebra isomorphism `R⟦X⟧ ⧸ (X) ≃ₐ[R] R`. -/
+noncomputable def quotientSpanXAlgEquiv (R : Type*) [CommRing R] :
+    (R⟦X⟧ ⧸ Ideal.span {(X : R⟦X⟧)}) ≃ₐ[R] R :=
+  (Ideal.quotientEquivAlgOfEq R ker_constantCoeffAlgHom).trans
+    (Ideal.quotientKerAlgEquivOfSurjective (f := constantCoeffAlgHom R) fun r ↦ ⟨C r, by simp⟩)
+
+/-- `PowerSeries.quotientSpanXAlgEquiv` sends the class of `f` to its constant coefficient. -/
+@[simp]
+theorem quotientSpanXAlgEquiv_mk [CommRing R] (f : R⟦X⟧) :
+    quotientSpanXAlgEquiv R (Ideal.Quotient.mk _ f) = constantCoeff f := by
+  rw [quotientSpanXAlgEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk]
+  exact Ideal.quotientKerAlgEquivOfSurjective_mk _ f
+
+/-- The inverse of `PowerSeries.quotientSpanXAlgEquiv` sends `r : R` to the class of `C r`. -/
+@[simp]
+theorem quotientSpanXAlgEquiv_symm_apply [CommRing R] (r : R) :
+    (quotientSpanXAlgEquiv R).symm r = Ideal.Quotient.mk _ (C r) := by
+  rw [AlgEquiv.symm_apply_eq, quotientSpanXAlgEquiv_mk, constantCoeff_C]
 
 /-- The constant coefficient is a local homomorphism: a power series is a unit exactly when its
 constant coefficient is. -/
