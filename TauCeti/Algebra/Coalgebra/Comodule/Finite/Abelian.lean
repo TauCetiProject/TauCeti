@@ -54,7 +54,7 @@ instance isFG_isClosedUnderKernels :
   kernels_le := by
     rintro _ ⟨f, s, hs, hM, _⟩
     let : Module.Finite R _ := hM
-    have : Module.Finite R f.ker := f.ker.finite
+    have : Module.Finite R f.ker := inferInstance
     exact Module.Finite.equiv (isoToLinearEquiv (R := R) (C := C)
       ((kernelIsoKer f).symm ≪≫ limit.isoLimitCone ⟨s, hs⟩))
 

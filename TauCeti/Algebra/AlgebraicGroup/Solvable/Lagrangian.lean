@@ -63,7 +63,7 @@ private theorem exists_isotropic_extension {B : BilinForm k M} (hB : B.IsAlt)
   have hO : O.toSubmodule = B.orthogonal N.toSubmodule :=
     Subcomodule.orthogonal_toSubmodule N B hinv
   let _ : AddCommGroup O := Module.addCommMonoidToAddCommGroup k
-  have : Module.Finite k O := O.finite
+  have : Module.Finite k O := inferInstance
   let K := N.comap O.subtype
   let Q := O ⧸ K.toSubmodule
   have hK : K.toSubmodule ≠ ⊤ :=

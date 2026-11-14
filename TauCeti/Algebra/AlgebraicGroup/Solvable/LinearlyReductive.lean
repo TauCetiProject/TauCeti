@@ -58,7 +58,7 @@ theorem groupLikeSetSpan_eq_top_of_isLinearlyReductive_of_isSolvable
     hlr.isCompletelyReducible
   intro Q hQ
   let _ : AddCommGroup Q := Module.addCommMonoidToAddCommGroup k
-  have _ : Module.Finite k Q := Q.finite
+  have _ : Module.Finite k Q := inferInstance
   have _ : Nontrivial Q := (Submodule.nontrivial_iff_ne_bot (p := Q.toSubmodule)).mpr
     (mt Subcomodule.toSubmodule_eq_bot.mp hQ)
   exact Comodule.hasNonzeroWeightVector_of_isSolvable (k := k) (H := H) (M := Q)
