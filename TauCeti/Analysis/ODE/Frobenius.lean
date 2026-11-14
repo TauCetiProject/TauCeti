@@ -11,7 +11,7 @@ public import Mathlib.Analysis.ODE.ExistUnique
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-public import TauCeti.Analysis.Calculus.ParametricIntegral
+public import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 public import TauCeti.Analysis.ODE.SmoothParameter
 
 /-!

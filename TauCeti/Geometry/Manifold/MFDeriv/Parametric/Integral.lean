@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 
 /-!
 # Differentiating integrals of time-dependent functions along maps of the plane
