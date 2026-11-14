@@ -16,7 +16,7 @@ one. Its `m`-th iterate `divX^[m] p` drops the `m` lowest coefficients and lower
 degrees by `m`, so that `(divX^[m] p).coeff n = p.coeff (n + m)`. This file records how the
 iterate interacts with sums, scalars, multiplication by powers of `X` and reflection, and the
 Horner recursion `divX^[m] p = divX^[m + 1] p * X + C (p.coeff m)`, whose values at a point are
-the partial Horner sums of `p`. It also records that `divX` commutes with coefficient maps.
+the partial Horner sums of `p`. It also records that the iterates commute with coefficient maps.
 
 In terms of Laurent polynomials, `divX^[m] (Xᵐ * p)` is `p`, while the reflection
 `reflect m q = Xᵐ q(X⁻¹)` of a polynomial `q` of degree at most `m` keeps only its constant
@@ -102,12 +102,18 @@ theorem iterate_divX_reflect {m : ℕ} {q : R[X]} (hq : q.natDegree ≤ m) :
   · rw [revAt_eq_self_of_lt (by omega), coeff_eq_zero_of_natDegree_lt (by omega)]
     split_ifs <;> first | omega | rfl
 
+/-- The iterates of `divX` commute with coefficient maps. -/
+@[simp]
+theorem iterate_divX_map {S : Type*} [Semiring S] (m : ℕ) (p : R[X]) (f : R →+* S) :
+    divX^[m] (p.map f) = (divX^[m] p).map f := by
+  ext n
+  simp
+
 /-- `divX` commutes with coefficient maps. -/
 @[simp]
 theorem divX_map {S : Type*} [Semiring S] (p : R[X]) (f : R →+* S) :
-    divX (p.map f) = (divX p).map f := by
-  ext n
-  simp [coeff_divX]
+    divX (p.map f) = (divX p).map f :=
+  iterate_divX_map 1 p f
 
 end Semiring
 
