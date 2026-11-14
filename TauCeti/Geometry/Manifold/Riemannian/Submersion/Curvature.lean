@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -104,19 +105,7 @@ variable
 
 include h
 
--- These regularity indices are propositionally, but not definitionally, equal to two or `∞`.
-local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-  rw [one_add_one_eq_two]
-  exact .of_le (by norm_cast)
-
-local instance : IsManifold I (minSmoothness ℝ 2) M := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact .of_le (by norm_cast)
-
-local instance : IsManifold J (minSmoothness ℝ 2) N := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact .of_le (by norm_cast)
-
+-- `∞ + 1` is propositionally, not definitionally, equal to `∞`.
 local instance : IsManifold I (∞ + 1) M := by
   simpa using (inferInstance : IsManifold I ∞ M)
 
@@ -192,14 +181,13 @@ theorem starProjection_orthogonal_ker_curvatureOperator_horizontalLift
   have hX1 : CMDiffAt 1 (T% X) (f x) := (hX (f x)).of_le (by simp)
   have hY1 : CMDiffAt 1 (T% Y) (f x) := (hY (f x)).of_le (by simp)
   have hZ1 : CMDiffAt 1 (T% Z) (f x) := (hZ (f x)).of_le (by simp)
-  have hXd := (h.contMDiffAt_horizontalLift hX1 (by norm_num)).mdifferentiableAt one_ne_zero
-  have hYd := (h.contMDiffAt_horizontalLift hY1 (by norm_num)).mdifferentiableAt one_ne_zero
   rw [curvatureOperator_apply, map_sub, map_sub,
     h.starProjection_orthogonal_ker_second_leviCivitaConnection_horizontalLift hY hZ x (X (f x)),
     h.starProjection_orthogonal_ker_second_leviCivitaConnection_horizontalLift hX hZ x (Y (f x)),
     h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift hZ1,
     h.mfderiv_mlieBracket_horizontalLift hX1 hY1,
-    h.starProjection_ker_mlieBracket hXd hYd
+    h.starProjection_ker_mlieBracket
+      (h.mdifferentiableAt_horizontalLift hX1) (h.mdifferentiableAt_horizontalLift hY1)
       (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
       (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _),
     curvatureOperator_apply, map_sub, map_sub, map_smul]
@@ -385,7 +373,7 @@ theorem sectionalCurvature_eq_horizontalLift_add_div (u v : TangentSpace J (f x)
         (h.horizontalLift x u) (h.horizontalLift x v) +
         3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 /
           (Matrix.gram ℝ ![u, v]).det := by
-  rw [sectionalCurvature_apply, sectionalCurvature_apply, (h.horizontalLift x).det_gram_pair,
+  rw [sectionalCurvature_apply, sectionalCurvature_apply, (h.horizontalLift x).gram_pair,
     h.inner_curvatureTensor_self_eq_horizontalLift_add, add_div]
 
 /-- **O'Neill's horizontal sectional curvature formula** for horizontal vectors `u, v` at `x`. -/
@@ -398,7 +386,7 @@ theorem sectionalCurvature_mfderiv_eq_add_div_of_mem
       (leviCivitaConnection I M).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection I) x u v +
         3 * ‖h.oneillA x u v‖ ^ 2 / (Matrix.gram ℝ ![u, v]).det := by
-  rw [h.sectionalCurvature_eq_horizontalLift_add_div, ← (h.horizontalLift x).det_gram_pair,
+  rw [h.sectionalCurvature_eq_horizontalLift_add_div, ← (h.horizontalLift x).gram_pair,
     h.horizontalLift_mfderiv_of_mem x hu, h.horizontalLift_mfderiv_of_mem x hv]
 
 /-- On an orthonormal pair in `T_(f x) N`, the base sectional curvature exceeds the horizontal

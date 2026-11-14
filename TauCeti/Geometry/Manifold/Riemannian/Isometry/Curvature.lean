@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -209,26 +210,20 @@ theorem hasSectionalCurvatureAt_map_iff (Φ : RiemannianIsometry I J M N) (x : M
         (isMetricCompatible_leviCivitaConnection J) (Φ x) k ↔
       (leviCivitaConnection I M).HasSectionalCurvatureAt
         (isMetricCompatible_leviCivitaConnection I) x k := by
-  let e := (Φ.mfderivToLinearIsometryEquiv x).toLinearEquiv
-  have he : ∀ u, e u = mfderiv I J Φ x u := Φ.mfderivToLinearIsometryEquiv_apply x
-  have hli : ∀ u v : TangentSpace I x,
-      LinearIndependent ℝ ![e u, e v] ↔ LinearIndependent ℝ ![u, v] := fun u v ↦ by
-    -- `LinearMap.linearIndependent_iff` is stated for a composite `e ∘ f`, so rewrite the
-    -- pair of images as the image of the pair.
-    have hcomp : e ∘ ![u, v] = ![e u, e v] := by ext i; fin_cases i <;> simp
-    rw [← hcomp]
-    exact e.toLinearMap.linearIndependent_iff (LinearEquiv.ker e)
+  let e := Φ.mfderivToLinearIsometryEquiv x
+  have he : ∀ u, e.toLinearIsometry u = mfderiv I J Φ x u := fun u ↦ by simp [e]
   rw [CovariantDerivative.hasSectionalCurvatureAt_iff,
     CovariantDerivative.hasSectionalCurvatureAt_iff]
   constructor
   · intro h u v huv
     rw [← Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv, ← he, ← he]
-    exact h _ _ ((hli u v).2 huv)
+    exact h _ _ (e.toLinearIsometry.linearIndependent_pair_iff.2 huv)
   · intro h u' v' huv
     obtain ⟨u, rfl⟩ := e.surjective u'
     obtain ⟨v, rfl⟩ := e.surjective v'
+    simp only [← LinearIsometryEquiv.coe_toLinearIsometry] at huv ⊢
     rw [he, he, Φ.isLocalRiemannianIsometry.sectionalCurvature_mfderiv]
-    exact h u v ((hli u v).1 huv)
+    exact h u v (e.toLinearIsometry.linearIndependent_pair_iff.1 huv)
 
 /-- Riemannian isometric manifolds have the same constant sectional curvatures. -/
 theorem hasConstantSectionalCurvature_iff (Φ : RiemannianIsometry I J M N) (k : ℝ) :

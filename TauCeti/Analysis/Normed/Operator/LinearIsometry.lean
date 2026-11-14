@@ -8,7 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
-# Closed ranges of postcomposition by linear isometries
+# Linear independence and postcomposition for linear isometries
+
+A linear isometry is injective, so composing an indexed family or a pair of vectors with a linear
+isometry preserves linear independence (`LinearIsometry.linearIndependent_iff` and
+`LinearIsometry.linearIndependent_pair_iff`).
 
 Postcomposition by a (semilinear) isometry `i` acts pointwise on continuous linear maps, and
 its image consists precisely of the operators whose values lie in the range of `i`
@@ -21,8 +25,30 @@ of the codomain, for instance of alternating maps into multilinear maps.
 public section
 
 open Set
+open scoped Matrix
 
 namespace LinearIsometry
+
+section LinearIndependent
+
+variable {R ι E F : Type*} [Semiring R] [NormedAddCommGroup E] [SeminormedAddCommGroup F]
+  [Module R E] [Module R F] (l : E →ₗᵢ[R] F)
+
+/-- A linear isometry preserves linear independence of an indexed family. -/
+@[simp]
+theorem linearIndependent_iff {v : ι → E} :
+    LinearIndependent R (l ∘ v) ↔ LinearIndependent R v :=
+  l.toLinearMap.linearIndependent_iff_of_injOn l.injective.injOn
+
+/-- A linear isometry preserves linear independence of a pair. -/
+@[simp]
+theorem linearIndependent_pair_iff {u v : E} :
+    LinearIndependent R ![l u, l v] ↔ LinearIndependent R ![u, v] := by
+  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
+    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+  rw [hcomp, l.linearIndependent_iff]
+
+end LinearIndependent
 
 variable {𝕜 𝕜₂ 𝕜₃ D E F : Type*}
   [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Adjoint
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Horizontal Levi-Civita differentiation under a Riemannian submersion
@@ -55,6 +56,8 @@ variable
 
 section Regularity
 
+section ContMDiff
+
 variable [IsManifold I 1 M] [IsManifold J 1 N]
   {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
@@ -78,6 +81,19 @@ theorem contMDiff_horizontalLift {X : Π y : N, TangentSpace J y}
       (T% (fun y ↦ h.horizontalLift y (X (f y)))) :=
   fun x ↦ h.contMDiffAt_horizontalLift (hX (f x)) hn
 
+end ContMDiff
+
+/-- Horizontal lifting of a base vector field that is `C^1` at `f x` is differentiable at `x`. -/
+theorem mdifferentiableAt_horizontalLift [IsManifold I 2 M] [IsManifold J 1 N]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
+    {Y : Π y : N, TangentSpace J y} {x : M}
+    (hY : CMDiffAt 1 (T% Y) (f x)) :
+    MDiffAt (T% (fun y ↦ h.horizontalLift y (Y (f y)))) x := by
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  exact (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+
 end Regularity
 
 section Connection
@@ -87,18 +103,7 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
   {X Y Z : Π y : N, TangentSpace J y} {x : M}
 
--- These regularity indices are propositionally, but not definitionally, equal to two.
-local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-  rw [one_add_one_eq_two]
-  infer_instance
-
-local instance : IsManifold I (minSmoothness ℝ 2) M := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  infer_instance
-
-local instance : IsManifold J (minSmoothness ℝ 2) N := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  infer_instance
+attribute [local instance] IsManifold.minSmoothness_of_isRCLikeNormedField
 
 /-- The bracket of horizontal lifts projects to the base bracket. Its vertical component is
 not asserted to vanish. -/
@@ -110,8 +115,8 @@ theorem mfderiv_mlieBracket_horizontalLift
       mlieBracket J X Y (f x) := by
   exact TauCeti.mfderiv_mlieBracket_of_eventually_related
     (h.isSubmersion.contMDiff x) (by simp)
-    ((h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero)
-    ((h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero)
+    (h.mdifferentiableAt_horizontalLift hX)
+    (h.mdifferentiableAt_horizontalLift hY)
     (hX.mdifferentiableAt one_ne_zero) (hY.mdifferentiableAt one_ne_zero)
     (Filter.Eventually.of_forall fun y ↦ h.mfderiv_horizontalLift y _)
     (Filter.Eventually.of_forall fun y ↦ h.mfderiv_horizontalLift y _)
@@ -166,10 +171,8 @@ theorem mfderiv_covariantDerivative_horizontalLift
   have hZ : CMDiffAt 1 (T% (FiberBundle.extend F w)) (f x) := FiberBundle.contMDiffAt_extend ..
   have hX : CMDiffAt 1 (T% (FiberBundle.extend F v)) (f x) := FiberBundle.contMDiffAt_extend ..
   have hk := h.koszul_horizontalLift hX hY hZ
-  have hXM := (h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero
-  have hYM := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
-  have hZM := (h.contMDiffAt_horizontalLift hZ (by norm_num)).mdifferentiableAt one_ne_zero
-  rw [← hM.two_inner_eq_koszul hXM hYM hZM,
+  rw [← hM.two_inner_eq_koszul (h.mdifferentiableAt_horizontalLift hX)
+      (h.mdifferentiableAt_horizontalLift hY) (h.mdifferentiableAt_horizontalLift hZ),
     ← hN.two_inner_eq_koszul (hX.mdifferentiableAt one_ne_zero)
       (hY.mdifferentiableAt one_ne_zero) (hZ.mdifferentiableAt one_ne_zero)] at hk
   simp only [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_right,

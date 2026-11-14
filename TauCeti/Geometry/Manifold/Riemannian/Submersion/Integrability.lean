@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
 import TauCeti.Geometry.Manifold.Distribution.Kernel
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 
 /-!
@@ -96,18 +97,7 @@ variable
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {f : M → N} (h : IsRiemannianSubmersion I J f)
 
--- These regularity indices are propositionally, but not definitionally, equal to two.
-local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-  rw [one_add_one_eq_two]
-  exact .of_le (by norm_cast)
-
-local instance : IsManifold I (minSmoothness ℝ 2) M := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact .of_le (by norm_cast)
-
-local instance : IsManifold J (minSmoothness ℝ 2) N := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  exact .of_le (by norm_cast)
+attribute [local instance] IsManifold.minSmoothness_of_isRCLikeNormedField
 
 include h
 
@@ -299,15 +289,13 @@ on the base, along itself has no vertical part. The two inputs are that `[X, V]`
 every vertical field `V`, and that `|X|²` is pulled back from the base, so it is constant along the
 fibres. -/
 private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, TangentSpace J y}
-    (hB : CMDiffAt ∞ (T% B) (f x)) {w : TangentSpace I x} (hw : w ∈ (mfderiv I J f x).ker) :
+    (hB : CMDiffAt 1 (T% B) (f x)) {w : TangentSpace I x} (hw : w ∈ (mfderiv I J f x).ker) :
     ⟪CovariantDerivative.leviCivitaConnection I M (fun y ↦ h.horizontalLift y (B (f y))) x
         (h.horizontalLift x (B (f x))), w⟫_ℝ = 0 := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   set cov := CovariantDerivative.leviCivitaConnection I M
   have hmetric := CovariantDerivative.isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B (f y))
-  have hXd : MDiffAt (T% X) x :=
-    (h.contMDiffAt_horizontalLift hB (by simp)).mdifferentiableAt (by simp)
+  have hXd : MDiffAt (T% X) x := h.mdifferentiableAt_horizontalLift hB
   have hXh (y : M) : X y ∈ (mfderiv I J f y).kerᗮ := h.horizontalLift_mem_orthogonal_ker y _
   obtain ⟨V, hVd, rfl, hVv⟩ := h.exists_vertical_extension hw
   -- `⟨X, V⟩ = 0`, so `⟨∇_X X, V⟩ = -⟨X, ∇_X V⟩`.
@@ -322,8 +310,8 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
   have hfV : mfderiv I J f x (V x) = 0 := hVv x
   have hd : mvfderiv I (fun y ↦ ⟪X y, X y⟫_ℝ) x (V x) = 0 := by
     rw [hXX, mvfderiv_comp_apply x
-      (TauCeti.Manifold.mdifferentiableAt_inner (hB.mdifferentiableAt (by simp))
-        (hB.mdifferentiableAt (by simp)))
+      (TauCeti.Manifold.mdifferentiableAt_inner (hB.mdifferentiableAt one_ne_zero)
+        (hB.mdifferentiableAt one_ne_zero))
       (h.isSubmersion.contMDiff.mdifferentiableAt (by simp)), hfV, map_zero]
   -- `∇_X V - ∇_V X = [X, V]` is vertical, since `X` is basic and `V` is vertical.
   have h₃ := ((CovariantDerivative.torsion_eq_zero_iff cov).mp
@@ -331,7 +319,7 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
   have hbr : ⟪X x, mlieBracket I X V x⟫_ℝ = 0 :=
     (real_inner_comm _ _).trans <| Submodule.inner_right_of_mem_orthogonal
       ((h.isSubmersion.contMDiff x).mlieBracket_mem_ker_mfderiv_of_eventually_related
-        (by simp [minSmoothness_of_isRCLikeNormedField]) hXd hVd (hB.mdifferentiableAt (by simp))
+        (by simp [minSmoothness_of_isRCLikeNormedField]) hXd hVd (hB.mdifferentiableAt one_ne_zero)
         (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) (.of_forall hVv)) (hXh x)
   have hXx : X x = h.horizontalLift x (B (f x)) := rfl
   rw [hXV, mvfderiv_const, zero_apply] at h₁
@@ -346,13 +334,11 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
 @[simp]
 theorem oneillA_self {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ) :
     h.oneillA x u u = 0 := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   -- Extend `u` to the basic horizontal field `X`, the lift of a field `B` on the base.
   set B : Π y : N, TangentSpace J y := FiberBundle.extend F (mfderiv I J f x u)
   set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B (f y))
-  have hB : CMDiffAt ∞ (T% B) (f x) := FiberBundle.contMDiffAt_extend ..
-  have hXd : MDiffAt (T% X) x :=
-    (h.contMDiffAt_horizontalLift hB (by simp)).mdifferentiableAt (by simp)
+  have hB : CMDiffAt 1 (T% B) (f x) := FiberBundle.contMDiffAt_extend ..
+  have hXd : MDiffAt (T% X) x := h.mdifferentiableAt_horizontalLift hB
   have hXx : X x = u := by
     simp [X, B, FiberBundle.extend_apply_self, h.horizontalLift_mfderiv_of_mem x hu]
   -- Then `A_u u = v ∇_X X`, which vanishes.
@@ -494,8 +480,8 @@ theorem mlieBracket_horizontalLift {X Y : Π y : N, TangentSpace J y}
       h.horizontalLift x (mlieBracket J X Y (f x)) +
         (2 : ℝ) • h.oneillA x (h.horizontalLift x (X (f x)))
           (h.horizontalLift x (Y (f x))) := by
-  have hXd := (h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero
-  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  have hXd := h.mdifferentiableAt_horizontalLift hX
+  have hYd := h.mdifferentiableAt_horizontalLift hY
   rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
       (mlieBracket I (fun y ↦ h.horizontalLift y (X (f y)))
         (fun y ↦ h.horizontalLift y (Y (f y))) x),
@@ -513,7 +499,7 @@ theorem leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y}
         (fun y ↦ h.horizontalLift y (Y (f y))) x (h.horizontalLift x v) =
       h.horizontalLift x (CovariantDerivative.leviCivitaConnection J N Y (f x) v) +
         h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (Y (f x))) := by
-  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  have hYd := h.mdifferentiableAt_horizontalLift hY
   have hA := h.oneillA_apply_of_eventually_mem_orthogonal_ker hYd
     (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _) (h.horizontalLift x v)
   rw [Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x v)] at hA
@@ -536,8 +522,7 @@ theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem
           (fun y ↦ h.horizontalLift y (Y (f y))) x u) =
       h.oneillA x (h.horizontalLift x (Y (f x))) u := by
   set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
-  have hXd : MDiffAt (T% X) x :=
-    (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  have hXd : MDiffAt (T% X) x := h.mdifferentiableAt_horizontalLift hY
   obtain ⟨V, hVd, rfl, hVv⟩ := h.exists_vertical_extension hu
   have hT := ((CovariantDerivative.torsion_eq_zero_iff _).mp
     (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I)) hXd hVd
@@ -563,7 +548,7 @@ theorem leviCivitaConnection_horizontalLift_of_mem_ker
         (fun y ↦ h.horizontalLift y (Y (f y))) x u =
       h.oneillA x (h.horizontalLift x (Y (f x))) u +
         h.oneillT x u (h.horizontalLift x (Y (f x))) := by
-  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  have hYd := h.mdifferentiableAt_horizontalLift hY
   have hT := h.oneillT_apply_of_eventually_mem_orthogonal_ker hYd
     (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _) u
   rw [Submodule.starProjection_eq_self_iff.mpr hu] at hT
