@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Sobolev.Morrey
+import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.MetricSpace.Holder
 
