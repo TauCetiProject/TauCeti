@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Prism
+public import TauCeti.Topology.PathSpace.Moore.Between.Append
 
 /-!
 # Module-linear inverse homotopies for path chains
@@ -21,6 +22,13 @@ homotopies for `pathChainPrepend R γ c`. Thus the path-chain maps are homotopy 
 of right DG modules, strengthening their underlying quasi-isomorphism statement. These
 module-linear homotopies, unlike coefficient-linear inverse homotopies alone, can be used
 in tensor products over the loop-chain algebra.
+
+Symmetrically, appending the reversal of a Moore path `δ` from `a` to `b`, followed by `δ`
+itself, is homotopic to the identity on `C_*(P_{a→b} B; R)` through the prism with time last of
+the growing retracing suffix (`pathChainAppendHomotopy`). It is graded linear for the loops at
+`a` acting in front, with the Koszul sign of an odd operator
+(`pathChainAppendHomotopy_smul`), which is the form a homotopy of left modules takes in a
+tensor product over `C_*(Ω_a B; R)`.
 
 ## References
 
@@ -81,5 +89,39 @@ theorem pathChainPrependHomotopy_spec (γ : MoorePathBetween B a b) (c : B)
     LinearMap.comp_apply, LinearMap.id_apply] at h
   rw [pathChainPrepend_apply, pathChainPrepend_apply]
   simpa only [pathChainPrependHomotopy, cubicalChainModulePrismLinearMap_apply] using h
+
+section Append
+
+variable (R) in
+/-- The homotopy on `C_*(P_{a→b} B; R)` growing the retracing suffix `δ⁻¹ ⋆ δ`: the prism with
+time last of `TauCeti.MoorePathBetween.appendSymmHomotopy`. Its boundary is appending `δ⁻¹`
+and then `δ`, minus the identity. -/
+def pathChainAppendHomotopy (δ : MoorePathBetween B a b) :
+    pathChainLocalSystem R a b →ₗ[R] pathChainLocalSystem R a b :=
+  cubicalChainModulePrismLast R (MoorePathBetween.appendSymmHomotopy δ a)
+
+/-- **Appending a path and its reversal is homotopic to the identity**, through the prism with
+time last of the growing retracing suffix. -/
+theorem pathChainAppendHomotopy_spec (δ : MoorePathBetween B a b) (x : pathChainLocalSystem R a b) :
+    cubicalChainModuleDifferential (MoorePathBetween B a b) (MooreLoopSpace B b) R
+          (pathChainAppendHomotopy R δ x) +
+        pathChainAppendHomotopy R δ
+          (cubicalChainModuleDifferential (MoorePathBetween B a b) (MooreLoopSpace B b) R x) =
+      cubicalChainModuleLinearMap R
+        ((MoorePathBetween.append δ a).comp (MoorePathBetween.append δ.symm a)) x - x := by
+  rw [pathChainAppendHomotopy,
+    cubicalChainModuleDifferential_prismLast_add_prismLast_differential,
+    cubicalChainModuleLinearMap_id, LinearMap.id_apply]
+
+/-- The append homotopy is graded linear for the loops at the starting point acting in front: a
+chain of loops of cohomological degree `i` passes it with the sign `(-1) ^ i`. -/
+theorem pathChainAppendHomotopy_smul (δ : MoorePathBetween B a b) {i : ℤ}
+    {α : loopChainAlgebra B a R} (hα : α ∈ cubicalChainGrading (MooreLoopSpace B a) R i)
+    (x : pathChainLocalSystem R a b) :
+    pathChainAppendHomotopy R δ (α • x) = i.negOnePow • (α • pathChainAppendHomotopy R δ x) :=
+  cubicalChainModulePrismLast_smul _
+    (fun t ω γ ↦ MoorePathBetween.appendSymmHomotopy_smul δ t γ ω) hα x
+
+end Append
 
 end TauCeti

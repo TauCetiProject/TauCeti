@@ -42,6 +42,9 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   over the ground ring is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
   whose relative cycles are relative boundaries.
+* `TauCeti.DGRightModuleCat.isQuasiIso_of_homotopyRetract`: a morphism is a quasi-isomorphism
+  when it is, compatibly, a homotopy retract of a map whose relative cycles are relative
+  boundaries.
 
 ## References
 
@@ -224,6 +227,40 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
   rw [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
     CategoryTheory.ConcreteCategory.isIso_iff_bijective]
   exact Iff.rfl
+
+/-- **Quasi-isomorphisms through homotopy retracts.** Let `f : M → N` be a morphism of DG right
+modules, and let `f₀ : M₀ → N₀` be a map of complexes over the ground ring whose relative cycles
+are relative boundaries, as for a quasi-isomorphism
+(`DGRightModuleHom.isQuasiIso_iff_forall_exists`). If `M` and `N` are homotopy retracts of
+`M₀` and `N₀`, through chain maps `r : M → M₀` and `e : M₀ → M` with
+`e ∘ r = 1 + d K + K d`, compatibly with `f` and `f₀`, then `f` is a quasi-isomorphism. Only
+the composite `e ∘ r` needs to be homotopic to the identity, and none of the maps `r`, `e`, `K`
+needs to be linear over the algebra. -/
+theorem isQuasiIso_of_homotopyRetract {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N)
+    {M₀ N₀ : Type*} [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
+    {dM₀ : M₀ →ₗ[R] M₀} {dN₀ : N₀ →ₗ[R] N₀} (f₀ : M₀ →ₗ[R] N₀)
+    (h₀ : ∀ x y, dM₀ x = 0 → f₀ x = dN₀ y → ∃ u v, dM₀ u = x ∧ f₀ u + dN₀ v = y)
+    (rM : M →ₗ[R] M₀) (eM : M₀ →ₗ[R] M) (KM : M →ₗ[R] M)
+    (rN : N →ₗ[R] N₀) (eN : N₀ →ₗ[R] N) (KN : N →ₗ[R] N)
+    (hrM : ∀ x, dM₀ (rM x) = rM (M.differential x))
+    (heM : ∀ x, M.differential (eM x) = eM (dM₀ x))
+    (hrN : ∀ y, dN₀ (rN y) = rN (N.differential y))
+    (heN : ∀ y, N.differential (eN y) = eN (dN₀ y))
+    (hKM : ∀ x, eM (rM x) = x + M.differential (KM x) + KM (M.differential x))
+    (hKN : ∀ y, eN (rN y) = y + N.differential (KN y) + KN (N.differential y))
+    (hr : ∀ x, rN (f x) = f₀ (rM x)) (he : ∀ x, f (eM x) = eN (f₀ x))
+    (hK : ∀ x, f (KM x) = KN (f x)) : IsQuasiIso f := by
+  rw [IsQuasiIso, DGRightModuleHom.isQuasiIso_iff_forall_exists]
+  intro x y hx hfx
+  -- Solve the problem for `f₀` on the retracts, then lift the solution back along `e`,
+  -- correcting by the homotopies.
+  obtain ⟨u₀, v₀, hu₀, huv₀⟩ := h₀ (rM x) (rN y) (by rw [hrM, hx, map_zero])
+    (by rw [← hr, hfx, hrN])
+  refine ⟨eM u₀ - KM x, eN v₀ - KN y, ?_, ?_⟩
+  · rw [map_sub, heM, hu₀, hKM, hx, map_zero, add_zero, add_sub_cancel_right]
+  · rw [map_sub, map_sub, he, hK, hfx, heN, show eN (f₀ u₀) = eN (rN y) - eN (dN₀ v₀) by
+      rw [← huv₀, map_add, add_sub_cancel_right], hKN]
+    abel
 
 end DGRightModuleCat
 
