@@ -21,7 +21,9 @@ vector field of `H` is obtained by inverting contraction with the symplectic for
 Our sign convention is `ω (X_H x) v = dH(x) v`. For `ω = dq ∧ dp`, this gives the
 Hamilton equations `q' = ∂H/∂p`, `p' = -∂H/∂q`.
 
-The characteristic contraction equation determines the field uniquely. Since `dH(X_H) = 0`, a
+The characteristic contraction equation determines the field uniquely, and the field vanishes
+off the topological support of `H`
+(`TauCeti.SymplecticForm.hamiltonianVectorField_eq_zero_of_notMem_tsupport`). Since `dH(X_H) = 0`, a
 differentiable Hamiltonian is constant along every integral curve of `X_H`
 (`TauCeti.SymplecticForm.apply_eq_of_hasDerivWithinAt_hamiltonianVectorField`). The linearization of
 `X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
@@ -100,6 +102,11 @@ theorem hamiltonianVectorField_eq_zero_iff (ω : SymplecticForm V) (H : V → �
     ω.hamiltonianVectorField H x = 0 ↔ fderiv ℝ H x = 0 := by
   rw [eq_comm, eq_hamiltonianVectorField_iff]
   simp [ContinuousLinearMap.ext_iff, eq_comm]
+
+/-- The Hamiltonian vector field vanishes off the topological support of the Hamiltonian. -/
+theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport (ω : SymplecticForm V) {H : V → ℝ}
+    {x : V} (hx : x ∉ tsupport H) : ω.hamiltonianVectorField H x = 0 :=
+  (ω.hamiltonianVectorField_eq_zero_iff H x).2 (fderiv_of_notMem_tsupport ℝ hx)
 
 /-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
 @[simp]
