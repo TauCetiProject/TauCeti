@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.Kernel
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The kernel distribution of a two-form
@@ -21,6 +22,8 @@ Let `σ` be a smooth two-form on a real manifold `M`. Its *kernel* at `x` is the
 `LinearMap.ker (σ.bilinFormAt x)`. This file studies the field of kernels `x ↦ ker σ_x` as a
 distribution.
 
+* On a manifold modelled on a finite-dimensional space, the locus where `σ_x` is nondegenerate
+  (`ker σ_x = ⊥`) is open (`TauCeti.SmoothForm.isOpen_setOf_nondegenerate_bilinFormAt`).
 * If `M` is modelled on a finite-dimensional space and the kernels all have the same dimension
   `k`, they form a smooth distribution of rank `k`
   (`TauCeti.SmoothForm.isContMDiffDistribution_ker_bilinFormAt`). Read in a trivialization of the
@@ -44,6 +47,8 @@ along the axis `x = 0` and `0` elsewhere.
 
 ## Main results
 
+* `TauCeti.SmoothForm.isOpen_setOf_nondegenerate_bilinFormAt`: on a manifold with
+  finite-dimensional model space, nondegeneracy of `σ_x` is an open condition on `x`.
 * `TauCeti.SmoothForm.isContMDiffDistribution_ker_bilinFormAt`: the kernels of a two-form of
   constant rank form a smooth distribution.
 * `TauCeti.SmoothForm.isInvolutiveDistribution_ker_bilinFormAt`: the kernels of a closed two-form
@@ -143,6 +148,29 @@ private theorem ker_bilinFormAt_eq_comap (σ : SmoothForm I M ℝ 2) {x₀ y : M
       congr($h (L w))
 
 end Coordinates
+
+/-- **Nondegeneracy of a two-form is an open condition.** On a manifold modelled on a
+finite-dimensional space, the set of points where `σ_x` is nondegenerate is open. -/
+theorem isOpen_setOf_nondegenerate_bilinFormAt [FiniteDimensional ℝ E] (σ : SmoothForm I M ℝ 2) :
+    IsOpen {x : M | (σ.bilinFormAt x).Nondegenerate} := by
+  have : IsManifold I (0 + 1) M := IsManifold.of_le (n := 1) (by simp)
+  rw [isOpen_iff_mem_nhds]
+  intro x₀ hx₀
+  let e := trivializationAt E (TangentSpace I) x₀
+  have hiff {y : M} (hy : y ∈ e.baseSet) :
+      (σ.bilinFormAt y).Nondegenerate ↔ (trivBilin σ x₀ y).toBilinForm.Nondegenerate := by
+    rw [LinearMap.BilinForm.Nondegenerate,
+      (isAlt_bilinFormAt σ y).isRefl.nondegenerate_iff_separatingLeft,
+      LinearMap.separatingLeft_iff_ker_eq_bot, ker_bilinFormAt_eq_comap σ hy,
+      Submodule.comap_equiv_eq_map_symm, Submodule.map_eq_bot_iff, LinearMap.ker_eq_bot,
+      ContinuousLinearMap.coe_coe, ← ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective]
+  have hcont : ContinuousAt (trivBilin σ x₀) x₀ :=
+    (contMDiffOn_trivBilin (n := 0) σ x₀).continuousOn.continuousAt
+      (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) x₀))
+  filter_upwards [e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) x₀),
+    hcont.eventually_toBilinForm_nondegenerate
+      ((hiff (mem_baseSet_trivializationAt E (TangentSpace I) x₀)).1 hx₀)] with y hy hnd
+  exact (hiff hy).2 hnd
 
 /-- **The kernels of a two-form of constant rank form a smooth distribution.** If the kernels
 `ker σ_x` of a smooth two-form `σ` all have dimension `k`, then `x ↦ ker σ_x` is a `C^n`

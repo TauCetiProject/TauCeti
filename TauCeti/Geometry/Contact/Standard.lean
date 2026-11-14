@@ -50,7 +50,10 @@ In every dimension, let `V` be a real inner product space and give `V × V × �
 coordinates
 (`TauCeti.mextDeriv_innerProductContactForm_apply`), and its kernel at `(q, p, z)` consists of
 the vectors
-`(u, v, w)` with `w = ⟪p, u⟫` (`TauCeti.mem_kerDistribution_innerProductContactForm`). The proof of
+`(u, v, w)` with `w = ⟪p, u⟫` (`TauCeti.mem_kerDistribution_innerProductContactForm`), and its
+Reeb vector field is the constant vector `(0, 0, 1)`
+(`TauCeti.reebVectorField_innerProductContactForm`,
+`TauCeti.fromTangentSpace_reebVectorField_innerProductContactForm`). The proof of
 contactness tests a kernel vector `(u, v, w)` against the kernel vectors `(0, u, 0)` and
 `(v, 0, ⟪p, v⟫)`, on which `dα` takes the values `‖u‖²` and `-‖v‖²`.
 
@@ -369,6 +372,26 @@ theorem isContactForm_innerProductContactForm : (innerProductContactForm V).IsCo
   rw [innerProductContactForm_apply, sub_eq_zero, h₁, inner_zero_right] at hv
   -- The zero tangent vector is by definition the zero of `V × V × ℝ`.
   exact Prod.ext h₁ (Prod.ext h₂ hv)
+
+/-- The Reeb vector field of the standard contact form `dz - ⟪p, dq⟫` on `V × V × ℝ` is the
+constant vector `(0, 0, 1)`. No finite-dimensionality of `V` is needed. -/
+theorem reebVectorField_innerProductContactForm (x : V × V × ℝ) :
+    (innerProductContactForm V).reebVectorField x =
+      (NormedSpace.fromTangentSpace x).symm (0, 0, 1) := by
+  refine (SmoothForm.isContactForm_iff_forall_isContactFormAt.1
+    (isContactForm_innerProductContactForm V) x).reebVectorField_eq_of_apply_eq_one ?_
+    fun w _ ↦ ?_
+  · rw [innerProductContactForm_apply, NormedSpace.fromTangentSpace_symm_apply]
+    simp
+  · rw [mextDeriv_innerProductContactForm_apply, NormedSpace.fromTangentSpace_symm_apply]
+    simp [stdSymplecticForm_apply]
+
+/-- Read in `V × V × ℝ`, the Reeb vector field of `dz - ⟪p, dq⟫` is `(0, 0, 1)`. -/
+@[simp]
+theorem fromTangentSpace_reebVectorField_innerProductContactForm (x : V × V × ℝ) :
+    NormedSpace.fromTangentSpace x ((innerProductContactForm V).reebVectorField x) =
+      (0, 0, 1) := by
+  rw [reebVectorField_innerProductContactForm, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the standard contact form is `dz - Σᵢ pᵢ dqᵢ`. -/
 theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}

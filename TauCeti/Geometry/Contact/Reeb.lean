@@ -46,6 +46,8 @@ All statements here are pointwise linear algebra at each point, applying
 * `TauCeti.SmoothForm.IsContactForm.interior_mextDeriv_reebVectorField`: the second Reeb
   equation `ι_(R_α) dα = 0` as an identity of one-forms.
 * `TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`: uniqueness.
+* `TauCeti.IsContactFormAt.reebVectorField_eq_of_apply_eq_one`: uniqueness at a contact point in
+  arbitrary dimension once a candidate Reeb vector is exhibited.
 * `TauCeti.SmoothForm.IsContactForm.isCompl_kerDistribution_span_reebVectorField`: the splitting
   `T_x M = ξ_x ⊕ ℝ R_α(x)`.
 * `TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`: the rescaling law.
@@ -204,6 +206,28 @@ omit [FiniteDimensional ℝ E] in
 theorem IsContactForm.reebVectorField_neg (hα : α.IsContactForm) (x : M) :
     (-α).reebVectorField x = -α.reebVectorField x := by
   rw [← neg_one_smul ℝ α, hα.reebVectorField_smul (by norm_num), inv_neg, inv_one, neg_one_smul]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Uniqueness of a Reeb vector at a contact point in arbitrary dimension.** If `α` is a contact
+form at `x` and `v` is a tangent vector at `x` with `α(v) = 1` and `dα(v, w) = 0` for all
+`w ∈ ker α_x`, then `α.reebVectorField x = v`. No finite-dimensionality or global contactness is
+needed once such a vector is exhibited. -/
+theorem _root_.TauCeti.IsContactFormAt.reebVectorField_eq_of_apply_eq_one {x : M}
+    (hc : IsContactFormAt α.1 x) {v : TangentSpace I x} (hv : α.1 x ![v] = 1)
+    (hvw : ∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) :
+    α.reebVectorField x = v := by
+  set a := (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+  set B := (mextDerivₗ I 1 α).bilinFormAt x
+  have ha (u : TangentSpace I x) : a u = α.1 x ![u] := degreeOneEquiv_coe_apply α x u
+  have hB (u w : TangentSpace I x) : B u w = mextDeriv α.1 x ![u, w] :=
+    (mextDeriv_eq_bilinFormAt α x u w).symm
+  obtain ⟨hr, hrB⟩ := Module.Dual.reebVector_spec_of_exists (a := a) (B := B)
+    ⟨v, (ha v).trans hv, fun w hw ↦ (hB v w).trans (hvw w ((ha w).symm.trans hw))⟩
+  change Module.Dual.reebVector a B = v
+  refine sub_eq_zero.1 (hc.nondegenerate _ ?_ fun w hw ↦ ?_)
+  · rw [RoughForm.mem_ker, ← ha, map_sub, hr, ha v, hv, sub_self]
+  · rw [← hB, map_sub, LinearMap.sub_apply, hrB w ((ha w).trans (RoughForm.mem_ker.1 hw)),
+      hB v w, hvw w (RoughForm.mem_ker.1 hw), sub_self]
 
 end SmoothForm
 
