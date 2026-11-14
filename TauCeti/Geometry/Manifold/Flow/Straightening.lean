@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Straightening
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
-import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -72,68 +70,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M]
-
-omit [FiniteDimensional ℝ E] in
-/-- A coordinate change `φ` of the model vector space, `C^m` with `C^m` inverse and defined at the
-chart image of an interior point `x`, gives a chart `e` of the `C^m` maximal atlas around `x` that
-reads as `φ ∘ extChartAt I x` up to a translation: at every point `y` of its domain, the
-differential of `I ∘ e` is the differential of `φ` composed with that of the extended chart. -/
-private theorem exists_mem_maximalAtlas_mfderiv_eq {m : ℕ∞} (hm : 1 ≤ m) [IsManifold I m M]
-    {x : M} (hx : I.IsInteriorPoint x) {φ : OpenPartialHomeomorph E E}
-    (hxφ : extChartAt I x x ∈ φ.source) (hφ : ∀ z ∈ φ.source, ContDiffAt ℝ m φ z)
-    (hφs : ∀ z ∈ φ.target, ContDiffAt ℝ m φ.symm z) :
-    ∃ e : OpenPartialHomeomorph M H, e ∈ IsManifold.maximalAtlas I m M ∧ x ∈ e.source ∧
-      ∀ y ∈ e.source, (y ∈ (extChartAt I x).source ∧ range I ∈ 𝓝 (extChartAt I x y)) ∧
-        extChartAt I x y ∈ φ.source ∧ mfderiv I 𝓘(ℝ, E) (I ∘ e) y =
-          (fderiv ℝ φ (extChartAt I x y)).comp (mfderiv I 𝓘(ℝ, E) (extChartAt I x) y) := by
-  have : IsManifold I 1 M := .of_le (n := m) (by exact_mod_cast hm)
-  set e₀ := extChartAt I x with he₀
-  -- The extended chart at `x`, restricted to the interior of its target, where the model range is
-  -- a neighbourhood of every point.
-  set Φ := extChartPartialDiffeomorph I m x
-  have hΦ {y : M} (hy : y ∈ Φ.source) : y ∈ e₀.source ∧ range I ∈ 𝓝 (e₀ y) := by
-    rw [extChartPartialDiffeomorph_source] at hy
-    exact ⟨hy.1,
-      mem_interior_iff_mem_nhds.1 (interior_mono (extChartAt_target_subset_range x) hy.2)⟩
-  have hxΦ : x ∈ Φ.source := (mem_extChartPartialDiffeomorph_source I m x).2 hx
-  -- Translate `φ` so that it fixes `e₀ x`.
-  have hφA : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) m E := by
-    have h := trans_mem_maximalAtlas_of_contDiffAt
-      ((contDiffGroupoid m 𝓘(ℝ, E)).id_mem_maximalAtlas) hφ hφs
-    rwa [OpenPartialHomeomorph.refl_trans] at h
-  set T := (Homeomorph.addRight (e₀ x - φ (e₀ x))).toOpenPartialHomeomorph
-  set σ := φ.trans T
-  have hσ : (σ : E → E) = fun z ↦ φ z + (e₀ x - φ (e₀ x)) := rfl
-  have hσA : σ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) m E :=
-    trans_mem_maximalAtlas_of_contDiffAt hφA (fun _ _ ↦ contDiffAt_id.add contDiffAt_const)
-      fun _ _ ↦ contDiffAt_id.add contDiffAt_const
-  have hσx : σ (e₀ x) = e₀ x := by
-    rw [hσ]
-    exact add_sub_cancel _ _
-  -- Read the new coordinates through the interior chart of the model.
-  set e := (Φ.toOpenPartialHomeomorph.trans σ).trans I.interiorChart.symm
-  have hes (y : M) : y ∈ e.source ↔
-      (y ∈ Φ.source ∧ e₀ y ∈ φ.source) ∧ σ (e₀ y) ∈ interior (range I) := by
-    simp [e, σ, T, Φ, he₀]
-  have heq {y : M} (hy : y ∈ e.source) : I (e y) = σ (e₀ y) := by
-    have h := I.right_inv (interior_subset ((hes y).1 hy).2)
-    simpa [e, Φ, he₀] using h
-  refine ⟨e, Φ.trans_trans_interiorChart_symm_mem_maximalAtlas hσA,
-    (hes x).2 ⟨⟨hxΦ, hxφ⟩, by rwa [hσx]⟩, fun y hy ↦ ?_⟩
-  obtain ⟨⟨hyΦ, hyφ⟩, -⟩ := (hes y).1 hy
-  refine ⟨hΦ hyΦ, hyφ, ?_⟩
-  have hσd : DifferentiableAt ℝ σ (e₀ y) := by
-    rw [hσ]
-    exact ((hφ _ hyφ).differentiableAt
-      (by exact_mod_cast (zero_lt_one.trans_le hm).ne')).add_const _
-  -- `I ∘ e` is `σ ∘ e₀` near `y`, so its differential follows from the chain rule.
-  have hev : I ∘ e =ᶠ[𝓝 y] σ ∘ e₀ :=
-    eventually_of_mem (e.open_source.mem_nhds hy) fun y' hy' ↦ heq hy'
-  rw [hev.mfderiv_eq, mfderiv_comp y hσd.mdifferentiableAt
-      (mdifferentiableAt_extChartAt (by rw [← extChartAt_source (I := I)]; exact (hΦ hyΦ).1)),
-    mfderiv_eq_fderiv, hσ, fderiv_add_const]
-  -- The tangent spaces of `E` are `E` by definition, so the remaining casts are identities.
-  rfl
 
 /-- **The canonical form for commuting vector fields** [Lee, Thm. 9.46]. Let `V i` be vector
 fields on a `C^n` manifold with finite-dimensional model, `C^m` on a neighbourhood of an interior
@@ -203,9 +139,10 @@ theorem exists_chart_mfderiv_eq_const_of_eventually_mlieBracket_eq_zero {ι : Ty
   obtain ⟨φ, hxφ, hφ, hφs, hφw⟩ :=
     exists_openPartialHomeomorph_fderiv_eq_const_of_lieBracket_eventuallyEq_zero hm hwS
       (hSo.mem_nhds hxS) hli' hbr'
-  obtain ⟨e, he, hxe, hed⟩ := exists_mem_maximalAtlas_mfderiv_eq hm hx hxφ hφ hφs
+  obtain ⟨e, he, hxe, hed⟩ :=
+    exists_mem_maximalAtlas_mfderiv_eq (by exact_mod_cast hm) hx hxφ hφ hφs
   refine ⟨e, fun i ↦ w i (e₀ x), he, hxe, hli', fun y hy i ↦ ?_⟩
-  obtain ⟨hy₀, hyφ, hd⟩ := hed y hy
+  obtain ⟨hy₀, hyφ, -, hd⟩ := hed y hy
   rw [hd]
   exact (congrArg (fderiv ℝ φ (e₀ y)) (hwe i hy₀).symm).trans (hφw _ hyφ i)
 
