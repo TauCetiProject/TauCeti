@@ -32,12 +32,9 @@ instance faithful_mapPresheaf (F : C ⥤ D) [F.Faithful] : F.mapPresheaf.Faithfu
   map_injective {X Y} f g h := by
     obtain ⟨fb, fc⟩ := f
     obtain ⟨gb, gc⟩ := g
-    -- `F.mapPresheaf.map f` is `f.base` together with `f.c` whiskered by `F`
-    have h' : (⟨fb, Functor.whiskerRight fc F⟩ :
-        Hom (F.mapPresheaf.obj X) (F.mapPresheaf.obj Y)) = ⟨gb, Functor.whiskerRight gc F⟩ := h
-    obtain ⟨rfl, hc⟩ := Hom.mk.inj h'
+    obtain rfl : fb = gb := congr(($h).base)
     congr
     ext U
-    exact F.map_injective (NatTrans.congr_app (eq_of_heq hc) (Opposite.op U))
+    exact F.map_injective congr(($h).c.app (.op U))
 
 end AlgebraicGeometry.PresheafedSpace

@@ -34,9 +34,8 @@ rationalization construction.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
-This is the generic-fibre step for the Chevalley integral form used in Layer 9 of the
-`ReductiveGroups` roadmap. That pinned Chevalley--Demazure construction is consumed by milestone
-L0 of the `CFSGStatement` roadmap.
+This is the generic-fibre step for the Chevalley integral form used in the pinned
+Chevalley--Demazure construction.
 -/
 
 public section
@@ -50,7 +49,7 @@ section
 universe u v w
 
 variable {R : Type u} {K : Type v} {L : Type w}
-  [CommRing R] [IsDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
   [LieRing L] [LieAlgebra R L] [LieAlgebra K L] [IsScalarTower R K L]
 
 private theorem rationalizationEquiv_map_lie (M : LieSubalgebra R L)

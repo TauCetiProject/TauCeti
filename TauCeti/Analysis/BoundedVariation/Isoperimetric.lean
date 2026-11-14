@@ -27,7 +27,8 @@ null-measurable set `s` of finite positive volume satisfies the sharp isoperimet
 
 (`MeasureTheory.NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`),
 with no boundedness, connectedness or regularity hypothesis on `s`, and with `P(s)` finite or
-infinite. Equivalently `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`
+infinite (when `n = 0` the inequality holds trivially). Equivalently
+`n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)`
 (`MeasureTheory.NullMeasurableSet.ofReal_mul_volume_real_rpow_mul_le_perimeter`), which is also
 stated in real numbers when the perimeter is finite
 (`MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`).
@@ -126,7 +127,7 @@ private theorem div_mul_le_integral_add_setIntegral {w : E → ℝ} (hw : ContDi
     · linarith [(abs_lt.1 (hgrad y hy1 hy2)).2]
     · rw [mem_ball_zero_iff, lt_div_iff₀ (by linarith)] at hz
       linarith
-  have hshell := finrank_mul_rpow_pow_mul_le_volume_real_sub hn hGm.nullMeasurableSet hG hF
+  have hshell := finrank_mul_rpow_pow_mul_le_volume_real_sub hn hG hF
     (div_pos hη (by linarith)) hsub
   rw [← measureReal_sdiff hGF hGm hF, ← hSFG] at hshell
   -- On `S` the gradient has norm at least `1 - ε`, and the calibration bounds its integral.
@@ -331,16 +332,25 @@ theorem mul_volume_real_rpow_mul_le_perimeter_toReal
   (ENNReal.ofReal_le_iff_le_toReal hP).1
     (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hs0)
 
-/-- **The sharp isoperimetric inequality.** In a Euclidean space of dimension `n ≥ 1`, every
+/-- **The sharp isoperimetric inequality.** In a Euclidean space of dimension `n`, every
 null-measurable set `s` of finite positive volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where
 `ω_n = volume (ball 0 1)` and `P(s)` is the perimeter of `s` in the whole space, finite or
-infinite. No boundedness or regularity is assumed. Balls attain equality
-(`TauCeti.perimeter_ball_pow`). -/
+infinite. No boundedness or regularity is assumed, and the case `n = 0` is trivial. Balls attain
+equality (`TauCeti.perimeter_ball_pow`). -/
 theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
-    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
-    (hs0 : volume s ≠ 0) :
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0) :
     (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) * volume s ^ (finrank ℝ E - 1) ≤
       perimeter volume ⊤ s ^ finrank ℝ E := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · have _ : Subsingleton E := Module.finrank_zero_iff.mp hn
+    let b := stdOrthonormalBasis ℝ E
+    have hb : parallelepiped b = univ := eq_univ_of_forall fun x ↦
+      (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, fun _ ↦ zero_le_one⟩, Subsingleton.elim _ _⟩
+    have hvol : volume (ball (0 : E) 1) ≤ 1 := by
+      calc volume (ball (0 : E) 1) ≤ volume (parallelepiped b) :=
+            measure_mono (hb ▸ subset_univ _)
+        _ = 1 := b.volume_parallelepiped
+    simpa [hn] using hvol
   rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
   exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hs0) _
@@ -357,6 +367,6 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le
   rcases eq_or_ne (volume s) 0 with hs0 | hs0
   · rw [hs0, zero_pow (by omega), mul_zero]
     exact zero_le
-  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs (by omega) hs0
+  exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs hs0
 
 end MeasureTheory.NullMeasurableSet

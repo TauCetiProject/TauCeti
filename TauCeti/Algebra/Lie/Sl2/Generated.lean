@@ -61,9 +61,6 @@ irreducibility.
 
 ## References
 
-This supports the Clebsch-Gordan item of Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
-
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §7.2.
 -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.MeasureTheory.Measure.Map
 public import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
@@ -29,11 +28,12 @@ The original work is copyright Cameron Freer and licensed under Apache 2.0.
   `TauCeti.Mod0MeasureIso.measurePreserving_invFun` read off the two measure-preserving maps,
   `TauCeti.Mod0MeasureIso.symm` inverts an isomorphism, and `TauCeti.Mod0MeasureIso.trans`
   composes two of them;
-* `TauCeti.embeddingRealMod0MeasureIso` transports a standard-Borel space into `ℝ` by
-  `embeddingReal`;
-* `TauCeti.mod0MeasureIso_to_unitInterval` turns a mod-zero isomorphism into `ℝ` carrying the
-  unit interval measure into measure-preserving maps in both directions between that space and
-  the unit interval.
+* `MeasurableEmbedding.mod0MeasureIso` makes a measurable embedding of a nonempty space that
+  pushes `μ` forward to `ν` into a mod-zero isomorphism, with `MeasurableEmbedding.invFun` as
+  the backward map;
+* `TauCeti.Mod0MeasureIso.exists_measurePreserving_unitInterval` turns a mod-zero isomorphism
+  into `ℝ` carrying the unit interval measure into measure-preserving maps in both directions
+  between that space and the unit interval.
 
 The instance built from the cumulative distribution function and the quantile of an atomless
 real law is `MeasureTheory.Measure.realMod0MeasureIso`, in `TauCeti.Probability.Quantile`.
@@ -64,22 +64,22 @@ structure Mod0MeasureIso (α β : Type*) [MeasurableSpace α] [MeasurableSpace �
   left_inv_ae : (fun x => invFun (toFun x)) =ᵐ[μ] id
   right_inv_ae : (fun y => toFun (invFun y)) =ᵐ[ν] id
 
+variable {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+  {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
+
 /-- The forward map of a mod-zero isomorphism preserves the measure. -/
-theorem Mod0MeasureIso.measurePreserving {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
+theorem Mod0MeasureIso.measurePreserving (e : Mod0MeasureIso α β μ ν) :
     MeasurePreserving e.toFun μ ν :=
   ⟨e.measurable_toFun, e.map_toFun⟩
 
 /-- The backward map of a mod-zero isomorphism preserves the measure. -/
-theorem Mod0MeasureIso.measurePreserving_invFun {α β : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
+theorem Mod0MeasureIso.measurePreserving_invFun (e : Mod0MeasureIso α β μ ν) :
     MeasurePreserving e.invFun ν μ :=
   ⟨e.measurable_invFun, e.map_invFun⟩
 
 /-- The inverse of a mod-zero isomorphism is a mod-zero isomorphism between the reversed spaces,
 with the two maps interchanged. -/
-def Mod0MeasureIso.symm {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) : Mod0MeasureIso β α ν μ where
+def Mod0MeasureIso.symm (e : Mod0MeasureIso α β μ ν) : Mod0MeasureIso β α ν μ where
   toFun := e.invFun
   invFun := e.toFun
   measurable_toFun := e.measurable_invFun
@@ -90,150 +90,85 @@ def Mod0MeasureIso.symm {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
   right_inv_ae := e.left_inv_ae
 
 @[simp]
-theorem Mod0MeasureIso.symm_toFun {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
-    e.symm.toFun = e.invFun :=
+theorem Mod0MeasureIso.symm_toFun (e : Mod0MeasureIso α β μ ν) : e.symm.toFun = e.invFun :=
   (rfl)
 
 @[simp]
-theorem Mod0MeasureIso.symm_invFun {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    {μ : Measure α} {ν : Measure β} (e : Mod0MeasureIso α β μ ν) :
-    e.symm.invFun = e.toFun :=
+theorem Mod0MeasureIso.symm_invFun (e : Mod0MeasureIso α β μ ν) : e.symm.invFun = e.toFun :=
   (rfl)
 
 /-- The composition of two mod-zero isomorphisms is again a mod-zero isomorphism. -/
-def Mod0MeasureIso.trans {α β γ} [MeasurableSpace α] [MeasurableSpace β]
-    [MeasurableSpace γ] {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
-    (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
+def Mod0MeasureIso.trans (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
     Mod0MeasureIso α γ μ ξ where
   toFun := f.toFun ∘ e.toFun
   invFun := e.invFun ∘ f.invFun
   measurable_toFun := f.measurable_toFun.comp e.measurable_toFun
   measurable_invFun := e.measurable_invFun.comp f.measurable_invFun
-  map_toFun := by
-    rw [← Measure.map_map f.measurable_toFun e.measurable_toFun, e.map_toFun, f.map_toFun]
-  map_invFun := by
-    rw [← Measure.map_map e.measurable_invFun f.measurable_invFun, f.map_invFun, e.map_invFun]
+  map_toFun := (f.measurePreserving.comp e.measurePreserving).map_eq
+  map_invFun := (e.measurePreserving_invFun.comp f.measurePreserving_invFun).map_eq
   left_inv_ae := by
-    have hqmp : QuasiMeasurePreserving e.toFun μ ν := by
-      refine ⟨e.measurable_toFun, ?_⟩
-      rw [e.map_toFun]
-    have h1 := hqmp.ae_eq_comp f.left_inv_ae
-    filter_upwards [h1, e.left_inv_ae] with x hx1 hx2
-    simp only [Function.comp_apply, id_eq] at hx1 hx2 ⊢
-    rw [hx1]
-    exact hx2
+    filter_upwards [e.measurePreserving.quasiMeasurePreserving.ae_eq_comp f.left_inv_ae,
+      e.left_inv_ae] with x hx hx'
+    simp_all
   right_inv_ae := by
-    have hqmp : QuasiMeasurePreserving f.invFun ξ ν := by
-      refine ⟨f.measurable_invFun, ?_⟩
-      rw [f.map_invFun]
-    have h2 := hqmp.ae_eq_comp e.right_inv_ae
-    filter_upwards [h2, f.right_inv_ae] with y hy1 hy2
-    simp only [Function.comp_apply, id_eq] at hy1 hy2 ⊢
-    rw [hy1]
-    exact hy2
+    filter_upwards [f.measurePreserving_invFun.quasiMeasurePreserving.ae_eq_comp e.right_inv_ae,
+      f.right_inv_ae] with y hy hy'
+    simp_all
 
 @[simp]
-theorem Mod0MeasureIso.trans_toFun {α β γ} [MeasurableSpace α] [MeasurableSpace β]
-    [MeasurableSpace γ] {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
-    (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
+theorem Mod0MeasureIso.trans_toFun (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
     (e.trans f).toFun = f.toFun ∘ e.toFun :=
   (rfl)
 
 @[simp]
-theorem Mod0MeasureIso.trans_invFun {α β γ} [MeasurableSpace α] [MeasurableSpace β]
-    [MeasurableSpace γ] {μ : Measure α} {ν : Measure β} {ξ : Measure γ}
-    (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
+theorem Mod0MeasureIso.trans_invFun (e : Mod0MeasureIso α β μ ν) (f : Mod0MeasureIso β γ ν ξ) :
     (e.trans f).invFun = e.invFun ∘ f.invFun :=
   (rfl)
 
-/-- Transporting a standard-Borel space into `ℝ` by `embeddingReal` is a mod-zero isomorphism
-onto the pushforward of the measure. -/
-def embeddingRealMod0MeasureIso (α) [MeasurableSpace α] [StandardBorelSpace α] (μ : Measure α)
-    [Nonempty α] : Mod0MeasureIso α ℝ μ (Measure.map (embeddingReal α) μ) :=
-  let he := measurableEmbedding_embeddingReal α
-  { toFun := embeddingReal α
-    invFun := he.invFun
-    measurable_toFun := he.measurable
-    measurable_invFun := he.measurable_invFun
-    map_toFun := rfl
-    map_invFun := by
-      rw [Measure.map_map he.measurable_invFun he.measurable]
-      have h : he.invFun ∘ embeddingReal α = id := funext he.leftInverse_invFun
-      rw [h, Measure.map_id]
-    left_inv_ae := ae_of_all _ he.leftInverse_invFun
-    right_inv_ae := by
-      have hmem : ∀ᵐ y ∂(Measure.map (embeddingReal α) μ), y ∈ range (embeddingReal α) :=
-        ae_map_mem_range he.measurableSet_range he.measurable.aemeasurable
-      filter_upwards [hmem] with y hy
-      obtain ⟨x, rfl⟩ := hy
-      simp only [id_eq]
-      rw [he.leftInverse_invFun x] }
+/-- A measurable embedding of a nonempty space that pushes `μ` forward to `ν` is a mod-zero
+isomorphism, with `MeasurableEmbedding.invFun` as the backward map: the two maps are mutually
+inverse on the range of the embedding, which carries all of `ν`. -/
+def _root_.MeasurableEmbedding.mod0MeasureIso [Nonempty α] {f : α → β}
+    (hf : MeasurableEmbedding f) (hμ : μ.map f = ν) : Mod0MeasureIso α β μ ν where
+  toFun := f
+  invFun := hf.invFun
+  measurable_toFun := hf.measurable
+  measurable_invFun := hf.measurable_invFun
+  map_toFun := hμ
+  map_invFun := by
+    rw [← hμ, Measure.map_map hf.measurable_invFun hf.measurable,
+      hf.leftInverse_invFun.comp_eq_id, Measure.map_id]
+  left_inv_ae := ae_of_all _ hf.leftInverse_invFun
+  right_inv_ae := by
+    have hmem : ∀ᵐ y ∂ν, y ∈ range f :=
+      hμ ▸ ae_map_mem_range hf.measurableSet_range hf.measurable.aemeasurable
+    filter_upwards [hmem] with _ ⟨x, hx⟩
+    rw [← hx, hf.leftInverse_invFun x, id_eq]
 
 @[simp]
-theorem embeddingRealMod0MeasureIso_toFun (α) [MeasurableSpace α] [StandardBorelSpace α]
-    (μ : Measure α) [Nonempty α] :
-    (embeddingRealMod0MeasureIso α μ).toFun = embeddingReal α :=
+theorem _root_.MeasurableEmbedding.mod0MeasureIso_toFun [Nonempty α] {f : α → β}
+    (hf : MeasurableEmbedding f) (hμ : μ.map f = ν) : (hf.mod0MeasureIso hμ).toFun = f :=
   (rfl)
 
 @[simp]
-theorem embeddingRealMod0MeasureIso_invFun (α) [MeasurableSpace α] [StandardBorelSpace α]
-    (μ : Measure α) [Nonempty α] :
-    (embeddingRealMod0MeasureIso α μ).invFun = (measurableEmbedding_embeddingReal α).invFun :=
+theorem _root_.MeasurableEmbedding.mod0MeasureIso_invFun [Nonempty α] {f : α → β}
+    (hf : MeasurableEmbedding f) (hμ : μ.map f = ν) :
+    (hf.mod0MeasureIso hμ).invFun = hf.invFun :=
   (rfl)
 
 /-- A mod-zero isomorphism into `ℝ` carrying the unit interval measure gives measure-preserving
-maps in both directions between the space and the unit interval: the forward map clipped to the
-unit interval, and the backward map composed with the coercion. Since the forward map takes
-values in the unit interval outside a null set, the two maps are mutually inverse almost
-everywhere. -/
-theorem mod0MeasureIso_to_unitInterval
-    {α : Type*} [MeasurableSpace α] {μ : Measure α}
+maps in both directions between the space and the unit interval which are mutually inverse
+almost everywhere. -/
+theorem Mod0MeasureIso.exists_measurePreserving_unitInterval
     (e : Mod0MeasureIso α ℝ μ (volume.restrict (Set.Icc (0 : ℝ) 1))) :
     ∃ (f : α → I) (g : I → α),
       MeasurePreserving f μ volume ∧ MeasurePreserving g volume μ ∧
-      (∀ᵐ x ∂μ, g (f x) = x) ∧ (∀ᵐ y ∂(volume : Measure I), f (g y) = y) := by
-  have hclip : ∀ x : α, max (0 : ℝ) (min 1 (e.toFun x)) ∈ I := by
-    intro x
-    exact ⟨by grind, by grind⟩
-  let f : α → I := fun x => ⟨max (0 : ℝ) (min 1 (e.toFun x)), hclip x⟩
-  let g : I → α := fun y => e.invFun y.1
-  have hfmeas : Measurable f := by
-    dsimp [f]
-    exact Measurable.subtype_mk
-      (measurable_const.max (measurable_const.min e.measurable_toFun)) (h := hclip)
-  have hgmeas : Measurable g := by
-    dsimp [g]
-    exact e.measurable_invFun.comp measurable_subtype_coe
-  have hclip_id : ∀ᵐ x ∂μ, max (0 : ℝ) (min 1 (e.toFun x)) = e.toFun x := by
-    filter_upwards [e.measurePreserving.quasiMeasurePreserving.ae
-      (ae_restrict_mem measurableSet_Icc)] with x hx
-    grind
-  have hgf : (g ∘ f) =ᵐ[μ] id := by
-    filter_upwards [hclip_id, e.left_inv_ae] with x hx hx'
-    simp [f, g, hx, hx']
-  have hval : (fun y : I => e.toFun (e.invFun (y : ℝ))) =ᵐ[(volume : Measure I)]
-      (fun y : I => (y : ℝ)) := by
-    simpa [Function.comp_def] using
-      (unitInterval.measurePreserving_coe.quasiMeasurePreserving.ae_eq_comp e.right_inv_ae)
-  have hfg : (f ∘ g) =ᵐ[(volume : Measure I)] id := by
-    filter_upwards [hval] with y hy
-    apply Subtype.ext
-    simp only [Function.comp_apply, f, g, id_eq]
-    rw [hy]
-    grind [y.2.1, y.2.2]
-  have hmapf : Measure.map f μ = volume := by
-    apply unitInterval.measurableEmbedding_coe.map_injective
-    have hcomp : (Subtype.val : I → ℝ) ∘ f =ᵐ[μ] e.toFun := hclip_id
-    rw [Measure.map_map unitInterval.measurePreserving_coe.measurable hfmeas,
-      Measure.map_congr hcomp, unitInterval.measurePreserving_coe.map_eq]
-    exact e.map_toFun
-  have hmapg : Measure.map g volume = μ := by
-    have hcomp : g = e.invFun ∘ (Subtype.val : I → ℝ) := by
-      funext y
-      rfl
-    rw [hcomp, ← Measure.map_map e.measurable_invFun measurable_subtype_coe,
-      unitInterval.measurePreserving_coe.map_eq, e.map_invFun]
-  exact ⟨f, g, ⟨hfmeas, hmapf⟩, ⟨hgmeas, hmapg⟩, hgf, hfg⟩
+      (∀ᵐ x ∂μ, g (f x) = x) ∧ (∀ᵐ y ∂(volume : Measure I), f (g y) = y) :=
+  -- Compose with the inverse of the coercion `I → ℝ`, itself a mod-zero isomorphism.
+  let e' : Mod0MeasureIso α I μ volume := e.trans
+    (unitInterval.measurableEmbedding_coe.mod0MeasureIso
+      unitInterval.measurePreserving_coe.map_eq).symm
+  ⟨e'.toFun, e'.invFun, e'.measurePreserving, e'.measurePreserving_invFun, e'.left_inv_ae,
+    e'.right_inv_ae⟩
 
 end TauCeti

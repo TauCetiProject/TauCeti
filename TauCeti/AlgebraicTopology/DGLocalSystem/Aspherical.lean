@@ -39,7 +39,7 @@ of the fundamental group, over which classical local systems are modules. Path-c
 * `TauCeti.bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom`: for an aspherical space, the
   degree-zero truncation `C_*(Ω_b B; R) → R[π₁(B, b)]` is a quasi-isomorphism.
 * `TauCeti.exists_cubicalChainDifferential_eq_of_loopChainToGroupAlgebra_eq_zero`: for an
-  aspherical space, a cycle killed by the degree-zero truncation is a boundary.
+  aspherical space, a cycle whose truncation vanishes is a boundary.
 
 ## References
 
@@ -163,28 +163,24 @@ theorem bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom
     (groupAlgebraLoopChainCohomologyAlgEquiv R hB).bijective), hcomp]
   exact (algEquivCohomologyOfZero _).bijective
 
-/-- **Over an aspherical space, the degree-zero truncation detects boundaries.** If
-`π_(n + 2)(B, b)` vanishes for every `n`, a cycle of `C_*(Ω_b B; R)` sent to zero in the group ring
-`R[π₁(B, b)]` is a boundary. -/
+/-- **Over an aspherical space, a cycle of the loop chain algebra is a boundary as soon as its
+degree-zero truncation vanishes.** This is injectivity of the truncation
+`C_*(Ω_b B; R) → R[π₁(B, b)]` on cohomology, read on representatives. -/
 theorem exists_cubicalChainDifferential_eq_of_loopChainToGroupAlgebra_eq_zero
     (hB : ∀ n : ℕ, Subsingleton (π_ (n + 2) B b)) {z : loopChainAlgebra B b R}
     (hz : cubicalChainDifferential (MooreLoopSpace B b) R z = 0)
-    (hφ : loopChainToGroupAlgebra B b R z = 0) :
+    (hT : loopChainToGroupAlgebra B b R z = 0) :
     ∃ w, cubicalChainDifferential (MooreLoopSpace B b) R w = z := by
   set h := loopChain_isDGAlgebra B b R
-  have hzc : z ∈ h.cycles := h.mem_cycles.mpr hz
-  have hcyc : (loopChainToGroupAlgebraDGAlgHom B b R).cyclesMap ⟨z, hzc⟩ = 0 :=
-    Subtype.ext ((DGAlgHom.cyclesMap_apply_coe _ _).trans
-      ((loopChainToGroupAlgebraDGAlgHom_apply z).trans hφ))
-  have hcyc0 : (loopChainToGroupAlgebraDGAlgHom B b R).cyclesMap 0 = 0 :=
-    Subtype.ext ((DGAlgHom.cyclesMap_apply_coe _ _).trans (map_zero _))
-  have h0 : (loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap
-      (Ideal.Quotient.mk h.boundaries.asIdeal ⟨z, hzc⟩) =
-        (loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap
-          (Ideal.Quotient.mk h.boundaries.asIdeal 0) := by
-    rw [DGAlgHom.cohomologyMap_mk, DGAlgHom.cohomologyMap_mk, hcyc, hcyc0]
-  have h1 := (bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom R hB).1 h0
-  rw [map_zero] at h1
-  exact h.mem_boundaries.mp (h.quotientMk_eq_zero_iff.mp h1)
+  have hc : (⟨z, h.mem_cycles.mpr hz⟩ : h.cycles) ∈ h.boundaries := by
+    rw [← h.quotientMk_eq_zero_iff]
+    set f := loopChainToGroupAlgebraDGAlgHom B b R
+    apply (bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom R hB).injective
+    refine (DGAlgHom.cohomologyMap_mk f _).trans
+      (Eq.trans ?_ (map_zero f.cohomologyMap.toAlgHom).symm)
+    rw [IsDGAlgebra.quotientMk_eq_zero_iff, IsDGAlgebra.mem_boundaries,
+      DGAlgHom.cyclesMap_apply_coe, loopChainToGroupAlgebraDGAlgHom_apply, hT]
+    exact zero_mem _
+  exact h.mem_boundaries.mp hc
 
 end TauCeti
