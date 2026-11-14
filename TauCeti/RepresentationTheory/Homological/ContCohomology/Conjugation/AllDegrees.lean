@@ -265,17 +265,17 @@ theorem conjMap_comp_resLE {U' V' : Subgroup G} (hU'U : U' ≤ U) (hV'V : V' ≤
 /-- **Conjugation by an element of the subgroup is trivial**: for `g ∈ U`, conjugation
 `(g)_* : Hⁿ(U, M) ⟶ Hⁿ(gUg⁻¹, M) = Hⁿ(U, M)` is the identity. This is the triviality of inner
 automorphisms on continuous cohomology, `map_eq_id_of_inner`, for the group `U`. -/
-theorem conjMap_eq_id_of_mem [ContinuousSMul U M] [LocallyCompactSpace U] {g : G} (hg : g ∈ U)
+theorem conjMap_eq_id_of_mem [LocallyCompactSpace U] {g : G} (hg : g ∈ U)
     (hU : U = U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
     conjMap U U M g hU n = 𝟙 _ :=
   map_eq_id_of_inner (⟨g, hg⟩ : U) (conjHom U U g hU) (fun u => Subtype.ext (by simp))
-    (conjPair U U M g hU) (conjPair_hom_apply U U M g hU)
-    (ofDiscreteModule_isSmoothDiscrete ℤ U M) n
+    (conjPair U U M g hU) (conjPair_hom_apply U U M g hU) n
 
 section ContinuousAction
 
 variable [ContinuousSMul G M]
 
+omit [ContinuousSMul G M] in
 /-- **Restriction from `G` followed by conjugation is restriction**: for `V = gUg⁻¹`, restricting a
 class of `Hⁿ(G, M)` to `U` and conjugating by `g` gives its restriction to `V`, because conjugation
 by `g` acts trivially on `Hⁿ(G, M)`. -/

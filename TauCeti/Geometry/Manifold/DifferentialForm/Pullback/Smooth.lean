@@ -440,6 +440,19 @@ theorem mpullback_mpullback (f : M → M') (g : M' → M'') (hf : ContMDiff I I'
     mpullback f hf (mpullback g hg β) = mpullback (g ∘ f) (hg.comp hf) β :=
   (LinearMap.congr_fun (mpullback_comp f g hf hg) β).symm
 
+variable {E''' H''' M''' : Type*} [NormedAddCommGroup E'''] [NormedSpace ℝ E''']
+  [TopologicalSpace H'''] [TopologicalSpace M'''] [ChartedSpace H''' M''']
+  {I''' : ModelWithCorners ℝ E''' H'''} [IsManifold I''' 1 M''']
+
+/-- Pulling a form back along the two sides of a commuting square of smooth maps gives the same
+form. -/
+theorem mpullback_mpullback_of_comp_eq {f : M → M'} {g : M' → M''} {f' : M → M'''}
+    {g' : M''' → M''} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I'' ∞ g)
+    (hf' : ContMDiff I I''' ∞ f') (hg' : ContMDiff I''' I'' ∞ g') (hcomp : g ∘ f = g' ∘ f')
+    (β : SmoothForm I'' M'' F k) :
+    mpullback f hf (mpullback g hg β) = mpullback f' hf' (mpullback g' hg' β) := by
+  simp only [mpullback_mpullback, hcomp]
+
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
@@ -457,6 +470,14 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
     Function.Injective
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
+
+/-- Pullback along the second projection `M × M' → M'` is injective when `M` is nonempty: any
+slice `y ↦ (x, y)` is a smooth right inverse of the projection. -/
+theorem mpullback_snd_injective [Nonempty M] :
+    Function.Injective (mpullback (I := I.prod I') (F := F) (k := k) (Prod.snd : M × M' → M')
+      contMDiff_snd) :=
+  mpullback_injective_of_rightInverse _ (g := Prod.mk (Classical.arbitrary M))
+    (contMDiff_const.prodMk contMDiff_id) fun _ ↦ rfl
 
 /-- If a diffeomorphism `φ` pulls `β` back to `α`, then its inverse pulls `α` back to `β`. -/
 theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}

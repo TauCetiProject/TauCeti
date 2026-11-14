@@ -378,7 +378,7 @@ theorem cdf_kumaraswamyMeasure_of_nonneg (ha : 0 < a) (hb : 0 < b) (hx : 0 ≤ x
   have := isProbabilityMeasure_kumaraswamyMeasure ha hb
   have hset : Iic x =ᵐ[kumaraswamyMeasure a b] (fun y : ℝ ↦ y ^ a) ⁻¹' Iic (x ^ a) := by
     filter_upwards [ae_mem_Ioo_kumaraswamyMeasure a b] with y hy
-    exact propext (Real.rpow_le_rpow_iff hy.1.le hx ha).symm
+    exact (Real.rpow_le_rpow_iff hy.1.le hx ha).symm
   rw [cdf_eq_real, ← measureReal_Iic_betaMeasure zero_lt_one hb,
     ← map_rpow_kumaraswamyMeasure ha hb, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, measure_congr hset]
