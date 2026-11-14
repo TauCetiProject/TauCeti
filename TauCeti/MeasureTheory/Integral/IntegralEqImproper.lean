@@ -26,6 +26,8 @@ For a real function `g` integrable on `(x, ∞)`, with tail integral
 `Ψ v = ∫ u in Ioi v, g u`, the product `g * Ψ ^ k` is integrable on `(x, ∞)`
 (`MeasureTheory.IntegrableOn.mul_pow_integral_Ioi`) with integral
 `Ψ x ^ (k + 1) / (k + 1)` (`MeasureTheory.IntegrableOn.integral_Ioi_mul_pow_integral_Ioi`).
+The tail integral of a function nonnegative on `(a, ∞)` is antitone there
+(`MeasureTheory.antitoneOn_integral_Ioi`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
 ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
@@ -167,6 +169,18 @@ theorem integral_Ioi_mul_pow_integral_Ioi (hint : IntegrableOn g (Ioi x)) (k : �
 end Real
 
 end MeasureTheory.IntegrableOn
+
+namespace MeasureTheory
+
+/-- If `f` is nonnegative on `(a, ∞)` and integrable on `(x, ∞)` for every `x > a`, then its tail
+integral `x ↦ ∫ v in Ioi x, f v` is antitone on `(a, ∞)`. -/
+theorem antitoneOn_integral_Ioi {f : ℝ → ℝ} {a : ℝ} (hf : ∀ v ∈ Ioi a, 0 ≤ f v)
+    (hint : ∀ x ∈ Ioi a, IntegrableOn f (Ioi x)) :
+    AntitoneOn (fun x ↦ ∫ v in Ioi x, f v) (Ioi a) := fun x (hx : a < x) _ _ hxy ↦
+  setIntegral_mono_set (hint x hx) ((ae_restrict_iff' measurableSet_Ioi).2
+    (ae_of_all _ fun v hv ↦ hf v (hx.trans hv))) (Ioi_subset_Ioi hxy).eventuallySubset
+
+end MeasureTheory
 
 section Ray
 
