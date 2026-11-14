@@ -543,7 +543,7 @@ injectivity of the residue class map needs), for every vector space `Z` with
 trivial action, of arbitrary dimension, the residue class map `z ↦ [c_Ψ ⊗ z]` is a linear
 equivalence from `Z` onto the continuous second cohomology of formal currents with coefficients in
 `Z`. For `Z = K` it sends `t` to `t • residueClass` (`residueClassMap_self`). -/
-noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
+def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
     (hΨ0 : Ψ ≠ 0) :
