@@ -220,6 +220,17 @@ theorem rootSubgroupPoints_mem_positivePoints (A : Type v) [CommRing A] {γ : Fi
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.positivePoints A :=
   (D.positivePoints_le_iff.mp le_rfl) γ hγ u
 
+/-- The positive point subgroup is the supremum of the ranges of the positive root maps. -/
+theorem positivePoints_eq_iSup (A : Type v) [CommRing A] :
+    D.positivePoints A =
+      ⨆ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (D.rootSubgroupPoints γ A).range := by
+  refine le_antisymm (D.positivePoints_le_iff.mpr fun γ hγ u =>
+    Subgroup.mem_iSup_of_mem γ (Subgroup.mem_iSup_of_mem hγ ⟨u, rfl⟩)) ?_
+  refine iSup₂_le fun γ hγ => ?_
+  rintro _ ⟨u, rfl⟩
+  exact D.rootSubgroupPoints_mem_positivePoints A hγ u
+
 /-- The positive point subgroup is nilpotent over every commutative ring. -/
 theorem isNilpotent_positivePoints (A : Type v) [CommRing A] :
     Group.IsNilpotent (D.positivePoints A) := by

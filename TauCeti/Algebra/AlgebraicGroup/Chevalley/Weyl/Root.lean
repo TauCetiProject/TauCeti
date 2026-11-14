@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -135,5 +136,18 @@ theorem map_iSup_rootSubgroupPoints_conj (g : D.weylSubgroup K)
       ⨆ γ ∈ (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) '' S,
         (D.rootSubgroupPoints γ K).range := by
   simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj, iSup_image]
+
+/-- Conjugation by a Weyl lift `g` sends the root subgroup of `γ` into the positive points
+whenever the projected root `w γ` is positive, `w` being the Weyl projection of `g`. -/
+theorem mul_rootSubgroupPoints_mul_inv_mem_positivePoints (g : D.weylSubgroup K)
+    {γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) γ ∈
+      posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : K) :
+    (g : D.points K) * D.rootSubgroupPoints γ K (ofAdd u) * (g : D.points K)⁻¹ ∈
+      D.positivePoints K := by
+  obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints K g γ
+  rw [← MulAut.conj_apply, hc u]
+  exact D.rootSubgroupPoints_mem_positivePoints K hγ _
 
 end TauCeti.DynkinType.ChevalleyDatum
