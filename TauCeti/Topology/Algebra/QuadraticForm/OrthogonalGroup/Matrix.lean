@@ -66,6 +66,7 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
       _root_.QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_symm_apply,
       standardOrthogonalGroupEquiv_symm_apply, LinearEquiv.conjAlgEquiv_apply,
       LinearEquiv.symm_symm, LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply]
+    rfl
   have hback : Continuous fun A : Matrix.orthogonalGroup n R ↦
       (E.symm A : Module.End R V) := by
     exact ((IsModuleTopology.continuous_of_linearMap D).comp

@@ -300,16 +300,16 @@ def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
     (e.orthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m
-      = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
+      = e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
   simp [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
     LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
     (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
-      = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
+      = e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
   simp only [orthogonalGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
-    LinearEquiv.autCongr_symm_apply_apply]
+    LinearEquiv.autCongr_symm_apply_apply]; rfl
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
 @[simp]
