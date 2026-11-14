@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Normalization
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.RingTheory.Japanese
+public import TauCeti.RingTheory.UniversallyJapanese
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 
 /-!
 # Finiteness of the relative normalization
@@ -40,6 +42,11 @@ Japanese rings.
   every nonempty affine open of an integral scheme `Y` is Japanese, the normalization of `Y` in a
   finite extension of its function field is finite over `Y` (Stacks, Lemma 29.54.14 (0AVK), with
   the hypothesis on every affine open).
+* `TauCeti.AlgebraicGeometry.isJapanese_of_locallyOfFiniteType`: the rings of sections of nonempty
+  affine opens of an integral scheme locally of finite type over a universally Japanese ring, for
+  instance a field, are Japanese.
+* `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_locallyOfFiniteType`: the normalization
+  of such a scheme in its function field is finite.
 
 ## References
 
@@ -140,5 +147,33 @@ theorem isFinite_fromNormalization_of_isJapanese
   · -- Over an open missing the generic point, the sections of `Spec L` are the zero ring.
     have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
     infer_instance
+
+section FiniteType
+
+variable {R : Type u} [CommRing R] [Ring.IsUniversallyJapanese R] {X : Scheme.{u}} [IsIntegral X]
+  (f : X ⟶ Spec (.of R)) [LocallyOfFiniteType f]
+
+include f
+
+/-- On an integral scheme locally of finite type over a universally Japanese ring `R`, for instance
+a field, the ring of sections of a nonempty affine open is Japanese: it is a domain of finite type
+over `R`. -/
+theorem isJapanese_of_locallyOfFiniteType {U : X.Opens} (hU : IsAffineOpen U) [Nonempty U] :
+    Ring.IsJapanese Γ(X, U) := by
+  let φ := (Scheme.ΓSpecIso (.of R)).inv ≫ f.appLE ⊤ U le_top
+  let := φ.hom.toAlgebra
+  have : Algebra.FiniteType R Γ(X, U) := f.finiteType_ΓSpecIso_inv_comp_appLE hU
+  exact Ring.IsUniversallyJapanese.isJapanese R Γ(X, U)
+
+/-- **Finiteness of normalization of schemes of finite type.** The normalization of an integral
+scheme locally of finite type over a universally Japanese ring `R`, for instance a field, in its
+function field, is finite: the rings of sections of its affine opens are Japanese. -/
+theorem isFinite_fromNormalization_of_locallyOfFiniteType :
+    IsFinite (X.fromSpecStalk (genericPoint X)).fromNormalization :=
+  isFinite_fromNormalization_fromSpecStalk_genericPoint_iff.mpr fun _ hU _ ↦
+    have := isJapanese_of_locallyOfFiniteType f hU
+    inferInstance
+
+end FiniteType
 
 end TauCeti.AlgebraicGeometry
