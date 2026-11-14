@@ -96,17 +96,17 @@ of the eight numbered simple root-subgroup coordinate maps and of the weight-tor
 transported into the coordinate Hopf algebras formed directly over `𝔽₂`. -/
 noncomputable def generator :
     ∀ j, TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26 ⟶ generatorCodomain j
-  | .inl k => kostantRootSubgroupBaseChangePresentationCoordinateMap rootGen cartanGen rep
+  | .inl k => kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap rootGen cartanGen rep
       lattice.toAddSubgroup rep_kostantForm_mem_lattice
-      isNilpotent_rep_serreRootGenerator latticeBasis (ZMod 2) k
+      k (isNilpotent_rep_serreRootGenerator k) latticeBasis (ZMod 2)
   | .inr _ => TauCeti.GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ (ZMod 2) f4ShortRootWeight
 
 /-- At a root index the generating family is the reduced root-subgroup coordinate map. -/
 theorem generator_inl (k : Fin 4 ⊕ Fin 4) :
     generator (.inl k) =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap rootGen cartanGen rep
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap rootGen cartanGen rep
         lattice.toAddSubgroup rep_kostantForm_mem_lattice
-        isNilpotent_rep_serreRootGenerator latticeBasis (ZMod 2) k := by
+        k (isNilpotent_rep_serreRootGenerator k) latticeBasis (ZMod 2) := by
   rw [generator]
 
 /-- At the torus index the generating family is the reduced weight-torus coordinate map. -/
