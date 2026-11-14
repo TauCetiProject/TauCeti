@@ -47,9 +47,9 @@ acyclic for the structure sheaf of a Riemann surface.
   real radius.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: every `Cⁿ` function on the plane is
   `\bar∂` of a `Cⁿ` function, without any support condition.
-* `TauCeti.exists_contDiffOn_differentiableOn_sub_of_ball`: smooth functions `g k` on open sets
-  covering a disc, with holomorphic pairwise differences, are all `f` plus a holomorphic function
-  for one smooth `f` on the disc.
+* `TauCeti.exists_contDiffOn_differentiableOn_sub_of_eball`: smooth functions `g k` on open sets
+  covering a disc `Metric.eball c R`, `R ≤ ∞`, with holomorphic pairwise differences, are all `f`
+  plus a holomorphic function for one smooth `f` on the disc.
 
 ## References
 
@@ -156,16 +156,16 @@ to one smooth function, and the Dolbeault lemma solves for it: some smooth `f` o
 every `f - g k` holomorphic. -/
 
 /-- **Smooth data with holomorphic differences glue on a disc.** Let `g k` be smooth on open sets
-`Ω k` covering the disc `ball c R`, with `g k - g l` complex differentiable on `Ω k ∩ Ω l`. Then
-some `f`, smooth on the disc, has `f - g k` complex differentiable on `ball c R ∩ Ω k` for
-every `k`. -/
-theorem exists_contDiffOn_differentiableOn_sub_of_ball {ι : Type*} {Ω : ι → Set ℂ}
-    {g : ι → ℂ → W} {c : ℂ} {R : ℝ} (hΩ : ∀ k, IsOpen (Ω k))
+`Ω k` covering the disc `eball c R`, `R ≤ ∞`, with `g k - g l` complex differentiable on
+`Ω k ∩ Ω l`. Then some `f`, smooth on the disc, has `f - g k` complex differentiable on
+`eball c R ∩ Ω k` for every `k`. -/
+theorem exists_contDiffOn_differentiableOn_sub_of_eball {ι : Type*} {Ω : ι → Set ℂ}
+    {g : ι → ℂ → W} {c : ℂ} {R : ℝ≥0∞} (hΩ : ∀ k, IsOpen (Ω k))
     (hg : ∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (g k) (Ω k))
     (hgg : ∀ k l, DifferentiableOn ℂ (g k - g l) (Ω k ∩ Ω l))
-    (hcov : ball c R ⊆ ⋃ k, Ω k) :
-    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f (ball c R) ∧
-      ∀ k, DifferentiableOn ℂ (f - g k) (ball c R ∩ Ω k) := by
+    (hcov : eball c R ⊆ ⋃ k, Ω k) :
+    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f (eball c R) ∧
+      ∀ k, DifferentiableOn ℂ (f - g k) (eball c R ∩ Ω k) := by
   classical
   -- The real differentiability of `g k` at points of `Ω k`.
   have hgd (k : ι) {z : ℂ} (hz : z ∈ Ω k) : DifferentiableAt ℝ (g k) z :=
@@ -185,18 +185,18 @@ theorem exists_contDiffOn_differentiableOn_sub_of_ball {ι : Type*} {Ω : ι →
     have h : ∃ k, z ∈ Ω k := ⟨k, hz⟩
     simp only [θ, h, ↓reduceDIte]
     exact hagree _ _ h.choose_spec hz
-  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ (ball c R) := by
+  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ (eball c R) := by
     refine contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hcov hz)
     refine ⟨Ω k, hΩ k, hk, ?_⟩
     refine (((hg k).conjWirtingerDeriv_apply_of_isOpen (hΩ k) (by simp) 1).mono
       inter_subset_right).congr ?_
     exact fun w hw ↦ hθ k hw.2
-  obtain ⟨f, hf, hfθ⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_ball
+  obtain ⟨f, hf, hfθ⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball
     (n := ⊤) le_top hθs
   refine ⟨f, hf, fun k z hz ↦ ?_⟩
   have hfd : DifferentiableAt ℝ f z :=
-    (hf.contDiffAt (isOpen_ball.mem_nhds hz.1)).differentiableAt (by simp)
+    (hf.contDiffAt (isOpen_eball.mem_nhds hz.1)).differentiableAt (by simp)
   have hd : DifferentiableAt ℝ (f - g k) z := hfd.sub (hgd k hz.2)
   refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_)
     |>.differentiableWithinAt
