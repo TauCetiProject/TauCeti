@@ -266,27 +266,25 @@ private lemma cupLift_component_coboundary {W D : Set X} (hDW : D ⊆ W) {i : Fi
 
 /-- The cup product of the restricted absolute cocycle `ζ` with the relative cocycle `β`, restricted
 to the small singular pair, is the restriction of the cup product of the underlying cochains. -/
-private lemma cupLift_iCycles_cyclesMap (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q : ℕ}
-    (h' : p + 1 + q = p + q + 1) (ζ : (singularCochainComplex R k M X).cycles (p + 1))
+private lemma cupLift_iCycles_cyclesMap (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {p q n : ℕ}
+    (h : p + q = n) (ζ : (singularCochainComplex R k M X).cycles p)
     (β : ((unionPair hAU hBV).singularCochainComplex S k N).cycles q) :
     ((SSetPair.mayerVietorisCochainShortComplex T k L
       (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
-        (isPushout_toSmallSingularPair_right hAU hBV).w)).X₁.iCycles (p + q + 1)).hom
-      (cyclesMap (SSetPair.cochainComplexMap (smallSingularPairToUnion hAU hBV)) (p + q + 1)
+        (isPushout_toSmallSingularPair_right hAU hBV).w)).X₁.iCycles n).hom
+      (cyclesMap (SSetPair.cochainComplexMap (smallSingularPairToUnion hAU hBV)) n
         (cupCycles k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u)
-          μ (p + 1) q (p + q + 1) h' (cyclesMap (singularCochainComplexMap
-            (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) (p + 1) ζ) β)) =
-      (SSetPair.chainComplexMap (smallSingularPairToUnion hAU hBV) T).f (p + q + 1) ≫
-        cupCochain k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ
-          (p + 1) q (p + q + 1) h'
+          μ p q n h (cyclesMap (singularCochainComplexMap
+            (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) p ζ) β)) =
+      (SSetPair.chainComplexMap (smallSingularPairToUnion hAU hBV) T).f n ≫
+        cupCochain k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q n h
           ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) R).f
-            (p + 1) ≫ (X.singularCochainComplex R k M).iCycles (p + 1) ζ)
+            p ≫ (X.singularCochainComplex R k M).iCycles p ζ)
           (((unionPair hAU hBV).singularCochainComplex S k N).iCycles q β) :=
   (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _).trans (congrArg (_ ≫ ·)
     ((iCycles_cupCycles _ _ _ _ _ _ _ _).trans (congrArg (fun a ↦ cupCochain k
-      ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal
-        u) μ (p + 1) q (p + q + 1) h' a _)
-          (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _))))
+      ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p q n h a _)
+        (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _))))
 
 /-- The lift of `α ⌣ β|` in the Mayer–Vietoris sequence of the pairs: the pair of cups of the
 components `y_U`, `y_V` of a lift `x₂` of `α` with the restrictions of the relative cocycle `β`
@@ -805,23 +803,7 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup_singularCohomologyMap
         ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset
         ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
         Set.subset_union_right Set.subset_union_right x₂ biprod.snd ζ hd (biprod.lift_snd _ _))
-    have hc : ((SSetPair.mayerVietorisCochainShortComplex T k L
-        (MorphismProperty.Arrow.Hom.ext (isPushout_toSmallSingularPair_left hAU hBV).w
-          (isPushout_toSmallSingularPair_right hAU hBV).w)).X₁.iCycles (p + q + 1)).hom
-        (cyclesMap (SSetPair.cochainComplexMap (smallSingularPairToUnion hAU hBV)) (p + q + 1)
-          (cupCycles k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p (q + 1)
-            (p + q + 1) h' (cyclesMap (singularCochainComplexMap
-              (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) p α) ζ)) =
-        (SSetPair.chainComplexMap (smallSingularPairToUnion hAU hBV) T).f (p + q + 1) ≫
-          cupCochain k ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ
-            p (q + 1) (p + q + 1) h'
-            ((SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∪ V)))) R).f p ≫
-              (X.singularCochainComplex R k M).iCycles p α)
-            (((unionPair hAU hBV).singularCochainComplex S k N).iCycles (q + 1) ζ) :=
-      (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _).trans (congrArg (_ ≫ ·)
-        ((iCycles_cupCycles _ _ _ _ _ _ _ _).trans (congrArg (fun a ↦ cupCochain k
-          ((unionPair hAU hBV).rightAlexanderWhitneyDiagonal u) μ p (q + 1) (p + q + 1) h' a _)
-            (iCycles_cyclesMap_linearYonedaFunctor_map_apply _ _ _))))
+    have hc := cupLift_iCycles_cyclesMap k hAU hBV u μ h' α ζ
     refine (congrArg _ ((map_zsmul _ _ _).trans (congrArg _ hc))).trans ?_
     refine (map_zsmul _ _ _).trans ?_
     refine (congrArg _ (HomologicalComplex.biprod_lift_f_apply _ _ _ _)).trans (Eq.trans ?_
