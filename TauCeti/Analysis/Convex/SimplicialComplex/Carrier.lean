@@ -35,6 +35,10 @@ in `TauCeti.Analysis.Convex.SimplicialComplex.CommonSubdivision`.
   simplices.
 * `Geometry.SimplicialComplex.existsUnique_mem_intrinsicInterior`: every point of `|K|` lies in
   the open simplex of exactly one face.
+* `Geometry.SimplicialComplex.exists_subset_mem_faces_of_le`: a point of a subcomplex lying in a
+  simplex of the complex lies in a face of that simplex belonging to the subcomplex.
+* `Geometry.SimplicialComplex.inter_convexHull_subset_convexHull_of_space_inter_subset`: two
+  complexes meeting in the underlying space of their common subcomplex have compatible faces.
 
 ## References
 
@@ -47,6 +51,40 @@ public section
 open Set
 
 namespace Geometry.SimplicialComplex
+
+section OrderedRing
+
+variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  {K : SimplicialComplex 𝕜 E} {s t : Finset E} {x : E}
+
+/-- A point of a subcomplex `A` of `K` lying in a simplex `s` of `K` lies in the simplex of a
+face of `A` contained in `s`. -/
+theorem exists_subset_mem_faces_of_le {A : SimplicialComplex 𝕜 E} (hAK : A ≤ K)
+    (hs : s ∈ K.faces) (hxs : x ∈ convexHull 𝕜 (s : Set E)) (hxA : x ∈ A.space) :
+    ∃ t ⊆ s, t ∈ A.faces ∧ x ∈ convexHull 𝕜 (t : Set E) := by
+  classical
+  obtain ⟨u, hu, hxu⟩ := mem_space_iff.1 hxA
+  have hx : x ∈ convexHull 𝕜 ((s ∩ u : Finset E) : Set E) := by
+    rw [Finset.coe_inter]
+    exact K.inter_subset_convexHull hs (hAK hu) ⟨hxs, hxu⟩
+  refine ⟨s ∩ u, Finset.inter_subset_left, A.down_closed hu Finset.inter_subset_right ?_, hx⟩
+  rw [← Finset.coe_nonempty, ← convexHull_nonempty_iff (𝕜 := 𝕜)]
+  exact ⟨x, hx⟩
+
+/-- If two complexes meet in the underlying space of their common subcomplex, then a simplex of
+one meets a simplex of the other in the convex hull of their common vertices, so their faces
+together form a simplicial complex. -/
+theorem inter_convexHull_subset_convexHull_of_space_inter_subset {L : SimplicialComplex 𝕜 E}
+    (hKL : K.space ∩ L.space ⊆ (K ⊓ L).space) (hs : s ∈ K.faces) (ht : t ∈ L.faces) :
+    convexHull 𝕜 ↑s ∩ convexHull 𝕜 ↑t ⊆ convexHull 𝕜 (s ∩ t : Set E) := by
+  rintro x ⟨hxs, hxt⟩
+  have hx := hKL ⟨convexHull_subset_space hs hxs, convexHull_subset_space ht hxt⟩
+  obtain ⟨s', hss', hs', hxs'⟩ := exists_subset_mem_faces_of_le inf_le_left hs hxs hx
+  obtain ⟨t', htt', ht', hxt'⟩ := exists_subset_mem_faces_of_le inf_le_right ht hxt hx
+  exact convexHull_mono (Set.inter_subset_inter (Finset.coe_subset.2 hss')
+    (Finset.coe_subset.2 htt')) ((K ⊓ L).inter_subset_convexHull hs' ht' ⟨hxs', hxt'⟩)
+
+end OrderedRing
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : SimplicialComplex ℝ E} {s t : Finset E} {x : E}
