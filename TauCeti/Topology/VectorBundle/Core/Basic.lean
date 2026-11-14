@@ -37,18 +37,14 @@ changes are equal. -/
 @[ext]
 protected theorem VectorBundleCore.ext {R B F ι : Type*} [NontriviallyNormedField R]
     [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace R F]
-    {Z₁ Z₂ : VectorBundleCore R B F ι}
-    (hbaseSet : ∀ i, Z₁.baseSet i = Z₂.baseSet i)
+    {Z₁ Z₂ : VectorBundleCore R B F ι} (hbaseSet : ∀ i, Z₁.baseSet i = Z₂.baseSet i)
     (hindexAt : ∀ x, Z₁.indexAt x = Z₂.indexAt x)
-    (hcoordChange : ∀ i j x, Z₁.coordChange i j x = Z₂.coordChange i j x) :
-    Z₁ = Z₂ := by
-  have hb : Z₁.baseSet = Z₂.baseSet := funext hbaseSet
-  have hi : Z₁.indexAt = Z₂.indexAt := funext hindexAt
-  have hc : Z₁.coordChange = Z₂.coordChange :=
-    funext fun i => funext fun j => funext (hcoordChange i j)
-  rcases Z₁ with ⟨_, _, _, _, _, _, _, _⟩
-  rcases Z₂ with ⟨_, _, _, _, _, _, _, _⟩
-  subst hb hi hc
+    (hcoordChange : ∀ i j x, Z₁.coordChange i j x = Z₂.coordChange i j x) : Z₁ = Z₂ := by
+  rcases Z₁ with ⟨b₁, _, i₁, _, c₁, _, _, _⟩
+  rcases Z₂ with ⟨b₂, _, i₂, _, c₂, _, _, _⟩
+  obtain rfl : b₁ = b₂ := funext hbaseSet
+  obtain rfl : i₁ = i₂ := funext hindexAt
+  obtain rfl : c₁ = c₂ := funext fun i => funext fun j => funext (hcoordChange i j)
   rfl
 
 namespace TauCeti
