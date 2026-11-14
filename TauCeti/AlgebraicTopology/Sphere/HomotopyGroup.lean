@@ -80,7 +80,7 @@ public section
 noncomputable section
 
 open Metric Set Module CategoryTheory Limits Topology.RelCWComplex
-open scoped unitInterval Topology Topology.Homotopy
+open scoped Topology
 
 namespace TauCeti
 
@@ -104,7 +104,6 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
   let F := EuclideanSpace ℝ (Fin (m + 2))
   have hF : Fintype.card (Fin (m + 2)) = m + 1 + 1 := Fintype.card_fin _
   let _ := sphereCWComplex hF
-  have := finite_sphereCWComplex hF
   -- The `m`-skeleton of the CW structure on `Sᵐ⁺¹` is its pole, the unique `0`-cell.
   have hA := skeletonLT_sphereCWComplex hF (k := m + 1) (by simp) le_rfl
   have hp : spherePole hF ∈ (skeletonLT (sphere (0 : F) 1) (m + 1) : Set F) :=
