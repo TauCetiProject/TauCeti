@@ -156,7 +156,9 @@ theorem weierstrassZeta_neg (z : ℂ) : L.weierstrassZeta (-z) = -L.weierstrassZ
   rw [neg_sub_neg, ← neg_sub, inv_neg]
   ring
 
-/-- `ζ(0) = 0`, as `ζ` is odd. -/
+/-- `ζ(0) = 0`, as `ζ` is odd. The point `0` is a pole of `ζ`, so this is a junk value: the term
+of the defining series at `l = 0` is `1 / 0 + 1 / 0 + 0 / 0 ^ 2 = 0`. It is also the constant term
+of the Laurent expansion of `ζ` at `0`, as `ζ(z) - 1 / z` is odd. -/
 @[simp]
 theorem weierstrassZeta_zero : L.weierstrassZeta 0 = 0 :=
   CharZero.eq_neg_self_iff.mp (by simpa using L.weierstrassZeta_neg 0)
