@@ -127,9 +127,8 @@ theorem finite_spectrum_inter (hT : IsSpectralWindow T r) :
     induction q using Polynomial.induction_on' with
     | add p q hp hq => simp [hp, hq]
     | monomial n a =>
-      rw [aeval_monomial, aeval_monomial, Algebra.algebraMap_eq_smul_one,
-        Algebra.algebraMap_eq_smul_one, smul_one_mul, smul_one_mul, ← algebraMap_smul 𝕜 a (T ^ n),
-        ← algebraMap_smul 𝕜 a (C ^ n)]
+      simp only [aeval_monomial, Algebra.algebraMap_eq_smul_one, smul_one_mul]
+      rw [← algebraMap_smul 𝕜 a (T ^ n), ← algebraMap_smul 𝕜 a (C ^ n)]
       simp only [_root_.smul_apply, LinearMap.smul_apply, Submodule.coe_smul,
         FunLike.coe_pow_eq_iterate, hsc.iterate_right n y]
   -- So the minimal polynomial of `T` on the range of the window projector kills that range.
@@ -282,22 +281,19 @@ theorem spectralRank_algebraMap (c : ℝ) (s : Set ℝ) [Decidable (c ∈ s)] :
       LinearMap.range_id, finrank_top]
   · rw [indicator_of_notMem h, map_zero, toLinearMap_zero, LinearMap.range_zero, finrank_bot]
 
-/-- On a nontrivial finite-dimensional space, every `r > |c|` is a spectral window of the scalar
-operator `c`. -/
-theorem isSpectralWindow_algebraMap [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] [Nontrivial E]
-    [FiniteDimensional 𝕜 E] {c r : ℝ} (h : |c| < r) :
-    IsSpectralWindow (algebraMap ℝ (E →L[𝕜] E) c) r where
-  isSelfAdjoint := by
-    rw [IsScalarTower.algebraMap_apply ℝ 𝕜]
+/-- On a finite-dimensional space, every `r > |c|` is a spectral window of the scalar operator
+`c`. -/
+theorem isSpectralWindow_algebraMap [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] [FiniteDimensional 𝕜 E]
+    {c r : ℝ} (h : |c| < r) : IsSpectralWindow (algebraMap ℝ (E →L[𝕜] E) c) r := by
+  -- The spectrum is `{c}`, or empty on the zero space.
+  have hσ : spectrum ℝ (algebraMap ℝ (E →L[𝕜] E) c) ⊆ {c} := by
+    rcases subsingleton_or_nontrivial (E →L[𝕜] E) with _ | _ <;>
+      simp [spectrum.of_subsingleton]
+  refine ⟨?_, (abs_nonneg c).trans_lt h, fun hr ↦ ?_, fun hr ↦ ?_, inferInstance⟩
+  · rw [IsScalarTower.algebraMap_apply ℝ 𝕜]
     exact IsSelfAdjoint.algebraMap _ (RCLike.conj_ofReal c)
-  pos := (abs_nonneg c).trans_lt h
-  notMem_spectrum := by
-    rw [spectrum.scalar_eq]
-    exact fun hr ↦ (le_abs_self c).not_gt (hr ▸ h)
-  neg_notMem_spectrum := by
-    rw [spectrum.scalar_eq]
-    exact fun hr ↦ (neg_abs_le c).not_gt (by linarith [hr ▸ neg_lt_neg h])
-  finiteDimensional_range_Ioo := inferInstance
+  · exact (le_abs_self c).not_gt (hσ hr ▸ h)
+  · exact (neg_abs_le c).not_gt (by linarith [hσ hr ▸ neg_lt_neg h])
 
 end Scalar
 
