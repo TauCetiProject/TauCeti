@@ -83,7 +83,7 @@ theorem memLp_truncatedCauchyKernel {q : ENNReal} (hq : q < 2) (R : ℝ) :
   have hqreal : q.toReal < 2 := by
     exact_mod_cast (ENNReal.toReal_lt_toReal hqt (by simp)).2 hq
   refine (integrable_norm_rpow_iff hm hq0 hqt).1 ?_
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball (0 : ℂ) R)]
+  rw [volume.restrict_closedBall_eq_restrict_ball (0 : ℂ) R]
   simpa only [IntegrableOn, norm_inv, Real.inv_rpow (norm_nonneg _),
     ← Real.rpow_neg (norm_nonneg _)] using
     (integrableOn_norm_rpow_ball (mu := volume) (E := ℂ) (s := -q.toReal) (R := R)
@@ -92,7 +92,7 @@ theorem memLp_truncatedCauchyKernel {q : ENNReal} (hq : q < 2) (R : ℝ) :
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball w R)]
+  rw [volume.restrict_closedBall_eq_restrict_ball w R]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
   norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h
