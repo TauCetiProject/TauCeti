@@ -12,7 +12,7 @@ import TauCeti.Analysis.Normed.Module.Ball.Retraction
 -- Proof-only: the layer-cake formula for powers of an `ℝ≥0∞`-valued function.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
-import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.Continuity
 
 /-!
 # The decreasing rearrangement of a function on a measure space
@@ -118,7 +118,7 @@ theorem lt_decreasingRearrangement_iff :
     obtain ⟨d, hd, hcd⟩ := h
     exact hd.trans_le (measure_mono fun y hy ↦ hcd.trans hy)
   · intro h
-    obtain ⟨d, hcd, hd⟩ := TauCeti.exists_lt_lt_measure_setOf_lt μ h
+    obtain ⟨d, hcd, hd⟩ := μ.exists_lt_lt_measure_setOf_lt h
     exact hcd.trans_le (le_iSup₂_of_le d hd le_rfl)
 
 /-- The generalized-inverse relation: `f* s ≤ c` exactly when the superlevel set `{f > c}` has
