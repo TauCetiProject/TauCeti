@@ -23,7 +23,7 @@ generators of a finitely generated group:
 * Cyclic groups are finitely generated of generator rank at most `1` (`1` when nontrivial);
   conversely, a finitely generated group is cyclic if and only if its generator rank is at most `1`.
 * Generator rank is subadditive on binary and finite indexed products (`Group.rank_prod_le`,
-  `Group.rank_pi_le`).
+  `Group.rank_pi_le`) and on joins of finitely generated subgroups (`Subgroup.rank_sup_le`).
 * On a finitely generated abelian group `M`, `AddGroup.rank M` agrees with the `ℤ`-submodule
   generator number `(⊤ : Submodule ℤ M).spanFinrank` (`AddGroup.rank_eq_spanFinrank_top`).
 * On a finitely generated free abelian group `M`, `AddGroup.rank M = finrank ℤ M`
@@ -38,6 +38,7 @@ generators of a finitely generated group:
 * `AddGroup.rank_eq_spanFinrank_top`
 * `AddGroup.rank_eq_finrank`, `AddGroup.rank_le_finrank`
 * `AddGroup.rank_zmod`, `AddGroup.rank_eq_finrank_zmod`
+* `Subgroup.rank_sup_le`, `AddSubgroup.rank_sup_le`
 -/
 
 public section
@@ -202,3 +203,22 @@ theorem rank_eq_finrank_zmod {p : ℕ} [Fact p.Prime] (V : Type*) [AddCommGroup 
   exact Submodule.spanFinrank_restrictScalars_eq ZMod.intCast_surjective (⊤ : Submodule (ZMod p) V)
 
 end AddGroup
+
+namespace Subgroup
+
+/-- The rank of the join of two finitely generated subgroups is at most the sum of their ranks. -/
+@[to_additive /-- The rank of the join of two finitely generated additive subgroups is at most the
+sum of their ranks. -/]
+theorem rank_sup_le {G : Type*} [Group G] (H K : Subgroup G) [Group.FG H] [Group.FG K] :
+    Group.rank ↥(H ⊔ K) ≤ Group.rank H + Group.rank K := by
+  classical
+  obtain ⟨S, hS, hSc⟩ := Group.rank_spec H
+  obtain ⟨T, hT, hTc⟩ := Group.rank_spec K
+  -- the images in `G` of minimal generating sets of `H` and `K` generate `H ⊔ K`
+  have h : closure ↑(S.image H.subtype ∪ T.image K.subtype) = H ⊔ K := by
+    simp [closure_union, ← MonoidHom.map_closure, hSc, hTc, ← MonoidHom.range_eq_map, -coe_subtype]
+  rw [← rank_congr h, ← hS, ← hT]
+  exact (rank_closure_finset_le_card _).trans
+    ((Finset.card_union_le _ _).trans (add_le_add Finset.card_image_le Finset.card_image_le))
+
+end Subgroup
