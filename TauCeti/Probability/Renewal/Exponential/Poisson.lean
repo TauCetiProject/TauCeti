@@ -102,7 +102,7 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     HasLaw (renewalArrivalMeasure T) (r • nnvolume).poissonLaw P := by
   exact (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw
     (by simpa only [Measure.coe_nnreal_smul] using
-      isPoissonRandomMeasure_poissonLaw (r • nnvolume))).symm.hasLaw HasLaw.id
+      Measure.isPoissonRandomMeasure_poissonLaw (r • nnvolume))).symm.hasLaw HasLaw.id
 
 /-- Independent exponential waiting times generate a homogeneous Poisson random measure.
 In particular, counts on arbitrary disjoint measurable sets are independent, not only counts
@@ -112,10 +112,10 @@ theorem isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     IsPoissonRandomMeasure P (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume) := by
   rw [Measure.coe_nnreal_smul]
-  exact (isPoissonRandomMeasure_poissonLaw (r • nnvolume)).of_identDistrib
+  exact (Measure.isPoissonRandomMeasure_poissonLaw (r • nnvolume)).of_identDistrib
     (measurable_renewalArrivalMeasure hT)
     (identDistrib_renewalArrivalMeasure_of_expMeasure hT hindep hlaw
       (by simpa only [Measure.coe_nnreal_smul] using
-        isPoissonRandomMeasure_poissonLaw (r • nnvolume))).symm
+        Measure.isPoissonRandomMeasure_poissonLaw (r • nnvolume))).symm
 
 end TauCeti.Probability

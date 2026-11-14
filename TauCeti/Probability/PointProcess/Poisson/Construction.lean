@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.PointProcess.Poisson.Finite
 public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.Measure.Measurability
+public import TauCeti.Probability.PointProcess.Poisson.Basic
 import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
 
 /-!
@@ -17,7 +17,6 @@ import TauCeti.Probability.PointProcess.Poisson.LaplaceCharacterization
 `Measure.poissonLaw` superposes independent finite Poisson samples on a countable
 measurable partition of a sigma-finite intensity. The resulting probability law has
 the Poisson exponential formula and its mean measure is the specified intensity.
-`isPoissonRandomMeasure_poissonLaw` identifies it as a Poisson random-measure law.
 Infinite total intensity and infinite test integrals are allowed, and atomic
 intensities retain multiplicities. No topology or nonempty location space is needed.
 
@@ -137,17 +136,10 @@ theorem laplaceFunctional_poissonLaw (Λ : Measure X) [SigmaFinite Λ]
     infinitePi_dirac, Measure.map_dirac' measurable_sum]
   simp
 
+/-- The sigma-finite sampling law realizes a Poisson random measure with its specified intensity. -/
+theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
+    IsPoissonRandomMeasure Λ.poissonLaw id Λ :=
+  isPoissonRandomMeasure_of_laplaceFunctional measurable_id
+    (fun _ hf ↦ laplaceFunctional_poissonLaw Λ hf)
+
 end MeasureTheory.Measure
-
-open MeasureTheory
-
-namespace TauCeti.Probability
-
-/-- The sigma-finite Poisson sampling law realizes a Poisson random measure with the
-specified intensity on the canonical space of measures. -/
-theorem isPoissonRandomMeasure_poissonLaw {X : Type*} [MeasurableSpace X]
-    (Λ : Measure X) [SigmaFinite Λ] : IsPoissonRandomMeasure Λ.poissonLaw id Λ := by
-  exact isPoissonRandomMeasure_of_laplaceFunctional measurable_id
-    (fun _ hf ↦ Measure.laplaceFunctional_poissonLaw Λ hf)
-
-end TauCeti.Probability

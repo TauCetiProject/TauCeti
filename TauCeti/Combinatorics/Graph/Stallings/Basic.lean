@@ -16,13 +16,13 @@ public import Mathlib.Algebra.Group.End
 /-!
 # Subgroups read by labelled graphs
 
-A labelled Serre graph assigns inverse letters to reversed darts. Reading the labels of
-closed paths at a vertex gives a subgroup of the free group. Based label-preserving morphisms
-send the accepted subgroup into that of the target. Moving the base vertex along a path
-conjugates the accepted subgroup. Every accepted word also has a reduced-path witness, so a
-labelled graph without nonempty reduced closed paths accepts only the identity.
-A path whose label is a freely reduced word is reduced. A graph with finitely many darts
-accepts a finitely generated subgroup at every vertex.
+A labelled Serre graph assigns inverse letters to reversed darts, so the darts labelled by a
+basis letter form an orientation. Reading the labels of closed paths at a vertex gives a
+subgroup of the free group. Based label-preserving morphisms send the accepted subgroup into
+that of the target. Moving the base vertex along a path conjugates the accepted subgroup. Every
+accepted word also has a reduced-path witness, so a labelled graph without nonempty reduced
+closed paths accepts only the identity. A path whose label is a freely reduced word is reduced.
+A graph with finitely many darts accepts a finitely generated subgroup at every vertex.
 
 The accepted subgroup is bounded by a subgroup `H` as soon as some assignment `r` of group
 elements to the vertices puts `r` of the base vertex in `H`, together with
@@ -53,6 +53,11 @@ structure StallingsGraph (α : Type u) where
 namespace StallingsGraph
 
 variable {α : Type*} (S : StallingsGraph α)
+
+/-- The darts labelled by a basis letter, rather than by its inverse, form an orientation:
+reversal swaps the two signs. -/
+theorem isOrientation_setOf_label_snd : S.graph.IsOrientation {e | (S.label e).2 = true} :=
+  (S.graph.isOrientation_iff _).mpr fun e => by simp [S.label_rev]
 
 /-- The label word of a path, in traversal order. -/
 def word {a : S.graph.V} : ∀ {b : S.graph.V}, S.graph.Path a b → List (α × Bool)
@@ -341,6 +346,11 @@ vertex. -/
 theorem subgroup_fg [Finite S.graph.E] (a : S.graph.V) : (S.subgroup a).FG :=
   (Subgroup.fg_iff _).mpr
     ⟨_, (S.subgroup_eq_closure_range_dartLoop a).symm, Set.finite_range _⟩
+
+/-- A labelled graph with finitely many darts accepts a finitely generated group at each vertex;
+the instance form of `subgroup_fg`. -/
+instance instFGSubgroup [Finite S.graph.E] (a : S.graph.V) : Group.FG (S.subgroup a) :=
+  (Group.fg_iff_subgroup_fg _).mpr (S.subgroup_fg a)
 
 /-- A based Serre-graph morphism preserving dart labels. -/
 structure Hom (T : StallingsGraph α) where
