@@ -158,7 +158,8 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 * `TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`,
   `TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor` and
   `TauCeti.TypeDStructure.typeABoxCompHomotopy_mem_typeABoxTensor`: for a strictly unital module,
-  the differential, the induced maps and the composite homotopies preserve `M ⊗ N`.
+  the differential, the induced maps and the composite homotopies preserve `M ⊗ N`; the induced
+  maps even send every row vector into `M ⊗ N'`.
 * `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_lt`: the identity morphism induces the
   identity of `M ⊗ N`.
@@ -1025,21 +1026,47 @@ theorem typeABoxDifferential_mem_typeABoxTensor [CharP R 2] (hMm : Mm.IsStrictly
   rw [typeABoxDifferential_def]
   exact hMm.act_one_matrix_twistedDifferential_apply X hι N.coeff_mul_idem hφ z
 
-/-- **A morphism induces a map of box tensor products over the idempotents** when `M` is strictly
-unital and the idempotents are cycles, over a ring of characteristic two: `T_F` sends `M ⊗ N` into
-`M ⊗ N'`. -/
+/-- **A morphism induces a map into the box tensor product over the idempotents** when `M` is
+strictly unital and the idempotents are cycles, over a ring of characteristic two: `T_F` sends
+every row vector into `M ⊗ N'`, since the last coefficient of every path into `X'` absorbs the
+idempotent of its end point. In particular `T_F` sends `M ⊗ N` into `M ⊗ N'`. -/
 theorem typeABoxMap_mem_typeABoxTensor [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
-    (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A} (hF : F ∈ morphisms N N') {φ : X → M}
-    (hφ : φ ∈ N.typeABoxTensor Mm) : typeABoxMap N N' Mm F φ ∈ N'.typeABoxTensor Mm := fun z => by
+    (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A} (hF : F ∈ morphisms N N') (φ : X → M) :
+    typeABoxMap N N' Mm F φ ∈ N'.typeABoxTensor Mm := fun z => by
   have hF' (x : X) (y : X') : F x y * ι (N'.idem y) = F x y := (mem_morphisms_iff.mp hF x y).2
-  rw [typeABoxMap_apply]
-  refine hMm.act_one_matrix_twistedDifferential_apply (X ⊕ X') hι (e := Sum.elim N.idem N'.idem)
-    (fun a b => ?_) (fun a => ?_) (Sum.inr z)
-  · rcases a with x | x <;> rcases b with y | y <;>
-      simp [N.coeff_mul_idem, N'.coeff_mul_idem, hF']
-  · rcases a with x | x
-    · exact hφ x
-    · simp
+  -- The diagonal matrix `E` of the idempotents of `N` and `N'` is a right unit for
+  -- `fromBlocks δ F 0 δ'`, so `m₂(·, E)` fixes every operation of positive arity along it.
+  set e : X ⊕ X' → S := Sum.elim N.idem N'.idem
+  set β := Matrix.fromBlocks N.coeff F 0 N'.coeff
+  have hdE : d.mapMatrix (Matrix.diagonal fun a => ι (e a)) = 0 := by
+    rw [LinearMap.mapMatrix_apply, Matrix.diagonal_map (map_zero d)]
+    simp [hι]
+  have hβE : β * Matrix.diagonal (fun a => ι (e a)) = β := by
+    ext a b
+    rw [Matrix.mul_diagonal]
+    rcases a with x | x <;> rcases b with y | y <;>
+      simp [β, e, N.coeff_mul_idem, N'.coeff_mul_idem, hF']
+  rw [typeABoxMap_apply, UngradedAInfinityRightModule.twistedDifferential_def]
+  by_cases hfin : (Function.support fun n => (Mm.matrix (X ⊕ X')).act n fun _ => β).Finite
+  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, Finset.sum_apply, map_sum]
+    refine Finset.sum_congr rfl fun n _ => ?_
+    cases n with
+    | zero =>
+      -- The only path of length zero into `X'` starts in `X'`, where `Sum.elim φ 0` vanishes.
+      have h0 : (Mm.matrix (X ⊕ X')).act 0 (fun _ => β) (Sum.elim φ 0) (Sum.inr z) = 0 := by
+        rw [UngradedAInfinityRightModule.matrix_act, UngradedAInfinityRightModule.matrixAct_apply]
+        refine Finset.sum_eq_zero fun x _ => ?_
+        split_ifs with hx
+        · rw [show x 0 = Sum.inr z from hx, Sum.elim_inr, Pi.zero_apply, map_zero]
+        · rfl
+      rw [h0, map_zero]
+    | succ n =>
+      have h := congrFun ((hMm.matrix (X ⊕ X')).act_one_act (s := e) hdE (n := n) (fun _ => β)
+        (Sum.elim φ 0)) (Sum.inr z)
+      rw [hβE, Function.update_eq_self, UngradedAInfinityRightModule.matrix_act,
+        UngradedAInfinityRightModule.matrixAct_one_diagonal_apply] at h
+      simpa only [UngradedAInfinityRightModule.matrix_act, e, Sum.elim_inr] using h
+  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, Pi.zero_apply, map_zero]
 
 /-- **The homotopy between composites preserves the box tensor products over the idempotents**
 when `M` is strictly unital and the idempotents are cycles, over a ring of characteristic two:
