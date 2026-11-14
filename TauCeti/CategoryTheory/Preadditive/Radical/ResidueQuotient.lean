@@ -41,6 +41,9 @@ sequences it identifies the valuations of irreducible morphisms with multiplicit
   rings of the source and of the target.
 * `TauCeti.radicalQuotientCongrRight` and `TauCeti.radicalQuotientCongrLeft`: the induced linear
   equivalences over these residue rings for an isomorphism of the other end.
+* `TauCeti.instSMulCommClassResidueRadicalQuotient`: the two residue actions commute, so the
+  quotient is a bimodule over the two residue rings; the companion `SMulCommClass` and, over a
+  commutative `k`, `IsScalarTower` instances make both actions compatible with the scalars of `k`.
 
 ## Main results
 
@@ -64,31 +67,66 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] (k : Type*) [Ring k] [Linear k C]
 
+/-! ### Composition on morphisms modulo the radical -/
+
+/-- **Postcomposition with a morphism of targets**, on morphisms modulo the radical. -/
+def radicalQuotientPostcomp (X : C) {Y Y' : C} (g : Y ⟶ Y') :
+    ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) →ₗ[k]
+      ((X ⟶ Y') ⧸ jacobsonRadicalSubmodule k X Y') :=
+  (jacobsonRadicalSubmodule k X Y).mapQ _ (Linear.rightComp k X g) fun _ hf =>
+    mem_jacobsonRadicalSubmodule.mpr
+      (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp hf) g)
+
+@[simp]
+theorem radicalQuotientPostcomp_mk (X : C) {Y Y' : C} (g : Y ⟶ Y') (f : X ⟶ Y) :
+    radicalQuotientPostcomp k X g (Submodule.Quotient.mk f) = Submodule.Quotient.mk (f ≫ g) :=
+  (rfl)
+
+/-- **Precomposition with a morphism of sources**, on morphisms modulo the radical. -/
+def radicalQuotientPrecomp (Y : C) {X X' : C} (g : X' ⟶ X) :
+    ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) →ₗ[k]
+      ((X' ⟶ Y) ⧸ jacobsonRadicalSubmodule k X' Y) :=
+  (jacobsonRadicalSubmodule k X Y).mapQ _ (Linear.leftComp k Y g) fun _ hf =>
+    mem_jacobsonRadicalSubmodule.mpr
+      (comp_mem_jacobsonRadical_left g (mem_jacobsonRadicalSubmodule.mp hf))
+
+@[simp]
+theorem radicalQuotientPrecomp_mk (Y : C) {X X' : C} (g : X' ⟶ X) (f : X ⟶ Y) :
+    radicalQuotientPrecomp k Y g (Submodule.Quotient.mk f) = Submodule.Quotient.mk (g ≫ f) :=
+  (rfl)
+
+/-- **A finite product of lines and zero spaces** over a division ring has dimension the number of
+lines. -/
+private theorem finrank_pi_eq_card_of_finrank_eq_one {D : Type*} [DivisionRing D] {J : Type*}
+    [Finite J] (M : J → Type*) [∀ j, AddCommGroup (M j)] [∀ j, Module D (M j)] (p : J → Prop)
+    (h₁ : ∀ j, p j → finrank D (M j) = 1) (h₀ : ∀ j, ¬p j → Subsingleton (M j)) :
+    finrank D (Π j, M j) = Nat.card {j // p j} := by
+  classical
+  have := Fintype.ofFinite J
+  have (j : J) : Module.Finite D (M j) := by
+    by_cases h : p j
+    · exact Module.finite_of_finrank_eq_succ (h₁ j h)
+    · have := h₀ j h
+      infer_instance
+  have hdim (j : J) : finrank D (M j) = if p j then 1 else 0 := by
+    split_ifs with h
+    · exact h₁ j h
+    · have := h₀ j h
+      exact finrank_zero_of_subsingleton
+  rw [Module.finrank_pi_fintype]
+  simp [hdim, Nat.card_eq_fintype_card, Fintype.card_subtype]
+
 /-! ### The residue ring of the source -/
 
 section Precomp
 
 variable (X Y : C)
 
-/-- **Precomposition by an endomorphism of the source**, on morphisms modulo the radical. -/
-def radicalQuotientPrecomp (a : End X) :
-    ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) →ₗ[k]
-      ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) :=
-  (jacobsonRadicalSubmodule k X Y).mapQ _ (Linear.leftComp k Y a.asHom) fun _ hf =>
-    mem_jacobsonRadicalSubmodule.mpr
-      (comp_mem_jacobsonRadical_left a.asHom (mem_jacobsonRadicalSubmodule.mp hf))
-
-@[simp]
-theorem radicalQuotientPrecomp_mk (a : End X) (f : X ⟶ Y) :
-    radicalQuotientPrecomp k X Y a (Submodule.Quotient.mk f) =
-      Submodule.Quotient.mk (a.asHom ≫ f) :=
-  (rfl)
-
 /-- **Precomposition as a ring homomorphism** out of the opposite endomorphism ring of the source,
 precomposing by `a₁` and then by `a₂` being precomposing by `a₂ ≫ a₁`. -/
 def radicalQuotientPrecompHom :
     (End X)ᵐᵒᵖ →+* Module.End k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
-  toFun a := radicalQuotientPrecomp k X Y a.unop
+  toFun a := radicalQuotientPrecomp k Y a.unop.asHom
   map_one' := by ext; simp [End.one_asHom]
   map_mul' _ _ := by ext; simp [End.mul_asHom]
   map_zero' := by ext; simp
@@ -96,7 +134,7 @@ def radicalQuotientPrecompHom :
 
 @[simp]
 theorem radicalQuotientPrecompHom_apply (a : (End X)ᵐᵒᵖ) :
-    radicalQuotientPrecompHom k X Y a = radicalQuotientPrecomp k X Y a.unop :=
+    radicalQuotientPrecompHom k X Y a = radicalQuotientPrecomp k Y a.unop.asHom :=
   (rfl)
 
 /-- **Precomposition, descended to the residue ring of the source**: a radical endomorphism of the
@@ -121,7 +159,7 @@ instance instModuleResiduePrecompRadicalQuotient :
 @[simp]
 theorem radicalQuotientResiduePrecompHom_mk (a : (End X)ᵐᵒᵖ) :
     radicalQuotientResiduePrecompHom k X Y (Ideal.Quotient.mk (Ring.jacobson (End X)ᵐᵒᵖ) a) =
-      radicalQuotientPrecomp k X Y a.unop :=
+      radicalQuotientPrecomp k Y a.unop.asHom :=
   (rfl)
 
 variable {k X Y}
@@ -141,9 +179,7 @@ map over the residue ring of the source. -/
 def radicalQuotientMapRight (g : Y ⟶ Y') :
     ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) →ₗ[(End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ]
       ((X ⟶ Y') ⧸ jacobsonRadicalSubmodule k X Y') where
-  toFun := (jacobsonRadicalSubmodule k X Y).mapQ _ (Linear.rightComp k X g) fun _ hf =>
-    mem_jacobsonRadicalSubmodule.mpr
-      (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp hf) g)
+  toFun := radicalQuotientPostcomp k X g
   map_add' := map_add _
   map_smul' d q := by
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective d
@@ -168,6 +204,12 @@ def radicalQuotientCongrRight (e : Y ≅ Y') :
 theorem radicalQuotientCongrRight_mk (e : Y ≅ Y') (f : X ⟶ Y) :
     radicalQuotientCongrRight k X e (Submodule.Quotient.mk f) =
       Submodule.Quotient.mk (f ≫ e.hom) :=
+  (rfl)
+
+@[simp]
+theorem radicalQuotientCongrRight_symm_mk (e : Y ≅ Y') (f : X ⟶ Y') :
+    (radicalQuotientCongrRight k X e).symm (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (f ≫ e.inv) :=
   (rfl)
 
 /-- **Morphisms into a finite biproduct, modulo the radical, decompose** over the residue ring of
@@ -209,26 +251,10 @@ theorem finrank_residueOp_radicalQuotient_biproduct {J : Type*} [Finite J] (P : 
     finrank ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
         ((X ⟶ ⨁ P) ⧸ jacobsonRadicalSubmodule k X (⨁ P)) =
       Nat.card {j // Nonempty (P j ≅ X)} := by
-  classical
-  have := Fintype.ofFinite J
-  have hdim (j : J) : finrank ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
-      ((X ⟶ P j) ⧸ jacobsonRadicalSubmodule k X (P j)) = if Nonempty (P j ≅ X) then 1 else 0 := by
-    split_ifs with h
-    · obtain ⟨e⟩ := h
-      rw [(radicalQuotientCongrRight k X e).finrank_eq, finrank_residueOp_radicalQuotient_self]
-    · have := subsingleton_quotient_jacobsonRadicalSubmodule k (X := X) (Y := P j)
-        ⟨fun e => h ⟨e.symm⟩⟩
-      exact finrank_zero_of_subsingleton
-  have (j : J) : Module.Finite ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
-      ((X ⟶ P j) ⧸ jacobsonRadicalSubmodule k X (P j)) := by
-    by_cases h : Nonempty (P j ≅ X)
-    · exact Module.finite_of_finrank_eq_succ (by simpa [h] using hdim j)
-    · have := subsingleton_quotient_jacobsonRadicalSubmodule k (X := X) (Y := P j)
-        ⟨fun e => h ⟨e.symm⟩⟩
-      infer_instance
-  rw [(LinearEquiv.ofBijective _ (bijective_radicalQuotientMapRight_pi k X P)).finrank_eq,
-    Module.finrank_pi_fintype]
-  simp [hdim, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [(LinearEquiv.ofBijective _ (bijective_radicalQuotientMapRight_pi k X P)).finrank_eq]
+  refine finrank_pi_eq_card_of_finrank_eq_one _ _ (fun j ⟨e⟩ => ?_) fun j h =>
+    subsingleton_quotient_jacobsonRadicalSubmodule k ⟨fun e => h ⟨e.symm⟩⟩
+  rw [(radicalQuotientCongrRight k X e).finrank_eq, finrank_residueOp_radicalQuotient_self]
 
 end Precomp
 
@@ -238,24 +264,10 @@ section Postcomp
 
 variable (X Y : C)
 
-/-- **Postcomposition by an endomorphism of the target**, on morphisms modulo the radical. -/
-def radicalQuotientPostcomp (g : End Y) :
-    ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) →ₗ[k]
-      ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) :=
-  (jacobsonRadicalSubmodule k X Y).mapQ _ (Linear.rightComp k X g.asHom) fun _ hf =>
-    mem_jacobsonRadicalSubmodule.mpr
-      (comp_mem_jacobsonRadical_right (mem_jacobsonRadicalSubmodule.mp hf) g.asHom)
-
-@[simp]
-theorem radicalQuotientPostcomp_mk (g : End Y) (f : X ⟶ Y) :
-    radicalQuotientPostcomp k X Y g (Submodule.Quotient.mk f) =
-      Submodule.Quotient.mk (f ≫ g.asHom) :=
-  (rfl)
-
 /-- **Postcomposition as a ring homomorphism** out of the endomorphism ring of the target. -/
 def radicalQuotientPostcompHom :
     End Y →+* Module.End k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
-  toFun := radicalQuotientPostcomp k X Y
+  toFun g := radicalQuotientPostcomp k X g.asHom
   map_one' := by ext; simp [End.one_asHom]
   map_mul' _ _ := by ext; simp [End.mul_asHom]
   map_zero' := by ext; simp
@@ -263,7 +275,7 @@ def radicalQuotientPostcompHom :
 
 @[simp]
 theorem radicalQuotientPostcompHom_apply (g : End Y) :
-    radicalQuotientPostcompHom k X Y g = radicalQuotientPostcomp k X Y g :=
+    radicalQuotientPostcompHom k X Y g = radicalQuotientPostcomp k X g.asHom :=
   (rfl)
 
 /-- **Postcomposition, descended to the residue ring of the target**: a radical endomorphism of the
@@ -286,7 +298,7 @@ instance instModuleResiduePostcompRadicalQuotient :
 @[simp]
 theorem radicalQuotientResiduePostcompHom_mk (g : End Y) :
     radicalQuotientResiduePostcompHom k X Y (Ideal.Quotient.mk (Ring.jacobson (End Y)) g) =
-      radicalQuotientPostcomp k X Y g :=
+      radicalQuotientPostcomp k X g.asHom :=
   (rfl)
 
 variable {k X Y}
@@ -306,9 +318,7 @@ map over the residue ring of the target. -/
 def radicalQuotientMapLeft (g : X' ⟶ X) :
     ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) →ₗ[End Y ⧸ Ring.jacobson (End Y)]
       ((X' ⟶ Y) ⧸ jacobsonRadicalSubmodule k X' Y) where
-  toFun := (jacobsonRadicalSubmodule k X Y).mapQ _ (Linear.leftComp k Y g) fun _ hf =>
-    mem_jacobsonRadicalSubmodule.mpr
-      (comp_mem_jacobsonRadical_left g (mem_jacobsonRadicalSubmodule.mp hf))
+  toFun := radicalQuotientPrecomp k Y g
   map_add' := map_add _
   map_smul' d q := by
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective d
@@ -333,6 +343,12 @@ def radicalQuotientCongrLeft (e : X ≅ X') :
 theorem radicalQuotientCongrLeft_mk (e : X ≅ X') (f : X ⟶ Y) :
     radicalQuotientCongrLeft k Y e (Submodule.Quotient.mk f) =
       Submodule.Quotient.mk (e.inv ≫ f) :=
+  (rfl)
+
+@[simp]
+theorem radicalQuotientCongrLeft_symm_mk (e : X ≅ X') (f : X' ⟶ Y) :
+    (radicalQuotientCongrLeft k Y e).symm (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (e.hom ≫ f) :=
   (rfl)
 
 /-- **Morphisms out of a finite biproduct, modulo the radical, decompose** over the residue ring of
@@ -371,25 +387,73 @@ theorem finrank_residue_radicalQuotient_biproduct {J : Type*} [Finite J] (P : J 
     [HasBiproduct P] [∀ j, IsLocalRing (End (P j))] :
     finrank (End Y ⧸ Ring.jacobson (End Y)) ((⨁ P ⟶ Y) ⧸ jacobsonRadicalSubmodule k (⨁ P) Y) =
       Nat.card {j // Nonempty (P j ≅ Y)} := by
-  classical
-  have := Fintype.ofFinite J
-  have hdim (j : J) : finrank (End Y ⧸ Ring.jacobson (End Y))
-      ((P j ⟶ Y) ⧸ jacobsonRadicalSubmodule k (P j) Y) = if Nonempty (P j ≅ Y) then 1 else 0 := by
-    split_ifs with h
-    · obtain ⟨e⟩ := h
-      rw [(radicalQuotientCongrLeft k Y e).finrank_eq, finrank_residue_radicalQuotient_self]
-    · have := subsingleton_quotient_jacobsonRadicalSubmodule k (X := P j) (Y := Y) ⟨fun e => h ⟨e⟩⟩
-      exact finrank_zero_of_subsingleton
-  have (j : J) : Module.Finite (End Y ⧸ Ring.jacobson (End Y))
-      ((P j ⟶ Y) ⧸ jacobsonRadicalSubmodule k (P j) Y) := by
-    by_cases h : Nonempty (P j ≅ Y)
-    · exact Module.finite_of_finrank_eq_succ (by simpa [h] using hdim j)
-    · have := subsingleton_quotient_jacobsonRadicalSubmodule k (X := P j) (Y := Y) ⟨fun e => h ⟨e⟩⟩
-      infer_instance
-  rw [(LinearEquiv.ofBijective _ (bijective_radicalQuotientMapLeft_pi k Y P)).finrank_eq,
-    Module.finrank_pi_fintype]
-  simp [hdim, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [(LinearEquiv.ofBijective _ (bijective_radicalQuotientMapLeft_pi k Y P)).finrank_eq]
+  refine finrank_pi_eq_card_of_finrank_eq_one _ _ (fun j ⟨e⟩ => ?_) fun j h =>
+    subsingleton_quotient_jacobsonRadicalSubmodule k ⟨fun e => h ⟨e⟩⟩
+  rw [(radicalQuotientCongrLeft k Y e).finrank_eq, finrank_residue_radicalQuotient_self]
 
 end Postcomp
+
+/-! ### Compatibility of the two residue actions -/
+
+section Bimodule
+
+variable (X Y : C)
+
+/-- The residue action of the source commutes with the base scalars, precomposition being
+`k`-linear. -/
+instance instSMulCommClassResiduePrecompRadicalQuotient :
+    SMulCommClass k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
+      ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
+  smul_comm c a q := ((radicalQuotientResiduePrecompHom k X Y a).map_smul c q).symm
+
+/-- The residue action of the target commutes with the base scalars, postcomposition being
+`k`-linear. -/
+instance instSMulCommClassResiduePostcompRadicalQuotient :
+    SMulCommClass k (End Y ⧸ Ring.jacobson (End Y)) ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
+  smul_comm c g q := ((radicalQuotientResiduePostcompHom k X Y g).map_smul c q).symm
+
+/-- **The two residue actions commute**, so morphisms modulo the radical form a bimodule over the
+residue ring of the source and that of the target: `a ≫ (f ≫ g)` and `(a ≫ f) ≫ g` are the same
+morphism. -/
+instance instSMulCommClassResidueRadicalQuotient :
+    SMulCommClass ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ) (End Y ⧸ Ring.jacobson (End Y))
+      ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
+  smul_comm A B q := by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective A
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective B
+    induction q using Submodule.Quotient.induction_on
+    simp
+
+end Bimodule
+
+/-! ### Compatibility with the base scalars -/
+
+section Scalars
+
+variable (k : Type*) [CommRing k] [Linear k C] (X Y : C)
+
+/-- The residue action of the source is compatible with the base scalars:
+`k → F_X → (X ⟶ Y) / rad` is a scalar tower. -/
+instance instIsScalarTowerResiduePrecompRadicalQuotient :
+    IsScalarTower k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
+      ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
+  smul_assoc c A q := by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective A
+    induction q using Submodule.Quotient.induction_on
+    rw [← Ideal.Quotient.mkₐ_eq_mk k, ← map_smul, Ideal.Quotient.mkₐ_eq_mk]
+    simp [End.smul_asHom, ← Submodule.Quotient.mk_smul]
+
+/-- The residue action of the target is compatible with the base scalars:
+`k → F_Y → (X ⟶ Y) / rad` is a scalar tower. -/
+instance instIsScalarTowerResiduePostcompRadicalQuotient :
+    IsScalarTower k (End Y ⧸ Ring.jacobson (End Y)) ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) where
+  smul_assoc c G q := by
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective G
+    induction q using Submodule.Quotient.induction_on
+    rw [← Ideal.Quotient.mkₐ_eq_mk k, ← map_smul, Ideal.Quotient.mkₐ_eq_mk]
+    simp [End.smul_asHom, ← Submodule.Quotient.mk_smul]
+
+end Scalars
 
 end TauCeti
