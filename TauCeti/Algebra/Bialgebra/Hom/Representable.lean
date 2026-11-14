@@ -164,7 +164,7 @@ private lemma ideal_fg [Algebra.FiniteType R H] : (ideal R H G).FG := by
         exact Ideal.subset_span (Or.inr ⟨x, hx, rfl⟩)
     rwa [AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] at h
   · apply Ideal.span_le.2
-    rintro _ (⟨x, hx, rfl⟩ | ⟨x, hx, rfl⟩)
+    rintro _ (⟨x, _, rfl⟩ | ⟨x, _, rfl⟩)
     · exact Ideal.subset_span (Or.inl ⟨x, rfl⟩)
     · exact Ideal.subset_span (Or.inr ⟨x, rfl⟩)
 
