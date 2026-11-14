@@ -130,31 +130,18 @@ omit [TopologicalSpace ι] [OrderTopology ι] in
 pointwise on paths. -/
 theorem hittingAfter_union_apply (X : ι → Ω → E) (s₁ s₂ : Set E) (a : ι) (ω : Ω) :
     hittingAfter X (s₁ ∪ s₂) a ω = min (hittingAfter X s₁ a ω) (hittingAfter X s₂ a ω) := by
-  classical
   refine le_antisymm (le_min (hittingAfter_apply_anti X a ω subset_union_left)
-    (hittingAfter_apply_anti X a ω subset_union_right)) ?_
-  by_contra! hlt
-  have hne : {i | a ≤ i ∧ X i ω ∈ s₁ ∪ s₂}.Nonempty := by
-    by_contra h
-    have hnot : ¬ ∃ j, a ≤ j ∧ X j ω ∈ s₁ ∪ s₂ := fun ⟨j, hj⟩ ↦ h ⟨j, hj⟩
-    exact (ne_top_of_lt hlt) (hittingAfter_eq_top_iff.mpr (by simpa using hnot))
-  have heq : hittingAfter X (s₁ ∪ s₂) a ω = ↑(sInf {i | a ≤ i ∧ X i ω ∈ s₁ ∪ s₂}) := by
-    have hex : ∃ j, a ≤ j ∧ X j ω ∈ s₁ ∪ s₂ := ⟨hne.some, hne.some_mem⟩
-    simp only [hittingAfter_def, ite_eq_left hex]
-  cases hm : min (hittingAfter X s₁ a ω) (hittingAfter X s₂ a ω) using WithTop.recTopCoe with
+    (hittingAfter_apply_anti X a ω subset_union_right)) (le_of_forall_gt fun b hb ↦ ?_)
+  cases b with
   | top =>
-    obtain ⟨j, haj, hj | hj⟩ := hne
-    · exact WithTop.coe_ne_top (top_unique ((le_min_iff.mp hm.ge).1.trans
-        (hittingAfter_le_of_mem haj hj)))
-    · exact WithTop.coe_ne_top (top_unique ((le_min_iff.mp hm.ge).2.trans
-        (hittingAfter_le_of_mem haj hj)))
-  | coe b =>
-    rw [heq, hm, WithTop.coe_lt_coe] at hlt
-    obtain ⟨j, ⟨haj, hj | hj⟩, hjb⟩ := exists_lt_of_csInf_lt hne hlt
-    · exact (WithTop.coe_lt_coe.mpr hjb).not_ge
-        ((le_min_iff.mp hm.ge).1.trans (hittingAfter_le_of_mem haj hj))
-    · exact (WithTop.coe_lt_coe.mpr hjb).not_ge
-        ((le_min_iff.mp hm.ge).2.trans (hittingAfter_le_of_mem haj hj))
+    rw [lt_top_iff_ne_top]
+    rintro htop
+    rw [min_eq_top, hittingAfter_eq_top_iff, hittingAfter_eq_top_iff] at htop
+    exact hb.ne_top (hittingAfter_eq_top_iff.mpr fun j hj h ↦ h.elim (htop.1 j hj) (htop.2 j hj))
+  | coe d =>
+    obtain ⟨j, hj, hj₁ | hj₂⟩ := hittingAfter_lt_iff.mp hb
+    · exact min_lt_iff.mpr (.inl (hittingAfter_lt_iff.mpr ⟨j, hj, hj₁⟩))
+    · exact min_lt_iff.mpr (.inr (hittingAfter_lt_iff.mpr ⟨j, hj, hj₂⟩))
 
 omit [TopologicalSpace ι] [OrderTopology ι] in
 /-- First entrance into a union of two sets is the minimum of the first entrances into each set. -/
@@ -167,9 +154,7 @@ omit [TopologicalSpace ι] [OrderTopology ι] in
 into the preimage `f ⁻¹' s`. -/
 theorem hittingAfter_comp {F : Type*} (f : E → F) (X : ι → Ω → E) (s : Set F) (a : ι) :
     hittingAfter (fun t ω ↦ f (X t ω)) s a = hittingAfter X (f ⁻¹' s) a := by
-  classical
-  ext ω
-  simp only [hittingAfter_def, mem_preimage]
+  classical ext ω; simp only [hittingAfter_def, mem_preimage]
 
 section Stopping
 

@@ -75,29 +75,25 @@ private theorem ae_imp_of_subset_of_measure_le {Ω : Type*} {mΩ : MeasurableSpa
     {P : Measure Ω} [IsFiniteMeasure P] {S T : Set Ω} (hST : S ⊆ T)
     (hS : MeasurableSet S) (hle : P T ≤ P S) :
     ∀ᵐ ω ∂P, ω ∈ T → ω ∈ S := by
-  have heq : {ω | ¬ (ω ∈ T → ω ∈ S)} = T \ S := by ext ω; simp
-  rw [ae_iff, heq, measure_sdiff hST hS.nullMeasurableSet (measure_ne_top P S),
-    tsub_eq_zero_of_le hle]
+  rw [ae_iff, show {ω | ¬ (ω ∈ T → ω ∈ S)} = T \ S by ext; simp,
+    measure_sdiff hST hS.nullMeasurableSet (measure_ne_top P S), tsub_eq_zero_of_le hle]
 
 private theorem le_of_forall_denseSeq_le_imp {a b : WithTop ℝ≥0}
     (h : ∀ k, a ≤ (TopologicalSpace.denseSeq ℝ≥0 k : WithTop ℝ≥0) →
-      b ≤ (TopologicalSpace.denseSeq ℝ≥0 k : WithTop ℝ≥0)) :
-    b ≤ a := by
+      b ≤ (TopologicalSpace.denseSeq ℝ≥0 k : WithTop ℝ≥0)) : b ≤ a := by
   by_contra! hlt
   cases a with
   | top => exact not_top_lt hlt
   | coe u =>
-    let U : Set ℝ≥0 := (fun t : ℝ≥0 ↦ (t : WithTop ℝ≥0)) ⁻¹' Ioo (u : WithTop ℝ≥0) b
-    have hU : IsOpen U := isOpen_Ioo.preimage WithTop.continuous_coe
-    have hUne : U.Nonempty := by
+    have hUne : ((fun t : ℝ≥0 ↦ (t : WithTop ℝ≥0)) ⁻¹' Ioo (u : WithTop ℝ≥0) b).Nonempty := by
       cases b with
       | top => exact ⟨u + 1, WithTop.coe_lt_coe.mpr (lt_add_of_pos_right u zero_lt_one),
           WithTop.coe_lt_top _⟩
       | coe v =>
         obtain ⟨m, hum, hmv⟩ := exists_between (WithTop.coe_lt_coe.mp hlt)
         exact ⟨m, WithTop.coe_lt_coe.mpr hum, WithTop.coe_lt_coe.mpr hmv⟩
-    obtain ⟨k, hk₁, hk₂⟩ :=
-      (TopologicalSpace.denseRange_denseSeq ℝ≥0).exists_mem_open hU hUne
+    obtain ⟨k, hk₁, hk₂⟩ := (TopologicalSpace.denseRange_denseSeq ℝ≥0).exists_mem_open
+      (isOpen_Ioo.preimage WithTop.continuous_coe) hUne
     exact hk₂.not_ge (h k hk₁.le)
 
 private theorem hittingAfter_Ioi_ae_eq_Ici_of_pos {Ω : Type*} {mΩ : MeasurableSpace Ω}
@@ -111,28 +107,23 @@ private theorem hittingAfter_Ioi_ae_eq_Ici_of_pos {Ω : Type*} {mΩ : Measurable
   have hτ₂_meas : Measurable τ₂ :=
     measurable_hittingAfter_of_isOpen (fun t ↦ (hWm t).measurable) hWc isOpen_Ioi
   have hstep (t : ℝ≥0) : ∀ᵐ ω ∂P, τ₁ ω ≤ t → τ₂ ω ≤ t := by
-    let S : Set Ω := {ω | τ₂ ω ≤ t}
-    let T : Set Ω := {ω | τ₁ ω ≤ t}
-    have hST : S ⊆ T := fun ω hω ↦ (hittingAfter_apply_anti W 0 ω Ioi_subset_Ici_self).trans hω
-    have hsub : {ω | ∃ s ≤ t, a < W s ω} ⊆ S := fun ω ⟨s, hst, hs⟩ ↦
-      (hittingAfter_le_of_mem bot_le hs).trans (WithTop.coe_le_coe.mpr hst)
-    have hT_eq : T = {ω | ∃ s ≤ t, a ≤ W s ω} := by
-      ext ω
-      simp only [T, τ₁, mem_ofPred_eq, isClosed_Ici.hittingAfter_le_iff (hWc ω), mem_Icc, zero_le,
-        true_and, mem_Ici]
+    have hST : {ω | τ₂ ω ≤ t} ⊆ {ω | τ₁ ω ≤ t} :=
+      fun ω hω ↦ (hittingAfter_apply_anti W 0 ω Ioi_subset_Ici_self).trans hω
+    have hT_eq : {ω | τ₁ ω ≤ t} = {ω | ∃ s ≤ t, a ≤ W s ω} := by
+      ext ω; simp only [τ₁, mem_ofPred_eq, isClosed_Ici.hittingAfter_le_iff (hWc ω), mem_Icc,
+        zero_le, true_and, mem_Ici]
     have hWt_eq : P {ω | a ≤ W t ω} = P {ω | a < W t ω} := by
       rcases eq_or_ne t 0 with rfl | ht0
-      · have h₁ : {ω | a ≤ W 0 ω} = ∅ := by ext ω; simp [hW0 ω, ha.not_ge]
-        have h₂ : {ω | a < W 0 ω} = ∅ := by ext ω; simp [hW0 ω, ha.not_gt]
-        rw [h₁, h₂]
+      · rw [show {ω | a ≤ W 0 ω} = ∅ by ext ω; simp [hW0 ω, ha.not_ge],
+          show {ω | a < W 0 ω} = ∅ by ext ω; simp [hW0 ω, ha.not_gt]]
       · have := nullSingletonClass_gaussianReal (μ := 0) ht0
-        have h₁ := (hW.hasLaw_eval t).measure_eq (p := (· ∈ Ici a)) measurableSet_Ici
-        have h₂ := (hW.hasLaw_eval t).measure_eq (p := (· ∈ Ioi a)) measurableSet_Ioi
-        exact h₁.trans ((measure_congr Ioi_ae_eq_Ici.symm).trans h₂.symm)
-    have hle : P T ≤ P S := by
-      rw [hT_eq, hW.measure_exists_le_ge t ha, hWt_eq, ← hW.measure_exists_le_gt t ha.le]
-      exact measure_mono hsub
-    exact ae_imp_of_subset_of_measure_le hST (measurableSet_Iic.preimage hτ₂_meas) hle
+        exact ((hW.hasLaw_eval t).measure_eq (p := (· ∈ Ici a)) measurableSet_Ici).trans
+          ((measure_congr Ioi_ae_eq_Ici.symm).trans
+            ((hW.hasLaw_eval t).measure_eq (p := (· ∈ Ioi a)) measurableSet_Ioi).symm)
+    refine ae_imp_of_subset_of_measure_le hST (measurableSet_Iic.preimage hτ₂_meas) ?_
+    rw [hT_eq, hW.measure_exists_le_ge t ha, hWt_eq, ← hW.measure_exists_le_gt t ha.le]
+    exact measure_mono fun ω ⟨s, hst, hs⟩ ↦
+      (hittingAfter_le_of_mem bot_le hs).trans (WithTop.coe_le_coe.mpr hst)
   filter_upwards [ae_all_iff.mpr fun k ↦ hstep (TopologicalSpace.denseSeq ℝ≥0 k)] with ω hω
   exact le_antisymm (le_of_forall_denseSeq_le_imp hω)
     (hittingAfter_apply_anti W 0 ω Ioi_subset_Ici_self)
@@ -171,17 +162,11 @@ theorem hittingAfter_Ioi_ae_eq_Ici (hB : IsBrownianReal B P) (a : ℝ) :
   refine (hWB.symm.hittingAfter_ae_eq (Ioi a) 0).trans
     (Filter.EventuallyEq.trans ?_ (hWB.hittingAfter_ae_eq (Ici a) 0))
   rcases lt_trichotomy a 0 with ha | rfl | ha
-  · refine Eventually.of_forall fun ω ↦ ?_
-    have h₁ : hittingAfter W (Ioi a) 0 ω = 0 :=
-      le_antisymm (hittingAfter_le_of_mem le_rfl (by simpa only [mem_Ioi, hW0 ω] using ha)) bot_le
-    have h₂ : hittingAfter W (Ici a) 0 ω = 0 :=
-      le_antisymm (hittingAfter_le_of_mem le_rfl (by simpa only [mem_Ici, hW0 ω] using ha.le))
-        bot_le
-    exact h₁.trans h₂.symm
-  · filter_upwards [hW.hittingAfter_Ioi_zero_ae_eq_zero] with ω hω
-    have h₂ : hittingAfter W (Ici 0) 0 ω = 0 :=
-      le_antisymm (hittingAfter_le_of_mem le_rfl (by simp [hW0 ω])) bot_le
-    exact hω.trans h₂.symm
+  · exact .of_forall fun ω ↦
+      (le_antisymm (hittingAfter_le_of_mem le_rfl (by simpa [hW0 ω] using ha)) bot_le).trans
+        (le_antisymm (hittingAfter_le_of_mem le_rfl (by simpa [hW0 ω] using ha.le)) bot_le).symm
+  · exact hW.hittingAfter_Ioi_zero_ae_eq_zero.mono fun ω hω ↦ hω.trans
+      (le_antisymm (hittingAfter_le_of_mem le_rfl (by simp [hW0 ω])) bot_le).symm
   · exact hittingAfter_Ioi_ae_eq_Ici_of_pos hW hWm hWc hW0 ha
 
 /-- **Immediate downward level crossing**: for every real threshold `a`, a real Brownian motion
@@ -189,21 +174,17 @@ enters `(-∞, a)` at the same time it enters `(-∞, a]` almost surely. -/
 theorem hittingAfter_Iio_ae_eq_Iic (hB : IsBrownianReal B P) (a : ℝ) :
     hittingAfter B (Iio a) 0 =ᵐ[P] hittingAfter B (Iic a) 0 := by
   have h := hB.neg.hittingAfter_Ioi_ae_eq_Ici (-a)
-  have hpre₁ : (fun y : ℝ ↦ -y) ⁻¹' Ioi (-a) = Iio a := by ext y; simp
-  have hpre₂ : (fun y : ℝ ↦ -y) ⁻¹' Ici (-a) = Iic a := by ext y; simp
-  have h₁ : hittingAfter (-B) (Ioi (-a)) 0 = hittingAfter B (Iio a) 0 :=
-    (hittingAfter_comp (fun y : ℝ ↦ -y) B (Ioi (-a)) 0).trans (by rw [hpre₁])
-  have h₂ : hittingAfter (-B) (Ici (-a)) 0 = hittingAfter B (Iic a) 0 :=
-    (hittingAfter_comp (fun y : ℝ ↦ -y) B (Ici (-a)) 0).trans (by rw [hpre₂])
-  rwa [h₁, h₂] at h
+  rwa [show (-B) = fun t ω ↦ -B t ω from rfl,
+    hittingAfter_comp (fun x : ℝ ↦ -x), hittingAfter_comp (fun x : ℝ ↦ -x),
+    show (fun x : ℝ ↦ -x) ⁻¹' Ioi (-a) = Iio a by ext; simp,
+    show (fun x : ℝ ↦ -x) ⁻¹' Ici (-a) = Iic a by ext; simp] at h
 
 /-- When the Brownian path starts at `x`, its hitting time of `{x}` is almost surely `0`. -/
 theorem hittingAfter_singleton_self_ae_eq_zero (hB : IsBrownianReal B P) (x : ℝ) :
     hittingAfter (fun t ω ↦ x + B t ω) {x} 0 =ᵐ[P] 0 := by
   obtain ⟨W, _, _, hW0, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
-  rw [hittingAfter_comp (x + ·)]
-  refine (hWB.symm.hittingAfter_ae_eq _ 0).trans (Eventually.of_forall fun ω ↦ ?_)
-  exact le_antisymm (hittingAfter_le_of_mem le_rfl (by simp [hW0 ω])) bot_le
+  exact ((hWB.symm.comp (x + ·)).hittingAfter_ae_eq {x} 0).trans (.of_forall fun ω ↦
+    le_antisymm (hittingAfter_le_of_mem le_rfl (by simp [hW0 ω])) bot_le)
 
 /-- For `x ≤ a`, the hitting time of `{a}` by `x + B` agrees almost surely with the hitting time
 of `[a, ∞)`. -/
@@ -211,14 +192,9 @@ theorem hittingAfter_singleton_ae_eq_Ici (hB : IsBrownianReal B P) {x a : ℝ} (
     hittingAfter (fun t ω ↦ x + B t ω) {a} 0 =ᵐ[P]
       hittingAfter (fun t ω ↦ x + B t ω) (Ici a) 0 := by
   obtain ⟨W, _, hWc, hW0, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
-  rw [hittingAfter_comp (x + ·), hittingAfter_comp (x + ·)]
-  refine (hWB.symm.hittingAfter_ae_eq _ 0).trans
-    (Filter.EventuallyEq.trans ?_ (hWB.hittingAfter_ae_eq _ 0))
-  refine Eventually.of_forall fun ω ↦ ?_
-  have h := congrFun (hittingAfter_comp (x + ·) W {a} 0) ω
-  have h' := congrFun (hittingAfter_comp (x + ·) W (Ici a) 0) ω
-  rw [← h, ← h']
-  exact ((continuous_const_add x).comp (hWc ω)).hittingAfter_singleton_eq_Ici
+  refine ((hWB.symm.comp (x + ·)).hittingAfter_ae_eq {a} 0).trans
+    (Filter.EventuallyEq.trans ?_ ((hWB.comp (x + ·)).hittingAfter_ae_eq (Ici a) 0))
+  exact .of_forall fun ω ↦ ((continuous_const_add x).comp (hWc ω)).hittingAfter_singleton_eq_Ici
     (by simpa only [hW0 ω, add_zero] using hxa)
 
 /-- For `a ≤ x`, the hitting time of `{a}` by `x + B` agrees almost surely with the hitting time
@@ -227,14 +203,9 @@ theorem hittingAfter_singleton_ae_eq_Iic (hB : IsBrownianReal B P) {x a : ℝ} (
     hittingAfter (fun t ω ↦ x + B t ω) {a} 0 =ᵐ[P]
       hittingAfter (fun t ω ↦ x + B t ω) (Iic a) 0 := by
   obtain ⟨W, _, hWc, hW0, _, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
-  rw [hittingAfter_comp (x + ·), hittingAfter_comp (x + ·)]
-  refine (hWB.symm.hittingAfter_ae_eq _ 0).trans
-    (Filter.EventuallyEq.trans ?_ (hWB.hittingAfter_ae_eq _ 0))
-  refine Eventually.of_forall fun ω ↦ ?_
-  have h := congrFun (hittingAfter_comp (x + ·) W {a} 0) ω
-  have h' := congrFun (hittingAfter_comp (x + ·) W (Iic a) 0) ω
-  rw [← h, ← h']
-  exact ((continuous_const_add x).comp (hWc ω)).hittingAfter_singleton_eq_Iic
+  refine ((hWB.symm.comp (x + ·)).hittingAfter_ae_eq {a} 0).trans
+    (Filter.EventuallyEq.trans ?_ ((hWB.comp (x + ·)).hittingAfter_ae_eq (Iic a) 0))
+  exact .of_forall fun ω ↦ ((continuous_const_add x).comp (hWc ω)).hittingAfter_singleton_eq_Iic
     (by simpa only [hW0 ω, add_zero] using hax)
 
 private theorem measure_hittingAfter_singleton_le_of_lt (hB : IsBrownianReal B P) {x a : ℝ}
@@ -242,22 +213,18 @@ private theorem measure_hittingAfter_singleton_le_of_lt (hB : IsBrownianReal B P
     P {ω | hittingAfter (fun s ω ↦ x + B s ω) {a} 0 ω ≤ t} = 2 * P {ω | |a - x| ≤ B t ω} := by
   obtain ⟨W, _, hWc, _, hW, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
   have hsub : 0 < a - x := sub_pos.mpr hxa
+  have hτ : hittingAfter (fun s ω ↦ x + B s ω) {a} 0 =ᵐ[P] hittingAfter W (Ici (a - x)) 0 := by
+    refine (hB.hittingAfter_singleton_ae_eq_Ici hxa.le).trans ?_
+    rw [hittingAfter_comp (x + ·), preimage_const_add_Ici]
+    exact hWB.symm.hittingAfter_ae_eq _ 0
   have heq₁ : {ω | hittingAfter (fun s ω ↦ x + B s ω) {a} 0 ω ≤ t} =ᵐ[P]
-      {ω | ∃ s ≤ t, a - x ≤ W s ω} := by
-    have hτ : hittingAfter (fun s ω ↦ x + B s ω) {a} 0 =ᵐ[P] hittingAfter W (Ici (a - x)) 0 := by
-      have hrhs : hittingAfter (fun s ω ↦ x + B s ω) (Ici a) 0 =
-          hittingAfter B (Ici (a - x)) 0 := by
-        rw [hittingAfter_comp (x + ·), preimage_const_add_Ici]
-      exact (hrhs ▸ hB.hittingAfter_singleton_ae_eq_Ici hxa.le).trans
-        (hWB.symm.hittingAfter_ae_eq _ 0)
-    filter_upwards [hτ] with ω hω
-    exact (congrArg (· ≤ (t : WithTop ℝ≥0)) hω).to_iff.trans <| by
-      simp only [isClosed_Ici.hittingAfter_le_iff (hWc ω), mem_Icc, zero_le, true_and, mem_Ici]
-  have heq₂ : {ω | |a - x| ≤ B t ω} =ᵐ[P] {ω | a - x ≤ W t ω} := by
-    filter_upwards [hWB.ae_eq_eval t] with ω hω
-    simp only [hω, abs_of_pos hsub]
-  rw [measure_congr heq₁, measure_congr heq₂]
-  exact hW.measure_exists_le_ge t hsub
+      {ω | ∃ s ≤ t, a - x ≤ W s ω} := hτ.mono fun ω hω ↦
+    (congrArg (· ≤ (t : WithTop ℝ≥0)) hω).to_iff.trans <| by
+      simp only [mem_ofPred_eq, isClosed_Ici.hittingAfter_le_iff (hWc ω), mem_Icc, zero_le,
+        true_and, mem_Ici]
+  have heq₂ : {ω | a - x ≤ W t ω} =ᵐ[P] {ω | |a - x| ≤ B t ω} :=
+    (hWB.ae_eq_eval t).mono fun _ hω ↦ by simp only [mem_ofPred_eq, hω, abs_of_pos hsub]
+  rw [measure_congr heq₁, hW.measure_exists_le_ge t hsub, measure_congr heq₂]
 
 /-- **Reflection formula for the Brownian level-hitting time**: for `x ≠ a` and `t ≥ 0`
 (including `t = 0`, where both sides vanish), the probability that `x + B` hits `a` by time `t`
@@ -270,16 +237,12 @@ theorem measure_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : ℝ} 
   · have hneg := measure_hittingAfter_singleton_le_of_lt hB.neg (neg_lt_neg hax) t
     have hτ : hittingAfter (fun s ω ↦ -x + (-B) s ω) {-a} 0 =
         hittingAfter (fun s ω ↦ x + B s ω) {a} 0 := by
-      have hfun : (fun s ω ↦ -x + (-B) s ω) = fun s ω ↦ -(x + B s ω) := by
-        ext s ω; simp [add_comm]
-      have hpre : (fun y : ℝ ↦ -y) ⁻¹' ({-a} : Set ℝ) = {a} := by
-        ext y; simp
-      rw [hfun, hittingAfter_comp (fun y : ℝ ↦ -y), hpre]
-    have habs : |-a - -x| = |a - x| := by rw [neg_sub_neg, abs_sub_comm]
+      rw [show (fun s ω ↦ -x + (-B) s ω) = fun s ω ↦ -(x + B s ω) by ext; simp [add_comm],
+        hittingAfter_comp Neg.neg, show Neg.neg ⁻¹' ({-a} : Set ℝ) = {a} by ext; simp]
     have hlaw : P {ω | |a - x| ≤ (-B) t ω} = P {ω | |a - x| ≤ B t ω} :=
       ((hB.neg.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·)) measurableSet_Ici).trans
         ((hB.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·)) measurableSet_Ici).symm
-    rwa [hτ, habs, hlaw] at hneg
+    rwa [hτ, neg_sub_neg, abs_sub_comm, hlaw] at hneg
 
 /-- Real-valued complementary-error-function formula for the Brownian level-hitting cumulative
 distribution function at positive time `t ≠ 0` when `x ≠ a`. -/
@@ -290,11 +253,10 @@ theorem measureReal_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : �
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   have := nullSingletonClass_gaussianReal (μ := 0) ht
   have hlaw : P {ω | |a - x| ≤ B t ω} = gaussianReal 0 t (Ioi |a - x|) :=
-    ((hB.hasLaw_eval t).measure_eq (p := (· ∈ Ici |a - x|)) measurableSet_Ici).trans
-      (measure_congr Ioi_ae_eq_Ici.symm)
-  rw [measureReal_def, hB.measure_hittingAfter_singleton_le hx t, hlaw,
-    ENNReal.toReal_mul, ENNReal.toReal_ofNat, ← measureReal_def,
-    measureReal_Ioi_gaussianReal 0 ht |a - x|, sub_zero]
+    ((hB.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·)) measurableSet_Ici).trans
+      (measure_congr (μ := gaussianReal 0 t) (Ioi_ae_eq_Ici (a := |a - x|)).symm)
+  rw [measureReal_def, hB.measure_hittingAfter_singleton_le hx t, hlaw, ENNReal.toReal_mul,
+    ENNReal.toReal_ofNat, ← measureReal_def, measureReal_Ioi_gaussianReal 0 ht |a - x|, sub_zero]
   ring
 
 /-- **One-dimensional Brownian recurrence of levels**: starting from any `x : ℝ`, the path
@@ -302,61 +264,41 @@ theorem measureReal_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : �
 theorem hittingAfter_singleton_ne_top (hB : IsBrownianReal B P) (x a : ℝ) :
     ∀ᵐ ω ∂P, hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω ≠ ⊤ := by
   rcases eq_or_ne x a with rfl | hx
-  · filter_upwards [hB.hittingAfter_singleton_self_ae_eq_zero x] with ω hω
-    simp [hω]
+  · exact (hB.hittingAfter_singleton_self_ae_eq_zero x).mono fun _ hω ↦ by simp [hω]
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨W, hWm, hWc, _, hW, hWB⟩ := hB.exists_stronglyMeasurable_continuous_indist
   let τ := hittingAfter (fun t ω ↦ x + W t ω) {a} 0
   have hτ_meas : Measurable τ :=
     measurable_hittingAfter_of_isClosed (fun t ↦ (measurable_const_add x).comp (hWm t).measurable)
       (fun ω ↦ (continuous_const_add x).comp (hWc ω)) isClosed_singleton 0
-  let E (n : ℕ) : Set Ω := {ω | τ ω ≤ ((n : ℝ≥0) + 1 : ℝ≥0)}
-  have hE_mono : Monotone E := fun m n hmn ω (hω : τ ω ≤ ((m : ℝ≥0) + 1 : ℝ≥0)) ↦
-    hω.trans (WithTop.coe_le_coe.mpr (add_le_add_left (Nat.cast_le.mpr hmn) 1))
-  have hE_union : (⋃ n, E n) = {ω | τ ω ≠ ⊤} := by
-    ext ω; simp only [E, mem_iUnion, mem_ofPred_eq]
-    refine ⟨fun ⟨n, hn⟩ htop ↦ by simp [htop] at hn, fun hne ↦ ?_⟩
-    cases hτ : τ ω with
-    | top => exact absurd hτ hne
-    | coe u =>
-      obtain ⟨n, hn⟩ := exists_nat_gt u
-      have hle : u ≤ (n : ℝ≥0) + 1 := hn.le.trans (le_add_of_nonneg_right zero_le_one)
-      exact ⟨n, hτ ▸ WithTop.coe_le_coe.mpr hle⟩
-  have hlim₁ : Tendsto (fun n ↦ P.real (E n)) atTop (𝓝 (P.real {ω | τ ω ≠ ⊤})) := by
-    rw [← hE_union]
-    exact (ENNReal.tendsto_toReal (measure_ne_top P _)).comp
-      (tendsto_measure_iUnion_atTop (μ := P) hE_mono)
-  have hinner : Tendsto (fun n : ℕ ↦ |a - x| / √(2 * ((n : ℝ) + 1))) atTop (𝓝 0) := by
-    have hnat : Tendsto (fun n : ℕ ↦ (n : ℝ) + 1) atTop atTop :=
-      tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds
-    exact tendsto_const_nhds.div_atTop
-      (Real.tendsto_sqrt_atTop.comp (Tendsto.const_mul_atTop zero_lt_two hnat))
-  have hlim₂ : Tendsto (fun n ↦ P.real (E n)) atTop (𝓝 1) := by
-    have herfc := TauCeti.Real.erfc_zero ▸ (TauCeti.Real.continuous_erfc.tendsto 0).comp hinner
-    refine herfc.congr fun n ↦ ?_
-    simpa only [E, τ, Function.comp_apply, NNReal.coe_add, NNReal.coe_natCast,
-      NNReal.coe_one] using
-      (hW.measureReal_hittingAfter_singleton_le hx (Nat.cast_add_one_ne_zero n)).symm
-  have hprob : P {ω | τ ω ≠ ⊤} = 1 := by
-    have hreal : P.real {ω | τ ω ≠ ⊤} = 1 := tendsto_nhds_unique hlim₁ hlim₂
-    rw [← ENNReal.ofReal_toReal (measure_ne_top P {ω | τ ω ≠ ⊤}), ← measureReal_def, hreal,
-      ENNReal.ofReal_one]
-  have hmeas : MeasurableSet {ω | τ ω ≠ ⊤} := (measurableSet_singleton ⊤).compl.preimage hτ_meas
+  have hinner : Tendsto (fun n : ℕ ↦ |a - x| / √(2 * ((n : ℝ) + 1))) atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop <| Real.tendsto_sqrt_atTop.comp <|
+      Tendsto.const_mul_atTop zero_lt_two
+        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
+  have hlim : Tendsto (fun n : ℕ ↦ 1 - TauCeti.Real.erfc (|a - x| / √(2 * ((n : ℝ) + 1))))
+      atTop (𝓝 0) := by
+    simpa only [Function.comp_apply, TauCeti.Real.erfc_zero, sub_self] using
+      (tendsto_const_nhds (x := (1 : ℝ))).sub
+        ((TauCeti.Real.continuous_erfc.tendsto 0).comp hinner)
+  have hreal : P.real {ω | τ ω = ⊤} = 0 := le_antisymm (ge_of_tendsto' hlim fun n ↦ by
+    have hsub : {ω | τ ω = ⊤} ⊆ {ω | τ ω ≤ (((n : ℝ≥0) + 1 : ℝ≥0) : WithTop ℝ≥0)}ᶜ :=
+      fun _ (h : τ _ = ⊤) (hle : τ _ ≤ _) ↦ WithTop.coe_ne_top (top_le_iff.mp (h ▸ hle))
+    refine (measureReal_mono hsub).trans_eq ?_
+    rw [probReal_compl_eq_one_sub (measurableSet_le hτ_meas measurable_const),
+      hW.measureReal_hittingAfter_singleton_le hx (Nat.cast_add_one_ne_zero n)]
+    push_cast; rfl) measureReal_nonneg
   have hW_ae : ∀ᵐ ω ∂P, τ ω ≠ ⊤ := by
-    rw [ae_iff, ← compl_ofPred, prob_compl_eq_zero_iff hmeas]
-    exact hprob
-  have hBW_τ : τ =ᵐ[P] hittingAfter (fun t ω ↦ x + B t ω) {a} 0 := by
-    simpa only [τ, hittingAfter_comp (x + ·)] using hWB.hittingAfter_ae_eq ((x + ·) ⁻¹' {a}) 0
-  filter_upwards [hW_ae, hBW_τ] with ω hω hω_eq
-  exact hω_eq ▸ hω
+    rw [ae_iff]; simp only [Classical.not_not]
+    exact ((ENNReal.toReal_eq_zero_iff _).mp hreal).resolve_right (measure_ne_top P _)
+  exact hW_ae.mp (((hWB.comp (x + ·)).hittingAfter_ae_eq {a} 0).mono fun _ h₁ h₂ ↦ h₁ ▸ h₂)
 
 /-- Starting from any `x : ℝ`, a one-dimensional Brownian path exits every proper subset `A ≠ univ`
 (i.e. hits `Aᶜ`) in finite time almost surely. -/
 theorem hittingAfter_compl_ne_top (hB : IsBrownianReal B P) (x : ℝ) {A : Set ℝ} (hA : A ≠ univ) :
     ∀ᵐ ω ∂P, hittingAfter (fun t ω ↦ x + B t ω) Aᶜ 0 ω ≠ ⊤ := by
   obtain ⟨y, hy⟩ := nonempty_compl.mpr hA
-  filter_upwards [hB.hittingAfter_singleton_ne_top x y] with ω hω
-  exact ne_top_of_le_ne_top hω (hittingAfter_apply_anti _ 0 ω (singleton_subset_iff.mpr hy))
+  exact (hB.hittingAfter_singleton_ne_top x y).mono fun ω hω ↦
+    ne_top_of_le_ne_top hω (hittingAfter_apply_anti _ 0 ω (singleton_subset_iff.mpr hy))
 
 /-- When `x ≠ a`, the level-hitting time `(hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω).untopA`
 of `x + B` has the Lévy law `levyMeasure 0 ((a - x) ^ 2)`. -/
@@ -372,10 +314,8 @@ theorem hasLaw_hittingAfter_singleton (hB : IsBrownianReal B P) {x a : ℝ} (hx 
   have hX_meas : Measurable X := measurable_subtype_coe.comp
     (measurable_hittingAfter_of_isClosed (fun t ↦ (measurable_const_add x).comp (hWm t).measurable)
       (fun ω ↦ (continuous_const_add x).comp (hWc ω)) isClosed_singleton 0).untopA
-  have hXB : X =ᵐ[P] fun ω ↦ ((hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω).untopA : ℝ) := by
-    have hBW_τ : τ =ᵐ[P] hittingAfter (fun t ω ↦ x + B t ω) {a} 0 := by
-      simpa only [τ, hittingAfter_comp (x + ·)] using hWB.hittingAfter_ae_eq ((x + ·) ⁻¹' {a}) 0
-    exact hBW_τ.mono fun ω hω ↦ by simp only [X, hω]
+  have hXB : X =ᵐ[P] fun ω ↦ ((hittingAfter (fun t ω ↦ x + B t ω) {a} 0 ω).untopA : ℝ) :=
+    ((hWB.comp (x + ·)).hittingAfter_ae_eq {a} 0).mono fun _ hω ↦ by simp only [X, τ, hω]
   refine ⟨hX_meas.aemeasurable.congr hXB, (Measure.map_congr hXB.symm).trans ?_⟩
   have : IsProbabilityMeasure (P.map X) :=
     (Measure.isProbabilityMeasure_map_iff hX_meas.aemeasurable).mpr ‹_›
@@ -395,30 +335,26 @@ theorem hasLaw_hittingAfter_singleton (hB : IsBrownianReal B P) {x a : ℝ} (hx 
         (hlt.trans_le (NNReal.coe_nonneg _)).not_ge hω
       rw [hemp, measureReal_empty]
     · have hz : P {ω | τ ω ≤ (0 : ℝ≥0)} = 0 := by
-        have hemp : {ω | |a - x| ≤ W 0 ω} = ∅ := by
-          ext ω; simp [hW0 ω, (abs_pos.mpr (sub_ne_zero.mpr hx.symm)).not_ge]
-        rw [hW.measure_hittingAfter_singleton_le hx 0, hemp, measure_empty, mul_zero]
+        rw [hW.measure_hittingAfter_singleton_le hx 0, show {ω | |a - x| ≤ W 0 ω} = ∅ by
+          ext ω; simp [hW0 ω, (abs_pos.mpr (sub_ne_zero.mpr hx.symm)).not_ge],
+          measure_empty, mul_zero]
       rw [← NNReal.coe_zero, measureReal_congr (hae 0), measureReal_def, hz, ENNReal.toReal_zero,
         NNReal.coe_zero]
   · rw [ite_eq_right hu]
-    have hupos : 0 < u := not_le.mp hu
-    let t : ℝ≥0 := ⟨u, hupos.le⟩
-    have ht : t ≠ 0 := fun h0 ↦ hupos.ne' (congrArg Subtype.val h0)
-    have htu : (t : ℝ) = u := rfl
-    rw [← htu, measureReal_congr (hae t), htu, hW.measureReal_hittingAfter_singleton_le hx ht]
-    congr 1
-    rw [sub_zero, Real.sqrt_div (sq_nonneg _), Real.sqrt_sq_eq_abs]
-    rfl
+    let t : ℝ≥0 := ⟨u, (not_le.mp hu).le⟩
+    have ht : t ≠ 0 := fun h0 ↦ (not_le.mp hu).ne' (congrArg Subtype.val h0)
+    rw [show u = (t : ℝ) from rfl, measureReal_congr (hae t),
+      hW.measureReal_hittingAfter_singleton_le hx ht]
+    congr 1; rw [sub_zero, Real.sqrt_div (sq_nonneg _), Real.sqrt_sq_eq_abs]
 
 /-- At `a = x`, the level-hitting time `(hittingAfter (fun t ω ↦ x + B t ω) {x} 0 ω).untopA`
 has law `Measure.dirac 0`. -/
 theorem hasLaw_hittingAfter_singleton_self (hB : IsBrownianReal B P) (x : ℝ) :
     HasLaw (fun ω ↦ ((hittingAfter (fun t ω ↦ x + B t ω) {x} 0 ω).untopA : ℝ))
-      (Measure.dirac 0) P := by
+      (Measure.dirac 0) P :=
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  refine hasLaw_dirac_of_ae_eq ?_
-  filter_upwards [hB.hittingAfter_singleton_self_ae_eq_zero x] with ω hω
-  simp [hω]
+  hasLaw_dirac_of_ae_eq <|
+    (hB.hittingAfter_singleton_self_ae_eq_zero x).mono fun _ hω ↦ by simp [hω]
 
 /-- **Laplace transform of the Brownian level-hitting time**: for all `x, a : ℝ` and `θ ≥ 0`
 (including `θ = 0` and `x = a`),
@@ -432,11 +368,9 @@ theorem integral_exp_neg_mul_hittingAfter_singleton (hB : IsBrownianReal B P) (x
   · simpa only [mgf, zero_mul, sub_self, abs_zero, mul_zero] using
       mgf_dirac (hB.hasLaw_hittingAfter_singleton_self x) (-θ)
   · have hc : 0 < (a - x) ^ 2 := sq_pos_of_ne_zero (sub_ne_zero.mpr hx.symm)
-    have hmgf := mgf_of_hasLaw_levyMeasure hc (hB.hasLaw_hittingAfter_singleton hx)
-      (neg_nonpos.mpr hθ)
-    rw [mgf] at hmgf
-    refine hmgf.trans ?_
-    have harg : -2 * (a - x) ^ 2 * -θ = (2 * θ) * (a - x) ^ 2 := by ring
-    rw [zero_mul, zero_sub, harg, Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, neg_mul]
+    refine (mgf_of_hasLaw_levyMeasure hc (hB.hasLaw_hittingAfter_singleton hx)
+      (neg_nonpos.mpr hθ)).trans ?_
+    rw [zero_mul, zero_sub, show -2 * (a - x) ^ 2 * -θ = (2 * θ) * (a - x) ^ 2 by ring,
+      Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, neg_mul]
 
 end ProbabilityTheory.IsBrownianReal
