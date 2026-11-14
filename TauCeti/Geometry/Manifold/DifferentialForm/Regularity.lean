@@ -55,6 +55,20 @@ differentiation commutes with this extension.
   differentiable section.
 * `TauCeti.mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self`: a form whose
   coordinate expression in its own preferred chart is differentiable is a differentiable section.
+* `TauCeti.mextDeriv_sum`: exterior differentiation commutes with finite sums of `C¹` forms.
+* `TauCeti.isSmoothForm_zeroDim`, `TauCeti.isSmoothForm_modelSpace_iff`: over a zero-dimensional
+  model every form is smooth, and over the model space a form is a `C^n` section exactly when it
+  is a `C^n` function.
+* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form;
+  `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
+  `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` evaluates `d α` of a smooth `1`-form on two
+  tangent vectors.
+* `TauCeti.RoughForm.contDiffOn_indicator_inChartAt`,
+  `TauCeti.IsSmoothForm.extDerivWithin_indicator_inChartAt`,
+  `TauCeti.IsSmoothForm.contDiff_indicator_inChartAt`: the zero extension of a form supported
+  compactly inside a chart keeps its regularity within the model range, exterior
+  differentiation commutes with the extension, and away from the boundary the extension is `C¹`
+  on the whole model space.
 
 ## References
 
@@ -263,7 +277,7 @@ theorem IsSmoothForm.contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
 hypotheses ensure additivity of the coordinate derivatives. -/
 theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
     (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I 1 (φ i)) :
-    TauCeti.mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, TauCeti.mextDeriv (φ i) := by
+    mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, mextDeriv (φ i) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
@@ -522,14 +536,8 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
   intro x
   rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
-  have hflat (f : E →
-      E [⋀^Fin k]→L[ℝ] F)
-      (s : Set (E)) (z : E) :
-      ContDiffWithinAt ℝ n f s z := by
-    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
-    rw [he]
-    exact contDiffWithinAt_const
-  exact hflat _ _ _
+  exact (contDiffWithinAt_const (c := _)).congr (fun y _ ↦ congrArg _ (Subsingleton.elim y 0))
+    (congrArg _ (Subsingleton.elim _ 0))
 
 /-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
 function into the space of alternating maps. -/
