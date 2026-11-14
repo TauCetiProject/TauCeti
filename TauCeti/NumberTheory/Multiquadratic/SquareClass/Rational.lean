@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Squarefree
 public import TauCeti.FieldTheory.IntermediateField.Rescale
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Kummer
+public import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.CoprimeSquarefree
-import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Rational radicands reduce to squarefree integer radicands
