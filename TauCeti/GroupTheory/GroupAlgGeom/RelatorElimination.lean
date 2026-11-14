@@ -14,14 +14,18 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 Let `S` be a system of equations over `G` in the variables `X` and `s ∈ G[X]` a further relator.
 Suppose that after an automorphism `τ` of `G[X]` the relator `s` becomes `u x v`
 for a variable `x` occurring neither in the words `u`, `v` nor in the images of the relators of
-`S`; that is, `s` belongs to a free basis of `G[X]` over `G` whose other members generate, together
-with `G`, a free factor containing `S`. Then adding `s` to `S` kills a free factor: the group
-`G_S = G[X] ⧸ ncl(S)` presented by `S` is the free product of the group `G_T` presented by `S` and
-`s` with an infinite cyclic group `⟨z⟩` (`TauCeti.GroupAlgGeom.SystemGroup.elimEquiv`). Under this
-isomorphism `s` corresponds to `z` and the class of a word whose image under `τ` avoids `x`
-corresponds to its class in `G_T`; sending `z` to `1` gives back the quotient map. In `G_T` the
-classes of these words generate, the remaining generator `τ⁻¹ x` being `τ⁻¹ (u⁻¹ v⁻¹)` there
-(`TauCeti.GroupAlgGeom.SystemGroup.mk_symm_inr_of_eq`).
+`S`. Then `G[X] = H ∗ ⟨s⟩`, where `H` is the preimage under `τ` of the words in which `x` does not
+occur; it contains `S`. When `τ` fixes `G`, this says that `s` belongs to a free basis of `G[X]`
+over `G` whose other members generate, together with `G`, the free factor `H`.
+
+Adding `s` to `S` therefore kills a free factor: the group `G_S = G[X] ⧸ ncl(S)` presented by `S`
+is the free product of the group `G_T` presented by `S` and `s` with an infinite cyclic group `⟨z⟩`
+(`TauCeti.GroupAlgGeom.SystemGroup.elimEquiv`). Under this isomorphism `s` corresponds to `z`,
+the class of a word of `H` to its class in `G_T`, and the remaining generator
+`τ⁻¹ x = τ⁻¹ u⁻¹ · s · τ⁻¹ v⁻¹` to `τ⁻¹ u⁻¹ · z · τ⁻¹ v⁻¹`
+(`TauCeti.GroupAlgGeom.SystemGroup.elimEquiv_mk_symm_inr_of`); sending `z` to `1` gives back the
+quotient map. In `G_T` the classes of the words of `H` generate, `τ⁻¹ x` being `τ⁻¹ (u⁻¹ v⁻¹)`
+there (`TauCeti.GroupAlgGeom.SystemGroup.mk_symm_inr_of_eq`).
 
 This is the Tietze transformation behind the elimination of a base of a generalised equation
 (Kharlampovich–Myasnikov, D4), where the basic equation of an eliminable base becomes, after a
@@ -194,6 +198,19 @@ theorem elimEquiv_mk_self :
     elimEquiv τ hu hv hs hS hT (s : SystemGroup G S) = inr (FreeGroup.of ()) := by
   rw [elimEquiv, elimEquivAux_mk]
   simp [hs, hu, hv, mul_assoc, toCoprod_inr_self]
+
+/-- The generator `τ⁻¹ x` is sent to `τ⁻¹ u⁻¹ · z · τ⁻¹ v⁻¹`: it is expressed by `z` and by
+classes of words whose images under `τ` avoid `x`. -/
+theorem elimEquiv_mk_symm_inr_of :
+    elimEquiv τ hu hv hs hS hT ((τ.symm (inr (FreeGroup.of x)) : GX G X) : SystemGroup G S) =
+      inl ((τ.symm u⁻¹ : GX G X) : SystemGroup G T) * inr (FreeGroup.of ()) *
+        inl ((τ.symm v⁻¹ : GX G X) : SystemGroup G T) := by
+  have h : τ.symm (inr (FreeGroup.of x)) = τ.symm u⁻¹ * s * τ.symm v⁻¹ := by
+    rw [← τ.symm_apply_apply s, hs]
+    simp [mul_assoc]
+  rw [h, QuotientGroup.mk_mul, QuotientGroup.mk_mul, map_mul, map_mul, elimEquiv_mk_self,
+    elimEquiv_mk_of_mem_avoiding τ hu hv hs hS hT (by simpa using hu),
+    elimEquiv_mk_of_mem_avoiding τ hu hv hs hS hT (by simpa using hv)]
 
 /-- The free generator `z` corresponds to the class of the eliminated relator. -/
 @[simp]

@@ -33,8 +33,8 @@ Consequently:
   (`TauCeti.GroupAlgGeom.CoordGroup.homOfVSubset`);
 * removing bases preserves formal consistency
   (`TauCeti.GenEq.IsFormallyConsistent.removeBases`);
-* if no boundary connection passes through `μ`, the system `Ω*` and the system of the result
-  together with the basic equation of `μ` present the same group
+* for a variable base `μ` through which no boundary connection passes, the system `Ω*` and the
+  system of `Ω.removePair μ` together with the basic equation of `μ` present the same group
   (`TauCeti.GenEq.normalClosure_toSystem_eq_insert_removePair`).
 
 ## Main definitions
@@ -304,13 +304,7 @@ theorem normalClosure_toSystem_eq_insert_removePair {μ : Fin Ω.numBases}
       rcases hν with rfl | rfl <;> rcases hν' with rfl | rfl <;> simp [Ω.dual_involutive _]
     rcases hν'' with rfl | rfl
     · exact Subgroup.subset_normalClosure (Set.mem_insert _ _)
-    · have hinv : EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation (Ω.dual ν)).1 *
-          (FreeGroup.mk (Ω.basicEquation (Ω.dual ν)).2)⁻¹) =
-          (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation ν).1 *
-            (FreeGroup.mk (Ω.basicEquation ν).2)⁻¹))⁻¹ := by
-        simp only [basicEquation_fst, basicEquation_snd, Ω.dual_involutive ν, map_mul, map_inv,
-          mul_inv_rev, inv_inv]
-      rw [hinv]
+    · rw [mk_basicEquation_dual, map_inv]
       exact inv_mem (Subgroup.subset_normalClosure (Set.mem_insert _ _))
   · -- A connection through `Δ(μ)` has a dual connection through `μ`.
     rcases Finset.mem_insert.1 hcμ with hcμ | hcμ

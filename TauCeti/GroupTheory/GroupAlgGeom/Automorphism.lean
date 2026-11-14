@@ -154,9 +154,10 @@ theorem eval_update_of_mem_avoiding (ha : a ∈ avoiding x) (v : X → H) (c : H
 
 /-- Two homomorphisms out of `G[X]` agreeing on the words in which `x` does not occur and on `x`
 are equal. -/
-theorem hom_ext_of_avoiding {φ ψ : GX G X →* H} (h : ∀ a ∈ avoiding x, φ a = ψ a)
+theorem hom_ext_of_avoiding {M F : Type*} [Monoid M] [FunLike F (GX G X) M]
+    [MonoidHomClass F (GX G X) M] {φ ψ : F} (h : ∀ a ∈ avoiding x, φ a = ψ a)
     (hx : φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
-  hom_ext (MonoidHom.ext fun g => h _ (inl_mem_avoiding x g)) <| FreeGroup.ext_hom _ _ fun y =>
+  ext_hom (fun g => h _ (inl_mem_avoiding x g)) fun y =>
     if hy : y = x then hy ▸ hx else h _ (inr_of_mem_avoiding hy)
 
 end Avoiding

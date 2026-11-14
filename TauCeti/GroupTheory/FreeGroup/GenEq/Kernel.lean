@@ -27,32 +27,39 @@ in which the other equations do not involve it: in case (a) it can be solved for
 (b), after replacing the two items `h_{i-1}, hᵢ` next to `i` by the item of `μ` among them and the
 product `h_{i-1} hᵢ`, it can be solved for the item of `μ`. Hence, writing `Ω₁ = Ω.removePair μ`,
 `F[h]/ncl(Ω₁*) ≅ (F[h]/ncl(Ω*)) ∗ ⟨z⟩`: the group presented by `Ω₁*` is the free product of the
-group presented by `Ω*` with an infinite cyclic group. The isomorphism sends the basic equation of
-`μ` to `z`, and the class of a word to its class in the first factor whenever
+group presented by `Ω*` with an infinite cyclic group.
 
-* in case (a), `hₖ` does not occur in it
-  (`TauCeti.GenEq.exists_mulEquiv_removePair_of_degree_eq_one`);
-* in case (b), it is a word in the items other than `h_{i-1}, hᵢ` and in the product `h_{i-1} hᵢ`
-  (`TauCeti.GenEq.exists_mulEquiv_removePair_of_touches`).
+Let `W` be the subgroup of `F(A)[h]` of the words in which `hₖ` does not occur in case (a), and of
+the words in the items other than `h_{i-1}, hᵢ` and in the product `h_{i-1} hᵢ` in case (b). The
+isomorphism sends the class of a word of `W` to its class in the first factor, the basic equation
+of `μ` to `z`, and each item not in `W` (`hₖ`, respectively `h_{i-1}` and `hᵢ`) to `u z^{±1} v` for
+the classes `u, v` of two words of `W`
+(`TauCeti.GenEq.exists_mulEquiv_removePair_of_degree_eq_one`,
+`TauCeti.GenEq.exists_mulEquiv_removePair_of_touches`). Sending `z` to `1` after it gives the
+homomorphism induced by the identity on the items, so in the group presented by `Ω*` each item not
+in `W` is the class of a word of `W`. In case (a) boundary connections through bases other than
+`μ, Δ(μ)` are allowed.
 
-The classes of these words generate the group presented by `Ω*`, in which the remaining item is
-expressed by them through the basic equation of `μ` (this consequence is not stated in this
-file). In case (a) boundary connections through bases other than `μ, Δ(μ)` are allowed.
+The source states this step through the generalised equation `Ω′` obtained from `Ω₁` by deleting
+the item `hₖ` in case (a), and by deleting the boundary `i`, which merges `h_{i-1}` and `hᵢ` into
+one item, in case (b); the items of `Ω′` correspond to the generators of `W` over `F(A)`. On
+presented groups its two isomorphisms read `F[h]/ncl(Ω*) ≅ F[h′]/ncl(Ω′*)` and
+`F[h]/ncl(Ω₁*) ≅ (F[h′]/ncl(Ω′*)) ∗ ⟨z⟩`, and both follow from the isomorphism above and its
+values. The source writes them for the coordinate groups `F_{R(·)}`. The first passes to coordinate
+groups, an `F(A)`-isomorphism of presented groups inducing one of their coordinate groups; the
+second does not in general: if the solution set of `Ω′*` is reducible, the `F(A)`-homomorphisms to
+`F(A)` do not separate the elements of `F_{R(Ω′)} ∗ ⟨z⟩`, while they separate those of the
+coordinate group of `Ω₁*`.
 
-The source states this step as two isomorphisms, `F_{R(Ω)} ≃ F_{R(Ω′)}` and
-`F_{R(Ω₁)} ≃ F_{R(Ω′)} ∗ ⟨z⟩`, where `Ω′` is obtained from `Ω₁` by deleting the item `hₖ` in case
-(a) and by deleting the boundary `i`, which merges `h_{i-1}` and `hᵢ` into one item, in case (b).
-Both follow from the isomorphism above and its values: the classes of the words listed are the
-image of the group presented by `Ω′*`. In case (a) the item `hₖ` is free in `Ω₁`
+In case (a) the item `hₖ` is free in `Ω₁`
 (`TauCeti.GenEq.isFreeItem_removePair_of_degree_eq_one`), so `Ω′` is also obtained from `Ω₁` by
 deleting free items. In case (b) it need not be: `h_{i-1}` and `hᵢ` still belong to the bases of
-`Ω₁` crossing the boundary `i`, if there are any, and then `Ω′` is not obtained from `Ω₁` by
-deleting free items. Thus the
-decomposition `F_{R(Ω)} ≃ F_{R(Ker Ω)} ∗ F(Z)` of the source (Lemma 16), in which the free items
-of the kernel are deleted, is to be read with the boundary `i` deleted at each elimination by
-rule (b). The surgery producing `Ω′` is not part of this file.
-
-All of this concerns the groups presented by the systems, not their coordinate groups.
+`Ω₁` crossing the boundary `i`, if there are any. The kernel `Ker Ω` of the source is the
+generalised equation left when eliminable bases are eliminated one after the other until none is
+left; its Lemma 16 decomposes `F_{R(Ω)}` as `F_{R(Ker Ω)} ∗ F(Z)`, the free items of the kernel
+being deleted. It is to be read on presented groups, with the boundary `i` deleted at each
+elimination by rule (b): on coordinate groups a free product with `F(Z)`, `Z` nonempty, fails in
+general for the same reason. The surgery producing `Ω′` is not part of this file.
 
 For a parametric generalised equation the source eliminates active bases only; that restriction
 is not part of `TauCeti.GenEq.IsEliminable` and is to be imposed where it is used.
@@ -69,11 +76,11 @@ is trivial, and removing it frees no generator.
 * `TauCeti.GenEq.exists_mulEquiv_removePair_of_degree_eq_one`,
   `TauCeti.GenEq.exists_mulEquiv_removePair_of_touches`: the isomorphism
   `F[h]/ncl(Ω₁*) ≅ (F[h]/ncl(Ω*)) ∗ ⟨z⟩` for an elimination by rule (a) and by rule (b), with its
-  values on the basic equation of the eliminated base and on the words not involving the
-  separated item.
+  values on the words of `W`, on the basic equation of the eliminated base and on the items not in
+  `W`.
 * `TauCeti.GenEq.exists_bijective_systemGroup_removePair`: removing an eliminable base from a
   generalised equation without boundary connections adds a free factor `⟨z⟩` to the presented
-  group, by an `F(A)`-isomorphism.
+  group, by an `F(A)`-isomorphism sending the basic equation of the base to `z`.
 * `TauCeti.GenEq.isFreeItem_removePair_of_degree_eq_one`: an item of degree one of a base is free
   once the base is removed.
 
@@ -177,14 +184,15 @@ private theorem mem_avoiding_of_not_touches {χ : MulAut (GX (FreeGroup A) (Fin 
     refine mul_mem (mul_mem (hfix _ ?_ ?_) hpair) (hfix _ ?_ ?_) <;>
       exact Ω.toGX_segment_mem_avoiding _ (by simp only; omega)
 
-/-- After the coefficient-fixing automorphism `χ` of `F(A)[h]`, the word `h[α(μ), β(μ)]` is
-unchanged, while the item `hₖ` of `μ` occurs neither in the image of the word of another base, nor
-in the image of a constant item, nor in the images of the two sides of the boundary equation of a
-connection through a base other than `μ, Δ(μ)`. -/
+/-- After the coefficient-fixing automorphism `χ` of `F(A)[h]`, the item `hₖ` of `μ` and the word
+`h[α(μ), β(μ)]` are unchanged, while `hₖ` occurs neither in the image of the word of another base,
+nor in the image of a constant item, nor in the images of the two sides of the boundary equation of
+a connection through a base other than `μ, Δ(μ)`. -/
 private structure Separates (μ : Fin Ω.numBases) (χ : MulAut (GX (FreeGroup A) (Fin Ω.numItems)))
     (k : Fin Ω.numItems) : Prop where
   map_inl (g : FreeGroup A) : χ (inl g) = inl g
   mem_baseItems : k ∈ Ω.baseItems μ
+  map_inr : χ (inr (FreeGroup.of k)) = inr (FreeGroup.of k)
   map_segment :
     χ (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true))) =
       EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true))
@@ -207,6 +215,7 @@ private theorem separates_of_degree_eq_one {μ : Fin Ω.numBases} {k : Fin Ω.nu
     (hk : k ∈ Ω.baseItems μ) (hdeg : Ω.degree k = 1) : Ω.Separates μ 1 k where
   map_inl _ := rfl
   mem_baseItems := hk
+  map_inr := rfl
   map_segment := rfl
   mem_avoiding_segment ν hν := by
     have hkν := notMem_baseItems_of_degree_eq_one hk hdeg hν
@@ -251,6 +260,52 @@ private theorem mem_avoiding_of_shear {p : ℕ} (hp : p + 1 < Ω.numItems) {k k'
   · rw [hpair]
     exact GX.inr_of_mem_avoiding (by rw [ne_eq, Fin.ext_iff]; omega)
 
+/-- For such a shear `χ`, the words whose image avoids `hₖ` are the words in the items other than
+`h_p, h_{p+1}` and in the product `h_p h_{p+1}`. -/
+private theorem mem_avoiding_iff_of_shear {p : ℕ} (hp : p + 1 < Ω.numItems)
+    {k k' : Fin Ω.numItems} (hkk' : (k : ℕ) = p ∧ (k' : ℕ) = p + 1 ∨ (k : ℕ) = p + 1 ∧ (k' : ℕ) = p)
+    {χ : MulAut (GX (FreeGroup A) (Fin Ω.numItems))} (hχ : ∀ c ∈ GX.avoiding k', χ c = c)
+    (hpair : χ (inr (FreeGroup.of ⟨p, by omega⟩) * inr (FreeGroup.of ⟨p + 1, hp⟩)) =
+      inr (FreeGroup.of k')) (c : GX (FreeGroup A) (Fin Ω.numItems)) :
+    χ c ∈ GX.avoiding k ↔ c ∈ (GX.avoiding (⟨p, by omega⟩ : Fin Ω.numItems) ⊓
+      GX.avoiding (⟨p + 1, hp⟩ : Fin Ω.numItems)) ⊔
+        Subgroup.zpowers (inr (FreeGroup.of ⟨p, by omega⟩) * inr (FreeGroup.of ⟨p + 1, hp⟩)) := by
+  obtain ⟨hfix, hpair'⟩ := mem_avoiding_of_shear hp hkk' hχ hpair
+  refine ⟨fun hc => ?_, fun hc => (show _ ≤ (GX.avoiding k).comap χ.toMonoidHom from
+    sup_le (fun c hc => hfix c (Subgroup.mem_inf.1 hc).1 (Subgroup.mem_inf.1 hc).2)
+      (Subgroup.zpowers_le.2 hpair')) hc⟩
+  -- `χ⁻¹` after the substitution `hₖ ↦ 1` maps every word into the subgroup on the right.
+  rw [← χ.symm_apply_apply c, ← GX.mem_avoiding.1 hc]
+  generalize χ c = a
+  induction a using Monoid.Coprod.induction_on with
+  | inl g =>
+    rw [eval_inl, χ.symm_apply_eq.2 (hχ _ (GX.inl_mem_avoiding _ g)).symm]
+    exact Subgroup.mem_sup_left ⟨GX.inl_mem_avoiding _ g, GX.inl_mem_avoiding _ g⟩
+  | inr f =>
+    induction f with
+    | one => simp
+    | of j =>
+      by_cases hj : j = k
+      · simp [hj]
+      rw [eval_inr_of, Function.update_of_ne hj]
+      by_cases hj' : j = k'
+      · rw [hj', χ.symm_apply_eq.2 hpair.symm]
+        exact Subgroup.mem_sup_right (Subgroup.mem_zpowers _)
+      rw [χ.symm_apply_eq.2 (hχ _ (GX.inr_of_mem_avoiding hj')).symm]
+      rw [Fin.ext_iff] at hj hj'
+      exact Subgroup.mem_sup_left
+        ⟨GX.inr_of_mem_avoiding (by simp only [ne_eq, Fin.ext_iff]; omega),
+          GX.inr_of_mem_avoiding (by simp only [ne_eq, Fin.ext_iff]; omega)⟩
+    | inv_of j h =>
+      rw [map_inv, map_inv, map_inv]
+      exact inv_mem h
+    | mul x y hx hy =>
+      rw [map_mul, map_mul, map_mul]
+      exact mul_mem hx hy
+  | mul x y hx hy =>
+    rw [map_mul, map_mul]
+    exact mul_mem hx hy
+
 /-- Case (b), after the choice of the shear: the item `hₖ` of `μ` next to the boundary `p + 1` and
 the other item `h_{k'}` next to it, and an automorphism `χ` fixing the words avoiding `h_{k'}` and
 sending `h_p h_{p+1}` to `h_{k'}`. -/
@@ -265,6 +320,7 @@ private theorem separates_of_shear {μ : Fin Ω.numBases} {p : ℕ} (hp : p + 1 
     Ω.Separates μ χ k where
   map_inl g := hχ _ (GX.inl_mem_avoiding _ g)
   mem_baseItems := hk
+  map_inr := hχ _ (GX.inr_of_mem_avoiding (by rw [ne_eq, Fin.ext_iff]; omega))
   map_segment := hχ _ (Ω.toGX_segment_mem_avoiding _ hk')
   mem_avoiding_segment ν hν' :=
     have h := mem_avoiding_of_shear hp hkk' hχ hpair
@@ -277,17 +333,16 @@ private theorem separates_of_shear {μ : Fin Ω.numBases} {p : ℕ} (hp : p + 1 
 
 /-- Case (b): an end-point `i ≠ 0, ρ` of `μ` touches no other base. After the shear sending
 `h_{i-1} hᵢ` to the item next to `i` outside `μ`, the item next to `i` in `μ` is separated, and
-it occurs neither in the image of a word avoiding `h_{i-1}` and `hᵢ` nor in that of
+the words whose image avoids it are the words in the items other than `h_{i-1}, hᵢ` and in
 `h_{i-1} hᵢ`. -/
 private theorem exists_separates_of_touches {μ : Fin Ω.numBases} {i : Fin (Ω.numItems + 1)}
     (hi : Ω.Touches i μ) (h0 : i ≠ 0) (hlast : i ≠ Fin.last Ω.numItems)
     (hν : ∀ ν, ν ≠ μ → ¬ Ω.Touches i ν)
     (hb : ∀ b ∈ Ω.constBases, (b.1 : ℕ) ≠ i ∧ (b.1 : ℕ) + 1 ≠ i) (hc : Ω.connections = ∅) :
-    ∃ χ k, Ω.Separates μ χ k ∧
-      (∀ c, c ∈ GX.avoiding (i.pred h0) → c ∈ GX.avoiding (i.castPred hlast) →
-        χ c ∈ GX.avoiding k) ∧
-      χ (inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast))) ∈
-        GX.avoiding k := by
+    ∃ χ k, Ω.Separates μ χ k ∧ (k = i.pred h0 ∨ k = i.castPred hlast) ∧
+      ∀ c, χ c ∈ GX.avoiding k ↔ c ∈ (GX.avoiding (i.pred h0) ⊓ GX.avoiding (i.castPred hlast)) ⊔
+        Subgroup.zpowers
+          (inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast))) := by
   obtain ⟨p, hp⟩ : ∃ p, (i : ℕ) = p + 1 :=
     Nat.exists_eq_succ_of_ne_zero (Fin.val_ne_iff.2 h0)
   have hpn : p + 1 < Ω.numItems := hp ▸ Fin.val_lt_last hlast
@@ -319,7 +374,7 @@ private theorem exists_separates_of_touches {μ : Fin Ω.numBases} {i : Fin (Ω.
       simp [GX.transvection_inr_of_of_ne _ _ hab.symm]
     exact ⟨_, ⟨p + 1, hpn⟩, Ω.separates_of_shear hpn (Or.inr ⟨rfl, rfl⟩)
       (by rw [mem_baseItems]; simp only; omega) (Or.inl (by simp only; omega)) hχ hpair hν' hb' hc,
-      mem_avoiding_of_shear hpn (Or.inr ⟨rfl, rfl⟩) hχ hpair⟩
+      .inr rfl, mem_avoiding_iff_of_shear hpn (Or.inr ⟨rfl, rfl⟩) hχ hpair⟩
   · -- `i = β(μ)`: the item `h_{i-1}` lies in `μ`; the shear is `hᵢ ↦ h_{i-1}⁻¹ hᵢ`.
     have hχ (c) (hc : c ∈ GX.avoiding (⟨p + 1, hpn⟩ : Fin Ω.numItems)) :
         GX.transvection (G := FreeGroup A) (⟨p + 1, hpn⟩ : Fin Ω.numItems)
@@ -334,7 +389,7 @@ private theorem exists_separates_of_touches {μ : Fin Ω.numBases} {i : Fin (Ω.
       simp [GX.transvection_inr_of_of_ne _ _ hab]
     exact ⟨_, ⟨p, by omega⟩, Ω.separates_of_shear hpn (Or.inl ⟨rfl, rfl⟩)
       (by rw [mem_baseItems]; simp only; omega) (Or.inr (by simp only; omega)) hχ hpair hν' hb' hc,
-      mem_avoiding_of_shear hpn (Or.inl ⟨rfl, rfl⟩) hχ hpair⟩
+      .inl rfl, mem_avoiding_iff_of_shear hpn (Or.inl ⟨rfl, rfl⟩) hχ hpair⟩
 
 /-- The word of a base other than `μ`, with either sign, avoids the separated item. -/
 private theorem Separates.mem_avoiding_segment' {μ : Fin Ω.numBases}
@@ -375,10 +430,39 @@ private theorem Separates.mem_avoiding_toSystem {μ : Fin Ω.numBases}
   rw [map_mul, map_inv, map_mul, map_inv]
   exact mul_mem (key e he).1 (inv_mem (key e he).2)
 
+/-- After `χ`, the basic equation of `μ` if `ε(μ) = 1`, and that of `Δ(μ)` if `ε(μ) = -1`, is
+`u hₖ v` with `hₖ` occurring neither in `u` nor in `v`. -/
+private theorem Separates.exists_eq_mul {μ : Fin Ω.numBases}
+    {χ : MulAut (GX (FreeGroup A) (Fin Ω.numItems))} {k : Fin Ω.numItems} (h : Ω.Separates μ χ k)
+    (hd : Ω.dual μ ≠ μ) {ν : Fin Ω.numBases}
+    (hν : Ω.sign μ = true ∧ ν = μ ∨ Ω.sign μ = false ∧ ν = Ω.dual μ) :
+    ∃ u v, u ∈ GX.avoiding k ∧ v ∈ GX.avoiding k ∧
+      χ (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation ν).1 *
+        (FreeGroup.mk (Ω.basicEquation ν).2)⁻¹)) = u * inr (FreeGroup.of k) * v := by
+  -- `χ` fixes the word `P hₖ Q` of `μ`, and sends the word of `Δ(μ)` to a word `R` avoiding `hₖ`
+  have hk := Ω.mem_baseItems.1 h.mem_baseItems
+  have hL := Ω.toGX_segment_eq_mul hk.1 hk.2 (Nat.lt_succ_iff.1 (Ω.right μ).isLt)
+  simp only [Fin.eta] at hL
+  have hP := Ω.toGX_segment_mem_avoiding (i := Ω.left μ) (j := k) true (Or.inr le_rfl)
+  have hQ := Ω.toGX_segment_mem_avoiding (i := k + 1) (j := Ω.right μ) true
+    (Or.inl (Nat.lt_succ_self _))
+  have hR := h.mem_avoiding_segment' hd (Ω.sign (Ω.dual μ))
+  rcases hν with ⟨hs, rfl⟩ | ⟨hs, rfl⟩
+  · -- the equation of `μ` is `(P hₖ Q) R⁻¹`
+    refine ⟨_, _, hP, mul_mem hQ (inv_mem hR), ?_⟩
+    rw [basicEquation_fst, basicEquation_snd, hs, map_mul, map_inv, map_mul χ, map_inv χ,
+      h.map_segment, hL]
+    simp only [mul_assoc]
+  · -- the equation of `Δ(μ)` is `R (P hₖ Q)`
+    refine ⟨_, _, mul_mem hR hP, hQ, ?_⟩
+    rw [basicEquation_fst, basicEquation_snd, Ω.dual_involutive μ, hs, map_mul, map_inv,
+      toGX_segment_false, inv_inv, map_mul χ, h.map_segment, hL]
+    simp only [mul_assoc]
+
 /-- If the item `hₖ` is separated in `μ` by `χ`, the group presented by the system of `Ω` with
 `μ, Δ(μ)` removed is the free product of the group presented by `Ω*` with `⟨z⟩`, by an isomorphism
-sending the class of a word whose image under `χ` avoids `hₖ` to its class and the basic equation
-of `μ` to `z`. -/
+sending the class of a word whose image under `χ` avoids `hₖ` to its class, the basic equation of
+`μ` to `z`, and `hₖ` to `u z^{±1} v` for the classes `u, v` of two such words. -/
 private theorem Separates.exists_mulEquiv {μ : Fin Ω.numBases}
     {χ : MulAut (GX (FreeGroup A) (Fin Ω.numItems))} {k : Fin Ω.numItems} (h : Ω.Separates μ χ k)
     (hc : ∀ c ∈ Ω.connections, c.2.1 ≠ μ) (hd : Ω.dual μ ≠ μ) :
@@ -390,65 +474,53 @@ private theorem Separates.exists_mulEquiv {μ : Fin Ω.numBases}
       e ((EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation μ).1 *
           (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹) : GX (FreeGroup A) (Fin Ω.numItems)) :
         SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) = inr (FreeGroup.of ()) ∧
+      (∃ u v : GX (FreeGroup A) (Fin Ω.numItems), χ u ∈ GX.avoiding k ∧ χ v ∈ GX.avoiding k ∧
+        ∃ n : ℤˣ, e ((inr (FreeGroup.of k) : GX (FreeGroup A) (Fin Ω.numItems)) :
+          SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) =
+            inl (u : SystemGroup (FreeGroup A) Ω.toSystem) * inr (FreeGroup.of ()) ^ (n : ℤ) *
+              inl (v : SystemGroup (FreeGroup A) Ω.toSystem)) ∧
       ∀ w : GX (FreeGroup A) (Fin Ω.numItems),
         eval (MonoidHom.id (SystemGroup (FreeGroup A) Ω.toSystem)) (fun _ => 1)
             (e (w : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem)) =
           (w : SystemGroup (FreeGroup A) Ω.toSystem) := by
-  -- After the change of variables `χ`, the item `hₖ` of `μ` occurs in no other equation, and the
-  -- basic equation of `μ` (or of `Δ(μ)`, according to the sign of `μ`) is `u hₖ v` with `hₖ`
-  -- occurring neither in `u` nor in `v`.
-  have hk := Ω.mem_baseItems.1 h.mem_baseItems
-  have hL := Ω.toGX_segment_eq_mul hk.1 hk.2 (Nat.lt_succ_iff.1 (Ω.right μ).isLt)
-  simp only [Fin.eta] at hL
-  have hP := Ω.toGX_segment_mem_avoiding (i := Ω.left μ) (j := k) true (Or.inr le_rfl)
-  have hQ := Ω.toGX_segment_mem_avoiding (i := k + 1) (j := Ω.right μ) true
-    (Or.inl (Nat.lt_succ_self _))
-  have hR := h.mem_avoiding_segment' hd (Ω.sign (Ω.dual μ))
+  -- After the change of variables `χ`, the item `hₖ` occurs in no other equation, and the basic
+  -- equation of `μ` (or of `Δ(μ)`, according to the sign of `μ`) is `u hₖ v`; it is eliminated.
   have hS (t) (ht : t ∈ (Ω.removePair μ).toSystem) := h.mem_avoiding_toSystem ht
+  have hk : χ.symm (inr (FreeGroup.of k)) = inr (FreeGroup.of k) :=
+    χ.symm_apply_eq.2 h.map_inr.symm
   cases hs : Ω.sign μ
-  · -- `ε(μ) = -1`: the equation of `Δ(μ)` is `R (P hₖ Q)` with `R` the word of `Δ(μ)`; it is the
-    -- inverse of the equation of `μ`, so `z` is inverted.
-    obtain ⟨u, v, hu, hv, hτ⟩ : ∃ u v, u ∈ GX.avoiding k ∧ v ∈ GX.avoiding k ∧
-        χ (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1 *
-          (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)⁻¹)) = u * inr (FreeGroup.of k) * v := by
-      refine ⟨_, _, mul_mem hR hP, hQ, ?_⟩
-      rw [basicEquation_fst, basicEquation_snd, Ω.dual_involutive μ, hs, map_mul, map_inv,
-        toGX_segment_false, inv_inv, map_mul χ, h.map_segment, hL]
-      simp only [mul_assoc]
-    have hinv : EqIneqSystem.toGX (Fin Ω.numItems) (FreeGroup.of (α := A))
-        (FreeGroup.mk (Ω.basicEquation μ).1 * (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹) =
-        (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1 *
-          (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)⁻¹))⁻¹ := by
-      rw [basicEquation_fst, basicEquation_snd, basicEquation_fst, basicEquation_snd,
-        Ω.dual_involutive μ, ← map_inv, mul_inv_rev, inv_inv]
+  · -- `ε(μ) = -1`: the equation of `Δ(μ)` is the inverse of that of `μ`, so `z` is inverted.
+    obtain ⟨u, v, hu, hv, hτ⟩ := h.exists_eq_mul hd (.inr ⟨hs, rfl⟩)
     have hT := normalClosure_toSystem_eq_insert_removePair hc (Or.inr rfl)
     refine ⟨(SystemGroup.elimEquiv χ hu hv hτ hS hT).trans (GX.invertVar _ ()),
-      fun w hw => ?_, ?_, fun w => ?_⟩
-    · rw [MulEquiv.trans_apply,
-        SystemGroup.elimEquiv_mk_of_mem_avoiding χ hu hv hτ hS hT hw]
+      fun w hw => ?_, ?_, ⟨χ.symm u⁻¹, χ.symm v⁻¹, by simpa using hu, by simpa using hv, -1, ?_⟩,
+      fun w => ?_⟩
+    · rw [MulEquiv.trans_apply, SystemGroup.elimEquiv_mk_of_mem_avoiding χ hu hv hτ hS hT hw]
       exact GX.invertVar_inl _ _
-    · rw [hinv, QuotientGroup.mk_inv]
+    · have hinv := Ω.mk_basicEquation_dual (Ω.dual μ)
+      rw [Ω.dual_involutive μ] at hinv
+      rw [hinv, map_inv, QuotientGroup.mk_inv]
+      simp
+    · rw [MulEquiv.trans_apply, ← hk, SystemGroup.elimEquiv_mk_symm_inr_of]
       simp
     · simp
-  · obtain ⟨u, v, hu, hv, hτ⟩ : ∃ u v, u ∈ GX.avoiding k ∧ v ∈ GX.avoiding k ∧
-        χ (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation μ).1 *
-          (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹)) = u * inr (FreeGroup.of k) * v := by
-      refine ⟨_, _, hP, mul_mem hQ (inv_mem hR), ?_⟩
-      rw [basicEquation_fst, basicEquation_snd, hs, map_mul, map_inv, map_mul χ, map_inv χ,
-        h.map_segment, hL]
-      simp only [mul_assoc]
+  · obtain ⟨u, v, hu, hv, hτ⟩ := h.exists_eq_mul hd (.inl ⟨hs, rfl⟩)
     have hT := normalClosure_toSystem_eq_insert_removePair hc (Or.inl rfl)
-    exact ⟨SystemGroup.elimEquiv χ hu hv hτ hS hT,
+    refine ⟨SystemGroup.elimEquiv χ hu hv hτ hS hT,
       fun w hw => SystemGroup.elimEquiv_mk_of_mem_avoiding χ hu hv hτ hS hT hw,
       SystemGroup.elimEquiv_mk_self χ hu hv hτ hS hT,
+      ⟨χ.symm u⁻¹, χ.symm v⁻¹, by simpa using hu, by simpa using hv, 1, ?_⟩,
       SystemGroup.eval_elimEquiv_mk χ hu hv hτ hS hT⟩
+    rw [← hk, SystemGroup.elimEquiv_mk_symm_inr_of]
+    simp
 
 /-- **Elimination of a base by rule (a).** Let `hₖ` be an item of degree one of a base `μ` which
 is not its own dual and through which no boundary connection passes. The group presented by the
 system of `Ω` with the pair `μ, Δ(μ)` removed is the free product of the group presented by `Ω*`
 with an infinite cyclic group `⟨z⟩`, by an isomorphism which sends the class of a word in which
-`hₖ` does not occur to its class and the basic equation of `μ` to `z`, and after which sending
-`z` to `1` is the homomorphism induced by the identity on the items. -/
+`hₖ` does not occur to its class, the basic equation of `μ` to `z`, and `hₖ` to `u z^{±1} v` for
+the classes `u, v` of two such words, and after which sending `z` to `1` is the homomorphism
+induced by the identity on the items. In particular `hₖ = u v` in the group presented by `Ω*`. -/
 theorem exists_mulEquiv_removePair_of_degree_eq_one {μ : Fin Ω.numBases}
     (hc : ∀ c ∈ Ω.connections, c.2.1 ≠ μ) (hd : Ω.dual μ ≠ μ) {k : Fin Ω.numItems}
     (hk : k ∈ Ω.baseItems μ) (hdeg : Ω.degree k = 1) :
@@ -460,6 +532,11 @@ theorem exists_mulEquiv_removePair_of_degree_eq_one {μ : Fin Ω.numBases}
       e ((EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation μ).1 *
           (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹) : GX (FreeGroup A) (Fin Ω.numItems)) :
         SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) = inr (FreeGroup.of ()) ∧
+      (∃ u v : GX (FreeGroup A) (Fin Ω.numItems), u ∈ GX.avoiding k ∧ v ∈ GX.avoiding k ∧
+        ∃ n : ℤˣ, e ((inr (FreeGroup.of k) : GX (FreeGroup A) (Fin Ω.numItems)) :
+          SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) =
+            inl (u : SystemGroup (FreeGroup A) Ω.toSystem) * inr (FreeGroup.of ()) ^ (n : ℤ) *
+              inl (v : SystemGroup (FreeGroup A) Ω.toSystem)) ∧
       ∀ w : GX (FreeGroup A) (Fin Ω.numItems),
         eval (MonoidHom.id (SystemGroup (FreeGroup A) Ω.toSystem)) (fun _ => 1)
             (e (w : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem)) =
@@ -468,47 +545,79 @@ theorem exists_mulEquiv_removePair_of_degree_eq_one {μ : Fin Ω.numBases}
 
 /-- **Elimination of a base by rule (b).** Let `Ω` have no boundary connections and let `i`,
 different from the first and the last boundary, be an end-point of a base `μ` which is not its own
-dual, and of no other base. The group presented by the system of `Ω` with the pair `μ, Δ(μ)`
-removed is the free product of the group presented by `Ω*` with an infinite cyclic group `⟨z⟩`, by
-an isomorphism which sends the class of a word in which neither `h_{i-1}` nor `hᵢ` occurs, and
-the class of `h_{i-1} hᵢ`, to their classes, and the basic equation of `μ` to `z`, and after which
-sending `z` to `1` is the homomorphism induced by the identity on the items. -/
+dual, and of no other base. Let `W` be the subgroup of the words in the items other than
+`h_{i-1}, hᵢ` and in the product `h_{i-1} hᵢ`. The group presented by the system of `Ω` with the
+pair `μ, Δ(μ)` removed is the free product of the group presented by `Ω*` with an infinite cyclic
+group `⟨z⟩`, by an isomorphism which sends the class of a word of `W` to its class, the basic
+equation of `μ` to `z`, and each of `h_{i-1}, hᵢ` to `u z^{±1} v` for the classes `u, v` of two
+words of `W`, and after which sending `z` to `1` is the homomorphism induced by the identity on the
+items. In particular `h_{i-1}` and `hᵢ` are products `u v` of two words of `W` in the group
+presented by `Ω*`. -/
 theorem exists_mulEquiv_removePair_of_touches (hc : Ω.connections = ∅) {μ : Fin Ω.numBases}
     (hd : Ω.dual μ ≠ μ) {i : Fin (Ω.numItems + 1)} (hi : Ω.Touches i μ) (h0 : i ≠ 0)
     (hlast : i ≠ Fin.last Ω.numItems) (hν : ∀ ν, ν ≠ μ → ¬ Ω.Touches i ν)
     (hb : ∀ b ∈ Ω.constBases, (b.1 : ℕ) ≠ i ∧ (b.1 : ℕ) + 1 ≠ i) :
     ∃ e : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem ≃*
         GX (SystemGroup (FreeGroup A) Ω.toSystem) Unit,
-      (∀ w : GX (FreeGroup A) (Fin Ω.numItems), w ∈ GX.avoiding (i.pred h0) →
-        w ∈ GX.avoiding (i.castPred hlast) →
+      (∀ w : GX (FreeGroup A) (Fin Ω.numItems),
+        w ∈ (GX.avoiding (i.pred h0) ⊓ GX.avoiding (i.castPred hlast)) ⊔ Subgroup.zpowers
+          (inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast))) →
         e (w : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) =
           inl (w : SystemGroup (FreeGroup A) Ω.toSystem)) ∧
-      e ((inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast)) :
-          GX (FreeGroup A) (Fin Ω.numItems)) :
-        SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) =
-        inl ((inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast)) :
-          GX (FreeGroup A) (Fin Ω.numItems)) : SystemGroup (FreeGroup A) Ω.toSystem) ∧
       e ((EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation μ).1 *
           (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹) : GX (FreeGroup A) (Fin Ω.numItems)) :
         SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) = inr (FreeGroup.of ()) ∧
+      (∀ j, j = i.pred h0 ∨ j = i.castPred hlast → ∃ u v : GX (FreeGroup A) (Fin Ω.numItems),
+        u ∈ (GX.avoiding (i.pred h0) ⊓ GX.avoiding (i.castPred hlast)) ⊔ Subgroup.zpowers
+          (inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast))) ∧
+        v ∈ (GX.avoiding (i.pred h0) ⊓ GX.avoiding (i.castPred hlast)) ⊔ Subgroup.zpowers
+          (inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast))) ∧
+        ∃ n : ℤˣ, e ((inr (FreeGroup.of j) : GX (FreeGroup A) (Fin Ω.numItems)) :
+          SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) =
+            inl (u : SystemGroup (FreeGroup A) Ω.toSystem) * inr (FreeGroup.of ()) ^ (n : ℤ) *
+              inl (v : SystemGroup (FreeGroup A) Ω.toSystem)) ∧
       ∀ w : GX (FreeGroup A) (Fin Ω.numItems),
         eval (MonoidHom.id (SystemGroup (FreeGroup A) Ω.toSystem)) (fun _ => 1)
             (e (w : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem)) =
           (w : SystemGroup (FreeGroup A) Ω.toSystem) := by
-  obtain ⟨χ, k, h, hfix, hpair⟩ := exists_separates_of_touches hi h0 hlast hν hb hc
-  obtain ⟨e, he, hz, hw⟩ := h.exists_mulEquiv (by simp [hc]) hd
-  exact ⟨e, fun w hw₁ hw₂ => he w (hfix w hw₁ hw₂), he _ hpair, hz, hw⟩
+  obtain ⟨χ, k, h, hk, hW⟩ := exists_separates_of_touches hi h0 hlast hν hb hc
+  obtain ⟨e, he, hz, ⟨u, v, hu, hv, n, hek⟩, hw⟩ := h.exists_mulEquiv (by simp [hc]) hd
+  rw [hW] at hu hv
+  have hp := Subgroup.mem_sup_right (S := GX.avoiding (i.pred h0) ⊓ GX.avoiding (i.castPred hlast))
+    (Subgroup.mem_zpowers
+      (inr (FreeGroup.of (i.pred h0)) * inr (FreeGroup.of (i.castPred hlast)) :
+        GX (FreeGroup A) (Fin Ω.numItems)))
+  refine ⟨e, fun w hw => he w ((hW w).2 hw), hz, fun j hj => ?_, hw⟩
+  -- The other item of the pair is `h_{i-1} hᵢ` divided by the separated one.
+  have hpair := he _ ((hW _).2 hp)
+  simp only [QuotientGroup.mk_mul, map_mul] at hpair
+  rcases hk with rfl | rfl <;> rcases hj with rfl | rfl
+  · exact ⟨u, v, hu, hv, n, hek⟩
+  · refine ⟨v⁻¹, u⁻¹ * _, inv_mem hv, mul_mem (inv_mem hu) hp, -n, ?_⟩
+    rw [hek] at hpair
+    rw [eq_inv_mul_of_mul_eq hpair]
+    simp [mul_assoc]
+  · refine ⟨_ * v⁻¹, u⁻¹, mul_mem hp (inv_mem hv), inv_mem hu, -n, ?_⟩
+    rw [hek] at hpair
+    rw [eq_mul_inv_of_mul_eq hpair]
+    simp [mul_assoc]
+  · exact ⟨u, v, hu, hv, n, hek⟩
 
 /-- **Elimination of a base on presented groups.** If `Ω` has no boundary connections and `μ` is
 eliminable, the group presented by the system of `Ω` with the pair `μ, Δ(μ)` removed is
 `F(A)`-isomorphic to the free product of the group presented by `Ω*` with an infinite cyclic group
-`⟨z⟩`; sending `z` to `1` gives back the homomorphism induced by the identity on the items. -/
+`⟨z⟩`, by an isomorphism sending the basic equation of `μ` to `z`; sending `z` to `1` gives back
+the homomorphism induced by the identity on the items. -/
 theorem exists_bijective_systemGroup_removePair (hc : Ω.connections = ∅) {μ : Fin Ω.numBases}
     (hμ : Ω.IsEliminable μ) :
     ∃ e : GHom (SystemGroup.coeff (Ω.removePair μ).toSystem)
         ((inl : SystemGroup (FreeGroup A) Ω.toSystem →*
           GX (SystemGroup (FreeGroup A) Ω.toSystem) Unit).comp (SystemGroup.coeff Ω.toSystem)),
-      Function.Bijective e ∧ ∀ w : GX (FreeGroup A) (Fin Ω.numItems),
+      Function.Bijective e ∧
+      e ((EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.basicEquation μ).1 *
+          (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹) : GX (FreeGroup A) (Fin Ω.numItems)) :
+        SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem) = inr (FreeGroup.of ()) ∧
+      ∀ w : GX (FreeGroup A) (Fin Ω.numItems),
         eval (MonoidHom.id (SystemGroup (FreeGroup A) Ω.toSystem)) (fun _ => 1)
             (e (w : SystemGroup (FreeGroup A) (Ω.removePair μ).toSystem)) =
           (w : SystemGroup (FreeGroup A) Ω.toSystem) := by
@@ -518,10 +627,11 @@ theorem exists_bijective_systemGroup_removePair (hc : Ω.connections = ∅) {μ 
     · exact ⟨1, k, separates_of_degree_eq_one hk hdeg⟩
     · obtain ⟨χ, k, h, -⟩ := exists_separates_of_touches hi h0 hlast hν hb hc
       exact ⟨χ, k, h⟩
-  obtain ⟨e, he, -, hw⟩ := h.exists_mulEquiv (by simp [hc]) hd
+  obtain ⟨e, he, hz, -, hw⟩ := h.exists_mulEquiv (by simp [hc]) hd
   exact ⟨GHom.ofMulEquiv e fun g => by
       simpa using he (inl g) (by rw [h.map_inl]; exact GX.inl_mem_avoiding k g),
-    GHom.ofMulEquiv_bijective _ _, fun w => by simpa using hw w⟩
+    GHom.ofMulEquiv_bijective _ _, by rw [GHom.coe_ofMulEquiv]; exact hz,
+    fun w => by simpa using hw w⟩
 
 /-! ### Examples -/
 
