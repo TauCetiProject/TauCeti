@@ -445,6 +445,15 @@ theorem sphericalPendulumEffectivePotential_le_iff {j z h : ℝ} (hz : z ^ 2 < 1
   rw [sphericalPendulumEffectivePotential_def, ← le_sub_iff_add_le, div_le_iff₀ hz']
   constructor <;> intro h <;> linarith
 
+/-- Away from the poles, the effective potential at `z` is below `h` exactly when
+`j² < 2 (h - z) (1 - z²)`, that is, when the points of height `z` in the fibre over `(h, j)` have
+nonzero vertical momentum. -/
+theorem sphericalPendulumEffectivePotential_lt_iff {j z h : ℝ} (hz : z ^ 2 < 1) :
+    sphericalPendulumEffectivePotential j z < h ↔ j ^ 2 < 2 * (h - z) * (1 - z ^ 2) := by
+  have hz' : 0 < 2 * (1 - z ^ 2) := by linarith
+  rw [sphericalPendulumEffectivePotential_def, ← lt_sub_iff_add_lt, div_lt_iff₀ hz']
+  constructor <;> intro h <;> linarith
+
 /-- **The effective potential is convex** on `(-1, 1)`: it is `z` plus the nonnegative multiple
 `j² / 4` of `2 / (1 - z²) = (1 - z)⁻¹ + (1 + z)⁻¹`. -/
 theorem convexOn_sphericalPendulumEffectivePotential (j : ℝ) :

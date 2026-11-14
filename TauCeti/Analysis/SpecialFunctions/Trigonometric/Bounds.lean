@@ -37,6 +37,20 @@ open Real
 
 namespace TauCeti
 
+/-- The point `(a + b) / 2 + (b - a) / 2 · sin θ` of the substitution lies in `[a, b]`. -/
+theorem mem_Icc_add_mul_sin {a b : ℝ} (hab : a ≤ b) (θ : ℝ) :
+    (a + b) / 2 + (b - a) / 2 * sin θ ∈ Set.Icc a b :=
+  ⟨by nlinarith [neg_one_le_sin θ], by nlinarith [sin_le_one θ]⟩
+
+/-- The denominator after a sine substitution is positive when the interval lies inside
+`(-1, 1)` and the remaining square-root root lies above the interval. -/
+theorem one_sub_sq_mul_sqrt_sub_add_mul_sin_pos {a b c : ℝ} (ha : -1 < a) (hab : a ≤ b)
+    (hb : b < 1) (hc : b < c) (θ : ℝ) :
+    0 < (1 - ((a + b) / 2 + (b - a) / 2 * sin θ) ^ 2) *
+      √(2 * (c - ((a + b) / 2 + (b - a) / 2 * sin θ))) := by
+  have hx := mem_Icc_add_mul_sin hab θ
+  exact mul_pos (by nlinarith [hx.1, hx.2]) (sqrt_pos.2 (by linarith [hx.2]))
+
 /-- Cosine is positive strictly between two angles in `[-π/2, π/2]`, in either orientation. -/
 theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
     (ha : |a| ≤ π / 2) (hb : |b| ≤ π / 2) (hθ : θ ∈ Set.uIoo a b) :
