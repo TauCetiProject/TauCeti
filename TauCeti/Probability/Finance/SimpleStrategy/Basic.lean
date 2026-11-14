@@ -238,6 +238,16 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
 
+/-- Applying a function fixing zero to each height applies that function to the holding
+process, because the trading intervals are disjoint. No continuity of the function is needed. -/
+theorem simpleHolding_comp {f : ℝ → ℝ} (hf : f 0 = 0)
+    (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) :
+    simpleHolding τ n (fun j ω ↦ f (a j ω)) t ω = f (simpleHolding τ n a t ω) := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, ht⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj ht, simpleHolding_of_mem_Ioc hτ hj ht]
+  · rw [simpleHolding_of_notMem_Ioc hτ ht, simpleHolding_of_notMem_Ioc hτ ht, hf]
+
 /-! ### Measurability -/
 
 section Measurability
