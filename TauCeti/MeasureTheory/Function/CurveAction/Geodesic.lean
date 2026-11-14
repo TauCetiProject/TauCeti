@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
-public import TauCeti.Topology.MetricSpace.Length
+public import TauCeti.Topology.MetricSpace.GeodesicPath
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 /-!
@@ -21,14 +21,17 @@ Conversely, the Hölder estimate bounds the `p`-action of every absolutely conti
 `[0, 1]` below by `d(γ 0, γ 1) ^ p`, and for `1 < p` the curves attaining this bound are exactly
 the constant-speed geodesic segments
 (`AbsolutelyContinuousOnInterval.isGeodesicSegment_of_curveAction_le`). This rigidity is what
-forces the paths of a dynamic plan of minimal action to be geodesics. It fails for `p = 1`, where
-every monotone reparametrisation of a geodesic has the same action.
+forces the paths of a dynamic plan of minimal action to be geodesics
+(`TauCeti.ae_mem_geodesicPaths_of_lintegral_curveAction_le`): a law on paths absolutely
+continuous on `[0, 1]` whose expected `p`-action is finite and at most the expected `p`-th power
+of the distance between the endpoints is concentrated on geodesic paths. It fails for `p = 1`,
+where every monotone reparametrisation of a geodesic has the same action.
 -/
 
 public section
 
 open Filter MeasureTheory Set Topology
-open scoped ENNReal Interval
+open scoped ENNReal Interval unitInterval
 
 namespace TauCeti
 
@@ -178,6 +181,31 @@ theorem _root_.AbsolutelyContinuousOnInterval.isGeodesicSegment_of_curveAction_l
       ← Real.rpow_add_one' (sub_nonneg.2 hst) (by linarith), sub_add_cancel]
   rwa [hrhs, Real.rpow_le_rpow_iff dist_nonneg
     (mul_nonneg (sub_nonneg.2 hst) dist_nonneg) (zero_lt_one.trans hp)] at hle
+
+/-- **A law on paths of minimal expected action is concentrated on geodesic paths.** Let `η` be a
+measure on the paths `C(I, X)`, concentrated on paths absolutely continuous on `[0, 1]`, and let
+`1 < p`. If the expected `p`-action of its paths is finite and at most the expected `p`-th power
+`edist (c 0) (c 1) ^ p` of the distance between their endpoints, then `η`-almost every path is a
+geodesic path. -/
+theorem ae_mem_geodesicPaths_of_lintegral_curveAction_le {η : Measure C(I, X)} (hp : 1 < p)
+    (hηAC : ∀ᵐ c : C(I, X) ∂η, AbsolutelyContinuousOnInterval (IccExtend zero_le_one c) 0 1)
+    (hfin : ∫⁻ c, curveAction p (IccExtend zero_le_one c) 0 1 ∂η ≠ ∞)
+    (hle : ∫⁻ c, curveAction p (IccExtend zero_le_one c) 0 1 ∂η ≤
+      ∫⁻ c, edist (c 0) (c 1) ^ p ∂η) :
+    ∀ᵐ c ∂η, c ∈ geodesicPaths X := by
+  -- Each path costs at most its action, and the two expectations agree, so almost every path
+  -- has minimal action and is a geodesic.
+  have hpath : ∀ᵐ c : C(I, X) ∂η, edist (c 0) (c 1) ^ p ≤
+      curveAction p (IccExtend zero_le_one c) 0 1 :=
+    hηAC.mono fun c hc ↦ hc.edist_rpow_le_curveAction_IccExtend hp.le
+  have hae := ae_eq_of_ae_le_of_lintegral_le hpath
+    (ne_top_of_le_ne_top hfin (lintegral_mono_ae hpath))
+    (measurable_curveAction_IccExtend zero_le_one _ _ _).aemeasurable hle
+  filter_upwards [hηAC, hae] with c hc hce
+  rw [mem_geodesicPaths_iff_isGeodesicSegment]
+  have hc' := hc.isGeodesicSegment_of_curveAction_le hp
+    (by rw [IccExtend_left, IccExtend_right]; exact hce.symm.le)
+  rwa [IccExtend_left, IccExtend_right] at hc'
 
 end Rigidity
 
