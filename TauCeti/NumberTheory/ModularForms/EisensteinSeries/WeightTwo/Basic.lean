@@ -89,9 +89,9 @@ def correctedE2 : ModularForm ((Gamma0 t).map (mapGL ℝ)) 2 where
     have hle : (Gamma0 t).map (mapGL ℝ) ≤ 𝒮ℒ := by
       simpa [MonoidHom.range_eq_map] using Subgroup.map_mono (f := mapGL ℝ) (le_top (a := Gamma0 t))
     have hE := isBoundedAt_E2 (hc.mono hle)
-    have hscale := OnePoint.isBoundedAt_rat_slash (Γ := 𝒮ℒ) 2 (scaleGLRat t)
-      (fun _ hc ↦ isBoundedAt_E2 hc) (hc.mono hle)
-    rw [ModularForm.rat_slash, map_ratCast_scaleGLRat] at hscale
+    have hscale := OnePoint.isBoundedAt_rat_slash (Γ := 𝒮ℒ) 2
+      (HeckeRing.GLn.natDiagGL 2 ![t, 1]) (fun _ hc ↦ isBoundedAt_E2 hc) (hc.mono hle)
+    rw [ModularForm.rat_slash, map_natDiagGL_d_one_eq_scaleGL] at hscale
     exact fun g hg ↦ by
       simpa only [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash]
         using! (hE g hg).sub (hscale g hg)
@@ -134,7 +134,7 @@ theorem hasSum_correctedE2 (z : ℍ) :
       refine hE'.congr_fun fun n ↦ ?_
       simp only [Function.comp_apply, b, dvd_mul_right, ite_true,
         Nat.mul_div_right _ (Nat.pos_of_ne_zero (NeZero.ne t)), pow_mul,
-        qParam_one_scaleGL_smul]
+        qParam_scaleGL_smul]
   rw [correctedE2_apply]
   convert hE.sub (hscale.const_smul (t : ℂ)) using 1
   ext n

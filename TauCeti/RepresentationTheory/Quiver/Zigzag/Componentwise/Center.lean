@@ -49,7 +49,7 @@ noncomputable def zigzagComponentCenterBasis (C : G.ConnectedComponent) :
   · letI := hC
     letI : Fintype C := Fintype.ofFinite C
     exact (zigzagCenterBasis k C.toSimpleGraph C.connected_toSimpleGraph.preconnected).map
-      (centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
+      (Subalgebra.centerCongr (zigzagComponentAlgebraEquivNonisolated k G C)).symm.toLinearEquiv
   · letI : Subsingleton C := not_nontrivial_iff_subsingleton.mp hC
     exact (((Module.Basis.finTwoProd k).reindex (singletonCenterIndexEquiv G C).symm).map
       ULift.moduleEquiv.symm).map (centerZigzagComponentAlgebraSubsingletonLinearEquiv k G C).symm
@@ -117,7 +117,7 @@ private def componentCenterIndexEquiv :
 noncomputable def zigzagAlgebraCenterPiAlgEquiv :
     Subalgebra.center k (zigzagAlgebra k G) ≃ₐ[k]
       ∀ C : G.ConnectedComponent, Subalgebra.center k (zigzagComponentAlgebra k G C) :=
-  (centerCongr (zigzagAlgebraPiAlgEquiv k G)).trans centerPiAlgEquiv
+  (Subalgebra.centerCongr (zigzagAlgebraPiAlgEquiv k G)).trans centerPiAlgEquiv
 
 /-- The center decomposition reads the ordinary component projections. -/
 @[simp]
@@ -125,7 +125,7 @@ theorem zigzagAlgebraCenterPiAlgEquiv_apply_coe
     (x : Subalgebra.center k (zigzagAlgebra k G)) (C : G.ConnectedComponent) :
     (zigzagAlgebraCenterPiAlgEquiv k G x C : zigzagComponentAlgebra k G C) =
       zigzagComponentProjection k G C x := by
-  simp [zigzagAlgebraCenterPiAlgEquiv]
+  simp [zigzagAlgebraCenterPiAlgEquiv, Subalgebra.centerCongr_apply_coe _ x]
 
 /-- The inverse center decomposition assembles the prescribed central components. -/
 @[simp]
