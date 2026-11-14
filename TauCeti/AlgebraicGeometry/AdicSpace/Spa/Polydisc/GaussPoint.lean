@@ -505,6 +505,18 @@ theorem closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le (hr₀ : 0 
       (f := toRestrictedSubring hr f) n)
   rw [coe_toRestrictedSubring_weightedC_mul_weightedX_pow, coeff_toRestrictedSubring]
 
+/-- The shifted variable `T + c` with `‖c‖ ≤ r` has the same Gauss norm at radius `r` as `T`. -/
+private theorem closedDiscGaussValuation_weightedX_add_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
+    {c : R} (hc : ‖c‖ ≤ r) :
+    closedDiscGaussValuation hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0 +
+          weightedC _ isWeightFamily_one_weight c) =
+      closedDiscGaussValuation hr₀ hr₁
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0) :=
+  NNReal.eq <| by
+    simpa [sub_eq_add_neg, norm_neg, max_eq_left hc] using
+      coe_closedDiscGaussValuation_weightedX_sub_weightedC hr₀ hr₁ (-c)
+
 /-- **Just above `r`, the shifted variable `T + c` with `‖c‖ ≤ r` has the value of `T`**: both
 have Gauss norm `r`, attained last in degree `1`. -/
 theorem closedDiscGaussValuationAbove_weightedX_add_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1)
@@ -519,16 +531,7 @@ theorem closedDiscGaussValuationAbove_weightedX_add_weightedC (hr₀ : 0 < r) (h
   have h₂ := TauCeti.PowerSeries.isDistinguished_X_sub_C hr₀ (b := (0 : R)) (by simpa using hr₀.le)
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
-  -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`
-  have heq : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
-      (weightedX _ isWeightFamily_one_weight 0 + weightedC _ isWeightFamily_one_weight c)) =
-      TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
-        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0)) := by
-    rw [← NNReal.coe_inj, TauCeti.PowerSeries.coe_gaussValuation,
-      TauCeti.PowerSeries.coe_gaussValuation, ← h₁.norm_coeff_mul_pow_eq,
-      ← h₂.norm_coeff_mul_pow_eq, coe_toRestrictedSubring_weightedX_add_weightedC,
-      coe_toRestrictedSubring_weightedX']
-    simp
+  have heq := closedDiscGaussValuation_weightedX_add_weightedC hr₀ hr₁ hc
   simp only [closedDiscGaussValuationAbove, Valuation.comap_apply]
   exact le_antisymm
     ((TauCeti.PowerSeries.gaussValuationAbove_le_iff hr₀ h₁ h₂).mpr (Or.inr ⟨heq, le_rfl⟩))
@@ -549,16 +552,7 @@ theorem closedDiscGaussValuationBelow_weightedX_add_weightedC (hr₀ : 0 < r) (h
     (by simpa using hr₀)
   rw [← coe_toRestrictedSubring_weightedX_add_weightedC hr] at h₁
   rw [← coe_toRestrictedSubring_weightedX' hr] at h₂
-  -- both Gauss norms are the norm `r` of the leading coefficient in degree `1`
-  have heq : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
-      (weightedX _ isWeightFamily_one_weight 0 + weightedC _ isWeightFamily_one_weight c)) =
-      TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
-        (weightedX (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight 0)) := by
-    rw [← NNReal.coe_inj, TauCeti.PowerSeries.coe_gaussValuation,
-      TauCeti.PowerSeries.coe_gaussValuation, ← h₁.norm_coeff_mul_pow_eq,
-      ← h₂.norm_coeff_mul_pow_eq, coe_toRestrictedSubring_weightedX_add_weightedC,
-      coe_toRestrictedSubring_weightedX']
-    simp
+  have heq := closedDiscGaussValuation_weightedX_add_weightedC hr₀ hr₁ hc.le
   simp only [closedDiscGaussValuationBelow, Valuation.comap_apply]
   exact le_antisymm
     ((TauCeti.PowerSeries.gaussValuationBelow_le_iff hr₀ h₁ h₂).mpr (Or.inr ⟨heq, le_rfl⟩))
