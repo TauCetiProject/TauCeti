@@ -207,7 +207,7 @@ theorem universalGSpaceMap_characteristicMap (φ : G →* H) {n : ℕ}
 
 section Cellular
 
-variable {G H : Type u} [MulOne G] [MulOne H]
+variable {G H K : Type u} [MulOne G] [MulOne H] [MulOne K]
 
 /-- The map of Milnor joins on the universal subsets used by cellular chains. -/
 def universalGSpaceCellularMap (φ : G →* H) :
@@ -221,6 +221,27 @@ def universalGSpaceCellularMap (φ : G →* H) :
 theorem universalGSpaceCellularMap_apply (φ : G →* H)
     (x : (univ : Set (universalGSpace G))) :
     (φ.universalGSpaceCellularMap x).1 = φ.universalGSpaceMap x.1 := (rfl)
+
+/-- The identity homomorphism induces the identity cellular map on the universal subset. -/
+@[simp]
+theorem universalGSpaceCellularMap_id :
+    (MonoidHom.id G).universalGSpaceCellularMap = 𝟙 _ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact congrArg (fun f : C(universalGSpace G, universalGSpace G) ↦ f x.1)
+    universalGSpaceMap_id
+
+/-- Composition of homomorphisms induces composition of cellular maps on universal subsets. -/
+@[simp]
+theorem universalGSpaceCellularMap_comp (ψ : H →* K) (φ : G →* H) :
+    (ψ.comp φ).universalGSpaceCellularMap =
+      φ.universalGSpaceCellularMap ≫ ψ.universalGSpaceCellularMap := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact congrArg (fun f : C(universalGSpace G, universalGSpace K) ↦ f x.1)
+    (universalGSpaceMap_comp ψ φ)
 
 /-- Restricting the realized simplicial map to the universal subset gives the cellular map. -/
 theorem universalGSpaceSimplicialMap_restrictPreimage (φ : G →* H) :
