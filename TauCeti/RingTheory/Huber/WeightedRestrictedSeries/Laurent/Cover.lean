@@ -126,16 +126,16 @@ theorem mem_laurentCoverOverlapIdeal_iff (f : A) {a : R±} :
   rw [laurentCoverOverlapIdeal_def, Ideal.mem_span_singleton']
 
 /-- The algebraic quotient presentation `A⟨X⟩/(f-X)` of the Laurent piece `{|f| ≤ 1}`. It is the
-coordinate ring of the piece when `A` is a strongly noetherian Tate ring. -/
+coordinate ring of the piece when `A` is a complete separated strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverLe (f : A) := R₁ ⧸ laurentCoverLeIdeal A f
 
 /-- The algebraic quotient presentation `A⟨Y⟩/(1-fY)` of the Laurent piece `{|f| ≥ 1}`. It is the
-coordinate ring of the piece when `A` is a strongly noetherian Tate ring. -/
+coordinate ring of the piece when `A` is a complete separated strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverGe (f : A) := R₁ ⧸ laurentCoverGeIdeal A f
 
 /-- The algebraic quotient presentation `A⟨X,Y⟩/(1-XY, f-X)` of the overlap `{|f| = 1}` of the two
-Laurent pieces. It is the coordinate ring of the overlap when `A` is a strongly noetherian Tate
-ring. -/
+Laurent pieces. It is the coordinate ring of the overlap when `A` is a complete separated
+strongly noetherian Tate ring. -/
 noncomputable abbrev laurentCoverOverlap (f : A) :=
   R± ⧸ laurentCoverOverlapIdeal A f
 
@@ -377,8 +377,10 @@ private theorem exists_algebraMap_eq_of_laurentCoverDiff_mk_eq_zero (f : A) (a b
 
 /-- **Wedhorn's Lemma 8.33, exactness in the middle, for the algebraic presentations.** For the
 quotients `laurentCoverLe` and `laurentCoverGe`, a pair of elements has equal restrictions to
-`laurentCoverOverlap` exactly when it is a pair of equal constants. The presheaf statement is
-`ValuationSpectrum.laurentCover_exact`. -/
+`laurentCoverOverlap` exactly when it is a pair of equal constants. The corresponding
+statement for the completed rational localisations is
+`TauCeti.ValuationSpectrum.laurentCover_exact`, and the one for the structure presheaf is
+`TauCeti.ValuationSpectrum.exists_presentationLimitMap_eq_of_laurentCoverOpen`. -/
 theorem exact_algebraMap_laurentCoverDiff (f : A) :
     Function.Exact
       (algebraMap A (laurentCoverLe A f × laurentCoverGe A f))
