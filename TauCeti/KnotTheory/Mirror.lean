@@ -56,6 +56,8 @@ linear isometry of determinant `-1` gives a knot smoothly ambient isotopic to it
 * `TauCeti.SmoothCircleEmbedding.smoothAmbientIsotopic_mirror_of_det_eq_neg_one`: the mirror image
   along any orientation-reversing linear isometry is smoothly ambient isotopic to the mirror image.
 * `TauCeti.SmoothCircleEmbedding.mirror_unknot`: the unknot is its own mirror image.
+* `TauCeti.SmoothEmbedding.smoothAmbientIsotopic_mirror_iff`: mirroring preserves and reflects
+  smooth ambient isotopy.
 * `TauCeti.isSmoothlySlice_mirror_iff`, `TauCeti.isTopologicallySlice_mirror_iff`,
   `TauCeti.sliceGenus_mirror`, `TauCeti.topologicalSliceGenus_mirror`: sliceness and the slice
   genera are invariant under mirroring.
@@ -199,6 +201,20 @@ theorem SmoothCircleEmbedding.mirror_unknot : unknot.mirror = unknot := by
 
 variable {n : ℕ}
   {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)}
+
+/-! ### Ambient isotopy -/
+
+/-- Mirror images of smoothly ambient-isotopic knots are smoothly ambient isotopic: the reflection
+conjugates the witnessing diffeotopy. -/
+theorem SmoothEmbedding.SmoothAmbientIsotopic.mirror (h : K.SmoothAmbientIsotopic K') :
+    K.mirror.SmoothAmbientIsotopic K'.mirror :=
+  h.transDiffeomorph _
+
+/-- Two knots are smoothly ambient isotopic exactly when their mirror images are. -/
+@[simp]
+theorem SmoothEmbedding.smoothAmbientIsotopic_mirror_iff :
+    K.mirror.SmoothAmbientIsotopic K'.mirror ↔ K.SmoothAmbientIsotopic K' :=
+  smoothAmbientIsotopic_transDiffeomorph_iff _
 
 /-! ### Sliceness and the slice genus -/
 
