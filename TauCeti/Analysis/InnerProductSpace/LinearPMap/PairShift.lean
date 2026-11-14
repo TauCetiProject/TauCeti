@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, Adam Bornemann
 -/
 module
 
@@ -38,11 +38,28 @@ Surjectivity of the pair shift of a self-adjoint `A` comes from the orthogonal d
 * `LinearPMap.IsFormalAdjoint.isSelfAdjoint_of_surjective_pairShift` and
   `IsSelfAdjoint.surjective_pairShift`: the self-adjointness criterion and its converse, combined
   in `LinearPMap.IsFormalAdjoint.isSelfAdjoint_iff_surjective_pairShift`.
+* `LinearPMap.isSelfAdjoint_of_surjective_addSub`: von Neumann's criterion over `ℂ`, a symmetric
+  map with `A + i` and `A - i` surjective is self-adjoint.
 
 ## References
 
 * M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*,
   Academic Press (1980), Theorem VIII.3 (the basic criterion for self-adjointness).
+
+## Provenance
+
+The formulation of `LinearPMap.isSelfAdjoint_of_surjective_addSub` is adapted from
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean)
+and
+[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean)
+in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
+authors Jon Crall and Claude Opus 5; Apache-2.0). The donor `Basic.lean`
+credits the earlier
+[`Spectra/OneParameterUnitaryGroup/Basic.lean`](https://github.com/adambornemann-glitch/Spectra/blob/8dbaaf6728d1342ae16acf79fd7eef7c59b37e63/Spectra/OneParameterUnitaryGroup/Basic.lean)
+at commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (copyright (c) 2026
+Spectra Formalization Project; author Adam Bornemann; Apache-2.0).
+The proof here is new: it reduces to
+`LinearPMap.IsFormalAdjoint.isSelfAdjoint_of_surjective_pairShift`.
 -/
 
 public section
@@ -197,5 +214,22 @@ theorem IsFormalAdjoint.isSelfAdjoint_iff_surjective_pairShift [CompleteSpace E]
     {B : E →ₗ.[𝕜] E} (hB : B.IsFormalAdjoint B) {μ : ℝ} (hμ : μ ≠ 0) :
     IsSelfAdjoint B ↔ Function.Surjective (B.pairShift μ) :=
   ⟨fun h ↦ h.surjective_pairShift hμ, hB.isSelfAdjoint_of_surjective_pairShift hμ⟩
+
+open Complex in
+/-- **Von Neumann's criterion.** A symmetric partial linear map on a complex Hilbert space is
+self-adjoint if its shifts by `+i` and `-i` are surjective. This is the pair-shift criterion at
+`μ = 1`. -/
+theorem isSelfAdjoint_of_surjective_addSub {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] [CompleteSpace H] (A : H →ₗ.[ℂ] H) (hsym : A.IsFormalAdjoint A)
+    (hplus : ∀ φ : H, ∃ ψ : A.domain, A ψ + I • (ψ : H) = φ)
+    (hminus : ∀ φ : H, ∃ ψ : A.domain, A ψ - I • (ψ : H) = φ) : IsSelfAdjoint A := by
+  refine hsym.isSelfAdjoint_of_surjective_pairShift one_ne_zero fun ⟨u, v⟩ ↦ ?_
+  obtain ⟨p, hp⟩ := hminus (v - I • u)
+  obtain ⟨q, hq⟩ := hplus (v + I • u)
+  refine ⟨((2 : ℂ)⁻¹ • (p + q), (I / 2) • (q - p)), Prod.ext ?_ ?_⟩ <;>
+    simp only [pairShift_apply, LinearPMap.map_smul, LinearPMap.map_add, LinearPMap.map_sub,
+      Submodule.coe_smul, Submodule.coe_add, Submodule.coe_sub,
+      eq_sub_of_add_eq hq, eq_add_of_sub_eq hp] <;>
+    match_scalars <;> ring_nf <;> simp [Complex.I_sq]
 
 end LinearPMap
