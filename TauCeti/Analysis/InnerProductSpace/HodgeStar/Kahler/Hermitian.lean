@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.ComplexStructure
 
 /-!
@@ -50,6 +51,8 @@ that the orientation is the complex one.
 ## Main definitions
 
 * `TauCeti.AlmostComplexStructure.hermitianForm J F`: the Hermitian part `B` of `F`.
+* `TauCeti.AlmostComplexStructure.continuousHermitianForm J`: `(F, v, w) ↦ B(v, w)` as a
+  continuous trilinear map.
 
 ## Main results
 
@@ -57,6 +60,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `hermitianForm_apply_self`: `B(v, v) = F(v, J v)`.
 * `hermitianForm_kahlerForm`: the Hermitian part of `ω` is the inner product.
+* `continuousHermitianForm_apply`: the continuous trilinear map evaluates to `B(v, w)`.
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
@@ -126,6 +130,19 @@ omit [FiniteDimensional ℝ V] in
 theorem isSymm_hermitianForm (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) :
     (J.hermitianForm F).IsSymm :=
   ⟨QuadraticMap.associated_isSymm ℝ _⟩
+
+/-- The Hermitian part `(F, v, w) ↦ B(v, w)` as a continuous trilinear map: in finite dimension
+`J.hermitianForm` is continuous, with values in the continuous bilinear forms on `V`. -/
+def continuousHermitianForm (J : AlmostComplexStructure V) :
+    ⋀[ℝ]^2 V →L[ℝ] V →L[ℝ] V →L[ℝ] ℝ :=
+  (J.hermitianForm.compr₂ (LinearMap.toContinuousLinearMap : (V →ₗ[ℝ] ℝ) ≃ₗ[ℝ] _).toLinearMap)
+    |>.toContinuousBilinearMap
+
+/-- The continuous trilinear map `J.continuousHermitianForm` evaluates to `B(v, w)`. -/
+@[simp]
+theorem continuousHermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v w : V) :
+    J.continuousHermitianForm F v w = J.hermitianForm F v w := by
+  simp [continuousHermitianForm]
 
 /-- **The Hermitian part of the Kähler form is the metric**: for an orthogonal `J`,
 `ω(v, J w) = ⟪v, w⟫`. -/
