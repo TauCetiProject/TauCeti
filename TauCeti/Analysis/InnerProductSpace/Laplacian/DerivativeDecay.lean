@@ -518,17 +518,10 @@ theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E �
   have hP := isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff hc hcκ hℓ'c heq' hℓd'
     hℓ'd
   have h : iteratedFDeriv ℝ n (fun x ↦ Real.exp (ℓ' x) - 1) =O[cocompact E]
-      fun x ↦ Real.exp (-(c * ‖x‖)) := by
-    rcases n with _ | n
-    · refine (isBigO_of_le _ fun y ↦ norm_iteratedFDeriv_zero.le).trans
-        (Real.isBigO_exp_comp_sub_one
-          (hℓd'.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc)) hℓd')
-    · have he : ContDiff ℝ ∞ (fun x ↦ Real.exp (ℓ' x)) := Real.contDiff_exp.comp hℓ'c
-      refine (isBigO_of_le _ fun y ↦ le_of_eq ?_).trans
-        ((hℓ'c.of_le (by simp)).isBigO_iteratedFDeriv_succ_exp
-          (fun i _ hi ↦ (hP (n + 1)).1 i hi) (hP n).2)
-      rw [fun_iteratedFDeriv_sub_apply (he.contDiffAt.of_le (by simp)) contDiffAt_const,
-        iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, sub_zero]
+      fun x ↦ Real.exp (-(c * ‖x‖)) :=
+    (hℓ'c.of_le (by simp)).isBigO_iteratedFDeriv_exp_sub_one
+      (hℓd'.trans_tendsto (tendsto_exp_neg_mul_norm_cocompact hc))
+      (by simpa using isBigO_exp_neg_mul_norm_of_le hc.le (cocompact E)) (hP n).1
   refine h.congr' (hagree.mono fun x hx ↦ ?_) EventuallyEq.rfl
   exact (((hx.fun_comp Real.exp).sub EventuallyEq.rfl).iteratedFDeriv ℝ n).eq_of_nhds
 
