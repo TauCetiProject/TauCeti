@@ -131,6 +131,16 @@ theorem IsElliptic.finrank_eq [Nontrivial E] {a : HomogeneousSymbol X E V W m}
 
 /-! ### The inverse of an elliptic symbol -/
 
+/-- The pullback of an elliptic homogeneous symbol is elliptic: `L y` maps nonzero frequencies to
+nonzero frequencies. -/
+theorem IsElliptic.pullback {Y F : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {g : Y → X} {L : Y → F →L[ℝ] E}
+    (hg : ContDiff ℝ ∞ g) (hL : ContDiff ℝ ∞ L) (hLinj : ∀ y, Function.Injective (L y))
+    {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) :
+    (a.pullback g L hg hL hLinj).IsElliptic :=
+  isElliptic_iff.2 fun y η hη ↦ by
+    simpa using isElliptic_iff.1 ha (g y) (L y η) ((map_ne_zero_iff _ (hLinj y)).2 hη)
+
 section Inverse
 
 variable [CompleteSpace V] (a : HomogeneousSymbol X E V W m) (ha : a.IsElliptic)

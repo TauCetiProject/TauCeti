@@ -832,6 +832,30 @@ theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace �
   rw [mixedDeriv_const_smul, norm_smul, mul_assoc]
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
+/-- Bounds `C * ρ ξ` and `D * ρ ξ` on mixed derivatives of smooth `a` and `b`, for positions in
+`K`, give a bound of the same form on the mixed derivative of `a + b`. -/
+theorem exists_norm_mixedDeriv_add_le {K : Set (CoordinateSpace n)} {ρ : CoordinateSpace n → ℝ}
+    (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b)
+    (haC : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β a x ξ‖ ≤ C * ρ ξ)
+    (hbD : ∃ D, 0 ≤ D ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β b x ξ‖ ≤ D * ρ ξ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (a + b) x ξ‖ ≤ C * ρ ξ := by
+  obtain ⟨C, hC0, hC⟩ := haC
+  obtain ⟨D, hD0, hD⟩ := hbD
+  exact ⟨C + D, add_nonneg hC0 hD0, fun x hx ξ ↦
+    norm_mixedDeriv_add_le ha hb (hC x hx ξ) (hD x hx ξ)⟩
+
+/-- Bounds `C i * ρ ξ` on mixed derivatives of smooth functions `f i`, for positions in `K`, give a
+bound of the same form on the mixed derivative of their finite sum. -/
+theorem exists_norm_mixedDeriv_sum_le {ι : Type*} (s : Finset ι)
+    {f : ι → CoordinateSpace n × CoordinateSpace n → A} (hf : ∀ i ∈ s, ContDiff ℝ ∞ (f i))
+    {K : Set (CoordinateSpace n)} {ρ : CoordinateSpace n → ℝ}
+    (h : ∀ i ∈ s, ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (f i) x ξ‖ ≤ C * ρ ξ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (fun q ↦ ∑ i ∈ s, f i q) x ξ‖ ≤ C * ρ ξ := by
+  choose! C hC0 hC using h
+  refine ⟨∑ i ∈ s, C i, Finset.sum_nonneg hC0, fun x hx ξ ↦ ?_⟩
+  rw [← Finset.sum_fn, mixedDeriv_sum hf, Finset.sum_mul]
+  exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i hi ↦ hC i hi x hx ξ)
+
 end Linear
 
 section Leibniz
