@@ -17,7 +17,8 @@ and nothing else, so it determines a measure on the line as soon as the measure 
 signs apart. For a reflection-invariant measure, the pushforward under squaring is a complete
 invariant: such a measure is determined by its mass on subsets of `(0, ∞)` and on `{0}`, and the
 squared pushforward records both. For a measure carried by the nonnegative
-half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the measure outright.
+half-line, squaring and `Real.sqrt` induce mutually inverse pushforwards, so either pushforward
+determines the measure outright.
 
 ## Main results
 
@@ -34,6 +35,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
   undoes squaring.
+* `MeasureTheory.Measure.map_sq_map_sqrt` — on the nonnegative half-line, squaring undoes
+  taking square roots.
 -/
 
 public section

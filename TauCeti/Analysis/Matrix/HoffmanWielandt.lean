@@ -62,12 +62,13 @@ namespace Matrix
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜] {A B : Matrix n n 𝕜}
 
 /-- **The singular-value Hoffman–Wielandt inequality** for same-shaped rectangular matrices:
-the squared distance between their ordered singular values, summed up to the smaller dimension,
-is bounded by the squared Frobenius norm of their difference. -/
+the squared distance between any initial segment of their ordered singular values is bounded
+by the squared Frobenius norm of their difference. Singular values beyond either dimension
+are zero, so the segment length is unrestricted. -/
 theorem sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq
     {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
-    (A B : Matrix m n 𝕜) :
-    ∑ i : Fin (min (Fintype.card n) (Fintype.card m)),
+    (A B : Matrix m n 𝕜) {k : ℕ} :
+    ∑ i : Fin k,
         ((Matrix.toEuclideanLin A).singularValues i -
           (Matrix.toEuclideanLin B).singularValues i) ^ 2 ≤ ‖A - B‖ ^ 2 := by
   let e := EuclideanSpace.basisFun n 𝕜
@@ -86,7 +87,30 @@ theorem sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq
           (Matrix.toEuclideanLin A - Matrix.toEuclideanLin B) = ‖A - B‖ := by
     rw [← map_sub, hF]
   rw [hn, hm] at h
-  simpa only [hF'] using h
+  simp only [hF'] at h
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦
+    ((toEuclideanLin A).singularValues i - (toEuclideanLin B).singularValues i) ^ 2)] at h ⊢
+  let d := min (Fintype.card n) (Fintype.card m)
+  have hzero (T : Matrix m n 𝕜) (i : ℕ) (hi : d ≤ i) :
+      (toEuclideanLin T).singularValues i = 0 := by
+    rcases le_total (Fintype.card n) (Fintype.card m) with hn | hm
+    · exact (toEuclideanLin T).singularValues_of_finrank_le
+        (by simpa [d, min_eq_left hn] using hi)
+    · exact (toEuclideanLin T).singularValues_of_finrank_le_right
+        (by simpa [d, min_eq_right hm] using hi)
+  calc
+    _ ≤ ∑ i ∈ Finset.range (max k d),
+        ((toEuclideanLin A).singularValues i - (toEuclideanLin B).singularValues i) ^ 2 :=
+      Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono (le_max_left _ _))
+        (fun _ _ _ ↦ sq_nonneg _)
+    _ = ∑ i ∈ Finset.range d,
+        ((toEuclideanLin A).singularValues i - (toEuclideanLin B).singularValues i) ^ 2 := by
+      symm
+      apply Finset.sum_subset (Finset.range_mono (le_max_right _ _))
+      intro i _ hi
+      have hi' : d ≤ i := by simpa only [Finset.mem_range, not_lt] using hi
+      simp [hzero A i hi', hzero B i hi']
+    _ ≤ _ := h
 
 /-- **The Hoffman–Wielandt inequality** for Hermitian matrices: the squared Euclidean distance
 between the decreasingly sorted spectra is at most the squared Frobenius norm `‖A - B‖_F²`. -/

@@ -7,18 +7,17 @@ module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.SingularValues
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
-public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Perturbing sample covariance spectral measures
 
 The square-root image of the spectral measure of `X Xᴴ / n` is the singular-value measure of
 `Xᴴ / √n`, normalized by the number of rows of `X`. The singular-value Hoffman–Wielandt
-inequality therefore bounds the squared change in every Lipschitz square-root spectral
-statistic by the mean squared entrywise change in `X`.
+inequality therefore bounds the squared change in a `K`-Lipschitz square-root spectral
+statistic by `K ^ 2` times the mean squared entrywise change in `X`.
 
 This estimate permits bounded approximation of data with only a finite second moment: no
-fourth moments of the covariance entries are needed. The row normalization retains zero
+fourth moments of the data entries are needed. The row normalization retains zero
 eigenvalues when the number of rows exceeds the number of columns. Empty samples are allowed;
 the row index must be nonempty to define the spectral probability measure.
 
@@ -59,7 +58,8 @@ theorem map_spectralMeasure_sampleCovariance_sqrt [DecidableEq m] [Nonempty m]
 omit [DecidableEq n] in
 /-- Lipschitz tests of the square roots of covariance eigenvalues are stable in the average
 squared entrywise error. This requires second moments of the data rather than fourth moments. -/
-theorem sq_norm_integral_sqrt_sampleCovariance_sub_le [DecidableEq m] [Nonempty m]
+theorem sq_norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_le
+    [DecidableEq m] [Nonempty m]
     (X Y : Matrix m n 𝕜) {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) :
     ‖∫ x, f (Real.sqrt x)
           ∂((sampleCovariance X).spectralMeasure (isHermitian_sampleCovariance X) : Measure ℝ) -
@@ -82,10 +82,26 @@ theorem sq_norm_integral_sqrt_sampleCovariance_sub_le [DecidableEq m] [Nonempty 
     Real.sq_sqrt (Nat.cast_nonneg (Fintype.card n))] at h
   convert h using 1; ring
 
-/-- Weak convergence of covariance laws is equivalent to weak convergence of their
-square-root images. Thus Lipschitz tests of square roots determine covariance spectral limits.
-The reference law is assumed to be carried by the nonnegative half-line. -/
-theorem tendsto_spectralMeasure_sampleCovariance_iff
+omit [DecidableEq n] in
+/-- A `K`-Lipschitz square-root covariance statistic changes by at most
+`K * ‖X - Y‖ / √(card m * card n)`, with the Frobenius norm. Empty samples are included. -/
+theorem norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_le
+    [DecidableEq m] [Nonempty m]
+    (X Y : Matrix m n 𝕜) {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) :
+    ‖∫ x, f (Real.sqrt x)
+          ∂((sampleCovariance X).spectralMeasure (isHermitian_sampleCovariance X) : Measure ℝ) -
+        ∫ x, f (Real.sqrt x)
+          ∂((sampleCovariance Y).spectralMeasure
+            (isHermitian_sampleCovariance Y) : Measure ℝ)‖ ≤
+      (K : ℝ) * ‖X - Y‖ / Real.sqrt (Fintype.card m * Fintype.card n) := by
+  have h := Real.le_sqrt_of_sq_le
+    (sq_norm_integral_comp_sqrt_spectralMeasure_sampleCovariance_sub_le X Y hf)
+  rw [Real.sqrt_div (by positivity), ← mul_pow, Real.sqrt_sq (by positivity)] at h
+  exact h
+
+/-- Weak convergence of covariance laws is equivalent to weak convergence of the associated
+singular-value laws. The reference law is carried by the nonnegative half-line. -/
+theorem tendsto_spectralMeasure_sampleCovariance_iff_tendsto_singularValueMeasure
     {ι : Type*} {p n : ι → Type*} [∀ i, Fintype (p i)] [∀ i, Fintype (n i)]
     [∀ i, DecidableEq (p i)] [∀ i, Nonempty (p i)]
     (X : (i : ι) → Matrix (p i) (n i) 𝕜) {l : Filter ι} {μ : ProbabilityMeasure ℝ}
@@ -94,18 +110,9 @@ theorem tendsto_spectralMeasure_sampleCovariance_iff
       (isHermitian_sampleCovariance (X i))) l (nhds μ) ↔
     Filter.Tendsto (fun i ↦ ((Real.sqrt (Fintype.card (n i)))⁻¹ • (X i)ᴴ).singularValueMeasure)
       l (nhds (μ.map Real.sqrt)) := by
-  have hmap (ν : ProbabilityMeasure ℝ) (hν : ∀ᵐ x ∂(ν : Measure ℝ), 0 ≤ x) :
-      (ν.map Real.sqrt).map (fun x ↦ x ^ 2) = ν := by
-    apply ProbabilityMeasure.toMeasure_injective
-    simp only [ProbabilityMeasure.toMeasure_map, Measure.map_sq_map_sqrt _ hν]
-  constructor
-  · intro h
-    simpa only [Function.comp_def, map_spectralMeasure_sampleCovariance_sqrt] using
-      (ProbabilityMeasure.continuous_map Real.continuous_sqrt).tendsto μ |>.comp h
-  · intro h
-    have hs := (ProbabilityMeasure.continuous_map (by fun_prop : Continuous (fun x : ℝ ↦ x ^ 2)))
-      |>.tendsto (μ.map Real.sqrt) |>.comp h
-    simpa only [Function.comp_def, ← map_spectralMeasure_sampleCovariance_sqrt, hmap μ hμ,
-      hmap _ (posSemidef_sampleCovariance _).ae_mem_Ici_spectralMeasure] using hs
+  simpa only [map_spectralMeasure_sampleCovariance_sqrt] using
+    ProbabilityMeasure.tendsto_iff_tendsto_map_sqrt
+      (Filter.Eventually.of_forall fun i ↦
+        (posSemidef_sampleCovariance (X i)).ae_mem_Ici_spectralMeasure) hμ
 
 end Matrix
