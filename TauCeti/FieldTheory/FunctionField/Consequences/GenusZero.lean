@@ -12,10 +12,10 @@ import TauCeti.FieldTheory.FunctionField.Divisor.ConstantField
 import TauCeti.FieldTheory.FunctionField.Frobenius
 -- Proof-only: the generator of `k(x)` generates it.
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
--- Proof-only: Lüroth's theorem and the genus of `k(t)`, for subfields of a rational function field.
+-- Proof-only: Lüroth's theorem and transport of the genus, for subfields of a rational function
+-- field.
 import Mathlib.FieldTheory.RatFunc.Luroth
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
-import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 
 /-!
 # Genus-zero function fields with a divisor of degree one
@@ -218,45 +218,23 @@ theorem genus_adjoin_simple_eq_zero {x : F} : genus k k⟮x⟯ = 0 :=
     (IntermediateField.adjoin_adjoinSimple_gen_eq_top x)
 
 /-- **A field embedded in a rational function field has genus zero**: by Lüroth's theorem
-(`RatFunc.Luroth.algEquiv`) its image in `k(t)` is again a rational function field, unless it is
-algebraic over `k`.  In that case its image lies in the constants `k`, so it is a finite extension
-of `k` (not a function field), on which the definition `TauCeti.genus` evaluates to zero. -/
+(`RatFunc.Luroth.eq_adjoin_generator`) its image in `k(t)` is generated over `k` by one element,
+so it has genus zero by `TauCeti.genus_adjoin_simple_eq_zero`.  When the field is not algebraic
+over `k`, that image is again a rational function field; when it is algebraic over `k`, the image
+lies in the constants `k`, so the field is a finite extension of `k` (not a function field), on
+which the definition `TauCeti.genus` evaluates to zero. -/
 theorem genus_eq_zero_of_algHom_ratFunc (ι : F →ₐ[k] RatFunc k) :
-    genus k F = 0 := by
-  by_cases hF : Algebra.Transcendental k F
-  swap
-  · -- an algebraic subfield of `k(t)` lies in `k`, so it is finite over `k`
-    have hbot : ι.range = ⊥ := by
-      refine bot_unique fun y ⟨x, hx⟩ ↦ ?_
-      have hxalg : IsAlgebraic k x := by
-        by_contra h
-        exact hF ⟨x, h⟩
-      obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp
-        (isIntegrallyClosedIn_ratFunc (k := k)) y (hx ▸ hxalg.algHom ι)
-      exact Algebra.mem_bot.mpr ⟨c, hc⟩
-    have hbotfin : FiniteDimensional k (⊥ : Subalgebra k (RatFunc k)) := inferInstance
-    have : FiniteDimensional k ι.range := hbot ▸ hbotfin
-    have : FiniteDimensional k F := LinearEquiv.finiteDimensional
-      (AlgEquiv.ofInjectiveField ι).symm.toLinearEquiv
-    exact genus_eq_zero_of_finiteDimensional
-  have hι : ι.fieldRange ≠ ⊥ := by
-    intro hbot
-    obtain ⟨x, hx⟩ := hF.transcendental
-    have hmem : ι x ∈ ι.fieldRange := ⟨x, rfl⟩
-    rw [hbot, IntermediateField.mem_bot] at hmem
-    obtain ⟨c, hc⟩ := hmem
-    have hxc : x = algebraMap k F c := ι.toRingHom.injective (by simpa using hc.symm)
-    exact hx (hxc ▸ isAlgebraic_algebraMap c)
-  rw [← genus_ratFunc k]
-  exact (genus_eq_of_ringEquiv (RingEquiv.refl k)
-    ((AlgEquiv.ofInjectiveField ι).trans (RatFunc.Luroth.algEquiv hι).symm).toRingEquiv
-    fun c ↦ by simp).symm
+    genus k F = 0 :=
+  let e := ι.equivFieldRange.trans (IntermediateField.equivOfEq RatFunc.Luroth.eq_adjoin_generator)
+  (genus_eq_of_ringEquiv (RingEquiv.refl k) e.toRingEquiv e.commutes).symm.trans
+    genus_adjoin_simple_eq_zero
 
 /-- **Rational subfields of prime index in a function field of positive genus are separable**
 over a perfect constant field: if `[F : k(x)]` is prime and `g(F) ≠ 0`, then `F / k(x)` is
-separable. Otherwise `F = k(y)` for a `p`-th root `y` of `x`, which has genus zero.  The
-hypothesis `hg` is only needed for transcendental `x`: for `x` algebraic over `k`, `F` is a finite,
-hence separable, extension of the perfect field `k`.
+separable. Otherwise `F = k(y)` for a `p`-th root `y` of `x`, which has genus zero.
+Transcendence of `x` over `k` need not be assumed: `hg` and `hprime` force it, since an algebraic
+`x` with `0 < [F : k(x)]` makes `F` a finite extension of `k`, which has genus zero
+(`TauCeti.genus_eq_zero_of_finiteDimensional`).
 
 Perfectness enters through Stichtenoth's Proposition 3.10.2, which makes every element `x` with
 `F / k(x)` inseparable a `p`-th power in `F`. -/
@@ -266,12 +244,11 @@ theorem isSeparable_adjoin_of_finrank_prime [PerfectField k] (hg : genus k F ≠
   have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos hprime.pos
   by_cases hx : Transcendental k x
   swap
-  · -- an algebraic `x` makes `F` finite, hence algebraic and separable, over `k`
+  · -- an algebraic `x` makes `F` finite over `k`, hence of genus zero
     have : FiniteDimensional k k⟮x⟯ :=
       IntermediateField.adjoin.finiteDimensional (not_not.mp hx).isIntegral
     have : FiniteDimensional k F := Module.Finite.trans k⟮x⟯ F
-    have : Algebra.IsSeparable k F := Algebra.IsAlgebraic.isSeparable_of_perfectField
-    exact Algebra.isSeparable_tower_top_of_isSeparable k k⟮x⟯ F
+    exact absurd genus_eq_zero_of_finiteDimensional hg
   obtain ⟨p, _⟩ := ExpChar.exists F
   by_contra hsep
   obtain ⟨y, -, htop⟩ := hx.isFunctionField_adjoin.finite_extension
