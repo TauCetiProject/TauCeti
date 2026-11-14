@@ -81,6 +81,7 @@ theorem zetaEntireCompletion_eq_mul {s : ℂ} (hs0 : s ≠ 0) (hs1 : s ≠ 1) :
   ring
 
 /-- Conjugation commutes with `zetaEntireCompletion`. -/
+@[simp]
 theorem zetaEntireCompletion_conj (s : ℂ) :
     zetaEntireCompletion (conj s) = conj (zetaEntireCompletion s) := by
   rcases eq_or_ne s 0 with rfl | hs0

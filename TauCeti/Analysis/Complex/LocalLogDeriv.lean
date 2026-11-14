@@ -180,6 +180,34 @@ theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBal
   rw [hφeq z hzb hfz, add_sub_cancel_left]
   exact hφb z hzb
 
+/-- Specializes `exists_differentiableOn_logDeriv_eq_finsum_add` to `r = R / 2`, bounding the
+holomorphic remainder by `48 / R * log M` on `closedBall z₀ (R / 4)`. -/
+private theorem exists_differentiableOn_logDeriv_eq_finsum_half_add
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hR : 0 < R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
+    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
+    ∃ φ : ℂ → ℂ, DifferentiableOn ℂ φ (ball z₀ (R / 2)) ∧
+      (∀ w ∈ closedBall z₀ (R / 4), ‖φ w‖ ≤ 48 / R * Real.log M) ∧
+      ∀ u ∈ ball z₀ (R / 2), f u ≠ 0 →
+        logDeriv f u = (∑ᶠ ρ, (divisor f (closedBall z₀ (R / 2)) ρ : ℂ) / (u - ρ)) + φ u := by
+  have hM1 : 1 ≤ M :=
+    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
+      hR hz₀ hM
+  obtain ⟨φ, hφd, hφb, hφeq⟩ := hf.exists_differentiableOn_logDeriv_eq_finsum_add
+    (r := R / 2) (by linarith) (by linarith) hz₀ hM
+  refine ⟨φ, hφd, fun w hw ↦ ?_, hφeq⟩
+  have hw' : ‖w - z₀‖ ≤ R / 4 := by simpa [dist_eq_norm] using hw
+  have hwb : w ∈ ball z₀ (R / 2) := by
+    rw [mem_ball, dist_eq_norm]
+    linarith
+  refine (hφb w hwb).trans (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
+  calc 4 * (R / 2 + ‖w - z₀‖) / (R / 2 - ‖w - z₀‖) ^ 2
+      ≤ 4 * (R / 2 + R / 4) / (R / 2 - R / 4) ^ 2 := by
+        have : 0 < R / 2 - R / 4 := by linarith
+        gcongr
+    _ = 48 / R := by
+        field_simp
+        ring
+
 /-- **Landau's local logarithmic-derivative lemma** in the classical normalization. Let `f` be
 analytic on `closedBall z₀ R` with `0 < R`, `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`.
 At every `z` with `‖z - z₀‖ ≤ R / 4` and `f z ≠ 0`, the logarithmic derivative of `f` differs
@@ -191,18 +219,13 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
     {z : ℂ} (hz : ‖z - z₀‖ ≤ R / 4) (hfz : f z ≠ 0) :
     ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ (R / 2)) ρ : ℂ) / (z - ρ)‖ ≤
       48 / R * Real.log M := by
-  have hM1 : 1 ≤ M :=
-    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
-      hR hz₀ hM
-  refine (hf.norm_logDeriv_sub_finsum_divisor_le (by linarith) hz₀ hM (by linarith) hfz).trans
-    (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
-  calc 4 * (R / 2 + ‖z - z₀‖) / (R / 2 - ‖z - z₀‖) ^ 2
-      ≤ 4 * (R / 2 + R / 4) / (R / 2 - R / 4) ^ 2 := by
-        have h4 : 0 < R / 2 - R / 4 := by linarith
-        gcongr
-    _ = 48 / R := by
-        field_simp
-        ring
+  obtain ⟨φ, _, hφ4, hφeq⟩ := hf.exists_differentiableOn_logDeriv_eq_finsum_half_add hR hz₀ hM
+  have hzb : z ∈ ball z₀ (R / 2) := by
+    rw [mem_ball, dist_eq_norm]
+    linarith
+  have hzc : z ∈ closedBall z₀ (R / 4) := by rwa [mem_closedBall, dist_eq_norm]
+  rw [hφeq z hzb hfz, add_sub_cancel_left]
+  exact hφ4 z hzc
 
 /-- **Subtracted local logarithmic-derivative bound.** Under the hypotheses of
 `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`, subtracting the expansion at `z₀`
@@ -216,26 +239,9 @@ theorem norm_logDeriv_sub_logDeriv_sub_finsum_divisor_le
     ‖logDeriv f z - logDeriv f z₀ -
         ∑ᶠ ρ, (divisor f (closedBall z₀ (R / 2)) ρ : ℂ) * (1 / (z - ρ) - 1 / (z₀ - ρ))‖ ≤
       384 * ‖z - z₀‖ / R ^ 2 * Real.log M := by
-  have hM1 : 1 ≤ M :=
-    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
-      hR hz₀ hM
-  obtain ⟨φ, hφd, hφb, hφeq⟩ := hf.exists_differentiableOn_logDeriv_eq_finsum_add
-    (r := R / 2) (by linarith) (by linarith) hz₀ hM
   -- `φ` is bounded by `48 / R * log M` on `closedBall z₀ (R / 4)`, so Cauchy's estimate on discs
   -- of radius `R / 8` bounds `deriv φ` on `closedBall z₀ (R / 8)`.
-  have hφ4 (w : ℂ) (hw : w ∈ closedBall z₀ (R / 4)) : ‖φ w‖ ≤ 48 / R * Real.log M := by
-    have hw' : ‖w - z₀‖ ≤ R / 4 := by simpa [dist_eq_norm] using hw
-    have hwb : w ∈ ball z₀ (R / 2) := by
-      rw [mem_ball, dist_eq_norm]
-      linarith
-    refine (hφb w hwb).trans (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
-    calc 4 * (R / 2 + ‖w - z₀‖) / (R / 2 - ‖w - z₀‖) ^ 2
-        ≤ 4 * (R / 2 + R / 4) / (R / 2 - R / 4) ^ 2 := by
-          have : 0 < R / 2 - R / 4 := by linarith
-          gcongr
-      _ = 48 / R := by
-          field_simp
-          ring
+  obtain ⟨φ, hφd, hφ4, hφeq⟩ := hf.exists_differentiableOn_logDeriv_eq_finsum_half_add hR hz₀ hM
   have hderiv (u : ℂ) (hu : u ∈ closedBall z₀ (R / 8)) :
       ‖deriv φ u‖ ≤ 384 / R ^ 2 * Real.log M := by
     have h8 : 0 < R / 8 := by linarith

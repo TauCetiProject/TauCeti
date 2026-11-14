@@ -105,11 +105,6 @@ variable {f : ℂ → ℂ} (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
   (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
     ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
 
-include hf hf0 in
-private theorem zero_notMem_divisor_support :
-    (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support :=
-  Function.notMem_support.mpr ((hf.analyticAt 0).divisor_apply_eq_zero hf0)
-
 include hsum in
 /-- Weighted inverse-square summability makes the native divisor product entire. -/
 @[fun_prop]
@@ -151,8 +146,8 @@ theorem divisorProductOne_eq_zero_iff (z : ℂ) : divisorProductOne f z = 0 ↔ 
   constructor
   · intro hz
     by_contra hn
-    exact divisorProductOne_ne_zero hsum (zero_notMem_divisor_support hf hf0)
-      (Function.notMem_support.mpr ((hf.analyticAt z).divisor_apply_eq_zero hn)) hz
+    exact divisorProductOne_ne_zero hsum ((hf.analyticAt 0).notMem_divisor_support hf0)
+      ((hf.analyticAt z).notMem_divisor_support hn) hz
   · rw [divisorProductOne_def, tprod_weierstrassFactorOne_pow_eq_zero_iff _ _ hsum]
     intro hz
     have hz0 : z ≠ 0 := by rintro rfl; exact hf0 hz
@@ -177,7 +172,7 @@ include hf hf0 hsum in
 /-- For an entire function nonzero at zero, the product has exactly its native divisor. -/
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
-  have h0 := zero_notMem_divisor_support hf hf0
+  have h0 := (hf.analyticAt 0).notMem_divisor_support (U := Set.univ) hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
   have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
     fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
@@ -196,8 +191,8 @@ theorem divisor_divisorProductOne :
       hinj (inv_mul_cancel₀ (coe_ne_zero_of_mem_divisor_support h0 ρ))
     rw [← divisorProductOne_eq] at ho
     rw [ho]
-    simpa only [ENat.map_natCast, WithTop.untop₀_coe] using
-      Int.toNat_of_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa z)
+    simpa only [ENat.map_natCast, WithTop.untop₀_coe, Int.cast_id] using
+      hfa.natCast_toNat_divisor (R := ℤ) z
   · have hdz : MeromorphicOn.divisor f Set.univ z = 0 := by
       simpa only [Function.mem_support, not_not] using hz
     rw [(hpa z trivial).analyticOrderAt_eq_zero.mpr (divisorProductOne_ne_zero hsum h0 hz), hdz]

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
@@ -19,7 +19,10 @@ has the same order, at the reflected point. Mathlib records the differentiable c
 with the invariance of `meromorphicOrderAt`.
 
 These are the statements needed to transport the analytic properties of a completed L-function to
-its dual, whose completed function is the reflection of the original one.
+its dual, whose completed function is the reflection of the original one. Combining this order
+invariance with a functional symmetry `f (1 - z) = c * conj (f (conj z))` shows that the
+whole-plane divisor of `f` is invariant under `z ↦ 1 - conj z` and induces an involutive
+permutation of its support.
 
 ## Main results
 
@@ -28,6 +31,9 @@ its dual, whose completed function is the reflection of the original one.
   reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
+* `TauCeti.divisor_one_sub_conj`, `TauCeti.divisorSupportOneSubConj`: invariance of the
+  whole-plane divisor and the induced support permutation `ρ ↦ 1 - conj ρ` under
+  `f (1 - z) = c * conj (f (conj z))`.
 -/
 
 public section
@@ -91,3 +97,64 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       ⟨conj ∘ g ∘ conj, analyticAt_conj_conj_iff.2 hg, by simpa using hg0, ?_⟩
     filter_upwards [hconj.eventually hfg] with z hz
     simp [hz]
+
+/-- Under a functional-conjugation symmetry `f (1 - z) = c * conj (f (conj z))`, the whole-plane
+divisor of `f` is invariant under `z ↦ 1 - conj z`. -/
+theorem TauCeti.divisor_one_sub_conj {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) (z : ℂ) :
+    MeromorphicOn.divisor f Set.univ (1 - conj z) = MeromorphicOn.divisor f Set.univ z := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have hf0 : f = 0 := funext fun w ↦ by simpa using hfe (1 - w)
+    simp [hf0]
+  · by_cases hm : MeromorphicOn f Set.univ
+    · have hm1 : meromorphicOrderAt (fun w : ℂ ↦ f (1 - w)) (conj z) =
+          meromorphicOrderAt f (1 - conj z) :=
+        meromorphicOrderAt_comp_of_deriv_ne_zero (f := f) (g := fun w : ℂ ↦ 1 - w) (by fun_prop)
+          (by simp)
+      have hsmul : (fun w : ℂ ↦ c * conj (f (conj w))) = c • (conj ∘ f ∘ conj) := by
+        ext w
+        simp [Function.comp_def, smul_eq_mul]
+      have hm2 : meromorphicOrderAt (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
+          meromorphicOrderAt f z := by
+        rw [hsmul, meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc,
+          TauCeti.meromorphicOrderAt_conj_conj, Complex.conj_conj]
+      have hmo : meromorphicOrderAt f (1 - conj z) = meromorphicOrderAt f z := by
+        rw [← hm1, funext hfe, hm2]
+      rw [hm.divisor_apply (Set.mem_univ _), hm.divisor_apply (Set.mem_univ _), hmo]
+    · simp [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm]
+
+/-- Under a functional-conjugation symmetry `f (1 - z) = c * conj (f (conj z))`, the involution
+`ρ ↦ 1 - conj ρ` restricts to a permutation of `(MeromorphicOn.divisor f Set.univ).support`. -/
+noncomputable def TauCeti.divisorSupportOneSubConj {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) :
+    Equiv.Perm (MeromorphicOn.divisor f Set.univ).support :=
+  Function.Involutive.toPerm
+    (fun ρ ↦ ⟨1 - conj (ρ : ℂ), Function.mem_support.mpr <| by
+      rw [divisor_one_sub_conj hfe]
+      exact Function.mem_support.mp ρ.property⟩)
+    fun ρ ↦ by ext; simp
+
+/-- The support permutation `divisorSupportOneSubConj` acts on the underlying point by
+`ρ ↦ 1 - conj ρ`. -/
+@[simp]
+theorem TauCeti.coe_divisorSupportOneSubConj_apply {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
+    (ρ : (MeromorphicOn.divisor f Set.univ).support) :
+    (divisorSupportOneSubConj hfe ρ : ℂ) = 1 - conj (ρ : ℂ) :=
+  (rfl)
+
+/-- `divisorSupportOneSubConj` is its own inverse. -/
+@[simp]
+theorem TauCeti.divisorSupportOneSubConj_symm {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) :
+    (divisorSupportOneSubConj hfe).symm = divisorSupportOneSubConj hfe :=
+  (rfl)
+
+/-- `divisorSupportOneSubConj` is an involution on the divisor support. -/
+@[simp]
+theorem TauCeti.divisorSupportOneSubConj_apply_apply {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
+    (ρ : (MeromorphicOn.divisor f Set.univ).support) :
+    divisorSupportOneSubConj hfe (divisorSupportOneSubConj hfe ρ) = ρ := by
+  ext
+  simp

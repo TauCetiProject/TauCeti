@@ -232,15 +232,12 @@ theorem one_zero_le_logDeriv (hne : χ ≠ 1) {β σ : ℝ} (hβ : 0 < β)
   have hσβ : 0 < σ - β := by linarith [hσ.1]
   have hm_pos : 1 ≤ analyticOrderNatAt χ.LFunction β := by
     have haL := (DirichletCharacter.differentiable_LFunction hne).analyticAt (β : ℂ)
-    have hne_zero : analyticOrderAt χ.LFunction β ≠ 0 := haL.analyticOrderAt_ne_zero.mpr hzero
     have hne_top : analyticOrderAt χ.LFunction β ≠ ⊤ := by
       rw [← analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hβre]
       exact analyticOrderAt_dirichletData_entireCompletion_ne_top χ hχ hne β
-    cases ho : analyticOrderAt χ.LFunction β with
-    | top => exact (hne_top ho).elim
-    | coe n =>
-      simp only [analyticOrderNatAt, ho, ENat.toNat_natCast]
-      exact Nat.pos_of_ne_zero (by simpa [ho] using hne_zero)
+    rw [Nat.one_le_iff_ne_zero, ← Nat.cast_ne_zero (R := ℕ∞),
+      Nat.cast_analyticOrderNatAt hne_top]
+    exact haL.analyticOrderAt_ne_zero.mpr hzero
   have hre_sub : (1 / ((σ : ℂ) - (β : ℂ))).re = 1 / (σ - β) := by
     rw [← ofReal_sub, ← ofReal_one, ← ofReal_div, ofReal_re]
   have hsingle := finite_zero_sum_le_logDeriv χ hχ hne {(β : ℂ)}

@@ -71,6 +71,8 @@ half-plane.
   relation, with the additive constant gone.
 * `TauCeti.logDeriv_conj_eq_conj_logDeriv` -- the logarithmic derivative of a function
   intertwining conjugation with `w ↦ u * conj w` intertwines conjugation with conjugation.
+* `TauCeti.logDeriv_one_sub_conj` -- under `f (1 - z) = u * conj (f (conj z))`, the logarithmic
+  derivative satisfies `logDeriv f (1 - conj z) = -conj (logDeriv f z)`.
 * `TauCeti.logDeriv_deriv_conj_eq_conj_logDeriv_deriv` -- applied to the first derivative: the
   pre-Schwarzian derivative intertwines conjugation with conjugation.
 * `TauCeti.im_logDeriv_deriv_eq_zero` -- so it is real on the real axis.
@@ -177,6 +179,25 @@ theorem logDeriv_conj_eq_conj_logDeriv (hΩopen : IsOpen Ω)
     have h2 : F z = 0 := by simpa using hrefl _ hz'
     simp [logDeriv_apply, h1, h2]
   · exact logDeriv_conj_eq_conj_logDeriv_of_ne_zero hu hΩopen hrefl hz
+
+/-- Under a functional-conjugation symmetry `f (1 - z) = u * conj (f (conj z))`, the logarithmic
+derivative satisfies `logDeriv f (1 - conj z) = -conj (logDeriv f z)`. -/
+theorem logDeriv_one_sub_conj
+    (hfe : ∀ z : ℂ, f (1 - z) = u * (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) (z : ℂ) :
+    logDeriv f (1 - (starRingEnd ℂ) z) = -(starRingEnd ℂ) (logDeriv f z) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · have hf0 : f = 0 := funext fun w ↦ by simpa using hfe (1 - w)
+    simp [hf0, logDeriv_apply]
+  · have hlhs : logDeriv (fun w : ℂ ↦ f (1 - w)) ((starRingEnd ℂ) z) =
+        -logDeriv f (1 - (starRingEnd ℂ) z) := by
+      rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
+    have hrhs : logDeriv (fun w : ℂ ↦ u * (starRingEnd ℂ) (f ((starRingEnd ℂ) w)))
+        ((starRingEnd ℂ) z) = (starRingEnd ℂ) (logDeriv f z) := by
+      have hmul : (fun w : ℂ ↦ u * (starRingEnd ℂ) (f ((starRingEnd ℂ) w))) =
+          fun w ↦ u * ((starRingEnd ℂ) ∘ f ∘ (starRingEnd ℂ)) w := rfl
+      rw [hmul, logDeriv_const_mul _ _ hu, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
+      simp
+    exact neg_eq_iff_eq_neg.mp (by rw [← hlhs, funext hfe, hrhs])
 
 /-- **The pre-Schwarzian derivative of a reflection-symmetric function is conjugation-symmetric,
 for a nondegenerate multiplier.** Differentiating the affine reflection identity of `F` removes its
