@@ -38,6 +38,10 @@ of a smooth family of compactly supported functions with respect to a parameter.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`: `‖Dⁱ (y ↦ Df(y) v)‖ ≤ ‖D^{i+1} f‖ ‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le`: a bound on the derivatives of `f`
   up to order `k + 1` bounds those of `y ↦ Df(y) v` up to order `k`.
+* `ContDiffAt.norm_iteratedFDeriv_fderiv_apply_le`: pointwise form of
+  `‖Dⁱ (y ↦ Df(y) v) (x)‖ ≤ ‖D^{i+1} f (x)‖ ‖v‖` for `C^{i+1}` at `x`, without `minSmoothness`.
+* `TauCeti.isBigO_iteratedFDeriv_fderiv_apply`, `ContDiff.isBigO_iteratedFDeriv_fderiv_apply`: if
+  `f` is eventually (or globally) `C^{i+1}` and `D^{i+1} f = O(ρ)`, then `Dⁱ (y ↦ Df(y) v) = O(ρ)`.
 * `ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc`: the pointwise form
   `Dⁱ (y ↦ Df(y) v) (x) m = D^{i+1} f (x) (m, v)`, with `v` in the last slot.
 * `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
@@ -107,6 +111,46 @@ theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le {n : WithTop �
     ∀ i ≤ k, ∀ x, ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ C * ‖v‖ := fun i hi x ↦
   (hf.norm_iteratedFDeriv_fderiv_apply_le ((minSmoothness_monotone (by gcongr)).trans hk) v x).trans
     (mul_le_mul_of_nonneg_right (hC (i + 1) (by omega) x) (norm_nonneg v))
+
+/-- If `f` is `C^{i+1}` at `x`, the `i`-th iterated derivative of the directional derivative
+`y ↦ Df(y) v` at `x` is bounded by `‖D^{i+1} f (x)‖ ‖v‖`. Unlike
+`ContDiff.norm_iteratedFDeriv_fderiv_apply_le`, this needs smoothness only at `x` and no
+`minSmoothness` hypothesis. -/
+theorem ContDiffAt.norm_iteratedFDeriv_fderiv_apply_le {n : WithTop ℕ∞} {f : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) {i : ℕ} (hi : (i + 1 : WithTop ℕ∞) ≤ n) (v : E) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ := by
+  have hv : (fun y ↦ fderiv 𝕜 f y v) = ContinuousLinearMap.apply 𝕜 F v ∘ fderiv 𝕜 f := by
+    ext
+    simp
+  have hL : ‖ContinuousLinearMap.apply 𝕜 F v‖ ≤ ‖v‖ :=
+    (ContinuousLinearMap.apply 𝕜 F v).opNorm_le_bound (norm_nonneg v) fun g ↦ by
+      simpa only [ContinuousLinearMap.apply_apply, mul_comm] using g.le_opNorm v
+  rw [hv]
+  refine ((ContinuousLinearMap.apply 𝕜 F v).norm_iteratedFDeriv_comp_left
+    (hf.fderiv_right hi) le_rfl).trans ?_
+  rw [norm_iteratedFDeriv_fderiv, mul_comm]
+  exact mul_le_mul_of_nonneg_left hL (norm_nonneg _)
+
+open Asymptotics in
+/-- If `f` is eventually `C^{i+1}` along a filter `l` and `D^{i+1} f = O(ρ)` along `l`, then the
+`i`-th iterated derivative of the directional derivative `y ↦ Df(y) v` is `O(ρ)` along `l`. -/
+theorem TauCeti.isBigO_iteratedFDeriv_fderiv_apply {G : Type*} [Norm G]
+    {n : WithTop ℕ∞} {f : E → F} {l : Filter E} (hf : ∀ᶠ x in l, ContDiffAt 𝕜 n f x)
+    {i : ℕ} (hi : (i + 1 : WithTop ℕ∞) ≤ n) {ρ : E → G}
+    (hρ : iteratedFDeriv 𝕜 (i + 1) f =O[l] ρ) (v : E) :
+    iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) =O[l] ρ :=
+  (IsBigO.of_bound ‖v‖ (hf.mono fun x hx ↦ by
+    simpa only [mul_comm] using hx.norm_iteratedFDeriv_fderiv_apply_le hi v)).trans hρ
+
+open Asymptotics in
+/-- If `f` is `C^{i+1}` and `D^{i+1} f = O(ρ)` along a filter `l`, then the `i`-th iterated
+derivative of the directional derivative `y ↦ Df(y) v` is `O(ρ)` along `l`. -/
+theorem ContDiff.isBigO_iteratedFDeriv_fderiv_apply {G : Type*} [Norm G]
+    {n : WithTop ℕ∞} {f : E → F} (hf : ContDiff 𝕜 n f) {i : ℕ}
+    (hi : (i + 1 : WithTop ℕ∞) ≤ n) {l : Filter E} {ρ : E → G}
+    (hρ : iteratedFDeriv 𝕜 (i + 1) f =O[l] ρ) (v : E) :
+    iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) =O[l] ρ :=
+  TauCeti.isBigO_iteratedFDeriv_fderiv_apply (.of_forall fun _ ↦ hf.contDiffAt) hi hρ v
 
 /-- **The innermost derivative of an iterated derivative.** If `f` is `C^{k+1}` at `x`, the `k`-th
 iterated derivative of the directional derivative `y ↦ Df(y) v` at `x` is the `(k + 1)`-th

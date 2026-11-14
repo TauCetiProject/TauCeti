@@ -40,7 +40,8 @@ A gauge carries `x` to `y` exactly when its logarithmic derivative is the differ
 connection forms and it carries the section of `x` to that of `y`
 (`TauCeti.Vortex.gaugeTransform_eq_iff`). Since `du = i u Im (u⁻¹ du)`, a differentiable gauge is
 one order smoother than its logarithmic derivative
-(`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeForm`).
+(`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeForm`), so a differentiable gauge carrying one `C^n`
+field to another is `C^(n+1)` (`TauCeti.Vortex.contDiff_coe_of_contDiff_gaugeTransform`).
 
 ## References
 
@@ -482,6 +483,42 @@ theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
 
+/-- **A differentiable gauge between `C^n` fields is `C^(n+1)`.** Converse to
+`contDiff_gaugeTransform`: if `u` is differentiable and both `x` and `gaugeTransform u x` are
+`C^n` (`n ≤ ∞`), then `gaugeForm u` is `C^n` from the connection difference and `u` is `C^(n+1)`
+by `contDiff_coe_of_contDiff_gaugeForm`. -/
+theorem contDiff_coe_of_contDiff_gaugeTransform {n : ℕ∞} {u : ℂ → Circle}
+    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x)
+    (hux : ContDiff ℝ n (gaugeTransform u x)) :
+    ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) := by
+  have hform : gaugeForm u = fun z ↦
+      (x z 0 - gaugeTransform u x z 0) • reCLM + (x z 1 - gaugeTransform u x z 1) • imCLM := by
+    funext z
+    refine ContinuousLinearMap.coe_injective (Complex.basisOneI.ext fun i ↦ ?_)
+    fin_cases i <;> simp [gaugeTransform_apply]
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := (contDiff_piLp _).mp hx i
+  have huxc (i : Fin 4) : ContDiff ℝ n (fun z ↦ gaugeTransform u x z i) :=
+    (contDiff_piLp _).mp hux i
+  refine contDiff_coe_of_contDiff_gaugeForm hu ?_
+  rw [hform]
+  exact (((hc 0).sub (huxc 0)).smul contDiff_const).add
+    (((hc 1).sub (huxc 1)).smul contDiff_const)
+
+/-- For a differentiable gauge `u` and a `C^n` field `x` (`n ≤ ∞`), `gaugeTransform u x` is `C^n`
+if and only if `u` is `C^(n+1)`. -/
+theorem contDiff_gaugeTransform_iff {n : ℕ∞} {u : ℂ → Circle}
+    (hu : Differentiable ℝ (fun z ↦ (u z : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (gaugeTransform u x) ↔ ContDiff ℝ (n + 1) (fun z ↦ (u z : ℂ)) :=
+  ⟨contDiff_coe_of_contDiff_gaugeTransform hu hx, fun hu' ↦ contDiff_gaugeTransform hu' hx⟩
+
+/-- Smooth framed gauges preserve `C^n` regularity of fields for `n ≤ ∞`. -/
+theorem contDiff_framedGaugeGroup_smul {n : ℕ∞} (u : framedGaugeGroup)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n (u • x) :=
+  contDiff_gaugeTransform (((mem_framedGaugeGroup _).1 u.2).1.of_le (mod_cast le_top)) hx
+
 /-- The logarithmic derivative of a `C²` circle-valued gauge is closed. -/
 theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z) (a b : ℂ) :
@@ -567,12 +604,30 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
   · linear_combination (u z : ℂ).re * h₁ + (u z : ℂ).im * h₂ - equation x z 1 * hn
   · linear_combination -(u z : ℂ).im * h₁ + (u z : ℂ).re * h₂ - equation x z 2 * hn
 
+/-- Smooth framed gauges preserve the vortex equations in both directions. -/
+theorem equation_framedGaugeGroup_smul_eq_zero_iff (u : framedGaugeGroup)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hx : DifferentiableAt ℝ x z) :
+    equation (u • x) z = 0 ↔ equation x z = 0 :=
+  equation_gaugeTransform_eq_zero_iff
+    ((((mem_framedGaugeGroup _).1 u.2).1.of_le (by simp)).contDiffAt)
+    fun _ ↦ ((contDiffAt_piLp_apply 2 (n := 1)).differentiableAt one_ne_zero).comp z hx
+
 /-- The section transforms by the charge-one representation, not its square. -/
 @[simp]
 theorem sectionValue_gaugeTransform (u : ℂ → Circle)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (gaugeTransform u x) z = (u z : ℂ) * sectionValue x z := by
   apply Complex.ext <;> simp [sectionValue_apply, gaugeTransform] <;> ring
+
+/-- Gauge transformations preserve the squared section amplitude `p² + q²`. -/
+@[simp]
+theorem gaugeTransform_apply_two_sq_add_apply_three_sq (u : ℂ → Circle)
+    (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeTransform u x z 2 ^ 2 + gaugeTransform u x z 3 ^ 2 = x z 2 ^ 2 + x z 3 ^ 2 := by
+  have hn := Circle.re_sq_add_im_sq (u z)
+  simp only [gaugeTransform_apply, PiLp.toLp_apply, Matrix.cons_val_two, Matrix.cons_val_three,
+    Matrix.head_cons, Matrix.tail_cons]
+  linear_combination (x z 2 ^ 2 + x z 3 ^ 2) * hn
 
 /-- **A gauge relates two fields exactly when it matches their connections and sections.** The
 logarithmic derivative `Im (u⁻¹ du)` is the connection difference
@@ -651,6 +706,13 @@ theorem tendsto_sectionValue_gaugeTransform {u : ℂ → Circle}
     have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtype_val
     simpa only [Function.comp_def, Circle.coe_one] using (hc.tendsto 1).comp hu
   simpa only [sectionValue_gaugeTransform, mul_assoc, one_mul] using huc.mul hx
+
+/-- Smooth framed gauges preserve the end framing `α · phase → 1`. -/
+theorem tendsto_sectionValue_framedGaugeGroup_smul (u : framedGaugeGroup)
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {phase : ℂ → ℂ}
+    (hx : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1)) :
+    Tendsto (fun z ↦ sectionValue (u • x) z * phase z) (cocompact ℂ) (𝓝 1) :=
+  tendsto_sectionValue_gaugeTransform ((mem_framedGaugeGroup _).1 u.2).2 hx
 
 /-- The phase gauges already used in the deformation complex have logarithmic derivative
 `df`, independently of the choice of real lift. -/

@@ -20,10 +20,15 @@ integrable on the plane. This file shows that such gauges never relate two field
 space `A_m^k` (`TauCeti.Vortex.framedFieldSpace`). If a `C²` gauge `u` carries a field `x` of
 `A_m^k`, `k ≥ 2`, to another field of `A_m^k`, then `u ∈ G_(k+1)`
 (`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`). So two representatives in
-`A_m^k` of the same smooth framed gauge orbit differ by an element of `G_(k+1)`: every smooth gauge
-equivalence between points of `A_m^k` is already an equivalence under `G_(k+1)`. Together with
-`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace`, a `C²` gauge carries a field of `A_m^k` into
-`A_m^k` exactly when it lies in `G_(k+1)`
+`A_m^k` of the same smooth framed gauge orbit differ by an element of `G_(k+1)`
+(`TauCeti.Vortex.coe_mem_sobolevGaugeGroup_of_smul_eq`,
+`TauCeti.Vortex.exists_sobolevGaugeGroup_smul_eq_of_exists_framedGaugeGroup_smul_eq`); conversely,
+any element of `G_(k+1)` carrying one smooth field of `A_m^k` to another has smooth connection
+form `Im (u⁻¹ du)` and is therefore a smooth framed gauge
+(`TauCeti.Vortex.coe_mem_framedGaugeGroup_of_smul_eq`,
+`TauCeti.Vortex.exists_framedGaugeGroup_smul_eq_iff_exists_sobolevGaugeGroup_smul_eq`). Together
+with `TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace`, a `C²` gauge carries a field of `A_m^k`
+into `A_m^k` exactly when it lies in `G_(k+1)`
 (`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_iff`).
 
 The argument reads off `u` from the two fields, with `ω = Im (u⁻¹ du)` (`TauCeti.Vortex.gaugeForm`)
@@ -276,5 +281,52 @@ theorem gaugeTransform_mem_framedFieldSpace_iff {k : ℕ} (hk : 1 < k)
       u ∈ sobolevGaugeGroup (s := k + 1) (by norm_cast; omega) :=
   ⟨mem_sobolevGaugeGroup_of_mem_framedFieldSpace hk hx hu,
     fun h ↦ gaugeTransform_mem_framedFieldSpace hk h hx⟩
+
+section OrbitComparison
+
+variable {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {x y : framedFieldSpace f m k}
+
+/-- A smooth framed gauge carrying one field of `A_m^k`, `k ≥ 2`, to another belongs to the
+Sobolev gauge group `G_(k+1)`. -/
+theorem coe_mem_sobolevGaugeGroup_of_smul_eq {u : framedGaugeGroup}
+    (hu : u • (y : ℂ → EuclideanSpace ℝ (Fin 4)) = x) :
+    (u : ℂ → Circle) ∈ sobolevGaugeGroup hs := by
+  have huc : ContDiff ℝ 2 fun z ↦ ((u : ℂ → Circle) z : ℂ) :=
+    (((mem_framedGaugeGroup _).1 u.2).1).of_le (by simp)
+  exact mem_sobolevGaugeGroup_of_mem_framedFieldSpace Fact.out y.2 huc
+    (by rw [← framedGaugeGroup_smul, hu]; exact x.2)
+
+/-- Two fields of `A_m^k`, `k ≥ 2`, related by a smooth framed gauge lie in the same
+`G_(k+1)`-orbit, even though an arbitrary smooth framed gauge need not belong to `G_(k+1)`. -/
+theorem exists_sobolevGaugeGroup_smul_eq_of_exists_framedGaugeGroup_smul_eq
+    (h : ∃ u : framedGaugeGroup, u • (y : ℂ → EuclideanSpace ℝ (Fin 4)) = x) :
+    ∃ u : sobolevGaugeGroup hs, u • y = x := by
+  obtain ⟨u, hu⟩ := h
+  exact ⟨⟨u, coe_mem_sobolevGaugeGroup_of_smul_eq hu⟩,
+    Subtype.ext (by rw [coe_sobolevGaugeGroup_smul, ← framedGaugeGroup_smul]; exact hu)⟩
+
+/-- A Sobolev gauge in `G_(k+1)`, `k ≥ 2`, carrying one smooth field of `A_m^k` to another is
+automatically a smooth framed gauge (`∈ framedGaugeGroup`). -/
+theorem coe_mem_framedGaugeGroup_of_smul_eq
+    (hx : ContDiff ℝ ∞ (x : ℂ → EuclideanSpace ℝ (Fin 4)))
+    (hy : ContDiff ℝ ∞ (y : ℂ → EuclideanSpace ℝ (Fin 4)))
+    {u : sobolevGaugeGroup hs} (hu : u • y = x) :
+    (u : ℂ → Circle) ∈ framedGaugeGroup :=
+  mem_framedGaugeGroup_of_mem_sobolevGaugeGroup_of_contDiff_gaugeTransform
+    (by linarith [(by exact_mod_cast (Fact.out : 1 < k) : (1 : ℝ) < k)]) u.2 hy
+    (by rwa [← coe_sobolevGaugeGroup_smul, hu])
+
+/-- **Smooth vs. Sobolev gauge equivalence on `A_m^k`.** Two smooth fields of `A_m^k`, `k ≥ 2`,
+are related by a smooth framed gauge if and only if they are related by an element of `G_(k+1)`. -/
+theorem exists_framedGaugeGroup_smul_eq_iff_exists_sobolevGaugeGroup_smul_eq
+    (hx : ContDiff ℝ ∞ (x : ℂ → EuclideanSpace ℝ (Fin 4)))
+    (hy : ContDiff ℝ ∞ (y : ℂ → EuclideanSpace ℝ (Fin 4))) :
+    (∃ u : framedGaugeGroup, u • (y : ℂ → EuclideanSpace ℝ (Fin 4)) = x) ↔
+      ∃ u : sobolevGaugeGroup hs, u • y = x := by
+  refine ⟨exists_sobolevGaugeGroup_smul_eq_of_exists_framedGaugeGroup_smul_eq,
+    fun ⟨u, hu⟩ ↦ ⟨⟨u, coe_mem_framedGaugeGroup_of_smul_eq hx hy hu⟩, ?_⟩⟩
+  simpa only [framedGaugeGroup_smul, ← coe_sobolevGaugeGroup_smul] using congrArg Subtype.val hu
+
+end OrbitComparison
 
 end TauCeti.Vortex
