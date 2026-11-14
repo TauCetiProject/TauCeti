@@ -50,6 +50,8 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
   components, and the bound `‖x‖ + ‖Du‖_p ≤ √2 ‖(x, Du)‖`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
   with its exact and almost-everywhere characteristic equations.
+* `TauCeti.WeakDerivStep.mkLine`: on the line, the element with a given value and a given weak
+  derivative in the direction `1`.
 * `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
   `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral`: on the line, the squared norms of a
   `W^{1,2}` path and of its weak derivative are the integrals of `‖φ‖²` and `‖φ'‖²` for a `C¹`
@@ -453,6 +455,62 @@ theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
   simp [← toSpanSingleton_deriv]
 
 end Line
+
+/-! ### Elements from a weak derivative on the line -/
+
+section LineMk
+
+variable [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
+
+/-- An element of a weak-derivative graph over an open subset of the line, from a value `x` and
+the weak derivative `g` of the selected field `base x` in the direction `1`. Its adjoined weak
+Fréchet derivative is the field `s ↦ (t ↦ t • g s)`. -/
+def mkLine {Omega : Opens ℝ} (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (volume.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn volume Omega (base x) g 1) : WeakDerivStep volume Omega p base :=
+  mk base x
+    ((ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp
+      g) <| by
+    rw [hasWeakFDerivOn_iff]
+    intro v
+    have hv := h.smul_direction v
+    simp only [smul_eq_mul, mul_one] at hv
+    refine hv.congr_ae_deriv ?_
+    filter_upwards [(ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry
+      |>.toContinuousLinearMap.coeFn_compLp g] with t ht
+    simp [ht]
+
+@[simp]
+theorem prev_mkLine {Omega : Opens ℝ} (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ)))
+    (x : X) (g : Lp F p (volume.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn volume Omega (base x) g 1) : prev base (mkLine base x g h) = x :=
+  prev_mk _ _ _ _
+
+/-- The weak derivative of `mkLine base x g h` in the direction `1` is `g`. -/
+@[simp]
+theorem apply_one_compLp_weakFDeriv_mkLine {Omega : Opens ℝ}
+    (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (volume.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn volume Omega (base x) g 1) :
+    (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base (mkLine base x g h)) = g := by
+  rw [mkLine, weakFDeriv_mk]
+  refine Lp.ext ?_
+  filter_upwards [(ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp _,
+    (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry
+      |>.toContinuousLinearMap.coeFn_compLp g] with t h₁ h₂
+  rw [h₁, h₂]
+  simp
+
+/-- The adjoined weak derivative of `mkLine base x g h` has the norm of `g`. -/
+@[simp]
+theorem norm_weakFDeriv_mkLine {Omega : Opens ℝ}
+    (base : X →L[ℝ] Lp F p (volume.restrict (Omega : Set ℝ))) (x : X)
+    (g : Lp F p (volume.restrict (Omega : Set ℝ)))
+    (h : HasWeakLineDerivOn volume Omega (base x) g 1) :
+    ‖weakFDeriv base (mkLine base x g h)‖ = ‖g‖ := by
+  rw [← Lp.norm_apply_one_compLp, apply_one_compLp_weakFDeriv_mkLine]
+
+end LineMk
 
 end WeakDerivStep
 
