@@ -11,7 +11,7 @@ import Mathlib.MeasureTheory.Function.Floor
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.SumCoeff
-import TauCeti.NumberTheory.LSeries.SumCoeff
+import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
 
 /-!
@@ -74,20 +74,20 @@ private theorem isBigO_fract :
 theorem integrableOn_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
     IntegrableOn (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
       (Ioi 1) :=
-  LSeries.integrableOn_mul_cpow_of_isBigO locallyIntegrableOn_fract isBigO_fract hs
+  integrableOn_mul_cpow_of_isBigO locallyIntegrableOn_fract isBigO_fract hs
 
 /-- The fractional-part integral in the Abel formula has norm at most `1 / s.re`
 on the right half-plane, including at `s = 1`. -/
 theorem norm_integral_fract_mul_cpow_le {s : ℂ} (hs : 0 < s.re) :
     ‖∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ ≤ 1 / s.re :=
-  LSeries.norm_integral_mul_cpow_le_of_bound (fun t _ ↦ norm_fract_le t) hs
+  norm_integral_mul_cpow_le_of_bound (fun t _ ↦ norm_fract_le t) hs
 
 /-- The fractional-part integral in the Abel formula is complex-differentiable throughout
 the right half-plane, including at `s = 1`. -/
 theorem differentiableAt_integral_fract_mul_cpow {s : ℂ} (hs : 0 < s.re) :
     DifferentiableAt ℂ (fun z : ℂ ↦
       ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1))) s :=
-  (LSeries.differentiableOn_integral_mul_cpow_of_isBigO isBigO_fract).differentiableAt
+  (differentiableOn_integral_mul_cpow_of_isBigO isBigO_fract).differentiableAt
     ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
 
 private theorem abel_initial (s : ℂ) (hs : 1 < s.re) :
@@ -178,6 +178,28 @@ theorem riemannZeta_eq_sub_integral_fract {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠
   field_simp [sub_ne_zero.mpr hs1]
   ring
 
+/-- Mathlib's totalized value of the Riemann zeta function at its pole has norm at most two. -/
+theorem norm_riemannZeta_one_le_two : ‖riemannZeta 1‖ ≤ 2 := by
+  have hlog0 : 0 ≤ Real.log (4 * Real.pi) :=
+    Real.log_nonneg (by nlinarith [Real.two_le_pi])
+  have hlog4 : Real.log (4 * Real.pi) ≤ 4 := by
+    calc
+      _ ≤ Real.log (2 ^ 4 : ℝ) :=
+        Real.log_le_log (by positivity) (by nlinarith [Real.pi_le_four])
+      _ = 4 * Real.log 2 := by rw [Real.log_pow]; norm_num
+      _ ≤ 4 := by linarith [Real.log_le_sub_one_of_pos (by norm_num : (0 : ℝ) < 2)]
+  have habs : |Real.eulerMascheroniConstant - Real.log (4 * Real.pi)| ≤ 4 :=
+    abs_le.mpr ⟨by linarith [Real.one_half_lt_eulerMascheroniConstant],
+      by linarith [Real.eulerMascheroniConstant_lt_two_thirds]⟩
+  have hdiv : |Real.eulerMascheroniConstant - Real.log (4 * Real.pi)| / 2 ≤ 2 := by
+    linarith
+  have hlog : Complex.log (4 * (Real.pi : ℂ)) = (Real.log (4 * Real.pi) : ℂ) := by
+    simpa only [Complex.ofReal_mul, Complex.ofReal_ofNat] using
+      (Complex.ofReal_log (by positivity : (0 : ℝ) ≤ 4 * Real.pi)).symm
+  rw [riemannZeta_one, hlog, ← Complex.ofReal_sub, norm_div, norm_real,
+    Real.norm_eq_abs, Complex.norm_ofNat]
+  exact hdiv
+
 /-- On the right half-plane `0 < s.re`,
 `‖ζ(s)‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / s.re`, including Mathlib's totalized value at `s = 1`. -/
 theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
@@ -186,24 +208,7 @@ theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
   · subst s
     simp only [sub_self, inv_zero, norm_zero, add_zero, norm_one, one_re, div_one,
       one_add_one_eq_two]
-    have hlog0 : 0 ≤ Real.log (4 * Real.pi) :=
-      Real.log_nonneg (by nlinarith [Real.two_le_pi])
-    have hlog4 : Real.log (4 * Real.pi) ≤ 4 := by
-      calc
-        _ ≤ Real.log (2 ^ 4 : ℝ) :=
-          Real.log_le_log (by positivity) (by nlinarith [Real.pi_le_four])
-        _ = 4 * Real.log 2 := by rw [Real.log_pow]; norm_num
-        _ ≤ 4 := by linarith [Real.log_le_sub_one_of_pos (by norm_num : (0 : ℝ) < 2)]
-    have habs : |Real.eulerMascheroniConstant - Real.log (4 * Real.pi)| ≤ 4 :=
-      abs_le.mpr ⟨by linarith [Real.one_half_lt_eulerMascheroniConstant],
-        by linarith [Real.eulerMascheroniConstant_lt_two_thirds]⟩
-    have hdiv : |Real.eulerMascheroniConstant - Real.log (4 * Real.pi)| / 2 ≤ 2 := by
-      linarith
-    have hlog : Complex.log (4 * (Real.pi : ℂ)) = (Real.log (4 * Real.pi) : ℂ) := by
-      simpa only [Complex.ofReal_mul, Complex.ofReal_ofNat] using
-        (Complex.ofReal_log (by positivity : (0 : ℝ) ≤ 4 * Real.pi)).symm
-    simpa only [riemannZeta_one, hlog, ← Complex.ofReal_sub, norm_div, norm_real,
-      Real.norm_eq_abs, Complex.norm_ofNat] using hdiv
+    exact norm_riemannZeta_one_le_two
   · rw [riemannZeta_eq_inv_sub_add hs1]
     exact (norm_add_le _ _).trans (by linarith [norm_riemannZeta₀_le_of_re_pos hs])
 
