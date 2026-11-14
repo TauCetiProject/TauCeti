@@ -8,9 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
 public import TauCeti.Analysis.Normed.Algebra.Arens.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Bimodule
-import TauCeti.Analysis.Normed.Module.Dual.Bidual
 import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
-import TauCeti.Topology.MetricSpace.SimultaneousApproximation
+import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 
 /-!
 # Virtual diagonals of Banach algebras
@@ -23,11 +22,15 @@ Giving each bidual the iterated dual actions `dualAction (dualAction ·)`, an el
 
 `a · M = M · a` and `a · Δ** M = J_A a`
 
-for every `a : A`, where `J_A = NormedSpace.inclusionInDoubleDual 𝕜 A`. Because `Δ` intertwines
-the outer actions with left and right multiplication on `A`, the commutation law `a · M = M · a`
-automatically gives the symmetric identity `Δ** M · a = J_A a`, and `Δ** M` is a mixed identity of
-`A**` for the two Arens products (`arensMul 𝕜 A F (Δ** M) = F` and
-`arensMulRev 𝕜 A (Δ** M) F = F`).
+for every `a : A`, where `J_A = NormedSpace.inclusionInDoubleDual 𝕜 A`. Virtual diagonals linearize
+approximate diagonals into a single element of `(A ⊗̂π A)**`: they give B. E. Johnson's bidual
+characterization of amenable Banach algebras and allow derivation innerness and kernel corrections
+to be carried out algebraically without repeated weak-star limits.
+
+Because `Δ` intertwines the outer actions with left and right multiplication on `A`, the
+commutation law `a · M = M · a` automatically gives the symmetric identity `Δ** M · a = J_A a`,
+and `Δ** M` is a mixed identity of `A**` for the two Arens products (`arensMul 𝕜 A F (Δ** M) = F`
+and `arensMulRev 𝕜 A (Δ** M) F = F`).
 
 Any weak-star cluster point in `(A ⊗̂π A)**` of an approximate diagonal is a virtual diagonal, so
 over a proper scalar field an approximate diagonal bounded by `C` yields a virtual diagonal of norm
@@ -43,17 +46,18 @@ of norm at most `C` if and only if it has an approximate diagonal bounded by `C`
 
 ## Main results
 
-* `TauCeti.exists_isApproximateDiagonal_iff_forall_finset`: finite-set criterion for an approximate
-  diagonal bounded by `C`.
+* `TauCeti.isVirtualDiagonal_iff`: pointwise characterization of `IsVirtualDiagonal` on
+  `(A ⊗̂π A)*` and `A*`.
 * `TauCeti.IsVirtualDiagonal.dualAction_mul_flip_precomp_mul'`,
   `TauCeti.IsVirtualDiagonal.arensMul_precomp_mul'`,
   `TauCeti.IsVirtualDiagonal.arensMulRev_precomp_mul'`: right-action symmetry and mixed-identity
   laws for `Δ** M`.
-* `TauCeti.IsApproximateDiagonal.isVirtualDiagonal_of_mapClusterPt` and
-  `TauCeti.IsApproximateDiagonal.exists_isVirtualDiagonal`: passage from a bounded approximate
-  diagonal to a virtual diagonal.
-* `TauCeti.IsVirtualDiagonal.exists_isApproximateDiagonal`: Goldstine passage from a virtual
-  diagonal `M` to an approximate diagonal bounded by `‖M‖`.
+* `TauCeti.IsApproximateDiagonal.isVirtualDiagonal_of_mapClusterPt`,
+  `TauCeti.IsApproximateDiagonal.isVirtualDiagonal_inclusionInDoubleDual`, and
+  `TauCeti.IsApproximateDiagonal.exists_isVirtualDiagonal`: passage from approximate diagonals to
+  virtual diagonals.
+* `TauCeti.IsVirtualDiagonal.exists_isApproximateDiagonal`: passage from a virtual diagonal `M` to
+  an approximate diagonal bounded by `‖M‖`.
 * `TauCeti.exists_isVirtualDiagonal_norm_le_iff_exists_isApproximateDiagonal` and
   `TauCeti.exists_isVirtualDiagonal_iff_exists_isApproximateDiagonal`: equivalence of virtual
   diagonals and bounded approximate diagonals.
@@ -83,42 +87,6 @@ attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
   ContinuousLinearMap.strongBidualSeminormedAddCommGroup
   ContinuousLinearMap.strongBidualNormedSpace
 
-section ApproximateDiagonal
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
-
-/-- Filter-product characterization of `TauCeti.IsApproximateDiagonal`, bundling the two
-convergence conditions into `A ⊗̂π A × A`. -/
-theorem isApproximateDiagonal_iff_neBot_and_tendsto_prod
-    {l : Filter (CompletedProjectiveTensor 𝕜 A A)} :
-    IsApproximateDiagonal 𝕜 l ↔ l.NeBot ∧ ∀ a : A,
-      Tendsto (fun m ↦ (mulLeft 𝕜 A a m - mulRight 𝕜 A a m, a * mul' 𝕜 A m)) l (𝓝 (0, a)) := by
-  simp only [tendsto_prod_iff', nhds_prod_eq]
-  refine ⟨fun h ↦ ⟨h.neBot, fun a ↦ ⟨h.tendsto_mulLeft_sub_mulRight a, h.tendsto_mul_mul' a⟩⟩,
-    fun ⟨hne, h⟩ ↦ ?_⟩
-  exact { tendsto_mulLeft_sub_mulRight := fun a ↦ (h a).1
-          tendsto_mul_mul' := fun a ↦ (h a).2
-          neBot := hne }
-
-/-- A Banach algebra has an approximate diagonal bounded by `C` if and only if every finite subset
-of `A` satisfies both approximate-diagonal conditions to any accuracy at a single element of
-`A ⊗̂π A` of norm at most `C`. -/
-theorem exists_isApproximateDiagonal_iff_forall_finset {C : ℝ} :
-    (∃ l : Filter (CompletedProjectiveTensor 𝕜 A A),
-      IsApproximateDiagonal 𝕜 l ∧ ∀ᶠ m in l, ‖m‖ ≤ C) ↔
-      ∀ s : Finset A, ∀ ε > 0, ∃ m : CompletedProjectiveTensor 𝕜 A A, ‖m‖ ≤ C ∧
-        ∀ a ∈ s, ‖mulLeft 𝕜 A a m - mulRight 𝕜 A a m‖ < ε ∧ ‖a * mul' 𝕜 A m - a‖ < ε := by
-  simp only [isApproximateDiagonal_iff_neBot_and_tendsto_prod, and_assoc]
-  refine (exists_congr fun _ ↦ and_congr_right fun _ ↦ and_comm).trans ?_
-  simpa [Prod.dist_eq, dist_eq_norm] using
-    exists_neBot_tendsto_iff_forall_finset_dist_lt
-      (p := fun m : CompletedProjectiveTensor 𝕜 A A ↦ ‖m‖ ≤ C)
-      (F := fun (a : A) m ↦ (mulLeft 𝕜 A a m - mulRight 𝕜 A a m, a * mul' 𝕜 A m))
-      (x := fun a : A ↦ ((0 : CompletedProjectiveTensor 𝕜 A A), a))
-
-end ApproximateDiagonal
-
 section VirtualDiagonal
 
 variable (𝕜 : Type*) {A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
@@ -143,8 +111,6 @@ variable {𝕜}
 
 namespace IsVirtualDiagonal
 
-section Algebraic
-
 variable {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
 
 /-- Pointwise form of `a · M = M · a`: `M (φ ∘ mulLeft a) = M (φ ∘ mulRight a)` for every
@@ -162,6 +128,32 @@ theorem apply_comp_mul_comp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) (f : St
   simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply, dual_def]
     using h
 
+end IsVirtualDiagonal
+
+/-- Pointwise characterization of a virtual diagonal by its functional equations on `(A ⊗̂π A)*` and
+`A*`. -/
+theorem isVirtualDiagonal_iff
+    {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))} :
+    IsVirtualDiagonal 𝕜 M ↔
+      (∀ (a : A) (φ : StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+        M (φ.comp (mulLeft 𝕜 A a)) = M (φ.comp (mulRight 𝕜 A a))) ∧
+      ∀ (a : A) (f : StrongDual 𝕜 A),
+        M ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)) = f a :=
+  ⟨fun hM ↦ ⟨hM.apply_comp_mulLeft_eq_mulRight, hM.apply_comp_mul_comp_mul'⟩,
+    fun ⟨hcomm, hmul⟩ ↦
+      { dualAction_mulLeft_eq_mulRight a := ext fun φ ↦ by
+          simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply] using
+            hcomm a φ
+        dualAction_mul_precomp_mul' a := ext fun f ↦ by
+          simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply,
+            dual_def] using hmul a f }⟩
+
+namespace IsVirtualDiagonal
+
+section Algebraic
+
+variable {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
+
 /-- Construct a virtual diagonal from its pointwise functional equations on `(A ⊗̂π A)*` and
 `A*`. -/
 theorem of_forall_apply
@@ -169,26 +161,15 @@ theorem of_forall_apply
       M (φ.comp (mulLeft 𝕜 A a)) = M (φ.comp (mulRight 𝕜 A a)))
     (hmul : ∀ (a : A) (f : StrongDual 𝕜 A),
       M ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)) = f a) :
-    IsVirtualDiagonal 𝕜 M where
-  dualAction_mulLeft_eq_mulRight a := ext fun φ ↦ by
-    simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply] using hcomm a φ
-  dualAction_mul_precomp_mul' a := ext fun f ↦ by
-    simpa only [dualAction_apply_apply, dualAction_apply, precomp_apply, comp_apply, dual_def] using
-      hmul a f
+    IsVirtualDiagonal 𝕜 M :=
+  isVirtualDiagonal_iff.2 ⟨hcomm, hmul⟩
 
 /-- Pointwise right-multiplication identity for a virtual diagonal:
 `M (f ∘ (· * a) ∘ Δ) = f a` for every `f ∈ A*`. -/
 theorem apply_comp_mul_flip_comp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) (f : StrongDual 𝕜 A) :
     M ((f.comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A)) = f a := by
-  have hR : (f.comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A) =
-      (f.comp (mul' 𝕜 A)).comp (mulRight 𝕜 A a) := by
-    ext m
-    simp [mul_assoc]
-  have hL : (f.comp (mul' 𝕜 A)).comp (mulLeft 𝕜 A a) =
-      (f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A) := by
-    ext m
-    simp [mul_assoc]
-  rw [hR, ← hM.apply_comp_mulLeft_eq_mulRight a, hL, hM.apply_comp_mul_comp_mul']
+  rw [comp_assoc, ← mul'_comp_mulRight, ← comp_assoc, ← hM.apply_comp_mulLeft_eq_mulRight a,
+    comp_assoc, mul'_comp_mulLeft, ← comp_assoc, hM.apply_comp_mul_comp_mul']
 
 /-- Right action of `a` on `Δ** M` also recovers `J_A a`: `Δ** M · a = J_A a`. -/
 theorem dualAction_mul_flip_precomp_mul' (hM : IsVirtualDiagonal 𝕜 M) (a : A) :
@@ -242,18 +223,21 @@ theorem IsApproximateDiagonal.isVirtualDiagonal_of_mapClusterPt
       refine hM.apply_eq_of_tendsto_inclusionInDoubleDual _ ?_
       simpa only [Function.comp_def, comp_apply, sub_apply, map_zero] using
         (φ.continuous.tendsto 0).comp (hl.tendsto_mulLeft_sub_mulRight a)
-    have hsub : φ.comp (mulLeft 𝕜 A a - mulRight 𝕜 A a) =
-        φ.comp (mulLeft 𝕜 A a) - φ.comp (mulRight 𝕜 A a) := by
-      ext m
-      simp
-    rw [hsub, map_sub, sub_eq_zero] at h0
-    exact h0
+    rwa [comp_sub, map_sub, sub_eq_zero] at h0
   · refine hM.apply_eq_of_tendsto_inclusionInDoubleDual _ ?_
     simpa only [Function.comp_def, comp_apply, mul_apply'] using
       (f.continuous.tendsto a).comp (hl.tendsto_mul_mul' a)
 
-/-- Over a proper scalar field, an approximate diagonal bounded by `C` has a weak-star cluster
-point in `(A ⊗̂π A)**`, which is a virtual diagonal of norm at most `C`. -/
+/-- If the constant filter `pure m` on `A ⊗̂π A` is an approximate diagonal, then the canonical
+bidual image of `m` is a virtual diagonal. -/
+theorem IsApproximateDiagonal.isVirtualDiagonal_inclusionInDoubleDual
+    {m : CompletedProjectiveTensor 𝕜 A A} (hm : IsApproximateDiagonal 𝕜 (pure m)) :
+    IsVirtualDiagonal 𝕜 (inclusionInDoubleDual 𝕜 _ m) :=
+  hm.isVirtualDiagonal_of_mapClusterPt
+    (tendsto_pure_nhds (fun x ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 _ x)) m).mapClusterPt
+
+/-- Over a proper scalar field, a Banach algebra with an approximate diagonal bounded by `C` has a
+virtual diagonal of norm at most `C`. -/
 theorem IsApproximateDiagonal.exists_isVirtualDiagonal [ProperSpace 𝕜]
     {l : Filter (CompletedProjectiveTensor 𝕜 A A)} (hl : IsApproximateDiagonal 𝕜 l) {C : ℝ}
     (hC : ∀ᶠ m in l, ‖m‖ ≤ C) :
@@ -270,9 +254,8 @@ section Goldstine
 variable {𝕜 A : Type*} [RCLike 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
 
-/-- **Goldstine passage from a virtual diagonal to a bounded approximate diagonal.** Over `ℝ` or
-`ℂ`, every virtual diagonal `M` of a Banach algebra `A` gives rise to an approximate diagonal
-bounded by `‖M‖`. -/
+/-- Over `ℝ` or `ℂ`, every virtual diagonal `M` of a Banach algebra `A` yields an approximate
+diagonal bounded by `‖M‖`. -/
 theorem IsVirtualDiagonal.exists_isApproximateDiagonal
     {M : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))}
     (hM : IsVirtualDiagonal 𝕜 M) :
@@ -295,20 +278,23 @@ theorem IsVirtualDiagonal.exists_isApproximateDiagonal
   let z : ∀ i, Z i
     | .inl _ => 0
     | .inr a => a.1
+  have hS_inl (a : s) : S (.inl a) = mulLeft 𝕜 A a.1 - mulRight 𝕜 A a.1 := rfl
+  have hS_inr (a : s) : S (.inr a) = ContinuousLinearMap.mul 𝕜 A a.1 ∘L mul' 𝕜 A := rfl
+  have hz_inl (a : s) : z (.inl a) = 0 := rfl
+  have hz_inr (a : s) : z (.inr a) = a.1 := rfl
   have hz : ∀ i (f : StrongDual 𝕜 (Z i)), M (f.comp (S i)) = f (z i) := by
     rintro (a | a) f
-    · dsimp only [Z, S, z] at f ⊢
-      have hsub : f.comp (mulLeft 𝕜 A a.1 - mulRight 𝕜 A a.1) =
-          f.comp (mulLeft 𝕜 A a.1) - f.comp (mulRight 𝕜 A a.1) := by
-        ext x
-        simp
-      rw [hsub, map_sub, hM.apply_comp_mulLeft_eq_mulRight, sub_self, map_zero]
-    · exact hM.apply_comp_mul_comp_mul' a.1 f
+    · rw [hS_inl a, hz_inl a, comp_sub, map_sub, hM.apply_comp_mulLeft_eq_mulRight, sub_self,
+        map_zero]
+    · rw [hS_inr a, hz_inr a]
+      exact hM.apply_comp_mul_comp_mul' a.1 f
   obtain ⟨m, hm, happrox⟩ := M.exists_norm_le_and_forall_norm_sub_lt S z hz le_rfl hε
   refine ⟨m, hm, fun a ha ↦ ?_⟩
   have h₁ := happrox (.inl ⟨a, ha⟩)
   have h₂ := happrox (.inr ⟨a, ha⟩)
-  simpa only [S, z, sub_zero, sub_apply, comp_apply, mul_apply'] using And.intro h₁ h₂
+  rw [hS_inl ⟨a, ha⟩, hz_inl ⟨a, ha⟩, sub_zero, sub_apply] at h₁
+  rw [hS_inr ⟨a, ha⟩, hz_inr ⟨a, ha⟩, comp_apply, mul_apply'] at h₂
+  exact ⟨h₁, h₂⟩
 
 /-- Over `ℝ` or `ℂ`, a Banach algebra has a virtual diagonal of norm at most `C` if and only if it
 has an approximate diagonal bounded by `C`. -/
@@ -340,18 +326,10 @@ section Subsingleton
 variable (𝕜 : Type*) {A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A]
   [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A] [Subsingleton A]
 
-/-- In a zero Banach algebra, `0` is a constant approximate diagonal. -/
-theorem isApproximateDiagonal_pure_zero :
-    IsApproximateDiagonal 𝕜 (pure (0 : CompletedProjectiveTensor 𝕜 A A)) where
-  tendsto_mulLeft_sub_mulRight a := by
-    simpa using tendsto_pure_nhds (fun m ↦ mulLeft 𝕜 A a m - mulRight 𝕜 A a m) 0
-  tendsto_mul_mul' a := by
-    convert tendsto_pure_nhds (fun m : CompletedProjectiveTensor 𝕜 A A ↦ a * mul' 𝕜 A m) 0
-
 /-- In a zero Banach algebra, `0` is a virtual diagonal. -/
 theorem isVirtualDiagonal_zero :
-    IsVirtualDiagonal 𝕜 (0 : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))) :=
-  .of_forall_apply (fun _ _ ↦ by simp) fun a f ↦ by simp [Subsingleton.elim a 0]
+    IsVirtualDiagonal 𝕜 (0 : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A))) := by
+  simpa using (isApproximateDiagonal_pure_zero 𝕜 (A := A)).isVirtualDiagonal_inclusionInDoubleDual
 
 end Subsingleton
 
@@ -365,17 +343,16 @@ diagonal. -/
 theorem isVirtualDiagonal_inclusionInDoubleDual {m : CompletedProjectiveTensor 𝕜 A A}
     (hm : ∀ a, mulLeft 𝕜 A a m = mulRight 𝕜 A a m) (h1 : mul' 𝕜 A m = 1) :
     IsVirtualDiagonal 𝕜 (inclusionInDoubleDual 𝕜 _ m) :=
-  .of_forall_apply (fun a φ ↦ by simp [hm a]) fun a f ↦ by simp [h1]
+  (isApproximateDiagonal_pure hm h1).isVirtualDiagonal_inclusionInDoubleDual
 
 variable (𝕜) in
-/-- For the base field over itself, the canonical bidual image of `1 ⊗ 1` is a virtual diagonal. -/
+/-- For a complete base field over itself, the canonical bidual image of `1 ⊗ 1` is a virtual
+diagonal. -/
 theorem isVirtualDiagonal_inclusionInDoubleDual_one_tmul_one [CompleteSpace 𝕜] :
     IsVirtualDiagonal 𝕜
       (inclusionInDoubleDual 𝕜 _
         ((⟨1 ⊗ₜ 1⟩ : ProjectiveTensor 𝕜 𝕜 𝕜) : CompletedProjectiveTensor 𝕜 𝕜 𝕜)) :=
-  isVirtualDiagonal_inclusionInDoubleDual (fun a ↦ by
-    rw [mulLeft_apply_coe_tmul, mulRight_apply_coe_tmul, ← smul_eq_mul a 1,
-      TensorProduct.smul_tmul, smul_eq_mul, mul_one, one_mul]) (by simp)
+  (isApproximateDiagonal_pure_one_tmul_one 𝕜).isVirtualDiagonal_inclusionInDoubleDual
 
 end Unital
 
