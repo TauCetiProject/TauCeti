@@ -214,9 +214,8 @@ theorem cotangentLiouvilleForm_cotangentGeneratingSource_sub
         (fderiv ℝ (cotangentGeneratingSource S) x) -
       (cotangentLiouvilleForm (cotangentGeneratingTarget S x)).compContinuousLinearMap
         (fderiv ℝ (cotangentGeneratingTarget S) x) =
-      differentialOneForm S x := by
+      differentialOneForm ℝ S x := by
   ext v
-  rw [eq_const_of_subsingleton v 0, ← Function.const_def]
   simp only [ContinuousAlternatingMap.sub_apply, compContinuousLinearMap_apply,
     cotangentLiouvilleForm_apply, Function.comp_apply, fderiv_cotangentGeneratingSource_apply hS,
     fderiv_cotangentGeneratingTarget_apply hS, cotangentGeneratingSource_snd_apply,
@@ -459,7 +458,7 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
         (cotangentLiouvilleForm
           (cotangentGeneratedMap hS hM (cotangentGeneratingSource S x))).compContinuousLinearMap
           (fderiv ℝ (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x)) =
-      differentialOneForm (S ∘ cotangentGeneratingBranch hS hM)
+      differentialOneForm ℝ (S ∘ cotangentGeneratingBranch hS hM)
         (cotangentGeneratingSource S x) := by
   have hd := (hSx.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
   have hφ : fderiv ℝ (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x) =
@@ -484,11 +483,10 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
     simp only [← Function.comp_apply (f := ⇑(fderiv ℝ (cotangentGeneratingSource S) x)), hsource,
       id]
   · -- Compose the exactness of the relation at `x` with the inverse of the source derivative.
-    have hdS : differentialOneForm (S ∘ cotangentGeneratingBranch hS hM)
-        (cotangentGeneratingSource S x) = (differentialOneForm S x).compContinuousLinearMap
+    have hdS : differentialOneForm ℝ (S ∘ cotangentGeneratingBranch hS hM)
+        (cotangentGeneratingSource S x) = (differentialOneForm ℝ S x).compContinuousLinearMap
           (e.symm : V × StrongDual ℝ V →L[ℝ] V × W) := by
       ext v
-      rw [eq_const_of_subsingleton v 0, ← Function.const_def]
       rw [differentialOneForm_apply, hSb, compContinuousLinearMap_apply]
       simp [Function.comp_def]
     rw [hdS, ← cotangentLiouvilleForm_cotangentGeneratingSource_sub hd]
@@ -543,7 +541,7 @@ theorem eventually_cotangentLiouvilleForm_sub_cotangentGeneratedMap :
       cotangentLiouvilleForm y - (cotangentLiouvilleForm
           (cotangentGeneratedMap hS hM y)).compContinuousLinearMap
           (fderiv ℝ (cotangentGeneratedMap hS hM) y) =
-        differentialOneForm (S ∘ cotangentGeneratingBranch hS hM) y := by
+        differentialOneForm ℝ (S ∘ cotangentGeneratingBranch hS hM) y := by
   filter_upwards [eventually_hasFDerivAt_cotangentGeneratingBranch hS hM] with y hy
   obtain ⟨x, e, rfl, hSx, he, hb, hx⟩ := hy
   exact (generatedMap_identities hS hM hSx e he hb hx).2

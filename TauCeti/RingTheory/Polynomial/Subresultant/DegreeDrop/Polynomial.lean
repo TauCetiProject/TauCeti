@@ -10,10 +10,10 @@ public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop.Basic
 /-!
 # Degree drops in subresultant polynomials
 
-Below the smaller degree bounds, lowering a bound scales the entire subresultant polynomial,
-not just its principal coefficient. At a smaller terminal bound, the surviving polynomial is
-instead a scalar multiple of the corresponding input. Thus terminal scalar data must not be replaced
-by the zero polynomial used outside the strict subresultant range.
+Below the smaller bound of the input whose bound drops, lowering that bound scales the entire
+subresultant polynomial, not just its principal coefficient. At a smaller terminal bound, the
+surviving polynomial is instead a scalar multiple of the corresponding input. Thus terminal scalar
+data must not be replaced by the zero polynomial used outside the strict subresultant range.
 
 The coefficient-minor formulas retain formal bounds and hold over arbitrary commutative rings.
 The specialization formulas use reducta taken before mapping coefficients, allowing degree
@@ -34,41 +34,51 @@ variable {R : Type*}
 
 variable [CommRing R]
 
-/-- Below both smaller bounds, an arbitrary right-bound drop scales the whole subresultant
-polynomial. The formula does not replace a terminal scalar minor by a polynomial. -/
+/-- Below the smaller right bound, an arbitrary right-bound drop scales the whole subresultant
+polynomial. The formula does not replace a terminal scalar minor by a polynomial. At indices
+`m ≤ j` both sides vanish, so no bound relating `j` to the left bound `m` is needed. -/
 theorem subresultant_eq_C_coeff_pow_mul_of_right_degree_drop
-    {p q : R[X]} {m n N j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
-    (hN : n ≤ N) (hj : j < min m n) :
+    {p q : R[X]} {m n N j : ℕ} (hn : q.natDegree ≤ n)
+    (hN : n ≤ N) (hj : j < n) :
     subresultant p q m N j = C (p.coeff m ^ (N - n)) * subresultant p q m n j := by
-  ext k
-  have hj' : j < min m N := by omega
-  by_cases hk : k ≤ j
-  · simp only [coeff_subresultant, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
-    exact subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hN
-      (by omega) (by omega) k
-  · simp only [coeff_C_mul, coeff_subresultant, hk, and_false, ↓reduceIte, mul_zero]
+  by_cases hjm : j < m
+  · ext k
+    have hj : j < min m n := lt_min hjm hj
+    have hj' : j < min m N := by omega
+    by_cases hk : k ≤ j
+    · simp only [coeff_subresultant, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
+      exact subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hn hN
+        (by omega) (by omega) k
+    · simp only [coeff_C_mul, coeff_subresultant, hk, and_false, ↓reduceIte, mul_zero]
+  · rw [subresultant_eq_zero_of_min_le p q m N j (by omega),
+      subresultant_eq_zero_of_min_le p q m n j (by omega), mul_zero]
 
-/-- Below both smaller bounds, a left-bound drop scales the whole subresultant polynomial,
-including the column-block sign. -/
+/-- Below the smaller left bound, a left-bound drop scales the whole subresultant polynomial,
+including the column-block sign. At indices `n ≤ j` both sides vanish, so no bound relating `j`
+to the right bound `n` is needed. -/
 theorem subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop
-    {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
-    (hM : m ≤ M) (hj : j < min m n) :
+    {p q : R[X]} {m M n j : ℕ} (hm : p.natDegree ≤ m)
+    (hM : m ≤ M) (hj : j < m) :
     subresultant p q M n j = C ((-1) ^ ((M - m) * (n - j)) * q.coeff n ^ (M - m)) *
       subresultant p q m n j := by
-  ext k
-  have hj' : j < min M n := by omega
-  by_cases hk : k ≤ j
-  · simp only [coeff_subresultant, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
-    simpa only [mul_assoc] using
-      subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM
-        (by omega) (by omega) k
-  · simp only [coeff_C_mul, coeff_subresultant, hk, and_false, ↓reduceIte, mul_zero]
+  by_cases hjn : j < n
+  · ext k
+    have hj : j < min m n := lt_min hj hjn
+    have hj' : j < min M n := by omega
+    by_cases hk : k ≤ j
+    · simp only [coeff_subresultant, hj, hj', hk, and_self, ↓reduceIte, coeff_C_mul]
+      simpa only [mul_assoc] using
+        subresultantCoeff_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hm hM
+          (by omega) (by omega) k
+    · simp only [coeff_C_mul, coeff_subresultant, hk, and_false, ↓reduceIte, mul_zero]
+  · rw [subresultant_eq_zero_of_min_le p q M n j (by omega),
+      subresultant_eq_zero_of_min_le p q m n j (by omega), mul_zero]
 
 /-- When only the right bound drops, the subresultant at its smaller terminal index survives
 as a scalar multiple of the right polynomial, rather than a terminal subresultant polynomial. -/
 @[simp]
 theorem subresultant_right_bound_of_degree_drop {p q : R[X]} {m n N : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hnm : n < m) (hnN : n < N) :
+    (hn : q.natDegree ≤ n) (hnm : n < m) (hnN : n < N) :
     subresultant p q m N n =
       C (p.coeff m ^ (N - n) * q.coeff n ^ (m - n - 1)) * q := by
   ext k
@@ -76,7 +86,7 @@ theorem subresultant_right_bound_of_degree_drop {p q : R[X]} {m n N : ℕ}
   rw [coeff_C_mul, coeff_subresultant]
   by_cases hk : k ≤ n
   · simp only [hj, hk, and_self, ↓reduceIte]
-    rw [subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hnN.le hnm le_rfl,
+    rw [subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hn hnN.le hnm le_rfl,
       subresultantCoeff_right_bound p q hnm hk]
     ring
   · have hq : q.coeff k = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
@@ -86,11 +96,11 @@ theorem subresultant_right_bound_of_degree_drop {p q : R[X]} {m n N : ℕ}
 with the sign from swapping the formal column blocks. -/
 @[simp]
 theorem subresultant_left_bound_of_degree_drop {p q : R[X]} {m M n : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hmn : m < n) (hmM : m < M) :
+    (hm : p.natDegree ≤ m) (hmn : m < n) (hmM : m < M) :
     subresultant p q M n m =
       C ((-1) ^ ((M - m) * (n - m)) * q.coeff n ^ (M - m) *
         p.coeff m ^ (n - m - 1)) * p := by
-  rw [subresultant_comm, subresultant_right_bound_of_degree_drop hn hm hmn hmM,
+  rw [subresultant_comm, subresultant_right_bound_of_degree_drop hm hmn hmM,
     ← mul_assoc, ← C_mul]
   congr 2
   ring
@@ -108,31 +118,31 @@ theorem subresultant_eq_zero_of_natDegree_lt_bounds {p q : R[X]}
     rw [coeff_subresultant]
     by_cases hk : k ≤ j
     · simp only [hj, hk, and_self, ↓reduceIte, coeff_zero]
-      rw [subresultantCoeff_succ_right hm.le (by omega) (by omega) (by omega),
+      rw [subresultantCoeff_succ_right (by omega) (by omega) (by omega),
         coeff_eq_zero_of_natDegree_lt hm, zero_mul]
     · simp [hk]
   · exact subresultant_eq_zero_of_min_le p q m n j (by omega)
 
-/-- After specialization, a right-bound drop below the smaller bounds scales the mapped
+/-- After specialization, a right-bound drop below the smaller right bound scales the mapped
 subresultant. The reduced input is obtained by truncating before mapping. -/
 theorem map_subresultant_of_right_degree_drop {S : Type*} [CommRing S]
     (f : R →+* S) {p q : R[X]} {m n N j : ℕ}
-    (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
-    (hN : n ≤ N) (hj : j < min m n) :
+    (hn : (q.map f).natDegree ≤ n)
+    (hN : n ≤ N) (hj : j < n) :
     (subresultant p q m N j).map f = C (f (p.coeff m) ^ (N - n)) *
       subresultant (p.map f) ((q.reductum (n + 1)).map f) m n j := by
   have htrunc : (q.reductum (n + 1)).map f = q.map f := by
     rw [← reductum_map]
     exact reductum_eq_self (by omega)
   rw [htrunc, ← subresultant_map_map,
-    subresultant_eq_C_coeff_pow_mul_of_right_degree_drop hm hn hN hj, coeff_map]
+    subresultant_eq_C_coeff_pow_mul_of_right_degree_drop hn hN hj, coeff_map]
 
 /-- The left-bound specialization formula retains the column-block sign and the right
 coefficient power, with truncation before mapping. -/
 theorem map_subresultant_of_left_degree_drop {S : Type*} [CommRing S]
     (f : R →+* S) {p q : R[X]} {m M n j : ℕ}
-    (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
-    (hM : m ≤ M) (hj : j < min m n) :
+    (hm : (p.map f).natDegree ≤ m)
+    (hM : m ≤ M) (hj : j < m) :
     (subresultant p q M n j).map f =
       C ((-1) ^ ((M - m) * (n - j)) * f (q.coeff n) ^ (M - m)) *
         subresultant ((p.reductum (m + 1)).map f) (q.map f) m n j := by
@@ -140,6 +150,6 @@ theorem map_subresultant_of_left_degree_drop {S : Type*} [CommRing S]
     rw [← reductum_map]
     exact reductum_eq_self (by omega)
   rw [htrunc, ← subresultant_map_map,
-    subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hm hn hM hj, coeff_map]
+    subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hm hM hj, coeff_map]
 
 end Polynomial

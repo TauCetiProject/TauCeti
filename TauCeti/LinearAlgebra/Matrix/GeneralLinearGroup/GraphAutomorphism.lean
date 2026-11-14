@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 import TauCeti.Data.Fin.Rev
+import Mathlib.Tactic.FinCases
 
 /-!
 # The pinned type-A graph automorphism on matrices
@@ -103,6 +104,13 @@ theorem typeAGraphConjugator_apply (r : ℕ) (i j : Fin (r + 1)) :
   have h : (i = j.rev) ↔ (j = i.rev) := by
     rw [← Fin.rev_eq_iff, eq_comm]
   simp only [Fin.revPerm_apply, diagGL_apply, coe_typeAGraphSign, h]
+
+/-- The signed reversal form in dimension three. -/
+theorem coe_typeAGraphConjugator_two :
+    (typeAGraphConjugator 2 A : Matrix (Fin 3) (Fin 3) A) =
+      !![0, 0, 1; 0, -1, 0; 1, 0, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [typeAGraphConjugator_apply]
 
 /-- The signed reversal matrix reverses coordinates and applies alternating signs. -/
 theorem coe_typeAGraphConjugator_mulVec (r : ℕ) (w : Fin (r + 1) → A) :

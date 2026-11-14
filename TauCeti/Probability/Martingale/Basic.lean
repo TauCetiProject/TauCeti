@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.Basic
+public import TauCeti.Probability.Process.Filtration.Comp
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
@@ -20,6 +21,9 @@ representatives.
 Closure properties of martingales, including building blocks of the elementary stochastic
 integral:
 
+* multiplying a martingale by a random scalar measurable at every time preserves the
+  martingale property when the products are integrable, in particular for bounded scalars
+  (`MeasureTheory.Martingale.smul_of_stronglyMeasurable`, `MeasureTheory.Martingale.bdd_smul`);
 * restricting a martingale to an event measurable at every time preserves the martingale
   property (`MeasureTheory.Martingale.indicator`);
 * a martingale `X` with values in a Banach space, frozen at a fixed date `w`, `t ↦ X (min w t)`,
@@ -31,7 +35,10 @@ integral:
 Together they show that a position chosen at `r`, times the change of a martingale over
 `(r, r']`, is a martingale whenever this product is integrable at every time.
 
-The following results need only a preordered time index. The norm of a Banach-valued
+The following results need only a preordered time index. Sampling along a monotone time map
+preserves martingales, supermartingales, and submartingales with respect to the sampled
+filtration (`MeasureTheory.Martingale.comp`, `MeasureTheory.Supermartingale.comp`, and
+`MeasureTheory.Submartingale.comp`). The norm of a Banach-valued
 martingale is a submartingale (`MeasureTheory.Martingale.norm`). A square-integrable real
 martingale has conditional square equal to its current square plus the conditional square
 of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
@@ -56,6 +63,32 @@ open Filter
 open scoped ENNReal
 
 namespace MeasureTheory
+
+section Sampling
+
+variable {Ω ι κ E : Type*} {m : MeasurableSpace Ω} {μ : Measure Ω}
+  [Preorder ι] [Preorder κ] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {ℱ : Filtration ι m} {X : ι → Ω → E} {τ : κ → ι}
+
+/-- Sampling a martingale along a monotone map gives a martingale. -/
+theorem Martingale.comp (hX : Martingale X ℱ μ) (hτ : Monotone τ) :
+    Martingale (fun n ↦ X (τ n)) (ℱ.comp hτ) μ := by
+  refine ⟨hX.stronglyAdapted.comp hτ, fun i j hij ↦ ?_⟩
+  simpa only [Filtration.comp_apply] using hX.condExp_ae_eq (hτ hij)
+
+/-- Sampling a supermartingale along a monotone map gives a supermartingale. -/
+theorem Supermartingale.comp [LE E] (hX : Supermartingale X ℱ μ) (hτ : Monotone τ) :
+    Supermartingale (fun n ↦ X (τ n)) (ℱ.comp hτ) μ := by
+  refine ⟨hX.stronglyAdapted.comp hτ, fun i j hij ↦ ?_, fun i ↦ hX.integrable (τ i)⟩
+  simpa only [Filtration.comp_apply] using hX.condExp_ae_le (hτ hij)
+
+/-- Sampling a submartingale along a monotone map gives a submartingale. -/
+theorem Submartingale.comp [LE E] (hX : Submartingale X ℱ μ) (hτ : Monotone τ) :
+    Submartingale (fun n ↦ X (τ n)) (ℱ.comp hτ) μ := by
+  refine ⟨hX.stronglyAdapted.comp hτ, fun i j hij ↦ ?_, fun i ↦ hX.integrable (τ i)⟩
+  simpa only [Filtration.comp_apply] using hX.ae_le_condExp (hτ hij)
+
+end Sampling
 
 /-- An adapted integrable process is a martingale exactly when its integrals on every
 event known at an earlier date are unchanged between the two dates. -/
@@ -122,6 +155,26 @@ section NormAndMultipliers
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder ι]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
+
+/-- Multiplication by a random real scalar measurable at every time preserves a martingale
+whenever all the products are integrable. No sigma-finiteness assumption is needed. -/
+theorem Martingale.smul_of_stronglyMeasurable (hX : Martingale X ℱ μ) {c : Ω → ℝ}
+    (hc : ∀ t, StronglyMeasurable[ℱ t] c)
+    (hint : ∀ t, Integrable (fun ω ↦ c ω • X t ω) μ) :
+    Martingale (fun t ω ↦ c ω • X t ω) ℱ μ := by
+  refine ⟨fun t ↦ (hc t).smul (hX.stronglyMeasurable t), fun s t hst ↦ ?_⟩
+  exact (condExp_smul_of_aestronglyMeasurable_left (hc s).aestronglyMeasurable
+    (hint t) (hX.integrable t)).trans
+      ((hX.condExp_ae_eq hst).mono fun ω hω ↦ by simp only [Pi.smul_apply', hω])
+
+/-- An almost surely bounded random real scalar measurable at every time preserves
+Banach-valued martingales. -/
+theorem Martingale.bdd_smul (hX : Martingale X ℱ μ) {c : Ω → ℝ}
+    (hc : ∀ t, StronglyMeasurable[ℱ t] c) (C : ℝ) (hbound : ∀ᵐ ω ∂μ, ‖c ω‖ ≤ C) :
+    Martingale (fun t ω ↦ c ω • X t ω) ℱ μ := by
+  apply hX.smul_of_stronglyMeasurable hc
+  intro t
+  exact (hX.integrable t).bdd_smul C ((hc t).mono (ℱ.le t)).aestronglyMeasurable hbound
 
 /-- The norm of a Banach-valued martingale is a submartingale. -/
 theorem Martingale.norm (hX : Martingale X ℱ μ) :

@@ -42,9 +42,6 @@ bases are positive, so Mathlib's improper-integral criterion for real powers app
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, the Pareto target — the
-  mean and its non-integrability threshold, the variance and its non-integrability threshold,
-  the cdf, and `integrableExpSet id (paretoMeasure t r) = Set.Iic 0`.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   Chapter 20.
 * `Mathlib.Probability.Distributions.Pareto`, whose density normalization is reused here.

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.Algebra.Operations
 import Mathlib.Data.List.Chain
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Algebra.BigOperators.Ring.List
 
 /-!
@@ -538,18 +539,22 @@ theorem iSup_fiber (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) (g : ι → �
       (q : A) (hq : q ∈ Submodule.span R (T x.1)) : x.2 * q ∈ Submodule.span R (V x.1) :=
     Submodule.span_mono (hST x.1)
       (Submodule.span_mul_span R (S x.1) (T x.1) ▸ Submodule.mul_mem_mul (hS hx.1 hx.2) hq)
-  -- By induction along the word, the value of a centred alternating word in the subalgebras
-  -- generated over the fibres, with first label `k`, lies in the span of `V k`.
-  have key := List.prod_map_snd_mem_span_of_isChain
-    (fun x : κ × A ↦ x.2 ∈ ⨆ (i) (_ : g i = x.1), B i ∧ φ x.2 = 0) V T hcons
-    (fun k => Submodule.subset_span ⟨[], by simp, by simp, by simp, by simp, by simp⟩)
-    (fun k k' hk => by
+  -- `T k` contains `1`, and the span of `T k` contains that of `V k'` for every `k' ≠ k`.
+  have h1 (k : κ) : (1 : A) ∈ Submodule.span R (T k) :=
+    Submodule.subset_span ⟨[], by simp, by simp, by simp, by simp, by simp⟩
+  have hVT {k k' : κ} (hk : k ≠ k') : Submodule.span R (V k') ≤ Submodule.span R (T k) :=
+    Submodule.span_mono <| by
       rintro _ ⟨w, -, halt', hw, hc', hg, rfl⟩
-      exact ⟨w, halt', hw, hc', fun y hy => (hg y hy).trans_ne hk.symm, rfl⟩)
+      exact ⟨w, halt', hw, hc', fun y hy => (hg y hy).trans_ne hk.symm, rfl⟩
   intro W hne halt hW hc
   obtain ⟨x, W, rfl⟩ := List.exists_cons_of_ne_nil hne
+  have hcons' (y : κ × A) (hy : y ∈ x :: W) := hcons y ⟨hW y hy, hc y hy⟩
+  -- By induction along the word, the value of a centred alternating word in the subalgebras
+  -- generated over the fibres, with first label `k`, lies in the span of `V k`.
   refine isFreelyIndependent_iff_span_le_ker.1 h (Submodule.span_mono ?_
-    (key W x halt fun y hy ↦ ⟨hW y hy, hc y hy⟩))
+    (List.prod_map_mem_of_isChain Prod.snd (fun y ↦ Submodule.span R (V y.1))
+      ((List.isChain_map Prod.fst).1 halt) (fun y hy ↦ by simpa using hcons' y hy 1 (h1 y.1))
+      fun y _ hy _ hyz q hq ↦ hcons' y hy q (hVT hyz hq)))
   rintro _ ⟨w, hne, halt, hw, hc, -, rfl⟩
   exact ⟨w, hne, halt, hw, hc, rfl⟩
 

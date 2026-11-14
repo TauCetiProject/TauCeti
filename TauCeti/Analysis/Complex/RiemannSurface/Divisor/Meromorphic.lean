@@ -24,9 +24,9 @@ normalization of representatives.
 If the space of sections has dimension greater than one, its image cannot consist only of
 constants. On a compact connected Riemann surface this produces a finite holomorphic map to
 the sphere, with the prescribed pole bound. This is the linear-algebra step converting a
-lower bound on the dimension of a divisor's section space into an actual finite map. Its
-degree is at most the degree of an effective divisor, so a second section of the divisor of a
-single point gives a map of degree one.
+lower bound on the dimension of a divisor's section space into an actual finite map. When the
+divisor `D` bounding the poles is effective, the degree of this map is at most `deg D`, so a
+second section of the divisor of a single point gives a map of degree one.
 
 ## References
 

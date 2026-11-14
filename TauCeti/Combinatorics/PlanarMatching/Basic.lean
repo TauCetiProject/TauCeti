@@ -306,6 +306,17 @@ def nested (n : ℕ) : PlanarMatching (n + n) :=
 @[simp]
 theorem nested_val (n : ℕ) : (nested n).1.val = Fin.revPerm := (rfl)
 
+/-- There is a planar matching of `k` points exactly when `k` is even: an odd number of points
+has none, and an even number `j + j` has the nested one. -/
+theorem nonempty_iff : Nonempty (PlanarMatching k) ↔ Even k :=
+  ⟨fun ⟨x⟩ => by_contra fun hk => (isEmpty_of_not_even hk).false x,
+    fun ⟨j, hj⟩ => ⟨cast hj.symm (nested j)⟩⟩
+
+/-- The empty matching is the only planar matching of no points. -/
+instance : Unique (PlanarMatching 0) where
+  default := nested 0
+  uniq _ := ext fun a => a.elim0
+
 end PlanarMatching
 
 /-- The nested matching `{0, 3}, {1, 2}` of four points is planar, while the crossing matching

@@ -123,6 +123,14 @@ theorem riemannianExp_def (p : M) (v : TangentSpace I p) :
     riemannianExp I M p v = maximalGeodesic I M p v 1 := by
   rfl
 
+/-- The exponential maps at equal base points agree on equal vectors. Both tangent spaces are the
+model space, so the vectors are compared there. -/
+theorem riemannianExp_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) :
+    riemannianExp I M q w = riemannianExp I M p v := by
+  subst h hw
+  rfl
+
 /-- The zero vector lies in the domain of the exponential map. -/
 theorem zero_mem_expDomain (p : M) : (0 : TangentSpace I p) ∈ expDomain I M p := by
   simp only [mem_expDomain_iff, geodesicInterval_zero, mem_univ]

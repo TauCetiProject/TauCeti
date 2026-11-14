@@ -119,6 +119,8 @@ families of operators.
 * `TauCeti.Symbol.IsSmoothing.exists_continuousLinearMap_toDistr_quantizeSobolev_eq`: a smoothing
   symbol with compact spatial support quantizes, on every `H^t`, to a bounded operator
   `H^r → H^s` for arbitrary orders `r` and `s`.
+* `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: such a symbol quantizes every
+  element of `H^s` into `H^t` for all real `s` and `t`.
 
 ## References
 
@@ -841,8 +843,6 @@ theorem quantizeSobolev_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
     BesselPotentialSpace.ext ?_
   ext φ
-  obtain ⟨C, -, hC⟩ := isUniform_iff.mp ha.isUniform [] []
-  obtain ⟨C', -, hC'⟩ := isUniform_iff.mp hb.isUniform [] []
   have hia : Integrable fun x ↦ φ x • quantizeSchwartzValue a.coefficient u x :=
     (ha.integrable_quantizeSchwartzValue u).smul_of_top_right (φ.memLp ⊤)
   have hib : Integrable fun x ↦ φ x • quantizeSchwartzValue b.coefficient u x :=
@@ -852,10 +852,7 @@ theorem quantizeSobolev_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
   rw [← integral_add hia hib]
   refine integral_congr_ae (.of_forall fun x ↦ ?_)
   dsimp only
-  rw [coefficient_add, quantizeSchwartzValue_add_left
-    (a.continuous_coefficient_slice x).aestronglyMeasurable (fun ξ ↦ by simpa using hC x ξ)
-    (b.continuous_coefficient_slice x).aestronglyMeasurable (fun ξ ↦ by simpa using hC' x ξ),
-    smul_add]
+  rw [coefficient_add, quantizeSchwartzValue_coefficient_add, smul_add]
 
 /-- The operator `Op(a) : H^s → H^{s - m}` is homogeneous in the symbol. -/
 theorem quantizeSobolev_smul (ha : a.HasCompactSpatialSupport) (c : ℂ)
@@ -1050,6 +1047,17 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
     SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth]
+
+/-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
+spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
+theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
+    (hc : a.HasCompactSpatialSupport) (s t : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    MemSobolev t 2 (a.quantizeSobolev hc s u).toDistr := by
+  -- A symbol of order `s - t` with the same coefficient maps `H^s` into `H^t`.
+  obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
+  have hbc := hc.of_coefficient_eq hb
+  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
+  simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
 
 end Sobolev
 

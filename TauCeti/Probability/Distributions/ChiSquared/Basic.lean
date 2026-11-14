@@ -89,10 +89,6 @@ statement.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, the **Chi-squared** target,
-  together with the chi-squared case of items 1–4 of "What every distribution must provide", and
-  the completion check `chiSquaredMeasure 2 = expMeasure (1 / 2)`.
-* Formal declaration scaffold: `TauCetiRoadmap/StandardDistributions/Suggested.lean`, Layer 3.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed.,
   Wiley (1994), ch. 18.
 -/

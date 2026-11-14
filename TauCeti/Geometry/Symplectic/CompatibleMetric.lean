@@ -38,6 +38,8 @@ against exactly this metric.
   polarization identity for `g(a + J b, a + J b)`.
 * `TauCeti.SymplecticForm.associatedBilinForm_apply_apply_of_isComplexLinearMap`: symplectic
   complex-linear maps preserve the metric.
+* `TauCeti.SymplecticForm.Compatible.associatedBilinForm_add_add_le`: the vectors `a`, `b`, `c`
+  are controlled in the metric by `a + δ b`, `c + δ J b` and `b`.
 * `TauCeti.SymplecticForm.Compatible.innerProductCore`: the metric of a compatible pair as an
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
@@ -174,6 +176,31 @@ lemma symplecticForm_apply_apply_self_nonneg (h : ω.Compatible J) (v : V) : 0 �
 lemma associatedBilinForm_self_eq_zero (h : ω.Compatible J) {v : V} :
     ω.associatedBilinForm J v v = 0 ↔ v = 0 :=
   SymplecticForm.associatedBilinForm_self_eq_zero h.positive
+
+/-- A comparison of metric norms under a shift by `b` and `J b`: the vectors `a`, `c`, `b` are
+controlled by the shifted vectors `a + δ b` and `c + δ J b`, since `g(J b, J b) = g(b, b)`. It is
+the pointwise comparison of weighted energy densities under conjugation by an exponential
+weight. -/
+lemma associatedBilinForm_add_add_le (h : ω.Compatible J) (δ : ℝ) (a b c : V) :
+    (ω.associatedBilinForm J a a + ω.associatedBilinForm J c c) + ω.associatedBilinForm J b b ≤
+      (2 + 4 * δ ^ 2) * ((ω.associatedBilinForm J (a + δ • b) (a + δ • b) +
+        ω.associatedBilinForm J (c + δ • J b) (c + δ • J b)) + ω.associatedBilinForm J b b) := by
+  -- `g(x, x) ≤ 2 g(x + y, x + y) + 2 g(y, y)`, since the difference is `g(x + 2 y, x + 2 y)`.
+  have key (x y : V) : ω.associatedBilinForm J x x ≤
+      2 * ω.associatedBilinForm J (x + y) (x + y) + 2 * ω.associatedBilinForm J y y := by
+    have h' := h.associatedBilinForm_self_nonneg (x + (2 : ℝ) • y)
+    simp only [associatedBilinForm_apply, map_add, map_smul, LinearMap.add_apply,
+      LinearMap.smul_apply, smul_eq_mul] at h' ⊢
+    nlinarith [h.associatedBilinForm_apply_swap x y]
+  have h₁ := key a (δ • b)
+  have h₂ := key c (δ • J b)
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, h.associatedBilinForm_invariant b b]
+    at h₁ h₂
+  have ha := h.associatedBilinForm_self_nonneg (a + δ • b)
+  have hc := h.associatedBilinForm_self_nonneg (c + δ • J b)
+  have hb := h.associatedBilinForm_self_nonneg b
+  nlinarith [sq_nonneg δ, mul_nonneg (sq_nonneg δ) ha, mul_nonneg (sq_nonneg δ) hc,
+    mul_nonneg (sq_nonneg δ) hb]
 
 /-- The metric of a compatible pair, packaged as an `InnerProductSpace.Core ℝ V`.
 
