@@ -237,7 +237,7 @@ theorem kroneckerSym_trichotomy (a b : ℤ) :
     Int.abs_le_one_iff.mpr (jacobiSym.trichotomy _ _)
   have hmul (x y : ℤ) (hx : |x| ≤ 1) (hy : |y| ≤ 1) : |x * y| ≤ 1 := by
     rw [abs_mul]
-    nlinarith [abs_nonneg x, abs_nonneg y]
+    exact (mul_le_of_le_one_left (abs_nonneg _) hx).trans hy
   rw [kroneckerSym_of_ne_zero a hb]
   exact hmul _ _ (hmul _ _ hs (by rw [abs_pow]; exact pow_le_one₀ (abs_nonneg _) h₈)) hJ
 
@@ -340,11 +340,9 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
       kroneckerSym_eq_jacobiSym _ hm, jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm]
     simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd]
     congr 2
-    have habs : ((D.natAbs : ℕ) : ZMod 8) = ((|D| : ℤ) : ZMod 8) := by
-      rw [← Int.natCast_natAbs, Int.cast_natCast]
-    rw [habs]
-    rcases abs_choice D with h | h <;> rw [h]
-    rw [Int.cast_neg, χ₈_neg]
+    rcases Int.natAbs_eq D with h | h
+    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
+    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · exact hnat k
   · rw [neg_eq_neg_one_mul, kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_neg_one_right,
@@ -360,16 +358,11 @@ least nonnegative residue of `m` modulo `D`. For `m < 0` this is the reflection 
 private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀ : D ≠ 0) {m : ℤ}
     (hm : Odd m) : kroneckerSym D m = jacobiSym D (m % D).toNat := by
   have hr₀ : 0 ≤ m % D := Int.emod_nonneg m hD₀
-  have hr : Odd (m % D).toNat := by
-    have h2 : Even D := even_iff_two_dvd.mpr (dvd_trans (by norm_num) (Int.dvd_of_emod_eq_zero hD))
-    rw [← Int.odd_natCast, Int.toNat_of_nonneg hr₀, Int.emod_def]
-    exact hm.sub_even (h2.mul_right _)
   rcases Int.eq_nat_or_neg m with ⟨k, rfl | rfl⟩
   · have hk : Odd k := (Int.odd_natCast k).mp hm
     have hmod : ((k : ℤ) % D).toNat = k % D.natAbs := by
       rw [← Int.emod_abs, ← Int.natCast_natAbs, ← Int.natCast_mod, Int.toNat_natCast]
-    rw [kroneckerSym_eq_jacobiSym D hk, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk, hmod,
-      jacobiSym_mod_natAbs_of_emod_four_eq_zero hD (hmod ▸ hr), Nat.mod_mod]
+    rw [kroneckerSym_eq_jacobiSym D hk, hmod, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk]
   · have hk : Odd k := (Int.odd_natCast k).mp (by simpa using hm)
     have hdvd : D.natAbs ∣ k + (-(k : ℤ) % D).toNat := by
       rw [← Int.natCast_dvd_natCast, Nat.cast_add, Int.toNat_of_nonneg hr₀, Int.natCast_natAbs,
