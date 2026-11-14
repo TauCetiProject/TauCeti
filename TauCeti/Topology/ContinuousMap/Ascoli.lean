@@ -217,7 +217,11 @@ theorem totallyBounded_range_mkOfCompact_of_equicontinuous [CompactSpace X] [Pse
   refine mem_iUnion₂.2 ⟨_, mem_image_of_mem _ hjt, Metric.mem_ball.2 ?_⟩
   refine lt_of_le_of_lt ((BoundedContinuousFunction.dist_le (half_pos hr).le).2 fun x ↦ ?_)
     (half_lt_self hr)
-  exact (hij x (mem_univ x)).le
+  rw [BoundedContinuousFunction.mkOfCompact_apply, BoundedContinuousFunction.mkOfCompact_apply,
+    ContinuousMap.coe_mk, ContinuousMap.coe_mk]
+  have hmem := hij x (mem_univ x)
+  rw [mem_ofPred] at hmem
+  exact hmem.le
 
 end ArzelaAscoli
 

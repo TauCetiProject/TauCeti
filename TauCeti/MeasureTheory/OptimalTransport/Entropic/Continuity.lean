@@ -14,13 +14,7 @@ import TauCeti.Topology.Instances.ENNReal
 import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
-# Separate convexity, potential regularity, and weak continuity of entropic optimal transport
-
-For a fixed temperature `ε` and cost `c`, the entropically regularised transport cost
-`TauCeti.entropicTransportCost c ε μ ν` is separately convex in each marginal: mixing couplings
-`π₀ ∈ Π(μ₀, ν)` and `π₁ ∈ Π(μ₁, ν)` mixes the reference products `μ₀ ⊗ ν` and `μ₁ ⊗ ν` with the
-same weights, so joint convexity of relative entropy
-(`TauCeti.klDiv_smul_add_smul_smul_add_smul_le`) bounds the regularised cost of the mixture.
+# Potential regularity and weak continuity of entropic optimal transport
 
 At positive temperature and for a bounded cost `c ≤ B`, the `c`-softmin operator
 
@@ -43,12 +37,7 @@ Ranga Rao's uniform weak convergence theorem
 
 ## Main statements
 
-* `TauCeti.entropicTransportCost_smul_add_smul_left_le` and
-  `TauCeti.entropicTransportCost_smul_add_smul_right_le`: separate convexity of
-  `entropicTransportCost` in `ℝ≥0∞` for finite measures and arbitrary costs.
-* `TauCeti.toReal_entropicTransportCost_smul_add_smul_left_le` and
-  `TauCeti.toReal_entropicTransportCost_smul_add_smul_right_le`: the real-valued forms.
-* `TauCeti.exists_regularized_entropicPotentials` and
+* `TauCeti.exists_measurable_entropicDualValue_eq` and
   `TauCeti.exists_continuous_entropicDualValue_eq`: dual attainment by normalised `c`-softmin
   potentials bounded by `B` and `2 * B`, with `φ x + ψ y ≤ 2 * B`, coordinate oscillation
   inheritance, and the pointwise marginal identity (measurable in general, continuous on compact
@@ -60,126 +49,17 @@ Ranga Rao's uniform weak convergence theorem
 
 * J. Feydy, T. Séjourné, F.-X. Vialard, S. Amari, A. Trouvé and G. Peyré,
   *Interpolating between optimal transport and MMD using Sinkhorn divergences*, AISTATS 2019,
-  Proposition 2, for separate convexity and weak continuity of entropic transport.
+  Proposition 2, for potential regularity and weak continuity of entropic transport.
 -/
 
 public section
 
 noncomputable section
 
-open Filter InformationTheory MeasureTheory Set Topology
+open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-! ### Separate convexity in each marginal -/
-
-section Convexity
-
-variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
-
-/-- **Convexity of entropic optimal transport in the first marginal.** For finite measures and
-nonnegative weights summing to `1`, the regularised transport cost out of `a • μ₀ + b • μ₁` is at
-most the weighted sum of the regularised transport costs out of `μ₀` and `μ₁`. No measurability of
-the cost or normalisation of the measures is required. -/
-theorem entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measure X} {ν : Measure Y}
-    [IsFiniteMeasure μ₀] [IsFiniteMeasure μ₁] [IsFiniteMeasure ν] {a b : ℝ≥0} (hab : a + b = 1)
-    (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) :
-    entropicTransportCost c ε (a • μ₀ + b • μ₁) ν ≤
-      a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · have hb : b = 1 := by simpa using hab
-    simp [hb]
-  rcases eq_or_ne b 0 with rfl | hb
-  · have ha : a = 1 := by simpa using hab
-    simp [ha]
-  have ha' : (a : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 ha
-  have hb' : (b : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hb
-  by_cases h₀ : entropicTransportCost c ε μ₀ ν = ∞
-  · simp [h₀, ENNReal.mul_top ha']
-  by_cases h₁ : entropicTransportCost c ε μ₁ ν = ∞
-  · simp [h₁, ENNReal.mul_top hb']
-  refine ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_
-  have hδ' : (0 : ℝ≥0∞) < δ := ENNReal.coe_pos.2 hδ
-  obtain ⟨π₀, hπ₀, hlt₀⟩ := entropicTransportCost_lt_iff.1
-    (ENNReal.lt_add_right h₀ hδ'.ne')
-  obtain ⟨π₁, hπ₁, hlt₁⟩ := entropicTransportCost_lt_iff.1
-    (ENNReal.lt_add_right h₁ hδ'.ne')
-  have := hπ₀.isFiniteMeasure
-  have := hπ₁.isFiniteMeasure
-  have hπ : IsCoupling (a • π₀ + b • π₁) (a • μ₀ + b • μ₁) ν := by
-    have h := (hπ₀.smul (a : ℝ≥0∞)).add (hπ₁.smul (b : ℝ≥0∞))
-    have hν : (a : ℝ≥0∞) • ν + (b : ℝ≥0∞) • ν = ν := by
-      rw [← add_smul, ← ENNReal.coe_add, hab, ENNReal.coe_one, one_smul]
-    rw [hν, Measure.coe_nnreal_smul, Measure.coe_nnreal_smul,
-      Measure.coe_nnreal_smul, Measure.coe_nnreal_smul] at h
-    exact h
-  have hprod : (a • μ₀ + b • μ₁).prod ν = a • (μ₀.prod ν) + b • (μ₁.prod ν) := by
-    rw [Measure.add_prod, Measure.prod_smul_left, Measure.prod_smul_left]
-  calc entropicTransportCost c ε (a • μ₀ + b • μ₁) ν
-      ≤ ∫⁻ z, c z ∂(a • π₀ + b • π₁) + ε * klDiv (a • π₀ + b • π₁) ((a • μ₀ + b • μ₁).prod ν) :=
-        entropicTransportCost_le hπ c ε
-    _ ≤ a * (∫⁻ z, c z ∂π₀ + ε * klDiv π₀ (μ₀.prod ν)) +
-          b * (∫⁻ z, c z ∂π₁ + ε * klDiv π₁ (μ₁.prod ν)) := by
-        rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure, hprod,
-          ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul]
-        calc ((a : ℝ≥0∞) * ∫⁻ z, c z ∂π₀ + b * ∫⁻ z, c z ∂π₁) +
-              ε * klDiv (a • π₀ + b • π₁) (a • μ₀.prod ν + b • μ₁.prod ν)
-            ≤ (a * ∫⁻ z, c z ∂π₀ + b * ∫⁻ z, c z ∂π₁) +
-                ε * (a * klDiv π₀ (μ₀.prod ν) + b * klDiv π₁ (μ₁.prod ν)) := by
-              gcongr
-              exact klDiv_smul_add_smul_smul_add_smul_le a b
-          _ = _ := by ring
-    _ ≤ a * (entropicTransportCost c ε μ₀ ν + δ) + b * (entropicTransportCost c ε μ₁ ν + δ) := by
-        gcongr
-    _ = a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν + δ := by
-        have hab' : (a : ℝ≥0∞) + b = 1 := by exact_mod_cast hab
-        calc a * (entropicTransportCost c ε μ₀ ν + δ) + b * (entropicTransportCost c ε μ₁ ν + δ)
-            = a * entropicTransportCost c ε μ₀ ν + b * entropicTransportCost c ε μ₁ ν +
-                ((a : ℝ≥0∞) + b) * δ := by ring
-          _ = _ := by rw [hab', one_mul]
-
-/-- **Convexity of entropic optimal transport in the second marginal.** -/
-theorem entropicTransportCost_smul_add_smul_right_le {μ : Measure X} {ν₀ ν₁ : Measure Y}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν₀] [IsFiniteMeasure ν₁] {a b : ℝ≥0} (hab : a + b = 1)
-    (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) :
-    entropicTransportCost c ε μ (a • ν₀ + b • ν₁) ≤
-      a * entropicTransportCost c ε μ ν₀ + b * entropicTransportCost c ε μ ν₁ := by
-  rw [← entropicTransportCost_comp_swap c ε (a • ν₀ + b • ν₁),
-    ← entropicTransportCost_comp_swap c ε ν₀, ← entropicTransportCost_comp_swap c ε ν₁]
-  exact entropicTransportCost_smul_add_smul_left_le hab (c ∘ Prod.swap) ε
-
-/-- **Convexity of real-valued entropic optimal transport in the first marginal.** -/
-theorem toReal_entropicTransportCost_smul_add_smul_left_le {μ₀ μ₁ : Measure X} {ν : Measure Y}
-    [IsFiniteMeasure μ₀] [IsFiniteMeasure μ₁] [IsFiniteMeasure ν] {a b : ℝ≥0} (hab : a + b = 1)
-    {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} (h₀ : entropicTransportCost c ε μ₀ ν ≠ ∞)
-    (h₁ : entropicTransportCost c ε μ₁ ν ≠ ∞) :
-    (entropicTransportCost c ε (a • μ₀ + b • μ₁) ν).toReal ≤
-      a * (entropicTransportCost c ε μ₀ ν).toReal +
-        b * (entropicTransportCost c ε μ₁ ν).toReal := by
-  have hrhs : (a : ℝ≥0∞) * entropicTransportCost c ε μ₀ ν +
-      b * entropicTransportCost c ε μ₁ ν ≠ ∞ :=
-    ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top h₀,
-      ENNReal.mul_ne_top ENNReal.coe_ne_top h₁⟩
-  have hle := ENNReal.toReal_mono hrhs (entropicTransportCost_smul_add_smul_left_le hab c ε)
-  rwa [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.coe_ne_top h₀)
-    (ENNReal.mul_ne_top ENNReal.coe_ne_top h₁), ENNReal.toReal_mul, ENNReal.toReal_mul,
-    ENNReal.coe_toReal, ENNReal.coe_toReal] at hle
-
-/-- **Convexity of real-valued entropic optimal transport in the second marginal.** -/
-theorem toReal_entropicTransportCost_smul_add_smul_right_le {μ : Measure X} {ν₀ ν₁ : Measure Y}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν₀] [IsFiniteMeasure ν₁] {a b : ℝ≥0} (hab : a + b = 1)
-    {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} (h₀ : entropicTransportCost c ε μ ν₀ ≠ ∞)
-    (h₁ : entropicTransportCost c ε μ ν₁ ≠ ∞) :
-    (entropicTransportCost c ε μ (a • ν₀ + b • ν₁)).toReal ≤
-      a * (entropicTransportCost c ε μ ν₀).toReal +
-        b * (entropicTransportCost c ε μ ν₁).toReal := by
-  rw [← entropicTransportCost_comp_swap c ε (a • ν₀ + b • ν₁),
-    ← entropicTransportCost_comp_swap c ε ν₀, ← entropicTransportCost_comp_swap c ε ν₁]
-  exact toReal_entropicTransportCost_smul_add_smul_left_le hab
-    (by rwa [entropicTransportCost_comp_swap]) (by rwa [entropicTransportCost_comp_swap])
-
-end Convexity
 
 /-! ### Regularised Schrödinger potentials via the `c`-softmin operator -/
 
@@ -204,10 +84,10 @@ private theorem integrable_exp_neg_toReal_add [IsFiniteMeasure ν] (hc : Measura
     {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ) (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
     Integrable (fun y ↦ Real.exp (-(c (x, y)).toReal / ε + ψ y / ε)) ν :=
   integrable_exp_add_of_le (h := fun z ↦ -(c z).toReal / ε) (ψ := fun y ↦ ψ y / ε)
-    (M := 0) (C := C / ε) (hc.ennreal_toReal.neg.div_const _)
+    (a := x) (M := 0) (C := C / ε) ((hc.comp measurable_prodMk_left).ennreal_toReal.neg.div_const _)
     (fun _ ↦ div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 ENNReal.toReal_nonneg) ε.coe_nonneg)
     (hψ.div_const _)
-    (fun y ↦ div_le_div_of_nonneg_right (le_of_abs_le (hψC y)) ε.coe_nonneg) x
+    (fun y ↦ div_le_div_of_nonneg_right (le_of_abs_le (hψC y)) ε.coe_nonneg)
 
 private theorem abs_entropicSoftmin_le [IsProbabilityMeasure ν] (hc : Measurable c)
     (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ)
@@ -215,14 +95,14 @@ private theorem abs_entropicSoftmin_le [IsProbabilityMeasure ν] (hc : Measurabl
     |entropicSoftmin c ε ν ψ x| ≤ C + B := by
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   have hlog := abs_logIntegralExp_le (ν := ν) (h := fun z ↦ -(c z).toReal / ε)
-    (ψ := fun y ↦ ψ y / ε) (IsProbabilityMeasure.ne_zero ν)
-    (hc.ennreal_toReal.neg.div_const _)
-    (M := (B : ℝ) / ε) (fun z ↦ by
+    (ψ := fun y ↦ ψ y / ε) (IsProbabilityMeasure.ne_zero ν) (a := x)
+    ((hc.comp measurable_prodMk_left).ennreal_toReal.neg.div_const _)
+    (M := (B : ℝ) / ε) (fun y ↦ by
       rw [abs_div, abs_neg, abs_of_nonneg ENNReal.toReal_nonneg, abs_of_pos hεpos]
-      exact div_le_div_of_nonneg_right (ENNReal.toReal_le_coe_of_le_coe (hcB z)) hεpos.le)
+      exact div_le_div_of_nonneg_right (ENNReal.toReal_le_coe_of_le_coe (hcB (x, y))) hεpos.le)
     (hψ.div_const _) (C := C / ε) (fun y ↦ by
       rw [abs_div, abs_of_pos hεpos]
-      exact div_le_div_of_nonneg_right (hψC y) hεpos.le) x
+      exact div_le_div_of_nonneg_right (hψC y) hεpos.le)
   rw [probReal_univ, Real.log_one, abs_zero, add_zero] at hlog
   rw [entropicSoftmin, abs_mul, abs_neg, abs_of_pos hεpos]
   calc (ε : ℝ) * |logIntegralExp (fun z ↦ -(c z).toReal / ε) ν (fun y ↦ ψ y / ε) x|
@@ -240,11 +120,8 @@ private theorem abs_entropicSoftmin_sub_le [IsProbabilityMeasure ν] (hc : Measu
   have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   have hlog := abs_logIntegralExp_sub_le (ν := ν) (h := fun z ↦ -(c z).toReal / ε)
     (ψ := fun y ↦ ψ y / ε) (IsProbabilityMeasure.ne_zero ν)
-    (hc.ennreal_toReal.neg.div_const _) (M := 0)
-    (fun _ ↦ div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 ENNReal.toReal_nonneg) hεpos.le)
-    (hψ.div_const _) (C := C / ε)
-    (fun y ↦ div_le_div_of_nonneg_right (le_of_abs_le (hψC y)) hεpos.le)
-    (a₁ := x₁) (a₂ := x₂) (δ := δ / ε) fun y ↦ by
+    (integrable_exp_neg_toReal_add hc hψ hψC x₁)
+    (integrable_exp_neg_toReal_add hc hψ hψC x₂) (δ := δ / ε) fun y ↦ by
       have hrw : -(c (x₁, y)).toReal / (ε : ℝ) - -(c (x₂, y)).toReal / ε =
           -((c (x₁, y)).toReal - (c (x₂, y)).toReal) / ε := by ring
       rw [hrw, abs_div, abs_neg, abs_of_pos hεpos]
@@ -257,6 +134,31 @@ private theorem abs_entropicSoftmin_sub_le [IsProbabilityMeasure ν] (hc : Measu
   rw [hsub, abs_mul, abs_neg, abs_of_pos hεpos]
   exact (mul_le_mul_of_nonneg_left hlog hεpos.le).trans_eq (mul_div_cancel₀ _ hεpos.ne')
 
+/-- When `c ≤ B` and `ψ` has oscillation at most `B`, the sum `entropicSoftmin c ε ν ψ x + ψ y` is
+at most `2 * B` at every `(x, y)`. -/
+private theorem entropicSoftmin_add_le [IsProbabilityMeasure ν] (hc : Measurable c)
+    (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ} (hψ : Measurable ψ)
+    (hψC : ∀ y, |ψ y| ≤ C) (hosc : ∀ y₁ y₂, |ψ y₁ - ψ y₂| ≤ B) (x : X) (y : Y) :
+    entropicSoftmin c ε ν ψ x + ψ y ≤ 2 * B := by
+  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  have hint := integrable_exp_neg_toReal_add (ν := ν) (ε := ε) hc hψ hψC x
+  have hlower : Real.exp ((ψ y - 2 * B) / ε) ≤
+      ∫ y', Real.exp (-(c (x, y')).toReal / ε + ψ y' / ε) ∂ν := by
+    calc Real.exp ((ψ y - 2 * B) / ε) = ∫ _, Real.exp ((ψ y - 2 * B) / ε) ∂ν := by simp
+      _ ≤ ∫ y', Real.exp (-(c (x, y')).toReal / ε + ψ y' / ε) ∂ν :=
+          integral_mono (integrable_const _) hint fun y' ↦ Real.exp_le_exp.2 <| by
+            have hdiff : ψ y - ψ y' ≤ B := (le_abs_self _).trans (hosc y y')
+            have hc' : (c (x, y')).toReal ≤ B := ENNReal.toReal_le_coe_of_le_coe (hcB (x, y'))
+            have hrw : -(c (x, y')).toReal / (ε : ℝ) + ψ y' / ε =
+                (ψ y' - (c (x, y')).toReal) / ε := by ring
+            rw [hrw]
+            exact div_le_div_of_nonneg_right (by linarith) hεpos.le
+  have hlog := (Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hlower)
+  have hmul := mul_le_mul_of_nonneg_left hlog hεpos.le
+  rw [mul_div_cancel₀ _ hεpos.ne'] at hmul
+  simp only [entropicSoftmin, logIntegralExp_def]
+  linarith
+
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- When `c (x, y) ≠ ∞`, the Gibbs factor splits into its `x`-potential factor and its tilted cost
 kernel. -/
@@ -268,19 +170,32 @@ private theorem entropicGibbsFactor_eq_exp_mul_exp {φ : X → ℝ} {ψ : Y → 
   congr 1
   ring
 
+/-- Each `x`-slice of `entropicGibbsFactor c ε φ ψ` integrates against `ν` to
+`exp ((φ x - entropicSoftmin c ε ν ψ x) / ε)`. -/
+private theorem integral_entropicGibbsFactor_eq_exp_sub_entropicSoftmin [IsProbabilityMeasure ν]
+    (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {φ : X → ℝ} {ψ : Y → ℝ} {C : ℝ}
+    (hψ : Measurable ψ) (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
+    ∫ y, entropicGibbsFactor c ε φ ψ (x, y) ∂ν =
+      Real.exp ((φ x - entropicSoftmin c ε ν ψ x) / ε) := by
+  have hfin : ∀ y, c (x, y) ≠ ∞ := fun y ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB (x, y))
+  have hint := integrable_exp_neg_toReal_add (ν := ν) (ε := ε) hc hψ hψC x
+  have hZpos : 0 < ∫ y, Real.exp (-(c (x, y)).toReal / ε + ψ y / ε) ∂ν := integral_exp_pos hint
+  simp_rw [entropicGibbsFactor_eq_exp_mul_exp (hfin _)]
+  rw [integral_const_mul, ← Real.exp_log hZpos, ← Real.exp_add]
+  congr 1
+  simp only [entropicSoftmin, logIntegralExp_def]
+  have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
+  field_simp
+  ring
+
 /-- At `φ = entropicSoftmin c ε ν ψ`, the Gibbs slice integrates to `1` against `ν` at *every*
 point `x : X`. -/
 private theorem integral_entropicGibbsFactor_entropicSoftmin [IsProbabilityMeasure ν]
     (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {ψ : Y → ℝ} {C : ℝ}
     (hψ : Measurable ψ) (hψC : ∀ y, |ψ y| ≤ C) (x : X) :
     ∫ y, entropicGibbsFactor c ε (entropicSoftmin c ε ν ψ) ψ (x, y) ∂ν = 1 := by
-  have hε' : (ε : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hε
-  have hfin : ∀ y, c (x, y) ≠ ∞ := fun y ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB (x, y))
-  have hint := integrable_exp_neg_toReal_add (ν := ν) (ε := ε) hc hψ hψC x
-  have hZpos : 0 < ∫ y, Real.exp (-(c (x, y)).toReal / ε + ψ y / ε) ∂ν := integral_exp_pos hint
-  simp_rw [entropicGibbsFactor_eq_exp_mul_exp (hfin _)]
-  rw [integral_const_mul, entropicSoftmin, logIntegralExp_def, neg_mul, neg_div,
-    mul_div_cancel_left₀ _ hε', Real.exp_neg, Real.exp_log hZpos, inv_mul_cancel₀ hZpos.ne']
+  rw [integral_entropicGibbsFactor_eq_exp_sub_entropicSoftmin hc hcB hε hψ hψC, sub_self,
+    zero_div, Real.exp_zero]
 
 /-- Replacing `φ` by `entropicSoftmin c ε ν ψ` does not decrease `entropicDualValue`. -/
 private theorem entropicDualValue_le_entropicSoftmin_left [IsProbabilityMeasure μ]
@@ -305,6 +220,8 @@ private theorem entropicDualValue_le_entropicSoftmin_left [IsProbabilityMeasure 
         rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
         refine div_le_div_of_nonneg_right ?_ hεpos.le
         linarith [le_of_abs_le (hφC x), (abs_le.1 (hφ₁C x)).1])
+  have hexp_sub1 : Integrable (fun x ↦ Real.exp ((φ x - φ₁ x) / ε) - 1) μ :=
+    hexp_diff.sub (integrable_const _)
   have hexp := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hφ hψ
     (fun x ↦ le_of_abs_le (hφC x)) (fun y ↦ le_of_abs_le (hψC y))
   have hexp₁ := integrable_entropicGibbsFactor_of_le (μ := μ) (ν := ν) (ε := ε) hc hφ₁m hψ
@@ -314,39 +231,44 @@ private theorem entropicDualValue_le_entropicSoftmin_left [IsProbabilityMeasure 
   have hint₁ : ∫ z, (entropicGibbsFactor c ε φ₁ ψ z - 1) ∂μ.prod ν = 0 := by
     rw [integral_sub hexp₁ (integrable_const _), integral_prod _ hexp₁]
     simp [φ₁, integral_entropicGibbsFactor_entropicSoftmin hc hcB hε hψ hψC']
-  have hslice (x : X) : ∫ y, entropicGibbsFactor c ε φ ψ (x, y) ∂ν =
-      Real.exp ((φ x - φ₁ x) / ε) := by
-    have hfin : ∀ y, c (x, y) ≠ ∞ := fun y ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB (x, y))
-    have hint := integrable_exp_neg_toReal_add (ν := ν) (ε := ε) hc hψ hψC x
-    have hZpos : 0 < ∫ y, Real.exp (-(c (x, y)).toReal / ε + ψ y / ε) ∂ν := integral_exp_pos hint
-    simp_rw [entropicGibbsFactor_eq_exp_mul_exp (hfin _)]
-    rw [integral_const_mul, ← Real.exp_log hZpos, ← Real.exp_add]
-    congr 1
-    simp only [φ₁, entropicSoftmin, logIntegralExp_def]
-    field_simp
-    ring
   have hpen : ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν =
       ∫ x, (Real.exp ((φ x - φ₁ x) / ε) - 1) ∂μ := by
     rw [integral_sub hexp (integrable_const _), integral_prod _ hexp,
       integral_sub hexp_diff (integrable_const _)]
-    simp_rw [hslice]
-    simp
+    simp_rw [integral_entropicGibbsFactor_eq_exp_sub_entropicSoftmin hc hcB hε hψ hψC]
+    simp [φ₁]
   -- Step 3: Integrate the pointwise inequality `φ x - ε * (exp ((φ x - φ₁ x) / ε) - 1) ≤ φ₁ x`.
   have hpt : ∫ x, (φ x - ε * (Real.exp ((φ x - φ₁ x) / ε) - 1)) ∂μ ≤ ∫ x, φ₁ x ∂μ := by
-    have hexp_sub1 : Integrable (fun x ↦ Real.exp ((φ x - φ₁ x) / ε) - 1) μ :=
-      hexp_diff.sub (integrable_const _)
     refine integral_mono (hφi.sub (hexp_sub1.const_mul _)) hφ₁i fun x ↦ ?_
     have hexp_le := mul_le_mul_of_nonneg_left (Real.add_one_le_exp ((φ x - φ₁ x) / ε)) hεpos.le
     rw [mul_add, mul_div_cancel₀ _ hεpos.ne', mul_one] at hexp_le
     linarith
   have hrew : ∫ x, φ x ∂μ - ε * ∫ x, (Real.exp ((φ x - φ₁ x) / ε) - 1) ∂μ =
       ∫ x, (φ x - ε * (Real.exp ((φ x - φ₁ x) / ε) - 1)) ∂μ := by
-    have hexp_sub1 : Integrable (fun x ↦ Real.exp ((φ x - φ₁ x) / ε) - 1) μ :=
-      hexp_diff.sub (integrable_const _)
     rw [integral_sub hφi (hexp_sub1.const_mul _), integral_const_mul]
   rw [entropicDualValue_def, entropicDualValue_def, kantorovichDualValue_def,
     kantorovichDualValue_def, hint₁, hpen]
   linarith
+
+/-- Replacing `φ` by `entropicSoftmin c ε ν ψ` preserves dual optimality. -/
+private theorem entropicDualValue_entropicSoftmin_left_eq [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0)
+    {φ : X → ℝ} {ψ : Y → ℝ} {Cφ Cψ : ℝ} (hφ : Measurable φ) (hψ : Measurable ψ)
+    (hφC : ∀ x, |φ x| ≤ Cφ) (hψC : ∀ y, |ψ y| ≤ Cψ)
+    (hval : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal) :
+    entropicDualValue c ε μ ν (entropicSoftmin c ε ν ψ) ψ =
+      (entropicTransportCost c ε μ ν).toReal := by
+  have hψC' : ∀ y, |ψ y| ≤ max Cψ 0 := fun y ↦ (hψC y).trans (le_max_left _ _)
+  have hφ₁m : Measurable (entropicSoftmin c ε ν ψ) := measurable_entropicSoftmin hc hψ
+  have hφ₁C : ∀ x, |entropicSoftmin c ε ν ψ x| ≤ max Cψ 0 + B :=
+    abs_entropicSoftmin_le hc hcB hε hψ hψC'
+  refine le_antisymm ?_ (hval ▸ entropicDualValue_le_entropicSoftmin_left hc hcB hε hφ hψ hφC hψC)
+  exact entropicDualValue_le_toReal_entropicTransportCost
+    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
+    (.of_bound hφ₁m.aestronglyMeasurable (max Cψ 0 + B) (ae_of_all _ hφ₁C))
+    (.of_bound hψ.aestronglyMeasurable Cψ (ae_of_all _ hψC))
+    (integrable_entropicGibbsFactor_of_le hc hφ₁m hψ
+      (fun x ↦ le_of_abs_le (hφ₁C x)) (fun y ↦ le_of_abs_le (hψC y)))
 
 /-- Bundled regularity, normalisation, and optimality properties of a `c`-softmin Schrödinger
 potential pair `(φ, ψ)` for a cost bounded by `B`. -/
@@ -367,98 +289,62 @@ private structure IsRegularizedPotentialPair (c : X × Y → ℝ≥0∞) (ε B :
 private theorem exists_isRegularizedPotentialPair [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ), IsRegularizedPotentialPair c ε B μ ν φ ψ := by
-  -- Step 1: Take any bounded measurable dual maximiser `(φ₀, ψ₀)` and apply one `c`-softmin
+  -- Step 1: Take a bounded measurable dual maximiser `(φ₀, ψ₀)` and apply one `c`-softmin
   -- half-step on `X`, recentered at a base point `x₀`, followed by one half-step on `Y`.
   obtain ⟨φ₀, ψ₀, C₀, hφ₀, hψ₀, hφ₀C, hψ₀C, hval₀⟩ :=
     exists_entropicDualValue_eq_toReal_entropicTransportCost (μ := μ) (ν := ν) hc hcB hε
   have hψ₀C' : ∀ y, |ψ₀ y| ≤ max C₀ 0 := fun y ↦ (hψ₀C y).trans (le_max_left _ _)
   set φ₁ := entropicSoftmin c ε ν ψ₀
   have x₀ : X := μ.nonempty_of_neZero.some
-  set a : ℝ := φ₁ x₀
-  set φ : X → ℝ := fun x ↦ φ₁ x - a
-  set ψ₁ : Y → ℝ := fun y ↦ ψ₀ y + a
+  set φ : X → ℝ := fun x ↦ φ₁ x - φ₁ x₀
   set ψ : Y → ℝ := entropicSoftmin (c ∘ Prod.swap) ε μ φ
   have hcs : Measurable (c ∘ Prod.swap) := hc.comp measurable_swap
   have hcsB : ∀ z, (c ∘ Prod.swap) z ≤ B := fun z ↦ hcB z.swap
   have hφ₁m : Measurable φ₁ := measurable_entropicSoftmin hc hψ₀
-  have hφm : Measurable φ := hφ₁m.sub_const a
-  have hψ₁m : Measurable ψ₁ := hψ₀.add_const a
-  have hψm : Measurable ψ := measurable_entropicSoftmin hcs hφm
+  have hφm : Measurable φ := hφ₁m.sub_const _
   -- Step 2: Oscillation inheritance gives `|φ| ≤ B` (since `φ x₀ = 0`), `|ψ| ≤ 2 * B`, and
   -- `φ x + ψ y ≤ 2 * B`.
-  have hosc_B : ∀ x₁ x₂ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ B := fun x₁ x₂ y ↦ by
-    rw [abs_le]
-    have h1 := ENNReal.toReal_le_coe_of_le_coe (hcB (x₁, y))
-    have h2 := ENNReal.toReal_le_coe_of_le_coe (hcB (x₂, y))
-    exact ⟨by linarith [(c (x₁, y)).toReal_nonneg], by linarith [(c (x₂, y)).toReal_nonneg]⟩
+  have hosc_B : ∀ x₁ x₂ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ B := fun x₁ x₂ y ↦ abs_le.2
+    ⟨by linarith [(c (x₁, y)).toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hcB (x₂, y))],
+      by linarith [(c (x₂, y)).toReal_nonneg, ENNReal.toReal_le_coe_of_le_coe (hcB (x₁, y))]⟩
   have hφ_osc : ∀ x₁ x₂ δ, 0 ≤ δ →
-      (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) → |φ x₁ - φ x₂| ≤ δ := by
-    intro x₁ x₂ δ _ h
+      (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) → |φ x₁ - φ x₂| ≤ δ := fun _ _ _ _ h ↦ by
     simpa only [φ, sub_sub_sub_cancel_right] using
       abs_entropicSoftmin_sub_le (ν := ν) hc hε hψ₀ hψ₀C' h
   have hφB : ∀ x, |φ x| ≤ B := fun x ↦ by
-    simpa only [φ, a, sub_self, sub_zero] using hφ_osc x x₀ B B.coe_nonneg (hosc_B x x₀)
+    simpa only [φ, sub_self, sub_zero] using hφ_osc x x₀ B B.coe_nonneg (hosc_B x x₀)
   have hψB : ∀ y, |ψ y| ≤ 2 * B := fun y ↦ by
     simpa only [two_mul] using abs_entropicSoftmin_le (ν := μ) hcs hcsB hε hφm hφB y
-  have hφψ_sum : ∀ x y, φ x + ψ y ≤ 2 * B := fun x y ↦ by
-    have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-    have hint := integrable_exp_neg_toReal_add (ν := μ) (ε := ε) hcs hφm hφB y
-    have hlower : Real.exp ((φ x - 2 * B) / ε) ≤
-        ∫ x', Real.exp (-((c ∘ Prod.swap) (y, x')).toReal / ε + φ x' / ε) ∂μ := by
-      calc Real.exp ((φ x - 2 * B) / ε) = ∫ _, Real.exp ((φ x - 2 * B) / ε) ∂μ := by simp
-        _ ≤ ∫ x', Real.exp (-((c ∘ Prod.swap) (y, x')).toReal / ε + φ x' / ε) ∂μ :=
-            integral_mono (integrable_const _) hint fun x' ↦ Real.exp_le_exp.2 <| by
-              have hdiff : φ x - φ x' ≤ B :=
-                (le_abs_self _).trans (hφ_osc x x' B B.coe_nonneg (hosc_B x x'))
-              have hc' : ((c ∘ Prod.swap) (y, x')).toReal ≤ B :=
-                ENNReal.toReal_le_coe_of_le_coe (hcB (x', y))
-              have hrw : -((c ∘ Prod.swap) (y, x')).toReal / (ε : ℝ) + φ x' / ε =
-                  (φ x' - ((c ∘ Prod.swap) (y, x')).toReal) / ε := by ring
-              rw [hrw]
-              exact div_le_div_of_nonneg_right (by linarith) hεpos.le
-    have hlog := (Real.log_exp _).symm.trans_le (Real.log_le_log (Real.exp_pos _) hlower)
-    have hmul := mul_le_mul_of_nonneg_left hlog hεpos.le
-    rw [mul_div_cancel₀ _ hεpos.ne'] at hmul
-    simp only [ψ, entropicSoftmin, logIntegralExp_def]
-    linarith
-  have hψ_osc : ∀ y₁ y₂ δ, 0 ≤ δ →
-      (∀ x, |(c (x, y₁)).toReal - (c (x, y₂)).toReal| ≤ δ) → |ψ y₁ - ψ y₂| ≤ δ :=
-    fun y₁ y₂ δ _ h ↦ abs_entropicSoftmin_sub_le (ν := μ) hcs hε hφm hφB h
-  -- Step 3: Verify the pointwise `y`-marginal equation and optimality via monotonicity of the
-  -- two softmin half-steps and shift invariance of `entropicDualValue`.
+  have hφψ_sum : ∀ x y, φ x + ψ y ≤ 2 * B := fun x y ↦ add_comm (φ x) (ψ y) ▸
+    entropicSoftmin_add_le (ν := μ) hcs hcsB hε hφm hφB
+      (fun x₁ x₂ ↦ hφ_osc x₁ x₂ B B.coe_nonneg (hosc_B x₁ x₂)) y x
+  -- Step 3: Verify the pointwise `y`-marginal equation and optimality across both half-steps.
   have hslice : ∀ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1 := fun y ↦ by
-    have h := integral_entropicGibbsFactor_entropicSoftmin (ν := μ) hcs hcsB hε hφm hφB y
-    simpa only [entropicGibbsFactor_comp_swap, Function.comp_apply, Prod.swap_prod_mk] using h
+    simpa only [entropicGibbsFactor_comp_swap, Function.comp_apply, Prod.swap_prod_mk] using
+      integral_entropicGibbsFactor_entropicSoftmin (ν := μ) hcs hcsB hε hφm hφB y
   have hφ₁C : ∀ x, |φ₁ x| ≤ max C₀ 0 + B := abs_entropicSoftmin_le (ν := ν) hc hcB hε hψ₀ hψ₀C'
-  have hψ₁C : ∀ y, |ψ₁ y| ≤ max C₀ 0 + (max C₀ 0 + B) := fun y ↦
-    (abs_add_le _ _).trans (add_le_add (hψ₀C' y) (hφ₁C x₀))
+  have hval₁ : entropicDualValue c ε μ ν φ₁ ψ₀ = (entropicTransportCost c ε μ ν).toReal :=
+    entropicDualValue_entropicSoftmin_left_eq hc hcB hε hφ₀ hψ₀ hφ₀C hψ₀C hval₀
+  have hval₂ : entropicDualValue c ε μ ν φ (fun y ↦ ψ₀ y + φ₁ x₀) =
+      (entropicTransportCost c ε μ ν).toReal := by
+    simpa only [φ, sub_eq_add_neg, neg_neg, hval₁] using
+      entropicDualValue_add_const_sub_const (c := c) (ε := ε) (μ := μ) (ν := ν)
+        (.of_bound hφ₁m.aestronglyMeasurable _ (ae_of_all _ hφ₁C))
+        (.of_bound hψ₀.aestronglyMeasurable C₀ (ae_of_all _ hψ₀C)) (by simp) (-φ₁ x₀)
   have hval : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
-    apply le_antisymm
-    · exact entropicDualValue_le_toReal_entropicTransportCost
-        (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hc.aemeasurable hε
-        (.of_bound hφm.aestronglyMeasurable B (ae_of_all _ hφB))
-        (.of_bound hψm.aestronglyMeasurable (2 * B) (ae_of_all _ hψB))
-        (integrable_entropicGibbsFactor_of_le hc hφm hψm
-          (fun x ↦ le_of_abs_le (hφB x)) (fun y ↦ le_of_abs_le (hψB y)))
-    · have h1 : (entropicTransportCost c ε μ ν).toReal ≤ entropicDualValue c ε μ ν φ₁ ψ₀ :=
-        hval₀ ▸ entropicDualValue_le_entropicSoftmin_left hc hcB hε hφ₀ hψ₀ hφ₀C hψ₀C
-      have h2 : entropicDualValue c ε μ ν φ₁ ψ₀ = entropicDualValue c ε μ ν φ ψ₁ := by
-        have := entropicDualValue_add_const_sub_const (c := c) (ε := ε) (μ := μ) (ν := ν)
-          (.of_bound hφ₁m.aestronglyMeasurable (max C₀ 0 + B) (ae_of_all _ hφ₁C))
-          (.of_bound hψ₀.aestronglyMeasurable C₀ (ae_of_all _ hψ₀C)) (by simp) (-a)
-        simpa only [φ, ψ₁, sub_eq_add_neg, neg_neg] using this.symm
-      have h3 : entropicDualValue c ε μ ν φ ψ₁ ≤ entropicDualValue c ε μ ν φ ψ := by
-        rw [← entropicDualValue_comp_swap (c := c), ← entropicDualValue_comp_swap (c := c)]
-        exact entropicDualValue_le_entropicSoftmin_left hcs hcsB hε hψ₁m hφm hψ₁C hφB
-      exact (h1.trans_eq h2).trans h3
-  exact ⟨φ, ψ, ⟨hφm, hψm, hφB, hψB, hφψ_sum, hφ_osc, hψ_osc, hslice, hval⟩⟩
+    rw [← entropicDualValue_comp_swap (c := c), ← entropicTransportCost_comp_swap c ε ν]
+    exact entropicDualValue_entropicSoftmin_left_eq hcs hcsB hε (hψ₀.add_const _) hφm
+      (fun y ↦ (abs_add_le _ _).trans (add_le_add (hψ₀C' y) (hφ₁C x₀))) hφB
+      (by rwa [entropicDualValue_comp_swap, entropicTransportCost_comp_swap])
+  exact ⟨φ, ψ, ⟨hφm, measurable_entropicSoftmin hcs hφm, hφB, hψB, hφψ_sum, hφ_osc,
+    fun _ _ _ _ h ↦ abs_entropicSoftmin_sub_le (ν := μ) hcs hε hφm hφB h, hslice, hval⟩⟩
 
 /-- **Existence of normalised `c`-softmin optimal potentials.** For probability measures, a bounded
 measurable cost `c ≤ B` and a positive temperature `ε`, there exist measurable potentials `(φ, ψ)`
 bounded by `B` and `2 * B` that attain `(entropicTransportCost c ε μ ν).toReal`, satisfy
 `φ(x) + ψ(y) ≤ 2 * B` and `∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1` at *every* `y : Y`, and
 inherit every uniform coordinate oscillation bound of `(c ·).toReal`. -/
-theorem exists_regularized_entropicPotentials [IsProbabilityMeasure μ]
+theorem exists_measurable_entropicDualValue_eq [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) :
     ∃ (φ : X → ℝ) (ψ : Y → ℝ), Measurable φ ∧ Measurable ψ ∧
       (∀ x, |φ x| ≤ B) ∧ (∀ y, |ψ y| ≤ 2 * B) ∧ (∀ x y, φ x + ψ y ≤ 2 * B) ∧
@@ -555,6 +441,40 @@ variable {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
   [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
   [OpensMeasurableSpace Y] [OpensMeasurableSpace (X × Y)] {c : X × Y → ℝ≥0∞} {ε B : ℝ≥0}
 
+private theorem totallyBounded_range_of_abs_le {ι : Type*} {f : ι → ℝ} {M : ℝ}
+    (hM : ∀ i, |f i| ≤ M) : TotallyBounded (range f) :=
+  (isCompact_Icc (a := -M) (b := M)).totallyBounded.subset <| by
+    rintro _ ⟨i, rfl⟩
+    exact abs_le.1 (hM i)
+
+omit [CompactSpace X] [OpensMeasurableSpace X] [OpensMeasurableSpace Y]
+  [OpensMeasurableSpace (X × Y)] in
+/-- Equicontinuity of the left potentials `q ↦ φ q` for any family of regularised potential
+pairs. -/
+private theorem equicontinuous_left_of_isRegularizedPotentialPair {ι : Type*}
+    {μ : ι → Measure X} {ν : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
+    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞)
+    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μ q) (ν q) (φ q) (ψ q)) :
+    Equicontinuous φ :=
+  Metric.equicontinuous_of_forall_dist_le (L := 1) (hc.ennreal_toReal hfin)
+    fun x₁ x₂ δ hδ h q ↦ by
+      simpa only [Real.dist_eq, one_mul] using
+        (hpair q).abs_sub_left_le x₁ x₂ δ hδ (by simpa only [Real.dist_eq] using h)
+
+omit [CompactSpace Y] [OpensMeasurableSpace X] [OpensMeasurableSpace Y]
+  [OpensMeasurableSpace (X × Y)] in
+/-- Equicontinuity of the right potentials `q ↦ ψ q` for any family of regularised potential
+pairs. -/
+private theorem equicontinuous_right_of_isRegularizedPotentialPair {ι : Type*}
+    {μ : ι → Measure X} {ν : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
+    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞)
+    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μ q) (ν q) (φ q) (ψ q)) :
+    Equicontinuous ψ :=
+  Metric.equicontinuous_of_forall_dist_le (L := 1)
+    ((hc.ennreal_toReal hfin).comp continuous_swap) fun y₁ y₂ δ hδ h q ↦ by
+      simpa only [Real.dist_eq, one_mul] using (hpair q).abs_sub_right_le y₁ y₂ δ hδ
+        (by simpa only [Real.dist_eq, Function.comp_apply, Prod.swap_prod_mk] using h)
+
 omit [CompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [MeasurableSpace Y]
   [OpensMeasurableSpace Y] [OpensMeasurableSpace (X × Y)] in
 /-- Equicontinuity in `x` of the Gibbs slices `(q, y) ↦ entropicGibbsFactor c ε (φ q) (ψ q) (·, y)`
@@ -594,6 +514,20 @@ private theorem equicontinuous_entropicGibbsFactor {ι : Type*} [MeasurableSpace
       ≤ |φ qy.1 x₁ - φ qy.1 x₂| + |(c (x₁, qy.2)).toReal - (c (x₂, qy.2)).toReal| := abs_sub _ _
     _ ≤ 2 * δ := by linarith
 
+omit [TopologicalSpace X] [TopologicalSpace Y] [CompactSpace X] [CompactSpace Y]
+  [OpensMeasurableSpace X] [OpensMeasurableSpace Y] in
+private theorem totallyBounded_range_entropicGibbsFactor (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    {ι : Type*} {μs : ι → Measure X} {νs : ι → Measure Y} {φ : ι → X → ℝ} {ψ : ι → Y → ℝ}
+    (hpair : ∀ q, IsRegularizedPotentialPair c ε B (μs q) (νs q) (φ q) (ψ q)) (x : X) :
+    TotallyBounded
+      (range fun qy : ι × Y ↦ entropicGibbsFactor c ε (φ qy.1) (ψ qy.1) (x, qy.2)) :=
+  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  totallyBounded_range_of_abs_le (M := Real.exp (2 * B / ε)) fun qy ↦ by
+    rw [abs_of_nonneg (entropicGibbsFactor_nonneg _)]
+    simp only [entropicGibbsFactor_of_ne_top (hfin (x, qy.2)), Real.exp_le_exp]
+    exact div_le_div_of_nonneg_right
+      (by linarith [(hpair qy.1).add_le x qy.2, (c (x, qy.2)).toReal_nonneg]) hεpos.le
+
 omit [OpensMeasurableSpace X] [OpensMeasurableSpace Y] in
 /-- **Existence of continuous optimal Schrödinger potentials on compact spaces.** For probability
 measures on compact spaces, a continuous cost bounded by `B` and a positive temperature `ε`, the
@@ -614,18 +548,10 @@ theorem exists_continuous_entropicDualValue_eq {μ : Measure X} {ν : Measure Y}
       entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
   have hfin : ∀ z, c z ≠ ∞ := fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
   obtain ⟨φ, ψ, hp⟩ := exists_isRegularizedPotentialPair (μ := μ) (ν := ν) hc.measurable hcB hε
-  have hcR : Continuous fun z : X × Y ↦ (c z).toReal := hc.ennreal_toReal hfin
   have hφc : Continuous φ :=
-    (Metric.equicontinuous_of_forall_dist_le (F := fun _ : Unit ↦ φ) (L := 1) hcR
-      fun x₁ x₂ δ hδ h _ ↦ by
-        simpa only [Real.dist_eq, one_mul] using
-          hp.abs_sub_left_le x₁ x₂ δ hδ (by simpa only [Real.dist_eq] using h)).continuous ()
+    (equicontinuous_left_of_isRegularizedPotentialPair hc hfin fun _ : Unit ↦ hp).continuous ()
   have hψc : Continuous ψ :=
-    (Metric.equicontinuous_of_forall_dist_le (F := fun _ : Unit ↦ ψ) (L := 1)
-      (hcR.comp continuous_swap) fun y₁ y₂ δ hδ h _ ↦ by
-        simpa only [Real.dist_eq, one_mul] using hp.abs_sub_right_le y₁ y₂ δ hδ
-          (by simpa only [Real.dist_eq, Function.comp_apply, Prod.swap_prod_mk] using h)).continuous
-      ()
+    (equicontinuous_right_of_isRegularizedPotentialPair hc hfin fun _ : Unit ↦ hp).continuous ()
   exact ⟨φ, ψ, hφc, hψc, hp.abs_left_le, hp.abs_right_le, hp.add_le,
     hp.abs_sub_left_le, hp.abs_sub_right_le, hp.integral_gibbs_eq_one, hp.dualValue_eq⟩
 
@@ -639,43 +565,25 @@ theorem continuous_toReal_entropicTransportCost (hc : Continuous c) (hfin : ∀ 
       (entropicTransportCost c ε (p.1 : Measure X) (p.2 : Measure Y)).toReal := by
   set I := ProbabilityMeasure X × ProbabilityMeasure Y
   obtain ⟨B, hcB⟩ := exists_le_of_continuous_of_ne_top hc hfin
-  have hεpos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hcR : Continuous fun z : X × Y ↦ (c z).toReal := hc.ennreal_toReal hfin
+  have : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   -- Choose normalised `c`-softmin potentials `(φ q, ψ q)` for each pair `q = (μ, ν)`.
   have hex (q : I) := exists_isRegularizedPotentialPair
     (μ := (q.1 : Measure X)) (ν := (q.2 : Measure Y)) hc.measurable hcB hε
   let φ : I → X → ℝ := fun q ↦ (hex q).choose
   let ψ : I → Y → ℝ := fun q ↦ (hex q).choose_spec.choose
   have hspec (q : I) : IsRegularizedPotentialPair c ε B (q.1 : Measure X) (q.2 : Measure Y)
-      (φ q) (ψ q) :=
-    (hex q).choose_spec.choose_spec
-  -- Equicontinuity and pointwise boundedness of `φ`, `ψ`, and the Gibbs slices `G`.
-  have hequi_φ : Equicontinuous φ :=
-    Metric.equicontinuous_of_forall_dist_le (L := 1) hcR fun x₁ x₂ δ hδ h q ↦ by
-      simpa only [Real.dist_eq, one_mul] using
-        (hspec q).abs_sub_left_le x₁ x₂ δ hδ (by simpa only [Real.dist_eq] using h)
-  have hequi_ψ : Equicontinuous ψ :=
-    Metric.equicontinuous_of_forall_dist_le (L := 1) (hcR.comp continuous_swap)
-      fun y₁ y₂ δ hδ h q ↦ by
-        simpa only [Real.dist_eq, one_mul] using (hspec q).abs_sub_right_le y₁ y₂ δ hδ
-          (by simpa only [Real.dist_eq, Function.comp_apply, Prod.swap_prod_mk] using h)
+      (φ q) (ψ q) := (hex q).choose_spec.choose_spec
+  -- Equicontinuity and pointwise total boundedness of `φ`, `ψ`, and the Gibbs slices `G`.
+  have hequi_φ := equicontinuous_left_of_isRegularizedPotentialPair hc hfin hspec
+  have hequi_ψ := equicontinuous_right_of_isRegularizedPotentialPair hc hfin hspec
   let G : I × Y → X → ℝ := fun qy x ↦ entropicGibbsFactor c ε (φ qy.1) (ψ qy.1) (x, qy.2)
   have hequi_G : Equicontinuous G := equicontinuous_entropicGibbsFactor hc hfin hε hspec
-  have htb_φ : ∀ x, TotallyBounded (range fun q ↦ φ q x) := fun x ↦
-    (isCompact_Icc (a := -(B : ℝ)) (b := B)).totallyBounded.subset <| by
-      rintro _ ⟨q, rfl⟩
-      exact abs_le.1 ((hspec q).abs_left_le x)
-  have htb_ψ : ∀ y, TotallyBounded (range fun q ↦ ψ q y) := fun y ↦
-    (isCompact_Icc (a := -(2 * (B : ℝ))) (b := 2 * B)).totallyBounded.subset <| by
-      rintro _ ⟨q, rfl⟩
-      exact abs_le.1 ((hspec q).abs_right_le y)
-  have htb_G : ∀ x, TotallyBounded (range fun qy ↦ G qy x) := fun x ↦
-    (isCompact_Icc (a := (0 : ℝ)) (b := Real.exp (2 * B / ε))).totallyBounded.subset <| by
-      rintro _ ⟨qy, rfl⟩
-      refine ⟨entropicGibbsFactor_nonneg _, ?_⟩
-      simp only [G, entropicGibbsFactor_of_ne_top (hfin (x, qy.2)), Real.exp_le_exp]
-      exact div_le_div_of_nonneg_right
-        (by linarith [(hspec qy.1).add_le x qy.2, (c (x, qy.2)).toReal_nonneg]) hεpos.le
+  have htb_φ : ∀ x, TotallyBounded (range fun q ↦ φ q x) :=
+    fun x ↦ totallyBounded_range_of_abs_le fun q ↦ (hspec q).abs_left_le x
+  have htb_ψ : ∀ y, TotallyBounded (range fun q ↦ ψ q y) :=
+    fun y ↦ totallyBounded_range_of_abs_le fun q ↦ (hspec q).abs_right_le y
+  have htb_G : ∀ x, TotallyBounded (range fun qy ↦ G qy x) :=
+    totallyBounded_range_entropicGibbsFactor hfin hε hspec
   -- Apply Ranga Rao's uniform convergence theorem to `φ`, `ψ`, and `G`, and combine both
   -- one-sided perturbation bounds.
   rw [continuous_iff_continuousAt]

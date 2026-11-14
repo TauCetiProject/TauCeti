@@ -116,9 +116,10 @@ theorem FiniteMeasure.tendstoUniformly_integral_of_equicontinuous [CompactSpace 
     {μs : γ → FiniteMeasure α} {μ : FiniteMeasure α} (hμ : Tendsto μs l (𝓝 μ)) {g : ι → α → 𝕜}
     (hequi : Equicontinuous g) (hg : ∀ x, TotallyBounded (range fun i ↦ g i x)) :
     TendstoUniformly (fun n i ↦ ∫ x, g i x ∂(μs n : Measure α))
-      (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l :=
-  FiniteMeasure.tendstoUniformly_integral_of_totallyBounded hμ
+      (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l := by
+  have h := FiniteMeasure.tendstoUniformly_integral_of_totallyBounded hμ
     (ArzelaAscoli.totallyBounded_range_mkOfCompact_of_equicontinuous hequi hg)
+  simpa only [BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] using h
 
 /-- **Uniform weak convergence over a totally bounded family.** If probability measures `μs n`
 converge weakly to `μ`, then for every family `g : ι → α →ᵇ 𝕜` with totally bounded range in
@@ -127,9 +128,11 @@ theorem ProbabilityMeasure.tendstoUniformly_integral_of_totallyBounded {l : Filt
     {μs : γ → ProbabilityMeasure α} {μ : ProbabilityMeasure α} (hμ : Tendsto μs l (𝓝 μ))
     {g : ι → α →ᵇ 𝕜} (hg : TotallyBounded (range g)) :
     TendstoUniformly (fun n i ↦ ∫ x, g i x ∂(μs n : Measure α))
-      (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l :=
-  FiniteMeasure.tendstoUniformly_integral_of_totallyBounded
+      (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l := by
+  have h := FiniteMeasure.tendstoUniformly_integral_of_totallyBounded
     ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds l).1 hμ) hg
+  simpa only [Function.comp_apply,
+    ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using h
 
 /-- **Ranga Rao's uniform weak convergence theorem on a compact space.** If probability measures
 `μs n` on a compact space converge weakly to `μ`, then for every equicontinuous and pointwise
@@ -140,8 +143,10 @@ theorem ProbabilityMeasure.tendstoUniformly_integral_of_equicontinuous [CompactS
     (hμ : Tendsto μs l (𝓝 μ)) {g : ι → α → 𝕜} (hequi : Equicontinuous g)
     (hg : ∀ x, TotallyBounded (range fun i ↦ g i x)) :
     TendstoUniformly (fun n i ↦ ∫ x, g i x ∂(μs n : Measure α))
-      (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l :=
-  FiniteMeasure.tendstoUniformly_integral_of_equicontinuous
+      (fun i ↦ ∫ x, g i x ∂(μ : Measure α)) l := by
+  have h := FiniteMeasure.tendstoUniformly_integral_of_equicontinuous
     ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds l).1 hμ) hequi hg
+  simpa only [Function.comp_apply,
+    ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure] using h
 
 end MeasureTheory
