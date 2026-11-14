@@ -38,6 +38,9 @@ logarithm on `(0, M]` and of the exponential on `[log m, ∞)`.
   exponential on `[log m, ∞)`.
 * `Real.le_sub_div_log_sub_log`: for `m ≤ a, b` with `0 < a, b` and `log a ≠ log b`,
   `m ≤ (a - b) / (log a - log b)`, the difference quotient form of the preceding estimate.
+* `Real.mul_abs_log_sub_log_le`, `Real.abs_log_sub_log_le`: Lipschitz bounds
+  `m * |log a - log b| ≤ |a - b|` on `[m, ∞) ∩ (0, ∞)` and `|log a - log b| ≤ |a - b|` on
+  `[1, ∞)`.
 
 `Real.mul_log_sub_mul_log_ge` is the tangent line at `a`, whose slope `log a + 1` is the
 derivative `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the
@@ -162,6 +165,25 @@ theorem le_sub_div_log_sub_log {a b m : ℝ} (ha : 0 < a) (hb : 0 < b)
     field_simp
   rw [hquot, le_div_iff₀ hD2]
   exact hmono
+
+/-- On `[m, ∞)` inside `(0, ∞)`, `m * |log a - log b| ≤ |a - b|`. -/
+theorem mul_abs_log_sub_log_le {a b m : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hma : m ≤ a) (hmb : m ≤ b) :
+    m * |log a - log b| ≤ |a - b| := by
+  rcases eq_or_ne (log a - log b) 0 with h₀ | h₀
+  · simp [h₀]
+  · have hpos : 0 < |log a - log b| := abs_pos.2 h₀
+    have hsq : m * |log a - log b| ^ 2 ≤ |a - b| * |log a - log b| := by
+      rw [sq_abs, ← abs_mul]
+      exact (mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb).trans (le_abs_self _)
+    rw [sq, ← mul_assoc] at hsq
+    exact le_of_mul_le_mul_right hsq hpos
+
+/-- `Real.log` is `1`-Lipschitz on `[1, ∞)`: for `1 ≤ a` and `1 ≤ b`,
+`|log a - log b| ≤ |a - b|`. -/
+theorem abs_log_sub_log_le {a b : ℝ} (ha : 1 ≤ a) (hb : 1 ≤ b) :
+    |log a - log b| ≤ |a - b| := by
+  simpa using mul_abs_log_sub_log_le (zero_lt_one.trans_le ha) (zero_lt_one.trans_le hb) ha hb
 
 end Real
 

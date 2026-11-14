@@ -51,7 +51,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
-* `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
+* `Complex.ne_neg_natCast_of_re_pos`, `Complex.Gamma_ne_zero_of_im_ne_zero` — parameters with
+  positive real part or nonzero imaginary part avoid `−ℕ`, so `Complex.Gamma` does not vanish off
+  the real axis.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -237,6 +239,10 @@ theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
   have heq := congrArg re h
   simp only [neg_re, natCast_re] at heq
   linarith [n.cast_nonneg (α := ℝ)]
+
+/-- `Complex.Gamma` does not vanish off the real axis. -/
+theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=
+  Gamma_ne_zero fun n hn ↦ hz (by simp [hn])
 
 /-- On the half-plane `1 ≤ Re s`, the reciprocal Gamma function decays factorially along
 `s + k`: `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!`. Together with the boundedness of `1 / Γ` on compact

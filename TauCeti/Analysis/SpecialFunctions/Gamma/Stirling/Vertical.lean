@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Asymptotics.VerticalStrip
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
@@ -187,13 +188,8 @@ theorem isBigO_log_norm_Gamma_vertical_sub (a b : ℝ) :
         ((p.1 - 1 / 2) * Real.log |p.2| - π * |p.2| / 2 + Real.log (2 * π) / 2))
       =O[𝓟 (Icc a b) ×ˢ cocompact ℝ] fun p ↦ |p.2|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
-  refine IsBigO.of_bound C ?_
-  have hT : ∀ᶠ t : ℝ in cocompact ℝ, T ≤ |t| := by
-    filter_upwards [(tendsto_norm_cocompact_atTop (E := ℝ)).eventually_ge_atTop T] with t ht
-    rwa [Real.norm_eq_abs] at ht
-  filter_upwards [(eventually_principal.2 fun _ hσ ↦ hσ).prod_mk hT] with p hp
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_abs, ← div_eq_mul_inv]
-  simpa using h (p.1 + p.2 * I) (by simpa using hp.1) (by simpa using hp.2)
+  refine isBigO_inv_vertical_of_exists ⟨C, T, fun p hσ ht ↦ ?_⟩
+  simpa using h (p.1 + p.2 * I) (by simpa using hσ) (by simpa using ht)
 
 /-- **Stirling's formula on vertical strips** as a function of `s = σ + i t`:
 `log ‖Γ(s)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `s → ∞` in the strip
@@ -203,15 +199,7 @@ theorem isBigO_log_norm_Gamma_vertical_strip_sub (a b : ℝ) :
         ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℂ ⊓ 𝓟 (re ⁻¹' Icc a b)] fun s ↦ |s.im|⁻¹ := by
   obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le a b
-  refine IsBigO.of_bound C ?_
-  have hT : ∀ᶠ s : ℂ in cocompact ℂ, T + max |a| |b| ≤ ‖s‖ :=
-    (tendsto_norm_cocompact_atTop (E := ℂ)).eventually_ge_atTop _
-  filter_upwards [hT.filter_mono inf_le_left,
-    (eventually_principal.2 fun _ hs ↦ hs).filter_mono inf_le_right] with s hs hre
-  have hM : |s.re| ≤ max |a| |b| := abs_le_max_abs_abs hre.1 hre.2
-  have hnorm := norm_le_abs_re_add_abs_im s
-  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_abs, ← div_eq_mul_inv]
-  exact h s hre (by linarith)
+  exact isBigO_inv_vertical_strip_of_exists ⟨C, T, fun s hs ht ↦ by simpa using h s hs ht⟩
 
 /-- Stirling's formula on a single vertical line `Re s = σ`:
 `log ‖Γ(σ + i t)‖ = (σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2 + O(1 / |t|)` as `|t| → ∞`. -/
@@ -219,7 +207,6 @@ theorem isBigO_log_norm_Gamma_vertical_line_sub (σ : ℝ) :
     (fun t : ℝ ↦ Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2))
       =O[cocompact ℝ] fun t ↦ |t|⁻¹ :=
-  (isBigO_log_norm_Gamma_vertical_sub σ σ).comp_tendsto
-    ((tendsto_principal.2 (Eventually.of_forall fun _ ↦ left_mem_Icc.2 le_rfl)).prodMk tendsto_id)
+  (isBigO_log_norm_Gamma_vertical_sub σ σ).cocompact_of_vertical (left_mem_Icc.2 le_rfl)
 
 end TauCeti

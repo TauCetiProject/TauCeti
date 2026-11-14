@@ -26,8 +26,9 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 ## Main declarations
 
 * `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`).
-* `Complex.Gamma_ne_zero_of_im_ne_zero`, `Complex.Gammaℝ_ne_zero_of_im_ne_zero`,
-  `Complex.Gammaℂ_ne_zero_of_im_ne_zero`: nonvanishing off the real axis.
+* `Complex.Gammaℂ_ne_zero_of_re_pos`, `Complex.Gammaℝ_ne_zero_of_im_ne_zero`,
+  `Complex.Gammaℂ_ne_zero_of_im_ne_zero`: nonvanishing on the right half-plane and off the real
+  axis.
 * `Complex.differentiableAt_Gammaℝ`, `Complex.differentiableAt_Gammaℂ`,
   `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
 * `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
@@ -48,9 +49,11 @@ namespace Complex
 theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by
   simp [Gammaℂ_def, Real.pi_ne_zero, Gamma_eq_zero_iff]
 
-/-- `Complex.Gamma` does not vanish off the real axis. -/
-theorem Gamma_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gamma z ≠ 0 :=
-  Gamma_ne_zero fun n hn ↦ hz (by simp [hn])
+/-- Deligne's complex archimedean factor `Gammaℂ` is nonzero on the open right half-plane. -/
+theorem Gammaℂ_ne_zero_of_re_pos {s : ℂ} (hs : 0 < s.re) : Gammaℂ s ≠ 0 := by
+  rw [Gammaℂ_def]
+  exact mul_ne_zero (mul_ne_zero two_ne_zero (by simp [Real.pi_ne_zero]))
+    (Gamma_ne_zero_of_re_pos hs)
 
 /-- Deligne's real archimedean factor `Gammaℝ` does not vanish off the real axis. -/
 theorem Gammaℝ_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gammaℝ z ≠ 0 := by
@@ -65,18 +68,22 @@ theorem Gammaℂ_ne_zero_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) : Gammaℂ z 
   exact hz (by simp [hn])
 
 /-- `Gammaℝ` is complex-differentiable wherever its total value is nonzero. -/
+@[fun_prop]
 theorem differentiableAt_Gammaℝ {z : ℂ} (hz : Gammaℝ z ≠ 0) : DifferentiableAt ℂ Gammaℝ z := by
   simpa only [inv_inv] using (differentiable_Gammaℝ_inv z).fun_inv (inv_ne_zero hz)
 
 /-- `Gammaℂ` is complex-differentiable wherever its total value is nonzero. -/
+@[fun_prop]
 theorem differentiableAt_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) : DifferentiableAt ℂ Gammaℂ z := by
   simpa only [inv_inv] using (differentiable_Gammaℂ_inv z).fun_inv (inv_ne_zero hz)
 
 /-- `Gammaℝ` is continuous wherever its total value is nonzero. -/
+@[fun_prop]
 theorem continuousAt_Gammaℝ {z : ℂ} (hz : Gammaℝ z ≠ 0) : ContinuousAt Gammaℝ z :=
   (differentiableAt_Gammaℝ hz).continuousAt
 
 /-- `Gammaℂ` is continuous wherever its total value is nonzero. -/
+@[fun_prop]
 theorem continuousAt_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) : ContinuousAt Gammaℂ z :=
   (differentiableAt_Gammaℂ hz).continuousAt
 
