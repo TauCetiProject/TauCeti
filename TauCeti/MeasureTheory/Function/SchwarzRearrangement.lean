@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.EMetricSpace.Weak
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
