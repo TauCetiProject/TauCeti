@@ -16,6 +16,7 @@ import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Chart calculus for local Sobolev maps of order at most one
@@ -40,7 +41,7 @@ along the transition map, which is real `C¹` with invertible derivative. Changi
 * `TauCeti.memWkpLoc_comp_chart_transition`: precomposition with the transition map between two
   holomorphic charts preserves the planar classes of order at most one.
 * `TauCeti.memWkpLoc_extend_comp`: changing the target chart through a `C¹` map preserves the
-  planar class of order one on a measurable set.
+  planar class of order one on any set.
 * `TauCeti.memWkpLocMapOn_iff_of_subset_maximalAtlas`: **chart independence**, testing families of
   charts covering `s` and `u '' s`; `TauCeti.memWkpLocMapOn_iff_atlas` and
   `TauCeti.memWkpLocMapOn_iff_chartAt` for the atlases and the preferred charts, and the versions
@@ -60,8 +61,10 @@ along the transition map, which is real `C¹` with invertible derivative. Changi
 
 The target `M` is assumed boundaryless: for a model with corners the transition maps of `M` are
 `C¹` only within the range of the model, while the chain rule for `MemWkpLoc` composes with maps
-that are `C¹` on an open set. The target `N` of a composition may have corners. Orders `k ≥ 2`
-need the higher-order chain rule and change of variables for planar classes and are not treated.
+that are `C¹` on an open set. The target `N` of a composition may have corners. The gluing proofs
+take the planar change of variables and chain rule of the given order as hypotheses, so that
+`TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas.Higher` reuses them at every order for
+`2 < p < ∞`.
 
 ## References
 
@@ -87,14 +90,7 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {p : ENNReal} {k : ℕ} {u : X → M} {s : Set X}
 
-/-! ### Auxiliary facts on coordinate expressions -/
-
-omit [ChartedSpace ℂ X] [ChartedSpace H M] in
-/-- The domain of a coordinate expression of a map continuous on an open set is open. -/
-private theorem isOpen_chart (hu : ContinuousOn u s) (hs : IsOpen s)
-    (φ : OpenPartialHomeomorph X ℂ) (ψ : OpenPartialHomeomorph M H) :
-    IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-  φ.isOpen_inter_preimage_symm (hu.isOpen_inter_preimage hs ψ.open_source)
+/-! ### Gluing coordinate expressions along changes of chart -/
 
 /-- **Change of holomorphic chart.** Precomposition with the transition map `φ ∘ φ'⁻¹` between
 two holomorphic charts preserves the local classes of order at most one. -/
@@ -115,6 +111,41 @@ theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph X ℂ}
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans one_ne_zero hφ'R hφR (hW' hz)
   rw [hA.fderiv]
   exact A.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- **Change of target chart through a `C^k` map.** Let the planar class `MemWkpLoc p _ k` be
+preserved by composing continuous maps on open sets with `C^k` maps on open sets. If `ψ ∘ v` is a
+continuous `W^{k,p}_loc` map on an open set `W` with `v` mapping `W` into the source of `ψ`, and
+`f` is `C^k` on an open set containing `v '' W`, then `ψ' ∘ f ∘ v` is in `W^{k,p}_loc(W)` for every
+chart `ψ'` of the target whose source contains `f '' (v '' W)`. -/
+private theorem memWkpLoc_extend_comp_of_planar [I.Boundaryless]
+    (hchain : ∀ {v : ℂ → F} {g : F → F'} {W : Set ℂ} {O : Set F}, IsOpen W →
+      MemWkpLoc p W k v → ContinuousOn v W → IsOpen O → ContDiffOn ℝ k g O → MapsTo v W O →
+      MemWkpLoc p W k (g ∘ v))
+    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M)
+    {ψ' : OpenPartialHomeomorph N H'} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' ∞ N)
+    {f : M → N} {t : Set M} (hf : ContMDiffOn I I' k f t) (ht : IsOpen t)
+    {v : ℂ → M} {W : Set ℂ} (hW : IsOpen W) (hv : MemWkpLoc p W k (ψ.extend I ∘ v))
+    (hvc : ContinuousOn (ψ.extend I ∘ v) W)
+    (hmaps : MapsTo v W (ψ.source ∩ (t ∩ f ⁻¹' ψ'.source))) :
+    MemWkpLoc p W k (ψ'.extend I' ∘ f ∘ v) := by
+  have hO : IsOpen ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
+    ψ.continuousOn_extend_symm.isOpen_inter_preimage ψ.isOpen_extend_target
+      (hf.continuousOn.isOpen_inter_preimage ht ψ'.open_source)
+  have hsymm : ContMDiffOn 𝓘(ℝ, F) I k (ψ.extend I).symm (ψ.extend I).target := by
+    rw [ψ.extend_target']
+    exact (contMDiffOn_extend_symm hψ).of_le (by exact_mod_cast le_top)
+  have hh : ContMDiffOn 𝓘(ℝ, F) 𝓘(ℝ, F') k (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
+      ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
+    ((ψ'.contMDiffOn_extend hψ').of_le (by exact_mod_cast le_top)).comp
+      (hf.comp (hsymm.mono inter_subset_left) fun _ hy ↦ hy.2.1) fun _ hy ↦ hy.2.2
+  have hmaps' : MapsTo (ψ.extend I ∘ v) W
+      ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) := fun w hw ↦ by
+    have hvw := hmaps hw
+    refine ⟨(ψ.extend I).map_source (by simpa using hvw.1), ?_⟩
+    simpa [ψ.left_inv hvw.1] using hvw.2
+  refine (hchain hW hv hvc hO (contMDiffOn_iff_contDiffOn.1 hh) hmaps').congr fun w hw ↦ ?_
+  simp [ψ.left_inv (hmaps hw).1]
+
 
 /-- **Change of target chart through a `C¹` map.** If `ψ ∘ v` is a continuous `W^{1,p}_loc` map on
 a set `W` with `v` mapping `W` into the source of `ψ`, and `f` is `C¹` on an open set
@@ -147,6 +178,87 @@ theorem memWkpLoc_extend_comp [I.Boundaryless] [CompleteSpace F']
     fun w hw ↦ ?_
   simp [ψ.left_inv (hmaps hw).1]
 
+/-- **Chart independence from the planar calculus.** Let `k ≥ 1` be an order for which the planar
+classes `MemWkpLoc p _ k` of maps into `F` are preserved by precomposition with transition maps of
+holomorphic charts and by composing continuous maps on open sets with `C^k` maps on open sets.
+Then for open `s` it suffices to test the coordinate expressions in the charts of a family `A` of
+holomorphic charts covering `s` and a family `B` of smooth charts of `M` covering `u '' s`. -/
+private theorem memWkpLocMapOn_iff_of_subset_maximalAtlas_of_planar [I.Boundaryless]
+    [CompleteSpace F]
+    (htrans : 1 ≤ k → ∀ {φ φ' : OpenPartialHomeomorph X ℂ},
+      φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X → φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X →
+      ∀ {g : ℂ → F} {U W : Set ℂ}, IsOpen U → IsOpen W → MemWkpLoc p U k g →
+      W ⊆ φ'.target ∩ φ'.symm ⁻¹' φ.source → MapsTo (φ ∘ φ'.symm) W U →
+      MemWkpLoc p W k (g ∘ φ ∘ φ'.symm))
+    (hchain : 1 ≤ k → ∀ {v : ℂ → F} {g : F → F} {W : Set ℂ} {O : Set F}, IsOpen W →
+      MemWkpLoc p W k v → ContinuousOn v W → IsOpen O → ContDiffOn ℝ k g O → MapsTo v W O →
+      MemWkpLoc p W k (g ∘ v))
+    (hs : IsOpen s)
+    {A : Set (OpenPartialHomeomorph X ℂ)} (hA : A ⊆ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hAs : ∀ x ∈ s, ∃ φ ∈ A, x ∈ φ.source)
+    {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
+    (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) :
+    MemWkpLocMapOn I p k u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
+      MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k (ψ.extend I ∘ u ∘ φ.symm) := by
+  refine ⟨fun hu ↦ ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ hu.memWkpLoc_chart (hA hφ) (hB hψ)⟩,
+    fun ⟨hc, h⟩ ↦ ?_⟩
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · exact memWkpLocMapOnGroupoid_zero_iff.2 hc
+  refine memWkpLocMapOn_iff.2 ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩
+  -- Change the holomorphic chart, for each chart of `B`.
+  have h1 : ∀ ψ ∈ B, MemWkpLoc p (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k
+      (ψ.extend I ∘ u ∘ φ'.symm) := by
+    intro ψ hψ
+    refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
+    obtain ⟨φ, hφA, hxφ⟩ := hAs _ hz.2.1
+    have hO : IsOpen (φ'.target ∩ φ'.symm ⁻¹' φ.source) :=
+      φ'.isOpen_inter_preimage_symm φ.open_source
+    have hO' := (φ'.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source).inter hO
+    refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hxφ⟩),
+      (htrans hk (hA hφA) hφ' (φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source)
+        hO' (h φ hφA ψ hψ) inter_subset_right fun w hw ↦ ?_).congr fun w hw ↦ ?_⟩
+    · refine ⟨φ.map_source hw.2.2, ?_⟩
+      simpa [Function.comp_apply, φ.left_inv hw.2.2] using hw.1.2
+    · simp [φ.left_inv hw.2.2]
+  -- Change the chart of `M`.
+  refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
+  obtain ⟨ψ, hψB, hxψ⟩ := hBs _ hz.2.1
+  have hO := φ'.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source
+  refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hz.2.1, hxψ⟩), ?_⟩
+  exact memWkpLoc_extend_comp_of_planar (hchain hk) (hB hψB) hψ' contMDiffOn_id isOpen_univ
+    ((φ'.isOpen_inter_preimage_symm_inter_preimage hc hs ψ'.open_source).inter hO)
+    ((h1 ψ hψB).mono inter_subset_right)
+    ((φ'.continuousOn_comp_comp_symm (ψ.continuousOn_extend.mono ψ.extend_source.ge) hc).mono
+      inter_subset_right)
+    fun w hw ↦ ⟨hw.2.2.2, mem_univ _, hw.1.2.2⟩
+
+/-- **Composition with `C^ℓ` maps from the planar calculus.** Let `k ≥ 1` be an order for which
+the planar class `MemWkpLoc p _ k` is preserved by composing continuous maps into `F` on open sets
+with `C^k` maps into `F'` on open sets. If `u` is a local Sobolev map of order `k` on an open set
+`s`, mapping `s` into an open set `t` on which `f : M → N` is `C^ℓ` with `k ≤ ℓ`, then `f ∘ u` is a
+local Sobolev map of order `k` on `s`. -/
+private theorem MemWkpLocMapOn.contMDiffOn_comp_of_planar [IsManifold I ∞ M] [I.Boundaryless]
+    [CompleteSpace F']
+    (hchain : 1 ≤ k → ∀ {v : ℂ → F} {g : F → F'} {W : Set ℂ} {O : Set F}, IsOpen W →
+      MemWkpLoc p W k v → ContinuousOn v W → IsOpen O → ContDiffOn ℝ k g O → MapsTo v W O →
+      MemWkpLoc p W k (g ∘ v))
+    {n : ℕ∞ω} {f : M → N} {t : Set M} (hu : MemWkpLocMapOn I p k u s)
+    (hf : ContMDiffOn I I' n f t) (hkn : (k : ℕ∞ω) ≤ n) (hs : IsOpen s) (ht : IsOpen t)
+    (hst : MapsTo u s t) : MemWkpLocMapOn I' p k (f ∘ u) s := by
+  have hc : ContinuousOn (f ∘ u) s := hf.continuousOn.comp hu.continuousOn hst
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · exact memWkpLocMapOnGroupoid_zero_iff.2 hc
+  refine memWkpLocMapOn_iff.2 ⟨hc, fun φ hφ ψ' hψ' ↦ memWkpLoc_iff_locally.2 fun z hz ↦ ?_⟩
+  have hO := φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs
+    (chartAt H (u (φ.symm z))).open_source
+  refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hz.2.1, mem_chart_source _ _⟩), ?_⟩
+  exact memWkpLoc_extend_comp_of_planar (hchain hk) (IsManifold.chart_mem_maximalAtlas _) hψ'
+    (hf.of_le hkn) ht ((φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ'.open_source).inter hO)
+    ((hu.memWkpLoc_chart hφ (IsManifold.chart_mem_maximalAtlas _)).mono inter_subset_right)
+    ((φ.continuousOn_comp_comp_symm ((chartAt H _).continuousOn_extend.mono
+      (chartAt H _).extend_source.ge) hu.continuousOn).mono inter_subset_right)
+    fun w hw ↦ ⟨hw.2.2.2, hst hw.2.2.1, hw.1.2.2⟩
+
 /-! ### Chart independence -/
 
 section ChartIndependence
@@ -162,37 +274,13 @@ theorem memWkpLocMapOn_iff_of_subset_maximalAtlas (hk : k ≤ 1) (hs : IsOpen s)
     {B : Set (OpenPartialHomeomorph M H)} (hB : B ⊆ IsManifold.maximalAtlas I ∞ M)
     (hBs : ∀ x ∈ s, ∃ ψ ∈ B, u x ∈ ψ.source) :
     MemWkpLocMapOn I p k u s ↔ ContinuousOn u s ∧ ∀ φ ∈ A, ∀ ψ ∈ B,
-      MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k (ψ.extend I ∘ u ∘ φ.symm) := by
-  refine ⟨fun hu ↦ ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ hu.memWkpLoc_chart (hA hφ) (hB hψ)⟩,
-    fun ⟨hc, h⟩ ↦ ?_⟩
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hk with rfl | rfl
-  · exact memWkpLocMapOnGroupoid_zero_iff.2 hc
-  refine memWkpLocMapOn_iff.2 ⟨hc, fun φ' hφ' ψ' hψ' ↦ ?_⟩
-  -- Change the holomorphic chart, for each chart of `B`.
-  have h1 : ∀ ψ ∈ B, MemWkpLoc p (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) 1
-      (ψ.extend I ∘ u ∘ φ'.symm) := by
-    intro ψ hψ
-    refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
-    obtain ⟨φ, hφA, hxφ⟩ := hAs _ hz.2.1
-    have hO : IsOpen (φ'.target ∩ φ'.symm ⁻¹' φ.source) :=
-      φ'.isOpen_inter_preimage_symm φ.open_source
-    refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hxφ⟩),
-      (memWkpLoc_comp_chart_transition (hA hφA) hφ' le_rfl (h φ hφA ψ hψ) inter_subset_right
-        fun w hw ↦ ?_).congr fun w hw ↦ ?_⟩
-    · refine ⟨φ.map_source hw.2.2, ?_⟩
-      simpa [Function.comp_apply, φ.left_inv hw.2.2] using hw.1.2
-    · simp [φ.left_inv hw.2.2]
-  -- Change the chart of `M`.
-  refine memWkpLoc_iff_locally.2 fun z hz ↦ ?_
-  obtain ⟨ψ, hψB, hxψ⟩ := hBs _ hz.2.1
-  have hO := isOpen_chart hc hs φ' ψ
-  refine ⟨_, inter_mem_nhdsWithin _ (hO.mem_nhds ⟨hz.1, hz.2.1, hxψ⟩), ?_⟩
-  have hcψ : ContinuousOn (ψ.extend I ∘ u ∘ φ'.symm)
-      (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) := by
-    simpa only [mfld_simps] using hc.extend_comp_extend_symm (J := 𝓘(ℝ, ℂ)) φ' ψ
-  exact memWkpLoc_extend_comp (hB hψB) hψ' contMDiffOn_id isOpen_univ
-    ((h1 ψ hψB).mono inter_subset_right)
-    (hcψ.mono inter_subset_right) fun w hw ↦ ⟨hw.2.2.2, mem_univ _, hw.1.2.2⟩
+      MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) k (ψ.extend I ∘ u ∘ φ.symm) :=
+  memWkpLocMapOn_iff_of_subset_maximalAtlas_of_planar
+    (fun _ _ _ hφ hφ' _ _ _ _ _ hg hW hmaps ↦ memWkpLoc_comp_chart_transition hφ hφ' hk hg hW hmaps)
+    (fun hk' _ _ _ _ _ hv hvc hO hg hmaps ↦ by
+      obtain rfl := le_antisymm hk hk'
+      exact hv.contDiffOn_comp hvc hO hg hmaps)
+    hs hA hAs hB hBs
 
 /-- **Chart independence on the whole surface.** For `k ≤ 1`, it suffices to test the coordinate
 expressions in the charts of a family `A` of holomorphic charts covering `X` and a family `B` of
