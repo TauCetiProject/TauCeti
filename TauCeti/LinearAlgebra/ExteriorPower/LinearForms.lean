@@ -50,11 +50,14 @@ subspace found in `⋀^p` is converted back to a subspace of `K^ι` through `wed
 
 ## Main results
 
-* `TauCeti.wedgeForm_plucker`: Laplace's identity
-  `(l 0 ∧ ⋯ ∧ l (p - 1)) (y 0 ∧ ⋯ ∧ y (p - 1)) = det (l a (y b))`.
+* `TauCeti.wedgeForm_plucker` and `TauCeti.plucker_pi_apply`: Laplace's identity
+  `(l 0 ∧ ⋯ ∧ l (p - 1)) (y 0 ∧ ⋯ ∧ y (p - 1)) = det (l a (y b))`, reading the Plücker coordinates
+  of `(l k (x b))_{b, k}` as the values of `wedgeForms l p` at `plucker x`.
 * `TauCeti.wedgeForms_plucker_comp_eq_ite`: biorthogonality passes to the wedges.
-* `TauCeti.linearIndependent_wedgeForms` and `TauCeti.linearIndependent_plucker_comp`: the wedges
-  of independent forms, and of independent vectors, are independent.
+* `TauCeti.linearIndependent_wedgeForms`, `TauCeti.exists_ne_zero_forall_wedgeForms_eq_sum`, and
+  `TauCeti.linearIndependent_plucker_comp`: the wedges of independent forms, and of independent
+  vectors, are independent; in particular each wedge form of independent forms has a nonzero
+  coefficient tuple.
 * `TauCeti.mem_span_iff_forall_plucker_mem_wedgeSpan` and `TauCeti.wedgeSpan_eq_wedgeSpan_iff`:
   the span of the wedges meeting the first `k` indices determines, and is determined by, the span
   of the first `k` vectors.
@@ -141,6 +144,14 @@ theorem wedgeForms_plucker (l : κ → Dual R (ι → R)) (p : ℕ) (T : powerse
     wedgeForms l p T (plucker y) = (Matrix.of fun a b ↦ l (ofFinEmbEquiv.symm T a) (y b)).det := by
   simp [wedgeForms_apply]
 
+/-- The Plücker coordinates of a family `x` transformed coordinatewise by linear forms `l` are the
+values of the wedge forms `wedgeForms l p` at `plucker x`. -/
+theorem plucker_pi_apply (l : κ → Dual R (ι → R)) (x : Fin p → ι → R)
+    (T : powersetCard κ p) :
+    plucker (fun b k ↦ l k (x b)) T = wedgeForms l p T (plucker x) := by
+  rw [plucker_apply, wedgeForms_plucker, ← Matrix.det_transpose]
+  rfl
+
 /-- **Biorthogonality passes to the wedges**: if `l i (y j) = δ i j`, then the wedge of the forms
 indexed by `T` takes the value `δ T T'` on the Plücker vector of the vectors indexed by `T'`. -/
 theorem wedgeForms_plucker_comp_eq_ite {l : κ → Dual R (ι → R)} {y : κ → ι → R}
@@ -173,6 +184,17 @@ theorem linearIndependent_wedgeForms {l : κ → Dual K (ι → K)} (hl : Linear
     (fun T ↦ Dual.eval K _ (plucker (y ∘ ofFinEmbEquiv.symm T))) (fun T T' hTT' ↦ ?_) fun T ↦ ?_
   · simp [Dual.eval_apply, wedgeForms_plucker_comp_eq_ite hy, hTT'.symm]
   · simp [Dual.eval_apply, wedgeForms_plucker_comp_eq_ite hy]
+
+/-- Every `p`-wedge form of linearly independent forms `l` is represented as a linear form with a
+nonzero coefficient tuple in `powersetCard ι p → K`. -/
+theorem exists_ne_zero_forall_wedgeForms_eq_sum {l : κ → Dual K (ι → K)}
+    (hl : LinearIndependent K l) (T : powersetCard κ p) :
+    ∃ α : powersetCard ι p → K, α ≠ 0 ∧ ∀ w, wedgeForms l p T w = ∑ s, α s * w s := by
+  refine ⟨fun s ↦ plucker (fun a j ↦ l (ofFinEmbEquiv.symm T a) (Pi.single j 1)) s,
+    fun h0 ↦ ?_, fun w ↦ by simp [wedgeForms_apply, wedgeForm_apply]⟩
+  refine (linearIndependent_wedgeForms hl p).ne_zero T ?_
+  ext w
+  simp [wedgeForms_apply, wedgeForm_apply, h0]
 
 end Field
 

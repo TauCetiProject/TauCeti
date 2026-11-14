@@ -52,8 +52,10 @@ has finitely many points of bounded height.
   subspace and the whole space have height `1`.
 * `Submodule.relativeSubspaceHeight_span_singleton`: the line spanned by a vector has the
   height of that vector.
-* `Submodule.relativeSubspaceHeight_euclideanDual`: the orthogonal complement of `U` for the dot
-  product has the height of `U`.
+* `Submodule.relativeSubspaceHeight_euclideanDual`,
+  `Submodule.relativeSubspaceHeight_eq_mulHeight_of_forall_dotProduct_eq_zero`: the orthogonal
+  complement of `U` for the dot product has the height of `U`; in particular, a hyperplane has the
+  height of any nonzero vector orthogonal to it.
 * `Submodule.instNorthcottRelativeSubspaceHeight` and
   `Submodule.instNorthcottRelativeSubspaceLogHeight`: the Northcott property for the relative
   height and the relative logarithmic height.
@@ -254,6 +256,26 @@ logarithmic height of `U`. -/
 theorem relativeSubspaceLogHeight_euclideanDual :
     relativeSubspaceLogHeight U.euclideanDual = relativeSubspaceLogHeight U := by
   simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
+
+variable {U} in
+/-- The relative height of a hyperplane in `ι → K` equals the projective height of any nonzero
+vector orthogonal to it. -/
+theorem relativeSubspaceHeight_eq_mulHeight_of_forall_dotProduct_eq_zero
+    (hU : finrank K U + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hUa : ∀ x ∈ U, x ⬝ᵥ a = 0) :
+    relativeSubspaceHeight U = mulHeight a := by
+  rw [← relativeSubspaceHeight_euclideanDual,
+    euclideanDual_eq_span_singleton hU ha hUa, relativeSubspaceHeight_span_singleton]
+
+variable {U} in
+/-- The relative logarithmic height of a hyperplane in `ι → K` equals the logarithmic height of
+any nonzero vector orthogonal to it. -/
+theorem relativeSubspaceLogHeight_eq_logHeight_of_forall_dotProduct_eq_zero
+    (hU : finrank K U + 1 = Fintype.card ι) {a : ι → K} (ha : a ≠ 0)
+    (hUa : ∀ x ∈ U, x ⬝ᵥ a = 0) :
+    relativeSubspaceLogHeight U = logHeight a := by
+  rw [← relativeSubspaceLogHeight_euclideanDual,
+    euclideanDual_eq_span_singleton hU ha hUa, relativeSubspaceLogHeight_span_singleton]
 
 end Fintype
 

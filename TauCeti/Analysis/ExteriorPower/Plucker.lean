@@ -12,13 +12,16 @@ public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Local bounds for Plücker coordinates
 
 The Euclidean norm of the Plücker vector is at most the product of the Euclidean
 norms of the original vectors. For a nonarchimedean absolute value, the analogous
-statement holds for maximum norms. These are the local estimates underlying the
+statement holds for maximum norms, while an arbitrary absolute value incurs at most
+the factorial of the exterior degree; columnwise entry bounds on a subset `s` pass
+to the minor on `s` in the same way. These are the local estimates underlying the
 height bound for a subspace in terms of a spanning family. The overlapping-family
 inequality compares the common rows and their two extensions; it supplies the
 archimedean factor of subspace-height submodularity.
@@ -97,7 +100,7 @@ end TauCeti
 
 namespace AbsoluteValue
 
-open TauCeti
+open Set.powersetCard TauCeti
 
 /-- Every Plücker coordinate is bounded by the product of the maximum row norms
 for a nonarchimedean real-valued absolute value. -/
@@ -107,5 +110,38 @@ theorem plucker_le_prod_iSup {R ι : Type*} [CommRing R] [LinearOrder ι] [Finit
     v (plucker x s) ≤ ∏ i, ⨆ j, v (x i j) := by
   rw [plucker_apply]
   exact Matrix.abv_det_le_prod_of_le _ hv fun i j ↦ Finite.le_ciSup_of_le _ le_rfl
+
+/-- Every Plücker coordinate is bounded by `p!` times the product of the maximum row norms
+for any real-valued absolute value. -/
+theorem plucker_le_factorial_mul_prod_iSup {R ι : Type*} [CommRing R] [LinearOrder ι] [Finite ι]
+    {p : ℕ} (v : AbsoluteValue R ℝ) (x : Fin p → ι → R) (s : powersetCard ι p) :
+    v (plucker x s) ≤ p.factorial * ∏ i, ⨆ j, v (x i j) := by
+  rw [plucker_apply]
+  simpa using Matrix.abv_det_le_factorial_prod _ v fun i j ↦
+    Finite.le_ciSup_of_le (ofFinEmbEquiv.symm s j) le_rfl
+
+/-- Columnwise bounds on the coordinates in `s` bound the Plücker coordinate at `s` by `p!` times
+their product over `s`, for any absolute value. -/
+theorem plucker_le_factorial_mul_prod {R S ι : Type*} [CommRing R] [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] [LinearOrder ι] {p : ℕ} (v : AbsoluteValue R S) (x : Fin p → ι → R)
+    (s : powersetCard ι p) {b : ι → S} (hb : ∀ i, ∀ j ∈ s, v (x i j) ≤ b j) :
+    v (plucker x s) ≤ p.factorial * ∏ j ∈ (s : Finset ι), b j := by
+  rw [plucker_apply, ← prod_comp_ofFinEmbEquiv_symm s b]
+  simpa only [Fintype.card_fin] using
+    Matrix.abv_det_le_factorial_prod' (Matrix.of fun i j ↦ x i (ofFinEmbEquiv.symm s j)) v
+      (b := fun j ↦ b (ofFinEmbEquiv.symm s j)) fun i j ↦ hb i _
+        ((mem_range_ofFinEmbEquiv_symm_iff_mem s (ofFinEmbEquiv.symm s j)).1 ⟨j, rfl⟩)
+
+/-- Columnwise bounds on the coordinates in `s` bound the Plücker coordinate at `s` by their
+product over `s`, for a nonarchimedean absolute value. -/
+theorem plucker_le_prod {R S ι : Type*} [CommRing R] [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] [LinearOrder ι] {p : ℕ} (v : AbsoluteValue R S)
+    (hv : IsNonarchimedean v) (x : Fin p → ι → R) (s : powersetCard ι p) {b : ι → S}
+    (hb : ∀ i, ∀ j ∈ s, v (x i j) ≤ b j) :
+    v (plucker x s) ≤ ∏ j ∈ (s : Finset ι), b j := by
+  rw [plucker_apply, ← prod_comp_ofFinEmbEquiv_symm s b]
+  exact Matrix.abv_det_le_prod_of_le' _ hv (b := fun j ↦ b (ofFinEmbEquiv.symm s j))
+    fun i j ↦ hb i _
+      ((mem_range_ofFinEmbEquiv_symm_iff_mem s (ofFinEmbEquiv.symm s j)).1 ⟨j, rfl⟩)
 
 end AbsoluteValue
