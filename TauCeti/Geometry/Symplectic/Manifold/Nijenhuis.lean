@@ -19,13 +19,15 @@ For a smooth almost complex structure `J` on a finite-dimensional manifold, the 
 expression on vector fields is
 `N_J(X, Y) = [JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]`,
 with Mathlib's Lie bracket `VectorField.mlieBracket`. It is linear over differentiable functions
-in each argument, so it is a tensor: its value at `x` depends only on `X x` and `Y x`. This file
-constructs that tensor as a continuous bilinear map on each tangent space, through Mathlib's
-tensoriality criterion `TensorialAt.mkHom₂`, and proves its basic algebraic identities. The
-construction follows Mathlib's torsion tensor `IsCovariantDerivativeOn.torsion`.
+in each argument, so on vector fields differentiable at `x` it is a tensor: its value at `x`
+depends only on `X x` and `Y x`. This file constructs that tensor as a continuous bilinear map on
+each tangent space, through Mathlib's tensoriality criterion `TensorialAt.mkHom₂`, and proves its
+basic algebraic identities. The construction follows Mathlib's torsion tensor
+`IsCovariantDerivativeOn.torsion`.
 
 The Nijenhuis tensor is the obstruction to integrability of `J`: the Newlander–Nirenberg
-theorem says that `J` comes from a complex atlas exactly when it vanishes. Its vanishing is
+theorem says that, on a manifold without boundary, `J` comes from a complex atlas exactly when it
+vanishes. Its vanishing is
 equivalent to involutivity of the `±i` eigenbundles of `J` in the complexified tangent bundle,
 and it controls the components of the exterior derivative outside the bidegrees `(1,0)` and
 `(0,1)`. The identities `N_J(Jv, w) = -J N_J(v, w)` proved here are the real form of the type
@@ -82,7 +84,7 @@ No factor `1/4` is included; some sources use `N_J / 4` instead.
 
 public noncomputable section
 
-open Bundle FiberBundle VectorField
+open FiberBundle VectorField
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti
