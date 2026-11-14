@@ -40,8 +40,6 @@ along the induced map of forced unitizations.
 * `TauCeti.relativeCyclicCochainComplex`: the relative cyclic cochain complex.
 * `TauCeti.relativeCyclicCohomology`: the relative cyclic cohomology of a nonunital algebra.
 * `TauCeti.relativeCyclicCohomology.map`: pullback along a homomorphism of nonunital algebras.
-* `TauCeti.relativeCyclicCohomology.toCyclic_map_unitization`: naturality of the map to the cyclic
-  cohomology of the forced unitization.
 * `TauCeti.unitizationAugmentationPullbackComplexMap`: pullback of cyclic cochain complexes along
   the augmentation.
 
@@ -56,6 +54,8 @@ along the induced map of forced unitizations.
 * `TauCeti.relativeCyclicCohomology.map_mk`, `TauCeti.relativeCyclicCohomology.map_id` and
   `TauCeti.relativeCyclicCohomology.map_comp`: the effect of pullback on classes, and its
   functoriality.
+* `TauCeti.relativeCyclicCohomology.toCyclic_map_unitization`: naturality of the map to the cyclic
+  cohomology of the forced unitization.
 
 ## References
 
