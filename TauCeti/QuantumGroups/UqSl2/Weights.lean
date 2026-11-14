@@ -181,7 +181,7 @@ theorem weightSpace_le_genWeightSpace (μ : ℂ) : weightSpace q V μ ≤ genWei
 theorem genWeightSpace_zero : genWeightSpace q V 0 = ⊥ := by
   refine (Submodule.eq_bot_iff _).mpr fun v hv => ?_
   obtain ⟨n, hn⟩ := mem_genWeightSpace_iff.mp hv
-  rw [map_zero, sub_zero, ← kUnit_val, ← Units.val_pow_eq_pow_val] at hn
+  rw [map_zero, sub_zero, ← val_kUnit, ← Units.val_pow_eq_pow_val] at hn
   exact ((kUnit q ^ n).isUnit.smul_eq_zero).mp hn
 
 /-- An element `a` that `q`-commutes with `K` in the form `K a = c (a K)` maps the generalized

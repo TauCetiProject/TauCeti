@@ -168,11 +168,11 @@ def kUnit (q : ℂ) : (UqSl2 q)ˣ where
 
 /-- The value of `kUnit q` is the generator `K`. -/
 @[simp]
-theorem kUnit_val : (kUnit q : UqSl2 q) = k q := (rfl)
+theorem val_kUnit : (kUnit q : UqSl2 q) = k q := (rfl)
 
 /-- The inverse of `kUnit q` has value `K⁻¹`. -/
 @[simp]
-theorem kUnit_inv : ↑(kUnit q)⁻¹ = kInv q := (rfl)
+theorem val_inv_kUnit : ↑(kUnit q)⁻¹ = kInv q := (rfl)
 
 /-- Left multiplication by `K` cancels left multiplication by `K⁻¹`. -/
 @[simp]
@@ -188,13 +188,13 @@ theorem kInv_mul_k_mul (x : UqSl2 q) : kInv q * (k q * x) = x :=
 theorem k_mul_kUnit_zpow (b : ℤ) :
     k q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       ((kUnit q ^ (b + 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
-  rw [← kUnit_val, ← Units.val_mul, add_comm, zpow_one_add]
+  rw [← val_kUnit, ← Units.val_mul, add_comm, zpow_one_add]
 
 /-- Multiplying an integer power of `K` by `K⁻¹` on the left lowers the exponent by one. -/
 theorem kInv_mul_kUnit_zpow (b : ℤ) :
     kInv q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
       ((kUnit q ^ (b - 1) : (UqSl2 q)ˣ) : UqSl2 q) := by
-  rw [← kUnit_inv, ← Units.val_mul, ← zpow_neg_one, ← zpow_add, neg_add_eq_sub]
+  rw [← val_inv_kUnit, ← Units.val_mul, ← zpow_neg_one, ← zpow_add, neg_add_eq_sub]
 
 /-- At `q = 0` the relation `K E = 0 • E K` forces `E = 0`. -/
 @[simp]
@@ -211,8 +211,8 @@ theorem f_zero : f (0 : ℂ) = 0 := by
 /-- The relation `E K⁻¹ = q² K⁻¹ E`, obtained from the defining `K E` relation. -/
 theorem e_mul_kInv : e q * kInv q = q ^ 2 • (kInv q * e q) := by
   have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := e q) (y := q ^ 2 • e q)
-    (by rw [SemiconjBy, kUnit_val, k_mul_e, smul_mul_assoc])).eq
-  rw [kUnit_inv, mul_smul_comm] at h
+    (by rw [SemiconjBy, val_kUnit, k_mul_e, smul_mul_assoc])).eq
+  rw [val_inv_kUnit, mul_smul_comm] at h
   exact h.symm
 
 /-- The inverse-generator commutation relation `K⁻¹ E = q⁻² E K⁻¹`. -/
@@ -225,8 +225,8 @@ theorem kInv_mul_e : kInv q * e q = q⁻¹ ^ 2 • (e q * kInv q) := by
 /-- The relation `F K⁻¹ = q⁻² K⁻¹ F`, obtained from the defining `K F` relation. -/
 theorem f_mul_kInv : f q * kInv q = q⁻¹ ^ 2 • (kInv q * f q) := by
   have h := (SemiconjBy.units_inv_symm_left (a := kUnit q) (x := f q) (y := q⁻¹ ^ 2 • f q)
-    (by rw [SemiconjBy, kUnit_val, k_mul_f, smul_mul_assoc])).eq
-  rw [kUnit_inv, mul_smul_comm] at h
+    (by rw [SemiconjBy, val_kUnit, k_mul_f, smul_mul_assoc])).eq
+  rw [val_inv_kUnit, mul_smul_comm] at h
   exact h.symm
 
 /-- The inverse-generator commutation relation `K⁻¹ F = q² F K⁻¹`. -/
@@ -409,8 +409,8 @@ theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V
 theorem commute_of_commute_generators {z : UqSl2 q} (he : Commute (e q) z)
     (hf : Commute (f q) z) (hk : Commute (k q) z) (a : UqSl2 q) : Commute a z := by
   have hkInv : Commute (kInv q) z := by
-    rw [← kUnit_inv]
-    exact Commute.units_inv_left (by rwa [kUnit_val])
+    rw [← val_inv_kUnit]
+    exact Commute.units_inv_left (by rwa [val_kUnit])
   refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (R := ℂ)
     (s := Set.range (generator q)) ?_ ?_).symm
   · rw [adjoin_range_generator]
