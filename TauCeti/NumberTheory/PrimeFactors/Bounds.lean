@@ -30,9 +30,6 @@ contribution to logarithmic derivatives `-L'/L(s, χ)` of imprimitive Dirichlet 
 ## Main results
 
 * `TauCeti.exists_pow_card_primeFactors_le_mul_rpow`: `C ^ ω(n) ≤ A n ^ ε` for `n ≠ 0`.
-* `Nat.prod_primeFactors_eq_filter_lt_mul_filter_ge`,
-  `Nat.sum_primeFactors_eq_filter_lt_add_filter_ge`: splitting products and sums over
-  `n.primeFactors` at a real threshold `X`.
 * `Nat.sum_primeFactors_log_le`, `Nat.sum_primeFactors_log_div_le`: elementary bounds
   `∑_{p ∣ n} log p ≤ log n` and `∑_{p ∣ n} log p / p ≤ log n / 2`.
 * `Nat.sum_primeFactors_filter_ge_log_div_le`, `Nat.sum_primeFactors_filter_lt_log_div_le`:
@@ -86,18 +83,6 @@ theorem exists_pow_card_primeFactors_le_mul_rpow {C ε : ℝ} (hC : 1 ≤ C) (h�
 end TauCeti
 
 namespace Nat
-
-/-- Splitting a product over the distinct prime divisors of `n` at a real threshold `X`. -/
-@[to_additive /-- Splitting a sum over the distinct prime divisors of `n` at a real threshold
-`X`. -/]
-theorem prod_primeFactors_eq_filter_lt_mul_filter_ge {M : Type*} [CommMonoid M] (n : ℕ) (X : ℝ)
-    (f : ℕ → M) :
-    ∏ p ∈ n.primeFactors, f p =
-      (∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ (p : ℝ) < X), f p) *
-        ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ X ≤ (p : ℝ)), f p := by
-  rw [← prod_filter_mul_prod_filter_not n.primeFactors (fun p : ℕ ↦ (p : ℝ) < X)]
-  congr 2
-  exact filter_congr fun _ _ ↦ not_lt
 
 /-- The sum of `log p` over the distinct prime divisors of `n` is at most `log n`. -/
 theorem sum_primeFactors_log_le (n : ℕ) :
@@ -176,7 +161,8 @@ theorem sum_primeFactors_log_div_le_log_log_add (n : ℕ) :
     have hlog1 : 1 < Real.log n := (Real.lt_log_iff_exp_lt (by linarith)).mpr
       (Real.exp_one_lt_three.trans_le hn3)
     have hlog0 : 0 < Real.log n := zero_lt_one.trans hlog1
-    rw [sum_primeFactors_eq_filter_lt_add_filter_ge n (Real.log n)]
+    rw [← sum_filter_add_sum_filter_not n.primeFactors (fun p : ℕ ↦ (p : ℝ) < Real.log n)]
+    simp only [not_lt]
     have hlt := sum_primeFactors_filter_lt_log_div_le n hlog1.le
     have hge := (sum_primeFactors_filter_ge_log_div_le n hlog0).trans_eq (div_self hlog0.ne')
     linarith

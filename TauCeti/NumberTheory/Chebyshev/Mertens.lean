@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.Chebyshev
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Factorial
 import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.LogFactorial
@@ -74,22 +75,6 @@ open Asymptotics Filter Finset ArithmeticFunction
 open scoped Chebyshev Nat Topology
 
 namespace Chebyshev
-
-private theorem log_four_le_two : Real.log 4 ≤ 2 := by
-  have h2 : Real.log 2 ≤ 1 := by linarith [Real.log_le_sub_one_of_pos zero_lt_two]
-  have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
-  rw [h4, Real.log_pow]
-  norm_num
-  linarith
-
-private theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : Real.log x / x ≤ 1 / 2 := by
-  rcases eq_or_lt_of_le hx with rfl | hx
-  · norm_num
-  have h2 : Real.log 2 ≤ 1 := by linarith [Real.log_le_sub_one_of_pos zero_lt_two]
-  have h := Real.log_le_sub_one_of_pos (half_pos hx)
-  rw [Real.log_div hx.ne' two_ne_zero] at h
-  rw [div_le_iff₀ hx]
-  linarith
 
 /-! ### Floor-replacement bounds and the von Mangoldt sum -/
 
@@ -212,7 +197,7 @@ theorem abs_sum_primesLE_log_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
     |(∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p) - Real.log x| ≤ Real.log 4 + 4 := by
   rw [abs_sub_le_iff]
   exact ⟨by linarith [sum_primesLE_log_div_le hx],
-    by linarith [log_sub_le_sum_primesLE_log_div (zero_le_one.trans hx), log_four_le_two]⟩
+    by linarith [log_sub_le_sum_primesLE_log_div (zero_le_one.trans hx), Real.log_four_le_two]⟩
 
 /-- Natural-cutoff form of Mertens' first theorem: for every `n : ℕ`,
 `|∑_{p ≤ n} log p / p - log n| ≤ log 4 + 4`. -/
@@ -290,7 +275,7 @@ theorem log_sub_le_sum_primesLE_filter_lt_log_div {x : ℝ} (hx : 0 ≤ x) :
     simp only [hfl, Nat.primesLE_zero, filter_empty, sum_empty]
     linarith
   · linarith [log_sub_le_sum_primesLE_log_div hx, sum_primesLE_log_div_sub_filter_lt_le hx1,
-      log_div_self_le_half hx]
+      Real.log_div_self_le_half hx]
 
 /-- **Mertens' first theorem, strict cutoff.** For every real `x ≥ 1`,
 `|∑_{p < x} log p / p - log x| ≤ log 4 + 4`. -/
@@ -300,7 +285,7 @@ theorem abs_sum_primesLE_filter_lt_log_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
   rw [abs_sub_le_iff]
   exact ⟨by linarith [sum_primesLE_filter_lt_log_div_le_log_add hx],
     by linarith [log_sub_le_sum_primesLE_filter_lt_log_div (zero_le_one.trans hx),
-      log_four_le_two]⟩
+      Real.log_four_le_two]⟩
 
 /-- Strict natural-cutoff form of Mertens' first theorem: for every `n : ℕ`,
 `|∑_{p ∈ Nat.primesBelow n} log p / p - log n| ≤ log 4 + 4`. -/
@@ -354,42 +339,28 @@ theorem tendsto_sum_primesLE_log_div_atTop :
   filter_upwards [eventually_ge_atTop 0] with x hx
   simpa [sub_eq_add_neg] using log_sub_le_sum_primesLE_log_div hx
 
+/-- The prime-supported logarithmic series `∑_p log p / p` on `ℕ` is not summable. -/
+theorem not_summable_prime_log_div :
+    ¬Summable (fun n : ℕ ↦ if n.Prime then Real.log n / n else 0) := by
+  rw [not_summable_iff_tendsto_nat_atTop_of_nonneg fun n ↦ by split_ifs <;> positivity,
+    ← tendsto_add_atTop_iff_nat 1]
+  refine (tendsto_sum_primesLE_log_div_atTop.comp tendsto_natCast_atTop_atTop).congr fun n ↦ ?_
+  simp [Nat.floor_natCast, Nat.primesLE_eq_filter_range, sum_filter]
+
 /-- For every real `y`, the prime tail `∑_{p ≥ y} log p / p` is not summable, contrasting with the
 `O(1 / y)` summability of `∑_{p ≥ y} log p / p ^ 2`. -/
 theorem not_summable_prime_log_div_ge (y : ℝ) :
     ¬Summable (fun n : ℕ ↦ if n.Prime ∧ y ≤ (n : ℝ) then Real.log n / n else 0) := by
-  intro hsum
-  set B := (∑ p ∈ Nat.primesLE ⌊y⌋₊, Real.log p / p) +
-    ∑' n : ℕ, (if n.Prime ∧ y ≤ (n : ℝ) then Real.log n / n else 0)
-  have hub (x : ℝ) (hx : max 1 y ≤ x) : ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ B := by
-    dsimp only [B]
-    rw [Nat.sum_primesLE_floor_eq_add_filter_gt _ ((le_max_right 1 y).trans hx)]
-    gcongr
-    refine (sum_le_sum fun p hp ↦ ?_).trans
-      (hsum.sum_le_tsum _ fun n _ ↦ by split_ifs <;> positivity)
-    obtain ⟨hp_mem, hpy⟩ := mem_filter.mp hp
-    simp [Nat.prime_of_mem_primesLE hp_mem, hpy.le]
-  have hdiv := (tendsto_atTop.mp tendsto_sum_primesLE_log_div_atTop (B + 1)).and
-    (eventually_ge_atTop (max 1 y))
-  obtain ⟨x, hgt, hx⟩ := hdiv.exists
-  linarith [hub x hx]
+  refine mt (summable_congr_atTop ?_).mp not_summable_prime_log_div
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop y] with n hn
+  simp [hn]
 
 /-- For every real `y`, the strict prime tail `∑_{p > y} log p / p` is not summable. -/
 theorem not_summable_prime_log_div_gt (y : ℝ) :
     ¬Summable (fun n : ℕ ↦ if n.Prime ∧ y < (n : ℝ) then Real.log n / n else 0) := by
-  refine fun h ↦ not_summable_prime_log_div_ge (y + 1)
-    (h.of_nonneg_of_le (fun n ↦ by split_ifs <;> positivity) fun n ↦ ?_)
-  split_ifs with h1 h2
-  · exact le_rfl
-  · exact False.elim (h2 ⟨h1.1, by linarith [h1.2]⟩)
-  · positivity
-  · exact le_rfl
-
-/-- The prime-supported logarithmic series `∑_p log p / p` on `ℕ` is not summable. -/
-theorem not_summable_prime_log_div :
-    ¬Summable (fun n : ℕ ↦ if n.Prime then Real.log n / n else 0) := by
-  refine fun h ↦ not_summable_prime_log_div_ge 0 (h.congr fun n ↦ ?_)
-  simp [Nat.cast_nonneg]
+  refine mt (summable_congr_atTop ?_).mp not_summable_prime_log_div
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop y] with n hn
+  simp [hn]
 
 end Chebyshev
 

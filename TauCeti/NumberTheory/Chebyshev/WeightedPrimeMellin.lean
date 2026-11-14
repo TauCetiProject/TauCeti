@@ -429,7 +429,6 @@ theorem tsum_primes_log_div_rpow_le {η : ℝ} (hη : 0 < η) :
 theorem norm_tsum_weightedPrimeSeries_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1)
     {η : ℝ} (hη : 0 < η) :
     ‖∑' p : Nat.Primes, (log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ η⁻¹ + (log 4 + 4) := by
-  have hsum1 := summable_primes_log_div_rpow hη
   have hle (p : Nat.Primes) :
       ‖(log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ log p / (p : ℝ) ^ (1 + η) := by
     have hp0 : (0 : ℝ) < p := mod_cast p.prop.pos
@@ -437,9 +436,7 @@ theorem norm_tsum_weightedPrimeSeries_le {a : ℕ → E} (ha : ∀ p, p.Prime �
       div_nonneg (log_nonneg (mod_cast p.prop.one_lt.le)) (rpow_nonneg hp0.le _)
     rw [norm_smul, norm_of_nonneg hlp]
     exact mul_le_of_le_one_right hlp (ha p p.prop)
-  have hnorm : Summable (fun p : Nat.Primes ↦ ‖(log p / (p : ℝ) ^ (1 + η)) • a p‖) :=
-    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hle hsum1
-  exact (norm_tsum_le_tsum_norm hnorm).trans
-    ((hnorm.tsum_le_tsum hle hsum1).trans (tsum_primes_log_div_rpow_le hη))
+  exact (tsum_of_norm_bounded (summable_primes_log_div_rpow hη).hasSum hle).trans
+    (tsum_primes_log_div_rpow_le hη)
 
 end TauCeti
