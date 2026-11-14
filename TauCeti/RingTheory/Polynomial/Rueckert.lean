@@ -176,10 +176,6 @@ theorem prime_apply_iff {w : A[X]} (hw : w ∈ W) : Prime (φ w) ↔ Prime w := 
   rw [← Ideal.span_singleton_prime hw0, ← Ideal.span_singleton_prime hφw0,
     h.isPrime_span_apply_iff hw]
 
-/-- The image of a prime member of `W` is prime. -/
-theorem prime_apply {w : A[X]} (hw : w ∈ W) (hp : Prime w) : Prime (φ w) :=
-  (h.prime_apply_iff hw).mpr hp
-
 /-- Over a unique factorisation domain `A`, the image of every member of `W` is associated to a
 product of primes. -/
 theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w : A[X]}
@@ -188,7 +184,7 @@ theorem exists_prime_factors_apply [IsDomain A] [UniqueFactorizationMonoid A] {w
   | _ n ih =>
   have hm := h.monic hw
   by_cases hirr : Irreducible w
-  · exact ⟨{φ w}, by simpa using h.prime_apply hw hirr.prime, by simp⟩
+  · exact ⟨{φ w}, by simpa using (h.prime_apply_iff hw).mpr hirr.prime, by simp⟩
   rcases eq_or_ne w 1 with rfl | hw1
   · exact ⟨0, by simp, by simp⟩
   -- A reducible monic member of `W` is a product of two monic members of positive degree.

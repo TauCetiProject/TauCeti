@@ -21,20 +21,15 @@ import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 # Holomorphic stalks are regular local rings
 
 At any point `x` of a finite-dimensional complex manifold `X` without boundary modelled on `E`, the
-stalk `𝒪_{X, x}` of holomorphic germs is a regular local ring whose Krull dimension, maximal-ideal
-minimal generator count, and residue-field cotangent dimension all equal `finrank ℂ E`.
+stalk `𝒪_{X, x}` of holomorphic germs and the stalk of Mathlib's complex-smooth structure sheaf are
+regular local rings whose Krull dimension, maximal-ideal minimal generator count, and residue-field
+cotangent dimension all equal `Module.finrank ℂ E`.
 
-On a complex normed model space `V`, differentiating germs at `x` identifies the algebraic
-cotangent space `𝔪 / 𝔪²` with `StrongDual ℂ V` over the residue field, while coordinate hyperplane
-restrictions bound the Krull dimension from below by `finrank ℂ V`. Since `𝒪_{V, x}` is Noetherian,
-the minimal number of generators of `𝔪` equals the cotangent dimension `finrank ℂ V`, matching the
-Krull dimension lower bound. Local analytic chart pullbacks transport regularity and dimension to
-every holomorphic chart and every boundaryless complex manifold, and the holomorphic/complex-smooth
-stalk comparison transfers them to Mathlib's complex-smooth structure sheaf.
-
-In any holomorphic chart at `x` and for any `Fin n`-indexed basis of `E`, the centered linear
-coordinate germs generate the maximal ideal in `finrank ℂ E` elements and therefore form a regular
-sequence (a regular system of parameters) on `𝒪_{X, x}`.
+The same regularity and dimension formulas hold chart-locally at any point in the domain of a
+holomorphic chart into `E`, without assuming a global manifold structure on `X`. In any such chart
+and for any `Fin n`-indexed basis of `E`, the centered linear coordinate germs form a regular
+sequence (a regular system of parameters) on `𝒪_{X, x}`, and the centered coordinate germ along any
+nonzero continuous linear functional on `E` generates a prime ideal and is prime and irreducible.
 
 ## Main declarations
 
