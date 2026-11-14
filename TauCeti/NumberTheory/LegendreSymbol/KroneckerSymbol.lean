@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
+public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.Nat.Factorization.GcdSplit
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # The Kronecker symbol
@@ -31,10 +32,10 @@ multiplicativity in the denominator fail exactly for the numerator `-1`, where
 `(-1 / 0) = 1` but `(-1 / 0) * (-1 / 3) = -1`.
 
 The point of the extension is the case of a **discriminant** `D ≡ 0, 1 (mod 4)`. Then `(D / ·)` is
-periodic modulo `|D|` on all of `ℤ`, so it is a quadratic Dirichlet character `kroneckerChar` of
-modulus `|D|`, whose value at `-1` is the sign of `D`. For `D ≡ 1 (mod 4)` this rests on
-quadratic reciprocity, in the form `(D / n) = J(n | |D|)`; for `D ≡ 0 (mod 4)` it rests on the
-periodicity of `J(D | ·)` modulo `|D|` on odd numbers and on its reflection law under `b ↦ -b`.
+periodic modulo `|D|` on all of `ℤ`, so for `D ≠ 0` it is a quadratic Dirichlet character
+`kroneckerChar` of modulus `|D|`, whose value at `-1` is the sign of `D`. For `D ≡ 1 (mod 4)` this
+rests on quadratic reciprocity, in the form `(D / n) = J(n | |D|)`; for `D ≡ 0 (mod 4)` it rests on
+the periodicity of `J(D | ·)` modulo `|D|` on odd numbers and on its reflection law under `b ↦ -b`.
 The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 
 ## Main definitions
