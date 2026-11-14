@@ -49,8 +49,9 @@ The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`
 * `TauCeti.matrixCochainExtension_diagonal`: on diagonal matrices, matrix extension is the sum of
   the original cochain over the diagonal positions.
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
-  `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
-  Hochschild coboundary.
+  `TauCeti.matrixCochainExtension_hochschildCoboundary`,
+  `TauCeti.matrixCochainExtension_barCoboundary`: compatibility with the cofaces, the Hochschild
+  coboundary, and the bar coboundary.
 * `TauCeti.cyclicCohomology.matrixExtension_map`: on cyclic cohomology, matrix extension is natural
   for algebra homomorphisms.
 -/
@@ -448,6 +449,16 @@ theorem matrixCochainExtension_hochschildCoboundary (ι : Type*) [Fintype ι] (n
   rw [hochschildCoboundary_apply, matrixCochainExtension_apply_eq_sum_pathEntries]
   simp only [hochschildCoboundary_apply, hface, Finset.smul_sum]
   exact Finset.sum_comm
+
+/-- Matrix extension commutes with the bar coboundary `b'`: `(b'φ)#Tr = b'(φ#Tr)`. -/
+theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) => A) M) :
+    matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
+      barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
+  rw [barCoboundary_def, barCoboundary_def, LinearMap.sum_apply, LinearMap.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.smul_apply, LinearMap.smul_apply, map_zsmul,
+    matrixCochainExtension_hochschildCoface]
 
 end Coboundary
 

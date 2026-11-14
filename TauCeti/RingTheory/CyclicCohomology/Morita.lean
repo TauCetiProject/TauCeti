@@ -8,18 +8,19 @@ module
 public import TauCeti.RingTheory.HochschildCohomology.Matrix
 public import TauCeti.RingTheory.CyclicCohomology.PeriodicCohomology
 import Mathlib.Algebra.FiveLemma
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # Matrix Morita invariance of cyclic and periodic cyclic cohomology
 
 Generalized matrix trace `TauCeti.matrixCochainExtension` commutes not only with the Hochschild
-coboundary `b`, cyclic operator `λ`, cyclic norm `N`, and Connes' operator `B`, but also with the
-bar coboundary `b'` and Connes' cochain periodicity operator `S₀`. Consequently it extends row by
-row to a cochain map on Connes' cyclic bicomplex (`TauCeti.matrixCyclicTotalCochainExtension`),
-inducing `R`-linear maps `TauCeti.cyclicTotalHomologyMatrixExtension` on the cohomology `Hⁿ(Tot)`
-of the total cyclic bicomplex and `TauCeti.periodicCyclicCohomology.matrixExtension` on periodic
-cyclic cohomology `HPⁿ`, compatible with all morphisms of Connes' SBI sequence and with the
-normalized stage maps from cyclic cohomology.
+coboundary `b`, bar coboundary `b'`, cyclic operator `λ`, cyclic norm `N`, and Connes' operator
+`B`, but also with Connes' cochain periodicity operator `S₀`. Consequently it extends row by row to
+a cochain map on Connes' cyclic bicomplex (`TauCeti.matrixCyclicTotalCochainExtension`), inducing
+`R`-linear maps `TauCeti.cyclicTotalHomologyMatrixExtension` on the cohomology `Hⁿ(Tot)` of the
+total cyclic bicomplex and `TauCeti.periodicCyclicCohomology.matrixExtension` on periodic cyclic
+cohomology `HPⁿ`, compatible with all morphisms of Connes' SBI sequence, the `2`-periodicity
+isomorphism, and the normalized stage maps from cyclic cohomology.
 
 For a unital `R`-algebra `A` and a nonempty finite index type `ι`, matrix Morita invariance of
 Hochschild cohomology (`TauCeti.hochschildCohomology.bijective_matrixExtension`) together with the
@@ -48,9 +49,7 @@ and in all degrees when `R` is a `ℚ`-algebra (`TauCeti.cyclicCohomology.biject
 
 ## Main results
 
-* `TauCeti.matrixCochainExtension_barCoboundary`,
-  `TauCeti.matrixCochainExtension_cochainPeriodicity`: generalized matrix trace commutes with `b'`
-  and `S₀`.
+* `TauCeti.matrixCochainExtension_cochainPeriodicity`: generalized matrix trace commutes with `S₀`.
 * `TauCeti.cyclicCohomology.toHochschild_matrixExtension`,
   `TauCeti.cyclicCohomology.matrixExtension_connesB`,
   `TauCeti.cyclicCohomology.matrixExtension_periodicity`: compatibility of
@@ -67,6 +66,8 @@ and in all degrees when `R` is a `ℚ`-algebra (`TauCeti.cyclicCohomology.biject
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §1.
 * J.-L. Loday, *Cyclic Homology*, §§1.2, 2.2, 5.1.
+* R. McCarthy, *Morita equivalence and cyclic homology*, C. R. Acad. Sci. Paris Sér. I Math. 307
+  (1988), 211–215.
 -/
 
 public section
@@ -75,7 +76,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-/-! ### Cochain-level compatibilities with `b'` and `S₀` -/
+/-! ### Cochain-level compatibilities with `S₀` and `S` -/
 
 section CochainCompatibilities
 
@@ -85,37 +86,14 @@ variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
   [SMulCommClass R R M]
 
-private theorem barCoboundary_eq_sum_hochschildCoface {n : ℕ}
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
-    barCoboundary R A M n φ =
-      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • hochschildCoface R A M j.castSucc φ := by
-  ext a
-  simp [barCoboundary_apply, hochschildFace_castSucc]
-
-private theorem cochainPeriodicity_eq_sum_hochschildCoface {n : ℕ}
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
-    cochainPeriodicity R A M n φ =
-      ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j,
-        (-1 : ℤ) ^ ((j : ℕ) - r) •
-          hochschildCoface R A M j.succ.castSucc (hochschildCoface R A M r.castSucc φ) := by
-  ext a
-  simp [cochainPeriodicity_apply]
-
-/-- Generalized matrix trace commutes with the bar coboundary `b'`. -/
-theorem matrixCochainExtension_barCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
-    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
-    matrixCochainExtension ι (n + 1) (barCoboundary R A M n φ) =
-      barCoboundary R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
-  rw [barCoboundary_eq_sum_hochschildCoface, barCoboundary_eq_sum_hochschildCoface]
-  simp only [map_sum, map_zsmul, matrixCochainExtension_hochschildCoface]
-
 /-- Generalized matrix trace commutes with Connes' unaveraged cochain periodicity operator `S₀`. -/
 theorem matrixCochainExtension_cochainPeriodicity (ι : Type*) [Fintype ι] (n : ℕ)
     (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     matrixCochainExtension ι (n + 2) (cochainPeriodicity R A M n φ) =
       cochainPeriodicity R (Matrix ι ι A) M n (matrixCochainExtension ι n φ) := by
-  rw [cochainPeriodicity_eq_sum_hochschildCoface, cochainPeriodicity_eq_sum_hochschildCoface]
-  simp only [map_sum, map_zsmul, matrixCochainExtension_hochschildCoface]
+  rw [cochainPeriodicity_def, cochainPeriodicity_def]
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply, map_sum, map_zsmul,
+    matrixCochainExtension_hochschildCoface]
 
 end NonAssoc
 
@@ -308,6 +286,7 @@ theorem matrixExtension_periodicity [Algebra ℚ R] (n : ℕ) (c : cyclicCohomol
 
 /-- Matrix extension on cyclic cohomology over a `ℚ`-algebra commutes with the iterated periodicity
 transitions `S^(j - i)`. -/
+@[simp]
 theorem matrixExtension_periodicTransition [Algebra ℚ R] (n : ℕ) {i j : ℕ} (h : i ≤ j)
     (c : cyclicCohomology R A M (n + 2 * i)) :
     matrixExtension M ι (n + 2 * j) (periodicTransition R A M n h c) =
@@ -409,6 +388,7 @@ theorem cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicity
   exact Subtype.ext (matrixCyclicTotalCochainExtension_cyclicTotalPeriodicity ι x.1)
 
 /-- Matrix extension on `Hᵐ(Tot)` commutes with the iterated transition maps `S^(j - i)`. -/
+@[simp]
 theorem cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicTransition
     (ι : Type*) [Fintype ι] (n : ℕ) {i j : ℕ} (h : i ≤ j)
     (c : (cyclicTotalComplex R A M).homology (n + 2 * i)) :
@@ -582,6 +562,87 @@ theorem cyclicTotalHomologyMatrixExtensionEquiv_apply (ι : Type*) [Fintype ι] 
       cyclicTotalHomologyMatrixExtension M ι n c :=
   (rfl)
 
+/-- Applying `cyclicTotalHomologyMatrixExtension` to the inverse equivalence recovers the original
+class. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMatrixExtensionEquiv_symm
+    (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
+    (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology n) :
+    cyclicTotalHomologyMatrixExtension M ι n
+        ((cyclicTotalHomologyMatrixExtensionEquiv M ι n).symm c) = c := by
+  rw [← cyclicTotalHomologyMatrixExtensionEquiv_apply, LinearEquiv.apply_symm_apply]
+
+/-- Applying the inverse of `cyclicTotalHomologyMatrixExtensionEquiv` after
+`cyclicTotalHomologyMatrixExtension` recovers the original class. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtensionEquiv_symm_cyclicTotalHomologyMatrixExtension
+    (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
+    (c : (cyclicTotalComplex R A M).homology n) :
+    (cyclicTotalHomologyMatrixExtensionEquiv M ι n).symm
+        (cyclicTotalHomologyMatrixExtension M ι n c) = c := by
+  rw [← cyclicTotalHomologyMatrixExtensionEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- The inverse of `cyclicTotalHomologyMatrixExtensionEquiv` commutes with the projection `I` onto
+Hochschild cohomology. -/
+@[simp]
+theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMatrixExtensionEquiv_symm
+    (ι : Type*) [Fintype ι] [Nonempty ι] (m : ℕ)
+    (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology m) :
+    HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) m
+        ((cyclicTotalHomologyMatrixExtensionEquiv M ι m).symm c) =
+      (hochschildCohomology.matrixExtensionEquiv M ι m).symm
+        (HomologicalComplex.homologyMap
+          (cyclicTotalComplexToHochschild R (Matrix ι ι A) M) m c) := by
+  apply (hochschildCohomology.matrixExtensionEquiv M ι m).injective
+  rw [LinearEquiv.apply_symm_apply, hochschildCohomology.matrixExtensionEquiv_apply,
+    ← homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMatrixExtension,
+    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMatrixExtensionEquiv_symm]
+
+/-- The inverse of `cyclicTotalHomologyMatrixExtensionEquiv` commutes with the periodicity map
+`S : Hᵐ(Tot) → Hᵐ⁺²(Tot)`. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtensionEquiv_symm_cyclicTotalHomologyPeriodicity
+    (ι : Type*) [Fintype ι] [Nonempty ι] (m : ℕ)
+    (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology m) :
+    (cyclicTotalHomologyMatrixExtensionEquiv M ι (m + 2)).symm
+        (cyclicTotalHomologyPeriodicity R (Matrix ι ι A) M m c) =
+      cyclicTotalHomologyPeriodicity R A M m
+        ((cyclicTotalHomologyMatrixExtensionEquiv M ι m).symm c) := by
+  apply (cyclicTotalHomologyMatrixExtensionEquiv M ι (m + 2)).injective
+  rw [LinearEquiv.apply_symm_apply, cyclicTotalHomologyMatrixExtensionEquiv_apply,
+    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicity,
+    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMatrixExtensionEquiv_symm]
+
+/-- The inverse of `cyclicTotalHomologyMatrixExtensionEquiv` commutes with the iterated transition
+maps `S^(j - i)`. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtensionEquiv_symm_cyclicTotalHomologyPeriodicTransition
+    (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) {i j : ℕ} (h : i ≤ j)
+    (c : (cyclicTotalComplex R (Matrix ι ι A) M).homology (n + 2 * i)) :
+    (cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * j)).symm
+        (cyclicTotalHomologyPeriodicTransition R (Matrix ι ι A) M n h c) =
+      cyclicTotalHomologyPeriodicTransition R A M n h
+        ((cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * i)).symm c) := by
+  apply (cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * j)).injective
+  rw [LinearEquiv.apply_symm_apply, cyclicTotalHomologyMatrixExtensionEquiv_apply,
+    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicTransition,
+    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyMatrixExtensionEquiv_symm]
+
+/-- The inverse of `cyclicTotalHomologyMatrixExtensionEquiv` commutes with Connes' operator
+`B : HHᵐ⁺¹ → Hᵐ(Tot)` on the cyclic bicomplex. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtensionEquiv_symm_cyclicTotalHomologyConnesB
+    (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (m : ℕ)
+    (c : hochschildCohomology R (Matrix ι ι A) M (m + 1)) :
+    (cyclicTotalHomologyMatrixExtensionEquiv M ι m).symm
+        (cyclicTotalHomologyConnesB R (Matrix ι ι A) M m c) =
+      cyclicTotalHomologyConnesB R A M m
+        ((hochschildCohomology.matrixExtensionEquiv M ι (m + 1)).symm c) := by
+  apply (cyclicTotalHomologyMatrixExtensionEquiv M ι m).injective
+  rw [LinearEquiv.apply_symm_apply, cyclicTotalHomologyMatrixExtensionEquiv_apply,
+    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyConnesB,
+    ← hochschildCohomology.matrixExtensionEquiv_apply, LinearEquiv.apply_symm_apply]
+
 end Unital
 
 end TotalCohomology
@@ -638,17 +699,8 @@ theorem bijective_matrixExtension_one (ι : Type*) [Fintype ι] [DecidableEq ι]
 in every degree. -/
 theorem bijective_matrixExtension [Algebra ℚ R] (ι : Type*) [Fintype ι] [DecidableEq ι]
     [Nonempty ι] (n : ℕ) :
-    Function.Bijective (matrixExtension (R := R) (A := A) M ι n) := by
-  have hjA := bijective_homologyMap_cyclicCochainComplexToTotal R A M n
-  have hjM := bijective_homologyMap_cyclicCochainComplexToTotal R (Matrix ι ι A) M n
-  have hcomm : (HomologicalComplex.homologyMap
-      (cyclicCochainComplexToTotal R (Matrix ι ι A) M) n) ∘ matrixExtension M ι n =
-      cyclicTotalHomologyMatrixExtension M ι n ∘
-        HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n :=
-    funext fun c ↦
-      (cyclicTotalHomologyMatrixExtension_homologyMap_cyclicCochainComplexToTotal ι n c).symm
-  exact (hjM.of_comp_iff' _).1
-    (hcomm ▸ (bijective_cyclicTotalHomologyMatrixExtension ι n).comp hjA)
+    Function.Bijective (matrixExtension (R := R) (A := A) M ι n) :=
+  bijective_matrixExtension_of_isUnit ι n fun q _ ↦ isUnit_natCast_add_one q
 
 variable (M) in
 /-- **Matrix Morita equivalence on cyclic cohomology.** The `R`-linear equivalence
@@ -676,9 +728,91 @@ theorem matrixExtensionEquiv_apply [Algebra ℚ R] (ι : Type*) [Fintype ι] [De
     matrixExtensionEquiv M ι n c = matrixExtension M ι n c :=
   (rfl)
 
+/-- Applying `cyclicCohomology.matrixExtension` to the inverse equivalence recovers the original
+class. -/
+@[simp]
+theorem matrixExtension_matrixExtensionEquiv_symm [Algebra ℚ R] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (n : ℕ) (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    matrixExtension M ι n ((matrixExtensionEquiv M ι n).symm c) = c := by
+  rw [← matrixExtensionEquiv_apply, LinearEquiv.apply_symm_apply]
+
+/-- Applying the inverse of `cyclicCohomology.matrixExtensionEquiv` after
+`cyclicCohomology.matrixExtension` recovers the original class. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_matrixExtension [Algebra ℚ R] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (n : ℕ) (c : cyclicCohomology R A M n) :
+    (matrixExtensionEquiv M ι n).symm (matrixExtension M ι n c) = c := by
+  rw [← matrixExtensionEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- The inverse of `cyclicCohomology.matrixExtensionEquiv` commutes with the map `I` to Hochschild
+cohomology. -/
+@[simp]
+theorem toHochschild_matrixExtensionEquiv_symm [Algebra ℚ R] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (n : ℕ) (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    toHochschild R A M n ((matrixExtensionEquiv M ι n).symm c) =
+      (hochschildCohomology.matrixExtensionEquiv M ι n).symm
+        (toHochschild R (Matrix ι ι A) M n c) := by
+  apply (hochschildCohomology.matrixExtensionEquiv M ι n).injective
+  rw [LinearEquiv.apply_symm_apply, hochschildCohomology.matrixExtensionEquiv_apply,
+    ← toHochschild_matrixExtension, matrixExtension_matrixExtensionEquiv_symm]
+
+/-- The inverse of `cyclicCohomology.matrixExtensionEquiv` commutes with Connes' operator `B` on
+Hochschild cohomology. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_connesB [Algebra ℚ R] (ι : Type*) [Fintype ι] [DecidableEq ι]
+    [Nonempty ι] (n : ℕ) (c : hochschildCohomology R (Matrix ι ι A) M (n + 1)) :
+    (matrixExtensionEquiv M ι n).symm
+        (hochschildCohomology.connesB R (Matrix ι ι A) M n c) =
+      hochschildCohomology.connesB R A M n
+        ((hochschildCohomology.matrixExtensionEquiv M ι (n + 1)).symm c) := by
+  apply (matrixExtensionEquiv M ι n).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply, matrixExtension_connesB,
+    ← hochschildCohomology.matrixExtensionEquiv_apply, LinearEquiv.apply_symm_apply]
+
+/-- The inverse of `cyclicCohomology.matrixExtensionEquiv` commutes with Connes' periodicity
+operator `S`. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_periodicity [Algebra ℚ R] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (n : ℕ) (c : cyclicCohomology R (Matrix ι ι A) M n) :
+    (matrixExtensionEquiv M ι (n + 2)).symm (periodicity R (Matrix ι ι A) M n c) =
+      periodicity R A M n ((matrixExtensionEquiv M ι n).symm c) := by
+  apply (matrixExtensionEquiv M ι (n + 2)).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply, matrixExtension_periodicity,
+    matrixExtension_matrixExtensionEquiv_symm]
+
+/-- The inverse of `cyclicCohomology.matrixExtensionEquiv` commutes with the iterated periodicity
+transitions `S^(j - i)`. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_periodicTransition [Algebra ℚ R] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (n : ℕ) {i j : ℕ} (h : i ≤ j)
+    (c : cyclicCohomology R (Matrix ι ι A) M (n + 2 * i)) :
+    (matrixExtensionEquiv M ι (n + 2 * j)).symm
+        (periodicTransition R (Matrix ι ι A) M n h c) =
+      periodicTransition R A M n h ((matrixExtensionEquiv M ι (n + 2 * i)).symm c) := by
+  apply (matrixExtensionEquiv M ι (n + 2 * j)).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply,
+    matrixExtension_periodicTransition, matrixExtension_matrixExtensionEquiv_symm]
+
 end Morita
 
 end cyclicCohomology
+
+/-- Over a `ℚ`-algebra, the inverse of `cyclicTotalHomologyMatrixExtensionEquiv` commutes with the
+comparison map `HCᵐ → Hᵐ(Tot)` from cyclic cohomology to the cohomology of the total cyclic
+bicomplex. -/
+@[simp]
+theorem cyclicTotalHomologyMatrixExtensionEquiv_symm_homologyMap_cyclicCochainComplexToTotal
+    {R A M : Type*} [CommRing R] [Algebra ℚ R] [Ring A] [Algebra R A] [AddCommGroup M]
+    [Module R M] (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι] (m : ℕ)
+    (c : cyclicCohomology R (Matrix ι ι A) M m) :
+    (cyclicTotalHomologyMatrixExtensionEquiv M ι m).symm
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R (Matrix ι ι A) M) m c) =
+      HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m
+        ((cyclicCohomology.matrixExtensionEquiv M ι m).symm c) := by
+  apply (cyclicTotalHomologyMatrixExtensionEquiv M ι m).injective
+  rw [LinearEquiv.apply_symm_apply, cyclicTotalHomologyMatrixExtensionEquiv_apply,
+    cyclicTotalHomologyMatrixExtension_homologyMap_cyclicCochainComplexToTotal,
+    cyclicCohomology.matrixExtension_matrixExtensionEquiv_symm]
 
 /-! ### Matrix Morita invariance of periodic cyclic cohomology -/
 
@@ -689,91 +823,13 @@ section NonUnital
 variable {R A M : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
-private theorem linearMap_ext {n : ℕ} {N : Type*} [AddCommGroup N] [Module R N]
-    {f₁ f₂ : periodicCyclicCohomology R A M n →ₗ[R] N}
-    (h : ∀ k x, f₁ (periodicCyclicCohomology.ι R A M n k x) =
-      f₂ (periodicCyclicCohomology.ι R A M n k x)) :
-    f₁ = f₂ := by
-  ext z
-  obtain ⟨k, x, rfl⟩ := exists_ι_eq z
-  exact h k x
-
-private theorem apply_eq_of_ι_eq {n : ℕ} {N : Type*} [AddCommGroup N] [Module R N]
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
-    (hg : ∀ ⦃i j : ℕ⦄ (h : i ≤ j) (x),
-      g j (cyclicTotalHomologyPeriodicTransition R A M n h x) = g i x)
-    {k₁ k₂ : ℕ} {x₁ : (cyclicTotalComplex R A M).homology (n + 2 * k₁)}
-    {x₂ : (cyclicTotalComplex R A M).homology (n + 2 * k₂)}
-    (h : periodicCyclicCohomology.ι R A M n k₁ x₁ =
-      periodicCyclicCohomology.ι R A M n k₂ x₂) :
-    g k₁ x₁ = g k₂ x₂ := by
-  have hι0 : periodicCyclicCohomology.ι R A M n (max k₁ k₂)
-      (cyclicTotalHomologyPeriodicTransition R A M n (le_max_left k₁ k₂) x₁ -
-        cyclicTotalHomologyPeriodicTransition R A M n (le_max_right k₁ k₂) x₂) = 0 := by
-    rw [map_sub, cyclicTotalHomologyPeriodicTransition_ι_apply,
-      cyclicTotalHomologyPeriodicTransition_ι_apply, h, sub_self]
-  obtain ⟨K, hjK, hK⟩ := (ι_eq_zero_iff _).1 hι0
-  have hgK := congrArg (g K) hK
-  rw [map_sub, map_sub, map_zero, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-    cyclicTotalHomologyPeriodicTransition_comp, cyclicTotalHomologyPeriodicTransition_comp,
-    hg, hg, sub_eq_zero] at hgK
-  exact hgK
-
-private noncomputable def liftLinearMapFun (n : ℕ) {N : Type*} [AddCommGroup N] [Module R N]
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
-    (z : periodicCyclicCohomology R A M n) : N :=
-  g (exists_ι_eq z).choose (exists_ι_eq z).choose_spec.choose
-
-private theorem liftLinearMapFun_ι {n : ℕ} {N : Type*} [AddCommGroup N] [Module R N]
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
-    (hg : ∀ ⦃i j : ℕ⦄ (h : i ≤ j) (x),
-      g j (cyclicTotalHomologyPeriodicTransition R A M n h x) = g i x)
-    (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
-    liftLinearMapFun n g (periodicCyclicCohomology.ι R A M n k x) = g k x :=
-  apply_eq_of_ι_eq g hg (exists_ι_eq _).choose_spec.choose_spec
-
-private noncomputable def liftLinearMap (n : ℕ) {N : Type*} [AddCommGroup N] [Module R N]
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
-    (hg : ∀ ⦃i j : ℕ⦄ (h : i ≤ j) (x),
-      g j (cyclicTotalHomologyPeriodicTransition R A M n h x) = g i x) :
-    periodicCyclicCohomology R A M n →ₗ[R] N where
-  toFun := liftLinearMapFun n g
-  map_add' z₁ z₂ := by
-    obtain ⟨k₁, x₁, rfl⟩ := exists_ι_eq z₁
-    obtain ⟨k₂, x₂, rfl⟩ := exists_ι_eq z₂
-    rw [← cyclicTotalHomologyPeriodicTransition_ι_apply (le_max_left k₁ k₂) x₁,
-      ← cyclicTotalHomologyPeriodicTransition_ι_apply (le_max_right k₁ k₂) x₂,
-      ← map_add, liftLinearMapFun_ι g hg, liftLinearMapFun_ι g hg, liftLinearMapFun_ι g hg,
-      map_add]
-  map_smul' r z := by
-    obtain ⟨k, x, rfl⟩ := exists_ι_eq z
-    rw [← map_smul, liftLinearMapFun_ι g hg, liftLinearMapFun_ι g hg, map_smul,
-      RingHom.id_apply]
-
-private theorem liftLinearMap_ι (n : ℕ) {N : Type*} [AddCommGroup N] [Module R N]
-    (g : ∀ k, (cyclicTotalComplex R A M).homology (n + 2 * k) →ₗ[R] N)
-    (hg : ∀ ⦃i j : ℕ⦄ (h : i ≤ j) (x),
-      g j (cyclicTotalHomologyPeriodicTransition R A M n h x) = g i x)
-    (k : ℕ) (x : (cyclicTotalComplex R A M).homology (n + 2 * k)) :
-    liftLinearMap n g hg (periodicCyclicCohomology.ι R A M n k x) = g k x :=
-  liftLinearMapFun_ι g hg k x
-
 variable (M) in
 /-- Matrix extension `HPⁿ(A; M) →ₗ[R] HPⁿ(Matrix ι ι A; M)` on periodic cyclic cohomology,
 induced on the direct limit by `cyclicTotalHomologyMatrixExtension` at each stage `n + 2k`. -/
 noncomputable def matrixExtension (ι : Type*) [Fintype ι] (n : ℕ) :
     periodicCyclicCohomology R A M n →ₗ[R] periodicCyclicCohomology R (Matrix ι ι A) M n :=
-  liftLinearMap n
-    (fun k ↦ (periodicCyclicCohomology.ι R (Matrix ι ι A) M n k).hom ∘ₗ
-      cyclicTotalHomologyMatrixExtension M ι (n + 2 * k))
-    fun _ _ h x ↦ by
-      change periodicCyclicCohomology.ι R (Matrix ι ι A) M n _
-          (cyclicTotalHomologyMatrixExtension M ι _
-            (cyclicTotalHomologyPeriodicTransition R A M n h x)) =
-        periodicCyclicCohomology.ι R (Matrix ι ι A) M n _
-          (cyclicTotalHomologyMatrixExtension M ι _ x)
-      rw [cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicTransition,
-        cyclicTotalHomologyPeriodicTransition_ι_apply]
+  mapStages (fun k ↦ cyclicTotalHomologyMatrixExtension M ι (n + 2 * k))
+    fun k ↦ cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicity ι (n + 2 * k)
 
 /-- On the `k`-th stage `Hⁿ⁺²ᵏ(Tot)`, `periodicCyclicCohomology.matrixExtension` acts via
 `cyclicTotalHomologyMatrixExtension`. -/
@@ -783,40 +839,33 @@ theorem matrixExtension_ι (ι : Type*) [Fintype ι] (n k : ℕ)
     matrixExtension M ι n (periodicCyclicCohomology.ι R A M n k x) =
       periodicCyclicCohomology.ι R (Matrix ι ι A) M n k
         (cyclicTotalHomologyMatrixExtension M ι (n + 2 * k) x) :=
-  liftLinearMap_ι n _ _ k x
+  mapStages_ι _ _ k x
+
+/-- Matrix extension on periodic cyclic cohomology commutes with the `2`-periodicity isomorphism
+`(shiftIso R A M n).hom`. -/
+@[simp]
+theorem matrixExtension_shiftIso_hom (ι : Type*) [Fintype ι] (n : ℕ)
+    (z : periodicCyclicCohomology R A M (n + 2)) :
+    matrixExtension M ι n ((shiftIso R A M n).hom z) =
+      (shiftIso R (Matrix ι ι A) M n).hom (matrixExtension M ι (n + 2) z) :=
+  mapStages_shiftIso_hom (cyclicTotalHomologyMatrixExtension M ι)
+    (cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicity ι) n z
+
+/-- Matrix extension on periodic cyclic cohomology commutes with the inverse `2`-periodicity
+isomorphism `(shiftIso R A M n).inv`. -/
+@[simp]
+theorem matrixExtension_shiftIso_inv (ι : Type*) [Fintype ι] (n : ℕ)
+    (z : periodicCyclicCohomology R A M n) :
+    matrixExtension M ι (n + 2) ((shiftIso R A M n).inv z) =
+      (shiftIso R (Matrix ι ι A) M n).inv (matrixExtension M ι n z) :=
+  mapStages_shiftIso_inv (cyclicTotalHomologyMatrixExtension M ι)
+    (cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicity ι) n z
 
 end NonUnital
 
 section Unital
 
 variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
-
-private theorem symm_cyclicTotalHomologyMatrixExtensionEquiv_transition (ι : Type*) [Fintype ι]
-    [Nonempty ι] (n : ℕ) {i j : ℕ} (h : i ≤ j)
-    (y : (cyclicTotalComplex R (Matrix ι ι A) M).homology (n + 2 * i)) :
-    (cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * j)).symm
-        (cyclicTotalHomologyPeriodicTransition R (Matrix ι ι A) M n h y) =
-      cyclicTotalHomologyPeriodicTransition R A M n h
-        ((cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * i)).symm y) := by
-  apply (cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * j)).injective
-  rw [LinearEquiv.apply_symm_apply, cyclicTotalHomologyMatrixExtensionEquiv_apply,
-    cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicTransition,
-    ← cyclicTotalHomologyMatrixExtensionEquiv_apply, LinearEquiv.apply_symm_apply]
-
-private noncomputable def matrixExtensionInv (M : Type*) [AddCommGroup M] [Module R M]
-    (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) :
-    periodicCyclicCohomology R (Matrix ι ι A) M n →ₗ[R] periodicCyclicCohomology R A M n :=
-  liftLinearMap n
-    (fun k ↦ (periodicCyclicCohomology.ι R A M n k).hom ∘ₗ
-      (cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k)).symm.toLinearMap)
-    fun _ _ h y ↦ by
-      change periodicCyclicCohomology.ι R A M n _
-          ((cyclicTotalHomologyMatrixExtensionEquiv M ι _).symm
-            (cyclicTotalHomologyPeriodicTransition R (Matrix ι ι A) M n h y)) =
-        periodicCyclicCohomology.ι R A M n _
-          ((cyclicTotalHomologyMatrixExtensionEquiv M ι _).symm y)
-      rw [symm_cyclicTotalHomologyMatrixExtensionEquiv_transition,
-        cyclicTotalHomologyPeriodicTransition_ι_apply]
 
 variable (M) in
 /-- **Matrix Morita equivalence on periodic cyclic cohomology.** Over every commutative ring `R`,
@@ -825,24 +874,10 @@ for any unital `R`-algebra `A` and nonempty finite index type `ι`,
 `HPⁿ(A; M) ≃ₗ[R] HPⁿ(Matrix ι ι A; M)`. -/
 noncomputable def matrixExtensionEquiv (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) :
     periodicCyclicCohomology R A M n ≃ₗ[R] periodicCyclicCohomology R (Matrix ι ι A) M n :=
-  LinearEquiv.ofLinearMap (matrixExtension M ι n) (matrixExtensionInv M ι n)
-    (linearMap_ext fun k y ↦ by
-      rw [LinearMap.comp_apply, LinearMap.id_apply]
-      dsimp only [matrixExtensionInv]
-      rw [liftLinearMap_ι]
-      change matrixExtension M ι n
-        (periodicCyclicCohomology.ι R A M n k
-          ((cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k)).symm y)) = _
-      rw [matrixExtension_ι, ← cyclicTotalHomologyMatrixExtensionEquiv_apply,
-        LinearEquiv.apply_symm_apply])
-    (linearMap_ext fun k x ↦ by
-      rw [LinearMap.comp_apply, LinearMap.id_apply, matrixExtension_ι]
-      dsimp only [matrixExtensionInv]
-      rw [liftLinearMap_ι]
-      change periodicCyclicCohomology.ι R A M n k
-        ((cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k)).symm
-          (cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k) x)) = _
-      rw [LinearEquiv.symm_apply_apply])
+  congrStages (fun k ↦ cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k)) fun k x ↦ by
+    rw [cyclicTotalHomologyMatrixExtensionEquiv_apply,
+      cyclicTotalHomologyMatrixExtensionEquiv_apply]
+    exact cyclicTotalHomologyMatrixExtension_cyclicTotalHomologyPeriodicity ι (n + 2 * k) x
 
 /-- The underlying linear map of `periodicCyclicCohomology.matrixExtensionEquiv` is
 `periodicCyclicCohomology.matrixExtension`. -/
@@ -850,8 +885,9 @@ noncomputable def matrixExtensionEquiv (ι : Type*) [Fintype ι] [Nonempty ι] (
 theorem coe_matrixExtensionEquiv (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) :
     (matrixExtensionEquiv (R := R) (A := A) M ι n :
       periodicCyclicCohomology R A M n →ₗ[R] periodicCyclicCohomology R (Matrix ι ι A) M n) =
-      matrixExtension M ι n :=
-  LinearMap.ext fun _ ↦ rfl
+      matrixExtension M ι n := by
+  ext k x
+  simp [matrixExtensionEquiv]
 
 /-- `periodicCyclicCohomology.matrixExtensionEquiv` acts by
 `periodicCyclicCohomology.matrixExtension`. -/
@@ -859,14 +895,65 @@ theorem coe_matrixExtensionEquiv (ι : Type*) [Fintype ι] [Nonempty ι] (n : �
 theorem matrixExtensionEquiv_apply (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
     (c : periodicCyclicCohomology R A M n) :
     matrixExtensionEquiv M ι n c = matrixExtension M ι n c :=
-  (rfl)
+  DFunLike.congr_fun (coe_matrixExtensionEquiv ι n) c
+
+/-- Applying `periodicCyclicCohomology.matrixExtension` to the inverse equivalence recovers the
+original class. -/
+@[simp]
+theorem matrixExtension_matrixExtensionEquiv_symm (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
+    (c : periodicCyclicCohomology R (Matrix ι ι A) M n) :
+    matrixExtension M ι n ((matrixExtensionEquiv M ι n).symm c) = c := by
+  rw [← matrixExtensionEquiv_apply, LinearEquiv.apply_symm_apply]
+
+/-- Applying the inverse of `periodicCyclicCohomology.matrixExtensionEquiv` after
+`periodicCyclicCohomology.matrixExtension` recovers the original class. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_matrixExtension (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
+    (c : periodicCyclicCohomology R A M n) :
+    (matrixExtensionEquiv M ι n).symm (matrixExtension M ι n c) = c := by
+  rw [← matrixExtensionEquiv_apply, LinearEquiv.symm_apply_apply]
+
+/-- On the `k`-th stage `Hⁿ⁺²ᵏ(Tot)`, the inverse of
+`periodicCyclicCohomology.matrixExtensionEquiv` acts via
+`(cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k)).symm`. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_ι (ι : Type*) [Fintype ι] [Nonempty ι] (n k : ℕ)
+    (y : (cyclicTotalComplex R (Matrix ι ι A) M).homology (n + 2 * k)) :
+    (matrixExtensionEquiv M ι n).symm
+        (periodicCyclicCohomology.ι R (Matrix ι ι A) M n k y) =
+      periodicCyclicCohomology.ι R A M n k
+        ((cyclicTotalHomologyMatrixExtensionEquiv M ι (n + 2 * k)).symm y) :=
+  congrStages_symm_ι _ _ k y
+
+/-- The inverse of `periodicCyclicCohomology.matrixExtensionEquiv` commutes with the `2`-periodicity
+isomorphism `(shiftIso R A M n).hom`. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_shiftIso_hom (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
+    (z : periodicCyclicCohomology R (Matrix ι ι A) M (n + 2)) :
+    (matrixExtensionEquiv M ι n).symm ((shiftIso R (Matrix ι ι A) M n).hom z) =
+      (shiftIso R A M n).hom ((matrixExtensionEquiv M ι (n + 2)).symm z) := by
+  apply (matrixExtensionEquiv M ι n).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply, matrixExtension_shiftIso_hom,
+    matrixExtension_matrixExtensionEquiv_symm]
+
+/-- The inverse of `periodicCyclicCohomology.matrixExtensionEquiv` commutes with the inverse
+`2`-periodicity isomorphism `(shiftIso R A M n).inv`. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_shiftIso_inv (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ)
+    (z : periodicCyclicCohomology R (Matrix ι ι A) M n) :
+    (matrixExtensionEquiv M ι (n + 2)).symm ((shiftIso R (Matrix ι ι A) M n).inv z) =
+      (shiftIso R A M n).inv ((matrixExtensionEquiv M ι n).symm z) := by
+  apply (matrixExtensionEquiv M ι (n + 2)).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply, matrixExtension_shiftIso_inv,
+    matrixExtension_matrixExtensionEquiv_symm]
 
 /-- **Matrix Morita invariance of periodic cyclic cohomology.** Over every commutative ring `R`,
 for any unital `R`-algebra `A` and nonempty finite index type `ι`,
 `periodicCyclicCohomology.matrixExtension` is bijective in every degree. -/
 theorem bijective_matrixExtension (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) :
-    Function.Bijective (matrixExtension (R := R) (A := A) M ι n) :=
-  (matrixExtensionEquiv M ι n).bijective
+    Function.Bijective (matrixExtension (R := R) (A := A) M ι n) := by
+  rw [← coe_matrixExtensionEquiv]
+  exact (matrixExtensionEquiv M ι n).bijective
 
 /-- Matrix extension on periodic cyclic cohomology commutes with the normalized stage maps
 `fromCyclicCohomology` from cyclic cohomology. -/
@@ -880,6 +967,21 @@ theorem matrixExtension_fromCyclicCohomology [Algebra ℚ R] (ι : Type*) [Finty
   simp only [ModuleCat.hom_smul, ModuleCat.hom_comp, LinearMap.smul_apply, LinearMap.comp_apply,
     map_smul, matrixExtension_ι,
     cyclicTotalHomologyMatrixExtension_homologyMap_cyclicCochainComplexToTotal]
+
+/-- The inverse of `periodicCyclicCohomology.matrixExtensionEquiv` commutes with the normalized
+stage maps `fromCyclicCohomology` from cyclic cohomology. -/
+@[simp]
+theorem matrixExtensionEquiv_symm_fromCyclicCohomology [Algebra ℚ R] (ι : Type*) [Fintype ι]
+    [DecidableEq ι] [Nonempty ι] (n k : ℕ)
+    (c : cyclicCohomology R (Matrix ι ι A) M (n + 2 * k)) :
+    (matrixExtensionEquiv M ι n).symm
+        (fromCyclicCohomology R (Matrix ι ι A) M n k c) =
+      fromCyclicCohomology R A M n k
+        ((cyclicCohomology.matrixExtensionEquiv M ι (n + 2 * k)).symm c) := by
+  apply (matrixExtensionEquiv M ι n).injective
+  rw [LinearEquiv.apply_symm_apply, matrixExtensionEquiv_apply,
+    matrixExtension_fromCyclicCohomology,
+    cyclicCohomology.matrixExtension_matrixExtensionEquiv_symm]
 
 end Unital
 
