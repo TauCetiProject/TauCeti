@@ -8,6 +8,8 @@ module
 public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.Algebra.Hom
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Nilpotent.Lemmas
 
 /-!
 # Functoriality of the affine point topology
@@ -15,7 +17,8 @@ public import TauCeti.Algebra.Algebra.Hom
 Precomposition and continuous change of coefficients are continuous for the evaluation topology.
 A surjection of coordinate rings gives a closed embedding of points over a T1 ring. Change of
 coefficients preserves embeddings and closed embeddings, and preserves open embeddings when the
-coordinate algebra is of finite type. Tensor products give products of point spaces, and base
+coordinate algebra is of finite type. Over a reduced ring, passing to the quotient by the
+nilradical does not change the point space. Tensor products give products of point spaces, and base
 change does not alter the point topology.
 
 These results allow affine presentations and changes of coefficient rings to be used in the
@@ -119,6 +122,46 @@ theorem isClosedEmbedding_comap_of_surjective [T1Space R]
   simp
 
 end Ring
+
+section Nilradical
+
+variable {k A R : Type*} [CommSemiring k] [CommRing A] [Algebra k A]
+  [Semiring R] [Algebra k R] [IsReduced R] [TopologicalSpace R]
+
+variable (k A R) in
+/-- Over a reduced ring, every point of `A` factors uniquely through `A ⧸ nilradical A`:
+precomposition with the quotient map is a homeomorphism of point spaces. No separation or
+finiteness hypothesis is needed. -/
+noncomputable def quotientNilradicalHomeomorph :
+    (A ⧸ nilradical A →ₐ[k] R) ≃ₜ (A →ₐ[k] R) where
+  toFun x := x.comp (Ideal.Quotient.mkₐ k (nilradical A))
+  invFun x := Ideal.Quotient.liftₐ (nilradical A) x fun a ha ↦
+    IsReduced.eq_zero _ ((mem_nilradical.mp ha).map x)
+  left_inv x := Ideal.Quotient.algHom_ext k (Ideal.Quotient.liftₐ_comp _ _ _)
+  right_inv x := Ideal.Quotient.liftₐ_comp _ _ _
+  continuous_toFun := continuous_comap _
+  continuous_invFun := by
+    refine (isEmbedding_comap_of_surjective (R := R) _
+      (Ideal.Quotient.mkₐ_surjective k (nilradical A))).continuous_iff.2 ?_
+    convert continuous_id
+    funext x
+    exact Ideal.Quotient.liftₐ_comp _ _ _
+
+/-- The homeomorphism `quotientNilradicalHomeomorph` is precomposition with the quotient map. -/
+@[simp]
+theorem quotientNilradicalHomeomorph_apply (x : A ⧸ nilradical A →ₐ[k] R) :
+    quotientNilradicalHomeomorph k A R x = x.comp (Ideal.Quotient.mkₐ k (nilradical A)) :=
+  (rfl)
+
+/-- The inverse of `quotientNilradicalHomeomorph` sends a point to the map it induces on
+the quotient by the nilradical. -/
+@[simp]
+theorem quotientNilradicalHomeomorph_symm_apply_mk (x : A →ₐ[k] R) (a : A) :
+    (quotientNilradicalHomeomorph k A R).symm x (Ideal.Quotient.mk (nilradical A) a) = x a := by
+  rw [quotientNilradicalHomeomorph, Homeomorph.homeomorph_mk_coe_symm, Equiv.coe_fn_symm_mk,
+    Ideal.Quotient.liftₐ_apply]
+  exact Ideal.Quotient.lift_mk _ _ _
+end Nilradical
 
 /-- For a family of algebra maps out of a tensor product, continuity of evaluation on pure
 tensors implies continuity in the point topology. The algebra-map scalar ring can differ from
