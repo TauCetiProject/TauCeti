@@ -63,6 +63,10 @@ span. This gives independence of integral toral constructions from a choice of l
   element `ε` satisfy `(n + 1) • (ε choose (n + 1)) = (-1) ^ n * ε`.
 * `TauCeti.Ring.choose_succ_smul_of_sq_eq_zero`: over a rational module, `ε choose (j + 1)` acts
   as `ε • ((-1) ^ j / (j + 1))` for a square-zero element `ε`.
+* `TauCeti.Ring.succ_nsmul_choose_succ` and
+  `TauCeti.Ring.succ_nsmul_choose_succ_eq_choose_mul_sub`: the absorption identity
+  `(k + 1) • (r choose (k + 1)) = r * (r - 1 choose k)` and the ratio
+  `(k + 1) • (r choose (k + 1)) = (r choose k) * (r - k)` of consecutive coefficients.
 * `TauCeti.Ring.choose_intCast`: generalized binomial coefficients commute with integer casts.
 * `TauCeti.Ring.choose_add_intCast_mem`: additive subgroups containing the coefficients of `r`
   up to degree `n` contain the degree-`n` coefficient of every integer translate of `r`.
@@ -536,6 +540,19 @@ section WeightedPascal
 
 variable {R : Type*} [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R] [BinomialRing R]
 
+/-- **Absorption**: `(k + 1) • (r choose (k + 1)) = r * (r - 1 choose k)`. -/
+theorem succ_nsmul_choose_succ (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose r (k + 1) = r * _root_.Ring.choose (r - 1) k := by
+  simpa [Nat.choose_one_right] using
+    _root_.Ring.choose_smul_choose r (n := k + 1) (k := 1) (by omega)
+
+/-- The ratio of consecutive binomial coefficients:
+`(k + 1) • (r choose (k + 1)) = (r choose k) * (r - k)`. -/
+theorem succ_nsmul_choose_succ_eq_choose_mul_sub (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose r (k + 1) = _root_.Ring.choose r k * (r - k) := by
+  simpa [Nat.choose_succ_self_right] using
+    _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (by omega)
+
 /-- A scalar-weighted form of Pascal's identity:
 
 ```text
@@ -550,12 +567,7 @@ theorem mul_weighted_choose_add_mul_choose (r c : R) (k : ℕ) :
         (r + c) * _root_.Ring.choose (r - 1) k =
       c * _root_.Ring.choose r (k + 1) +
         (k + 1) • _root_.Ring.choose r (k + 1) := by
-  have hmul :
-      (k + 1) • _root_.Ring.choose r (k + 1) =
-        r * _root_.Ring.choose (r - 1) k := by
-    simpa [Nat.choose_one_right] using
-      _root_.Ring.choose_smul_choose r (n := k + 1) (k := 1) (by omega)
-  rw [add_mul, ← hmul]
+  rw [add_mul, ← succ_nsmul_choose_succ]
   have hpascal : _root_.Ring.choose r (k + 1) =
       _root_.Ring.choose (r - 1) k + _root_.Ring.choose (r - 1) (k + 1) := by
     simpa only [sub_add_cancel] using _root_.Ring.choose_succ_succ (r - 1) k
