@@ -203,6 +203,13 @@ theorem discriminantQuadraticModule_toFiniteBilinearModule (L : IntegralLattice 
       L.discriminantBilinearModule :=
   rfl
 
+/-- The cardinality of the discriminant quadratic module is that of the discriminant group. -/
+@[simp]
+theorem natCard_discriminantQuadraticModule (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) :
+    Nat.card (L.discriminantQuadraticModule hL) = Nat.card L.DiscriminantGroup :=
+  rfl
+
 /-- The discriminant quadratic module of an even nondegenerate lattice is nondegenerate. -/
 theorem isNondegenerate_discriminantQuadraticModule (L : IntegralLattice V)
     [L.IsNondegenerate] (hL : L.IsEven) :

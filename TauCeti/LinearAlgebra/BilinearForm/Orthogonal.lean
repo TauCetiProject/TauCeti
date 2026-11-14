@@ -202,6 +202,13 @@ theorem iIsOrtho.isSymm {B : LinearMap.BilinForm K V} {ι : Type*} {b : Module.B
   · rfl
   · rw [iIsOrtho_def.mp hb i j hij, iIsOrtho_def.mp hb j i hij.symm]
 
+/-- Reindexing an orthogonal basis preserves orthogonality. -/
+theorem iIsOrtho.reindex {B : LinearMap.BilinForm K V} {ι κ : Type*} {b : Module.Basis ι K V}
+    (hb : B.iIsOrtho b) (e : ι ≃ κ) : B.iIsOrtho (b.reindex e) :=
+  iIsOrtho_def.mpr fun i j hij ↦ by
+    simpa [Module.Basis.reindex_apply] using
+      iIsOrtho_def.mp hb (e.symm i) (e.symm j) (e.symm.injective.ne hij)
+
 /-- **Orthogonal sums of isometric forms are isometric.** If two modules are internal direct sums
 of pairwise orthogonal families of submodules indexed by the same type, and the restrictions of the
 forms to corresponding members are isometric, then the forms are isometric. -/
@@ -737,10 +744,7 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
     omega
   obtain ⟨v, hv⟩ := exists_orthogonal_basis (isSymm_iff.mp (hB.restrict (B.orthogonal (K ∙ x))))
   let v' := v.reindex (finCongr hN)
-  have hv' : (B.restrict (B.orthogonal (K ∙ x))).IsOrthoᵢ v' := by
-    intro i j hij
-    simpa only [Function.onFun, v', Basis.reindex_apply] using
-      hv ((finCongr hN).symm.injective.ne hij)
+  have hv' : (B.restrict (B.orthogonal (K ∙ x))).IsOrthoᵢ v' := iIsOrtho.reindex hv (finCongr hN)
   obtain ⟨b, hb, hzero, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
     (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ hx.isUnit.dvd) hv'
   exact ⟨b, hb, hzero⟩

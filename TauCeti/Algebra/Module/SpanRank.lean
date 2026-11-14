@@ -29,6 +29,7 @@ generate `q`. For a non-finitely-generated submodule, `spanFinrank` is defined t
   generators as the list's length.
 * `Submodule.spanFinrank_restrictScalars_eq`: restricting scalars along a surjective
   `algebraMap` preserves `spanFinrank`.
+* `Submodule.spanFinrank_eq_of_equiv`: semilinear equivalences preserve the `spanFinrank` of `⊤`.
 * `Submodule.spanFinrank_le_spanFinrank_map_mkQ_add_spanFinrank`: for `p ≤ q` with `p`
   finitely generated, `q.spanFinrank ≤ (q.map p.mkQ).spanFinrank + p.spanFinrank`.
 
@@ -92,6 +93,16 @@ theorem spanFinrank_restrictScalars_eq (H : Function.Surjective (algebraMap R S)
   rw [spanFinrank, spanFinrank, spanRank_restrictScalars_eq H]
 
 end RestrictScalars
+
+/-- Semilinear equivalences preserve the least number of generators of the top submodule, across
+arbitrary universes. -/
+theorem spanFinrank_eq_of_equiv {R S : Type*} {M : Type u} {N : Type v}
+    [Semiring R] [Semiring S] {σ : R →+* S} {σ' : S →+* R}
+    [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module S N] (e : M ≃ₛₗ[σ] N) :
+    (⊤ : Submodule R M).spanFinrank = (⊤ : Submodule S N).spanFinrank := by
+  rw [← spanFinrank_map_eq_of_injective e.toLinearMap e.injective (p := ⊤), map_top,
+    LinearEquiv.range]
 
 end Submodule
 

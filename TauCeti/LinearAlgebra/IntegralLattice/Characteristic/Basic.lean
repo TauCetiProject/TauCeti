@@ -9,18 +9,29 @@ public import Mathlib.Data.Int.ModEq
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Characteristic vectors of integral lattices
 
 A lattice vector is characteristic when pairing it with any lattice vector agrees modulo two
-with the latter's norm. This parity condition is the input to the characteristic-norm congruence
-for unimodular lattices. The results here give its behavior under evenness, isometries,
-translation by twice a vector, and orthogonal sums.
+with the latter's norm. Every integral lattice admits a characteristic vector
+(`TauCeti.IntegralLattice.exists_isCharacteristicVector`), because over `ℤ/2ℤ` the diagonal of a
+symmetric matrix vanishes on its kernel and hence lies in its column space. The results here also
+give the behavior of characteristic vectors under evenness, isometries, translation by twice a
+vector, and orthogonal sums.
 
 The congruences are in `ℤ`, using the integral restriction of the rational bilinear form, so the
 characteristic vectors of a lattice are those of that integral form in the sense of
 `LinearMap.BilinForm.IsCharacteristic`.
+
+## Main results
+
+* `TauCeti.IntegralLattice.exists_isCharacteristicVector`: every integral lattice admits a
+  characteristic vector.
 
 ## References
 
@@ -71,6 +82,59 @@ theorem isCharacteristicVector_iff_isCharacteristic (L : IntegralLattice V) (w :
   rw [isCharacteristicVector_iff, LinearMap.BilinForm.isCharacteristic_iff]
   refine forall_congr' fun x ↦ ?_
   rw [Int.modEq_iff_dvd, L.integralNorm_apply, ← dvd_neg, neg_sub]
+
+/-- **Every integral lattice has a characteristic vector.** Over `ℤ/2ℤ`, the diagonal of the
+symmetric Gram matrix vanishes on the kernel of that matrix and hence lies in its column space;
+lifting a solution to `ℤ` yields a characteristic vector. -/
+theorem exists_isCharacteristicVector (L : IntegralLattice V) :
+    ∃ w : L, L.IsCharacteristicVector w := by
+  classical
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  let b := Module.finBasis ℤ L
+  let e := Pi.basisFun (ZMod 2) (Fin (Module.finrank ℤ L))
+  let B : (Fin (Module.finrank ℤ L) → ZMod 2) →ₗ[ZMod 2]
+      (Fin (Module.finrank ℤ L) → ZMod 2) →ₗ[ZMod 2] ZMod 2 :=
+    e.constr (ZMod 2) fun i ↦ e.constr (ZMod 2) fun j ↦ (L.integralForm (b i) (b j) : ZMod 2)
+  have hB_flip : LinearMap.flip B = B :=
+    e.ext fun i ↦ e.ext fun j ↦ by simp [B, L.isSymm_integralForm.eq (b j) (b i)]
+  let φ : (Fin (Module.finrank ℤ L) → ZMod 2) →ₗ[ZMod 2] ZMod 2 :=
+    e.constr (ZMod 2) fun i ↦ (L.integralForm (b i) (b i) : ZMod 2)
+  have hc_sq : ∀ c : ZMod 2, c * c = c := fun | ⟨0, _⟩ => rfl | ⟨1, _⟩ => rfl
+  have hφ (u : Fin (Module.finrank ℤ L) → ZMod 2) : φ u = B u u := by
+    induction e.mem_span u using Submodule.span_induction with
+    | mem _ hx =>
+      obtain ⟨i, rfl⟩ := hx
+      simp [φ, B]
+    | zero => simp
+    | add x y _ _ hx hy =>
+      have hxy : B y x = B x y := LinearMap.congr_fun₂ hB_flip x y
+      have htwo : B x y + B x y = 0 := by
+        rw [← two_mul, show (2 : ZMod 2) = ((2 : ℕ) : ZMod 2) by rfl, ZMod.natCast_self, zero_mul]
+      simp only [map_add, LinearMap.add_apply, hx, hy, hxy]
+      rw [add_assoc (B x x), ← add_assoc (B x y) (B x y), htwo, zero_add]
+    | smul c x _ hx =>
+      simp [hx, smul_eq_mul, ← mul_assoc, hc_sq c]
+  have hmem : φ ∈ LinearMap.range B := by
+    rw [← hB_flip, ← LinearMap.dualAnnihilator_ker_eq_range_flip (B := B),
+      Submodule.mem_dualAnnihilator]
+    intro u hu
+    rw [hφ u, LinearMap.mem_ker.mp hu, LinearMap.zero_apply]
+  obtain ⟨c, hc⟩ := hmem
+  let w : L := ∑ i, ((c i).val : ℤ) • b i
+  refine ⟨w, (L.isCharacteristicVector_iff_isCharacteristic w).mpr ?_⟩
+  refine (L.isSymm_integralForm.isCharacteristic_iff_forall_basis Int.two_dvd_sq_sub_self b).mpr
+    fun j ↦ ?_
+  rw [show (2 : ℤ) = ((2 : ℕ) : ℤ) by rfl, ← ZMod.intCast_zmod_eq_zero_iff_dvd,
+    Int.cast_sub, sub_eq_zero]
+  have hcj : B c (e j) = (L.integralForm (b j) (b j) : ZMod 2) := by
+    simpa [φ] using LinearMap.congr_fun hc (e j)
+  have hwc : (L.integralForm w (b j) : ZMod 2) = B c (e j) := by
+    have hc_sum : ∑ i, c i • e i = c := by simpa [e] using e.sum_repr c
+    conv_rhs => rw [← hc_sum]
+    simp only [w, map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply,
+      zsmul_eq_mul, Int.cast_sum, Int.cast_mul, Int.cast_natCast, ZMod.natCast_zmod_val]
+    simp [B]
+  exact hwc.trans hcj
 
 /-- Zero is characteristic precisely when the lattice is even. -/
 @[simp ←]

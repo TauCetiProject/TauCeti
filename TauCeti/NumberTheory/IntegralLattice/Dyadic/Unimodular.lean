@@ -65,6 +65,17 @@ open Module
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
+/-- The discriminant of `L` is odd if and only if its signed determinant is a unit in `ℤ_[2]`. -/
+theorem odd_discriminant_iff_isUnit_determinant_padicInt_two (L : IntegralLattice V) :
+    Odd L.discriminant ↔ IsUnit (L.determinant : ℤ_[2]) := by
+  rw [PadicInt.isUnit_intCast_iff, discriminant_def, ← Nat.not_even_iff_odd, even_iff_two_dvd]
+  refine not_congr ⟨fun ⟨k, hk⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨k.natAbs, ?_⟩⟩
+  · rcases Int.natAbs_eq L.determinant with h | h
+    · exact ⟨k, by rw [h, hk]; push_cast; ring⟩
+    · exact ⟨-k, by rw [h, hk]; push_cast; ring⟩
+  · rw [hk, Int.natAbs_mul]
+    rfl
+
 /-- **An even lattice of odd determinant has even rank.** Its dyadic localization is a perfect
 pairing whose self-pairings are all divisible by `2`, and such a form has even rank. -/
 theorem IsEven.even_finrank_of_isUnit_determinant {L : IntegralLattice V} (heven : L.IsEven)

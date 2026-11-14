@@ -5,38 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Rank
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Bilinear
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.Algebra.Group.Primary.Generators
+import TauCeti.Algebra.Module.SpanRank
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
 # The `p`-primary discriminant form from a diagonal Jordan form
 
-Let `L` be a nondegenerate integral lattice and `p` an odd prime. The localization
+Let `L` be a nondegenerate integral lattice and `p` a prime. Whenever the localization
 `L_p = ℤ_p ⊗[ℤ] L` has an orthogonal basis `b` with self-pairings `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, `uᵢ` a unit
-of `ℤ_p` (`TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`). This
-file reads the `p`-primary component of the discriminant bilinear form `b_L` off these Jordan data:
-for integers `θᵢ ≡ uᵢ (mod pᵏⁱ)`,
+of `ℤ_p`, the dual classes of `p^{-kᵢ} bᵢ` give an additive isomorphism
+`∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p` (`TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`), so the generator
+count of `(A_L)_p` is `#{i | kᵢ ≠ 0}` for every prime `p`.
+
+At an odd prime `p`, every nondegenerate `L_p` admits such an orthogonal basis
+(`TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`). For integers
+`θᵢ ≡ uᵢ (mod pᵏⁱ)`, this file identifies the `p`-primary component of the discriminant bilinear
+form `b_L` with the orthogonal sum of Nikulin's odd cyclic generators:
 
 ```text
-(A_L)_p ≅ ⊕ᵢ q_{θᵢ}^{(p)}(pᵏⁱ)
+(A_L)_p ≅ ⊕ᵢ q_{θᵢ}^{(p)}(pᵏⁱ),
 ```
 
-as finite bilinear modules, where `q_θ^{(p)}(pᵏ)` is Nikulin's odd cyclic generator, the group
-`ℤ/pᵏ` with pairing `b(x, y) = θxy / pᵏ`. Summands with `kᵢ = 0` are trivial, so only the
-non-unimodular Jordan constituents of `L_p` contribute. Orthogonal sums of odd cyclic generators
-are classified by their exponents and the Legendre symbols of their coefficients
-(`TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff`), which is how this
-computation feeds the description of the genus of `L` at odd primes by its discriminant form
-(Nikulin, Corollaries 1.9.4 and 1.16.3).
+where `q_θ^{(p)}(pᵏ)` is the group `ℤ/pᵏ` with pairing `b(x, y) = θxy / pᵏ`. Summands with `kᵢ = 0`
+are trivial, so only the non-unimodular Jordan constituents of `L_p` contribute. Orthogonal sums of
+odd cyclic generators are classified by their exponents and the Legendre symbols of their
+coefficients (`TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff`), which feeds the
+classification of `L_p` at odd primes by its discriminant form (Nikulin, Corollaries 1.9.4 and
+1.16.3).
 
 ## Main results
 
+* `TauCeti.IntegralLattice.piZModPowEquivPrimaryComponent`: for any prime `p` and any orthogonal
+  basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, an additive equivalence
+  `(∀ i, ZMod (p ^ k i)) ≃+ primaryComponent L.DiscriminantGroup p`.
+* `TauCeti.IntegralLattice.spanFinrank_primaryComponent_discriminantGroup_eq_card_filter` and
+  `TauCeti.IntegralLattice.rank_primaryComponent_discriminantGroup_eq_card_filter`: in such a
+  diagonal basis, the generator count of `(A_L)_p` equals `#{i | kᵢ ≠ 0}`.
 * `TauCeti.IntegralLattice.nonempty_isometry_pi_oddCyclic_primaryComponent`: at an odd prime, the
   `p`-primary component of the discriminant bilinear module of `L` is isometric to the orthogonal
   sum of the odd cyclic generators `q_{θᵢ}^{(p)}(pᵏⁱ)` read off a diagonal Jordan form of `L_p`.
@@ -61,7 +75,7 @@ integer (`Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap`), so the classes pair
 
 public section
 
-open Module TensorProduct AddCommGroup
+open Module TensorProduct AddCommGroup Finset
 
 namespace TauCeti.IntegralLattice
 
@@ -107,6 +121,12 @@ private theorem localDualPairingEquiv_basis [DecidableEq ι]
     simp only [map_mul, map_pow, map_natCast]
     field_simp
   · simp [LinearMap.BilinForm.iIsOrtho_def.mp hb i j hij]
+
+private theorem localDualPairingEquiv_localCarrierToDual (x z : L.LocalCarrier p) :
+    L.localDualPairingEquiv p (L.localCarrierToDual p x) z = L.localIntegralForm p x z := by
+  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
+  rw [← completedRationalForm_localizationDualToCompletion,
+    localizationDualToCompletion_localCarrierToDual, completedRationalForm_localizationToCompletion]
 
 omit [L.IsNondegenerate] in
 /-- `pᵏⁱ` times the dual vector `p^{-kᵢ} bᵢ` is `bᵢ`. -/
@@ -187,6 +207,100 @@ private theorem pow_nsmul_symm_mk_eq_zero
   rw [← map_nsmul, ← Submodule.Quotient.mk_smul, pow_nsmul_eq_localCarrierToDual hy,
     (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.mem_range_self _ (b i)), map_zero]
 
+/-- The additive homomorphism `(cᵢ) ↦ ∑ᵢ cᵢ [p^{-kᵢ} bᵢ]` from `∏ᵢ ℤ/pᵏⁱ` to `(A_L)_p`. -/
+private noncomputable def piZModPowHom [Fintype ι]
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) :
+    (∀ i, ZMod (p ^ k i)) →+ primaryComponent L.DiscriminantGroup p :=
+  haveI : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
+  ∑ i, (ZMod.lift (p ^ k i) ⟨zmultiplesHom _
+      ((L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk (y i))), by
+    rw [zmultiplesHom_apply, natCast_zsmul]
+    exact pow_nsmul_symm_mk_eq_zero hy i⟩).comp
+    (Pi.evalAddMonoidHom (fun i ↦ ZMod (p ^ k i)) i)
+
+private theorem piZModPowHom_intCast [Fintype ι]
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) (n : ι → ℤ) :
+    piZModPowHom hy (fun i ↦ (n i : ZMod (p ^ k i))) =
+      ∑ i, n i • (L.primaryComponentEquivLocalDiscriminantGroup p).symm
+        (Submodule.Quotient.mk (y i)) := by
+  have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
+  simp [piZModPowHom, ZMod.lift_coe]
+
+private theorem bijective_piZModPowHom [Fintype ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    (hy : ∀ i, L.localizationDualToCompletion p (y i) =
+      ((p : ℚ_[p]) ^ k i)⁻¹ • L.localizationToCompletion p (b i)) :
+    Function.Bijective (piZModPowHom hy) := by
+  classical
+  have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_, fun c ↦ ?_⟩
+  · have hc_val : c = fun i ↦ (((c i).val : ℤ) : ZMod (p ^ k i)) :=
+      funext fun i ↦ by rw [Int.cast_natCast, ZMod.natCast_zmod_val]
+    rw [hc_val, piZModPowHom_intCast] at hc
+    have hmk : (Submodule.Quotient.mk (∑ i, (c i).val • y i) : L.LocalDiscriminantGroup p) = 0 := by
+      have hmap := congrArg (L.primaryComponentEquivLocalDiscriminantGroup p) hc
+      rw [map_zero, map_sum] at hmap
+      rw [← Submodule.mkQ_apply, map_sum]
+      refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans hmap
+      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_smul, ← natCast_zsmul, map_zsmul,
+        (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply, natCast_zsmul]
+    obtain ⟨x, hx⟩ := (Submodule.Quotient.mk_eq_zero _).mp hmk
+    ext j
+    have hpair := congrArg (fun w ↦ L.localDualPairingEquiv p w (b j)) hx
+    simp only [localDualPairingEquiv_localCarrierToDual, (L.isSymm_localIntegralForm p).eq x (b j),
+      hb.apply_basis_left j x, hbu, map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply,
+      localDualPairingEquiv_basis hb hbu hy, nsmul_eq_mul, mul_ite, mul_zero,
+      Finset.sum_ite_eq', Finset.mem_univ, ite_true] at hpair
+    have hdvd : (p : ℤ_[p]) ^ k j ∣ ((c j).val : ℤ_[p]) := by
+      refine ⟨b.repr x j, (u j).isUnit.mul_right_cancel ?_⟩
+      linear_combination -hpair
+    exact (ZMod.natCast_zmod_val (c j)) ▸
+      (ZMod.natCast_eq_zero_iff (c j).val (p ^ k j)).mpr
+        ((PadicInt.pow_p_dvd_natCast_iff _ _).mp hdvd)
+  · obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _
+      (L.primaryComponentEquivLocalDiscriminantGroup p c)
+    obtain ⟨n, hn⟩ := exists_mk_eq_sum_nsmul hb hbu hy z
+    refine ⟨fun i ↦ ((n i : ℤ) : ZMod (p ^ k i)),
+      (L.primaryComponentEquivLocalDiscriminantGroup p).injective ?_⟩
+    rw [piZModPowHom_intCast, map_sum, ← hz, hn]
+    simp
+
+/-- **Additive structure of `(A_L)_p` from a diagonal Jordan form.** For any prime `p` (including
+`p = 2`) and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the dual
+classes of `p^{-kᵢ} bᵢ` give an additive isomorphism `∏ᵢ ℤ/pᵏⁱ ≃+ (A_L)_p`. -/
+noncomputable def piZModPowEquivPrimaryComponent [Fintype ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
+    (∀ i, ZMod (p ^ k i)) ≃+ primaryComponent L.DiscriminantGroup p :=
+  AddEquiv.ofBijective
+    (piZModPowHom (fun i ↦ Classical.choose_spec (exists_localizationDualToCompletion_eq hb hbu i)))
+    (bijective_piZModPowHom hb hbu
+      (fun i ↦ Classical.choose_spec (exists_localizationDualToCompletion_eq hb hbu i)))
+
+/-- **Generator count (`spanFinrank`) of `(A_L)_p` from a diagonal Jordan form.** For any prime `p`
+and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the least number of
+generators of `(A_L)_p` over `ℤ` equals `#{i | kᵢ ≠ 0}`. -/
+theorem spanFinrank_primaryComponent_discriminantGroup_eq_card_filter [Fintype ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
+    (⊤ : Submodule ℤ (primaryComponent L.DiscriminantGroup p)).spanFinrank = #{i | k i ≠ 0} :=
+  (Submodule.spanFinrank_eq_of_equiv
+    (L.piZModPowEquivPrimaryComponent hb hbu).toIntLinearEquiv.symm).trans
+    (AddCommGroup.spanFinrank_pi_zmod_pow k)
+
+/-- **Generator count (`AddGroup.rank`) of `(A_L)_p` from a diagonal Jordan form.** For any prime
+`p` and any orthogonal basis `b` of `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ` (`uᵢ ∈ ℤ_pˣ`), the rank of
+`(A_L)_p` equals `#{i | kᵢ ≠ 0}`. -/
+theorem rank_primaryComponent_discriminantGroup_eq_card_filter [Fintype ι]
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
+    AddGroup.rank (primaryComponent L.DiscriminantGroup p) = #{i | k i ≠ 0} := by
+  rw [AddGroup.rank_eq_spanFinrank_top]
+  exact L.spanFinrank_primaryComponent_discriminantGroup_eq_card_filter hb hbu
+
 /-- The `p`-primary classes of the dual vectors `p^{-kᵢ} bᵢ` pair to `δᵢⱼ θᵢ / pᵏⁱ` in `ℚ/ℤ`. -/
 private theorem discriminantPairing_symm_mk [DecidableEq ι]
     (hb : (L.localIntegralForm p).iIsOrtho b)
@@ -254,27 +368,6 @@ private theorem discriminantPairing_sum_zsmul [Fintype ι]
 
 /-! ### The `p`-primary discriminant form -/
 
-omit [L.IsNondegenerate] in
-/-- The orthogonal sum of the odd cyclic generators `q_{θᵢ}^{(p)}(pᵏⁱ)` is nondegenerate when each
-`θᵢ` is congruent modulo `pᵏⁱ` to a unit of `ℤ_p`. -/
-private theorem isNondegenerate_pi_oddCyclic [Fintype ι] (hp : Odd p) {θ : ι → ℤ}
-    (hθ : ∀ i, (p : ℤ_[p]) ^ k i ∣ u i - θ i) :
-    (FiniteQuadraticModule.pi fun i ↦
-      FiniteQuadraticModule.oddCyclic (p ^ k i) hp.pow (θ i)).IsNondegenerate := by
-  refine (FiniteQuadraticModule.isNondegenerate_pi_iff _).mpr fun i ↦ ?_
-  rw [FiniteQuadraticModule.isNondegenerate_oddCyclic_iff]
-  rcases Nat.eq_zero_or_pos (k i) with hk | hk
-  · simp [hk, isCoprime_one_left]
-  push_cast
-  refine IsCoprime.pow_left <| (Prime.coprime_iff_not_dvd
-    (Nat.prime_iff_prime_int.mp Fact.out)).mpr fun hdvd ↦ ?_
-  -- Otherwise `p` divides `θᵢ` and `uᵢ - θᵢ`, hence the unit `uᵢ`.
-  have hθp : (p : ℤ_[p]) ∣ θ i := by
-    simpa using map_dvd (Int.castRingHom ℤ_[p]) hdvd
-  have hup : (p : ℤ_[p]) ∣ u i := by
-    simpa using ((dvd_pow_self _ hk.ne').trans (hθ i)).add hθp
-  exact ((PadicInt.norm_lt_one_iff_dvd _).mpr hup).ne (PadicInt.isUnit_iff.mp (u i).isUnit)
-
 /-- **The `p`-primary discriminant form from a diagonal Jordan form.** Let `p` be an odd prime and
 let `b` be an orthogonal basis of the localization `L_p` with `B(bᵢ, bᵢ) = uᵢ pᵏⁱ`, `uᵢ` a unit
 of `ℤ_p`. For integers `θᵢ ≡ uᵢ (mod pᵏⁱ)`, the `p`-primary component of the discriminant
@@ -289,49 +382,18 @@ theorem nonempty_isometry_pi_oddCyclic_primaryComponent [Fintype ι] (hp : Odd p
         FiniteQuadraticModule.oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule
       (L.discriminantBilinearModule.restrict
         (primaryComponent L.discriminantBilinearModule p))) := by
-  classical
-  choose y hy using exists_localizationDualToCompletion_eq hb hbu
-  -- `aᵢ` is the class of `p^{-kᵢ} bᵢ`, killed by `pᵏⁱ`.
-  set a : ι → primaryComponent L.DiscriminantGroup p :=
-    fun i ↦ (L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk (y i))
-    with ha
-  have : ∀ i, NeZero (p ^ k i) := fun i ↦ ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
-  -- The homomorphism `(cᵢ) ↦ ∑ cᵢ aᵢ` out of `⊕ ℤ/pᵏⁱ`.
-  let f : (∀ i, ZMod (p ^ k i)) →+ primaryComponent L.DiscriminantGroup p :=
-    ∑ i, (ZMod.lift (p ^ k i) ⟨zmultiplesHom _ (a i), by
-      rw [zmultiplesHom_apply, natCast_zsmul]
-      exact pow_nsmul_symm_mk_eq_zero hy i⟩).comp
-      (Pi.evalAddMonoidHom (fun i ↦ ZMod (p ^ k i)) i)
-  have hf (n : ι → ℤ) : f (fun i ↦ (n i : ZMod (p ^ k i))) = ∑ i, n i • a i := by
-    simp [f, ZMod.lift_coe]
+  let hy := fun i ↦ Classical.choose_spec (exists_localizationDualToCompletion_eq hb hbu i)
   have hcast (c : ∀ i, ZMod (p ^ k i)) : ∃ n : ι → ℤ, (fun i ↦ (n i : ZMod (p ^ k i))) = c :=
     ⟨fun i ↦ (c i).cast, funext fun i ↦ ZMod.intCast_zmod_cast _⟩
-  have hpair (n n' : ι → ℤ) :
-      L.discriminantPairing (f fun i ↦ (n i : ZMod (p ^ k i)) : L.DiscriminantGroup)
-        (f fun i ↦ (n' i : ZMod (p ^ k i))) =
-      ∑ i, (FiniteQuadraticModule.oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule.pairing
-        (n i : ZMod (p ^ k i)) (n' i : ZMod (p ^ k i)) := by
-    simp only [hf, ha, discriminantPairing_sum_zsmul hb hbu hy hθ,
-      FiniteQuadraticModule.oddCyclic_pairing_intCast, Nat.cast_pow]
-  let F : FiniteBilinearModule.Hom
-      (FiniteQuadraticModule.pi fun i ↦
-        FiniteQuadraticModule.oddCyclic (p ^ k i) hp.pow (θ i)).toFiniteBilinearModule
-      (L.discriminantBilinearModule.restrict
-        (primaryComponent L.discriminantBilinearModule p)) :=
-    { toAddMonoidHom := f
-      map_pairing' := fun c c' ↦ by
-        obtain ⟨n, rfl⟩ := hcast c
-        obtain ⟨n', rfl⟩ := hcast c'
-        exact (hpair n n').trans (FiniteQuadraticModule.pi_pairing _ _ _).symm }
-  -- Every class is a combination of the `aᵢ`, since the `p^{-kᵢ} bᵢ` generate the local dual.
-  have hsurj : Function.Surjective f := fun c ↦ by
-    obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _
-      (L.primaryComponentEquivLocalDiscriminantGroup p c)
-    obtain ⟨n, hn⟩ := exists_mk_eq_sum_nsmul hb hbu hy z
-    refine ⟨fun i ↦ ((n i : ℤ) : ZMod (p ^ k i)),
-      (L.primaryComponentEquivLocalDiscriminantGroup p).injective ?_⟩
-    rw [hf, map_sum, ← hz, hn]
-    simp [ha]
-  exact ⟨F.toIsometry ⟨F.injective (isNondegenerate_pi_oddCyclic hp hθ), hsurj⟩⟩
+  refine ⟨{ toAddEquiv := L.piZModPowEquivPrimaryComponent hb hbu, map_pairing' := fun c c' ↦ ?_ }⟩
+  obtain ⟨n, rfl⟩ := hcast c
+  obtain ⟨n', rfl⟩ := hcast c'
+  refine ((L.discriminantBilinearModule.restrict_pairing _ _ _).trans ?_).trans
+    (FiniteQuadraticModule.pi_pairing _ _ _).symm
+  refine (L.discriminantBilinearModule_pairing _ _).trans ?_
+  have hL := discriminantPairing_sum_zsmul hb hbu hy hθ n n'
+  rw [← piZModPowHom_intCast hy n, ← piZModPowHom_intCast hy n'] at hL
+  refine hL.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [FiniteQuadraticModule.oddCyclic_pairing_intCast, Nat.cast_pow]
 
 end TauCeti.IntegralLattice
