@@ -38,8 +38,9 @@ homology of `|K|` (`TauCeti.orderedSimplicialHomologyIsoSingularHomology`).
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Section 2.1 (simplicial homology) and Section 2.2 (cellular
-  homology, and its equivalence with simplicial homology).
+* A. Hatcher, *Algebraic Topology*, Section 2.1 (simplicial homology; Theorem 2.27, simplicial and
+  singular homology agree) and Section 2.2 (cellular homology; Theorem 2.35, cellular and singular
+  homology agree).
 -/
 
 public section
