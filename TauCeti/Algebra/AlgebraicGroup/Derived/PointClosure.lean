@@ -33,8 +33,7 @@ Lie--Kolchin induction decreases.
 
 ## Main declarations
 
-* `TauCeti.CommHopfAlgCat.
-    comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator`:
+* `TauCeti.CommHopfAlgCat.comapOfSurjective_derivedDefiningIdeal_eq_vanishingIdeal_commutator`:
   over any field, the derived subgroup of the reduced closure of a rational-point subgroup `S` is
   the reduced closure of `⁅S, S⁆`.
 * `TauCeti.CommHopfAlgCat.derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points`: if
@@ -96,7 +95,7 @@ private theorem map_vanishingIdeal_commutator_le_derivedDefiningIdeal
 /-- Taking the derived closed subgroup commutes with taking the reduced closure of a
 rational-point subgroup. The equality is stated as equality of defining ideals in the
 ambient coordinate algebra. -/
-theorem comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator
+theorem comapOfSurjective_derivedDefiningIdeal_eq_vanishingIdeal_commutator
     (S : Subgroup (WithConv (H →ₐ[k] k))) :
     (derivedDefiningIdeal (quotient H
       (HopfIdeal.vanishingIdeal S))).comapOfSurjective
@@ -134,7 +133,7 @@ theorem derivedDefiningIdeal_eq_vanishingIdeal_commutator_of_dense_points
     derivedDefiningIdeal (R := k) H =
       HopfIdeal.vanishingIdeal (commutator (WithConv (H →ₐ[k] k))) := by
   have h :=
-    comapOfSurjective_derivedDefiningIdeal_quotient_vanishingIdeal_eq_vanishingIdeal_commutator
+    comapOfSurjective_derivedDefiningIdeal_eq_vanishingIdeal_commutator
       (H := _root_.CommHopfAlgCat.of k H) ⊤
   rw [hdense] at h
   have hbot := comapOfSurjective_derivedDefiningIdeal
