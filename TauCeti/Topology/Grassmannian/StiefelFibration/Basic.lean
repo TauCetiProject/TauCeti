@@ -111,6 +111,13 @@ theorem specialOrthogonalFrameMap_one :
     specialOrthogonalFrameMap r m 1 = standard ℝ (Nat.le_add_right r m) :=
   unitaryMap_one _
 
+/-- The frame map is the orbit map `A ↦ A • e` of the standard frame `e` under
+`specialOrthogonalMulAction`. -/
+theorem specialOrthogonalFrameMap_eq_smul_standard (A : specialOrthogonalGroup (Fin (r + m)) ℝ) :
+    letI := specialOrthogonalMulAction r (r + m)
+    specialOrthogonalFrameMap r m A = A • standard ℝ (Nat.le_add_right r m) :=
+  (specialOrthogonal_smul_def A _).symm
+
 /-- The fibres of the frame map are the left cosets of the stabilizer of the standard frame. -/
 theorem specialOrthogonalFrameMap_eq_specialOrthogonalFrameMap_iff
     {A B : specialOrthogonalGroup (Fin (r + m)) ℝ} :

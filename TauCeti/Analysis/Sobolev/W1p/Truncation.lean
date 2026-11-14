@@ -24,6 +24,8 @@ Dirichlet boundary data, as needed in weak comparison arguments.
 * `TauCeti.W1p.continuous_posPartAbove`: continuity in the full Sobolev norm.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule`: preservation of the homogeneous Dirichlet
   condition.
+* `TauCeti.W1p.posPart_sub_mem_w1p0Submodule`: lowering `u ∈ W^{1,p}_0(Ω)` by a nonnegative
+  `v ∈ W^{1,p}(Ω)` keeps `(u - v)⁺` in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
 * `TauCeti.W1p.norm_posPartAbove_le`: truncation does not increase the Sobolev norm.
@@ -210,6 +212,24 @@ theorem W1p.posPart_mem_w1p0Submodule (hp : p ≠ ∞) {u : W1p mu Omega p}
     W1p.posPart hp u ∈ w1p0Submodule mu Omega p := by
   simpa only [W1p.posPartAbove_zero] using
     W1p.posPartAbove_mem_w1p0Submodule hp (le_refl 0) hu
+
+/-- **Lowering a zero-boundary function keeps its positive part zero on the boundary.** If
+`u ∈ W^{1,p}_0(Ω)` and `v ∈ W^{1,p}(Ω)` is nonnegative almost everywhere, then
+`(u - v)⁺ ∈ W^{1,p}_0(Ω)`, whatever the boundary behaviour of `v`: `0 ≤ (u - v)⁺ ≤ u⁺`. -/
+theorem W1p.posPart_sub_mem_w1p0Submodule (hp : p ≠ ∞) {u v : W1p mu Omega p}
+    (hu : u ∈ w1p0Submodule mu Omega p) (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
+    W1p.posPart hp (u - v) ∈ w1p0Submodule mu Omega p := by
+  refine w1p0Submodule_subset_of_isClosed ((w1p0Submodule mu Omega p).isClosed.preimage
+    ((W1p.continuous_posPart hp).comp (continuous_id.sub continuous_const))) ?_ hu
+  intro phi
+  apply W1p.mem_w1p0Submodule_of_isCompact hp phi.hasCompactSupport phi.tsupport_subset
+  filter_upwards [Lp.coeFn_posPart (W1p.value (W1p.ofTestFunctionₗ mu Omega p phi - v)),
+    W1p.value_sub_ae (W1p.ofTestFunctionₗ mu Omega p phi) v,
+    testFunctionLp_apply_ae (mu := mu) p phi, hv] with x hx hsub hphi hvx
+  intro hxK
+  simp only [Function.comp_apply, id_eq, W1p.value_posPart, hx, hsub, Pi.sub_apply,
+    W1p.value_ofTestFunctionₗ, hphi, image_eq_zero_of_notMem_tsupport hxK, zero_sub]
+  exact max_eq_right (neg_nonpos.2 hvx)
 
 /-- If `(u - k)⁺` satisfies the homogeneous Dirichlet boundary condition, then so does
 `(u - l)⁺` at every higher level `l ≥ k`: boundary values at most `k` are at most `l`. -/

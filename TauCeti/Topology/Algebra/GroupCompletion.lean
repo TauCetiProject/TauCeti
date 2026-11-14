@@ -14,8 +14,8 @@ public import TauCeti.Topology.UniformSpace.Completion
 /-!
 # Neighbourhoods of zero and completions of homomorphisms of uniform groups
 
-The zero-point form of `UniformSpace.Completion.isCountablyGenerated_nhds_coe`, registered as an
-instance. Only a zero and a uniformity are needed; no group structure, no separation, no
+The zero-point form of `UniformSpace.Completion.isCountablyGenerated_nhds_coe_iff`, registered as
+an instance. Only a zero and a uniformity are needed; no group structure, no separation, no
 completeness.
 
 It exists because results in the Huber development carry `[(𝓝 (0 : A)).IsCountablyGenerated]` and
@@ -62,8 +62,8 @@ An instance rather than a theorem because it is consumed by typeclass resolution
 general statement it specialises is about an arbitrary point and cannot be. -/
 instance isCountablyGenerated_nhds_zero {G : Type*} [Zero G] [UniformSpace G]
     [(𝓝 (0 : G)).IsCountablyGenerated] : (𝓝 (0 : Completion G)).IsCountablyGenerated := by
-  have h := isCountablyGenerated_nhds_coe (x := (0 : G))
-  rwa [coe_zero] at h
+  rw [← coe_zero]
+  exact isCountablyGenerated_nhds_coe_iff.2 ‹_›
 
 /-- The separated completion of a uniform additive group is discrete exactly when the separation
 quotient of the group is discrete. -/

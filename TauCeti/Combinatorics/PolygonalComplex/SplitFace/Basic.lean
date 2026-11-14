@@ -251,6 +251,13 @@ theorem outgoing_splitFace_inr_false_zero :
     (C.splitFace f p).outgoing ⟨.inr false, ⟨0, Nat.succ_pos _⟩⟩ = .inr false :=
   outgoing_splitFace_eq_inr_iff.2 (splitFaceCornerOrigin_inr_false_of_eq_zero rfl)
 
+/-- The new dart is the incoming side of the first corner of the face `a₀ ⋯ aₚ₋₁ d`. -/
+theorem incoming_splitFace_inr_true_zero :
+    (C.splitFace f p).incoming ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ = .inr true := by
+  rw [(C.splitFace f p).incoming_mk_of_eq_zero (f := .inr true)
+    (i := (⟨p, Nat.lt_succ_self _⟩ : Fin (p + 1))) rfl (Nat.add_sub_cancel _ _).symm]
+  exact outgoing_splitFace_inr_true_last C f p
+
 /-- The side occurrence of `C.splitFace f p` coming from a side occurrence of `C`, and the two
 occurrences of the new edge: the side `aₖ` of `f` is the side `k` of the face `a₀ ⋯ aₚ₋₁ d` if
 `k < p` and the side `k - p + 1` of the face `d⁻¹ aₚ ⋯ aₙ₋₁` otherwise. -/

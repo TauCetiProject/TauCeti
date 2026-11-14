@@ -42,6 +42,8 @@ one dart `e` from each reversal pair outside `T`; the basis consists of the loop
 * `TauCeti.SerreGraph.SpanningTree.eq_path`: the tree path is the only reduced path in the tree.
 * `TauCeti.SerreGraph.SpanningTree.mapPath_path_of_injective`: a morphism injective on darts and
   carrying one spanning tree into another sends tree paths to tree paths.
+* `TauCeti.SerreGraph.SpanningTree.path_eq_cons_or_path_eq_cons_reverse`: the tree paths from a
+  vertex to the two ends of a tree dart differ by that dart.
 
 ## References
 
@@ -271,6 +273,30 @@ theorem homotopic_path_comp_path (a b c : Γ.V) :
     simp only [Path.darts_reverse, List.mem_map, List.mem_reverse] at he
     obtain ⟨f, hf, rfl⟩ := he
     exact T.rev_mem f (T.mem_of_mem_darts_path hf)
+
+/-- The tree paths from a vertex `c` to the two ends of a tree dart `f` differ by that dart: the
+tree path to the target of `f` is the tree path to its source followed by `f`, or the tree path
+to the source of `f` is the tree path to its target followed by the reverse of `f`. -/
+theorem path_eq_cons_or_path_eq_cons_reverse (c : Γ.V) {a b : Γ.V} (f : Quiver.Hom a b)
+    (hf : f.1 ∈ T.darts) :
+    T.path c b = (T.path c a).cons f ∨ T.path c a = (T.path c b).cons (Quiver.reverse f) := by
+  have hmem : ∀ e ∈ Path.darts Γ (T.path c a), e ∈ T.darts := fun _ => T.mem_of_mem_darts_path
+  by_cases h : Path.IsReduced Γ ((T.path c a).cons f)
+  · refine Or.inl (T.eq_path h fun e he => ?_).symm
+    rw [Path.darts_cons, List.mem_append, List.mem_singleton] at he
+    exact he.elim (hmem e) fun he => he ▸ hf
+  -- Otherwise the tree path to `a` ends with the reverse of `f`.
+  refine Or.inr ?_
+  have hred := T.isReduced_path c a
+  generalize T.path c a = p at h hred hmem ⊢
+  cases p with
+  | nil => exact absurd (Path.isReduced_toPath Γ f) h
+  | @cons d _ r g =>
+    have hfg : f.1 = Γ.rev g.1 :=
+      of_not_not fun hne => h ((Path.isReduced_cons_cons Γ r g f).mpr ⟨hred, hne⟩)
+    obtain rfl : b = d := f.2.2.symm.trans (by rw [hfg, tgt_rev, g.2.1])
+    rw [T.eq_path (hred.of_cons Γ) fun e he => hmem e (by simp [he])]
+    exact congrArg _ (Subtype.ext (by rw [reverse_val, hfg, rev_rev]))
 
 /-- The tree path between the endpoints of a tree dart is that dart. -/
 @[simp] theorem path_src_tgt {e : Γ.E} (he : e ∈ T.darts) :
