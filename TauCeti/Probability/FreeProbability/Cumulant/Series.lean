@@ -55,7 +55,10 @@ and the moment series determine each other.
   `TauCeti.freeCumulantSeries_eq_subst_substInvOfIsUnit` — the free cumulant series is the only
   solution of `C(z M(z)) = M(z)`, namely `C = M ∘ (z M)⁻¹`.
 * `TauCeti.freeCumulantSeries_congr` — equal moment series give equal free cumulant series, and
-  `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` — conversely for normalised functionals.
+  `TauCeti.freeCumulantSeries_eq_iff_momentSeries_eq` and `TauCeti.rSeries_eq_iff_momentSeries_eq`
+  — conversely for normalised functionals.
+* `TauCeti.map_momentSeries`, `TauCeti.map_freeCumulant`, `TauCeti.map_freeCumulantSeries` and
+  `TauCeti.map_rSeries` — compatibility with ring homomorphisms on the target ring.
 * `TauCeti.IsFreelyIndependent.rSeries_sum` and `TauCeti.IsFreelyIndependent.rSeries_add` — the
   R-series is additive on elements of freely independent subalgebras, with the element versions
   `TauCeti.IsFreelyIndependentElements.rSeries_sum` and
@@ -268,7 +271,67 @@ theorem freeCumulantSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [
   rw [card_univ, Fintype.card_fin] at ha hb
   rw [coeff_momentSeries, coeff_momentSeries, ha, hb, h]
 
+/-- Two elements have the same R-series if and only if they have the same free cumulant series.
+No normalisation is needed, since both free cumulant series have constant term `1`. -/
+theorem rSeries_eq_iff_freeCumulantSeries_eq {B : Type*} [Monoid B] {ψ : B → R} {b : B} :
+    rSeries φ a = rSeries ψ b ↔ freeCumulantSeries φ a = freeCumulantSeries ψ b := by
+  constructor
+  · intro h
+    rw [freeCumulantSeries_eq_one_add_X_mul_rSeries,
+      freeCumulantSeries_eq_one_add_X_mul_rSeries, h]
+  · intro h
+    ext n
+    rw [← coeff_succ_freeCumulantSeries, ← coeff_succ_freeCumulantSeries, h]
+
+/-- For normalised functionals, two elements have the same R-series if and only if they have the
+same moment series. -/
+theorem rSeries_eq_iff_momentSeries_eq (hφ : φ 1 = 1) {B : Type*} [Monoid B]
+    {ψ : B → R} {b : B} (hψ : ψ 1 = 1) :
+    rSeries φ a = rSeries ψ b ↔ momentSeries φ a = momentSeries ψ b :=
+  (rSeries_eq_iff_freeCumulantSeries_eq a).trans (freeCumulantSeries_eq_iff_momentSeries_eq a hφ hψ)
+
 end Monoid
+
+section RingHom
+
+/-- Composing `φ` with a semiring homomorphism maps the moment series coefficientwise. -/
+theorem map_momentSeries {R' S : Type*} [Semiring R'] [Semiring S] [Monoid A] (f : R' →+* S)
+    (φ : A → R') (a : A) :
+    (momentSeries φ a).map f = momentSeries (f ∘ φ) a := by
+  ext n
+  simp
+
+/-- Composing `φ` with a ring homomorphism commutes with `partitionCumulant`. -/
+theorem map_partitionCumulant {S α : Type*} [CommRing S] [LinearOrder α] [Monoid A]
+    (f : R →+* S) (φ : A → R) (a : α → A) {s : Finset α} (π : NoncrossingPartition s) :
+    f (partitionCumulant φ a π) = partitionCumulant (f ∘ φ) a π := by
+  have h := eq_partitionCumulant_of_forall_sum_Iic (f ∘ φ) a
+    (fun σ : NoncrossingPartition s => f (partitionCumulant φ a σ)) fun τ => by
+      rw [← map_sum, sum_Iic_partitionCumulant]
+      simp [partitionMoment_def]
+  exact congrFun h π
+
+/-- Composing `φ` with a ring homomorphism commutes with `freeCumulant`. -/
+theorem map_freeCumulant {S α : Type*} [CommRing S] [LinearOrder α] [Monoid A]
+    (f : R →+* S) (φ : A → R) (a : α → A) (s : Finset α) :
+    f (freeCumulant φ a s) = freeCumulant (f ∘ φ) a s := by
+  rw [freeCumulant_def, freeCumulant_def, map_partitionCumulant]
+
+/-- Composing `φ` with a ring homomorphism maps the free cumulant series coefficientwise. -/
+theorem map_freeCumulantSeries {S : Type*} [CommRing S] [Monoid A] (f : R →+* S)
+    (φ : A → R) (a : A) :
+    (freeCumulantSeries φ a).map f = freeCumulantSeries (f ∘ φ) a := by
+  ext n
+  simp [map_freeCumulant]
+
+/-- Composing `φ` with a ring homomorphism maps the R-series coefficientwise. -/
+theorem map_rSeries {S : Type*} [CommRing S] [Monoid A] (f : R →+* S)
+    (φ : A → R) (a : A) :
+    (rSeries φ a).map f = rSeries (f ∘ φ) a := by
+  ext n
+  simp [map_freeCumulant]
+
+end RingHom
 
 section Algebra
 

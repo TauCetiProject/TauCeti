@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -47,17 +48,21 @@ probability measures on `ℝ`.
 * `PositiveLinearMap.ofReal_integral_law`: `∫ f dμ_a = φ (cfc f a)`.
 * `PositiveLinearMap.eq_law_iff`: `μ_a` is the only finite measure on `ℝ` with this property for
   continuous `f`.
-* `PositiveLinearMap.law_compl_spectrum`: `μ_a` is concentrated on `spectrum ℝ a`.
+* `PositiveLinearMap.law_compl_spectrum`, `PositiveLinearMap.support_law_subset_spectrum`,
+  `PositiveLinearMap.isCompact_support_law`: `μ_a` is concentrated on `spectrum ℝ a`, so its
+  topological support is compact and inherits spectral order bounds
+  (`PositiveLinearMap.support_law_subset_Icc`).
 * `PositiveLinearMap.integrable_law`: every `f` continuous on `spectrum ℝ a` is `μ_a`-integrable.
 * `PositiveLinearMap.isProbabilityMeasure_law`: `μ_a` is a probability measure when `φ 1 = 1`.
 * `PositiveLinearMap.ofReal_integral_pow_law`: the moments of `μ_a` are `φ (a ^ n)`.
 * `PositiveLinearMap.law_cfc`, `PositiveLinearMap.law_aeval`,
-  `PositiveLinearMap.law_smul_add_algebraMap`: the law of `g(a)`, of `p(a)` for a real
-  polynomial `p`, and of `r • a + c` is the pushforward of `μ_a` along `g`, `p` and `x ↦ r x + c`.
+  `PositiveLinearMap.law_smul_add_algebraMap`, `PositiveLinearMap.law_algebraMap`: the law of
+  `g(a)`, of `p(a)` for a real polynomial `p`, of `r • a + c`, and of a real scalar `c`.
 * `PositiveLinearMap.eq_law_iff_forall_integral_pow`: a compactly supported finite measure is
   `μ_a` exactly when its moments are the `φ (a ^ n)`.
-* `PositiveLinearMap.law_eq_law_iff_forall_apply_pow`: two selfadjoint elements have the same law
-  exactly when they have the same moments.
+* `PositiveLinearMap.law_eq_law_iff_forall_apply_pow`,
+  `PositiveLinearMap.law_map_of_isSelfAdjoint`: two selfadjoint elements have the same law
+  exactly when they have the same moments, so state-preserving `⋆`-homomorphisms preserve laws.
 * `PositiveLinearMap.law_integralPositiveLinearMap_realToRCLike`: in `C(X, ℂ)` for a compact
   space `X`, the law of a real function `g` with respect to integration against `ν` is the
   pushforward of `ν` along `g`.
@@ -258,6 +263,99 @@ theorem law_smul_add_algebraMap (ha : IsSelfAdjoint a) (r c : ℝ) :
     law φ (r • a + algebraMap ℝ A c) = (law φ a).map (fun x ↦ r * x + c) := by
   rw [← cfc_const_mul_id r a, ← cfc_add_const c _ a, law_cfc φ ha (fun x ↦ r * x + c)]
 
+/-- Rescaling a selfadjoint element `a` by `r : ℝ` pushes its law forward along `x ↦ r * x`.
+Selfadjointness cannot be omitted: for `r = 0` and non-selfadjoint `a`, `0 • a = 0` is
+selfadjoint while `a` is not. -/
+theorem law_smul (ha : IsSelfAdjoint a) (r : ℝ) :
+    law φ (r • a) = (law φ a).map (r * ·) := by
+  simpa using law_smul_add_algebraMap φ ha r 0
+
+/-- Negating an element pushes its law forward along `x ↦ -x`. -/
+theorem law_neg (a : A) : law φ (-a) = (law φ a).map (-·) := by
+  by_cases ha : IsSelfAdjoint a
+  · simpa [neg_one_smul] using law_smul_add_algebraMap φ ha (-1) 0
+  · have hna : ¬IsSelfAdjoint (-a) := fun h ↦ ha (by simpa using h.neg)
+    simp [law_of_not_isSelfAdjoint φ ha, law_of_not_isSelfAdjoint φ hna]
+
+/-- Translating an element by a real scalar `c` pushes its law forward along `x ↦ x + c`. -/
+theorem law_add_algebraMap (a : A) (c : ℝ) :
+    law φ (a + algebraMap ℝ A c) = (law φ a).map (· + c) := by
+  by_cases ha : IsSelfAdjoint a
+  · simpa using law_smul_add_algebraMap φ ha 1 c
+  · have hca : ¬IsSelfAdjoint (a + algebraMap ℝ A c) := fun h ↦
+      ha (by simpa using h.sub (IsSelfAdjoint.all c |>.algebraMap A))
+    simp [law_of_not_isSelfAdjoint φ ha, law_of_not_isSelfAdjoint φ hca]
+
+/-- The law of a real scalar `c` with respect to any positive functional `φ` is `Re (φ 1)` times
+the point mass at `c`. -/
+theorem law_algebraMap_eq_smul_dirac (c : ℝ) :
+    law φ (algebraMap ℝ A c) = ENNReal.ofReal (φ 1).re • Measure.dirac c := by
+  have : IsFiniteMeasure (ENNReal.ofReal (φ 1).re • Measure.dirac c) := ⟨by simp⟩
+  refine (eq_law_iff.2 fun f _ ↦ ?_).symm
+  have h1 : 0 ≤ φ 1 := φ.map_nonneg zero_le_one
+  obtain ⟨h1re, h1im⟩ := Complex.nonneg_iff.mp h1
+  have h1eq : ((φ 1).re : ℂ) = φ 1 := Complex.ext rfl h1im
+  rw [integral_smul_measure, ENNReal.toReal_ofReal h1re, integral_dirac, smul_eq_mul,
+    Complex.ofReal_mul, h1eq, cfc_algebraMap c f, Algebra.algebraMap_eq_smul_one,
+    ← Complex.coe_smul, map_smul, smul_eq_mul, mul_comm]
+
+/-- For a state (`φ 1 = 1`), the law of a real scalar `c` is the point mass at `c`. -/
+theorem law_algebraMap (hφ : φ 1 = 1) (c : ℝ) :
+    law φ (algebraMap ℝ A c) = Measure.dirac c := by
+  simp [law_algebraMap_eq_smul_dirac, hφ]
+
+/-- For a state (`φ 1 = 1`), the law of `0` is the point mass at `0`. -/
+theorem law_zero (hφ : φ 1 = 1) : law φ (0 : A) = Measure.dirac 0 := by
+  simpa using law_algebraMap φ hφ 0
+
+/-- For a state (`φ 1 = 1`), the law of `1` is the point mass at `1`. -/
+theorem law_one (hφ : φ 1 = 1) : law φ (1 : A) = Measure.dirac 1 := by
+  simpa using law_algebraMap φ hφ 1
+
+/-! ### Topological support and spectral bounds -/
+
+/-- The topological support of the law `μ_a` is contained in `spectrum ℝ a`. -/
+theorem support_law_subset_spectrum (a : A) : (law φ a).support ⊆ spectrum ℝ a :=
+  Measure.support_subset_of_isClosed (spectrum.isClosed a) (ae_iff.mpr (law_compl_spectrum φ a))
+
+/-- The topological support of the law `μ_a` is compact. -/
+theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
+  (ContinuousFunctionalCalculus.isCompact_spectrum a).of_isClosed_subset
+    Measure.isClosed_support (support_law_subset_spectrum φ a)
+
+/-- Every point in the topological support of `μ_a` is bounded in absolute value by `‖a‖`. -/
+theorem abs_le_norm_of_mem_support_law {x : ℝ} (hx : x ∈ (law φ a).support) : |x| ≤ ‖a‖ := by
+  have hspec := support_law_subset_spectrum φ a hx
+  obtain _ | _ := subsingleton_or_nontrivial A
+  · exact False.elim (by simp at hspec)
+  · simpa [Real.norm_eq_abs] using spectrum.norm_le_norm_of_mem hspec
+
+/-- The topological support of `μ_a` lies inside the closed interval `[-‖a‖, ‖a‖]`. -/
+theorem support_law_subset_closedBall (a : A) :
+    (law φ a).support ⊆ Metric.closedBall 0 ‖a‖ := by
+  intro x hx
+  simpa [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs] using
+    abs_le_norm_of_mem_support_law φ hx
+
+/-- An upper C⋆-order bound `a ≤ r` confines the support of `μ_a` to `(-∞, r]`. -/
+theorem support_law_subset_Iic {r : ℝ} (hr : a ≤ algebraMap ℝ A r) :
+    (law φ a).support ⊆ Set.Iic r := by
+  by_cases ha : IsSelfAdjoint a
+  · exact (support_law_subset_spectrum φ a).trans ((le_algebraMap_iff_spectrum_le ha).mp hr)
+  · simp [law_of_not_isSelfAdjoint φ ha]
+
+/-- A lower C⋆-order bound `l ≤ a` confines the support of `μ_a` to `[l, ∞)`. -/
+theorem support_law_subset_Ici {l : ℝ} (hl : algebraMap ℝ A l ≤ a) :
+    (law φ a).support ⊆ Set.Ici l := by
+  by_cases ha : IsSelfAdjoint a
+  · exact (support_law_subset_spectrum φ a).trans ((algebraMap_le_iff_le_spectrum ha).mp hl)
+  · simp [law_of_not_isSelfAdjoint φ ha]
+
+/-- Two-sided C⋆-order bounds `l ≤ a ≤ r` confine the support of `μ_a` to `[l, r]`. -/
+theorem support_law_subset_Icc {l r : ℝ} (hl : algebraMap ℝ A l ≤ a)
+    (hr : a ≤ algebraMap ℝ A r) : (law φ a).support ⊆ Set.Icc l r :=
+  Set.subset_inter (support_law_subset_Ici φ hl) (support_law_subset_Iic φ hr)
+
 /-! ### Moment determinacy -/
 
 variable {φ} in
@@ -288,6 +386,24 @@ theorem law_eq_law_iff_forall_apply_pow {B : Type*} [CStarAlgebra B] [PartialOrd
   rw [eq_law_iff_forall_integral_pow hb (ContinuousFunctionalCalculus.isCompact_spectrum a)
     (law_compl_spectrum φ a)]
   simp_rw [ofReal_integral_pow_law φ ha]
+
+/-- A functional-preserving unital `⋆`-homomorphism preserves the law of any selfadjoint element.
+Selfadjointness cannot be omitted when `f` is not injective: `f` can annihilate a non-selfadjoint
+element, sending a zero law to the scalar law of `0`. -/
+theorem law_map_of_isSelfAdjoint {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (ψ : B →ₚ[ℂ] ℂ) (f : A →⋆ₐ[ℂ] B) (hf : ∀ x, ψ (f x) = φ x) (ha : IsSelfAdjoint a) :
+    ψ.law (f a) = φ.law a :=
+  (law_eq_law_iff_forall_apply_pow ψ φ (ha.map f) ha).2 fun n ↦ by rw [← map_pow, hf]
+
+/-- An injective functional-preserving unital `⋆`-homomorphism preserves the law of every element,
+whether selfadjoint or not. -/
+theorem law_map_of_injective {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (ψ : B →ₚ[ℂ] ℂ) (f : A →⋆ₐ[ℂ] B) (hf : ∀ x, ψ (f x) = φ x) (hinj : Function.Injective f)
+    (a : A) : ψ.law (f a) = φ.law a := by
+  by_cases ha : IsSelfAdjoint a
+  · exact law_map_of_isSelfAdjoint φ ψ f hf ha
+  · have hfa : ¬IsSelfAdjoint (f a) := fun h ↦ ha <| hinj <| by rw [map_star, h.star_eq]
+    simp [law_of_not_isSelfAdjoint φ ha, law_of_not_isSelfAdjoint ψ hfa]
 
 /-! ### Realization of compactly supported measures -/
 
