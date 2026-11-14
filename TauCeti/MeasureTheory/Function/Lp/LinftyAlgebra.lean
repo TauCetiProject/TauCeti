@@ -167,4 +167,62 @@ instance inftyCStarAlgebra [CStarAlgebra R] : CStarAlgebra (Lp R ∞ μ) where
 
 instance inftyCommCStarAlgebra [CommCStarAlgebra R] : CommCStarAlgebra (Lp R ∞ μ) where
 
+section SelfAdjoint
+
+variable [RCLike 𝕜]
+
+/-- `Lp.ofRealLI` preserves the multiplicative identity in `L∞`. -/
+@[simp]
+theorem ofRealLI_one : ofRealLI 𝕜 ∞ μ 1 = 1 := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_ofRealLI (𝕜 := 𝕜) (1 : Lp ℝ ∞ μ), coeFn_one (E := ℝ) (μ := μ),
+    coeFn_one (E := 𝕜) (μ := μ)] with x h₁ h₂ h₃
+  simp [h₁, h₂, h₃]
+
+/-- `Lp.ofRealLI` preserves pointwise multiplication in `L∞`. -/
+@[simp]
+theorem ofRealLI_mul (f g : Lp ℝ ∞ μ) :
+    ofRealLI 𝕜 ∞ μ (f * g) = ofRealLI 𝕜 ∞ μ f * ofRealLI 𝕜 ∞ μ g := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_ofRealLI (𝕜 := 𝕜) (f * g), coeFn_mul f g,
+    coeFn_mul (ofRealLI 𝕜 ∞ μ f) (ofRealLI 𝕜 ∞ μ g),
+    coeFn_ofRealLI (𝕜 := 𝕜) f, coeFn_ofRealLI (𝕜 := 𝕜) g] with x h₁ h₂ h₃ h₄ h₅
+  simp [h₁, h₂, h₃, h₄, h₅]
+
+/-- The inverse of `selfAdjointLinearIsometryEquiv` preserves `1` on `L∞`. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_symm_one :
+    (selfAdjointLinearIsometryEquiv 𝕜 ∞ μ).symm 1 = 1 := by
+  apply Subtype.ext
+  rw [coe_selfAdjointLinearIsometryEquiv_symm_apply, ofRealLI_one, selfAdjoint.val_one]
+
+/-- The inverse of `selfAdjointLinearIsometryEquiv` preserves multiplication on `L∞`. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_symm_mul (f g : Lp ℝ ∞ μ) :
+    (selfAdjointLinearIsometryEquiv 𝕜 ∞ μ).symm (f * g) =
+      (selfAdjointLinearIsometryEquiv 𝕜 ∞ μ).symm f *
+        (selfAdjointLinearIsometryEquiv 𝕜 ∞ μ).symm g := by
+  apply Subtype.ext
+  rw [coe_selfAdjointLinearIsometryEquiv_symm_apply, ofRealLI_mul, selfAdjoint.val_mul,
+    coe_selfAdjointLinearIsometryEquiv_symm_apply,
+    coe_selfAdjointLinearIsometryEquiv_symm_apply]
+
+/-- `selfAdjointLinearIsometryEquiv` preserves `1` on `L∞`. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_one :
+    selfAdjointLinearIsometryEquiv 𝕜 ∞ μ 1 = 1 := by
+  rw [← selfAdjointLinearIsometryEquiv_symm_one (𝕜 := 𝕜) (μ := μ),
+    LinearIsometryEquiv.apply_symm_apply]
+
+/-- `selfAdjointLinearIsometryEquiv` preserves multiplication on `L∞`. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_mul (f g : selfAdjoint (Lp 𝕜 ∞ μ)) :
+    selfAdjointLinearIsometryEquiv 𝕜 ∞ μ (f * g) =
+      selfAdjointLinearIsometryEquiv 𝕜 ∞ μ f * selfAdjointLinearIsometryEquiv 𝕜 ∞ μ g := by
+  refine (selfAdjointLinearIsometryEquiv 𝕜 ∞ μ).symm.injective ?_
+  rw [selfAdjointLinearIsometryEquiv_symm_mul, LinearIsometryEquiv.symm_apply_apply,
+    LinearIsometryEquiv.symm_apply_apply, LinearIsometryEquiv.symm_apply_apply]
+
+end SelfAdjoint
+
 end MeasureTheory.Lp

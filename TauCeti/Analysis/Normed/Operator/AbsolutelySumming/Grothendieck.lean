@@ -8,39 +8,60 @@ module
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.Analysis.Matrix.Grothendieck
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.Gelfand
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
+import TauCeti.Topology.ContinuousMap.Grothendieck
+import TauCeti.Topology.ContinuousMap.WeakLpNorm
 
 /-!
-# Grothendieck's theorem: operators from `L¹` into Hilbert space are absolutely summing
+# Grothendieck's theorems on absolutely summing operators
 
-Let `μ` be any measure and `H` an inner product space over `𝕜 = ℝ` or `ℂ`. Every bounded operator
-`T : L¹(μ) → H` is absolutely `1`-summing, with `π₁(T) ≤ κ_𝕜 ‖T‖`, where `κ_ℝ = 8` and
-`κ_𝕜 = 16` for a general `RCLike` field are the constants of Grothendieck's inequality for
-matrices (`Matrix.abs_sum_sum_mul_inner_le_eight_mul` and
-`Matrix.norm_sum_sum_mul_inner_le_sixteen_mul`). The constants are not optimal. The space `H`
-need not be complete.
+Let `μ` be any measure and `𝕜 = ℝ` or `ℂ` (an `RCLike` field). This file proves the two classic
+operator-theoretic forms of Grothendieck's inequality, with constants `κ_ℝ = 8` and `κ_𝕜 = 16`
+coming from `Matrix.abs_sum_sum_mul_inner_le_eight_mul` and
+`Matrix.norm_sum_sum_mul_inner_le_sixteen_mul` (not claimed optimal):
 
-The proof first treats finite families in the span of the indicator functions `1_{A j}` of
-finitely many disjoint sets of finite measure. This span is a weighted finite `ℓ¹` space:
-`‖∑ j, d j • 1_{A j}‖ = ∑ j, μ(A j) * ‖d j‖` (`TauCeti.norm_sum_indicatorConstLp_one`). For
+1. Every bounded operator `T : L¹(μ) → H` into an inner product space `H` (not assumed complete)
+   is absolutely `1`-summing, with `π₁(T) ≤ κ_𝕜 ‖T‖`.
+2. Every bounded operator `T : C(K, 𝕜) → L¹(μ)` from continuous functions on a compact space `K`
+   into `L¹(μ)` is absolutely `2`-summing, with `π₂(T) ≤ κ_𝕜 ‖T‖`.
+
+For `T : L¹(μ) → H`, the proof first treats finite families in the span of the indicator functions
+`1_{A j}` of finitely many disjoint sets of finite measure. This span is a weighted finite `ℓ¹`
+space: `‖∑ j, d j • 1_{A j}‖ = ∑ j, μ(A j) * ‖d j‖` (`TauCeti.norm_sum_indicatorConstLp_one`). For
 `y i = ∑ j, c i j • 1_{A j}`, let `u i` be unit vectors norming `T (y i)` and
 `v j = T 1_{A j} / (μ(A j) ‖T‖)` the normalized columns of `T`. Then
 `∑ i, ‖T (y i)‖ = ‖T‖ * ∑ i, ∑ j, c i j * μ(A j) * ⟪u i, v j⟫`. The matrix `c i j * μ(A j)` has
-scalar bound the weak `L¹` norm of `y`, since a combination of the `y i` with coefficients of norm
-at most one has norm at most that weak norm (`TauCeti.norm_sum_smul_le_weakLpNorm_one`), and
-Grothendieck's inequality applies. Every finite family of simple functions lies in such a span,
-the sets `A j` being the nonzero fibres of the joint simple function. Both sides of the inequality
-are continuous in the family, so density of simple functions in `L¹` gives the general case.
+scalar bound the weak `L¹` norm of `y` (`TauCeti.norm_sum_smul_le_weakLpNorm_one`), and
+Grothendieck's matrix inequality applies. Simple-function density in `L¹` gives the general case.
+
+For `T : C(K, 𝕜) → L¹(μ)`, we pair `T` with `L∞(μ)` via `(f, g) ↦ ∫ (T f) g ∂μ` and identify
+`L∞(μ)` isometrically with `C(K_μ, 𝕜)` on the Gelfand character space `K_μ` of `L∞(μ, ℂ)`
+(`MeasureTheory.Lp.gelfandLinearIsometryEquiv`). A finite family `f` of weak `L²` norm at most `1`
+in `C(K, 𝕜)` has pointwise square function bounded by `1`
+(`ContinuousMap.sum_norm_apply_sq_le_one_of_weakLpNorm_two_le_one`), while norming each `T (f i)` in
+`L¹(μ)` by a unit `L∞` function weighted by `‖T (f i)‖ / (∑ j, ‖T (f j)‖ ^ 2)^{1/2}` yields a family
+`g` in `L∞(μ)` with `∑ i, ‖g i‖ ^ 2 ≤ 1` almost everywhere, hence everywhere on `K_μ` after the
+Gelfand transform (`MeasureTheory.Lp.sum_norm_gelfandLinearIsometryEquiv_sq_le_one`). Applying the
+compact-space bilinear Grothendieck inequality (`LinearMap.norm_sum_apply_apply_le_sixteen_mul` and
+`LinearMap.abs_sum_apply_apply_le_eight_mul`) yields `π₂(T) ≤ κ_𝕜 ‖T‖`.
 
 ## Main results
 
 * `ContinuousLinearMap.summingENorm_one_le_ofReal_sixteen_mul_norm`: `π₁(T) ≤ 16 ‖T‖` for every
   bounded operator `T : L¹(μ, 𝕜) → H` over an `RCLike` field.
 * `ContinuousLinearMap.summingENorm_one_le_ofReal_eight_mul_norm`: `π₁(T) ≤ 8 ‖T‖` over `ℝ`.
+* `ContinuousLinearMap.summingENorm_two_le_ofReal_sixteen_mul_norm`: `π₂(T) ≤ 16 ‖T‖` for every
+  bounded operator `T : C(K, 𝕜) → L¹(μ, 𝕜)` over an `RCLike` field.
+* `ContinuousLinearMap.summingENorm_two_le_ofReal_eight_mul_norm`: `π₂(T) ≤ 8 ‖T‖` for every
+  bounded operator `T : C(K, ℝ) → L¹(μ, ℝ)`.
 
 ## References
 
@@ -54,6 +75,8 @@ open MeasureTheory
 open scoped ENNReal InnerProductSpace
 
 namespace ContinuousLinearMap
+
+section Hilbert
 
 variable {α 𝕜 H : Type*} [RCLike 𝕜] {m : MeasurableSpace α} {μ : Measure α}
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
@@ -223,5 +246,131 @@ theorem summingENorm_one_le_ofReal_eight_mul_norm {H : Type*} [NormedAddCommGrou
       (fun s t hs ht ↦ by
         simpa only [Real.norm_eq_abs] using ha s t (by simpa using hs) (by simpa using ht))
       hu hv) T
+
+end Hilbert
+
+section ContinuousMap
+
+variable {K α 𝕜 : Type*} [TopologicalSpace K] [RCLike 𝕜]
+  {m : MeasurableSpace α} {μ : Measure α}
+
+/-- The integral pairing `(f, h) ↦ ∫ x, T f x * Φ⁻¹(h) x ∂μ` induced by `T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ`
+and the inverse Gelfand isomorphism `Φ⁻¹ : C(characterSpace ℂ (Lp ℂ ∞ μ), 𝕜) ≃ₗᵢ[𝕜] Lp 𝕜 ∞ μ`. -/
+private noncomputable def integralGelfandBilin (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ) :
+    C(K, 𝕜) →ₗ[𝕜] C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜) →ₗ[𝕜] 𝕜 :=
+  LinearMap.mk₂ 𝕜
+    (fun f h ↦ (mul 𝕜 𝕜).lpPairing μ 1 ∞ (T f) ((Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm h))
+    (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+    (fun _ _ _ ↦ by simp [(Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm.map_add])
+    (fun _ _ _ ↦ by simp [(Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm.map_smul])
+
+/-- Evaluating `integralGelfandBilin T` integrates `T f` against
+`(gelfandLinearIsometryEquiv 𝕜 μ).symm h`. -/
+private theorem integralGelfandBilin_apply (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ) (f : C(K, 𝕜))
+    (h : C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜)) :
+    integralGelfandBilin T f h =
+      ∫ x, T f x * ((Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm h) x ∂μ := by
+  rw [integralGelfandBilin, LinearMap.mk₂_apply, lpPairing_mul_eq_integral]
+
+variable [CompactSpace K]
+
+/-- `integralGelfandBilin T` is bounded on `C(K, 𝕜) × C(characterSpace, 𝕜)` with constant `‖T‖`. -/
+private theorem norm_integralGelfandBilin_le (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ) (f : C(K, 𝕜))
+    (h : C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜)) :
+    ‖integralGelfandBilin T f h‖ ≤ ‖T‖ * ‖f‖ * ‖h‖ := by
+  set g := (Lp.gelfandLinearIsometryEquiv 𝕜 μ).symm h
+  have henorm : ‖integralGelfandBilin T f h‖ₑ ≤ ‖T f‖ₑ * ‖g‖ₑ := by
+    rw [integralGelfandBilin_apply, Lp.eNorm_def, Lp.eNorm_def]
+    exact TauCeti.enorm_integral_mul_le
+  have hreal : ‖integralGelfandBilin T f h‖ ≤ ‖T f‖ * ‖g‖ := by
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top) henorm
+    rwa [ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm, toReal_eNorm] at this
+  calc
+    ‖integralGelfandBilin T f h‖ ≤ ‖T f‖ * ‖g‖ := hreal
+    _ ≤ (‖T‖ * ‖f‖) * ‖h‖ := by
+      rw [LinearIsometryEquiv.norm_map]
+      exact mul_le_mul_of_nonneg_right (T.le_opNorm f) (norm_nonneg h)
+    _ = ‖T‖ * ‖f‖ * ‖h‖ := by ring
+
+/-- Grothendieck's `2`-summing theorem for `T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ` follows from any compact
+bilinear Grothendieck inequality with constant `c ≥ 0` on `C(K, 𝕜) × C(characterSpace, 𝕜)`. -/
+private theorem summingENorm_two_le_ofReal_mul_norm {c : ℝ} (hc0 : 0 ≤ c)
+    (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ)
+    (hc : ∀ (n : ℕ)
+      (B : C(K, 𝕜) →ₗ[𝕜] C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜) →ₗ[𝕜] 𝕜),
+      (∀ f h, ‖B f h‖ ≤ ‖T‖ * ‖f‖ * ‖h‖) →
+      ∀ (f : Fin n → C(K, 𝕜))
+        (h : Fin n → C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜)),
+        (∀ k, ∑ i, ‖f i k‖ ^ 2 ≤ 1) → (∀ y, ∑ i, ‖h i y‖ ^ 2 ≤ 1) →
+        ‖∑ i, B (f i) (h i)‖ ≤ c * ‖T‖) :
+    T.summingENorm 2 ≤ ENNReal.ofReal (c * ‖T‖) := by
+  rw [summingENorm_le_ofReal_iff (mul_nonneg hc0 (norm_nonneg T))]
+  intro n x
+  set w : ℝ := TauCeti.weakLpNorm (𝕜 := 𝕜) 2 x
+  have hw_nonneg : 0 ≤ w := apply_nonneg (TauCeti.weakLpNorm (𝕜 := 𝕜) (ι := Fin n) 2) x
+  rcases hw_nonneg.eq_or_lt with hw0 | hw
+  · have hx0 (i : Fin n) : x i = 0 :=
+      norm_le_zero_iff.1 ((TauCeti.norm_le_weakLpNorm 2 x i).trans hw0.symm.le)
+    have hTx : WithLp.toLp 2 (fun i ↦ T (x i)) = 0 := by
+      ext i
+      simp [hx0 i]
+    simp [hTx, ← hw0]
+  · set f : Fin n → C(K, 𝕜) := ((w⁻¹ : ℝ) : 𝕜) • x
+    have hwf : TauCeti.weakLpNorm (𝕜 := 𝕜) 2 f ≤ 1 := by
+      rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg (inv_nonneg.2 hw.le)]
+      exact (inv_mul_cancel₀ hw.ne').le
+    have hf (k : K) : ∑ i, ‖f i k‖ ^ 2 ≤ 1 :=
+      ContinuousMap.sum_norm_apply_sq_le_one_of_weakLpNorm_two_le_one hwf k
+    obtain ⟨g, hg_ae, hg_int⟩ :=
+      Lp.exists_ae_sum_norm_sq_le_one_sum_integral_mul_eq (fun i ↦ T (f i))
+    set h : Fin n → C(WeakDual.characterSpace ℂ (Lp ℂ ∞ μ), 𝕜) :=
+      fun i ↦ Lp.gelfandLinearIsometryEquiv 𝕜 μ (g i)
+    have hh (y : WeakDual.characterSpace ℂ (Lp ℂ ∞ μ)) : ∑ i, ‖h i y‖ ^ 2 ≤ 1 :=
+      Lp.sum_norm_gelfandLinearIsometryEquiv_sq_le_one hg_ae y
+    have hTf : ‖WithLp.toLp 2 (fun i ↦ T (f i))‖ ≤ c * ‖T‖ := by
+      calc
+        ‖WithLp.toLp 2 (fun i ↦ T (f i))‖ =
+            ‖((‖WithLp.toLp 2 (fun i ↦ T (f i))‖ : ℝ) : 𝕜)‖ := by
+          rw [RCLike.norm_ofReal, abs_norm]
+        _ = ‖∑ i, integralGelfandBilin T (f i) (h i)‖ := by
+          rw [← hg_int]
+          congr 1
+          refine Finset.sum_congr rfl fun i _ ↦ ?_
+          rw [integralGelfandBilin_apply, LinearIsometryEquiv.symm_apply_apply]
+        _ ≤ c * ‖T‖ := hc n (integralGelfandBilin T) (norm_integralGelfandBilin_le T) f h hf hh
+    have hTx : WithLp.toLp 2 (fun i ↦ T (x i)) =
+        ((w : ℝ) : 𝕜) • WithLp.toLp 2 (fun i ↦ T (f i)) := by
+      rw [← WithLp.toLp_smul]
+      congr 1
+      funext i
+      simp only [Pi.smul_apply, f, map_smul, smul_smul, ← RCLike.ofReal_mul,
+        mul_inv_cancel₀ hw.ne', RCLike.ofReal_one, one_smul]
+    calc
+      ‖WithLp.toLp 2 (fun i ↦ T (x i))‖ =
+          w * ‖WithLp.toLp 2 (fun i ↦ T (f i))‖ := by
+        rw [hTx, norm_smul, RCLike.norm_ofReal, abs_of_nonneg hw.le]
+      _ ≤ w * (c * ‖T‖) := mul_le_mul_of_nonneg_left hTf hw.le
+      _ = c * ‖T‖ * w := by ring
+
+/-- **Grothendieck's theorem** for `C(K) → L¹(μ)`. Every bounded operator `T` from `C(K, 𝕜)` on a
+compact space `K` into `L¹(μ)` over an `RCLike` field is absolutely `2`-summing, with
+`π₂(T) ≤ 16 ‖T‖`. Over `ℝ`,
+`ContinuousLinearMap.summingENorm_two_le_ofReal_eight_mul_norm` gives the constant `8`. -/
+theorem summingENorm_two_le_ofReal_sixteen_mul_norm (T : C(K, 𝕜) →L[𝕜] Lp 𝕜 1 μ) :
+    T.summingENorm 2 ≤ ENNReal.ofReal (16 * ‖T‖) :=
+  summingENorm_two_le_ofReal_mul_norm (by norm_num) T
+    fun _ B hB _ _ hf hh ↦ B.norm_sum_apply_apply_le_sixteen_mul (norm_nonneg T) hB hf hh
+
+/-- **Grothendieck's theorem** for `C(K, ℝ) → L¹(μ, ℝ)`. Every bounded real linear operator `T`
+from `C(K, ℝ)` on a compact space `K` into real `L¹(μ)` is absolutely `2`-summing, with
+`π₂(T) ≤ 8 ‖T‖`. -/
+theorem summingENorm_two_le_ofReal_eight_mul_norm (T : C(K, ℝ) →L[ℝ] Lp ℝ 1 μ) :
+    T.summingENorm 2 ≤ ENNReal.ofReal (8 * ‖T‖) :=
+  summingENorm_two_le_ofReal_mul_norm (by norm_num) T fun _ B hB _ _ hf hh ↦ by
+    simpa only [Real.norm_eq_abs] using B.abs_sum_apply_apply_le_eight_mul (norm_nonneg T)
+      (fun f h ↦ by simpa only [Real.norm_eq_abs] using hB f h)
+      (by simpa using hf) (by simpa using hh)
+
+end ContinuousMap
 
 end ContinuousLinearMap

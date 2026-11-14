@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
@@ -63,6 +64,9 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `MeasureTheory.Lp.toDual`: on a σ-finite measure space, the integral pairing is a linear
   isometry `L^q(μ) → L^q'(μ)*`.
 * `MeasureTheory.Lp.toDual_indicatorConstLp`: the value of the pairing at an indicator function.
+* `MeasureTheory.Lp.exists_norm_le_one_integral_mul_eq`,
+  `MeasureTheory.Lp.exists_ae_sum_norm_sq_le_one_sum_integral_mul_eq`: exact norming of elements
+  and finite `ℓ²(L¹)` families in `L¹(μ)` by `L∞(μ)` test functions on any measure space.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
@@ -411,5 +415,100 @@ theorem toDual_indicatorConstLp [SigmaFinite μ] (g : Lp 𝕜 q μ) {s : Set α}
   by_cases hxs : x ∈ s <;> simp [hx, hxs]
 
 end toDual
+
+section NormingByLinfty
+
+/-- Every `v : Lp 𝕜 1 μ` on any measure space is normed by some `u : Lp 𝕜 ∞ μ` of norm at most `1`:
+`∫ x, v x * u x ∂μ = ‖v‖`. -/
+theorem exists_norm_le_one_integral_mul_eq (v : Lp 𝕜 1 μ) :
+    ∃ u : Lp 𝕜 ∞ μ, ‖u‖ ≤ 1 ∧ ∫ x, v x * u x ∂μ = ((‖v‖ : ℝ) : 𝕜) := by
+  have hv_ae := (Lp.aestronglyMeasurable v).ae_eq_mk
+  have hv_sm := (Lp.aestronglyMeasurable v).stronglyMeasurable_mk
+  set v' : α → 𝕜 := (Lp.aestronglyMeasurable v).mk v
+  set u₀ : α → 𝕜 := fun x ↦ ((‖v' x‖⁻¹ : ℝ) : 𝕜) * star (v' x)
+  have hu₀_sm : StronglyMeasurable u₀ :=
+    (RCLike.continuous_ofReal.comp_stronglyMeasurable
+      hv_sm.norm.measurable.inv.stronglyMeasurable).mul
+      (continuous_star.comp_stronglyMeasurable hv_sm)
+  have hu₀_le (x : α) : ‖u₀ x‖ ≤ 1 := by
+    rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (inv_nonneg.2 (norm_nonneg _)), norm_star]
+    exact inv_mul_le_one_of_le₀ le_rfl (norm_nonneg _)
+  have hu_mem : MemLp u₀ ∞ μ :=
+    memLp_top_of_bound hu₀_sm.aestronglyMeasurable 1 (Filter.Eventually.of_forall hu₀_le)
+  refine ⟨hu_mem.toLp u₀, Lp.norm_top_le_of_ae_bound zero_le_one ?_, ?_⟩
+  · filter_upwards [hu_mem.coeFn_toLp] with x hx
+    rw [hx]
+    exact hu₀_le x
+  · have hvu : (fun x ↦ v x * (hu_mem.toLp u₀) x) =ᵐ[μ] fun x ↦ ((‖v x‖ : ℝ) : 𝕜) := by
+      filter_upwards [hv_ae, hu_mem.coeFn_toLp] with x hvx hux
+      rw [hvx, hux]
+      dsimp only [u₀]
+      rcases eq_or_ne (v' x) 0 with h0 | h0
+      · simp [h0]
+      · have hn0 : ‖v' x‖ ≠ 0 := norm_ne_zero_iff.2 h0
+        calc
+          v' x * (((‖v' x‖⁻¹ : ℝ) : 𝕜) * star (v' x)) =
+              ((‖v' x‖⁻¹ : ℝ) : 𝕜) * (v' x * starRingEnd 𝕜 (v' x)) := by
+            rw [starRingEnd_apply]
+            ring
+          _ = ((‖v' x‖⁻¹ : ℝ) : 𝕜) * ((‖v' x‖ ^ 2 : ℝ) : 𝕜) := by
+            rw [RCLike.mul_conj, RCLike.ofReal_pow]
+          _ = ((‖v' x‖ : ℝ) : 𝕜) := by
+            push_cast
+            field_simp [RCLike.ofReal_ne_zero.2 hn0]
+    rw [integral_congr_ae hvu, integral_ofReal, L1.norm_eq_integral_norm]
+
+/-- Every finite family `y : ι → Lp 𝕜 1 μ` on any measure space is normed in `ℓ²(L¹)` by a family
+`g : ι → Lp 𝕜 ∞ μ` with `∑ i, ‖g i x‖ ^ 2 ≤ 1` almost everywhere:
+`∑ i, ∫ x, y i x * g i x ∂μ = ‖WithLp.toLp 2 y‖`. -/
+theorem exists_ae_sum_norm_sq_le_one_sum_integral_mul_eq {ι : Type*} [Fintype ι]
+    (y : ι → Lp 𝕜 1 μ) :
+    ∃ g : ι → Lp 𝕜 ∞ μ, (∀ᵐ x ∂μ, ∑ i, ‖g i x‖ ^ 2 ≤ 1) ∧
+      ∑ i, ∫ x, y i x * g i x ∂μ = ((‖WithLp.toLp 2 y‖ : ℝ) : 𝕜) := by
+  set N : ℝ := ‖WithLp.toLp 2 y‖
+  rcases (norm_nonneg (WithLp.toLp 2 y)).eq_or_lt with hN0 | hN
+  · refine ⟨0, ?_, ?_⟩
+    · filter_upwards [Lp.coeFn_zero 𝕜 ∞ μ] with x hx
+      simp only [Pi.zero_apply]
+      rw [hx]
+      simp
+    · simp only [Pi.zero_apply, ← ContinuousLinearMap.lpPairing_mul_eq_integral (𝕜 := 𝕜),
+        map_zero, Finset.sum_const_zero, N, ← hN0]
+  · choose u hu_norm hu_int using fun i ↦ exists_norm_le_one_integral_mul_eq (y i)
+    have hu_le (i : ι) : ∀ᵐ x ∂μ, ‖u i x‖ ≤ 1 :=
+      (Lp.ae_norm_le_norm_top (u i)).mono fun _ hx ↦ hx.trans (hu_norm i)
+    set g : ι → Lp 𝕜 ∞ μ := fun i ↦ ((‖y i‖ / N : ℝ) : 𝕜) • u i
+    have hN_sq : N ^ 2 = ∑ i, ‖y i‖ ^ 2 :=
+      PiLp.norm_sq_eq_of_L2 (fun _ : ι ↦ Lp 𝕜 1 μ) (WithLp.toLp 2 y)
+    refine ⟨g, ?_, ?_⟩
+    · filter_upwards [Filter.eventually_all.mpr fun i ↦
+          Lp.coeFn_smul (((‖y i‖ / N : ℝ) : 𝕜)) (u i),
+        Filter.eventually_all.mpr hu_le] with x hsmul hle
+      calc
+        ∑ i, ‖g i x‖ ^ 2 ≤ ∑ i, (‖y i‖ / N) ^ 2 := by
+          refine Finset.sum_le_sum fun i _ ↦ ?_
+          have hgi : ‖g i x‖ ≤ ‖y i‖ / N := by
+            rw [hsmul i, Pi.smul_apply, norm_smul, RCLike.norm_ofReal,
+              abs_of_nonneg (div_nonneg (norm_nonneg _) hN.le)]
+            exact mul_le_of_le_one_right (div_nonneg (norm_nonneg _) hN.le) (hle i)
+          exact sq_le_sq'
+            ((neg_nonpos.2 (div_nonneg (norm_nonneg _) hN.le)).trans (norm_nonneg _)) hgi
+        _ = (∑ i, ‖y i‖ ^ 2) / N ^ 2 := by
+          simp_rw [div_pow]
+          rw [← Finset.sum_div]
+        _ = 1 := by rw [← hN_sq, div_self (pow_ne_zero 2 hN.ne')]
+    · have hterm (i : ι) :
+          ∫ x, y i x * g i x ∂μ = ((‖y i‖ ^ 2 / N : ℝ) : 𝕜) := by
+        rw [← ContinuousLinearMap.lpPairing_mul_eq_integral (𝕜 := 𝕜), map_smul,
+          ContinuousLinearMap.lpPairing_mul_eq_integral (𝕜 := 𝕜), hu_int i, smul_eq_mul,
+          ← RCLike.ofReal_mul]
+        congr 1
+        ring
+      simp_rw [hterm]
+      rw [← RCLike.ofReal_sum, ← Finset.sum_div, ← hN_sq]
+      congr 1
+      field_simp [hN.ne']
+
+end NormingByLinfty
 
 end MeasureTheory.Lp
