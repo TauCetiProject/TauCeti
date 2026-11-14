@@ -17,6 +17,8 @@ This file collects the rearrangements of such powers that these arguments need.
 * A power of `r` is a power of `r / R` times a power of `R`. So a bound `c R^a ≤ M` on a
   dimensionless constant gives `r^{2a} c² ≤ (r / R)^{2a} M²`, and a bound `c² R^{d+2a} ≤ V` gives
   `r^{2a} c² r^d ≤ V (r / R)^{d+2a}`.
+* For `b ≤ a`, such a quantity also decays like `(r / R)^{d+2b}`, with the constant
+  `(R^{a-b} c)² R^{d+2b}`.
 * A power `(r / R)^γ` of the ratio splits as `R^{-γ} r^γ`, and shrinking the outer radius by a
   factor `θ` multiplies it by `θ^{-γ}`.
 * A constant of the form `(R^{d/2+a} Q)²`, which is the natural scale of an `L²` quantity on a
@@ -47,6 +49,21 @@ theorem rpow_mul_mul_rpow_le {r R c V a d : ℝ} (hr : 0 < r) (hR : 0 < R)
     field_simp
   rw [h1, mul_comm V]
   gcongr
+
+/-- `r^{2a} c² r^d ≤ (R^{a-b} c)² R^{d+2b} (r / R)^{d+2b}` for `0 < r ≤ R` and `b ≤ a`: a quantity
+of order `r^{d+2a}` decays at least with the smaller exponent `d + 2b`, at the cost of the
+dimensionless factor `R^{a-b}`. -/
+theorem rpow_mul_mul_rpow_le_mul_rpow_of_le {r R c a b d : ℝ} (hr : 0 < r) (hrR : r ≤ R)
+    (hba : b ≤ a) :
+    r ^ (2 * a) * (c ^ 2 * r ^ d) ≤
+      (R ^ (a - b) * c) ^ 2 * R ^ (d + 2 * b) * (r / R) ^ (d + 2 * b) := by
+  have hR : 0 < R := hr.trans_le hrR
+  have hc : (R ^ (a - b) * c) ^ 2 * R ^ (d + 2 * b) = c ^ 2 * R ^ (d + 2 * a) := by
+    rw [mul_pow, ← rpow_mul_natCast hR.le, mul_right_comm, ← rpow_add hR]
+    ring_nf
+  rw [hc]
+  refine (rpow_mul_mul_rpow_le hr hR le_rfl).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  exact rpow_le_rpow_of_exponent_ge (div_pos hr hR) (div_le_one_of_le₀ hrR hR.le) (by linarith)
 
 /-- `(r / R)^γ = R^{-γ} r^γ`. -/
 theorem div_rpow_eq_rpow_neg_mul_rpow {r R γ : ℝ} (hr : 0 ≤ r) (hR : 0 < R) :
