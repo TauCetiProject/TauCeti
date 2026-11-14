@@ -88,7 +88,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
   valuation.
 * `Padic.valuation_p_pow_mul_intCast`: the valuation of `p ^ n m`, for an integer `m` prime to
   `p`, is `n`.
-* `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a positive integer `m` is at least
+* `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
@@ -292,8 +292,8 @@ theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
 
 /-- **A family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
 `v : ι → ℤ_p` with `ι` nonempty there are an index `i₀`, a scalar `q` and a family `w`
-with `w i₀ = 1` and `v = q • w`. One may take `i₀` of maximal norm (minimal valuation) and
-`q = v i₀`, which then divides every coordinate. -/
+with `w i₀ = 1` and `v = q • w`. One may take `i₀` of maximal norm (minimal valuation among the
+nonzero `v i`) and `q = v i₀`, which then divides every coordinate. -/
 theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Nonempty ι] (v : ι → ℤ_[p]) :
     ∃ (i₀ : ι) (q : ℤ_[p]) (w : ι → ℤ_[p]), w i₀ = 1 ∧ v = q • w := by
   classical
@@ -381,7 +381,8 @@ theorem valuation_p_pow_mul_intCast (n : ℕ) {m : ℤ} (hm : ¬(p : ℤ) ∣ m)
   rwa [Padic.valuation_intCast, padicValInt.eq_zero_of_not_dvd hm, Nat.cast_zero, add_zero,
     zpow_natCast] at h
 
-/-- The `p`-adic norm of a positive integer `m` is at least `1 / m`. -/
+/-- The `p`-adic norm of a natural number `m` is at least `1 / m`. For `m = 0` both sides are `0`
+by the convention `0⁻¹ = 0`. -/
 theorem inv_natCast_le_norm_natCast (m : ℕ) : (m : ℝ)⁻¹ ≤ ‖(m : ℚ_[p])‖ := by
   rcases eq_or_ne m 0 with rfl | hm
   · simp
