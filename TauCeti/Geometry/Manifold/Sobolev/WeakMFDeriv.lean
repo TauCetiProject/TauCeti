@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.MeasureTheory.OuterMeasure.Basic
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -51,9 +52,10 @@ constrains it almost everywhere in holomorphic charts over `s`.
   everywhere on the part of the target of every holomorphic chart over `s`;
   `TauCeti.HasWeakMFDerivOn.congr_ae_deriv`: a family of tangent maps agreeing almost everywhere
   with a weak differential is one.
-* `ContMDiffOn.hasWeakMFDerivOn_mfderiv`: for a `C¹` map, `mfderiv` is a weak differential, so
-  every weak differential agrees with `mfderiv` almost everywhere on the part of the target of
-  every holomorphic chart over `s` (`TauCeti.HasWeakMFDerivOn.ae_eq_mfderiv`).
+* `ContMDiffOn.hasWeakMFDerivOn_mfderiv`: for a `C¹` map on an open set `s` (with `F` complete),
+  `mfderiv` is a weak differential, so every weak differential agrees with `mfderiv` almost
+  everywhere on the part of the target of every holomorphic chart over `s`
+  (`TauCeti.HasWeakMFDerivOn.ae_eq_mfderiv`, for `IsManifold I ∞ M`).
 * `TauCeti.hasWeakMFDerivOn_conj`: the weak differential of `conj : ℂ → ℂ` is the constant
   conjugation map, which is `mfderiv` and is not complex linear.
 
@@ -250,7 +252,7 @@ theorem HasWeakMFDerivOn.ae_eq [IsManifold I ∞ M] (h : HasWeakMFDerivOn I p u 
   set ψ := chartAt H (u (φ.symm z))
   have hψ : ψ ∈ IsManifold.maximalAtlas I ∞ M := IsManifold.chart_mem_maximalAtlas _
   have hV : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-    φ.isOpen_inter_preimage_symm (h.continuousOn.isOpen_inter_preimage hs ψ.open_source)
+    φ.isOpen_inter_preimage_symm_inter_preimage h.continuousOn hs ψ.open_source
   have hzV : z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source) :=
     ⟨hzt, hzs, mem_chart_source H _⟩
   refine ⟨_, inter_mem_nhdsWithin _ (hV.mem_nhds hzV), ?_⟩
@@ -309,7 +311,7 @@ theorem _root_.ContMDiffOn.hasWeakMFDerivOn_mfderiv {n : ℕ∞ω} (hu : ContMDi
   refine ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ ?_⟩
   set V := φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)
   have hV : IsOpen V :=
-    φ.isOpen_inter_preimage_symm (hu.continuousOn.isOpen_inter_preimage hs ψ.open_source)
+    φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs ψ.open_source
   have hφ' : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 X :=
     IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero hφ
   have hψ' : ψ ∈ IsManifold.maximalAtlas I 1 M :=
@@ -358,14 +360,14 @@ theorem HasWeakMFDerivOn.ae_eq_mfderiv [IsManifold I ∞ M] {n : ℕ∞ω}
 
 /-- **The weak differential of `conj z`.** For `X = M = ℂ`, the constant conjugation map is a weak
 differential of `conj : ℂ → ℂ` for every exponent. It is the manifold derivative
-(`ContinuousLinearEquiv.mfderiv_eq`), and it sends `I` to `-I` (`Complex.conj_I`), so it is not
-complex linear and is not determined by its complex antilinear part alone. -/
+(`ContinuousLinearEquiv.mfderiv_eq`), and it sends `I` to `-I` (`Complex.conj_I`): it is complex
+antilinear, so it is not complex linear. -/
 theorem hasWeakMFDerivOn_conj :
     HasWeakMFDerivOn 𝓘(ℝ, ℂ) p (fun w : ℂ ↦ (starRingEnd ℂ) w)
       (fun _ ↦ (Complex.conjCLE : ℂ →L[ℝ] ℂ)) univ := by
   have h := Complex.conjCLE.contDiff.contMDiff.hasWeakMFDerivOn_mfderiv (p := p) one_ne_zero
   simp only [ContinuousLinearEquiv.mfderiv_eq] at h
-  -- `⇑Complex.conjCLE` is `fun w ↦ conj w` by definition.
-  exact h
+  rwa [show ⇑Complex.conjCLE = fun w : ℂ ↦ (starRingEnd ℂ) w from funext Complex.conjCLE_apply]
+    at h
 
 end TauCeti
