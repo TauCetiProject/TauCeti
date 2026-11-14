@@ -177,7 +177,7 @@ attribute [local instance] Polynomial.algebra in
 theorem weightReesAevalLift_C
     {A : Subalgebra R (MvPolynomial σ R)} {w : σ → ℕ} {c : ι → MvPolynomial σ R} {d : ι → ℕ}
     (hcA : ∀ i, c i ∈ A) (hc : ∀ i, c i ∈ weightFiltration R w (d i))
-    (p : MvPolynomial ι R) :
+    {p : MvPolynomial ι R} :
     letI := coeffSubalgebra.algebra (A.weightFiltration w) (A.one_mem_weightFiltration_one w)
     weightReesAevalLift hcA hc (Polynomial.C p) =
       aeval (fun i ↦ coeffSubalgebra.monomial (A.weightFiltration w) (d i) ⟨c i, hcA i⟩
