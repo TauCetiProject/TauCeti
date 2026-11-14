@@ -10,8 +10,11 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.FiniteFibre
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
+import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
+import Mathlib.RingTheory.Flat.Rank
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Support
+import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Integral.Basic
 
@@ -26,7 +29,9 @@ words `Spa(B, B⁺)` is the full preimage of `Spa(A, A⁺)` in `Spv B`. Combined
 points of valuation spectra along primes lying over their supports
 (`TauCeti.ValuationSpectrum.exists_supp_eq_comap_eq`), it follows that
 `Spa(B, B⁺) → Spa(A, A⁺)` hits every point whose support is the contraction of a prime of `B`. In
-particular it is surjective when `B` is faithfully flat over `A`, which is the surjectivity clause
+particular, for a finite étale morphism of Huber pairs over a Tate ring, the image of `Spa(B, B⁺)`
+in `Spa(A, A⁺)` is cut out by the nonvanishing of an idempotent of `A` and is therefore clopen, and
+the map is surjective when `B` is faithfully flat over `A`, which is the surjectivity clause
 of the Huber pair of a finite étale algebra. Over a complete Hausdorff Tate ring every maximal
 ideal of `A` is the support of a point of `Spa(A, A⁺)`
 (`TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_of_isMaximal`), so for a flat (for example
@@ -57,6 +62,9 @@ is the fibre bound for valuation spectra along finite flat ring maps
   automorphisms of `B` act on `Spa(B, B⁺)`.
 * `TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_comap_eq`: a point of `Spa(A, A⁺)` lifts to
   `Spa(B, B⁺)` with any prescribed support lying over its own.
+* `TauCeti.Huber.Pair.Hom.IsFiniteEtale.exists_isIdempotentElem_range_spaComap` and
+  `TauCeti.Huber.Pair.Hom.IsFiniteEtale.isClopen_range_spaComap`: the image on adic spectra of a
+  finite étale morphism of Huber pairs over a Tate ring is cut out by an idempotent and is clopen.
 * `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap`: a faithfully flat finite étale
   morphism of Huber pairs over a Tate ring is surjective on adic spectra.
 * `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap_iff`: over a complete Hausdorff Tate
@@ -187,6 +195,48 @@ theorem IsFiniteEtale.surjective_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale
   obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
     (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
   exact ⟨⟨w, hφ.plus_eq ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
+
+/-- **The image on adic spectra of a finite étale morphism is cut out by an idempotent.** For a
+finite étale morphism `φ : (A, A⁺) → (B, B⁺)` over a Tate ring `A`, there is an idempotent `e : A`
+such that `Set.range φ.spaComap` consists of the points `x ∈ Spa(A, A⁺)` with `e ∉ supp x`. -/
+theorem IsFiniteEtale.exists_isIdempotentElem_range_spaComap {φ : Hom S T}
+    (hφ : φ.IsFiniteEtale) :
+    ∃ e : A, IsIdempotentElem e ∧ Set.range φ.spaComap = {x : spa S.plus | e ∉ x.1.supp} := by
+  let _ : Algebra A B := φ.toRingHom.toAlgebra
+  have : Module.Finite A B := hφ.finite
+  have : Algebra.Etale A B := hφ.etale
+  have : IsModuleTopology A B := hφ.isModuleTopology
+  have : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
+  obtain ⟨e, he, hbasic⟩ :=
+    Module.exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage (R := A) B {n | 0 < n}
+  refine ⟨e, he, Set.ext fun x ↦ ?_⟩
+  have hmem : e ∉ x.1.supp ↔ suppFun x.1 ∈ Set.range (PrimeSpectrum.comap (algebraMap A B)) := by
+    have hx := Set.ext_iff.mp hbasic (suppFun x.1)
+    rwa [SetLike.mem_coe, PrimeSpectrum.mem_basicOpen, suppFun_asIdeal, Set.mem_preimage,
+      Set.mem_ofPred, PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap] at hx
+  refine ⟨?_, ?_⟩
+  · rintro ⟨y, rfl⟩
+    refine Set.mem_ofPred.mpr (hmem.mpr ⟨suppFun y.1, ?_⟩)
+    rw [spaComap_val]
+    exact (suppFun_comap (algebraMap A B) y.1).symm
+  · intro hx
+    obtain ⟨q, hq⟩ := hmem.mp (Set.mem_ofPred.mp hx)
+    obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
+      (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
+    exact ⟨⟨w, hφ.plus_eq ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
+
+/-- **The image on adic spectra of a finite étale morphism over a Tate ring is clopen.** -/
+theorem IsFiniteEtale.isClopen_range_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale) :
+    IsClopen (Set.range φ.spaComap) := by
+  obtain ⟨e, he, hrange⟩ := hφ.exists_isIdempotentElem_range_spaComap
+  have hpre : {x : spa S.plus | e ∉ x.1.supp} =
+      (fun x : spa S.plus ↦ suppFun x.1) ⁻¹'
+        (PrimeSpectrum.basicOpen e : Set (PrimeSpectrum A)) := by
+    ext x
+    simp
+  rw [hrange, hpre]
+  exact (PrimeSpectrum.isClopen_iff.mpr ⟨e, he, rfl⟩).preimage
+    (continuous_suppFun.comp continuous_subtype_val)
 
 section Complete
 
