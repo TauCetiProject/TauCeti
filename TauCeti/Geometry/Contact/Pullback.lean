@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Pullback of contact forms

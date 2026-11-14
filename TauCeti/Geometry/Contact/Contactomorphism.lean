@@ -8,10 +8,6 @@ module
 public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Contact.Transition
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Contactomorphisms

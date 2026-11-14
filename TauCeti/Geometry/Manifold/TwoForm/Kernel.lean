@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.Foliation.Basic
-import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.Kernel
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField

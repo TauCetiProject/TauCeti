@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Basic
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
-import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Topology.Algebra.Module.Contact
 

@@ -130,18 +130,18 @@ theorem mpullback_symm_mpullback (φ : PartialDiffeomorph I I' M M' n) (hn : n �
     mpullback I' I φ.symm (mpullback I I' φ ω) y = ω y :=
   φ.symm.mpullback_mpullback_symm hn ω hy
 
-/-- Pulling a rough form back within an open set `B` along `φ.symm` and then pulling back along
-`φ` at `x ∈ φ.source` with `φ x ∈ B` recovers the form at `x`. No inclusion `B ⊆ φ.target` is
-needed since `φ x ∈ φ.target` holds automatically for `x ∈ φ.source`. -/
+/-- Pulling a rough form back within `B` along `φ.symm` and then pulling back along `φ` at
+`x ∈ φ.source` recovers the form at `x` whenever `B` has unique differentials at `φ x`. No
+inclusion `B ⊆ φ.target` is needed since `φ x ∈ φ.target` holds automatically for `x ∈ φ.source`. -/
 theorem mpullback_mpullbackWithin_symm (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
-    {B : Set M'} (hB : IsOpen B) (ω : RoughForm I M V k) {x : M} (hx : x ∈ φ.source)
-    (hφx : φ x ∈ B) :
+    {B : Set M'} {x : M} (hB : UniqueMDiffWithinAt I' B (φ x)) (ω : RoughForm I M V k)
+    (hx : x ∈ φ.source) :
     mpullback I I' φ (mpullbackWithin I' I φ.symm B ω) x = ω x := by
   have hB_eq : mpullback I I' φ (mpullbackWithin I' I φ.symm B ω) x =
       mpullback I I' φ (mpullback I' I φ.symm ω) x := by
     ext v
-    simp only [mpullback_apply, mpullbackWithin_eq_mpullback (hB.uniqueMDiffWithinAt hφx)
-      (φ.symm.mdifferentiableAt hn (φ.map_source hx)) ω]
+    simp only [mpullback_apply,
+      mpullbackWithin_eq_mpullback hB (φ.symm.mdifferentiableAt hn (φ.map_source hx)) ω]
   rw [hB_eq, φ.mpullback_mpullback_symm hn ω hx]
 
 end PartialDiffeomorph
