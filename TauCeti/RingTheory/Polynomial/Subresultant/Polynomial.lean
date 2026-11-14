@@ -119,6 +119,17 @@ theorem subresultantCoeffMatrix_congr_left [Semiring R] {p p' q : R[X]} {m n j k
     simp only [subresultantCoeffMatrix_natAdd]
     split_ifs <;> first | rfl | exact h _ (by omega)
 
+/-- The coefficient matrix reads only the coefficients of the right input up to its formal bound. -/
+theorem subresultantCoeffMatrix_congr_right [Semiring R] {p q q' : R[X]} {m n j k : ℕ}
+    (h : ∀ i ≤ n, q.coeff i = q'.coeff i) :
+    subresultantCoeffMatrix p q m n j k = subresultantCoeffMatrix p q' m n j k := by
+  ext i l
+  induction l using Fin.addCases with
+  | left l =>
+    simp only [subresultantCoeffMatrix_castAdd]
+    split_ifs <;> first | rfl | exact h _ (by omega)
+  | right l => simp
+
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
 theorem subresultantCoeffMatrix_eq_updateRow [Semiring R]
