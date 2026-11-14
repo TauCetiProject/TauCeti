@@ -19,8 +19,9 @@ computations on finite lists of integers; multiplication convolves coefficient l
 `TauCeti.Polynomial.mulCoeffList` and then applies the computable cyclotomic reduction from
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Computable`.
 
-The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and integer scalar
-multiplication scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`).
+The coefficient accessor is additive (`TauCeti.Cyclotomic.coeffAddHom`), and multiplying by an
+integer cast scales each coordinate (`TauCeti.Cyclotomic.coeff_intCast_mul`, and
+`TauCeti.Cyclotomic.coeff_zsmul` for the scalar form).
 
 The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`.  For nonzero `e`,
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
