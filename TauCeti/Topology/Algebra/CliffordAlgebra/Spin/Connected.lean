@@ -148,8 +148,8 @@ theorem not_pathConnectedSpace_spinGroup_of_finrank_eq_one {K V : Type*} [Field 
   have : Finite (spinGroup Q) := .of_equiv _ e.toEquiv
   have : DiscreteTopology (spinGroup Q) := Finite.instDiscreteTopology
   -- A connected discrete space has at most one point, but `e` is injective on two points.
-  have h := PreconnectedSpace.constant inferInstance (continuous_id (X := spinGroup Q))
-    (x := e 1) (y := e (Multiplicative.ofAdd 1))
+  have h := (continuous_id (X := spinGroup Q)).isConst_of_preconnectedSpace (e 1)
+    (e (Multiplicative.ofAdd 1))
   exact absurd (e.injective h) (by decide)
 
 /-- **Path-connectedness of complex Spin groups**: the Spin group of a nondegenerate quadratic

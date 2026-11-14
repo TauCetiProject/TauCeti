@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 public import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Operator.Norming
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.Analysis.Normed.Module.Mazur
+import TauCeti.Analysis.LocallyConvex.Mazur
 
 /-!
 # The Eberlein–Šmulian theorem
@@ -71,7 +71,7 @@ theorem exists_seq_inclusionInDoubleDualWeak_eq_of_mem_closure {K : Set E}
       isOpen_lt ((WeakDual.eval_continuous f).sub continuous_const).norm continuous_const
     have hφU : φ ∈ U := by
       simp only [U, mem_iInter, mem_ofPred_eq, sub_self, norm_zero]
-      intro f hf
+      intro f _
       positivity
     obtain ⟨_, hxU, ⟨_, ⟨x, hx, rfl⟩, rfl⟩⟩ :=
       mem_closure_iff.mp hφ U hU hφU
@@ -157,7 +157,7 @@ theorem isCompact_toWeakSpace_iff_isSeqCompact {K : Set E} :
       StrictMono σ ∧
         Tendsto (fun n ↦ toWeakSpace 𝕜 E (u (σ n))) atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
     intro u hu
-    obtain ⟨_, ⟨x, hx, rfl⟩, σ, hσ, hlim⟩ :=
+    obtain ⟨_, ⟨x, _, rfl⟩, σ, hσ, hlim⟩ :=
       hK (fun n ↦ mem_image_of_mem (toWeakSpace 𝕜 E) (hu n))
     exact ⟨x, σ, hσ, hlim⟩
   have hclosed : IsClosed (toWeakSpace 𝕜 E '' K) := by

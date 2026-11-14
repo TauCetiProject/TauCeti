@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # `n`-connected maps
@@ -37,6 +40,8 @@ composing on either side with a weak homotopy equivalence neither creates nor de
   equivalence exactly when it is `n`-connected for every `n`.
 * `ContinuousMap.IsNConnected.of_homotopic`, `ContinuousMap.IsNConnected.comp`: invariance under
   homotopy and closure under composition.
+* `ContinuousMap.IsNConnected.simplyConnectedSpace_iff`: a `2`-connected map relates simply
+  connected spaces only to simply connected spaces.
 * `ContinuousMap.IsWeakHomotopyEquivalence.isNConnected_iff_of_comp_eq`: in a square
   `g ∘ i = j ∘ f` with `f` and `g` weak homotopy equivalences, `i` and `j` have the same
   connectivity.
@@ -120,6 +125,39 @@ theorem comp (hg : g.IsNConnected n) (hf : f.IsNConnected n) : (g.comp f).IsNCon
   surjective k hk x :=
     HomotopyGroup.map_comp_map g rfl f rfl ▸
       (hg.surjective k hk (f x)).comp (hf.surjective k hk x)
+
+/-- **Simple connectivity is invariant under `2`-connected maps.** If `f : X → Y` is `n`-connected
+with `2 ≤ n`, then `X` is simply connected exactly when `Y` is: `f` is bijective on path
+components and on fundamental groups. -/
+theorem simplyConnectedSpace_iff (hf : f.IsNConnected n) (hn : 2 ≤ n) :
+    SimplyConnectedSpace X ↔ SimplyConnectedSpace Y := by
+  -- `π_0` and `π_1` are read through path-connectedness and the fundamental group.
+  constructor
+  · intro _
+    obtain ⟨x⟩ := (inferInstance : Nonempty X)
+    have : Subsingleton (π_ 0 X x) :=
+      (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
+    have : Subsingleton (π_ 1 X x) := HomotopyGroup.pi1EquivFundamentalGroup.subsingleton
+    have : PathConnectedSpace Y :=
+      (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (f x)).2
+        (hf.surjective 0 (by omega) x).subsingleton
+    have : Subsingleton (FundamentalGroup Y (f x)) :=
+      HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.1
+        (hf.surjective 1 (by omega) x).subsingleton
+    exact TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup (f x)
+  · intro _
+    obtain ⟨y⟩ := (inferInstance : Nonempty Y)
+    obtain ⟨x, -⟩ := hf.exists_joined y
+    have : Subsingleton (π_ 0 Y (f x)) :=
+      (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (f x)).1 inferInstance
+    have : Subsingleton (π_ 1 Y (f x)) := HomotopyGroup.pi1EquivFundamentalGroup.subsingleton
+    have : PathConnectedSpace X :=
+      (TauCeti.pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).2
+        (hf.injective 0 (by omega) x).subsingleton
+    have : Subsingleton (FundamentalGroup X x) :=
+      HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.1
+        (hf.injective 1 (by omega) x).subsingleton
+    exact TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup x
 
 end IsNConnected
 

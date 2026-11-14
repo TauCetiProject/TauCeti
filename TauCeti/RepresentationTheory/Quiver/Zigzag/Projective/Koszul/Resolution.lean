@@ -127,7 +127,7 @@ private theorem restrictScalars_termEquiv_symm_symm_apply (v : V) (n : ℕ)
 degree `p` when it takes values in degree `p - n` of the vertex projectives, so that `K_n` is the
 direct sum of the shifted projectives `Z e_u{n}` tensored with the dual corners. -/
 noncomputable def zigzagKoszulTermGrading (v : V) (n : ℕ) :
-    InternalGrading k (ZigzagKoszulTerm k G v n) :=
+    InternalGrading k (ZigzagKoszulTerm k G v n) ℤ :=
   (InternalGrading.directSum fun s : TermIndex k G v n =>
     (zigzagGradedProjective k G s.1).grading.shift (-n)).map
     ((termEquiv k G v n).symm.restrictScalars k)

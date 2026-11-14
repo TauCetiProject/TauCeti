@@ -88,7 +88,7 @@ theorem pullback_mk (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : g a = 
 @[simp]
 theorem pullback_id (φ : meromorphicGerms 𝕜 a) :
     pullback (b := a) id analyticAt_id rfl tendsto_id φ = φ := by
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
   apply Subtype.ext
   rw [coe_pullback, ← hφ, Germ.coe_compTendsto]
   rfl
@@ -100,7 +100,7 @@ theorem pullback_congr {g g' : 𝕜 → 𝕜} (hg : AnalyticAt 𝕜 g a)
     (h : g =ᶠ[𝓝[≠] a] g') : pullback g hg hga ht = pullback g' hg' hg'a ht' := by
   apply RingHom.ext
   intro φ
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
   apply Subtype.ext
   simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
   exact Germ.coe_eq.mpr (h.fun_comp f)
@@ -112,7 +112,7 @@ theorem pullback_pullback (g : 𝕜 → 𝕜) (hg : AnalyticAt 𝕜 g a) (hga : 
     (hhb : h b = c) (hu : Tendsto h (𝓝[≠] b) (𝓝[≠] c)) (φ : meromorphicGerms 𝕜 c) :
     pullback g hg hga ht (pullback h hh hhb hu φ) =
       pullback (h ∘ g) (hh.comp_of_eq hg hga) (by simp [hga, hhb]) (hu.comp ht) φ := by
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+  obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
   apply Subtype.ext
   simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
   rfl
@@ -136,14 +136,14 @@ def meromorphicGermsEquiv (e : OpenPartialHomeomorph 𝕜 𝕜) (ha : a ∈ e.so
   invFun := pullback e.symm he' (e.left_inv ha)
     (by simpa only [e.left_inv ha] using e.symm.tendsto_nhdsNE (e.map_source ha))
   left_inv φ := by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
     apply Subtype.ext
     simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
     apply Germ.coe_eq.mpr
     filter_upwards [nhdsWithin_le_nhds (e.open_target.mem_nhds (e.map_source ha))] with z hz
     exact congrArg f (e.right_inv hz)
   right_inv φ := by
-    obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
+    obtain ⟨f, _, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
     apply Subtype.ext
     simp only [coe_pullback, ← hφ, Germ.coe_compTendsto]
     apply Germ.coe_eq.mpr

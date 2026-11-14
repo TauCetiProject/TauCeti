@@ -25,6 +25,10 @@ that agree at every `c : R` have the same coefficients below that length
 (`TauCeti.eq_of_forall_sum_range_pow_smul_eq`). Neither hypothesis can be dropped. Over the
 finite field `𝔽₂` the functions `c ↦ c` and `c ↦ c ^ 2` agree. In the `ℤ`-module `ℤ/2`, which
 has torsion, `c ↦ c • 1` and `c ↦ c ^ 2 • 1` agree.
+Over an arbitrary commutative ring the values still determine the coefficients up to the
+Vandermonde determinant of the evaluation points, by Cramer's rule
+(`TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul`). For instance, if the points and the values
+lie in a subring `S`, then the determinant times each coefficient lies in `S`.
 
 *Producing the coefficients.* Conversely, let `K` be a commutative semiring and `f c` a family
 of `K`-linear maps between modules with finite bases. If every matrix entry of `f c` against
@@ -37,6 +41,9 @@ functions is expanded along a one-parameter subgroup and its terms then identifi
 
 ## Main results
 
+* `TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul`: over any commutative ring, the
+  Vandermonde determinant of `d` points times a coefficient of a power sum of length `d` is a
+  linear combination of the values of the power sum at the points.
 * `TauCeti.eq_zero_of_forall_sum_range_pow_smul_eq_zero`: the coefficients below `d` of an
   identically vanishing power sum `∑ m < d, c ^ m • u m` are zero.
 * `TauCeti.eq_of_forall_sum_range_pow_smul_eq`: two power sums of length `d` agreeing at every
@@ -55,7 +62,24 @@ namespace TauCeti
 
 section Coefficients
 
-variable {R : Type u} [CommRing R] [IsDomain R] [Infinite R] {M : Type v} [AddCommGroup M]
+/-- **Cramer's rule for power sums.** Over any commutative ring, the Vandermonde determinant of
+`d` points `x i` times a coefficient `u m` of a power sum `c ↦ ∑ k < d, c ^ k • u k` is a fixed
+linear combination of the values of the power sum at the points, with coefficients the entries of
+the adjugate of the Vandermonde matrix. -/
+theorem det_vandermonde_smul_eq_sum_adjugate_smul {R : Type u} [CommRing R] {M : Type v}
+    [AddCommMonoid M] [Module R M] {d : ℕ} (x : Fin d → R) (u : ℕ → M) (m : Fin d) :
+    (Matrix.vandermonde x).det • u m = ∑ i, (Matrix.vandermonde x).adjugate m i •
+      ∑ k ∈ Finset.range d, x i ^ k • u k := by
+  set V := Matrix.vandermonde x
+  have hdet : V.det • u m = ∑ k, (V.adjugate * V) m k • u k := by
+    simp [Matrix.adjugate_mul, Matrix.one_apply, ite_smul]
+  rw [hdet]
+  simp_rw [Matrix.mul_apply, Finset.sum_smul, mul_smul, ← Fin.sum_univ_eq_sum_range
+    (fun k ↦ x _ ^ k • u k), Finset.smul_sum]
+  rw [Finset.sum_comm]
+  simp [V, Matrix.vandermonde_apply]
+
+variable {R : Type u} [CommRing R] [IsDomain R] [Infinite R] {M : Type v} [AddCommMonoid M]
   [Module R M] [Module.IsTorsionFree R M]
 
 /-- **A power sum with vector coefficients that vanishes identically has zero coefficients.**
@@ -63,20 +87,13 @@ Let `R` be an infinite integral domain and `M` a torsion-free `R`-module. If
 `∑ m < d, c ^ m • u m = 0` for every `c : R`, then `u m = 0` for every `m < d`. -/
 theorem eq_zero_of_forall_sum_range_pow_smul_eq_zero {d : ℕ} {u : ℕ → M}
     (h : ∀ c : R, ∑ m ∈ Finset.range d, c ^ m • u m = 0) {m : ℕ} (hm : m < d) : u m = 0 := by
-  -- Evaluating at `d` distinct points shows that their Vandermonde matrix `V` kills the
-  -- coefficient vector. Multiplying by the adjugate of `V` gives `det V • u m = 0`, and
-  -- `det V ≠ 0` because the points are distinct.
-  set V := Matrix.vandermonde fun i : Fin d ↦ Infinite.natEmbedding R i
-  have hV : V.det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr
+  -- Evaluating at `d` distinct points and applying Cramer's rule gives `det V • u m = 0` for
+  -- their Vandermonde matrix `V`, and `det V ≠ 0` because the points are distinct.
+  set x : Fin d → R := fun i ↦ Infinite.natEmbedding R i
+  have hV : (Matrix.vandermonde x).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr
     ((Infinite.natEmbedding R).injective.comp Fin.val_injective)
-  have hrow (i : Fin d) : ∑ k, V i k • u k = 0 := by
-    simpa [V, Finset.sum_range] using h (Infinite.natEmbedding R i)
-  have hdet : V.det • u m = ∑ k, (V.adjugate * V) ⟨m, hm⟩ k • u k := by
-    simp [Matrix.adjugate_mul, Matrix.one_apply, ite_smul]
-  rw [← smul_eq_zero_iff_right hV, hdet]
-  simp_rw [Matrix.mul_apply, Finset.sum_smul, mul_smul]
-  rw [Finset.sum_comm]
-  simp [← Finset.smul_sum, hrow]
+  rw [← smul_eq_zero_iff_right hV]
+  simpa [x, h] using det_vandermonde_smul_eq_sum_adjugate_smul x u ⟨m, hm⟩
 
 /-- **Two power sums with vector coefficients that agree at every point have the same
 coefficients.** Let `R` be an infinite integral domain and `M` a torsion-free `R`-module. If
@@ -84,9 +101,15 @@ coefficients.** Let `R` be an infinite integral domain and `M` a torsion-free `R
 `m < d`. -/
 theorem eq_of_forall_sum_range_pow_smul_eq {d : ℕ} {u v : ℕ → M}
     (h : ∀ c : R, ∑ m ∈ Finset.range d, c ^ m • u m = ∑ m ∈ Finset.range d, c ^ m • v m)
-    {m : ℕ} (hm : m < d) : u m = v m :=
-  sub_eq_zero.mp <| eq_zero_of_forall_sum_range_pow_smul_eq_zero (R := R) (u := u - v)
-    (fun c ↦ by simp [smul_sub, Finset.sum_sub_distrib, h c]) hm
+    {m : ℕ} (hm : m < d) : u m = v m := by
+  -- Cramer's rule at `d` distinct points expresses `det V • u m` and `det V • v m` through the
+  -- same values, and `det V ≠ 0` because the points are distinct.
+  set x : Fin d → R := fun i ↦ Infinite.natEmbedding R i
+  have hV : (Matrix.vandermonde x).det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr
+    ((Infinite.natEmbedding R).injective.comp Fin.val_injective)
+  rw [← smul_right_inj hV, det_vandermonde_smul_eq_sum_adjugate_smul x u ⟨m, hm⟩,
+    det_vandermonde_smul_eq_sum_adjugate_smul x v ⟨m, hm⟩]
+  simp only [h]
 
 end Coefficients
 

@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.Algebra.Module.Equiv.Opposite
 public import TauCeti.Algebra.Ring.Opposite
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
-import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Evaluation into the opposite double dual
@@ -122,14 +121,7 @@ bijective, with no commutativity hypothesis on the semiring. -/
 theorem opDualEval_bijective [Module.Finite A P] [Module.Projective A P] :
     Function.Bijective (opDualEval A P) := by
   classical
-  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
-  let b : Fin n → P := fun i => f (Pi.single i 1)
-  let φ : Fin n → Module.Dual A P := fun i => (LinearMap.proj i).comp g
-  have hsum (x : P) : ∑ i, φ i x • b i = x := by
-    have h := (Pi.basisFun A (Fin n)).sum_repr (g x)
-    have hf := congrArg f h
-    simpa [b, φ, map_sum, map_smul] using
-      hf.trans (LinearMap.congr_fun hfg x)
+  obtain ⟨n, b, φ, hsum⟩ := exists_sum_dual_smul_eq (R := A) (M := P)
   have hdual (ψ : Module.Dual A P) : ∑ i, MulOpposite.op (ψ (b i)) • φ i = ψ := by
     ext x
     have h := congrArg ψ (hsum x)

@@ -86,6 +86,7 @@ restriction along `SemidirectProduct.inl` is the action of `H` on its fiber.
 universe v u
 
 open CategoryTheory Bicategory MonoidalCategory MonoidalLeftAction
+open Subalgebra (centerCongr)
 
 namespace TauCeti
 
@@ -95,14 +96,14 @@ variable {G : Type*} [Monoid G] {X : Type*} [MulAction G X]
 
 variable [TopologicalSpace A] (ha : ∀ g, Continuous (a g).symm)
   (χ : X → (Subalgebra.center R A →ₐ[R] R))
-  (hχ : ∀ (g : G) (x : X), χ (g • x) = (χ x).comp (centerCongr (a g)).symm.toAlgHom)
+  (hχ : ∀ (g : G) (x : X), χ (g • x) = (χ x).comp (centerCongr (a g).symm).toAlgHom)
 
 omit [TopologicalSpace A] in
 include hχ in
 /-- Along an arrow `x ⟶ y` of `G ⋉ X` labelled `g`, the character of `y` is that of `x`
 transported by `(a g)⁻¹`. -/
 lemma eq_comp_centerCongr_symm_of_hom {x y : LocallyDiscrete (ActionCategory G X)} (f : x ⟶ y) :
-    χ y.as.back = (χ x.as.back).comp (centerCongr (a f.as.hom)).symm.toAlgHom := by
+    χ y.as.back = (χ x.as.back).comp (centerCongr (a f.as.hom).symm).toAlgHom := by
   have hf : f.as.hom • x.as.back = y.as.back := f.as.map_val
   rw [← hf, hχ]
 
@@ -334,8 +335,8 @@ omit [TopologicalSpace A] in
 include hx in
 /-- The elements of `K` fix the character of a point fixed by the image of `φ : K →* G`. -/
 lemma comp_centerCongr_symm_eq_of_smul_eq
-    (hχ : ∀ (g : G) (x : X), χ (g • x) = (χ x).comp (centerCongr (a g)).symm.toAlgHom)
-    (k : K) : (χ x).comp (centerCongr (a.comp φ k)).symm.toAlgHom = χ x := by
+    (hχ : ∀ (g : G) (x : X), χ (g • x) = (χ x).comp (centerCongr (a g).symm).toAlgHom)
+    (k : K) : (χ x).comp (centerCongr (a.comp φ k).symm).toAlgHom = χ x := by
   rw [MonoidHom.comp_apply, ← hχ, hx]
 
 /-- At a point `x` fixed by the image of `φ : K →* G`, the restriction of the fiber family along
@@ -419,18 +420,16 @@ elements of `S` move both. -/
 lemma smul_eq_comp_centerCongr_symm_of_inl_of_inr
     {ψ : Y → (Subalgebra.center R A →ₐ[R] R)}
     (hH : ∀ (h : H) (y : Y),
-      ψ ((inl h : H ⋊[β] S) • y) = (ψ y).comp (centerCongr (b (inl h))).symm.toAlgHom)
+      ψ ((inl h : H ⋊[β] S) • y) = (ψ y).comp (centerCongr (b (inl h)).symm).toAlgHom)
     (hS : ∀ (σ : S) (y : Y),
-      ψ ((inr σ : H ⋊[β] S) • y) = (ψ y).comp (centerCongr (b (inr σ))).symm.toAlgHom)
-    (g : H ⋊[β] S) (y : Y) : ψ (g • y) = (ψ y).comp (centerCongr (b g)).symm.toAlgHom := by
+      ψ ((inr σ : H ⋊[β] S) • y) = (ψ y).comp (centerCongr (b (inr σ)).symm).toAlgHom)
+    (g : H ⋊[β] S) (y : Y) : ψ (g • y) = (ψ y).comp (centerCongr (b g).symm).toAlgHom := by
   obtain ⟨h, σ⟩ := g
   rw [mk_eq_inl_mul_inr, mul_smul, hH, hS]
   ext z
-  simp only [AlgHom.coe_comp, Function.comp_apply, AlgEquiv.coe_toAlgHom]
-  -- `(b (inl h) * b (inr σ))⁻¹ = (b (inr σ))⁻¹ ∘ (b (inl h))⁻¹` on the center.
-  congr 1
-  ext
-  simp [← AlgEquiv.aut_inv, mul_inv_rev, AlgEquiv.mul_apply]
+  rw [map_mul]
+  -- `(b (inl h) * b (inr σ))⁻¹ = (b (inr σ))⁻¹ ∘ (b (inl h))⁻¹` on the center, by definition.
+  rfl
 
 end SemidirectProduct
 
