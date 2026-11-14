@@ -124,8 +124,7 @@ theorem serreMk_surjective : Function.Surjective (serreMk R CM) :=
 /-- A relator of Serre's presentation becomes zero in the presented algebra. -/
 theorem serreMk_eq_zero_of_mem_toSet {x : FreeLieAlgebra R (Generators B)}
     (hx : x ∈ Relations.toSet R CM) : serreMk R CM x = 0 :=
-  (LieIdeal.mkQ_apply _ x).trans
-    (LieSubmodule.Quotient.mk_eq_zero'.mpr (LieSubmodule.subset_lieSpan hx))
+  (Relations.toIdeal R CM).mkQ_eq_zero.mpr (LieSubmodule.subset_lieSpan hx)
 
 /-- The generator `Hᵢ` of `Matrix.ToLieAlgebra R CM`, the image of the free generator `Hᵢ`. -/
 noncomputable def serreH (i : B) : Matrix.ToLieAlgebra R CM :=
