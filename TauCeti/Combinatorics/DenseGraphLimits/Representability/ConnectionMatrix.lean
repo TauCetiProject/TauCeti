@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.Representability.LabeledGra
 public import TauCeti.Combinatorics.SimpleGraph.Sum
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.LinearAlgebra.Matrix.PosDef
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Graph parameters, connection matrices and reflection positivity
@@ -57,8 +57,8 @@ that reflection positivity is not automatic.
 `connectionMatrix` takes an arbitrary index type: the `Matrix ι ι ℝ` it produces needs no
 finiteness, and `IsReflectionPositive` supplies `Fin n` where positive semidefiniteness is
 asserted.  `IsReflectionPositive.posSemidef` then recovers the arbitrary index case, since every
-finitely supported test vector lives on a finite principal block, a connection matrix on a
-`Fin n`-indexed family.
+finitely supported test vector lives on a finite reindexing of the index set, whose connection
+matrix is a connection matrix on a `Fin n`-indexed family.
 
 ## References
 
@@ -166,13 +166,12 @@ one-vertex graph `K₁` is `1`.  This is both the way to prove `IsNormalized` an
 it. -/
 theorem isNormalized_iff {f : GraphParam} : IsNormalized f ↔ f 1 ⊥ = 1 := (Iff.rfl)
 
-/-- Reflection positivity for an arbitrary index type.  By `posSemidef_iff_finite_sum` it suffices
-to check nonnegativity on finite families, which are carried by a finite principal block that is a
-connection matrix on a `Fin n`-indexed family, and Hermitianness, a statement about `2 × 2`
-blocks. -/
+/-- Every connection matrix of a reflection-positive graph parameter is positive semidefinite, for
+any index type. -/
 theorem IsReflectionPositive.posSemidef {f : GraphParam} (hf : IsReflectionPositive f) {k : ℕ}
     {ι : Type*} (A : ι → LabeledGraph k) : (connectionMatrix f A).PosSemidef := by
   classical
+  -- every `Fin n`-indexed submatrix is a connection matrix of `A ∘ g`, hence positive semidefinite
   have hsub : ∀ (n : ℕ) (g : Fin n → ι),
       ((connectionMatrix f A).submatrix g g).PosSemidef := fun n g => by
     have h := hf k n (A ∘ g)
@@ -184,8 +183,9 @@ theorem IsReflectionPositive.posSemidef {f : GraphParam} (hf : IsReflectionPosit
   · have h := (hsub 2 ![a, b]).1.apply 1 0
     simpa [Matrix.conjTranspose_apply] using h
   · let e := Fintype.equivFin ι'
-    have h := (Matrix.posSemidef_submatrix_equiv e.symm (M := Matrix.of fun i j : ι' =>
-      connectionMatrix f A (v i) (v j))).mp (hsub _ (v ∘ e.symm))
+    have h : ((connectionMatrix f A).submatrix v v).PosSemidef := by
+      rw [← Matrix.posSemidef_submatrix_equiv e.symm, Matrix.submatrix_submatrix]
+      exact hsub _ (v ∘ e.symm)
     simpa [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc] using
       h.dotProduct_mulVec_nonneg x
 
