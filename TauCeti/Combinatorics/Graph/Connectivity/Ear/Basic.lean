@@ -738,6 +738,7 @@ theorem isOpen_cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
   ⟨start_isCycle_cycle walk isCycle, fun i ↦ Fin.elim0 i⟩
 
 /-- Reindex the final graph of an ear decomposition along an equality of graphs. -/
+@[expose]
 protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     G.EarDecomposition H' where
   length := d.length
@@ -1129,6 +1130,12 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
   -- Projection reduction exposes the `Fin.castLE` index hidden by the opaque `prefix` body.
   change d.earAt _ = d.earAt _
   congr 1
+
+/-- Prefixing retains the walks of the original ears before the chosen index. -/
+theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : Fin i.val) :
+    (d.prefix i).walkAt (Fin.cast (length_prefix d i).symm j) =
+      d.walkAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  rw [walkAt_eq, walkAt_eq, earAt_prefix]
 
 /-- Prefixing retains the kind of every ear before the chosen index. -/
 theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
