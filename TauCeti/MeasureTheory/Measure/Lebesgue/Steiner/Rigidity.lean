@@ -9,7 +9,6 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.BoundedVariation.Slicing.Excess
 import TauCeti.Analysis.BoundedVariation.Slicing.Measurability
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -35,13 +34,14 @@ Write `L(y) = |{t | y + t • e ∈ s}|` for the section lengths on the orthogon
 2. **Scaled perimeter bound and Pythagorean noninterval excess.** Combining the variational formula
    with the localized noninterval-excess slicing inequality of
    `TauCeti.Analysis.BoundedVariation.Slicing.Excess` at rescaled test fields `(1 - δ) • φ` for
-   `δ ∈ [0, 1]` shows that every null-measurable family `A ⊆ (ℝ ∙ e)ᗮ` of noninterval sections
-   satisfies `(1 - δ) P(S_e s) + 2 √(2 δ - δ²) |A| ≤ P(s)`
+   `δ ∈ [0, 1]` shows that every family `A ⊆ (ℝ ∙ e)ᗮ` of sections that, for almost every `y ∈ A`,
+   do not agree almost everywhere with any interval (`OrdConnected` set) satisfies
+   `(1 - δ) P(S_e s) + 2 √(2 δ - δ²) |A| ≤ P(s)`
    (`TauCeti.ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter`). Optimizing in `δ` gives
    the parameter-free Pythagorean excess inequality
    `P(S_e s)² + 4 |A|² ≤ P(s)²`
-   (`TauCeti.perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le`), which holds for the
-   entire family of noninterval sections
+   (`TauCeti.perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le`), which holds in
+   particular for the full family of noninterval sections up to null sets
    (`TauCeti.perimeter_steinerSymmetrization_sq_add_four_mul_volume_noninterval_sq_le`).
 
 3. **Steiner equality forces interval sections.** When `P(s) < ∞` and `P(S_e s) = P(s)`, the excess
@@ -56,9 +56,10 @@ Write `L(y) = |{t | y + t • e ∈ s}|` for the section lengths on the orthogon
 The lower bound `≥` in `TauCeti.perimeter_steinerSymmetrization_eq_iSup` is immediate from joint
 slicing applied to `S_e s`. For the upper bound `≤`, if `|D| = ∞` then `φ = 0` already makes the
 supremum `∞`. When `|D| < ∞`, we test `S_e s` against an arbitrary `ψ₀ ∈ 𝓓(⊤, E)` with
-`‖ψ₀‖ ≤ 1` and regularize `L` by shrinking normalized bumps `L_k = ρ_k ⋆ L`. On the smooth
-symmetric slab `{|t| < L_k(y) / 2}`, decomposing `div ψ₀` into horizontal divergence and vertical
-derivative and integrating `(L_k / 2) A(y, L_k u / 2)` over `u ∈ (-1, 1)` rewrites
+`‖ψ₀‖ ≤ 1`, write `ψ_⊥(y, t) = ((orthogonalLineEquiv e he).symm (ψ₀ (y + t • e))).1` for its
+transverse projection, and regularize `L` by shrinking normalized bumps `L_k = ρ_k ⋆ L`. On the
+smooth symmetric slab `{|t| < L_k(y) / 2}`, decomposing `div ψ₀` into horizontal divergence and
+vertical derivative and integrating `(L_k / 2) ψ_⊥(y, L_k u / 2)` over `u ∈ (-1, 1)` rewrites
 `∫_{|t| < L_k/2} div ψ₀` as `2 ∫ d_k - ∫ DL_k (b_k)`, where the boundary horizontal average `b_k`
 and vertical half-difference `d_k` satisfy `‖b_k‖² + d_k² ≤ 1` everywhere. Moving `ρ_k` onto `b_k`
 produces `φ_k = ρ_k ⋆ b_k ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` with `‖φ_k‖² + (ρ_k ⋆ d_k)² ≤ 1`, while the off-`D`
@@ -88,6 +89,19 @@ section SmoothSymmetricSlab
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Transverse coordinate projection `E →L[ℝ] (ℝ ∙ e)ᗮ` along the unit vector `e`. -/
+private def orthogonalLineFstCLM (e : E) (he : ‖e‖ = 1) : E →L[ℝ] (ℝ ∙ e)ᗮ :=
+  (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
+    (orthogonalLineEquiv e he).symm.toContinuousLinearMap
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+@[simp]
+private theorem orthogonalLineFstCLM_apply (e : E) (he : ‖e‖ = 1) (x : E) :
+    orthogonalLineFstCLM e he x = ((orthogonalLineEquiv e he).symm x).1 := by
+  rw [orthogonalLineFstCLM, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
+    ContinuousLinearEquiv.coe_coe]
+
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Decompose `divergenceCLM ψ₀` in orthogonal line coordinates into the hyperplane divergence of
 its transverse projection plus the longitudinal derivative along `e`. -/
@@ -98,19 +112,13 @@ private theorem divergenceCLM_orthogonalLine_eq (e : E) (he : ‖e‖ = 1) (ψ�
         (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1)
           y) +
         deriv (fun s : ℝ => ⟪e, ψ₀ ((y : E) + s • e)⟫) t := by
-  set L := orthogonalLineEquiv e he
-  let π : E →L[ℝ] (ℝ ∙ e)ᗮ :=
-    (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp L.symm.toContinuousLinearMap
-  set g : E → (ℝ ∙ e)ᗮ := fun x => π (ψ₀ x)
+  set g : E → (ℝ ∙ e)ᗮ := fun x => orthogonalLineFstCLM e he (ψ₀ x) with hg_def
   have hdecomp : (ψ₀ : E → E) = fun x => (ℝ ∙ e)ᗮ.subtypeL (g x) + ⟪e, ψ₀ x⟫ • e := by
     ext x
-    have hx := L.apply_symm_apply (ψ₀ x)
-    rw [← Prod.eta (p := L.symm (ψ₀ x)), orthogonalLineEquiv_apply,
-      orthogonalLineEquiv_symm_snd] at hx
-    exact hx.symm
+    simp [hg_def, orthogonalLineEquiv_symm_fst]
   set x₀ : E := (y : E) + t • e
   have hψd : DifferentiableAt ℝ (ψ₀ : E → E) x₀ := ψ₀.contDiff.differentiable (by simp) x₀
-  have hgd : DifferentiableAt ℝ g x₀ := π.differentiableAt.comp x₀ hψd
+  have hgd : DifferentiableAt ℝ g x₀ := (orthogonalLineFstCLM e he).differentiableAt.comp x₀ hψd
   have h1d : DifferentiableAt ℝ (fun x => (ℝ ∙ e)ᗮ.subtypeL (g x)) x₀ :=
     (ℝ ∙ e)ᗮ.subtypeL.differentiableAt.comp x₀ hgd
   have hinner : DifferentiableAt ℝ (fun x => ⟪e, ψ₀ x⟫) x₀ :=
@@ -128,8 +136,12 @@ private theorem divergenceCLM_orthogonalLine_eq (e : E) (he : ‖e‖ = 1) (ψ�
         (fderiv ℝ g x₀).comp (ℝ ∙ e)ᗮ.subtypeL :=
       (HasFDerivAt.comp (f := fun z : (ℝ ∙ e)ᗮ => (z : E) + t • e) y
         hgd.hasFDerivAt haff).fderiv
-    change LinearMap.trace ℝ E _ = traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z => g ((z : E) + t • e)) y)
-    rw [hf1, traceCLM_apply, hf2, ContinuousLinearMap.toLinearMap_comp,
+    have hg_slice :
+        (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) =
+          fun z : (ℝ ∙ e)ᗮ => g ((z : E) + t • e) := by
+      ext z
+      simp [hg_def]
+    rw [hg_slice, hf1, traceCLM_apply, hf2, ContinuousLinearMap.toLinearMap_comp,
       ContinuousLinearMap.toLinearMap_comp]
     exact LinearMap.trace_comp_comm' _ _
   · have hl : HasDerivAt (fun s : ℝ => (y : E) + s • e) e t := by
@@ -158,8 +170,7 @@ private theorem trace_fderiv_slabRescaledField_eq {H : Type*} [NormedAddCommGrou
   have hAd : DifferentiableAt ℝ (A y) ((ℓ y / 2) * u) :=
     (hA.comp (contDiff_const.prodMk contDiff_id)).differentiable (by simp) _
   have hcomp_diff : DifferentiableAt ℝ (fun z : H => A z ((ℓ z / 2) * u)) y :=
-    show DifferentiableAt ℝ ((Function.uncurry A) ∘ fun z : H => (z, (ℓ z / 2) * u)) y from
-      hFA.comp y (differentiableAt_id.prodMk hmul.differentiableAt)
+    hFA.fun_comp' y (differentiableAt_id.prodMk hmul.differentiableAt)
   have hcomp_eq : fderiv ℝ (fun z : H => A z ((ℓ z / 2) * u)) y =
       fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y +
         ((u * (2 : ℝ)⁻¹) • fderiv ℝ ℓ y).smulRight (deriv (A y) ((ℓ y / 2) * u)) := by
@@ -178,8 +189,7 @@ private theorem trace_fderiv_slabRescaledField_eq {H : Type*} [NormedAddCommGrou
         (u • (ℓ y / 2) • deriv (A y) ((ℓ y / 2) * u) + (1 : ℝ) • A y ((ℓ y / 2) * u))) u :=
     ((fderiv ℝ ℓ y).hasFDerivAt.comp_hasDerivAt u hsm).const_mul (2 : ℝ)⁻¹
   rw [traceCLM_apply, trace_fderiv_smul hhalf.differentiableAt hcomp_diff, hhalf.fderiv,
-    hcomp_eq, ContinuousLinearMap.toLinearMap_add, map_add,
-    ContinuousLinearMap.coe_smulRight, LinearMap.trace_smulRight, hΦd.deriv]
+    hcomp_eq, hΦd.deriv]
   simp [traceCLM_apply, smul_eq_mul]
   ring
 
@@ -192,22 +202,22 @@ private theorem integrable_and_integral_swap_Ioc {H : Type*} [NormedAddCommGroup
     Integrable (fun y : H => ∫ u in (-1 : ℝ)..1, P (u, y)) volume ∧
       (∫ u in Ioc (-1 : ℝ) 1, ∫ y : H, P (u, y)) =
         ∫ y : H, ∫ u in (-1 : ℝ)..1, P (u, y) := by
-  let g : ℝ × H → ℝ := fun q => (Ioc (-1 : ℝ) 1).indicator (fun u => P (u, q.2)) q.1
+  set g : ℝ × H → ℝ := fun q => (Ioc (-1 : ℝ) 1).indicator (fun u => P (u, q.2)) q.1 with hg_def
   have hg_eq : g = (Ioc (-1 : ℝ) 1 ×ˢ K).indicator P := by
     ext ⟨u, y⟩
-    by_cases hu : u ∈ Ioc (-1 : ℝ) 1 <;> by_cases hy : y ∈ K <;> simp [g, hu, hy, hvan]
+    by_cases hu : u ∈ Ioc (-1 : ℝ) 1 <;> by_cases hy : y ∈ K <;> simp [hg_def, hu, hy, hvan]
   have hgi : Integrable g (volume.prod volume) := by
     rw [hg_eq]
     exact ((hP.continuousOn.integrableOn_compact (isCompact_Icc.prod hK)).mono_set
       (Set.prod_mono Ioc_subset_Icc_self Subset.rfl)).integrable_indicator
       (measurableSet_Ioc.prod hK.isClosed.measurableSet)
   have hsec (y : H) : ∫ u : ℝ, g (u, y) = ∫ u in (-1 : ℝ)..1, P (u, y) := by
-    rw [show (fun u : ℝ => g (u, y)) = (Ioc (-1 : ℝ) 1).indicator (fun u => P (u, y)) from rfl,
-      integral_indicator measurableSet_Ioc, intervalIntegral.integral_of_le (by norm_num)]
+    simp_rw [hg_def]
+    rw [integral_indicator measurableSet_Ioc, intervalIntegral.integral_of_le (by norm_num)]
   have hlhs : ∫ u : ℝ, ∫ y : H, g (u, y) = ∫ u in Ioc (-1 : ℝ) 1, ∫ y : H, P (u, y) := by
     rw [← integral_indicator measurableSet_Ioc]
     refine integral_congr_ae (.of_forall fun u => ?_)
-    by_cases hu : u ∈ Ioc (-1 : ℝ) 1 <;> simp [g, hu]
+    by_cases hu : u ∈ Ioc (-1 : ℝ) 1 <;> simp [hg_def, hu]
   refine ⟨by simpa only [hsec] using hgi.integral_prod_right, ?_⟩
   rw [← hlhs, ← integral_prod g hgi, integral_prod_symm g hgi]
   exact integral_congr_ae (.of_forall hsec)
@@ -256,6 +266,21 @@ private theorem continuous_slabRescaledPieces {H : Type*} [NormedAddCommGroup H]
   simp only [Pi.sub_apply]
   linarith [trace_fderiv_slabRescaledField_eq hA hℓ u y]
 
+/-- Off a closed set `K` outside which `A` vanishes, both slab-rescaled integrands vanish. -/
+private theorem slabRescaledPieces_eq_zero_of_notMem {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace ℝ H] [FiniteDimensional ℝ H] {K : Set H} (hK : IsClosed K) {A : H → ℝ → H}
+    (hA0 : ∀ {y : H}, y ∉ K → ∀ t, A y t = 0) (ℓ : H → ℝ) (u : ℝ) {y : H} (hy : y ∉ K) :
+    (ℓ y / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y) = 0 ∧
+      deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u = 0 := by
+  refine ⟨?_, ?_⟩
+  · have hloc : (fun z : H => A z ((ℓ y / 2) * u)) =ᶠ[𝓝 y] 0 :=
+      Filter.eventually_of_mem (hK.isOpen_compl.mem_nhds hy) fun z hz => hA0 hz _
+    simp [hloc.fderiv_eq]
+  · have hloc : (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) = 0 :=
+      funext fun s => by simp [hA0 hy]
+    rw [hloc]
+    simp
+
 /-- For each fixed rescaled height `u : ℝ`, the hyperplane integral of the rescaled horizontal
 divergence equals minus the integral of the `u`-derivative term, since their sum is the divergence
 of a compactly supported test field. -/
@@ -271,25 +296,18 @@ private theorem integral_slabRescaledPiece_eq_neg {H : Type*} [NormedAddCommGrou
       .of_support_subset_isCompact hK fun y hy => by by_contra hyK; exact hy (by simp [hA0 hyK]),
       subset_univ _⟩
   obtain ⟨hP1c, hP2c⟩ := continuous_slabRescaledPieces hA hℓ
-  have hvan1 {y : H} (hy : y ∉ K) :
-      (ℓ y / 2) * traceCLM ℝ H (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y) = 0 := by
-    have hloc : (fun z : H => A z ((ℓ y / 2) * u)) =ᶠ[𝓝 y] 0 :=
-      Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hy) fun z hz => hA0 hz _
-    simp [hloc.fderiv_eq]
-  have hvan2 {y : H} (hy : y ∉ K) :
-      deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u = 0 := by
-    have hloc : (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) = 0 :=
-      funext fun s => by simp [hA0 hy]
-    rw [hloc]
-    simp
   have hi1 : Integrable (fun y : H => (ℓ y / 2) * traceCLM ℝ H
       (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y)) volume :=
     (hP1c.comp (continuous_const.prodMk continuous_id)).integrable_of_hasCompactSupport
-      (.of_support_subset_isCompact hK fun y hy => by by_contra hyK; exact hy (hvan1 hyK))
+      (.of_support_subset_isCompact hK fun y hy => by
+        by_contra hyK
+        exact hy (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hyK).1)
   have hi2 : Integrable (fun y : H =>
       deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u) volume :=
     (hP2c.comp (continuous_const.prodMk continuous_id)).integrable_of_hasCompactSupport
-      (.of_support_subset_isCompact hK fun y hy => by by_contra hyK; exact hy (hvan2 hyK))
+      (.of_support_subset_isCompact hK fun y hy => by
+        by_contra hyK
+        exact hy (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hyK).2)
   have hsum : (∫ y : H, (ℓ y / 2) * traceCLM ℝ H
         (fderiv ℝ (fun z : H => A z ((ℓ y / 2) * u)) y)) +
       (∫ y : H, deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u) =
@@ -310,8 +328,42 @@ private theorem isCompact_fst_image_tsupport (e : E) (he : ‖e‖ = 1) (ψ₀ :
     fun hy t => image_eq_zero_of_notMem_tsupport fun h => hy ⟨_, ⟨_, h, rfl⟩, by
       rw [← orthogonalLineEquiv_apply e he _ t, ContinuousLinearEquiv.symm_apply_apply]⟩⟩
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The horizontal boundary-average test vector field in `𝓓(⊤, (ℝ ∙ e)ᗮ)` associated to `ψ₀` and a
+smooth slab thickness `ℓ`. -/
+private def slabHorizAvg (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
+    {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) : 𝓓((⊤ : Opens (ℝ ∙ e)ᗮ), (ℝ ∙ e)ᗮ) where
+  toFun y := (2 : ℝ)⁻¹ •
+    (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
+      ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1)
+  contDiff' := by
+    have h1 : ContDiff ℝ ∞ (fun y : (ℝ ∙ e)ᗮ =>
+        orthogonalLineFstCLM e he (ψ₀ ((y : E) + (ℓ y / 2) • e))) :=
+      (orthogonalLineFstCLM e he).contDiff.comp (ψ₀.contDiff.comp
+        ((ℝ ∙ e)ᗮ.subtypeL.contDiff.add ((hℓ.div_const 2).smul (contDiff_const (c := e)))))
+    have h2 : ContDiff ℝ ∞ (fun y : (ℝ ∙ e)ᗮ =>
+        orthogonalLineFstCLM e he (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))) :=
+      (orthogonalLineFstCLM e he).contDiff.comp (ψ₀.contDiff.comp
+        ((ℝ ∙ e)ᗮ.subtypeL.contDiff.add ((hℓ.div_const 2).neg.smul (contDiff_const (c := e)))))
+    simpa only [orthogonalLineFstCLM_apply] using (h1.add h2).const_smul (2 : ℝ)⁻¹
+  hasCompactSupport' := by
+    obtain ⟨hK, h0⟩ := isCompact_fst_image_tsupport e he ψ₀
+    refine .of_support_subset_isCompact hK fun y hy => ?_
+    by_contra hyK
+    exact hy (by simp only [h0 hyK (ℓ y / 2), h0 hyK (-(ℓ y / 2)), map_zero, Prod.fst_zero,
+      add_zero, smul_zero])
+  tsupport_subset' := subset_univ _
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+@[simp]
+private theorem slabHorizAvg_apply (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
+    {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (y : (ℝ ∙ e)ᗮ) :
+    slabHorizAvg e he ψ₀ hℓ y = (2 : ℝ)⁻¹ •
+      (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
+        ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1) := (rfl)
+
 /-- Integrating the horizontal divergence of `ψ₀` over the smooth symmetric slab `{|t| < ℓ y / 2}`
-gives `-∫ y, Dℓ(y) ((A(y, ℓ y / 2) + A(y, -ℓ y / 2)) / 2)` and proves `y`-integrability. -/
+gives `-∫ y, Dℓ(y) (slabHorizAvg e he ψ₀ hℓ y)` and proves `y`-integrability. -/
 private theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E) (he : ‖e‖ = 1)
     (ψ₀ : 𝓓(⊤, E)) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) :
     Integrable (fun y : (ℝ ∙ e)ᗮ => ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
@@ -322,49 +374,47 @@ private theorem integrable_and_integral_horizontal_divergence_symmSlab_eq (e : E
           traceCLM ℝ (ℝ ∙ e)ᗮ
             (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
               ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) y)) =
-        -∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y
-          ((2 : ℝ)⁻¹ • (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
-            ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1)) := by
-  let π : E →L[ℝ] (ℝ ∙ e)ᗮ :=
-    (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
-      (orthogonalLineEquiv e he).symm.toContinuousLinearMap
-  set A : (ℝ ∙ e)ᗮ → ℝ → (ℝ ∙ e)ᗮ := fun y t => π (ψ₀ ((y : E) + t • e))
+        -∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y) := by
+  set A : (ℝ ∙ e)ᗮ → ℝ → (ℝ ∙ e)ᗮ :=
+    fun y t => orthogonalLineFstCLM e he (ψ₀ ((y : E) + t • e)) with hA_def
   have hA : ContDiff ℝ ∞ (Function.uncurry A) :=
-    π.contDiff.comp (ψ₀.contDiff.comp (((ℝ ∙ e)ᗮ.subtypeL.contDiff.comp contDiff_fst).add
-      (contDiff_snd.smul contDiff_const)))
+    (orthogonalLineFstCLM e he).contDiff.comp (ψ₀.contDiff.comp
+      (((ℝ ∙ e)ᗮ.subtypeL.contDiff.comp contDiff_fst).add (contDiff_snd.smul contDiff_const)))
   obtain ⟨hK, hψ0⟩ := isCompact_fst_image_tsupport e he ψ₀
   have hA0 {y : (ℝ ∙ e)ᗮ} (hy : y ∉ Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀))
-      (t : ℝ) : A y t = 0 := by simp [A, hψ0 hy t]
+      (t : ℝ) : A y t = 0 := by simp [hA_def, hψ0 hy t]
   obtain ⟨hP1c, hP2c⟩ := continuous_slabRescaledPieces hA hℓ
-  have h1 := integrable_and_integral_swap_Ioc hK hP1c fun u y hy => by
-    have hloc : (fun z : (ℝ ∙ e)ᗮ => A z ((ℓ y / 2) * u)) =ᶠ[𝓝 y] 0 :=
-      Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hy) fun z hz => hA0 hz _
-    simp [hloc.fderiv_eq]
-  have h2 := integrable_and_integral_swap_Ioc hK hP2c fun u y hy => by
-    rw [show (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) = 0 from
-      funext fun s => by simp [hA0 hy]]; simp
+  have h1 := integrable_and_integral_swap_Ioc hK hP1c fun u y hy =>
+    (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hy).1
+  have h2 := integrable_and_integral_swap_Ioc hK hP2c fun u y hy =>
+    (slabRescaledPieces_eq_zero_of_notMem hK.isClosed hA0 ℓ u hy).2
+  have hA_slice (t : ℝ) :
+      (fun z : (ℝ ∙ e)ᗮ => ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) =
+        fun z : (ℝ ∙ e)ᗮ => A z t := by
+    ext z
+    simp [hA_def]
   have hp1_eq (y : (ℝ ∙ e)ᗮ) : (∫ u in (-1 : ℝ)..1,
       (ℓ y / 2) * traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z ((ℓ y / 2) * u)) y)) =
       ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
-        traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z t) y) := by
+        traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
+          ((orthogonalLineEquiv e he).symm (ψ₀ ((z : E) + t • e))).1) y) := by
+    simp_rw [hA_slice]
     rw [intervalIntegral.integral_const_mul, ← smul_eq_mul,
       intervalIntegral.smul_integral_comp_mul_left
         (f := fun t => traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z t) y)),
       mul_neg_one, mul_one]
   have hp2_eq (y : (ℝ ∙ e)ᗮ) : (∫ u in (-1 : ℝ)..1,
       deriv (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) u) =
-      fderiv ℝ ℓ y ((2 : ℝ)⁻¹ • (A y (ℓ y / 2) + A y (-(ℓ y / 2)))) := by
+      fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y) := by
     have hΦ : ContDiff ℝ ∞ (fun s : ℝ => (2 : ℝ)⁻¹ * fderiv ℝ ℓ y (s • A y ((ℓ y / 2) * s))) :=
       contDiff_const.mul ((fderiv ℝ ℓ y).contDiff.comp
         (contDiff_id.smul (hA.comp (contDiff_const.prodMk (contDiff_const.mul contDiff_id)))))
     rw [intervalIntegral.integral_deriv_eq_sub (fun s _ => hΦ.differentiable (by simp) s)
       ((hΦ.continuous_deriv (by simp)).intervalIntegrable _ _)]
-    simp only [one_smul, mul_one, mul_neg_one, neg_one_smul, map_neg, map_add, map_smul,
-      smul_eq_mul]; ring
+    simp only [slabHorizAvg_apply, hA_def, orthogonalLineFstCLM_apply, one_smul, mul_one,
+      mul_neg_one, neg_one_smul, map_neg, map_add, map_smul, smul_eq_mul]
+    ring
   refine ⟨h1.1.congr (.of_forall hp1_eq), ?_⟩
-  change (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-(ℓ y / 2))..(ℓ y / 2),
-      traceCLM ℝ (ℝ ∙ e)ᗮ (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ => A z t) y)) =
-    -∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y ((2 : ℝ)⁻¹ • (A y (ℓ y / 2) + A y (-(ℓ y / 2))))
   simp_rw [← hp1_eq, ← hp2_eq, ← h1.2, ← h2.2,
     integral_slabRescaledPiece_eq_neg hK hA hA0 hℓ, integral_neg]
 
@@ -386,16 +436,11 @@ private theorem continuous_and_integrable_slabVerticalDiff (e : E) (he : ‖e‖
   have hdc : Continuous fun y : (ℝ ∙ e)ᗮ => (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
       ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫) :=
     continuous_const.mul (hpos.sub hneg)
-  set K : Set (ℝ ∙ e)ᗮ := Prod.fst '' ((orthogonalLineEquiv e he).symm '' tsupport ψ₀)
-  have hK : IsCompact K :=
-    (ψ₀.hasCompactSupport.isCompact.image (orthogonalLineEquiv e he).symm.continuous).image
-      continuous_fst
+  obtain ⟨hK, h0⟩ := isCompact_fst_image_tsupport e he ψ₀
   refine ⟨hdc, hdc.integrable_of_hasCompactSupport (.of_support_subset_isCompact hK fun y hy => ?_)⟩
   by_contra hyK
-  have h0 (t : ℝ) : ψ₀ ((y : E) + t • e) = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h => hyK ⟨_, ⟨_, h, rfl⟩, by
-      rw [← orthogonalLineEquiv_apply e he y t, ContinuousLinearEquiv.symm_apply_apply]⟩
-  exact hy (by simp only [h0 (ℓ y / 2), h0 (-(ℓ y / 2)), inner_zero_right, sub_self, mul_zero])
+  exact hy (by simp only [h0 hyK (ℓ y / 2), h0 hyK (-(ℓ y / 2)), inner_zero_right, sub_self,
+    mul_zero])
 
 /-- Integrating `divergenceCLM ψ₀` over the smooth symmetric slab `{|t| < ℓ y / 2}` splits into
 twice the integral of the longitudinal boundary half-difference minus the pairing of `Dℓ` with the
@@ -407,9 +452,7 @@ private theorem integrable_and_integral_divergenceCLM_symmSlab_eq (e : E) (he : 
       (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-(ℓ y / 2))..(ℓ y / 2), divergenceCLM ψ₀ ((y : E) + t • e)) =
         2 * (∫ y : (ℝ ∙ e)ᗮ, (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
           ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)) -
-        ∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y
-          ((2 : ℝ)⁻¹ • (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
-            ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1)) := by
+        ∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ ℓ y (slabHorizAvg e he ψ₀ hℓ y) := by
   obtain ⟨hi1, heq1⟩ := integrable_and_integral_horizontal_divergence_symmSlab_eq e he ψ₀ hℓ
   obtain ⟨-, hdi⟩ := continuous_and_integrable_slabVerticalDiff e he ψ₀ hℓ
   let d : (ℝ ∙ e)ᗮ → ℝ := fun y =>
@@ -449,11 +492,11 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- Pointwise Pythagorean bound for the horizontal average and vertical half-difference of `ψ₀` on
 the boundary of the symmetric slab. -/
 private theorem norm_sq_slabBoundaryAvg_le_one (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E))
-    (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1) (ℓ : (ℝ ∙ e)ᗮ → ℝ) (y : (ℝ ∙ e)ᗮ) :
-    ‖(2 : ℝ)⁻¹ • (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
-        ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1)‖ ^ 2 +
+    (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1) {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) (y : (ℝ ∙ e)ᗮ) :
+    ‖slabHorizAvg e he ψ₀ hℓ y‖ ^ 2 +
       ((2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (ℓ y / 2) • e)⟫ -
         ⟪e, ψ₀ ((y : E) + (-(ℓ y / 2)) • e)⟫)) ^ 2 ≤ 1 := by
+  rw [slabHorizAvg_apply]
   set x1 := (y : E) + (ℓ y / 2) • e
   set x2 := (y : E) + (-(ℓ y / 2)) • e
   set u1 := ((orthogonalLineEquiv e he).symm (ψ₀ x1)).1
@@ -462,9 +505,7 @@ private theorem norm_sq_slabBoundaryAvg_le_one (e : E) (he : ‖e‖ = 1) (ψ₀
   set v2 := ⟪e, ψ₀ x2⟫
   have hdecomp (x : E) :
       (((orthogonalLineEquiv e he).symm (ψ₀ x)).1 : E) + ⟪e, ψ₀ x⟫ • e = ψ₀ x := by
-    have hx := (orthogonalLineEquiv e he).apply_symm_apply (ψ₀ x)
-    rwa [← Prod.eta (p := (orthogonalLineEquiv e he).symm (ψ₀ x)), orthogonalLineEquiv_apply,
-      orthogonalLineEquiv_symm_snd] at hx
+    rw [orthogonalLineEquiv_symm_fst, sub_add_cancel]
   have hn1 : ‖(u1 : E) + v1 • e‖ ≤ 1 := by rw [hdecomp]; exact hψ1 x1
   have hn2 : ‖(u2 : E) + (-v2) • e‖ ≤ 1 := by
     have hsq : ‖(u2 : E) + (-v2) • e‖ ^ 2 ≤ 1 := by
@@ -498,12 +539,8 @@ private theorem norm_sq_add_sq_normed_convolution_le_one {H : Type*} [NormedAddC
   have hex_g :=
     (ρ.hasCompactSupport_normed (μ := volume)).convolutionExists_left_of_continuous_right
       (lsmul ℝ ℝ) (ρ.integrable_normed (μ := volume)).locallyIntegrable hg z
-  have hle : ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z‖ ≤ 1 := by
-    rw [convolution_def]
-    refine (norm_integral_le_of_norm_le (ρ.integrable_normed (μ := volume))
-      (.of_forall fun t => ?_)).trans_eq ρ.integral_normed
-    simp only [lsmul_apply, norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed t)]
-    exact mul_le_of_le_one_right (ρ.nonneg_normed t) (hgn (z - t))
+  have hle : ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z‖ ≤ 1 :=
+    ρ.norm_normed_convolution_le hgn z
   have hfst : ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] g) z).fst =
       (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] b) z :=
     ((WithLp.fstL 2 ℝ H ℝ).convolution_lsmul_comp_comm hex_g).symm
@@ -512,26 +549,6 @@ private theorem norm_sq_add_sq_normed_convolution_le_one {H : Type*} [NormedAddC
     ((WithLp.sndL 2 ℝ H ℝ).convolution_lsmul_comp_comm hex_g).symm
   have hsq := pow_le_one₀ (norm_nonneg _) hle (n := 2)
   rwa [WithLp.prod_norm_sq_eq_of_L2, hfst, hsnd, Real.norm_eq_abs, sq_abs] at hsq
-
-/-- Divergence commutes with normalized-bump mollification of a test vector field. -/
-private theorem divergenceCLM_mollify_eq_normed_convolution {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    (ρ : ContDiffBump (0 : H)) (B : 𝓓(⊤, H)) (z : H) :
-    divergenceCLM (B.mollify volume ρ (subset_univ _)) z =
-      (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] (divergenceCLM B : H → ℝ)) z := by
-  have hpre : (lsmul ℝ ℝ : ℝ →L[ℝ] H →L[ℝ] H).precompR H = lsmul ℝ ℝ := by ext; rfl
-  have hB1 : ContDiff ℝ 1 (B : H → H) := B.contDiff.of_le (by simp)
-  have hfd : fderiv ℝ (B.mollify volume ρ (subset_univ _) : H → H) z =
-      (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fderiv ℝ (B : H → H)) z := by
-    rw [coe_mollify, (B.hasCompactSupport.hasFDerivAt_convolution_right (lsmul ℝ ℝ)
-      (ρ.continuous_normed (μ := volume)).locallyIntegrable hB1 z).fderiv, hpre]
-  have hex := (ρ.hasCompactSupport_normed (μ := volume)).convolutionExists_left_of_continuous_right
-    (lsmul ℝ ℝ) (ρ.integrable_normed (μ := volume)).locallyIntegrable
-    (hB1.continuous_fderiv one_ne_zero) z
-  have hdiv_eq : (divergenceCLM B : H → ℝ) = fun y => traceCLM ℝ H (fderiv ℝ (B : H → H) y) := by
-    ext y; rw [divergenceCLM_apply, ← traceCLM_apply]
-  rw [divergenceCLM_apply, ← traceCLM_apply, hfd, hdiv_eq]
-  exact ((traceCLM ℝ H).convolution_lsmul_comp_comm hex).symm
 
 /-- Moving a normalized-bump mollifier from an integrable function `L` onto a test vector field
 `B ∈ 𝓓(⊤, H)` turns `-∫ DL_ρ (B)` into `∫ div (mollify B) * L`. -/
@@ -580,21 +597,7 @@ private theorem neg_integral_fderiv_normed_convolution_eq {H : Type*} [NormedAdd
   rw [integral_integral_swap hprod]
   refine integral_congr_ae (.of_forall fun z => ?_)
   simp_rw [← mul_assoc, integral_mul_const]
-  rw [divergenceCLM_mollify_eq_normed_convolution ρ B z]; rfl
-
-/-- The real-valued section lengths of a finite-volume null-measurable set form an integrable
-function on the orthogonal hyperplane. -/
-private theorem integrable_measureReal_lineSection {s : Set E} (hs : NullMeasurableSet s volume)
-    (hfin : volume s ≠ ⊤) (e : E) (he : ‖e‖ = 1) :
-    Integrable (fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) volume := by
-  refine ⟨(ENNReal.measurable_toReal.comp_aemeasurable
-    (aemeasurable_volume_lineSection e he hs)).aestronglyMeasurable, ?_⟩
-  have hae : (fun y : (ℝ ∙ e)ᗮ => ‖volume.real {t : ℝ | (y : E) + t • e ∈ s}‖ₑ) =ᵐ[volume]
-      fun y => volume {t : ℝ | (y : E) + t • e ∈ s} := by
-    filter_upwards [ae_volume_lineSection_lt_top e he hs hfin] with y hy
-    rw [Real.eNorm_of_nonneg measureReal_nonneg, ofReal_measureReal hy.ne]
-  rw [HasFiniteIntegral, lintegral_congr_ae hae, ← volume_eq_lintegral_volume_lineSection e he hs]
-  exact hfin.lt_top
+  rw [congrFun (coe_divergenceCLM_mollify B volume ρ (subset_univ _)) z]; rfl
 
 omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
   [BorelSpace E] in
@@ -619,11 +622,9 @@ private theorem abs_intervalIntegral_symm_sub_le {h : ℝ → ℝ} (hh : Continu
       ≤ C * |-(b / 2) - -(a / 2)| + C * |a / 2 - b / 2| :=
         (norm_add_le _ _).trans (add_le_add hb1 hb2)
     _ = C * |a - b| := by
-        have h1 : |-(b / 2) - -(a / 2)| = |a - b| / 2 := by
-          rw [show -(b / 2) - -(a / 2) = (a - b) / 2 by ring, abs_div, abs_two]
-        have h2 : |a / 2 - b / 2| = |a - b| / 2 := by
-          rw [show a / 2 - b / 2 = (a - b) / 2 by ring, abs_div, abs_two]
-        rw [h1, h2]
+        have h1 : -(b / 2) - -(a / 2) = (a - b) / 2 := by ring
+        have h2 : a / 2 - b / 2 = (a - b) / 2 := by ring
+        rw [h1, h2, abs_div, abs_two]
         ring
 
 /-- Express the integral of `divergenceCLM ψ₀` over a finite-volume Steiner symmetral as an
@@ -642,7 +643,7 @@ private theorem integrable_and_setIntegral_steinerSymmetrization_eq_integral_int
   have hS := nullMeasurableSet_steinerSymmetrization e he hs
   have hL := measurePreserving_orthogonalLineEquiv e he
   have hLe := (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding
-  set G : E → ℝ := (steinerSymmetrization e he s).indicator (divergenceCLM ψ₀)
+  set G : E → ℝ := (steinerSymmetrization e he s).indicator (divergenceCLM ψ₀) with hG_def
   have hi : Integrable G volume :=
     ((divergenceCLM ψ₀).continuous.integrable_of_hasCompactSupport
       (divergenceCLM ψ₀).hasCompactSupport).indicator₀ hS
@@ -654,24 +655,21 @@ private theorem integrable_and_setIntegral_steinerSymmetrization_eq_integral_int
     set L_y := volume.real {t : ℝ | (y : E) + t • e ∈ s}
     have hsec : {t : ℝ | (y : E) + t • e ∈ steinerSymmetrization e he s} =
         Ioo (-(L_y / 2)) (L_y / 2) := by
-      ext t
-      rw [Set.mem_ofPred, mem_steinerSymmetrization, mem_eball, edist_zero_right,
-        Real.eNorm_eq_ofReal_abs, ← ofReal_measureReal hy.ne, ← ENNReal.ofReal_ofNat,
-        ← ENNReal.ofReal_div_of_pos two_pos,
-        ENNReal.ofReal_lt_ofReal_iff_of_nonneg (abs_nonneg t), abs_lt]
-      rfl
+      rw [lineSection_steinerSymmetrization, ← ofReal_measureReal hy.ne, ← ENNReal.ofReal_ofNat,
+        ← ENNReal.ofReal_div_of_pos two_pos, Metric.eball_ofReal, Real.ball_zero_eq_Ioo]
     have hind : (fun t : ℝ => (G ∘ orthogonalLineEquiv e he) (y, t)) =
         (Ioo (-(L_y / 2)) (L_y / 2)).indicator fun t => divergenceCLM ψ₀ ((y : E) + t • e) := by
       ext t
-      simp only [G, Function.comp_apply, orthogonalLineEquiv_apply, ← hsec]
+      simp only [hG_def, Function.comp_apply, orthogonalLineEquiv_apply, ← hsec]
       exact (indicator_comp_right (fun t : ℝ => (y : E) + t • e)
         (s := steinerSymmetrization e he s) (g := divergenceCLM ψ₀)).symm
     have hL0 : 0 ≤ L_y := measureReal_nonneg
     rw [hind, integral_indicator measurableSet_Ioo, ← integral_Ioc_eq_integral_Ioo,
       intervalIntegral.integral_of_le (by linarith)]
   refine ⟨((hL.integrable_comp_of_integrable hi).integral_prod_left).congr hae, ?_⟩
-  rw [← integral_indicator₀ hS, show ∫ x, (steinerSymmetrization e he s).indicator
-      (divergenceCLM ψ₀) x = ∫ x, G x from rfl, ← hL.integral_comp hLe]
+  rw [← integral_indicator₀ hS]
+  simp_rw [← hG_def]
+  rw [← hL.integral_comp hLe]
   exact (integral_prod (G ∘ orthogonalLineEquiv e he)
     (hL.integrable_comp_of_integrable hi)).trans (integral_congr_ae hae)
 
@@ -789,50 +787,6 @@ private theorem integral_normed_convolution_le_setIntegral_add_errors {H : Type*
       Mψ * ∫ y : H, ‖L_k y - L y‖ := h1.trans (h2.trans_eq (by rw [hconvL]))
   linarith
 
-/-- Real-valued `L¹` convergence of normalized-bump mollifications. -/
-private theorem tendsto_integral_norm_normed_convolution_sub {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    {ρ : ℕ → ContDiffBump (0 : H)} (hρ : Tendsto (fun k => (ρ k).rOut) atTop (𝓝 0))
-    {f : H → ℝ} (hf : Integrable f volume) :
-    Tendsto (fun k => ∫ y : H, ‖((ρ k).normed volume ⋆[lsmul ℝ ℝ, volume] f) y - f y‖)
-      atTop (𝓝 0) := by
-  have hto := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (tendsto_lintegral_enorm_normed_convolution_sub hρ hf)
-  rw [ENNReal.toReal_zero] at hto
-  refine hto.congr fun k => ?_
-  have hik : Integrable (((ρ k).normed volume ⋆[lsmul ℝ ℝ, volume] f) - f) volume :=
-    (((ρ k).integrable_normed (μ := volume)).integrable_convolution (lsmul ℝ ℝ) hf).sub hf
-  exact (integral_norm_eq_lintegral_eNorm hik.aestronglyMeasurable).symm
-
-/-- The horizontal boundary-average test vector field in `𝓓(⊤, (ℝ ∙ e)ᗮ)` associated to `ψ₀` and a
-smooth slab thickness `ℓ`. -/
-private def slabHorizAvg (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓((⊤ : Opens E), E))
-    {ℓ : (ℝ ∙ e)ᗮ → ℝ} (hℓ : ContDiff ℝ ∞ ℓ) : 𝓓((⊤ : Opens (ℝ ∙ e)ᗮ), (ℝ ∙ e)ᗮ) where
-  toFun y := (2 : ℝ)⁻¹ •
-    (((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (ℓ y / 2) • e))).1 +
-      ((orthogonalLineEquiv e he).symm (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))).1)
-  contDiff' :=
-    let π : E →L[ℝ] (ℝ ∙ e)ᗮ :=
-      (ContinuousLinearMap.fst ℝ (ℝ ∙ e)ᗮ ℝ).comp
-        (orthogonalLineEquiv e he).symm.toContinuousLinearMap
-    have h1 : ContDiff ℝ ∞ (fun y : (ℝ ∙ e)ᗮ => π (ψ₀ ((y : E) + (ℓ y / 2) • e))) :=
-      π.contDiff.comp (ψ₀.contDiff.comp ((ℝ ∙ e)ᗮ.subtypeL.contDiff.add
-        ((hℓ.div_const 2).smul (contDiff_const (c := e)))))
-    have h2 : ContDiff ℝ ∞ (fun y : (ℝ ∙ e)ᗮ => π (ψ₀ ((y : E) + (-(ℓ y / 2)) • e))) :=
-      π.contDiff.comp (ψ₀.contDiff.comp ((ℝ ∙ e)ᗮ.subtypeL.contDiff.add
-        ((hℓ.div_const 2).neg.smul (contDiff_const (c := e)))))
-    (h1.add h2).const_smul (2 : ℝ)⁻¹
-  hasCompactSupport' := .of_support_subset_isCompact
-    ((ψ₀.hasCompactSupport.isCompact.image (orthogonalLineEquiv e he).symm.continuous).image
-      continuous_fst) fun y hy => by
-      by_contra hyK
-      have h0 (t : ℝ) : ψ₀ ((y : E) + t • e) = 0 :=
-        image_eq_zero_of_notMem_tsupport fun h => hyK ⟨_, ⟨_, h, rfl⟩, by
-          rw [← orthogonalLineEquiv_apply e he y t, ContinuousLinearEquiv.symm_apply_apply]⟩
-      exact hy (by simp only [h0 (ℓ y / 2), h0 (-(ℓ y / 2)), map_zero, Prod.fst_zero, add_zero,
-        smul_zero])
-  tsupport_subset' := subset_univ _
-
 private theorem integrable_min_one_mul {H : Type*} [MeasurableSpace H] {μ : Measure H}
     {L : H → ℝ} (hLi : Integrable L μ) (hL0 : ∀ y, 0 ≤ L y) {M : ℝ} (hM0 : 0 ≤ M) :
     Integrable (fun y => min 1 (M * L y)) μ :=
@@ -851,25 +805,29 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
     (ψ₀ : 𝓓(⊤, E)) (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1)
     {Mψ : ℝ} (hM0 : 0 ≤ Mψ) (hMψ : ∀ x, ‖fderiv ℝ (fun z : E => ⟪e, ψ₀ z⟫) x‖ ≤ Mψ)
     (ρ : ContDiffBump (0 : (ℝ ∙ e)ᗮ)) :
-    let L : (ℝ ∙ e)ᗮ → ℝ := fun y => volume.real {t : ℝ | (y : E) + t • e ∈ s}
     ∃ (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)), (∀ y, ‖φ y‖ ≤ 1) ∧
       IntegrableOn (fun z : (ℝ ∙ e)ᗮ => √(1 - ‖φ z‖ ^ 2))
         {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}} volume ∧
       (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-(
-          (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2))..(
-          (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2),
+          (ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
+            fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y / 2))..(
+          (ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
+            fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y / 2),
           divergenceCLM ψ₀ ((y : E) + t • e)) ≤
         2 * (∫ z in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
             √(1 - ‖φ z‖ ^ 2)) +
-          (∫ z : (ℝ ∙ e)ᗮ, divergenceCLM φ z * L z) +
-          2 * ((∫ z, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => min 1 (Mψ * L y)) z -
-              min 1 (Mψ * L z)‖) +
-            Mψ * ∫ y, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y - L y‖) := by
-  intro L
+          (∫ z : (ℝ ∙ e)ᗮ, divergenceCLM φ z * volume.real {t : ℝ | (z : E) + t • e ∈ s}) +
+          2 * ((∫ z : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y : (ℝ ∙ e)ᗮ =>
+              min 1 (Mψ * volume.real {t : ℝ | (y : E) + t • e ∈ s})) z -
+              min 1 (Mψ * volume.real {t : ℝ | (z : E) + t • e ∈ s})‖) +
+            Mψ * ∫ y : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
+              fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y -
+              volume.real {t : ℝ | (y : E) + t • e ∈ s}‖) := by
+  set L : (ℝ ∙ e)ᗮ → ℝ := fun y => volume.real {t : ℝ | (y : E) + t • e ∈ s} with hL_def
   set D : Set (ℝ ∙ e)ᗮ := {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}}
   have hDm : NullMeasurableSet D volume :=
     nullMeasurableSet_lt aemeasurable_const (aemeasurable_volume_lineSection e he hs)
-  have hLi : Integrable L volume := integrable_measureReal_lineSection hs hfin e he
+  have hLi : Integrable L volume := integrable_measureReal_lineSection e he hs hfin
   set L_ρ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L
   have hLρ_s : ContDiff ℝ ∞ L_ρ :=
     (ρ.hasCompactSupport_normed (μ := volume)).contDiff_convolution_left _ ρ.contDiff_normed
@@ -878,14 +836,17 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
     le_convolution_lsmul_of_forall_le ρ.support_normed_eq.subset ρ.nonneg_normed ρ.integral_normed
       ((ρ.hasCompactSupport_normed (μ := volume)).convolutionExists_left _
         (ρ.continuous_normed (μ := volume)) hLi.locallyIntegrable y) fun _ _ => measureReal_nonneg
-  let B := slabHorizAvg e he ψ₀ hLρ_s; let φ := B.mollify volume ρ (subset_univ _)
+  set B := slabHorizAvg e he ψ₀ hLρ_s with hB_def
+  set φ := B.mollify volume ρ (subset_univ _) with hφ_def
   set d : (ℝ ∙ e)ᗮ → ℝ := fun y =>
-    (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (L_ρ y / 2) • e)⟫ - ⟪e, ψ₀ ((y : E) + (-(L_ρ y / 2)) • e)⟫)
+    (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (L_ρ y / 2) • e)⟫ -
+      ⟪e, ψ₀ ((y : E) + (-(L_ρ y / 2)) • e)⟫) with hd_def
   obtain ⟨hdc, hdi⟩ : Continuous d ∧ Integrable d volume :=
     continuous_and_integrable_slabVerticalDiff e he ψ₀ hLρ_s
   have hφ_sq (z : (ℝ ∙ e)ᗮ) : ‖φ z‖ ^ 2 + (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z ^ 2 ≤ 1 := by
-    rw [mollify_apply]; exact norm_sq_add_sq_normed_convolution_le_one ρ B.continuous hdc
-      (norm_sq_slabBoundaryAvg_le_one e he ψ₀ hψ1 L_ρ) z
+    rw [hφ_def, mollify_apply]
+    exact norm_sq_add_sq_normed_convolution_le_one ρ B.continuous hdc
+      (fun y => by rw [hB_def]; exact norm_sq_slabBoundaryAvg_le_one e he ψ₀ hψ1 hLρ_s y) z
   have hφ1 (z : (ℝ ∙ e)ᗮ) : ‖φ z‖ ≤ 1 := by
     nlinarith [norm_nonneg (φ z), hφ_sq z, sq_nonneg ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z)]
   have hwi : IntegrableOn (fun z : (ℝ ∙ e)ᗮ => √(1 - ‖φ z‖ ^ 2)) D volume :=
@@ -902,28 +863,30 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
     abs_slabVerticalDiff_le e he ψ₀ hψ1 hM0 hMψ (L := L) hLρ0 y
   have hg0 (z : (ℝ ∙ e)ᗮ) (hz : z ∈ Dᶜ) : min 1 (Mψ * L z) = 0 := by
     have hz0 : volume {t : ℝ | (z : E) + t • e ∈ s} = 0 := by simpa [D] using hz
-    simp [L, measureReal_def, hz0]
+    simp [hL_def, measureReal_def, hz0]
   have hd_int := integral_normed_convolution_le_setIntegral_add_errors ρ hdi hgi hL_err hDm hg0
     hM0 hd_le hwi fun z _ => Real.le_sqrt_of_sq_le (by rw [sq_abs]; linarith [hφ_sq z])
   have hslab := (integrable_and_integral_divergenceCLM_symmSlab_eq e he ψ₀ hLρ_s).2
+  simp_rw [← hd_def, ← hB_def] at hslab
   have hibp := neg_integral_fderiv_normed_convolution_eq ρ hLi B
-  change (∫ y : (ℝ ∙ e)ᗮ, _) = 2 * (∫ y : (ℝ ∙ e)ᗮ, d y) - ∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ L_ρ y (B y)
-    at hslab
-  change -∫ y : (ℝ ∙ e)ᗮ, fderiv ℝ L_ρ y (B y) = ∫ z : (ℝ ∙ e)ᗮ, divergenceCLM φ z * L z at hibp
+  simp_rw [← hφ_def] at hibp
   linarith
 
 private theorem symmSlab_approx_sub_le (e : E) (he : ‖e‖ = 1)
     {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤)
     (ψ₀ : 𝓓(⊤, E)) {C₀ : ℝ} (hC₀ : ∀ x, ‖divergenceCLM ψ₀ x‖ ≤ C₀)
     (ρ : ContDiffBump (0 : (ℝ ∙ e)ᗮ)) :
-    let L : (ℝ ∙ e)ᗮ → ℝ := fun y => volume.real {t : ℝ | (y : E) + t • e ∈ s}
     (∫ x in steinerSymmetrization e he s, divergenceCLM ψ₀ x) -
-      (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2))..
-          ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2),
+      (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-((ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
+          fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y / 2))..
+          ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
+            fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y / 2),
         divergenceCLM ψ₀ ((y : E) + t • e)) ≤
-      C₀ * ∫ y : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y - L y‖ := by
-  intro L
-  have hLi : Integrable L volume := integrable_measureReal_lineSection hs hfin e he
+      C₀ * ∫ y : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
+        fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y -
+        volume.real {t : ℝ | (y : E) + t • e ∈ s}‖ := by
+  set L : (ℝ ∙ e)ᗮ → ℝ := fun y => volume.real {t : ℝ | (y : E) + t • e ∈ s}
+  have hLi : Integrable L volume := integrable_measureReal_lineSection e he hs hfin
   set L_ρ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L
   have hLρ_s : ContDiff ℝ ∞ L_ρ :=
     (ρ.hasCompactSupport_normed (μ := volume)).contDiff_convolution_left _
@@ -970,7 +933,7 @@ private theorem ofReal_setIntegral_steinerSymmetrization_le_iSup
   obtain ⟨Cψ, hCψ⟩ := (divergenceCLM ψ₀).continuous.bounded_above_of_compact_support
     (divergenceCLM ψ₀).hasCompactSupport
   set Mψ := max M₀ 0; set C₀ := max Cψ 0
-  have hLi := integrable_measureReal_lineSection hs hfin e he
+  have hLi := integrable_measureReal_lineSection e he hs hfin
   have hgi := integrable_min_one_mul hLi (fun _ => measureReal_nonneg) (le_max_right M₀ 0 : 0 ≤ Mψ)
   have hL_lim := tendsto_integral_norm_normed_convolution_sub hρ_lim hLi
   have hg_lim := tendsto_integral_norm_normed_convolution_sub hρ_lim hgi
@@ -992,12 +955,14 @@ private theorem ofReal_setIntegral_steinerSymmetrization_le_iSup
   refine le_trans ?_ (le_iSup₂_of_le φ hφ1 le_rfl)
   rw [← hD_eq]
   refine (ENNReal.ofReal_le_ofReal ?_).trans ENNReal.ofReal_add_le
-  dsimp only at hslab herr₀
   linarith
 
 /-- **Variational formula for the perimeter of a Steiner symmetral.** For any null-measurable set
-`s` of finite volume and any unit vector `e`, `P(S_e s)` equals the supremum of
-`2 ∫_D √(1 - ‖φ‖²) + ∫ div φ · L` over `φ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` satisfying `‖φ‖ ≤ 1`. -/
+`s` of finite volume and any unit vector `e`, writing `L(y) = |{t | y + t • e ∈ s}|` for the
+section lengths on `(ℝ ∙ e)ᗮ` and `D = {y | 0 < L(y)}` for the positive-section set, the perimeter
+`P(S_e s)` in `ℝ≥0∞` equals the `ℝ≥0∞`-supremum of
+`2 ∫_D √(1 - ‖φ‖²) + ENNReal.ofReal (∫ div φ · L)` over transverse test vector fields
+`φ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` satisfying `‖φ‖ ≤ 1`, with no finiteness assumption on `P(s)` or `P(S_e s)`. -/
 theorem perimeter_steinerSymmetrization_eq_iSup (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤) :
     perimeter volume ⊤ (steinerSymmetrization e he s) =
@@ -1097,12 +1062,12 @@ private theorem mul_variational_add_excess_le_perimeter (e : E) (he : ‖e‖ = 
   exact (add_le_add (add_le_add hD_le hA_le) le_rfl).trans hex
 
 /-- **Scaled Steiner perimeter and noninterval excess bound.** For any null-measurable set `s` of
-finite volume, a unit vector `e`, a null-measurable family `A` of noninterval line sections, and
-`δ ∈ [0, 1]`,
+finite volume, a unit vector `e`, any family `A ⊆ (ℝ ∙ e)ᗮ` of sections that, for almost every
+`y ∈ A`, do not agree almost everywhere with any interval (`OrdConnected` set), and `δ ∈ [0, 1]`,
 `(1 - δ) P(S_e s) + 2 √(2 δ - δ²) |A| ≤ P(s)`. -/
 theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
     (e : E) (he : ‖e‖ = 1) {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤)
-    {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
+    {A : Set (ℝ ∙ e)ᗮ}
     (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
       ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I)
     {δ : ℝ} (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) :
@@ -1118,9 +1083,13 @@ theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
       volume.real {t : ℝ | (y : E) + t • e ∈ s})
   have hsup : perimeter volume ⊤ (steinerSymmetrization e he s) = ⨆ p : Φ, V p := by
     rw [perimeter_steinerSymmetrization_eq_iSup e he hs hfin, iSup_subtype]
+  have hAB : A ≤ᵐ[volume] {y : (ℝ ∙ e)ᗮ |
+      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := hbad
+  refine (add_le_add le_rfl (mul_le_mul_right (measure_mono_ae hAB) _)).trans ?_
   rw [hsup, ENNReal.mul_iSup, ENNReal.iSup_add]
-  exact iSup_le fun p =>
-    mul_variational_add_excess_le_perimeter e he hs hfin hA hbad hδ0 hδ1 p.1 p.2
+  exact iSup_le fun p => mul_variational_add_excess_le_perimeter e he hs hfin
+    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ => id)
+    hδ0 hδ1 p.1 p.2
 
 private theorem eq_zero_of_forall_delta_le {p a : ℝ} (hp : 0 < p) (ha : 0 ≤ a)
     (hdelta : ∀ {δ : ℝ}, 0 < δ → δ < 1 → (1 - δ) * p + 2 * √(2 * δ - δ ^ 2) * a ≤ p) :
@@ -1182,12 +1151,13 @@ private theorem sq_add_four_mul_sq_le_of_forall_delta {p p₀ a : ℝ}
     linarith
 
 /-- **Pythagorean noninterval excess in Steiner's perimeter inequality.** For any null-measurable
-set `s` of finite volume, a unit vector `e`, and any null-measurable family `A` of noninterval line
-sections of `s` in direction `e`,
+set `s` of finite volume, a unit vector `e`, and any family `A ⊆ (ℝ ∙ e)ᗮ` of line sections of `s`
+in direction `e` that, for almost every `y ∈ A`, do not agree almost everywhere with any interval
+(`OrdConnected` set),
 `P(S_e s)² + 4 |A|² ≤ P(s)²`. -/
 theorem perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le
     (e : E) (he : ‖e‖ = 1) {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤)
-    {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
+    {A : Set (ℝ ∙ e)ᗮ}
     (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
       ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I) :
     perimeter volume ⊤ (steinerSymmetrization e he s) ^ 2 + 4 * volume A ^ 2 ≤
@@ -1198,8 +1168,13 @@ theorem perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le
   · simp [hPtop]
   have hP₀_le : P₀ ≤ P := perimeter_steinerSymmetrization_le e he hs hfin
   have hP₀_fin : P₀ ≠ ⊤ := ne_top_of_le_ne_top hPfin hP₀_le
-  have h2A : 2 * volume A ≤ P := le_add_self.trans
-    (two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection hs hfin e he hA hbad)
+  have hAB : A ≤ᵐ[volume] {y : (ℝ ∙ e)ᗮ |
+      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := hbad
+  have h2A : 2 * volume A ≤ P :=
+    (mul_le_mul_right (measure_mono_ae hAB) _).trans
+      (le_add_self.trans (two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection
+        hs hfin e he (nullMeasurableSet_noninterval_lineSection hs hfin e he)
+        (.of_forall fun _ => id)))
   have hA_fin : volume A ≠ ⊤ := fun htop => hPfin (top_unique (by simpa [htop] using h2A))
   set p := P.toReal; set p₀ := P₀.toReal; set a := (volume A).toReal
   have hp0 : 0 ≤ p := ENNReal.toReal_nonneg
@@ -1209,21 +1184,17 @@ theorem perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le
     simpa [p, a, ENNReal.toReal_mul] using ENNReal.toReal_mono hPfin h2A
   have hdelta {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1) :
       (1 - δ) * p₀ + 2 * √(2 * δ - δ ^ 2) * a ≤ p := by
-    have h := ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter e he hs hfin hA hbad
-      hδ0.le hδ1.le
-    have hlt := ENNReal.toReal_mono hPfin h
-    rwa [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hP₀_fin)
-        (ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.ofReal_ne_top) hA_fin),
-      ENNReal.toReal_mul, ENNReal.toReal_ofReal (sub_nonneg.2 hδ1.le), ENNReal.toReal_mul,
-      ENNReal.toReal_mul, ENNReal.toReal_ofNat, ENNReal.toReal_ofReal (Real.sqrt_nonneg _)] at hlt
+    have hlt := ENNReal.toReal_mono hPfin
+      (ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter e he hs hfin hbad
+        hδ0.le hδ1.le)
+    rw [ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hP₀_fin)
+      (ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.ofReal_ne_top) hA_fin)] at hlt
+    simpa [p, p₀, a, hδ1.le] using hlt
   have hreal : p₀ ^ 2 + 4 * a ^ 2 ≤ p ^ 2 :=
     sq_add_four_mul_sq_le_of_forall_delta hp₀0 ha0 (ENNReal.toReal_mono hPfin hP₀_le) h2a_le hdelta
   have hof := ENNReal.ofReal_le_ofReal hreal
-  rw [ENNReal.ofReal_add (sq_nonneg p₀) (mul_nonneg (by norm_num) (sq_nonneg a)),
-    ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat, ENNReal.ofReal_pow hp₀0,
-    ENNReal.ofReal_pow ha0, ENNReal.ofReal_pow hp0, ENNReal.ofReal_toReal hP₀_fin,
-    ENNReal.ofReal_toReal hA_fin, ENNReal.ofReal_toReal hPfin] at hof
-  exact hof
+  rw [ENNReal.ofReal_add (sq_nonneg p₀) (mul_nonneg (by positivity) (sq_nonneg a))] at hof
+  simpa [p, p₀, a, hp0, hp₀0, ha0, hPfin, hP₀_fin, hA_fin] using hof
 
 /-- **Pythagorean noninterval excess for the full family of noninterval sections.** For any
 null-measurable set `s` of finite volume and any unit vector `e`,
@@ -1234,8 +1205,7 @@ theorem perimeter_steinerSymmetrization_sq_add_four_mul_volume_noninterval_sq_le
         4 * volume {y : (ℝ ∙ e)ᗮ |
           ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} ^ 2 ≤
       perimeter volume ⊤ s ^ 2 :=
-  perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le e he hs hfin
-    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ => id)
+  perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le e he hs hfin (.of_forall fun _ => id)
 
 /-- **Steiner perimeter equality forces interval sections.** If a null-measurable set `s` of finite
 volume and finite perimeter satisfies `P(S_e s) = P(s)`, then for almost every `y ∈ (ℝ ∙ e)ᗮ` the

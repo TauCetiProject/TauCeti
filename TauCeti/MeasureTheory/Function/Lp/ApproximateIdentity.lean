@@ -59,6 +59,8 @@ integrability or compact support assumption on the function.
   convolution of a function in `Lᵖ` with these bumps.
 * `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
+* `TauCeti.tendsto_integral_norm_normed_convolution_sub`: the same `L¹` convergence written with
+  Bochner integrals of norms.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
 * `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
@@ -235,6 +237,22 @@ theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Ty
     ((phi i).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hf).sub hf
   simp_rw [eLpNorm_one_eq_lintegral_eNorm (hi _).aestronglyMeasurable] at h
   exact h
+
+/-- **Mollification converges in `L¹`, Bochner-integral form.** For an integrable Banach-valued
+function `f` and normalized smooth bumps `phi i` centred at zero whose outer radii tend to zero,
+`∫ x, ‖((phi i).normed mu ⋆ f) x - f x‖ ∂mu → 0`. -/
+theorem tendsto_integral_norm_normed_convolution_sub [CompleteSpace F] {I : Type*}
+    {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : Integrable f mu) :
+    Tendsto (fun i ↦ ∫ x, ‖((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x‖ ∂mu) l
+      (nhds 0) := by
+  have hto := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (tendsto_lintegral_enorm_normed_convolution_sub hphi hf)
+  rw [ENNReal.toReal_zero] at hto
+  refine hto.congr fun i ↦ ?_
+  have hi : Integrable ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) mu :=
+    ((phi i).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hf).sub hf
+  exact (integral_norm_eq_lintegral_eNorm hi.aestronglyMeasurable).symm
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
 bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions

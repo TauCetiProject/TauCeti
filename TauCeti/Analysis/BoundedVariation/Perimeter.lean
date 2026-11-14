@@ -38,7 +38,9 @@ the semicontinuity half of the direct method for perimeter problems.
 * `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`
   and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
   monotonicity and inner continuity in `Ω`.
-* `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty` and `TauCeti.perimeter_univ`.
+* `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty`, `TauCeti.perimeter_univ`,
+  `TauCeti.perimeter_eq_zero_of_restrict_eq_zero` and
+  `TauCeti.perimeter_eq_zero_of_measure_eq_zero`.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
 ## References
@@ -106,6 +108,17 @@ theorem perimeter_iSup {ι : Type*} {Ω : ι → Opens E} (hΩ : Directed (· �
 theorem perimeter_empty : perimeter μ Ω ∅ = 0 := by
   rw [perimeter_def, indicator_empty]
   exact totalVariationOn_zero
+
+/-- A set of measure zero inside `Ω` has perimeter zero in `Ω`. -/
+theorem perimeter_eq_zero_of_restrict_eq_zero (h : μ.restrict Ω s = 0) :
+    perimeter μ Ω s = 0 := by
+  rw [perimeter_congr_ae (ae_eq_empty.2 h), perimeter_empty]
+
+/-- A null set has perimeter zero in every open set. -/
+theorem perimeter_eq_zero_of_measure_eq_zero (h : μ s = 0) :
+    perimeter μ Ω s = 0 :=
+  perimeter_eq_zero_of_restrict_eq_zero
+    (le_antisymm ((Measure.restrict_apply_le _ _).trans_eq h) zero_le)
 
 /-- The perimeter of a subset `t ⊆ s` with respect to `μ.restrict s` agrees with its perimeter with
 respect to `μ`, because the indicator of `t` vanishes off `s`. -/
