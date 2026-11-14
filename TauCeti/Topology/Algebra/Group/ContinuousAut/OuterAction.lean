@@ -43,6 +43,8 @@ Galois action. The construction does not use closedness, so no closedness hypoth
   induced by conjugation.
 * `TauCeti.ContinuousAut.continuous_conjNormal`, `TauCeti.continuous_outerAction`: for compact `N`,
   both maps are continuous for the congruence topology and its quotient.
+* `TauCeti.ContinuousOut.congr_smul_conjClasses_map`: compatibility of `ContinuousOut.congr` with
+  the action on conjugacy classes.
 
 ## References
 
@@ -146,5 +148,23 @@ theorem continuous_outerAction : Continuous (outerAction N) :=
       fun e ↦ (outerAction_mk e).symm
 
 end Continuity
+
+namespace ContinuousOut
+
+/-- Transporting a continuous outer automorphism along `e : G ≃ₜ* H` is compatible with the map on
+conjugacy classes induced by `e`. -/
+theorem congr_smul_conjClasses_map {G H : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] [Group H] [TopologicalSpace H] [SeparatelyContinuousMul H]
+    (e : G ≃ₜ* H) (α : ContinuousOut G) (c : ConjClasses G) :
+    congr e α • ConjClasses.map (e : G →* H) c =
+      ConjClasses.map (e : G →* H) (α • c) := by
+  obtain ⟨φ, rfl⟩ := QuotientGroup.mk_surjective α
+  obtain ⟨g, rfl⟩ := ConjClasses.mk_surjective c
+  change congr e (φ : ContinuousOut G) •
+      ConjClasses.map (e : G →* H) (ConjClasses.mk g) =
+    ConjClasses.map (e : G →* H) ((φ : ContinuousOut G) • ConjClasses.mk g)
+  simp
+
+end ContinuousOut
 
 end TauCeti
