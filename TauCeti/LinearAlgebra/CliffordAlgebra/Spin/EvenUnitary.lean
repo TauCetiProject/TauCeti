@@ -596,12 +596,9 @@ theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
   rw [coe_rightIotaEven, spinGroup_smul_apply, ι_spinVectorAction_apply]
   simp only [Subalgebra.coe_mul, coe_rightIotaEven, coe_conjugateNegativeIotaEven]
   rw [coe_evenUnitaryGroupEvenPart, coe_reverseEven_apply,
-    coe_evenUnitaryGroupEvenPart, coe_spinGroupToEvenUnitary_apply]
+    coe_evenUnitaryGroupEvenPart, coe_spinGroupToEvenUnitary_apply, spinGroup.val_toUnits_apply]
   -- All terms now lie in the ambient Clifford algebra; this exposes associativity and the
   -- cancellation `ι(e) * -ι(e) = 1` used below.
-  change ((s : CliffordAlgebra Q) * ι Q m * star (s : CliffordAlgebra Q)) * ι Q e =
-    (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
-      ((-ι Q e * reverse (s : CliffordAlgebra Q)) * ι Q e)
   rw [reverse_eq_star_of_mem_even ⟨(s : CliffordAlgebra Q), spinGroup.mem_even s.2⟩]
   symm
   calc
@@ -641,12 +638,7 @@ quadratic isometry. -/
 theorem evenUnitaryGroupMap_spinGroupToEvenUnitary (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
     f.evenUnitaryGroupMap (CliffordAlgebra.spinGroupToEvenUnitary Q₁ x) =
       CliffordAlgebra.spinGroupToEvenUnitary Q₂ (f.spinGroupMap x) :=
-  Subtype.ext <| Units.ext <| by
-    rw [coe_evenUnitaryGroupMap_apply, CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
-      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply, spinGroup.val_toUnits_apply,
-      coe_spinGroupMap_apply]
-    -- The algebra-hom and ring-hom coercions of `CliffordAlgebra.map f` agree definitionally.
-    rfl
+  Subtype.ext <| Units.ext <| by simp
 
 end QuadraticMap.Isometry
 
