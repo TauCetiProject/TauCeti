@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DualNumber
-public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Ring.Ultra
 public import TauCeti.Topology.MetricSpace.Ultra.Prod
 
 /-!
@@ -19,8 +20,10 @@ norm `‖a‖ + ‖b‖` instead, which is not ultrametric, so the maximum norm 
 Over a complete ultrametric normed ring `K` with `‖1‖ = 1` it is a complete ultrametric normed
 ring with `‖1‖ = 1` and `‖ε‖ = 1`, and its norm is not multiplicative since `ε * ε = 0`.
 
-It is a basic example of a nonreduced ultrametric Banach ring, built on Mathlib's `DualNumber K`
-(`TrivSqZeroExt K K`) through the ring identification `TauCeti.MaxDualNumber.ofDualNumber`.
+It is a basic example of a nonreduced ultrametric Banach ring (and Banach `𝕜`-algebra whenever `K`
+is a normed `𝕜`-algebra), built on Mathlib's `DualNumber K` (`TrivSqZeroExt K K`) through the ring
+and algebra identifications `TauCeti.MaxDualNumber.ofDualNumber` and
+`TauCeti.MaxDualNumber.ofDualNumberAlgEquiv`.
 -/
 
 public section
@@ -77,6 +80,41 @@ instance : IsUltrametricDist (MaxDualNumber K) :=
 instance [CompleteSpace K] : CompleteSpace (MaxDualNumber K) :=
   inferInstanceAs (CompleteSpace (K × K))
 
+instance {R : Type*} [SMul R K] : SMul R (MaxDualNumber K) :=
+  inferInstanceAs (SMul R (DualNumber K))
+
+instance {R S : Type*} [SMul R K] [SMul S K] [SMul R S] [IsScalarTower R S K] :
+    IsScalarTower R S (MaxDualNumber K) :=
+  inferInstanceAs (IsScalarTower R S (DualNumber K))
+
+instance {R : Type*} [CommSemiring R] [Algebra R K] : Algebra R (MaxDualNumber K) :=
+  inferInstanceAs (Algebra R (DualNumber K))
+
+instance {R : Type*} [SeminormedRing R] [SMul R K] [IsBoundedSMul R K] :
+    IsBoundedSMul R (MaxDualNumber K) :=
+  inferInstanceAs (IsBoundedSMul R (K × K))
+
+instance {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra 𝕜 K] : NormedAlgebra 𝕜 (MaxDualNumber K) where
+  norm_smul_le r x := norm_smul_le r (x : K × K)
+
+/-- The identification of `MaxDualNumber K` with Mathlib's dual numbers, as `R`-algebras. -/
+def ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] :
+    DualNumber K ≃ₐ[R] MaxDualNumber K :=
+  AlgEquiv.refl
+
+@[simp]
+theorem coe_ofDualNumberAlgEquiv (R : Type*) [CommSemiring R] [Algebra R K] (x : DualNumber K) :
+    ofDualNumberAlgEquiv R x = ofDualNumber x :=
+  (rfl)
+
+@[simp]
+theorem norm_algebraMap_self (a : K) : ‖algebraMap K (MaxDualNumber K) a‖ = ‖a‖ := by
+  rw [← (ofDualNumberAlgEquiv K).commutes, coe_ofDualNumberAlgEquiv,
+    TrivSqZeroExt.algebraMap_eq_inl, norm_ofDualNumber]
+  simp
+
+section NormOneClass
+
 variable [NormOneClass K]
 
 instance : NormOneClass (MaxDualNumber K) :=
@@ -91,6 +129,8 @@ theorem norm_eps : ‖(eps : MaxDualNumber K)‖ = 1 := by
 /-- The maximum norm on the dual numbers is not multiplicative: `‖ε * ε‖ = 0` while `‖ε‖ = 1`. -/
 theorem not_normMulClass : ¬NormMulClass (MaxDualNumber K) := fun _ ↦ by
   simpa using norm_mul (eps : MaxDualNumber K) eps
+
+end NormOneClass
 
 end MaxDualNumber
 

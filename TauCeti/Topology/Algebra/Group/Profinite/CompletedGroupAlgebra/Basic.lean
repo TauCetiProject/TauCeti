@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
+public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Basic
@@ -87,7 +88,7 @@ commutative exactly when `Γ` is (`isMulCommutative_iff`).
   `TauCeti.completedGroupAlgebra.isMulCommutative_iff`: for profinite `Γ` over a nontrivial `R`,
   the group elements are distinct, form a closed copy of `Γ` when `R` is Hausdorff, and the
   algebra is commutative exactly when `Γ` is.
-* The instances `IsTopologicalRing`, `ContinuousSMul R`, `CompactSpace`,
+* The instances `IsTopologicalRing`, `IsLinearTopology`, `ContinuousSMul R`, `CompactSpace`,
   `TotallyDisconnectedSpace`, `T2Space`, `UniformSpace` and `IsUniformAddGroup`, the
   `NoZeroSMulDivisors R` instance for `R` without zero divisors, and the `IsMulCommutative` and
   `CommRing` instances for commutative `Γ`.
@@ -523,6 +524,57 @@ compact Hausdorff ring with continuous addition is compact. -/
 instance [T2Space R] [CompactSpace R] [ContinuousAdd R] :
     CompactSpace (completedGroupAlgebra R Γ) :=
   (isClosedEmbedding_coeffFamily R Γ).compactSpace
+
+/-- When every open normal quotient of `Γ` is finite, the completed group algebra over a linearly
+topologised commutative ring is linearly topologised: the elements whose projections at finitely
+many levels have coefficients in an open ideal of `R` form a basis of left ideals at `0`. -/
+instance [IsLinearTopology R R] :
+    IsLinearTopology (completedGroupAlgebra R Γ) (completedGroupAlgebra R Γ) := by
+  classical
+  let levelIdeal (F : Finset (OpenNormalSubgroup Γ)) (I : Ideal R) :
+      Ideal (completedGroupAlgebra R Γ) :=
+    { carrier := {x | ∀ U ∈ F, ∀ g : Γ ⧸ U.toSubgroup, (proj R Γ U x).coeff g ∈ I}
+      add_mem' := fun hx hy U hU g ↦ by
+        rw [map_add, MonoidAlgebra.coeff_add, Finsupp.add_apply]
+        exact I.add_mem (hx U hU g) (hy U hU g)
+      zero_mem' := fun U _ g ↦ by simp
+      smul_mem' := fun c {x} hx U hU g ↦ by
+        let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+        rw [smul_eq_mul, coeff_proj_mul]
+        exact I.sum_mem fun h _ ↦ I.mul_mem_left _ (hx U hU _) }
+  have hmem (F : Finset (OpenNormalSubgroup Γ)) {I : Ideal R} (hI : (I : Set R) ∈ 𝓝 0) :
+      (levelIdeal F I : Set (completedGroupAlgebra R Γ)) ∈ 𝓝 0 := by
+    have heq : (levelIdeal F I : Set (completedGroupAlgebra R Γ)) =
+        ⋂ U ∈ F, ⋂ g : Γ ⧸ U.toSubgroup, (fun x ↦ (proj R Γ U x).coeff g) ⁻¹' (I : Set R) := by
+      ext x
+      simp [levelIdeal]
+    rw [heq]
+    refine (Filter.biInter_finset_mem F).mpr fun U _ ↦ ?_
+    exact Filter.iInter_mem.mpr fun g ↦
+      (continuous_coeff_proj R Γ U g).continuousAt.preimage_mem_nhds (by simpa using hI)
+  refine IsLinearTopology.mk_of_hasBasis (completedGroupAlgebra R Γ)
+    (p := fun p : Finset (OpenNormalSubgroup Γ) × Ideal R ↦ (p.2 : Set R) ∈ 𝓝 0)
+    (s := fun p ↦ levelIdeal p.1 p.2) (Filter.hasBasis_iff.mpr fun s ↦ ⟨fun hs ↦ ?_, ?_⟩)
+  · rw [(isInducing_coeffFamily R Γ).nhds_eq_comap, map_zero, Filter.mem_comap] at hs
+    obtain ⟨t, ht, hts⟩ := hs
+    rw [nhds_pi, Filter.mem_pi'] at ht
+    obtain ⟨F, tU, htU, hFt⟩ := ht
+    have hex : ∀ U : OpenNormalSubgroup Γ, ∃ J : Ideal R, (J : Set R) ∈ 𝓝 0 ∧
+        (Set.univ : Set (Γ ⧸ U.toSubgroup)).pi (fun _ ↦ (J : Set R)) ⊆ tU U := by
+      intro U
+      have htU' : tU U ∈ 𝓝 0 := htU U
+      rw [nhds_pi] at htU'
+      obtain ⟨⟨_, J⟩, ⟨_, hJ⟩, hsub⟩ :=
+        (IsLinearTopology.hasBasis_ideal (R := R)).pi_self.mem_iff.mp htU'
+      exact ⟨J, hJ, fun f hf ↦ hsub fun g _ ↦ hf g trivial⟩
+    choose J hJ using hex
+    have hK : (⋂ U ∈ F, (J U : Set R)) ∈ 𝓝 0 :=
+      (Filter.biInter_finset_mem F).mpr fun U _ ↦ (hJ U).1
+    obtain ⟨I, hI, hIK⟩ := (IsLinearTopology.hasBasis_ideal (R := R)).mem_iff.mp hK
+    refine ⟨(F, I), hI, fun x hx ↦ hts (hFt fun U hU ↦ (hJ U).2 fun g _ ↦ ?_)⟩
+    exact Set.mem_iInter₂.mp (hIK (hx U hU g)) U hU
+  · rintro ⟨⟨F, I⟩, hI, hsub⟩
+    exact Filter.mem_of_superset (hmem F hI) hsub
 
 end FiniteQuotients
 
