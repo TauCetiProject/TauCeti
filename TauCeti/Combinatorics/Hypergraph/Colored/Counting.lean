@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
 public import Mathlib.Data.Fintype.CardEmbedding
 
+import TauCeti.Data.Fintype.EmbeddingFiber
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
@@ -22,7 +23,9 @@ induced copy exactly when it matches the pattern color of every increasing tripl
 
 Patterns with fewer than three vertices impose no color conditions. Constant patterns in
 constant hosts of the same color attain the falling-factorial bound, whereas a conflicting
-pattern color forces the count to vanish.
+pattern color forces the count to vanish. The pattern consisting of a single triple of color `c`
+has `6` labelled induced copies for every triple of color `c` in the host
+(`Colored3Graph.inducedCopyCount_const_three`).
 -/
 
 public section
@@ -43,6 +46,8 @@ variable {κ : Type*}
 
 /-- The pattern with `k` labeled vertices and constant triple color `c`. -/
 def const (k : ℕ) (c : κ) : FiniteColored3Pattern κ := ⟨k, Colored3Graph.const c⟩
+
+theorem const_def (k : ℕ) (c : κ) : const k c = ⟨k, Colored3Graph.const c⟩ := (rfl)
 
 @[simp]
 theorem k_const (k : ℕ) (c : κ) : (const k c).k = k := (rfl)
@@ -191,6 +196,25 @@ theorem inducedCopyCount_const_eq_zero (c : κ) (F : FiniteColored3Pattern κ)
   intro f hf
   apply hs
   simpa using ((isInducedCopy_iff _ _ _).mp ((mem_inducedCopies _ _ _).mp hf) s).symm
+
+open Finset in
+/-- **Counting a single colored triple.** The pattern on three vertices whose triple has color `c`
+has six labelled induced copies, one for each ordering, on every triple of color `c`. -/
+theorem inducedCopyCount_const_three [DecidableEq κ] (H : Colored3Graph κ V) (c : κ) :
+    H.inducedCopyCount (FiniteColored3Pattern.const 3 c) = 6 * #{s | H.color s = c} := by
+  classical
+  rw [FiniteColored3Pattern.const_def, inducedCopyCount_def, show 6 = Nat.factorial 3 from rfl,
+    ← Set.powersetCard.card_filter_ofFinEmb]
+  congr 1
+  ext f
+  -- The only triple of `Fin 3` is `univ`, whose image under `f` is `ofFinEmb 3 V f`.
+  have hs (s : Set.powersetCard (Fin 3) 3) :
+      Set.powersetCard.map 3 f s = Set.powersetCard.ofFinEmb 3 V f :=
+    Subtype.ext (by rw [Set.powersetCard.val_map, Set.powersetCard.val_ofFinEmb,
+      eq_univ_of_card s.val (by simp)])
+  rw [mem_inducedCopies, isInducedCopy_iff, mem_filter_univ]
+  simp only [hs, color_const]
+  exact ⟨fun h ↦ h ⟨univ, by simp [Set.powersetCard.mem_iff]⟩, fun h _ ↦ h⟩
 
 end Colored3Graph
 
