@@ -9,6 +9,8 @@ public import TauCeti.KnotTheory.Cobordism.Basic
 
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Instances.Quotient
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.Orientation.Glue
 import TauCeti.Geometry.Manifold.Orientation.OpenSubset
@@ -651,26 +653,18 @@ private theorem proj_inr_comp_transition :
     (proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂ = (proj S₁ S₂ ∘ Sum.inl) ∘ Subtype.val :=
   funext fun w ↦ (proj_eq_proj_iff S₁ S₂).2 (upper_transition S₁ S₂ w)
 
-private theorem contMDiff_transition :
-    ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
-  have hc : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
-      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) := by
-    rw [proj_inr_comp_transition]
-    exact (isLocalDiffeomorph_proj_inl S₁ S₂).contMDiff.comp contMDiff_subtype_val
-  exact hc.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_proj_inr S₁ S₂)
-    ((isOpenEmbedding_proj_inr S₁ S₂).isEmbedding.continuous_iff.mpr hc.continuous)
-
-private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
-    (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (transition S₁ S₂) w).IsInvertible := by
+private theorem isLocalDiffeomorph_transition :
+    IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
   -- `proj ∘ inr ∘ transition = proj ∘ inl ∘ val` is a local diffeomorphism, and cancelling the
   -- local diffeomorphism `proj ∘ inr` makes `transition` one.
-  have hcomp : IsLocalDiffeomorphAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
-      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) w := by
+  have hcomp : IsLocalDiffeomorph ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
+      ((proj S₁ S₂ ∘ Sum.inr) ∘ transition S₁ S₂) := by
     rw [proj_inr_comp_transition]
-    exact (isLocalDiffeomorph_subtype_val w).comp
+    exact fun w ↦ (isLocalDiffeomorph_subtype_val w).comp
       (hg := isLocalDiffeomorph_proj_inl S₁ S₂ (w : lowerPiece S₁ S₂))
-  exact (hcomp.of_comp_left (isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w))
-    (contMDiff_transition S₁ S₂).continuous.continuousAt).isInvertible_mfderiv (NeZero.ne ∞)
+  exact fun w ↦ (hcomp w).of_comp_left (isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w))
+    ((isOpenEmbedding_proj_inr S₁ S₂).isEmbedding.continuous_iff.mpr
+      hcomp.contMDiff.continuous).continuousAt
 
 /-- The index type of orientations of surfaces modelled on `ℝ¹ × ℝ`. -/
 private abbrev OrientationIndex : Type :=
@@ -717,10 +711,11 @@ preserves orientation on the overlap: the overlap is connected, so the restricte
 private theorem exists_transitionPreserves : ∃ o₁ o₂, TransitionPreserves S₁ S₂ o₁ o₂ := by
   obtain ⟨o₁⟩ := S₁.orientable.nonempty_orientation
   obtain ⟨o₂⟩ := S₂.orientable.nonempty_orientation
-  have hT := (contMDiff_transition S₁ S₂).of_le (m := 1)
+  have hT := (isLocalDiffeomorph_transition S₁ S₂).contMDiff.of_le (m := 1)
     (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne ∞))
   rcases ((o₁.restrict (lowerPiece S₁ S₂)).restrict (overlap S₁ S₂)).eq_or_eq_neg
-    ((o₂.restrict (upperPiece S₁ S₂)).pullback hT (isInvertible_mfderiv_transition S₁ S₂)
+    ((o₂.restrict (upperPiece S₁ S₂)).pullback hT
+      (fun w ↦ (isLocalDiffeomorph_transition S₁ S₂ w).isInvertible_mfderiv (NeZero.ne ∞))
       o₂.card_eq) with h | h
   · refine ⟨o₁.restrict (lowerPiece S₁ S₂), o₂.restrict (upperPiece S₁ S₂), fun w ↦ ?_⟩
     rw [h]
@@ -752,7 +747,7 @@ private instance : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Stack S₁ S₂) := by
   exact (map_orientationAt_eq_of_comp_eventuallyEq (isLocalDiffeomorph_proj_inl S₁ S₂)
     (isLocalDiffeomorph_proj_inr S₁ S₂) (isOrientationPreservingAt_restrict o₁ _ ⟨x, hx⟩)
     (ho ⟨x, hx⟩) ((isLocalDiffeomorph_subtype_val _).mdifferentiableAt (NeZero.ne ∞))
-    ((contMDiff_transition S₁ S₂ _).mdifferentiableAt (NeZero.ne ∞))
+    ((isLocalDiffeomorph_transition S₁ S₂ _).mdifferentiableAt (NeZero.ne ∞))
     (.of_eq (proj_inr_comp_transition S₁ S₂).symm) :)
 
 /-! ### The composite -/
