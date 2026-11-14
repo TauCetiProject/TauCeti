@@ -232,9 +232,8 @@ noncomputable def prodHomeomorphOfSection (s : ∀ b, P b)
     filter_upwards [hπ.continuousAt (e.open_baseSet.mem_nhds hb₀)] with y hy
     obtain ⟨b, w⟩ := y
     obtain ⟨v, rfl⟩ := (mk_bijective (F := F) (s b)).2 w
-    change (Equiv.ofBijective _ _).symm (mk G (s b) v) =
-      (e ⟨b, s b⟩).2⁻¹ • (eA ⟨b, mk G (s b) v⟩).2
-    rw [Equiv.ofBijective_symm_apply_apply, trivializationAt_mk_snd hy, inv_smul_smul]
+    simp only [Pi.smul_apply', Pi.inv_apply, Equiv.ofBijective_symm_apply_apply]
+    rw [trivializationAt_mk_snd hy, inv_smul_smul]
 
 /-- The trivialization by a global section sends `(b, v)` to `[s b, v]`. -/
 @[simp]
@@ -256,5 +255,21 @@ theorem fst_prodHomeomorphOfSection_symm (s : ∀ b, P b)
     (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) (y : TotalSpace F (AssociatedBundle G P F)) :
     ((prodHomeomorphOfSection s hs).symm y).1 = y.proj :=
   (rfl)
+
+/-- The second component of the inverse of the trivialization by a global section `s` is the
+representative of a point in the frame `s`. -/
+@[simp]
+theorem mk_snd_prodHomeomorphOfSection_symm (s : ∀ b, P b)
+    (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) (y : TotalSpace F (AssociatedBundle G P F)) :
+    mk G (s y.proj) ((prodHomeomorphOfSection s hs).symm y).2 = y.2 :=
+  congrArg TotalSpace.snd ((prodHomeomorphOfSection s hs).apply_symm_apply y)
+
+/-- The second component of the inverse of the trivialization by a global section `s` is `v`
+exactly when the point is the class of `s` and `v`. -/
+theorem snd_prodHomeomorphOfSection_symm_eq_iff (s : ∀ b, P b)
+    (hs : Continuous fun b ↦ TotalSpace.mk' G b (s b)) (y : TotalSpace F (AssociatedBundle G P F))
+    (v : F) : ((prodHomeomorphOfSection s hs).symm y).2 = v ↔ mk G (s y.proj) v = y.2 := by
+  rw [← mk_snd_prodHomeomorphOfSection_symm s hs y]
+  exact (mk_bijective (G := G) (F := F) (s y.proj)).1.eq_iff.symm.trans eq_comm
 
 end TauCeti.AssociatedBundle

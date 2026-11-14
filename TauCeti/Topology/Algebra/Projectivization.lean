@@ -44,6 +44,8 @@ of projective space.
 
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
+* `Projectivization.isClosed_setOfPred_mem_submodule`: the incidence relation of a point and a
+  vector on its line is closed in `ℙ K V × V`.
 * `Projectivization.continuousAt_linearProjection`: the map induced by a linear map depends
   jointly continuously on the linear map and the point, where it is defined.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
@@ -89,6 +91,27 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
   ext v
   simp [mk'_eq_mk]
+
+/-- **The incidence relation of projective space is closed**: the pairs of a point of `ℙ K V` and
+a vector on its line form a closed subset of `ℙ K V × V`. -/
+theorem isClosed_setOfPred_mem_submodule [T1Space V] [T2Space (ℙ K V)] :
+    IsClosed {p : ℙ K V × V | p.2 ∈ p.1.submodule} := by
+  -- The complement is the image, under the open embedding `ℙ K V × (V ∖ 0) → ℙ K V × V`, of the
+  -- open set of pairs `(x, v)` with `x ≠ [v]`.
+  have hι : IsOpenEmbedding (Prod.map id Subtype.val : ℙ K V × {v : V // v ≠ 0} → ℙ K V × V) :=
+    IsOpenEmbedding.id.prodMap (isOpen_ne.isOpenEmbedding_subtypeVal)
+  have hc : {p : ℙ K V × V | p.2 ∈ p.1.submodule}ᶜ =
+      Prod.map id Subtype.val '' {q : ℙ K V × {v : V // v ≠ 0} | q.1 ≠ mk' K q.2} := by
+    ext ⟨x, v⟩
+    simp only [mem_compl_iff, mem_ofPred_eq, mem_submodule_iff, not_forall, mem_image,
+      Prod.exists, Prod.map, id_eq, Prod.mk.injEq, Subtype.exists, mk'_eq_mk]
+    constructor
+    · rintro ⟨hv, hx⟩
+      exact ⟨x, v, hv, Ne.symm hx, rfl, rfl⟩
+    · rintro ⟨x, v, hv, hx, rfl, rfl⟩
+      exact ⟨hv, Ne.symm hx⟩
+  rw [← isOpen_compl_iff, hc]
+  exact hι.isOpenMap _ (isOpen_ne_fun continuous_fst (continuous_mk'.comp continuous_snd))
 
 variable [ContinuousConstSMul Kˣ V]
 

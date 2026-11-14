@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Projectivization.Action
+public import TauCeti.LinearAlgebra.Projectivization.Basic
 import Mathlib.LinearAlgebra.Center
 
 /-!
@@ -17,6 +18,9 @@ of matrix subgroups without any finite-dimensionality assumption.
 
 The argument generalizes the scalarity step in Mathlib's `Projectivization.SL_mulAction_ker`,
 using `LinearMap.exists_eq_smul_id_of_forall_notLinearIndependent`.
+
+Moving a line by a group element and then by a semilinear equivalence `f` is moving it by the
+composite of the linear action of that element with `f` (`Projectivization.mapLinearEquiv_smul`).
 -/
 
 public section
@@ -24,6 +28,21 @@ public section
 open scoped LinearAlgebra.Projectivization
 
 open Projectivization
+
+namespace Projectivization
+
+variable {G K L V W : Type*} [Group G] [DivisionRing K] [DivisionRing L] [AddCommGroup V]
+  [Module K V] [AddCommGroup W] [Module L W] [DistribMulAction G V] [SMulCommClass G K V]
+  {σ : K →+* L} {σ' : L →+* K} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+
+/-- Moving a line by `g` and then by a semilinear equivalence `f` is moving it by the composite of
+the linear action of `g` with `f`. -/
+theorem mapLinearEquiv_smul (f : V ≃ₛₗ[σ] W) (g : G) (x : ℙ K V) :
+    mapLinearEquiv f (g • x) =
+      mapLinearEquiv ((DistribMulAction.toLinearEquiv K V g).trans f) x := by
+  induction x using ind with | h v hv => simp [smul_mk]
+
+end Projectivization
 
 namespace TauCeti.Projectivization
 
