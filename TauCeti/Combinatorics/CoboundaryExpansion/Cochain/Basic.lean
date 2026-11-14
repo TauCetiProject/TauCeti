@@ -297,6 +297,15 @@ theorem isCoboundary_iff_mem_edges [DecidableEq V] (α : Cochain X G) :
       ∃ β : V → G, ∀ u v, ({u, v} : Finset V) ∈ X.edges → α u v = β u * (β v)⁻¹ := by
   simp_rw [isCoboundary_def, adj_iff_pair_mem_edges]
 
+/-- On the complete complex, `α` is a coboundary if and only if some gauge `β : V → G` satisfies
+`α u v = β u * (β v)⁻¹` for all vertex pairs, including the diagonal. -/
+theorem isCoboundary_complete [Fintype V] (α : Cochain (complete V) G) :
+    α.IsCoboundary ↔ ∃ β : V → G, ∀ u v, α u v = β u * (β v)⁻¹ := by
+  refine exists_congr fun β => ⟨fun h u v => ?_, fun h u v _ => h u v⟩
+  rcases eq_or_ne u v with rfl | huv
+  · simp
+  · exact h u v ((adj_complete u v).mpr huv)
+
 /-- A cochain is a coboundary if and only if some gauge moves it to the trivial cochain `1`. -/
 theorem isCoboundary_iff_exists_smul_eq_one (α : Cochain X G) :
     α.IsCoboundary ↔ ∃ β : V → G, β • α = 1 := by
@@ -351,6 +360,18 @@ theorem defect_def (ℓ : GroupNorm G) (α : Cochain X G) :
           p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset V) ∈ X.triangles),
         ℓ (α.holonomy p.1 p.2.1 p.2.2) := (rfl)
 
+/-- On the complete complex, `defect` sums the holonomy norm over all strictly increasing vertex
+triples `u < v < w`. -/
+theorem defect_complete (ℓ : GroupNorm G) (α : Cochain (complete V) G) :
+    α.defect ℓ =
+      ∑ p ∈ univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+        ℓ (α.holonomy p.1 p.2.1 p.2.2) := by
+  rw [defect_def]
+  refine sum_congr ?_ fun _ _ => rfl
+  ext p
+  simp only [mem_filter, mem_univ, true_and, mem_triangles_complete, card_triple_eq_three_iff]
+  exact ⟨fun ⟨h₁, h₂, _⟩ => ⟨h₁, h₂⟩, fun ⟨h₁, h₂⟩ => ⟨h₁, h₂, h₁.ne, (h₁.trans h₂).ne, h₂.ne⟩⟩
+
 /-- The cost of a gauge `β` against `α`: the sum of `ℓ ((β u)⁻¹ * α u v * β v)` over all edges
 read in increasing vertex order `u < v`. -/
 noncomputable def cost (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) : ℝ :=
@@ -361,6 +382,19 @@ theorem cost_def (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) :
     α.cost ℓ β =
       ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
         ℓ ((β p.1)⁻¹ * α p.1 p.2 * β p.2) := (rfl)
+
+/-- On the complete complex, `cost` sums `ℓ ((β u)⁻¹ * α u v * β v)` over all strictly increasing
+vertex pairs `u < v`. -/
+theorem cost_complete (ℓ : GroupNorm G) (α : Cochain (complete V) G) (β : V → G) :
+    α.cost ℓ β =
+      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2),
+        ℓ ((β p.1)⁻¹ * α p.1 p.2 * β p.2) := by
+  rw [cost_def]
+  refine sum_congr ?_ fun _ _ => rfl
+  ext p
+  simp only [mem_filter, mem_univ, true_and, mem_edges_complete, card_pair_eq_two_iff,
+    and_iff_left_iff_imp]
+  exact LT.lt.ne
 
 /-- The gauge distance from `α` to the coboundaries: the infimum of `cost` over all gauges. -/
 noncomputable def gaugeDist (ℓ : GroupNorm G) (α : Cochain X G) : ℝ := ⨅ β : V → G, α.cost ℓ β

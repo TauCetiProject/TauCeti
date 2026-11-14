@@ -78,33 +78,26 @@ theorem norm_holonomy_swap {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsCon
     ℓ (α.holonomy v u w) = ℓ (α.holonomy u v w) := by
   rw [← map_inv_eq_map ℓ (α.holonomy v u w), α.inv_holonomy, α.norm_holonomy_rotate hℓ u v w]
 
-/-- Under a conjugation-invariant norm, all six vertex orderings of a filled triangle have the same
-holonomy norm. -/
-theorem norm_holonomy_eq_of_mem_triangles {ℓ : GroupNorm G}
-    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) {t : Finset V}
-    (ht : t ∈ X.triangles) {u v w u' v' w' : V}
-    (hu : u ∈ t) (hv : v ∈ t) (hw : w ∈ t) (huv : u ≠ v) (huw : u ≠ w) (hvw : v ≠ w)
-    (hu' : u' ∈ t) (hv' : v' ∈ t) (hw' : w' ∈ t)
-    (hu'v' : u' ≠ v') (hu'w' : u' ≠ w') (hv'w' : v' ≠ w') :
+/-- Under a conjugation-invariant norm, any two vertex triples spanning the same set have the same
+holonomy norm, including degenerate triples with repeated vertices where both holonomies are `1`. -/
+theorem norm_holonomy_of_set_eq {ℓ : GroupNorm G}
+    (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) {u v w u' v' w' : V}
+    (h : ({u', v', w'} : Set V) = {u, v, w}) :
     ℓ (α.holonomy u' v' w') = ℓ (α.holonomy u v w) := by
-  classical
-  have hcard3 : ({u, v, w} : Finset V).card = 3 := card_triple_eq_three_iff.mpr ⟨huv, huw, hvw⟩
-  have ht_eq : t = {u, v, w} :=
-    (eq_of_subset_of_card_le (by simp [insert_subset_iff, hu, hv, hw])
-      (by rw [X.triangle_card t ht, hcard3])).symm
-  rw [ht_eq] at hu' hv' hw'
-  simp only [mem_insert, mem_singleton] at hu' hv' hw'
-  rcases hu' with h₁ | h₁ | h₁ <;> rcases hv' with h₂ | h₂ | h₂ <;> rcases hw' with h₃ | h₃ | h₃
-  all_goals rw [h₁, h₂] at hu'v'; rw [h₁, h₃] at hu'w'; rw [h₂, h₃] at hv'w'
-  all_goals try exact (hu'v' rfl).elim
-  all_goals try exact (hu'w' rfl).elim
-  all_goals try exact (hv'w' rfl).elim
-  all_goals rw [h₁, h₂, h₃]
-  · rw [α.norm_holonomy_rotate hℓ v u w, α.norm_holonomy_swap hℓ u v w]
-  · exact α.norm_holonomy_swap hℓ u v w
-  · exact α.norm_holonomy_rotate hℓ u v w
-  · rw [α.norm_holonomy_rotate hℓ v w u, α.norm_holonomy_rotate hℓ u v w]
-  · rw [α.norm_holonomy_swap hℓ v w u, α.norm_holonomy_rotate hℓ u v w]
+  have hmem (x : V) : (x = u' ∨ x = v' ∨ x = w') ↔ (x = u ∨ x = v ∨ x = w) := by
+    simpa [Set.mem_insert_iff, Set.mem_singleton_iff] using Set.ext_iff.mp h x
+  by_cases hd : u' = v' ∨ u' = w' ∨ v' = w'
+  · have := hmem u; have := hmem v; have := hmem w; grind [map_one_eq_zero]
+  · have hu' := (hmem u').mp (by simp); have hv' := (hmem v').mp (by simp)
+    have hw' := (hmem w').mp (by simp)
+    rcases hu' with h₁ | h₁ | h₁ <;> rcases hv' with h₂ | h₂ | h₂ <;> rcases hw' with h₃ | h₃ | h₃
+    all_goals try exact (hd (by grind)).elim
+    all_goals rw [h₁, h₂, h₃]
+    · rw [α.norm_holonomy_rotate hℓ v u w, α.norm_holonomy_swap hℓ u v w]
+    · exact α.norm_holonomy_swap hℓ u v w
+    · exact α.norm_holonomy_rotate hℓ u v w
+    · rw [α.norm_holonomy_rotate hℓ v w u, α.norm_holonomy_rotate hℓ u v w]
+    · rw [α.norm_holonomy_swap hℓ v w u, α.norm_holonomy_rotate hℓ u v w]
 
 /-- The gauge cost contribution of an unoriented edge `e`, or `0` if `e ∉ X.edges`. -/
 noncomputable def edgeCost (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) (e : Finset V) : ℝ := by
@@ -191,7 +184,18 @@ theorem triangleDefect_of_mem_triangles {ℓ : GroupNorm G}
   simp only [triangleDefect, ht, ↓reduceDIte]
   obtain ⟨hu'v', hu'w', hv'w', hu', hv', hw'⟩ :=
     (X.exists_vertices_of_mem_triangles ht).choose_spec.choose_spec.choose_spec
-  exact α.norm_holonomy_eq_of_mem_triangles hℓ ht hu hv hw huv huw hvw hu' hv' hw' hu'v' hu'w' hv'w'
+  have ht₁ : ({(X.exists_vertices_of_mem_triangles ht).choose,
+      (X.exists_vertices_of_mem_triangles ht).choose_spec.choose,
+      (X.exists_vertices_of_mem_triangles ht).choose_spec.choose_spec.choose} : Finset V) = t :=
+    eq_of_subset_of_card_le
+      (insert_subset_iff.mpr ⟨hu', insert_subset_iff.mpr ⟨hv', singleton_subset_iff.mpr hw'⟩⟩)
+      (by rw [X.triangle_card t ht, card_triple_eq_three_iff.mpr ⟨hu'v', hu'w', hv'w'⟩])
+  have ht₂ : ({u, v, w} : Finset V) = t :=
+    eq_of_subset_of_card_le
+      (insert_subset_iff.mpr ⟨hu, insert_subset_iff.mpr ⟨hv, singleton_subset_iff.mpr hw⟩⟩)
+      (by rw [X.triangle_card t ht, card_triple_eq_three_iff.mpr ⟨huv, huw, hvw⟩])
+  exact α.norm_holonomy_of_set_eq hℓ
+    (by simpa only [coe_insert, coe_singleton] using coe_inj.mpr (ht₁.trans ht₂.symm))
 
 /-- Under a conjugation-invariant norm, evaluating `triangleDefect` directly on a filled triangle
 `{u, v, w} ∈ X.triangles`. -/
