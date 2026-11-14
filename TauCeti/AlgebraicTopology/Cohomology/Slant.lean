@@ -42,9 +42,8 @@ The slant product by the class `[x₀]` of a point is restriction to the slice `
 `φ / [x₀] = ι_{x₀}^* φ` for the inclusion `ι_{x₀} : y ↦ (x₀, y)`
 (`TopCat.singularSlant_singularHomology₀Section`). By naturality `φ / [x₀]` is the slant of the
 pullback of `φ` to `pt × Y` by the class of the point, and every class on `pt × Y` is pulled back
-from `Y`. Since the class of a point depends only on its path component, so does the restriction
-(`TopCat.singularCohomologyMap_lift_const_eq_of_joined`). So the point class `c₁(U) / [x₀]` of a
-line bundle `U` on `X × Y` is the restriction of `c₁(U)` to `{x₀} × Y`.
+from `Y`. So the point class `c₁(U) / [x₀]` of a line bundle `U` on `X × Y` is the restriction
+of `c₁(U)` to `{x₀} × Y`.
 
 On classes pulled back from one factor the slant product is computed by the cohomology of a point:
 
@@ -111,9 +110,7 @@ cup product `pr₁^* a ⌣ pr₂^* c` are those of the cross product `a × c`
   `TauCeti.singularHomology₀Section` in
   `TopCat.singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self`.
 * `TopCat.singularSlant_singularHomology₀Section`: the slant product by the class of a point is
-  restriction to the slice through the point, and
-  `TopCat.singularCohomologyMap_lift_const_eq_of_joined`: this restriction depends only on the
-  path component of the point.
+  restriction to the slice through the point.
 * `TopCat.singularSlant_eq_slant`: through Eilenberg–Zilber, the slant product is the slant
   product on the tensor product of singular chain complexes.
 * `TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne` and
@@ -407,19 +404,6 @@ theorem singularSlant_singularHomology₀Section (X Y : TopCat.{w}) (u : R ⊗ S
   rw [TopCat.singularCohomologyMap_id, ModuleCat.id_apply, ← hx, hφ,
     singularSlant_singularHomology₀Section_singularCohomologyMap_snd_eq_self M P Y u q _ r hu] at h
   rw [← h, ← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hf]
-
-/-- **Restrictions to slices through joined points agree**: if `x` and `y` are joined by a path,
-then the restrictions of `φ ∈ H^q(X × Y; S, M)` to the slices `{x} × Y` and `{y} × Y` agree, since
-both are slant products by point classes and `[x] = [y]`. -/
-theorem singularCohomologyMap_lift_const_eq_of_joined (X Y : TopCat.{w}) (q : ℕ) {x y : X}
-    (h : Joined x y) (φ : (X ⊗ Y).singularCohomology S k M q) :
-    TopCat.singularCohomologyMap
-        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y x)) (𝟙 Y)) q φ =
-      TopCat.singularCohomologyMap
-        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Y y)) (𝟙 Y)) q φ := by
-  rw [← singularSlant_singularHomology₀Section M X Y (λ_ S).hom q x (1 : k) (fun s ↦ by simp),
-    ← singularSlant_singularHomology₀Section M X Y (λ_ S).hom q y (1 : k) (fun s ↦ by simp),
-    TauCeti.singularHomology₀Section_eq_of_joined _ h]
 
 /-- **The slant product through Eilenberg–Zilber**: slanting a class `φ` of `X × Y` by `x` is
 slanting its image `shuffle^* φ` in the cohomology of `Hom(C(X; R) ⊗ C(Y; S), M)` by `x` along the

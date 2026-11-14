@@ -33,6 +33,8 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
   cohomology.
 * `TopCat.isIso_singularCohomologyMap` and `TopPair.isIso_singularCohomologyMap`: a map with a
   homotopy inverse induces an isomorphism on singular cohomology.
+* `TopCat.singularCohomologyMap_lift_const_eq_of_joined`: restrictions of a class on `X × Y` to
+  the slices through two points joined by a path agree.
 * `TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy`: enlarging the subspace of a
   pair to a neighbourhood which deforms back into it does not change relative cohomology.
 * `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
@@ -99,6 +101,20 @@ lemma isIso_singularCohomologyMap (f : X ⟶ Y) (f' : Y ⟶ X) (H : Homotopy (f 
       singularCohomologyMap_id]
   · rw [← singularCohomologyMap_comp, H.congr_singularCohomologyMap R k M n,
       singularCohomologyMap_id]
+
+/-- **Restrictions to slices through joined points agree**: if `x` and `x'` are joined by a path,
+then for `g : Z ⟶ Y` the maps `z ↦ (x, g z)` and `z ↦ (x', g z)` into `X × Y` are homotopic, so
+they induce the same map on singular cohomology. For `g = 𝟙 Y` these are the restrictions to the
+slices `{x} × Y` and `{x'} × Y`. -/
+@[reassoc, elementwise]
+lemma singularCohomologyMap_lift_const_eq_of_joined {Z : TopCat.{w}} {x x' : X} (h : Joined x x')
+    {g : Z ⟶ Y} {R : C} {k : Type*} [Ring k] [Linear k C] {M : C} (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x)) g) n =
+      TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x')) g) n :=
+  Homotopy.congr_singularCohomologyMap
+    (h.somePath.toHomotopyConst.prodMk (.refl g.hom) :) R k M n
 
 end TopCat
 
