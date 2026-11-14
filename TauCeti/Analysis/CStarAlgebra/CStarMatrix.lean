@@ -38,6 +38,9 @@ Hilbert C⋆-module.
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
+* `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
+* `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: restricting a positive matrix
+  along an injective map of indices, or extending it by zero, gives a positive matrix.
 
 ## References
 
@@ -106,6 +109,20 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum [Fintype n] [NonUnitalRing A] 
     ofMatrix_symm_apply] at this
   rw [star_apply, mul_sub, sub_mul, this, mul_assoc, sub_self]
 
+/-- `CStarMatrix.ofMatrixₗ` is `CStarMatrix.ofMatrix`. -/
+@[simp]
+lemma ofMatrixₗ_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
+    (M : Matrix m n A) : ofMatrixₗ (R := R) M = ofMatrix M := (rfl)
+
+/-- The inverse of `CStarMatrix.ofMatrixₗ` is the inverse of `CStarMatrix.ofMatrix`. -/
+@[simp]
+lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
+    (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
+
+/-- Mapping the entries of a C⋆-matrix by `f` and then by `g` maps them by `g ∘ f`. -/
+theorem map_comp {m B C : Type*} (M : CStarMatrix m n A) (f : A → B) (g : B → C) :
+    (M.map f).map g = M.map (g ∘ f) := (rfl)
+
 end Algebraic
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -170,5 +187,40 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   rw [← star_mul_self_eq_zero, hN.star_eq]
   calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
     _ = 0 := by rw [hRN, mul_zero]
+
+/-- The diagonal entries of a positive matrix over a C⋆-algebra are positive. -/
+theorem diag_nonneg_of_nonneg {M : CStarMatrix n n A} (hM : 0 ≤ M) (i : n) : 0 ≤ M i i := by
+  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
+  rw [CStarMatrix.mul_apply]
+  exact Finset.sum_nonneg fun k _ => by
+    simp [CStarMatrix.star_apply]
+
+/-- Restricting a positive matrix along an injective map of indices gives a positive matrix. -/
+theorem submatrix_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injective f)
+    {M : CStarMatrix n n A} (hM : 0 ≤ M) : 0 ≤ ofMatrix ((ofMatrix.symm M).submatrix f f) := by
+  classical
+  refine nonneg_iff_forall_sum_nonneg.mpr fun x => ?_
+  have hx (k : n) (hk : k ∉ Set.range f) : Function.extend f x 0 k = 0 :=
+    Function.extend_apply' _ _ _ (by simpa using hk)
+  convert nonneg_iff_forall_sum_nonneg.mp hM (Function.extend f x 0) using 1
+  refine Fintype.sum_of_injective f hf _ _ (fun k hk => by simp [hx k hk]) fun i => ?_
+  refine Fintype.sum_of_injective f hf _ _ (fun l hl => by simp [hx l hl]) fun j => ?_
+  simp [hf.extend_apply]
+
+/-- Extending a positive matrix by zero along an injective map of indices gives a positive
+matrix. -/
+theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injective f)
+    {M : CStarMatrix m m A} (hM : 0 ≤ M) :
+    0 ≤ ofMatrix (Matrix.of fun k l =>
+      Function.extend f (fun i => Function.extend f (ofMatrix.symm M i) 0 l) 0 k) := by
+  refine nonneg_iff_forall_sum_nonneg.mpr fun y => ?_
+  convert nonneg_iff_forall_sum_nonneg.mp hM (y ∘ f) using 1
+  symm
+  refine Fintype.sum_of_injective f hf _ _ (fun k hk => ?_) fun i => ?_
+  · refine Finset.sum_eq_zero fun l _ => ?_
+    simp [Function.extend_apply' _ _ _ (by simpa using hk : ¬∃ a, f a = k)]
+  refine Fintype.sum_of_injective f hf _ _ (fun l hl => ?_) fun j => ?_
+  · simp [hf.extend_apply, Function.extend_apply' _ _ _ (by simpa using hl : ¬∃ a, f a = l)]
+  simp [hf.extend_apply]
 
 end CStarMatrix
