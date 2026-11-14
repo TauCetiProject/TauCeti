@@ -55,14 +55,12 @@ orientation is used, and `M` may have boundary or corners.
   determinant of the differential.
 * `TauCeti.setLIntegral_riemannianJacobian_changeBasis`: the Jacobian-weighted coordinate integral
   does not depend on the basis.
-* `TauCeti.setLIntegral_riemannianVolume_image_of_subset_chart`: change of variables for an
-  injective differentiable map whose image lies in a preferred chart.
 * `Module.Basis.setLIntegral_riemannianVolume_image_of_injOn`: nonnegative change of variables
   on a measurable injective carrier, without measurability assumptions on the weight.
 * `Module.Basis.map_withDensity_riemannianJacobian_of_injOn` and
   `Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn`: the corresponding
   pushforward identities for the map and its subtype restriction.
-* `Module.Basis.aemeasurable_ofReal_riemannianJacobian`: almost everywhere measurability of the
+* `Module.Basis.aemeasurable_riemannianJacobian`: almost everywhere measurability of the
   Jacobian weight on a carrier of pointwise differentiability.
 * `Module.Basis.setIntegral_riemannianVolume_image_of_injOn` and
   `Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn`: Bochner change of variables
@@ -343,7 +341,7 @@ variable [MeasurableSpace F] [BorelSpace F]
 whose image lies in a preferred chart: the integral of `φ` over `f '' s` is the integral over `s`
 of `φ ∘ f` weighted by the Riemannian Jacobian, against the Haar measure of the same basis. The
 weight `φ` need not be measurable. -/
-theorem setLIntegral_riemannianVolume_image_of_subset_chart
+private theorem setLIntegral_riemannianVolume_image_of_subset_chart
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
     {f : F → M} {s : Set F} {α : M} (hs : MeasurableSet s)
     (himage : MeasurableSet (f '' s)) (hinj : InjOn f s)
@@ -439,14 +437,16 @@ private theorem aemeasurable_ofReal_riemannianJacobian_of_model
       ← riemannianJacobian_changeBasis, riemannianJacobian_reindex]
 
 omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
-/-- The Jacobian weight is almost everywhere measurable on a measurable carrier on which the
+/-- The real-valued Jacobian is almost everywhere measurable on a measurable carrier on which the
 map is differentiable at every point, when the source and target model have equal dimension. -/
-theorem _root_.Module.Basis.aemeasurable_ofReal_riemannianJacobian
+theorem _root_.Module.Basis.aemeasurable_riemannianJacobian
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
     {f : F → M} {s : Set F} (hs : MeasurableSet s)
     (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) :
-    AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
-      (b.addHaar.restrict s) := by
+    AEMeasurable (riemannianJacobian (I := I) b f) (b.addHaar.restrict s) := by
+  suffices h : AEMeasurable (fun x ↦ ENNReal.ofReal (riemannianJacobian (I := I) b f x))
+      (b.addHaar.restrict s) by
+    simpa only [ENNReal.toReal_ofReal (riemannianJacobian_nonneg b f _)] using h.ennreal_toReal
   have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
   let A : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hdim.symm
   let c := b.map A.symm.toLinearEquiv
@@ -576,7 +576,7 @@ theorem _root_.Module.Basis.setIntegral_riemannianVolume_image_of_injOn
   have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   have he := hc.measurableEmbedding_chartedSpace F H hs hinj
-  have hρ := b.aemeasurable_ofReal_riemannianJacobian hdim hs hf
+  have hρ := (b.aemeasurable_riemannianJacobian hdim hs hf).ennreal_ofReal
   rw [← b.restrict_map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
     he.integral_map]
   simp only [Set.domRestrict_apply]
@@ -597,7 +597,7 @@ theorem _root_.Module.Basis.integrableOn_riemannianVolume_image_iff_of_injOn
   have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   have he := hc.measurableEmbedding_chartedSpace F H hs hinj
-  have hρ := b.aemeasurable_ofReal_riemannianJacobian hdim hs hf
+  have hρ := (b.aemeasurable_riemannianJacobian hdim hs hf).ennreal_ofReal
   rw [IntegrableOn, ← b.restrict_map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
     he.integrable_map_iff]
   rw [Set.domRestrict_eq, ← Function.comp_assoc,

@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
@@ -112,22 +111,16 @@ theorem _root_.IsLocalDiffeomorph.map_withDensity_enorm_curveVelocity_of_periodi
     (hper : γ.Periodic p) (hp : 0 < p) (a : ℝ) (hinj : InjOn γ (Ioo a (a + p))) :
     Measure.map γ ((volume.restrict (Ioc a (a + p))).withDensity
       fun t ↦ ‖curveVelocity I γ t‖ₑ) = (riemannianVolume I M).restrict (range γ) := by
-  have hdim : Module.finrank ℝ E = 1 := by
-    -- The differential of `γ` at `a` is a linear equivalence from `TangentSpace 𝓘(ℝ) a`, which is
-    -- `ℝ`, onto `TangentSpace I (γ a)`, which is `E`.
-    have h : Module.finrank ℝ ℝ = Module.finrank ℝ E :=
-      ((hγ a).mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
-    rw [← h, Module.finrank_self]
+  have hdim : Module.finrank ℝ E = 1 :=
+    ((hγ a).finrank_eq hn).symm.trans (Module.finrank_self ℝ)
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hdim
   have hrange : range γ = insert (γ (a + p)) (γ '' Ioo a (a + p)) := by
     rw [← hper.image_Ioc hp a, ← insert_right_Ioo (lt_add_of_pos_right a hp), image_insert_eq]
   rw [hrange, Measure.restrict_congr_set (insert_ae_eq_self _ _),
     ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-  have h := PartialDiffeomorph.map_withDensity_enorm_curveVelocity
-    ((hγ.isLocalDiffeomorphOn _).partialDiffeomorphOfInjOn isOpen_Ioo hinj) hn
-  rwa [IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn,
-    IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source,
-    IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_target] at h
+  simpa only [Module.Basis.addHaar_singleton, riemannianJacobian_singleton, ofReal_norm] using
+    (hγ.isLocalDiffeomorphOn (Ioo a (a + p))).map_withDensity_riemannianJacobian hn
+      measurableSet_Ioo hinj (Module.Basis.singleton (Fin 1) ℝ)
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
