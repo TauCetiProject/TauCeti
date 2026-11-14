@@ -24,7 +24,8 @@ not be injective. No minimality, exactness, or finite-dimensionality is needed h
 
 For finite projectives, `balancedDualTensorHomEquiv` identifies dual tensors with Hom spaces.
 Evaluation carries the relations defining the transpose to the image of precomposition,
-so it descends to the Hom cokernel.
+so it descends to the Hom cokernel. A map `g : N → N'` induces `LinearMap.homCokernelMap` on the
+Hom cokernels, and the equivalence is natural for it.
 
 ## References
 
@@ -90,6 +91,46 @@ private theorem transposeTensorToCokernel_tmul (f : P₁ →ₗ[A] P₀)
       Submodule.Quotient.mk
         (balancedDualTensorHom k A P₁ N (BalancedTensorProduct.tmul k A φ n)) := by
   simp [transposeTensorToCokernel, transposeTensorBilinear_mk]
+
+section HomCokernelMap
+
+variable {N' N'' : Type*} [AddCommGroup N'] [Module A N'] [Module k N'] [IsScalarTower k A N']
+  [AddCommGroup N''] [Module A N''] [Module k N''] [IsScalarTower k A N'']
+
+variable (k) in
+/-- The map `H(g) : H(N) → H(N')` induced by `g : N → N'` on the cokernels
+`H(N) = coker(Hom_A(P₀, N) → Hom_A(P₁, N))` of precomposition with `f`. -/
+noncomputable def homCokernelMap (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N') :
+    ((P₁ →ₗ[A] N) ⧸ range (f.lcomp k N)) →ₗ[k] ((P₁ →ₗ[A] N') ⧸ range (f.lcomp k N')) :=
+  (range (f.lcomp k N)).mapQ (range (f.lcomp k N')) (g.compRight k) (by
+    rintro _ ⟨F, rfl⟩
+    exact ⟨g.comp F, rfl⟩)
+
+@[simp]
+theorem homCokernelMap_mk (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N') (F : P₁ →ₗ[A] N) :
+    homCokernelMap k f g (Submodule.Quotient.mk F) = Submodule.Quotient.mk (g.comp F) := by
+  simp [homCokernelMap]
+
+@[simp]
+theorem homCokernelMap_id (f : P₁ →ₗ[A] P₀) :
+    homCokernelMap k f (LinearMap.id : N →ₗ[A] N) = LinearMap.id := by
+  ext F
+  simp
+
+variable (k) in
+/-- `H(g)` is induced by postcomposition with `g`: it commutes with the quotient maps. -/
+theorem homCokernelMap_comp_mkQ (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N') :
+    homCokernelMap k f g ∘ₗ (range (f.lcomp k N)).mkQ =
+      (range (f.lcomp k N')).mkQ ∘ₗ g.compRight k := by
+  ext F
+  simp
+
+theorem homCokernelMap_comp (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N') (g' : N' →ₗ[A] N'') :
+    homCokernelMap k f (g'.comp g) = (homCokernelMap k f g').comp (homCokernelMap k f g) := by
+  ext F
+  simp [LinearMap.comp_assoc]
+
+end HomCokernelMap
 
 variable [Module.Finite A P₀] [Module.Projective A P₀]
   [Module.Finite A P₁] [Module.Projective A P₁]
@@ -196,17 +237,13 @@ theorem auslanderReitenTransposeTensorEquivCokernel_map (f : P₁ →ₗ[A] P₀
     auslanderReitenTransposeTensorEquivCokernel f
         (BalancedTensorProduct.map LinearMap.id (g.restrictScalars k)
           (fun _ _ ↦ rfl) (fun a n ↦ by simp only [restrictScalars_apply, map_smul]) z) =
-      (range (f.lcomp k N)).mapQ (range (f.lcomp k N')) (g.compRight k)
-        (by
-          rintro _ ⟨F, rfl⟩
-          exact ⟨g.comp F, rfl⟩)
-        (auslanderReitenTransposeTensorEquivCokernel f z) := by
+      homCokernelMap k f g (auslanderReitenTransposeTensorEquivCokernel f z) := by
   induction z using BalancedTensorProduct.induction_on with
   | ht t n =>
     obtain ⟨φ, rfl⟩ := AuslanderReitenTranspose.mk_surjective f t
     rw [BalancedTensorProduct.map_tmul]
     simp only [LinearMap.id_apply, restrictScalars_apply,
-      auslanderReitenTransposeTensorEquivCokernel_tmul, Submodule.mapQ_apply]
+      auslanderReitenTransposeTensorEquivCokernel_tmul, homCokernelMap_mk]
     congr 1
     ext x
     simp

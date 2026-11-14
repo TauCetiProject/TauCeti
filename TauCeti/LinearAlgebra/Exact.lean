@@ -17,25 +17,26 @@ including the exactness of `U' → V → B × A` built from two exact stages `U'
 `U → V → A` (`Function.Exact.comp_prod`, with `LinearMap.surjective_prod_of_comp_eq_zero`), the
 exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_fst`,
 `Function.Exact.id_prodMap_comp_snd`), the left exactness of `Hom` over a noncommutative ring
-(`Function.Exact.lcomp_of_surjective`), the generators and relations of an extension
+(`Function.Exact.lcomp_of_surjective`), its covariant counterpart
+(`Function.Exact.compRight_of_injective`), the generators and relations of an extension
 (`Function.Exact.surjective_coprod`, `TauCeti.ker_coprod_eq_map_prod_top`), the horseshoe step
 `TauCeti.exists_surjective_ker_exact`, the short exact sequence of kernels
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
 `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
 (`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
-of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and
-cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and cokernels
+induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
 middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
 (`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension
-`dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of
-`α : X → T` and `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the
-homology of a complex of finite-dimensional vector spaces in terms of the two cokernels
+`dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of `α : X → T` and
+`β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the homology of a complex of
+finite-dimensional vector spaces in terms of the two cokernels
 (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
-dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
-by a homology theory,
+dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced by
+a homology theory,
 
 ```text
 ⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ 0,
@@ -161,6 +162,31 @@ theorem lcomp_of_surjective {R T M₁ M₂ M₃ : Type*} (Q : Type*) [Ring R] [S
     ext x
     simp
   · rw [← hy, LinearMap.comp_assoc, exac.linearMap_comp_eq_zero, LinearMap.comp_zero y]
+
+/-- **`Hom(P, -)` is left exact.** If `0 → M₁ → M₂ → M₃` is exact, so is
+`Hom(P, M₁) → Hom(P, M₂) → Hom(P, M₃)`, for any ring `T` of scalars acting on the `Hom` modules
+through the codomains. Together with the injectivity of postcomposition with `f`, this says that
+`0 → Hom(P, M₁) → Hom(P, M₂) → Hom(P, M₃)` is exact. -/
+theorem _root_.Function.Exact.compRight_of_injective {R T M₁ M₂ M₃ : Type*} (P : Type*) [Ring R]
+    [Semiring T] [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃] [AddCommGroup P]
+    [Module R M₁] [Module R M₂] [Module R M₃] [Module R P] [Module T M₁] [Module T M₂]
+    [Module T M₃] [SMulCommClass R T M₁] [SMulCommClass R T M₂] [SMulCommClass R T M₃]
+    [LinearMap.CompatibleSMul M₁ M₂ T R] [LinearMap.CompatibleSMul M₂ M₃ T R]
+    {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃} (exac : Function.Exact f g)
+    (inj : Function.Injective f) :
+    Function.Exact (f.compRight T : (P →ₗ[R] M₁) →ₗ[T] (P →ₗ[R] M₂))
+      (g.compRight T : (P →ₗ[R] M₂) →ₗ[T] (P →ₗ[R] M₃)) := by
+  intro h
+  refine ⟨fun hh ↦ ?_, ?_⟩
+  · have hmem : ∀ x, h x ∈ LinearMap.range f := fun x ↦
+      (exac (h x)).mp (by simpa using LinearMap.congr_fun hh x)
+    refine ⟨(LinearEquiv.ofInjective f inj).symm.toLinearMap.comp
+      (h.codRestrict (LinearMap.range f) hmem), ?_⟩
+    ext x
+    simp
+  · rintro ⟨u, rfl⟩
+    ext x
+    simp [exac.apply_apply_eq_zero]
 
 /-- Given an exact sequence `M₁ → M → M₂`, a surjection `π₁ : P₁ → M₁` and a lift `σ : P₂ → M`
 of a surjection `π₂ : P₂ → M₂`, the combined generator map `(x, y) ↦ f (π₁ x) + σ y` of `M` is
