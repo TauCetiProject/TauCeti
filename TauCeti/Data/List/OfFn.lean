@@ -8,11 +8,14 @@ module
 public import Mathlib.Data.Fintype.Card
 
 /-!
-# Counting letters in prefixes of `List.ofFn`
+# Counting letters in prefixes of `List.ofFn` and duplicate-free concatenations
 
 The number of occurrences of a letter `s` among the first `j` letters of the word
 `f 0, …, f (k - 1)` is the number of positions `a < j` with `f a = s`
 (`List.count_take_ofFn`). This is the occurrence-count form of `List.sum_take_ofFn`.
+
+The concatenation `List.ofFn f ++ List.ofFn g` has no duplicates if and only if `Sum.elim f g` is
+injective (`List.nodup_ofFn_append`).
 -/
 
 public section
@@ -42,5 +45,12 @@ theorem count_take_ofFn {α : Type*} [DecidableEq α] {k : ℕ} (f : Fin k → �
       split_ifs with hs <;> simp [hs]
     · rw [card_eq_zero.mpr (filter_eq_empty_iff.mpr fun a _ ⟨h, _⟩ => hj (h ▸ a.isLt))]
       simp [hj]
+
+/-- The concatenation `List.ofFn f ++ List.ofFn g` has no duplicates if and only if
+`Sum.elim f g` is injective. -/
+theorem nodup_ofFn_append {α : Type*} {n m : ℕ} {f : Fin n → α} {g : Fin m → α} :
+    (ofFn f ++ ofFn g).Nodup ↔ Function.Injective (Sum.elim f g) := by
+  rw [nodup_append, nodup_ofFn, nodup_ofFn, Sum.elim_injective]
+  simp
 
 end List

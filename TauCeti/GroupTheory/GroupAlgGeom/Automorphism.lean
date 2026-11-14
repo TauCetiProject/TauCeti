@@ -400,6 +400,24 @@ theorem apply_inl_of_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ element
   | mul f f' _ _ hf hf' => simp [hf, hf']
   | inv f _ hf => simpa [MulEquiv.symm_apply_eq] using hf.symm
 
+omit [DecidableEq X] in
+/-- The inverse bijection of an elementary automorphism is an elementary automorphism. -/
+theorem symm_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ elementaryAut G X) :
+    f.symm ∈ elementaryAut G X :=
+  MulAut.inv_def _ f ▸ inv_mem hf
+
+omit [DecidableEq X] in
+@[simp]
+theorem symm_mem_elementaryAut_iff {f : MulAut (GX G X)} :
+    f.symm ∈ elementaryAut G X ↔ f ∈ elementaryAut G X :=
+  ⟨fun h => f.symm_symm ▸ symm_mem_elementaryAut h, symm_mem_elementaryAut⟩
+
+omit [DecidableEq X] in
+/-- The inverse bijection of an elementary automorphism fixes the coefficients. -/
+theorem symm_apply_inl_of_mem_elementaryAut {f : MulAut (GX G X)} (hf : f ∈ elementaryAut G X)
+    (g : G) : f.symm (inl g) = inl g :=
+  apply_inl_of_mem_elementaryAut (symm_mem_elementaryAut hf) g
+
 /-- Simultaneous transvections: for a finite set `Y` of variables and words `a y`, `b y` in which
 no variable of `Y` occurs, there is an elementary automorphism with `y ↦ a y * y * b y` for every
 `y ∈ Y` which fixes every word in which no variable of `Y` occurs. -/
