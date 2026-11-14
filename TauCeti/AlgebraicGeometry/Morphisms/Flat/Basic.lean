@@ -38,6 +38,8 @@ the generic fibre.
   flat iff the localization of `Γ(X, V)` at the prime of `x` is flat over `Γ(Y, U)`.
 * `AlgebraicGeometry.flat_stalkMap_specMap_iff`: the stalk map of `Spec S ⟶ Spec R` at `q` is flat
   iff `S_q` is flat over `R`.
+* `AlgebraicGeometry.Scheme.Hom.flat_restrict_image_of_flat_restrict_restrict`: flatness over an
+  open `V` of an open subscheme `U` of the target is flatness over the image of `V`.
 * `AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_comp`: flatness of stalk maps descends along
   morphisms with flat stalk maps.
 * `AlgebraicGeometry.Flat.of_comp_surjective`: if `g` is flat and surjective and `g ≫ f` is flat,
@@ -85,6 +87,18 @@ theorem flat_restrict_iff {X Y : Scheme.{u}} (f : X ⟶ Y) (U : Y.Opens) :
   · intro h x
     exact (CommRingCat.flat.arrow_mk_iso_iff
       (morphismRestrictStalkMap f U x)).mpr (h x.1 x.2)
+
+/-- Flatness over an open `V` of an open subscheme `U` of the target is flatness over the image
+of `V` in the target. -/
+theorem flat_restrict_image_of_flat_restrict_restrict {X Y : Scheme.{u}} (f : X ⟶ Y)
+    (U : Y.Opens) (V : U.toScheme.Opens) (h : Flat (f ∣_ U ∣_ V)) : Flat (f ∣_ U.ι ''ᵁ V) := by
+  -- Instance search does not find `RespectsIso @Flat` at this Mathlib revision, so derive it from
+  -- the affine-local description of flatness.
+  have : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) := by
+    rw [HasRingHomProperty.eq_affineLocally (P := @Flat)]
+    exact affineLocally_respectsIso _ RingHom.Flat.respectsIso
+  exact (MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
+    (morphismRestrictRestrict f U V)).mp h
 
 /-- Flatness of stalk maps descends along flat morphisms: if `g` has flat stalk map at `x'` and
 `g ≫ f` has flat stalk map at `x'`, then `f` has flat stalk map at `g x'`. -/

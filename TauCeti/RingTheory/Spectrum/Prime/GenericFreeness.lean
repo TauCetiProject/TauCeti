@@ -7,14 +7,13 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Polynomial.Basic
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangeRightExact
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.Algebra.Polynomial.XPow.Span
 public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.Order.CompleteLattice.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 import TauCeti.RingTheory.MvPolynomial.SpanUpToTorsion
 
@@ -208,57 +207,6 @@ theorem dense_interior_freeLocus_of_finiteType [IsNoetherianRing A] [IsReduced A
     mem_interior_iff_mem_nhds.mpr (freeLocus_mem_nhds_of_mem_minimalPrimes (B := B) M hp)
 
 attribute [local instance] MvPolynomial.algebraMvPolynomial in
-/-- Taking the cokernel of finitely many relations over a polynomial ring commutes with extending
-the coefficients: if the relations `v` over `MvPolynomial σ A` are the images of relations `w`
-over `MvPolynomial σ R`, then the cokernel of `v` is the base change along `R → A` of the
-cokernel of `w`. -/
-private theorem exists_isBaseChange_quotient_range_linearCombination {R : Type*} [CommRing R]
-    [Algebra R A] {σ ι κ : Type*} [Fintype ι] [Finite κ] (w : ι → κ → MvPolynomial σ R)
-    (v : ι → κ → MvPolynomial σ A)
-    (hw : ∀ i k, MvPolynomial.map (algebraMap R A) (w i k) = v i k) :
-    ∃ h : ((κ → MvPolynomial σ R) ⧸
-        LinearMap.range (Fintype.linearCombination (MvPolynomial σ R) w)) →ₗ[R]
-      ((κ → MvPolynomial σ A) ⧸ LinearMap.range (Fintype.linearCombination (MvPolynomial σ A) v)),
-      IsBaseChange A h := by
-  let P₀ := MvPolynomial σ R
-  let P := MvPolynomial σ A
-  let f₀ := Fintype.linearCombination P₀ w
-  let f₁ := Fintype.linearCombination P v
-  let h₁ : (ι → P₀) →ₗ[R] (ι → P) := (IsScalarTower.toAlgHom R P₀ P).toLinearMap.compLeft ι
-  let h₂ : (κ → P₀) →ₗ[R] (κ → P) := (IsScalarTower.toAlgHom R P₀ P).toLinearMap.compLeft κ
-  have comm₁ : h₂ ∘ₗ f₀.restrictScalars R = (f₁.restrictScalars R) ∘ₗ h₁ := by
-    refine LinearMap.ext fun c ↦ funext fun k ↦ ?_
-    simp [h₁, h₂, f₀, f₁, P₀, P, Fintype.linearCombination_apply, Algebra.smul_def, hw]
-  have hle : (LinearMap.range f₀).restrictScalars R ≤
-      LinearMap.ker ((LinearMap.range f₁).mkQ.restrictScalars R ∘ₗ h₂) := by
-    rintro _ ⟨c, rfl⟩
-    have := congr($comm₁ c)
-    simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply] at this
-    simp [this]
-  let h₃ : (κ → P₀) ⧸ LinearMap.range f₀ →ₗ[R] (κ → P) ⧸ LinearMap.range f₁ :=
-    ((LinearMap.range f₀).restrictScalars R).liftQ _ hle ∘ₗ
-      (Submodule.Quotient.restrictScalarsEquiv R (LinearMap.range f₀)).symm.toLinearMap
-  have comm₂ : h₃ ∘ₗ (LinearMap.range f₀).mkQ.restrictScalars R =
-      (((LinearMap.range f₁).mkQ.restrictScalars A).restrictScalars R) ∘ₗ h₂ :=
-    LinearMap.ext fun x ↦
-      Submodule.liftQ_apply ((LinearMap.range f₀).restrictScalars R)
-        ((LinearMap.range f₁).mkQ.restrictScalars R ∘ₗ h₂) (h := hle) x
-  have hb₁ : IsBaseChange A h₁ := IsBaseChange.finitePow ι Algebra.IsPushout.out
-  have hb₂ : IsBaseChange A h₂ := IsBaseChange.finitePow κ Algebra.IsPushout.out
-  have e₀ : Function.Exact (f₀.restrictScalars R) ((LinearMap.range f₀).mkQ.restrictScalars R) :=
-    LinearMap.exact_map_mkQ_range f₀
-  have s₀ : Function.Surjective ((LinearMap.range f₀).mkQ.restrictScalars R) :=
-    Submodule.mkQ_surjective (LinearMap.range f₀)
-  have e₁ : Function.Exact (f₁.restrictScalars A) ((LinearMap.range f₁).mkQ.restrictScalars A) :=
-    LinearMap.exact_map_mkQ_range f₁
-  have s₁ : Function.Surjective ((LinearMap.range f₁).mkQ.restrictScalars A) :=
-    Submodule.mkQ_surjective (LinearMap.range f₁)
-  exact ⟨h₃, IsBaseChange.of_right_exact A h₁ h₂ h₃
-    (f := f₀.restrictScalars R) (g := (LinearMap.range f₀).mkQ.restrictScalars R)
-    (f' := f₁.restrictScalars A) (g' := (LinearMap.range f₁).mkQ.restrictScalars A)
-    comm₁ comm₂ hb₁ hb₂ e₀ s₀ e₁ s₁⟩
-
-attribute [local instance] MvPolynomial.algebraMvPolynomial in
 /-- Generic freeness over a domain for a finitely presented module over a polynomial ring. The
 relations have coefficients in a finitely generated subring `R₀` of `A`, which is Noetherian; the
 module is the base change of a module over `MvPolynomial σ R₀`, to which the Noetherian case
@@ -282,7 +230,7 @@ private theorem freeLocus_quotient_range_mem_nhds_bot [IsDomain A] {σ ι κ : T
       ⟨i, Finset.mem_univ _, Finset.mem_biUnion.mpr ⟨k, Finset.mem_univ _, ha⟩⟩⟩, rfl⟩
   choose w hw using hv
   -- The module is the base change of the cokernel of the lifted relations.
-  obtain ⟨h, hb⟩ := exists_isBaseChange_quotient_range_linearCombination w v hw
+  obtain ⟨h, hb⟩ := MvPolynomial.exists_isBaseChange_quotient_range_linearCombination w v hw
   have hbot : (⊥ : Ideal R₀) ∈ minimalPrimes R₀ := by
     rw [IsDomain.minimalPrimes_eq_singleton_bot]; rfl
   have h₀ := freeLocus_mem_nhds_of_mem_minimalPrimes (B := MvPolynomial σ R₀)

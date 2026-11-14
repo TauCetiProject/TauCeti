@@ -8,9 +8,11 @@ module
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangeRightExact
 
 /-!
-# Binomial expansions and coefficients under extension of scalars of multivariate polynomials
+# Extension of scalars of multivariate polynomials
 
 Under the identification `A ⊗[R] R[X_σ] ≃ A[X_σ]` of `MvPolynomial.algebraTensorAlgEquiv`, the
 power `(u - a v) ^ i` of polynomials `u, v` over `R` and a scalar `a` of `A` is the image of the
@@ -22,12 +24,17 @@ is `(-1)ⁿ (i choose n) uⁱ⁻ⁿ vⁿ`.
 An element of `R[X_σ] ⊗[R] N` is determined by its coefficients, the images of the coefficient
 functionals `MvPolynomial.lcoeff R e` on the polynomial leg.
 
+The cokernel of finitely many relations over `R[X_σ]`, with coefficients extended to `A`, is the
+base change along `R → A` of the cokernel of the original relations.
+
 ## Main declarations
 
 * `MvPolynomial.algebraTensorAlgEquiv_sum_tmul_pow_mul_pow`: the binomial expansion of
   `(u - a v) ^ i` on the tensor side.
 * `MvPolynomial.ext_lid_rTensor_lcoeff`: elements of `R[X_σ] ⊗[R] N` with the same coefficients
   are equal.
+* `MvPolynomial.exists_isBaseChange_quotient_range_linearCombination`: taking the cokernel of
+  finitely many relations over a polynomial ring commutes with extending the coefficients.
 -/
 
 public section
@@ -74,5 +81,60 @@ theorem ext_lid_rTensor_lcoeff {x y : MvPolynomial σ R ⊗[R] N}
     hcoord, h]
 
 end Ext
+
+section QuotientRange
+
+attribute [local instance] MvPolynomial.algebraMvPolynomial in
+/-- Taking the cokernel of finitely many relations over a polynomial ring commutes with extending
+the coefficients: if the relations `v` over `MvPolynomial σ A` are the images of relations `w`
+over `MvPolynomial σ R`, then the cokernel of `v` is the base change along `R → A` of the
+cokernel of `w`. -/
+theorem exists_isBaseChange_quotient_range_linearCombination {R A : Type*} [CommRing R]
+    [CommRing A] [Algebra R A] {σ ι κ : Type*} [Fintype ι] [Finite κ] (w : ι → κ → MvPolynomial σ R)
+    (v : ι → κ → MvPolynomial σ A)
+    (hw : ∀ i k, MvPolynomial.map (algebraMap R A) (w i k) = v i k) :
+    ∃ h : ((κ → MvPolynomial σ R) ⧸
+        LinearMap.range (Fintype.linearCombination (MvPolynomial σ R) w)) →ₗ[R]
+      ((κ → MvPolynomial σ A) ⧸ LinearMap.range (Fintype.linearCombination (MvPolynomial σ A) v)),
+      IsBaseChange A h := by
+  let P₀ := MvPolynomial σ R
+  let P := MvPolynomial σ A
+  let f₀ := Fintype.linearCombination P₀ w
+  let f₁ := Fintype.linearCombination P v
+  let h₁ : (ι → P₀) →ₗ[R] (ι → P) := (IsScalarTower.toAlgHom R P₀ P).toLinearMap.compLeft ι
+  let h₂ : (κ → P₀) →ₗ[R] (κ → P) := (IsScalarTower.toAlgHom R P₀ P).toLinearMap.compLeft κ
+  have comm₁ : h₂ ∘ₗ f₀.restrictScalars R = (f₁.restrictScalars R) ∘ₗ h₁ := by
+    refine LinearMap.ext fun c ↦ funext fun k ↦ ?_
+    simp [h₁, h₂, f₀, f₁, P₀, P, Fintype.linearCombination_apply, Algebra.smul_def, hw]
+  have hle : (LinearMap.range f₀).restrictScalars R ≤
+      LinearMap.ker ((LinearMap.range f₁).mkQ.restrictScalars R ∘ₗ h₂) := by
+    rintro _ ⟨c, rfl⟩
+    have := congr($comm₁ c)
+    simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Function.comp_apply] at this
+    simp [this]
+  let h₃ : (κ → P₀) ⧸ LinearMap.range f₀ →ₗ[R] (κ → P) ⧸ LinearMap.range f₁ :=
+    ((LinearMap.range f₀).restrictScalars R).liftQ _ hle ∘ₗ
+      (Submodule.Quotient.restrictScalarsEquiv R (LinearMap.range f₀)).symm.toLinearMap
+  have comm₂ : h₃ ∘ₗ (LinearMap.range f₀).mkQ.restrictScalars R =
+      (((LinearMap.range f₁).mkQ.restrictScalars A).restrictScalars R) ∘ₗ h₂ :=
+    LinearMap.ext fun x ↦
+      Submodule.liftQ_apply ((LinearMap.range f₀).restrictScalars R)
+        ((LinearMap.range f₁).mkQ.restrictScalars R ∘ₗ h₂) (h := hle) x
+  have hb₁ : IsBaseChange A h₁ := IsBaseChange.finitePow ι Algebra.IsPushout.out
+  have hb₂ : IsBaseChange A h₂ := IsBaseChange.finitePow κ Algebra.IsPushout.out
+  have e₀ : Function.Exact (f₀.restrictScalars R) ((LinearMap.range f₀).mkQ.restrictScalars R) :=
+    LinearMap.exact_map_mkQ_range f₀
+  have s₀ : Function.Surjective ((LinearMap.range f₀).mkQ.restrictScalars R) :=
+    Submodule.mkQ_surjective (LinearMap.range f₀)
+  have e₁ : Function.Exact (f₁.restrictScalars A) ((LinearMap.range f₁).mkQ.restrictScalars A) :=
+    LinearMap.exact_map_mkQ_range f₁
+  have s₁ : Function.Surjective ((LinearMap.range f₁).mkQ.restrictScalars A) :=
+    Submodule.mkQ_surjective (LinearMap.range f₁)
+  exact ⟨h₃, IsBaseChange.of_right_exact A h₁ h₂ h₃
+    (f := f₀.restrictScalars R) (g := (LinearMap.range f₀).mkQ.restrictScalars R)
+    (f' := f₁.restrictScalars A) (g' := (LinearMap.range f₁).mkQ.restrictScalars A)
+    comm₁ comm₂ hb₁ hb₂ e₀ s₀ e₁ s₁⟩
+
+end QuotientRange
 
 end MvPolynomial
