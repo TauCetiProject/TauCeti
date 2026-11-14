@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
+import TauCeti.Algebra.Category.ModuleCat.Connected
 import TauCeti.Algebra.Category.ModuleCat.HaradaSai
 import TauCeti.Algebra.Category.FGModuleCat.RepresentationFinite
 import TauCeti.Algebra.Category.ModuleCat.Injective.LeftAlmostSplit
@@ -115,17 +116,8 @@ theorem isRepresentationFinite_of_length_le_of_isLeftAlmostSplit [IsArtinianRing
     (Set.finite_range P) (by rintro _ ⟨j, rfl⟩; exact hP j)
   refine isRepresentationFinite_of_forall_exists_iso hS fun M hf hi ↦ ?_
   -- A nonzero module receives a nonzero morphism from the ring, hence from a summand.
-  have : Nontrivial M := ((indecomposable_iff_isIndecomposableModule M).mp hi).nontrivial
-  obtain ⟨x, hx⟩ := exists_ne (0 : M)
-  let t : G ⟶ M := ModuleCat.ofHom
-    (LinearMap.toSpanSingleton A M x ∘ₗ (ULift.moduleEquiv (R := A) (M := A)).toLinearMap)
-  have ht : e.inv ≫ t ≠ 0 := fun h ↦ hx <| by
-    have h₀ : t = 0 := by simpa using congrArg (e.hom ≫ ·) h
-    simpa [t, G] using ConcreteCategory.congr_hom h₀ (ULift.up 1 : ULift.{w} A)
-  obtain ⟨j, hj⟩ : ∃ j, biproduct.ι P j ≫ e.inv ≫ t ≠ 0 := by
-    by_contra! hzero
-    exact ht (biproduct.hom_ext' _ _ fun j ↦ by rw [hzero j, comp_zero])
-  exact hSmem M ⟨hf, hi⟩ (P j) ⟨j, rfl⟩ _ hj
+  obtain ⟨j, f, hj⟩ := exists_hom_ne_zero_of_iso_biproduct e hi.1
+  exact hSmem M ⟨hf, hi⟩ (P j) ⟨j, rfl⟩ f hj
 
 /-- **The first Brauer–Thrall conjecture** for a finite-dimensional algebra: if the finitely
 generated indecomposable modules have bounded length, then there are only finitely many of them up
