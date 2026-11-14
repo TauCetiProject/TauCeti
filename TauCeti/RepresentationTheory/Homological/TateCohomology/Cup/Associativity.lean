@@ -98,8 +98,8 @@ private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0
   obtain ⟨z, rfl⟩ : ∃ z', (dimensionShiftUpIso P s).hom z' = z :=
     ⟨(dimensionShiftUpIso P s).inv z, Iso.inv_hom_id_apply _ _⟩
   have hN : ((ShortComplex.mk (coindBotUnit P) (dimensionShiftUpπ P)
-      (coindBotUnit_comp_dimensionShiftUpπ P)).map (tensorLeft N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact P N
+      (coindBotUnit_comp_dimensionShiftUpπ P)).map (tensorLeft N)).ShortExact :=
+    dimensionShiftUpSES_tensorLeft_shortExact P N
   -- On the right, the tensor product of the upward sequence of `P` with `N` is split by
   -- `N ⊗ (evaluation at 1)`, so `x ∪ δ w = (-1)^p δ (x ∪ w)` for its connecting map.
   have hR := cup_δ_of_leftInverse M hN
@@ -133,11 +133,11 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
         (cup (M ⊗ N) P (p + q) s r h (cup M N p q (p + q) rfl x y) z) =
       cup M (N ⊗ P) p r₂ r (by omega) x (cup N P q s r₂ h₂ y z) := by
   have hD : (ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
-      (dimensionShiftDownι_comp_indBotCounit P)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact P
+      (dimensionShiftDownι_comp_indBotCounit P)).ShortExact :=
+    dimensionShiftDownSES_shortExact P
   have hN : ((ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
-      (dimensionShiftDownι_comp_indBotCounit P)).map (tensorLeft N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_tensorLeft_shortExact P N
+      (dimensionShiftDownι_comp_indBotCounit P)).map (tensorLeft N)).ShortExact :=
+    dimensionShiftDownSES_tensorLeft_shortExact P N
   -- The downward sequence of `P` is split, hence so is its tensor product with `N`.
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit P)
   have hρN := Rep.leftInverse_whiskerLeft N (dimensionShiftDownι P) hρ
