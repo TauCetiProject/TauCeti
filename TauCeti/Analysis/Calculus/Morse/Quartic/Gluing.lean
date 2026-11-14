@@ -325,6 +325,30 @@ theorem quarticSliceGluing_apply (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Fins
         else intervalBaseSourceGluing (intervalBaseTimeCoordinate c) (ρ i) :=
   (rfl)
 
+@[simp]
+theorem quarticSliceGluing_apply_of_eq (j : ι) (c : ℝ) (A : Finset ι) (ρ : ι → ℝ) {i : ι}
+    (h : p i = q i) : quarticSliceGluing p q j c A ρ i = p i := by
+  rw [quarticSliceGluing_apply, ite_eq_left h]
+
+@[simp]
+theorem quarticSliceGluing_apply_self {j : ι} (c : ℝ) (A : Finset ι) (ρ : ι → ℝ)
+    (h : p j ≠ q j) : quarticSliceGluing p q j c A ρ j = q j * c := by
+  rw [quarticSliceGluing_apply, ite_eq_right h, ite_eq_left rfl]
+
+@[simp]
+theorem quarticSliceGluing_apply_of_mem {j : ι} (c : ℝ) {A : Finset ι} (ρ : ι → ℝ) {i : ι}
+    (h : p i ≠ q i) (hij : i ≠ j) (hA : i ∈ A) :
+    quarticSliceGluing p q j c A ρ i =
+      q i * intervalBaseTargetGluing (intervalBaseTimeCoordinate c) (ρ i) := by
+  rw [quarticSliceGluing_apply, ite_eq_right h, ite_eq_right hij, ite_eq_left hA]
+
+@[simp]
+theorem quarticSliceGluing_apply_of_notMem {j : ι} (c : ℝ) {A : Finset ι} (ρ : ι → ℝ) {i : ι}
+    (h : p i ≠ q i) (hij : i ≠ j) (hA : i ∉ A) :
+    quarticSliceGluing p q j c A ρ i =
+      q i * intervalBaseSourceGluing (intervalBaseTimeCoordinate c) (ρ i) := by
+  rw [quarticSliceGluing_apply, ite_eq_right h, ite_eq_right hij, ite_eq_right hA]
+
 /-- **The slice evaluation is smooth in the gluing parameters**, including at the broken
 trajectories `ρᵢ = 0`. -/
 theorem contDiff_quarticSliceGluing [Fintype ι] (p q : ι → ℝ) (j : ι) (c : ℝ) (A : Finset ι)
@@ -349,18 +373,23 @@ theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing
         fun i ↦ if i ∈ A then exp (-(u i - u j)) else exp (u i - u j) := by
   rw [quarticWellSumFlow_quarticTrajectoryPoint hp hq]
   funext i
-  rw [quarticSliceGluing_apply]
   by_cases h : p i = q i
-  · rw [quarticTrajectoryPoint_apply_of_eq _ h, ite_eq_left h]
-  rw [quarticTrajectoryPoint_apply_of_ne _ h, ite_eq_right h]
+  · rw [quarticTrajectoryPoint_apply_of_eq _ h, quarticSliceGluing_apply_of_eq _ _ _ _ h]
+  rw [quarticTrajectoryPoint_apply_of_ne _ h]
   by_cases hij : i = j
-  · rw [ite_eq_left hij, hij, sub_add_cancel, intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
-  rw [ite_eq_right hij]
+  · subst hij
+    rw [quarticSliceGluing_apply_self _ _ _ h, sub_add_cancel,
+      intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
+  -- Only the times `uᵢ + (U(c) - uⱼ)` and `U(c) ∓ log ρᵢ` passed to `q` need rearranging.
   by_cases hA : i ∈ A
-  · rw [ite_eq_left hA, ite_eq_left hA, ← intervalBaseOrbit_one_sub_log _ (exp_pos _), log_exp]
-    ring_nf
-  · rw [ite_eq_right hA, ite_eq_right hA, ← intervalBaseOrbit_one_add_log _ (exp_pos _), log_exp]
-    ring_nf
+  · rw [quarticSliceGluing_apply_of_mem _ _ h hij hA, ite_eq_left hA,
+      ← intervalBaseOrbit_one_sub_log _ (exp_pos _), log_exp]
+    congr 2
+    ring
+  · rw [quarticSliceGluing_apply_of_notMem _ _ h hij hA, ite_eq_right hA,
+      ← intervalBaseOrbit_one_add_log _ (exp_pos _), log_exp]
+    congr 2
+    ring
 
 /-- **Positive gluing parameters give trajectory points.** At gluing parameters which are positive
 on the moving coordinates other than `j`, the slice evaluation is the trajectory point with time
@@ -372,16 +401,18 @@ theorem quarticSliceGluing_eq_quarticTrajectoryPoint (j : ι) {c : ℝ} (hc : c 
       if i = j then intervalBaseTimeCoordinate c else if i ∈ A then
         intervalBaseTimeCoordinate c - log (ρ i) else intervalBaseTimeCoordinate c + log (ρ i) := by
   funext i
-  rw [quarticSliceGluing_apply]
   by_cases h : p i = q i
-  · rw [quarticTrajectoryPoint_apply_of_eq _ h, ite_eq_left h]
-  rw [quarticTrajectoryPoint_apply_of_ne _ h, ite_eq_right h]
+  · rw [quarticTrajectoryPoint_apply_of_eq _ h, quarticSliceGluing_apply_of_eq _ _ _ _ h]
+  rw [quarticTrajectoryPoint_apply_of_ne _ h]
   by_cases hij : i = j
-  · rw [ite_eq_left hij, ite_eq_left hij, intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
-  rw [ite_eq_right hij, ite_eq_right hij]
+  · subst hij
+    rw [quarticSliceGluing_apply_self _ _ _ h, ite_eq_left rfl,
+      intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
   by_cases hA : i ∈ A
-  · rw [ite_eq_left hA, ite_eq_left hA, intervalBaseOrbit_one_sub_log _ (hρ i h hij)]
-  · rw [ite_eq_right hA, ite_eq_right hA, intervalBaseOrbit_one_add_log _ (hρ i h hij)]
+  · rw [quarticSliceGluing_apply_of_mem _ _ h hij hA, ite_eq_right hij, ite_eq_left hA,
+      intervalBaseOrbit_one_sub_log _ (hρ i h hij)]
+  · rw [quarticSliceGluing_apply_of_notMem _ _ h hij hA, ite_eq_right hij, ite_eq_right hA,
+      intervalBaseOrbit_one_add_log _ (hρ i h hij)]
 
 /-- **The broken trajectory at zero gluing parameters.** At `ρ = 0` the slice evaluation is the
 point with time coordinate `U(c)` on the trajectories from `A.piecewise q p`, where the coordinates
@@ -391,24 +422,26 @@ theorem quarticSliceGluing_zero (hpq : ∀ i, p i ≠ q i → p i = 0) {j : ι} 
     quarticSliceGluing p q j c A 0 = quarticTrajectoryPoint (A.piecewise q p)
       ((insert j A).piecewise q p) fun _ ↦ intervalBaseTimeCoordinate c := by
   funext i
-  rw [quarticSliceGluing_apply]
   by_cases hij : i = j
   · subst hij
     rw [quarticTrajectoryPoint_apply, Finset.piecewise_insert_self,
       A.piecewise_eq_of_notMem _ _ hjA]
     by_cases h : p i = q i
-    · rw [ite_eq_left h, ite_eq_left h]
-    · rw [ite_eq_right h, ite_eq_right h, ite_eq_left rfl,
+    · rw [quarticSliceGluing_apply_of_eq _ _ _ _ h, ite_eq_left h]
+    · rw [quarticSliceGluing_apply_self _ _ _ h, ite_eq_right h,
         intervalBaseOrbit_one_intervalBaseTimeCoordinate hc]
-  rw [quarticTrajectoryPoint_apply_of_eq _ (Finset.piecewise_insert_of_ne _ _ _ hij).symm,
-    ite_eq_right hij]
+  rw [quarticTrajectoryPoint_apply_of_eq _ (Finset.piecewise_insert_of_ne _ _ _ hij).symm]
   by_cases hA : i ∈ A
-  · rw [A.piecewise_eq_of_mem _ _ hA, ite_eq_left hA, Pi.zero_apply, intervalBaseTargetGluing_zero,
-      mul_one, ite_eq_right_iff]
-    exact id
-  · rw [A.piecewise_eq_of_notMem _ _ hA, ite_eq_right hA, Pi.zero_apply,
-      intervalBaseSourceGluing_zero, mul_zero, ite_eq_left_iff]
-    exact fun h ↦ (hpq i h).symm
+  · rw [A.piecewise_eq_of_mem _ _ hA]
+    by_cases h : p i = q i
+    · rw [quarticSliceGluing_apply_of_eq _ _ _ _ h, h]
+    · rw [quarticSliceGluing_apply_of_mem _ _ h hij hA, Pi.zero_apply,
+        intervalBaseTargetGluing_zero, mul_one]
+  · rw [A.piecewise_eq_of_notMem _ _ hA]
+    by_cases h : p i = q i
+    · rw [quarticSliceGluing_apply_of_eq _ _ _ _ h]
+    · rw [quarticSliceGluing_apply_of_notMem _ _ h hij hA, Pi.zero_apply,
+        intervalBaseSourceGluing_zero, mul_zero, hpq i h]
 
 /-- **The slice evaluation at zero gluing parameters lies on the broken trajectory.** At `ρ = 0`
 the slice evaluation lies on a trajectory from the critical point `A.piecewise q p` to
@@ -450,20 +483,19 @@ theorem tendsto_quarticWellSumFlow_quarticTrajectoryPoint_nhds_quarticSliceGluin
       (quarticTrajectoryPoint p q (u n))) l (𝓝 (quarticSliceGluing p q j c A 0)) := by
   simp only [quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing hp hq j hc A]
   refine tendsto_pi_nhds.2 fun i ↦ ?_
-  simp only [quarticSliceGluing_apply, Pi.zero_apply]
   by_cases h : p i = q i
-  · simp only [ite_eq_left h]
+  · simp only [quarticSliceGluing_apply_of_eq _ _ _ _ h]
     exact tendsto_const_nhds
   by_cases hij : i = j
-  · simp only [ite_eq_right h, ite_eq_left hij]
+  · subst hij
+    simp only [quarticSliceGluing_apply_self _ _ _ h]
     exact tendsto_const_nhds
-  simp only [ite_eq_right h, ite_eq_right hij]
   by_cases hiA : i ∈ A
-  · simp only [ite_eq_left hiA]
+  · simp only [quarticSliceGluing_apply_of_mem _ _ h hij hiA, ite_eq_left hiA, Pi.zero_apply]
     refine tendsto_const_nhds.mul ?_
     exact (contDiff_intervalBaseTargetGluing _ (n := 0)).continuous.continuousAt.tendsto.comp
       (tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp (hA i hiA h hij)))
-  · simp only [ite_eq_right hiA]
+  · simp only [quarticSliceGluing_apply_of_notMem _ _ h hij hiA, ite_eq_right hiA, Pi.zero_apply]
     refine tendsto_const_nhds.mul ?_
     exact (contDiff_intervalBaseSourceGluing _ (n := 0)).continuous.continuousAt.tendsto.comp
       (tendsto_exp_atBot.comp (hA' i hiA h hij))

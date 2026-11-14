@@ -676,12 +676,15 @@ theorem hasDerivAt_intervalBaseSourceGluing_zero (a : ℝ) :
     rw [← exp_half]
     congr 1
     ring
+  -- The quotient rule at `ρ = 0`, where the numerator vanishes, leaves `√(e^{-2a}) / √(e^{-2a})²`.
+  have hderiv : (1 * √((0 : ℝ) ^ 2 + exp (-(2 * a))) -
+      id (0 : ℝ) * (0 / (2 * √((0 : ℝ) ^ 2 + exp (-(2 * a)))))) /
+        √((0 : ℝ) ^ 2 + exp (-(2 * a))) ^ 2 = exp a := by
+    rw [zero_pow two_ne_zero, zero_add, hs, id, zero_mul, sub_zero, one_mul]
+    field_simp
+    rw [← exp_add, neg_add_cancel, exp_zero]
   rw [funext (intervalBaseSourceGluing_apply a)]
-  refine ((hasDerivAt_id (0 : ℝ)).div (hD.sqrt (by positivity)) (by positivity)).congr_deriv ?_
-  simp [hs]
-  field_simp
-  rw [← exp_add]
-  simp
+  exact ((hasDerivAt_id (0 : ℝ)).div (hD.sqrt (by positivity)) (by positivity)).congr_deriv hderiv
 
 /-- **Rate `2` at the target**: the target end reaches `1` with vanishing derivative in the
 gluing parameter. -/
