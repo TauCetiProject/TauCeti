@@ -95,6 +95,7 @@ theorem linearIndependent_ofFn_repr {R : Type*} [CommSemiring R] [DecidableEq R]
       (⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ : Submodule.span R (Set.range Q))) =
       ⊤ :=
     (Submodule.span_range_subtype_eq_top_iff _ _).mpr rfl
+  -- Adapted from the proof of Mathlib's `Module.Basis.linearIndependent_coord`.
   -- Two combinations with equal polynomials give linear forms on the span agreeing on every `Qⱼ`.
   refine linearIndependent_iff'ₛ.2 fun s f g h i hi ↦ ?_
   have hφ : ∑ k ∈ s, f k • b.coord k = ∑ k ∈ s, g k • b.coord k :=
