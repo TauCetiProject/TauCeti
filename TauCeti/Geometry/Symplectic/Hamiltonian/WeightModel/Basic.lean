@@ -475,28 +475,45 @@ theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
   (rfl)
 
-/-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
-angles `θ` is spanned by the coordinates whose angle vanishes. -/
-theorem map_weightModelCoords_ker_weightGenerator (θ : ι → ℝ) :
-    (LinearMap.ker (weightGenerator θ).toLinearMap).map weightModelCoords.toLinearMap =
-      Pi.spanSubset ℝ {j | Sum.elim θ θ j = 0} := by
+omit [Fintype ι] in
+/-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, a subspace `W` of `ℂ^ι` cut out by `z_i = 0` for
+every `i` with `¬ P (θ i)` is spanned by the coordinates `i` with `P (θ i)`. -/
+theorem map_weightModelCoords_eq_spanSubset [Finite ι]
+    {W : Submodule ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (θ : ι → ℝ) (P : ℝ → Prop)
+    (hW : ∀ x, x ∈ W ↔ ∀ i, ¬ P (θ i) → x.1 i = 0 ∧ x.2 i = 0) :
+    W.map weightModelCoords.toLinearMap = Pi.spanSubset ℝ {j | P (Sum.elim θ θ j)} := by
   ext u
   obtain ⟨v, rfl⟩ := weightModelCoords.surjective u
-  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, mem_ker_weightGenerator_iff,
-    Pi.mem_spanSubset_iff]
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, hW, Pi.mem_spanSubset_iff]
   constructor
   · rintro h (i | i) hi
     · exact (h i hi).1
     · exact (h i hi).2
   · exact fun h i hi ↦ ⟨h (Sum.inl i) hi, h (Sum.inr i) hi⟩
 
+omit [Fintype ι] in
+/-- A subspace `W` of `ℂ^ι` cut out by `z_i = 0` for every `i` with `¬ P (θ i)` has real dimension
+twice the number of `i` with `P (θ i)`. -/
+theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
+    {W : Submodule ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (θ : ι → ℝ) (P : ℝ → Prop)
+    (hW : ∀ x, x ∈ W ↔ ∀ i, ¬ P (θ i) → x.1 i = 0 ∧ x.2 i = 0) :
+    Module.finrank ℝ W = 2 * {i | P (θ i)}.ncard := by
+  rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_eq_spanSubset θ P hW,
+    Pi.dim_spanSubset, Set.ncard_setOf_sumElim θ P]
+
+/-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
+angles `θ` is spanned by the coordinates whose angle vanishes. -/
+theorem map_weightModelCoords_ker_weightGenerator (θ : ι → ℝ) :
+    (LinearMap.ker (weightGenerator θ).toLinearMap).map weightModelCoords.toLinearMap =
+      Pi.spanSubset ℝ {j | Sum.elim θ θ j = 0} :=
+  map_weightModelCoords_eq_spanSubset θ (· = 0) (mem_ker_weightGenerator_iff θ)
+
 /-- **Fixed tangent directions in the weight model.** The kernel of the generator of the rotation
 by the angles `θ` has dimension twice the number of `i` with `θ_i = 0`. -/
 theorem finrank_ker_weightGenerator (θ : ι → ℝ) :
     Module.finrank ℝ (LinearMap.ker (weightGenerator θ).toLinearMap) =
-      2 * {i | θ i = 0}.ncard := by
-  rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_ker_weightGenerator,
-    Pi.dim_spanSubset, Set.ncard_setOf_sumElim θ (· = 0)]
+      2 * {i | θ i = 0}.ncard :=
+  finrank_eq_two_mul_ncard_of_mem_iff θ (· = 0) (mem_ker_weightGenerator_iff θ)
 
 /-- **The image of the derivative of the moment map.** At `z`, the derivative of `μ` has image the
 span of the weights `α_i` for which the coordinate `z_i = q_i + i p_i` is nonzero. -/
