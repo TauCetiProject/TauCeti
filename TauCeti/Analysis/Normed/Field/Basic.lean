@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 import Mathlib.Algebra.Order.Archimedean.Basic
@@ -34,7 +35,13 @@ side is the Gauss norm at radius `‖d‖` of the polynomial with roots `s`, so 
 which that Gauss norm equals `‖c‖`.
 
 A normed field whose norm takes every positive real value is densely normed
-(`DenselyNormedField.ofForallExistsNormEq`).
+(`DenselyNormedField.ofForallExistsNormEq`), as is every algebraically closed nontrivially normed
+field (`DenselyNormedField.ofIsAlgClosed`). Over either class of fields, the closure of the range
+of the norm is `[0, ∞)` (`NormedField.closure_range_norm`,
+`NormedField.closure_range_norm_of_isAlgClosed`). Over any
+nontrivial normed additive group with an isometric scalar action by a nontrivially normed field,
+the supremum of extended norms is `⊤` (`NormedField.iSup_eNorm_eq_top_of_normSMulClass`,
+`NormedField.iSup_eNorm_eq_top`).
 
 Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
 into a relative error bound for `F - w / c`.
@@ -177,6 +184,49 @@ theorem exists_prod_map_max_norm_eq_of_isAlgClosed {𝕜 : Type*} [NormedField �
       div_eq_iff (norm_ne_zero_iff.mpr hs₂), ← hsplit, hφr]
   exact ⟨d, by rw [hdr]; exact hφr⟩
 
+/-- Over a nontrivial normed additive group with an isometric scalar action by a nontrivially
+normed field, the supremum of extended norms is `⊤`. -/
+theorem iSup_eNorm_eq_top_of_normSMulClass (E : Type*) [NormedAddCommGroup E] [SMul 𝕜 E]
+    [NormSMulClass 𝕜 E] [Nontrivial E] : (⨆ x : E, ‖x‖ₑ) = ⊤ := by
+  obtain ⟨e, he⟩ := exists_ne (0 : E)
+  have he' : 0 < ‖e‖ := norm_pos_iff.mpr he
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  obtain ⟨k, hk⟩ := exists_lt_norm 𝕜 ((r : ℝ) / ‖e‖)
+  have hle : (r : ℝ) ≤ ‖k • e‖ := by
+    rw [norm_smul]
+    exact ((div_lt_iff₀ he').mp hk).le
+  exact le_trans (by simpa [eNorm_eq_nnNorm] using ENNReal.ofReal_le_ofReal hle)
+    (le_iSup (fun x : E ↦ ‖x‖ₑ) (k • e))
+
+/-- In a nontrivially normed field, the supremum of extended norms is `⊤`. -/
+@[simp]
+theorem iSup_eNorm_eq_top : (⨆ x : 𝕜, ‖x‖ₑ) = ⊤ :=
+  iSup_eNorm_eq_top_of_normSMulClass 𝕜 𝕜
+
+/-- In a densely normed field, every positive real number lies in the closure of the range of the
+norm. -/
+theorem Ioi_subset_closure_range_norm (𝕜 : Type*) [DenselyNormedField 𝕜] :
+    Set.Ioi (0 : ℝ) ⊆ closure (Set.range (norm : 𝕜 → ℝ)) := by
+  intro r hr
+  rw [Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨x, hx₁, hx₂⟩ := exists_lt_norm_lt 𝕜 (r₂ := r + ε / 2)
+    (le_max_left 0 (r - ε / 2)) (max_lt (by linarith [Set.mem_Ioi.mp hr]) (by linarith))
+  refine ⟨‖x‖, ⟨x, rfl⟩, ?_⟩
+  rw [Real.dist_eq, abs_sub_lt_iff]
+  exact ⟨by linarith [le_max_right 0 (r - ε / 2)], by linarith⟩
+
+/-- In a densely normed field, the closure of the range of the norm is `[0, ∞)`. -/
+@[simp]
+theorem closure_range_norm (𝕜 : Type*) [DenselyNormedField 𝕜] :
+    closure (Set.range (norm : 𝕜 → ℝ)) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (isClosed_Ici.closure_subset_iff.mpr ?_) fun r hr ↦ ?_
+  · rintro _ ⟨x, rfl⟩
+    exact norm_nonneg x
+  · rcases (Set.mem_Ici.mp hr).eq_or_lt with rfl | hr'
+    · exact subset_closure ⟨0, norm_zero⟩
+    · exact Ioi_subset_closure_range_norm 𝕜 hr'
+
 end NormedField
 
 /-- A normed field whose norm takes every positive real value is densely normed. The underlying
@@ -189,6 +239,36 @@ def DenselyNormedField.ofForallExistsNormEq {𝕜 : Type*} [h' : NormedField �
   lt_norm_lt r₁ r₂ h₀ hr := by
     obtain ⟨x, hx⟩ := h ((r₁ + r₂) / 2) (by linarith)
     exact ⟨x, by linarith, by linarith⟩
+
+/-- An algebraically closed nontrivially normed field is densely normed, by
+`NormedField.exists_lt_norm_lt_of_isAlgClosed`. This is a definition rather than a global instance
+to avoid a typeclass cycle through `DenselyNormedField.toNontriviallyNormedField`, and carries the
+given `NormedField` data so that concrete fields incur no norm diamond. -/
+@[expose, instance_reducible]
+def DenselyNormedField.ofIsAlgClosed (𝕜 : Type*) [h : NontriviallyNormedField 𝕜] [IsAlgClosed 𝕜] :
+    DenselyNormedField 𝕜 where
+  toNormedField := h.toNormedField
+  lt_norm_lt _ _ := NormedField.exists_lt_norm_lt_of_isAlgClosed 𝕜
+
+namespace NormedField
+
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] [IsAlgClosed 𝕜]
+
+/-- In an algebraically closed nontrivially normed field, every positive real number lies in the
+closure of the range of the norm. -/
+theorem Ioi_subset_closure_range_norm_of_isAlgClosed :
+    Set.Ioi (0 : ℝ) ⊆ closure (Set.range (norm : 𝕜 → ℝ)) := by
+  let _ := DenselyNormedField.ofIsAlgClosed 𝕜
+  exact Ioi_subset_closure_range_norm 𝕜
+
+/-- In an algebraically closed nontrivially normed field, the closure of the range of the norm is
+`[0, ∞)`. -/
+theorem closure_range_norm_of_isAlgClosed :
+    closure (Set.range (norm : 𝕜 → ℝ)) = Set.Ici 0 := by
+  let _ := DenselyNormedField.ofIsAlgClosed 𝕜
+  exact closure_range_norm 𝕜
+
+end NormedField
 
 namespace TauCeti
 

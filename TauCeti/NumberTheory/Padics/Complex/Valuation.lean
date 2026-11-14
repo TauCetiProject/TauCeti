@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
+public import TauCeti.Analysis.Normed.Field.Basic
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
 import TauCeti.Analysis.Normed.Ring.Commensurable
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Commensurable
@@ -25,13 +26,16 @@ field a sufficiently close approximation of a nonzero element has the same norm.
 
 On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
 every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
-For example a cube root of `p` has valuation `1 / 3`.
+For example a cube root of `p` has valuation `1 / 3`. Consequently the nonzero norms of `ℂ_[p]`
+are the rational powers `p ^ q` (`q ∈ ℚ`), and because `ℚ` is dense in `ℝ` this makes `ℂ_[p]` a
+densely normed field (`PadicComplex.denselyNormedField`).
 
 ## Main definitions
 
 * `PadicComplex.pseudoUniformizer`: the multiplicative pseudo-uniformiser `p` of `ℂ_[p]`.
 * `PadicComplex.addValuation`: the additive valuation on `ℂ_[p]` with values in `WithTop ℚ`,
   normalised by `v(p) = 1`.
+* `PadicComplex.denselyNormedField`: `ℂ_[p]` is a `DenselyNormedField`.
 
 ## Main results
 
@@ -42,6 +46,8 @@ For example a cube root of `p` has valuation `1 / 3`.
 * `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
 * `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.exists_norm_eq_rpow_rat` and `PadicComplex.range_norm`: the norms on `ℂ_[p]` are
+  `0` and the rational powers of `p`.
 
 ## References
 
@@ -154,5 +160,42 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
   | coe q =>
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
+
+/-- Every rational power `p ^ q` is the norm of an element of `ℂ_[p]`. -/
+theorem exists_norm_eq_rpow_rat (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (q : ℝ) := by
+  obtain ⟨x, hx⟩ := addValuation_surjective (p := p) ((-q : ℚ) : WithTop ℚ)
+  exact ⟨x, by simpa [Rat.cast_neg] using addValuation_eq_coe_iff.mp hx⟩
+
+variable (p) in
+/-- **The norms of `ℂ_[p]`** are `0` and the rational powers `p ^ q` (`q ∈ ℚ`). -/
+theorem range_norm :
+    Set.range (norm : ℂ_[p] → ℝ) = insert 0 (Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ)) := by
+  ext r
+  constructor
+  · rintro ⟨x, rfl⟩
+    cases h : addValuation p x with
+    | top =>
+      exact Set.mem_insert_iff.mpr <| Or.inl <| norm_eq_zero.mpr <|
+        (addValuation p).top_iff.mp h
+    | coe q =>
+      exact Set.mem_insert_of_mem _ ⟨-q, by
+        simpa [Rat.cast_neg] using (addValuation_eq_coe_iff.mp h).symm⟩
+  · rintro (rfl | ⟨q, rfl⟩)
+    · exact ⟨0, norm_zero⟩
+    · exact exists_norm_eq_rpow_rat q
+
+variable (p) in
+/-- **`ℂ_[p]` is densely normed**: since `ℂ_[p]` is algebraically closed and nontrivially normed,
+its nonzero norms `p ^ ℚ` are dense in `(0, ∞)`. In particular `NormedField.denseRange_nnNorm` and
+`NormedField.closure_range_norm` apply to `ℂ_[p]`. -/
+noncomputable instance denselyNormedField : DenselyNormedField ℂ_[p] :=
+  DenselyNormedField.ofIsAlgClosed ℂ_[p]
+
+-- Ensure `DenselyNormedField.toNontriviallyNormedField` agrees definitionally with
+-- `PadicComplex.nontriviallyNormedField`.
+example (p : ℕ) [Fact p.Prime] :
+    (DenselyNormedField.toNontriviallyNormedField : NontriviallyNormedField ℂ_[p]) =
+      PadicComplex.nontriviallyNormedField p := by
+  with_reducible_and_instances rfl
 
 end PadicComplex
