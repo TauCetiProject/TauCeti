@@ -30,12 +30,11 @@ particular nonzero finite projective ideals of a domain, freeness is principalit
 
 ## References
 
-* C. A. Weibel, *The K-book: an introduction to algebraic K-theory*, Chapter I, Proposition 3.4.
+* C. A. Weibel, *The K-book: an introduction to algebraic K-theory*, Chapter II,
+  Proposition 2.6 (the determinant map), and Chapter I, Proposition 3.5 (invertible ideals).
 -/
 
 public section
-
-open scoped nonZeroDivisors
 
 namespace TauCeti
 
@@ -63,37 +62,14 @@ theorem classOf_eq_zero_iff_free {M : Type u} [AddCommGroup M] [Module A M]
 /-- An invertible submodule has zero reduced projective class exactly when it is principal. -/
 theorem classOf_submodule_eq_zero_iff_isPrincipal {P : Type u} [AddCommGroup P] [Module A P]
     (I : Submodule A P) [Module.Invertible A I] : classOf A I 1 = 0 ↔ I.IsPrincipal := by
-  rw [classOf_eq_zero_iff_free, Module.Invertible.free_iff_linearEquiv]
-  constructor
-  · rintro ⟨f⟩
-    exact ⟨_, Submodule.eq_span_singleton_of_surjective f.symm.surjective⟩
-  · rintro ⟨x, hx⟩
-    -- Multiplication by the generator maps `A` onto `I`, hence isomorphically.
-    let f : A →ₗ[A] I :=
-      (LinearMap.toSpanSingleton A P x).codRestrict I fun a ↦ by
-        rw [hx]
-        exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self x)
-    have hf : Function.Surjective f := by
-      rintro ⟨y, hy⟩
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hx ▸ hy : y ∈ Submodule.span A {x})
-      exact ⟨a, rfl⟩
-    exact ⟨(LinearEquiv.ofBijective f (Module.Invertible.bijective_of_surjective hf)).symm⟩
+  rw [classOf_eq_zero_iff_free, I.free_iff_isPrincipal]
 
 /-- A nonzero finite projective ideal of a domain has zero reduced projective class exactly when
 it is principal. The finiteness and projectivity instances are required to express the left-hand
 side using `classOf`. -/
 theorem classOf_ideal_eq_zero_iff_isPrincipal [IsDomain A] {I : Ideal A} [Module.Finite A I]
     [Module.Projective A I] (hI : I ≠ ⊥) : classOf A I 1 = 0 ↔ I.IsPrincipal := by
-  -- The rank of `I` is constant, and it is one at the generic point.
-  have : Module.Invertible A I := .of_rankAtStalk_eq_one fun p ↦ by
-    have hle : (⊥ : PrimeSpectrum A).asIdeal.primeCompl ≤ A⁰ := fun _ hx ↦
-      mem_nonZeroDivisors_of_ne_zero hx
-    rw [← Module.rankAtStalk_eq_of_le_of_finite_of_flat I (bot_le : ⊥ ≤ p), Module.rankAtStalk,
-      IsLocalization.finrank_eq (Localization.AtPrime (⊥ : PrimeSpectrum A).asIdeal) _ hle,
-      IsLocalizedModule.finrank_eq _ (LocalizedModule.mkLinearMap _ I) hle]
-    refine le_antisymm ((Submodule.finrank_le I).trans (by simp)) ?_
-    obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
-    exact Module.finrank_pos_iff_exists_ne_zero.mpr ⟨⟨x, hx⟩, by simpa using hx0⟩
+  have : Module.Invertible A I := I.moduleInvertible_of_ne_bot hI
   exact classOf_submodule_eq_zero_iff_isPrincipal I
 
 end FiniteProjectiveModules

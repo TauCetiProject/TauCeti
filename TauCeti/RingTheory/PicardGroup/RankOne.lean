@@ -25,6 +25,8 @@ invertible.
 
 ## Main results
 
+* `Submodule.free_iff_isPrincipal`: an invertible submodule is free exactly when it is principal.
+* `Ideal.moduleInvertible_of_ne_bot`: a nonzero finite projective ideal of a domain is invertible.
 * `Module.Invertible.rankAtStalk_eq_one`: an invertible module has rank one at every prime.
 * `Module.Invertible.of_rankAtStalk_eq_one`: a finite projective module of rank one at every prime
   is invertible.
@@ -86,3 +88,42 @@ theorem invertible_iff_rankAtStalk_eq_one :
     fun ⟨_, _, h⟩ ↦ .of_rankAtStalk_eq_one h⟩
 
 end Module
+
+namespace Submodule
+
+variable {R P : Type*} [CommRing R] [AddCommGroup P] [Module R P]
+
+/-- An invertible submodule is free exactly when it is principal. -/
+theorem free_iff_isPrincipal (I : Submodule R P) [Module.Invertible R I] :
+    Module.Free R I ↔ I.IsPrincipal := by
+  rw [Module.Invertible.free_iff_linearEquiv]
+  constructor
+  · rintro ⟨f⟩
+    exact ⟨_, Submodule.eq_span_singleton_of_surjective f.symm.surjective⟩
+  · rintro ⟨x, hx⟩
+    -- Multiplication by the generator maps `R` onto `I`, hence isomorphically.
+    let f : R →ₗ[R] I :=
+      (LinearMap.toSpanSingleton R P x).codRestrict I fun a ↦ by
+        rw [hx]
+        exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self x)
+    have hf : Function.Surjective f := by
+      rintro ⟨y, hy⟩
+      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hx ▸ hy : y ∈ Submodule.span R {x})
+      exact ⟨a, rfl⟩
+    exact ⟨(LinearEquiv.ofBijective f (Module.Invertible.bijective_of_surjective hf)).symm⟩
+
+end Submodule
+
+namespace Ideal
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- A nonzero finite projective ideal of a domain is an invertible module. -/
+theorem moduleInvertible_of_ne_bot (I : Ideal R) [Module.Finite R I] [Module.Projective R I]
+    (hI : I ≠ ⊥) : Module.Invertible R I :=
+  .of_rankAtStalk_eq_one fun p ↦ by
+    rw [Module.rankAtStalk_eq, p.asIdeal.finrank_fiber_eq_finrank]
+    exact le_antisymm ((Submodule.finrank_le I).trans (by simp))
+      (Submodule.one_le_finrank_iff.mpr hI)
+
+end Ideal
