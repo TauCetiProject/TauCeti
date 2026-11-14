@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Component.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -23,10 +23,17 @@ the spans attached to a single diagram component, because this property is stabl
 reflections and every root is reached from a simple root by them. Different diagram components have
 orthogonal spans, so non-orthogonal roots stay attached to one diagram component.
 
+For a finite root system over a field, a base also restricts to each irreducible component: the
+simple roots lying in a component form a base of its component pairing, because up to sign every
+root of the component is a sum of simple roots in which only those of its own component can occur.
+Heights and positivity of roots of the component are the same for both bases.
+
 ## Main definitions
 
 * `RootPairing.Base.componentEquiv`: the bijection from diagram components to irreducible
   components.
+* `RootPairing.Base.componentBase`: the base of the component pairing formed by the simple roots in
+  the component.
 
 ## Main results
 
@@ -39,6 +46,11 @@ orthogonal spans, so non-orthogonal roots stay attached to one diagram component
   a diagram component is a component space, and likewise for coroots.
 * `RootPairing.Base.span_root_image_supp_eq_span_root_image_supp`: the component spaces obtained
   from two bases agree.
+* `RootPairing.Base.cartanMatrixIn_componentBase`: the Cartan matrix of the base of a component is
+  the corresponding block of the Cartan matrix of the whole base.
+* `RootPairing.Base.mem_closure_root_componentBase_iff`,
+  `RootPairing.Base.height_componentBase`: the base of a component has the positive cone and the
+  heights cut out by the whole base.
 
 ## References
 
@@ -198,6 +210,13 @@ theorem componentEquiv_connectedComponentMk (i : b.support) :
     b.componentEquiv ((diagramGraph b.cartanMatrix).connectedComponentMk i) = P.componentOf i :=
   (rfl)
 
+/-- The simple roots of `b` in the diagram component corresponding to `C` are those in `C`. -/
+theorem mem_supp_componentEquiv_symm (C : P.Component) {i : b.support} :
+    i ∈ (b.componentEquiv.symm C).supp ↔ (i : ι) ∈ C.supp := by
+  rw [SimpleGraph.ConnectedComponent.mem_supp_iff, Equiv.eq_symm_apply,
+    componentEquiv_connectedComponentMk]
+  rfl
+
 /-- A root is attached to a diagram component exactly when it lies in the corresponding irreducible
 component. -/
 private theorem attachedTo_iff {C : (diagramGraph b.cartanMatrix).ConnectedComponent}
@@ -251,5 +270,157 @@ theorem span_root_image_supp_eq_span_root_image_supp (b' : P.Base)
       span R (P.root '' ((↑) '' (b'.componentEquiv.symm (b.componentEquiv C)).supp)) := by
   rw [span_root_image_supp_eq_componentSpace, span_root_image_supp_eq_componentSpace,
     Equiv.apply_symm_apply]
+
+/-! ### The base of a component pairing -/
+
+section ComponentPairing
+
+variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+  {P : RootPairing ι K M N} [Finite ι] [P.IsRootSystem] (b : P.Base) (C : P.Component)
+
+omit [Finite ι] [P.IsRootSystem] in
+/-- Membership in the additive closure of a family restricted to the indices in `C` with a given
+property, read in an ambient space through a submodule. -/
+private theorem mem_closure_image_preimage_iff {V : Type*} [AddCommGroup V] [Module K V]
+    {p : Submodule K V} {f : C.supp → p} {g : ι → V} (hfg : ∀ i, (f i : V) = g i) {s : Set ι}
+    {x : p} : x ∈ AddSubmonoid.closure (f '' ((↑) ⁻¹' s)) ↔
+      (x : V) ∈ AddSubmonoid.closure (g '' (s ∩ C.supp)) := by
+  have himage : p.subtype '' (f '' ((↑) ⁻¹' s)) = g '' (s ∩ C.supp) := by
+    rw [Set.image_image]
+    simp_rw [Submodule.subtype_apply, hfg]
+    rw [← Set.image_image g Subtype.val, Subtype.image_preimage_coe, Set.inter_comm]
+  rw [← himage, ← AddMonoidHom.map_mclosure]
+  exact (AddSubmonoid.mem_map_iff_mem p.injective_subtype).symm
+
+/-- The **base of the component pairing** of `C` cut out by a base `b`: its simple roots are the
+simple roots of `b` lying in `C`. -/
+noncomputable def componentBase : (P.componentPairing C).Base where
+  support := b.support.preimage (↑) Subtype.val_injective.injOn
+  linearIndepOn_root := by
+    have h : (P.componentSpace C).subtype ∘ (P.componentPairing C).root = P.root ∘ (↑) :=
+      funext (P.coe_componentPairing_root C)
+    rw [Finset.coe_preimage]
+    refine .of_comp (P.componentSpace C).subtype ?_
+    rw [h]
+    exact (b.linearIndepOn_root.mono (Set.image_preimage_subset _ _)).comp_of_image
+      Subtype.val_injective.injOn
+  linearIndepOn_coroot := by
+    have h : (P.corootComponentSpace C).subtype ∘ (P.componentPairing C).coroot = P.coroot ∘ (↑) :=
+      funext (P.coe_componentPairing_coroot C)
+    rw [Finset.coe_preimage]
+    refine .of_comp (P.corootComponentSpace C).subtype ?_
+    rw [h]
+    exact (b.linearIndepOn_coroot.mono (Set.image_preimage_subset _ _)).comp_of_image
+      Subtype.val_injective.injOn
+  root_mem_or_neg_mem i := by
+    rw [Finset.coe_preimage]
+    refine (b.root_mem_or_neg_mem i).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
+      exact (mem_closure_image_preimage_iff C (P.coe_componentPairing_root C)).mpr
+        (mem_closure_root_inter_supp (by simpa using h) (Subtype.prop _))
+  coroot_mem_or_neg_mem i := by
+    rw [Finset.coe_preimage]
+    refine (b.coroot_mem_or_neg_mem i).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
+      exact (mem_closure_image_preimage_iff C (P.coe_componentPairing_coroot C)).mpr
+        (mem_closure_coroot_inter_supp (by simpa using h) (Subtype.prop _))
+
+theorem support_componentBase :
+    (b.componentBase C).support = b.support.preimage (↑) Subtype.val_injective.injOn := by
+  simp [componentBase]
+
+/-- The simple roots of the component base are the simple roots of `b` in `C`. -/
+@[simp]
+theorem mem_support_componentBase {i : C.supp} :
+    i ∈ (b.componentBase C).support ↔ (i : ι) ∈ b.support := by
+  simp [support_componentBase]
+
+/-- **The positive cone of the component base**: a vector of the component space of `C` is a sum
+of simple roots of the component base exactly when it is a sum of simple roots of `b`. -/
+theorem mem_closure_root_componentBase_iff {x : P.componentSpace C} :
+    x ∈ AddSubmonoid.closure ((P.componentPairing C).root '' (b.componentBase C).support) ↔
+      (x : M) ∈ AddSubmonoid.closure (P.root '' b.support) := by
+  rw [support_componentBase, Finset.coe_preimage,
+    mem_closure_image_preimage_iff C (P.coe_componentPairing_root C)]
+  exact ⟨fun h ↦ AddSubmonoid.closure_mono (Set.image_mono Set.inter_subset_left) h,
+    fun h ↦ mem_closure_root_inter_supp h x.2⟩
+
+/-- A vector of the coroot space of `C` is a sum of simple coroots of the component base exactly
+when it is a sum of simple coroots of `b`. -/
+theorem mem_closure_coroot_componentBase_iff {x : P.corootComponentSpace C} :
+    x ∈ AddSubmonoid.closure ((P.componentPairing C).coroot '' (b.componentBase C).support) ↔
+      (x : N) ∈ AddSubmonoid.closure (P.coroot '' b.support) := by
+  rw [support_componentBase, Finset.coe_preimage,
+    mem_closure_image_preimage_iff C (P.coe_componentPairing_coroot C)]
+  exact ⟨fun h ↦ AddSubmonoid.closure_mono (Set.image_mono Set.inter_subset_left) h,
+    fun h ↦ mem_closure_coroot_inter_supp h x.2⟩
+
+/-- The heights of the roots of `C` relative to the component base are their heights relative to
+`b`. -/
+@[simp]
+theorem height_componentBase [CharZero K] (i : C.supp) :
+    (b.componentBase C).height i = b.height i := by
+  classical
+  obtain ⟨f, -, -, hf⟩ := (b.componentBase C).exists_root_eq_sum_int i
+  let F : ι → ℤ := fun k ↦ if hk : k ∈ C.supp then f ⟨k, hk⟩ else 0
+  have hF (k : ι) (hk : k ∉ Set.range ((↑) : C.supp → ι)) : F k = 0 :=
+    dite_eq_right fun h ↦ hk ⟨⟨k, h⟩, rfl⟩
+  have hFf (j : C.supp) : F j = f j := dite_eq_left j.2
+  rw [height_eq_sum hf, b.height_eq_sum (f := F) ?_, support_componentBase]
+  · rw [← Finset.sum_preimage _ _ Subtype.val_injective.injOn F fun k _ hk ↦ hF k hk]
+    exact Finset.sum_congr rfl fun j _ ↦ (hFf j).symm
+  · rw [← Finset.sum_preimage _ _ Subtype.val_injective.injOn (fun k ↦ F k • P.root k)
+      fun k _ hk ↦ by rw [hF k hk, zero_smul]]
+    simp_rw [hFf]
+    simpa [support_componentBase] using congrArg Subtype.val hf
+
+/-- A root of `C` is positive for the component base exactly when it is positive for `b`. -/
+@[simp]
+theorem isPos_componentBase_iff [CharZero K] (i : C.supp) :
+    (b.componentBase C).IsPos i ↔ b.IsPos i := by
+  rw [isPos_iff, isPos_iff, height_componentBase]
+
+/-- The simple roots of the component base are the vertices of the corresponding component of the
+Dynkin diagram of `b`. -/
+noncomputable def supportComponentBaseEquiv [CharZero K] [P.IsCrystallographic] [P.IsReduced] :
+    (b.componentBase C).support ≃ (b.componentEquiv.symm C).supp where
+  toFun i := ⟨⟨i, (b.mem_support_componentBase C).mp i.2⟩,
+    (b.mem_supp_componentEquiv_symm C).mpr i.1.2⟩
+  invFun i := ⟨⟨i.1, (b.mem_supp_componentEquiv_symm C).mp i.2⟩,
+    (b.mem_support_componentBase C).mpr i.1.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_supportComponentBaseEquiv_apply [CharZero K] [P.IsCrystallographic] [P.IsReduced]
+    (i : (b.componentBase C).support) :
+    (b.supportComponentBaseEquiv C i : b.support) =
+      ⟨i, (b.mem_support_componentBase C).mp i.2⟩ := by
+  simp [supportComponentBaseEquiv]
+
+@[simp]
+theorem coe_supportComponentBaseEquiv_symm_apply [CharZero K] [P.IsCrystallographic]
+    [P.IsReduced] (i : (b.componentEquiv.symm C).supp) :
+    ((b.supportComponentBaseEquiv C).symm i : C.supp) =
+      ⟨(i : b.support), (b.mem_supp_componentEquiv_symm C).mp i.2⟩ := by
+  simp [supportComponentBaseEquiv]
+
+/-- The `S`-valued Cartan matrix of the component base is the block of the `S`-valued Cartan
+matrix of `b` on the simple roots in `C`. -/
+@[simp]
+theorem cartanMatrixIn_componentBase (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S]
+    (i j : (b.componentBase C).support) :
+    (b.componentBase C).cartanMatrixIn S i j =
+      b.cartanMatrixIn S ⟨i, (b.mem_support_componentBase C).mp i.2⟩
+        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ := by
+  simp [cartanMatrixIn_def]
+
+/-- The Cartan matrix of the component base is the block of the Cartan matrix of `b` on the simple
+roots in `C`. -/
+theorem cartanMatrix_componentBase [P.IsCrystallographic] (i j : (b.componentBase C).support) :
+    (b.componentBase C).cartanMatrix i j =
+      b.cartanMatrix ⟨i, (b.mem_support_componentBase C).mp i.2⟩
+        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ :=
+  b.cartanMatrixIn_componentBase C ℤ i j
+
+end ComponentPairing
 
 end RootPairing.Base
