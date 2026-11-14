@@ -38,8 +38,9 @@ The file develops:
   on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
-* the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
-  the degree and in particular restricts a symbol to a set of positions;
+* the pullback `HomogeneousSymbol.pullback` along a smooth map of the positions and a smooth
+  family of injective linear maps of the frequencies, which keeps the degree and in particular
+  restricts a symbol to a set of positions;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -418,70 +419,86 @@ theorem id_comp (a : HomogeneousSymbol X E V W m) :
     (id X E W).comp a = a.castDegree (zero_add m).symm :=
   ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
 
-/-! ### Pullback in the position -/
+/-! ### Pullback along fibrewise linear maps -/
 
-section CompPosition
+section Pullback
 
-variable {Y Z : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup Z]
-  [NormedSpace ℝ Z]
+variable {Y Z F G : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup Z]
+  [NormedSpace ℝ Z] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {g : Y → X} {L : Y → F →L[ℝ] E}
 
-/-- Pullback in the position along a smooth map `g`: the coefficient `a (g y, ξ)` is again
-homogeneous of degree `m`. It restricts the symbol to the positions in the range of `g`, read in
-the parameter of `g`. -/
-def compPosition (a : HomogeneousSymbol X E V W m) (g : Y → X) (hg : ContDiff ℝ ∞ g) :
-    HomogeneousSymbol Y E V W m where
-  coefficient p := a.coefficient (g p.1, p.2)
-  zero_covector y := a.zero_covector (g y)
+variable (g L) in
+/-- The **pullback** `(y, η) ↦ a(g y, L y η)` of a homogeneous symbol of degree `m` along a smooth
+map `g` of the positions and a smooth family `L` of injective linear maps of the frequencies, again
+homogeneous of degree `m`: `L y` is linear and maps nonzero frequencies to nonzero frequencies.
+For the constant identity family it pulls back the position alone, restricting the symbol to the
+positions in the range of `g`, read in the parameter of `g`. -/
+def pullback (hg : ContDiff ℝ ∞ g) (hL : ContDiff ℝ ∞ L) (hLinj : ∀ y, Function.Injective (L y))
+    (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol Y F V W m where
+  coefficient p := a.coefficient (g p.1, L p.1 p.2)
+  zero_covector y := by simp
   contDiffOn_coefficient :=
-    a.contDiffOn_coefficient.comp ((hg.comp contDiff_fst).prodMk contDiff_snd).contDiffOn
-      fun _ hp ↦ hp
-  homogeneous y ξ t ht := a.homogeneous (g y) ξ t ht
+    a.contDiffOn_coefficient.comp
+      ((hg.comp contDiff_fst).prodMk ((hL.comp contDiff_fst).clm_apply contDiff_snd)).contDiffOn
+      fun p hp ↦ (map_ne_zero_iff _ (hLinj p.1)).2 hp
+  homogeneous y η t ht := by simp [a.homogeneous _ _ t ht]
+
+variable (hg : ContDiff ℝ ∞ g) (hL : ContDiff ℝ ∞ L) (hLinj : ∀ y, Function.Injective (L y))
 
 @[simp]
-theorem coefficient_compPosition (a : HomogeneousSymbol X E V W m) (g : Y → X)
-    (hg : ContDiff ℝ ∞ g) (p : Y × E) :
-    (a.compPosition g hg).coefficient p = a.coefficient (g p.1, p.2) :=
-  (rfl)
-
-variable (g : Y → X) (hg : ContDiff ℝ ∞ g)
-
-@[simp]
-theorem zero_compPosition : (0 : HomogeneousSymbol X E V W m).compPosition g hg = 0 :=
+theorem coefficient_pullback (a : HomogeneousSymbol X E V W m) (p : Y × F) :
+    (a.pullback g L hg hL hLinj).coefficient p = a.coefficient (g p.1, L p.1 p.2) :=
   (rfl)
 
 @[simp]
-theorem add_compPosition (a b : HomogeneousSymbol X E V W m) :
-    (a + b).compPosition g hg = a.compPosition g hg + b.compPosition g hg :=
+theorem zero_pullback : (0 : HomogeneousSymbol X E V W m).pullback g L hg hL hLinj = 0 :=
   (rfl)
 
 @[simp]
-theorem neg_compPosition (a : HomogeneousSymbol X E V W m) :
-    (-a).compPosition g hg = -a.compPosition g hg :=
+theorem add_pullback (a b : HomogeneousSymbol X E V W m) :
+    (a + b).pullback g L hg hL hLinj = a.pullback g L hg hL hLinj + b.pullback g L hg hL hLinj :=
   (rfl)
 
 @[simp]
-theorem sub_compPosition (a b : HomogeneousSymbol X E V W m) :
-    (a - b).compPosition g hg = a.compPosition g hg - b.compPosition g hg :=
+theorem neg_pullback (a : HomogeneousSymbol X E V W m) :
+    (-a).pullback g L hg hL hLinj = -a.pullback g L hg hL hLinj :=
   (rfl)
 
 @[simp]
-theorem smul_compPosition {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+theorem sub_pullback (a b : HomogeneousSymbol X E V W m) :
+    (a - b).pullback g L hg hL hLinj = a.pullback g L hg hL hLinj - b.pullback g L hg hL hLinj :=
+  (rfl)
+
+@[simp]
+theorem smul_pullback {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
     [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R)
-    (a : HomogeneousSymbol X E V W m) : (c • a).compPosition g hg = c • a.compPosition g hg :=
+    (a : HomogeneousSymbol X E V W m) :
+    (c • a).pullback g L hg hL hLinj = c • a.pullback g L hg hL hLinj :=
   (rfl)
 
 @[simp]
-theorem comp_compPosition (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
-    (b.comp a).compPosition g hg = (b.compPosition g hg).comp (a.compPosition g hg) :=
-  (rfl)
+theorem castDegree_pullback (h : m = m') (a : HomogeneousSymbol X E V W m) :
+    (a.castDegree h).pullback g L hg hL hLinj = (a.pullback g L hg hL hLinj).castDegree h :=
+  HomogeneousSymbol.ext <| funext fun p ↦ by simp
 
 @[simp]
-theorem compPosition_compPosition (a : HomogeneousSymbol X E V W m) (g' : Z → Y)
-    (hg' : ContDiff ℝ ∞ g') :
-    (a.compPosition g hg).compPosition g' hg' = a.compPosition (g ∘ g') (hg.comp hg') :=
+theorem comp_pullback (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).pullback g L hg hL hLinj =
+      (b.pullback g L hg hL hLinj).comp (a.pullback g L hg hL hLinj) :=
+  HomogeneousSymbol.ext <| funext fun p ↦ by simp [coefficient_comp]
+
+/-- Pulling back twice is pulling back along the composite maps of the positions and of the
+frequencies. -/
+@[simp]
+theorem pullback_pullback {g' : Z → Y} {L' : Z → G →L[ℝ] F} (hg' : ContDiff ℝ ∞ g')
+    (hL' : ContDiff ℝ ∞ L') (hL'inj : ∀ z, Function.Injective (L' z))
+    (a : HomogeneousSymbol X E V W m) :
+    (a.pullback g L hg hL hLinj).pullback g' L' hg' hL' hL'inj =
+      a.pullback (g ∘ g') (fun z ↦ (L (g' z)).comp (L' z)) (hg.comp hg')
+        ((hL.comp hg').clm_comp hL') (fun z ↦ (hLinj (g' z)).comp (hL'inj z)) :=
   (rfl)
 
-end CompPosition
+end Pullback
 
 /-! ### Spatial and frequency derivatives -/
 

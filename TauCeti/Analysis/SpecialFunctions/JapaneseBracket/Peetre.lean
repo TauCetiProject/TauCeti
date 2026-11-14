@@ -45,10 +45,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_sub_le_one`: for `‖x - y‖ ≤ 1`,
   `⟨x⟩ ^ s ≤ 2 ^ |s| ⟨y⟩ ^ s`.
-* `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
-  `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
-* `TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul`: more generally, norms comparable up to a factor
-  `c ≥ 1` give weights comparable up to `c ^ |s|`.
+* `TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul`: norms comparable up to a factor `c ≥ 1` give
+  weights comparable up to `c ^ |s|`.
 * `TauCeti.one_add_norm_smul_sq_rpow_le`: the same for the scalar multiple `c • x`,
   `⟨c • x⟩ ^ s ≤ c ^ |s| ⟨x⟩ ^ s`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
@@ -176,32 +174,6 @@ theorem one_add_norm_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] {x
         ring_nf
 
 omit [SeminormedAddGroup E] in
-/-- Rescaling by a factor `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`: if
-`‖x‖ = c ‖y‖`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
-For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ ‖x‖`. -/
-theorem one_add_norm_sq_rpow_le_of_norm_eq_mul [SeminormedAddGroup E] {F : Type*}
-    [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) {x : E} {y : F} (h : ‖x‖ = c * ‖y‖) :
-    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
-  rw [h]
-  rcases le_or_gt 0 s with hs | hs
-  · rw [abs_of_nonneg hs]
-    calc (1 + (c * ‖y‖) ^ 2) ^ (s / 2) ≤ (c ^ 2 * (1 + ‖y‖ ^ 2)) ^ (s / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith) (by positivity)
-      _ = c ^ s * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
-          rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast c 2,
-            ← Real.rpow_mul (by linarith)]
-          congr 2
-          push_cast
-          ring
-  · have hcy : ‖y‖ ^ 2 ≤ (c * ‖y‖) ^ 2 := by
-      rw [mul_pow]
-      exact le_mul_of_one_le_left (sq_nonneg _) (one_le_pow₀ hc)
-    calc (1 + (c * ‖y‖) ^ 2) ^ (s / 2) ≤ (1 + ‖y‖ ^ 2) ^ (s / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by linarith)
-      _ ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
-          le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hc (abs_nonneg s))
-
-omit [SeminormedAddGroup E] in
 /-- Comparable norms give comparable Japanese bracket weights: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖`
 with `c ≥ 1`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
 For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ c ‖x‖`. -/
@@ -236,9 +208,11 @@ omit [SeminormedAddGroup E] in
 `(1 + ‖c • x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖x‖ ^ 2) ^ (s / 2)` for every real `s`. -/
 theorem one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
     (hc : 1 ≤ c) (s : ℝ) (x : E) :
-    (1 + ‖c • x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖x‖ ^ 2) ^ (s / 2) :=
-  one_add_norm_sq_rpow_le_of_norm_eq_mul hc s
-    (by rw [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hc)])
+    (1 + ‖c • x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖x‖ ^ 2) ^ (s / 2) := by
+  have h : ‖c • x‖ = c * ‖x‖ := by rw [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hc)]
+  refine one_add_norm_sq_rpow_le_of_norm_le_mul hc s h.le ?_
+  rw [h, ← mul_assoc]
+  exact le_mul_of_one_le_left (norm_nonneg x) (one_le_mul_of_one_le_of_one_le hc hc)
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,

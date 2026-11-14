@@ -34,14 +34,9 @@ frequency derivative of `a`, of order `m - 1`.
 * `TauCeti.Symbol.pullback κ M`: the pullback, a linear map `S^m_{1,0} → S^m_{1,0}`, with
   `TauCeti.Symbol.pullback_pullback` (pulling back twice), `TauCeti.Symbol.pullback_comp` (it
   commutes with the pointwise composition of symbols) and `TauCeti.Symbol.IsSmoothing.pullback`.
-* `TauCeti.HomogeneousSymbol.pullback g L`: the pullback `(y, η) ↦ a(g y, L y η)` of a homogeneous
-  symbol along a smooth family of injective linear maps `L y`, homogeneous of the same degree; it
-  preserves ellipticity (`TauCeti.HomogeneousSymbol.IsElliptic.pullback`), and for the identity
-  family it is `TauCeti.HomogeneousSymbol.compPosition`
-  (`TauCeti.HomogeneousSymbol.compPosition_eq_pullback`).
 * `TauCeti.HomogeneousSymbol.isSmoothing_pullback_cutoffSymbol_sub_cutoffSymbol_pullback`: pulling
   back the cut-off term `χ(ξ) a(x, ξ)` gives the cut-off term of the pulled back homogeneous
-  symbol, up to a smoothing symbol.
+  symbol `TauCeti.HomogeneousSymbol.pullback`, up to a smoothing symbol.
 * `TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`: a symbol vanishing, for
   positions in each compact set, at all large enough frequencies is smoothing.
 * `TauCeti.ClassicalSymbol.pullback κ M`: the pullback of a classical symbol, whose homogeneous
@@ -205,30 +200,6 @@ private theorem coordinateDeriv_fst_pullbackTerm (hκ : ContDiff ℝ ∞ κ) (hM
   simp [pullbackTerm, coordinateDeriv_cons, Finset.smul_sum, Finset.sum_smul, smul_smul, add_assoc,
     EuclideanSpace.inner_single_right, mul_comm, mul_left_comm]
 
-/-- Mixed derivatives of a finite sum, from bounds on those of the summands. -/
-private theorem exists_norm_mixedDeriv_sum_le {ι : Type*} (s : Finset ι)
-    {f : ι → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ∀ i, ContDiff ℝ ∞ (f i))
-    {α β : List (Fin n)} {K : Set (CoordinateSpace n)} {w : CoordinateSpace n → ℝ}
-    (h : ∀ i, ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (f i) x ξ‖ ≤ C * w ξ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (fun q ↦ ∑ i ∈ s, f i q) x ξ‖ ≤ C * w ξ := by
-  choose C hC0 hC using h
-  refine ⟨∑ i ∈ s, C i, Finset.sum_nonneg fun i _ ↦ hC0 i, fun x hx ξ ↦ ?_⟩
-  rw [← Finset.sum_fn, mixedDeriv_sum (fun i _ ↦ hf i), Finset.sum_mul]
-  exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ hC i x hx ξ)
-
-/-- Mixed derivatives of a sum of two functions, from bounds on those of the summands. -/
-private theorem exists_norm_mixedDeriv_add_le
-    {f g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
-    (hg : ContDiff ℝ ∞ g) {α β : List (Fin n)} {K : Set (CoordinateSpace n)}
-    {w : CoordinateSpace n → ℝ}
-    (h₁ : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β f x ξ‖ ≤ C * w ξ)
-    (h₂ : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β g x ξ‖ ≤ C * w ξ) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (f + g) x ξ‖ ≤ C * w ξ := by
-  obtain ⟨C₁, hC₁0, hC₁⟩ := h₁
-  obtain ⟨C₂, hC₂0, hC₂⟩ := h₂
-  exact ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦
-    norm_mixedDeriv_add_le hf hg (hC₁ x hx ξ) (hC₂ x hx ξ)⟩
-
 /-- **The symbol estimates of a pullback.** Every mixed derivative `∂_x^α ∂_ξ^β` of
 `c(x) b(κ x, M x ξ)` is bounded by `C ⟨ξ⟩ ^ (m - |β|)` for positions in a compact set. By the chain
 rule (`coordinateDeriv_snd_pullbackTerm`, `coordinateDeriv_fst_pullbackTerm`) a derivative of such
@@ -299,15 +270,15 @@ private theorem exists_norm_mixedDeriv_pullbackTerm_le (hκ : ContDiff ℝ ∞ �
         rw [Pi.add_apply, Pi.add_apply, coordinateDeriv_fst_pullbackTerm hκ hM hMinv hc b j q.1 q.2,
           add_assoc]
       have h₂ := exists_norm_mixedDeriv_sum_le (α := α) (β := []) (K := K)
-        (w := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - ([] : List (Fin n)).length) / 2)) Finset.univ
-        (fun l ↦ contDiff_pullbackTerm hκ hM (hc₂ l) _)
-        fun l ↦ ih (spatialDeriv l b) (hc₂ l) α [] hlen hK
+        (ρ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - ([] : List (Fin n)).length) / 2)) Finset.univ
+        (fun l _ ↦ contDiff_pullbackTerm hκ hM (hc₂ l) _)
+        fun l _ ↦ ih (spatialDeriv l b) (hc₂ l) α [] hlen hK
       have h₃ := exists_norm_mixedDeriv_sum_le (α := α) (β := []) (K := K)
-        (w := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - ([] : List (Fin n)).length) / 2)) Finset.univ
-        (fun l ↦ ContDiff.sum fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
-        fun l ↦ exists_norm_mixedDeriv_sum_le Finset.univ
-          (fun i ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
-          fun i ↦ (ih ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) (hc₃ l i)
+        (ρ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - ([] : List (Fin n)).length) / 2)) Finset.univ
+        (fun l _ ↦ ContDiff.sum fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
+        fun l _ ↦ exists_norm_mixedDeriv_sum_le Finset.univ
+          (fun i _ ↦ contDiff_pullbackTerm hκ hM (hc₃ l i) _)
+          fun i _ ↦ (ih ((frequencyDeriv l b).comp (ofInner (EuclideanSpace.single i 1))) (hc₃ l i)
             α [] hlen hK).imp fun C hC ↦
               ⟨hC.1, fun x hx ξ ↦ (hC.2 x hx ξ).trans_eq (by rw [sub_add_cancel])⟩
       obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_add_le (contDiff_pullbackTerm hκ hM hc₁ b)
@@ -327,8 +298,8 @@ private theorem exists_norm_mixedDeriv_pullbackTerm_le (hκ : ContDiff ℝ ∞ �
               (frequencyDeriv l b) q :=
         funext fun q ↦ coordinateDeriv_snd_pullbackTerm hκ hM hc b j q.1 q.2
       obtain ⟨C, hC0, hC⟩ := exists_norm_mixedDeriv_sum_le (α := α) (β := β) (K := K) Finset.univ
-        (fun l ↦ contDiff_pullbackTerm hκ hM (hc' l) _)
-        fun l ↦ ih (frequencyDeriv l b) (hc' l) α β hlen hK
+        (fun l _ ↦ contDiff_pullbackTerm hκ hM (hc' l) _)
+        fun l _ ↦ ih (frequencyDeriv l b) (hc' l) α β hlen hK
       refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
       rw [← mixedDeriv_coordinateDeriv_snd, hfun, ← order_sub_one_sub_length]
       exact hC x hx ξ
@@ -407,85 +378,6 @@ end Symbol
 
 namespace HomogeneousSymbol
 
-variable {X Y E F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y]
-  [NormedSpace ℝ Y] [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] {g : Y → X} {L : Y → F →L[ℝ] E}
-
-section Pullback
-
-variable (g L) in
-/-- The **pullback** `(y, η) ↦ a(g y, L y η)` of a homogeneous symbol of degree `m` along a smooth
-map `g` of the positions and a smooth family `L` of injective linear maps of the frequencies, again
-homogeneous of degree `m`: `L y` is linear and maps nonzero frequencies to nonzero frequencies. -/
-def pullback (hg : ContDiff ℝ ∞ g) (hL : ContDiff ℝ ∞ L) (hLinj : ∀ y, Function.Injective (L y))
-    (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol Y F V W m where
-  coefficient p := a.coefficient (g p.1, L p.1 p.2)
-  zero_covector y := by simp
-  contDiffOn_coefficient :=
-    a.contDiffOn_coefficient.comp
-      ((hg.comp contDiff_fst).prodMk ((hL.comp contDiff_fst).clm_apply contDiff_snd)).contDiffOn
-      fun p hp ↦ (map_ne_zero_iff _ (hLinj p.1)).2 hp
-  homogeneous y η t ht := by simp [a.homogeneous _ _ t ht]
-
-variable (hg : ContDiff ℝ ∞ g) (hL : ContDiff ℝ ∞ L) (hLinj : ∀ y, Function.Injective (L y))
-
-@[simp]
-theorem coefficient_pullback (a : HomogeneousSymbol X E V W m) (p : Y × F) :
-    (a.pullback g L hg hL hLinj).coefficient p = a.coefficient (g p.1, L p.1 p.2) :=
-  (rfl)
-
-/-- Pulling back the position alone, `TauCeti.HomogeneousSymbol.compPosition`, is the pullback along
-the constant identity family of the frequencies. -/
-theorem compPosition_eq_pullback (a : HomogeneousSymbol X E V W m) :
-    a.compPosition g hg = a.pullback g (fun _ ↦ ContinuousLinearMap.id ℝ E) hg contDiff_const
-      fun _ ↦ by simpa using Function.injective_id :=
-  HomogeneousSymbol.ext <| funext fun p ↦ by simp
-
-@[simp]
-theorem zero_pullback : (0 : HomogeneousSymbol X E V W m).pullback g L hg hL hLinj = 0 :=
-  (rfl)
-
-@[simp]
-theorem add_pullback (a b : HomogeneousSymbol X E V W m) :
-    (a + b).pullback g L hg hL hLinj = a.pullback g L hg hL hLinj + b.pullback g L hg hL hLinj :=
-  (rfl)
-
-@[simp]
-theorem neg_pullback (a : HomogeneousSymbol X E V W m) :
-    (-a).pullback g L hg hL hLinj = -a.pullback g L hg hL hLinj :=
-  (rfl)
-
-@[simp]
-theorem sub_pullback (a b : HomogeneousSymbol X E V W m) :
-    (a - b).pullback g L hg hL hLinj = a.pullback g L hg hL hLinj - b.pullback g L hg hL hLinj :=
-  (rfl)
-
-@[simp]
-theorem smul_pullback {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
-    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R)
-    (a : HomogeneousSymbol X E V W m) :
-    (c • a).pullback g L hg hL hLinj = c • a.pullback g L hg hL hLinj :=
-  (rfl)
-
-@[simp]
-theorem castDegree_pullback {m' : ℝ} (h : m = m') (a : HomogeneousSymbol X E V W m) :
-    (a.castDegree h).pullback g L hg hL hLinj = (a.pullback g L hg hL hLinj).castDegree h :=
-  HomogeneousSymbol.ext <| funext fun p ↦ by simp
-
-@[simp]
-theorem comp_pullback {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
-    (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
-    (b.comp a).pullback g L hg hL hLinj =
-      (b.pullback g L hg hL hLinj).comp (a.pullback g L hg hL hLinj) :=
-  HomogeneousSymbol.ext <| funext fun p ↦ by simp [coefficient_comp]
-
-/-- The pullback of an elliptic homogeneous symbol is elliptic: `L y` maps nonzero frequencies to
-nonzero frequencies. -/
-theorem IsElliptic.pullback {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) :
-    (a.pullback g L hg hL hLinj).IsElliptic :=
-  isElliptic_iff.2 fun y η hη ↦ by
-    simpa using isElliptic_iff.1 ha (g y) (L y η) ((map_ne_zero_iff _ (hLinj y)).2 hη)
-
 /-- **Change of cutoff under a pullback.** On `ℝⁿ`, pulling back the cut-off term `χ(ξ) a(x, ξ)`
 gives `χ(M x ξ) a(κ x, M x ξ)`, which differs from the cut-off term `χ(ξ) a(κ x, M x ξ)` of the
 pulled back homogeneous symbol by a smoothing symbol: on a compact set of positions `M x` changes
@@ -507,8 +399,6 @@ theorem isSmoothing_pullback_cutoffSymbol_sub_cutoffSymbol_pullback
     have := (hcK x hx ξ).2
     nlinarith
   simp [χ.apply_eq_one_of_two_le_norm h₁, χ.apply_eq_one_of_two_le_norm h₂]
-
-end Pullback
 
 end HomogeneousSymbol
 
