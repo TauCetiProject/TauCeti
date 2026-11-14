@@ -35,10 +35,13 @@ In the trivialization of `Sym²(T*M)` induced by a chart, the section coordinate
 chart metric composed with that chart. Composition by the chart and its inverse is continuous
 in each compact derivative topology, giving the comparison without choosing a basis.
 
-In smooth regularity, `toSymmetricSection` embeds the metrics into smooth symmetric tensor
-sections. On a compact manifold its image, the metric cone, is open, giving an open embedding.
-In finite regularity the comparison is only with the subspace of smooth metrics inside Cᵏ
-metrics; it does not assert that smooth sections are open among Cᵏ sections.
+In any regularity `n`, `toSymmetricSection` embeds `C^n` metrics with `frameTopology` into `C^n`
+symmetric tensor sections, and on a compact manifold its image — the metric cone — is open, giving
+an open embedding
+(`Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_frameTopology`). For smooth
+metrics on a boundaryless manifold this specializes to `chartCInftyTopology`. In finite regularity
+`chartCkTopology` compares only with the subspace of smooth metrics inside `C^k` metrics; it does
+not assert that smooth sections are open among `C^k` sections.
 
 ## Main results
 
@@ -52,8 +55,10 @@ metrics; it does not assert that smooth sections are open among Cᵏ sections.
   and section topologies coincide without forgetting regularity.
 * `Bundle.ContMDiffRiemannianMetric.isEmbedding_toSymmetricSection_chartCInfty`: the smooth
   section map is an embedding.
-* `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_chartCInfty`: on a compact
-  manifold it is an open embedding.
+* `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_frameTopology` and
+  `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_chartCInfty`: on a compact
+  manifold, `toSymmetricSection` is an open embedding for `frameTopology` at any regularity `n`, and
+  hence for `chartCInftyTopology` when `n = ∞`.
 
 ## References
 
@@ -374,6 +379,34 @@ theorem isEmbedding_toSymmetricSection_chartCInfty [LocallyCompactSpace E]
   exact ⟨⟨(chartCInftyTopology_eq_frameTopology e U hU hcover).trans
     (frameTopology_eq_induced ⊤ e U hU)⟩, toSymmetricSection_injective⟩
 
+/-- On a compact base (possibly with boundary or corners) modelled on a locally compact space,
+`toSymmetricSection` is an open embedding of `C^n` metrics with `frameTopology` into `C^n`
+symmetric sections with `ContMDiffSection.frameTopology`, for every regularity `n` (in particular
+`n = 2` and `n = ∞`). -/
+theorem isOpenEmbedding_toSymmetricSection_frameTopology
+    {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB] [LocallyCompactSpace EB]
+    {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+    {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] [CompactSpace B]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+    [FiberBundle F V] [VectorBundle ℝ F V]
+    {n : ℕ∞ω} [IsManifold IB n B] [ContMDiffVectorBundle n F V IB]
+    {ι : Type*}
+    (e : ι → Trivialization (symmetricBilinearMaps ℝ F ℝ)
+      (π (symmetricBilinearMaps ℝ F ℝ) (fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ)))
+    [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens B) (hU : ∀ i, (U i : Set B) ⊆ (e i).baseSet)
+    (hcover : ∀ x, ∃ i, x ∈ U i) :
+    letI := frameTopology IB n e U hU
+    letI := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
+    IsOpenEmbedding (toSymmetricSection (IB := IB) (n := n) (F := F) (V := V)) := by
+  let _ := frameTopology IB n e U hU
+  let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
+  refine ⟨isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := n) e U hU, ?_⟩
+  rw [range_toSymmetricSection]
+  exact isOpen_positiveDefiniteSymmetricSections_frameTopology e U hU hcover
+
 /-- On a compact manifold the smooth metrics with the chart C∞ topology form an open subspace of
 the smooth sections of `Sym²(T*M)`, with the compact derivative topology of any covering frame
 system. -/
@@ -389,10 +422,7 @@ theorem isOpenEmbedding_toSymmetricSection_chartCInfty [FiniteDimensional ℝ E]
     letI := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
     IsOpenEmbedding (toSymmetricSection (IB := I) (n := ∞) (F := E)
       (V := fun x : M ↦ TangentSpace I x)) := by
-  let _ := chartCInftyTopology (I := I) (M := M)
-  let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
-  refine ⟨isEmbedding_toSymmetricSection_chartCInfty e U hU hcover, ?_⟩
-  rw [range_toSymmetricSection]
-  exact isOpen_positiveDefiniteSymmetricSections_frameTopology e U hU hcover
+  rw [chartCInftyTopology_eq_frameTopology e U hU hcover]
+  exact isOpenEmbedding_toSymmetricSection_frameTopology e U hU hcover
 
 end Bundle.ContMDiffRiemannianMetric
