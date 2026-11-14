@@ -61,6 +61,31 @@ theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (reso
   continuous_iff_continuousAt.2 fun x ↦
     (spectrum.hasDerivAt_resolvent_const_left (mem_resolventSet_real hz x)).continuousAt
 
+/-- A ball of radius `z.im / 2` around `z` stays above height `z.im / 2`. -/
+theorem im_gt_of_mem_ball {z w : ℂ} (hw : w ∈ Metric.ball z (z.im / 2)) :
+    z.im / 2 < w.im := by
+  rw [Metric.mem_ball, dist_eq_norm] at hw
+  have h := abs_im_le_norm (w - z)
+  simp only [sub_im] at h
+  have := neg_abs_le (w.im - z.im)
+  linarith
+
+/-- The reciprocal kernel is bounded in a ball around a point in the upper half-plane. -/
+theorem norm_sub_inv_le_of_mem_ball {z w : ℂ}
+    (hw : w ∈ Metric.ball z (z.im / 2)) (y : ℝ) :
+    ‖((w - y)⁻¹ : ℂ)‖ ≤ 2 / z.im := by
+  have h1 := im_gt_of_mem_ball hw
+  have hradius : 0 < z.im / 2 :=
+    (dist_nonneg : 0 ≤ dist w z).trans_lt (Metric.mem_ball.mp hw)
+  have hz : 0 < z.im := by linarith
+  have h2 : w.im ≤ ‖w - (y : ℂ)‖ := by
+    have := abs_im_le_norm (w - (y : ℂ))
+    simp only [sub_im, ofReal_im, sub_zero] at this
+    exact (le_abs_self _).trans this
+  rw [norm_inv]
+  calc ‖w - (y : ℂ)‖⁻¹ ≤ (z.im / 2)⁻¹ := inv_anti₀ (by positivity) (by linarith)
+    _ = 2 / z.im := by field_simp
+
 end Complex
 
 namespace MeasureTheory
