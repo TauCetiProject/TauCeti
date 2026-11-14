@@ -59,15 +59,6 @@ theorem intervalIntegrable_posLog_one_div_abs_one_sub_div (a A B : ℝ) :
   simpa only [Real.norm_eq_abs, abs_div, abs_one, one_div, abs_inv] using
     hm.intervalIntegrable_posLog_norm
 
-private lemma kernel_intervalIntegrable (A B : ℝ) : IntervalIntegrable kernel volume A B := by
-  change IntervalIntegrable (fun r ↦ Real.posLog (1 / |1 - r|)) volume A B
-  simpa only [div_one] using intervalIntegrable_posLog_one_div_abs_one_sub_div 1 A B
-
-private lemma kernel_le_sqrt_aux {t : ℝ} : kernel t ≤ Real.sqrt (2 / |1 - t|) := by
-  rw [kernel]
-  simpa only [abs_div, abs_one, abs_abs, mul_one_div] using
-    Real.posLog_le_sqrt_two_mul (1 / |1 - t|)
-
 private lemma intervalIntegrable_majorant (A B : ℝ) :
     IntervalIntegrable (fun t : ℝ ↦ Real.sqrt (2 / |1 - t|)) volume A B := by
   let f : ℝ → ℝ := fun u ↦ Real.sqrt (2 / |u|)
@@ -186,7 +177,9 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
   by_cases hsmall : A ≤ 1 / 4
   · calc
       (∫ t in A..(2 * A), kernel t) ≤ ∫ _ in A..(2 * A), Real.log 2 := by
-        apply intervalIntegral.integral_mono_on hA2A (kernel_intervalIntegrable _ _)
+        apply intervalIntegral.integral_mono_on hA2A (by
+          change IntervalIntegrable (fun r ↦ Real.posLog (1 / |1 - r|)) volume A (2 * A)
+          simpa only [div_one] using intervalIntegrable_posLog_one_div_abs_one_sub_div 1 A (2 * A))
           intervalIntegrable_const
         intro t ht
         exact kernel_le_log_two_of_le_half (by linarith [ht.2])
@@ -207,9 +200,14 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
   calc
     (∫ t in A..(2 * A), kernel t) ≤
         ∫ t in A..(2 * A), Real.sqrt (2 / |1 - t|) := by
-      exact intervalIntegral.integral_mono_on hA2A (kernel_intervalIntegrable _ _)
+      exact intervalIntegral.integral_mono_on hA2A (by
+          change IntervalIntegrable (fun r ↦ Real.posLog (1 / |1 - r|)) volume A (2 * A)
+          simpa only [div_one] using intervalIntegrable_posLog_one_div_abs_one_sub_div 1 A (2 * A))
         (intervalIntegrable_majorant _ _)
-        (fun _ _ ↦ kernel_le_sqrt_aux)
+        (fun t _ ↦ by
+          rw [kernel]
+          simpa only [abs_div, abs_one, abs_abs, mul_one_div] using
+            Real.posLog_le_sqrt_two_mul (1 / |1 - t|))
     _ ≤ majorantIntegral :=
       intervalIntegral.integral_mono_interval hlo hA2A (by linarith only [hhi])
         (Filter.Eventually.of_forall fun _ ↦ Real.sqrt_nonneg _) (intervalIntegrable_majorant _ _)
