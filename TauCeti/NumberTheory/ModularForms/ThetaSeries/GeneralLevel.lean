@@ -77,7 +77,7 @@ noncomputable def thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k) 
   toFun := thetaSeries L
   slash_action_eq' A hA := by
     obtain ⟨A, hA, rfl⟩ := hA
-    rw [← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
+    rw [← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
       hL.thetaSeries_slash_of_mem_Gamma0 hk (CongruenceSubgroup.Gamma1_in_Gamma0 _ hA)]
     have hd := (CongruenceSubgroup.mem_Gamma1_iff.mp hA).2
     rw [hd, map_one, one_smul]
@@ -98,7 +98,7 @@ theorem thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finrank ℝ 
   intro A
   simpa only [coe_thetaFormOfLevel, MulChar.coe_equivToUnitHom,
     MonoidHom.coe_toHomUnits, CongruenceSubgroup.Gamma0Map_apply, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
     hL.thetaSeries_slash_of_mem_Gamma0 hk A.property
 
 /-- The coefficients of the theta form in `q = exp (2 π i τ)` are representation numbers. -/
