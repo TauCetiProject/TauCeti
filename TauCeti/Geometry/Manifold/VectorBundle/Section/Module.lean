@@ -23,6 +23,9 @@ operators, to be expressed using the usual `LinearMap` API. The points of `M` se
 modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
 as needed by the algebraic theory of differential operators between modules of sections.
 
+For `m ≤ n`, every `Cⁿ` section is a `Cᵐ` section (`ContMDiffSection.ofLE`), linearly over the
+ground field.
+
 Pullback along a `C^n` map takes values in the pullback bundle. It is linear over the
 ground field and intertwines multiplication with composition of scalar functions.
 Restriction to an open subset is pullback along its inclusion. No finite-dimensionality,
@@ -82,6 +85,16 @@ def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
 
 @[simp]
 theorem evalLinearMap_apply (x : M) (s : Cₛ^n⟮I; F, V⟯) : evalLinearMap I F n V x s = s x :=
+  (rfl)
+
+/-- For `m ≤ n`, `Cⁿ` sections as `Cᵐ` sections, as a ground-field linear map. -/
+def ofLE {m : ℕ∞ω} (hmn : m ≤ n) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^m⟮I; F, V⟯ where
+  toFun s := ⟨s, s.contMDiff.of_le hmn⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_ofLE {m : ℕ∞ω} (hmn : m ≤ n) (s : Cₛ^n⟮I; F, V⟯) : ⇑(ofLE hmn s) = s :=
   (rfl)
 
 /-- The points of `M` separate sections: a section lying in `ker (ev x) • Γ(V)` for every point
