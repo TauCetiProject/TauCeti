@@ -503,7 +503,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   -- The left-hand side is below the cutoff integral, since `ψ = 1` on the smaller ball.
   have hlhs : ∫ x in Metric.ball x₀ r₁, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * max (W1p.value u x - l) 0 ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (hint l (hk0.trans hkl.le))
+    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_ae_sq_eq_one (hint l (hk0.trans hkl.le))
       (ae_of_all _ fun x => hnn l x) (hψ.continuous.pow 2).aestronglyMeasurable
       (ae_of_all _ fun x => abs_le.2 ⟨by linarith [(hψ01 (mem_range_self x)).1],
         (hψ01 (mem_range_self x)).2⟩)
