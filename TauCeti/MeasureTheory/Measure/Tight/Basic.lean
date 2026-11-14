@@ -7,9 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Measure.TightNormed
-import TauCeti.Probability.Moments.Chebyshev
 
 /-!
 # Basic tightness criteria for measures
@@ -19,7 +16,6 @@ complete second-countable pseudo-metrizable space is tight, and `IsTightMeasureS
 that tightness survives a binary union. Together they give tightness of any *finite* set of
 finite measures, which is the form the Prokhorov extraction arguments need in order to discard
 the finitely many exceptional members of a family for which a uniform tail bound is unavailable.
-On a proper seminormed group, uniformly bounded second norm moments also imply tightness.
 
 ## Main declarations
 
@@ -28,10 +24,6 @@ On a proper seminormed group, uniformly bounded second norm moments also imply t
   has tight range.
 * `TauCeti.isTightMeasureSet_range_of_eventually_eq`: a family of finite measures that is equal to
   a fixed measure off finitely many indices has tight range.
-* `TauCeti.isTightMeasureSet_of_integral_norm_sq_le`: measures on a proper seminormed group
-  with uniformly bounded second norm moments form a tight set.
-* `TauCeti.isTightMeasureSet_of_integral_sq_le`: real measures with uniformly bounded
-  second moments form a tight set.
 -/
 
 public section
@@ -71,35 +63,6 @@ theorem isTightMeasureSet_range_of_eventually_eq {ι : Type*} {μ : ι → Measu
     (by rintro _ ⟨i, rfl⟩; infer_instance)
   rintro _ ⟨i, rfl⟩
   exact (em (μ i = ν)).imp id fun hi ↦ ⟨i, hi, rfl⟩
-
-/-- Measures on a proper seminormed group with uniformly bounded second norm moment are tight. -/
-theorem isTightMeasureSet_of_integral_norm_sq_le {E : Type*} [MeasurableSpace E]
-    [SeminormedAddCommGroup E] [ProperSpace E] {S : Set (Measure E)} {B : ℝ}
-    (hS : ∀ ρ ∈ S, Integrable (fun x : E => ‖x‖ ^ 2) ρ ∧
-      ∫ x, ‖x‖ ^ 2 ∂ρ ≤ B) : IsTightMeasureSet S := by
-  have htail : Tendsto (fun R : ℝ => ⨆ ρ ∈ S, ρ {x | R < ‖x‖}) atTop (𝓝 0) := by
-    have hlim : Tendsto (fun R : ℝ => B / R ^ 2) atTop (𝓝 0) :=
-      tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
-    have hlim' : Tendsto (fun R : ℝ => ENNReal.ofReal (B / R ^ 2)) atTop (𝓝 0) := by
-      simpa using ENNReal.tendsto_ofReal hlim
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim'
-      (Eventually.of_forall fun _ => bot_le) ?_
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with R hR
-    refine iSup_le fun ρ => iSup_le fun hρ => ?_
-    obtain ⟨hint, hB⟩ := hS ρ hρ
-    exact meas_gt_le_div_sq_of_integral_sq_le (Y := fun x : E => ‖x‖) hint hB hR
-  refine isTightMeasureSet_of_tendsto_measure_compl_closedBall (x := (0 : E)) ?_
-  convert! htail using 6 with R
-  ext x
-  simp
-
-/-- A set of measures on `ℝ` with uniformly bounded second moment is tight. -/
-theorem isTightMeasureSet_of_integral_sq_le {S : Set (Measure ℝ)} {B : ℝ}
-    (hS : ∀ ρ ∈ S, Integrable (fun x : ℝ => x ^ 2) ρ ∧
-      ∫ x, x ^ 2 ∂ρ ≤ B) : IsTightMeasureSet S := by
-  refine isTightMeasureSet_of_integral_norm_sq_le (B := B) ?_
-  intro ρ hρ
-  simpa only [Real.norm_eq_abs, sq_abs] using hS ρ hρ
 
 end TauCeti
 

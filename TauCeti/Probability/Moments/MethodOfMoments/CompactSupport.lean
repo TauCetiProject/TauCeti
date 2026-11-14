@@ -154,7 +154,7 @@ variable {ι : Type*} {l : Filter ι}
 measures on `ℝ` such that `μ` is concentrated on a compact set, every moment of `μᵢ` is eventually
 finite, and `∫ xⁿ dμᵢ → ∫ xⁿ dμ` for every `n`. Then `μᵢ → μ` weakly. For a moment-determinate
 limit without a compact-support assumption, see
-`MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow_of_unique`. -/
+`ProbabilityMeasure.tendsto_of_tendsto_integral_pow_of_forall_integral_pow_eq_imp_eq`. -/
 theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ} {K : Set ℝ} (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0)
     (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i : Measure ℝ))
@@ -172,7 +172,7 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   have hμ := integrable_pow_of_ae_abs_le hae
   have hpoly := tendsto_integral_eval_of_tendsto_integral_pow hμs hμ h
   have hpolyμs (p : ℝ[X]) : ∀ᶠ i in l, Integrable (fun x => p.eval x) (μs i : Measure ℝ) := by
-    filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
+    filter_upwards [eventually_forall_le_natDegree_integrable_pow p (fun n _ => hμs n)] with i hi
     exact integrable_eval_of_forall_le_natDegree hi
   rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
   intro f

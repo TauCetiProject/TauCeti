@@ -75,11 +75,25 @@ theorem integral_eval_eq_sum_range {q : ℝ[X]}
 
 /-- If every monomial is eventually integrable against `μᵢ`, then eventually all monomials up to
 the degree of a given polynomial are integrable. -/
-theorem eventually_forall_le_natDegree_integrable {ι : Type*} {l : Filter ι}
-    {μs : ι → Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
+theorem eventually_forall_le_natDegree_integrable_pow {ι : Type*} {l : Filter ι}
+    {μs : ι → Measure ℝ} (p : ℝ[X])
+    (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) :
     ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
-  (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
+  (eventually_all_finite (Set.finite_Iic p.natDegree)).2 hμs
+
+/-- If the moments up to the degree of `p` converge to prescribed values, the polynomial integrals
+converge to the corresponding linear combination of those values. -/
+theorem tendsto_integral_eval_sum_range_of_forall_le_natDegree {ι : Type*} {l : Filter ι}
+    {μs : ι → Measure ℝ} {m : ℕ → ℝ} (p : ℝ[X])
+    (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
+    (h : ∀ n ≤ p.natDegree,
+      Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (m n))) :
+    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l
+      (𝓝 (∑ n ∈ Finset.range (p.natDegree + 1), p.coeff n * m n)) := by
+  refine (tendsto_finsetSum _ fun n hn =>
+    (h n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).const_mul (p.coeff n)).congr' ?_
+  filter_upwards [eventually_forall_le_natDegree_integrable_pow p hμs] with i hi
+  exact (integral_eval_eq_sum_range hi).symm
 
 /-- Convergence of the moments up to the degree of `p` implies convergence of its integral. -/
 theorem tendsto_integral_eval_of_forall_le_natDegree {ι : Type*} {l : Filter ι}
@@ -90,25 +104,7 @@ theorem tendsto_integral_eval_of_forall_le_natDegree {ι : Type*} {l : Filter ι
       Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) :
     Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
   rw [integral_eval_eq_sum_range hμ]
-  refine (tendsto_finsetSum _ fun n hn =>
-    (h n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [(eventually_all_finite (Set.finite_Iic p.natDegree)).2 hμs] with i hi
-  exact (integral_eval_eq_sum_range hi).symm
-
-/-- If the moments up to the degree of `p` converge to prescribed values, the polynomial integrals
-converge to the corresponding linear combination of those values. -/
-theorem tendsto_integral_eval_of_forall_le_natDegree_of_moments {ι : Type*} {l : Filter ι}
-    {μs : ι → Measure ℝ} {m : ℕ → ℝ} (p : ℝ[X])
-    (hμs : ∀ n ≤ p.natDegree, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
-    (h : ∀ n ≤ p.natDegree,
-      Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (m n))) :
-    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l
-      (𝓝 (∑ n ∈ Finset.range (p.natDegree + 1), p.coeff n * m n)) := by
-  refine (tendsto_finsetSum _ fun n hn =>
-    (h n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [(eventually_all_finite (Set.finite_Iic p.natDegree)).2
-    (fun n hn => hμs n (Set.mem_Iic.mp hn))] with i hi
-  exact (integral_eval_eq_sum_range hi).symm
+  exact tendsto_integral_eval_sum_range_of_forall_le_natDegree p hμs h
 
 /-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
 polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,

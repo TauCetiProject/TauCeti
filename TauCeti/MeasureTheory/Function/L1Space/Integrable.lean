@@ -26,8 +26,9 @@ integrable function whose norm is almost everywhere at least one is finite
 For absolute moments, a real function in `Lᵖ` of positive real order has an integrable `p`-th
 power, membership of the identity in `Lᵖ` gives integrability of its norm power even on a
 seminormed group, and on the real line positive-order `Lᵖ` membership is equivalent to
-integrability of the corresponding absolute power. On a finite measure, integrability of a real
-power implies that of every lower natural power (`TauCeti.integrable_pow_of_le`).
+integrability of the corresponding absolute power. For a measurable function into a normed ring
+with multiplicative norm, integrability of a natural power on a finite measure implies that of
+each lower power (`TauCeti.integrable_pow_of_le`).
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
@@ -124,16 +125,18 @@ namespace TauCeti
 
 open MeasureTheory
 
-/-- Lower powers are integrable against a finite measure whenever a higher power is integrable. -/
-theorem integrable_pow_of_le {μ : Measure ℝ} [IsFiniteMeasure μ] {k n : ℕ} (hkn : k ≤ n)
-    (h : Integrable (fun x : ℝ => x ^ n) μ) : Integrable (fun x : ℝ => x ^ k) μ := by
-  have hnorm : Integrable (fun x : ℝ => ‖x‖ ^ n) μ := by
+/-- On a finite measure, a lower natural power of an almost everywhere strongly measurable
+function into a normed ring with multiplicative norm is integrable if a higher power is. -/
+theorem integrable_pow_of_le {α β : Type*} [MeasurableSpace α] [NormedRing β] [NormOneClass β]
+    [NormMulClass β] {μ : Measure α} [IsFiniteMeasure μ] {f : α → β}
+    (hf : AEStronglyMeasurable f μ) {k n : ℕ} (hkn : k ≤ n)
+    (h : Integrable (fun x => f x ^ n) μ) : Integrable (fun x => f x ^ k) μ := by
+  have hnorm : Integrable (fun x => ‖f x‖ ^ n) μ := by
     simpa only [norm_pow] using h.norm
-  have hnormk : Integrable (fun x : ℝ => ‖x‖ ^ k) μ :=
-    integrable_norm_pow_of_le aestronglyMeasurable_id hkn hnorm
-  apply (integrable_norm_iff
-    (by fun_prop : AEStronglyMeasurable (fun x : ℝ => x ^ k) μ)).1
-  simpa only [norm_pow] using hnormk
+  have hnormk : Integrable (fun x => ‖f x‖ ^ k) μ :=
+    integrable_norm_pow_of_le hf hkn hnorm
+  apply (integrable_norm_iff (hf.pow k)).1
+  simpa only [Pi.pow_apply, norm_pow] using hnormk
 
 /-- On a finite measure, `Lᵖ` membership of the identity gives integrability of its norm
 power, including for seminormed groups and order zero. -/

@@ -7,10 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.MeasureTheory.Measure.Prokhorov
-import TauCeti.MeasureTheory.Measure.Tight.Basic
+import TauCeti.MeasureTheory.Measure.Tight.Normed
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
-import TauCeti.MeasureTheory.Function.PolynomialMemLp
 
 /-!
 # The method of moments
@@ -19,16 +18,22 @@ If probability measures `μₙ` on `ℝ` have moments that are eventually integr
 converge to those of a probability measure `μ`, and `μ` is determined by its moments among
 probability measures with all moments, then `μₙ → μ` weakly (the method of moments).
 
-The proof is the standard one: bounded moments give tightness, Prokhorov's theorem gives compactness
-of an eventual family, and uniform integrability of the monomials (from the bounds on higher
-moments) identifies the moments of every weak limit point with those of `μ`.
+Unlike `TauCeti.Probability.Moments.MethodOfMoments.CompactSupport`, this version does not require
+compact support; it assumes moment determinacy instead. Determinacy criteria for supplying `hdet`
+are available in `TauCeti.Probability.Moments.Determinacy`.
 
 ## Main results
 
 * `MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_eq_of_mapClusterPt`:
   moments of a weak cluster point equal the limits of the moments.
-* `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow_of_unique`: weak
+* `ProbabilityMeasure.tendsto_of_tendsto_integral_pow_of_forall_integral_pow_eq_imp_eq`: weak
   convergence when the limit is determined by its moments.
+
+## Implementation notes
+
+Bounded second moments give tightness, and Prokhorov's theorem gives compactness of an eventual
+family. Closed sublevel sets of lower-semicontinuous integrals, applied to `x ^ (2 * k)` and
+`(x ^ k - c) ^ 2`, show that every cluster point has the required `k`th moment.
 
 ## References
 
@@ -42,48 +47,63 @@ open scoped ENNReal NNReal BoundedContinuousFunction
 
 namespace TauCeti.MethodOfMoments
 
+/-- A weak cluster point satisfies the lower integral bound for a continuous nonnegative
+function whose integrals converge. -/
+private theorem integrable_and_integral_le_of_mapClusterPt
+    {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
+    {ν : ProbabilityMeasure ℝ} {f : ℝ → ℝ} {M : ℝ}
+    (hf : Continuous f) (hnonneg : ∀ x, 0 ≤ f x)
+    (hint : ∀ᶠ i in l, Integrable f (μn i : Measure ℝ))
+    (hlim : Tendsto (fun i => ∫ x, f x ∂(μn i : Measure ℝ)) l (𝓝 M))
+    (hν : MapClusterPt ν l μn) :
+    Integrable f (ν : Measure ℝ) ∧ ∫ x, f x ∂(ν : Measure ℝ) ≤ M := by
+  have hbound (ε : ℝ) (hε : 0 < ε) :
+      ∫⁻ x, ENNReal.ofReal (f x) ∂(ν : Measure ℝ) ≤ ENNReal.ofReal (M + ε) := by
+    have hclosed := isClosed_setOfPred_lintegral_le_probabilityMeasure
+      ((ENNReal.continuous_ofReal.comp hf).lowerSemicontinuous) (ENNReal.ofReal (M + ε))
+    have hevent : ∀ᶠ i in l, μn i ∈
+        {ρ : ProbabilityMeasure ℝ |
+          ∫⁻ x, ENNReal.ofReal (f x) ∂(ρ : Measure ℝ) ≤ ENNReal.ofReal (M + ε)} := by
+      filter_upwards [hint, hlim.eventually (Iio_mem_nhds (show M < M + ε by linarith))]
+        with i hi hBi
+      rw [← ofReal_integral_eq_lintegral_ofReal hi (ae_of_all _ hnonneg)]
+      exact ENNReal.ofReal_le_ofReal hBi.le
+    exact hclosed.mem_of_mapClusterPt hν hevent
+  have hfinite := ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hbound 1 (by norm_num))
+  have hνint : Integrable f (ν : Measure ℝ) :=
+    (lintegral_ofReal_ne_top_iff_integrable hf.aestronglyMeasurable
+      (ae_of_all _ hnonneg)).1 hfinite
+  have hneBot : l.NeBot := (map_neBot_iff μn).1 (hν.clusterPt.neBot.mono inf_le_right)
+  have hM : 0 ≤ M := ge_of_tendsto_of_frequently hlim
+    (@Frequently.of_forall ι l hneBot _ fun i =>
+      integral_nonneg_of_ae (ae_of_all _ hnonneg))
+  refine ⟨hνint, le_of_forall_pos_le_add fun ε hε => ?_⟩
+  have hreal := hbound ε hε
+  rw [← ofReal_integral_eq_lintegral_ofReal hνint (ae_of_all _ hnonneg)] at hreal
+  exact (ENNReal.ofReal_le_ofReal_iff (by linarith : 0 ≤ M + ε)).mp hreal
+
 /-- A weak cluster point inherits a fixed moment from convergence of the moments up to twice
 its order. -/
 private theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_fixed
     {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
     {ν : ProbabilityMeasure ℝ} {m : ℕ → ℝ} (k : ℕ)
-    (hint : ∀ n ≤ 2 * k, ∀ᶠ i in l,
-      Integrable (fun x : ℝ => x ^ n) (μn i : Measure ℝ))
-    (hlim : ∀ n ≤ 2 * k,
-      Tendsto (fun i => ∫ x, x ^ n ∂(μn i : Measure ℝ)) l (𝓝 (m n)))
+    (hint : ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ (2 * k)) (μn i : Measure ℝ))
+    (hlimk : Tendsto (fun i => ∫ x, x ^ k ∂(μn i : Measure ℝ)) l (𝓝 (m k)))
+    (hlim2k : Tendsto (fun i => ∫ x, x ^ (2 * k) ∂(μn i : Measure ℝ)) l
+      (𝓝 (m (2 * k))))
     (hν : MapClusterPt ν l μn) :
     Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ) ∧
       ∫ x, x ^ k ∂(ν : Measure ℝ) = m k := by
-  let B : ℝ := m (2 * k) + 1
-  have hB : ∀ᶠ i in l, ∫ x, x ^ (2 * k) ∂(μn i : Measure ℝ) ≤ B := by
-    have hlim2 := hlim (2 * k) le_rfl
-    have hlt : m (2 * k) < B := by dsimp [B]; linarith
-    exact (hlim2.eventually (Iio_mem_nhds hlt)).mono fun _ h => le_of_lt h
   have hnonneg : ∀ x : ℝ, 0 ≤ x ^ (2 * k) := by
     intro x
     rw [show 2 * k = k * 2 by omega, pow_mul]
     exact sq_nonneg (x ^ k)
-  have hf : LowerSemicontinuous (fun x : ℝ => ENNReal.ofReal (x ^ (2 * k))) := by
-    exact (ENNReal.continuous_ofReal.comp (continuous_id.pow (2 * k))).lowerSemicontinuous
-  have hclosed := isClosed_setOfPred_lintegral_le_probabilityMeasure hf (ENNReal.ofReal B)
-  have hbound :
-      ∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) ∂(ν : Measure ℝ) ≤ ENNReal.ofReal B := by
-    have hevent : ∀ᶠ i in l, μn i ∈
-        {ρ : ProbabilityMeasure ℝ |
-          ∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) ∂(ρ : Measure ℝ) ≤ ENNReal.ofReal B} := by
-      filter_upwards [hint (2 * k) le_rfl, hB] with i hi hBi
-      rw [← ofReal_integral_eq_lintegral_ofReal hi
-        (ae_of_all _ hnonneg)]
-      exact ENNReal.ofReal_le_ofReal hBi
-    simpa using hclosed.mem_of_mapClusterPt hν hevent
-  have hfinite :
-      (∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) ∂(ν : Measure ℝ)) ≠ ⊤ :=
-    ne_top_of_le_ne_top ENNReal.ofReal_ne_top hbound
   have h2k : Integrable (fun x : ℝ => x ^ (2 * k)) (ν : Measure ℝ) :=
-    (lintegral_ofReal_ne_top_iff_integrable (by fun_prop) (ae_of_all _ hnonneg)).1 hfinite
+    (integrable_and_integral_le_of_mapClusterPt (continuous_id.pow (2 * k))
+      hnonneg hint hlim2k hν).1
   have hlow : ∀ n ≤ k, Integrable (fun x : ℝ => x ^ n) (ν : Measure ℝ) := by
     intro n hn
-    exact integrable_pow_of_le (by omega) h2k
+    exact integrable_pow_of_le aestronglyMeasurable_id (by omega) h2k
   let a : ℝ := ∫ x, x ^ k ∂(ν : Measure ℝ)
   let q : ℝ := ∫ x, x ^ (2 * k) ∂(ν : Measure ℝ)
   have hpow (x : ℝ) : x ^ (2 * k) = (x ^ k) ^ 2 := by
@@ -94,42 +114,29 @@ private theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_fixed
       (x ^ k - c) ^ 2 = x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2 := by
     rw [hpow x]
     ring
-  have hνsquare_integrable (c : ℝ) :
-      Integrable (fun x : ℝ => (x ^ k - c) ^ 2) (ν : Measure ℝ) := by
-    have hpoly : Integrable
-        (fun x : ℝ => x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2) (ν : Measure ℝ) :=
-      (h2k.sub ((hlow k le_rfl).const_mul (2 * c))).add (integrable_const _)
-    exact hpoly.congr (ae_of_all _ fun x => (hsquare_identity c x).symm)
-  have integral_expansion {ρ : ProbabilityMeasure ℝ}
-      (h2 : Integrable (fun x : ℝ => x ^ (2 * k)) (ρ : Measure ℝ))
-      (hk : Integrable (fun x : ℝ => x ^ k) (ρ : Measure ℝ)) (c : ℝ) :
-      ∫ x, x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2 ∂(ρ : Measure ℝ) =
+  have square_info {ρ : ProbabilityMeasure ℝ}
+      (h2 : Integrable (fun x : ℝ => x ^ (2 * k)) (ρ : Measure ℝ)) (c : ℝ) :
+      Integrable (fun x : ℝ => (x ^ k - c) ^ 2) (ρ : Measure ℝ) ∧
+      ∫ x, (x ^ k - c) ^ 2 ∂(ρ : Measure ℝ) =
         (∫ x, x ^ (2 * k) ∂(ρ : Measure ℝ)) -
           (2 * c) * ∫ x, x ^ k ∂(ρ : Measure ℝ) + c ^ 2 := by
-    let f : ℝ → ℝ := fun x => x ^ (2 * k) - (2 * c) * x ^ k
-    let g : ℝ → ℝ := fun _ => c ^ 2
-    have hf : Integrable f (ρ : Measure ℝ) := h2.sub (hk.const_mul (2 * c))
-    have hg : Integrable g (ρ : Measure ℝ) := integrable_const _
-    have hsplit : (fun x : ℝ => x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2) = f + g := by
-      funext x
-      rfl
+    have hk : Integrable (fun x : ℝ => x ^ k) (ρ : Measure ℝ) :=
+      integrable_pow_of_le aestronglyMeasurable_id (by omega : k ≤ 2 * k) h2
+    have hpoly : Integrable
+        (fun x : ℝ => x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2) (ρ : Measure ℝ) :=
+      (h2.sub (hk.const_mul (2 * c))).add (integrable_const _)
+    refine ⟨hpoly.congr (ae_of_all _ fun x => (hsquare_identity c x).symm), ?_⟩
+    simp_rw [hsquare_identity c]
     calc
-      ∫ x, x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2 ∂(ρ : Measure ℝ) =
-          ∫ x, (f + g) x ∂(ρ : Measure ℝ) := by rw [hsplit]
-      _ = (∫ x, f x ∂(ρ : Measure ℝ)) + ∫ x, g x ∂(ρ : Measure ℝ) :=
-        integral_add hf hg
-      _ = (∫ x, x ^ (2 * k) ∂(ρ : Measure ℝ)) -
-          (2 * c) * ∫ x, x ^ k ∂(ρ : Measure ℝ) + c ^ 2 := by
+      _ = (∫ x, x ^ (2 * k) - (2 * c) * x ^ k ∂(ρ : Measure ℝ)) +
+          ∫ _ : ℝ, c ^ 2 ∂(ρ : Measure ℝ) :=
+        integral_add (h2.sub (hk.const_mul (2 * c))) (integrable_const _)
+      _ = _ := by
         rw [integral_sub h2 (hk.const_mul (2 * c))]
-        simp [g, integral_const_mul]
+        simp [integral_const_mul]
   have hνsquare (c : ℝ) :
       ∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) = q - (2 * c) * a + c ^ 2 := by
-    calc
-      ∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) =
-          ∫ x, x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2 ∂(ν : Measure ℝ) :=
-        integral_congr_ae (ae_of_all _ (hsquare_identity c))
-      _ = q - (2 * c) * a + c ^ 2 := by
-        simpa [a, q] using integral_expansion h2k (hlow k le_rfl) c
+    simpa [a, q] using (square_info h2k c).2
   have hsquare_limit (c : ℝ) :
       Tendsto (fun i => ∫ x, (x ^ k - c) ^ 2 ∂(μn i : Measure ℝ)) l
         (𝓝 (m (2 * k) - (2 * c) * m k + c ^ 2)) := by
@@ -137,73 +144,23 @@ private theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt_fixed
         ∫ x, (x ^ k - c) ^ 2 ∂(μn i : Measure ℝ) =
           (∫ x, x ^ (2 * k) ∂(μn i : Measure ℝ)) -
             (2 * c) * ∫ x, x ^ k ∂(μn i : Measure ℝ) + c ^ 2 := by
-      filter_upwards [hint (2 * k) le_rfl, hint k (by omega)] with i h2 hk
-      calc
-        ∫ x, (x ^ k - c) ^ 2 ∂(μn i : Measure ℝ) =
-            ∫ x, x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2 ∂(μn i : Measure ℝ) :=
-          integral_congr_ae (ae_of_all _ (hsquare_identity c))
-        _ = _ := integral_expansion h2 hk c
+      filter_upwards [hint] with i h2
+      exact (square_info h2 c).2
     have hcomb :
         Tendsto
           (fun i => (∫ x, x ^ (2 * k) ∂(μn i : Measure ℝ)) -
             (2 * c) * ∫ x, x ^ k ∂(μn i : Measure ℝ) + c ^ 2) l
           (𝓝 (m (2 * k) - (2 * c) * m k + c ^ 2)) := by
-      exact ((hlim (2 * k) le_rfl).sub ((hlim k (by omega)).const_mul (2 * c)))
+      exact (hlim2k.sub (hlimk.const_mul (2 * c)))
         |>.add_const (c ^ 2)
     exact hcomb.congr' (heq.mono fun i hi => hi.symm)
   have hbound_square (c : ℝ) :
       ∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) ≤
         m (2 * k) - (2 * c) * m k + c ^ 2 := by
-    let M : ℝ := m (2 * k) - (2 * c) * m k + c ^ 2
-    have hM_nonneg : 0 ≤ M := by
-      have hnonneg : ∀ i, 0 ≤ ∫ x, (x ^ k - c) ^ 2 ∂(μn i : Measure ℝ) :=
-        fun i => integral_nonneg_of_ae (ae_of_all _ fun _ => sq_nonneg _)
-      have hneBot : l.NeBot :=
-        (map_neBot_iff μn).1 (hν.clusterPt.neBot.mono inf_le_right)
-      exact ge_of_tendsto_of_frequently (hsquare_limit c)
-        (@Frequently.of_forall ι l hneBot _ hnonneg)
-    have hε_bound (ε : ℝ) (hε : 0 < ε) :
-        ∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) ≤ M + ε := by
-      have hMlt : M < M + ε := by linarith
-      have hB : 0 ≤ M + ε := by linarith
-      have hB_event : ∀ᶠ i in l,
-          ∫ x, (x ^ k - c) ^ 2 ∂(μn i : Measure ℝ) ≤ M + ε :=
-        (hsquare_limit c).eventually (Iio_mem_nhds hMlt) |>.mono fun _ h => le_of_lt h
-      have hcont : Continuous fun x : ℝ => (x ^ k - c) ^ 2 :=
-        ((continuous_id.pow k).sub continuous_const).pow 2
-      have hclosed := isClosed_setOfPred_lintegral_le_probabilityMeasure
-        ((ENNReal.continuous_ofReal.comp hcont).lowerSemicontinuous)
-        (ENNReal.ofReal (M + ε))
-      have hevent : ∀ᶠ i in l, μn i ∈
-          {ρ : ProbabilityMeasure ℝ |
-            ∫⁻ x, ENNReal.ofReal ((x ^ k - c) ^ 2) ∂(ρ : Measure ℝ) ≤
-              ENNReal.ofReal (M + ε)} := by
-        filter_upwards [hint (2 * k) le_rfl, hint k (by omega), hB_event]
-          with i h2 hk hBi
-        have hsq : Integrable (fun x : ℝ => (x ^ k - c) ^ 2) (μn i : Measure ℝ) := by
-          have hpoly : Integrable
-              (fun x : ℝ => x ^ (2 * k) - (2 * c) * x ^ k + c ^ 2) (μn i : Measure ℝ) :=
-            (h2.sub (hk.const_mul (2 * c))).add (integrable_const _)
-          exact hpoly.congr (ae_of_all _ fun x => (hsquare_identity c x).symm)
-        rw [← ofReal_integral_eq_lintegral_ofReal hsq
-          (ae_of_all _ fun x => sq_nonneg (x ^ k - c))]
-        exact ENNReal.ofReal_le_ofReal hBi
-      have hlintegral := hclosed.mem_of_mapClusterPt hν hevent
-      have hlintegral' :
-          ∫⁻ x, ENNReal.ofReal ((x ^ k - c) ^ 2) ∂(ν : Measure ℝ) ≤
-            ENNReal.ofReal (M + ε) := by
-        exact hlintegral
-      have hreal : ENNReal.ofReal
-          (∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ)) ≤ ENNReal.ofReal (M + ε) := by
-        rw [← ofReal_integral_eq_lintegral_ofReal (hνsquare_integrable c)
-          (ae_of_all _ fun x => sq_nonneg (x ^ k - c))] at hlintegral'
-        exact hlintegral'
-      exact (ENNReal.ofReal_le_ofReal_iff hB).mp hreal
-    by_contra hnot
-    have hε : 0 < (∫ x, (x ^ k - c) ^ 2 ∂(ν : Measure ℝ) - M) / 2 :=
-      div_pos (sub_pos.mpr (lt_of_not_ge hnot)) (by norm_num)
-    have hle := hε_bound _ hε
-    linarith
+    exact (integrable_and_integral_le_of_mapClusterPt
+      (((continuous_id.pow k).sub continuous_const).pow 2)
+      (fun x => sq_nonneg (x ^ k - c))
+      (hint.mono fun _ h2 => (square_info h2 c).1) (hsquare_limit c) hν).2
   have hmoment : a = m k := by
     by_contra hne
     let c : ℝ := (m (2 * k) - q + 1) / (2 * (m k - a))
@@ -234,7 +191,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_
     (∀ k, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ)) ∧
       ∀ k, ∫ x, x ^ k ∂(ν : Measure ℝ) = m k := by
   have h k := integrable_pow_and_integral_pow_eq_of_mapClusterPt_fixed k
-    (fun n _ => hint n) (fun n _ => hlim n) hν
+    (hint (2 * k)) (hlim k) (hlim (2 * k)) hν
   exact ⟨fun k => (h k).1, fun k => (h k).2⟩
 end MethodOfMoments
 
@@ -247,7 +204,7 @@ open TauCeti.MethodOfMoments
 /-- **The method of moments.** Let `μn` be probability measures on `ℝ` whose moments are
 eventually finite and converge to those of `μ`. If `μ` is determined by its moments among
 probability measures with finite moments, then `μn` converges weakly to `μ`. -/
-theorem tendsto_of_tendsto_integral_pow_of_unique
+theorem tendsto_of_tendsto_integral_pow_of_forall_integral_pow_eq_imp_eq
     {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ}
     (hint : ∀ k, ∀ᶠ n in l, Integrable (fun x : ℝ => x ^ k) (μn n : Measure ℝ))
