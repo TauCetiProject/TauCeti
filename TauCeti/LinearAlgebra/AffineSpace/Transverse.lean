@@ -45,6 +45,17 @@ Source: https://github.com/yuma-mizuno-lean/Mei/blob/68536122a97fed8e87bc6870b94
 
 public section
 
+/-- The span of the edge vectors from the initial vertex of a finite family is its vector span. -/
+theorem span_range_succ_vsub_zero_eq_vectorSpan {k V P : Type*} [Ring k] [AddCommGroup V]
+    [Module k V] [AddTorsor V P] {n : ℕ} (p : Fin (n + 1) → P) :
+    Submodule.span k (Set.range fun j : Fin n => p j.succ -ᵥ p 0) =
+      vectorSpan k (Set.range p) := by
+  rw [vectorSpan_range_eq_span_range_vsub_right_ne k p 0]
+  congr 1
+  simpa only [Function.comp_def, finSuccAboveEquiv_apply, Fin.succAbove_zero] using
+    (finSuccAboveEquiv 0).surjective.range_comp
+      (fun j : {j : Fin (n + 1) // j ≠ 0} => p j -ᵥ p 0)
+
 namespace LinearMap
 
 /-- A transverse line meets a level hyperplane at the height difference divided
