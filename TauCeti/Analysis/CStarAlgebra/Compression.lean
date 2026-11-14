@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
 
 /-!
 # Order and compression by projections
@@ -15,6 +16,9 @@ Compression by a star projection preserves positivity, but need not decrease a p
 It decreases a positive element exactly when the projection commutes with that element.
 The key zero-corner criterion says that `star b * a * b = 0` for positive `a` exactly when
 `a * b = 0`; thus a vanishing positive corner forces the off-diagonal terms to vanish too.
+Similarly, a self-adjoint element `a` is positive once no compression `star c * a * c` equals a
+nonzero negative square `-(star b * b)` (`TauCeti.nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg`),
+encapsulating the negative-part vanishing argument for quadratic-form positivity criteria.
 -/
 
 public section
@@ -40,6 +44,26 @@ theorem star_mul_mul_eq_zero_iff_of_nonneg {a : A} (ha : 0 ≤ a) (b : A) :
       _ = 0 := by rw [hs, mul_zero]
   · intro h
     simp [mul_assoc, h]
+
+/-- A self-adjoint element `a` of a C⋆-algebra is positive if whenever a compression
+`star c * a * c` equals `-(star b * b)`, the factor `b` vanishes. -/
+theorem nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg {a : A} (ha : IsSelfAdjoint a)
+    (h : ∀ b c : A, star c * a * c = -(star b * b) → b = 0) : 0 ≤ a := by
+  refine CStarAlgebra.nonneg_iff_isSelfAdjoint_and_negPart_eq_zero.mpr ⟨ha, ?_⟩
+  set N := a⁻
+  have hN : 0 ≤ N := negPart_nonneg a
+  have hsq : sqrt N * N = 0 := h (sqrt N * N) N <| by
+    have h₁ : star N * a * N = -(N * (N * N)) := by
+      rw [hN.isSelfAdjoint.star_eq]
+      conv_lhs => rw [← posPart_sub_negPart a ha]
+      rw [mul_sub, sub_mul, mul_assoc N (a⁺) N, posPart_mul_negPart, mul_zero, zero_sub, mul_assoc]
+    have h₂ : star (sqrt N * N) * (sqrt N * N) = N * (N * N) := by
+      rw [star_mul, hN.isSelfAdjoint.star_eq, (sqrt_nonneg N).isSelfAdjoint.star_eq,
+        mul_assoc, ← mul_assoc (sqrt N) (sqrt N), sqrt_mul_sqrt_self N hN]
+    rw [h₁, h₂]
+  rw [← star_mul_self_eq_zero, hN.isSelfAdjoint.star_eq]
+  conv_lhs => lhs; rw [← sqrt_mul_sqrt_self N hN]
+  rw [mul_assoc, hsq, mul_zero]
 
 end TauCeti
 

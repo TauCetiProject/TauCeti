@@ -36,9 +36,10 @@ Riesz theorem.
   expressing `⟪S x, T y⟫_A` and `⟪x, y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
   inner products against all vectors.
-* `CStarModule.eq_of_forall_inner_map_self`, `CStarModule.inner_map_eq_iff_forall_self`:
-  complex-linear endomorphisms and inner-product-preserving maps are determined by diagonal inner
-  products.
+* `CStarModule.eq_of_forall_inner_map_self`,
+  `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
+  determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
+  products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
@@ -135,13 +136,29 @@ theorem eq_of_forall_inner_map_self {M : Type*} [FunLike M E E] [LinearMapClass 
 
 /-- A complex-linear map between C⋆-modules preserves all inner products if and only if it
 preserves diagonal inner products `⟪x, x⟫_A`. -/
-theorem inner_map_eq_iff_forall_self {F M : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F]
-    [Norm F] [CStarModule A F] [FunLike M E F] [LinearMapClass M ℂ E F] (U : M) :
+theorem inner_map_map_iff_forall_inner_map_map_self {F M : Type*} [AddCommGroup F] [Module ℂ F]
+    [SMul A F] [Norm F] [CStarModule A F] [FunLike M E F] [LinearMapClass M ℂ E F] (U : M) :
     (∀ x y : E, inner A (U x) (U y) = inner A x y) ↔
       ∀ x : E, inner A (U x) (U x) = inner A x x :=
   ⟨fun h x ↦ h x x, fun h x y ↦ by
     rw [inner_map_polarization (A := A) U U x y, inner_polarization (A := A) x y]
     simp only [h]⟩
+
+/-- Any plain function between C⋆-modules that preserves the `A`-valued inner product is
+injective. -/
+theorem injective_of_inner_map_map {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F]
+    [Norm F] [CStarModule A F] {f : E → F}
+    (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y) :
+    Function.Injective f := fun x y hxy ↦
+  ext_inner_left (A := A) fun z ↦ by
+    rw [← hf z x, ← hf z y, hxy]
+
+omit [StarModule ℂ A] in
+/-- Vectors with equal diagonal `A`-valued inner products have equal norms. -/
+theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F]
+    [Norm F] [CStarModule A F] {x : E} {y : F} (h : inner A x x = inner A y y) :
+    ‖x‖ = ‖y‖ := by
+  rw [norm_eq_sqrt_norm_inner_self (A := A), norm_eq_sqrt_norm_inner_self (A := A) (x := y), h]
 
 end Algebraic
 
@@ -152,6 +169,14 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 section Norm
 
 variable [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Monotonicity of the module norm in the diagonal `A`-valued inner product: if
+`⟪x, x⟫_A ≤ ⟪y, y⟫_A`, then `‖x‖ ≤ ‖y‖`. -/
+theorem norm_le_of_inner_self_le {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F]
+    [Norm F] [CStarModule A F] {x : E} {y : F} (h : inner A x x ≤ inner A y y) :
+    ‖x‖ ≤ ‖y‖ := by
+  rw [norm_eq_sqrt_norm_inner_self (A := A), norm_eq_sqrt_norm_inner_self (A := A) (x := y)]
+  exact Real.sqrt_le_sqrt (CStarAlgebra.norm_le_norm_of_le_of_nonneg h inner_self_nonneg)
 
 /-- Norm recovery: `‖x‖` is the largest value of `‖⟪y, x⟫_A‖` for `y` in the closed unit ball,
 attained at `y = ‖x‖⁻¹ x`. -/
