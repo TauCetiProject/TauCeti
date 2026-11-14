@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
+public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
 # Localization of distributions and the augmentation
@@ -43,13 +43,14 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 * `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
-* `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_monoCLM_subset`,
+* `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_cutoffCLM_subset`,
+  `Distribution.dsupport_comp_monoCLM_subset`,
   `Distribution.isCompact_dsupport_and_subset_of_eventually_eq_one`,
   `Distribution.exists_eventually_eq_one_nhdsSet_dsupport_iff`,
   `Distribution.isCompact_dsupport_apply_apply`,
   `Distribution.isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM`: support under
-  smooth multiples, open/regularity restriction, existence of a test cutoff equal to one near the
-  support, and compactness of point-evaluation support.
+  smooth multiples and cutoffs, open/regularity restriction, existence of a test cutoff equal to
+  one near the support, and compactness of point-evaluation support.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`,
@@ -252,6 +253,27 @@ theorem dsupport_comp_smulLeftCLM_subset {g : E → ℝ} (hg : ContDiff ℝ n g)
   · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
     exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
       (((TestFunction.tsupport_smulLeftCLM_subset hg φ).trans inter_subset_right).trans hφ),
+      hs, hxs⟩
+
+/-- The support of `T ∘ (χ ·)`, where multiplication by `χ` sends tests on `Ω'` to tests on `Ω`
+(`TestFunction.cutoffCLM`), lies both in the support of `χ` and in the support of `T`. For a test
+function `χ` on `Ω` and `Ω' = ⊤`, the map `T ∘ (χ ·)` is the extension by zero of `χ T` from `Ω`
+to the whole space. -/
+theorem dsupport_comp_cutoffCLM_subset {Ω' : Opens E} {χ : E → ℝ} (hχ : ContDiff ℝ n χ)
+    (hχΩ : tsupport χ ∩ Ω' ⊆ Ω) :
+    dsupport (T ∘ TestFunction.cutoffCLM (F := F) hχ hχΩ) ⊆ tsupport χ ∩ dsupport T := by
+  refine subset_inter (compl_subset_compl.1 fun x hx ↦ ?_) (compl_subset_compl.1 fun x hx ↦ ?_)
+  · -- Off the support of `χ`, every product `χ • φ` vanishes identically.
+    refine (notMem_dsupport_iff x).2
+      ⟨(tsupport χ)ᶜ, fun φ hφ ↦ ?_, (isClosed_tsupport χ).isOpen_compl, hx⟩
+    have hχφ : TestFunction.cutoffCLM hχ hχΩ φ = 0 := TestFunction.ext fun y ↦ by
+      by_cases hy : y ∈ tsupport φ
+      · simp [image_eq_zero_of_notMem_tsupport (hφ hy)]
+      · simp [image_eq_zero_of_notMem_tsupport hy]
+    simp [hχφ]
+  · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
+    exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
+      (((TestFunction.tsupport_cutoffCLM_subset hχ hχΩ φ).trans inter_subset_right).trans hφ),
       hs, hxs⟩
 
 end SmoothMultiple
