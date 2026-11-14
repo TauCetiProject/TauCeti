@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
-public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Zero
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 
@@ -24,13 +23,14 @@ degrees `n + r ≥ r`, for every base degree `n`.
 * `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`
   (`TauCeti.prodThomPairPuncturedHomotopyEquiv`, in
   `TauCeti.AlgebraicTopology.Singular.ProdThomPair`). Let `σ ∈ Hᵈ(B × (F ∖ {0}); k)` be the
-  pullback of the standard class of `Hᵈ(Sᵈ; k)` — the indicator of the positive pole for `d = 0`
-  (`TauCeti.singularCohomologyTopCatSphereZeroClass`) and the generator for `d ≥ 1`
-  (`TauCeti.singularCohomologyTopCatSphereGenerator`) — along the first component
+  pullback of the standard top class of `Hᵈ(Sᵈ; k)`
+  (`TauCeti.singularCohomologyTopCatSphereTopClass`, in
+  `TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic`: the indicator of the positive pole for
+  `d = 0` and the generator for `d ≥ 1`) along the first component
   (`TauCeti.prodThomPairPuncturedClass`), and `π : B × (F ∖ {0}) → B` the projection
-  (`TauCeti.prodThomPairPuncturedProj`). The decomposition of the cohomology of `Sᵈ × B`
-  (`TopCat.singularCohomologySphereZeroProdEquiv` for `d = 0`, and
-  `TopCat.singularCohomologySphereProdSlantEquiv` for `d ≥ 1`) becomes
+  (`TauCeti.prodThomPairPuncturedProj`). The unified decomposition of the cohomology of `Sᵈ × B`
+  (`TopCat.singularCohomologySphereTopProdEquiv`, in
+  `TauCeti.AlgebraicTopology.Cohomology.Sphere.Product`) becomes
   `Hⁿ⁺ᵈ(B; M) × Hⁿ(B; M) ≃ Hⁿ⁺ᵈ(B × (F ∖ {0}); M)`, `(b, c) ↦ π^* b + σ ⌣ π^* c`
   (`TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`).
 * In the long exact sequence of the pair, the restriction from `Hᵐ(B × F; M)` to
@@ -53,7 +53,6 @@ is `TauCeti.prodThomPairSingularHomologyIso` in degrees `n + r`, with
 
 ## Main definitions and results
 
-* `TauCeti.singularCohomologyTopCatSphereTopClass`: the standard class of `Hᵈ(Sᵈ; k)` (`d ≥ 0`).
 * `TauCeti.prodThomPairPuncturedClass`: the class `σ` pulled back from the sphere `Sᵈ`.
 * `TauCeti.prodThomPairPuncturedSingularCohomologyEquiv`:
   `Hⁿ⁺ᵈ(B; M) × Hⁿ(B; M) ≃ Hⁿ⁺ᵈ(B × (F ∖ {0}); M)`, `(b, c) ↦ π^* b + σ ⌣ π^* c`.
@@ -90,29 +89,6 @@ private abbrev sphereProdMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) 
     (prodThomPair B F).snd ⟶ TopCat.sphere.{w} d ⊗ TopCat.of B :=
   TopCat.ofHom (prodThomPairPuncturedHomotopyEquiv B e).toFun
 
-/-- The standard class in `Hᵈ(Sᵈ; k)`: the indicator of the positive pole for `d = 0`, and the
-generator dual to the standard homology generator for `d ≥ 1`. -/
-def singularCohomologyTopCatSphereTopClass (k : Type w) [CommRing k] :
-    (d : ℕ) → (TopCat.sphere.{w} d).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
-      (𝟙_ (ModuleCat.{w} k)) d
-  | 0 => singularCohomologyTopCatSphereZeroClass k
-  | d + 1 => singularCohomologyTopCatSphereGenerator k d
-
-/-- In degree `0`, `TauCeti.singularCohomologyTopCatSphereTopClass` is the indicator class of the
-positive pole. -/
-@[simp]
-theorem singularCohomologyTopCatSphereTopClass_zero (k : Type w) [CommRing k] :
-    singularCohomologyTopCatSphereTopClass k 0 = singularCohomologyTopCatSphereZeroClass k :=
-  (rfl)
-
-/-- In positive degree `d + 1`, `TauCeti.singularCohomologyTopCatSphereTopClass` is the standard
-generator of `Hᵈ⁺¹(Sᵈ⁺¹; k)`. -/
-@[simp]
-theorem singularCohomologyTopCatSphereTopClass_succ (k : Type w) [CommRing k] (d : ℕ) :
-    singularCohomologyTopCatSphereTopClass k (d + 1) =
-      singularCohomologyTopCatSphereGenerator k d :=
-  (rfl)
-
 variable (k B) in
 /-- The class of `Hᵈ(B × (F ∖ {0}); k)` pulled back from `Hᵈ(Sᵈ; k)`
 (`TauCeti.singularCohomologyTopCatSphereTopClass`) along the radial projection
@@ -132,22 +108,6 @@ theorem prodThomPairPuncturedClass_def (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 
         (TopCat.ofHom (prodThomPairPuncturedHomotopyEquiv B e).toFun ≫ fst _ _) d
         (singularCohomologyTopCatSphereTopClass k d) :=
   (rfl)
-
-/-- A point of the sphere `Sᵈ⁺¹`, at which the slant products of
-`TopCat.singularCohomologySphereProdSlantEquiv` are taken. -/
-private def sphereBasePoint (d : ℕ) : TopCat.sphere.{w} (d + 1) :=
-  ⟨⟨EuclideanSpace.single 0 1, by simp⟩⟩
-
-/-- The decomposition of the cohomology of `Sᵈ × Y` in degree `n + d`, unifying `d = 0`
-(`TopCat.singularCohomologySphereZeroProdEquiv`) and `d ≥ 1`
-(`TopCat.singularCohomologySphereProdSlantEquiv`). -/
-private def sphereProdCohomologyEquiv (Y : TopCat.{w}) :
-    (d : ℕ) → (n : ℕ) →
-      (TopCat.sphere.{w} d ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ≃ₗ[k]
-        Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
-          Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n
-  | 0, n => TopCat.singularCohomologySphereZeroProdEquiv M Y n
-  | d + 1, n => TopCat.singularCohomologySphereProdSlantEquiv M Y (sphereBasePoint d) n
 
 /-- The composite of the homotopy equivalence `TauCeti.prodThomPairPuncturedHomotopyEquiv` with
 the projection onto `B` is the projection of the punctured product bundle. -/
@@ -170,7 +130,7 @@ private def puncturedEquivAux (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1)))
     ((TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
       (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) ≃ₗ[k]
       (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) :=
-  (sphereProdCohomologyEquiv M (TopCat.of B) d n).symm.trans
+  (TopCat.singularCohomologySphereTopProdEquiv M (TopCat.of B) d n).symm.trans
     (asIso (TopCat.singularCohomologyMap (sphereProdMap e) (n + d))).toLinearEquiv
 
 private theorem puncturedEquivAux_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) (n : ℕ)
@@ -182,18 +142,10 @@ private theorem puncturedEquivAux_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin
           d n (n + d) (add_comm d n) (prodThomPairPuncturedClass k B e)
           (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) n bc.2) := by
   rw [← sphereProdMap_snd e]
-  cases d
-  · simp only [puncturedEquivAux, sphereProdCohomologyEquiv, LinearEquiv.trans_apply,
-      TopCat.singularCohomologySphereZeroProdEquiv_symm_apply,
-      Iso.toLinearEquiv_apply, asIso_hom, map_add, prodThomPairPuncturedClass,
-      singularCohomologyTopCatSphereTopClass_zero,
-      TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, TopCat.singularCup_naturality]
-    rfl
-  · simp only [puncturedEquivAux, sphereProdCohomologyEquiv, LinearEquiv.trans_apply,
-      TopCat.singularCohomologySphereProdSlantEquiv_symm_apply,
-      Iso.toLinearEquiv_apply, asIso_hom, map_add, prodThomPairPuncturedClass,
-      singularCohomologyTopCatSphereTopClass_succ,
-      TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, TopCat.singularCup_naturality]
+  simp only [puncturedEquivAux, LinearEquiv.trans_apply,
+    TopCat.singularCohomologySphereTopProdEquiv_symm_apply,
+    Iso.toLinearEquiv_apply, asIso_hom, map_add, prodThomPairPuncturedClass,
+    TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, TopCat.singularCup_naturality]
 
 /-- The map `(b, c) ↦ π^* b + σ ⌣ π^* c` into the cohomology of the punctured product bundle. -/
 private def puncturedMap (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) (n m : ℕ)

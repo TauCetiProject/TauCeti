@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
 # Degree-zero singular cohomology as functions on path components
@@ -31,8 +32,9 @@ functions `X → k` that are constant on path components:
 The unit of the cup product, the class `TopCat.singularCohomologyZeroOne` of the constant
 cocycle `1`, has the value `1` everywhere, and on a path-connected space every degree-zero class
 is its value at any point times the unit
-(`TauCeti.eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne`). Pulling back along the
-constant map at `x` gives the value at `x` times the unit
+(`TauCeti.eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne`), so evaluation at a point
+gives a `k`-linear equivalence `H⁰(X; k) ≃ₗ[k] k` (`TauCeti.singularCohomologyZeroEvalEquiv`).
+Pulling back along the constant map at `x` gives the value at `x` times the unit
 (`TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul`), which reduces
 multiplicativity of the values for the cup product
 (`TauCeti.singularCohomologyZeroEval_singularCup`) to the unit law on a point.
@@ -40,7 +42,9 @@ multiplicativity of the values for the cup product
 Consequently invertibility in `H⁰(X; k)` can be tested pointwise, one path component at a time: a
 square matrix of degree-zero classes whose matrices of values are invertible at every point is
 invertible for the cup product (`TauCeti.exists_singularCup_matrix_eq_one`), and in particular a
-class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`). The inverse has, at
+class whose values are units is a unit (`TauCeti.exists_singularCup_eq_one`), so right
+cup-multiplication by it is bijective on `Hᵖ(X; M)`
+(`TauCeti.bijective_singularCup_right_of_forall_isUnit`). The inverse has, at
 every point, the inverse matrix of values; it is a class because the matrix of values, and so its
 inverse, is constant on path components.
 
@@ -227,6 +231,29 @@ lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [PathConnecte
     rw [singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined x x₀), map_smul,
       singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
 
+/-- On a path-connected space, evaluation at any point `x₀` identifies `H⁰(X; k)` with `k`,
+with inverse sending `c` to `c • 1`. -/
+def singularCohomologyZeroEvalEquiv [PathConnectedSpace X] (x₀ : X) :
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 ≃ₗ[k] k :=
+  LinearEquiv.ofLinearMap
+    (f := singularCohomologyZeroEval x₀)
+    (g := LinearMap.toSpanSingleton k _ (X.singularCohomologyZeroOne (k := k)))
+    (LinearMap.ext fun c ↦ by simp)
+    (LinearMap.ext fun u ↦ (eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne x₀ u).symm)
+
+/-- `TauCeti.singularCohomologyZeroEvalEquiv` evaluates a degree-zero class at `x₀`. -/
+@[simp]
+lemma singularCohomologyZeroEvalEquiv_apply [PathConnectedSpace X] (x₀ : X)
+    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
+    singularCohomologyZeroEvalEquiv x₀ u = singularCohomologyZeroEval x₀ u :=
+  (rfl)
+
+/-- The inverse of `TauCeti.singularCohomologyZeroEvalEquiv` sends `c` to `c • 1`. -/
+@[simp]
+lemma singularCohomologyZeroEvalEquiv_symm_apply [PathConnectedSpace X] (x₀ : X) (c : k) :
+    (singularCohomologyZeroEvalEquiv x₀).symm c = c • X.singularCohomologyZeroOne :=
+  (rfl)
+
 /-- Pulling back a degree-zero class along the constant map at `x` gives its value at `x` times
 the unit class. -/
 @[simp]
@@ -313,6 +340,42 @@ theorem exists_singularCup_eq_one
   obtain ⟨B, h₁, h₂⟩ := exists_singularCup_matrix_eq_one (ι := Unit) (fun _ _ ↦ u)
     fun x ↦ (Matrix.isUnit_iff_isUnit_det _).2 (by simpa using hu x)
   exact ⟨B () (), by simpa using h₁ () (), by simpa using h₂ () ()⟩
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- **Right cup-multiplication by a pointwise-invertible degree-zero class is bijective**: if
+`u ∈ H⁰(X; k)` evaluates to a unit at every point of `X`, then `a ↦ a ⌣ u` is bijective on
+`Hᵖ(X; M)` for every `k`-module `M`. -/
+theorem bijective_singularCup_right_of_forall_isUnit (M : ModuleCat.{w} k) (p : ℕ)
+    {u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0}
+    (hu : ∀ x : X, IsUnit (singularCohomologyZeroEval x u)) :
+    Function.Bijective
+      (fun a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p ↦
+        X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p (add_zero p) a u) := by
+  obtain ⟨v, huv, hvu⟩ := exists_singularCup_eq_one u hu
+  let rcup (θ : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+      (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p) :
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p :=
+    X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p (add_zero p) a θ
+  have hrcup_comp
+      (θ₁ θ₂ : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+      (hθ : X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl θ₁ θ₂ =
+        X.singularCohomologyZeroOne)
+      (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M p) :
+      rcup θ₂ (rcup θ₁ a) = a := by
+    dsimp only [rcup]
+    calc X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p (add_zero p)
+          (X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p (add_zero p) a θ₁) θ₂
+      _ = X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (ρ_ M).hom p 0 p (add_zero p) a
+            (X.singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+              (λ_ (𝟙_ (ModuleCat.{w} k))).hom 0 0 0 rfl θ₁ θ₂) :=
+        X.singularCup_assoc k (by monoidal) (by monoidal)
+          (add_zero p) (add_zero p) rfl (add_zero p) a θ₁ θ₂
+      _ = a := by
+        rw [hθ, TopCat.singularCohomologyZeroOne_def]
+        exact X.singularCup_constSingularCocycle_right k (η := 𝟙 _)
+          (by monoidal) (by monoidal) (add_zero p) a
+  exact ⟨Function.LeftInverse.injective (hrcup_comp u v huv),
+    Function.RightInverse.surjective (hrcup_comp v u hvu)⟩
 
 end Invertibility
 

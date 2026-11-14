@@ -1,0 +1,193 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
+import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
+
+/-!
+# The relative cap product followed by push-forward
+
+Let `P = (X, Z)` be a topological pair, `p₀ : X ⟶ Y` a continuous map out of its ambient space, and
+`u ∈ Hⁿ(X, Z; K)` a relative class with coefficients in a commutative ring `K`. This file defines
+the homological counterpart of `TopPair.pullbackCup`:
+
+`Hₘ(X, Z; A) ⟶ Hₚ(Y; A)`,  `x ↦ p₀_*(x ⌢ u)`,  `n + p = m`,
+
+(`TopPair.pushforwardCap`), the relative cap product `Hₘ(X, Z; A) ⟶ Hₚ(X; A)` with `u`
+(`TopPair.singularCap`) followed by push-forward along `p₀`, as a `K`-linear map in `u` for any
+`K`-module `A`. For the Thom pair `(E, E₀)` of a bundle and its projection `π : E ⟶ B`, it is the
+homology Thom map `TauCeti.homologyThomMap`.
+
+The operation is natural in maps of pairs covering maps of target spaces
+(`TopPair.pushforwardCap_naturality`). By `TopPair.singularCap_comp_singularKronecker` and graded
+commutativity of the relative cup product (`TopPair.singularCup_gradedComm`), `pushforwardCap` is
+transpose to `TopPair.pullbackCup` under the Kronecker pairing up to the Koszul sign `(-1)^(n p)`:
+for `a ∈ Hᵖ(Y; K, M)` and `x ∈ Hₘ(X, Z; K)`,
+
+`⟨a, p₀_*(x ⌢ u)⟩ = (-1)^(n p) ⟨p₀^*a ⌣ u, x⟩`
+
+(`TopPair.pushforwardCap_comp_singularKronecker`). Over a field `K`, the universal coefficient
+duality equivalences `TopCat.singularCohomologyDualEquiv` and `TopPair.singularCohomologyDualEquiv`
+therefore imply that `p₀_*(- ⌢ u)` is bijective on `K`-homology if and only if `p₀^*(-) ⌣ u` is
+bijective on `K`-cohomology (`TopPair.bijective_pushforwardCap_iff`), and when `p₀_*(- ⌢ u)` is an
+isomorphism in `ModuleCat K`, `TopCat.singularKroneckerEquivOfProjectiveHomology` and
+`TopPair.singularKroneckerEquivOfProjectiveHomology` give bijectivity of `p₀^*(-) ⌣ u` with
+coefficients in every `K`-vector space `M`
+(`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`).
+
+## Main definitions and results
+
+* `TopPair.pushforwardCap`: the map `x ↦ p₀_*(x ⌢ u)`, `K`-linear in `u`.
+* `TopPair.pushforwardCap_naturality`: naturality in maps of pairs covering maps of targets.
+* `TopPair.pushforwardCap_comp_singularKronecker`: Kronecker duality with `TopPair.pullbackCup`.
+* `TopPair.bijective_pushforwardCap_iff`: over a field, bijectivity of `p₀_*(- ⌢ u)` is equivalent
+  to bijectivity of `p₀^*(-) ⌣ u`.
+* `TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`: over a field, an isomorphism on
+  `K`-homology implies bijectivity of `TopPair.pullbackCup` for arbitrary `K`-vector spaces `M`.
+
+## References
+
+* E. H. Spanier, *Algebraic Topology*, McGraw-Hill (1966), Chapter 5, Sections 6–7.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press (2002), Section 3.3 (the identity
+  `⟨ψ, x ⌢ φ⟩ = ⟨φ ⌣ ψ, x⟩`).
+-/
+
+public section
+
+noncomputable section
+
+open AlgebraicTopology CategoryTheory MonoidalCategory
+
+universe w
+
+namespace TopPair
+
+/-- For a topological pair `P = (X, Z)`, a map `p₀ : X ⟶ Y` and a relative class `u ∈ Hⁿ(X, Z; K)`,
+the morphism `Hₘ(X, Z; A) ⟶ Hₚ(Y; A)`, `x ↦ p₀_*(x ⌢ u)`, `n + p = m`, as a `K`-linear map in `u`:
+the relative cap product with `u` (`TopPair.singularCap`) followed by push-forward in homology along
+`p₀`. Both the coefficient morphism and the pairing of values are the left unitor `K ⊗ A ≅ A`. -/
+def pushforwardCap {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : TopCat.{w}}
+    (p₀ : P.fst ⟶ Y) (A : ModuleCat.{w} K) (n p m : ℕ) (h : n + p = m) :
+    P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n →ₗ[K]
+      (P.singularHomology A m ⟶
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) p).obj A).obj Y) :=
+  Linear.rightComp K _
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map p₀) ∘ₗ
+    P.singularCap K (λ_ A).inv (λ_ A).hom n p m h
+
+/-- `TopPair.pushforwardCap` is `TopPair.singularCap` postcomposed with `(Hₚ(-; A)).map p₀`. -/
+@[simp]
+theorem pushforwardCap_apply {K : Type w} [CommRing K] (P : TopPair.{w}) {Y : TopCat.{w}}
+    (p₀ : P.fst ⟶ Y) (A : ModuleCat.{w} K) {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    P.pushforwardCap p₀ A n p m h u =
+      P.singularCap K (λ_ A).inv (λ_ A).hom n p m h u ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map p₀ :=
+  (rfl)
+
+/-- **Naturality of `x ↦ p₀_*(x ⌢ u)`.** For a map of pairs `φ : P' ⟶ P` and maps `p₀ : P.fst ⟶ Y`,
+`p₀' : P'.fst ⟶ Y'` and `g : Y' ⟶ Y` with `φ ≫ p₀ = p₀' ≫ g` on the ambient spaces,
+`g_*(p₀'_*(x ⌢ φ^*u)) = p₀_*((φ_* x) ⌢ u)`. -/
+theorem pushforwardCap_naturality {K : Type w} [CommRing K] {P P' : TopPair.{w}}
+    {Y Y' : TopCat.{w}} (φ : P' ⟶ P) (p₀ : P.fst ⟶ Y) (p₀' : P'.fst ⟶ Y') (g : Y' ⟶ Y)
+    (hφ : TopPair.Hom.fst φ ≫ p₀ = p₀' ≫ g) (A : ModuleCat.{w} K) {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    P'.pushforwardCap p₀' A n p m h (TopPair.singularCohomologyMap φ n u) ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map g =
+      TopPair.singularHomologyMap φ A m ≫ P.pushforwardCap p₀ A n p m h u := by
+  rw [pushforwardCap_apply, pushforwardCap_apply, Category.assoc, ← Functor.map_comp, ← hφ,
+    Functor.map_comp, ← Category.assoc, TopPair.singularCap_naturality, Category.assoc]
+
+/-- **Kronecker duality between `TopPair.pushforwardCap` and `TopPair.pullbackCup`**: for
+`u ∈ Hⁿ(P; K)`, `a ∈ Hᵖ(Y; K, M)` and `m = n + p`, the Kronecker pairing of `a` with `p₀_*(x ⌢ u)`
+equals `(-1)^(n p)` times the Kronecker pairing of `p₀^*a ⌣ u` with `x`. -/
+theorem pushforwardCap_comp_singularKronecker {K : Type w} [CommRing K] (P : TopPair.{w})
+    {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {M : ModuleCat.{w} K} {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : Y.singularCohomology (ModuleCat.of K K) K M p) :
+    P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u ≫ Y.singularKronecker K p a =
+      ((-1 : ℤ) ^ (n * p)) • P.singularKronecker K m
+        (P.pullbackCup M p₀ n p m (by omega) u a) := by
+  -- `⟨a, p₀_*(x ⌢ u)⟩ = ⟨p₀^*a, x ⌢ u⟩ = ⟨u ⌣ p₀^*a, x⟩`, and `u ⌣ p₀^*a = (-1)^(n p) p₀^*a ⌣ u`.
+  rw [pushforwardCap_apply, Category.assoc, ← TopCat.singularKronecker_naturality,
+    TopPair.singularCap_comp_singularKronecker, TopPair.pullbackCup_apply,
+    TopPair.singularCup_gradedComm K P (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+      (u' := (λ_ (ModuleCat.of K K)).inv) (μ' := (λ_ M).hom)
+      (μ := (ρ_ M).hom) ?_ ?_ (by omega), map_zsmul, mul_comm]
+  -- `pullbackCup` cups along `(λ_ (𝟙_ (ModuleCat K))).inv`, while `singularCap` uses
+  -- `ModuleCat.of K K`; both `rfl`s close the definitional equality
+  -- `𝟙_ (ModuleCat K) = ModuleCat.of K K`.
+  · rfl
+  · rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, ← unitors_inv_equal]
+    rfl
+  · exact braiding_leftUnitor M
+
+/-- **Over a field, `TopPair.pushforwardCap` is bijective if and only if `TopPair.pullbackCup` is**:
+for `u ∈ Hⁿ(P; K)` and `m = n + p`, `p₀_*(- ⌢ u) : Hₘ(P; K) ⟶ Hₚ(Y; K)` is bijective if and only if
+`p₀^*(-) ⌣ u : Hᵖ(Y; K) ⟶ Hᵐ(P; K)` is. -/
+theorem bijective_pushforwardCap_iff {K : Type w} [Field K] (P : TopPair.{w})
+    {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {n p m : ℕ} (h : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u).hom ↔
+      Function.Bijective (P.pullbackCup (ModuleCat.of K K) p₀ n p m (by omega) u) := by
+  set T := (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h u).hom
+  have hc : ((-1 : K) ^ (n * p)) ≠ 0 := pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)
+  have key : ∀ a, P.singularCohomologyDualEquiv m
+      (P.pullbackCup (ModuleCat.of K K) p₀ n p m (by omega) u a) =
+      LinearEquiv.smulOfNeZero K _ _ hc (T.dualMap (Y.singularCohomologyDualEquiv p a)) := by
+    intro a
+    ext x
+    have hx := congrArg (fun φ ↦ φ.hom x) (P.pushforwardCap_comp_singularKronecker p₀ h u a)
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zsmul,
+      LinearMap.smul_apply] at hx
+    rw [LinearEquiv.smulOfNeZero_apply, LinearMap.smul_apply, LinearMap.dualMap_apply,
+      TopPair.singularCohomologyDualEquiv_apply, TopCat.singularCohomologyDualEquiv_apply, hx]
+    simp [← Int.cast_smul_eq_zsmul K, ← mul_assoc, ← mul_pow]
+  have e : ⇑(P.pullbackCup (ModuleCat.of K K) p₀ n p m (by omega) u) =
+      ⇑(P.singularCohomologyDualEquiv m).symm ∘ ⇑(LinearEquiv.smulOfNeZero K _ _ hc) ∘
+        ⇑T.dualMap ∘ ⇑(Y.singularCohomologyDualEquiv p) := by
+    funext a
+    simp only [Function.comp_apply, ← key, LinearEquiv.symm_apply_apply]
+  rw [e, EquivLike.comp_bijective, EquivLike.comp_bijective, EquivLike.bijective_comp,
+    LinearMap.dualMap_bijective_iff]
+
+/-- Over a field `K`, if `TopPair.pushforwardCap` in degree `m = n + p` is an isomorphism in
+`ModuleCat K`, then `TopPair.pullbackCup` in degree `p` (`p + n = m`) is bijective for every
+coefficient `K`-vector space `M`. -/
+theorem bijective_pullbackCup_of_isIso_pushforwardCap {K : Type w} [Field K]
+    (P : TopPair.{w}) {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) (M : ModuleCat.{w} K) {n p m : ℕ}
+    (h : p + n = m) (h' : n + p = m)
+    (u : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    [IsIso (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h' u)] :
+    Function.Bijective (P.pullbackCup M p₀ n p m h u) := by
+  let T := asIso (P.pushforwardCap p₀ (ModuleCat.of K K) n p m h' u)
+  let eY := Y.singularKroneckerEquivOfProjectiveHomology (ModuleCat.of K K) M p
+  let eP := P.singularKroneckerEquivOfProjectiveHomology (ModuleCat.of K K) M m
+  have hcomp : ⇑(P.pullbackCup M p₀ n p m h u) =
+      ⇑eP.symm ∘ (fun ψ ↦ ((-1 : ℤ) ^ (n * p)) • ψ) ∘
+        ⇑(Linear.homCongr K T.symm (Iso.refl M)) ∘ ⇑eY := by
+    funext a
+    apply eP.injective
+    simp only [Function.comp_apply, LinearEquiv.apply_symm_apply, Linear.homCongr_apply,
+      Iso.symm_inv, Iso.refl_hom, Category.comp_id, eP, eY, T, asIso_hom,
+      TopPair.singularKroneckerEquivOfProjectiveHomology_apply,
+      TopCat.singularKroneckerEquivOfProjectiveHomology_apply]
+    have hx := congrArg (((-1 : ℤ) ^ (n * p)) • ·)
+      (P.pushforwardCap_comp_singularKronecker p₀ h' u a)
+    have hc : (-1 : ℤ) ^ (n * p) * (-1 : ℤ) ^ (n * p) = 1 := by
+      rw [← mul_pow]
+      simp
+    rw [smul_smul, hc, one_zsmul] at hx
+    exact hx.symm
+  rw [hcomp]
+  exact eP.symm.bijective.comp (((isUnit_neg_one.pow (n * p)).smul_bijective.comp
+    (Linear.homCongr K T.symm (Iso.refl M)).bijective).comp eY.bijective)
+
+end TopPair
+
+end

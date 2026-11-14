@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Cohomology.Cup.Connecting
 import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
@@ -29,25 +30,25 @@ fibre pair `(F, F ∖ {0})` (`TauCeti.prodThomPairFiberMap`) to a `K`-module gen
 `Hʳ(F, F ∖ {0}; K)` (`TauCeti.bijective_pullbackCup_prodThomPair`, bundled as
 `TauCeti.prodThomPairPullbackCupEquiv`).
 
-## Proof outline
+In `TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.Sphere`, the cohomology of a positive-rank
+product Thom pair is computed via a coordinate-dependent equivalence
+`TauCeti.prodThomPairSingularCohomologySphereEquiv` (`c ↦ δ (σ ⌣ π₀^* c)`) attached to a chosen
+linear isomorphism `e : F ≃L[ℝ] ℝᵈ⁺¹`. Upgrading that calculation to `TopPair.pullbackCup`
+(`a ↦ π^* a ⌣ u`) for an arbitrary fibrewise-generating relative class `u` and across all finite
+ranks `r ≥ 0` provides the coordinate-free local trivialization model consumed by
+`Bundle.Trivialization.bijective_pullbackCupRestrict_thomPair` in
+`TauCeti.Topology.VectorBundle.Thom.Isomorphism`, where a general vector bundle has no canonical
+fibre coordinates and the restricted global Thom class need not be pulled back from a single fibre.
 
-1. **Positive rank via the sphere bundle.** When `e : F ≃L[ℝ] ℝᵈ⁺¹`, the equivalence
-   `TauCeti.prodThomPairSingularCohomologySphereEquiv` sends `a ∈ Hᵖ(B; M)` to `δ (σ ⌣ π₀^* a)`,
-   where `σ ∈ Hᵈ(B × (F ∖ {0}); K)` is `TauCeti.prodThomPairPuncturedClass`. Graded commutativity
-   (`TopCat.singularCup_gradedComm`) and the module property of the connecting morphism
-   (`TopPair.singularCohomologyδ_singularCup`) identify `δ (σ ⌣ π₀^* a)` up to the sign
-   `(-1)^(p d + p)` with `π^* a ⌣ δ σ`, proving bijectivity for `u₀ = δ σ`. Naturality along
-   `B → PUnit` shows `u₀ = pr₂^* g₀` for a generator `g₀` of `Hᵈ⁺¹(F, F ∖ {0}; K)`, and any two
-   generators of `Hᵈ⁺¹(F, F ∖ {0}; K) ≃ₗ[K] K` differ by a unit of `K`.
-2. **Rank zero.** When `F` is zero-dimensional, `B × (F ∖ {0})` is empty, so relative cohomology
-   agrees with absolute cohomology (`TopPair.isIso_singularCohomologyπ_of_isEmpty`), `π` is an
-   isomorphism, and `pr₂^* g` acts as multiplication by a unit of `K`.
-3. **General fibrewise-generating classes.** Fix a generator `g ∈ Hʳ(F, F ∖ {0}; K)`. Surjectivity
-   of `φ ↦ π^* φ ⌣ pr₂^* g` in base degree `0` writes any `u` as `π^* φ ⌣ pr₂^* g` with
-   `φ ∈ H⁰(B; K)`. Restricting to the fibre over `b : B` gives `φ(b) • g`, so `φ(b)` is a unit of
-   `K` at every point `b`, hence `φ` is a cup-product unit in `H⁰(B; K)`
-   (`TauCeti.exists_singularCup_eq_one`). Associativity (`TopPair.singularCup_assoc`) factors the
-   map for `u` as `a ↦ a ⌣ φ` followed by the map for `pr₂^* g`.
+In positive rank, graded commutativity (`TopCat.singularCup_gradedComm`) and the module property of
+the connecting morphism (`TopPair.singularCohomologyδ_singularCup`) relate `δ (σ ⌣ π₀^* a)` to
+`TopPair.pullbackCup` for `δ σ`, while rank zero reduces via
+`TopPair.isIso_singularCohomologyπ_of_isEmpty` to absolute cohomology; arbitrary generators of
+`Hʳ(F, F ∖ {0}; K)` (`TauCeti.singularCohomologyComplSingletonFinrankEquivSelf`) then differ by a
+unit of `K` (`LinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top`), and arbitrary
+fibrewise-generating classes `u` differ from fibre pullbacks `pr₂^* g` by a pointwise-invertible
+degree-zero class on `B` (`TauCeti.bijective_singularCup_right_of_forall_isUnit`,
+`TopPair.singularCup_assoc`).
 
 ## Main definitions and results
 
@@ -76,29 +77,6 @@ universe w
 namespace TauCeti
 
 variable {K : Type w} [CommRing K]
-
-/-! ### Generators of rank-one free modules -/
-
-private lemma isUnit_of_span_eq_top {L : Type*} [AddCommGroup L] [Module K L] (e : L ≃ₗ[K] K)
-    {x : L} (hx : Submodule.span K {x} = ⊤) : IsUnit (e x) := by
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (hx.symm ▸ Submodule.mem_top (x := e.symm 1))
-  exact IsUnit.of_mul_eq_one_right c (by simpa [map_smul, smul_eq_mul] using congrArg e hc)
-
-private lemma exists_isUnit_smul_eq_of_span_eq_top {L : Type*} [AddCommGroup L] [Module K L]
-    (e : L ≃ₗ[K] K) {g g' : L} (hg : Submodule.span K {g} = ⊤)
-    (hg' : Submodule.span K {g'} = ⊤) : ∃ u : Kˣ, (u : K) • g = g' := by
-  have hu : IsUnit (e g) := isUnit_of_span_eq_top e hg
-  have hu' : IsUnit (e g') := isUnit_of_span_eq_top e hg'
-  refine ⟨hu'.unit * hu.unit⁻¹, e.injective ?_⟩
-  simp [map_smul, smul_eq_mul, mul_assoc]
-
-private lemma bijective_units_smul {L₁ L₂ : Type*} [AddCommGroup L₁] [Module K L₁]
-    [AddCommGroup L₂] [Module K L₂] (u : Kˣ) {f : L₁ →ₗ[K] L₂} (hf : Function.Bijective f) :
-    Function.Bijective ((u : K) • f) := by
-  have hperm : Function.Bijective (fun y : L₂ ↦ (u : K) • y) :=
-    ⟨fun x y h ↦ by simpa [smul_smul] using congrArg ((↑u⁻¹ : K) • ·) h,
-      fun y ↦ ⟨(↑u⁻¹ : K) • y, by simp [smul_smul]⟩⟩
-  exact hperm.comp hf
 
 /-! ### Positive rank via the punctured sphere bundle -/
 
@@ -141,20 +119,15 @@ private theorem bijective_pullbackCup_singularCohomologyδ_puncturedClass
       ((prodThomPair B F).pullbackCup M (prodThomPairProj B F) (d + 1) p m h
         (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K
           (𝟙_ (ModuleCat.{w} K)) d (d + 1) rfl (prodThomPairPuncturedClass K B e)))) := by
-  let z : ℤ := (-1) ^ (p * d + p)
-  have hz : z * z = 1 := by
-    dsimp [z]
-    rw [← mul_pow]
-    norm_num
-  have hinv : Function.Bijective (fun y : (prodThomPair B F).singularCohomology
-      (ModuleCat.of K K) K M m ↦ z • y) :=
-    Function.Involutive.bijective fun y ↦ by rw [smul_smul, hz, one_smul]
-  have heq : (fun y ↦ z • y) ∘ ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F)
-      (d + 1) p m h (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K
-        (𝟙_ (ModuleCat.{w} K)) d (d + 1) rfl (prodThomPairPuncturedClass K B e)))) =
+  have heq : (fun y : (prodThomPair B F).singularCohomology (ModuleCat.of K K) K M m ↦
+      ((-1 : ℤ) ^ (p * d + p)) • y) ∘ ⇑((prodThomPair B F).pullbackCup M
+        (prodThomPairProj B F) (d + 1) p m h (((prodThomPair B F).singularCohomologyδ
+          (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) d (d + 1) rfl
+          (prodThomPairPuncturedClass K B e)))) =
       ⇑(prodThomPairSingularCohomologySphereEquiv M B e p m h) :=
     funext fun c ↦ (prodThomPairSingularCohomologySphereEquiv_eq_sign_pullbackCup M e p m h c).symm
-  exact (Function.Bijective.of_comp_iff' hinv _).1
+  exact (Function.Bijective.of_comp_iff'
+    ((isUnit_neg_one (α := ℤ)).pow (p * d + p)).smul_bijective _).1
     (heq ▸ (prodThomPairSingularCohomologySphereEquiv M B e p m h).bijective)
 
 private theorem exists_span_eq_top_and_pullback_eq_singularCohomologyδ_puncturedClass
@@ -174,30 +147,18 @@ private theorem exists_span_eq_top_and_pullback_eq_singularCohomologyδ_puncture
     TopPair.singularCohomologyMap (complZeroPairIsoProdThomPair F).hom (d + 1) u_pt
   have hspan_one : Submodule.span K
       {(TopCat.of PUnit.{w + 1}).singularCohomologyZeroOne (k := K)} = ⊤ :=
-    Submodule.eq_top_iff'.2 fun x ↦ Submodule.mem_span_singleton.2
-      ⟨singularCohomologyZeroEval PUnit.unit x,
-        (eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne PUnit.unit x).symm⟩
-  have hu_pt_eq : (prodThomPairSingularCohomologySphereEquiv (𝟙_ (ModuleCat.{w} K)) PUnit.{w + 1}
-      e 0 (d + 1)) ((TopCat.of PUnit.{w + 1}).singularCohomologyZeroOne (k := K)) = u_pt := by
+    (singularCohomologyZeroEvalEquiv (X := TopCat.of PUnit.{w + 1}) PUnit.unit
+      ).span_singleton_eq_top_iff_isUnit.2 (by simp)
+  let E₁ := prodThomPairSingularCohomologySphereEquiv (𝟙_ (ModuleCat.{w} K)) PUnit.{w + 1}
+    e 0 (d + 1)
+  have hu_pt_eq : E₁ ((TopCat.of PUnit.{w + 1}).singularCohomologyZeroOne (k := K)) = u_pt := by
     rw [TopCat.singularCohomologyZeroOne_def]
     exact prodThomPairSingularCohomologySphereEquiv_homologyπ_constSingularCocycle e
-  have hspan_g₀ : Submodule.span K {g₀} = ⊤ := by
-    refine Submodule.eq_top_iff'.2 fun y ↦ ?_
-    let E₁ := prodThomPairSingularCohomologySphereEquiv (𝟙_ (ModuleCat.{w} K)) PUnit.{w + 1}
-      e 0 (d + 1)
-    let y' := TopPair.singularCohomologyMap (complZeroPairIsoProdThomPair F).inv (d + 1) y
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1
-      (hspan_one.symm ▸ Submodule.mem_top (x := E₁.symm y'))
-    refine Submodule.mem_span_singleton.2 ⟨c, ?_⟩
-    have hc' : c • u_pt = y' := by
-      simpa [E₁, map_smul, hu_pt_eq] using congrArg E₁ hc
-    have hy :
-        TopPair.singularCohomologyMap (complZeroPairIsoProdThomPair F).hom (d + 1) y' = y := by
-      simp [y', ← TopPair.singularCohomologyMap_comp_apply]
-    exact (map_smul
-      (TopPair.singularCohomologyMap (complZeroPairIsoProdThomPair F).hom (d + 1)).hom c
-      u_pt).symm.trans ((congrArg
-        (TopPair.singularCohomologyMap (complZeroPairIsoProdThomPair F).hom (d + 1)) hc').trans hy)
+  let e₀ := ((TopPair.singularCohomologyFunctor (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
+    (d + 1)).mapIso (complZeroPairIsoProdThomPair F).op).toLinearEquiv
+  have hspan_g₀ : Submodule.span K {g₀} = ⊤ :=
+    (e₀.span_singleton_apply_eq_top_iff (x := u_pt)).2
+      (hu_pt_eq ▸ E₁.span_singleton_apply_eq_top_iff.2 hspan_one)
   have hg₀_pull : TopPair.singularCohomologyMap (prodThomPairSnd B F) (d + 1) g₀ =
       ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K
         (𝟙_ (ModuleCat.{w} K)) d (d + 1) rfl (prodThomPairPuncturedClass K B e)) := by
@@ -235,9 +196,10 @@ private theorem bijective_pullbackCup_prodThomPair_snd_of_equiv
       (OpenPartialHomeomorph.refl F) (x := (0 : F)) (by simp) :
       (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
         (ModuleCat.of K K) K (ModuleCat.of K K) (d + 1) ≃ₗ[K] ModuleCat.of K K)
-  obtain ⟨c, rfl⟩ := exists_isUnit_smul_eq_of_span_eq_top e_loc hspan_g₀' hg
-  rw [map_smul, map_smul, hg₀'_pull]
-  exact bijective_units_smul c (bijective_pullbackCup_singularCohomologyδ_puncturedClass M e p m h)
+  obtain ⟨c, rfl⟩ := e_loc.exists_units_smul_eq_of_span_singleton_eq_top hspan_g₀' hg
+  rw [map_smul, map_smul, hg₀'_pull, LinearMap.coe_smul, Pi.smul_def]
+  exact c.isUnit.smul_bijective.comp
+    (bijective_pullbackCup_singularCohomologyδ_puncturedClass M e p m h)
 
 end PositiveRank
 
@@ -261,30 +223,19 @@ private theorem bijective_pullbackCup_prodThomPair_snd_of_subsingleton [Subsingl
   have : IsEmpty (prodThomPair B F).snd := ⟨fun p ↦ p.2 (Subsingleton.elim p.1.2 0)⟩
   have : IsEmpty PF.snd := ⟨fun q ↦ q.2 (Subsingleton.elim q.1 0)⟩
   have : PathConnectedSpace ↥PF.fst := inferInstanceAs (PathConnectedSpace F)
-  let z₀ : ↥PF.fst := (0 : F)
   let π_B := (prodThomPair B F).singularCohomologyπ (ModuleCat.of K K) K M p
   let π_F := PF.singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0
-  let s : TopCat.of B ⟶ (prodThomPair B F).fst :=
-    ConcreteCategory.ofHom (C := TopCat.{w}) ⟨fun b ↦ (b, (0 : F)), by fun_prop⟩
   have hproj_iso : IsIso (prodThomPairProj B F) :=
-    ⟨s,
+    ⟨ConcreteCategory.ofHom (C := TopCat.{w}) ⟨fun b ↦ (b, (0 : F)), by fun_prop⟩,
       TopCat.ext fun p ↦ Prod.ext (prodThomPairProj_apply F p) (Subsingleton.elim 0 p.2),
       TopCat.ext fun b ↦ prodThomPairProj_apply F (b, 0)⟩
   -- Identify `π_F g ∈ H⁰(F; K)` with `c • 1` for a unit `c : Kˣ`.
-  let ev_F : PF.fst.singularCohomology (𝟙_ (ModuleCat.{w} K)) K
-      (𝟙_ (ModuleCat.{w} K)) 0 ≃ₗ[K] K :=
-    LinearEquiv.ofLinearMap
-      (f := singularCohomologyZeroEval z₀)
-      (g := LinearMap.toSpanSingleton K _ (PF.fst.singularCohomologyZeroOne (k := K)))
-      (LinearMap.ext fun c ↦ by simp)
-      (LinearMap.ext fun x ↦ by
-        dsimp
-        exact (eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne z₀ x).symm)
-  let e_F := (asIso π_F).toLinearEquiv.trans ev_F
-  have hc : IsUnit (e_F g) := isUnit_of_span_eq_top e_F hg
+  let e_F := (asIso π_F).toLinearEquiv.trans
+    (singularCohomologyZeroEvalEquiv (X := PF.fst) (0 : F))
+  have hc : IsUnit (e_F g) := e_F.span_singleton_eq_top_iff_isUnit.1 hg
   have hπF_g : π_F g = (hc.unit : K) • PF.fst.singularCohomologyZeroOne (k := K) := by
-    rw [hc.unit_spec]
-    exact eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne z₀ (π_F g)
+    rw [← singularCohomologyZeroEvalEquiv_symm_apply (X := PF.fst) (0 : F), hc.unit_spec]
+    exact ((singularCohomologyZeroEvalEquiv (X := PF.fst) (0 : F)).symm_apply_apply (π_F g)).symm
   have hπB_pull : (prodThomPair B F).singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K
       (𝟙_ (ModuleCat.{w} K)) 0 (TopPair.singularCohomologyMap (prodThomPairSnd B F) 0 g) =
       (hc.unit : K) • ((prodThomPair B F).fst).singularCohomologyZeroOne (k := K) := by
@@ -296,13 +247,13 @@ private theorem bijective_pullbackCup_prodThomPair_snd_of_subsingleton [Subsingl
   -- Compose `pullbackCup` with the isomorphism `π_B : Hᵖ(B × F, ∅; M) ≅ Hᵖ(B × F; M)`.
   have hcomp : ⇑π_B ∘ ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) 0 p p h
       (TopPair.singularCohomologyMap (prodThomPairSnd B F) 0 g)) =
-      ⇑((hc.unit : K) • (TopCat.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
-        (M := M) (prodThomPairProj B F) p).hom) := by
+      (fun y ↦ (hc.unit : K) • y) ∘ ⇑(TopCat.singularCohomologyMap (R := ModuleCat.of K K) (k := K)
+        (M := M) (prodThomPairProj B F) p).hom := by
     funext a
     dsimp only [Function.comp_apply]
     rw [TopPair.pullbackCup_apply, TopPair.singularCohomologyπ_singularCup]
-    refine Eq.trans (congrArg _ hπB_pull) ?_
-    rw [map_smul, LinearMap.smul_apply, TopCat.singularCohomologyZeroOne_def]
+    refine (congrArg _ hπB_pull).trans ?_
+    rw [map_smul, TopCat.singularCohomologyZeroOne_def]
     exact congrArg ((hc.unit : K) • ·)
       (TopCat.singularCup_constSingularCocycle_right _ K (η := 𝟙 _)
         (by monoidal) (by monoidal) h _)
@@ -311,9 +262,8 @@ private theorem bijective_pullbackCup_prodThomPair_snd_of_subsingleton [Subsingl
         (prodThomPairProj B F) p).hom :=
     ((singularCohomologyFunctor (ModuleCat.of K K) K M p).mapIso
       (asIso (prodThomPairProj B F)).op).toLinearEquiv.bijective
-  have hbij_πB : Function.Bijective π_B := (asIso π_B).toLinearEquiv.bijective
-  exact (Function.Bijective.of_comp_iff' hbij_πB _).1
-    (hcomp ▸ bijective_units_smul hc.unit hbij_proj)
+  exact (Function.Bijective.of_comp_iff' (asIso π_B).toLinearEquiv.bijective _).1
+    (hcomp ▸ hc.unit.isUnit.smul_bijective.comp hbij_proj)
 
 end RankZero
 
@@ -349,40 +299,41 @@ theorem bijective_pullbackCup_prodThomPair_snd (p m : ℕ) (h : p + finrank ℝ 
         (TopPair.singularCohomologyMap (prodThomPairSnd B F) (finrank ℝ F) g)) :=
   bijective_pullbackCup_prodThomPair_snd_aux M (finrank ℝ F) p m rfl h hg
 
-private theorem bijective_singularCup_right_of_forall_isUnit (p : ℕ)
-    {φ : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0}
-    (hφ : ∀ b : B, IsUnit (singularCohomologyZeroEval b φ)) :
-    Function.Bijective (fun a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p ↦
-      (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p
-        (add_zero p) a φ) := by
-  obtain ⟨ψ, hφψ, hψφ⟩ := exists_singularCup_eq_one φ hφ
-  let rcup (θ : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} K)) K
-      (𝟙_ (ModuleCat.{w} K)) 0)
-      (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
-      (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p :=
-    (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p (add_zero p) a θ
-  have hrcup_comp (θ₁ θ₂ : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} K)) K
-      (𝟙_ (ModuleCat.{w} K)) 0)
-      (hθ : (TopCat.of B).singularCup K (λ_ _).inv (λ_ _).hom 0 0 0 rfl θ₁ θ₂ =
-        (TopCat.of B).singularCohomologyZeroOne)
-      (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
-      rcup θ₂ (rcup θ₁ a) = a := by
-    dsimp [rcup]
-    calc (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p (add_zero p)
-          ((TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p
-            (add_zero p) a θ₁) θ₂
-      _ = (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p
-            (add_zero p) a
-            ((TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv
-              (λ_ (𝟙_ (ModuleCat.{w} K))).hom 0 0 0 rfl θ₁ θ₂) :=
-        (TopCat.of B).singularCup_assoc K (by monoidal) (by monoidal)
-          (add_zero p) (add_zero p) rfl (add_zero p) a θ₁ θ₂
-      _ = a := by
-        rw [hθ, TopCat.singularCohomologyZeroOne_def]
-        exact (TopCat.of B).singularCup_constSingularCocycle_right K (η := 𝟙 _)
-          (by monoidal) (by monoidal) (add_zero p) a
-  exact ⟨Function.LeftInverse.injective (hrcup_comp φ ψ hφψ),
-    Function.RightInverse.surjective (hrcup_comp ψ φ hψφ)⟩
+omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] in
+/-- Restricting `π^* φ ⌣ pr₂^* g` (`φ ∈ H⁰(B; K)`) to the fibre pair over `b : B` yields
+`φ(b) • g`. -/
+private theorem singularCohomologyMap_prodThomPairFiberMap_pullbackCup_snd_zero
+    (b : B) {r : ℕ} (h : 0 + r = r)
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
+      (ModuleCat.of K K) K (ModuleCat.of K K) r)
+    (φ : (TopCat.of B).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) 0) :
+    TopPair.singularCohomologyMap (prodThomPairFiberMap F b) r
+        ((prodThomPair B F).pullbackCup (ModuleCat.of K K) (prodThomPairProj B F) r 0 r h
+          (TopPair.singularCohomologyMap (prodThomPairSnd B F) r g) φ) =
+      singularCohomologyZeroEval b φ • g := by
+  let PF := TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)
+  have hfib_proj : TopPair.Hom.fst (prodThomPairFiberMap F b) ≫ prodThomPairProj B F =
+      TopCat.const (X := PF.fst) b ≫ 𝟙 (TopCat.of B) := by
+    rw [Category.comp_id]
+    exact TopCat.ext fun x ↦
+      (congrArg (prodThomPairProj B F) (prodThomPairFiberMap_fst_apply F b x)).trans
+        ((prodThomPairProj_apply F (b, x)).trans
+          (TopCat.const_apply (X := PF.fst) (Y := TopCat.of B) b x).symm)
+  have hfib := TopPair.pullbackCup_naturality (prodThomPairFiberMap F b)
+    (TopCat.const (X := PF.fst) b) (prodThomPairProj B F) (𝟙 (TopCat.of B)) hfib_proj h
+    (TopPair.singularCohomologyMap (prodThomPairSnd B F) r g) φ
+  have hug_fib : TopPair.singularCohomologyMap (prodThomPairFiberMap F b) r
+      (TopPair.singularCohomologyMap (prodThomPairSnd B F) r g) = g := by
+    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
+      prodThomPairFiberMap_comp_prodThomPairSnd, TopPair.singularCohomologyMap_id,
+      ConcreteCategory.id_apply]
+  rw [TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply] at hfib
+  rw [← hfib, hug_fib, TopPair.pullbackCup_apply,
+    singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul, map_smul,
+    LinearMap.smul_apply, TopCat.singularCohomologyZeroOne_def]
+  exact congrArg (singularCohomologyZeroEval b φ • ·)
+    (TopPair.singularCup_constSingularCocycle_left K _ (η := 𝟙 _)
+      (by monoidal) (by monoidal) h g)
 
 /-- **The Thom isomorphism for a product bundle.** Let `F` be a finite-dimensional real normed
 space of dimension `r = finrank ℝ F`, and let `u ∈ Hʳ(B × F, B × (F ∖ {0}); K)` restrict on every
@@ -400,42 +351,19 @@ theorem bijective_pullbackCup_prodThomPair (p m : ℕ) (h : p + finrank ℝ F = 
   obtain ⟨g, hg⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
     (OpenPartialHomeomorph.refl F) (x := (0 : F)) (by simp)
   let ug := TopPair.singularCohomologyMap (prodThomPairSnd B F) (finrank ℝ F) g
+  -- Write `u = π^* φ ⌣ pr₂^* g` for some `φ ∈ H⁰(B; K)` using base degree `0`.
   obtain ⟨φ, hφ⟩ := (bijective_pullbackCup_prodThomPair_snd (ModuleCat.of K K) 0 (finrank ℝ F)
     (zero_add _) hg).2 u
-  have hφ_unit : ∀ b : B, IsUnit (singularCohomologyZeroEval b φ) := by
-    intro b
-    let PF := TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)
-    have hfib_proj : TopPair.Hom.fst (prodThomPairFiberMap F b) ≫ prodThomPairProj B F =
-        TopCat.const (X := PF.fst) b ≫ 𝟙 (TopCat.of B) := by
-      rw [Category.comp_id]
-      exact TopCat.ext fun x ↦
-        (congrArg (prodThomPairProj B F) (prodThomPairFiberMap_fst_apply F b x)).trans
-          ((prodThomPairProj_apply F (b, x)).trans
-            (TopCat.const_apply (X := PF.fst) (Y := TopCat.of B) b x).symm)
-    have hfib := TopPair.pullbackCup_naturality (prodThomPairFiberMap F b)
-      (TopCat.const (X := PF.fst) b) (prodThomPairProj B F) (𝟙 (TopCat.of B)) hfib_proj
-      (zero_add (finrank ℝ F)) ug φ
-    rw [TopCat.singularCohomologyMap_id, ConcreteCategory.id_apply, hφ] at hfib
-    have hug_fib :
-        TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F) ug = g := by
-      dsimp [ug]
-      rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
-        prodThomPairFiberMap_comp_prodThomPairSnd, TopPair.singularCohomologyMap_id,
-        ConcreteCategory.id_apply]
-    have hval : TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F) u =
-        singularCohomologyZeroEval b φ • g := by
-      rw [← hfib, hug_fib, TopPair.pullbackCup_apply,
-        singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul, map_smul,
-        LinearMap.smul_apply, TopCat.singularCohomologyZeroOne_def]
-      exact congrArg (singularCohomologyZeroEval b φ • ·)
-        (TopPair.singularCup_constSingularCocycle_left K _ (η := 𝟙 _)
-          (by monoidal) (by monoidal) (zero_add _) g)
-    let e_loc := singularCohomologyComplSingletonFinrankEquivSelf (ModuleCat.of K K)
-      (OpenPartialHomeomorph.refl F) (x := (0 : F)) (by simp)
-    have htop : Submodule.span K {singularCohomologyZeroEval b φ • g} = ⊤ := hval ▸ hu b
+  let e_loc := singularCohomologyComplSingletonFinrankEquivSelf (ModuleCat.of K K)
+    (OpenPartialHomeomorph.refl F) (x := (0 : F)) (by simp)
+  -- Restricting to the fibre over `b` shows `φ(b) • g` spans `Hʳ(F, F ∖ {0}; K)`, so `φ(b) ∈ Kˣ`.
+  have hφ_unit (b : B) : IsUnit (singularCohomologyZeroEval b φ) := by
+    have htop := hu b
+    rw [← hφ, singularCohomologyMap_prodThomPairFiberMap_pullbackCup_snd_zero] at htop
     have hprod : IsUnit (singularCohomologyZeroEval b φ * (e_loc g : K)) := by
-      simpa [map_smul, smul_eq_mul] using isUnit_of_span_eq_top e_loc htop
+      simpa [map_smul, smul_eq_mul] using e_loc.span_singleton_eq_top_iff_isUnit.1 htop
     exact isUnit_of_mul_isUnit_left hprod
+  -- Factor `a ↦ π^* a ⌣ u` as `a ↦ a ⌣ φ` followed by `a ↦ π^* a ⌣ pr₂^* g`.
   have hfac : ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) (finrank ℝ F) p m h u) =
       ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) (finrank ℝ F) p m h ug) ∘
         fun a ↦ (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p 0 p

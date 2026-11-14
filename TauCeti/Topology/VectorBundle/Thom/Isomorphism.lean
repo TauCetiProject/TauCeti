@@ -8,8 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pullback
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.PullbackCup
-import TauCeti.AlgebraicTopology.Cohomology.Point
 import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair.PullbackCup
 import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
 
@@ -199,6 +199,20 @@ theorem thomMap_eq_pullbackCup_proj {n p m : ℕ} (h : p + n = m)
         (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩) n p m h u :=
   congrArg (fun g ↦ (thomPair F E).pullbackCup M g n p m h u) (thomPairProj_def F E)
 
+/-- `TopCat.pullbackCupRestrict` of the bundle projection over `W` is `TopPair.pullbackCup` on
+`TauCeti.thomPairOver F E W` along `TauCeti.thomPairOverProj F E W`. -/
+theorem pullbackCupRestrict_thomPair (W : Set B) {n p m : ℕ} (h : p + n = m)
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    TopCat.pullbackCupRestrict (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
+        (zeroSectionCompl F E) M W n p m h u =
+      (thomPairOver F E W).pullbackCup M (thomPairOverProj F E W) n p m h
+        (TopPair.singularCohomologyMap
+          (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+            (zeroSectionCompl F E) W) n u) := by
+  rw [thomPairOverProj_def]
+  exact TopCat.pullbackCupRestrict_apply
+    (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩) (zeroSectionCompl F E) M W h u
+
 end TauCeti
 
 namespace Bundle.Trivialization
@@ -224,26 +238,21 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
     Function.Bijective
       (TopCat.pullbackCupRestrict (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
         (zeroSectionCompl F E) M W (finrank ℝ F) p m h u) := by
-  rw [TopCat.pullbackCupRestrict_apply]
-  let π₀ : TopCat.of (TotalSpace F E) ⟶ TopCat.of B :=
-    TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩
+  rw [pullbackCupRestrict_thomPair]
+  set u_W := TopPair.singularCohomologyMap
+    (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+      (zeroSectionCompl F E) W) (finrank ℝ F) u
   let φ := e.thomPairOverIso ℝ hW
-  let u_W : (thomPairOver F E W).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
-      (finrank ℝ F) :=
-    TopPair.singularCohomologyMap (TopCat.restrictPreimagePairMap π₀ (zeroSectionCompl F E) W)
-      (finrank ℝ F) u
   let u_prod := TopPair.singularCohomologyMap φ.inv (finrank ℝ F) u_W
   have hu_W : TopPair.singularCohomologyMap φ.hom (finrank ℝ F) u_prod = u_W := by
     simp [u_prod, ← TopPair.singularCohomologyMap_comp_apply]
   have hproj : TopPair.Hom.fst φ.hom ≫ prodThomPairProj W F =
-      TopCat.ofHom (π₀.hom.restrictPreimage W) ≫ 𝟙 (TopCat.of W) := by
+      thomPairOverProj F E W ≫ 𝟙 (TopCat.of W) := by
     rw [Category.comp_id]
-    refine TopCat.ext fun v ↦ Subtype.ext ?_
-    exact congrArg Subtype.val
-      ((congrArg (prodThomPairProj W F) (e.thomPairOverIso_hom_fst_apply ℝ hW v)).trans
-        (prodThomPairProj_apply F _))
-  change Function.Bijective ((thomPairOver F E W).pullbackCup M
-    (TopCat.ofHom (π₀.hom.restrictPreimage W)) (finrank ℝ F) p m h u_W)
+    refine TopCat.ext fun v ↦ ?_
+    rw [TopCat.comp_app]
+    exact (congrArg (prodThomPairProj W F) (e.thomPairOverIso_hom_fst_apply ℝ hW v)).trans
+      ((prodThomPairProj_apply F _).trans (thomPairOverProj_apply F E v).symm)
   rw [← hu_W, TopPair.bijective_pullbackCup_iff_of_isIso φ.hom (𝟙 (TopCat.of W)) hproj h u_prod]
   -- Transport the fibrewise generator condition to the product bundle `W × F`.
   refine bijective_pullbackCup_prodThomPair M p m h fun b ↦ ?_
@@ -262,24 +271,16 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
       TopPair.singularCohomologyMap
         (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.inv (finrank ℝ F)
         (TopPair.singularCohomologyMap (fiberThomPairMap F E b.1) (finrank ℝ F) u) := by
-    change TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F)
-        (TopPair.singularCohomologyMap φ.inv (finrank ℝ F)
-          (TopPair.singularCohomologyMap
-            (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
-              (zeroSectionCompl F E) W) (finrank ℝ F) u)) = _
+    dsimp only [u_prod, u_W]
     rw [← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply,
       Category.assoc, hfib, TopPair.singularCohomologyMap_comp_apply]
-  let ψ := (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.symm
-  let e_b : (TopPair.ofSubset (X := TopCat.of (E b.1)) ({0}ᶜ : Set (E b.1))).singularCohomology
-      (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F) ≃ₗ[K]
-      (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology
-        (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F) :=
-    ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
-      (finrank ℝ F)).mapIso ψ.op).toLinearEquiv
-  have hspan := (Submodule.map_eq_top_iff (e := e_b)).2 (hu b.1 b.2)
-  rw [← Submodule.span_image_linearEquiv e_b, Set.image_singleton] at hspan
+  let e_b := ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
+    (finrank ℝ F)).mapIso
+      (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.symm.op).toLinearEquiv
   rw [hu_prod]
-  exact hspan
+  exact (e_b.span_singleton_apply_eq_top_iff
+    (x := TopPair.singularCohomologyMap (fiberThomPairMap F E b.1) (finrank ℝ F) u)).2
+    (hu b.1 b.2)
 
 /-- **The Thom isomorphism for a globally trivializable bundle.** If `e` is an `ℝ`-linear
 trivialization of `E` over the whole base and `u` is a Thom class of `E`, then the Thom map
@@ -322,22 +323,6 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
 
-omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] in
-private theorem bijective_pullbackCupRestrict_thomPair_empty {n p m : ℕ} (h : p + n = m)
-    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
-    Function.Bijective
-      (TopCat.pullbackCupRestrict (TopCat.ofHom ⟨π F E, FiberBundle.continuous_proj F E⟩)
-        (zeroSectionCompl F E) M (∅ : Set B) n p m h u) := by
-  have : Subsingleton ((TopCat.of (∅ : Set B)).singularCohomology (ModuleCat.of K K) K M p) :=
-    ModuleCat.subsingleton_of_isZero
-      (isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M (TopCat.of (∅ : Set B)) p)
-  have hzero : IsZero ((thomPairOver F E ∅).singularCohomology (ModuleCat.of K K) K M m) :=
-    TopPair.isZero_singularCohomology_of_isZero_singularHomology _ (ModuleCat.of K K) M m
-      fun j _ ↦ isZero_singularHomology_thomPairOver_empty (ModuleCat.of K K) j
-  have : Subsingleton ((thomPairOver F E ∅).singularCohomology (ModuleCat.of K K) K M m) :=
-    ModuleCat.subsingleton_of_isZero hzero
-  exact ⟨fun x y _ ↦ Subsingleton.elim x y, fun y ↦ ⟨0, Subsingleton.elim _ y⟩⟩
-
 /-- **Thom isomorphism over a finite union of trivializing open sets.** Let `W i`, `i ∈ s`, be
 finitely many open subsets of `B`, each contained in the base set of an `ℝ`-linear trivialization of
 `E`. If `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`) restricts to a generator on every fibre over the
@@ -358,7 +343,7 @@ theorem bijective_pullbackCupRestrict_thomPair_biUnion [FiniteDimensional ℝ F]
   | empty =>
     have h_empty : (⋃ i ∈ (∅ : Finset ι), W i) = ∅ := by simp
     rw [h_empty]
-    exact bijective_pullbackCupRestrict_thomPair_empty M h u
+    exact TopCat.bijective_pullbackCupRestrict_empty _ _ M h u
   | insert a s _ ih =>
     rw [Finset.set_biUnion_insert]
     have ha : a ∈ insert a s := Finset.mem_insert_self a s

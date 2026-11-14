@@ -59,8 +59,8 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
   `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
 * `TauCeti.thomPairMapOfNeZero`: a continuous map `f : X → E` taking nonzero values off a set `S`,
   as a map of pairs `(X, X ∖ S) ⟶ (E, E₀)`.
-* `TauCeti.thomPairProj`: the projection of the total space to the base, as a morphism of
-  topological spaces out of the ambient space of the Thom pair.
+* `TauCeti.thomPairProj`, `TauCeti.thomPairOverProj`: the projection of the total space to the base,
+  and its restriction over `W ⊆ B`, as morphisms out of the ambient spaces of the Thom pairs.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.zeroSectionHomotopy`: the straight-line homotopy `t • s` from the zero section to a
   continuous section `s`.
@@ -331,6 +331,26 @@ theorem fiberThomPairMap_fst_comp_thomPairProj (b : B) :
     TopPair.Hom.fst (fiberThomPairMap F E b) ≫ thomPairProj F E =
       TopCat.ofHom (ContinuousMap.const _ b) :=
   TopCat.ext fun x ↦ congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x)
+
+/-- The projection `E|_W ⟶ W` of a fibre bundle restricted to a subset `W` of its base, as a
+morphism of topological spaces out of the ambient space of `TauCeti.thomPairOver`. -/
+def thomPairOverProj (W : Set B) : (thomPairOver F E W).fst ⟶ TopCat.of W :=
+  TopCat.ofHom
+    ((⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).restrictPreimage W)
+
+/-- `TauCeti.thomPairOverProj` is the preimage restriction of the bundle projection `π F E`,
+matching the projection used in `TopCat.pullbackCupRestrict`. -/
+theorem thomPairOverProj_def (W : Set B) :
+    thomPairOverProj F E W =
+      TopCat.ofHom
+        ((⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).restrictPreimage W) :=
+  (rfl)
+
+/-- Evaluating `TauCeti.thomPairOverProj` returns the base projection as a point of `W`. -/
+@[simp]
+theorem thomPairOverProj_apply {W : Set B} (v : (thomPairOver F E W).fst) :
+    thomPairOverProj F E W v = ⟨v.1.proj, v.2⟩ :=
+  (rfl)
 
 /-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
 Thom pair of the restriction to `W`. -/
