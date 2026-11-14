@@ -107,7 +107,7 @@ private lemma eq_of_bot_orbitRel {x y : X}
   exact hsmul.symm
 
 /-- Quotienting a group action by the trivial subgroup gives back the original space. -/
-noncomputable def MulAction.orbitRelQuotientBotEquiv :
+def MulAction.orbitRelQuotientBotEquiv :
     MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X :=
   { toFun := Quotient.lift (fun x : X => x) fun _ _ h => eq_of_bot_orbitRel h
     invFun := Quotient.mk''
@@ -457,7 +457,7 @@ lemma MulAction.normalizerOrbitRelQuotientEquiv_symm_apply (H : Subgroup G)
   by simp [MulAction.normalizerOrbitRelQuotientEquiv]
 
 /-- The normalizer action on the orbit quotient as a permutation representation. -/
-noncomputable def MulAction.normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
+def MulAction.normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
     Subgroup.normalizer (H : Set G) →*
       Equiv.Perm (MulAction.orbitRel.Quotient H X) where
   toFun := MulAction.normalizerOrbitRelQuotientEquiv H
@@ -499,7 +499,7 @@ lemma MulAction.normalizerOrbitRelQuotientPermHom_eq_one_of_mem
   exact Quotient.sound' ⟨⟨(g : G), hg⟩, rfl⟩
 
 /-- The action of the normalizer on an orbit quotient descends to `N(H) / H`. -/
-noncomputable def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
+def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
     Subgroup.normalizerQuotient H →*
       Equiv.Perm (MulAction.orbitRel.Quotient H X) :=
   Subgroup.normalizerQuotientLift H (MulAction.normalizerOrbitRelQuotientPermHom (X := X) H)
@@ -517,7 +517,7 @@ lemma MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup
 
 /-- The normalizer quotient `N(H) / H` acts on the quotient by `H`-orbits. -/
 @[implicit_reducible]
-noncomputable def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
+def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
     MulAction (Subgroup.normalizerQuotient H) (MulAction.orbitRel.Quotient H X) :=
   MulAction.compHom (MulAction.orbitRel.Quotient H X)
     (MulAction.normalizerQuotientOrbitRelQuotientPermHom (X := X) H)
