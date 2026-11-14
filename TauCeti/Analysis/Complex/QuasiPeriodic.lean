@@ -53,6 +53,18 @@ is the input which forces the coefficients `b_j ∈ H⁰(C, N ^ j)`, `1 ≤ j �
 holomorphic curve in the total space of `N` covering `C` with degree `m` to vanish, so that the
 curve lies on the zero section; that application is not formalized here.
 
+For a lattice in `ℂ` with a basis `ω₁, ω₂`, `TauCeti.Analysis.Complex.Wirtinger.FlatTorus` proves
+the quantitative counterpart: an `L²` coercivity estimate for `∂bar` on `C²` sections over the
+fundamental parallelogram, with a positive constant on every power and on every finite cover
+given by an integer change of basis of nonzero determinant, namely
+`TauCeti.exists_pos_mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq_of_irrational`
+(using `TauCeti.notMem_range_intCast_or_notMem_range_intCast_of_irrational`). That estimate is what
+a bounded inverse of `∂bar` needs. The statements here are the qualitative form used for the
+coefficients `b_j` above, which are entire quasi-periodic maps: they apply to entire maps
+directly, without a fundamental-domain integral, on a torus of any dimension, for any subgroup of
+finite index and any holonomy of infinite order, and they come with the converse for the trivial
+line.
+
 ## Main results
 
 * `Differentiable.apply_eq_apply_of_norm_add_eq`: an entire map whose norm is invariant under
