@@ -11,12 +11,13 @@ import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Progressive measurability of right-continuous adapted processes
+# Progressive measurability and right-continuous adapted processes
 
 A strongly adapted process in nonnegative real time with everywhere right-continuous paths is
 strongly progressive, on its original filtration. No completeness or right continuity of the
 filtration is required. In particular, the result applies to adapted càdlàg processes and permits
-use of the progressive stopped-evaluation API.
+use of the progressive stopped-evaluation API. Restricting a strongly progressive process to
+an event known at the initial time also preserves strong progressivity.
 
 On each fixed horizon, right-endpoint samples are capped at that horizon. These approximations
 are measurable for the horizon's product sigma algebra; they need not be adapted at earlier
@@ -32,6 +33,17 @@ public section
 
 open MeasureTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
+
+/-- Restricting a strongly progressive process to an initial-measurable event preserves
+strong progressivity. No topology on the time index is needed. -/
+theorem MeasureTheory.IsStronglyProgressive.indicator
+    {ι Ω E : Type*} [Preorder ι] [OrderBot ι] {m : MeasurableSpace Ω}
+    [MeasurableSpace ι] [TopologicalSpace E] [Zero E]
+    {ℱ : Filtration ι m} {X : ι → Ω → E} {A : Set Ω}
+    (hX : IsStronglyProgressive ℱ X) (hA : MeasurableSet[ℱ ⊥] A) :
+    IsStronglyProgressive ℱ (fun t ↦ A.indicator (X t)) := by
+  intro T
+  exact (hX T).indicator ((ℱ.mono bot_le _ hA).preimage measurable_snd)
 
 private noncomputable def rightSample (n : ℕ) (t : ℝ≥0) : ℝ≥0 :=
   (⌈(t : ℝ) * (n + 1)⌉₊ : ℝ≥0) / (n + 1)

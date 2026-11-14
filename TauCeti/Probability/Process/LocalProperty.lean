@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
-import TauCeti.Probability.Process.Stopping
+public import TauCeti.Probability.Process.Progressive
+public import TauCeti.Probability.Process.Stopping
 
 /-!
 # Adapted representatives of local processes and filtration enlargement
@@ -35,6 +36,9 @@ Cutting localizing times off at the initial time outside increasing, exhausting 
 preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
 indicator-restricted stopped stages suffice to establish any local property
 (`ProbabilityTheory.IsLocalizingSequence.locally_of_indicator`).
+
+For progressive processes with almost-surely continuous paths, adding these regularity
+requirements to any local property does not change locality: the same localizers work.
 
 Enlarging a filtration preserves its localizing sequences. The stopping-time property
 transports to the larger filtration, while monotonicity and divergence are unchanged.
@@ -185,3 +189,38 @@ theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
   exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
 
 end ProbabilityTheory.Locally
+
+namespace MeasureTheory.IsStronglyProgressive
+
+open ProbabilityTheory
+
+/-- For a progressive process with almost-surely continuous paths, localizing a property
+is equivalent to localizing it together with progressivity and continuity.
+The same native localizing sequence works in the forward direction. -/
+theorem locally_iff_locally_isStronglyProgressive_ae_continuous
+    {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+    [PseudoMetrizableSpace ι] [MeasurableSpace ι] [BorelSpace ι]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [TopologicalSpace E] [Zero E]
+    {ℱ : Filtration ι mΩ} {X : ι → Ω → E}
+    (hp : IsStronglyProgressive ℱ X) (hc : ∀ᵐ ω ∂P, Continuous (X · ω))
+    (p : (ι → Ω → E) → Prop) :
+    Locally p ℱ X P ↔ Locally (fun Y ↦ p Y ∧ IsStronglyProgressive ℱ Y ∧
+      ∀ᵐ ω ∂P, Continuous (Y · ω)) ℱ X P := by
+  constructor
+  · rintro ⟨τ, hτ, hM⟩
+    refine ⟨τ, hτ, fun n ↦ ⟨hM n, ?_, ?_⟩⟩
+    · rw [stoppedProcess_indicator_comm']
+      exact (hp.stoppedProcess (hτ.isStoppingTime n)).indicator
+        ((hτ.isStoppingTime n).measurableSet_gt ⊥)
+    · filter_upwards [hc] with ω hω
+      rw [stoppedProcess_indicator_comm']
+      by_cases hpos : (⊥ : WithTop ι) < τ n ω
+      · simpa only [Set.indicator_apply, Set.mem_ofPred_eq, ite_eq_left hpos] using
+          hω.stoppedProcess (τ := τ n)
+      · simpa only [Set.indicator_apply, Set.mem_ofPred_eq, ite_eq_right hpos] using
+          (continuous_const : Continuous (fun _ : ι ↦ (0 : E)))
+  · exact Locally.mono fun _ h ↦ h.1
+
+end MeasureTheory.IsStronglyProgressive
