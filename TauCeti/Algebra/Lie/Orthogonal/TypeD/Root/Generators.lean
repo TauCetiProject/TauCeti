@@ -548,30 +548,12 @@ private theorem lie_typeDDiagonalMatrix_loweringMatrix {K : Type*} [CommRing K]
     ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
         loweringMatrix (K := K) n hn i⁆ =
       (-CartanMatrix.D n i j : K) • loweringMatrix n hn i := by
-  rw [loweringMatrix]
-  apply Matrix.transpose_injective
-  calc
-    (⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
-        (raisingMatrix n hn i).transpose⁆).transpose =
-        ⁅raisingMatrix n hn i,
-          (typeDDiagonalMatrix
-            (fun a => (DynkinType.typeDSimpleRoot n hn j a : K))).transpose⁆ :=
-      Matrix.lie_transpose _ _
-    _ = ⁅raisingMatrix n hn i,
-        typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K))⁆ := by
-      congr 1
-      ext a b
-      by_cases hab : a = b
-      · subst b
-        simp [typeDDiagonalMatrix_apply]
-      · have hba : b ≠ a := Ne.symm hab
-        simp [typeDDiagonalMatrix_apply, hab, hba]
-    _ = -⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
-        raisingMatrix n hn i⁆ := by rw [← lie_skew]
-    _ = -((CartanMatrix.D n i j : K) • raisingMatrix n hn i) := by
-      rw [lie_typeDDiagonalMatrix_raisingMatrix n hn i j]
-    _ = ((-CartanMatrix.D n i j : K) •
-        (raisingMatrix n hn i).transpose).transpose := by simp
+  ext a b
+  have h := congrFun (congrFun (lie_typeDDiagonalMatrix_raisingMatrix (K := K) n hn i j) b) a
+  rw [typeDDiagonalMatrix_lie_apply, Matrix.smul_apply, smul_eq_mul] at h
+  rw [typeDDiagonalMatrix_lie_apply, loweringMatrix, Matrix.transpose_apply, Matrix.smul_apply,
+    Matrix.transpose_apply, smul_eq_mul]
+  linear_combination -h
 
 /-- The numbered Cartan generators act on the numbered root generators through the type-`D`
 Cartan matrix, with the opposite weight on lowering generators. -/
@@ -604,15 +586,11 @@ theorem lie_cartanGenerator_rootGenerator {K : Type*} [CommRing K]
 /-- The numbered Cartan generators commute. -/
 @[simp]
 theorem lie_cartanGenerator_cartanGenerator {K : Type*} [CommRing K] (i j : Fin n) :
-    ⁅cartanGenerator (K := K) n hn i, cartanGenerator (K := K) n hn j⁆ = 0 := by
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, val_cartanGenerator, val_cartanGenerator]
-  have hdiag (k : Fin n) :
-      (typeDDiagonalMatrix
-        (fun a => (DynkinType.typeDSimpleRoot n hn k a : K))).IsDiag := by
-    intro a b hab
-    rw [typeDDiagonalMatrix_apply, ite_eq_right hab]
-  exact lie_eq_zero_of_isDiag (hdiag i) (hdiag j)
+    ⁅cartanGenerator (K := K) n hn i, cartanGenerator (K := K) n hn j⁆ = 0 :=
+  congrArg Subtype.val (trivial_lie_zero (typeDDiagonalCartan K (Fin n))
+    (typeDDiagonalCartan K (Fin n))
+    ⟨_, cartanGenerator_mem_typeDDiagonalCartan n hn i⟩
+    ⟨_, cartanGenerator_mem_typeDDiagonalCartan n hn j⟩)
 
 private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (i : Fin n) :
     ⁅raisingMatrix (K := K) n hn i, loweringMatrix (K := K) n hn i⁆ =
