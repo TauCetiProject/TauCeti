@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
@@ -16,7 +17,7 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
 The `n`-th Hilbert number of a bounded operator `T : E →L[𝕜] F` over `RCLike 𝕜` is
 `hₙ(T) = sup {aₙ(B ∘ T ∘ A) : A : ℓ₂ → E, B : F → ℓ₂, ‖A‖ ≤ 1, ‖B‖ ≤ 1}`,
-the largest approximation number of a compression of `T` to the separable Hilbert space
+the supremum of the approximation numbers of compressions of `T` to the separable Hilbert space
 `ℓ₂ = ℓ²(ℕ, 𝕜)`. The indexing is zero-based, so `h₀(T) = ‖T‖`.
 
 Every compression scales: `aₙ(B T A) ≤ ‖B‖ hₙ(T) ‖A‖` for all bounded `A` and `B`
@@ -32,6 +33,8 @@ The remaining axioms are inherited from the approximation numbers through the su
 ## Main declarations
 
 * `ContinuousLinearMap.hilbertNumber`: the Hilbert numbers `hₙ(T)`.
+* `ContinuousLinearMap.isLUB_hilbertNumber`: `hₙ(T)` is the least upper bound of the
+  approximation numbers of compressions of `T` by contractions.
 * `ContinuousLinearMap.singularValue_comp_comp_le_hilbertNumber`: `aₙ(B T A) ≤ ‖B‖ hₙ(T) ‖A‖`.
 * `ContinuousLinearMap.hilbertNumber_eq_iSup_div`: the ratio form of `hₙ(T)`.
 * `ContinuousLinearMap.hilbertNumber_le_singularValue`: `hₙ(T) ≤ aₙ(T)`.
@@ -44,6 +47,8 @@ The remaining axioms are inherited from the approximation numbers through the su
   181–187.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
 * M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82.
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  `SNumbers/Hilbert.lean`: an earlier Lean formalization of the Hilbert numbers.
 -/
 
 public section
@@ -75,17 +80,25 @@ private instance :
     Nonempty {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) // ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} :=
   ⟨⟨0, by simp, by simp⟩⟩
 
+/-- Multiplying by the norms of two contractions does not increase a bound. -/
+private theorem nnnorm_mul_mul_nnnorm_le {B : G →L[𝕜] H} {A : E →L[𝕜] F} (hB : ‖B‖ ≤ 1)
+    (hA : ‖A‖ ≤ 1) (x : ℝ≥0) : ‖B‖₊ * x * ‖A‖₊ ≤ x := by
+  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
+  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
+  calc ‖B‖₊ * x * ‖A‖₊ ≤ 1 * x * 1 := by gcongr
+    _ = x := by simp
+
+/-- Rescaling a map of nonzero norm by the inverse of its norm gives a map of norm one. -/
+private theorem norm_inv_norm_smul {A : E →L[𝕜] F} (hA : ‖A‖ ≠ 0) :
+    ‖(‖A‖ : 𝕜)⁻¹ • A‖ = 1 := by
+  rw [norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm, inv_mul_cancel₀ hA]
+
 /-- A compression of `T` by contractions has approximation numbers at most `‖T‖`. -/
 private theorem singularValue_comp_comp_le_nnnorm {T : E →L[𝕜] F} {A : ℓ²(ℕ, 𝕜) →L[𝕜] E}
     {B : F →L[𝕜] ℓ²(ℕ, 𝕜)} (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (n : ℕ) :
-    (B ∘L T ∘L A).singularValue n ≤ ‖T‖₊ := by
-  refine ((B ∘L T ∘L A).singularValue_le_nnnorm n).trans ?_
-  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
-  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
-  calc ‖B ∘L T ∘L A‖₊ ≤ ‖B‖₊ * (‖T‖₊ * ‖A‖₊) :=
-        (opNNNorm_comp_le _ _).trans (by gcongr; exact opNNNorm_comp_le _ _)
-    _ ≤ 1 * (‖T‖₊ * 1) := by gcongr
-    _ = ‖T‖₊ := by simp
+    (B ∘L T ∘L A).singularValue n ≤ ‖T‖₊ :=
+  (B.singularValue_comp_comp_le T A n).trans
+    ((nnnorm_mul_mul_nnnorm_le hB hA _).trans (T.singularValue_le_nnnorm n))
 
 private theorem bddAbove_range_singularValue_comp_comp (T : E →L[𝕜] F) (n : ℕ) :
     BddAbove (Set.range fun p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) //
@@ -93,7 +106,7 @@ private theorem bddAbove_range_singularValue_comp_comp (T : E →L[𝕜] F) (n :
   ⟨‖T‖₊, Set.forall_mem_range.mpr fun p ↦ singularValue_comp_comp_le_nnnorm p.2.1 p.2.2 n⟩
 
 /-- Every compression of `T` by contractions bounds `hₙ(T)` from below. -/
-private theorem singularValue_comp_comp_le_hilbertNumber_of_norm_le_one (T : E →L[𝕜] F)
+theorem singularValue_comp_comp_le_hilbertNumber_of_norm_le_one (T : E →L[𝕜] F)
     {A : ℓ²(ℕ, 𝕜) →L[𝕜] E} {B : F →L[𝕜] ℓ²(ℕ, 𝕜)} (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (n : ℕ) :
     (B ∘L T ∘L A).singularValue n ≤ T.hilbertNumber n :=
   le_ciSup (f := fun p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) //
@@ -109,6 +122,24 @@ theorem hilbertNumber_le_iff {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0} :
     Prod.forall]
   exact forall₂_congr fun A B ↦ ⟨fun h hA hB ↦ h ⟨hA, hB⟩, fun h hAB ↦ h hAB.1 hAB.2⟩
 
+/-- **Supremum characterization.** `hₙ(T)` is the least upper bound of the approximation numbers
+`aₙ(B ∘ T ∘ A)` over the contractions `A : ℓ₂ → E` and `B : F → ℓ₂`. -/
+theorem isLUB_hilbertNumber (T : E →L[𝕜] F) (n : ℕ) :
+    IsLUB {c : ℝ≥0 | ∃ (A : ℓ²(ℕ, 𝕜) →L[𝕜] E) (B : F →L[𝕜] ℓ²(ℕ, 𝕜)),
+      ‖A‖ ≤ 1 ∧ ‖B‖ ≤ 1 ∧ (B ∘L T ∘L A).singularValue n = c} (T.hilbertNumber n) := by
+  refine ⟨?_, fun c hc ↦ hilbertNumber_le_iff.mpr fun A B hA hB ↦ hc ⟨A, B, hA, hB, rfl⟩⟩
+  rintro c ⟨A, B, hA, hB, rfl⟩
+  exact T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n
+
+/-- **Near-optimal compressions.** If `c < hₙ(T)`, then some compression of `T` by contractions
+has `n`-th approximation number greater than `c`. -/
+theorem exists_lt_singularValue_of_lt_hilbertNumber {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0}
+    (h : c < T.hilbertNumber n) :
+    ∃ (A : ℓ²(ℕ, 𝕜) →L[𝕜] E) (B : F →L[𝕜] ℓ²(ℕ, 𝕜)),
+      ‖A‖ ≤ 1 ∧ ‖B‖ ≤ 1 ∧ c < (B ∘L T ∘L A).singularValue n := by
+  by_contra! hc
+  exact h.not_ge (hilbertNumber_le_iff.mpr hc)
+
 /-- **Compressions.** `aₙ(B ∘ T ∘ A) ≤ ‖B‖ hₙ(T) ‖A‖` for all bounded `A : ℓ₂ → E` and
 `B : F → ℓ₂`. -/
 theorem singularValue_comp_comp_le_hilbertNumber (B : F →L[𝕜] ℓ²(ℕ, 𝕜)) (T : E →L[𝕜] F)
@@ -121,24 +152,22 @@ theorem singularValue_comp_comp_le_hilbertNumber (B : F →L[𝕜] ℓ²(ℕ, �
   · simpa [hA] using B.singularValue_comp_comp_le T A n
   have hA₀ : ‖A‖ ≠ 0 := by rwa [← coe_nnNorm, NNReal.coe_ne_zero]
   have hB₀ : ‖B‖ ≠ 0 := by rwa [← coe_nnNorm, NNReal.coe_ne_zero]
-  -- The normalized compression `(‖B‖⁻¹ B) T (‖A‖⁻¹ A)` is admissible for `hₙ(T)`.
-  have hle := T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one
-    (A := ((‖A‖ : 𝕜))⁻¹ • A) (B := ((‖B‖ : 𝕜))⁻¹ • B)
-    (by rw [norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm, inv_mul_cancel₀ hA₀])
-    (by rw [norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm, inv_mul_cancel₀ hB₀]) n
-  have heq : B ∘L T ∘L A =
-      ((‖B‖ * ‖A‖ : ℝ) : 𝕜) • ((((‖B‖ : 𝕜))⁻¹ • B) ∘L T ∘L (((‖A‖ : 𝕜))⁻¹ • A)) := by
-    have hc : (‖B‖ : 𝕜) * ‖A‖ * ((‖A‖ : 𝕜)⁻¹ * (‖B‖ : 𝕜)⁻¹) = 1 := by
-      field_simp [RCLike.ofReal_ne_zero.mpr hA₀, RCLike.ofReal_ne_zero.mpr hB₀]
-    ext1 x
-    simp only [comp_apply, smul_apply, map_smul, smul_smul, RCLike.ofReal_mul, hc, one_smul]
-  have hn : ‖((‖B‖ * ‖A‖ : ℝ) : 𝕜)‖₊ = ‖B‖₊ * ‖A‖₊ := by
+  -- Factor out the norms: `B T A = ‖B‖ ‖A‖ • (‖B‖⁻¹ B) T (‖A‖⁻¹ A)`.
+  have hA₁ := smul_inv_smul₀ (RCLike.ofReal_ne_zero (K := 𝕜) |>.mpr hA₀) A
+  have hB₁ := smul_inv_smul₀ (RCLike.ofReal_ne_zero (K := 𝕜) |>.mpr hB₀) B
+  have hn (r : ℝ) : ‖(r : 𝕜)‖₊ = ‖r‖₊ := by
     ext
     simp
-  rw [heq, singularValue_smul, hn]
-  calc ‖B‖₊ * ‖A‖₊ * ((((‖B‖ : 𝕜))⁻¹ • B) ∘L T ∘L (((‖A‖ : 𝕜))⁻¹ • A)).singularValue n
-      ≤ ‖B‖₊ * ‖A‖₊ * T.hilbertNumber n := by gcongr
-    _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := mul_right_comm _ _ _
+  conv_lhs => rw [← hA₁, ← hB₁]
+  rw [smul_comp, comp_smul, comp_smul, singularValue_smul, singularValue_smul, hn, hn,
+    nnNorm_norm, nnNorm_norm]
+  -- The normalized compression `(‖B‖⁻¹ B) T (‖A‖⁻¹ A)` is admissible for `hₙ(T)`.
+  calc ‖B‖₊ * (‖A‖₊ * ((((‖B‖ : 𝕜))⁻¹ • B) ∘L T ∘L (((‖A‖ : 𝕜))⁻¹ • A)).singularValue n)
+      ≤ ‖B‖₊ * (‖A‖₊ * T.hilbertNumber n) := by
+        gcongr
+        exact T.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one
+          (norm_inv_norm_smul hA₀).le (norm_inv_norm_smul hB₀).le n
+    _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := by ring
 
 /-- **Ratio form.** `hₙ(T)` is the supremum of `aₙ(B ∘ T ∘ A) / (‖B‖ ‖A‖)` over all nonzero
 bounded `A : ℓ₂ → E` and `B : F → ℓ₂`. -/
@@ -173,21 +202,19 @@ theorem hilbertNumber_eq_iSup_div (T : E →L[𝕜] F) (n : ℕ) :
 /-- The Hilbert numbers are bounded by the approximation numbers. -/
 theorem hilbertNumber_le_singularValue (T : E →L[𝕜] F) (n : ℕ) :
     T.hilbertNumber n ≤ T.singularValue n :=
-  hilbertNumber_le_iff.mpr fun A B hA hB ↦ (B.singularValue_comp_comp_le T A n).trans <| by
-    have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
-    have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
-    calc ‖B‖₊ * T.singularValue n * ‖A‖₊ ≤ 1 * T.singularValue n * 1 := by gcongr
-      _ = T.singularValue n := by simp
+  hilbertNumber_le_iff.mpr fun A B hA hB ↦
+    (B.singularValue_comp_comp_le T A n).trans (nnnorm_mul_mul_nnnorm_le hB hA _)
 
 /-- The Hilbert numbers are bounded by the operator norm. -/
 theorem hilbertNumber_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.hilbertNumber n ≤ ‖T‖₊ :=
   (T.hilbertNumber_le_singularValue n).trans (T.singularValue_le_nnnorm n)
 
-/-- **Zeroth Hilbert number.** `h₀(T) = ‖T‖`: a vector `x` and a norming functional `g` of
-`T x` give a rank-one compression `α ↦ g (T (α₀ • x)) • e₀` through `ℓ₂`. -/
+/-- **Zeroth Hilbert number.** `h₀(T) = ‖T‖`. -/
 @[simp]
 theorem hilbertNumber_zero (T : E →L[𝕜] F) : T.hilbertNumber 0 = ‖T‖₊ := by
   refine (T.hilbertNumber_le_nnnorm 0).antisymm (opNNNorm_le_bound _ _ fun x ↦ ?_)
+  -- A vector `x` and a norming functional `g` of `T x` give a rank-one compression
+  -- `α ↦ g (T (α₀ • x)) • e₀` through `ℓ₂`.
   -- The first unit vector `e₀` of `ℓ₂`.
   set e : ℓ²(ℕ, 𝕜) := lp.single 2 0 1
   have he : ‖e‖ = 1 := by simp [e, lp.norm_single]
@@ -241,69 +268,43 @@ theorem hilbertNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
 theorem hilbertNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
     (B ∘L T ∘L A).hilbertNumber n ≤ ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ :=
   hilbertNumber_le_iff.mpr fun A' B' hA' hB' ↦ by
-    have hA'' : ‖A'‖₊ ≤ 1 := mod_cast hA'
-    have hB'' : ‖B'‖₊ ≤ 1 := mod_cast hB'
     calc (B' ∘L (B ∘L T ∘L A) ∘L A').singularValue n
         = ((B' ∘L B) ∘L T ∘L (A ∘L A')).singularValue n := by simp only [comp_assoc]
       _ ≤ ‖B' ∘L B‖₊ * T.hilbertNumber n * ‖A ∘L A'‖₊ :=
         singularValue_comp_comp_le_hilbertNumber _ T _ n
       _ ≤ (‖B'‖₊ * ‖B‖₊) * T.hilbertNumber n * (‖A‖₊ * ‖A'‖₊) := by
         gcongr <;> exact opNNNorm_comp_le _ _
-      _ ≤ (1 * ‖B‖₊) * T.hilbertNumber n * (‖A‖₊ * 1) := by gcongr
-      _ = ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := by simp
-
-variable (𝕜) in
-/-- The identity of `ℓ₂^{n+1}` is a compression of a contraction of `ℓ₂` by contractions: an
-isometric embedding `B : ℓ₂^{n+1} → ℓ₂` and its adjoint satisfy `B† ∘ B = id`. -/
-private theorem exists_comp_eq_id_euclideanSpace (n : ℕ) :
-    ∃ (A : ℓ²(ℕ, 𝕜) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)))
-      (B : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] ℓ²(ℕ, 𝕜)),
-      ‖A‖ ≤ 1 ∧ ‖B‖ ≤ 1 ∧ ∀ x, A (B x) = x := by
-  classical
-  let b := EuclideanSpace.basisFun (Fin (n + 1)) 𝕜
-  let v : Fin (n + 1) → ℓ²(ℕ, 𝕜) := fun i ↦ lp.single 2 (i : ℕ) 1
-  have hv : Orthonormal 𝕜 v := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    simp [v, lp.inner_single_left, Pi.single_apply, Fin.val_inj]
-  -- The linear map `x ↦ ∑ i, x i • v i` sends the standard basis to `v`.
-  let f : EuclideanSpace 𝕜 (Fin (n + 1)) →ₗ[𝕜] ℓ²(ℕ, 𝕜) :=
-    Fintype.linearCombination 𝕜 v ∘ₗ (WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).toLinearMap
-  have hfb : ⇑f ∘ ⇑b.toBasis = v := by
-    ext1 i
-    simp [f, b]
-  have hb : Orthonormal 𝕜 b.toBasis := by rw [b.coe_toBasis]; exact b.orthonormal
-  let L := f.isometryOfOrthonormal hb (hfb ▸ hv)
-  refine ⟨L.toContinuousLinearMap.adjoint, L.toContinuousLinearMap, ?_,
-    L.norm_toContinuousLinearMap_le, ?_⟩
-  · rw [LinearIsometryEquiv.norm_map]
-    exact L.norm_toContinuousLinearMap_le
-  · refine fun x ↦ ext_inner_left 𝕜 fun y ↦ ?_
-    rw [ContinuousLinearMap.adjoint_inner_right]
-    simp
+      _ = ‖B'‖₊ * (‖B‖₊ * T.hilbertNumber n * ‖A‖₊) * ‖A'‖₊ := by ring
+      _ ≤ ‖B‖₊ * T.hilbertNumber n * ‖A‖₊ := nnnorm_mul_mul_nnnorm_le hB' hA' _
 
 /-- **Euclidean normalization.** The identity of `ℓ₂^{n+1}` has `hₙ = 1`. -/
 theorem hilbertNumber_id_euclideanSpace (n : ℕ) :
     (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))).hilbertNumber n = 1 := by
   set I := ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))
-  obtain ⟨A, B, hA, hB, hAB⟩ := exists_comp_eq_id_euclideanSpace 𝕜 n
-  have hA' : ‖A‖₊ ≤ 1 := mod_cast hA
-  have hB' : ‖B‖₊ ≤ 1 := mod_cast hB
+  -- An isometric embedding `B : ℓ₂^{n+1} → ℓ₂` onto the first `n + 1` unit vectors, with its
+  -- adjoint `A` as a left inverse.
+  have hv : Orthonormal 𝕜 fun i : Fin (n + 1) ↦ (lp.single 2 (i : ℕ) 1 : ℓ²(ℕ, 𝕜)) := by
+    classical
+    rw [orthonormal_iff_ite]
+    intro i j
+    simp [lp.inner_single_left, Pi.single_apply, Fin.val_inj]
+  set L := hv.synthesisMapIsometry
+  set B := L.toContinuousLinearMap
+  set A := B.adjoint
+  have hB : ‖B‖ ≤ 1 := L.norm_toContinuousLinearMap_le
+  have hA : ‖A‖ ≤ 1 := by rw [LinearIsometryEquiv.norm_map]; exact hB
   have hrank : (n : Cardinal) < Module.rank 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) := by
     rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
     simp
   refine le_antisymm ((I.hilbertNumber_le_nnnorm n).trans (by exact_mod_cast norm_id_le)) ?_
   -- `id = A ∘ (B ∘ id ∘ A) ∘ B`, and `aₙ(id) = 1` below the dimension.
   have hid : A ∘L (B ∘L I ∘L A) ∘L B = I := by
-    ext1 x
-    simp [I, hAB]
+    simp only [I, id_comp, ← comp_assoc, A, B, L.adjoint_comp_self, one_def]
   calc (1 : ℝ≥0) = I.singularValue n := by simp [I, singularValue_id, hrank]
     _ = (A ∘L (B ∘L I ∘L A) ∘L B).singularValue n := by rw [hid]
     _ ≤ ‖A‖₊ * (B ∘L I ∘L A).singularValue n * ‖B‖₊ := singularValue_comp_comp_le _ _ _ n
-    _ ≤ 1 * (B ∘L I ∘L A).singularValue n * 1 := by gcongr
-    _ ≤ I.hilbertNumber n := by
-      rw [one_mul, mul_one]
-      exact I.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n
+    _ ≤ (B ∘L I ∘L A).singularValue n := nnnorm_mul_mul_nnnorm_le hA hB _
+    _ ≤ I.hilbertNumber n := I.singularValue_comp_comp_le_hilbertNumber_of_norm_le_one hA hB n
 
 end ContinuousLinearMap
 
