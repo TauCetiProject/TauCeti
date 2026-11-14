@@ -38,7 +38,8 @@ recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
 `(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`). In particular `C • W` is
-elliptic exactly when `W` is (`isElliptic_smul_iff`).
+elliptic exactly when `W` is (`isElliptic_smul_iff`). Base change along a ring homomorphism is
+equivariant for the base change of changes of variables (`mapMulActionHom`).
 
 The negation is the nontrivial automorphism in `Aut (E, O)`, proved in
 `TauCeti/AlgebraicGeometry/EllipticCurve/Aut.lean` to exhaust `Aut(E)` with the identity when
@@ -247,6 +248,20 @@ theorem isElliptic_smul_iff (C : VariableChange R) (W : WeierstrassCurve R) :
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   have : (C⁻¹ • C • W).IsElliptic := inferInstance
   rwa [inv_smul_smul] at this
+
+/-- Base change of Weierstrass curves along a ring homomorphism `φ : R →+* S`, as a map
+equivariant along the base change `VariableChange.mapHom φ` of changes of variables (Mathlib's
+`WeierstrassCurve.map_variableChange`). It induces the functor from the action groupoid of
+Weierstrass curves over `R` to that over `S`. -/
+def mapMulActionHom {S : Type*} [CommRing S] (φ : R →+* S) :
+    WeierstrassCurve R →ₑ[VariableChange.mapHom φ] WeierstrassCurve S where
+  toFun W := W.map φ
+  map_smul' C W := (map_variableChange W C φ).symm
+
+@[simp]
+theorem mapMulActionHom_apply {S : Type*} [CommRing S] (φ : R →+* S) (W : WeierstrassCurve R) :
+    mapMulActionHom φ W = W.map φ :=
+  (rfl)
 
 section BaseChange
 

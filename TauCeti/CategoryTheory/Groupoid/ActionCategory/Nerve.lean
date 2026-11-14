@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.CategoryTheory.ComposableArrows.Basic
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Order.Fin.Induction
 
@@ -18,7 +18,12 @@ action category `CategoryTheory.ActionCategory G X` is determined by its first p
 labels `gₖ` of its consecutive arrows, with `xₖ₊₁ = gₖ • xₖ`. This file proves the facts about
 labels along a string behind this description, and the resulting bijection
 `TauCeti.ActionGroupoid.nerveEquiv` between the `n`-simplices of the nerve and `X × Gⁿ`. Every
-label is retained, including labels acting trivially.
+label is retained, including labels acting trivially. In these coordinates the simplicial
+operators of the nerve (`TauCeti.ActionGroupoid.nerveEquiv_nerve_map`) and the functors induced by
+equivariant maps (`TauCeti.ActionGroupoid.nerveEquiv_mapComposableArrows_obj`) are explicit, and
+for a group action the arrow between any two points of a string is labelled by a quotient of
+partial products of the consecutive labels
+(`TauCeti.ActionGroupoid.label_nerveEquiv_symm_homOfLE`).
 
 For an invariant subset `U`, a string of `G ⋉ X` comes from the full subcategory `G ⋉ U`
 exactly when its first point lies in `U`
@@ -134,6 +139,24 @@ theorem label_nerveEquiv_symm (p : X × (Fin n → G)) (k : Fin n) :
     ((((nerveEquiv G X n).symm p).map (homOfLE k.castSucc_le_succ)).hom : G) = p.2 k :=
   congrFun (congrArg Prod.snd ((nerveEquiv G X n).apply_symm_apply p)) k
 
+/-- In the coordinates of `nerveEquiv`, the simplicial operator of `f : [m] ⟶ [n]` on the nerve
+takes the `f 0`-th point as first point, and as `k`-th label the label of the arrow from the
+`f k`-th to the `f (k + 1)`-th point. -/
+theorem nerveEquiv_nerve_map {m n : SimplexCategory} (f : m ⟶ n)
+    (F : ComposableArrows (ActionCategory G X) n.len) :
+    nerveEquiv G X m.len ((nerve (ActionCategory G X)).map f.op F) =
+      ((F.obj (f.toOrderHom 0)).back,
+        fun k ↦ (F.map (homOfLE (f.toOrderHom.monotone k.castSucc_le_succ))).hom) :=
+  (rfl)
+
+/-- In the coordinates of `nerveEquiv`, the functor induced by a map `f` equivariant along a
+monoid homomorphism `φ` applies `f` to the first point and `φ` to the labels. -/
+theorem nerveEquiv_mapComposableArrows_obj {H Y : Type*} [Monoid H] [MulAction H Y]
+    (φ : G →* H) (f : X →ₑ[φ] Y) (F : ComposableArrows (ActionCategory G X) n) :
+    nerveEquiv H Y n (((ActionCategory.map φ f).mapComposableArrows n).obj F) =
+      (f (nerveEquiv G X n F).1, fun k ↦ φ ((nerveEquiv G X n F).2 k)) := by
+  simp
+
 /-- A string of composable arrows of `G ⋉ X` comes from `G ⋉ U` exactly when its first vertex lies
 in the invariant subset `U`. -/
 theorem range_mapComposableArrows_obj_restrict (U : SubMulAction G X) (n : ℕ) :
@@ -163,5 +186,21 @@ theorem quotient_mk_back_obj (F : ComposableArrows (ActionCategory G X) n) (i : 
   rw [back_obj_eq_smul F i, MulAction.orbitRel.Quotient.quotient_smul_eq]
 
 end CategoryTheory.ComposableArrows
+
+namespace TauCeti.ActionGroupoid
+
+/-- In the string with first point `x` and consecutive labels `g`, the arrow from the `i`-th to the
+`j`-th point has label `(gⱼ₋₁ ⋯ g₀) (gᵢ₋₁ ⋯ g₀)⁻¹`. -/
+theorem label_nerveEquiv_symm_homOfLE (p : X × (Fin n → G)) {i j : Fin (n + 1)} (hij : i ≤ j) :
+    ((((nerveEquiv G X n).symm p).map (homOfLE hij)).hom : G) =
+      (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) j).unop *
+        (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop⁻¹ := by
+  induction i, j, hij using Fin.le_induction_castSucc with
+  | refl i => rw [ComposableArrows.hom_map_homOfLE_refl, mul_inv_cancel]
+  | succ i k hik ih =>
+    rw [ComposableArrows.hom_map_homOfLE_succ _ hik, ih, label_nerveEquiv_symm,
+      Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op, mul_assoc]
+
+end TauCeti.ActionGroupoid
 
 end Group
