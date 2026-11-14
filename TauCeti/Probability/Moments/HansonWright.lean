@@ -293,6 +293,35 @@ theorem measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
       (div_le_div_of_nonneg_left ht (by positivity) (mul_le_mul_of_nonneg_left hMop hK_pos.le))
     linarith
 
+/-- If both matrix parameters are bounded by `r⁻¹`, deviations up to one have a sub-Gaussian
+tail with exponent proportional to `r`. Enlarging the proxy to `max K 1` includes `K = 0`. -/
+theorem measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_inv_bound
+    {A : Ω → Matrix ι ι ℝ} (hA_meas : AEMeasurable A P)
+    (hAX : IndepFun A (fun ω i ↦ X i ω) P) {r : ℝ} (hr : 0 < r)
+    (hA_frob : ∀ᵐ ω ∂P, ∑ i, ∑ j, A ω i j ^ 2 ≤ r⁻¹)
+    (hA_op : ∀ᵐ ω ∂P, ‖A ω‖ ≤ r⁻¹) {u : ℝ} (hu : 0 ≤ u) (hu1 : u ≤ 1) :
+    P.real {ω | u < |(fun i ↦ X i ω) ⬝ᵥ A ω *ᵥ (fun i ↦ X i ω) -
+        ∑ i, A ω i i * P[fun ω' ↦ X i ω' ^ 2]|} ≤
+      2 * exp (-(u ^ 2 * r) / (3200 * (max (K : ℝ) 1) ^ 2)) := by
+  let C : ℝ≥0 := max K 1
+  have hC : 1 ≤ (C : ℝ) := by exact_mod_cast le_max_right K 1
+  have hCp : 0 < (C : ℝ) := by positivity
+  have hbound := hindep.measureReal_abs_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
+    (fun i ↦ (hX i).mono (le_max_left K 1)) hA_meas hAX hA_frob hA_op hu
+  have hmin : u ^ 2 * r / (C : ℝ) ^ 2 ≤
+      min (u ^ 2 / ((C : ℝ) ^ 2 * r⁻¹)) (u / ((C : ℝ) * r⁻¹)) := by
+    refine le_min (by field_simp; rfl) ?_
+    apply (div_le_div_iff₀ (by positivity) (by positivity)).2
+    have husq : u ^ 2 ≤ u := by nlinarith
+    field_simp
+    nlinarith [mul_le_mul_of_nonneg_right husq (by positivity : 0 ≤ (C : ℝ)),
+      mul_nonneg hu (sub_nonneg.mpr hC)]
+  refine hbound.trans ?_
+  gcongr
+  convert mul_le_mul_of_nonpos_left hmin (by norm_num : -(1 / 3200 : ℝ) ≤ 0) using 1
+  simp only [C, NNReal.coe_max, NNReal.coe_one, div_eq_mul_inv, mul_inv_rev]
+  ring
+
 end RealHansonWright
 
 section ComplexHansonWright

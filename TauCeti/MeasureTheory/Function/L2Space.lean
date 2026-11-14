@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
+public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPartSq
@@ -64,6 +65,14 @@ public section
 
 open Function MeasureTheory
 open scoped ComplexConjugate ENNReal InnerProductSpace
+
+/-- A square-integrable function has integrable squared distance to a set whose closure
+contains zero. -/
+theorem MeasureTheory.MemLp.integrable_infDist_sq {Ω E : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [NormedAddCommGroup E] {Y : Ω → E}
+    (hY : MemLp Y 2 P) {s : Set E} (hs : (0 : E) ∈ closure s) :
+    Integrable (fun ω ↦ Metric.infDist (Y ω) s ^ 2) P :=
+  (hY.infDist_of_mem_closure hs).integrable_sq
 
 namespace MeasureTheory
 

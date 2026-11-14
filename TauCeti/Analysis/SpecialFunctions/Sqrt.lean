@@ -68,6 +68,28 @@ open scoped Topology
 
 namespace Real
 
+/-- A deviation from a square root forces both the linear and quadratic squared-distance
+thresholds to be exceeded. -/
+theorem max_sqrt_mul_sq_lt_abs_sq_sub {a r t : ℝ} (ha : 0 ≤ a) (hr : 0 ≤ r)
+    (ht : 0 < t) (h : t < |a - √r|) : max (√r * t) (t ^ 2) < |a ^ 2 - r| := by
+  have hab : |a - √r| ≤ a + √r :=
+    abs_le.mpr ⟨by linarith, by nlinarith [sqrt_nonneg r]⟩
+  have heq : |a ^ 2 - r| = |a - √r| * (a + √r) := by
+    rw [← abs_of_nonneg (by positivity : 0 ≤ a + √r), ← abs_mul]
+    congr 1
+    nlinarith [sq_sqrt hr]
+  rw [heq]
+  refine max_lt_iff.mpr ⟨?_, ?_⟩
+  · by_cases hr0 : r = 0
+    · simp only [hr0, sqrt_zero, zero_mul, add_zero, sub_zero, abs_of_nonneg ha] at h ⊢
+      have ha' : 0 < a := ht.trans h
+      positivity
+    · simpa only [mul_comm] using
+        (mul_lt_mul_of_pos_right h (sqrt_pos.mpr (lt_of_le_of_ne hr (Ne.symm hr0)))).trans_le
+          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left ha) (abs_nonneg (a - √r)))
+  · nlinarith [mul_self_lt_mul_self ht.le h,
+      mul_le_mul_of_nonneg_left hab (abs_nonneg (a - √r))]
+
 /-- For every real `μ`, the square root is no farther from `1` than `μ` is:
 `|√μ - 1| ≤ |μ - 1|`. -/
 theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :

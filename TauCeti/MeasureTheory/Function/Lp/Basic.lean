@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
-# Finite sums of `MemLp.toLp` classes
+# Basic operations on `Lᵖ` functions
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
 class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
 witness on the sum.
+
+Distance to a set whose closure contains zero preserves `MemLp`, since that distance is
+Lipschitz and vanishes at zero (`MeasureTheory.MemLp.infDist_of_mem_closure`).
 
 ## Main declarations
 
@@ -31,6 +35,11 @@ namespace MeasureTheory.MemLp
 
 variable {α E ι : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
   {p : ℝ≥0∞} {s : Finset ι} {f : ι → α → E}
+
+/-- Distance to a set whose closure contains zero preserves membership in `Lᵖ`. -/
+theorem infDist_of_mem_closure {f : α → E} (hf : MemLp f p μ) {s : Set E}
+    (hs : (0 : E) ∈ closure s) : MemLp (fun x ↦ Metric.infDist (f x) s) p μ :=
+  (Metric.lipschitz_infDist_pt s).comp_memLp (Metric.infDist_zero_of_mem_closure hs) hf
 
 /-- The `Lp` class of a finite sum of `Lᵖ` functions is the sum of their `Lp` classes. -/
 theorem toLp_finsetSum' (hsum : MemLp (∑ i ∈ s, f i) p μ) (hf : ∀ i, MemLp (f i) p μ) :
