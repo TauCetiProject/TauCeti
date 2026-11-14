@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
+public import TauCeti.MeasureTheory.OptimalTransport.SmallSets
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Convex.FenchelMoreau
 import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
@@ -25,7 +26,9 @@ import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 
 Let `E` be a finite-dimensional real inner product space, such as `ℝⁿ`, and consider the quadratic
 transport cost `c (x, y) = ‖x - y‖ ^ 2 / 2`. **Brenier's theorem** says that when the source law
-`μ` is absolutely continuous with respect to Lebesgue measure and the optimal cost is finite, the
+`μ` assigns zero mass to Lipschitz hyperplane graphs (for instance when `μ.VanishesOnSmallSets`,
+that is, `μ` vanishes on Borel sets of Hausdorff codimension at least `1`, and in particular when
+`μ` is absolutely continuous with respect to Lebesgue measure) and the optimal cost is finite, the
 optimal transport plan is unique and is induced by the gradient of a convex function: there is a
 proper lower semicontinuous convex `u : E → EReal`, finite and differentiable `μ`-almost
 everywhere, such that `x ↦ ∇ u (x)` pushes `μ` to `ν` and is the unique optimal transport map.
@@ -33,19 +36,20 @@ everywhere, such that `x ↦ ∇ u (x)` pushes `μ` to `ν` and is the unique op
 The proof avoids Kantorovich duality. The support of an optimal plan of finite cost is
 `c`-cyclically monotone (`TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support`), so by
 Rockafellar's theorem it lies in the subdifferential graph of a Legendre–Fenchel conjugate `u`
-(`TauCeti.IsCyclicallyMonotone.exists_fenchelConjugate_innerₗ_subset_subdifferential`). By
-Rademacher's theorem for convex functions
-(`TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal`), `u` is differentiable at almost
-every point of its effective domain, which contains `μ`-almost every point because the plan has
-first marginal `μ`; there the subgradient is the gradient
+(`TauCeti.IsCyclicallyMonotone.exists_fenchelConjugate_innerₗ_subset_subdifferential`). The points
+of the effective domain where `u` fails to be finite nearby and differentiable are covered by
+countably many Lipschitz hyperplane graphs
+(`TauCeti.exists_lipschitzWith_graphs_cover_not_differentiableAt_toReal`), so `u` is finite nearby
+and differentiable at `μ`-almost every point of its effective domain, which contains `μ`-almost
+every point because the plan has first marginal `μ`; there the subgradient is the gradient
 (`TauCeti.gradient_toReal_eq_of_mem_subdifferential`). So the plan is the graph plan of `∇ u`.
 Uniqueness follows by applying this to the sum of two optimal plans, which is again optimal.
 
-When the target `ν` is absolutely continuous as well, the same argument applies to the plan with
-exchanged coordinates, which lies in the subdifferential graph of the Legendre–Fenchel conjugate
-`u⋆` by conjugate-subgradient reciprocity. So `∇ u⋆` is the optimal transport map from `ν` back to
-`μ`, and the two maps are inverse to each other almost everywhere: conjugate potentials give
-inverse maps.
+When the target `ν` also vanishes on small sets (or is absolutely continuous), the same argument
+applies to the plan with exchanged coordinates, which lies in the subdifferential graph of the
+Legendre–Fenchel conjugate `u⋆` by conjugate-subgradient reciprocity. So `∇ u⋆` is the optimal
+transport map from `ν` back to `μ`, and the two maps are inverse to each other almost everywhere:
+conjugate potentials give inverse maps.
 
 Conversely, between finite measures with finite second moments on any real inner product space,
 every plan concentrated on the subdifferential graph of a function `u : E → EReal` is optimal,
@@ -74,34 +78,41 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing the quadratic
   Wasserstein distance between laws with finite second moments has cyclically monotone support for
   the cost `‖x - y‖ ^ 2 / 2`;
-* `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential` — for an absolutely continuous
-  source, a plan concentrated on the subdifferential graph of a proper lower
-  semicontinuous convex function is the graph plan of its gradient, differentiable almost
-  everywhere;
-* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` — for an absolutely continuous source,
-  an optimal quadratic plan of finite cost is the graph plan of the gradient of such a function,
-  differentiable almost everywhere;
-* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous` — the graph-plan
-  conclusion of `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` for the cost `edist ^ 2`
-  of the quadratic Wasserstein distance: out of an absolutely continuous source, an optimal plan to
-  a law at finite `W₂` distance is the graph plan of a measurable map;
+* `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential_of_null_lipschitz_graphs`,
+  `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets`, and
+  `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential` — for a source null on Lipschitz
+  hyperplane graphs, vanishing on small sets, or absolutely continuous, a plan concentrated on the
+  subdifferential graph of a convex function is the graph plan of its gradient, differentiable
+  almost everywhere;
+* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs`,
+  `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient_of_vanishesOnSmallSets`, and
+  `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` — an optimal quadratic plan of finite
+  cost out of such a source is the graph plan of the gradient of a proper lower semicontinuous
+  convex function, differentiable almost everywhere;
+* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_null_lipschitz_graphs`,
+  `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_vanishesOnSmallSets`, and
+  `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous` — the graph-plan
+  conclusion for the cost `edist ^ 2` of the quadratic Wasserstein distance;
 * `TauCeti.map_swap_eq_graphPlan_gradient_fenchelConjugate`,
   `TauCeti.IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id` and
-  `TauCeti.IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id` — for an absolutely
-  continuous target, the exchanged plan is the graph plan of the gradient of the conjugate
+  `TauCeti.IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id` (and their
+  `_of_vanishesOnSmallSets` counterparts) — when the target also vanishes on small sets or is
+  absolutely continuous, the exchanged plan is the graph plan of the gradient of the conjugate
   potential, and the two gradients are inverse to each other almost everywhere;
-* `TauCeti.IsOptimalCoupling.unique` — for an absolutely continuous source and finite optimal
-  cost, the optimal quadratic plan is unique;
+* `TauCeti.IsOptimalCoupling.unique_of_null_lipschitz_graphs`,
+  `TauCeti.IsOptimalCoupling.unique_of_vanishesOnSmallSets`, and
+  `TauCeti.IsOptimalCoupling.unique` — uniqueness of the optimal quadratic plan;
 * `TauCeti.gradient_ae_eq_gradient_of_hasLaw` — **uniqueness of the monotone rearrangement**:
   two gradients of convex functions pushing an absolutely continuous `μ` to the same law agree
   `μ`-almost everywhere, when both laws have finite second moments;
-* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient` — **Brenier's theorem**: the gradient
+* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_of_null_lipschitz_graphs`,
+  `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_of_vanishesOnSmallSets`, and
+  `TauCeti.exists_isKantorovichOptimalTransportMap_gradient` — **Brenier's theorem**: the gradient
   of a convex function is the almost everywhere unique optimal transport map, and its graph plan is
   the unique optimal plan;
-* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate` —
-  **Brenier's theorem with the inverse map**: when both laws are absolutely continuous, the
-  gradients of a convex potential and of its conjugate are the optimal transport maps in the two
-  directions, and they are inverse to each other almost everywhere;
+* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate` and
+  `exists_isKantorovichOptimalTransportMap_gradient_and_fenchelConjugate_of_vanishesOnSmallSets` —
+  **Brenier's theorem with the inverse map**;
 * `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq` — when both
   laws are absolutely continuous, the Brenier potential `u` is a weak solution of its transport
   equation: its Monge–Ampère measure weighted by `ν` is `μ`, and `ν` is carried by
@@ -140,16 +151,20 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   (1984), 39--49, for the optimality criterion.
 * Y. Brenier, *Polar factorization and monotone rearrangement of vector-valued functions*, Comm.
   Pure Appl. Math. 44 (1991), 375--417.
-* C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
-  Theorem 2.12, whose proof of the converse direction is followed here.
 * R. J. McCann, *Existence and uniqueness of monotone measure-preserving maps*, Duke Math. J. 80
   (1995), 309--323, for the route through cyclical monotonicity of the support.
+* W. Gangbo and R. J. McCann, *The geometry of optimal transportation*, Acta Math. 177 (1996),
+  113--161, and M. Agueh and G. Carlier, *Barycenters in the Wasserstein space*, SIAM J. Math. Anal.
+  43 (2011), 904--924, for sources vanishing on Lipschitz hypersurfaces and sets of Hausdorff
+  codimension at least `1`.
+* C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
+  Theorem 2.12, whose proof of the converse direction is followed here.
 -/
 
 public section
 
 open Filter MeasureTheory ProbabilityTheory Set
-open scoped ENNReal Topology Gradient RealInnerProductSpace
+open scoped ENNReal NNReal Topology Gradient RealInnerProductSpace
 
 namespace TauCeti
 
@@ -413,6 +428,325 @@ theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
 
 end InnerProduct
 
+section SmallSets
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ ν : Measure E} {π : Measure (E × E)}
+
+/-- **A plan on a subdifferential graph is the graph plan of the gradient (Lipschitz-graph source
+condition).** Let `π` be a plan with first marginal `μ` on a finite-dimensional real inner product
+space, where `μ` assigns mass zero to every Lipschitz hyperplane graph, and let `u : E → EReal`
+have convex epigraph. If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then `u` is finite near
+`μ`-almost every point with differentiable real representative there, and `π` is the graph plan of
+the gradient of that real representative. -/
+theorem eq_graphPlan_gradient_of_ae_mem_subdifferential_of_null_lipschitz_graphs
+    (hπ : π.fst = μ)
+    (hμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      μ {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0)
+    {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
+    (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
+    (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      π = graphPlan (∇ fun x => (u x).toReal) μ := by
+  obtain ⟨ι, _, v, K, g, hv, hg, hcov⟩ :=
+    (convex_setOf_ne_top hconv).exists_lipschitzWith_graphs_cover_frontier
+  have hfr0 : μ (frontier {x | u x ≠ ⊤}) = 0 :=
+    measure_mono_null hcov (measure_iUnion_null fun i => hμ (v i) (hv i) (K i) (g i) (hg i))
+  have hcl : ∀ᵐ x ∂μ, x ∈ closure {x | u x ≠ ⊤} := by
+    rw [← hπ]
+    refine (ae_map_iff measurable_fst.aemeasurable isClosed_closure.measurableSet).2 ?_
+    filter_upwards [hsub] with z hz
+    exact subset_closure (ne_top_of_mem_subdifferential (innerₗ E) hz)
+  have hdom : ∀ᵐ x ∂μ, u x ≠ ⊤ := by
+    filter_upwards [hcl, measure_eq_zero_iff_ae_notMem.mp hfr0] with x hxcl hxfr
+    exact interior_subset (by_contra fun hxint => hxfr ⟨hxcl, hxint⟩)
+  have hdiff : ∀ᵐ x ∂μ,
+      (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x := by
+    filter_upwards [ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs
+      hconv hμ, hdom] with x hx hx' using hx hx'
+  have hgraph : ∀ᵐ z ∂π, z.2 = ∇ (fun x => (u x).toReal) z.1 := by
+    rw [← hπ] at hdiff
+    filter_upwards [ae_of_ae_map measurable_fst.aemeasurable hdiff, hsub] with z ⟨hdom, hd⟩ hz
+    exact (gradient_toReal_eq_of_mem_subdifferential hz hdom hd).symm
+  refine ⟨hdiff, ?_⟩
+  rw [eq_graphPlan_of_ae_snd_eq (measurable_gradient _).aemeasurable hgraph, hπ]
+
+/-- **A plan on a subdifferential graph is the graph plan of the gradient (`VanishesOnSmallSets`
+source condition).** -/
+theorem eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets
+    (hπ : π.fst = μ) (hμ : μ.VanishesOnSmallSets)
+    {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
+    (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
+    (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      π = graphPlan (∇ fun x => (u x).toReal) μ :=
+  eq_graphPlan_gradient_of_ae_mem_subdifferential_of_null_lipschitz_graphs hπ
+    (fun _ hv _ _ hg => hμ.measure_setOf_inner_eq_orthogonalProjectionOnto
+      (ne_of_apply_ne norm (by simp [hv])) hg) hconv hsub
+
+/-- **An optimal quadratic plan out of a source null on Lipschitz hyperplane graphs is induced by
+the gradient of a convex function.** -/
+theorem IsOptimalCoupling.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs
+    [IsFiniteMeasure μ]
+    (hμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      μ {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0)
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      π = graphPlan (∇ fun x => (u x).toReal) μ := by
+  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := h.exists_support_subset_subdifferential hfin
+  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+    filter_upwards [π.support_mem_ae] with z hz using hsub hz
+  obtain ⟨hdiff, hgraph⟩ :=
+    eq_graphPlan_gradient_of_ae_mem_subdifferential_of_null_lipschitz_graphs
+      h.fst_eq hμ hconv hsub'
+  exact ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩
+
+/-- **An optimal quadratic plan out of a source vanishing on small sets is induced by the gradient
+of a convex function.** -/
+theorem IsOptimalCoupling.exists_eq_graphPlan_gradient_of_vanishesOnSmallSets
+    [IsFiniteMeasure μ] (hμ : μ.VanishesOnSmallSets)
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      π = graphPlan (∇ fun x => (u x).toReal) μ :=
+  h.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs
+    (fun _ hv _ _ hg => hμ.measure_setOf_inner_eq_orthogonalProjectionOnto
+      (ne_of_apply_ne norm (by simp [hv])) hg) hfin
+
+/-- **The exchanged plan is the graph plan of the gradient of the conjugate (`VanishesOnSmallSets`
+target condition).** -/
+theorem map_swap_eq_graphPlan_gradient_fenchelConjugate_of_vanishesOnSmallSets
+    (hπ : π.snd = ν) (hν : ν.VanishesOnSmallSets)
+    {u : E → EReal} (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
+    (∀ᵐ y ∂ν, (∀ᶠ y' in 𝓝 y, fenchelConjugate (innerₗ E) u y' ≠ ⊤) ∧
+        DifferentiableAt ℝ (fun y' => (fenchelConjugate (innerₗ E) u y').toReal) y) ∧
+      π.map Prod.swap = graphPlan (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ν :=
+  eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets
+    (Measure.fst_map_swap.trans hπ) hν (convex_epigraph_fenchelConjugate (innerₗ E) u)
+    (ae_mem_subdifferential_fenchelConjugate_map_swap hsub)
+
+/-- **Conjugate potentials give inverse maps (`μ`-a.e. left inverse under
+`VanishesOnSmallSets`).** -/
+theorem IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id_of_vanishesOnSmallSets
+    (hπ : IsCoupling π μ ν) (hμ : μ.VanishesOnSmallSets) (hν : ν.VanishesOnSmallSets)
+    {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
+    (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
+    (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id := by
+  have h₁ :=
+    (eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets
+      hπ.fst_eq hμ hconv hsub).2
+  have h₂ :=
+    (map_swap_eq_graphPlan_gradient_fenchelConjugate_of_vanishesOnSmallSets hπ.snd_eq hν hsub).2
+  rw [h₁] at h₂
+  exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
+    (measurable_gradient _).aemeasurable h₂).1
+
+/-- **Conjugate potentials give inverse maps (`ν`-a.e. left inverse under
+`VanishesOnSmallSets`).** -/
+theorem IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id_of_vanishesOnSmallSets
+    (hπ : IsCoupling π μ ν) (hμ : μ.VanishesOnSmallSets) (hν : ν.VanishesOnSmallSets)
+    {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
+    (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
+    (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν] id := by
+  have h₁ :=
+    (eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets
+      hπ.fst_eq hμ hconv hsub).2
+  have h₂ :=
+    (map_swap_eq_graphPlan_gradient_fenchelConjugate_of_vanishesOnSmallSets hπ.snd_eq hν hsub).2
+  rw [h₁] at h₂
+  exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
+    (measurable_gradient _).aemeasurable h₂).2
+
+/-- **Uniqueness of the optimal quadratic plan for a source null on Lipschitz hyperplane
+graphs.** -/
+theorem IsOptimalCoupling.unique_of_null_lipschitz_graphs [IsFiniteMeasure μ]
+    (hμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      μ {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0)
+    {π' : Measure (E × E)}
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (h' : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π' μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    π = π' := by
+  have hsum := h.add h'
+  have hfin' : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      (μ + μ) (ν + ν) ≠ ∞ := by
+    rw [← hsum.lintegral_eq, lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq]
+    exact ENNReal.add_ne_top.2 ⟨hfin, hfin⟩
+  have hμμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      (μ + μ) {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0 := by
+    intro v hv K g hg
+    simp [hμ v hv K g hg]
+  obtain ⟨u, -, -, -, -, hgraph⟩ :=
+    hsum.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs hμμ hfin'
+  have hT := measurable_gradient fun x => (u x).toReal
+  have hae : ∀ᵐ z ∂(π + π'), z.2 = ∇ (fun x => (u x).toReal) z.1 :=
+    hgraph ▸ ae_snd_eq_graphPlan hT.aemeasurable
+  rw [eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_right le_rfl) hae),
+    eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_left le_rfl) hae),
+    h.fst_eq, h'.fst_eq]
+
+/-- **Uniqueness of the optimal quadratic plan for a source vanishing on small sets.** -/
+theorem IsOptimalCoupling.unique_of_vanishesOnSmallSets [IsFiniteMeasure μ]
+    (hμ : μ.VanishesOnSmallSets) {π' : Measure (E × E)}
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (h' : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π' μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    π = π' :=
+  h.unique_of_null_lipschitz_graphs
+    (fun _ hv _ _ hg => hμ.measure_setOf_inner_eq_orthogonalProjectionOnto
+      (ne_of_apply_ne norm (by simp [hv])) hg) h' hfin
+
+/-- **Brenier's theorem for sources null on Lipschitz hyperplane graphs.** Let `μ` be a probability
+measure and `ν` a measure on a finite-dimensional real inner product space `E` such that `μ`
+assigns mass zero to every Lipschitz hyperplane graph, and suppose the optimal cost for
+`‖x - y‖ ^ 2 / 2` is finite. Then there is a convex, lower semicontinuous `u : E → EReal` that
+never takes the value `⊥`, is finite near `μ`-almost every point and has differentiable real
+representative there, such that `T = ∇ (fun x => (u x).toReal)` is the `μ`-almost everywhere unique
+optimal transport map and its graph plan is the unique optimal plan. -/
+theorem exists_isKantorovichOptimalTransportMap_gradient_of_null_lipschitz_graphs
+    [IsProbabilityMeasure μ]
+    (hμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      μ {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      (∀ π, IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ↔
+        π = graphPlan (∇ fun x => (u x).toReal) μ) ∧
+      ∀ S : E → E,
+        IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+          μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal := by
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
+  have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
+    continuous_ofReal_norm_sub_sq_div_two
+  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
+  obtain ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩ :=
+    hπ.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs hμ hfin
+  have hT := measurable_gradient fun x => (u x).toReal
+  have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
+    (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
+  have hiff : ∀ S : E → E, HasLaw S ν μ →
+      (IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν S ↔ IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+          (graphPlan S μ) μ ν) := fun S hS =>
+    isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hS
+      hc.measurable.aemeasurable
+  refine ⟨u, hconv, hlsc, hbot, hdiff, (hiff _ hlaw).2 (hgraph ▸ hπ),
+    fun σ => ⟨fun hσ => (hσ.unique_of_null_lipschitz_graphs hμ hπ hfin).trans hgraph,
+      fun hσ => hσ ▸ hgraph ▸ hπ⟩,
+    fun S hS => ?_⟩
+  exact (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT.aemeasurable).1
+    ((((hiff S hS.toHasLaw).1 hS).unique_of_null_lipschitz_graphs hμ hπ hfin).trans hgraph)
+
+/-- **Brenier's theorem for sources vanishing on small sets.** -/
+theorem exists_isKantorovichOptimalTransportMap_gradient_of_vanishesOnSmallSets
+    [IsProbabilityMeasure μ] (hμ : μ.VanishesOnSmallSets)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      (∀ π, IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ↔
+        π = graphPlan (∇ fun x => (u x).toReal) μ) ∧
+      ∀ S : E → E,
+        IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+          μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal :=
+  exists_isKantorovichOptimalTransportMap_gradient_of_null_lipschitz_graphs
+    (fun _ hv _ _ hg => hμ.measure_setOf_inner_eq_orthogonalProjectionOnto
+      (ne_of_apply_ne norm (by simp [hv])) hg) hfin
+
+/-- **Brenier's theorem with the inverse map under `VanishesOnSmallSets`.** -/
+theorem
+    exists_isKantorovichOptimalTransportMap_gradient_and_fenchelConjugate_of_vanishesOnSmallSets
+    [IsProbabilityMeasure μ] (hμ : μ.VanishesOnSmallSets) (hν : ν.VanishesOnSmallSets)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
+      (∀ᵐ y ∂ν, (∀ᶠ y' in 𝓝 y, fenchelConjugate (innerₗ E) u y' ≠ ⊤) ∧
+        DifferentiableAt ℝ (fun y' => (fenchelConjugate (innerₗ E) u y').toReal) y) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        ν μ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∧
+      (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal)
+        =ᵐ[μ] id ∧
+      (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal)
+        =ᵐ[ν] id := by
+  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
+  have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
+    continuous_ofReal_norm_sub_sq_div_two
+  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
+  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := hπ.exists_support_subset_subdifferential hfin
+  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+    filter_upwards [π.support_mem_ae] with z hz using hsub hz
+  obtain ⟨hdiff, hgraph⟩ :=
+    eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets
+      hπ.fst_eq hμ hconv hsub'
+  obtain ⟨hdiff', hgraph'⟩ :=
+    map_swap_eq_graphPlan_gradient_fenchelConjugate_of_vanishesOnSmallSets hπ.snd_eq hν hsub'
+  have hswap : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      (π.map Prod.swap) ν μ := by
+    have hcs : (fun z : E × E => ENNReal.ofReal (‖z.swap.1 - z.swap.2‖ ^ 2 / 2)) =
+        fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
+      ext z
+      rw [Prod.fst_swap, Prod.snd_swap, norm_sub_rev]
+    exact hcs ▸ hπ.swap
+  have hT := measurable_gradient fun x => (u x).toReal
+  have hS := measurable_gradient fun y => (fenchelConjugate (innerₗ E) u y).toReal
+  have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
+    (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
+  have hlaw' : HasLaw (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) μ ν :=
+    (isCoupling_graphPlan_iff hS.aemeasurable).1 (hgraph' ▸ hπ.toIsCoupling.swap)
+  refine ⟨u, hconv, hlsc, hbot, hdiff, hdiff',
+    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw
+      hc.measurable.aemeasurable).2 (hgraph ▸ hπ),
+    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw'
+      hc.measurable.aemeasurable).2 (hgraph' ▸ hswap),
+    hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id_of_vanishesOnSmallSets
+      hμ hν hconv hsub',
+    hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id_of_vanishesOnSmallSets
+      hμ hν hconv hsub'⟩
+
+/-- **Brenier's theorem for the cost `edist ^ 2` out of a source null on Lipschitz hyperplane
+graphs.** -/
+theorem IsOptimalCoupling.exists_eq_graphPlan_of_null_lipschitz_graphs
+    [IsFiniteMeasure μ]
+    (hμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      μ {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0)
+    (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
+    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ := by
+  have hfin' : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+    have h2 := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+      ENNReal.ofNat_ne_top μ ν
+    rw [ENNReal.toReal_ofNat, funext edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
+      transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top] at h2
+    refine fun htop ↦ ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin ?_
+    rw [h2, htop, ENNReal.mul_top two_ne_zero]
+  have hopt := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h
+  obtain ⟨u, -, -, -, -, hgraph⟩ :=
+    hopt.exists_eq_graphPlan_gradient_of_null_lipschitz_graphs hμ hfin'
+  exact ⟨_, measurable_gradient _, hgraph⟩
+
+/-- **Brenier's theorem for the cost `edist ^ 2` out of a source vanishing on small sets.** -/
+theorem IsOptimalCoupling.exists_eq_graphPlan_of_vanishesOnSmallSets
+    [IsFiniteMeasure μ] (hμ : μ.VanishesOnSmallSets)
+    (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
+    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ :=
+  h.exists_eq_graphPlan_of_null_lipschitz_graphs
+    (fun _ hv _ _ hg => hμ.measure_setOf_inner_eq_orthogonalProjectionOnto
+      (ne_of_apply_ne norm (by simp [hv])) hg) hfin
+
+end SmallSets
+
 section FiniteDimensional
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -421,45 +755,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- **A plan on a subdifferential graph is the graph plan of the gradient.** Let `π` be a plan
 with first marginal `μ` on a finite-dimensional real inner product space, with `μ` absolutely
-continuous with respect to an additive Haar measure, and let `u : E → EReal` be convex, lower
-semicontinuous. If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then `u` is finite
-near `μ`-almost every point with differentiable real representative there, and `π` is the graph
-plan of the gradient of that real representative. -/
+continuous with respect to an additive Haar measure, and let `u : E → EReal` be convex. If
+`y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then `u` is finite near `μ`-almost every point with
+differentiable real representative there, and `π` is the graph plan of the gradient of that real
+representative. -/
 theorem eq_graphPlan_gradient_of_ae_mem_subdifferential (hπ : π.fst = μ) (hμ : μ ≪ ρ)
     {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hlsc : LowerSemicontinuous u)
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
-      π = graphPlan (∇ fun x => (u x).toReal) μ := by
-  -- The empty plan is trivial; otherwise a subgradient exists somewhere, so `u` is never `⊥`.
-  rcases eq_zero_or_neZero π with rfl | hne
-  · obtain rfl : μ = 0 := hπ.symm.trans Measure.fst_zero
-    simp
-  have := ae_neBot.2 hne.out
-  obtain ⟨z, hz⟩ := hsub.exists
-  have hbot : ∀ x, u x ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) hz
-  -- The effective domain of `u` contains the first coordinate of almost every point of `π`,
-  -- hence `μ`-almost every point, since `π` has first marginal `μ`.
-  have hdom : ∀ᵐ x ∂μ, u x ≠ ⊤ := by
-    rw [← hπ]
-    refine (ae_map_iff measurable_fst.aemeasurable
-      (hlsc.measurable (measurableSet_singleton ⊤).compl)).2 ?_
-    filter_upwards [hsub] with z hz
-    exact ne_top_of_mem_subdifferential (innerₗ E) hz
-  -- Rademacher's theorem holds `ρ`-almost everywhere on the effective domain, hence `μ`-almost
-  -- everywhere.
-  have hdiff : ∀ᵐ x ∂μ,
-      (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x := by
-    filter_upwards [hμ.ae_le (ae_eventually_ne_top_and_differentiableAt_toReal hconv hbot), hdom]
-      with x hx hx' using hx hx'
-  -- At almost every point of `π` the second coordinate is a subgradient at the first, which is
-  -- then the gradient.
-  have hgraph : ∀ᵐ z ∂π, z.2 = ∇ (fun x => (u x).toReal) z.1 := by
-    rw [← hπ] at hdiff
-    filter_upwards [ae_of_ae_map measurable_fst.aemeasurable hdiff, hsub] with z ⟨hdom, hd⟩ hz
-    exact (gradient_toReal_eq_of_mem_subdifferential hz hdom hd).symm
-  refine ⟨hdiff, ?_⟩
-  rw [eq_graphPlan_of_ae_snd_eq (measurable_gradient _).aemeasurable hgraph, hπ]
+      π = graphPlan (∇ fun x => (u x).toReal) μ :=
+  eq_graphPlan_gradient_of_ae_mem_subdifferential_of_vanishesOnSmallSets
+    hπ (.of_absolutelyContinuous hμ) hconv hsub
 
 /-- **An optimal quadratic plan is induced by the gradient of a convex function.** Let `π` be an
 optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite measures `μ` and `ν` on a
@@ -474,14 +780,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient [IsFiniteMeasure μ] (hμ
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
       (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
-      π = graphPlan (∇ fun x => (u x).toReal) μ := by
-  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := h.exists_support_subset_subdifferential hfin
-  -- Almost every point of `π` lies in its support, so it lies in the subdifferential graph.
-  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
-  obtain ⟨hdiff, hgraph⟩ :=
-    eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hμ hconv hlsc hsub'
-  exact ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩
+      π = graphPlan (∇ fun x => (u x).toReal) μ :=
+  h.exists_eq_graphPlan_gradient_of_vanishesOnSmallSets (.of_absolutelyContinuous hμ) hfin
 
 /-- **The exchanged plan is the graph plan of the gradient of the conjugate.** Let `π` be a plan
 with second marginal `ν` on a finite-dimensional real inner product space, with `ν` absolutely
@@ -494,44 +794,33 @@ theorem map_swap_eq_graphPlan_gradient_fenchelConjugate (hπ : π.snd = ν) (hν
     {u : E → EReal} (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     (∀ᵐ y ∂ν, (∀ᶠ y' in 𝓝 y, fenchelConjugate (innerₗ E) u y' ≠ ⊤) ∧
         DifferentiableAt ℝ (fun y' => (fenchelConjugate (innerₗ E) u y').toReal) y) ∧
-      π.map Prod.swap = graphPlan (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ν := by
-  exact eq_graphPlan_gradient_of_ae_mem_subdifferential (Measure.fst_map_swap.trans hπ) hν
-    (convex_epigraph_fenchelConjugate (innerₗ E) u) (lowerSemicontinuous_fenchelConjugate_innerₗ u)
-    (ae_mem_subdifferential_fenchelConjugate_map_swap hsub)
+      π.map Prod.swap = graphPlan (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ν :=
+  map_swap_eq_graphPlan_gradient_fenchelConjugate_of_vanishesOnSmallSets
+    hπ (.of_absolutelyContinuous hν) hsub
 
 /-- **Conjugate potentials give inverse maps.** Let `π` couple `μ` and `ν`, both absolutely
 continuous with respect to an additive Haar measure on a finite-dimensional real inner product
-space, and let `u : E → EReal` be convex and lower semicontinuous, with `y ∈ ∂u(x)`
-for `π`-almost every `(x, y)`. Then the gradient of the conjugate `u⋆` is a left inverse of the
-gradient of `u`, `μ`-almost everywhere. -/
+space, and let `u : E → EReal` be convex, with `y ∈ ∂u(x)` for `π`-almost every `(x, y)`. Then
+the gradient of the conjugate `u⋆` is a left inverse of the gradient of `u`, `μ`-almost
+everywhere. -/
 theorem IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id (hπ : IsCoupling π μ ν)
     (hμ : μ ≪ ρ) (hν : ν ≪ ρ) {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hlsc : LowerSemicontinuous u)
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
-    (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id := by
-  have h₁ :=
-    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hsub).2
-  have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
-  rw [h₁] at h₂
-  exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
-    (measurable_gradient _).aemeasurable h₂).1
+    (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal) =ᵐ[μ] id :=
+  hπ.gradient_fenchelConjugate_comp_gradient_ae_eq_id_of_vanishesOnSmallSets
+    (.of_absolutelyContinuous hμ) (.of_absolutelyContinuous hν) hconv hsub
 
 /-- **Conjugate potentials give inverse maps.** Let `π` couple `μ` and `ν`, both absolutely
 continuous with respect to an additive Haar measure on a finite-dimensional real inner product
-space, and let `u : E → EReal` be convex and lower semicontinuous, with `y ∈ ∂u(x)`
-for `π`-almost every `(x, y)`. Then the gradient of `u` is a left inverse of the gradient of the
-conjugate `u⋆`, `ν`-almost everywhere. -/
+space, and let `u : E → EReal` be convex, with `y ∈ ∂u(x)` for `π`-almost every `(x, y)`. Then
+the gradient of `u` is a left inverse of the gradient of the conjugate `u⋆`, `ν`-almost
+everywhere. -/
 theorem IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id (hπ : IsCoupling π μ ν)
     (hμ : μ ≪ ρ) (hν : ν ≪ ρ) {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2})
-    (hlsc : LowerSemicontinuous u)
     (hsub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
-    (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν] id := by
-  have h₁ :=
-    (eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hsub).2
-  have h₂ := (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub).2
-  rw [h₁] at h₂
-  exact (comp_ae_eq_id_of_map_swap_graphPlan_eq (measurable_gradient _).aemeasurable
-    (measurable_gradient _).aemeasurable h₂).2
+    (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) =ᵐ[ν] id :=
+  hπ.gradient_comp_gradient_fenchelConjugate_ae_eq_id_of_vanishesOnSmallSets
+    (.of_absolutelyContinuous hμ) (.of_absolutelyContinuous hν) hconv hsub
 
 /-- **Uniqueness of the optimal quadratic plan.** Between finite measures on a finite-dimensional
 real inner product space, if the source `μ` is absolutely continuous with respect to an additive
@@ -541,21 +830,8 @@ theorem IsOptimalCoupling.unique [IsFiniteMeasure μ] (hμ : μ ≪ ρ) {π' : M
     (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
     (h' : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π' μ ν)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
-    π = π' := by
-  -- The sum `π + π'` is an optimal plan between `μ + μ` and `ν + ν`, so it is carried by the
-  -- graph of a single map, and so are `π` and `π'`, which lie below it.
-  have hsum := h.add h'
-  have hfin' : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      (μ + μ) (ν + ν) ≠ ∞ := by
-    rw [← hsum.lintegral_eq, lintegral_add_measure, h.lintegral_eq, h'.lintegral_eq]
-    exact ENNReal.add_ne_top.2 ⟨hfin, hfin⟩
-  obtain ⟨u, -, -, -, -, hgraph⟩ := hsum.exists_eq_graphPlan_gradient (hμ.add_left hμ) hfin'
-  have hT := measurable_gradient fun x => (u x).toReal
-  have hae : ∀ᵐ z ∂(π + π'), z.2 = ∇ (fun x => (u x).toReal) z.1 :=
-    hgraph ▸ ae_snd_eq_graphPlan hT.aemeasurable
-  rw [eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_right le_rfl) hae),
-    eq_graphPlan_of_ae_snd_eq hT.aemeasurable (ae_mono (Measure.le_add_left le_rfl) hae),
-    h.fst_eq, h'.fst_eq]
+    π = π' :=
+  h.unique_of_vanishesOnSmallSets (.of_absolutelyContinuous hμ) h' hfin
 
 /-- **Uniqueness of the monotone rearrangement.** Let `μ` and `ν` be finite measures with finite
 second moments on a finite-dimensional real inner product space, with `μ` absolutely continuous
@@ -581,8 +857,7 @@ theorem gradient_ae_eq_gradient_of_hasLaw [IsFiniteMeasure μ] (hμ2 : MemLp id 
   have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
     rw [← hu'.lintegral_eq, hu'.toIsCoupling.lintegral_norm_sub_sq_div_two hμ2 hν2]
     exact ENNReal.ofReal_ne_top
-  exact (graphPlan_eq_graphPlan_iff huν.aemeasurable hvν.aemeasurable).1
-    (hu'.unique hμ hv' hfin)
+  exact (graphPlan_eq_graphPlan_iff huν.aemeasurable hvν.aemeasurable).1 (hu'.unique hμ hv' hfin)
 
 /-- **Brenier's theorem.** Let `μ` be a probability measure and `ν` a measure on a
 finite-dimensional real inner product space `E`, with `μ` absolutely continuous with respect to an
@@ -608,27 +883,9 @@ theorem exists_isKantorovichOptimalTransportMap_gradient [IsProbabilityMeasure �
         π = graphPlan (∇ fun x => (u x).toReal) μ) ∧
       ∀ S : E → E,
         IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-          μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal := by
-  -- Finite cost gives a coupling, so the target of `μ` is a probability measure as well.
-  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
-  have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
-    continuous_ofReal_norm_sub_sq_div_two
-  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
-  obtain ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩ := hπ.exists_eq_graphPlan_gradient hμ hfin
-  have hT := measurable_gradient fun x => (u x).toReal
-  have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
-    (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
-  have hiff : ∀ S : E → E, HasLaw S ν μ →
-      (IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-        μ ν S ↔ IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-          (graphPlan S μ) μ ν) := fun S hS =>
-    isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hS
-      hc.measurable.aemeasurable
-  refine ⟨u, hconv, hlsc, hbot, hdiff, (hiff _ hlaw).2 (hgraph ▸ hπ),
-    fun σ => ⟨fun hσ => (hσ.unique hμ hπ hfin).trans hgraph, fun hσ => hσ ▸ hgraph ▸ hπ⟩,
-    fun S hS => ?_⟩
-  exact (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT.aemeasurable).1
-    ((((hiff S hS.toHasLaw).1 hS).unique hμ hπ hfin).trans hgraph)
+          μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal :=
+  exists_isKantorovichOptimalTransportMap_gradient_of_vanishesOnSmallSets
+    (.of_absolutelyContinuous hμ) hfin
 
 /-- **Brenier's theorem with the inverse map.** Let `μ` be a probability measure and `ν` a measure
 on a finite-dimensional real inner product space `E`, both absolutely continuous with respect to an
@@ -661,39 +918,9 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
       (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ (∇ fun x => (u x).toReal)
         =ᵐ[μ] id ∧
       (∇ fun x => (u x).toReal) ∘ (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal)
-        =ᵐ[ν] id := by
-  have := isProbabilityMeasure_right_of_transportCost_ne_top hfin
-  have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
-    continuous_ofReal_norm_sub_sq_div_two
-  obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ ν hc.lowerSemicontinuous
-  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := hπ.exists_support_subset_subdifferential hfin
-  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
-  obtain ⟨hdiff, hgraph⟩ :=
-    eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hlsc hsub'
-  obtain ⟨hdiff', hgraph'⟩ :=
-    map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub'
-  -- The quadratic cost is symmetric, so the exchanged plan is optimal from `ν` to `μ`.
-  have hswap : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-      (π.map Prod.swap) ν μ := by
-    have hcs : (fun z : E × E => ENNReal.ofReal (‖z.swap.1 - z.swap.2‖ ^ 2 / 2)) =
-        fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
-      ext z
-      rw [Prod.fst_swap, Prod.snd_swap, norm_sub_rev]
-    exact hcs ▸ hπ.swap
-  have hT := measurable_gradient fun x => (u x).toReal
-  have hS := measurable_gradient fun y => (fenchelConjugate (innerₗ E) u y).toReal
-  have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
-    (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
-  have hlaw' : HasLaw (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) μ ν :=
-    (isCoupling_graphPlan_iff hS.aemeasurable).1 (hgraph' ▸ hπ.toIsCoupling.swap)
-  refine ⟨u, hconv, hlsc, hbot, hdiff, hdiff',
-    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw
-      hc.measurable.aemeasurable).2 (hgraph ▸ hπ),
-    (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hlaw'
-      hc.measurable.aemeasurable).2 (hgraph' ▸ hswap),
-    hπ.toIsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id hμ hν hconv hlsc hsub',
-    hπ.toIsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id hμ hν hconv hlsc hsub'⟩
+        =ᵐ[ν] id :=
+  exists_isKantorovichOptimalTransportMap_gradient_and_fenchelConjugate_of_vanishesOnSmallSets
+    (.of_absolutelyContinuous hμ) (.of_absolutelyContinuous hν) hfin
 
 /-- **The Brenier potential is a weak solution of its transport equation.** Let `μ` be a
 probability measure and `ν` a measure on a finite-dimensional real inner product space `E`, both
@@ -794,18 +1021,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous {μ ν : M
     [IsFiniteMeasure μ] {π : Measure (E × E)} (hμ : μ ≪ ρ)
     (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
     (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
-    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ := by
-  -- The cost `edist ^ 2` is twice the cost `‖x - y‖ ^ 2 / 2` of Brenier's theorem.
-  have hfin' : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-    have h2 := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
-      ENNReal.ofNat_ne_top μ ν
-    rw [ENNReal.toReal_ofNat, funext edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
-      transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top] at h2
-    refine fun htop ↦ ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin ?_
-    rw [h2, htop, ENNReal.mul_top two_ne_zero]
-  have hopt := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h
-  obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient hμ hfin'
-  exact ⟨_, measurable_gradient _, hgraph⟩
+    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ :=
+  h.exists_eq_graphPlan_of_vanishesOnSmallSets (.of_absolutelyContinuous hμ) hfin
 
 /-- **The Brenier potential solves the Monge–Ampère equation almost everywhere.** Let `μ` be a
 probability measure and `ν` a measure on a finite-dimensional real inner product space `E`, both

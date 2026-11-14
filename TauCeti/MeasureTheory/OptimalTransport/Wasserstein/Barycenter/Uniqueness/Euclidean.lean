@@ -12,27 +12,36 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniq
 # Uniqueness of quadratic Euclidean barycenters
 
 On a finite-dimensional real inner product space, Brenier's theorem
-(`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous`) shows that every optimal
-plan for the cost `edist ^ 2` out of a law absolutely continuous with respect to an additive Haar
-measure, such as Lebesgue measure on `ℝⁿ`, into a law at finite `W₂` distance from it, is induced
-by a map. Between laws of `P₂(E)` the distance is always finite, so this is the hypothesis of the
-general uniqueness result `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters`. It gives the
-uniqueness half of Agueh and Carlier's theorem for finitely many input laws, one of them
-absolutely continuous with a positive weight, and its population version, for laws `P` giving
-positive mass to absolutely continuous measures.
+(`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_null_lipschitz_graphs` and
+`TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_vanishesOnSmallSets`) shows that every optimal
+plan for the cost `edist ^ 2` out of a law that assigns zero mass to Lipschitz hyperplane graphs
+(for instance a law vanishing on small sets of Hausdorff codimension at least `1`, and in
+particular any law absolutely continuous with respect to an additive Haar measure such as Lebesgue
+measure on `ℝⁿ`), into a law at finite `W₂` distance from it, is induced by a map. Between laws of
+`P₂(E)` the distance is always finite, so this is the hypothesis of the general uniqueness result
+`TauCeti.WassersteinSpace.subsingleton_frechetBarycenters`. It gives the uniqueness half of Agueh
+and Carlier's theorem for finitely many input laws, one of them vanishing on small sets (or
+absolutely continuous) with a positive weight, and its population version for laws `P` giving
+positive mass to such measures.
 
 ## Main statements
 
-* `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two` and
-  `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two_sum_smul_dirac` — there is at most
-  one quadratic Wasserstein barycenter when the law of the input laws gives positive mass to
-  absolutely continuous laws, in particular for finitely many input laws one of which is
-  absolutely continuous and has a positive weight.
+* `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two_of_null_lipschitz_graphs`,
+  `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two_of_vanishesOnSmallSets`, and
+  `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two` — there is at most one quadratic
+  Wasserstein barycenter when `P` gives positive mass to laws null on Lipschitz hyperplane graphs,
+  laws vanishing on small sets, or laws absolutely continuous with respect to additive Haar
+  measure.
+* `WassersteinSpace.subsingleton_frechetBarycenters_two_sum_smul_dirac_of_null_lipschitz_graphs`,
+  `WassersteinSpace.subsingleton_frechetBarycenters_two_sum_smul_dirac_of_vanishesOnSmallSets`,
+  and `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two_sum_smul_dirac` — the
+  corresponding uniqueness theorems for finitely supported laws `∑ i, w i • δ_{μ i}`.
 
 ## References
 
 * M. Agueh and G. Carlier, *Barycenters in the Wasserstein space*, SIAM J. Math. Anal. 43
-  (2011), 904--924, for uniqueness of finite quadratic barycenters.
+  (2011), 904--924, Proposition 3.5, for uniqueness of finite quadratic barycenters under the
+  small-set condition.
 * T. Le Gouic and J.-M. Loubes, *Existence and consistency of Wasserstein barycenters*,
   Probab. Theory Related Fields 168 (2017), 901--917, for the population version.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, Chapter 7,
@@ -44,9 +53,84 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal RealInnerProductSpace
 
 namespace TauCeti
+
+section SmallSets
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+namespace WassersteinSpace
+
+/-- **Uniqueness of quadratic Wasserstein barycenters under the Lipschitz-graph condition.** On a
+finite-dimensional real inner product space, a law `P` on `P₂(E)` that gives positive outer measure
+to laws assigning zero mass to Lipschitz hyperplane graphs has at most one quadratic Fréchet
+barycenter in `P₂(E)`. -/
+theorem subsingleton_frechetBarycenters_two_of_null_lipschitz_graphs
+    {P : Measure (WassersteinSpace 2 E)}
+    (hP : P {m : WassersteinSpace 2 E | ∀ (v : E), ‖v‖ = 1 →
+      ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+        ((m : ProbabilityMeasure E) : Measure E)
+          {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0} ≠ 0) :
+    (frechetBarycenters 2 P).Subsingleton := by
+  refine subsingleton_frechetBarycenters ENNReal.ofNat_ne_top fun h ↦
+    hP (measure_mono_null ?_ h)
+  intro m hm ν π hπ
+  rw [ENNReal.toReal_ofNat] at hπ
+  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_null_lipschitz_graphs hm
+    (wassersteinEDist_ne_top measurable_edist m ν)
+  exact ⟨T, hT.aemeasurable, hπT⟩
+
+/-- **Uniqueness of quadratic Wasserstein barycenters under `VanishesOnSmallSets`.** On a
+finite-dimensional real inner product space, a law `P` on `P₂(E)` that gives positive outer measure
+to laws vanishing on small sets has at most one quadratic Fréchet barycenter in `P₂(E)`. -/
+theorem subsingleton_frechetBarycenters_two_of_vanishesOnSmallSets
+    {P : Measure (WassersteinSpace 2 E)}
+    (hP : P {m : WassersteinSpace 2 E |
+      ((m : ProbabilityMeasure E) : Measure E).VanishesOnSmallSets} ≠ 0) :
+    (frechetBarycenters 2 P).Subsingleton := by
+  refine subsingleton_frechetBarycenters_two_of_null_lipschitz_graphs fun h ↦
+    hP (measure_mono_null ?_ h)
+  intro m (hm : Measure.VanishesOnSmallSets _) _ hv _ _ hg
+  exact hm.measure_setOf_inner_eq_orthogonalProjectionOnto (ne_of_apply_ne norm (by simp [hv])) hg
+
+/-- **Uniqueness of quadratic Wasserstein barycenters of finitely many laws (Lipschitz-graph
+hypothesis).** -/
+theorem subsingleton_frechetBarycenters_two_sum_smul_dirac_of_null_lipschitz_graphs
+    {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} {μ : ι → WassersteinSpace 2 E} {j : ι} (hj : w j ≠ 0)
+    (hμj : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      ((μ j : ProbabilityMeasure E) : Measure E)
+        {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0) :
+    (frechetBarycenters 2 (∑ i, w i • Measure.dirac (μ i))).Subsingleton := by
+  set S := {m : WassersteinSpace 2 E | ∀ (v : E), ‖v‖ = 1 →
+    ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
+      ((m : ProbabilityMeasure E) : Measure E)
+        {x | ⟪v, x⟫ = g ((ℝ ∙ v)ᗮ.orthogonalProjectionOnto x)} = 0}
+  refine subsingleton_frechetBarycenters_two_of_null_lipschitz_graphs (ne_of_gt ?_)
+  have hjS : μ j ∈ S := hμj
+  calc (0 : ℝ≥0∞) < w j := ENNReal.coe_pos.2 (pos_iff_ne_zero.2 hj)
+    _ = (w j • Measure.dirac (μ j)) S := by simp [Measure.dirac_apply_of_mem hjS]
+    _ ≤ ∑ i, (w i • Measure.dirac (μ i)) S :=
+        Finset.single_le_sum (f := fun i ↦ (w i • Measure.dirac (μ i)) S)
+          (fun _ _ ↦ bot_le) (Finset.mem_univ j)
+    _ = (∑ i, w i • Measure.dirac (μ i)) S := by rw [FunLike.coe_sum, Finset.sum_apply]
+
+/-- **Uniqueness of quadratic Wasserstein barycenters of finitely many laws under
+`VanishesOnSmallSets`** (Agueh–Carlier, Proposition 3.5). -/
+theorem subsingleton_frechetBarycenters_two_sum_smul_dirac_of_vanishesOnSmallSets
+    {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} {μ : ι → WassersteinSpace 2 E} {j : ι} (hj : w j ≠ 0)
+    (hμj : ((μ j : ProbabilityMeasure E) : Measure E).VanishesOnSmallSets) :
+    (frechetBarycenters 2 (∑ i, w i • Measure.dirac (μ i))).Subsingleton :=
+  subsingleton_frechetBarycenters_two_sum_smul_dirac_of_null_lipschitz_graphs hj fun _ hv _ _ hg ↦
+    hμj.measure_setOf_inner_eq_orthogonalProjectionOnto (ne_of_apply_ne norm (by simp [hv])) hg
+
+end WassersteinSpace
+
+end SmallSets
+
+section Haar
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {ρ : Measure E} [ρ.IsAddHaarMeasure]
@@ -59,14 +143,9 @@ with respect to an additive Haar measure has at most one quadratic Fréchet bary
 `P₂(E)`. -/
 theorem subsingleton_frechetBarycenters_two {P : Measure (WassersteinSpace 2 E)}
     (hP : P {m : WassersteinSpace 2 E | ((m : ProbabilityMeasure E) : Measure E) ≪ ρ} ≠ 0) :
-    (frechetBarycenters 2 P).Subsingleton := by
-  refine subsingleton_frechetBarycenters ENNReal.ofNat_ne_top fun h ↦
-    hP (measure_mono_null ?_ h)
-  intro m (hm : _ ≪ ρ) ν π hπ
-  rw [ENNReal.toReal_ofNat] at hπ
-  obtain ⟨T, hT, hπT⟩ := hπ.exists_eq_graphPlan_of_absolutelyContinuous hm
-    (wassersteinEDist_ne_top measurable_edist m ν)
-  exact ⟨T, hT.aemeasurable, hπT⟩
+    (frechetBarycenters 2 P).Subsingleton :=
+  subsingleton_frechetBarycenters_two_of_vanishesOnSmallSets fun h ↦
+    hP (measure_mono_null (fun _ hm ↦ Measure.VanishesOnSmallSets.of_absolutelyContinuous hm) h)
 
 /-- **Uniqueness of quadratic Wasserstein barycenters of finitely many laws** (Agueh–Carlier). On
 a finite-dimensional real inner product space, if one of finitely many laws `μ i` of `P₂(E)` is
@@ -75,17 +154,12 @@ law `∑ i, w i • δ_{μ i}` has at most one quadratic Fréchet barycenter in 
 theorem subsingleton_frechetBarycenters_two_sum_smul_dirac {ι : Type*} [Fintype ι]
     {w : ι → ℝ≥0} {μ : ι → WassersteinSpace 2 E} {j : ι} (hj : w j ≠ 0)
     (hμj : ((μ j : ProbabilityMeasure E) : Measure E) ≪ ρ) :
-    (frechetBarycenters 2 (∑ i, w i • Measure.dirac (μ i))).Subsingleton := by
-  set S := {m : WassersteinSpace 2 E | ((m : ProbabilityMeasure E) : Measure E) ≪ ρ}
-  refine subsingleton_frechetBarycenters_two (ρ := ρ) (ne_of_gt ?_)
-  have hjS : μ j ∈ S := by simpa only [S, Set.mem_ofPred_eq] using hμj
-  calc (0 : ℝ≥0∞) < w j := ENNReal.coe_pos.2 (pos_iff_ne_zero.2 hj)
-    _ = (w j • Measure.dirac (μ j)) S := by simp [Measure.dirac_apply_of_mem hjS]
-    _ ≤ ∑ i, (w i • Measure.dirac (μ i)) S :=
-        Finset.single_le_sum (f := fun i ↦ (w i • Measure.dirac (μ i)) S)
-          (fun _ _ ↦ bot_le) (Finset.mem_univ j)
-    _ = (∑ i, w i • Measure.dirac (μ i)) S := by rw [FunLike.coe_sum, Finset.sum_apply]
+    (frechetBarycenters 2 (∑ i, w i • Measure.dirac (μ i))).Subsingleton :=
+  subsingleton_frechetBarycenters_two_sum_smul_dirac_of_vanishesOnSmallSets hj
+    (.of_absolutelyContinuous hμj)
 
 end WassersteinSpace
+
+end Haar
 
 end TauCeti

@@ -10,9 +10,13 @@ public import TauCeti.Analysis.Convex.Subdifferential
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
-import TauCeti.Analysis.Convex.Differentiability
+public import TauCeti.Analysis.Convex.Differentiability
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.Convex.Measure
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Compactness of subgradient images of convex functions
@@ -26,6 +30,9 @@ on `K`. Hence
 the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact. The same
 compactness, with Rademacher's theorem, shows that `f` has a subgradient at every point of `D`;
 in particular a real function convex on an open set has a supporting hyperplane at each point.
+At a point of `D` where the subgradient is unique, compactness of the graph forces any local
+subgradient selection to be continuous there, so `f` is differentiable at points of `D` with
+subsingleton subdifferential.
 
 For a real function `u` continuous on the compact closure of a set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
@@ -55,6 +62,11 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
   point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
   around which `f` is finite;
+* `TauCeti.mem_interior_setOf_ne_top_of_subsingleton_subdifferential`,
+  `TauCeti.hasGradientAt_toReal_of_subsingleton_subdifferential`, and
+  `TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential` — a unique subgradient forces
+  an interior effective-domain point, where differentiability is equivalent to uniqueness of the
+  subgradient;
 * `ConvexOn.exists_forall_add_inner_le` — a real function convex on an open set has a subgradient
   relative to that set at each of its points;
 * `TauCeti.exists_forall_add_apply_le_of_forall_frontier` — continuous-linear-functional slopes
@@ -71,7 +83,8 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 
 ## References
 
-* R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, 1970, Theorem 24.7.
+* R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, 1970, Theorems 24.7
+  and 25.1.
 * C. E. Gutiérrez, *The Monge–Ampère Equation*, 2nd ed., Progress in Nonlinear Differential
   Equations and Their Applications 89, Birkhäuser, 2016, §§1.1–1.2.
 -/
@@ -135,6 +148,49 @@ theorem isClosed_setOf_mem_subdifferential {f : E → EReal} (hbot : ∀ x, f x 
   exact ((continuous_const.sub continuous_fst).inner continuous_snd).continuousOn
 
 end Seminormed
+
+/-- If an `EReal`-valued function with convex epigraph takes the value `⊥` somewhere, then it is
+identically `⊥` on the interior of `{z | f z ≠ ⊤}` (Rockafellar, Theorem 7.2). -/
+theorem eq_bot_of_mem_interior_of_eq_bot {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : E → EReal} (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {z₀ y : E}
+    (hz₀ : f z₀ = ⊥) (hy : y ∈ interior {z | f z ≠ ⊤}) : f y = ⊥ := by
+  have hg : Continuous fun t : ℝ => y + t • (y - z₀) :=
+    continuous_const.add (continuous_id.smul continuous_const)
+  have hmem : {t : ℝ | y + t • (y - z₀) ∈ interior {z | f z ≠ ⊤}} ∈ nhds (0 : ℝ) :=
+    hg.continuousAt.preimage_mem_nhds (isOpen_interior.mem_nhds (by simpa using hy))
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 hmem
+  set δ := r / 2
+  have hδ : 0 < δ := half_pos hr
+  set w := y + δ • (y - z₀)
+  have hfw : f w ≠ ⊤ := interior_subset <| hball <| Metric.mem_ball.2 <| by
+    rw [Real.dist_eq, sub_zero, abs_of_pos hδ]
+    exact half_lt_self hr
+  set M := (f w).toReal
+  have hwM : f w ≤ M := by
+    rcases eq_or_ne (f w) ⊥ with h | h
+    · simp [h]
+    · exact (EReal.coe_toReal hfw h).ge
+  by_contra hybot
+  have hytop : f y ≠ ⊤ := interior_subset hy
+  set c := (f y).toReal - 1
+  set a := δ / (1 + δ)
+  set b := 1 / (1 + δ)
+  have ha : 0 < a := div_pos hδ (by linarith)
+  have hb : 0 ≤ b := div_nonneg zero_le_one (by linarith)
+  have hab : a + b = 1 := by simp only [a, b]; field_simp; ring
+  have hcomb := hf (x := (z₀, (c - b * M) / a)) (y := (w, M))
+    (by simp [hz₀]) hwM ha.le hb hab
+  have hfst : a • z₀ + b • w = y := by
+    have ha' : a - b * δ = 0 := by simp only [a, b]; field_simp; ring
+    have hb' : b * (1 + δ) = 1 := by simp only [b]; field_simp
+    calc a • z₀ + b • w
+        = (a - b * δ) • z₀ + (b * (1 + δ)) • y := by dsimp only [w]; module
+      _ = y := by rw [ha', hb', zero_smul, one_smul, zero_add]
+  have hsnd : a * ((c - b * M) / a) + b * M = c := by
+    rw [mul_div_cancel₀ _ ha.ne', sub_add_cancel]
+  simp only [Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, hfst, hsnd, mem_ofPred_eq] at hcomb
+  rw [← EReal.coe_toReal hytop hybot, EReal.coe_le_coe_iff] at hcomb
+  linarith
 
 section FiniteDimensional
 
@@ -222,6 +278,127 @@ theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x,
     ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
   Filter.eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
     fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
+
+omit hbot in
+/-- **A unique subgradient forces an interior effective-domain point** (Rockafellar, Theorem 23.4).
+If a convex `f : E → EReal` on a finite-dimensional real inner product space has a unique
+subgradient at `x`, then `x` lies in the interior of `{z | f z ≠ ⊤}`. -/
+theorem mem_interior_setOf_ne_top_of_subsingleton_subdifferential {x y : E}
+    (hy : y ∈ subdifferential (innerₗ E) f x)
+    (hsub : (subdifferential (innerₗ E) f x).Subsingleton) :
+    x ∈ interior {z | f z ≠ ⊤} := by
+  by_contra hx
+  set C := {z | f z ≠ ⊤}
+  have hC : Convex ℝ C := convex_setOf_ne_top hf
+  have hxC : x ∈ C := ne_top_of_mem_subdifferential (innerₗ E) hy
+  suffices ∃ w : E, w ≠ 0 ∧ ∀ z ∈ C, inner ℝ (z - x) w ≤ 0 by
+    obtain ⟨w, hw0, hw⟩ := this
+    have hyw : y + w ∈ subdifferential (innerₗ E) f x := by
+      rw [mem_subdifferential_iff]
+      refine ⟨ne_bot_of_mem_subdifferential (innerₗ E) hy, hxC, fun z => ?_⟩
+      by_cases hz : f z = ⊤
+      · simp [hz]
+      · refine le_trans ?_ (add_le_of_mem_subdifferential (innerₗ E) hy z)
+        rw [innerₗ_apply_apply, innerₗ_apply_apply, inner_add_right]
+        exact add_le_add le_rfl (EReal.coe_le_coe_iff.2 (by linarith [hw z hz]))
+    exact hw0 (by simpa using hsub hyw hy)
+  rcases (interior C).eq_empty_or_nonempty with hemp | hne
+  · have hspan : affineSpan ℝ C ≠ ⊤ :=
+      fun htop => (hC.interior_nonempty_iff_affineSpan_eq_top.2 htop).ne_empty hemp
+    have hdir : (affineSpan ℝ C).direction ≠ ⊤ := fun htop =>
+      hspan ((AffineSubspace.direction_eq_top_iff_of_nonempty
+        ⟨x, subset_affineSpan ℝ C hxC⟩).1 htop)
+    have horth : (affineSpan ℝ C).directionᗮ ≠ ⊥ := fun hbot => hdir <| by
+      rw [← (affineSpan ℝ C).direction.orthogonal_orthogonal, hbot,
+        Submodule.bot_orthogonal_eq_top]
+    obtain ⟨w, hw, hw0⟩ := (Submodule.ne_bot_iff _).1 horth
+    refine ⟨w, hw0, fun z hz => le_of_eq ?_⟩
+    have hsub' : z - x ∈ (affineSpan ℝ C).direction := by
+      simpa only [vsub_eq_sub] using
+        AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C hz) (subset_affineSpan ℝ C hxC)
+    rw [real_inner_comm]
+    exact (Submodule.mem_orthogonal' _ _).1 hw _ hsub'
+  · obtain ⟨φ, hφ⟩ := geometric_hahn_banach_open_point hC.interior isOpen_interior hx
+    set w := (InnerProductSpace.toDual ℝ E).symm φ
+    have hφw (z : E) : φ z = inner ℝ w z := InnerProductSpace.toDual_symm_apply.symm
+    have hw0 : w ≠ 0 := by
+      intro hw0
+      obtain ⟨a, ha⟩ := hne
+      simpa [hφw, hw0] using hφ a ha
+    refine ⟨w, hw0, fun z hz => ?_⟩
+    have hzcl : z ∈ closure (interior C) :=
+      (hC.closure_interior_eq_closure_of_nonempty_interior hne).symm ▸ subset_closure hz
+    have hle : φ z ≤ φ x :=
+      le_on_closure (fun a ha => (hφ a ha).le) φ.continuous.continuousOn continuousOn_const hzcl
+    rw [hφw, hφw] at hle
+    rw [real_inner_comm, inner_sub_right]
+    linarith
+
+omit hbot in
+open scoped Topology in
+/-- **Uniqueness of the subgradient implies differentiability.** For a convex `f : E → EReal` on a
+finite-dimensional real inner product space, if `y` is the only subgradient of `f` at `x`, then `y`
+is the gradient of the real representative of `f` at `x`. -/
+theorem hasGradientAt_toReal_of_subsingleton_subdifferential {x y : E}
+    (hy : y ∈ subdifferential (innerₗ E) f x)
+    (hsub : (subdifferential (innerₗ E) f x).Subsingleton) :
+    HasGradientAt (fun z => (f z).toReal) y x := by
+  have hbot : ∀ z, f z ≠ ⊥ := apply_ne_bot_of_mem_subdifferential (innerₗ E) hy
+  have hx : x ∈ interior {z | f z ≠ ⊤} :=
+    mem_interior_setOf_ne_top_of_subsingleton_subdifferential hf hy hsub
+  obtain ⟨r, hr, hrD⟩ : ∃ r > 0, closedBall x r ⊆ interior {z | f z ≠ ⊤} :=
+    nhds_basis_closedBall.mem_iff.1 (isOpen_interior.mem_nhds hx)
+  have hex : ∀ z, ∃ w, z ∈ closedBall x r → w ∈ subdifferential (innerₗ E) f z := fun z => by
+    by_cases hz : z ∈ closedBall x r
+    · obtain ⟨w, hw⟩ := nonempty_subdifferential_of_mem_interior hf hbot (hrD hz)
+      exact ⟨w, fun _ => hw⟩
+    · exact ⟨y, fun hz' => (hz hz').elim⟩
+  choose T hTz using hex
+  have hTx : T x = y := hsub (hTz x (mem_closedBall_self hr.le)) hy
+  -- Compactness of the subdifferential graph over the closed ball makes `T` continuous at `x`.
+  have hG := isCompact_setOf_mem_subdifferential hf hbot (isCompact_closedBall x r) hrD
+  have hcont : ContinuousAt T x := by
+    intro V hV
+    obtain ⟨U, hUV, hU, hxU⟩ := _root_.mem_nhds_iff.1 hV
+    have hF : IsClosed (Prod.fst '' ({z : E × E | z.1 ∈ closedBall x r ∧
+        z.2 ∈ subdifferential (innerₗ E) f z.1} \ Prod.snd ⁻¹' U)) :=
+      ((hG.diff (hU.preimage continuous_snd)).image continuous_fst).isClosed
+    have hxF : x ∉ Prod.fst '' ({z : E × E | z.1 ∈ closedBall x r ∧
+        z.2 ∈ subdifferential (innerₗ E) f z.1} \ Prod.snd ⁻¹' U) := by
+      rintro ⟨⟨z, w⟩, ⟨⟨-, hw⟩, hwU⟩, rfl⟩
+      dsimp only at hw
+      exact hwU (show w ∈ U from hsub (hTz z (mem_closedBall_self hr.le)) hw ▸ hxU)
+    rw [Filter.mem_map]
+    filter_upwards [closedBall_mem_nhds x hr, hF.compl_mem_nhds hxF] with z hzK hzF
+    exact hUV (by_contra fun hzU => hzF ⟨(z, T z), ⟨⟨hzK, hTz z hzK⟩, hzU⟩, rfl⟩)
+  refine hTx ▸ hasGradientAt_toReal_of_continuousAt_subgradient hcont ?_
+  filter_upwards [closedBall_mem_nhds x hr] with z hzK using hTz z hzK
+
+omit hbot in
+open scoped Topology in
+/-- **Characterization of differentiability by a unique subgradient** (Rockafellar, Theorem 25.1).
+At an interior point `x` of the effective domain of a convex `f : E → EReal` on a
+finite-dimensional real inner product space, the real representative of `f` is differentiable at
+`x` if and only if the subdifferential of `f` at `x` has at most one element. -/
+theorem differentiableAt_toReal_iff_subsingleton_subdifferential {x : E}
+    (hx : x ∈ interior {z | f z ≠ ⊤}) :
+    DifferentiableAt ℝ (fun z => (f z).toReal) x ↔
+      (subdifferential (innerₗ E) f x).Subsingleton := by
+  by_cases hbot : ∀ z, f z ≠ ⊥
+  · refine ⟨fun hd y₁ hy₁ y₂ hy₂ => ?_, fun hsub => ?_⟩
+    · have hdom := mem_interior_iff_mem_nhds.1 hx
+      exact (gradient_toReal_eq_of_mem_subdifferential hy₁ hdom hd).symm.trans
+        (gradient_toReal_eq_of_mem_subdifferential hy₂ hdom hd)
+    · obtain ⟨y, hy⟩ := nonempty_subdifferential_of_mem_interior hf hbot hx
+      exact (hasGradientAt_toReal_of_subsingleton_subdifferential hf hy hsub).differentiableAt
+  · push Not at hbot
+    obtain ⟨z₀, hz₀⟩ := hbot
+    have hd : DifferentiableAt ℝ (fun z => (f z).toReal) x := by
+      refine (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq ?_
+      filter_upwards [isOpen_interior.mem_nhds hx] with z hz
+      simp [eq_bot_of_mem_interior_of_eq_bot hf hz₀ hz]
+    rw [subdifferential_eq_empty_of_eq_bot (innerₗ E) (eq_bot_of_mem_interior_of_eq_bot hf hz₀ hx)]
+    exact ⟨fun _ => subsingleton_empty, fun _ => hd⟩
 
 end FiniteDimensional
 

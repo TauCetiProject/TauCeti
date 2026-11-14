@@ -26,6 +26,9 @@ barycenters of `∑ j, w j • δ_{μ j}` are exactly the minimizers of that cos
 * `TauCeti.WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter` — on a
   Polish space, a barycenter in `P_p(X)` of `∑ j, w j • δ_{μ j}` minimizes the weighted cost over
   all laws.
+* `TauCeti.hasFiniteMoment_of_isMinOn_sum_mul_wassersteinEDist_rpow` — any probability law
+  minimizing a weighted positive-power `W_p` cost against finite-moment anchors inherits finite
+  `p`-th moment.
 -/
 
 public section
@@ -98,5 +101,37 @@ theorem WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBaryc
     congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
   have hz := isMinOn_iff.1 hmin (WassersteinSpace.mk ⟨ν', hν'⟩ hmom) (mem_univ _)
   rwa [hcoe] at hz
+
+section MomentOfMinimizer
+
+variable {ι Y : Type*} [Fintype ι] [MeasurableSpace Y] [PseudoMetricSpace Y]
+
+/-- **Minimizers of weighted Wasserstein power costs inherit finite moments.** On any measurable
+pseudometric space with jointly measurable distance, if `ν : ProbabilityMeasure Y` minimizes
+`ν' ↦ ∑ i, w i * W_p(ν', μ i) ^ q` (with `0 < q`) among all probability measures on `Y`, where
+every `μ i` has finite `p`-th moment and some `w j` is nonzero, then `ν` has finite `p`-th moment.
+-/
+theorem hasFiniteMoment_of_isMinOn_sum_mul_wassersteinEDist_rpow
+    (hd : Measurable fun z : Y × Y ↦ edist z.1 z.2) {p : ℝ≥0∞} {q : ℝ} (hq : 0 < q)
+    {w : ι → ℝ≥0} {μ : ι → ProbabilityMeasure Y}
+    (hmom : ∀ i, HasFiniteMoment p (μ i : Measure Y)) {j : ι} (hj : w j ≠ 0)
+    {ν : ProbabilityMeasure Y}
+    (hν : IsMinOn (fun ν' : ProbabilityMeasure Y ↦ ∑ i, (w i : ℝ≥0∞) *
+      wassersteinEDist p (ν' : Measure Y) (μ i : Measure Y) ^ q) univ ν) :
+    HasFiniteMoment p (ν : Measure Y) := by
+  let m : ι → WassersteinSpace p Y := fun i ↦ WassersteinSpace.mk (μ i) (hmom i)
+  have hm (i : ι) : (m i : ProbabilityMeasure Y) = μ i := WassersteinSpace.coe_mk _ _
+  have hle : ∑ i, (w i : ℝ≥0∞) * wassersteinEDist p (ν : Measure Y) (μ i : Measure Y) ^ q ≤
+      ∑ i, (w i : ℝ≥0∞) * wassersteinEDist p (μ j : Measure Y) (μ i : Measure Y) ^ q :=
+    isMinOn_univ_iff.1 hν (μ j)
+  have hfin₀ : ∑ i, (w i : ℝ≥0∞) *
+      wassersteinEDist p (μ j : Measure Y) (μ i : Measure Y) ^ q ≠ ∞ :=
+    ENNReal.sum_ne_top.2 fun i _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top <|
+      ENNReal.rpow_ne_top_of_nonneg hq.le <| by
+        simpa only [hm] using WassersteinSpace.wassersteinEDist_ne_top hd (m j) (m i)
+  exact hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top hd
+    (Finset.mem_univ j) (ENNReal.coe_ne_zero.2 hj) (hmom j) hq (ne_top_of_le_ne_top hfin₀ hle)
+
+end MomentOfMinimizer
 
 end TauCeti
