@@ -21,7 +21,9 @@ three pairs it determines form a short exact sequence
 `0 ⟶ C(A, B) ⟶ C(X, B) ⟶ C(X, A) ⟶ 0`,
 
 because each of them is the quotient of the singular chains of the ambient space by those of the
-subspace.  The associated long homology sequence is the long exact sequence of the triple
+subspace.  It is split in each degree
+(`TauCeti.TopTriple.isSplitEpi_singularChainComplexMap_totalToOuter_f`).  The associated long
+homology sequence is the long exact sequence of the triple
 
 `⋯ ⟶ Hₙ(A, B) ⟶ Hₙ(X, B) ⟶ Hₙ(X, A) ⟶ Hₙ₋₁(A, B) ⟶ ⋯`.
 
@@ -168,6 +170,32 @@ lemma shortExact_singularChainComplexShortComplex :
       TopCat.toSSet.map T.totalMap := by
     rw [← Functor.map_comp, T.innerMap_comp_outerMap]
   exact (((SSet.chainComplexFunctor A).obj R).map_comp _ _).symm.trans (congrArg _ h)
+
+/-- In each degree, the map `C(X, B) ⟶ C(X, A)` of relative singular chains of a triple
+`(X, A, B)` is a split epimorphism: a section of the quotient map `C(X) ⟶ C(X, A)`, followed by the
+quotient map `C(X) ⟶ C(X, B)`, is a section of it. -/
+instance isSplitEpi_singularChainComplexMap_totalToOuter_f (n : ℕ) :
+    IsSplitEpi ((TopPair.singularChainComplexMap (totalToOuter.app T) R).f n) :=
+  let e := SSetPair.chainComplexXRetract R (TopPair.toSSetPair.obj (outerPair.obj T)) n
+  IsSplitEpi.mk' ⟨e.i ≫ ((totalPair.obj T).singularChainComplexπ R).f n,
+    (Category.assoc _ _ _).trans <| (congrArg (e.i ≫ ·) <|
+      (HomologicalComplex.comp_f _ _ n).symm.trans <|
+        (congrArg (fun f ↦ f.f n) (T.singularChainComplexπ_comp_totalToOuter R)).trans
+          (SSetPair.chainComplexXRetract_r _ _ n).symm).trans e.retract⟩
+
+/-- In each degree, the map `C(A, B) ⟶ C(X, B)` of relative singular chains of a triple
+`(X, A, B)` is a split monomorphism, since the sequence of the triple is short exact with split
+last map. -/
+instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
+    IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) :=
+  have hS := T.shortExact_singularChainComplexShortComplex R
+  have : (HomologicalComplex.eval A (ComplexShape.down ℕ) n).PreservesHomology := {}
+  have := hS.mono_f
+  have : Mono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) :=
+    (HomologicalComplex.eval A (ComplexShape.down ℕ) n).map_mono _
+  (ShortComplex.Splitting.ofExactOfSection _ (hS.exact.map (HomologicalComplex.eval A _ n))
+    (section_ ((TopPair.singularChainComplexMap (totalToOuter.app T) R).f n))
+    (IsSplitEpi.id _) this).isSplitMono_f
 
 /-- The connecting morphism `Hₙ(X, A) ⟶ Hₘ(A, B)` in the long exact sequence of a triple, for
 `m + 1 = n`. -/

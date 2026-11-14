@@ -111,6 +111,11 @@ noncomputable def chainComplexXRetract (R : A) (P : SSetPair.{w}) (n : ℕ) :
     Retract ((P.chainComplex R).X n) ((P.right.chainComplex R).X n) :=
   ⟨(chainComplexXSplitting R P n).s, (P.chainComplexπ R).f n, (chainComplexXSplitting R P n).s_g⟩
 
+/-- The retraction of `SSetPair.chainComplexXRetract` is the quotient map from the ambient chains to
+the relative chains. -/
+lemma chainComplexXRetract_r (R : A) (P : SSetPair.{w}) (n : ℕ) :
+    (chainComplexXRetract R P n).r = (P.chainComplexπ R).f n := (rfl)
+
 /-- The relative chains `Cₙ(Y, X; R)` of a pair of simplicial sets are projective whenever the
 ambient chains `Cₙ(Y; R)` are, for instance for chains with coefficients in a projective module. -/
 instance projective_chainComplex_X (R : A) (P : SSetPair.{w}) (n : ℕ)
