@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.ZariskisMainTheorem
+public import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
 public import TauCeti.RingTheory.KrullDimension.Parameter
 
 /-!
@@ -30,22 +30,6 @@ It is useful for lifting coordinates from a special fibre.
 public section
 
 open Polynomial
-
-namespace Algebra.QuasiFiniteAt
-
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
-
-/-- A finite type algebra is quasi-finite at a prime `q` if its quotient by an ideal
-contained in the extension of `q.under R` is quasi-finite over the base. -/
-theorem of_quasiFinite_quotient [Algebra.FiniteType R A] (q : Ideal A) [q.IsPrime]
-    (I : Ideal A) [Algebra.QuasiFinite R (A ⧸ I)]
-    (hI : I ≤ (q.under R).map (algebraMap R A)) : Algebra.QuasiFiniteAt R q := by
-  have : Algebra.QuasiFinite R (A ⧸ (q.under R).map (algebraMap R A)) :=
-    .of_surjective_algHom (Ideal.Quotient.factorₐ R hI) (Ideal.Quotient.factor_surjective hI)
-  have : Algebra.WeaklyQuasiFiniteAt R q := inferInstance
-  exact .of_weaklyQuasiFiniteAt q
-
-end Algebra.QuasiFiniteAt
 
 namespace AlgHom
 
@@ -91,17 +75,20 @@ end AlgHom
 
 namespace Ideal
 
-/-- A closed point of an affine curve over an Artinian ring admits a function vanishing there
+/-- A closed point of an affine curve over a Noetherian ring admits a function vanishing there
 which defines a quasi-finite map to the affine line at that point. -/
-theorem exists_mem_quasiFiniteAt_aeval {k A : Type*} [CommRing k] [IsArtinianRing k] [CommRing A]
+theorem exists_mem_quasiFiniteAt_aeval {k A : Type*} [CommRing k] [IsNoetherianRing k] [CommRing A]
     [Algebra k A] [Algebra.FiniteType k A] [Ring.KrullDimLE 1 A]
     (m : Ideal A) [m.IsMaximal] :
     ∃ x ∈ m, letI := (Polynomial.aeval (R := k) x).toAlgebra
       Algebra.QuasiFiniteAt k[X] m := by
-  obtain ⟨x, hxm, hx⟩ := m.exists_mem_finite_quotient_span_singleton (k := k)
+  have := Algebra.FiniteType.isNoetherianRing k A
+  obtain ⟨x, hxm, hx⟩ := m.exists_mem_krullDimLE_zero_quotient_span_singleton
+  have : IsArtinianRing (A ⧸ span {x}) :=
+    IsNoetherianRing.isArtinianRing_of_krullDimLE_zero
   have : Algebra.QuasiFinite k (A ⧸ span {(AlgHom.id k A) x}) := by
     rw [AlgHom.id_apply]
-    infer_instance
+    exact Algebra.QuasiFinite.iff_finite_comap_preimage_singleton.mpr fun _ ↦ Set.toFinite _
   exact ⟨x, hxm, (AlgHom.id k A).quasiFiniteAt_aeval
     Function.surjective_id x m hxm (by
       rw [(RingHom.injective_iff_ker_eq_bot _).mp Function.injective_id]

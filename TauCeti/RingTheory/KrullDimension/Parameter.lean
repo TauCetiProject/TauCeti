@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.Jacobson.Artinian
+public import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 
 /-!
@@ -17,8 +18,8 @@ whose principal quotient has dimension zero. Choose the element by avoiding the 
 many minimal primes which are not maximal. Every prime containing the element is then
 maximal. This also handles isolated zero-dimensional components and nonreduced rings.
 
-For a finite type algebra over an Artinian ring, the quotient is finite over the base. Thus every
-closed point of an affine curve lies in the finite zero fibre of a regular function.
+For a finite type algebra over a Noetherian Jacobson ring, the quotient is finite over the base.
+Thus every closed point of an affine curve lies in the finite zero fibre of a regular function.
 This construction works over finite fields as well as infinite fields.
 
 ## References
@@ -64,16 +65,17 @@ end Ideal
 
 namespace Ideal
 
-/-- On an affine scheme of dimension at most one and finite type over an Artinian ring, every closed
-point lies on the finite zero fibre of a function. No reducedness, equidimensionality, or
-infinitude of a residue field is required. -/
-theorem exists_mem_finite_quotient_span_singleton {k A : Type*} [CommRing k] [IsArtinianRing k]
-    [CommRing A]
-    [Algebra k A] [Algebra.FiniteType k A] [Ring.KrullDimLE 1 A]
+/-- On an affine scheme of dimension at most one and finite type over a Noetherian Jacobson ring,
+every closed point lies on the finite zero fibre of a function. No reducedness,
+equidimensionality, or infinitude of a residue field is required. -/
+theorem exists_mem_finite_quotient_span_singleton {k A : Type*} [CommRing k] [IsNoetherianRing k]
+    [IsJacobsonRing k] [CommRing A] [Algebra k A] [Algebra.FiniteType k A] [Ring.KrullDimLE 1 A]
     (m : Ideal A) [m.IsMaximal] :
     ∃ x ∈ m, Module.Finite k (A ⧸ Ideal.span {x}) := by
   have := Algebra.FiniteType.isNoetherianRing k A
   obtain ⟨x, hxm, hx⟩ := m.exists_mem_krullDimLE_zero_quotient_span_singleton
-  exact ⟨x, hxm, (Module.finite_iff_krullDimLE_zero k _).mpr hx⟩
+  have : IsArtinianRing (A ⧸ span {x}) :=
+    IsNoetherianRing.isArtinianRing_of_krullDimLE_zero
+  exact ⟨x, hxm, Module.finite_of_isArtinianRing k _⟩
 
 end Ideal
