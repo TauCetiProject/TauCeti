@@ -239,7 +239,7 @@ theorem principalForm_reindex {K' : Type*} [DecidableEq K'] (e : K ≃ K') :
     (reindex e e (fun _ ↦ rfl) B).principalForm =
       B.principalForm.reindex (e.sumCongr e) (e.sumCongr e) := by
   ext (i | i) (j | j) <;>
-    simp [diagonal, reindex_apply,
+    simp [diagonal,
       reindex_matrix (row' := Function.Embedding.refl K') B e e (fun _ ↦ rfl),
       reindex_symmetrizer (row' := Function.Embedding.refl K') B e e (fun _ ↦ rfl)]
 
