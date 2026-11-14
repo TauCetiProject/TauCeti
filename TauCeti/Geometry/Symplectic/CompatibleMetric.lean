@@ -44,6 +44,9 @@ against exactly this metric.
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
   metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
+* `TauCeti.SymplecticForm.inner_apply_left_eq_of_apply_apply_eq_inner` and
+  `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
+  product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
 * `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
   orthogonal almost complex structure `J` on a real inner product space.
 
@@ -267,6 +270,20 @@ theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w 
   have hJ := ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) w
   rw [hω, abs_neg, ← hJ]
   exact abs_real_inner_le_norm v (J w)
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then pairing with `J v` is `ω(v, ·)`:
+`⟪J v, w⟫ = ω(v, w)`. -/
+theorem inner_apply_left_eq_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (v w : V) : ⟪J v, w⟫ = ω v w := by
+  have h : ω w (-v) = -ω w v := map_neg (ω.toBilinForm w) v
+  rw [real_inner_comm, ← hg, J.apply_apply, h, ω.neg_eq]
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then `J` is skew-adjoint:
+`⟪J v, w⟫ = -⟪v, J w⟫`. -/
+theorem inner_apply_left_eq_neg_of_apply_apply_eq_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ := by
+  rw [inner_apply_left_eq_of_apply_apply_eq_inner hg, real_inner_comm,
+    inner_apply_left_eq_of_apply_apply_eq_inner hg, ω.neg_eq]
 
 end InnerProductSpace
 
