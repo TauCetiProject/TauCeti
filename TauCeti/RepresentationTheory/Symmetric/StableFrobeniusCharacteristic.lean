@@ -160,37 +160,29 @@ theorem stableFrobeniusCharacteristic_eq_sum_stablePsumPart (f : ClassFunction �
           stablePsumPart ℂ ρ := by
   refine stableSymmetricSubmodule_ext fun d => Subtype.ext ?_
   classical
-  rw [coe_stableSymmetricProj_stableFrobeniusCharacteristic_eq_sum_psumPart]
+  -- the summand `π ↦ f(π) p_{ρ(π)}` is a class function, so the sum runs over conjugacy classes
+  let g : ClassFunction (MvPolynomial (Fin d) ℂ) (Perm (Fin n)) :=
+    ClassFunction.ofConjClasses fun C =>
+      ClassFunction.toConjClasses f C • psumPart (Fin d) ℂ ((partitionEquivConjClasses n).symm C)
+  have hg (π : Perm (Fin n)) :
+      g.1 π = (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition := by
+    simp only [g, ClassFunction.ofConjClasses_apply, ClassFunction.toConjClasses_mk,
+      psumPart_eq_psumPart_partition ℂ ((partitionEquivConjClasses n).apply_symm_apply _).symm]
+  rw [coe_stableSymmetricProj_stableFrobeniusCharacteristic_eq_sum_psumPart,
+    ← Finset.sum_congr rfl fun π _ => hg π, ClassFunction.sum_eq_sum_conjClasses,
+    ← (partitionEquivConjClasses n).sum_comp, Finset.smul_sum]
   simp only [map_sum, map_smul, Submodule.coe_sum, Submodule.coe_smul,
-    coe_stableSymmetricProj_stablePsumPart]
-  -- group the permutations by cycle type: the class of type `ρ` has `n! / z_ρ` elements
-  rw [← Finset.sum_fiberwise Finset.univ (fun π => (partitionEquivConjClasses n).symm
-    (ConjClasses.mk π)), Finset.smul_sum]
+    coe_stableSymmetricProj_stablePsumPart, g, ClassFunction.toConjClasses_ofConjClasses,
+    Equiv.symm_apply_apply]
+  -- the class of cycle type `ρ` has `n! / z_ρ` elements
   refine Finset.sum_congr rfl fun ρ _ => ?_
-  have hmem (π : Perm (Fin n)) : (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ ↔
-      π ∈ (partitionEquivConjClasses n ρ).carrier := by
-    rw [Equiv.symm_apply_eq, ConjClasses.mem_carrier_iff_mk_eq]
-  have hterm : ∀ π ∈ Finset.univ.filter
-      fun π => (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ,
-      (f : Perm (Fin n) → ℂ) π • psumPart (Fin d) ℂ π.partition =
-        ClassFunction.toConjClasses f (partitionEquivConjClasses n ρ) • psumPart (Fin d) ℂ ρ := by
-    intro π hπ
-    have hπ : ConjClasses.mk π = partitionEquivConjClasses n ρ :=
-      (Equiv.symm_apply_eq _).mp (Finset.mem_filter.mp hπ).2
-    rw [← hπ, ClassFunction.toConjClasses_mk, psumPart_eq_psumPart_partition ℂ hπ]
-  have hcard : ((Finset.univ.filter fun π : Perm (Fin n) =>
-      (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ).card : ℂ) * zPart ρ =
+  have hcard : (Nat.card (partitionEquivConjClasses n ρ).carrier : ℂ) * zPart ρ =
       n.factorial := by
-    rw [← Nat.card_eq_finsetCard, Nat.card_congr (β := (partitionEquivConjClasses n ρ).carrier)
-      (Equiv.subtypeEquivRight fun π => by
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, hmem])]
     exact_mod_cast card_carrier_partitionEquivConjClasses_mul_zPart ρ
   have hz : (zPart ρ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (zPart_pos ρ).ne'
-  have hc : ((Finset.univ.filter fun π : Perm (Fin n) =>
-      (partitionEquivConjClasses n).symm (ConjClasses.mk π) = ρ).card : ℂ) ≠ 0 :=
+  have hc : (Nat.card (partitionEquivConjClasses n ρ).carrier : ℂ) ≠ 0 :=
     left_ne_zero_of_mul (hcard ▸ Nat.cast_ne_zero.mpr n.factorial_ne_zero)
-  rw [Finset.sum_congr rfl hterm, Finset.sum_const, ← Nat.cast_smul_eq_nsmul ℂ, smul_smul,
-    smul_smul, ← hcard]
+  rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℂ, smul_smul, smul_smul, ← hcard]
   congr 1
   field_simp
 
@@ -253,10 +245,10 @@ theorem stableFrobeniusCharacteristic_zero_symm_stableSymmetricOne :
 
 /-- **The virtual characters are the class functions with integral Schur coordinates**: a class
 function `f` of `Sₙ` is an integer combination of characters exactly when every Schur coordinate
-`⟨χ^μ, f⟩` of its Frobenius characteristic is an integer. The virtual characters form a proper
-sublattice of the integer-valued class functions: for `n = 2` the class function with values `1` at
-the identity and `0` at the transposition is integer-valued, but its Schur coordinates are `1 / 2`.
--/
+`⟨χ^μ, f⟩` of its Frobenius characteristic is an integer. The virtual characters form a sublattice
+of the integer-valued class functions, which can be proper: for `n = 2` the class function with
+values `1` at the identity and `0` at the transposition is integer-valued, but its Schur coordinates
+are `1 / 2`. -/
 theorem mem_virtualCharacters_iff_forall_exists_stableSchurBasis_repr_eq_intCast
     (f : ClassFunction ℂ (Perm (Fin n))) :
     (f : Perm (Fin n) → ℂ) ∈ virtualCharacters ℂ (Perm (Fin n)) ↔

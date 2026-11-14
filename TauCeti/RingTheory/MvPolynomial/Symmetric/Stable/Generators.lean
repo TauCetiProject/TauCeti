@@ -35,6 +35,8 @@ functions over a commutative ring. In finitely many variables this is Mathlib's
 
 ## Main results
 
+* `TauCeti.SymmetricFunction.of_stablePsumPart`: `p_μ` is the product of the power sums `p_{μᵢ}`
+  in `Λ_R`.
 * `TauCeti.SymmetricFunction.algHom_ext`: algebra homomorphisms out of `Λ_R` are determined by
   their values on the elementary symmetric functions.
 
@@ -146,6 +148,19 @@ theorem stablePsumPart_indiscrete {n : ℕ} (hn : n ≠ 0) :
   stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp [hn]
 
 namespace SymmetricFunction
+
+/-- **The power-sum product is a product of power sums** in the ring `Λ_R` of symmetric
+functions: `p_μ = p_{μ₁} p_{μ₂} ⋯`. -/
+theorem of_stablePsumPart {n : ℕ} (μ : n.Partition) :
+    DirectSum.of _ n (stablePsumPart R μ) =
+      (μ.parts.attach.map fun k : {k // k ∈ μ.parts} =>
+        DirectSum.of (fun m => stableSymmetricSubmodule R m) k.1
+          (stablePsum R (μ.parts_pos k.2).ne')).prod :=
+  ext_specialization fun d => by
+    rw [specialization_of, coe_stableSymmetricProj_stablePsumPart, map_multiset_prod,
+      Multiset.map_map, psumPart]
+    simp only [Function.comp_def, specialization_of, coe_stableSymmetricProj_stablePsum]
+    rw [Multiset.attach_map_val' _ (psum (Fin d) R)]
 
 /-- The algebra homomorphism from polynomials in countably many variables to the symmetric functions
 sending the variable `X r` to the elementary symmetric function `e_(r + 1)`. -/
