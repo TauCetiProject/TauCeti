@@ -109,7 +109,7 @@ private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Op
   · exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hf
       (fun _ => bot_le) fun k =>
         (setLIntegral_le_lintegral _ _).trans <|
-          (hΦ.lintegral_comp' (hfm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one
+          (hΦ.lintegral_comp' (hfm k).eNorm).le.trans lintegral_eNorm_le_eLpNorm_one
   · have hGM := ENNReal.Tendsto.mul_const (b := ENNReal.ofReal M) hG
       (Or.inr ENNReal.ofReal_ne_top)
     rw [zero_mul] at hGM
@@ -124,7 +124,7 @@ private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Op
       _ = (∫⁻ x in W, ‖G k (Φ x) - H (Φ x)‖ₑ ∂μ) * ENNReal.ofReal M :=
           lintegral_mul_const' _ _ ENNReal.ofReal_ne_top
       _ ≤ _ := mul_le_mul_left ((setLIntegral_le_lintegral _ _).trans <|
-          (hΦ.lintegral_comp' (hGm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one) _
+          (hΦ.lintegral_comp' (hGm k).eNorm).le.trans lintegral_eNorm_le_eLpNorm_one) _
 
 /-- **Mollifying the pieces of the chain rule.** Let `u` have weak derivative `D` on `V`, let `Φ`
 be locally Lipschitz on `W` and Lipschitz on `W`, mapping `W` into a compact `K ⊆ V`, and let `O`
