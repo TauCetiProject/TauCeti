@@ -50,10 +50,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace C] [ChartedSpace H C]
   [TopologicalSpace (Quiver.Total C)] [ChartedSpace H' (Quiver.Total C)]
 
-/-- A proper groupoid whose source and target are `C^n` local diffeomorphisms is locally the
-action groupoid of a `C^n` isotropy action fixing the centre. The fully faithful functor is the
+/-- A proper groupoid with Hausdorff arrow space, continuous units and composition, and `C^n`
+source and target local diffeomorphisms is locally the action groupoid of a `C^n` isotropy action
+fixing the centre. The fully faithful functor is the
 inclusion on objects. Each label parametrizes an open set of arrows by a local diffeomorphism,
-and its arrow at the centre is the original isotropy arrow, even for ineffective labels. -/
+its source is the parameter and its target is the action of the label on that parameter.
+Its arrow at the centre is the original isotropy arrow, even for ineffective labels. -/
 theorem exists_contMDiff_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)]
     (hp : IsProperMap (fun a : Quiver.Total C ↦ (a.left, a.right)))
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C))
@@ -73,6 +75,12 @@ theorem exists_contMDiff_isotropy_action_of_proper_source_target [T2Space (Quive
       (∀ g : Aut x, IsLocalDiffeomorph I J n fun y : U ↦
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, y)).hom⟩ :
           Quiver.Total C)) ∧
+      (∀ g : Aut x, Quiver.Total.left ∘ (fun y : U ↦
+        (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, y)).hom⟩ :
+          Quiver.Total C)) = (Subtype.val : U → C)) ∧
+      (∀ g : Aut x, Quiver.Total.right ∘ (fun y : U ↦
+        (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, y)).hom⟩ :
+          Quiver.Total C)) = fun y : U ↦ (g • y : U).val) ∧
       ∀ g : Aut x,
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, ⟨x, hxU⟩)).hom⟩ :
           Quiver.Total C) = ⟨x, x, g.asIso.hom⟩ := by
@@ -99,7 +107,7 @@ theorem exists_contMDiff_isotropy_action_of_proper_source_target [T2Space (Quive
       exact isLocalDiffeomorph_subtype_val
     exact fun y ↦ (hcomp y).of_comp_left (hs _) ((hopen g).continuous.continuousAt)
   refine ⟨V, hxU, inst, F, ⟨fun g ↦ ?_⟩, ?_, hobj, hfull, hfaithful,
-    hopen, hsmooth, hcentre⟩
+    hopen, hsmooth, hsource, htarget, hcentre⟩
   · apply (ContMDiff.subtypeVal_comp_iff V _).mp
     have h := ht.contMDiff.comp (hsmooth g).contMDiff
     rw [htarget] at h
