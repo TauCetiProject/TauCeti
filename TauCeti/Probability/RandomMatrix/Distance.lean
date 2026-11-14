@@ -44,7 +44,7 @@ open scoped NNReal Matrix Matrix.Norms.L2Operator RealInnerProductSpace
 
 namespace Submodule
 
-variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω} {X : ι → Ω → ℝ}
+variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
 
 /-- Square-integrable coordinates have integrable squared distance to every subspace. No
 independence or centering assumption is needed. -/
@@ -67,30 +67,32 @@ theorem integrable_infDist_sq {𝕜 : Type*} [RCLike 𝕜]
     EuclideanSpace.norm_sq_eq] using
       (sq_le_sq₀ Metric.infDist_nonneg (norm_nonneg _)).2 hdist
 
-/-- For centered, variance-one, square-integrable pairwise independent coordinates, the integral
-of squared distance to a subspace is its codimension. Sub-Gaussianity is not required. -/
-theorem integral_infDist_sq_eq_finrank_orthogonal (U : Submodule ℝ (EuclideanSpace ℝ ι))
+/-- For centered, unit-second-moment, square-integrable pairwise independent real or complex
+coordinates, the integral of squared distance to a subspace is its codimension over the scalar
+field. Sub-Gaussianity is not required. -/
+theorem integral_infDist_sq_eq_finrank_orthogonal {𝕜 : Type*} [RCLike 𝕜]
+    (U : Submodule 𝕜 (EuclideanSpace 𝕜 ι)) {X : ι → Ω → 𝕜}
     [IsFiniteMeasure P] (hindep : Pairwise fun i j ↦ X i ⟂ᵢ[P] X j)
     (hX : ∀ i, MemLp (X i) 2 P)
-    (hmean : ∀ i, ∫ ω, X i ω ∂P = 0) (hvar : ∀ i, ∫ ω, X i ω ^ 2 ∂P = 1) :
+    (hmean : ∀ i, ∫ ω, X i ω ∂P = 0) (hvar : ∀ i, ∫ ω, ‖X i ω‖ ^ 2 ∂P = 1) :
     ∫ ω, Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U : Set _) ^ 2 ∂P =
-      (Module.finrank ℝ Uᗮ : ℝ) := by
+      (Module.finrank 𝕜 Uᗮ : ℝ) := by
   classical
-  let e := Matrix.toEuclideanCLM (n := ι) (𝕜 := ℝ)
+  let e := Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)
   let A := e.symm Uᗮ.starProjection
-  have hquad (ω : Ω) : (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω) =
+  have hquad (ω : Ω) : RCLike.re (star (fun i ↦ X i ω) ⬝ᵥ A *ᵥ (fun i ↦ X i ω)) =
       Metric.infDist (WithLp.toLp 2 (fun i ↦ X i ω)) (U : Set _) ^ 2 := by
-    rw [← Matrix.inner_toEuclideanCLM A (WithLp.toLp 2 (fun i ↦ X i ω))
-      (WithLp.toLp 2 (fun i ↦ X i ω)), e.apply_symm_apply]
+    rw [dotProduct_comm, ← EuclideanSpace.inner_toLp_toLp,
+      ← Matrix.toEuclideanCLM_toLp, e.apply_symm_apply]
     exact U.re_inner_starProjection_orthogonal_eq_infDist_sq _
   have h := TauCeti.integral_star_dotProduct_mulVec_eq_sum_diag_of_pairwise_indepFun
     hindep (fun i ↦ (hX i).integrable (by norm_num))
-    (fun i ↦ by simpa only [Real.norm_eq_abs, sq_abs] using (hX i).integrable_sq) hmean A
-  simp only [star_trivial, hquad, Real.norm_eq_abs, sq_abs, hvar, RCLike.ofReal_real_eq_id,
-    id_eq, mul_one] at h
-  rw [h.2]
-  exact (LinearMap.trace_eq_matrix_trace ℝ (EuclideanSpace.basisFun ι ℝ).toBasis
-    Uᗮ.starProjection.toLinearMap).symm.trans Uᗮ.trace_starProjection
+    (fun i ↦ (memLp_two_iff_integrable_sq_norm (hX i).aestronglyMeasurable).mp (hX i)) hmean A
+  have htr : ∑ i, A i i = (Module.finrank 𝕜 Uᗮ : 𝕜) :=
+    (LinearMap.trace_eq_matrix_trace 𝕜 (EuclideanSpace.basisFun ι 𝕜).toBasis
+      Uᗮ.starProjection.toLinearMap).symm.trans Uᗮ.trace_starProjection
+  rw [← integral_congr_ae (.of_forall hquad), integral_re h.1, h.2]
+  simp only [hvar, RCLike.ofReal_one, mul_one, htr, RCLike.natCast_re]
 
 end Submodule
 
