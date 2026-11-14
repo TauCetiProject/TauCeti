@@ -33,6 +33,8 @@ for set and probability integrals.
 
 * `MeasureTheory.norm_integral_smul_le_of_support_subset`: a multiplier `g` bounded by `K` on a
   set containing the support of an integrable `f` gives `‖∫ g • f‖ ≤ K ∫ ‖f‖`.
+* `TauCeti.MeasureTheory.integral_norm_smul_pow_le`: a multiplier `g` with `‖g‖ ≤ 1` almost
+  everywhere does not increase `∫ ‖f‖ⁿ`.
 
 ## Differences of integrals
 
@@ -327,6 +329,17 @@ theorem not_memLp_of_tendsto_norm_atBot {E : Type*} [NormedAddCommGroup E] {f : 
     ¬ MemLp f p volume := fun hmem =>
   not_memLp_of_tendsto_norm_atTop hp0 (hf.comp tendsto_neg_atTop_atBot)
     (hmem.comp_measurePreserving (Measure.measurePreserving_neg volume))
+
+/-- A multiplier of norm at most one does not increase `∫ ‖f‖ⁿ`: if `‖g‖ ≤ 1` almost everywhere
+and `‖f‖ⁿ` is integrable, then `∫ ‖g • f‖ⁿ ≤ ∫ ‖f‖ⁿ`. -/
+theorem integral_norm_smul_pow_le {X 𝕜 E : Type*} [MeasurableSpace X] {μ : Measure X}
+    [SeminormedRing 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {g : X → 𝕜} {f : X → E} {n : ℕ} (hg : ∀ᵐ x ∂μ, ‖g x‖ ≤ 1)
+    (hf : Integrable (fun x ↦ ‖f x‖ ^ n) μ) :
+    ∫ x, ‖g x • f x‖ ^ n ∂μ ≤ ∫ x, ‖f x‖ ^ n ∂μ :=
+  integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity) hf (hg.mono fun x hx ↦
+    pow_le_pow_left₀ (norm_nonneg _)
+      ((norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hx)) n)
 
 /-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
 `s`, then `∫_s ‖g + h‖² ≤ 2 ∫_s ‖g‖² + 2 ∫_s ‖h‖²`. -/

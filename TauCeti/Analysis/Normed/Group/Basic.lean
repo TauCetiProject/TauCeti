@@ -17,8 +17,9 @@ import Mathlib.Topology.MetricSpace.Bounded
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
 `(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. Likewise the squared norm of a sum of three vectors is at most
-three times the sum of their squared norms. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
-distance is at most `1`.
+three times the sum of their squared norms, and a function `g ≥ m ‖·‖²` controls
+`m (‖x‖² + ‖y‖² + ‖v‖²)` through `g x + g (y - w) + g v` when `‖w‖ ≤ |B| ‖v‖`. The reciprocal
+transform `(1 + ‖x - a‖²)⁻¹` of a squared distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
@@ -43,6 +44,8 @@ contains `0`.
   point.
 * `TauCeti.norm_add₃_sq_le` -- the squared norm of a sum of three vectors is at most three times
   the sum of their squared norms.
+* `TauCeti.mul_norm_sq_add_le_mul_add` -- a function bounded below by `m ‖·‖²` controls the
+  squared norms of `x`, `y`, `v` through its values at `x`, `y - w`, `v`, for `w` bounded by `v`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
   most `1`.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
@@ -81,6 +84,25 @@ theorem norm_add₃_sq_le {E : Type*} [SeminormedAddGroup E] (a b c : E) :
     ‖a + b + c‖ ^ 2 ≤ 3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) := by
   have h := pow_le_pow_left₀ (norm_nonneg _) (norm_add₃_le (a := a) (b := b) (c := c)) 2
   nlinarith [sq_nonneg (‖a‖ - ‖b‖), sq_nonneg (‖b‖ - ‖c‖), sq_nonneg (‖a‖ - ‖c‖)]
+
+/-- **Comparing squared norms with a dominating function after a shift.** If `m ‖w‖² ≤ g w` for
+every `w`, with `0 ≤ m`, and `‖w‖ ≤ |B| ‖v‖`, then
+`m (‖x‖² + ‖y‖² + ‖v‖²) ≤ (2 + 2 B²) (g x + g (y - w) + g v)`. With `g` a quadratic form uniformly
+equivalent to the squared norm, this compares the norms of `(x, y, v)` with the form evaluated at
+`(x, y - w, v)`, where `w` is a bounded linear image of `v`. -/
+theorem mul_norm_sq_add_le_mul_add {E : Type*} [SeminormedAddCommGroup E] {m B : ℝ} (hm : 0 ≤ m)
+    {g : E → ℝ} (hg : ∀ w, m * ‖w‖ ^ 2 ≤ g w) {x y v w : E} (hw : ‖w‖ ≤ |B| * ‖v‖) :
+    m * (‖x‖ ^ 2 + ‖y‖ ^ 2 + ‖v‖ ^ 2) ≤ (2 + 2 * B ^ 2) * (g x + g (y - w) + g v) := by
+  have h₀ (z : E) : 0 ≤ g z := (mul_nonneg hm (sq_nonneg _)).trans (hg z)
+  have hy : ‖y‖ ≤ ‖y - w‖ + |B| * ‖v‖ := by
+    have := norm_le_norm_add_norm_sub' y w
+    linarith [norm_sub_rev y w]
+  have hy2 : ‖y‖ ^ 2 ≤ 2 * (‖y - w‖ ^ 2 + B ^ 2 * ‖v‖ ^ 2) := by
+    refine (pow_le_pow_left₀ (norm_nonneg _) hy 2).trans (add_sq_le.trans_eq ?_)
+    rw [mul_pow, sq_abs]
+  linarith [hg x, hg (y - w), hg v, mul_le_mul_of_nonneg_left hy2 hm,
+    mul_le_mul_of_nonneg_left (hg v) (sq_nonneg B), mul_nonneg (sq_nonneg B) (h₀ x),
+    mul_nonneg (sq_nonneg B) (h₀ (y - w)), h₀ x, h₀ (y - w), h₀ v]
 
 /-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
 theorem inv_one_add_norm_sub_sq_le_one {E : Type*} [SeminormedAddCommGroup E] (x a : E) :

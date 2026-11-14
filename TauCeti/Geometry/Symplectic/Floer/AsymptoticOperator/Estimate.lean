@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -363,25 +364,6 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
     (hmM z.2 ht _).1 (hmM z.2 ht (ξ z)).1 hD
   simpa only [mul_add, add_assoc] using this
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The pointwise comparison behind
-`exists_forall_setIntegral_norm_sq_le_mul_setIntegral_of_setIntegral_le`: if `m ‖w‖² ≤ g(w)` for
-every `w` and `‖w‖ ≤ |B| ‖v‖`, then `m (‖x‖² + ‖y‖² + ‖v‖²) ≤ (2 + 2 B²) (g(x) + g(y - w) + g(v))`.
--/
-private theorem mul_norm_sq_add_le_mul_add {m B : ℝ} (hm : 0 ≤ m) {g : V → ℝ}
-    (hg : ∀ w, m * ‖w‖ ^ 2 ≤ g w) {x y v w : V} (hw : ‖w‖ ≤ |B| * ‖v‖) :
-    m * (‖x‖ ^ 2 + ‖y‖ ^ 2 + ‖v‖ ^ 2) ≤ (2 + 2 * B ^ 2) * (g x + g (y - w) + g v) := by
-  have h₀ (z : V) : 0 ≤ g z := (mul_nonneg hm (sq_nonneg _)).trans (hg z)
-  have hy : ‖y‖ ≤ ‖y - w‖ + |B| * ‖v‖ := by
-    have := norm_le_norm_add_norm_sub' y w
-    linarith [norm_sub_rev y w]
-  have hy2 : ‖y‖ ^ 2 ≤ 2 * (‖y - w‖ ^ 2 + B ^ 2 * ‖v‖ ^ 2) := by
-    refine (pow_le_pow_left₀ (norm_nonneg _) hy 2).trans (add_sq_le.trans_eq ?_)
-    rw [mul_pow, sq_abs]
-  linarith [hg x, hg (y - w), hg v, mul_le_mul_of_nonneg_left hy2 hm,
-    mul_le_mul_of_nonneg_left (hg v) (sq_nonneg B), mul_nonneg (sq_nonneg B) (h₀ x),
-    mul_nonneg (sq_nonneg B) (h₀ (y - w)), h₀ x, h₀ (y - w), h₀ v]
-
 /-- **The cylinder estimate in the norm of `V`.** Let each `J_t` be `ω`-tame and depend
 continuously on `t`, and let `S` be continuous. For every `C₀ ≥ 0` there is a `C ≥ 0` with the
 following property. If a `C¹` map `ξ` and a map `η` continuous on `[a, b] × [0, 1]` satisfy
@@ -440,7 +422,7 @@ theorem exists_forall_setIntegral_norm_sq_le_mul_setIntegral_of_setIntegral_le
     rw [← integral_const_mul, ← integral_const_mul]
     exact setIntegral_mono_on ((continuous_const.mul hQ).continuousOn.integrableOn_compact hR)
       ((continuous_const.mul hG).continuousOn.integrableOn_compact hR) hR.measurableSet
-      fun z ⟨_, hz⟩ ↦ mul_norm_sq_add_le_mul_add hm.le
+      fun z ⟨_, hz⟩ ↦ TauCeti.mul_norm_sq_add_le_mul_add hm.le
         (g := fun w ↦ ω.associatedBilinForm (J z.2) w w) (fun w ↦ (hmM z.2 hz w).1)
         ((ContinuousLinearMap.le_opNorm _ _).trans
           (by gcongr; exact (hB z.2 hz).trans (le_abs_self B)))

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -101,17 +102,6 @@ private theorem continuousOn_fderiv_add {K : Set (ℝ × ℝ)}
     (hJc.clm_apply (hd.clm_apply continuous_const).continuousOn)).add
     (hS.clm_apply hη.continuous.continuousOn)
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- A map vanishing for `s ∉ (c, d)` vanishes near every point with `s < c` or `s > d`. -/
-private theorem eventuallyEq_zero_of_forall_notMem_Ioo {η : ℝ × ℝ → V} {c d : ℝ}
-    (hη : ∀ w : ℝ × ℝ, w.1 ∉ Ioo c d → η w = 0) {z : ℝ × ℝ} (hz : z.1 < c ∨ d < z.1) :
-    η =ᶠ[𝓝 z] 0 := by
-  rcases hz with hz | hz
-  · exact eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds hz)
-      fun w hw ↦ hη w fun hw' ↦ lt_irrefl _ (hw.trans hw'.1)
-  · exact eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds hz)
-      fun w hw ↦ hη w fun hw' ↦ lt_irrefl _ (hw.trans hw'.2)
-
 omit [FiniteDimensional ℝ V] in
 /-- For a map `η` vanishing for `s ∉ (c, d)`, the integrals of `‖∂s η‖² + ‖∂t η‖² + ‖η‖²` and of
 `‖∂s η + J ∂t η + S η‖²` over a window `[c', d'] × [0, 1]` containing `[c, d] × [0, 1]` are the
@@ -127,10 +117,14 @@ private theorem setIntegral_Icc_prod_eq_of_forall_notMem_Ioo
         J z (fderiv ℝ η z stdComplexLineImag) + S z (η z)‖ ^ 2) =
       ∫ z in Icc c d ×ˢ Icc 0 1, ‖fderiv ℝ η z stdComplexLineReal +
         J z (fderiv ℝ η z stdComplexLineImag) + S z (η z)‖ ^ 2 := by
+  have hts : tsupport η ⊆ Prod.fst ⁻¹' Icc c d :=
+    closure_minimal (fun w hw ↦ Ioo_subset_Icc_self (not_not.1 (mt (hη w) hw)))
+      (isClosed_Icc.preimage continuous_fst)
   refine ⟨setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hc hd fun z hz ↦ ?_,
     setIntegral_Icc_prod_eq_of_forall_eq_zero measurableSet_Icc hc hd fun z hz ↦ ?_⟩ <;>
-  · have h := eventuallyEq_zero_of_forall_notMem_Ioo hη hz
-    rw [h.fderiv_eq, h.eq_of_nhds]
+  · have hz' : z ∉ tsupport η := fun h ↦ by
+      rcases hz with hz | hz <;> linarith [(hts h).1, (hts h).2]
+    rw [fderiv_of_notMem_tsupport ℝ hz', image_eq_zero_of_notMem_tsupport hz']
     simp
 
 omit [FiniteDimensional ℝ V] in
@@ -226,21 +220,6 @@ private theorem setIntegral_norm_fderiv_add_sq_le_of_eq_smul
   refine (pow_le_pow_left₀ (norm_nonneg _) h₁ 2).trans (add_sq_le.trans_eq ?_)
   rw [mul_pow, sq_abs]
   ring
-
-omit [FiniteDimensional ℝ V] in
-/-- Multiplying `ξ` by a function `β(s)` with `|β| ≤ 1` does not increase `∫ ‖ξ‖²`. -/
-private theorem setIntegral_norm_sq_le_of_eq_smul {ξ : ℝ × ℝ → V} (hξ : Continuous ξ)
-    {β : ℝ → ℝ} (hβ : Continuous β) (hβ1 : ∀ s, |β s| ≤ 1) {η : ℝ × ℝ → V}
-    (hη : ∀ w, η w = β w.1 • ξ w) (c d : ℝ) :
-    ∫ z in Icc c d ×ˢ Icc 0 1, ‖η z‖ ^ 2 ≤ ∫ z in Icc c d ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 := by
-  obtain rfl : η = _ := funext hη
-  refine setIntegral_mono_on ((((hβ.comp continuous_fst).smul hξ).norm.pow 2).continuousOn
-    |>.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-    ((hξ.norm.pow 2).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-    (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
-  rw [norm_smul, mul_pow, Real.norm_eq_abs]
-  exact mul_le_of_le_one_left (sq_nonneg _)
-    (by simpa [sq_abs] using pow_le_one₀ (abs_nonneg _) (hβ1 z.1) (n := 2))
 
 /-- **Adding the zeroth-order term to the interior estimate.** If
 `∫ (‖∂s η‖² + ‖∂t η‖²) ≤ C₀ ∫ (‖D η‖² + ‖η‖²)` over `[c, d] × [0, 1]` for `D = ∂s + J ∂t + S`, and
@@ -426,8 +405,10 @@ private theorem setIntegral_le_of_partition
     (setIntegral_norm_fderiv_sq_add_le_of_le hJc hS ((hpc hβ₀c hη₀).of_le one_le_two) hC₀
       (h₀ (hpc hβ₀c hη₀) (fun s _ ↦ by rw [hη₀, hη₀, ← zero_add (1 : ℝ), hper])
         (fun t ↦ hs₀ _ (by simp)) fun t ↦ hs₀ _ (by simp))
-      (setIntegral_norm_sq_le_of_eq_smul hξ.continuous hβ₀c.continuous (fun s ↦ (hβ1 s).2.1)
-        hη₀ _ _))
+      (by
+        simpa only [hη₀] using TauCeti.MeasureTheory.integral_norm_smul_pow_le
+          (ae_of_all _ fun z ↦ (hβ1 z.1).2.1) ((hξ.continuous.norm.pow 2).continuousOn
+            |>.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))))
   -- The errors of the cutoffs, supported in the core.
   have hξ1 := hξ.of_le one_le_two
   have km := setIntegral_norm_fderiv_add_sq_le_of_eq_smul hJc hS hξ1 (hβmc.of_le one_le_two)
