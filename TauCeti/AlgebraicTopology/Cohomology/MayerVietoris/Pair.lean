@@ -172,15 +172,18 @@ private lemma mayerVietorisCochainFromBiprod_eq (n : ℕ) :
         (HomologicalComplex.homologyMap (-cochainComplexMap (R := R) (k := k) (M := M) l) n) := by
   rw [mayerVietorisCochainFromBiprod, HomologicalComplex.homologyMap_neg]
 
-variable (sqL : IsPushout t.left l.left r.left b.left) [Mono t.left]
+variable (sqL : IsPushout t.left l.left r.left b.left)
   (sqR : IsPushout t.right l.right r.right b.right) [Mono t.right]
 
 /-- **The relative cochain Mayer–Vietoris short exact sequence.** For a commutative square of
 pairs of simplicial sets whose squares of subobjects and of ambient simplicial sets are pushouts
-with monomorphic top maps, the relative cochain Mayer–Vietoris sequence is short exact. -/
+and whose top map of ambient simplicial sets is a monomorphism (then so is the top map of
+subobjects), the relative cochain Mayer–Vietoris sequence is short exact. -/
 lemma shortExact_mayerVietorisCochainShortComplex :
     (mayerVietorisCochainShortComplex R k M
       (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)).ShortExact := by
+  -- `t.left` is mono since `t.left ≫ P₂.hom = P₁.hom ≫ t.right` is.
+  have : Mono t.left := mono_of_mono_fac (h := P₁.hom ≫ t.right) t.w
   have hS := shortExact_mayerVietoris R sqL sqR
   have (i : ℕ) : IsSplitMono ((biprod.lift (chainComplexMap t R) (-chainComplexMap l R)).f i) :=
     ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1 hS
@@ -263,7 +266,7 @@ lemma mayerVietorisCochain_exact₃ (n m : ℕ) (h : n + 1 = m := by lia) :
   exacts [mayerVietorisCochainFromBiprod_eq R k M n, rfl]
 
 include sqR in
-omit [Mono t.left] [Mono t.right] in
+omit [Mono t.right] in
 /-- The map `H⁰(P₄) ⟶ H⁰(P₂) ⊞ H⁰(P₃)` at the start of the relative cochain Mayer–Vietoris
 sequence is a monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero :
@@ -286,7 +289,7 @@ variable {Q₁ Q₂ Q₃ Q₄ : SSetPair.{w}} {t' : Q₁ ⟶ Q₂} {l' : Q₁ �
 of pairs. -/
 @[reassoc]
 lemma mayerVietorisCochainδ_naturality (sqL' : IsPushout t'.left l'.left r'.left b'.left)
-    [Mono t'.left] (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
+    (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
     (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
     (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : n + 1 = m := by lia) :
     mayerVietorisCochainδ R k M sqL' sqR' n m h ≫
