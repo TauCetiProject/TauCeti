@@ -272,7 +272,6 @@ theorem mk_toInvertibleSheaf_prod {ι : Type*} (s : Finset ι) {I : ι → X.Ide
         (hI i (Finset.mem_insert_self i s)) (TauCeti.isEffectiveCartier_prod hs))
         (Finset.prod_insert hi),
       mk_toInvertibleSheaf_mul _ (TauCeti.isEffectiveCartier_prod hs), ih hs,
-      Finset.prod_attach_eq_of_eq_insert (s := insert i s)
-        (G := fun j hj ↦ mk (hI j hj).toInvertibleSheaf) hi rfl]
+      Finset.prod_attach_insert hi]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
