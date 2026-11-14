@@ -36,7 +36,10 @@ without loss; models in other universes are handled by `TauCeti.classOf`.
 
 ## Main results
 
-* `FirstOrder.Language.LEquiv.lift_countableModelCount_onBoundedFormulaInf`
+* `FirstOrder.Language.LEquiv.lift_countableModelCount_onBoundedFormulaInf`,
+  `FirstOrder.Language.LEquiv.countableModelCount_onBoundedFormulaInf_le_aleph0_iff`,
+  `FirstOrder.Language.LEquiv.countableModelCount_onBoundedFormulaInf_eq_aleph_one_iff`, and
+  `FirstOrder.Language.LEquiv.countableModelCount_onBoundedFormulaInf_eq_continuum_iff`
 * `FirstOrder.Language.LEquiv.hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff`
 * `TauCeti.exists_language_zero_countableModelCount`
 -/
@@ -128,6 +131,33 @@ theorem hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff (φ : L.Sentence
   simp only [hasPerfectlyManyCountableModels_iff, ← image_onConfiguration_modelsOf,
     Setoid.hasPerfectAntichainOn_image_homeomorph_iff _
       (fun _ _ => e.isoSetoid_onConfiguration_iff)]
+
+/-- A sentence and its translation along a language equivalence have countably many countable
+models together. -/
+@[simp]
+theorem countableModelCount_onBoundedFormulaInf_le_aleph0_iff (φ : L.SentenceInf ι) :
+    countableModelCount (e.toLHom.onBoundedFormulaInf φ) ≤ ℵ₀ ↔ countableModelCount φ ≤ ℵ₀ := by
+  rw [← lift_le_aleph0.{v', v}, ← lift_le_aleph0.{v, v'},
+    e.lift_countableModelCount_onBoundedFormulaInf φ]
+
+/-- A sentence and its translation along a language equivalence have `ℵ₁` countable models
+together. -/
+@[simp]
+theorem countableModelCount_onBoundedFormulaInf_eq_aleph_one_iff (φ : L.SentenceInf ι) :
+    countableModelCount (e.toLHom.onBoundedFormulaInf φ) = ℵ₁ ↔
+      countableModelCount φ = ℵ₁ := by
+  have h₁ : lift.{v} (ℵ₁ : Cardinal.{v'}) = ℵ₁ := by simp [lift_aleph]
+  have h₂ : lift.{v'} (ℵ₁ : Cardinal.{v}) = ℵ₁ := by simp [lift_aleph]
+  rw [← lift_inj.{v', v}, h₁, ← lift_inj.{v, v'}, h₂,
+    e.lift_countableModelCount_onBoundedFormulaInf φ]
+
+/-- A sentence and its translation along a language equivalence have continuum many countable
+models together. -/
+@[simp]
+theorem countableModelCount_onBoundedFormulaInf_eq_continuum_iff (φ : L.SentenceInf ι) :
+    countableModelCount (e.toLHom.onBoundedFormulaInf φ) = 𝔠 ↔ countableModelCount φ = 𝔠 := by
+  rw [← lift_inj.{v', v}, lift_continuum, ← lift_inj.{v, v'}, lift_continuum,
+    e.lift_countableModelCount_onBoundedFormulaInf φ]
 
 end FirstOrder.Language.LEquiv
 
