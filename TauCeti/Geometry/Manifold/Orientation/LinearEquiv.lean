@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ModelTransport.LinearEquiv
 public import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
@@ -33,11 +34,19 @@ automorphism `e : E ≃L[ℝ] E`, or fixed basis orientations of `E` and `F`), t
 diffeomorphism preserves or reverses orientation according to the sign of the real determinant of
 `e`, and its `orientationSign` equals `SignType.sign` of that determinant.
 
+Orientations also transport along the other kind of recharting, in which the charts themselves
+are composed with `L : F ≃L[ℝ] E`, giving the charted space structure
+`ContinuousLinearEquiv.chartedSpace L M` modelled on `E`. The recharted orientation
+`TauCeti.Manifold.Orientation.rechart` maps every tangent orientation by `L`, and recharting the
+source or the target of a map does not change its orientation sign.
+
 ## Main definitions
 
 * `TauCeti.Manifold.OrientationLift.transContinuousLinearEquiv`,
   `TauCeti.Manifold.Orientation.transContinuousLinearEquiv`: transport an orientation lift or
   manifold orientation along `e : E ≃L[ℝ] F`.
+* `TauCeti.Manifold.Orientation.rechart`: transport a manifold orientation to the recharting
+  `ContinuousLinearEquiv.chartedSpace L M` along `L : F ≃L[ℝ] E`.
 
 ## Main results
 
@@ -52,6 +61,11 @@ diffeomorphism preserves or reverses orientation according to the sign of the re
 * `TauCeti.IsOrientedAtlas.orientationSign_toTransContinuousLinearEquiv`,
   `TauCeti.IsOrientedAtlas.orientationSign_toTransContinuousLinearEquiv_basis`: comparison with a
   separately fixed model orientation has the sign of the real determinant of `e`.
+* `TauCeti.Manifold.Orientation.orientationAt_rechart`: the tangent orientations of the
+  recharted orientation are those of `o` mapped by `L`.
+* `TauCeti.Manifold.Orientation.orientationSign_rechart_left`,
+  `TauCeti.Manifold.Orientation.orientationSign_rechart_right`: recharting the source or the
+  target leaves orientation signs unchanged.
 
 ## References
 
@@ -663,5 +677,110 @@ theorem IsOrientedAtlas.orientationSign_toTransContinuousLinearEquiv_basis
 end BasisSign
 
 end AtlasAndSign
+
+/-! ### Recharting the atlas along a continuous linear equivalence -/
+
+section ChartedSpace
+
+variable {E F M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace M] [ChartedSpace F M] [IsManifold 𝓘(ℝ, F) 1 M]
+  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 1 N]
+  {ι : Type*} [Fintype ι] (L : F ≃L[ℝ] E)
+
+attribute [local instance] ContinuousLinearEquiv.isManifold_chartedSpace
+
+namespace Manifold.Orientation
+
+/-- An orientation of `M` transported to the recharting `L.chartedSpace M` of its atlas along
+`L : F ≃L[ℝ] E`: the tangent orientation at `x` is mapped by `L`
+(`TauCeti.Manifold.Orientation.orientationAt_rechart`). It is the orientation for which the
+identity of `M` preserves orientation from the original structure to the recharted one. -/
+def rechart (o : Orientation 𝓘(ℝ, F) M ι) :
+    letI := L.chartedSpace M
+    Orientation 𝓘(ℝ, E) M ι :=
+  letI := L.chartedSpace M
+  o.pullback (L.contMDiff_id_chartedSpace_left (M := M))
+    (fun x ↦ ⟨L.symm, (L.mfderiv_id_chartedSpace_left x).symm⟩)
+    (o.card_eq.trans L.toLinearEquiv.finrank_eq)
+
+variable (o : Orientation 𝓘(ℝ, F) M ι)
+
+/-- The tangent orientations of the recharted orientation are those of `o` mapped by `L`. -/
+@[simp]
+theorem orientationAt_rechart (x : M) :
+    (letI := L.chartedSpace M; (o.rechart L).orientationAt x) =
+      _root_.Orientation.map ι L.toLinearEquiv (o.orientationAt x) := by
+  let := L.chartedSpace M
+  have h := map_orientationAt_pullback o (L.contMDiff_id_chartedSpace_left (M := M))
+    (fun x ↦ ⟨L.symm, (L.mfderiv_id_chartedSpace_left x).symm⟩)
+    (o.card_eq.trans L.toLinearEquiv.finrank_eq) x L.symm (L.mfderiv_id_chartedSpace_left x).symm
+  apply (_root_.Orientation.map ι L.symm.toLinearEquiv).injective
+  refine h.trans ?_
+  rw [ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm]
+  exact ((_root_.Orientation.map ι L.toLinearEquiv).symm_apply_apply _).symm
+
+/-- The identity of `M` preserves orientation from the recharted orientation to `o`. -/
+theorem isOrientationPreservingAt_id_rechart (x : M) :
+    letI := L.chartedSpace M
+    IsOrientationPreservingAt (o.rechart L) o (id : M → M) x := by
+  let := L.chartedSpace M
+  exact isOrientationPreservingAt_pullback _ _ _ _ x
+
+/-- Reversing an orientation reverses its recharting. -/
+@[simp]
+theorem rechart_neg : (letI := L.chartedSpace M; (-o).rechart L) = -o.rechart L := by
+  let := L.chartedSpace M
+  exact pullback_neg _ _ _ _
+
+/-- Distinct orientations have distinct rechartings. -/
+theorem rechart_injective :
+    Function.Injective (fun o : Orientation 𝓘(ℝ, F) M ι ↦
+      (letI := L.chartedSpace M; o.rechart L)) := by
+  let := L.chartedSpace M
+  intro o₁ o₂ h
+  ext x
+  have hx := congrArg (fun o ↦ o.orientationAt x) h
+  simp only [orientationAt_rechart] at hx
+  exact (_root_.Orientation.map ι L.toLinearEquiv).injective hx
+
+/-- Recharting the source does not change the orientation sign of a map differentiable at `x`. -/
+theorem orientationSign_rechart_left (o' : Orientation J N ι) {f : M → N} {x : M}
+    (hf : MDifferentiableAt 𝓘(ℝ, F) J f x) :
+    (letI := L.chartedSpace M; orientationSign (o.rechart L) o' f x) =
+      orientationSign o o' f x := by
+  let := L.chartedSpace M
+  have h := orientationSign_comp (o := o.rechart L) (o' := o) (o'' := o') (g := f)
+    (f := (id : M → M)) hf
+    ((L.contMDiff_id_chartedSpace_left (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
+  rw [Function.comp_id, orientationSign_of_isOrientationPreservingAt
+    (o.isOrientationPreservingAt_id_rechart L x), mul_one] at h
+  exact h
+
+/-- Recharting the target does not change the orientation sign of a map differentiable at `x`. -/
+theorem orientationSign_rechart_right (o' : Orientation J N ι) {g : N → M} {y : N}
+    (hg : MDifferentiableAt J 𝓘(ℝ, F) g y) :
+    (letI := L.chartedSpace M; orientationSign o' (o.rechart L) g y) =
+      orientationSign o' o g y := by
+  let := L.chartedSpace M
+  -- The identity from the original structure to the recharted one has orientation sign `1`,
+  -- since its composite with the identity back is the identity.
+  have hid : orientationSign o (o.rechart L) (id : M → M) (g y) = 1 := by
+    have h := orientationSign_comp (o := o) (o' := o.rechart L) (o'' := o)
+      (g := (id : M → M)) (f := (id : M → M)) (x := g y)
+      ((L.contMDiff_id_chartedSpace_left (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
+      ((L.contMDiff_id_chartedSpace_right (M := M) (n := 1)).mdifferentiableAt one_ne_zero)
+    rwa [Function.comp_id, orientationSign_id, orientationSign_of_isOrientationPreservingAt
+      (o.isOrientationPreservingAt_id_rechart L _), one_mul, eq_comm] at h
+  have h := orientationSign_comp (o := o') (o' := o) (o'' := o.rechart L)
+    (g := (id : M → M)) (f := g) (x := y)
+    ((L.contMDiff_id_chartedSpace_right (M := M) (n := 1)).mdifferentiableAt one_ne_zero) hg
+  rwa [Function.id_comp, hid, one_mul] at h
+
+end Manifold.Orientation
+
+end ChartedSpace
 
 end TauCeti

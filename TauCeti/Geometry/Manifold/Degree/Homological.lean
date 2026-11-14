@@ -14,9 +14,9 @@ import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 /-!
 # The smooth degree is the homological degree
 
-Let `M` and `N` be boundaryless `C¹` manifolds modelled on the same real inner product space `E`
-of dimension `n + 1`, with orientations `o` of `M` and `o'` of `N`
-(`TauCeti.Manifold.Orientation`). Through their local homology generators
+Let `M` and `N` be boundaryless `C¹` manifolds of dimension `n + 1`, modelled on possibly
+different finite-dimensional real normed spaces `F` and `F'`, with orientations `o` of `M` and `o'`
+of `N` (`TauCeti.Manifold.Orientation`). Through their local homology generators
 (`TauCeti.Manifold.Orientation.toHomologicalOrientation`) these are homological orientations,
 for which a continuous map `f : M → N` has a local index at every point
 (`TauCeti.HomologicalOrientation.localIndex`) and, when it is proper and `N` is preconnected, a
@@ -25,9 +25,12 @@ compact `M` and `N`.
 
 At a point `x` where the manifold derivative of `f` is invertible, the local index of `f` is the
 orientation sign of `f` at `x` (`TauCeti.Manifold.Orientation.localIndex_toHomologicalOrientation`):
-`1` where `f` preserves the orientations and `-1` where it reverses them. In the preferred charts
-at `x` and `f x`, the derivative of `f` is that of `χ ∘ f ∘ φ.symm`, which acts on the local
-homology of the model by the sign of its Jacobian
+`1` where `f` preserves the orientations and `-1` where it reverses them. Recharting both atlases
+along linear equivalences with a Euclidean space changes neither the homological orientations
+(`TauCeti.Manifold.Orientation.toHomologicalOrientation_rechart`) nor the orientation sign, so it
+suffices to treat a common inner product model. In the preferred charts at `x` and `f x`, the
+derivative of `f` is then that of `χ ∘ f ∘ φ.symm`, which acts on the local homology of the model
+by the sign of its Jacobian
 (`OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationOfOrientedChart`). Only
 differentiability at `x` is used; it already makes `x` isolated in its fibre
 (`TauCeti.eventually_ne_of_mfderiv_injective`).
@@ -39,7 +42,10 @@ homological degree of a proper map onto a preconnected manifold is the signed co
 For a map between compact manifolds, with `N` preconnected, this reads
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`
 (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
-computed by counting preimages with signs computes the image of the fundamental class.
+computed by counting preimages with signs computes the image of the fundamental class. The models
+need not be inner product spaces: a product of spheres is covered once its product model
+`𝓘(ℝ, E).prod 𝓘(ℝ, E')` is presented as `𝓘(ℝ, E × E')`, a product of Euclidean spaces with the
+sup norm (`modelWithCornersSelf_prod`, `chartedSpaceSelf_prod`).
 
 ## Main results
 
@@ -69,6 +75,8 @@ open scoped Manifold
 namespace TauCeti
 
 namespace Manifold.Orientation
+
+section Inner
 
 variable {M N E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace E N]
@@ -129,11 +137,9 @@ private theorem localIndex_toHomologicalOrientation_of_orientationAt_eq (f : C(M
     rw [sign_pos h, SignType.coe_one, orientationSign_of_isOrientationPreservingAt
       ((isOrientationPreservingAt_iff o o' f x).2 ⟨e, he, by rw [ho]; exact hmap⟩)]
 
-/-- **The local index at a point of invertible derivative is the orientation sign.** For a
-continuous map `f : M → N` whose manifold derivative at `x` is invertible, the local index of `f`
-at `x` with respect to the homological orientations of `o` and `o'` is `1` if `f` preserves the
-orientations at `x` and `-1` if it reverses them. -/
-theorem localIndex_toHomologicalOrientation (f : C(M, N)) {x : M}
+/-- On a common inner product model, the local index at a point of invertible derivative is the
+orientation sign. -/
+private theorem localIndex_toHomologicalOrientation_inner (f : C(M, N)) {x : M}
     (hf : (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x).IsInvertible) :
     (o.toHomologicalOrientation hE).localIndex (o'.toHomologicalOrientation hE) f x =
       orientationSign o o' f x := by
@@ -146,18 +152,69 @@ theorem localIndex_toHomologicalOrientation (f : C(M, N)) {x : M}
     rwa [toHomologicalOrientation_neg, HomologicalOrientation.localIndex_neg_right,
       orientationSign_neg_right, neg_inj] at h
 
+end Inner
+
+variable {M N F F' : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+  [TopologicalSpace M] [T2Space M] [ChartedSpace F M] [IsManifold 𝓘(ℝ, F) 1 M]
+  [TopologicalSpace N] [T2Space N] [ChartedSpace F' N] [IsManifold 𝓘(ℝ, F') 1 N]
+  {n : ℕ} (hF : finrank ℝ F = n + 1) (hF' : finrank ℝ F' = n + 1)
+  (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1)))
+  (o' : Manifold.Orientation 𝓘(ℝ, F') N (Fin (n + 1)))
+
+section LocalIndex
+
+attribute [local instance] ContinuousLinearEquiv.isManifold_chartedSpace
+
+/-- **The local index at a point of invertible derivative is the orientation sign.** For a
+continuous map `f : M → N` between oriented boundaryless `C¹` manifolds of the same dimension,
+modelled on possibly different real normed spaces, whose manifold derivative at `x` is invertible,
+the local index of `f` at `x` with respect to the homological orientations of `o` and `o'` is `1`
+if `f` preserves the orientations at `x` and `-1` if it reverses them. -/
+theorem localIndex_toHomologicalOrientation (f : C(M, N)) {x : M}
+    (hf : (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F') f x).IsInvertible) :
+    (o.toHomologicalOrientation hF).localIndex (o'.toHomologicalOrientation hF') f x =
+      orientationSign o o' f x := by
+  -- Recharting both atlases along linear equivalences with a Euclidean space reduces to the inner
+  -- product case.
+  have hE : finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = n + 1 := by simp
+  let L : F ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) := .ofFinrankEq (hF.trans hE.symm)
+  let L' : F' ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) := .ofFinrankEq (hF'.trans hE.symm)
+  let := L.chartedSpace M
+  let := L'.chartedSpace N
+  have hd : MDifferentiableAt 𝓘(ℝ, F) 𝓘(ℝ, F') f x := mdifferentiableAt_of_isInvertible_mfderiv hf
+  have hd' : MDifferentiableAt 𝓘(ℝ, F) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) f x :=
+    L'.mdifferentiableAt_chartedSpace_right_iff.2 hd
+  have hinv : (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+      f x).IsInvertible := by
+    rw [L.mfderiv_chartedSpace_left hd', L'.mfderiv_chartedSpace_right hd]
+    obtain ⟨e, he⟩ := hf
+    refine ⟨(L.symm.trans e).trans L', ?_⟩
+    rw [← he]
+    -- Both sides send `v` to `L' (e (L.symm v))`; `simp` does not see through the tangent spaces,
+    -- which are the model spaces.
+    ext v
+    exact (L.symm.trans e).trans_apply L' v
+  rw [← HomologicalOrientation.localIndex_congrModel (hM := hE.trans hF.symm)
+      (hN := hE.trans hF'.symm),
+    ← toHomologicalOrientation_rechart hF hE L, ← toHomologicalOrientation_rechart hF' hE L',
+    localIndex_toHomologicalOrientation_inner hE _ _ f hinv,
+    orientationSign_rechart_left L o _ hd', orientationSign_rechart_right L' o' o hd]
+
+end LocalIndex
+
 /-- **The homological degree is the signed count of preimages.** For a proper map `f : M → N`
 onto a preconnected manifold and a regular value `y` of `f`, the degree of `f` with respect to the
 homological orientations of `o` and `o'` is `degreeAtRegularValue o o' f y`. -/
 theorem degree_toHomologicalOrientation [PreconnectedSpace N] {f : C(M, N)} (hf : IsProperMap f)
-    {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, E) f y) :
-    (o.toHomologicalOrientation hE).degree (o'.toHomologicalOrientation hE) hE f =
+    {y : N} (hy : IsRegularValue 𝓘(ℝ, F) 𝓘(ℝ, F') f y) :
+    (o.toHomologicalOrientation hF).degree (o'.toHomologicalOrientation hF') hF f =
       degreeAtRegularValue o o' f y := by
-  have hfin := hy.finite_preimage_of_isProperMap rfl hf
-  rw [HomologicalOrientation.degree_eq_sum_localIndex _ _ hE hE hf hfin,
+  have hfin := hy.finite_preimage_of_isProperMap (hF.trans hF'.symm) hf
+  rw [HomologicalOrientation.degree_eq_sum_localIndex _ _ hF hF' hf hfin,
     degreeAtRegularValue_eq_sum_of_finite hfin]
-  exact Finset.sum_congr rfl fun x hx ↦ localIndex_toHomologicalOrientation hE o o' f
-    ((isRegularPoint_iff_isInvertible_mfderiv rfl).1
+  exact Finset.sum_congr rfl fun x hx ↦ localIndex_toHomologicalOrientation hF hF' o o' f
+    ((isRegularPoint_iff_isInvertible_mfderiv (hF.trans hF'.symm)).1
       (hy.isRegularPoint (hfin.mem_toFinset.1 hx)))
 
 /-- **The signed count of preimages computes the image of the fundamental class.** For a continuous
@@ -165,11 +222,11 @@ map `f : M → N` between compact manifolds, with `N` preconnected, and a regula
 `f_*[M] = (degreeAtRegularValue o o' f y) • [N]` in `Hₙ₊₁(N; ℤ)`, for the fundamental classes of
 the homological orientations of `o` and `o'`. -/
 theorem mapFundamentalClass_eq_degreeAtRegularValue_smul [CompactSpace M] [CompactSpace N]
-    [PreconnectedSpace N] {f : C(M, N)} {y : N} (hy : IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, E) f y) :
-    (o.toHomologicalOrientation hE).mapFundamentalClass hE f =
-      degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hE).fundamentalClass hE := by
-  rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hE hE,
-    degree_toHomologicalOrientation hE o o' f.continuous.isProperMap hy]
+    [PreconnectedSpace N] {f : C(M, N)} {y : N} (hy : IsRegularValue 𝓘(ℝ, F) 𝓘(ℝ, F') f y) :
+    (o.toHomologicalOrientation hF).mapFundamentalClass hF f =
+      degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hF').fundamentalClass hF' := by
+  rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hF hF',
+    degree_toHomologicalOrientation hF hF' o o' f.continuous.isProperMap hy]
 
 end Manifold.Orientation
 

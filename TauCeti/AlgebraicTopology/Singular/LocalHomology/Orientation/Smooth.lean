@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+public import TauCeti.Geometry.Manifold.Orientation.LinearEquiv
 import TauCeti.Data.SignType.Basic
 
 /-!
@@ -17,10 +18,25 @@ An orientation `o` of a boundaryless `C¹` manifold `M` modelled on a real inner
 of dimension `n + 1` (`TauCeti.Manifold.Orientation`) selects at every point `x` the local
 orientation of its oriented preferred chart (`TauCeti.localOrientationOfManifoldOrientation`), a
 generator of `Hₙ₊₁(M, M ∖ {x}; ℤ)`. These local orientations are carried to each other by
-transport along paths, so they form a homological orientation
-(`TauCeti.Manifold.Orientation.toHomologicalOrientation`). Through it, the fundamental class, the
-degree and the local index of `TauCeti.HomologicalOrientation` apply to smooth oriented manifolds,
-and can be compared with tangent-space computations such as signed counts of preimages.
+transport along paths, so they form a homological orientation. A manifold modelled on an arbitrary
+finite-dimensional real normed space `F` is first recharted along a linear equivalence of `F` with
+a Euclidean space (`ContinuousLinearEquiv.chartedSpace`); homological orientations do not depend on
+the model (`TauCeti.HomologicalOrientation.congrModel`), so this gives the homological orientation
+`TauCeti.Manifold.Orientation.toHomologicalOrientation` of `o` for every such model, for instance
+for a product of spheres once its product model is presented as `𝓘(ℝ, E × E')`, a product of
+Euclidean spaces with the sup norm (`modelWithCornersSelf_prod`, `chartedSpaceSelf_prod`). On
+an inner product model it is the chart construction above
+(`TauCeti.Manifold.Orientation.toHomologicalOrientation_apply`): oriented-chart generators are
+invariant under linear isometries of the model, and change by the sign of the Jacobian under linear
+automorphisms, so following a chart by a linear equivalence of inner product models, with the
+orientation mapped along, selects the same local orientations
+(`OpenPartialHomeomorph.localOrientationOfOrientedChart_trans_continuousLinearEquiv`). For the same
+reason the construction does not depend on the model: recharting along any linear equivalence
+gives the same homological orientation
+(`TauCeti.Manifold.Orientation.toHomologicalOrientation_rechart`).
+Through it, the fundamental class, the degree and the local index of
+`TauCeti.HomologicalOrientation` apply to smooth oriented manifolds, and can be compared with
+tangent-space computations such as signed counts of preimages.
 
 Two facts about the local orientations selected by oriented charts go into the proof.
 
@@ -61,8 +77,14 @@ single orientation of the model, and transport preserves them.
 * `OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart`: a continuous map which
   reads as the identity in two charts carries the local orientations they select to each other.
 * `TauCeti.Manifold.Orientation.toHomologicalOrientation`: the homological orientation of a smooth
-  orientation, with `toHomologicalOrientation_apply`, `toHomologicalOrientation_neg` and
-  `toHomologicalOrientation_injective`.
+  orientation, with `toHomologicalOrientation_neg` and `toHomologicalOrientation_injective`.
+* `OpenPartialHomeomorph.localOrientationOfOrientedChart_trans_continuousLinearEquiv`: following
+  a chart by a linear equivalence of inner product models, with the orientation mapped along,
+  selects the same local orientations.
+* `TauCeti.Manifold.Orientation.toHomologicalOrientation_apply`: on an inner product model, its
+  local orientations are those of the oriented preferred charts.
+* `TauCeti.Manifold.Orientation.toHomologicalOrientation_rechart`: recharting along a linear
+  equivalence of models does not change the homological orientation.
 
 ## References
 
@@ -312,6 +334,78 @@ private theorem localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart_o
   exact localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart ω hE φ ha w hw
 
 end Pullback
+
+section Isometry
+
+variable {E E' : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] {n : ℕ}
+  (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (hE' : finrank ℝ E' = n + 1)
+  (T : E ≃ₗᵢ[ℝ] E')
+
+variable {M : Type w} [TopologicalSpace M] [T1Space M] (φ : OpenPartialHomeomorph M E)
+
+/-- Following a chart by a linear isometry `T`, with the orientation transported by `T`, selects
+the same local orientations. -/
+private theorem localOrientationOfOrientedChart_trans_isometry {a : M} (ha : a ∈ φ.source)
+    (ha' : a ∈ (φ ≫ₕ T.toHomeomorph.toOpenPartialHomeomorph).source) :
+    (φ ≫ₕ T.toHomeomorph.toOpenPartialHomeomorph).localOrientationOfOrientedChart ha'
+        (ω.map _ T.toLinearEquiv) hE' =
+      φ.localOrientationOfOrientedChart ha ω hE := by
+  set R := ModuleCat.of ℤ (ULift.{w} ℤ)
+  set ψ := φ ≫ₕ T.toHomeomorph.toOpenPartialHomeomorph
+  -- The chart isomorphism of `ψ` is that of `φ` followed by `T`; compare them on the source of
+  -- `ψ`, whose excision isomorphism is an epimorphism.
+  have hsub : ψ.source ⊆ φ.source := fun z hz ↦ hz.1
+  obtain ⟨incl, hincl⟩ : ∃ incl : C(ψ.source, φ.source), ∀ z, (incl z : M) = z :=
+    ⟨⟨fun z ↦ ⟨z, hsub z.2⟩, by fun_prop⟩, fun _ ↦ rfl⟩
+  have hpre : incl ⁻¹' (ContinuousMap.subtypeVal φ.source ⁻¹' {a}) ⊆
+      ContinuousMap.subtypeVal ψ.source ⁻¹' {a} := fun z hz ↦ by
+    simpa [hincl] using hz
+  have hchart : (singularHomologyComplSingletonIsoOfChart R ψ ha' (n + 1)).hom =
+      (singularHomologyComplSingletonIsoOfChart R φ ha (n + 1)).hom ≫
+        localHomologyMap R (⟨T, T.continuous⟩ : C(E, E')) (T := {ψ a})
+          (fun _ hz ↦ T.injective hz) (n + 1) := by
+    have := isIso_localHomologyMap R (ContinuousMap.subtypeVal ψ.source)
+      ψ.open_source.isOpenEmbedding_subtypeVal (S := ContinuousMap.subtypeVal ψ.source ⁻¹' {a})
+      (T := {a}) rfl isClosed_singleton (by simpa using ha') (n + 1)
+    rw [← cancel_epi (localHomologyMap R (ContinuousMap.subtypeVal ψ.source)
+      (S := ContinuousMap.subtypeVal ψ.source ⁻¹' {a}) (T := {a}) subset_rfl (n + 1)),
+      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom]
+    have hval : localHomologyMap R (ContinuousMap.subtypeVal ψ.source)
+        (S := ContinuousMap.subtypeVal ψ.source ⁻¹' {a}) (T := {a}) subset_rfl (n + 1) =
+        localHomologyMap R incl hpre (n + 1) ≫
+        localHomologyMap R (ContinuousMap.subtypeVal φ.source)
+          (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl (n + 1) :=
+      (localHomologyMap_congr R (ContinuousMap.ext hincl).symm _ _).trans
+        (localHomologyMap_comp R incl (ContinuousMap.subtypeVal φ.source) hpre subset_rfl
+          (n + 1)).symm
+    rw [hval, Category.assoc,
+      reassoc_of% (localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
+        R φ ha (n + 1))]
+    -- Both sides are induced by `T ∘ φ` on the source of `ψ`.
+    rw [← Category.assoc, localHomologyMap_comp R incl (sourceRestrict φ)]
+    refine Eq.trans ?_ (localHomologyMap_comp R _ (⟨T, T.continuous⟩ : C(E, E')) _ _ _).symm
+    exact localHomologyMap_congr R (ContinuousMap.ext fun z ↦ by
+      rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, sourceRestrict_apply,
+        sourceRestrict_apply, hincl, OpenPartialHomeomorph.coe_trans,
+        Homeomorph.toOpenPartialHomeomorph_apply, LinearIsometryEquiv.coe_toHomeomorph,
+        Function.comp_apply, ContinuousMap.coe_mk]) _ (n + 1)
+  apply Subtype.ext
+  rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
+    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart]
+  apply (ConcreteCategory.bijective_of_isIso (singularHomologyComplSingletonIsoOfOrientation R ψ
+    ha' (ω.map _ T.toLinearEquiv) hE').hom).1
+  rw [Iso.inv_hom_id_apply,
+    singularHomologyComplSingletonIsoOfOrientation_hom_eq _ ψ ha' (mem_refl_source (ψ a)), hchart,
+    Category.assoc]
+  -- The goal is at the point `ψ a` of the model, the lemma at `T (φ a)`; these agree only after
+  -- unfolding `ψ`, so `erw` is needed.
+  erw [singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality R T
+    (mem_refl_source (φ a)) (mem_refl_source (T (φ a))) (fun _ hz ↦ T.injective hz) ω hE hE']
+  rw [← singularHomologyComplSingletonIsoOfOrientation_hom_eq _ φ ha (mem_refl_source (φ a)),
+    Iso.inv_hom_id_apply]
+
+end Isometry
 
 section Transport
 
@@ -582,6 +676,53 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
 
 end ChartChange
 
+section LinearChange
+
+variable {M : Type w} [TopologicalSpace M] [T1Space M]
+  {E E' : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] {n : ℕ}
+  (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (hE' : finrank ℝ E' = n + 1)
+
+/-- **Linear changes of model.** Following a chart `φ` by a continuous linear equivalence
+`L : E ≃L[ℝ] E'` of inner product models, with the orientation of the model mapped by `L`, selects
+the same local orientations. -/
+theorem _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_trans_continuousLinearEquiv
+    (L : E ≃L[ℝ] E') (φ : OpenPartialHomeomorph M E) {a : M} (ha : a ∈ φ.source)
+    (ha' : a ∈ (φ ≫ₕ L.toHomeomorph.toOpenPartialHomeomorph).source) :
+    (φ ≫ₕ L.toHomeomorph.toOpenPartialHomeomorph).localOrientationOfOrientedChart ha'
+        (ω.map _ L.toLinearEquiv) hE' =
+      φ.localOrientationOfOrientedChart ha ω hE := by
+  -- A linear isometry `T : E ≃ E'`, and the automorphism `A = L ∘ T⁻¹` of `E'`.
+  let T : E ≃ₗᵢ[ℝ] E' := (stdOrthonormalBasis ℝ E).equiv (stdOrthonormalBasis ℝ E')
+    (finCongr (hE.trans hE'.symm))
+  let A : E' ≃L[ℝ] E' := T.symm.toContinuousLinearEquiv.trans L
+  set ψ := φ ≫ₕ T.toHomeomorph.toOpenPartialHomeomorph
+  set χ := φ ≫ₕ L.toHomeomorph.toOpenPartialHomeomorph
+  have haψ : a ∈ ψ.source := by simpa [ψ, OpenPartialHomeomorph.trans_source] using ha
+  -- The transition from `ψ` to `χ` is `A`.
+  have hfd : HasFDerivAt (χ ∘ ψ.symm) (A : E' →L[ℝ] E') (ψ a) := by
+    have hmem : ψ.target ∈ 𝓝 (ψ a) := ψ.open_target.mem_nhds (ψ.map_source haψ)
+    refine A.hasFDerivAt.congr_of_eventuallyEq ?_
+    filter_upwards [hmem] with y hy
+    have hy' : T.symm y ∈ φ.target := by
+      simpa [ψ, OpenPartialHomeomorph.trans_target] using hy
+    simp [χ, ψ, A, φ.right_inv hy']
+  have hω : ω.map _ L.toLinearEquiv = (ω.map _ T.toLinearEquiv).map _ A.toLinearEquiv := by
+    have hL : L.toLinearEquiv = T.toLinearEquiv.trans A.toLinearEquiv := by
+      ext v
+      simp [A]
+    rw [hL, Orientation.map_trans]
+  have hdet : (A : E' →L[ℝ] E').det ≠ 0 := (LinearEquiv.isUnit_det' A.toLinearEquiv).ne_zero
+  rw [← localOrientationOfOrientedChart_trans_isometry ω hE hE' T φ ha haψ]
+  apply Subtype.ext
+  -- Changing the chart from `ψ` to `χ` and mapping the orientation by `A` both contribute the sign
+  -- of `det A`.
+  rw [hω, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign_det_smul _ hE' ψ χ haψ
+      ha' hfd hdet, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_map (hE := hE'),
+    smul_smul, coe_sign_mul_coe_sign_of_ne_zero hdet, one_smul]
+
+end LinearChange
+
 section ChartNaturality
 
 variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T1Space N]
@@ -776,16 +917,18 @@ end Manifold
 
 namespace Manifold.Orientation
 
+/-! ### Inner product models -/
+
+section Inner
+
 variable {M E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace M] [T2Space M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M] {n : ℕ}
   (hE : finrank ℝ E = n + 1)
 
-/-- **A smooth orientation is a homological orientation.** An orientation `o` of a boundaryless
-`C¹` manifold modelled on an `(n + 1)`-dimensional real inner product space selects, at every
-point, the local orientation of its oriented preferred chart
-(`TauCeti.localOrientationOfManifoldOrientation`), and these local orientations are carried to
-each other by transport along paths. -/
-def toHomologicalOrientation (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
+/-- On an inner product model, the local orientations of the oriented preferred charts of a smooth
+orientation (`TauCeti.localOrientationOfManifoldOrientation`) are carried to each other by
+transport along paths. -/
+private def innerHomologicalOrientation (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
     HomologicalOrientation M E (n + 1) where
   toFun x := localOrientationOfManifoldOrientation o hE x
   localOrientationTransport_toFun' f := by
@@ -794,23 +937,13 @@ def toHomologicalOrientation (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 
       simp only [localOrientationOfManifoldOrientation_mk]
       exact localOrientationTransport_chartAt hE l f
 
-/-- The homological orientation of a smooth orientation `o` is, at every point, the local
-orientation selected by `o`. -/
-@[simp]
-theorem toHomologicalOrientation_apply (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
-    (x : M) : o.toHomologicalOrientation hE x = localOrientationOfManifoldOrientation o hE x :=
+private theorem innerHomologicalOrientation_apply
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) (x : M) :
+    innerHomologicalOrientation hE o x = localOrientationOfManifoldOrientation o hE x :=
   (rfl)
 
-/-- Reversing a smooth orientation reverses its homological orientation. -/
-@[simp]
-theorem toHomologicalOrientation_neg (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) :
-    (-o).toHomologicalOrientation hE = -o.toHomologicalOrientation hE :=
-  HomologicalOrientation.ext fun x ↦ by
-    simp [localOrientationOfManifoldOrientation_neg]
-
-/-- **Distinct smooth orientations have distinct homological orientations.** -/
-theorem toHomologicalOrientation_injective :
-    Function.Injective (toHomologicalOrientation (M := M) hE) := by
+private theorem innerHomologicalOrientation_injective :
+    Function.Injective (innerHomologicalOrientation (M := M) hE) := by
   intro o o' h
   refine Manifold.Orientation.ext fun x ↦ ?_
   have hx := DFunLike.congr_fun h x
@@ -818,7 +951,7 @@ theorem toHomologicalOrientation_injective :
   | _ l =>
     induction o' using Manifold.Orientation.inductionOn with
     | _ l' =>
-      simp only [toHomologicalOrientation_apply, localOrientationOfManifoldOrientation_mk] at hx
+      simp only [innerHomologicalOrientation_apply, localOrientationOfManifoldOrientation_mk] at hx
       rw [orientationAt_mk, orientationAt_mk, l.orientationAt_eq, l'.orientationAt_eq]
       rcases _root_.Orientation.eq_or_eq_neg (l.chartOrientation x ⟨x, mem_chart_source E x⟩)
           (l'.chartOrientation x ⟨x, mem_chart_source E x⟩) (by simp [hE]) with h' | h'
@@ -829,6 +962,149 @@ theorem toHomologicalOrientation_injective :
           (singularHomologyComplSingletonIsoOfOrientation _ (chartAt E x) (mem_chart_source E x)
             (l'.chartOrientation x ⟨x, mem_chart_source E x⟩) hE)
           (OpenPartialHomeomorph.localOrientationOfOrientedChart _ _ _ hE).property)
+
+end Inner
+
+/-! ### Arbitrary finite-dimensional models -/
+
+section Normed
+
+/-- The Euclidean model of dimension `n + 1` in the universe `w`. -/
+private abbrev Model (n : ℕ) : Type w :=
+  EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))
+
+private theorem finrank_model (n : ℕ) : finrank ℝ (Model.{w} n) = n + 1 := by
+  simp
+
+variable {M F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace M] [T2Space M] [ChartedSpace F M] [IsManifold 𝓘(ℝ, F) 1 M] {n : ℕ}
+  (hF : finrank ℝ F = n + 1)
+
+/-- A linear equivalence of the model `F` with the Euclidean model, along which the atlas of `M` is
+recharted to construct its homological orientations. -/
+private def modelEquiv : F ≃L[ℝ] Model.{w} n :=
+  ContinuousLinearEquiv.ofFinrankEq (hF.trans (finrank_model n).symm)
+
+attribute [local instance] ContinuousLinearEquiv.isManifold_chartedSpace
+
+/-- **A smooth orientation is a homological orientation.** An orientation `o` of a boundaryless
+`C¹` manifold modelled on an `(n + 1)`-dimensional real normed space selects, at every point, a
+local orientation, a generator of `Hₙ₊₁(M, M ∖ {x}; ℤ)`, and these local orientations are carried
+to each other by transport along paths. After recharting the atlas along a linear equivalence with
+a Euclidean space (`ContinuousLinearEquiv.chartedSpace`), the local orientation at `x` is the one
+selected by the preferred chart at `x`, oriented by `o`
+(`TauCeti.localOrientationOfManifoldOrientation`). Recharting the atlas first along any linear
+equivalence of models does not change it
+(`TauCeti.Manifold.Orientation.toHomologicalOrientation_rechart`), and on an inner
+product model these are the local orientations of its own oriented preferred charts
+(`TauCeti.Manifold.Orientation.toHomologicalOrientation_apply`). -/
+def toHomologicalOrientation (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1))) :
+    HomologicalOrientation M F (n + 1) :=
+  letI := (modelEquiv hF).chartedSpace M
+  HomologicalOrientation.congrModel (hF.trans (finrank_model n).symm)
+    (innerHomologicalOrientation (finrank_model n) (o.rechart (modelEquiv hF)))
+
+private theorem toHomologicalOrientation_apply_rechart
+    (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1))) (x : M) :
+    o.toHomologicalOrientation hF x =
+      (letI := (modelEquiv hF).chartedSpace M
+       localOrientationOfManifoldOrientation (o.rechart (modelEquiv hF)) (finrank_model n) x) := by
+  let := (modelEquiv hF).chartedSpace M
+  rw [toHomologicalOrientation, HomologicalOrientation.congrModel_apply,
+    innerHomologicalOrientation_apply]
+
+/-- **On an inner product model, the local orientation at `x` is that of the oriented preferred
+chart at `x`** (`TauCeti.localOrientationOfManifoldOrientation`). -/
+@[simp]
+theorem toHomologicalOrientation_apply {E : Type w} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+    (hE : finrank ℝ E = n + 1) (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1))) (x : M) :
+    o.toHomologicalOrientation hE x = localOrientationOfManifoldOrientation o hE x := by
+  let := (modelEquiv hE).chartedSpace M
+  rw [toHomologicalOrientation_apply_rechart, localOrientationOfManifoldOrientation_eq,
+    localOrientationOfManifoldOrientation_eq, orientationAt_rechart]
+  simp only [ContinuousLinearEquiv.chartAt_chartedSpace]
+  exact OpenPartialHomeomorph.localOrientationOfOrientedChart_trans_continuousLinearEquiv _ hE
+    (finrank_model n) (modelEquiv hE) (chartAt E x) (mem_chart_source E x) _
+
+/-- Reversing a smooth orientation reverses its homological orientation. -/
+@[simp]
+theorem toHomologicalOrientation_neg (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1))) :
+    (-o).toHomologicalOrientation hF = -o.toHomologicalOrientation hF :=
+  HomologicalOrientation.ext fun x ↦ by
+    let := (modelEquiv hF).chartedSpace M
+    rw [toHomologicalOrientation_apply_rechart, HomologicalOrientation.neg_apply,
+      toHomologicalOrientation_apply_rechart, rechart_neg,
+      localOrientationOfManifoldOrientation_neg]
+
+/-- **Distinct smooth orientations have distinct homological orientations.** -/
+theorem toHomologicalOrientation_injective :
+    Function.Injective (toHomologicalOrientation (M := M) hF) := by
+  let := (modelEquiv hF).chartedSpace M
+  intro o o' h
+  refine rechart_injective (modelEquiv hF) (innerHomologicalOrientation_injective
+    (finrank_model n) ?_)
+  exact (HomologicalOrientation.congrModel (hF.trans (finrank_model n).symm)).injective h
+
+/-- The local orientation at `x` is the one selected by the preferred chart at `x` followed by the
+linear equivalence with the Euclidean model, for the tangent orientation at `x` mapped by it. -/
+private theorem toHomologicalOrientation_apply_chartAt
+    (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1))) (x : M) :
+    o.toHomologicalOrientation hF x =
+      OpenPartialHomeomorph.localOrientationOfOrientedChart
+        (chartAt F x ≫ₕ (modelEquiv hF).toHomeomorph.toOpenPartialHomeomorph)
+        ⟨mem_chart_source F x, mem_univ _⟩
+        ((o.orientationAt x).map _ (modelEquiv hF).toLinearEquiv) (finrank_model n) := by
+  let := (modelEquiv hF).chartedSpace M
+  rw [toHomologicalOrientation_apply_rechart, localOrientationOfManifoldOrientation_eq,
+    orientationAt_rechart]
+  simp only [ContinuousLinearEquiv.chartAt_chartedSpace]
+
+/-- Two charts into the Euclidean model that differ by a linear automorphism `K` of the model
+select the same local orientations for orientations of the model related by `K`. -/
+private theorem localOrientationOfOrientedChart_eq_of_eq_trans
+    (ψ χ : OpenPartialHomeomorph M (Model.{w} n)) (K : Model.{w} n ≃L[ℝ] Model.{w} n)
+    (hψ : ψ = χ ≫ₕ K.toHomeomorph.toOpenPartialHomeomorph)
+    (ω ω' : _root_.Orientation ℝ (Model.{w} n) (Fin (n + 1))) (hω : ω = ω'.map _ K.toLinearEquiv)
+    {a : M} (haψ : a ∈ ψ.source) (haχ : a ∈ χ.source) :
+    ψ.localOrientationOfOrientedChart haψ ω (finrank_model n) =
+      χ.localOrientationOfOrientedChart haχ ω' (finrank_model n) := by
+  subst hψ hω
+  exact OpenPartialHomeomorph.localOrientationOfOrientedChart_trans_continuousLinearEquiv _ _ _ K
+    χ haχ haψ
+
+/-- **The homological orientation does not depend on the model.** Recharting the atlas of `M`
+along a continuous linear equivalence `L : F ≃L[ℝ] E` and transporting the orientation `o`
+(`TauCeti.Manifold.Orientation.rechart`) gives the homological orientation of `o`, read in the
+model `E`. -/
+theorem toHomologicalOrientation_rechart {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] (hE : finrank ℝ E = n + 1) (L : F ≃L[ℝ] E)
+    (o : Manifold.Orientation 𝓘(ℝ, F) M (Fin (n + 1))) :
+    letI := L.chartedSpace M
+    (o.rechart L).toHomologicalOrientation hE =
+      HomologicalOrientation.congrModel (hE.trans hF.symm) (o.toHomologicalOrientation hF) := by
+  let := L.chartedSpace M
+  refine HomologicalOrientation.ext fun x ↦ ?_
+  rw [HomologicalOrientation.congrModel_apply, toHomologicalOrientation_apply_chartAt,
+    toHomologicalOrientation_apply_chartAt]
+  let K := (modelEquiv hF).symm.trans (L.trans (modelEquiv hE))
+  refine localOrientationOfOrientedChart_eq_of_eq_trans _ _ K ?_ _ _ ?_ _ _
+  · ext y
+    · simp [K]
+    · simp [K]
+    · simp
+  · -- Both orientations are the tangent orientation of `o` at `x` mapped by `L` and then by the
+    -- linear equivalence of `E` with the Euclidean model.
+    have hK : L.toLinearEquiv.trans (modelEquiv hE).toLinearEquiv =
+        (modelEquiv hF).toLinearEquiv.trans K.toLinearEquiv := by
+      ext v
+      simp [K]
+    rw [orientationAt_rechart]
+    exact (Orientation.map_trans _ _ _).symm.trans
+      ((congrArg (fun e ↦ Orientation.map (Fin (n + 1)) e (o.orientationAt x)) hK).trans
+        (Orientation.map_trans _ _ _))
+
+end Normed
 
 end Manifold.Orientation
 

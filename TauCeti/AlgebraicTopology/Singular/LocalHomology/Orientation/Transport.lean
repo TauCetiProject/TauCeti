@@ -104,4 +104,15 @@ lemma localOrientationTransport_neg {x y : FundamentalGroupoid M} (f : x ⟶ y)
   exact (localHomologyTransport (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
       M E d f).hom.map_neg z.val
 
+/-- **Transport of local orientations does not depend on the model.** If `M` is modelled both on
+`E` and on a real normed space `F` of the same finite dimension, the two transports of local
+orientations agree (`TauCeti.localHomologyTransport_eq_of_finrank_eq`). -/
+lemma localOrientationTransport_eq_of_finrank_eq {F : Type w} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F M]
+    (h : Module.finrank ℝ F = Module.finrank ℝ E) {x y : FundamentalGroupoid M} (f : x ⟶ y) :
+    localOrientationTransport M F d f = localOrientationTransport M E d f := by
+  ext z
+  simp only [coe_localOrientationTransport]
+  rw [localHomologyTransport_eq_of_finrank_eq _ h]
+
 end TauCeti
