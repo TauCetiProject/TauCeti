@@ -17,20 +17,42 @@ import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 /-!
 # The theta series of A₂
 
-The real model of the root lattice `typeARootLattice 2` has theta series equal to six times
-the normalized weight-one Eisenstein series for the Kronecker character `χ₋₃ = (-3 / ·)`.
-Thus its number of vectors of rational norm `2m` is `6 ∑_{d ∣ m} χ₋₃(d)` for every positive
-`m`; in particular, its kissing number is six.
+The root lattice `A₂ = typeARootLattice 2` has rank `2`, level `3`, and signed discriminant `-3`.
+Through the general-level Hecke–Schoeneberg theorem, the theta series of its real model bundles as
+a weight-one modular form `thetaFormRealModelTypeARootLatticeTwo` on `Γ₁(3)` lying in the
+character space `M₁(Γ₀(3), χ₋₃)` for the primitive Kronecker character `χ₋₃ = (-3 / ·)`, with
+level, signed discriminant, and nebentypus computed directly from the lattice.
+
+Both this theta form and six times the normalized weight-one Eisenstein series for `χ₋₃` are
+weight-one modular forms on `Γ₁(3)`. The index of `Γ₁(3)` in `SL(2, ℤ)` is eight, so the Sturm
+bound (`⌊8 / 12⌋ = 0`) identifies them in `M₁(Γ₁(3))` — and hence in `M₁(Γ₀(3), χ₋₃)` — from
+their common constant coefficient one. Thus the number of vectors of rational norm `2m` in `A₂` is
+`6 ∑_{d ∣ m} χ₋₃(d)` for every positive `m`; in particular, its kissing number is six.
 The norm-two count and kissing number for all ranks are provided by
 `TauCeti.IntegralLattice.representationNumber_typeARootLattice_two` and
 `TauCeti.IntegralLattice.kissingNumber_typeARootLattice` in the root-lattice API.
 
-Both series are weight-one modular forms on `Γ₁(3)`. The index of this subgroup is eight,
-so the Sturm bound identifies them from their common constant coefficient one.
+## Main definitions
+
+* `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo`: the theta series of the real
+  model of `A₂`, bundled as a weight-one modular form on `Γ₁(3)`.
+
+## Main statements
+
+* `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace`:
+  `Θ_{A₂}` lies in `M₁(Γ₀(3), χ₋₃)` (`TauCeti.modFormCharSpace` for `χ₋₃` at modulus `3`).
+* `TauCeti.IntegralLattice.thetaFormRealModelTypeARootLatticeTwo_eq_smul_normalizedCharE1MF`,
+  `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two`: equality of `Θ_{A₂}` with
+  six times the normalized weight-one Eisenstein series of character `χ₋₃`, as modular forms and
+  as functions on `ℍ`.
+* `TauCeti.IntegralLattice.thetaSeries_realModel_typeARootLattice_two_eq_tsum`: the convergent
+  expansion `Θ_{A₂}(τ) = 1 + 6 ∑_{m ≥ 1} (∑_{d ∣ m} (-3 / d)) q^m`.
+* `TauCeti.IntegralLattice.representationNumber_typeARootLattice_two_mul`:
+  `r_{A₂}(2m) = 6 ∑_{d ∣ m} (-3 / d)` for `m ≠ 0`.
 
 ## References
 
-* W. Ebeling, *Lattices and Codes*, Chapter 3.
+* W. Ebeling, *Lattices and Codes*, third edition, Chapter 3.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 2, §2.3.
 -/
 
@@ -53,17 +75,37 @@ private theorem a2_character_parity :
 private theorem a2_character_primitive : χ₋₃.IsPrimitive :=
   conductor_kroneckerChar_eq_natAbs_of_prime _ _ (by decide)
 
-private def a2ThetaForm :
+/-- The theta series of the real model of the root lattice `A₂`, bundled as a weight-one modular
+form on `Γ₁(3)` via `ZLattice.thetaFormOfLevel` and `level_realModel_typeARootLattice_two`. -/
+def thetaFormRealModelTypeARootLatticeTwo :
     ModularForm ((CongruenceSubgroup.Gamma1 3).map (Matrix.SpecialLinearGroup.mapGL ℝ)) 1 :=
   (ZLattice.thetaFormOfLevel
     ((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr (isEven_typeARootLattice 2))
     (k := 1) (by simp [RealModelSpace.finrank_eq, finrank_carrier])).mcast rfl
     (by rw [level_realModel_typeARootLattice_two])
 
-private theorem coe_a2ThetaForm : ⇑a2ThetaForm = ZLattice.thetaSeries
-    ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) := by
-  dsimp only [a2ThetaForm, ModularForm.coe_mcast]
+/-- The underlying function of the bundled `A₂` theta form is the lattice theta series. -/
+@[simp]
+theorem coe_thetaFormRealModelTypeARootLatticeTwo :
+    ⇑thetaFormRealModelTypeARootLatticeTwo =
+      ZLattice.thetaSeries ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) := by
+  dsimp only [thetaFormRealModelTypeARootLatticeTwo, ModularForm.coe_mcast]
   exact ZLattice.coe_thetaFormOfLevel _ _
+
+/-- **Modularity of `Θ_{A₂}` with character `χ₋₃`**: the bundled `A₂` theta form lies in
+`M₁(Γ₀(3), χ₋₃)`, proved directly from the lattice invariants `level A₂ = 3` and
+`signedDiscr A₂ = -3`. -/
+theorem thetaFormRealModelTypeARootLatticeTwo_mem_modFormCharSpace :
+    thetaFormRealModelTypeARootLatticeTwo ∈
+      TauCeti.modFormCharSpace 1
+        (MulChar.equivToUnitHom (χ₋₃.changeLevel (by decide))) :=
+  ((isEven_realModel_iff _ (isPosDef_typeARootLattice 2)).mpr
+    (isEven_typeARootLattice 2)).mem_modFormCharSpace_of_coe_eq_thetaSeries
+    coe_thetaFormRealModelTypeARootLatticeTwo
+    (by simp [RealModelSpace.finrank_eq, finrank_carrier])
+    level_realModel_typeARootLattice_two.dvd fun _ ha ↦ by
+      rw [DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _ ha, kroneckerChar_intCast,
+        signedDiscr_realModel_typeARootLattice_two]
 
 private theorem a2_eisenstein_constant :
     (qExpansion 1 (EisensteinSeries.normalizedCharE1MF
@@ -90,6 +132,30 @@ private theorem a2_six_eisenstein_coeff (m : ℕ) :
   rw [FunLike.coe_smul, ModularForm.qExpansion_smul one_pos
     (TauCeti.one_mem_strictPeriods_Gamma1_map 3), PowerSeries.coeff_smul, smul_eq_mul]
 
+/-- As weight-one modular forms on `Γ₁(3)` (and hence in `M₁(Γ₀(3), χ₋₃)`), the theta form of
+the real model of `A₂` equals six times the normalized weight-one Eisenstein series of character
+`(-3 / ·)` with first coefficient one. -/
+theorem thetaFormRealModelTypeARootLatticeTwo_eq_smul_normalizedCharE1MF :
+    thetaFormRealModelTypeARootLatticeTwo =
+      (6 : ℂ) • EisensteinSeries.normalizedCharE1MF
+        (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide) := by
+  have hi : Nat.card (𝒮ℒ ⧸
+      ((CongruenceSubgroup.Gamma1 3).map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) =
+      8 := by
+    rw [Subgroup.card_quotient_mapGL_eq_index, CongruenceSubgroup.Gamma1_index,
+      CongruenceSubgroup.Gamma0_prime_index 3 Nat.prime_three, Nat.card_eq_fintype_card]
+    decide
+  apply ModularForm.eq_of_sturm_bound
+  intro i hi'
+  rw [hi] at hi'
+  have hi0 : i = 0 := by norm_num at hi'; omega
+  subst i
+  rw [CongruenceSubgroup.strictWidthInfty_Gamma1, coe_thetaFormRealModelTypeARootLatticeTwo,
+    ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero
+      ((isEven_realModel_iff _ _).mpr (isEven_typeARootLattice 2)),
+    a2_six_eisenstein_coeff, a2_eisenstein_constant]
+  norm_num
+
 /-- The theta series of the real model of `A₂` is six times the normalized weight-one
 Eisenstein series of character `(-3 / ·)` with first coefficient one, giving constant
 coefficient one. -/
@@ -97,28 +163,8 @@ theorem thetaSeries_realModel_typeARootLattice_two :
     ZLattice.thetaSeries ((typeARootLattice 2).realModel (isPosDef_typeARootLattice 2)) =
       ⇑((6 : ℂ) • EisensteinSeries.normalizedCharE1MF
         (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide)) := by
-  have hindex : (CongruenceSubgroup.Gamma1 3).index = 8 := by
-    rw [CongruenceSubgroup.Gamma1_index,
-      CongruenceSubgroup.Gamma0_prime_index 3 Nat.prime_three, Nat.card_eq_fintype_card]
-    decide
-  have hzero : a2ThetaForm - (6 : ℂ) • EisensteinSeries.normalizedCharE1MF
-      (1 : DirichletCharacter ℂ 1) χ₋₃ (N := 3) (by decide) = 0 := by
-    apply ModularForm.sturm_bound_finiteIndex_SL2Z
-    rw [CongruenceSubgroup.strictWidthInfty_Gamma1, hindex]
-    norm_num only [Int.cast_ofNat, one_mul, Int.toNat_natCast, Nat.reduceDiv]
-    apply lt_of_lt_of_le (by norm_num : (0 : ℕ∞) < 1)
-    apply PowerSeries.nat_le_order
-    intro i hi
-    have hi0 : i = 0 := by omega
-    subst i
-    rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos
-      (TauCeti.one_mem_strictPeriods_Gamma1_map 3), map_sub,
-      a2_six_eisenstein_coeff, coe_a2ThetaForm,
-      ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero
-        ((isEven_realModel_iff _ _).mpr (isEven_typeARootLattice 2)),
-      a2_eisenstein_constant]
-    norm_num
-  rw [← coe_a2ThetaForm, sub_eq_zero.mp hzero]
+  rw [← coe_thetaFormRealModelTypeARootLatticeTwo,
+    thetaFormRealModelTypeARootLatticeTwo_eq_smul_normalizedCharE1MF]
 
 /-- The classical expansion `Θ_{A₂}(τ) = 1 + 6 ∑_{m ≥ 1} (∑_{d ∣ m} (-3 / d)) q^m`,
 where `q = exp (2 π i τ)`. -/
