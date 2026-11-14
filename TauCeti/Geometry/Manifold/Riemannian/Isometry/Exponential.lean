@@ -194,7 +194,10 @@ theorem mfderiv_apply_mfderiv_riemannianExp [I.Boundaryless] [J.Boundaryless] [T
     ((contMDiffAt_riemannianExp hv).mdifferentiableAt (by simp)).hasMFDerivAt
   have hright := ((contMDiffAt_riemannianExp (hf.mfderiv_mem_expDomain hv)).mdifferentiableAt
     (by simp)).hasMFDerivAt.comp v (mfderiv I J f p).hasMFDerivAt
-  exact congrArg (fun L ↦ L w) (hasMFDerivAt_unique hleft (hright.congr_of_eventuallyEq hfun))
+  -- `HasMFDerivAt.congr_of_eventuallyEq` inserts `tangentSpaceCast`, whose underlying function is
+  -- the identity on the common model space; applying both compositions to `w` unfolds
+  -- `ContinuousLinearMap.comp_apply` and this cast by definitional equality.
+  exact DFunLike.congr_fun (hasMFDerivAt_unique hleft (hright.congr_of_eventuallyEq hfun)) w
 
 end IsLocalRiemannianIsometry
 
