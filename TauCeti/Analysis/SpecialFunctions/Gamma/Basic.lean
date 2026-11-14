@@ -59,6 +59,7 @@ summability and moment arguments for discrete laws with Beta-function masses.
   shifts on `[1, ∞)`.
 * `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
   `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
+* `Complex.Gamma_one_third_mul_Gamma_two_thirds` — `Γ(1/3) Γ(2/3) = 2π/√3`.
 -/
 
 public section
@@ -311,5 +312,19 @@ theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : �
     have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
     field_simp
     ring
+
+/-- `Γ(1/3) Γ(2/3) = 2π/√3`, by the reflection formula. -/
+theorem Gamma_one_third_mul_Gamma_two_thirds :
+    Gamma (1 / 3) * Gamma (2 / 3) = 2 * Real.pi / (Real.sqrt 3 : ℂ) := by
+  have h := Gamma_mul_Gamma_one_sub (1 / 3)
+  rw [show (1 : ℂ) - 1 / 3 = 2 / 3 by norm_num] at h
+  have hs : sin (Real.pi * (1 / 3)) = (Real.sqrt 3 : ℂ) / 2 := by
+    rw [show (Real.pi : ℂ) * (1 / 3) = ((Real.pi / 3 : ℝ) : ℂ) by push_cast; ring, ← ofReal_sin,
+      Real.sin_pi_div_three]
+    push_cast
+    ring
+  have h3 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp
+  rw [h, hs]
+  field_simp
 
 end Complex
