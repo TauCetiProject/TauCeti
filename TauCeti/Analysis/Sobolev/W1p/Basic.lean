@@ -925,33 +925,9 @@ variable {q : ENNReal} [Fact (1 <= q)] [IsFiniteMeasure (mu.restrict (Omega : Se
 weak gradient of `u ∈ W^{1,q}(Ω)` are also in `Lᵖ(Ω)`, and are still related by the weak
 derivative identity. -/
 def W1p.ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) : W1p mu Omega p :=
-  ⟨⟨(u : Sobolev1JetLp mu Omega q).1, Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩, by
-    have hJ : (⟨(u : Sobolev1JetLp mu Omega q).1,
-        Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩ :
-        Sobolev1JetLp mu Omega p) ∈ w1pSubmodule mu Omega p := by
-      rw [mem_w1pSubmodule_iff]
-      intro phi v
-      have h_int := (mem_w1pSubmodule_iff (u : Sobolev1JetLp mu Omega q)).mp u.2 phi v
-      have hae : (fun x => lineDeriv ℝ (phi : E → ℝ) x v *
-          Sobolev1JetLp.value ⟨(u : Sobolev1JetLp mu Omega q).1,
-            Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩ x +
-          phi x * Sobolev1JetLp.candidateWeakFDeriv ⟨(u : Sobolev1JetLp mu Omega q).1,
-            Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩ x v) =ᵐ[mu.restrict Omega]
-          (fun x => lineDeriv ℝ (phi : E → ℝ) x v *
-          Sobolev1JetLp.value (u : Sobolev1JetLp mu Omega q) x +
-          phi x * Sobolev1JetLp.candidateWeakFDeriv (u : Sobolev1JetLp mu Omega q) x v) := by
-        filter_upwards [Sobolev1JetLp.value_apply_ae ⟨(u : Sobolev1JetLp mu Omega q).1,
-            Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩,
-          Sobolev1JetLp.value_apply_ae (u : Sobolev1JetLp mu Omega q),
-          Sobolev1JetLp.gradient_apply_ae ⟨(u : Sobolev1JetLp mu Omega q).1,
-            Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩,
-          Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega q)]
-          with x hval_p hval_q hgrad_p hgrad_q
-        simp only [Sobolev1JetLp.candidateWeakFDeriv_apply]
-        rw [hval_p, hval_q, hgrad_p, hgrad_q]
-      rw [integral_congr_ae hae]
-      exact h_int
-    exact hJ⟩
+  -- the lowered jet has the same a.e. classes as `u`, so the weak derivative identity transfers
+  ⟨⟨(u : Sobolev1JetLp mu Omega q).1, Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩,
+    (mem_w1pSubmodule_iff _).2 ((mem_w1pSubmodule_iff (u : Sobolev1JetLp mu Omega q)).1 u.2)⟩
 
 /-- The underlying ambient `Lᵖ` jet of `W1p.ofExponentLE` is the canonical subtype inclusion of the
 underlying `L^q` jet via `Lp.antitone`. -/
@@ -961,23 +937,26 @@ theorem W1p.coe_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
       ⟨(u : Sobolev1JetLp mu Omega q).1, Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩ :=
   (rfl)
 
+/-- Lowering the exponent does not change the value of a Sobolev function, as a function. -/
+theorem W1p.coeFn_value_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.value (W1p.ofExponentLE hpq u)) = ⇑(W1p.value u) :=
+  (rfl)
+
 /-- Lowering the exponent does not change the value of a Sobolev function. -/
 theorem W1p.value_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
-    ⇑(W1p.value (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.value u := by
-  rw [W1p.value_coe, W1p.value_coe, W1p.coe_ofExponentLE]
-  filter_upwards [Sobolev1JetLp.value_apply_ae ⟨(u : Sobolev1JetLp mu Omega q).1,
-      Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩,
-    Sobolev1JetLp.value_apply_ae (u : Sobolev1JetLp mu Omega q)] with x hp hq
-  rw [hp, hq]
+    ⇑(W1p.value (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.value u :=
+  .of_eq (W1p.coeFn_value_ofExponentLE hpq u)
+
+/-- Lowering the exponent does not change the weak gradient of a Sobolev function, as a
+function. -/
+theorem W1p.coeFn_gradient_ofExponentLE (hpq : p ≤ q) (u : W1p mu Omega q) :
+    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) = ⇑(W1p.gradient u) :=
+  (rfl)
 
 /-- Lowering the exponent does not change the weak gradient of a Sobolev function. -/
 theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
-    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.gradient u := by
-  rw [W1p.gradient_coe, W1p.gradient_coe, W1p.coe_ofExponentLE]
-  filter_upwards [Sobolev1JetLp.gradient_apply_ae ⟨(u : Sobolev1JetLp mu Omega q).1,
-      Lp.antitone hpq (u : Sobolev1JetLp mu Omega q).2⟩,
-    Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega q)] with x hp hq
-  rw [hp, hq]
+    ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.gradient u :=
+  .of_eq (W1p.coeFn_gradient_ofExponentLE hpq u)
 
 /-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves zero. -/
 theorem W1p.coe_ofExponentLE_zero (hpq : p ≤ q) :
