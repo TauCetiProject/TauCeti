@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.QuotientRing
+public import TauCeti.Algebra.Group.ZMultiples
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Circle
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Monodromy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.InfiniteCyclic
-public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+public import TauCeti.RepresentationTheory.LinearCharacter.Sign
 
 /-!
 # Homology of the circle with local coefficients
@@ -34,7 +35,8 @@ and one edge, whose differential is `T - 1`:
 * `Hₙ(S¹; A) = 0` for `n ≥ 2` (`TauCeti.isZero_circleTwistedHomology_add_two`).
 
 For the rank-one integral system with monodromy `-1`, the coefficient system
-`TauCeti.circleLocalSystem ℤ TauCeti.intSignRep` of the sign representation `n ↦ (-1)ⁿ`, the
+`TauCeti.circleLocalSystem ℤ TauCeti.intSignRep` of the sign representation `n ↦ (-1)ⁿ`
+(from `TauCeti.RepresentationTheory.LinearCharacter.Sign`), the
 differential `T - 1` is multiplication by `-2`. Hence `H₀(S¹; ℤ⁻) ≅ ℤ/2`
 (`TauCeti.circleTwistedHomologyIntSignRepZeroIso`) and `H₁(S¹; ℤ⁻) = 0`
 (`TauCeti.isZero_circleTwistedHomology_intSignRep_one`), whereas with constant coefficients both
@@ -50,7 +52,6 @@ maximum circle of the height function on the Klein bottle.
 * `TauCeti.circleTwistedHomologyIsoGroupHomology`: `Hₙ(S¹; A) ≅ Hₙ(ℤ, A)`.
 * `TauCeti.circleTwistedHomologyZeroIso`, `TauCeti.circleTwistedHomologyOneIso`: the homology in
   degrees `0` and `1`.
-* `TauCeti.intSignRep`: the sign representation of `ℤ` on `ℤ`.
 * `TauCeti.circleTwistedHomologyIntSignRepZeroIso`: `H₀(S¹; ℤ⁻) ≅ ℤ/2`.
 
 ## Main results
@@ -167,37 +168,6 @@ def circleTwistedHomologyZeroIso :
       ModuleCat.of k (A ⧸ LinearMap.range (A.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) :=
   circleTwistedHomologyIsoGroupHomology A 0 ≪≫
     Rep.InfiniteCyclicGroup.groupHomologyZeroIso A Multiplicative.mem_zpowers_ofAdd_one_int
-
-/-- The sign representation of `ℤ` on `ℤ`, in which `n` acts by `(-1)ⁿ`. Its local system
-`circleLocalSystem ℤ intSignRep` is the rank-one integral system on the circle with monodromy
-`-1`. -/
-abbrev intSignRep : Rep ℤ (Multiplicative ℤ) :=
-  Rep.of (Representation.ofLinearCharacter (zpowersHom ℤˣ (-1)))
-
-/-- The generator of `ℤ` acts on the sign representation by `-1`. -/
-@[simp]
-lemma intSignRep_ρ_ofAdd_one : intSignRep.ρ (Multiplicative.ofAdd 1) = -LinearMap.id := by
-  ext
-  simp
-
-/-- The sign representation of `ℤ` on `ℤ` has no nonzero invariants. -/
-lemma invariants_intSignRep : intSignRep.ρ.invariants = ⊥ := by
-  rw [Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub _ _
-    Multiplicative.mem_zpowers_ofAdd_one_int, intSignRep_ρ_ofAdd_one]
-  ext x
-  simp only [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.neg_apply, LinearMap.id_coe, id_eq,
-    Submodule.mem_bot]
-  omega
-
-/-- For the sign representation, `T - 1` is multiplication by `-2`, whose range is `2ℤ`. -/
-lemma range_intSignRep_ρ_ofAdd_one_sub_id :
-    LinearMap.range (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) =
-      Ideal.span {(2 : ℤ)} := by
-  rw [intSignRep_ρ_ofAdd_one]
-  ext x
-  simp only [LinearMap.mem_range, LinearMap.sub_apply, LinearMap.neg_apply, LinearMap.id_apply,
-    Ideal.mem_span_singleton]
-  exact ⟨fun ⟨y, hy⟩ ↦ ⟨-y, by rw [← hy]; ring⟩, fun ⟨c, hc⟩ ↦ ⟨-c, by rw [hc]; ring⟩⟩
 
 /-- **The circle has no first homology with coefficients in the sign system**: `H₁(S¹; ℤ⁻) = 0`,
 since no nonzero integer is fixed by `-1`. -/
