@@ -880,8 +880,7 @@ theorem bimoduleTensorMap_add_left (f f' : M ⟶ M') (g : N ⟶ N') :
       bimoduleTensorMap Γ Δ Θ f g + bimoduleTensorMap Γ Δ Θ f' g := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.add_tmul k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
@@ -889,24 +888,21 @@ theorem bimoduleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
       bimoduleTensorMap Γ Δ Θ f g + bimoduleTensorMap Γ Δ Θ f g' := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_add k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleTensorMap_smul_left (c : k) (f : M ⟶ M') (g : N ⟶ N') :
     bimoduleTensorMap Γ Δ Θ (c • f) g = c • bimoduleTensorMap Γ Δ Θ f g := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.smul_tmul k B _ _ _
+  simp
 
 @[simp]
 theorem bimoduleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N') :
     bimoduleTensorMap Γ Δ Θ f (c • g) = c • bimoduleTensorMap Γ Δ Θ f g := by
   apply bimoduleTensor_hom_ext Γ Δ Θ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_smul k B _ _ _
+  simp
 
 /-- Balanced tensor composition of internally graded bimodules. -/
 -- Expose the object assignment so the tensor maps have the computed source and target types.
