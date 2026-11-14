@@ -86,6 +86,7 @@ representation (`TauCeti/Algebra/Lie/Presentation/Serre/Integrable.lean`) then c
 public section
 
 open LieAlgebra LieSubalgebra Matrix
+open scoped Pointwise
 
 namespace TauCeti
 
