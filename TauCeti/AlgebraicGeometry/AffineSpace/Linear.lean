@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.AffineSpace
-public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.RingTheory.AlgebraicIndependent.Defs
+public import TauCeti.AlgebraicGeometry.AffineSpace.Basic
 
 /-!
-# Linear maps and algebra evaluation morphisms of affine spaces
+# Linear morphisms and automorphisms of affine spaces
 
 Given a matrix `C : Matrix m n Γ(S, ⊤)` of global sections over a base scheme `S` (for finite `n`),
 the linear combination of standard coordinates `i ↦ ∑ j, C i j * coord S j` defines an `S`-morphism
@@ -19,14 +16,9 @@ the linear combination of standard coordinates `i ↦ ∑ j, C i j * coord S j` 
 index and covariantly on coordinate vectors (`linearMap_comp`, `homOfVector_linearMap`). Invertible
 square matrices induce `S`-automorphisms `AlgebraicGeometry.AffineSpace.linearIso`.
 
-For an `R`-algebra `A` and an `n`-tuple `x : n → A`, `AlgebraicGeometry.AffineSpace.homOfAlgebra x`
-is the canonical `Spec R`-morphism `Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` corresponding to evaluation
-`MvPolynomial.aeval x`. It is a closed immersion if and only if `x` generates `A` over `R`
-(`isClosedImmersion_homOfAlgebra_iff`), finite if and only if `MvPolynomial.aeval x` is
-module-finite (`isFinite_homOfAlgebra_iff`), and surjective when `x` is algebraically independent
-over `R` and makes `A` integral (`surjective_homOfAlgebra`). Composing `homOfAlgebra x` with a
-linear morphism of affine spaces corresponds to taking linear combinations of the coordinates `x`
-(`homOfAlgebra_linearMap`).
+Composing an algebra evaluation morphism `AlgebraicGeometry.AffineSpace.homOfAlgebra R x` with a
+linear morphism of affine spaces over `Spec (.of R)` corresponds to taking `R`-linear combinations
+of the coordinates `x` (`homOfAlgebra_linearMap`).
 
 ## Main declarations
 
@@ -34,13 +26,13 @@ linear morphism of affine spaces corresponds to taking linear combinations of th
   matrix `C : Matrix m n Γ(S, ⊤)`.
 * `AlgebraicGeometry.AffineSpace.linearIso`: the `S`-automorphism of `𝔸(n; S)` induced by an
   invertible matrix `M : (Matrix n n Γ(S, ⊤))ˣ`.
-* `AlgebraicGeometry.AffineSpace.homOfAlgebra`: the evaluation morphism
-  `Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` attached to a coordinate tuple `x : n → A`.
+* `AlgebraicGeometry.AffineSpace.homOfAlgebra_linearMap`: compatibility of `homOfAlgebra` with
+  `linearMap`.
 -/
 
 public section
 
-open CategoryTheory MvPolynomial
+open CategoryTheory
 
 namespace AlgebraicGeometry.AffineSpace
 
@@ -121,10 +113,9 @@ lemma linearMap_comp [Fintype p] (C : Matrix m n Γ(S, ⊤)) (D : Matrix n p Γ(
 @[reassoc]
 lemma linearMap_reindex {q : Type u} (C : Matrix m n Γ(S, ⊤)) (g : q → m) :
     linearMap S C ≫ reindex g S = linearMap S (C.submatrix g id) := by
-  refine hom_ext (by simp) fun i ↦ ?_
-  rw [Scheme.Hom.comp_appTop, CommRingCat.comp_apply, reindex_appTop_coord,
-    linearMap_appTop_coord, linearMap_appTop_coord]
-  rfl
+  refine hom_ext (by simp) fun _ ↦ ?_
+  simp only [Scheme.Hom.comp_appTop, CommRingCat.comp_apply, reindex_appTop_coord,
+    linearMap_appTop_coord, Matrix.submatrix_apply, id_eq]
 
 variable {S} in
 /-- Base change of `linearMap T C` along `f : S ⟶ T` applies `f.appTop` to the entries of `C`. -/
@@ -158,6 +149,10 @@ lemma linearIso_inv [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) :
     (linearIso S M).inv = linearMap S M⁻¹.val :=
   (rfl)
 
+instance [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) : (linearIso S M).hom.IsOver S := by
+  rw [linearIso_hom]
+  infer_instance
+
 /-- The identity unit matrix induces `Iso.refl 𝔸(n; S)`. -/
 @[simp]
 lemma linearIso_one [DecidableEq n] :
@@ -168,7 +163,7 @@ lemma linearIso_one [DecidableEq n] :
 @[simp]
 lemma linearIso_symm [DecidableEq n] (M : (Matrix n n Γ(S, ⊤))ˣ) :
     (linearIso S M).symm = linearIso S M⁻¹ :=
-  (rfl)
+  Iso.ext (by simp)
 
 /-- Multiplication of unit matrices reverses order under `linearIso`. -/
 lemma linearIso_mul [DecidableEq n] (M N : (Matrix n n Γ(S, ⊤))ˣ) :
@@ -177,103 +172,14 @@ lemma linearIso_mul [DecidableEq n] (M N : (Matrix n n Γ(S, ⊤))ˣ) :
 
 end LinearMap
 
-section HomOfAlgebra
-
-variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A] {m n : Type u}
-
-/-- The `Spec R`-morphism `Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` corresponding to the `R`-algebra
-evaluation homomorphism `MvPolynomial.aeval x : MvPolynomial n R →ₐ[R] A`. -/
-def homOfAlgebra (x : n → A) : Spec (.of A) ⟶ 𝔸(n; Spec (.of R)) :=
-  Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) x).toRingHom) ≫
-    (SpecIso n (.of R)).inv
-
-/-- Explicit unfolding of `homOfAlgebra` in terms of `Spec.map` and `SpecIso`. -/
-lemma homOfAlgebra_def (x : n → A) :
-    homOfAlgebra (R := R) x =
-      Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) x).toRingHom) ≫
-        (SpecIso n (.of R)).inv :=
-  (rfl)
-
-/-- Composing `homOfAlgebra x` with `(SpecIso n (.of R)).hom` recovers `Spec.map (aeval x)`. -/
-@[reassoc (attr := simp)]
-lemma homOfAlgebra_specIso_hom (x : n → A) :
-    homOfAlgebra (R := R) x ≫ (SpecIso n (.of R)).hom =
-      Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) x).toRingHom) := by
-  simp [homOfAlgebra_def]
-
-/-- `homOfAlgebra x` lies over `Spec (.of R)` via `Spec.map (algebraMap R A)`. -/
-@[reassoc (attr := simp)]
-lemma homOfAlgebra_over (x : n → A) :
-    homOfAlgebra (R := R) x ≫ 𝔸(n; Spec (.of R)) ↘ Spec (.of R) =
-      Spec.map (CommRingCat.ofHom (algebraMap R A)) := by
-  rw [homOfAlgebra_def, Category.assoc, SpecIso_inv_over, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp]
-  congr 2
-  ext r
-  simp
-
-/-- Pulling back the `i`-th coordinate of `𝔸(n; Spec (.of R))` along `homOfAlgebra x` gives the
-global section corresponding to `x i`. -/
-@[simp]
-lemma homOfAlgebra_appTop_coord (x : n → A) (i : n) :
-    (homOfAlgebra (R := R) x).appTop (coord (Spec (.of R)) i) =
-      (Scheme.ΓSpecIso (.of A)).inv (x i) := by
-  rw [homOfAlgebra_def, Scheme.Hom.comp_appTop, CommRingCat.comp_apply, SpecIso_inv_appTop_coord,
-    ← CommRingCat.comp_apply, ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply,
-    ConcreteCategory.hom_ofHom]
-  simp
-
-/-- `homOfAlgebra (R := R)` is injective in the coordinate tuple `x : n → A`. -/
-@[simp]
-lemma homOfAlgebra_inj {x y : n → A} :
-    homOfAlgebra (R := R) x = homOfAlgebra (R := R) y ↔ x = y := by
-  refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ rfl⟩
-  simpa using congrArg (Scheme.ΓSpecIso (.of A)).hom
-    (congrArg (fun f ↦ f.appTop (coord (Spec (.of R)) i)) h)
-
-/-- Evaluating at the standard indeterminates `MvPolynomial.X` yields `(SpecIso n (.of R)).inv`. -/
-@[simp]
-lemma homOfAlgebra_X :
-    homOfAlgebra (R := R) (MvPolynomial.X : n → MvPolynomial n R) = (SpecIso n (.of R)).inv := by
-  simp [homOfAlgebra_def]
-
-/-- `homOfAlgebra x` agrees with `homOfVector` applied to the global sections corresponding to
-`x`. -/
-lemma homOfAlgebra_eq_homOfVector (x : n → A) :
-    homOfAlgebra (R := R) x =
-      homOfVector (Spec.map (CommRingCat.ofHom (algebraMap R A)))
-        ((Scheme.ΓSpecIso (.of A)).inv ∘ x) := by
-  refine hom_ext (by simp) fun i ↦ ?_
-  simp
-
-/-- Postcomposing `homOfAlgebra x` with `reindex g (Spec (.of R))` reindexes the coordinates `x`
-along `g`. -/
-@[reassoc (attr := simp)]
-lemma homOfAlgebra_reindex (x : n → A) (g : m → n) :
-    homOfAlgebra (R := R) x ≫ reindex g (Spec (.of R)) = homOfAlgebra (R := R) (x ∘ g) := by
-  refine hom_ext (by simp) fun j ↦ ?_
-  rw [Scheme.Hom.comp_appTop, CommRingCat.comp_apply, reindex_appTop_coord,
-    homOfAlgebra_appTop_coord, homOfAlgebra_appTop_coord]
-  rfl
-
-/-- Precomposing `homOfAlgebra x` with `Spec.map` of an `R`-algebra morphism `f : A →ₐ[R] B`
-applies `f` to the coordinates `x`. -/
+/-- Composing `homOfAlgebra R x` with the linear map defined by a matrix `C : Matrix m n R` produces
+`homOfAlgebra R` for the linear combinations `i ↦ ∑ j, C i j • x j`. -/
 @[reassoc]
-lemma specMap_homOfAlgebra {B : Type u} [CommRing B] [Algebra R B] (f : A →ₐ[R] B) (x : n → A) :
-    Spec.map (CommRingCat.ofHom f.toRingHom) ≫ homOfAlgebra (R := R) x =
-      homOfAlgebra (R := R) (f ∘ x) := by
-  have hcomp : f.comp (MvPolynomial.aeval (R := R) x) = MvPolynomial.aeval (R := R) (f ∘ x) :=
-    MvPolynomial.algHom_ext fun i ↦ by simp
-  simp only [homOfAlgebra_def, ← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-    AlgHom.toRingHom_eq_coe, ← AlgHom.comp_toRingHom, hcomp]
-
-/-- Composing `homOfAlgebra x` with the linear map defined by a matrix `C : Matrix m n R` produces
-`homOfAlgebra` for the linear combinations `i ↦ ∑ j, C i j • x j`. -/
-@[reassoc]
-lemma homOfAlgebra_linearMap [Fintype n] (x : n → A) (C : Matrix m n R) :
-    homOfAlgebra (R := R) x ≫
+lemma homOfAlgebra_linearMap {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
+    {m n : Type u} [Fintype n] (x : n → A) (C : Matrix m n R) :
+    homOfAlgebra R x ≫
         linearMap (Spec (.of R)) (C.map (Scheme.ΓSpecIso (.of R)).inv) =
-      homOfAlgebra (R := R) (fun i ↦ ∑ j, C i j • x j) := by
+      homOfAlgebra R (fun i ↦ ∑ j, C i j • x j) := by
   rw [homOfAlgebra_eq_homOfVector, homOfVector_linearMap, homOfAlgebra_eq_homOfVector]
   congr 1
   ext i
@@ -281,51 +187,6 @@ lemma homOfAlgebra_linearMap [Fintype n] (x : n → A) (C : Matrix m n R) :
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [Algebra.smul_def, map_mul, ← CommRingCat.comp_apply, ← Scheme.ΓSpecIso_inv_naturality,
     CommRingCat.comp_apply, ConcreteCategory.hom_ofHom]
-
-/-- `homOfAlgebra x : Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` is a closed immersion if and only if
-`x` generates `A` as an `R`-algebra. -/
-@[simp]
-theorem isClosedImmersion_homOfAlgebra_iff {x : n → A} :
-    IsClosedImmersion (homOfAlgebra (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
-  rw [homOfAlgebra_def, MorphismProperty.cancel_right_of_respectsIso @IsClosedImmersion _
-    (SpecIso n (.of R)).inv,
-    IsClosedImmersion.hasAffineProperty.SpecMap_iff_of_affineAnd RingHom.surjective_respectsIso,
-    CommRingCat.hom_ofHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← AlgHom.range_eq_top,
-    ← Algebra.adjoin_range_eq_range_aeval]
-
-/-- `homOfAlgebra y : Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` is a finite morphism of schemes if and
-only if `MvPolynomial.aeval y` is module-finite. -/
-@[simp]
-theorem isFinite_homOfAlgebra_iff {y : n → A} :
-    IsFinite (homOfAlgebra (R := R) y) ↔ (MvPolynomial.aeval (R := R) y).Finite := by
-  refine ⟨fun _ ↦ ?_, fun hfin ↦ ?_⟩
-  · rw [AlgHom.Finite, ← CommRingCat.hom_ofHom (MvPolynomial.aeval (R := R) y).toRingHom,
-      ← IsFinite.SpecMap_iff, ← homOfAlgebra_specIso_hom]
-    infer_instance
-  · have : IsFinite (Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) y).toRingHom)) :=
-      (IsFinite.SpecMap_iff _).mpr hfin
-    rw [homOfAlgebra_def]
-    infer_instance
-
-/-- If `y : n → A` is algebraically independent over `R` and makes `A` integral over
-`MvPolynomial n R`, then `homOfAlgebra y : Spec (.of A) ⟶ 𝔸(n; Spec (.of R))` is surjective. -/
-theorem surjective_homOfAlgebra {y : n → A}
-    (hind : AlgebraicIndependent R y)
-    (hint : (MvPolynomial.aeval (R := R) y).toRingHom.IsIntegral) :
-    Surjective (homOfAlgebra (R := R) y) := by
-  have : Surjective (Spec.map (CommRingCat.ofHom (MvPolynomial.aeval (R := R) y).toRingHom)) := by
-    rw [surjective_iff]
-    -- `Spec_carrier` identifies the carrier of `Spec (.of _)` with `PrimeSpectrum _` (no carrier
-    -- equivalence exists in `Mathlib.AlgebraicGeometry.Scheme`); `Spec.map_apply` and
-    -- `CommRingCat.hom_ofHom` then identify the underlying map with `PrimeSpectrum.comap`.
-    intro q
-    obtain ⟨p, hp⟩ := hint.comap_surjective (algebraicIndependent_iff_injective_aeval.mp hind) q
-    exact ⟨p, (Spec.map_apply (CommRingCat.ofHom (MvPolynomial.aeval (R := R) y).toRingHom) p).trans
-      (by rwa [CommRingCat.hom_ofHom])⟩
-  rw [homOfAlgebra_def]
-  infer_instance
-
-end HomOfAlgebra
 
 end
 

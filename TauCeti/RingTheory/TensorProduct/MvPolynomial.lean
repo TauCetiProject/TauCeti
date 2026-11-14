@@ -29,8 +29,8 @@ functionals `MvPolynomial.lcoeff R e` on the polynomial leg.
 Evaluating `S[X_ι]` at `1 ⊗ₜ yᵢ` inside `S ⊗[R] A` factors as `(algebraTensorAlgEquiv R S).symm`
 followed by `lTensor S (aeval y)`
 (`MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm`,
-`MvPolynomial.aeval_one_tmul_apply`). Consequently, module-finiteness and integrality of
-`MvPolynomial.aeval y` are preserved under arbitrary base change `S / R`
+`MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm`). Consequently, module-finiteness
+and integrality of `MvPolynomial.aeval y` are preserved under arbitrary base change `S / R`
 (`MvPolynomial.finite_aeval_one_tmul`, `MvPolynomial.isIntegral_aeval_one_tmul`).
 
 ## Main declarations
@@ -40,8 +40,8 @@ followed by `lTensor S (aeval y)`
 * `MvPolynomial.ext_lid_rTensor_lcoeff`: elements of `R[X_σ] ⊗[R] N` with the same coefficients
   are equal.
 * `MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm`,
-  `MvPolynomial.aeval_one_tmul_apply`: `aeval (1 ⊗ₜ y ·)` factors through
-  `MvPolynomial.algebraTensorAlgEquiv` and `Algebra.TensorProduct.lTensor`.
+  `MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm`: `aeval (1 ⊗ₜ y ·)` factors
+  through `MvPolynomial.algebraTensorAlgEquiv` and `Algebra.TensorProduct.lTensor`.
 * `MvPolynomial.finite_aeval_one_tmul`, `MvPolynomial.isIntegral_aeval_one_tmul`: scalar extension
   preserves module-finiteness and integrality of `MvPolynomial.aeval`.
 -/
@@ -108,8 +108,8 @@ theorem aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm {S : Type*} [C
 
 /-- Evaluating a polynomial over `S` at `1 ⊗ₜ[R] y i` in `S ⊗[R] A` agrees with transporting along
 `(algebraTensorAlgEquiv R S).symm` and applying `id_S ⊗ aeval y`. -/
-theorem aeval_one_tmul_apply {S : Type*} [CommSemiring S] [Algebra R S] (y : ι → A)
-    (p : MvPolynomial ι S) :
+theorem aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm {S : Type*} [CommSemiring S]
+    [Algebra R S] (y : ι → A) (p : MvPolynomial ι S) :
     aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i) p =
       Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)
         ((algebraTensorAlgEquiv R S).symm p) := by
@@ -123,7 +123,7 @@ private theorem aeval_one_tmul_toRingHom {S : Type*} [CommSemiring S] [Algebra R
     (aeval (R := S) (fun i ↦ (1 : S) ⊗ₜ[R] y i)).toRingHom =
       (Algebra.TensorProduct.map (AlgHom.id R S) (aeval (R := R) y)).toRingHom.comp
         (algebraTensorAlgEquiv R S).symm.toRingHom :=
-  RingHom.ext (aeval_one_tmul_apply y)
+  RingHom.ext (aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm y)
 
 end CommSemiring
 

@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
-import Mathlib.Algebra.Module.LinearMap.End
-import Mathlib.Algebra.Module.Pi
 
 /-!
 # Linear independence of matrix rows from linear combinations
@@ -32,11 +30,8 @@ independent, then the rows of `C` are `R`-linearly independent. -/
 theorem row_of_sum_smul {ι κ R M : Type*} [Fintype κ] [Semiring R] [AddCommMonoid M] [Module R M]
     {C : Matrix ι κ R} {x : κ → M}
     (hy : LinearIndependent R fun i ↦ ∑ j, C i j • x j) :
-    LinearIndependent R C.row := by
-  let L : (κ → R) →ₗ[R] M := ∑ j : κ, (LinearMap.proj j).smulRight (x j)
-  have hL : (fun i ↦ ∑ j, C i j • x j) = L ∘ C.row := by
-    funext i
-    simp [L, Matrix.row_apply]
-  exact LinearIndependent.of_comp L (hL ▸ hy)
+    LinearIndependent R C.row :=
+  LinearIndependent.of_comp (Fintype.linearCombination R x)
+    (by simpa [Function.comp_def, Fintype.linearCombination_apply] using hy)
 
 end LinearIndependent

@@ -294,6 +294,7 @@ theorem comap_rename_some_map_rename_some_sup_span (I : Ideal (MvPolynomial σ R
 
 /-- The quotient `MvPolynomial σ R ⧸ I` is generated as an `R`-algebra by the residue classes of the
 variables `X i`. -/
+@[simp]
 theorem adjoin_range_quotient_mk_X_eq_top (I : Ideal (MvPolynomial σ R)) :
     Algebra.adjoin R (Set.range fun i : σ ↦ Quotient.mk I (X i)) = ⊤ := by
   rw [Algebra.adjoin_range_eq_range_aeval, ← mkₐ_eq_aeval, AlgHom.range_eq_top]

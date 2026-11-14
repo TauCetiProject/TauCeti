@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.MvPolynomial.Expand
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
@@ -19,7 +20,8 @@ import TauCeti.RingTheory.MvPolynomial.Ideal
 * **Zero-dimensional presentations:** a field `k` presented by a single generator `![0] : Fin 1 → k`
   is normalized with `d = 0` and the unique `0 × 1` matrix over `k`.
 * **Nonreduced algebras:** `k[X₀, X₁] ⧸ (X₁²)` is nonreduced (`X₁ ≠ 0`, `X₁² = 0`) and is
-  normalized by the projection matrix `!![1, 0] : Matrix (Fin 1) (Fin 2) k` onto `X₀` (`d = 1`).
+  normalized by the projection matrix `!![1, 0] : Matrix (Fin 1) (Fin 2) k` onto `X₀` (`d = 1`;
+  `algebraicIndependent_mk_span_X_one_sq`, `finite_aeval_mk_span_X_one_sq`).
 * **Failure of linearity over finite fields:** over `𝔽₂ = ZMod 2`, the coordinate ring
   `A = 𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` of the union of the three `𝔽₂`-rational lines through the
   origin admits *no* `𝔽₂`-linear normalizing parameter `c₀ x₀ + c₁ x₁`, because every `𝔽₂`-linear
@@ -64,7 +66,8 @@ example (k : Type*) [Field k] :
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim k = (0 : ℕ) := by
   dsimp only
   have hadj : Algebra.adjoin k (Set.range (![0] : Fin 1 → k)) = ⊤ :=
-    eq_top_iff.mpr fun a _ ↦ by simp
+    eq_top_iff.mpr fun a _ ↦ by
+      simpa using (Algebra.adjoin k (Set.range (![0] : Fin 1 → k))).algebraMap_mem a
   have hind : AlgebraicIndependent k
       (fun i : Fin 0 ↦ ∑ j : Fin 1, (0 : Matrix (Fin 0) (Fin 1) k) i j • (![0] : Fin 1 → k) j) :=
     algebraicIndependent_empty_type_iff.mpr (algebraMap k k).injective
@@ -72,6 +75,41 @@ example (k : Type*) [Field k] :
       (fun i : Fin 0 ↦ ∑ j : Fin 1, (0 : Matrix (Fin 0) (Fin 1) k) i j • (![0] : Fin 1 → k) j)) :=
     fun a ↦ ⟨MvPolynomial.C a, by simp⟩
   exact ⟨hadj, hind, AlgHom.Finite.of_surjective _ hsurj, by simp⟩
+
+/-- In `R[X₀, X₁] ⧸ (X₁²)`, the residue class of `X₀` indexed by `Fin 1` is algebraically
+independent over `R`. -/
+theorem algebraicIndependent_mk_span_X_one_sq (R : Type*) [CommRing R] :
+    AlgebraicIndependent R (fun _ : Fin 1 ↦
+      Ideal.Quotient.mk (Ideal.span {(X 1 : MvPolynomial (Fin 2) R) ^ 2}) (X 0)) := by
+  set I : Ideal (MvPolynomial (Fin 2) R) := Ideal.span {X 1 ^ 2}
+  have hproj_ker :
+      ∀ p ∈ I, (aeval (R := R) (![X 0, 0] : Fin 2 → MvPolynomial (Fin 1) R)) p = 0 :=
+    fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
+  let proj : (MvPolynomial (Fin 2) R ⧸ I) →ₐ[R] MvPolynomial (Fin 1) R :=
+    Ideal.Quotient.liftₐ I (aeval (R := R) ![X 0, 0]) hproj_ker
+  have hproj : proj (Ideal.Quotient.mk I (X 0)) = X 0 := by
+    simpa [proj] using congr($(Ideal.Quotient.liftₐ_comp I _ hproj_ker) (X 0))
+  rw [algebraicIndependent_iff_injective_aeval]
+  have hleft : proj.comp (aeval (R := R) fun _ : Fin 1 ↦ Ideal.Quotient.mk I (X 0)) =
+      AlgHom.id R _ :=
+    MvPolynomial.algHom_ext <| Fin.forall_fin_one.mpr (by simp [hproj])
+  exact Function.LeftInverse.injective fun p ↦ congr($hleft p)
+
+/-- Evaluating `R[Y₀]` at the residue class of `X₀` makes `R[X₀, X₁] ⧸ (X₁²)` module-finite. -/
+theorem finite_aeval_mk_span_X_one_sq (R : Type*) [CommRing R] :
+    (aeval (R := R) fun _ : Fin 1 ↦
+      Ideal.Quotient.mk (Ideal.span {(X 1 : MvPolynomial (Fin 2) R) ^ 2}) (X 0)).Finite := by
+  set I : Ideal (MvPolynomial (Fin 2) R) := Ideal.span {X 1 ^ 2}
+  set x : Fin 2 → MvPolynomial (Fin 2) R ⧸ I := fun j ↦ Ideal.Quotient.mk I (X j)
+  set y : Fin 1 → MvPolynomial (Fin 2) R ⧸ I := fun _ ↦ x 0
+  refine (aeval (R := R) y).finite_of_adjoin_eq_top (Set.finite_range x)
+    I.adjoin_range_quotient_mk_X_eq_top <| Set.forall_mem_range.mpr <|
+      Fin.forall_fin_two.mpr ⟨?_, ?_⟩
+  · simpa [y] using RingHom.isIntegralElem_map (aeval (R := R) y).toRingHom (x := X 0)
+  · have hx1_sq : x 1 ^ 2 = 0 := by
+      rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem]
+      exact Ideal.subset_span rfl
+    exact ⟨Polynomial.X ^ 2, Polynomial.monic_X_pow 2, by simp [hx1_sq]⟩
 
 -- The nonreduced algebra `k[X₀, X₁] ⧸ (X₁²)` is normalized by `C = !![1, 0]` (`d = 1`) while
 -- retaining nonzero nilpotents.
@@ -106,40 +144,41 @@ example (k : Type*) [Field k] :
     have heps : (DualNumber.eps : DualNumber k) = 0 := by
       rw [← htoDual, hred.eq_zero (x 1) ⟨2, hx1_sq⟩, map_zero]
     exact one_ne_zero (α := k) (by simpa using congrArg TrivSqZeroExt.snd heps)
-  have hadj : Algebra.adjoin k (Set.range x) = ⊤ := I.adjoin_range_quotient_mk_X_eq_top
-  have hy0 : y = ![x 0] := funext <| Fin.forall_fin_one.mpr (by simp [y, Fin.sum_univ_two])
-  have hproj_ker :
-      ∀ p ∈ I, (aeval (R := k) (![X 0, 0] : Fin 2 → MvPolynomial (Fin 1) k)) p = 0 :=
-    fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by rintro _ rfl; simp) hp
-  let proj : (MvPolynomial (Fin 2) k ⧸ I) →ₐ[k] MvPolynomial (Fin 1) k :=
-    Ideal.Quotient.liftₐ I (aeval (R := k) ![X 0, 0]) hproj_ker
-  have hproj : proj (x 0) = X 0 := by
-    simpa [proj, x] using congr($(Ideal.Quotient.liftₐ_comp I _ hproj_ker) (X 0))
-  have hind : AlgebraicIndependent k y := by
-    rw [algebraicIndependent_iff_injective_aeval]
-    have hleft : proj.comp (aeval (R := k) y) = AlgHom.id k _ :=
-      MvPolynomial.algHom_ext <| Fin.forall_fin_one.mpr (by simp [hy0, hproj])
-    exact Function.LeftInverse.injective fun p ↦ congr($hleft p)
-  have hfin : (aeval (R := k) y).Finite := by
-    refine finite_aeval_of_adjoin_eq_top hadj <| Fin.forall_fin_two.mpr ⟨?_, ?_⟩
-    · simpa [hy0] using RingHom.isIntegralElem_map (aeval (R := k) y).toRingHom (x := X 0)
-    · exact ⟨Polynomial.X ^ 2, Polynomial.monic_X_pow 2, by simp [hx1_sq]⟩
-  exact ⟨hnot_red, hadj, hind, hfin, by
+  have hy0 : y = fun _ ↦ x 0 := funext <| Fin.forall_fin_one.mpr (by simp [y, Fin.sum_univ_two])
+  have hind : AlgebraicIndependent k y := hy0 ▸ algebraicIndependent_mk_span_X_one_sq k
+  have hfin : (aeval (R := k) y).Finite := hy0 ▸ finite_aeval_mk_span_X_one_sq k
+  exact ⟨hnot_red, I.adjoin_range_quotient_mk_X_eq_top, hind, hfin, by
     simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial
       (aeval (R := k) y).toRingHom (algebraicIndependent_iff_injective_aeval.mp hind)
       hfin.to_isIntegral⟩
 
 section ThreeLines
 
-/-- The defining ideal `(X₀ X₁ (X₀ + X₁))` of the three `𝔽₂`-rational lines through the origin in
-`𝔽₂[X₀, X₁]`. -/
-noncomputable def threeLinesIdeal : Ideal (MvPolynomial (Fin 2) (ZMod 2)) :=
+private noncomputable def threeLinesIdeal : Ideal (MvPolynomial (Fin 2) (ZMod 2)) :=
   Ideal.span {X 0 * X 1 * (X 0 + X 1)}
 
-/-- The coordinate generators `x₀, x₁` of `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))`. -/
-noncomputable def threeLinesGen (j : Fin 2) :
+private noncomputable def threeLinesGen (j : Fin 2) :
     MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
   Ideal.Quotient.mk threeLinesIdeal (X j)
+
+private noncomputable def threeLinesLineHom (u : Fin 2 → ZMod 2)
+    (hu : u 0 * u 1 * (u 0 + u 1) = 0) :
+    (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) →ₐ[ZMod 2] Polynomial (ZMod 2) :=
+  Ideal.Quotient.liftₐ threeLinesIdeal
+    (aeval (R := ZMod 2) fun j ↦ Polynomial.C (u j) * Polynomial.X) fun p hp ↦
+    RingHom.mem_ker.mp <| Ideal.span_le.mpr (by
+      rintro _ rfl
+      have hcalc : (Polynomial.C (u 0) * Polynomial.X) * (Polynomial.C (u 1) * Polynomial.X) *
+          (Polynomial.C (u 0) * Polynomial.X + Polynomial.C (u 1) * Polynomial.X) =
+          Polynomial.C (u 0 * u 1 * (u 0 + u 1)) * Polynomial.X ^ 3 := by
+        simp only [map_add, map_mul]; ring
+      simp [hcalc, hu]) hp
+
+private lemma threeLinesLineHom_gen (u : Fin 2 → ZMod 2) (hu : u 0 * u 1 * (u 0 + u 1) = 0)
+    (j : Fin 2) :
+    threeLinesLineHom u hu (threeLinesGen j) = Polynomial.C (u j) * Polynomial.X := by
+  rw [threeLinesLineHom, threeLinesGen, ← Ideal.Quotient.mkₐ_eq_mk (ZMod 2), ← AlgHom.comp_apply,
+    Ideal.Quotient.liftₐ_comp, aeval_X]
 
 -- Over `𝔽₂ = ZMod 2`, NO linear combination `c 0 • x 0 + c 1 • x 1` of the coordinate generators
 -- makes `𝔽₂[X₀, X₁] ⧸ (X₀ X₁ (X₀ + X₁))` integral (hence nor module-finite) over `𝔽₂[Y]`.
@@ -148,7 +187,8 @@ example (c : Fin 2 → ZMod 2) :
       Fin 1 → _)).toRingHom.IsIntegral := by
   let y : Fin 1 → MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal :=
     ![c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1]
-  have hdir : ∃ (u : Fin 2 → ZMod 2) (i₀ : Fin 2),
+  -- Pick one of the three lines `X₀ = 0`, `X₁ = 0`, `X₀ + X₁ = 0` on which `c 0 X₀ + c 1 X₁ = 0`.
+  obtain ⟨u, i₀, hu_rel, hu_orth, hui₀⟩ : ∃ (u : Fin 2 → ZMod 2) (i₀ : Fin 2),
       u 0 * u 1 * (u 0 + u 1) = 0 ∧ c 0 * u 0 + c 1 * u 1 = 0 ∧ u i₀ = 1 := by
     by_cases hc0 : c 0 = 0
     · exact ⟨![1, 0], 0, by simp, by simp [hc0], rfl⟩
@@ -156,31 +196,17 @@ example (c : Fin 2 → ZMod 2) :
       · exact ⟨![0, 1], 1, by simp, by simp [hc1], rfl⟩
       · have hne : ∀ a : ZMod 2, a ≠ 0 → a = 1 := by decide
         exact ⟨![1, 1], 0, by decide, by rw [hne _ hc0, hne _ hc1]; decide, rfl⟩
-  obtain ⟨u, i₀, hu_rel, hu_orth, hui₀⟩ := hdir
-  have hline_ker : ∀ p ∈ threeLinesIdeal,
-      (aeval (R := ZMod 2) fun j ↦ Polynomial.C (u j) * Polynomial.X) p = 0 :=
-    fun p hp ↦ RingHom.mem_ker.mp <| Ideal.span_le.mpr (by
-      rintro _ rfl
-      have hcalc : (Polynomial.C (u 0) * Polynomial.X) * (Polynomial.C (u 1) * Polynomial.X) *
-          (Polynomial.C (u 0) * Polynomial.X + Polynomial.C (u 1) * Polynomial.X) =
-          Polynomial.C (u 0 * u 1 * (u 0 + u 1)) * Polynomial.X ^ 3 := by
-        simp only [map_add, map_mul]; ring
-      simp [hcalc, hu_rel]) hp
-  let lineHom : (MvPolynomial (Fin 2) (ZMod 2) ⧸ threeLinesIdeal) →ₐ[ZMod 2] Polynomial (ZMod 2) :=
-    Ideal.Quotient.liftₐ threeLinesIdeal
-      (aeval (R := ZMod 2) fun j ↦ Polynomial.C (u j) * Polynomial.X) hline_ker
-  have hline (j : Fin 2) : lineHom (threeLinesGen j) = Polynomial.C (u j) * Polynomial.X := by
-    simpa [lineHom, threeLinesGen] using
-      congr($(Ideal.Quotient.liftₐ_comp threeLinesIdeal _ hline_ker) (X j))
+  -- Restrict along the chosen line; `y 0` maps to `0`, while `threeLinesGen i₀` maps to `X`.
+  let lineHom := threeLinesLineHom u hu_rel
   have hy0 : lineHom (y 0) = 0 := by
-    rw [show y 0 = c 0 • threeLinesGen 0 + c 1 • threeLinesGen 1 from rfl,
-      map_add, map_smul, map_smul, hline 0, hline 1,
-      Algebra.smul_def, Algebra.smul_def, Polynomial.algebraMap_eq]
+    simp only [y, lineHom, Matrix.cons_val_zero, map_add, map_smul,
+      threeLinesLineHom_gen u hu_rel, Algebra.smul_def, Polynomial.algebraMap_eq]
     calc Polynomial.C (c 0) * (Polynomial.C (u 0) * Polynomial.X) +
           Polynomial.C (c 1) * (Polynomial.C (u 1) * Polynomial.X)
         = Polynomial.C (c 0 * u 0 + c 1 * u 1) * Polynomial.X := by
           simp only [map_add, map_mul]; ring
       _ = 0 := by rw [hu_orth, map_zero, zero_mul]
+  -- Any monic integral equation for `threeLinesGen i₀` over `𝔽₂[y 0]` specializes to `P_0(X) = 0`.
   intro hint
   obtain ⟨P, hP_monic, hP_eval⟩ := hint (threeLinesGen i₀)
   have hcomp : lineHom.toRingHom.comp (aeval (R := ZMod 2) y).toRingHom =
@@ -194,7 +220,7 @@ example (c : Fin 2 → ZMod 2) :
     have h0 := congrArg lineHom.toRingHom hP_eval
     rw [Polynomial.hom_eval₂, hcomp, map_zero] at h0
     have hxi₀ : lineHom.toRingHom (threeLinesGen i₀) = Polynomial.X := by
-      simp [hline i₀, hui₀]
+      simp [lineHom, threeLinesLineHom_gen u hu_rel i₀, hui₀]
     rwa [hxi₀, ← Polynomial.eval₂_map, Polynomial.eval₂_C_X] at h0
   exact (hP_monic.map (MvPolynomial.eval (0 : Fin 1 → ZMod 2))).ne_zero hmap
 
@@ -241,7 +267,8 @@ example :
       exact Ideal.subset_span rfl
     simpa [y, threeLinesGen, map_sub, map_add, map_mul, map_pow] using hmk
   have hfin : (aeval (R := ZMod 2) y).Finite := by
-    refine finite_aeval_of_adjoin_eq_top hadj fun j ↦ ?_
+    refine (aeval (R := ZMod 2) y).finite_of_adjoin_eq_top (Set.finite_range threeLinesGen) hadj <|
+      Set.forall_mem_range.mpr fun j ↦ ?_
     refine ⟨Polynomial.X ^ 3 - Polynomial.C (X 0) * Polynomial.X,
       Polynomial.monic_X_pow_sub ((Polynomial.degree_C_mul_X_le _).trans_lt (by norm_num)), ?_⟩
     simpa using hcubic j

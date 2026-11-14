@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Basic
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
@@ -39,7 +38,8 @@ theorem one_tmul {ι R A : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra
     Module.Flat.lTensor_preserves_injective_linearMap (M := S)
       (MvPolynomial.aeval y).toLinearMap hy
   intro p q hpq
-  rw [MvPolynomial.aeval_one_tmul_apply, MvPolynomial.aeval_one_tmul_apply] at hpq
+  rw [MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm,
+    MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm] at hpq
   exact (MvPolynomial.algebraTensorAlgEquiv R S).symm.injective (hinj hpq)
 
 end AlgebraicIndependent
