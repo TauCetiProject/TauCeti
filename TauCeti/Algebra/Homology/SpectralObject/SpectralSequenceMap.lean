@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Map
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
+public import Mathlib.Algebra.Homology.SpectralObject.FirstPage
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.LeftHomology
 -- The statement of `SpectralObject.spectralSequence_iso` refers to private auxiliary proofs of
@@ -38,6 +39,10 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom` and, in the same namespace,
+  `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, under
+  the identifications `spectralSequenceFirstPageXIso` of its objects with objects `H`, the
+  morphism of pages is the morphism `φ` on `H`.
 
 ## Implementation notes
 
@@ -274,5 +279,43 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+
+section FirstPage
+
+/-- Under the identifications `EIsoH` of `E(𝟙 i, f, 𝟙 j)` with `H(f)`, the map `EMap φ` is the
+morphism `φ` on `H(f)`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom {i j : ι} (f : i ⟶ j) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁)
+    (hn₂ : n₁ + 1 = n₂) :
+    EMap φ (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  have h : cyclesMapOfHom φ (𝟙 i) f n₁ ≫ (Y.cyclesIsoH f n₁ n₂ hn₂).hom =
+      (X.cyclesIsoH f n₁ n₂ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+    rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv, X.cyclesIsoH_inv f n₁ n₂ hn₂,
+      Y.cyclesIsoH_inv f n₁ n₂ hn₂, toCycles_cyclesMapOfHom]
+  rw [← cancel_epi (X.πE (𝟙 i) f (𝟙 j) n₀ n₁ n₂ hn₁ hn₂), πE_EMap_assoc,
+    Y.πE_EIsoH_hom f n₀ n₁ n₂ hn₁ hn₂, X.πE_EIsoH_hom_assoc f n₀ n₁ n₂ hn₁ hn₂, h]
+
+variable [data.HasFirstPageComputation]
+
+/-- **The morphism of spectral sequences on the first page.** Under the identifications
+`spectralSequenceFirstPageXIso` of the objects of the first page with objects `H`, the morphism
+of pages induced by `φ` is the morphism `φ` on `H`. -/
+@[reassoc]
+lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom (pq : κ) (i₁ i₂ : ι)
+    (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (n : ℤ) (hn : n = data.deg pq) :
+    spectralSequencePageXMap data φ r₀ le_rfl pq ≫
+        (Y.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (X.spectralSequenceFirstPageXIso data pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        (φ.hom n).app (mk₁ (homOfLE (data.le₁₂' pq hi₁ hi₂))) := by
+  rw [X.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
+    Y.spectralSequenceFirstPageXIso_hom data pq i₁ i₂ hi₁ hi₂ (n - 1) n (n + 1) hn,
+    Category.assoc, ← EMap_comp_EIsoH_hom]
+  -- The identities `𝟙 i₁` and `𝟙 i₂` are the morphisms `homOfLE` of the recipe `data` only up to
+  -- unfolding, so the square of `EMap` is applied with `exact` rather than `rw`.
+  exact (spectralSequencePageXIso_hom_comp_EMap_assoc ..).symm
+
+end FirstPage
 
 end CategoryTheory.Abelian.SpectralObject

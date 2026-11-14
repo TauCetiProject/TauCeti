@@ -20,6 +20,12 @@ filtered complexes, holds for all filtrations.
 
 ## Main results
 
+* `CochainComplex.spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_hom`:
+  on the first page, the morphism of spectral sequences is the map in cohomology of the induced
+  morphism of graded pieces.
+* `CochainComplex.spectralObjectMap_filtrationFunctorMap_abutment_comp`:
+  on the abutment, the morphism of spectral objects induced by a morphism `f` of filtered
+  complexes is the map in cohomology of `f`.
 * `CochainComplex.isIso_homologyMap_app_top_of_isIso_abutment`: an isomorphism on the abutments
   gives an isomorphism in cohomology.
 * `CochainComplex.isIso_homologyMap_of_isIso_spectralSequence_page`: the comparison theorem.
@@ -84,5 +90,45 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page (F : ℤ → Subobject 
       ((F i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hFb ▸ hF hi)) m))
     (fun m i _ _ hi => isZero_spectralObject_H_top G hG i m
       ((G i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h
+
+
+/-- **The morphism of spectral sequences on the first page.** For monomorphisms `F_q ⟶ F_{q+1}`
+and `G_q ⟶ G_{q+1}`, under the identifications of the objects of the first pages with the
+cohomology of the graded pieces, the morphism of spectral sequences induced by `α : F ⟶ G` is the
+map in cohomology of the induced morphism of cokernels. -/
+@[reassoc]
+lemma spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_hom
+    {F G : EInt ⥤ CochainComplex C ℤ} (α : F ⟶ G) (pq : ℤ × ℤ) (i₁ i₂ : ℤ)
+    (hi₁ : i₁ = pq.2) (hi₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2)
+    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))]
+    [Mono (G.map (homOfLE (coe_le_coe_of_eq_add_one hi₁ hi₂)))] :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom 2 le_rfl).f pq ≫
+        (spectralSequenceFirstPageXIsoCokernel G pq i₁ i₂ hi₁ hi₂ n hn).hom =
+      (spectralSequenceFirstPageXIsoCokernel F pq i₁ i₂ hi₁ hi₂ n hn).hom ≫
+        HomologicalComplex.homologyMap (cokernel.map _ _ _ _ (α.naturality _)) n := by
+  rw [spectralSequenceMap_hom, spectralSequencePageMap_f, spectralSequenceFirstPageXIsoCokernel_eq,
+    spectralSequenceFirstPageXIsoCokernel_eq, Iso.trans_hom, Iso.trans_hom, Category.assoc,
+    ← spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom]
+  -- The degree `pq.1 + pq.2` is `coreE₂Cohomological.deg pq` only up to unfolding, so the first
+  -- page square is applied with `exact` rather than `rw`.
+  exact spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom_assoc _ _ _ _ _ _ _ _ _ _
+
+/-- **The morphism of spectral objects on the abutment.** For a morphism `f : K ⟶ L` carrying a
+filtration `F` of `K` into a filtration `G` of `L`, under the identifications of the abutments
+with the cohomology of `K` and `L`, the morphism of spectral objects induced by `f` is the map in
+cohomology of `f`. -/
+@[reassoc]
+lemma spectralObjectMap_filtrationFunctorMap_abutment_comp
+    {F : ℤ → Subobject K} (hF : Monotone F) {G : ℤ → Subobject L} (hG : Monotone G) (f : K ⟶ L)
+    (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (n : ℤ) :
+    ((spectralObjectMap (filtrationFunctorMap hF hG f hf)).hom n).app
+        (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (filtrationAbutmentIso G hG n).hom =
+      (filtrationAbutmentIso F hF n).hom ≫ HomologicalComplex.homologyMap f n := by
+  rw [filtrationAbutmentIso_hom, filtrationAbutmentIso_hom, ← Category.assoc,
+    spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom, Category.assoc, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  congr 2
+  rw [← cancel_epi (cokernel.π _)]
+  simp
 
 end CochainComplex

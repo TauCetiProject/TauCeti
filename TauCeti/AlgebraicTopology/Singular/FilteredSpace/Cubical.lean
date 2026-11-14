@@ -8,7 +8,13 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.QuasiIso
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Comparison
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+-- The comparison with the simplicial filtration unfolds its stages and its first-page
+-- identification, and the quotient map `TopPair.singularRelπ` onto relative simplicial chains,
+-- whose definitions are not exposed.
+import all TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
+import all TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Basic
 
 /-!
 # The cubical spectral sequence of a filtered space
@@ -36,7 +42,12 @@ compares the two.
   quasi-isomorphism on every stage of the filtration, hence induces an isomorphism of spectral
   objects, and so an isomorphism between the cubical and the simplicial spectral sequences of the
   filtered space, on every page (`TauCeti.filteredSpaceCubicalSpectralSequenceIso`). No
-  boundedness or exhaustiveness assumption on the filtration is needed.
+  boundedness or exhaustiveness assumption on the filtration is needed. Under the identifications
+  of the first pages with relative homology, this isomorphism is the map in homology of the
+  relative comparison map `TopPair.cubicalToSingularRel`
+  (`TauCeti.filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp`), and on the abutments the
+  comparison is the map in homology of `TauCeti.cubicalToSingular`
+  (`TauCeti.spectralObjectMap_filteredSpaceCubicalToSingular_abutment_comp`).
 
 Applied to the filtration of the total space of a fibration by the preimages of the skeleta of the
 base, this transports the Serre spectral sequence of simplicial singular chains to normalized
@@ -203,7 +214,7 @@ variable (hX : Monotone X)
 /-- The quotient of two stages of the cubical filtration, as the cokernel of a transition map of
 its filtration functor, is the reindexed relative cubical chain complex of the corresponding
 pair. -/
-private def cokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
+private def cubicalCokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel ((CochainComplex.filtrationFunctor _ (monotone_cubicalChainFiltration k hX)).map f) ≅
       ((TopPair.ofInclusion (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).cubicalChainComplex
         k).extend ComplexShape.embeddingDownNat :=
@@ -215,6 +226,22 @@ private def cokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
       (by simp only [Iso.trans_hom, Subobject.isoOfEq_hom, Subobject.ofLE_comp_ofLE,
         reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc]) ≪≫
     cubicalChainFiltrationCokernelIso k _
+
+/-- The identification of the cokernel of a transition map of the filtration functor with
+relative cubical chains is induced by the quotient map from the cubical chains of the larger
+subset. -/
+@[reassoc]
+private lemma π_cubicalCokernelFiltrationFunctorMapIso_hom {a b : ℤ} (f : (a : EInt) ⟶ b) :
+    cokernel.π _ ≫ (cubicalCokernelFiltrationFunctorMapIso k hX f).hom =
+      (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
+          (cubicalChainFiltrationIso k X b).hom ≫
+            extendMap (cokernel.π ((normalizedCubicalChainComplex k).map
+              (TopPair.ofInclusion (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).map))
+              ComplexShape.embeddingDownNat :=
+  (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
+    (Category.assoc _ _ _).trans <|
+      congrArg (_ ≫ _ ≫ ·) (π_cubicalChainFiltrationCokernelIso_hom k _)
 
 /-- **The cubical spectral sequence of a filtered space.** For an increasing family
 `X : ℤ → Set Y` of subsets of a space `Y`, this is the spectral sequence of the filtration of the
@@ -234,7 +261,7 @@ def filteredSpaceCubicalSpectralSequenceFirstPageXIso (pq : ℤ × ℤ) (a b : �
     ((filteredSpaceCubicalSpectralSequence k hX).page 2).X pq ≅
       ((TopPair.ofInclusion (hX (by lia : a ≤ b))).cubicalChainComplex k).homology n :=
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ pq a b ha hb m hm ≪≫
-    (homologyFunctor _ _ _).mapIso (cokernelFiltrationFunctorMapIso k hX _) ≪≫
+    (homologyFunctor _ _ _).mapIso (cubicalCokernelFiltrationFunctorMapIso k hX _) ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat hn.symm
 
 /-- **The abutment of the cubical spectral sequence of a filtered space** in degree `-n` is the
@@ -336,50 +363,22 @@ lemma filteredSpaceCubicalToSingular_app_comp (a : EInt) :
     (hG := monotone_singularChainFiltration (ModuleCat.of k k) hX) _
     (cubicalToSingular_factors_singularChainFiltration k X) a).trans (Category.assoc _ _ _).symm
 
-/-- The object at `n : ℤ` of the functor of the cubical filtration is the cubical chain complex of
-`X n`. -/
-private def cubicalFiltrationFunctorObjIso (n : ℤ) :
-    (CochainComplex.filtrationFunctor _ (monotone_cubicalChainFiltration k hX)).obj n ≅
-      ((normalizedCubicalChainComplex k).obj (TopPair.ofSubset (X n)).snd).extend
-        ComplexShape.embeddingDownNat :=
-  CochainComplex.filtrationFunctorObjIso _ _ n ≪≫
-    Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ n) ≪≫
-      cubicalChainFiltrationIso k X n
-
-private lemma cubicalFiltrationFunctorObjIso_hom_comp_cubicalChainFiltrationι (n : ℤ) :
-    (cubicalFiltrationFunctorObjIso k hX n).hom ≫ cubicalChainFiltrationι k X n =
-      CochainComplex.filtrationFunctorArrow _ (monotone_cubicalChainFiltration k hX) n := by
-  simp [cubicalFiltrationFunctorObjIso, CochainComplex.filtrationFunctorArrow]
-
-/-- The object at `n : ℤ` of the functor of the simplicial filtration is the simplicial chain
-complex of `X n`. -/
-private def singularFiltrationFunctorObjIso (n : ℤ) :
-    (CochainComplex.filtrationFunctor _
-        (monotone_singularChainFiltration (ModuleCat.of k k) hX)).obj n ≅
-      ((TopCat.toSSet.obj (TopPair.ofSubset (X n)).snd).chainComplex (ModuleCat.of k k)).extend
-        ComplexShape.embeddingDownNat :=
-  CochainComplex.filtrationFunctorObjIso _ _ n ≪≫
-    Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ n) ≪≫
-      singularChainFiltrationIso (ModuleCat.of k k) X n
-
-private lemma singularFiltrationFunctorObjIso_hom_comp_singularChainFiltrationι (n : ℤ) :
-    (singularFiltrationFunctorObjIso k hX n).hom ≫ singularChainFiltrationι (ModuleCat.of k k) X n =
-      CochainComplex.filtrationFunctorArrow _
-        (monotone_singularChainFiltration (ModuleCat.of k k) hX) n := by
-  simp [singularFiltrationFunctorObjIso, CochainComplex.filtrationFunctorArrow]
-
 /-- On the `n`-th stage, the comparison of the cubical and simplicial filtrations is the
 comparison map `TauCeti.cubicalToSingular` of `X n`, under the identifications of the stages with
 the chains of `X n`. -/
-private lemma filteredSpaceCubicalToSingular_app_comp_singularFiltrationFunctorObjIso_hom
-    (n : ℤ) :
-    (filteredSpaceCubicalToSingular k hX).app n ≫ (singularFiltrationFunctorObjIso k hX n).hom =
-      (cubicalFiltrationFunctorObjIso k hX n).hom ≫ cubicalToSingularExtend k _ := by
+private lemma filteredSpaceCubicalToSingular_app_comp_filtrationFunctorObjIsoOfEqMk_hom (n : ℤ) :
+    (filteredSpaceCubicalToSingular k hX).app n ≫
+        (CochainComplex.filtrationFunctorObjIsoOfEqMk _
+          (monotone_singularChainFiltration (ModuleCat.of k k) hX)
+          (singularChainFiltrationι (ModuleCat.of k k) X)
+          (fun _ ↦ by rw [singularChainFiltration]) n).hom =
+      (CochainComplex.filtrationFunctorObjIsoOfEqMk _ (monotone_cubicalChainFiltration k hX)
+          (cubicalChainFiltrationι k X)
+          (fun _ ↦ by rw [cubicalChainFiltration]) n).hom ≫ cubicalToSingularExtend k _ := by
   rw [← cancel_mono (singularChainFiltrationι (ModuleCat.of k k) X n), Category.assoc,
-    singularFiltrationFunctorObjIso_hom_comp_singularChainFiltrationι, Category.assoc,
-    ← cubicalChainFiltrationι_comp_cubicalToSingularExtend,
-    ← Category.assoc (cubicalFiltrationFunctorObjIso k hX n).hom,
-    cubicalFiltrationFunctorObjIso_hom_comp_cubicalChainFiltrationι]
+    Category.assoc, ← cubicalChainFiltrationι_comp_cubicalToSingularExtend]
+  simp only [CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp,
+    CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp_assoc]
   exact filteredSpaceCubicalToSingular_app_comp k hX n
 
 /-- The comparison of the cubical and simplicial filtrations is a quasi-isomorphism on every
@@ -388,8 +387,11 @@ instance quasiIso_filteredSpaceCubicalToSingular_app (a : EInt) :
     QuasiIso ((filteredSpaceCubicalToSingular k hX).app a) := by
   refine CochainComplex.quasiIso_filtrationFunctorMap_app _ _ _ _ (fun n ↦ ?_) a
   have h : QuasiIso ((filteredSpaceCubicalToSingular k hX).app n ≫
-      (singularFiltrationFunctorObjIso k hX n).hom) := by
-    rw [filteredSpaceCubicalToSingular_app_comp_singularFiltrationFunctorObjIso_hom]
+      (CochainComplex.filtrationFunctorObjIsoOfEqMk _
+        (monotone_singularChainFiltration (ModuleCat.of k k) hX)
+        (singularChainFiltrationι (ModuleCat.of k k) X)
+        (fun _ ↦ by rw [singularChainFiltration]) n).hom) := by
+    rw [filteredSpaceCubicalToSingular_app_comp_filtrationFunctorObjIsoOfEqMk_hom]
     infer_instance
   exact (quasiIso_iff_comp_right _ _).1 h
 
@@ -418,5 +420,84 @@ lemma filteredSpaceCubicalSpectralSequenceIso_hom :
       spectralSequenceMap coreE₂Cohomological
         (CochainComplex.spectralObjectMap (filteredSpaceCubicalToSingular k hX)) :=
   (rfl)
+
+/-- On the graded pieces of the filtrations, the comparison of the cubical and simplicial
+filtrations is the relative comparison map `TopPair.cubicalToSingularRel`. -/
+private lemma cokernel_map_filteredSpaceCubicalToSingular_comp {a b : ℤ} (f : (a : EInt) ⟶ b) :
+    cokernel.map _ _ _ _ ((filteredSpaceCubicalToSingular k hX).naturality f) ≫
+        (cokernelFiltrationFunctorMapIso (ModuleCat.of k k) hX f).hom =
+      (cubicalCokernelFiltrationFunctorMapIso k hX f).hom ≫
+        extendMap (TopPair.cubicalToSingularRel k _) ComplexShape.embeddingDownNat := by
+  have hι : (filteredSpaceCubicalToSingular k hX).app b ≫
+      (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
+          (singularChainFiltrationIso (ModuleCat.of k k) X b).hom =
+      (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
+          (cubicalChainFiltrationIso k X b).hom ≫ cubicalToSingularExtend k _ := by
+    rw [← cancel_mono (singularChainFiltrationι (ModuleCat.of k k) X b)]
+    simp only [Category.assoc, ← cubicalChainFiltrationι_comp_cubicalToSingularExtend,
+      singularChainFiltrationIso_hom_comp_singularChainFiltrationι,
+      cubicalChainFiltrationIso_hom_comp_cubicalChainFiltrationι_assoc, Subobject.ofLE_arrow,
+      Subobject.ofLE_arrow_assoc]
+    exact filteredSpaceCubicalToSingular_app_comp k hX b
+  have hπ (hab : X a ⊆ X b) :
+      extendMap (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofInclusion hab).map))
+          ComplexShape.embeddingDownNat ≫
+        extendMap (TopPair.cubicalToSingularRel k (TopPair.ofInclusion hab))
+          ComplexShape.embeddingDownNat =
+      cubicalToSingularExtend k _ ≫
+        extendMap ((TopPair.ofInclusion hab).singularChainComplexπ (ModuleCat.of k k))
+          ComplexShape.embeddingDownNat :=
+    (extendMap_comp _ _ _).symm.trans <|
+      (congrArg (extendMap · _) (TopPair.π_cubicalToSingularRel k _)).trans (extendMap_comp _ _ _)
+  refine (cancel_epi (cokernel.π _)).1 ?_
+  -- The ambient space of the pair `(X b, X a)` is the subspace `X b` of `Y` only up to
+  -- definitional unfolding, so the composites are formed with terms rather than `rw`.
+  exact (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (π_cokernelFiltrationFunctorMapIso_hom _ hX f)).trans <|
+    ((reassoc_of% hι) _).trans <| (congrArg (_ ≫ _ ≫ ·)
+      ((congrArg (_ ≫ ·) (hπ _).symm).trans (Category.assoc _ _ _).symm)).trans
+        (π_cubicalCokernelFiltrationFunctorMapIso_hom_assoc k hX f _).symm
+
+/-- **The comparison of the cubical and simplicial spectral sequences on the first page.** Under
+the identifications of the objects of the first pages with relative cubical and relative
+simplicial homology, the isomorphism `TauCeti.filteredSpaceCubicalSpectralSequenceIso` is the map
+in homology of the relative comparison map `TopPair.cubicalToSingularRel`, an isomorphism by
+`TopPair.quasiIso_cubicalToSingularRel`. -/
+@[reassoc]
+lemma filteredSpaceCubicalSpectralSequenceIso_hom_two_f_comp (pq : ℤ × ℤ) (a b : ℤ)
+    (ha : a = pq.2) (hb : b = pq.2 + 1) (m : ℤ) (hm : m = pq.1 + pq.2) (n : ℕ) (hn : m = -n) :
+    ((filteredSpaceCubicalSpectralSequenceIso k hX).hom.hom 2 le_rfl).f pq ≫
+        (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of k k) hX pq a b ha hb m hm n
+          hn).hom =
+      (filteredSpaceCubicalSpectralSequenceFirstPageXIso k hX pq a b ha hb m hm n hn).hom ≫
+        homologyMap (TopPair.cubicalToSingularRel k (TopPair.ofInclusion (hX (by lia : a ≤ b))))
+          n := by
+  have h := (homologyMap_comp _ _ m).symm.trans <| (congrArg (homologyMap · m)
+    (cokernel_map_filteredSpaceCubicalToSingular_comp k hX
+      (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one ha hb)))).trans (homologyMap_comp _ _ m)
+  -- The first-page identifications are composites of isomorphisms whose types mention the pair
+  -- `(X b, X a)` only up to definitional unfolding, so they are composed with terms.
+  have e :=
+    CochainComplex.spectralSequenceMap_hom_two_f_comp_spectralSequenceFirstPageXIsoCokernel_hom
+      (filteredSpaceCubicalToSingular k hX) pq a b ha hb m hm
+  exact ((reassoc_of% e) _).trans <|
+    (congrArg (_ ≫ ·) <| ((reassoc_of% h) _).trans <|
+      congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _)).trans <|
+    ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _))).symm
+
+/-- **The comparison of the cubical and simplicial abutments.** Under the identifications of the
+abutments in degree `-n` with the cubical and the simplicial homology `Hₙ(Y)`, the morphism of
+spectral objects induced by the comparison of the filtrations is the map in homology of the
+comparison map `TauCeti.cubicalToSingular` of `Y`. -/
+@[reassoc]
+lemma spectralObjectMap_filteredSpaceCubicalToSingular_abutment_comp (n : ℕ) :
+    ((CochainComplex.spectralObjectMap (filteredSpaceCubicalToSingular k hX)).hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (filteredSpaceAbutmentIso (ModuleCat.of k k) hX n).hom =
+      (filteredSpaceCubicalAbutmentIso k hX n).hom ≫ homologyMap ((cubicalToSingular k).app Y) n :=
+  ((CochainComplex.spectralObjectMap_filtrationFunctorMap_abutment_comp_assoc _ _ _ _ _ _).trans
+    (congrArg (_ ≫ ·) (extendHomologyIso_hom_naturality _ _ _))).trans (Category.assoc _ _ _).symm
 
 end TauCeti

@@ -44,7 +44,7 @@ whose cones are acyclic.
 * `CochainComplex.quasiIso_iff_acyclic_mappingCone`: in an abelian category, a morphism is a
   quasi-isomorphism exactly when its mapping cone is acyclic.
 * `CochainComplex.mappingCone.quasiIso_map`: in an abelian category, the map of mapping cones
-  induced by a commutative square whose two horizontal sides are quasi-isomorphisms is a
+  induced by a commutative square whose two vertical maps are quasi-isomorphisms is a
   quasi-isomorphism (an instance).
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
@@ -501,7 +501,7 @@ theorem quasiIso_iff_acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K �
     (HomotopyCategory.mappingCone_triangleh_distinguished φ)
 
 /-- The map of mapping cones induced by a commutative square of cochain complexes whose two
-horizontal sides `a` and `b` are quasi-isomorphisms is a quasi-isomorphism. -/
+vertical maps `a` and `b` are quasi-isomorphisms is a quasi-isomorphism. -/
 instance mappingCone.quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁)
     (φ₂ : K₂ ⟶ L₂) (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a]
     [QuasiIso b] : QuasiIso (mappingCone.map φ₁ φ₂ a b comm) := by
