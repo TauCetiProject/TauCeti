@@ -101,7 +101,7 @@ theorem map_decompose (h : IsCurvedDGAlgebra 𝒜 d w) (p : ℤ) (a : A) :
 arbitrary left factor, without a homogeneity hypothesis. -/
 theorem leibniz_of_map_eq_zero (h : IsCurvedDGAlgebra 𝒜 d w) (a : A) {b : A} (hb : d b = 0) :
     d (a * b) = d a * b :=
-  map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
+  map_mul_of_leibniz_of_map_eq_zero (𝒜 := 𝒜) h.leibniz a hb
 
 /-- The Leibniz rule against the curvature in the right factor: the curvature is a cycle. -/
 theorem map_mul_curvature (h : IsCurvedDGAlgebra 𝒜 d w) (a : A) : d (a * w) = d a * w :=
@@ -110,12 +110,12 @@ theorem map_mul_curvature (h : IsCurvedDGAlgebra 𝒜 d w) (a : A) : d (a * w) =
 /-- The differential of a curved differential graded algebra annihilates the unit: the Leibniz
 rule for `1 * 1` reads `d 1 = d 1 + d 1`. -/
 theorem map_one_eq_zero (h : IsCurvedDGAlgebra 𝒜 d w) : d 1 = 0 :=
-  map_one_eq_zero_of_leibniz h.leibniz
+  map_one_eq_zero_of_leibniz (𝒜 := 𝒜) h.leibniz
 
 /-- The differential of a curved differential graded algebra annihilates the image of the ground
 ring. -/
 theorem map_algebraMap (h : IsCurvedDGAlgebra 𝒜 d w) (r : R) : d (algebraMap R A r) = 0 :=
-  map_algebraMap_of_leibniz h.leibniz r
+  map_algebraMap_of_leibniz (𝒜 := 𝒜) h.leibniz r
 
 /-- **The graded-commutator form of the curvature equation.** The square of the differential is
 the commutator `⁅-w, a⁆ = -w * a - a * -w` with the negative of the curvature. Since the curvature

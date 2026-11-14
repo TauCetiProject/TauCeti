@@ -22,15 +22,19 @@ is an odd signed derivation of the underlying super algebra: apply the theorems 
 `h.map_mem` and `h.leibniz`.
 
 Only the forward direction holds in general: a parity datum does not determine an integer lift.
+The unsigned derivation law for the square of an odd parity-Leibniz map adapts the calculation in
+`TauCeti.SignedSym.comp_self_eq_zero_iff`
+(`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation`) and the additive decomposition
+extension of `TauCeti.map_mul_of_leibniz_of_map_eq_zero`
+(`TauCeti.Algebra.Homology.DG.Algebra.Defs`), where the general cycle, unit, and `algebraMap`
+consequences of a `ℤˣ`-signed Leibniz rule live.
 
 ## Main results
 
 * `TauCeti.map_mem_parityGrading_of_map_mem`: a map raising integer degree by one is odd.
 * `TauCeti.leibniz_parityGrading_of_leibniz`: the integer Leibniz rule implies the parity Leibniz
   rule.
-* `TauCeti.map_mul_of_parity_leibniz_of_map_eq_zero`, `TauCeti.map_one_eq_zero_of_parity_leibniz`,
-  and `TauCeti.map_algebraMap_of_parity_leibniz`: consequences of the parity Leibniz rule alone.
-* `TauCeti.comp_self_mul_of_parity_leibniz_of_mem` and `TauCeti.comp_self_mul_of_parity_leibniz`:
+* `TauCeti.map_map_mul_of_parity_leibniz_of_mem` and `TauCeti.map_map_mul_of_parity_leibniz`:
   the square of an odd parity-Leibniz map is an unsigned derivation.
 -/
 
@@ -79,23 +83,12 @@ end Leibniz
 
 section ParityLeibniz
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  {𝒜 : ZMod 2 → Submodule R A} {d : A →ₗ[R] A}
-
-/-- The parity Leibniz rule against a cycle in the right factor holds for an arbitrary left factor,
-without a homogeneity hypothesis. -/
-theorem map_mul_of_parity_leibniz_of_map_eq_zero [DirectSum.Decomposition 𝒜]
-    (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
-      d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
-    (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | homogeneous a => simp [hl a.property b, hb]
-  | add a a' ha ha' => simp [add_mul, ha, ha']
+variable {A σ F : Type*} [NonUnitalNonAssocRing A] [SetLike σ A] {𝒜 : ZMod 2 → σ}
+  [FunLike F A A] [AddMonoidHomClass F A A] {d : F}
 
 /-- **The square of an odd parity-Leibniz map satisfies the unsigned Leibniz rule** on any
 homogeneous left factor: the two middle terms cancel because `d` flips parity. -/
-theorem comp_self_mul_of_parity_leibniz_of_mem
+theorem map_map_mul_of_parity_leibniz_of_mem
     (hd : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → d a ∈ 𝒜 (i + 1))
     (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
@@ -110,7 +103,7 @@ theorem comp_self_mul_of_parity_leibniz_of_mem
 /-- **The square of an odd parity-Leibniz map is an unsigned derivation** on the whole algebra:
 because the unsigned Leibniz rule has no parity sign, it extends additively from homogeneous left
 factors to arbitrary elements. -/
-theorem comp_self_mul_of_parity_leibniz [DirectSum.Decomposition 𝒜]
+theorem map_map_mul_of_parity_leibniz [AddSubmonoidClass σ A] [DirectSum.Decomposition 𝒜]
     (hd : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → d a ∈ 𝒜 (i + 1))
     (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
       d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
@@ -118,34 +111,11 @@ theorem comp_self_mul_of_parity_leibniz [DirectSum.Decomposition 𝒜]
     d (d (a * b)) = d (d a) * b + a * d (d b) := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
-  | homogeneous a => exact comp_self_mul_of_parity_leibniz_of_mem hd hl a.2 b
+  | homogeneous a => exact map_map_mul_of_parity_leibniz_of_mem hd hl a.2 b
   | add x y hx hy =>
     rw [add_mul, map_add, map_add, hx, hy, map_add, map_add, add_mul, add_mul]
     abel
 
 end ParityLeibniz
-
-section UnitalParityLeibniz
-
-/-- A function satisfying the parity Leibniz rule annihilates the unit: on `1 * 1` the rule reads
-`d 1 = d 1 + d 1`. -/
-theorem map_one_eq_zero_of_parity_leibniz {A σ : Type*} [NonAssocRing A] [SetLike σ A]
-    {𝒜 : ZMod 2 → σ} [SetLike.GradedOne 𝒜] {d : A → A}
-    (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
-      d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)) :
-    d 1 = 0 := by
-  have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul, uzpow_zero, one_smul] at key
-  exact left_eq_add.mp key
-
-/-- A linear map satisfying the parity Leibniz rule annihilates the image of the ground semiring. -/
-theorem map_algebraMap_of_parity_leibniz {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
-    {𝒜 : ZMod 2 → Submodule R A} [SetLike.GradedOne 𝒜] {d : A →ₗ[R] A}
-    (hl : ∀ {i : ZMod 2} {a : A}, a ∈ 𝒜 i → ∀ b : A,
-      d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
-    (r : R) : d (algebraMap R A r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_parity_leibniz hl, smul_zero]
-
-end UnitalParityLeibniz
 
 end TauCeti

@@ -23,8 +23,10 @@ of several integer degrees. The additional parity relations already hold in the 
 quotient by bilinearity and supercommutativity.
 
 The construction follows J. Pardon, *Contact homology and virtual fundamental cycles*,
-equation (1.1) and Definition 2.48. No grading of the parity quotient or odd derivation is
-constructed in this file.
+equation (1.1) and Definition 2.48, with augmentation and functoriality (`augmentation`, `map`,
+`congr`) paralleling the integer-graded presentation in
+`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Basic`. No grading of the parity quotient or odd
+derivation is constructed in this file.
 -/
 
 public section
@@ -147,6 +149,105 @@ theorem liftEquiv_apply (f) : liftEquiv G (A := A) f = lift G f.1 f.2 := (rfl)
 @[simp]
 theorem liftEquiv_symm_apply_val (g : ParitySignedSym G →ₐ[R] A) :
     ((liftEquiv G).symm g).val = g.toLinearMap.comp (generator G) := (rfl)
+
+/-- Sending every generator to zero defines the canonical augmentation of `ParitySignedSym G`. -/
+def augmentation : ParitySignedSym G →ₐ[R] R :=
+  lift G 0 (by simp)
+
+@[simp]
+theorem augmentation_generator (x : V) : augmentation G (generator G x) = 0 := by
+  simp [augmentation]
+
+/-- The ground ring embeds into `ParitySignedSym G`, split by `augmentation G`. -/
+theorem algebraMap_injective : Function.Injective (algebraMap R (ParitySignedSym G)) :=
+  Function.LeftInverse.injective fun r ↦ (augmentation G).commutes r
+
+instance [Nontrivial R] : Nontrivial (ParitySignedSym G) :=
+  (algebraMap_injective G).nontrivial
+
+section Map
+
+variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W (ZMod 2))
+
+/-- A parity-preserving linear map induces an algebra map of parity signed algebras. -/
+def map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
+    ParitySignedSym G →ₐ[R] ParitySignedSym H :=
+  lift G ((generator H).comp f) fun _ _ _ _ hx hy ↦
+    generator_mul_generator H (by simpa using hf.map_mem hx) (by simpa using hf.map_mem hy)
+
+@[simp]
+theorem map_generator (f : V →ₗ[R] W) (hf) (x : V) :
+    map G H f hf (generator G x) = generator H (f x) :=
+  lift_generator G _ _ x
+
+@[simp]
+theorem map_id :
+    map G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
+      AlgHom.id R (ParitySignedSym G) := by
+  ext x
+  simp
+
+variable {U : Type*} [AddCommGroup U] [Module R U]
+
+/-- Functorial maps of parity signed algebras respect composition. -/
+theorem map_comp (K : InternalGrading R U (ZMod 2)) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
+    (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
+    map G K (g.comp f) (by simpa using hg.comp hf) = (map H K g hg).comp (map G H f hf) := by
+  ext x
+  simp
+
+/-- A parity-preserving linear equivalence induces an algebra equivalence of parity signed
+algebras. -/
+def congr (e : V ≃ₗ[R] W) (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0) :
+    ParitySignedSym G ≃ₐ[R] ParitySignedSym H :=
+  AlgEquiv.ofAlgHom (map G H e.toLinearMap he) (map H G e.symm.toLinearMap he.linearEquiv_symm)
+    (by ext x; simp) (by ext x; simp)
+
+@[simp]
+theorem congr_toAlgHom (e : V ≃ₗ[R] W) (he) :
+    (congr G H e he : ParitySignedSym G →ₐ[R] ParitySignedSym H) = map G H e.toLinearMap he :=
+  (rfl)
+
+-- Not `@[simp]`: rewriting `congr G H e he a` to `map G H e.toLinearMap he a` would prevent
+-- `AlgEquiv.symm_apply_apply` from firing and put `congr_generator` and
+-- `congr_mem_paritySignedSymPiece_iff` out of `simp` normal form.
+/-- The underlying function of `ParitySignedSym.congr` is `ParitySignedSym.map`. -/
+theorem congr_apply (e : V ≃ₗ[R] W) (he) (a : ParitySignedSym G) :
+    congr G H e he a = map G H e.toLinearMap he a := (rfl)
+
+@[simp]
+theorem congr_generator (e : V ≃ₗ[R] W) (he) (x : V) :
+    congr G H e he (generator G x) = generator H (e x) :=
+  map_generator G H e.toLinearMap he x
+
+@[simp]
+theorem congr_refl :
+    congr G G (LinearEquiv.refl R V) (LinearMap.isHomogeneous_id G.piece) = AlgEquiv.refl := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  exact map_id G
+
+@[simp]
+theorem congr_symm (e : V ≃ₗ[R] W) (he) :
+    (congr G H e he).symm = congr H G e.symm he.linearEquiv_symm := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply hom_ext
+  intro y
+  apply (congr G H e he).injective
+  simp
+
+/-- Algebra equivalences induced by parity-preserving linear equivalences respect composition. -/
+theorem congr_trans (K : InternalGrading R U (ZMod 2)) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
+    (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
+    congr G K (e.trans f) (by simpa using hf.comp he) =
+      (congr G H e he).trans (congr H K f hf) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply hom_ext
+  intro x
+  simp
+
+end Map
 
 end ParitySignedSym
 

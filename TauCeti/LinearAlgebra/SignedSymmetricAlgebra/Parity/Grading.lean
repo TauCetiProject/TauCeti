@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Basic
-import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
-import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # The parity grading and supercommutativity of the parity signed algebra
@@ -25,13 +23,12 @@ For an internal integer grading `H` of `V`, the presentation equivalence
 `TauCeti.SignedSym.parityEquiv H` identifies `TauCeti.parityGrading (TauCeti.signedSymPiece H)`
 piece by piece with `paritySignedSymPiece H.parity`. In particular, the parity reduction of an
 element of integer input degree `p` lies in `paritySignedSymPiece H.parity p`. Taking
-`H = G.ofParity` transports internality and supercommutativity from the integer-graded theory to
-an arbitrary parity-graded module `G`, without choosing an integer lift in the statement.
+`H = G.ofParity` and rewriting along `G.parity_ofParity` transports internality and
+supercommutativity from the integer-graded theory to an arbitrary parity-graded module `G`, without
+choosing an integer lift in the statement.
 
 ## Main definitions
 
-* `TauCeti.ParitySignedSym.augmentation`, `TauCeti.ParitySignedSym.map`, and
-  `TauCeti.ParitySignedSym.congr`: augmentation and functoriality for parity-preserving maps.
 * `TauCeti.paritySignedSymPiece`: the parity-`i` piece of `ParitySignedSym G`.
 * `TauCeti.ParitySignedSym.gradedLift` and `TauCeti.ParitySignedSym.gradedMap`: the `ZMod 2`-graded
   universal property and functoriality.
@@ -40,7 +37,7 @@ an arbitrary parity-graded module `G`, without choosing an integer lift in the s
 
 ## Main results
 
-* `TauCeti.SignedSym.map_parityGrading_signedSymPiece` and
+* `TauCeti.SignedSym.parityGrading_signedSymPiece_map_parityEquiv` and
   `TauCeti.SignedSym.parityEquiv_mem_paritySignedSymPiece_iff`: `SignedSym.parityEquiv H`
   identifies the coarsened integer grading with `paritySignedSymPiece H.parity`.
 * `TauCeti.SignedSym.parityEquiv_mem_of_mem_signedSymPiece`: an element of integer degree `p` maps
@@ -48,10 +45,17 @@ an arbitrary parity-graded module `G`, without choosing an integer lift in the s
 * `TauCeti.isInternal_paritySignedSymPiece` and `GradedAlgebra (paritySignedSymPiece G)`.
 * `TauCeti.ParitySignedSym.mul_eq_uzpow_smul_mul`, `TauCeti.ParitySignedSym.sq_eq_neg`, and
   `TauCeti.ParitySignedSym.sq_eq_zero`: homogeneous supercommutativity and odd-square vanishing.
+* `TauCeti.ParitySignedSym.congr_mem_paritySignedSymPiece_iff` and
+  `TauCeti.ParitySignedSym.paritySignedSymPiece_map_congr`: parity-piece transport along
+  `ParitySignedSym.congr`.
 
 ## References
 
 * J. Pardon, *Contact homology and virtual fundamental cycles*, equation (1.1) and Definition 2.48.
+* Homogeneous-word induction, the graded universal property (`gradedLift`, `gradedMap`), and the
+  odd-square consequences adapt the integer-graded development in
+  `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading` and
+  `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity`.
 -/
 
 public section
@@ -62,99 +66,6 @@ universe u v w
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
-
-namespace ParitySignedSym
-
-variable (G : InternalGrading R V (ZMod 2))
-
-/-- Sending every generator to zero defines the canonical augmentation of `ParitySignedSym G`. -/
-def augmentation : ParitySignedSym G →ₐ[R] R :=
-  lift G 0 (by simp)
-
-@[simp]
-theorem augmentation_generator (x : V) : augmentation G (generator G x) = 0 := by
-  simp [augmentation]
-
-/-- The ground ring embeds into `ParitySignedSym G`, split by `augmentation G`. -/
-theorem algebraMap_injective : Function.Injective (algebraMap R (ParitySignedSym G)) :=
-  Function.LeftInverse.injective fun r ↦ (augmentation G).commutes r
-
-instance [Nontrivial R] : Nontrivial (ParitySignedSym G) :=
-  (algebraMap_injective G).nontrivial
-
-section Map
-
-variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W (ZMod 2))
-
-/-- A parity-preserving linear map induces an algebra map of parity signed algebras. -/
-def map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
-    ParitySignedSym G →ₐ[R] ParitySignedSym H :=
-  lift G ((generator H).comp f) fun _ _ _ _ hx hy ↦
-    generator_mul_generator H (by simpa using hf.map_mem hx) (by simpa using hf.map_mem hy)
-
-@[simp]
-theorem map_generator (f : V →ₗ[R] W) (hf) (x : V) :
-    map G H f hf (generator G x) = generator H (f x) :=
-  lift_generator G _ _ x
-
-@[simp]
-theorem map_id :
-    map G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
-      AlgHom.id R (ParitySignedSym G) := by
-  ext x
-  simp
-
-variable {U : Type*} [AddCommGroup U] [Module R U]
-
-/-- Functorial maps of parity signed algebras respect composition. -/
-theorem map_comp (K : InternalGrading R U (ZMod 2)) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
-    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
-    (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
-    map G K (g.comp f) (by simpa using hg.comp hf) = (map H K g hg).comp (map G H f hf) := by
-  ext x
-  simp
-
-/-- A parity-preserving linear equivalence induces an algebra equivalence of parity signed
-algebras. -/
-def congr (e : V ≃ₗ[R] W) (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0) :
-    ParitySignedSym G ≃ₐ[R] ParitySignedSym H :=
-  AlgEquiv.ofAlgHom (map G H e.toLinearMap he) (map H G e.symm.toLinearMap he.linearEquiv_symm)
-    (by ext x; simp) (by ext x; simp)
-
-@[simp]
-theorem congr_generator (e : V ≃ₗ[R] W) (he) (x : V) :
-    congr G H e he (generator G x) = generator H (e x) :=
-  map_generator G H e.toLinearMap he x
-
-@[simp]
-theorem congr_refl :
-    congr G G (LinearEquiv.refl R V) (LinearMap.isHomogeneous_id G.piece) = AlgEquiv.refl := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  exact map_id G
-
-@[simp]
-theorem congr_symm (e : V ≃ₗ[R] W) (he) :
-    (congr G H e he).symm = congr H G e.symm he.linearEquiv_symm := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  apply hom_ext
-  intro y
-  apply (congr G H e he).injective
-  simp
-
-/-- Algebra equivalences induced by parity-preserving linear equivalences respect composition. -/
-theorem congr_trans (K : InternalGrading R U (ZMod 2)) (e : V ≃ₗ[R] W) (f : W ≃ₗ[R] U)
-    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
-    (hf : LinearMap.IsHomogeneous f.toLinearMap H.piece K.piece 0) :
-    congr G K (e.trans f) (by simpa using hf.comp he) =
-      (congr G H e he).trans (congr H K f hf) := by
-  apply AlgEquiv.coe_toAlgHom_injective
-  apply hom_ext
-  intro x
-  simp
-
-end Map
-
-end ParitySignedSym
 
 /-! ### Homogeneous parity pieces -/
 
@@ -269,7 +180,7 @@ variable (H : InternalGrading R V ℤ)
 
 /-- `SignedSym.parityEquiv H` maps each parity piece of `signedSymPiece H` onto the corresponding
 native parity piece of `ParitySignedSym H.parity`. -/
-theorem map_parityGrading_signedSymPiece (i : ZMod 2) :
+theorem parityGrading_signedSymPiece_map_parityEquiv (i : ZMod 2) :
     (parityGrading (signedSymPiece H) i).map (parityEquiv H).toLinearMap =
       paritySignedSymPiece H.parity i := by
   refine le_antisymm ?_ ?_
@@ -305,7 +216,7 @@ the coarsened integer piece. -/
 theorem parityEquiv_mem_paritySignedSymPiece_iff {i : ZMod 2} {a : SignedSym H} :
     parityEquiv H a ∈ paritySignedSymPiece H.parity i ↔
       a ∈ parityGrading (signedSymPiece H) i := by
-  rw [← map_parityGrading_signedSymPiece H i]
+  rw [← parityGrading_signedSymPiece_map_parityEquiv H i]
   exact ⟨fun ⟨y, hy, hye⟩ ↦ (parityEquiv H).injective hye ▸ hy, fun ha ↦ ⟨a, ha, rfl⟩⟩
 
 /-- The inverse comparison `parityEquiv H` likewise reflects parity-piece membership. -/
@@ -325,72 +236,19 @@ end SignedSym
 
 /-! ### Internality, graded algebra structure, and supercommutativity -/
 
-/-- Auxiliary equivalence `SignedSym G.ofParity ≃ₐ[R] ParitySignedSym G` fixing generators, used to
-transport internality and supercommutativity from `G.ofParity` without dependent casts. -/
-private noncomputable def ofParityEquiv : SignedSym G.ofParity ≃ₐ[R] ParitySignedSym G :=
-  (SignedSym.parityEquiv G.ofParity).trans
-    (ParitySignedSym.congr G.ofParity.parity G (LinearEquiv.refl R V)
-      (LinearMap.isHomogeneous_def.2 fun i _ hx ↦ by
-        rw [InternalGrading.parity_ofParity] at hx
-        simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.refl_apply] using hx))
-
-private theorem ofParityEquiv_generator (x : V) :
-    ofParityEquiv G (SignedSym.generator G.ofParity x) = ParitySignedSym.generator G x := by
-  simp [ofParityEquiv]
-
-private theorem map_parityGrading_ofParityEquiv (i : ZMod 2) :
-    (parityGrading (signedSymPiece G.ofParity) i).map (ofParityEquiv G).toLinearMap =
-      paritySignedSymPiece G i := by
-  refine le_antisymm ?_ ?_
-  · rw [Submodule.map_le_iff_le_comap]
-    intro a ha
-    rw [Submodule.mem_comap, AlgEquiv.toLinearMap_apply]
-    have ha' : SignedSym.parityEquiv G.ofParity a ∈ paritySignedSymPiece G.ofParity.parity i :=
-      (SignedSym.parityEquiv_mem_paritySignedSymPiece_iff G.ofParity).2 ha
-    refine ParitySignedSym.homogeneous_induction G.ofParity.parity
-      (P := fun j b ↦ ParitySignedSym.congr G.ofParity.parity G (LinearEquiv.refl R V) _ b ∈
-        paritySignedSymPiece G j)
-      (by simpa using SetLike.GradedOne.one_mem (A := paritySignedSymPiece G))
-      (fun j x hx ↦ by
-        rw [InternalGrading.parity_ofParity] at hx
-        simpa using generator_mem_paritySignedSymPiece G hx)
-      (fun j k u v hu hv ↦ by
-        rw [map_mul]
-        exact SetLike.mul_mem_graded hu hv)
-      (fun _ ↦ by simp)
-      (fun _ _ _ hu hv ↦ by rw [map_add]; exact add_mem hu hv)
-      (fun _ r _ hu ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hu) ha'
-  · rw [paritySignedSymPiece_eq_span, Submodule.span_le]
-    rintro _ ⟨n, d, x, hx, rfl, rfl⟩
-    refine ⟨(List.ofFn fun k ↦ SignedSym.generator G.ofParity (x k)).prod, ?_, ?_⟩
-    · have hgen := (isHomogeneous_signedSymGenerator G.ofParity).coarsenGrading
-        (Int.castAddHom (ZMod 2))
-      rw [← List.sum_ofFn]
-      refine SetLike.list_prod_ofFn_mem_graded d
-        (fun k ↦ SignedSym.generator G.ofParity (x k)) fun k ↦ ?_
-      have hxk : x k ∈ parityGrading G.ofParity.piece (d k) := by
-        simpa only [← InternalGrading.parity_piece, InternalGrading.parity_ofParity] using hx k
-      simpa only [map_zero, add_zero] using hgen.map_mem hxk
-    · simp only [AlgEquiv.toLinearMap_apply, map_list_prod, List.map_ofFn, Function.comp_def,
-        ofParityEquiv_generator]
-
-private theorem ofParityEquiv_mem_iff {i : ZMod 2} {a : SignedSym G.ofParity} :
-    ofParityEquiv G a ∈ paritySignedSymPiece G i ↔
-      a ∈ parityGrading (signedSymPiece G.ofParity) i := by
-  rw [← map_parityGrading_ofParityEquiv G i]
-  exact ⟨fun ⟨y, hy, hye⟩ ↦ (ofParityEquiv G).injective hye ▸ hy, fun ha ↦ ⟨a, ha, rfl⟩⟩
-
 /-- The parity pieces of `ParitySignedSym G` form an internal direct sum, over any commutative
 ring. -/
 theorem isInternal_paritySignedSymPiece : DirectSum.IsInternal (paritySignedSymPiece G) := by
+  rw [← G.parity_ofParity]
   have hpiece : ((InternalGrading.ofDecomposition (parityGrading (signedSymPiece G.ofParity))).map
-      (ofParityEquiv G).toLinearEquiv).piece = paritySignedSymPiece G := by
+      (SignedSym.parityEquiv G.ofParity).toLinearEquiv).piece =
+        paritySignedSymPiece G.ofParity.parity := by
     funext i
     simpa only [InternalGrading.map_piece, InternalGrading.ofDecomposition_piece] using
-      map_parityGrading_ofParityEquiv G i
+      SignedSym.parityGrading_signedSymPiece_map_parityEquiv G.ofParity i
   rw [← hpiece]
   exact ((InternalGrading.ofDecomposition (parityGrading (signedSymPiece G.ofParity))).map
-    (ofParityEquiv G).toLinearEquiv).isInternal
+    (SignedSym.parityEquiv G.ofParity).toLinearEquiv).isInternal
 
 /-- `ParitySignedSym G` is an internally `ZMod 2`-graded algebra. -/
 noncomputable instance : GradedAlgebra (paritySignedSymPiece G) :=
@@ -419,15 +277,19 @@ commutative ring. -/
 theorem mul_eq_uzpow_smul_mul {i j : ZMod 2} {a b : ParitySignedSym G}
     (ha : a ∈ paritySignedSymPiece G i) (hb : b ∈ paritySignedSymPiece G j) :
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) := by
-  obtain ⟨x, rfl⟩ := (ofParityEquiv G).surjective a
-  obtain ⟨y, rfl⟩ := (ofParityEquiv G).surjective b
-  have hx := (ofParityEquiv_mem_iff G).1 ha
-  have hy := (ofParityEquiv_mem_iff G).1 hb
+  revert a b
+  rw [← G.parity_ofParity]
+  intro a b ha hb
+  obtain ⟨x, rfl⟩ := (SignedSym.parityEquiv G.ofParity).surjective a
+  obtain ⟨y, rfl⟩ := (SignedSym.parityEquiv G.ofParity).surjective b
+  have hx := (SignedSym.parityEquiv_mem_paritySignedSymPiece_iff G.ofParity).1 ha
+  have hy := (SignedSym.parityEquiv_mem_paritySignedSymPiece_iff G.ofParity).1 hb
   have hxy := mul_eq_uzpow_smul_mul_of_mem_parityGrading (𝒜 := signedSymPiece G.ofParity)
     (fun hu hv ↦ by
       simpa [Units.smul_def] using SignedSym.mul_eq_negOnePow_smul_mul G.ofParity hu hv)
     hx hy
-  simpa only [← map_mul, Units.smul_def, ← map_zsmul] using congrArg (ofParityEquiv G) hxy
+  simpa only [← map_mul, Units.smul_def, ← map_zsmul] using
+    congrArg (SignedSym.parityEquiv G.ofParity) hxy
 
 /-- An odd homogeneous element of `ParitySignedSym G` squares to its own negative. -/
 theorem sq_eq_neg {a : ParitySignedSym G} (ha : a ∈ paritySignedSymPiece G 1) :
@@ -441,6 +303,15 @@ theorem sq_eq_zero [Invertible (2 : R)] {a : ParitySignedSym G}
   eq_zero_of_eq_neg_of_invertible_two (R := R) (sq_eq_neg G ha)
 
 /-! ### Graded universal property and functoriality -/
+
+variable {G} in
+/-- `ZMod 2`-graded algebra maps out of `ParitySignedSym G` are determined by generators. -/
+@[ext]
+theorem gradedHom_ext {A : Type w} [Semiring A] [Algebra R A] {𝒜 : ZMod 2 → Submodule R A}
+    [GradedAlgebra 𝒜] {φ ψ : paritySignedSymPiece G →ₐᵍ[R] 𝒜}
+    (h : ∀ x, φ (generator G x) = ψ (generator G x)) : φ = ψ := by
+  have hφψ : φ.toAlgHom = ψ.toAlgHom := hom_ext G h
+  exact GradedAlgHom.ext fun a ↦ DFunLike.congr_fun hφψ a
 
 variable {A : Type w} [Ring A] [Algebra R A] (𝒜 : ZMod 2 → Submodule R A)
 
@@ -478,17 +349,13 @@ theorem gradedLift_toAlgHom (f : V →ₗ[R] A) (hr hf) :
     (gradedLift G 𝒜 f hr hf).toAlgHom = lift G f hr := (rfl)
 
 @[simp]
+theorem gradedLift_apply (f : V →ₗ[R] A) (hr hf) (a : ParitySignedSym G) :
+    gradedLift G 𝒜 f hr hf a = lift G f hr a := (rfl)
+
+-- Not `@[simp]`: `simp` already reduces the LHS via `gradedLift_apply` and `lift_generator`.
 theorem gradedLift_generator (f : V →ₗ[R] A) (hr hf) (x : V) :
     gradedLift G 𝒜 f hr hf (generator G x) = f x :=
   lift_generator G f hr x
-
-variable {G 𝒜} in
-/-- `ZMod 2`-graded algebra maps out of `ParitySignedSym G` are determined by generators. -/
-@[ext]
-theorem gradedHom_ext {φ ψ : paritySignedSymPiece G →ₐᵍ[R] 𝒜}
-    (h : ∀ x, φ (generator G x) = ψ (generator G x)) : φ = ψ := by
-  have hφψ : φ.toAlgHom = ψ.toAlgHom := hom_ext G h
-  exact GradedAlgHom.ext fun a ↦ DFunLike.congr_fun hφψ a
 
 /-- Uniqueness of the `ZMod 2`-graded universal extension. -/
 theorem gradedLift_unique (f : V →ₗ[R] A) (hr hf) (φ : paritySignedSymPiece G →ₐᵍ[R] 𝒜)
@@ -504,9 +371,43 @@ variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W (ZMo
 grading. -/
 theorem isHomogeneous_map (f : V →ₗ[R] W) (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
     LinearMap.IsHomogeneous (map G H f hf).toLinearMap
-      (paritySignedSymPiece G) (paritySignedSymPiece H) 0 :=
-  isHomogeneous_lift G (paritySignedSymPiece H) ((generator H).comp f) _
+      (paritySignedSymPiece G) (paritySignedSymPiece H) 0 := by
+  have hr : ∀ (i j : ZMod 2) (x y : V), x ∈ G.piece i → y ∈ G.piece j →
+      (generator H).comp f x * (generator H).comp f y =
+        ((-1 : ℤˣ) ^ (i * j)) • ((generator H).comp f y * (generator H).comp f x) :=
+    fun _ _ _ _ hx hy ↦ generator_mul_generator H
+      (by simpa only [add_zero] using hf.map_mem hx)
+      (by simpa only [add_zero] using hf.map_mem hy)
+  rw [lift_unique G ((generator H).comp f) hr (map G H f hf) (map_generator G H f hf)]
+  exact isHomogeneous_lift G (paritySignedSymPiece H) ((generator H).comp f) hr
     (by simpa only [add_zero] using (isHomogeneous_paritySignedSymGenerator H).comp hf)
+
+/-- `ParitySignedSym.congr` reflects and preserves membership in each parity piece. -/
+@[simp]
+theorem congr_mem_paritySignedSymPiece_iff (e : V ≃ₗ[R] W)
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
+    {i : ZMod 2} {a : ParitySignedSym G} :
+    congr G H e he a ∈ paritySignedSymPiece H i ↔ a ∈ paritySignedSymPiece G i := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h' := (isHomogeneous_map H G e.symm.toLinearMap he.linearEquiv_symm).map_mem h
+    rw [add_zero, AlgHom.toLinearMap_apply, ← congr_apply, ← congr_symm G H e he,
+      AlgEquiv.symm_apply_apply] at h'
+    exact h'
+  · simpa only [add_zero, AlgHom.toLinearMap_apply, ← congr_apply] using
+      (isHomogeneous_map G H e.toLinearMap he).map_mem h
+
+/-- `ParitySignedSym.congr` maps each parity piece of `ParitySignedSym G` onto the corresponding
+parity piece of `ParitySignedSym H`. -/
+theorem paritySignedSymPiece_map_congr (e : V ≃ₗ[R] W)
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0) (i : ZMod 2) :
+    (paritySignedSymPiece G i).map (congr G H e he).toLinearMap = paritySignedSymPiece H i := by
+  ext b
+  simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply]
+  exact ⟨fun ⟨a, ha, hab⟩ ↦ hab ▸ (congr_mem_paritySignedSymPiece_iff G H e he).2 ha,
+    fun hb ↦ ⟨(congr G H e he).symm b,
+      by simpa [congr_symm] using
+        (congr_mem_paritySignedSymPiece_iff H G e.symm he.linearEquiv_symm).2 hb,
+      (congr G H e he).apply_symm_apply b⟩⟩
 
 /-- A parity-preserving linear map induces a `ZMod 2`-graded algebra map of parity signed
 algebras. -/
@@ -524,6 +425,24 @@ theorem gradedMap_toAlgHom (f : V →ₗ[R] W) (hf) :
 @[simp]
 theorem gradedMap_apply (f : V →ₗ[R] W) (hf) (a : ParitySignedSym G) :
     gradedMap G H f hf a = map G H f hf a := (rfl)
+
+@[simp]
+theorem gradedMap_id :
+    gradedMap G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
+      GradedAlgHom.id R (paritySignedSymPiece G) := by
+  ext x
+  simp
+
+variable {U : Type*} [AddCommGroup U] [Module R U]
+
+/-- Graded functorial maps of parity signed algebras respect composition. -/
+theorem gradedMap_comp (K : InternalGrading R U (ZMod 2)) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
+    (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
+    gradedMap G K (g.comp f) (by simpa using hg.comp hf) =
+      (gradedMap H K g hg).comp (gradedMap G H f hf) := by
+  ext x
+  simp
 
 end GradedMap
 
@@ -547,11 +466,33 @@ noncomputable def fromParityGraded :
   map_mem hb := (parityEquiv_symm_mem_parityGrading_iff H).2 hb
 
 @[simp]
+theorem toParityGraded_toAlgHom :
+    (toParityGraded H).toAlgHom = (parityEquiv H).toAlgHom := (rfl)
+
+@[simp]
+theorem fromParityGraded_toAlgHom :
+    (fromParityGraded H).toAlgHom = (parityEquiv H).symm.toAlgHom := (rfl)
+
+@[simp]
 theorem toParityGraded_apply (a : SignedSym H) : toParityGraded H a = parityEquiv H a := (rfl)
 
 @[simp]
 theorem fromParityGraded_apply (b : ParitySignedSym H.parity) :
     fromParityGraded H b = (parityEquiv H).symm b := (rfl)
+
+@[simp]
+theorem fromParityGraded_comp_toParityGraded :
+    (fromParityGraded H).comp (toParityGraded H) =
+      GradedAlgHom.id R (parityGrading (signedSymPiece H)) := by
+  ext a
+  simp
+
+@[simp]
+theorem toParityGraded_comp_fromParityGraded :
+    (toParityGraded H).comp (fromParityGraded H) =
+      GradedAlgHom.id R (paritySignedSymPiece H.parity) := by
+  ext b
+  simp
 
 /-- `SignedSym.parityEquiv H` commutes with projection onto each parity component. -/
 @[simp]
@@ -565,6 +506,22 @@ theorem decompose_parityEquiv (a : SignedSym H) (i : ZMod 2) :
       simpa only [add_zero, AlgEquiv.toLinearMap_apply] using
         (parityEquiv_mem_paritySignedSymPiece_iff H).2 ha
   have h := hhom.map_decompose i a
+  rw [add_zero] at h
+  exact h.symm
+
+/-- `(SignedSym.parityEquiv H).symm` commutes with projection onto each parity component. -/
+@[simp]
+theorem decompose_parityEquiv_symm (b : ParitySignedSym H.parity) (i : ZMod 2) :
+    (DirectSum.decompose (parityGrading (signedSymPiece H)) ((parityEquiv H).symm b) i :
+        SignedSym H) =
+      (parityEquiv H).symm
+        (DirectSum.decompose (paritySignedSymPiece H.parity) b i : ParitySignedSym H.parity) := by
+  have hhom : LinearMap.IsHomogeneous (parityEquiv H).symm.toLinearMap
+      (paritySignedSymPiece H.parity) (parityGrading (signedSymPiece H)) 0 :=
+    LinearMap.isHomogeneous_def.2 fun _ _ hb ↦ by
+      simpa only [add_zero, AlgEquiv.toLinearMap_apply] using
+        (parityEquiv_symm_mem_parityGrading_iff H).2 hb
+  have h := hhom.map_decompose i b
   rw [add_zero] at h
   exact h.symm
 

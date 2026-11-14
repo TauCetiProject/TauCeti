@@ -88,13 +88,15 @@ proof.  The corresponding consequence of the degree law alone, that `d` commutes
 projections up to the degree shift, is `TauCeti.LinearMap.IsHomogeneous.map_decompose`.
 -/
 
-variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
-  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜] {d : A →ₗ[R] A}
+variable {ι A σ F : Type*} [DecidableEq ι] [NonUnitalNonAssocRing A]
+  [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ι → σ} [DirectSum.Decomposition 𝒜]
+  [FunLike F A A] [AddMonoidHomClass F A A] {d : F} {s : ι → ℤˣ}
 
-/-- The graded Leibniz rule against a cycle in the right factor.  The vanishing signed term permits
-an arbitrary left factor, without a homogeneity hypothesis. -/
+/-- The graded Leibniz rule against a cycle in the right factor, for any index type and sign
+family. The vanishing signed term permits an arbitrary left factor, without a homogeneity
+hypothesis. -/
 theorem map_mul_of_leibniz_of_map_eq_zero
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
     (a : A) {b : A} (hb : d b = 0) : d (a * b) = d a * b := by
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
@@ -139,7 +141,7 @@ theorem map_decompose (h : IsNonUnitalDGAlgebra 𝒜 d) (p : ℤ) (a : A) :
 arbitrary left factor, without a homogeneity hypothesis. -/
 theorem leibniz_of_map_eq_zero (h : IsNonUnitalDGAlgebra 𝒜 d) (a : A) {b : A}
     (hb : d b = 0) : d (a * b) = d a * b :=
-  map_mul_of_leibniz_of_map_eq_zero h.leibniz a hb
+  map_mul_of_leibniz_of_map_eq_zero (𝒜 := 𝒜) h.leibniz a hb
 
 /-- The Leibniz rule for a left factor of degree zero, where the sign is trivial. -/
 theorem leibniz_of_mem_zero (h : IsNonUnitalDGAlgebra 𝒜 d) {a : A} (ha : a ∈ 𝒜 0) (b : A) :
@@ -166,31 +168,32 @@ end NonUnital
 
 section UnitalLeibniz
 
-variable {A σ : Type*} [NonAssocRing A] [SetLike σ A] {𝒜 : ℤ → σ}
-  [SetLike.GradedOne 𝒜] {d : A → A}
+variable {ι A σ : Type*} [Zero ι] [NonAssocRing A] [SetLike σ A] {𝒜 : ι → σ}
+  [SetLike.GradedOne 𝒜] {d : A → A} {s : ι → ℤˣ}
 
-/-- A function satisfying the graded Leibniz rule annihilates the unit: the rule for `1 * 1`
-reads `d 1 = d 1 + d 1`. Neither additivity nor a direct-sum decomposition is needed. -/
+/-- A function satisfying a `ℤˣ`-signed graded Leibniz rule annihilates the unit: on `1 * 1`
+the rule reads `d 1 = d 1 + s 0 • d 1`, so `s 0 • d 1 = 0`. Neither additivity nor a direct-sum
+decomposition is needed. -/
 theorem map_one_eq_zero_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b)) :
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b)) :
     d 1 = 0 := by
   have key := hl (SetLike.one_mem_graded 𝒜) 1
-  simp only [mul_one, one_mul, Int.negOnePow_zero, one_smul] at key
-  exact left_eq_add.mp key
+  simp only [mul_one, one_mul, left_eq_add] at key
+  exact (smul_eq_zero_iff_eq (s 0)).1 key
 
 end UnitalLeibniz
 
 section AlgebraLeibniz
 
-variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A}
-  [SetLike.GradedOne 𝒜] {d : A →ₗ[R] A}
+variable {ι R A σ F : Type*} [Zero ι] [CommSemiring R] [Ring A] [Algebra R A] [SetLike σ A]
+  {𝒜 : ι → σ} [SetLike.GradedOne 𝒜] [FunLike F A A] [LinearMapClass F R A A] {d : F} {s : ι → ℤˣ}
 
-/-- A linear map satisfying the graded Leibniz rule annihilates the image of the ground semiring.
-Only the unit's degree-zero membership is needed from the grading. -/
+/-- A linear map satisfying a `ℤˣ`-signed graded Leibniz rule annihilates the image of the ground
+semiring. Only the unit's degree-zero membership is needed from the grading. -/
 theorem map_algebraMap_of_leibniz
-    (hl : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (hl : ∀ {p : ι} {a : A}, a ∈ 𝒜 p → ∀ b : A, d (a * b) = d a * b + s p • (a * d b))
     (r : R) : d (algebraMap R A r) = 0 := by
-  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz hl, smul_zero]
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one_eq_zero_of_leibniz (𝒜 := 𝒜) hl, smul_zero]
 
 end AlgebraLeibniz
 
@@ -225,11 +228,11 @@ theorem toIsNonUnitalDGAlgebra (h : IsDGAlgebra 𝒜 d) : IsNonUnitalDGAlgebra �
 /-- The differential of a differential graded algebra annihilates the unit: the Leibniz rule for
 `1 * 1` reads `d 1 = d 1 + d 1`. -/
 theorem map_one_eq_zero (h : IsDGAlgebra 𝒜 d) : d 1 = 0 :=
-  map_one_eq_zero_of_leibniz h.leibniz
+  map_one_eq_zero_of_leibniz (𝒜 := 𝒜) h.leibniz
 
 /-- The differential of a differential graded algebra annihilates the image of the ground ring. -/
 theorem map_algebraMap (h : IsDGAlgebra 𝒜 d) (r : R) : d (algebraMap R A r) = 0 :=
-  map_algebraMap_of_leibniz h.leibniz r
+  map_algebraMap_of_leibniz (𝒜 := 𝒜) h.leibniz r
 
 end IsDGAlgebra
 

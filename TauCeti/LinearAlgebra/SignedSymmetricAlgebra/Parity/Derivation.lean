@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Grading
 public import TauCeti.RingTheory.GradedAlgebra.GradeInvolution
 import Mathlib.Data.Matrix.Basic
 import Mathlib.GroupTheory.GroupAction.Ring
-import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # Odd derivations of the parity signed algebra
@@ -30,7 +29,7 @@ map `a ↦ [[a, 0], [d a, σ a]]` whose lower-left entry satisfies
 `d (a * b) = d a * b + σ a * d b` on arbitrary elements.
 
 The extension flips parity (`isHomogeneous_liftDerivation`). Because the square of any odd
-parity-Leibniz map is an unsigned derivation (`TauCeti.comp_self_mul_of_parity_leibniz`), `d ∘ₗ d`
+parity-Leibniz map is an unsigned derivation (`TauCeti.map_map_mul_of_parity_leibniz`), `d ∘ₗ d`
 vanishes on the whole algebra if and only if it vanishes on generators (`comp_self_eq_zero_iff`).
 When `V` carries an internal integer grading `H`, the presentation equivalence
 `TauCeti.SignedSym.parityEquiv H` intertwines `SignedSym.liftDerivation` with
@@ -52,7 +51,7 @@ When `V` carries an internal integer grading `H`, the presentation equivalence
 * `TauCeti.ParitySignedSym.comp_self_eq_zero_iff` and
   `TauCeti.ParitySignedSym.liftDerivation_comp_self_eq_zero_iff`: `d ∘ₗ d = 0` reduces to
   generators.
-* `TauCeti.SignedSym.isHomogeneous_parityEquiv_comp_of_degree_one`,
+* `TauCeti.SignedSym.isHomogeneous_parityEquiv_comp_of_isHomogeneous_one`,
   `TauCeti.SignedSym.parityEquiv_liftDerivation`, and
   `TauCeti.SignedSym.parityEquiv_comp_liftDerivation`: compatibility of `SignedSym.liftDerivation`
   with `ParitySignedSym.liftDerivation` across `SignedSym.parityEquiv`.
@@ -62,6 +61,10 @@ When `V` carries an internal integer grading `H`, the presentation equivalence
 * J. Pardon, *Contact homology and virtual fundamental cycles*, equation (1.1) and Definition 2.48,
   where the contact homology differential is defined as an odd derivation of the free
   supercommutative algebra even when no canonical integer grading is fixed.
+* The lower-triangular `2 × 2` matrix construction and the uniqueness and square-zero proof
+  architecture adapt `TauCeti.SignedSym.liftDerivation` in
+  `TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation`, replacing the integer Koszul twist
+  with `TauCeti.gradeInvolution`.
 -/
 
 public section
@@ -83,23 +86,13 @@ private theorem eq_zero_of_parity_leibniz {D : ParitySignedSym G →ₗ[R] Parit
     (hD : ∀ {i : ZMod 2} {a : ParitySignedSym G}, a ∈ paritySignedSymPiece G i →
       ∀ b : ParitySignedSym G, D (a * b) = D a * b + ((-1 : ℤˣ) ^ i) • (a * D b))
     (hgen : ∀ x, D (generator G x) = 0) : D = 0 := by
-  have hone : D 1 = 0 := map_one_eq_zero_of_parity_leibniz hD
-  have hhom : ∀ {i : ZMod 2} {a : ParitySignedSym G}, a ∈ paritySignedSymPiece G i → D a = 0 := by
-    intro i a ha
-    refine (homogeneous_induction G (P := fun j b ↦ b ∈ paritySignedSymPiece G j ∧ D b = 0)
-      ⟨SetLike.GradedOne.one_mem, hone⟩
-      (fun j x hx ↦ ⟨generator_mem_paritySignedSymPiece G hx, hgen x⟩)
-      (fun j k u v hu hv ↦ ⟨SetLike.mul_mem_graded hu.1 hv.1, by
-        rw [hD hu.1, hu.2, hv.2, zero_mul, mul_zero, zero_add]
-        exact smul_zero _⟩)
-      (fun _ ↦ ⟨zero_mem _, map_zero D⟩)
-      (fun _ u v hu hv ↦ ⟨add_mem hu.1 hv.1, by rw [map_add, hu.2, hv.2, add_zero]⟩)
-      (fun _ r u hu ↦ ⟨Submodule.smul_mem _ r hu.1, by rw [map_smul, hu.2, smul_zero]⟩)
-      ha).2
   ext a
-  induction a using DirectSum.Decomposition.inductionOn (paritySignedSymPiece G) with
-  | zero => simp
-  | homogeneous a => exact hhom a.2
+  induction a using ParitySignedSym.induction with
+  | algebraMap r => simp [map_algebraMap_of_leibniz (𝒜 := paritySignedSymPiece G) hD]
+  | generator x => exact hgen x
+  | mul u v hu hv =>
+    simp only [LinearMap.zero_apply] at hu hv ⊢
+    rw [map_mul_of_leibniz_of_map_eq_zero (𝒜 := paritySignedSymPiece G) hD u hv, hu, zero_mul]
   | add u v hu hv => simp_all
 
 section Lift
@@ -222,12 +215,12 @@ theorem liftDerivation_mul {i : ZMod 2} {a : ParitySignedSym G} (ha : a ∈ pari
 @[simp]
 theorem liftDerivation_algebraMap (r : R) :
     liftDerivation δ hδ (algebraMap R (ParitySignedSym G) r) = 0 :=
-  map_algebraMap_of_parity_leibniz (liftDerivation_mul hδ) r
+  map_algebraMap_of_leibniz (𝒜 := paritySignedSymPiece G) (liftDerivation_mul hδ) r
 
 /-- The odd derivation annihilates the unit. -/
 @[simp]
 theorem liftDerivation_one : liftDerivation δ hδ 1 = 0 :=
-  map_one_eq_zero_of_parity_leibniz (liftDerivation_mul hδ)
+  map_one_eq_zero_of_leibniz (𝒜 := paritySignedSymPiece G) (liftDerivation_mul hδ)
 
 /-- The odd derivation flips parity. -/
 theorem isHomogeneous_liftDerivation :
@@ -287,10 +280,10 @@ theorem comp_self_eq_zero_iff {d : ParitySignedSym G →ₗ[R] ParitySignedSym G
   refine ⟨fun h x ↦ LinearMap.congr_fun h (generator G x), fun h ↦ ?_⟩
   ext a
   induction a using ParitySignedSym.induction with
-  | algebraMap r => simp [map_algebraMap_of_parity_leibniz hleibniz]
+  | algebraMap r => simp [map_algebraMap_of_leibniz (𝒜 := paritySignedSymPiece G) hleibniz]
   | generator x => exact h x
   | mul u v hu hv =>
-    have hmul := comp_self_mul_of_parity_leibniz (fun hx ↦ hdeg.map_mem hx) hleibniz u v
+    have hmul := map_map_mul_of_parity_leibniz (fun hx ↦ hdeg.map_mem hx) hleibniz u v
     simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hu hv ⊢
     rw [hmul, hu, hv, zero_mul, mul_zero, add_zero]
   | add u v hu hv => simp_all
@@ -312,7 +305,7 @@ variable (H : InternalGrading R V ℤ)
 
 /-- Composing a degree-one generator assignment into `SignedSym H` with `parityEquiv H` yields an
 odd generator assignment into `ParitySignedSym H.parity`. -/
-theorem isHomogeneous_parityEquiv_comp_of_degree_one {δ : V →ₗ[R] SignedSym H}
+theorem isHomogeneous_parityEquiv_comp_of_isHomogeneous_one {δ : V →ₗ[R] SignedSym H}
     (hδ : LinearMap.IsHomogeneous δ H.piece (signedSymPiece H) 1) :
     LinearMap.IsHomogeneous ((parityEquiv H).toLinearMap ∘ₗ δ)
       H.parity.piece (paritySignedSymPiece H.parity) 1 := by
@@ -327,11 +320,11 @@ theorem parityEquiv_liftDerivation {δ : V →ₗ[R] SignedSym H}
     (hδ : LinearMap.IsHomogeneous δ H.piece (signedSymPiece H) 1) (a : SignedSym H) :
     parityEquiv H (liftDerivation δ hδ a) =
       ParitySignedSym.liftDerivation ((parityEquiv H).toLinearMap ∘ₗ δ)
-        (isHomogeneous_parityEquiv_comp_of_degree_one H hδ) (parityEquiv H a) := by
+        (isHomogeneous_parityEquiv_comp_of_isHomogeneous_one H hδ) (parityEquiv H a) := by
   let d' : ParitySignedSym H.parity →ₗ[R] ParitySignedSym H.parity :=
     (parityEquiv H).toLinearMap ∘ₗ liftDerivation δ hδ ∘ₗ (parityEquiv H).symm.toLinearMap
   have hd' : d' = ParitySignedSym.liftDerivation ((parityEquiv H).toLinearMap ∘ₗ δ)
-      (isHomogeneous_parityEquiv_comp_of_degree_one H hδ) := by
+      (isHomogeneous_parityEquiv_comp_of_isHomogeneous_one H hδ) := by
     refine ParitySignedSym.eq_liftDerivation _ (fun {i u} hu v ↦ ?_) fun x ↦ ?_
     · have ha : (parityEquiv H).symm u ∈ parityGrading (signedSymPiece H) i :=
         (parityEquiv_symm_mem_parityGrading_iff H).2 hu
@@ -349,7 +342,8 @@ theorem parityEquiv_comp_liftDerivation {δ : V →ₗ[R] SignedSym H}
     (hδ : LinearMap.IsHomogeneous δ H.piece (signedSymPiece H) 1) :
     (parityEquiv H).toLinearMap ∘ₗ liftDerivation δ hδ =
       ParitySignedSym.liftDerivation ((parityEquiv H).toLinearMap ∘ₗ δ)
-        (isHomogeneous_parityEquiv_comp_of_degree_one H hδ) ∘ₗ (parityEquiv H).toLinearMap := by
+        (isHomogeneous_parityEquiv_comp_of_isHomogeneous_one H hδ) ∘ₗ
+          (parityEquiv H).toLinearMap := by
   ext a
   exact parityEquiv_liftDerivation H hδ a
 
