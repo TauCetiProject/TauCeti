@@ -215,14 +215,8 @@ private theorem normalizerQuotientEquivCentralizerOp_mk (H : Subgroup G)
 centralizing left translation by `G` is right multiplication by a normalizer coset, and right
 multiplications compose in the opposite order. -/
 noncomputable def centralizerToPermHomQuotientMulEquiv (H : Subgroup G) :
-    centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))) ≃* (H.normalizerQuotient)ᵐᵒᵖ where
-  toFun τ := MulOpposite.op ((normalizerQuotientEquivCentralizerOp H).symm (MulOpposite.op τ))
-  invFun x := (normalizerQuotientEquivCentralizerOp H x.unop).unop
-  left_inv τ := by
-    dsimp only; rw [MulOpposite.unop_op, MulEquiv.apply_symm_apply, MulOpposite.unop_op]
-  right_inv x := by
-    dsimp only; rw [MulOpposite.op_unop, MulEquiv.symm_apply_apply, MulOpposite.op_unop]
-  map_mul' τ₁ τ₂ := by rw [MulOpposite.op_mul, map_mul, ← MulOpposite.op_mul]
+    centralizer (Set.range (MulAction.toPermHom G (G ⧸ H))) ≃* (H.normalizerQuotient)ᵐᵒᵖ :=
+  (MulEquiv.opOp _).trans (MulEquiv.op (normalizerQuotientEquivCentralizerOp H).symm)
 
 /-- The inverse of `Subgroup.centralizerToPermHomQuotientMulEquiv` sends the opposite of a
 normalizer coset `n H` to right multiplication `x H ↦ (x * n) H`. -/
@@ -231,9 +225,10 @@ normalizer coset `n H` to right multiplication `x H ↦ (x * n) H`. -/
     (((H.centralizerToPermHomQuotientMulEquiv.symm
       (MulOpposite.op (n : H.normalizerQuotient)) : _) : Equiv.Perm (G ⧸ H)) (x : G ⧸ H)) =
         ((x * (n : G) : G) : G ⧸ H) := by
-  change (((normalizerQuotientEquivCentralizerOp H n).unop :
-    Equiv.Perm (G ⧸ H)) (x : G ⧸ H)) = ((x * (n : G) : G) : G ⧸ H)
-  rw [normalizerQuotientEquivCentralizerOp_mk, coe_unop_normalizerToCentralizerOp_apply]
+  rw [centralizerToPermHomQuotientMulEquiv, MulEquiv.symm_trans_apply,
+    MulEquiv.op_apply_symm_apply, Function.comp_apply, Function.comp_apply, MulOpposite.unop_op,
+    MulEquiv.symm_symm, MulEquiv.opOp_symm_apply, MulOpposite.unop_op,
+    normalizerQuotientEquivCentralizerOp_mk, coe_unop_normalizerToCentralizerOp_apply]
 
 end Subgroup
 
