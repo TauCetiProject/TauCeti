@@ -41,6 +41,11 @@ namespace Graph
 
 variable {V : Type u} {E : Type v} {G : Graph V E}
 
+/-- A nonloop link gives adjacency in the underlying simple graph. -/
+theorem IsLink.toSimpleGraph_adj {x y : V} {e : E} (h : G.IsLink e x y)
+    (hxy : x ≠ y) : G.toSimpleGraph.Adj ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
+  ⟨fun heq ↦ hxy (Subtype.mk.inj heq), h.adj⟩
+
 private theorem edgeEnds_mem_toSimpleGraph_edgeSet [G.Simple] (e : G.edgeSet) :
     G.edgeEnds e ∈ G.toSimpleGraph.edgeSet := by
   rw [← Sym2.mk_fst_out_snd_out (G.edgeEnds e), SimpleGraph.mem_edgeSet,

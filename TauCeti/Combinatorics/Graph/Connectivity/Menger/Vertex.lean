@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Simplification
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 public import Mathlib.Data.Set.Card
 

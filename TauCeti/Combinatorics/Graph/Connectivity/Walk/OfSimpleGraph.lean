@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
+public import TauCeti.Combinatorics.SimpleGraph.Paths
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -296,6 +297,14 @@ theorem support_liftToGraph (p : G.toSimpleGraph.Walk x y) :
       List.map_nil]
   | cons h p ih =>
       rw [liftToGraph_cons, Graph.Walk.support_cons, ih, support_cons, List.map_cons]
+
+/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
+since the lift keeps every vertex sequence. -/
+@[simp]
+theorem internallyDisjoint_liftToGraph_iff {p q : G.toSimpleGraph.Walk x y} :
+    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
+  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
+    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
 
 /-- Lifting preserves and reflects disjointness of whole supports, including for walks with
 different endpoints. -/

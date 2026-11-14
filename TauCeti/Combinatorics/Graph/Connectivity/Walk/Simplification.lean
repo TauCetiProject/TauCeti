@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
-public import TauCeti.Combinatorics.SimpleGraph.Paths
+public import TauCeti.Combinatorics.Graph.Simple
 
 /-!
 # Projecting multigraph paths to the underlying simple graph
@@ -34,11 +34,6 @@ universe u v
 namespace Graph.Walk
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
-
-/-- A nonloop link gives adjacency in the underlying simple graph. -/
-theorem _root_.Graph.IsLink.toSimpleGraph_adj {x y : α} {e : β} (h : G.IsLink e x y)
-    (hxy : x ≠ y) : G.toSimpleGraph.Adj ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
-  ⟨fun heq ↦ hxy (Subtype.mk.inj heq), h.adj⟩
 
 /-- The first step of a path joins distinct vertices in the underlying simple graph. -/
 theorem IsPath.toSimpleGraph_adj {x y z : α} {e : β} {h : G.IsLink e x y}
@@ -249,13 +244,5 @@ theorem toSimpleGraphWalk_liftToGraph (p : G.toSimpleGraph.Walk s t)
   apply ext_support
   apply List.map_injective_iff.2 Subtype.val_injective
   simp
-
-/-- Lifting walks of the underlying simple graph preserves and reflects internal disjointness,
-since the lift keeps every vertex sequence. -/
-@[simp]
-theorem internallyDisjoint_liftToGraph_iff {p q : G.toSimpleGraph.Walk s t} :
-    p.liftToGraph.InternallyDisjoint q.liftToGraph ↔ p.InternallyDisjoint q := by
-  simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_liftToGraph,
-    List.forall_mem_map, List.mem_map_of_injective Subtype.val_injective, Subtype.val_inj]
 
 end SimpleGraph.Walk
