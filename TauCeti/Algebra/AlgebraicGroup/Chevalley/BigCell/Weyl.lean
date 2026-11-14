@@ -43,7 +43,9 @@ attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-private theorem simpleWeylLatticeEquiv_weight (i : Fin t.rank) {μ : Fin t.rank → ℤ}
+/-- A pinned simple lattice representative transports a Cartan weight vector by the
+corresponding simple reflection. -/
+theorem simpleWeylLatticeEquiv_weight (i : Fin t.rank) {μ : Fin t.rank → ℤ}
     {m : D.lattice}
     (hm : IsCartanWeightVector (t.lieBasis ht).h D.representation μ (m : D.carrier)) :
     IsCartanWeightVector (t.lieBasis ht).h D.representation
@@ -62,16 +64,17 @@ private theorem simpleWeylLatticeEquiv_weight (i : Fin t.rank) {μ : Fin t.rank 
     (fun j => by simpa only [LieAlgebra.Basis.rootGenerator_inr, Int.cast_smul_eq_zsmul,
       neg_smul] using t.lie_lieBasis_h_f ht i j) hm
 
-private theorem weylWordLatticeEquiv_weight (l : List (Fin t.rank)) {μ : Fin t.rank → ℤ}
+/-- A lattice Weyl word transports a Cartan weight vector by the Weyl-group element it spells. -/
+theorem weylWordLatticeEquiv_weight (l : List (Fin t.rank)) {μ : Fin t.rank → ℤ}
     {m : D.lattice}
     (hm : IsCartanWeightVector (t.lieBasis ht).h D.representation μ (m : D.carrier)) :
     IsCartanWeightVector (t.lieBasis ht).h D.representation
       (t.geckWeylWordProd ht l • μ) (D.weylWordLatticeEquiv l m : D.carrier) := by
   induction l generalizing μ m with
-  | nil => simpa only [weylWordLatticeEquiv_def, List.map_nil, List.prod_nil,
-      one_apply_eq_self, geckWeylWordProd_nil, one_smul] using hm
+  | nil => simpa only [weylWordLatticeEquiv_nil, one_apply_eq_self,
+      geckWeylWordProd_nil, one_smul] using hm
   | cons i l ih =>
-      simpa only [weylWordLatticeEquiv_def, List.map_cons, List.prod_cons, mul_apply_eq_comp,
+      simpa only [weylWordLatticeEquiv_cons, mul_apply_eq_comp,
         geckWeylWordProd_cons, mul_smul] using D.simpleWeylLatticeEquiv_weight i (ih hm)
 
 /-- A Weyl word has invertible leading weight-block minors exactly when the Weyl-group element
@@ -85,7 +88,7 @@ theorem isUnit_leading_weight_minors_weylWord_iff {β : Type*} [PartialOrder β]
         Matrix.GeneralLinearGroup (Fin D.dim) A) : Matrix (Fin D.dim) (Fin D.dim) A))
       fun j => r ⟨D.weight j, Set.mem_range_self j⟩ ≤ a).det)) ↔
       t.geckWeylWordProd ht l = 1 := by
-  rw [← D.weylWordLatticeEquiv_matrix l A,
+  rw [← D.map_toMatrix_weylWordLatticeEquiv l A,
     isUnit_leading_weight_minors_iff (t.lieBasis ht).h D.representation D.lattice D.basis D.weight
       D.isCartanWeightVector_basis (D.weylWordLatticeEquiv l)
       (fun μ => t.geckWeylWordProd ht l • μ)

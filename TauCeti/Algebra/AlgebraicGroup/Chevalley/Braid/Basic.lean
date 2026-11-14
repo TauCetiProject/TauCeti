@@ -52,28 +52,14 @@ theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq (l r : List (Fin t.rank)
     (A : Type*) [CommRing A] :
     (l.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod =
       (r.map (fun k => D.weylElement (t.simpleIndex ht k) A 1)).prod := by
-  let q := fun k => weylUnit
-    (D.isNilpotent_representation_rootGenerator (.inl k))
-    (D.isNilpotent_representation_rootGenerator (.inr k))
-  let z := D.simpleWeylLatticeEquiv
-  -- Restriction respects each letter, and hence the action of every word.
-  have hz (w : List (Fin t.rank)) (v : D.lattice) :
-      ((w.map z).prod v : D.carrier) = ((w.map q).prod : Module.End ℚ D.carrier) v := by
-    induction w with
-    | nil => rfl
-    | cons k w ih =>
-      simp only [List.map_cons, List.prod_cons, mul_apply_eq_comp, Units.val_mul,
-        z, simpleWeylLatticeEquiv_def, coe_kostantWeylRestrict_apply, Module.End.smul_def]
-      rw [ih]
   have hZ : D.weylWordLatticeEquiv l = D.weylWordLatticeEquiv r := by
-    simp only [weylWordLatticeEquiv_def]
     ext v
-    rw [hz, hz]
+    rw [coe_weylWordLatticeEquiv_apply, coe_weylWordLatticeEquiv_apply]
     exact congrArg (fun u : (Module.End ℚ D.carrier)ˣ => (u : Module.End ℚ D.carrier) v) h
   -- Reuse the integral-word matrix comparison shared with the big-cell argument.
   apply Subtype.ext
   apply Units.ext
-  rw [← D.weylWordLatticeEquiv_matrix l A, ← D.weylWordLatticeEquiv_matrix r A, hZ]
+  rw [← D.map_toMatrix_weylWordLatticeEquiv l A, ← D.map_toMatrix_weylWordLatticeEquiv r A, hZ]
 
 /-- A word identity valid for all nilpotent Serre systems on the datum's rational carrier,
 in the transposed Cartan convention, holds for its pinned simple Weyl representatives
