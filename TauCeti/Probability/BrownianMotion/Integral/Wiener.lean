@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.BrownianMotion.TimeIntegral.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.Analysis.Normed.Operator.Extend
@@ -15,6 +16,7 @@ import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Probability.Independence.Filtration
 
 /-!
 # The deterministic Wiener integral
@@ -32,6 +34,16 @@ the squared time-`L²` norm. Interval formulas and uniqueness among continuous l
 maps characterize the construction. Extension by zero to longer horizons and changes
 of Brownian version almost surely at each time preserve the integral. Linearity,
 isometry and preservation of inner products are provided by its bundled type.
+
+For a function `f` square integrable on `(0,T]`, the integral is centered Gaussian with
+variance `∫₀ᵀ f²` (`hasLaw_wienerIntegral_toLp`), so `E[exp (q ∫₀ᵀ f dB)] = exp (q² ∫₀ᵀ f² / 2)`
+(`integral_exp_mul_wienerIntegral_toLp`), and the increment of the integrals of `f`
+from horizon `s` to horizon `T` has variance `∫ₛᵀ f²`. A Wiener integral is almost everywhere
+measurable for every sigma-algebra making the Brownian values up to the horizon measurable.
+Such an increment is almost everywhere measurable for the Brownian increments after `s`;
+hence, for a Brownian motion relative to a filtration, it is independent of the past at `s`
+(`TauCeti.Probability.IsFilteredPreBrownianReal.indep_wienerIntegral_sub`). These are the
+facts needed to treat `t ↦ ∫₀ᵗ f dB` as a process with independent Gaussian increments.
 
 ## References
 
@@ -318,3 +330,192 @@ theorem isGaussianProcess_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ�
     exact (hg.congr heq).isGaussian_map
 
 end ProbabilityTheory.IsPreBrownianReal
+
+namespace ProbabilityTheory.IsPreBrownianReal
+
+open TauCeti.Probability
+
+variable {Ω : Type*} {m mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
+
+/-- A deterministic Wiener integral on `(0,T]` is almost everywhere measurable for every
+sub-sigma-algebra for which the Brownian values up to the horizon are. -/
+theorem aestronglyMeasurable_wienerIntegral (hB : IsPreBrownianReal B P)
+    (hm : m ≤ mΩ) {T : ℝ≥0}
+    (hBm : ∀ t ≤ T, AEStronglyMeasurable[m] (B t) P) (f : Lp ℝ 2 (timeMeasure T)) :
+    AEStronglyMeasurable[m] (hB.wienerIntegral T f) P := by
+  refine TauCeti.aestronglyMeasurable_of_indicatorConstLp_Iic (fun _ ↦ measure_ne_top _ _) hm
+    (hB.wienerIntegral T).toContinuousLinearMap (fun t ↦ ?_) f
+  simp only [LinearIsometry.coe_toContinuousLinearMap, wienerIntegral_indicatorConstLp_Iic,
+    one_smul]
+  exact (hBm _ (min_le_right t T)).congr (hB.coeFn_toL2 _).symm
+
+/-- **Future measurability of Wiener increments.** Let `s ≤ T`, and let `g` agree with `f`
+on `(0,s]`. Then the Wiener integral of `f` on `(0,T]` minus that of `g` on `(0,s]` is almost
+everywhere measurable for any sub-sigma-algebra making the Brownian increments
+on `[s,T]` almost everywhere measurable. -/
+theorem aestronglyMeasurable_wienerIntegral_sub (hB : IsPreBrownianReal B P)
+    (hm : m ≤ mΩ) {s T : ℝ≥0} (hsT : s ≤ T)
+    (hBm : ∀ t, s ≤ t → t ≤ T → AEStronglyMeasurable[m] (B t - B s) P)
+    {f : Lp ℝ 2 (timeMeasure T)} {g : Lp ℝ 2 (timeMeasure s)} (hfg : f =ᵐ[timeMeasure s] g) :
+    AEStronglyMeasurable[m] (⇑(hB.wienerIntegral T f) - ⇑(hB.wienerIntegral s g)) P := by
+  have hle : timeMeasure s ≤ (1 : ENNReal) • timeMeasure T := by
+    rw [one_smul]; exact timeMeasure_mono hsT
+  let R := Lp.LpToLpOfMeasureLeSMul (E := ℝ) (p := 2) ENNReal.one_ne_top hle
+  have hR (h : Lp ℝ 2 (timeMeasure T)) (k : Lp ℝ 2 (timeMeasure s))
+      (hk : h =ᵐ[timeMeasure s] k) : R h = k :=
+    Lp.ext ((Lp.coeFn_LpToLpOfMeasureLeSMul _ _ h).trans hk)
+  let A : Lp ℝ 2 (timeMeasure T) →L[ℝ] Lp ℝ 2 P :=
+    (hB.wienerIntegral T).toContinuousLinearMap -
+      (hB.wienerIntegral s).toContinuousLinearMap.comp R
+  have hA := TauCeti.aestronglyMeasurable_of_indicatorConstLp_Iic (fun _ ↦ measure_ne_top _ _)
+    hm A (fun u ↦ ?_) f
+  · have hAf : A f = hB.wienerIntegral T f - hB.wienerIntegral s g := by
+      simp [A, hR f g hfg]
+    rw [hAf] at hA
+    exact hA.congr (Lp.coeFn_sub _ _)
+  · have hRu : R (indicatorConstLp 2 (measurableSet_Iic (a := u)) (measure_ne_top _ _) 1) =
+        indicatorConstLp 2 (measurableSet_Iic (a := u)) (measure_ne_top _ _) 1 :=
+      hR _ _ (indicatorConstLp_coeFn.filter_mono (ae_mono (timeMeasure_mono hsT)) |>.trans
+        indicatorConstLp_coeFn.symm)
+    simp only [A, sub_apply, ContinuousLinearMap.comp_apply,
+      LinearIsometry.coe_toContinuousLinearMap, hRu, wienerIntegral_indicatorConstLp_Iic,
+      one_smul]
+    rcases le_total u s with hus | hsu
+    · rw [min_eq_left hus, min_eq_left (hus.trans hsT), sub_self]
+      exact (stronglyMeasurable_zero.aestronglyMeasurable).congr (Lp.coeFn_zero _ _ _).symm
+    · rw [min_eq_right hsu]
+      refine (hBm _ (le_min hsu hsT) (min_le_right u T)).congr ?_
+      filter_upwards [Lp.coeFn_sub (hB.toL2 (min u T)) (hB.toL2 s), hB.coeFn_toL2 (min u T),
+        hB.coeFn_toL2 s] with ω h h₁ h₂
+      simp only [h, Pi.sub_apply, h₁, h₂]
+
+/-- **The law of a Wiener integral.** The Wiener integral on `(0,T]` of a deterministic
+square-integrable function `f` is centered Gaussian with variance `∫₀ᵀ f²`. -/
+theorem hasLaw_wienerIntegral_toLp (hB : IsPreBrownianReal B P) {T : ℝ≥0} {f : ℝ≥0 → ℝ}
+    (hf : MemLp f 2 (timeMeasure T)) :
+    HasLaw (hB.wienerIntegral T (hf.toLp f))
+      (gaussianReal 0 (∫ t, f t ^ 2 ∂timeMeasure T).toNNReal) P := by
+  have hnorm : ‖hf.toLp f‖₊ ^ 2 = (∫ t, f t ^ 2 ∂timeMeasure T).toNNReal := by
+    apply NNReal.coe_injective
+    rw [NNReal.coe_pow, coe_nnNorm, ← real_inner_self_eq_norm_sq, L2.inner_def,
+      Real.coe_toNNReal _ (integral_nonneg fun _ ↦ sq_nonneg _)]
+    refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp] with t ht
+    simp [ht, sq]
+  rw [← hnorm]
+  exact hB.hasLaw_wienerIntegral T _
+
+/-- Exponentials of multiples of Wiener integrals are integrable. -/
+theorem integrable_exp_mul_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
+    (f : Lp ℝ 2 (timeMeasure T)) (q : ℝ) :
+    Integrable (fun ω ↦ Real.exp (q * hB.wienerIntegral T f ω)) P := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  exact mgf_pos_iff.mp (mgf_gaussianReal (hB.hasLaw_wienerIntegral T f) q ▸ Real.exp_pos _)
+
+/-- **Exponential moments of a Wiener integral.** The variance is the squared `L²` norm
+of its deterministic integrand. -/
+theorem integral_exp_mul_wienerIntegral (hB : IsPreBrownianReal B P) (T : ℝ≥0)
+    (f : Lp ℝ 2 (timeMeasure T)) (q : ℝ) :
+    ∫ ω, Real.exp (q * hB.wienerIntegral T f ω) ∂P =
+      Real.exp (q ^ 2 * ‖f‖ ^ 2 / 2) := by
+  rw [← mgf, mgf_gaussianReal (hB.hasLaw_wienerIntegral T f)]
+  simp only [NNReal.coe_pow, coe_nnNorm]
+  congr 1
+  ring
+
+/-- **Exponential moments of a Wiener integral.** For square-integrable `f` on `(0,T]`,
+`E[exp (q ∫₀ᵀ f dB)] = exp (q² ∫₀ᵀ f² / 2)`, as for its Gaussian law. -/
+theorem integral_exp_mul_wienerIntegral_toLp (hB : IsPreBrownianReal B P) {T : ℝ≥0}
+    {f : ℝ≥0 → ℝ} (hf : MemLp f 2 (timeMeasure T)) (q : ℝ) :
+    ∫ ω, Real.exp (q * hB.wienerIntegral T (hf.toLp f) ω) ∂P =
+      Real.exp (q ^ 2 * (∫ t, f t ^ 2 ∂timeMeasure T) / 2) := by
+  rw [← mgf, mgf_gaussianReal (hB.hasLaw_wienerIntegral_toLp hf),
+    Real.coe_toNNReal _ (integral_nonneg fun _ ↦ sq_nonneg _)]
+  ring_nf
+
+/-- **The law of a Wiener increment.** For `s ≤ T`, the difference of the Wiener integrals of
+`f` on `(0,T]` and on `(0,s]` is centered Gaussian with variance `∫ₛᵀ f²`. -/
+theorem hasLaw_wienerIntegral_toLp_sub (hB : IsPreBrownianReal B P) {s T : ℝ≥0} (hsT : s ≤ T)
+    {f : ℝ≥0 → ℝ} (hfT : MemLp f 2 (timeMeasure T)) (hfs : MemLp f 2 (timeMeasure s)) :
+    HasLaw (⇑(hB.wienerIntegral T (hfT.toLp f)) - ⇑(hB.wienerIntegral s (hfs.toLp f)))
+      (gaussianReal 0 ((∫ t, f t ^ 2 ∂timeMeasure T) - ∫ t, f t ^ 2 ∂timeMeasure s).toNNReal)
+      P := by
+  have hc : MemLp ((Ioc 0 s)ᶜ.indicator f) 2 (timeMeasure T) :=
+    hfT.indicator measurableSet_Ioc.compl.nullMeasurableSet
+  have heq : hB.wienerIntegral T (hfT.toLp f) - hB.wienerIntegral s (hfs.toLp f) =
+      hB.wienerIntegral T (hc.toLp _) := by
+    rw [← wienerIntegral_timeMeasureExtendLp hB hsT, ← map_sub]
+    congr 1
+    apply Lp.ext
+    filter_upwards [Lp.coeFn_sub (hfT.toLp f) (timeMeasureExtendLp ℝ hsT (hfs.toLp f)),
+      hfT.coeFn_toLp, hc.coeFn_toLp,
+      coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hsT hfs.coeFn_toLp]
+      with t h₁ h₂ h₃ h₄
+    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, Set.indicator_compl]
+    rfl
+  have hsq : (∫ t, (Ioc 0 s)ᶜ.indicator f t ^ 2 ∂timeMeasure T) =
+      (∫ t, f t ^ 2 ∂timeMeasure T) - ∫ t, f t ^ 2 ∂timeMeasure s := by
+    have hi : Integrable (fun t ↦ f t ^ 2) (timeMeasure T) := hfT.integrable_sq
+    simp_rw [sq, ← Set.indicator_mul, ← sq]
+    rw [integral_indicator measurableSet_Ioc.compl, eq_sub_iff_add_eq,
+      ← min_eq_left hsT, ← timeMeasure_restrict, min_eq_left hsT]
+    exact integral_add_compl measurableSet_Ioc hi |>.symm.trans (add_comm _ _) |>.symm
+  rw [← hsq]
+  exact (hB.hasLaw_wienerIntegral_toLp hc).congr
+    (by rw [← heq]; exact (Lp.coeFn_sub _ _).symm)
+
+end ProbabilityTheory.IsPreBrownianReal
+
+namespace TauCeti.Probability.IsFilteredPreBrownianReal
+
+open ProbabilityTheory
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
+  {W : ℝ≥0 → Ω → ℝ}
+
+/-- **Wiener increments are independent of the past.** For a Brownian motion relative to `ℱ`,
+`s ≤ T` and `g` agreeing with `f` on `(0,s]`, the Wiener integral of `f` on `(0,T]` minus that
+of `g` on `(0,s]` is independent of `ℱ s`. -/
+theorem indep_wienerIntegral_sub (hW : IsFilteredPreBrownianReal ℱ W P) {s T : ℝ≥0}
+    (hsT : s ≤ T) {f : Lp ℝ 2 (timeMeasure T)} {g : Lp ℝ 2 (timeMeasure s)}
+    (hfg : f =ᵐ[timeMeasure s] g) :
+    Indep (MeasurableSpace.comap
+      (⇑(hW.wienerIntegral T f) - ⇑(hW.wienerIntegral s g)) inferInstance) (ℱ s) P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hmeas (t : ℝ≥0) : Measurable (W t) := (hW.adapted t).mono (ℱ.le t) le_rfl
+  have hmG : MeasurableSpace.comap (fun ω (t : Ici s) ↦ W t ω - W s ω) inferInstance ≤ mΩ :=
+    (measurable_pi_iff.2 fun t : Ici s ↦ (hmeas t).sub (hmeas s)).comap_le
+  have hinc (t : ℝ≥0) (hst : s ≤ t) (_ : t ≤ T) :
+      AEStronglyMeasurable[MeasurableSpace.comap (fun ω (v : Ici s) ↦ W v ω - W s ω)
+        inferInstance] (W t - W s) P :=
+    ((measurable_pi_apply (⟨t, hst⟩ : Ici s)).comp
+      (comap_measurable (fun ω (v : Ici s) ↦ W v ω - W s ω))).stronglyMeasurable
+      |>.aestronglyMeasurable
+  obtain ⟨h, hh, hfh⟩ := hW.aestronglyMeasurable_wienerIntegral_sub hmG hsT hinc hfg
+  have hind : Indep (MeasurableSpace.comap h inferInstance) (ℱ s) P :=
+    indep_of_indep_of_le_left (hW.adapted.indep_comap_sub_Ici hW.indep_sub s)
+      hh.measurable.comap_le
+  have hi : @IndepFun Ω ℝ Ω mΩ inferInstance (ℱ s) h id P := by
+    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hind
+  simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using
+    hi.congr hfh.symm (EventuallyEq.refl ..)
+
+/-- A deterministic Wiener integral up to `T` is almost everywhere `ℱ T`-measurable. -/
+theorem aestronglyMeasurable_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (f : Lp ℝ 2 (timeMeasure T)) :
+    AEStronglyMeasurable[ℱ T] (hW.wienerIntegral T f) P :=
+  hW.toIsPreBrownianReal.aestronglyMeasurable_wienerIntegral (ℱ.le T)
+    (fun t ht ↦ ((hW.adapted t).mono (ℱ.mono ht) le_rfl).aestronglyMeasurable) f
+
+/-- A deterministic Wiener integral is independent of every random variable known at time zero. -/
+theorem indepFun_wienerIntegral_of_measurable_zero (hW : IsFilteredPreBrownianReal ℱ W P)
+    {E : Type*} [MeasurableSpace E] {ξ : Ω → E} (hξ : Measurable[ℱ 0] ξ)
+    (T : ℝ≥0) (f : Lp ℝ 2 (timeMeasure T)) : IndepFun (hW.wienerIntegral T f) ξ P := by
+  have hi : IndepFun (⇑(hW.wienerIntegral T f) - ⇑(hW.wienerIntegral 0 0)) ξ P :=
+    indep_of_indep_of_le_right
+      (hW.indep_wienerIntegral_sub (zero_le (a := T)) (ae_iff.2 (by simp))) hξ.comap_le
+  refine hi.congr ?_ (EventuallyEq.refl ..)
+  filter_upwards [Lp.coeFn_zero ℝ 2 P] with ω hω
+  simp only [map_zero, Pi.sub_apply, hω, Pi.zero_apply, sub_zero]
+
+end TauCeti.Probability.IsFilteredPreBrownianReal
