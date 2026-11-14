@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
+public import TauCeti.AlgebraicTopology.Cellular.Dimension
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
@@ -27,7 +27,7 @@ The proof passes to the universal cover `Y` of `X`, which exists because `X` is 
 path-connected and semilocally simply connected. The CW structure of `X` lifts to `Y`, cell by
 cell (`TauCeti.cwComplexPreimage`), so `Y` is again a CW complex with no cells of dimension at
 least `2`. Its singular homology therefore vanishes in every degree at least `2`
-(`TauCeti.isZero_singularHomology_of_isEmpty_cell`), and since `Y` is simply
+(`TauCeti.isZero_singularHomology_univ_of_isEmpty_cell_gt`), and since `Y` is simply
 connected, the Hurewicz theorem shows that all of its homotopy groups vanish
 (`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`). A covering map is an
 isomorphism on homotopy groups in dimensions at least `2`, so those of `X` vanish too. This is a
@@ -72,24 +72,17 @@ theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2S
     [CWComplex (univ : Set X)] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (h : ∀ n, IsEmpty (cell (univ : Set X) (n + 2))) (x : X) : IsAspherical X x := by
   have hp := UniversalCover.isCoveringMap x
-  let := cwComplexPreimage (univ : Set X) hp
   have := hp.t2Space
+  -- The lifted CW structure lives on `p ⁻¹' univ`, which is definitionally `univ`.
+  let : CWComplex (univ : Set (UniversalCover x)) := cwComplexPreimage (univ : Set X) hp
   -- The lifted CW structure on the universal cover has no cells of dimension at least `2`.
-  have hcell (n : ℕ) : IsEmpty (cell (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (n + 2)) :=
-    (cellPreimageEquiv (univ : Set X) hp (n + 2)).isEmpty
-  have : FiniteDimensional (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) :=
-    ⟨Filter.eventually_atTop.2 ⟨2, fun n hn ↦ by
-      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-      exact hcell m⟩⟩
+  have hcell (m : ℕ) (hm : 1 < m) : IsEmpty (cell (univ : Set (UniversalCover x)) m) := by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
+    exact (cellPreimageEquiv (univ : Set X) hp (k + 1 + 1)).isEmpty
   have hH (n : ℕ) :
-      IsZero (((singularChains ℤ).obj (TopCat.of (UniversalCover x))).homology (n + 2)) := by
-    -- The homology of the lifted CW complex vanishes in degree `n + 2`, and it is the homology
-    -- of the universal cover.
-    have hC := isZero_singularHomology_of_isEmpty_cell
-      (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (ModuleCat.of ℤ ℤ) (n + 2)
-    exact hC.of_iso (((AlgebraicTopology.singularHomologyFunctor _ (n + 2)).obj _).mapIso
-      (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
-        (Homeomorph.Set.univ _)))).symm
+      IsZero (((singularChains ℤ).obj (TopCat.of (UniversalCover x))).homology (n + 2)) :=
+    isZero_singularHomology_univ_of_isEmpty_cell_gt (UniversalCover x) (ModuleCat.of ℤ ℤ)
+      hcell (by lia)
   have : Subsingleton (π_ 1 (UniversalCover x) (UniversalCover.basepointLift x)) :=
     HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.mpr inferInstance
   exact hp.isAspherical_of_subsingleton_homotopyGroup UniversalCover.proj_surjective
@@ -115,11 +108,8 @@ theorem isZero_singularHomology_circle (S : Type u) {A : Type w} [Category.{v} A
     [HasCoproducts.{u} A] [Abelian A] [AB4OfSize.{u} A] (R : A) {n : ℕ} (hn : 2 ≤ n) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor.{u} A n).obj R).obj
       (TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle)))) :=
-  have := isEmpty_cell_circleCWComplex (S := S) hn
-  (isZero_singularHomology_of_isEmpty_cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))
-    R n).of_iso
-      (((AlgebraicTopology.singularHomologyFunctor _ n).obj _).mapIso
-        (TopCat.isoOfHomeo (Homeomorph.Set.univ _))).symm
+  isZero_singularHomology_univ_of_isEmpty_cell_gt (WedgeSum fun _ : S ↦ (1 : Circle)) R
+    (d := 1) (fun _ hm ↦ isEmpty_cell_circleCWComplex (S := S) hm) hn
 
 end WedgeSum
 
