@@ -121,6 +121,8 @@ families of operators.
   `H^r → H^s` for arbitrary orders `r` and `s`.
 * `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: such a symbol quantizes every
   element of `H^s` into `H^t` for all real `s` and `t`.
+* `TauCeti.Symbol.memSobolev_toDistr_quantizeSobolev`: `Op(a)` sends a tempered distribution in
+  `H^s` into `H^{s - m}`, whichever Bessel-potential space it is applied on.
 
 ## References
 
@@ -1058,6 +1060,15 @@ theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev (ha : a.IsSmoothing)
   have hbc := hc.of_coefficient_eq hb
   rw [toDistr_quantizeSobolev_congr hb.symm hc hbc (v := u) rfl]
   simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
+
+/-- **A symbol of order `m` costs `m` derivatives at every Sobolev order.** If `u ∈ H^t` has a
+tempered distribution lying in `H^s`, then `Op(a) u ∈ H^{s - m}`, whatever the order `t` at which
+`Op(a)` is applied. -/
+theorem memSobolev_toDistr_quantizeSobolev (ha : a.HasCompactSpatialSupport) {s t : ℝ}
+    {u : H^{t}(CoordinateSpace n, V)} (hu : MemSobolev s 2 u.toDistr) :
+    MemSobolev (s - m) 2 (a.quantizeSobolev ha t u).toDistr := by
+  rw [toDistr_quantizeSobolev_congr rfl ha ha hu.toBesselPotentialSpace_toDistr.symm]
+  exact (a.quantizeSobolev ha s _).memSobolev_toDistr
 
 end Sobolev
 

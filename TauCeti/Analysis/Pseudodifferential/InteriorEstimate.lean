@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
 /-!
-# Interior estimates for elliptic pseudodifferential operators
+# Interior estimates and regularity for elliptic pseudodifferential operators
 
 Let `a` be a symbol of order `m` on `ℝⁿ` with compact spatial support, with values in operators
 `V →L[ℂ] W` between complex Hilbert spaces, and let `φ` be a compactly supported Schwartz
@@ -30,6 +30,14 @@ such as the localization `a = ψ p` by a function `ψ` equal to `1` near `tsuppo
 inverse of the symbol is needed: the estimate holds for injectively elliptic symbols, between
 fibres of different dimensions.
 
+The same parametrix gives **interior regularity**
+(`TauCeti.Symbol.memSobolev_smulLeftCLM_of_eventually_comp_eq_id`): if `u ∈ H^t` and
+`χ Op(a) u ∈ H^{s - m}` for a Schwartz function `χ` equal to `1` near `tsupport φ`, then
+`φ u ∈ H^s`, for all real `s` and `t`. Unlike the estimate, this does not assume
+that `u` already lies in `H^s`, and it only uses `Op(a) u` near `tsupport φ`: this is the
+Euclidean form of `Pu ∈ H^{s - m}_loc ⇒ u ∈ H^s_loc` for operators that are only elliptic near
+`tsupport φ`.
+
 ## Proof outline
 
 The symbol `q = φ e` of order `-m` is a parametrix of `a` near `tsupport φ`: by the composition
@@ -43,6 +51,16 @@ frequencies, hence is smoothing, and `q # a - q ∘ a` has order `-1`
 `H^{s - 1}` for a cutoff `χ` equal to `1` near `tsupport φ`, plus `‖u‖_{H^r}`. The same estimate
 for `χ` in place of `φ`, at the order `s - 1`, closes an induction on the number of derivatives
 `s - r` to recover.
+
+Regularity follows from the same identity
+`φ u = Op(q) (Op(a) u) - Op(q ∘ a - φ) u - Op(q # a - q ∘ a) u`, read on distributions. By locality
+modulo smoothing operators
+(`TauCeti.Symbol.exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub`), `Op(q) (Op(a) u)`
+is `Op(q) (χ Op(a) u) ∈ H^s` up to a smoothing term, and `Op(q # a - q ∘ a) u` is
+`Op(q # a - q ∘ a) (ψ u)` up to a smoothing term, for a cutoff `ψ` equal to `1` near `tsupport φ`;
+the latter gains one derivative on `ψ u`. Hence if `ψ u ∈ H^σ` for every cutoff `ψ` supported
+where `a` is elliptic, then `φ u ∈ H^{min s (σ + 1)}` for every such `φ`, and `⌈s - t⌉` steps
+starting from `u ∈ H^t` reach `H^s`.
 
 ## References
 
@@ -86,19 +104,24 @@ private theorem toDistr_quantizeSobolev_eq_sub_sub (ha : a.HasCompactSpatialSupp
   funext p
   simp
 
-/-- One step of the interior estimate: the parametrix `q = φ e` of `a` gives
-`‖φ u‖_{H^s} ≤ C (‖Op(a) u‖_{H^{s - m}} + ‖χ u‖_{H^{s - 1}} + ‖u‖_{H^r})` for a cutoff `χ` equal
-to `1` near `tsupport φ`. -/
-private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport)
+/-- **The local parametrix identity.** Let `e` be a left inverse of `a(x, ξ)` at all frequencies
+`‖ξ‖ ≥ R` and all positions `x ∈ U`, and let `φ` be a compactly supported Schwartz function with
+`tsupport φ ⊆ U`. For the parametrix symbol `q = φ e`,
+`φ u = Op(q) (Op(a) u) - Op(sm) u - Op(rem) u` on every `H^s`, where `sm` is smoothing and `rem`
+has order `-1`; both `q` and `rem` vanish at positions outside `tsupport φ`. -/
+private theorem exists_toDistr_smulLeftCLM_eq (ha : a.HasCompactSpatialSupport)
     {U : Set (CoordinateSpace n)}
     (he : ∀ x ∈ U, ∀ ξ, R ≤ ‖ξ‖ → e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V)
-    {φ χ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ) (hφU : tsupport φ ⊆ U)
-    (hχ : HasCompactSupport χ) (hχφ : ∀ᶠ x in 𝓝ˢ (tsupport φ), χ x = 1) {r s : ℝ}
-    (hrs : r ≤ s) :
-    ∃ C, ∀ u : H^{s}(CoordinateSpace n, V), ‖smulLeftCLM s φ u‖ ≤
-      C * (‖a.quantizeSobolev ha s u‖ +
-        ‖smulLeftCLM (s - 1) χ (BesselPotentialSpace.inclusion (sub_le_self s zero_le_one) u)‖ +
-          ‖BesselPotentialSpace.inclusion hrs u‖) := by
+    {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ) (hφU : tsupport φ ⊆ U) :
+    ∃ (q : Symbol n W V (0 + -m)) (hq : q.HasCompactSpatialSupport)
+      (sm : Symbol n V V (0 + -m + m)) (hsmK : sm.HasCompactSpatialSupport)
+      (rem : Symbol n V V (0 + -m + m - (1 : ℕ))) (hremK : rem.HasCompactSpatialSupport),
+      sm.IsSmoothing ∧ (∀ x ∉ tsupport φ, ∀ ξ, q.coefficient (x, ξ) = 0) ∧
+        (∀ x ∉ tsupport φ, ∀ ξ, rem.coefficient (x, ξ) = 0) ∧
+        ∀ (s : ℝ) (u : H^{s}(CoordinateSpace n, V)),
+          (smulLeftCLM s φ u).toDistr =
+            (q.quantizeSobolev hq (s - m) (a.quantizeSobolev ha s u)).toDistr -
+              (sm.quantizeSobolev hsmK s u).toDistr - (rem.quantizeSobolev hremK s u).toDistr := by
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
   set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
   have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
@@ -119,9 +142,27 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
     rw [sharp_eq_comp_add_sharpRemainder_one ha, add_sub_cancel_left, coefficient_inclusion]
   have hremK : rem.HasCompactSpatialSupport :=
     ((hq.sharp ha).sub (hq.comp_right a)).of_coefficient_eq hrem.symm
-  have hrem0 : ∀ x ∉ tsupport φ, ∀ ξ, rem.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
-    rw [← hrem]
-    simp [q, F, hφ0 x hx]
+  refine ⟨q, hq, sm, hsmK, rem, hremK, hsm, fun x hx ξ ↦ by simp [q, F, hφ0 x hx],
+    fun x hx ξ ↦ by rw [← hrem]; simp [q, F, hφ0 x hx], fun s u ↦ ?_⟩
+  rw [← toDistr_quantizeSobolev_ofSpatial_smul_id φ hF,
+    toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK,
+    toDistr_quantizeSobolev_congr hrem _ hremK rfl]
+
+/-- One step of the interior estimate: the parametrix `q = φ e` of `a` gives
+`‖φ u‖_{H^s} ≤ C (‖Op(a) u‖_{H^{s - m}} + ‖χ u‖_{H^{s - 1}} + ‖u‖_{H^r})` for a cutoff `χ` equal
+to `1` near `tsupport φ`. -/
+private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport)
+    {U : Set (CoordinateSpace n)}
+    (he : ∀ x ∈ U, ∀ ξ, R ≤ ‖ξ‖ → e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V)
+    {φ χ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ) (hφU : tsupport φ ⊆ U)
+    (hχ : HasCompactSupport χ) (hχφ : ∀ᶠ x in 𝓝ˢ (tsupport φ), χ x = 1) {r s : ℝ}
+    (hrs : r ≤ s) :
+    ∃ C, ∀ u : H^{s}(CoordinateSpace n, V), ‖smulLeftCLM s φ u‖ ≤
+      C * (‖a.quantizeSobolev ha s u‖ +
+        ‖smulLeftCLM (s - 1) χ (BesselPotentialSpace.inclusion (sub_le_self s zero_le_one) u)‖ +
+          ‖BesselPotentialSpace.inclusion hrs u‖) := by
+  obtain ⟨q, hq, sm, hsmK, rem, hremK, hsm, -, hrem0, hid⟩ :=
+    exists_toDistr_smulLeftCLM_eq ha he hφ hφU
   obtain ⟨C₁, hC₁⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM hremK hrem0 hχ hχφ
     (min_le_right r (s - 1))
   obtain ⟨T, hT⟩ := hsm.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hsmK r s
@@ -137,10 +178,8 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
         BesselPotentialSpace.inclusion (le_of_eq (by push_cast; ring))
           (rem.quantizeSobolev hremK (s - 1) v) := by
     refine BesselPotentialSpace.ext ?_
-    rw [← toDistr_quantizeSobolev_ofSpatial_smul_id φ hF,
-      toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK, toDistr_sub, toDistr_sub,
-      toDistr_inclusion, toDistr_inclusion, ← hw,
-      toDistr_quantizeSobolev_congr hrem _ hremK (toDistr_inclusion _ u).symm]
+    rw [hid s u, toDistr_sub, toDistr_sub, toDistr_inclusion, toDistr_inclusion, ← hw,
+      toDistr_quantizeSobolev_congr rfl hremK hremK (toDistr_inclusion _ u).symm]
   have hZ : ‖rem.quantizeSobolev hremK (s - 1) v‖ ≤
       max C₁ 0 * (‖smulLeftCLM (s - 1) χ v‖ + ‖BesselPotentialSpace.inclusion hrs u‖) := by
     refine (hC₁ v).trans ?_
@@ -246,6 +285,88 @@ theorem IsEllipticAbove.exists_norm_smulLeftCLM_le {p : Symbol n V W m} (hp : p.
     (hap.mono fun x hx ξ hξ ↦ ?_) hrs
   rw [hx]
   exact (he x ξ hξ).1
+
+/-! ### Interior regularity -/
+
+/-- Interior regularity, by induction on the number `k` of derivatives recovered: if `e` is a left
+inverse of `a` at large frequencies on the open set `U`, on which `χ = 1`, and
+`χ Op(a) u ∈ H^{s - m}` for `u ∈ H^t`, then `φ u ∈ H^{min s (t + k)}` for every compactly
+supported Schwartz function `φ` with `tsupport φ ⊆ U`. -/
+private theorem memSobolev_smulLeftCLM_min (ha : a.HasCompactSpatialSupport)
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    (he : ∀ x ∈ U, ∀ ξ, R ≤ ‖ξ‖ → e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V)
+    {χ : 𝓢(CoordinateSpace n, ℂ)} (hχ : HasCompactSupport χ) (hχU : ∀ x ∈ U, χ x = 1)
+    {s t : ℝ} {u : H^{t}(CoordinateSpace n, V)}
+    (hu : (smulLeftCLM (t - m) χ (a.quantizeSobolev ha t u)).toDistr.MemSobolev (s - m) 2)
+    (k : ℕ) : ∀ {φ : 𝓢(CoordinateSpace n, ℂ)}, HasCompactSupport φ → tsupport φ ⊆ U →
+      (smulLeftCLM t φ u).toDistr.MemSobolev (min s (t + k)) 2 := by
+  induction k with
+  | zero =>
+    intro φ _ _
+    exact (memSobolev_toDistr _).mono (by simp)
+  | succ k ih =>
+    intro φ hφ hφU
+    obtain ⟨ψ, hψ, hψU, hψφ⟩ := hφ.isCompact.exists_schwartzMap_cutoff hU hφU
+    obtain ⟨q, hq, sm, hsmK, rem, hremK, hsm, hq0, hrem0, hid⟩ :=
+      exists_toDistr_smulLeftCLM_eq ha he hφ hφU
+    have hχφ : ∀ᶠ x in 𝓝ˢ (tsupport φ), χ x = 1 :=
+      Filter.eventually_of_mem (hU.mem_nhdsSet.2 hφU) hχU
+    -- `Op(q) (Op(a) u)` only depends on `χ Op(a) u ∈ H^{s - m}`, up to a smoothing operator.
+    obtain ⟨r₁, hr₁, hr₁S, hloc₁⟩ :=
+      exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub hq hq0 hχ hχφ
+    have h₁ : (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t u)).toDistr.MemSobolev
+        (min s (t + (k + 1 : ℕ))) 2 := by
+      rw [hloc₁ (t - m) (a.quantizeSobolev ha t u)]
+      refine TemperedDistribution.MemSobolev.sub
+        ((memSobolev_toDistr_quantizeSobolev hq hu).mono ?_)
+        (hr₁S.memSobolev_toDistr_quantizeSobolev hr₁ _ _ _)
+      linarith [min_le_left s (t + (k + 1 : ℕ))]
+    -- `Op(rem) u` only depends on `ψ u`, which lies in `H^{min s (t + k)}` by induction, up to a
+    -- smoothing operator, and `rem` has order `-1`.
+    obtain ⟨r₂, hr₂, hr₂S, hloc₂⟩ :=
+      exists_isSmoothing_toDistr_quantizeSobolev_eq_smulLeftCLM_sub hremK hrem0 hψ hψφ
+    have h₂ : (rem.quantizeSobolev hremK t u).toDistr.MemSobolev (min s (t + (k + 1 : ℕ))) 2 := by
+      rw [hloc₂ t u]
+      refine TemperedDistribution.MemSobolev.sub
+        ((memSobolev_toDistr_quantizeSobolev hremK (ih hψ hψU)).mono ?_)
+        (hr₂S.memSobolev_toDistr_quantizeSobolev hr₂ _ _ _)
+      have hmin : min s (t + (k + 1 : ℕ)) ≤ min s (t + k) + 1 := by
+        rw [← min_add_add_right]
+        push_cast
+        exact min_le_min (by linarith) (by linarith)
+      push_cast at hmin ⊢
+      linarith
+    rw [hid t u]
+    exact (h₁.sub (hsm.memSobolev_toDistr_quantizeSobolev hsmK _ _ _)).sub h₂
+
+/-- **Interior elliptic regularity for locally elliptic symbols.** Let `a` be a symbol of order `m`
+with compact spatial support and `φ` a compactly supported Schwartz function, and suppose that a
+symbol `e` of order `-m` is a left inverse of `a(x, ξ)` at all frequencies `‖ξ‖ ≥ R` and all
+positions `x` near `tsupport φ`. Let `χ` be a Schwartz function equal to `1` near `tsupport φ`. If
+`u ∈ H^t` and `χ Op(a) u ∈ H^{s - m}`, then `φ u ∈ H^s`, for all real `s` and `t`. -/
+theorem memSobolev_smulLeftCLM_of_eventually_comp_eq_id (ha : a.HasCompactSpatialSupport)
+    {φ χ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (he : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, R ≤ ‖ξ‖ →
+      e.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = .id ℂ V)
+    (hχφ : ∀ᶠ x in 𝓝ˢ (tsupport φ), χ x = 1) {s t : ℝ} {u : H^{t}(CoordinateSpace n, V)}
+    (hu : (smulLeftCLM (t - m) χ (a.quantizeSobolev ha t u)).toDistr.MemSobolev (s - m) 2) :
+    (smulLeftCLM t φ u).toDistr.MemSobolev s 2 := by
+  obtain ⟨U, hU, hφU, hUe⟩ := eventually_nhdsSet_iff_exists.1 (he.and hχφ)
+  -- Replace `χ` by a compactly supported cutoff `χ'` with `χ' = χ' χ`.
+  obtain ⟨χ', hχ', hχ'U, hχ'φ⟩ := hφ.isCompact.exists_schwartzMap_cutoff hU hφU
+  obtain ⟨U', hU', hφU', hU'χ'⟩ := eventually_nhdsSet_iff_exists.1 hχ'φ
+  have hχχ' : (χ : CoordinateSpace n → ℂ) * χ' = χ' := funext fun x ↦ by
+    by_cases hx : x ∈ tsupport χ'
+    · simp [(hUe x (hχ'U hx)).2]
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  have hu' : (smulLeftCLM (t - m) χ' (a.quantizeSobolev ha t u)).toDistr.MemSobolev (s - m) 2 := by
+    rw [toDistr_smulLeftCLM] at hu
+    have h := hu.smulLeftCLM χ'
+    rwa [TemperedDistribution.smulLeftCLM_smulLeftCLM_apply χ.hasTemperateGrowth
+      χ'.hasTemperateGrowth, hχχ', ← toDistr_smulLeftCLM] at h
+  have h := memSobolev_smulLeftCLM_min ha (hU.inter hU') (fun x hx ↦ (hUe x hx.1).1) hχ'
+    (fun x hx ↦ hU'χ' x hx.2) hu' ⌈s - t⌉₊ hφ (Set.subset_inter hφU hφU')
+  rwa [min_eq_left (by linarith [Nat.le_ceil (s - t)])] at h
 
 end Symbol
 
