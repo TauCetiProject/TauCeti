@@ -101,7 +101,8 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
     simpa only [hri] using hqdisj
   have hinj (i : ι) : InjOn (R i) D := injOn_comp_euclideanSpace_proj_preimage (hqinj i) _
   have hr := integralTopForm_eq_oriented_parametrizations l
-    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis φ hi hD hZ.countable himage hdisj hinj e hqd hqo
+    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis φ hi hD hZ.countable.isNullSet himage hdisj hinj
+    e hqd hqo
   rw [OrthonormalBasis.addHaar_eq_volume] at hr
   have hic (i : ι) : IntervalIntegrable (circulationFun P Q (γ i).extend) volume 0 1 := by
     have hparam := (hr.1 i).congr_fun (heval i) hD

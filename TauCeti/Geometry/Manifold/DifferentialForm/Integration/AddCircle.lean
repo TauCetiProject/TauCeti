@@ -65,7 +65,8 @@ theorem integralTopForm_eq_setIntegral {φ : RoughForm 𝓘(ℝ) (AddCircle p) �
       ∫ t in Ico a (a + p), φ t fun _ ↦ (1 : ℝ) := by
   obtain ⟨l, hl⟩ := (AddCircle.orientation p).exists_lift
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.singleton (Fin 1) ℝ) φ hφ
-    (Q := ((↑) : ℝ → AddCircle p)) (D := Ico a (a + p)) measurableSet_Ico countable_empty
+    (Q := ((↑) : ℝ → AddCircle p)) (D := Ico a (a + p)) measurableSet_Ico
+    countable_empty.isNullSet
     (by rw [compl_empty, coe_image_Ico_eq])
     (fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
     (fun _ ↦ ContinuousLinearEquiv.refl ℝ ℝ) (fun t _ ↦ hasMFDerivAt_coe p t)
@@ -109,7 +110,7 @@ theorem integralTopForm_prod_eq_setIntegral
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.finTwoProd ℝ) φ hφ
     (Q := Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q))
     (D := Ico a (a + p) ×ˢ Ico b (b + q))
-    (measurableSet_Ico.prod measurableSet_Ico) countable_empty
+    (measurableSet_Ico.prod measurableSet_Ico) countable_empty.isNullSet
     (by rw [compl_empty, prodMap_image_prod, coe_image_Ico_eq, coe_image_Ico_eq, univ_prod_univ])
     (InjOn.prodMap (fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)
       fun _ hs _ ht hst ↦ (coe_eq_coe_iff_of_mem_Ico hs ht).mp hst)

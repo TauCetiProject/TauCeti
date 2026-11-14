@@ -314,7 +314,7 @@ private theorem integralTopForm_sphereVolumeForm_basisFun :
     (IsSmoothForm.integrableTopForm
       (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.isSmoothForm hc
       (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis)
-    MeasurableSet.univ (Set.countable_singleton southPole)
+    MeasurableSet.univ (Set.countable_singleton southPole).isNullSet
     (by rw [Set.image_univ, range_stereoSphere]) injective_stereoSphere.injOn stereoDerivEquiv
     (fun z _ ↦ hasMFDerivAt_stereoSphere z)
     (fun z _ ↦ by

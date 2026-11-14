@@ -330,7 +330,8 @@ theorem integralTopForm_circleOrientation_circleAngularForm :
     (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis circleAngularForm
     (isSmoothForm_circleAngularForm.integrableTopForm hc
       (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis)
-    hD (Set.countable_singleton _) image_circleParam injOn_circleParam circleParamDerivEquiv
+    hD (Set.countable_singleton _).isNullSet image_circleParam injOn_circleParam
+    circleParamDerivEquiv
     (fun z _ ↦ hasMFDerivAt_circleParam z)
     (fun z _ ↦ by
       rw [← Manifold.Orientation.orientationAt_mk, hl, map_circleParamDerivEquiv_orientation])
