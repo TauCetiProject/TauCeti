@@ -26,7 +26,8 @@ forward images `φ t (ψ (U))` of any piece of the disc around `z₀` eventually
 `{(h t v, v) | ‖v‖ < R}` of maps `h t` on the ball of radius `R` of the unstable set, and the
 maps `h t` tend to zero in `C^n` uniformly on that ball
 (`TauCeti.exists_splitQuadraticFlow_graph_tendstoUniformlyOn_iteratedFDeriv`). Explicitly,
-`h t v = e^{-t} g (e^{-t} v)` for the `C^n` map `g` whose graph is the disc near `(x₀, 0)`.
+`h t v = e^{-t} g (e^{-t} v)` for the map `g`, `C^n` at `0`, whose graph is the disc near
+`(x₀, 0)`.
 
 As a consequence every point of the unstable set is a limit of points of the forward images of the
 disc at arbitrarily large times
@@ -61,10 +62,10 @@ variable {F Eₛ Eᵤ : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Compl
   [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ] [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ]
   {n : ℕ∞ω} {z₀ : F} {ψ : F → WithLp 2 (Eₛ × Eᵤ)} {ψ' : F →L[ℝ] WithLp 2 (Eₛ × Eᵤ)} {U : Set F}
 
-/-- **The λ-lemma for the split hyperbolic flow.** Let `ψ` be a `C^n` disc, `n ≥ 1`, through a
-point `ψ z₀` of the stable set `y = 0`, transverse to it: the derivative of its expanding
+/-- **The λ-lemma for the split hyperbolic flow.** Let `ψ` be a disc, `C^n` at `z₀` with `n ≥ 1`,
+through a point `ψ z₀` of the stable set `y = 0`, transverse to it: the derivative of its expanding
 component at `z₀` is invertible. Fix a neighbourhood `U` of `z₀` and a radius `R`. Then there is
-a `C^n` map `g` from the expanding factor to the contracting one, with `g 0` the contracting
+a map `g` from the expanding factor to the contracting one, `C^n` at `0`, with `g 0` the contracting
 component of `ψ z₀`, such that
 
 * for all large `t`, the image under the flow at time `t` of the part of the disc over `U`
@@ -123,10 +124,10 @@ theorem exists_splitQuadraticFlow_graph_tendstoUniformlyOn_iteratedFDeriv
   · simpa only [htransform] using hconv i hi
 
 /-- **The unstable set lies in the closure of the forward images of a transverse disc.** Let `ψ`
-be a `C^n` disc, `n ≥ 1`, through a point `ψ z₀` of the stable set `y = 0`, with the derivative
-at `z₀` of its expanding component invertible. Then every point `(0, v)` of the unstable set is a
-limit of points of the images of the part of the disc over any neighbourhood `U` of `z₀` under the
-flow at times `t ≥ T₀`, for every `T₀`. -/
+be a disc, `C^n` at `z₀` with `n ≥ 1`, through a point `ψ z₀` of the stable set `y = 0`, with the
+derivative at `z₀` of its expanding component invertible. Then every point `(0, v)` of the unstable
+set is a limit of points of the images of the part of the disc over any neighbourhood `U` of `z₀`
+under the flow at times `t ≥ T₀`, for every `T₀`. -/
 theorem toLp_zero_mem_closure_iUnion_splitQuadraticFlow_image
     (hψ : ContDiffAt ℝ n ψ z₀) (hψ' : HasFDerivAt ψ ψ' z₀)
     (hψ'i : (WithLp.sndL 2 ℝ Eₛ Eᵤ ∘L ψ').IsInvertible) (hψ₀ : (ψ z₀).snd = 0) (hn : n ≠ 0)

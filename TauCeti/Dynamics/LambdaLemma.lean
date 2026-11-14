@@ -34,11 +34,12 @@ their time reversals with the roles of the two factors exchanged.
   order at most `n` are bounded; so the transformed maps and their derivatives up to order `n`
   tend to zero uniformly on that ball
   (`TauCeti.tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm`).
-* **Transverse discs are graphs.** A `C^n` disc `z ↦ (a z, b z)` whose unstable component `b` has
-  invertible derivative at `z₀` is, near `z₀`, the graph of the `C^n` map `a ∘ b⁻¹`, by the
-  inverse function theorem (`TauCeti.exists_contDiffAt_graph_of_isInvertible`). Transversality to
-  the stable factor at a point of the disc with `b z₀ = 0` means exactly that the derivative of `b`
-  at `z₀` is onto; for a disc of the dimension of `Eᵤ` it is then invertible.
+* **Transverse discs are graphs.** A disc `z ↦ (a z, b z)`, `C^n` at `z₀`, whose unstable
+  component `b` has invertible derivative at `z₀` is, near `z₀`, the graph of the map `a ∘ b⁻¹`,
+  which is `C^n` at `b z₀`, by the inverse function theorem
+  (`TauCeti.exists_contDiffAt_graph_of_isInvertible`). Transversality to the stable factor at a
+  point of the disc with `b z₀ = 0` means exactly that the derivative of `b` at `z₀` is onto; for a
+  disc of the dimension of `Eᵤ` it is then invertible.
 * **The λ-lemma.** Combining the two, for every neighbourhood `U` of `z₀` in the source of the
   disc and every radius `R`, the image under `S t × T t` of the part of the disc over `U` eventually
   contains the graph of a map on the ball `‖v‖ < R` of the unstable factor, and these maps tend to
@@ -97,11 +98,8 @@ theorem eventually_contDiffOn_comp_comp_symm
 
 /-- **The graph transform converges to zero in `C^n`.** Let `‖S t‖ → 0` and `‖(T t)⁻¹‖ → 0`
 along `l`, and let `g` be `C^n` at `0`. For every `i ≤ n`, the `i`-th derivatives of the maps
-`v ↦ S t (g ((T t)⁻¹ v))` tend to zero uniformly on the ball of radius `R`.
-
-The graphs of these maps are the images of the graph of `g` under `S t × T t`. The `i`-th
-derivative at `v` is bounded by `‖S t‖ ‖(T t)⁻¹‖ ^ i` times the `i`-th derivative of `g` at
-`(T t)⁻¹ v`, which eventually lies in a neighbourhood of `0` where that derivative is bounded. -/
+`v ↦ S t (g ((T t)⁻¹ v))`, whose graphs are the images of the graph of `g` under `S t × T t`,
+tend to zero uniformly on the ball of radius `R`. -/
 theorem tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm
     (hS : Tendsto (fun t ↦ ‖S t‖) l (𝓝 0))
     (hT : Tendsto (fun t ↦ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖) l (𝓝 0)) (hg : ContDiffAt ℝ n g 0)
@@ -109,6 +107,9 @@ theorem tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm
     TendstoUniformlyOn (fun t v ↦ iteratedFDeriv ℝ i (fun v ↦ S t (g ((T t).symm v))) v) 0 l
       (ball 0 R) := by
   have hgi : ContDiffAt ℝ i g 0 := hg.of_le hi
+  -- The `i`-th derivative at `v` is bounded by `‖S t‖ ‖(T t)⁻¹‖ ^ i` times the `i`-th derivative
+  -- of `g` at `(T t)⁻¹ v`, which eventually lies in a neighbourhood of `0` where that derivative
+  -- is bounded.
   -- Near `0`, `g` is `C^i` and its `i`-th derivative is bounded by `C`.
   set C := ‖iteratedFDeriv ℝ i g 0‖ + 1
   have hnear : ∀ᶠ w in 𝓝 (0 : Eᵤ), ContDiffAt ℝ i g w ∧ ‖iteratedFDeriv ℝ i g w‖ < C :=
@@ -168,11 +169,11 @@ theorem tendstoUniformlyOn_fderiv_comp_comp_symm
   filter_upwards [h ε hε] with t ht v hv
   simpa [dist_zero_left, norm_iteratedFDeriv_one] using ht v hv
 
-/-- **A transverse disc is a graph over the unstable factor.** Let `z ↦ (a z, b z)` be a `C^n`
-disc, `n ≥ 1`, whose second component `b` has invertible derivative at `z₀`. Then near `b z₀`
-there is a `C^n` map `g` with `g (b z₀) = a z₀` whose graph is covered by the part of the disc over
-any prescribed neighbourhood `U` of `z₀`: every `w` near `b z₀` is `b z` for some `z ∈ U` with
-`a z = g w`.
+/-- **A transverse disc is a graph over the unstable factor.** Let `z ↦ (a z, b z)` be a disc,
+`C^n` at `z₀` with `n ≥ 1`, whose second component `b` has invertible derivative at `z₀`. Then
+there is a map `g`, `C^n` at `b z₀`, with `g (b z₀) = a z₀` whose graph near `b z₀` is covered
+by the part of the disc over any prescribed neighbourhood `U` of `z₀`: every `w` near `b z₀` is
+`b z` for some `z ∈ U` with `a z = g w`.
 
 The map `g` is `a ∘ b⁻¹` for the local inverse of `b` given by the inverse function theorem. -/
 theorem exists_contDiffAt_graph_of_isInvertible [CompleteSpace F] {a : F → Eₛ} {b : F → Eᵤ}
@@ -190,10 +191,10 @@ theorem exists_contDiffAt_graph_of_isInvertible [CompleteSpace F] {a : F → E�
   exact ⟨_, hwU, rfl, hw⟩
 
 /-- **The λ-lemma for linear hyperbolic maps.** Let `‖S t‖ → 0` and `‖(T t)⁻¹‖ → 0` along `l`,
-and let `z ↦ (a z, b z)` be a `C^n` disc, `n ≥ 1`, through the point `(a z₀, 0)` of the stable
-factor, transverse to it in the sense that the derivative of `b` at `z₀` is invertible. Fix a
-neighbourhood `U` of `z₀` and a radius `R`. Then there is a `C^n` map `g` with `g 0 = a z₀` such
-that:
+and let `z ↦ (a z, b z)` be a disc, `C^n` at `z₀` with `n ≥ 1`, through the point `(a z₀, 0)` of
+the stable factor, transverse to it in the sense that the derivative of `b` at `z₀` is invertible.
+Fix a neighbourhood `U` of `z₀` and a radius `R`. Then there is a map `g`, `C^n` at `0`, with
+`g 0 = a z₀` such that:
 
 * eventually along `l`, the image of the part of the disc over `U` under `S t × T t` contains the
   graph of `v ↦ S t (g ((T t)⁻¹ v))` over the ball `‖v‖ < R` of the unstable factor;
