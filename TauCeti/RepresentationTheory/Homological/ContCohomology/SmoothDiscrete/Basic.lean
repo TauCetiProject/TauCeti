@@ -170,10 +170,7 @@ open CategoryTheory in
 `ContinuousSMul G` of the same action on the same space, by `TopRep.toActionTopModFunc_smul`;
 `Action.IsContinuous` is by definition the left-hand `ContinuousSMul`. -/
 lemma isContinuous_toActionTopModFunc_iff (X : TopRep R G) :
-    (toActionTopModFunc.obj X).IsContinuous ↔ ContinuousSMul G X.V := by
-  change ContinuousSMul G ((forget₂ (Action (TopModuleCat R) G) TopCat).obj
-    (toActionTopModFunc.obj X)) ↔ ContinuousSMul G X.V
-  exact Iff.rfl
+    (toActionTopModFunc.obj X).IsContinuous ↔ ContinuousSMul G X.V := Iff.rfl
 
 end ActionTop
 
@@ -188,9 +185,7 @@ attribute [local instance] distribMulAction
 `MulAction.stabilizer`, in which `continuousSMul_iff_stabilizer_isOpen` is stated, and that
 phrasing. -/
 lemma coe_stabilizer (X : TopRep R G) (x : X.V) :
-    (MulAction.stabilizer G x : Set G) = {g : G | X.ρ g x = x} := by
-  ext g
-  simp [MulAction.mem_stabilizer_iff]
+    (MulAction.stabilizer G x : Set G) = {g : G | X.ρ g x = x} := (rfl)
 
 end Group
 
@@ -266,11 +261,7 @@ structure IsSmoothDiscrete (X : TopRep R G) : Prop where
 discrete. -/
 lemma isSmoothDiscrete_of_ρ_apply_eq_self (X : TopRep R G) [DiscreteTopology X.V]
     (htriv : ∀ (g : G) (x : X.V), X.ρ g x = x) : IsSmoothDiscrete R X := by
-  refine ⟨inferInstance, fun x ↦ ?_⟩
-  have hstabilizer : {g : G | X.ρ g x = x} = Set.univ :=
-    Set.eq_univ_of_forall fun g ↦ htriv g x
-  rw [hstabilizer]
-  exact isOpen_univ
+  exact ⟨inferInstance, fun x ↦ by simpa only [htriv, Set.ofPred_true] using isOpen_univ⟩
 
 /-- A trivial representation on a discrete module is smooth discrete: every point stabilizer is
 the whole monoid. -/
@@ -290,12 +281,7 @@ lemma proves the goal `IsSmoothDiscrete R (TopRep.res φ X)` verbatim. -/
 lemma IsSmoothDiscrete.res {H : Type*} [Monoid H] [TopologicalSpace H] {φ : H →* G}
     (hφ : Continuous φ) {X : TopRep R G} (hX : IsSmoothDiscrete R X) :
     IsSmoothDiscrete R (TopRep.of (X.ρ.restrict φ)) := by
-  refine ⟨hX.discreteTopology, fun x ↦ ?_⟩
-  have hpre : {h : H | (TopRep.of (X.ρ.restrict φ)).ρ h x = x} = φ ⁻¹' {g : G | X.ρ g x = x} := by
-    ext h
-    simp
-  rw [hpre]
-  exact (hX.stabilizer_isOpen x).preimage hφ
+  exact ⟨hX.discreteTopology, fun x ↦ (hX.stabilizer_isOpen x).preimage hφ⟩
 
 /-- Smoothness passes to the source of an injective morphism: a continuous injection into a
 discrete space has discrete source, and by equivariance the stabilizer of `x` is the stabilizer
@@ -330,13 +316,7 @@ Read on an arbitrary discrete `X` it says less: the image of `TauCeti.ofDiscrete
 discrete modules is every discrete object, smooth or not
 (`TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod`). -/
 @[simp] lemma ofDiscreteModule_eq_self (X : TopRep R G) [DiscreteTopology X.V] :
-    ofDiscreteModule R G X.V = X := by
-  have h : (ofDiscreteModule R G X.V).ρ = X.ρ :=
-    DFunLike.ext _ _ fun g ↦ ContinuousLinearMap.ext fun (x : X.V) ↦
-      (ofDiscreteModule_ρ_apply_apply g x).trans (TopRep.distribMulAction_smul X g x)
-  -- The two objects have the same underlying module by construction, and `X` is `TopRep.of X.ρ`
-  -- by structure eta, so they agree as soon as their operators do.
-  exact congrArg (TopRep.of (X := X.V)) h
+    ofDiscreteModule R G X.V = X := (rfl)
 
 variable (R G)
 
@@ -346,15 +326,8 @@ lemma ofDiscreteModule_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R 
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M] [SMulCommClass G R M]
     [ContinuousSMul R M] [ContinuousSMul G M] :
     IsSmoothDiscrete R (ofDiscreteModule R G M) := by
-  refine ⟨‹DiscreteTopology M›, fun (m : M) ↦ ?_⟩
-  have hpre : {g : G | (ofDiscreteModule R G M).ρ g m = m} = (fun g : G ↦ g • m) ⁻¹' {m} := by
-    ext g
-    -- After `ofDiscreteModule_ρ_apply_apply` both sides read `g • m = m`; the last step is the
-    -- membership in the singleton, which `simp` leaves at reducible transparency.
-    simp
-    rfl
-  rw [hpre]
-  exact (isOpen_discrete {m}).preimage (by fun_prop)
+  exact ⟨‹DiscreteTopology M›, fun (m : M) ↦
+    (isOpen_discrete {m}).preimage (f := fun g : G ↦ g • m) (by fun_prop)⟩
 
 end IsSmoothDiscrete
 
