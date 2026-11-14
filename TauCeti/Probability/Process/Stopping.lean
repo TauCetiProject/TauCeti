@@ -6,17 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Stopping
+public import TauCeti.Topology.Order.Cadlag
 
 /-!
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
 arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
-the stopping-time property.
+the stopping-time property, as does gluing two stopping times along an event measurable in both
+stopping σ-algebras (`MeasureTheory.IsStoppingTime.piecewise`); in particular, restricting a
+stopping time to an event known at that time by setting it to `⊤` outside (`piecewise_top`) yields
+a stopping time.
 
-Stopping preserves right continuity at each time, including when the stopping time is infinite.
-This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
-arguments retain the right continuity of their native stopped stages.
+Stopping preserves right continuity at each time and preserves the càdlàg property globally
+(`IsCadlag.stoppedProcess`), including when the stopping time is infinite. These pathwise facts
+require no measurability or stopping-time hypothesis and let local-martingale and optional-ray
+arguments retain the path regularity of stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
@@ -26,7 +31,14 @@ fact requires a stopping-time or measurability assumption.
 
 public section
 
-namespace MeasureTheory.IsStoppingTime
+namespace MeasureTheory
+
+/-- The identically infinite time is a stopping time for any filtration. -/
+theorem isStoppingTime_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) : IsStoppingTime ℱ (fun _ ↦ (⊤ : WithTop ι)) :=
+  fun _ ↦ by simp
+
+namespace IsStoppingTime
 
 /-- A stopping time for a filtration is also a stopping time for any larger filtration. -/
 theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
@@ -34,7 +46,41 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
     (hτ : IsStoppingTime ℱ τ) (h : ℱ ≤ 𝒢) : IsStoppingTime 𝒢 τ :=
   fun t => h t _ (hτ.measurableSet_le t)
 
-end MeasureTheory.IsStoppingTime
+/-- The stopping σ-algebra of the identically infinite stopping time is `⨆ t, ℱ t`. -/
+@[simp]
+theorem measurableSpace_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) :
+    (isStoppingTime_top ℱ).measurableSpace = ⨆ t, ℱ t := by
+  ext s
+  simp [IsStoppingTime.measurableSet]
+
+/-- Gluing two stopping times along an event measurable in both stopping σ-algebras yields a
+stopping time, with no ordering assumption between the two times. -/
+theorem piecewise {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {τ η : Ω → WithTop ι} {s : Set Ω} [DecidablePred (· ∈ s)]
+    (hτ : IsStoppingTime ℱ τ) (hη : IsStoppingTime ℱ η)
+    (hsτ : MeasurableSet[hτ.measurableSpace] s)
+    (hsη : MeasurableSet[hη.measurableSpace] s) :
+    IsStoppingTime ℱ (s.piecewise τ η) := by
+  intro t
+  have heq : {ω | s.piecewise τ η ω ≤ t} = s ∩ {ω | τ ω ≤ t} ∪ sᶜ ∩ {ω | η ω ≤ t} := by
+    ext ω
+    by_cases hω : ω ∈ s <;> simp [Set.piecewise, hω]
+  rw [heq]
+  exact (((hτ.measurableSet s).mp hsτ).2 t).union (((hη.measurableSet sᶜ).mp hsη.compl).2 t)
+
+/-- Restricting a stopping time `τ` to an event known at `τ` (setting it to `⊤` on the complement)
+produces a stopping time; this is the Début/Meyer restriction `τ_A`. -/
+theorem piecewise_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {τ : Ω → WithTop ι} {s : Set Ω} [DecidablePred (· ∈ s)]
+    (hτ : IsStoppingTime ℱ τ) (hs : MeasurableSet[hτ.measurableSpace] s) :
+    IsStoppingTime ℱ (s.piecewise τ (fun _ ↦ ⊤)) :=
+  hτ.piecewise (isStoppingTime_top ℱ) hs
+    (hτ.measurableSpace_mono (isStoppingTime_top ℱ) (fun _ ↦ le_top) s hs)
+
+end IsStoppingTime
+
+end MeasureTheory
 
 /-- The finite supremum of stopping times is a stopping time.
 The empty supremum is the constant bottom time. -/
@@ -72,6 +118,24 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
         (fun s hs => ?_) ?_
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
+
+/-- Stopping preserves the càdlàg property of a path globally, without any measurability or
+stopping-time assumption on the random time. At an infinite time the path is unchanged, and at a
+finite time `u` it freezes at `X u ω` on `[u, ∞)` while preserving left limits everywhere. -/
+theorem IsCadlag.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : IsCadlag (X · ω)) :
+    IsCadlag (MeasureTheory.stoppedProcess X τ · ω) := by
+  cases hτ : τ ω with
+  | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
+  | coe u =>
+    have heq : (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := by
+      ext t
+      simp only [MeasureTheory.stoppedProcess, hτ]
+      rw [← WithTop.coe_min]
+      rfl
+    exact heq ▸ hX.comp_min_const u
 
 namespace MeasureTheory
 
