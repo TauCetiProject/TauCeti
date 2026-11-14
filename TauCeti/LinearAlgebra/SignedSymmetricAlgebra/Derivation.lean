@@ -70,27 +70,14 @@ private theorem eq_zero_of_leibniz (s : ℤ → ℤˣ) {D : SignedSym G →ₗ[R
     (hD : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
       D (a * b) = D a * b + s p • (a * D b))
     (hgen : ∀ x, D (generator G x) = 0) : D = 0 := by
-  have hone : D 1 = 0 := by
-    have h := hD (SetLike.GradedOne.one_mem (A := signedSymPiece G)) 1
-    simp only [mul_one, one_mul, left_eq_add] at h
-    exact (smul_eq_zero_iff_eq (s 0)).1 h
-  have hhom : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p → D a = 0 := by
-    intro p a ha
-    refine (homogeneous_induction G (P := fun p a => a ∈ signedSymPiece G p ∧ D a = 0)
-      ⟨SetLike.GradedOne.one_mem, hone⟩
-      (fun p x hx => ⟨generator_mem_signedSymPiece G hx, hgen x⟩)
-      (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
-        rw [hD ha.1, ha.2, hb.2, zero_mul, mul_zero, zero_add]
-        exact smul_zero _⟩)
-      (fun p => ⟨zero_mem _, map_zero D⟩)
-      (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by rw [map_add, ha.2, hb.2, add_zero]⟩)
-      (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by rw [map_smul, ha.2, smul_zero]⟩)
-      ha).2
   ext a
-  induction a using DirectSum.Decomposition.inductionOn (signedSymPiece G) with
-  | zero => simp
-  | homogeneous a => exact hhom a.2
-  | add a b ha hb => simp_all
+  induction a using SignedSym.induction with
+  | algebraMap r => simp [map_algebraMap_of_leibniz (𝒜 := signedSymPiece G) hD]
+  | generator x => exact hgen x
+  | mul u v hu hv =>
+    simp only [LinearMap.zero_apply] at hu hv ⊢
+    rw [map_mul_of_leibniz_of_map_eq_zero (𝒜 := signedSymPiece G) hD u hv, hu, zero_mul]
+  | add u v hu hv => simp_all
 
 section Lift
 
