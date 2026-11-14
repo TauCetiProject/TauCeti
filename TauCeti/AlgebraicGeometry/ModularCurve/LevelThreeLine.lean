@@ -765,7 +765,7 @@ end invariants
 suppose that `3` is invertible in `R`. A point of the level-three ring fixed by the rotation
 `μ ↦ ζ μ` and the involution `μ ↦ (μ + 2) / (μ - 1)` lies in `R[u]`. Thus the `u`-line, which is
 the `j`-line since `j = 27 u`, is the quotient of the level-three line by the tetrahedral group.
-No hypothesis on `2` is needed: the proof takes the orbit sum of `μ³ a`, not of `a`. -/
+No hypothesis on `2` is needed. -/
 theorem isInvariant_tetrahedralGroup {ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : IsUnit (3 : R)) :
     Algebra.IsInvariant R[X] (LevelThreeRing R) (tetrahedralGroup ζ hζ h3) := by
   refine ⟨fun a ha => ?_⟩
@@ -781,7 +781,7 @@ theorem isInvariant_tetrahedralGroup {ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : 
     (AdjoinRoot.powerBasis'_dim _).trans (natDegree_levelThreeRelation R)
   have hgen : pb.gen = mu R := AdjoinRoot.powerBasis'_gen _
   -- The orbit sum of `μ³ a` is `a` times the orbit sum `3 (u - 24)` of `μ³`, and it lies in
-  -- `R[u]`.
+  -- `R[u]`. Using `μ³ a` rather than `a`, whose orbit sum is `12 a`, avoids dividing by `2`.
   obtain ⟨c, hc⟩ : ∃ c, algebraMap R[X] (LevelThreeRing R) c = (3 * (X - 24) : R[X]) • a := by
     refine Submodule.mem_one.mp ?_
     have hμ := orbitSum_mu_pow_three_pow hζ h3 1
