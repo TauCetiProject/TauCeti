@@ -474,9 +474,8 @@ theorem _root_.MDifferentiableAt.iff_comp_isDiffImmersionAt
     exact mem_range_self _
   have hcomp : writtenInExtChartAt J J' (f x) φ ∘ writtenInExtChartAt I J x f =ᶠ[𝓝[range I] a]
       writtenInExtChartAt I J' x (φ ∘ f) := by
-    filter_upwards [hfa (extChartAt_source_mem_nhds (I := J) (f x))] with y hy
-    have hy : f ((extChartAt I x).symm y) ∈ (extChartAt J (f x)).source := hy
-    simp only [writtenInExtChartAt, Function.comp_apply, (extChartAt J (f x)).left_inv hy]
+    simpa only [preimage_univ, univ_inter] using
+      (writtenInExtChartAt_comp (s := univ) hf.continuousWithinAt).symm
   have hΦ : HasFDerivWithinAt (writtenInExtChartAt J J' (f x) φ) (mfderiv J J' φ (f x)) (range J)
       (writtenInExtChartAt I J x f a) := by
     rw [ha, hφd.mfderiv_abuse]
