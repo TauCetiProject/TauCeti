@@ -34,6 +34,7 @@ element `2 p - 1` is again self-adjoint.
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
+* `IsSelfAdjoint.eq_of_same_range`: uniqueness of a self-adjoint element with the same range.
 -/
 
 public section
@@ -89,3 +90,15 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
   exact left_inv_eq_right_inv hstar hRRinv
+
+/-- Two self-adjoint elements agreeing in range with an element `e` are equal.
+For idempotents in a ring, the equations express equality of their principal right ideals. -/
+theorem IsSelfAdjoint.eq_of_same_range {A : Type*} [Semigroup A] [StarMul A] {e p q : A}
+    (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q)
+    (hep : e * p = p) (hpe : p * e = e) (heq : e * q = q) (hqe : q * e = e) :
+    p = q := by
+  have hpq : p * q = q := by rw [← heq, ← mul_assoc, hpe, heq]
+  have hqp : q * p = p := by rw [← hep, ← mul_assoc, hqe, hep]
+  have hpq' : q * p = q := by
+    simpa only [star_mul, hp.star_eq, hq.star_eq] using congrArg star hpq
+  exact hqp.symm.trans hpq'
