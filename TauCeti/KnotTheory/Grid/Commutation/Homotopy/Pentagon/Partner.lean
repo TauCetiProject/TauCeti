@@ -75,14 +75,6 @@ variable {n : ℕ} (G : GridDiagram n) (C C' : ColumnTurn n) {s' : Fin n}
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
-/-- A pentagon pair is counted when its first pentagon is counted by the commutation map of `C`
-and its second by the commutation map of `G.swapColumns a b` at `C'`. -/
-private abbrev IsCountedPentagonPair {x z : GridState n}
-    (D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z) : Prop :=
-  D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
-    D.second ∈ ((G.swapColumns a b).pentagons C' D.middle z).disjSum
-      ((G.swapColumns a b).initialPentagons C' D.middle z)
-
 /-! ### Promoting rectangles to counted pentagons -/
 
 /-- The cut-away column of the replaced line lies in a rectangle with terminal side that line. -/
@@ -197,7 +189,7 @@ private theorem exists_terminalTerminal {x z : GridState n} (E : GridRectangleDe
     (hX1 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.first.toGridRectangle.coveredSquares)
     (hX2 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.second.toGridRectangle.coveredSquares) :
     ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft = D.second.isLeft ∧
         D.toRectangleDecomposition = E := by
   obtain ⟨hPa, hPb⟩ :=
     Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco ht ht'
@@ -207,8 +199,9 @@ private theorem exists_terminalTerminal {x z : GridState n} (E : GridRectangleDe
       hXnext hXcol
   obtain ⟨P, hPe, hP⟩ := G.exists_pentagon C _ h1 hr1 ht hX1 hPa hPb
   obtain ⟨Q, hQe, hQ⟩ := G.exists_reversePentagon C C' hcol hturn _ h2 hr2 hs' hX2 hQb hQa
-  refine ⟨⟨E.middle, .inl P, .inl Q⟩, ⟨Finset.inl_mem_disjSum.mpr hP,
-    Finset.inl_mem_disjSum.mpr hQ⟩, rfl, ?_⟩
+  refine ⟨⟨E.middle, .inl P, .inl Q⟩, (G.mem_pentagonPairDecompositions C C' _).mpr
+    ⟨(G.inl_mem_commutationPentagons C P).mpr hP,
+      ((G.swapColumns a b).inl_mem_commutationPentagons C' Q).mpr hQ⟩, rfl, ?_⟩
   simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
     GridCommutationPentagonBetween.toGridRectangleBetween_inl, hPe, hQe]
 
@@ -223,7 +216,7 @@ private theorem exists_initialInitial {x z : GridState n} (E : GridRectangleDeco
     (hX1 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.first.toGridRectangle.coveredSquares)
     (hX2 : ∀ c, c ≠ a → c ≠ b → (c, G.X c) ∉ E.second.toGridRectangle.coveredSquares) :
     ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft = D.second.isLeft ∧
         D.toRectangleDecomposition = E := by
   obtain ⟨hPa, hPb⟩ :=
     Grid.notMem_cIoo_and_notMem_cIco_of_mem_insert_cIco_of_notMem_cIco ht ht'
@@ -233,8 +226,9 @@ private theorem exists_initialInitial {x z : GridState n} (E : GridRectangleDeco
       hXnext hXcol
   obtain ⟨P, hPe, hP⟩ := G.exists_initialPentagon C _ h1 hl1 ht hX1 hPa hPb
   obtain ⟨Q, hQe, hQ⟩ := G.exists_reverseInitialPentagon C C' hcol hturn _ h2 hl2 hs' hX2 hQb hQa
-  refine ⟨⟨E.middle, .inr P, .inr Q⟩, ⟨Finset.inr_mem_disjSum.mpr hP,
-    Finset.inr_mem_disjSum.mpr hQ⟩, rfl, ?_⟩
+  refine ⟨⟨E.middle, .inr P, .inr Q⟩, (G.mem_pentagonPairDecompositions C C' _).mpr
+    ⟨(G.inr_mem_commutationPentagons C P).mpr hP,
+      ((G.swapColumns a b).inr_mem_commutationPentagons C' Q).mpr hQ⟩, rfl, ?_⟩
   simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
     GridCommutationPentagonBetween.toGridRectangleBetween_inr, hPe, hQe]
 
@@ -254,12 +248,13 @@ private theorem exists_terminalInitial {x z : GridState n} (E : GridRectangleDec
     (hQb : G.X b ∉ Grid.cIoo s' E.second.top)
     (hQa : G.X a ∉ Grid.cIco E.second.bottom s') :
     ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft ≠ D.second.isLeft ∧
         D.toRectangleDecomposition = E := by
   obtain ⟨P, hPe, hP⟩ := G.exists_pentagon C _ h1 hr1 ht hX1 hPa hPb
   obtain ⟨Q, hQe, hQ⟩ := G.exists_reverseInitialPentagon C C' hcol hturn _ h2 hl2 hs' hX2 hQb hQa
-  refine ⟨⟨E.middle, .inl P, .inr Q⟩, ⟨Finset.inl_mem_disjSum.mpr hP,
-    Finset.inr_mem_disjSum.mpr hQ⟩, by simp, ?_⟩
+  refine ⟨⟨E.middle, .inl P, .inr Q⟩, (G.mem_pentagonPairDecompositions C C' _).mpr
+    ⟨(G.inl_mem_commutationPentagons C P).mpr hP,
+      ((G.swapColumns a b).inr_mem_commutationPentagons C' Q).mpr hQ⟩, by simp, ?_⟩
   simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
     GridCommutationPentagonBetween.toGridRectangleBetween_inl,
     GridCommutationPentagonBetween.toGridRectangleBetween_inr, hPe, hQe]
@@ -277,12 +272,13 @@ private theorem exists_initialTerminal {x z : GridState n} (E : GridRectangleDec
     (hQb : G.X b ∉ Grid.cIoo s' E.second.top)
     (hQa : G.X a ∉ Grid.cIco E.second.bottom s') :
     ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft ≠ D.second.isLeft ∧
         D.toRectangleDecomposition = E := by
   obtain ⟨P, hPe, hP⟩ := G.exists_initialPentagon C _ h1 hl1 ht hX1 hPa hPb
   obtain ⟨Q, hQe, hQ⟩ := G.exists_reversePentagon C C' hcol hturn _ h2 hr2 hs' hX2 hQb hQa
-  refine ⟨⟨E.middle, .inr P, .inl Q⟩, ⟨Finset.inr_mem_disjSum.mpr hP,
-    Finset.inl_mem_disjSum.mpr hQ⟩, by simp, ?_⟩
+  refine ⟨⟨E.middle, .inr P, .inl Q⟩, (G.mem_pentagonPairDecompositions C C' _).mpr
+    ⟨(G.inr_mem_commutationPentagons C P).mpr hP,
+      ((G.swapColumns a b).inl_mem_commutationPentagons C' Q).mpr hQ⟩, by simp, ?_⟩
   simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
     GridCommutationPentagonBetween.toGridRectangleBetween_inl,
     GridCommutationPentagonBetween.toGridRectangleBetween_inr, hPe, hQe]
@@ -375,7 +371,7 @@ private theorem exists_mixed_of_terminal_first
     (hX : ∀ c, (c, G.X c) ∈ D.first.toGridRectangle.coveredSquares ∪
       D.second.toGridRectangle.coveredSquares → c = a) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
         D'.toRectangleDecomposition = D := by
   have hbot := D.second_bottom_eq_first_bottom_of_right_eq_left hcommon
   have hl : D.second.left = b := hcommon.symm.trans hr
@@ -412,7 +408,7 @@ private theorem exists_mixed_of_initial_second
     (hX : ∀ c, (c, G.X c) ∈ D.first.toGridRectangle.coveredSquares ∪
       D.second.toGridRectangle.coveredSquares → c = b) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
         D'.toRectangleDecomposition = D := by
   have hbot := D.second_bottom_eq_first_bottom_of_right_eq_left hcommon
   have hr : D.first.right = b := hcommon.trans hl
@@ -451,7 +447,7 @@ private theorem exists_mixed_of_initial_first
     (hX : ∀ c, (c, G.X c) ∈ D.first.toGridRectangle.coveredSquares ∪
       D.second.toGridRectangle.coveredSquares → c = b) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
         D'.toRectangleDecomposition = D := by
   have htop := D.second_top_eq_first_top_of_left_eq_right hcommon
   have hr : D.second.right = b := hcommon.symm.trans hl
@@ -492,7 +488,7 @@ private theorem exists_mixed_of_terminal_second
     (hX : ∀ c, (c, G.X c) ∈ D.first.toGridRectangle.coveredSquares ∪
       D.second.toGridRectangle.coveredSquares → c = a) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft ≠ D'.second.isLeft ∧
         D'.toRectangleDecomposition = D := by
   have htop := D.second_top_eq_first_top_of_left_eq_right hcommon
   have hl : D.first.left = b := hcommon.trans hr
@@ -546,7 +542,7 @@ private theorem exists_sameSide_of_initial_first
     (hl : D.first.left = b) (hlow : C.turnRow ∈ Grid.cIco D.first.bottom D.first.top)
     (hup : s' ∈ Grid.cIoo C.turnRow D.first.top) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft = D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft = D'.second.isLeft ∧
         D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
@@ -589,7 +585,7 @@ private theorem exists_sameSide_of_terminal_second
     (hr : D.second.right = b) (hlow : s' ∈ Grid.cIco D.second.bottom D.second.top)
     (hup : C.turnRow ∈ Grid.cIoo s' D.second.top) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft = D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft = D'.second.isLeft ∧
         D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rw [D.second_bottom_eq_first_bottom_of_right_eq_left hcommon] at hlow
@@ -633,7 +629,7 @@ private theorem exists_sameSide_of_terminal_first
     (hr : D.first.right = b) (hlow : s' ∈ Grid.cIco D.first.bottom D.first.top)
     (hup : C.turnRow ∈ Grid.cIoo s' D.first.top) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft = D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft = D'.second.isLeft ∧
         D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
@@ -676,7 +672,7 @@ private theorem exists_sameSide_of_initial_second
     (hl : D.second.left = b) (hlow : C.turnRow ∈ Grid.cIco D.second.bottom D.second.top)
     (hup : s' ∈ Grid.cIoo C.turnRow D.second.top) :
     ∃ D' : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D' ∧ D'.first.isLeft = D'.second.isLeft ∧
+      D' ∈ G.pentagonPairDecompositions C C' x z ∧ D'.first.isLeft = D'.second.isLeft ∧
         D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rw [D.second_top_eq_first_top_of_left_eq_right hcommon] at hlow hup
@@ -739,10 +735,10 @@ private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inl {x z : GridSta
       ¬(toRectangleDecomposition (.inl F)).IsRecut F'.toRectangleDecomposition)
     (hmixed : (toRectangleDecomposition (.inl F)).HasMixedSideOverlap) :
     (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft = D.second.isLeft ∧
         D.toRectangleDecomposition.IsRecut (toRectangleDecomposition (.inl F))) ∨
       ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+        D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft ≠ D.second.isLeft ∧
           D.toRectangleDecomposition = toRectangleDecomposition (.inl F) := by
   obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
   obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
@@ -799,10 +795,10 @@ private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inr {x z : GridSta
       ¬(toRectangleDecomposition (.inr F)).IsRecut F'.toRectangleDecomposition)
     (hmixed : (toRectangleDecomposition (.inr F)).HasMixedSideOverlap) :
     (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft = D.second.isLeft ∧
         D.toRectangleDecomposition.IsRecut (toRectangleDecomposition (.inr F))) ∨
       ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+        D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft ≠ D.second.isLeft ∧
           D.toRectangleDecomposition = toRectangleDecomposition (.inr F) := by
   obtain ⟨hone, hside⟩ := (GridRectangleDecomposition.hasMixedSideOverlap_iff _).mp hmixed
   obtain ⟨h1, h2⟩ := isEmpty_of_mem_disjSum_of_mem_iff hH hF
@@ -865,18 +861,16 @@ theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n
       ¬F.toRectangleDecomposition.IsRecut F'.toRectangleDecomposition)
     (hmixed : F.toRectangleDecomposition.HasMixedSideOverlap) :
     ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      (D.first ∈ (G.pentagons C x D.middle).disjSum (G.initialPentagons C x D.middle) ∧
-        D.second ∈ ((G.swapColumns a b).pentagons C' D.middle z).disjSum
-          ((G.swapColumns a b).initialPentagons C' D.middle z)) ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧
       (D.first.isLeft = D.second.isLeft ∧
           D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition ∨
         D.first.isLeft ≠ D.second.isLeft ∧
           D.toRectangleDecomposition = F.toRectangleDecomposition) := by
   suffices h : (∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-      G.IsCountedPentagonPair C C' D ∧ D.first.isLeft = D.second.isLeft ∧
+      D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft = D.second.isLeft ∧
         D.toRectangleDecomposition.IsRecut F.toRectangleDecomposition) ∨
       ∃ D : GridPentagonPairDecomposition a C.turnRow C'.column C'.turnRow x z,
-        G.IsCountedPentagonPair C C' D ∧ D.first.isLeft ≠ D.second.isLeft ∧
+        D ∈ G.pentagonPairDecompositions C C' x z ∧ D.first.isLeft ≠ D.second.isLeft ∧
           D.toRectangleDecomposition = F.toRectangleDecomposition by
     rcases h with ⟨D, hD, hside, hD'⟩ | ⟨D, hD, hside, hD'⟩
     exacts [⟨D, hD, Or.inl ⟨hside, hD'⟩⟩, ⟨D, hD, Or.inr ⟨hside, hD'⟩⟩]
