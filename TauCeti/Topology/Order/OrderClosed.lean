@@ -25,6 +25,9 @@ establishes.
   `0` along `l`, then `v ≤ K`.
 * `Filter.Tendsto.exists_forall_le_of_le`: a function tending to `b` along `cofinite` that is at
   least `b` somewhere attains its supremum.
+* `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
+  monotonicity of an index map matching boundary limits of sections on `C` along a nonempty
+  `B ⊆ closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
 -/
 
 public section
@@ -58,3 +61,42 @@ theorem Filter.Tendsto.exists_forall_le_of_le {α β : Type*} [LinearOrder β] [
   by_cases hs : v s₁ ≤ v s
   · exact htmax s (by simpa using hs)
   · exact (not_le.mp hs).le.trans (by simpa using ht)
+
+namespace TauCeti
+
+section BoundarySection
+
+variable {X α ι κ : Type*} [TopologicalSpace X] [TopologicalSpace α]
+  {C B : Set X} {θ : ι → C → α} {η : κ → B → α} {σ σ' : ι → κ}
+
+/-- Over a nonempty boundary set `B ⊆ closure C` on which the sections `η` are pointwise
+distinct, at most one index map `σ` can match the limits of `θ` along `C` to `η`. -/
+theorem eq_of_tendsto_section [T2Space α] (hBC : B ⊆ closure C) (hB : B.Nonempty)
+    (hη : ∀ x : B, Function.Injective fun l ↦ η l x)
+    (hσ : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
+    (hσ' : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ' i) x))) :
+    σ = σ' := by
+  obtain ⟨x₀, hx₀⟩ := hB
+  have : (comap (Subtype.val : C → X) (𝓝 x₀)).NeBot :=
+    mem_closure_iff_comap_neBot.mp (hBC hx₀)
+  funext i
+  exact hη ⟨x₀, hx₀⟩ (tendsto_nhds_unique (hσ i ⟨x₀, hx₀⟩) (hσ' i ⟨x₀, hx₀⟩))
+
+/-- If pointwise monotone sections `θ` on `C` converge along `C` at a nonempty `B ⊆ closure C`
+to pointwise strictly monotone sections `η` on `B`, the matching index map `σ` is monotone. -/
+theorem monotone_of_tendsto_section [Preorder ι] [LinearOrder κ] [Preorder α]
+    [OrderClosedTopology α] (hBC : B ⊆ closure C) (hB : B.Nonempty)
+    (hθ : ∀ y : C, Monotone fun i ↦ θ i y) (hη : ∀ x : B, StrictMono fun l ↦ η l x)
+    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x))) :
+    Monotone σ := by
+  obtain ⟨x₀, hx₀⟩ := hB
+  have : (comap (Subtype.val : C → X) (𝓝 x₀)).NeBot :=
+    mem_closure_iff_comap_neBot.mp (hBC hx₀)
+  intro i j hij
+  exact (hη ⟨x₀, hx₀⟩).le_iff_le.mp <|
+    le_of_tendsto_of_tendsto (hlim i ⟨x₀, hx₀⟩) (hlim j ⟨x₀, hx₀⟩)
+      (Eventually.of_forall fun y ↦ hθ y hij)
+
+end BoundarySection
+
+end TauCeti

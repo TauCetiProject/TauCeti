@@ -57,10 +57,10 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.stackCells_inclusion`: restricting a stack to a subset of its base cuts each ambient
   cell down to the part lying over that subset.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
-  `TauCeti.sUnion_biUnion_stackCells`, `TauCeti.pairwiseDisjoint_biUnion_stackCells`,
-  `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack (and of a family of
-  stacks over disjoint bases) partition the cylinder over their base, and over a connected base
-  they are connected.
+  `TauCeti.tail_mem_of_mem_stackCells`, `TauCeti.sUnion_biUnion_stackCells`,
+  `TauCeti.pairwiseDisjoint_biUnion_stackCells`, `TauCeti.isConnected_of_mem_stackCells`: the
+  ambient cells of a stack (and of a family of stacks over disjoint bases) partition the cylinder
+  over their base, and over a connected base they are connected.
 * `TauCeti.ordConnected_setOf_cons_mem_of_mem_stackCells`: every ambient cell meets each line
   parallel to the distinguished axis in an order-connected set.
 
@@ -699,6 +699,11 @@ theorem sUnion_biUnion_stackCells {𝒟 : Set (Set (Fin n → α))} {k : Set (Fi
   simp_rw [sUnion_iUnion, iUnion₂_congr fun C hC ↦ sUnion_stackCells (hθ C hC),
     ← preimage_iUnion, ← sUnion_eq_biUnion]
 
+/-- Every point of a cell in `stackCells C θ` projects under `Fin.tail` into `C`. -/
+theorem tail_mem_of_mem_stackCells {E : Set (Fin (n + 1) → α)} (hE : E ∈ stackCells C θ)
+    {v : Fin (n + 1) → α} (hv : v ∈ E) : Fin.tail v ∈ C := by
+  rcases mem_stackCells.mp hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.mp hv).1
+
 /-- If `𝒟` is pairwise disjoint and each stack `θ C` is pointwise injective in its section index,
 the cells of all these stacks are pairwise disjoint. -/
 theorem pairwiseDisjoint_biUnion_stackCells {𝒟 : Set (Set (Fin n → α))}
@@ -710,12 +715,8 @@ theorem pairwiseDisjoint_biUnion_stackCells {𝒟 : Set (Set (Fin n → α))}
   obtain ⟨C₂, hC₂, hE₂C⟩ := mem_iUnion₂.mp hE₂
   rcases eq_or_ne C₁ C₂ with rfl | hCC
   · exact pairwiseDisjoint_stackCells (hθ C₁ hC₁) hE₁C hE₂C hne
-  · refine disjoint_left.mpr fun v hv₁ hv₂ ↦ ?_
-    have ht₁ : Fin.tail v ∈ C₁ := by
-      rcases mem_stackCells.mp hE₁C with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.mp hv₁).1
-    have ht₂ : Fin.tail v ∈ C₂ := by
-      rcases mem_stackCells.mp hE₂C with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.mp hv₂).1
-    exact disjoint_left.mp (hdisj hC₁ hC₂ hCC) ht₁ ht₂
+  · exact disjoint_left.mpr fun v hv₁ hv₂ ↦ disjoint_left.mp (hdisj hC₁ hC₂ hCC)
+      (tail_mem_of_mem_stackCells hE₁C hv₁) (tail_mem_of_mem_stackCells hE₂C hv₂)
 
 /-- Every cell of a stack meets each line parallel to the distinguished axis in an
 order-connected set: a point or nothing for a section, an open interval for a sector. -/

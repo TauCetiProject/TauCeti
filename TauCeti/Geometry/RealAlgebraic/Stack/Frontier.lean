@@ -9,6 +9,7 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Selection
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 public import TauCeti.Topology.Algebra.Polynomial.Root.Extension
 import TauCeti.Analysis.Analytic.Submanifold.Dimension
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Frontier compatibility and approach regions of stacks
@@ -17,7 +18,8 @@ Let `C` and `B` be subsets of `ℝⁿ` with `B ⊆ closure C`, carrying strictly
 `θ : Fin k → C → ℝ` and `η : Fin m → B → ℝ`. Suppose each section `θ i` converges along `C` at
 every point of `B` to a section `η (σ i)` of the boundary stack. Then:
 
-* `σ : Fin k → Fin m` is unique (over a nonempty `B`) and monotone;
+* `σ : Fin k → Fin m` is unique (over a nonempty `B`) and monotone
+  (`TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`);
 * the closure of the `i`-th ambient section over `C`, intersected with the cylinder over `B`, is
   exact: it equals the `(σ i)`-th ambient section over `B`;
 * the closure of the `j`-th ambient sector over `C`, intersected with the cylinder over `B`, is
@@ -42,16 +44,19 @@ invariant across inductive coordinate liftings on cylinders and bounded open box
 
 ## Main declarations
 
-* `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`,
-  `TauCeti.tail_mem_closure_of_mem_closure_stackCells`: uniqueness and monotonicity of the
-  boundary section-matching map `σ`, and base-closure projection of stack cells.
+* `TauCeti.tail_mem_closure_of_mem_closure_stackCells`: base-closure projection of stack cells.
 * `TauCeti.closure_image_cylinder_sectionSet_inter_eq`,
+  `TauCeti.eq_image_cylinder_sectionSet_of_nonempty_inter_closure`,
   `TauCeti.closure_image_cylinder_sectorSet_inter_eq`,
   `TauCeti.closure_image_cylinder_sectorSet_inter_eq_union`: exact trace of section and sector
   closures over `B ⊆ closure C`.
 * `TauCeti.subset_closure_of_mem_stackCells_of_nonempty_inter`,
   `TauCeti.subset_closure_of_mem_stackCells_self_of_nonempty_inter`: first part of the frontier
   condition (`E' ∩ closure E ≠ ∅ → E' ⊆ closure E`).
+* `TauCeti.image_cylinder_sectionSet_subset_closure_sectorSet_iff`,
+  `TauCeti.image_cylinder_sectorSet_subset_closure_sectorSet_iff`,
+  `TauCeti.eq_sectionSet_and_eq_sectorSet_of_subset_closure_of_ne`: same-base closure incidence
+  characterization between sections and sectors.
 * `TauCeti.dim_lt_of_mem_stackCells_of_subset_closure`,
   `TauCeti.dim_lt_of_mem_stackCells_self_of_subset_closure`: second part of the frontier
   condition (`E' ⊆ closure E, E' ≠ E → dim E' < dim E`) for analytic submanifold cells.
@@ -91,35 +96,7 @@ variable {n k m : ℕ}
 section Topological
 
 variable {α : Type*} [TopologicalSpace α] {C B : Set (Fin n → α)}
-  {θ : Fin k → C → α} {η : Fin m → B → α} {σ σ' : Fin k → Fin m}
-
-/-- Over a nonempty boundary set `B ⊆ closure C` on which the sections `η` are pointwise
-distinct, at most one index map `σ` can match the limits of `θ` along `C` to `η`. -/
-theorem eq_of_tendsto_section [T2Space α] (hBC : B ⊆ closure C) (hB : B.Nonempty)
-    (hη : ∀ x : B, Injective fun l ↦ η l x)
-    (hσ : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
-    (hσ' : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ' i) x))) :
-    σ = σ' := by
-  obtain ⟨x₀, hx₀⟩ := hB
-  have hne : (comap (Subtype.val : C → Fin n → α) (𝓝 x₀)).NeBot :=
-    mem_closure_iff_comap_neBot.mp (hBC hx₀)
-  funext i
-  exact hη ⟨x₀, hx₀⟩ (tendsto_nhds_unique (hσ i ⟨x₀, hx₀⟩) (hσ' i ⟨x₀, hx₀⟩))
-
-/-- If pointwise monotone sections `θ` on `C` converge along `C` at a nonempty `B ⊆ closure C`
-to pointwise strictly monotone sections `η` on `B`, the matching index map `σ` is monotone. -/
-theorem monotone_of_tendsto_section [LinearOrder α] [OrderClosedTopology α]
-    (hBC : B ⊆ closure C) (hB : B.Nonempty)
-    (hθ : ∀ y : C, Monotone fun i ↦ θ i y) (hη : ∀ x : B, StrictMono fun l ↦ η l x)
-    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x))) :
-    Monotone σ := by
-  obtain ⟨x₀, hx₀⟩ := hB
-  have hne : (comap (Subtype.val : C → Fin n → α) (𝓝 x₀)).NeBot :=
-    mem_closure_iff_comap_neBot.mp (hBC hx₀)
-  intro i j hij
-  exact (hη ⟨x₀, hx₀⟩).le_iff_le.mp <|
-    le_of_tendsto_of_tendsto (hlim i ⟨x₀, hx₀⟩) (hlim j ⟨x₀, hx₀⟩)
-      (Eventually.of_forall fun y ↦ hθ y hij)
+  {θ : Fin k → C → α} {η : Fin m → B → α} {σ : Fin k → Fin m}
 
 /-- If a point `v` lies in the closure of a cell of a strictly ordered stack over `C`, its base
 projection `Fin.tail v` lies in `closure C`. -/
@@ -148,7 +125,8 @@ theorem closure_image_cylinder_sectionSet_inter_eq [T2Space α] (hBC : B ⊆ clo
   ext v
   simp only [mem_inter_iff, mem_ofPred_eq, mem_image_cylinder, mem_sectionSet]
   constructor
-  · rintro ⟨hv_cl, hxB⟩
+  · -- Any limit point `v` over `B` has height `η (σ i) (Fin.tail v)` by Hausdorff uniqueness.
+    rintro ⟨hv_cl, hxB⟩
     have : (comap q (𝓝 v)).NeBot := by
       rw [← Filter.map_neBot_iff q, Filter.map_comap, hrange]
       exact mem_closure_iff_nhdsWithin_neBot.mp hv_cl
@@ -160,7 +138,8 @@ theorem closure_image_cylinder_sectionSet_inter_eq [T2Space α] (hBC : B ⊆ clo
     have hηv : Tendsto (θ i) (comap q (𝓝 v)) (𝓝 (η (σ i) ⟨Fin.tail v, hxB⟩)) :=
       (hlim i ⟨Fin.tail v, hxB⟩).mono_left (tendsto_comap_iff.mpr htail)
     exact ⟨hxB, tendsto_nhds_unique hηv hzero⟩
-  · rintro ⟨hxB, hηv⟩
+  · -- Conversely, `Fin.cons (θ i y) y` converges to `v` along `C` as `y → Fin.tail v`.
+    rintro ⟨hxB, hηv⟩
     have hne : (comap (Subtype.val : C → Fin n → α) (𝓝 (Fin.tail v))).NeBot :=
       mem_closure_iff_comap_neBot.mp (hBC hxB)
     have hq_lim : Tendsto q (comap Subtype.val (𝓝 (Fin.tail v))) (𝓝 v) := by
@@ -169,6 +148,21 @@ theorem closure_image_cylinder_sectionSet_inter_eq [T2Space α] (hBC : B ⊆ clo
     refine ⟨?_, hxB⟩
     rw [← hrange]
     exact mem_closure_of_tendsto hq_lim (Eventually.of_forall fun y ↦ mem_range_self y)
+
+/-- Any boundary stack cell `E' ∈ stackCells B η` meeting the closure of the `i`-th ambient
+section over `C` must equal the matched `(σ i)`-th boundary section over `B`. -/
+theorem eq_image_cylinder_sectionSet_of_nonempty_inter_closure [LinearOrder α] [T2Space α]
+    (hBC : B ⊆ closure C) (hη : ∀ x : B, Injective fun l ↦ η l x)
+    (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
+    {E' : Set (Fin (n + 1) → α)} (hE' : E' ∈ stackCells B η) (i : Fin k)
+    (hne : (E' ∩ closure (cylinder C '' sectionSet θ i)).Nonempty) :
+    E' = cylinder B '' sectionSet η (σ i) := by
+  obtain ⟨v, hvE', hvcl⟩ := hne
+  have hv_sec : v ∈ cylinder B '' sectionSet η (σ i) := by
+    rw [← closure_image_cylinder_sectionSet_inter_eq hBC hlim i]
+    exact ⟨hvcl, tail_mem_of_mem_stackCells hE' hvE'⟩
+  exact (pairwiseDisjoint_stackCells hη).eq hE' (image_cylinder_sectionSet_mem_stackCells (σ i))
+    (not_disjoint_iff.mpr ⟨v, hvE', hv_sec⟩)
 
 end Topological
 
@@ -187,6 +181,50 @@ private lemma mem_closure_image_cylinder_sectorSet_of_tendsto {x : Fin n → ℝ
   exact mem_closure_of_tendsto hcons
     (Eventually.of_forall fun y ↦ mem_image_cylinder.mpr ⟨y.2, hh y⟩)
 
+private lemma mem_closure_sectorSet_zero_of_le {k : ℕ} {C : Set (Fin n → ℝ)}
+    {θ : Fin (k + 1) → C → ℝ} (hm : ∀ y : C, Monotone fun i ↦ θ i y)
+    {x : Fin n → ℝ} (hx : x ∈ closure C) {b t : ℝ} (hb : t ≤ b)
+    (hlim : Tendsto (θ 0) (comap Subtype.val (𝓝 x)) (𝓝 b)) :
+    Fin.cons t x ∈ closure (cylinder C '' sectorSet θ 0) := by
+  -- Approximate `t` from below by `t - ε`, realized along `C` by `min (t - ε) (θ 0 y - ε)`.
+  have hε (ε : ℝ) (hε : 0 < ε) :
+      Fin.cons (t - ε) x ∈ closure (cylinder C '' sectorSet θ 0) := by
+    have hmin : min (t - ε) (b - ε) = t - ε := min_eq_left (sub_le_sub_right hb ε)
+    rw [← hmin]
+    exact mem_closure_image_cylinder_sectorSet_of_tendsto hx
+      (h := fun y ↦ min (t - ε) (θ 0 y - ε))
+      (fun y ↦ by rw [sectorSet_zero hm]; exact (min_le_right _ _).trans_lt (sub_lt_self _ hε))
+      (tendsto_const_nhds.min (hlim.sub_const ε))
+  have hlim_ε : Tendsto (fun ε : ℝ ↦ (Fin.cons (t - ε) x : Fin (n + 1) → ℝ))
+      (𝓝[>] 0) (𝓝 (Fin.cons t x)) := by
+    have hc : Continuous (fun ε : ℝ ↦ (Fin.cons (t - ε) x : Fin (n + 1) → ℝ)) := by fun_prop
+    simpa only [sub_zero] using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact isClosed_closure.mem_of_tendsto hlim_ε
+    (eventually_nhdsWithin_iff.mpr <| Eventually.of_forall hε)
+
+private lemma mem_closure_sectorSet_last_of_le {k : ℕ} {C : Set (Fin n → ℝ)}
+    {θ : Fin (k + 1) → C → ℝ} (hm : ∀ y : C, Monotone fun i ↦ θ i y)
+    {x : Fin n → ℝ} (hx : x ∈ closure C) {a t : ℝ} (ha : a ≤ t)
+    (hlim : Tendsto (θ (Fin.last k)) (comap Subtype.val (𝓝 x)) (𝓝 a)) :
+    Fin.cons t x ∈ closure (cylinder C '' sectorSet θ (Fin.last (k + 1))) := by
+  -- Approximate `t` from above by `t + ε`, realized along `C` by `max (t + ε) (θ k y + ε)`.
+  have hε (ε : ℝ) (hε : 0 < ε) :
+      Fin.cons (t + ε) x ∈ closure (cylinder C '' sectorSet θ (Fin.last (k + 1))) := by
+    have hmax : max (t + ε) (a + ε) = t + ε := max_eq_left (add_le_add_left ha ε)
+    rw [← hmax]
+    exact mem_closure_image_cylinder_sectorSet_of_tendsto hx
+      (h := fun y ↦ max (t + ε) (θ (Fin.last k) y + ε))
+      (fun y ↦ by
+        rw [sectorSet_last hm]
+        exact (lt_add_of_pos_right _ hε).trans_le (le_max_right _ _))
+      (tendsto_const_nhds.max (hlim.add_const ε))
+  have hlim_ε : Tendsto (fun ε : ℝ ↦ (Fin.cons (t + ε) x : Fin (n + 1) → ℝ))
+      (𝓝[>] 0) (𝓝 (Fin.cons t x)) := by
+    have hc : Continuous (fun ε : ℝ ↦ (Fin.cons (t + ε) x : Fin (n + 1) → ℝ)) := by fun_prop
+    simpa only [add_zero] using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact isClosed_closure.mem_of_tendsto hlim_ε
+    (eventually_nhdsWithin_iff.mpr <| Eventually.of_forall hε)
+
 private lemma mem_closure_sectorSet_castSucc_succ_of_le {k : ℕ} {C : Set (Fin n → ℝ)}
     {θ : Fin (k + 1) → C → ℝ} (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
     {x : Fin n → ℝ} (hx : x ∈ closure C) {i₀ : Fin k} {a b t : ℝ} (ha : a ≤ t) (hb : t ≤ b)
@@ -194,6 +232,7 @@ private lemma mem_closure_sectorSet_castSucc_succ_of_le {k : ℕ} {C : Set (Fin 
     (hlim_b : Tendsto (θ i₀.succ) (comap Subtype.val (𝓝 x)) (𝓝 b)) :
     Fin.cons t x ∈ closure (cylinder C '' sectorSet θ i₀.castSucc.succ) := by
   have hm : ∀ y : C, Monotone fun i ↦ θ i y := fun y ↦ (hθ y).monotone
+  -- Every strict convex combination of `a` and `b` is a limit of interior sector heights along `C`.
   have hline (c : ℝ) (hc : c ∈ Ioo (0 : ℝ) 1) :
       Fin.cons (AffineMap.lineMap a b c) x ∈
         closure (cylinder C '' sectorSet θ i₀.castSucc.succ) := by
@@ -204,6 +243,7 @@ private lemma mem_closure_sectorSet_castSucc_succ_of_le {k : ℕ} {C : Set (Fin 
       exact mem_image_of_mem _ hc
     · simp only [AffineMap.lineMap_apply_ring]
       exact (hlim_a.const_mul (1 - c)).add (hlim_b.const_mul c)
+  -- Either `a = b = t` (the midpoint suffices) or `a < b` and `t ∈ Icc a b = closure (Ioo a b)`.
   rcases eq_or_lt_of_le (ha.trans hb) with hab | hab
   · have ht : t = a := le_antisymm (hab ▸ hb) ha
     have hmid : AffineMap.lineMap a b (1 / 2 : ℝ) = t := by simp [← hab, ht]
@@ -228,56 +268,26 @@ private lemma mem_closure_image_cylinder_sectorSet_of_le (hBC : B ⊆ closure C)
     v ∈ closure (cylinder C '' sectorSet θ j) := by
   let x : B := ⟨Fin.tail v, hxB⟩
   have hx_cl : Fin.tail v ∈ closure C := hBC hxB
+  rw [← Fin.cons_self_tail v]
   cases k with
   | zero =>
-    simpa only [Fin.cons_self_tail] using mem_closure_image_cylinder_sectorSet_of_tendsto hx_cl
+    -- With no sections, the single sector is the full cylinder over `C`.
+    exact mem_closure_image_cylinder_sectorSet_of_tendsto hx_cl
       (h := fun _ ↦ v 0) (fun _ ↦ by simp) tendsto_const_nhds
   | succ k =>
+    -- Dispatch to the lower unbounded, upper unbounded, or interior bounded sector lemma.
     have hm : ∀ y : C, Monotone fun i ↦ θ i y := fun y ↦ (hθ y).monotone
     cases j using Fin.cases with
     | zero =>
-      have hε (ε : ℝ) (hε : 0 < ε) :
-          Fin.cons (v 0 - ε) (Fin.tail v) ∈ closure (cylinder C '' sectorSet θ 0) := by
-        have hmin : min (v 0 - ε) (η (σ 0) x - ε) = v 0 - ε :=
-          min_eq_left (by linarith [hhigh 0 (Fin.zero_le _)])
-        rw [← hmin]
-        exact mem_closure_image_cylinder_sectorSet_of_tendsto hx_cl
-          (h := fun y ↦ min (v 0 - ε) (θ 0 y - ε))
-          (fun y ↦ by rw [sectorSet_zero hm]; exact (min_le_right _ _).trans_lt (sub_lt_self _ hε))
-          (tendsto_const_nhds.min ((hlim 0 x).sub_const ε))
-      have hlim_ε : Tendsto (fun ε : ℝ ↦ (Fin.cons (v 0 - ε) (Fin.tail v) : Fin (n + 1) → ℝ))
-          (𝓝[>] 0) (𝓝 v) := by
-        have hc : Continuous (fun ε : ℝ ↦ (Fin.cons (v 0 - ε) (Fin.tail v) : Fin (n + 1) → ℝ)) := by
-          fun_prop
-        simpa only [sub_zero, Fin.cons_self_tail] using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-      exact isClosed_closure.mem_of_tendsto hlim_ε
-        (eventually_nhdsWithin_iff.mpr <| Eventually.of_forall hε)
+      exact mem_closure_sectorSet_zero_of_le hm hx_cl (hhigh 0 (Fin.zero_le _)) (hlim 0 x)
     | succ j =>
       cases j using Fin.lastCases with
       | last =>
-        have hε (ε : ℝ) (hε : 0 < ε) :
-            Fin.cons (v 0 + ε) (Fin.tail v) ∈
-              closure (cylinder C '' sectorSet θ (Fin.last (k + 1))) := by
-          have hmax : max (v 0 + ε) (η (σ (Fin.last k)) x + ε) = v 0 + ε :=
-            max_eq_left (by linarith [hlow (Fin.last k) (Fin.castSucc_lt_last _)])
-          rw [← hmax, ← Fin.succ_last]
-          exact mem_closure_image_cylinder_sectorSet_of_tendsto hx_cl
-            (h := fun y ↦ max (v 0 + ε) (θ (Fin.last k) y + ε))
-            (fun y ↦ by
-              rw [Fin.succ_last, sectorSet_last hm]
-              exact (lt_add_of_pos_right _ hε).trans_le (le_max_right _ _))
-            (tendsto_const_nhds.max ((hlim (Fin.last k) x).add_const ε))
-        have hlim_ε : Tendsto (fun ε : ℝ ↦ (Fin.cons (v 0 + ε) (Fin.tail v) : Fin (n + 1) → ℝ))
-            (𝓝[>] 0) (𝓝 v) := by
-          have hc :
-              Continuous (fun ε : ℝ ↦ (Fin.cons (v 0 + ε) (Fin.tail v) : Fin (n + 1) → ℝ)) := by
-            fun_prop
-          simpa only [add_zero, Fin.cons_self_tail] using
-            (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-        exact isClosed_closure.mem_of_tendsto hlim_ε
-          (eventually_nhdsWithin_iff.mpr <| Eventually.of_forall hε)
+        rw [Fin.succ_last]
+        exact mem_closure_sectorSet_last_of_le hm hx_cl
+          (hlow (Fin.last k) (Fin.castSucc_lt_last _)) (hlim (Fin.last k) x)
       | cast i₀ =>
-        simpa only [Fin.cons_self_tail] using mem_closure_sectorSet_castSucc_succ_of_le hθ hx_cl
+        exact mem_closure_sectorSet_castSucc_succ_of_le hθ hx_cl
           (hlow i₀.castSucc Fin.castSucc_lt_succ) (hhigh i₀.succ le_rfl)
           (hlim i₀.castSucc x) (hlim i₀.succ x)
 
@@ -299,7 +309,8 @@ theorem closure_image_cylinder_sectorSet_inter_eq (hBC : B ⊆ closure C)
   ext v
   simp only [mem_inter_iff, mem_ofPred_eq]
   constructor
-  · rintro ⟨hv_cl, hxB⟩
+  · -- Strict sector inequalities pass to weak inequalities in the limit along `comap q (𝓝 v)`.
+    rintro ⟨hv_cl, hxB⟩
     have : (comap q (𝓝 v)).NeBot := by
       rw [← Filter.map_neBot_iff q, Filter.map_comap, hrange]
       exact mem_closure_iff_nhdsWithin_neBot.mp hv_cl
@@ -414,19 +425,12 @@ theorem subset_closure_of_mem_stackCells_of_nonempty_inter (hBC : B ⊆ closure 
     (hlim : ∀ i (x : B), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (η (σ i) x)))
     {E E' : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) (hE' : E' ∈ stackCells B η)
     (hne : (E' ∩ closure E).Nonempty) : E' ⊆ closure E := by
-  obtain ⟨v, hvE', hvcl⟩ := hne
   rcases mem_stackCells.mp hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · have hxB : Fin.tail v ∈ B := by
-      rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩ <;> exact (mem_image_cylinder.mp hvE').1
-    have hv_sec : v ∈ cylinder B '' sectionSet η (σ i) := by
-      rw [← closure_image_cylinder_sectionSet_inter_eq hBC hlim i]
-      exact ⟨hvcl, hxB⟩
-    have hEq : E' = cylinder B '' sectionSet η (σ i) :=
-      (pairwiseDisjoint_stackCells fun x ↦ (hη x).injective).eq hE'
-        (image_cylinder_sectionSet_mem_stackCells (σ i)) (not_disjoint_iff.mpr ⟨v, hvE', hv_sec⟩)
-    rw [hEq, ← closure_image_cylinder_sectionSet_inter_eq hBC hlim i]
+  · rw [eq_image_cylinder_sectionSet_of_nonempty_inter_closure hBC (fun x ↦ (hη x).injective)
+      hlim hE' i hne, ← closure_image_cylinder_sectionSet_inter_eq hBC hlim i]
     exact inter_subset_left
-  · rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩
+  · obtain ⟨v, hvE', hvcl⟩ := hne
+    rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩
     · have hl := (mem_closure_sectorSet_iff_of_mem_sectionSet hBC hθ hη hlim hvE').mp hvcl
       exact fun w hw ↦ (mem_closure_sectorSet_iff_of_mem_sectionSet hBC hθ hη hlim hw).mpr hl
     · have hr := (mem_closure_sectorSet_iff_of_mem_sectorSet hBC hθ hlim hvE').mp hvcl
@@ -442,6 +446,79 @@ theorem subset_closure_of_mem_stackCells_self_of_nonempty_inter
   subset_closure_of_mem_stackCells_of_nonempty_inter (σ := id) subset_closure hθ hθ
     (fun i x ↦ by rw [← nhds_subtype]; exact (hc i).tendsto x) hE hE' hne
 
+private lemma succ_eq_or_castSucc_eq_iff_forall_le {i : Fin k} {j : Fin (k + 1)} :
+    (i.succ = j ∨ i.castSucc = j) ↔
+      (∀ i' : Fin k, i'.castSucc < j → i' ≤ i) ∧
+        ∀ i' : Fin k, j ≤ i'.castSucc → i ≤ i' := by
+  constructor
+  · rintro (rfl | rfl)
+    · exact ⟨fun i' hi' ↦ Fin.castSucc_lt_succ_iff.mp hi',
+        fun i' hi' ↦ Fin.castSucc_le_castSucc_iff.mp (i.castSucc_lt_succ.le.trans hi')⟩
+    · exact ⟨fun i' hi' ↦ (Fin.castSucc_lt_castSucc_iff.mp hi').le,
+        fun i' hi' ↦ Fin.castSucc_le_castSucc_iff.mp hi'⟩
+  · rintro ⟨hlow, hhigh⟩
+    rcases lt_trichotomy i.castSucc j with hij | hij | hij
+    · have hij_val : i.val + 1 ≤ j.val := Nat.succ_le_of_lt (by simpa using Fin.lt_def.mp hij)
+      rcases eq_or_lt_of_le hij_val with heq | hlt
+      · exact Or.inl (Fin.ext heq)
+      · exfalso
+        let i' : Fin k := ⟨i.val + 1, by omega⟩
+        exact Nat.not_succ_le_self i.val (Fin.le_def.mp (hlow i' (Fin.lt_def.mpr hlt)))
+    · exact Or.inr hij
+    · exfalso
+      let i' : Fin k := ⟨j.val, by omega⟩
+      exact (not_le_of_gt hij) (Fin.castSucc_le_castSucc_iff.mpr (hhigh i' le_rfl))
+
+private lemma eq_iff_forall_castSucc_lt_and_le {r j : Fin (k + 1)} :
+    r = j ↔
+      (∀ i' : Fin k, i'.castSucc < j → i'.castSucc < r) ∧
+        ∀ i' : Fin k, j ≤ i'.castSucc → r ≤ i'.castSucc := by
+  constructor
+  · rintro rfl
+    exact ⟨fun _ h ↦ h, fun _ h ↦ h⟩
+  · rintro ⟨hlow, hhigh⟩
+    refine le_antisymm ?_ ?_
+    · by_contra hlt
+      replace hlt := lt_of_not_ge hlt
+      let i' : Fin k := ⟨j.val, by omega⟩
+      exact (not_le_of_gt hlt) (hhigh i' le_rfl)
+    · by_contra hlt
+      replace hlt := lt_of_not_ge hlt
+      let i' : Fin k := ⟨r.val, by omega⟩
+      exact (lt_irrefl r) (hlow i' hlt)
+
+/-- Over a nonempty base `C`, the `i`-th ambient section of a continuous strictly ordered stack lies
+in the closure of the `j`-th ambient sector if and only if it is the lower (`i.succ = j`) or upper
+(`i.castSucc = j`) bounding section of that sector. -/
+theorem image_cylinder_sectionSet_subset_closure_sectorSet_iff (hC : C.Nonempty)
+    (hc : ∀ i, Continuous (θ i)) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
+    {i : Fin k} {j : Fin (k + 1)} :
+    cylinder C '' sectionSet θ i ⊆ closure (cylinder C '' sectorSet θ j) ↔
+      i.succ = j ∨ i.castSucc = j := by
+  have hlim : ∀ i' (x : C), Tendsto (θ i') (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i') x)) :=
+    fun i' x ↦ by rw [← nhds_subtype]; exact (hc i').tendsto x
+  have : Nonempty C := hC.to_subtype
+  obtain ⟨v, hv⟩ := (sectionSet_nonempty θ i).image (cylinder C)
+  rw [succ_eq_or_castSucc_eq_iff_forall_le]
+  exact ⟨fun hsub ↦
+      (mem_closure_sectorSet_iff_of_mem_sectionSet subset_closure hθ hθ hlim hv).mp (hsub hv),
+    fun h w hw ↦
+      (mem_closure_sectorSet_iff_of_mem_sectionSet subset_closure hθ hθ hlim hw).mpr h⟩
+
+/-- Over a nonempty base `C`, one ambient sector of a continuous strictly ordered stack lies in the
+closure of another if and only if the two sectors are equal. -/
+theorem image_cylinder_sectorSet_subset_closure_sectorSet_iff (hC : C.Nonempty)
+    (hc : ∀ i, Continuous (θ i)) (hθ : ∀ y : C, StrictMono fun i ↦ θ i y)
+    {r j : Fin (k + 1)} :
+    cylinder C '' sectorSet θ r ⊆ closure (cylinder C '' sectorSet θ j) ↔ r = j := by
+  have hlim : ∀ i' (x : C), Tendsto (θ i') (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i') x)) :=
+    fun i' x ↦ by rw [← nhds_subtype]; exact (hc i').tendsto x
+  have : Nonempty C := hC.to_subtype
+  obtain ⟨v, hv⟩ := (sectorSet_nonempty hθ r).image (cylinder C)
+  refine ⟨fun hsub ↦ eq_iff_forall_castSucc_lt_and_le.mpr
+      ((mem_closure_sectorSet_iff_of_mem_sectorSet subset_closure hθ hlim hv).mp (hsub hv)),
+    by rintro rfl; exact subset_closure⟩
+
 /-- Over a nonempty base `C`, if two distinct cells `E' ≠ E` of a continuous strictly ordered
 stack satisfy `E' ⊆ closure E`, then `E` is a sector and `E'` is either its lower or its upper
 bounding section. -/
@@ -452,52 +529,19 @@ theorem eq_sectionSet_and_eq_sectorSet_of_subset_closure_of_ne (hC : C.Nonempty)
     ∃ (i : Fin k) (j : Fin (k + 1)),
       (i.succ = j ∨ i.castSucc = j) ∧
         E' = cylinder C '' sectionSet θ i ∧ E = cylinder C '' sectorSet θ j := by
-  have hlim : ∀ i (x : C), Tendsto (θ i) (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i) x)) :=
-    fun i x ↦ by rw [← nhds_subtype]; exact (hc i).tendsto x
-  have : Nonempty C := hC.to_subtype
-  have hE'_ne : E'.Nonempty := by
-    rcases mem_stackCells.mp hE' with ⟨i, rfl⟩ | ⟨j, rfl⟩
-    · exact (sectionSet_nonempty θ i).image _
-    · exact (sectorSet_nonempty hθ j).image _
-  obtain ⟨v, hvE'⟩ := hE'_ne
-  have hvC : Fin.tail v ∈ C := by
-    rcases mem_stackCells.mp hE' with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.mp hvE').1
+  obtain ⟨v, hvE'⟩ := image_nonempty.mp ((image_tail_of_mem_stackCells hθ hE').symm ▸ hC)
   rcases mem_stackCells.mp hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · have hvE : v ∈ cylinder C '' sectionSet θ i := by
-      have htr := closure_image_cylinder_sectionSet_inter_eq (σ := id) subset_closure hlim i
-      exact htr ▸ ⟨hsub hvE', hvC⟩
-    exact absurd ((pairwiseDisjoint_stackCells fun y ↦ (hθ y).injective).eq hE'
-      (image_cylinder_sectionSet_mem_stackCells i) (not_disjoint_iff.mpr ⟨v, hvE', hvE⟩)) hne
-  · rcases mem_stackCells.mp hE' with ⟨i, rfl⟩ | ⟨r, rfl⟩
-    · obtain ⟨hlow, hhigh⟩ :=
-        (mem_closure_sectorSet_iff_of_mem_sectionSet subset_closure hθ hθ hlim hvE').mp (hsub hvE')
-      refine ⟨i, j, ?_, rfl, rfl⟩
-      rcases lt_trichotomy i.castSucc j with hij | hij | hij
-      · have hij_val : i.val + 1 ≤ j.val := Nat.succ_le_of_lt (Fin.lt_def.mp hij)
-        rcases eq_or_lt_of_le hij_val with heq | hlt
-        · exact Or.inl (Fin.ext heq)
-        · exfalso
-          have hi'_lt : i.val + 1 < k := by omega
-          let i' : Fin k := ⟨i.val + 1, hi'_lt⟩
-          have hi' : i'.castSucc < j := Fin.lt_def.mpr hlt
-          exact Nat.not_succ_le_self i.val (Fin.le_def.mp (hlow i' hi'))
-      · exact Or.inr hij
-      · exfalso
-        let i' : Fin k := ⟨j.val, by omega⟩
-        have hi' : j ≤ i'.castSucc := le_rfl
-        exact (not_le_of_gt hij) (Fin.castSucc_le_castSucc_iff.mpr (hhigh i' hi'))
-    · obtain ⟨hlow, hhigh⟩ :=
-        (mem_closure_sectorSet_iff_of_mem_sectorSet subset_closure hθ hlim hvE').mp (hsub hvE')
-      exfalso
-      refine hne (congrArg (cylinder C '' sectorSet θ ·) (le_antisymm ?_ ?_))
-      · by_contra hlt
-        replace hlt := lt_of_not_ge hlt
-        let i' : Fin k := ⟨j.val, by omega⟩
-        exact (not_le_of_gt hlt) (hhigh i' le_rfl)
-      · by_contra hlt
-        replace hlt := lt_of_not_ge hlt
-        let i' : Fin k := ⟨r.val, by omega⟩
-        exact (lt_irrefl r) (hlow i' hlt)
+  · -- No distinct stack cell can lie in the closure of a section.
+    have hlim : ∀ i' (x : C), Tendsto (θ i') (comap Subtype.val (𝓝 x.1)) (𝓝 (θ (id i') x)) :=
+      fun i' x ↦ by rw [← nhds_subtype]; exact (hc i').tendsto x
+    exact absurd (eq_image_cylinder_sectionSet_of_nonempty_inter_closure subset_closure
+      (fun y ↦ (hθ y).injective) hlim hE' i ⟨v, hvE', hsub hvE'⟩) hne
+  · -- Inside a sector closure, a distinct stack cell must be an adjacent bounding section.
+    rcases mem_stackCells.mp hE' with ⟨i, rfl⟩ | ⟨r, rfl⟩
+    · exact ⟨i, j,
+        (image_cylinder_sectionSet_subset_closure_sectorSet_iff hC hc hθ).mp hsub, rfl, rfl⟩
+    · exact absurd (congrArg (cylinder C '' sectorSet θ ·)
+        ((image_cylinder_sectorSet_subset_closure_sectorSet_iff hC hc hθ).mp hsub)) hne
 
 /-- **Frontier condition, part 2 (across lower-dimensional strata).** Let `C` and `B` be analytic
 submanifolds with `B ⊆ closure C` and `dB < dC`, carrying strictly ordered stacks whose sections
@@ -529,14 +573,9 @@ theorem dim_lt_of_mem_stackCells_of_subset_closure {dC dB e e' : ℕ}
     have he : e = dC :=
       hE_sub.dim_eq (isAnalyticSubmanifold_image_cylinder_sectionSet hC i hfn hafn)
     obtain ⟨v, hvE'⟩ := hE'_sub.nonempty
-    have hxB : Fin.tail v ∈ B := by
-      rcases mem_stackCells.mp hE' with ⟨l, rfl⟩ | ⟨r, rfl⟩ <;> exact (mem_image_cylinder.mp hvE').1
-    have hv_sec : v ∈ cylinder B '' sectionSet η (σ i) := by
-      rw [← closure_image_cylinder_sectionSet_inter_eq hBC hlim i]
-      exact ⟨hsub hvE', hxB⟩
     have hEq : E' = cylinder B '' sectionSet η (σ i) :=
-      (pairwiseDisjoint_stackCells fun x ↦ (hη x).injective).eq hE'
-        (image_cylinder_sectionSet_mem_stackCells (σ i)) (not_disjoint_iff.mpr ⟨v, hvE', hv_sec⟩)
+      eq_image_cylinder_sectionSet_of_nonempty_inter_closure hBC (fun x ↦ (hη x).injective)
+        hlim hE' i ⟨v, hvE', hsub hvE'⟩
     obtain ⟨fnB, hfnB, hafnB⟩ := haB (σ i)
     have he'_eq : e' = dB := hE'_sub.dim_eq
       (hEq ▸ isAnalyticSubmanifold_image_cylinder_sectionSet hB (σ i) hfnB hafnB)
@@ -601,6 +640,62 @@ private lemma image_cylinder_sectorSet_inter_eq_image_lineMap {j : Fin (k + 1)}
     obtain ⟨hsec, hv_Ioo⟩ := (hIoo y _).mp hr
     exact ⟨⟨y.2, hsec⟩, hyt, hv_Ioo⟩
 
+private lemma isPreconnectedApproachAt_of_forall_pos_exists_image {β : Type*} [TopologicalSpace β]
+    {E : Set (Fin (n + 1) → ℝ)} {v₀ : Fin (n + 1) → ℝ}
+    (hconn : IsPreconnectedApproachAt C (Fin.tail v₀))
+    (hparam : ∀ δ > 0, ∃ (G₁ : Set (Fin n → ℝ)) (F : Set β) (φ : C × β → Fin (n + 1) → ℝ),
+      G₁ ∈ 𝓝 (Fin.tail v₀) ∧ IsPreconnected F ∧ Continuous φ ∧
+      ∀ U ⊆ G₁, E ∩ {v | Fin.tail v ∈ U ∧ v 0 ∈ Ioo (v₀ 0 - δ) (v₀ 0 + δ)} =
+        φ '' (((Subtype.val : C → _) ⁻¹' U) ×ˢ F)) :
+    IsPreconnectedApproachAt E v₀ := by
+  refine isPreconnectedApproachAt_def.mpr fun s hs ↦ ?_
+  -- Split `s ∈ 𝓝 v₀` into a product box `G × Ioo (v₀ 0 - δ) (v₀ 0 + δ)` in `(Fin.tail v, v 0)`.
+  obtain ⟨G, hG, W, hW, hGW⟩ := mem_nhds_prod_iff.mp <|
+    (by fun_prop : Continuous fun p : (Fin n → ℝ) × ℝ ↦
+      (Fin.cons p.2 p.1 : Fin (n + 1) → ℝ)).continuousAt
+        (x := (Fin.tail v₀, v₀ 0)) |>.preimage_mem_nhds
+      (by simpa only [Fin.cons_self_tail] using hs)
+  obtain ⟨δ, hδ, hδW⟩ := Metric.mem_nhds_iff.mp hW
+  have hIooW : Ioo (v₀ 0 - δ) (v₀ 0 + δ) ⊆ W := by simpa only [Real.ball_eq_Ioo] using hδW
+  -- Intersect `G` with the parameterization's base domain `G₁` and shrink to an approach `t_base`.
+  obtain ⟨G₁, F, φ, hG₁, hF_pre, hφ_cont, hφ_eq⟩ := hparam δ hδ
+  obtain ⟨t_base, ht_nhds, ht_sub, ht_pre⟩ :=
+    isPreconnectedApproachAt_def.mp hconn (G ∩ G₁) (inter_mem hG hG₁)
+  have htail : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → Fin n → ℝ) := by fun_prop
+  refine ⟨{v | Fin.tail v ∈ t_base ∧ v 0 ∈ Ioo (v₀ 0 - δ) (v₀ 0 + δ)},
+    inter_mem (htail.continuousAt.preimage_mem_nhds ht_nhds)
+      ((continuous_apply 0).continuousAt.preimage_mem_nhds
+        (Ioo_mem_nhds (sub_lt_self _ hδ) (lt_add_of_pos_right _ hδ))),
+    fun v hv ↦ by
+      simpa only [mem_preimage, Fin.cons_self_tail] using
+        hGW (mk_mem_prod (ht_sub hv.1).1 (hIooW hv.2)), ?_⟩
+  -- Pull back `C ∩ t_base` to `C`, cross with `F`, and take the continuous image under `φ`.
+  have hA_pre : IsPreconnected ((Subtype.val : C → _) ⁻¹' t_base) :=
+    Topology.IsInducing.subtypeVal.isPreconnected_image.mp (by rwa [Subtype.image_preimage_val])
+  rw [hφ_eq t_base fun x hx ↦ (ht_sub hx).2]
+  exact (hA_pre.prod hF_pre).image φ hφ_cont.continuousOn
+
+private lemma eq_apply_zero_of_mem_closure_sectionSet (i : Fin k) {v₀ : Fin (n + 1) → ℝ}
+    (hv₀ : v₀ ∈ closure (cylinder C '' sectionSet θ i)) {L : ℝ}
+    (hL : Tendsto (θ i) (comap Subtype.val (𝓝 (Fin.tail v₀))) (𝓝 L)) :
+    L = v₀ 0 := by
+  have htail : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → Fin n → ℝ) := by fun_prop
+  have hx_cl : Fin.tail v₀ ∈ closure C := by
+    have hmem := image_closure_subset_closure_image htail (mem_image_of_mem Fin.tail hv₀)
+    rwa [image_tail_image_cylinder, fst_image_sectionSet, Subtype.coe_image_univ] at hmem
+  have hsec_eq : sectionSet (fun _ : Fin 1 ↦ θ i) 0 = sectionSet θ i := by
+    ext ⟨y, t⟩
+    simp only [mem_sectionSet]
+  have htr := closure_image_cylinder_sectionSet_inter_eq
+    (B := {Fin.tail v₀}) (θ := fun _ : Fin 1 ↦ θ i) (η := fun _ : Fin 1 ↦ fun _ ↦ L)
+    (σ := id) (singleton_subset_iff.mpr hx_cl)
+    (fun _ x ↦ by simpa [mem_singleton_iff.mp x.2] using hL) 0
+  have hv_in :
+      v₀ ∈ cylinder {Fin.tail v₀} '' sectionSet (fun _ : Fin 1 ↦ fun _ ↦ L) (id 0) := by
+    rw [← htr, hsec_eq]
+    exact ⟨hv₀, rfl⟩
+  exact mem_sectionSet.mp (mem_image_cylinder.mp hv_in).2
+
 /-- An ambient section of a continuous function `θ i` inherits preconnected approach regions at
 `v₀` whenever the base `C` has preconnected approach regions at `Fin.tail v₀` and `θ i` has a
 limit along `C` at `Fin.tail v₀`. -/
@@ -609,59 +704,20 @@ theorem isPreconnectedApproachAt_image_cylinder_sectionSet (i : Fin k) (hc : Con
     (hlim : ∃ L, Tendsto (θ i) (comap Subtype.val (𝓝 (Fin.tail v₀))) (𝓝 L)) :
     IsPreconnectedApproachAt (cylinder C '' sectionSet θ i) v₀ := by
   by_cases hv₀ : v₀ ∈ closure (cylinder C '' sectionSet θ i)
-  · obtain ⟨L, hL⟩ := hlim
-    have hx_cl : Fin.tail v₀ ∈ closure C := by
-      have htail : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → Fin n → ℝ) := by fun_prop
-      have hmem := image_closure_subset_closure_image htail (mem_image_of_mem Fin.tail hv₀)
-      refine closure_mono ?_ hmem
-      rw [image_tail_image_cylinder, fst_image_sectionSet, Subtype.coe_image_univ]
-    have hLv₀ : L = v₀ 0 := by
-      have hsec_eq : sectionSet (fun _ : Fin 1 ↦ θ i) 0 = sectionSet θ i := by
-        ext ⟨y, t⟩
-        simp only [mem_sectionSet]
-      have htr := closure_image_cylinder_sectionSet_inter_eq
-        (B := {Fin.tail v₀}) (θ := fun _ : Fin 1 ↦ θ i) (η := fun _ : Fin 1 ↦ fun _ ↦ L)
-        (σ := id) (singleton_subset_iff.mpr hx_cl)
-        (fun _ x ↦ by simpa [mem_singleton_iff.mp x.2] using hL) 0
-      have hv_in :
-          v₀ ∈ cylinder {Fin.tail v₀} '' sectionSet (fun _ : Fin 1 ↦ fun _ ↦ L) (id 0) := by
-        rw [← htr, hsec_eq]
-        exact ⟨hv₀, rfl⟩
-      exact mem_sectionSet.mp (mem_image_cylinder.mp hv_in).2
-    subst hLv₀
-    refine isPreconnectedApproachAt_def.mpr fun s hs ↦ ?_
-    obtain ⟨G, hG, W, hW, hGW⟩ := mem_nhds_prod_iff.mp <|
-      (by fun_prop : Continuous fun p : (Fin n → ℝ) × ℝ ↦
-        (Fin.cons p.2 p.1 : Fin (n + 1) → ℝ)).continuousAt
-          (x := (Fin.tail v₀, v₀ 0)) |>.preimage_mem_nhds
-        (by simpa only [Fin.cons_self_tail] using hs)
-    obtain ⟨G₁, hG₁, hG₁W⟩ := mem_comap.mp (hL.eventually hW)
-    obtain ⟨t_base, ht_nhds, ht_sub, ht_pre⟩ :=
-      isPreconnectedApproachAt_def.mp hconn (G ∩ G₁) (inter_mem hG hG₁)
-    have htail : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → Fin n → ℝ) := by fun_prop
-    refine ⟨{v | Fin.tail v ∈ t_base ∧ v 0 ∈ W},
-      inter_mem (htail.continuousAt.preimage_mem_nhds ht_nhds)
-        ((continuous_apply 0).continuousAt.preimage_mem_nhds hW),
-      fun v hv ↦ by
-        simpa only [mem_preimage, Fin.cons_self_tail] using
-          hGW (mk_mem_prod (ht_sub hv.1).1 hv.2), ?_⟩
-    have hA_pre : IsPreconnected ((Subtype.val : C → _) ⁻¹' t_base) :=
-      Topology.IsInducing.subtypeVal.isPreconnected_image.mp
-        (by rwa [Subtype.image_preimage_val])
-    have heq : (cylinder C '' sectionSet θ i) ∩ {v | Fin.tail v ∈ t_base ∧ v 0 ∈ W} =
-        (fun y : C ↦ (Fin.cons (θ i y) y.1 : Fin (n + 1) → ℝ)) ''
-          ((Subtype.val : C → _) ⁻¹' t_base) := by
-      ext v
-      rw [mem_inter_iff, mem_image_cylinder, mem_image]
-      simp only [mem_sectionSet, mem_preimage]
-      constructor
-      · rintro ⟨⟨hxC, hθv⟩, hxt, -⟩
-        exact ⟨⟨Fin.tail v, hxC⟩, hxt, by rw [hθv, Fin.cons_self_tail]⟩
-      · rintro ⟨y, hyt, rfl⟩
-        exact ⟨⟨y.2, rfl⟩, hyt, hG₁W (ht_sub hyt).2⟩
-    rw [heq]
-    exact hA_pre.image _
-      (by fun_prop : Continuous fun y : C ↦ (Fin.cons (θ i y) y.1 : Fin (n + 1) → ℝ)).continuousOn
+  · -- Match the section limit `L` with `v₀ 0`, then parameterize the local slice over `C × univ`.
+    obtain ⟨L, hL⟩ := hlim
+    obtain rfl := eq_apply_zero_of_mem_closure_sectionSet i hv₀ hL
+    refine isPreconnectedApproachAt_of_forall_pos_exists_image (β := Unit) hconn fun δ hδ ↦ ?_
+    obtain ⟨G₁, hG₁, hG₁_Ioo⟩ := mem_comap.mp <|
+      hL.eventually (Ioo_mem_nhds (sub_lt_self _ hδ) (lt_add_of_pos_right _ hδ))
+    refine ⟨G₁, univ, fun p ↦ Fin.cons (θ i p.1) p.1.1, hG₁, isPreconnected_univ,
+      by fun_prop, fun U hUG₁ ↦ ?_⟩
+    ext v
+    rw [mem_inter_iff, mem_image_cylinder, mem_image]
+    simp only [mem_sectionSet, mem_prod, mem_preimage, mem_univ, and_true, Prod.exists,
+      Unique.exists_iff]
+    exact ⟨fun ⟨⟨hxC, hθv⟩, hxt, _⟩ ↦ ⟨⟨Fin.tail v, hxC⟩, hxt, by rw [hθv, Fin.cons_self_tail]⟩,
+      fun ⟨y, hyt, hv⟩ ↦ hv ▸ ⟨⟨y.2, rfl⟩, hyt, hG₁_Ioo (hUG₁ hyt)⟩⟩
   · exact isPreconnectedApproachAt_of_notMem_closure hv₀
 
 private lemma exists_continuous_Ioo_eq_sectorSet_inter
@@ -677,10 +733,12 @@ private lemma exists_continuous_Ioo_eq_sectorSet_inter
         r ∈ Ioo (low y) (high y) ↔ (y, r) ∈ sectorSet θ j ∧ r ∈ Ioo (t₀ - δ) (t₀ + δ) := by
   cases k with
   | zero =>
+    -- With no sections, the vertical window `Ioo (t₀ - δ) (t₀ + δ)` works over all of `C`.
     refine ⟨fun _ ↦ t₀ - δ, fun _ ↦ t₀ + δ, univ, univ_mem,
       continuous_const, continuous_const, fun _ _ ↦ by linarith, fun y r ↦ ?_⟩
     simp [sectorSet_fin_zero]
   | succ k =>
+    -- Clip the lower, upper, or interior sector bounds against `t₀ - δ` and `t₀ + δ` near `x₀`.
     have hm : ∀ y : C, Monotone fun i ↦ θ i y := fun y ↦ (hθ y).monotone
     cases j using Fin.cases with
     | zero =>
@@ -728,50 +786,23 @@ theorem isPreconnectedApproachAt_image_cylinder_sectorSet (hc : ∀ i, Continuou
     (hlim : ∀ i, ∃ L, Tendsto (θ i) (comap Subtype.val (𝓝 (Fin.tail v₀))) (𝓝 L)) :
     IsPreconnectedApproachAt (cylinder C '' sectorSet θ j) v₀ := by
   by_cases hv₀ : v₀ ∈ closure (cylinder C '' sectorSet θ j)
-  · choose L hL using hlim
+  · -- Bound `v₀ 0` between the section limits, then parameterize the slice over `C × Ioo 0 1`.
+    choose L hL using hlim
     have hx_cl : Fin.tail v₀ ∈ closure C :=
       tail_mem_closure_of_mem_closure_stackCells hθ (image_cylinder_sectorSet_mem_stackCells j) hv₀
-    have hbounds : (∀ i : Fin k, i.castSucc < j → L i ≤ v₀ 0) ∧
-        ∀ i : Fin k, j ≤ i.castSucc → v₀ 0 ≤ L i := by
-      have htr := closure_image_cylinder_sectorSet_inter_eq
-        (B := {Fin.tail v₀}) (θ := θ) (η := fun i _ ↦ L i) (σ := id)
-        (singleton_subset_iff.mpr hx_cl) hθ
-        (fun i x ↦ by simpa [mem_singleton_iff.mp x.2] using hL i) j
-      have hv_in : v₀ ∈ closure (cylinder C '' sectorSet θ j) ∩
-          {v | Fin.tail v ∈ ({Fin.tail v₀} : Set _)} := ⟨hv₀, rfl⟩
-      rw [htr] at hv_in
-      obtain ⟨_, h₁, h₂⟩ := hv_in
-      exact ⟨h₁, h₂⟩
-    refine isPreconnectedApproachAt_def.mpr fun s hs ↦ ?_
-    obtain ⟨G, hG, W, hW, hGW⟩ := mem_nhds_prod_iff.mp <|
-      (by fun_prop : Continuous fun p : (Fin n → ℝ) × ℝ ↦
-        (Fin.cons p.2 p.1 : Fin (n + 1) → ℝ)).continuousAt
-          (x := (Fin.tail v₀, v₀ 0)) |>.preimage_mem_nhds
-        (by simpa only [Fin.cons_self_tail] using hs)
-    obtain ⟨δ, hδ, hδW⟩ := Metric.mem_nhds_iff.mp hW
-    have hIooW : Ioo (v₀ 0 - δ) (v₀ 0 + δ) ⊆ W := by simpa only [Real.ball_eq_Ioo] using hδW
+    have htr := closure_image_cylinder_sectorSet_inter_eq
+      (B := {Fin.tail v₀}) (θ := θ) (η := fun i _ ↦ L i) (σ := id)
+      (singleton_subset_iff.mpr hx_cl) hθ
+      (fun i x ↦ by simpa [mem_singleton_iff.mp x.2] using hL i) j
+    obtain ⟨_, hlow₀, hhigh₀⟩ := Set.ext_iff.mp htr v₀ |>.mp ⟨hv₀, rfl⟩
+    refine isPreconnectedApproachAt_of_forall_pos_exists_image (β := ℝ) hconn fun δ hδ ↦ ?_
     obtain ⟨low, high, G₁, hG₁, hlow_c, hhigh_c, hlt_G₁, hIoo_eq⟩ :=
-      exists_continuous_Ioo_eq_sectorSet_inter hc hθ j hδ hL hbounds.1 hbounds.2
-    obtain ⟨t_base, ht_nhds, ht_sub, ht_pre⟩ :=
-      isPreconnectedApproachAt_def.mp hconn (G ∩ G₁) (inter_mem hG hG₁)
-    have htail : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → Fin n → ℝ) := by fun_prop
-    refine ⟨{v | Fin.tail v ∈ t_base ∧ v 0 ∈ Ioo (v₀ 0 - δ) (v₀ 0 + δ)},
-      inter_mem (htail.continuousAt.preimage_mem_nhds ht_nhds)
-        ((continuous_apply 0).continuousAt.preimage_mem_nhds
-          (Ioo_mem_nhds (by linarith) (by linarith))),
-      fun v hv ↦ by
-        simpa only [mem_preimage, Fin.cons_self_tail] using
-          hGW (mk_mem_prod (ht_sub hv.1).1 (hIooW hv.2)), ?_⟩
-    have hA_pre : IsPreconnected ((Subtype.val : C → _) ⁻¹' t_base) :=
-      Topology.IsInducing.subtypeVal.isPreconnected_image.mp
-        (by rwa [Subtype.image_preimage_val])
-    rw [image_cylinder_sectorSet_inter_eq_image_lineMap
-      (fun y hy ↦ hlt_G₁ y (ht_sub hy).2) hIoo_eq]
-    exact (hA_pre.prod isPreconnected_Ioo).image _
-      (by simp only [AffineMap.lineMap_apply_ring]; fun_prop :
-        Continuous fun p : C × ℝ ↦
-          (Fin.cons (AffineMap.lineMap (low p.1) (high p.1) p.2) p.1.1 :
-            Fin (n + 1) → ℝ)).continuousOn
+      exists_continuous_Ioo_eq_sectorSet_inter hc hθ j hδ hL hlow₀ hhigh₀
+    refine ⟨G₁, Ioo (0 : ℝ) 1,
+      fun p ↦ Fin.cons (AffineMap.lineMap (low p.1) (high p.1) p.2) p.1.1,
+      hG₁, isPreconnected_Ioo, by simp only [AffineMap.lineMap_apply_ring]; fun_prop,
+      fun U hUG₁ ↦ image_cylinder_sectorSet_inter_eq_image_lineMap
+        (fun y hy ↦ hlt_G₁ y (hUG₁ hy)) hIoo_eq⟩
   · exact isPreconnectedApproachAt_of_notMem_closure hv₀
 
 /-- Every ambient cell of a continuous strictly ordered stack over `C` inherits preconnected
@@ -826,6 +857,7 @@ theorem exists_root_tendsto_of_subset_closure
     ∃ σ : Fin D_C.count → Fin D_B.count, Monotone σ ∧
       ∀ i (x : B), Tendsto (D_C.root i) (comap Subtype.val (𝓝 x.1)) (𝓝 (D_B.root (σ i) x)) := by
   have : ConnectedSpace B := isConnected_iff_connectedSpace.mp hB_conn
+  -- Extend each section `D_C.root i` continuously to `B` via `extendFrom` and match it in `D_B`.
   have hsec (i : Fin D_C.count) :
       ∃ l : Fin D_B.count, ∀ x : B,
         Tendsto (D_C.root i) (comap Subtype.val (𝓝 x.1)) (𝓝 (D_B.root l x)) := by
@@ -843,6 +875,7 @@ theorem exists_root_tendsto_of_subset_closure
     have hF_root (x : B) : (P k x.1).eval (extendFrom C f x.1) = 0 :=
       eval_extendFrom_eq_zero_of_isRoot (hBC x.2) (hconn x.1 x.2) hf_cont
         (eventually_nhdsWithin_of_forall hf_root) (hcoeff x.1 x.2) (hdeg x.1 x.2) (hne x.1 x.2)
+    -- Over connected `B`, the continuous root `extendFrom C f` matches a single `D_B.root l`.
     obtain ⟨l, hl⟩ := D_B.exists_eq_root_of_continuous
       (continuousOn_iff_continuous_domRestrict.mp hF_cont) (fun x ↦ hne x.1 x.2) hF_root
     refine ⟨l, fun x ↦ ?_⟩
@@ -857,6 +890,7 @@ theorem exists_root_tendsto_of_subset_closure
     have hfeq : f ∘ Subtype.val = D_C.root i := funext hf_apply
     have hlext : extendFrom C f x.1 = D_B.root l x := congrFun hl x
     rwa [hfeq, hlext] at hlim_sub
+  -- Monotonicity of `σ` follows from order-closedness along the nonempty boundary `B`.
   choose σ hσ using hsec
   exact ⟨σ, monotone_of_tendsto_section hBC hB_conn.nonempty
     (fun y ↦ (D_C.strictMono_root y).monotone) D_B.strictMono_root hσ, hσ⟩
