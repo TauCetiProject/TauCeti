@@ -197,15 +197,6 @@ private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingl
   rw [GenLoop.const_apply, genLoopHomeoOfIsEmpty_symm_apply] at h1
   exact h1
 
-/-- Every point of `E` is joined to a point of the fibre over `b` when `B` is path-connected: lift
-a path from its projection to `b`. -/
-private theorem exists_joined_fiberι (hp : serreFibrations p) [PathConnectedSpace B] (x : E) :
-    ∃ y : p.fiber b, Joined (fiberVal p b y) x := by
-  obtain ⟨Γ, hΓ0, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp
-    (PathConnectedSpace.somePath (p x) b)
-  refine ⟨⟨Γ 1, (congrFun hΓ 1).trans (PathConnectedSpace.somePath (p x) b).target⟩, ?_⟩
-  exact Joined.symm ⟨⟨Γ, hΓ0, rfl⟩⟩
-
 /-- **The fibre of a Serre fibration over an `n`-connected base is `n`-connected in the total
 space.** Let `p : E → B` be a Serre fibration and `b : B` a point such that `π_k(B, b)` is trivial
 for every `k ≤ n`; for `k = 0` this says that `B` is path-connected. Then the inclusion of the
@@ -216,8 +207,9 @@ theorem isNConnected_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {n 
   classical
   have : PathConnectedSpace B :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero b).2 (hB 0 n.zero_le)
+  have hpI := hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations hp
   rw [fiberι_hom_eq_fiberVal]
-  refine ⟨fun x ↦ exists_joined_fiberι hp x, fun k hk e ↦ ?_, fun k hk e ↦ ?_⟩
+  refine ⟨fun x ↦ hpI.exists_joined b x, fun k hk e ↦ ?_, fun k hk e ↦ ?_⟩
   · cases k with
     | zero =>
       -- In degree zero, homotopy classes are path components.
@@ -240,7 +232,7 @@ theorem isNConnected_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {n 
     | zero =>
       -- In degree zero, every point of `E` is joined to the fibre.
       exact HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined _ rfl fun x ↦
-        exists_joined_fiberι hp x
+        hpI.exists_joined b x
     | succ k =>
       -- By exactness at `π_{k+1}(E)`, a class comes from the fibre since its projection lies in
       -- the trivial group `π_{k+1}(B, b)`.

@@ -41,6 +41,8 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
 
 * `TauCeti.TopCat.serreFibrations`: Serre fibrations, the right lifting property with respect to
   the inclusions `ι₀ : Dⁿ ⟶ Dⁿ ⊗ I`.
+* `TauCeti.TopCat.hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations`: a Serre
+  fibration has the homotopy lifting property with respect to the unit interval.
 * `TauCeti.TopCat.exists_path_lift_of_mem_serreFibrations`: a Serre fibration lifts paths. In
   particular a point joined in the base to a point with path-connected fibre is joined to it in
   the total space (`TauCeti.TopCat.joined_of_mem_serreFibrations`), so the total space is
@@ -163,6 +165,11 @@ theorem mem_serreFibrations_of_hasHomotopyLiftingProperty {p : E ⟶ B}
     (h : ∀ (A : Type u) [TopologicalSpace A], HasHomotopyLiftingProperty p A) :
     serreFibrations p :=
   mem_serreFibrations_iff_hasLiftingProperty.2 fun _ ↦ hasLiftingProperty_ι₀_iff.2 (h _)
+
+/-- A Serre fibration has the homotopy lifting property with respect to the unit interval. -/
+theorem hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations {p : E ⟶ B}
+    (hp : serreFibrations p) : HasHomotopyLiftingProperty p I :=
+  (mem_serreFibrations_iff_cube.1 hp 1).of_homeomorph (Homeomorph.funUnique (Fin 1) I).symm
 
 /-- A Serre fibration lifts paths: a path in `B` starting at `p e` lifts to a path in `E` starting
 at `e`. -/
