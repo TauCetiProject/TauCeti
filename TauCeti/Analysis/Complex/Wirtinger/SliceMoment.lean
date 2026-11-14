@@ -94,6 +94,8 @@ The identity comes from the derivative of the slice moments, `dM_k = π_*(k w^(k
   graphs of `J_N` are the solutions of `D_C`.
 * `TauCeti.sliceDefectDensity_eq`: the defect density in terms of the values of `τ` on the
   horizontal directions `(v, 0)`, `(i v, 0)` and on the fibre.
+* `TauCeti.sliceDefectDensity_add_right`, `TauCeti.sliceDefectDensity_smul_right`: the defect
+  density is conjugate linear in the base direction, like the moment defects.
 * `TauCeti.sliceDefectDensity_compContinuousLinearMap_normalStructure`,
   `TauCeti.sliceDefectDensity_eq_zero_of_compContinuousLinearMap_eq`,
   `TauCeti.sliceDefectDensity_smul_sub_compContinuousLinearMap`,
@@ -134,6 +136,28 @@ def normalLift (v : V) : V × ℂ :=
 
 theorem normalLift_apply (v : V) : normalLift ν μ w v = (v, -(ν v * w + μ v * conj w)) :=
   (rfl)
+
+/-- The horizontal lift of the zero direction is zero. -/
+@[simp]
+theorem normalLift_zero : normalLift ν μ w (0 : V) = 0 := by
+  simp [normalLift_apply]
+
+/-- The horizontal lift is additive. -/
+@[simp]
+theorem normalLift_add (v v' : V) :
+    normalLift ν μ w (v + v') = normalLift ν μ w v + normalLift ν μ w v' := by
+  simp only [normalLift_apply, map_add, Prod.mk_add_mk]
+  ring_nf
+
+/-- The horizontal lift is real linear. -/
+@[simp]
+theorem normalLift_smul (c : ℝ) (v : V) : normalLift ν μ w (c • v) = c • normalLift ν μ w v := by
+  simp only [normalLift_apply, map_real_smul ν ν.continuous, map_real_smul μ μ.continuous,
+    Prod.smul_mk]
+  ext
+  · rfl
+  · simp only [real_smul]
+    ring
 
 /-- The horizontal lift of `i v`: its fibre component is `i (ν(v) w + μ(v) \bar w)`. -/
 theorem normalLift_I_smul (v : V) :
@@ -324,12 +348,12 @@ theorem sliceDefectDensity_eq (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V)
 
 /-- The defect density of the zero form vanishes. -/
 @[simp]
-theorem sliceDefectDensity_zero (v : V) : sliceDefectDensity ν μ w 0 v = 0 := by
+theorem sliceDefectDensity_zero_left (v : V) : sliceDefectDensity ν μ w 0 v = 0 := by
   simp [sliceDefectDensity_def]
 
 /-- The defect density is additive in the two-form. -/
 @[simp]
-theorem sliceDefectDensity_add (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+theorem sliceDefectDensity_add_left (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (τ + σ) v =
       sliceDefectDensity ν μ w τ v + sliceDefectDensity ν μ w σ v := by
   simp only [sliceDefectDensity_def, ContinuousAlternatingMap.add_apply]
@@ -338,7 +362,7 @@ theorem sliceDefectDensity_add (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v 
 
 /-- The defect density is real homogeneous in the two-form. -/
 @[simp]
-theorem sliceDefectDensity_smul (c : ℝ) (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+theorem sliceDefectDensity_smul_left (c : ℝ) (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (c • τ) v = c * sliceDefectDensity ν μ w τ v := by
   simp only [sliceDefectDensity_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   push_cast
@@ -346,7 +370,7 @@ theorem sliceDefectDensity_smul (c : ℝ) (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] 
 
 /-- The defect density changes sign with the two-form. -/
 @[simp]
-theorem sliceDefectDensity_neg (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+theorem sliceDefectDensity_neg_left (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (-τ) v = -sliceDefectDensity ν μ w τ v := by
   simp only [sliceDefectDensity_def, ContinuousAlternatingMap.neg_apply]
   push_cast
@@ -354,10 +378,52 @@ theorem sliceDefectDensity_neg (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V
 
 /-- The defect density is subtractive in the two-form. -/
 @[simp]
-theorem sliceDefectDensity_sub (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
+theorem sliceDefectDensity_sub_left (τ σ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v : V) :
     sliceDefectDensity ν μ w (τ - σ) v =
       sliceDefectDensity ν μ w τ v - sliceDefectDensity ν μ w σ v := by
-  rw [sub_eq_add_neg, sliceDefectDensity_add, sliceDefectDensity_neg, sub_eq_add_neg]
+  rw [sub_eq_add_neg, sliceDefectDensity_add_left, sliceDefectDensity_neg_left, sub_eq_add_neg]
+
+/-- The defect density is additive in the base direction. -/
+@[simp]
+theorem sliceDefectDensity_add_right (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (v v' : V) :
+    sliceDefectDensity ν μ w τ (v + v') =
+      sliceDefectDensity ν μ w τ v + sliceDefectDensity ν μ w τ v' := by
+  simp only [sliceDefectDensity_def, smul_add, normalLift_add, τ.vecCons_add]
+  push_cast
+  ring
+
+/-- The defect density vanishes in the zero direction. -/
+@[simp]
+theorem sliceDefectDensity_zero_right (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) :
+    sliceDefectDensity ν μ w τ 0 = 0 := by
+  have h := sliceDefectDensity_add_right ν μ w τ 0 0
+  rw [add_zero] at h
+  linear_combination -h
+
+/-- The defect density is conjugate linear in the base direction:
+`δ(τ)(c v) = \bar c δ(τ)(v)`. -/
+@[simp]
+theorem sliceDefectDensity_smul_right (τ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (c : ℂ) (v : V) :
+    sliceDefectDensity ν μ w τ (c • v) = conj c * sliceDefectDensity ν μ w τ v := by
+  have hreal (r : ℝ) (u : V) :
+      sliceDefectDensity ν μ w τ (r • u) = r * sliceDefectDensity ν μ w τ u := by
+    simp only [sliceDefectDensity_def, smul_comm I r u, normalLift_smul, τ.vecCons_smul,
+      smul_eq_mul]
+    push_cast
+    ring
+  have hI : sliceDefectDensity ν μ w τ (I • v) = -I * sliceDefectDensity ν μ w τ v := by
+    simp only [sliceDefectDensity_def, smul_smul, I_mul_I, neg_one_smul, normalLift_neg,
+      ContinuousAlternatingMap.map_vecCons_neg]
+    push_cast
+    linear_combination (τ ![normalLift ν μ w (I • v), (0, 1)] +
+      I * τ ![normalLift ν μ w (I • v), (0, I)]) * I_sq
+  have hc : c • v = c.re • v + c.im • (I • v) := by
+    conv_lhs => rw [← re_add_im c]
+    rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
+  rw [hc, sliceDefectDensity_add_right, hreal, hreal, hI]
+  conv_rhs => rw [← re_add_im c]
+  simp only [map_add, map_mul, conj_ofReal, conj_I]
+  ring
 
 /-- The defect density changes sign when the two-form is pulled back by the normal structure:
 `δ(J_N^* τ) = -δ(τ)`. -/
@@ -395,7 +461,7 @@ theorem sliceDefectDensity_smul_sub_compContinuousLinearMap (τ : (V × ℂ) [�
     sliceDefectDensity ν μ w
         ((2 : ℝ)⁻¹ • (τ - τ.compContinuousLinearMap (normalStructure ν μ w))) v =
       sliceDefectDensity ν μ w τ v := by
-  rw [sliceDefectDensity_smul, sliceDefectDensity_sub,
+  rw [sliceDefectDensity_smul_left, sliceDefectDensity_sub_left,
     sliceDefectDensity_compContinuousLinearMap_normalStructure]
   push_cast
   ring
@@ -457,13 +523,6 @@ section Moments
 
 variable {T : V × ℂ → (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ} {K : Set ℂ} {z : V}
 
-/-- A continuous function on the fibre over `z` that vanishes wherever `T` does is integrable,
-when `T` vanishes over the complement of a compact set. -/
-private theorem integrable_of_forall_eq_zero (hK : IsCompact K)
-    (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {f : ℂ → ℂ} (hf : Continuous f)
-    (h : ∀ w, T (z, w) = 0 → f w = 0) : Integrable f :=
-  hf.integrable_of_hasCompactSupport (HasCompactSupport.intro hK fun w hw ↦ h w (hT z w hw))
-
 /-- **The moment defect identity.** Let `T` be a `C¹` two-form on `V × ℂ` vanishing over the
 complement of a compact set `K` and closed at every point of the fibre over `z`, and let
 `ν, μ` be the coefficients of `D_C = \bar∂ + ν W + μ \bar W` at `z`. Then the moment defect
@@ -484,7 +543,7 @@ theorem conjWirtingerDeriv_sliceMoment_pow_add_add_apply (hK : IsCompact K)
       (hTc.continuous.comp (Continuous.prodMk_right z))
   have hint {f : ℂ → ℂ} (hf : Continuous f) (h : ∀ w, T (z, w) = 0 → f w = 0) :
       Integrable f :=
-    integrable_of_forall_eq_zero hK hT hf h
+    hf.integrable_of_hasCompactSupport (HasCompactSupport.intro hK fun w hw ↦ h w (hT z w hw))
   set f₁ : ℂ → ℂ := fun w ↦ k * w ^ (k - 1) *
     (I * T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![(v, 0), (0, I)])
   set f₂ : ℂ → ℂ := fun w ↦ k * w ^ (k - 1) *
