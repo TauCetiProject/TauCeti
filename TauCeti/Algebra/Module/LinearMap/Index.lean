@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.LinearAlgebra.LinearMap.Prod
 public import TauCeti.LinearAlgebra.Quotient.Prod
+import TauCeti.LinearAlgebra.Dimension.Prod
 
 /-!
 # Index of linear maps
@@ -61,10 +63,7 @@ lemma index_prodMap {Q : Type*} [AddCommGroup Q] [Module R Q] [StrongRankConditi
     [Module.Free R (N ⧸ f.range)] [Module.Free R (Q ⧸ g.range)]
     [Module.Finite R (N ⧸ f.range)] [Module.Finite R (Q ⧸ g.range)] :
     (f.prodMap g).index = f.index + g.index := by
-  simp only [index_eq_finrank_sub]
-  rw [ker_prodMap, range_prodMap]
-  simp only [(Submodule.prodEquiv _ _).finrank_eq, Submodule.finrank_quotient_prod,
-    Module.finrank_prod]
+  simp only [index_eq_finrank_sub, finrank_ker_prodMap, finrank_quotient_range_prodMap]
   omega
 
 section RestrictScalars

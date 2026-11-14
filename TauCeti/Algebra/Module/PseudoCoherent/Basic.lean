@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Module.Projective.Schanuel
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Finiteness.Prod
+import TauCeti.LinearAlgebra.LinearMap.Prod
 
 /-!
 # Pseudocoherent modules
@@ -237,7 +238,7 @@ private theorem prod_nat_aux : ∀ (n : ℕ) {N₁ N₂ : Type u} [AddCommGroup 
     obtain ⟨b, f₂, hf₂, h₂⟩ := h₂
     rw [Nat.cast_succ]
     exact succ_of_ker (Prod.map_surjective.mpr ⟨hf₁, hf₂⟩) ((prod_nat_aux n h₁ h₂).of_equiv
-      ((LinearEquiv.ofEq _ _ (ker_prodMap f₁ f₂)).trans (Submodule.prodEquiv _ _)).symm)
+      (kerProdMapEquiv f₁ f₂).symm)
 
 private theorem prod_nat {n : ℕ} (h₁ : IsPseudoCoherentOver R M n)
     (h₂ : IsPseudoCoherentOver R N n) : IsPseudoCoherentOver R (M × N) n := by

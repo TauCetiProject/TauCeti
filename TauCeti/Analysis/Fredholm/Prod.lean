@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
+import TauCeti.LinearAlgebra.LinearMap.Prod
+import TauCeti.LinearAlgebra.Quotient.Prod
+
 /-!
 # Products of Fredholm operators
 
@@ -52,10 +55,10 @@ lemma IsFredholm.prodMap
     exact LinearMap.isStrictMap_prodMap hT.isStrictMap hS.isStrictMap
   · rw [coe_prodMap T S, LinearMap.range_prodMap]
     exact hT.isClosed_range.prod hS.isClosed_range
-  · rw [coe_prodMap T S, LinearMap.ker_prodMap]
-    exact (Submodule.prodEquiv _ _).symm.finiteDimensional
-  · rw [coe_prodMap T S, LinearMap.range_prodMap]
-    exact (Submodule.quotientProdEquiv _ _).symm.finiteDimensional
+  · rw [coe_prodMap T S]
+    infer_instance
+  · rw [coe_prodMap T S]
+    infer_instance
   · rw [coe_prodMap T S, LinearMap.ker_prodMap]
     obtain ⟨PT, hPT⟩ := hT.closedComplemented_ker
     obtain ⟨PS, hPS⟩ := hS.closedComplemented_ker
