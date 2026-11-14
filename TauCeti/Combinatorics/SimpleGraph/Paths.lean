@@ -36,6 +36,8 @@ This file collects general facts about paths and cycles in a simple graph, compl
   `F` than in `F` has an arc between two distinct vertices of `F` whose interior avoids `T`.
 * `SimpleGraph.exists_isPath_notMem_support_iff`: every walk avoiding one vertex can be shortened
   to a path avoiding it.
+* `SimpleGraph.Walk.IsTrail.darts_nodup` and `SimpleGraph.Walk.IsTrail.symm_notMem_darts`: the
+  darts of a trail are duplicate-free and never contain both a dart and its reverse.
 -/
 
 public section
@@ -48,6 +50,15 @@ universe u
 namespace SimpleGraph.Walk
 
 variable {V : Type u} {G : SimpleGraph V}
+
+/-- The darts of a trail contain no duplicates. -/
+theorem IsTrail.darts_nodup {u v : V} {p : G.Walk u v} (hp : p.IsTrail) : p.darts.Nodup :=
+  hp.edges_nodup.of_map _
+
+/-- A trail cannot traverse both a dart and its reverse. -/
+theorem IsTrail.symm_notMem_darts {u v : V} {p : G.Walk u v} (hp : p.IsTrail) {d : G.Dart}
+    (hd : d ∈ p.darts) : d.symm ∉ p.darts := fun hds =>
+  d.symm_ne ((List.nodup_map_iff_inj_on hp.darts_nodup).mp hp.edges_nodup _ hds _ hd d.edge_symm)
 
 /-- A path does not return to its start. -/
 theorem IsPath.start_notMem_tail_support {u v : V} {p : G.Walk u v} (hp : p.IsPath) :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
@@ -12,8 +13,9 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 # Signless preprojective algebras under graph isomorphisms
 
 A graph isomorphism relabels the doubled paths and their local signless relations, and hence
-identifies the signless preprojective algebras. This allows algebraic properties to be
-transported between different vertex labellings, including induced Dynkin subdiagrams.
+identifies the signless preprojective algebras while preserving path length. This allows algebraic
+and graded properties to be transported between different vertex labellings, including induced
+Dynkin subdiagrams.
 
 The neighborhood `Fintype` instances are explicit parameters, matching those used to form the
 caller's signless quotients. The quotient types retain their star enumerations as implicit
@@ -130,5 +132,24 @@ theorem signlessPreprojectiveAlgebraEquiv_trans {X : Type*} [Finite X] {K : Simp
     AlgEquiv.trans_apply, AlgEquiv.trans_apply,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+
+/-- The graph-isomorphism comparison preserves and reflects every path-length graded piece. -/
+theorem signlessPreprojectiveAlgebraEquiv_mem_signlessPreprojectiveGrade_iff
+    (e : G ≃g H) {n : ℕ} {x : signlessPreprojectiveAlgebra k (DoubledQuiver G)} :
+    signlessPreprojectiveAlgebraEquiv k e x ∈
+      signlessPreprojectiveGrade k (DoubledQuiver H) n ↔
+      x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) n := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy, hxy⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver H)).mp hx
+    have h := congrArg (signlessPreprojectiveAlgebraEquiv k e).symm hxy
+    rw [AlgEquiv.symm_apply_apply, signlessPreprojectiveAlgebraEquiv_symm,
+      signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk] at h
+    rw [← h]
+    exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e.symm).mpr hy)
+  · intro hx
+    obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k (DoubledQuiver G)).mp hx
+    rw [signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
+    exact signlessPreprojectiveMk_mem_grade k _ ((pathAlgebraEquiv_mem_grade_iff k e).mpr hy)
 
 end TauCeti
