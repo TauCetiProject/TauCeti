@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.RunningMaximum
+public import TauCeti.Probability.BrownianMotion.PolynomialGrowth
+public import TauCeti.Probability.Martingale.Local.SquareIntegrable
 public import TauCeti.MeasureTheory.Function.UniformIntegrable
 
 /-!
@@ -29,8 +30,17 @@ stopping times or even measurable: only the sampled values must be almost everyw
 measurable. Continuity is required only at the terminal spot/time pair. No stochastic integral
 or martingale property is inferred from these moment and continuity assumptions.
 
-The maximal-moment input is
-`IsFilteredPreBrownianReal.lintegral_iSup_rpow_geometricBrownianMotion_lt_top`.
+More generally, a strongly adapted, almost surely right-continuous local martingale bounded
+by `A (1 + S_(t ∧ T)^p)` for a positive geometric Brownian stock is a true martingale, with
+square-integrable values. The exponent may be any real number. Neither usual filtration
+conditions nor deterministic Markov dependence are required. Apply this criterion to the
+discounted price stopped at maturity, absorbing the bounded deterministic discount factor
+into the growth constant. An Itô argument must first establish local martingality, and the
+stopped extension must have the stated path regularity.
+
+The maximal-moment inputs are
+`IsFilteredPreBrownianReal.lintegral_iSup_rpow_geometricBrownianMotion_lt_top` and
+`IsFilteredPreBrownianReal.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound`.
 
 ## References
 
@@ -170,5 +180,29 @@ theorem tendsto_eLpNorm_polynomialGrowth_geometricBrownianMotion
     exact hCt.tendsto.comp hp
   exact tendsto_Lp_finite_of_tendsto_ae hp hp_top hC
     (hUI.memLp_of_ae_tendsto hlim) hUI.1 hlim
+
+/-- A strongly adapted, almost surely right-continuous local martingale with a uniform
+polynomial bound in a positive geometric Brownian stock stopped at maturity is a true
+martingale. Together with `memLp_two_randomTime_of_geometricBrownianMotion_bound`, this verifies the
+square-integrable true-martingale condition for a discounted candidate price once its local
+Itô identity and terminal extension have been established. -/
+theorem martingale_of_locally_martingale_of_geometricBrownianMotion_bound
+    {X : ℝ≥0 → Ω → ℝ} {p : ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ W u ω) (Ioi t) t)
+    (hs : 0 < s) (hX : StronglyAdapted ℱ X)
+    (hlocal : Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P)
+    (hcontX : ∀ᵐ ω ∂P, ∀ t, ContinuousWithinAt (fun u ↦ X u ω) (Ioi t) t)
+    (hbound : ∀ᵐ ω ∂P, ∀ t,
+      |X t ω| ≤ A * (1 + geometricBrownianMotion s μ σ W (min t T) ω ^ p)) :
+    Martingale X ℱ P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  apply hX.martingale_of_locally_martingale_of_lintegral_iSup_norm_sq_lt_top hlocal
+    (fun _ ↦ hcontX.mono fun ω hω t _ ↦ hω t)
+  intro R
+  simp only [Real.norm_eq_abs, sq_abs]
+  refine lt_of_le_of_lt (lintegral_mono fun ω ↦ iSup₂_le fun t _ ↦
+    le_iSup (fun u ↦ ENNReal.ofReal (X u ω ^ 2)) t)
+    (hW.lintegral_iSup_sq_lt_top_of_geometricBrownianMotion_bound hcont hs hbound)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
