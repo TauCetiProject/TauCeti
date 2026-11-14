@@ -36,8 +36,8 @@ grading graded-isomorphic to a shift has such a generator.
 
 ## Main results
 
-* `Units.val_inv_mem_graded`: the inverse of a homogeneous unit of degree `d` is homogeneous of
-  degree `-d`.
+* `Units.val_inv_mem_graded` and `Units.val_zpow_mem_graded`: the inverse and integer powers of a
+  homogeneous unit of degree `d` are homogeneous of degrees `-d` and `m • d`.
 * `TauCeti.mem_homogeneousUnitDegrees_iff`: a degree lies in `homogeneousUnitDegrees 𝒜` if and
   only if it is the degree of a homogeneous unit.
 * `TauCeti.mul_mem_iff_of_isUnit_mem` and `TauCeti.eq_map_mulLeft_of_isUnit_mem`: a compatible
@@ -68,6 +68,16 @@ theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (-d) :=
   TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hu u.isRegular.left
     (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
+
+/-- In a ring graded by an additive group, an integer power `u ^ m` (`m : ℤ`) of a homogeneous
+unit of degree `d` is homogeneous of degree `m • d`. -/
+theorem Units.val_zpow_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) (m : ℤ) :
+    ((u ^ m : Aˣ) : A) ∈ 𝒜 (m • d) := by
+  cases m with
+  | ofNat n => simpa using SetLike.pow_mem_graded n hu
+  | negSucc n =>
+    rw [zpow_negSucc, negSucc_zsmul]
+    exact (u ^ (n + 1)).val_inv_mem_graded (SetLike.pow_mem_graded (n + 1) hu)
 
 end Inverse
 
