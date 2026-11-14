@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Topology.LocallyClosed
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Finite locally closed stratifications
@@ -75,28 +76,25 @@ lemma empty_notMem_parts : ∅ ∉ S.parts :=
 
 @[grind →]
 lemma nonempty_of_mem_parts {s : Set X} (hs : s ∈ S.parts) : s.Nonempty :=
-  nonempty_iff_ne_empty.2 (S.ne_bot hs)
+  S.toFinpartition.nonempty_of_mem_parts_set hs
 
 /-- The strata cover the whole space. -/
-@[simp]
-lemma sUnion_parts : ⋃₀ (S.parts : Set (Set X)) = univ := by
-  rw [← Finset.sup_id_set_eq_sUnion, S.sup_parts]
+lemma sUnion_parts : ⋃₀ (S.parts : Set (Set X)) = univ :=
+  S.toFinpartition.sUnion_parts
 
 /-- Every point lies in some stratum. -/
-lemma exists_mem (x : X) : ∃ s ∈ S.parts, x ∈ s := by
-  have hx : x ∈ ⋃₀ (S.parts : Set (Set X)) := by rw [S.sUnion_parts]; exact mem_univ x
-  exact mem_sUnion.1 hx
+lemma exists_mem (x : X) : ∃ s ∈ S.parts, x ∈ s :=
+  S.toFinpartition.exists_mem_set (mem_univ x)
 
 /-- Two strata containing a common point are equal. -/
 @[grind →]
 lemma eq_of_mem_parts {s t : Set X} (hs : s ∈ S.parts) (ht : t ∈ S.parts) {x : X} (hxs : x ∈ s)
     (hxt : x ∈ t) : s = t :=
-  S.disjoint.elim_set hs ht x hxs hxt
+  S.toFinpartition.eq_of_mem_parts_set hs ht hxs hxt
 
 /-- Every point lies in exactly one stratum. -/
-lemma existsUnique_mem (x : X) : ∃! s, s ∈ S.parts ∧ x ∈ s := by
-  obtain ⟨s, hs, hx⟩ := S.exists_mem x
-  exact ⟨s, ⟨hs, hx⟩, fun t ⟨ht, hxt⟩ ↦ S.eq_of_mem_parts ht hs hxt hx⟩
+lemma existsUnique_mem (x : X) : ∃! s, s ∈ S.parts ∧ x ∈ s :=
+  S.toFinpartition.existsUnique_mem_set (mem_univ x)
 
 /-- Refinement: `S ≤ T` when every stratum of `S` lies in some stratum of `T`. -/
 instance : PartialOrder (FiniteStratification X) :=
@@ -117,12 +115,8 @@ lemma le_def : S ≤ T ↔ ∀ s ∈ S.parts, ∃ t ∈ T.parts, s ⊆ t :=
 
 /-- If `S` refines `T`, each stratum of `T` is the union of the strata of `S` inside it. -/
 lemma eq_sUnion_of_le (hST : S ≤ T) {t : Set X} (ht : t ∈ T.parts) :
-    t = ⋃₀ {s ∈ (S.parts : Set (Set X)) | s ⊆ t} := by
-  refine Subset.antisymm (fun x hxt ↦ ?_) (sUnion_subset fun s hs ↦ hs.2)
-  obtain ⟨s, hs, hxs⟩ := S.exists_mem x
-  obtain ⟨t', ht', hst'⟩ := le_def.1 hST s hs
-  obtain rfl := T.eq_of_mem_parts ht ht' hxt (hst' hxs)
-  exact ⟨s, ⟨hs, hst'⟩, hxs⟩
+    t = ⋃₀ {s ∈ (S.parts : Set (Set X)) | s ⊆ t} :=
+  Finpartition.eq_sUnion_of_le (toFinpartition_le_toFinpartition.2 hST) ht
 
 open Classical in
 /-- The stratification with the single stratum `X` (no strata when `X` is empty). -/
