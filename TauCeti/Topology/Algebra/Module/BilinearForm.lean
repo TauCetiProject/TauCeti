@@ -9,13 +9,9 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.LocallyConvex.Bounded
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Analysis.Matrix.PosDef
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import Mathlib.Topology.Instances.Matrix
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.QuadraticMap
@@ -94,6 +90,8 @@ use.
   lemma where the first form is positive semidefinite, over a compact family. If the diagonal of
   `a x` is nonnegative and that of `b x` is positive at the nonzero zeros of the diagonal of
   `a x`, then `t a x + b x` is uniformly coercive for every large `t`.
+* `TauCeti.convex_setOfPred_symm_pos`: the symmetric, positive definite continuous bilinear forms
+  on a real topological vector space form a convex set.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -115,28 +113,12 @@ theorem _root_.LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap
     {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
     [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
     [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [T2Space V]
-    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B := by
-  ext v w
-  simp only [ContinuousLinearMap.toBilinForm_apply, LinearMap.toContinuousBilinearMap_apply]
+    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B :=
+  rfl
 
 section
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-
-/-- The bilinear form of a continuous linear map into the dual space is left-separating exactly
-when the map is injective. -/
-theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective (L : E →L[𝕜] E →L[𝕜] 𝕜)
-    :
-    L.toBilinForm.SeparatingLeft ↔ Function.Injective L := by
-  rw [LinearMap.separatingLeft_iff_ker_eq_bot, LinearMap.ker_eq_bot]
-  exact ⟨fun h v w hvw ↦ h (LinearMap.ext fun u ↦ by simp [hvw]),
-    fun h v w hvw ↦ h (ContinuousLinearMap.ext fun u ↦ by simpa using LinearMap.congr_fun hvw u)⟩
-
-/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
-the map takes symmetric values. -/
-theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
-    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
-  LinearMap.BilinForm.isSymm_def
 
 /-- The kernel of the bilinear form of a continuous linear map into the dual space is the kernel of
 the map. -/
@@ -144,6 +126,20 @@ theorem _root_.ContinuousLinearMap.ker_toBilinForm (L : E →L[𝕜] E →L[𝕜
     LinearMap.ker L.toBilinForm = L.ker := by
   ext x
   simp [LinearMap.ext_iff, ContinuousLinearMap.ext_iff]
+
+/-- The bilinear form of a continuous linear map into the dual space is left-separating exactly
+when the map is injective. -/
+theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective
+    (L : E →L[𝕜] E →L[𝕜] 𝕜) :
+    L.toBilinForm.SeparatingLeft ↔ Function.Injective L := by
+  rw [LinearMap.separatingLeft_iff_ker_eq_bot, L.ker_toBilinForm]
+  exact LinearMap.ker_eq_bot
+
+/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
+the map takes symmetric values. -/
+theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
+    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
+  LinearMap.BilinForm.isSymm_def
 
 /-- A subspace on whose nonzero vectors the diagonal of a continuous bilinear form does not vanish
 meets every subspace of the kernel of the form trivially. -/
@@ -240,8 +236,8 @@ an open set. -/
 theorem _root_.ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [FiniteDimensional 𝕜 E] :
-    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} := by
-  exact isOpen_setOf_nondegenerate fun v w ↦ by
+    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} :=
+  isOpen_setOf_nondegenerate fun v w ↦ by
     simpa only [ContinuousLinearMap.toBilinForm_apply] using
       (continuous_id.clm_apply continuous_const).clm_apply continuous_const
 
@@ -311,6 +307,22 @@ theorem isVonNBounded_setOfPred_lt_one_of_le {g h : V →L[ℝ] V →L[ℝ] ℝ}
     _ ≤ h v v := hle v
     _ < 1 := hv
 
+omit [ContinuousConstSMul ℝ V] in
+/-- The symmetric, positive definite continuous bilinear forms on a real topological vector space
+are closed under convex combinations. -/
+theorem convex_setOfPred_symm_pos :
+    Convex ℝ {g : V →L[ℝ] V →L[ℝ] ℝ | (∀ v w, g v w = g w v) ∧ ∀ v, v ≠ 0 → 0 < g v v} := by
+  rintro g ⟨hgs, hgp⟩ g' ⟨hgs', hgp'⟩ a b ha hb hab
+  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_⟩
+  have hab' : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
+  rw [hab']
+  -- One of the two coefficients is positive.
+  rcases ha.eq_or_lt with rfl | ha'
+  · rw [zero_add] at hab
+    subst hab
+    simpa using hgp' v hv
+  · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv)) (mul_nonneg hb (hgp' v hv).le)
+
 /-- The fibrewise conditions of a Riemannian metric cut out a convex set: the continuous bilinear
 forms on a real topological vector space that are symmetric, positive definite and have a
 von Neumann bounded unit set are closed under convex combinations. -/
@@ -324,21 +336,14 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
     · exact (hg v hv).le
   rintro g ⟨hgs, hgp, hgb⟩ g' ⟨hgs', hgp', hgb'⟩ a b ha hb hab
   have hab' (v : V) : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
-  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_, ?_⟩
-  · -- One of the two coefficients is positive.
-    rw [hab']
-    rcases ha.eq_or_lt with rfl | ha'
-    · rw [zero_add] at hab
-      subst hab
-      simpa using hgp' v hv
-    · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv))
-        (mul_nonneg hb (nonneg hgp' v))
-  · -- One of the two coefficients is at least `1 / 2`, and that term dominates.
-    rcases le_total (1 / 2 : ℝ) a with ha' | hb'
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
+  obtain ⟨hs, hp⟩ := convex_setOfPred_symm_pos ⟨hgs, hgp⟩ ⟨hgs', hgp'⟩ ha hb hab
+  refine ⟨hs, hp, ?_⟩
+  -- One of the two coefficients is at least `1 / 2`, and that term dominates.
+  rcases le_total (1 / 2 : ℝ) a with ha' | hb'
+  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
+  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
 
 omit [ContinuousConstSMul ℝ V] in
 /-- A continuous bilinear form that reads as the inner product of a real inner product space
