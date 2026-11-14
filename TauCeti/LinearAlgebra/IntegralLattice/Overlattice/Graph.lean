@@ -347,13 +347,9 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   set P := N.toIntermediateCarrier hform hle
   have hPc : P.1 = N.carrier := N.coe_toIntermediateCarrier hform hle
   have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.2.2
-  have hPe := N.isEven_toIntermediateCarrier hform hle hNe
-  have hPN := N.toIntegralLattice_toIntermediateCarrier hform hle hPe.isIntegral
   -- Its subgroup of the discriminant group is a quadratic Lagrangian.
-  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) := by
-    refine (FiniteQuadraticModule.isLagrangian_def _ _).mpr
-      ⟨(IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hS P).mp hPe, ?_⟩
-    exact hPe.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp (hPN.symm ▸ hNu)
+  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) :=
+    (S.isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff hS N hform hle).mpr ⟨hNe, hNu⟩
   have hlag' := ((L.discriminantQuadraticIsometryOrthogonalSum M hL hM).isLagrangian_map_iff
     _ (S.discriminantSubgroup P)).mpr hlag
   rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'
