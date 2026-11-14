@@ -99,7 +99,7 @@ theorem wronskian_derivativeOfSeparating_basis_ne_zero_of_perfectField [PerfectF
   obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
   obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
   rw [wronskian_eq_pow_mul_wronskian_derivativeOfSeparating htr]
-  exact mul_ne_zero (pow_ne_zero _ (derivativeOfSeparating_ne_zero hx htr))
+  exact mul_ne_zero (pow_ne_zero _ (derivativeOfSeparating_ne_zero hx (y := t)))
     (P.wronskian_derivativeOfSeparating_basis_ne_zero hP ht htr hF hex hW hgaps b)
 
 include hP in
@@ -122,7 +122,7 @@ theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
   -- Change the parameter to a separating prime element `t` at `P`.
   obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
   obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
-  have hd0 := derivativeOfSeparating_ne_zero hx htr
+  have hd0 := derivativeOfSeparating_ne_zero hx (y := t)
   -- By the chain rule `dt = (dt/dx) · dx`, the order of `dt/dx` at `P` is `-v_P(dx)`.
   have := P.isSeparable_residueField_of_degree_eq_one hP
   have hord := P.ord_derivativeOfSeparating_eq_sub hF hex hx htr

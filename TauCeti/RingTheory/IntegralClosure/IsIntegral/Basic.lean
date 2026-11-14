@@ -39,6 +39,7 @@ without either being an algebra over the other.
   `b ≠ 0`, then `x` is integral over `ℚ`.
 * `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
   with integral coefficients.
+* `Algebra.IsIntegral.of_finrank_pos`: an algebra of positive finite rank over a field is integral.
 -/
 
 public section
@@ -182,3 +183,11 @@ theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRin
   exact isIntegral_trans g (hpow.of_pow hn)
 
 end TauCeti
+
+/-- **A positive finite rank forces integrality**: if `0 < finrank K L` for a field `K` and a ring
+`L` over it, then `L` is finite over `K` (a module of infinite dimension has `finrank` zero), hence
+integral. -/
+theorem Algebra.IsIntegral.of_finrank_pos {K L : Type*} [Field K] [Ring L] [Algebra K L]
+    (h : 0 < Module.finrank K L) : Algebra.IsIntegral K L :=
+  haveI := Module.finite_of_finrank_pos h
+  Algebra.IsIntegral.of_finite K L

@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Different.Complementary
 public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.FieldTheory.FunctionField.Different.Localization
+import TauCeti.FieldTheory.Separable.SimpleRoot
 
 /-!
 # The different exponent and derivatives of generating equations
@@ -106,27 +107,6 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
   rw [← hval]
   exact differentExponent_le_ord_of_mem_differentIdeal k F P' hmem hne
 
-/-- **The different exponent of a quadratic equation**: if `F' = F(z)` with
-`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`, as long
-as `2 z + u ≠ 0`. This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
-theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u ∈ P'.integers)
-    (hv : algebraMap F F' v ∈ P'.integers) {z : F'} (hgen : F⟮z⟯ = ⊤)
-    (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0)
-    (hne : 2 * z + algebraMap F F' u ≠ 0) :
-    (differentExponent k F P' : ℤ) ≤ P'.ord (2 * z + algebraMap F F' u) := by
-  have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
-  have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
-      2 * z + algebraMap F F' u := by
-    simp only [derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
-      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
-    norm_num
-  rw [← hderiv]
-  refine differentExponent_le_ord_aeval_derivative k F hgen hψ (fun i ↦ ?_)
-    (by simpa using hz) (by rwa [hderiv])
-  rw [mem_integers_restrict_iff]
-  rcases i with _ | _ | _ | i <;>
-    simp [coeff_X, coeff_C, coeff_X_pow, neg_mem_iff, hu, hv]
-
 /-- For a generator of the integral closure over the valuation ring, the different exponent is
 the order of the derivative of its field minimal polynomial. -/
 theorem differentExponent_eq_ord_aeval_derivative_minpoly
@@ -209,6 +189,31 @@ theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
     (IntermediateField.finrank_eq_one_iff_eq_top.mp
       (by rw [IntermediateField.adjoin_zero, IntermediateField.finrank_bot', h]))
     monic_X (fun i ↦ by rw [coeff_X]; split_ifs <;> simp) (aeval_X 0) (by simp)
+
+/-- **The different exponent of a quadratic equation**: if `F' = F(z)` with
+`z² + u z - v = 0` and `u, v ∈ F` regular at `P'`, then `d(P' ∣ P) ≤ ord_{P'} (2 z + u)`. When
+`2 z + u = 0` the extension has degree one, so the different exponent and `P'.ord 0` both vanish.
+This is `differentExponent_le_ord_aeval_derivative` for `ψ = X² + u X - v`. -/
+theorem differentExponent_le_ord_two_mul_add {u v : F} (hu : algebraMap F F' u ∈ P'.integers)
+    (hv : algebraMap F F' v ∈ P'.integers) {z : F'} (hgen : F⟮z⟯ = ⊤)
+    (hz : z ^ 2 + algebraMap F F' u * z - algebraMap F F' v = 0) :
+    (differentExponent k F P' : ℤ) ≤ P'.ord (2 * z + algebraMap F F' u) := by
+  by_cases hne : 2 * z + algebraMap F F' u = 0
+  · rw [hne, P'.ord_zero]
+    exact_mod_cast (differentExponent_eq_zero_of_finrank_eq_one k F P'
+      (finrank_eq_one_of_two_mul_add_eq_zero hgen hz hne)).le
+  have hψ : (X ^ 2 + C u * X - C v : F[X]).Monic := by monicity!
+  have hderiv : aeval z (derivative (X ^ 2 + C u * X - C v : F[X])) =
+      2 * z + algebraMap F F' u := by
+    simp only [derivative_sub, derivative_X_pow, derivative_C_mul_X, derivative_C, sub_zero,
+      map_add, map_mul, aeval_C, Nat.cast_ofNat, map_ofNat]
+    norm_num
+  rw [← hderiv]
+  refine differentExponent_le_ord_aeval_derivative k F hgen hψ (fun i ↦ ?_)
+    (by simpa using hz) (by rwa [hderiv])
+  rw [mem_integers_restrict_iff]
+  rcases i with _ | _ | _ | i <;>
+    simp [coeff_X, coeff_C, coeff_X_pow, neg_mem_iff, hu, hv]
 
 end Place
 

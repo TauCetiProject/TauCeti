@@ -211,8 +211,12 @@ theorem derivativeOfSeparating_sub_algebraMap {a : k}
 
 /-- The derivative of a separating element `y` with respect to a separating element `x` is
 nonzero. -/
-theorem derivativeOfSeparating_ne_zero {y : F} (hy : Transcendental k y)
-    [Algebra.IsSeparable k⟮y⟯ F] : derivativeOfSeparating hx y ≠ 0 := fun h ↦ by
+theorem derivativeOfSeparating_ne_zero {y : F} [Algebra.IsSeparable k⟮y⟯ F] :
+    derivativeOfSeparating hx y ≠ 0 := fun h ↦ by
+  have hy : Transcendental k y := fun hya ↦ hx <| by
+    have : Algebra.IsAlgebraic k k⟮y⟯ := IntermediateField.isAlgebraic_adjoin_simple hya.isIntegral
+    have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans (R := k) (S := k⟮y⟯) (A := F)
+    exact Algebra.IsAlgebraic.isAlgebraic x
   have hD := derivativeOfSeparating_smul_D hx y
   rw [h, zero_smul] at hD
   exact D_ne_zero_of_separating hy hD.symm
