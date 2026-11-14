@@ -21,7 +21,12 @@ The last criterion expresses concentration of `M / A₊ M` in degree `d` without
 presentation of that quotient. It detects the generating degrees of terms of minimal graded
 projective resolutions: maps to modules annihilated by `A₊` see precisely this quotient.
 Neither projectivity nor semisimplicity is needed for the generation criterion. Boundedness below
-is essential; no finite-generation hypothesis is required when a lower bound is supplied.
+is essential; no finite-generation hypothesis is required when a lower bound is supplied, while a
+finitely generated module over a nonnegatively graded ring is bounded below automatically.
+
+In the same bounded-below setting, any degree-zero module endomorphism congruent to the identity
+modulo `A₊ M` is bijective: generation modulo `A₊` gives surjectivity, and the difference from the
+identity raises internal degree on homogeneous components so its iterates kill any given degree.
 
 The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
 scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
@@ -186,6 +191,61 @@ theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 
     exact Submodule.smul_mem_smul (hmul b hb) Submodule.mem_top
   · simpa only [smul_add] using Submodule.add_mem _ hx hy
 
+/-- A finitely generated graded module over a nonnegatively decomposed scalar semiring vanishes
+below some internal degree: its finite generating set has finitely many nonzero homogeneous
+components, and nonnegative homogeneous scalars cannot lower internal degree. -/
+theorem exists_piece_eq_bot_of_lt_of_moduleFinite [DirectSum.Decomposition 𝒜] [Module.Finite A M]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) : ∃ b : ℤ, ∀ p < b, G.piece p = ⊥ := by
+  classical
+  obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := A) (M := M)
+  let supp : Finset ℤ := s.biUnion fun g ↦ (decompose G.piece g).support
+  obtain ⟨b, hb⟩ := supp.finite_toSet.bddBelow
+  -- Elements whose homogeneous components vanish below `b` form an `A`-submodule containing `s`.
+  let U : Submodule A M :=
+    { carrier := {x : M | ∀ p < b, (decompose G.piece x p : M) = 0}
+      zero_mem' := fun p _ ↦ by simp
+      add_mem' := fun {x y} hx hy p hp ↦ by
+        simp [decompose_add, hx p hp, hy p hp]
+      smul_mem' := fun a {x} hx ↦ by
+        induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+        | zero => intro p _; simp
+        | add a₁ a₂ h₁ h₂ =>
+          intro p hp
+          simp [add_smul, decompose_add, h₁ p hp, h₂ p hp]
+        | @homogeneous i a =>
+          intro p hp
+          rcases lt_or_ge i 0 with hi | hi
+          · have ha0 : (a : A) = 0 := by
+              simpa only [h𝒜 i hi, Submodule.mem_bot] using a.2
+            simp [ha0]
+          · let f : M →ₗ[k] M := Algebra.lsmul k k M (a : A)
+            have hf : TauCeti.LinearMap.IsHomogeneous f G.piece G.piece i :=
+              TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz ↦ by
+                simpa [f, add_comm] using SetLike.GradedSMul.smul_mem a.2 hz
+            have hmap := hf.map_decompose (p - i) x
+            rw [sub_add_cancel] at hmap
+            simpa only [f, Algebra.lsmul_apply, hx (p - i) (by omega), smul_zero] using hmap.symm }
+  have hU : U = ⊤ := top_unique <| hs ▸ Submodule.span_le.mpr fun g hg p hp ↦ by
+    by_contra hne
+    have hmem : p ∈ supp := Finset.mem_biUnion.mpr
+      ⟨g, hg, DFinsupp.mem_support_iff.mpr (Submodule.coe_eq_zero.not.mp hne)⟩
+    exact hp.not_ge (hb hmem)
+  refine ⟨b, fun p hp ↦ (Submodule.eq_bot_iff _).mpr fun x hx ↦ ?_⟩
+  have hxU : x ∈ U := hU.symm ▸ Submodule.mem_top
+  simpa only [decompose_of_mem_same G.piece hx] using hxU p hp
+
+/-- The set of nonzero homogeneous pieces of a finitely generated module over a nonnegatively
+decomposed scalar semiring is bounded below. -/
+theorem bddBelow_setOf_piece_ne_bot_of_moduleFinite [DirectSum.Decomposition 𝒜]
+    [Module.Finite A M] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
+    BddBelow {p : ℤ | G.piece p ≠ ⊥} := by
+  obtain ⟨b, hb⟩ := exists_piece_eq_bot_of_lt_of_moduleFinite (G := G) 𝒜 h𝒜
+  refine ⟨b, fun p hp ↦ ?_⟩
+  by_contra hlt
+  exact hp (hb p (lt_of_not_ge hlt))
+
+section GradedAlgebra
+
 variable [GradedAlgebra 𝒜]
 
 /-- A bounded-below module over a nonnegatively graded algebra is generated in degree `d`
@@ -224,5 +284,102 @@ theorem isGeneratedInDegree_iff_piece_le_positive_smul_top_of_finite [Module.Fin
   by_contra hne
   have := hb hne
   omega
+
+/-- The generating-degree criterion for a finitely generated module over a nonnegatively graded
+algebra: finite generation over `A` supplies boundedness below automatically. -/
+theorem isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite [Module.Finite A M]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) (d : ℤ) :
+    G.IsGeneratedInDegree A d ↔
+      ∀ p, p ≠ d → G.piece p ≤
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  obtain ⟨b, hb⟩ := exists_piece_eq_bot_of_lt_of_moduleFinite (G := G) 𝒜 h𝒜
+  exact isGeneratedInDegree_iff_piece_le_positive_smul_top 𝒜 h𝒜 b hb d
+
+end GradedAlgebra
+
+section Endomorphism
+
+variable {k' : Type uk} [CommRing k'] {A' : Type uA} [Ring A'] [Algebra k' A']
+  {N : Type uM} [AddCommGroup N] [Module k' N] [Module A' N] [IsScalarTower k' A' N]
+  (ℬ : ℤ → Submodule k' A') {H : InternalGrading k' N ℤ} [SetLike.GradedSMul ℬ H.piece]
+
+/-- Iterates of a degree-zero `A`-linear endomorphism landing in `A₊ N` annihilate homogeneous
+pieces of bounded degree: each application lowers the module degree needed to decompose into a
+bounded-below support, so the `m`-th iterate vanishes below `b + m`. -/
+theorem pow_apply_eq_zero_of_mem_positive_smul_top (b : ℤ) (hbelow : ∀ p < b, H.piece p = ⊥)
+    {δ : N →ₗ[A'] N} (hδhom : TauCeti.LinearMap.IsHomogeneous δ H.piece H.piece 0)
+    (hδ : ∀ x, δ x ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule k' N))
+    (m : ℕ) {p : ℤ} (hp : p < b + m) {x : N} (hx : x ∈ H.piece p) :
+    (δ ^ m) x = 0 := by
+  induction m generalizing p x with
+  | zero =>
+    rw [Nat.cast_zero, add_zero] at hp
+    exact (Submodule.eq_bot_iff _).mp (hbelow p hp) x hx
+  | succ m ih =>
+    have hmem := decompose_mem_of_mem_positive_smul_top (G := H) ℬ
+      (LinearMap.ker (δ ^ m)) (p := p)
+      (fun q hq y hy ↦ LinearMap.mem_ker.mpr (ih (by omega) hy)) (hδ x)
+    have hsame : (decompose H.piece (δ x) p : N) = δ x :=
+      decompose_of_mem_same H.piece (by simpa only [add_zero] using hδhom.map_mem hx)
+    rw [hsame, LinearMap.mem_ker] at hmem
+    simpa only [pow_succ, mul_apply_eq_comp] using hmem
+
+/-- **Graded Nakayama for degree-zero endomorphisms.** On a bounded-below graded module, any
+degree-zero `A`-linear endomorphism congruent to the identity modulo `A₊ N` is bijective:
+generation modulo `A₊` gives surjectivity, and iterating `id - f` shifts internal support below the
+lower bound to give injectivity. Neither multiplicative algebra axioms nor finite generation are
+needed once a lower bound is supplied. -/
+theorem bijective_of_sub_id_mem_positive_smul_top (b : ℤ) (hbelow : ∀ p < b, H.piece p = ⊥)
+    {f : N →ₗ[A'] N} (hf : TauCeti.LinearMap.IsHomogeneous f H.piece H.piece 0)
+    (hsub : ∀ x, f x - x ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule k' N)) :
+    Function.Bijective f := by
+  let δ : N →ₗ[A'] N := LinearMap.id - f
+  have hδ : ∀ x, δ x ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule k' N) := fun x ↦ by
+    have hx : -(f x - x) ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule k' N) :=
+      Submodule.neg_mem _ (hsub x)
+    simpa only [δ, LinearMap.sub_apply, LinearMap.id_apply, neg_sub] using hx
+  have hδhom : TauCeti.LinearMap.IsHomogeneous δ H.piece H.piece 0 :=
+    TauCeti.LinearMap.isHomogeneous_def.mpr fun q y hy ↦ by
+      simpa only [δ, LinearMap.sub_apply, LinearMap.id_apply, add_zero] using
+        (H.piece q).sub_mem hy (by simpa only [add_zero] using hf.map_mem hy)
+  constructor
+  · rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
+    intro x hx
+    rw [LinearMap.mem_ker] at hx
+    classical
+    rw [← sum_support_decompose H.piece x]
+    refine Finset.sum_eq_zero fun p _ ↦ ?_
+    set xp : N := ↑(decompose H.piece x p)
+    have hfxp : f xp = 0 := by
+      have hmap := hf.map_decompose p x
+      simpa only [xp, hx, add_zero, decompose_zero, DirectSum.zero_apply,
+        Submodule.coe_zero] using hmap
+    have hδxp : δ xp = xp := by simp [δ, hfxp]
+    have hfix : ∀ m : ℕ, (δ ^ m) xp = xp := fun m ↦ by
+      induction m with
+      | zero => simp
+      | succ m ih => simp [pow_succ, hδxp, ih]
+    let m : ℕ := (p - b + 1).toNat
+    rw [← hfix m]
+    exact pow_apply_eq_zero_of_mem_positive_smul_top (H := H) ℬ b hbelow hδhom hδ m (by omega)
+      (decompose H.piece x p).2
+  · rw [← LinearMap.range_eq_top]
+    refine eq_top_of_piece_le_sup_positive_smul_top (G := H) ℬ (LinearMap.range f)
+      hf.isHomogeneous_range b hbelow fun p x _ ↦ ?_
+    have hdecomp : x = f x + δ x := by simp [δ]
+    rw [hdecomp]
+    exact Submodule.add_mem_sup (LinearMap.mem_range_self f x) (hδ x)
+
+/-- On a finitely generated graded module over a nonnegatively decomposed ring, any degree-zero
+`A`-linear endomorphism congruent to the identity modulo `A₊ N` is bijective. -/
+theorem bijective_of_sub_id_mem_positive_smul_top_of_moduleFinite [DirectSum.Decomposition ℬ]
+    [Module.Finite A' N] (hℬ : ∀ i < 0, ℬ i = ⊥) {f : N →ₗ[A'] N}
+    (hf : TauCeti.LinearMap.IsHomogeneous f H.piece H.piece 0)
+    (hsub : ∀ x, f x - x ∈ (⨆ (i : ℤ) (_ : 0 < i), ℬ i) • (⊤ : Submodule k' N)) :
+    Function.Bijective f := by
+  obtain ⟨b, hb⟩ := exists_piece_eq_bot_of_lt_of_moduleFinite (G := H) ℬ hℬ
+  exact bijective_of_sub_id_mem_positive_smul_top (H := H) ℬ b hb hf hsub
+
+end Endomorphism
 
 end TauCeti.InternalGrading

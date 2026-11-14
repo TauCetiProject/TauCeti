@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
+public import TauCeti.Algebra.Module.GradedModule.Nakayama
 
 /-!
-# Ext from minimal graded resolutions
+# Ext and uniqueness for minimal graded resolutions
 
 For a minimal graded projective resolution, every differential has image in the positive-degree
 algebra action. Against a target annihilated by that action, the Hom complex has zero
@@ -22,6 +23,14 @@ natural in the target. Neither nonnegative grading nor semisimplicity is needed 
 computation; those hypotheses enter when detecting generating degrees or constructing minimal
 resolutions.
 
+Any two bounded-below minimal graded projective resolutions of the same graded module are
+canonically chain-isomorphic (`GradedProjectiveResolution.IsMinimal.complexIso`), and in fact any
+augmentation-compatible chain map between them is already an isomorphism: homotopic chain maps
+between minimal resolutions agree modulo `A₊`, so graded Nakayama makes any homotopy equivalence an
+isomorphism in every homological degree. Over a nonnegatively decomposed ring, finite generation of
+the resolution terms supplies the lower bounds automatically
+(`GradedProjectiveResolution.IsMinimal.termObjIsoOfModuleFinite`).
+
 `GradedProjectiveResolution.exists_isMinimal_of_forall_cover` assembles a minimal resolution from
 any supply of minimal projective surjections that is stable under passing to kernels.
 
@@ -29,6 +38,8 @@ any supply of minimal projective surjections that is stable under passing to ker
 
 * A. Beilinson, V. Ginzburg and W. Soergel, "Koszul duality patterns in representation theory",
   Section 1.2, for the minimal-resolution computation underlying the diagonal Ext criterion.
+* C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3, for graded Nakayama
+  and minimal graded projective resolutions.
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 2.4, for computing Ext
   from projective resolutions.
 -/
@@ -203,6 +214,177 @@ theorem IsMinimal.extLinearEquiv_comp (hr : r.IsMinimal)
   | succ n =>
       simp only [IsMinimal.extLinearEquiv_succ_apply,
         ProjectiveResolution.extMk_comp_mk₀, Category.assoc]
+
+end GradedProjectiveResolution
+
+/-! ### Uniqueness up to chain isomorphism -/
+
+namespace GradedModuleCat
+
+/-- On a bounded-below graded module, any graded endomorphism congruent to the identity modulo
+`A₊ M` is an isomorphism in `GradedModuleCat`. -/
+theorem isIso_of_sub_id_mem_positive_smul_top {M : GradedModuleCat.{v} 𝒜} (b : ℤ)
+    (hbelow : ∀ p < b, M.grading.piece p = ⊥) (f : M ⟶ M)
+    (hsub : ∀ x, f.hom x - x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    IsIso f :=
+  (isIso_iff_bijective f).mpr <|
+    InternalGrading.bijective_of_sub_id_mem_positive_smul_top (H := M.grading) 𝒜 b hbelow
+      f.isHomogeneous hsub
+
+end GradedModuleCat
+
+namespace GradedProjectiveResolution
+
+variable [DirectSum.Decomposition 𝒜]
+  {r r' : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
+
+omit [DirectSum.Decomposition 𝒜] in
+private theorem map_mem_positive_smul_top {X Y : GradedModuleCat.{v} 𝒜} (g : X ⟶ Y) {x : X}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k X)) :
+    g.hom x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k Y) := by
+  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_)
+    (fun y z hy hz ↦ by simpa only [map_add] using Submodule.add_mem _ hy hz)
+  rw [map_smul]
+  exact Submodule.smul_mem_smul ha Submodule.mem_top
+
+private theorem IsMinimal.complex_d_apply_mem (hr : r.IsMinimal) (i j : ℕ)
+    (x : r.toProjectiveResolution.complex.X i) :
+    (r.toProjectiveResolution.complex.d i j).hom x ∈
+      (⨆ (d : ℤ) (_ : 0 < d), 𝒜 d) •
+        (⊤ : Submodule k (r.toProjectiveResolution.complex.X j)) := by
+  by_cases hij : (ComplexShape.down ℕ).Rel i j
+  · obtain rfl : j + 1 = i := hij
+    rw [r.toProjectiveResolution_complex_d, GradedModuleCat.hom_comp, GradedModuleCat.hom_comp]
+    exact map_mem_positive_smul_top (r.toProjectiveResolutionXIso j).inv
+      (isMinimal_iff.mp hr j _)
+  · simp [r.toProjectiveResolution.complex.shape i j hij]
+
+/-- Homotopic chain maps between minimal graded projective resolutions agree modulo `A₊` in every
+homological degree. -/
+theorem IsMinimal.sub_mem_of_homotopy (hr : r.IsMinimal) (hr' : r'.IsMinimal)
+    {f g : r.toProjectiveResolution.complex ⟶ r'.toProjectiveResolution.complex}
+    (h : Homotopy f g) (n : ℕ) (x : r.toProjectiveResolution.complex.X n) :
+    (f.f n).hom x - (g.f n).hom x ∈
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) •
+        (⊤ : Submodule k (r'.toProjectiveResolution.complex.X n)) := by
+  have hd := hr.complex_d_apply_mem n ((ComplexShape.down ℕ).next n) x
+  have hm := map_mem_positive_smul_top (h.hom ((ComplexShape.down ℕ).next n) n) hd
+  have hp := hr'.complex_d_apply_mem ((ComplexShape.down ℕ).prev n) n
+    ((h.hom n ((ComplexShape.down ℕ).prev n)).hom x)
+  have he := congrArg
+    (fun a : r.toProjectiveResolution.complex.X n ⟶ r'.toProjectiveResolution.complex.X n ↦
+      a.hom x) (h.comm n)
+  simp only [dNext, prevD, AddMonoidHom.mk'_apply, GradedModuleCat.hom_add,
+    GradedModuleCat.hom_comp, LinearMap.add_apply, LinearMap.comp_apply] at he
+  rw [he, add_sub_cancel_right]
+  exact Submodule.add_mem _ hm hp
+
+/-- A chain endomorphism of a bounded-below minimal graded projective resolution that is homotopic
+to the identity is an isomorphism of chain complexes. -/
+theorem IsMinimal.isIso_of_homotopy_id (hr : r.IsMinimal) (b : ℕ → ℤ)
+    (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥)
+    {f : r.toProjectiveResolution.complex ⟶ r.toProjectiveResolution.complex}
+    (h : Homotopy f (𝟙 r.toProjectiveResolution.complex)) : IsIso f := by
+  have (n : ℕ) : IsIso (f.f n) := by
+    let e := r.toProjectiveResolutionXIso n
+    let φ : r.termObj n ⟶ r.termObj n := e.inv ≫ f.f n ≫ e.hom
+    have : IsIso φ :=
+      GradedModuleCat.isIso_of_sub_id_mem_positive_smul_top (b n) (hbelow n) φ fun x ↦ by
+        have hsub : (f.f n).hom (e.inv.hom x) - e.inv.hom x ∈
+            (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) •
+              (⊤ : Submodule k (r.toProjectiveResolution.complex.X n)) := by
+          simpa using hr.sub_mem_of_homotopy hr h n (e.inv.hom x)
+        have hmap := map_mem_positive_smul_top e.hom hsub
+        have hid := congrArg (fun u : r.termObj n ⟶ r.termObj n ↦ u.hom x) e.inv_hom_id
+        simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply, GradedModuleCat.hom_id,
+          LinearMap.id_apply] at hid
+        simpa [φ, map_sub, hid] using hmap
+    have hfeq : f.f n = e.hom ≫ φ ≫ e.inv := by simp [φ]
+    rw [hfeq]
+    infer_instance
+  exact HomologicalComplex.Hom.isIso_of_components f
+
+/-- Any homotopy equivalence between bounded-below minimal graded projective resolutions is an
+isomorphism on its forward chain map. -/
+theorem IsMinimal.isIso_hom_of_homotopyEquiv (hr : r.IsMinimal) (hr' : r'.IsMinimal)
+    (b : ℕ → ℤ) (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥)
+    (b' : ℕ → ℤ) (hbelow' : ∀ n p, p < b' n → (r'.grading n).piece p = ⊥)
+    (e : HomotopyEquiv r.toProjectiveResolution.complex r'.toProjectiveResolution.complex) :
+    IsIso e.hom := by
+  have := hr.isIso_of_homotopy_id b hbelow e.homotopyHomInvId
+  have := hr'.isIso_of_homotopy_id b' hbelow' e.homotopyInvHomId
+  have : Mono e.hom := mono_of_mono e.hom e.inv
+  have : IsSplitEpi e.hom := IsSplitEpi.mk'
+    { section_ := inv (e.inv ≫ e.hom) ≫ e.inv
+      id := by simp }
+  exact isIso_of_mono_of_isSplitEpi e.hom
+
+/-- **Rigidity of minimal graded projective resolutions.** Any chain map compatible with the
+augmentations between two bounded-below minimal graded projective resolutions of `M` is an
+isomorphism of chain complexes. -/
+theorem IsMinimal.isIso_of_comm (hr : r.IsMinimal) (hr' : r'.IsMinimal)
+    (b : ℕ → ℤ) (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥)
+    (b' : ℕ → ℤ) (hbelow' : ∀ n p, p < b' n → (r'.grading n).piece p = ⊥)
+    (f : r.toProjectiveResolution.complex ⟶ r'.toProjectiveResolution.complex)
+    (hf : f ≫ r'.toProjectiveResolution.π = r.toProjectiveResolution.π) : IsIso f := by
+  simpa only [ProjectiveResolution.homotopyEquivOfComm_hom] using
+    hr.isIso_hom_of_homotopyEquiv hr' b hbelow b' hbelow'
+      (ProjectiveResolution.homotopyEquivOfComm r.toProjectiveResolution
+        r'.toProjectiveResolution f hf)
+
+/-- **Uniqueness of minimal graded projective resolutions up to chain isomorphism.** Two
+bounded-below minimal graded projective resolutions of `M` have isomorphic underlying chain
+complexes via the comparison lift of `𝟙 M`. -/
+noncomputable def IsMinimal.complexIso (hr : r.IsMinimal) (hr' : r'.IsMinimal)
+    (b : ℕ → ℤ) (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥)
+    (b' : ℕ → ℤ) (hbelow' : ∀ n p, p < b' n → (r'.grading n).piece p = ⊥) :
+    r.toProjectiveResolution.complex ≅ r'.toProjectiveResolution.complex := by
+  have := hr.isIso_hom_of_homotopyEquiv hr' b hbelow b' hbelow'
+    (ProjectiveResolution.homotopyEquiv r.toProjectiveResolution r'.toProjectiveResolution)
+  exact asIso
+    (ProjectiveResolution.homotopyEquiv r.toProjectiveResolution r'.toProjectiveResolution).hom
+
+/-- The chain isomorphism between minimal resolutions commutes with the augmentations. -/
+@[reassoc (attr := simp)]
+theorem IsMinimal.complexIso_hom_comp_π (hr : r.IsMinimal) (hr' : r'.IsMinimal)
+    (b : ℕ → ℤ) (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥)
+    (b' : ℕ → ℤ) (hbelow' : ∀ n p, p < b' n → (r'.grading n).piece p = ⊥) :
+    (hr.complexIso hr' b hbelow b' hbelow').hom ≫ r'.toProjectiveResolution.π =
+      r.toProjectiveResolution.π := by
+  simp [IsMinimal.complexIso, ProjectiveResolution.homotopyEquiv]
+
+/-- Corresponding terms of two bounded-below minimal graded projective resolutions of `M` are
+isomorphic as graded modules. -/
+noncomputable def IsMinimal.termObjIso (hr : r.IsMinimal) (hr' : r'.IsMinimal)
+    (b : ℕ → ℤ) (hbelow : ∀ n p, p < b n → (r.grading n).piece p = ⊥)
+    (b' : ℕ → ℤ) (hbelow' : ∀ n p, p < b' n → (r'.grading n).piece p = ⊥) (n : ℕ) :
+    r.termObj n ≅ r'.termObj n :=
+  (r.toProjectiveResolutionXIso n).symm ≪≫
+    (HomologicalComplex.eval _ _ n).mapIso (hr.complexIso hr' b hbelow b' hbelow') ≪≫
+    r'.toProjectiveResolutionXIso n
+
+/-- Over a nonnegatively decomposed ring, two minimal graded projective resolutions of `M` with
+finitely generated terms have isomorphic underlying chain complexes. -/
+noncomputable def IsMinimal.complexIsoOfModuleFinite
+    [∀ n, Module.Finite A (r.X n)] [∀ n, Module.Finite A (r'.X n)]
+    (hneg : ∀ i < 0, 𝒜 i = ⊥) (hr : r.IsMinimal) (hr' : r'.IsMinimal) :
+    r.toProjectiveResolution.complex ≅ r'.toProjectiveResolution.complex := by
+  classical
+  choose b hb using fun n ↦
+    InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite (G := r.grading n) 𝒜 hneg
+  choose b' hb' using fun n ↦
+    InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite (G := r'.grading n) 𝒜 hneg
+  exact hr.complexIso hr' b hb b' hb'
+
+/-- Over a nonnegatively decomposed ring, corresponding terms of two minimal graded projective
+resolutions of `M` with finitely generated terms are isomorphic as graded modules. -/
+noncomputable def IsMinimal.termObjIsoOfModuleFinite
+    [∀ n, Module.Finite A (r.X n)] [∀ n, Module.Finite A (r'.X n)]
+    (hneg : ∀ i < 0, 𝒜 i = ⊥) (hr : r.IsMinimal) (hr' : r'.IsMinimal) (n : ℕ) :
+    r.termObj n ≅ r'.termObj n :=
+  (r.toProjectiveResolutionXIso n).symm ≪≫
+    (HomologicalComplex.eval _ _ n).mapIso (hr.complexIsoOfModuleFinite hneg hr') ≪≫
+    r'.toProjectiveResolutionXIso n
 
 end GradedProjectiveResolution
 

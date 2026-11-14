@@ -16,9 +16,10 @@ internal degree `n`. For a nonnegatively graded algebra, graded Nakayama detects
 the quotient of each term by the positive-degree action `A₊`: the resolution is linear exactly when
 the quotient of its `n`th term is concentrated in internal degree `n`.
 
-This criterion is stated both with explicit termwise lower bounds and for terms finite over the
-grading's scalar ring. It is the generation-theoretic bridge from computations of a minimal
-resolution modulo `A₊` to linearity of that resolution.
+This criterion is stated with explicit termwise lower bounds, for terms finite over the grading's
+scalar ring, and for terms finitely generated over the graded algebra. It is the
+generation-theoretic bridge from computations of a minimal resolution modulo `A₊` to linearity of
+that resolution.
 
 Half of linearity holds for every minimal resolution: if the resolved module starts in degree `c`,
 the term in homological degree `n` starts in degree `c + n`. This is the triangularity that lets
@@ -28,10 +29,12 @@ numerical invariants of minimal resolutions detect linearity.
 
 * `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top`: the bounded-below
   criterion.
-* `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top_of_finite`: the
-  finite-term criterion.
-* `TauCeti.GradedProjectiveResolution.IsMinimal.piece_eq_bot_of_lt`: the terms of a minimal
-  resolution start in their homological degree.
+* `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top_of_finite` and
+  `TauCeti.GradedProjectiveResolution.isLinear_iff_piece_le_positive_smul_top_of_moduleFinite`:
+  the criteria for finite and finitely generated terms.
+* `TauCeti.GradedProjectiveResolution.IsMinimal.piece_eq_bot_of_lt` and
+  `TauCeti.GradedProjectiveResolution.IsMinimal.piece_eq_bot_of_lt_of_moduleFinite`: the terms of
+  a minimal resolution start in their homological degree.
 
 ## References
 
@@ -121,5 +124,30 @@ theorem IsMinimal.piece_eq_bot_of_lt (hr : r.IsMinimal) {c : ℤ} (hG : ∀ p < 
       rwa [DirectSum.decompose_of_mem_same _ hmem, Submodule.mem_bot] at hU
     obtain ⟨y, rfl⟩ := (r.exact_d_d n x).mp hd
     exact isMinimal_iff.mp hr (n + 1) y
+
+/-- For a resolution whose terms are finitely generated over a nonnegatively graded algebra,
+linearity is equivalent to concentration of each term modulo `A₊` in its homological degree. -/
+theorem isLinear_iff_piece_le_positive_smul_top_of_moduleFinite
+    [∀ n, Module.Finite A (r.X n)] (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
+    r.IsLinear ↔ ∀ (n : ℕ) (p : ℤ), p ≠ n →
+      (r.grading n).piece p ≤
+        (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (r.X n)) := by
+  rw [isLinear_iff]
+  exact ⟨fun h n ↦
+    (InternalGrading.isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite
+      𝒜 h𝒜 n).mp (h n), fun h n ↦
+    (InternalGrading.isGeneratedInDegree_iff_piece_le_positive_smul_top_of_moduleFinite
+      𝒜 h𝒜 n).mpr (h n)⟩
+
+/-- Over a nonnegatively graded algebra, if the resolved module vanishes below degree `c` and
+every term of a minimal resolution is finitely generated over `A`, then the `n`th term vanishes
+below degree `c + n`. -/
+theorem IsMinimal.piece_eq_bot_of_lt_of_moduleFinite [∀ n, Module.Finite A (r.X n)]
+    (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) (hr : r.IsMinimal) {c : ℤ} (hG : ∀ p < c, G.piece p = ⊥)
+    (n : ℕ) {p : ℤ} (hp : p < c + n) : (r.grading n).piece p = ⊥ := by
+  classical
+  choose b hb using fun m ↦
+    InternalGrading.exists_piece_eq_bot_of_lt_of_moduleFinite (G := r.grading m) 𝒜 h𝒜
+  exact hr.piece_eq_bot_of_lt hG b hb n hp
 
 end TauCeti.GradedProjectiveResolution

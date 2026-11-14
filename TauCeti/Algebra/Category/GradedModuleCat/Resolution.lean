@@ -27,6 +27,8 @@ minimality, finite generation, nor boundedness.
 Forgetting the grading turns the same data into a projective resolution of the underlying
 `A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
 ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
+Regrading by `-d` turns a concrete resolution of `M` into one of `M{d}`
+(`TauCeti.GradedProjectiveResolution.shiftObj`).
 
 ## References
 
@@ -168,6 +170,47 @@ theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton 
   refine R.hasProjectiveDimensionLT n fun i hi ↦ ?_
   have := h i hi
   exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
+
+end GradedProjectiveResolution
+
+namespace GradedProjectiveResolution
+
+variable (r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading)
+
+/-- Shifting a concrete graded projective resolution of `M` produces a concrete graded projective
+resolution of the shifted graded module `M{d}`: since `(M{d})ₚ = M_{p - d}`, this regrades every
+term by `-d`. -/
+abbrev shiftObj (d : ℤ) : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
+  r.shift (-d)
+
+/-- The terms of the `d`-shifted resolution are the `d`-shifts of the original terms. -/
+@[simp]
+theorem shiftObj_termObj (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d :=
+  (rfl)
+
+/-- The differentials of the `d`-shifted resolution are the `d`-shifted differentials. -/
+@[simp]
+theorem shiftObj_differential (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).differential n = (GradedModuleCat.shiftFunctor d).map (r.differential n) :=
+  (rfl)
+
+/-- The augmentation of the `d`-shifted resolution is the `d`-shifted augmentation. -/
+@[simp]
+theorem shiftObj_augmentation (d : ℤ) :
+    (r.shiftObj d).augmentation = (GradedModuleCat.shiftFunctor d).map r.augmentation :=
+  (rfl)
+
+/-- Minimality is preserved under shifting the resolved object. -/
+theorem isMinimal_shiftObj_iff (d : ℤ) :
+    (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
+  r.isMinimal_shift_iff (-d)
+
+/-- The `d`-shifted resolution is linear if and only if the `n`th term of the original resolution
+is generated in internal degree `n - d`. -/
+theorem isLinear_shiftObj_iff (d : ℤ) :
+    (r.shiftObj d).IsLinear ↔ ∀ n : ℕ, (r.grading n).IsGeneratedInDegree A (n - d) := by
+  simpa [sub_eq_add_neg] using r.isLinear_shift_iff (-d)
 
 end GradedProjectiveResolution
 

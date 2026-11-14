@@ -39,6 +39,8 @@ degree zero.
 * `TauCeti.GradedProjectiveResolution.IsLinear`: the `n`th term is generated in internal
   degree `n`.
 * `TauCeti.GradedProjectiveResolution.IsMinimal`: the differentials take values in `A₊ Pₙ`.
+* `TauCeti.GradedProjectiveResolution.shift`: regrading every term and the resolved module by a
+  uniform shift.
 
 ## Main results
 
@@ -251,6 +253,80 @@ theorem isLinear_directSum_iff : (directSum G r).IsLinear ↔ ∀ i, (r i).IsLin
     exact (InternalGrading.isGeneratedInDegree_directSum_iff _ _).1 (h n) i
   · intro h n
     exact (InternalGrading.isGeneratedInDegree_directSum_iff _ _).2 fun i ↦ h i n
+
+end GradedProjectiveResolution
+
+/-! ### Shifts -/
+
+namespace GradedProjectiveResolution
+
+variable {𝒜 G}
+
+omit [GradedAlgebra 𝒜] in
+/-- Regrading the resolved module and every resolution term by `c` leaves the underlying projective
+modules and linear maps unchanged while shifting all internal gradings by `c`. -/
+abbrev shift (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    GradedProjectiveResolution 𝒜 (G.shift c) where
+  X := r.X
+  addCommGroup := r.addCommGroup
+  module := r.module
+  moduleBase := r.moduleBase
+  isScalarTower := r.isScalarTower
+  grading n := (r.grading n).shift c
+  gradedSMul n := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    simpa [add_assoc] using SetLike.GradedSMul.smul_mem (B := (r.grading n).piece) ha hx⟩
+  projective := r.projective
+  d := r.d
+  «π» := r.π
+  isHomogeneous_d n := LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    simpa [add_right_comm] using (r.isHomogeneous_d n).map_mem hx
+  isHomogeneous_π := LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    simpa [add_right_comm] using r.isHomogeneous_π.map_mem hx
+  surjective_π := r.surjective_π
+  exact_d_π := r.exact_d_π
+  exact_d_d := r.exact_d_d
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves the underlying modules of its terms unchanged. -/
+@[simp]
+theorem shift_X (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).X n = r.X n := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution shifts the internal grading of every term by the same amount. -/
+@[simp]
+theorem shift_grading (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).grading n = (r.grading n).shift c := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its underlying differentials unchanged. -/
+@[simp]
+theorem shift_d (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).d n = r.d n := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its underlying augmentation unchanged. -/
+@[simp]
+theorem shift_π (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).π = r.π := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Minimality is invariant under shifting a graded projective resolution, since `A₊ (X n)`
+depends only on the underlying `k`-module and `A`-action. -/
+@[simp]
+theorem isMinimal_shift_iff (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).IsMinimal ↔ r.IsMinimal :=
+  Iff.rfl
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution by `c` is linear if and only if the `n`th term of the original
+resolution is generated in internal degree `n + c`. -/
+theorem isLinear_shift_iff (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).IsLinear ↔ ∀ n : ℕ, (r.grading n).IsGeneratedInDegree A (n + c) := by
+  simp [isLinear_iff]
 
 end GradedProjectiveResolution
 
