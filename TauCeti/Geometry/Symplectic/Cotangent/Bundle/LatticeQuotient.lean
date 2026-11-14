@@ -628,8 +628,9 @@ theorem isLagrangianMap_mk_comp_section_iff (hclosed : ∀ i, (α i).IsClosed)
   · rw [mpullback_mk_comp_section_symplecticForm hα hclosed,
       (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero β).1 h, neg_zero]
   · -- The projection `T*B/Λ → B` is a left inverse of the section.
-    exact mfderiv_injective_of_leftInverse ((contMDiff_proj hα _).mdifferentiableAt (by simp))
-      ((hs x).mdifferentiableAt (by simp)) fun _ ↦ proj_mk hα _
+    exact mfderiv_injective_of_comp_eventuallyEq_id
+      ((contMDiff_proj hα _).mdifferentiableAt (by simp)) ((hs x).mdifferentiableAt (by simp))
+      (.of_forall fun _ ↦ proj_mk hα _)
   · rw [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 end Manifold
