@@ -35,6 +35,10 @@ disjoint. This needs no more about `Γ` than the membership description above, s
 * `TauCeti.ModularForm.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
   `TauCeti.ModularForm.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
   `[SL₂(ℤ) : Γ] = 2 · [SL₂(ℤ) : ±Γ]`.
+* `TauCeti.ModularForm.relIndex_withCenter_eq_one_iff`,
+  `TauCeti.ModularForm.relIndex_withCenter_pos`, and
+  `TauCeti.ModularForm.card_center_subgroupOf_mul_relIndex_withCenter`: the complementary `= 1`
+  case when `-I ∈ Γ` and the unconditional product `|{±I} ∩ Γ| · [±Γ : Γ] = 2`.
 * `ModularGroup.pairwise_disjoint_smul_fdo_out_withCenter`: the translates of `𝒟ᵒ` indexed by
   the cosets of `Γ·{±I}` are pairwise disjoint.
 -/
@@ -102,6 +106,50 @@ theorem relIndex_withCenter_eq_two_of_neg_one_notMem (h : (-1 : SL(2, ℤ)) ∉ 
   Subgroup.relIndex_withCenter_eq_two
     (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mpr (Or.inr rfl)) h
     fun _ hc ↦ Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc
+
+/-- **The `±Γ` relative index is `1` exactly when `-I ∈ Γ`**: adjoining `{±I}` enlarges `Γ` iff
+`-I ∉ Γ`. -/
+theorem relIndex_withCenter_eq_one_iff :
+    Γ.relIndex Γ.withCenter = 1 ↔ (-1 : SL(2, ℤ)) ∈ Γ := by
+  rw [Subgroup.relIndex_eq_one, Subgroup.withCenter_def, sup_le_iff]
+  refine ⟨fun ⟨_, hc⟩ ↦ hc (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mpr
+    (Or.inr rfl)), fun h ↦ ⟨le_rfl, fun x hx ↦ ?_⟩⟩
+  rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hx with rfl | rfl
+  · exact Γ.one_mem
+  · exact h
+
+/-- When `-I ∈ Γ`, adjoining the centre leaves `Γ` unchanged, so `[±Γ : Γ] = 1`. -/
+theorem relIndex_withCenter_eq_one_of_neg_one_mem (h : (-1 : SL(2, ℤ)) ∈ Γ) :
+    Γ.relIndex Γ.withCenter = 1 :=
+  relIndex_withCenter_eq_one_iff.mpr h
+
+/-- The relative index `[±Γ : Γ]` is always `1` or `2`. -/
+theorem relIndex_withCenter_eq_one_or_two (Γ : Subgroup SL(2, ℤ)) :
+    Γ.relIndex Γ.withCenter = 1 ∨ Γ.relIndex Γ.withCenter = 2 := by
+  by_cases h : (-1 : SL(2, ℤ)) ∈ Γ
+  · exact Or.inl (relIndex_withCenter_eq_one_of_neg_one_mem h)
+  · exact Or.inr (relIndex_withCenter_eq_two_of_neg_one_notMem h)
+
+/-- The relative index `[±Γ : Γ]` is positive for every `Γ ≤ SL(2, ℤ)`. -/
+theorem relIndex_withCenter_pos (Γ : Subgroup SL(2, ℤ)) : 0 < Γ.relIndex Γ.withCenter := by
+  rcases relIndex_withCenter_eq_one_or_two Γ with h | h <;> omega
+
+instance instNeZeroRelIndexWithCenter (Γ : Subgroup SL(2, ℤ)) :
+    NeZero (Γ.relIndex Γ.withCenter) :=
+  ⟨(relIndex_withCenter_pos Γ).ne'⟩
+
+/-- **The centre-order / relative-index complementarity**: for every `Γ ≤ SL(2, ℤ)`, the order of
+`{±I} ∩ Γ` times the relative index `[±Γ : Γ]` equals `2`.
+
+When `-I ∈ Γ` this is `2 · 1 = 2`; when `-I ∉ Γ` it is `1 · 2 = 2`. Stating the product avoids a
+case split on `-I ∈ Γ` when converting between full-coset and projective-quotient quantities. -/
+theorem card_center_subgroupOf_mul_relIndex_withCenter (Γ : Subgroup SL(2, ℤ)) :
+    Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) * Γ.relIndex Γ.withCenter = 2 := by
+  by_cases h : (-1 : SL(2, ℤ)) ∈ Γ
+  · rw [(Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff Γ).mpr h,
+      relIndex_withCenter_eq_one_of_neg_one_mem h]
+  · rw [(Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_one_iff Γ).mpr h,
+      relIndex_withCenter_eq_two_of_neg_one_notMem h, one_mul]
 
 end TauCeti.ModularForm
 
