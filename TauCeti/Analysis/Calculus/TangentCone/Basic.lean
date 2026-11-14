@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Calculus.TangentCone.Pi
 import Mathlib.Analysis.Complex.ReImTopology
@@ -34,6 +35,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
+* `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
+  in a set, just after the base time, is a positive tangent vector of that set.
 -/
 
 public section
@@ -126,3 +129,15 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
     simpa using tendsto_const_nhds.add hd₀
   · exact hds.mono fun n hn ↦ ⟨x + d n, hn, by simp⟩
   · exact h.lim hd₀ hds hcd
+
+/-- If a curve `x` has right derivative `w` at `t` and lies in `s` at times arbitrarily close to
+`t` from the right, then `w` is a positive tangent vector of `s` at `x t`. -/
+theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {x : ℝ → E} {w : E} {t : ℝ} {s : Set E}
+    (hx : HasDerivWithinAt x w (Ici t) t) (hs : ∃ᶠ τ in 𝓝[>] t, x τ ∈ s) :
+    w ∈ posTangentConeAt s (x t) := by
+  have h1 : (1 : ℝ) ∈ posTangentConeAt (Ici t ∩ x ⁻¹' s) t :=
+    one_mem_posTangentConeAt_iff_frequently.2 <| (hs.and_eventually self_mem_nhdsWithin).mono
+      fun τ ⟨h, hτ⟩ ↦ ⟨le_of_lt hτ, h⟩
+  refine posTangentConeAt_mono ((image_mono inter_subset_right).trans (image_preimage_subset x s))
+    (by simpa using (hx.mono inter_subset_left).hasFDerivWithinAt.mapsTo_posTangentConeAt h1)

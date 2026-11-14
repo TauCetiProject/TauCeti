@@ -43,6 +43,10 @@ by `a ≠ 0` on `F`, from degree `1` to degree `0`, has torsion `a⁻¹`. The to
 that is not acyclic is defined to be `0` (`HomologicalComplex.reidemeisterTorsion`), and so is
 that of an unbounded complex, for which the alternating product is not defined.
 
+The brackets, and the chosen bases of the boundaries used to define the torsion, make sense for
+chain complexes indexed by any type with a `+ 1`; the torsion of complexes indexed by `ZMod 2` is
+`ChainComplex.parityTorsion`.
+
 For a bounded complex the alternating product does not depend on the boundary bases nor on the
 lifts (`HomologicalComplex.reidemeisterTorsion_eq_finprod`): changing the lifts does not change
 any bracket, and changing `bⱼ` multiplies the brackets in degrees `j + 1` and `j` by the same
@@ -505,11 +509,8 @@ theorem card_eq_card_of_concentrated : n (j + 1) = n (j + 1 + 1) := by
       (by simp) (by simp) (h (j + 1))) y).1
         (Subtype.ext (eq_zero_of_eq_zero (c := c) (hn j (by omega) (by omega)) _))
     exact ⟨x, hx⟩
-  have h₁ := finrank_eq_card_basis (c (j + 1))
-  have h₂ := finrank_eq_card_basis ((c (j + 1 + 1)).map
-    (LinearEquiv.ofBijective _ ⟨injective_d_of_concentrated (c := c) h hn, hsurj⟩))
-  simp only [Fintype.card_fin] at h₁ h₂
-  omega
+  exact (card_eq_card_of_bijective_d (c (j + 1 + 1)) (c (j + 1))
+    ⟨injective_d_of_concentrated (c := c) h hn, hsurj⟩).symm
 
 include hn h in
 /-- The torsion of an acyclic complex concentrated in two consecutive degrees `j + 1` and `j + 2`

@@ -94,12 +94,17 @@ theorem minorsIdeal_map_finrank (φ : F →ₗ[R] F) (N : Submodule R F) :
   · rintro _ ⟨_, ⟨w, hw, rfl⟩, rfl⟩
     exact Ideal.subset_span ⟨φ ∘ w, fun i ↦ Submodule.mem_map_of_mem (hw i), Basis.det_comp ..⟩
 
-/-- The maximal minors of the image of an endomorphism of a finite free module generate
-the principal ideal of its determinant. -/
+omit [Module.Finite R F] in
+/-- The maximal minors of the image of an endomorphism of a free module generate
+the principal ideal of its determinant. If the module is not finite, both sides are `⊤`. -/
 @[simp]
 theorem minorsIdeal_range_finrank_eq_span_det (φ : F →ₗ[R] F) :
     (LinearMap.range φ).minorsIdeal (Module.finrank R F) = Ideal.span {φ.det} := by
   nontriviality R
+  by_cases hF : Module.Finite R F
+  swap
+  · rw [Module.finrank_of_not_finite hF, minorsIdeal_zero, det_eq_one_of_not_module_finite hF,
+      Ideal.span_singleton_one]
   let b := Module.finBasis R F
   have htop : (⊤ : Submodule R F).minorsIdeal (Module.finrank R F) = ⊤ := by
     rw [Submodule.minorsIdeal_eq_span_det b, Ideal.eq_top_iff_one]

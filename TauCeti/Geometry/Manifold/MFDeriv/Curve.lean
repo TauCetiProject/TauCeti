@@ -29,7 +29,7 @@ derivative.  This file records the resulting chain rule, and the special case of
 curve in the extended chart centred at the current point, where the derivative is the velocity
 itself.
 
-Following Mathlib's `IsIntegralCurveOn`, the velocity `w : TangentSpace I (γ t)` is presented
+Following Mathlib's `IsMIntegralCurveOn`, the velocity `w : TangentSpace I (γ t)` is presented
 through `HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)`, since
 `TangentSpace 𝓘(𝕜, 𝕜) t` carries no `One` instance and `mfderivWithin ... 1` therefore does not
 elaborate.
@@ -167,8 +167,9 @@ theorem hasDerivAt_comp_curve {g : M → F} (hg : MDifferentiableAt I 𝓘(𝕜,
 variable (I) in
 /-- The velocity of the curve `γ` at the parameter `t`, taken within the parameter set `s`: the
 value at the unit tangent vector of the manifold derivative of `γ` within `s`.  Where `γ` is not
-differentiable within `s` at `t`, this carries Mathlib's junk value `0`; where the derivative
-within `s` is not unique it need not be the velocity of any parametrization. -/
+differentiable within `s` at `t`, or where the derivative within `s` is not unique there
+(`TauCeti.Manifold.curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt`), this carries Mathlib's
+junk value `0`. -/
 def curveVelocityWithin (γ : 𝕜 → M) (s : Set 𝕜) (t : 𝕜) : TangentSpace I (γ t) :=
   mfderivWithin 𝓘(𝕜, 𝕜) I γ s t (1 : 𝕜)
 

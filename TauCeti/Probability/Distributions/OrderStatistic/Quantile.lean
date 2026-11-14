@@ -81,7 +81,7 @@ theorem tendsto_quantile_map_orderStatistic_pi_nhdsGT_zero (k : Fin n) :
       (inverseRegularizedIncompleteBeta ((k : ℝ) + 1) ((n : ℝ) - k))
       (𝓝[>] 0) (𝓝[>] 0) := by
     refine tendsto_nhdsWithin_iff.2 ⟨
-      tendsto_inverseRegularizedIncompleteBeta_zero ha hb, ?_⟩
+      tendsto_inverseRegularizedIncompleteBeta_zero ((k : ℝ) + 1) ((n : ℝ) - k), ?_⟩
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
     exact (inverseRegularizedIncompleteBeta_mem_Ioo ha hb hu.1 hu.2).1
   refine ((Measure.tendsto_quantile_nhdsGT_zero μ).comp hbeta).congr' ?_

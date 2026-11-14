@@ -27,6 +27,8 @@ fibre.
 * `TopCat.lerayHirsch`: the Leray–Hirsch map, characterized on summands by
   `TopCat.lerayHirsch_lof`.
 * `TopCat.lerayHirsch_bijective_of_isEmpty`: the Leray–Hirsch map over an empty base.
+* `TopCat.singularCohomologyMap_lerayHirsch`: naturality for maps of total spaces covering a map
+  of the bases.
 
 ## References
 
@@ -85,5 +87,28 @@ lemma lerayHirsch_bijective_of_isEmpty [IsEmpty B] : Function.Bijective (lerayHi
       (TauCeti.isZero_singularCohomology_of_isEmpty (𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) B j.1.1.2)
   exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
+/-- **Naturality of the Leray–Hirsch map**: for a map `φ : E ⟶ E'` covering `f : B ⟶ B'`, pulling
+back the image of `a` along `φ` gives the image of `f^* a` for the pulled-back classes `φ^* e'`. -/
+lemma singularCohomologyMap_lerayHirsch {E' B' : TopCat.{w}} (p' : E' ⟶ B') (φ : E ⟶ E')
+    (f : B ⟶ B') (hφ : φ ≫ p' = p ≫ f)
+    (e' : ∀ d, ι d → E'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
+    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
+        B'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    TopCat.singularCohomologyMap φ n (lerayHirsch p' n e' a) =
+      lerayHirsch p n (fun d i ↦ TopCat.singularCohomologyMap φ d (e' d i))
+        (DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+          (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.1.2).hom) a) := by
+  suffices h : (TopCat.singularCohomologyMap φ n).hom ∘ₗ lerayHirsch p' n e' =
+      lerayHirsch p n (fun d i ↦ TopCat.singularCohomologyMap φ d (e' d i)) ∘ₗ
+        DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+          (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.1.2).hom) from LinearMap.congr_fun h a
+  refine DirectSum.linearMap_ext k fun ⟨⟨⟨d, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
+  simp only [LinearMap.comp_apply, DirectSum.lmap_lof]
+  rw [lerayHirsch_lof, lerayHirsch_lof, ← singularCup_naturality,
+    ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp,
+    ← singularCohomologyMap_comp, hφ]
 
 end TopCat

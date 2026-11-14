@@ -204,8 +204,6 @@ theorem recutRightEqLeft_toRectangleDecomposition
     exact (D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn).1.symm
   · simp only [recutRightEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, rightLeftRecut]
-  · simp only [recutRightEqLeft,
-      GridPentagonRectangleDecomposition.toRectangleDecomposition_second_right, rightLeftRecut]
 
 /-- The promoted decomposition is an empty-rectangle recut of the original composite domain. -/
 theorem isRecut_recutRightEqLeft (D : GridRectanglePentagonDecomposition a s x z)
