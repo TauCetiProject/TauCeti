@@ -66,6 +66,11 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
   set.
 * `Ideal.primaryComponent_quotient_primaryComponent`: for finitely generated `𝔞`,
   `Γ_𝔞(N ⧸ Γ_𝔞(N)) = 0`.
+* `LinearMap.exists_forall_exists_eq_pow_smul`: if the cokernel of `i` is `(G)`-power torsion,
+  a single power of every generator moves a given element into the image of `i`;
+* `LinearMap.existsUnique_comp_eq_of_primaryComponent_eq_top`: maps into a module with the
+  gluing property for the cover by the basic opens `D(a)`, `a ∈ G`, extend uniquely along
+  injections with `(G)`-power torsion cokernel.
 
 ## References
 
@@ -302,3 +307,104 @@ theorem primaryComponent_quotient_primaryComponent {N : Type*} [AddCommGroup N] 
   exact ⟨k + n, by rw [pow_add, mul_smul, hk]⟩
 
 end Ideal
+
+namespace LinearMap
+
+open Function
+
+variable {R : Type*} [CommRing R] {K E M : Type*} [AddCommGroup K] [Module R K]
+  [AddCommGroup E] [Module R E] [AddCommGroup M] [Module R M]
+
+/-- If the cokernel of `i` is `(G)`-power torsion, a single power of every generator moves a
+given element into the image of `i`. -/
+theorem exists_forall_exists_eq_pow_smul (i : K →ₗ[R] E) (G : Finset R)
+    (hE : (Ideal.span (G : Set R)).primaryComponent (E ⧸ range i) = ⊤) (x : E) :
+    ∃ n : ℕ, ∀ a ∈ G, ∃ k : K, i k = a ^ n • x := by
+  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem _ _ _).mp
+    (hE ▸ Submodule.mem_top : (range i).mkQ x ∈ _)
+  refine ⟨n, fun a ha ↦ ?_⟩
+  have h := (Submodule.mem_torsionBySet_iff _ _).mp hn
+    ⟨_, Ideal.pow_mem_pow (Ideal.subset_span ha) n⟩
+  rwa [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at h
+
+/-- Let `M` be a module without `(G)`-power torsion in which every family `(mₐ)_{a ∈ G}` with
+`aⁿ m_b = bⁿ mₐ` is of the form `(aⁿ x)`; that is, `M` is the module of sections of its
+restriction to the cover of the complement of `V(G)` by the basic opens `D(a)`. Then maps into
+`M` extend uniquely along an injection whose cokernel is `(G)`-power torsion. -/
+theorem existsUnique_comp_eq_of_primaryComponent_eq_top (i : K →ₗ[R] E) (hi : Injective i)
+    (G : Finset R) (hE : (Ideal.span (G : Set R)).primaryComponent (E ⧸ range i) = ⊤)
+    (hM : (Ideal.span (G : Set R)).primaryComponent M = ⊥)
+    (hglue : ∀ (n : ℕ) (m : G → M), (∀ a b : G, (a : R) ^ n • m b = (b : R) ^ n • m a) →
+      ∃ x : M, ∀ a : G, (a : R) ^ n • x = m a)
+    (φ : K →ₗ[R] M) :
+    ∃! ψ : E →ₗ[R] M, ψ ∘ₗ i = φ := by
+  classical
+  -- The extension is defined pointwise: its value at `x` glues the values of `φ` at the
+  -- elements `aⁿ x ∈ range i`. Uniqueness of gluing makes it well defined and linear.
+  -- An element killed by one power of every generator vanishes.
+  have hzero (n : ℕ) (y : M) (hy : ∀ a : G, (a : R) ^ n • y = 0) : y = 0 := by
+    have : y ∈ (Ideal.span (G : Set R)).primaryComponent M :=
+      (Ideal.mem_primaryComponent_span_iff G).mpr fun a ha ↦ ⟨n, hy ⟨a, ha⟩⟩
+    rwa [hM, Submodule.mem_bot] at this
+  have htors (x : E) : ∃ n : ℕ, ∀ a : G, ∃ k : K, i k = (a : R) ^ n • x :=
+    (exists_forall_exists_eq_pow_smul i G hE x).imp fun _ h a ↦ h a a.2
+  -- `Rel x m` says that `m` is the value at `x` of every extension of `φ`.
+  let Rel (x : E) (m : M) : Prop :=
+    ∃ n : ℕ, ∀ a : G, ∃ k : K, i k = (a : R) ^ n • x ∧ (a : R) ^ n • m = φ k
+  have hunique (x : E) (m m' : M) (h : Rel x m) (h' : Rel x m') : m = m' := by
+    obtain ⟨n, hn⟩ := h
+    obtain ⟨n', hn'⟩ := h'
+    refine sub_eq_zero.mp (hzero (n + n') _ fun a ↦ ?_)
+    obtain ⟨k, hk, hkm⟩ := hn a
+    obtain ⟨k', hk', hkm'⟩ := hn' a
+    have hkk : (a : R) ^ n' • k = (a : R) ^ n • k' :=
+      hi (by rw [map_smul, map_smul, hk, hk', smul_smul, smul_smul, mul_comm])
+    have h₁ : (a : R) ^ (n + n') • m = φ ((a : R) ^ n' • k) := by
+      rw [pow_add, mul_comm, mul_smul, hkm, map_smul]
+    have h₂ : (a : R) ^ (n + n') • m' = φ ((a : R) ^ n • k') := by
+      rw [pow_add, mul_smul, hkm', map_smul]
+    rw [smul_sub, h₁, h₂, hkk, sub_self]
+  have hexists (x : E) : ∃ m, Rel x m := by
+    obtain ⟨n, hn⟩ := htors x
+    choose k hk using hn
+    obtain ⟨m, hm⟩ := hglue n (fun a ↦ φ (k a)) fun a b ↦ by
+      rw [← map_smul, ← map_smul]
+      congr 1
+      exact hi (by rw [map_smul, map_smul, hk, hk, smul_smul, smul_smul, mul_comm])
+    exact ⟨m, n, fun a ↦ ⟨k a, hk a, hm a⟩⟩
+  have hadd (x y : E) (m m' : M) (h : Rel x m) (h' : Rel y m') : Rel (x + y) (m + m') := by
+    obtain ⟨n, hn⟩ := h
+    obtain ⟨n', hn'⟩ := h'
+    refine ⟨n + n', fun a ↦ ?_⟩
+    obtain ⟨k, hk, hkm⟩ := hn a
+    obtain ⟨k', hk', hkm'⟩ := hn' a
+    refine ⟨(a : R) ^ n' • k + (a : R) ^ n • k', ?_, ?_⟩
+    · rw [map_add, map_smul, map_smul, hk, hk', smul_add, smul_smul, smul_smul, ← pow_add,
+        ← pow_add, add_comm n']
+    · rw [map_add, map_smul, map_smul, ← hkm, ← hkm', smul_add, smul_smul, smul_smul, ← pow_add,
+        ← pow_add, add_comm n']
+  have hsmul (r : R) (x : E) (m : M) (h : Rel x m) : Rel (r • x) (r • m) := by
+    obtain ⟨n, hn⟩ := h
+    refine ⟨n, fun a ↦ ?_⟩
+    obtain ⟨k, hk, hkm⟩ := hn a
+    exact ⟨r • k, by rw [map_smul, hk, smul_comm], by rw [map_smul, ← hkm, smul_comm]⟩
+  have hbase (k : K) : Rel (i k) (φ k) := ⟨0, fun _ ↦ ⟨k, by simp, by simp⟩⟩
+  let ψ : E →ₗ[R] M :=
+    { toFun x := (hexists x).choose
+      map_add' x y := hunique _ _ _ (hexists (x + y)).choose_spec
+        (hadd _ _ _ _ (hexists x).choose_spec (hexists y).choose_spec)
+      map_smul' r x := hunique _ _ _ (hexists (r • x)).choose_spec
+        (hsmul r _ _ (hexists x).choose_spec) }
+  have hψ : ψ ∘ₗ i = φ :=
+    LinearMap.ext fun k ↦ hunique _ _ _ (hexists (i k)).choose_spec (hbase k)
+  refine ⟨ψ, hψ, ?_⟩
+  -- Two extensions differ by a map killing `range i`, whose values are therefore torsion.
+  intro ψ' hψ'
+  refine LinearMap.ext fun x ↦ sub_eq_zero.mp ?_
+  obtain ⟨n, hn⟩ := htors x
+  refine hzero n _ fun a ↦ ?_
+  obtain ⟨k, hk⟩ := hn a
+  rw [smul_sub, ← map_smul, ← map_smul, ← hk, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
+    hψ', hψ, sub_self]
+
+end LinearMap
