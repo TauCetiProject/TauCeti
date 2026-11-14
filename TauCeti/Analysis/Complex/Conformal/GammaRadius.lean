@@ -48,6 +48,9 @@ uniformization meaning.
   `Γ(1 / 4) ^ 4 / (4 * π ^ 2)` and `Γ(1 / 6) ^ 3 / (12 * π ^ (3 / 2))`.
 * `TauCeti.hasSum_log_gammaRadius_sub_div` and `TauCeti.log_gammaRadius_eq_div_add_tsum`: the
   odd-zeta power series for `log (gammaRadius N)` when `N ≠ 1`.
+* `TauCeti.div_lt_log_gammaRadius`, `TauCeti.log_gammaRadius_pos`, and
+  `TauCeti.one_lt_gammaRadius`: for `2 ≤ N`, `(log 16) / N < log (gammaRadius N)`,
+  `0 < log (gammaRadius N)`, and `1 < gammaRadius N`.
 * `TauCeti.mul_lt_gammaRadius`, `TauCeti.gammaRadius_le_mul_add`, and
   `TauCeti.exists_pos_forall_gammaRadius_eq`: the positive `O(N ^ (-6))` remainder expansion of
   `gammaRadius N`.
@@ -101,8 +104,7 @@ private theorem inv_two_mul_natCast_le_quarter {N : ℕ} (hN : 2 ≤ N) :
   rw [div_le_div_iff₀ (by linarith) (by norm_num)]
   linarith
 
-/-- For every `N ≠ 1`, `gammaRadius N` is strictly positive; for `2 ≤ N` every Gamma factor in its
-numerator and denominator is positive and nonzero, while at `N = 0` it evaluates to `1`. -/
+/-- For every `N ≠ 1`, `gammaRadius N` is strictly positive. -/
 theorem gammaRadius_pos {N : ℕ} (hN : N ≠ 1) : 0 < gammaRadius N := by
   rcases eq_or_ne N 0 with rfl | hN0
   · simp
@@ -388,8 +390,7 @@ private theorem hasSum_log_gammaRadius_sub_div_of_two_le {N : ℕ} (hN : 2 ≤ N
 
 /-- **Odd-zeta series for `log (gammaRadius N)`**: for every `N ≠ 1`,
 `log (gammaRadius N) - (log 16) / N` is the sum of the odd-zeta series
-`∑_{k ≥ 0} (2 ^ (2k + 2) - 1) Re(ζ(2k + 3)) / (2 ^ (2k + 1) (2k + 3) N ^ (2k + 3))` (whose terms
-are strictly positive for `N ≥ 2` and vanish at `N = 0`). -/
+`∑_{k ≥ 0} (2 ^ (2k + 2) - 1) Re(ζ(2k + 3)) / (2 ^ (2k + 1) (2k + 3) N ^ (2k + 3))`. -/
 theorem hasSum_log_gammaRadius_sub_div {N : ℕ} (hN : N ≠ 1) :
     HasSum (fun k : ℕ ↦
       (2 ^ (2 * k + 2) - 1 : ℝ) * (riemannZeta (2 * k + 3)).re /
@@ -409,6 +410,26 @@ theorem log_gammaRadius_eq_div_add_tsum {N : ℕ} (hN : N ≠ 1) :
           (2 ^ (2 * k + 1) * (2 * k + 3) * (N : ℝ) ^ (2 * k + 3)) := by
   have h := (hasSum_log_gammaRadius_sub_div hN).tsum_eq
   linarith
+
+/-- For `2 ≤ N`, `log (gammaRadius N)` strictly exceeds its leading term `(log 16) / N`. -/
+theorem div_lt_log_gammaRadius {N : ℕ} (hN : 2 ≤ N) :
+    Real.log 16 / (N : ℝ) < Real.log (gammaRadius N) := by
+  have hhs : HasSum (oddZetaRadiusTerm N) (Real.log (gammaRadius N) - Real.log 16 / (N : ℝ)) :=
+    hasSum_log_gammaRadius_sub_div_of_two_le hN
+  have hpos : 0 < ∑' k : ℕ, oddZetaRadiusTerm N k :=
+    hhs.summable.tsum_pos (fun k ↦ (oddZetaRadiusTerm_pos hN k).le) 0 (oddZetaRadiusTerm_pos hN 0)
+  linarith [hhs.tsum_eq]
+
+/-- For `2 ≤ N`, `log (gammaRadius N)` is strictly positive. -/
+theorem log_gammaRadius_pos {N : ℕ} (hN : 2 ≤ N) : 0 < Real.log (gammaRadius N) := by
+  have hN0 : 0 < (N : ℝ) := by exact_mod_cast (by omega : 0 < N)
+  have h16 : 0 < Real.log 16 / (N : ℝ) := div_pos (Real.log_pos (by norm_num)) hN0
+  exact h16.trans (div_lt_log_gammaRadius hN)
+
+/-- For `2 ≤ N`, `1 < gammaRadius N`. -/
+theorem one_lt_gammaRadius {N : ℕ} (hN : 2 ≤ N) : 1 < gammaRadius N := by
+  have hpos : 0 < gammaRadius N := gammaRadius_pos (by omega)
+  simpa using (Real.lt_log_iff_exp_lt hpos).mp (log_gammaRadius_pos hN)
 
 /-! ### Effective positive `O(N ^ (-6))` expansion -/
 
@@ -528,14 +549,12 @@ private theorem log_gammaRadius_sub_div_eq_add_tail {N : ℕ} (hN : 2 ≤ N) :
   rw [hhs.tsum_eq] at hsplit
   simpa [Finset.sum_range_succ, add_assoc] using hsplit
 
-private theorem log_gammaRadius_sub_div_bounds {N : ℕ} (hN : 2 ≤ N) :
-    0 < Real.log (gammaRadius N) - Real.log 16 / (N : ℝ) ∧
-      Real.log (gammaRadius N) - Real.log 16 / (N : ℝ) ≤ (3 / 2 : ℝ) / (N : ℝ) ^ 3 := by
+private theorem log_gammaRadius_sub_div_le {N : ℕ} (hN : 2 ≤ N) :
+    Real.log (gammaRadius N) - Real.log 16 / (N : ℝ) ≤ (3 / 2 : ℝ) / (N : ℝ) ^ 3 := by
   have hN2 : (2 : ℝ) ≤ N := by exact_mod_cast hN
   have hN0 : 0 < (N : ℝ) := by linarith
-  obtain ⟨hRpos, hRle⟩ := tsum_oddZetaRadiusTerm_shift_two_bounds hN
+  have hRle := (tsum_oddZetaRadiusTerm_shift_two_bounds hN).2
   rw [log_gammaRadius_sub_div_eq_add_tail hN]
-  refine ⟨by linarith [oddZetaRadiusTerm_pos hN 0, oddZetaRadiusTerm_pos hN 1, hRpos], ?_⟩
   have ht0 : oddZetaRadiusTerm N 0 ≤ 1 / (N : ℝ) ^ 3 := by
     rw [oddZetaRadiusTerm_zero, div_le_div_iff₀ (by positivity) (by positivity)]
     have hz3 : (riemannZeta 3).re ≤ 2 := (riemannZeta_re_lt_two (by norm_num)).le
@@ -591,7 +610,8 @@ private theorem gammaRadius_le_mul_add_of_two_le {N : ℕ} (hN : 2 ≤ N) :
   have hS : S = oddZetaRadiusTerm N 0 + oddZetaRadiusTerm N 1 + R :=
     log_gammaRadius_sub_div_eq_add_tail hN
   have hRle : R ≤ (1 / 2 : ℝ) / (N : ℝ) ^ 6 := (tsum_oddZetaRadiusTerm_shift_two_bounds hN).2
-  obtain ⟨hSpos, hSle⟩ := log_gammaRadius_sub_div_bounds hN
+  have hSpos : 0 < S := sub_pos.mpr (div_lt_log_gammaRadius hN)
+  have hSle : S ≤ (3 / 2 : ℝ) / (N : ℝ) ^ 3 := log_gammaRadius_sub_div_le hN
   have hS1 : |S| ≤ 1 := by
     rw [abs_of_pos hSpos]
     have hN3 : (8 : ℝ) ≤ (N : ℝ) ^ 3 := by nlinarith [sq_nonneg (N : ℝ)]
@@ -634,9 +654,10 @@ theorem gammaRadius_le_mul_add (N : ℕ) :
   · exact gammaRadius_le_mul_add_of_two_le (by omega)
 
 /-- **Positive asymptotic expansion of `gammaRadius N`** (Calegari–Dimitrov–Tang (5.1.6)):
-there is an explicit positive constant `C` (`C = 3` suffices) such that for every `N ≥ 2`,
+there is an absolute positive constant `C` (independent of `N`) such that for every `N ≥ 2`,
 `gammaRadius N = 16 ^ (1 / N) * (1 + Re ζ(3) / (2N ^ 3) + 3 Re ζ(5) / (8N ^ 5) + E)` with
-`0 < E ≤ C / N ^ 6`. -/
+`0 < E ≤ C / N ^ 6`. See `TauCeti.mul_lt_gammaRadius` and `TauCeti.gammaRadius_le_mul_add` for the
+explicit constant `C = 3`. -/
 theorem exists_pos_forall_gammaRadius_eq :
     ∃ C : ℝ, 0 < C ∧ ∀ N : ℕ, 2 ≤ N → ∃ E : ℝ, 0 < E ∧ E ≤ C / (N : ℝ) ^ 6 ∧
       gammaRadius N = (16 : ℝ) ^ (1 / (N : ℝ)) *

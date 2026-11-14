@@ -11,22 +11,28 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Real
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 
 /-!
 # Taylor series of digamma and `logGamma` at `1`
 
-On the open unit disc `‖z‖ < 1`, expanding each paired summand of Gauss' digamma series in powers
-of `z / (n + 1)` and interchanging the double sum expresses `Complex.digamma (1 + z)` in terms of
-Euler's constant `γ` and the integer zeta values `riemannZeta (k + 2)`:
-`ψ(1 + z) = -γ + ∑' k, (-1) ^ k * ζ(k + 2) * z ^ (k + 1)`.
-Integrating termwise on subdiscs of the unit disc and matching values at `z = 0` via
-`TauCeti.logGamma_one` yields the power series of the normalized holomorphic branch
-`TauCeti.logGamma (1 + z)`:
-`logGamma (1 + z) = -γ * z + ∑' k, (-1) ^ k * ζ(k + 2) * z ^ (k + 2) / (k + 2)`.
-Restricting to `x ∈ (-1, 1)` gives the corresponding real Taylor expansions for
+This file establishes the power series expansions of the digamma function and the logarithmic
+Gamma function around `1` in terms of Euler's constant `γ` and the integer zeta values
+`riemannZeta (k + 2)`:
+* `ψ(1 + z) = -γ + ∑' k, (-1) ^ k * ζ(k + 2) * z ^ (k + 1)` for `‖z‖ < 1`;
+* `logGamma (1 + z) = -γ * z + ∑' k, (-1) ^ k * ζ(k + 2) * z ^ (k + 2) / (k + 2)` for `‖z‖ < 1`.
+
+Evaluating linear combinations of these expansions at small rational shifts cancels `γ` and
+selected parities of `ζ(k + 2)`, yielding zeta-value series for logarithms of Gamma quotients
+(such as the odd-zeta expansion of `TauCeti.gammaRadius`).
+
+Over `ℂ`, the naive composition `Complex.log (Complex.Gamma (1 + z))` can cross the branch cut of
+`Complex.log` even when `‖z‖ < 1`. Instead, every `z` with `‖z‖ < 1` satisfies
+`1 + z ∈ Complex.slitPlane`, so the normalized holomorphic branch `TauCeti.logGamma (1 + z)` is
+single-valued and analytic on the entire open unit disc `‖z‖ < 1`—the maximal disc around `0`
+avoiding the pole of `Γ(1 + z)` at `z = -1`. On `(-1, 1)`, `Real.Gamma (1 + x)` is positive and
+`TauCeti.logGamma` agrees with `Real.log ∘ Real.Gamma`, giving the companion real power series for
 `Real.digamma (1 + x)` and `Real.log (Real.Gamma (1 + x))`.
 
 ## Main results
@@ -46,7 +52,8 @@ Restricting to `x ∈ (-1, 1)` gives the corresponding real Taylor expansions fo
 
 ## References
 
-* [NIST DLMF, equations 5.7.3 and 5.7.4](https://dlmf.nist.gov/5.7).
+* [NIST DLMF, equation 5.7.4, and equation 5.7.3 combined with the Taylor series of `log (1 + z)`
+  on `‖z‖ < 1`](https://dlmf.nist.gov/5.7).
 * F. Calegari, V. Dimitrov and Y. Tang, *The unbounded denominators conjecture*,
   J. Amer. Math. Soc. 38 (2025), proof of Theorem 5.1.4.
 -/
@@ -54,16 +61,6 @@ Restricting to `x ∈ (-1, 1)` gives the corresponding real Taylor expansions fo
 public section
 
 open Complex Metric
-
-private theorem riemannZeta_nat_add_two_eq_ofReal (k : ℕ) :
-    riemannZeta (k + 2) = ((riemannZeta (k + 2)).re : ℂ) := by
-  have hcast : ((k : ℂ) + 2) = (((k : ℝ) + 2 : ℝ) : ℂ) := by
-    push_cast
-    rfl
-  have him : (riemannZeta (k + 2)).im = 0 := by
-    rw [hcast]
-    exact riemannZeta_im_eq_zero_of_one_lt (by linarith)
-  exact Complex.ext rfl him
 
 namespace Complex
 
@@ -197,9 +194,8 @@ theorem hasSum_digamma_one_add_add_eulerMascheroniConstant {x : ℝ} (hx : |x| <
   refine hc.congr_fun fun k ↦ ?_
   have hterm : (-1 : ℂ) ^ k * riemannZeta (k + 2) * (x : ℂ) ^ (k + 1) =
       (((-1 : ℝ) ^ k * (riemannZeta (k + 2)).re * x ^ (k + 1) : ℝ) : ℂ) := by
-    rw [riemannZeta_nat_add_two_eq_ofReal]
     push_cast
-    rfl
+    rw [TauCeti.ofReal_riemannZeta_re (by simp)]
   rw [hterm, Complex.reCLM_apply, Complex.ofReal_re]
 
 /-- **Taylor series of real digamma at `1`**, written with `tsum`. -/
@@ -285,7 +281,8 @@ private theorem hasDerivAt_logGamma_one_add_linear {w : ℂ} (hw : ‖w‖ < 1) 
     simpa using (hasDerivAt_id w).const_mul (Real.eulerMascheroniConstant : ℂ)
   exact hcomp.fun_add h2
 
-/-- **Taylor series of `logGamma` at `1`** (DLMF 5.7.3): for `‖z‖ < 1`,
+/-- **Taylor series of `logGamma` at `1`** (DLMF 5.7.3 combined with the Taylor series of
+`log (1 + z)` on `‖z‖ < 1`): for `‖z‖ < 1`,
 `logGamma (1 + z) + γ z = ∑_{k ≥ 0} (-1) ^ k ζ(k + 2) z ^ (k + 2) / (k + 2)`. -/
 theorem hasSum_logGamma_one_add_add_eulerMascheroniConstant_mul {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun k : ℕ ↦ (-1) ^ k * riemannZeta (k + 2) * z ^ (k + 2) / (k + 2))
@@ -326,7 +323,8 @@ end TauCeti
 
 namespace Real
 
-/-- **Taylor series of `log (Gamma (1 + x))` at `0`** (DLMF 5.7.3): for `|x| < 1`,
+/-- **Taylor series of `log (Gamma (1 + x))` at `0`** (DLMF 5.7.3 combined with the Taylor series
+of `log (1 + x)` on `|x| < 1`): for `|x| < 1`,
 `log (Gamma (1 + x)) + γ x = ∑_{k ≥ 0} (-1) ^ k Re(ζ(k + 2)) x ^ (k + 2) / (k + 2)`. -/
 theorem hasSum_log_Gamma_one_add_add_eulerMascheroniConstant_mul {x : ℝ} (hx : |x| < 1) :
     HasSum (fun k : ℕ ↦ (-1) ^ k * (riemannZeta (k + 2)).re * x ^ (k + 2) / (k + 2))
@@ -345,9 +343,8 @@ theorem hasSum_log_Gamma_one_add_add_eulerMascheroniConstant_mul {x : ℝ} (hx :
   refine hc.congr_fun fun k ↦ ?_
   have hterm : (-1 : ℂ) ^ k * riemannZeta (k + 2) * (x : ℂ) ^ (k + 2) / (k + 2) =
       (((-1 : ℝ) ^ k * (riemannZeta (k + 2)).re * x ^ (k + 2) / (k + 2) : ℝ) : ℂ) := by
-    rw [riemannZeta_nat_add_two_eq_ofReal]
     push_cast
-    rfl
+    rw [TauCeti.ofReal_riemannZeta_re (by simp)]
   rw [hterm, Complex.reCLM_apply, Complex.ofReal_re]
 
 /-- **Taylor series of `log (Gamma (1 + x))` at `0`**, written with `tsum`. -/

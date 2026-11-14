@@ -24,9 +24,10 @@ For a real `s > 1`, Mathlib's `riemannZeta s` is the sum of the complex Dirichle
 `∑ 1 / n ^ s`. This file records the corresponding statements for the real series: the real
 `p`-series `∑ (n + 1) ^ (-s)` sums to the real part of `riemannZeta s`, so `s ↦ Re ζ(s)` is
 strictly antitone on `(1, ∞)`, `‖ζ(s)‖ ≤ Re ζ(Re s)` on `Re s > 1`, and `‖ζ(s)‖ < 2` (hence
-`Re ζ(s) < 2`) on `Re s ≥ 2`. Together with Mathlib's
-`riemannZeta_re_pos_of_one_lt` and `riemannZeta_im_eq_zero_of_one_lt`, this identifies the
-real normalizing constant of a `p`-series, as needed for the Zipf law on the positive integers.
+`Re ζ(s) < 2`) on `Re s ≥ 2`. By conjugation symmetry (`riemannZeta_conj`), `riemannZeta` is
+real-valued along the entire real axis (`((riemannZeta s).re : ℂ) = riemannZeta s`). Together with
+Mathlib's `riemannZeta_re_pos_of_one_lt` and `riemannZeta_im_eq_zero_of_one_lt`, this identifies
+the real normalizing constant of a `p`-series, as needed for the Zipf law on the positive integers.
 
 The file also proves that `riemannZeta` is measurable, so that families of laws normalized by its
 real values are measurable in their parameter.
@@ -41,6 +42,8 @@ Siegel's theorem on real zeros.
 
 ## Main results
 
+* `TauCeti.ofReal_riemannZeta_re` and `TauCeti.ofReal_riemannZeta_ofReal_re`:
+  `((riemannZeta s).re : ℂ) = riemannZeta s` whenever `s.im = 0` (in particular for real `s`);
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
@@ -67,6 +70,17 @@ open Complex Filter Finset
 open scoped Topology ComplexOrder
 
 namespace TauCeti
+
+/-- For every complex `s` on the real axis (`s.im = 0`), `riemannZeta s` equals the coercion of its
+real part. -/
+theorem ofReal_riemannZeta_re {s : ℂ} (hs : s.im = 0) :
+    ((riemannZeta s).re : ℂ) = riemannZeta s :=
+  conj_eq_iff_re.mp (by rw [← riemannZeta_conj, conj_eq_iff_im.mpr hs])
+
+/-- At every real point `s`, `riemannZeta s` equals the coercion of its real part. -/
+@[simp]
+theorem ofReal_riemannZeta_ofReal_re (s : ℝ) : ((riemannZeta s).re : ℂ) = riemannZeta s :=
+  ofReal_riemannZeta_re (ofReal_im s)
 
 /-- For real `s > 1`, the real series `∑ (n + 1) ^ (-s)` sums to the real part of `riemannZeta s`.
 -/
