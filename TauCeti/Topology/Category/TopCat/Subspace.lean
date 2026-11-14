@@ -12,10 +12,10 @@ public import Mathlib.CategoryTheory.CommSq
 # Subspace inclusions in `TopCat`
 
 The canonical inclusions of subspaces are monomorphisms, the inclusions of nested subspaces
-compose to an inclusion, and the restrictions of a map to subspaces commute with the
-inclusions. These supply the monomorphism hypotheses for the subspace inclusions in the
-Mayer–Vietoris pushout square, the functoriality of homology along nested subspaces, and the
-naturality of the Mayer–Vietoris sequences.
+compose to an inclusion, and the restrictions of a map to subspaces (including whole-space
+`Set.univ` preimage restrictions) commute with the inclusions. These supply the monomorphism
+hypotheses for the subspace inclusions in the Mayer–Vietoris pushout square, the functoriality of
+homology along nested subspaces, and the naturality of the Mayer–Vietoris sequences.
 -/
 
 public section
@@ -64,6 +64,15 @@ lemma ofHom_inclusion_comp {A A' : Set X} {B B' : Set Y} (hA : A ⊆ A') (hB : B
   rfl
 
 end Restrict
+
+/-- `TopCat.ofHom (f.restrictPreimage Set.univ)` typed on `Set.univ` is the subtype-restricted
+morphism `x ↦ ⟨f x.1, Set.mem_univ _⟩`. -/
+lemma ofHom_restrictPreimage_univ_eq {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : C(X, Y)) :
+    (ofHom (f.restrictPreimage Set.univ) : of (Set.univ : Set X) ⟶ of (Set.univ : Set Y)) =
+      ofHom ⟨fun x ↦ ⟨f x.1, Set.mem_univ _⟩,
+        (f.continuous.comp continuous_subtype_val).subtype_mk _⟩ := by
+  ext x; exact Set.restrictPreimage_coe Set.univ f x
 
 variable (U V : Set α)
 
