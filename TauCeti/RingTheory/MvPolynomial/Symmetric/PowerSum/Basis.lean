@@ -51,6 +51,10 @@ as they agree on every `p_μ`.
 * `TauCeti.span_psumPart_eq_symmetricHomogeneousSubmodule`: the power-sum products of the
   partitions of `n` span the symmetric polynomials of degree `n`.
 * `TauCeti.linearIndependent_psumPart`: in at least `n` variables they are linearly independent.
+* `TauCeti.not_linearIndependent_psumPart`: in fewer than `n` variables they are dependent, over
+  any nontrivial commutative ring, since the dimension in degree `n` is then the number of
+  partitions of `n` with at most that many parts; `TauCeti.linearIndependent_psumPart_iff`
+  combines the two.
 
 ## References
 
@@ -181,12 +185,9 @@ private theorem top_le_span_psumPartVec (n : ℕ) :
 
 private theorem linearIndependent_psumPartVec {n : ℕ} (hn : n ≤ Fintype.card σ) :
     LinearIndependent R (psumPartVec σ R (n := n)) := by
-  classical
-  -- in at least `n` letters every partition of `n` indexes a monomial basis vector
-  have hcard (μ : n.Partition) : μ.parts.card ≤ Fintype.card σ := μ.card_parts_le.trans hn
   nontriviality R
-  refine linearIndependent_of_top_le_span_of_card_eq_finrank (top_le_span_psumPartVec σ R n) ?_
-  rw [Module.finrank_eq_card_basis ((msymmBasis σ R n).reindex (Equiv.subtypeUnivEquiv hcard))]
+  exact linearIndependent_of_top_le_span_of_card_eq_finrank (top_le_span_psumPartVec σ R n)
+    (finrank_symmetricHomogeneousSubmodule_of_le hn).symm
 
 /-- **The power-sum basis**: over a `ℚ`-algebra and in an alphabet of at least `n` letters, the
 power-sum products `p_μ` of the partitions `μ` of `n` form a basis of the symmetric polynomials of
@@ -209,5 +210,57 @@ theorem linearIndependent_psumPart {n : ℕ} (hn : n ≤ Fintype.card σ) :
     funext fun μ => (coe_psumPartBasis σ R hn μ).symm
   rw [h]
   exact (psumPartBasis σ R hn).linearIndependent.map' _ (Submodule.ker_subtype _)
+
+omit [Algebra ℚ R] in
+/-- **In fewer than `n` letters the power-sum products are dependent**: over any nontrivial
+commutative ring, the products `p_μ` over the partitions `μ` of `n` outnumber the dimension of the
+symmetric polynomials of degree `n`, which is the number of partitions of `n` with at most
+`Fintype.card σ` parts (`TauCeti.finrank_symmetricHomogeneousSubmodule`). -/
+theorem not_linearIndependent_psumPart [Nontrivial R] {n : ℕ} (hn : Fintype.card σ < n) :
+    ¬ LinearIndependent R (psumPart σ R : n.Partition → MvPolynomial σ R) := fun h => by
+  have : Module.Finite R (symmetricHomogeneousSubmodule σ R n) := .of_basis (msymmBasis σ R n)
+  have h' : LinearIndependent R fun μ : n.Partition =>
+      (⟨psumPart σ R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩ :
+        symmetricHomogeneousSubmodule σ R n) :=
+    .of_comp (symmetricHomogeneousSubmodule σ R n).subtype h
+  exact h'.fintype_card_le_finrank.not_gt (finrank_symmetricHomogeneousSubmodule_lt hn)
+
+/-- **The power-sum products are independent exactly in at least `n` letters**: over a nontrivial
+`ℚ`-algebra, the products `p_μ` over the partitions `μ` of `n` are linearly independent if and
+only if the alphabet has at least `n` letters. -/
+theorem linearIndependent_psumPart_iff [Nontrivial R] {n : ℕ} :
+    LinearIndependent R (psumPart σ R : n.Partition → MvPolynomial σ R) ↔
+      n ≤ Fintype.card σ :=
+  ⟨fun h => not_lt.mp fun hn => not_linearIndependent_psumPart σ R hn h,
+    linearIndependent_psumPart σ R⟩
+
+/-! ### Degree two in one and two letters -/
+
+/-- In one letter `x`, both power-sum products of degree two are `x²`. -/
+example : psumPart (Fin 1) ℚ (.indiscrete 2) = X 0 ^ 2 ∧
+    psumPart (Fin 1) ℚ (Nat.Partition.ones 2) = X 0 ^ 2 := by
+  simp [psumPart, psum, Nat.Partition.ones_parts, sq]
+
+/-- In one letter the two power-sum products of degree two are dependent, while the symmetric
+polynomials of degree two are one-dimensional, spanned by the single Schur polynomial `s_(2)`. -/
+example : ¬ LinearIndependent ℚ (psumPart (Fin 1) ℚ : (2).Partition → MvPolynomial (Fin 1) ℚ) ∧
+    Module.finrank ℚ (symmetricHomogeneousSubmodule (Fin 1) ℚ 2) = 1 := by
+  refine ⟨not_linearIndependent_psumPart (Fin 1) ℚ (by simp), ?_⟩
+  rw [finrank_symmetricHomogeneousSubmodule, Fintype.card_eq_one_iff]
+  refine ⟨⟨.indiscrete 2, by simp⟩, fun ⟨ν, hν⟩ => Subtype.ext (Nat.Partition.ext ?_)⟩
+  have hs := ν.parts_sum
+  obtain hc | hc := Nat.le_one_iff_eq_zero_or_eq_one.mp (hν.trans_eq (Fintype.card_fin 1))
+  · simp [Multiset.card_eq_zero.mp hc] at hs
+  · obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp hc
+    simp_all
+
+/-- In two letters `x, y`, the power-sum products of degree two are `x² + y²` and `(x + y)²`. -/
+example : psumPart (Fin 2) ℚ (.indiscrete 2) = X 0 ^ 2 + X 1 ^ 2 ∧
+    psumPart (Fin 2) ℚ (Nat.Partition.ones 2) = (X 0 + X 1) ^ 2 := by
+  simp [psumPart, psum, Nat.Partition.ones_parts, Fin.sum_univ_two, sq]
+
+/-- In two letters the two power-sum products of degree two are independent. -/
+example : LinearIndependent ℚ (psumPart (Fin 2) ℚ : (2).Partition → MvPolynomial (Fin 2) ℚ) :=
+  linearIndependent_psumPart (Fin 2) ℚ (by simp)
 
 end TauCeti
