@@ -36,8 +36,8 @@ Completeness of `E` is used only in the last step, where the vector-valued integ
 
 ## Main results
 
-* `TauCeti.continuousWithinAt_of_forall_dual`: weak differentiability within a set at a point
-  implies continuity within the set at that point.
+* `TauCeti.continuousWithinAt_of_forall_dual_differentiableWithinAt`: weak differentiability
+  within a set at a point implies continuity within the set at that point.
 * `TauCeti.continuousOn_of_forall_dual_differentiableOn`: weak differentiability on any set
   implies continuity, even when `E` is not complete.
 * `TauCeti.differentiableOn_of_forall_dual`: weak holomorphy on an open set implies holomorphy.
@@ -63,7 +63,7 @@ variable {f : ℂ → E} {U : Set ℂ}
 
 /-- A function that is weakly differentiable within `U` at `c` is continuous within `U` at `c`.
 This needs neither openness of `U` nor completeness of `E`. -/
-theorem continuousWithinAt_of_forall_dual {c : ℂ}
+theorem continuousWithinAt_of_forall_dual_differentiableWithinAt {c : ℂ}
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableWithinAt ℂ (fun z ↦ ℓ (f z)) U c) :
     ContinuousWithinAt f U c := by
   rw [ContinuousWithinAt, tendsto_iff_seq_tendsto]
@@ -104,7 +104,8 @@ theorem continuousWithinAt_of_forall_dual {c : ℂ}
 openness of `U` nor completeness of `E`. -/
 theorem continuousOn_of_forall_dual_differentiableOn
     (hf : ∀ ℓ : StrongDual ℂ E, DifferentiableOn ℂ (fun z ↦ ℓ (f z)) U) :
-    ContinuousOn f U := fun c hc ↦ continuousWithinAt_of_forall_dual fun ℓ ↦ hf ℓ c hc
+    ContinuousOn f U := fun c hc ↦
+  continuousWithinAt_of_forall_dual_differentiableWithinAt fun ℓ ↦ hf ℓ c hc
 
 /-- **Weak holomorphy implies holomorphy.** If `E` is a complex Banach space and
 `z ↦ ℓ (f z)` is complex differentiable on the open set `U` for every continuous linear
