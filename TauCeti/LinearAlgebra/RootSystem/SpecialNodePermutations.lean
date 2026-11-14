@@ -168,8 +168,9 @@ the two to be equinumerous. A valid simply-laced type is ruled out by
 of one kind whose images would have to be the single node of the other kind. -/
 
 /-- A permutation of `Fin r` cannot send both of the nodes `0` and `1` to the node `n - 1`. -/
-private theorem false_of_val_add_one_eq {r n : ℕ} (σ : Equiv.Perm (Fin r)) (h₀ : 0 < r)
-    (h₁ : 1 < r) (h : ∀ (m : ℕ) (hm : m < r), m < 2 → ((σ ⟨m, hm⟩ : ℕ)) + 1 = n) : False := by
+private theorem false_of_val_add_one_eq {r n : ℕ} (σ : Equiv.Perm (Fin r)) (h₁ : 1 < r)
+    (h : ∀ (m : ℕ) (hm : m < r), m < 2 → ((σ ⟨m, hm⟩ : ℕ)) + 1 = n) : False := by
+  have h₀ : 0 < r := Nat.zero_lt_of_lt h₁
   have e₀ := h 0 h₀ (by omega)
   have e₁ := h 1 h₁ (by omega)
   simpa using congrArg Fin.val (σ.injective (Fin.eq_of_val_eq (by omega) : σ ⟨0, h₀⟩ = σ ⟨1, h₁⟩))
@@ -189,7 +190,7 @@ theorem not_isSpecialNodePerm_B {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (
     simp only [isLongSimpleRoot_B, not_lt] at hshort
     have := (σ ⟨m, hm⟩).isLt
     omega
-  exact false_of_val_add_one_eq σ (by omega) (by omega) fun m hm hm₂ => key m hm (by omega)
+  exact false_of_val_add_one_eq σ (by omega) fun m hm hm₂ => key m hm (by omega)
 
 /-- `Cₙ` has no special node permutation once `3 ≤ n`: its nodes `0` and `1` are then both short,
 while its only long node is the last one, so the two would have the same image. -/
@@ -202,7 +203,7 @@ theorem not_isSpecialNodePerm_C {n : ℕ} (hn : 3 ≤ n) (σ : Equiv.Perm (Fin (
     intro m hm hi
     have hshort : ¬ (C n).IsLongSimpleRoot ⟨m, hm⟩ := by simpa using hi
     simpa using (h.isLongSimpleRoot_apply ⟨m, hm⟩).mpr hshort
-  exact false_of_val_add_one_eq σ (by omega) (by omega) fun m hm hm₂ => key m hm (by omega)
+  exact false_of_val_add_one_eq σ (by omega) fun m hm hm₂ => key m hm (by omega)
 
 /-- **A valid Dynkin type admits a special node permutation exactly when it is `B₂`, `F₄` or
 `G₂`.**
