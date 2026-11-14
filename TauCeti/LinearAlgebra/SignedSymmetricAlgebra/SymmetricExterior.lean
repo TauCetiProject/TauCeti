@@ -25,7 +25,7 @@ is isomorphic to the exterior algebra of `V` (`TauCeti.SignedSym.exteriorAlgebra
 module finiteness for finite `V`, rank `2 ^ finrank R V` for finite free `V` over a nontrivial
 ring, and vanishing of `lengthPiece G d` above `finrank R V`. For the general mixed-parity
 comparison `A(V) ≃ Sym(V_even) ⊗ Λ(V_odd)`, see
-`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.ParityDecomposition`.
+`TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Decomposition`.
 
 When `V` is concentrated in degree `1`, `toExteriorAlgebra` maps `signedSymPiece G p` onto
 `TauCeti.ExteriorAlgebra.integerGrading R V p` over any commutative ring, `exteriorAlgebraEquiv`
