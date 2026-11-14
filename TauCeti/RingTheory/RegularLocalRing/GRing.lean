@@ -5,15 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
-public import Mathlib.RingTheory.AdicCompletion.Completeness
-public import Mathlib.RingTheory.AdicCompletion.Noetherian
-public import Mathlib.RingTheory.Finiteness.Prod
-public import Mathlib.RingTheory.HopkinsLevitzki
-public import Mathlib.RingTheory.KrullDimension.PID
-public import Mathlib.RingTheory.Localization.LocalizationLocalization
-public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap
+import Mathlib.RingTheory.AdicCompletion.Completeness
+import Mathlib.RingTheory.AdicCompletion.Noetherian
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # G-rings
