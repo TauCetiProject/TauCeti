@@ -150,6 +150,18 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
+/-- The preimage of a compact set `K` under an inducing map `j` is compact when `K` lies in the
+union of the range of `j` and an open set `V` meeting no point of `K` in that range: it is the
+preimage of the compact set `K ∖ V`. -/
+theorem _root_.Topology.IsInducing.isCompact_preimage_of_subset_union {Y : Type*}
+    [TopologicalSpace Y] {j : X → Y} (hj : IsInducing j) {V : Set Y} (hV : IsOpen V) {K : Set Y}
+    (hK : IsCompact K) (hKV : K ⊆ range j ∪ V) (hdisj : Disjoint (K ∩ range j) V) :
+    IsCompact (j ⁻¹' K) := by
+  have h : j ⁻¹' (K \ V) = j ⁻¹' K :=
+    Set.ext fun z ↦ and_iff_left_of_imp fun hz ↦ hdisj.notMem_of_mem_left ⟨hz, mem_range_self z⟩
+  exact h ▸ (hj.isCompact_preimage_iff (K := K \ V) fun _ ⟨hz, hz'⟩ ↦
+    (hKV hz).resolve_right hz').2 (hK.diff hV)
+
 section TubeLemma
 
 variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]

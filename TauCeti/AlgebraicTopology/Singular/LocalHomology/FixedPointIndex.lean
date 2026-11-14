@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 import Mathlib.Analysis.Convex.Contractible
 
@@ -34,7 +35,9 @@ The index has the following properties.
   (`IsCompact.finite_setOf_apply_eq_self_of_hasFDerivAt`), and the index is then the signed
   count `∑_{f x = x} sign det (1 - Dφ(x))` (`ContinuousMap.fixedPointIndex_eq_sum_sign_det`). In
   particular a constant map with value `c` has index `1` if `c ∈ U` and `0` otherwise
-  (`ContinuousMap.fixedPointIndex_const_of_mem`, `ContinuousMap.fixedPointIndex_const_of_notMem`).
+  (`ContinuousMap.fixedPointIndex_const_of_mem`, `ContinuousMap.fixedPointIndex_const_of_notMem`,
+  and `ContinuousMap.fixedPointIndex_zero_of_mem`, `ContinuousMap.fixedPointIndex_zero_of_notMem`
+  for the zero map).
 * **Homotopy invariance.** Maps joined by a homotopy `H : [0, 1] × U → E` whose fixed set
   `{(t, x) | H (t, x) = x}` is compact have the same index
   (`ContinuousMap.fixedPointIndex_eq_of_homotopy`). For instance, if `U` has compact closure
@@ -43,9 +46,9 @@ The index has the following properties.
 * **Excision.** Restricting `f` to an open subset containing all of its fixed points does not
   change the index (`ContinuousMap.fixedPointIndex_comp_inclusion`). Applied to `U₁ ∩ U₂`, this
   shows that the index of an isolated fixed set does not depend on the isolating neighbourhood.
-* **Additivity.** If the fixed set is compact and covered by disjoint open subsets `V` and `W` of
-  `U`, the index is the sum of the indices of the restrictions to `V` and to `W`
-  (`ContinuousMap.fixedPointIndex_eq_add`).
+* **Additivity.** If the fixed set is compact and covered by open subsets `V` and `W` of `U` with
+  no fixed point in both, the index is the sum of the indices of the restrictions to `V` and to
+  `W` (`ContinuousMap.fixedPointIndex_eq_add`).
 * A map without fixed points has index `0` (`ContinuousMap.fixedPointIndex_eq_zero_of_forall_ne`).
 
 Together, these compute the index of a degenerate map as the signed count of the fixed points of
@@ -90,34 +93,41 @@ open TauCeti TauCeti.HomologicalOrientation
 
 namespace ContinuousMap
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {U : Opens E}
+section SubtypeValSub
+
+variable {E : Type*} [TopologicalSpace E] {U : Opens E}
 
 /-- The map `x ↦ x - f x` of a map `f : U → E`, that is `ContinuousMap.subtypeVal U - f`. Its
 zeros are the fixed points of `f` (`ContinuousMap.preimage_subtypeValSub_zero`). -/
-def subtypeValSub (f : C(U, E)) : C(U, E) :=
+def subtypeValSub [Sub E] [ContinuousSub E] (f : C(U, E)) : C(U, E) :=
   ⟨fun x ↦ (x : E) - f x, by fun_prop⟩
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 @[simp]
-theorem subtypeValSub_apply (f : C(U, E)) (x : U) : f.subtypeValSub x = (x : E) - f x :=
+theorem subtypeValSub_apply [Sub E] [ContinuousSub E] (f : C(U, E)) (x : U) :
+    f.subtypeValSub x = (x : E) - f x :=
   (rfl)
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 /-- The zeros of `x ↦ x - f x` are the fixed points of `f`. -/
 @[simp]
-theorem preimage_subtypeValSub_zero (f : C(U, E)) : f.subtypeValSub ⁻¹' {0} = {x | f x = x} := by
+theorem preimage_subtypeValSub_zero [AddGroup E] [ContinuousSub E] (f : C(U, E)) :
+    f.subtypeValSub ⁻¹' {0} = {x | f x = x} := by
   ext x
   simp only [mem_preimage, subtypeValSub_apply, mem_singleton_iff, sub_eq_zero, mem_ofPred_eq]
   exact eq_comm
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 /-- The map `x ↦ x - f x` commutes with restriction to an open subset `V ⊆ U`. -/
 @[simp]
-theorem subtypeValSub_comp_inclusion {V : Opens E} (hVU : V ≤ U) (f : C(U, E)) :
+theorem subtypeValSub_comp_inclusion [Sub E] [ContinuousSub E] {V : Opens E} (hVU : V ≤ U)
+    (f : C(U, E)) :
     (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).subtypeValSub =
-      f.subtypeValSub.comp (inclusion (SetLike.coe_subset_coe.2 hVU)) :=
-  ContinuousMap.ext fun _ ↦ rfl
+      f.subtypeValSub.comp (inclusion (SetLike.coe_subset_coe.2 hVU)) := by
+  ext x
+  rw [comp_apply, subtypeValSub_apply, subtypeValSub_apply, comp_apply, inclusion_apply_coe]
+
+end SubtypeValSub
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {U : Opens E}
 
 /-- The **fixed-point index** of a continuous map `f : U → E` on an open subset `U` of a
 finite-dimensional real normed space: the local degree at `0` of the map `x ↦ x - f x`,
@@ -229,6 +239,16 @@ theorem fixedPointIndex_const_of_mem {c : E} (hc : c ∈ U) :
     (by simp [ContinuousLinearMap.det])]
   simp [ContinuousLinearMap.det]
 
+/-- The zero map has fixed-point index `1` when `0 ∈ U`. -/
+@[simp]
+theorem fixedPointIndex_zero_of_mem (h : (0 : E) ∈ U) : (0 : C(U, E)).fixedPointIndex = 1 := by
+  rw [← const_zero, fixedPointIndex_const_of_mem h]
+
+/-- The zero map has fixed-point index `0` when `0 ∉ U`. -/
+@[simp]
+theorem fixedPointIndex_zero_of_notMem (h : (0 : E) ∉ U) : (0 : C(U, E)).fixedPointIndex = 0 := by
+  rw [← const_zero, fixedPointIndex_const_of_notMem h]
+
 /-- **Homotopy invariance of the fixed-point index.** Maps `f₀, f₁ : U → E` joined by a homotopy
 `H` whose fixed set `{(t, x) | H (t, x) = x}` is compact have the same fixed-point index. -/
 theorem fixedPointIndex_eq_of_homotopy {f₀ f₁ : C(U, E)} (H : f₀.Homotopy f₁)
@@ -253,15 +273,21 @@ of `x ↦ x - f x` composed with the inclusion, for the orientation of `U` pulle
 `V`. -/
 private theorem fixedPointIndex_comp_inclusion_eq_localDegree {n : ℕ}
     (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n) {V : Opens E} (hVU : V ≤ U)
-    (hj : IsOpenEmbedding (Opens.inclusion hVU)) (f : C(U, E)) :
+    (f : C(U, E)) :
     (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).fixedPointIndex =
-      ((o.comap U.isOpenEmbedding').comap hj).localDegree o hE
-        (f.subtypeValSub.comp ⟨Opens.inclusion hVU, hj.continuous⟩) 0 := by
+      ((o.comap U.isOpenEmbedding').comap (j := Opens.inclusion hVU)
+        (Opens.isOpenEmbedding_of_le hVU)).localDegree o hE
+        (f.subtypeValSub.comp ⟨Opens.inclusion hVU, (Opens.isOpenEmbedding_of_le hVU).continuous⟩)
+        0 := by
+  have hincl : inclusion (SetLike.coe_subset_coe.2 hVU) =
+      ⟨Opens.inclusion hVU, (Opens.isOpenEmbedding_of_le hVU).continuous⟩ := by
+    ext x
+    rw [inclusion_apply_coe, coe_mk]
   -- The orientation of `V` is the one of `U` pulled back along the inclusion, and the
   -- map `x ↦ x - f x` commutes with restriction.
-  rw [comap_comap, o.comap_congr _ V.isOpenEmbedding' rfl, fixedPointIndex_eq_localDegree o hE,
-    subtypeValSub_comp_inclusion hVU]
-  rfl
+  rw [comap_comap, o.comap_congr _ V.isOpenEmbedding'
+      (Set.val_comp_inclusion (SetLike.coe_subset_coe.2 hVU)),
+    fixedPointIndex_eq_localDegree o hE, subtypeValSub_comp_inclusion hVU, hincl]
 
 /-- **Excision for the fixed-point index.** Restricting `f` to an open subset `V ⊆ U` containing
 all fixed points of `f` does not change the fixed-point index. -/
@@ -270,30 +296,30 @@ theorem fixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) {f : C(U, E
     (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).fixedPointIndex =
       f.fixedPointIndex := by
   obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  rw [fixedPointIndex_comp_inclusion_eq_localDegree o rfl hVU (Opens.isOpenEmbedding_of_le hVU),
+  rw [fixedPointIndex_comp_inclusion_eq_localDegree o rfl hVU,
     fixedPointIndex_eq_localDegree o rfl, localDegree_comap _ _ rfl rfl]
-  rw [preimage_subtypeValSub_zero, Set.range_inclusion hVU]
+  rw [preimage_subtypeValSub_zero, Set.range_inclusion (SetLike.coe_subset_coe.2 hVU)]
   exact hV
 
 /-- **Additivity of the fixed-point index.** If the fixed set of `f` is compact and covered by
-disjoint open subsets `V` and `W` of `U`, the fixed-point index of `f` is the sum of those of its
-restrictions to `V` and to `W`. -/
-theorem fixedPointIndex_eq_add {V W : Opens E} (hVU : V ≤ U) (hWU : W ≤ U) (hVW : Disjoint V W)
+open subsets `V` and `W` of `U` with no fixed point in both, the fixed-point index of `f` is the
+sum of those of its restrictions to `V` and to `W`. -/
+theorem fixedPointIndex_eq_add {V W : Opens E} (hVU : V ≤ U) (hWU : W ≤ U)
     {f : C(U, E)} (hc : IsCompact {x | f x = x})
-    (hfix : ∀ x : U, f x = x → (x : E) ∈ V ∨ (x : E) ∈ W) :
+    (hfix : ∀ x : U, f x = x → (x : E) ∈ V ∨ (x : E) ∈ W)
+    (hVW : ∀ x : U, f x = x → (x : E) ∈ V → (x : E) ∉ W) :
     f.fixedPointIndex = (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).fixedPointIndex +
       (f.comp (inclusion (SetLike.coe_subset_coe.2 hWU))).fixedPointIndex := by
   obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  have hV : IsOpenEmbedding (Opens.inclusion hVU) := Opens.isOpenEmbedding_of_le hVU
-  have hW : IsOpenEmbedding (Opens.inclusion hWU) := Opens.isOpenEmbedding_of_le hWU
-  rw [fixedPointIndex_comp_inclusion_eq_localDegree o rfl hVU hV,
-    fixedPointIndex_comp_inclusion_eq_localDegree o rfl hWU hW,
+  rw [fixedPointIndex_comp_inclusion_eq_localDegree o rfl hVU,
+    fixedPointIndex_comp_inclusion_eq_localDegree o rfl hWU,
     fixedPointIndex_eq_localDegree o rfl]
-  refine localDegree_eq_add _ _ rfl rfl hV hW ?_ _ (preimage_subtypeValSub_zero f ▸ hc) ?_
-  -- The ranges of the two inclusions are the points of `U` lying in `V` and in `W`.
-  · rw [Set.range_inclusion hVU, Set.range_inclusion hWU]
-    exact (Opens.coe_disjoint.2 hVW).preimage Subtype.val
-  · rw [preimage_subtypeValSub_zero, Set.range_inclusion hVU, Set.range_inclusion hWU]
-    exact hfix
+  refine localDegree_eq_add _ _ rfl rfl _ _ _ (preimage_subtypeValSub_zero f ▸ hc) ?_ ?_
+  all_goals
+    -- The ranges of the two inclusions are the points of `U` lying in `V` and in `W`.
+    rw [preimage_subtypeValSub_zero, Set.range_inclusion (SetLike.coe_subset_coe.2 hVU),
+      Set.range_inclusion (SetLike.coe_subset_coe.2 hWU)]
+  · exact hfix
+  · exact disjoint_left.2 fun x ⟨hx, hxV⟩ ⟨_, hxW⟩ ↦ hVW x hx hxV hxW
 
 end ContinuousMap

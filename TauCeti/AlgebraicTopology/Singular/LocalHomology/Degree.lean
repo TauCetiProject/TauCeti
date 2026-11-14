@@ -9,6 +9,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # The degree of a proper map between oriented manifolds
@@ -37,9 +38,9 @@ sign when either orientation is reversed, is multiplicative under composition, v
 that are not surjective and is invariant under proper homotopies, that is homotopies
 `F : [0, 1] × M → N` which are proper as maps on `[0, 1] × M`. The local degree at `y` is already
 invariant under homotopies whose fibre over `y` is compact. It only depends on `f` near the fibre
-over `y` (excision), and it is additive over disjoint open sets covering a compact fibre: the
-fundamental class along the fibre is the sum of the images of the fundamental classes along its
-two parts.
+over `y` (excision), and it is additive over open sets covering a compact fibre and meeting it in
+disjoint parts: the fundamental class along the fibre is the sum of the images of the fundamental
+classes along its two parts.
 
 ## Main definitions
 
@@ -68,7 +69,7 @@ two parts.
 * `TauCeti.HomologicalOrientation.localDegree_comap`: excision, the local degree of `f` equals that
   of its composite with an open embedding whose image contains the fibre.
 * `TauCeti.HomologicalOrientation.localDegree_eq_add`: additivity of the local degree over two
-  disjoint open embeddings whose images cover a compact fibre.
+  open embeddings whose images cover a compact fibre and meet it in disjoint parts.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_degree_smul`: for compact `M` and `N`,
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
@@ -399,35 +400,30 @@ theorem localDegree_comap (hF : finrank ℝ F = n) {M' : Type} [TopologicalSpace
     rw [(o.comap hj).localDegree_of_not_isCompact o' hE _ hc',
       o.localDegree_of_not_isCompact o' hE f hc]
 
-/-- The preimage of a compact set `K` under an embedding `j` is compact when `K` lies in the union
-of the range of `j` and an open set `V` disjoint from it: it is the preimage of `K ∖ V`. -/
-private theorem isCompact_preimage_of_subset_union {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] {j : X → Y} (hj : IsInducing j) {V : Set Y} (hV : IsOpen V)
-    (hdisj : Disjoint (range j) V) {K : Set Y} (hK : IsCompact K) (hKV : K ⊆ range j ∪ V) :
-    IsCompact (j ⁻¹' K) := by
-  have h : j ⁻¹' (K \ V) = j ⁻¹' K :=
-    Set.ext fun z ↦ and_iff_left (hdisj.notMem_of_mem_left (mem_range_self z))
-  exact h ▸ (hj.isCompact_preimage_iff (K := K \ V) fun _ ⟨hz, hz'⟩ ↦
-    (hKV hz).resolve_right hz').2 (hK.diff hV)
-
 /-- **Additivity of the local degree.** Let `j₁ : M₁ → M` and `j₂ : M₂ → M` be open embeddings
-with disjoint images which together contain the fibre `f⁻¹(y)`, and suppose that this fibre is
-compact. Then the local degree of `f` at `y` is the sum of the local degrees of `f ∘ j₁` and
-`f ∘ j₂` at `y`, for the orientations pulled back along `j₁` and `j₂`. -/
+whose images together contain the fibre `f⁻¹(y)` and meet it in disjoint sets, and suppose that
+this fibre is compact. Then the local degree of `f` at `y` is the sum of the local degrees of
+`f ∘ j₁` and `f ∘ j₂` at `y`, for the orientations pulled back along `j₁` and `j₂`. -/
 theorem localDegree_eq_add (hF : finrank ℝ F = n) {M₁ M₂ : Type} [TopologicalSpace M₁]
     [T2Space M₁] [ChartedSpace E M₁] [TopologicalSpace M₂] [T2Space M₂] [ChartedSpace E M₂]
     {j₁ : M₁ → M} {j₂ : M₂ → M}
-    (hj₁ : IsOpenEmbedding j₁) (hj₂ : IsOpenEmbedding j₂) (hdisj : Disjoint (range j₁) (range j₂))
-    (f : C(M, N)) {y : N} (hc : IsCompact (f ⁻¹' {y})) (hy : f ⁻¹' {y} ⊆ range j₁ ∪ range j₂) :
+    (hj₁ : IsOpenEmbedding j₁) (hj₂ : IsOpenEmbedding j₂) (f : C(M, N)) {y : N}
+    (hc : IsCompact (f ⁻¹' {y})) (hy : f ⁻¹' {y} ⊆ range j₁ ∪ range j₂)
+    (hdisj : Disjoint (f ⁻¹' {y} ∩ range j₁) (f ⁻¹' {y} ∩ range j₂)) :
     o.localDegree o' hE f y =
       (o.comap hj₁).localDegree o' hE (f.comp ⟨j₁, hj₁.continuous⟩) y +
         (o.comap hj₂).localDegree o' hE (f.comp ⟨j₂, hj₂.continuous⟩) y := by
+  -- No point of the fibre lies in both images.
+  have hdisj' {X₁ X₂ : Type} {i₁ : X₁ → M} {i₂ : X₂ → M}
+      (h : Disjoint (f ⁻¹' {y} ∩ range i₁) (f ⁻¹' {y} ∩ range i₂)) :
+      Disjoint (f ⁻¹' {y} ∩ range i₁) (range i₂) :=
+    disjoint_left.2 fun _ hx hx₂ ↦ h.notMem_of_mem_left hx ⟨hx.1, hx₂⟩
   -- The fibres of `f ∘ j₁` and `f ∘ j₂` are the preimages of the compact fibre of `f`.
   have hc₁ : IsCompact ((f.comp ⟨j₁, hj₁.continuous⟩) ⁻¹' {y}) :=
-    isCompact_preimage_of_subset_union hj₁.isInducing hj₂.isOpen_range hdisj hc hy
+    hj₁.isInducing.isCompact_preimage_of_subset_union hj₂.isOpen_range hc hy (hdisj' hdisj)
   have hc₂ : IsCompact ((f.comp ⟨j₂, hj₂.continuous⟩) ⁻¹' {y}) :=
-    isCompact_preimage_of_subset_union hj₂.isInducing hj₁.isOpen_range hdisj.symm hc
-      (hy.trans (union_comm _ _).subset)
+    hj₂.isInducing.isCompact_preimage_of_subset_union hj₁.isOpen_range hc
+      (hy.trans (union_comm _ _).subset) (hdisj' hdisj.symm)
   have h₁ : (⟨j₁, hj₁.continuous⟩ : C(M₁, M)) ⁻¹' (f ⁻¹' {y}) ⊆
       (f.comp ⟨j₁, hj₁.continuous⟩) ⁻¹' {y} :=
     fun _ h ↦ h
@@ -448,9 +444,9 @@ theorem localDegree_eq_add (hF : finrank ℝ F = n) {M₁ M₂ : Type} [Topologi
     rcases hy hx with ⟨a, rfl⟩ | ⟨b, rfl⟩
     · rw [o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hE hj₁ hc₁ _ hx,
         localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx
-          (hdisj.notMem_of_mem_left (mem_range_self a)), add_zero]
+          ((hdisj' hdisj).notMem_of_mem_left ⟨hx, mem_range_self a⟩), add_zero]
     · rw [localHomologyRestriction_localHomologyMap_of_notMem_range _ _ _ hx
-          (hdisj.notMem_of_mem_right (mem_range_self b)),
+          ((hdisj' hdisj.symm).notMem_of_mem_left ⟨hx, mem_range_self b⟩),
         o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hE hj₂ hc₂ _ hx,
         zero_add]
   rw [localDegree_eq_iff o o' hE hF f hc, ← hsum, map_add, ← ConcreteCategory.comp_apply,

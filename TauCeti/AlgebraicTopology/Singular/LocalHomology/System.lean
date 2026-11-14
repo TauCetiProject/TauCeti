@@ -269,7 +269,7 @@ end Map
 
 section ModuleCat
 
-variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ) {M N : Type w} [TopologicalSpace M]
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ) {M N : Type w} [TopologicalSpace M]
   [TopologicalSpace N] (j : C(M, N))
 
 /-- A class mapped along `j` restricts to `0` at a point outside the range of `j`: the elementwise
