@@ -240,16 +240,13 @@ private theorem exists_narrowPicClass_eq_mkPrincipal (y : Kˣ) :
   rw [conductorModulus_finitePart] at ha
   -- The class of `y` is that of `a`, since `a / y` is totally positive.
   have hya : NarrowPic.mkPrincipal O y = NarrowPic.mkPrincipal O (Units.mk0 _ ha0) := by
-    have hpos : IsTotallyPositive (((Units.mk0 _ ha0 * y⁻¹ : Kˣ)) : K) := by
-      have hsign : signHom (Units.mk0 _ ha0 * y⁻¹) = 1 := by
-        have hax : Units.mk0 _ ha0 = Units.mk0 _ hb * x :=
-          Units.ext (by
-            simpa only [Units.val_mul, Units.val_mk0, RingOfIntegers.coe_eq_algebraMap] using hab)
-        rw [hax, map_mul, map_mul, hxy, (signHom_eq_one_iff _).mpr hbpos, map_inv, one_mul,
-          mul_inv_cancel]
-      exact (signHom_eq_one_iff _).mp hsign
-    rw [eq_comm, ← mul_inv_eq_one, ← map_inv, ← map_mul]
-    exact NarrowPic.mkPrincipal_eq_one_of_isTotallyPositive O hpos
+    refine (NarrowPic.mkPrincipal_eq_of_isTotallyPositive_mul_inv O
+      ((signHom_eq_one_iff _).mp ?_)).symm
+    have hax : Units.mk0 _ ha0 = Units.mk0 _ hb * x :=
+      Units.ext (by
+        simpa only [Units.val_mul, Units.val_mk0, RingOfIntegers.coe_eq_algebraMap] using hab)
+    rw [hax, map_mul, map_mul, hxy, (signHom_eq_one_iff _).mpr hbpos, map_inv, one_mul,
+      mul_inv_cancel]
   -- The ideal `(a)` is prime to the conductor, and `a` lies in the order.
   have hJ : Ideal.span {a} ∈ integralIdealsPrimeTo O.narrowConductorModulus := by
     refine Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_iff_sup_eq_top.mpr
