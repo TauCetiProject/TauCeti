@@ -52,7 +52,6 @@ end EarKind
 namespace Ear
 
 /-- Transport a simple-graph ear to the edge-labelled graph interface. -/
-@[expose]
 def toGraph (e : G.Ear H) : (Graph.ofSimpleGraph G).Ear H.toGraph := by
   cases e with
   | «open» p hp hu hv huv hint hedge =>
@@ -98,7 +97,6 @@ end Ear
 namespace EarStart
 
 /-- Transport initial ear-decomposition data to the edge-labelled graph interface. -/
-@[expose]
 def toGraph (s : G.EarStart H) : (Graph.ofSimpleGraph G).EarStart H.toGraph := by
   cases s with
   | vertex v =>
@@ -137,7 +135,6 @@ end EarStart
 namespace EarDecomposition
 
 /-- Transport a simple-graph ear decomposition to `Graph.ofSimpleGraph G`. -/
-@[expose]
 def toGraph (d : G.EarDecomposition H) :
     (Graph.ofSimpleGraph G).EarDecomposition H.toGraph where
   length := d.length
@@ -149,21 +146,21 @@ def toGraph (d : G.EarDecomposition H) :
   graphAfter_last := congrArg Subgraph.toGraph d.subgraphAfter_last
 
 @[simp]
-theorem length_toGraph (d : G.EarDecomposition H) : d.toGraph.length = d.length := rfl
+theorem length_toGraph (d : G.EarDecomposition H) : d.toGraph.length = d.length := (rfl)
 
 @[simp]
 theorem graphAfter_toGraph (d : G.EarDecomposition H)
     (i : Fin (d.toGraph.length + 1)) :
     d.toGraph.graphAfter i =
       (d.subgraphAfter (Fin.cast (congrArg (fun n ↦ n + 1) (length_toGraph d)) i)).toGraph :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem earAt_toGraph (d : G.EarDecomposition H) (i : Fin d.toGraph.length) :
     d.toGraph.earAt i =
       ⟨(d.subgraphAfter (Fin.cast (length_toGraph d) i).castSucc).toGraph,
         (d.earAt (Fin.cast (length_toGraph d) i)).toGraph⟩ :=
-  rfl
+  (rfl)
 
 theorem kindAt_toGraph (d : G.EarDecomposition H) (i : Fin d.toGraph.length) :
     d.toGraph.kindAt i = (d.kindAt (Fin.cast (length_toGraph d) i)).toGraph := by
@@ -181,8 +178,7 @@ theorem walkAt_toGraph (d : G.EarDecomposition H) (i : Fin d.toGraph.length) :
 theorem heq_start_toGraph (d : G.EarDecomposition H) :
     HEq d.toGraph.start d.start.toGraph := HEq.rfl
 
-@[simp]
-theorem graphAfter_zero_toGraph (d : G.EarDecomposition H) :
+private theorem toGraph_subgraphAfter_cast_zero (d : G.EarDecomposition H) :
     (d.subgraphAfter
       (Fin.cast (congrArg (fun n ↦ n + 1) (length_toGraph d)) 0)).toGraph =
         d.initial.toGraph :=
@@ -190,7 +186,7 @@ theorem graphAfter_zero_toGraph (d : G.EarDecomposition H) :
 
 theorem initial_toGraph (d : G.EarDecomposition H) : d.toGraph.initial = d.initial.toGraph := by
   rw [Graph.EarDecomposition.initial_eq_graphAfter, graphAfter_toGraph,
-    graphAfter_zero_toGraph]
+    toGraph_subgraphAfter_cast_zero]
 
 @[simp]
 theorem start_isCycle_toGraph (d : G.EarDecomposition H) :
@@ -217,13 +213,11 @@ theorem isOpen_toGraph (d : G.EarDecomposition H) : d.toGraph.IsOpen ↔ d.IsOpe
     exact (EarKind.toGraph_eq_open _).mpr (hkinds _)
 
 /-- Transporting a prefix gives the corresponding prefix of the transported decomposition. -/
-theorem toGraph_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
-    (d.prefix k).toGraph = d.toGraph.prefix k := by
-  apply Graph.EarDecomposition.ext
-  · rfl
-  · simp [toGraph, Graph.EarDecomposition.prefix]
-  · exact HEq.rfl
-  · simp [toGraph, Graph.EarDecomposition.prefix]
+theorem heq_toGraph_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
+    HEq (d.prefix k).toGraph
+      (d.toGraph.prefix
+        (Fin.cast (congrArg (fun n ↦ n + 1) (length_toGraph d).symm) k)) :=
+  (HEq.rfl)
 
 end EarDecomposition
 
@@ -267,7 +261,6 @@ end EarKind
 namespace Ear
 
 /-- Transport an ear in a subgraph of `Graph.ofSimpleGraph G` to the simple-graph interface. -/
-@[expose]
 def toSimpleGraph (e : (Graph.ofSimpleGraph G).Ear K) :
     G.Ear (K.toSubgraphOfSimpleGraph e.base_le) := by
   cases e with
@@ -300,7 +293,7 @@ theorem toWalk_toSimpleGraph (e : (Graph.ofSimpleGraph G).Ear K) :
       rw [Graph.Ear.toWalk_closed, SimpleGraph.Ear.toWalk_closed]
 
 @[simp]
-theorem toSubgraph_toSimpleGraph (e : (Graph.ofSimpleGraph G).Ear K) :
+theorem toGraph_toSubgraph_toSimpleGraph (e : (Graph.ofSimpleGraph G).Ear K) :
     e.toSimpleGraph.toSubgraph.toGraph = e.toGraph := by
   cases e with
   | «open» =>
@@ -320,7 +313,7 @@ theorem add_toGraph_toSimpleGraph (e : (Graph.ofSimpleGraph G).Ear K) :
     e.toSimpleGraph.toGraph.add = e.add := by
   have hbase : (K.toSubgraphOfSimpleGraph e.base_le).toGraph = K := by simp
   have htrace : e.toSimpleGraph.toGraph.toGraph = e.toGraph := by
-    rw [SimpleGraph.Ear.toGraph_toGraph, e.toSubgraph_toSimpleGraph]
+    rw [SimpleGraph.Ear.toGraph_toGraph, e.toGraph_toSubgraph_toSimpleGraph]
   apply le_antisymm
   · rw [Graph.Ear.add_le_iff]
     exact ⟨hbase.le.trans e.base_le_add, htrace.le.trans e.toGraph_le_add⟩
@@ -351,7 +344,6 @@ namespace EarStart
 
 /-- Transport initial ear-decomposition data from `Graph.ofSimpleGraph G` to the simple-graph
 interface. -/
-@[expose]
 def toSimpleGraph (s : (Graph.ofSimpleGraph G).EarStart K) :
     G.EarStart (K.toSubgraphOfSimpleGraph s.le) := by
   cases s with
@@ -359,7 +351,7 @@ def toSimpleGraph (s : (Graph.ofSimpleGraph G).EarStart K) :
       exact (toSubgraphOfSimpleGraph_noEdge_singleton v.1 _).symm ▸
         SimpleGraph.EarStart.vertex v.1
   | cycle p hp =>
-      exact (SimpleGraph.Walk.toSubgraphOfSimpleGraph_walkGraph p hp.start_mem).symm ▸
+      exact (p.toSubgraphOfSimpleGraph_walkGraph hp.start_mem).symm ▸
         SimpleGraph.EarStart.cycle p.toSimpleGraph (p.isCycle_toSimpleGraph_iff.mpr hp)
 
 /-- Reverse transport sends a vertex-start witness to the same vertex. -/
@@ -386,7 +378,7 @@ theorem isCycle_toSimpleGraph (s : (Graph.ofSimpleGraph G).EarStart K) :
         (toSubgraphOfSimpleGraph_noEdge_singleton v.1 _) (eqRec_heq _ _) |>.trans (by simp)
   | cycle p hp =>
       exact SimpleGraph.EarStart.isCycle_iff_of_heq
-        (SimpleGraph.Walk.toSubgraphOfSimpleGraph_walkGraph p hp.start_mem)
+        (p.toSubgraphOfSimpleGraph_walkGraph hp.start_mem)
         (eqRec_heq _ _) |>.trans (by simp)
 
 end EarStart
@@ -395,7 +387,6 @@ namespace EarDecomposition
 
 /-- Transport an ear decomposition of a subgraph of `Graph.ofSimpleGraph G` to the simple-graph
 interface. -/
-@[expose]
 def toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
     G.EarDecomposition (K.toSubgraphOfSimpleGraph d.final_le) where
   length := d.length
@@ -419,7 +410,7 @@ def toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
 
 @[simp]
 theorem length_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
-    d.toSimpleGraph.length = d.length := rfl
+    d.toSimpleGraph.length = d.length := (rfl)
 
 @[simp]
 theorem subgraphAfter_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K)
@@ -428,40 +419,35 @@ theorem subgraphAfter_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecompositio
       Graph.toSubgraphOfSimpleGraph
         (d.graphAfter (Fin.cast (congrArg (fun n ↦ n + 1) (length_toSimpleGraph d)) i))
         (d.graphAfter_le _) :=
-  rfl
+  (rfl)
+
+/-- The base of a reverse-transported displayed ear is its transported stage subgraph. -/
+theorem earAt_base_toSimpleGraph
+    (d : (Graph.ofSimpleGraph G).EarDecomposition K)
+    (i : Fin d.toSimpleGraph.length) :
+    ((d.earAt (Fin.cast (length_toSimpleGraph d) i)).1.toSubgraphOfSimpleGraph
+        (d.earAt (Fin.cast (length_toSimpleGraph d) i)).2.base_le) =
+      d.toSimpleGraph.subgraphAfter i.castSucc := by
+  rw [subgraphAfter_toSimpleGraph]
+  apply toSubgraphOfSimpleGraph_congr
+  rw [d.earAt_fst]
+  congr 1
 
 @[simp]
 theorem earAt_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K)
     (i : Fin d.toSimpleGraph.length) :
     d.toSimpleGraph.earAt i =
       (d.earAt (Fin.cast (length_toSimpleGraph d) i)).2.toSimpleGraph.copy
-        (toSubgraphOfSimpleGraph_congr (d.earAt_fst _)
-          (d.earAt _).2.base_le (d.graphAfter_le _)) :=
-  rfl
-
-private theorem kindAt_toSimpleGraph_cast (d : (Graph.ofSimpleGraph G).EarDecomposition K)
-    (i : Fin d.length) :
-    d.toSimpleGraph.kindAt (Fin.cast (length_toSimpleGraph d).symm i) =
-      (d.kindAt i).toSimpleGraph := by
-  simp only [SimpleGraph.EarDecomposition.kindAt_def, Graph.EarDecomposition.kindAt_eq,
-    toSimpleGraph, Fin.cast_eq_self, SimpleGraph.Ear.kind_copy, Ear.kind_toSimpleGraph]
-
-private theorem walkAt_toSimpleGraph_cast (d : (Graph.ofSimpleGraph G).EarDecomposition K)
-    (i : Fin d.length) :
-    d.toSimpleGraph.walkAt (Fin.cast (length_toSimpleGraph d).symm i) =
-      ⟨(d.walkAt i).1, (d.walkAt i).2.1, (d.walkAt i).2.2.toSimpleGraph⟩ := by
-  rw [SimpleGraph.EarDecomposition.walkAt_def, Graph.EarDecomposition.walkAt_eq]
-  simp only [toSimpleGraph, Fin.cast_eq_self, SimpleGraph.Ear.toWalk_copy,
-    Ear.toWalk_toSimpleGraph]
+        (earAt_base_toSimpleGraph d i) :=
+  (rfl)
 
 @[simp]
 theorem kindAt_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K)
     (i : Fin d.toSimpleGraph.length) :
     d.toSimpleGraph.kindAt i =
       (d.kindAt (Fin.cast (length_toSimpleGraph d) i)).toSimpleGraph := by
-  have h := kindAt_toSimpleGraph_cast d (Fin.cast (length_toSimpleGraph d) i)
-  rw [Fin.cast_cast] at h
-  exact h
+  rw [SimpleGraph.EarDecomposition.kindAt_def, Graph.EarDecomposition.kindAt_eq]
+  rw [earAt_toSimpleGraph, SimpleGraph.Ear.kind_copy, Ear.kind_toSimpleGraph]
 
 @[simp]
 theorem walkAt_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K)
@@ -470,9 +456,8 @@ theorem walkAt_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K)
       ⟨(d.walkAt (Fin.cast (length_toSimpleGraph d) i)).1,
         (d.walkAt (Fin.cast (length_toSimpleGraph d) i)).2.1,
         (d.walkAt (Fin.cast (length_toSimpleGraph d) i)).2.2.toSimpleGraph⟩ := by
-  have h := walkAt_toSimpleGraph_cast d (Fin.cast (length_toSimpleGraph d) i)
-  rw [Fin.cast_cast] at h
-  exact h
+  rw [SimpleGraph.EarDecomposition.walkAt_def, Graph.EarDecomposition.walkAt_eq]
+  rw [earAt_toSimpleGraph, SimpleGraph.Ear.toWalk_copy, Ear.toWalk_toSimpleGraph]
 
 theorem heq_start_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
     HEq d.toSimpleGraph.start d.start.toSimpleGraph := HEq.rfl
@@ -497,39 +482,50 @@ theorem isOpen_toSimpleGraph (d : (Graph.ofSimpleGraph G).EarDecomposition K) :
   · rintro ⟨hstart, hkinds⟩
     refine ⟨hstart, fun i ↦ ?_⟩
     have hkind := hkinds (Fin.cast (length_toSimpleGraph d).symm i)
-    rw [kindAt_toSimpleGraph_cast] at hkind
-    exact (EarKind.toSimpleGraph_eq_open _).mp hkind
+    rw [kindAt_toSimpleGraph] at hkind
+    simpa using (EarKind.toSimpleGraph_eq_open _).mp hkind
   · rintro ⟨hstart, hkinds⟩
     refine ⟨hstart, fun i ↦ ?_⟩
-    have hkind := hkinds (Fin.cast (length_toSimpleGraph d) i)
-    have htransport := kindAt_toSimpleGraph_cast d (Fin.cast (length_toSimpleGraph d) i)
-    rw [Fin.cast_cast] at htransport
-    exact htransport.trans ((EarKind.toSimpleGraph_eq_open _).mpr hkind)
+    rw [kindAt_toSimpleGraph]
+    exact (EarKind.toSimpleGraph_eq_open _).mpr (hkinds _)
 
 /-- Transporting a prefix gives the corresponding prefix of the transported decomposition. -/
-theorem toSimpleGraph_prefix (d : (Graph.ofSimpleGraph G).EarDecomposition K)
+theorem heq_toSimpleGraph_prefix (d : (Graph.ofSimpleGraph G).EarDecomposition K)
     (k : Fin (d.length + 1)) :
-    HEq (d.prefix k).toSimpleGraph (d.toSimpleGraph.prefix k) := by
-  rfl
+    HEq (d.prefix k).toSimpleGraph
+      (d.toSimpleGraph.prefix
+        (Fin.cast (congrArg (fun n ↦ n + 1) (length_toSimpleGraph d).symm) k)) :=
+  (HEq.rfl)
 
 /-- A full edge-labelled decomposition transports to the top simple-graph subgraph. -/
-@[expose]
 def toSimpleGraphTop
     (d : (Graph.ofSimpleGraph G).EarDecomposition (Graph.ofSimpleGraph G)) :
     G.EarDecomposition (⊤ : G.Subgraph) :=
   d.toSimpleGraph.copy toSubgraphOfSimpleGraph_ofSimpleGraph
 
-theorem toSimpleGraphTop_eq_copy
+theorem toSimpleGraphTop_def
     (d : (Graph.ofSimpleGraph G).EarDecomposition (Graph.ofSimpleGraph G)) :
-    d.toSimpleGraphTop = d.toSimpleGraph.copy toSubgraphOfSimpleGraph_ofSimpleGraph := rfl
+    d.toSimpleGraphTop = d.toSimpleGraph.copy toSubgraphOfSimpleGraph_ofSimpleGraph := (rfl)
+
+@[simp]
+theorem length_toSimpleGraphTop
+    (d : (Graph.ofSimpleGraph G).EarDecomposition (Graph.ofSimpleGraph G)) :
+    d.toSimpleGraphTop.length = d.length := by
+  rw [toSimpleGraphTop_def, SimpleGraph.EarDecomposition.length_copy, length_toSimpleGraph]
 
 @[simp]
 theorem initial_toSimpleGraphTop
     (d : (Graph.ofSimpleGraph G).EarDecomposition (Graph.ofSimpleGraph G)) :
     d.toSimpleGraphTop.initial =
       (d.graphAfter 0).toSubgraphOfSimpleGraph (d.graphAfter_le 0) := by
-  rw [toSimpleGraphTop_eq_copy, SimpleGraph.EarDecomposition.initial_copy,
+  rw [toSimpleGraphTop_def, SimpleGraph.EarDecomposition.initial_copy,
     initial_toSimpleGraph]
+
+@[simp]
+theorem isOpen_toSimpleGraphTop
+    (d : (Graph.ofSimpleGraph G).EarDecomposition (Graph.ofSimpleGraph G)) :
+    d.toSimpleGraphTop.IsOpen ↔ d.IsOpen := by
+  rw [toSimpleGraphTop_def, SimpleGraph.EarDecomposition.isOpen_copy, isOpen_toSimpleGraph]
 
 end EarDecomposition
 
@@ -541,12 +537,28 @@ variable {V : Type u} {G : SimpleGraph V}
 
 /-- A full simple-graph decomposition transports to a full decomposition of its edge-labelled
 graph. -/
-@[expose]
 def toGraphTop (d : G.EarDecomposition (⊤ : G.Subgraph)) :
     (Graph.ofSimpleGraph G).EarDecomposition (Graph.ofSimpleGraph G) :=
   d.toGraph.copy SimpleGraph.Subgraph.toGraph_top
 
-theorem toGraphTop_eq_copy (d : G.EarDecomposition (⊤ : G.Subgraph)) :
-    d.toGraphTop = d.toGraph.copy SimpleGraph.Subgraph.toGraph_top := rfl
+theorem toGraphTop_def (d : G.EarDecomposition (⊤ : G.Subgraph)) :
+    d.toGraphTop = d.toGraph.copy SimpleGraph.Subgraph.toGraph_top := (rfl)
+
+@[simp]
+theorem length_toGraphTop (d : G.EarDecomposition (⊤ : G.Subgraph)) :
+    d.toGraphTop.length = d.length := by
+  rw [toGraphTop_def, Graph.EarDecomposition.length_copy,
+    SimpleGraph.EarDecomposition.length_toGraph]
+
+theorem initial_toGraphTop (d : G.EarDecomposition (⊤ : G.Subgraph)) :
+    d.toGraphTop.initial = d.initial.toGraph := by
+  rw [toGraphTop_def, Graph.EarDecomposition.initial_copy,
+    SimpleGraph.EarDecomposition.initial_toGraph]
+
+@[simp]
+theorem isOpen_toGraphTop (d : G.EarDecomposition (⊤ : G.Subgraph)) :
+    d.toGraphTop.IsOpen ↔ d.IsOpen := by
+  rw [toGraphTop_def, Graph.EarDecomposition.isOpen_copy,
+    SimpleGraph.EarDecomposition.isOpen_toGraph]
 
 end SimpleGraph.EarDecomposition

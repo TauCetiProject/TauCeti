@@ -13,8 +13,8 @@ public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 # Subgraphs of graphs associated to simple graphs
 
 This file identifies a subgraph of a simple graph `G` with a subgraph of the edge-labelled graph
-`Graph.ofSimpleGraph G`. The two conversions preserve vertex and edge sets, adjacency, inclusion,
-unions, and singleton and full subgraphs.
+`Graph.ofSimpleGraph G`. The conversions preserve vertex and edge sets and adjacency; the forward
+conversion also preserves inclusion, singleton subgraphs, and the full subgraph.
 -/
 
 public section
@@ -181,8 +181,10 @@ theorem toSubgraphOfSimpleGraph_toGraph (H : G.Subgraph) :
 theorem toGraph_injective (G : SimpleGraph V) :
     Function.Injective (fun H : G.Subgraph ↦ H.toGraph) := by
   intro H K h
+  have hverts : H.verts = K.verts := by
+    simpa using congrArg Graph.vertexSet h
   ext x y
-  · rw [show H.verts = K.verts from by simpa using congrArg Graph.vertexSet h]
+  · rw [hverts]
   · have hlink := congrArg (fun L : Graph V (Sym2 V) ↦ L.IsLink s(x, y) x y) h
     simpa using hlink
 

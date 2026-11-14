@@ -10,7 +10,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
-public import TauCeti.Combinatorics.Graph.Subgraph
+public import TauCeti.Combinatorics.Graph.Subgraph.OfSimpleGraph
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -145,9 +145,8 @@ theorem toGraph_toSubgraph (p : H.Walk x y) :
   apply (Graph.Compatible.of_le_le p.toSubgraph.toGraph_le
     (p.toGraph.walkGraph_le (by simp))).ext
   · simp
-  · rw [SimpleGraph.Subgraph.edgeSet_toGraph, SimpleGraph.Walk.edgeSet_toSubgraph,
-      Graph.Walk.edgeSet_walkGraph, SimpleGraph.Walk.edges_toGraph]
-    rfl
+  · ext
+    simp
 
 @[simp]
 theorem toSimpleGraph_toGraph (p : H.Walk x y) : p.toGraph.toSimpleGraph = p := by
@@ -170,7 +169,7 @@ theorem toGraph_toSimpleGraph (p : (Graph.ofSimpleGraph H).Walk x y) :
       simp [ih]
 
 @[simp]
-theorem _root_.SimpleGraph.Walk.toSubgraphOfSimpleGraph_walkGraph
+theorem toSubgraphOfSimpleGraph_walkGraph
     (p : (Graph.ofSimpleGraph H).Walk x y)
     (hx : x ∈ (Graph.ofSimpleGraph H).vertexSet) :
     ((Graph.ofSimpleGraph H).walkGraph p).toSubgraphOfSimpleGraph (p.walkGraph_le hx) =
