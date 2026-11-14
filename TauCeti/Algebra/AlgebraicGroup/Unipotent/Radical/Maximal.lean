@@ -65,7 +65,7 @@ theorem le_of_finrank_maximal
       (IsUnipotentRadicalCandidate H)
       hI.isNormal
       (fun hK ↦
-        geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hK.geometricallyConnected)
+        geometricallyConnectedCommHopfAlgProperty.connectedSpace hK.geometricallyConnected)
       (fun hK ↦
         ((smoothUnipotentCommHopfAlgProperty_iff k
           (FiniteTypeCommHopfAlgCat.quotient H _)).mp hK.smoothUnipotent).1)
