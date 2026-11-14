@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
@@ -23,10 +22,11 @@ parametrization `γ` of a part of `M` by a real parameter, the Riemannian Jacobi
 speed `‖γ'‖`, so that the change of variables formula for the Riemannian volume reads
 `∫ φ ∂vol = ∫ ‖γ' t‖ * φ (γ t) dt`.
 
-Two kinds of parametrizations are treated. An arc is parametrized by a `C¹` partial diffeomorphism
-from `ℝ` to `M`. A closed curve is parametrized by a periodic local diffeomorphism `γ : ℝ → M`
-which is injective on the interior of a period interval. The remaining endpoint of the interval is
-sent to a single point, which has volume zero, so `γ` carries the speed-weighted Lebesgue measure
+Two kinds of parametrizations are treated. An arc is parametrized by a `C^n` partial
+diffeomorphism, with `n ≠ 0`, from `ℝ` to `M`. A closed curve is parametrized by a periodic local
+diffeomorphism `γ : ℝ → M` which is injective on the interior of a period interval. The remaining
+endpoint of the interval is sent to a single point, which has volume zero, so `γ` carries the
+speed-weighted Lebesgue measure
 on any period interval to the Riemannian volume on the range of `γ`. A diffeomorphism from
 `AddCircle p` onto `M`, read on `ℝ`, is such a parametrization of all of `M`.
 
@@ -36,9 +36,9 @@ The model space of `M` is any one-dimensional real normed space, and `M` may hav
 
 * `TauCeti.riemannianJacobian_singleton`: the Riemannian Jacobian of a curve with respect to the
   basis `1` of `ℝ` is its speed.
-* `PartialDiffeomorph.map_withDensity_enorm_curveVelocity`: a `C¹` partial diffeomorphism from `ℝ`
-  to `M` carries the speed-weighted Lebesgue measure on its source to the Riemannian volume on its
-  target.
+* `PartialDiffeomorph.map_withDensity_enorm_curveVelocity`: a `C^n` partial diffeomorphism,
+  with `n ≠ 0`, from `ℝ` to `M` carries the speed-weighted Lebesgue measure on its source to the
+  Riemannian volume on its target.
 * `PartialDiffeomorph.setLIntegral_riemannianVolume_eq_enorm_curveVelocity_mul`: the
   corresponding formula for integrals over the target.
 * `IsLocalDiffeomorph.map_withDensity_enorm_curveVelocity_of_periodic`: a periodic local
@@ -80,28 +80,26 @@ variable [IsManifold I 1 M] [FiniteDimensional ℝ E]
 
 /-! ### Arcs -/
 
-/-- A `C¹` partial diffeomorphism `Φ` from `ℝ` to a one-dimensional Riemannian manifold carries
-the Lebesgue measure on its source, weighted by the speed of `Φ`, to the Riemannian volume on its
-target. -/
+/-- A `C^n` partial diffeomorphism `Φ`, with `n ≠ 0`, from `ℝ` to a one-dimensional Riemannian
+manifold carries the Lebesgue measure on its source, weighted by the speed of `Φ`, to the
+Riemannian volume on its target. -/
 theorem _root_.PartialDiffeomorph.map_withDensity_enorm_curveVelocity
-    (Φ : PartialDiffeomorph 𝓘(ℝ) I ℝ M 1) (hdim : Module.finrank ℝ E = 1) :
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ) I ℝ M n) (hn : n ≠ 0) :
     Measure.map Φ ((volume.restrict Φ.source).withDensity fun t ↦ ‖curveVelocity I Φ t‖ₑ) =
       (riemannianVolume I M).restrict Φ.target := by
   simpa only [Module.Basis.addHaar_singleton, riemannianJacobian_singleton, ofReal_norm] using
-    Φ.map_withDensity_riemannianJacobian (Module.Basis.singleton (Fin 1) ℝ)
-      ((Module.finrank_self ℝ).trans hdim.symm)
+    Φ.map_withDensity_riemannianJacobian hn (Module.Basis.singleton (Fin 1) ℝ)
 
-/-- **Change of variables** over the target of a `C¹` partial diffeomorphism `Φ` from `ℝ` to a
-one-dimensional Riemannian manifold: the integral of a measurable `φ` over the target against the
-Riemannian volume is the integral of `φ ∘ Φ` over the source, weighted by the speed of `Φ`. -/
+/-- **Change of variables** over the target of a `C^n` partial diffeomorphism `Φ`, with `n ≠ 0`,
+from `ℝ` to a one-dimensional Riemannian manifold: the integral of `φ` over the target against
+Riemannian volume is the integral of `φ ∘ Φ` over the source, weighted by the speed of `Φ`.
+The nonnegative weight need not be measurable. -/
 theorem _root_.PartialDiffeomorph.setLIntegral_riemannianVolume_eq_enorm_curveVelocity_mul
-    (Φ : PartialDiffeomorph 𝓘(ℝ) I ℝ M 1) (hdim : Module.finrank ℝ E = 1) {φ : M → ℝ≥0∞}
-    (hφ : Measurable φ) :
+    {n : ℕ∞ω} (Φ : PartialDiffeomorph 𝓘(ℝ) I ℝ M n) (hn : n ≠ 0) (φ : M → ℝ≥0∞) :
     ∫⁻ y in Φ.target, φ y ∂riemannianVolume I M =
       ∫⁻ t in Φ.source, ‖curveVelocity I Φ t‖ₑ * φ (Φ t) := by
   simpa only [Module.Basis.addHaar_singleton, riemannianJacobian_singleton, ofReal_norm] using
-    Φ.setLIntegral_riemannianVolume_eq (Module.Basis.singleton (Fin 1) ℝ)
-      ((Module.finrank_self ℝ).trans hdim.symm) hφ
+    Φ.setLIntegral_riemannianVolume_eq hn (Module.Basis.singleton (Fin 1) ℝ) φ
 
 /-! ### Closed curves -/
 
@@ -125,10 +123,9 @@ theorem _root_.IsLocalDiffeomorph.map_withDensity_enorm_curveVelocity_of_periodi
     rw [← hper.image_Ioc hp a, ← insert_right_Ioo (lt_add_of_pos_right a hp), image_insert_eq]
   rw [hrange, Measure.restrict_congr_set (insert_ae_eq_self _ _),
     ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-  have h := (((hγ.isLocalDiffeomorphOn _).partialDiffeomorphOfInjOn isOpen_Ioo hinj).ofLE
-    (ENat.one_le_iff_ne_zero_withTop.mpr hn)).map_withDensity_enorm_curveVelocity hdim
-  rwa [PartialDiffeomorph.ofLE_toPartialEquiv,
-    IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn,
+  have h := PartialDiffeomorph.map_withDensity_enorm_curveVelocity
+    ((hγ.isLocalDiffeomorphOn _).partialDiffeomorphOfInjOn isOpen_Ioo hinj) hn
+  rwa [IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn,
     IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source,
     IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_target] at h
 
