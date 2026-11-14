@@ -356,14 +356,7 @@ theorem mk_diagGL_mulSingle {n : ℕ} (i : Fin n) (d : Aˣ) :
       congr 1
       simpa [σ, Function.comp_def, Equiv.swap_inv, Equiv.symm_swap] using
         Pi.mulSingle_comp_equiv (Equiv.swap 0 i) 0 d
-    rw [← hconj, ← h1, map_mul, map_mul, map_inv, mk_stabilizeGL]
-    calc
-      mk A (m + 1) (permutationGL σ) * mk A 1 (GeneralLinearGroup.scalar (Fin 1) d) *
-          (mk A (m + 1) (permutationGL σ))⁻¹
-        = mk A 1 (GeneralLinearGroup.scalar (Fin 1) d) *
-            (mk A (m + 1) (permutationGL σ) * (mk A (m + 1) (permutationGL σ))⁻¹) := by
-          ac_rfl
-      _ = mk A 1 (GeneralLinearGroup.scalar (Fin 1) d) := by rw [mul_inv_cancel, mul_one]
+    rw [← hconj, ← h1, map_mul, map_mul, map_inv, mk_stabilizeGL, mul_inv_cancel_comm]
 
 /-- Every class in algebraic `K₁` is the class of an invertible matrix of some size. -/
 theorem exists_mk (x : AlgebraicK1 A) : ∃ n u, mk A n u = x := by

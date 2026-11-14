@@ -95,10 +95,9 @@ def dieudonneDetEquiv (D : Type*) [DivisionRing D] :
           GeneralLinearGroup.dieudonneDet_diagGL_mulSingle, Group.Abelianization.lift_apply_of,
           MonoidHom.comp_apply, map_mul, he1, one_mul, mk_diagGL_mulSingle]
     exact DFunLike.congr_fun hcomp
-  right_inv y := QuotientGroup.induction_on y fun u ↦ by
-    have hy : (QuotientGroup.mk u : Group.Abelianization Dˣ) = Group.Abelianization.of u := rfl
-    rw [hy, Group.Abelianization.lift_apply_of, MonoidHom.comp_apply, lift_mk,
-      GeneralLinearGroup.dieudonneDet_scalar, Fintype.card_fin, pow_one]
+  right_inv := Quot.ind fun u ↦ by
+    rw [Group.Abelianization.mk_eq_of, Group.Abelianization.lift_apply_of, MonoidHom.comp_apply,
+      lift_mk, GeneralLinearGroup.dieudonneDet_scalar, Fintype.card_fin, pow_one]
   map_mul' := map_mul _
 
 /-- `dieudonneDetEquiv` evaluates on the class of `u ∈ GL (Fin n) D` as `u.dieudonneDet`. -/
@@ -112,8 +111,9 @@ theorem dieudonneDetEquiv_mk {D : Type*} [DivisionRing D] (n : ℕ) (u : GL (Fin
 @[simp]
 theorem dieudonneDetEquiv_symm_of {D : Type*} [DivisionRing D] (u : Dˣ) :
     (dieudonneDetEquiv D).symm (Group.Abelianization.of u) =
-      mk D 1 (GeneralLinearGroup.scalar (Fin 1) u) :=
-  (rfl)
+      mk D 1 (GeneralLinearGroup.scalar (Fin 1) u) := by
+  rw [MulEquiv.symm_apply_eq, dieudonneDetEquiv_mk, GeneralLinearGroup.dieudonneDet_scalar,
+    Fintype.card_fin, pow_one]
 
 /-- Naturality of `dieudonneDetEquiv` with respect to ring homomorphisms of division rings. -/
 @[simp]
@@ -147,7 +147,7 @@ def detEquiv (F : Type*) [Field F] : AlgebraicK1 F ≃* Fˣ :=
 @[simp]
 theorem detEquiv_mk {F : Type*} [Field F] (n : ℕ) (u : GL (Fin n) F) :
     detEquiv F (mk F n u) = u.det := by
-  simp [detEquiv, GeneralLinearGroup.dieudonneDet_eq_of_det]
+  simp [detEquiv, GeneralLinearGroup.dieudonneDet_eq_abelianizationOf_det]
 
 /-- The inverse of `detEquiv` sends `a : Fˣ` to `[scalar (Fin 1) a]`. -/
 @[simp]
@@ -161,8 +161,9 @@ theorem detEquiv_map {F K : Type*} [Field F] [Field K] (f : F →+* K) (x : Alge
     detEquiv K (map f x) = Units.map (f : F →* K) (detEquiv F x) := by
   obtain ⟨n, u, rfl⟩ := exists_mk x
   rw [detEquiv, MulEquiv.trans_apply, dieudonneDetEquiv_map, dieudonneDetEquiv_mk,
-    GeneralLinearGroup.dieudonneDet_eq_of_det, Group.Abelianization.map_of, detEquiv,
-    MulEquiv.trans_apply, dieudonneDetEquiv_mk, GeneralLinearGroup.dieudonneDet_eq_of_det]
+    GeneralLinearGroup.dieudonneDet_eq_abelianizationOf_det, Group.Abelianization.map_of, detEquiv,
+    MulEquiv.trans_apply, dieudonneDetEquiv_mk,
+    GeneralLinearGroup.dieudonneDet_eq_abelianizationOf_det]
   simp
 
 end TauCeti.AlgebraicK1

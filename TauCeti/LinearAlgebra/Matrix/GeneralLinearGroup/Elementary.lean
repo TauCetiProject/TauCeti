@@ -252,6 +252,17 @@ theorem upperBlockGL_inv (X : Matrix m k A) : (upperBlockGL X)⁻¹ = upperBlock
 theorem lowerBlockGL_inv (Y : Matrix k m A) : (lowerBlockGL Y)⁻¹ = lowerBlockGL (-Y) :=
   Units.ext (rfl)
 
+/-- Left multiplication by `lowerBlockGL (-M.toBlocks₂₁)` clears the lower-left block of a block
+matrix `M` whose upper-left block is `1`, replacing the lower-right block by the Schur complement
+`-M.toBlocks₂₁ * M.toBlocks₁₂ + M.toBlocks₂₂`. -/
+theorem coe_lowerBlockGL_neg_toBlocks₂₁_mul (M : Matrix (m ⊕ k) (m ⊕ k) A)
+    (h₁₁ : M.toBlocks₁₁ = 1) :
+    (lowerBlockGL (-M.toBlocks₂₁) : Matrix (m ⊕ k) (m ⊕ k) A) * M =
+      fromBlocks 1 M.toBlocks₁₂ 0 (-M.toBlocks₂₁ * M.toBlocks₁₂ + M.toBlocks₂₂) := by
+  rw [coe_lowerBlockGL]
+  conv_lhs => rw [← fromBlocks_toBlocks M, h₁₁]
+  simp [fromBlocks_multiply]
+
 /-- Upper block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + X a b E_(inl a, inr b)`. -/
 theorem upperBlockGL_mem_elementarySubgroup (X : Matrix m k A) :

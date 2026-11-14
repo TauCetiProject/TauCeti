@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
+import Mathlib.LinearAlgebra.Matrix.Unique
 
 /-!
 # Gauss–Jordan factorization and normality of the elementary subgroup over a division ring
@@ -25,6 +26,11 @@ Since invertible diagonal matrices normalize the generators of `TauCeti.elementa
 `TauCeti.elementarySubgroup n D` is normal in `GL n D` already at every finite matrix size
 (`TauCeti.elementarySubgroup_normal`), without stabilization.
 
+## Main definitions
+
+* `TauCeti.finOneSumEquiv`: the equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)` splitting off row/column
+  `0`.
+
 ## Main results
 
 * `TauCeti.exists_mem_elementarySubgroup_mul_diagGL_mulSingle`: Gauss–Jordan factorization
@@ -43,6 +49,27 @@ Since invertible diagonal matrices normalize the generators of `TauCeti.elementa
 -/
 
 public section
+
+namespace TauCeti
+
+/-- The equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)` sending `Sum.inl 0` to `0` and `Sum.inr i` to
+`i.succ`. -/
+def finOneSumEquiv (m : ℕ) : Fin 1 ⊕ Fin m ≃ Fin (m + 1) :=
+  finSumFinEquiv.trans (finCongr (Nat.one_add m))
+
+/-- `TauCeti.finOneSumEquiv` sends the single element of the left summand `Fin 1` to `0`. -/
+@[simp]
+theorem finOneSumEquiv_inl (m : ℕ) (i : Fin 1) :
+    finOneSumEquiv m (Sum.inl i) = 0 := by
+  fin_cases i; ext; simp [finOneSumEquiv]
+
+/-- `TauCeti.finOneSumEquiv` sends `Sum.inr i` to `i.succ`. -/
+@[simp]
+theorem finOneSumEquiv_inr (m : ℕ) (i : Fin m) :
+    finOneSumEquiv m (Sum.inr i) = i.succ := by
+  ext; simp [finOneSumEquiv]
+
+end TauCeti
 
 noncomputable section
 
@@ -68,13 +95,13 @@ private theorem exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one (k : �
     rw [transvectionUnit_mul_apply]; simpa [h10] using hi
   obtain ⟨e₁, he₁, hB10⟩ := hstep1
   let B : GL (Fin (k + 2)) D := e₁ * A
-  have hB10' : B 1 0 ≠ 0 := hB10
   have h01 : (0 : Fin (k + 2)) ≠ 1 := Fin.zero_ne_one
   let e₂ := transvectionUnit h01 ((1 - B 0 0) * (B 1 0)⁻¹)
-  have hassoc : e₂ * (e₁ * A) = e₂ * B := rfl
   refine ⟨e₂ * e₁, mul_mem (transvectionUnit_mem_elementarySubgroup _ _) he₁, ?_⟩
-  rw [mul_assoc, hassoc, transvectionUnit_mul_apply]
-  simp [mul_assoc, inv_mul_cancel₀ hB10']
+  rw [mul_assoc, transvectionUnit_mul_apply]
+  dsimp only [B]
+  rw [mul_assoc, inv_mul_cancel₀ hB10]
+  simp
 
 /-- Block elimination step on `Fin 1 ⊕ Fin (k + 1)` when the upper-left `1 × 1` entry is `1`. -/
 private theorem exists_mem_elementarySubgroup_mul_fromBlocksGL {k : ℕ}
@@ -84,18 +111,15 @@ private theorem exists_mem_elementarySubgroup_mul_fromBlocksGL {k : ℕ}
       M = e * fromBlocksGL (1, S) := by
   let c := (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₁
   let M' : GL (Fin 1 ⊕ Fin (k + 1)) D := lowerBlockGL (-c) * M
+  have hM'_blocks : (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D) =
+      fromBlocks 1 (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂ 0
+        (-c * (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂ +
+          (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₂) :=
+    (Units.val_mul _ _).trans (Matrix.coe_lowerBlockGL_neg_toBlocks₂₁_mul _ hM11)
   have hM'11 : (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1 := by
-    have := congrArg Matrix.toBlocks₁₁ (Units.val_mul (lowerBlockGL (-c)) M)
-    rw [coe_lowerBlockGL,
-      ← Matrix.fromBlocks_toBlocks (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D),
-      hM11, Matrix.fromBlocks_multiply] at this
-    simpa [M'] using this
+    rw [hM'_blocks, Matrix.toBlocks_fromBlocks₁₁]
   have hM'21 : (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₁ = 0 := by
-    have := congrArg Matrix.toBlocks₂₁ (Units.val_mul (lowerBlockGL (-c)) M)
-    rw [coe_lowerBlockGL,
-      ← Matrix.fromBlocks_toBlocks (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D),
-      hM11, Matrix.fromBlocks_multiply] at this
-    simpa [M', c] using this
+    rw [hM'_blocks, Matrix.toBlocks_fromBlocks₂₁]
   let S := upperTriangularToBlocks₂₂GL M' hM'11 hM'21
   let r := (M' : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂
   let rS : Matrix (Fin 1) (Fin (k + 1)) D :=
@@ -126,46 +150,44 @@ private theorem exists_mem_elementarySubgroup_mul_lastDiag :
       ∃ e ∈ elementarySubgroup (Fin (m + 1)) D, ∃ u : Dˣ,
         A = e * diagGL (Pi.mulSingle (Fin.last m) u)
   | 0, A => by
-    have h00 : A 0 0 * (A⁻¹ : GL (Fin 1) D) 0 0 = 1 := by
-      simpa [Matrix.mul_apply] using congrFun (congrFun A.mul_inv 0) 0
-    have h00' : (A⁻¹ : GL (Fin 1) D) 0 0 * A 0 0 = 1 := by
-      simpa [Matrix.mul_apply] using congrFun (congrFun A.inv_mul 0) 0
-    refine ⟨1, one_mem _, ⟨A 0 0, (A⁻¹ : GL (Fin 1) D) 0 0, h00, h00'⟩, ?_⟩
-    ext i j; fin_cases i; fin_cases j; simp [Fin.last]
+    let u : Dˣ :=
+      Units.map (Matrix.uniqueRingEquiv : Matrix (Fin 1) (Fin 1) D ≃+* D).toMonoidHom A
+    have hu : (u : D) = A 0 0 :=
+      (Units.coe_map _ A).trans (Matrix.uniqueRingEquiv_apply (m := Fin 1) A.val)
+    refine ⟨1, one_mem _, u, ?_⟩
+    ext i j; fin_cases i; fin_cases j; simp [Fin.last, hu]
   | k + 1, A => by
     obtain ⟨e₁, he₁, h1⟩ := exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one k A
-    let sw : Fin 1 ⊕ Fin (k + 1) ≃ Fin (k + 2) :=
-      finSumFinEquiv.trans (finCongr (Nat.one_add (k + 1)))
-    have hsw_inl (i : Fin 1) : sw (Sum.inl i) = 0 := by fin_cases i; ext; simp [sw]
-    have hsw_inr (i : Fin (k + 1)) : sw (Sum.inr i) = i.succ := by ext; simp [sw]
-    let M : GL (Fin 1 ⊕ Fin (k + 1)) D := sw.symm.reindexGL D (e₁ * A)
+    let M : GL (Fin 1 ⊕ Fin (k + 1)) D := (finOneSumEquiv (k + 1)).symm.reindexGL D (e₁ * A)
     have hM11 : (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1 := by
-      ext i j; fin_cases i; fin_cases j; simpa [M, hsw_inl, Matrix.toBlocks₁₁] using h1
+      ext i j; fin_cases i; fin_cases j; simpa [M, Matrix.toBlocks₁₁] using h1
     obtain ⟨eM, heM, S, hM⟩ := exists_mem_elementarySubgroup_mul_fromBlocksGL M hM11
     obtain ⟨eS, heS, u, hS⟩ := exists_mem_elementarySubgroup_mul_lastDiag k S
-    let e₂ : GL (Fin (k + 2)) D := sw.reindexGL D (eM * fromBlocksGL (1, eS))
+    let e₂ : GL (Fin (k + 2)) D := (finOneSumEquiv (k + 1)).reindexGL D (eM * fromBlocksGL (1, eS))
     have he₂ : e₂ ∈ elementarySubgroup (Fin (k + 2)) D := by
-      rw [← sw.map_reindexGL_elementarySubgroup]
+      rw [← (finOneSumEquiv (k + 1)).map_reindexGL_elementarySubgroup]
       exact ⟨_, mul_mem heM (map_inr_elementarySubgroup_le_elementarySubgroup ⟨eS, heS, rfl⟩), rfl⟩
-    have hdiag_sw : sw.reindexGL D (fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u))) =
+    have hdiag_sw : (finOneSumEquiv (k + 1)).reindexGL D
+        (fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u))) =
         diagGL (Pi.mulSingle (Fin.last (k + 1)) u) := by
       apply Units.ext; ext i j
-      obtain ⟨i, rfl⟩ := sw.surjective i
-      obtain ⟨j, rfl⟩ := sw.surjective j
+      obtain ⟨i, rfl⟩ := (finOneSumEquiv (k + 1)).surjective i
+      obtain ⟨j, rfl⟩ := (finOneSumEquiv (k + 1)).surjective j
       rw [Equiv.coe_reindexGL, coe_fromBlocksGL, Matrix.submatrix_apply,
         Equiv.symm_apply_apply, Equiv.symm_apply_apply]
       rcases i with i | i <;> rcases j with j | j
-      · fin_cases i; fin_cases j; simp [hsw_inl, Fin.ext_iff]
-      · simp [hsw_inl, hsw_inr, (Fin.succ_ne_zero j).symm]
-      · simp [hsw_inl, hsw_inr]
-      · simp [hsw_inr, Matrix.diagonal_apply, Pi.mulSingle_apply, Fin.ext_iff, Fin.val_last]
+      · fin_cases i; fin_cases j; simp [Fin.ext_iff]
+      · simp [(Fin.succ_ne_zero j).symm]
+      · simp
+      · simp [Matrix.diagonal_apply, Pi.mulSingle_apply, Fin.ext_iff, Fin.val_last]
     have hM_decomp :
         M = (eM * fromBlocksGL (1, eS)) *
           fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u)) := by
       rw [hM, hS, ← Prod.one_mk_mul_one_mk, map_mul, mul_assoc]
     refine ⟨e₁⁻¹ * e₂, mul_mem (inv_mem he₁) he₂, u, ?_⟩
     have he₁A : e₁ * A = e₂ * diagGL (Pi.mulSingle (Fin.last (k + 1)) u) := by
-      simpa [M, map_mul, e₂, hdiag_sw] using congrArg (sw.reindexGL D) hM_decomp
+      simpa [M, map_mul, e₂, hdiag_sw] using
+        congrArg ((finOneSumEquiv (k + 1)).reindexGL D) hM_decomp
     rw [mul_assoc, ← he₁A, inv_mul_cancel_left]
 
 /-- **Gauss–Jordan factorization over a division ring.** Given any coordinate `i : n`, every

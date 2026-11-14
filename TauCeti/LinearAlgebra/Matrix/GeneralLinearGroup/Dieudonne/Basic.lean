@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.GaussJordan
 import Mathlib.GroupTheory.Perm.Fin
+import Mathlib.LinearAlgebra.Matrix.Unique
 
 /-!
 # The Dieudonné determinant over a division ring
@@ -56,7 +57,7 @@ For stabilization invariance and the induced isomorphism on algebraic `K₁`, se
   block-diagonal, and ring-mapped matrices.
 * `Matrix.GeneralLinearGroup.eq_dieudonneDet`: characterization of `dieudonneDet` by vanishing on
   `TauCeti.elementarySubgroup n D` and its values on single-entry diagonal matrices.
-* `Matrix.GeneralLinearGroup.dieudonneDet_eq_of_det`: over a field, `dieudonneDet` is
+* `Matrix.GeneralLinearGroup.dieudonneDet_eq_abelianizationOf_det`: over a field, `dieudonneDet` is
   `Group.Abelianization.of ∘ det`.
 
 ## References
@@ -83,21 +84,6 @@ namespace TauCeti
 section SchurInduction
 
 variable {D : Type*} [DivisionRing D]
-
-/-- The equivalence `Fin 1 ⊕ Fin m ≃ Fin (m + 1)` sending `inl 0` to `0` and `inr i` to
-`i.succ`. -/
-private def finOneSumEquiv (m : ℕ) : Fin 1 ⊕ Fin m ≃ Fin (m + 1) :=
-  finSumFinEquiv.trans (finCongr (Nat.one_add m))
-
-@[simp]
-private theorem finOneSumEquiv_inl (m : ℕ) (i : Fin 1) :
-    finOneSumEquiv m (Sum.inl i) = 0 := by
-  fin_cases i; ext; simp [finOneSumEquiv]
-
-@[simp]
-private theorem finOneSumEquiv_inr (m : ℕ) (i : Fin m) :
-    finOneSumEquiv m (Sum.inr i) = i.succ := by
-  ext; simp [finOneSumEquiv]
 
 /-- In rank at least two, a commutator of units placed in the last diagonal coordinate lies in the
 elementary subgroup. -/
@@ -153,8 +139,9 @@ private def abelianizationToQuotientFin (k : ℕ) :
 @[simp]
 private theorem abelianizationToQuotientFin_of (k : ℕ) (u : Dˣ) :
     abelianizationToQuotientFin k (Group.Abelianization.of u) =
-      QuotientGroup.mk (diagGL (Pi.mulSingle (Fin.last (k + 1)) u)) :=
-  rfl
+      QuotientGroup.mk (diagGL (Pi.mulSingle (Fin.last (k + 1)) u)) := by
+  rw [abelianizationToQuotientFin, ← Group.Abelianization.mk_eq_of]
+  exact QuotientGroup.lift_mk' _ _ u
 
 private theorem abelianizationToQuotientFin_surjective (k : ℕ) :
     Function.Surjective (abelianizationToQuotientFin (D := D) k) := by
@@ -181,6 +168,7 @@ private def schurBlock {m : ℕ} (A : Matrix (Fin (m + 1)) (Fin (m + 1)) D) (p :
 `Matrix (Fin m) (Fin m) D`. -/
 private theorem exists_coe_eq_schurBlock {m : ℕ} (A : GL (Fin (m + 1)) D) (p : Fin (m + 1))
     (hp : A p 0 ≠ 0) : ∃ S : GL (Fin m) D, (S : Matrix (Fin m) (Fin m) D) = schurBlock A p := by
+  -- Step 1: permute pivot row `p` into row `0` via `p.cycleRange` and split along `Fin 1 ⊕ Fin m`.
   let d₀ : GL (Fin 1) D := GeneralLinearGroup.scalar (Fin 1) (Units.mk0 (A p 0) hp)⁻¹
   have hd₀ : (d₀ : Matrix (Fin 1) (Fin 1) D) = Matrix.scalar (Fin 1) (A p 0)⁻¹ := by
     rw [GeneralLinearGroup.coe_scalar]; simp
@@ -189,6 +177,7 @@ private theorem exists_coe_eq_schurBlock {m : ℕ} (A : GL (Fin (m + 1)) D) (p :
   have hB_11 : (B : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁ =
       Matrix.scalar (Fin 1) (A p 0) := by
     ext i j; fin_cases i; fin_cases j; simp [B, Matrix.toBlocks₁₁, Equiv.Perm.inv_def]
+  -- Step 2: rescale the `1 × 1` upper-left pivot block by `(A p 0)⁻¹` so it becomes `1`.
   let B₁ : GL (Fin 1 ⊕ Fin m) D := fromBlocksGL (d₀, 1) * B
   have hB₁_blocks : (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D) =
       fromBlocks (Matrix.scalar (Fin 1) (A p 0)⁻¹ *
@@ -205,17 +194,15 @@ private theorem exists_coe_eq_schurBlock {m : ℕ} (A : GL (Fin (m + 1)) D) (p :
   have hB₁_11 : (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁ = 1 := by
     rw [hB₁_blocks, Matrix.toBlocks_fromBlocks₁₁, hB_11, ← map_mul (Matrix.scalar (Fin 1)),
       inv_mul_cancel₀ hp, map_one]
+  -- Step 3: clear the lower-left block with `lowerBlockGL`; the `(2, 2)` block of the resulting
+  -- upper block-triangular unit `U` is invertible and equals `schurBlock A p`.
   let c : Matrix (Fin m) (Fin 1) D := (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₂₁
   let U : GL (Fin 1 ⊕ Fin m) D := lowerBlockGL (-c) * B₁
   have hU_blocks : (U : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D) =
       fromBlocks 1 (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₂ 0
         (-c * (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₂ +
-          (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₂₂) := by
-    have := Units.val_mul (lowerBlockGL (-c)) B₁
-    rw [coe_lowerBlockGL,
-      ← Matrix.fromBlocks_toBlocks (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D), hB₁_11,
-      Matrix.fromBlocks_multiply] at this
-    simpa [U, c] using this
+          (B₁ : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₂₂) :=
+    (Units.val_mul _ _).trans (Matrix.coe_lowerBlockGL_neg_toBlocks₂₁_mul _ hB₁_11)
   have hU_11 : (U : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₁₁ = 1 := by
     rw [hU_blocks, Matrix.toBlocks_fromBlocks₁₁]
   have hU_21 : (U : Matrix (Fin 1 ⊕ Fin m) (Fin 1 ⊕ Fin m) D).toBlocks₂₁ = 0 := by
@@ -400,6 +387,49 @@ private theorem pivotVal_transvectionUnit_mul_of_forall_eq_zero {m : ℕ}
     transvectionUnit_mul_apply, transvectionUnit_mul_apply]
   simp [hr_ne, hzero _ hr_ne]
 
+/-- Pivot-row entry identity comparing `schurBlock A 0` and `schurBlock A p.succ` at row `p`. -/
+private theorem schurBlock_zero_apply_self {k : ℕ}
+    (A : Matrix (Fin (k + 2)) (Fin (k + 2)) D) (p s : Fin (k + 1))
+    (h0 : A 0 0 ≠ 0) (hp : A p.succ 0 ≠ 0) :
+    (-A p.succ 0 * (A 0 0)⁻¹) * (A 0 s.succ - A 0 0 * (A p.succ 0)⁻¹ * A p.succ s.succ) =
+      schurBlock A 0 p s := by
+  have hy_cancel : A p.succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹ = 1 := by
+    rw [mul_assoc (A p.succ 0), inv_mul_cancel₀ h0, mul_one, mul_inv_cancel₀ hp]
+  calc
+    (-A p.succ 0 * (A 0 0)⁻¹) * (A 0 s.succ - A 0 0 * (A p.succ 0)⁻¹ * A p.succ s.succ)
+      = -(A p.succ 0 * (A 0 0)⁻¹ * A 0 s.succ) +
+          (A p.succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹) * A p.succ s.succ := by
+        noncomm_ring
+    _ = schurBlock A 0 p s := by
+        rw [hy_cancel, one_mul, schurBlock, Fin.zero_succAbove, sub_eq_add_neg, add_comm]
+
+/-- Off-pivot-row entry identity comparing `schurBlock A 0` and `schurBlock A p.succ` at row
+`p.succAbove q`. -/
+private theorem schurBlock_zero_apply_succAbove {k : ℕ}
+    (A : Matrix (Fin (k + 2)) (Fin (k + 2)) D) (p : Fin (k + 1)) (q : Fin k) (s : Fin (k + 1))
+    (h0 : A 0 0 ≠ 0) :
+    (A (p.succAbove q).succ s.succ -
+        A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ * A p.succ s.succ) +
+      (-A (p.succAbove q).succ 0 * (A 0 0)⁻¹) *
+        (A 0 s.succ - A 0 0 * (A p.succ 0)⁻¹ * A p.succ s.succ) =
+      schurBlock A 0 (p.succAbove q) s := by
+  have hx_cancel :
+      A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹ =
+        A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ := by
+    rw [mul_assoc (A (p.succAbove q).succ 0), inv_mul_cancel₀ h0, mul_one]
+  calc
+    (A (p.succAbove q).succ s.succ -
+        A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ * A p.succ s.succ) +
+      (-A (p.succAbove q).succ 0 * (A 0 0)⁻¹) *
+        (A 0 s.succ - A 0 0 * (A p.succ 0)⁻¹ * A p.succ s.succ)
+      = A (p.succAbove q).succ s.succ -
+          A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ * A p.succ s.succ -
+          A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * A 0 s.succ +
+          (A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹) *
+            A p.succ s.succ := by noncomm_ring
+    _ = schurBlock A 0 (p.succAbove q) s := by
+        rw [hx_cancel, schurBlock, Fin.zero_succAbove]; abel
+
 /-- Explicit matrix relation between the Schur complements of `A ∈ GL (Fin (k + 2)) D` at pivot `0`
 and at pivot `p.succ`. -/
 private theorem schurGL_zero_eq_mul_schurGL_succ {k : ℕ} (A : GL (Fin (k + 2)) D) (p : Fin (k + 1))
@@ -409,52 +439,28 @@ private theorem schurGL_zero_eq_mul_schurGL_succ {k : ℕ} (A : GL (Fin (k + 2))
         colElimGL p (fun q ↦ -A (p.succAbove q).succ 0 * (A 0 0)⁻¹) *
         permutationGL (k := D) (Fin.cycleRange p)⁻¹ * schurGL A p.succ hp := by
   symm
-  let cr : Equiv.Perm (Fin (k + 1)) := Fin.cycleRange p
   apply Units.ext; ext j s
   simp only [Units.val_mul, diagGL_coe, Matrix.diagonal_mul, mul_assoc]
+  have hswap_p : p.succ.succAbove (p.cycleRange p) = 0 := by
+    rw [Fin.succAbove_cycleRange, Equiv.swap_apply_right]
+  -- Permuting rows of `schurGL A p.succ hp` by `(Fin.cycleRange p)⁻¹` places the row derived from
+  -- row `0` of `A` at index `p` and keeps each other row at `p.succAbove q`; `colElimGL` then
+  -- replaces pivot `p.succ` by pivot `0` in rows `p.succAbove q`, and `diagGL` rescales row `p`.
   by_cases hjp : j = p
-  · rw [hjp, Pi.mulSingle_eq_same, coe_colElimGL_mul_apply_self, coe_permutationGL_mul_apply]
-    have hcr : cr⁻¹.symm p = p.cycleRange p := rfl
-    have hswap : p.succ.succAbove (p.cycleRange p) = 0 := by
-      rw [Fin.succAbove_cycleRange, Equiv.swap_apply_right]
-    rw [hcr]; simp only [coe_schurGL, schurBlock, Fin.zero_succAbove]; rw [hswap]
-    simp only [Units.val_mul, Units.val_neg, Units.val_mk0, Units.val_inv_eq_inv_val]
-    have hy_cancel : A p.succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹ = 1 := by
-      rw [mul_assoc (A p.succ 0), inv_mul_cancel₀ h0, mul_one, mul_inv_cancel₀ hp]
-    calc
-      (-A p.succ 0 * (A 0 0)⁻¹) * (A 0 s.succ - A 0 0 * (A p.succ 0)⁻¹ * A p.succ s.succ)
-        = -(A p.succ 0 * (A 0 0)⁻¹ * A 0 s.succ) +
-            (A p.succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹) * A p.succ s.succ := by
-          noncomm_ring
-      _ = A p.succ s.succ - A p.succ 0 * (A 0 0)⁻¹ * A 0 s.succ := by
-          rw [hy_cancel, one_mul, sub_eq_add_neg, add_comm]
+  · rw [hjp, Pi.mulSingle_eq_same, coe_colElimGL_mul_apply_self, coe_permutationGL_mul_apply,
+      Equiv.Perm.inv_def, Equiv.symm_symm, coe_schurGL, coe_schurGL]
+    simp only [schurBlock, hswap_p, Units.val_mul, Units.val_neg, Units.val_mk0,
+      Units.val_inv_eq_inv_val]
+    exact schurBlock_zero_apply_self A.val p s h0 hp
   · obtain ⟨q, rfl⟩ := Fin.exists_succAbove_eq hjp
-    rw [Pi.mulSingle_eq_of_ne hjp, Units.val_one, one_mul, coe_colElimGL_mul_apply_succAbove,
-      coe_permutationGL_mul_apply, coe_permutationGL_mul_apply]
-    have hcr1 : cr⁻¹.symm (p.succAbove q) = p.cycleRange (p.succAbove q) := rfl
-    have hcr2 : cr⁻¹.symm p = p.cycleRange p := rfl
     have hswap_q : p.succ.succAbove (p.cycleRange (p.succAbove q)) = (p.succAbove q).succ := by
       rw [Fin.succAbove_cycleRange, Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _)
         ((Fin.succ_injective _).ne hjp)]
-    have hswap_p : p.succ.succAbove (p.cycleRange p) = 0 := by
-      rw [Fin.succAbove_cycleRange, Equiv.swap_apply_right]
-    rw [hcr1, hcr2]; simp only [coe_schurGL, schurBlock, Fin.zero_succAbove]; rw [hswap_q, hswap_p]
-    have hx_cancel :
-        A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹ =
-          A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ := by
-      rw [mul_assoc (A (p.succAbove q).succ 0), inv_mul_cancel₀ h0, mul_one]
-    calc
-      (A (p.succAbove q).succ s.succ -
-          A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ * A p.succ s.succ) +
-        (-A (p.succAbove q).succ 0 * (A 0 0)⁻¹) *
-          (A 0 s.succ - A 0 0 * (A p.succ 0)⁻¹ * A p.succ s.succ)
-        = A (p.succAbove q).succ s.succ -
-            A (p.succAbove q).succ 0 * (A p.succ 0)⁻¹ * A p.succ s.succ -
-            A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * A 0 s.succ +
-            (A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * (A 0 0) * (A p.succ 0)⁻¹) *
-              A p.succ s.succ := by noncomm_ring
-      _ = A (p.succAbove q).succ s.succ -
-            A (p.succAbove q).succ 0 * (A 0 0)⁻¹ * A 0 s.succ := by rw [hx_cancel]; abel
+    rw [Pi.mulSingle_eq_of_ne hjp, Units.val_one, one_mul, coe_colElimGL_mul_apply_succAbove,
+      coe_permutationGL_mul_apply, coe_permutationGL_mul_apply, Equiv.Perm.inv_def,
+      Equiv.symm_symm, coe_schurGL, coe_schurGL]
+    simp only [schurBlock, hswap_q, hswap_p]
+    exact schurBlock_zero_apply_succAbove A.val p q s h0
 
 /-- Pivot comparison between row `0` and row `p.succ` in `GL (Fin (k + 2)) D`. -/
 private theorem pivotVal_zero_eq_pivotVal_succ {k : ℕ}
@@ -467,34 +473,22 @@ private theorem pivotVal_zero_eq_pivotVal_succ {k : ℕ}
     elementarySubgroup_le_iff.2 fun _ _ hij c ↦ hf_transv hij c
   let ux : Dˣ := Units.mk0 (A 0 0) h0
   let uy : Dˣ := Units.mk0 (A p.succ 0) hp
-  let cr : Equiv.Perm (Fin (k + 1)) := Fin.cycleRange p
   have hf_rel := congrArg f (schurGL_zero_eq_mul_schurGL_succ A p h0 hp)
   rw [map_mul, map_mul, map_mul, hf_diag,
     Fintype.prod_eq_single p (fun x hx ↦ by simp [Pi.mulSingle_eq_of_ne hx]),
     Pi.mulSingle_eq_same, hf_ker (colElimGL_mem_elementarySubgroup p _), mul_one,
     map_permutationGL_of_ih f hf_transv hf_diag] at hf_rel
-  have hsign : Units.map (Int.castRingHom D).toMonoidHom (Equiv.Perm.sign cr⁻¹) =
+  have hsign : Units.map (Int.castRingHom D).toMonoidHom (Equiv.Perm.sign (Fin.cycleRange p)⁻¹) =
       (-1 : Dˣ) ^ (p : ℕ) := by rw [map_inv, Fin.sign_cycleRange]; ext; simp
   rw [hsign] at hf_rel
   rw [pivotVal, pivotVal, hf_rel, Fin.val_zero, pow_zero, one_mul, Fin.val_succ, ← mul_assoc]
   refine congrArg (· * f (schurGL A p.succ hp)) ?_
-  have hneg : (-uy * ux⁻¹ : Dˣ) = (-1 : Dˣ) * uy * ux⁻¹ := Units.ext (by simp)
+  have hneg : (-uy : Dˣ) = (-1 : Dˣ) * uy := Units.ext (by simp)
   dsimp only [ux, uy] at hneg ⊢
-  rw [← mul_assoc, hneg, pow_succ, Group.Abelianization.of.map_mul,
-    Group.Abelianization.of.map_mul, Group.Abelianization.of.map_inv,
-    Group.Abelianization.of.map_mul, Group.Abelianization.of.map_mul]
-  calc
-    Group.Abelianization.of (Units.mk0 (A 0 0) h0) *
-        (Group.Abelianization.of (-1 : Dˣ) *
-          Group.Abelianization.of (Units.mk0 (A p.succ 0) hp) *
-          (Group.Abelianization.of (Units.mk0 (A 0 0) h0))⁻¹) *
-        Group.Abelianization.of ((-1 : Dˣ) ^ (p : ℕ))
-      = Group.Abelianization.of ((-1 : Dˣ) ^ (p : ℕ)) * Group.Abelianization.of (-1 : Dˣ) *
-          Group.Abelianization.of (Units.mk0 (A p.succ 0) hp) *
-          (Group.Abelianization.of (Units.mk0 (A 0 0) h0) *
-            (Group.Abelianization.of (Units.mk0 (A 0 0) h0))⁻¹) := by ac_rfl
-    _ = Group.Abelianization.of ((-1 : Dˣ) ^ (p : ℕ)) * Group.Abelianization.of (-1 : Dˣ) *
-          Group.Abelianization.of (Units.mk0 (A p.succ 0) hp) := by rw [mul_inv_cancel, mul_one]
+  rw [hneg, pow_succ]
+  simp only [map_mul, map_inv]
+  rw [← mul_assoc _ (_ * _⁻¹), mul_inv_cancel_comm_assoc]
+  ac_rfl
 
 /-- **Pivot independence.** For any two nonzero entries in column `0` of `A ∈ GL (Fin (k + 2)) D`,
 `pivotVal` yields the same element of `Group.Abelianization Dˣ`. -/
@@ -607,11 +601,9 @@ private structure DieudonneFinData (D : Type*) [DivisionRing D] (m : ℕ) where
 private theorem abelianizationToQuotientFin_injective {k : ℕ}
     (prev : DieudonneFinData D (k + 1)) :
     Function.Injective (abelianizationToQuotientFin (D := D) k) := by
-  refine (MonoidHom.ker_eq_bot_iff _).1 ((Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_)
-  rw [MonoidHom.mem_ker] at hx
-  refine QuotientGroup.induction_on x (fun u hu ↦ ?_) hx
-  have hmk : (QuotientGroup.mk u : Group.Abelianization Dˣ) = Group.Abelianization.of u := rfl
-  rw [hmk] at hu ⊢
+  refine (MonoidHom.ker_eq_bot_iff _).1 ((Subgroup.eq_bot_iff_forall _).2 (Quot.ind fun u hu ↦ ?_))
+  rw [Group.Abelianization.mk_eq_of, MonoidHom.mem_ker] at hu
+  rw [Group.Abelianization.mk_eq_of]
   rw [abelianizationToQuotientFin_of, QuotientGroup.eq_one_iff] at hu
   have h1 : bareDieudonne prev.hom (diagGL (Pi.mulSingle (Fin.last (k + 1)) u)) =
       bareDieudonne prev.hom 1 := by
@@ -660,29 +652,26 @@ private def dieudonneFinSuccSucc {k : ℕ} (prev : DieudonneFinData D (k + 1)) :
       (bareDieudonne_diagGL prev.hom prev.map_transvection prev.map_diag d)
     ker_eq := fun _ ↦ by ext g; simp [φ] }
 
+/-- Rank-`1` base case of `dieudonneFinData`, built from `Matrix.uniqueRingEquiv`. -/
+private def dieudonneFinOne (D : Type*) [DivisionRing D] : DieudonneFinData D 1 where
+  hom := Group.Abelianization.of.comp
+    (Units.map (Matrix.uniqueRingEquiv : Matrix (Fin 1) (Fin 1) D ≃+* D).toMonoidHom)
+  map_transvection {i j} hij _ := absurd (Subsingleton.elim i j) hij
+  map_diag d := by
+    rw [MonoidHom.comp_apply, Fintype.prod_unique]
+    congr 1
+    ext
+    exact (Units.coe_map _ (diagGL d)).trans
+      ((Matrix.uniqueRingEquiv_apply (diagGL d : Matrix (Fin 1) (Fin 1) D)).trans (by simp))
+  ker_eq h := absurd h (by decide)
+
 private def dieudonneFinData (D : Type*) [DivisionRing D] : ∀ m : ℕ, DieudonneFinData D m
   | 0 =>
     { hom := 1
       map_transvection := fun {_} _ _ _ ↦ rfl
       map_diag := fun _ ↦ by simp
       ker_eq := fun h ↦ absurd h (by decide) }
-  | 1 =>
-    { hom :=
-        { toFun A := Group.Abelianization.of
-            ⟨A 0 0, (A⁻¹ : GL (Fin 1) D) 0 0,
-              by simpa [Matrix.mul_apply] using congrFun (congrFun A.mul_inv 0) 0,
-              by simpa [Matrix.mul_apply] using congrFun (congrFun A.inv_mul 0) 0⟩
-          map_one' := by
-            rw [← Group.Abelianization.of.map_one]
-            exact congrArg Group.Abelianization.of (Units.ext (by simp))
-          map_mul' A B := by
-            rw [← Group.Abelianization.of.map_mul]
-            exact congrArg Group.Abelianization.of (Units.ext (by simp [Matrix.mul_apply])) }
-      map_transvection := fun {i j} hij _ ↦ absurd (Subsingleton.elim i j) hij
-      map_diag := fun d ↦ by
-        rw [Fin.prod_univ_one]
-        exact congrArg Group.Abelianization.of (Units.ext (by simp))
-      ker_eq := fun h ↦ absurd h (by decide) }
+  | 1 => dieudonneFinOne D
   | k + 2 => dieudonneFinSuccSucc (dieudonneFinData D (k + 1))
 
 end SchurInduction
@@ -701,15 +690,7 @@ private theorem dieudonneFinData_hom_reindexGL_perm {m : ℕ} (σ : Equiv.Perm (
     (A : GL (Fin m) D) :
     (TauCeti.dieudonneFinData D m).hom (σ.reindexGL D A) =
       (TauCeti.dieudonneFinData D m).hom A := by
-  rw [← TauCeti.permutationGL_mul_mul_inv, map_mul, map_mul, map_inv]
-  calc
-    (TauCeti.dieudonneFinData D m).hom (TauCeti.permutationGL σ) *
-        (TauCeti.dieudonneFinData D m).hom A *
-        ((TauCeti.dieudonneFinData D m).hom (TauCeti.permutationGL σ))⁻¹
-      = (TauCeti.dieudonneFinData D m).hom A *
-          ((TauCeti.dieudonneFinData D m).hom (TauCeti.permutationGL σ) *
-            ((TauCeti.dieudonneFinData D m).hom (TauCeti.permutationGL σ))⁻¹) := by ac_rfl
-    _ = (TauCeti.dieudonneFinData D m).hom A := by rw [mul_inv_cancel, mul_one]
+  rw [← TauCeti.permutationGL_mul_mul_inv, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
 
 private theorem dieudonneFinData_hom_finCongr {m k : ℕ} (h : m = k) (A : GL (Fin m) D) :
     (TauCeti.dieudonneFinData D k).hom ((finCongr h).reindexGL D A) =
@@ -791,6 +772,8 @@ theorem dieudonneDet_diagGL (d : n → Dˣ) :
 
 /-- A diagonal matrix with `u` at entry `i` and `1` elsewhere has Dieudonné determinant
 `Group.Abelianization.of u`. -/
+-- Prefer the single-entry rule before the general `dieudonneDet_diagGL` product.
+@[simp high]
 theorem dieudonneDet_diagGL_mulSingle (i : n) (u : Dˣ) :
     dieudonneDet (TauCeti.diagGL (Pi.mulSingle i u)) = Group.Abelianization.of u := by
   rw [dieudonneDet_diagGL,
@@ -808,9 +791,8 @@ theorem dieudonneDet_scalar (u : Dˣ) :
 theorem dieudonneDet_surjective [Nonempty n] :
     Function.Surjective (dieudonneDet (n := n) (D := D)) := by
   obtain ⟨i⟩ := ‹Nonempty n›
-  intro x
-  refine QuotientGroup.induction_on x (fun u ↦ ⟨TauCeti.diagGL (Pi.mulSingle i u), ?_⟩)
-  exact dieudonneDet_diagGL_mulSingle i u
+  exact Quot.ind fun u ↦ ⟨TauCeti.diagGL (Pi.mulSingle i u),
+    (dieudonneDet_diagGL_mulSingle i u).trans (Group.Abelianization.mk_eq_of u).symm⟩
 
 /-- **Uniqueness of the Dieudonné determinant.** A homomorphism
 `GL n D →* Group.Abelianization Dˣ` that vanishes on `TauCeti.elementarySubgroup n D` and sends
@@ -881,7 +863,7 @@ theorem dieudonneDet_fromBlocksGL {m : Type*} [Fintype m] [DecidableEq m]
     dieudonneDet_of_mem_elementarySubgroup heu, dieudonneDet_of_mem_elementarySubgroup hev,
     one_mul, one_mul, one_mul, one_mul, hdiag, dieudonneDet_diagGL, dieudonneDet_diagGL,
     dieudonneDet_diagGL, Fintype.prod_sum_type]
-  rfl
+  simp
 
 /-- The Dieudonné determinant is natural with respect to ring homomorphisms `D →+* E` between
 division rings. -/
@@ -923,7 +905,7 @@ theorem dieudonneDet_map {F K : Type*} [Field F] [Field K] (f : F →+* K) (g : 
 
 /-- Over a field `F`, the Dieudonné determinant agrees with the ordinary determinant followed by
 `Group.Abelianization.of : Fˣ →* Group.Abelianization Fˣ`. -/
-theorem dieudonneDet_eq_of_det {F : Type*} [Field F] (g : GL n F) :
+theorem dieudonneDet_eq_abelianizationOf_det {F : Type*} [Field F] (g : GL n F) :
     dieudonneDet g = Group.Abelianization.of g.det := by
   obtain ⟨e, he, d, rfl⟩ := TauCeti.exists_mem_elementarySubgroup_mul_diagGL g
   have hdet_e : e.det = 1 :=
@@ -957,8 +939,8 @@ def quotientElementarySubgroupDieudonneEquiv (n : Type*) [Fintype n] [DecidableE
 theorem quotientElementarySubgroupDieudonneEquiv_mk {n : Type*} [Fintype n] [DecidableEq n]
     {D : Type*} [DivisionRing D] (hn : 2 ≤ Fintype.card n) (g : GL n D) :
     quotientElementarySubgroupDieudonneEquiv n D hn (QuotientGroup.mk g) =
-      GeneralLinearGroup.dieudonneDet g :=
-  (rfl)
+      GeneralLinearGroup.dieudonneDet g := by
+  simp [quotientElementarySubgroupDieudonneEquiv, QuotientGroup.quotientKerEquivOfSurjective]
 
 /-- The inverse of `TauCeti.quotientElementarySubgroupDieudonneEquiv` sends
 `Group.Abelianization.of u` to the coset of `diagGL (Pi.mulSingle i u)` at any index `i : n`. -/
