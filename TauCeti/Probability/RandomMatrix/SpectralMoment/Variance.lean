@@ -138,14 +138,8 @@ private theorem variance_re_le_norm_integral_mul_star_sub [IsProbabilityMeasure 
       (hZ.star.integrable one_le_two).const_mul _
     rw [integral_add, integral_sub, integral_sub]
     · rw [integral_mul_const, integral_const_mul, integral_const, probReal_univ, one_smul]
-      simp only [Complex.star_def, integral_conj]
-      ring
-    · exact hi1
-    · exact hi2
-    · exact hi1.sub hi2
-    · exact hi3
-    · exact (hi1.sub hi2).sub hi3
-    · exact integrable_const _
+      simp only [Complex.star_def, integral_conj]; ring
+    exacts [hi1, hi2, hi1.sub hi2, hi3, (hi1.sub hi2).sub hi3, integrable_const _]
   refine hvar_le.trans ?_
   have hnorm : ∫ ω, ‖Z ω - μ‖ ^ 2 ∂P = ‖((∫ ω, ‖Z ω - μ‖ ^ 2 ∂P : ℝ) : ℂ)‖ := by
     rw [Complex.norm_real, Real.norm_of_nonneg hr_nonneg]
@@ -176,16 +170,33 @@ private theorem edge_sumElim_eq {k n : ℕ} (w₁ w₂ : Fin k → Fin n) (t : F
         (fun j ↦ s(w₂ j, w₂ (finRotate k j))) t := by
   rcases t with i | j <;> simp [Sym2.eq_swap]
 
+private noncomputable abbrev wordProd (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    {k n : ℕ} (w : Fin k → Fin n) (ω : Ω) : ℂ :=
+  ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t))
+
+private noncomputable abbrev wordPairCov (P : Measure Ω)
+    (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) {k n : ℕ} (w₁ w₂ : Fin k → Fin n) : ℂ :=
+  (∫ ω, wordProd ξ η w₁ ω * star (wordProd ξ η w₂ ω) ∂P) -
+    (∫ ω, wordProd ξ η w₁ ω ∂P) * star (∫ ω, wordProd ξ η w₂ ω ∂P)
+
+private abbrev ConnectedWordPair {k n : ℕ} (p : (Fin k → Fin n) × (Fin k → Fin n)) : Prop :=
+  (∃ i j : Fin k, s(p.1 i, p.1 (finRotate k i)) = s(p.2 j, p.2 (finRotate k j))) ∧
+    ∀ t : Fin k ⊕ Fin k,
+      ¬(Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
+          (fun i ↦ s(p.2 i, p.2 (finRotate k i))) t).IsDiag →
+        ∃ s ≠ t,
+          Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
+            (fun i ↦ s(p.2 i, p.2 (finRotate k i))) s =
+          Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
+            (fun i ↦ s(p.2 i, p.2 (finRotate k i))) t
+
 private theorem integral_prod_mul_star_sub_eq_zero_of_disjoint {k n : ℕ} (hk : k ≠ 0)
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
     (w₁ w₂ : Fin k → Fin n)
     (hdisj : ¬∃ i j : Fin k, s(w₁ i, w₁ (finRotate k i)) = s(w₂ j, w₂ (finRotate k j))) :
-    (∫ ω, (∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i))) *
-        star (∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j))) ∂P) -
-      (∫ ω, ∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i)) ∂P) *
-        star (∫ ω, ∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j)) ∂P) = 0 := by
+    wordPairCov P ξ η w₁ w₂ = 0 := by
   push Not at hdisj
   have hind := indepFun_prod_wignerMatrix_apply_of_edge_ne
     (fun ij ↦ (hξp ij).aestronglyMeasurable.aemeasurable)
@@ -196,6 +207,7 @@ private theorem integral_prod_mul_star_sub_eq_zero_of_disjoint {k n : ℕ} (hk :
     (fun i ↦ w₁ (finRotate k i))).aestronglyMeasurable
   have h2 := (memLp_prod_wignerMatrix_apply_two hk hξp hηp (fun j ↦ w₂ (finRotate k j))
     w₂).aestronglyMeasurable
+  dsimp only [wordPairCov, wordProd]
   simp_rw [star_prod_wignerMatrix_eq]
   rw [hind.integral_fun_mul_eq_mul_integral h1 h2]
   simp_rw [← star_prod_wignerMatrix_eq, Complex.star_def, integral_conj, sub_self]
@@ -214,12 +226,10 @@ private theorem integral_prod_mul_star_sub_eq_zero_of_singleton_nonloop {k n : �
             (fun j ↦ s(w₂ j, w₂ (finRotate k j))) s =
           Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k i)))
             (fun j ↦ s(w₂ j, w₂ (finRotate k j))) t) :
-    (∫ ω, (∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i))) *
-        star (∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j))) ∂P) -
-      (∫ ω, ∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i)) ∂P) *
-        star (∫ ω, ∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j)) ∂P) = 0 := by
+    wordPairCov P ξ η w₁ w₂ = 0 := by
   push Not at hsing
   obtain ⟨t, hnd, huniq⟩ := hsing
+  dsimp only [wordPairCov, wordProd]
   have hprod : ∫ ω, (∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i))) *
       star (∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j))) ∂P = 0 := by
     simp_rw [prod_wignerMatrix_mul_star_eq]
@@ -247,59 +257,49 @@ private theorem norm_integral_prod_mul_star_sub_le [IsProbabilityMeasure P] {k n
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P)
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * k) ∂P ≤ B) (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * k) ∂P ≤ B)
     (w₁ w₂ : Fin k → Fin n) :
-    ‖(∫ ω, (∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i))) *
-        star (∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j))) ∂P) -
-      (∫ ω, ∏ i, wignerMatrix ξ η n ω (w₁ i) (w₁ (finRotate k i)) ∂P) *
-        star (∫ ω, ∏ j, wignerMatrix ξ η n ω (w₂ j) (w₂ (finRotate k j)) ∂P)‖ ≤
-      2 * ((Real.sqrt n)⁻¹ ^ (2 * k) * B) := by
-  let F (w : Fin k → Fin n) (ω : Ω) : ℂ := ∏ i, wignerMatrix ξ η n ω (w i) (w (finRotate k i))
+    ‖wordPairCov P ξ η w₁ w₂‖ ≤ 2 * ((Real.sqrt n)⁻¹ ^ (2 * k) * B) := by
   set M : ℝ := (Real.sqrt n)⁻¹ ^ (2 * k) * B
   have hB : 0 ≤ B := (integral_nonneg fun ω ↦ pow_nonneg (norm_nonneg (η 0 ω)) _).trans (hη 0)
   have hM : 0 ≤ M := mul_nonneg (by positivity) hB
   have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by
     rw [Fintype.card_sum, Fintype.card_fin, two_mul]
-  have hpair (u₁ u₂ : Fin k → Fin n) : ‖∫ ω, F u₁ ω * star (F u₂ ω) ∂P‖ ≤ M := by
-    simp_rw [F, prod_wignerMatrix_mul_star_eq]
+  have hpair (u₁ u₂ : Fin k → Fin n) :
+      ‖∫ ω, wordProd ξ η u₁ ω * star (wordProd ξ η u₂ ω) ∂P‖ ≤ M := by
+    simp_rw [wordProd, prod_wignerMatrix_mul_star_eq]
     simpa only [hcard, M] using
       norm_integral_prod_wignerMatrix_apply_le (ι := Fin k ⊕ Fin k)
         (by simpa only [hcard] using hξp) (by simpa only [hcard] using hηp)
         (by simpa only [hcard] using hξ) (by simpa only [hcard] using hη) _ _
-  have hsingle (w : Fin k → Fin n) : ‖∫ ω, F w ω ∂P‖ ≤ Real.sqrt M := by
-    have hFw : MemLp (F w) 2 P := memLp_prod_wignerMatrix_apply_two hk hξp hηp _ _
-    have hvar := variance_nonneg (fun ω ↦ ‖F w ω‖) P
+  have hsingle (w : Fin k → Fin n) : ‖∫ ω, wordProd ξ η w ω ∂P‖ ≤ Real.sqrt M := by
+    have hFw : MemLp (wordProd ξ η w) 2 P := memLp_prod_wignerMatrix_apply_two hk hξp hηp _ _
+    have hvar := variance_nonneg (fun ω ↦ ‖wordProd ξ η w ω‖) P
     rw [variance_eq_sub hFw.norm] at hvar
-    have hsq : ‖∫ ω, F w ω ∂P‖ ^ 2 ≤ ∫ ω, ‖F w ω‖ ^ 2 ∂P :=
+    have hsq : ‖∫ ω, wordProd ξ η w ω ∂P‖ ^ 2 ≤ ∫ ω, ‖wordProd ξ η w ω‖ ^ 2 ∂P :=
       (pow_le_pow_left₀ (norm_nonneg _) (norm_integral_le_integral_norm _) 2).trans (by
         simpa only [Pi.pow_apply, sub_nonneg] using hvar)
-    have hl2 : ∫ ω, ‖F w ω‖ ^ 2 ∂P ≤ M := by
-      have hnn : 0 ≤ ∫ ω, ‖F w ω‖ ^ 2 ∂P := integral_nonneg fun _ ↦ sq_nonneg _
-      have heq : ((∫ ω, ‖F w ω‖ ^ 2 ∂P : ℝ) : ℂ) = ∫ ω, F w ω * star (F w ω) ∂P := by
+    have hl2 : ∫ ω, ‖wordProd ξ η w ω‖ ^ 2 ∂P ≤ M := by
+      have hnn : 0 ≤ ∫ ω, ‖wordProd ξ η w ω‖ ^ 2 ∂P := integral_nonneg fun _ ↦ sq_nonneg _
+      have heq : ((∫ ω, ‖wordProd ξ η w ω‖ ^ 2 ∂P : ℝ) : ℂ) =
+          ∫ ω, wordProd ξ η w ω * star (wordProd ξ η w ω) ∂P := by
         rw [← integral_complex_ofReal]
         congr with ω
         rw [Complex.ofReal_pow, ← Complex.mul_conj', ← Complex.star_def]
       rw [← Real.norm_of_nonneg hnn, ← Complex.norm_real, heq]
       exact hpair w w
     exact Real.le_sqrt_of_sq_le (hsq.trans hl2)
-  have hmul : ‖(∫ ω, F w₁ ω ∂P) * star (∫ ω, F w₂ ω ∂P)‖ ≤ M := by
+  have hmul : ‖(∫ ω, wordProd ξ η w₁ ω ∂P) * star (∫ ω, wordProd ξ η w₂ ω ∂P)‖ ≤ M := by
     rw [norm_mul, norm_star]
-    calc
-      ‖∫ ω, F w₁ ω ∂P‖ * ‖∫ ω, F w₂ ω ∂P‖ ≤ Real.sqrt M * Real.sqrt M :=
-        mul_le_mul (hsingle w₁) (hsingle w₂) (norm_nonneg _) (Real.sqrt_nonneg M)
-      _ = M := Real.mul_self_sqrt hM
-  refine (norm_sub_le _ _).trans ?_
-  linarith [hpair w₁ w₂]
+    exact (mul_le_mul (hsingle w₁) (hsingle w₂) (norm_nonneg _) (Real.sqrt_nonneg M)).trans_eq
+      (Real.mul_self_sqrt hM)
+  exact (norm_sub_le _ _).trans (by linarith [hpair w₁ w₂])
 
 private theorem trace_pow_mul_star_sub_eq_sum [IsFiniteMeasure P] {k n : ℕ} (hk : k ≠ 0)
     (hξp : ∀ ij, MemLp (ξ ij) (2 * k : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * k : ℕ) P) :
     (∫ ω, (wignerMatrix ξ η n ω ^ k).trace * star (wignerMatrix ξ η n ω ^ k).trace ∂P) -
       (∫ ω, (wignerMatrix ξ η n ω ^ k).trace ∂P) *
         star (∫ ω, (wignerMatrix ξ η n ω ^ k).trace ∂P) =
-      ∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-        ((∫ ω, (∏ t, wignerMatrix ξ η n ω (p.1 t) (p.1 (finRotate k t))) *
-            star (∏ t, wignerMatrix ξ η n ω (p.2 t) (p.2 (finRotate k t))) ∂P) -
-          (∫ ω, ∏ t, wignerMatrix ξ η n ω (p.1 t) (p.1 (finRotate k t)) ∂P) *
-            star (∫ ω, ∏ t, wignerMatrix ξ η n ω (p.2 t) (p.2 (finRotate k t)) ∂P)) := by
-  let F (w : Fin k → Fin n) (ω : Ω) : ℂ := ∏ t, wignerMatrix ξ η n ω (w t) (w (finRotate k t))
+      ∑ p : (Fin k → Fin n) × (Fin k → Fin n), wordPairCov P ξ η p.1 p.2 := by
+  let F (w : Fin k → Fin n) := wordProd ξ η w
   have hFw (w : Fin k → Fin n) : MemLp (F w) 2 P := memLp_prod_wignerMatrix_apply_two hk hξp hηp _ _
   simp_rw [trace_pow_eq_sum_prod _ hk]
   have h1 : (∫ ω, (∑ w₁, F w₁ ω) * star (∑ w₂, F w₂ ω) ∂P) =
@@ -307,11 +307,10 @@ private theorem trace_pow_mul_star_sub_eq_sum [IsFiniteMeasure P] {k n : ℕ} (h
     simp_rw [star_sum, sum_mul_sum, ← Fintype.sum_prod_type']
     exact integral_finsetSum _ fun p _ ↦ (hFw p.1).integrable_mul (hFw p.2).star
   have h2 : (∫ ω, ∑ w₁, F w₁ ω ∂P) * star (∫ ω, ∑ w₂, F w₂ ω ∂P) =
-      ∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-        (∫ ω, F p.1 ω ∂P) * star (∫ ω, F p.2 ω ∂P) := by
+      ∑ p : (Fin k → Fin n) × (Fin k → Fin n), (∫ ω, F p.1 ω ∂P) * star (∫ ω, F p.2 ω ∂P) := by
     rw [integral_finsetSum _ fun w _ ↦ (hFw w).integrable one_le_two, star_sum,
       sum_mul_sum, ← Fintype.sum_prod_type']
-  rw [h1, h2, ← sum_sub_distrib]
+  exact (congrArg₂ (· - ·) h1 h2).trans (sum_sub_distrib _ _).symm
 
 private theorem trace_pow_mul_star_sub_eq_sum_filter {k n : ℕ} (hk : k ≠ 0)
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦
@@ -321,20 +320,8 @@ private theorem trace_pow_mul_star_sub_eq_sum_filter {k n : ℕ} (hk : k ≠ 0)
     (∫ ω, (wignerMatrix ξ η n ω ^ k).trace * star (wignerMatrix ξ η n ω ^ k).trace ∂P) -
       (∫ ω, (wignerMatrix ξ η n ω ^ k).trace ∂P) *
         star (∫ ω, (wignerMatrix ξ η n ω ^ k).trace ∂P) =
-      ∑ p : (Fin k → Fin n) × (Fin k → Fin n) with
-        (∃ i j : Fin k, s(p.1 i, p.1 (finRotate k i)) = s(p.2 j, p.2 (finRotate k j))) ∧
-          ∀ t : Fin k ⊕ Fin k,
-            ¬(Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
-                (fun i ↦ s(p.2 i, p.2 (finRotate k i))) t).IsDiag →
-              ∃ s ≠ t,
-                Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
-                  (fun i ↦ s(p.2 i, p.2 (finRotate k i))) s =
-                Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
-                  (fun i ↦ s(p.2 i, p.2 (finRotate k i))) t,
-        ((∫ ω, (∏ t, wignerMatrix ξ η n ω (p.1 t) (p.1 (finRotate k t))) *
-            star (∏ t, wignerMatrix ξ η n ω (p.2 t) (p.2 (finRotate k t))) ∂P) -
-          (∫ ω, ∏ t, wignerMatrix ξ η n ω (p.1 t) (p.1 (finRotate k t)) ∂P) *
-            star (∫ ω, ∏ t, wignerMatrix ξ η n ω (p.2 t) (p.2 (finRotate k t)) ∂P)) := by
+      ∑ p : (Fin k → Fin n) × (Fin k → Fin n) with ConnectedWordPair p,
+        wordPairCov P ξ η p.1 p.2 := by
   have := hindep.isProbabilityMeasure
   rw [trace_pow_mul_star_sub_eq_sum hk hξp hηp]
   refine (sum_filter_of_ne fun p _ hp ↦ ?_).symm
@@ -368,27 +355,11 @@ theorem variance_re_trace_pow_wignerMatrix_le {k : ℕ} {B : ℝ}
     rw [hconst, variance_eq_integral aemeasurable_const]
     simpa using mul_nonneg zero_le_two hB
   rcases eq_or_ne n 0 with rfl | hn
-  · have hzero : (fun ω ↦ ((wignerMatrix ξ η 0 ω ^ k).trace).re) = 0 := by
-      ext ω; simp
-    rw [hzero, variance_zero]
-    positivity
-  let C (p : (Fin k → Fin n) × (Fin k → Fin n)) : ℂ :=
-    (∫ ω, (∏ t, wignerMatrix ξ η n ω (p.1 t) (p.1 (finRotate k t))) *
-        star (∏ t, wignerMatrix ξ η n ω (p.2 t) (p.2 (finRotate k t))) ∂P) -
-      (∫ ω, ∏ t, wignerMatrix ξ η n ω (p.1 t) (p.1 (finRotate k t)) ∂P) *
-        star (∫ ω, ∏ t, wignerMatrix ξ η n ω (p.2 t) (p.2 (finRotate k t)) ∂P)
-  let S : Finset ((Fin k → Fin n) × (Fin k → Fin n)) :=
-    {p | (∃ i j : Fin k, s(p.1 i, p.1 (finRotate k i)) = s(p.2 j, p.2 (finRotate k j))) ∧
-      ∀ t : Fin k ⊕ Fin k,
-        ¬(Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
-            (fun i ↦ s(p.2 i, p.2 (finRotate k i))) t).IsDiag →
-          ∃ s ≠ t,
-            Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
-              (fun i ↦ s(p.2 i, p.2 (finRotate k i))) s =
-            Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k i)))
-              (fun i ↦ s(p.2 i, p.2 (finRotate k i))) t}
+  · have hzero : (fun ω ↦ ((wignerMatrix ξ η 0 ω ^ k).trace).re) = 0 := by ext ω; simp
+    rw [hzero, variance_zero]; positivity
+  let S : Finset ((Fin k → Fin n) × (Fin k → Fin n)) := {p | ConnectedWordPair p}
   have hcardS : #S ≤ n ^ k * k ^ (2 * k) := by
-    simpa [S, Fintype.card_fin] using
+    simpa [S, ConnectedWordPair, Fintype.card_fin] using
       card_filter_pair_le_of_shared_edge_of_no_singleton_nonloop_edge (α := Fin n) k
   have : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hsqrt : (Real.sqrt n)⁻¹ ^ (2 * k) = ((n : ℝ) ^ k)⁻¹ := by
@@ -397,7 +368,7 @@ theorem variance_re_trace_pow_wignerMatrix_le {k : ℕ} {B : ℝ}
     ?_
   rw [trace_pow_mul_star_sub_eq_sum_filter hk hindep hξzero hξp hηp]
   calc
-    ‖∑ p ∈ S, C p‖ ≤ ∑ p ∈ S, ‖C p‖ := norm_sum_le S C
+    ‖∑ p ∈ S, wordPairCov P ξ η p.1 p.2‖ ≤ ∑ p ∈ S, ‖wordPairCov P ξ η p.1 p.2‖ := norm_sum_le S _
     _ ≤ ∑ _p ∈ S, 2 * ((Real.sqrt n)⁻¹ ^ (2 * k) * B) :=
       sum_le_sum fun p _ ↦ norm_integral_prod_mul_star_sub_le hk hξp hηp hξ hη p.1 p.2
     _ = (#S : ℝ) * (2 * ((Real.sqrt n)⁻¹ ^ (2 * k) * B)) := by simp
