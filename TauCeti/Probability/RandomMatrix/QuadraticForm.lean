@@ -103,7 +103,7 @@ variable {Ω p n : Type*} [MeasurableSpace Ω] [Fintype p] [Fintype n]
 /-- The column-normalized leave-one-column-out covariance resolvent quadratic form concentrates
 about the column-normalized trace. Entries are independent; only the chosen column needs unit
 second absolute moments and directional sub-Gaussian bounds. Empty row types are included. -/
-theorem measureReal_norm_sampleCovariance_updateCol_quadraticForm_sub_trace_gt_le
+theorem measureReal_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace_gt_le
     (hind : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hm : AEMeasurable X P) (k : n)
     (hX : ∀ i (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * X ω i k).re)
@@ -147,7 +147,7 @@ theorem measureReal_norm_sampleCovariance_updateCol_quadraticForm_sub_trace_gt_l
 
 /-- A simultaneous leave-one-column-out covariance resolvent estimate. The union bound has
 one term per column and requires no additional independence between the quadratic forms. -/
-theorem measureReal_exists_norm_sampleCovariance_updateCol_quadraticForm_sub_trace_gt_le
+theorem measureReal_exists_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace_gt_le
     (hind : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hX : ∀ i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * X ω i j).re)
       (‖u‖₊ ^ 2 * K) P)
@@ -171,8 +171,10 @@ theorem measureReal_exists_norm_sampleCovariance_updateCol_quadraticForm_sub_tra
       simp only [Set.mem_iUnion, Set.mem_ofPred_eq]
     _ ≤ _ := (measureReal_iUnion_fintype_le _).trans
       ((Finset.sum_le_sum fun k _ ↦
-        hind.measureReal_norm_sampleCovariance_updateCol_quadraticForm_sub_trace_gt_le
-          hm k (fun i ↦ hX i k) (fun i ↦ hunit i k) z (t := t)).trans_eq (by simp; ring))
+        hind.measureReal_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace_gt_le
+          hm k (fun i ↦ hX i k) (fun i ↦ hunit i k) z (t := t)).trans_eq (by
+            simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+            ring))
 
 end ProbabilityTheory.iIndepFun
 
@@ -201,7 +203,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 /-- Leave-one-column-out covariance quadratic-form errors have summable exceptional
 probabilities when the aspect ratios are eventually bounded. The matrices at different sizes
 may have any coupling, and their entry laws may vary with size and position. -/
-theorem summable_measureReal_exists_norm_sampleCovariance_updateCol_quadraticForm_sub_trace
+theorem summable_measureReal_exists_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace
     (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
       fun ω ↦ X m ω ij.1 ij.2) P)
     (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * X m ω i j).re)
@@ -234,8 +236,9 @@ theorem summable_measureReal_exists_norm_sampleCovariance_updateCol_quadraticFor
   have hp' : 0 < (p m : ℝ) := by exact_mod_cast Nat.pos_of_ne_zero hp
   have hrate := covariance_quadraticForm_rate_le (L := (L : ℝ)) (t := t) (η := |z.im|)
     (by positivity : 0 ≤ (m + 1 : ℝ)) hp' hm
+  have hi := hind m
   have htail :=
-    (hind m).measureReal_exists_norm_sampleCovariance_updateCol_quadraticForm_sub_trace_gt_le
+    hi.measureReal_exists_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace_gt_le
       (hXL m) (hunit m) z (t := t)
   simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at htail
   have hexp : exp (-(1 / 150528) * min
@@ -251,7 +254,7 @@ theorem summable_measureReal_exists_norm_sampleCovariance_updateCol_quadraticFor
 resolvent quadratic-form errors tend almost surely to zero at each nonreal spectral parameter.
 Only an eventual upper bound on the aspect ratios is needed; empty row spaces are allowed.
 There is no independence assumption across matrix sizes. -/
-theorem ae_tendsto_norm_sampleCovariance_updateCol_quadraticForm_sub_trace
+theorem ae_tendsto_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace
     (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
       fun ω ↦ X m ω ij.1 ij.2) P)
     (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * X m ω i j).re)
@@ -268,8 +271,9 @@ theorem ae_tendsto_norm_sampleCovariance_updateCol_quadraticForm_sub_trace
     (star (fun i ↦ X m ω i k) ⬝ᵥ (sampleCovariance ((X m ω).updateCol k 0) - z • 1)⁻¹ *ᵥ
       (fun i ↦ X m ω i k) - (sampleCovariance ((X m ω).updateCol k 0) - z • 1)⁻¹.trace)
   have hbc (j : ℕ) : ∀ᵐ ω ∂P, ∀ᶠ m in atTop, ∀ k, ‖E m ω k‖ ≤ (j + 1 : ℝ)⁻¹ := by
-    have hs := summable_measureReal_exists_norm_sampleCovariance_updateCol_quadraticForm_sub_trace
-      hind hX hunit hdim hz (by positivity : 0 < (j + 1 : ℝ)⁻¹)
+    have hs :=
+      summable_measureReal_exists_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace
+        hind hX hunit hdim hz (by positivity : 0 < (j + 1 : ℝ)⁻¹)
     have hfinite : (∑' m, P {ω | ∃ k, (j + 1 : ℝ)⁻¹ < ‖E m ω k‖}) ≠ ∞ := by
       simpa only [E, measureReal_def, ENNReal.ofReal_toReal (measure_ne_top _ _)] using
         hs.tsum_ofReal_ne_top

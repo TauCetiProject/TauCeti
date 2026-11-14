@@ -50,7 +50,7 @@ theorem indepFun_updateCol_zero {Ω p n R : Type*}
   have hleft (ω : Ω) :
       f (fun i : S ↦ Y ω i.1.1 i.1.2) = (Y ω).updateCol k 0 := by
     ext i j
-    exact (Matrix.updateCol_apply (M := Y ω) (j := k) (c := 0) (i := i) (j' := j)).symm
+    by_cases h : j = k <;> simp [f, h]
   refine h.congr ?_ ?_
   · filter_upwards [hX.ae_eq_mk] with ω hω
     exact (hleft ω).trans (congrArg (fun M : Matrix p n R ↦ M.updateCol k 0) hω.symm)
