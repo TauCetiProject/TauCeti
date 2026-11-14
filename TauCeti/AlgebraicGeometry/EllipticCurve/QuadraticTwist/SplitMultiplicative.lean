@@ -49,6 +49,12 @@ itself removes the restriction on the characteristic.
 
 ## Main results
 
+* `WeierstrassCurve.exists_integral_nodeQuadratic`: the integral monic node quadratic has unit
+  discriminant.
+* `WeierstrassCurve.exists_quadraticExtension_root_nodeQuadratic`: at nonsplit multiplicative
+  reduction it generates a separable quadratic extension, with a specified root.
+* `WeierstrassCurve.hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root`: any such
+  quadratic extension gives a twist with split multiplicative reduction.
 * `WeierstrassCurve.hasSplitMultiplicativeReduction_quadraticTwistOf`: the explicit twist by
   `(-a₁, coeff₀ / c₄)` of a curve with multiplicative reduction has split multiplicative
   reduction.
@@ -86,7 +92,7 @@ variable (R) in
 multiplicative reduction is integral: it is the image of an element `n₀` of `R` with
 `c₄ n₀ = coeff₀` on the integral model, where `c₄` is a unit. The discriminant `a₁² - 4 n₀` of the
 node quadratic is a unit too, since `c₄ (a₁² - 4 n₀) = -c₆`. -/
-private lemma exists_algebraMap_eq_nodePolynomial_coeff_zero_div
+theorem exists_integral_nodeQuadratic
     [hE : E.HasMultiplicativeReduction R] :
     IsUnit (E.integralModel R).c₄ ∧ ∃ n₀ : R,
       (E.integralModel R).c₄ * n₀ = (E.integralModel R).nodePolynomial.coeff 0 ∧
@@ -126,7 +132,7 @@ is split. -/
 theorem hasSplitMultiplicativeReduction_quadraticTwistOf [hE : E.HasMultiplicativeReduction R] :
     (E.quadraticTwistOf (-E.a₁) (E.nodePolynomial.coeff 0 / E.c₄)).HasSplitMultiplicativeReduction
       R := by
-  obtain ⟨hu, n₀, hn₀, hD, hn₀K⟩ := exists_algebraMap_eq_nodePolynomial_coeff_zero_div R (E := E)
+  obtain ⟨hu, n₀, hn₀, hD, hn₀K⟩ := exists_integral_nodeQuadratic R (E := E)
   set I := E.integralModel R
   set J := I.quadraticTwistOf (-I.a₁) n₀
   -- The twisted curve is the base change of `J`, which is integral with unit `c₄`.
@@ -154,18 +160,37 @@ theorem hasSplitMultiplicativeReduction_quadraticTwistOf [hE : E.HasMultiplicati
   rw [reduction, map_nodePolynomial, hint, nodePolynomial_quadraticTwistOf_neg_a₁ I n₀ hn₀]
   exact (((Splits.X_sub_C _).C_mul _).mul (Splits.X_sub_C _)).map _
 
-/-- **Quadratic twist to split multiplicative reduction.** Over the fraction field `K` of a
-discrete valuation ring `R`, a curve with multiplicative but nonsplit reduction acquires split
-multiplicative reduction after a separable quadratic twist. As `HasMultiplicativeReduction`
-extends `IsMinimal`, the hypothesis is about a minimal equation; the conclusion is about Mathlib's
-chosen minimal equation `.minimal R` of the twist. The field `L` is found in the universe of `K`.
--/
-theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
+/-- A quadratic extension containing a root of the monic node quadratic gives a twist with split
+multiplicative reduction. The generator need not lie in a prescribed algebraic closure. -/
+theorem hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root
+    [E.IsElliptic] [E.HasMultiplicativeReduction R]
+    {L : Type*} [Field L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
+    [Algebra.IsSeparable K L] {θ : L} (hθ : θ ∉ Set.range (algebraMap K L))
+    (hroot : θ ^ 2 + algebraMap K L E.a₁ * θ +
+      algebraMap K L (E.nodePolynomial.coeff 0 / E.c₄) = 0) :
+    ((E.quadraticTwist L).minimal R).HasSplitMultiplicativeReduction R := by
+  let n := E.nodePolynomial.coeff 0 / E.c₄
+  have hθ2 : θ * θ = algebraMap K L (-E.a₁) * θ - algebraMap K L n := by
+    rw [map_neg]
+    linear_combination hroot
+  obtain ⟨C₁, hC₁⟩ := E.exists_smul_quadraticTwist_eq hθ
+  rw [_root_.Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero hθ hroot,
+    TauCeti.Algebra.norm_eq_of_mul_self_eq hθ hθ2] at hC₁
+  obtain ⟨C₂, hC₂⟩ := (E.quadraticTwist L).exists_smul_eq_minimal R
+  have : (E.quadraticTwistOf (-E.a₁) n).IsElliptic := hC₁ ▸ inferInstance
+  exact (hasSplitMultiplicativeReduction_quadraticTwistOf R (E := E)).of_isMinimal_smul R
+    (C₂ * C₁⁻¹) (by rw [mul_smul, ← hC₁, inv_smul_smul, hC₂])
+
+/-- At nonsplit multiplicative reduction the monic node quadratic generates a separable quadratic
+extension. Its root is a generator outside the ground field. -/
+theorem exists_quadraticExtension_root_nodeQuadratic
     [E.HasMultiplicativeReduction R] (h : ¬ E.HasSplitMultiplicativeReduction R) :
     ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : Algebra.IsQuadraticExtension K L)
-      (_ : Algebra.IsSeparable K L),
-      ((E.quadraticTwist L).minimal R).HasSplitMultiplicativeReduction R := by
-  obtain ⟨-, n₀, hn₀, hD, hn₀K⟩ := exists_algebraMap_eq_nodePolynomial_coeff_zero_div R (E := E)
+      (_ : Algebra.IsSeparable K L), ∃ θ : L,
+      θ ∉ Set.range (algebraMap K L) ∧
+        θ ^ 2 + algebraMap K L E.a₁ * θ +
+          algebraMap K L (E.nodePolynomial.coeff 0 / E.c₄) = 0 := by
+  obtain ⟨-, n₀, hn₀, hD, hn₀K⟩ := exists_integral_nodeQuadratic R (E := E)
   set I := E.integralModel R
   set n := E.nodePolynomial.coeff 0 / E.c₄
   set q : K[X] := X ^ 2 + C E.a₁ * X + C n
@@ -200,24 +225,28 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
     have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable K (AdjoinRoot q)).mpr hsep
     rw [IntermediateField.adjoin_root_eq_top] at this
     exact .of_algHom K _ IntermediateField.topEquiv.symm.toAlgHom
-  refine ⟨AdjoinRoot q, inferInstance, inferInstance, inferInstance, inferInstance, ?_⟩
-  -- The twist by `L` is the explicit twist up to a change of variables over `K`.
-  -- `θ² = -a₁ θ - n`, so `θ` has trace `-a₁` and norm `n`.
+  refine ⟨AdjoinRoot q, inferInstance, inferInstance, inferInstance, inferInstance,
+    AdjoinRoot.root q, hθ, ?_⟩
   have hθeq : AdjoinRoot.root q ^ 2 + algebraMap K (AdjoinRoot q) E.a₁ * AdjoinRoot.root q +
       algebraMap K (AdjoinRoot q) n = 0 := by
     have h := AdjoinRoot.mk_self (f := q)
     rw [← AdjoinRoot.aeval_eq] at h
     simpa only [q, map_add, map_mul, map_pow, aeval_X, aeval_C] using h
-  have hθ2 : AdjoinRoot.root q * AdjoinRoot.root q =
-      algebraMap K (AdjoinRoot q) (-E.a₁) * AdjoinRoot.root q - algebraMap K (AdjoinRoot q) n := by
-    rw [map_neg]
-    linear_combination hθeq
-  obtain ⟨C₁, hC₁⟩ := E.exists_smul_quadraticTwist_eq hθ
-  rw [_root_.Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero hθ hθeq,
-    TauCeti.Algebra.norm_eq_of_mul_self_eq hθ hθ2] at hC₁
-  obtain ⟨C₂, hC₂⟩ := (E.quadraticTwist (AdjoinRoot q)).exists_smul_eq_minimal R
-  have : (E.quadraticTwistOf (-E.a₁) n).IsElliptic := hC₁ ▸ inferInstance
-  exact (hasSplitMultiplicativeReduction_quadraticTwistOf R (E := E)).of_isMinimal_smul R
-    (C₂ * C₁⁻¹) (by rw [mul_smul, ← hC₁, inv_smul_smul, hC₂])
+  exact hθeq
+
+/-- **Quadratic twist to split multiplicative reduction.** Over the fraction field `K` of a
+discrete valuation ring `R`, a curve with multiplicative but nonsplit reduction acquires split
+multiplicative reduction after a separable quadratic twist. As `HasMultiplicativeReduction`
+extends `IsMinimal`, the hypothesis is about a minimal equation; the conclusion is about Mathlib's
+chosen minimal equation `.minimal R` of the twist. The field `L` is found in the universe of `K`.
+-/
+theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
+    [E.HasMultiplicativeReduction R] (h : ¬ E.HasSplitMultiplicativeReduction R) :
+    ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : Algebra.IsQuadraticExtension K L)
+      (_ : Algebra.IsSeparable K L),
+      ((E.quadraticTwist L).minimal R).HasSplitMultiplicativeReduction R := by
+  obtain ⟨L, _, _, _, _, θ, hθ, hroot⟩ := exists_quadraticExtension_root_nodeQuadratic h
+  exact ⟨L, inferInstance, inferInstance, inferInstance, inferInstance,
+    hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root hθ hroot⟩
 
 end WeierstrassCurve
