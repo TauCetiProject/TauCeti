@@ -152,9 +152,17 @@ theorem norm_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) (x : w.Com
 
 variable (v) in
 /-- `completionCongr` is continuous. -/
+@[continuity, fun_prop]
 theorem continuous_completionCongr (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
     Continuous (completionCongr v σ h) :=
   AbsoluteValue.Completion.continuous_congr (apply_eq_of_eq_smul σ h)
+
+variable (v) in
+/-- The inverse of `completionCongr` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_completionCongr_symm (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
+    Continuous (completionCongr v σ h).symm :=
+  AbsoluteValue.Completion.continuous_congr_symm (apply_eq_of_eq_smul σ h)
 
 /-- `completionCongr` is the only continuous map `L_w → L_{w'}` extending `σ`. -/
 theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w)
@@ -165,20 +173,11 @@ theorem eq_completionCongr_of_continuous (σ : L ≃ₐ[K] L) (h : w' = σ • w
     rw [hfL, Completion.algebraMap_apply_eq_coe, Completion.algebraMap_apply_eq_coe,
       completionCongr_algebraMap]
 
-/-- `completionCongr` depends only on the automorphism, not on the proof that it carries `w`
-to `w'`. -/
-private theorem completionCongr_congr {σ σ' : L ≃ₐ[K] L} (hσσ' : σ = σ')
-    (h : w' = σ • w) (h' : w' = σ' • w) :
-    completionCongr v σ h = completionCongr v σ' h' := by
-  subst hσσ'
-  rfl
-
 /-- `completionCongr` of the identity is the identity. -/
 @[simp]
 theorem completionCongr_one :
     completionCongr (w := w) (w' := w) v (1 : L ≃ₐ[K] L) (by simp) = AlgEquiv.refl :=
-  AlgEquiv.ext fun a ↦ (congrFun (eq_completionCongr_of_continuous (v := v) (w := w) (w' := w) 1
-    (by simp) continuous_id fun _ ↦ rfl) a).symm
+  AlgEquiv.toRingEquiv_injective AbsoluteValue.Completion.congr_refl
 
 /-- `completionCongr` is multiplicative: transporting along `σ` and then along `τ` is
 transporting along `τ * σ`. -/
@@ -187,20 +186,13 @@ theorem completionCongr_trans {w'' : InfinitePlace L} [w''.LiesOver v]
     (σ τ : L ≃ₐ[K] L) (hσ : w' = σ • w) (hτ : w'' = τ • w') :
     (completionCongr v σ hσ).trans (completionCongr v τ hτ) =
       completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) :=
-  AlgEquiv.ext (congrFun (eq_completionCongr_of_continuous (τ * σ) _
-    ((continuous_completionCongr v τ hτ).comp (continuous_completionCongr v σ hσ)) fun x ↦ by
-      rw [AlgEquiv.trans_apply, Completion.algebraMap_apply_eq_coe,
-        Completion.algebraMap_apply_eq_coe, completionCongr_algebraMap, completionCongr_algebraMap,
-        AlgEquiv.mul_apply]))
+  AlgEquiv.toRingEquiv_injective (AbsoluteValue.Completion.congr_trans _ _)
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
 @[simp]
 theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w' = σ • w) :
-    (completionCongr v σ h).symm = completionCongr v σ⁻¹ (by rw [h, inv_smul_smul]) := by
-  refine AlgEquiv.ext fun x ↦ ?_
-  rw [AlgEquiv.symm_apply_eq, ← AlgEquiv.trans_apply, completionCongr_trans,
-    completionCongr_congr (mul_inv_cancel σ) _ (by simp), completionCongr_one]
-  rfl
+    (completionCongr v σ h).symm = completionCongr v σ⁻¹ (by rw [h, inv_smul_smul]) :=
+  AlgEquiv.toRingEquiv_injective (AbsoluteValue.Completion.congr_symm _)
 
 end completionCongr
 

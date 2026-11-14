@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Transport
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Transport
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
+import TauCeti.Analysis.Normed.Field.WithAbs
 
 /-!
 # Transporting localized units, Hilbert symbols, and local norm equations along field isomorphisms

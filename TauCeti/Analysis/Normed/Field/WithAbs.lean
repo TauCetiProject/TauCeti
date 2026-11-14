@@ -15,7 +15,7 @@ If `w` is an absolute value on `L` lying over an absolute value `v` on `K`, the 
 `AbsoluteValue.Completion.map v w : v.Completion →+* w.Completion` is an isometry, so it preserves
 the norm (`AbsoluteValue.Completion.norm_map`).
 
-More generally, a field isomorphism `σ : K ≃+* L` carrying a real absolute value `v` on `K` to a
+In addition, a field isomorphism `σ : K ≃+* L` carrying a real absolute value `v` on `K` to a
 real absolute value `w` on `L` (`w (σ x) = v x`) is an isometry `WithAbs v → WithAbs w`, so it
 extends by continuity to an isometric ring isomorphism of completions
 `AbsoluteValue.Completion.congr σ hσ : v.Completion ≃+* w.Completion`. This is the real-valued
@@ -36,12 +36,14 @@ universes.
 * `AbsoluteValue.Completion.congr_coe`, `AbsoluteValue.Completion.congr_algebraMap`:
   `AbsoluteValue.Completion.congr` extends `σ` on `WithAbs v` and on `K`.
 * `AbsoluteValue.Completion.isometry_congr`, `AbsoluteValue.Completion.norm_congr`,
-  `AbsoluteValue.Completion.continuous_congr`: `congr` is an isometry, preserves the norm, and is
-  continuous.
+  `AbsoluteValue.Completion.continuous_congr`,
+  `AbsoluteValue.Completion.continuous_congr_symm`: `congr` is an isometry, preserves the norm, and
+  is continuous in both directions.
 * `AbsoluteValue.Completion.eq_congr_of_continuous`: `congr` is the unique continuous ring
   homomorphism `v.Completion →+* w.Completion` extending `σ`.
 * `AbsoluteValue.Completion.congr_refl`, `AbsoluteValue.Completion.congr_trans`,
-  `AbsoluteValue.Completion.congr_symm`: functoriality.
+  `AbsoluteValue.Completion.congr_trans_apply`, `AbsoluteValue.Completion.congr_symm`:
+  functoriality.
 -/
 
 public section
@@ -132,6 +134,11 @@ theorem norm_congr (x : v.Completion) : ‖congr σ hσ x‖ = ‖x‖ :=
 theorem continuous_congr : Continuous (congr σ hσ) :=
   (isometry_congr hσ).continuous
 
+/-- The inverse of `AbsoluteValue.Completion.congr` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_congr_symm : Continuous (congr σ hσ).symm :=
+  (isometryEquivCongr σ hσ).symm.continuous
+
 /-- `AbsoluteValue.Completion.congr` is the only continuous ring homomorphism
 `v.Completion →+* w.Completion` extending `σ`. -/
 theorem eq_congr_of_continuous {f : v.Completion →+* w.Completion} (hf : Continuous f)
@@ -159,13 +166,20 @@ theorem congr_trans {τ : L ≃+* M} (hτ : ∀ y, u (τ y) = w y) :
       rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.trans_apply,
         congr_algebraMap, congr_algebraMap, RingEquiv.trans_apply]
 
+/-- Pointwise composition of `AbsoluteValue.Completion.congr`. -/
+@[simp]
+theorem congr_trans_apply {τ : L ≃+* M} (hτ : ∀ y, u (τ y) = w y) (x : v.Completion) :
+    congr τ hτ (congr σ hσ x) =
+      congr (σ.trans τ) (fun a ↦ by rw [RingEquiv.trans_apply, hτ, hσ]) x :=
+  DFunLike.congr_fun (congr_trans hσ hτ) x
+
 /-- The inverse of `AbsoluteValue.Completion.congr` is `AbsoluteValue.Completion.congr` of the
 inverse isomorphism. -/
 @[simp]
 theorem congr_symm :
     (congr σ hσ).symm = congr σ.symm (fun y ↦ by rw [← hσ, σ.apply_symm_apply]) :=
   RingEquiv.toRingHom_injective <| eq_congr_of_continuous _
-    (isometryEquivCongr σ hσ).symm.continuous fun y ↦ by
+    (continuous_congr_symm hσ) fun y ↦ by
       rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq,
         congr_algebraMap, σ.apply_symm_apply]
 
