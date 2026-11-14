@@ -19,6 +19,7 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
+* `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
 -/
 
 public section
@@ -59,6 +60,14 @@ theorem snd_map (f : A →ₙₐ[R] B) (x : Unitization R A) : (map f x).snd = f
 @[simp]
 theorem fstHom_comp_map (f : A →ₙₐ[R] B) : (fstHom R B).comp (map f) = fstHom R A :=
   AlgHom.ext fun x ↦ by simp
+
+/-- A surjective homomorphism of nonunital algebras induces a surjective homomorphism of forced
+unitizations: `(r, b)` is the image of `(r, a)` for any preimage `a` of `b`. -/
+theorem map_surjective {f : A →ₙₐ[R] B} (hf : Function.Surjective f) :
+    Function.Surjective (map f) := fun y ↦ by
+  obtain ⟨a, ha⟩ := hf y.snd
+  exact ⟨inl y.fst + inr a,
+    Unitization.ext (by rw [fst_map]; simp) (by rw [snd_map]; simp [ha])⟩
 
 /-- The identity homomorphism induces the identity homomorphism of forced unitizations. -/
 @[simp]

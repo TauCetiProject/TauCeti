@@ -226,7 +226,7 @@ theorem _root_.Ideal.restrictScalars_coeIdeal_map_toRingOfIntegersEquiv_mul_one
   -- The extension of `I` is the `𝓞 K`-span of the elements of `I`.
   have hspan : (((I.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) : Ideal (𝓞 K)) :
       FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K) = Submodule.span (𝓞 K) (i : Set K) := by
-    rw [FractionalIdeal.coe_coeIdeal, Ideal.map, IsLocalization.coeSubmodule_span,
+    rw [FractionalIdeal.coeToSubmodule_coeIdeal, Ideal.map, IsLocalization.coeSubmodule_span,
       Set.image_image]
     congr 1
     ext y

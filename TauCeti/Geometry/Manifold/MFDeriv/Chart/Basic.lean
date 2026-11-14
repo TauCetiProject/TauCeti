@@ -38,12 +38,17 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
+* `ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt`: a map between model spaces that is
+  `C^n` at the chart image of a point, read back through extended charts into a boundaryless
+  target, is `C^n` on the manifolds.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
   `TauCeti.fderiv_comp_extChartAt_symm_injective`: for a map into a normed space, the manifold
   derivative at any point of a chart's source, in terms of the Fréchet derivative of the
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `TauCeti.mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
+  some chart locally agree with maps having equal Fréchet derivatives have equal differentials.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
   of a `C¹` family in the extended chart at `x` transfers to the manifold.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
@@ -52,6 +57,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   differentiable) at the chart image of the point.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint`: the same for `C^n` maps at
   an interior point of a manifold with boundary.
+* `ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm`: the same for a map on a product of
+  boundaryless manifolds, read in the product of the preferred charts at the two factors.
 * `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
   `MDifferentiableAt.differentiableAt_writtenInExtChartAt`: the same for a map between manifolds,
   read in the extended charts at the point and at its image.
@@ -61,7 +68,12 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifold, a map into a normed space is differentiable at a point exactly when its preferred
   coordinate expression is differentiable at the chart image of the point.
 * `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
-  vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+  vector-valued manifold derivative is the Fréchet derivative of the coordinate expression;
+  `TauCeti.mvfderiv_comp_tangentSpaceCastModel_symm`,
+  `TauCeti.mvfderiv_apply_eq_fderiv_comp_extChartAt_symm`,
+  `TauCeti.range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm`, and
+  `TauCeti.injective_fderiv_comp_extChartAt_symm_iff` record the corresponding composition with
+  the model-space tangent cast, pointwise evaluation, range equality, and injectivity equivalence.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the
   Fréchet derivative of its preferred-chart coordinate expression does.
@@ -83,20 +95,20 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the derivative of its
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
-* `MDifferentiableAt.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
+* `TauCeti.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
   derivative after an inverse chart, including derivatives within the model range.
-* `MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
+* `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
   manifolds read in arbitrary preferred charts of the source and the target.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
-* `MDifferentiableAt.fderiv_extChartAt_comp_apply`: the same, with the manifold derivative of the
+* `ContinuousAt.fderiv_extChartAt_comp_apply`: the same, with the manifold derivative of the
   chart in place of the tangent chart.
 * `MDifferentiableAt.differentiableAt_chartAt_comp`: a differentiable map from a normed space
   into a manifold modelled on a normed space is differentiable in the preferred chart at its
   image.
-* `MDifferentiableAt.fderiv_chartAt_comp`: the derivative in that chart is the manifold
+* `ContinuousAt.fderiv_chartAt_comp`: the derivative in that chart is the manifold
   derivative with the canonical source tangent identification.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
   unique derivatives, the derivative of the inverse chart is its derivative within the model range.
@@ -202,6 +214,26 @@ theorem HasMFDerivAt.hasFDerivWithinAt_of_mem_source {f : M → M'} {x x' : M} {
   exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.1
     ((hchart.comp _ hf').comp_hasMFDerivWithinAt _ hsymm)
 
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- A map `g` between model spaces which is `C^n` at the chart image of `x` and sends it to the
+chart image of `y` gives, read back through the extended charts at `x` and `y`, a map `M → M'`
+which is `C^n` at `x`. The target model must be boundaryless, so that `g` stays in the chart
+target near the chart image of `x`. -/
+theorem ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt [I'.Boundaryless]
+    {n : WithTop ℕ∞} {g : E → E'} {x : M} {y : M'} (hg : ContDiffAt 𝕜 n g (extChartAt I x x))
+    (hgx : g (extChartAt I x x) = extChartAt I' y y) :
+    ContMDiffAt I I' n (fun z ↦ (extChartAt I' y).symm (g (extChartAt I x z))) x := by
+  have hy : (extChartAt I' y).symm (g (extChartAt I x x)) = y := by
+    rw [hgx, extChartAt_to_inv]
+  have htarget : ∀ᶠ w in 𝓝 (extChartAt I x x), g w ∈ (extChartAt I' y).target :=
+    hg.continuousAt.preimage_mem_nhds (hgx ▸ extChartAt_target_mem_nhds y)
+  rw [contMDiffAt_iff, hy]
+  refine ⟨ContinuousAt.comp_of_eq (continuousAt_extChartAt_symm y)
+    (hg.continuousAt.comp (continuousAt_extChartAt x)) hgx, ?_⟩
+  refine hg.contDiffWithinAt.congr_of_eventuallyEq_of_mem ?_ (mem_range_self _)
+  filter_upwards [nhdsWithin_le_nhds htarget, extChartAt_target_mem_nhdsWithin x] with w hw hw'
+  simp only [Function.comp_apply, (extChartAt I x).right_inv hw', (extChartAt I' y).right_inv hw]
+
 /-! ### Maps into a normed space, read in a chart of the source -/
 
 namespace TauCeti
@@ -250,6 +282,26 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · obtain ⟨w, rfl⟩ := L.surjective v
     exact DFunLike.congr_fun h w
   · exact DFunLike.congr_fun h (L w)
+
+/-- Read in a chart whose source contains `y`, two maps into a normed space have the same
+differential at `y` when, near the chart image of `y`, their coordinate expressions agree with maps
+`f'` and `g'` that are differentiable there with the same Fréchet derivative. Taking
+`f' = f ∘ (extChartAt I x).symm` and `g' = g ∘ (extChartAt I x).symm` compares the coordinate
+expressions themselves. -/
+theorem mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E → F}
+    (hy : y ∈ (extChartAt I x).source)
+    (hf : f ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] f')
+    (hg : g ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] g')
+    (hf' : DifferentiableAt 𝕜 f' (extChartAt I x y))
+    (hg' : DifferentiableAt 𝕜 g' (extChartAt I x y))
+    (h : fderiv 𝕜 f' (extChartAt I x y) = fderiv 𝕜 g' (extChartAt I x y)) :
+    mvfderiv I f y = mvfderiv I g y := by
+  simp only [mvfderiv,
+    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hf'.congr_of_eventuallyEq hf),
+    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hg'.congr_of_eventuallyEq hg),
+    hf.fderiv_eq, hg.fderiv_eq, h]
+  -- The two sides differ only in the point indexing the tangent space of `F`, which is `F`.
+  rfl
 
 open Filter in
 /-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
@@ -367,6 +419,18 @@ theorem ContMDiffAt.contDiffAt_comp_extChartAt_symm {n : WithTop ℕ∞}
     ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   TauCeti.contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.mp hf
 
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a product of boundaryless manifolds, a map into a normed space which is `C^n` at `(x, x')`
+has a `C^n` coordinate expression in the preferred extended charts at `x` and `x'`, at the pair of
+chart images. -/
+theorem _root_.ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm [I'.Boundaryless]
+    {n : WithTop ℕ∞} {g : M × M' → F} {x' : M'}
+    (hg : ContMDiffAt (I.prod I') 𝓘(𝕜, F) n g (x, x')) :
+    ContDiffAt 𝕜 n (fun z : E × E' ↦ g ((extChartAt I x).symm z.1, (extChartAt I' x').symm z.2))
+      (extChartAt I x x, extChartAt I' x' x') := by
+  simpa only [extChartAt_prod, PartialEquiv.prod_coe_symm, PartialEquiv.prod_coe,
+    Function.comp_def] using hg.contDiffAt_comp_extChartAt_symm
+
 omit [IsManifold I 1 M] in
 /-- On a boundaryless manifold, a map into a normed space which is differentiable at `x` has a
 differentiable coordinate expression in the preferred extended chart at `x`. -/
@@ -478,9 +542,9 @@ namespace ContMDiffAt
 theorem contDiffAt_comp_chartAt_symm {n : WithTop ℕ∞}
     (hg : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n g z) :
     ContDiffAt 𝕜 n (g ∘ (chartAt E z).symm) (chartAt E z z) := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  simpa only [hext, hext'] using hg.contDiffAt_comp_extChartAt_symm
+  simpa only [TauCeti.extChartAt_model_symm_eq_chartAt_symm,
+    TauCeti.extChartAt_model_apply_eq_chartAt_apply] using
+    hg.contDiffAt_comp_extChartAt_symm
 
 end ContMDiffAt
 
@@ -489,9 +553,8 @@ expression is the vector-valued manifold derivative. Both sides are `0` when the
 differentiable at the point. -/
 theorem TauCeti.fderiv_comp_chartAt_symm :
     fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z) = mvfderiv 𝓘(𝕜, E) g z := by
-  have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm,
+    TauCeti.extChartAt_model_symm_eq_chartAt_symm, TauCeti.extChartAt_model_apply_eq_chartAt_apply]
 
 /-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
 is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the
@@ -518,6 +581,50 @@ theorem TauCeti.mdifferentiableAt_of_differentiableAt_comp_symm {e : OpenPartial
 
 end SelfModel
 
+namespace TauCeti
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, `mvfderiv I f x`, read on the model space `E`, agrees with the
+Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`, even without a
+differentiability hypothesis (both vanish when `f` is not differentiable at `x`). -/
+theorem mvfderiv_comp_tangentSpaceCastModel_symm (f : M → F) (x : M) :
+    (mvfderiv I f x).comp ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x) =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  ext v
+  exact DFunLike.congr_fun (TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I)) v
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, `mvfderiv I f x` evaluated on `v` equals the Fréchet derivative of
+the preferred coordinate expression evaluated on `tangentSpaceCastModel I x v`, without any
+differentiability assumption. -/
+theorem mvfderiv_apply_eq_fderiv_comp_extChartAt_symm (f : M → F) (x : M)
+    (v : TangentSpace I x) :
+    mvfderiv I f x v =
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) (tangentSpaceCastModel I x v) := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the range of `mvfderiv I f x` equals the range of the Fréchet
+derivative of the preferred coordinate expression at `extChartAt I x x`. -/
+theorem range_mvfderiv_eq_range_fderiv_comp_extChartAt_symm (f : M → F) (x : M) :
+    (mvfderiv I f x).range = (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)).range := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top]
+  exact LinearMap.range_eq_top.mpr (tangentSpaceCastModel I x).symm.surjective
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, injectivity of `mvfderiv I f x` is equivalent to injectivity of the
+Fréchet derivative of the preferred coordinate expression at `extChartAt I x x`. -/
+theorem injective_fderiv_comp_extChartAt_symm_iff :
+    Function.Injective (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)) ↔
+      Function.Injective (mvfderiv I f x) := by
+  rw [← mvfderiv_comp_tangentSpaceCastModel_symm, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe]
+  refine ⟨fun h u w huw ↦ ?_, fun h ↦ h.comp (tangentSpaceCastModel I x).symm.injective⟩
+  exact (tangentSpaceCastModel I x).injective (h (by simpa using huw))
+
+end TauCeti
 end Boundaryless
 
 /-! ### Preferred charts of a composite charted space -/
@@ -570,8 +677,8 @@ theorem hasFDerivWithinAt_extChartAt_coordChange (α β : M) {s : Set M}
         ((extChartAt I α) '' s) y := by
   rintro _ ⟨x, hx, rfl⟩
   exact (hasFDerivWithinAt_tangentCoordChange (I := I) (hsub hx)).mono fun y hy ↦ by
-    obtain ⟨z, hz, rfl⟩ := hy
-    exact extChartAt_target_subset_range α ((extChartAt I α).map_source (hsub hz).1)
+    obtain ⟨z, -, rfl⟩ := hy
+    exact mem_range_self _
 
 end ChartOverlap
 
@@ -597,26 +704,36 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The derivative of a model-valued map in an arbitrary preferred chart is its actual
-manifold derivative composed with the inverse tangent chart. -/
-theorem _root_.MDifferentiableAt.fderivWithin_comp_extChartAt_symm {f : M → F} {x : M}
-    (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) (α : M) (hx : x ∈ (extChartAt I α).source) :
+manifold derivative composed with the inverse tangent chart. Both sides vanish when the map is not
+differentiable at the point. -/
+theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
+    (hx : x ∈ (extChartAt I α).source) :
     fderivWithin 𝕜 (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) =
       -- Use the fixed model fibers to compose the derivative with the tangent chart.
       (show E →L[𝕜] F from mfderiv I 𝓘(𝕜, F) f x).comp
         (tangentCoordChange I α x x) := by
-  have ht := (extChartAt I α).map_source hx
-  have h := mfderiv_comp_mfderivWithin (I := 𝓘(𝕜, E)) (I' := I) (I'' := 𝓘(𝕜, F))
-    (extChartAt I α x) (by simpa only [(extChartAt I α).left_inv hx] using hf)
-    (mdifferentiableWithinAt_extChartAt_symm ht)
-    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range α ht)
-      |>.uniqueMDiffWithinAt)
-  rw [(extChartAt I α).left_inv hx] at h
   have hx' : x ∈ (chartAt H α).source := by simpa only [extChartAt_source] using hx
-  rw [← TangentBundle.symmL_trivializationAt hx',
-    TangentBundle.symmL_trivializationAt_eq_core hx'] at h
-  rw [mfderivWithin_eq_fderivWithin] at h
-  -- The tangent spaces of normed model spaces reduce to their underlying normed spaces.
-  convert! h using 1
+  by_cases hf : MDifferentiableAt I 𝓘(𝕜, F) f x
+  · have ht := (extChartAt I α).map_source hx
+    have h := mfderiv_comp_mfderivWithin (I := 𝓘(𝕜, E)) (I' := I) (I'' := 𝓘(𝕜, F))
+      (extChartAt I α x) (by simpa only [(extChartAt I α).left_inv hx] using hf)
+      (mdifferentiableWithinAt_extChartAt_symm ht)
+      (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range α ht)
+        |>.uniqueMDiffWithinAt)
+    rw [(extChartAt I α).left_inv hx] at h
+    rw [← TangentBundle.symmL_trivializationAt hx',
+      TangentBundle.symmL_trivializationAt_eq_core hx'] at h
+    rw [mfderivWithin_eq_fderivWithin] at h
+    -- The tangent spaces of normed model spaces reduce to their underlying normed spaces.
+    convert! h using 1
+  · -- Off the differentiable locus both sides are `0`.
+    have hiff : MDifferentiableAt I 𝓘(𝕜, F) f x ↔ DifferentiableWithinAt 𝕜
+        (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x) :=
+      (mdifferentiableAt_iff_source_of_mem_source hx').trans
+        mdifferentiableWithinAt_iff_differentiableWithinAt
+    rw [fderivWithin_zero_of_not_differentiableWithinAt (mt hiff.mpr hf),
+      mfderiv_zero_of_not_mdifferentiableAt hf]
+    exact (ContinuousLinearMap.zero_comp _).symm
 
 /-- In a preferred chart, a manifold derivative from a normed source gives the ordinary
 coordinate derivative by composing with the tangent chart. -/
@@ -641,7 +758,7 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
   have hd : HasFDerivAt (extChartAt I α ∘ Q) L z := by
     have h := (hasMFDerivAt_extChartAt (I := I) hx).comp z hQ
     -- Cancel the canonical source tangent identification in the derivative composition.
-    convert! h.hasFDerivAt using 2
+    refine h.hasFDerivAt.congr_fderiv ?_
     ext v
     rw [← hη']
     rfl
@@ -653,16 +770,22 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
   exact he ▸ hd
 
 /-- Read in a preferred chart, the derivative of a map from a normed space is its manifold
-derivative followed by the manifold derivative of the chart. -/
-theorem _root_.MDifferentiableAt.fderiv_extChartAt_comp_apply {Q : F → M} {z : F} {α : M}
-    (hQ : MDifferentiableAt 𝓘(𝕜, F) I Q z) (hz : Q z ∈ (extChartAt I α).source) (v : F) :
+derivative followed by the manifold derivative of the chart. Both sides are `0` when the map is not
+differentiable at the point, so continuity at the point suffices. -/
+theorem _root_.ContinuousAt.fderiv_extChartAt_comp_apply {Q : F → M} {z : F} {α : M}
+    (hQc : ContinuousAt Q z) (hz : Q z ∈ (extChartAt I α).source) (v : F) :
     fderiv 𝕜 (extChartAt I α ∘ Q) z v =
       mfderiv I 𝓘(𝕜, E) (extChartAt I α) (Q z) (mfderiv 𝓘(𝕜, F) I Q z v) := by
   have hz' : Q z ∈ (chartAt H α).source := by rwa [← extChartAt_source I]
-  have h := congr($(mfderiv_comp z (mdifferentiableAt_extChartAt hz') hQ) v)
-  rw [mfderiv_eq_fderiv] at h
-  -- `mfderiv_eq_fderiv` only inserts the identifications of tangent spaces of `F` and `E`.
-  exact h
+  by_cases hQ : MDifferentiableAt 𝓘(𝕜, F) I Q z
+  · have h := congr($(mfderiv_comp z (mdifferentiableAt_extChartAt hz') hQ) v)
+    rw [mfderiv_eq_fderiv] at h
+    -- `mfderiv_eq_fderiv` only inserts the identifications of tangent spaces of `F` and `E`.
+    exact h
+  · have hd : ¬ DifferentiableAt 𝕜 (extChartAt I α ∘ Q) z := fun hd ↦ hQ
+      ((mdifferentiableAt_iff_target_of_mem_source hz').2 ⟨hQc, hd.mdifferentiableAt⟩)
+    rw [mfderiv_zero_of_not_mdifferentiableAt hQ, fderiv_zero_of_not_differentiableAt hd]
+    exact (map_zero _).symm
 
 end NormedFieldCharts
 
@@ -678,20 +801,30 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The coordinate expression of a map between manifolds in arbitrary preferred charts at `β`
 and `α` has, as its derivative within the model range, the manifold derivative composed with the
-tangent coordinate changes of the two charts. -/
-theorem _root_.MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm {f : M → N}
-    {x : M} (hf : MDifferentiableAt I I' f x) {β : M} {α : N}
+tangent coordinate changes of the two charts. Both sides are `0` when the map is not differentiable
+at the point, so continuity at the point suffices. -/
+theorem _root_.ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm {f : M → N}
+    {x : M} (hc : ContinuousAt f x) {β : M} {α : N}
     (hx : x ∈ (extChartAt I β).source) (hfx : f x ∈ (extChartAt I' α).source) :
     fderivWithin 𝕜 (extChartAt I' α ∘ f ∘ (extChartAt I β).symm) (range I) (extChartAt I β x) =
       (tangentCoordChange I' (f x) α (f x) ∘L mfderiv I I' f x ∘L
         tangentCoordChange I β x x : E →L[𝕜] E') := by
   have hfx' : f x ∈ (chartAt H' α).source := by simpa only [extChartAt_source] using hfx
-  have hα : MDifferentiableAt I' 𝓘(𝕜, E') (extChartAt I' α) (f x) :=
-    mdifferentiableAt_extChartAt hfx'
-  have h := (hα.comp x hf).fderivWithin_comp_extChartAt_symm β hx
-  rw [mfderiv_comp x hα hf, (hasMFDerivAt_extChartAt hfx').mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hfx'] at h
-  exact h
+  by_cases hf : MDifferentiableAt I I' f x
+  · have hα : MDifferentiableAt I' 𝓘(𝕜, E') (extChartAt I' α) (f x) :=
+      mdifferentiableAt_extChartAt hfx'
+    have h := fderivWithin_comp_extChartAt_symm (f := extChartAt I' α ∘ f) β hx
+    rw [mfderiv_comp x hα hf, (hasMFDerivAt_extChartAt hfx').mfderiv,
+      mfderiv_chartAt_eq_tangentCoordChange hfx'] at h
+    exact h
+  · have hx' : x ∈ (chartAt H β).source := by rwa [← extChartAt_source I]
+    have hd : ¬ DifferentiableWithinAt 𝕜 (extChartAt I' α ∘ f ∘ (extChartAt I β).symm) (range I)
+        (extChartAt I β x) :=
+      fun hd ↦ hf ((mdifferentiableAt_iff_of_mem_source hx' hfx').2 ⟨hc, hd⟩)
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf,
+      fderivWithin_zero_of_not_differentiableWithinAt hd]
+    ext _
+    exact (map_zero (tangentCoordChange I' (f x) α (f x))).symm
 
 end ManifoldCharts
 
@@ -739,10 +872,8 @@ theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y :
     (hf : ContMDiffAt I I' 1 f y) :
     HasStrictFDerivAt (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm)
       (fderiv 𝕜 (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm) (extChartAt I y y))
-      (extChartAt I y y) := by
-  have h := (contMDiffAt_iff.mp hf).2
-  rw [I.range_eq_univ, contDiffWithinAt_univ] at h
-  exact h.hasStrictFDerivAt_fderiv one_ne_zero
+      (extChartAt I y y) :=
+  hf.contDiffAt_writtenInExtChartAt.hasStrictFDerivAt_fderiv one_ne_zero
 
 end RCLikeCharts
 
@@ -761,16 +892,23 @@ theorem _root_.MDifferentiableAt.differentiableAt_chartAt_comp {g : F → N} {x 
 
 /-- For a normed source and a manifold modelled on a normed space, the derivative in the
 preferred chart at the image is the manifold derivative, using the canonical tangent-space
-identifications. -/
-theorem _root_.MDifferentiableAt.fderiv_chartAt_comp {g : F → N} {x : F}
-    (hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g x) :
+identifications. Both sides are `0` when the map is not differentiable at `x`, so continuity at `x`
+suffices. -/
+theorem _root_.ContinuousAt.fderiv_chartAt_comp {g : F → N} {x : F}
+    (hc : ContinuousAt g x) :
     fderiv 𝕜 (chartAt E (g x) ∘ g) x =
       (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g x).comp
         (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm.toContinuousLinearMap := by
-  -- For the self model, the extended chart is the chart itself, and tangent spaces of normed
-  -- spaces have the canonical identity equivalence with their underlying spaces.
-  ext v
-  simpa [writtenInExtChartAt] using! congrArg (fun L => L v) hg.mfderiv.symm
+  by_cases hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g x
+  · -- For the self model, the extended chart is the chart itself, and tangent spaces of normed
+    -- spaces have the canonical identity equivalence with their underlying spaces.
+    ext v
+    simpa [writtenInExtChartAt] using! congrArg (fun L => L v) hg.mfderiv.symm
+  · have hd : ¬ DifferentiableAt 𝕜 (chartAt E (g x) ∘ g) x := fun hd ↦ hg
+      ((mdifferentiableAt_iff g x).2 ⟨hc, by
+        simpa [writtenInExtChartAt, differentiableWithinAt_univ] using hd⟩)
+    rw [mfderiv_zero_of_not_mdifferentiableAt hg, fderiv_zero_of_not_differentiableAt hd]
+    exact (ContinuousLinearMap.zero_comp _).symm
 
 end ModelSpaceSource
 
@@ -874,7 +1012,7 @@ theorem differentiableWithinAt_and_fderivWithin_extChartAt_comp_eq_zero {x : M} 
     mdifferentiableAt_extChartAt (by
       simpa only [mem_preimage, d, extChartAt_source] using hu3)
   refine ⟨((hd.comp _ hfu).comp_mdifferentiableWithinAt _ hc).differentiableWithinAt, ?_⟩
-  have h := (hd.comp _ hfu).fderivWithin_comp_extChartAt_symm x (c.map_target hu1)
+  have h := TauCeti.fderivWithin_comp_extChartAt_symm (f := d ∘ f) x (c.map_target hu1)
   rw [c.right_inv hu1, mfderiv_comp _ hd hfu, hzero, ContinuousLinearMap.comp_zero] at h
   exact h.trans (ContinuousLinearMap.zero_comp _)
 

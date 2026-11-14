@@ -47,7 +47,8 @@ truncation `u = χ ℓ` is smooth, nonpositive and decays exponentially
 `Δ ℓ = (exp ℓ - 1) / 4` (`TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`) gives
 `Δu = (exp u - 1) / 4 + h` with `h` smooth and compactly supported. Then `-Δu + u` is square
 integrable, so `u ∈ H²` by elliptic regularity of `-Δ + 1`
-(`TauCeti.mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq`), and whenever
+(`TauCeti.mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq` with `P = 1`),
+and whenever
 `u ∈ H^s` with `s ≥ 2`, the function `exp u - 1` lies in `H^s`
 (`TemperedDistribution.exp_mul_sub_one_mem_realSobolevFunctions`), so `-Δu + u ∈ H^s` and
 `u ∈ H^(s+2)` (`TauCeti.Vortex.mem_realSobolevFunctions_of_laplacian_eq`). The derivatives of `u`
@@ -155,12 +156,16 @@ theorem mem_realSobolevFunctions_of_laplacian_eq {u h : ℂ → ℝ} {c M : ℝ}
     have t₂ := abs_sub (u z - c * (Real.exp (u z) - 1)) (h z)
     rw [abs_mul] at t₁
     nlinarith [abs_nonneg c, abs_nonneg (u z)]
+  -- The weak equation is that of the Schrödinger operator `-Δ + P` with `P = 1`.
+  have hweak₁ (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+      ∫ z, u z * (-Δ (φ : ℂ → ℝ) z + (fun _ ↦ (1 : ℝ)) z * φ z) = ∫ z, g z * φ z := by
+    simpa only [one_mul] using hweak φ hφ hφc
   -- Bootstrap: `u ∈ H^(2n+2)` for every `n`.
   have hboot (n : ℕ) : u ∈ realSobolevFunctions ℂ (2 * n + 2) 2 := by
     induction n with
     | zero =>
-      simpa using mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq (s := 0)
-        hu2 (mem_realSobolevFunctions_zero_iff.2 hg2) hweak
+      simpa using mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq
+        (memLp_top_const 1) hu2 hg2 hweak₁
     | succ n ih =>
       have hs : finrank ℝ ℂ < 2 * (2 * (n : ℝ) + 2) :=
         finrank_real_complex_lt_two_mul (by linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)])
@@ -171,7 +176,8 @@ theorem mem_realSobolevFunctions_of_laplacian_eq {u h : ℂ → ℝ} {c M : ℝ}
         convert this using 1
         ext z
         simp [hg]
-      have := mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_eq hu2 hgs hweak
+      have := mem_realSobolevFunctions_add_two_of_integral_mul_neg_laplacian_add_mul_eq ih
+        (by simpa only [one_mul] using ih) hgs hweak₁
       convert this using 2
       push_cast
       ring

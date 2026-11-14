@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+public import TauCeti.Algebra.MvPolynomial.Variables
 public import TauCeti.Data.Finsupp.MonomialOrder.Refinement
 
 /-!
@@ -41,7 +42,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
 
 * `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
   comparisons preserving the leading exponent, including comparisons on a set containing the
-  support and original leading exponent.
+  support.
 * `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
   `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
   on the corresponding leading coefficients, leading terms and S-polynomials.
@@ -91,7 +92,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
   exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
   the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
-  most `e`.
+  most `e` (the latter for any family `c`, monic or not).
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -132,15 +133,18 @@ theorem degree_eq_of_forall_lt [CommSemiring R] (n : MonomialOrder σ)
   · exact le_rfl
   · exact (h a ha hne).le
 
-/-- Orders preserving strict comparisons on a set containing the support and original leading
-exponent of a polynomial give it the same leading exponent. -/
+/-- Orders preserving strict comparisons on a set containing the support of a polynomial give it
+the same leading exponent. -/
 theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
     (f : MvPolynomial σ R) {s : Set (σ →₀ ℕ)}
     (h : ∀ a ∈ s, ∀ b ∈ s, a ≺[m] b → a ≺[n] b)
-    (hf : ↑f.support ⊆ s) (hd : m.degree f ∈ s) : n.degree f = m.degree f := by
+    (hf : ↑f.support ⊆ s) : n.degree f = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
   apply m.degree_eq_of_forall_lt n f
   intro a ha hne
-  exact h a (hf ha) _ hd (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
+  exact h a (hf ha) _ (hf (m.degree_mem_support hf0))
+    (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
 
 /-- Orders agreeing on the leading exponent of a polynomial agree on its leading coefficient. -/
 theorem leadingCoeff_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)
@@ -505,12 +509,13 @@ leading monomial only involves the variables `e τ` is the renaming of a polynom
 variables `τ`. -/
 theorem exists_rename_eq_of_coe_support_degree_subset
     (helim : ∀ a b : σ →₀ ℕ, a ≼[m] b → ↑b.support ⊆ Set.range e → ↑a.support ⊆ Set.range e)
-    (he : Function.Injective e) {g : MvPolynomial σ R}
+    {g : MvPolynomial σ R}
     (hg : ↑(m.degree g).support ⊆ Set.range e) : ∃ g' : MvPolynomial τ R, rename e g' = g := by
   classical
-  refine exists_rename_eq_of_vars_subset_range g e he fun i hi ↦ ?_
-  obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
-  exact helim d _ (m.le_degree hd) hg hid
+  have hvars : ↑g.vars ⊆ Set.range e := fun i hi ↦ by
+    obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
+    exact helim d _ (m.le_degree hd) hg hid
+  exact exists_rename_eq_of_vars_subset_range' g e hvars
 
 end Rename
 
@@ -639,13 +644,13 @@ theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ)
   rw [aeval_monomial, map_one, one_mul, Finsupp.prod]
   exact Monic.prod fun i _ ↦ (hc i).pow
 
-variable [Nontrivial R]
-
 /-- The image of the monomial `Y^w` under the substitution of a monic family `c` has leading
 exponent `∑ i, w i • m.degree (c i)`. -/
 theorem degree_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
     m.degree (aeval c (monomial w (1 : R))) =
       Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · simp [Finsupp.linearCombination_apply, Finsupp.sum]
   rw [aeval_monomial, map_one, one_mul, Finsupp.prod,
     m.degree_prod_of_regular fun i _ ↦ by rw [(hc i).pow.leadingCoeff_eq_one]; exact isRegular_one,
     Finsupp.linearCombination_apply, Finsupp.sum]
@@ -674,18 +679,20 @@ theorem coeff_aeval_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial �
     rw [degree_aeval_monomial_one hc]
     exact lt_of_le_of_ne (hP w hw) fun h' ↦ h (m.toSyn.injective h')
 
-/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
-`P` satisfies `A w ≼ e`, then `aeval c P` has leading exponent at most `e`. -/
-theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
-    {e : σ →₀ ℕ}
+/-- Write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of `P` satisfies `A w ≼ e`,
+then `aeval c P` has leading exponent at most `e`. The family `c` need not be monic. -/
+theorem degree_aeval_le_of_forall_le {P : MvPolynomial ι R} {e : σ →₀ ℕ}
     (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
     m.degree (aeval c P) ≼[m] e := by
   classical
-  refine m.degree_le_iff.2 fun d hd ↦ le_of_not_gt fun hlt ↦ ?_
-  rw [mem_support_iff, coeff_aeval_of_forall_le hc fun w hw ↦ (hP w hw).trans hlt.le] at hd
-  refine hd (Finset.sum_eq_zero fun w hw ↦ ?_)
-  rw [Finset.mem_filter] at hw
-  exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
+  conv_lhs => rw [P.as_sum, map_sum]
+  refine m.degree_sum_le.trans (Finset.sup_le fun w hw ↦ ?_)
+  rw [aeval_monomial, algebraMap_eq]
+  refine (m.degree_mul_le.trans ?_).trans (hP w hw)
+  rw [degree_C, zero_add, Finsupp.prod, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
+  refine m.degree_prod_le.trans ?_
+  rw [map_sum]
+  exact Finset.sum_le_sum fun i _ ↦ m.degree_pow_le _
 
 end Substitution
 
@@ -694,7 +701,7 @@ variable [CommRing R]
 /-- The substituted value of a coefficient-one binomial relation of a monic family vanishes
 or has leading exponent strictly below the common exponent of its two terms. -/
 theorem aeval_monomial_sub_monomial_eq_zero_or_degree_lt
-    {ι : Type*} {b : ι → MvPolynomial σ R} [Nontrivial R]
+    {ι : Type*} {b : ι → MvPolynomial σ R}
     (hb : ∀ i, m.Monic (b i)) (u v : ι →₀ ℕ)
     (huv : Finsupp.linearCombination ℕ (m.degree ∘ b) u =
       Finsupp.linearCombination ℕ (m.degree ∘ b) v) :
