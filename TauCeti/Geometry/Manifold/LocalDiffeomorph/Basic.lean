@@ -37,9 +37,9 @@ every differential.
 The file also records that maximal-atlas charts and their inverses are local diffeomorphisms, and
 that being a local diffeomorphism at a point is an open condition: the partial diffeomorphism
 witnessing it at one point witnesses it at every nearby point, and that a local diffeomorphism can
-be cancelled on either side of a composite local diffeomorphism. Conversely, an open partial
-homeomorphism to the model space which is a local diffeomorphism on its source is a chart of the
-maximal atlas.
+be cancelled on the right of a composite local diffeomorphism, and on the left when the remaining
+right factor is continuous at the point. Conversely, an open partial homeomorphism to the model
+space which is a local diffeomorphism on its source is a chart of the maximal atlas.
 
 The extended-chart constructor lets maximal-atlas coordinates, including Frobenius flat charts,
 serve as partial diffeomorphisms in constructions of local submanifolds. A partial
@@ -508,7 +508,7 @@ theorem _root_.IsLocalDiffeomorphAt.eventually {f : M → N} {x : M}
   exact isLocalDiffeomorphAt_of_eqOn hy hfΦ
 
 /-- **A local diffeomorphism is locally injective.** A `C^n` local diffeomorphism at `x` is
-injective on a neighbourhood of `x`, where its local inverse is a left inverse. -/
+injective on a neighbourhood of `x`. -/
 theorem _root_.IsLocalDiffeomorphAt.exists_mem_nhds_injOn {f : M → N} {x : M}
     (hf : IsLocalDiffeomorphAt I J n f x) : ∃ t ∈ 𝓝 x, InjOn f t :=
   ⟨_, hf.localInverse_eventuallyEq_left, fun _ ha _ hb hab ↦
