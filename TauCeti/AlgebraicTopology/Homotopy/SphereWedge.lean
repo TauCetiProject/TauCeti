@@ -312,6 +312,8 @@ def sphereWedgeLift (γ : ι → Ω^ (Fin n) Z z) : sphereWedge ι n ⟶ Z :=
   cellAttachmentLift (sphereWedgeAttachingMap ι n) (TopCat.ofHom (ContinuousMap.const _ z))
     (fun i ↦ GenLoop.diskMap (γ i)) fun i ↦ by
       rw [GenLoop.diskBoundaryInclusion_comp_diskMap]
+      -- The attaching maps of the wedge are constant, so both sides are the constant map at `z`
+      -- by definition.
       rfl
 
 /-- The map out of the wedge with prescribed spheres sends the base point to the base point of
@@ -321,7 +323,7 @@ theorem sphereWedgeLift_sphereWedgeBase (γ : ι → Ω^ (Fin n) Z z) :
     sphereWedgeLift γ (sphereWedgeBase ι n) = z := by
   rw [sphereWedgeBase_def, sphereWedgeLift, ← ConcreteCategory.comp_apply,
     cellAttachmentIncl_lift]
-  rfl
+  simp
 
 /-- On the `i`-th cell, the map out of the wedge with prescribed spheres is `γ i`, read on the
 disk. -/
@@ -374,18 +376,22 @@ section Realization
 variable {ι n}
 
 /-- **Homomorphisms out of `πₙ₊₂` of a wedge of spheres are determined by the spheres.** Two
-homomorphisms from `πₙ₊₂(⋁ᵢ Sⁿ⁺²)` to a commutative group that agree on the class of every sphere
-are equal. -/
-theorem sphereWedge_homotopyGroup_hom_ext {G : Type*} [CommGroup G]
+homomorphisms from `πₙ₊₂(⋁ᵢ Sⁿ⁺²)` to a monoid that agree on the class of every sphere are equal,
+since these classes generate `πₙ₊₂(⋁ᵢ Sⁿ⁺²)`. -/
+theorem sphereWedge_homotopyGroup_hom_ext {G : Type*} [Monoid G]
     {φ ψ : HomotopyGroup (Fin (n + 2)) (sphereWedge ι (n + 2)) (sphereWedgeBase ι (n + 2)) →* G}
     (h : ∀ i, φ (⟦sphereWedgeLoop ι (n + 2) i⟧ : HomotopyGroup (Fin (n + 2)) _ _) =
       ψ ⟦sphereWedgeLoop ι (n + 2) i⟧) : φ = ψ := by
-  have := (sphereWedgeHomotopyGroupBasis ι n).ext
-    (f₁ := φ.toAdditive.toIntLinearMap) (f₂ := ψ.toAdditive.toIntLinearMap) fun i ↦ by
-      rw [sphereWedgeHomotopyGroupBasis_apply]
-      exact congrArg Additive.ofMul (h i)
-  ext a
-  simpa using congrArg Additive.toMul (LinearMap.congr_fun this (Additive.ofMul a))
+  refine MonoidHom.eq_of_eqOn_dense
+    (G := HomotopyGroup (Fin (n + 2)) (sphereWedge ι (n + 2)) (sphereWedgeBase ι (n + 2)))
+    ((Subgroup.eq_top_iff' _).2 fun a ↦ ?_) (Set.forall_mem_range.2 h)
+  -- The classes of the spheres form a basis, so the subgroup they generate contains everything.
+  refine Submodule.span_induction (p := fun b _ ↦ b.toMul ∈ Subgroup.closure _) ?_ (one_mem _)
+    (fun _ _ _ _ ↦ mul_mem) (fun k b _ hb ↦ by rw [toMul_zsmul]; exact zpow_mem hb k)
+    ((sphereWedgeHomotopyGroupBasis ι n).mem_span (Additive.ofMul a))
+  rintro _ ⟨i, rfl⟩
+  rw [sphereWedgeHomotopyGroupBasis_apply]
+  exact Subgroup.subset_closure (Set.mem_range_self i)
 
 variable {Z : TopCat.{0}} {z : Z}
 
@@ -433,14 +439,13 @@ theorem exists_sphereWedge_singularHomologyMap_eq
   calc _ = (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map
           (TopCat.ofHom f.hom)).hom (HomotopyGroup.hurewiczIntHom (sphereWedge ι (n + 2))
             (sphereWedgeBase ι (n + 2)) (n + 1) (Additive.ofMul a.toMul)) := by
-        rw [TopCat.ofHom_hom, HomotopyGroup.hurewiczAddEquiv_apply,
-          HomotopyGroup.hurewiczIntHom_apply, HomotopyGroup.hurewiczHom_apply, toMul_ofMul]
+        rw [TopCat.ofHom_hom, ofMul_toMul, HomotopyGroup.hurewiczAddEquiv_apply_eq_hurewiczIntHom]
     _ = HomotopyGroup.hurewiczIntHom Z z (n + 1)
           (Additive.ofMul (HomotopyGroup.map f.hom hf a.toMul)) :=
         (HomotopyGroup.hurewiczIntHom_map f.hom hf a.toMul).symm
     _ = hZ' (hZ'.symm (χ (hW a))) := by
-        rw [hφ, ofMul_toMul, HomotopyGroup.hurewiczIntHom_apply, ← HomotopyGroup.hurewiczHom_apply,
-          ← HomotopyGroup.hurewiczAddEquiv_apply hZ]
+        rw [hφ, ofMul_toMul]
+        exact (HomotopyGroup.hurewiczAddEquiv_apply_eq_hurewiczIntHom hZ _).symm
     _ = χ (hW a) := hZ'.apply_symm_apply _
 
 end Realization
