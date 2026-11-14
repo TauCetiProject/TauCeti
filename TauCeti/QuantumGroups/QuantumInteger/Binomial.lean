@@ -53,6 +53,9 @@ comparisons of quantum divided-power relations at opposite parameters.
   `q ≠ 0`.
 * `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
   coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`.
+* `TauCeti.sum_neg_one_pow_mul_zpow_mul_quantumBinomial` and
+  `TauCeti.sum_neg_one_pow_mul_zpow_one_sub_mul_quantumBinomial`: the alternating `q`-binomial
+  vanishing `∑_k (-1)^k q^(±k(n-1)) [n choose k]_q = 0` for `n ≠ 0` and `q ≠ 0`.
 
 ## References
 
@@ -367,5 +370,51 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
       intro k hk
       rw [Nat.add_sub_add_right, ← add_smul,
         ← pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq (Nat.lt_succ_iff.mp hk), add_comm]
+
+/-- The alternating `q`-binomial identity
+`∑ k ∈ range (n + 1), (-1)^k q^(k(n - 1)) [n choose k]_q = 0` for `n ≠ 0` and `q ≠ 0`:
+expanding `[n choose k + 1]_q` by the second Pascal rule telescopes the sum. -/
+theorem sum_neg_one_pow_mul_zpow_mul_quantumBinomial {q : K} (hq : q ≠ 0) {n : ℕ} (hn : n ≠ 0) :
+    ∑ k ∈ range (n + 1),
+      (-1 : K) ^ k * q ^ ((k : ℤ) * ((n : ℤ) - 1)) * quantumBinomial q n k = 0 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+  have hm : ((m + 1 : ℕ) : ℤ) - 1 = m := by push_cast; ring
+  simp only [hm]
+  let g : ℕ → K := fun j => (-1 : K) ^ j * q ^ (j * (m + 1)) * quantumBinomial q m j
+  have hstep : ∀ k ∈ range (m + 1),
+      (-1 : K) ^ (k + 1) * q ^ (((k + 1 : ℕ) : ℤ) * (m : ℤ)) *
+        quantumBinomial q (m + 1) (k + 1) = g (k + 1) - g k := by
+    intro k hk
+    have hkm : k ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hk)
+    rw [quantumBinomial_succ_succ']
+    have h₁ : q ^ (((k + 1 : ℕ) : ℤ) * (m : ℤ)) * q⁻¹ ^ (m - k) = q ^ (k * (m + 1)) := by
+      rw [inv_pow, ← zpow_natCast q (m - k), ← zpow_neg, ← zpow_add₀ hq,
+        ← zpow_natCast q (k * (m + 1))]
+      exact congrArg (q ^ ·) (by push_cast [hkm]; ring)
+    have h₂ : q ^ (((k + 1 : ℕ) : ℤ) * (m : ℤ)) * q ^ (k + 1) = q ^ ((k + 1) * (m + 1)) := by
+      rw [← zpow_natCast q (k + 1), ← zpow_add₀ hq, ← zpow_natCast q ((k + 1) * (m + 1))]
+      exact congrArg (q ^ ·) (by push_cast; ring)
+    calc
+      (-1 : K) ^ (k + 1) * q ^ (((k + 1 : ℕ) : ℤ) * (m : ℤ)) *
+          (q⁻¹ ^ (m - k) * quantumBinomial q m k + q ^ (k + 1) * quantumBinomial q m (k + 1))
+        = (-1 : K) ^ (k + 1) * (q ^ (((k + 1 : ℕ) : ℤ) * (m : ℤ)) * q ^ (k + 1)) *
+            quantumBinomial q m (k + 1) -
+          (-1 : K) ^ k * (q ^ (((k + 1 : ℕ) : ℤ) * (m : ℤ)) * q⁻¹ ^ (m - k)) *
+            quantumBinomial q m k := by rw [pow_succ (-1 : K)]; ring
+      _ = g (k + 1) - g k := by rw [h₁, h₂]
+  rw [sum_range_succ', sum_congr rfl hstep, sum_range_sub]
+  simp [g]
+
+/-- The `q ↦ q⁻¹` companion of `sum_neg_one_pow_mul_zpow_mul_quantumBinomial`:
+`∑ k ∈ range (n + 1), (-1)^k q^(k(1 - n)) [n choose k]_q = 0` for `n ≠ 0` and `q ≠ 0`. -/
+theorem sum_neg_one_pow_mul_zpow_one_sub_mul_quantumBinomial {q : K} (hq : q ≠ 0) {n : ℕ}
+    (hn : n ≠ 0) :
+    ∑ k ∈ range (n + 1),
+      (-1 : K) ^ k * q ^ ((k : ℤ) * (1 - (n : ℤ))) * quantumBinomial q n k = 0 := by
+  have h := sum_neg_one_pow_mul_zpow_mul_quantumBinomial (inv_ne_zero hq) hn
+  refine Eq.trans (sum_congr rfl fun k _ => ?_) h
+  rw [quantumBinomial_inv, inv_zpow, ← zpow_neg]
+  congr 3
+  ring
 
 end TauCeti
