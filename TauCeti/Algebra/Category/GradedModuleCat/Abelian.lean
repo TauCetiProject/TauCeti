@@ -47,11 +47,12 @@ graded abelian category, whose canonical exact structure is
 ## Main results
 
 * `TauCeti.GradedModuleCat.kernelIsLimit`, `TauCeti.GradedModuleCat.cokernelIsColimit` and
-  `TauCeti.GradedModuleCat.productFanIsLimit`: these are limits and colimits.
+  `TauCeti.GradedModuleCat.productFanIsLimit`: these are limits and colimits (for `productFan`,
+  when the family is finite).
 * `TauCeti.GradedModuleCat.mem_kernelCone_pt_piece_iff`,
   `TauCeti.GradedModuleCat.mem_cokernelCocone_pt_piece_iff` and
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
-  cokernels and finite products.
+  cokernels and direct-sum products (for any family).
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
 * `TauCeti.GradedModuleCat.epi_iff_surjective`, `TauCeti.GradedModuleCat.mono_iff_injective` and
   `TauCeti.GradedModuleCat.isIso_iff_bijective`: epimorphisms, monomorphisms and isomorphisms are
