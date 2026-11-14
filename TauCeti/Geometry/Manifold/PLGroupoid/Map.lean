@@ -54,6 +54,9 @@ The construction and the proof of `TauCeti.plWithinAtProp_localInvariantProp` fo
   identities and constant maps are PL, and PL maps compose.
 * `TauCeti.isPLMap_iff_isPLOn_univ`: a map between real normed spaces is a PL map exactly
   when it is piecewise linear on the whole space.
+* `TauCeti.isPLMap_iff_isPLOn_range`: a map between model spaces is a PL map exactly when it is
+  continuous and, read in the model vector spaces, piecewise linear on the range of the source
+  model.
 
 ## References
 
@@ -258,5 +261,13 @@ theorem isPLMap_iff_isPLOn_univ {f : E → E'} :
   simp only [IsPLMap, liftProp_iff, PLWithinAtProp, mfld_simps]
   refine ⟨fun h => isPLOn_iff_forall_isPLWithinAt.2 fun x _ => h.2 x, fun h =>
     ⟨continuousOn_univ.1 h.continuousOn, fun x => h.isPLWithinAt (mem_univ x)⟩⟩
+
+/-- A map between model spaces, with their trivial charts, is PL exactly when it is continuous and
+its reading `I' ∘ f ∘ I.symm` in the model vector spaces is PL on the range of `I`. -/
+theorem isPLMap_iff_isPLOn_range {f : H → H'} :
+    IsPLMap I I' f ↔ Continuous f ∧ IsPLOn (I' ∘ f ∘ I.symm) (range I) := by
+  simp only [isPLMap_iff_forall_isPLMapAt, isPLMapAt_iff, chartAt_self_eq, mfld_simps,
+    forall_and, ← continuous_iff_continuousAt]
+  rw [isPLOn_iff_forall_isPLWithinAt, forall_mem_range]
 
 end TauCeti

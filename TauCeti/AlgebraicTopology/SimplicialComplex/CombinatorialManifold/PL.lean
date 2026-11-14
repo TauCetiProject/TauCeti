@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.HalfSpace
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.ChartedSpace
 public import TauCeti.Geometry.Manifold.PLGroupoid.Transition
+public import TauCeti.Geometry.Manifold.ModelTransport.PL
 
 /-!
 # PL structures on combinatorial manifolds
@@ -19,6 +20,10 @@ from charts on the open vertex stars. In the half-space atlas, vertices with sph
 get charts into the open half-space, and vertices with ball links get charts sending them
 to the boundary. PL compatibility follows by composing the ambient forward and inverse
 barycentric formulas of the charts on overlapping stars.
+
+Changing the model along the PL homeomorphism `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`
+turns the half-space atlas into a PL atlas modelled on Mathlib's half-space
+`EuclideanHalfSpace (n + 1)`, the model used for manifolds with boundary elsewhere.
 
 No finiteness or countability of the ambient complex is required. Each link is finite,
 so its closed star supplies the local simplex model.
@@ -102,5 +107,22 @@ theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid
   · simpa only [image_eq_range] using hf v
   · simpa only [modelWithCornersHalfSpace_apply] using hfc v
   · simpa only [modelWithCornersHalfSpace_apply] using hgc v
+
+/-- The weak realization of a positive-dimensional combinatorial manifold is a PL manifold,
+possibly with boundary, modelled on Mathlib's half-space `EuclideanHalfSpace (n + 1)`. The atlas
+is the product half-space atlas of
+`PreAbstractSimplicialComplex.IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid`
+followed by `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`. -/
+theorem IsCombinatorialManifold.exists_chartedSpace_euclideanHalfSpace_hasGroupoid_PLGroupoid
+    {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {n : ℕ}
+    (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1)) :
+    ∃ C : ChartedSpace (EuclideanHalfSpace (n + 1)) (Realization K),
+      let := C
+      HasGroupoid (Realization K) (PLGroupoid (𝓡∂ (n + 1))) := by
+  obtain ⟨C, hC⟩ := h.exists_chartedSpace_hasGroupoid_PLGroupoid
+  let := C
+  exact ⟨_, (halfSpaceHomeomorphEuclideanHalfSpace n).hasGroupoid_PLGroupoid_chartedSpaceComp
+    isPLMap_halfSpaceHomeomorphEuclideanHalfSpace
+    isPLMap_halfSpaceHomeomorphEuclideanHalfSpace_symm (Realization K)⟩
 
 end PreAbstractSimplicialComplex
