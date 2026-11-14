@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ModularForms.ThetaSeries.BoundedAtCusp
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.LevelOne
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.PositiveOdd.Slash
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import Mathlib.NumberTheory.ModularForms.NormTrace
 
 /-!
