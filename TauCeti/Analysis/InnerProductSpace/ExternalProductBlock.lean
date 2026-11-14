@@ -66,9 +66,9 @@ here to the block on algebraic tensor products, for instance to the symbols.
 * `ContinuousLinearMap.adjoint_externalProductBlock_comp_self_of_eq_smul`,
   `ContinuousLinearMap.externalProductBlock_comp_adjoint_of_eq_smul` and
   `ContinuousLinearMap.norm_externalProductBlock_apply_sq_of_eq_smul`: the scalar case.
-* `ContinuousLinearMap.externalProductBlock_eq_zero_iff`,
-  `ContinuousLinearMap.adjoint_externalProductBlock_eq_zero_iff`: the kernels of the block and of
-  its adjoint.
+* `ContinuousLinearMap.externalProductBlock_apply_eq_zero_iff`,
+  `ContinuousLinearMap.adjoint_externalProductBlock_apply_eq_zero_iff`: the kernels of the block
+  and of its adjoint.
 * `ContinuousLinearMap.kerExternalProductBlockEquiv`: the Künneth isomorphism
   `ker (externalProductBlock A B) ≃ (ker A ⊗ ker B) × (ker A† ⊗ ker B†)`.
 * `ContinuousLinearMap.kerAdjointExternalProductBlockEquiv`: the Künneth isomorphism
@@ -214,7 +214,7 @@ section Kernel
 /-- **The kernel of the external product block.** `externalProductBlock A B` kills `(x, y)` exactly
 when `A ⊗ 1` and `1 ⊗ B` both kill `x` and `A† ⊗ 1` and `1 ⊗ B†` both kill `y`. The tensor
 products need not be complete. -/
-theorem externalProductBlock_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
+theorem externalProductBlock_apply_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
     {w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))} :
     externalProductBlock A B w = 0 ↔
       (A.rTensor W₀ w.fst = 0 ∧ B.lTensor V₀ w.fst = 0) ∧
@@ -254,7 +254,7 @@ private theorem range_toLp_prodMap_mapIncl_ker (A : V₀ →L[𝕜] V₁) (B : W
         WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))) := by
   ext w
   -- Each component condition is membership in the common kernel of `f ⊗ 1` and `1 ⊗ g`.
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, externalProductBlock_eq_zero_iff,
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, externalProductBlock_apply_eq_zero_iff,
     LinearMap.range_comp, LinearMap.range_prodMap, Submodule.mem_map_equiv,
     LinearEquiv.symm_symm, Submodule.mem_prod]
   simp only [WithLp.coe_linearEquiv, WithLp.ofLp_fst, WithLp.ofLp_snd, rTensor_apply,
@@ -344,12 +344,12 @@ theorem externalProductBlock_apply_adjoint_externalProductBlock (A : V₀ →L[�
 /-- **The kernel of the adjoint of the external product block**, which is its cokernel when the
 range is closed: `(externalProductBlock A B)†` kills `(x, y)` exactly when `A† ⊗ 1` and `1 ⊗ B`
 both kill `x` and `A ⊗ 1` and `1 ⊗ B†` both kill `y`. -/
-theorem adjoint_externalProductBlock_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
+theorem adjoint_externalProductBlock_apply_eq_zero_iff {A : V₀ →L[𝕜] V₁} {B : W₀ →L[𝕜] W₁}
     {w : WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁))} :
     (externalProductBlock A B).adjoint w = 0 ↔
       (A.adjoint.rTensor W₀ w.fst = 0 ∧ B.lTensor V₁ w.fst = 0) ∧
         A.rTensor W₁ w.snd = 0 ∧ B.adjoint.lTensor V₀ w.snd = 0 := by
-  simp [adjoint_externalProductBlock, externalProductBlock_eq_zero_iff]
+  simp [adjoint_externalProductBlock, externalProductBlock_apply_eq_zero_iff]
 
 private theorem range_toLp_prodMap_mapIncl_ker_adjoint (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
     LinearMap.range ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
@@ -361,9 +361,9 @@ private theorem range_toLp_prodMap_mapIncl_ker_adjoint (A : V₀ →L[𝕜] V₁
       LinearMap.ker ((externalProductBlock A B).adjoint :
         WithLp 2 ((V₁ ⊗[𝕜] W₀) × (V₀ ⊗[𝕜] W₁)) →ₗ[𝕜] WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) := by
   ext w
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, adjoint_externalProductBlock_eq_zero_iff,
-    LinearMap.range_comp, LinearMap.range_prodMap, Submodule.mem_map_equiv,
-    LinearEquiv.symm_symm, Submodule.mem_prod]
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    adjoint_externalProductBlock_apply_eq_zero_iff, LinearMap.range_comp, LinearMap.range_prodMap,
+    Submodule.mem_map_equiv, LinearEquiv.symm_symm, Submodule.mem_prod]
   simp only [WithLp.coe_linearEquiv, WithLp.ofLp_fst, WithLp.ofLp_snd, rTensor_apply,
     lTensor_apply, ← LinearMap.mem_ker, ← Submodule.mem_inf, LinearMap.ker_rTensor_inf_ker_lTensor]
 
