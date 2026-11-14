@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Serre.Convex.Basic
 public import Mathlib.Data.Set.Finite.Lattice
-public import Mathlib.Data.Set.Finite.List
 public import Mathlib.Order.Closure
 
 /-!
