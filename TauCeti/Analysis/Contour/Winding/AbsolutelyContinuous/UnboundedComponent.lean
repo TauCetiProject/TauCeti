@@ -84,6 +84,7 @@ theorem _root_.ContinuousOn.windingNumber_naturalParameterization_eq_zero_of_not
     rwa [uIcc_of_le ENNReal.toReal_nonneg, hγ.image_naturalParameterization_Icc hcont hab]
   exact (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
       hab).windingNumber_eq_zero_of_notMem_filledHull
-    (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab hclosed) hz'
+    (naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+      hclosed) hz'
 
 end TauCeti.Contour
