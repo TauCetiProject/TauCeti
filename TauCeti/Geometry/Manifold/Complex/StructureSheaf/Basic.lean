@@ -35,7 +35,8 @@ isomorphism `ℂ ≃ₐ[ℂ] H⁰(X, 𝒪)`. The inverse is evaluation at any po
 which point is chosen. In particular, the space of global sections has dimension one.
 
 The function coercions and algebra instance use the bundled analytic-map representation.
-Pointwise computation is provided by section evaluation lemmas.
+Pointwise computation is provided by section evaluation lemmas, and restriction along inclusions of
+open sets is bundled as the `ℂ`-algebra homomorphism `restrictAlgHom`.
 The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
 Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
@@ -156,6 +157,78 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 @[simp]
 theorem algebraMap_apply (U : (Opens (TopCat.of X))ᵒᵖ) (c : ℂ) (x : ↥(unop U)) :
     algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj U) c x = c := (rfl)
+
+variable (I) in
+/-- Restriction of holomorphic sections along an inclusion `V ≤ U` of open subsets, bundled as a
+`ℂ`-algebra homomorphism. -/
+def restrictAlgHom {U V : Opens X} (h : V ≤ U) :
+    (holomorphicStructureSheaf I X).obj.obj (op U) →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).obj.obj (op V) where
+  toRingHom := ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom
+  commutes' c := ext fun x ↦
+    (map_apply (op (homOfLE h)) (algebraMap ℂ _ c) x).trans
+      ((algebraMap_apply (op U) c _).trans (algebraMap_apply (op V) c x).symm)
+
+/-- Restricting a holomorphic section evaluates it on the smaller open set. -/
+@[simp]
+theorem restrictAlgHom_apply {U V : Opens X} (h : V ≤ U)
+    (s : (holomorphicStructureSheaf I X).obj.obj (op U)) (x : V) :
+    (no_index (restrictAlgHom I h s)) x = s (Opens.inclusion h x) :=
+  map_apply (op (homOfLE h)) s x
+
+variable (I) in
+/-- Forgetting the `ℂ`-algebra structure on `restrictAlgHom` recovers the underlying sheaf
+restriction ring homomorphism. -/
+@[simp]
+theorem coe_restrictAlgHom_ringHom {U V : Opens X} (h : V ≤ U) :
+    RingHomClass.toRingHom
+      (F := no_index ((holomorphicStructureSheaf I X).obj.obj (op U) →ₐ[ℂ]
+        (holomorphicStructureSheaf I X).obj.obj (op V)))
+      (α := no_index ((holomorphicStructureSheaf I X).obj.obj (op U)))
+      (β := no_index ((holomorphicStructureSheaf I X).obj.obj (op V)))
+      (restrictAlgHom I h) =
+      ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom := (rfl)
+
+variable (I) in
+/-- The underlying ring homomorphism of `restrictAlgHom` is the sheaf restriction map. -/
+theorem restrictAlgHom_toRingHom {U V : Opens X} (h : V ≤ U) :
+    (restrictAlgHom I h).toRingHom =
+      ((holomorphicStructureSheaf I X).obj.map (op (homOfLE h))).hom := (rfl)
+
+/-- Taking the stalk germ at `x ∈ V` after `restrictAlgHom` recovers the germ of the original
+section on `U`. -/
+@[simp]
+theorem germ_restrictAlgHom {U V : Opens X} (h : V ≤ U) (x : X) (hx : x ∈ V)
+    (s : (holomorphicStructureSheaf I X).obj.obj (op U)) :
+    DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
+      (ConcreteCategory.hom (C := CommRingCat) (X := no_index _) (Y := no_index _)
+        ((holomorphicStructureSheaf I X).presheaf.germ V x hx))
+      (DFunLike.coe (F := no_index _) (α := no_index _) (β := no_index _)
+        (restrictAlgHom I h) s) =
+      (holomorphicStructureSheaf I X).presheaf.germ U x (h hx) s := by
+  change (holomorphicStructureSheaf I X).presheaf.germ V x hx
+    ((holomorphicStructureSheaf I X).presheaf.map (op (homOfLE h)) s) = _
+  exact (holomorphicStructureSheaf I X).presheaf.germ_res_apply (homOfLE h) x hx s
+
+variable (I) in
+/-- Restricting holomorphic sections along `U ≤ U` is the identity `ℂ`-algebra homomorphism. -/
+@[simp]
+theorem restrictAlgHom_id (U : Opens X) :
+    restrictAlgHom I (le_refl U) = AlgHom.id ℂ _ := by
+  ext s x
+  exact restrictAlgHom_apply (le_refl U) s x
+
+variable (I) in
+/-- Restricting holomorphic sections along a composite inclusion `W ≤ V ≤ U` is the composition of
+the `ℂ`-algebra restrictions. -/
+@[simp]
+theorem restrictAlgHom_comp {U V W : Opens X} (h₂ : W ≤ V) (h₁ : V ≤ U) :
+    AlgHom.comp (R := ℂ) (A := no_index _) (B := no_index _) (C := no_index _)
+      (restrictAlgHom I h₂) (restrictAlgHom I h₁) = restrictAlgHom I (h₂.trans h₁) := by
+  ext s x
+  exact (restrictAlgHom_apply h₂ (restrictAlgHom I h₁ s) x).trans
+    ((restrictAlgHom_apply h₁ s (Opens.inclusion h₂ x)).trans
+      (congrArg s (Set.inclusion_inclusion h₂ h₁ x)))
 
 /-- A section of the structure sheaf is holomorphic on its domain. -/
 theorem mdifferentiable {U : (Opens (TopCat.of X))ᵒᵖ}

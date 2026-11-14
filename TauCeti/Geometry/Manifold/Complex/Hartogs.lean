@@ -11,13 +11,15 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.DiscreteSubset
+import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
-import Mathlib.Topology.Algebra.Module.PerfectSpace
+import Mathlib.Topology.Piecewise
 import TauCeti.Analysis.Complex.Hartogs
-import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Topology.Perfect
 
 /-!
@@ -29,17 +31,18 @@ neighbourhood of a point `p` has a limit at `p` and extends analytically (hence 
 across `p`, with no boundedness, Hausdorffness, or second-countability hypothesis on the manifold.
 
 Reading a map in the preferred extended chart at `p` reduces the local removable singularity
-statement to `TauCeti.exists_analyticAt_and_eventuallyEq_nhdsNE` on the model space `E`, via the
-coordinate characterizations `TauCeti.contMDiffAt_omega_iff_analyticAt` and
-`TauCeti.contMDiffAt_iff_eventually_mdifferentiableAt`. Patching pointwise punctured limits then
-extends holomorphic maps across arbitrary discrete subsets that are closed in an open set `U`, in
-particular across finite sets and single points (using `I.t1Space M`).
+statement to `TauCeti.exists_analyticAt_and_eventuallyEq_nhdsNE` on the model space `E`, via
+`mdifferentiableWithinAt_extChartAt_symm` and the coordinate characterization
+`TauCeti.contMDiffAt_omega_iff_analyticAt`, while the isolated-zeros theorem uses the chart-free
+regularity equivalence `TauCeti.contMDiffAt_iff_eventually_mdifferentiableAt`. Patching pointwise
+punctured limits then extends holomorphic maps across arbitrary discrete subsets that are closed in
+an open set `U`, in particular across finite sets and single points (using `I.t1Space M`).
 
 ## Main results
 
 * `TauCeti.exists_contMDiffAt_omega_and_eventuallyEq_nhdsNE`,
-  `TauCeti.tendsto_limUnder_of_eventually_mdifferentiableAt`,
-  `TauCeti.contMDiffAt_omega_update_limUnder_of_eventually_mdifferentiableAt`: **local Hartogs
+  `TauCeti.contMDiffAt_omega_update_limUnder_of_eventually_mdifferentiableAt`,
+  `TauCeti.tendsto_limUnder_of_eventually_mdifferentiableAt`: **local Hartogs
   removable singularity** at a point of a complex manifold of dimension at least two.
 * `TauCeti.exists_mdifferentiableOn_eqOn_sdiff_of_isDiscrete`,
   `TauCeti.exists_mdifferentiableOn_eqOn_sdiff_of_finite`,
@@ -50,8 +53,6 @@ particular across finite sets and single points (using `I.t1Space M`).
   discrete sets and single points.
 * `TauCeti.frequently_nhdsNE_eq_zero_of_eventually_mdifferentiableAt`: **holomorphic functions on a
   complex manifold of dimension at least two have no isolated zeros.**
-* `TauCeti.not_exists_mdifferentiable_and_eqOn_inv_compl_zero`: in dimension one, `z ↦ z⁻¹` on
-  `{0}ᶜ ⊆ ℂ` has no globally holomorphic extension.
 
 ## References
 
@@ -83,53 +84,19 @@ theorem exists_contMDiffAt_omega_and_eventuallyEq_nhdsNE (hE : 2 ≤ Module.finr
     {p : M} (hf : ∀ᶠ x in 𝓝[≠] p, MDifferentiableAt I 𝓘(ℂ, F) f x) :
     ∃ g : M → F, ContMDiffAt I 𝓘(ℂ, F) ω g p ∧ g =ᶠ[𝓝[≠] p] f := by
   set e := extChartAt I p
-  have hI : range I = univ := ModelWithCorners.Boundaryless.range_eq_univ
-  have H₁ : 𝓝[range I] (e p) = 𝓝 (e p) := by rw [hI, nhdsWithin_univ]
-  have H₂ : map e.symm (𝓝 (e p)) = 𝓝 p := by
-    rw [← map_extChartAt_symm_nhdsWithin_range (I := I) p, H₁]
-  have htgt : e.target ∈ 𝓝 (e p) := H₁ ▸ extChartAt_target_mem_nhdsWithin p
+  have htgt : e.target ∈ 𝓝 (e p) := extChartAt_target_mem_nhds p
   have hd : ∀ᶠ z in 𝓝[≠] (e p), DifferentiableAt ℂ (f ∘ e.symm) z := by
     filter_upwards [nhdsWithin_le_nhds htgt,
-      nhdsWithin_le_nhds (Tendsto.eventually H₂.le (eventually_nhdsWithin_iff.1 hf)),
-      self_mem_nhdsWithin] with z hzt hfz hzne
-    have hne : e.symm z ≠ p := fun h ↦
-      mem_compl_singleton_iff.1 hzne ((e.right_inv hzt).symm.trans (congrArg e h))
-    have hmd : MDifferentiableAt I 𝓘(ℂ, F) f (e.symm z) := hfz (mem_compl_singleton_iff.2 hne)
-    have hys : e.symm z ∈ (chartAt H p).source := by
-      rw [← extChartAt_source I p]
-      exact e.map_target hzt
-    have hfy : f (e.symm z) ∈ (chartAt F (0 : F)).source := mem_univ _
-    rw [mdifferentiableAt_iff_of_mem_source hys hfy, hI, differentiableWithinAt_univ,
-      e.right_inv hzt] at hmd
-    exact hmd.2
+      (tendsto_extChartAt_symm_nhdsNE I p).eventually hf] with z hzt hmd
+    exact ((hmd.comp_mdifferentiableWithinAt z
+      (mdifferentiableWithinAt_extChartAt_symm hzt)).mdifferentiableAt
+      (I.range_eq_univ ▸ univ_mem)).differentiableAt
   obtain ⟨G, hG_an, hG_eq⟩ := exists_analyticAt_and_eventuallyEq_nhdsNE hE hd
   refine ⟨G ∘ e, contMDiffAt_omega_iff_analyticAt.2 (hG_an.congr ?_), ?_⟩
   · filter_upwards [htgt] with z hzt
     exact (congrArg G (e.right_inv hzt)).symm
-  · filter_upwards [nhdsWithin_le_nhds (extChartAt_source_mem_nhds (I := I) p),
-      nhdsWithin_le_nhds
-        ((continuousAt_extChartAt (I := I) p).eventually (eventuallyEq_nhdsWithin_iff.1 hG_eq)),
-      self_mem_nhdsWithin] with x hxs hGx hxne
-    have hex_ne : e x ≠ e p := fun h ↦
-      mem_compl_singleton_iff.1 hxne (e.injOn hxs (mem_extChartAt_source p) h)
-    calc
-      G (e x) = f (e.symm (e x)) := hGx (mem_compl_singleton_iff.2 hex_ne)
-      _ = f x := congrArg f (e.left_inv hxs)
-
-/-- On a boundaryless complex manifold of dimension at least two, a map into a complete complex
-normed space that is holomorphic on a punctured neighbourhood of `p` automatically has a limit at
-`p`. -/
-theorem tendsto_limUnder_of_eventually_mdifferentiableAt (hE : 2 ≤ Module.finrank ℂ E) {f : M → F}
-    {p : M} (hf : ∀ᶠ x in 𝓝[≠] p, MDifferentiableAt I 𝓘(ℂ, F) f x) :
-    Tendsto f (𝓝[≠] p) (𝓝 (limUnder (𝓝[≠] p) f)) := by
-  obtain ⟨g, hg, hgf⟩ := exists_contMDiffAt_omega_and_eventuallyEq_nhdsNE hE hf
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℂ E)
-  have : PerfectSpace E := perfectSpace_of_module ℂ E
-  have : PerfectSpace H := I.toHomeomorph.symm.perfectSpace
-  have : PerfectSpace M := ChartedSpace.perfectSpace (H := H)
-  have hlim : Tendsto f (𝓝[≠] p) (𝓝 (g p)) :=
-    (hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' hgf
-  rwa [hlim.limUnder_eq]
+  · exact EventuallyEq.trans ((tendsto_extChartAt_nhdsNE I p).eventually hG_eq)
+      ((comp_extChartAt_symm_comp_extChartAt_eventuallyEq f p).filter_mono nhdsWithin_le_nhds)
 
 /-- On a boundaryless complex manifold of dimension at least two, updating `f` at `p` by its
 punctured limit produces a map `C^ω` at `p`, with no boundedness hypothesis. -/
@@ -139,17 +106,22 @@ theorem contMDiffAt_omega_update_limUnder_of_eventually_mdifferentiableAt [Decid
     ContMDiffAt I 𝓘(ℂ, F) ω (update f p (limUnder (𝓝[≠] p) f)) p := by
   obtain ⟨g, hg, hgf⟩ := exists_contMDiffAt_omega_and_eventuallyEq_nhdsNE hE hf
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℂ E)
-  have : PerfectSpace E := perfectSpace_of_module ℂ E
-  have : PerfectSpace H := I.toHomeomorph.symm.perfectSpace
-  have : PerfectSpace M := ChartedSpace.perfectSpace (H := H)
+  have := I.perfectSpace M
   have hlim : Tendsto f (𝓝[≠] p) (𝓝 (g p)) :=
     (hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' hgf
-  refine hg.congr_of_eventuallyEq ?_
-  rw [eventuallyEq_nhdsWithin_iff] at hgf
-  filter_upwards [hgf] with x hx
-  rcases eq_or_ne x p with rfl | hne
-  · simp [hlim.limUnder_eq]
-  · simp [hne, (hx hne).symm]
+  exact hg.congr_of_eventuallyEq (eventuallyEq_nhds_of_eventuallyEq_nhdsNE
+    (((Function.update_eventuallyEq f p _).filter_mono inf_le_right).trans hgf.symm)
+    (by simp [hlim.limUnder_eq]))
+
+/-- On a boundaryless complex manifold of dimension at least two, a map into a complete complex
+normed space that is holomorphic on a punctured neighbourhood of `p` automatically has a limit at
+`p`. -/
+theorem tendsto_limUnder_of_eventually_mdifferentiableAt (hE : 2 ≤ Module.finrank ℂ E) {f : M → F}
+    {p : M} (hf : ∀ᶠ x in 𝓝[≠] p, MDifferentiableAt I 𝓘(ℂ, F) f x) :
+    Tendsto f (𝓝[≠] p) (𝓝 (limUnder (𝓝[≠] p) f)) := by
+  classical
+  exact continuousAt_update_same.1
+    (contMDiffAt_omega_update_limUnder_of_eventually_mdifferentiableAt hE hf).continuousAt
 
 /-- **Hartogs' extension theorem across a closed discrete set on a complex manifold.** Let `M` be a
 boundaryless complex manifold modelled on `E` with `2 ≤ Module.finrank ℂ E`, `U ⊆ M` an open set,
@@ -167,23 +139,15 @@ theorem exists_mdifferentiableOn_eqOn_sdiff_of_isDiscrete (hE : 2 ≤ Module.fin
     simp only [g, hx', ↓reduceIte]
   refine ⟨g, fun x hx ↦ ?_, hgf⟩
   by_cases hxS : x ∈ S
-  · obtain ⟨W, hW_open, hW_eq⟩ := isDiscrete_iff_forall_mem_exists_isOpen.1 hS x ⟨hx, hxS⟩
-    have hxW : x ∈ W := (hW_eq.symm ▸ mem_singleton x : x ∈ W ∩ (U ∩ S)).1
-    have hUW : ∀ y ∈ (U ∩ W) \ {x}, y ∈ U \ S := by
-      rintro y ⟨⟨hyU, hyW⟩, hyx⟩
-      refine ⟨hyU, fun hyS ↦ hyx ?_⟩
-      have : y ∈ W ∩ (U ∩ S) := ⟨hyW, hyU, hyS⟩
-      rwa [hW_eq, mem_singleton_iff] at this
-    have hdiff_nhds : ∀ᶠ y in 𝓝[≠] x, MDifferentiableAt I 𝓘(ℂ, F) f y := by
-      filter_upwards [nhdsWithin_le_nhds ((hU.inter hW_open).mem_nhds ⟨hx, hxW⟩),
-        self_mem_nhdsWithin] with y hyU hyx
-      exact (hf y (hUW y ⟨hyU, hyx⟩)).mdifferentiableAt (hUS.mem_nhds (hUW y ⟨hyU, hyx⟩))
+  · have hmem : U \ S ∈ 𝓝[≠] x := hU.sdiff_mem_nhdsNE_of_isDiscrete hS hx hxS
+    have hdiff_nhds : ∀ᶠ y in 𝓝[≠] x, MDifferentiableAt I 𝓘(ℂ, F) f y :=
+      eventually_of_mem hmem fun y hy ↦ (hf y hy).mdifferentiableAt (hUS.mem_nhds hy)
     have hupd := contMDiffAt_omega_update_limUnder_of_eventually_mdifferentiableAt hE hdiff_nhds
-    refine ((hupd.congr_of_eventuallyEq ?_).mdifferentiableAt (by simp)).mdifferentiableWithinAt
-    filter_upwards [(hU.inter hW_open).mem_nhds ⟨hx, hxW⟩] with y hy
-    rcases eq_or_ne y x with rfl | hyx
-    · simp [g, hx, hxS]
-    · rw [update_of_ne hyx, hgf (hUW y ⟨hy, hyx⟩)]
+    refine ((hupd.congr_of_eventuallyEq
+      (eventuallyEq_nhds_of_eventuallyEq_nhdsNE ?_ (by simp [g, hx, hxS]))).mdifferentiableAt
+      (by simp)).mdifferentiableWithinAt
+    exact (eventuallyEq_of_mem hmem hgf).trans
+      ((Function.update_eventuallyEq f x _).filter_mono inf_le_right).symm
   · refine ((hf x ⟨hx, hxS⟩).mdifferentiableAt (hUS.mem_nhds ⟨hx, hxS⟩)
       |>.congr_of_eventuallyEq ?_).mdifferentiableWithinAt
     filter_upwards [hUS.mem_nhds ⟨hx, hxS⟩] with y hy
@@ -240,32 +204,9 @@ theorem frequently_nhdsNE_eq_zero_of_eventually_mdifferentiableAt (hE : 2 ≤ Mo
     contMDiffAt_omega_iff_analyticAt.1 hcont
   have h0 : (f ∘ (extChartAt I p).symm) (extChartAt I p p) = 0 := by
     simpa [Function.comp_apply, extChartAt_to_inv] using hfp
-  have hfreq := frequently_nhdsNE_eq_zero_of_analyticAt hE han h0
-  set e := extChartAt I p
-  have hI : range I = univ := ModelWithCorners.Boundaryless.range_eq_univ
-  have H₁ : 𝓝[range I] (e p) = 𝓝 (e p) := by rw [hI, nhdsWithin_univ]
-  have htgt : e.target ∈ 𝓝 (e p) := H₁ ▸ extChartAt_target_mem_nhdsWithin p
-  have hsymm_nhds : Tendsto e.symm (𝓝 (e p)) (𝓝 p) := by
-    have := (continuousAt_extChartAt_symm (I := I) p).tendsto
-    rwa [extChartAt_to_inv] at this
-  have hsymm_ne : Tendsto e.symm (𝓝[≠] (e p)) (𝓝[≠] p) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within e.symm
-      (hsymm_nhds.mono_left nhdsWithin_le_nhds) ?_
-    filter_upwards [nhdsWithin_le_nhds htgt, self_mem_nhdsWithin] with z hzt hzne
-    exact mem_compl_singleton_iff.2 fun h ↦
-      mem_compl_singleton_iff.1 hzne ((e.right_inv hzt).symm.trans (congrArg e h))
-  by_contra hne
-  rw [Filter.not_frequently] at hne
-  exact hfreq (hsymm_ne.eventually hne)
+  exact (tendsto_extChartAt_symm_nhdsNE I p).frequently
+    (frequently_nhdsNE_eq_zero_of_analyticAt hE han h0)
 
 end Manifold
-
-/-- In complex dimension one, `z ↦ z⁻¹` on `{0}ᶜ ⊆ ℂ` admits no globally holomorphic extension in
-the manifold sense either. -/
-theorem not_exists_mdifferentiable_and_eqOn_inv_compl_zero :
-    ¬ ∃ g : ℂ → ℂ, MDifferentiable 𝓘(ℂ) 𝓘(ℂ) g ∧ EqOn g Inv.inv {(0 : ℂ)}ᶜ := by
-  rintro ⟨g, hg, hgf⟩
-  exact not_exists_differentiable_and_eqOn_inv_compl_zero
-    ⟨g, fun z ↦ mdifferentiableAt_iff_differentiableAt.1 (hg z), hgf⟩
 
 end TauCeti
