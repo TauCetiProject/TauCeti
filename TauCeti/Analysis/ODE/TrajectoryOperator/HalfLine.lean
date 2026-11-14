@@ -384,7 +384,7 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspac
     exact squareIntegrableSolutionsOn_Ioi_congr hB hA fun τ hτ ↦ leftCap_of_nonneg hτ
   have hsol' : squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) = ⊥ := by
     rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', bot_inf_eq]
-  simp only [hsol, hsol', hneg, finrank_bot, finrank_top] at h
+  rw [hsol, hsol', hneg, finrank_bot, finrank_top] at h
   omega
 
 /-- **The dimension of the stable solutions of the adjoint equation.** Let `A` be a continuous
@@ -432,7 +432,7 @@ theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi
     rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', top_inf_eq]
     exact squareIntegrableSolutionsOn_Ioi_congr hBadj hAadj fun τ hτ ↦ by
       simp [B, leftCap_of_nonneg hτ]
-  simp only [hsol, hsol', hpos, finrank_bot] at h
+  rw [hsol, hsol', hpos, finrank_bot] at h
   omega
 
 /-- **The dimension of the stable solutions for an invertible symmetric limit.** Let `A` be a
