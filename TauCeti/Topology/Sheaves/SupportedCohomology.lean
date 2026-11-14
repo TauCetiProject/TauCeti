@@ -332,8 +332,8 @@ lemma supportedHRestrict_supportedHMap (hZS : Z ≤ S) {W' W : Opens X} (h : W' 
     F.supportedHRestrict S h n (F.supportedHMap hZS W n x) =
       F.supportedHMap hZS W' n (F.supportedHRestrict Z h n x) := by
   simp only [supportedHRestrict, supportedHMap, relativeH'.map_map]
-  -- both sides are induced by morphisms of pairs into `(W', W' ∖ S)`, which agree because
-  -- `Opens X` is a thin category
+  -- both sides are induced by morphisms of pairs from `(W', W' ∖ S)` to `(W, W ∖ Z)`, which
+  -- agree because `Opens X` is a thin category
   rfl
 
 /-- Under `supportedHZeroEquiv`, enlarging the support in degree zero is the inclusion of
@@ -555,13 +555,13 @@ theorem isIso_supportedHPresheafPostcomp {F G : Sheaf (Opens.grothendieckTopolog
     exact h W.unop
   exact NatIso.isIso_of_isIso_app _
 
-/-- An isomorphism of sheaves `e : F ≅ G` induces an isomorphism of presheaves
+/-- An isomorphism of sheaves `f : F ⟶ G` induces an isomorphism of presheaves
 `H_Sⁿ(-, F) ≅ H_Sⁿ(-, G)`. -/
-instance isIso_supportedHPresheafPostcomp_mk₀_hom {F G : Sheaf (Opens.grothendieckTopology X)
-    AddCommGrpCat.{u}} (e : F ≅ G) (n : ℕ) :
-    IsIso (supportedHPresheafPostcomp S (Ext.mk₀ e.hom) (add_zero n)) :=
+instance isIso_supportedHPresheafPostcomp_mk₀ {F G : Sheaf (Opens.grothendieckTopology X)
+    AddCommGrpCat.{u}} (f : F ⟶ G) [IsIso f] (n : ℕ) :
+    IsIso (supportedHPresheafPostcomp S (Ext.mk₀ f) (add_zero n)) :=
   isIso_supportedHPresheafPostcomp S _ _ fun _ ↦
-    Function.bijective_iff_has_inverse.2 ⟨(Ext.mk₀ e.inv).postcomp _ (add_zero n),
+    Function.bijective_iff_has_inverse.2 ⟨(Ext.mk₀ (inv f)).postcomp _ (add_zero n),
       fun x ↦ by simp, fun x ↦ by simp⟩
 
 /-- If `F₂` is flasque, the connecting morphism `H_Sᵃ⁺¹(-, F₃) ⟶ H_Sᵏ(-, F₁)`, for `k = a + 2`, is

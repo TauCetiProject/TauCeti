@@ -13,7 +13,6 @@ public import TauCeti.CategoryTheory.Limits.Lattice
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Refinement
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 import Mathlib.Algebra.Category.Grp.EpiMono
-import TauCeti.Topology.Sheaves.Stalks
 
 /-!
 # Čech cohomology of locally zero presheaves
@@ -171,9 +170,12 @@ theorem isZero_cechCohomology_obj_of_isZero_sheafify
     [(Opens.grothendieckTopology X).WEqualsLocallyBijective (ModuleCat.{u} R)]
     (h₀ : IsZero (P.obj (op ⊥))) (hP : IsZero (sheafify (Opens.grothendieckTopology X) P))
     (n : ℕ) : IsZero ((cechCohomology X (ModuleCat.{u} R) n).obj P) := by
-  have hP' := IsZero.of_full_of_faithful_of_isZero (sheafToPresheaf _ _) _ hP
-  exact isZero_cechCohomology_obj_of_locally_eq_zero P h₀
-    (fun W s x hx ↦ TopCat.Presheaf.exists_map_eq_zero_of_isZero_presheafToSheaf_obj hP' s hx) n
+  refine isZero_cechCohomology_obj_of_locally_eq_zero P h₀ (fun W s x hx ↦ ?_) n
+  -- `s` and `0` have the same image in the zero sheafification, so they agree locally
+  obtain ⟨V, f, hf, hxV⟩ := Presheaf.equalizerSieve_mem (Opens.grothendieckTopology X)
+    (toSheafify (Opens.grothendieckTopology X) P) s 0
+    ((ModuleCat.subsingleton_of_isZero (hP.obj _)).elim _ _) x hx
+  exact ⟨V, leOfHom f, hxV, hf.trans (map_zero _)⟩
 
 end Compact
 

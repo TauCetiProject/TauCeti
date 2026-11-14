@@ -54,6 +54,6 @@ It is therefore bijective there, even though the coordinate endomorphism need no
 theorem comap_quotientIsogeny_involutive :
     Function.Involutive (PrimeSpectrum.comap quotientIsogeny.hom.toAlgHom.toRingHom) :=
   quotientIsogeny.hom.toAlgHom.toRingHom.leftInverse_comap_of_comp_eq_pow
-    (by decide) quotientIsogeny_apply_apply
+    quotientIsogeny_apply_apply
 
 end TauCeti.F4ShortRoot.PrimeField

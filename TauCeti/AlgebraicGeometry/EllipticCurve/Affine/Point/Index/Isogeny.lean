@@ -215,7 +215,7 @@ theorem index_range_eq_card_ker_of_isElliptic
     exact hf (by simp [degree_zero])
   -- the reductions have the same number of points, hence equinumerous primary components
   have hcard := (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
-    (((toIsogeny hf0).natCard_point_reduction_eq inferInstance).trans
+    ((toIsogeny hf0).natCard_point_reduction_eq.trans
       C₂.natCard_point_reduction_baseChange_adicCompletion)
   -- `R_u` is `u.adicCompletionIntegers F` by definition
   have : Finite (ResidueField R_u) :=

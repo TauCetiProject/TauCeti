@@ -67,7 +67,6 @@ theorem integrable_one_div_cosh_sq : Integrable fun x : ℝ ↦ 1 / Real.cosh x 
   have hc : Real.exp |x| / 2 ≤ Real.cosh x := by
     rw [← Real.cosh_abs, Real.cosh_eq]
     linarith [Real.exp_pos (-|x|)]
-  have he : 0 < Real.exp |x| / 2 := by positivity
   rw [Real.norm_of_nonneg (by positivity)]
   calc 1 / Real.cosh x ^ 2 ≤ 1 / (Real.exp |x| / 2) ^ 2 := by gcongr
     _ = 4 * Real.exp (-(2 * |x|)) := by

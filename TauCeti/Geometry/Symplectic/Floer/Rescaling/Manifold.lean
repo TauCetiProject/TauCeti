@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+import TauCeti.Analysis.Hofer
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
@@ -57,8 +58,19 @@ energy accounting that bounds the energy of a bubble by the energy lost at its b
 values `ω(a, b)` along converging tangent vectors are read off in the trivialization at the limit
 point (`TauCeti.IsSmoothForm.tendsto_apply`).
 
-Choosing the centres and scales, the convergence of the rescaled maps and the removal of the
-singularity at infinity of the limit plane are not carried out here.
+The centres and scales are chosen by Hofer's lemma applied to the square root of the Floer energy
+density (`TauCeti.exists_tendsto_sq_mul_rescale_le`). On a manifold there is no norm of the
+derivative without a choice of metric, but the energy density
+`ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t})` is intrinsic and scales by `ε²`, so it plays the role of the
+squared norm of the derivative in the vector-space normalization. If the energy densities of
+solutions blow up along points `z i → z₀`, there are centres `c i → z₀` and scales `ε i → 0` such
+that the rescaled maps solve the rescaled Floer equation on closed discs of radii `R i → ∞`, have
+energy density one at the origin and at most four on those discs, while the rescaled discs
+`c i + ε i • closedBall 0 (R i)` shrink to `z₀`
+(`TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`).
+
+The convergence of the rescaled maps and the removal of the singularity at infinity of the limit
+plane are not carried out here.
 
 ## Main results
 
@@ -79,6 +91,9 @@ singularity at infinity of the limit plane are not carried out here.
   rescaled maps is at most the energy concentrating at the bubbling point.
 * `TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale_of_contMDiffOn`: the same
   bound for maps that are `C¹` near the bubbling point, with no measurability hypothesis.
+* `TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`: where the energy
+  densities of Floer solutions blow up, rescaling gives solutions of the rescaled equation on
+  growing discs with energy density one at the origin and at most four on the discs.
 
 ## References
 
@@ -474,5 +489,68 @@ theorem lintegral_eval₂_le_liminf_of_tendsto_rescale_of_contMDiffOn (ω : Smoo
     lintegral_mono_set (Metric.ball_subset_ball (min_le_left δ r)))
 
 end Limit
+
+section Bubbling
+
+variable {ι : Type*} {l : Filter ι} {u : ι → ℝ × ℝ → M} {z : ι → ℝ × ℝ} {z₀ : ℝ × ℝ}
+
+/-- **Rescaling Floer solutions in a manifold where their energy density blows up.** Let `u i`
+solve the Floer equation `(du - X_K)^{0,1} = 0` in a manifold `M` on an open set `U` of the
+domain, for a domain-dependent structure `J(z, x)` on `T_x M`, with Floer energy densities
+`e i = ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t})` continuous on `U`. If `e i (z i) → ∞` along points
+`z i → z₀ ∈ U`, there are centres `c i → z₀`, scales `ε i > 0` with `ε i → 0` and radii
+`R i → ∞` with `ε i * R i → 0` such that eventually the rescaled maps `w ↦ u i (c i + ε i • w)`
+
+* have energy density one at the origin for the rescaled perturbation `ε i K(c i + ε i • w)`;
+* for `‖w‖ ≤ R i`, are defined at `w`, in the sense that `c i + ε i • w ∈ U`, have energy density
+  at most four there, and solve the rescaled Floer equation there for the structure
+  `J(c i + ε i • w, ·)`.
+
+This is the choice of centres and scales of bubbling analysis. The energy density replaces the norm
+of the derivative of the vector-space statement
+`TauCeti.SymplecticForm.exists_rescale_isComplexLinearMap_perturbedFDeriv`: it is defined without a
+metric on `M` and scales by `ε²` under rescaling
+(`TauCeti.SmoothTwoForm.floerEnergyDensity_rescale`). -/
+theorem exists_rescale_isComplexLinearMap_perturbedMFDeriv (ω : SmoothTwoForm I M)
+    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {U : Set (ℝ × ℝ)}
+    (hU : IsOpen U) (hz₀ : z₀ ∈ U) (he : ∀ i, ContinuousOn (ω.floerEnergyDensity Ks Kt (u i)) U)
+    (hsol : ∀ᶠ i in l, ∀ y ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J y (u i y)) (ω.perturbedMFDeriv Ks Kt (u i) y).toLinearMap)
+    (hz : Tendsto z l (𝓝 z₀))
+    (hblow : Tendsto (fun i ↦ ω.floerEnergyDensity Ks Kt (u i) (z i)) l atTop) :
+    ∃ (c : ι → ℝ × ℝ) (ε R : ι → ℝ), (∀ i, 0 < ε i) ∧ Tendsto c l (𝓝 z₀) ∧
+      Tendsto ε l (𝓝 0) ∧ Tendsto R l atTop ∧ Tendsto (fun i ↦ ε i * R i) l (𝓝 0) ∧
+      ∀ᶠ i in l, ω.floerEnergyDensity (fun w x ↦ ε i * Ks (c i + ε i • w) x)
+          (fun w x ↦ ε i * Kt (c i + ε i • w) x) (fun w ↦ u i (c i + ε i • w)) 0 = 1 ∧
+        ∀ w, ‖w‖ ≤ R i → c i + ε i • w ∈ U ∧
+          ω.floerEnergyDensity (fun w x ↦ ε i * Ks (c i + ε i • w) x)
+            (fun w x ↦ ε i * Kt (c i + ε i • w) x) (fun w ↦ u i (c i + ε i • w)) w ≤ 4 ∧
+          IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+            (J (c i + ε i • w) (u i (c i + ε i • w)))
+            (ω.perturbedMFDeriv (fun w x ↦ ε i * Ks (c i + ε i • w) x)
+              (fun w x ↦ ε i * Kt (c i + ε i • w) x) (fun w ↦ u i (c i + ε i • w)) w).toLinearMap
+    := by
+  obtain ⟨r, hr, hrU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hz₀)
+  obtain ⟨c, ε, R, hε, hc, hε0, hR, hεR, hev⟩ :=
+    exists_tendsto_sq_mul_rescale_le hr (fun i ↦ (he i).mono hrU) hz hblow
+  -- Eventually the rescaled discs `c i + ε i • closedBall 0 (R i)` lie in `closedBall z₀ r ⊆ U`.
+  have hin : ∀ᶠ i in l, ε i * R i + dist (c i) z₀ < r := by
+    have h := hεR.add (tendsto_iff_dist_tendsto_zero.1 hc)
+    rw [add_zero] at h
+    exact h.eventually (gt_mem_nhds hr)
+  refine ⟨c, ε, R, hε, hc, hε0, hR, hεR, ?_⟩
+  filter_upwards [hev, hin, hsol] with i hi hin hsol
+  refine ⟨by rw [ω.floerEnergyDensity_rescale, smul_zero, add_zero]; exact hi.1, fun w hw ↦ ?_⟩
+  have hmem : c i + ε i • w ∈ U := hrU <| Metric.mem_closedBall.2 <| by
+    have hεw : ‖ε i • w‖ ≤ ε i * R i := by
+      rw [norm_smul, Real.norm_of_nonneg (hε i).le]
+      exact mul_le_mul_of_nonneg_left hw (hε i).le
+    have := dist_triangle (c i + ε i • w) (c i) z₀
+    rw [dist_self_add_left] at this
+    linarith
+  exact ⟨hmem, by rw [ω.floerEnergyDensity_rescale]; exact hi.2 w hw,
+    (ω.isComplexLinearMap_perturbedMFDeriv_rescale_iff (hε i).ne').2 (hsol _ hmem)⟩
+
+end Bubbling
 
 end TauCeti.SmoothTwoForm
