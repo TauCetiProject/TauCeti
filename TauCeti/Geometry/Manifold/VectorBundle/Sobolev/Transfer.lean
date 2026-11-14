@@ -38,8 +38,9 @@ transfer of its chart-`i` data restricted to `Q`
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.exists_isChangeOfVariables_coordChange`: chart coordinate changes are
-  changes of variables of every order on relatively compact subsets of the transfer domain.
+* `TauCeti.FiniteBundleAtlas.exists_isChangeOfVariables_chart_symm_trans`: chart coordinate
+  changes are changes of variables of every order on relatively compact subsets of the transfer
+  domain.
 * `TauCeti.FiniteBundleAtlas.value_transferL_ae`, `TauCeti.FiniteBundleAtlas.eq_transferL_iff`:
   the components of a transfer are those of the bundle coordinate change applied to the
   precomposed input values, and this characterizes the transfer.
@@ -72,7 +73,8 @@ namespace FiniteBundleAtlas
 /-- **Chart coordinate changes are changes of variables.** On a `C^(max k 1)` manifold, on an open
 set `P` with compact closure inside the transfer domain, the coordinate change from chart `j` to
 chart `i` is a change of variables of order `k` from `P` into any open set containing its image. -/
-theorem exists_isChangeOfVariables_coordChange (k : ℕ) [IsManifold 𝓘(ℝ, E) (max k 1 : ℕ) M]
+theorem exists_isChangeOfVariables_chart_symm_trans (k : ℕ)
+    [IsManifold 𝓘(ℝ, E) (max k 1 : ℕ) M]
     {i j : Fin A.n} {P Q : Opens E}
     (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
     (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) :
@@ -123,7 +125,7 @@ def transferL (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
   (Wkp.contDiffOnCLMApplyL (A.isOpen_transferDomain i j).uniqueDiffOn hPc hPD k (finBasis ℝ F)
       (finBasis ℝ F) (A.contDiffOn_coordChangeL_transferDomain i j)).comp
     (ContinuousLinearMap.piMap fun _ ↦ Wkp.compL
-      (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec hp)
+      (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec hp)
 
 /-- The chart-`j` components of a transfer are, almost everywhere on `P`, the components of the
 coordinate change from bundle chart `i` to bundle chart `j` applied to the vector whose components
@@ -135,7 +137,7 @@ theorem value_transferL_ae (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
     (Wkp.value k (A.transferL μ p k hp i j hPc hPD hPQ u m) : E → ℝ) =ᵐ[μ.restrict P]
       fun y ↦ (finBasis ℝ F).repr ((A.triv i).coordChangeL ℝ (A.triv j) ((A.chart j).symm y)
         (∑ l, Wkp.value k (u l) (((A.chart j).symm ≫ₕ A.chart i) y) • finBasis ℝ F l)) m := by
-  set h := (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec
+  set h := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
   filter_upwards [Wkp.value_contDiffOnCLMApplyL_ae (A.isOpen_transferDomain i j).uniqueDiffOn
       hPc hPD k
       (finBasis ℝ F) (finBasis ℝ F) (A.contDiffOn_coordChangeL_transferDomain i j)
@@ -183,7 +185,7 @@ theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : A.sectionChartData.SobolevD
     (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q) (m : Fin (finrank ℝ F)) :
     Wkp.restrictL (SetLike.coe_subset_coe.1 (hP.trans (A.overlap_subset_image i j))) k (w j m) =
       A.transferL μ p k hp i j hPc hPD hPQ (fun l ↦ Wkp.restrictL hQ k (w i l)) m := by
-  set h := (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec
+  set h := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
   have hPj : P ≤ A.image j := SetLike.coe_subset_coe.1 (hP.trans (A.overlap_subset_image i j))
   refine Wkp.ext k (Lp.ext ?_)
   have hcompat := ae_restrict_of_ae_restrict_of_subset hP
