@@ -41,6 +41,12 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`: a continuous family of
   continuous linear maps `g` applied to an a.e. finitely strongly measurable `f`, for instance an
   `Lᵖ` function with `p < ∞`, is a.e. strongly measurable.
+* `ContinuousLinearMap.aestronglyMeasurable_comp₂_continuous`: a continuous bilinear map `L`
+  applied to an a.e. finitely strongly measurable `f` and a continuous `g` is a.e. strongly
+  measurable.
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous`: an a.e. finitely
+  strongly measurable family of continuous linear maps `f` applied to a continuous `g` is a.e.
+  strongly measurable.
 -/
 
 public section
@@ -125,3 +131,29 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply {�
       (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
         hf.ae_eq_mk⟩))
     fun x hx ↦ by simp [hx]
+
+/-- A continuous bilinear map `L` applied to an a.e. finitely strongly measurable function `f` and
+a continuous function `g` is a.e. strongly measurable, for a measure that is inner regular with
+respect to compact sets on sets of finite measure. Neither σ-finiteness of the measure nor second
+countability is needed. -/
+theorem ContinuousLinearMap.aestronglyMeasurable_comp₂_continuous {𝕜 E F G : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] (L : E →L[𝕜] F →L[𝕜] G)
+    {f : α → E} (hf : AEFinStronglyMeasurable f μ) {g : α → F} (hg : Continuous g) :
+    AEStronglyMeasurable (fun x ↦ L (f x) (g x)) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    (L.aestronglyMeasurable_comp₂
+      (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+        hf.ae_eq_mk⟩)
+      hg.aestronglyMeasurable_of_sigmaFinite)
+    fun x hx ↦ by simp [hx]
+
+/-- An a.e. finitely strongly measurable family `f` of continuous linear maps applied to a
+continuous function `g` is a.e. strongly measurable, for a measure that is inner regular with
+respect to compact sets on sets of finite measure. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : α → E →L[𝕜] F}
+    (hf : AEFinStronglyMeasurable f μ) {g : α → E} (hg : Continuous g) :
+    AEStronglyMeasurable (fun x ↦ f x (g x)) μ :=
+  (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).aestronglyMeasurable_comp₂_continuous hf hg
