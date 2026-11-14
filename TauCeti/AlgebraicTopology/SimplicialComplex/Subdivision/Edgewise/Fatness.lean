@@ -13,7 +13,7 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.Rify
 import TauCeti.Algebra.Order.BigOperators.ChainCombination
-import TauCeti.Data.Fintype.CardFilterOrder
+import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
 # The simplices of edgewise subdivisions are small and uniformly fat

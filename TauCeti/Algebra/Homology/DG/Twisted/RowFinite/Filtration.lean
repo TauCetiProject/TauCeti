@@ -175,6 +175,27 @@ theorem rowFiniteIndexGrading_le_rowFiniteTotalGrading (p n : ℤ) :
     rowFiniteIndexGrading ℳ ind p n ≤ rowFiniteTotalGrading ℳ ind n :=
   inf_le_right
 
+/-- Extending a family of coefficients on the generators of index `p` by zero preserves the total
+degree. -/
+theorem mapDomain_subtypeVal_mem_rowFiniteTotalGrading {p n : ℤ} {f : {x // ind x = p} →₀ M}
+    (hf : f ∈ rowFiniteTotalGrading ℳ (fun x : {x // ind x = p} ↦ ind x) n) :
+    f.mapDomain Subtype.val ∈ rowFiniteTotalGrading ℳ ind n := by
+  rw [mem_rowFiniteTotalGrading_iff] at hf ⊢
+  intro x
+  by_cases hx : ind x = p
+  · rw [show x = ((⟨x, hx⟩ : {x // ind x = p}) : P) from rfl,
+      Finsupp.mapDomain_apply_of_injective Subtype.val_injective]
+    exact hf _
+  · rw [Finsupp.mapDomain_of_notMem_range _ _ (by rintro ⟨y, rfl⟩; exact hx y.2)]
+    exact zero_mem _
+
+/-- A family of coefficients on the generators of index `p`, extended by zero, lies in the stage
+of index `p` of the index filtration. -/
+theorem mapDomain_subtypeVal_mem_rowFiniteIndexFiltration {p : ℤ} (f : {x // ind x = p} →₀ M) :
+    f.mapDomain Subtype.val ∈ rowFiniteIndexFiltration (R := R) ind p :=
+  (mem_rowFiniteIndexFiltration_iff ind).2 fun _ hx ↦
+    Finsupp.mapDomain_of_notMem_range _ _ (by rintro ⟨z, rfl⟩; exact hx.ne' z.2)
+
 /-- For cohomologically nonpositive coefficients, a vector of total degree `n` is carried by
 generators of index at most `-n`. -/
 theorem rowFiniteTotalGrading_le_rowFiniteIndexFiltration (hℳ : ∀ k, 0 < k → ℳ k = ⊥) (n : ℤ) :

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Algebra.Subalgebra.Nilpotent
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Kernel
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
 public import TauCeti.RingTheory.Morita.BasicAlgebra
+import TauCeti.RingTheory.Idempotents.Corner.RadicalLayer
 import TauCeti.RingTheory.Idempotents.LinearIndependent
 
 /-!
@@ -190,14 +191,11 @@ theorem IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker {k : Type w}
   obtain ⟨n, e, he, hne, hquot⟩ := hA.exists_completeOrthogonalIdempotents (k := k)
   -- The arrows `i ⟶ j` index a basis of the `(j, i)`-corner of `J ⧸ J ^ 2`.
   let W (i j : Fin n) : Submodule k (A ⧸ Ring.jacobson A ^ 2) :=
-    ((Ring.jacobson A).restrictScalars k).map
-      ((Ideal.Quotient.mkₐ k (Ring.jacobson A ^ 2)).toLinearMap ∘ₗ
-        LinearMap.mulLeftRight k (e j, e i))
+    radicalLayerCorner k (Ring.jacobson A) (e j) (e i)
   let : Quiver.{0} (Fin n) := ⟨fun i j => Fin (Module.finrank k (W i j))⟩
   have hlift (i j : Fin n) (t : i ⟶ j) : ∃ x ∈ Ring.jacobson A,
       Ideal.Quotient.mk (Ring.jacobson A ^ 2) (e j * x * e i) = Module.finBasis k (W i j) t := by
-    obtain ⟨x, hx, hxt⟩ := Submodule.mem_map.mp (Module.finBasis k (W i j) t).2
-    exact ⟨x, hx, by simpa using hxt⟩
+    exact mem_radicalLayerCorner.mp (Module.finBasis k (W i j) t).2
   choose x hxJ hx using hlift
   let f : ∀ {i j : Fin n}, (i ⟶ j) → A := fun {i j} t => e j * x i j t * e i
   have hl {i j : Fin n} (t : i ⟶ j) : e j * f t = f t := by
@@ -212,9 +210,7 @@ theorem IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker {k : Type w}
   · refine liftAlgHomOfArrows_surjective e he f hl hr _ hJ hquot fun i j y hy => ?_
     rw [hbasis, Set.range_comp, ← Submodule.map_span, Module.Basis.span_eq, Submodule.map_top,
       Submodule.range_subtype]
-    exact Submodule.mem_map_of_mem
-      (f := (Ideal.Quotient.mkₐ k (Ring.jacobson A ^ 2)).toLinearMap ∘ₗ
-        LinearMap.mulLeftRight k (e j, e i)) hy
+    exact mem_radicalLayerCorner.mpr ⟨y, hy, rfl⟩
   · refine isAdmissibleIdeal_ker_liftAlgHomOfArrows e he f hl hr _ hJ hne
       (fun {i j} t => Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hxJ i j t))) fun i j => ?_
     rw [hbasis]

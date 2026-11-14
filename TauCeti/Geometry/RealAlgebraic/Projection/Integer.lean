@@ -143,7 +143,6 @@ theorem nonempty_delineation_integerFamily_of_signInvariant_integerProjection
     Nonempty (Delineation fun (p : P.integerFamily) (x : S) ↦
       p.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1)) := by
   classical
-  exact nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection
-    (RingHom.injective_int _) hS h
+  exact nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection hS h
 
 end TauCeti

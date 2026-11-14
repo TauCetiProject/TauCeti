@@ -63,7 +63,7 @@ Without differentiability `mfderiv` is zero, so then `det (1 - df_x) = 1` althou
 nondegenerate.
 Read in the extended chart at any point `x'` whose chart contains `x`, the derivative of `f` at the
 fixed point is `df_x` conjugated by the derivative of the transition map
-(`MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm`), so `det (1 - df_x)` can be
+(`ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`), so `det (1 - df_x)` can be
 computed in any chart, also on manifolds with boundary or corners
 (`TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`).
 
@@ -485,14 +485,14 @@ theorem finite_fixedPoints_of_det_id_sub_ne_zero [CompleteSpace 𝕜]
   exact finite_fixedPoints_of_isNondegenerateFixedPt hf fun x hx ↦
     (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx⟩ (hdf ⟨x, hx⟩)).2 (h ⟨x, hx⟩)
 
-/-- **`det (1 - df_x)` is intrinsic.** If `f` is differentiable at a fixed point `x`, then in any
+/-- **`det (1 - df_x)` is intrinsic.** If `f` is continuous at a fixed point `x`, then in any
 extended chart whose source contains `x`, the derivative of the coordinate expression of `f` at `x`
 within the range of the model has the same `det (1 - ·)` as the fixed-point derivative of `f` at
 `x`: the two endomorphisms are conjugate by the derivative of the transition map. Over `ℝ`, at a
 nondegenerate fixed point in the interior of the manifold, the sign of this determinant is the local
 Lefschetz number. -/
 theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 M] {x' : M}
-    (x : {x // f x = x}) (hf : MDifferentiableAt I I f x.1)
+    (x : {x // f x = x}) (hf : ContinuousAt f x.1)
     (hx' : x.1 ∈ (extChartAt I x').source) :
     LinearMap.det (LinearMap.id -
         (fderivWithin 𝕜 (extChartAt I x' ∘ f ∘ (extChartAt I x').symm) (range I)
@@ -500,7 +500,6 @@ theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 
       LinearMap.det (LinearMap.id - fixedPointDerivative I f x) := by
   obtain ⟨x, hx⟩ := x
   let D : E →L[𝕜] E := mfderiv I I f x
-  have hD : HasMFDerivAt I I f x D := hf.hasMFDerivAt
   set T := tangentCoordChange I x x' x
   set T' := tangentCoordChange I x' x x
   -- The derivatives `T` and `T'` of the transition maps between the charts at `x` and `x'` are
@@ -524,9 +523,10 @@ theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 
       (e : E →ₗ[𝕜] E) ∘ₗ (LinearMap.id - (D : E →ₗ[𝕜] E)) ∘ₗ (e.symm : E →ₗ[𝕜] E) := by
     ext v
     simpa [e] using congr(($hTT'.symm) v)
-  rw [hchart, hconj, LinearMap.det_conj, hD.fixedPointDerivative_eq]
+  rw [hchart, hconj, LinearMap.det_conj]
   -- Both sides are `det (1 - D)`, computed on `E` and on `T_x M`, which is `E` by definition.
-  rfl
+  congr 2
+  exact LinearMap.ext fun v ↦ (fixedPointDerivative_apply (I := I) (f := f) ⟨x, hx⟩ v).symm
 
 /-- **Nondegeneracy read in a chart.** Let `x` be a fixed point of `f`, at which `f` is
 differentiable, lying in the extended chart at `x'`. If the coordinate expression of `f` in that
@@ -544,7 +544,7 @@ theorem isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt [Finite
       (extChartAt_target_subset_range x' ((extChartAt I x').map_source hsrc)))
   have : FiniteDimensional 𝕜 (TangentSpace I x) := ‹FiniteDimensional 𝕜 E›
   rw [isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx⟩ hf,
-    ← det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm ⟨x, hx⟩ hf hsrc, hfd, Ne,
+    ← det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm ⟨x, hx⟩ hf.continuousAt hsrc, hfd, Ne,
     LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, LinearMap.ker_eq_bot',
     injective_iff_map_eq_zero]
   -- Both sides say that `B` fixes no nonzero vector.

@@ -89,9 +89,8 @@ theorem closure_range_projectiveOrbitMap_subset_boundary
     (fun g ↦ ?_)).mpr hboundary) hclosed
   have himage : (projectivePointTranslation (M := M) g).hom '' O = O :=
     image_projectivePointTranslation_range_projectiveOrbitMap g m hm
-  have hclosure : (projectivePointTranslation (M := M) g).hom '' closure O = closure O := by
-    simpa only [Scheme.coe_homeoOfIso, himage] using
-      (Scheme.homeoOfIso (projectivePointTranslation (M := M) g)).image_closure O
+  have hclosure : (projectivePointTranslation (M := M) g).hom '' closure O = closure O :=
+    image_projectivePointTranslation_closure_range_projectiveOrbitMap g m hm
   have hboundaryImage : (projectivePointTranslation (M := M) g).hom '' (closure O \ O) =
       closure O \ O := by
     have hinj : Function.Injective (projectivePointTranslation (M := M) g).hom := by

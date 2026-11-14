@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Instances.ZMultiples
 public import TauCeti.Geometry.Manifold.Instances.Quotient
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 
 /-!
 # The Kodaira–Thurston manifold

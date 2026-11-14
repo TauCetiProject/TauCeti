@@ -29,6 +29,10 @@ of the monomial bases of the three factors is sent to it.  The decomposition is 
 which the PBW theorem enters highest-weight theory: an element is determined by its components
 in `U⁻ ⊗ U⁰ ⊗ U⁺`, which is how central elements are reduced to their `U⁰` part.
 
+At `q = 1` and `q = -1` the factor `(q - q⁻¹)⁻¹` in the defining relation is Lean's `0⁻¹ = 0`, so
+`UqSl2 q` is the commutative algebra `ℂ[E, F, K^(±1)]` there, and the decomposition is the quantum
+group statement exactly when `q² ≠ 1`.
+
 ## Main definitions
 
 * `TauCeti.UqSl2.triangularEquiv`: the multiplication isomorphism

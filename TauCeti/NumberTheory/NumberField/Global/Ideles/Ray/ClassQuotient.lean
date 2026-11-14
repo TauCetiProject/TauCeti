@@ -121,7 +121,8 @@ theorem exists_unitEmbedding_mul_mem_ideleCongrOneSubgroup (𝔪 : Modulus K)
         Units.coe_map]
       simpa using hf ⟨v, (Modulus.mem_support_iff 𝔪 v).mpr hv⟩
     · rw [map_mul, Units.val_mul, map_mul, InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-      simpa [hr_def] using hi ⟨w, hw⟩
+      simpa [hr_def, NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
+        using hi ⟨w, hw⟩
   by_cases hα : α = 0
   · -- Then `𝔪` has no finite divisor and no real place, since `0` meets none of the targets.
     subst hα
@@ -460,10 +461,12 @@ theorem rayClassQuotient_ofCompletion_neg_one (𝔪 : Modulus K) [DecidableEq �
       · subst h
         rw [Pi.mulSingle_eq_same] at hs
         rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
-        simpa using (signHom_apply_eq_neg_one_iff _ _).mp hs
+        simpa [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
+          using (signHom_apply_eq_neg_one_iff _ _).mp hs
       · rw [Pi.mulSingle_eq_of_ne fun h' ↦ h (congrArg Subtype.val h')] at hs
         rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ fun h' ↦ h (Subtype.ext h')]
-        simpa using (signHom_apply_eq_one_iff _ _).mp hs
+        simpa [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
+          using (signHom_apply_eq_one_iff _ _).mp hs
   rw [IdeleClassGroup.ofCompletion_apply, mk_eq_mk_unitEmbedding_mul _ (x : Kˣ),
     rayClassQuotient_mk_of_mem hz, ← hx, residueSignRayClass_residueSignHom,
     principalRayClass_apply]

@@ -36,7 +36,10 @@ Integrating it along the open interval of times at which the flow through `x` is
 (`TauCeti.mpullback_flowOf_apply_eq_exp_integral_smul`). This is how the local flow of a contact
 Hamiltonian vector field rescales the contact form. For a closed form `β` with closed contraction
 `ι_Z β`, Cartan's formula gives `L_Z β = 0`, so `(φₜ^* β)ₓ = βₓ` wherever the flow through `x` is
-defined at time `t` (`TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`).
+defined at time `t` (`TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`). Likewise a
+one-form `α` taking a constant value on `Z`, with `ι_Z dα = 0`, has `L_Z α = 0` and is preserved
+by the local flow (`TauCeti.mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero`); this applies to
+the Reeb flow of a contact form.
 
 When `Z` is complete its maximal flow is the global flow `ψ` (`TauCeti.globalFlow`), and these
 statements hold at every time and point (`TauCeti.hasDerivAt_mpullback_globalFlow`,
@@ -74,6 +77,8 @@ further instances.
   `(φₜ^* α)ₓ = exp (∫₀ᵗ g (φₛ x) ds) • αₓ` wherever the maximal flow is defined.
 * `TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero`: if `β` is closed and `ι_Z β` is
   closed, then `(φₜ^* β)ₓ = βₓ` wherever the maximal flow is defined.
+* `TauCeti.mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero`: if `α(Z)` is constant and
+  `ι_Z dα = 0`, then `(φₜ^* α)ₓ = αₓ` wherever the maximal flow is defined.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
 * `TauCeti.mpullback_globalFlow_apply_eq_exp_integral_smul`: if `L_Z α = g • α`, then
   `(ψₜ^* α)ₓ = exp (∫₀ᵗ g (ψₛ x) ds) • αₓ`.
@@ -304,6 +309,29 @@ theorem mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero {β : SmoothForm I 
     simp
   simpa only [intervalIntegral.integral_zero, Real.exp_zero, one_smul] using
     mpullback_flowOf_apply_eq_exp_integral_smul hZ continuous_const β.mdifferentiable hL hx
+
+/-- **Maximal flows preserve one-forms of constant value whose derivative annihilates the field.**
+If a smooth one-form `α` takes a constant value `c` on a `C²` vector field `Z` and
+`ι_Z dα = 0`, then the time-`t` map of the maximal flow `φ` of `Z` satisfies `(φₜ^* α)ₓ = αₓ`
+wherever the flow through `x` is defined at time `t`, because Cartan's formula gives
+`L_Z α = ι_Z dα + d(α(Z)) = 0`. This applies to the Reeb vector field of a contact form. The field
+need not be complete. -/
+theorem mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero {α : SmoothForm I M F 1} {c : F}
+    (hαZ : ∀ y, α.1 y ![Z y] = c) (hZα : (mextDeriv α.1).interior Z = 0) {t : ℝ} {x : M}
+    (hx : (t, x) ∈ flowDomain Z) :
+    mpullback (F := F) I I (flowOf Z t) α.1 x = α.1 x := by
+  -- Cartan's formula: `L_Z α = ι_Z dα + d(α(Z)) = 0`, a zero multiple of `α`.
+  have hL : mlieDerivForm Z α.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • α.1 y := by
+    funext y
+    refine ContinuousAlternatingMap.ext fun v ↦ ?_
+    obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+    have h0 := congrArg (fun β : RoughForm I M F 1 ↦ β y ![w]) hZα
+    simp only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] at h0
+    rw [mlieDerivForm_apply_eq_mextDeriv_add hαZ (α.mdifferentiable y)
+      (hZ.mdifferentiable two_ne_zero y), h0]
+    simp [mvfderiv_const]
+  simpa only [intervalIntegral.integral_zero, Real.exp_zero, one_smul] using
+    mpullback_flowOf_apply_eq_exp_integral_smul hZ continuous_const α.mdifferentiable hL hx
 
 end MaximalFlow
 

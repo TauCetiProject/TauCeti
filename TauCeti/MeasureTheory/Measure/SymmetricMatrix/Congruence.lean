@@ -164,6 +164,13 @@ theorem symmetricCongruenceLinearMap_one :
   refine LinearMap.ext fun A => Subtype.ext ?_
   simp
 
+/-- Congruence by the zero matrix is the zero linear map. -/
+@[simp]
+theorem symmetricCongruenceLinearMap_zero :
+    symmetricCongruenceLinearMap (0 : Matrix (Fin q) (Fin p) ℝ) = 0 := by
+  refine LinearMap.ext fun A ↦ Subtype.ext ?_
+  simp
+
 /-! ### The determinant of congruence -/
 
 /-- Counting how often each index occurs in an on-or-above-diagonal pair: the index `i` occurs

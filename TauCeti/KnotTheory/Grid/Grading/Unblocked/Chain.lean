@@ -605,7 +605,7 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
 /-- **The Alexander grading of `GC⁻`**: the unblocked grid chain module is the internal direct sum
 of its Alexander pieces, as a module over the coefficient ring `R`. -/
 def alexanderChainMinusGrading (R : Type*) [CommRing R] :
-    InternalGrading R (GridChainMinus R n) where
+    InternalGrading R (GridChainMinus R n) ℤ where
   piece := G.alexanderChainMinusPiece R
   isInternal := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
     (G.iSupIndep_alexanderChainMinusPiece R) (G.iSup_alexanderChainMinusPiece_eq_top R)

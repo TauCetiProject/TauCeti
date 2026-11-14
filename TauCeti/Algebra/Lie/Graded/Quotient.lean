@@ -30,7 +30,7 @@ public section
 
 namespace LieIdeal
 
-variable {ι : Type} {R L : Type*} [DecidableEq ι] [AddCommMonoid ι]
+variable {ι : Type*} {R L : Type*} [DecidableEq ι] [AddCommMonoid ι]
   [CommRing R] [LieRing L] [LieAlgebra R L]
 
 /-- The quotient by a homogeneous Lie ideal inherits the Lie grading on the images of the

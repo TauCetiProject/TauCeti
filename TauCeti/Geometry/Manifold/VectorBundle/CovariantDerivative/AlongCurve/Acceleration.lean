@@ -262,7 +262,7 @@ theorem accelerationWithin_eq_symmL {x : M} {s : Set 𝕜} {t : 𝕜} (hs : Uniq
             (derivWithin (extChartAt I x ∘ γ) s t) (derivWithin (extChartAt I x ∘ γ) s t)) := by
   have hγd : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [← alongCurveInChartWithin_curveVelocityWithin cov γ hγd ht hx,
-    symmL_alongCurveInChartWithin cov γ _ hx (hs t ht) (hγd t ht)
+    symmL_alongCurveInChartWithin cov γ _ hx (hγd t ht)
       (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))),
     accelerationWithin_def]

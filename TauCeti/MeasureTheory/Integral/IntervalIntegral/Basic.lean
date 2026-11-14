@@ -32,6 +32,14 @@ not belong to any particular application.
   `+∞` and to `-∞` at `-∞`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
+* `TauCeti.intervalIntegral.norm_integral_le_setIntegral_norm` and
+  `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
+  and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
+  by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
+* `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
+  integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
+* `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
+  integrable function is bounded in norm by the integral of its norm over the whole space.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
@@ -46,6 +54,27 @@ open MeasureTheory Set
 namespace TauCeti
 
 namespace intervalIntegral
+
+/-- Interval integrals add over a `Fin`-indexed partition, which need not be increasing. -/
+theorem sum_integral_adjacent_intervals_fin {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {f : ℝ → E} {n : ℕ} (τ : Fin (n + 1) → ℝ)
+    (hint : ∀ i : Fin n, IntervalIntegrable f μ (τ i.castSucc) (τ i.succ)) :
+    ∑ i : Fin n, ∫ t in τ i.castSucc..τ i.succ, f t ∂μ =
+      ∫ t in τ 0..τ (Fin.last n), f t ∂μ := by
+  let a (k : ℕ) := τ (Fin.ofNat (n + 1) k)
+  have ha (i : Fin (n + 1)) : a i = τ i := by
+    simp [a, Fin.ofNat_eq_cast]
+  have hint' (k : ℕ) (hk : k < n) : IntervalIntegrable f μ (a k) (a (k + 1)) := by
+    simpa only [← ha (⟨k, hk⟩ : Fin n).castSucc, ← ha (⟨k, hk⟩ : Fin n).succ,
+      Fin.val_castSucc, Fin.val_succ, Fin.val_mk] using hint ⟨k, hk⟩
+  have h0 : a 0 = τ 0 := by simpa only [Fin.val_zero] using ha 0
+  have hn : a n = τ (Fin.last n) := by simpa only [Fin.val_last] using ha (Fin.last n)
+  have hsum := _root_.intervalIntegral.sum_integral_adjacent_intervals hint'
+  rw [← Fin.sum_univ_eq_sum_range, h0, hn] at hsum
+  rw [← hsum]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
 
 /-- The primitive `t ↦ ∫ x in a..t, f x ∂μ` of a function that is almost everywhere nonnegative and
 interval integrable on `[a, b]` is nondecreasing on `[a, b]`. -/
@@ -197,6 +226,61 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
     IntervalIntegrable f μ s t :=
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
+
+/-- For `f` integrable on `(a, b)`, `c ∈ [a, b]` and `a ≤ s ≤ t ≤ b`, the integral of `f` over
+`(s, t)` is the difference of the primitives `∫ x in c..t, f x` and `∫ x in c..s, f x` based at
+`c`. -/
+theorem MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ] {a b c s t : ℝ}
+    (hf : IntegrableOn f (Ioo a b) μ) (hc : c ∈ Icc a b) (has : a ≤ s) (hst : s ≤ t)
+    (htb : t ≤ b) :
+    ∫ x in Ioo s t, f x ∂μ = (∫ x in c..t, f x ∂μ) - ∫ x in c..s, f x ∂μ := by
+  rw [intervalIntegral.integral_interval_sub_left
+      (hf.intervalIntegrable_of_mem_Icc hc ⟨has.trans hst, htb⟩)
+      (hf.intervalIntegrable_of_mem_Icc hc ⟨has, hst.trans htb⟩),
+    intervalIntegral.integral_of_le hst, integral_Ioc_eq_integral_Ioo]
+
+/-- The norm of an interval integral of an integrable function is at most the integral of its
+norm over the whole space. -/
+theorem MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ} (hf : Integrable f μ)
+    (a b : ℝ) : ‖∫ x in a..b, f x ∂μ‖ ≤ ∫ x, ‖f x‖ ∂μ :=
+  intervalIntegral.norm_integral_le_integral_norm_uIoc.trans
+    (setIntegral_le_integral hf.norm (.of_forall fun _ ↦ norm_nonneg _))
+
+namespace TauCeti.intervalIntegral
+
+open scoped Interval
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {μ : Measure ℝ}
+  [NullSingletonClass μ] {a b s t : ℝ}
+
+/-- For a measure without mass at points, the integral of `f` between two points of `[a, b]` is
+bounded by the `L¹(a, b)` norm of `f`. -/
+theorem norm_integral_le_setIntegral_norm (hf : IntegrableOn f (Ioo a b) μ)
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ x in s..t, f x ∂μ‖ ≤ ∫ x in Ioo a b, ‖f x‖ ∂μ := by
+  have hf' : IntegrableOn f (Icc a b) μ := (integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf
+  calc ‖∫ x in s..t, f x ∂μ‖ ≤ ∫ x in Ι s t, ‖f x‖ ∂μ :=
+        _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
+    _ ≤ ∫ x in Icc a b, ‖f x‖ ∂μ :=
+        setIntegral_mono_set hf'.norm (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _)
+          (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)).eventuallySubset
+    _ = ∫ x in Ioo a b, ‖f x‖ ∂μ := integral_Icc_eq_integral_Ioo
+
+/-- For a measure without mass at points, if `‖f‖ ≤ g` almost everywhere on `(a, b)`, with `g`
+integrable there, then the integral of `f` between two points of `[a, b]` is bounded by the
+integral of `g` between them. -/
+theorem norm_integral_le_abs_of_ae_norm_le {g : ℝ → ℝ}
+    (hg : IntegrableOn g (Ioo a b) μ) (hfg : ∀ᵐ x ∂μ.restrict (Ioo a b), ‖f x‖ ≤ g x)
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖∫ x in s..t, f x ∂μ‖ ≤ |∫ x in s..t, g x ∂μ| := by
+  rw [restrict_Ioo_eq_restrict_Icc] at hfg
+  exact _root_.intervalIntegral.norm_integral_le_abs_of_norm_le
+    (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)) hfg)
+    (hg.intervalIntegrable_of_mem_Icc hs ht)
+
+end TauCeti.intervalIntegral
 
 /-- A continuous linear equivalence commutes with interval integrals of arbitrary functions;
 compare `ContinuousLinearMap.intervalIntegral_comp_comm`, which needs integrability. -/

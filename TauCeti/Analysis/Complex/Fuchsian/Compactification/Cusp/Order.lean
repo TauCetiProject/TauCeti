@@ -47,11 +47,7 @@ theorem meromorphicOrderAt_ofCusp_eq_orderTop_laurentQExpansion (D : Γ.CuspDatu
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     RiemannSurface.meromorphicOrderAt F (ofCusp D.cuspOrbit) =
       (laurentQExpansion D k f).orderTop := by
-  have hf (g : stabilizer Γ D.cusp) (z : ℍ) : f (g • z) = f z := by
-    rw [← hF, ← hF]
-    exact congrArg (fun p ↦ F (ofQuotient p))
-      (Quotient.sound (orbitRel_apply.mpr (mem_orbit z (g : Γ))))
   rw [meromorphicOrderAt_ofCusp D hF]
-  exact meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f hf han
+  exact meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion D k f han
 
 end Subgroup.CompactifiedQuotient
