@@ -78,8 +78,9 @@ as well.
   of the cube.
 * `HomotopyGroup.hurewicz_mul`, `HomotopyGroup.hurewiczHom`: the Hurewicz map is a homomorphism
   from `π_{n+1}(X, x)`, written additively, to the group of morphisms `R ⟶ Hₙ₊₁(X; R)`.
-* `HomotopyGroup.hurewiczIntHom`: the integral Hurewicz homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`,
-  natural in the space (`HomotopyGroup.hurewiczIntHom_map`).
+* `HomotopyGroup.hurewiczIntHom`, `HomotopyGroup.hurewiczUliftIntHom`: the integral Hurewicz
+  homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, in `Type 0` and in an arbitrary universe `w`, natural in
+  the space (`HomotopyGroup.hurewiczIntHom_map`, `HomotopyGroup.hurewiczUliftIntHom_map`).
 
 ## References
 
@@ -712,6 +713,36 @@ theorem hurewiczIntHom_map {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y
       (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
         (TopCat.ofHom f)).hom (hurewiczIntHom X x n (Additive.ofMul a)) := by
   rw [hurewiczIntHom_apply, hurewiczIntHom_apply, toMul_ofMul, toMul_ofMul, hurewicz_map,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
+
+/-- **The integral Hurewicz homomorphism in an arbitrary universe** `w`,
+`πₙ₊₁(X, x) → Hₙ₊₁(X; ULift.{w} ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the Hurewicz homomorphism
+`HomotopyGroup.hurewiczHom` with universe-lifted integer coefficients
+`ModuleCat.of ℤ (ULift.{w} ℤ)`, evaluated at `1 : ULift.{w} ℤ`. -/
+def hurewiczUliftIntHom (X : Type w) [TopologicalSpace X] (x : X) (n : ℕ) :
+    Additive (HomotopyGroup (Fin (n + 1)) X x) →+
+      ((singularHomologyFunctor (ModuleCat.{w} ℤ) (n + 1)).obj
+        (ModuleCat.of ℤ (ULift.{w} ℤ))).obj (TopCat.of X) where
+  toFun a := (hurewiczHom (ModuleCat.of ℤ (ULift.{w} ℤ)) n a).hom 1
+  map_zero' := by simp
+  map_add' a b := by simp
+
+lemma hurewiczUliftIntHom_apply (X : Type w) [TopologicalSpace X] (x : X) (n : ℕ)
+    (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
+    hurewiczUliftIntHom X x n a = (hurewicz (ModuleCat.of ℤ (ULift.{w} ℤ)) n a.toMul).hom 1 :=
+  congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
+
+/-- **Naturality of the universe-polymorphic integral Hurewicz homomorphism**: for a based map
+`f : (X, x) → (Y, y)` in universe `w`, the Hurewicz class of `f_* a` is the image of the Hurewicz
+class of `a` under `f_* : Hₙ₊₁(X; ULift.{w} ℤ) → Hₙ₊₁(Y; ULift.{w} ℤ)`. -/
+theorem hurewiczUliftIntHom_map {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+    {x : X} {y : Y} (f : C(X, Y)) (hf : f x = y) {n : ℕ}
+    (a : HomotopyGroup (Fin (n + 1)) X x) :
+    hurewiczUliftIntHom Y y n (Additive.ofMul (map f hf a)) =
+      (((singularHomologyFunctor (ModuleCat.{w} ℤ) (n + 1)).obj
+        (ModuleCat.of ℤ (ULift.{w} ℤ))).map (TopCat.ofHom f)).hom
+          (hurewiczUliftIntHom X x n (Additive.ofMul a)) := by
+  rw [hurewiczUliftIntHom_apply, hurewiczUliftIntHom_apply, toMul_ofMul, toMul_ofMul, hurewicz_map,
     ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end HomotopyGroup
