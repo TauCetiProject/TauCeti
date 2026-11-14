@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.MetricSpace.HolderNorm
 
+import TauCeti.Topology.MetricSpace.Holder
+
 /-!
 # Hölder spaces
 
@@ -21,7 +23,6 @@ space. The carrier is a submodule of bounded continuous maps, using Mathlib's ex
 * `TauCeti.holderSubmodule`: the `𝕜`-submodule of bounded continuous Hölder functions;
 * `TauCeti.holderNorm_nonneg`, `TauCeti.norm_le_holderNorm`, and
   `TauCeti.nnHolderNorm_le_holderNorm`: basic bounds;
-* `TauCeti.nnHolderNorm_smul`: unconditional scalar homogeneity of Mathlib's `nnHolderNorm`;
 * `TauCeti.holderNorm_add_le`, `TauCeti.holderNorm_smul`, and
   `TauCeti.holderNorm_sub_le_holderNorm_sub_add_holderNorm_sub`: norm estimates.
 -/
@@ -77,23 +78,28 @@ theorem holderNorm_add_le {α : ℝ≥0} (f g : X →ᵇ Y)
     _ = (‖f‖ + (nnHolderNorm α (f : X → Y) : ℝ)) +
           (‖g‖ + (nnHolderNorm α (g : X → Y) : ℝ)) := add_add_add_comm _ _ _ _
 
-/-- Scalar homogeneity of the Hölder seminorm, for every map, whether or not it is `α`-Hölder.
-Mathlib's `MemHolder.nnHolderNorm_smul` assumes `MemHolder`; without it, both sides take the junk
-value `0` when `c ≠ 0`. -/
-theorem nnHolderNorm_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 Y] [NormSMulClass 𝕜 Y]
-    {α : ℝ≥0} (c : 𝕜) (f : X → Y) :
-    nnHolderNorm α (c • f) = ‖c‖₊ * nnHolderNorm α f := by
-  -- `nnHolderNorm` is the truncation of `eHolderNorm`, which is unconditionally homogeneous.
-  rw [nnHolderNorm, nnHolderNorm, eHolderNorm_smul, ENNReal.toNNReal_mul, ENNReal.toNNReal_coe]
-
 /-- Scalar homogeneity of the supremum-plus-Hölder norm, for every bounded continuous map, whether
 or not it is `α`-Hölder. -/
 @[simp]
-theorem holderNorm_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
+theorem holderNorm_smul {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 Y] [NormSMulClass 𝕜 Y]
     {α : ℝ≥0} (c : 𝕜) (f : X →ᵇ Y) :
     holderNorm α (c • f) = ‖c‖ * holderNorm α f := by
-  simp only [holderNorm_def, norm_smul, FunLike.coe_smul, nnHolderNorm_smul, NNReal.coe_mul,
+  -- Mathlib's `NormedSpace` instance on `X →ᵇ Y` needs a normed field, so the homogeneity of the
+  -- supremum norm over a normed ring is computed from its definition as a supremum.
+  have hsup : ‖c • f‖ = ‖c‖ * ‖f‖ := by
+    simp only [BoundedContinuousFunction.norm_eq_iSup_norm, smul_apply, norm_smul,
+      ← Real.mul_iSup_of_nonneg (norm_nonneg c)]
+  simp only [holderNorm_def, hsup, FunLike.coe_smul, nnHolderNorm_smul, NNReal.coe_mul,
     coe_nnNorm, mul_add]
+
+/-- Triangle inequality for the supremum-plus-Hölder norm of a difference through an intermediate
+map `g`. Only the two differences `f - g` and `g - h` need to be `α`-Hölder. -/
+theorem holderNorm_sub_le_holderNorm_sub_add_holderNorm_sub {α : ℝ≥0} (f g h : X →ᵇ Y)
+    (hfg : MemHolder α ((f - g : X →ᵇ Y) : X → Y))
+    (hgh : MemHolder α ((g - h : X →ᵇ Y) : X → Y)) :
+    holderNorm α (f - h) ≤ holderNorm α (f - g) + holderNorm α (g - h) := by
+  rw [← sub_add_sub_cancel f g h]
+  exact holderNorm_add_le _ _ hfg hgh
 
 variable (𝕜 : Type*) [SeminormedRing 𝕜] [Module 𝕜 Y] [IsBoundedSMul 𝕜 Y]
 
@@ -125,22 +131,6 @@ theorem holderWith (f : holderSubmodule (X := X) (Y := Y) 𝕜 α) :
     HolderWith (nnHolderNorm α (f : X → Y)) α (f : X → Y) :=
   (holderSubmodule.memHolder f).holderWith
 
-/-- The difference of two elements of `holderSubmodule 𝕜 α` satisfies the global `α`-Hölder
-condition. -/
-theorem memHolder_sub (f g : holderSubmodule (X := X) (Y := Y) 𝕜 α) :
-    MemHolder α (((f : X →ᵇ Y) - g) : X → Y) :=
-  sub_mem f.2 g.2
-
 end holderSubmodule
-
-/-- Triangle inequality for the norm of a difference through an intermediate Hölder map. -/
-theorem holderNorm_sub_le_holderNorm_sub_add_holderNorm_sub
-    {α : ℝ≥0} (f g h : holderSubmodule (X := X) (Y := Y) 𝕜 α) :
-    holderNorm α ((f : X →ᵇ Y) - (h : X →ᵇ Y)) ≤
-      holderNorm α ((f : X →ᵇ Y) - (g : X →ᵇ Y)) +
-        holderNorm α ((g : X →ᵇ Y) - (h : X →ᵇ Y)) := by
-  rw [← sub_add_sub_cancel (f : X →ᵇ Y) g h]
-  exact holderNorm_add_le _ _ (holderSubmodule.memHolder_sub f g)
-    (holderSubmodule.memHolder_sub g h)
 
 end TauCeti

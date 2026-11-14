@@ -45,6 +45,8 @@ Finally, on a metric space the infimum defining Mathlib's extended Hölder semin
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
 supremum of the difference quotients `edist (f x) (f y) / edist x y ^ r` over pairs of distinct
 points, the form in which Hölder seminorms are written in analysis texts.
+Its truncation `nnHolderNorm r f` is homogeneous in scalar multiples of `f`, whether or not `f` is
+Hölder.
 
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
 `α ≤ 1`.
@@ -54,6 +56,7 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
   is Mathlib's `HolderOnWith.dist_le`.
 * `HolderOnWith.sub`: differences preserve the exponent and add the Hölder constants.
+* `MemHolder.sub`: the difference of two `r`-Hölder functions is `r`-Hölder.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
 * `HolderOnWith.of_le_of_dist_le`: a function satisfying a `β`-Hölder bound between points at
   distance less than `δ > 0`, with values within distance `D` of each other, is `γ`-Hölder for
@@ -91,6 +94,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   extended constant `C`.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
+* `nnHolderNorm_smul`: scalar homogeneity of Mathlib's `nnHolderNorm`, without assuming that the
+  map is Hölder.
 * `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
   `α ≤ 1`.
 -/
@@ -151,6 +156,14 @@ theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
     _ ≤ (C : ℝ) * dist x y ^ (r : ℝ) + (D : ℝ) * dist x y ^ (r : ℝ) :=
       add_le_add (hf.dist_le hx hy) (hg.dist_le hx hy)
     _ = _ := by rw [NNReal.coe_add, add_mul]
+
+/-- The difference of two `r`-Hölder functions is `r`-Hölder. Compare `MemHolder.add`. -/
+theorem MemHolder.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y] {r : ℝ≥0}
+    {f g : X → Y} (hf : MemHolder r f) (hg : MemHolder r g) : MemHolder r (f - g) := by
+  obtain ⟨C, hC⟩ := hf
+  obtain ⟨D, hD⟩ := hg
+  -- `HolderWith` is `HolderOnWith` on `univ`, where `HolderOnWith.sub` applies.
+  exact ⟨C + D, holderOnWith_univ.1 ((hC.holderOnWith univ).sub (hD.holderOnWith univ))⟩
 
 /-- `HolderOnWith` is equivalent to the Hölder bound stated with `dist`. Compare
 `lipschitzOnWith_iff_dist_le_mul`. -/
@@ -457,6 +470,15 @@ theorem eHolderNorm_eq_iSup_dist {X Y : Type*} [MetricSpace X] [PseudoMetricSpac
   refine iSup_congr fun x => iSup_congr fun y => iSup_congr fun hxy => ?_
   rw [ENNReal.ofReal_div_of_pos (Real.rpow_pos_of_pos (dist_pos.2 hxy) _), edist_dist,
     edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg]
+
+/-- Scalar homogeneity of the Hölder seminorm, for every map, whether or not it is `r`-Hölder.
+Mathlib's `MemHolder.nnHolderNorm_smul` assumes `MemHolder`; without it, both sides take the junk
+value `0` when `c ≠ 0`. -/
+theorem nnHolderNorm_smul {X Y 𝕜 : Type*} [MetricSpace X] [NormedAddCommGroup Y] [NormedRing 𝕜]
+    [Module 𝕜 Y] [NormSMulClass 𝕜 Y] {r : ℝ≥0} (c : 𝕜) (f : X → Y) :
+    nnHolderNorm r (c • f) = ‖c‖₊ * nnHolderNorm r f := by
+  -- `nnHolderNorm` is the truncation of `eHolderNorm`, which is unconditionally homogeneous.
+  rw [nnHolderNorm, nnHolderNorm, eHolderNorm_smul, ENNReal.toNNReal_mul, ENNReal.toNNReal_coe]
 
 /-- A curve on a set `S` of times with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous on `S`
 with constant `c ^ (1 / 2)`. -/
