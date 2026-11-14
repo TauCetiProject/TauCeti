@@ -66,11 +66,8 @@ private theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin_alongCurveWithin
       (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
     simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
       hvel.of_le hn_le_infty
-  have hcurv : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1 : ℕ)
-      (fun r ↦ TotalSpace.mk' E (γ r)
-        (cov.curvatureTensor (γ r) (J r) (curveVelocityWithin I γ s r)
-          (curveVelocityWithin I γ s r))) s := by
-    exact cov.contMDiffOn_curvatureTensor_apply hJ hvel' hvel' hn_le_infty
+  have hcurv := cov.contMDiffOn_curvatureTensor (F := E) (V := TangentSpace I)
+        hn_le_infty hJ hvel' hvel'
   refine (contMDiffOn_const (c := (-1 : ℝ))).smul_totalSpace hcurv |>.congr ?_
   intro r hr
   simp only [neg_one_smul]

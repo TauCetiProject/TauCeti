@@ -17,6 +17,7 @@ regularity on a parameter set, so they apply both to local frames and to familie
 Independence is needed only at the point in the pointwise statements. No regularity is
 asserted for the quotient's junk values at dependent pairs.
 
+The proof uses smooth curvature evaluation and the Gram determinant.
 No frame or Grassmannian carrier is chosen.
 The convention and quotient follow J. M. Lee, *Introduction to Riemannian Manifolds*,
 second edition, Chapter 8.
@@ -52,7 +53,8 @@ theorem contMDiffWithinAt_sectionalCurvature
     (huv : LinearIndependent ℝ ![u p, v p]) :
     ContMDiffWithinAt J 𝓘(ℝ) n (fun q ↦ cov.sectionalCurvature hcov (f q) (u q) (v q))
       s p := by
-  have hRuvv := cov.contMDiffWithinAt_curvatureTensor_apply hu hv hv (by simp)
+  have hRuvv := cov.contMDiffWithinAt_curvatureTensor (F := E) (V := TangentSpace I)
+    (by simp : (n : ℕ∞ω) ≤ ∞) hu hv hv
   have hnum := ContMDiffWithinAt.inner_bundle (IB := I) (F := E)
     (E := fun x : M ↦ TangentSpace I x) hRuvv hu
   have huu := ContMDiffWithinAt.inner_bundle (IB := I) (F := E)
