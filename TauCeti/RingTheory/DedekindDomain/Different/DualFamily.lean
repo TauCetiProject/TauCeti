@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.RingTheory.Localization.Finiteness
+public import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
 # Trace-dual families of a projective extension
@@ -22,14 +23,18 @@ finite trace-dual family `bᵢ ∈ B` and `yᵢ ∈ Bᵛ` satisfying
 
 `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`.
 
-This identity is used to compare trace duals after extending scalars, in particular when
-comparing a number-field different with the different of a completed extension.
+This identity, together with integrality of the trace pairing on `A₀ ⊗[A] B`
+(`TauCeti.trace_baseChangeOfTower_mul_mem`), is used to compare trace duals after extending scalars,
+in particular when comparing a global or local different with the different of a completed
+extension.
 
 ## Main results
 
 * `TauCeti.exists_trace_mul_algebraMap_eq`: every `A`-linear form on `B` is a trace pairing.
 * `TauCeti.exists_sum_trace_mul_smul_eq`: a projective integral closure has a finite trace-dual
   family `(bᵢ, yᵢ)` with `bᵢ ∈ B`, `yᵢ ∈ Bᵛ` and `x = ∑ᵢ Tr(x bᵢ) yᵢ`.
+* `TauCeti.trace_baseChangeOfTower_mul_mem`: on the image of `A₀ ⊗[R] B` in `A ⊗[K] L`, the trace
+  pairing with an element of `Submodule.traceDual R K 1` takes values in `A₀`.
 
 ## References
 
@@ -40,9 +45,11 @@ public section
 
 open Module
 
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors TensorProduct
 
 namespace TauCeti
+
+section DualFamily
 
 variable (A K : Type*) {L B : Type*} [CommRing A] [Field K] [CommRing B] [Field L]
   [Algebra A K] [Algebra B L] [Algebra A B] [Algebra K L] [Algebra A L]
@@ -125,5 +132,34 @@ theorem exists_sum_trace_mul_smul_eq :
   simp only [Submonoid.smul_def] at hz'
   rw [← smul_eq_zero_iff_right ha', ← map_smul, algebraMap_smul, ← hz', Algebra.traceForm_apply,
     hpair]
+
+end DualFamily
+
+section BaseChange
+
+variable {R K A₀ A B L : Type*} [CommRing R] [Field K] [Algebra R K]
+  [CommRing A₀] [Algebra R A₀] [CommRing A] [Algebra R A] [Algebra K A] [Algebra A₀ A]
+  [IsScalarTower R K A] [IsScalarTower R A₀ A]
+  [CommRing B] [Algebra R B] [Field L] [Algebra R L] [Algebra K L] [Algebra B L]
+  [IsScalarTower R K L] [IsScalarTower R B L]
+
+/-- On the image of `A₀ ⊗[R] B` under `TauCeti.baseChangeOfTower`, the trace pairing with an
+element of `Submodule.traceDual R K (1 : Submodule B L)` takes values in `A₀`. -/
+theorem trace_baseChangeOfTower_mul_mem {d : L}
+    (hd : d ∈ Submodule.traceDual R K (1 : Submodule B L)) (t : A₀ ⊗[R] B) :
+    Algebra.trace A (A ⊗[K] L) (baseChangeOfTower R K A₀ A B L t * (1 ⊗ₜ[K] d)) ∈
+      (algebraMap A₀ A).range := by
+  induction t using TensorProduct.inductionOn with
+  | add t u ht hu =>
+    rw [map_add, add_mul, map_add]
+    exact add_mem ht hu
+  | tmul a₀ b =>
+    obtain ⟨r, hr⟩ := Submodule.mem_traceDual.mp hd _ (Submodule.mem_one.mpr ⟨b, rfl⟩)
+    rw [Algebra.traceForm_apply, mul_comm] at hr
+    refine ⟨a₀ * algebraMap R A₀ r, ?_⟩
+    rw [Algebra.trace_baseChangeOfTower_tmul_mul, ← hr, map_mul,
+      ← IsScalarTower.algebraMap_apply R A₀ A, IsScalarTower.algebraMap_apply R K A]
+
+end BaseChange
 
 end TauCeti

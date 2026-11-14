@@ -115,13 +115,12 @@ theorem restrict_surjective (hF' : IsFunctionField k' F') :
 
 /-- **The ramification index of a place of the base is positive** for an algebraic extension
 `F' / F` with `F'` a function field over an integral extension `k'` of `k`: some place of
-`F' / k'` lies above it, and it is also a place of `F' / k` (`TauCeti.Place.constantsEquiv`). -/
+`F' / k'` lies above it, and it is also a place of `F' / k` (`TauCeti.Place.restrictConstants`). -/
 theorem ramificationIdxIn_pos (hF' : IsFunctionField k' F') {P : Place k F} :
     0 < P.ramificationIdxIn F' := by
   obtain ⟨Q', hQ'⟩ := restrict_surjective hF' P
-  have hQ : ((constantsEquiv k k' F').symm Q').restrict k F = P := by
-    rw [restrict_eq_iff_integers_le, integers_constantsEquiv_symm]
-    exact (restrict_eq_iff_integers_le k F Q' P).mp hQ'
+  have hQ : (Q'.restrictConstants k).restrict k F = P :=
+    (restrict_restrictConstants k F Q').trans hQ'
   rw [ramificationIdxIn_of_exists ⟨_, hQ⟩]
   exact ramificationIdx_pos F _
 
