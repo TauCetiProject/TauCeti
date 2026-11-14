@@ -163,7 +163,8 @@ theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
 /-- **Almost everywhere does not depend on the metric.** The almost-everywhere filter of the
 Riemannian volume of a continuous metric is the almost-everywhere filter of chartwise null sets. -/
 theorem ae_riemannianVolume : ae (riemannianVolume I M) = Manifold.ae I M :=
-  Manifold.ae_eq_of_forall_measure_eq_zero_iff fun _ ↦ isNullSet_iff_riemannianVolume_eq_zero.symm
+  Manifold.ae_eq_iff_forall_measure_eq_zero_iff.2 fun _ ↦
+    isNullSet_iff_riemannianVolume_eq_zero.symm
 
 end Null
 
