@@ -24,7 +24,9 @@ the subtype `Ω`, finite on compact subsets of `Ω`, such that:
 * `|T φ| ≤ ∫ ‖φ‖ d‖T‖` for every test `φ`;
 * `‖T‖` is the least outer regular measure with this domination property.
 
-The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`.
+The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`. The
+local-mass estimates, the construction of `‖T‖` and its values on open sets do not use finite
+dimension; its regularity, the domination and the minimality do.
 No Radon representation is claimed for functionals that do not have locally finite mass; for
 these `Distribution.massMeasure` is the zero measure by convention.
 
@@ -67,7 +69,7 @@ open scoped BoundedContinuousFunction ENNReal NNReal Distributions Topology
 
 namespace Distribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
   {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ]
 
@@ -75,7 +77,6 @@ section LocalMass
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-omit [FiniteDimensional ℝ E] in
 /-- **Localization of the mass bound.** If the support of a test `φ` is covered by finitely many
 open sets `W i`, and `‖φ‖ ≤ c i` on `W i`, then `‖T φ‖ ≤ ∑ i, localMass T (W i) * c i`. -/
 theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
@@ -99,7 +100,6 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
         rw [Finset.sum_coe_sort s fun i => localMass T (W i) * c i]
         exact Finset.sum_le_sum_of_subset (Finset.subset_univ s)
 
-omit [FiniteDimensional ℝ E] in
 /-- The local mass is subadditive on pairs of open sets. -/
 theorem localMass_union_le {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
     [LinearMapClass 𝓖 ℝ 𝓓^{n}(Ω, F) V] (T : 𝓖) {U U' : Set E} (hU : IsOpen U)
@@ -110,7 +110,6 @@ theorem localMass_union_le {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
     (fun _ x _ => by simpa [← ofReal_norm] using hφ1 x)
   simpa [add_comm] using h
 
-omit [FiniteDimensional ℝ E] in
 /-- **Additivity of the local mass on disjoint open sets.** -/
 theorem localMass_union_of_disjoint (T : 𝓕) {U U' : Set E} (hU : IsOpen U) (hU' : IsOpen U')
     (h : Disjoint U U') : localMass T (U ∪ U') = localMass T U + localMass T U' :=
@@ -127,6 +126,11 @@ theorem HasLocallyFiniteMass.exists_open_localMass_ne_top
     {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V] [LinearMapClass 𝓖 ℝ 𝓓^{n}(Ω, F) V]
     {T : 𝓖} (hT : HasLocallyFiniteMass T) {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ U : Opens E, K ⊆ (U : Set E) ∧ localMass T U ≠ ⊤ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- Every test function is zero, so `T` has zero local mass on `Ω`.
+    refine ⟨Ω, hKΩ, ne_top_of_le_ne_top ENNReal.zero_ne_top (localMass_le_iff.2 fun φ _ _ => ?_)⟩
+    simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   obtain ⟨U, hU, hKU, hclΩ, hcl⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   exact ⟨⟨U, hU⟩, hKU, ne_top_of_le_ne_top
     ((hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT _ hcl hclΩ) (localMass_mono subset_closure)⟩
@@ -146,13 +150,11 @@ end Content
 private def levelSet (φ : 𝓓^{n}(Ω, F)) (ε : ℝ) (j : ℕ) : Set Ω :=
   (↑) ⁻¹' tsupport φ ∩ {x | ⌈‖φ x‖ / ε⌉₊ = j + 1}
 
-omit [FiniteDimensional ℝ E] in
 private theorem mem_levelSet {φ : 𝓓^{n}(Ω, F)} {ε : ℝ} (hε : 0 < ε) {j : ℕ} {x : Ω}
     (hx : x ∈ levelSet φ ε j) : j * ε < ‖φ x‖ ∧ ‖φ x‖ ≤ (j + 1) * ε := by
   have h := (Nat.ceil_eq_iff (Nat.succ_ne_zero j)).1 hx.2
   rwa [Nat.succ_sub_one, Nat.cast_succ, lt_div_iff₀ hε, div_le_iff₀ hε] at h
 
-omit [FiniteDimensional ℝ E] in
 variable [MeasurableSpace E] [BorelSpace E] in
 /-- On the level sets of `‖φ‖`, the constant `(j + 2) * ε` exceeds `‖φ‖` by at most `2 * ε`, so
 the corresponding sum is bounded by the integral of `‖φ‖` plus `2 * ε` times the measure of a
@@ -183,7 +185,6 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
         rw [lintegral_add_right _ measurable_const, setLIntegral_const]
         exact add_le_add (setLIntegral_le_lintegral _ _) le_rfl
 
-omit [FiniteDimensional ℝ E] in
 /-- The sets used to dominate `T φ`: a set `W` containing the support, truncated to where
 `‖φ‖ < ε`, and, for each level set of index `j < N`, the points of `W` in a given set `G j`
 containing that level set where `‖φ‖ < (j + 2) * ε`, cover the support of `φ`. The cover is open
@@ -233,11 +234,6 @@ theorem massMeasure_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) 
     massMeasure T = 0 := by
   simp [massMeasure, hT]
 
-instance : (massMeasure T).Regular := by
-  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  unfold massMeasure
-  split_ifs <;> infer_instance
-
 /-- **The mass measure on open sets.** For an open set `U` of `E`, the mass measure of `Ω ∩ U` is
 the local mass of `T` on `U`. -/
 theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU : IsOpen U) :
@@ -264,6 +260,13 @@ theorem lintegral_massMeasure_le_mul_mass (hT : HasLocallyFiniteMass T) {f : Ω 
     {L : ℝ≥0∞} (hf : ∀ x, f x ≤ L) : ∫⁻ x, f x ∂massMeasure T ≤ L * mass T := by
   calc ∫⁻ x, f x ∂massMeasure T ≤ ∫⁻ _, L ∂massMeasure T := lintegral_mono hf
     _ = L * mass T := by rw [lintegral_const, massMeasure_univ hT]
+
+variable [FiniteDimensional ℝ E]
+
+instance : (massMeasure T).Regular := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  unfold massMeasure
+  split_ifs <;> infer_instance
 
 /-- The level-set estimate behind the domination: if `W` is an open neighbourhood of the support
 of `φ` of finite mass `M`, then `‖T φ‖ ≤ ∫ ‖φ‖ d‖T‖ + ε * (3 * M + 1)` for every `ε > 0`. -/

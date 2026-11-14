@@ -18,9 +18,9 @@ import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 /-!
 # Tensor products of distributions
 
-Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces, with `E` finite-dimensional, and
-let `V ⊆ Ω ×ˢ O` be open. For a distribution `T` on `O` and a test function `φ` on `V`, the
-**partial pairing** of `T` with `φ` is the function
+Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces, and let `V ⊆ Ω ×ˢ O` be open. For a
+distribution `T` on `O` and a test function `φ` on `V`, the **partial pairing** of `T` with `φ` is
+the function
 
 `x ↦ T (φ (x, ·))`
 
@@ -41,7 +41,7 @@ real test functions it is the product of the pairings,
 
 `(S ⊗ T) ((x, y) ↦ φ x ψ y) = S φ * T ψ`,
 
-and when `V = Ω ×ˢ O` it is the only distribution with this property: when `D` is
+and when `V = Ω ×ˢ O` it is the only distribution with this property: when `E` and `D` are
 finite-dimensional, such tensor products span a dense subspace of the test functions on `Ω ×ˢ O`
 (`TestFunction.ext_prodSMulCLM`), and otherwise every test function on `V` is zero. The tensor
 product is bilinear, satisfies the Leibniz rule
@@ -141,7 +141,16 @@ private theorem tsupport_sliceRight_taylor_subset (hO : MapsTo Prod.snd (V : Set
     Function.notMem_support.1 fun h' ↦ hn x (support_fderiv_subset ℝ h')]
   simp
 
-variable [FiniteDimensional ℝ E]
+/-- On an infinite-dimensional `E`, every test function on `V ⊆ E × D` is zero, and so is the
+partial pairing. -/
+private theorem pairingFun_eq_zero_of_not_finiteDimensional (T : 𝓓'(O, F))
+    (hO : MapsTo Prod.snd (V : Set (E × D)) O) (φ : 𝓓(V, ℝ)) (hE : ¬FiniteDimensional ℝ E) :
+    pairingFun T hO φ = 0 := by
+  have hED : ¬FiniteDimensional ℝ (E × D) := fun _ ↦
+    hE (Module.Finite.of_surjective (LinearMap.fst ℝ E D) LinearMap.fst_surjective)
+  ext x
+  rw [eq_zero_of_not_finiteDimensional φ hED]
+  simp [pairingFun, sliceRight_eq_zero]
 
 /-- The partial pairing is differentiable at every point, with derivative in the direction `v`
 given by the partial pairing with `∂_{(v, 0)} φ`. -/
@@ -149,6 +158,10 @@ private theorem exists_hasFDerivAt_pairingFun (T : 𝓓'(O, F))
     (hO : MapsTo Prod.snd (V : Set (E × D)) O) (φ : 𝓓(V, ℝ)) (x : E) :
     ∃ L : E →L[ℝ] F, HasFDerivAt (pairingFun T hO φ) L x ∧
       ∀ v, L v = pairingFun T hO (∂_{((v, 0) : E × D)} φ) x := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp only [pairingFun_eq_zero_of_not_finiteDimensional T hO _ hE]
+    exact ⟨0, hasFDerivAt_const 0 x, fun v ↦ by simp⟩
   let L : E →L[ℝ] F := LinearMap.toContinuousLinearMap
     { toFun := fun v ↦ pairingFun T hO (∂_{((v, 0) : E × D)} φ) x
       map_add' := fun v w ↦ by
@@ -193,6 +206,10 @@ private theorem fderiv_pairingFun_apply (T : 𝓓'(O, F))
 
 private theorem contDiff_pairingFun (T : 𝓓'(O, F)) (hO : MapsTo Prod.snd (V : Set (E × D)) O)
     (φ : 𝓓(V, ℝ)) : ContDiff ℝ ∞ (pairingFun T hO φ) := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · rw [pairingFun_eq_zero_of_not_finiteDimensional T hO φ hE]
+    exact contDiff_const
   rw [contDiff_infty]
   intro n
   induction n generalizing φ with
@@ -363,7 +380,7 @@ end PartialPairing
 
 section TensorProduct
 
-variable [FiniteDimensional ℝ E] (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ))
+variable (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ))
   (hV : (V : Set (E × D)) ⊆ (Ω : Set E) ×ˢ (O : Set D))
 
 /-- The **tensor product** `S ⊗ T` of complex-valued distributions `S` on `Ω` and `T` on `O`, as a
@@ -433,11 +450,13 @@ only distribution on `V` taking the value `S φ * T ψ` on every tensor product
 theorem tensorProduct_eq (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {U : 𝓓'(V, ℂ)}
     (h : ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), U (prodSMulCLM ψ hV.symm.subset φ) = S φ * T ψ) :
     S.tensorProduct T hV.subset = U := by
-  by_cases hD : FiniteDimensional ℝ D
-  · exact ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
-  -- Otherwise `E × D` is infinite-dimensional, so every test function on `V` is zero.
-  have hED : ¬FiniteDimensional ℝ (E × D) := fun _ ↦
-    hD (Module.Finite.of_surjective (LinearMap.snd ℝ E D) LinearMap.snd_surjective)
+  by_cases hED : FiniteDimensional ℝ (E × D)
+  · have : FiniteDimensional ℝ E :=
+      Module.Finite.of_surjective (LinearMap.fst ℝ E D) LinearMap.fst_surjective
+    have : FiniteDimensional ℝ D :=
+      Module.Finite.of_surjective (LinearMap.snd ℝ E D) LinearMap.snd_surjective
+    exact ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
+  -- Otherwise every test function on `V` is zero.
   ext φ
   simp [eq_zero_of_not_finiteDimensional φ hED]
 

@@ -42,7 +42,7 @@ open scoped Distributions Topology ENNReal
 namespace Distribution
 
 variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup V] [NormedSpace ℝ V] {Ω : Opens E} {n : ℕ∞}
 
 /-- The mass bounds augmentation against a constant vector, evaluated using a cutoff near the
@@ -51,6 +51,9 @@ theorem enorm_augmentation_le_mass_mul {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω,
     [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] (T : 𝓕) (hT : IsCompact (dsupport T))
     (hTΩ : dsupport T ⊆ Ω) (c : F) :
     ‖augmentation T c‖ₑ ≤ mass T * ‖c‖ₑ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
   obtain ⟨χ, hχ, hχ01⟩ := TestFunction.exists_eventually_eq_one (n := n) hT hTΩ
   rw [augmentation_eq T hχ]
   refine (enorm_apply_le_mass_mul T _).trans (mul_le_mul_right ?_ _)
@@ -105,6 +108,11 @@ theorem mass_mul_apply_finZero_le_mass_add_comp_extDerivCLM {𝓖 : Type*}
     mass (fun ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) => a * ω x ![]) ≤
       mass (fun ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) =>
         a * ω x ![] + Q (TestFunction.extDerivCLM ω)) := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- Every test form is zero, so the point current has zero mass.
+    refine (mass_le_iff.2 fun ω _ => ?_).trans zero_le
+    simp [TestFunction.eq_zero_of_not_finiteDimensional ω hE]
   let T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →ₗ[ℝ] ℝ :=
     { toFun ω := a * ω x ![]
       map_add' ω η := by simp [mul_add]
