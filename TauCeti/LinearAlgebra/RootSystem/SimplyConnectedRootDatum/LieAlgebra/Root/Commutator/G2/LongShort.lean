@@ -240,7 +240,7 @@ theorem chevalleyRootSubgroup_mul_of_g2_long_short
     (((commute_of_lie_eq_zero ρ hγζ).smul_left c).smul_right b)
     (((commute_of_lie_eq_zero ρ hδζ).smul_left d).smul_right b)
     (((commute_of_lie_eq_zero ρ hεζ).smul_left a).smul_right b)
-    (hn α) (hn β) ((hn γ).smul c) ((hn δ).smul d)
+    ((hn γ).smul c) ((hn δ).smul d)
     (hstable α) (hstable β) (hscaled c γ) (hscaled d δ) (hscaled a ε) (hscaled b ζ) u v
 
 end
