@@ -21,7 +21,7 @@ nonvanishing hypothesis is needed for the update.
 The matrix, entrywise, trace and quadratic-form identities apply also to negative `c`, zero
 vectors and empty index types. The quadratic form of the updated resolvent along `u` is
 `q / (1 + c q)`, where `q = uᴴ R u`. For positive semidefinite `A` and `c ≥ 0` the denominator
-satisfies `|(1 + c q)⁻¹| ≤ |z| / |Im z|`, because `Im (z q) = Im z · wᴴ A w` with `w = R u`.
+satisfies `|(1 + c q)⁻¹| ≤ |z| / |Im z|`.
 Trace updates and these quadratic forms are used when adding or removing one sample in a Gram
 matrix in the resolvent method for sample-covariance spectral laws.
 
@@ -118,30 +118,6 @@ theorem dotProduct_inv_add_smul_vecMulVec_sub_smul_one_mulVec (c : ℝ) (u : n �
   rw [eq_div_iff hden, sub_mul, div_mul_eq_mul_div, div_mul_eq_mul_div,
     mul_div_cancel_right₀ _ hden]
   ring
-
-/-- The imaginary part of `z uᴴ R u`, for the resolvent `R = (A - z • 1)⁻¹`, is `Im z` times the
-real quadratic form `wᴴ A w` of the vector `w = R u`. If `A - z • 1` is singular, then `R = 0` by
-the convention for `⁻¹` and both sides vanish. -/
-theorem im_mul_dotProduct_inv_sub_smul_one_mulVec (u : n → 𝕜) (z : 𝕜) :
-    RCLike.im (z * (star u ⬝ᵥ ((A - z • 1)⁻¹ *ᵥ u))) =
-      RCLike.im z *
-        RCLike.re (star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A *ᵥ ((A - z • 1)⁻¹ *ᵥ u))) := by
-  by_cases hdet : IsUnit (A - z • 1).det
-  swap
-  · simp [nonsing_inv_apply_not_isUnit _ hdet]
-  set w := (A - z • 1)⁻¹ *ᵥ u
-  have hu : u = (A - z • 1) *ᵥ w := by
-    rw [mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
-  -- Writing `u = (A - z • 1) w` turns `uᴴ w` into `wᴴ A w - conj z * wᴴ w`.
-  have hq : star u ⬝ᵥ w = star w ⬝ᵥ (A *ᵥ w) - star z * (star w ⬝ᵥ w) := by
-    conv_lhs => rw [hu]
-    rw [star_mulVec, ← dotProduct_mulVec, conjTranspose_sub, hA.eq, conjTranspose_smul,
-      conjTranspose_one, sub_mulVec, smul_mulVec, one_mulVec, dotProduct_sub, dotProduct_smul,
-      smul_eq_mul]
-  have ha := hA.im_star_dotProduct_mulVec_self w
-  have hw := (RCLike.nonneg_iff.mp (dotProduct_star_self_nonneg w)).2
-  rw [hq, mul_sub, ← mul_assoc, RCLike.star_def, RCLike.mul_conj]
-  simp [RCLike.mul_im, ha, hw]
 
 end Matrix.IsHermitian
 
