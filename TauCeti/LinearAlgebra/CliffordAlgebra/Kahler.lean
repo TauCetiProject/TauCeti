@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
@@ -18,8 +19,11 @@ with Kähler two-vector `ω` (`TauCeti.AlmostComplexStructure.kahlerForm`). For 
 `Q v = -‖v‖²`, write `c = CliffordAlgebra.ι Q` and `c₂ = CliffordAlgebra.bivectorExterior Q` for
 Clifford multiplication by vectors and by two-forms.
 
-The commutator of `c₂(ω)` with a generator is the Clifford image of `J`:
-`⁅c₂(ω), c(v)⁆ = 2 c(J v)`. On a Clifford module this is how the eigenspaces of `c₂(ω)` see `J`.
+The commutator of the Clifford image of any two-vector `F` with a generator is the Clifford image
+of the contraction `v ⌟ F` (`TauCeti.twoVectorContraction`): `⁅c₂(F), c(v)⁆ = 2 c(v ⌟ F)`
+(`CliffordAlgebra.bivectorExterior_lie_ι`). For the Kähler two-vector `v ⌟ ω = J v`, so the
+commutator of `c₂(ω)` with a generator is the Clifford image of `J`: `⁅c₂(ω), c(v)⁆ = 2 c(J v)`.
+On a Clifford module this is how the eigenspaces of `c₂(ω)` see `J`.
 For instance, on Taubes's canonical line, the `-2i`-eigenline of `c₂(ω)` in the positive
 half-spinors of a four-dimensional spin module, `v ↦ c(v) u` turns `J` into multiplication by `i`
 (`TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`).
@@ -73,28 +77,6 @@ include hQ in
 `⁅c₂(ω), c(v)⁆ = 2 c(J v)`. -/
 theorem bivectorExterior_kahlerForm_lie_ι (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) :
     ⁅bivectorExterior Q J.kahlerForm, ι Q v⁆ = ι Q ((2 : ℝ) • J v) := by
-  have hpolar (x y : V) : QuadraticMap.polar Q x y = -2 * ⟪x, y⟫ := by
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-    ring
-  rw [kahlerForm_def, map_smul, map_sum, Ring.lie_def, smul_mul_assoc, mul_smul_comm, ← smul_sub,
-    Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
-  simp only [← Ring.lie_def, bivectorExterior_apply_ιMulti, bivector_lie_ι, ← map_sum]
-  set b := stdOrthonormalBasis ℝ V
-  -- Expanding `ω = (1 / 2) ∑ᵢ bᵢ ∧ J bᵢ`, each `bᵢ ∧ J bᵢ` rotates `v` within `⟨bᵢ, J bᵢ⟩`.
-  have hsum : ∑ i, (QuadraticMap.polar Q (J (b i)) v • b i - QuadraticMap.polar Q (b i) v • J (b i))
-      = (4 : ℝ) • J v := by
-    have hJv : ∑ i, ⟪b i, J v⟫ • b i = J v := b.sum_repr' (J v)
-    have hv : ∑ i, ⟪b i, v⟫ • J (b i) = J v := by
-      conv_rhs => rw [← b.sum_repr' v]
-      simp [map_sum, map_smul]
-    calc _ = ∑ i, ((2 : ℝ) • (⟪b i, J v⟫ • b i) + (2 : ℝ) • (⟪b i, v⟫ • J (b i))) := by
-          refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [hpolar, hpolar, inner_apply_left hJ]
-          module
-      _ = (4 : ℝ) • J v := by
-          rw [Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.smul_sum, hJv, hv]
-          module
-  rw [hsum, ← map_smul, smul_smul]
-  norm_num
+  rw [bivectorExterior_lie_ι hQ, twoVectorContraction_kahlerForm hJ]
 
 end TauCeti.AlmostComplexStructure

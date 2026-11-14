@@ -402,6 +402,28 @@ theorem twoVectorContraction_neg (F : ⋀[ℝ]^2 V) :
   ext u
   simp [twoVectorContraction_apply]
 
+omit [FiniteDimensional ℝ V] in
+/-- The contraction `(F, u) ↦ u ⌟ F` as a bilinear map, linear in the two-vector `F` as well as in
+`u`. -/
+noncomputable def twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] V →ₗ[ℝ] V where
+  toFun := twoVectorContraction
+  map_add' := twoVectorContraction_add
+  map_smul' := twoVectorContraction_smul
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem twoVectorContractionₗ_apply (F : ⋀[ℝ]^2 V) :
+    twoVectorContractionₗ F = twoVectorContraction F :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
+/-- **The contraction of a simple two-vector**: `u ⌟ (a ∧ b) = ⟪u, a⟫ b - ⟪u, b⟫ a`. -/
+@[simp]
+theorem twoVectorContraction_ιMulti (w : Fin 2 → V) (u : V) :
+    twoVectorContraction (ιMulti ℝ 2 w) u = ⟪u, w 0⟫ • w 1 - ⟪u, w 1⟫ • w 0 := by
+  simp [twoVectorContraction_apply, ExteriorAlgebra.ιMulti_apply, contractLeft_ι_mul,
+    ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _, Matrix.vecTail]
+
 /-- **The contraction represents the two-form of `F`**: `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`. Equivalently,
 on two-forms, wedging with `u` is adjoint to contracting with `⟪u, ·⟫`. -/
 @[simp]

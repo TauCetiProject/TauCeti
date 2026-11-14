@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.RingTheory.KoszulComplex.Basic
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
@@ -30,6 +31,11 @@ Hodge Laplacian `d d* + d* d`: up to the factor `i`, the symbol of `d` is `ε_ξ
 the adjoint contraction `ι_ξ`, and the formula `d* = (-1) ^ (m (p + 1) + 1) ⋆ d ⋆` on `p`-forms has
 the identity above as its symbol.
 
+In dimension four, on self-dual two-vectors, `ι_u β = ⋆(u ∧ β)`. For a self-dual two-form `ω` with
+covariant derivative `∇ω` in an orthonormal frame `eₖ`, `dω = ∑ₖ eₖ ∧ ∇_{eₖ} ω` and
+`d*ω = -∑ₖ ι_{eₖ} ∇_{eₖ} ω`, so this is the pointwise reason why a closed self-dual two-form is
+coclosed.
+
 ## Main results
 
 * `TauCeti.inner_wedgeLeft_eq_inner_koszulDifferential`: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫` in every
@@ -38,6 +44,10 @@ the identity above as its symbol.
 * `Orientation.hodgeStar_koszulDifferential`: `⋆(ι_u x) = (-1) ^ k u ∧ ⋆x` for `x ∈ ⋀ᵏ⁺¹ V`.
 * `Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar`: on `⋀ᵏ⁺¹ V` with
   `m = finrank ℝ V`, `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆`.
+* `Orientation.ι_twoVectorContraction_of_hodgeStar_eq_self`: in dimension four, the contraction
+  `u ⌟ β` of a self-dual two-vector is `⋆(u ∧ β)`, and
+  `Orientation.sum_twoVectorContraction_eq_zero_of_hodgeStar_eq_self`: for self-dual `βₖ`,
+  `∑ₖ uₖ ∧ βₖ = 0` implies `∑ₖ uₖ ⌟ βₖ = 0`.
 
 ## References
 
@@ -143,5 +153,31 @@ theorem koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar (u : V) {k l : 
   obtain ⟨j, hj⟩ := Nat.even_mul_succ_self k
   have he : (k + 1) * l + (k + 1 + l) * k = l + 2 * (k * l + j) := by nlinarith [hj]
   simp [he, pow_add, pow_mul]
+
+/-- **The contraction of a self-dual two-vector is the Hodge star of a wedge**: in dimension four,
+if `⋆β = β` then `u ⌟ β = ⋆(u ∧ β)`, with `u ⌟ β` the vector `TauCeti.twoVectorContraction β u`
+read in `⋀¹ V`. -/
+theorem ι_twoVectorContraction_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
+    (hkl' : 2 + 1 + 1 = finrank ℝ V) {β : ⋀[ℝ]^2 V} (hβ : o.hodgeStar hkl β = β) (u : V) :
+    _root_.ExteriorAlgebra.ι ℝ (twoVectorContraction β u) =
+      (o.hodgeStar hkl' (ExteriorAlgebra.wedgeLeft u 2 β) : _root_.ExteriorAlgebra ℝ V) := by
+  have h := o.koszulDifferential_hodgeStar u hkl hkl' β
+  rw [hβ] at h
+  rw [twoVectorContraction_apply, ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+    (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) β.2),
+    ← coe_koszulDifferential_apply, h]
+  simp
+
+/-- **A closed self-dual two-form is coclosed, pointwise**: in dimension four, if the two-vectors
+`βₖ` are self-dual and `∑ₖ uₖ ∧ βₖ = 0`, then `∑ₖ uₖ ⌟ βₖ = 0`. -/
+theorem sum_twoVectorContraction_eq_zero_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
+    {ι : Type*} {s : Finset ι} {β : ι → ⋀[ℝ]^2 V} (hβ : ∀ k ∈ s, o.hodgeStar hkl (β k) = β k)
+    {u : ι → V} (h : ∑ k ∈ s, ExteriorAlgebra.wedgeLeft (u k) 2 (β k) = 0) :
+    ∑ k ∈ s, twoVectorContraction (β k) (u k) = 0 := by
+  have hkl' : 2 + 1 + 1 = finrank ℝ V := hkl
+  apply (_root_.ExteriorAlgebra.ι_leftInverse (R := ℝ) (M := V)).injective
+  rw [map_sum, map_zero, Finset.sum_congr rfl fun k hk ↦
+    o.ι_twoVectorContraction_of_hodgeStar_eq_self hkl hkl' (hβ k hk) (u k), ← Submodule.coe_sum,
+    ← map_sum, h, map_zero, Submodule.coe_zero]
 
 end Orientation
