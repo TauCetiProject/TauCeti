@@ -203,7 +203,7 @@ has six labelled induced copies, one for each ordering, on every triple of color
 theorem inducedCopyCount_const_three [DecidableEq κ] (H : Colored3Graph κ V) (c : κ) :
     H.inducedCopyCount (FiniteColored3Pattern.const 3 c) = 6 * #{s | H.color s = c} := by
   classical
-  rw [FiniteColored3Pattern.const_def, inducedCopyCount_def, show 6 = Nat.factorial 3 from rfl,
+  rw [FiniteColored3Pattern.const_def, inducedCopyCount_def, (by decide : 6 = Nat.factorial 3),
     ← Set.powersetCard.card_filter_ofFinEmb]
   congr 1
   ext f

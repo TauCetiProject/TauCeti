@@ -146,6 +146,7 @@ theorem sum_relativeDensity_mul_card_support (H : Colored3Graph κ V)
   have hcard : #{x | q x} = Nat.factorial 3 * #{s | H.color s = c} :=
     (card_equiv (Equiv.subtypeInjectiveEquivEmbedding _ _) fun x ↦ by
       rw [mem_filter_univ, mem_filter_univ]
+      -- By definition the equivalence sends `x` to the embedding `⟨x.1, x.2⟩` used in `q`.
       rfl).trans (Set.powersetCard.card_filter_ofFinEmb fun s ↦ H.color s = c)
   simp_rw [hP]
   rw [← Nat.cast_sum, ← card_biUnion fun P _ Q _ hPQ ↦ disjoint_filter_filter

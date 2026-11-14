@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 public import TauCeti.Data.Fintype.Card.Embedding
+import TauCeti.Data.Fintype.EmbeddingFiber
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Tactic.Positivity
@@ -168,23 +169,16 @@ theorem injHomCount_complete_left_of_card_eq (hU : Fintype.card U = r) :
   refine (card_eq_sum_card_fiberwise (f := fun f : U ↪ V ↦ univ.map f) (t := H.edges)
     fun f hf ↦ (mem_filter.1 hf).2).trans ?_
   rw [sum_congr rfl fun e he ↦ ?_, sum_const, smul_eq_mul, mul_comm]
-  have hcard : #e = Fintype.card U := by rw [H.edge_card e he, hU]
-  -- An embedding maps the `|U|` vertices onto the edge `e` exactly when it maps them into `e`.
-  trans #{f : U ↪ V | ∀ u, f u ∈ e}
-  · congr 1
-    ext f
-    simp only [mem_filter, mem_univ, mem_coe, true_and]
-    refine ⟨fun ⟨_, hf⟩ u ↦ hf ▸ mem_map_of_mem f (mem_univ u), fun hf ↦ ?_⟩
-    have hfe : univ.map f = e := eq_of_subset_of_card_le
-      (fun x hx ↦ by obtain ⟨u, -, rfl⟩ := mem_map.1 hx; exact hf u)
-      (by rw [card_map, card_univ, hcard])
-    exact ⟨hfe ▸ he, hfe⟩
-  -- These are the orderings of `e` by `U`.
-  have hocc : Function.occCount (fun _ : U ↦ e) e = Fintype.card U := by
-    rw [Function.occCount_eq_card_filter, filter_true_of_mem fun _ _ ↦ rfl, card_univ]
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
-    Nat.card_embedding_mem_eq_prod_descFactorial (fun _ ↦ e) (fun _ ↦ mem_singleton_self e)
-      (by simp), prod_singleton, hocc, hcard, Nat.descFactorial_self, hU]
+  -- An embedding mapping the vertices of the pattern onto the edge `e` is an ordering of `e`.
+  have hcard := natCard_embedding_map_univ_eq_factorial (α := U) (t := e)
+    (by rw [H.edge_card e he, hU])
+  rw [hU, Nat.card_eq_fintype_card, Fintype.card_subtype] at hcard
+  rw [filter_filter, ← hcard]
+  congr 1
+  ext f
+  simp only [mem_filter, mem_univ, true_and, and_iff_right_iff_imp]
+  rintro rfl
+  exact he
 
 /-- The homomorphisms out of a single edge, the complete `r`-uniform hypergraph on `r` vertices,
 are the orderings of the edges of the host: there are `r!` for each edge. -/

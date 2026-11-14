@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Set.PowersetCard
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Embeddings with a prescribed image of a finite subset
@@ -16,10 +17,12 @@ Fix two subsets of cardinality `r` in finite types. There are at most
 This separates the choices on a prescribed subset from the unconstrained remaining vertices,
 as needed when bounding the number of copies affected by a hyperedge edit.
 
-When the source is `Fin n` itself, the count is exact: every `n`-element subset of `β` is the
-image of exactly `n!` embeddings of `Fin n`. Consequently a count of labelled embeddings
-`Fin n ↪ β` through a condition on their images is `n!` times the count of the `n`-element
-subsets satisfying it, which converts labelled copy counts into counts of unordered subsets.
+When the whole source is mapped onto a prescribed subset, the count is exact: an `n`-element
+type maps onto a prescribed `n`-element finset in exactly `n!` ways. In particular every
+`n`-element subset of `β` is the image of exactly `n!` embeddings of `Fin n`. Consequently a
+count of labelled embeddings `Fin n ↪ β` through a condition on their images is `n!` times the
+count of the `n`-element subsets satisfying it, which converts labelled copy counts into counts
+of unordered subsets.
 -/
 
 public section
@@ -56,6 +59,23 @@ theorem card_embedding_map_eq_le {α β : Type*} [Fintype α] [Fintype β] {r : 
     Fintype.card_fun, Fintype.card_coe, Set.powersetCard.card_eq, Finset.card_compl,
     Nat.descFactorial_self] using Nat.card_le_card_of_injective code hinj
 
+/-- An `n`-element type maps onto a prescribed `n`-element finset by exactly `n!` embeddings. -/
+theorem natCard_embedding_map_univ_eq_factorial {α β : Type*} [Fintype α] {t : Finset β}
+    (ht : #t = Fintype.card α) :
+    Nat.card {f : α ↪ β // univ.map f = t} = (Fintype.card α).factorial := by
+  classical
+  -- An embedding maps the elements of `α` onto `t` exactly when it maps them into `t`.
+  have h (f : α ↪ β) : univ.map f = t ↔ ∀ a, f a ∈ t :=
+    ⟨fun hf a ↦ hf ▸ mem_map_of_mem f (mem_univ a), fun hf ↦ eq_of_subset_of_card_le
+      (fun x hx ↦ by obtain ⟨a, -, rfl⟩ := mem_map.1 hx; exact hf a)
+      (by rw [card_map, card_univ, ht])⟩
+  -- These are the orderings of `t` by `α`.
+  have hocc : Function.occCount (fun _ : α ↦ t) t = Fintype.card α := by
+    rw [Function.occCount_eq_card_filter, filter_true_of_mem fun _ _ ↦ rfl, card_univ]
+  rw [Nat.card_congr (Equiv.subtypeEquivRight h),
+    Nat.card_embedding_mem_eq_prod_descFactorial (fun _ ↦ t) (fun _ ↦ mem_singleton_self t)
+      (by simp), prod_singleton, hocc, ht, Nat.descFactorial_self]
+
 end TauCeti
 
 namespace Set.powersetCard
@@ -63,25 +83,10 @@ namespace Set.powersetCard
 /-- Every `n`-element subset of `β` is the image of exactly `n!` embeddings of `Fin n`. -/
 theorem natCard_ofFinEmb_eq_factorial {β : Type*} {n : ℕ} (t : powersetCard β n) :
     Nat.card {f : Fin n ↪ β // ofFinEmb n β f = t} = n.factorial := by
-  classical
-  -- Such an embedding is the same as an embedding of `Fin n` into `t`, which is onto `t`
-  -- because both have `n` elements.
-  let e : {f : Fin n ↪ β // ofFinEmb n β f = t} ≃ (Fin n ↪ t.val) :=
-    { toFun f := ⟨fun i ↦ ⟨f.1 i, by
-          have h := Finset.mem_map_of_mem f.1 (Finset.mem_univ i)
-          rwa [← val_ofFinEmb, f.2] at h⟩,
-        fun i j h ↦ f.1.injective (congrArg Subtype.val h)⟩
-      invFun g := ⟨g.trans (Function.Embedding.subtype _), by
-        refine Subtype.ext ?_
-        rw [val_ofFinEmb]
-        refine Finset.eq_of_subset_of_card_le (fun x hx ↦ ?_) ?_
-        · obtain ⟨i, -, rfl⟩ := Finset.mem_map.1 hx
-          exact (g i).2
-        · rw [Finset.card_map, Finset.card_univ, Fintype.card_fin, card_eq]⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_embedding_eq, Fintype.card_fin,
-    Fintype.card_coe, card_eq, Nat.descFactorial_self]
+  have h := TauCeti.natCard_embedding_map_univ_eq_factorial (α := Fin n) (t := t.val)
+    (by rw [card_eq, Fintype.card_fin])
+  rw [Fintype.card_fin] at h
+  simpa only [Subtype.ext_iff, val_ofFinEmb] using h
 
 /-- There are `n!` times as many embeddings of `Fin n` whose image satisfies a condition as there
 are `n`-element subsets satisfying it. -/
