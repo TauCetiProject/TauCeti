@@ -329,13 +329,20 @@ def RawCap.area (φ : RoughForm I M F 2) (h : ∃ u, IsSmoothBasedCap I γ u) (D
   rectangleIntegral φ h.choose (0, 0) (1, 1) +
     sphereIntegral φ x (D -ᵥ h.choose_spec.rawCap).toMul
 
+/-- The defining equation of `TauCeti.Floer.RawCap.area`, for an arbitrary two-form. -/
+theorem RawCap.area_def (φ : RoughForm I M F 2) (h : ∃ u, IsSmoothBasedCap I γ u)
+    (D : RawCap γ) :
+    RawCap.area φ h D = rectangleIntegral φ h.choose (0, 0) (1, 1) +
+      sphereIntegral φ x (D -ᵥ h.choose_spec.rawCap).toMul :=
+  (rfl)
+
 /-- **The area of a smooth cap.** For a closed `C¹` two-form, the area of the raw cap of a smooth
 based cap `u` is the integral of the form over `u` on the unit square. -/
 theorem RawCap.area_rawCap (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {u : ℝ × ℝ → M}
     (hu : IsSmoothBasedCap I γ u) :
     RawCap.area φ ⟨u, hu⟩ hu.rawCap = rectangleIntegral φ u (0, 0) (1, 1) := by
   have h : ∃ u, IsSmoothBasedCap I γ u := ⟨u, hu⟩
-  rw [RawCap.area, h.choose_spec.sphereIntegral_rawCap_vsub_rawCap hφ hdφ hu, add_sub_cancel]
+  rw [RawCap.area_def, h.choose_spec.sphereIntegral_rawCap_vsub_rawCap hφ hdφ hu, add_sub_cancel]
 
 /-- **The recapping law.** If `γ` has a smooth based cap, gluing a sphere `a ∈ π₂(M, x)` to a raw
 cap of `γ` adds the integral of a closed `C¹` two-form over `a` to the area. -/
@@ -343,7 +350,7 @@ theorem RawCap.area_vadd (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
     (h : ∃ u, IsSmoothBasedCap I γ u) (a : Additive (π_ 2 M x)) (D : RawCap γ) :
     RawCap.area φ h (a +ᵥ D) = sphereIntegralHom x hφ hdφ a + RawCap.area φ h D := by
   have : Nonempty (RawCap γ) := ⟨D⟩
-  rw [RawCap.area, RawCap.area, vadd_vsub_assoc,
+  rw [RawCap.area_def, RawCap.area_def, vadd_vsub_assoc,
     ← sphereIntegralHom_apply hφ hdφ, ← sphereIntegralHom_apply hφ hdφ, map_add]
   abel
 
