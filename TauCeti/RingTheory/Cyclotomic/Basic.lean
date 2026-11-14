@@ -159,9 +159,6 @@ theorem add_def (x y : Cyclotomic e) :
 /-- Negation negates every coefficient. -/
 theorem neg_def (x : Cyclotomic e) : -x = ofCoeffList e (x.coeffs.map (-·)) := rfl
 
-/-- `TauCeti.Cyclotomic.neg` is the negation of the `Neg` instance. -/
-theorem neg_eq (x : Cyclotomic e) : neg x = -x := rfl
-
 /-- Multiplication convolves coefficient lists and reduces modulo `Φ_e`. -/
 theorem mul_def (x y : Cyclotomic e) :
     x * y = ofCoeffList e (mulCoeffList x.coeffs y.coeffs) := rfl
@@ -363,7 +360,7 @@ theorem coeff_zsmul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     (z • x).coeff j = z • x.coeff j := by
   simpa only [coeffAddHom_apply] using (coeffAddHom e j).map_zsmul z x
 
-/-- Integer scalar multiplication scales every power-basis coefficient. -/
+/-- Multiplying by an integer cast scales every power-basis coefficient. -/
 @[simp]
 theorem coeff_intCast_mul (z : ℤ) (x : Cyclotomic e) (j : ℕ) :
     ((z : Cyclotomic e) * x).coeff j = z * x.coeff j := by
@@ -384,8 +381,7 @@ theorem toAdjoinRoot_surjective : Function.Surjective (toAdjoinRoot : Cyclotomic
 
 private theorem toAdjoinRootRingHom_bijective :
     Function.Bijective (toAdjoinRootRingHom (e := e)) :=
-  ⟨fun _ _ h => toAdjoinRoot_injective (by simpa using h),
-    fun z => (toAdjoinRoot_surjective z).imp fun _ h => by simpa using h⟩
+  ⟨toAdjoinRoot_injective, toAdjoinRoot_surjective⟩
 
 /-- Exact cyclotomic integers are the quotient `ℤ[X] / (Φ_e)`. -/
 noncomputable def equivAdjoinRoot :
