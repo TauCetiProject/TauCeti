@@ -7,12 +7,12 @@ module
 
 public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.TensorProduct.Quotient
-import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import TauCeti.RingTheory.NormTrace.BaseChange
 
 /-!
 # The norm modulo an ideal
 
-Let `S` be a finite free `R`-algebra and `I` an ideal of `R`. The norm of `S ⧸ IS` over `R ⧸ I`
+Let `S` be a free `R`-algebra and `I` an ideal of `R`. The norm of `S ⧸ IS` over `R ⧸ I`
 of the class of `x` is the class of the norm of `x`. This is the norm counterpart of
 `TauCeti.Algebra.trace_quotient_map_mk`. It lets a norm equation over `R` be solved first over the
 quotient: taking `I` to be the maximal ideal of a local ring, it supplies the residual norm input
@@ -28,20 +28,19 @@ public section
 
 namespace TauCeti
 
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-  [Module.Free R S] [Module.Finite R S]
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Free R S]
 
-/-- **The norm commutes with reduction modulo an ideal.** For a finite free algebra `S` over `R`
+/-- **The norm commutes with reduction modulo an ideal.** For a free algebra `S` over `R`
 and an ideal `I` of `R`, the norm of `S ⧸ IS` over `R ⧸ I` of the class of `x` is the class of the
 norm of `x`. -/
 @[simp]
 theorem Algebra.norm_quotient_mk (I : Ideal R) (x : S) :
     Algebra.norm (R ⧸ I) (Ideal.Quotient.mk (I.map (algebraMap R S)) x) =
       Ideal.Quotient.mk I (Algebra.norm R x) := by
-  -- `S ⧸ IS` is the base change `(R ⧸ I) ⊗[R] S`, on which multiplication by `1 ⊗ x` is the base
-  -- change of multiplication by `x`; the determinant commutes with base change.
+  -- `S ⧸ IS` is the base change `(R ⧸ I) ⊗[R] S`, and the norm of `1 ⊗ x` is the image of the norm
+  -- of `x`.
   rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.quotIdealMapEquivQuotTensor S I),
-    Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk, Algebra.norm_apply, Algebra.norm_apply,
-    ← Ideal.Quotient.algebraMap_eq, ← LinearMap.det_baseChange, Algebra.baseChange_lmul]
+    Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk, Algebra.norm_baseChange_tmul,
+    Ideal.Quotient.algebraMap_eq]
 
 end TauCeti
