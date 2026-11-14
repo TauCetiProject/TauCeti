@@ -10,7 +10,9 @@ public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.Semigroups.Resolvent.Identity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -121,18 +123,6 @@ theorem integral_laplacian_smul_eq_of_mem_graph_generator_heatSemigroupBUC
   exact ((mem_smoothBoundedDerivativesSubmodule ℝ E F _).mp hS).1.of_le (by simp)
     |>.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian ψ
 
-/-- The test function `y ↦ ρ (x - y)` built from a smooth compactly supported `ρ`. -/
-private def reflectTestFunction {ρ : E → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ)
-    (x : E) : 𝓓((⊤ : Opens E), ℝ) :=
-  ⟨fun y ↦ ρ (x - y), hρ.comp (contDiff_const.sub contDiff_id : ContDiff ℝ ∞ fun y : E ↦ x - y),
-    hρc.comp_homeomorph (Homeomorph.subLeft x), by simp⟩
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_reflectTestFunction {ρ : E → ℝ} (hρ : ContDiff ℝ ∞ ρ)
-    (hρc : HasCompactSupport ρ) (x : E) :
-    (reflectTestFunction hρ hρc x : E → ℝ) = fun y ↦ ρ (x - y) :=
-  rfl
-
 /-- **The distributional Laplacian has no positive eigenvalue on bounded continuous functions.**
 If a bounded continuous `w` satisfies `Δw = c w` in the sense of distributions for some `c > 0`,
 then `w = 0`. -/
@@ -164,10 +154,17 @@ theorem eq_zero_of_forall_integral_laplacian_smul_eq_smul {w : E →ᵇ F} {c : 
       rw [hv_def, ← convolution_flip,
         hρc.laplacian_convolution_right _ hwl (hρ.of_le (by simp))]
       funext x
-      have h := hw (reflectTestFunction hρ hρc x)
+      -- The test function `y ↦ ρ (x - y)`: reflect `ρ` through the origin, then translate by `x`.
+      let ψ : 𝓓(⊤, ℝ) := translateTestFunction (V := ⊤) (h := x) (mapsTo_univ _ _)
+        ((ContinuousLinearEquiv.neg ℝ : E ≃L[ℝ] E).transportTestFunction (V := ⊤) (Ω := ⊤)
+          (mapsTo_univ _ _) ⟨ρ, hρ, hρc, by simp⟩)
+      have hψ : (ψ : E → ℝ) = fun y ↦ ρ (x - y) := by
+        funext y
+        simp [ψ, neg_sub]
+      have h := hw ψ
       have hΔρ : Δ (fun y ↦ ρ (x - y)) = fun y ↦ Δ ρ (x - y) :=
         laplacian_comp_affineIsometryEquiv_right (AffineIsometryEquiv.constVSub ℝ x) ρ
-      simp only [coe_reflectTestFunction, hΔρ] at h
+      simp only [hψ, hΔρ] at h
       simp only [convolution_def, flip_apply, lsmul_apply, Pi.smul_apply]
       exact h
     obtain ⟨hdom, hA⟩ := exists_generator_heatSemigroupBUC_eq_laplacian hvU
@@ -209,20 +206,17 @@ theorem mem_graph_generator_heatSemigroupBUC_iff {f g : uniformContinuousSubmodu
     rw [LinearPMap.apply_resolvent h1, one_smul]
   have hh' := integral_laplacian_smul_eq_of_mem_graph_generator_heatSemigroupBUC
     (A.mem_graph ⟨h, hh⟩)
-  -- Pairing with an integrable `ψ` is additive in the bounded continuous function.
-  have integral_smul_sub {ψ : E → ℝ} (hψ : Integrable ψ) (u v : E →ᵇ F) :
-      ∫ x, ψ x • (u - v) x = (∫ x, ψ x • u x) - ∫ x, ψ x • v x := by
-    simp only [sub_apply, smul_sub]
-    exact integral_sub (hψ.smul_boundedContinuousFunction u) (hψ.smul_boundedContinuousFunction v)
   -- `w = f - h` satisfies `Δw = w` in the sense of distributions.
   have hw : (f - h).val = 0 := by
     refine eq_zero_of_forall_integral_laplacian_smul_eq_smul one_pos fun φ ↦ ?_
     have H : LocallyIntegrableOn (fun _ : E ↦ (1 : ℝ)) (⊤ : Opens E) :=
       (locallyIntegrable_const 1).locallyIntegrableOn _
     have hφ : Integrable (φ : E → ℝ) := φ.integrable H
-    rw [one_smul, Submodule.coe_sub, integral_smul_sub (φ.integrable_laplacian H),
-      integral_smul_sub hφ, hfg φ, hh' φ, hAh, Submodule.coe_sub, Submodule.coe_sub,
-      integral_smul_sub hφ, integral_smul_sub hφ]
+    rw [one_smul, Submodule.coe_sub,
+      integral_smul_boundedContinuousFunction_sub (φ.integrable_laplacian H),
+      integral_smul_boundedContinuousFunction_sub hφ, hfg φ, hh' φ, hAh, Submodule.coe_sub,
+      Submodule.coe_sub, integral_smul_boundedContinuousFunction_sub hφ,
+      integral_smul_boundedContinuousFunction_sub hφ]
     abel
   have hfh : f = h := sub_eq_zero.1 (Subtype.ext hw)
   refine (LinearPMap.mem_graph_iff _).mpr ⟨⟨h, hh⟩, hfh.symm, ?_⟩

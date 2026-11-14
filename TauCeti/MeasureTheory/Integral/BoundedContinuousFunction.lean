@@ -9,15 +9,19 @@ public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Topology.Instances.RealVectorSpace
 
 /-!
 # Pairing bounded continuous functions with an integrable weight
 
 For an integrable `ψ : X → 𝕜` and a bounded continuous `u : X →ᵇ F`, the product `ψ • u` is
 integrable (`MeasureTheory.Integrable.smul_boundedContinuousFunction`), and the pairing
-`u ↦ ∫ ψ • u` is continuous for the supremum norm on `X →ᵇ F`
-(`TauCeti.continuous_integral_smul_boundedContinuousFunction`). This is what lets an identity
-between such pairings pass to uniform limits; for instance, the pairs `(f, g)` with
+`u ↦ ∫ ψ • u` is additive and homogeneous
+(`TauCeti.integral_smul_boundedContinuousFunction_add`,
+`TauCeti.integral_smul_boundedContinuousFunction_sub`,
+`TauCeti.integral_smul_boundedContinuousFunction_smul`) and continuous for the supremum norm on
+`X →ᵇ F` (`TauCeti.continuous_integral_smul_boundedContinuousFunction`). This is what lets an
+identity between such pairings pass to uniform limits; for instance, the pairs `(f, g)` with
 `∫ Δφ • f = ∫ φ • g` for all test functions `φ` form a closed set of pairs of bounded continuous
 functions.
 -/
@@ -38,6 +42,31 @@ theorem MeasureTheory.Integrable.smul_boundedContinuousFunction (hψ : Integrabl
 namespace TauCeti
 
 open MeasureTheory
+
+/-- Pairing with an integrable function is additive in the bounded continuous function. -/
+theorem integral_smul_boundedContinuousFunction_add [NormedSpace ℝ F] (hψ : Integrable ψ μ)
+    (u v : X →ᵇ F) :
+    ∫ x, ψ x • (u + v) x ∂μ = (∫ x, ψ x • u x ∂μ) + ∫ x, ψ x • v x ∂μ := by
+  simp only [add_apply, smul_add]
+  exact integral_add (hψ.smul_boundedContinuousFunction u) (hψ.smul_boundedContinuousFunction v)
+
+/-- Pairing with an integrable function commutes with subtraction of bounded continuous
+functions. -/
+theorem integral_smul_boundedContinuousFunction_sub [NormedSpace ℝ F] (hψ : Integrable ψ μ)
+    (u v : X →ᵇ F) :
+    ∫ x, ψ x • (u - v) x ∂μ = (∫ x, ψ x • u x ∂μ) - ∫ x, ψ x • v x ∂μ := by
+  simp only [sub_apply, smul_sub]
+  exact integral_sub (hψ.smul_boundedContinuousFunction u) (hψ.smul_boundedContinuousFunction v)
+
+omit [OpensMeasurableSpace X] [SecondCountableTopologyEither X F] in
+/-- Pairing with a function is homogeneous in the bounded continuous function. -/
+theorem integral_smul_boundedContinuousFunction_smul [NormedSpace ℝ F] (c : 𝕜) (u : X →ᵇ F) :
+    ∫ x, ψ x • (c • u) x ∂μ = c • ∫ x, ψ x • u x ∂μ := by
+  -- Scaling by `c` is continuous and additive, hence `ℝ`-linear.
+  have : SMulCommClass ℝ 𝕜 F := ⟨fun r c' y ↦
+    (map_real_smul (DistribSMul.toAddMonoidHom F c') (continuous_const_smul c') r y).symm⟩
+  simp only [smul_apply, smul_comm (ψ _) c]
+  exact integral_smul c _
 
 /-- Pairing with an integrable function is continuous on bounded continuous functions with the
 supremum norm. -/
