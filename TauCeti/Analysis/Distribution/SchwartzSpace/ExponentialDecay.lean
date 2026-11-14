@@ -6,23 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Defs
-public import TauCeti.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
-# Schwartz functions and Bessel-potential regularity from exponential derivative decay
+# Schwartz functions from exponential derivative decay
 
 For any positive decay rate `c`, the radial exponential `exp (-c ‖x‖)` absorbs every polynomial
 weight `‖x‖ ^ k` (`TauCeti.exists_rpow_mul_exp_neg_mul_le`). A smooth map between real normed
 spaces whose iterated derivatives of each order are bounded by multiples of `exp (-c ‖x‖)` — either
 globally or outside compact sets (`cocompact`) — is therefore a Schwartz function.
-
-Every real-valued Schwartz function on a finite-dimensional real inner product space embeds into
-complex Schwartz space through `Complex.ofRealCLM`, hence defines a tempered distribution lying in
-every Bessel-potential space `H^{s,p}` (`SchwartzMap.coe_mem_realSobolevFunctions`). Combining the
-two steps places smooth real functions with exponentially decaying derivatives in
-`TemperedDistribution.realSobolevFunctions E s p` at all real orders `s` simultaneously.
 
 ## Main declarations
 
@@ -30,25 +24,19 @@ two steps places smooth real functions with exponentially decaying derivatives i
   bounded by `Kₙ exp (-c ‖x‖)`, `c > 0`, as a Schwartz function.
 * `SchwartzMap.ofIsBigOIteratedFDerivExp`: a smooth map whose `n`-th derivative is
   `O(exp (-c ‖x‖))` along `cocompact`, `c > 0`, as a Schwartz function.
-* `SchwartzMap.coe_mem_realSobolevFunctions`: every real Schwartz function lies in
-  `TemperedDistribution.realSobolevFunctions E s p` for all `s` and `1 ≤ p`.
-* `TemperedDistribution.mem_realSobolevFunctions_of_isBigO_iteratedFDeriv_exp`,
-  `TemperedDistribution.mem_realSobolevFunctions_of_norm_iteratedFDeriv_le_mul_exp`: smooth real
-  functions with exponentially decaying iterated derivatives lie in `realSobolevFunctions E s p`
-  for every `s`.
 
 ## References
 
 * G. B. Folland, *Real Analysis: Modern Techniques and Their Applications*, 2nd ed., Wiley, 1999,
-  §8.1 and §9.3.
+  §8.1.
 -/
 
 public section
 
 noncomputable section
 
-open Asymptotics Filter MeasureTheory
-open scoped ContDiff ENNReal SchwartzMap
+open Asymptotics Filter
+open scoped ContDiff SchwartzMap
 
 namespace SchwartzMap
 
@@ -115,45 +103,4 @@ theorem coe_ofIsBigOIteratedFDerivExp {f : E → F} (hf : ContDiff ℝ ∞ f) {c
 
 end Normed
 
-section Sobolev
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- **Every real Schwartz function lies in every real Bessel-potential space.** -/
-theorem coe_mem_realSobolevFunctions (u : 𝓢(E, ℝ)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
-    (u : E → ℝ) ∈ TemperedDistribution.realSobolevFunctions E s p := by
-  let uℂ : 𝓢(E, ℂ) := u.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
-  refine TemperedDistribution.mem_realSobolevFunctions_of_ae_eq_ofReal
-    (v := uℂ.toLp p (volume : Measure E)) ?_ (uℂ.coeFn_toLp p (volume : Measure E))
-  rw [Lp.toTemperedDistribution_toLp_eq]
-  exact uℂ.memSobolev
-
-end Sobolev
-
 end SchwartzMap
-
-namespace TemperedDistribution
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- **Bessel-potential regularity from asymptotic exponential derivative decay.** A smooth real
-function whose iterated derivatives of every order are `O(exp (-c ‖x‖))` outside compact sets for
-some `c > 0` lies in `realSobolevFunctions E s p` at every real order `s`. -/
-theorem mem_realSobolevFunctions_of_isBigO_iteratedFDeriv_exp {f : E → ℝ} (hf : ContDiff ℝ ∞ f)
-    {c : ℝ} (hc : 0 < c)
-    (hdecay : ∀ n : ℕ, iteratedFDeriv ℝ n f =O[cocompact E] fun x ↦ Real.exp (-(c * ‖x‖)))
-    (s : ℝ) : f ∈ realSobolevFunctions E s p :=
-  (SchwartzMap.ofIsBigOIteratedFDerivExp hf hc hdecay).coe_mem_realSobolevFunctions s p
-
-/-- **Bessel-potential regularity from global exponential derivative decay.** A smooth real
-function whose iterated derivatives satisfy `‖Dⁿf(x)‖ ≤ Kₙ exp (-c ‖x‖)` for some `c > 0` lies in
-`realSobolevFunctions E s p` at every real order `s`. -/
-theorem mem_realSobolevFunctions_of_norm_iteratedFDeriv_le_mul_exp {f : E → ℝ}
-    (hf : ContDiff ℝ ∞ f) {c : ℝ} (hc : 0 < c)
-    (hbound : ∀ n : ℕ, ∃ K, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ K * Real.exp (-(c * ‖x‖)))
-    (s : ℝ) : f ∈ realSobolevFunctions E s p :=
-  (SchwartzMap.ofNormIteratedFDerivLeMulExp hf hc hbound).coe_mem_realSobolevFunctions s p
-
-end TemperedDistribution

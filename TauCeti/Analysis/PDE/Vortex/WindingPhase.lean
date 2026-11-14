@@ -56,6 +56,8 @@ treated here.
 * `TauCeti.Vortex.gaugeForm_windingPhase`: the logarithmic derivative of the winding phase.
 * `TauCeti.Vortex.gaugeTransform_inv_windingPhase_referenceField`: the end trivialization takes
   the reference field to the vacuum outside the cutoff disc.
+* `TauCeti.Vortex.sectionValue_gaugeTransform_inv_windingPhase`: at a point where the section is
+  `|α|` times the winding phase, the end trivialization has real section `|α|`.
 * `TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`: a vortex normalized at its end
   converges exponentially to the reference field.
 * `TauCeti.Vortex.exists_framedGaugeGroup_sectionValue_smul_eq`: framed gauge normalization of the
@@ -184,9 +186,9 @@ theorem gaugeTransform_inv_windingPhase_referenceField (f : ContDiffBump (0 : �
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m : ℕ}
 
-/-- If the section of `x` is `|α|` times the winding phase near `z`, then its end
+/-- If the section of `x` is `|α|` times the winding phase at `z`, then its end
 trivialization has the real section `|α|` there. -/
-private theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
+theorem sectionValue_gaugeTransform_inv_windingPhase {z : ℂ}
     (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
     sectionValue (gaugeTransform (windingPhase m)⁻¹ x) z = ‖sectionValue x z‖ := by
   have h1 : ((windingPhase m z)⁻¹ : Circle) * (windingPhase m z : ℂ) = 1 := by
@@ -372,18 +374,12 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
         sectionValue (u • x) z = ‖sectionValue (u • x) z‖ * windingPhase m z) ∧
       ∀ c < 1 / 2, ∃ K, ∀ z, ‖(u • x) z - referenceField f m z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
-  refine ⟨u, hu, fun c hc ↦ ?_⟩
-  have huc := ((mem_framedGaugeGroup _).1 u.property).1
-  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform (by simpa using huc) hx
-  have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) := contDiff_euclidean.1 hy i
-  have hsol' (z : ℂ) : equation (u • x) z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
-      fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
-  have hlim : Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
-    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-      sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
-  exact exists_norm_sub_referenceField_le_mul_exp (hcd 0).continuous (hcd 1).continuous
-    ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol' hlim hu f hc
+  have hcd := contDiff_euclidean.1 (contDiff_framedGaugeGroup_smul u hx)
+  exact ⟨u, hu, fun _ hc ↦ exists_norm_sub_referenceField_le_mul_exp
+    (hcd 0).continuous (hcd 1).continuous ((hcd 2).of_le (by simp)) ((hcd 3).of_le (by simp))
+    (fun z ↦ (equation_framedGaugeGroup_smul_eq_zero_iff u
+      (hx.contDiffAt.differentiableAt (by simp))).2 (hsol z))
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
+      (tendsto_sectionValue_framedGaugeGroup_smul u hframe)) hu f hc⟩
 
 end TauCeti.Vortex

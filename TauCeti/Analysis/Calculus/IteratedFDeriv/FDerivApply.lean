@@ -38,6 +38,8 @@ of a smooth family of compactly supported functions with respect to a parameter.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`: `‖Dⁱ (y ↦ Df(y) v)‖ ≤ ‖D^{i+1} f‖ ‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le`: a bound on the derivatives of `f`
   up to order `k + 1` bounds those of `y ↦ Df(y) v` up to order `k`.
+* `ContDiff.isBigO_iteratedFDeriv_fderiv_apply`: if `D^{i+1} f = O(ρ)`, then
+  `Dⁱ (y ↦ Df(y) v) = O(ρ)`.
 * `ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc`: the pointwise form
   `Dⁱ (y ↦ Df(y) v) (x) m = D^{i+1} f (x) (m, v)`, with `v` in the last slot.
 * `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
@@ -107,6 +109,17 @@ theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le {n : WithTop �
     ∀ i ≤ k, ∀ x, ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ C * ‖v‖ := fun i hi x ↦
   (hf.norm_iteratedFDeriv_fderiv_apply_le ((minSmoothness_monotone (by gcongr)).trans hk) v x).trans
     (mul_le_mul_of_nonneg_right (hC (i + 1) (by omega) x) (norm_nonneg v))
+
+open Asymptotics in
+/-- If `f` is `C^{minSmoothness 𝕜 (i + 1)}` and `D^{i+1} f = O(ρ)` along a filter `l`, then the
+`i`-th iterated derivative of the directional derivative `y ↦ Df(y) v` is `O(ρ)` along `l`. -/
+theorem ContDiff.isBigO_iteratedFDeriv_fderiv_apply {G : Type*} [SeminormedAddCommGroup G]
+    {n : WithTop ℕ∞} {f : E → F} (hf : ContDiff 𝕜 n f) {i : ℕ}
+    (hi : minSmoothness 𝕜 (i + 1) ≤ n) {l : Filter E} {ρ : E → G}
+    (hρ : iteratedFDeriv 𝕜 (i + 1) f =O[l] ρ) (v : E) :
+    iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) =O[l] ρ :=
+  (IsBigO.of_bound ‖v‖ (Filter.Eventually.of_forall fun x ↦ by
+    simpa only [mul_comm] using hf.norm_iteratedFDeriv_fderiv_apply_le hi v x)).trans hρ
 
 /-- **The innermost derivative of an iterated derivative.** If `f` is `C^{k+1}` at `x`, the `k`-th
 iterated derivative of the directional derivative `y ↦ Df(y) v` at `x` is the `(k + 1)`-th
