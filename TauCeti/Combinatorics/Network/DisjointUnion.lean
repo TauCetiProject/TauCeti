@@ -260,35 +260,23 @@ theorem map_disjointUnion {L : Type*} (f : Assignment Q K) (g : Assignment R K) 
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
 
-theorem disjointUnion_add [Add K] (f f' : Assignment Q K) (g g' : Assignment R K) :
-    (f + f').disjointUnion (g + g') = f.disjointUnion g + f'.disjointUnion g' := by
-  apply eq_iff_restrictLeft_restrictRight.2
-  exact ⟨rfl, rfl⟩
-
 @[simp]
 theorem add_disjointUnion [Add K] (f f' : Assignment Q K) (g g' : Assignment R K) :
-    f.disjointUnion g + f'.disjointUnion g' = (f + f').disjointUnion (g + g') :=
-  (disjointUnion_add f f' g g').symm
-
-theorem disjointUnion_neg [Neg K] (f : Assignment Q K) (g : Assignment R K) :
-    (-f).disjointUnion (-g) = -(f.disjointUnion g) := by
+    f.disjointUnion g + f'.disjointUnion g' = (f + f').disjointUnion (g + g') := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
 
 @[simp]
 theorem neg_disjointUnion [Neg K] (f : Assignment Q K) (g : Assignment R K) :
-    -(f.disjointUnion g) = (-f).disjointUnion (-g) :=
-  (disjointUnion_neg f g).symm
-
-theorem disjointUnion_sub [Sub K] (f f' : Assignment Q K) (g g' : Assignment R K) :
-    (f - f').disjointUnion (g - g') = f.disjointUnion g - f'.disjointUnion g' := by
+    -(f.disjointUnion g) = (-f).disjointUnion (-g) := by
   apply eq_iff_restrictLeft_restrictRight.2
   exact ⟨rfl, rfl⟩
 
 @[simp]
 theorem sub_disjointUnion [Sub K] (f f' : Assignment Q K) (g g' : Assignment R K) :
-    f.disjointUnion g - f'.disjointUnion g' = (f - f').disjointUnion (g - g') :=
-  (disjointUnion_sub f f' g g').symm
+    f.disjointUnion g - f'.disjointUnion g' = (f - f').disjointUnion (g - g') := by
+  apply eq_iff_restrictLeft_restrictRight.2
+  exact ⟨rfl, rfl⟩
 
 @[simp]
 theorem disjointUnion_zero [Zero K] :
@@ -614,15 +602,8 @@ theorem restrictRight_val {lo hi : Assignment (DisjointUnionHom Q R) K} {b : V �
 theorem eq_iff_restrictLeft_restrictRight
     {lo hi : Assignment (DisjointUnionHom Q R) K} {b : V ⊕ W → K}
     {f g : ExcessFlow lo hi b} :
-    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight := by
-  constructor
-  · rintro rfl
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨hl, hr⟩
-    apply Subtype.ext
-    apply Assignment.eq_iff_restrictLeft_restrictRight.2
-    simpa only [restrictLeft_val, restrictRight_val] using ⟨congrArg Subtype.val hl,
-      congrArg Subtype.val hr⟩
+    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight :=
+  (restrictEquiv lo hi b).apply_eq_iff_eq.symm.trans Prod.ext_iff
 
 @[simp]
 theorem restrictLeft_disjointUnion (f : ExcessFlow lo hi b) (g : ExcessFlow lo' hi' b') :
@@ -770,15 +751,8 @@ are equal. -/
 theorem eq_iff_restrictLeft_restrictRight
     {lo hi : Assignment (DisjointUnionHom Q R) K} {a b : V ⊕ W → K}
     {f g : ExcessIntervalFlow lo hi a b} :
-    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight := by
-  constructor
-  · rintro rfl
-    exact ⟨rfl, rfl⟩
-  · rintro ⟨hl, hr⟩
-    apply Subtype.ext
-    apply Assignment.eq_iff_restrictLeft_restrictRight.2
-    simpa only [restrictLeft_val, restrictRight_val] using ⟨congrArg Subtype.val hl,
-      congrArg Subtype.val hr⟩
+    f = g ↔ f.restrictLeft = g.restrictLeft ∧ f.restrictRight = g.restrictRight :=
+  (restrictEquiv lo hi a b).apply_eq_iff_eq.symm.trans Prod.ext_iff
 
 @[simp]
 theorem restrictLeft_disjointUnion (f : ExcessIntervalFlow lo hi a b)
