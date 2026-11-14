@@ -73,34 +73,6 @@ namespace TauCeti
 namespace PermutationTriple
 namespace LMFDB
 
-namespace PassportRecord.IsValidAt
-
-/-- A valid passport row has a one-sheet primitivization block exactly when its stored
-primitivity flag is set. -/
-theorem card_primitivizationBlock_eq_one_iff {n : ℕ} {r : PassportRecord n}
-    {t : ConnectedTriple n} (hr : r.IsValidAt t) :
-    r.primitivizationBlock.card = 1 ↔ r.isPrimitive = true := by
-  have := t.2.isPretransitive
-  rw [hr.isPrimitive_eq_true_iff, isPrimitive_iff]
-  constructor
-  · intro hcard
-    obtain ⟨x, hx⟩ := Finset.card_eq_one.mp hcard
-    refine IsPreprimitive.of_isTrivialBlock_base x fun {C} hxC hC ↦ ?_
-    rcases hr.eq_or_eq_univ_of_primitivizationBlock_subset C hC
-      (by simpa [hx] using hxC) with h | h
-    · exact Or.inl (h ▸ by simp [hx])
-    · exact Or.inr h
-  · intro hprim
-    rcases hprim.isTrivialBlock_of_isBlock hr.isBlock_primitivizationBlock with hsub | huniv
-    · obtain ⟨x, hx⟩ := hr.primitivizationBlock_nonempty
-      rw [Finset.card_eq_one]
-      exact ⟨x, Finset.coe_injective (by simpa using hsub.eq_singleton_of_mem hx)⟩
-    · have huniv : r.primitivizationBlock = Finset.univ := Finset.coe_eq_univ.mp huniv
-      rw [huniv, Finset.card_univ, Fintype.card_fin]
-      exact hr.deg_eq_one_of_primitivizationBlock_eq_univ huniv
-
-end PassportRecord.IsValidAt
-
 namespace BelyiRecord
 
 variable {n m : ℕ}
