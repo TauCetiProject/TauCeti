@@ -18,7 +18,8 @@ by `+π/2` in the oriented tangent plane and divided by its speed, `ν = J γ' /
 points it is a unit vector orthogonal to the velocity, and the oriented area of the pair
 `(γ', ν)` is the speed, so `ν` points to the left of `γ` with respect to the orientation. Along a
 positively oriented boundary curve of a domain it is the inward normal. It vanishes where the
-velocity does, and reversing the curve reverses it.
+velocity does, increasing reparametrizations do not change it, and reversing the curve reverses
+it.
 
 ## Main results
 
@@ -28,6 +29,8 @@ velocity does, and reversing the curve reverses it.
   vector orthogonal to the velocity.
 * `TauCeti.Manifold.riemannianVolumeForm_curveVelocity_orientedUnitNormal`: the oriented area of
   the velocity and the normal is the speed.
+* `TauCeti.Manifold.orientedUnitNormal_comp`: reparametrization multiplies the normal by the
+  sign of its derivative, with positive and negative derivative specializations.
 * `TauCeti.Manifold.orientedUnitNormal_comp_const_sub`: reversing the curve reverses the normal.
 
 ## References
@@ -105,17 +108,35 @@ theorem riemannianVolumeForm_curveVelocity_orientedUnitNormal
 theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : ℝ → M) (d t : ℝ) :
     orientedUnitNormal o (fun r ↦ γ (d - r)) t = -orientedUnitNormal o γ (d - t) := by
   let := o.fact_finrank_tangentSpace (γ (d - t))
-  have hv : curveVelocity I (fun r ↦ γ (d - r)) t = -curveVelocity I γ (d - t) := by
-    by_cases hγ : MDifferentiableAt 𝓘(ℝ) I γ (d - t)
-    · simpa only [Function.comp_def, id_eq, neg_smul, one_smul] using
-        curveVelocity_comp ((hasDerivAt_id t).const_sub d) hγ
-    · have hγ' : ¬MDifferentiableAt 𝓘(ℝ) I (fun r ↦ γ (d - r)) t := fun h ↦ hγ <| by
-        simpa only [Function.comp_def, sub_sub_cancel, id_eq] using h.comp_of_eq (d - t)
-          (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.const_sub d))
-          (sub_sub_cancel d t)
-      rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
-        mfderiv_zero_of_not_mdifferentiableAt hγ']
-      exact neg_zero.symm
-  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hv, NormedSpace.normalize_neg, map_neg]
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp_const_sub,
+    NormedSpace.normalize_neg, map_neg]
+
+/-- Curves agreeing near a parameter have the same oriented unit normal there. -/
+theorem _root_.Filter.EventuallyEq.orientedUnitNormal_eq
+    {γ η : ℝ → M} {t : ℝ} (h : γ =ᶠ[nhds t] η) (o : Orientation I M (Fin 2)) :
+    orientedUnitNormal o γ t = orientedUnitNormal o η t := by
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, h.self_of_nhds, h.curveVelocity_eq]
+
+/-- Reparametrization multiplies the oriented unit normal by the sign of its derivative. -/
+theorem orientedUnitNormal_comp (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {c t : ℝ} (hφ : HasDerivAt φ c t) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
+    orientedUnitNormal o (γ ∘ φ) t = (SignType.sign c : ℝ) • orientedUnitNormal o γ (φ t) := by
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp hφ hγ,
+    NormedSpace.normalize_smul, map_smul]
+  simp only [Function.comp_apply]
+
+/-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
+at `t`. -/
+theorem orientedUnitNormal_comp_of_pos (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : 0 < c) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
+    orientedUnitNormal o (γ ∘ φ) t = orientedUnitNormal o γ (φ t) := by
+  simpa [hc] using orientedUnitNormal_comp o hφ hγ
+
+/-- A reparametrization with negative derivative at a parameter reverses the oriented unit normal
+there. -/
+theorem orientedUnitNormal_comp_of_neg (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : c < 0) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
+    orientedUnitNormal o (γ ∘ φ) t = -orientedUnitNormal o γ (φ t) := by
+  simpa [hc] using orientedUnitNormal_comp o hφ hγ
 
 end TauCeti.Manifold

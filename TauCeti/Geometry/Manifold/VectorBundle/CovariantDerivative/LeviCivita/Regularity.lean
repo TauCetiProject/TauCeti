@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
@@ -75,6 +76,8 @@ merely to be written down, are carried for the same reason.
 * `TauCeti.Manifold.contMDiffWithinAt_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.contMDiffAt_alongCurve_leviCivitaConnection`: the pointwise forms, with one
   derivative lost from the section lift at a single parameter.
+* `TauCeti.Manifold.contMDiffAt_acceleration_leviCivitaConnection`: the acceleration of a
+  `C^(n+2)` curve has a `C^n` tangent-bundle lift at the parameter in question.
 
 ## References
 
@@ -441,6 +444,18 @@ theorem contMDiff_alongCurve_leviCivitaConnection
     ContMDiff 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r) (alongCurve (leviCivitaConnection I M) γ V r)) :=
   fun _ ↦ contMDiffAt_alongCurve_leviCivitaConnection hm hk (hV _)
+
+/-- The Levi-Civita acceleration of a curve that is `C^(n+2)` at a parameter has a `C^n`
+tangent-bundle lift there, for a `C^m` manifold and `C^k` metric with `n + 2 ≤ m`, `n + 1 ≤ k`. -/
+theorem contMDiffAt_acceleration_leviCivitaConnection (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
+    (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I (n + 2) γ t) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r) (acceleration (leviCivitaConnection I M) γ r)) t := by
+  simp only [acceleration_def]
+  apply contMDiffAt_alongCurve_leviCivitaConnection hm hk
+  rw [← funext (curveVelocityLift_apply (I := I) γ)]
+  exact hγ.contMDiffAt_curveVelocityLift (m := n + 1)
+    (by simp only [add_assoc, one_add_one_eq_two, le_refl])
 
 /-- The covariant derivative of a section with a `C²` lift at a parameter has differentiable
 coordinate readings there. Only regularity at that parameter is needed. -/

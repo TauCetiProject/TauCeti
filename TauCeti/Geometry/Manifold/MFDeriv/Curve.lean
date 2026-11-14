@@ -410,6 +410,34 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
 
+/-- Reversing the parameter reverses the velocity, without regularity assumptions. -/
+theorem curveVelocity_comp_const_sub (γ : 𝕜 → M) (d t : 𝕜) :
+    curveVelocity I (fun r ↦ γ (d - r)) t = -curveVelocity I γ (d - t) := by
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (d - t)
+  · simpa only [Function.comp_def, id_eq, neg_smul, one_smul] using
+      curveVelocity_comp ((hasDerivAt_id t).const_sub d) hγ
+  · have hγ' : ¬MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun r ↦ γ (d - r)) t := fun h ↦ hγ <| by
+      simpa only [Function.comp_def, sub_sub_cancel, id_eq] using h.comp_of_eq (d - t)
+        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.const_sub d))
+        (sub_sub_cancel d t)
+    rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
+      mfderiv_zero_of_not_mdifferentiableAt hγ']
+    exact neg_zero.symm
+
+/-- Translating the parameter preserves the velocity, without regularity assumptions. -/
+theorem curveVelocity_comp_add_const (γ : 𝕜 → M) (a t : 𝕜) :
+    curveVelocity I (fun r ↦ γ (r + a)) t = curveVelocity I γ (t + a) := by
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + a)
+  · simpa only [Function.comp_def, id_eq, one_smul] using
+      curveVelocity_comp ((hasDerivAt_id t).add_const a) hγ
+  · have hγ' : ¬MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun r ↦ γ (r + a)) t := fun h ↦ hγ <| by
+      simpa only [Function.comp_def, sub_add_cancel, id_eq] using h.comp_of_eq (t + a)
+        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.sub_const a))
+        (add_sub_cancel_right t a)
+    rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
+      mfderiv_zero_of_not_mdifferentiableAt hγ']
+    rfl
+
 /-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
 differentiable, its velocity at `t + c` is its velocity at `t`. -/
 theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
@@ -724,6 +752,31 @@ theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} 
   have hcomp := htangent.comp hι.contMDiffOn (fun t ht ↦ by simpa [ι] using ht)
   refine hcomp.congr fun t _ ↦ ?_
   exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
+
+/-- The velocity lift of a curve that is `C^n` at a parameter is `C^m` there when
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocityLift {m n : ℕ∞ω}
+    (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLift I γ) t := by
+  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun r ↦
+    TotalSpace.mk' 𝕜 r ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) r).symm 1)
+  have hι : ContMDiffAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι t := by
+    rw [contMDiffAt_totalSpace_iff]
+    refine ⟨contMDiffAt_id, ?_⟩
+    refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
+    filter_upwards with r
+    rw [trivializationAt_model_space_apply]
+    rfl
+  have hcomp := (hγ.contMDiffAt_tangentMap (X := ι t) hmn).comp t hι
+  refine hcomp.congr_of_eventuallyEq (Filter.Eventually.of_forall fun r ↦ ?_)
+  rw [Function.comp_apply, ← curveVelocityLiftWithin_univ, ← tangentMapWithin_univ]
+  exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) r).symm
+
+/-- The velocity lift of a `C^n` curve is `C^m` when `m + 1 ≤ n`. -/
+theorem _root_.ContMDiff.contMDiff_curveVelocityLift {m n : ℕ∞ω}
+    (hγ : ContMDiff 𝓘(𝕜, 𝕜) I n γ) (hmn : m + 1 ≤ n) :
+    ContMDiff 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLift I γ) :=
+  fun _ ↦ hγ.contMDiffAt.contMDiffAt_curveVelocityLift hmn
 
 /-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
 manifold derivatives. -/
