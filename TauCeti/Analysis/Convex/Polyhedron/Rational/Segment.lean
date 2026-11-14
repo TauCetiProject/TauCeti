@@ -13,13 +13,13 @@ public import TauCeti.Analysis.Convex.Polyhedron.Rational.LocallyClosed
 
 The parameters for which a segment in a fixed lattice direction meets a closed
 rational-normal polyhedron in its open time interval form a rational semilinear
-set. Both its starting point and its duration may depend affinely on the endpoint,
+set. Both its starting point and its duration may depend affinely on the parameter,
 with rational linear parts. Tangencies and singleton intersections are retained.
 
-The proof eliminates the time variable using `exists_pos_lt_mul_le_iff`.
-The strict interval bounds give strict resultant inequalities, while pairs of
-weak support inequalities give weak resultants. Complements therefore describe
-avoidance by the entire open segment, including segments parallel to a wall.
+The theorem characterizes the exact encounter set without transversality assumptions,
+including zero slope and segments parallel to a wall's hyperplanes. Since rational
+semilinearity is preserved by complements, it also characterizes avoidance of the
+polyhedron by the whole open segment.
 
 Adapted from `Mei/Geometry/Convex/Polyhedron/Rational/Segment.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -28,16 +28,19 @@ Adapted from `Mei/Geometry/Convex/Polyhedron/Rational/Segment.lean` in
 
 public section
 
-namespace TauCeti.Convex
+namespace TauCeti
 
-variable {N V W : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W]
-  {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
+variable {N V W : Type*} [AddCommGroup N] [NormedAddCommGroup W] [NormedSpace ℝ W]
+  [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  {j : N →+ W} {h : TauCeti.Toric.IsIntegralLattice j}
+
+section Elimination
 
 /-- Eliminating a strictly bounded parameter with rational slopes preserves
-rational semilinearity. Offsets and interval lengths may vary affinely. -/
+rational semilinearity. The base functionals `g j` and upper bound `T` may vary
+affinely with rational linear parts and arbitrary real constant terms. -/
 theorem isRationalSemilinear_setOf_exists_pos_lt_affine_le {κ : Type*} [Finite κ]
-    (g : κ → V →ᴬ[ℝ] ℝ) (a : κ → ℝ) (T : V →ᴬ[ℝ] ℝ)
+    (g : κ → W →ᴬ[ℝ] ℝ) (a : κ → ℝ) (T : W →ᴬ[ℝ] ℝ)
     (hg : ∀ j, Toric.IsRationalFunctional h (g j).toAffineMap.linear)
     (ha : ∀ j, ∃ q : ℚ, a j = (q : ℝ))
     (hT : Toric.IsRationalFunctional h T.toAffineMap.linear) :
@@ -88,11 +91,15 @@ theorem isRationalSemilinear_setOf_exists_pos_lt_affine_le {κ : Type*} [Finite 
       fun j hj => by linarith [hp j hj], fun j hj => by linarith [hn j hj],
       fun j k hj hk => by linarith [hpair j hj k hk]⟩
 
-/-- The open part of a finite segment meets a rational-normal polyhedron on a
-semilinear endpoint domain. The direction may be tangent or zero. -/
-theorem isRationalSemilinear_setOf_exists_pos_lt_add_smul_mem
+end Elimination
+
+/-- For a lattice direction `w` and affine starting point `X` and duration `T`
+with rational linear parts, the parameters in `W` for which the open segment
+`X x + (0, T x) • i w` meets `P` form a rational semilinear set. Tangencies, zero
+directions, and singleton intersections are retained. -/
+theorem IsRationalNormalPolyhedron.isRationalSemilinear_setOf_exists_pos_lt_add_smul_mem
     {N' : Type*} [AddCommGroup N'] {i' : N' →+ W}
-    {h' : TauCeti.Toric.IsIntegralLattice i'}
+    {h' : TauCeti.Toric.IsIntegralLattice i'} {i : N →+ V} {h : TauCeti.Toric.IsIntegralLattice i}
     {P : Set V} (hP : IsRationalNormalPolyhedron h P) (w : N)
     (X : W →ᴬ[ℝ] V) (T : W →ᴬ[ℝ] ℝ)
     (hX : Toric.IsRationalLinearMap h' h X.toAffineMap.linear)
@@ -101,20 +108,13 @@ theorem isRationalSemilinear_setOf_exists_pos_lt_add_smul_mem
   obtain ⟨Q, rfl⟩ := isRationalNormalPolyhedron_iff.mp hP
   have happ (j) (x : W) (t : ℝ) : (Q.inequality j) (X x + t • i w) =
       (Q.inequality j) (X x) + (Q.inequality j).linear (i w) * t := by
-    have hc (z : V) : (Q.inequality j).contLinear z = (Q.inequality j).linear z :=
-      LinearMap.congr_fun (ContinuousAffineMap.coe_contLinear_eq_linear (Q.inequality j)) z
-    calc
-      (Q.inequality j) (X x + t • i w) = (Q.inequality j).contLinear (t • i w) +
-          (Q.inequality j) (X x) := by
-        simpa only [vadd_eq_add, add_comm] using
-          (Q.inequality j).map_vadd (X x) (t • i w)
-      _ = (Q.inequality j) (X x) + (Q.inequality j).linear (i w) * t := by
-        rw [map_smul, hc (i w)]
-        simp only [smul_eq_mul, add_comm, mul_comm]
+    rw [add_comm (X x)]
+    simpa [vadd_eq_add, mul_comm, add_comm] using
+      (Q.inequality j).toAffineMap.map_vadd (X x) (t • i w)
   simp_rw [RationalAffinePolyhedron.mem_carrier, happ]
   exact isRationalSemilinear_setOf_exists_pos_lt_affine_le
     (fun j => (Q.inequality j).comp X) (fun j => (Q.inequality j).linear (i w)) T
     (fun j => hX.map_functional (Q.rational_linear j))
     (fun j => (Q.rational_linear j).exists_rat_apply w) hT
 
-end TauCeti.Convex
+end TauCeti
