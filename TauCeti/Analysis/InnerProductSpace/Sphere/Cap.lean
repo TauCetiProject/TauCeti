@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
 
 /-!
 # Caps of a unit sphere
@@ -15,7 +17,8 @@ unit sphere around `a` at height `r` is the set of unit vectors `x` with `⟪x, 
 `r > 0` it is the closed ball around `a` of angular radius `arccos r`. This file records two
 criteria, stated through inner products only, for caps to be disjoint and for a cap to lie in an
 open hemisphere. They are what keeps knotted arcs confined to small caps apart when the caps are
-slid along a great circle.
+slid along a great circle. In finite dimension, finitely many caps at any height below one cover
+the unit sphere.
 
 ## Main results
 
@@ -23,6 +26,8 @@ slid along a great circle.
   `⟪a, b⟫ < 2 r² - 1`.
 * `TauCeti.inner_pos_of_le_inner`: a cap at height `r` around `a` lies in the open hemisphere
   around `u` when `⟪a, u⟫ ≥ 0` and `1 - ⟪a, u⟫² < r²`.
+* `TauCeti.exists_finset_forall_exists_le_inner`: for `κ < 1`, finitely many caps at height `κ`
+  cover the unit sphere of a finite-dimensional space.
 -/
 
 public section
@@ -65,5 +70,18 @@ theorem inner_pos_of_le_inner (hx : ‖x‖ = 1) (ha : ‖a‖ = 1) (hu : ‖u�
   rw [hd, hxx, inner_sub_right, real_inner_smul_right] at h
   have h₂ : r ≤ ⟪x, a⟫ - ⟪a, u⟫ * ⟪x, u⟫ := by nlinarith
   nlinarith
+
+/-- **Finitely many caps cover the sphere.** In a finite-dimensional real inner product space, for
+`κ < 1` there are finitely many unit vectors `θ` such that every unit vector `v` satisfies
+`κ ≤ ⟪θ, v⟫` for one of them. -/
+theorem exists_finset_forall_exists_le_inner [FiniteDimensional ℝ F] {κ : ℝ} (hκ : κ < 1) :
+    ∃ S : Finset F, (∀ θ ∈ S, ‖θ‖ = 1) ∧ ∀ v : F, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫ := by
+  -- Cover the unit sphere by finitely many balls of radius `1 - κ` around unit vectors.
+  obtain ⟨S, hSs, hcov⟩ := (isCompact_sphere (0 : F) 1).elim_nhds_subcover
+    (Metric.ball · (1 - κ)) fun θ _ ↦ Metric.ball_mem_nhds θ (sub_pos.2 hκ)
+  refine ⟨S, fun θ hθ ↦ by simpa using hSs θ hθ, fun v hv ↦ ?_⟩
+  obtain ⟨θ, hθS, hvθ⟩ := Set.mem_iUnion₂.1 (hcov (by simpa using hv))
+  have hd : ‖v - θ‖ < 1 - κ := by simpa [dist_eq_norm] using hvθ
+  exact ⟨θ, hθS, by linarith [one_sub_norm_sub_le_inner (by simpa using hSs θ hθS) v]⟩
 
 end TauCeti

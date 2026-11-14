@@ -55,7 +55,9 @@ The file also records the characterization `laplacian_eq_traceL` of the Laplacia
 the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
-`ContDiffAt.laplacian_comp` for a real function of a scalar function, the companion rule
+`ContDiffAt.laplacian_comp` for a real function of a scalar function, the plane-wave rules
+`laplacian_comp_inner` and `laplacian_comp_inner_sub`, additivity over
+finite sums, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, the commutation
 `ContDiffAt.laplacian_fderiv` of the Laplacian with the derivative and its iterate
 `ContDiff.laplacian_iteratedFDeriv`, and the locality
@@ -101,6 +103,10 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   function `F` of a scalar function `q`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
+* `TauCeti.laplacian_comp_inner`: the Laplacian of a plane wave `z ↦ g ⟪θ, z⟫` is `‖θ‖² g''`;
+  `TauCeti.laplacian_comp_inner_sub` is its shifted form `z ↦ g ⟪θ, z - x⟫`.
+* `TauCeti.laplacian_fun_sum`, `TauCeti.laplacian_sum`: the Laplacian of a finite sum of `C²`
+  functions.
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
@@ -575,6 +581,80 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+omit [FiniteDimensional ℝ E] in
+/-- The derivative of a plane wave `z ↦ g ⟪θ, z⟫` along a nonzero vector `θ` is
+`v ↦ ⟪θ, v⟫ • g' ⟪θ, y⟫`, with no differentiability hypothesis on `g`: the plane wave is
+differentiable at `y` exactly when `g` is differentiable at `⟪θ, y⟫`. -/
+private theorem fderiv_comp_inner (g : ℝ → F) {θ : E} (hθ : θ ≠ 0) (y : E) :
+    fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) y = (innerSL ℝ θ).smulRight (deriv g ⟪θ, y⟫_ℝ) := by
+  by_cases hd : DifferentiableAt ℝ g ⟪θ, y⟫_ℝ
+  · refine (hd.hasFDerivAt.comp y (innerSL ℝ θ).hasFDerivAt).fderiv.trans ?_
+    ext v
+    simp [fderiv_eq_smul_deriv]
+  -- Otherwise neither side is differentiable: `g` is the plane wave along an affine section.
+  have hn : ¬ DifferentiableAt ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) y := fun hf ↦ hd <| by
+    have hA : (fun t : ℝ ↦ y + (t - ⟪θ, y⟫_ℝ) • (‖θ‖ ^ 2)⁻¹ • θ) ⟪θ, y⟫_ℝ = y := by simp
+    have hc := (hA ▸ hf).comp ⟪θ, y⟫_ℝ (by fun_prop :
+      DifferentiableAt ℝ (fun t : ℝ ↦ y + (t - ⟪θ, y⟫_ℝ) • (‖θ‖ ^ 2)⁻¹ • θ) ⟪θ, y⟫_ℝ)
+    convert hc using 1
+    funext t
+    simp [inner_add_right, inner_smul_right, hθ]
+  rw [fderiv_zero_of_not_differentiableAt hn, deriv_zero_of_not_differentiableAt hd]
+  ext v
+  simp
+
+/-- **The Laplacian of a plane wave.** For a vector `θ` and a function `g : ℝ → F`, the function
+`z ↦ g ⟪θ, z⟫`, constant on the hyperplanes orthogonal to `θ`, has Laplacian `‖θ‖² g'' (⟪θ, y⟫)`
+at `y`. For instance `cosh (c ⟪θ, z⟫)` with `‖θ‖ = 1` is an eigenfunction of `Δ` with eigenvalue
+`c²`. -/
+theorem laplacian_comp_inner (g : ℝ → F) (θ y : E) :
+    Δ (fun z ↦ g ⟪θ, z⟫_ℝ) y = ‖θ‖ ^ 2 • deriv (deriv g) ⟪θ, y⟫_ℝ := by
+  rcases eq_or_ne θ 0 with rfl | hθ
+  · simp
+  set Ψ := ContinuousLinearMap.smulRightL ℝ E F (innerSL ℝ θ)
+  have hD : fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) = fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ) :=
+    funext (fderiv_comp_inner g hθ)
+  -- `Ψ` has the left inverse given by evaluation at `θ / ‖θ‖²`, so it commutes with `fderiv`.
+  have hD2 : fderiv ℝ (fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ)) y =
+      Ψ.comp (fderiv ℝ (fun z ↦ deriv g ⟪θ, z⟫_ℝ) y) := by
+    by_cases hd : DifferentiableAt ℝ (fun z ↦ deriv g ⟪θ, z⟫_ℝ) y
+    · exact (Ψ.hasFDerivAt.comp y hd.hasFDerivAt).fderiv
+    have hn : ¬ DifferentiableAt ℝ (fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ)) y := fun hf ↦ hd <| by
+      convert hf.clm_apply (differentiableAt_const ((‖θ‖ ^ 2)⁻¹ • θ)) using 1
+      funext z
+      simp [Ψ, hθ]
+    rw [fderiv_zero_of_not_differentiableAt hn, fderiv_zero_of_not_differentiableAt hd,
+      ContinuousLinearMap.comp_zero]
+  rw [laplacian_eq_traceL, traceL_apply, hD, hD2, fderiv_comp_inner _ hθ]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
+    innerSL_apply_apply, Ψ, ContinuousLinearMap.smulRightL_apply_apply,
+    smul_smul, ← Finset.sum_smul]
+  rw [← (stdOrthonormalBasis ℝ E).sum_sq_inner_left θ]
+  simp_rw [sq]
+
+/-- **The Laplacian of a shifted plane wave.** For vectors `θ` and `x` and a function
+`g : ℝ → F`, the function `z ↦ g ⟪θ, z - x⟫` has Laplacian `‖θ‖² g'' (⟪θ, y - x⟫)` at `y`. -/
+theorem laplacian_comp_inner_sub (g : ℝ → F) (θ x y : E) :
+    Δ (fun z ↦ g ⟪θ, z - x⟫_ℝ) y = ‖θ‖ ^ 2 • deriv (deriv g) ⟪θ, y - x⟫_ℝ := by
+  have h := congrFun (laplacian_comp_add_right (fun z ↦ g ⟪θ, z⟫_ℝ) (-x)) y
+  simp only [← sub_eq_add_neg] at h
+  rw [h, laplacian_comp_inner]
+
+/-- **The Laplacian of a finite sum** is the sum of the Laplacians of the summands, when these are
+`C²` at the point. -/
+theorem laplacian_fun_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
+    Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
+  rw [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_fun_sum_apply hf, map_sum]
+  simp_rw [← laplacian_eq_traceL_iteratedFDeriv]
+
+/-- **The Laplacian of a finite sum**, point-free form of `TauCeti.laplacian_fun_sum`. -/
+theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
+    Δ (∑ i ∈ s, f i) x = ∑ i ∈ s, Δ (f i) x := by
+  rw [Finset.sum_fn]
+  exact laplacian_fun_sum hf
 
 open Gradient in
 /-- **The Leibniz rule for the Laplacian**, vector-valued form.  For a scalar function `f` and a
