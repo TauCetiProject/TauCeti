@@ -10,6 +10,9 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
+public import TauCeti.Analysis.Complex.EvenReflection
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Complex.ReImTopology
@@ -20,7 +23,6 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -57,6 +59,10 @@ Laplace equation; it needs no hypothesis on `R`.
 
 ## Main results
 
+* `TauCeti.twistedReflection_starL'_ae_eq_starSchwarzReflection` and
+  `TauCeti.twistedReflection_id_ae_eq_evenReflection`: twisted by `star` or by the identity, the
+  reflection agrees almost everywhere with `TauCeti.starSchwarzReflection` or
+  `TauCeti.evenReflection`.
 * `TauCeti.locallyIntegrableOn_twistedReflection`: the reflection of a function locally integrable
   up to the real axis is locally integrable on the doubled domain.
 * `TauCeti.forall_integral_laplacian_smul_twistedReflection_eq_iff`: the reflected triple solves
@@ -69,8 +75,8 @@ Laplace equation; it needs no hypothesis on `R`.
 * `TauCeti.integral_laplacian_smul_twistedReflection_conjCLE_id_eq_zero`: reflecting the solution
   `z` of the real boundary problem with `R = conj` gives `z` again, which solves the doubled
   equation.
-* `TauCeti.exists_integral_laplacian_smul_twistedReflection_id_ne_zero`: the even reflection
-  `s + i |t|` (that is, `R = id`) does not.
+* `TauCeti.exists_integral_laplacian_smul_twistedReflection_id_ne_zero`: the reflection with
+  `R = id`, almost everywhere the even reflection `s + i |t|` of `z`, does not.
 
 ## References
 
@@ -98,7 +104,7 @@ variable {R : V →L[ℝ] V} {ξ f g : ℂ → V} {z : ℂ}
 
 /-- Above the real axis the twisted reflection of `ξ` is `ξ`. -/
 @[simp]
-theorem twistedReflection_of_pos (hz : 0 < z.im) : twistedReflection R ξ z = ξ z := by
+theorem twistedReflection_of_im_pos (hz : 0 < z.im) : twistedReflection R ξ z = ξ z := by
   have hz' : conj z ∉ {w : ℂ | 0 < w.im} := by simpa using hz.le
   have hz'' : z ∈ {w : ℂ | 0 < w.im} := mem_ofPred.2 hz
   rw [twistedReflection, indicator_of_mem hz'', indicator_of_notMem hz', map_zero, add_zero]
@@ -106,7 +112,7 @@ theorem twistedReflection_of_pos (hz : 0 < z.im) : twistedReflection R ξ z = ξ
 /-- Below the real axis the twisted reflection of `ξ` is `R` applied to `ξ` at the mirror
 point. -/
 @[simp]
-theorem twistedReflection_of_neg (hz : z.im < 0) :
+theorem twistedReflection_of_im_neg (hz : z.im < 0) :
     twistedReflection R ξ z = R (ξ (conj z)) := by
   have hz' : z ∉ {w : ℂ | 0 < w.im} := not_lt.2 hz.le
   have hz'' : conj z ∈ {w : ℂ | 0 < w.im} := by simpa using hz
@@ -174,7 +180,29 @@ theorem twistedReflection_ae_eq (R : V →L[ℝ] V) (ξ : ℂ → V) :
   have hm : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
   have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
   filter_upwards [ae_restrict_mem hm, ae_restrict_of_ae hne] with z hz hz'
-  exact twistedReflection_of_pos (lt_of_le_of_ne (mem_ofPred.1 hz) hz'.symm)
+  exact twistedReflection_of_im_pos (lt_of_le_of_ne (mem_ofPred.1 hz) hz'.symm)
+
+/-- Twisted by `star`, the reflection agrees almost everywhere with `starSchwarzReflection`: they
+differ only on the real axis. -/
+theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [StarModule ℝ V]
+    [ContinuousStar V] (ξ : ℂ → V) :
+    twistedReflection ((starL' ℝ : V ≃L[ℝ] V) : V →L[ℝ] V) ξ =ᵐ[volume]
+      starSchwarzReflection ξ := by
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
+  rcases (show z.im ≠ 0 from hz).lt_or_gt with hz | hz
+  · rw [twistedReflection_of_im_neg hz, starSchwarzReflection_of_im_neg hz,
+      ContinuousLinearEquiv.coe_coe, starL'_apply]
+  · rw [twistedReflection_of_im_pos hz, starSchwarzReflection_of_im_nonneg hz.le]
+
+/-- Twisted by the identity, the reflection agrees almost everywhere with `evenReflection`: they
+differ only on the real axis. -/
+theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
+    twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ := by
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)] with z hz
+  rcases (show z.im ≠ 0 from hz).lt_or_gt with hz | hz
+  · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
+      ContinuousLinearMap.id_apply]
+  · rw [twistedReflection_of_im_pos hz, evenReflection_of_nonneg hz.le]
 
 /-! ### Local integrability -/
 
@@ -216,12 +244,8 @@ private def lapIntegrand (φ : ℂ → ℝ) (a b c : ℂ → V) (z : ℂ) : V :=
 
 private theorem integrable_rhs (φ : 𝓓(Ω, ℝ)) {b c : ℂ → V} (hb : LocallyIntegrableOn b Ω)
     (hc : LocallyIntegrableOn c Ω) :
-    Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z := by
-  have hd (z v : ℂ) := (φ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv (v := v)
-  have h1 := integrable_lineDeriv_smul_of_locallyIntegrableOn hb φ 1
-  have h2 := integrable_lineDeriv_smul_of_locallyIntegrableOn hc φ I
-  simp only [hd] at h1 h2
-  exact h1.add h2
+    Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • b z + fderiv ℝ (φ : ℂ → ℝ) z I • c z :=
+  (φ.integrable_fderiv_apply_smul 1 hb).fun_add (φ.integrable_fderiv_apply_smul I hc)
 
 private theorem integrable_lapIntegrand (φ : 𝓓(Ω, ℝ)) {a b c : ℂ → V}
     (ha : LocallyIntegrableOn a Ω) (hb : LocallyIntegrableOn b Ω)
@@ -284,39 +308,18 @@ private theorem integral_lapIntegrand_add_data (φ : 𝓓(Ω, ℝ)) {a b c a' b'
   simp only [lapIntegrand, Pi.add_apply, smul_add]
   abel
 
-private theorem mapsTo_conjLIE (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) :
-    MapsTo conjLIE.toContinuousLinearEquiv Ω Ω := fun z hz ↦ by
-  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply, SetLike.mem_coe]
-    using hΩ z hz
-
-/-- The test function `z ↦ φ (conj z)` on a conjugation-invariant open set. -/
-private def conjTest (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) : 𝓓(Ω, ℝ) :=
-  conjLIE.toContinuousLinearEquiv.transportTestFunction (mapsTo_conjLIE hΩ) φ
-
-private theorem conjTest_apply (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
-    conjTest hΩ φ z = φ (conj z) := by
-  simp only [conjTest, ContinuousLinearEquiv.transportTestFunction_apply,
-    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, conjLIE_symm, conjLIE_apply]
-
-private theorem coe_conjTest (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) :
-    (conjTest hΩ φ : ℂ → ℝ) = (φ : ℂ → ℝ) ∘ conjLIE := by
-  ext z
-  simp [conjTest_apply]
-
-private theorem laplacian_conjTest (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
-    Δ (conjTest hΩ φ : ℂ → ℝ) z = Δ (φ : ℂ → ℝ) (conj z) := by
-  rw [coe_conjTest, laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, conjLIE_apply]
-
-private theorem fderiv_conjTest (hΩ : ∀ z ∈ Ω, conj z ∈ Ω) (φ : 𝓓(Ω, ℝ)) (z v : ℂ) :
-    fderiv ℝ (conjTest hΩ φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) (conj z) (conj v) := by
-  simp only [conjTest, ContinuousLinearEquiv.fderiv_transportTestFunction,
-    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, conjLIE_symm, conjLIE_apply]
+/-- The Laplacian of `φ ∘ conj` at `z` is that of `φ` at `conj z`. -/
+private theorem laplacian_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
+    Δ (TestFunction.compConj hΩ φ : ℂ → ℝ) z = Δ (φ : ℂ → ℝ) (conj z) := by
+  have h : (TestFunction.compConj hΩ φ : ℂ → ℝ) = (φ : ℂ → ℝ) ∘ conjLIE := by
+    ext z
+    simp
+  rw [h, laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, conjLIE_apply]
 
 /-- **The reflection formula.** The weak Laplace integrand of the reflected data against `φ`
 integrates to the half-plane integrand of the data against `φ`, plus that of `R` applied to the
 data against `φ ∘ conj`. -/
-private theorem integral_lapIntegrand_twistedReflection (hΩ : ∀ z ∈ Ω, conj z ∈ Ω)
+private theorem integral_lapIntegrand_twistedReflection (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (R : V →L[ℝ] V) (φ : 𝓓(Ω, ℝ))
     (hξ : LocallyIntegrableOn ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
     (hf : LocallyIntegrableOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
@@ -325,12 +328,12 @@ private theorem integral_lapIntegrand_twistedReflection (hΩ : ∀ z ∈ Ω, con
         (twistedReflection (-R) g) z =
       (∫ z, lapIntegrand (φ : ℂ → ℝ) (upper.indicator ξ) (upper.indicator f)
           (upper.indicator g) z) +
-        ∫ z, lapIntegrand (conjTest hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
+        ∫ z, lapIntegrand (TestFunction.compConj hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
           (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w)) z := by
   have hξ' := locallyIntegrableOn_indicator_upper hξ
   have hf' := locallyIntegrableOn_indicator_upper hf
   have hg' := locallyIntegrableOn_indicator_upper hg
-  set J := lapIntegrand (conjTest hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
+  set J := lapIntegrand (TestFunction.compConj hΩ φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
     (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w))
   have hJ : Integrable J :=
     integrable_lapIntegrand _ (R.locallyIntegrableOn_comp hξ')
@@ -341,7 +344,7 @@ private theorem integral_lapIntegrand_twistedReflection (hΩ : ∀ z ∈ Ω, con
         (upper.indicator g) z + J (conjLIE z) := by
     have h1 : conj (1 : ℂ) = 1 := by simp
     have hI : conj I = -I := by simp
-    simp only [J, lapIntegrand, laplacian_conjTest, fderiv_conjTest, conjLIE_apply,
+    simp only [J, lapIntegrand, laplacian_compConj, TestFunction.fderiv_compConj, conjLIE_apply,
       RCLike.conj_conj, h1, hI, map_neg, twistedReflection, neg_apply,
       smul_add, smul_neg, neg_smul]
     abel
@@ -429,11 +432,14 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
       simp [lapIntegrand, laplacian_neg, fderiv_neg]
     rw [hneg]
   -- The reflection formula for even and odd test functions.
-  have hconj_even {φ : 𝓓(Ω, ℝ)} (hφ : ∀ z, φ (conj z) = φ z) : conjTest hΩ φ = φ := by
-    ext z; rw [conjTest_apply, hφ]
-  have hconj_odd {φ : 𝓓(Ω, ℝ)} (hφ : ∀ z, φ (conj z) = -φ z) : conjTest hΩ φ = -φ := by
-    ext z; rw [conjTest_apply, hφ]; simp
-  have hrefl (φ : 𝓓(Ω, ℝ)) := integral_lapIntegrand_twistedReflection hΩ R φ hξ hf hg
+  have hΩ' : MapsTo (starRingEnd ℂ) Ω Ω := fun z hz ↦ hΩ z hz
+  have hconj_even {φ : 𝓓(Ω, ℝ)} (hφ : ∀ z, φ (conj z) = φ z) :
+      TestFunction.compConj hΩ' φ = φ := by
+    ext z; rw [TestFunction.compConj_apply, hφ]
+  have hconj_odd {φ : 𝓓(Ω, ℝ)} (hφ : ∀ z, φ (conj z) = -φ z) :
+      TestFunction.compConj hΩ' φ = -φ := by
+    ext z; rw [TestFunction.compConj_apply, hφ]; simp
+  have hrefl (φ : 𝓓(Ω, ℝ)) := integral_lapIntegrand_twistedReflection hΩ' R φ hξ hf hg
   constructor
   · intro h
     refine ⟨fun φ hφ ↦ ?_, fun φ hφ ↦ ?_⟩
@@ -448,11 +454,11 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
   · rintro ⟨he, ho⟩ φ
     rw [integral_eq_neg_iff φ hξr hfr hgr]
     -- Split `φ + φ` into the even test function `φ + φ ∘ conj` and the odd one `φ - φ ∘ conj`.
-    set ψ := conjTest hΩ φ
+    set ψ := TestFunction.compConj hΩ' φ
     have hE : ∀ z, (φ + ψ) (conj z) = (φ + ψ) z := by
-      intro z; simp [ψ, conjTest_apply, add_comm]
+      intro z; simp [ψ, add_comm]
     have hO : ∀ z, (φ - ψ) (conj z) = -(φ - ψ) z := by
-      intro z; simp [ψ, conjTest_apply]
+      intro z; simp [ψ]
     have hE' : ∫ z, lapIntegrand ((φ + ψ : 𝓓(Ω, ℝ)) : ℂ → ℝ) (twistedReflection R ξ)
         (twistedReflection R f) (twistedReflection (-R) g) z = 0 := by
       rw [hrefl, hconj_even hE]
@@ -501,16 +507,6 @@ theorem twistedReflection_conjCLE_id (hz : z.im ≠ 0) :
   · simp [hz]
   · simp [hz]
 
-/-- Off the real axis, the reflection of `z = s + i t` twisted by the identity is the even
-reflection `s + i |t|`. -/
-theorem twistedReflection_id_id (hz : z.im ≠ 0) :
-    twistedReflection (ContinuousLinearMap.id ℝ ℂ) id z = z.re + |z.im| * I := by
-  rcases hz.lt_or_gt with hz | hz
-  · rw [twistedReflection_of_neg hz, abs_of_neg hz]
-    apply Complex.ext <;> simp
-  · rw [twistedReflection_of_pos hz, abs_of_pos hz]
-    exact (re_add_im z).symm
-
 /-- **Check: the reflection by `conj` of the real-boundary solution `z` solves the doubled
 equation.** With `f = g = 0`, the reflection of `z` by `R = conj` is `z` off the real axis, and
 `z` is harmonic, so `∫ Δφ • ξ = 0` for every test function `φ` on `Ω`. -/
@@ -525,16 +521,17 @@ theorem integral_laplacian_smul_twistedReflection_conjCLE_id_eq_zero (φ : 𝓓(
   exact (hh.weaklyHarmonicOn (μ := volume)).integral_laplacian_smul_eq_zero φ
 
 /-- **Check: the even reflection `s + i |t|` does not solve the doubled equation.** With
-`f = g = 0` and `R = id`, the reflection of `z` is `s + i |t|` off the real axis, which is not
-weakly harmonic on `ℂ`: a weakly harmonic function agrees almost everywhere with a harmonic one,
-and the continuous function `s + i |t|` would then be smooth, while `|t|` is not differentiable at
-`0`. -/
+`f = g = 0` and `R = id`, the reflection of `z` agrees almost everywhere with the even reflection
+`evenReflection id`, that is `s + i |t|`, which is not weakly harmonic on `ℂ`: a weakly harmonic
+function agrees almost everywhere with a harmonic one, and the continuous function `s + i |t|`
+would then be smooth, while `|t|` is not differentiable at `0`. -/
 theorem exists_integral_laplacian_smul_twistedReflection_id_ne_zero :
     ∃ φ : 𝓓((⊤ : Opens ℂ), ℝ),
       ∫ z, Δ (φ : ℂ → ℝ) z • twistedReflection (ContinuousLinearMap.id ℝ ℂ) id z ≠ 0 := by
   by_contra! h
-  set w : ℂ → ℂ := fun z ↦ z.re + |z.im| * I with hw
-  have hwc : Continuous w := by fun_prop
+  set w : ℂ → ℂ := evenReflection id with hw
+  have hwc : Continuous w :=
+    continuousOn_univ.1 (continuousOn_evenReflection (by simp) continuous_id.continuousOn)
   have hloc : LocallyIntegrableOn (twistedReflection (ContinuousLinearMap.id ℝ ℂ) id)
       (⊤ : Opens ℂ) :=
     locallyIntegrableOn_twistedReflection (by simp) _
@@ -545,8 +542,7 @@ theorem exists_integral_laplacian_smul_twistedReflection_id_ne_zero :
   have hwae : twistedReflection (ContinuousLinearMap.id ℝ ℂ) id
       =ᵐ[volume.restrict ((⊤ : Opens ℂ) : Set ℂ)] w := by
     rw [Opens.coe_top, Measure.restrict_univ]
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_im_eq 0)] with z hz
-    exact twistedReflection_id_id hz
+    exact twistedReflection_id_ae_eq_evenReflection id
   have hwh : HarmonicOnNhd w (⊤ : Opens ℂ) :=
     (harmonicOnNhd_iff_weaklyHarmonicOn (μ := volume) hwc.continuousOn).2 (hharm.congr_ae hwae)
   have hwd : DifferentiableAt ℝ w 0 := (hwh 0 (by simp)).1.differentiableAt (by norm_num)
@@ -558,7 +554,11 @@ theorem exists_integral_laplacian_smul_twistedReflection_id_ne_zero :
       imCLM.differentiableAt.comp (0 : ℝ) (hw'.comp (0 : ℝ) hlin)
   have hfun : (fun t : ℝ ↦ (w (t * I)).im) = abs := by
     ext t
-    simp [hw]
+    rcases le_total 0 t with ht | ht
+    · rw [hw, evenReflection_of_nonneg (by simpa using ht)]
+      simp [abs_of_nonneg ht]
+    · rw [hw, evenReflection_of_nonpos (by simpa using ht)]
+      simp [abs_of_nonpos ht]
   rw [hfun] at habs
   exact not_differentiableAt_abs_zero habs
 

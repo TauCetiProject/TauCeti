@@ -38,6 +38,9 @@ reflections.
   test function.
 * `ContinuousLinearEquiv.divergenceCLM_postcompCLM_transportTestFunction`: the divergence of a
   transported test vector field is the transported divergence.
+* `TestFunction.compConj`: a test function on a conjugation-invariant open set of `ℂ` composed
+  with complex conjugation, with its derivatives `TestFunction.fderiv_compConj` and
+  `TestFunction.lineDeriv_compConj`.
 
 ## Implementation notes
 
@@ -167,3 +170,45 @@ theorem divergenceCLM_postcompCLM_transportTestFunction [FiniteDimensional ℝ E
   simp [e.comp_fderiv, LinearEquiv.conj_apply]
 
 end ContinuousLinearEquiv
+
+namespace TestFunction
+
+open Complex Set TopologicalSpace
+open scoped ComplexConjugate Distributions
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens ℂ} {n : ℕ∞}
+
+private theorem mapsTo_conjLIE (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) :
+    MapsTo (conjLIE.toContinuousLinearEquiv : ℂ → ℂ) Ω Ω := fun z hz ↦ by
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
+  exact hΩ hz
+
+/-- Precompose test functions on a conjugation-invariant open set `Ω ⊆ ℂ` with complex
+conjugation, `φ ↦ φ ∘ conj`: the transport along `conj`, which is its own inverse. -/
+def compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
+  conjLIE.toContinuousLinearEquiv.transportTestFunction (mapsTo_conjLIE hΩ)
+
+/-- The test function `φ ∘ conj` is evaluated at the conjugate point. -/
+@[simp]
+theorem compConj_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z : ℂ) :
+    compConj hΩ φ z = φ (conj z) := by
+  rw [compConj, ContinuousLinearEquiv.transportTestFunction_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
+
+/-- The derivative of `φ ∘ conj` at `z` in the direction `v` is that of `φ` at `conj z` in the
+direction `conj v`. -/
+theorem fderiv_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, F)) (z v : ℂ) :
+    fderiv ℝ (compConj hΩ φ : ℂ → F) z v = fderiv ℝ (φ : ℂ → F) (conj z) (conj v) := by
+  simp only [compConj, ContinuousLinearEquiv.fderiv_transportTestFunction,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, conjLIE_symm, conjLIE_apply]
+
+/-- The line derivative of `φ ∘ conj` at `z` in the direction `v` is that of `φ` at `conj z` in
+the direction `conj v`. -/
+theorem lineDeriv_compConj (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓^{n}(Ω, F)) (z v : ℂ) :
+    lineDeriv ℝ (compConj hΩ φ : ℂ → F) z v = lineDeriv ℝ (φ : ℂ → F) (conj z) (conj v) := by
+  simp only [lineDeriv, compConj_apply, map_add, Complex.real_smul, map_mul,
+    Complex.conj_ofReal]
+
+end TestFunction

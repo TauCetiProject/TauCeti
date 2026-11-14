@@ -230,13 +230,10 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
   -- `integral_laplacian_smul_half_re_cauchyTransform` for `dat i`.
   have hid (φ : 𝓓(U, ℝ)) : ∫ z, Δ (φ : ℂ → ℝ) z • ξ₀ z =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) := by
-    have hd (z v : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) z v :=
-      (φ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv
     have hR : Integrable fun z ↦
-        fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z := by
-      simpa only [hd] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
-        (hfi.mono_set hUΩ') φ 1).fun_add (integrable_lineDeriv_smul_of_locallyIntegrableOn
-          (hgi.mono_set hUΩ') φ I)
+        fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z :=
+      (φ.integrable_fderiv_apply_smul 1 (hfi.mono_set hUΩ')).fun_add
+        (φ.integrable_fderiv_apply_smul I (hgi.mono_set hUΩ'))
     have hL := φ.integrable_laplacian_smul hξ₀i
     refine b.ext_elem fun i ↦ ?_
     have hci (x : V) : b.repr x i = c i x := by simp [c]
