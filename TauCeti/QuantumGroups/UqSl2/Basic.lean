@@ -30,10 +30,10 @@ complex-linear map between `UqSl2 q`-modules that commutes with `E`, `F` and `K`
 `UqSl2 q`-linear, and an element of `UqSl2 q` that commutes with `E`, `F` and `K` is central. We
 also package `K` as a unit and derive the commutation rules with `K⁻¹` and with `K` on the
 right, together with the invariance `K F E K⁻¹ = F E`; these are the basic presentation-level
-identities used when putting words into triangular order.  Establishing a PBW basis, and hence
-nontriviality of this presentation, requires additional Ore-extension arguments and is not part
-of the presentation API: `TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero
-`q`, with an iterated Ore extension of `ℂ[K, K⁻¹]`.
+identities used when putting words into triangular order.  Establishing a PBW basis requires
+additional Ore-extension arguments and is not part of the presentation API:
+`TauCeti.QuantumGroups.UqSl2.OreTower` identifies `UqSl2 q`, for nonzero `q`, with an iterated Ore
+extension of `ℂ[K, K⁻¹]`.
 
 ## Main definitions
 
@@ -382,17 +382,13 @@ theorem _root_.LinearMap.map_smul_of_commute_uqSl2 {V W : Type*} [AddCommGroup V
     calc φ (kInv q • x) = (kInv q * k q) • φ (kInv q • x) := by rw [kInv_mul_k, one_smul]
       _ = kInv q • φ ((k q * kInv q) • x) := by rw [mul_smul, ← hk, ← mul_smul]
       _ = kInv q • φ x := by rw [k_mul_kInv, one_smul]
-  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
-    rw [adjoin_range_generator]
-    exact Algebra.mem_top
-  induction ha using Algebra.adjoin_induction generalizing x with
-  | mem a ha =>
-    obtain ⟨g, rfl⟩ := ha
+  induction a using UqSl2.induction generalizing x with
+  | generator g =>
     cases g
     exacts [he x, hf x, hk x, hkInv x]
   | algebraMap c => rw [algebraMap_smul, algebraMap_smul, map_smul]
-  | add a b _ _ ha hb => rw [add_smul, add_smul, map_add, ha, hb]
-  | mul a b _ _ ha hb => rw [mul_smul, mul_smul, ha, hb]
+  | add a b ha hb => rw [add_smul, add_smul, map_add, ha, hb]
+  | mul a b ha hb => rw [mul_smul, mul_smul, ha, hb]
 
 /-- An element of `UqSl2 q` that commutes with `E`, `F` and `K` commutes with every element of
 `UqSl2 q`; commuting with `K⁻¹` is automatic. -/
@@ -415,17 +411,13 @@ theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommGroup 
     [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
     (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
     (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
-  have ha : a ∈ Algebra.adjoin ℂ (Set.range (generator q)) := by
-    rw [adjoin_range_generator]
-    exact Algebra.mem_top
-  induction ha using Algebra.adjoin_induction generalizing x with
-  | mem a ha =>
-    obtain ⟨g, rfl⟩ := ha
+  induction a using UqSl2.induction generalizing x with
+  | generator g =>
     cases g
     exacts [he x hx, hf x hx, hk x hx, hkInv x hx]
   | algebraMap c => rw [algebraMap_smul]; exact W.smul_mem c hx
-  | add a b _ _ ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
-  | mul a b _ _ ha hb => rw [mul_smul]; exact ha (hb hx)
+  | add a b ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
+  | mul a b ha hb => rw [mul_smul]; exact ha (hb hx)
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where
