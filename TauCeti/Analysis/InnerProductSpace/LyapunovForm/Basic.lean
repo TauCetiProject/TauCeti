@@ -40,8 +40,7 @@ in `TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic`.
 * `ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`: a symmetric operator bounded below has a
   Lyapunov form; `ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric` applies this to a
   limit of symmetric operators, and `ContinuousLinearMap.hasLyapunovForm_sub_smul_id_of_isSymmetric`
-  to its shifts `A - c • id` with `|c|` below the bound, which are symmetric by
-  `ContinuousLinearMap.isSymmetric_sub_smul_id`.
+  to its shifts `A - c • id` with `|c|` below the bound.
 * `ContinuousLinearMap.HasLyapunovForm.exists_eventually_nhds`: one Lyapunov form serves every
   operator close enough to `A`; `ContinuousLinearMap.isOpen_setOf_hasLyapunovForm` is the
   corresponding openness statement.
@@ -117,11 +116,6 @@ theorem hasLyapunovForm_of_tendsto_of_isSymmetric {ι : Type*} {l : Filter ι} [
     {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) : A.HasLyapunovForm :=
   hasLyapunovForm_of_isSymmetric (isClosed_setOf_isSymmetric.mem_of_tendsto hlim (.of_forall hF))
     hα hgap
-
-/-- A symmetric operator shifted by a real multiple of the identity is symmetric. -/
-theorem isSymmetric_sub_smul_id (hA : (A : E →ₗ[ℝ] E).IsSymmetric) (c : ℝ) :
-    ((A - c • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
-  simpa using hA.sub (LinearMap.IsSymmetric.id.smul (c := c) (by simp))
 
 /-- **A symmetric operator bounded below keeps a Lyapunov form under small shifts.** If `A` is
 symmetric with `α ‖v‖ ≤ ‖A v‖` and `|c| < α`, then `A - c • id` is symmetric with
