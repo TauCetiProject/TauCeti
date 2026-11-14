@@ -29,6 +29,7 @@ indexed by closed walks, which are then analysed combinatorially.
 
 * `Matrix.pow_succ_apply_eq_sum_prod`: the entries of `A ^ (k + 1)` as sums over walks.
 * `Matrix.trace_pow_eq_sum_prod`: the trace of `A ^ k`, `k ≠ 0`, as a sum over closed walks.
+* `Matrix.trace_mul_pow_eq_sum_prod`: the analogous expansion for a rectangular product.
 * `Matrix.trace_mul_conjTranspose_pow_eq_sum_prod`: the trace of `(X * Xᴴ) ^ k` for a rectangular
   matrix `X`, `k ≠ 0`, as a sum over closed walks alternating between row and column indices.
 
@@ -72,6 +73,16 @@ theorem trace_pow_eq_sum_prod (A : Matrix ι ι R) {k : ℕ} (hk : k ≠ 0) :
   rw [← (Fin.consEquiv fun _ ↦ ι).sum_comp, Fintype.sum_prod_type]
   simp [Fin.consEquiv_apply]
 
+/-- **Trace-word expansion of a rectangular product.** For `k ≠ 0`, the trace of
+`(A * B) ^ k` is the sum over closed walks alternating between the row and column indices
+of `A`, with factors from `A` on the outward steps and from `B` on the return steps. -/
+theorem trace_mul_pow_eq_sum_prod {κ : Type*} [Fintype κ]
+    (A : Matrix ι κ R) (B : Matrix κ ι R) {k : ℕ} (hk : k ≠ 0) :
+    ((A * B) ^ k).trace = ∑ u : Fin k → ι, ∑ v : Fin k → κ,
+      ∏ t, A (u t) (v t) * B (v t) (u (finRotate k t)) := by
+  rw [trace_pow_eq_sum_prod _ hk]
+  simp only [Matrix.mul_apply, Finset.prod_univ_sum, Fintype.piFinset_univ]
+
 /-- **Trace-word expansion of `X * Xᴴ`.** For a rectangular matrix `X` and `k ≠ 0`, the trace of
 `(X * Xᴴ) ^ k` is the sum, over the closed walks `u 0, v 0, u 1, v 1, …, v (k - 1), u 0`
 alternating between row indices `u : Fin k → ι` and column indices `v : Fin k → κ`, of the
@@ -81,7 +92,6 @@ theorem trace_mul_conjTranspose_pow_eq_sum_prod [Star R] {κ : Type*} [Fintype �
     (X : Matrix ι κ R) {k : ℕ} (hk : k ≠ 0) :
     ((X * Xᴴ) ^ k).trace = ∑ u : Fin k → ι, ∑ v : Fin k → κ,
       ∏ t, X (u t) (v t) * star (X (u (finRotate k t)) (v t)) := by
-  rw [trace_pow_eq_sum_prod _ hk]
-  simp only [Matrix.mul_apply, conjTranspose_apply, Finset.prod_univ_sum, Fintype.piFinset_univ]
+  simpa only [conjTranspose_apply] using trace_mul_pow_eq_sum_prod X Xᴴ hk
 
 end Matrix

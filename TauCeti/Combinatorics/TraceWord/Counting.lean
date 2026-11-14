@@ -104,6 +104,18 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
     rw [hvertices] at h
     exact h.trans (Nat.add_le_add_right (card_le_card hedges) 1)
 
+/-- A map whose fibers contain at least two elements has at most half as many image elements
+as domain elements. -/
+theorem two_mul_card_image_le_of_no_singleton_fiber {ι β : Type*} [Fintype ι]
+    [DecidableEq β] {f : ι → β} (h : ∀ a, ∃ b ≠ a, f b = f a) :
+    2 * #(univ.image f) ≤ Fintype.card ι := by
+  have hfiber : ∀ y ∈ univ.image f, 2 ≤ #{a | f a = y} := by
+    intro y hy
+    obtain ⟨a, -, rfl⟩ := mem_image.1 hy
+    obtain ⟨b, hba, hb⟩ := h a
+    exact one_lt_card.2 ⟨a, by simp, b, mem_filter.2 ⟨mem_univ _, hb⟩, hba.symm⟩
+  simpa only [card_univ] using mul_card_image_le_card univ 2 hfiber
+
 private theorem two_le_card_cyclic_edge_fiber_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i)))
     (e : Sym2 α) (he : e ∈ univ.image fun i => s(w i, w (finRotate k i))) :
@@ -117,9 +129,7 @@ as steps. Loops count as edges. -/
 theorem two_mul_card_cyclic_edges_le_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
     2 * #(univ.image fun i => s(w i, w (finRotate k i))) ≤ k := by
-  simpa only [card_univ, Fintype.card_fin] using
-    mul_card_image_le_card (univ : Finset (Fin k)) 2
-      (two_le_card_cyclic_edge_fiber_of_no_singleton_edge w h)
+  simpa only [Fintype.card_fin] using two_mul_card_image_le_of_no_singleton_fiber h
 
 /-- A word of length `k` with no singleton edge visits at most `k / 2 + 1` vertices.
 Edges are unordered, and loops count as edges. -/

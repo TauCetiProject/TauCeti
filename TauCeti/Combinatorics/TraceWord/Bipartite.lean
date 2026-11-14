@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import TauCeti.Combinatorics.TraceWord.Counting
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -63,12 +63,17 @@ read cyclically. -/
 def bipartiteEdge (u : Fin k → α) (v : Fin k → β) : Fin k ⊕ Fin k → α × β :=
   Sum.elim (fun t ↦ (u t, v t)) fun t ↦ (u (finRotate k t), v t)
 
-@[simp]
+/-- The edge map as a function on the two kinds of steps. -/
+theorem bipartiteEdge_def (u : Fin k → α) (v : Fin k → β) :
+    bipartiteEdge u v = Sum.elim (fun t ↦ (u t, v t))
+      (fun t ↦ (u (finRotate k t), v t)) := (rfl)
+
+@[simp, grind =]
 theorem bipartiteEdge_inl (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
     bipartiteEdge u v (.inl t) = (u t, v t) := by
   simp [bipartiteEdge]
 
-@[simp]
+@[simp, grind =]
 theorem bipartiteEdge_inr (u : Fin k → α) (v : Fin k → β) (t : Fin k) :
     bipartiteEdge u v (.inr t) = (u (finRotate k t), v t) := by
   simp [bipartiteEdge]
@@ -83,80 +88,62 @@ theorem card_image_add_card_image_le_card_image_bipartiteEdge_add_one (u : Fin k
   cases k with
   | zero => simp
   | succ m =>
-  -- Every row index other than `u 0` is entered for the first time along a step `inr s`, and
-  -- every column index along a step `inl t`; these steps read distinct positions.
-  let fu : α → Fin (m + 1) := fun a ↦ if h : ∃ t, u t = a then Fin.find (u · = a) h else 0
-  let fv : β → Fin (m + 1) := fun b ↦ if h : ∃ t, v t = b then Fin.find (v · = b) h else 0
-  have hfu {a : α} (ha : a ∈ univ.image u) :
-      u (fu a) = a ∧ ∀ t, u t = a → fu a ≤ t := by
-    obtain ⟨t, -, rfl⟩ := mem_image.1 ha
-    have h : ∃ t', u t' = u t := ⟨t, rfl⟩
-    simp only [fu, h, ↓reduceDIte]
-    exact ⟨Fin.find_spec h, fun t' ht' ↦ Fin.find_le_of_pos h ht'⟩
-  have hfv {b : β} (hb : b ∈ univ.image v) :
-      v (fv b) = b ∧ ∀ t, v t = b → fv b ≤ t := by
-    obtain ⟨t, -, rfl⟩ := mem_image.1 hb
-    have h : ∃ t', v t' = v t := ⟨t, rfl⟩
-    simp only [fv, h, ↓reduceDIte]
-    exact ⟨Fin.find_spec h, fun t' ht' ↦ Fin.find_le_of_pos h ht'⟩
-  let f : α ⊕ β → α × β :=
-    Sum.elim (fun a ↦ (a, v ((finRotate (m + 1)).symm (fu a)))) fun b ↦ (u (fv b), b)
-  have hmaps : ∀ x ∈ ((univ.image u).erase (u 0)).disjSum (univ.image v),
-      f x ∈ univ.image (bipartiteEdge u v) := by
-    rintro (a | b) hx <;> simp only [inl_mem_disjSum, inr_mem_disjSum] at hx
-    · have ha := hfu (mem_of_mem_erase hx)
-      refine mem_image.2 ⟨.inr ((finRotate (m + 1)).symm (fu a)), mem_univ _, ?_⟩
-      simp [f, ha.1]
-    · have hb := hfv hx
-      exact mem_image.2 ⟨.inl (fv b), mem_univ _, by simp [f, hb.1]⟩
-  -- The first visit `fu a` of a row index `a ≠ u 0` is entered along the step `inr s` reading
-  -- `f (inl a)`, with `s` just before `fu a`. If this position is also `f (inr b)`, then the
-  -- first visit `fv b` of `b` lies between `fu a` and `s`, which is impossible.
-  have hmix {a : α} {b : β} (ha : a ∈ (univ.image u).erase (u 0)) (hb : b ∈ univ.image v) :
-      f (.inl a) ≠ f (.inr b) := by
-    intro hab
-    have ha' := hfu (mem_of_mem_erase ha)
-    have hb' := hfv hb
-    set s := (finRotate (m + 1)).symm (fu a) with hs
-    simp only [f, Sum.elim_inl, Sum.elim_inr, Prod.mk.injEq] at hab
-    have h1 : fu a ≤ fv b := ha'.2 _ hab.1.symm
-    have h2 : fv b ≤ s := hb'.2 _ hab.2
-    have hrot : finRotate (m + 1) s = fu a := by simp [hs]
-    have hlast : s ≠ Fin.last m := by
-      rintro hsl
-      rw [hsl, finRotate_last] at hrot
-      exact ne_of_mem_erase ha (by rw [← ha'.1, ← hrot])
-    have hval := coe_finRotate_of_ne_last hlast
-    rw [hrot] at hval
-    rw [Fin.le_def] at h1 h2
-    omega
-  have hinj : Set.InjOn f ↑(((univ.image u).erase (u 0)).disjSum (univ.image v)) := by
-    rintro (a | b) hx (a' | b') hy hxy <;>
-      simp only [mem_coe, inl_mem_disjSum, inr_mem_disjSum] at hx hy
-    · simp only [f, Sum.elim_inl, Prod.mk.injEq] at hxy
-      rw [hxy.1]
-    · exact absurd hxy (hmix hx hy)
-    · exact absurd hxy.symm (hmix hy hx)
-    · simp only [f, Sum.elim_inr, Prod.mk.injEq] at hxy
-      rw [hxy.2]
-  have hcard := card_le_card_of_injOn f hmaps hinj
-  rw [card_disjSum, card_erase_of_mem (mem_image_of_mem u (mem_univ 0))] at hcard
-  have hpos : 0 < #(univ.image u) := card_pos.2 (univ_nonempty.image u)
-  omega
+    -- Read the alternating word as an ordinary path, omitting its closing step.
+    let w (i : ℕ) : α ⊕ β := if i % 2 = 0 then
+      .inl (u (Fin.ofNat (m + 1) (i / 2))) else .inr (v (Fin.ofNat (m + 1) (i / 2)))
+    let edge (p : α × β) : Sym2 (α ⊕ β) := s(.inl p.1, .inr p.2)
+    have hvertices : (univ.image u).disjSum (univ.image v) ⊆
+        (range (2 * m + 2)).image w := by
+      rintro (a | b) hx <;> simp only [inl_mem_disjSum, inr_mem_disjSum] at hx
+      · obtain ⟨t, -, rfl⟩ := mem_image.1 hx
+        exact mem_image.2 ⟨2 * t.val, mem_range.2 (by omega), by simp [w]⟩
+      · obtain ⟨t, -, rfl⟩ := mem_image.1 hx
+        refine mem_image.2 ⟨2 * t.val + 1, mem_range.2 (by omega), ?_⟩
+        simp [w, Nat.add_div]
+    have hedges :
+        (((range (2 * m + 1)).filter fun i ↦ w i ≠ w (i + 1)).image
+          fun i ↦ s(w i, w (i + 1))) ⊆ (univ.image (bipartiteEdge u v)).image edge := by
+      intro e he
+      obtain ⟨i, hi, rfl⟩ := mem_image.1 he
+      have hi' : i < 2 * m + 1 := mem_range.1 (mem_filter.1 hi).1
+      let t : Fin (m + 1) := ⟨i / 2, by omega⟩
+      have hidx : Fin.ofNat (m + 1) (i / 2) = t := by
+        apply Fin.ext
+        exact Nat.mod_eq_of_lt t.isLt
+      by_cases hpar : i % 2 = 0
+      · have hnext : (i + 1) % 2 ≠ 0 := by omega
+        have hdiv : (i + 1) / 2 = i / 2 := by omega
+        refine mem_image.2 ⟨bipartiteEdge u v (.inl t), mem_image_of_mem _ (mem_univ _), ?_⟩
+        simp only [edge, bipartiteEdge_inl, w, hpar, hnext, ↓reduceIte, hdiv, hidx]
+      · have hnext : (i + 1) % 2 = 0 := by omega
+        have hdiv : (i + 1) / 2 = i / 2 + 1 := by omega
+        have ht : t ≠ Fin.last m := by
+          intro h
+          have := congrArg Fin.val h
+          dsimp [t] at this
+          omega
+        have hrot : finRotate (m + 1) t = Fin.ofNat (m + 1) ((i + 1) / 2) := by
+          apply Fin.ext
+          rw [coe_finRotate_of_ne_last ht]
+          simp only [Fin.val_ofNat, t]
+          rw [Nat.mod_eq_of_lt (by omega)]
+          exact hdiv.symm
+        refine mem_image.2 ⟨bipartiteEdge u v (.inr t), mem_image_of_mem _ (mem_univ _), ?_⟩
+        simp only [edge, bipartiteEdge_inr, w, hpar, hnext, ↓reduceIte, hrot, hidx]
+        exact Sym2.eq_swap
+    have hpath := card_image_range_le_card_nonloop_edges_add_one w (2 * m + 1)
+    have hv := card_le_card hvertices
+    rw [card_disjSum] at hv
+    exact hv.trans (hpath.trans (Nat.add_le_add_right
+      ((card_le_card hedges).trans (card_image_le)) 1))
 
 /-- A bipartite word of half-length `k` that reads no position exactly once reads at most `k`
 distinct positions. -/
 theorem card_image_bipartiteEdge_le_of_no_singleton_edge {u : Fin k → α} {v : Fin k → β}
     (h : ∀ a, ∃ b ≠ a, bipartiteEdge u v b = bipartiteEdge u v a) :
     #(univ.image (bipartiteEdge u v)) ≤ k := by
-  have hfiber : ∀ e ∈ univ.image (bipartiteEdge u v),
-      2 ≤ #{a | bipartiteEdge u v a = e} := by
-    intro e he
-    obtain ⟨a, -, rfl⟩ := mem_image.1 he
-    obtain ⟨b, hba, hb⟩ := h a
-    exact one_lt_card.2 ⟨a, by simp, b, mem_filter.2 ⟨mem_univ _, hb⟩, hba.symm⟩
-  have := mul_card_image_le_card univ 2 hfiber
-  simp only [card_univ, Fintype.card_sum, Fintype.card_fin] at this
+  have hcount := two_mul_card_image_le_of_no_singleton_fiber h
+  simp only [Fintype.card_sum, Fintype.card_fin] at hcount
   omega
 
 /-- A bipartite word of half-length `k` that reads no position exactly once visits at most

@@ -47,22 +47,55 @@ end ProbabilityTheory.IndepFun
 
 namespace ProbabilityTheory.iIndepFun
 
+/-- **Expected products of functions of independent variables, grouped by fibers.**
+Only finitely many factors and members of the independent family are involved; `e` maps the
+factor indices in `s` to the member indices in `t`. Several factors may read the same member. -/
+theorem integral_fun_prod_comp_fiberwise_of_maps_to {Ω κ ι β 𝕜 : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [DecidableEq κ]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P)
+    {s : Finset ι} {t : Finset κ} {e : ι → κ} (he : ∀ i ∈ s, e i ∈ t)
+    (mY : ∀ j ∈ t, AEMeasurable (Y j) P) {φ : ι → β → 𝕜}
+    (hφ : ∀ i ∈ s, AEStronglyMeasurable (φ i) (P.map (Y (e i)))) :
+    ∫ ω, ∏ i ∈ s, φ i (Y (e i) ω) ∂P =
+      ∏ j ∈ t, ∫ ω, ∏ i ∈ s with e i = j, φ i (Y j ω) ∂P := by
+  let ψ (j : κ) (b : β) := ∏ i ∈ s with e i = j, φ i b
+  have hψ (j : t) : AEStronglyMeasurable (ψ j) (P.map (Y j)) := by
+    exact Finset.aestronglyMeasurable_fun_prod _ fun i hi ↦ by
+      obtain ⟨his, hij⟩ := Finset.mem_filter.1 hi
+      simpa only [hij] using hφ i his
+  have hfactor := (hY.precomp Subtype.val_injective).integral_fun_prod_comp
+    (f := fun j : t ↦ ψ j) (fun j ↦ mY j j.property) hψ
+  have hfactor' : (∫ ω, ∏ j ∈ t, ψ j (Y j ω) ∂P) =
+      ∏ j ∈ t, ∫ ω, ψ j (Y j ω) ∂P := by
+    calc
+      _ = ∫ ω, ∏ j : t, ψ j (Y j ω) ∂P :=
+        integral_congr_ae (.of_forall fun ω ↦ (Finset.prod_coe_sort t
+          (fun j ↦ ψ j (Y j ω))).symm)
+      _ = _ := hfactor
+      _ = _ := Finset.prod_coe_sort t (fun j ↦ ∫ ω, ψ j (Y j ω) ∂P)
+  rw [← hfactor']
+  congr with ω
+  symm
+  dsimp only [ψ]
+  calc
+    _ = ∏ j ∈ t, ∏ i ∈ s with e i = j, φ i (Y (e i) ω) := by
+      refine Finset.prod_congr rfl fun j _ ↦ Finset.prod_congr rfl fun i hi ↦ ?_
+      rw [(Finset.mem_filter.1 hi).2]
+    _ = _ := Finset.prod_fiberwise_of_maps_to he _
+
 /-- **Expected products of functions of independent variables.** Let `Y` be an independent
-family indexed by a finite type, and let the factors `φ s (Y (e s))` of a finite product read
+family indexed by a finite type, and let the factors `φ i (Y (e i))` of a finite product read
 members of `Y`, several factors possibly reading the same member. The expectation of the product
 is the product, over the members `j`, of the expectations of the products of the factors reading
 `j`. -/
-theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} {mΩ : MeasurableSpace Ω}
-    {mβ : MeasurableSpace β} [RCLike 𝕜] [Fintype κ] [DecidableEq κ] [Fintype ι]
+theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] [RCLike 𝕜] [Fintype κ] [DecidableEq κ] [Fintype ι]
     {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P) (mY : ∀ j, AEMeasurable (Y j) P)
-    (e : ι → κ) {φ : ι → β → 𝕜} (hφ : ∀ s, Measurable (φ s)) :
-    ∫ ω, ∏ s, φ s (Y (e s) ω) ∂P = ∏ j, ∫ ω, ∏ s with e s = j, φ s (Y j ω) ∂P := by
-  rw [← hY.integral_fun_prod_comp mY fun j ↦
-    (Finset.measurable_prod _ fun s _ ↦ hφ s).aestronglyMeasurable]
-  congr with ω
-  rw [← Finset.prod_fiberwise Finset.univ e]
-  exact Finset.prod_congr rfl fun j _ ↦ Finset.prod_congr rfl fun s hs ↦ by
-    rw [(Finset.mem_filter.1 hs).2]
+    (e : ι → κ) {φ : ι → β → 𝕜}
+    (hφ : ∀ i, AEStronglyMeasurable (φ i) (P.map (Y (e i)))) :
+    ∫ ω, ∏ i, φ i (Y (e i) ω) ∂P = ∏ j, ∫ ω, ∏ i with e i = j, φ i (Y j ω) ∂P :=
+  hY.integral_fun_prod_comp_fiberwise_of_maps_to (fun _ _ ↦ Finset.mem_univ _)
+    (fun j _ ↦ mY j) (fun i _ ↦ hφ i)
 
 end ProbabilityTheory.iIndepFun
 

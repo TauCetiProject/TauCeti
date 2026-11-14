@@ -81,19 +81,19 @@ private theorem prod_mul_star_eq_prod_readFactor {k : ℕ} (A : Matrix p n 𝕜)
 independent and centred. If a bipartite word `u, v` reads some position at exactly one of its
 steps, then the product of the entries `X (u t) (v t)` and conjugate entries
 `star (X (u (t + 1)) (v t))` along the word has expectation zero. -/
-theorem integral_prod_apply_mul_star_apply_eq_zero [Finite p] [Finite n]
+theorem integral_prod_apply_mul_star_apply_eq_zero
     (hXm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P)
     (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hX : ∀ i j, ∫ ω, X ω i j ∂P = 0) {k : ℕ} (u : Fin k → p) (v : Fin k → n)
     {a : Fin k ⊕ Fin k} (ha : ∀ b, bipartiteEdge u v b = bipartiteEdge u v a → b = a) :
     ∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P = 0 := by
   classical
-  have := Fintype.ofFinite p
-  have := Fintype.ofFinite n
   simp_rw [prod_mul_star_eq_prod_readFactor]
-  rw [hindep.integral_fun_prod_comp_fiberwise (fun ij ↦ hXm ij.1 ij.2) (bipartiteEdge u v)
-    measurable_readFactor]
-  refine Finset.prod_eq_zero (Finset.mem_univ (bipartiteEdge u v a)) ?_
+  rw [hindep.integral_fun_prod_comp_fiberwise_of_maps_to
+    (t := Finset.univ.image (bipartiteEdge u v))
+    (fun i hi ↦ Finset.mem_image_of_mem _ hi) (fun ij _ ↦ hXm ij.1 ij.2)
+    (fun s _ ↦ (measurable_readFactor s).aestronglyMeasurable)]
+  refine Finset.prod_eq_zero (Finset.mem_image_of_mem _ (Finset.mem_univ a)) ?_
   have hfiber : ({b | bipartiteEdge u v b = bipartiteEdge u v a} : Finset _) = {a} := by
     ext b
     simpa using ⟨ha b, fun h ↦ h ▸ rfl⟩
