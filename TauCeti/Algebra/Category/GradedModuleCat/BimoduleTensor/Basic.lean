@@ -990,13 +990,13 @@ theorem bimoduleTensor_obj_obj : ((bimoduleTensor Γ Δ Θ).obj M).obj N =
     bimoduleTensorObj Γ Δ Θ M N := rfl
 
 /-- The action of the bimodule tensor bifunctor on a morphism in the second variable is the
-tensor of the identity of the first variable with it, up to the object identification. -/
+tensor of the identity of the first variable with it. -/
 @[simp]
 theorem bimoduleTensor_obj_map (g : N ⟶ N') :
     ((bimoduleTensor Γ Δ Θ).obj M).map g = bimoduleTensorMap Γ Δ Θ (𝟙 M) g := rfl
 
 /-- The component at `N` of the bimodule tensor of a morphism in the first variable is the tensor
-of that morphism with the identity of `N`, up to the object identification. -/
+of that morphism with the identity of `N`. -/
 @[simp]
 theorem bimoduleTensor_map_app (f : M ⟶ M') :
     ((bimoduleTensor Γ Δ Θ).map f).app N = bimoduleTensorMap Γ Δ Θ f (𝟙 N) := rfl
