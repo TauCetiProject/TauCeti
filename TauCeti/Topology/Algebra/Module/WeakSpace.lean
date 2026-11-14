@@ -19,11 +19,36 @@ evaluations.
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
 (`TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact`): on a compact set the two topologies agree.
+The intertwining lemmas `WeakSpace.map_toWeakSpace` and `WeakSpace.toWeakSpace_symm_map` express
+`WeakSpace.map` through `toWeakSpace` and its inverse without relying on definitional equality of
+the type synonym.
 -/
 
 public section
 
 open Filter Topology
+
+namespace WeakSpace
+
+variable {𝕜 E F : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+
+/-- `WeakSpace.map` intertwines the canonical maps into `WeakSpace`. -/
+@[simp]
+theorem map_toWeakSpace (f : E →L[𝕜] F) (x : E) :
+    WeakSpace.map f (toWeakSpace 𝕜 E x) = toWeakSpace 𝕜 F (f x) := (rfl)
+
+/-- Applying the inverse of `toWeakSpace` after `WeakSpace.map f` evaluates `f` on the underlying
+vector. -/
+theorem toWeakSpace_symm_map (f : E →L[𝕜] F) (w : WeakSpace 𝕜 E) :
+    (toWeakSpace 𝕜 F).symm (WeakSpace.map f w) = f ((toWeakSpace 𝕜 E).symm w) := (rfl)
+
+/-- Explicit formula for `WeakSpace.map` in terms of `toWeakSpace` and its inverse. -/
+theorem map_apply_eq_toWeakSpace (f : E →L[𝕜] F) (w : WeakSpace 𝕜 E) :
+    WeakSpace.map f w = toWeakSpace 𝕜 F (f ((toWeakSpace 𝕜 E).symm w)) := (rfl)
+
+end WeakSpace
 
 namespace TauCeti
 
