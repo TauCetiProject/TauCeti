@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
+public import TauCeti.Analysis.Matrix.HoffmanWielandt
 public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
 
@@ -23,7 +24,9 @@ continuously and measurably on the entries of `A`. These identities connect sing
 with Gram-matrix spectral limits, as used in covariance laws and hermitization.
 
 The squared-singular-value measure needs no separate definition: it is the existing
-`Matrix.spectralMeasure` of `Aᴴ * A`. All singular values come from Mathlib's
+`Matrix.spectralMeasure` of `Aᴴ * A`. Lipschitz statistics satisfy a squared perturbation bound
+by the average squared Frobenius error, which controls bounded approximations of covariance
+spectra using only second moments. All singular values come from Mathlib's
 `LinearMap.singularValues` via `Matrix.toEuclideanLin`.
 
 ## References
@@ -36,7 +39,7 @@ public section
 noncomputable section
 
 open MeasureTheory TauCeti.Probability
-open scoped ComplexOrder ENNReal
+open scoped ComplexOrder ENNReal Matrix.Norms.Frobenius NNReal
 
 namespace Matrix
 
@@ -142,5 +145,59 @@ theorem singularValueMeasure_unitary_mul [DecidableEq m] (A : Matrix m n 𝕜) (
 theorem singularValueMeasure_mul_unitary (A : Matrix m n 𝕜) (U : unitaryGroup n 𝕜) :
     (A * (U : Matrix n n 𝕜)).singularValueMeasure = A.singularValueMeasure := by
   simp only [singularValueMeasure_def, singularValues_toEuclideanLin_mul_unitary]
+
+/-- The squared change in a Lipschitz singular-value statistic is at most the average
+squared Frobenius perturbation, with normalization by the domain dimension. -/
+theorem sq_norm_integral_singularValueMeasure_sub_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (A B : Matrix m n 𝕜) {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) :
+    ‖∫ x, f x ∂(A.singularValueMeasure : Measure ℝ) -
+        ∫ x, f x ∂(B.singularValueMeasure : Measure ℝ)‖ ^ 2 ≤
+      (K : ℝ) ^ 2 * ‖A - B‖ ^ 2 / Fintype.card n := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp only [integral_of_not_completeSpace hE, sub_self, norm_zero, zero_pow two_ne_zero]
+    positivity
+  let _ := hE
+  let d := min (Fintype.card n) (Fintype.card m)
+  let a := (toEuclideanLin A).singularValues
+  let b := (toEuclideanLin B).singularValues
+  have hsum : ∑ i : Fin (Fintype.card n), (a i - b i) ^ 2 ≤ ‖A - B‖ ^ 2 := by
+    have hzero (T : Matrix m n 𝕜) {i : ℕ} (hi : d ≤ i) :
+        (toEuclideanLin T).singularValues i = 0 := by
+      apply ((toEuclideanLin T).singularValues_eq_zero_iff_le_finrank_range).mpr
+      exact (le_min (by simpa using LinearMap.finrank_range_le (toEuclideanLin T))
+        (by simpa using Submodule.finrank_le (toEuclideanLin T).range)).trans hi
+    have heq : ∑ i : Fin (Fintype.card n), (a i - b i) ^ 2 =
+        ∑ i : Fin d, (a i - b i) ^ 2 := by
+      rw [Fin.sum_univ_eq_sum_range (fun i ↦ (a i - b i) ^ 2),
+        Fin.sum_univ_eq_sum_range (fun i ↦ (a i - b i) ^ 2)]
+      symm
+      apply Finset.sum_subset (Finset.range_mono (min_le_left _ _))
+      intro i _ hi
+      simp only [Finset.mem_range, not_lt] at hi
+      simp [a, b, hzero A hi, hzero B hi]
+    rw [heq]
+    exact sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq A B
+  have hN : (0 : ℝ) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
+  have hnorm : ‖∑ i : Fin (Fintype.card n), (f (a i) - f (b i))‖ ≤
+      (K : ℝ) * ∑ i : Fin (Fintype.card n), |a i - b i| := by
+    rw [Finset.mul_sum]
+    exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by
+      simpa [← dist_eq_norm, Real.dist_eq] using hf.dist_le_mul (a i) (b i))
+  have hcs := sq_sum_le_card_mul_sum_sq
+    (s := Finset.univ) (f := fun i : Fin (Fintype.card n) ↦ |a i - b i|)
+  simp only [Finset.card_univ, Fintype.card_fin, sq_abs] at hcs
+  rw [integral_singularValueMeasure, integral_singularValueMeasure, ← smul_sub,
+    ← Finset.sum_sub_distrib, norm_smul, Real.norm_of_nonneg (by positivity), mul_pow]
+  have hsq := pow_le_pow_left₀ (norm_nonneg _) hnorm 2
+  rw [mul_pow] at hsq
+  have hbound := mul_le_mul_of_nonneg_left hsum hN.le
+  have hcs' := mul_le_mul_of_nonneg_left (hcs.trans hbound) (sq_nonneg (K : ℝ))
+  calc
+    _ ≤ (Fintype.card n : ℝ)⁻¹ ^ 2 * ((K : ℝ) ^ 2 *
+        ((Fintype.card n : ℝ) * ‖A - B‖ ^ 2)) :=
+      mul_le_mul_of_nonneg_left (hsq.trans hcs') (sq_nonneg _)
+    _ = _ := by field_simp
 
 end Matrix
