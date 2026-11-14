@@ -361,10 +361,11 @@ theorem contDiff_quarticSliceGluing [Fintype ι] (p q : ι → ℝ) (j : ι) (c 
   · exact contDiff_const.mul ((contDiff_intervalBaseTargetGluing _).comp (contDiff_apply _ _ i))
   · exact contDiff_const.mul ((contDiff_intervalBaseSourceGluing _).comp (contDiff_apply _ _ i))
 
-/-- **The slice point of a trajectory in gluing parameters.** The trajectory point with time
-coordinates `u` reaches the slice `{|yⱼ| = c}` after time `U(c) - uⱼ`, at the slice evaluation with
-gluing parameters `e^{-(uᵢ - uⱼ)}` for the coordinates `i ∈ A` ahead of `j` and `e^{uᵢ - uⱼ}` for
-the others. -/
+/-- **The slice point of a trajectory in gluing parameters.** Flowing the trajectory point with
+time coordinates `u` for time `U(c) - uⱼ` gives the slice evaluation with gluing parameters
+`e^{-(uᵢ - uⱼ)}` for the coordinates `i ∈ A` and `e^{uᵢ - uⱼ}` for the others. When `j` is a moving
+coordinate, with `pⱼ = 0` and `qⱼ = ±1`, this is where the trajectory reaches the slice
+`{|yⱼ| = c}`, and `A` plays the role of the coordinates ahead of `j`. -/
 theorem quarticWellSumFlow_quarticTrajectoryPoint_eq_quarticSliceGluing
     (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) (j : ι)
     {c : ℝ} (hc : c ∈ Ioo 0 1) (A : Finset ι) (u : ι → ℝ) :
@@ -415,8 +416,10 @@ theorem quarticSliceGluing_eq_quarticTrajectoryPoint (j : ι) {c : ℝ} (hc : c 
       intervalBaseOrbit_one_add_log _ (hρ i h hij)]
 
 /-- **The broken trajectory at zero gluing parameters.** At `ρ = 0` the slice evaluation is the
-point with time coordinate `U(c)` on the trajectories from `A.piecewise q p`, where the coordinates
-in `A` have already moved, to `(insert j A).piecewise q p`, where `j` has moved too. -/
+trajectory point with all time coordinates `U(c)` from `A.piecewise q p` to
+`(insert j A).piecewise q p`. These differ at most in the coordinate `j`; when `pⱼ ≠ qⱼ`, the
+coordinates in `A` have already moved in the first and `j` has moved too in the second. When
+`pⱼ = qⱼ` the two coincide and the evaluation is `A.piecewise q p` itself. -/
 theorem quarticSliceGluing_zero (hpq : ∀ i, p i ≠ q i → p i = 0) {j : ι} {c : ℝ}
     (hc : c ∈ Ioo 0 1) {A : Finset ι} (hjA : j ∉ A) :
     quarticSliceGluing p q j c A 0 = quarticTrajectoryPoint (A.piecewise q p)
@@ -445,8 +448,10 @@ theorem quarticSliceGluing_zero (hpq : ∀ i, p i ≠ q i → p i = 0) {j : ι} 
 
 /-- **The slice evaluation at zero gluing parameters lies on the broken trajectory.** At `ρ = 0`
 the slice evaluation lies on a trajectory from the critical point `A.piecewise q p` to
-`(insert j A).piecewise q p`: the piece through the slice of the broken trajectory from `p` to `q`
-on which the coordinates in `A` move before `j`, and the other moving coordinates after it. -/
+`(insert j A).piecewise q p`. When `j` is a moving coordinate, `pⱼ ≠ qⱼ`, this is the piece through
+the slice `{|yⱼ| = c}` of the broken trajectory from `p` to `q` on which the coordinates in `A` move
+before `j`, and the other moving coordinates after it. When `pⱼ = qⱼ` the two critical points
+coincide and the trajectory is stationary. -/
 theorem tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop
     (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1) (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)
     (hpq : ∀ i, p i ≠ q i → p i = 0) {j : ι} {c : ℝ} (hc : c ∈ Ioo 0 1) {A : Finset ι}
@@ -470,9 +475,11 @@ theorem tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop
 
 /-- **Convergence to the broken trajectory.** Let trajectory points from `p` to `q` have time
 separations `uᵢ - uⱼ` tending to `+∞` for the moving coordinates `i ∈ A` and to `-∞` for the other
-moving coordinates `i ≠ j`. Then their slice points on `{|yⱼ| = c}` converge to the slice evaluation
-at zero gluing parameters, a point of the broken trajectory
-(`TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop`). -/
+moving coordinates `i ≠ j`. Then their flows for time `U(c) - uⱼ` converge to the slice evaluation
+at zero gluing parameters, a point of the broken trajectory when `p`, `q` satisfy the hypotheses of
+`TauCeti.tendsto_quarticWellSumFlow_quarticSliceGluing_zero_atBot_atTop`. When `j` is a moving
+coordinate, with `pⱼ = 0` and `qⱼ = ±1`, these flowed points are the slice points of the
+trajectories on `{|yⱼ| = c}`. -/
 theorem tendsto_quarticWellSumFlow_quarticTrajectoryPoint_nhds_quarticSliceGluing_zero
     {α : Type*} {l : Filter α} (hp : ∀ i, p i = -1 ∨ p i = 0 ∨ p i = 1)
     (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1) {j : ι} {c : ℝ} (hc : c ∈ Ioo 0 1) {A : Finset ι}
