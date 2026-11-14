@@ -58,8 +58,8 @@ module `A` with `N`. When the `ι s` are idempotents, it is spanned over `A` by 
   `D (1 ⊗ x)`. Evaluating `D² = 0` at the generators `1 ⊗ x` gives the structure equation
   `d δ + δ * δ = 0`. Hence `D` is the box tensor differential of the type `D` structure
   `TauCeti.TypeDStructure.ofInducedDifferential`, the only one with the idempotents of `N`
-  (`TauCeti.TypeDStructure.existsUnique_idem_eq_and_boxDifferential_eq`). The induced
-  differential of `N` gives back `N`
+  (`TauCeti.TypeDStructure.existsUnique_idem_eq_and_boxDifferential_eq`). Over a ring of
+  characteristic two, the induced differential of `N` squares to zero and gives back `N`
   (`TauCeti.TypeDStructure.ofInducedDifferential_inducedDifferential`).
 
 ## Main definitions
@@ -301,6 +301,7 @@ theorem inducedDifferential_smul (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (�
 
 /-- The induced differential sends the generator `1 ⊗ x` to `∑ y, coeff x y ⊗ y`, the row of the
 coefficient matrix at `x`. -/
+@[simp]
 theorem coe_inducedDifferential_generator [DecidableEq X] (hd : IsUngradedDGAlgebra d)
     (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0) (x : X) :
     (N.inducedDifferential hd hι (N.generator hidem x) : X → A) = N.coeff x := by
@@ -550,9 +551,12 @@ theorem ofInducedDifferential_inducedDifferential [CharP R 2] [DecidableEq X]
 `ι s` be idempotent cycles, and let `D` be a differential of the induced module
 `A ⊠ N = A ⊗_I ⟨X⟩`, with `D (b • φ) = d b • φ + b • D φ` and `D ∘ D = 0`. Then there is a unique
 type `D` structure `N'` with the same idempotents as `N` whose box tensor differential
-`φ ↦ d φ + φ ⬝ δ'` is `D`, namely `TauCeti.TypeDStructure.ofInducedDifferential`. So the
-differential module structures on `A ⊗_I ⟨X⟩` are exactly the type `D` structures on the
-generators `X` with the idempotents of `N`. -/
+`φ ↦ d φ + φ ⬝ δ'` is `D`, namely `TauCeti.TypeDStructure.ofInducedDifferential`. Over a ring
+of characteristic two, where the induced differential of every type `D` structure squares to zero
+(`TauCeti.TypeDStructure.inducedDifferential_inducedDifferential`), the differential module
+structures on `A ⊗_I ⟨X⟩` are therefore exactly the type `D` structures on the generators `X`
+with the idempotents of `N` (`TauCeti.TypeDStructure.ofInducedDifferential_inducedDifferential`).
+-/
 theorem existsUnique_idem_eq_and_boxDifferential_eq
     (hd : IsUngradedDGAlgebra d) (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0)
     (D : N.inducedModule →ₗ[R] N.inducedModule)
