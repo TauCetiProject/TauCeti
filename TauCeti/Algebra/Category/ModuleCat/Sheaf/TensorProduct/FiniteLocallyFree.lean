@@ -37,9 +37,6 @@ noncomputable section
 
 variable {C : Type u} [SmallCategory C] [HasPullbacks C] [HasBinaryProducts C]
   {J : GrothendieckTopology C}
-  [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
-  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {R : Sheaf J CommRingCat.{u}}
 
 /-- Internal Hom out of a finite free sheaf preserves finite local freeness. -/
