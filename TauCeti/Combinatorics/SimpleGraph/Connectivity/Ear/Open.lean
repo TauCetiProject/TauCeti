@@ -179,30 +179,6 @@ end EarDecomposition
 
 /-! ### Completeness: constructing open ears and open ear decompositions -/
 
-/-- A spanning proper subgraph admits an open ear: a single missing edge. -/
-private theorem exists_open_ear_of_spanning {H : G.Subgraph} (hH : H ≠ ⊤)
-    (hspan : ∀ x : V, x ∈ H.verts) : ∃ e : G.Ear H, e.kind = .«open» := by
-  classical
-  -- `H` is spanning and `H ≠ ⊤`, so some edge of `G` is missing from `H`.
-  have hex : ∃ u v : V, G.Adj u v ∧ ¬H.Adj u v := by
-    by_contra! hall
-    apply hH
-    ext x y
-    · simp [hspan x]
-    · exact ⟨fun h ↦ by simp [H.adj_sub h], fun h ↦ hall x y (by simpa using h)⟩
-  obtain ⟨u, v, hadj, hnotH⟩ := hex
-  refine ⟨Ear.«open» hadj.toWalk (Walk.IsPath.cons .nil (by simp [hadj.ne]))
-    (hspan u) (hspan v) hadj.ne ?_ ?_, Ear.kind_open ..⟩
-  · intro w hw hwu hwv
-    simp only [Adj.toWalk, Walk.support_cons, Walk.support_nil, List.mem_cons,
-      List.not_mem_nil, or_false] at hw
-    exact (hw.elim hwu hwv).elim
-  · intro e he
-    simp only [Adj.toWalk, Walk.edges_cons, Walk.edges_nil, List.mem_cons,
-      List.not_mem_nil, or_false] at he
-    subst he
-    rwa [Subgraph.mem_edgeSet]
-
 /-- A `2`-vertex-connected finite graph has an open ear on any subgraph with at least two
 vertices that misses a vertex. -/
 private theorem IsVertexConnected.exists_open_ear_of_not_mem_verts [Finite V]
@@ -257,7 +233,7 @@ theorem IsVertexConnected.exists_open_ear [Finite V] (hG : G.IsVertexConnected 2
     ∃ e : G.Ear H, e.kind = .«open» := by
   classical
   by_cases hspan : ∀ x : V, x ∈ H.verts
-  · exact exists_open_ear_of_spanning hH hspan
+  · exact Subgraph.IsSpanning.exists_open_ear hspan hH
   · push Not at hspan
     obtain ⟨x, hx⟩ := hspan
     exact hG.exists_open_ear_of_not_mem_verts hverts hx

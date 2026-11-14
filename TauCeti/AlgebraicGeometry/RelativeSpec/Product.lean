@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 public import TauCeti.CategoryTheory.Monoidal.CommMon

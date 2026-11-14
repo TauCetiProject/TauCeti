@@ -78,7 +78,7 @@ on `m`. Only the diagonal values of `f` appear on the left, so they already dete
 symmetrization; over a ring in which `(#ι)!` is invertible they therefore determine `f` on all
 symmetric arguments. -/
 theorem sum_neg_one_pow_card_smul_apply_sum_compl
-    (f : MultilinearMap R (fun _ : ι => M) N) (m : ι → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : ι => M) N) (m : ι → M) :
     ∑ S : Finset ι, (-1 : R) ^ #S • f (fun _ => ∑ i ∈ Sᶜ, m i) =
       ∑ σ : Equiv.Perm ι, f fun i => m (σ i) := by
   classical
