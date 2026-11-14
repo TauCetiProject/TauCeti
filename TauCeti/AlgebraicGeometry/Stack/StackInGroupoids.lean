@@ -117,7 +117,7 @@ end Hom
 /-- The stack in setoids of an fppf sheaf of sets `F` (Stacks, Lemma 0432): the discrete
 pseudofunctor `Pseudofunctor.ofPresheaf` of `F`, whose fibre over `T` is the discrete groupoid on
 `F(T)`. -/
-@[expose, stacks 0432]
+@[stacks 0432]
 def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} where
   toSchPseudofunctor := Pseudofunctor.ofPresheaf.{u + 1} F.obj
   isGroupoid _ := inferInstance
@@ -126,7 +126,7 @@ def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} 
 @[simp]
 lemma ofSheaf_toSchPseudofunctor (F : Sheaf Scheme.fppfTopology.{u} (Type u)) :
     (ofSheaf F).toSchPseudofunctor = Pseudofunctor.ofPresheaf.{u + 1} F.obj :=
-  rfl
+  (rfl)
 
 end StackInGroupoids
 
