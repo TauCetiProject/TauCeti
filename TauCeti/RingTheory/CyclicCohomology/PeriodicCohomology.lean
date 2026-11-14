@@ -541,6 +541,15 @@ def fromCyclicCohomology (n k : ℕ) :
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
       ι R A M n k)
 
+/-- Defining formula for `fromCyclicCohomology` in terms of `cyclicCochainComplexToTotal` and
+`ι`. -/
+theorem fromCyclicCohomology_def (n k : ℕ) :
+    fromCyclicCohomology R A M n k =
+      algebraMap ℚ R (periodicComparisonScalar n k) •
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
+          ι R A M n k) :=
+  (rfl)
+
 /-- At stage zero (`k = 0`), `fromCyclicCohomology` is the unscaled inclusion into `HP^n`. -/
 @[simp]
 theorem fromCyclicCohomology_zero (n : ℕ) :
