@@ -44,8 +44,8 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 /-- On the spectral projection of a point `μ`, a normal operator acts as multiplication by `μ`:
 `a P({μ}) = μ P({μ})`. -/
 @[simp]
-theorem comp_spectralPVM_proj_preimage_singleton (μ : ℂ) :
-    a ∘L a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
+theorem mul_spectralPVM_proj_preimage_singleton (μ : ℂ) :
+    a * a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
       (measurableSet_singleton μ)) =
       μ • a.spectralPVM.proj (Subtype.val ⁻¹' {μ})
         (measurable_subtype_coe (measurableSet_singleton μ)) := by
@@ -62,14 +62,15 @@ theorem comp_spectralPVM_proj_preimage_singleton (μ : ℂ) :
   have h := congrArg a.borelCalculus hmul
   rwa [map_mul, map_smul, borelCalculus_restrict_id, borelCalculus_indicator] at h
 
-/-- `a P({μ}) = μ P({μ})`, stated with the multiplication of `H →L[ℂ] H`. -/
+/-- `a P({μ}) = μ P({μ})`, stated with the composition of continuous linear maps. -/
 @[simp]
-theorem mul_spectralPVM_proj_preimage_singleton (μ : ℂ) :
-    a * a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
+theorem comp_spectralPVM_proj_preimage_singleton (μ : ℂ) :
+    a ∘L a.spectralPVM.proj (Subtype.val ⁻¹' {μ}) (measurable_subtype_coe
       (measurableSet_singleton μ)) =
       μ • a.spectralPVM.proj (Subtype.val ⁻¹' {μ})
-        (measurable_subtype_coe (measurableSet_singleton μ)) :=
-  a.comp_spectralPVM_proj_preimage_singleton μ
+        (measurable_subtype_coe (measurableSet_singleton μ)) := by
+  rw [← mul_def]
+  exact a.mul_spectralPVM_proj_preimage_singleton μ
 
 /-- A normal operator `a` maps each vector `P({μ}) x` to `μ P({μ}) x`. -/
 @[simp]
