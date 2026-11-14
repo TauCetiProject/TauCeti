@@ -150,15 +150,12 @@ theorem weightLeviQuotient_mk_genericMatrix_apply_of_ne (w : Fin N → ℤ)
     Ideal.Quotient.mk (weightLeviDefiningHopfIdeal R w).toIdeal
       (coordinateHopfAlgebraAlgEquiv R N
         (coordinateRingMap R N (MvPolynomial.X (i, j)))) = 0 := by
-  rw [← genericMatrix_apply, Ideal.Quotient.eq_zero_iff_mem, weightLeviDefiningHopfIdeal_def,
+  rw [Ideal.Quotient.eq_zero_iff_mem, weightLeviDefiningHopfIdeal_def,
     HopfIdeal.sup_toIdeal, weightParabolicDefiningHopfIdeal_toIdeal,
     weightParabolicDefiningHopfIdeal_toIdeal]
   rcases lt_or_gt_of_ne hij with hij | hji
-  · apply Ideal.mem_sup_left
-    rw [genericMatrix_apply]
-    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij)
-  · apply Ideal.mem_sup_right
-    rw [genericMatrix_apply]
-    exact Ideal.subset_span (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
+  · exact Ideal.mem_sup_left <| Ideal.subset_span (X_mem_weightParabolicRelationSet R w hij)
+  · exact Ideal.mem_sup_right <| Ideal.subset_span
+      (X_mem_weightParabolicRelationSet R (-w) (by simpa using hji))
 
 end TauCeti.GeneralLinear
