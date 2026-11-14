@@ -80,8 +80,8 @@ diffeomorphism of the model space read through it has explicit source and forwar
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: the pulled back chart can
-  be chosen with the same extended coordinates at the basepoint, so that the coordinate expression
-  of `f` is the identity.
+  be chosen with the same extended coordinates at the basepoint, so that `f` composed with the
+  inverse extended chart agrees near that point with the inverse extended chart of the target.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
 * `IsLocalDiffeomorphAt.exists_mem_nhds_injOn`: a local diffeomorphism is locally injective.
@@ -470,8 +470,8 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : T
 
 /-- A chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
 diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M` at `x` with the same
-extended coordinates at `x`, in which the coordinate expression of `f` is the identity: near
-`e.extend I x`, `f ∘ (e.extend I).symm` agrees with `(c.extend I).symm`. -/
+extended coordinates at `x`: near `e.extend I x`, `f ∘ (e.extend I).symm` agrees with
+`(c.extend I).symm`. -/
 theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq {N' : Type*}
     [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] {f : M → N'}
     {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {c : OpenPartialHomeomorph N' H}
