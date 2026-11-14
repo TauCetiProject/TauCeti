@@ -256,17 +256,17 @@ theorem norm_lieMap_lieMap_le (η : ⋀[ℝ]^2 V) :
 
 end Orthogonal
 
-omit [FiniteDimensional ℝ V] in
 /-- The derivation action of `J` kills each complex line `v ∧ J v`:
 `D_J (v ∧ J v) = J v ∧ J v + v ∧ J (J v) = J v ∧ J v - v ∧ v = 0`. No orthogonality of `J` is
-needed. -/
-theorem lieMap_ιMulti_apply (J : AlmostComplexStructure V) (v : V) :
+needed, nor any inner product on the underlying real module. -/
+theorem lieMap_ιMulti_apply {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (J : AlmostComplexStructure W) (v : W) :
     exteriorPower.lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J v]) = 0 := by
-  have h : ∀ x : V, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
+  have h : ∀ x : W, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
     (ιMulti ℝ 2).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp) (by decide)
-  have h' : ∀ x : V, ιMulti ℝ 2 ![x, -x] = 0 := fun x ↦ by
+  have h' : ∀ x : W, ιMulti ℝ 2 ![x, -x] = 0 := fun x ↦ by
     have := (ιMulti ℝ 2).map_update_neg ![x, x] 1 x
-    have e : ∀ y : V, Function.update ![x, x] 1 y = ![x, y] := fun y ↦ by
+    have e : ∀ y : W, Function.update ![x, x] 1 y = ![x, y] := fun y ↦ by
       ext i; fin_cases i <;> simp
     rw [e, e] at this
     simpa [h x] using this
