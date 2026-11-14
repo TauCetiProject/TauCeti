@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Module.CohenFactorization.Basic
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
+import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
 # Approximate diagonals of Banach algebras
@@ -46,7 +47,9 @@ bounded approximate diagonal has a bounded approximate identity.
 * `TauCeti.CompletedProjectiveTensor.mulLeft_mul_apply`,
   `TauCeti.CompletedProjectiveTensor.mulRight_mul_apply` and
   `TauCeti.CompletedProjectiveTensor.mulLeft_mulRight_apply_comm`: the bimodule laws.
-* `TauCeti.CompletedProjectiveTensor.mul'_mulLeft_apply` and
+* `TauCeti.CompletedProjectiveTensor.mul'_comp_mulLeft`,
+  `TauCeti.CompletedProjectiveTensor.mul'_mulLeft_apply`,
+  `TauCeti.CompletedProjectiveTensor.mul'_comp_mulRight`, and
   `TauCeti.CompletedProjectiveTensor.mul'_mulRight_apply`: `Δ` is a bimodule map.
 * `TauCeti.CompletedProjectiveTensor.mul'_surjective`: `Δ` is surjective when `A` has a bounded
   left approximate identity.
@@ -54,6 +57,8 @@ bounded approximate diagonal has a bounded approximate identity.
   approximate identity.
 * `TauCeti.IsApproximateDiagonal.exists_isApproximateUnit`: a Banach algebra with an approximate
   diagonal bounded by `C` has a two-sided approximate identity bounded by `C`.
+* `TauCeti.exists_isApproximateDiagonal_iff_forall_finset`: finite-set criterion for an approximate
+  diagonal bounded by `C`.
 
 ## References
 
@@ -181,23 +186,33 @@ theorem norm_mul'_le : ‖mul' 𝕜 A‖ ≤ 1 := by
 theorem norm_mul'_apply_le (m : CompletedProjectiveTensor 𝕜 A A) : ‖mul' 𝕜 A m‖ ≤ ‖m‖ := by
   simpa using (mul' 𝕜 A).le_of_opNorm_le norm_mul'_le m
 
+/-- Operator form of left-action intertwining for the multiplication map:
+`Δ ∘L mulLeft c = mul c ∘L Δ`. -/
+theorem mul'_comp_mulLeft (c : A) :
+    mul' 𝕜 A ∘L mulLeft 𝕜 A c = ContinuousLinearMap.mul 𝕜 A c ∘L mul' 𝕜 A := by
+  ext
+  simp [mul_assoc]
+
 /-- The multiplication map intertwines the outer left action with left multiplication:
 `Δ (c · m) = c * Δ m`. -/
 @[simp]
 theorem mul'_mulLeft_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
-    mul' 𝕜 A (mulLeft 𝕜 A c m) = c * mul' 𝕜 A m := by
-  have : mul' 𝕜 A ∘L mulLeft 𝕜 A c = ContinuousLinearMap.mul 𝕜 A c ∘L mul' 𝕜 A := by
-    ext; simp [mul_assoc]
-  exact congr($this m)
+    mul' 𝕜 A (mulLeft 𝕜 A c m) = c * mul' 𝕜 A m :=
+  congr($(mul'_comp_mulLeft c) m)
+
+/-- Operator form of right-action intertwining for the multiplication map:
+`Δ ∘L mulRight c = (mul.flip c) ∘L Δ`. -/
+theorem mul'_comp_mulRight (c : A) :
+    mul' 𝕜 A ∘L mulRight 𝕜 A c = (ContinuousLinearMap.mul 𝕜 A).flip c ∘L mul' 𝕜 A := by
+  ext
+  simp [mul_assoc]
 
 /-- The multiplication map intertwines the outer right action with right multiplication:
 `Δ (m · c) = Δ m * c`. -/
 @[simp]
 theorem mul'_mulRight_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
-    mul' 𝕜 A (mulRight 𝕜 A c m) = mul' 𝕜 A m * c := by
-  have : mul' 𝕜 A ∘L mulRight 𝕜 A c = (ContinuousLinearMap.mul 𝕜 A).flip c ∘L mul' 𝕜 A := by
-    ext; simp [mul_assoc]
-  exact congr($this m)
+    mul' 𝕜 A (mulRight 𝕜 A c m) = mul' 𝕜 A m * c :=
+  congr($(mul'_comp_mulRight c) m)
 
 end Multiplication
 
@@ -263,6 +278,43 @@ theorem exists_isApproximateUnit (h : IsApproximateDiagonal 𝕜 l) {C : ℝ}
     (norm_mul'_apply_le m).trans hm⟩
 
 end IsApproximateDiagonal
+
+/-- Filter-product characterization of `TauCeti.IsApproximateDiagonal`, bundling the two
+convergence conditions into `A ⊗̂π A × A`. -/
+theorem isApproximateDiagonal_iff_neBot_and_tendsto_prod :
+    IsApproximateDiagonal 𝕜 l ↔ l.NeBot ∧ ∀ a : A,
+      Tendsto (fun m ↦ (mulLeft 𝕜 A a m - mulRight 𝕜 A a m, a * mul' 𝕜 A m)) l (𝓝 (0, a)) := by
+  simp only [tendsto_prod_iff', nhds_prod_eq]
+  refine ⟨fun h ↦ ⟨h.neBot, fun a ↦ ⟨h.tendsto_mulLeft_sub_mulRight a, h.tendsto_mul_mul' a⟩⟩,
+    fun ⟨hne, h⟩ ↦ ?_⟩
+  exact { tendsto_mulLeft_sub_mulRight := fun a ↦ (h a).1
+          tendsto_mul_mul' := fun a ↦ (h a).2
+          neBot := hne }
+
+/-- A Banach algebra has an approximate diagonal bounded by `C` if and only if every finite subset
+of `A` satisfies both approximate-diagonal conditions to any accuracy at a single element of
+`A ⊗̂π A` of norm at most `C`. -/
+theorem exists_isApproximateDiagonal_iff_forall_finset {C : ℝ} :
+    (∃ l : Filter (CompletedProjectiveTensor 𝕜 A A),
+      IsApproximateDiagonal 𝕜 l ∧ ∀ᶠ m in l, ‖m‖ ≤ C) ↔
+      ∀ s : Finset A, ∀ ε > 0, ∃ m : CompletedProjectiveTensor 𝕜 A A, ‖m‖ ≤ C ∧
+        ∀ a ∈ s, ‖mulLeft 𝕜 A a m - mulRight 𝕜 A a m‖ < ε ∧ ‖a * mul' 𝕜 A m - a‖ < ε := by
+  simp only [isApproximateDiagonal_iff_neBot_and_tendsto_prod, and_assoc]
+  refine (exists_congr fun _ ↦ and_congr_right fun _ ↦ and_comm).trans ?_
+  simpa [Prod.dist_eq, dist_eq_norm] using
+    exists_neBot_tendsto_iff_forall_finset_dist_lt
+      (p := fun m : CompletedProjectiveTensor 𝕜 A A ↦ ‖m‖ ≤ C)
+      (F := fun (a : A) m ↦ (mulLeft 𝕜 A a m - mulRight 𝕜 A a m, a * mul' 𝕜 A m))
+      (x := fun a : A ↦ ((0 : CompletedProjectiveTensor 𝕜 A A), a))
+
+variable (𝕜) in
+/-- In a zero Banach algebra, `0` is a constant approximate diagonal. -/
+theorem isApproximateDiagonal_pure_zero [Subsingleton A] :
+    IsApproximateDiagonal 𝕜 (pure (0 : CompletedProjectiveTensor 𝕜 A A)) where
+  tendsto_mulLeft_sub_mulRight a := by
+    simpa using tendsto_pure_nhds (fun m ↦ mulLeft 𝕜 A a m - mulRight 𝕜 A a m) 0
+  tendsto_mul_mul' a := by
+    convert tendsto_pure_nhds (fun m : CompletedProjectiveTensor 𝕜 A A ↦ a * mul' 𝕜 A m) 0
 
 end ApproximateDiagonal
 
