@@ -17,9 +17,7 @@ import Mathlib.Order.Fin.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -55,8 +53,7 @@ summing to `1` on `{x | ∑ i, x i = n}`, expressing its closed cell `T.cell` bo
 
 ## Main results
 
-* `TauCeti.Hive.Vertex.card`, `TauCeti.Hive.UnitTriangle.card`: `|Vertex n| = (n + 1)(n + 2) / 2`
-  and `|UnitTriangle n| = n ^ 2`.
+* `TauCeti.Hive.UnitTriangle.card`: `|UnitTriangle n| = n ^ 2`.
 * `TauCeti.Hive.UnitTriangle.isConvexPolyhedron_cell`,
   `TauCeti.Hive.UnitTriangle.cell_eq_convexHull`,
   `TauCeti.Hive.UnitTriangle.iUnion_cell_eq_barycentricSimplex`.
@@ -83,24 +80,6 @@ namespace TauCeti.Hive
 namespace Vertex
 
 variable {n : ℕ}
-
-theorem ext_coord {p q : Vertex n} (h : ∀ i : Fin 3, p.coord i = q.coord i) : p = q :=
-  Vertex.ext (by simpa using h 0) (by simpa using h 1) (by simpa using h 2)
-
-@[simp] theorem coord_add {m : ℕ} (p : Vertex n) (q : Vertex m) (i : Fin 3) :
-    (p.add q).coord i = p.coord i + q.coord i := by fin_cases i <;> simp
-
-theorem coord_rotate (p : Vertex n) (i : Fin 3) : p.rotate.coord (i + 1) = p.coord i := by
-  fin_cases i <;> simp
-
-theorem coord_reflect (p : Vertex n) (i : Fin 3) : p.reflect.coord (-i) = p.coord i := by
-  fin_cases i <;> simp [show (-1 : Fin 3) = 2 from rfl, show (-2 : Fin 3) = 1 from rfl]
-
-@[simp] theorem rotate_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
-    (p.add q).rotate = p.rotate.add q.rotate := by ext <;> simp
-
-@[simp] theorem reflect_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
-    (p.add q).reflect = p.reflect.add q.reflect := by ext <;> simp
 
 /-- Embed a lattice vertex `p : Vertex n` into real barycentric coordinates `Fin 3 → ℝ`. -/
 def barycentric (p : Vertex n) : Fin 3 → ℝ := fun i => (p.coord i : ℝ)
@@ -130,33 +109,6 @@ theorem barycentric_injective : Function.Injective (barycentric (n := n)) := fun
 theorem sqDist_eq_sum_sub_sq (p q : Vertex n) :
     (p.sqDist q : ℝ) = ∑ i, (p.barycentric i - q.barycentric i) ^ 2 := by
   simp [sqDist_def, Fin.sum_univ_three, add_assoc]
-
-/-- At size `0`, the unique lattice vertex is `cornerA 0 = (0, 0, 0)`. -/
-instance uniqueZero : Unique (Vertex 0) where
-  default := cornerA 0
-  uniq p := by have := p.sum_eq; ext <;> simp <;> omega
-
-/-- Splitting `Vertex (n + 1)` into side `B → C` (`x = 0`) and `(1, 0, 0) + Vertex n` (`x > 0`). -/
-def equivFinSumSucc (n : ℕ) : Vertex (n + 1) ≃ Fin (n + 2) ⊕ Vertex n where
-  toFun p := if hx : p.x = 0 then Sum.inl ⟨p.z, by have := p.sum_eq; omega⟩
-    else Sum.inr ⟨p.x - 1, p.y, p.z, by have := p.sum_eq; omega⟩
-  invFun | Sum.inl k => edgePoint (n + 1) 1 k
-         | Sum.inr q => ⟨q.x + 1, q.y, q.z, by have := q.sum_eq; omega⟩
-  left_inv p := by
-    by_cases hx : p.x = 0 <;> simp only [hx, ↓reduceDIte] <;>
-      ext <;> simp <;> have := p.sum_eq <;> omega
-  right_inv | Sum.inl _ => by simp | Sum.inr _ => by simp
-
-theorem two_mul_card (n : ℕ) : 2 * Fintype.card (Vertex n) = (n + 1) * (n + 2) := by
-  induction n with
-  | zero => simp
-  | succ m ih =>
-    rw [Fintype.card_congr (equivFinSumSucc m), Fintype.card_sum, Fintype.card_fin]
-    linarith
-
-/-- The triangular lattice `Vertex n` has `(n + 1) * (n + 2) / 2` vertices. -/
-theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
-  rw [← two_mul_card n]; omega
 
 end Vertex
 
@@ -321,8 +273,7 @@ theorem isClosed_planarSimplex (n : ℕ) : IsClosed (planarSimplex n) :=
 
 theorem planarSimplex_eq_convexHull (n : ℕ) :
     planarSimplex n = convexHull ℝ (Set.range (Vertex.plane (n := n))) := by
-  rw [planarSimplex, barycentricSimplex_eq_convexHull,
-    show (planeLinear : (Fin 3 → ℝ) → _) = planeLinear.toLinearMap from rfl,
+  rw [planarSimplex, barycentricSimplex_eq_convexHull, ← planeLinear.coe_coe,
     LinearMap.image_convexHull, ← Set.range_comp]
   exact congrArg _ (congrArg Set.range (funext planeLinear_barycentric))
 

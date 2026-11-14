@@ -8,12 +8,10 @@ module
 public import TauCeti.Combinatorics.Hive.Basic
 public import TauCeti.Combinatorics.Hive.UnitTriangle
 public import TauCeti.Topology.PL.Map
-import Mathlib.Order.Fin.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
 /-!
@@ -40,8 +38,8 @@ triangle `down s` and its upward neighbour `adjacentUp s i`, the `(i + 1)`-coord
 * `TauCeti.Hive.triangleGradient`: zero-sum triple of edge slopes of a unit triangle over any
   `AddCommGroup`.
 * `TauCeti.Hive.triangleAffine`, `TauCeti.Hive.interpolate`, `TauCeti.Hive.planarInterpolate`:
-  simplicial affine pieces and continuous piecewise-affine interpolation in barycentric and planar
-  coordinates.
+  simplicial affine pieces and simplicial extensions (continuous and piecewise affine on
+  `barycentricSimplex n` and `planarSimplex n`, respectively).
 
 ## Main results
 
@@ -198,14 +196,19 @@ theorem triangleGradient_smul {n : ℕ} {S R : Type*} [Semiring S] [AddCommGroup
     (c : S) (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient (c • f) T s = c • triangleGradient f T s := by cases T <;> simp [smul_sub]
 
+@[simp] theorem triangleGradient_adjacentUp {m : ℕ} {R : Type*} [AddCommGroup R]
+    (f : Vertex (m + 2) → R) (s : Vertex m) (i j : Fin 3) :
+    triangleGradient f (adjacentUp s i) j =
+      f ((adjacentUp s i).vertex (j + 1)) - f ((adjacentUp s i).vertex j) := (rfl)
+
 /-- Across the shared `i`-th edge of `down s` and `adjacentUp s i`, the `(i + 1)`-coordinate of
 `triangleGradient` is constant. -/
 theorem triangleGradient_adjacentUp_add_one {m : ℕ} {R : Type*} [AddCommGroup R]
     (f : Vertex (m + 2) → R) (s : Vertex m) (i : Fin 3) :
     triangleGradient f (adjacentUp s i) (i + 1) =
       triangleGradient f (UnitTriangle.down s) (i + 1) := by
-  change f ((adjacentUp s i).vertex (i + 1 + 1)) - f ((adjacentUp s i).vertex (i + 1)) = _
-  rw [triangleGradient_down, show i + 1 + 1 = i + 2 by fin_cases i <;> rfl,
+  have hi : i + 1 + 1 = i + 2 := by fin_cases i <;> rfl
+  rw [triangleGradient_adjacentUp, triangleGradient_down, hi,
     adjacentUp_vertex_add_two, adjacentUp_vertex_add_one]
 
 /-- Across the shared `i`-th edge of `down s` and `adjacentUp s i`, the `i`-th coordinate of
@@ -215,8 +218,9 @@ theorem triangleGradient_adjacentUp_sub_down_self {m : ℕ} {R : Type*} [AddComm
     triangleGradient f (adjacentUp s i) i - triangleGradient f (UnitTriangle.down s) i =
       rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
-  change f ((adjacentUp s i).vertex (i + 1)) - f ((adjacentUp s i).vertex i) - _ = _
-  rw [triangleGradient_down, rhombusSlack_def, adjacentUp_vertex_add_one]; abel
+  rw [triangleGradient_adjacentUp, triangleGradient_down, rhombusSlack_def,
+    adjacentUp_vertex_add_one]
+  abel
 
 /-- Across the shared `i`-th edge of `down s` and `adjacentUp s i`, the `(i + 2)`-th coordinate of
 `triangleGradient` jumps by minus the unit-rhombus slack. -/
@@ -226,9 +230,10 @@ theorem triangleGradient_adjacentUp_sub_down_add_two {m : ℕ} {R : Type*} [AddC
         triangleGradient f (UnitTriangle.down s) (i + 2) =
       -rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
-  change f ((adjacentUp s i).vertex (i + 2 + 1)) - f ((adjacentUp s i).vertex (i + 2)) - _ = _
-  rw [triangleGradient_down, show i + 2 + 1 = i by fin_cases i <;> rfl, rhombusSlack_def,
-    adjacentUp_vertex_add_two]; abel
+  have hi : i + 2 + 1 = i := by fin_cases i <;> rfl
+  rw [triangleGradient_adjacentUp, triangleGradient_down, hi, rhombusSlack_def,
+    adjacentUp_vertex_add_two]
+  abel
 
 /-- At size `1`, the zero-sum gradient of the unique unit triangle equals the clockwise boundary
 `(λ₁, μ₁, ν₁)` of the hive. -/
@@ -272,16 +277,10 @@ combinatorial edge slope `triangleGradient f T s`. -/
 theorem triangleAffine_combo {n : ℕ} (f : Vertex n → ℝ) (T : UnitTriangle n)
     {w : Fin 3 → ℝ} (hw : ∑ i, w i = 1) (v : Fin 3 → Fin 3 → ℝ) :
     triangleAffine f T (∑ i, w i • v i) = ∑ i, w i * triangleAffine f T (v i) := by
-  have hw' : w 0 + w 1 + w 2 = 1 := by simpa [Fin.sum_univ_three, add_assoc] using hw
-  have hweight (j : Fin 3) : T.weight j (∑ i, w i • v i) = ∑ i, w i * T.weight j (v i) := by
-    cases T with
-    | up base =>
-      simp only [UnitTriangle.weight_up_apply, Fin.sum_univ_three, Pi.add_apply, Pi.smul_apply,
-        smul_eq_mul]; linear_combination (base.coord j : ℝ) * hw'
-    | down base =>
-      simp only [UnitTriangle.weight_down_apply, Fin.sum_univ_three, Pi.add_apply, Pi.smul_apply,
-        smul_eq_mul]; linear_combination -((base.coord j : ℝ) + 1) * hw'
-  simp_rw [triangleAffine_apply, hweight]; simp only [Fin.sum_univ_three]; ring
+  rw [← Finset.univ.affineCombination_eq_linear_combination v w hw,
+    ← ContinuousAffineMap.coe_toAffineMap, Finset.univ.map_affineCombination v w hw,
+    Finset.univ.affineCombination_eq_linear_combination _ w hw]
+  simp [smul_eq_mul]
 
 /-- Two unit triangles whose cells both contain `x` assign the same affine value at `x`. -/
 theorem triangleAffine_eq_of_mem_cell {n : ℕ} (f : Vertex n → ℝ) {T₁ T₂ : UnitTriangle n}
@@ -297,9 +296,10 @@ theorem triangleAffine_eq_of_mem_cell {n : ℕ} (f : Vertex n → ℝ) {T₁ T�
   · obtain ⟨j, hj⟩ := T₁.mem_range_vertex_of_weight_pos hx₁ hx₂ hpos
     rw [← hj, triangleAffine_vertex, mul_comm]
 
-/-- Continuous piecewise-affine simplicial extension of `f : Vertex n → ℝ` to `Fin 3 → ℝ`.
-On `barycentricSimplex n` it agrees with `triangleAffine f T` on every cell `T.cell`; outside the
-union of cells (and for `n = 0`) it takes the fallback value `f (cornerA n)`. -/
+/-- Simplicial extension of `f : Vertex n → ℝ` to `Fin 3 → ℝ` that is continuous and piecewise
+affine on `barycentricSimplex n`. On `barycentricSimplex n` it agrees with `triangleAffine f T` on
+every cell `T.cell`; outside the union of cells (and for `n = 0`) it takes the fallback value
+`f (cornerA n)`. -/
 noncomputable def interpolate {n : ℕ} (f : Vertex n → ℝ) (x : Fin 3 → ℝ) : ℝ :=
   open Classical in
   if h : ∃ T : UnitTriangle n, x ∈ T.cell then triangleAffine f h.choose x
@@ -330,15 +330,14 @@ theorem interpolate_lineMap_of_isUnitEdge {n : ℕ} (f : Vertex n → ℝ) {a c 
     interpolate f (AffineMap.lineMap a.barycentric c.barycentric t) =
       (1 - t) * f a + t * f c := by
   obtain ⟨T, ha, hc⟩ := exists_cell_of_isUnitEdge h
-  rw [AffineMap.lineMap_apply_module, interpolate_eq_triangleAffine f
-    (T.convex_cell ha hc (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)),
-    show (1 - t) • a.barycentric + t • c.barycentric = ∑ i : Fin 3,
-      (![1 - t, t, 0] : Fin 3 → ℝ) i • (![a.barycentric, c.barycentric, 0] : Fin 3 → _) i by
-      ext; simp [Fin.sum_univ_three],
-    triangleAffine_combo f T (by simp [Fin.sum_univ_three])]
+  have hmem : AffineMap.lineMap a.barycentric c.barycentric t ∈ T.cell := by
+    rw [AffineMap.lineMap_apply_module]
+    exact T.convex_cell ha hc (sub_nonneg.mpr ht.2) ht.1 (sub_add_cancel 1 t)
   obtain ⟨ia, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell ha
   obtain ⟨ic, rfl⟩ := UnitTriangle.mem_range_vertex_of_barycentric_mem_cell hc
-  simp [Fin.sum_univ_three]
+  rw [interpolate_eq_triangleAffine f hmem, (triangleAffine f T).apply_lineMap,
+    triangleAffine_vertex, triangleAffine_vertex, AffineMap.lineMap_apply_module,
+    smul_eq_mul, smul_eq_mul]
 
 /-- `interpolate f` is piecewise affine on `barycentricSimplex n`. -/
 theorem isPiecewiseAffineOn_interpolate {n : ℕ} (f : Vertex n → ℝ) :
@@ -416,8 +415,9 @@ theorem interpolate_subtriangle {m k : ℕ} (h : RealHive (m + k)) (p : Vertex m
       sub_mul, Finset.sum_sub_distrib, ← Finset.mul_sum,
       T.sum_weight (mem_barycentricSimplex_iff.mp hx).2, mul_one]
 
-/-- Continuous piecewise-affine simplicial extension of `f : Vertex n → ℝ` in the Euclidean plane
-`EuclideanSpace ℝ (Fin 2)`, defined by pulling `interpolate f` back along `planeInvAffine n`. -/
+/-- Simplicial extension of `f : Vertex n → ℝ` to `EuclideanSpace ℝ (Fin 2)` that is continuous and
+piecewise affine on `planarSimplex n`, defined by pulling `interpolate f` back along
+`planeInvAffine n`. -/
 noncomputable def planarInterpolate {n : ℕ} (f : Vertex n → ℝ)
     (u : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   interpolate f (planeInvAffine n u)

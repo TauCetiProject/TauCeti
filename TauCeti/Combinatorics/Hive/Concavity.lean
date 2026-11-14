@@ -502,17 +502,16 @@ theorem concaveOn_planarSimplex_planarInterpolate {n : ℕ} (h : RealHive n) :
 theorem IsRhombusConcave.interpolate_le_triangleAffine {n : ℕ} {f : Vertex n → ℝ}
     (hf : IsRhombusConcave f) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex n) : interpolate f x ≤ triangleAffine f T x := by
+  have hw3 : ∑ _ : Fin 3, (1 / 3 : ℝ) = 1 := by norm_num
   let c : Fin 3 → ℝ := ∑ j : Fin 3, (1 / 3 : ℝ) • (T.vertex j).barycentric
   have hc_weight (i : Fin 3) : T.weight i c = 1 / 3 := by
-    rw [show T.weight i c = ∑ j : Fin 3, (1 / 3 : ℝ) * T.weight i (T.vertex j).barycentric by
-      cases T with
-      | up => simp only [c, UnitTriangle.weight_up_apply, Fin.sum_univ_three, Pi.add_apply,
-          Pi.smul_apply, smul_eq_mul]; ring
-      | down => simp only [c, UnitTriangle.weight_down_apply, Fin.sum_univ_three, Pi.add_apply,
-          Pi.smul_apply, smul_eq_mul]; ring]
+    dsimp only [c]
+    rw [← Finset.univ.affineCombination_eq_linear_combination _ _ hw3,
+      ← ContinuousAffineMap.coe_toAffineMap, Finset.univ.map_affineCombination _ _ hw3,
+      Finset.univ.affineCombination_eq_linear_combination _ _ hw3]
     fin_cases i <;> simp
   have hc_mem : c ∈ barycentricSimplex n :=
-    (convex_barycentricSimplex n).sum_mem (fun _ _ => by norm_num) (by norm_num)
+    (convex_barycentricSimplex n).sum_mem (fun _ _ => by norm_num) hw3
       fun j _ => barycentric_mem_barycentricSimplex (T.vertex j)
   have hc_cell : c ∈ T.cell := T.mem_cell_iff.mpr ⟨hc_mem, fun i => by rw [hc_weight i]; norm_num⟩
   let M : ℝ := |T.weight 0 x| + |T.weight 1 x| + |T.weight 2 x| + 1
@@ -520,27 +519,31 @@ theorem IsRhombusConcave.interpolate_le_triangleAffine {n : ℕ} {f : Vertex n �
   let t : ℝ := 1 / (3 * M + 1)
   have ht_pos : 0 < t := by dsimp [t]; positivity
   have ht_le : t ≤ 1 := div_le_one_of_le₀ (by linarith) (by positivity)
-  let y : Fin 3 → ℝ := (1 - t) • c + t • x
-  have hy_cell : y ∈ T.cell := T.mem_cell_iff.mpr
-    ⟨convex_barycentricSimplex n hc_mem hx (sub_nonneg.mpr ht_le) ht_pos.le (sub_add_cancel 1 t),
-      fun i => by
-        rw [show T.weight i y = (1 - t) * (1 / 3) + t * T.weight i x by
-          rw [← hc_weight i]; cases T <;> simp [y] <;> ring]
-        have habs : -M ≤ T.weight i x := neg_le_of_abs_le (by
-          fin_cases i <;> dsimp [M] <;>
-            linarith [abs_nonneg (T.weight 0 x), abs_nonneg (T.weight 1 x),
-              abs_nonneg (T.weight 2 x)])
-        have htM : 0 ≤ (1 - t) * (1 / 3) - t * M := by dsimp [t]; field_simp; linarith
-        linarith [mul_le_mul_of_nonneg_left habs ht_pos.le]⟩
+  let y : Fin 3 → ℝ := AffineMap.lineMap c x t
+  have hy_mem : y ∈ barycentricSimplex n := by
+    dsimp only [y]
+    rw [AffineMap.lineMap_apply_module]
+    exact convex_barycentricSimplex n hc_mem hx (sub_nonneg.mpr ht_le) ht_pos.le
+      (sub_add_cancel 1 t)
+  have hy_cell : y ∈ T.cell := T.mem_cell_iff.mpr ⟨hy_mem, fun i => by
+    dsimp only [y]
+    rw [(T.weight i).apply_lineMap, AffineMap.lineMap_apply_module, hc_weight i,
+      smul_eq_mul, smul_eq_mul]
+    have habs : -M ≤ T.weight i x := neg_le_of_abs_le (by
+      fin_cases i <;> dsimp [M] <;>
+        linarith [abs_nonneg (T.weight 0 x), abs_nonneg (T.weight 1 x),
+          abs_nonneg (T.weight 2 x)])
+    have htM : 0 ≤ (1 - t) * (1 / 3) - t * M := by dsimp [t]; field_simp; linarith
+    linarith [mul_le_mul_of_nonneg_left habs ht_pos.le]⟩
   have hconc := ((concaveOn_barycentricSimplex_interpolate_iff f).mpr hf).2 hc_mem hx
     (sub_nonneg.mpr ht_le) ht_pos.le (sub_add_cancel 1 t)
-  have hy_val : interpolate f y = (1 - t) * triangleAffine f T c + t * triangleAffine f T x := by
-    rw [interpolate_eq_triangleAffine f hy_cell,
-      show y = ∑ i : Fin 3, (![1 - t, t, 0] : Fin 3 → ℝ) i • (![c, x, 0] : Fin 3 → _) i by
-        ext; simp [y, Fin.sum_univ_three],
-      triangleAffine_combo f T (by simp [Fin.sum_univ_three])]
-    simp [Fin.sum_univ_three]
-  rw [interpolate_eq_triangleAffine f hc_cell, hy_val] at hconc
+  have hy_val :
+      interpolate f (AffineMap.lineMap c x t) =
+        (1 - t) * triangleAffine f T c + t * triangleAffine f T x := by
+    rw [interpolate_eq_triangleAffine f hy_cell, (triangleAffine f T).apply_lineMap,
+      AffineMap.lineMap_apply_module, smul_eq_mul, smul_eq_mul]
+  rw [← AffineMap.lineMap_apply_module c x t, interpolate_eq_triangleAffine f hc_cell,
+    hy_val] at hconc
   simp only [smul_eq_mul] at hconc
   exact le_of_mul_le_mul_left (by linarith) ht_pos
 
