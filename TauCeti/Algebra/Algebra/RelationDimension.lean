@@ -62,8 +62,10 @@ theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
   have hTT' : T ≤ T' := fun t ht ↦ by
     obtain ⟨a, ha, rfl⟩ := hT t ht
     exact mem_map.2 ⟨a, mem_pi.2 fun i _ ↦ ha i, hf a⟩
-  have hUT' : ∀ u ∈ U, ∀ i, u * x i ∈ T' := fun u hu i ↦
-    mem_map.2 ⟨Pi.single i u, le_comap_single_pi (fun _ : ι ↦ U) (I := Set.univ) (i := i) hu,
+  have hUT' (i : ι) : U ≤ T'.comap (LinearMap.mulRight k (x i)) := fun u hu ↦
+    mem_comap.2 <| mem_map.2 ⟨Pi.single i u,
+      by simpa only [mem_comap, LinearMap.coe_single] using
+        le_comap_single_pi (fun _ : ι ↦ U) (I := Set.univ) (i := i) hu,
       LinearMap.lsum_piSingle k (fun _ ↦ A) k _ i u⟩
   have : FiniteDimensional k (A ⧸ T') := .of_surjective (factor hTT') (factor_surjective hTT')
   suffices Fintype.card ι * finrank k (A ⧸ U) + finrank k (A ⧸ S) ≤
@@ -75,7 +77,7 @@ theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
     exact hxS a
   -- The maps induced on the quotients by the generators and by the relations.
   let d₁ : (ι → A ⧸ U) →ₗ[k] A ⧸ T' := piQuotientLift (fun _ ↦ U) T'
-    (fun i ↦ LinearMap.mulRight k (x i)) fun i u hu ↦ mem_comap.2 (hUT' u hu i)
+    (fun i ↦ LinearMap.mulRight k (x i)) hUT'
   let d₂ : (κ → A ⧸ W) →ₗ[k] ι → A ⧸ U := LinearMap.pi fun i ↦ piQuotientLift (fun _ ↦ W) U
     (fun j ↦ LinearMap.mulRight k (y j i)) fun j w hw ↦ mem_comap.2 (hWU w hw j i)
   have hd₁ (a : ι → A) : d₁ (U.mkQ ∘ a) = T'.mkQ (∑ i, a i * x i) := by
