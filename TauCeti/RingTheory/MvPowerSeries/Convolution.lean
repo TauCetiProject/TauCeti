@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 
+import Mathlib.LinearAlgebra.Quotient.Basic
+import Mathlib.RingTheory.MvPowerSeries.LexOrder
+
 /-!
 # Convolution of power series with coefficient families
 
@@ -21,7 +24,10 @@ This file defines the convolution `MvPowerSeries.convSMul` and proves its module
 additive in both arguments, constant series act through their constants, and it is compatible
 with multiplication of series. For `E = R` it is the coefficient family of the product
 (`MvPowerSeries.convSMul_coeff`), and linear maps of coefficient modules commute with it
-(`MvPowerSeries.convSMul_comp`). No norm or topology is needed.
+(`MvPowerSeries.convSMul_comp`). When `E` has no zero `R`-scalar divisors, nonzero power series act
+faithfully on nonzero coefficient families (`MvPowerSeries.convSMul_eq_zero`), which implies
+coefficientwise descent along submodules (`MvPowerSeries.coeff_mem_of_map_mul_coeff_mem`). No norm
+or topology is needed.
 
 ## Implementation notes
 
@@ -113,5 +119,87 @@ theorem convSMul_coeff (f g : MvPowerSeries σ R) :
   classical
   ext t
   simp [convSMul_apply, coeff_mul]
+
+/-- When `E` has no zero `R`-scalar divisors, the convolution of a nonzero series with a nonzero
+coefficient family is nonzero. -/
+theorem eq_zero_or_eq_zero_of_convSMul_eq_zero [NoZeroSMulDivisors R E]
+    {f : MvPowerSeries σ R} {a : (σ →₀ ℕ) → E} (h : convSMul f a = 0) :
+    f = 0 ∨ a = 0 := by
+  classical
+  by_contra! hne
+  obtain ⟨hf, ha⟩ := hne
+  rcases exists_wellFoundedGT σ with ⟨_, _⟩
+  obtain ⟨p, hp⟩ := exists_finsupp_eq_lexOrder_of_ne_zero hf
+  have hsup : (toLex '' Function.support a).Nonempty :=
+    (Function.support_nonempty_iff.mpr ha).image _
+  let wf : WellFounded (· < · : Lex (σ →₀ ℕ) → Lex (σ →₀ ℕ) → Prop) :=
+    Finsupp.Lex.wellFoundedLT
+  set qLex := wf.min (toLex '' Function.support a) hsup
+  let q : σ →₀ ℕ := ofLex qLex
+  have hq_ne : a q ≠ 0 := by
+    have hmem := wf.min_mem (toLex '' Function.support a) hsup
+    simpa only [q, Set.mem_image_equiv, toLex_symm_eq, Function.mem_support] using hmem
+  have hq_min {v : σ →₀ ℕ} (hv : toLex v < toLex q) : a v = 0 := by
+    by_contra hv_ne
+    exact wf.not_lt_min (toLex '' Function.support a)
+      (Set.mem_image_of_mem _ hv_ne) (by simpa only [q, toLex_ofLex] using hv)
+  have hsum : convSMul f a (p + q) = coeff p f • a q := by
+    rw [convSMul_apply, Finset.sum_eq_single_of_mem (p, q) (by simp)]
+    rintro ⟨u, v⟩ huv hne_uv
+    simp only [Finset.mem_antidiagonal] at huv
+    rcases trichotomy_of_add_eq_add (congrArg toLex huv) with htri | htri | htri
+    · exact False.elim (hne_uv (Prod.ext (toLex.injective htri.1) (toLex.injective htri.2)))
+    · have hu : toLex u < lexOrder f := by rw [hp]; exact WithTop.coe_lt_coe.mpr htri
+      rw [coeff_eq_zero_of_lt_lexOrder hu, zero_smul]
+    · rw [hq_min htri, smul_zero]
+  have hpq : coeff p f • a q = 0 := by rw [← hsum, h, Pi.zero_apply]
+  exact (NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hpq).elim
+    (coeff_ne_zero_of_lexOrder hp.symm) hq_ne
+
+@[simp]
+theorem convSMul_eq_zero [NoZeroSMulDivisors R E]
+    {f : MvPowerSeries σ R} {a : (σ →₀ ℕ) → E} :
+    convSMul f a = 0 ↔ f = 0 ∨ a = 0 :=
+  ⟨eq_zero_or_eq_zero_of_convSMul_eq_zero, fun h ↦ h.elim (fun hf ↦ by simp [hf]) fun ha ↦ by
+    simp [ha]⟩
+
+/-- For an `R`-algebra `S` and an `R`-saturated submodule `E ⊆ S`, if `f : MvPowerSeries σ R` is
+nonzero and every coefficient of `map (algebraMap R S) f * g` lies in `E`, then every coefficient
+of `g` lies in `E`. -/
+theorem coeff_mem_of_map_mul_coeff_mem_of_smul_mem {R : Type*} {S : Type*} [CommRing R] [Ring S]
+    [Algebra R S] (E : Submodule R S) (hE : ∀ {r : R} {s : S}, r ≠ 0 → r • s ∈ E → s ∈ E)
+    {f : MvPowerSeries σ R} (hf : f ≠ 0) {g : MvPowerSeries σ S}
+    (hfg : ∀ t, coeff t (MvPowerSeries.map (algebraMap R S) f * g) ∈ E) (t : σ →₀ ℕ) :
+    coeff t g ∈ E := by
+  classical
+  have : NoZeroSMulDivisors R (S ⧸ E) := ⟨by
+    rintro r x hrx
+    obtain ⟨s, rfl⟩ := Submodule.Quotient.mk_surjective E x
+    by_cases hr : r = 0
+    · exact Or.inl hr
+    · refine Or.inr ((Submodule.Quotient.mk_eq_zero E).mpr (hE hr ?_))
+      exact (Submodule.Quotient.mk_eq_zero E).mp hrx⟩
+  have hconv : convSMul f (E.mkQ ∘ fun d ↦ coeff d g) = 0 := by
+    rw [convSMul_comp]
+    ext d
+    simp only [Function.comp_apply, Pi.zero_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero]
+    convert hfg d using 2
+    rw [convSMul_apply, coeff_mul]
+    refine Finset.sum_congr rfl fun pq _ ↦ ?_
+    rw [Algebra.smul_def, coeff_map]
+  have ha0 : (E.mkQ ∘ fun d ↦ coeff d g) = 0 :=
+    (eq_zero_or_eq_zero_of_convSMul_eq_zero hconv).resolve_left hf
+  exact (Submodule.Quotient.mk_eq_zero E).mp (congrFun ha0 t)
+
+/-- Over a field `K`, if `f : MvPowerSeries σ K` is nonzero and every coefficient of
+`map (algebraMap K S) f * g` lies in a `K`-submodule `E ⊆ S`, then every coefficient of `g` lies in
+`E`. -/
+theorem coeff_mem_of_map_mul_coeff_mem {K : Type*} {S : Type*} [Field K] [Ring S] [Algebra K S]
+    (E : Submodule K S) {f : MvPowerSeries σ K} (hf : f ≠ 0) {g : MvPowerSeries σ S}
+    (hfg : ∀ t, coeff t (MvPowerSeries.map (algebraMap K S) f * g) ∈ E) (t : σ →₀ ℕ) :
+    coeff t g ∈ E :=
+  coeff_mem_of_map_mul_coeff_mem_of_smul_mem E
+    (fun {r s} hr hrs ↦ by simpa [inv_smul_smul₀ hr] using E.smul_mem r⁻¹ hrs) hf hfg t
 
 end MvPowerSeries
