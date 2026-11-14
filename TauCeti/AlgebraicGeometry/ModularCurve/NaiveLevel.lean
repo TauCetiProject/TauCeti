@@ -326,11 +326,8 @@ identity, because it fixes `P`, `Q` and `-P`, which are distinct in every fibre.
 made on the base, which may be nonreduced or non-affine. -/
 theorem isRigid_gammaNaive (hN : 3 ≤ N) : (gammaNaive B N).IsRigid := by
   have : Fact (1 < N) := ⟨by omega⟩
-  have h2 : (2 : ZMod N) ≠ 0 := by
-    intro h
-    have := (ZMod.natCast_eq_zero_iff 2 N).mp (by exact_mod_cast h)
-    have := Nat.le_of_dvd two_pos this
-    omega
+  have h2 : (2 : ZMod N) ≠ 0 := fun h ↦
+    Nat.not_dvd_of_pos_of_lt two_pos (by omega : 2 < N) ((ZMod.natCast_eq_zero_iff 2 N).mp h)
   refine isRigid_naiveLevel B (a := .ofAdd (1, 0)) (b := .ofAdd (0, 1)) ?_ ?_ ?_ ?_
   · rw [← ofAdd_add, Ne, ofAdd_eq_one, Prod.ext_iff]
     simp [one_add_one_eq_two, h2]
