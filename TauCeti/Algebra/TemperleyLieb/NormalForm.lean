@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 public import TauCeti.Algebra.TemperleyLieb.Basic
 import Mathlib.Data.List.Intervals
 import Mathlib.LinearAlgebra.Dimension.Constructions
+-- Supplies `CommSemiring.strongRankCondition_of_nontrivial` for `rank_span_le` and `finrank`.
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import TauCeti.Combinatorics.PlanarMatching.HalfDiagram
 
@@ -31,9 +32,9 @@ quotient) are at most `catalan n`.
 
 Two immediate structural consequences accompany the upper bound:
 
-* Over any field or division ring, `TemperleyLieb R δ n` and all of its quotients by two-sided
-  ideals (in particular quotients by trace radicals) are finite-dimensional of dimension at most
-  `catalan n`.
+* Over any field, `TemperleyLieb R δ n` and all of its quotients by `R`-submodules (in particular
+  quotients by left, right, or two-sided ideals such as trace radicals) are finite-dimensional of
+  dimension at most `catalan n`.
 * Over any commutative semiring satisfying `OrzechProperty` (including every commutative ring and
   every field), any `R`-linear map out of `TemperleyLieb R δ n` whose image has `finrank` at least
   `catalan n` is automatically injective and promotes the reduced-word evaluations to a free
@@ -59,12 +60,17 @@ Two immediate structural consequences accompany the upper bound:
 
 * `TauCeti.TemperleyLieb.exists_jonesWord_of_list`: every generator product reduces to
   `δ ^ m • w.eval δ` with `w.wordLength ≤ l.length`.
-* `TauCeti.TemperleyLieb.span_range_jonesWord_eval`: reduced words span `TemperleyLieb R δ n`.
+* `TauCeti.TemperleyLieb.span_range_jonesWord_eval`,
+  `TauCeti.TemperleyLieb.span_range_comp_jonesWord_eval_of_surjective`: reduced words span
+  `TemperleyLieb R δ n` and any surjective `R`-linear image of it.
 * `TauCeti.TemperleyLieb.card_jonesWord`: `Fintype.card (JonesWord n) = catalan n`.
 * `TauCeti.TemperleyLieb.rank_le_catalan`, `TauCeti.TemperleyLieb.finrank_le_catalan`,
   `TauCeti.TemperleyLieb.rank_le_catalan_of_surjective`,
-  `TauCeti.TemperleyLieb.finrank_le_catalan_of_surjective`: the `R`-rank and `finrank` of
-  `TemperleyLieb R δ n` and of any surjective `R`-linear image are at most `catalan n`.
+  `TauCeti.TemperleyLieb.finrank_le_catalan_of_surjective`,
+  `TauCeti.TemperleyLieb.rank_quotient_le_catalan`,
+  `TauCeti.TemperleyLieb.finrank_quotient_le_catalan`: the `R`-rank and `finrank` of
+  `TemperleyLieb R δ n`, of any surjective `R`-linear image, and of any submodule quotient are at
+  most `catalan n`.
 * `TauCeti.TemperleyLieb.injective_of_catalan_le_finrank_range`: a linear map out of
   `TemperleyLieb R δ n` whose range has `finrank` at least `catalan n` is injective.
 * `TauCeti.TemperleyLieb.finrank_of_le_one`, `TauCeti.TemperleyLieb.finrank_two`: exact `finrank`
@@ -159,11 +165,26 @@ theorem mem_descBlockList {i j x : Fin (n - 1)} :
   rw [descBlockList, mem_descIco]
   exact ⟨fun h ↦ ⟨h.1, Nat.lt_succ_iff.1 h.2⟩, fun h ↦ ⟨h.1, Nat.lt_succ_iff.2 h.2⟩⟩
 
+/-- Extending a nonempty decreasing block list on the left by the successor of `i`. -/
+theorem descBlockList_cons {k i j : Fin (n - 1)} (hji : j ≤ i) (hik : i.val + 1 = k.val) :
+    k :: descBlockList i j = descBlockList k j := by
+  apply List.map_injective_iff.2 Fin.val_injective
+  suffices (i.val + 1) :: (List.Ico j.val (i.val + 1)).reverse =
+      (List.Ico j.val (i.val + 1 + 1)).reverse by
+    simpa [descBlockList, descIco, List.map_pmap, ← hik]
+  rw [← List.Ico.append_consecutive (Nat.le_succ_of_le hji) (Nat.le_succ (i.val + 1))]
+  simp
+
 /-- Extending a nonempty decreasing block list on the right by the predecessor of `j`. -/
 theorem descBlockList_concat {i j k : Fin (n - 1)} (hji : j ≤ i) (hkj : k.val + 1 = j.val) :
     descBlockList i j ++ [k] = descBlockList i k := by
   rw [descBlockList, descBlockList, ← descIco_singleton k, ← hkj]
   exact (descIco_split i.isLt (by omega) (by omega)).symm
+
+private theorem descBlockList_eq_descIco_append_singleton {i j : Fin (n - 1)} (hji : j ≤ i) :
+    descBlockList i j = descIco (j.val + 1) (i.val + 1) i.isLt ++ [j] := by
+  rw [descBlockList, ← descIco_singleton j]
+  exact descIco_split i.isLt (Nat.le_succ j.val) (Nat.succ_le_succ hji)
 
 /-- Mapping `descBlockList` along `Fin.castSucc` produces `descBlockList` at the next strand
 level. -/
@@ -192,6 +213,12 @@ theorem descBlock_self (δ : R) (i : Fin (n - 1)) : descBlock δ i i = e δ i :=
 theorem descBlock_of_lt (δ : R) {i j : Fin (n - 1)} (h : i < j) : descBlock δ i j = 1 := by
   simp [descBlock_def, descBlockList_of_lt h]
 
+/-- Left multiplication by `e δ k` extends `descBlock δ i j` when `j ≤ i` and `i + 1 = k`. -/
+theorem e_mul_descBlock_of_succ_eq (δ : R) {k i j : Fin (n - 1)} (hji : j ≤ i)
+    (hik : i.val + 1 = k.val) :
+    e δ k * descBlock δ i j = descBlock δ k j := by
+  rw [descBlock_def, descBlock_def, ← descBlockList_cons hji hik, List.map_cons, List.prod_cons]
+
 /-- Right multiplication by `e δ k` extends `descBlock δ i j` when `j ≤ i` and `k + 1 = j`. -/
 theorem descBlock_mul_e_of_succ_eq (δ : R) {i j k : Fin (n - 1)} (hji : j ≤ i)
     (hkj : k.val + 1 = j.val) :
@@ -211,20 +238,16 @@ theorem commute_descBlock_e (δ : R) {i j k : Fin (n - 1)}
 `e j * e j = δ • e j`. -/
 theorem descBlock_mul_e_self (δ : R) {i j : Fin (n - 1)} (hji : j ≤ i) :
     descBlock δ i j * e δ j = δ • descBlock δ i j := by
-  have hsplit : descBlockList i j = descIco (j.val + 1) (i.val + 1) i.isLt ++ [j] := by
-    rw [descBlockList, ← descIco_singleton j]
-    exact descIco_split i.isLt (Nat.le_succ j.val) (Nat.succ_le_succ hji)
-  rw [descBlock_def, hsplit, List.map_append, List.prod_append]
+  rw [descBlock_def, descBlockList_eq_descIco_append_singleton hji, List.map_append,
+    List.prod_append]
   simp [mul_assoc, e_mul_self]
 
 /-- The augmentation kills every nonempty decreasing generator block (`j ≤ i`). -/
 @[simp]
 theorem aug_descBlock_of_le (δ : R) {i j : Fin (n - 1)} (hji : j ≤ i) :
     aug (descBlock δ i j) = 0 := by
-  have hsplit : descBlockList i j = descIco (j.val + 1) (i.val + 1) i.isLt ++ [j] := by
-    rw [descBlockList, ← descIco_singleton j]
-    exact descIco_split i.isLt (Nat.le_succ j.val) (Nat.succ_le_succ hji)
-  rw [descBlock_def, hsplit, List.map_append, List.prod_append]
+  rw [descBlock_def, descBlockList_eq_descIco_append_singleton hji, List.map_append,
+    List.prod_append]
   simp
 
 /-- Strand inclusion sends a decreasing block to the decreasing block with `castSucc` endpoints. -/
@@ -247,8 +270,8 @@ private theorem exists_list_descBlock_mul_e_of_lt_of_le (δ : R) {i j k : Fin (n
         (t.map (e δ)).prod = descBlock δ i j * e δ k := by
   have hk1 : k.val - 1 < n - 1 := by omega
   let km1 : Fin (n - 1) := ⟨k.val - 1, hk1⟩
-  refine ⟨descIco k.val (i.val + 1) i.isLt ++ descIco j.val (k.val - 1) (by omega), ?_, ?_⟩
-  · rw [List.length_append, length_descIco, length_descIco, length_descBlockList]
+  refine ⟨descBlockList i k ++ descIco j.val (k.val - 1) (by omega), ?_, ?_⟩
+  · rw [List.length_append, length_descBlockList, length_descIco, length_descBlockList]
     omega
   · have hsplit₁ : descBlockList i j =
         descIco (k.val + 1) (i.val + 1) i.isLt ++ [k] ++ [km1] ++
@@ -260,15 +283,11 @@ private theorem exists_list_descBlock_mul_e_of_lt_of_le (δ : R) {i j k : Fin (n
       have hkm1 : descIco (k.val - 1) k.val (by omega) = [km1] := by
         simpa [km1, hk_eq] using descIco_singleton km1
       rw [descIco_singleton k, hkm1, List.append_assoc, List.append_assoc]
-    have hsplit₂ : descIco k.val (i.val + 1) i.isLt =
-        descIco (k.val + 1) (i.val + 1) i.isLt ++ [k] := by
-      rw [← descIco_singleton k]
-      exact descIco_split i.isLt (Nat.le_succ _) (Nat.succ_le_succ hki)
     have hcomm := (commute_prod_descIco_e (R := R) δ (lo := j.val) (hi := k.val - 1)
       (by omega) (k := k) (Or.inr (by omega))).eq
     have hadj : e (R := R) δ k * e δ km1 * e δ k = e δ k :=
       e_mul_e_mul_e (Or.inr (by simp [km1]; omega))
-    rw [descBlock_def, hsplit₁, hsplit₂]
+    rw [descBlock_def, hsplit₁, descBlockList_eq_descIco_append_singleton hki]
     simp only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton]
     calc ((descIco (k.val + 1) (i.val + 1) i.isLt).map (e δ)).prod * e δ k *
             ((descIco j.val (k.val - 1) _).map (e δ)).prod
@@ -290,24 +309,18 @@ private theorem exists_list_descBlock_mul_descBlock_mul_e (δ : R) {i₁ i₂ j�
       t.length + 1 ≤ (descBlockList i₁ k).length + (descBlockList i₂ j₂).length ∧
         (t.map (e δ)).prod = descBlock δ i₁ k * descBlock δ i₂ j₂ * e δ k := by
   refine ⟨descIco (k.val + 1) (i₁.val + 1) i₁.isLt ++
-      descIco (k.val + 2) (i₂.val + 1) i₂.isLt ++ [k], ?_, ?_⟩
+      descIco (j₂.val + 1) (i₂.val + 1) i₂.isLt ++ [k], ?_, ?_⟩
   · rw [List.length_append, List.length_append, List.length_singleton, length_descIco,
       length_descIco, length_descBlockList, length_descBlockList]
     omega
-  · have hsplit₁ : descBlockList i₁ k = descIco (k.val + 1) (i₁.val + 1) i₁.isLt ++ [k] := by
-      rw [descBlockList, ← descIco_singleton k]
-      exact descIco_split i₁.isLt (Nat.le_succ _) (Nat.succ_le_succ hk₁)
-    have hkj₂ : k.val + 2 = j₂.val + 1 := by omega
-    have hsplit₂ : descBlockList i₂ j₂ = descIco (k.val + 2) (i₂.val + 1) i₂.isLt ++ [j₂] := by
-      rw [descBlockList, hkj₂, ← descIco_singleton j₂]
-      exact descIco_split i₂.isLt (Nat.le_succ _) (Nat.succ_le_succ hj₂)
-    have hcomm := (commute_prod_descIco_e (R := R) δ (lo := k.val + 2) (hi := i₂.val + 1)
+  · have hcomm := (commute_prod_descIco_e (R := R) δ (lo := j₂.val + 1) (hi := i₂.val + 1)
       i₂.isLt (k := k) (Or.inl (by omega))).eq
     have hadj : e (R := R) δ k * e δ j₂ * e δ k = e δ k :=
       e_mul_e_mul_e (Or.inl hkj)
     let P₁ := ((descIco (k.val + 1) (i₁.val + 1) i₁.isLt).map (e δ)).prod
-    let P₂ := ((descIco (k.val + 2) (i₂.val + 1) i₂.isLt).map (e δ)).prod
-    rw [descBlock_def, descBlock_def, hsplit₁, hsplit₂]
+    let P₂ := ((descIco (j₂.val + 1) (i₂.val + 1) i₂.isLt).map (e δ)).prod
+    rw [descBlock_def, descBlock_def, descBlockList_eq_descIco_append_singleton hk₁,
+      descBlockList_eq_descIco_append_singleton hj₂]
     simp only [List.map_append, List.prod_append, List.map_singleton, List.prod_singleton]
     calc P₁ * P₂ * e δ k
         = P₁ * P₂ * (e δ k * e δ j₂ * e δ k) := by rw [hadj]
@@ -386,6 +399,13 @@ theorem blocks_snoc (w : JonesWord n) (i j : Fin (n - 1)) (hji : j ≤ i)
     (hi : ∀ p ∈ w.blocks, p.1 < i) (hj : ∀ p ∈ w.blocks, p.2 < j) :
     (w.snoc i j hji hi hj).blocks = w.blocks ++ [(i, j)] := (rfl)
 
+/-- Appending a decreasing block yields a nonempty Jones reduced word. -/
+@[simp]
+theorem snoc_ne_empty (w : JonesWord n) (i j : Fin (n - 1)) (hji : j ≤ i)
+    (hi : ∀ p ∈ w.blocks, p.1 < i) (hj : ∀ p ∈ w.blocks, p.2 < j) :
+    w.snoc i j hji hi hj ≠ empty := fun h ↦ by
+  simpa using congrArg (List.length ∘ blocks) h
+
 /-- Drop the last decreasing block of a Jones reduced word (leaving `empty` untouched). -/
 def dropLast (w : JonesWord n) : JonesWord n where
   blocks := w.blocks.dropLast
@@ -413,7 +433,7 @@ theorem dropLast_snoc (w : JonesWord n) (i j : Fin (n - 1)) (hji : j ≤ i)
 
 /-- Structural induction on `JonesWord n` by appending decreasing blocks from the right (`snoc`). -/
 @[elab_as_elim]
-theorem snocRecOn {motive : JonesWord n → Prop} (w : JonesWord n) (empty : motive empty)
+theorem snoc_induction_on {motive : JonesWord n → Prop} (w : JonesWord n) (empty : motive empty)
     (snoc : ∀ (w : JonesWord n) (i j : Fin (n - 1)) (hji : j ≤ i)
       (hi : ∀ p ∈ w.blocks, p.1 < i) (hj : ∀ p ∈ w.blocks, p.2 < j),
       motive w → motive (w.snoc i j hji hi hj)) : motive w := by
@@ -487,12 +507,10 @@ theorem length_toList (w : JonesWord n) : w.toList.length = w.wordLength := by
 /-- A Jones reduced word has word length `0` if and only if it is `empty`. -/
 @[simp]
 theorem wordLength_eq_zero_iff {w : JonesWord n} : w.wordLength = 0 ↔ w = empty := by
-  induction w using snocRecOn with
+  induction w using snoc_induction_on with
   | empty => simp
   | snoc w i j hji hi hj _ =>
-    have hne : w.snoc i j hji hi hj ≠ empty := fun h ↦ by
-      simpa using congrArg (List.length ∘ blocks) h
-    simp only [wordLength_snoc, hne, iff_false]
+    simp only [wordLength_snoc, snoc_ne_empty, iff_false]
     omega
 
 /-- Evaluate a Jones reduced word in `TemperleyLieb R δ n` as the product of its decreasing
@@ -523,7 +541,7 @@ theorem eval_snoc (δ : R) (w : JonesWord n) (i j : Fin (n - 1)) (hji : j ≤ i)
 /-- Evaluating a reduced word agrees with multiplying the generators along `w.toList`. -/
 theorem prod_map_toList (δ : R) (w : JonesWord n) :
     (w.toList.map (e δ)).prod = w.eval δ := by
-  induction w using snocRecOn with
+  induction w using snoc_induction_on with
   | empty => simp
   | snoc w i j hji hi hj ih =>
     rw [toList_snoc, List.map_append, List.prod_append, ih, eval_snoc, descBlock_def]
@@ -533,12 +551,9 @@ word. -/
 @[simp]
 theorem aug_eval (δ : R) (w : JonesWord n) :
     aug (w.eval δ) = if w = empty then 1 else 0 := by
-  induction w using snocRecOn with
+  induction w using snoc_induction_on with
   | empty => simp
-  | snoc w i j hji hi hj _ =>
-    have hne : w.snoc i j hji hi hj ≠ empty := fun h ↦ by
-      simpa using congrArg (List.length ∘ blocks) h
-    simp [hne, aug_descBlock_of_le δ hji]
+  | snoc w i j hji hi hj _ => simp [aug_descBlock_of_le δ hji]
 
 /-- Embedding of Jones reduced words on `m + 1` strands into those on `m + 2` strands by mapping
 each generator index along `Fin.castSucc`. -/
@@ -751,7 +766,7 @@ private theorem stepRight_adj (δ : R) (w₀ : JonesWord n) (i j k : Fin (n - 1)
     (hi : ∀ p ∈ w₀.blocks, p.1 < i) (hj : ∀ p ∈ w₀.blocks, p.2 < j)
     (hki : k ≤ i) (hsucc : k.val + 1 = j.val) :
     StepRightOutcome δ (w₀.snoc i j hji hi hj) k := by
-  induction w₀ using JonesWord.snocRecOn with
+  induction w₀ using JonesWord.snoc_induction_on with
   | empty =>
     refine Or.inl ⟨JonesWord.empty.snoc i k hki (by simp) (by simp), ?_, ?_, ?_⟩
     · simp only [JonesWord.wordLength_snoc, JonesWord.wordLength_empty]
@@ -833,7 +848,7 @@ private theorem stepRight_comm (δ : R) (w₀ : JonesWord n) (i j k : Fin (n - 1
 
 private theorem stepRight (δ : R) (w : JonesWord n) (k : Fin (n - 1)) :
     StepRightOutcome δ w k := by
-  induction w using JonesWord.snocRecOn with
+  induction w using JonesWord.snoc_induction_on with
   | empty =>
     refine Or.inl ⟨JonesWord.singleton k, by simp, by simp, fun q hq ↦ ?_⟩
     exact Or.inr (List.mem_singleton.1 hq)
@@ -910,32 +925,14 @@ theorem exists_jonesWord_of_list (δ : R) (l : List (Fin (n - 1))) :
 `TemperleyLieb R δ n` is spanned as an `R`-module by the evaluations of `JonesWord n`. -/
 theorem span_range_jonesWord_eval (δ : R) (n : ℕ) :
     Submodule.span R (Set.range (JonesWord.eval (R := R) δ (n := n))) = ⊤ := by
-  let S : Submodule R (TemperleyLieb R δ n) :=
-    Submodule.span R (Set.range fun l : List (Fin (n - 1)) ↦ (l.map (e δ)).prod)
-  have hS_le : S ≤ Submodule.span R (Set.range (JonesWord.eval (R := R) δ (n := n))) := by
-    refine Submodule.span_le.2 ?_
-    rintro _ ⟨l, rfl⟩
-    obtain ⟨m, w, -, hw⟩ := exists_jonesWord_of_list δ l
-    dsimp only
-    rw [hw]
-    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨w, rfl⟩)
-  have hmul_e (i : Fin (n - 1)) {x : TemperleyLieb R δ n} (hx : x ∈ S) : x * e δ i ∈ S := by
-    refine (Submodule.image_span_subset (LinearMap.mulRight R (e δ i)) _ S).2 ?_ ⟨x, hx, rfl⟩
-    rintro _ ⟨l, rfl⟩
-    exact Submodule.subset_span ⟨l ++ [i], by simp⟩
-  have hS_top : S = ⊤ := by
-    refine Submodule.eq_top_iff'.2 fun x ↦ ?_
-    suffices ∀ y ∈ S, y * x ∈ S by
-      simpa using this 1 (Submodule.subset_span ⟨[], by simp⟩)
-    induction x using TemperleyLieb.induction with
-    | e i => exact fun _ hy ↦ hmul_e i hy
-    | algebraMap r =>
-      intro y hy
-      rw [← Algebra.commutes, ← Algebra.smul_def]
-      exact S.smul_mem r hy
-    | add x z hx hz => exact fun y hy ↦ by simpa [mul_add] using S.add_mem (hx y hy) (hz y hy)
-    | mul x z hx hz => exact fun y hy ↦ by simpa [mul_assoc] using hz _ (hx y hy)
-  exact top_unique (hS_top ▸ hS_le)
+  rw [eq_top_iff, ← Algebra.top_toSubmodule, ← adjoin_range_e (R := R) (δ := δ) (n := n),
+    Algebra.adjoin_eq_span, Submodule.span_le]
+  intro x hx
+  obtain ⟨L, hL, rfl⟩ := Submonoid.exists_list_of_mem_closure hx
+  obtain ⟨l, rfl⟩ : L ∈ Set.range (List.map (e δ)) := (Set.range_list_map (e δ)).symm ▸ hL
+  obtain ⟨m, w, -, hw⟩ := exists_jonesWord_of_list δ l
+  rw [hw]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨w, rfl⟩)
 
 end NormalForm
 
@@ -1031,7 +1028,7 @@ private theorem eq_snoc_of_mem_jonesWordsBounded {n m b : ℕ} (hm : m < n - 1) 
       (hj : ∀ p ∈ w₀.blocks, p.2 < ⟨b, lt_of_le_of_lt hbm hm⟩),
       w = w₀.snoc ⟨m, hm⟩ ⟨b, lt_of_le_of_lt hbm hm⟩ hbm hi hj := by
   rw [mem_jonesWordsBounded] at hw
-  induction w using JonesWord.snocRecOn with
+  induction w using JonesWord.snoc_induction_on with
   | empty => exact absurd (by simp) hw₁
   | snoc w₀ i j hji hi hj _ =>
     have him : i.val = m := by
@@ -1129,23 +1126,13 @@ private theorem card_jonesWordsBounded_eq_halfCount {n m b : ℕ} (hm : m ≤ n 
     | succ b ihb =>
       rcases le_or_gt b m with hbm' | hmb
       · rw [card_jonesWordsBounded_succ_succ (by omega) hbm', ihb (by omega),
-          ihm (by omega) (Nat.succ_le_succ hbm')]
-        have h1 : m + 1 + 1 + (b + 1) = (m + b + 2) + 1 := by omega
-        have h2 : m + 1 + 1 - (b + 1) = (m - b) + 1 := by omega
-        have h3 : m + 1 + 1 + b = m + b + 2 := by omega
-        have h4 : m + 1 + 1 - b = m - b + 2 := by omega
-        have h5 : m + 1 + (b + 1) = m + b + 2 := by omega
-        have h6 : m + 1 - (b + 1) = m - b := by omega
-        rw [h1, h2, h3, h4, h5, h6, add_comm]
-        exact (halfCount_succ_succ (m + b + 2) (m - b)).symm
+          ihm (by omega) (Nat.succ_le_succ hbm'), add_comm]
+        convert (halfCount_succ_succ (m + b + 2) (m - b)).symm using 2 <;>
+          first | omega | (congr 1 <;> omega)
       · have hbeq : b = m + 1 := by omega
         subst hbeq
         rw [jonesWordsBounded_eq_self_of_le (Nat.le_succ (m + 1)), ihb (Nat.le_succ (m + 1))]
-        have h1 : m + 1 + 1 + (m + 1 + 1) = (2 * m + 3) + 1 := by omega
-        have h2 : m + 1 + 1 - (m + 1 + 1) = 0 := by omega
-        have h3 : m + 1 + 1 + (m + 1) = 2 * m + 3 := by omega
-        have h4 : m + 1 + 1 - (m + 1) = 1 := by omega
-        rw [h1, h2, h3, h4, halfCount_succ_zero]
+        convert (halfCount_succ_zero (2 * m + 3)).symm using 2 <;> omega
 
 /-- **The Catalan count of Jones reduced words.** On `n` strands there are `catalan n` Jones
 reduced words. -/
@@ -1157,11 +1144,9 @@ theorem card_jonesWord (n : ℕ) : Fintype.card (JonesWord n) = catalan n := by
     rw [Nat.zero_sub, jonesWordsBounded_zero_left, Finset.card_singleton, catalan_zero]
   | succ k =>
     rw [Nat.succ_sub_one,
-      card_jonesWordsBounded_eq_halfCount (n := k + 1) (m := k) (b := k) le_rfl (Nat.le_succ k)]
-    have h1 : k + 1 + k = 2 * k + 1 := by omega
-    have h2 : k + 1 - k = 1 := by omega
-    have h3 : 2 * (k + 1) = (2 * k + 1) + 1 := by omega
-    rw [h1, h2, ← halfCount_succ_zero, ← h3, halfCount_two_mul_zero]
+      card_jonesWordsBounded_eq_halfCount (n := k + 1) (m := k) (b := k) le_rfl (Nat.le_succ k),
+      ← halfCount_two_mul_zero]
+    convert (halfCount_succ_zero (2 * k + 1)).symm using 2 <;> omega
 
 end CatalanCount
 
@@ -1172,23 +1157,29 @@ section Dimension
 variable {R : Type*} [CommSemiring R]
 
 /-- Over any commutative semiring `R`, the Temperley–Lieb algebra `TemperleyLieb R δ n` is finitely
-generated as an `R`-module. In particular, over a field or division ring it is finite-dimensional,
-and so is every quotient of it by an ideal. -/
+generated as an `R`-module. In particular, over any field it is finite-dimensional, and so is every
+quotient of it by an `R`-submodule (including any left, right, or two-sided ideal). -/
 instance (δ : R) (n : ℕ) : Module.Finite R (TemperleyLieb R δ n) := by
   have : Module.Finite R (JonesWord n →₀ R) := Module.Finite.of_basis Finsupp.basisSingleOne
   refine Module.Finite.of_surjective (Finsupp.linearCombination R (JonesWord.eval δ)) ?_
   rw [← LinearMap.range_eq_top, Finsupp.range_linearCombination, span_range_jonesWord_eval]
+
+/-- Under any surjective `R`-linear map out of `TemperleyLieb R δ n`, the images of the
+reduced-word evaluations span the target module. -/
+theorem span_range_comp_jonesWord_eval_of_surjective {M : Type*} [AddCommMonoid M] [Module R M]
+    {δ : R} {n : ℕ} (f : TemperleyLieb R δ n →ₗ[R] M) (hf : Function.Surjective f) :
+    Submodule.span R (Set.range (f ∘ JonesWord.eval δ)) = ⊤ := by
+  rw [Set.range_comp, ← Submodule.map_span, span_range_jonesWord_eval, Submodule.map_top,
+    LinearMap.range_eq_top.2 hf]
 
 /-- Any `R`-module admitting a surjective `R`-linear map from `TemperleyLieb R δ n` has `R`-rank
 at most `(catalan n : Cardinal)`. -/
 theorem rank_le_catalan_of_surjective {M : Type*} [AddCommMonoid M] [Module R M]
     {δ : R} {n : ℕ} (f : TemperleyLieb R δ n →ₗ[R] M) (hf : Function.Surjective f) :
     Module.rank R M ≤ catalan n := by
-  have hspan : Submodule.span R (Set.range (f ∘ JonesWord.eval δ)) = ⊤ := by
-    rw [Set.range_comp, ← Submodule.map_span, span_range_jonesWord_eval, Submodule.map_top,
-      LinearMap.range_eq_top.2 hf]
   by_cases hR : Nontrivial R
-  · rw [← (Submodule.topEquiv (R := R) (M := M)).rank_eq, ← hspan]
+  · rw [← (Submodule.topEquiv (R := R) (M := M)).rank_eq,
+      ← span_range_comp_jonesWord_eval_of_surjective f hf]
     refine (rank_span_le _).trans ?_
     simpa [card_jonesWord] using Cardinal.mk_range_le_lift (f := f ∘ JonesWord.eval δ)
   · have : Subsingleton R := not_nontrivial_iff_subsingleton.1 hR
@@ -1202,19 +1193,12 @@ theorem rank_le_catalan (δ : R) (n : ℕ) :
   rank_le_catalan_of_surjective LinearMap.id Function.surjective_id
 
 /-- Any `R`-module admitting a surjective `R`-linear map from `TemperleyLieb R δ n` has `finrank`
-at most `catalan n`. This applies in particular to every quotient of `TemperleyLieb R δ n` by a
-submodule or two-sided ideal. -/
+at most `catalan n`. When `R` is a commutative ring, this applies in particular to every quotient of
+`TemperleyLieb R δ n` by an `R`-submodule (including any left, right, or two-sided ideal). -/
 theorem finrank_le_catalan_of_surjective {M : Type*} [AddCommMonoid M] [Module R M]
     {δ : R} {n : ℕ} (f : TemperleyLieb R δ n →ₗ[R] M) (hf : Function.Surjective f) :
-    Module.finrank R M ≤ catalan n := by
-  have hspan : Submodule.span R (Set.range (f ∘ JonesWord.eval δ)) = ⊤ := by
-    rw [Set.range_comp, ← Submodule.map_span, span_range_jonesWord_eval, Submodule.map_top,
-      LinearMap.range_eq_top.2 hf]
-  by_cases hR : Nontrivial R
-  · exact (finrank_le_of_span_eq_top hspan).trans_eq (card_jonesWord n)
-  · have : Subsingleton R := not_nontrivial_iff_subsingleton.1 hR
-    rw [Module.finrank_subsingleton, ← card_jonesWord n]
-    exact Nat.succ_le_of_lt Fintype.card_pos
+    Module.finrank R M ≤ catalan n :=
+  Module.finrank_le_of_rank_le (rank_le_catalan_of_surjective f hf)
 
 /-- **Catalan `finrank` bound.** Over any commutative semiring `R`, the `finrank` of
 `TemperleyLieb R δ n` is at most `catalan n`. -/
@@ -1222,17 +1206,19 @@ theorem finrank_le_catalan (δ : R) (n : ℕ) :
     Module.finrank R (TemperleyLieb R δ n) ≤ catalan n :=
   finrank_le_catalan_of_surjective LinearMap.id Function.surjective_id
 
-/-- Any quotient of `TemperleyLieb S δ n` by a two-sided ideal has `S`-rank at most `catalan n`. -/
+/-- Any quotient of `TemperleyLieb S δ n` by an `S`-submodule (in particular by any left, right, or
+two-sided ideal) has `S`-rank at most `(catalan n : Cardinal)`. -/
 theorem rank_quotient_le_catalan {S : Type*} [CommRing S] {δ : S} {n : ℕ}
-    (I : Ideal (TemperleyLieb S δ n)) :
-    Module.rank S (TemperleyLieb S δ n ⧸ I) ≤ catalan n :=
-  rank_le_catalan_of_surjective (I.mkQ.restrictScalars S) (Submodule.mkQ_surjective I)
+    (p : Submodule S (TemperleyLieb S δ n)) :
+    Module.rank S (TemperleyLieb S δ n ⧸ p) ≤ catalan n :=
+  rank_le_catalan_of_surjective p.mkQ p.mkQ_surjective
 
-/-- Any quotient of `TemperleyLieb S δ n` by a two-sided ideal has `finrank` at most `catalan n`. -/
+/-- Any quotient of `TemperleyLieb S δ n` by an `S`-submodule (in particular by any left, right, or
+two-sided ideal) has `finrank` at most `catalan n`. -/
 theorem finrank_quotient_le_catalan {S : Type*} [CommRing S] {δ : S} {n : ℕ}
-    (I : Ideal (TemperleyLieb S δ n)) :
-    Module.finrank S (TemperleyLieb S δ n ⧸ I) ≤ catalan n :=
-  finrank_le_catalan_of_surjective (I.mkQ.restrictScalars S) (Submodule.mkQ_surjective I)
+    (p : Submodule S (TemperleyLieb S δ n)) :
+    Module.finrank S (TemperleyLieb S δ n ⧸ p) ≤ catalan n :=
+  finrank_le_catalan_of_surjective p.mkQ p.mkQ_surjective
 
 section Orzech
 
@@ -1240,11 +1226,10 @@ variable [OrzechProperty R] {M : Type*} [AddCommMonoid M] [Module R M] {δ : R} 
 
 private theorem linearIndependent_rangeRestrict_of_catalan_le_finrank_range
     (f : TemperleyLieb R δ n →ₗ[R] M) (hf : catalan n ≤ Module.finrank R (LinearMap.range f)) :
-    LinearIndependent R (f.rangeRestrict ∘ JonesWord.eval (R := R) δ (n := n)) := by
-  have hspan : ⊤ ≤ Submodule.span R (Set.range (f.rangeRestrict ∘ JonesWord.eval δ)) := by
-    rw [Set.range_comp, ← Submodule.map_span, span_range_jonesWord_eval, Submodule.map_top,
-      LinearMap.range_eq_top.2 f.surjective_rangeRestrict]
-  exact linearIndependent_of_top_le_span_of_card_le_finrank hspan ((card_jonesWord n).trans_le hf)
+    LinearIndependent R (f.rangeRestrict ∘ JonesWord.eval (R := R) δ (n := n)) :=
+  linearIndependent_of_top_le_span_of_card_le_finrank
+    (span_range_comp_jonesWord_eval_of_surjective f.rangeRestrict f.surjective_rangeRestrict).ge
+    ((card_jonesWord n).trans_le hf)
 
 /-- Over a commutative semiring satisfying the Orzech property (in particular over any commutative
 ring or field), if a linear map `f : TemperleyLieb R δ n →ₗ[R] M` has range of `finrank` at least
@@ -1276,24 +1261,12 @@ range has `finrank` at least `catalan n` is injective. -/
 theorem injective_of_catalan_le_finrank_range
     (f : TemperleyLieb R δ n →ₗ[R] M) (hf : catalan n ≤ Module.finrank R (LinearMap.range f)) :
     Function.Injective f := by
-  have hli_range := linearIndependent_rangeRestrict_of_catalan_le_finrank_range f hf
   let B := basisJonesWordOfCatalanLeFinrankRange f hf
-  intro x y hxy
-  apply B.repr.injective
-  apply hli_range
-  apply Subtype.ext
-  have hrepr (z : TemperleyLieb R δ n) :
-      ((Finsupp.linearCombination R (f.rangeRestrict ∘ JonesWord.eval δ) (B.repr z) :
-          LinearMap.range f) : M) = f z := by
-    have hsub : (LinearMap.range f).subtype
-        (Finsupp.linearCombination R (f.rangeRestrict ∘ JonesWord.eval δ) (B.repr z)) =
-          f (Finsupp.linearCombination R B (B.repr z)) := by
-      simp only [Finsupp.linearCombination_apply, map_finsuppSum, LinearMap.map_smul,
-        Function.comp_apply, Submodule.coe_subtype, B,
-        basisJonesWordOfCatalanLeFinrankRange_apply]
-      rfl
-    exact hsub.trans (congrArg f (B.linearCombination_repr z))
-  rw [hrepr, hrepr, hxy]
+  have h : B.constr ℕ (f.rangeRestrict ∘ JonesWord.eval δ) = f.rangeRestrict :=
+    B.constr_eq ℕ fun w ↦ by simp [B]
+  exact f.injective_rangeRestrict_iff.1 <|
+    h ▸ B.injective_constr_of_linearIndependent (R₂ := ℕ)
+      (linearIndependent_rangeRestrict_of_catalan_le_finrank_range f hf)
 
 /-- When an `R`-linear map out of `TemperleyLieb R δ n` has range of `finrank` at least
 `catalan n`, the `finrank` of `TemperleyLieb R δ n` equals `catalan n`. -/

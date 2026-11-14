@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.JonesWenzl
+public import TauCeti.Algebra.TemperleyLieb.NormalForm
 
 /-!
 # The single-clasp recursion
@@ -73,6 +74,21 @@ theorem descendingWord_succ (n : ℕ) (i : Fin (n + 2)) :
   induction i using Fin.lastCases with
   | last => simp [descendingWord]
   | cast j => simp [descendingWord]
+
+/-- `descendingWord δ n i` agrees with the decreasing generator block `descBlock δ (Fin.last n) i`
+from `TauCeti.Algebra.TemperleyLieb.NormalForm`. -/
+theorem descendingWord_eq_descBlock (n : ℕ) (i : Fin (n + 1)) :
+    descendingWord δ n i = descBlock δ (Fin.last n) i := by
+  induction n with
+  | zero =>
+    rw [Fin.eq_zero i, descendingWord_zero]
+    exact (descBlock_self δ 0).symm
+  | succ n ih =>
+    induction i using Fin.lastCases with
+    | last => exact (descendingWord_last δ (n + 1)).trans (descBlock_self δ _).symm
+    | cast j =>
+      rw [descendingWord_castSucc, ih, strandIncl_descBlock]
+      exact e_mul_descBlock_of_succ_eq δ (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last j)) (by simp)
 
 end Words
 
