@@ -282,7 +282,7 @@ variable [Fact (q ≠ 0)]
 
 /-- At a generic parameter, the module map `L_m^ε → M(ε q^m) ⧸ N` sending `v₀` to the class of
 `v₀` is bijective. -/
-private theorem bijective_lift_mk_vec_zero (hq : IsGenericQuantumParameter q) :
+private theorem lift_mk_vec_zero_bijective (hq : IsGenericQuantumParameter q) :
     Function.Bijective (LadderModule.lift hq (mk_vec_zero_mem_weightSpace (m := m) (ε := ε))
       e_smul_mk_vec_zero f_pow_smul_mk_vec_zero) := by
   refine ⟨LadderModule.lift_injective hq _ _ _ <| (Submodule.Quotient.mk_eq_zero _).not.mpr <|
@@ -301,7 +301,7 @@ module map sending `v₀` to the class of `v₀`. -/
 def ladderModuleEquivQuotient (hq : IsGenericQuantumParameter q) :
     LadderModule q m ε ≃ₗ[UqSl2 q]
       VermaModule q (ε * q ^ m) ⧸ span (UqSl2 q) {vec q (ε * q ^ m) (m + 1)} :=
-  LinearEquiv.ofBijective _ (bijective_lift_mk_vec_zero hq)
+  LinearEquiv.ofBijective _ (lift_mk_vec_zero_bijective hq)
 
 /-- The isomorphism `L_m^ε ≃ M(ε q^m) ⧸ N` sends `v₀` to the class of `v₀`. -/
 @[simp]
