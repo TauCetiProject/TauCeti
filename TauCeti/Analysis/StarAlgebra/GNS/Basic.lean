@@ -17,7 +17,8 @@ import TauCeti.Algebra.Star.Basic
 
 A complex-linear functional on a possibly non-unital star algebra is positive when it is
 nonnegative on all squares `star a * a`. Its null space is a left ideal, and the quotient is an
-inner product space with an action by left multiplication. In the unital case this action is
+inner product space with an action by left multiplication, from which the Cauchy–Schwarz inequality
+follows (`TauCeti.StarPositiveFunctional.norm_map_star_mul_le`). In the unital case this action is
 cyclic. The adjoint identity holds on this space, but the operators need not be bounded and the
 space need not be complete.
 
@@ -128,6 +129,10 @@ theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOr
   (rfl)
 
 variable (φ : StarPositiveFunctional A)
+
+/-- A `StarPositiveFunctional` is nonnegative on every square `star a * a`. -/
+theorem apply_star_mul_self_nonneg (a : A) : 0 ≤ φ (star a * a) :=
+  φ.square_nonneg a
 
 variable [StarModule ℂ A] [IsScalarTower ℂ A A]
 
@@ -305,6 +310,46 @@ theorem inner_classMap (a b : A) :
 /-- The GNS norm of a class is determined by the quadratic form. -/
 theorem norm_classMap_sq (a : A) : ‖φ.classMap a‖ ^ 2 = (φ (star a * a)).re := by
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_classMap, RCLike.re_to_complex]
+
+/-- Cast to `ℂ`, the squared GNS norm of a class equals `φ (star a * a)`. -/
+theorem ofReal_norm_classMap_sq (a : A) : (‖φ.classMap a‖ ^ 2 : ℂ) = φ (star a * a) := by
+  have ha := φ.apply_star_mul_self_nonneg a
+  rw [← Complex.ofReal_pow, φ.norm_classMap_sq]
+  exact Complex.ext (Complex.ofReal_re _) ha.2
+
+/-- The squared GNS norm of a class equals the norm of `φ (star a * a)`. -/
+theorem norm_classMap_sq_eq_norm (a : A) : ‖φ.classMap a‖ ^ 2 = ‖φ (star a * a)‖ := by
+  have hre := congrArg Complex.re
+    (Complex.eq_coe_norm_of_nonneg (φ.apply_star_mul_self_nonneg a))
+  rw [Complex.ofReal_re] at hre
+  rw [φ.norm_classMap_sq, hre]
+
+/-- The GNS norm of a class is the square root of `‖φ (star a * a)‖`. -/
+theorem norm_classMap (a : A) : ‖φ.classMap a‖ = √‖φ (star a * a)‖ := by
+  rw [← Real.sqrt_sq (norm_nonneg _), φ.norm_classMap_sq_eq_norm]
+
+/-- **Cauchy–Schwarz inequality** for a positive functional on a (possibly non-unital) complex star
+algebra. -/
+theorem norm_map_star_mul_le (a b : A) :
+    ‖φ (star a * b)‖ ≤ √‖φ (star a * a)‖ * √‖φ (star b * b)‖ := by
+  rw [← φ.inner_classMap, ← φ.norm_classMap a, ← φ.norm_classMap b]
+  exact norm_inner_le_norm (φ.classMap a) (φ.classMap b)
+
+/-- Squared **Cauchy–Schwarz inequality** for a positive functional on a complex star algebra. -/
+theorem norm_map_star_mul_sq_le (a b : A) :
+    ‖φ (star a * b)‖ ^ 2 ≤ ‖φ (star a * a)‖ * ‖φ (star b * b)‖ := by
+  calc ‖φ (star a * b)‖ ^ 2
+      ≤ (√‖φ (star a * a)‖ * √‖φ (star b * b)‖) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) (φ.norm_map_star_mul_le a b) 2
+    _ = ‖φ (star a * a)‖ * ‖φ (star b * b)‖ := by
+        rw [mul_pow, Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _)]
+
+/-- Squared **Cauchy–Schwarz inequality** in the `ComplexOrder` on `ℂ`. -/
+theorem ofReal_norm_map_star_mul_sq_le (a b : A) :
+    ((‖φ (star a * b)‖ ^ 2 : ℝ) : ℂ) ≤ φ (star a * a) * φ (star b * b) := by
+  rw [Complex.eq_coe_norm_of_nonneg (φ.apply_star_mul_self_nonneg a),
+    Complex.eq_coe_norm_of_nonneg (φ.apply_star_mul_self_nonneg b), ← Complex.ofReal_mul]
+  exact Complex.real_le_real.2 (φ.norm_map_star_mul_sq_le a b)
 
 /-- Left multiplication on the algebraic GNS space, without a continuity assertion. -/
 def leftMul (a : A) : Module.End ℂ φ.GNS where

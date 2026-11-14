@@ -8,6 +8,8 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Hamiltonian
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+public import Mathlib.Combinatorics.SimpleGraph.Metric
+public import Mathlib.Data.Nat.Dist
 
 /-!
 # A finite tree of maximum degree two is a path graph
@@ -16,7 +18,7 @@ A finite connected graph in which every vertex has at most two neighbours is a p
 acyclicity leaves the path. This file proves that identification in the form a consumer wants: a
 finite tree of maximum degree two is isomorphic to Mathlib's `SimpleGraph.pathGraph` on as many
 vertices as it has, so its vertices can be numbered `0, …, n - 1` with two of them adjacent exactly
-when their numbers are consecutive.
+when their numbers are consecutive, and at graph distance `Nat.dist`.
 
 The proof takes a path `p` of greatest length in the graph, which Mathlib's
 `SimpleGraph.exists_isPath_forall_isPath_length_le_length` supplies. Every neighbour of a vertex of
@@ -34,6 +36,8 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
   is isomorphic to the path graph on its vertices.
 * `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
   consecutiveness of the numbers.
+* `SimpleGraph.edist_pathGraph`, `SimpleGraph.dist_pathGraph`, `SimpleGraph.mem_ball_pathGraph`:
+  extended distance, distance, and open balls on `SimpleGraph.pathGraph n` in terms of `Nat.dist`.
 * `TauCeti.pathGraphRevIso`: the reversal automorphism of a path graph, which reverses a numbering.
 
 ## References
@@ -75,6 +79,67 @@ when their numbers are consecutive. -/
 theorem Iso.adj_iff_of_pathGraph {n : ℕ} (f : G ≃g pathGraph n) (i j : V) :
     G.Adj i j ↔ (f i : ℕ) + 1 = (f j : ℕ) ∨ (f j : ℕ) + 1 = (f i : ℕ) := by
   simpa only [pathGraph_adj] using f.map_adj_iff.symm
+
+/-! ## Metric on a path graph -/
+
+private lemma edist_pathGraph_le_of_add_eq {n : ℕ} :
+    ∀ {d : ℕ} {u v : Fin n}, u.val + d = v.val → (pathGraph n).edist u v ≤ d
+  | 0, u, v, h => by
+    obtain rfl : u = v := Fin.ext (by omega)
+    simp
+  | d + 1, u, v, h => by
+    let w : Fin n := ⟨u.val + 1, by omega⟩
+    have hadj : (pathGraph n).Adj u w := pathGraph_adj.2 (Or.inl rfl)
+    calc (pathGraph n).edist u v
+        ≤ (pathGraph n).edist u w + (pathGraph n).edist w v := SimpleGraph.edist_triangle
+      _ ≤ 1 + d := add_le_add (edist_eq_one_iff_adj.2 hadj).le
+          (edist_pathGraph_le_of_add_eq (by simp [w]; omega))
+      _ = ((d + 1 : ℕ) : ℕ∞) := by push_cast; exact add_comm 1 _
+
+private lemma nat_dist_le_walk_length_pathGraph {n : ℕ} :
+    ∀ {u v : Fin n} (p : (pathGraph n).Walk u v), Nat.dist u v ≤ p.length
+  | u, _, .nil => by simp
+  | u, v, .cons (v := w) hadj q => by
+    have h1 : Nat.dist u w = 1 := by
+      rw [pathGraph_adj] at hadj
+      unfold Nat.dist
+      omega
+    have hq := nat_dist_le_walk_length_pathGraph q
+    have htri := Nat.dist.triangle_inequality u w v
+    simp only [Walk.length_cons]
+    omega
+
+/-- Extended distance between two vertices of `pathGraph n` is `Nat.dist` of their indices. -/
+@[simp]
+theorem edist_pathGraph {n : ℕ} (u v : Fin n) :
+    (pathGraph n).edist u v = Nat.dist u v := by
+  refine le_antisymm ?_ (le_iInf fun p ↦ Nat.cast_le.2 (nat_dist_le_walk_length_pathGraph p))
+  obtain huv | hvu := le_total u.val v.val
+  · rw [Nat.dist_eq_sub_of_le huv]
+    exact edist_pathGraph_le_of_add_eq (Nat.add_sub_of_le huv)
+  · rw [edist_comm, Nat.dist_comm, Nat.dist_eq_sub_of_le hvu]
+    exact edist_pathGraph_le_of_add_eq (Nat.add_sub_of_le hvu)
+
+/-- Distance between two vertices of `pathGraph n` is `Nat.dist` of their indices. -/
+@[simp]
+theorem dist_pathGraph {n : ℕ} (u v : Fin n) :
+    (pathGraph n).dist u v = Nat.dist u v := by
+  simp [dist]
+
+/-- Membership in an open ball of `pathGraph n` in terms of `Nat.dist`. -/
+theorem mem_ball_pathGraph {n : ℕ} {u c : Fin n} {r : ℕ∞} :
+    u ∈ (pathGraph n).ball c r ↔ (Nat.dist u c : ℕ∞) < r := by
+  simp
+
+/-- Extended distance read through a numbering of a graph as a path. -/
+theorem Iso.edist_eq_of_pathGraph {n : ℕ} (f : G ≃g pathGraph n) (i j : V) :
+    G.edist i j = Nat.dist (f i) (f j) := by
+  rw [← f.edist_eq, edist_pathGraph]
+
+/-- Distance read through a numbering of a graph as a path. -/
+theorem Iso.dist_eq_of_pathGraph {n : ℕ} (f : G ≃g pathGraph n) (i j : V) :
+    G.dist i j = Nat.dist (f i) (f j) := by
+  rw [← f.dist_eq, dist_pathGraph]
 
 /-! ## A finite tree of maximum degree two -/
 

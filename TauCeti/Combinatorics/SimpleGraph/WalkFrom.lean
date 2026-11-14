@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Metric
 public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
@@ -20,6 +20,8 @@ decidable subset of a finite function type.
 ## Main definitions
 
 * `SimpleGraph.IsWalkFrom`: a vertex sequence is a walk in `G` from `v₀`.
+* `SimpleGraph.IsWalkFrom.toWalk`: the initial segment of a vertex-sequence walk up to position
+  `i`, as a `SimpleGraph.Walk` from `v₀` to `s i`.
 
 ## Main results
 
@@ -27,6 +29,8 @@ decidable subset of a finite function type.
   vertex is adjacent to the old endpoint.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
+* `SimpleGraph.IsWalkFrom.edist_le`, `SimpleGraph.IsWalkFrom.mem_ball`: the `i`-th vertex of a walk
+  from `v₀` lies at extended distance at most `i` from `v₀`.
 -/
 
 public section
@@ -106,5 +110,49 @@ theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]
     exact hs.2 i
+
+/-- Every step of a walk from `v₀` connects adjacent vertices. -/
+theorem IsWalkFrom.adj_castSucc_succ {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (j : Fin m) : G.Adj (s j.castSucc) (s j.succ) :=
+  hs.2 j
+
+/-- The initial segment of `hs` up to position `i`, as a `SimpleGraph.Walk` from `v₀` to `s i`. -/
+def IsWalkFrom.toWalk {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : G.Walk v₀ (s i) :=
+  Fin.induction ((Walk.nil : G.Walk v₀ v₀).copy rfl hs.apply_zero.symm)
+    (fun j p ↦ p.concat (hs.adj_castSucc_succ j)) i
+
+/-- At position `0`, `toWalk` is the empty walk at `v₀` transported along `s 0 = v₀`. -/
+@[simp]
+theorem IsWalkFrom.toWalk_zero {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) :
+    hs.toWalk 0 = (Walk.nil : G.Walk v₀ v₀).copy rfl hs.apply_zero.symm :=
+  (rfl)
+
+/-- At `j.succ`, `toWalk` appends the step from `s j.castSucc` to `s j.succ`. -/
+@[simp]
+theorem IsWalkFrom.toWalk_succ {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (j : Fin m) :
+    hs.toWalk j.succ = (hs.toWalk j.castSucc).concat (hs.adj_castSucc_succ j) :=
+  Fin.induction_succ ..
+
+/-- The walk up to position `i` has length `i`. -/
+@[simp]
+theorem IsWalkFrom.length_toWalk {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : (hs.toWalk i).length = i.val := by
+  induction i using Fin.induction with
+  | zero => rw [toWalk_zero, Walk.length_copy, Walk.length_nil, Fin.val_zero]
+  | succ j ih => rw [toWalk_succ, Walk.length_concat, ih, Fin.val_castSucc, Fin.val_succ]
+
+/-- The `i`-th vertex of a walk from `v₀` has extended distance at most `i` from `v₀`. -/
+theorem IsWalkFrom.edist_le {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (i : Fin (m + 1)) : G.edist v₀ (s i) ≤ i.val := by
+  rw [← hs.length_toWalk i]
+  exact (hs.toWalk i).edist_le
+
+/-- If `i < r`, the `i`-th vertex of a walk from `v₀` lies in the open ball `G.ball v₀ r`. -/
+theorem IsWalkFrom.mem_ball {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    {i : Fin (m + 1)} {r : ℕ∞} (hr : (i.val : ℕ∞) < r) : s i ∈ G.ball v₀ r := by
+  rw [SimpleGraph.mem_ball, edist_comm]
+  exact (hs.edist_le i).trans_lt hr
 
 end SimpleGraph
