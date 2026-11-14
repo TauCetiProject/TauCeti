@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerEnvelope
 
@@ -25,15 +24,18 @@ For the curvature of large-parameter Seiberg–Witten solutions this gives Taube
 This file proves the lower bound on `B` by the minimum principle for its least eigenvalue
 (`TauCeti.min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn`). Over a compact set `K`, if
 `B ≥ m` on unit vectors over `frontier K`, and at each interior point `x` and each unit vector `v`
-minimizing `B_x(w, w)` over the unit sphere with `B_x(v, v) < m` the barrier inequality
+minimizing `B_x(w, w)` over the unit sphere with `B_x(v, v) < min m (-k / c₀)` there are a local
+unit section `w` through `v`, `C²` at `x`, and a drift vector `b` satisfying the barrier inequality
 
-`Δ (B_· (v, v)) x ≤ c x · B_x(v, v) + k`,  `c ≥ c₀ > 0`,  `k ≥ 0`,
+`Δ (B_· (w ·, w ·)) x + D (B_· (w ·, w ·)) x b ≤ c x · B_x(v, v) + k`,  `c x ≥ c₀ > 0`,  `k ≥ 0`,
 
-holds, then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` throughout `K`
+then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` throughout `K`
 (`TauCeti.AlmostComplexStructure.min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_le`).
 The barrier inequality is only required at minimizing unit vectors, that is at eigenvectors for the
 least eigenvalue of `B_x`; no regularity of that eigenvalue across eigenvalue crossings is needed.
-The regularity hypotheses are on `F` itself: continuity on `K` and `C²` regularity on its interior.
+The section `w` may be chosen freely, for instance as a moving frame adapted to a nonconstant `J`.
+The regularity hypotheses are on `F` itself: continuity on `K`, and `C²` regularity at the interior
+points where the least eigenvalue drops below `min m (-k / c₀)`.
 
 ## References
 
@@ -45,7 +47,7 @@ The regularity hypotheses are on `F` itself: continuity on `K` and `C²` regular
 
 public section
 
-open InnerProductSpace Laplacian Metric
+open InnerProductSpace Laplacian Metric Filter Topology
 
 namespace TauCeti.AlmostComplexStructure
 
@@ -53,28 +55,40 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **The minimum principle for the Hermitian part of a field of two-forms.** Let `F` be continuous
-on a compact set `K` and `C²` on its interior, with Hermitian part `B_x = J.hermitianForm (F x)`.
-Suppose that `B_x(v, v) ≥ m` for `x ∈ frontier K` and unit `v`, and that at each interior point `x`
-and each unit `v` minimizing `B_x(w, w)` over the unit sphere with `B_x(v, v) < m`, the barrier
-inequality `Δ (B_· (v, v)) x ≤ c x · B_x(v, v) + k` holds, with `c ≥ c₀ > 0` and `k ≥ 0`. Then
-`B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` for every `x ∈ K` and every `v`. -/
+on a compact set `K`, with Hermitian part `B_x = J.hermitianForm (F x)`. Suppose that
+`B_x(v, v) ≥ m` for `x ∈ frontier K` and unit `v`, and that at each interior point `x` and each
+unit `v` minimizing `B_x(u, u)` over the unit sphere with `B_x(v, v) < min m (-k / c₀)`, `F` is `C²`
+at `x`, `c x ≥ c₀`, and there are a local section `w` of the unit sphere through `v`, `C²` at `x`,
+and a drift vector `b` with `Δ (B_· (w ·, w ·)) x + D (B_· (w ·, w ·)) x b ≤ c x · B_x(v, v) + k`,
+where `c₀ > 0` and `k ≥ 0`. Then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` for every `x ∈ K` and every
+`v`. -/
 theorem min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_le (J : AlmostComplexStructure V)
     {K : Set E} (hK : IsCompact K) {F : E → ⋀[ℝ]^2 V} {c : E → ℝ} {m k c₀ : ℝ} (hc₀ : 0 < c₀)
-    (hk : 0 ≤ k) (hFc : ContinuousOn F K) (hFd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 F x)
-    (hc : ∀ ⦃x⦄, x ∈ interior K → c₀ ≤ c x)
+    (hk : 0 ≤ k) (hFc : ContinuousOn F K)
+    (hFd : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
+      IsMinOn (fun u ↦ J.hermitianForm (F x) u u) (sphere 0 1) v →
+      J.hermitianForm (F x) v v < min m (-(k / c₀)) → ContDiffAt ℝ 2 F x)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
+      IsMinOn (fun u ↦ J.hermitianForm (F x) u u) (sphere 0 1) v →
+      J.hermitianForm (F x) v v < min m (-(k / c₀)) → c₀ ≤ c x)
     (hsuper : ∀ ⦃x⦄, x ∈ interior K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
-      IsMinOn (fun w ↦ J.hermitianForm (F x) w w) (sphere 0 1) v →
-      J.hermitianForm (F x) v v < m →
-      Δ (fun y ↦ J.hermitianForm (F y) v v) x ≤ c x * J.hermitianForm (F x) v v + k)
+      IsMinOn (fun u ↦ J.hermitianForm (F x) u u) (sphere 0 1) v →
+      J.hermitianForm (F x) v v < min m (-(k / c₀)) →
+      ∃ w : E → V, w x = v ∧ (∀ᶠ y in 𝓝 x, w y ∈ sphere (0 : V) 1) ∧ ContDiffAt ℝ 2 w x ∧
+        ∃ b : E, Δ (fun y ↦ J.hermitianForm (F y) (w y) (w y)) x +
+          fderiv ℝ (fun y ↦ J.hermitianForm (F y) (w y) (w y)) x b ≤
+            c x * J.hermitianForm (F x) v v + k)
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → ∀ ⦃v⦄, v ∈ sphere (0 : V) 1 →
       m ≤ J.hermitianForm (F x) v v) :
     ∀ ⦃x⦄, x ∈ K → ∀ v, min m (-(k / c₀)) * ‖v‖ ^ 2 ≤ J.hermitianForm (F x) v v := by
   refine min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn (B := fun x ↦ J.hermitianForm (F x))
-    hK hc₀ hk ?_ (fun x hx v _ ↦ ?_) hc hsuper hbdry
-  · exact J.continuous_hermitianForm_apply.comp_continuousOn
-      ((hFc.comp continuousOn_fst Set.mapsTo_fst_prod).prodMk
-        (continuousOn_snd.prodMk continuousOn_snd))
-  · simp_rw [hermitianForm_apply_self]
-    exact (hFd hx).inner ℝ contDiffAt_const
+    hK hc₀ hk ?_ hc (fun x hx v hv hmin hlt ↦ ?_) hbdry
+  · simpa using ((J.continuousHermitianForm.continuous.comp_continuousOn
+      (hFc.comp continuousOn_fst Set.mapsTo_fst_prod)).clm_apply continuousOn_snd).clm_apply
+        continuousOn_snd
+  · obtain ⟨w, hwx, hw, hwd, b, hle⟩ := hsuper hx hv hmin hlt
+    refine ⟨w, hwx, hw, ?_, b, hle⟩
+    simpa using ((J.continuousHermitianForm.contDiff.contDiffAt.comp x
+      (hFd hx hv hmin hlt)).clm_apply hwd).clm_apply hwd
 
 end TauCeti.AlmostComplexStructure
