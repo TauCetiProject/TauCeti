@@ -310,13 +310,13 @@ theorem closedDiscGaussValuation_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a 
       (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight a) = ‖a‖₊ := by
   simp [closedDiscGaussValuation, toRestrictedSubring_weightedC]
 
-/-- The powers of a constant `c` of norm `r > 0` have nonzero Gauss norm at radius `r`. -/
+/-- The powers of a nonzero constant `c` have nonzero Gauss norm. -/
 theorem closedDiscGaussValuation_weightedC_pow_pos (hr₀ : 0 < r) (hr₁ : r ≤ 1) {c : R}
-    (hc : ‖c‖ = r) (n : ℕ) :
+    (hc : c ≠ 0) (n : ℕ) :
     0 < closedDiscGaussValuation hr₀ hr₁
       (weightedC (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight c ^ n) := by
   rw [map_pow, closedDiscGaussValuation_weightedC]
-  exact pow_pos (by rw [← NNReal.coe_pos, coe_nnNorm, hc]; exact hr₀) n
+  exact pow_pos (nnNorm_pos.2 hc) n
 
 /-- Multiplying by a constant of norm larger than `1` strictly increases a nonzero Gauss norm. -/
 theorem closedDiscGaussValuation_lt_mul_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1) {d : R}
