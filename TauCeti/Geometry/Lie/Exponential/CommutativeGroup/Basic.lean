@@ -84,6 +84,7 @@ theorem lieExp_add (X Y : LeftInvariantDerivation I G) :
 
 /-- **The tangent-space exponential of a commutative Lie group is a homomorphism** from the
 additive group of the tangent space at the identity. -/
+@[simp]
 theorem mulInvariantExp_add (v w : GroupLieAlgebra I G) :
     mulInvariantExp (v + w) = mulInvariantExp v * mulInvariantExp w := by
   let e := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)

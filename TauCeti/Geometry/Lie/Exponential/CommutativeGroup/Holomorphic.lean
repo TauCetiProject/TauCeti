@@ -18,15 +18,14 @@ with the same charts. Its real exponential `exp : E → G` is the tangent-space 
 field. This file shows that for commutative `G` this map is holomorphic.
 
 Read in the chart at the identity, the real derivative of `exp` at `0` is the identity of `E`,
-which is complex linear; so `exp` is complex differentiable at `0`, for every complex Lie group.
-When `G` is commutative, `exp` is a homomorphism (`TauCeti.mulInvariantExp_add`), so near any `v`
-it is `w ↦ exp v * exp (w - v)`, a left translate of its germ at `0`, and left translations of `G`
-are holomorphic.
+which is complex linear; so `exp` is complex differentiable at `0`, for every complex Lie group
+(`hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`). When `G` is commutative, `exp`
+is a homomorphism (`TauCeti.mulInvariantExp_add`), so near any `v` it is
+`w ↦ exp v * exp (w - v)`, a left translate of its germ at `0`, and left translations of `G` are
+holomorphic.
 
 ## Main results
 
-* `TauCeti.hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`: in the chart at the identity of a
-  complex Lie group, the real exponential has complex derivative the identity at `0`.
 * `TauCeti.mdifferentiable_mulInvariantExp_complex` and
   `TauCeti.contMDiff_mulInvariantExp_complex`: the real exponential of a commutative complex Lie
   group is holomorphic.
@@ -46,23 +45,9 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedSpace ℝ E]
   [IsScalarTower ℝ ℂ E] [FiniteDimensional ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace E G] [Group G]
-  [LieGroup 𝓘(ℝ, E) ∞ G] [T2Space G]
+  [LieGroup 𝓘(ℝ, E) ∞ G] [T2Space G] [LieGroup 𝓘(ℂ, E) ∞ G] [IsMulCommutative G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-
-/-- **The derivative of the exponential of a complex Lie group at `0` is the identity**: read in
-the chart at the identity, the real exponential has complex derivative the identity at `0`. Only
-the real Lie group structure on the complex charts is used. -/
-theorem hasFDerivAt_extChartAt_mulInvariantExp_zero_complex :
-    HasFDerivAt (fun v : E ↦ extChartAt 𝓘(ℂ, E) (1 : G)
-      (mulInvariantExp (I := 𝓘(ℝ, E)) (v : GroupLieAlgebra 𝓘(ℝ, E) G)))
-      (ContinuousLinearMap.id ℂ E) 0 :=
-  -- The real derivative is the identity, which is complex linear. The charts of the two models
-  -- agree, as both self-models have the identity as underlying map.
-  hasFDerivAt_of_restrictScalars ℝ (hasFDerivAt_extChartAt_mulInvariantExp_zero (I := 𝓘(ℝ, E)))
-    (by ext; rfl)
-
-variable [LieGroup 𝓘(ℂ, E) ∞ G] [IsMulCommutative G]
 
 /-- **The exponential of a commutative complex Lie group is holomorphic.** -/
 theorem mdifferentiable_mulInvariantExp_complex :
