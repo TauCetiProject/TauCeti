@@ -62,6 +62,9 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
+* `MulEquiv.primaryComponentEquiv` and `AddEquiv.primaryComponentEquiv`: a group (or additive)
+  equivalence restricts to an equivalence between `p`-primary components, and preserves their
+  triviality (`MulEquiv.primaryComponent_eq_bot_iff`, `AddEquiv.primaryComponent_eq_bot_iff`).
 -/
 
 public section
@@ -72,6 +75,90 @@ additive inverses. -/
 theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G] (p : ℕ) :
     (AddCommGroup.primaryComponent G p).toAddSubmonoid = AddCommMonoid.primaryComponent G p :=
   (rfl)
+
+namespace MulEquiv
+
+variable {G H K : Type*} [CommGroup G] [CommGroup H] [CommGroup K]
+
+/-- A group isomorphism preserves membership in the `p`-primary component. -/
+@[to_additive
+  /-- An additive group isomorphism preserves membership in the `p`-primary component. -/]
+theorem mem_primaryComponent_iff (e : G ≃* H) (p : ℕ) {g : G} :
+    e g ∈ CommGroup.primaryComponent H p ↔ g ∈ CommGroup.primaryComponent G p := by
+  simp only [CommGroup.mem_primaryComponent, ← map_pow, MulEquiv.map_eq_one_iff]
+
+/-- A group isomorphism maps the `p`-primary component onto the `p`-primary component. -/
+@[to_additive (attr := simp)
+  /-- An additive group isomorphism maps the `p`-primary component onto the `p`-primary
+  component. -/]
+theorem map_primaryComponent (e : G ≃* H) (p : ℕ) :
+    (CommGroup.primaryComponent G p).map (e : G →* H) = CommGroup.primaryComponent H p := by
+  ext h
+  refine ⟨?_, fun hh ↦ ⟨e.symm h, (e.symm.mem_primaryComponent_iff p).2 hh, e.apply_symm_apply h⟩⟩
+  rintro ⟨g, hg, rfl⟩
+  exact (e.mem_primaryComponent_iff p).2 hg
+
+/-- Pulling back the `p`-primary component along a group isomorphism gives the `p`-primary
+component. -/
+@[to_additive (attr := simp)
+  /-- Pulling back the `p`-primary component along an additive group isomorphism gives the
+  `p`-primary component. -/]
+theorem comap_primaryComponent (e : G ≃* H) (p : ℕ) :
+    (CommGroup.primaryComponent H p).comap (e : G →* H) = CommGroup.primaryComponent G p := by
+  ext g
+  exact e.mem_primaryComponent_iff p
+
+/-- The isomorphism between `p`-primary components induced by a group isomorphism. -/
+@[to_additive
+  /-- The isomorphism between `p`-primary components induced by an additive group isomorphism. -/]
+def primaryComponentEquiv (e : G ≃* H) (p : ℕ) :
+    CommGroup.primaryComponent G p ≃* CommGroup.primaryComponent H p :=
+  (e.subgroupMap (CommGroup.primaryComponent G p)).trans
+    (MulEquiv.subgroupCongr (e.map_primaryComponent p))
+
+/-- On underlying elements, `primaryComponentEquiv` acts as the ambient isomorphism. -/
+@[to_additive (attr := simp)
+  /-- On underlying elements, `primaryComponentEquiv` acts as the ambient additive
+  isomorphism. -/]
+theorem coe_primaryComponentEquiv (e : G ≃* H) (p : ℕ) (x : CommGroup.primaryComponent G p) :
+    (e.primaryComponentEquiv p x : H) = e x :=
+  (rfl)
+
+/-- The identity isomorphism induces the identity on `p`-primary components. -/
+@[to_additive (attr := simp)
+  /-- The identity additive isomorphism induces the identity on `p`-primary components. -/]
+theorem primaryComponentEquiv_refl (p : ℕ) :
+    (MulEquiv.refl G).primaryComponentEquiv p = MulEquiv.refl _ := by
+  ext x
+  rfl
+
+/-- The inverse of `primaryComponentEquiv` is `primaryComponentEquiv` of the inverse
+isomorphism. -/
+@[to_additive (attr := simp)
+  /-- The inverse of `primaryComponentEquiv` is `primaryComponentEquiv` of the inverse additive
+  isomorphism. -/]
+theorem primaryComponentEquiv_symm (e : G ≃* H) (p : ℕ) :
+    (e.primaryComponentEquiv p).symm = e.symm.primaryComponentEquiv p := by
+  ext x
+  rfl
+
+/-- `primaryComponentEquiv` commutes with composition of group isomorphisms. -/
+@[to_additive
+  /-- `primaryComponentEquiv` commutes with composition of additive group isomorphisms. -/]
+theorem primaryComponentEquiv_trans (e₁ : G ≃* H) (e₂ : H ≃* K) (p : ℕ) :
+    (e₁.trans e₂).primaryComponentEquiv p =
+      (e₁.primaryComponentEquiv p).trans (e₂.primaryComponentEquiv p) := by
+  ext x
+  rfl
+
+/-- A group isomorphism preserves triviality of the `p`-primary component. -/
+@[to_additive
+  /-- An additive group isomorphism preserves triviality of the `p`-primary component. -/]
+theorem primaryComponent_eq_bot_iff (e : G ≃* H) (p : ℕ) :
+    CommGroup.primaryComponent G p = ⊥ ↔ CommGroup.primaryComponent H p = ⊥ := by
+  rw [← e.map_primaryComponent p, Subgroup.map_eq_bot_iff_of_injective _ e.injective]
+
+end MulEquiv
 
 namespace TauCeti
 
