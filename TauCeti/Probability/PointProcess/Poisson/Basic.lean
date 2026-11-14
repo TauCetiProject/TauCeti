@@ -145,14 +145,6 @@ theorem IsPoissonRandomMeasure.ae_eq_top (h : IsPoissonRandomMeasure P N Λ)
     ∀ᵐ ω ∂P, N ω A = ∞ :=
   (isPoissonRandomMeasure_iff.mp h).2.2 A hA hΛ
 
-/-- Any Poisson random measure with zero intensity vanishes almost surely as a measure, with no
-assumptions on the ground measurable space. -/
-theorem IsPoissonRandomMeasure.ae_eq_zero (h : IsPoissonRandomMeasure P N 0) :
-    N =ᵐ[P] 0 := by
-  have hlaw : HasLaw (fun ω ↦ N ω Set.univ) (Measure.dirac 0) P := by
-    simpa [poissonMeasure_zero] using h.hasLaw MeasurableSet.univ (by simp)
-  exact hlaw.ae_eq_of_dirac.mono fun _ ↦ Measure.measure_univ_eq_zero.mp
-
 /-- Counts of a Poisson random measure on any disjoint measurable family are independent.
 Sets of infinite intensity are allowed; their counts are almost surely infinite. -/
 theorem IsPoissonRandomMeasure.iIndepFun_eval (h : IsPoissonRandomMeasure P N Λ)

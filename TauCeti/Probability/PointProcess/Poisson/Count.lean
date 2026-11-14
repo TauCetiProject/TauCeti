@@ -154,12 +154,13 @@ theorem hasIndepIncrements_nat_count [IsLocallyFiniteMeasure Λ]
   have hfloor := hi.comp (fun _ x ↦ ⌊x.toNNReal⌋₊) (fun _ ↦ by fun_prop)
   exact hfloor.congr fun i ↦ (h.ae_nat_count_sub_eq (ht i.castSucc_le_succ)).symm
 
-/-- Any temporal Poisson random measure with zero intensity has identically zero cumulative counts
-simultaneously at all times `t` on a single event of probability one. -/
-theorem ae_forall_nat_count_eq_zero (h : IsPoissonRandomMeasure P M 0) :
+/-- If the intensity vanishes on `(0, ∞)`, all natural-valued cumulative counts vanish
+simultaneously at every time `t` on a single event of probability one. In particular this covers
+zero intensity `Λ = 0` and rate `0 • nnvolume`, without local finiteness at the origin. -/
+theorem ae_forall_nat_count_eq_zero (h : IsPoissonRandomMeasure P M Λ) (hΛ : Λ (Ioi 0) = 0) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t)).toNNReal⌋₊ = 0 := by
-  filter_upwards [h.ae_eq_zero] with ω hω t
-  simp [hω]
+  filter_upwards [h.ae_eq_zero hΛ] with ω hω t
+  simp [measure_mono_null Ioc_subset_Ioi_self hω]
 
 /-- If two temporal Poisson random measures with finite intensities on bounded `(0, n]` windows
 sum almost surely to `M₀`, then their natural cumulative counts add to those of `M₀`
