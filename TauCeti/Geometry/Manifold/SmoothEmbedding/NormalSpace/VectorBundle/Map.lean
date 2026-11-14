@@ -80,8 +80,7 @@ private theorem contMDiff_pullbackTangentMap
     [IsManifold J (r + 1) N] [IsManifold J' (r + 1) N']
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' n' M' N')
     (hfn : r ≤ n) (hgn : r ≤ n')
-    (u : M → M') (v : N → N')
-    (hu : ContMDiff I I' r u) (hv : ContMDiff J J' (r + 1) v)
+    (u : M → M') (v : N → N') (hv : ContMDiff J J' (r + 1) v)
     (h : v ∘ f = g ∘ u) :
     haveI : IsManifold J 1 N := .of_le (n := r + 1) le_add_self
     haveI : IsManifold J' 1 N' := .of_le (n := r + 1) le_add_self
@@ -91,7 +90,10 @@ private theorem contMDiff_pullbackTangentMap
   have : IsManifold J' 1 N' := .of_le (n := r + 1) le_add_self
   rw [Bundle.Pullback.contMDiff_iff g (g.contMDiff.of_le hgn)]
   constructor
-  · exact hu.comp (Bundle.contMDiff_proj (f *ᵖ (TangentSpace J)))
+  · -- The base map is `C^r` because the embedding `g` reflects `C^r` regularity.
+    have hu : ContMDiff I I' r u := (g.isSmoothEmbedding.of_le hgn).contMDiff_iff_comp.2
+      (h ▸ (hv.of_le le_self_add).comp (f.contMDiff.of_le hfn))
+    exact hu.comp (Bundle.contMDiff_proj (f *ᵖ (TangentSpace J)))
   · have hlift : ContMDiff (I.prod 𝓘(𝕜, V)) (J.prod 𝓘(𝕜, V)) r
         (fun p : TotalSpace V (f *ᵖ (TangentSpace J)) => Pullback.lift f p) :=
       ((Bundle.Pullback.contMDiff_iff f (f.contMDiff.of_le hfn)).mp contMDiff_id).2
@@ -99,9 +101,9 @@ private theorem contMDiff_pullbackTangentMap
     exact htangent.congr (lift_pullbackTangentMap f g u v h)
 
 /-- A commuting square between smooth embeddings induces a `C^r` map of their intrinsic normal
-bundles when its map of ambient manifolds is `C^(r + 1)` and its map of embedded manifolds is
-differentiable and `C^r`. Thus the normal-bundle construction is functorial with the expected
-one-derivative loss in the ambient map. -/
+bundles when its map of ambient manifolds is `C^(r + 1)`; its map of embedded manifolds is then
+`C^r`, since the target embedding reflects regularity. Thus the normal-bundle construction is
+functorial with the expected one-derivative loss in the ambient map. -/
 theorem contMDiff_normalBundleMap
     [IsManifold I (r + 1) M] [IsManifold J (r + 1) N]
     [IsManifold I' (r + 1) M'] [IsManifold J' (r + 1) N']
@@ -109,10 +111,7 @@ theorem contMDiff_normalBundleMap
     (hn : n ≠ 0) (hn' : n' ≠ 0) (hfn : r + 1 ≤ n) (hgn : r + 1 ≤ n')
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E)
     (hdim' : Module.finrank 𝕜 P' = Module.finrank 𝕜 V' - Module.finrank 𝕜 E')
-    {u : M → M'} {v : N → N'}
-    (hu : ContMDiff I I' r u) (hdu : MDifferentiable I I' u)
-    (hv : ContMDiff J J' (r + 1) v)
-    (h : v ∘ f = g ∘ u) :
+    {u : M → M'} {v : N → N'} (hv : ContMDiff J J' (r + 1) v) (h : v ∘ f = g ∘ u) :
     haveI : IsManifold I 1 M := .of_le (n := r + 1) le_add_self
     haveI : IsManifold J 1 N := .of_le (n := r + 1) le_add_self
     haveI : IsManifold I' 1 M' := .of_le (n := r + 1) le_add_self
@@ -120,7 +119,7 @@ theorem contMDiff_normalBundleMap
     letI := f.normalSpaceFiberBundle hn hdim
     letI := g.normalSpaceFiberBundle hn' hdim'
     ContMDiff (I.prod 𝓘(𝕜, P)) (I'.prod 𝓘(𝕜, P')) r
-      (f.normalBundleMap (K := P) (K' := P') g hn hn' hdu h) := by
+      (f.normalBundleMap (K := P) (K' := P') g hn hn' h) := by
   have : IsManifold I 1 M := .of_le (n := r + 1) le_add_self
   have : IsManifold J 1 N := .of_le (n := r + 1) le_add_self
   have : IsManifold I' 1 M' := .of_le (n := r + 1) le_add_self
@@ -129,10 +128,10 @@ theorem contMDiff_normalBundleMap
   let := g.normalSpaceFiberBundle hn' hdim'
   rw [f.contMDiff_normalBundle_iff hn hfn hdim]
   have hT := contMDiff_pullbackTangentMap f g
-    ((le_add_right le_rfl).trans hfn) ((le_add_right le_rfl).trans hgn) u v hu hv h
+    ((le_add_right le_rfl).trans hfn) ((le_add_right le_rfl).trans hgn) u v hv h
   have hq := (g.contMDiff_normalQuotientMap hn' hgn hdim').comp hT
   convert hq using 1
   funext p
-  exact f.normalBundleMap_normalQuotientMap g hn hn' hdu h p
+  exact f.normalBundleMap_normalQuotientMap g hn hn' h p
 
 end TauCeti.SmoothEmbedding
