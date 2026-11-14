@@ -7,10 +7,8 @@ module
 
 public import TauCeti.GroupTheory.HNNExtension.Double
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
-public import TauCeti.GroupTheory.MalcevEquation
 public import TauCeti.GroupTheory.SurfaceGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
-import TauCeti.GroupTheory.FreeGroup.Vaught
 
 /-!
 # Residual freeness of the closed surface groups `S⁺(2, 0)` and `S⁻(3, 0)`
@@ -35,11 +33,12 @@ residually free, applied to genus two as in G. Baumslag's work on surface groups
 
 The nonorientable surface group `S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` behaves
 differently. By Lyndon's theorem, three elements `x`, `y`, `z` of a free group with
-`x ^ 2 y ^ 2 z ^ 2 = 1` commute pairwise: free groups satisfy Vaught's condition
-(`IsFreeGroup.isVaught`). Hence every homomorphism from `S⁻(3, 0)` to a free group, or to any
-group satisfying Vaught's condition, has commutative image. Since `c₁` and `c₂` do not commute
-(`TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`), the commutator `⁅c₁, c₂⁆` is a nontrivial
-element killed by every homomorphism to a free group, so `S⁻(3, 0)` is not residually free.
+`x ^ 2 y ^ 2 z ^ 2 = 1` commute pairwise: free groups satisfy Vaught's condition, hence so do
+residually free groups (`TauCeti.LimitGroup.IsResiduallyFree.isVaught`). In `S⁻(3, 0)` the
+generators satisfy `c₁ ^ 2 c₂ ^ 2 c₃ ^ 2 = 1`, but `c₁` and `c₂` do not commute
+(`TauCeti.SurfaceGroup.Nonorientable.commute_c_iff`). So `S⁻(3, 0)` fails Vaught's condition and is
+not residually free: every homomorphism to a free group kills the nontrivial commutator of `c₁` and
+`c₂`.
 
 ## Main definitions
 
@@ -52,8 +51,6 @@ element killed by every homomorphism to a free group, so `S⁻(3, 0)` is not res
   extension of the centralizer of `[a, b]` in `F₂`.
 * `TauCeti.LimitGroup.isFullyResiduallyFree_orientable_two_zero`: `S⁺(2, 0)` is fully residually
   free.
-* `TauCeti.SurfaceGroup.Nonorientable.isMulCommutative_range_of_isVaught`: every homomorphism from
-  `S⁻(3, 0)` to a group satisfying Vaught's condition has commutative image.
 * `TauCeti.LimitGroup.not_isResiduallyFree_nonorientable_three_zero`: `S⁻(3, 0)` is not
   residually free.
 
@@ -71,7 +68,6 @@ element killed by every homomorphism to a free group, so `S⁻(3, 0)` is not res
 public section
 
 open Subgroup
-open scoped commutatorElement
 
 namespace TauCeti
 
@@ -177,31 +173,6 @@ theorem genusTwoToCentralizerExt_injective : Function.Injective genusTwoToCentra
 
 end SurfaceGroup.Orientable
 
-namespace SurfaceGroup.Nonorientable
-
-/-- Every homomorphism from the closed nonorientable surface group
-`S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` to a group satisfying Vaught's condition, such as
-a free group, has commutative image. -/
-theorem isMulCommutative_range_of_isVaught {H : Type*} [Group H] (hH : Group.IsVaught H)
-    (f : Nonorientable 3 0 →* H) : IsMulCommutative f.range := by
-  -- An element commuting with the images of `c₁, c₂, c₃` commutes with the whole image.
-  have key {a : H} (ha : ∀ i, Commute a (f (c 3 0 i))) (x : Nonorientable 3 0) :
-      Commute a (f x) := by
-    have : (MulAut.conj a).toMonoidHom.comp f = f :=
-      hom_ext (fun i ↦ by simp [(ha i).eq]) finZeroElim
-    simpa [commute_iff_eq, mul_inv_eq_iff_eq_mul] using DFunLike.congr_fun this x
-  have h : f (c 3 0 0) ^ 2 * f (c 3 0 1) ^ 2 * f (c 3 0 2) ^ 2 = 1 := by
-    simpa [map_nonorientableWord, nonorientableWord_def, List.ofFn_succ, mul_assoc] using
-      congrArg f (nonorientableWord_c_peripheral 3 0)
-  obtain ⟨h01, h02, h12⟩ := (Group.isVaught_iff H).1 hH _ _ _ h
-  have hc (i j : Fin 3) : Commute (f (c 3 0 i)) (f (c 3 0 j)) := by
-    fin_cases i <;> fin_cases j <;> simp [h01, h02, h12, h01.symm, h02.symm, h12.symm]
-  refine isMulCommutative_iff.2 ?_
-  rintro ⟨_, x, rfl⟩ ⟨_, y, rfl⟩
-  exact Subtype.ext (key (fun i ↦ (key (hc i) x).symm) y).eq
-
-end SurfaceGroup.Nonorientable
-
 namespace LimitGroup
 
 /-- **G. Baumslag.** The fundamental group `S⁺(2, 0)` of the closed orientable surface of genus two
@@ -219,18 +190,14 @@ section Nonorientable
 open SurfaceGroup.Nonorientable
 
 /-- **Lyndon.** The fundamental group `S⁻(3, 0) = ⟨c₁, c₂, c₃ | c₁ ^ 2 c₂ ^ 2 c₃ ^ 2⟩` of the closed
-nonorientable surface of genus three is not residually free: every homomorphism to a free group
-kills the nontrivial commutator `⁅c₁, c₂⁆`. -/
+nonorientable surface of genus three is not residually free: residually free groups satisfy Vaught's
+condition, while `c₁ ^ 2 c₂ ^ 2 c₃ ^ 2 = 1` in `S⁻(3, 0)` although `c₁` and `c₂` do not commute. -/
 theorem not_isResiduallyFree_nonorientable_three_zero :
-    ¬IsResiduallyFree (SurfaceGroup.Nonorientable 3 0) := by
-  rw [isResiduallyFree_def]
-  push Not
-  refine ⟨⁅c 3 0 0, c 3 0 1⁆, by simp [commutatorElement_eq_one_iff_commute], fun ι φ ↦ ?_⟩
-  -- By Lyndon's theorem the image of `φ` in the free group `FreeGroup ι` is commutative.
-  have := isMulCommutative_iff.1 (isMulCommutative_range_of_isVaught IsFreeGroup.isVaught φ)
-    ⟨_, φ.mem_range.2 ⟨c 3 0 0, rfl⟩⟩ ⟨_, φ.mem_range.2 ⟨c 3 0 1, rfl⟩⟩
-  simpa [map_commutatorElement, commutatorElement_eq_one_iff_commute, commute_iff_eq,
-    Subtype.ext_iff] using this
+    ¬IsResiduallyFree (SurfaceGroup.Nonorientable 3 0) := fun h ↦ by
+  have hc : c 3 0 0 ^ 2 * c 3 0 1 ^ 2 * c 3 0 2 ^ 2 = 1 := by
+    simpa [List.ofFn_succ, mul_assoc] using
+      (SurfaceGroup.nonorientableWord_def _ _).symm.trans (nonorientableWord_c_peripheral 3 0)
+  simpa using ((Group.isVaught_iff _).1 h.isVaught _ _ _ hc).1
 
 end Nonorientable
 
