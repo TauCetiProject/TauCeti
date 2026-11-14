@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Factorisation
 import TauCeti.GroupTheory.Index.Comp
 
@@ -100,5 +101,12 @@ theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.d
   have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
     eq_bot_iff.mpr fun _ hP ↦ hlinv.injective (by simpa using AddMonoidHom.mem_ker.mp hP)
   simp [kummerRatio_def, hrange, hker]
+
+/-- The isogeny attached to a change of Weierstrass variables has Kummer ratio one. -/
+@[simp]
+theorem kummerRatio_variableChangeIsogeny (C : WeierstrassCurve.VariableChange F)
+    (h : C • W₁ = W₂) :
+    (variableChangeIsogeny C h).kummerRatio = 1 :=
+  kummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
 
 end TauCeti.Isogeny

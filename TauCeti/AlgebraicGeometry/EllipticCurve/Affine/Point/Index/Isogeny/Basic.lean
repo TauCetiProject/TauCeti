@@ -247,9 +247,17 @@ theorem index_range_eq_card_ker_of_isElliptic
     rintro rfl
     exact hf (by simp [degree_zero])
   -- the reductions have the same number of points, hence equinumerous primary components
-  have hcard := (C₁.natCard_point_reduction_baseChange_adicCompletion).symm.trans
+  have : (C₁.baseChange (u.adicCompletion F)).IsMinimal (u.adicCompletionIntegers F) :=
+    (WeierstrassCurve.isMinimal_integer_adicCompletion_iff _).mp
+      C₁.hasGoodReduction_baseChange_adicCompletion.toIsMinimal
+  have : (C₂.baseChange (u.adicCompletion F)).IsMinimal (u.adicCompletionIntegers F) :=
+    (WeierstrassCurve.isMinimal_integer_adicCompletion_iff _).mp
+      C₂.hasGoodReduction_baseChange_adicCompletion.toIsMinimal
+  have hcard := (WeierstrassCurve.natCard_point_reduction_adicCompletion
+      (C₁.baseChange (u.adicCompletion F))).symm.trans
     ((toIsogeny hf0).natCard_point_reduction_eq.trans
-      C₂.natCard_point_reduction_baseChange_adicCompletion)
+      (WeierstrassCurve.natCard_point_reduction_adicCompletion
+        (C₂.baseChange (u.adicCompletion F))))
   -- `R_u` is `u.adicCompletionIntegers F` by definition
   have : Finite (ResidueField R_u) :=
     inferInstanceAs (Finite (ResidueField (u.adicCompletionIntegers F)))

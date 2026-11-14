@@ -143,6 +143,13 @@ theorem finiteKummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁.toAffine W�
   rw [finiteKummerRatio_def]
   exact kummerRatio_eq_one_of_degree_eq_one _ (by rw [degree_map, hφ])
 
+/-- A change of variables has finite local Kummer ratio one at every height-one prime. -/
+@[simp]
+theorem finiteKummerRatio_variableChangeIsogeny (C : VariableChange K)
+    (h : C • W₁.toAffine = W₂.toAffine) (v : HeightOneSpectrum R) :
+    (variableChangeIsogeny C h).finiteKummerRatio v = 1 :=
+  finiteKummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h) v
+
 end Finite
 
 section Rational
@@ -198,6 +205,13 @@ theorem realKummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁.toAffine W₂
   rw [realKummerRatio_def]
   exact kummerRatio_eq_one_of_degree_eq_one _ (by rw [degree_map, hφ])
 
+/-- A change of variables over `ℚ` has real local Kummer ratio one. -/
+@[simp]
+theorem realKummerRatio_variableChangeIsogeny (C : VariableChange ℚ)
+    (h : C • W₁.toAffine = W₂.toAffine) :
+    (variableChangeIsogeny C h).realKummerRatio = 1 :=
+  realKummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
+
 /-- The product of local Kummer ratios, including the real place and every finite prime. -/
 def kummerRatioProduct (φ : Isogeny W₁.toAffine W₂.toAffine) : ℚ :=
   φ.realKummerRatio * ∏ᶠ v : HeightOneSpectrum ℤ, φ.finiteKummerRatio v
@@ -248,6 +262,13 @@ theorem kummerRatioProduct_eq_one_of_degree_eq_one (φ : Isogeny W₁.toAffine W
     φ.kummerRatioProduct = 1 := by
   simp [kummerRatioProduct_def, realKummerRatio_eq_one_of_degree_eq_one φ hφ,
     finiteKummerRatio_eq_one_of_degree_eq_one φ hφ]
+
+/-- A change of variables over `ℚ` has global Kummer ratio product one. -/
+@[simp]
+theorem kummerRatioProduct_variableChangeIsogeny (C : VariableChange ℚ)
+    (h : C • W₁.toAffine = W₂.toAffine) :
+    (variableChangeIsogeny C h).kummerRatioProduct = 1 :=
+  kummerRatioProduct_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
 
 end Rational
 

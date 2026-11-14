@@ -267,13 +267,10 @@ theorem pullbackDifferential_variableChangeIsogeny_comp_comp
         (φ.comp (variableChangeIsogeny C₁⁻¹ h₁))).pullbackDifferential
         (invariantDifferential W₂') =
       (c * C₂.u / C₁.u) • invariantDifferential W₁' := by
-  have hC₁inv : ((C₁⁻¹.u : F)) = (C₁.u : F)⁻¹ := by
-    simp [VariableChange.inv_def]
-  rw [pullbackDifferential_comp, pullbackDifferential_comp, LinearMap.comp_apply,
-    LinearMap.comp_apply, pullbackDifferential_variableChangeIsogeny_invariantDifferential C₂ h₂,
-    LinearMap.map_smul, hc, LinearMap.map_smul, LinearMap.map_smul,
-    pullbackDifferential_variableChangeIsogeny_invariantDifferential C₁⁻¹ h₁,
-    hC₁inv, smul_smul, smul_smul]
+  rw [pullbackDifferential_comp, pullbackDifferential_comp]
+  simp only [LinearMap.comp_apply, LinearMap.map_smul, hc,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, smul_smul,
+    VariableChange.inv_def, Units.val_inv_eq_inv_val]
   congr 1
   ring
 

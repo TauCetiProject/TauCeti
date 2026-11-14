@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.RealPeriod
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Tamagawa.Product
 import Mathlib.Algebra.FiniteSupport.Basic
@@ -63,11 +62,6 @@ global Kummer ratio products of dual isogenies are inverse to one another.
 
 ## Main results
 
-* `TauCeti.Isogeny.kummerRatio_variableChangeIsogeny`,
-  `TauCeti.Isogeny.finiteKummerRatio_variableChangeIsogeny`,
-  `TauCeti.Isogeny.realKummerRatio_variableChangeIsogeny`, and
-  `TauCeti.Isogeny.kummerRatioProduct_variableChangeIsogeny`: changes of variables have Kummer
-  ratio `1`.
 * `TauCeti.Isogeny.zpow_log_valued_mul_tamagawaNumber_mul_kummerRatio`: the completed local
   identity `q ^ log(v(c)) · c_v(E₁) · z_v(φ) = c_v(E₂)` for minimal equations over `K_v`.
 * `TauCeti.Isogeny.zpow_log_valuation_mul_tamagawaNumberAt_mul_finiteKummerRatio` and
@@ -104,43 +98,6 @@ open IsDedekindDomain IsLocalRing WeierstrassCurve
 open scoped NumberField ValuativeRel WithZero
 
 namespace TauCeti.Isogeny
-
-/-! ### Kummer ratios of changes of variables -/
-
-section VariableChange
-
-/-- The isogeny attached to a change of Weierstrass variables has Kummer ratio one. -/
-@[simp]
-theorem kummerRatio_variableChangeIsogeny {F : Type*} [Field F]
-    {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
-    (C : VariableChange F) (h : C • W₁ = W₂) :
-    (variableChangeIsogeny C h).kummerRatio = 1 :=
-  kummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
-
-/-- A change of variables has finite local Kummer ratio one at every height-one prime. -/
-@[simp]
-theorem finiteKummerRatio_variableChangeIsogeny {R : Type*} [CommRing R] [IsDedekindDomain R]
-    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-    {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
-    (C : VariableChange K) (h : C • W₁.toAffine = W₂.toAffine) (v : HeightOneSpectrum R) :
-    (variableChangeIsogeny C h).finiteKummerRatio v = 1 :=
-  finiteKummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h) v
-
-/-- A change of variables over `ℚ` has real local Kummer ratio one. -/
-@[simp]
-theorem realKummerRatio_variableChangeIsogeny {E₁ E₂ : WeierstrassCurve ℚ}
-    [E₁.IsElliptic] [E₂.IsElliptic] (C : VariableChange ℚ) (h : C • E₁.toAffine = E₂.toAffine) :
-    (variableChangeIsogeny C h).realKummerRatio = 1 :=
-  realKummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
-
-/-- A change of variables over `ℚ` has global Kummer ratio product one. -/
-@[simp]
-theorem kummerRatioProduct_variableChangeIsogeny {E₁ E₂ : WeierstrassCurve ℚ}
-    [E₁.IsElliptic] [E₂.IsElliptic] (C : VariableChange ℚ) (h : C • E₁.toAffine = E₂.toAffine) :
-    (variableChangeIsogeny C h).kummerRatioProduct = 1 :=
-  kummerRatioProduct_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
-
-end VariableChange
 
 /-! ### Local Kummer ratios and Tamagawa numbers at a height-one prime -/
 
@@ -265,18 +222,6 @@ variable [Ring.HasFiniteQuotients R]
 private local instance (v : HeightOneSpectrum R) : Finite (R ⧸ v.asIdeal) :=
   Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
 
-private theorem tamagawaNumberAt_eq_valued (W : WeierstrassCurve K)
-    (v : HeightOneSpectrum R) :
-    W.tamagawaNumberAt v =
-      (W.map (algebraMap K (v.adicCompletion K))).tamagawaNumber
-        (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) := by
-  let : IsDiscreteValuationRing (ValuativeRel.valuation (v.adicCompletion K)).valuationSubring :=
-    inferInstanceAs (IsDiscreteValuationRing 𝒪[v.adicCompletion K])
-  rw [tamagawaNumberAt_def]
-  exact tamagawaNumber_congr _ _ _
-    (ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
-      (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰))
-
 /-- **Local Tamagawa–Kummer identity over `K` (rational `zpow` form)**: let `φ : W₁ → W₂` pull back
 the invariant differential as `φ^*ω₂ = c ω₁`, and let `C₁`, `C₂` carry `W₁`, `W₂` to equations
 minimal over `Localization.AtPrime v.asIdeal`. When `(2 : K) ≠ 0` and `(φ.degree : R) ≠ 0`,
@@ -320,8 +265,11 @@ theorem zpow_log_valuation_mul_tamagawaNumberAt_mul_finiteKummerRatio
   have hval : Valued.v (algebraMap K (v.adicCompletion K) (c * C₂.u / C₁.u)) =
       v.valuation K (c * C₂.u / C₁.u) := by
     simp [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion]
-  rw [hval, ← tamagawaNumberAt_eq_valued (C₁ • W₁) v, ← tamagawaNumberAt_eq_valued (C₂ • W₂) v,
-    tamagawaNumberAt_smul, tamagawaNumberAt_smul, ← finiteKummerRatio_def, hψk] at h
+  have htam₁ := tamagawaNumberAt_eq_valued (C₁ • W₁) v
+  have htam₂ := tamagawaNumberAt_eq_valued (C₂ • W₂) v
+  rw [WeierstrassCurve.baseChange] at htam₁ htam₂
+  rw [hval, ← htam₁, ← htam₂, tamagawaNumberAt_smul, tamagawaNumberAt_smul,
+    ← finiteKummerRatio_def, hψk] at h
   exact h
 
 /-- **Local Tamagawa–Kummer identity over `K` (`adicAbv` form)**: under the hypotheses of

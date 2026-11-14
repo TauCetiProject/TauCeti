@@ -216,10 +216,12 @@ theorem exists_smul_isIntegral_localizationAtPrime_of_adicCompletion (W : Weiers
   · rw [← isIntegral_baseChange_adicCompletion_iff, hDf, isIntegral_adicCompletionIntegers_iff]
     simpa only [U, B, Set.mem_inter_iff, Set.mem_preimage, Set.mem_ofPred_eq, Prod.map_apply]
       using hp₀
-  · rw [hΔ₁, variableChange_Δ, hC'u, variableChange_Δ, baseChange, map_Δ,
-      map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀,
-      map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀]
-    simp [D, Units.coe_map, algebraMap_adicCompletion]
+  · have hΔ : (C' • W.baseChange (v.adicCompletion K)).Δ =
+        ((D • W).baseChange (v.adicCompletion K)).Δ := by
+      rw [← baseChange_smul_baseChange, variableChange_Δ, variableChange_Δ, hC'u]
+      simp [D, VariableChange.baseChange]
+    rw [hΔ₁, hΔ]
+    simp [baseChange, algebraMap_adicCompletion]
 
 /-- **Minimality is preserved and reflected by `v`-adic completion**:
 `W.baseChange (v.adicCompletion K)` is minimal over `v.adicCompletionIntegers K` if and only if `W`

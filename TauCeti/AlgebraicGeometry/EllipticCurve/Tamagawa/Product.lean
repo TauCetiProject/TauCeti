@@ -36,6 +36,7 @@ in particular for elliptic curves over `ℚ` with the Dedekind domain `ℤ`.
 public section
 
 open IsDedekindDomain ValuativeRel
+open scoped WithZero
 
 namespace WeierstrassCurve
 
@@ -45,6 +46,11 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Ring.HasFiniteQuotients 
 -- The height-one-prime carrier supplies nonzeroness as a theorem, rather than a `NeZero` instance.
 local instance (v : HeightOneSpectrum R) : Finite (R ⧸ v.asIdeal) :=
   Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+
+-- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`.
+private local instance (v : HeightOneSpectrum R) :
+    IsDiscreteValuationRing (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).valuationSubring :=
+  inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K))
 
 /-- The minimal-equation index over the completed field at a finite prime. For elliptic curves
 this is the local Tamagawa number. -/
@@ -57,6 +63,20 @@ theorem tamagawaNumberAt_def (E : WeierstrassCurve K)
     (v : HeightOneSpectrum R) : E.tamagawaNumberAt v =
       (E.baseChange (v.adicCompletion K)).tamagawaNumber (valuation (v.adicCompletion K)) :=
   (rfl)
+
+/-- The finite-place Tamagawa number agrees with the Tamagawa number computed for the canonical
+adic valuation `Valued.v` on the completion. -/
+theorem tamagawaNumberAt_eq_valued (E : WeierstrassCurve K)
+    (v : HeightOneSpectrum R) :
+    E.tamagawaNumberAt v =
+      (E.baseChange (v.adicCompletion K)).tamagawaNumber
+        (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) := by
+  let : IsDiscreteValuationRing (valuation (v.adicCompletion K)).valuationSubring :=
+    inferInstanceAs (IsDiscreteValuationRing 𝒪[v.adicCompletion K])
+  rw [tamagawaNumberAt_def]
+  exact tamagawaNumber_congr _ _ _
+    (ValuativeRel.isEquiv (valuation (v.adicCompletion K))
+      (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰))
 
 /-- Each finite-place Tamagawa number is positive. -/
 theorem tamagawaNumberAt_pos (E : WeierstrassCurve K) [E.IsElliptic]
