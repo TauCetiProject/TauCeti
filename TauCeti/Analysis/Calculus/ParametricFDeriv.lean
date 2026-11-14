@@ -33,6 +33,9 @@ over a general nontrivially normed field, it is analyticity.
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `TauCeti.contDiffOn_spatialFDeriv`: the spatial derivative of a jointly `C^(n+1)` map is `C^n`.
+* `TauCeti.norm_iteratedFDeriv_spatialFDeriv`: spatial derivative jets have the norms of
+  the next jets of the fixed-parameter slice.
 * `TauCeti.hasDerivAt_parameterCurve_uncurry`, `TauCeti.hasDerivAt_timeSlice_uncurry`: the same
   for a curried function `u`, as directional derivatives of `uncurry u`.
 * `TauCeti.hasDerivAt_comp_prodMk`: the chain rule along a curve `s ↦ F (s, γ s)`.
@@ -164,6 +167,32 @@ theorem fderiv_timeSlice {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   TauCeti.fderiv_slice_right hF
 
 namespace TauCeti
+
+section SpatialRegularity
+
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+
+/-- Spatial differentiation loses one derivative on an open joint domain. -/
+theorem contDiffOn_spatialFDeriv {n : ℕ∞ω} {f : P × E → F'}
+    {W : Set (P × E)} (hW : IsOpen W) (hf : ContDiffOn 𝕜 (n + 1) f W) :
+    ContDiffOn 𝕜 n (fun z ↦ spatialFDeriv (𝕜 := 𝕜) f z.2 z.1) W := by
+  simp only [spatialFDeriv_def]
+  exact (hf.fderiv_of_isOpen hW le_rfl).clm_comp contDiffOn_const
+
+/-- Spatial derivative jets are the next jets of the fixed-parameter slice. -/
+theorem norm_iteratedFDeriv_spatialFDeriv {k : ℕ} {f : P × E → F'}
+    {W : Set (P × E)} (hW : IsOpen W) (hf : DifferentiableOn 𝕜 f W)
+    {t : P} {p : E} (hz : (t, p) ∈ W) :
+    ‖iteratedFDeriv 𝕜 k (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) p‖ =
+      ‖iteratedFDeriv 𝕜 (k + 1) (fun q ↦ f (t, q)) p‖ := by
+  have heq : (fun q ↦ spatialFDeriv (𝕜 := 𝕜) f q t) =ᶠ[𝓝 p]
+      fderiv 𝕜 (fun q ↦ f (t, q)) := by
+    filter_upwards [(continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
+      (hW.mem_nhds hz)] with q hq
+    exact (fderiv_timeSlice ((hf _ hq).differentiableAt (hW.mem_nhds hq))).symm
+  rw [(heq.iteratedFDeriv 𝕜 k).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+
+end SpatialRegularity
 
 /-- For a function `u` of a scalar parameter and a spatial variable, the derivative of the
 parameter curve `s ↦ u s x` is the derivative of `uncurry u` in the direction `(1, 0)`. This is
