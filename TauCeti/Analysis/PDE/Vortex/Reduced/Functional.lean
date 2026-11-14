@@ -237,28 +237,19 @@ theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]
 theorem sobolevReducedFunctional_zero : sobolevReducedFunctional P 0 = 0 := by
-  have hv0 : W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) = 0 := by
-    rw [← W1p.valueL_apply, map_zero]
-  have hg0 : W1p.gradient (0 : W1p (volume : Measure ℂ) ⊤ 2) = 0 := by
-    rw [← W1p.gradientL_apply, map_zero]
-  have h0 : (W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) : ℂ → ℝ) =ᵐ[volume] 0 := by
-    have h := Lp.coeFn_zero ℝ 2 ((volume : Measure ℂ).restrict ((⊤ : TopologicalSpace.Opens ℂ) :
-      Set ℂ))
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-    rw [hv0]
-    exact h
   have hpot : (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) z) - 1 -
         2 * W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) z)) =ᵐ[volume] 0 :=
-    h0.mono fun z hz ↦ by simp [hz]
+    ae_of_all _ fun z ↦ by simp
   have hlin : (fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) z) =ᵐ[volume] 0 :=
-    h0.mono fun z hz ↦ by simp [hz]
+    ae_of_all _ fun z ↦ by simp
   have hint : Integrable (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) z) - 1 -
         2 * W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) z)) :=
     (integrable_congr hpot).2 (integrable_zero ℂ ℝ volume)
-  rw [sobolevReducedFunctional_eq_coe hint, integral_congr_ae hpot, integral_congr_ae hlin, hg0]
+  rw [sobolevReducedFunctional_eq_coe hint, integral_congr_ae hpot, integral_congr_ae hlin,
+    W1p.gradient_zero]
   simp
 
 /-- The squared `L²` norm of the weak gradient of a representative of a compactly supported `C¹`
