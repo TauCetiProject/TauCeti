@@ -17,9 +17,9 @@ For a weakly regular sequence `x = (x₁, …, xₙ)` in a commutative ring `R`,
 complex of finite free modules `K(x)ₖ = ⋀ᵏ Rⁿ` resolves `R ⧸ (x₁, …, xₙ)`.
 
 The proof adjoins one element at a time. For a linear functional `φ : M → R` and `x : R`, the
-functional `(m, r) ↦ φ(m) + r x` on `M × R` is the Koszul complex `K(φ, x)` of `φ` with `x`
-adjoined. Writing `e = (0, 1)`, every element of `⋀ᵏ⁺¹ (M × R)` is uniquely `a + e ∧ b` with
-`a ∈ ⋀ᵏ⁺¹ M` and `b ∈ ⋀ᵏ M`, and the Koszul differential is
+functional `(m, r) ↦ φ(m) + r x` on `M × R` has a Koszul complex, written `K(φ, x)`: the Koszul
+complex of `φ` with `x` adjoined. Writing `e = (0, 1)`, every element of `⋀ᵏ⁺¹ (M × R)` is
+uniquely `a + e ∧ b` with `a ∈ ⋀ᵏ⁺¹ M` and `b ∈ ⋀ᵏ M`, and the Koszul differential is
 `d(a + e ∧ b) = (d a + x b) - e ∧ d b`. Hence a cycle `a + e ∧ b` of `K(φ, x)` has `d b = 0` and
 `x b = -d a`. If `K(φ)` is exact at `⋀ᵏ⁺¹ M` and `b` is a boundary, then `a + e ∧ b` is a
 boundary. In degree `k + 2` the cycle `b` is a boundary when `Hₖ₊₁(K(φ)) = 0`; in degree one,
@@ -47,8 +47,6 @@ public section
 noncomputable section
 
 universe u v
-
-open CategoryTheory CliffordAlgebra
 
 namespace TauCeti
 
