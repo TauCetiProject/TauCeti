@@ -459,6 +459,17 @@ private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     rw [mul_assoc]
     exact hx _ (hy m hm)
 
+/-- The braid relation moves `Tₘ₊₁` past `d * Tₘ * e` when `d` and `e` commute with `Tₘ₊₁`. -/
+private theorem T_succ_mul_mul_T_succ (m : ℕ) {d e : InfiniteTypeAHeckeAlgebra R q}
+    (hd : T q (m + 1) * d = d * T q (m + 1)) (he : T q (m + 1) * e = e * T q (m + 1)) :
+    T q (m + 1) * (d * T q m * e) * T q (m + 1) =
+      d * T q m * T q (m + 1) * (T q m * e) := by
+  calc _ = T q (m + 1) * d * T q m * (e * T q (m + 1)) := by simp only [mul_assoc]
+    _ = d * (T q m * T q (m + 1) * T q m) * e := by
+      rw [hd, ← he, T_braid]
+      simp only [mul_assoc]
+    _ = _ := by simp only [mul_assoc]
+
 /-- **The bimodule decomposition of the stages.** As a submodule, the stage of the first `n + 2`
 strands is `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`: it is spanned by the stage `Hₙ₊₁` of the first `n + 1` strands
 together with the products `a * T n * b` of the last generator with elements `a`, `b` of `Hₙ₊₁`.
@@ -495,16 +506,8 @@ theorem toSubmodule_stage_add_two (n : ℕ) :
       refine add_mem (Submodule.smul_mem _ _ ?_)
         (Submodule.mem_sup_left (stage_mono (by omega) hd))
       simpa only [mul_one] using mul_T_mul_mem_stageSplit (stage_mono (by omega) hd) (one_mem _)
-    · have hd' := (commute_T_of_mem_stage le_rfl hd).eq
-      have he' := (commute_T_of_mem_stage le_rfl he).eq
-      have h : T q (m + 1) * (d * T q m * e) * T q (m + 1) =
-          d * T q m * T q (m + 1) * (T q m * e) := by
-        calc _ = T q (m + 1) * d * T q m * (e * T q (m + 1)) := by simp only [mul_assoc]
-          _ = d * (T q m * T q (m + 1) * T q m) * e := by
-            rw [hd', ← he', T_braid]
-            simp only [mul_assoc]
-          _ = _ := by simp only [mul_assoc]
-      rw [h]
+    · rw [T_succ_mul_mul_T_succ m (commute_T_of_mem_stage le_rfl hd).eq
+        (commute_T_of_mem_stage le_rfl he).eq]
       exact mul_T_mul_mem_stageSplit
         (mul_mem (stage_mono (by omega) hd) (T_mem_stage (by omega)))
         (mul_mem (T_mem_stage (by omega)) (stage_mono (by omega) he))
