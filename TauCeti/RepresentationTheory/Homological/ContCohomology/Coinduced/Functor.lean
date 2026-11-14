@@ -171,6 +171,7 @@ noncomputable def coindTraceHom [U.FiniteIndex]
         ext f
         exact map_smul (DiscreteCoind.trace G U A.obj.V) g f }
 
+/-- The trace morphism `coindTraceHom` acts on underlying functions as `DiscreteCoind.trace`. -/
 @[simp]
 theorem coindTraceHom_apply [U.FiniteIndex]
     (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
