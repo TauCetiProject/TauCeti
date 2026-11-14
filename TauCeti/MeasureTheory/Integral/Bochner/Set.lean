@@ -107,13 +107,13 @@ theorem integral_norm_add_const_sub_le {α E : Type*} [MeasurableSpace α] {μ :
   rw [he]
   exact norm_add_le _ _
 
-/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a finite set `Z`, and
-`g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the images
-`(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the transport
-identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and the
-measure needs null singletons only to discard the seams. -/
+/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a countable set
+`Z`, and `g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the
+images `(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the
+transport identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and
+the measure needs null singletons only to discard the seams. -/
 theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [Fintype ι]
-    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Countable) (himage : (⋃ i, Q i '' D) = Zᶜ)
     (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D))) {g : M → E} {s : Set M}
     (hg : InjOn g s) (μ : Measure E) [NullSingletonClass μ] {C : E → ℝ}
     (hC : IntegrableOn C (g '' s) μ)
@@ -137,7 +137,7 @@ theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [F
   have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
     rw [image_comp, image_inter_preimage]
     exact image_mono inter_subset_right
-  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ), ← hcover,
+  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ).symm, ← hcover,
     integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ hpiece i
 
