@@ -53,9 +53,10 @@ theorem exchangeMatrix_eq_submatrix (n : ℕ) :
     let k : Fin 4 := n
     let f : Fin 4 → Fin 4 := (· - k)
     have hf : Function.Injective f := fun _ _ h ↦ sub_left_inj.mp h
-    have hm := matrixMutation_submatrix (row := Function.Embedding.refl (Fin 4))
-      (row' := Function.Embedding.refl (Fin 4)) (f := f) (g := f)
-      hf hf (fun _ ↦ rfl) initialMatrix k
+    have hm : matrixMutation (Function.Embedding.refl (Fin 4))
+        (initialMatrix.submatrix f f) k =
+        (matrixMutation (Function.Embedding.refl (Fin 4)) initialMatrix (f k)).submatrix f f := by
+      solve_by_elim [matrixMutation_submatrix, hf]
     ext i j
     rw [exchangeMatrix, ih]
     change matrixMutation _ (initialMatrix.submatrix f f) k i j = _
