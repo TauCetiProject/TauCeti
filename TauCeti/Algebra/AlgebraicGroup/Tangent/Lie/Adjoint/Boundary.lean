@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Regular
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
 import TauCeti.RingTheory.KrullDimension.FiniteType
 
@@ -25,6 +26,10 @@ Consequently a regular element, in the minimal-centralizer sense, cannot lie in 
 of any adjoint orbit. If a regular element lies in an orbit closure, it already lies in that
 orbit. These results apply to nilpotent orbits without assuming nilpotence, connectedness,
 or semisimplicity of the acting group.
+
+In the closure order on adjoint orbits (`TauCeti.Comodule.VectorOrbit` for the adjoint
+representation), an orbit lying strictly below the orbit of `x` has dimension smaller than
+`dim [𝔤, x]` (`TauCeti.finrank_range_ad_lt_of_mk_lt_mk`).
 
 The proof uses the strict dimension drop for projective boundary orbits, the adjoint orbit
 dimension formula, and rank-nullity. It compares dimensions, without asserting an inclusion
@@ -122,5 +127,24 @@ theorem mem_adjointOrbit_of_mem_closure_of_isCentralizerRegular [CharZero k]
   by_contra h
   have hlt := finrank_ker_ad_lt_of_mem_adjointOrbit_boundary ⟨hyClosure, h⟩
   exact (LieAlgebra.isCentralizerRegular_iff_forall_finrank_ker_le.mp hy x).not_gt hlt
+
+/-- **Strictly smaller adjoint orbits have strictly smaller dimension.** In characteristic zero,
+if the adjoint orbit of `y` lies strictly below the adjoint orbit of `x` in the closure order,
+then `[𝔤, y]` has smaller dimension than `[𝔤, x]`. -/
+theorem finrank_range_ad_lt_of_mk_lt_mk [CharZero k]
+    {x y : Module.Dual k (Bialgebra.CotangentSpace k H)}
+    (h : (Comodule.VectorOrbit.mk y :
+        Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H))) <
+      Comodule.VectorOrbit.mk x) :
+    Module.finrank k (LinearMap.range
+        (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) y)) <
+      Module.finrank k (LinearMap.range
+        (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x)) := by
+  have hlt := Comodule.VectorOrbit.strictMono_topologicalKrullDim_image h
+  beta_reduce at hlt
+  rw [Comodule.VectorOrbit.image_mk, Comodule.VectorOrbit.image_mk,
+    topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
+    topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad] at hlt
+  exact_mod_cast hlt
 
 end TauCeti

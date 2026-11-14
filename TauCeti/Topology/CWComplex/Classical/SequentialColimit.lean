@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
 public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.CWComplex.Classical.Image
-public import TauCeti.Topology.CWComplex.Classical.TowerUnion
+public import TauCeti.Topology.CWComplex.Classical.Tower.Union
 public import TauCeti.Topology.Homotopy.Extension.CWComplex
 import TauCeti.Topology.Coherent
 

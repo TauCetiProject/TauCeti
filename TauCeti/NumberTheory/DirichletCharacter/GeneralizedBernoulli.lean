@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.BernoulliPolynomials
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -40,6 +41,8 @@ terms used in Eisenstein series with character.
   `DirichletCharacter.generalizedBernoulli_one` reduce the first two degrees to character sums.
 * `DirichletCharacter.generalizedBernoulli_zero_of_ne_one` gives `B₀,χ = 0` for a nontrivial
   character, while `DirichletCharacter.generalizedBernoulli_zero_one` evaluates the trivial one.
+* `DirichletCharacter.generalizedBernoulli_one_kroneckerChar_neg_three` evaluates `B₁,χ₋₃`
+  as the image of `-1 / 3` in any rational coefficient algebra.
 * `DirichletCharacter.generalizedBernoulli_one_of_ne_one` and
   `DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one` give the two useful forms
   of `B₁,χ` for a nontrivial character, and
@@ -150,6 +153,33 @@ theorem generalizedBernoulli_one [NeZero N] (χ : DirichletCharacter R N) :
   simp only [generalizedBernoulli_def, Nat.cast_one, sub_self, zpow_zero, map_one, one_mul,
     Polynomial.bernoulli_one, eval_sub, eval_X, eval_C, map_sub, mul_sub,
     Finset.sum_sub_distrib, Finset.sum_mul, mul_comm (algebraMap ℚ R 2⁻¹)]
+
+section KroneckerNegThree
+
+local instance : NeZero (-3 : ℤ).natAbs := ⟨by decide⟩
+
+/-- The first generalized Bernoulli number for the quadratic character `(-3 / ·)` is the
+image of `-1 / 3` in the coefficient ring. -/
+@[simp]
+theorem generalizedBernoulli_one_kroneckerChar_neg_three :
+    (TauCeti.kroneckerChar R (-3) (by decide) (by decide)).generalizedBernoulli 1 =
+      algebraMap ℚ R (-1 / 3) := by
+  have hU : (Finset.univ : Finset (ZMod (-3 : ℤ).natAbs)) = {0, 1, 2} := by decide
+  rw [generalizedBernoulli_one, hU]
+  have h1 : (1 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
+  have h01 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 1 := by decide
+  have h02 : (0 : ZMod (-3 : ℤ).natAbs) ≠ 2 := by decide
+  simp only [Finset.sum_insert, Finset.sum_singleton, Finset.mem_insert, Finset.mem_singleton,
+    h1, h01, h02, or_self, not_false_eq_true]
+  have hv1 : (1 : ZMod (-3 : ℤ).natAbs).val = 1 := by decide
+  have hv2 : (2 : ZMod (-3 : ℤ).natAbs).val = 2 := by decide
+  have h8 : ZMod.χ₈ (-3 : ZMod 8) = -1 := by decide
+  norm_num [TauCeti.kroneckerChar_apply, h01.symm, h02.symm, hv1, hv2,
+    TauCeti.kroneckerSym_two_right, h8]
+  rw [← sub_eq_add_neg, ← map_sub]
+  norm_num
+
+end KroneckerNegThree
 
 /-- For a nontrivial character, `B₁,χ` is the character-weighted sum of the rational residues
 `a / N`; the constant term of the first Bernoulli polynomial cancels. -/
