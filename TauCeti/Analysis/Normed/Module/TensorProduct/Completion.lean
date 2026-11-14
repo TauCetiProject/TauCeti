@@ -52,7 +52,9 @@ bilinear forms on `E × F`.
 * `TauCeti.CompletedProjectiveTensor.norm_mapL_le` and
   `TauCeti.CompletedInjectiveTensor.norm_mapL_le`: `‖mapL f g‖ ≤ ‖f‖ * ‖g‖`.
 * `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_comp_mapL`: naturality of the
-  contraction from the completed projective to the completed injective tensor product.
+  contraction from the completed projective to the completed injective tensor product, and
+  `TauCeti.CompletedProjectiveTensor.injective_toCompletedInjectiveTensor_of_leftInverse` for
+  descent of its injectivity along bounded linear retractions.
 
 ## References
 
@@ -307,3 +309,46 @@ theorem CompletedProjectiveTensor.toCompletedInjectiveTensor_comp_mapL (f : E �
   continuousLinearMap_ext fun x y ↦ by simp
 
 end TauCeti
+
+namespace TauCeti.CompletedProjectiveTensor
+
+variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+
+/-- Injectivity of the contraction `E ⊗̂π F → E ⊗̂ε F` descends along bounded linear retractions in
+both factors. -/
+theorem injective_toCompletedInjectiveTensor_of_leftInverse
+    {i₁ : E →L[𝕜] E'} {r₁ : E' →L[𝕜] E} (h₁ : Function.LeftInverse r₁ i₁)
+    {i₂ : F →L[𝕜] F'} {r₂ : F' →L[𝕜] F} (h₂ : Function.LeftInverse r₂ i₂)
+    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E' F')) :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
+  have hr₁ : r₁ ∘L i₁ = ContinuousLinearMap.id 𝕜 E := ContinuousLinearMap.ext h₁
+  have hr₂ : r₂ ∘L i₂ = ContinuousLinearMap.id 𝕜 F := ContinuousLinearMap.ext h₂
+  have hmap : toCompletedInjectiveTensor 𝕜 E' F' (mapL i₁ i₂ u) = 0 := by
+    simpa [hu] using congr($(toCompletedInjectiveTensor_comp_mapL i₁ i₂) u)
+  have himg : mapL i₁ i₂ u = 0 := hinj (hmap.trans (map_zero _).symm)
+  simpa [hr₁, hr₂, himg] using congr($(mapL_comp r₁ i₁ r₂ i₂) u)
+
+/-- Injectivity of `E ⊗̂π F → E ⊗̂ε F` descends along a bounded linear retraction in the left
+factor. -/
+theorem injective_toCompletedInjectiveTensor_of_leftInverse_left
+    {i : E →L[𝕜] E'} {r : E' →L[𝕜] E} (h : Function.LeftInverse r i)
+    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E' F)) :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
+  injective_toCompletedInjectiveTensor_of_leftInverse (i₂ := .id 𝕜 F) (r₂ := .id 𝕜 F) h
+    (fun _ ↦ rfl) hinj
+
+/-- Injectivity of `E ⊗̂π F → E ⊗̂ε F` descends along a bounded linear retraction in the right
+factor. -/
+theorem injective_toCompletedInjectiveTensor_of_leftInverse_right
+    {i : F →L[𝕜] F'} {r : F' →L[𝕜] F} (h : Function.LeftInverse r i)
+    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E F')) :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
+  injective_toCompletedInjectiveTensor_of_leftInverse (i₁ := .id 𝕜 E) (r₁ := .id 𝕜 E)
+    (fun _ ↦ rfl) h hinj
+
+end TauCeti.CompletedProjectiveTensor

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Module.TensorProduct.Approximable
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Series
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Analysis.Normed.Group.Quotient
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Normed.Group.InfiniteSum
@@ -25,10 +24,9 @@ contraction `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E F`, 
 closed. Its range is the submodule `TauCeti.nuclearOperators 𝕜 E F` of *nuclear operators*.
 Over `ℝ` or `ℂ` it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding
 of `E* ⊗̂ε F` into the bounded operators, so it is injective exactly when that contraction is.
-Without completeness assumptions on `E` or `F`, an element of `E* ⊗̂π F` has zero image in
-`E* ⊗̂ε F` iff every weak*-rank-one form `f ⊗ₜ y ↦ f x * g y` (`x ∈ E`, `g ∈ F*`) vanishes on it;
-when `F = E` and `𝕜` is complete, the evaluation pairing defines the *tensor trace*
-`TauCeti.CompletedProjectiveTensor.trace 𝕜 E : E* ⊗̂π E →L[𝕜] 𝕜` sending `f ⊗ₜ x` to `f x`.
+When `F = E` and `𝕜` is complete, without completeness assumptions on `E`, the evaluation pairing
+defines the *tensor trace* `TauCeti.CompletedProjectiveTensor.trace 𝕜 E : E* ⊗̂π E →L[𝕜] 𝕜` sending
+`f ⊗ₜ x` to `f x`.
 
 The *nuclear norm* `ν(T)` of a bounded operator `T` is the infimum of the projective norms of the
 tensors representing `T`, and `∞` when `T` is not nuclear. As `TauCeti.nuclearGauge 𝕜 E F` it is
@@ -63,12 +61,11 @@ factors appear in the order `F ⊗ E*`.
 
 * `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap`: the canonical operator
   `E* ⊗̂π F → (E →L[𝕜] F)`.
-* `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap_mapL`: its naturality.
+* `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap_mapL` and
+  `TauCeti.CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply`: its naturality and
+  pointwise evaluation on pure-tensor series.
 * `TauCeti.CompletedProjectiveTensor.trace`: the tensor trace `E* ⊗̂π E →L[𝕜] 𝕜` sending
   `f ⊗ₜ x` to `f x`, and `TauCeti.CompletedProjectiveTensor.trace_mapL_precomp` for its cyclicity.
-* `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_strongDual_eq_zero_iff`: over `ℝ`
-  and `ℂ`, an element of `E* ⊗̂π F` has zero image in `E* ⊗̂ε F` iff all weak*-rank-one forms
-  `f ⊗ₜ y ↦ f x * g y` vanish on it.
 * `TauCeti.CompletedProjectiveTensor.toOperator_comp_toCompletedInjectiveTensor`: over `ℝ` and
   `ℂ`, it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding of
   `E* ⊗̂ε F` into the bounded operators.
@@ -155,6 +152,16 @@ theorem toContinuousLinearMap_mapL (A : F →L[𝕜] G) (B : D →L[𝕜] E)
     ext x
     simp
   exact congr($h u)
+
+/-- If `u = ∑ i, f i ⊗ₜ y i` in `E* ⊗̂π F`, then evaluating `toContinuousLinearMap 𝕜 E F u` at
+`x : E` has sum `∑ i, f i x • y i`. -/
+theorem hasSum_toContinuousLinearMap_apply {ι : Type*} {f : ι → StrongDual 𝕜 E} {y : ι → F}
+    {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F}
+    (hu : HasSum (fun i ↦ ((⟨f i ⊗ₜ y i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+      CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F)) u)
+    (x : E) :
+    HasSum (fun i ↦ f i x • y i) (toContinuousLinearMap 𝕜 E F u x) := by
+  simpa using hasSum_apply ((toContinuousLinearMap 𝕜 E F).hasSum hu) x
 
 end CompletedProjectiveTensor
 
@@ -353,12 +360,9 @@ private theorem exists_toContinuousLinearMap_eq_of_hasSum {ι : Type*} {T : E �
   have hs : Summable fun i ↦ ((⟨f i ⊗ₜ y i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
       CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :=
     .of_norm_bounded hfy fun i ↦ norm_coe_tmul_le (f i) (y i)
-  refine ⟨_, ContinuousLinearMap.ext fun x ↦ ?_, norm_le_tsum_of_hasSum_tmul hs.hasSum hfy⟩
-  -- Evaluating the image of the series of tensors at `x` gives the series of `f i x • y i`.
-  have hx := (ContinuousLinearMap.apply 𝕜 F x ∘L toContinuousLinearMap 𝕜 E F).hasSum hs.hasSum
-  simp only [ContinuousLinearMap.comp_apply, toContinuousLinearMap_coe_tmul,
-    ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] at hx
-  exact hx.unique (hT x)
+  refine ⟨_, ContinuousLinearMap.ext fun x ↦
+    (hasSum_toContinuousLinearMap_apply hs.hasSum x).unique (hT x),
+    norm_le_tsum_of_hasSum_tmul hs.hasSum hfy⟩
 
 /-- The nuclear norm of `T` is at most the cost `∑ i, ‖f i‖ * ‖y i‖` of any series representation
 `T x = ∑ i, f i x • y i`. -/
@@ -535,6 +539,16 @@ theorem toContinuousLinearMap_completedProjectiveTensorEquiv
       toContinuousLinearMap 𝕜 E F u :=
   (rfl)
 
+/-- The inverse of `completedProjectiveTensorEquiv` sends a nuclear operator `T` to a tensor
+representing `T.toContinuousLinearMap`. -/
+@[simp]
+theorem toContinuousLinearMap_completedProjectiveTensorEquiv_symm
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F)) (T : NuclearOperator 𝕜 E F) :
+    toContinuousLinearMap 𝕜 E F ((completedProjectiveTensorEquiv hinj).symm T) =
+      T.toContinuousLinearMap := by
+  rw [← toContinuousLinearMap_completedProjectiveTensorEquiv hinj,
+    LinearIsometryEquiv.apply_symm_apply]
+
 /-- The isometric isomorphism `completedProjectiveTensorEquiv` sends a pure tensor `f ⊗ₜ y` to the
 rank-one nuclear operator `smulRight f y`. -/
 @[simp]
@@ -614,45 +628,7 @@ end Trace
 section Factorization
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Over `ℝ` and `ℂ`, an element `u` of `E* ⊗̂π F` has zero image in `E* ⊗̂ε F` iff all
-weak*-rank-one forms `f ⊗ₜ y ↦ f x * g y` (`x ∈ E`, `g ∈ F*`) vanish on `u`. Neither `E` nor `F`
-need be complete. -/
-theorem toCompletedInjectiveTensor_strongDual_eq_zero_iff
-    {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F} :
-    toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F u = 0 ↔
-      ∀ (x : E) (g : StrongDual 𝕜 F),
-        liftIsometry 𝕜 (StrongDual 𝕜 E) F 𝕜
-          ((NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight g) u = 0 := by
-  -- Embed `E* ⊗̂ε F` isometrically into `E →L[𝕜] Completion F` via `Completion.toComplL`.
-  let J : (E →L[𝕜] F) →ₗᵢ[𝕜] (E →L[𝕜] Completion F) :=
-    { toLinearMap := (ContinuousLinearMap.postcomp E
-        (Completion.toComplL : F →L[𝕜] Completion F)).toLinearMap
-      norm_map' f := ContinuousLinearMap.norm_toComplL_comp f }
-  have hJ (S : E →L[𝕜] F) : J S = (Completion.toComplL : F →L[𝕜] Completion F) ∘L S := rfl
-  let L : CompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F →ₗᵢ[𝕜] (E →L[𝕜] Completion F) :=
-    (J.comp (InjectiveTensor.toOperator 𝕜 E F)).fromCompletion
-  have hpair (x : E) (g : StrongDual 𝕜 F) :
-      g.fromCompletion ∘L ContinuousLinearMap.apply 𝕜 (Completion F) x ∘L
-        L.toContinuousLinearMap ∘L toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F =
-          liftIsometry 𝕜 (StrongDual 𝕜 E) F 𝕜
-            ((NormedSpace.inclusionInDoubleDual 𝕜 E x).smulRight g) := by
-    refine continuousLinearMap_ext fun f y ↦ ?_
-    simp [L, hJ, ProjectiveTensor.toInjectiveTensor_apply]
-  refine ⟨fun hu x g ↦ ?_,
-    fun hu ↦ (map_eq_zero_iff L L.injective).1 (ContinuousLinearMap.ext fun x ↦ ?_)⟩
-  · simpa [hu] using (congr($(hpair x g) u)).symm
-  · refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun h ↦ ?_
-    let g : StrongDual 𝕜 F := h ∘L Completion.toComplL
-    have hg : g.fromCompletion = h := by
-      ext z
-      induction z using Completion.induction_on with
-      | hp => exact isClosed_eq g.fromCompletion.continuous h.continuous
-      | ih y => simp [g]
-    simpa [hg] using (congr($(hpair x g) u)).trans (hu x g)
-
-variable [CompleteSpace F]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
 variable (𝕜 E F) in
 /-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is the contraction `E* ⊗̂π F → E* ⊗̂ε F`

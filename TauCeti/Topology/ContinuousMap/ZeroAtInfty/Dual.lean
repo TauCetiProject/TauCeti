@@ -33,8 +33,10 @@ coordinate vectors, without conjugation.
   isometry.
 * `ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul` and
   `ZeroAtInftyContinuousMap.hasSum_comp_singleCLM`: every continuous linear functional on
-  `C₀(ι, 𝕜)` or `C₀(ι, E)` is given by its coordinate series.
-* `ZeroAtInftyContinuousMap.sum_norm_apply_single_one_le` and
+  `C₀(ι, 𝕜)` (and every continuous linear map out of `C₀(ι, E)`) is given by its coordinate
+  series.
+* `ZeroAtInftyContinuousMap.sum_norm_apply_single_le_of_forall_norm_le_one`,
+  `ZeroAtInftyContinuousMap.sum_norm_apply_single_one_le`, and
   `ZeroAtInftyContinuousMap.sum_norm_comp_singleCLM_le`: the coordinate values or coordinate
   functionals have finite partial sums of norms bounded by the norm of the functional.
 * `ZeroAtInftyContinuousMap.dualEquiv`: the isometric equivalence `ℓ¹ ≃ₗᵢ C₀(ι, 𝕜)*`.
@@ -97,18 +99,18 @@ theorem hasSum_apply_single_one_mul (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) (f : C
 
 end SeminormedCommRing
 
-section SeminormedRing
+section Semiring
 
-variable [SeminormedRing 𝕜] {E : Type*} [SeminormedAddCommGroup E] [Module 𝕜 E]
-  [ContinuousConstSMul 𝕜 E] [DecidableEq ι]
+variable {E M : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
+  [ContinuousConstSMul 𝕜 E] [AddCommMonoid M] [TopologicalSpace M] [Module 𝕜 M] [DecidableEq ι]
 
-/-- Every continuous linear functional on `C₀(ι, E)` is given by the series of its coordinate
-functionals `Λ ∘ singleCLM 𝕜 i`. -/
-theorem hasSum_comp_singleCLM (Λ : StrongDual 𝕜 C₀(ι, E)) (f : C₀(ι, E)) :
+/-- Every continuous linear map out of `C₀(ι, E)` is given by the series of its coordinate maps
+`Λ ∘ singleCLM 𝕜 i`. -/
+theorem hasSum_comp_singleCLM (Λ : C₀(ι, E) →L[𝕜] M) (f : C₀(ι, E)) :
     HasSum (fun i ↦ Λ.comp (singleCLM 𝕜 i) (f i)) (Λ f) := by
   simpa using (hasSum_single f).mapL Λ
 
-end SeminormedRing
+end Semiring
 
 section RCLike
 
@@ -118,28 +120,39 @@ section Coordinates
 
 variable [DecidableEq ι]
 
-/-- The finite partial sums of the norms of the coordinate values of a functional on `C₀(ι, 𝕜)`
-are bounded by its norm. -/
-theorem sum_norm_apply_single_one_le (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) (s : Finset ι) :
-    ∑ i ∈ s, ‖Λ (single i 1)‖ ≤ ‖Λ‖ := by
-  -- Test `Λ` against the finitely supported family of the conjugate phases of its coordinates.
-  set u : ι → 𝕜 := fun i ↦ conj (Λ (single i 1)) / (‖Λ (single i 1)‖ : 𝕜)
-  have hu (i : ι) : ‖u i‖ ≤ 1 := by
-    simpa [u] using div_self_le_one ‖Λ (single i 1)‖
-  have hΛu (i : ι) : Λ (single i (u i)) = ‖Λ (single i 1)‖ := by
-    rw [← smul_single_one, map_smul, smul_eq_mul, div_mul_eq_mul_div, RCLike.conj_mul]
-    rcases eq_or_ne (‖Λ (single i 1)‖ : 𝕜) 0 with h | h
+/-- Along any family of vectors in the closed unit ball of `E`, the values of a functional on
+`C₀(ι, E)` at the corresponding coordinate vectors have finite partial sums of norms bounded by
+`‖Λ‖`. -/
+theorem sum_norm_apply_single_le_of_forall_norm_le_one {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] (Λ : StrongDual 𝕜 C₀(ι, E)) {v : ι → E} (hv : ∀ i, ‖v i‖ ≤ 1)
+    (s : Finset ι) :
+    ∑ i ∈ s, ‖Λ (single i (v i))‖ ≤ ‖Λ‖ := by
+  -- Rotate each `v i` by the conjugate phase of `Λ (single i (v i))` to align the terms in `ℝ≥0`.
+  set u : ι → 𝕜 := fun i ↦ conj (Λ (single i (v i))) / (‖Λ (single i (v i))‖ : 𝕜)
+  have hu (i : ι) : ‖u i • v i‖ ≤ 1 := by
+    rw [norm_smul]
+    exact (mul_le_of_le_one_left (norm_nonneg _)
+      (by simpa [u] using div_self_le_one ‖Λ (single i (v i))‖)).trans (hv i)
+  have hΛu (i : ι) : Λ (single i (u i • v i)) = ‖Λ (single i (v i))‖ := by
+    rw [single_smul, map_smul, smul_eq_mul, div_mul_eq_mul_div, RCLike.conj_mul]
+    rcases eq_or_ne (‖Λ (single i (v i))‖ : 𝕜) 0 with h | h
     · simp [h]
     · field_simp
-  set g : C₀(ι, 𝕜) := ∑ i ∈ s, single i (u i)
+  set g : C₀(ι, E) := ∑ i ∈ s, single i (u i • v i)
   have hg : ‖g‖ ≤ 1 := (norm_le zero_le_one).2 fun j ↦ by
-    by_cases hj : j ∈ s <;> simp [g, Pi.single_apply, hj, hu]
-  have hΛg : Λ g = ((∑ i ∈ s, ‖Λ (single i 1)‖ : ℝ) : 𝕜) := by
+    by_cases hj : j ∈ s <;> simp [g, hj, hu]
+  have hΛg : Λ g = ((∑ i ∈ s, ‖Λ (single i (v i))‖ : ℝ) : 𝕜) := by
     simp [g, map_sum, hΛu]
-  calc ∑ i ∈ s, ‖Λ (single i 1)‖ = ‖Λ g‖ := by
+  calc ∑ i ∈ s, ‖Λ (single i (v i))‖ = ‖Λ g‖ := by
         rw [hΛg, RCLike.norm_ofReal, abs_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
     _ ≤ ‖Λ‖ * ‖g‖ := Λ.le_opNorm g
     _ ≤ ‖Λ‖ := mul_le_of_le_one_right (norm_nonneg Λ) hg
+
+/-- The finite partial sums of the norms of the coordinate values of a functional on `C₀(ι, 𝕜)`
+are bounded by its norm. -/
+theorem sum_norm_apply_single_one_le (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) (s : Finset ι) :
+    ∑ i ∈ s, ‖Λ (single i 1)‖ ≤ ‖Λ‖ :=
+  sum_norm_apply_single_le_of_forall_norm_le_one Λ (fun _ ↦ norm_one.le) s
 
 /-- The coordinate values of a functional on `C₀(ι, 𝕜)` are absolutely summable. -/
 theorem summable_norm_apply_single_one (Λ : StrongDual 𝕜 C₀(ι, 𝕜)) :
@@ -222,33 +235,6 @@ end RCLike
 section VectorValued
 
 variable [RCLike 𝕜] {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [DecidableEq ι]
-
-/-- Along any family of vectors in the closed unit ball of `E`, the values of a functional on
-`C₀(ι, E)` at the corresponding coordinate vectors have finite partial sums of norms bounded by
-`‖Λ‖`. -/
-private theorem sum_norm_apply_single_le_of_forall_norm_le_one (Λ : StrongDual 𝕜 C₀(ι, E))
-    {v : ι → E} (hv : ∀ i, ‖v i‖ ≤ 1) (s : Finset ι) :
-    ∑ i ∈ s, ‖Λ (single i (v i))‖ ≤ ‖Λ‖ := by
-  -- Rotate each `v i` by the conjugate phase of `Λ (single i (v i))` to align the terms in `ℝ≥0`.
-  set u : ι → 𝕜 := fun i ↦ conj (Λ (single i (v i))) / (‖Λ (single i (v i))‖ : 𝕜)
-  have hu (i : ι) : ‖u i • v i‖ ≤ 1 := by
-    rw [norm_smul]
-    exact (mul_le_of_le_one_left (norm_nonneg _)
-      (by simpa [u] using div_self_le_one ‖Λ (single i (v i))‖)).trans (hv i)
-  have hΛu (i : ι) : Λ (single i (u i • v i)) = ‖Λ (single i (v i))‖ := by
-    rw [single_smul, map_smul, smul_eq_mul, div_mul_eq_mul_div, RCLike.conj_mul]
-    rcases eq_or_ne (‖Λ (single i (v i))‖ : 𝕜) 0 with h | h
-    · simp [h]
-    · field_simp
-  set g : C₀(ι, E) := ∑ i ∈ s, single i (u i • v i)
-  have hg : ‖g‖ ≤ 1 := (norm_le zero_le_one).2 fun j ↦ by
-    by_cases hj : j ∈ s <;> simp [g, hj, hu]
-  have hΛg : Λ g = ((∑ i ∈ s, ‖Λ (single i (v i))‖ : ℝ) : 𝕜) := by
-    simp [g, map_sum, hΛu]
-  calc ∑ i ∈ s, ‖Λ (single i (v i))‖ = ‖Λ g‖ := by
-        rw [hΛg, RCLike.norm_ofReal, abs_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
-    _ ≤ ‖Λ‖ * ‖g‖ := Λ.le_opNorm g
-    _ ≤ ‖Λ‖ := mul_le_of_le_one_right (norm_nonneg Λ) hg
 
 /-- The finite partial sums of the norms of the coordinate functionals of a functional on
 `C₀(ι, E)` are bounded by its norm. -/

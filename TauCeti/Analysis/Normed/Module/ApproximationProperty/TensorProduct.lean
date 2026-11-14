@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Module.ApproximationProperty.Basic
 public import TauCeti.Analysis.Normed.Operator.Nuclear
 import Mathlib.Analysis.Convex.Hull
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import TauCeti.Analysis.Convex.TotallyBounded
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.TensorProduct.Associator
@@ -79,7 +78,8 @@ characterizations.
   `TauCeti.hasApproximationProperty_iff_tsum_apply_eq_zero`, and `TauCeti.NuclearOperator.trace`:
   for a Banach space `E`, the canonical-operator, nuclear-trace, and nuclear-series
   characterizations of the approximation property, together with the contractive trace functional
-  on `NuclearOperator 𝕜 E E` when `E` has the approximation property.
+  on `NuclearOperator 𝕜 E E` (`hasSum_trace`, `trace_mk'_comp_comm`) when `E` has the
+  approximation property.
 
 ## References
 
@@ -222,44 +222,6 @@ theorem injective_toContinuousLinearMap_of_hasApproximationProperty_strongDual
     (injective_toCompletedInjectiveTensor_of_hasApproximationProperty_left hE)
 
 end Operator
-
-section Retract
-
-variable {𝕜 D E' G F' : Type*} [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
-  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
-  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
-
-/-- Injectivity of `E ⊗̂π F → E ⊗̂ε F` descends along a bounded linear retraction in the left
-factor. -/
-theorem injective_toCompletedInjectiveTensor_of_retract_left
-    {i : D →L[𝕜] E'} {r : E' →L[𝕜] D} (hri : r ∘L i = ContinuousLinearMap.id 𝕜 D)
-    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E' G)) :
-    Function.Injective (toCompletedInjectiveTensor 𝕜 D G) := by
-  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
-  have hmap : toCompletedInjectiveTensor 𝕜 E' G (mapL i (ContinuousLinearMap.id 𝕜 G) u) = 0 := by
-    simpa [hu] using congr($(toCompletedInjectiveTensor_comp_mapL i (ContinuousLinearMap.id 𝕜 G)) u)
-  have himg : mapL i (ContinuousLinearMap.id 𝕜 G) u = 0 :=
-    hinj (hmap.trans (map_zero _).symm)
-  have hret := congr($(mapL_comp r i (ContinuousLinearMap.id 𝕜 G) (ContinuousLinearMap.id 𝕜 G)) u)
-  simpa [hri, himg] using hret
-
-/-- Injectivity of `E ⊗̂π F → E ⊗̂ε F` descends along a bounded linear retraction in the right
-factor. -/
-theorem injective_toCompletedInjectiveTensor_of_retract_right
-    {i : G →L[𝕜] F'} {r : F' →L[𝕜] G} (hri : r ∘L i = ContinuousLinearMap.id 𝕜 G)
-    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 D F')) :
-    Function.Injective (toCompletedInjectiveTensor 𝕜 D G) := by
-  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
-  have hmap : toCompletedInjectiveTensor 𝕜 D F' (mapL (ContinuousLinearMap.id 𝕜 D) i u) = 0 := by
-    simpa [hu] using congr($(toCompletedInjectiveTensor_comp_mapL (ContinuousLinearMap.id 𝕜 D) i) u)
-  have himg : mapL (ContinuousLinearMap.id 𝕜 D) i u = 0 :=
-    hinj (hmap.trans (map_zero _).symm)
-  have hret := congr($(mapL_comp (ContinuousLinearMap.id 𝕜 D) (ContinuousLinearMap.id 𝕜 D) r i) u)
-  simpa [hri, himg] using hret
-
-end Retract
 
 end TauCeti.CompletedProjectiveTensor
 
@@ -421,13 +383,9 @@ theorem hasApproximationProperty_iff_forall_injective_toCompletedInjectiveTensor
   refine ⟨fun hE F _ _ _ ↦
     injective_toCompletedInjectiveTensor_of_hasApproximationProperty_right hE, fun h ↦ ?_⟩
   rw [hasApproximationProperty_iff_injective_toCompletedInjectiveTensor_strongDual]
-  let e : ULift.{w} (StrongDual 𝕜 E) ≃ₗᵢ[𝕜] StrongDual 𝕜 E := LinearIsometryEquiv.ulift _ _
-  have hret : e.toContinuousLinearEquiv.toContinuousLinearMap ∘L
-      e.symm.toContinuousLinearEquiv.toContinuousLinearMap =
-        ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E) := by
-    ext f x
-    simp
-  exact injective_toCompletedInjectiveTensor_of_retract_left hret
+  let e : ULift.{w} (StrongDual 𝕜 E) ≃L[𝕜] StrongDual 𝕜 E := ContinuousLinearEquiv.ulift
+  exact injective_toCompletedInjectiveTensor_of_leftInverse_left
+    (i := e.symm.toContinuousLinearMap) (r := e.toContinuousLinearMap) e.apply_symm_apply
     (h (ULift.{w} (StrongDual 𝕜 E)))
 
 /-- Symmetric tensor-product characterization: a normed space `E` over `ℝ` or `ℂ` has the
@@ -486,24 +444,16 @@ theorem hasApproximationProperty_iff_tsum_apply_eq_zero :
       (⟨f n ⊗ₜ x n⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)
     have hu : Summable t :=
       .of_norm_bounded hfx fun n ↦ CompletedProjectiveTensor.norm_coe_tmul_le (f n) (x n)
-    have hT : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E (∑' n, t n) = 0 := by
-      ext v
-      have hv' := (ContinuousLinearMap.apply 𝕜 E v ∘L
-        CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).hasSum hu.hasSum
-      simp only [t, ContinuousLinearMap.comp_apply,
-        CompletedProjectiveTensor.toContinuousLinearMap_coe_tmul,
-        ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] at hv'
-      simpa [hv v] using hv'.tsum_eq.symm
+    have hT : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E (∑' n, t n) = 0 :=
+      ContinuousLinearMap.ext fun v ↦
+        (CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply hu.hasSum v)
+          |>.tsum_eq.symm.trans (hv v)
     exact (CompletedProjectiveTensor.hasSum_trace hu.hasSum).tsum_eq.trans (h _ hT)
   · obtain ⟨f, x, hu, hfx, -⟩ :=
       CompletedProjectiveTensor.exists_hasSum_tmul_of_norm_lt u (lt_add_one ‖u‖)
     have hv (v : E) : ∑' n, f n v • x n = 0 := by
-      have hv' := (ContinuousLinearMap.apply 𝕜 E v ∘L
-        CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).hasSum hu
-      simp only [ContinuousLinearMap.comp_apply,
-        CompletedProjectiveTensor.toContinuousLinearMap_coe_tmul,
-        ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] at hv'
-      simpa [hu0] using hv'.tsum_eq
+      simpa [hu0] using
+        (CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply hu v).tsum_eq
     exact (CompletedProjectiveTensor.hasSum_trace hu).tsum_eq.symm.trans (h f x hfx hv)
 
 namespace NuclearOperator
@@ -518,6 +468,15 @@ noncomputable def trace (hE : HasApproximationProperty 𝕜 E) :
       (CompletedProjectiveTensor.injective_toContinuousLinearMap_of_hasApproximationProperty
         hE)).symm.toContinuousLinearEquiv.toContinuousLinearMap
 
+/-- Evaluating the nuclear trace on `T` applies the tensor trace to the unique tensor in
+`E* ⊗̂π E` representing `T`. -/
+theorem trace_apply (hE : HasApproximationProperty 𝕜 E) (T : NuclearOperator 𝕜 E E) :
+    trace hE T = CompletedProjectiveTensor.trace 𝕜 E
+      ((completedProjectiveTensorEquiv
+        (CompletedProjectiveTensor.injective_toContinuousLinearMap_of_hasApproximationProperty
+          hE)).symm T) :=
+  (rfl)
+
 /-- Evaluating the nuclear trace on the nuclear operator associated with a tensor `u` recovers the
 tensor trace of `u`. -/
 @[simp]
@@ -529,6 +488,19 @@ theorem trace_completedProjectiveTensorEquiv (hE : HasApproximationProperty 𝕜
       CompletedProjectiveTensor.trace 𝕜 E u := by
   simp [trace]
 
+/-- If `u ∈ E* ⊗̂π E` represents `T : NuclearOperator 𝕜 E E`, then the nuclear trace of `T`
+equals the tensor trace of `u`. -/
+theorem trace_eq_of_toContinuousLinearMap_eq (hE : HasApproximationProperty 𝕜 E)
+    {T : NuclearOperator 𝕜 E E} {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E}
+    (hu : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E u = T.toContinuousLinearMap) :
+    trace hE T = CompletedProjectiveTensor.trace 𝕜 E u := by
+  have hinj :=
+    CompletedProjectiveTensor.injective_toContinuousLinearMap_of_hasApproximationProperty
+      (E := E) hE
+  rw [trace_apply]
+  congr 1
+  exact hinj (by simp [hu])
+
 /-- On a rank-one nuclear operator `smulRight f x`, the nuclear trace evaluates `f x`. -/
 @[simp]
 theorem trace_smulRight (hE : HasApproximationProperty 𝕜 E) (f : StrongDual 𝕜 E) (x : E) :
@@ -537,13 +509,64 @@ theorem trace_smulRight (hE : HasApproximationProperty 𝕜 E) (f : StrongDual �
 
 /-- The nuclear trace is a contraction on `NuclearOperator 𝕜 E E`. -/
 theorem norm_trace_le (hE : HasApproximationProperty 𝕜 E) : ‖trace hE‖ ≤ 1 :=
-  (trace hE).opNorm_le_bound zero_le_one fun T ↦ by
-    simpa [trace] using
-      (CompletedProjectiveTensor.trace 𝕜 E).le_of_opNorm_le
-        CompletedProjectiveTensor.norm_trace_le ((completedProjectiveTensorEquiv _).symm T)
+  ((CompletedProjectiveTensor.trace 𝕜 E).opNorm_comp_linearIsometryEquiv _).trans_le
+    CompletedProjectiveTensor.norm_trace_le
+
+/-- If `T : NuclearOperator 𝕜 E E` has a nuclear series representation
+`T v = ∑ i, f i v • x i` with `∑ i, ‖f i‖ * ‖x i‖ < ∞`, then
+`trace hE T = ∑ i, f i (x i)`. -/
+theorem hasSum_trace {ι : Type*} (hE : HasApproximationProperty 𝕜 E)
+    {f : ι → StrongDual 𝕜 E} {x : ι → E} {T : NuclearOperator 𝕜 E E}
+    (hfx : Summable fun i ↦ ‖f i‖ * ‖x i‖)
+    (hT : ∀ v, HasSum (fun i ↦ f i v • x i) (T.toContinuousLinearMap v)) :
+    HasSum (fun i ↦ f i (x i)) (trace hE T) := by
+  let t (i : ι) : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E :=
+    (⟨f i ⊗ₜ x i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)
+  have hu : Summable t :=
+    .of_norm_bounded hfx fun i ↦ CompletedProjectiveTensor.norm_coe_tmul_le (f i) (x i)
+  have hTu : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E (∑' i, t i) =
+      T.toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun v ↦
+      (CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply hu.hasSum v).unique (hT v)
+  rw [trace_eq_of_toContinuousLinearMap_eq hE hTu]
+  exact CompletedProjectiveTensor.hasSum_trace hu.hasSum
 
 end NuclearOperator
 
 end Banach
+
+section TraceCyclicity
+
+variable {𝕜 D E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup D] [NormedSpace 𝕜 D] [CompleteSpace D]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+
+/-- Cyclicity of the nuclear trace: for a bounded operator `A : E →L[𝕜] D` and a nuclear operator
+`T : D →L[𝕜] E` between Banach spaces with the approximation property, `A ∘L T` and `T ∘L A` have
+the same nuclear trace. -/
+theorem NuclearOperator.trace_mk'_comp_comm (hD : HasApproximationProperty 𝕜 D)
+    (hE : HasApproximationProperty 𝕜 E) (A : E →L[𝕜] D) {T : D →L[𝕜] E}
+    (hT : T ∈ nuclearOperators 𝕜 D E) :
+    NuclearOperator.trace hD (NuclearOperator.mk' (comp_left_mem_nuclearOperators A hT)) =
+      NuclearOperator.trace hE (NuclearOperator.mk' (comp_right_mem_nuclearOperators hT A)) := by
+  obtain ⟨u, rfl⟩ := mem_nuclearOperators.1 hT
+  have hAT : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 D D
+      (CompletedProjectiveTensor.mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A u) =
+      (NuclearOperator.mk' (comp_left_mem_nuclearOperators A hT)).toContinuousLinearMap := by
+    have hid : ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.id 𝕜 D) =
+        ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D) := by ext; rfl
+    simpa [hid] using CompletedProjectiveTensor.toContinuousLinearMap_mapL A
+      (ContinuousLinearMap.id 𝕜 D) u
+  have hTA : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E
+      (CompletedProjectiveTensor.mapL (ContinuousLinearMap.precomp 𝕜 A)
+        (ContinuousLinearMap.id 𝕜 E) u) =
+      (NuclearOperator.mk' (comp_right_mem_nuclearOperators hT A)).toContinuousLinearMap := by
+    simpa using CompletedProjectiveTensor.toContinuousLinearMap_mapL
+      (ContinuousLinearMap.id 𝕜 E) A u
+  rw [NuclearOperator.trace_eq_of_toContinuousLinearMap_eq hD hAT,
+    NuclearOperator.trace_eq_of_toContinuousLinearMap_eq hE hTA,
+    CompletedProjectiveTensor.trace_mapL_precomp]
+
+end TraceCyclicity
 
 end TauCeti
