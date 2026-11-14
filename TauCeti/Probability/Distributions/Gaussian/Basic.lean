@@ -35,9 +35,10 @@ by parts.
   reflection `gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x` and evenness at zero mean.
 * `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
   mean.
-* `TauCeti.Probability.gaussianPDFReal_self`, `TauCeti.Probability.gaussianPDFReal_le_self`, and
-  `TauCeti.Probability.gaussianPDFReal_le` — the density attains its global maximum
-  `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when `v = 0`).
+* `TauCeti.Probability.gaussianPDFReal_self`, `TauCeti.Probability.gaussianPDFReal_le_self`,
+  `TauCeti.Probability.gaussianPDFReal_le`, and `TauCeti.Probability.gaussianPDF_le` — the density
+  attains its global maximum `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when
+  `v = 0`).
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
@@ -117,6 +118,12 @@ every variance `v`, including `v = 0` where both sides vanish. -/
 theorem gaussianPDFReal_le (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
     gaussianPDFReal μ v x ≤ (√(2 * π * (v : ℝ)))⁻¹ :=
   gaussianPDFReal_self μ v ▸ gaussianPDFReal_le_self μ v x
+
+/-- Uniform upper bound on the `ℝ≥0∞`-valued Gaussian density `gaussianPDF`, valid at every
+variance `v` (including `v = 0`, where both sides vanish). -/
+theorem gaussianPDF_le (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
+    gaussianPDF μ v x ≤ ENNReal.ofReal (√(2 * π * (v : ℝ)))⁻¹ :=
+  ENNReal.ofReal_le_ofReal (gaussianPDFReal_le μ v x)
 
 /-- The standard Gaussian density decays faster than `1 / |x|`: `x φ(x) → 0` as `|x| → ∞`. -/
 theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :

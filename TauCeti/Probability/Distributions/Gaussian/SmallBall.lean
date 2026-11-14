@@ -45,12 +45,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
-/-- Uniform upper bound on the `ℝ≥0∞`-valued Gaussian density `gaussianPDF`, valid at every
-variance `v` (including `v = 0`, where both sides vanish). -/
-theorem gaussianPDF_le (μ : ℝ) (v : ℝ≥0) (x : ℝ) :
-    gaussianPDF μ v x ≤ ENNReal.ofReal (√(2 * π * (v : ℝ)))⁻¹ :=
-  ENNReal.ofReal_le_ofReal (gaussianPDFReal_le μ v x)
-
 /-- At nonzero variance, `gaussianReal μ v` is dominated by `(√(2 * π * v))⁻¹` times Lebesgue
 measure on every subset of `ℝ` (measurable or not). The hypothesis `v ≠ 0` is required because
 `gaussianReal μ 0 = Measure.dirac μ` gives mass `1` to the Lebesgue-null singleton `{μ}`. -/
@@ -164,14 +158,10 @@ theorem measure_forall_abs_sub_le_of_pi_gaussianReal {ι : Type*} [Fintype ι]
     (hv : ∀ i, v i ≠ 0) (x r : ι → ℝ) :
     P {ω | ∀ i, |X ω i - x i| ≤ r i} ≤
       ∏ i, ENNReal.ofReal (√(2 / (π * (v i : ℝ))) * r i) := by
-  have hmeas : MeasurableSet {y : ι → ℝ | ∀ i, |y i - x i| ≤ r i} := by
-    have hset : {y : ι → ℝ | ∀ i, |y i - x i| ≤ r i} =
-        ⋂ i : ι, {y : ι → ℝ | |y i - x i| ≤ r i} := by
-      ext y
-      simp
-    rw [hset]
-    exact MeasurableSet.iInter fun i ↦ measurableSet_le
-      (continuous_abs.comp ((continuous_apply i).sub continuous_const)).measurable measurable_const
+  have hmeas : MeasurableSet {y : ι → ℝ | ∀ i, |y i - x i| ≤ r i} :=
+    MeasurableSet.univ_pi' (t := fun i ↦ {z : ℝ | |z - x i| ≤ r i}) fun i ↦
+      measurableSet_le (continuous_abs.comp (continuous_id.sub continuous_const)).measurable
+        measurable_const
   rw [hX.measure_eq hmeas]
   exact pi_gaussianReal_forall_abs_sub_le μ hv x r
 
