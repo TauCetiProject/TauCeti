@@ -840,6 +840,26 @@ theorem whitneySumTotalSpaceHomeomorph_naturality {A A' D D' : FiniteRankBundleC
   exact congrArg (TotalSpace.mk' ((Fin A'.rank → 𝕜) × (Fin D'.rank → 𝕜)) x)
     (whitneySumFiberEquiv_fiberMap_whitneyMap f g x v)
 
+/-- A map into `(whitneySum A D).core.TotalSpace` is continuous if and only if its two coordinate
+blocks under `splitCoords` define continuous maps into `A.core.TotalSpace` and
+`D.core.TotalSpace`. -/
+theorem continuous_mk_whitneySum_iff {Y : Type*} [TopologicalSpace Y]
+    (A D : FiniteRankBundleCore 𝕜 B) {b : Y → B} {s : Y → Fin (A.rank + D.rank) → 𝕜} :
+    Continuous (fun y => (⟨b y, s y⟩ : (whitneySum A D).core.TotalSpace)) ↔
+      Continuous (fun y =>
+        (⟨b y, (splitCoords (𝕜 := 𝕜) A.rank D.rank (s y)).1⟩ : A.core.TotalSpace)) ∧
+      Continuous (fun y =>
+        (⟨b y, (splitCoords (𝕜 := 𝕜) A.rank D.rank (s y)).2⟩ : D.core.TotalSpace)) := by
+  rw [(whitneySumTotalSpaceHomeomorph A D).isInducing.continuous_iff,
+    (FiberBundle.Prod.isInducing_diag (Fin A.rank → 𝕜) A.core.Fiber
+      (Fin D.rank → 𝕜) D.core.Fiber).continuous_iff]
+  simp only [Function.comp_def, whitneySumTotalSpaceHomeomorph_apply, continuous_prodMk]
+  exact and_congr
+    (continuous_congr fun y => TotalSpace.mk_inj.mpr
+      (congrArg Prod.fst (whitneySumFiberEquiv_apply A D (b y) (s y))))
+    (continuous_congr fun y => TotalSpace.mk_inj.mpr
+      (congrArg Prod.snd (whitneySumFiberEquiv_apply A D (b y) (s y))))
+
 end MathlibProd
 
 end TauCeti.FiniteRankBundleCore

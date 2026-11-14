@@ -279,4 +279,15 @@ theorem pullbackHomeomorph_naturality {A D : FiniteRankBundleCore 𝕜 Y} (a : A
       (congrArg a.totalSpaceMap
         (Pullback.lift_mk (E := A.core.Fiber) (F := Fin A.rank → 𝕜) f x v).symm))
 
+/-- A map into `(A.pullback f).core.TotalSpace` is continuous if and only if its base map `g` is
+continuous and the lifted section over `f ∘ g` into `A.core.TotalSpace` is continuous. -/
+theorem continuous_mk_pullback_iff (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    {g : Z → X} {t : Z → Fin A.rank → 𝕜} :
+    Continuous (fun z => (⟨g z, t z⟩ : (A.pullback f).core.TotalSpace)) ↔
+      Continuous g ∧ Continuous (fun z => (⟨f (g z), t z⟩ : A.core.TotalSpace)) := by
+  rw [(A.pullbackHomeomorph f).isInducing.continuous_iff,
+    (inducing_pullbackTotalSpaceEmbedding (Fin A.rank → 𝕜) A.core.Fiber f).continuous_iff]
+  simp only [Function.comp_def, pullbackHomeomorph_apply,
+    pullbackTotalSpaceEmbedding, continuous_prodMk]
+
 end TauCeti.FiniteRankBundleCore
