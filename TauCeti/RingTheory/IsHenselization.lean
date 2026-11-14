@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.RingTheory.Henselian.IndEtale
+public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RingTheory.Henselian.Quotient
@@ -129,10 +130,11 @@ theorem isUnit_iff (ψ : A →ₐ[R] L) [IsHenselization ψ] (a : A) :
   ⟨fun ha ↦ (ha.map ψ).ne_zero,
     fun ha ↦ isUnit_of_map_unit ψ a (isUnit_iff_ne_zero.mpr ha)⟩
 
-/-- Over a local ring `R` with a local point `R → L`, every henselization at `R → L` is faithfully
-flat over `R`. -/
-theorem faithfullyFlat [IsLocalRing R] (ψ : A →ₐ[R] L) [IsHenselization ψ]
+/-- Over a ring `R` with a local point `R → L` (which forces `R` to be local), every henselization
+at `R → L` is faithfully flat over `R`. -/
+theorem faithfullyFlat (ψ : A →ₐ[R] L) [IsHenselization ψ]
     [hRL : IsLocalHom (algebraMap R L)] : Module.FaithfullyFlat R A := by
+  have := (algebraMap R L).domain_isLocalRing
   have := isLocalRing ψ
   have := flat ψ
   have : IsLocalHom (ψ.toRingHom.comp (algebraMap R A)) := ψ.comp_algebraMap.symm ▸ hRL
@@ -159,25 +161,25 @@ theorem comap_maximalIdeal (ψ : A →ₐ[R] L) [IsHenselization ψ] :
 /-- The `R`-algebra isomorphism `κ(A) ≃ₐ[R] L` induced by the surjective map `ψ : A →ₐ[R] L`. -/
 noncomputable def residueFieldEquiv (ψ : A →ₐ[R] L) [h : IsHenselization ψ] :
     ResidueField A ≃ₐ[R] L :=
-  (Ideal.quotientEquivAlgOfEq R (ker_eq_maximalIdeal ψ).symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective h.surjective)
+  residueFieldAlgEquivOfSurjective h.surjective
+
+/-- `residueFieldEquiv ψ` unfolds to `residueFieldAlgEquivOfSurjective` applied to
+`IsHenselization.surjective`. -/
+theorem residueFieldEquiv_def (ψ : A →ₐ[R] L) [h : IsHenselization ψ] :
+    residueFieldEquiv ψ = residueFieldAlgEquivOfSurjective h.surjective :=
+  (rfl)
 
 /-- `residueFieldEquiv ψ` sends the residue of `a` to `ψ a`. -/
 @[simp]
 theorem residueFieldEquiv_residue (ψ : A →ₐ[R] L) [h : IsHenselization ψ] (a : A) :
-    residueFieldEquiv ψ (residue A a) = ψ a := by
-  have hker : maximalIdeal A = RingHom.ker ψ := (ker_eq_maximalIdeal ψ).symm
-  -- `ResidueField A` is the quotient by `maximalIdeal A` with quotient map `residue A`; rewriting
-  -- with `residue_def` would alter the dependent type, so pass to the quotient form directly.
-  change Ideal.quotientKerAlgEquivOfSurjective h.surjective
-    (Ideal.quotientEquivAlgOfEq R hker (Ideal.Quotient.mk _ a)) = ψ a
-  rw [Ideal.quotientEquivAlgOfEq_mk, Ideal.quotientKerAlgEquivOfSurjective_mk]
+    residueFieldEquiv ψ (residue A a) = ψ a :=
+  residueFieldAlgEquivOfSurjective_residue h.surjective a
 
 /-- The inverse of `residueFieldEquiv ψ` sends `ψ a` to the residue of `a`. -/
 @[simp]
-theorem residueFieldEquiv_symm_apply (ψ : A →ₐ[R] L) [IsHenselization ψ] (a : A) :
+theorem residueFieldEquiv_symm_apply (ψ : A →ₐ[R] L) [h : IsHenselization ψ] (a : A) :
     (residueFieldEquiv ψ).symm (ψ a) = residue A a :=
-  (residueFieldEquiv ψ).symm_apply_eq.mpr (residueFieldEquiv_residue ψ a).symm
+  residueFieldAlgEquivOfSurjective_symm_apply h.surjective a
 
 end IsLocalRing
 
@@ -185,15 +187,13 @@ end Basic
 
 section Lift
 
-/-- **Maps out of an ind-étale algebra into a henselian local ring.** If `A` is ind-étale over
-`R`, `ψ : A → L` is an `R`-algebra map to a field and `χ : B → L` is a surjective `R`-algebra map
-from a henselian local ring, there is exactly one `R`-algebra map `f : A → B` with `χ ∘ f = ψ`.
-Stacks, Lemma 10.154.6 (08HR), in its own generality: stage by stage (Lemma 10.153.11, 08HQ, over
-the localisation of `R` at `ker (R → L)`) for the prime `ker ψ` of the étale stage and the residue
-map into `L ≅ κ(B)`. Neither henselianity of `A` nor surjectivity of `ψ` is needed, so the theorem
-applies to every étale stage `A_i` of a henselization as well as to the henselization itself.
-Without the surjectivity of `χ` there is in general no such map: `L` need not embed in `κ(B)` over
-`R`. For `A` the strict henselization, `f` is `TauCeti.StrictHenselization.lift`. -/
+/-- **Maps out of an ind-étale algebra into a Henselian local ring.** If `A` is ind-étale over
+`R`, `ψ : A → L` is an `R`-algebra map to a field, and `χ : B → L` is a surjective `R`-algebra map
+from a Henselian local ring, there is a unique `R`-algebra map `f : A → B` with `χ ∘ f = ψ`
+(`IsHenselization.lift`), Stacks, Lemma 10.154.6 (08HR). Neither Henselianity of `A` nor
+surjectivity of `ψ` is needed, so the theorem applies to every étale stage `A_i` of a henselization
+as well as to the henselization itself. Without surjectivity of `χ` there is in general no such
+map, as `L` need not embed in `κ(B)` over `R`. -/
 @[stacks 08HR "for an ind-étale algebra and the residue map induced by ψ and χ"]
 theorem existsUnique_comp_eq {R A : Type u} {B L : Type*} [CommRing R]
     [CommRing A] [Algebra R A] [Algebra.IndEtale R A] [CommRing B] [Algebra R B]
@@ -234,7 +234,7 @@ theorem lift_self [HenselianLocalRing A] (ψ : A →ₐ[R] L) (hψ : Function.Su
     lift ψ hψ = AlgHom.id R A :=
   (eq_lift hψ (AlgHom.comp_id ψ)).symm
 
-/-- Compatible lifts compose: lifting `ψ` to `B` and then `χ` to `C` equals lifting `ψ` directly
+/-- Compatible lifts compose: lifting `ψ` to `B'` and then `χ` to `C` equals lifting `ψ` directly
 to `C`. -/
 @[simp]
 theorem lift_comp_lift {B' : Type u} {C : Type v} [CommRing B'] [Algebra R B']
@@ -243,6 +243,15 @@ theorem lift_comp_lift {B' : Type u} {C : Type v} [CommRing B'] [Algebra R B']
     {ω : C →ₐ[R] L} (hω : Function.Surjective ω) :
     (lift χ hω).comp (lift ψ hχ) = lift ψ hω :=
   eq_lift hω (by rw [← AlgHom.comp_assoc, comp_lift, comp_lift])
+
+/-- Elementwise form of `lift_comp_lift`. -/
+@[simp]
+theorem lift_apply_lift {B' : Type u} {C : Type v} [CommRing B'] [Algebra R B']
+    [Algebra.IndEtale R B'] [HenselianLocalRing B'] [CommRing C] [Algebra R C]
+    [HenselianLocalRing C] (ψ : A →ₐ[R] L) {χ : B' →ₐ[R] L} (hχ : Function.Surjective χ)
+    {ω : C →ₐ[R] L} (hω : Function.Surjective ω) (a : A) :
+    lift χ hω (lift ψ hχ a) = lift ψ hω a :=
+  DFunLike.congr_fun (lift_comp_lift ψ hχ hω) a
 
 /-- When `ψ` is a local homomorphism (in particular whenever `IsHenselization ψ` holds), the lift
 `lift ψ hχ` is a local homomorphism. -/
@@ -255,11 +264,10 @@ end Lift
 section Uniqueness
 
 /-- **Uniqueness of henselizations.** If `ψ : A → L` and `χ : B → L` are henselizations of `R` at
-the same point, every `R`-algebra map `f : A → B` with `χ ∘ f = ψ` is bijective. With
-`existsUnique_comp_eq` applied to the ind-étale `A`, which gives that exactly one such `f` exists,
-this is Stacks, Lemma 10.154.7 (08HT); the comparison isomorphism is `AlgEquiv.ofBijective` of
-that map, for `A` the strict henselization of `TauCeti.StrictHenselization.lift`, and no
-isomorphism is chosen. -/
+the same point, every `R`-algebra map `f : A → B` with `χ ∘ f = ψ` is bijective. Together with
+`existsUnique_comp_eq`, which supplies the unique compatible map `lift ψ hχ.surjective`, this is
+Stacks, Lemma 10.154.7 (08HT); `IsHenselization.algEquiv` packages that map into an `R`-algebra
+isomorphism `A ≃ₐ[R] B`. -/
 @[stacks 08HT "bijectivity of every compatible map"]
 theorem bijective_of_comp_eq {R A B : Type u} {L : Type*} [CommRing R]
     [CommRing A] [Algebra R A] [CommRing B] [Algebra R B] [Field L] [Algebra R L]
@@ -269,14 +277,9 @@ theorem bijective_of_comp_eq {R A B : Type u} {L : Type*} [CommRing R]
   have := hψ.indEtale
   have := hχ.henselianLocalRing
   have := hχ.indEtale
-  let g : B →ₐ[R] A := lift χ hψ.surjective
-  have hfg : f.comp g = AlgHom.id R B :=
-    (existsUnique_comp_eq χ χ hχ.surjective).unique
-      (by rw [← AlgHom.comp_assoc, hf, comp_lift]) (AlgHom.comp_id χ)
-  have hgf : g.comp f = AlgHom.id R A :=
-    (existsUnique_comp_eq ψ ψ hψ.surjective).unique
-      (by rw [← AlgHom.comp_assoc, comp_lift, hf]) (AlgHom.comp_id ψ)
-  exact (AlgEquiv.ofAlgHom f g hfg hgf).bijective
+  rw [eq_lift hχ.surjective hf]
+  exact (AlgEquiv.ofAlgHom (lift ψ hχ.surjective) (lift χ hψ.surjective)
+    (by simp) (by simp)).bijective
 
 variable {R A B C : Type u} {L : Type w} [CommRing R]
   [CommRing A] [Algebra R A] [CommRing B] [Algebra R B] [CommRing C] [Algebra R C]
@@ -352,6 +355,13 @@ theorem algEquiv_trans (ψ : A →ₐ[R] L) (χ : B →ₐ[R] L) (ω : C →ₐ[
     (algEquiv ψ χ).trans (algEquiv χ ω) = algEquiv ψ ω :=
   eq_algEquiv (AlgHom.ext fun a ↦ by simp)
 
+/-- Elementwise form of `algEquiv_trans`. -/
+@[simp]
+theorem algEquiv_apply_algEquiv (ψ : A →ₐ[R] L) (χ : B →ₐ[R] L) (ω : C →ₐ[R] L)
+    [IsHenselization ψ] [IsHenselization χ] [IsHenselization ω] (a : A) :
+    algEquiv χ ω (algEquiv ψ χ a) = algEquiv ψ ω a := by
+  rw [← AlgEquiv.trans_apply, algEquiv_trans]
+
 end Uniqueness
 
 section Permanence
@@ -366,12 +376,12 @@ theorem of_surjective_of_henselianLocalRing {R : Type u} {L : Type*} [CommRing R
   surjective := hψ
 
 /-- A Henselian local ring `R` is its own henselization at the residue map `R →ₐ[R] κ(R)`. -/
-instance isHenselization_toResidueField (R : Type u) [CommRing R] [HenselianLocalRing R] :
+instance ofId_residueField (R : Type u) [CommRing R] [HenselianLocalRing R] :
     IsHenselization (Algebra.ofId R (ResidueField R)) :=
   of_surjective_of_henselianLocalRing _ residue_surjective
 
 /-- A field `K` is its own henselization at the identity map `K →ₐ[K] K`. -/
-instance isHenselization_id (K : Type u) [Field K] : IsHenselization (AlgHom.id K K) :=
+instance id (K : Type u) [Field K] : IsHenselization (AlgHom.id K K) :=
   of_surjective_of_henselianLocalRing _ Function.surjective_id
 
 /-- Transport `IsHenselization` along an `R`-algebra isomorphism `e : A ≃ₐ[R] B`. -/
@@ -386,9 +396,18 @@ theorem of_algEquiv {R A B : Type u} {L : Type*} [CommRing R] [CommRing A] [Alge
       indEtale := Algebra.IndEtale.of_equiv e
       surjective := h.surjective.comp e.symm.surjective }
 
+/-- Pre-composing the pointing map with an `R`-algebra isomorphism preserves `IsHenselization`. -/
+@[simp]
+theorem comp_algEquiv_iff {R A B : Type u} {L : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    [CommRing B] [Algebra R B] [Field L] [Algebra R L] (ψ : B →ₐ[R] L) (e : A ≃ₐ[R] B) :
+    IsHenselization (ψ.comp e.toAlgHom) ↔ IsHenselization ψ := by
+  have hEq : (ψ.comp e.toAlgHom).comp e.symm.toAlgHom = ψ := AlgHom.ext fun b ↦ by simp
+  exact ⟨fun h ↦ hEq ▸ of_algEquiv (h := h) e, fun _ ↦ of_algEquiv e.symm⟩
+
 /-- Post-composing the pointing map with an `R`-algebra isomorphism of fields preserves
 `IsHenselization`. -/
-theorem comp_algEquiv_iff {R A : Type u} {L L' : Type*} [CommRing R] [CommRing A] [Algebra R A]
+@[simp]
+theorem algEquiv_comp_iff {R A : Type u} {L L' : Type*} [CommRing R] [CommRing A] [Algebra R A]
     [Field L] [Algebra R L] [Field L'] [Algebra R L'] (e : L ≃ₐ[R] L') (ψ : A →ₐ[R] L) :
     IsHenselization (e.toAlgHom.comp ψ) ↔ IsHenselization ψ :=
   ⟨fun h ↦ ⟨h.henselianLocalRing, h.indEtale, fun x ↦ by

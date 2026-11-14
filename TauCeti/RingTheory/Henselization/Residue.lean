@@ -11,9 +11,18 @@ public import TauCeti.RingTheory.Ideal.Quotient.Colimit
 /-!
 # The closed fibre of a henselization
 
-The henselization of a pair has the same quotient by its extended ideal as the original ring.
-This identifies the closed fibre before proving that the colimit pair is henselian, by applying
-`Ideal.quotientColimitEquiv` to the small-model neighbourhood diagram.
+The henselization of a pair has the same quotient by its extended ideal as the original ring
+(`quotientEquiv`), giving a canonical surjective `R`-algebra map `toQuotient` onto `R ⧸ I` with
+kernel `extended I`. This identifies the closed fibre before proving that the colimit pair is
+henselian, by applying `Ideal.quotientColimitEquiv` to the small-model neighbourhood diagram.
+
+## Main declarations
+
+* `TauCeti.Henselization.quotientEquiv`: the canonical `R`-algebra isomorphism
+  `(R ⧸ I) ≃ₐ[R] (algebra I ⧸ extended I)`.
+* `TauCeti.Henselization.quotient_bijective`: bijectivity of `reducedMap I (algebra I)`.
+* `TauCeti.Henselization.toQuotient`: the canonical surjective `R`-algebra map
+  `algebra I →ₐ[R] R ⧸ I` with kernel `extended I`.
 
 ## References
 
@@ -30,7 +39,9 @@ namespace TauCeti.Henselization
 
 variable {R : Type u} [CommRing R]
 
-private noncomputable def residueEquiv (I : Ideal R) :
+/-- The canonical `R`-algebra isomorphism `(R ⧸ I) ≃ₐ[R] (algebra I ⧸ extended I)` induced by the
+structure map of the henselization. -/
+noncomputable def quotientEquiv (I : Ideal R) :
     (R ⧸ I) ≃ₐ[R] (algebra I ⧸ extended I) :=
   (I.quotientColimitEquiv (diagram I) (fun B ↦ by
     have he : algebraMap (R ⧸ I)
@@ -49,17 +60,58 @@ private noncomputable def residueEquiv (I : Ideal R) :
         rw [Ideal.map_map]
         exact congrArg (I.map ·) (algebraIsoColimitDiagram I).inv.hom.comp_algebraMap.symm))
 
+/-- `quotientEquiv I` sends the class of `r` to the class of `algebraMap R (algebra I) r`. -/
+@[simp]
+theorem quotientEquiv_mk (I : Ideal R) (r : R) :
+    quotientEquiv I (Ideal.Quotient.mk I r) =
+      Ideal.Quotient.mk (extended I) (algebraMap R (algebra I) r) := by
+  simp [quotientEquiv]
+
 /-- The canonical map from the quotient of a ring by an ideal to the quotient of its
 henselization by the extended ideal is bijective. -/
 theorem quotient_bijective (I : Ideal R) :
     Function.Bijective (reducedMap I (algebra I)) := by
-  have he : reducedMap I (algebra I) = (residueEquiv I).toRingEquiv.toRingHom := by
+  have he : reducedMap I (algebra I) = (quotientEquiv I).toRingEquiv.toRingHom := by
     apply Ideal.Quotient.ringHom_ext
     apply RingHom.ext
     intro r
-    simp [reducedMap_mk, residueEquiv]
+    simp [reducedMap_mk]
   rw [he]
-  exact (residueEquiv I).bijective
+  exact (quotientEquiv I).bijective
+
+/-- The canonical surjective `R`-algebra map `algebra I →ₐ[R] R ⧸ I` factoring the quotient map
+modulo `extended I` through `(quotientEquiv I).symm`. -/
+noncomputable def toQuotient (I : Ideal R) : algebra I →ₐ[R] R ⧸ I :=
+  (quotientEquiv I).symm.toAlgHom.comp (Ideal.Quotient.mkₐ R (extended I))
+
+/-- The inverse of `quotientEquiv I` sends the class modulo `extended I` of `x` to
+`toQuotient I x`. -/
+@[simp]
+theorem quotientEquiv_symm_mk (I : Ideal R) (x : algebra I) :
+    (quotientEquiv I).symm (Ideal.Quotient.mk (extended I) x) = toQuotient I x := by
+  simp [toQuotient]
+
+/-- Composing `toQuotient I` with `quotientEquiv I` recovers the quotient map modulo
+`extended I`. -/
+@[simp]
+theorem quotientEquiv_toQuotient (I : Ideal R) (x : algebra I) :
+    quotientEquiv I (toQuotient I x) = Ideal.Quotient.mk (extended I) x :=
+  (quotientEquiv I).apply_symm_apply _
+
+/-- `toQuotient I` is surjective. -/
+theorem toQuotient_surjective (I : Ideal R) : Function.Surjective (toQuotient I) :=
+  (quotientEquiv I).symm.surjective.comp Ideal.Quotient.mk_surjective
+
+/-- The kernel of `toQuotient I` is the extended ideal `extended I`. -/
+@[simp]
+theorem ker_toQuotient (I : Ideal R) : RingHom.ker (toQuotient I) = extended I := by
+  ext x
+  rw [RingHom.mem_ker, ← (quotientEquiv I).map_eq_zero_iff]
+  simp [Ideal.Quotient.eq_zero_iff_mem]
+
+/-- `toQuotient I` is the unique `R`-algebra map `algebra I →ₐ[R] R ⧸ I`. -/
+theorem eq_toQuotient (I : Ideal R) (f : algebra I →ₐ[R] R ⧸ I) : f = toQuotient I :=
+  hom_ext fun B ↦ B.property.algHom_ext (by simp [Ideal.Quotient.algebraMap_eq])
 
 /-- An element belongs to the extended ideal of the henselization exactly when it comes from
 the extended ideal at some étale neighbourhood. -/

@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 public import TauCeti.RingTheory.StrictHenselization.Local
 public import TauCeti.FieldTheory.IsSepClosed
-import TauCeti.RingTheory.StrictHenselization.Etale
+public import TauCeti.RingTheory.StrictHenselization.Etale
 
 /-!
 # The residue field of the strict henselization
@@ -52,27 +53,25 @@ induced by `toTarget`. For a separable closure `Ω` of the residue field of `R`,
 the residue field of the strict henselization of `R` with `Ω`. -/
 @[stacks 04GP "(3)"]
 noncomputable def residueFieldEquiv : ResidueField (algebra R Ω) ≃ₐ[R] Ω :=
-  (Ideal.quotientEquivAlgOfEq R (ker_toTarget_eq_maximalIdeal R Ω).symm).trans
-    (Ideal.quotientKerAlgEquivOfSurjective (toTarget_surjective R Ω))
+  residueFieldAlgEquivOfSurjective (toTarget_surjective R Ω)
+
+/-- `residueFieldEquiv R Ω` is `residueFieldAlgEquivOfSurjective` applied to
+`toTarget_surjective R Ω`. -/
+theorem residueFieldEquiv_def :
+    residueFieldEquiv R Ω = residueFieldAlgEquivOfSurjective (toTarget_surjective R Ω) :=
+  (rfl)
 
 /-- `residueFieldEquiv` sends the residue of `x` to `toTarget x`. -/
 @[simp]
 theorem residueFieldEquiv_residue (x : algebra R Ω) :
-    residueFieldEquiv R Ω (residue (algebra R Ω) x) = toTarget R Ω x := by
-  have h : maximalIdeal (algebra R Ω) = RingHom.ker (toTarget R Ω) :=
-    (ker_toTarget_eq_maximalIdeal R Ω).symm
-  -- `ResidueField` is by definition the quotient by the maximal ideal, with `residue` its
-  -- quotient map (`residue_def`). Rewriting with `residue_def` would change the type of the
-  -- argument, so state the unfolded form directly.
-  change Ideal.quotientKerAlgEquivOfSurjective (toTarget_surjective R Ω)
-    (Ideal.quotientEquivAlgOfEq R h (Ideal.Quotient.mk _ x)) = _
-  rw [Ideal.quotientEquivAlgOfEq_mk, Ideal.quotientKerAlgEquivOfSurjective_mk]
+    residueFieldEquiv R Ω (residue (algebra R Ω) x) = toTarget R Ω x :=
+  residueFieldAlgEquivOfSurjective_residue (toTarget_surjective R Ω) x
 
 /-- The inverse of `residueFieldEquiv` sends `toTarget x` to the residue of `x`. -/
 @[simp]
 theorem residueFieldEquiv_symm_toTarget (x : algebra R Ω) :
     (residueFieldEquiv R Ω).symm (toTarget R Ω x) = residue (algebra R Ω) x :=
-  (residueFieldEquiv R Ω).symm_apply_eq.mpr (residueFieldEquiv_residue R Ω x).symm
+  residueFieldAlgEquivOfSurjective_symm_apply (toTarget_surjective R Ω) x
 
 /-- If `Ω` is separably closed, so is the residue field of the colimit of pointed étale
 neighbourhoods. Together with `henselianLocalRing`, this says that the strict henselization of a

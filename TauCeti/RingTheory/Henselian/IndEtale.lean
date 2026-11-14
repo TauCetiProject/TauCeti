@@ -67,56 +67,23 @@ bijection from `R`-algebra maps `A → S` to `R`-algebra maps `A → S ⧸ J`. T
 theorem comp_bijective_of_indEtale :
     Function.Bijective ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) := by
   obtain ⟨ι, _, _, pres, hD⟩ := Algebra.IndEtale.ind_etale (R := R) (S := A)
-  -- Identify `A` with `SmallFilteredAlgebraColimit.algebra pres.diag` via its colimit cocone so
-  -- stagewise extensionality and descent apply to targets in `Type v`.
-  let fwd : SmallFilteredAlgebraColimit.algebra pres.diag →ₐ[R] A :=
-    SmallFilteredAlgebraColimit.desc pres.diag pres.cocone
-  let c₀ : Cocone pres.diag :=
-    { pt := SmallFilteredAlgebraColimit.algebra pres.diag
-      ι :=
-        { app i := CommAlgCat.ofHom (SmallFilteredAlgebraColimit.stage pres.diag i)
-          naturality {i j} u := by
-            ext1
-            exact SmallFilteredAlgebraColimit.stage_naturality pres.diag u } }
-  let bwd : A →ₐ[R] SmallFilteredAlgebraColimit.algebra pres.diag := (pres.isColimit.desc c₀).hom
-  have hbwd_stage (i : ι) :
-      bwd.comp (pres.ι.app i).hom = SmallFilteredAlgebraColimit.stage pres.diag i := by
-    have h := congrArg CommAlgCat.Hom.hom (pres.isColimit.fac c₀ i)
-    rwa [CommAlgCat.hom_comp] at h
-  have hfwd_bwd : fwd.comp bwd = AlgHom.id R A := by
-    have h : (CommAlgCat.ofHom (fwd.comp bwd) : CommAlgCat.of R A ⟶ CommAlgCat.of R A) =
-        𝟙 (CommAlgCat.of R A) :=
-      pres.isColimit.hom_ext fun i ↦ by
-        ext1
-        rw [CommAlgCat.hom_comp, CommAlgCat.hom_ofHom, AlgHom.comp_assoc, hbwd_stage,
-          SmallFilteredAlgebraColimit.desc_comp_stage, Category.comp_id]
-    simpa using congrArg CommAlgCat.Hom.hom h
   -- On each étale stage `Dᵢ` of the presentation, reduction modulo `J` is bijective.
   have hst (i : ι) :
       Function.Bijective ((Ideal.Quotient.mkₐ R J).comp : (pres.diag.obj i →ₐ[R] S) → _) :=
     have := hD i
     comp_bijective_of_algebra J
-  -- Two maps out of `A` into a `Type v` target agree once they agree on every stage.
-  have hext {T : Type v} [Semiring T] [Algebra R T] {f g : A →ₐ[R] T}
-      (h : ∀ i, f.comp (pres.ι.app i).hom = g.comp (pres.ι.app i).hom) : f = g := by
-    have hfe : f.comp fwd = g.comp fwd :=
-      SmallFilteredAlgebraColimit.hom_ext pres.diag fun i ↦ by
-        rw [AlgHom.comp_assoc, AlgHom.comp_assoc, SmallFilteredAlgebraColimit.desc_comp_stage]
-        exact h i
-    refine AlgHom.ext fun a ↦ ?_
-    have ha : fwd (bwd a) = a := DFunLike.congr_fun hfwd_bwd a
-    simpa [AlgHom.comp_apply, ha] using DFunLike.congr_fun hfe (bwd a)
-  refine ⟨fun f g hfg ↦ hext fun i ↦ (hst i).1 ?_, fun ψ ↦ ?_⟩
+  refine ⟨fun f g hfg ↦
+    SmallFilteredAlgebraColimit.hom_ext_of_isColimit pres.isColimit fun i ↦ (hst i).1 ?_,
+    fun ψ ↦ ?_⟩
   · simp only [← AlgHom.comp_assoc, hfg]
   -- Lift `ψ` on each stage, and glue the lifts, which are compatible by uniqueness.
   choose φ hφ using fun i ↦ (hst i).2 (ψ.comp (pres.ι.app i).hom)
   have hcompat {i j : ι} (u : i ⟶ j) : (φ j).comp (pres.diag.map u).hom = φ i :=
     (hst i).1 <| by
       rw [← AlgHom.comp_assoc, hφ, hφ, AlgHom.comp_assoc, ← CommAlgCat.hom_comp, pres.w]
-  refine ⟨(SmallFilteredAlgebraColimit.descOfCompatible pres.diag φ hcompat).comp bwd,
-    hext fun i ↦ ?_⟩
-  rw [AlgHom.comp_assoc, AlgHom.comp_assoc, hbwd_stage,
-    SmallFilteredAlgebraColimit.descOfCompatible_comp_stage, hφ]
+  refine ⟨SmallFilteredAlgebraColimit.descOfCompatibleOfIsColimit pres.isColimit φ hcompat,
+    SmallFilteredAlgebraColimit.hom_ext_of_isColimit pres.isColimit fun i ↦ ?_⟩
+  rw [AlgHom.comp_assoc, SmallFilteredAlgebraColimit.descOfCompatibleOfIsColimit_comp_ι, hφ]
 
 end HenselianRing
 
@@ -128,12 +95,13 @@ variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A] [Algebra.IndEtal
 /-- **Maps out of an ind-étale algebra into a Henselian local ring.** For an ind-étale `R`-algebra
 `A`, a Henselian local `R`-algebra `S`, and a surjective `R`-algebra map `χ : S → L` onto a field
 `L`, post-composition with `χ` is a bijection from `R`-algebra maps `A → S` to `R`-algebra maps
-`A → L`. The kernel of `χ` is the maximal ideal of `S`, so `S ⧸ ker χ ≃ₐ[R] L` reduces this to
-`HenselianRing.comp_bijective_of_indEtale`. -/
+`A → L`. -/
 @[stacks 08HR "bijection on algebra maps out of an ind-étale algebra"]
 theorem comp_bijective_of_surjective {L : Type w} [Field L] [Algebra R L] (χ : S →ₐ[R] L)
     (hχ : Function.Surjective χ) :
     Function.Bijective (χ.comp : (A →ₐ[R] S) → A →ₐ[R] L) := by
+  -- The kernel of `χ` is the maximal ideal of `S`, so `S ⧸ ker χ ≃ₐ[R] L` reduces this to
+  -- `HenselianRing.comp_bijective_of_indEtale`.
   have hker : RingHom.ker χ = maximalIdeal S := ker_eq_maximalIdeal χ.toRingHom hχ
   have : HenselianRing S (RingHom.ker χ) := hker.symm ▸ inferInstance
   let e : (S ⧸ RingHom.ker χ) ≃ₐ[R] L := Ideal.quotientKerAlgEquivOfSurjective hχ

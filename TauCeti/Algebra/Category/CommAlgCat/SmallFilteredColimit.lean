@@ -22,8 +22,9 @@ a descent map for each cocone. The stage maps generate the colimit algebra, so a
 it into a target in any universe are determined stagewise. When the indexing category is also
 filtered, every element of the colimit comes from some stage and every finite family comes from a
 common stage. A compatible family of stage maps into a target in any universe descends to the
-colimit algebra. These interfaces are shared by the henselization and strict-henselization
-constructions.
+colimit algebra, and any colimit cocone on the diagram inherits this stagewise extensionality and
+descent via its canonical isomorphism with the colimit algebra. These interfaces are shared by the
+henselization, strict-henselization, and ind-étale lifting constructions.
 -/
 
 public section
@@ -282,5 +283,97 @@ theorem descOfCompatible_stage_apply (stageMap : ∀ object, functor.obj object 
   DFunLike.congr_fun (descOfCompatible_comp_stage functor stageMap hcompat object) element
 
 end DescOfCompatible
+
+section IsColimit
+
+variable {functor} {cocone : Cocone functor}
+
+/-- The canonical `Base`-algebra isomorphism identifying the apex of any colimit cocone of
+`functor` with `algebra functor`. -/
+noncomputable def coconePointAlgEquiv (hc : IsColimit cocone) :
+    cocone.pt ≃ₐ[Base] algebra functor :=
+  CommAlgCat.algEquivOfIso (hc.coconePointUniqueUpToIso (colimit.isColimit functor))
+
+/-- `coconePointAlgEquiv` commutes with the cocone legs and canonical stage maps. -/
+@[simp]
+theorem coconePointAlgEquiv_comp_ι (hc : IsColimit cocone) (object : Index) :
+    (coconePointAlgEquiv hc).toAlgHom.comp (cocone.ι.app object).hom =
+      stage functor object := by
+  have h := congrArg CommAlgCat.Hom.hom
+    (hc.comp_coconePointUniqueUpToIso_hom (colimit.isColimit functor) object)
+  rwa [CommAlgCat.hom_comp] at h
+
+/-- Elementwise form of `coconePointAlgEquiv_comp_ι`. -/
+theorem coconePointAlgEquiv_ι_apply (hc : IsColimit cocone) (object : Index)
+    (element : functor.obj object) :
+    coconePointAlgEquiv hc ((cocone.ι.app object).hom element) = stage functor object element :=
+  DFunLike.congr_fun (coconePointAlgEquiv_comp_ι hc object) element
+
+/-- The inverse of `coconePointAlgEquiv` sends the canonical stage maps to the cocone legs. -/
+@[simp]
+theorem coconePointAlgEquiv_symm_comp_stage (hc : IsColimit cocone) (object : Index) :
+    (coconePointAlgEquiv hc).symm.toAlgHom.comp (stage functor object) =
+      (cocone.ι.app object).hom := by
+  ext element
+  exact (coconePointAlgEquiv hc).symm_apply_eq.mpr
+    (coconePointAlgEquiv_ι_apply hc object element).symm
+
+/-- Elementwise form of `coconePointAlgEquiv_symm_comp_stage`. -/
+@[simp]
+theorem coconePointAlgEquiv_symm_stage_apply (hc : IsColimit cocone) (object : Index)
+    (element : functor.obj object) :
+    (coconePointAlgEquiv hc).symm (stage functor object element) =
+      cocone.ι.app object element :=
+  DFunLike.congr_fun (coconePointAlgEquiv_symm_comp_stage hc object) element
+
+/-- Algebra maps out of any colimit cocone apex into a target in any universe agree when they agree
+on each stage. -/
+theorem hom_ext_of_isColimit (hc : IsColimit cocone) {Target : Type w}
+    [Semiring Target] [Algebra Base Target] {first second : cocone.pt →ₐ[Base] Target}
+    (hequal : ∀ object, first.comp (cocone.ι.app object).hom =
+      second.comp (cocone.ι.app object).hom) :
+    first = second := by
+  have h : first.comp (coconePointAlgEquiv hc).symm.toAlgHom =
+      second.comp (coconePointAlgEquiv hc).symm.toAlgHom :=
+    hom_ext functor fun object ↦ by
+      rw [AlgHom.comp_assoc, AlgHom.comp_assoc, coconePointAlgEquiv_symm_comp_stage]
+      exact hequal object
+  ext x
+  simpa using DFunLike.congr_fun h (coconePointAlgEquiv hc x)
+
+/-- A compatible family of algebra maps from the stages into a target in any universe descends to
+the apex of any colimit cocone. -/
+noncomputable def descOfCompatibleOfIsColimit (hc : IsColimit cocone) {Target : Type w}
+    [CommRing Target] [Algebra Base Target]
+    (stageMap : ∀ object, functor.obj object →ₐ[Base] Target)
+    (hcompat : ∀ {first second : Index} (morphism : first ⟶ second),
+      (stageMap second).comp (functor.map morphism).hom = stageMap first) :
+    cocone.pt →ₐ[Base] Target :=
+  (descOfCompatible functor stageMap hcompat).comp (coconePointAlgEquiv hc).toAlgHom
+
+/-- `descOfCompatibleOfIsColimit` restricts to the given map at every stage. -/
+@[simp]
+theorem descOfCompatibleOfIsColimit_comp_ι (hc : IsColimit cocone) {Target : Type w}
+    [CommRing Target] [Algebra Base Target]
+    (stageMap : ∀ object, functor.obj object →ₐ[Base] Target)
+    (hcompat : ∀ {first second : Index} (morphism : first ⟶ second),
+      (stageMap second).comp (functor.map morphism).hom = stageMap first) (object : Index) :
+    (descOfCompatibleOfIsColimit hc stageMap hcompat).comp (cocone.ι.app object).hom =
+      stageMap object := by
+  rw [descOfCompatibleOfIsColimit, AlgHom.comp_assoc, coconePointAlgEquiv_comp_ι,
+    descOfCompatible_comp_stage]
+
+/-- Elementwise form of `descOfCompatibleOfIsColimit_comp_ι`. -/
+theorem descOfCompatibleOfIsColimit_ι_apply (hc : IsColimit cocone) {Target : Type w}
+    [CommRing Target] [Algebra Base Target]
+    (stageMap : ∀ object, functor.obj object →ₐ[Base] Target)
+    (hcompat : ∀ {first second : Index} (morphism : first ⟶ second),
+      (stageMap second).comp (functor.map morphism).hom = stageMap first) (object : Index)
+    (element : functor.obj object) :
+    descOfCompatibleOfIsColimit hc stageMap hcompat ((cocone.ι.app object).hom element) =
+      stageMap object element :=
+  DFunLike.congr_fun (descOfCompatibleOfIsColimit_comp_ι hc stageMap hcompat object) element
+
+end IsColimit
 
 end TauCeti.SmallFilteredAlgebraColimit
