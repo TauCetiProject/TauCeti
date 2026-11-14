@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Analytic
 public import TauCeti.Analysis.CStarAlgebra.Action.Hom
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.PhragmenLindelof
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
@@ -55,8 +54,8 @@ the pair `π a, π b` for `φ` is one of the pair `a, b` for `φ ∘ π`, `Hom.i
 surjective `π`, for instance a quotient map by an invariant ideal, the norm condition is automatic,
 and a positive functional `ω` of the quotient dynamics is a β-KMS state exactly when `ω ∘ π` is,
 `isKMSState_comp_iff_of_surjective`. For the inclusion of a closed invariant star subalgebra this
-gives restriction of KMS states, `IsKMSState.comp` at `hS.subtypeHom`, which needs the norm
-condition: the restriction of a state need not be a state.
+gives restriction of KMS states, `IsKMSState.comp` at `IsInvariant.subtypeHom`, which needs the
+norm condition: the restriction of a state need not be a state.
 
 ## References
 
