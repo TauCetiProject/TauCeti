@@ -27,8 +27,8 @@ compact one, this topology is completely metrizable
 sections is dense. This is the parameter space of the genericity theorems for vector fields and
 other sections on a manifold that need not be compact, such as the Kupka–Smale theorem, where a
 property is shown to hold on a countable intersection of open dense sets of fields, one for each
-compact window of a countable exhaustion of the base. On a noncompact base the space is not
-normable, so the Baire property cannot come from a Banach space structure.
+compact window of a countable exhaustion of the base. On a noncompact base the space need not
+be normable, so in general the Baire property cannot come from a Banach space structure.
 
 The proof assembles three existing facts. A countable covering frame system with sigma-compact
 domains gives a metrizable topology
