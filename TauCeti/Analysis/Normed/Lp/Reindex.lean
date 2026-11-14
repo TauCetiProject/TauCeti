@@ -18,7 +18,8 @@ value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
 (`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`).
+(`TauCeti.memℓp_nat_add_iff`). Two sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a
+single one, `f 0, g 0, f 1, g 1, …` (`Memℓp.interleave`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -88,6 +89,25 @@ theorem lp.norm_le_of_forall_eq_indicator_comp (hp : p ≠ 0) {f : lp (fun _ : �
     simp_rw [h]
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp'.ne']) hg t).trans_le (lp.sum_rpow_le_norm_rpow hp' f _)
+
+/-- **Interleaving in `ℓᵖ`.** The sequence `f 0, g 0, f 1, g 1, …` alternating the terms of two
+sequences in `ℓᵖ` lies in `ℓᵖ`. -/
+theorem Memℓp.interleave {f g : ℕ → G} (hf : Memℓp f p) (hg : Memℓp g p) :
+    Memℓp (fun n ↦ if Even n then f (n / 2) else g (n / 2)) p := by
+  -- the even and the odd terms are reindexings of `f` and `g` along `n ↦ n / 2`
+  have h₁ := hf.indicator_comp (g := (· / 2)) (s := {n | Even n}) (by
+    rintro _ ⟨k, rfl⟩ _ ⟨l, rfl⟩ h
+    simp only at h
+    omega)
+  have h₂ := hg.indicator_comp (g := (· / 2)) (s := {n | ¬Even n}) (by
+    intro a ha b hb h
+    simp only [Set.mem_ofPred_eq, Nat.not_even_iff_odd] at ha hb h
+    obtain ⟨k, rfl⟩ := ha
+    obtain ⟨l, rfl⟩ := hb
+    omega)
+  convert h₁.add h₂ using 1
+  funext n
+  by_cases hn : Even n <;> simp [Set.indicator, hn]
 
 namespace TauCeti
 
