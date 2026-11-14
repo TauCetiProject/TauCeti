@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Algebra.BigOperators.Field
