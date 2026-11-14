@@ -181,6 +181,7 @@ theorem isCentralizerRegular_zero_iff [FiniteDimensional K L] :
   · rw [ad_eq_zero_of_isLieAbelian, ker_zero, finrank_top]
 
 /-- In an abelian Lie algebra every element is regular. -/
+@[simp]
 theorem isCentralizerRegular_of_isLieAbelian [IsLieAbelian L] (x : L) :
     IsCentralizerRegular K x := fun y ↦ by
   rw [ad_eq_zero_of_isLieAbelian, ad_eq_zero_of_isLieAbelian]
