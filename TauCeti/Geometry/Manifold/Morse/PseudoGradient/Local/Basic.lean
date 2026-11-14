@@ -91,6 +91,27 @@ theorem linearFlow_add (s t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
   simp only [linearFlow_apply, ← mul_assoc, ← Real.exp_add]
   ring_nf
 
+/-- The linear flow is linear in the coordinates. -/
+theorem linearFlow_smul (t a : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
+    φ.linearFlow t (a • z) = a • φ.linearFlow t z := by
+  funext i
+  simp only [linearFlow_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- The linear flow of the negated Morse chart runs the linear flow backwards. -/
+theorem neg_linearFlow (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (t : ℝ)
+    (z : Fin (Module.finrank ℝ E) → ℝ) : (φ.neg h).linearFlow t z = φ.linearFlow (-t) z := by
+  funext i
+  simp only [linearFlow_apply, neg_weight, Pi.neg_apply]
+  ring_nf
+
+/-- The linear flow of a Morse chart is jointly continuous in the coordinates and the time. -/
+theorem continuous_linearFlow_uncurry :
+    Continuous fun p : (Fin (Module.finrank ℝ E) → ℝ) × ℝ ↦ φ.linearFlow p.2 p.1 := by
+  refine continuous_pi fun i ↦ ?_
+  simp only [linearFlow_apply]
+  fun_prop
+
 /-- The linear flow solves the ODE `z' = (-wᵢ zᵢ)ᵢ`. -/
 theorem hasDerivAt_linearFlow (z : Fin (Module.finrank ℝ E) → ℝ) (t : ℝ) :
     HasDerivAt (fun t ↦ φ.linearFlow t z) (fun i ↦ -(φ.weight i * φ.linearFlow t z i)) t := by

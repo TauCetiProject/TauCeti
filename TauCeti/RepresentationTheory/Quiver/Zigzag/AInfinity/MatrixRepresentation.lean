@@ -260,7 +260,7 @@ theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
     ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
   classical
   exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
-    hn _ _
+    _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero
       f hH β hβ hn hu htr)
 
@@ -274,7 +274,7 @@ theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one [N
     ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
   classical
   exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
-    hn _ _
+    _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one
       f hH β h₀ h hn hu htr)
 
