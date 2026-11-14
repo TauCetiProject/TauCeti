@@ -12,8 +12,9 @@ public import Mathlib.CategoryTheory.CommSq
 # Subspace inclusions in `TopCat`
 
 The canonical inclusions of subspaces are monomorphisms, the inclusions of nested subspaces
-compose to an inclusion, and the restrictions of a map to subspaces (including whole-space
-`Set.univ` preimage restrictions) commute with the inclusions. These supply the monomorphism
+compose to an inclusion, the restrictions of a map to subspaces commute with the inclusions, and
+`TopCat.ofHom_restrictPreimage_univ_eq` rewrites `ofHom (f.restrictPreimage Set.univ)` on
+`Set.univ` as the subtype morphism `x ↦ ⟨f x.1, Set.mem_univ _⟩`. These supply the monomorphism
 hypotheses for the subspace inclusions in the Mayer–Vietoris pushout square, the functoriality of
 homology along nested subspaces, and the naturality of the Mayer–Vietoris sequences.
 -/
