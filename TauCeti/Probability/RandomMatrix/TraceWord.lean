@@ -19,11 +19,13 @@ matrix `Hₙ` into a sum over closed walks `w : Fin k → Fin n` of the expectat
 Each step `w t → w (t + 1)` reads the entry at the unordered position `s(w t, w (t + 1))`, its
 *edge*; a loop `w t = w (t + 1)` reads a diagonal entry.
 
-When the entries are independent and centred, a product of entries in which some edge is read
-exactly once has expectation zero: that entry is independent of all the others and has mean
-zero. Consequently only the closed walks traversing each of their edges at least twice contribute
-to the expected moment. This is the first reduction of the trace-word expansion; the remaining
-walks are then classified by their numbers of vertices and distinct edges.
+When the entries are independent, two products of entries reading disjoint sets of unordered
+positions are independent and factor in expectation. When the entries are also centred, a product
+of entries in which some edge is read exactly once has expectation zero: that entry is independent
+of all the others and has mean zero. Consequently only the closed walks traversing each of their
+edges at least twice contribute to the expected moment. This is the first reduction of the
+trace-word expansion; the remaining walks are then classified by their numbers of vertices and
+distinct edges.
 
 For a leading word of length `2 * m`, the maximal `m + 1` visited vertices force a
 double-traversal tree. Pairing each discovery with its reverse reduces the entry product
@@ -33,6 +35,9 @@ The path formulation includes the zero-step case and proves integrability first.
 
 ## Main results
 
+* `TauCeti.indepFun_prod_wignerMatrix_apply_of_disjoint` and
+  `TauCeti.integral_prod_mul_prod_wignerMatrix_apply_of_disjoint`: entry products reading disjoint
+  sets of unordered positions are independent and factor in expectation.
 * `TauCeti.integral_prod_wignerMatrix_apply_eq_zero`: for independent centred entries, a product
   of entries reading some edge exactly once has expectation zero.
 * `TauCeti.integral_trace_pow_wignerMatrix`: for independent centred entries in `Lᵏ`, the
@@ -170,6 +175,70 @@ theorem integral_trace_pow_wignerMatrix [IsFiniteMeasure P]
     (fun ij ↦ (hξk ij).aestronglyMeasurable.aemeasurable)
     (fun i ↦ (hηk i).aestronglyMeasurable.aemeasurable) hindep hξ hη _ _
     fun s hs ↦ by_contra fun hst ↦ h s hst hs)
+
+/-- **Edge-disjoint Wigner products are independent.** For independent array coordinates, two
+finite products of Wigner entries reading disjoint sets of unordered positions are independent. No
+centering or finite-moment assumption is required. -/
+theorem indepFun_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
+    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
+    {n : ℕ} (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
+    (hdisj : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
+    IndepFun
+      (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s))
+      (fun ω ↦ ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) P := by
+  classical
+  set X : StrictUpper ⊕ ℕ → Ω → ℂ := fun k ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k
+  set e₁ : ι₁ → StrictUpper ⊕ ℕ := fun s ↦ entryIndex (u₁ s) (v₁ s)
+  set e₂ : ι₂ → StrictUpper ⊕ ℕ := fun t ↦ entryIndex (u₂ t) (v₂ t)
+  set S₁ : Finset (StrictUpper ⊕ ℕ) := Finset.univ.image e₁
+  set S₂ : Finset (StrictUpper ⊕ ℕ) := Finset.univ.image e₂
+  have hS : Disjoint S₁ S₂ := by
+    rw [Finset.disjoint_left]
+    intro k hk₁ hk₂
+    obtain ⟨s, -, rfl⟩ := Finset.mem_image.mp hk₁
+    obtain ⟨t, -, htk⟩ := Finset.mem_image.mp hk₂
+    exact hdisj s t (entryIndex_eq_entryIndex_iff.mp htk.symm)
+  set φ₁ : (S₁ → ℂ) → ℂ := fun g ↦ ∏ s ∈ Finset.univ.attach,
+    (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₁ s.1) (v₁ s.1) (g ⟨e₁ s.1, Finset.mem_image_of_mem e₁ s.2⟩)
+  set φ₂ : (S₂ → ℂ) → ℂ := fun g ↦ ∏ t ∈ Finset.univ.attach,
+    (Real.sqrt n : ℂ)⁻¹ * orientEntry (u₂ t.1) (v₂ t.1) (g ⟨e₂ t.1, Finset.mem_image_of_mem e₂ t.2⟩)
+  have hφ₁ : Measurable φ₁ := Finset.measurable_prod _ fun s _ ↦
+    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
+  have hφ₂ : Measurable φ₂ := Finset.measurable_prod _ fun t _ ↦
+    measurable_const.mul ((measurable_orientEntry _ _).comp (measurable_pi_apply _))
+  have hind := (hindep.indepFun_finset₀ S₁ S₂ hS (aemeasurable_sumElim_ofReal hξm hηm)).comp
+    hφ₁ hφ₂
+  refine hind.congr (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
+  · simp only [Function.comp_apply, φ₁, ← Finset.prod_attach Finset.univ,
+      wignerMatrix_apply_eq_orientEntry, X, e₁]
+  · simp only [Function.comp_apply, φ₂, ← Finset.prod_attach Finset.univ,
+      wignerMatrix_apply_eq_orientEntry, X, e₂]
+
+/-- **Factorization of edge-disjoint Wigner products.** When two finite products of Wigner entries
+read disjoint sets of unordered positions and the array coordinates are independent, the integral
+of their product equals the product of their integrals. -/
+theorem integral_prod_mul_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*}
+    [Fintype ι₁] [Fintype ι₂]
+    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
+    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
+    {n : ℕ} (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
+    (hdisj : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
+    ∫ ω, (∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s)) *
+        (∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) ∂P =
+      (∫ ω, ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s) ∂P) *
+        ∫ ω, ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t) ∂P := by
+  have hentry (i j : Fin n) : AEMeasurable (fun ω ↦ wignerMatrix ξ η n ω i j) P := by
+    simp_rw [wignerMatrix_apply_eq_orientEntry]
+    exact measurable_const.aemeasurable.mul
+      ((measurable_orientEntry i j).comp_aemeasurable
+        (aemeasurable_sumElim_ofReal hξm hηm (entryIndex i j)))
+  exact (indepFun_prod_wignerMatrix_apply_of_disjoint hξm hηm hindep u₁ v₁ u₂ v₂
+    hdisj).integral_fun_mul_eq_mul_integral
+    (Finset.aestronglyMeasurable_fun_prod Finset.univ fun s _ ↦
+      (hentry (u₁ s) (v₁ s)).aestronglyMeasurable)
+    (Finset.aestronglyMeasurable_fun_prod Finset.univ fun t _ ↦
+      (hentry (u₂ t) (v₂ t)).aestronglyMeasurable)
 
 end SingleEdge
 

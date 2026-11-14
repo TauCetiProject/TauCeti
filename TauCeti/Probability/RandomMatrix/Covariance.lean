@@ -15,10 +15,11 @@ import Mathlib.MeasureTheory.Integral.Prod
 Expanding `E[tr(Hₙ ^ k₁) tr(Hₙ ^ k₂)] - E[tr(Hₙ ^ k₁)] E[tr(Hₙ ^ k₂)]` into pairs of closed walks
 `(w₁, w₂)` eliminates two classes of pairs under independent centered entries:
 
-* pairs whose unordered cyclic edge sets are disjoint decouple by independence, so
-  `E[P₁ P₂] = E[P₁] E[P₂]`;
+* pairs whose unordered cyclic edge sets are disjoint decouple by independence
+  (`TauCeti.integral_prod_mul_prod_wignerMatrix_apply_of_disjoint`), so `E[P₁ P₂] = E[P₁] E[P₂]`;
 * pairs whose combined unordered cyclic edge multiset on `Fin k₁ ⊕ Fin k₂` contains an edge
-  traversed only once satisfy `E[P₁ P₂] = 0` and either `E[P₁] = 0` or `E[P₂] = 0`.
+  traversed only once satisfy `E[P₁ P₂] = 0` and either `E[P₁] = 0` or `E[P₂] = 0`
+  (`TauCeti.integral_prod_wignerMatrix_apply_eq_zero`).
 
 Every surviving pair shares at least one unordered cyclic edge and has no singleton unordered
 cyclic edge across `Fin k₁ ⊕ Fin k₂`. By
@@ -31,13 +32,12 @@ the mean-square fluctuations of normalized Wigner traces of every order.
 
 ## Main results
 
-* `TauCeti.indepFun_prod_wignerMatrix_apply_of_disjoint` and
-  `TauCeti.integral_prod_mul_prod_wignerMatrix_apply_of_disjoint`: entry products reading disjoint
-  unordered positions are independent and factor in expectation.
 * `TauCeti.integral_trace_pow_mul_trace_pow_sub_wignerMatrix`: the connected singleton-free
   two-trace expansion for `E[tr(Hₙ ^ k₁) tr(Hₙ ^ k₂)] - E[tr(Hₙ ^ k₁)] E[tr(Hₙ ^ k₂)]`.
-* `TauCeti.norm_integral_centered_trace_pow_mul_wignerMatrix_le`: quantitative `O(n⁻²)` bound on
-  the centered normalized two-trace expectation for all `k₁, k₂, n : ℕ`.
+* `TauCeti.memLp_two_trace_pow_wignerMatrix`: `tr(Hₙ ^ k)` lies in `L²` under `L^(2k)` entries.
+* `TauCeti.norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le` and
+  `TauCeti.norm_integral_centered_trace_pow_mul_wignerMatrix_le`: quantitative `O(n⁻²)` bounds on
+  normalized two-trace covariances for all `k₁, k₂, n : ℕ`.
 * `TauCeti.integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq_le` and
   `TauCeti.tendsto_integral_norm_inv_mul_trace_pow_wignerMatrix_sub_sq`: `O(n⁻²)` mean-square
   concentration of normalized Wigner traces, including on varying probability spaces.
@@ -59,106 +59,6 @@ namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
   {η : ℕ → Ω → ℝ}
-
-section DisjointEdges
-
-private def entryCoord {n : ℕ} (i j : Fin n) : StrictUpper ⊕ ℕ :=
-  if h : i.val < j.val then .inl ⟨(i, j), h⟩
-  else if h' : j.val < i.val then .inl ⟨(j, i), h'⟩ else .inr i
-
-private theorem entryCoord_eq_entryCoord_iff {n : ℕ} {i j i' j' : Fin n} :
-    entryCoord i j = entryCoord i' j' ↔ s(i, j) = s(i', j') := by
-  unfold entryCoord
-  split_ifs <;> simp [Fin.ext_iff] <;> omega
-
-private def orientCoord {n : ℕ} (i j : Fin n) (z : ℂ) : ℂ :=
-  if i.val < j.val then z else if j.val < i.val then star z else (z.re : ℂ)
-
-private theorem measurable_orientCoord {n : ℕ} (i j : Fin n) : Measurable (orientCoord i j) := by
-  unfold orientCoord
-  split_ifs
-  · exact measurable_id
-  · exact continuous_star.measurable
-  · exact Complex.measurable_ofReal.comp Complex.measurable_re
-
-omit [MeasurableSpace Ω] in
-private theorem wignerMatrix_apply_eq_orientCoord {n : ℕ} (ω : Ω) (i j : Fin n) :
-    wignerMatrix ξ η n ω i j = (Real.sqrt n : ℂ)⁻¹ *
-      orientCoord i j (Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) (entryCoord i j) ω) := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [orientCoord, entryCoord, h]
-  · obtain rfl := Fin.ext h
-    simp [orientCoord, entryCoord]
-  · simp [orientCoord, entryCoord, h, h.not_gt]
-
-private theorem aemeasurable_wignerMatrix_apply
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
-    {n : ℕ} (i j : Fin n) : AEMeasurable (fun ω ↦ wignerMatrix ξ η n ω i j) P := by
-  simp_rw [wignerMatrix_apply_eq_orientCoord]
-  exact measurable_const.aemeasurable.mul
-    ((measurable_orientCoord i j).comp_aemeasurable
-      (aemeasurable_sumElim_ofReal hξm hηm (entryCoord i j)))
-
-/-- **Edge-disjoint Wigner products are independent.** For independent array coordinates, two
-finite products of Wigner entries reading disjoint sets of unordered positions are independent. No
-centering or finite-moment assumption is required. -/
-theorem indepFun_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
-    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    {n : ℕ} (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
-    (hdisj : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
-    IndepFun
-      (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s))
-      (fun ω ↦ ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) P := by
-  classical
-  set X : StrictUpper ⊕ ℕ → Ω → ℂ := fun k ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k
-  set e₁ : ι₁ → StrictUpper ⊕ ℕ := fun s ↦ entryCoord (u₁ s) (v₁ s)
-  set e₂ : ι₂ → StrictUpper ⊕ ℕ := fun t ↦ entryCoord (u₂ t) (v₂ t)
-  set S₁ : Finset (StrictUpper ⊕ ℕ) := univ.image e₁
-  set S₂ : Finset (StrictUpper ⊕ ℕ) := univ.image e₂
-  have hS : Disjoint S₁ S₂ := by
-    rw [disjoint_left]
-    intro k hk₁ hk₂
-    obtain ⟨s, -, rfl⟩ := mem_image.mp hk₁
-    obtain ⟨t, -, htk⟩ := mem_image.mp hk₂
-    exact hdisj s t (entryCoord_eq_entryCoord_iff.mp htk.symm)
-  set φ₁ : (S₁ → ℂ) → ℂ := fun g ↦ ∏ s ∈ univ.attach,
-    (Real.sqrt n : ℂ)⁻¹ * orientCoord (u₁ s.1) (v₁ s.1) (g ⟨e₁ s.1, Finset.mem_image_of_mem e₁ s.2⟩)
-  set φ₂ : (S₂ → ℂ) → ℂ := fun g ↦ ∏ t ∈ univ.attach,
-    (Real.sqrt n : ℂ)⁻¹ * orientCoord (u₂ t.1) (v₂ t.1) (g ⟨e₂ t.1, Finset.mem_image_of_mem e₂ t.2⟩)
-  have hφ₁ : Measurable φ₁ := Finset.measurable_prod _ fun s _ ↦
-    measurable_const.mul ((measurable_orientCoord _ _).comp (measurable_pi_apply _))
-  have hφ₂ : Measurable φ₂ := Finset.measurable_prod _ fun t _ ↦
-    measurable_const.mul ((measurable_orientCoord _ _).comp (measurable_pi_apply _))
-  have hind := (hindep.indepFun_finset₀ S₁ S₂ hS (aemeasurable_sumElim_ofReal hξm hηm)).comp
-    hφ₁ hφ₂
-  refine hind.congr (.of_forall fun ω ↦ ?_) (.of_forall fun ω ↦ ?_)
-  · simp only [Function.comp_apply, φ₁, ← prod_attach univ, wignerMatrix_apply_eq_orientCoord,
-      X, e₁]
-  · simp only [Function.comp_apply, φ₂, ← prod_attach univ, wignerMatrix_apply_eq_orientCoord,
-      X, e₂]
-
-/-- **Factorization of edge-disjoint Wigner products.** When two finite products of Wigner entries
-read disjoint sets of unordered positions and the array coordinates are independent, the integral
-of their product equals the product of their integrals. -/
-theorem integral_prod_mul_prod_wignerMatrix_apply_of_disjoint {ι₁ ι₂ : Type*}
-    [Fintype ι₁] [Fintype ι₂]
-    (hξm : ∀ ij, AEMeasurable (ξ ij) P) (hηm : ∀ i, AEMeasurable (η i) P)
-    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    {n : ℕ} (u₁ v₁ : ι₁ → Fin n) (u₂ v₂ : ι₂ → Fin n)
-    (hdisj : ∀ s t, s(u₁ s, v₁ s) ≠ s(u₂ t, v₂ t)) :
-    ∫ ω, (∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s)) *
-        (∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t)) ∂P =
-      (∫ ω, ∏ s, wignerMatrix ξ η n ω (u₁ s) (v₁ s) ∂P) *
-        ∫ ω, ∏ t, wignerMatrix ξ η n ω (u₂ t) (v₂ t) ∂P :=
-  (indepFun_prod_wignerMatrix_apply_of_disjoint hξm hηm hindep u₁ v₁ u₂ v₂
-    hdisj).integral_fun_mul_eq_mul_integral
-    (Finset.aestronglyMeasurable_fun_prod univ fun s _ ↦
-      (aemeasurable_wignerMatrix_apply hξm hηm (u₁ s) (v₁ s)).aestronglyMeasurable)
-    (Finset.aestronglyMeasurable_fun_prod univ fun t _ ↦
-      (aemeasurable_wignerMatrix_apply hξm hηm (u₂ t) (v₂ t)).aestronglyMeasurable)
-
-end DisjointEdges
 
 section ConnectedExpansion
 
@@ -373,22 +273,6 @@ theorem memLp_two_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
         ← mul_assoc, ENNReal.mul_inv_cancel hk0 (ENNReal.natCast_ne_top k), one_mul, inv_inv]
     rwa [hexp] at h
 
-private theorem pow_div_two_mul_inv_sqrt_pow_le {n : ℕ} (hn : n ≠ 0) (K : ℕ) :
-    (n : ℝ) ^ (K / 2) * (Real.sqrt n)⁻¹ ^ K ≤ 1 := by
-  have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast Nat.pos_of_ne_zero hn
-  have hsqrt_ge : 1 ≤ Real.sqrt n := Real.one_le_sqrt.mpr hn1
-  have hinv_le : (Real.sqrt n)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hsqrt_ge
-  have hsplit : (Real.sqrt n)⁻¹ ^ K =
-      (Real.sqrt n)⁻¹ ^ (2 * (K / 2)) * (Real.sqrt n)⁻¹ ^ (K % 2) := by
-    rw [← pow_add, Nat.div_add_mod]
-  have hpow2 : (n : ℝ) ^ (K / 2) * (Real.sqrt n)⁻¹ ^ (2 * (K / 2)) = 1 := by
-    rw [inv_pow, pow_mul, Real.sq_sqrt (Nat.cast_nonneg n),
-      mul_inv_cancel₀ (pow_ne_zero _ (by positivity))]
-  rw [hsplit, ← mul_assoc, hpow2, one_mul]
-  rcases Nat.mod_two_eq_zero_or_one K with h0 | h1
-  · simp [h0]
-  · simp [h1, hinv_le]
-
 private theorem norm_integral_prod_mul_prod_sub_wignerMatrix_le [IsProbabilityMeasure P]
     {k₁ k₂ n : ℕ} {B : ℝ}
     (hξp : ∀ ij, MemLp (ξ ij) (k₁ + k₂ : ℕ) P)
@@ -441,13 +325,20 @@ theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le [IsProba
   · simp
   rcases eq_or_ne k₁ 0 with rfl | hk₁
   · simp only [pow_zero, trace_one, Fintype.card_fin, integral_const_mul, integral_const,
-      probReal_univ, one_smul, sub_self, mul_zero, norm_zero]
-    positivity
+      probReal_univ, one_smul, sub_self, mul_zero, norm_zero]; positivity
   rcases eq_or_ne k₂ 0 with rfl | hk₂
   · simp only [pow_zero, trace_one, Fintype.card_fin, integral_mul_const, integral_const,
-      probReal_univ, one_smul, sub_self, mul_zero, norm_zero]
-    positivity
+      probReal_univ, one_smul, sub_self, mul_zero, norm_zero]; positivity
   have : NeZero n := ⟨hn⟩
+  have hpow : (n : ℝ) ^ ((k₁ + k₂) / 2) * (Real.sqrt n)⁻¹ ^ (k₁ + k₂) ≤ 1 := by
+    have hinv : (Real.sqrt n)⁻¹ ≤ 1 :=
+      inv_le_one_of_one_le₀ (Real.one_le_sqrt.mpr (by exact_mod_cast Nat.pos_of_ne_zero hn))
+    conv_lhs => enter [2, 2]; rw [← Nat.div_add_mod (k₁ + k₂) 2]
+    rw [pow_add, ← mul_assoc, inv_pow, pow_mul, Real.sq_sqrt (Nat.cast_nonneg n),
+      mul_inv_cancel₀ (pow_ne_zero _ (by positivity)), one_mul]
+    rcases Nat.mod_two_eq_zero_or_one (k₁ + k₂) with h | h
+    · simp [h]
+    · simpa [h] using hinv
   set S : Finset ((Fin k₁ → Fin n) × (Fin k₂ → Fin n)) :=
     {p | (∃ i j, s(p.1 i, p.1 (finRotate k₁ i)) = s(p.2 j, p.2 (finRotate k₂ j))) ∧
       ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,
@@ -470,12 +361,9 @@ theorem norm_inv_mul_inv_mul_integral_trace_pow_mul_sub_wignerMatrix_le [IsProba
           (2 * ((Real.sqrt n)⁻¹ ^ (k₁ + k₂) * B))) := by gcongr
     _ = (2 * ((((k₁ + k₂) / 2 : ℕ) : ℝ) ^ (k₁ + k₂)) * B / (n : ℝ) ^ 2) *
         ((n : ℝ) ^ ((k₁ + k₂) / 2) * (Real.sqrt n)⁻¹ ^ (k₁ + k₂)) := by
-        push_cast
-        have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-        field_simp
+        push_cast; have : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn; field_simp
     _ ≤ 2 * ((((k₁ + k₂) / 2 : ℕ) : ℝ) ^ (k₁ + k₂)) * B / (n : ℝ) ^ 2 :=
-        mul_le_of_le_one_right (by positivity)
-          (pow_div_two_mul_inv_sqrt_pow_le hn (k₁ + k₂))
+        mul_le_of_le_one_right (by positivity) hpow
 
 private theorem integrable_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ}
     (hξp : ∀ ij, MemLp (ξ ij) k P) (hηp : ∀ i, MemLp (η i) k P) (n : ℕ) :

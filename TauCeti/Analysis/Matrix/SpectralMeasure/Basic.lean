@@ -77,8 +77,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
-* `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
-  normalized trace of `A ^ k`;
+* `Matrix.integral_pow_spectralMeasure`, `Matrix.ofReal_integral_pow_spectralMeasure` — the `k`-th
+  moment of the spectral measure is the normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
   the normalized trace of the resolvent `(A - z • 1)⁻¹`;
 * `Matrix.spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul`,
@@ -317,6 +317,15 @@ theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) 
       ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
   rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
   simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- Cast into `𝕜`, the `k`-th moment of the spectral measure of a Hermitian matrix is the
+normalized trace of `A ^ k` without taking a real part, since `A ^ k` is Hermitian. -/
+theorem ofReal_integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    ((∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) : ℝ) : 𝕜) =
+      ((Fintype.card n : ℕ) : 𝕜)⁻¹ * (A ^ k).trace := by
+  rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow]
+  push_cast
+  rfl
 
 /-- The positive moments of the two Gram-matrix spectral measures agree after weighting by the
 dimensions of their respective matrices, over any `RCLike` field and finite nonempty index types. -/

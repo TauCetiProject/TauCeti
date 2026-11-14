@@ -67,55 +67,48 @@ private theorem exists_mod_two_color_of_card_image_eq (p : ℕ → α) (n : ℕ)
   | zero => exact ⟨fun _ ↦ 0, by simp⟩
   | succ n ih =>
     set Vn := (range (n + 1)).image p
-    set Vn1 := (range (n + 2)).image p
     set Nn := ((range n).filter fun r ↦ p r ≠ p (r + 1)).image fun r ↦ s(p r, p (r + 1))
     set Nn1 := ((range (n + 1)).filter fun r ↦ p r ≠ p (r + 1)).image fun r ↦ s(p r, p (r + 1))
     have hle : #Vn ≤ #Nn + 1 := card_image_range_le_card_nonloop_edges_add_one p n
     have hNsub : Nn ⊆ Nn1 := image_subset_image (filter_subset_filter _ (range_mono (by omega)))
     have hNle : #Nn ≤ #Nn1 := card_le_card hNsub
-    have hVstep : Vn1 = insert (p (n + 1)) Vn := by simp [Vn, Vn1, range_add_one]
+    have hVstep : (range (n + 2)).image p = insert (p (n + 1)) Vn := by simp [Vn, range_add_one]
     by_cases hmem : p (n + 1) ∈ Vn
-    · have hVeq : #Vn1 = #Vn := by rw [hVstep, insert_eq_of_mem hmem]
+    · -- Revisiting a vertex forces `Nn = Nn1`, so a nonloop last step repeats an earlier edge.
+      rw [hVstep, insert_eq_of_mem hmem] at hv
       obtain ⟨c, hc⟩ := ih (by omega)
       refine ⟨c, fun r hr ↦ ?_⟩
-      by_cases hlt : r < n
+      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hr) with hlt | rfl
       · exact hc r hlt
-      · obtain rfl : r = n := by omega
-        by_cases hloop : p r = p (r + 1)
-        · simp only [← hloop, he₀ (p r), ↓reduceIte]
-          omega
-        · have hNeq : Nn = Nn1 := eq_of_subset_of_card_le hNsub (by omega)
-          have hin : s(p r, p (r + 1)) ∈ Nn := by
-            rw [hNeq]
+      · by_cases hloop : p r = p (r + 1)
+        · simp only [← hloop, he₀ (p r), ↓reduceIte]; omega
+        · have hin : s(p r, p (r + 1)) ∈ Nn := by
+            rw [eq_of_subset_of_card_le hNsub (by omega)]
             exact mem_image.mpr ⟨r, mem_filter.mpr ⟨mem_range.mpr (by omega), hloop⟩, rfl⟩
           obtain ⟨q, hqN, hqe⟩ := mem_image.mp hin
-          have hql : q < r := mem_range.mp (mem_filter.mp hqN).1
           have hsum : c (p r) + c (p (r + 1)) = c (p q) + c (p (q + 1)) := by
             rcases Sym2.eq_iff.mp hqe with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> simp [h1, h2, add_comm]
-          rw [hsum, ← hqe, hc q hql]
-    · have hloop : p n ≠ p (n + 1) := fun h ↦
-        hmem (mem_image.mpr ⟨n, mem_range.mpr (by omega), h⟩)
+          rw [hsum, ← hqe, hc q (mem_range.mp (mem_filter.mp hqN).1)]
+    · -- Discovering a fresh vertex adds one new nonloop edge; extend `c` at `p (n + 1)`.
+      have hnot_pre {m : ℕ} (hm : m ≤ n) : p m ≠ p (n + 1) := fun h ↦
+        hmem (mem_image.mpr ⟨m, mem_range.mpr (by omega), h⟩)
       have hnotN : s(p n, p (n + 1)) ∉ Nn := fun hin ↦ by
         obtain ⟨q, hqN, hqe⟩ := mem_image.mp hin
         have hql : q < n := mem_range.mp (mem_filter.mp hqN).1
         have hm : p (n + 1) ∈ s(p q, p (q + 1)) := by rw [hqe]; exact Sym2.mem_mk_right _ _
         rcases Sym2.mem_iff.mp hm with h | h
-        · exact hmem (mem_image.mpr ⟨q, mem_range.mpr (by omega), h.symm⟩)
-        · exact hmem (mem_image.mpr ⟨q + 1, mem_range.mpr (by omega), h.symm⟩)
+        · exact hnot_pre hql.le h.symm
+        · exact hnot_pre hql h.symm
+      rw [hVstep, card_insert_of_notMem hmem] at hv
       have hNcard : #Nn1 = #Nn + 1 := by
-        simp [Nn, Nn1, range_add_one, filter_insert, hloop, hnotN]
-      have hVcard : #Vn1 = #Vn + 1 := by rw [hVstep, card_insert_of_notMem hmem]
+        simp [Nn, Nn1, range_add_one, filter_insert, hnot_pre le_rfl, hnotN]
       obtain ⟨c, hc⟩ := ih (by omega)
       refine ⟨Function.update c (p (n + 1))
         (c (p n) + if s(p n, p (n + 1)) = e₀ then 1 else 0), fun r hr ↦ ?_⟩
-      by_cases hlt : r < n
-      · have hpr : p r ≠ p (n + 1) := fun h ↦
-          hmem (mem_image.mpr ⟨r, mem_range.mpr (by omega), h⟩)
-        have hpr1 : p (r + 1) ≠ p (n + 1) := fun h ↦
-          hmem (mem_image.mpr ⟨r + 1, mem_range.mpr (by omega), h⟩)
-        simpa only [Function.update_of_ne hpr, Function.update_of_ne hpr1] using hc r hlt
-      · obtain rfl : r = n := by omega
-        simp only [Function.update_of_ne hloop, Function.update_self]
+      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hr) with hlt | rfl
+      · rw [Function.update_of_ne (hnot_pre hlt.le), Function.update_of_ne (hnot_pre hlt)]
+        exact hc r hlt
+      · simp only [Function.update_of_ne (hnot_pre le_rfl), Function.update_self]
         split_ifs <;> omega
 
 /-- If `c` flips parity exclusively across steps with unordered edge `e₀`, any closed walk
@@ -131,24 +124,6 @@ private theorem card_filter_cyclic_edge_mod_two_eq_zero {k : ℕ} (w : Fin k →
   simp_rw [h1]
   rw [← sum_nat_mod, sum_add_distrib, Equiv.sum_comp (finRotate k) (fun i ↦ c (w i))]
   omega
-
-private theorem fin_ofNat_add_step {k : ℕ} (a₀ : Fin (k + 1)) (r : ℕ) :
-    Fin.ofNat (k + 1) (a₀.val + (r + 1)) =
-      finRotate (k + 1) (Fin.ofNat (k + 1) (a₀.val + r)) := by
-  rw [finRotate_apply]
-  apply Fin.ext
-  simp [Fin.val_add, Fin.ofNat_eq_cast, ← Nat.add_assoc, Nat.add_mod]
-
-private theorem exists_lt_fin_ofNat_add_eq {k : ℕ} (a₀ i : Fin (k + 1)) :
-    ∃ r < k + 1, Fin.ofNat (k + 1) (a₀.val + r) = i := by
-  by_cases hia : a₀.val ≤ i.val
-  · refine ⟨i.val - a₀.val, by omega, ?_⟩
-    apply Fin.ext
-    simp [Fin.ofNat_eq_cast, Nat.add_sub_of_le hia]
-  · refine ⟨i.val + (k + 1) - a₀.val, by omega, ?_⟩
-    apply Fin.ext
-    have hsum : a₀.val + (i.val + (k + 1) - a₀.val) = i.val + (k + 1) := by omega
-    simp [Fin.ofNat_eq_cast, hsum, Nat.mod_eq_of_lt i.isLt]
 
 /-- Two cyclic walks sharing a vertex `w₁ a₀ = w₂ b₀` concatenate into a walk of `k₁ + k₂` steps
 whose visited vertices are `image w₁ ∪ image w₂` and whose steps cover all cyclic steps of `w₁`
@@ -168,60 +143,45 @@ private theorem exists_concat_path_of_eq {k₁ k₂ : ℕ} (w₁ : Fin k₁ → 
     cases k₂ with
     | zero => exact Fin.elim0 b₀
     | succ k₂ =>
-      let idx₁ (r : ℕ) : Fin (k₁ + 1) := Fin.ofNat (k₁ + 1) (a₀.val + r)
-      let idx₂ (r : ℕ) : Fin (k₂ + 1) := Fin.ofNat (k₂ + 1) (b₀.val + r)
-      let p (r : ℕ) : α := if r ≤ k₁ + 1 then w₁ (idx₁ r) else w₂ (idx₂ (r - (k₁ + 1)))
-      have hseam : p (k₁ + 1) = w₂ (idx₂ 0) := by
-        have ha : idx₁ (k₁ + 1) = a₀ := Fin.ext (by
-          simp [idx₁, Fin.ofNat_eq_cast, Nat.mod_eq_of_lt a₀.isLt])
-        have hb : idx₂ 0 = b₀ := Fin.ext (by simp [idx₂, Fin.ofNat_eq_cast])
-        simp [p, ha, hb, hab]
-      have hidx₁_step (r : ℕ) : idx₁ (r + 1) = finRotate (k₁ + 1) (idx₁ r) :=
-        fin_ofNat_add_step a₀ r
-      have hidx₂_step (r : ℕ) : idx₂ (r + 1) = finRotate (k₂ + 1) (idx₂ r) :=
-        fin_ofNat_add_step b₀ r
-      have hstep₁ (r : ℕ) (hr : r < k₁ + 1) :
-          p r = w₁ (idx₁ r) ∧ p (r + 1) = w₁ (finRotate (k₁ + 1) (idx₁ r)) := by
-        have h1 : r ≤ k₁ + 1 := by omega
-        have h2 : r + 1 ≤ k₁ + 1 := by omega
-        simp [p, h1, h2, hidx₁_step]
-      have hstep₂ (s : ℕ) :
-          p (k₁ + 1 + s) = w₂ (idx₂ s) ∧
-            p (k₁ + 1 + s + 1) = w₂ (finRotate (k₂ + 1) (idx₂ s)) := by
+      -- Concatenate `w₁` starting at `a₀` with `w₂` starting at `b₀` across the seam `k₁ + 1`.
+      let rot {k : ℕ} (x : Fin (k + 1)) (r : ℕ) : Fin (k + 1) := x + Fin.ofNat (k + 1) r
+      let p (r : ℕ) : α := if r ≤ k₁ + 1 then w₁ (rot a₀ r) else w₂ (rot b₀ (r - (k₁ + 1)))
+      have hseam : p (k₁ + 1) = w₂ (rot b₀ 0) := by simp [p, rot, hab]
+      have hrot {k : ℕ} (x : Fin (k + 1)) (r : ℕ) :
+          rot x (r + 1) = finRotate (k + 1) (rot x r) := by
+        simp only [rot, finRotate_apply, add_assoc]; congr 1
+        exact Fin.ext (by simp [Fin.ofNat, Fin.add_def, Nat.add_mod])
+      have hhit {k : ℕ} (x y : Fin (k + 1)) : rot x (y - x).val = y := by simp [rot]
+      have hstep₁ {r : ℕ} (hr : r < k₁ + 1) :
+          p r = w₁ (rot a₀ r) ∧ p (r + 1) = w₁ (finRotate (k₁ + 1) (rot a₀ r)) := by
+        simp [p, hr.le, Nat.succ_le_of_lt hr, hrot]
+      have hstep₂ (s : ℕ) : p (k₁ + 1 + s) = w₂ (rot b₀ s) ∧
+          p (k₁ + 1 + s + 1) = w₂ (finRotate (k₂ + 1) (rot b₀ s)) := by
         rcases eq_or_ne s 0 with rfl | hs
-        · refine ⟨hseam, ?_⟩
-          have h2 : ¬ (k₁ + 1 + 1 ≤ k₁ + 1) := by omega
-          simpa [p, h2] using congrArg w₂ (hidx₂_step 0)
-        · have h1 : ¬ (k₁ + 1 + s ≤ k₁ + 1) := by omega
-          have h2 : ¬ (k₁ + 1 + s + 1 ≤ k₁ + 1) := by omega
-          have hsub : k₁ + 1 + s + 1 - (k₁ + 1) = s + 1 := by omega
-          simp [p, h1, h2, hsub, hidx₂_step]
+        · exact ⟨hseam, by simpa [p] using congrArg w₂ (hrot b₀ 0)⟩
+        · have hsub : k₁ + 1 + s + 1 - (k₁ + 1) = s + 1 := by omega
+          simp [p, show ¬ k₁ + 1 + s ≤ k₁ + 1 by omega,
+            show ¬ k₁ + 1 + s + 1 ≤ k₁ + 1 by omega, hsub, hrot]
       refine ⟨p, ?_, ?_, fun i ↦ ?_, fun j ↦ ?_⟩
-      · ext x
-        simp only [mem_image, mem_range, mem_union, mem_univ, true_and]
-        constructor
-        · rintro ⟨r, -, rfl⟩
-          by_cases hle : r ≤ k₁ + 1
-          · exact Or.inl ⟨idx₁ r, by simp [p, hle]⟩
-          · exact Or.inr ⟨idx₂ (r - (k₁ + 1)), by simp [p, hle]⟩
+      · ext x; simp only [mem_image, mem_range, mem_union, mem_univ, true_and]
+        refine ⟨fun ⟨r, _, hx⟩ ↦ ?_, ?_⟩
+        · by_cases hle : r ≤ k₁ + 1
+          · exact Or.inl ⟨rot a₀ r, by simp [← hx, p, hle]⟩
+          · exact Or.inr ⟨rot b₀ (r - (k₁ + 1)), by simp [← hx, p, hle]⟩
         · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
-          · obtain ⟨r, hr, hi⟩ := exists_lt_fin_ofNat_add_eq a₀ i
-            exact ⟨r, by omega, (hstep₁ r hr).1.trans (congrArg w₁ hi)⟩
-          · obtain ⟨s, hs, hj⟩ := exists_lt_fin_ofNat_add_eq b₀ j
-            exact ⟨k₁ + 1 + s, by omega, (hstep₂ s).1.trans (congrArg w₂ hj)⟩
-      · intro e he
-        obtain ⟨r, -, rfl⟩ := mem_image.mp he
+          · exact ⟨(i - a₀).val, by omega, by simpa only [hhit] using (hstep₁ (i - a₀).isLt).1⟩
+          · exact ⟨k₁ + 1 + (j - b₀).val, by omega,
+              by simpa only [hhit] using (hstep₂ (j - b₀).val).1⟩
+      · intro e he; obtain ⟨r, -, rfl⟩ := mem_image.mp he
         by_cases hr1 : r < k₁ + 1
-        · obtain ⟨h1, h2⟩ := hstep₁ r hr1
-          exact mem_image.mpr ⟨.inl (idx₁ r), mem_univ _, by simp [h1, h2]⟩
+        · obtain ⟨h1, h2⟩ := hstep₁ hr1
+          exact mem_image.mpr ⟨.inl (rot a₀ r), mem_univ _, by simp [h1, h2]⟩
         · obtain ⟨h1, h2⟩ := hstep₂ (r - (k₁ + 1))
           have hadd : k₁ + 1 + (r - (k₁ + 1)) = r := by omega
-          exact mem_image.mpr ⟨.inr (idx₂ (r - (k₁ + 1))), mem_univ _, by
+          exact mem_image.mpr ⟨.inr (rot b₀ (r - (k₁ + 1))), mem_univ _, by
             simpa only [Sum.elim_inr, hadd] using (congrArg₂ Sym2.mk h1 h2).symm⟩
-      · obtain ⟨r, hr, hi⟩ := exists_lt_fin_ofNat_add_eq a₀ i
-        exact ⟨r, by omega, by simpa only [idx₁, hi] using hstep₁ r hr⟩
-      · obtain ⟨s, hs, hj⟩ := exists_lt_fin_ofNat_add_eq b₀ j
-        exact ⟨k₁ + 1 + s, by omega, by simpa only [idx₂, hj] using hstep₂ s⟩
+      · exact ⟨(i - a₀).val, by omega, by simpa only [hhit] using hstep₁ (i - a₀).isLt⟩
+      · exact ⟨k₁ + 1 + (j - b₀).val, by omega, by simpa only [hhit] using hstep₂ (j - b₀).val⟩
 
 private theorem two_le_card_sum_edge_fiber_of_no_singleton_edge {k₁ k₂ : ℕ}
     (w₁ : Fin k₁ → α) (w₂ : Fin k₂ → α)
@@ -239,22 +199,6 @@ private theorem two_le_card_sum_edge_fiber_of_no_singleton_edge {k₁ k₂ : ℕ
   obtain ⟨t, -, rfl⟩ := mem_image.mp he
   obtain ⟨t', htt', ht'⟩ := h t
   exact one_lt_card.mpr ⟨t, by simp, t', mem_filter.mpr ⟨mem_univ _, ht'⟩, htt'.symm⟩
-
-private theorem four_add_two_mul_sub_one_le_card_of_fiber_four {ι β : Type*} [Fintype ι]
-    [DecidableEq β] (f : ι → β) {e₀ : β} (he₀ : e₀ ∈ univ.image f)
-    (h4 : 4 ≤ #{t : ι | f t = e₀})
-    (h2 : ∀ e ∈ univ.image f, 2 ≤ #{t : ι | f t = e}) :
-    4 + 2 * (#(univ.image f) - 1) ≤ Fintype.card ι := by
-  have htotal : Fintype.card ι = ∑ e ∈ univ.image f, #{t : ι | f t = e} := by
-    simpa only [card_univ] using card_eq_sum_card_image f (univ : Finset ι)
-  have herase : ∑ _e ∈ (univ.image f).erase e₀, 2 ≤
-      ∑ e ∈ (univ.image f).erase e₀, #{t : ι | f t = e} :=
-    sum_le_sum fun e he ↦ h2 e (mem_of_mem_erase he)
-  rw [← add_sum_erase _ _ he₀] at htotal
-  have hcard_erase : #((univ.image f).erase e₀) = #(univ.image f) - 1 :=
-    card_erase_of_mem he₀
-  simp only [sum_const, smul_eq_mul, hcard_erase] at herase
-  omega
 
 /-- A pair of cyclic words with no singleton unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`
 traverses at most `(k₁ + k₂) / 2` distinct unordered edges in total. Loops count as edges. -/
@@ -285,11 +229,10 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k�
         (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t) :
     #(univ.image w₁ ∪ univ.image w₂) ≤ (k₁ + k₂) / 2 := by
   obtain ⟨i₀, j₀, hij₀⟩ := hshare
-  have hcommon : ∃ b₀ : Fin k₂, w₁ i₀ = w₂ b₀ := by
+  obtain ⟨b₀, hab₀⟩ : ∃ b₀ : Fin k₂, w₁ i₀ = w₂ b₀ := by
     rcases Sym2.mem_iff.mp (hij₀ ▸ Sym2.mem_mk_left _ _) with h1 | h2
     · exact ⟨j₀, h1⟩
     · exact ⟨finRotate k₂ j₀, h2⟩
-  obtain ⟨b₀, hab₀⟩ := hcommon
   obtain ⟨p, hpV, hpE, hpw₁, hpw₂⟩ := exists_concat_path_of_eq w₁ w₂ i₀ b₀ hab₀
   set stepEdge := Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
     (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j)))
@@ -300,6 +243,7 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k�
   have hNleE : #N ≤ #E := card_le_card hpE
   have h2E : 2 * #E ≤ k₁ + k₂ := two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge w₁ w₂ h
   by_contra hgt
+  -- Exceeding `(k₁ + k₂) / 2` forces `#V = #N + 1` and `N = E`, so the shared edge `e₀` is nonloop.
   have hNE : N = E := eq_of_subset_of_card_le hpE (by omega)
   set e₀ := s(w₁ i₀, w₁ (finRotate k₁ i₀))
   have he₀E : e₀ ∈ E := mem_image.mpr ⟨.inl i₀, mem_univ _, rfl⟩
@@ -310,26 +254,25 @@ theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k�
       exact (mem_filter.mp hr).2 (h1.trans h2.symm)
   have hVN : #((range (k₁ + k₂ + 1)).image p) = #N + 1 := by rw [hpV]; omega
   obtain ⟨c, hc⟩ := exists_mod_two_color_of_card_image_eq p (k₁ + k₂) e₀ he₀_noloop hVN
-  have hmod₁ : #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} % 2 = 0 :=
-    card_filter_cyclic_edge_mod_two_eq_zero w₁ c e₀ fun i ↦
-      let ⟨r, hr, h1, h2⟩ := hpw₁ i; by simpa only [h1, h2] using hc r hr
-  have hmod₂ : #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} % 2 = 0 :=
-    card_filter_cyclic_edge_mod_two_eq_zero w₂ c e₀ fun j ↦
-      let ⟨r, hr, h1, h2⟩ := hpw₂ j; by simpa only [h1, h2] using hc r hr
+  -- Both closed walks traverse `e₀` a positive even number of times, giving fiber size ≥ 4.
+  have hmod₁ := card_filter_cyclic_edge_mod_two_eq_zero w₁ c e₀ fun i ↦
+    let ⟨r, hr, h1, h2⟩ := hpw₁ i; by simpa only [h1, h2] using hc r hr
+  have hmod₂ := card_filter_cyclic_edge_mod_two_eq_zero w₂ c e₀ fun j ↦
+    let ⟨r, hr, h1, h2⟩ := hpw₂ j; by simpa only [h1, h2] using hc r hr
   have hpos₁ : 1 ≤ #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} := card_pos.mpr ⟨i₀, by simp [e₀]⟩
   have hpos₂ : 1 ≤ #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} :=
     card_pos.mpr ⟨j₀, by simp [e₀, hij₀]⟩
-  have hfiber₀ : 4 ≤ #{t : Fin k₁ ⊕ Fin k₂ | stepEdge t = e₀} := by
-    have hsplit : #{t : Fin k₁ ⊕ Fin k₂ | stepEdge t = e₀} =
-        #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} +
-          #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} := by
-      simp only [card_filter, Fintype.sum_sum_type, stepEdge, Sum.elim_inl, Sum.elim_inr]
-      congr 1
-    omega
-  have h4 : 4 + 2 * (#E - 1) ≤ Fintype.card (Fin k₁ ⊕ Fin k₂) :=
-    four_add_two_mul_sub_one_le_card_of_fiber_four stepEdge he₀E hfiber₀
-      (two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h)
-  simp only [Fintype.card_sum, Fintype.card_fin] at h4
+  have hsplit : #{t : Fin k₁ ⊕ Fin k₂ | stepEdge t = e₀} =
+      #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} + #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} := by
+    simp only [card_filter, Fintype.sum_sum_type, stepEdge, Sum.elim_inl, Sum.elim_inr]; congr 1
+  have htotal : k₁ + k₂ = #{t | stepEdge t = e₀} + ∑ e ∈ E.erase e₀, #{t | stepEdge t = e} := by
+    have hcard := card_eq_sum_card_image stepEdge (univ : Finset (Fin k₁ ⊕ Fin k₂))
+    simpa only [card_univ, Fintype.card_sum, Fintype.card_fin, E] using
+      hcard.trans (add_sum_erase _ _ he₀E).symm
+  have herase : 2 * (#E - 1) ≤ ∑ e ∈ E.erase e₀, #{t | stepEdge t = e} := by
+    simpa only [sum_const, smul_eq_mul, card_erase_of_mem he₀E, mul_comm] using
+      sum_le_sum (s := E.erase e₀) fun e he ↦
+        two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h e (mem_of_mem_erase he)
   omega
 
 /-- Over a nonempty finite alphabet `β`, at most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)`

@@ -15,6 +15,13 @@ A function into a nonempty finite type `β` visiting at most `r` values factors 
 Counting the two maps in this factorization bounds the number of such functions by
 `|β|^r * r^|α|`. This deliberately coarse bound controls sums over matrix trace words with fewer
 than the leading number of vertices.
+
+## Main results
+
+* `TauCeti.card_filter_card_image_le`: at most `|β|^r * r^|α|` functions `α → β` visit at most `r`
+  values.
+* `TauCeti.card_filter_card_image_union_le`: at most `|β|^r * r^(|ι₁| + |ι₂|)` pairs `(ι₁ → β) ×
+  (ι₂ → β)` have combined range of size at most `r`.
 -/
 
 public section
