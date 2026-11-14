@@ -41,7 +41,8 @@ both the point `u` and the tangent vectors. So it preserves the outward-normal o
 when `n` is odd and reverses it when `n` is even. When `n ≥ 1` the sphere is connected
 (`TauCeti.connectedSpace_sphere`), so it has exactly two orientations, and the antipodal map has
 orientation sign `(-1)^(n+1)` for every orientation of `Sⁿ`. Since every point has exactly one
-antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
+antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value, and every value is
+regular, so its mapping degree `TauCeti.degree` is `(-1)^(n+1)`.
 
 ## Main declarations
 
@@ -68,6 +69,8 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
   `Sⁿ`, the antipodal map has orientation sign `(-1)^(n+1)` at every point.
 * `TauCeti.Manifold.Orientation.degreeAtRegularValue_neg_sphere`: for `n ≥ 1` the antipodal map
   of `Sⁿ` has degree `(-1)^(n+1)`.
+* `TauCeti.Manifold.Orientation.degree_neg_sphere`: for `n ≥ 1` the mapping degree of the
+  antipodal map of `Sⁿ` is `(-1)^(n+1)`.
 
 ## References
 
@@ -284,6 +287,23 @@ theorem Manifold.Orientation.degreeAtRegularValue_neg_sphere [NeZero n]
   rw [degreeAtRegularValue_eq_sum (s := {-y}) fun x ↦ by
     rw [Finset.mem_singleton, neg_eq_iff_eq_neg], Finset.sum_singleton,
     orientationSign_neg_sphere]
+
+/-- **The mapping degree of the antipodal map.** For `n ≥ 1` and every orientation of `Sⁿ`, the
+antipodal map has mapping degree `(-1)^(n+1)`. -/
+@[simp]
+theorem Manifold.Orientation.degree_neg_sphere [NeZero n]
+    (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) :
+    degree o o (fun x : sphere (0 : E) 1 ↦ -x) = (-1) ^ (n + 1) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (R := ℝ) (n := n) Fact.out
+  -- Every point is regular, since the orientation sign `(-1)^(n+1)` is nonzero.
+  have hreg (y : sphere (0 : E) 1) : IsRegularValue (𝓡 n) (𝓡 n)
+      (fun x : sphere (0 : E) 1 ↦ -x) y := isRegularValue_iff.2 fun x _ ↦
+    (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <| not_not.1 fun h ↦ by
+      simpa using
+        (orientationSign_neg_sphere o x).symm.trans (orientationSign_of_not_isInvertible h)
+  obtain ⟨y⟩ := (NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one
+  rw [degree_eq_degreeAtRegularValue_choose ⟨⟨y, ‹_›⟩, hreg _⟩, degreeAtRegularValue_neg_sphere]
 
 /-- The unit sphere of a finite-dimensional real inner product space is orientable. -/
 theorem orientable_sphere : Orientable (𝓡 n) (sphere (0 : E) 1) := by
