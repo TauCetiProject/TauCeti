@@ -25,7 +25,7 @@ The cells of the complex are exactly the nonempty exposed faces of `P`
 (`FinitePolyhedralComplex.support_ofPolyhedron`). For a polyhedron, exposed faces of exposed
 faces are exposed faces, and the intersection of two faces is a face of each of them; this is
 what makes the cells a complex. If `P` is a cell of a complex `C`, then the complex of `P` is a
-subcomplex of `C` (`FinitePolyhedralComplex.isSubcomplex_ofPolyhedron`). A subdivision of the
+subcomplex of `C` (`FinitePolyhedralComplex.ofPolyhedron_isSubcomplex`). A subdivision of the
 face complex is characterized by equality of supports; a weak refinement into it only requires
 containment of the support. Inclusion of two face complexes is equivalent to exposure of the
 first polyhedron as a face of the second.
@@ -112,7 +112,7 @@ theorem cells_ofPolyhedron_empty (hempty : IsRationalNormalPolyhedron h (∅ : S
     (ofPolyhedron h ∅ hempty).cells = ∅ :=
   (cells_ofPolyhedron_eq_empty hempty).mpr rfl
 
-/-- A complex refines the face complex of a polyhedron exactly when its support lies in it. -/
+/-- A complex weakly refines the face complex of `P` exactly when its support lies in `P`. -/
 @[simp]
 theorem isWeakRefinement_ofPolyhedron (C : FinitePolyhedralComplex h) :
     C.IsWeakRefinement (ofPolyhedron h P hP) ↔ C.support ⊆ P := by
@@ -128,7 +128,8 @@ theorem isSubdivision_ofPolyhedron (C : FinitePolyhedralComplex h) :
   rw [isSubdivision_iff, isWeakRefinement_ofPolyhedron, support_ofPolyhedron]
   exact ⟨And.right, fun e => ⟨e.subset, e⟩⟩
 
-/-- A nonempty polyhedron refines another complex precisely by lying in one of its cells. -/
+/-- The face complex of `P` weakly refines `C` exactly when `P`, if nonempty, lies in a cell of
+`C`. -/
 theorem ofPolyhedron_isWeakRefinement_iff (C : FinitePolyhedralComplex h) :
     (ofPolyhedron h P hP).IsWeakRefinement C ↔ P.Nonempty → ∃ Q ∈ C.cells, P ⊆ Q := by
   refine ⟨fun href hne => isWeakRefinement_iff.mp href P (self_mem_cells_ofPolyhedron hP hne),
@@ -138,12 +139,13 @@ theorem ofPolyhedron_isWeakRefinement_iff (C : FinitePolyhedralComplex h) :
   exact ⟨Q, hQ, hf.isExposed.subset.trans hPQ⟩
 
 /-- If a polyhedron is a cell of a complex, its complex of faces is a subcomplex. -/
-theorem isSubcomplex_ofPolyhedron (C : FinitePolyhedralComplex h) (hPC : P ∈ C.cells) :
+theorem ofPolyhedron_isSubcomplex (C : FinitePolyhedralComplex h) (hPC : P ∈ C.cells) :
     (ofPolyhedron h P (C.rational P hPC)).IsSubcomplex C :=
   isSubcomplex_iff.mpr fun F hF =>
     C.face_closed P hPC F ((mem_cells_ofPolyhedron (C.rational P hPC)).mp hF)
 
-/-- The nonempty polyhedron must itself be a cell for its faces to form a subcomplex. -/
+/-- The face complex of `P` is a subcomplex of `C` exactly when `P`, if nonempty, is a cell of
+`C`. -/
 theorem ofPolyhedron_isSubcomplex_iff (C : FinitePolyhedralComplex h) :
     (ofPolyhedron h P hP).IsSubcomplex C ↔ P.Nonempty → P ∈ C.cells := by
   refine ⟨fun hsub hne => isSubcomplex_iff.mp hsub (self_mem_cells_ofPolyhedron hP hne),
