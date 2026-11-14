@@ -68,8 +68,6 @@ range, so the value is a `dite` rather than a plain application.
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
-* `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
-  last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
 * `Fin.exists_orderHom_succAbove_eq`: each `l.succAbove` has a monotone retraction on the
   indices different from `l`.
@@ -561,13 +559,6 @@ theorem castSucc_last_ne_one {n : ℕ} (hn : n ≠ 1) : castSucc (last n) ≠ (1
 /-- The last index of `Fin (n + 2)` is not `1` when `n ≠ 0`. -/
 theorem last_ne_one {n : ℕ} (hn : n ≠ 0) : last (n + 1) ≠ (1 : Fin (n + 2)) :=
   ne_of_val_ne (by simp only [val_last, val_one]; omega)
-
-/-- An index of `Fin (n + 2)` that is at least `n` is the penultimate or the last one. -/
-theorem eq_castSucc_last_or_eq_last {n : ℕ} {i : Fin (n + 2)} (hi : n ≤ i.val) :
-    i = castSucc (last n) ∨ i = last (n + 1) := by
-  have := i.isLt
-  simp only [Fin.ext_iff, val_castSucc, val_last]
-  omega
 
 /-- The indices of `Fin (n + 2)` greater than `1` are the double successors of indices of
 `Fin n`. -/
