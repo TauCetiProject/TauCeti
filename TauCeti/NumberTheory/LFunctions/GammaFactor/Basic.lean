@@ -25,7 +25,9 @@ properties of its completed function.
 * `differentiable_invGammaFactor` gives entirety; `meromorphic_gammaFactor` and
   `analyticAt_gammaFactor` give meromorphy and analyticity off exceptional values.
 * `gammaFactor_eq_zero_iff` and `invGammaFactor_eq_zero_iff_exists` identify the shifted
-  pole lattices.
+  pole lattices; `gammaFactor_ne_zero_of_forall_im_ne`, `gammaFactor_ne_zero_of_im_gt`,
+  `gammaFactor_ne_zero_of_re_pos`, and `log_norm_gammaFactor` record nonvanishing off those
+  lattices and the additive log-norm decomposition.
 * `invGammaFactor_eq_zero_iff_meromorphicOrderAt_pos` characterizes zeros by positive order.
 * `meromorphicOrderAt_invGammaFactor` negates orders, and `invGammaFactor_dual` describes
   compatibility with duality.
@@ -120,6 +122,68 @@ theorem gammaFactor_eq_zero_iff (s : ℂ) :
       (∃ ν ∈ d.gammaC, ∃ n : ℕ, s + ν = -(n : ℂ)) := by
   simp only [gammaFactor_def, mul_eq_zero, Multiset.prod_eq_zero_iff, Multiset.mem_map,
     Gammaℝ_eq_zero_iff, Gammaℂ_eq_zero_iff]
+
+/-- `d.gammaFactor s` is nonzero whenever `s + μ` and `s + ν` lie off the real axis for all shifts
+`μ ∈ d.gammaR` and `ν ∈ d.gammaC`. -/
+theorem gammaFactor_ne_zero_of_forall_im_ne {s : ℂ}
+    (hR : ∀ μ ∈ d.gammaR, s.im + μ.im ≠ 0) (hC : ∀ ν ∈ d.gammaC, s.im + ν.im ≠ 0) :
+    d.gammaFactor s ≠ 0 := by
+  rw [Ne, d.gammaFactor_eq_zero_iff]
+  rintro (⟨μ, hμ, n, hn⟩ | ⟨ν, hν, n, hn⟩)
+  · exact hR μ hμ (by simpa using congrArg im hn)
+  · exact hC ν hν (by simpa using congrArg im hn)
+
+/-- `d.gammaFactor s` is nonzero once `|s.im|` strictly exceeds the imaginary parts of all
+shifts. -/
+theorem gammaFactor_ne_zero_of_im_gt {s : ℂ}
+    (hR : ∀ μ ∈ d.gammaR, |μ.im| < |s.im|) (hC : ∀ ν ∈ d.gammaC, |ν.im| < |s.im|) :
+    d.gammaFactor s ≠ 0 := by
+  refine d.gammaFactor_ne_zero_of_forall_im_ne (fun μ hμ h0 ↦ ?_) (fun ν hν h0 ↦ ?_)
+  · have hμs : μ.im = -s.im := by linarith
+    have habs : |μ.im| = |s.im| := by rw [hμs, abs_neg]
+    exact (hR μ hμ).ne habs
+  · have hνs : ν.im = -s.im := by linarith
+    have habs : |ν.im| = |s.im| := by rw [hνs, abs_neg]
+    exact (hC ν hν).ne habs
+
+/-- `d.gammaFactor s` is nonzero whenever every shifted real part `s.re + μ.re` and `s.re + ν.re`
+is strictly positive. -/
+theorem gammaFactor_ne_zero_of_re_pos {s : ℂ}
+    (hR : ∀ μ ∈ d.gammaR, 0 < s.re + μ.re) (hC : ∀ ν ∈ d.gammaC, 0 < s.re + ν.re) :
+    d.gammaFactor s ≠ 0 := by
+  rw [Ne, d.gammaFactor_eq_zero_iff]
+  rintro (⟨μ, hμ, n, hn⟩ | ⟨ν, hν, n, hn⟩)
+  · have hre : s.re + μ.re = -(2 * (n : ℝ)) := by simpa using congrArg re hn
+    linarith [hR μ hμ, (Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
+  · have hre : s.re + ν.re = -(n : ℝ) := by simpa using congrArg re hn
+    linarith [hC ν hν, (Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
+
+/-- Away from the poles of `d.gammaFactor`, `log ‖d.gammaFactor s‖` is the sum of the logarithms of
+the norms of its shifted `Gammaℝ` and `Gammaℂ` factors. -/
+theorem log_norm_gammaFactor {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
+    Real.log ‖d.gammaFactor s‖ =
+      (d.gammaR.map fun μ ↦ Real.log ‖Gammaℝ (s + μ)‖).sum +
+        (d.gammaC.map fun ν ↦ Real.log ‖Gammaℂ (s + ν)‖).sum := by
+  rw [gammaFactor_def] at hs ⊢
+  have hR_ne : (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)).prod ≠ 0 := left_ne_zero_of_mul hs
+  have hC_ne : (d.gammaC.map fun ν ↦ Gammaℂ (s + ν)).prod ≠ 0 := right_ne_zero_of_mul hs
+  have hR_mem : ∀ x ∈ (d.gammaR.map fun μ ↦ ‖Gammaℝ (s + μ)‖), x ≠ 0 := by
+    intro x hx
+    obtain ⟨μ, hμ, rfl⟩ := Multiset.mem_map.mp hx
+    exact norm_ne_zero_iff.2 fun h0 ↦ hR_ne
+      (Multiset.prod_eq_zero (by
+        simpa [h0] using Multiset.mem_map_of_mem (fun μ ↦ Gammaℝ (s + μ)) hμ))
+  have hC_mem : ∀ x ∈ (d.gammaC.map fun ν ↦ ‖Gammaℂ (s + ν)‖), x ≠ 0 := by
+    intro x hx
+    obtain ⟨ν, hν, rfl⟩ := Multiset.mem_map.mp hx
+    exact norm_ne_zero_iff.2 fun h0 ↦ hC_ne
+      (Multiset.prod_eq_zero (by
+        simpa [h0] using Multiset.mem_map_of_mem (fun ν ↦ Gammaℂ (s + ν)) hν))
+  rw [norm_mul, Real.log_mul (norm_ne_zero_iff.2 hR_ne) (norm_ne_zero_iff.2 hC_ne),
+    Multiset.norm_prod, Multiset.norm_prod]
+  simp only [Multiset.map_map, Function.comp_def]
+  rw [Real.log_multiset_prod hR_mem, Real.log_multiset_prod hC_mem]
+  simp only [Multiset.map_map, Function.comp_def]
 
 /-- The analytic reciprocal vanishes precisely on the shifted gamma pole lattices. -/
 theorem invGammaFactor_eq_zero_iff_exists (s : ℂ) :
