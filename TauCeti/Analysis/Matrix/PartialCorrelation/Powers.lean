@@ -499,24 +499,32 @@ theorem partialCorrelationGramCholeskyPower_single_single
     Prod.ext_iff, ite_and]
   simp only [eq_comm]
 
+/-- The total Cholesky exponent in row `i` induced by `K` equals the sum over `j` of the column
+totals of `K (i, j)` and `K (j, i)`. -/
+theorem sum_partialCorrelationGramCholeskyPower_row
+    (K : Fin p × Fin p → Fin p → ℕ) (i : Fin p) :
+    ∑ k, partialCorrelationGramCholeskyPower K (i, k) =
+      ∑ j, ((∑ k, K (i, j) k) + ∑ k, K (j, i) k) := by
+  simp_rw [partialCorrelationGramCholeskyPower_def]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_add_distrib
+
 /-- For every column-split family `K` whose entrywise sums match `n`, the total Cholesky exponent
 in row `i` equals the total degree of axis `i` in `n`. -/
-theorem sum_partialCorrelationGramCholeskyPower_row
+theorem sum_partialCorrelationGramCholeskyPower_row_of_mem_piFinset
     {s : Fin p × Fin p → Finset (Fin p)} {n : Fin p × Fin p → ℕ}
     {K : Fin p × Fin p → Fin p → ℕ}
     (hK : K ∈ Fintype.piFinset fun ab ↦ Finset.piAntidiag (s ab) (n ab))
     (i : Fin p) :
     ∑ k, partialCorrelationGramCholeskyPower K (i, k) =
       ∑ j, (n (i, j) + n (j, i)) := by
-  simp_rw [partialCorrelationGramCholeskyPower_def]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [sum_partialCorrelationGramCholeskyPower_row]
   have hsum (ab : Fin p × Fin p) : ∑ k, K ab k = n ab := by
     have hab := Fintype.mem_piFinset.mp hK ab
     rw [← (Finset.mem_piAntidiag.mp hab).1]
     exact (Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦
       Finset.eq_zero_of_notMem_of_mem_piAntidiag hk hab).symm
-  rw [Finset.sum_add_distrib, hsum (i, j), hsum (j, i)]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [hsum (i, j), hsum (j, i)]
 
 /-- When each column-split vector `K ab` is supported on `Finset.Iic (min ab.1 ab.2)`, the
 induced Cholesky multi-index is supported on or below the diagonal. -/

@@ -235,9 +235,13 @@ theorem partialCorrelationGram_apply_eq_sum_Iic_min (z : strictLowerTriangle p �
 
 /-- Below the diagonal, the first column of the triangular factor consists of the first-column
 partial correlations. -/
-theorem partialCorrelationCholesky_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)
-    {i : Fin (p + 1)} (h : 0 < i) : partialCorrelationCholesky z i 0 = z ⟨(i, 0), h⟩ := by
-  simp [partialCorrelationCholesky_apply_of_gt z h]
+theorem partialCorrelationCholesky_apply_zero_of_pos [NeZero p]
+    (z : strictLowerTriangle p → ℝ) {i : Fin p} (h : 0 < i) :
+    partialCorrelationCholesky z i 0 = z ⟨(i, 0), h⟩ := by
+  have hlt (k : Fin p) : ¬ k < 0 := by
+    rw [Fin.lt_def, Fin.val_zero]
+    exact Nat.not_lt_zero _
+  simp [partialCorrelationCholesky_apply_of_gt z h, hlt]
 
 /-- The first column of the Gram matrix consists of the first-column partial correlations. -/
 theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)

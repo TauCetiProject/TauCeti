@@ -51,10 +51,14 @@ off-diagonal correlation entries despite their zero pairwise covariances.
 * `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_diag` and
   `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_le_one`: diagonal-only and
   low-dimensional mixed moments equal one.
-* `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure_of_ne`,
+* `TauCeti.Probability.memLp_coe_apply_lkjMeasure`,
+  `TauCeti.Probability.memLp_pow_coe_apply_lkjMeasure`,
+  `TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure`,
+  `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure_of_ne`,
   `TauCeti.Probability.integral_pow_coe_apply_self_lkjMeasure`, and
-  `TauCeti.Probability.integral_mul_mul_coe_apply_lkjMeasure`: closed-form single-entry natural
-  moments and the positive joint 3-cycle moment `1 / (2 * η + p - 1) ^ 2`.
+  `TauCeti.Probability.integral_mul_mul_coe_apply_lkjMeasure`: single-entry `Lᵖ` membership and
+  integrability, closed-form single-entry natural moments, and the positive joint 3-cycle moment
+  `1 / (2 * η + p - 1) ^ 2`.
 
 ## References
 
@@ -319,7 +323,35 @@ theorem integral_prod_pow_coe_apply_lkjMeasure_of_le_one {p : ℕ} (hp : p ≤ 1
   have : Subsingleton (Fin p) := Fin.subsingleton_iff_le_one.mpr hp
   exact integral_prod_pow_coe_apply_lkjMeasure_of_diag hη fun ab _ ↦ Subsingleton.elim ab.1 ab.2
 
-/-! ### Closed-form single-entry and three-entry mixed moments -/
+/-! ### Single-entry integrability and closed-form moments -/
+
+/-- Every natural power of an entry of an LKJ matrix belongs to every `Lᵠ`, including `L∞`.
+This holds for all dimensions and all real shapes `η`, including nonpositive shapes. -/
+theorem memLp_pow_coe_apply_lkjMeasure (p : ℕ) (η : ℝ) (i j : Fin p) (k : ℕ) (q : ℝ≥0∞) :
+    MemLp (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      (R : Matrix (Fin p) (Fin p) ℝ) i j ^ k) q (lkjMeasure p η) := by
+  classical
+  have hsingle (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+      (∏ ab : Fin p × Fin p,
+          (R : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ Pi.single (i, j) k ab) =
+        (R : Matrix (Fin p) (Fin p) ℝ) i j ^ k := by
+    rw [Fintype.prod_eq_single (i, j) fun ab hab ↦ by simp [Pi.single_eq_of_ne hab],
+      Pi.single_eq_same]
+  simpa only [hsingle] using memLp_prod_pow_coe_apply_lkjMeasure p η (Pi.single (i, j) k) q
+
+/-- Every entry of an LKJ matrix belongs to every `Lᵠ`, including `L∞`. This holds for all
+dimensions and all real shapes `η`, including nonpositive shapes. -/
+theorem memLp_coe_apply_lkjMeasure (p : ℕ) (η : ℝ) (i j : Fin p) (q : ℝ≥0∞) :
+    MemLp (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      (R : Matrix (Fin p) (Fin p) ℝ) i j) q (lkjMeasure p η) := by
+  simpa only [pow_one] using memLp_pow_coe_apply_lkjMeasure p η i j 1 q
+
+/-- Every natural power of an entry of an LKJ matrix is integrable. This includes the zeroth
+moment and all nonpositive shapes, where `lkjMeasure` is zero. -/
+theorem integrable_pow_coe_apply_lkjMeasure (p : ℕ) (η : ℝ) (i j : Fin p) (k : ℕ) :
+    Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      (R : Matrix (Fin p) (Fin p) ℝ) i j ^ k) (lkjMeasure p η) :=
+  memLp_one_iff_integrable.mp (memLp_pow_coe_apply_lkjMeasure p η i j k 1)
 
 /-- **Natural moments of an off-diagonal LKJ entry.** For `0 < η` and `i ≠ j`, the `k`-th moment of
 `R i j` under `lkjMeasure p η` vanishes at odd `k` and equals a single Beta quotient at even `k`,
