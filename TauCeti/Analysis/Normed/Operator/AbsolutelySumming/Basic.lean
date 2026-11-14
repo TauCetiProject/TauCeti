@@ -618,13 +618,14 @@ def mk' {T : E →L[𝕜] F} (hT : T ∈ absolutelySummingOperators 𝕜 p E F) 
 theorem toContinuousLinearMap_mk' {T : E →L[𝕜] F}
     (hT : T ∈ absolutelySummingOperators 𝕜 p E F) : (mk' hT).toContinuousLinearMap = T := (rfl)
 
+variable (p) in
 /-- The rank-one operator `x ↦ f x • y` in `Πₚ(E, F)`. -/
 def smulRight (f : StrongDual 𝕜 E) (y : F) : AbsolutelySumming 𝕜 p E F :=
   mk' (smulRight_mem_absolutelySummingOperators f y)
 
 @[simp]
 theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (y : F) :
-    (smulRight (p := p) f y).toContinuousLinearMap = f.smulRight y := (rfl)
+    (smulRight p f y).toContinuousLinearMap = f.smulRight y := (rfl)
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -660,7 +661,7 @@ theorem norm_le_iff {T : AbsolutelySumming 𝕜 p E F} {C : ℝ} (hC : 0 ≤ C) 
 /-- The rank-one operator `x ↦ f x • y` has `p`-summing norm `‖f‖ ‖y‖`. -/
 @[simp]
 theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) :
-    ‖smulRight (p := p) f y‖ = ‖f‖ * ‖y‖ := by
+    ‖smulRight p f y‖ = ‖f‖ * ‖y‖ := by
   rw [norm_def, toContinuousLinearMap_smulRight, ContinuousLinearMap.summingENorm_smulRight,
     ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
