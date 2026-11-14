@@ -24,20 +24,32 @@ The entries of row `0` to the right of the corner then vanish too, because the i
 unitary matrix is its conjugate transpose and the corner, a nonzero element of a division ring,
 is invertible on both sides.
 
+Setting `c = 1` embeds `unitary (Matrix (Fin m) (Fin m) α)` in
+`unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)` by `B ↦ diag(1, B)`
+(`Matrix.unitaryOneBlockSucc`). Here the corner is already `1`, so no division-ring hypothesis is
+needed to clear row `0`: over any star semiring, the image of `Matrix.unitaryOneBlockSucc` is the
+stabilizer of the first standard basis vector `e₀` (`Matrix.mem_range_unitaryOneBlockSucc_iff`).
+
 The block-diagonal matrix `Matrix.cornerBlockSucc c B = diag(c, B)` itself, with its blockwise
 product and star lemmas, is in `TauCeti/LinearAlgebra/Matrix/CornerBlockSucc.lean`.
 
 ## Main definitions
 
 * `Matrix.unitaryProdBlockSucc`: the embedding `(c, B) ↦ diag(c, B)`.
+* `Matrix.unitaryOneBlockSucc`: the embedding `B ↦ diag(1, B)`.
 
 ## Main results
 
 * `Matrix.cornerBlockSucc_mem_unitary_iff`: `diag(c, B)` is unitary exactly when `c` and `B` are.
-* `Matrix.coe_unitaryProdBlockSucc`: the embedding sends `(c, B)` to `cornerBlockSucc c B`.
-* `Matrix.unitaryProdBlockSucc_injective`: the embedding is injective.
-* `Matrix.mem_range_unitaryProdBlockSucc_iff`: over a division ring, its image is the subgroup of
-  unitary matrices whose column `0` vanishes below the corner.
+* `Matrix.coe_unitaryProdBlockSucc`, `Matrix.coe_unitaryOneBlockSucc`: the embeddings send `(c, B)`
+  and `B` to `cornerBlockSucc c B` and `cornerBlockSucc 1 B`.
+* `Matrix.unitaryProdBlockSucc_injective`, `Matrix.unitaryOneBlockSucc_injective`: both embeddings
+  are injective.
+* `Matrix.mem_range_unitaryOneBlockSucc_iff`, `Matrix.mem_range_unitaryOneBlockSucc_iff_apply`:
+  over any star semiring, the image of `Matrix.unitaryOneBlockSucc` is the subgroup fixing `e₀`.
+* `Matrix.mem_range_unitaryProdBlockSucc_iff`: over a division ring, the image of
+  `Matrix.unitaryProdBlockSucc` is the subgroup of unitary matrices whose column `0` vanishes below
+  the corner.
 
 ## References
 
@@ -113,6 +125,93 @@ theorem unitaryProdBlockSucc_injective : Function.Injective (unitaryProdBlockSuc
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext (Matrix.ext fun i j ↦ ?_))
   · simpa using congrFun (congrFun h' 0) 0
   · simpa using congrFun (congrFun h' i.succ) j.succ
+
+variable (α m) in
+/-- The **block-diagonal embedding** `B ↦ diag(1, B)` of `unitary (Matrix (Fin m) (Fin m) α)` in
+`unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)`: the identity scalar occupies the corner indexed
+by `0`, and `B` the indices `Fin.succ`. -/
+def unitaryOneBlockSucc :
+    unitary (Matrix (Fin m) (Fin m) α) →* unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α) :=
+  (unitaryProdBlockSucc α m).comp
+    (MonoidHom.inr (unitary α) (unitary (Matrix (Fin m) (Fin m) α)))
+
+/-- `Matrix.unitaryOneBlockSucc` is `Matrix.unitaryProdBlockSucc` with corner `1`. -/
+theorem unitaryOneBlockSucc_eq_unitaryProdBlockSucc (B : unitary (Matrix (Fin m) (Fin m) α)) :
+    unitaryOneBlockSucc α m B = unitaryProdBlockSucc α m (1, B) :=
+  (rfl)
+
+/-- The block-diagonal embedding `Matrix.unitaryOneBlockSucc` sends `B` to `diag(1, B)`. -/
+theorem coe_unitaryOneBlockSucc (B : unitary (Matrix (Fin m) (Fin m) α)) :
+    (unitaryOneBlockSucc α m B : Matrix (Fin (m + 1)) (Fin (m + 1)) α) = cornerBlockSucc 1 B.1 :=
+  (rfl)
+
+@[simp]
+theorem unitaryOneBlockSucc_apply_zero_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
+    (unitaryOneBlockSucc α m B).1 0 0 = 1 :=
+  cornerBlockSucc_zero_zero 1 B.1
+
+@[simp]
+theorem unitaryOneBlockSucc_apply_zero_succ (B : unitary (Matrix (Fin m) (Fin m) α)) (j : Fin m) :
+    (unitaryOneBlockSucc α m B).1 0 j.succ = 0 :=
+  cornerBlockSucc_zero_succ 1 B.1 j
+
+@[simp]
+theorem unitaryOneBlockSucc_apply_succ_zero (B : unitary (Matrix (Fin m) (Fin m) α)) (i : Fin m) :
+    (unitaryOneBlockSucc α m B).1 i.succ 0 = 0 :=
+  cornerBlockSucc_succ_zero 1 B.1 i
+
+@[simp]
+theorem unitaryOneBlockSucc_apply_succ_succ (B : unitary (Matrix (Fin m) (Fin m) α))
+    (i j : Fin m) : (unitaryOneBlockSucc α m B).1 i.succ j.succ = B.1 i j :=
+  cornerBlockSucc_succ_succ 1 B.1 i j
+
+/-- Column `0` of the block-diagonal unitary matrix `diag(1, B)` is `e₀`. -/
+@[simp]
+theorem col_unitaryOneBlockSucc_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
+    (unitaryOneBlockSucc α m B).1.col 0 = Pi.single 0 1 := by
+  ext p
+  refine Fin.cases ?_ (fun i ↦ ?_) p <;> simp [Fin.succ_ne_zero]
+
+/-- A block-diagonal unitary matrix `diag(1, B)` fixes the first standard basis vector `e₀`. -/
+theorem unitaryOneBlockSucc_mulVec_single_zero (B : unitary (Matrix (Fin m) (Fin m) α)) :
+    (unitaryOneBlockSucc α m B).1 *ᵥ Pi.single 0 1 = Pi.single 0 1 := by
+  simp
+
+/-- The block-diagonal embedding `B ↦ diag(1, B)` is injective. -/
+theorem unitaryOneBlockSucc_injective : Function.Injective (unitaryOneBlockSucc α m) :=
+  (unitaryProdBlockSucc_injective (α := α) (m := m)).comp fun _ _ h ↦ (Prod.mk.inj h).2
+
+/-- **The block-diagonal unitary matrices `diag(1, B)` are those whose column `0` is `e₀`**: over
+any star semiring, a unitary matrix of size `m + 1` lies in the image of
+`unitary (Matrix (Fin m) (Fin m) α)` exactly when its `(0, 0)` entry is `1` and its entries below
+the corner in column `0` vanish. -/
+theorem mem_range_unitaryOneBlockSucc_iff_apply
+    {A : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)} :
+    A ∈ (unitaryOneBlockSucc α m).range ↔ A.1 0 0 = 1 ∧ ∀ i : Fin m, A.1 i.succ 0 = 0 := by
+  refine ⟨?_, fun ⟨h00, hcol⟩ ↦ ?_⟩
+  · rintro ⟨B, rfl⟩
+    exact ⟨unitaryOneBlockSucc_apply_zero_zero B, unitaryOneBlockSucc_apply_succ_zero B⟩
+  -- Because `A 0 0 = 1` and `star A * A = 1`, row `0` vanishes off the corner as well.
+  have hrow (j : Fin m) : A.1 0 j.succ = 0 := by
+    have h := congrFun (congrFun A.2.1 0) j.succ
+    simpa [Matrix.mul_apply, star_eq_conjTranspose, Matrix.one_apply, Fin.sum_univ_succ, h00, hcol,
+      (Fin.succ_ne_zero j).symm] using h
+  let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.1 i.succ j.succ
+  have hAB : A.1 = cornerBlockSucc 1 B :=
+    ext_fin_succ (h00.trans (cornerBlockSucc_zero_zero 1 B).symm) (by simpa using hrow)
+      (by simpa using hcol) fun i j ↦ (cornerBlockSucc_succ_succ 1 B i j).symm
+  have hB : B ∈ unitary (Matrix (Fin m) (Fin m) α) :=
+    (cornerBlockSucc_mem_unitary_iff.1 (hAB ▸ A.2)).2
+  exact ⟨⟨B, hB⟩, Subtype.ext hAB.symm⟩
+
+/-- **The block-diagonal unitary matrices `diag(1, B)` are the stabilizer of `e₀`**: over any star
+semiring, a unitary matrix of size `m + 1` lies in the image of
+`unitary (Matrix (Fin m) (Fin m) α)` exactly when it fixes `e₀`. -/
+theorem mem_range_unitaryOneBlockSucc_iff
+    {A : unitary (Matrix (Fin (m + 1)) (Fin (m + 1)) α)} :
+    A ∈ (unitaryOneBlockSucc α m).range ↔ A.1 *ᵥ Pi.single 0 1 = Pi.single 0 1 := by
+  rw [mem_range_unitaryOneBlockSucc_iff_apply, funext_iff, Fin.forall_fin_succ]
+  simp [Fin.succ_ne_zero]
 
 end Semiring
 
