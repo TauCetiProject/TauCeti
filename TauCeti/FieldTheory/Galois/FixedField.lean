@@ -272,11 +272,8 @@ automorphism fixes `⨆ i, E i` pointwise exactly when it fixes every `E i` poin
 indexed form of Mathlib's `IntermediateField.fixingSubgroup_sup`, and like it needs no hypothesis
 on `M / K`. -/
 theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
-    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup := by
-  ext σ
-  rw [Subgroup.mem_iInf]
-  exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
-    by simp [← Subgroup.zpowers_le, ← le_fixedField_iff_le_fixingSubgroup]⟩
+    (⨆ i, E i).fixingSubgroup = ⨅ i, (E i).fixingSubgroup :=
+  congrArg OrderDual.ofDual (fixingSubgroup_fixedField_gc (K := K) (M := M)).l_iSup
 
 /-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
 `E` is the join of the simple extensions it contains, each of them finite over `K`, so
