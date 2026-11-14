@@ -14,84 +14,51 @@ import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 
 Brenier's theorem in `TauCeti/MeasureTheory/OptimalTransport/Brenier.lean` assumes that the source
 law `μ` on a finite-dimensional real inner product space `E` is absolutely continuous with respect
-to an additive Haar measure. That hypothesis is sufficient — Rademacher's theorem makes every convex
-potential differentiable almost everywhere — but far from necessary: in `ℝ²`, the one-dimensional
-Hausdorff measure along a strictly convex circle still admits a unique, map-induced optimal plan to
-every target of finite second moment, whereas one-dimensional Hausdorff measure along a line segment
-can split symmetrically to the two sides of the segment.
+to an additive Haar measure. That hypothesis is sufficient, via Rademacher's theorem, but far from
+necessary: in `ℝ²`, one-dimensional Hausdorff measure on a circle still admits a unique map-induced
+optimal plan to every `P₂` target, whereas on a line segment mass can split symmetrically.
 
-The sharp hypothesis on `μ`, isolated by Gangbo and McCann (1996) through Zajíček's covering theorem
-for convex nondifferentiability sets (1979) and recorded as Definition 1.25 and Theorem 1.26 of
-Ambrosio and Gigli (2013), is that `μ` vanishes on every `c - c` hypersurface (`IsCCHypersurface`):
-we call such a measure **`c - c`-regular** (`TauCeti.IsCCRegular`, avoiding a collision with
-Mathlib's topological `MeasureTheory.Measure.Regular`).
+The sharp hypothesis on `μ`, isolated by Gangbo and McCann (1996) via Zajíček's covering theorem
+(1979) and recorded as Definition 1.25 and Theorem 1.26 of Ambrosio and Gigli (2013), is that `μ`
+vanishes on every `c - c` hypersurface (`IsCCHypersurface`). We call such a measure
+**`c - c`-regular** (`TauCeti.IsCCRegular`, avoiding Mathlib's topological `Measure.Regular`).
 
-Four layers of results organize this module:
-
-1. **Calculus and sufficient conditions for `IsCCRegular`:** closure under absolute continuity,
-   domination, restriction, addition, and scalar multiplication; automatic regularity of every
-   additive Haar measure (`TauCeti.isCCRegular_of_isAddHaarMeasure`), every measure absolutely
-   continuous with respect to Haar measure (`TauCeti.isCCRegular_of_absolutelyContinuous`), and
-   every measure vanishing on all Lipschitz hypersurfaces
-   (`TauCeti.isCCRegular_of_forall_isLipschitzHypersurface`); equivalence with
-   `NullSingletonClass` in dimension `1` (`TauCeti.isCCRegular_iff_nullSingletonClass`); and
-   equivalence with `μ`-almost everywhere differentiability of every convex function `u : E → ℝ`
-   (`TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt`).
-2. **Almost everywhere differentiability on effective domains:** for any `u : E → EReal` with convex
-   real epigraph and any `c - c`-regular Borel measure `μ`, at `μ`-almost every point where
-   `u x ≠ ⊤`, `u` is finite on a neighborhood of `x` and `u.toReal` is differentiable at `x`
-   (`TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal`), because both the
-   frontier of `{x | u x ≠ ⊤}` and the interior nondifferentiability locus are covered by countably
-   many `c - c` hypersurfaces.
-3. **Regular-source Brenier theory:** replacing `μ ≪ ρ` by `IsCCRegular μ` throughout Brenier's
-   theorem yields determinism of plans on subdifferential graphs
-   (`TauCeti.IsCCRegular.eq_graphPlan_gradient_of_ae_mem_subdifferential`), uniqueness of optimal
-   quadratic plans (`TauCeti.IsOptimalCoupling.unique_of_isCCRegular`), uniqueness of the monotone
-   rearrangement (`TauCeti.IsCCRegular.gradient_ae_eq_gradient_of_hasLaw`), existence and almost
-   everywhere uniqueness of a convex-gradient optimal transport map
-   (`TauCeti.IsCCRegular.exists_isKantorovichOptimalTransportMap_gradient`), and strict convexity of
-   the quadratic transport cost in the target
-   (`TauCeti.IsCCRegular.transportCost_smul_add_smul_lt`).
-4. **Sharpness (Ambrosio–Gigli Theorem 1.26):** conversely, if a probability measure `μ` of finite
-   second moment charges some `c - c` hypersurface `s`, then `μ` charges a bounded piece
-   `s ∩ closedBall 0 N`; adding `‖x‖ ^ 2 / 2` to the Lipschitz convex splitting potential from
-   `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_measurable_subgradients` produces two
-   Borel measurable subgradient selections `S₁, S₂` of linear growth that disagree everywhere on
-   `s ∩ closedBall 0 N`. The half-and-half mixture `π = 2⁻¹ • graphPlan S₁ μ + 2⁻¹ • graphPlan S₂ μ`
-   is quadratic-optimal for its second marginal `ν` (which also has finite second moment) yet is not
-   of the form `graphPlan T μ` for any map `T : E → E`
-   (`TauCeti.exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular`). Thus
-   `IsCCRegular μ` is necessary and sufficient for every `P₂(E)` target to have all its optimal
-   plans (equivalently, a unique optimal plan) induced by a transport map. Note that uniqueness of
-   optimal plans *alone*, without map-inducibility, does not force `IsCCRegular μ`: a Dirac mass
-   `δ_x` has a unique coupling with every target, yet is not `c - c`-regular in positive dimension.
+1. **Calculus and sufficient conditions:** closure under absolute continuity, domination,
+   restriction, addition, and scaling; regularity of Haar measures, absolutely continuous measures,
+   and measures null on Lipschitz hypersurfaces; equivalence with `NullSingletonClass` in dimension
+   `1` and with `μ`-a.e. differentiability of all convex functions `u : E → ℝ`.
+2. **Effective-domain differentiability:** for `u : E → EReal` with convex real epigraph and
+   `c - c`-regular `μ`, at `μ`-a.e. `x` with `u x ≠ ⊤`, `u` is finite near `x` and `u.toReal` is
+   differentiable at `x` (`TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal`).
+3. **Regular-source Brenier theory:** determinism on subdifferential graphs, uniqueness of optimal
+   plans and monotone rearrangements, existence of a convex-gradient optimal map, and strict
+   convexity of the quadratic transport cost in the target.
+4. **Sharpness (Ambrosio–Gigli Theorem 1.26):** if a `P₂` probability measure `μ` charges a `c - c`
+   hypersurface `s`, adding `‖x‖ ^ 2 / 2` to the Lipschitz convex splitting potential from
+   `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_measurable_subgradients` yields Borel
+   subgradients `S₁, S₂` separating `s ∩ closedBall 0 N` whose half-and-half mixture
+   `π = 2⁻¹ • graphPlan S₁ μ + 2⁻¹ • graphPlan S₂ μ` is quadratic-optimal for its `P₂` target `ν`
+   yet equals `graphPlan T μ` for no `T : E → E` (note that uniqueness *alone*, without
+   map-inducibility, holds trivially for Dirac masses `δ_x`).
 
 ## Main definitions
 
-* `TauCeti.IsCCRegular μ` — a measure `μ` on a real inner product space `E` assigns zero mass to
-  every `c - c` hypersurface (`∀ ⦃s⦄, IsCCHypersurface s → μ s = 0`).
+* `TauCeti.IsCCRegular μ` — `μ` vanishes on every `c - c` hypersurface.
 
 ## Main statements
 
 * `TauCeti.isCCRegular_of_forall_isLipschitzHypersurface`,
-  `TauCeti.isCCRegular_of_isAddHaarMeasure`, and `TauCeti.isCCRegular_of_absolutelyContinuous` —
-  measures null on Lipschitz hypersurfaces, additive Haar measures, and measures absolutely
-  continuous with respect to Haar measure are `c - c`-regular;
-* `TauCeti.isCCRegular_iff_nullSingletonClass` — on a one-dimensional inner product space,
-  `IsCCRegular μ` is equivalent to `NullSingletonClass μ`;
-* `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt` — a measure on a finite-dimensional
-  inner product space is `c - c`-regular if and only if every convex function `u : E → ℝ` is
-  differentiable `μ`-almost everywhere;
+  `TauCeti.isCCRegular_of_isAddHaarMeasure`, `TauCeti.isCCRegular_of_absolutelyContinuous`,
+  `TauCeti.isCCRegular_iff_nullSingletonClass`, and
+  `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt`;
 * `TauCeti.IsCCRegular.exists_isKantorovichOptimalTransportMap_gradient` and
-  `TauCeti.IsOptimalCoupling.unique_of_isCCRegular` — **Brenier's theorem for `c - c`-regular
-  sources**;
-* `TauCeti.exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular` — **converse
-  splitting construction** when `¬ IsCCRegular μ`;
-* `TauCeti.isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan`,
+  `TauCeti.IsOptimalCoupling.unique_of_isCCRegular` — **Brenier's theorem for regular sources**;
+* `TauCeti.exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular`,
+  `TauCeti.isCCRegular_iff_forall_memLp_isOptimalCoupling_exists_eq_graphPlan`,
   `TauCeti.isCCRegular_iff_forall_memLp_exists_isKantorovichOptimalTransportMap_and_unique`,
   `TauCeti.WassersteinSpace.isCCRegular_iff_forall_isOptimalCoupling_exists_eq_graphPlan`, and
   `WassersteinSpace.isCCRegular_iff_forall_exists_isKantorovichOptimalTransportMap_and_unique`
-  — **Ambrosio–Gigli Theorem 1.26**: sharp characterization of `c - c`-regular sources in `P₂(E)`.
+  — **Ambrosio–Gigli Theorem 1.26**.
 
 ## References
 
@@ -101,8 +68,7 @@ Four layers of results organize this module:
   113--161.
 * L. Ambrosio and N. Gigli, *A user's guide to optimal transport*, Lecture Notes in Mathematics
   2062, Springer, 2013, Definition 1.25 and Theorem 1.26.
-* C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, AMS, 2003,
-  §2.1.3 and §2.4.
+* C. Villani, *Topics in Optimal Transportation*, GSM 58, AMS, 2003, §2.1.3 and §2.4.
 -/
 
 public section
@@ -178,11 +144,11 @@ theorem IsCCRegular.restrict (hμ : IsCCRegular μ) (t : Set E) : IsCCRegular (�
 
 /-- The sum of two `c - c`-regular measures is `c - c`-regular. -/
 theorem IsCCRegular.add (hμ : IsCCRegular μ) (hν : IsCCRegular ν) : IsCCRegular (μ + ν) :=
-  fun s hs => by simp [hμ hs, hν hs]
+  fun _ hs => by simp [hμ hs, hν hs]
 
 /-- Scaling a `c - c`-regular measure by any factor in `ℝ≥0∞` preserves `c - c`-regularity. -/
 theorem IsCCRegular.smul (hμ : IsCCRegular μ) (c : ℝ≥0∞) : IsCCRegular (c • μ) :=
-  fun s hs => by simp [hμ hs]
+  fun _ hs => by simp [hμ hs]
 
 /-- On a one-dimensional real inner product space, `c - c` hypersurfaces are singletons, so
 `IsCCRegular μ` is equivalent to `NullSingletonClass μ`. -/
@@ -190,7 +156,6 @@ theorem isCCRegular_iff_nullSingletonClass (hd : Module.finrank ℝ E = 1) :
     IsCCRegular μ ↔ NullSingletonClass μ := by
   refine ⟨fun h => ⟨fun x => h ((isCCHypersurface_iff_exists_eq_singleton hd).2 ⟨x, rfl⟩)⟩,
     fun h s hs => ?_⟩
-  have := h
   obtain ⟨x, rfl⟩ := (isCCHypersurface_iff_exists_eq_singleton hd).1 hs
   exact measure_singleton x
 
@@ -198,15 +163,11 @@ end Basic
 
 private theorem convex_ne_top_of_convex_epigraph {E : Type*} [AddCommGroup E] [Module ℝ E]
     {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) :
-    Convex ℝ {x : E | u x ≠ ⊤} := by
-  intro x hx y hy a b ha hb hab
-  have hle : ∀ z : E, u z ≠ ⊤ → u z ≤ ((u z).toReal : EReal) := fun z hz => by
-    rcases eq_bot_or_bot_lt (u z) with hbot | hbot
-    · simp [hbot]
-    · exact (EReal.coe_toReal hz hbot.ne').symm.le
-  have hmem := hconv (x := (x, (u x).toReal)) (hle x hx) (y := (y, (u y).toReal)) (hle y hy)
-    ha hb hab
-  exact ne_top_of_le_ne_top (EReal.coe_ne_top _) hmem
+    Convex ℝ {x : E | u x ≠ ⊤} := fun x hx y hy a b ha hb hab => by
+  have hle (z : E) (hz : u z ≠ ⊤) : u z ≤ ((u z).toReal : EReal) :=
+    (eq_bot_or_bot_lt (u z)).elim (fun hb => by simp [hb]) fun hb => (EReal.coe_toReal hz hb.ne').ge
+  exact ne_top_of_le_ne_top (EReal.coe_ne_top _)
+    (hconv (x := (x, (u x).toReal)) (hle x hx) (y := (y, (u y).toReal)) (hle y hy) ha hb hab)
 
 section SufficientConditions
 
@@ -246,24 +207,18 @@ theorem IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal {μ : Measu
     ∀ᵐ x ∂μ, u x ≠ ⊤ →
       (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x := by
   let D : Set E := {x | u x ≠ ⊤}
-  have hD_conv : Convex ℝ D := convex_ne_top_of_convex_epigraph hconv
-  obtain ⟨C₁, hC₁, hs₁, hfr⟩ := hD_conv.exists_countable_isCCHypersurface_cover_frontier
+  obtain ⟨C₁, hC₁, hs₁, hfr⟩ :=
+    (convex_ne_top_of_convex_epigraph hconv).exists_countable_isCCHypersurface_cover_frontier
   obtain ⟨C₂, hC₂, hs₂, hnd⟩ :=
     exists_countable_isCCHypersurface_cover_not_differentiableAt_toReal hconv
-  have hfr_sub : D \ interior D ⊆ frontier D := fun _ hx => ⟨subset_closure hx.1, hx.2⟩
   have hnull₁ : μ (D \ interior D) = 0 :=
-    hμ.measure_eq_zero_of_subset_sUnion hC₁ hs₁ (hfr_sub.trans hfr)
+    hμ.measure_eq_zero_of_subset_sUnion hC₁ hs₁ (fun _ hx => hfr ⟨subset_closure hx.1, hx.2⟩)
   have hnull₂ : μ {x | x ∈ interior D ∧ ¬ DifferentiableAt ℝ (fun x' => (u x').toReal) x} = 0 :=
     hμ.measure_eq_zero_of_subset_sUnion hC₂ hs₂ hnd
   filter_upwards [measure_eq_zero_iff_ae_notMem.1 hnull₁,
     measure_eq_zero_iff_ae_notMem.1 hnull₂] with x hx₁ hx₂ hxD
-  have hx_int : x ∈ interior D := by
-    by_contra hni
-    exact hx₁ ⟨hxD, hni⟩
-  have hxdiff : DifferentiableAt ℝ (fun x' => (u x').toReal) x := by
-    by_contra hndiff
-    exact hx₂ ⟨hx_int, hndiff⟩
-  exact ⟨mem_interior_iff_mem_nhds.1 hx_int, hxdiff⟩
+  have hx_int : x ∈ interior D := by by_contra hni; exact hx₁ ⟨hxD, hni⟩
+  exact ⟨mem_interior_iff_mem_nhds.1 hx_int, by by_contra hndiff; exact hx₂ ⟨hx_int, hndiff⟩⟩
 
 section Borel
 
@@ -324,10 +279,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient_of_isCCRegular [IsFiniteM
       (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
       π = graphPlan (∇ fun x => (u x).toReal) μ := by
   obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := h.exists_support_subset_subdifferential hfin
-  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
-  obtain ⟨hdiff, hgraph⟩ :=
-    hμ.eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hconv hlsc hsub'
+  obtain ⟨hdiff, hgraph⟩ := hμ.eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hconv hlsc
+    (by filter_upwards [π.support_mem_ae] with z hz using hsub hz)
   exact ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩
 
 /-- **Regular-source Brenier theorem for the cost `edist ^ 2`.** Generalizes
@@ -344,8 +297,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular [IsFiniteMeasure μ
       transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top] at h2
     refine fun htop => ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin ?_
     rw [h2, htop, ENNReal.mul_top two_ne_zero]
-  have hopt := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h
-  obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient_of_isCCRegular hμ hfin'
+  obtain ⟨u, -, -, -, -, hgraph⟩ := (isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h)
+    |>.exists_eq_graphPlan_gradient_of_isCCRegular hμ hfin'
   exact ⟨_, measurable_gradient _, hgraph⟩
 
 /-- **Uniqueness of the optimal quadratic plan out of a `c - c`-regular source.** Generalizes
@@ -422,18 +375,13 @@ theorem IsCCRegular.exists_isKantorovichOptimalTransportMap_gradient [IsProbabil
   have hT := measurable_gradient fun x => (u x).toReal
   have hlaw : HasLaw (∇ fun x => (u x).toReal) ν μ :=
     (isCoupling_graphPlan_iff hT.aemeasurable).1 (hgraph ▸ hπ.toIsCoupling)
-  have hiff : ∀ S : E → E, HasLaw S ν μ →
-      (IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-        μ ν S ↔ IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
-          (graphPlan S μ) μ ν) := fun S hS =>
-    isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hS
-      hc.measurable.aemeasurable
+  have hiff (S : E → E) (hS : HasLaw S ν μ) :=
+    isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hS hc.measurable.aemeasurable
   refine ⟨u, hconv, hlsc, hbot, hdiff, (hiff _ hlaw).2 (hgraph ▸ hπ),
     fun σ => ⟨fun hσ => (hσ.unique_of_isCCRegular hμ hπ hfin).trans hgraph,
       fun hσ => hσ ▸ hgraph ▸ hπ⟩,
-    fun S hS => ?_⟩
-  exact (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT.aemeasurable).1
-    ((((hiff S hS.toHasLaw).1 hS).unique_of_isCCRegular hμ hπ hfin).trans hgraph)
+    fun S hS => (graphPlan_eq_graphPlan_iff hS.toHasLaw.aemeasurable hT.aemeasurable).1
+      ((((hiff S hS.toHasLaw).1 hS).unique_of_isCCRegular hμ hπ hfin).trans hgraph)⟩
 
 /-- **Strict convexity of the quadratic transport cost in the target for `c - c`-regular sources.**
 Whenever `μ` is a `c - c`-regular probability measure and `ν₀ ≠ ν₁` have finite quadratic transport
@@ -475,23 +423,19 @@ private theorem mem_subdifferential_norm_sq_div_two_add {E : Type*} [NormedAddCo
     x + T x ∈ subdifferential (innerₗ E) (fun z => ((‖z‖ ^ 2 / 2 + ψ z : ℝ) : EReal)) x := by
   refine (mem_subdifferential_iff (innerₗ E)).2
     ⟨EReal.coe_ne_bot _, EReal.coe_ne_top _, fun z => ?_⟩
-  rw [innerₗ_apply_apply, ← EReal.coe_add, EReal.coe_le_coe_iff]
+  rw [innerₗ_apply_apply, ← EReal.coe_add, EReal.coe_le_coe_iff, inner_add_right, inner_sub_left,
+    real_inner_self_eq_norm_sq]
   have hsq : 0 ≤ ‖z - x‖ ^ 2 := sq_nonneg _
   rw [norm_sub_sq_real] at hsq
-  have hin : inner ℝ (z - x) (x + T x) = inner ℝ z x - ‖x‖ ^ 2 + inner ℝ (z - x) (T x) := by
-    rw [inner_add_right, inner_sub_left, real_inner_self_eq_norm_sq]
   linarith [hT x z]
 
 private theorem exists_closedBall_inter_measure_ne_zero {E : Type*} [SeminormedAddCommGroup E]
     [MeasurableSpace E] {μ : Measure E} {s : Set E} (hμs : μ s ≠ 0) :
     ∃ N : ℕ, μ (s ∩ closedBall 0 N) ≠ 0 := by
   by_contra! hall
-  apply hμs
-  have hcover : s = ⋃ N : ℕ, (s ∩ closedBall 0 N) := by
-    ext x
-    simp only [mem_iUnion, mem_inter_iff, mem_closedBall_zero_iff]
-    exact ⟨fun hx => let ⟨N, hN⟩ := exists_nat_ge ‖x‖; ⟨N, hx, hN⟩, fun ⟨_, hx, _⟩ => hx⟩
-  rw [hcover, measure_iUnion_null hall]
+  refine hμs ((congrArg μ (Set.ext fun x => ?_)).trans (measure_iUnion_null hall))
+  simp only [mem_iUnion, mem_inter_iff, mem_closedBall_zero_iff]
+  exact ⟨fun hx => let ⟨N, hN⟩ := exists_nat_ge ‖x‖; ⟨N, hx, hN⟩, fun ⟨_, hx, _⟩ => hx⟩
 
 private theorem smul_graphPlan_add_apply_eq_lt_one {E : Type*} [MeasurableSpace E]
     [MeasurableEq E] {μ : Measure E} [IsProbabilityMeasure μ] {B : Set E} (hBm : MeasurableSet B)
@@ -503,24 +447,24 @@ private theorem smul_graphPlan_add_apply_eq_lt_one {E : Type*} [MeasurableSpace 
   have hGm : MeasurableSet G := measurableSet_eq_fun measurable_snd (hT'.comp measurable_fst)
   let E₁ : Set E := {x | S₁ x = T' x}
   let E₂ : Set E := {x | S₂ x = T' x}
-  have hE₂ : MeasurableSet E₂ := measurableSet_eq_fun hS₂ hT'
-  have hinter : E₁ ∩ E₂ ⊆ Bᶜ := fun x ⟨h₁, h₂⟩ hxB => hBne x hxB (h₁.trans h₂.symm)
   have hBc_lt : μ Bᶜ < 1 := by
     have hsum : μ B + μ Bᶜ = 1 := by rw [measure_add_measure_compl hBm, measure_univ]
-    refine lt_of_le_of_ne (hsum ▸ le_add_self) fun h1 => hμB ?_
-    exact (ENNReal.add_left_inj ENNReal.one_ne_top).1 (by simpa [h1] using hsum)
-  have hsum_lt : μ E₁ + μ E₂ < 2 := by
-    calc μ E₁ + μ E₂ = μ (E₁ ∪ E₂) + μ (E₁ ∩ E₂) := (measure_union_add_inter E₁ hE₂).symm
-      _ ≤ μ univ + μ Bᶜ := add_le_add (measure_mono (subset_univ _)) (measure_mono hinter)
-      _ = 1 + μ Bᶜ := by rw [measure_univ]
+    exact lt_of_le_of_ne (hsum ▸ le_add_self) fun h1 =>
+      hμB ((ENNReal.add_left_inj ENNReal.one_ne_top).1 (by simpa [h1] using hsum))
+  have hsum_lt : μ E₁ + μ E₂ < 2 :=
+    calc μ E₁ + μ E₂ = μ (E₁ ∪ E₂) + μ (E₁ ∩ E₂) :=
+            (measure_union_add_inter E₁ (measurableSet_eq_fun hS₂ hT')).symm
+      _ ≤ 1 + μ Bᶜ := by
+            rw [← measure_univ (μ := μ)]
+            exact add_le_add (measure_mono (subset_univ _))
+              (measure_mono fun x ⟨h₁, h₂⟩ hxB => hBne x hxB (h₁.trans h₂.symm))
       _ < 1 + 1 := ENNReal.add_lt_add_left ENNReal.one_ne_top hBc_lt
       _ = 2 := one_add_one_eq_two
   have hval : ((2⁻¹ : ℝ≥0∞) • graphPlan S₁ μ + (2⁻¹ : ℝ≥0∞) • graphPlan S₂ μ) G =
       (μ E₁ + μ E₂) * 2⁻¹ := by
     rw [FunLike.coe_add, Pi.add_apply, smul_apply, smul_apply, smul_eq_mul, smul_eq_mul,
       ← mul_add, mul_comm, graphPlan_apply hS₁.aemeasurable hGm,
-      graphPlan_apply hS₂.aemeasurable hGm]
-    rfl
+      graphPlan_apply hS₂.aemeasurable hGm]; rfl
   rw [hval, ← ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top]
   exact ENNReal.mul_lt_mul_left (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
     (ENNReal.inv_ne_top.2 two_ne_zero) hsum_lt
@@ -532,25 +476,21 @@ private theorem ne_graphPlan_of_smul_graphPlan_add {E : Type*} [Nonempty E] [Mea
     (2⁻¹ : ℝ≥0∞) • graphPlan S₁ μ + (2⁻¹ : ℝ≥0∞) • graphPlan S₂ μ ≠ graphPlan T μ := by
   intro hEq
   by_cases hT : AEMeasurable T μ
-  · let T' : E → E := hT.mk T
-    have hT' : Measurable T' := hT.measurable_mk
-    have hlt := smul_graphPlan_add_apply_eq_lt_one hBm hμB hS₁ hS₂ hBne hT'
-    have hGm : MeasurableSet {z : E × E | z.2 = T' z.1} :=
-      measurableSet_eq_fun measurable_snd (hT'.comp measurable_fst)
-    rw [hEq, graphPlan_congr hT.ae_eq_mk, graphPlan_apply hT'.aemeasurable hGm] at hlt
+  · have hlt := smul_graphPlan_add_apply_eq_lt_one hBm hμB hS₁ hS₂ hBne hT.measurable_mk
+    rw [hEq, graphPlan_congr hT.ae_eq_mk, graphPlan_apply hT.measurable_mk.aemeasurable
+      (show MeasurableSet {z : E × E | z.2 = hT.mk T z.1} from
+        measurableSet_eq_fun measurable_snd (hT.measurable_mk.comp measurable_fst))] at hlt
     exact hlt.ne (by simp)
   · have hg : ¬ AEMeasurable (fun x => (x, T x)) μ :=
       fun h => hT (measurable_snd.comp_aemeasurable h)
-    have hdir : graphPlan T μ = Measure.dirac Classical.ofNonempty := by
-      rw [graphPlan_def,
-        Measure.map_of_not_aemeasurable_of_ne_zero hg (IsProbabilityMeasure.ne_zero μ)]
     let z₀ : E × E := Classical.ofNonempty
-    let T' : E → E := fun _ => z₀.2
-    have hlt := smul_graphPlan_add_apply_eq_lt_one hBm hμB hS₁ hS₂ hBne (T' := T') measurable_const
-    have hGm : MeasurableSet {z : E × E | z.2 = T' z.1} :=
-      measurableSet_eq_fun measurable_snd (measurable_const.comp measurable_fst)
-    rw [hEq, hdir, Measure.dirac_apply' z₀ hGm] at hlt
-    exact hlt.ne (by simp [T', z₀])
+    have hlt := smul_graphPlan_add_apply_eq_lt_one hBm hμB hS₁ hS₂ hBne
+      (T' := fun _ => z₀.2) measurable_const
+    rw [hEq, graphPlan_def,
+      Measure.map_of_not_aemeasurable_of_ne_zero hg (IsProbabilityMeasure.ne_zero μ),
+      Measure.dirac_apply' z₀ (show MeasurableSet {z : E × E | z.2 = z₀.2} from
+        measurableSet_eq_fun measurable_snd measurable_const)] at hlt
+    exact hlt.ne (by simp [z₀])
 
 section SharpCharacterization
 
@@ -587,8 +527,7 @@ theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {�
   have hhalf_add : (2⁻¹ : ℝ≥0∞) + 2⁻¹ = 1 := ENNReal.inv_two_add_inv_two
   let ν : Measure E := (2⁻¹ : ℝ≥0∞) • μ.map S₁ + (2⁻¹ : ℝ≥0∞) • μ.map S₂
   have hν_prob : IsProbabilityMeasure ν := ⟨by
-    simp only [ν, FunLike.coe_add, Pi.add_apply, smul_apply, smul_eq_mul, measure_univ, mul_one,
-      hhalf_add]⟩
+    simp [ν, smul_eq_mul, hhalf_add]⟩
   have hν2 : MemLp id 2 ν :=
     (hS₁_lp.smul_measure hhalf_ne_top).add_measure (hS₂_lp.smul_measure hhalf_ne_top)
   let π : Measure (E × E) := (2⁻¹ : ℝ≥0∞) • graphPlan S₁ μ + (2⁻¹ : ℝ≥0∞) • graphPlan S₂ μ
@@ -597,14 +536,13 @@ theorem exists_memLp_isOptimalCoupling_forall_ne_graphPlan_of_not_isCCRegular {�
       ((isCoupling_graphPlan_map (μ := μ) hS₂m.aemeasurable).smul (2⁻¹ : ℝ≥0∞))
     rwa [← add_smul, hhalf_add, one_smul] at h
   let u : E → EReal := fun z => ((‖z‖ ^ 2 / 2 + ψ z : ℝ) : EReal)
-  have hπ_sub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-    have h₁ : ∀ᵐ z ∂graphPlan S₁ μ, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+  have hπ_sub : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 :=
+    ae_add_measure_iff.2 ⟨Measure.ae_smul_measure (by
       filter_upwards [ae_snd_eq_graphPlan hS₁m.aemeasurable] with z hz
-      exact hz ▸ mem_subdifferential_norm_sq_div_two_add hT₁s z.1
-    have h₂ : ∀ᵐ z ∂graphPlan S₂ μ, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-      filter_upwards [ae_snd_eq_graphPlan hS₂m.aemeasurable] with z hz
-      exact hz ▸ mem_subdifferential_norm_sq_div_two_add hT₂s z.1
-    exact ae_add_measure_iff.2 ⟨Measure.ae_smul_measure h₁ _, Measure.ae_smul_measure h₂ _⟩
+      exact hz ▸ mem_subdifferential_norm_sq_div_two_add hT₁s z.1) _,
+      Measure.ae_smul_measure (by
+        filter_upwards [ae_snd_eq_graphPlan hS₂m.aemeasurable] with z hz
+        exact hz ▸ mem_subdifferential_norm_sq_div_two_add hT₂s z.1) _⟩
   exact ⟨ν, hν_prob, hν2, π, hπ_coup.isOptimalCoupling_of_ae_mem_subdifferential hμ2 hν2 hπ_sub,
     ne_graphPlan_of_smul_graphPlan_add (hs.measurableSet.inter measurableSet_closedBall) hμB
       hS₁m hS₂m (fun x hx hEq => hTne x hx (add_left_cancel hEq))⟩
@@ -670,10 +608,9 @@ theorem WassersteinSpace.isCCRegular_iff_forall_isOptimalCoupling_exists_eq_grap
   refine ⟨fun h ν π hπ => h ((ν : ProbabilityMeasure E) : Measure E)
     ν.hasFiniteMoment.memLp_id π hπ, fun h ν _ hν2 π hπ => ?_⟩
   let νP : ProbabilityMeasure E := ⟨ν, inferInstance⟩
-  have hν_mom : HasFiniteMoment 2 (νP : Measure E) := hasFiniteMoment_def.2
-    ⟨0, (memLp_congr_eNorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x => by simp [eDist_eq_eNorm_sub])).1 hν2⟩
-  have hmk := h (WassersteinSpace.mk νP hν_mom) π
+  have hmk := h (WassersteinSpace.mk νP (hasFiniteMoment_def.2 ⟨0,
+    (memLp_congr_eNorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
+      (.of_forall fun x => by simp [eDist_eq_eNorm_sub])).1 hν2⟩)) π
   simp only [WassersteinSpace.coe_mk] at hmk
   exact hmk hπ
 
@@ -697,10 +634,9 @@ theorem WassersteinSpace.isCCRegular_iff_forall_exists_isKantorovichOptimalTrans
   refine ⟨fun h ν => h ((ν : ProbabilityMeasure E) : Measure E) ν.hasFiniteMoment.memLp_id,
     fun h ν _ hν2 => ?_⟩
   let νP : ProbabilityMeasure E := ⟨ν, inferInstance⟩
-  have hν_mom : HasFiniteMoment 2 (νP : Measure E) := hasFiniteMoment_def.2
-    ⟨0, (memLp_congr_eNorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x => by simp [eDist_eq_eNorm_sub])).1 hν2⟩
-  have hmk := h (WassersteinSpace.mk νP hν_mom)
+  have hmk := h (WassersteinSpace.mk νP (hasFiniteMoment_def.2 ⟨0,
+    (memLp_congr_eNorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
+      (.of_forall fun x => by simp [eDist_eq_eNorm_sub])).1 hν2⟩))
   simp only [WassersteinSpace.coe_mk] at hmk
   exact hmk
 

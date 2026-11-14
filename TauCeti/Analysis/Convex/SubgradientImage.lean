@@ -247,13 +247,11 @@ theorem hasGradientAt_toReal_of_forall_mem_subdifferential_eq {x y : E}
     (hy : ∀ y' ∈ subdifferential (innerₗ E) f x, y' = y) :
     HasGradientAt (fun x' => (f x').toReal) y x := by
   classical
-  obtain ⟨r, hr, hrD⟩ : ∃ r > 0, closedBall x r ⊆ interior {x | f x ≠ ⊤} :=
-    nhds_basis_closedBall.mem_iff.1 (isOpen_interior.mem_nhds hx)
+  obtain ⟨r, hr, hrD⟩ := nhds_basis_closedBall.mem_iff.1 (isOpen_interior.mem_nhds hx)
   let T : E → E := fun z =>
     if hz : z ∈ closedBall x r then
-      (nonempty_subdifferential_of_mem_interior hf hbot (hrD hz)).choose
-    else y
-  have hTmem : ∀ z ∈ closedBall x r, T z ∈ subdifferential (innerₗ E) f z := fun z hz => by
+      (nonempty_subdifferential_of_mem_interior hf hbot (hrD hz)).choose else y
+  have hTmem (z : E) (hz : z ∈ closedBall x r) : T z ∈ subdifferential (innerₗ E) f z := by
     simpa only [T, dite_eq_left hz] using
       (nonempty_subdifferential_of_mem_interior hf hbot (hrD hz)).choose_spec
   have hTx : T x = y := hy _ (hTmem x (mem_closedBall_self hr.le))
@@ -264,57 +262,45 @@ theorem hasGradientAt_toReal_of_forall_mem_subdifferential_eq {x y : E}
     rw [ContinuousAt, hTx]
     refine (isCompact_closedBall (0 : E) R).tendsto_nhds_of_unique_mapClusterPt
       (Filter.eventually_of_mem (closedBall_mem_nhds x hr) fun z hz =>
-        mem_closedBall_zero_iff.2 (hR z hz (T z) (hTmem z hz))) ?_
-    intro q _ hq
+        mem_closedBall_zero_iff.2 (hR z hz (T z) (hTmem z hz))) fun q _ hq => ?_
     obtain ⟨w, hTw, hw⟩ := hq.exists_seq_tendsto
-    have hmem : ∀ᶠ n in Filter.atTop,
-        (w n, T (w n)) ∈ {z : E × E | z.1 ∈ closedBall x r ∧
-          z.2 ∈ subdifferential (innerₗ E) f z.1} := by
+    exact hy q (hclosed.mem_of_tendsto (hw.prodMk_nhds hTw) <| by
       filter_upwards [hw.eventually (closedBall_mem_nhds x hr)] with n hn
-      exact ⟨hn, hTmem (w n) hn⟩
-    exact hy q (hclosed.mem_of_tendsto (hw.prodMk_nhds hTw) hmem).2
+      exact ⟨hn, hTmem (w n) hn⟩).2
   exact hTx ▸ hasGradientAt_toReal_of_continuousAt_subgradient hcont
     (Filter.eventually_of_mem (closedBall_mem_nhds x hr) hTmem)
 
 end FiniteDimensional
 
-/-- If a function `f : E → EReal` with convex real epigraph takes the value `⊥` somewhere, then it
-equals `⊥` at every interior point of its effective domain. -/
 private theorem eq_bot_of_mem_interior_of_eq_bot {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] {f : E → EReal} (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {z₀ x : E}
     (hz₀ : f z₀ = ⊥) (hx : x ∈ interior {z | f z ≠ ⊤}) : f x = ⊥ := by
   have hcont : Continuous fun t : ℝ => x + t • (x - z₀) := by fun_prop
-  have hnhds : (fun t : ℝ => x + t • (x - z₀)) ⁻¹' interior {z | f z ≠ ⊤} ∈ nhds (0 : ℝ) :=
-    hcont.continuousAt.preimage_mem_nhds (isOpen_interior.mem_nhds (by simpa using hx))
-  obtain ⟨δ, hδ, hδB⟩ := Metric.mem_nhds_iff.1 hnhds
+  obtain ⟨δ, hδ, hδB⟩ := Metric.mem_nhds_iff.1 <|
+    (hcont.continuousAt (x := (0 : ℝ))).preimage_mem_nhds
+      (isOpen_interior.mem_nhds (by simpa using hx))
   set t := δ / 2
   have ht : 0 < t := half_pos hδ
   have hw : x + t • (x - z₀) ∈ interior {z | f z ≠ ⊤} :=
     hδB (by rw [mem_ball, Real.dist_eq, sub_zero, abs_of_pos ht]; exact half_lt_self hδ)
-  have hwr : f (x + t • (x - z₀)) ≤ (f (x + t • (x - z₀))).toReal :=
-    EReal.le_coe_toReal (interior_subset hw)
   set r := (f (x + t • (x - z₀))).toReal
   set a := t / (1 + t)
   set b := 1 / (1 + t)
   have ha : 0 < a := by positivity
-  have hb : 0 ≤ b := by positivity
-  have hab : a + b = 1 := by simp only [a, b]; field_simp; ring
-  refine (EReal.eq_bot_iff_forall_lt _).2 fun c =>
-    lt_of_le_of_lt ?_ (EReal.coe_lt_coe_iff.2 (sub_one_lt c))
-  have hcomb := hf (x := (z₀, (c - 1 - b * r) / a)) (y := (x + t • (x - z₀), r))
-    (by simp [hz₀]) hwr ha.le hb hab
+  have hcomb (c : ℝ) := hf (x := (z₀, (c - 1 - b * r) / a)) (y := (x + t • (x - z₀), r)) (b := b)
+    (by simp [hz₀]) (EReal.le_coe_toReal (interior_subset hw)) ha.le (by positivity)
+    (by simp only [a, b]; field_simp; ring)
   have hfst : a • z₀ + b • (x + t • (x - z₀)) = x := by
-    simp only [a, b, smul_add, smul_smul, smul_sub]
     have h1 : 1 + t ≠ 0 := by positivity
-    calc (t / (1 + t)) • z₀ +
-          ((1 / (1 + t)) • x + ((1 / (1 + t) * t) • x - (1 / (1 + t) * t) • z₀))
+    calc a • z₀ + b • (x + t • (x - z₀))
         = ((1 + t) / (1 + t)) • x + ((t - t) / (1 + t)) • z₀ := by
-          simp only [sub_self, zero_div, zero_smul, add_zero]
+          simp only [a, b, smul_add, smul_smul, smul_sub, sub_self, zero_div, zero_smul, add_zero]
           module
       _ = x := by simp [div_self h1]
-  have hsnd : a * ((c - 1 - b * r) / a) + b * r = c - 1 := by
-    rw [mul_div_cancel₀ _ ha.ne']; ring
-  simpa only [Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, hfst, hsnd, mem_ofPred_eq] using hcomb
+  refine (EReal.eq_bot_iff_forall_lt _).2 fun c =>
+    lt_of_le_of_lt ?_ (EReal.coe_lt_coe_iff.2 (sub_one_lt c))
+  have hsnd : a * ((c - 1 - b * r) / a) + b * r = c - 1 := by rw [mul_div_cancel₀ _ ha.ne']; ring
+  simpa only [Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, hfst, hsnd, mem_ofPred_eq] using hcomb c
 
 section DifferentiableIff
 
@@ -336,12 +322,10 @@ theorem differentiableAt_toReal_iff_subsingleton_subdifferential {f : E → ERea
     · obtain ⟨y, hy⟩ := nonempty_subdifferential_of_mem_interior hf hbot hx
       exact (hasGradientAt_toReal_of_forall_mem_subdifferential_eq hf hbot hx
         fun y' hy' => hsub hy' hy).differentiableAt
-    · push Not at hbot
-      obtain ⟨z₀, hz₀⟩ := hbot
-      have hev : (fun x' => (f x').toReal) =ᶠ[nhds x] fun _ => (0 : ℝ) := by
-        filter_upwards [isOpen_interior.mem_nhds hx] with x' hx'
-        simp [eq_bot_of_mem_interior_of_eq_bot hf hz₀ hx']
-      exact (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq hev
+    · push Not at hbot; obtain ⟨z₀, hz₀⟩ := hbot
+      refine (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq ?_
+      filter_upwards [isOpen_interior.mem_nhds hx] with x' hx'
+      simp [eq_bot_of_mem_interior_of_eq_bot hf hz₀ hx']
 
 end DifferentiableIff
 
@@ -370,97 +354,73 @@ theorem _root_.ConvexOn.differentiableAt_iff_subsingleton_subdifferential {Ω : 
   classical
   let f : E → EReal := fun z => if z ∈ Ω then (u z : EReal) else ⊤
   have hev : (fun z => (f z).toReal) =ᶠ[nhds x] u := by
-    filter_upwards [hΩ.mem_nhds hx] with z hz
-    simp [f, hz]
-  have hsub : subdifferential (innerₗ E) f x =
-      {p : E | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y} := by
-    ext p
-    simpa only [f, innerₗ_apply_apply, mem_ofPred_eq] using
+    filter_upwards [hΩ.mem_nhds hx] with z hz using by simp [f, hz]
+  have hsub : subdifferential (innerₗ E) f x = {p | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y} :=
+    Set.ext fun p => by simpa only [f, innerₗ_apply_apply, mem_ofPred_eq] using
       mem_subdifferential_ite_iff (innerₗ E) hx
   rw [← hev.differentiableAt_iff, ← hsub]
   exact differentiableAt_toReal_iff_subsingleton_subdifferential
     (convexOn_iff_convex_epigraph_ite.1 hu) (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
 
-/-- At every point `x`, a real convex function `u` on `E` has a unique subgradient of minimal
-norm. -/
 private theorem existsUnique_mem_subdifferential_norm_le {u : E → ℝ} (hu : ConvexOn ℝ univ u)
     (x : E) :
     ∃! p : E, (∀ y, u x + inner ℝ (y - x) p ≤ u y) ∧
       ∀ q, (∀ y, u x + inner ℝ (y - x) q ≤ u y) → ‖p‖ ≤ ‖q‖ := by
   let f : E → EReal := fun z => (u z : EReal)
   have hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} := by
-    simpa only [f, mem_univ, ite_true] using convexOn_iff_convex_epigraph_ite.1 hu
-  have hbot : ∀ z, f z ≠ ⊥ := fun z => EReal.coe_ne_bot (u z)
+    simpa [f] using convexOn_iff_convex_epigraph_ite.1 hu
   let K : Set E := subdifferential (innerₗ E) f x
-  have hKmem : ∀ q, q ∈ K ↔ ∀ y, u x + inner ℝ (y - x) q ≤ u y := fun q => by
+  have hKmem (q : E) : q ∈ K ↔ ∀ y, u x + inner ℝ (y - x) q ≤ u y := by
     simpa only [K, f, innerₗ_apply_apply] using mem_subdifferential_coe_iff (innerₗ E) u
-  have hKne : K.Nonempty := by
-    obtain ⟨p, hp⟩ := hu.exists_forall_add_inner_le isOpen_univ (mem_univ x)
-    exact ⟨p, (hKmem p).2 fun y => hp y (mem_univ y)⟩
+  have hKne : K.Nonempty := let ⟨p, hp⟩ := hu.exists_forall_add_inner_le isOpen_univ (mem_univ x)
+    ⟨p, (hKmem p).2 fun y => hp y (mem_univ y)⟩
   have hKconv : Convex ℝ K := convex_subdifferential (innerₗ E) f x
   have hKcomp : IsCompact K := by
-    have hD : ({x} : Set E) ⊆ interior {z | f z ≠ ⊤} := by simp [f]
-    convert isCompact_subgradientImage hf hbot isCompact_singleton hD using 1
-    ext p
-    simp [K]
+    convert isCompact_subgradientImage hf (fun z => EReal.coe_ne_bot (u z)) isCompact_singleton
+      (by simp [f] : ({x} : Set E) ⊆ interior {z | f z ≠ ⊤}) using 1
+    ext p; simp [K]
   obtain ⟨p, hpK, hpmin⟩ :=
     exists_norm_eq_iInf_of_complete_convex hKne hKcomp.isComplete hKconv (0 : E)
-  have hple : ∀ q ∈ K, ‖p‖ ≤ ‖q‖ := fun q hq => by
-    let wq : K := ⟨q, hq⟩
-    have hle : ⨅ w : K, ‖(0 : E) - (w : E)‖ ≤ ‖(0 : E) - (wq : E)‖ :=
-      ciInf_le ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩ wq
-    rw [← hpmin] at hle
-    simpa [wq] using hle
+  have hple (q : E) (hq : q ∈ K) : ‖p‖ ≤ ‖q‖ := by
+    simpa using hpmin.trans_le
+      (ciInf_le ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩ (⟨q, hq⟩ : K))
   refine ⟨p, ⟨(hKmem p).1 hpK, fun q hq => hple q ((hKmem q).2 hq)⟩, fun p' ⟨hp'K, hp'le⟩ => ?_⟩
   have hp'K' : p' ∈ K := (hKmem p').2 hp'K
   have hp'min : ‖(0 : E) - p'‖ = ⨅ w : K, ‖(0 : E) - w‖ := by
-    have heq : ‖p'‖ = ‖p‖ := le_antisymm (hp'le p ((hKmem p).1 hpK)) (hple p' hp'K')
-    simpa [heq] using hpmin
+    simpa [le_antisymm (hp'le p ((hKmem p).1 hpK)) (hple p' hp'K')] using hpmin
   have h₁ := (norm_eq_iInf_iff_real_inner_le_zero hKconv hpK).1 hpmin p' hp'K'
   have h₂ := (norm_eq_iInf_iff_real_inner_le_zero hKconv hp'K').1 hp'min p hpK
   have hsq : ‖p' - p‖ ^ 2 ≤ 0 := by
-    rw [← real_inner_self_eq_norm_sq]
+    rw [← real_inner_self_eq_norm_sq, inner_sub_left]
     simp only [zero_sub, inner_neg_left] at h₁ h₂
-    have h₃ : inner ℝ (p' - p) (p' - p) = inner ℝ p' (p' - p) - inner ℝ p (p' - p) :=
-      inner_sub_left p' p (p' - p)
-    have h₄ : -inner ℝ p' (p - p') = inner ℝ p' (p' - p) := by
-      rw [← inner_neg_right, neg_sub]
+    have : -inner ℝ p' (p - p') = inner ℝ p' (p' - p) := by rw [← inner_neg_right, neg_sub]
     linarith
   exact sub_eq_zero.1 (norm_eq_zero.1 (sq_eq_zero_iff.1 (le_antisymm hsq (sq_nonneg _))))
 
-/-- For a real convex function `u` on `E`, a closed set `F ⊆ E`, and `a : ℝ`, the set of points `x`
-admitting a subgradient in `F` of norm at most `a` is Borel measurable. -/
 private theorem measurableSet_exists_forall_add_inner_le_mem [MeasurableSpace E] [BorelSpace E]
     {u : E → ℝ} (hu : ConvexOn ℝ univ u) {F : Set E} (hF : IsClosed F) (a : ℝ) :
     MeasurableSet {x : E | ∃ p ∈ F, (∀ y, u x + inner ℝ (y - x) p ≤ u y) ∧ ‖p‖ ≤ a} := by
   let f : E → EReal := fun z => (u z : EReal)
-  have hbot : ∀ z, f z ≠ ⊥ := fun z => EReal.coe_ne_bot (u z)
-  have hcontOn : ContinuousOn (fun z => (f z).toReal) univ := by
-    simpa only [f, EReal.toReal_coe] using hu.continuousOn isOpen_univ
   have hG : IsClosed {z : E × E | z.2 ∈ subdifferential (innerₗ E) f z.1} := by
-    simpa only [mem_univ, true_and] using isClosed_setOf_mem_subdifferential hbot isClosed_univ
-      (fun z _ => EReal.coe_ne_top (u z)) hcontOn
+    simpa only [mem_univ, true_and] using isClosed_setOf_mem_subdifferential
+      (fun z => EReal.coe_ne_bot (u z)) isClosed_univ (fun z _ => EReal.coe_ne_top (u z))
+      (by simpa only [f, EReal.toReal_coe] using hu.continuousOn isOpen_univ)
   have heq : {x : E | ∃ p ∈ F, (∀ y, u x + inner ℝ (y - x) p ≤ u y) ∧ ‖p‖ ≤ a} =
       ⋃ R : ℕ, Prod.fst '' ({z : E × E | z.2 ∈ subdifferential (innerₗ E) f z.1} ∩
         (closedBall (0 : E) R ×ˢ (F ∩ closedBall (0 : E) a))) := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iUnion, mem_image, Prod.exists, exists_and_right, exists_eq_right,
-      mem_inter_iff, mem_prod, mem_closedBall_zero_iff]
-    refine ⟨fun ⟨p, hpF, hp, hpa⟩ => ?_, fun ⟨_, p, hp, ⟨_, hpF, hpa⟩⟩ => ?_⟩
-    · obtain ⟨R, hR⟩ := exists_nat_ge ‖x‖
-      exact ⟨R, p, (mem_subdifferential_coe_iff (innerₗ E) u).2 fun y => by
-        simpa only [innerₗ_apply_apply] using hp y, hR, hpF, hpa⟩
-    · exact ⟨p, hpF, fun y => by
+    ext x; simp only [mem_ofPred_eq, mem_iUnion, mem_image, Prod.exists, exists_and_right,
+      exists_eq_right, mem_inter_iff, mem_prod, mem_closedBall_zero_iff]
+    refine ⟨fun ⟨p, hpF, hp, hpa⟩ => let ⟨R, hR⟩ := exists_nat_ge ‖x‖
+      ⟨R, p, (mem_subdifferential_coe_iff (innerₗ E) u).2 fun y => by
+        simpa only [innerₗ_apply_apply] using hp y, hR, hpF, hpa⟩,
+      fun ⟨_, p, hp, _, hpF, hpa⟩ => ⟨p, hpF, fun y => by
         simpa only [innerₗ_apply_apply] using (mem_subdifferential_coe_iff (innerₗ E) u).1 hp y,
-        hpa⟩
+        hpa⟩⟩
   rw [heq]
-  refine MeasurableSet.iUnion fun R => ?_
-  have hcomp : IsCompact (closedBall (0 : E) R ×ˢ (F ∩ closedBall (0 : E) a)) :=
-    (isCompact_closedBall 0 R).prod ((isCompact_closedBall 0 a).inter_left hF)
-  exact ((hcomp.inter_left hG).image continuous_fst).isClosed.measurableSet
+  exact MeasurableSet.iUnion fun R => (((isCompact_closedBall (0 : E) R |>.prod
+    ((isCompact_closedBall 0 a).inter_left hF)).inter_left hG).image
+      continuous_fst).isClosed.measurableSet
 
-/-- A sequence of subgradients in a closed set `F` whose norms converge beneath `‖p‖ + 1 / (n + 1)`
-forces the minimal-norm subgradient `p` to lie in `F`. -/
 private theorem mem_of_forall_exists_mem_subdifferential_norm_lt {u : E → ℝ} {F : Set E}
     (hF : IsClosed F) {x p : E}
     (hp : (∀ y, u x + inner ℝ (y - x) p ≤ u y) ∧
@@ -472,20 +432,17 @@ private theorem mem_of_forall_exists_mem_subdifferential_norm_lt {u : E → ℝ}
   choose g hgF hg hgn using hseq
   have hKcl : IsClosed (F ∩ {q : E | ∀ y, u x + inner ℝ (y - x) q ≤ u y}) := by
     refine hF.inter ?_
-    have : {q : E | ∀ y, u x + inner ℝ (y - x) q ≤ u y} =
-        ⋂ y : E, (fun q : E => u x + inner ℝ (y - x) q) ⁻¹' Iic (u y) := by ext q; simp
-    rw [this]
-    exact isClosed_iInter fun y => isClosed_Iic.preimage (by fun_prop)
-  have hcomp : IsCompact ((F ∩ {q : E | ∀ y, u x + inner ℝ (y - x) q ≤ u y}) ∩
-      closedBall 0 (‖p‖ + 1)) := (isCompact_closedBall 0 (‖p‖ + 1)).inter_left hKcl
-  obtain ⟨q, hq, φ, hφ, hlim⟩ := hcomp.tendsto_subseq fun n => ⟨⟨hgF n, hg n⟩, by
-    rw [mem_closedBall_zero_iff]
-    have hle : 1 / ((n : ℝ) + 1) ≤ 1 :=
-      div_le_one_of_le₀ (le_add_of_nonneg_left n.cast_nonneg) (by positivity)
-    linarith [hgn n]⟩
-  have hub : Filter.Tendsto (fun k => ‖p‖ + 1 / ((φ k : ℝ) + 1)) Filter.atTop (nhds (‖p‖ + 0)) :=
-    tendsto_const_nhds.add (tendsto_one_div_add_atTop_nhds_zero_nat.comp hφ.tendsto_atTop)
-  rw [add_zero] at hub
+    convert (isClosed_iInter fun y : E => (isClosed_Iic (a := u y)).preimage
+      (by fun_prop : Continuous fun q : E => u x + inner ℝ (y - x) q)) using 1
+    ext q; simp
+  obtain ⟨q, hq, φ, hφ, hlim⟩ :=
+    ((isCompact_closedBall (0 : E) (‖p‖ + 1)).inter_left hKcl).tendsto_subseq fun n =>
+      ⟨⟨hgF n, hg n⟩, mem_closedBall_zero_iff.2 <| by
+        linarith [hgn n, div_le_one_of_le₀ (le_add_of_nonneg_left n.cast_nonneg)
+          (by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]⟩
+  have hub : Filter.Tendsto (fun k => ‖p‖ + 1 / ((φ k : ℝ) + 1)) Filter.atTop (nhds ‖p‖) := by
+    simpa only [Function.comp_def, add_zero] using (tendsto_const_nhds (x := ‖p‖)).add
+      (tendsto_one_div_add_atTop_nhds_zero_nat.comp hφ.tendsto_atTop)
   have hqnorm : ‖q‖ ≤ ‖p‖ :=
     le_of_tendsto_of_tendsto hlim.norm hub (Filter.Eventually.of_forall fun k => (hgn (φ k)).le)
   exact huniq q ⟨hq.1.2, fun w hw => hqnorm.trans (hp.2 w hw)⟩ ▸ hq.1.1
@@ -499,14 +456,12 @@ theorem _root_.ConvexOn.exists_measurable_forall_add_inner_le [MeasurableSpace E
     ∃ T : E → E, Measurable T ∧ ∀ x y, u x + inner ℝ (y - x) (T x) ≤ u y := by
   choose T hT hTuniq using existsUnique_mem_subdifferential_norm_le hu
   refine ⟨T, measurable_of_isClosed fun F hF => ?_, fun x y => (hT x).1 y⟩
-  have hpre : T ⁻¹' F =
-      ⋂ n : ℕ, ⋃ r : ℚ,
-        {x : E | ∃ p ∈ F, (∀ y, u x + inner ℝ (y - x) p ≤ u y) ∧ ‖p‖ ≤ (r : ℝ)} ∩
-        {x : E | ∃ q ∈ (univ : Set E), (∀ y, u x + inner ℝ (y - x) q ≤ u y) ∧
-          ‖q‖ ≤ (r : ℝ) - 1 / ((n : ℝ) + 1)}ᶜ := by
-    ext x
-    simp only [mem_preimage, mem_iInter, mem_iUnion, mem_inter_iff, mem_compl_iff, mem_ofPred_eq,
-      mem_univ, true_and, not_exists, not_and, not_le]
+  have hpre : T ⁻¹' F = ⋂ n : ℕ, ⋃ r : ℚ,
+      {x : E | ∃ p ∈ F, (∀ y, u x + inner ℝ (y - x) p ≤ u y) ∧ ‖p‖ ≤ (r : ℝ)} ∩
+      {x : E | ∃ q ∈ (univ : Set E), (∀ y, u x + inner ℝ (y - x) q ≤ u y) ∧
+        ‖q‖ ≤ (r : ℝ) - 1 / ((n : ℝ) + 1)}ᶜ := by
+    ext x; simp only [mem_preimage, mem_iInter, mem_iUnion, mem_inter_iff, mem_compl_iff,
+      mem_ofPred_eq, mem_univ, true_and, not_exists, not_and, not_le]
     refine ⟨fun hxF n => ?_, fun hx =>
       mem_of_forall_exists_mem_subdifferential_norm_lt hF (hT x) (hTuniq x) fun n => ?_⟩
     · obtain ⟨r, hr₁, hr₂⟩ :=
@@ -515,9 +470,8 @@ theorem _root_.ConvexOn.exists_measurable_forall_add_inner_le [MeasurableSpace E
     · obtain ⟨r, ⟨p, hpF, hp, hpr⟩, hq⟩ := hx n
       exact ⟨p, hpF, hp, by linarith [hq (T x) (hT x).1]⟩
   rw [hpre]
-  exact MeasurableSet.iInter fun n => MeasurableSet.iUnion fun r =>
-    (measurableSet_exists_forall_add_inner_le_mem hu hF r).inter
-      (measurableSet_exists_forall_add_inner_le_mem hu isClosed_univ _).compl
+  exact .iInter fun n => .iUnion fun r => (measurableSet_exists_forall_add_inner_le_mem hu hF r)
+    |>.inter (measurableSet_exists_forall_add_inner_le_mem hu isClosed_univ _).compl
 
 /-- **Global convex Lipschitz envelope over a compact set.** Let `u` be convex on the whole of a
 finite-dimensional real inner product space `E`, and let `K ⊆ E` be compact. Then `u` agrees on `K`
@@ -529,41 +483,36 @@ theorem _root_.ConvexOn.exists_convexOn_lipschitzWith_eqOn {u : E → ℝ} (hu :
   rcases K.eq_empty_or_nonempty with rfl | hKne
   · exact ⟨0, 0, convexOn_const 0 convex_univ, LipschitzWith.const 0, by simp⟩
   have : Nonempty K := hKne.to_subtype
-  let f : E → EReal := fun z => (u z : EReal)
-  have hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} := by
-    simpa only [f, mem_univ, ite_true] using convexOn_iff_convex_epigraph_ite.1 hu
-  obtain ⟨M, hM⟩ := exists_norm_le_of_mem_subdifferential hf (fun z => EReal.coe_ne_bot (u z))
-    hK (by simp [f])
+  obtain ⟨M, hM⟩ := exists_norm_le_of_mem_subdifferential (f := fun z => (u z : EReal))
+    (by simpa using convexOn_iff_convex_epigraph_ite.1 hu) (fun z => EReal.coe_ne_bot (u z))
+    hK (by simp)
   let L : NNReal := ⟨max M 0, le_max_right _ _⟩
   choose p hp using fun z : K => hu.exists_forall_add_inner_le isOpen_univ (mem_univ (z : E))
-  have hpL : ∀ z : K, ‖p z‖ ≤ (L : ℝ) := fun z => (hM z z.2 (p z)
+  have hpL (z : K) : ‖p z‖ ≤ (L : ℝ) := (hM z z.2 (p z)
     ((mem_subdifferential_coe_iff (innerₗ E) u).2 fun y => by
       simpa only [innerₗ_apply_apply] using hp z y (mem_univ y))).trans (le_max_left _ _)
   let g : K → E → ℝ := fun z y => u z + inner ℝ (y - z) (p z)
-  have hbdd : ∀ y, BddAbove (range fun z : K => g z y) := fun y =>
+  have hbdd (y : E) : BddAbove (range fun z : K => g z y) :=
     ⟨u y, forall_mem_range.2 fun z => hp z y (mem_univ y)⟩
   let v : E → ℝ := fun y => ⨆ z : K, g z y
-  have hstep : ∀ y₁ y₂, v y₁ - v y₂ ≤ (L : ℝ) * dist y₁ y₂ := fun y₁ y₂ => by
-    rw [sub_le_iff_le_add]
-    refine ciSup_le fun z => ?_
-    have hlin : g z y₁ = g z y₂ + inner ℝ (y₁ - y₂) (p z) := by
-      simp only [g, inner_sub_left]; ring
+  have hstep (y₁ y₂ : E) : v y₁ - v y₂ ≤ (L : ℝ) * dist y₁ y₂ := by
+    refine sub_le_iff_le_add.2 <| ciSup_le fun z => ?_
     have hcs : inner ℝ (y₁ - y₂) (p z) ≤ (L : ℝ) * dist y₁ y₂ :=
-      (real_inner_le_norm _ _).trans <| by
-        rw [mul_comm, ← dist_eq_norm]
-        exact mul_le_mul_of_nonneg_right (hpL z) dist_nonneg
+      (real_inner_le_norm _ _).trans
+        (by rw [mul_comm, ← dist_eq_norm]; exact mul_le_mul_of_nonneg_right (hpL z) dist_nonneg)
+    have : g z y₁ = g z y₂ + inner ℝ (y₁ - y₂) (p z) := by simp only [g, inner_sub_left]; ring
     linarith [le_ciSup (hbdd y₂) z]
   refine ⟨L, v, ⟨convex_univ, fun x _ y _ a b ha hb hab => ciSup_le fun z => ?_⟩,
-    lipschitzWith_iff_dist_le_mul.2 fun y₁ y₂ => ?_, fun y hy => le_antisymm ?_ ?_⟩
+    lipschitzWith_iff_dist_le_mul.2 fun y₁ y₂ => ?_,
+    fun y hy => le_antisymm (by simpa [g] using le_ciSup (hbdd y) ⟨y, hy⟩)
+      (ciSup_le fun z => hp z y (mem_univ y))⟩
   · have haff : g z (a • x + b • y) = a * g z x + b * g z y := by
       simp only [g, inner_sub_left, inner_add_left, real_inner_smul_left]
       linear_combination (u z - inner ℝ (z : E) (p z)) * hab.symm
     exact haff.le.trans (add_le_add (mul_le_mul_of_nonneg_left (le_ciSup (hbdd x) z) ha)
       (mul_le_mul_of_nonneg_left (le_ciSup (hbdd y) z) hb))
-  · rw [Real.dist_eq, abs_sub_le_iff]
-    exact ⟨hstep y₁ y₂, dist_comm y₁ y₂ ▸ hstep y₂ y₁⟩
-  · simpa [g] using le_ciSup (hbdd y) ⟨y, hy⟩
-  · exact ciSup_le fun z => hp z y (mem_univ y)
+  · exact (Real.dist_eq _ _).trans_le
+      (abs_sub_le_iff.2 ⟨hstep y₁ y₂, dist_comm y₁ y₂ ▸ hstep y₂ y₁⟩)
 
 end OpenDomain
 
