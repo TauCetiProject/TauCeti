@@ -8,12 +8,21 @@ module
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.DerivedSet
+import TauCeti.Topology.DiscreteSubset
 
 /-!
-# Perfect sets: homeomorphic images and products
+# Perfect sets and spaces: homeomorphic images, products, and discrete subsets
 
-A homeomorphism carries perfect sets exactly onto perfect sets (`Homeomorph.perfect_image`), so
-statements about perfect sets can be transported along homeomorphisms of the ambient spaces.
+A homeomorphism carries perfect sets onto perfect sets (`Homeomorph.perfect_image`) and perfect
+spaces onto perfect spaces (`Homeomorph.perfectSpace`), so statements about perfect sets and spaces
+can be transported along homeomorphisms of the ambient spaces.
+
+In any topological space, removing a subset `S` whose trace `U ∩ S` is discrete from a preperfect
+set `U` leaves `U \ S` dense in `U` (`Preperfect.subset_closure_sdiff_of_isDiscrete`, specialized to
+open sets in perfect spaces by `IsOpen.subset_closure_sdiff_of_isDiscrete`), so continuous maps into
+a Hausdorff space are determined on `U` by their values on `U \ S`
+(`Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`,
+`IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`).
 
 A product of infinitely many nontrivial topological spaces has no isolated points: a
 neighbourhood of a point in the product topology constrains only finitely many coordinates, so
@@ -23,8 +32,13 @@ perfect.
 
 ## Main results
 
-* `Homeomorph.perfect_image`: the image of a set under a homeomorphism is perfect exactly when
-  the set is.
+* `Homeomorph.perfect_image`, `Homeomorph.perfectSpace`: perfect sets and perfect spaces are
+  preserved by homeomorphisms.
+* `Preperfect.subset_closure_sdiff_of_isDiscrete`,
+  `IsOpen.subset_closure_sdiff_of_isDiscrete`,
+  `Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`,
+  `IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete`: density and continuous-extension
+  uniqueness across discrete subsets of preperfect sets and open sets in perfect spaces.
 * `TauCeti.perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
 
 ## References
@@ -37,7 +51,7 @@ perfect.
 
 public section
 
-open Set Topology
+open Filter Set Topology
 
 universe u v
 
@@ -58,7 +72,49 @@ theorem perfect_image (h : X ≃ₜ Y) {C : Set X} : Perfect (h '' C) ↔ Perfec
   refine ⟨fun hC => ?_, perfect_image_of_perfect h⟩
   simpa [Set.image_image] using perfect_image_of_perfect h.symm hC
 
+/-- A homeomorphic image of a perfect space is a perfect space. -/
+protected theorem perfectSpace [PerfectSpace X] (h : X ≃ₜ Y) : PerfectSpace Y := by
+  have hU : Perfect (h '' (univ : Set X)) :=
+    h.perfect_image.2 (PerfectSpace.univ_perfect (α := X))
+  rw [Set.image_univ, h.surjective.range_eq] at hU
+  exact ⟨hU.acc⟩
+
 end Homeomorph
+
+/-- Every preperfect set `U` is contained in the closure of `U \ S` whenever `U ∩ S` is discrete. -/
+theorem Preperfect.subset_closure_sdiff_of_isDiscrete {X : Type u} [TopologicalSpace X]
+    {U S : Set X} (hU : Preperfect U) (hS : IsDiscrete (U ∩ S)) :
+    U ⊆ closure (U \ S) := fun x hx ↦ by
+  by_cases hxS : x ∈ S
+  · rw [mem_closure_iff_nhdsWithin_neBot]
+    exact (accPt_principal_iff_nhdsWithin.1 (hU x hx)).mono
+      (le_inf nhdsWithin_le_nhds (le_principal_iff.2 (hS.sdiff_mem_nhdsWithin hx hxS)))
+  · exact subset_closure ⟨hx, hxS⟩
+
+/-- In a perfect space, every open set `U` is contained in the closure of `U \ S` whenever `U ∩ S`
+is discrete. -/
+theorem IsOpen.subset_closure_sdiff_of_isDiscrete {X : Type u} [TopologicalSpace X]
+    [PerfectSpace X] {U S : Set X} (hU : IsOpen U) (hS : IsDiscrete (U ∩ S)) :
+    U ⊆ closure (U \ S) :=
+  hU.preperfect.subset_closure_sdiff_of_isDiscrete hS
+
+/-- **Uniqueness of continuous extensions across a discrete set.** If `U` is preperfect and `U ∩ S`
+is discrete, any two maps into a `T₂` space that are continuous on `U` and agree on `U \ S` agree on
+all of `U`. -/
+theorem Preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [TopologicalSpace Y] [T2Space Y] {g₁ g₂ : X → Y} {U S : Set X}
+    (hU : Preperfect U) (hS : IsDiscrete (U ∩ S)) (hg₁ : ContinuousOn g₁ U)
+    (hg₂ : ContinuousOn g₂ U) (heq : EqOn g₁ g₂ (U \ S)) : EqOn g₁ g₂ U :=
+  heq.of_subset_closure hg₁ hg₂ sdiff_subset (hU.subset_closure_sdiff_of_isDiscrete hS)
+
+/-- **Uniqueness of continuous extensions across a discrete set in a perfect space.** If `U` is open
+in a perfect space and `U ∩ S` is discrete, any two maps into a `T₂` space that are continuous on
+`U` and agree on `U \ S` agree on all of `U`. -/
+theorem IsOpen.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete {X : Type u} {Y : Type v}
+    [TopologicalSpace X] [PerfectSpace X] [TopologicalSpace Y] [T2Space Y] {g₁ g₂ : X → Y}
+    {U S : Set X} (hU : IsOpen U) (hS : IsDiscrete (U ∩ S)) (hg₁ : ContinuousOn g₁ U)
+    (hg₂ : ContinuousOn g₂ U) (heq : EqOn g₁ g₂ (U \ S)) : EqOn g₁ g₂ U :=
+  hU.preperfect.eqOn_of_continuousOn_of_eqOn_sdiff_of_isDiscrete hS hg₁ hg₂ heq
 
 namespace TauCeti
 
