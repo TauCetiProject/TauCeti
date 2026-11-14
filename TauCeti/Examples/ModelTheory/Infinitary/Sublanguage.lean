@@ -56,25 +56,38 @@ example :
     fun r hr xs => expandSymbStructure_relMap_of_notMem (F := ∅) hr xs,
     SentenceInf.realize_expandSymbStructure (F := ∅) φ (by simp) hR⟩
 
--- Over an uncountable language with function symbols in `Language.{1, 1}`, expanding a concrete
--- sublanguage structure on `ℕ` evaluates in-sublanguage function terms via the sublanguage.
+-- Over an uncountable algebraic language in `Language.{1, 1}`, expanding a concrete sublanguage
+-- structure on `ℕ` evaluates in-sublanguage function terms via the sublanguage and transfers
+-- `L_{ω₁ω}` sentence satisfaction.
 example :
-    let L : Language.{1, 1} := ⟨fun _ => ULift.{1} (ℕ → Bool), fun _ => ULift.{1} (ℕ → Bool)⟩
+    let L : Language.{1, 1} := ⟨fun _ => ULift.{1} (ℕ → Bool), fun _ => PEmpty.{2}⟩
     let f₀ : L.Functions 1 := ⟨fun _ => false⟩
     let F : Set (Σ n, L.Functions n) := {⟨1, f₀⟩}
+    let φ : L.Sentenceω :=
+      (BoundedFormulaInf.equal (Term.func f₀ ![Term.var (Sum.inr 0)])
+        (Term.var (Sum.inr 0))).not.all
     letI : (symbSublang F ∅).Structure ℕ :=
       { funMap := fun {n} _ xs => if h : 0 < n then xs ⟨0, h⟩ + 1 else 0
         RelMap := fun {_} r _ => r.2.elim }
     letI : L.Structure ℕ := expandSymbStructure F ∅ ℕ
-    (Term.func f₀ ![Term.var ()]).realize (fun _ : Unit => (5 : ℕ)) = 6 := by
-  intro L f₀ F
+    L.IsAlgebraic ∧
+      (Term.func f₀ ![Term.var ()]).realize (fun _ : Unit => (5 : ℕ)) = 6 ∧
+      SentenceInf.Realize φ ℕ := by
+  intro L f₀ F φ
   let : (symbSublang F ∅).Structure ℕ :=
     { funMap := fun {n} _ xs => if h : 0 < n then xs ⟨0, h⟩ + 1 else 0
       RelMap := fun {_} r _ => r.2.elim }
-  have ht : (Term.func f₀ ![Term.var ()] : L.Term Unit).functionsIn ⊆ F := by
-    simp [F]
-  rw [Term.realize_expandSymbStructure (R := (∅ : Set (Σ n, L.Relations n))) _ ht]
-  simp [Term.restrictSymbols_func, Term.restrictSymbols_var]
+  have ht : (Term.func f₀ ![Term.var ()] : L.Term Unit).functionsIn ⊆ F := by simp [F]
+  have hφF : φ.functionsIn ⊆ F := by simp [φ, F]
+  have hφR : φ.relationsIn ⊆ (∅ : Set (Σ n, L.Relations n)) := by simp [φ]
+  refine ⟨fun _ => inferInstance, ?_, ?_⟩
+  · rw [Term.realize_expandSymbStructure (R := (∅ : Set (Σ n, L.Relations n))) _ ht]
+    simp [Term.restrictSymbols_func, Term.restrictSymbols_var]
+  · rw [SentenceInf.realize_expandSymbStructure (R := (∅ : Set (Σ n, L.Relations n))) φ hφF hφR]
+    simp [φ, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.not,
+      BoundedFormulaInf.restrictSymbols_all, BoundedFormulaInf.restrictSymbols_imp,
+      BoundedFormulaInf.restrictSymbols_equal, BoundedFormulaInf.restrictSymbols_falsum,
+      Term.restrictSymbols_func, Term.restrictSymbols_var]
 
 -- Restricting a structure on `Bool` to a proper symbol sublanguage and re-expanding via
 -- `expandSymbStructure` empties out-of-sublanguage relations while preserving sentences supported
@@ -136,18 +149,18 @@ example :
   have : Countable T := hT.to_subtype
   refine ⟨inferInstance, inferInstance,
     BoundedFormulaInf.countable_toSetSymbSublang hT, ?_⟩
-  simp only [Theoryω.isSatisfiable_iff, BoundedFormulaInf.toSetSymbSublang_def]
+  simp only [Theoryω.isSatisfiable_iff]
   constructor
   · rintro ⟨M, instL, hne, hM⟩
     let : (BoundedFormulaInf.setSymbSublang T).Structure M :=
       (BoundedFormulaInf.setSymbSublangIncl T).reduct M
     refine ⟨M, inferInstance, hne, Theoryω.model_iff.2 ?_⟩
-    exact (SentenceInf.forall_realize_restrictSymbolsSet_iff T subset_rfl subset_rfl).2
+    exact (SentenceInf.forall_realize_toSetSymbSublang_iff T).2
       (Theoryω.model_iff.1 hM)
   · rintro ⟨M, instL₀, hne, hM⟩
     let : L.Structure M :=
       expandSymbStructure (BoundedFormulaInf.functionsInSet T)
         (BoundedFormulaInf.relationsInSet T) M
     refine ⟨M, inferInstance, hne, Theoryω.model_iff.2 ?_⟩
-    exact (SentenceInf.forall_realize_expandSymbStructure_iff T subset_rfl subset_rfl).2
+    exact (SentenceInf.forall_realize_expandSymbStructure_toSetSymbSublang_iff T).2
       (Theoryω.model_iff.1 hM)

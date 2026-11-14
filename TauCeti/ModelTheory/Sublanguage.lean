@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Basic
+public import TauCeti.ModelTheory.LanguageMap
 public import TauCeti.ModelTheory.Term.Symbols
 
 /-!
@@ -271,11 +272,9 @@ instance isExpansionOn_expandSymbStructure :
 @[simp]
 theorem reduct_expandSymbStructure :
     @LHom.reduct (symbSublang F R) L (symbSublangIncl F R) M (expandSymbStructure F R M) =
-      ‹(symbSublang F R).Structure M› := by
-  refine Structure.ext (funext fun n => funext fun f => funext fun xs => ?_)
-    (funext fun n => funext fun r => funext fun xs => ?_)
-  · exact expandSymbStructure_funMap_of_mem f.2 xs
-  · exact propext (expandSymbStructure_relMap_of_mem r.2 xs)
+      ‹(symbSublang F R).Structure M› :=
+  letI := expandSymbStructure F R M
+  (symbSublangIncl F R).reduct_eq_of_isExpansionOn M
 
 end Expand
 
@@ -284,10 +283,6 @@ end Expand
 namespace Term
 
 variable {α : Type uα}
-
-/-- The subtype of function symbols occurring in a term is finite. -/
-instance finite_functionsIn (t : L.Term α) : Finite t.functionsIn :=
-  t.functionsIn_finite.to_subtype
 
 /-- The restriction of a term to a symbol sublanguage containing its function symbols. -/
 def restrictSymbols : ∀ t : L.Term α, t.functionsIn ⊆ F → (symbSublang F R).Term α
@@ -378,12 +373,13 @@ theorem realize_congr_of_isExpansionOn_symbSublangIncl {M : Type w}
 /-- Restricting an `L`-structure on `M` to `symbSublang F R` and re-expanding via
 `expandSymbStructure F R M` preserves the value of every term whose occurring function symbols lie
 in `F`. -/
-theorem realize_expandSymbStructure_reduct {M : Type w} [L.Structure M] [Nonempty (L.Structure M)]
+theorem realize_expandSymbStructure_reduct {M : Type w} [S : L.Structure M]
     (t : L.Term α) (h : t.functionsIn ⊆ F) (v : α → M) :
-    @realize L M (@expandSymbStructure L F R M _ ((symbSublangIncl F R).reduct M)) α v t =
+    @realize L M (@expandSymbStructure L F R M ⟨S⟩ ((symbSublangIncl F R).reduct M)) α v t =
       t.realize v := by
+  have : Nonempty (L.Structure M) := ⟨S⟩
   let : (symbSublang F R).Structure M := (symbSublangIncl F R).reduct M
-  exact t.realize_congr_of_isExpansionOn_symbSublangIncl (R := R) (expandSymbStructure F R M) _ h v
+  exact t.realize_congr_of_isExpansionOn_symbSublangIncl (R := R) (expandSymbStructure F R M) S h v
 
 end Term
 
