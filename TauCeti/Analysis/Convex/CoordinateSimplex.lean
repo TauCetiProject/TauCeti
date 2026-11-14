@@ -15,11 +15,11 @@ import Mathlib.Analysis.Normed.Operator.Banach
 The coordinate simplex is the set of nonnegative coordinate vectors with total mass at most
 one. Unlike the barycentric simplex, it is full dimensional: the missing mass is the
 coordinate of its vertex at the origin. Its dilation by `a ≥ 0` is the set of nonnegative
-coordinate vectors with total mass at most `a` (`TauCeti.smul_coordinateSimplex`). Its frontier consists of the points with a zero
-coordinate or total mass one. This identifies the proper barycentric faces with a geometric
-boundary, and allows Mathlib's convex-body rescaling theorem to identify that boundary with
-a round sphere. Affine vertex swaps transport the neighbourhood of the origin to the
-neighbourhoods of the other vertices.
+coordinate vectors with total mass at most `a` (`TauCeti.smul_coordinateSimplex`). Its
+frontier consists of the points with a zero coordinate or total mass one. This identifies the
+proper barycentric faces with a geometric boundary, and allows Mathlib's convex-body rescaling
+theorem to identify that boundary with a round sphere. Affine vertex swaps transport the
+neighbourhood of the origin to the neighbourhoods of the other vertices.
 
 Reference: C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
 Chapter 2. The sphere identification uses Mathlib's

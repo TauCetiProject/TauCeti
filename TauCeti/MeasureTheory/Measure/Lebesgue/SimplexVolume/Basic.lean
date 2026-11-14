@@ -197,8 +197,7 @@ theorem volume_setOf_nonneg_sum_le (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 �
     exact measure_ne_top_of_subset (hfin ▸ inter_subset_left)
       (isCompact_Icc.measure_ne_top (μ := (volume : Measure (Fin m → ℝ))))
   -- Transport along a bijection `Fin m ≃ κ`, then dilate by `a`.
-  have hκ : volume {x : κ → ℝ | (∀ k, 0 ≤ x k) ∧ ∑ k, x k ≤ 1} =
-      ENNReal.ofReal (1 / m.factorial) := by
+  have hκ : volume (coordinateSimplex κ) = ENNReal.ofReal (1 / m.factorial) := by
     let e : Fin m ≃ κ := (Fintype.equivFin κ).symm
     have hp := volume_preserving_arrowCongr' e (MeasurableEquiv.refl ℝ) (MeasurePreserving.id _)
     have happ (x : Fin m → ℝ) (k : κ) :
@@ -207,11 +206,10 @@ theorem volume_setOf_nonneg_sum_le (κ : Type*) [Fintype κ] {a : ℝ} (ha : 0 �
     rw [← hp.measure_preimage_equiv, ← hunit]
     congr 1
     ext x
-    simp only [mem_preimage, mem_ofPred_eq, happ]
+    simp only [mem_preimage, mem_coordinateSimplex, mem_ofPred_eq, happ]
     exact and_congr (e.symm.surjective.forall (p := fun j ↦ 0 ≤ x j)).symm
       (by rw [e.symm.sum_comp x])
-  rw [← smul_coordinateSimplex κ ha, Measure.addHaar_smul_of_nonneg volume ha, coordinateSimplex,
-    hκ,
+  rw [← smul_coordinateSimplex κ ha, Measure.addHaar_smul_of_nonneg volume ha, hκ,
     Module.finrank_fintype_fun_eq_card, ← ENNReal.ofReal_mul (pow_nonneg ha m), mul_one_div]
 
 /-- **The volume of the half-open corner simplex.** For `0 < a`, the set
