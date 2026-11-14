@@ -47,12 +47,14 @@ variable {θ : ℝ} {ι : Type*} [Fintype ι] {e : Matrix ι ι (SmoothNoncommut
 `e`, the curvature `F` satisfies `(2πi)⁻¹ τ (Tr F) = (φ#Tr)(e, e, e)`, where `φ` is the fundamental
 cyclic cocycle of `𝒜_θ`. -/
 theorem inv_two_pi_I_mul_trace_endToMatrix_curvature (he : IsIdempotentElem e)
-    (D₁ : DerivationConnection (derivation₁ θ) (range
-      (Matrix.mulVecBilin (SmoothNoncommutativeTorus θ) (SmoothNoncommutativeTorus θ)ᵐᵒᵖ e)))
-    (D₂ : DerivationConnection (derivation₂ θ) (range
-      (Matrix.mulVecBilin (SmoothNoncommutativeTorus θ) (SmoothNoncommutativeTorus θ)ᵐᵒᵖ e))) :
-    (2 * π * I)⁻¹ *
-        trace θ (he.endToMatrix (D₁.curvature D₂ commute_derivation₁_derivation₂)).trace =
+    (D₁ : RightConnection (E := range
+      (Matrix.mulVecBilin (SmoothNoncommutativeTorus θ) (SmoothNoncommutativeTorus θ)ᵐᵒᵖ e))
+      (derivation₁ θ))
+    (D₂ : RightConnection (E := range
+      (Matrix.mulVecBilin (SmoothNoncommutativeTorus θ) (SmoothNoncommutativeTorus θ)ᵐᵒᵖ e))
+      (derivation₂ θ)) :
+    (2 * π * I)⁻¹ * trace θ
+        (he.endToMatrix (RightConnection.curvature D₁ D₂ commute_derivation₁_derivation₂)).trace =
       matrixCochainExtension ι 2
         ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
           MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ)
