@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Topology.Circle.Degree
+public import TauCeti.Analysis.Contour.Winding.RealIntegral.Basic
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Winding.SegmentSum
 
@@ -20,6 +21,12 @@ is the degree `Circle.degree` of this loop
 (`TauCeti.Contour.windingNumber_eq_degree_of_eq_div_norm`). Both are read off from one continuous
 argument of `γ t - w`: its total change is the imaginary part of the logarithmic contour integral,
 and it is also `2π` times the degree. The argument need not be differentiable.
+
+Combined with the real integral formula for the winding number, this identifies the turning
+integral `∫ (x y' - y x') / (x² + y²)` of `γ - w = x + i y` with `2π` times the degree of the
+direction loop (`TauCeti.Contour.integral_realWindingIntegrand_eq_two_pi_mul_degree`). Applied to
+the velocity of a regular closed curve, it identifies the total signed curvature with `2π` times
+the degree of the tangent loop.
 
 ## References
 
@@ -84,5 +91,35 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
   simp only [Path.extend_zero, Path.extend_one, sub_self, Complex.ofReal_zero, zero_add,
     Complex.ofReal_mul, Complex.ofReal_intCast, Complex.ofReal_ofNat]
   field_simp
+
+/-- **The turning integral is `2π` times the degree of the direction loop.** For a piecewise `C¹`
+curve `γ` with `γ 0 = γ 1` avoiding `w` on `[0, 1]`, the real winding integral of `γ - w`, that is
+`∫ (x y' - y x') / (x² + y²)` where `γ - w = x + i y`, is `2π` times the degree of the loop
+`p t = (γ t - w) / ‖γ t - w‖` in the unit circle. -/
+theorem integral_realWindingIntegrand_eq_two_pi_mul_degree {γ : ℝ → ℂ} {w : ℂ} {u : Circle}
+    (hγ : IsPiecewiseC1On γ 0 1) (hclosed : γ 0 = γ 1) (havoid : ∀ t ∈ Icc (0 : ℝ) 1, γ t ≠ w)
+    (p : Path u u) (hp : ∀ t : I, (p t : ℂ) = (γ t - w) / (‖γ t - w‖ : ℂ)) :
+    ∫ t in (0 : ℝ)..1, realWindingIntegrand (γ t - w) (deriv γ t) =
+      2 * Real.pi * Circle.degree p := by
+  have hc : ContinuousOn γ (Icc 0 1) := by
+    simpa only [uIcc_of_le zero_le_one] using hγ.continuousOn
+  have hn : ∀ t ∈ uIcc (0 : ℝ) 1, γ t ≠ w := by simpa only [uIcc_of_le zero_le_one] using havoid
+  obtain ⟨P, hP, hd⟩ := hγ.exists_countable_differentiableAt
+  have hreal := windingNumber_eq_real_integral_of_closed hclosed hP hγ.continuousOn hd hn
+    (intervalIntegrable_inv_sub_mul_deriv hγ.continuousOn hn hγ.intervalIntegrable_deriv)
+  let Γ : Path (γ 0) (γ 0) :=
+    { toFun t := γ t
+      continuous_toFun := hc.domRestrict
+      source' := rfl
+      target' := hclosed.symm }
+  have hΓ : EqOn Γ.extend γ (Icc 0 1) := fun t ht ↦ Path.extend_apply Γ ht
+  have hdeg := windingNumber_eq_degree_of_eq_div_norm Γ p
+    (hγ.congr (by simpa only [uIcc_of_le zero_le_one] using hΓ)) (fun t ↦ havoid t t.2) hp
+  rw [windingNumber_congr_curve (hΓ.mono (by simpa using Ioo_subset_Icc_self)), hreal] at hdeg
+  have hdeg' : 1 / (2 * Real.pi) *
+      ∫ t in (0 : ℝ)..1, realWindingIntegrand (γ t - w) (deriv γ t) = Circle.degree p := by
+    exact_mod_cast hdeg
+  field_simp at hdeg'
+  linarith
 
 end TauCeti.Contour
