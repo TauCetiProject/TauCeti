@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.Topology.CWComplex.Classical.Map
 
 /-!
 # Actions on the cells of a relative CW complex
@@ -23,6 +24,8 @@ open cells give a free action on cells.
 * `TauCeti.smul_closedCell`: compatibility with closed cells for continuous translations.
 * `TauCeti.smul_mem_skeletonLT`: a fixed translation carrying each open cell onto an open cell
   of the same dimension preserves every skeleton of a CW complex.
+* `TauCeti.cellActionSMul` and `TauCeti.isCellular_cellActionSMul`: continuous translation on a
+  Hausdorff CW complex carrying open cells onto open cells of the same dimension is cellular.
 * `TauCeti.smul_closedCell_of_smul_openCell`: continuous translations carrying an open cell
   onto another also carry the corresponding closed cells onto each other.
 * `TauCeti.isCancelSMul_cell`: freeness of the induced group action on cells.
@@ -40,7 +43,7 @@ public section
 
 noncomputable section
 
-open Set Topology Topology.RelCWComplex
+open CategoryTheory Set Topology Topology.RelCWComplex
 open scoped Pointwise
 
 universe u
@@ -61,6 +64,65 @@ lemma smul_mem_skeletonLT {C : Set E} [CWComplex C] [T2Space E] [SMul G E]
   obtain ⟨m, hm, i, hi⟩ := hz
   obtain ⟨j, hj⟩ := hcell m i
   exact ⟨m, hm, j, hj ▸ smul_mem_smul_set hi⟩
+
+/-- Translation by a fixed element carrying each open cell onto an open cell of the same dimension
+maps a Hausdorff CW complex into itself. -/
+lemma smul_mem_complex {C : Set E} [CWComplex C] [T2Space E] [SMul G E]
+    (g : G) (hcell : ∀ (n : ℕ) (i : cell C n),
+      ∃ j : cell C n, g • openCell n i = openCell n j)
+    {z : E} (hz : z ∈ C) : g • z ∈ C := by
+  have hz' : z ∈ (skeletonLT C (⊤ : ℕ∞) : Set E) := by
+    simpa only [CWComplex.skeletonLT_top] using hz
+  simpa only [CWComplex.skeletonLT_top] using smul_mem_skeletonLT g hcell hz'
+
+/-- Continuous translation by `g`, restricted to a Hausdorff CW complex `C` whose open cells it
+carries onto open cells of the same dimension. -/
+def cellActionSMul (C : Set E) [CWComplex C] [T2Space E] [SMul G E] [ContinuousConstSMul G E]
+    (g : G) (hcell : ∀ (n : ℕ) (i : cell C n),
+      ∃ j : cell C n, g • openCell n i = openCell n j) :
+    TopCat.of C ⟶ TopCat.of C :=
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, smul_mem_complex g hcell x.2⟩, by fun_prop⟩
+
+/-- On points of `C`, `TauCeti.cellActionSMul` acts by translation in the ambient space. -/
+@[simp]
+theorem coe_cellActionSMul_apply (C : Set E) [CWComplex C] [T2Space E] [SMul G E]
+    [ContinuousConstSMul G E] (g : G)
+    (hcell : ∀ (n : ℕ) (i : cell C n), ∃ j : cell C n, g • openCell n i = openCell n j) (x : C) :
+    (cellActionSMul C g hcell x : E) = g • (x : E) :=
+  (rfl)
+
+/-- **Continuous translation carrying open cells onto open cells of the same dimension is
+cellular.** -/
+theorem isCellular_cellActionSMul (C : Set E) [CWComplex C] [T2Space E] [SMul G E]
+    [ContinuousConstSMul G E] (g : G)
+    (hcell : ∀ (n : ℕ) (i : cell C n), ∃ j : cell C n, g • openCell n i = openCell n j) :
+    IsCellular C C (cellActionSMul C g hcell) :=
+  fun _ _ hx ↦ smul_mem_skeletonLT g hcell hx
+
+/-- Translation by the identity element is the identity morphism on the CW complex. -/
+@[simp]
+theorem cellActionSMul_one (C : Set E) [CWComplex C] [T2Space E] [Monoid G] [MulAction G E]
+    [ContinuousConstSMul G E]
+    (hcell : ∀ (n : ℕ) (i : cell C n), ∃ j : cell C n, (1 : G) • openCell n i = openCell n j) :
+    cellActionSMul C (1 : G) hcell = 𝟙 (TopCat.of C) := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (coe_cellActionSMul_apply C 1 hcell x).trans (one_smul G x.1)
+
+/-- Translation by a product is successive translation on the CW complex. -/
+theorem cellActionSMul_mul (C : Set E) [CWComplex C] [T2Space E] [Monoid G] [MulAction G E]
+    [ContinuousConstSMul G E] (g h : G)
+    (hg : ∀ (n : ℕ) (i : cell C n), ∃ j : cell C n, g • openCell n i = openCell n j)
+    (hh : ∀ (n : ℕ) (i : cell C n), ∃ j : cell C n, h • openCell n i = openCell n j)
+    (hgh : ∀ (n : ℕ) (i : cell C n), ∃ j : cell C n, (g * h) • openCell n i = openCell n j) :
+    cellActionSMul C (g * h) hgh = cellActionSMul C h hh ≫ cellActionSMul C g hg := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  exact (coe_cellActionSMul_apply C (g * h) hgh x).trans ((mul_smul g h x.1).trans
+    ((coe_cellActionSMul_apply C g hg (cellActionSMul C h hh x)).trans
+      (congrArg (g • ·) (coe_cellActionSMul_apply C h hh x))).symm)
 
 /-- A continuous translation carrying an open cell onto another also carries the corresponding
 closed cell onto the other closed cell. -/
