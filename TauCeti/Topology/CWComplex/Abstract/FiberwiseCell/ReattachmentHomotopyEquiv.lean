@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCellAttachment
+public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
@@ -472,22 +472,18 @@ private theorem endAttachingMap_eq (i : ι) (p : P) (s s' : TopCat.diskBoundary.
 /-- The reattachment map along `K` and `h` is the reattachment map along `K` with the identity of
 the discs, into the attachment along the end of `K`, followed by the reparametrization of the
 discs by `h`. -/
-private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentIso
-    (h' : ∀ i, C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i)))
-    (hh' : ∀ i p, MapsTo (fun w ↦ h' i (p, w)) (range (TopCat.diskBoundaryInclusion (k i)))
-      (range (TopCat.diskBoundaryInclusion (k i))))
-    (hh'h : ∀ i p w, h' i (p, h i (p, w)) = w) (hhh' : ∀ i p w, h i (p, h' i (p, w)) = w) :
+private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentReparam :
     fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK =
       fiberwiseCellReattachment (endAttachingMap χ₀ χ₁ h K hK) α₁
           (fun i ↦ (χ₀ i).comp (ContinuousMap.fst.prodMk (h i))) χ₁
           (comp_diskBoundaryInclusion_eq_endAttachingMap χ₀ χ₁ h K hK) hχ₁
           (fun _ ↦ ContinuousMap.snd) (mapsTo_snd k) (castHomotopy χ₀ χ₁ h K)
           (castHomotopy_mem χ₀ χ₁ h K hK) ≫
-        (fiberwiseCellAttachmentIso α₀ (endAttachingMap χ₀ χ₁ h K hK) h h' hh hh' hh'h hhh'
-          (endAttachingMap_eq α₀ χ₀ χ₁ hχ₀ h K hK)).hom := by
+        fiberwiseCellAttachmentReparam α₀ (endAttachingMap χ₀ χ₁ h K hK) h hh
+          (endAttachingMap_eq α₀ χ₀ χ₁ hχ₀ h K hK) := by
   refine fiberwiseCellAttachment_hom_ext α₁ (fun x ↦ ?_) fun i x ↦ ?_
   · rw [ConcreteCategory.comp_apply, fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
-      fiberwiseCellReattachment_fiberwiseCellAttachmentIncl, fiberwiseCellAttachmentIso_hom,
+      fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
       fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
   obtain ⟨p, w⟩ := x
   rw [ConcreteCategory.comp_apply]
@@ -495,7 +491,7 @@ private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentIso
   · have hv := TopCat.coe_reattachmentRadial_of_norm_le hw
     rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
       fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
-      fiberwiseCellAttachmentIso_hom, fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentCell]
+      fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentCell]
     simp only [ContinuousMap.snd_apply]
   · obtain ⟨s, hs⟩ : ∃ s : TopCat.diskBoundary.{u} (k i), s.down.1 = ‖w.down.1‖⁻¹ • w.down.1 :=
       ⟨TopCat.annulusDir (by norm_num) ⟨w, hw⟩, TopCat.coe_annulusDir _ _⟩
@@ -505,7 +501,7 @@ private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentIso
         (hs := hs),
       fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hw) (ht := ht)
         (hs := hs),
-      fiberwiseCellAttachmentIso_hom, fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
+      fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
     simp only [castHomotopy, ContinuousMap.Homotopy.cast_apply]
 
 /-- **The fiberwise reattachment map is a homotopy equivalence over `P`, relative to `P × A`.**
@@ -514,8 +510,7 @@ reattachment map of a family of homotopies `K i : χ₁ i ≃ χ₀ i ∘ (p, h 
 spheres in `A`, where the self-maps `h i (p, ·)` of the disc pairs are invertible, with inverses
 `h' i (p, ·)` continuous in `p` and preserving the boundary spheres. Then `E` has a homotopy
 inverse `E'` over `P` which is the identity on `P × A`, and both composites are homotopic to the
-identities relative to `P × A`, through maps over `P`. The inverse is the reparametrization of the
-discs by `h'` followed by the reattachment map along the reverse of `K`. -/
+identities relative to `P × A`, through maps over `P`. -/
 theorem exists_homotopyRel_fiberwiseCellReattachment_comp
     (h' : ∀ i, C(P × TopCat.disk.{u} (k i), TopCat.disk.{u} (k i)))
     (hh' : ∀ i p, MapsTo (fun w ↦ h' i (p, w)) (range (TopCat.diskBoundaryInclusion (k i)))
@@ -543,9 +538,10 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp
     (castHomotopy χ₀ χ₁ h K) hKc
   set E₁ := fiberwiseCellReattachment α₁ α χ₁ χ hχ₁ hχ (fun _ ↦ ContinuousMap.snd) (mapsTo_snd k)
     (symmHomotopy χ₀ χ₁ h K) hKs
-  have hE : fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK = E₀ ≫ J.hom :=
-    fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentIso α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK h'
-      hh' hh'h hhh'
+  have hE : fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK = E₀ ≫ J.hom := by
+    rw [fiberwiseCellAttachmentIso_hom]
+    exact fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentReparam α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh
+      K hK
   obtain ⟨F₁, hF₁⟩ := exists_homotopyRel_reattachment_comp_symm
     α α₁ χ χ₁ hχ hχ₁ (castHomotopy χ₀ χ₁ h K) hKc (symmHomotopy χ₀ χ₁ h K) hKs
     fun i t p s ↦ by
