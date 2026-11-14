@@ -208,7 +208,7 @@ theorem universalResolvent_map_rename (Φ : MvPolynomial σ R) (e : Equiv.Perm �
 theorem isSymmetric_universalResolvent_coeff (Φ : MvPolynomial σ R) (k : ℕ) :
     ((universalResolvent Φ).coeff k).IsSymmetric := fun e => by
   simpa only [Polynomial.coeff_map, RingHom.coe_coe] using
-    congrArg (Polynomial.coeff · k) (universalResolvent_map_rename Φ e)
+    congrArg (fun p : (MvPolynomial σ R)[X] ↦ p.coeff k) (universalResolvent_map_rename Φ e)
 
 end Resolvent
 
