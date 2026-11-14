@@ -275,6 +275,32 @@ section Covolume
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
 
+/-- Finitely many vectors `y k : ι → K` and forms `L w i` are bounded at every finite place `w`:
+there is a single nonnegative `R w` with `w (L w i (y k)) ≤ R w * |Q| ^ c w i` and
+`w (y k j) ≤ R w`. -/
+private theorem exists_forall_form_coord_le [Finite ι]
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}
+    (hQ : Q ≠ 0) (y : ι → ι → K) :
+    ∃ R : FinitePlace K → ℝ, (∀ w, 0 ≤ R w) ∧
+      (∀ w k i, w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i) ∧ ∀ w k j, w (y k j) ≤ R w := by
+  have := Fintype.ofFinite ι
+  have hQc (w : FinitePlace K) (i : ι) : 0 < |Q| ^ c w.1 i :=
+    Real.rpow_pos_of_pos (abs_pos.mpr hQ) _
+  let R : FinitePlace K → ℝ := fun w ↦
+    ∑ p : ι × ι, (w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2))
+  have hterm_nonneg (w : FinitePlace K) (p : ι × ι) :
+      0 ≤ w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2) :=
+    add_nonneg (div_nonneg (apply_nonneg _ _) (hQc w p.2).le) (apply_nonneg _ _)
+  have hR_pair (w : FinitePlace K) (k i : ι) :
+      w (L w.1 i (y k)) / |Q| ^ c w.1 i + w (y k i) ≤ R w :=
+    Finset.single_le_sum (fun p _ ↦ hterm_nonneg w p) (Finset.mem_univ (k, i))
+  refine ⟨R, fun w ↦ Finset.sum_nonneg fun p _ ↦ hterm_nonneg w p, fun w k i ↦ ?_,
+    fun w k j ↦ ?_⟩
+  · exact (div_le_iff₀ (hQc w i)).mp
+      ((le_add_of_nonneg_right (apply_nonneg _ _)).trans (hR_pair w k i))
+  · exact (le_add_of_nonneg_left (div_nonneg (apply_nonneg _ _) (hQc w j).le)).trans
+      (hR_pair w k j)
+
 /-- Given vectors `y k : ι → K` already satisfying the local bound of `approxModule S₀ L c Q` at a
 chosen finite place `v`, some algebraic integer `d` with `v d = 1` scales every `y k` into
 `approxModule S₀ L c Q`. -/
@@ -296,22 +322,10 @@ private theorem exists_apply_eq_one_forall_smul_mem_approxModule [Finite ι]
       (FinitePlace.hasFiniteMulSupport_max_one (y p.1 p.2)).toFinset
   let T : Finset (FinitePlace K) := S₀.erase v ∪ T₁.erase v
   have hvT : v ∉ T := by simp [T]
-  -- Bound both normalized form values and coordinates at `w` by a single nonnegative sum `R w`,
+  -- Bound both normalized form values and coordinates at `w` by a single nonnegative `R w`,
   -- then pick `d : 𝓞 K` with `v d = 1` and `w d * R w ≤ 1` for every `w ∈ T`.
-  let R : FinitePlace K → ℝ := fun w ↦
-    ∑ p : ι × ι, (w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2))
-  have hterm_nonneg (w : FinitePlace K) (p : ι × ι) :
-      0 ≤ w (L w.1 p.2 (y p.1)) / |Q| ^ c w.1 p.2 + w (y p.1 p.2) :=
-    add_nonneg (div_nonneg (apply_nonneg _ _) (hQc w p.2).le) (apply_nonneg _ _)
-  have hR_pair (w : FinitePlace K) (k i : ι) :
-      w (L w.1 i (y k)) / |Q| ^ c w.1 i + w (y k i) ≤ R w :=
-    Finset.single_le_sum (fun p _ ↦ hterm_nonneg w p) (Finset.mem_univ (k, i))
-  have hR_form (w : FinitePlace K) (k i : ι) : w (L w.1 i (y k)) ≤ R w * |Q| ^ c w.1 i :=
-    (div_le_iff₀ (hQc w i)).mp ((le_add_of_nonneg_right (apply_nonneg _ _)).trans (hR_pair w k i))
-  have hR_coord (w : FinitePlace K) (k j : ι) : w (y k j) ≤ R w :=
-    (le_add_of_nonneg_left (div_nonneg (apply_nonneg _ _) (hQc w j).le)).trans (hR_pair w k j)
-  obtain ⟨d, hdv, hdR⟩ := v.exists_apply_eq_one_forall_mul_apply_le hvT
-    fun w _ ↦ Finset.sum_nonneg fun p _ ↦ hterm_nonneg w p
+  obtain ⟨R, hR_nonneg, hR_form, hR_coord⟩ := exists_forall_form_coord_le L c hQ y
+  obtain ⟨d, hdv, hdR⟩ := v.exists_apply_eq_one_forall_mul_apply_le hvT fun w _ ↦ hR_nonneg w
   -- Check the `S₀` and non-`S₀` conditions at `w = v` (using `v d = 1`) and at `w ≠ v`.
   refine ⟨d, hdv, fun k ↦ mem_approxModule.mpr ⟨fun w hw i ↦ ?_, fun w hw j ↦ ?_⟩⟩
   · rw [map_smul, smul_eq_mul, map_mul]
