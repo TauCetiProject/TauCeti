@@ -53,10 +53,9 @@ variable {C : Type u} [Category.{u} C] [IsGroupoid C]
 
 /-- The restricted nerve is exactly the part over the image of the saturated object set
 in the coarse space, in each degree. -/
-theorem range_topologicalNerveMap_ι (m : SemiSimplexCategoryᵒᵖ) :
-    range ((TauCeti.topologicalNerveMap P.ι P.continuous_mapTotal_ι).app
-      (SemiSimplexCategory.toSimplexCategory.op.obj m)) =
-      (TauCeti.fatClassifyingSpace.coarseAugmentation hs).app m ⁻¹'
+theorem range_topologicalNerveMap_ι (Δ : SimplexCategoryᵒᵖ) :
+    range ((TauCeti.topologicalNerveMap P.ι P.continuous_mapTotal_ι).app Δ) =
+      (TauCeti.topologicalNerve.coarseAugmentation hs).app Δ ⁻¹'
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) := by
   rw [TauCeti.coe_topologicalNerveMap_app]
   refine (P.range_mapComposableArrows_ι_of_isClosedUnderIsomorphisms _).trans ?_
@@ -64,10 +63,10 @@ theorem range_topologicalNerveMap_ι (m : SemiSimplexCategoryᵒᵖ) :
   constructor
   · intro hF
     exact ⟨F.obj 0, hF,
-      (TauCeti.fatClassifyingSpace.coarseAugmentation_app_apply hs m F).symm⟩
+      (TauCeti.topologicalNerve.coarseAugmentation_app_apply hs Δ F).symm⟩
   · rintro ⟨x, hx, h⟩
     obtain ⟨e⟩ := Quotient.exact
-      (h.trans (TauCeti.fatClassifyingSpace.coarseAugmentation_app_apply hs m F))
+      (h.trans (TauCeti.topologicalNerve.coarseAugmentation_app_apply hs Δ F))
     exact P.prop_of_iso e hx
 
 include hs in
@@ -77,13 +76,16 @@ theorem isOpenEmbedding_fatClassifyingSpaceMap_ι (hP : IsOpen {x | P x}) :
     IsOpenEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.fatClassifyingSpaceMap_eq]
   apply TauCeti.fatRealization.isOpenEmbedding_map_of_range_eq_preimage
-    (TauCeti.fatClassifyingSpace.coarseAugmentation hs)
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+      (TauCeti.topologicalNerve.coarseAugmentation hs))
     (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
   · intro m
     dsimp only [Functor.whiskerLeft_app]
     rw [TauCeti.coe_topologicalNerveMap_app]
     exact P.isOpenEmbedding_mapComposableArrows_ι hs hP _
-  · exact P.range_topologicalNerveMap_ι hs
+  · intro m
+    simpa only [Functor.whiskerLeft_app] using
+      P.range_topologicalNerveMap_ι hs (SemiSimplexCategory.toSimplexCategory.op.obj m)
 
 omit [IsGroupoid C] [TopologicalSpace (Quiver.Total C)] in
 /-- The coarse space of a saturated closed full subcategory is a closed subspace of the coarse
@@ -102,13 +104,16 @@ theorem isClosedEmbedding_fatClassifyingSpaceMap_ι (hP : IsClosed {x | P x}) :
     IsClosedEmbedding (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.fatClassifyingSpaceMap_eq]
   apply TauCeti.fatRealization.isClosedEmbedding_map_of_range_eq_preimage
-    (TauCeti.fatClassifyingSpace.coarseAugmentation hs)
+    (Functor.whiskerLeft SemiSimplexCategory.toSimplexCategory.op
+      (TauCeti.topologicalNerve.coarseAugmentation hs))
     (V := Quotient.mk (isIsomorphicSetoid C) '' {x | P x})
   · intro m
     dsimp only [Functor.whiskerLeft_app]
     rw [TauCeti.coe_topologicalNerveMap_app]
     exact P.isClosedEmbedding_mapComposableArrows_ι hs hP _
-  · exact P.range_topologicalNerveMap_ι hs
+  · intro m
+    simpa only [Functor.whiskerLeft_app] using
+      P.range_topologicalNerveMap_ι hs (SemiSimplexCategory.toSimplexCategory.op.obj m)
 
 /-- The preimage of a saturated coarse subset is the image of the fat classifying space
 of its full restriction. This equality needs neither openness nor closedness; either one
@@ -118,9 +123,10 @@ theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι :
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
       range (TauCeti.fatClassifyingSpaceMap P.ι P.continuous_mapTotal_ι) := by
   rw [TauCeti.fatClassifyingSpace.coarseMap_eq_augment,
-    TauCeti.fatClassifyingSpaceMap_eq]
-  exact TauCeti.fatRealization.preimage_augment_eq_range_map _
-    (P.range_topologicalNerveMap_ι hs)
+    TauCeti.fatClassifyingSpace.coarseAugmentation_eq, TauCeti.fatClassifyingSpaceMap_eq]
+  exact TauCeti.fatRealization.preimage_augment_eq_range_map _ fun m ↦ by
+    simpa only [Functor.whiskerLeft_app] using
+      P.range_topologicalNerveMap_ι hs (SemiSimplexCategory.toSimplexCategory.op.obj m)
 
 /-- The fat classifying space of a saturated open restriction is homeomorphic to the
 actual coarse-map preimage, with its subspace topology. -/

@@ -9,6 +9,7 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.CategoryTheory.Codiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Metrizable.Basic
 
 /-!
 # Unit, pair and one-object topological groupoids
@@ -250,6 +251,31 @@ theorem arrowHomeomorph_apply (a : Quiver.Total (SingleObj G)) :
 @[simp]
 theorem arrowHomeomorph_symm_apply (g : G) :
     (arrowHomeomorph G).symm g = ⟨SingleObj.star G, SingleObj.star G, g⟩ := (rfl)
+
+instance [T0Space G] : T0Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t0Space
+
+instance [T1Space G] : T1Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.t1Space
+
+instance [T2Space G] : T2Space (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).symm.t2Space
+
+instance [RegularSpace G] : RegularSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.regularSpace
+
+instance [CompactSpace G] : CompactSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).symm.compactSpace
+
+instance [FirstCountableTopology G] : FirstCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.firstCountableTopology
+
+instance [SecondCountableTopology G] : SecondCountableTopology (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.secondCountableTopology
+
+instance [TopologicalSpace.MetrizableSpace G] :
+    TopologicalSpace.MetrizableSpace (Quiver.Total (SingleObj G)) :=
+  (arrowHomeomorph G).isEmbedding.metrizableSpace
 
 /-- All pairs of labels are composable over the single object. The order here is
 categorical: the first label is traversed first. -/
