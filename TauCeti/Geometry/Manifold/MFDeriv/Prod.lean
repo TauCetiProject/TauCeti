@@ -49,6 +49,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
+* `TauCeti.mvfderiv_diag_eq_add`: the derivative of `x ↦ S(x, x)` is the sum of the two
+  partial derivatives of `S` on the diagonal.
 * `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
   differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
@@ -291,6 +293,24 @@ theorem mfderiv_inr_eq_zero_of_forall_apply_eq {f : M × N → M''} {p : M} {x :
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf]
     -- The zero map evaluates to zero; the product tangent space is the product of the factors.
     rfl
+
+/-- **The differential on the diagonal.** If `S` is differentiable at `(q, q)`, the differential
+of `ψ(x) = S(x, x)` at `q` is the sum `d₁S(q, q) + d₂S(q, q)` of the partial differentials. -/
+theorem mvfderiv_diag_eq_add {S : M × M → F} {q : M}
+    (hS : MDifferentiableAt (I.prod I) 𝓘(𝕜, F) S (q, q)) :
+    mvfderiv I (fun x ↦ S (x, x)) q =
+      mvfderiv I (fun x ↦ S (x, q)) q + mvfderiv I (fun x ↦ S (q, x)) q := by
+  have hdiag : MDifferentiableAt I (I.prod I) (fun x : M ↦ (x, x)) q :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_id
+  refine ContinuousLinearMap.ext fun v : E ↦ ?_
+  -- `ψ` is `S` composed with the diagonal, whose differential is `v ↦ (v, v)`.
+  refine (mvfderiv_comp_apply (g := S) (f := fun x : M ↦ (x, x)) q hS hdiag v).trans ?_
+  have hd : mfderiv I (I.prod I) (fun x : M ↦ (x, x)) q =
+      (mfderiv I I (@id M) q).prod (mfderiv I I (@id M) q) :=
+    mfderiv_prodMk (f := id) (g := id) mdifferentiableAt_id mdifferentiableAt_id
+  rw [hd, mfderiv_id]
+  -- `(id.prod id) v` is `(v, v)` in the product tangent space.
+  exact (hS.mvfderiv_prod_eq_add_apply (v, v)).trans (add_apply _ _ v).symm
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
