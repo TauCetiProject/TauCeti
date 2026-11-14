@@ -60,7 +60,7 @@ theorem reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmen
         ((geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso qIso hconn)
     have hJu : smoothUnipotentCommHopfAlgProperty k
         (FiniteTypeCommHopfAlgCat.quotient H J) :=
-      smoothUnipotentCommHopfAlgProperty.of_baseChange_of_surjective _ hsurj
+      smoothUnipotentCommHopfAlgProperty.of_baseChange _
         ((smoothUnipotentCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
           (CategoryTheory.ObjectProperty.isoMk _ qIso) hu)
     have hJ : J = HopfIdeal.augmentation k H :=
