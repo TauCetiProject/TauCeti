@@ -9,10 +9,14 @@ public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Finite vector-partition fibers
+
+`Matrix.nonnegFiber A b` is the nonnegative solution set over a partially ordered semiring.
+Over an ordered semiring, a nonnegative covector bounds each coordinate contribution by the
+target height.
 
 For an integer matrix `A`, `Matrix.NatFiber A b` consists of decompositions of the target `b`
 as a natural linear combination of the columns of `A`. Distinct multiplicity vectors are counted
@@ -32,6 +36,36 @@ public section
 namespace Matrix
 
 variable {m : Type*} {n : Type*} [Fintype n]
+
+/-- The nonnegative solutions of the matrix equation `A x = b`. -/
+def nonnegFiber {R : Type*} [Semiring R] [PartialOrder R]
+    (A : Matrix m n R) (b : m → R) : Set (n → R) :=
+  {x | 0 ≤ x ∧ A *ᵥ x = b}
+
+/-- The nonnegative fiber is the solution set cut out by nonnegativity and the matrix equation. -/
+theorem nonnegFiber_def {R : Type*} [Semiring R] [PartialOrder R]
+    (A : Matrix m n R) (b : m → R) :
+    A.nonnegFiber b = {x | 0 ≤ x ∧ A *ᵥ x = b} := by
+  rfl
+
+/-- Membership in a fiber means nonnegativity and the matrix equation. -/
+@[simp, grind =] theorem mem_nonnegFiber {R : Type*} [Semiring R] [PartialOrder R]
+    (A : Matrix m n R) (b : m → R) (x : n → R) :
+    x ∈ A.nonnegFiber b ↔ 0 ≤ x ∧ A *ᵥ x = b := by
+  rw [nonnegFiber_def]
+  rfl
+
+/-- A nonnegative height bounds the contribution of each coordinate of a nonnegative solution. -/
+theorem mul_apply_le_dotProduct_of_mem_nonnegFiber {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] [Fintype m] (A : Matrix m n R) {h : m → R}
+    (hh : ∀ j, 0 ≤ (h ᵥ* A) j) {b : m → R} {x : n → R}
+    (hx : x ∈ A.nonnegFiber b) (j : n) : (h ᵥ* A) j * x j ≤ h ⬝ᵥ b := by
+  rw [mem_nonnegFiber] at hx
+  have hheight : (h ᵥ* A) ⬝ᵥ x = h ⬝ᵥ b := by
+    rw [← dotProduct_mulVec, hx.2]
+  rw [← hheight]
+  exact Finset.single_le_sum (fun k _ => mul_nonneg (hh k) (hx.1 k))
+    (Finset.mem_univ j)
 
 /-- The natural multiplicity vectors with image `b` under the integer matrix `A`. -/
 abbrev NatFiber (A : Matrix m n ℤ) (b : m → ℤ) :=
@@ -59,12 +93,10 @@ by the height of the right-hand side. -/
 theorem NatFiber.apply_le_toNat_dotProduct {A : Matrix m n ℤ} {b : m → ℤ} (c : NatFiber A b)
     {h : m → ℤ} (hh : ∀ j, 0 < (h ᵥ* A) j) (j : n) :
     c.1 j ≤ (h ⬝ᵥ b).toNat := by
-  have hterm : ∀ k, 0 ≤ (h ᵥ* A) k * (c.1 k : ℤ) :=
-    fun k => mul_nonneg (hh k).le (Int.natCast_nonneg _)
-  have hle : (c.1 j : ℤ) ≤ h ⬝ᵥ b := by
-    rw [← c.dotProduct_eq h]
-    exact (le_mul_of_one_le_left (Int.natCast_nonneg _) (hh j)).trans
-      (Finset.single_le_sum (fun k _ => hterm k) (Finset.mem_univ j))
+  have hle : (c.1 j : ℤ) ≤ h ⬝ᵥ b :=
+    (le_mul_of_one_le_left (Int.natCast_nonneg _) (hh j)).trans
+      (A.mul_apply_le_dotProduct_of_mem_nonnegFiber (fun k => (hh k).le)
+        ⟨fun _ => Int.natCast_nonneg _, c.2⟩ j)
   omega
 
 /-- A bounded candidate enumeration for a natural fiber. If `h` is positive on every column,
@@ -130,8 +162,8 @@ when there is no natural solution. -/
 
 /-- Under an integral covector strictly positive on every column, the zero vector is the unique
 natural solution with image zero. -/
-theorem NatFiber.eq_zero {A : Matrix m n ℤ}
-    (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) (c : NatFiber A 0) : c.1 = 0 := by
+theorem NatFiber.val_eq_zero {A : Matrix m n ℤ} (c : NatFiber A 0)
+    (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) : c.1 = 0 := by
   obtain ⟨h, hh⟩ := hA
   ext j
   have := c.apply_le_toNat_dotProduct hh j
@@ -142,7 +174,7 @@ one point, including for an empty column family. -/
 @[simp] theorem natFiberCount_zero (A : Matrix m n ℤ)
     (hA : ∃ h : m → ℤ, ∀ j, 0 < (h ᵥ* A) j) : A.natFiberCount 0 = 1 := by
   rw [natFiberCount_def, Nat.card_eq_one_iff_unique]
-  refine ⟨⟨fun c d => Subtype.ext ((c.eq_zero hA).trans (d.eq_zero hA).symm)⟩,
+  refine ⟨⟨fun c d => Subtype.ext ((c.val_eq_zero hA).trans (d.val_eq_zero hA).symm)⟩,
     ⟨⟨0, by ext i; simp [mulVec, dotProduct]⟩⟩⟩
 
 end Matrix
