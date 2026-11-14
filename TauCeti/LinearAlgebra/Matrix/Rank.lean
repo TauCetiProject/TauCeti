@@ -37,6 +37,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `(p + 1) × (p + 1)` minor vanishes.
 * `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
   over a field with independent rows.
+* `Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero`: for orthogonal independent families `x`
+  and `y` of complementary sizes, the kernel of the matrix with rows `y` is the span of `x`.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
@@ -197,6 +199,24 @@ theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field 
     Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
   have h := A.mulVecLin.finrank_range_add_finrank_ker
   rw [← rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
+/-- Let `x` and `y` be linearly independent families of vectors in `K ^ ι`, indexed by `m` and `n`
+with `#m + #n = #ι`, such that every `x i` has dot product zero with every `y j`. Then the kernel
+of the matrix with rows `y` is the span of `x`, by counting dimensions. -/
+theorem ker_mulVecLin_eq_span_of_dotProduct_eq_zero {K ι m n : Type*} [Field K] [Fintype ι]
+    [Fintype m] [Fintype n] (hmn : Fintype.card m + Fintype.card n = Fintype.card ι)
+    {x : m → ι → K} {y : n → ι → K} (hx : LinearIndependent K x) (hy : LinearIndependent K y)
+    (hxy : ∀ i j, x i ⬝ᵥ y j = 0) :
+    LinearMap.ker (of y).mulVecLin = Submodule.span K (Set.range x) := by
+  have hle : Submodule.span K (Set.range x) ≤ LinearMap.ker (of y).mulVecLin := by
+    rw [Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    ext j
+    simp [mulVec, dotProduct_comm, hxy]
+  refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  rw [finrank_span_eq_card hx,
+    finrank_ker_mulVecLin_of_linearIndependent_rows (A := of y) (by rwa [row_of])]
   omega
 
 end KernelDimension

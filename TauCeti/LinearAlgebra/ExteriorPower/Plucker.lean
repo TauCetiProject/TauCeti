@@ -381,18 +381,8 @@ theorem exists_plucker_eq_mul_plucker_compl_or_eq_neg (hm : p + q = Fintype.card
   have hsurj : Function.Surjective (Matrix.of y).mulVec := hy.mulVec_surjective
   choose w hw using fun j ↦ hsurj (Pi.single j 1)
   -- The vectors orthogonal to every `y j` are the span of `x`, by counting dimensions.
-  have hker : LinearMap.ker (Matrix.of y).mulVecLin ≤ Submodule.span K (range x) := by
-    have hle : Submodule.span K (range x) ≤ LinearMap.ker (Matrix.of y).mulVecLin := by
-      rw [Submodule.span_le]
-      rintro _ ⟨i, rfl⟩
-      ext j
-      simp [Matrix.mulVec, dotProduct_comm, hxy]
-    refine (Submodule.eq_of_le_of_finrank_eq hle ?_).ge
-    have h := LinearMap.finrank_range_add_finrank_ker (Matrix.of y).mulVecLin
-    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, Module.finrank_fin_fun,
-      Module.finrank_fintype_fun_eq_card] at h
-    rw [finrank_span_eq_card hx, Fintype.card_fin]
-    omega
+  have hker := (Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero
+    (by simpa only [Fintype.card_fin] using hm) hx hy hxy).le
   obtain ⟨e⟩ : Nonempty (Fin p ⊕ Fin q ≃ ι) := ⟨Fintype.equivOfCardEq (by simp [hm])⟩
   set D := (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det
   have key : ∀ t, ∃ ε : ℤˣ, plucker y t * D = ((ε : ℤ) : K) * plucker x (compl hm t) := by
