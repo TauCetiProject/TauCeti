@@ -30,6 +30,7 @@ there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
+* `ContMDiff.restrict`: the restriction of a `C^n` map to open submanifolds is `C^n`.
 * `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
   to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
   map is.
@@ -88,6 +89,12 @@ theorem ContMDiff.subtypeVal_comp_iff (U : Opens M') (f : M → U) :
     ContMDiff I I' n (Subtype.val ∘ f) ↔ ContMDiff I I' n f :=
   ⟨fun h _ => (ContMDiffWithinAt.subtypeVal_comp_iff U f Set.univ _).mp (h _),
    fun h _ => (ContMDiffWithinAt.subtypeVal_comp_iff U f Set.univ _).mpr (h _)⟩
+
+/-- The restriction `U → V` of a `C^n` map to open submanifolds `U ⊆ M` and `V ⊆ M'` with
+`f(U) ⊆ V` is `C^n`, as for Mathlib's `Continuous.restrict`. -/
+theorem _root_.ContMDiff.restrict {f : M → M'} {U : Opens M} {V : Opens M'} (hUV : MapsTo f U V)
+    (hf : ContMDiff I I' n f) : ContMDiff I I' n fun x : U ↦ (⟨f x, hUV x.2⟩ : V) :=
+  (ContMDiff.subtypeVal_comp_iff V _).mp (hf.comp contMDiff_subtype_val)
 
 end TauCeti
 
