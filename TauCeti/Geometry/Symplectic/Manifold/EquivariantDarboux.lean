@@ -73,6 +73,69 @@ namespace TauCeti
 
 namespace SmoothTwoForm
 
+section Helpers
+
+variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-! The helpers below name the pulled-back form `α` with `hα : α = mpullback 𝓘(ℝ, F) I f form.1`,
+so that it has the plain type `F → F [⋀^Fin 2]→L[ℝ] ℝ` expected by the flat theorems, rather
+than the type of a form on the tangent bundle of `F`. -/
+
+/-- The pullback of a smooth two-form by a map from a normed space that is smooth on an open set
+is smooth on that set. -/
+private theorem contDiffOn_mpullback (form : SmoothTwoForm I M) {f : F → M} {s : Set F}
+    (hs : IsOpen s) (hf : ContMDiffOn 𝓘(ℝ, F) I ∞ f s) {α : F → F [⋀^Fin 2]→L[ℝ] ℝ}
+    (hα : α = mpullback 𝓘(ℝ, F) I f form.1) : ContDiffOn ℝ (⊤ : ℕ∞) α s := by
+  subst hα
+  exact fun y hy ↦ RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
+    ((form.isSmoothForm.contMDiff.contMDiffAt (x := f y)).mpullback_form
+      ((hf y hy).contMDiffAt (hs.mem_nhds hy)) (by simp)).contMDiffWithinAt
+
+/-- The pullback of a closed smooth two-form by a map from a normed space that is `C²` at `y` has
+vanishing exterior derivative at `y`. -/
+private theorem extDeriv_mpullback_eq_zero {form : SmoothTwoForm I M} (hform : form.IsClosed)
+    {f : F → M} {y : F} (hf : ContMDiffAt 𝓘(ℝ, F) I 2 f y) {α : F → F [⋀^Fin 2]→L[ℝ] ℝ}
+    (hα : α = mpullback 𝓘(ℝ, F) I f form.1) : extDeriv α y = 0 := by
+  subst hα
+  have h := mpullback_mextDeriv_at hf
+    ((form.isSmoothForm.contMDiff.contMDiffAt (x := f y)).of_le (by simp))
+  rw [← mextDeriv_eq_extDeriv, ← h, (SmoothForm.isClosed_def form).1 hform, mpullback_zero,
+    Pi.zero_apply]
+  -- The zero on the left lives in the fiber over `y`, whose model `TangentSpace 𝓘(ℝ, F) y` is
+  -- `F` by definition, so the two zeros agree definitionally.
+  rfl
+
+/-- If `f ∘ L` agrees near `y` with `φ ∘ f`, for a continuous linear map `L` and a smooth map `φ`
+preserving `form`, then the pullback of `form` by `f` is `L`-invariant at `y`. -/
+private theorem compContinuousLinearMap_mpullback_eq {form : SmoothTwoForm I M} {φ : M → M}
+    {hφ : ContMDiff I I ∞ φ} (hpull : SmoothForm.mpullback φ hφ form = form) {f : F → M}
+    {L : F →L[ℝ] F} {y : F} (hfy : MDifferentiableAt 𝓘(ℝ, F) I f y)
+    (hfLy : MDifferentiableAt 𝓘(ℝ, F) I f (L y)) (hcomp : f ∘ L =ᶠ[𝓝 y] φ ∘ f)
+    {α : F → F [⋀^Fin 2]→L[ℝ] ℝ} (hα : α = mpullback 𝓘(ℝ, F) I f form.1) :
+    (α (L y)).compContinuousLinearMap L = α y := by
+  have hφd : MDifferentiableAt I I φ (f y) := hφ.mdifferentiableAt (by simp)
+  have hD : mfderiv 𝓘(ℝ, F) I (f ∘ L) y = mfderiv 𝓘(ℝ, F) I (φ ∘ f) y := hcomp.mfderiv_eq
+  rw [mfderiv_comp y hfLy L.differentiableAt.mdifferentiableAt, mfderiv_comp y hφd hfy] at hD
+  have hfLy' : f (L y) = φ (f y) := hcomp.eq_of_nhds
+  have hα' (z : F) (m : Fin 2 → F) :
+      α z m = form.1 (f z) (fun i ↦ mfderiv 𝓘(ℝ, F) I f z (m i)) := by
+    subst hα
+    exact mpullback_apply _ _ _ _
+  ext m
+  have hpull' := congrArg (fun ψ : SmoothTwoForm I M ↦ ψ.1 (f y)
+    (fun i ↦ mfderiv 𝓘(ℝ, F) I f y (m i))) hpull
+  simp only [SmoothForm.mpullback_apply] at hpull'
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hα', hα', ← hpull', hfLy']
+  congr 1
+  funext i
+  have := DFunLike.congr_fun hD (m i)
+  simp only [mfderiv_eq_fderiv, L.fderiv] at this
+  exact this
+
+end Helpers
+
 variable {E H M EG HG G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
@@ -118,26 +181,19 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
   have hω' (y : E) (m : Fin 2 → E) :
       ω' y m = form.1 (e.symm y) (fun i ↦ mfderiv 𝓘(ℝ, E) I e.symm y (m i)) :=
     mpullback_apply _ _ _ _
-  have hsec (x : M) : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) ∞
-      (fun x ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ) x (form.1 x)) x :=
-    form.isSmoothForm.contMDiff.contMDiffAt
-  have hsmooth : ContDiffOn ℝ (⊤ : ℕ∞) ω' e.target := fun y hy ↦
-    (RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
-      ((hsec (e.symm y)).mpullback_form ((hes y hy).contMDiffAt (e.open_target.mem_nhds hy))
-        (by simp)).contMDiffWithinAt)
-  have hclosed : ∀ y ∈ e.target, extDeriv ω' y = 0 := fun y hy ↦ by
-    have h := mpullback_mextDeriv_at
-      (((hes y hy).contMDiffAt (e.open_target.mem_nhds hy)).of_le (by simp))
-      ((hsec (e.symm y)).of_le (by simp))
-    have hc : mextDeriv (form : RoughForm I M ℝ 2) = 0 :=
-      (SmoothForm.isClosed_def form).1 hform.isClosed
-    rw [← mextDeriv_eq_extDeriv, ← h, hc, mpullback_zero]
-    rfl
+  have hsmooth : ContDiffOn ℝ (⊤ : ℕ∞) ω' e.target :=
+    contDiffOn_mpullback form e.open_target hes rfl
+  have hclosed : ∀ y ∈ e.target, extDeriv ω' y = 0 := fun y hy ↦
+    extDeriv_mpullback_eq_zero hform.isClosed
+      (((hes y hy).contMDiffAt (e.open_target.mem_nhds hy)).of_le (by simp)) rfl
   -- At `0`, the differential of `e⁻¹` is the identity, so `ω'` is the form at `x₀`.
   have hderiv0 (v : E) : mfderiv 𝓘(ℝ, E) I e.symm 0 v = v := by
     have h := e.mfderiv_apply_mfderiv_symm_apply h0 (hes0 ▸ hmd hx₀e) (hmds h0) v
     rwa [hes0, hderiv.mfderiv] at h
   have hω'0 (m : Fin 2 → E) : ω' 0 m = form.1 x₀ m := by
+    -- `hω' 0 m` evaluates `form` at `e.symm 0`, on vectors in `TangentSpace I (e.symm 0)`, so
+    -- rewriting `hes0 : e.symm 0 = x₀` there gives an ill-typed motive. Generalizing the base
+    -- point to a variable `z` with `z = x₀` lets `rintro z rfl` substitute it instead.
     have key : ∀ (z : M), z = x₀ → ∀ D : E →L[ℝ] TangentSpace I z, (∀ v, D v = v) →
         form.1 z (fun i ↦ D (m i)) = form.1 x₀ m := by
       rintro z rfl D hD
@@ -149,29 +205,9 @@ theorem IsSymplectic.exists_equivariant_darbouxChart {form : SmoothTwoForm I M}
       let w' : TangentSpace I x₀ := w
       exact (SmoothBundleForm.eval₂_apply form x₀ v' w').trans ((hω'0 _).symm.trans (hv w))
   -- The form `ω'` is invariant under the linear action `σ`.
-  have hinv : ∀ g : G, ∀ y ∈ e.target, (ω' (σ g y)).compContinuousLinearMap (σ g) = ω' y := by
-    intro g y hy
-    obtain ⟨hgy, hgy'⟩ := hsymm g hy
-    have hcomp : (e.symm ∘ σ g : E → M) =ᶠ[𝓝 y] (fun x : M ↦ g • x) ∘ e.symm :=
-      eventually_of_mem (e.open_target.mem_nhds hy) fun y' hy' ↦ (hsymm g hy').2
-    have hσd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) (σ g) y :=
-      (σ g).differentiableAt.mdifferentiableAt
-    have hgd : MDifferentiableAt I I (fun x : M ↦ g • x) (e.symm y) :=
-      ((ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) (n := ∞) g).mdifferentiableAt
-        (by simp))
-    have hD : mfderiv 𝓘(ℝ, E) I (e.symm ∘ σ g) y =
-        mfderiv 𝓘(ℝ, E) I ((fun x : M ↦ g • x) ∘ e.symm) y := hcomp.mfderiv_eq
-    rw [mfderiv_comp y (hmds hgy) hσd, mfderiv_comp y hgd (hmds hy)] at hD
-    ext m
-    have hpull := congrArg (fun φ : SmoothTwoForm I M ↦ φ.1 (e.symm y)
-      (fun i ↦ mfderiv 𝓘(ℝ, E) I e.symm y (m i))) (hG g)
-    simp only [SmoothForm.mpullback_apply] at hpull
-    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hω', hω', ← hpull, hgy']
-    congr 1
-    funext i
-    have := DFunLike.congr_fun hD (m i)
-    simp only [mfderiv_eq_fderiv, (σ g).fderiv] at this
-    exact this
+  have hinv : ∀ g : G, ∀ y ∈ e.target, (ω' (σ g y)).compContinuousLinearMap (σ g) = ω' y :=
+    fun g y hy ↦ compContinuousLinearMap_mpullback_eq (hG g) (hmds hy) (hmds (hsymm g hy).1)
+      (eventually_of_mem (e.open_target.mem_nhds hy) fun y' hy' ↦ (hsymm g hy').2) rfl
   -- The flat equivariant Darboux theorem for `ω'`.
   have hbdd : Bornology.IsBounded (range σ) := (isCompact_range hσc).isBounded
   obtain ⟨ψ, U, hUo, h0U, -, hUσ, hψ0, hψσ, hψ⟩ :=
