@@ -236,7 +236,6 @@ theorem closure_image_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : Upp
         (eventually_inf_principal.mpr (Eventually.of_forall fun z hz => mem_image_of_mem F hz))
     | coe x =>
       rw [schwarzChristoffelCompactifiedBoundary_coe]
-      have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
       exact mem_closure_of_tendsto (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x
           (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite x))
         (eventually_mem_nhdsWithin.mono fun z hz => mem_image_of_mem F hz)
