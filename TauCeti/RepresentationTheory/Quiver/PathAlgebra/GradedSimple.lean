@@ -411,7 +411,7 @@ def gradedVertexSimpleProjectiveResolution :
 theorem gradedVertexSimpleProjectiveResolution_termObj_zero :
     (gradedVertexSimpleProjectiveResolution k Q i).termObj 0 =
       gradedVertexProjective k Q i :=
-  (rfl)
+  GradedProjectiveResolution.ofShortExact_termObj_zero (shortExact_mk_gradedVertexSimple k Q i)
 
 /-- The degree-one categorical term of `gradedVertexSimpleProjectiveResolution k Q i` is
 `gradedArrowSum k Q i`. -/
@@ -419,13 +419,13 @@ theorem gradedVertexSimpleProjectiveResolution_termObj_zero :
 theorem gradedVertexSimpleProjectiveResolution_termObj_one :
     (gradedVertexSimpleProjectiveResolution k Q i).termObj 1 =
       gradedArrowSum k Q i :=
-  (rfl)
+  GradedProjectiveResolution.ofShortExact_termObj_one (shortExact_mk_gradedVertexSimple k Q i)
 
 /-- The degree-one module of `gradedVertexSimpleProjectiveResolution k Q i` is
 `gradedArrowSum k Q i`. -/
 theorem gradedVertexSimpleProjectiveResolution_X_one :
     (gradedVertexSimpleProjectiveResolution k Q i).X 1 = gradedArrowSum k Q i :=
-  (rfl)
+  GradedProjectiveResolution.ofShortExact_X_one (shortExact_mk_gradedVertexSimple k Q i)
 
 /-- For `n ≥ 2`, the `n`th module of `gradedVertexSimpleProjectiveResolution k Q i` is zero. -/
 theorem subsingleton_gradedVertexSimpleProjectiveResolution_X_of_two_le {n : ℕ} (hn : 2 ≤ n) :

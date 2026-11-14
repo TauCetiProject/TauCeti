@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Bigraded.PowerSeries
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.ProjectiveCoordinates
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
+import TauCeti.Algebra.Module.GradedModule.Nakayama
 
 /-!
 # Graded Betti Poincaré series and matrices of projective resolutions
@@ -31,8 +32,7 @@ Betti series in every projective basis, and shifting `M` to `M{d}` multiplies `B
 * `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq_of_bddBelow`,
   `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_eq`, and
   `TauCeti.bettiPoincareMatrix_congr`: independence of the choice of minimal resolution.
-* `TauCeti.GradedProjectiveResolution.bettiPoincareSeries_shiftObj`,
-  `TauCeti.GradedProjectiveResolution.bettiPoincareSeries_shiftObj_one`, and
+* `TauCeti.GradedProjectiveResolution.bettiPoincareSeries_shiftObj` and
   `TauCeti.GradedProjectiveResolution.IsMinimal.bettiPoincareSeries_shiftObj_eq`: `M{d}` shift laws.
 * `TauCeti.GradedProjectiveResolution.bettiPoincareSeries_eq_sum_of_forall_subsingleton` and
   `TauCeti.GradedProjectiveResolution.maslovEulerPowerSeries_bettiPoincareSeries_eq_sum`:
@@ -100,11 +100,6 @@ theorem bettiPoincareSeries_shiftObj (d : ℤ) (i : I) :
       finiteProjectiveTerm_shiftObj, laurentK0_projective_of_shiftObj, map_smul,
       Finsupp.smul_apply, smul_eq_mul]
 
-/-- Shifting `r` from `M` to `M{1}` multiplies its Betti Poincaré series by `q`. -/
-theorem bettiPoincareSeries_shiftObj_one (i : I) :
-    (r.shiftObj 1).bettiPoincareSeries bP i = PowerSeries.C (T 1) * r.bettiPoincareSeries bP i :=
-  r.bettiPoincareSeries_shiftObj bP 1 i
-
 /-- Shifting `r` to `M{d}` translates internal Betti coefficients by `d`. -/
 theorem coeff_coeff_bettiPoincareSeries_shiftObj (d : ℤ) (i : I) (n : ℕ) (p : ℤ) :
     (PowerSeries.coeff n ((r.shiftObj d).bettiPoincareSeries bP i)).coeff p =
@@ -116,11 +111,10 @@ theorem coeff_bettiPoincareSeries_eq_zero_of_subsingleton (i : I) {n : ℕ}
     (hn : Subsingleton (r.X n)) :
     PowerSeries.coeff n (r.bettiPoincareSeries bP i) = 0 := by
   have : Subsingleton (r.finiteProjectiveTerm n).obj := r.finiteProjectiveTerm_obj n ▸ hn
-  have hz : IsZero (r.finiteProjectiveTerm n) :=
-    (IsZero.iff_id_eq_zero _).2 <| ObjectProperty.hom_ext _ <|
-      GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)
   rw [coeff_bettiPoincareSeries, ← LaurentK0.ofExactK0_exactK0_of.{uA},
-    ExactK0.of_eq_zero_of_isZero.{uA} hz, map_zero, map_zero, Finsupp.zero_apply]
+    ExactK0.of_eq_zero_of_isZero.{uA}
+      (GradedModuleCat.isZero_fullSubcategory_of_subsingleton _),
+    map_zero, map_zero, Finsupp.zero_apply]
 
 /-- For a resolution whose terms vanish from homological degree `b` onward, the Betti Poincaré
 series is the finite polynomial sum `∑_{n < b} (bP.repr [Pₙ] i) Xⁿ`. -/
@@ -143,15 +137,12 @@ theorem maslovEulerPowerSeries_bettiPoincareSeries_eq_sum (i : I) (b : ℕ)
     Bigraded.maslovEulerPowerSeries (r.bettiPoincareSeries bP i) =
       ∑ n ∈ Finset.range b, PowerSeries.C ((-1 : ℤ) ^ n *
         laurentEval (1 : ℤˣ) (PowerSeries.coeff n (r.bettiPoincareSeries bP i))) *
-        PowerSeries.X ^ n :=
-  PowerSeries.ext fun m ↦ by
-    rw [Bigraded.coeff_maslovEulerPowerSeries, map_sum]
-    simp only [PowerSeries.coeff_C_mul_X_pow]
-    by_cases hmb : m < b
-    · rw [Finset.sum_ite_eq (Finset.range b) m, ite_eq_left (Finset.mem_range.mpr hmb)]
-    · rw [Finset.sum_ite_eq (Finset.range b) m, ite_eq_right (Finset.mem_range.not.mpr hmb),
-        r.coeff_bettiPoincareSeries_eq_zero_of_subsingleton bP i (hb m (Nat.le_of_not_lt hmb)),
-        map_zero, mul_zero]
+        PowerSeries.X ^ n := by
+  conv_lhs => rw [r.bettiPoincareSeries_eq_sum_of_forall_subsingleton bP i b hb]
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun n _ ↦ PowerSeries.ext fun m ↦ ?_
+  simp only [Bigraded.coeff_maslovEulerPowerSeries, PowerSeries.coeff_C_mul_X_pow]
+  split_ifs with h <;> simp [h]
 
 end GradedProjectiveResolution
 
@@ -169,14 +160,6 @@ theorem bettiPoincareMatrix_apply {J : Type uJ} {M : J → GradedModuleCat.{uA} 
     (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
     [∀ j n, Module.Finite A ((r j).X n)] (i : I) (j : J) :
     bettiPoincareMatrix bP r i j = (r j).bettiPoincareSeries bP i := (rfl)
-
-/-- The `n`th power-series coefficient of `(bettiPoincareMatrix bP r) i j` is the `i`th projective
-coordinate of `(r j).finiteProjectiveTerm n`. -/
-theorem coeff_bettiPoincareMatrix {J : Type uJ} {M : J → GradedModuleCat.{uA} 𝒜}
-    (r : ∀ j, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M j).grading)
-    [∀ j n, Module.Finite A ((r j).X n)] (i : I) (j : J) (n : ℕ) :
-    PowerSeries.coeff n (bettiPoincareMatrix bP r i j) =
-      bP.repr (LaurentK0.of.{uA} _ ((r j).finiteProjectiveTerm n)) i := by simp
 
 end Definitions
 
@@ -214,8 +197,11 @@ theorem IsMinimal.laurentK0_of_finiteProjectiveTerm_eq
     LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) (r₁.finiteProjectiveTerm n) =
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         (r₂.finiteProjectiveTerm n) :=
-  LaurentK0.of_congr _ (ObjectProperty.isoMk _ (eqToIso (r₁.finiteProjectiveTerm_obj n) ≪≫
-    hr₁.termObjIsoOfFinite hr₂ h𝒜 n ≪≫ eqToIso (r₂.finiteProjectiveTerm_obj n).symm))
+  let hb₁ := (r₁.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
+  let hb₂ := (r₂.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
+  hr₁.laurentK0_of_finiteProjectiveTerm_eq_of_bddBelow hr₂ hb₁.choose hb₂.choose
+    (fun _ hp ↦ Classical.not_not.mp fun hne ↦ (hb₁.choose_spec hne).not_gt hp)
+    (fun _ hp ↦ Classical.not_not.mp fun hne ↦ (hb₂.choose_spec hne).not_gt hp)
 
 /-- **Independence of minimal resolution (bounded-below form).** -/
 theorem IsMinimal.bettiPoincareSeries_eq_of_bddBelow
@@ -235,10 +221,12 @@ theorem IsMinimal.bettiPoincareSeries_eq
     {r₁ r₂ : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
     [∀ n, Module.Finite A (r₁.X n)] [∀ n, Module.Finite A (r₂.X n)]
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (h𝒜 : ∀ p < 0, 𝒜 p = ⊥) (i : I) :
-    r₁.bettiPoincareSeries bP i = r₂.bettiPoincareSeries bP i :=
-  PowerSeries.ext fun n ↦ by
-    rw [coeff_bettiPoincareSeries, coeff_bettiPoincareSeries,
-      hr₁.laurentK0_of_finiteProjectiveTerm_eq hr₂ h𝒜 n]
+    r₁.bettiPoincareSeries bP i = r₂.bettiPoincareSeries bP i := by
+  choose b₁ hb₁ using fun n ↦ (r₁.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
+  choose b₂ hb₂ using fun n ↦ (r₂.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
+  exact hr₁.bettiPoincareSeries_eq_of_bddBelow bP hr₂ b₁ b₂
+    (fun n _ hp ↦ Classical.not_not.mp fun hne ↦ (hb₁ n hne).not_gt hp)
+    (fun n _ hp ↦ Classical.not_not.mp fun hne ↦ (hb₂ n hne).not_gt hp) i
 
 /-- **Shift law for minimal resolutions.** Over a nonnegatively decomposed algebra, minimal
 resolutions `r` of `M` and `r'` of `M{d}` satisfy `B_i(M{d}) = q^d · B_i(M)`. -/
@@ -250,16 +238,6 @@ theorem IsMinimal.bettiPoincareSeries_shiftObj_eq
     r'.bettiPoincareSeries bP i = PowerSeries.C (T d) * r.bettiPoincareSeries bP i := by
   rw [hr'.bettiPoincareSeries_eq bP ((r.isMinimal_shiftObj_iff d).mpr hr) h𝒜 i,
     r.bettiPoincareSeries_shiftObj bP d i]
-
-/-- Over a nonnegatively decomposed algebra, minimal resolutions `r` of `M` and `r'` of `M{1}`
-satisfy `B_i(M{1}) = q · B_i(M)`. -/
-theorem IsMinimal.bettiPoincareSeries_shiftObj_one_eq
-    {r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading}
-    {r' : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (M.shiftObj 1).grading}
-    [∀ n, Module.Finite A (r.X n)] [∀ n, Module.Finite A (r'.X n)]
-    (hr : r.IsMinimal) (hr' : r'.IsMinimal) (h𝒜 : ∀ p < 0, 𝒜 p = ⊥) (i : I) :
-    r'.bettiPoincareSeries bP i = PowerSeries.C (T 1) * r.bettiPoincareSeries bP i :=
-  hr.bettiPoincareSeries_shiftObj_eq bP hr' h𝒜 i
 
 end GradedProjectiveResolution
 

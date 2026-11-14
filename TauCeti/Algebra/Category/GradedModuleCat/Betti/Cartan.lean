@@ -24,7 +24,9 @@ projective resolution of `M` decomposes `[M]` directly in `G₀^gr(mod A)` witho
    `C_psᵀ * E_ps = diag(dᵢ)` with `diag(dᵢ) * B(q, -1) = E_psᵀ` cancels `dᵢ ≠ 0` in `PowerSeries ℤ`
    to give `C_ps * B(q, -1) = 1` and `B(q, -1) = C_ps⁻¹` without splitting.
 3. **Koszul specialization (`C(q) · P(-q) = I`):** minimal resolutions of `S` are all linear iff
-   `(bettiPoincareMatrix bP r).map Bigraded.maslovEulerPowerSeries` inverts `C_ps`.
+   `(bettiPoincareMatrix bP r).map Bigraded.maslovEulerPowerSeries` inverts `C_ps`; writing `P(q)`
+   for the diagonal Betti power-series matrix with `(i, j)` entry
+   `∑_{n ≥ 0} ([qⁿ][tⁿ] B_{i,j}(q, t)) Xⁿ`, linear resolutions satisfy `C(q) · P(-q) = I`.
 
 ## Main results
 
@@ -68,32 +70,18 @@ namespace GradedProjectiveResolution
 variable (M : (gradedFiniteModules 𝒜).FullSubcategory)
   (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.obj.grading) [∀ n, Module.Finite A (r.X n)]
 
-private theorem gradedFiniteModules_kernelObj_of_exact {X Y Z : GradedModuleCat.{uA} 𝒜}
-    [Module.Finite A X] (d : X ⟶ Y) (f : Y ⟶ Z) (hd : Function.Exact d.hom f.hom) :
-    gradedFiniteModules 𝒜 (GradedModuleCat.kernelObj f) := by
-  rw [gradedFiniteModules_iff]
-  -- `kernelObj f` has underlying `A`-module `LinearMap.ker f.hom`.
-  change Module.Finite A ↥(LinearMap.ker f.hom)
-  rw [LinearMap.exact_iff.mp hd]
-  exact Module.Finite.range d.hom
-
-private theorem subsingleton_kernelObj_of_exact {X Y Z : GradedModuleCat.{uA} 𝒜}
-    [Subsingleton X] (d : X ⟶ Y) (f : Y ⟶ Z) (hd : Function.Exact d.hom f.hom) :
-    Subsingleton (GradedModuleCat.kernelObj f) := by
-  -- `kernelObj f` has underlying type `LinearMap.ker f.hom`.
-  change Subsingleton ↥(LinearMap.ker f.hom)
-  rw [LinearMap.exact_iff.mp hd]
-  exact d.hom.surjective_rangeRestrict.subsingleton
-
 /-- The `n`th syzygy of `r` in `(gradedFiniteModules 𝒜).FullSubcategory`: `syzygy 0 = M`,
 `syzygy 1 = ker π`, and `syzygy (n + 2) = ker (d n)`, finite over `A` by exactness. -/
 def syzygy : ℕ → (gradedFiniteModules 𝒜).FullSubcategory
   | 0 => M
   | 1 => ⟨GradedModuleCat.kernelObj r.augmentation,
-      gradedFiniteModules_kernelObj_of_exact (r.differential 0) r.augmentation r.exact_d_π⟩
+      gradedFiniteModules_iff.mpr
+        (GradedModuleCat.finite_kernelObj_of_exact
+          (r.differential 0) r.augmentation r.exact_d_π)⟩
   | n + 2 => ⟨GradedModuleCat.kernelObj (r.differential n),
-      gradedFiniteModules_kernelObj_of_exact
-        (r.differential (n + 1)) (r.differential n) (r.exact_d_d n)⟩
+      gradedFiniteModules_iff.mpr
+        (GradedModuleCat.finite_kernelObj_of_exact
+          (r.differential (n + 1)) (r.differential n) (r.exact_d_d n))⟩
 
 /-- The `0`th syzygy of `r` is `M`. -/
 @[simp] theorem syzygy_zero : r.syzygy M 0 = M := (rfl)
@@ -106,22 +94,15 @@ def syzygy : ℕ → (gradedFiniteModules 𝒜).FullSubcategory
 @[simp] theorem syzygy_add_two_obj (n : ℕ) :
     (r.syzygy M (n + 2)).obj = GradedModuleCat.kernelObj (r.differential n) := (rfl)
 
-private theorem shortExact_kernelι_lift {X Y Z : GradedModuleCat.{uA} 𝒜}
-    (d : X ⟶ Y) (f : Y ⟶ Z) (hd : Function.Exact d.hom f.hom) :
-    ∃ (g : X ⟶ GradedModuleCat.kernelObj f) (hcomp : GradedModuleCat.kernelι d ≫ g = 0),
-      (ShortComplex.mk (GradedModuleCat.kernelι d) g hcomp).ShortExact := by
-  let g : X ⟶ GradedModuleCat.kernelObj f := GradedModuleCat.ofHom
-    (LinearMap.codRestrict (LinearMap.ker f.hom) d.hom fun x ↦
-      LinearMap.mem_ker.mpr (hd.apply_apply_eq_zero x))
-    (TauCeti.LinearMap.isHomogeneous_def.mpr fun p x hx ↦ by
-      rw [InternalGrading.mem_ker_piece]; exact d.isHomogeneous.map_mem hx)
-  refine ⟨g, GradedModuleCat.hom_ext (LinearMap.ext fun z ↦ Subtype.ext z.2),
-    { mono_f := (GradedModuleCat.mono_iff_injective _).mpr (Submodule.injective_subtype _)
-      epi_g := (GradedModuleCat.epi_iff_surjective _).mpr fun ⟨y, hy⟩ ↦ by
-        obtain ⟨x, hx⟩ := (hd y).mp (LinearMap.mem_ker.mp hy); exact ⟨x, Subtype.ext hx⟩
-      exact := GradedModuleCat.exact_iff.mpr fun x ↦
-        ⟨fun hx ↦ ⟨⟨x, LinearMap.mem_ker.mpr (congrArg Subtype.val hx)⟩, rfl⟩,
-         fun ⟨z, hz⟩ ↦ hz ▸ Subtype.ext z.2⟩ }⟩
+/-- If `r.X b` is a subsingleton, then the `b`th syzygy `(r.syzygy M b).obj` is a subsingleton. -/
+theorem subsingleton_syzygy_of_subsingleton_X {b : ℕ} (hb : Subsingleton (r.X b)) :
+    Subsingleton (r.syzygy M b).obj := by
+  rcases b with _ | _ | k
+  · exact r.surjective_π.subsingleton
+  · exact GradedModuleCat.subsingleton_kernelObj_of_exact
+      (r.differential 0) r.augmentation r.exact_d_π
+  · exact GradedModuleCat.subsingleton_kernelObj_of_exact
+      (r.differential (k + 1)) (r.differential k) (r.exact_d_d k)
 
 private theorem gradedCartanMap_finiteProjectiveTerm_eq_syzygy_add (n : ℕ) :
     gradedCartanMap 𝒜 (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) =
@@ -143,17 +124,12 @@ private theorem gradedCartanMap_finiteProjectiveTerm_eq_syzygy_add (n : ℕ) :
         (ShortComplex.mk (ObjectProperty.homMk f) (ObjectProperty.homMk g)
           (ObjectProperty.hom_ext _ hfg))).mpr hse)
   rcases n with _ | _ | k
-  · exact ⟨GradedModuleCat.kernelι r.augmentation, r.augmentation,
-      GradedModuleCat.kernelι_comp r.augmentation,
-      { mono_f := (GradedModuleCat.mono_iff_injective _).mpr (Submodule.injective_subtype _)
-        epi_g := (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
-        exact := GradedModuleCat.exact_iff.mpr (LinearMap.exact_subtype_ker_map r.π) }⟩
-  · obtain ⟨g, hcomp, hse⟩ :=
-      shortExact_kernelι_lift (r.differential 0) r.augmentation r.exact_d_π
-    exact ⟨GradedModuleCat.kernelι (r.differential 0), g, hcomp, hse⟩
-  · obtain ⟨g, hcomp, hse⟩ :=
-      shortExact_kernelι_lift (r.differential (k + 1)) (r.differential k) (r.exact_d_d k)
-    exact ⟨GradedModuleCat.kernelι (r.differential (k + 1)), g, hcomp, hse⟩
+  · have : Epi r.augmentation := (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+    exact ⟨_, _, _, GradedModuleCat.shortExact_kernelι r.augmentation⟩
+  · exact ⟨_, _, _, GradedModuleCat.shortExact_kernelι_kernelIsLimit_lift
+      (r.differential 0) r.augmentation r.exact_d_π⟩
+  · exact ⟨_, _, _, GradedModuleCat.shortExact_kernelι_kernelIsLimit_lift
+      (r.differential (k + 1)) (r.differential k) (r.exact_d_d k)⟩
 
 /-- **Partial alternating Euler sum of a graded projective resolution** in `G₀^gr(mod A)`. -/
 theorem sum_negOnePow_gradedCartanMap_finiteProjectiveTerm_eq_sub (b : ℕ) :
@@ -174,18 +150,12 @@ theorem sum_negOnePow_gradedCartanMap_finiteProjectiveTerm_eq_of {b : ℕ}
     (∑ n ∈ Finset.range b,
         (-1 : ℤ) ^ n • gradedCartanMap 𝒜 (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n))) =
       LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M := by
-  have hsub : Subsingleton (r.syzygy M b).obj := by
-    rcases b with _ | _ | k
-    · exact r.surjective_π.subsingleton
-    · exact subsingleton_kernelObj_of_exact (r.differential 0) r.augmentation r.exact_d_π
-    · exact subsingleton_kernelObj_of_exact
-        (r.differential (k + 1)) (r.differential k) (r.exact_d_d k)
-  have hz : IsZero (r.syzygy M b) :=
-    (IsZero.iff_id_eq_zero _).2 <| ObjectProperty.hom_ext _ <|
-      GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)
+  have := r.subsingleton_syzygy_of_subsingleton_X M hb
   rw [r.sum_negOnePow_gradedCartanMap_finiteProjectiveTerm_eq_sub M b,
     ← LaurentK0.ofExactK0_exactK0_of.{uA} _ (r.syzygy M b),
-    ExactK0.of_eq_zero_of_isZero.{uA} hz, map_zero, smul_zero, sub_zero]
+    ExactK0.of_eq_zero_of_isZero.{uA}
+      (GradedModuleCat.isZero_fullSubcategory_of_subsingleton (r.syzygy M b)),
+    map_zero, smul_zero, sub_zero]
 
 end GradedProjectiveResolution
 
@@ -214,7 +184,8 @@ theorem gradedCartanMatrix_mul_bettiAlternatingSum_eq_one {b : ℕ}
   rw [← hbM j, bM.repr_self, Finsupp.single_apply] at htel
   simp only [eq_comm (a := j)] at htel
   rw [Matrix.one_apply, ← htel, map_sum, Finsupp.finsetSum_apply, Matrix.mul_apply]
-  simp only [Matrix.of_apply, Finset.mul_sum, coeff_bettiPoincareMatrix, gradedCartanMatrix_apply]
+  simp only [Matrix.of_apply, Finset.mul_sum, bettiPoincareMatrix_apply,
+    GradedProjectiveResolution.coeff_bettiPoincareSeries, gradedCartanMatrix_apply]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   conv_rhs => rw [← bP.sum_repr (LaurentK0.of.{uA} _ ((r j).finiteProjectiveTerm n))]
@@ -372,7 +343,8 @@ theorem forall_isLinear_iff_gradedCartanMatrix_trunc_mul_maslovEulerPowerSeries_
   exact (hiff i j).mp (congrFun (congrFun heq i) j).symm
 
 include he₀ hne hself hS hbP hbM in
-/-- **The Koszul Hilbert-series equation `C(q) · P(-q) = I` for linear resolutions.** -/
+/-- **The Koszul diagonal Betti equation `C(q) · P(-q) = I` for linear resolutions**, where `P(q)`
+has `(i, j)` entry `∑_{n ≥ 0} ([qⁿ][tⁿ] B_{i,j}(q, t)) Xⁿ`. -/
 theorem gradedCartanMatrix_trunc_mul_diagonalBettiPowerSeries_eq_one
     (r : ∀ i, GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 (S i).obj.grading)
     [∀ i n, Module.Finite A ((r i).X n)] (hlin : ∀ i, (r i).IsLinear)

@@ -118,7 +118,7 @@ structure GradedProjectiveResolution where
 
 namespace GradedProjectiveResolution
 
-attribute [instance] addCommGroup module moduleBase isScalarTower gradedSMul
+attribute [instance] addCommGroup module moduleBase isScalarTower gradedSMul projective
 
 variable {𝒜 G}
 
@@ -261,9 +261,19 @@ namespace GradedProjectiveResolution
 variable {𝒜 G}
 
 omit [GradedAlgebra 𝒜] in
+/-- The module resolved by a graded projective resolution with finitely generated degree-zero term
+is finitely generated over `A`. -/
+theorem finite (r : GradedProjectiveResolution 𝒜 G) [Module.Finite A (r.X 0)] :
+    Module.Finite A M :=
+  Module.Finite.of_surjective r.π r.surjective_π
+
 /-- Regrade every term of a graded projective resolution by the same shift `c : ℤ`. The underlying
-projective modules, differentials and augmentation are unchanged. -/
-abbrev shift (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+projective modules, differentials and augmentation are unchanged.
+
+The body is exposed so that `(r.shift c).X n` and its module instances are definitionally those of
+`r`, as the statements of `shift_grading`, `shift_d` and `shift_π` require. -/
+@[expose]
+def shift (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
     GradedProjectiveResolution 𝒜 (G.shift c) where
   X := r.X
   grading n := (r.grading n).shift c
@@ -291,6 +301,12 @@ omit [GradedAlgebra 𝒜] in
 theorem shift_X (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
     (r.shift c).X n = r.X n :=
   (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- A term of a shifted resolution is finitely generated over `A` whenever the original term is. -/
+instance finite_shift_X (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ)
+    [Module.Finite A (r.X n)] : Module.Finite A ((r.shift c).X n) :=
+  inferInstanceAs (Module.Finite A (r.X n))
 
 omit [GradedAlgebra 𝒜] in
 /-- Shifting a resolution shifts the internal grading of each term by the same amount. -/

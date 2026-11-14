@@ -28,7 +28,7 @@ projective resolution `r` of `M` with finitely generated terms:
 
 ## Main results
 
-* `TauCeti.coeff_repr_laurentK0_of_nonneg` and
+* `TauCeti.coeff_repr_laurentK0_nonneg` and
   `TauCeti.GradedProjectiveResolution.coeff_coeff_bettiPoincareSeries_nonneg`: nonnegativity of
   projective coordinates and graded Betti coefficients.
 * `TauCeti.GradedProjectiveResolution.IsMinimal.C_smulGradedDimension_mul_bettiPoincareSeries`,
@@ -77,7 +77,7 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 include he₀ hne hbP in
 /-- Every finite graded projective has nonnegative Laurent coefficients along `[A eᵢ]` whenever
 `gdim(eᵢ • Sᵢ) ≠ 0`. -/
-theorem coeff_repr_laurentK0_of_nonneg (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory)
+theorem coeff_repr_laurentK0_nonneg (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory)
     {i : I} (hself : (S i).obj.smulGradedDimension (e i) ≠ 0)
     (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (d : ℤ) :
     0 ≤ (bP.repr (LaurentK0.of.{uA} _ P) i).coeff d := by
@@ -98,8 +98,28 @@ theorem coeff_coeff_bettiPoincareSeries_nonneg [∀ n, Module.Finite A (r.X n)] 
     (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (n : ℕ) (d : ℤ) :
     0 ≤ (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d := by
   rw [coeff_bettiPoincareSeries]
-  exact coeff_repr_laurentK0_of_nonneg S he he₀ hI hne bP hbP (r.finiteProjectiveTerm n)
+  exact coeff_repr_laurentK0_nonneg S he he₀ hI hne bP hbP (r.finiteProjectiveTerm n)
     hself hconc d
+
+include he₀ hne hbP in
+/-- Multiplying the `(n, d)` Betti coefficient of a minimal resolution `r` by `dim_k(eᵢ • (Sᵢ)₀)`
+recovers `dim_k Extⁿ_gr(M, Sᵢ)_d`. -/
+theorem IsMinimal.finrank_mul_coeff_coeff_bettiPoincareSeries
+    [∀ m, Module.Finite A (r.X m)] (hr : r.IsMinimal) {i : I}
+    (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (n : ℕ) (d : ℤ) :
+    (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) *
+        (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d =
+      (Module.finrank k (GradedExt.{uA} (GradedModuleCat.shift 𝒜) M (S i).obj n d) : ℤ) := by
+  have hmul := coeff_smulGradedDimension_mul_repr S he he₀ hI hne bP hbP
+    (r.finiteProjectiveTerm n) hconc d
+  rw [(S i).obj.smulGradedDimension_eq_C_of_concentrated (e i) hconc, coeff_C_mul,
+    finiteProjectiveTerm_obj, ← coeff_bettiPoincareSeries] at hmul
+  have hshift : ∀ q, q ≠ d → ((S i).obj.shiftObj d).grading.piece q = ⊥ := fun q hqd ↦ by
+    simpa [sub_eq_add_neg] using hconc (q - d) (sub_ne_zero.mpr hqd)
+  have hann := ((S i).obj.shiftObj d).positive_smul_top_eq_bot_of_concentrated d hshift
+  exact hmul.trans <| congrArg Nat.cast ((hr.extLinearEquiv hann n).trans
+    (extLinearEquivOfIso k (Iso.refl M)
+      ((GradedModuleCat.shiftPowIso 𝒜 d).app (S i).obj).symm n)).finrank_eq
 
 include he₀ hne hbP in
 /-- **Comparison of graded Betti and bigraded Ext Poincaré formal power series.** Multiplying
@@ -109,20 +129,14 @@ theorem IsMinimal.C_smulGradedDimension_mul_bettiPoincareSeries
     [∀ n, Module.Finite A (r.X n)] (hr : r.IsMinimal) {i : I}
     (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
     (h : IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) M (S i).obj :=
-      have : Module.Finite A M := Module.Finite.of_surjective r.π r.surjective_π
+      have := r.finite
       GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite M (S i).obj) :
     PowerSeries.C ((S i).obj.smulGradedDimension (e i)) * r.bettiPoincareSeries bP i =
       bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h :=
   PowerSeries.ext fun n ↦ LaurentPolynomial.ext fun d ↦ by
-    rw [PowerSeries.coeff_C_mul, coeff_bettiPoincareSeries,
-      coeff_smulGradedDimension_mul_repr S he he₀ hI hne bP hbP (r.finiteProjectiveTerm n) hconc d,
-      finiteProjectiveTerm_obj, coeff_coeff_bigradedExtPoincarePowerSeries]
-    have hshift : ∀ q, q ≠ d → ((S i).obj.shiftObj d).grading.piece q = ⊥ := fun q hqd ↦ by
-      simpa [sub_eq_add_neg] using hconc (q - d) (sub_ne_zero.mpr hqd)
-    have hann := ((S i).obj.shiftObj d).positive_smul_top_eq_bot_of_concentrated d hshift
-    exact congrArg Nat.cast ((hr.extLinearEquiv hann n).trans
-      (extLinearEquivOfIso k (Iso.refl M)
-        ((GradedModuleCat.shiftPowIso 𝒜 d).app (S i).obj).symm n)).finrank_eq
+    rw [PowerSeries.coeff_C_mul, (S i).obj.smulGradedDimension_eq_C_of_concentrated (e i) hconc,
+      coeff_C_mul, coeff_coeff_bigradedExtPoincarePowerSeries]
+    exact hr.finrank_mul_coeff_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc n d
 
 include he₀ hne hbP in
 /-- When `gdim(eᵢ • Sᵢ) = 1`, `r.bettiPoincareSeries bP i` equals the bigraded Ext Poincaré power
@@ -132,7 +146,7 @@ theorem IsMinimal.bettiPoincareSeries_eq_extPoincarePowerSeries
     (hself : (S i).obj.smulGradedDimension (e i) = 1)
     (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
     (h : IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) M (S i).obj :=
-      have : Module.Finite A M := Module.Finite.of_surjective r.π r.surjective_π
+      have := r.finite
       GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite M (S i).obj) :
     r.bettiPoincareSeries bP i = bigradedExtPoincarePowerSeries k (GradedModuleCat.shift 𝒜) h := by
   simpa only [hself, map_one, one_mul] using
@@ -148,16 +162,13 @@ theorem IsMinimal.coeff_coeff_bettiPoincareSeries_eq_zero_of_lt
     {n : ℕ} {d : ℤ} (hdn : d < c + n) :
     (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d = 0 := by
   let _ (m : ℕ) : Module.Finite k (r.X m) := Module.Finite.trans A (r.X m)
-  have : Module.Finite A M := Module.Finite.of_surjective r.π r.surjective_π
-  let h := GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite M (S i).obj
+  let _ := hr.subsingleton_gradedExt_of_lt hM hconc hdn
   have hne0 : (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) ≠ 0 :=
     Int.natCast_ne_zero.mpr
       ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) hconc hself).ne'
-  have hcmp := congrArg (fun P ↦ (PowerSeries.coeff n P).coeff d)
-    (hr.C_smulGradedDimension_mul_bettiPoincareSeries S he he₀ hI hne bP hbP hconc h)
-  rw [PowerSeries.coeff_C_mul, (S i).obj.smulGradedDimension_eq_C_of_concentrated (e i) hconc,
-    coeff_C_mul, hr.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt hM hconc h hdn] at hcmp
-  exact (mul_eq_zero.mp hcmp).resolve_left hne0
+  rw [← mul_eq_zero_iff_left hne0,
+    hr.finrank_mul_coeff_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc n d,
+    Module.finrank_zero_of_subsingleton, Nat.cast_zero]
 
 include he₀ hne hbP in
 /-- Every minimal resolution `r` of a nonnegatively graded module `M` with finitely generated terms
@@ -180,7 +191,7 @@ theorem IsMinimal.C_finrank_mul_eulerPowerSeries_bettiPoincareSeries
     (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
     (hB : Bigraded.HasEulerPowerSeries (r.bettiPoincareSeries bP i))
     (h : IsGradedExtInternallyFinite.{uA} k (GradedModuleCat.shift 𝒜) M (S i).obj :=
-      have : Module.Finite A M := Module.Finite.of_surjective r.π r.surjective_π
+      have := r.finite
       GradedModuleCat.isGradedExtInternallyFinite_of_moduleFinite M (S i).obj) :
     PowerSeries.C (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) *
         Bigraded.eulerPowerSeries hB =
@@ -198,11 +209,9 @@ theorem IsMinimal.C_finrank_mul_eulerPowerSeries_bettiPoincareSeries
       (fun n d hdn ↦ hr.coeff_coeff_bigradedExtPoincarePowerSeries_eq_zero_of_lt hM hconc h
         (by simpa using hdn)) a, Finset.mul_sum]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
-  have hcmp := congrArg (fun P ↦ (PowerSeries.coeff n P).coeff (a : ℤ))
-    (hr.C_smulGradedDimension_mul_bettiPoincareSeries S he he₀ hI hne bP hbP hconc h)
-  rw [PowerSeries.coeff_C_mul, (S i).obj.smulGradedDimension_eq_C_of_concentrated (e i) hconc,
-    coeff_C_mul] at hcmp
-  rw [← hcmp]; ring
+  rw [coeff_coeff_bigradedExtPoincarePowerSeries,
+    ← hr.finrank_mul_coeff_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP hconc n a]
+  ring
 
 include he₀ hne hbP in
 /-- **Diagonal Betti support characterizes linear resolutions** for minimal resolutions over a
@@ -214,7 +223,7 @@ theorem IsMinimal.isLinear_iff_diagonal_bettiPoincareSeries
     r.IsLinear ↔ ∀ (i : I) (n : ℕ) (d : ℤ), (n : ℤ) ≠ d →
       (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d = 0 := by
   let _ (m : ℕ) : Module.Finite k (r.X m) := Module.Finite.trans A (r.X m)
-  have : Module.Finite A M := Module.Finite.of_surjective r.π r.surjective_π
+  have := r.finite
   have hcell (i : I) (n : ℕ) (d : ℤ) :
       (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d = 0 ↔
         Subsingleton (Ext.{uA} M ((S i).obj.shiftObj d) n) := by
@@ -222,15 +231,10 @@ theorem IsMinimal.isLinear_iff_diagonal_bettiPoincareSeries
     have hne0 : (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) ≠ 0 :=
       Int.natCast_ne_zero.mpr
         ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) (hconc i) (hself i)).ne'
-    have hcmp := congrArg (fun P ↦ (PowerSeries.coeff n P).coeff d)
-      (hr.C_smulGradedDimension_mul_bettiPoincareSeries S he he₀ hI hne bP hbP (hconc i) h)
-    rw [PowerSeries.coeff_C_mul, (S i).obj.smulGradedDimension_eq_C_of_concentrated (e i) (hconc i),
-      coeff_C_mul, coeff_coeff_bigradedExtPoincarePowerSeries] at hcmp
-    have hmul : (PowerSeries.coeff n (r.bettiPoincareSeries bP i)).coeff d = 0 ↔
-        Module.finrank k (GradedExt.{uA} (GradedModuleCat.shift 𝒜) M (S i).obj n d) = 0 := by
-      rw [← Nat.cast_eq_zero (R := ℤ), ← hcmp, mul_eq_zero, or_iff_right hne0]
     let _ := (h.finiteLaurentSupport n).finiteDimensional d
-    rw [hmul, Module.finrank_zero_iff]
+    rw [← mul_eq_zero_iff_left hne0,
+      hr.finrank_mul_coeff_coeff_bettiPoincareSeries S he he₀ hI hne bP hbP (hconc i) n d,
+      Nat.cast_eq_zero, Module.finrank_zero_iff]
     exact (extLinearEquivOfIso k (Iso.refl M)
       ((GradedModuleCat.shiftPowIso 𝒜 d).app (S i).obj) n).toEquiv.subsingleton_congr
   refine ⟨fun hlin i n d hnd ↦

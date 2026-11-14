@@ -129,25 +129,17 @@ theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{v} 𝒜 → Pro
       exact (hπ (K (n + 2))).comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map _) },
     isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).2, fun n => hT (K n)⟩
 
-private theorem map_mem_positive_smul_top {X Y : Type*} [AddCommGroup X] [Module k X] [Module A X]
-    [IsScalarTower k A X] [AddCommGroup Y] [Module k Y] [Module A Y] [IsScalarTower k A Y]
-    (f : X →ₗ[A] Y) {x : X}
-    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k X)) :
-    f x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k Y) :=
-  Submodule.smul_induction_on hx
-    (fun a ha y _ ↦ by simpa only [map_smul] using Submodule.smul_mem_smul ha Submodule.mem_top)
-    fun x₁ x₂ hx₁ hx₂ ↦ by simpa only [map_add] using add_mem hx₁ hx₂
-
 variable [DirectSum.Decomposition 𝒜]
 
 /-- Any chain endomorphism of a minimal resolution homotopic to the identity is an isomorphism in
-every homological degree whose term is bounded below: `g.f n - 𝟙` is a sum of composites factoring
-through `r.differential`, hence lands in `A₊` and is locally nilpotent by graded Nakayama. -/
+every homological degree whose term is bounded below. -/
 theorem IsMinimal.isIso_f_of_homotopy_id (hr : r.IsMinimal)
     {g : r.toProjectiveResolution.complex ⟶ r.toProjectiveResolution.complex}
     (h : Homotopy g (𝟙 r.toProjectiveResolution.complex)) {n : ℕ} (b : ℤ)
     (hbelow : ∀ p < b, (r.grading n).piece p = ⊥) :
     IsIso (g.f n) := by
+  -- `g.f n - 𝟙` is a sum of composites factoring through `r.differential`, so it lands in `A₊`
+  -- and `g.f n` is bijective by graded Nakayama.
   let e := r.toProjectiveResolutionXIso n
   let g' : r.termObj n ⟶ r.termObj n := e.inv ≫ g.f n ≫ e.hom
   have hg' : IsIso g' := (GradedModuleCat.isIso_iff_bijective g').mpr <|
@@ -171,8 +163,9 @@ theorem IsMinimal.isIso_f_of_homotopy_id (hr : r.IsMinimal)
             r.toProjectiveResolution_complex_d]
           simp only [e, Category.assoc, Iso.inv_hom_id_assoc, GradedModuleCat.hom_comp,
             LinearMap.comp_apply]
-          exact map_mem_positive_smul_top _ <| map_mem_positive_smul_top _ <|
-            map_mem_positive_smul_top _ (isMinimal_iff.mp hr m x)
+          exact InternalGrading.map_mem_positive_smul_top _ <|
+            InternalGrading.map_mem_positive_smul_top _ <|
+              InternalGrading.map_mem_positive_smul_top _ (isMinimal_iff.mp hr m x)
       · rw [prevD_eq h.hom (rfl : (ComplexShape.down ℕ).Rel (n + 1) n),
           r.toProjectiveResolution_complex_d]
         simp only [e, Category.assoc, Iso.inv_hom_id, Category.comp_id, GradedModuleCat.hom_comp,
@@ -230,18 +223,12 @@ noncomputable def IsMinimal.termObjIsoOfFinite
     {r₁ r₂ : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
     (hr₁ : r₁.IsMinimal) (hr₂ : r₂.IsMinimal) (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) (n : ℕ)
     [Module.Finite A (r₁.X n)] [Module.Finite A (r₂.X n)] :
-    r₁.termObj n ≅ r₂.termObj n := by
-  let f := (ProjectiveResolution.homotopyEquiv r₁.toProjectiveResolution
-    r₂.toProjectiveResolution).hom
-  have : IsIso (f.f n) := by
-    obtain ⟨b₁, hb₁⟩ := (r₁.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
-    obtain ⟨b₂, hb₂⟩ := (r₂.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
-    refine hr₁.isIso_f_of_comm hr₂ f (by simp [f]) b₁ b₂ (fun p hp ↦ ?_) (fun p hp ↦ ?_)
-    · by_contra hne
-      exact (hb₁ hne).not_gt hp
-    · by_contra hne
-      exact (hb₂ hne).not_gt hp
-  exact (r₁.toProjectiveResolutionXIso n).symm ≪≫ asIso (f.f n) ≪≫ r₂.toProjectiveResolutionXIso n
+    r₁.termObj n ≅ r₂.termObj n :=
+  let hb₁ := (r₁.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
+  let hb₂ := (r₂.grading n).bddBelow_setOf_piece_ne_bot 𝒜 h𝒜
+  hr₁.termObjIso hr₂ hb₁.choose hb₂.choose
+    (fun _ hp ↦ Classical.not_not.mp fun hne ↦ (hb₁.choose_spec hne).not_gt hp)
+    (fun _ hp ↦ Classical.not_not.mp fun hne ↦ (hb₂.choose_spec hne).not_gt hp)
 
 private theorem IsMinimal.complex_d_comp_eq_zero (hr : r.IsMinimal)
     (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥)

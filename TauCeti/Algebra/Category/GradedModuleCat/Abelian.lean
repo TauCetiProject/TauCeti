@@ -128,6 +128,24 @@ instance : PreservesLimit (parallelPair f 0) toModuleCat :=
   preservesLimit_of_preserves_limit_cone (kernelIsLimit f)
     ((KernelFork.isLimitMapConeEquiv _ _).symm (ModuleCat.kernelIsLimit (toModuleCat.map f)))
 
+/-- The kernel of `g` is finitely generated over `A` when `g` is exact after a morphism from a
+finitely generated graded module. -/
+theorem finite_kernelObj_of_exact {X Y Z : GradedModuleCat.{v} 𝒜} [Module.Finite A X]
+    (d : X ⟶ Y) (g : Y ⟶ Z) (hd : Function.Exact d.hom g.hom) :
+    Module.Finite A (kernelObj g) := by
+  change Module.Finite A ↥(LinearMap.ker g.hom)
+  rw [LinearMap.exact_iff.mp hd]
+  exact Module.Finite.range d.hom
+
+/-- The kernel of `g` is a subsingleton when `g` is exact after a morphism from a subsingleton
+graded module. -/
+theorem subsingleton_kernelObj_of_exact {X Y Z : GradedModuleCat.{v} 𝒜} [Subsingleton X]
+    (d : X ⟶ Y) (g : Y ⟶ Z) (hd : Function.Exact d.hom g.hom) :
+    Subsingleton (kernelObj g) := by
+  change Subsingleton ↥(LinearMap.ker g.hom)
+  rw [LinearMap.exact_iff.mp hd]
+  exact d.hom.surjective_rangeRestrict.subsingleton
+
 end Kernel
 
 section Cokernel
@@ -233,8 +251,7 @@ noncomputable def directSumObjIsoOfUnique {J : Type w} [Unique J]
         exact InternalGrading.lof_mem_directSumPiece (fun j ↦ (M j).grading) p default ⟨x, hx⟩
     hom_inv_id := hom_ext <| LinearMap.ext fun x => DFinsupp.ext fun j => by
       obtain rfl := Unique.eq_default j
-      simp [DirectSum.lof_eq_of]
-      rfl
+      simp [DirectSum.apply_eq_component A]
     inv_hom_id := hom_ext <| LinearMap.ext fun x => by simp }
 
 end DirectSum
@@ -385,11 +402,59 @@ theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
     ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
   rfl
 
+/-- A graded module whose underlying type is a subsingleton is a zero object. -/
+theorem isZero_of_subsingleton (M : GradedModuleCat.{v} 𝒜) [Subsingleton M] : IsZero M :=
+  (IsZero.iff_id_eq_zero _).2 <| hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _)
+
+/-- An object of a full subcategory of `GradedModuleCat 𝒜` whose underlying module is a
+subsingleton is a zero object. -/
+theorem isZero_fullSubcategory_of_subsingleton {P : ObjectProperty (GradedModuleCat.{v} 𝒜)}
+    (X : P.FullSubcategory) [Subsingleton X.obj] : IsZero X :=
+  (IsZero.iff_id_eq_zero _).2 <|
+    ObjectProperty.hom_ext _ ((isZero_of_subsingleton X.obj).eq_of_src _ _)
+
 /-- A monomorphism of graded modules followed by the projection onto its cokernel is a short
 exact sequence. -/
 theorem shortExact_cokernelπ [Mono f] :
     (ShortComplex.mk f (cokernelπ f) (comp_cokernelπ f)).ShortExact where
   exact := exact_iff.mpr (LinearMap.exact_map_mkQ_range f.hom)
   epi_g := (epi_iff_surjective _).mpr (Submodule.mkQ_surjective _)
+
+/-- The kernel inclusion of an epimorphism of graded modules followed by the epimorphism itself is
+a short exact sequence. -/
+theorem shortExact_kernelι [Epi f] :
+    (ShortComplex.mk (kernelι f) f (kernelι_comp f)).ShortExact where
+  mono_f := (mono_iff_injective _).mpr (Submodule.injective_subtype _)
+  exact := exact_iff.mpr (LinearMap.exact_subtype_ker_map f.hom)
+
+/-- The inclusion of `ker d` composed with the lift of `d` to `ker g` vanishes whenever
+`d ≫ g = 0`. -/
+theorem kernelι_comp_kernelIsLimit_lift {X Y Z : GradedModuleCat.{v} 𝒜}
+    (d : X ⟶ Y) (g : Y ⟶ Z) (hdg : d ≫ g = 0) :
+    kernelι d ≫ (kernelIsLimit g).lift (KernelFork.ofι d hdg) = 0 :=
+  Fork.IsLimit.hom_ext (kernelIsLimit g) (by simp)
+
+/-- An exact pair `d : X ⟶ Y`, `g : Y ⟶ Z` induces a short exact sequence
+`0 ⟶ ker d ⟶ X ⟶ ker g ⟶ 0` in `GradedModuleCat 𝒜`. -/
+theorem shortExact_kernelι_kernelIsLimit_lift {X Y Z : GradedModuleCat.{v} 𝒜}
+    (d : X ⟶ Y) (g : Y ⟶ Z) (hd : Function.Exact d.hom g.hom) :
+    (ShortComplex.mk (kernelι d)
+      ((kernelIsLimit g).lift (KernelFork.ofι d (hom_ext hd.linearMap_comp_eq_zero)))
+      (kernelι_comp_kernelIsLimit_lift d g _)).ShortExact := by
+  have hlift (x : X) :
+      (kernelι g).hom (((kernelIsLimit g).lift
+        (KernelFork.ofι d (hom_ext hd.linearMap_comp_eq_zero))).hom x) = d.hom x :=
+    congrArg (fun φ : X ⟶ Y ↦ φ.hom x)
+      (Fork.IsLimit.lift_ι (kernelIsLimit g)
+        (t := KernelFork.ofι d (hom_ext hd.linearMap_comp_eq_zero)))
+  exact
+    { mono_f := (mono_iff_injective _).mpr (Submodule.injective_subtype _)
+      epi_g := (epi_iff_surjective _).mpr fun ⟨y, hy⟩ ↦ by
+        obtain ⟨x, hx⟩ := (hd y).mp (LinearMap.mem_ker.mp hy)
+        exact ⟨x, Subtype.ext ((hlift x).trans hx)⟩
+      exact := exact_iff.mpr fun x ↦
+        ⟨fun hx ↦ ⟨⟨x, LinearMap.mem_ker.mpr ((hlift x).symm.trans (congrArg Subtype.val hx))⟩,
+          rfl⟩,
+         by rintro ⟨z, rfl⟩; exact Subtype.ext ((hlift _).trans z.2)⟩ }
 
 end TauCeti.GradedModuleCat
