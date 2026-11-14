@@ -517,12 +517,17 @@ theorem exists_continuousOn_circleMap_comp_eqOn {γ : ℝ → ℂ} {a b : ℝ} {
 /-- An angle function `θ`, continuous on `[a, b]`, of a simple closed curve `circleMap c r ∘ θ`
 increases or decreases by exactly one full turn. -/
 theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ → ℝ} {a b : ℝ}
-    {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hr : r ≠ 0) (hab : a < b)
+    {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hab : a < b)
     (hinj : InjOn (circleMap c r ∘ θ) (Ico a b))
     (hclosed : circleMap c r (θ a) = circleMap c r (θ b)) :
     (MonotoneOn θ (Icc a b) ∧ θ b = θ a + 2 * π) ∨
       (AntitoneOn θ (Icc a b) ∧ θ a = θ b + 2 * π) := by
   have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
+  -- A simple curve has positive radius: for `r = 0` the points `a` and `(a + b) / 2` coincide.
+  have hr : r ≠ 0 := by
+    rintro rfl
+    have hm : (a + b) / 2 ∈ Ico a b := ⟨by linarith, by linarith⟩
+    exact (by linarith : a ≠ (a + b) / 2) (hinj ha hm (by simp))
   have hθinj : InjOn θ (Ico a b) := fun s hs t ht h ↦ hinj hs ht (by simp [h])
   -- A parameter `t ∈ [a, b)` whose angle differs from that of `a` by a full turn is `a`.
   have hturn (t : ℝ) (ht : t ∈ Ico a b) (h : θ t = θ a + 2 * π ∨ θ a = θ t + 2 * π) :
