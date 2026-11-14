@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.NovikovSeries.Derivation
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.ExpLog
+import TauCeti.RingTheory.NovikovSeries.Grading
 
 /-!
 # Exponential and logarithm of Novikov series
@@ -89,42 +90,25 @@ theorem coe_log_nonnegSubring (a : nonnegSubring K N) :
   exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
     (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
 
-private def supportSubalgebra {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
-    (S : M) : Subalgebra ℚ (NovikovSeries K H N) where
-  carrier := {a | a.support ⊆ S}
-  add_mem' ha hb := (support_add_subset _ _).trans (Set.union_subset ha hb)
-  mul_mem' ha hb h hh := by
-    obtain ⟨a, ha', b, hb', rfl⟩ := support_mul_subset _ _ hh
-    exact add_mem (ha ha') (hb hb')
-  algebraMap_mem' r h hh := by
-    rw [algebraMap_apply] at hh
-    exact (Set.mem_singleton_iff.1 (support_single_subset 0 (algebraMap ℚ K r) hh)) ▸
-      zero_mem S
-
-private theorem isClosed_supportSubalgebra {M : Type*} [SetLike M H] [AddSubmonoidClass M H]
-    (S : M) : IsClosed (supportSubalgebra (K := K) (N := N) S : Set (NovikovSeries K H N)) := by
-  have hset : (supportSubalgebra (K := K) (N := N) S : Set (NovikovSeries K H N)) =
-      ⋂ h ∈ {h | h ∉ S}, {a | a.coeff h = 0} := by
-    ext a
-    simp only [supportSubalgebra, Set.mem_ofPred_eq, Set.mem_iInter]
-    exact ⟨fun ha h hh => not_not.1 fun hn => hh (ha (mem_support.2 hn)),
-      fun ha h hh => not_not.1 fun hn => mem_support.1 hh (ha h hn)⟩
-  rw [hset]
-  exact isClosed_biInter fun h _ => (isLocallyConstant_coeff h).isClosed_fiber 0
-
 /-- The exponential of a series supported in an additive submonoid or subgroup is supported in
 that subobject. This holds for the totalized exponential without a positivity assumption. -/
 theorem support_exp_subset (a : NovikovSeries K H N) {M : Type*} [SetLike M H]
     [AddSubmonoidClass M H] {S : M} (ha : a.support ⊆ S) :
-    (NormedSpace.exp a).support ⊆ S :=
-  NormedSpace.exp_mem (R := ℚ) (s := supportSubalgebra S) (isClosed_supportSubalgebra S) ha
+    (NormedSpace.exp a).support ⊆ S := by
+  exact (mem_supportSubalgebra ℚ K N).1
+    (NormedSpace.exp_mem (R := ℚ) (s := supportSubalgebra ℚ K N S)
+      (by simpa only [coe_supportSubalgebra] using isClosed_support_subset (N := N) (S : Set H))
+      ((mem_supportSubalgebra ℚ K N).2 ha))
 
 /-- The logarithm of a series supported in an additive submonoid or subgroup is supported in
 that subobject. This holds for the totalized logarithm without a positivity assumption. -/
 theorem support_log_subset (u : NovikovSeries K H N) {M : Type*} [SetLike M H]
     [AddSubmonoidClass M H] {S : M} (hu : u.support ⊆ S) :
-    (NormedSpace.log u).support ⊆ S :=
-  NormedSpace.log_mem (R := ℚ) (s := supportSubalgebra S) (isClosed_supportSubalgebra S) hu
+    (NormedSpace.log u).support ⊆ S := by
+  exact (mem_supportSubalgebra ℚ K N).1
+    (NormedSpace.log_mem (R := ℚ) (s := supportSubalgebra ℚ K N S)
+      (by simpa only [coe_supportSubalgebra] using isClosed_support_subset (N := N) (S : Set H))
+      ((mem_supportSubalgebra ℚ K N).2 hu))
 
 end Ring
 
