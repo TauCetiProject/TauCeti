@@ -52,6 +52,9 @@ quantile.
 * `TauCeti.Probability.truncatedNormalMeasure_zero_var` — the Dirac boundary `v = 0`, where the
   densities vanish (`TauCeti.Probability.truncatedNormalPDFReal_zero_var`,
   `TauCeti.Probability.truncatedNormalPDF_zero_var`);
+* `TauCeti.Probability.nullSingletonClass_truncatedNormalMeasure` and
+  `TauCeti.Probability.nullSingletonClass_truncatedNormalMeasure_iff` — atomlessness at positive
+  variance and exact singleton criterion across all variances;
 * `TauCeti.Probability.truncatedNormalMeasure_eq_preimage_Ioc` — endpoint conventions agree at
   positive variance;
 * `TauCeti.Probability.truncatedNormalMeasure_eq_withDensity` and the `HasPDF` and Radon–Nikodym
@@ -124,6 +127,29 @@ theorem truncatedNormalMeasure_zero_var (m : ℝ) (s : Set ℝ) [Decidable (m �
   split_ifs with h
   · simp [ProbabilityTheory.cond, restrict_dirac, h]
   · exact cond_eq_zero_of_meas_eq_zero (by simp [h])
+
+/-- At positive variance, conditioning a Gaussian on any set produces a measure with null
+singletons. -/
+theorem nullSingletonClass_truncatedNormalMeasure (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (s : Set ℝ) :
+    NullSingletonClass (truncatedNormalMeasure m v s) := by
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  rw [truncatedNormalMeasure_def]
+  infer_instance
+
+/-- The truncated normal law has null singletons unless `v = 0` and the conditioning set retains
+the Dirac location `m`. -/
+@[simp]
+theorem nullSingletonClass_truncatedNormalMeasure_iff :
+    NullSingletonClass (truncatedNormalMeasure m v s) ↔ v ≠ 0 ∨ m ∉ s := by
+  by_cases hv : v = 0
+  · classical
+    subst hv
+    by_cases hm : m ∈ s
+    · simp [hm, Measure.not_nullSingletonClass_dirac]
+    · refine iff_of_true ?_ (Or.inr hm)
+      simp only [truncatedNormalMeasure_zero_var, hm, ↓reduceIte]
+      infer_instance
+  · exact iff_of_true (nullSingletonClass_truncatedNormalMeasure m hv s) (Or.inl hv)
 
 /-- At positive variance, the truncated normal law to any set containing the open interval with
 extended bounds `l < r` is a probability measure. -/

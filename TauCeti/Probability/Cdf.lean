@@ -206,6 +206,17 @@ theorem measureReal_Ioi_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure 
     ν.real (Ioi x) = 1 - cdf ν x := by
   rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic, cdf_eq_real]
 
+/-- If `ν` has no atom at `x`, the closed upper ray `Ici x` has real mass `1 - cdf ν x`. -/
+theorem measureReal_Ici_of_measure_singleton_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    {x : ℝ} (hx : ν {x} = 0) : ν.real (Ici x) = 1 - cdf ν x := by
+  rw [← measureReal_congr (Ioi_ae_eq_Ici' hx), measureReal_Ioi_eq_one_sub_cdf]
+
+/-- For an atomless real probability measure, the closed upper ray `Ici x` has real mass
+`1 - cdf ν x`. -/
+theorem measureReal_Ici_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NullSingletonClass ν] (x : ℝ) : ν.real (Ici x) = 1 - cdf ν x :=
+  measureReal_Ici_of_measure_singleton_eq_zero (measure_singleton x)
+
 /-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
 `1 - cdf μ x`. -/
 theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]

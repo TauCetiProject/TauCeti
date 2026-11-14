@@ -54,8 +54,10 @@ difference of Gaussian densities (`hasDerivAt_measureReal_gaussianReal`).
 * `TauCeti.Probability.integrableExpSet_id_truncatedNormalMeasure` — exponential moments of
   every order;
 * `TauCeti.Probability.cgf_id_truncatedNormalMeasure` — the cgf;
-* `TauCeti.Probability.integral_id_truncatedNormalMeasure` and
-  `TauCeti.Probability.integral_id_truncatedNormalMeasure_eq_cdf_zero_one` — the mean;
+* `TauCeti.Probability.integral_id_truncatedNormalMeasure`,
+  `TauCeti.Probability.setIntegral_id_gaussianReal`, and
+  `TauCeti.Probability.integral_id_truncatedNormalMeasure_eq_cdf_zero_one` — the mean and
+  unnormalized interval set integral;
 * `TauCeti.Probability.variance_id_truncatedNormalMeasure` and
   `TauCeti.Probability.variance_id_truncatedNormalMeasure_eq_cdf_zero_one` — the variance.
 
@@ -166,6 +168,32 @@ theorem integral_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
     one_mul] at h
   rw [← h]
   field_simp
+
+/-- The unnormalized set integral of the identity over any set between the open and closed
+intervals with extended bounds `l ≤ r` against `gaussianReal m v` (including at zero variance). -/
+theorem setIntegral_id_gaussianReal (m : ℝ) (v : ℝ≥0) (hlr : l ≤ r)
+    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    ∫ x in s, x ∂gaussianReal m v =
+      m * (gaussianReal m v).real s +
+        v * (gaussianPDFRealEReal m v l - gaussianPDFRealEReal m v r) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · classical
+    by_cases hm : m ∈ s <;> simp [hm, restrict_dirac, measureReal_def]
+  · rcases hlr.eq_or_lt with rfl | hlt
+    · have := nullSingletonClass_gaussianReal (μ := m) hv
+      have hs0 : gaussianReal m v s = 0 := by
+        refine measure_mono_null hs₂ ?_
+        rw [Icc_self]
+        exact (subsingleton_singleton.preimage fun _ _ ↦ EReal.coe_eq_coe_iff.1).measure_zero _
+      simp [Measure.restrict_eq_zero.mpr hs0, Measure.real, hs0]
+    · have hZ : (gaussianReal m v).real s ≠ 0 := (measureReal_gaussianReal_pos m hv hlt hs₁).ne'
+      have hcond := Measure.toNNReal_smul_integral_cond_eq_setIntegral (gaussianReal m v) s id
+        (measure_ne_top _ _)
+      rw [← truncatedNormalMeasure_def, NNReal.smul_def, ENNReal.coe_toNNReal_eq_toReal,
+        ← measureReal_def, smul_eq_mul] at hcond
+      simp only [id_eq] at hcond
+      rw [← hcond, integral_id_truncatedNormalMeasure hv hlt hs₁ hs₂]
+      field_simp
 
 /-- The variance of a normal law of positive variance truncated to an interval with extended
 bounds `l < r`: `v (1 + ((l - m) g l - (r - m) g r) / Z - v ((g l - g r) / Z)²)`, where `g` is
