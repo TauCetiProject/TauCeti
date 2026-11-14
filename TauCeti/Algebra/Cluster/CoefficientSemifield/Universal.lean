@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.CoefficientSemifield.WithZero
+public import TauCeti.Algebra.MonoidAlgebra.ZeroSumFree
 public import TauCeti.Algebra.MvPolynomial.ZeroSumFree
+public import TauCeti.Data.Nat.Cast.ZeroSumFree
 public import TauCeti.RingTheory.Localization.TotalQuotient
-public import TauCeti.RingTheory.Localization.Defs
 public import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
@@ -56,6 +57,14 @@ theorem X_ne_zero (i : K) : X i ≠ 0 := by
   exact (map_eq_zero_iff _ (TotalQuotient.algebraMap_injective (MvPolynomial K ℕ))).not.mpr
     (MvPolynomial.X_ne_zero i)
 
+/-- Distinct variables give distinct universal generators. -/
+theorem X_injective (K : Type*) : Function.Injective (X : K → QsfZero K) := by
+  intro i j h
+  exact MvPolynomial.X_injective (TotalQuotient.algebraMap_injective _ h)
+
+@[simp]
+theorem X_inj {i j : K} : X i = X j ↔ i = j := (X_injective K).eq_iff
+
 section Evaluation
 
 variable {S : Type*} [Semifield S] [Subsingleton (AddUnits S)]
@@ -101,7 +110,6 @@ theorem hom_ext {S : Type*} [CommSemiring S] {f g : QsfZero K →+* S}
   · exact h
 
 /-- Evaluation at the variable generators is the identity. -/
-@[simp]
 theorem eval_X_left : eval (fun i => Units.mk0 (X i) (X_ne_zero i)) = RingHom.id (QsfZero K) := by
   apply hom_ext
   intro i
@@ -121,9 +129,21 @@ theorem evalEquiv_apply {S : Type*} [Semifield S] [Subsingleton (AddUnits S)] (y
     evalEquiv y = eval y := (rfl)
 
 @[simp]
+theorem evalEquiv_symm_eval {S : Type*} [Semifield S] [Subsingleton (AddUnits S)] (y : K → Sˣ) :
+    evalEquiv.symm (eval y) = y := evalEquiv.symm_apply_apply y
+
+@[simp]
+theorem eval_evalEquiv_symm {S : Type*} [Semifield S] [Subsingleton (AddUnits S)]
+    (f : QsfZero K →+* S) : eval (evalEquiv.symm f) = f := evalEquiv.apply_symm_apply f
+
+theorem evalEquiv_symm_apply {S : Type*} [Semifield S] [Subsingleton (AddUnits S)]
+    (f : QsfZero K →+* S) (i : K) :
+    evalEquiv.symm f i = Units.map f.toMonoidHom (Units.mk0 (X i) (X_ne_zero i)) := (rfl)
+
+@[simp]
 theorem val_evalEquiv_symm_apply {S : Type*} [Semifield S] [Subsingleton (AddUnits S)]
     (f : QsfZero K →+* S) (i : K) : ((evalEquiv.symm f i : Sˣ) : S) = f (X i) := by
-  change (Units.map f.toMonoidHom (Units.mk0 (X i) (X_ne_zero i)) : S) = f (X i)
+  simp only [evalEquiv_symm_apply]
   simp
 
 /-- Applying a semiring map after evaluation evaluates at the images of the assigned units. -/
@@ -135,22 +155,15 @@ theorem comp_eval {S T : Type*} [Semifield S] [Semifield T] [Subsingleton (AddUn
   intro i
   simp
 
-section FractionField
-
-/-- Map natural-coefficient polynomials into the integral rational-function field. -/
-def polynomialMap (K : Type*) :
-    MvPolynomial K ℕ →+* FractionRing (MvPolynomial K ℤ) :=
-  (algebraMap _ _).comp (MvPolynomial.map (Nat.castRingHom ℤ))
-
-/-- The coefficientwise polynomial map into the integral fraction field is injective. -/
-theorem polynomialMap_injective (K : Type*) : Function.Injective (polynomialMap K) :=
-  (IsFractionRing.injective (MvPolynomial K ℤ) _).comp
-    (MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective)
-
+/-- A ring homomorphism maps an evaluation to evaluation at the mapped assignments. -/
 @[simp]
-theorem polynomialMap_apply (p : MvPolynomial K ℕ) :
-    polynomialMap K p =
-      algebraMap (MvPolynomial K ℤ) _ (MvPolynomial.map (Nat.castRingHom ℤ) p) := (rfl)
+theorem map_eval {S T : Type*} [Semifield S] [Semifield T] [Subsingleton (AddUnits S)]
+    [Subsingleton (AddUnits T)] (f : S →+* T) (y : K → Sˣ) (a : QsfZero K) :
+    f (eval y a) = eval (Units.map f.toMonoidHom ∘ y) a := by
+  simpa only [RingHom.coe_comp, Function.comp_apply] using
+    congrArg (fun g => g a) (comp_eval f y)
+
+section FractionField
 
 /-- The comparison with the rational-function field with integer coefficients. -/
 def toFractionRing (K : Type*) : QsfZero K →+* FractionRing (MvPolynomial K ℤ) :=
@@ -169,7 +182,17 @@ theorem toFractionRing_algebraMap (p : MvPolynomial K ℕ) :
 
 /-- Distinct subtraction-free functions stay distinct in the rational-function field. -/
 theorem toFractionRing_injective (K : Type*) : Function.Injective (toFractionRing K) := by
-  exact IsLocalization.lift_injective_of_injective _ (polynomialMap_injective K)
+  refine (IsLocalization.injective_iff_map_algebraMap_eq (S := QsfZero K)
+    (regularElements (MvPolynomial K ℕ)) (toFractionRing K)).mpr ?_
+  intro p q
+  constructor
+  · intro h
+    exact congrArg (toFractionRing K) h
+  · intro h
+    refine congrArg (algebraMap (MvPolynomial K ℕ) (QsfZero K)) ?_
+    exact MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective
+      (IsFractionRing.injective (MvPolynomial K ℤ) _ (by
+        simpa only [toFractionRing_algebraMap] using h))
 
 @[simp]
 theorem toFractionRing_X (i : K) :
@@ -179,9 +202,9 @@ theorem toFractionRing_X (i : K) :
 /-- The image of a fraction is the ratio of its two integer-coefficient polynomial images. -/
 theorem toFractionRing_mk' (p : MvPolynomial K ℕ) (q : regularElements (MvPolynomial K ℕ)) :
     toFractionRing K (IsLocalization.mk' (QsfZero K) p q) =
-      polynomialMap K p / polynomialMap K q := by
-  simp only [TotalQuotient.map_mk'_eq_div, toFractionRing_algebraMap, polynomialMap,
-    RingHom.comp_apply]
+      algebraMap (MvPolynomial K ℤ) _ (MvPolynomial.map (Nat.castRingHom ℤ) p) /
+        algebraMap (MvPolynomial K ℤ) _ (MvPolynomial.map (Nat.castRingHom ℤ) q) := by
+  simp only [TotalQuotient.map_mk'_eq_div, toFractionRing_algebraMap]
 
 end FractionField
 
@@ -199,6 +222,22 @@ def X (i : K) : Qsf K := Units.mk0 (QsfZero.X i) (QsfZero.X_ne_zero i)
 @[simp]
 theorem val_X (i : K) : (X i : QsfZero K) = QsfZero.X i := (rfl)
 
+/-- Distinct variables give distinct universal unit generators. -/
+theorem X_injective (K : Type*) : Function.Injective (X : K → Qsf K) := by
+  intro i j h
+  apply QsfZero.X_injective K
+  simpa only [val_X] using congrArg Units.val h
+
+@[simp]
+theorem X_inj {i j : K} : X i = X j ↔ i = j := (X_injective K).eq_iff
+
+/-- Evaluation of the total quotient at the universal unit generators is the identity. -/
+@[simp]
+theorem eval_zero_X : QsfZero.eval X = RingHom.id (QsfZero K) := by
+  apply QsfZero.hom_ext
+  intro i
+  simp
+
 /-- Every element has a presentation with nonzero numerator and denominator. -/
 theorem exists_mk' (a : Qsf K) :
     ∃ (p : MvPolynomial K ℕ) (q : regularElements (MvPolynomial K ℕ)),
@@ -209,12 +248,11 @@ theorem exists_mk' (a : Qsf K) :
 
 variable {P Q : Type*} [CoefficientSemifield P] [CoefficientSemifield Q]
 
-/-- Evaluation on the coefficient semifield is the restriction of semiring evaluation to units. -/
+/-- Evaluation on the coefficient semifield sends each variable `X i` to `y i`. -/
 def eval (y : K → P) : CoefficientSemifieldHom (Qsf K) P :=
   unitsWithZero.comp (mapUnits (QsfZero.eval (fun i => WithZero.unitsWithZeroEquiv.symm (y i))))
 
 /-- Evaluation agrees with semiring evaluation after adjoining zero to the target. -/
-@[simp]
 theorem coe_eval (y : K → P) (a : Qsf K) :
     (eval y a : WithZero P) =
       QsfZero.eval (fun i => WithZero.unitsWithZeroEquiv.symm (y i)) (a : QsfZero K) := by
@@ -223,7 +261,7 @@ theorem coe_eval (y : K → P) (a : Qsf K) :
 @[simp]
 theorem eval_X (y : K → P) (i : K) : eval y (X i) = y i := by
   apply WithZero.coe_injective
-  simp
+  simp [coe_eval]
 
 /-- Coefficient homomorphisms from `Qsf K` are determined by their values on the variables. -/
 @[ext]
@@ -237,6 +275,23 @@ theorem hom_ext {f g : CoefficientSemifieldHom (Qsf K) P}
   apply CoefficientSemifieldHom.ext
   intro a
   simpa using DFunLike.congr_fun hfg (a : QsfZero K)
+
+/-- For evaluation into a zero-sum-free semifield, restricting semiring evaluation to units agrees
+with coefficient-semifield evaluation. -/
+@[simp]
+theorem mapUnits_eval {S : Type*} [Semifield S] [Subsingleton (AddUnits S)] (y : K → Sˣ) :
+    mapUnits (QsfZero.eval y) = eval y := by
+  apply hom_ext
+  intro i
+  apply Units.ext
+  apply WithZero.coe_injective
+  simp
+
+/-- Coefficient-semifield evaluation reduces to semiring evaluation on the underlying unit. -/
+theorem val_eval {S : Type*} [Semifield S] [Subsingleton (AddUnits S)]
+    (y : K → Sˣ) (a : Qsf K) : (eval y a : S) = QsfZero.eval y (a : QsfZero K) := by
+  rw [← mapUnits_eval]
+  exact val_mapUnits (QsfZero.eval y) a
 
 /-- Universal property: families in a coefficient semifield classify homomorphisms from
 `Qsf K`. -/
@@ -253,6 +308,14 @@ theorem evalEquiv_apply (y : K → P) : evalEquiv y = eval y := (rfl)
 theorem evalEquiv_symm_apply (f : CoefficientSemifieldHom (Qsf K) P) (i : K) :
     evalEquiv.symm f i = f (X i) := (rfl)
 
+@[simp]
+theorem evalEquiv_symm_eval (y : K → P) : evalEquiv.symm (eval y) = y :=
+  evalEquiv.symm_apply_apply y
+
+@[simp]
+theorem eval_evalEquiv_symm (f : CoefficientSemifieldHom (Qsf K) P) :
+    eval (evalEquiv.symm f) = f := evalEquiv.apply_symm_apply f
+
 /-- Substitution commutes with applying a homomorphism to the coefficients. -/
 @[simp]
 theorem comp_eval (f : CoefficientSemifieldHom P Q) (y : K → P) :
@@ -260,6 +323,13 @@ theorem comp_eval (f : CoefficientSemifieldHom P Q) (y : K → P) :
   apply hom_ext
   intro i
   simp
+
+/-- A coefficient homomorphism maps an evaluation to evaluation at the mapped assignments. -/
+@[simp]
+theorem map_eval (f : CoefficientSemifieldHom P Q) (y : K → P) (a : Qsf K) :
+    f (eval y a) = eval (f ∘ y) a := by
+  simpa only [CoefficientSemifieldHom.comp_apply] using
+    congrArg (fun g => g a) (comp_eval f y)
 
 @[simp]
 theorem eval_X_left : eval (X : K → Qsf K) = CoefficientSemifieldHom.id (Qsf K) := by
@@ -270,6 +340,9 @@ theorem eval_X_left : eval (X : K → Qsf K) = CoefficientSemifieldHom.id (Qsf K
 /-- Rename the variables along an arbitrary function. -/
 def rename {L : Type*} (r : K → L) : CoefficientSemifieldHom (Qsf K) (Qsf L) :=
   eval (X ∘ r)
+
+/-- Renaming evaluates at the renamed family of generators. -/
+theorem rename_def {L : Type*} (r : K → L) : rename r = eval (X ∘ r) := (rfl)
 
 @[simp]
 theorem rename_X {L : Type*} (r : K → L) (i : K) : rename r (X i) = X (r i) :=
@@ -287,6 +360,13 @@ theorem rename_comp_rename {L M : Type*} (r : K → L) (s : L → M) :
   intro i
   simp
 
+/-- Applied renaming along a composition is composition of applied renamings. -/
+@[simp]
+theorem rename_rename {L M : Type*} (r : K → L) (s : L → M) (a : Qsf K) :
+    rename s (rename r a) = rename (s ∘ r) a := by
+  simpa only [CoefficientSemifieldHom.comp_apply] using
+    congrArg (fun g => g a) (rename_comp_rename r s)
+
 /-- Evaluation after renaming is evaluation at the pulled back assignment. -/
 @[simp]
 theorem eval_comp_rename {L : Type*} (r : K → L) (y : L → P) :
@@ -294,6 +374,13 @@ theorem eval_comp_rename {L : Type*} (r : K → L) (y : L → P) :
   apply hom_ext
   intro i
   simp
+
+/-- Evaluation after an applied renaming evaluates at the pulled back assignment. -/
+@[simp]
+theorem eval_rename {L : Type*} (r : K → L) (y : L → P) (a : Qsf K) :
+    eval y (rename r a) = eval (y ∘ r) a := by
+  simpa only [CoefficientSemifieldHom.comp_apply] using
+    congrArg (fun g => g a) (eval_comp_rename r y)
 
 end Qsf
 
