@@ -221,16 +221,11 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
     exact hsymm ▸ hopt.swap
   -- That optimal plan is the graph plan of a gradient `∇v`, so `s` and `s'` are both `∇v ∘ U`.
   obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUρ hfin'
-  have hS := measurable_gradient fun y => (v y).toReal
-  have hfactor : ∀ {t : α → E}, HasLaw t P m →
-      (m.map fun ω => (t ω, U ω)).map Prod.swap = graphPlan (∇ fun y => (v y).toReal) (m.map U) →
-      t =ᵐ[m] (∇ fun y => (v y).toReal) ∘ U := by
-    intro t ht heq
-    have hae := ae_snd_eq_graphPlan (μ := m.map U) hS.aemeasurable
-    rw [← heq] at hae
-    exact ae_of_ae_map (ht.aemeasurable.prodMk hU) (ae_of_ae_map measurable_swap.aemeasurable hae)
-  filter_upwards [hfactor hs' (((hopt hs le_rfl).unique hUρ (hopt hs' hle) hfin').symm.trans
-      hgraph), hfactor hs hgraph] with ω h₁ h₂
+  have hS : AEMeasurable (∇ fun y => (v y).toReal) (m.map U) :=
+    (measurable_gradient fun y => (v y).toReal).aemeasurable
+  filter_upwards [ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs'.aemeasurable hU
+      (((hopt hs le_rfl).unique hUρ (hopt hs' hle) hfin').symm.trans hgraph),
+    ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs.aemeasurable hU hgraph] with ω h₁ h₂
   rw [h₁, h₂]
 
 /-- **The measure-preserving factor is the unique correlation maximiser.** Let `P` and the law of
