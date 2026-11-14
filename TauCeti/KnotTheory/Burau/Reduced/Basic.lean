@@ -19,9 +19,10 @@ invariant kernel and the reduced representation over an arbitrary commutative ri
 unit, both in the canonical tail-coordinate system and in the basis of Burau columns. The latter
 is named with the suffix `BurauCol` to distinguish the two coordinate systems. The column matrix
 and its explicit coordinate inverse are defined over any ring for every parameter `t`, including
-nonunits. The elementary reduced matrices, their braid relations and the Burau-column
-homomorphism `TauCeti.KnotTheory.reducedBurauCol` also need no commutativity; its determinant
-and its comparison with the unreduced representation are stated over a commutative ring.
+nonunits. The elementary reduced matrices, their braid and quadratic relations, their inverses in
+`GL` and the Burau-column homomorphism `TauCeti.KnotTheory.reducedBurauCol` also need no
+commutativity; its determinant and its comparison with the unreduced representation are stated
+over a commutative ring.
 
 For a braid on `n + 1` strands, the coefficient of the zeroth coordinate in the invariant
 covector is `1`. The kernel is therefore canonically free on the remaining `n` coordinates:
@@ -472,7 +473,7 @@ theorem reducedBurauColMatrix_three_one (t : R) :
     reducedBurauColMatrix_apply_of_succ_rev t (by decide), reducedBurauColMatrix_apply_self]
   norm_num
 
-/-! ### The braid relations -/
+/-! ### The braid relations and the Hecke relation -/
 
 /-- **The distant commutation relation** for the elementary reduced Burau matrices. -/
 theorem reducedBurauColMatrix_mul_comm (t : R) {i j : Fin (n - 1)}
@@ -496,6 +497,27 @@ theorem reducedBurauColMatrix_braid (t : R) {i j : Fin (n - 1)}
       simpa only [dotProduct_single_one] using reducedBurauColRow_of_succ_rev t h)
     h
 
+/-- A scalar on the right factor of the rank-one term of an elementary reduced Burau matrix may be
+pulled out to the left, because the entries of `Pi.single i 1` are central. -/
+private theorem vecMulVec_single_one_smul (c : R) (i : Fin (n - 1)) (v : Fin (n - 1) → R) :
+    vecMulVec (Pi.single i 1) (c • v) = c • vecMulVec (Pi.single i 1) v := by
+  ext a b
+  rcases eq_or_ne a i with rfl | h
+  · simp [vecMulVec_apply]
+  · simp [vecMulVec_apply, h]
+
+/-- **The quadratic relation** for the elementary reduced Burau matrices, equivalently
+`(x - 1) * (x + t) = 0`. This is the Iwahori-Hecke quadratic relation in the normalisation with
+eigenvalues `1` and `-t`. It needs no commutativity, since the scalar `t + 1` may be pulled out
+of the rank-one term. -/
+theorem reducedBurauColMatrix_mul_self (t : R) (i : Fin (n - 1)) :
+    reducedBurauColMatrix t i * reducedBurauColMatrix t i =
+      (1 - t) • reducedBurauColMatrix t i + t • 1 := by
+  rw [reducedBurauColMatrix_def, one_sub_vecMulVec_mul_one_sub_vecMulVec, dotProduct_single_one,
+    reducedBurauColRow_self, vecMulVec_single_one_smul]
+  simp only [smul_sub, sub_smul, add_smul, one_smul]
+  abel
+
 /-! ### The reduced Burau homomorphism in the Burau-column basis -/
 
 /-- An elementary reduced Burau matrix as an element of the general linear group, with inverse
@@ -510,6 +532,14 @@ theorem coe_reducedBurauColGL (t : Rˣ) (i : Fin (n - 1)) :
     (reducedBurauColGL t i : Matrix (Fin (n - 1)) (Fin (n - 1)) R) =
       reducedBurauColMatrix (t : R) i :=
   by rw [reducedBurauColGL, coe_oneSubVecMulVecGL, reducedBurauColMatrix_def]
+
+/-- The matrix underlying the inverse of `TauCeti.KnotTheory.reducedBurauColGL`, over any ring.
+Over a commutative ring it is also `TauCeti.KnotTheory.inv_reducedBurauColMatrix`. -/
+@[simp]
+theorem coe_reducedBurauColGL_inv (t : Rˣ) (i : Fin (n - 1)) :
+    (↑(reducedBurauColGL t i)⁻¹ : Matrix (Fin (n - 1)) (Fin (n - 1)) R) =
+      1 - ((t⁻¹ : Rˣ) : R) • vecMulVec (Pi.single i 1) (reducedBurauColRow (t : R) i) := by
+  rw [reducedBurauColGL, coe_oneSubVecMulVecGL_inv, vecMulVec_single_one_smul]
 
 /-- The reduced Burau homomorphism in the basis of Burau columns. Its name records the basis to
 distinguish it from `TauCeti.KnotTheory.reducedBurau`, which uses canonical tail coordinates. -/
@@ -753,7 +783,7 @@ theorem reducedBurau_sigma_zero_apply (t : Rˣ) (x : Fin 1 → R) :
   have hstrandSucc : BraidGroup.strandSucc (n := 2) 0 = 1 := by simp [Fin.ext_iff]
   simp [hstrand, hstrandSucc, burauCol_apply]
 
-/-! ### The determinant, the inverse and the Hecke relation -/
+/-! ### The determinant and the inverse -/
 
 /-- The determinant of an elementary reduced Burau matrix is `-t`, as for the unreduced one. -/
 @[simp]
@@ -762,15 +792,6 @@ theorem det_reducedBurauColMatrix (t : R) (i : Fin (n - 1)) :
   rw [reducedBurauColMatrix_def, det_one_sub_vecMulVec, dotProduct_single_one,
     reducedBurauColRow_self]
   ring
-
-/-- **The quadratic relation** for the elementary reduced Burau matrices, equivalently
-`(x - 1) * (x + t) = 0`. This is the Iwahori-Hecke quadratic relation in the normalisation with
-eigenvalues `1` and `-t`. -/
-theorem reducedBurauColMatrix_mul_self (t : R) (i : Fin (n - 1)) :
-    reducedBurauColMatrix t i * reducedBurauColMatrix t i =
-      (1 - t) • reducedBurauColMatrix t i + t • 1 :=
-  one_sub_vecMulVec_mul_self t
-    (by simpa only [dotProduct_single_one] using reducedBurauColRow_self t i)
 
 /-- The nonsingular inverse of an elementary reduced Burau matrix. -/
 @[simp]
