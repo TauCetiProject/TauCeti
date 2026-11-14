@@ -82,14 +82,6 @@ theorem rev_injective : Function.Injective Γ.rev := by
   intro e f h
   simpa only [Γ.rev_rev] using congrArg Γ.rev h
 
-variable {Γ} in
-/-- Two darts with the same initial vertex and distinct terminal vertices are not reverse to each
-other. -/
-theorem ne_rev_of_src_eq_of_tgt_ne {e₁ e₂ : Γ.E} (hsrc : Γ.src e₁ = Γ.src e₂)
-    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) : e₁ ≠ Γ.rev e₂ := by
-  rintro rfl
-  simp_all
-
 /-- The geometric edges of a Serre graph: the pairs `{e, rev e}` of mutually reverse darts. -/
 def GeomEdge : Type v := Quot fun e f : Γ.E => f = Γ.rev e
 
@@ -129,6 +121,14 @@ theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
   · rintro (rfl | rfl)
     · rfl
     · exact (Γ.toGeomEdge_rev e).symm
+
+variable {Γ} in
+/-- Two darts with the same initial vertex and distinct terminal vertices lie on distinct geometric
+edges. -/
+theorem toGeomEdge_ne_toGeomEdge_of_src_eq_of_tgt_ne {e₁ e₂ : Γ.E} (hsrc : Γ.src e₁ = Γ.src e₂)
+    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl) <;> simp_all
 
 /-- A function on darts taking the same value on mutually reverse darts descends to geometric
 edges. -/
