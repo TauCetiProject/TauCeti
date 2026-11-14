@@ -22,10 +22,12 @@ essentially surjective.
 
 The boundedness predicate records both bounds at once. This matters for closure under cones: the
 mapping cone of a morphism between bounded complexes is bounded
-(`CochainComplex.bounded_mappingCone`). The explicit bounds are given by
-`CochainComplex.isStrictlyGE_mappingCone` and `CochainComplex.isStrictlyLE_mappingCone`: if the
-source has bounds `(a₁, b₁)` and the target has bounds `(a₂, b₂)`, the cone is strictly bounded
-by `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. Consequently the full subcategory is stable under
+(`CochainComplex.bounded_mappingCone`). If the source has bounds `(a₁, b₁)` and the target has
+bounds `(a₂, b₂)`, the cone is strictly bounded by `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. The
+upper bound is `CochainComplex.isStrictlyLE_mappingCone`, which needs only
+`[HasHomotopyCofiber f]`; the lower bound is Mathlib's
+`CochainComplex.isStrictlyGE_mappingCone`, which also needs `[HasBinaryBiproducts C]`, and is
+reproved directly here. Consequently the full subcategory is stable under
 shifts and distinguished triangles.
 
 The construction follows the organization of Mathlib's bounded-below category
@@ -116,23 +118,29 @@ abbrev Bounded [HasZeroMorphisms C] :=
 
 section
 
-variable {C} [Preadditive C] [HasBinaryBiproducts C]
+variable {C} [Preadditive C]
 
 /-- The cylinder of a bounded cochain complex is bounded. -/
-lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C K) :
+lemma bounded_cylinder {K : CochainComplex C ℤ} [∀ i, HasBinaryBiproduct (K.X i) (K.X i)]
+    [K.HasCylinder] (hK : CochainComplex.bounded C K) :
     CochainComplex.bounded C K.cylinder := by
   obtain ⟨a, b, ha, hb⟩ := (CochainComplex.bounded_iff C K).1 hK
-  obtain ⟨a', ha'⟩ := K.plus_cylinder ⟨a, ha⟩
-  refine (CochainComplex.bounded_iff C _).2 ⟨a', b, ha', ?_⟩
-  rw [CochainComplex.isStrictlyLE_iff]
-  intro i hi
-  refine homotopyCofiber.isZero_X (biprod.lift (𝟙 K) (-𝟙 K)) _ ?_ (fun j hj ↦ ?_)
-  · refine IsZero.of_iso ?_ ((HomologicalComplex.eval C (.up ℤ) i).mapBiprod _ _)
-    simpa using K.isZero_of_isStrictlyLE b i
-  · simp only [ComplexShape.up_Rel] at hj
-    exact K.isZero_of_isStrictlyLE b _ (by lia)
+  refine (CochainComplex.bounded_iff C _).2 ⟨a - 1, b, ?_, ?_⟩
+  · rw [CochainComplex.isStrictlyGE_iff]
+    intro i hi
+    refine homotopyCofiber.isZero_X (biprod.lift (𝟙 K) (-𝟙 K)) _ ?_ (fun j hj ↦ ?_)
+    · refine IsZero.of_iso ?_ ((HomologicalComplex.eval C (.up ℤ) i).mapBiprod _ _)
+      simpa using K.isZero_of_isStrictlyGE a i
+    · simp only [ComplexShape.up_Rel] at hj
+      exact K.isZero_of_isStrictlyGE a _ (by lia)
+  · rw [CochainComplex.isStrictlyLE_iff]
+    intro i hi
+    refine homotopyCofiber.isZero_X (biprod.lift (𝟙 K) (-𝟙 K)) _ ?_ (fun j hj ↦ ?_)
+    · refine IsZero.of_iso ?_ ((HomologicalComplex.eval C (.up ℤ) i).mapBiprod _ _)
+      simpa using K.isZero_of_isStrictlyLE b i
+    · simp only [ComplexShape.up_Rel] at hj
+      exact K.isZero_of_isStrictlyLE b _ (by lia)
 
-omit [HasBinaryBiproducts C] in
 /-- The mapping cone of a morphism `K ⟶ L` is strictly bounded above by `n` when `K` is strictly
 bounded above by `n + 1` and `L` by `n`. This is the upper-bound counterpart of Mathlib's
 `CochainComplex.isStrictlyGE_mappingCone`. -/
@@ -145,16 +153,22 @@ lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHo
   rw [CochainComplex.mappingCone.isZero_X_iff]
   exact ⟨K.isZero_of_isStrictlyLE n₁ (i + 1) (by lia), L.isZero_of_isStrictlyLE n₂ i (by lia)⟩
 
-/-- The mapping cone of a morphism between bounded cochain complexes is bounded. The explicit
-bounds are given by `CochainComplex.isStrictlyGE_mappingCone` and `isStrictlyLE_mappingCone`. -/
-lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+/-- The mapping cone of a morphism between bounded cochain complexes is bounded. If `K` has
+bounds `(a₁, b₁)` and `L` has bounds `(a₂, b₂)`, the explicit bounds are
+`(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. The upper bound is `isStrictlyLE_mappingCone`; Mathlib's
+`CochainComplex.isStrictlyGE_mappingCone` requires `[HasBinaryBiproducts C]`, so the lower bound
+is proved directly, needing only `[HasHomotopyCofiber f]`. -/
+lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHomotopyCofiber f]
     (hK : CochainComplex.bounded C K) (hL : CochainComplex.bounded C L) :
     CochainComplex.bounded C (CochainComplex.mappingCone f) := by
   obtain ⟨a₁, b₁, ha₁, hb₁⟩ := (CochainComplex.bounded_iff C K).1 hK
   obtain ⟨a₂, b₂, ha₂, hb₂⟩ := (CochainComplex.bounded_iff C L).1 hL
-  exact (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂,
-    CochainComplex.isStrictlyGE_mappingCone f a₁ a₂ _,
+  refine (CochainComplex.bounded_iff C _).2 ⟨min (a₁ - 1) a₂, max (b₁ - 1) b₂, ?_,
     isStrictlyLE_mappingCone f b₁ b₂ _⟩
+  rw [CochainComplex.isStrictlyGE_iff]
+  intro i hi
+  rw [CochainComplex.mappingCone.isZero_X_iff]
+  exact ⟨K.isZero_of_isStrictlyGE a₁ (i + 1) (by lia), L.isZero_of_isStrictlyGE a₂ i (by lia)⟩
 
 end
 
