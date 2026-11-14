@@ -94,6 +94,26 @@ theorem IsAcyclic.isEmpty_dart_of_subsingleton (h : Γ.IsAcyclic) [Subsingleton 
     IsEmpty Γ.E :=
   ⟨fun e => h.src_ne_tgt e (Subsingleton.elim _ _)⟩
 
+variable {Γ} in
+/-- In an acyclic Serre graph, the target map identifies the outgoing darts at any vertex `u` with
+the adjacent vertices `{w // Nonempty (u ⟶ w)}`. -/
+noncomputable def IsAcyclic.starEquivAdjacent (h : Γ.IsAcyclic) (u : Γ.V) :
+    {e : Γ.E // Γ.src e = u} ≃ {w : Γ.V // Nonempty (u ⟶ w)} :=
+  Equiv.ofBijective (fun e => ⟨Γ.tgt e.1, ⟨⟨e.1, e.2, rfl⟩⟩⟩)
+    ⟨fun ⟨e₁, h₁⟩ ⟨e₂, h₂⟩ h' => Subtype.ext <| by
+      have htgt : Γ.tgt e₁ = Γ.tgt e₂ := congrArg Subtype.val h'
+      let f₁ : u ⟶ Γ.tgt e₁ := ⟨e₁, h₁, rfl⟩
+      let f₂ : u ⟶ Γ.tgt e₁ := ⟨e₂, h₂, htgt.symm⟩
+      have hpath := h.eq_of_isReduced (Path.isReduced_toPath Γ f₁) (Path.isReduced_toPath Γ f₂)
+      injection hpath with _ _ _ hf
+      exact congrArg (fun f : u ⟶ Γ.tgt e₁ => f.1) hf,
+     fun ⟨_, ⟨f⟩⟩ => ⟨⟨f.1, f.2.1⟩, Subtype.ext f.2.2⟩⟩
+
+@[simp] theorem IsAcyclic.starEquivAdjacent_apply_val {h : Γ.IsAcyclic} (u : Γ.V)
+    (e : {e : Γ.E // Γ.src e = u}) :
+    (h.starEquivAdjacent u e).1 = Γ.tgt e.1 :=
+  (rfl)
+
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     ∀ ⦃a b : Γ.V⦄ (p q : Γ.Path a b), Path.IsReduced Γ p → Path.IsReduced Γ q → p = q :=

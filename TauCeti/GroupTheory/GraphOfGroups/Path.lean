@@ -285,6 +285,30 @@ theorem comp_comp_reverse (q : 𝔸.Path x y) (p : 𝔸.Path y z) :
     Homotopic ((q.comp p).comp p.reverse) q := by
   simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using (comp_reverse p).comp_left q
 
+/-- The reverse of a path followed by that path and a second path is homotopic to the second
+path. -/
+theorem reverse_comp_comp (p : 𝔸.Path x y) (q : 𝔸.Path y z) :
+    Homotopic (p.reverse.comp (p.comp q)) q := by
+  simpa only [← Quiver.Path.comp_assoc, Quiver.Path.nil_comp] using (reverse_comp p).comp_right q
+
+/-- A path followed by the reverse of a second path and that second path is homotopic to the first
+path. -/
+theorem comp_reverse_comp (q : 𝔸.Path x y) (p : 𝔸.Path z y) :
+    Homotopic ((q.comp p.reverse).comp p) q := by
+  simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using (reverse_comp p).comp_left q
+
+/-- Left cancellation for homotopy of `𝔸`-paths. -/
+@[simp] theorem comp_left_iff (r : 𝔸.Path x y) {p q : 𝔸.Path y z} :
+    Homotopic (r.comp p) (r.comp q) ↔ Homotopic p q :=
+  ⟨fun h => (reverse_comp_comp r p).symm.trans ((h.comp_left r.reverse).trans
+    (reverse_comp_comp r q)), fun h => h.comp_left r⟩
+
+/-- Right cancellation for homotopy of `𝔸`-paths. -/
+@[simp] theorem comp_right_iff {p q : 𝔸.Path x y} (r : 𝔸.Path y z) :
+    Homotopic (p.comp r) (q.comp r) ↔ Homotopic p q :=
+  ⟨fun h => (comp_comp_reverse p r).symm.trans ((h.comp_right r.reverse).trans
+    (comp_comp_reverse q r)), fun h => h.comp_right r⟩
+
 /-- Reversing homotopic paths gives homotopic paths. -/
 theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse q.reverse := by
   -- `p⁻¹ ~ p⁻¹ (q q⁻¹) = (p⁻¹ q) q⁻¹ ~ (p⁻¹ p) q⁻¹ ~ q⁻¹`.
