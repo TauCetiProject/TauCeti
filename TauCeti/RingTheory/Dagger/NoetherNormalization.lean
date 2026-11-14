@@ -57,7 +57,6 @@ public section
 
 namespace TauCeti.Dagger
 
-open _root_.MvPowerSeries
 open washnitzerAlgebra
 
 universe u v w
@@ -144,7 +143,6 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
   obtain ⟨n, g, _, hg, hfin⟩ := washnitzerAlgebra.exists_finite_injective hπ
   let : Algebra (W (Fin n)) A := g.toRingHom.toAlgebra
   have : Module.Finite (W (Fin n)) A := hfin
-  have : Algebra.IsIntegral (W (Fin n)) A := Algebra.IsIntegral.of_finite _ _
   have hf : IsField (W (Fin n)) := isField_of_isIntegral_of_isField hg hA
   have hn : n = 0 := by
     by_contra hn
@@ -162,8 +160,8 @@ theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
 a finite-variable Monsky–Washnitzer algebra is finite-dimensional over the coefficient field. -/
 theorem washnitzerAlgebra.finite_quotient_of_isMaximal {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
-    (hπ : π.Finite) (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) := by
-  exact finite_of_isField
+    (hπ : π.Finite) (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) :=
+  finite_of_isField
     ((AlgHom.Finite.of_surjective (Ideal.Quotient.mkₐ K m) Ideal.Quotient.mk_surjective).comp hπ)
     ((Ideal.Quotient.maximal_ideal_iff_isField_quotient m).mp ‹_›)
 
