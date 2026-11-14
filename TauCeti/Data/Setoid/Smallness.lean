@@ -12,8 +12,9 @@ public import Mathlib.Data.Set.Countable
 # Small sides of equivalence-class partitions
 
 Suppose a set meets countably many classes of an equivalence relation, and small sets are closed
-under countable unions. If the set is not small, some class has a non-small intersection with it.
-If every class cut has a small side, the complement of that intersection is small.
+under countable unions. If the set is not small, some class has a non-small intersection with it
+(`Setoid.exists_class_not_small`). If every class cut has a small side, the complement of that
+intersection is small (`Setoid.exists_class_not_small_and_small_sdiff`).
 
 This is a combinatorial way to find a centre for a concentrated family. The smallness predicate
 can, for example, mean that a set meets only countably many classes of a finer relation, or that
@@ -26,15 +27,12 @@ open Set
 
 namespace Setoid
 
-/-- If a non-small set meets countably many equivalence classes and every class cut has a small
-side, one class meets it in a non-small set with small complement. Only closure under countable
-unions is needed; downward closure of smallness is not required. -/
-theorem exists_class_not_small_and_small_sdiff {X : Type*} (E : Setoid X) (K : Set X)
-    (small : Set X → Prop)
+/-- If a non-small set meets countably many equivalence classes, one class meets it in a non-small
+set, provided smallness is closed under countable unions. -/
+theorem exists_class_not_small {X : Type*} (E : Setoid X) (K : Set X) (small : Set X → Prop)
     (hUnion : ∀ S : Set (Set X), S.Countable → (∀ s ∈ S, small s) → small (⋃₀ S))
-    [Countable (Quotient (E.comap (Subtype.val : K → X)))] (hK : ¬ small K)
-    (hsplit : ∀ x ∈ K, small (K ∩ {y | E x y}) ∨ small (K \ {y | E x y})) :
-    ∃ x ∈ K, ¬ small (K ∩ {y | E x y}) ∧ small (K \ {y | E x y}) := by
+    [Countable (Quotient (E.comap (Subtype.val : K → X)))] (hK : ¬ small K) :
+    ∃ x ∈ K, ¬ small (K ∩ {y | E x y}) := by
   classical
   let F (q : Quotient (E.comap (Subtype.val : K → X))) := K ∩ {y | E q.out.val y}
   have hcover : ⋃₀ range F = K := by
@@ -52,6 +50,18 @@ theorem exists_class_not_small_and_small_sdiff {X : Type*} (E : Setoid X) (K : S
       rintro s ⟨q, rfl⟩
       exact h q))
   obtain ⟨q, hq⟩ := hex
-  exact ⟨q.out.val, q.out.prop, hq, (hsplit q.out.val q.out.prop).resolve_left hq⟩
+  exact ⟨q.out.val, q.out.prop, hq⟩
+
+/-- If a non-small set meets countably many equivalence classes and every class cut has a small
+side, one class meets it in a non-small set with small complement. Only closure under countable
+unions is needed; downward closure of smallness is not required. -/
+theorem exists_class_not_small_and_small_sdiff {X : Type*} (E : Setoid X) (K : Set X)
+    (small : Set X → Prop)
+    (hUnion : ∀ S : Set (Set X), S.Countable → (∀ s ∈ S, small s) → small (⋃₀ S))
+    [Countable (Quotient (E.comap (Subtype.val : K → X)))] (hK : ¬ small K)
+    (hsplit : ∀ x ∈ K, small (K ∩ {y | E x y}) ∨ small (K \ {y | E x y})) :
+    ∃ x ∈ K, ¬ small (K ∩ {y | E x y}) ∧ small (K \ {y | E x y}) := by
+  obtain ⟨x, hx, hnot⟩ := E.exists_class_not_small K small hUnion hK
+  exact ⟨x, hx, hnot, (hsplit x hx).resolve_left hnot⟩
 
 end Setoid
