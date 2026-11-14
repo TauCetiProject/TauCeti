@@ -26,8 +26,9 @@ All series here use initial segments, rather than unconditional summation.
 
 ## Main results
 
-* `SchauderBasis.surjective_inclusionInDoubleDual_iff`: **James's basis criterion**, a space with
-  a Schauder basis is reflexive if and only if the basis is shrinking and boundedly complete.
+* `SchauderBasis.surjective_inclusionInDoubleDual_iff`: **James's basis criterion**, a real or
+  complex Banach space with a Schauder basis is reflexive if and only if the basis is shrinking and
+  boundedly complete.
 
 ## References
 
@@ -151,7 +152,8 @@ theorem isBoundedlyComplete_of_surjective_inclusionInDoubleDual
 
 variable [CompleteSpace E]
 
-/-- A shrinking and boundedly complete Schauder basis makes its space reflexive. -/
+/-- A shrinking and boundedly complete Schauder basis of a real or complex Banach space makes the
+space reflexive. -/
 theorem surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete
     (hs : b.IsShrinking) (hc : b.IsBoundedlyComplete) :
     Surjective (inclusionInDoubleDual 𝕜 E) := by
