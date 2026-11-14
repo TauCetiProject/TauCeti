@@ -32,6 +32,8 @@ one: a proper specialization in `X` lifts to one in `X^ν`.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.isFinite_fromNormalization_of_isCurveOver`: the normalization of a
+  curve is finite over it.
 * `TauCeti.AlgebraicGeometry.isCurveOver_normalization`: the normalization of a curve is a curve.
 * `TauCeti.AlgebraicGeometry.isRegular_normalization_of_isCurveOver`: the normalization of a curve
   is regular.
@@ -52,16 +54,21 @@ universe u
 
 variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCurveOver k]
 
+/-- The normalization of a curve in its function field is finite over the curve. This is a
+theorem rather than an instance: the field `k` does not occur in the conclusion. -/
+theorem isFinite_fromNormalization_of_isCurveOver :
+    IsFinite (X.fromSpecStalk (genericPoint X)).fromNormalization :=
+  isFinite_fromNormalization_of_locallyOfFiniteType (X ↘ Spec (.of k))
+
 /-- **The normalization of a curve is a curve.** The normalization of a curve over `k` in its
 function field is integral, proper over `k` and of dimension one. -/
 instance isCurveOver_normalization :
     (X.fromSpecStalk (genericPoint X)).normalization.IsCurveOver k := by
   set f := X.fromSpecStalk (genericPoint X)
-  have : IsFinite f.fromNormalization :=
-    isFinite_fromNormalization_of_locallyOfFiniteType (X ↘ Spec (.of k))
+  have : IsFinite f.fromNormalization := isFinite_fromNormalization_of_isCurveOver k X
   have hdimX := Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X) k
   refine Scheme.isCurveOver_iff.mpr ⟨inferInstance, ?_, le_antisymm ?_ ?_⟩
-  · change IsProper (f.fromNormalization ≫ X ↘ Spec (.of k))
+  · rw [← comp_over f.fromNormalization (Spec (.of k))]
     infer_instance
   · exact f.fromNormalization.topologicalKrullDim_le.trans hdimX.le
   · -- `X` has a point other than its generic point, since it has dimension one
@@ -80,8 +87,7 @@ instance isCurveOver_normalization :
 valuation rings. -/
 instance isRegular_normalization_of_isCurveOver :
     IsRegular (X.fromSpecStalk (genericPoint X)).normalization := by
-  have : IsFinite (X.fromSpecStalk (genericPoint X)).fromNormalization :=
-    isFinite_fromNormalization_of_locallyOfFiniteType (X ↘ Spec (.of k))
+  have := isFinite_fromNormalization_of_isCurveOver k X
   have := Scheme.IsCurveOver.isNoetherian k X
   exact isRegular_normalization_fromSpecStalk_genericPoint
     (Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
