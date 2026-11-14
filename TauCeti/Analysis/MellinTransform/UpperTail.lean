@@ -18,9 +18,17 @@ integrability: in that case all the totalized integrals vanish. Absolute converg
 local integrability on the closed ray, including its boundary at one. Uniformly bounded kernels
 have integral norm at most `C / re s` on `0 < re s`.
 
-The indicator estimates also allow an arbitrary cutoff at infinity and a positive cutoff near
-zero. Together with `mellin_indicator_Ici`, these are the Mellin side conditions used for upper
-tails in partial summation and in the fractional-part formula for the Riemann zeta function.
+The proofs cut off kernels below one and use `mellin_indicator_Ici` to express the resulting
+integrals as Mellin transforms. These upper tails occur in partial summation and in the
+fractional-part formula for the Riemann zeta function.
+
+## Motivation and provenance
+
+These upper tails control analytic Abel remainders in Dirichlet-series continuation. One
+application motivating the general kernel interface is Matteo Cipollina's
+[PNT+ Abel-kernel formalization](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/e316efa96ec1faa14c06dccf912b7f1bcefb4d2a/PrimeNumberTheoremAnd/Mathlib/NumberTheory/LSeries/RiemannZetaAbelKernel.lean).
+The bounded-kernel estimate is extracted from the native partial-sum norm estimate in
+`TauCeti.NumberTheory.LSeries.SumCoeff`; the proofs use the existing Mellin suppliers.
 
 ## Main results
 
@@ -35,23 +43,6 @@ open Set Filter MeasureTheory Complex Asymptotics
 open scoped Topology
 
 namespace TauCeti
-
-/-- Cutting a kernel off below any real threshold preserves its power bound at infinity. -/
-theorem isBigO_indicator_Ici_atTop {F : Type*} [Norm F] [Zero F]
-    {g : ℝ → F} {a r : ℝ}
-    (hO : g =O[atTop] fun t ↦ t ^ r) :
-    (Set.Ici a).indicator g =O[atTop] fun t ↦ t ^ r := by
-  refine hO.congr' ?_ EventuallyEq.rfl
-  filter_upwards [eventually_ge_atTop a] with t ht
-  exact (Set.indicator_of_mem (Set.mem_Ici.mpr ht) g).symm
-
-/-- A kernel cut off below a positive threshold vanishes near zero, so has any power bound. -/
-theorem isBigO_indicator_Ici_nhdsGT_zero {F : Type*} [SeminormedAddGroup F]
-    (g : ℝ → F) {a : ℝ} (ha : 0 < a) (b : ℝ) :
-    (Set.Ici a).indicator g =O[𝓝[>] 0] fun t : ℝ ↦ t ^ b := by
-  refine IsBigO.of_bound 0 ?_
-  filter_upwards [Ioo_mem_nhdsGT ha] with t ht
-  simp only [Set.indicator_of_notMem (Set.notMem_Ici.mpr ht.2) g, norm_zero, zero_mul, le_refl]
 
 /-- **Holomorphy of an integral against `t ^ (-(s + 1))`.** If `g` is `O(t ^ r)` at infinity,
 then `s ↦ ∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))` is complex-differentiable on `r < Re s`.
@@ -70,8 +61,15 @@ theorem differentiableOn_integral_mul_cpow_of_isBigO {g : ℝ → ℂ} {r : ℝ}
           (by
             filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht
             exact fun hn ↦ (hn ht).elim))
-        (by rw [neg_neg]; exact isBigO_indicator_Ici_atTop hO) (by simpa using hs)
-        (isBigO_indicator_Ici_nhdsGT_zero g zero_lt_one _) (sub_one_lt (-s).re)).comp s
+        (by
+          rw [neg_neg]
+          refine hO.congr' ?_ EventuallyEq.rfl
+          filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
+          exact (Set.indicator_of_mem ht g).symm) (by simpa using hs)
+        (IsBigO.of_bound 0 <| by
+        filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+        simp only [Set.indicator_of_notMem (Set.notMem_Ici.mpr ht.2) g,
+          norm_zero, zero_mul, le_refl]) (sub_one_lt (-s).re)).comp s
         differentiableAt_id.neg
     simpa only [mellin_indicator_Ici _ zero_le_one, smul_eq_mul, neg_add', mul_comm] using
       hmellin.differentiableWithinAt
@@ -108,8 +106,15 @@ theorem integrableOn_mul_cpow_of_isBigO {g : ℝ → ℂ} {r : ℝ}
           (by
             filter_upwards [ae_restrict_mem measurableSet_Ici] with t ht
             exact fun hn ↦ (hn ht).elim))
-      (by rw [neg_neg]; exact isBigO_indicator_Ici_atTop hO) (by simpa using hs)
-      (isBigO_indicator_Ici_nhdsGT_zero g zero_lt_one _) (sub_one_lt (-s).re)
+      (by
+        rw [neg_neg]
+        refine hO.congr' ?_ EventuallyEq.rfl
+        filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
+        exact (Set.indicator_of_mem ht g).symm) (by simpa using hs)
+      (IsBigO.of_bound 0 <| by
+        filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+        simp only [Set.indicator_of_notMem (Set.notMem_Ici.mpr ht.2) g,
+          norm_zero, zero_mul, le_refl]) (sub_one_lt (-s).re)
   refine (hconv.mono_set (Set.Ioi_subset_Ioi zero_le_one)).congr_fun (fun t ht ↦ ?_)
     measurableSet_Ioi
   dsimp only
