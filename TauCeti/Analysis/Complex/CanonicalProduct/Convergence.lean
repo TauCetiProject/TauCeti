@@ -59,7 +59,9 @@ theorem hasProdUniformlyOn_weierstrassFactorOne {K : Set ℂ} (hK : IsCompact K)
       rw [norm_mul]
       exact (mul_le_mul_of_nonneg_left hzC (norm_nonneg _)).trans hsmall
     calc
-      _ ≤ 3 * ‖a i * z‖ ^ 2 := norm_weierstrassFactor_one_sub_one_le hzsmall
+      _ ≤ 3 * ‖a i * z‖ ^ 2 :=
+        (norm_weierstrassFactor_sub_one_le 1 hzsmall).trans
+          (by norm_num only [Nat.reduceAdd]; nlinarith [sq_nonneg ‖a i * z‖])
       _ ≤ 3 * (‖a i‖ * C) ^ 2 := by
         rw [norm_mul]
         gcongr
@@ -98,8 +100,10 @@ theorem summable_norm_weierstrassFactorOne_sub_one (z : ℂ) :
   apply (hz.mul_left 3).of_norm_bounded_eventually
   filter_upwards [hz.tendsto_cofinite_zero.eventually (ge_mem_nhds zero_lt_one)] with i hi
   rw [Real.norm_eq_abs, abs_norm]
-  apply norm_weierstrassFactor_one_sub_one_le
-  nlinarith [norm_nonneg (a i * z)]
+  refine (norm_weierstrassFactor_sub_one_le 1 ?_).trans ?_
+  · nlinarith [norm_nonneg (a i * z)]
+  · norm_num only [Nat.reduceAdd]
+    nlinarith [sq_nonneg ‖a i * z‖]
 
 /-- The genus-one product vanishes exactly at a zero of one of its factors. -/
 theorem tprod_weierstrassFactorOne_eq_zero_iff (z : ℂ) :
