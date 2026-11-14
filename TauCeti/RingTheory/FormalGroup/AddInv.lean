@@ -48,7 +48,8 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
 * `FormalGroup.subst_X_addInvX_eq_zero`: `F(X, i(X)) = 0`.
 * `FormalGroup.eq_addInvX_iff_subst_left_eq_zero`, `FormalGroup.eq_addInvX_iff_subst_right_eq_zero`:
   uniqueness of the inverse on either side.
-* `FormalGroup.coeff_one_addInvX`: `i(X) = -X + ⋯`.
+* `FormalGroup.coeff_one_addInvX`, `FormalGroup.order_addInvX`: `i(X) = -X + ⋯`, of order `1` over
+  a nontrivial ring.
 * `FormalGroup.subst_addInvX_addInvX`: `i(i(X)) = X`.
 * `FormalGroup.coeff_succ_addInvX`: the recurrence in terms of preceding inverse coefficients.
 * `FormalGroup.eq_subst_addInvX_iff_subst_left_eq_zero`,
@@ -153,6 +154,14 @@ theorem constantCoeff_addInvX : PowerSeries.constantCoeff F.addInvX = 0 := by
 @[simp]
 theorem coeff_one_addInvX : PowerSeries.coeff 1 F.addInvX = -1 := by
   simp [addInvX, addInvApprox, F.zero_add PowerSeries.HasSubst.X']
+
+/-- Over a nontrivial ring, the formal inverse has order `1`. -/
+@[simp]
+theorem order_addInvX [Nontrivial R] : F.addInvX.order = 1 := by
+  rw [← Nat.cast_one, PowerSeries.order_eq_nat]
+  refine ⟨by simp, fun i hi ↦ ?_⟩
+  rw [Nat.lt_one_iff.mp hi, PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  exact F.constantCoeff_addInvX
 
 /-- The formal inverse can be substituted into power series. -/
 theorem hasSubst_addInvX : PowerSeries.HasSubst F.addInvX :=
