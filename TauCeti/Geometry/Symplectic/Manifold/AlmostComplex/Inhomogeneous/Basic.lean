@@ -135,6 +135,26 @@ def tangentHom (A : DomainDependentHomSection I M IP P n) (q : P × M) :
 theorem tangentHom_apply (A : DomainDependentHomSection I M IP P n) (q : P × M)
     (v : TangentSpace IP q.1) : A.tangentHom q v = A q v := (rfl)
 
+@[simp]
+theorem tangentHom_zero (q : P × M) :
+    (0 : DomainDependentHomSection I M IP P n).tangentHom q = 0 := (rfl)
+
+@[simp]
+theorem tangentHom_add (A B : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (A + B).tangentHom q = A.tangentHom q + B.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_smul (c : ℝ) (A : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (c • A).tangentHom q = c • A.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_neg (A : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (-A).tangentHom q = -A.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_sub (A B : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (A - B).tangentHom q = A.tangentHom q - B.tangentHom q := (rfl)
+
 /-- Reading the original tangent fibres preserves native Hom-section regularity. -/
 theorem contMDiff_tangentHom (A : DomainDependentHomSection I M IP P n) :
     ContMDiff (IP.prod I) ((IP.prod I).prod 𝓘(ℝ, EP →L[ℝ] E)) n
@@ -163,6 +183,10 @@ def ofLE (A : DomainDependentHomSection I M IP P n) {m : ℕ∞} (hmn : m ≤ n)
 @[simp]
 theorem ofLE_apply (A : DomainDependentHomSection I M IP P n) {m : ℕ∞} (hmn : m ≤ n)
     (q : P × M) : (A.ofLE hmn) q = A q := (rfl)
+
+@[simp]
+theorem tangentHom_ofLE (A : DomainDependentHomSection I M IP P n) {m : ℕ∞} (hmn : m ≤ n)
+    (q : P × M) : (A.ofLE hmn).tangentHom q = A.tangentHom q := (rfl)
 
 section Model
 
@@ -266,6 +290,23 @@ def ofLE (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
 @[simp]
 theorem ofLE_val_apply (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) (q : P × M) :
     (ν.ofLE hmn).val q = ν.val q := (rfl)
+
+@[simp]
+theorem ofLE_val_tangentHom (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) (q : P × M) :
+    (ν.ofLE hmn).val.tangentHom q = ν.val.tangentHom q := (rfl)
+
+/-- Regard a forcing term for `(j, J)` as one for equal structures `(j', J')`, keeping its
+underlying section. For instance, after a regularity downgrade of a term whose domain structure
+is a smooth structure `j₀` viewed as `C^n`, this gives a term for `j₀` viewed as `C^m`. -/
+def ofEq (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    InhomogeneousTerm j' J' :=
+  ⟨ν.val, by subst hj hJ; exact ν.2⟩
+
+@[simp]
+theorem ofEq_val (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (ν.ofEq hj hJ).val = ν.val := (rfl)
 
 /-- Compose a forcing term with jointly regular complex-linear source and target bundle maps.
 The domain and target structures may both change. -/
