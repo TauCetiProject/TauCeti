@@ -338,7 +338,7 @@ theorem sum_sign_Ioc (h : IsSignedRemainderSeq (p :: cs))
       ∑ r ∈ p.roots.toFinset with a < r ∧ r ≤ b, (sign (f.eval r) : ℤ) := by
   rcases hab.lt_or_eq with hab | rfl
   · have hIoc (r : R) : a < r ∧ r ≤ b ↔ (a < r ∧ r < b) ∨ r = b := by
-      rw [← mem_Ioc, ← Ioo_insert_right hab, mem_insert_iff, mem_Ioo, or_comm]
+      rw [← mem_Ioc, ← insert_right_Ioo hab, mem_insert_iff, mem_Ioo, or_comm]
     rw [Finset.filter_congr fun r _ => hIoc r,
       Finset.sum_filter_or_eq_of_not _ _ _ fun h => h.2.false,
       sum_sign_Ioo h hseed hab]
@@ -356,7 +356,7 @@ theorem sum_sign_Ico (h : IsSignedRemainderSeq (p :: cs))
       ∑ r ∈ p.roots.toFinset with a ≤ r ∧ r < b, (sign (f.eval r) : ℤ) := by
   rcases hab.lt_or_eq with hab | rfl
   · have hIco (r : R) : a ≤ r ∧ r < b ↔ (a < r ∧ r < b) ∨ r = a := by
-      rw [← mem_Ico, ← Ioo_insert_left hab, mem_insert_iff, mem_Ioo, or_comm]
+      rw [← mem_Ico, ← insert_left_Ioo hab, mem_insert_iff, mem_Ioo, or_comm]
     rw [Finset.filter_congr fun r _ => hIco r,
       Finset.sum_filter_or_eq_of_not _ _ _ fun h => h.1.false,
       sum_sign_Ioo h hseed hab]
@@ -374,7 +374,7 @@ theorem sum_sign_Icc (h : IsSignedRemainderSeq (p :: cs))
         (if p.eval b = 0 then (sign (f.eval b) : ℤ) else 0) =
       ∑ r ∈ p.roots.toFinset with a ≤ r ∧ r ≤ b, (sign (f.eval r) : ℤ) := by
   have hIcc (r : R) : a ≤ r ∧ r ≤ b ↔ (a < r ∧ r ≤ b) ∨ r = a := by
-    rw [← mem_Icc, ← Ioc_insert_left hab, mem_insert_iff, mem_Ioc, or_comm]
+    rw [← mem_Icc, ← insert_left_Ioc hab, mem_insert_iff, mem_Ioc, or_comm]
   rw [Finset.filter_congr fun r _ => hIcc r,
     Finset.sum_filter_or_eq_of_not _ _ _ fun h => h.1.false, ← sum_sign_Ioc h hseed hab]
   simp [mem_roots (h.nonzero p (by simp))]
