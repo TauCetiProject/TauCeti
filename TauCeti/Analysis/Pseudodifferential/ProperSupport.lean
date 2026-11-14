@@ -23,60 +23,40 @@ import TauCeti.Analysis.Calculus.ParametricIntegral
 # Properly supported binary kernels
 
 A binary kernel `K : X → Y → M` has *proper output support* (`TauCeti.HasProperOutputSupport`) if
-the projection `(x, y) ↦ x` from the closed support `tsupport (Function.uncurry K)` in `X × Y` to
-the output space `X` is a proper map, *proper input support* (`TauCeti.HasProperInputSupport`) if
-the projection `(x, y) ↦ y` to the input space `Y` is proper, and *proper support*
-(`TauCeti.HasProperSupport`) if both projections are proper.
+`(x, y) ↦ x` on `tsupport (Function.uncurry K)` is proper, *proper input support*
+(`TauCeti.HasProperInputSupport`) if `(x, y) ↦ y` is proper, and *proper support*
+(`TauCeti.HasProperSupport`) if both projections are proper. Under weak local compactness and
+Hausdorffness of the target fiber, these mean that compact sets in one variable force compact slices
+in the other (`TauCeti.hasProperOutputSupport_iff`, `TauCeti.hasProperInputSupport_iff`).
 
-When `X` is weakly locally compact and `Y` is Hausdorff, proper output support means that for every
-compact set `C ⊆ X` of output positions there is a compact set `L ⊆ Y` of input positions outside
-which `K x y` vanishes for all `x ∈ C` (`TauCeti.hasProperOutputSupport_iff`); symmetrically, when
-`X` is Hausdorff and `Y` is weakly locally compact, proper input support means that inputs in a
-compact set produce outputs in a compact set (`TauCeti.hasProperInputSupport_iff`).
+For the integral operator `u ↦ (x ↦ ∫ y, K x y (u y))`:
+* **Proper input support** preserves compact support
+  (`TauCeti.HasProperInputSupport.hasCompactSupport_integral`) without smoothness or separation.
+* **Proper output support** of a `C^n` kernel sends every continuous `u` to a `C^n` function
+  (`TauCeti.HasProperOutputSupport.contDiff_integral`).
+* **Transposition** (`TauCeti.HasProperOutputSupport.integral_apply_integral_eq`,
+  `TauCeti.HasProperInputSupport.integral_apply_integral_eq`) swaps `T_K` with the transposed
+  operator `(T_K^t v)(y) = ∫ x, (v x).comp (K x y)`.
 
-The two halves play dual roles for the integral operator `u ↦ (x ↦ ∫ y, K x y (u y))`:
-
-* **Proper input support** implies that the operator preserves compact support
-  (`TauCeti.HasProperInputSupport.hasCompactSupport_integral`), without any smoothness or
-  separation assumption on `K`, `u`, `X`, or `Y`.
-* **Proper output support** of a `C^n` kernel between real normed spaces implies that the operator
-  sends every continuous input `u` — with no support assumption — to a `C^n` function
-  (`TauCeti.HasProperOutputSupport.contDiff_integral`), because near each output point the
-  integration reduces to a fixed compact set in `Y`.
-* **Transposition** (`TauCeti.HasProperOutputSupport.integral_apply_integral_eq` and
-  `TauCeti.HasProperInputSupport.integral_apply_integral_eq`): pairing `(T_K u)(x)` against a test
-  field `v(x)` swaps with the transposed operator `(T_K^t v)(y) = ∫ x, (v x).comp (K x y)`, which
-  itself preserves compact support when `K` has proper output support. This is the mechanism by
-  which properly supported operators extend to distributions by transposition and can be composed
-  without compact spatial support.
-
-In a topological additive group, any compactly supported profile `φ` gives a properly supported
-difference kernel `(x, y) ↦ φ (x - y)` (`TauCeti.hasProperSupport_sub_comp`); in particular every
-finite-dimensional real normed space admits a smooth `[0, 1]`-valued properly supported cutoff
-equal to `1` on a neighborhood of the diagonal
-(`TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`). By contrast, a nonzero
-constant kernel `(x, y) ↦ c` is smooth, sends an integrable input `u` to the constant `(∫ u) c`,
-fails to preserve compact support, and is not properly supported; the Gaussian kernel
-`(x, y) ↦ exp (-‖x - y‖²)` decays rapidly off the diagonal, yet its support is all of `E × E`, so
-it is not properly supported either (`TauCeti.not_hasProperSupport_exp_neg_norm_sub_sq`).
+In a topological additive group, `(x, y) ↦ φ (x - y)` is properly supported when `φ` has compact
+support (`TauCeti.hasProperSupport_sub_comp`), giving smooth diagonal cutoffs on finite-dimensional
+spaces (`TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`), whereas nonzero
+constant and Gaussian kernels are not properly supported (`TauCeti.not_hasProperSupport_const`,
+`TauCeti.not_hasProperSupport_exp_neg_norm_sub_sq`).
 
 ## Main declarations
 
-* `TauCeti.HasProperOutputSupport`, `TauCeti.HasProperInputSupport`, `TauCeti.HasProperSupport`:
-  properness of the output, input, and both projections from `tsupport (Function.uncurry K)`.
-* `TauCeti.hasProperOutputSupport_iff`, `TauCeti.hasProperInputSupport_iff`: characterizations by
-  compact slices under weak local compactness and Hausdorffness of the target fiber.
+* `TauCeti.HasProperOutputSupport`, `TauCeti.HasProperInputSupport`, `TauCeti.HasProperSupport`,
+  `TauCeti.hasProperOutputSupport_iff`, `TauCeti.hasProperInputSupport_iff`.
 * `TauCeti.hasProperSupport_sub_comp`,
-  `TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`: difference kernels from
-  compactly supported profiles and smooth diagonal cutoffs.
+  `TauCeti.exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal`.
 * `TauCeti.HasProperInputSupport.hasCompactSupport_integral`,
-  `TauCeti.HasProperOutputSupport.contDiff_integral`: compact-support preservation and smoothness of
-  integral operators.
-* `TauCeti.HasProperOutputSupport.integral_apply_integral_eq`,
-  `TauCeti.HasProperInputSupport.integral_apply_integral_eq`: transposition identities.
+  `TauCeti.HasProperOutputSupport.contDiff_integral`,
+  `TauCeti.HasProperOutputSupport.integral_apply_integral_eq`,
+  `TauCeti.HasProperInputSupport.integral_apply_integral_eq`.
 * `TauCeti.not_hasProperSupport_const`,
   `TauCeti.exists_hasCompactSupport_not_hasCompactSupport_integral_const`,
-  `TauCeti.not_hasProperSupport_exp_neg_norm_sub_sq`: constant and Gaussian non-examples.
+  `TauCeti.not_hasProperSupport_exp_neg_norm_sub_sq`.
 
 ## References
 
@@ -149,16 +129,14 @@ private theorem tsupport_uncurry_flip (K : X → Y → M) :
 
 /-- Flipping the two arguments of a kernel exchanges output and input proper support. -/
 theorem HasProperOutputSupport.flip {K : X → Y → M} (hK : HasProperOutputSupport K) :
-    HasProperInputSupport (_root_.flip K) := by
-  let e : tsupport (uncurry (_root_.flip K)) ≃ₜ tsupport (uncurry K) :=
-    (Homeomorph.prodComm Y X).subtype fun p ↦ Set.ext_iff.mp (tsupport_uncurry_flip K) p
-  exact hK.comp e.isProperMap
+    HasProperInputSupport (_root_.flip K) :=
+  hK.comp ((Homeomorph.prodComm Y X).subtype
+    fun p ↦ Set.ext_iff.mp (tsupport_uncurry_flip K) p).isProperMap
 
 theorem HasProperInputSupport.flip {K : X → Y → M} (hK : HasProperInputSupport K) :
-    HasProperOutputSupport (_root_.flip K) := by
-  let e : tsupport (uncurry (_root_.flip K)) ≃ₜ tsupport (uncurry K) :=
-    (Homeomorph.prodComm Y X).subtype fun p ↦ Set.ext_iff.mp (tsupport_uncurry_flip K) p
-  exact hK.comp e.isProperMap
+    HasProperOutputSupport (_root_.flip K) :=
+  hK.comp ((Homeomorph.prodComm Y X).subtype
+    fun p ↦ Set.ext_iff.mp (tsupport_uncurry_flip K) p).isProperMap
 
 @[simp]
 theorem hasProperOutputSupport_flip_iff {K : X → Y → M} :
@@ -180,9 +158,7 @@ theorem HasProperInputSupport.of_tsupport_subset {K : X → Y → M} {K' : X →
     (hK : HasProperInputSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
     HasProperInputSupport K' := by
   rw [← hasProperOutputSupport_flip_iff] at hK ⊢
-  refine hK.of_tsupport_subset ?_
-  rw [tsupport_uncurry_flip, tsupport_uncurry_flip]
-  exact preimage_mono hsub
+  exact hK.of_tsupport_subset (by simpa only [tsupport_uncurry_flip] using preimage_mono hsub)
 
 theorem HasProperSupport.of_tsupport_subset {K : X → Y → M} {K' : X → Y → N}
     (hK : HasProperSupport K) (hsub : tsupport (uncurry K') ⊆ tsupport (uncurry K)) :
@@ -194,9 +170,7 @@ theorem hasProperOutputSupport_zero : HasProperOutputSupport (0 : X → Y → M)
   rw [HasProperOutputSupport, isProperMap_iff_ultrafilter]
   refine ⟨continuous_fst.comp continuous_subtype_val, fun 𝒰 _ _ ↦ ?_⟩
   obtain ⟨p, -⟩ := 𝒰.toFilter.nonempty_of_mem univ_mem
-  have h0 : tsupport (uncurry (0 : X → Y → M)) = ∅ := by
-    have hz : uncurry (0 : X → Y → M) = 0 := rfl
-    rw [hz, tsupport_zero]
+  have h0 : tsupport (uncurry (0 : X → Y → M)) = ∅ := tsupport_zero
   exact False.elim (notMem_empty p.1 (h0 ▸ p.prop))
 
 @[simp]
@@ -227,8 +201,8 @@ theorem HasProperOutputSupport.exists_isCompact_isClosed_forall_eq_zero {K : X �
     refine ⟨V, ?_, hVo, hy₀V rfl⟩
     rintro y hyV ⟨⟨⟨x, y'⟩, hmem⟩, hxC, rfl : y' = y⟩
     exact hUV ⟨hCU hxC, hyV⟩ hmem
-  refine ⟨L, hL, hLc, fun x hx y hy ↦ ?_⟩
-  exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦ hy ⟨⟨(x, y), hmem⟩, hx, rfl⟩
+  exact ⟨L, hL, hLc, fun x hx y hy ↦
+    image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦ hy ⟨⟨(x, y), hmem⟩, hx, rfl⟩⟩
 
 /-- If `K` has proper output support, then for every compact set `C ⊆ X` there is a compact set
 `L ⊆ Y` outside which `K x y = 0` for all `x ∈ C`. No separation axiom is needed. -/
@@ -260,10 +234,8 @@ theorem HasProperInputSupport.exists_isCompact_forall_eq_zero_of_hasCompactSuppo
     {K : X → Y → M} (hK : HasProperInputSupport K) {u : Y → N} (hu : HasCompactSupport u) :
     ∃ C : Set X, IsCompact C ∧ ∀ x ∉ C, ∀ y, K x y = 0 ∨ u y = 0 := by
   obtain ⟨C, hC, hCK⟩ := hK.exists_isCompact_forall_eq_zero hu
-  refine ⟨C, hC, fun x hx y ↦ ?_⟩
-  by_cases hy : y ∈ tsupport u
-  · exact Or.inl (hCK x hx y hy)
-  · exact Or.inr (image_eq_zero_of_notMem_tsupport hy)
+  exact ⟨C, hC, fun x hx y ↦ by_cases (fun hy : y ∈ tsupport u ↦ Or.inl (hCK x hx y hy))
+    fun hy ↦ Or.inr (image_eq_zero_of_notMem_tsupport hy)⟩
 
 /-- Characterization of proper output support when `X` is weakly locally compact and `Y` is
 Hausdorff: for every compact `C ⊆ X`, `K x y` vanishes for `x ∈ C` and `y` outside some compact
@@ -279,15 +251,14 @@ theorem hasProperOutputSupport_iff [WeaklyLocallyCompactSpace X] [T2Space Y] {K 
   have hdisj : tsupport (uncurry K) ⊆ (interior C ×ˢ Lᶜ)ᶜ :=
     closure_minimal (fun ⟨x', y'⟩ hxy ⟨hx', hy'⟩ ↦ hxy (hKL x' (interior_subset hx') y' hy'))
       (isOpen_interior.prod hL.isClosed.isOpen_compl).isClosed_compl
-  have hL_mem : L ∈ 𝒰.map (fun p : tsupport (uncurry K) ↦ p.1.2) := by
-    refine mem_map.2 ( Filter.mem_of_superset (hx (interior_mem_nhds.2 hxC)) fun p hp ↦ ?_ )
-    exact by_contra fun hyL ↦ hdisj p.prop ⟨hp, hyL⟩
+  have hL_mem : L ∈ 𝒰.map (fun p : tsupport (uncurry K) ↦ p.1.2) :=
+    mem_map.2 (Filter.mem_of_superset (hx (interior_mem_nhds.2 hxC)) fun p hp ↦
+      by_contra fun hyL ↦ hdisj p.prop ⟨hp, hyL⟩)
   obtain ⟨y, -, hy⟩ := hL.ultrafilter_le_nhds _ (le_principal_iff.2 hL_mem)
   have hxy : Tendsto (Subtype.val : tsupport (uncurry K) → X × Y) 𝒰 (𝓝 (x, y)) :=
     hx.prodMk_nhds hy
-  have hmem : (x, y) ∈ tsupport (uncurry K) :=
-    (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)
-  exact ⟨⟨(x, y), hmem⟩, rfl, tendsto_subtype_rng.2 hxy⟩
+  exact ⟨⟨(x, y), (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)⟩, rfl,
+    tendsto_subtype_rng.2 hxy⟩
 
 /-- Characterization of proper input support when `X` is Hausdorff and `Y` is weakly locally
 compact: for every compact `L ⊆ Y`, `K x y` vanishes for `y ∈ L` and `x` outside some compact
@@ -299,32 +270,27 @@ theorem hasProperInputSupport_iff [T2Space X] [WeaklyLocallyCompactSpace Y] {K :
   exact forall₂_congr fun _ _ ↦ exists_congr fun _ ↦ and_congr_right fun _ ↦
     ⟨fun h x hx y hy ↦ h y hy x hx, fun h y hy x hx ↦ h x hx y hy⟩
 
-/-- A kernel whose closed support is the whole product `X × Y` cannot have proper output support
-when `X` is nonempty and `Y` is noncompact. -/
+/-- A kernel with `tsupport = univ` lacks proper output support if `X` is nonempty and `Y` is
+noncompact. -/
 theorem not_hasProperOutputSupport_of_tsupport_eq_univ [Nonempty X] [NoncompactSpace Y]
-    {K : X → Y → M} (h : tsupport (uncurry K) = univ) :
-    ¬HasProperOutputSupport K := by
+    {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperOutputSupport K := by
   intro hK
   obtain ⟨x₀⟩ := ‹Nonempty X›
   have hcomp : IsCompact ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) :=
     (hK.isCompact_preimage isCompact_singleton).image (continuous_snd.comp continuous_subtype_val)
-  have heq : ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) = univ := by
-    ext y
-    exact ⟨fun _ ↦ mem_univ y, fun _ ↦ ⟨⟨(x₀, y), h.symm ▸ mem_univ _⟩, rfl, rfl⟩⟩
+  have heq : ((fun p : tsupport (uncurry K) ↦ p.1.2) '' ((fun p ↦ p.1.1) ⁻¹' {x₀})) = univ :=
+    eq_univ_iff_forall.2 fun y ↦ ⟨⟨(x₀, y), h.symm ▸ mem_univ _⟩, rfl, rfl⟩
   exact NoncompactSpace.noncompact_univ (heq ▸ hcomp)
 
-/-- A kernel whose closed support is the whole product `X × Y` cannot have proper input support
-when `X` is noncompact and `Y` is nonempty. -/
+/-- A kernel with `tsupport = univ` lacks proper input support if `X` is noncompact and `Y` is
+nonempty. -/
 theorem not_hasProperInputSupport_of_tsupport_eq_univ [NoncompactSpace X] [Nonempty Y]
-    {K : X → Y → M} (h : tsupport (uncurry K) = univ) :
-    ¬HasProperInputSupport K := by
+    {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperInputSupport K := by
   rw [← hasProperOutputSupport_flip_iff]
-  refine not_hasProperOutputSupport_of_tsupport_eq_univ ?_
-  simp [tsupport_uncurry_flip, h]
+  exact not_hasProperOutputSupport_of_tsupport_eq_univ (by simp [tsupport_uncurry_flip, h])
 
 theorem not_hasProperSupport_of_tsupport_eq_univ [Nonempty X] [NoncompactSpace Y]
-    {K : X → Y → M} (h : tsupport (uncurry K) = univ) :
-    ¬HasProperSupport K :=
+    {K : X → Y → M} (h : tsupport (uncurry K) = univ) : ¬HasProperSupport K :=
   fun hK ↦ not_hasProperOutputSupport_of_tsupport_eq_univ h hK.1
 
 private theorem tsupport_uncurry_const {c : M} (hc : c ≠ 0) :
@@ -332,13 +298,13 @@ private theorem tsupport_uncurry_const {c : M} (hc : c ≠ 0) :
   have h : (uncurry fun (_ : X) (_ : Y) ↦ c) = fun _ : X × Y ↦ c := rfl
   rw [h, tsupport, support_const hc, closure_univ]
 
-/-- A nonzero constant kernel does not have proper output support when `X` is nonempty and `Y` is
+/-- A nonzero constant kernel lacks proper output support when `X` is nonempty and `Y` is
 noncompact. -/
 theorem not_hasProperOutputSupport_const [Nonempty X] [NoncompactSpace Y] {c : M} (hc : c ≠ 0) :
     ¬HasProperOutputSupport fun (_ : X) (_ : Y) ↦ c :=
   not_hasProperOutputSupport_of_tsupport_eq_univ (tsupport_uncurry_const hc)
 
-/-- A nonzero constant kernel does not have proper input support when `X` is noncompact and `Y` is
+/-- A nonzero constant kernel lacks proper input support when `X` is noncompact and `Y` is
 nonempty. -/
 theorem not_hasProperInputSupport_const [NoncompactSpace X] [Nonempty Y] {c : M} (hc : c ≠ 0) :
     ¬HasProperInputSupport fun (_ : X) (_ : Y) ↦ c :=
@@ -358,10 +324,8 @@ section Algebra
 
 private theorem tsupport_uncurry_neg_subset {G : Type*} [NegZeroClass G] (K : X → Y → G) :
     tsupport (uncurry (-K)) ⊆ tsupport (uncurry K) :=
-  closure_mono fun ⟨x, y⟩ h ↦
-    mem_support.2 fun h0 ↦ mem_support.1 h (by
-      have hK0 : K x y = 0 := h0
-      simp [uncurry_apply_pair, hK0])
+  closure_mono fun ⟨x, y⟩ h ↦ mem_support.2 fun h0 ↦
+    mem_support.1 h (by simp [uncurry_apply_pair, show K x y = 0 from h0])
 
 theorem HasProperOutputSupport.neg {G : Type*} [NegZeroClass G] {K : X → Y → G}
     (hK : HasProperOutputSupport K) : HasProperOutputSupport (-K) :=
@@ -382,8 +346,7 @@ private theorem tendsto_of_mem_preimage_tsupport {M : Type*} [AddZeroClass M]
     ∃ p : tsupport (uncurry K), p.1.1 = x ∧ ↑𝒰 ≤ 𝓝 p := by
   rw [HasProperOutputSupport, isProperMap_iff_ultrafilter] at h₁
   let S₁ : Set (tsupport (uncurry K)) := Subtype.val ⁻¹' tsupport (uncurry K₁)
-  have hrange : range (Subtype.val : S₁ → tsupport (uncurry K)) ∈ 𝒰 := by
-    rwa [Subtype.range_coe]
+  have hrange : range (Subtype.val : S₁ → tsupport (uncurry K)) ∈ 𝒰 := by rwa [Subtype.range_coe]
   let i : S₁ → tsupport (uncurry K₁) := fun p ↦ ⟨p.1.1, p.2⟩
   have hi_tendsto : Tendsto (fun p : tsupport (uncurry K₁) ↦ p.1.1)
       ((𝒰.comap Subtype.val_injective hrange).map i) (𝓝 x) := by
@@ -397,9 +360,8 @@ private theorem tendsto_of_mem_preimage_tsupport {M : Type*} [AddZeroClass M]
     rwa [Ultrafilter.coe_map, Ultrafilter.coe_comap, tendsto_map'_iff] at h0
   have hval : Tendsto (Subtype.val : tsupport (uncurry K) → X × Y) 𝒰 (𝓝 q) :=
     (tendsto_comap'_iff hrange).1 h'
-  have hq' : q ∈ tsupport (uncurry K) :=
-    (isClosed_tsupport _).mem_of_tendsto hval (univ_mem' Subtype.coe_prop)
-  exact ⟨⟨q, hq'⟩, rfl, tendsto_subtype_rng.2 hval⟩
+  exact ⟨⟨q, (isClosed_tsupport _).mem_of_tendsto hval (univ_mem' Subtype.coe_prop)⟩, rfl,
+    tendsto_subtype_rng.2 hval⟩
 
 theorem HasProperOutputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
     (h₁ : HasProperOutputSupport K₁) (h₂ : HasProperOutputSupport K₂) :
@@ -412,9 +374,7 @@ theorem HasProperOutputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X �
       ((Subtype.val : tsupport (uncurry (K₁ + K₂)) → X × Y) ⁻¹' tsupport (uncurry K₂)) ∈ 𝒰 := by
     rw [← Ultrafilter.union_mem_iff, ← preimage_union]
     exact univ_mem' fun p ↦ hunion p.prop
-  rcases hor with hmem | hmem
-  · exact tendsto_of_mem_preimage_tsupport h₁ hx hmem
-  · exact tendsto_of_mem_preimage_tsupport h₂ hx hmem
+  exact hor.elim (tendsto_of_mem_preimage_tsupport h₁ hx) (tendsto_of_mem_preimage_tsupport h₂ hx)
 
 theorem HasProperInputSupport.add {M : Type*} [AddZeroClass M] {K₁ K₂ : X → Y → M}
     (h₁ : HasProperInputSupport K₁) (h₂ : HasProperInputSupport K₂) :
@@ -462,16 +422,12 @@ theorem HasProperOutputSupport.smul_left {R M : Type*} [Zero M] [SMulZeroClass R
 theorem HasProperInputSupport.smul_right {R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
     {χ : X → Y → R} (hχ : HasProperInputSupport χ) (K : X → Y → M) :
     HasProperInputSupport fun x y ↦ χ x y • K x y :=
-  hχ.of_tsupport_subset (closure_mono fun ⟨x, y⟩ h ↦
-    mem_support.2 fun h0 ↦ mem_support.1 h
-      (by simp only [uncurry_apply_pair] at h0 ⊢; rw [h0, zero_smul]))
+  hasProperOutputSupport_flip_iff.mp (hχ.flip.smul_right (_root_.flip K))
 
 theorem HasProperInputSupport.smul_left {R M : Type*} [Zero M] [SMulZeroClass R M]
     (χ : X → Y → R) {K : X → Y → M} (hK : HasProperInputSupport K) :
     HasProperInputSupport fun x y ↦ χ x y • K x y :=
-  hK.of_tsupport_subset (closure_mono fun ⟨x, y⟩ h ↦
-    mem_support.2 fun h0 ↦ mem_support.1 h
-      (by simp only [uncurry_apply_pair] at h0 ⊢; rw [h0, smul_zero]))
+  hasProperOutputSupport_flip_iff.mp (hK.flip.smul_left (_root_.flip χ))
 
 theorem HasProperSupport.smul_right {R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
     {χ : X → Y → R} (hχ : HasProperSupport χ) (K : X → Y → M) :
@@ -509,9 +465,8 @@ theorem hasProperOutputSupport_sub_comp {G M : Type*} [TopologicalSpace G] [AddG
     (hdiff.neg.add hx₀).congr fun p ↦ by rw [neg_sub, sub_add_cancel]
   have hxy : Tendsto (Subtype.val : tsupport (uncurry K) → G × G) 𝒰 (𝓝 (x₀, -z + x₀)) :=
     hx₀.prodMk_nhds hy
-  have hmem : (x₀, -z + x₀) ∈ tsupport (uncurry K) :=
-    (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)
-  exact ⟨⟨(x₀, -z + x₀), hmem⟩, rfl, tendsto_subtype_rng.2 hxy⟩
+  exact ⟨⟨(x₀, -z + x₀), (isClosed_tsupport _).mem_of_tendsto hxy (univ_mem' Subtype.coe_prop)⟩,
+    rfl, tendsto_subtype_rng.2 hxy⟩
 
 /-- In any topological additive group, `(x, y) ↦ φ (x - y)` has proper input support whenever `φ`
 has compact support. -/
@@ -536,31 +491,23 @@ and vanishing when `‖x - y‖ ≥ R`, whenever `0 < R` and `r < R`. -/
 theorem exists_contDiff_hasProperSupport_eventuallyEq_one_diagonal {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {r R : ℝ}
     (hR : 0 < R) (hrR : r < R) :
-    ∃ χ : E → E → ℝ,
-      ContDiff ℝ ∞ (uncurry χ) ∧
-      range (uncurry χ) ⊆ Icc 0 1 ∧
-      HasProperSupport χ ∧
-      (∀ x : E, uncurry χ =ᶠ[𝓝 (x, x)] 1) ∧
-      (∀ x y : E, ‖x - y‖ ≤ r → χ x y = 1) ∧
-      ∀ x y : E, R ≤ ‖x - y‖ → χ x y = 0 := by
+    ∃ χ : E → E → ℝ, ContDiff ℝ ∞ (uncurry χ) ∧ range (uncurry χ) ⊆ Icc 0 1 ∧
+      HasProperSupport χ ∧ (∀ x : E, uncurry χ =ᶠ[𝓝 (x, x)] 1) ∧
+      (∀ x y : E, ‖x - y‖ ≤ r → χ x y = 1) ∧ ∀ x y : E, R ≤ ‖x - y‖ → χ x y = 0 := by
   set r' := max r (R / 2)
   have hr' : 0 < r' := (half_pos hR).trans_le (le_max_right r (R / 2))
   let b : ContDiffBump (0 : E) := ⟨r', R, hr', max_lt hrR (half_lt_self hR)⟩
-  have hone : ∀ x y : E, ‖x - y‖ ≤ r → b (x - y) = 1 := fun x y hxy ↦ by
-    refine b.one_of_mem_closedBall ?_
-    simpa only [Metric.mem_closedBall, dist_zero_right] using hxy.trans (le_max_left r (R / 2))
-  refine ⟨fun x y ↦ b (x - y),
-    (b.contDiff (n := ⊤)).comp (contDiff_fst.sub contDiff_snd),
+  have hone : ∀ x y : E, ‖x - y‖ ≤ r → b (x - y) = 1 := fun x y hxy ↦
+    b.one_of_mem_closedBall
+      (by simpa only [Metric.mem_closedBall, dist_zero_right] using hxy.trans (le_max_left r _))
+  refine ⟨fun x y ↦ b (x - y), (b.contDiff (n := ⊤)).comp (contDiff_fst.sub contDiff_snd),
     range_subset_iff.2 fun p ↦ ⟨b.nonneg' _, b.le_one⟩,
-    hasProperSupport_sub_comp b.hasCompactSupport,
-    fun x ↦ ?_,
-    hone,
+    hasProperSupport_sub_comp b.hasCompactSupport, fun x ↦ ?_, hone,
     fun x y hxy ↦ b.zero_of_le_dist (by simpa [dist_eq_norm] using hxy)⟩
-  have hmem : Metric.closedBall (0 : E) r' ∈ 𝓝 (0 : E) := Metric.closedBall_mem_nhds 0 hr'
   have hsub : Tendsto (fun p : E × E ↦ p.1 - p.2) (𝓝 (x, x)) (𝓝 (x - x)) :=
     (continuous_fst.sub continuous_snd).tendsto (x, x)
   rw [sub_self] at hsub
-  filter_upwards [hsub hmem] with p hp
+  filter_upwards [hsub (Metric.closedBall_mem_nhds 0 hr')] with p hp
   exact b.one_of_mem_closedBall hp
 
 end Difference
@@ -580,9 +527,8 @@ private theorem hasCompactSupport_of_isCompact_isClosed {Z α : Type*} [Topologi
 `u ↦ (x ↦ ∫ y, K x y (u y) ∂μ)` maps compactly supported functions to compactly supported
 functions. No smoothness or separation axiom is needed. -/
 theorem HasProperInputSupport.hasCompactSupport_integral {X Y 𝕜 V W : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] [MeasurableSpace Y]
-    [Semiring 𝕜] [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V]
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [Module 𝕜 W]
+    [TopologicalSpace X] [TopologicalSpace Y] [MeasurableSpace Y] [Semiring 𝕜] [AddCommMonoid V]
+    [Module 𝕜 V] [TopologicalSpace V] [NormedAddCommGroup W] [NormedSpace ℝ W] [Module 𝕜 W]
     {K : X → Y → V →L[𝕜] W} (hK : HasProperInputSupport K) {u : Y → V}
     (hu : HasCompactSupport u) (μ : Measure Y := by volume_tac) :
     HasCompactSupport fun x ↦ ∫ y, K x y (u y) ∂μ := by
@@ -594,9 +540,8 @@ theorem HasProperInputSupport.hasCompactSupport_integral {X Y 𝕜 V W : Type*}
     · simp [image_eq_zero_of_notMem_tsupport hy]
   simp [hzero]
 
-private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*}
-    [TopologicalSpace X] [NormedAddCommGroup Y]
-    [TopologicalSpace M] [Zero M] [T1Space M]
+private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*} [TopologicalSpace X]
+    [NormedAddCommGroup Y] [TopologicalSpace M] [Zero M] [T1Space M]
     {K : X → Y → M} (hK : HasProperOutputSupport K) (hKc : Continuous (uncurry K))
     {x₁ : X} {y₁ : Y} (hne : K x₁ y₁ ≠ 0) (x₀ : X) :
     ∃ (U : Set X) (L : Set Y), IsOpen U ∧ x₀ ∈ U ∧ IsCompact L ∧
@@ -610,27 +555,24 @@ private theorem exists_open_isCompact_forall_eq_zero {X Y M : Type*}
     (hc₁.eq_zero_or_locallyCompactSpace_of_addGroup hcont₁).resolve_left
       fun h0 ↦ hne (congrFun h0 y₁)
   let S := tsupport (uncurry K)
-  have hF₀ : IsCompact ((fun p : S ↦ p.1.2) '' ((fun p : S ↦ p.1.1) ⁻¹' {x₀})) :=
-    (hK.isCompact_preimage isCompact_singleton).image (continuous_snd.comp continuous_subtype_val)
-  obtain ⟨L, hL, hFL⟩ := exists_compact_superset hF₀
+  obtain ⟨L, hL, hFL⟩ := exists_compact_superset
+    ((hK.isCompact_preimage (isCompact_singleton (x := x₀))).image
+      (continuous_snd.comp continuous_subtype_val))
   let Z : Set S := (fun p : S ↦ p.1.2) ⁻¹' (interior L)ᶜ
   have hZc : IsClosed Z :=
     isOpen_interior.isClosed_compl.preimage (continuous_snd.comp continuous_subtype_val)
-  refine ⟨((fun p : S ↦ p.1.1) '' Z)ᶜ, L, (hK.isClosedMap Z hZc).isOpen_compl, ?_, hL, ?_⟩
-  · rintro ⟨p, hpZ, hp1⟩
-    exact hpZ (hFL ⟨p, hp1, rfl⟩)
-  · intro x hxU y hyL
-    exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦
-      hxU ⟨⟨(x, y), hmem⟩, fun hy_int ↦ hyL (interior_subset hy_int), rfl⟩
+  refine ⟨((fun p : S ↦ p.1.1) '' Z)ᶜ, L, (hK.isClosedMap Z hZc).isOpen_compl,
+    fun ⟨p, hpZ, hp1⟩ ↦ hpZ (hFL ⟨p, hp1, rfl⟩), hL, fun x hxU y hyL ↦ ?_⟩
+  exact image_eq_zero_of_notMem_tsupport (f := uncurry K) fun hmem ↦
+    hxU ⟨⟨(x, y), hmem⟩, fun hy_int ↦ hyL (interior_subset hy_int), rfl⟩
 
 /-- **Proper output support gives smoothness on arbitrary continuous inputs.** If `K` is `C^n` on
 `X × Y` and has proper output support, where `μ` is finite on compact subsets of `Y`, then
 `x ↦ ∫ y, K x y (u y) ∂μ` is `C^n` for every continuous `u : Y → V` (with no support assumption on
 `u` and no finite-dimensionality assumption on `X` or `Y`). -/
 theorem HasProperOutputSupport.contDiff_integral {X Y 𝕜 V W : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
     [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace 𝕜 V] [IsScalarTower ℝ 𝕜 V]
     [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
     {n : ℕ∞} {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K)
@@ -663,27 +605,23 @@ theorem HasProperOutputSupport.contDiff_integral {X Y 𝕜 V W : Type*}
       setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by simp [hKL x hx y hy]]
   · push Not at hne
     have h0 : (fun x ↦ ∫ y, K x y (u y) ∂μ) = 0 := funext fun x ↦ by simp [hne x]
-    rw [h0]
-    exact contDiff_const
+    exact h0 ▸ contDiff_const
 
 /-- When `K` has proper output support and `v : X → W →L[𝕜] M` has compact support, the transposed
 operator `y ↦ ∫ x, (v x).comp (K x y) ∂μ` has compact support. -/
 theorem HasProperOutputSupport.hasCompactSupport_integral_comp {X Y 𝕜 V W M : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y]
-    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-    [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
-    {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K) {v : X → W →L[𝕜] M}
-    (hv : HasCompactSupport v) (μ : Measure X := by volume_tac) :
+    [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
+    [NormedSpace 𝕜 W] [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M]
+    [IsScalarTower ℝ 𝕜 M] {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K)
+    {v : X → W →L[𝕜] M} (hv : HasCompactSupport v) (μ : Measure X := by volume_tac) :
     HasCompactSupport fun y ↦ ∫ x, (v x).comp (K x y) ∂μ := by
   let K' : Y → X → (W →L[𝕜] M) →L[𝕜] (V →L[𝕜] M) :=
     fun y x ↦ (ContinuousLinearMap.compL 𝕜 V W M).flip (K x y)
   have hK' : HasProperInputSupport K' :=
     hK.flip.of_tsupport_subset <| closure_mono fun ⟨y, x⟩ hxy ↦
-      mem_support.2 fun h0 ↦ mem_support.1 hxy (by
-        have hK0 : K x y = 0 := h0
-        simp [K', uncurry_apply_pair, hK0])
+      mem_support.2 fun h0 ↦ mem_support.1 hxy
+        (by simp [K', uncurry_apply_pair, show K x y = 0 from h0])
   exact hK'.hasCompactSupport_integral hv μ
 
 private theorem integral_apply_integral_eq_restrict {X Y 𝕜 W M : Type*}
@@ -691,20 +629,15 @@ private theorem integral_apply_integral_eq_restrict {X Y 𝕜 W M : Type*}
     [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
     [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
     [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
-    [CompleteSpace W]
-    [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
-    [CompleteSpace M]
+    [CompleteSpace W] [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M]
+    [IsScalarTower ℝ 𝕜 M] [CompleteSpace M]
     {F : X → Y → W} {v : X → W →L[𝕜] M} (μ : Measure X) (ν : Measure Y)
     [IsFiniteMeasureOnCompacts ν] {C : Set X} {L : Set Y}
-    (hCc : IsClosed C) (hL : IsCompact L) (hLc : IsClosed L)
-    (hF_cont : ∀ x ∈ C, Continuous (F x))
-    (hx_out : ∀ x ∉ C, v x = 0 ∨ ∀ y, F x y = 0)
-    (hy_in : ∀ x ∈ C, ∀ y ∉ L, F x y = 0) :
+    (hCc : IsClosed C) (hL : IsCompact L) (hLc : IsClosed L) (hF_cont : ∀ x ∈ C, Continuous (F x))
+    (hx_out : ∀ x ∉ C, v x = 0 ∨ ∀ y, F x y = 0) (hy_in : ∀ x ∈ C, ∀ y ∉ L, F x y = 0) :
     (∫ x, v x (∫ y, F x y ∂ν) ∂μ) = ∫ x in C, ∫ y in L, v x (F x y) ∂ν ∂μ := by
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
-    rcases hx_out x hx with hv0 | hF0
-    · simp [hv0]
-    · simp [hF0]]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦
+    (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hF0 ↦ by simp [hF0]]
   refine integral_congr_ae ((ae_restrict_mem hCc.measurableSet).mono fun x hx ↦ ?_)
   dsimp only
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (hy_in x hx)]
@@ -715,17 +648,14 @@ private theorem integral_apply_integral_eq_restrict {X Y 𝕜 W M : Type*}
 private theorem integral_apply_integral_eq_of_isCompact_isClosed {X Y 𝕜 V W M : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [SecondCountableTopologyEither X Y]
-    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
-    [CompleteSpace W]
+    [SecondCountableTopologyEither X Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
     [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
-    {K : X → Y → V →L[𝕜] W} (hKc : Continuous (uncurry K))
-    {u : Y → V} (hu : Continuous u) {v : X → W →L[𝕜] M} (hv : Continuous v)
-    (μ : Measure X) (ν : Measure Y) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν]
-    {C : Set X} {L : Set Y} (hC : IsCompact C) (hCc : IsClosed C)
-    (hL : IsCompact L) (hLc : IsClosed L)
+    {K : X → Y → V →L[𝕜] W} (hKc : Continuous (uncurry K)) {u : Y → V} (hu : Continuous u)
+    {v : X → W →L[𝕜] M} (hv : Continuous v) (μ : Measure X) (ν : Measure Y)
+    [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] {C : Set X} {L : Set Y}
+    (hC : IsCompact C) (hCc : IsClosed C) (hL : IsCompact L) (hLc : IsClosed L)
     (hx_out : ∀ x ∉ C, v x = 0 ∨ ∀ y, K x y (u y) = 0)
     (hy_in : ∀ x ∈ C, ∀ y ∉ L, K x y (u y) = 0)
     (hy_out : ∀ y ∉ L, u y = 0 ∨ ∀ x, (v x).comp (K x y) = 0)
@@ -744,9 +674,7 @@ private theorem integral_apply_integral_eq_of_isCompact_isClosed {X Y 𝕜 V W M
       (hasCompactSupport_of_isCompact_isClosed (hC.prod hL) (hCc.prod hLc) fun ⟨x, y⟩ hxy ↦ by
         by_cases hx : x ∈ C
         · simp [hy_in x hx y fun hy ↦ hxy ⟨hx, hy⟩]
-        · rcases hx_out x hx with hv0 | hK0
-          · simp [hv0]
-          · simp [hK0])
+        · exact (hx_out x hx).elim (fun hv0 ↦ by simp [hv0]) fun hK0 ↦ by simp [hK0])
   have hLHS := integral_apply_integral_eq_restrict (F := fun x y ↦ K x y (u y)) (v := v)
     μ ν hCc hL hLc (fun x _ ↦ (hKc.comp (continuous_const.prodMk continuous_id)).clm_apply hu)
     hx_out hy_in
@@ -754,8 +682,7 @@ private theorem integral_apply_integral_eq_of_isCompact_isClosed {X Y 𝕜 V W M
     (v := fun y ↦ ContinuousLinearMap.apply 𝕜 M (u y)) ν μ hLc hC hCc
     (fun y _ ↦ hcont_comp.comp (continuous_id.prodMk continuous_const))
     (fun y hy ↦ (hy_out y hy).imp (fun hu0 ↦ by ext; simp [hu0]) id) hx_in
-  rw [hLHS]
-  exact (integral_integral_swap hint_prod).trans hRHS.symm
+  exact hLHS.trans ((integral_integral_swap hint_prod).trans hRHS.symm)
 
 /-- **Transposition identity under proper output support.** If `K` is continuous with proper output
 support and `v : X → W →L[𝕜] M` is continuous with compact support, then for *every* continuous
@@ -764,11 +691,9 @@ pairing `u(y)` with the transposed operator `(T_K^t v)(y) = ∫ x, (v x).comp (K
 theorem HasProperOutputSupport.integral_apply_integral_eq {X Y 𝕜 V W M : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [SecondCountableTopologyEither X Y]
-    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
-    [CompleteSpace W]
+    [SecondCountableTopologyEither X Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
     [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
     {K : X → Y → V →L[𝕜] W} (hK : HasProperOutputSupport K) (hKc : Continuous (uncurry K))
     {u : Y → V} (hu : Continuous u) {v : X → W →L[𝕜] M} (hv : Continuous v)
@@ -791,11 +716,9 @@ identity holds for *every* continuous `v : X → W →L[𝕜] M`. -/
 theorem HasProperInputSupport.integral_apply_integral_eq {X Y 𝕜 V W M : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
     [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
-    [SecondCountableTopologyEither X Y]
-    [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W]
-    [CompleteSpace W]
+    [SecondCountableTopologyEither X Y] [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [NormedSpace 𝕜 W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
     [NormedAddCommGroup M] [NormedSpace ℝ M] [NormedSpace 𝕜 M] [IsScalarTower ℝ 𝕜 M]
     {K : X → Y → V →L[𝕜] W} (hK : HasProperInputSupport K) (hKc : Continuous (uncurry K))
     {u : Y → V} (hu : Continuous u) (huc : HasCompactSupport u)
@@ -827,8 +750,7 @@ theorem exists_hasCompactSupport_not_hasCompactSupport_integral_const {E : Type*
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
     [MeasurableSpace E] [OpensMeasurableSpace E] (μ : Measure E := by volume_tac)
     [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure] :
-    ∃ u : E → ℝ, ContDiff ℝ ∞ u ∧ HasCompactSupport u ∧
-      (∫ y, u y ∂μ) ≠ 0 ∧
+    ∃ u : E → ℝ, ContDiff ℝ ∞ u ∧ HasCompactSupport u ∧ (∫ y, u y ∂μ) ≠ 0 ∧
       ¬HasCompactSupport fun _ : E ↦ ∫ y, (ContinuousLinearMap.id ℝ ℝ) (u y) ∂μ := by
   let b : ContDiffBump (0 : E) := ⟨1, 2, zero_lt_one, one_lt_two⟩
   have hint : Integrable b μ := b.continuous.integrable_of_hasCompactSupport b.hasCompactSupport
