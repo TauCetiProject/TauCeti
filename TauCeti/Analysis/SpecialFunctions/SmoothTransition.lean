@@ -23,9 +23,10 @@ Mathlib's `Analysis/SpecialFunctions/SmoothTransition.lean` proves that
 `Real.smoothTransition` is smooth and equals one on `[1, ∞)`, but states no derivative values.
 This file records that its derivative vanishes on the open rays `(-∞, 0)` and `(1, ∞)`, where the
 function is locally constant, so that the derivative is compactly supported. Being continuous, it
-is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`. It is
-also integrable with integral one, so its rescalings `t ↦ c ψ'(c (a - t))` are approximate
-identities; together with the chain rule and local Lipschitz continuity of `ψ (c (u - t))`, this
+is then bounded, which bounds the gradients of cutoffs built from `Real.smoothTransition`, and so
+is the second derivative, which makes the derivative Lipschitz. It is also integrable with
+integral one, so its rescalings `t ↦ c ψ'(c (a - t))` are approximate identities; together with
+the chain rule and local Lipschitz continuity of `ψ (c (u - t))`, this
 is what is needed to smooth the indicator of a superlevel set `{u > t}`. The one-sided rescalings
 `y ↦ c ψ'(c (y - a))`, supported in `[a, a + c⁻¹]`, converge at every Lebesgue point: if the mean
 oscillation of `u` about `v` on `closedBall a r` tends to zero, then
@@ -169,6 +170,14 @@ theorem exists_forall_norm_deriv_deriv_le :
     ∃ L : ℝ, ∀ τ, ‖deriv (deriv smoothTransition) τ‖ ≤ L :=
   (Real.smoothTransition.contDiff.iterate_deriv 2).continuous.bounded_above_of_compact_support
     hasCompactSupport_deriv.deriv
+
+/-- The derivative of the smooth transition function is Lipschitz. -/
+theorem exists_lipschitzWith_deriv : ∃ L : ℝ≥0, LipschitzWith L (deriv smoothTransition) := by
+  obtain ⟨L, hL⟩ := exists_forall_norm_deriv_deriv_le
+  refine ⟨L.toNNReal, lipschitzWith_of_nnNorm_deriv_le
+    (Real.smoothTransition.contDiff (n := 2)).differentiable_deriv_two fun x ↦ ?_⟩
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
+  exact (hL x).trans (Real.le_coe_toNNReal L)
 
 /-- A bound for the error term of a smooth transition rescaled by `a ≥ 0`: if `M` bounds the
 derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
