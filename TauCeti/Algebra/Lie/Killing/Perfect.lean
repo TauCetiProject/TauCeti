@@ -55,7 +55,7 @@ section Killing
 
 variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [LieAlgebra.IsKilling K L]
 
-/-- **A Lie algebra with nondegenerate Killing form is perfect**: `⁅L, L⁆ = L`.
+/-- **A Lie algebra over a field with nondegenerate Killing form is perfect**: `⁅L, L⁆ = L`.
 
 No finite-dimensionality hypothesis is needed, since a Killing Lie algebra is finite-dimensional
 (`TauCeti.finite_of_isKilling`). -/
