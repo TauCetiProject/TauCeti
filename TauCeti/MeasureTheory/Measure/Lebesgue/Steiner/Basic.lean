@@ -227,7 +227,7 @@ theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}
     ext t
     simp [AffineMap.lineMap_apply_module', add_comm]
   have hlength := (Real.mul_volume_add_mul_volume_le (hne x hx) (hne y hy)
-    ((hconv y).nullMeasurableSet volume) ha.le hb.le).trans (measure_mono hsub)
+    ((hconv y).nullMeasurableSet volume) (c := a) (d := b)).trans (measure_mono hsub)
   calc ENNReal.ofReal |⟪e, a • x + b • y⟫|
       ≤ ENNReal.ofReal a * ENNReal.ofReal |⟪e, x⟫| +
           ENNReal.ofReal b * ENNReal.ofReal |⟪e, y⟫| := by
