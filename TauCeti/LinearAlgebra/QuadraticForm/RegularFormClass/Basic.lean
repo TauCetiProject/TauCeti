@@ -65,6 +65,7 @@ rank is additive.
 * `TauCeti.formClass_prod`: the class of an orthogonal product is the sum of the classes.
 * `TauCeti.RegularFormClass.mk_succ_eq_mk_rankOne_add`: the class of a presentation of positive
   rank is the rank-one class of its first weight plus the class of the remaining weights.
+* `TauCeti.RegularFormClass.mk_rankOne_inv`: `⟨a⁻¹⟩ ≅ ⟨a⟩`.
 * `TauCeti.RegularFormClass.induction_on_rankOne`: every class is a sum of rank-one classes.
 * `TauCeti.RegularFormClass.exists_eq_add_mk_rankOne` and
   `TauCeti.RegularFormClass.exists_eq_mk_binary_add`: a class of positive rank splits off a line,
@@ -229,6 +230,18 @@ def RegularFormClass.rank : RegularFormClass K → ℕ :=
 @[simp]
 theorem RegularFormClass.rank_mk (p : RegularFormPresentation K) :
     RegularFormClass.rank (Quotient.mk (regularFormSetoid K) p) = p.1 := (rfl)
+
+/-- **A rank-one class is the class of its inverse weight**: `⟨a⁻¹⟩ ≅ ⟨a⟩`, since `a⁻¹` and `a`
+differ by the square `a⁻¹ * a⁻¹`. The isometry is multiplication by `a⁻¹`, so this holds in every
+characteristic. -/
+@[simp]
+theorem RegularFormClass.mk_rankOne_inv (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) (⟨1, fun _ => a⁻¹⟩ : RegularFormPresentation K) =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  rw [RegularFormClass.mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
+    presentedForm_eq_weightedSumSquares_coe]
+  exact ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares (fun _ => a⁻¹)
+    fun _ => by simp [pow_two]⟩
 
 /-! ### The orthogonal sum -/
 
