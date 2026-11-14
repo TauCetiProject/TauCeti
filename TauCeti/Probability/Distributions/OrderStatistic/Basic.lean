@@ -21,7 +21,8 @@ import TauCeti.Probability.Distributions.Binomial.Tail
 
 The generic finite-tuple order-statistic API is in `TauCeti.Data.Fin.Tuple.OrderStatistic`.
 This file uses its counting characterization and measurability to reduce order-statistic laws to
-binomial tails. If the entries are independent with common law `μ`, the number of entries at most
+binomial tails, and specializes the beta and quantile-pushforward laws at the extreme positions `0`
+and `Fin.last n`. If the entries are independent with common law `μ`, the number of entries at most
 `t` is binomial with success probability `F(t) = cdf μ t`, so the `k`-th order statistic has
 cumulative distribution function
 
@@ -45,11 +46,15 @@ independent `μ`-distributed entries, with random-variable forms for an independ
   `TauCeti.Probability.measureReal_setOf_orderStatistic_le_iid`;
 * `TauCeti.Probability.map_orderStatistic_pi_uniformMeasure` — the `k`-th order statistic of `n`
   independent unit uniforms has the law `betaMeasure (k + 1) (n - k)`, with the random-variable
-  form `TauCeti.Probability.hasLaw_orderStatistic_iid_uniformMeasure`;
+  form `TauCeti.Probability.hasLaw_orderStatistic_iid_uniformMeasure` and endpoint specializations
+  `TauCeti.Probability.map_orderStatistic_zero_pi_uniformMeasure` and
+  `TauCeti.Probability.map_orderStatistic_last_pi_uniformMeasure`;
 * `TauCeti.Probability.map_orderStatistic_pi_eq_map_betaMeasure_quantile` — the `k`-th order
   statistic of an iid sample from any real probability law `μ` is obtained by applying
   `μ.quantile` to a beta variable, with random-variable form
-  `TauCeti.Probability.hasLaw_orderStatistic_iid_map_betaMeasure_quantile`.
+  `TauCeti.Probability.hasLaw_orderStatistic_iid_map_betaMeasure_quantile` and endpoint
+  specializations `TauCeti.Probability.map_orderStatistic_zero_pi_eq_map_betaMeasure_quantile` and
+  `TauCeti.Probability.map_orderStatistic_last_pi_eq_map_betaMeasure_quantile`.
 
 ## References
 
@@ -100,11 +105,12 @@ theorem cdf_map_orderStatistic_pi [IsProbabilityMeasure μ] (k : Fin n) (t : ℝ
 statistic of an independent family of `n` real random variables with common law `μ` is at most
 `t` with probability `∑ j ∈ Finset.Icc (k + 1) n, n.choose j * F(t) ^ j * (1 - F(t)) ^ (n - j)`,
 where `F = cdf μ`. -/
-theorem measureReal_setOf_orderStatistic_le_iid [IsProbabilityMeasure μ]
+theorem measureReal_setOf_orderStatistic_le_iid
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) (t : ℝ) :
     P.real {ω | orderStatistic k (fun i => X i ω) ≤ t} =
       ∑ j ∈ Finset.Icc ((k : ℕ) + 1) n,
         (n.choose j : ℝ) * cdf μ t ^ j * (1 - cdf μ t) ^ (n - j) := by
+  have : IsProbabilityMeasure μ := (hlaw k).isProbabilityMeasure_iff.1 hindep.isProbabilityMeasure
   have hpi := hindep.hasLaw_pi hlaw
   rw [← cdf_map_orderStatistic_pi, Measure.cdf_map _ _ (measurable_orderStatistic k).aemeasurable]
   exact hpi.measureReal_eq (p := fun x => orderStatistic k x ≤ t)
@@ -190,13 +196,51 @@ theorem map_orderStatistic_pi_eq_map_betaMeasure_quantile [IsProbabilityMeasure 
 /-- The random-variable form of
 `TauCeti.Probability.map_orderStatistic_pi_eq_map_betaMeasure_quantile`: the `k`-th order
 statistic of an iid sample from `μ` has the beta-quantile pushforward law. -/
-theorem hasLaw_orderStatistic_iid_map_betaMeasure_quantile [IsProbabilityMeasure μ]
+theorem hasLaw_orderStatistic_iid_map_betaMeasure_quantile
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (k : Fin n) :
     HasLaw (fun ω => orderStatistic k fun i => X i ω)
       ((betaMeasure ((k : ℝ) + 1) ((n : ℝ) - k)).map μ.quantile) P := by
+  have : IsProbabilityMeasure μ := (hlaw k).isProbabilityMeasure_iff.1 hindep.isProbabilityMeasure
   rw [← map_orderStatistic_pi_eq_map_betaMeasure_quantile]
   exact (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp (hindep.hasLaw_pi hlaw)
 
 end Law
+
+/-! ### Extreme positions: beta and quantile-pushforward specializations -/
+
+section Endpoints
+
+variable {n : ℕ} {μ : Measure ℝ}
+
+/-- The least order statistic of `n ≠ 0` independent unit uniforms has law `betaMeasure 1 n`. -/
+theorem map_orderStatistic_zero_pi_uniformMeasure [NeZero n] :
+    (Measure.pi fun _ : Fin n ↦ uniformMeasure 0 1).map (orderStatistic 0) =
+      betaMeasure 1 n := by
+  simpa using map_orderStatistic_pi_uniformMeasure (0 : Fin n)
+
+/-- The greatest order statistic of `n + 1` independent unit uniforms has law
+`betaMeasure (n + 1) 1`. -/
+theorem map_orderStatistic_last_pi_uniformMeasure :
+    (Measure.pi fun _ : Fin (n + 1) ↦ uniformMeasure 0 1).map (orderStatistic (Fin.last n)) =
+      betaMeasure ((n : ℝ) + 1) 1 := by
+  simpa [Fin.val_last, Nat.cast_add_one, add_sub_cancel_left] using
+    map_orderStatistic_pi_uniformMeasure (Fin.last n)
+
+/-- The least order statistic of an iid sample of size `n ≠ 0` from `μ` is the pushforward of
+`betaMeasure 1 n` under `μ.quantile`, atoms included. -/
+theorem map_orderStatistic_zero_pi_eq_map_betaMeasure_quantile [NeZero n] [IsProbabilityMeasure μ] :
+    (Measure.pi fun _ : Fin n ↦ μ).map (orderStatistic 0) =
+      (betaMeasure 1 n).map μ.quantile := by
+  simpa using map_orderStatistic_pi_eq_map_betaMeasure_quantile (μ := μ) (0 : Fin n)
+
+/-- The greatest order statistic of an iid sample of size `n + 1` from `μ` is the pushforward of
+`betaMeasure (n + 1) 1` under `μ.quantile`, atoms included. -/
+theorem map_orderStatistic_last_pi_eq_map_betaMeasure_quantile [IsProbabilityMeasure μ] :
+    (Measure.pi fun _ : Fin (n + 1) ↦ μ).map (orderStatistic (Fin.last n)) =
+      (betaMeasure ((n : ℝ) + 1) 1).map μ.quantile := by
+  simpa [Fin.val_last, Nat.cast_add_one, add_sub_cancel_left] using
+    map_orderStatistic_pi_eq_map_betaMeasure_quantile (μ := μ) (Fin.last n)
+
+end Endpoints
 
 end TauCeti.Probability

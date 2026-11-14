@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 import TauCeti.Probability.Distributions.Relations
+import TauCeti.Probability.Independence.Lattice
 
 /-!
 # Maxima of Gumbel variables
@@ -77,10 +78,7 @@ theorem hasLaw_max_iid_gumbelMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Meas
     HasLaw (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω)
       (gumbelMeasure (m + s * Real.log (Fintype.card ι)) s) P := by
   rw [← map_max_pi_gumbelMeasure (ι := ι)]
-  have hmax : Measurable (fun x : ι → ℝ => Finset.univ.sup' Finset.univ_nonempty x) := by
-    simp_rw [Finset.sup'_univ_eq_ciSup]
-    exact Measurable.iSup fun i => measurable_pi_apply i
-  exact (hasLaw_map hmax.aemeasurable).comp (hindep.hasLaw_pi hlaw)
+  exact hindep.hasLaw_sup' hlaw
 
 /-- Subtracting the logarithmic sample-size shift from the maximum of iid Gumbel variables
 recovers their common law. -/

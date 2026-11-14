@@ -36,7 +36,6 @@ namespace TauCeti.Probability
 
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] [Nonempty ι]
   {P : Measure Ω} {μ : ι → Measure ℝ} {X : ι → Ω → ℝ}
-  [∀ i, IsProbabilityMeasure (μ i)]
 
 /-- **Cumulative hazards add under independent minima.** At a point where every component has
 positive survival, the negative logarithm of the minimum's survival is the sum of the component
@@ -139,9 +138,13 @@ theorem deriv_cdf_min_div_one_sub_cdf_of_eq_withDensity (hindep : iIndepFun X P)
         (1 - cdf (P.map fun ω =>
           Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x) =
       ∑ i, f i x / (1 - cdf (μ i) x) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have : ∀ i, IsProbabilityMeasure (μ i) := fun i ↦ (hlaw i).isProbabilityMeasure_iff.mp ‹_›
   have hd i := hasDerivAt_cdf_of_eq_withDensity (hμ i) (hfm i) (hnn i) (hc i)
   rw [deriv_cdf_min_div_one_sub_cdf hindep hlaw hS (fun i => (hd i).differentiableAt)]
   simp_rw [(hd _).deriv]
+
+variable [∀ i, IsProbabilityMeasure (μ i)]
 
 /-- **Cumulative hazard of the product-measure minimum.** This measure identity applies to any
 finite nonempty family of real probability laws, including laws with atoms. -/
