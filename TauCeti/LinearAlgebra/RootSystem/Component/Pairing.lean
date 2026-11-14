@@ -155,14 +155,14 @@ instance isIrreducible_componentPairing [NeZero (2 : K)] : (P.componentPairing C
     rw [nonorthogonalGraph_componentPairing]
     exact C.connected_toSimpleGraph
 
-instance isCrystallographic_componentPairing [P.IsCrystallographic] :
-    (P.componentPairing C).IsCrystallographic where
-  exists_value i j := IsValuedIn.exists_value (P := P) (S := ℤ) (i : ι) j
+instance isValuedIn_componentPairing (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S] :
+    (P.componentPairing C).IsValuedIn S where
+  exists_value i j := IsValuedIn.exists_value (P := P) (S := S) (i : ι) j
 
-/-- The integral pairings of the component pairing are those of the ambient pairing. -/
+/-- The `S`-valued pairings of the component pairing are those of the ambient pairing. -/
 @[simp]
-theorem componentPairing_pairingIn [P.IsCrystallographic] (i j : C.supp) :
-    (P.componentPairing C).pairingIn ℤ i j = P.pairingIn ℤ i j :=
+theorem componentPairing_pairingIn (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S]
+    (i j : C.supp) : (P.componentPairing C).pairingIn S i j = P.pairingIn S i j :=
   (rfl)
 
 instance isReduced_componentPairing [P.IsReduced] : (P.componentPairing C).IsReduced where

@@ -46,7 +46,7 @@ Heights and positivity of roots of the component are the same for both bases.
   a diagram component is a component space, and likewise for coroots.
 * `RootPairing.Base.span_root_image_supp_eq_span_root_image_supp`: the component spaces obtained
   from two bases agree.
-* `RootPairing.Base.cartanMatrix_componentBase`: the Cartan matrix of the base of a component is
+* `RootPairing.Base.cartanMatrixIn_componentBase`: the Cartan matrix of the base of a component is
   the corresponding block of the Cartan matrix of the whole base.
 * `RootPairing.Base.mem_closure_root_componentBase_iff`,
   `RootPairing.Base.height_componentBase`: the base of a component has the positive cone and the
@@ -210,6 +210,13 @@ theorem componentEquiv_connectedComponentMk (i : b.support) :
     b.componentEquiv ((diagramGraph b.cartanMatrix).connectedComponentMk i) = P.componentOf i :=
   (rfl)
 
+/-- The simple roots of `b` in the diagram component corresponding to `C` are those in `C`. -/
+theorem mem_supp_componentEquiv_symm (C : P.Component) {i : b.support} :
+    i ∈ (b.componentEquiv.symm C).supp ↔ (i : ι) ∈ C.supp := by
+  rw [SimpleGraph.ConnectedComponent.mem_supp_iff, Equiv.eq_symm_apply,
+    componentEquiv_connectedComponentMk]
+  rfl
+
 /-- A root is attached to a diagram component exactly when it lies in the corresponding irreducible
 component. -/
 private theorem attachedTo_iff {C : (diagramGraph b.cartanMatrix).ConnectedComponent}
@@ -367,18 +374,9 @@ theorem height_componentBase [CharZero K] (i : C.supp) :
 
 /-- A root of `C` is positive for the component base exactly when it is positive for `b`. -/
 @[simp]
-theorem isPos_componentBase [CharZero K] (i : C.supp) :
+theorem isPos_componentBase_iff [CharZero K] (i : C.supp) :
     (b.componentBase C).IsPos i ↔ b.IsPos i := by
   rw [isPos_iff, isPos_iff, height_componentBase]
-
-omit [P.IsRootSystem] in
-/-- The simple roots of `b` in the diagram component corresponding to `C` are those in `C`. -/
-theorem mem_supp_componentEquiv_symm [CharZero K] [P.IsCrystallographic] [P.IsReduced]
-    {i : b.support} :
-    i ∈ (b.componentEquiv.symm C).supp ↔ (i : ι) ∈ C.supp := by
-  rw [SimpleGraph.ConnectedComponent.mem_supp_iff, Equiv.eq_symm_apply,
-    componentEquiv_connectedComponentMk]
-  rfl
 
 /-- The simple roots of the component base are the vertices of the corresponding component of the
 Dynkin diagram of `b`. -/
@@ -394,17 +392,34 @@ noncomputable def supportComponentBaseEquiv [CharZero K] [P.IsCrystallographic] 
 @[simp]
 theorem coe_supportComponentBaseEquiv_apply [CharZero K] [P.IsCrystallographic] [P.IsReduced]
     (i : (b.componentBase C).support) :
-    ((b.supportComponentBaseEquiv C i : b.support) : ι) = i := by
+    (b.supportComponentBaseEquiv C i : b.support) =
+      ⟨i, (b.mem_support_componentBase C).mp i.2⟩ := by
   simp [supportComponentBaseEquiv]
+
+@[simp]
+theorem coe_supportComponentBaseEquiv_symm_apply [CharZero K] [P.IsCrystallographic]
+    [P.IsReduced] (i : (b.componentEquiv.symm C).supp) :
+    ((b.supportComponentBaseEquiv C).symm i : C.supp) =
+      ⟨(i : b.support), (b.mem_supp_componentEquiv_symm C).mp i.2⟩ := by
+  simp [supportComponentBaseEquiv]
+
+/-- The `S`-valued Cartan matrix of the component base is the block of the `S`-valued Cartan
+matrix of `b` on the simple roots in `C`. -/
+@[simp]
+theorem cartanMatrixIn_componentBase (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S]
+    (i j : (b.componentBase C).support) :
+    (b.componentBase C).cartanMatrixIn S i j =
+      b.cartanMatrixIn S ⟨i, (b.mem_support_componentBase C).mp i.2⟩
+        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ := by
+  simp [cartanMatrixIn_def]
 
 /-- The Cartan matrix of the component base is the block of the Cartan matrix of `b` on the simple
 roots in `C`. -/
-@[simp]
 theorem cartanMatrix_componentBase [P.IsCrystallographic] (i j : (b.componentBase C).support) :
     (b.componentBase C).cartanMatrix i j =
       b.cartanMatrix ⟨i, (b.mem_support_componentBase C).mp i.2⟩
-        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ := by
-  simp [cartanMatrixIn_def]
+        ⟨j, (b.mem_support_componentBase C).mp j.2⟩ :=
+  b.cartanMatrixIn_componentBase C ℤ i j
 
 end ComponentPairing
 
