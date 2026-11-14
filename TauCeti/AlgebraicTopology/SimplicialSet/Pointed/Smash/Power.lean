@@ -49,6 +49,9 @@ the modules over the sphere sequence.
   index types.
 * `PointedSSet.smashPowMap`, `PointedSSet.smashPowMapIso`: functoriality in the pointed
   simplicial set, applying a based map in every coordinate.
+* `PointedSSet.smashPowFunctorMap`: the morphism `X^∧n ⟶ Y^∧n` of symmetric sequences induced by
+  a based map `X ⟶ Y`, applying it in every coordinate; it is a monoidal natural transformation
+  (`NatTrans.IsMonoidal`).
 * `PointedSSet.smashPowAppendIso`: concatenation `X^∧ι ⊗ X^∧κ ≅ X^∧(ι ⊕ κ)`.
 * `PointedSSet.smashPowUnitIso`: the identification `𝟙_ ≅ X^∧ι` for empty `ι`.
 * `PointedSSet.smashPowUniqueIso`: the identification `X^∧ι ≅ X` for `ι` with a unique element.
