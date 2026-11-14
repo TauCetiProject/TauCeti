@@ -24,13 +24,15 @@ that finite pointwise continuous linear combinations preserve `IsGaussianProcess
 
 ## Main results
 
-* `ProbabilityTheory.iIndepFun.isGaussianProcess`,
-  `ProbabilityTheory.iIndepFun.isGaussianProcess_prod`,
+* `ProbabilityTheory.iIndepFun.isGaussianProcess`, `iIndepFun.isGaussianProcess_prod`,
   `ProbabilityTheory.IndepFun.isGaussianProcess`: independent Gaussian processes are jointly
   Gaussian.
-* `ProbabilityTheory.IsGaussianProcess.sum_comp_left`,
-  `ProbabilityTheory.IsGaussianProcess.sum_smul`: finite pointwise continuous linear combinations
-  remain Gaussian processes.
+* `ProbabilityTheory.IsGaussianProcess.sum_comp_left`, `IsGaussianProcess.sum_smul`: finite
+  pointwise continuous linear combinations remain Gaussian processes.
+* `ProbabilityTheory.IsGaussianProcess.iIndepFun_iff_covariance_strongDual`,
+  `iIndepFun_iff_covariance_inner`, `iIndepFun_iff_covariance_eq_zero`,
+  `indepFun_iff_covariance_strongDual`, `indepFun_iff_covariance_inner`,
+  `indepFun_iff_covariance_eq_zero`: covariance characterizations of process independence.
 
 ## References
 
@@ -41,19 +43,19 @@ that finite pointwise continuous linear combinations preserve `IsGaussianProcess
 public section
 
 open MeasureTheory Finset
+open scoped RealInnerProductSpace
 
 namespace ProbabilityTheory
 
 variable {T Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [SecondCountableTopology E]
+  [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
 
 section Independence
 
-variable [CompleteSpace E]
+variable [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- Mutually independent Gaussian processes `X t : S t → Ω → E` form a jointly Gaussian process
-indexed by `(t : T) × S t`, with no finiteness or countability assumption on `T` or `S t`. -/
+/-- Mutually independent Gaussian processes `X t : S t → Ω → E` form a Gaussian process on
+`(t : T) × S t`, with no finiteness or countability assumption on `T` or `S t`. -/
 theorem iIndepFun.isGaussianProcess {S : T → Type*} {X : (t : T) → S t → Ω → E}
     (hX : ∀ t, IsGaussianProcess (X t) P) (hindep : iIndepFun (fun t ω s ↦ X t s ω) P) :
     IsGaussianProcess (fun (p : (t : T) × S t) ω ↦ X p.1 p.2 ω) P where
@@ -100,24 +102,20 @@ end Independence
 
 namespace IsGaussianProcess
 
-/-- A finite sum of pointwise continuous linear images of a jointly Gaussian family of processes is
-itself a Gaussian process. -/
-theorem sum_comp_left {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+/-- Finite sums of pointwise continuous linear images preserve `IsGaussianProcess`. -/
+theorem sum_comp_left [NormedSpace ℝ E] {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
     {X : ι → T → Ω → E} (hX : IsGaussianProcess (fun (p : ι × T) ω ↦ X p.1 p.2 ω) P)
     (s : Finset ι) (L : ι → T → E →L[ℝ] F) :
     IsGaussianProcess (fun t ω ↦ ∑ i ∈ s, L i t (X i t ω)) P := by
   classical
   refine hX.of_isGaussianProcess fun t ↦ ⟨s ×ˢ {t},
-    { toFun z := ∑ i ∈ s.attach,
-        L i.1 t (z ⟨(i.1, t), mem_product.mpr ⟨i.2, mem_singleton_self t⟩⟩)
-      map_add' _ _ := by simp [sum_add_distrib]
-      map_smul' _ _ := by simp [smul_sum]
+    { toFun z := ∑ i ∈ s.attach, L i.1 t (z ⟨(i.1, t), mem_product.mpr ⟨i.2, mem_singleton_self t⟩⟩)
+      map_add' _ _ := by simp [sum_add_distrib], map_smul' _ _ := by simp [smul_sum]
       cont := by fun_prop }, fun ω ↦ ?_⟩
   simpa [restrict_def] using (sum_attach s fun i ↦ L i t (X i t ω)).symm
 
-/-- A finite pointwise linear combination of a jointly Gaussian family of scalar processes with
-deterministic vectors in `F` is a Gaussian process in `F`. -/
+/-- Finite pointwise linear combinations of jointly Gaussian scalar processes are Gaussian. -/
 theorem sum_smul {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
     {X : ι → T → Ω → ℝ} (hX : IsGaussianProcess (fun (p : ι × T) ω ↦ X p.1 p.2 ω) P)
@@ -125,17 +123,79 @@ theorem sum_smul {ι F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     IsGaussianProcess (fun t ω ↦ ∑ i ∈ s, X i t ω • v t i) P :=
   hX.sum_comp_left s fun i t ↦ ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v t i)
 
-/-- A jointly Gaussian family of scalar processes is mutually independent iff distinct processes
-have zero cross-covariance at all pairs of times. -/
+/-- Jointly Gaussian processes are mutually independent iff distinct processes have uncorrelated
+continuous linear functionals at all pairs of times. -/
+theorem iIndepFun_iff_covariance_strongDual [NormedSpace ℝ E] [CompleteSpace E] {S : T → Type*}
+    {X : (t : T) → S t → Ω → E} (hX : IsGaussianProcess (fun (p : (t : T) × S t) ↦ X p.1 p.2) P) :
+    iIndepFun (fun t ω s ↦ X t s ω) P ↔
+      ∀ t₁ t₂, t₁ ≠ t₂ → ∀ (s₁ : S t₁) (s₂ : S t₂) (L₁ L₂ : StrongDual ℝ E),
+        cov[L₁ ∘ X t₁ s₁, L₂ ∘ X t₂ s₂; P] = 0 := by
+  have := hX.isProbabilityMeasure
+  refine ⟨fun h t₁ t₂ ht s₁ s₂ L₁ L₂ ↦
+      ((h.indepFun ht).comp (L₁.continuous.measurable.comp (measurable_pi_apply s₁))
+        (L₂.continuous.measurable.comp (measurable_pi_apply s₂))).covariance_eq_zero
+        ((hX.hasGaussianLaw_eval ⟨t₁, s₁⟩).map L₁).memLp_two
+        ((hX.hasGaussianLaw_eval ⟨t₂, s₂⟩).map L₂).memLp_two,
+    hX.iIndepFun_of_covariance_strongDual fun t s ↦ hX.aemeasurable ⟨t, s⟩⟩
+
+/-- Jointly Gaussian inner-product-space processes are mutually independent iff distinct processes
+have uncorrelated inner-product projections at all pairs of times. -/
+theorem iIndepFun_iff_covariance_inner [InnerProductSpace ℝ E] [CompleteSpace E] {S : T → Type*}
+    {X : (t : T) → S t → Ω → E} (hX : IsGaussianProcess (fun (p : (t : T) × S t) ↦ X p.1 p.2) P) :
+    iIndepFun (fun t ω s ↦ X t s ω) P ↔
+      ∀ t₁ t₂, t₁ ≠ t₂ → ∀ (s₁ : S t₁) (s₂ : S t₂) (x y : E),
+        cov[fun ω ↦ ⟪x, X t₁ s₁ ω⟫, fun ω ↦ ⟪y, X t₂ s₂ ω⟫; P] = 0 := by
+  rw [hX.iIndepFun_iff_covariance_strongDual]
+  exact ⟨fun h t₁ t₂ ht s₁ s₂ x y ↦ h t₁ t₂ ht s₁ s₂ (innerSL ℝ x) (innerSL ℝ y),
+    fun h t₁ t₂ ht s₁ s₂ L₁ L₂ ↦ by
+      simpa using! h t₁ t₂ ht s₁ s₂ ((InnerProductSpace.toDual ℝ E).symm L₁)
+        ((InnerProductSpace.toDual ℝ E).symm L₂)⟩
+
+/-- Jointly Gaussian scalar processes are mutually independent iff distinct processes have zero
+cross-covariance at all pairs of times. -/
 theorem iIndepFun_iff_covariance_eq_zero {S : T → Type*} {X : (t : T) → S t → Ω → ℝ}
     (hX : IsGaussianProcess (fun (p : (t : T) × S t) ω ↦ X p.1 p.2 ω) P) :
     iIndepFun (fun t ω s ↦ X t s ω) P ↔
       ∀ t₁ t₂, t₁ ≠ t₂ → ∀ (s₁ : S t₁) (s₂ : S t₂), cov[X t₁ s₁, X t₂ s₂; P] = 0 := by
   have := hX.isProbabilityMeasure
-  refine ⟨fun h t₁ t₂ ht s₁ s₂ ↦ ((h.indepFun ht).comp (measurable_pi_apply s₁)
-      (measurable_pi_apply s₂)).covariance_eq_zero (hX.hasGaussianLaw_eval ⟨t₁, s₁⟩).memLp_two
-      (hX.hasGaussianLaw_eval ⟨t₂, s₂⟩).memLp_two,
-    hX.iIndepFun_of_covariance_eq_zero fun t s ↦ hX.aemeasurable ⟨t, s⟩⟩
+  rw [hX.iIndepFun_iff_covariance_inner]
+  exact ⟨fun h t₁ t₂ ht s₁ s₂ ↦ by simpa using h t₁ t₂ ht s₁ s₂ 1 1, fun h t₁ t₂ ht s₁ s₂ _ _ ↦ by
+    simp [covariance_mul_const_left, covariance_mul_const_right, h t₁ t₂ ht s₁ s₂]⟩
+
+/-- Two jointly Gaussian processes are independent iff their continuous linear functionals are
+uncorrelated at all pairs of times. -/
+theorem indepFun_iff_covariance_strongDual [NormedSpace ℝ E] [CompleteSpace E] {S : Type*}
+    {X : S → Ω → E} {Y : T → Ω → E} (hXY : IsGaussianProcess (Sum.elim X Y) P) :
+    IndepFun (fun ω s ↦ X s ω) (fun ω t ↦ Y t ω) P ↔
+      ∀ s t (L₁ L₂ : StrongDual ℝ E), cov[L₁ ∘ X s, L₂ ∘ Y t; P] = 0 := by
+  have := hXY.isProbabilityMeasure
+  refine ⟨fun h s t L₁ L₂ ↦
+      (h.comp (L₁.continuous.measurable.comp (measurable_pi_apply s))
+        (L₂.continuous.measurable.comp (measurable_pi_apply t))).covariance_eq_zero
+        ((hXY.hasGaussianLaw_eval (.inl s)).map L₁).memLp_two
+        ((hXY.hasGaussianLaw_eval (.inr t)).map L₂).memLp_two,
+    hXY.indepFun_of_covariance_strongDual (fun s ↦ hXY.aemeasurable (.inl s))
+      fun t ↦ hXY.aemeasurable (.inr t)⟩
+
+/-- Two jointly Gaussian inner-product-space processes are independent iff their inner-product
+projections are uncorrelated at all pairs of times. -/
+theorem indepFun_iff_covariance_inner [InnerProductSpace ℝ E] [CompleteSpace E] {S : Type*}
+    {X : S → Ω → E} {Y : T → Ω → E} (hXY : IsGaussianProcess (Sum.elim X Y) P) :
+    IndepFun (fun ω s ↦ X s ω) (fun ω t ↦ Y t ω) P ↔
+      ∀ s t (x y : E), cov[fun ω ↦ ⟪x, X s ω⟫, fun ω ↦ ⟪y, Y t ω⟫; P] = 0 := by
+  rw [hXY.indepFun_iff_covariance_strongDual]
+  exact ⟨fun h s t x y ↦ h s t (innerSL ℝ x) (innerSL ℝ y), fun h s t L₁ L₂ ↦ by
+    simpa using! h s t ((InnerProductSpace.toDual ℝ E).symm L₁)
+      ((InnerProductSpace.toDual ℝ E).symm L₂)⟩
+
+/-- Two jointly Gaussian scalar processes are independent iff they have zero cross-covariance. -/
+theorem indepFun_iff_covariance_eq_zero {S : Type*} {X : S → Ω → ℝ} {Y : T → Ω → ℝ}
+    (hXY : IsGaussianProcess (Sum.elim X Y) P) :
+    IndepFun (fun ω s ↦ X s ω) (fun ω t ↦ Y t ω) P ↔ ∀ s t, cov[X s, Y t; P] = 0 := by
+  have := hXY.isProbabilityMeasure
+  rw [hXY.indepFun_iff_covariance_inner]
+  exact ⟨fun h s t ↦ by simpa using h s t 1 1, fun h s t _ _ ↦ by
+    simp [covariance_mul_const_left, covariance_mul_const_right, h s t]⟩
 
 end IsGaussianProcess
 

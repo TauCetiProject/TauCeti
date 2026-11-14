@@ -9,16 +9,16 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Process.Indistinguishable
-public import TauCeti.Probability.BrownianMotion.GaussianLimit
+public import TauCeti.Probability.BrownianMotion.ProjectiveLimit
 
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
-import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Independence
 import Mathlib.Probability.Independence.Process.Basic
 import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.IsGaussianProcess
+import TauCeti.Probability.Moments.Covariance
 
 /-!
 # Coordinate vector Brownian motion
@@ -38,16 +38,14 @@ multivariate Gaussian increment laws, and independence of future increments from
 
 * `TauCeti.Probability.IsPreBrownianVector`, `TauCeti.Probability.IsBrownianVector`: coordinate
   vector pre-Brownian and Brownian motion indexed by `ι`.
-* `TauCeti.Probability.isPreBrownianVector_iff_isGaussianProcess`: centered Gaussian `δᵢⱼ min s t`
-  covariance characterization.
+* `ProbabilityTheory.IsGaussianProcess.isPreBrownianVector_of_covariance`,
+  `TauCeti.Probability.isPreBrownianVector_iff_isGaussianProcess`: Gaussian `δᵢⱼ min s t`
+  characterization.
 * `TauCeti.Probability.IsPreBrownianVector.mulVec_of_mul_transpose_eq_one`,
-  `TauCeti.Probability.IsPreBrownianVector.orthogonal`,
-  `TauCeti.Probability.IsBrownianVector.orthogonal`: row-orthonormal and orthogonal invariance.
-* `TauCeti.Probability.IsPreBrownianVector.hasLaw_toLp_sub`,
-  `TauCeti.Probability.IsPreBrownianVector.indepFun_sub_past`: multivariate Gaussian increment laws
-  and past independence.
-* `TauCeti.Probability.isPreBrownianVector_eval_pi_gaussianLimit`: canonical coordinate vector
-  pre-Brownian motion on `ι → ℝ≥0 → ℝ` for finite `ι`.
+  `IsPreBrownianVector.mulVec_of_mem_orthogonalGroup`, `IsPreBrownianVector.hasLaw_toLp_sub`,
+  `IsPreBrownianVector.indepFun_sub_past`: matrix invariance, increment laws, and past independence.
+* `TauCeti.Probability.isPreBrownianVector_eval_pi_brownianProjectiveLimit`: canonical coordinate
+  vector pre-Brownian motion on `ι → ℝ≥0 → ℝ` for finite `ι`.
 
 ## References
 
@@ -64,14 +62,12 @@ open scoped ENNReal NNReal Matrix
 
 namespace TauCeti.Probability
 
-variable {ι κ Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {B C : ι → ℝ≥0 → Ω → ℝ}
+variable {ι κ Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B C : ι → ℝ≥0 → Ω → ℝ}
 
 /-- An `ι`-indexed family of scalar processes is a **coordinate vector pre-Brownian motion** under
 `P` if every coordinate satisfies `ProbabilityTheory.IsPreBrownianReal` and the coordinate paths are
 mutually independent as `(ℝ≥0 → ℝ)`-valued random variables. -/
-structure IsPreBrownianVector (B : ι → ℝ≥0 → Ω → ℝ)
-    (P : Measure Ω := by volume_tac) : Prop where
+structure IsPreBrownianVector (B : ι → ℝ≥0 → Ω → ℝ) (P : Measure Ω := by volume_tac) : Prop where
   /-- Each coordinate process is a scalar pre-Brownian motion. -/
   isPreBrownianReal : ∀ i, IsPreBrownianReal (B i) P
   /-- The coordinate paths are mutually independent in the product `σ`-algebra on `ℝ≥0 → ℝ`. -/
@@ -79,8 +75,8 @@ structure IsPreBrownianVector (B : ι → ℝ≥0 → Ω → ℝ)
 
 /-- An `ι`-indexed family of scalar processes is a **coordinate vector Brownian motion** under `P`
 if it is a coordinate vector pre-Brownian motion and every coordinate has a.s. continuous paths. -/
-structure IsBrownianVector (B : ι → ℝ≥0 → Ω → ℝ)
-    (P : Measure Ω := by volume_tac) : Prop extends IsPreBrownianVector B P where
+structure IsBrownianVector (B : ι → ℝ≥0 → Ω → ℝ) (P : Measure Ω := by volume_tac) : Prop
+    extends IsPreBrownianVector B P where
   /-- Each coordinate has almost-surely continuous paths. -/
   ae_continuous : ∀ i, ∀ᵐ ω ∂P, Continuous (B i · ω)
 
@@ -97,11 +93,9 @@ theorem of_isBrownianReal (h₁ : ∀ i, IsBrownianReal (B i) P)
 
 end IsBrownianVector
 
-/-- `IsBrownianVector B P` holds iff every coordinate satisfies `IsBrownianReal` and coordinate
-paths are mutually independent. -/
-theorem isBrownianVector_iff :
-    IsBrownianVector B P ↔
-      (∀ i, IsBrownianReal (B i) P) ∧ iIndepFun (fun i ω t ↦ B i t ω) P :=
+/-- `IsBrownianVector B P` iff every coordinate is `IsBrownianReal` and paths are independent. -/
+theorem isBrownianVector_iff : IsBrownianVector B P ↔
+    (∀ i, IsBrownianReal (B i) P) ∧ iIndepFun (fun i ω t ↦ B i t ω) P :=
   ⟨fun h ↦ ⟨h.isBrownianReal, h.iIndepFun⟩, fun ⟨h₁, h₂⟩ ↦ .of_isBrownianReal h₁ h₂⟩
 
 namespace IsPreBrownianVector
@@ -115,7 +109,7 @@ theorem congr (hB : IsPreBrownianVector B P) (h : ∀ i t, B i t =ᵐ[P] C i t) 
     IsPreBrownianVector C P :=
   ⟨fun i ↦ (hB.isPreBrownianReal i).congr (h i), hB.iIndepFun.process_congr h⟩
 
-/-- Over an empty index type (`d = 0`), `IsPreBrownianVector` holds vacuously. -/
+/-- Over `[IsEmpty ι]`, any process family on a probability space is `IsPreBrownianVector`. -/
 theorem of_isEmpty [IsEmpty ι] [IsProbabilityMeasure P] (B : ι → ℝ≥0 → Ω → ℝ) :
     IsPreBrownianVector B P :=
   ⟨fun i ↦ isEmptyElim i, .of_subsingleton⟩
@@ -131,8 +125,7 @@ theorem isGaussianProcess (hB : IsPreBrownianVector B P) :
   hB.iIndepFun.isGaussianProcess_prod fun i ↦ (hB.isPreBrownianReal i).isGaussianProcess
 
 /-- Every coordinate time marginal of a vector pre-Brownian motion is a.e. measurable. -/
-theorem aemeasurable (hB : IsPreBrownianVector B P) (i : ι) (t : ℝ≥0) :
-    AEMeasurable (B i t) P :=
+theorem aemeasurable (hB : IsPreBrownianVector B P) (i : ι) (t : ℝ≥0) : AEMeasurable (B i t) P :=
   (hB.isPreBrownianReal i).aemeasurable t
 
 /-- Every coordinate time marginal of a vector pre-Brownian motion is centered. -/
@@ -158,22 +151,19 @@ theorem covariance_eval [DecidableEq ι] (hB : IsPreBrownianVector B P) (i j : �
       (measurable_pi_apply t)).covariance_eq_zero (hB.memLp_two_eval i s) (hB.memLp_two_eval j t)
 
 /-- Uncurried form of `IsPreBrownianVector.covariance_eval` for lambda expressions. -/
-theorem covariance_fun_eval [DecidableEq ι] (hB : IsPreBrownianVector B P)
-    (i j : ι) (s t : ℝ≥0) :
+theorem covariance_fun_eval [DecidableEq ι] (hB : IsPreBrownianVector B P) (i j : ι) (s t : ℝ≥0) :
     cov[fun ω ↦ B i s ω, fun ω ↦ B j t ω; P] = if i = j then (min s t : ℝ) else 0 :=
   hB.covariance_eval i j s t
 
 /-- Distinct coordinates of a vector pre-Brownian motion cannot agree a.e. at any `t > 0`. -/
-theorem ne_ae_eq_of_pos (hB : IsPreBrownianVector B P) {i j : ι} (hij : i ≠ j)
+theorem not_ae_eq_of_ne_of_pos (hB : IsPreBrownianVector B P) {i j : ι} (hij : i ≠ j)
     {t : ℝ≥0} (ht : 0 < t) : ¬ (B i t =ᵐ[P] B j t) := by
   classical
   intro heq
   have := hB.isProbabilityMeasure
   have hcov0 : cov[B i t, B j t; P] = 0 := by simp [hB.covariance_eval, hij]
-  have hcongr : cov[B i t, B j t; P] = cov[B i t, B i t; P] := by
-    rw [covariance, covariance, integral_congr_ae heq]
-    exact integral_congr_ae (heq.mono fun _ hω ↦ by dsimp only; rw [hω])
-  rw [hcongr, (hB.isPreBrownianReal i).covariance_eval, min_self] at hcov0
+  rw [TauCeti.covariance_congr_ae .rfl heq.symm, (hB.isPreBrownianReal i).covariance_eval,
+    min_self] at hcov0
   linarith [NNReal.coe_pos.mpr ht]
 
 /-- Negating every coordinate preserves `IsPreBrownianVector`. -/
@@ -184,16 +174,15 @@ theorem neg (hB : IsPreBrownianVector B P) : IsPreBrownianVector (-B) P :=
 /-- Brownian diffusive scaling `(√c)⁻¹ * B i (c * t)` (`c ≠ 0`) preserves `IsPreBrownianVector`. -/
 theorem smul (hB : IsPreBrownianVector B P) {c : ℝ≥0} (hc : c ≠ 0) :
     IsPreBrownianVector (fun i t ω ↦ (√(c : ℝ))⁻¹ * B i (c * t) ω) P :=
-  ⟨fun i ↦ (hB.isPreBrownianReal i).smul hc,
-    hB.iIndepFun.comp (fun _ x t ↦ (√(c : ℝ))⁻¹ * x (c * t))
-      fun _ ↦ .of_eval fun t ↦ (measurable_pi_apply (c * t)).const_mul _⟩
+  ⟨fun i ↦ (hB.isPreBrownianReal i).smul hc, hB.iIndepFun.comp
+    (fun _ x t ↦ (√(c : ℝ))⁻¹ * x (c * t)) fun _ ↦ .of_eval fun t ↦
+      (measurable_pi_apply (c * t)).const_mul _⟩
 
 /-- Deterministic time shift `B i (t₀ + t) - B i t₀` preserves `IsPreBrownianVector`. -/
 theorem shift (hB : IsPreBrownianVector B P) (t₀ : ℝ≥0) :
     IsPreBrownianVector (fun i t ω ↦ B i (t₀ + t) ω - B i t₀ ω) P :=
-  ⟨fun i ↦ (hB.isPreBrownianReal i).shift t₀,
-    hB.iIndepFun.comp (fun _ x t ↦ x (t₀ + t) - x t₀)
-      fun _ ↦ .of_eval fun t ↦ (measurable_pi_apply (t₀ + t)).sub (measurable_pi_apply t₀)⟩
+  ⟨fun i ↦ (hB.isPreBrownianReal i).shift t₀, hB.iIndepFun.comp (fun _ x t ↦ x (t₀ + t) - x t₀)
+    fun _ ↦ .of_eval fun t ↦ (measurable_pi_apply (t₀ + t)).sub (measurable_pi_apply t₀)⟩
 
 end IsPreBrownianVector
 
@@ -205,7 +194,7 @@ theorem congr_indistinguishable (hB : IsBrownianVector B P) (h : ∀ i, B i ≡�
   ⟨hB.toIsPreBrownianVector.congr fun i t ↦ (h i).mono fun _ hω ↦ hω t,
     fun i ↦ (hB.ae_continuous i).mp ((h i).mono fun _ hω hc ↦ by simpa [funext hω] using hc)⟩
 
-/-- Over an empty index type (`d = 0`), `IsBrownianVector` holds vacuously. -/
+/-- Over `[IsEmpty ι]`, any process family on a probability space satisfies `IsBrownianVector`. -/
 theorem of_isEmpty [IsEmpty ι] [IsProbabilityMeasure P] (B : ι → ℝ≥0 → Ω → ℝ) :
     IsBrownianVector B P :=
   ⟨.of_isEmpty B, fun i ↦ isEmptyElim i⟩
@@ -267,10 +256,9 @@ theorem isBrownianVector_precomp_of_bijective {g : κ → ι} (hg : Function.Bij
   exact ⟨fun h ↦ by simpa [e, Equiv.ofBijective_apply_symm_apply] using h.precomp e.symm.injective,
     fun h ↦ h.precomp hg.injective⟩
 
-/-- A centered jointly Gaussian family `B : ι → ℝ≥0 → Ω → ℝ` with cross-covariance `δᵢⱼ min s t`
-is a coordinate vector pre-Brownian motion. -/
-theorem isPreBrownianVector_of_isGaussianProcess [DecidableEq ι]
-    (hG : IsGaussianProcess (fun (p : ι × ℝ≥0) ω ↦ B p.1 p.2 ω) P)
+/-- Centered Gaussian families with covariance `δᵢⱼ min s t` satisfy `IsPreBrownianVector`. -/
+theorem _root_.ProbabilityTheory.IsGaussianProcess.isPreBrownianVector_of_covariance
+    [DecidableEq ι] (hG : IsGaussianProcess (fun (p : ι × ℝ≥0) ω ↦ B p.1 p.2 ω) P)
     (hmean : ∀ i t, P[B i t] = 0)
     (hcov : ∀ i j s t, cov[B i s, B j t; P] = if i = j then (min s t : ℝ) else 0) :
     IsPreBrownianVector B P where
@@ -280,36 +268,32 @@ theorem isPreBrownianVector_of_isGaussianProcess [DecidableEq ι]
   iIndepFun := (hG.comp_right fun p : (_ : ι) × ℝ≥0 ↦ (p.1, p.2)).iIndepFun_of_covariance_eq_zero
     (fun i t ↦ hG.aemeasurable (i, t)) fun i j hij s t ↦ by simpa [hij] using hcov i j s t
 
-/-- Intrinsic Gaussian characterization of `IsPreBrownianVector`: joint centered Gaussianity on
-`ι × ℝ≥0` with cross-covariance `if i = j then min s t else 0`. -/
+/-- Centered Gaussian characterization of `IsPreBrownianVector` via covariance `δᵢⱼ min s t`. -/
 theorem isPreBrownianVector_iff_isGaussianProcess [DecidableEq ι] :
-    IsPreBrownianVector B P ↔
-      IsGaussianProcess (fun (p : ι × ℝ≥0) ω ↦ B p.1 p.2 ω) P ∧
-        (∀ i t, P[B i t] = 0) ∧
-        (∀ i j s t, cov[B i s, B j t; P] = if i = j then (min s t : ℝ) else 0) :=
+    IsPreBrownianVector B P ↔ IsGaussianProcess (fun (p : ι × ℝ≥0) ω ↦ B p.1 p.2 ω) P ∧
+      (∀ i t, P[B i t] = 0) ∧
+      ∀ i j s t, cov[B i s, B j t; P] = if i = j then (min s t : ℝ) else 0 :=
   ⟨fun h ↦ ⟨h.isGaussianProcess, h.integral_eval, h.covariance_eval⟩,
-    fun ⟨hG, hm, hc⟩ ↦ isPreBrownianVector_of_isGaussianProcess hG hm hc⟩
+    fun ⟨hG, hm, hc⟩ ↦ hG.isPreBrownianVector_of_covariance hm hc⟩
 
 namespace IsPreBrownianVector
 
-/-- Applying a row-orthonormal matrix `A : Matrix κ ι ℝ` (`A * Aᵀ = 1`) to a coordinate vector
-pre-Brownian motion yields a coordinate vector pre-Brownian motion indexed by `κ`. -/
+/-- Applying a row-orthonormal matrix `A` (`A * Aᵀ = 1`) preserves `IsPreBrownianVector`. -/
 theorem mulVec_of_mul_transpose_eq_one [Fintype ι] [DecidableEq κ]
     (hB : IsPreBrownianVector B P) {A : Matrix κ ι ℝ} (hA : A * Aᵀ = 1) :
-    IsPreBrownianVector (fun k t ω ↦ ∑ i, A k i * B i t ω) P := by
+    IsPreBrownianVector (fun k t ω ↦ (A *ᵥ (B · t ω)) k) P := by
   classical
   have := hB.isProbabilityMeasure
-  refine isPreBrownianVector_of_isGaussianProcess
-    (hB.isGaussianProcess.of_isGaussianProcess fun q ↦ ⟨univ ×ˢ {q.2},
-      { toFun z := ∑ i : ι,
-          A q.1 i * z ⟨(i, q.2), mem_product.mpr ⟨mem_univ i, mem_singleton_self q.2⟩⟩
-        map_add' _ _ := by simp [mul_add, sum_add_distrib]
-        map_smul' _ _ := by simp [mul_sum, mul_left_comm]
-        cont := by fun_prop }, fun _ ↦ by simp [restrict_def]⟩)
+  have h0 : IsGaussianProcess (fun (p : ι × (κ × ℝ≥0)) ω ↦ B p.1 p.2.2 ω) P :=
+    hB.isGaussianProcess.comp_right fun p : ι × (κ × ℝ≥0) ↦ (p.1, p.2.2)
+  have hGP : IsGaussianProcess (fun (q : κ × ℝ≥0) ω ↦ (A *ᵥ (B · q.2 ω)) q.1) P :=
+    h0.sum_comp_left univ fun i (q : κ × ℝ≥0) ↦ ContinuousLinearMap.lsmul ℝ ℝ (A q.1 i)
+  refine hGP.isPreBrownianVector_of_covariance
     (fun k t ↦ by
+      simp only [Matrix.mulVec, dotProduct]
       rw [integral_finsetSum _ fun i _ ↦ ((hB.isPreBrownianReal i).integrable_eval t).const_mul _]
-      simp [integral_const_mul, hB.integral_eval])
-    fun k₁ k₂ s t ↦ ?_
+      simp [integral_const_mul, hB.integral_eval]) fun k₁ k₂ s t ↦ ?_
+  simp only [Matrix.mulVec, dotProduct]
   rw [covariance_fun_sum_fun_sum (fun i ↦ (hB.memLp_two_eval i s).const_mul _)
     (fun j ↦ (hB.memLp_two_eval j t).const_mul _)]
   have hentry (i j : ι) : cov[fun ω ↦ A k₁ i * B i s ω, fun ω ↦ A k₂ j * B j t ω; P] =
@@ -321,16 +305,14 @@ theorem mulVec_of_mul_transpose_eq_one [Fintype ι] [DecidableEq κ]
   split_ifs <;> simp
 
 /-- Applying `O ∈ Matrix.orthogonalGroup ι ℝ` preserves `IsPreBrownianVector`. -/
-theorem orthogonal [Fintype ι] [DecidableEq ι] (hB : IsPreBrownianVector B P)
+theorem mulVec_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι] (hB : IsPreBrownianVector B P)
     {O : Matrix ι ι ℝ} (hO : O ∈ Matrix.orthogonalGroup ι ℝ) :
     IsPreBrownianVector (fun k t ω ↦ (O *ᵥ (B · t ω)) k) P :=
   hB.mulVec_of_mul_transpose_eq_one ((Matrix.mem_orthogonalGroup_iff ι ℝ).1 hO)
 
-/-- Weak Markov independence: `(i, t) ↦ B i (t₀ + t) - B i t₀` is independent of
-`(i, u) ↦ B i u` (`u ≤ t₀`). -/
+/-- `(i, t) ↦ B i (t₀ + t) - B i t₀` is independent of `(i, u) ↦ B i u` (`u ≤ t₀`). -/
 theorem indepFun_shift (hB : IsPreBrownianVector B P) (t₀ : ℝ≥0) :
-    IndepFun (fun ω i t ↦ B i (t₀ + t) ω - B i t₀ ω)
-      (fun ω i (u : Set.Iic t₀) ↦ B i u ω) P := by
+    IndepFun (fun ω i t ↦ B i (t₀ + t) ω - B i t₀ ω) (fun ω i (u : Set.Iic t₀) ↦ B i u ω) P := by
   classical
   have := hB.isProbabilityMeasure
   let X : ι × ℝ≥0 → Ω → ℝ := fun p ω ↦ B p.1 (t₀ + p.2) ω - B p.1 t₀ ω
@@ -350,8 +332,8 @@ theorem indepFun_shift (hB : IsPreBrownianVector B P) (t₀ : ℝ≥0) :
     (fun q ↦ hB.aemeasurable q.1 q.2) fun ⟨i, t⟩ ⟨j, u, hu⟩ ↦ ?_).comp
     (.of_eval fun i ↦ .of_eval fun t ↦ measurable_pi_apply (i, t))
     (.of_eval fun i ↦ .of_eval fun u ↦ measurable_pi_apply (i, u))
-  change cov[B i (t₀ + t) - B i t₀, B j u; P] = 0
-  rw [covariance_sub_left (hB.memLp_two_eval i (t₀ + t)) (hB.memLp_two_eval i t₀)
+  simp only [X, Y]
+  rw [covariance_fun_sub_left (hB.memLp_two_eval i (t₀ + t)) (hB.memLp_two_eval i t₀)
     (hB.memLp_two_eval j u), hB.covariance_eval, hB.covariance_eval]
   split_ifs with hij
   · have hu1 : (u : ℝ) ≤ ((t₀ + t : ℝ≥0) : ℝ) := by
@@ -366,32 +348,24 @@ theorem indepFun_sub_past (hB : IsPreBrownianVector B P) {s t : ℝ≥0} (hst : 
     (φ := fun (x : ι → ℝ≥0 → ℝ) i ↦ x i (t - s))
     (.of_eval fun i ↦ (measurable_pi_apply (t - s)).comp (measurable_pi_apply i)) measurable_id
 
-/-- For `s ≤ t` and finite `ι`, `i ↦ B i t - B i s` has law
-`Measure.pi (fun _ ↦ gaussianReal 0 (t - s))`. -/
+/-- For `s ≤ t`, `B · t - B · s` has law `Measure.pi (fun _ ↦ gaussianReal 0 (t - s))`. -/
 theorem hasLaw_sub_pi [Fintype ι] (hB : IsPreBrownianVector B P) {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω i ↦ B i t ω - B i s ω) (Measure.pi fun _ : ι ↦ gaussianReal 0 (t - s)) P :=
   (hB.iIndepFun.comp (fun _ x ↦ x t - x s)
     fun _ ↦ (measurable_pi_apply t).sub (measurable_pi_apply s)).hasLaw_pi
     fun i ↦ (hB.isPreBrownianReal i).hasLaw_sub_of_le hst
 
-/-- For `s ≤ t` and finite `ι`, `WithLp.toLp 2 (B · t - B · s)` has law
-`multivariateGaussian 0 ((t - s) • 1)`. -/
+/-- For `s ≤ t`, `WithLp.toLp 2 (B · t - B · s)` has law `multivariateGaussian 0 ((t - s) • 1)`. -/
 theorem hasLaw_toLp_sub [Fintype ι] [DecidableEq ι] (hB : IsPreBrownianVector B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    HasLaw (fun ω ↦ WithLp.toLp 2 fun i ↦ B i t ω - B i s ω)
+    {s t : ℝ≥0} (hst : s ≤ t) : HasLaw (fun ω ↦ WithLp.toLp 2 fun i ↦ B i t ω - B i s ω)
       (multivariateGaussian 0 (((t - s : ℝ≥0) : ℝ) • (1 : Matrix ι ι ℝ))) P := by
   refine (HasLaw.mk (by fun_prop) ?_).fun_comp (hB.hasLaw_sub_pi hst)
-  have hscale : (fun _ : ι ↦ gaussianReal 0 (t - s)) =
-      fun _ : ι ↦ (gaussianReal 0 1).map (fun x : ℝ ↦ √((t - s : ℝ≥0) : ℝ) * x) := by
-    ext _; rw [gaussianReal_map_const_mul]; simp [Real.sq_sqrt (NNReal.coe_nonneg _)]
-  have hcomm : (WithLp.toLp 2 ∘ fun (x : ι → ℝ) (i : ι) ↦ √((t - s : ℝ≥0) : ℝ) * x i) =
+  have hcomm : (WithLp.toLp 2 ∘ fun x : ι → ℝ ↦ √((t - s : ℝ≥0) : ℝ) • x) =
       (fun z : EuclideanSpace ℝ ι ↦ (0 : EuclideanSpace ℝ ι) + √((t - s : ℝ≥0) : ℝ) • z) ∘
         WithLp.toLp 2 := by ext x i; simp
-  have hstd : stdGaussian (EuclideanSpace ℝ ι) = multivariateGaussian 0 (1 : Matrix ι ι ℝ) := by
-    simp [multivariateGaussian]
-  rw [hscale, ← Measure.pi_map_pi fun _ ↦ by fun_prop, Measure.map_map (by fun_prop) (by fun_prop),
-    hcomm, ← Measure.map_map (by fun_prop) (by fun_prop), map_pi_eq_stdGaussian, hstd,
-    map_add_smul_multivariateGaussian 0 Matrix.PosSemidef.one 0]
+  rw [pi_gaussianReal_zero_eq_map_smul, Measure.map_map (by fun_prop) (by fun_prop), hcomm,
+    ← Measure.map_map (by fun_prop) (by fun_prop), map_pi_eq_stdGaussian,
+    ← multivariateGaussian_zero_one, map_add_smul_multivariateGaussian 0 Matrix.PosSemidef.one 0]
   simp [Real.sq_sqrt (NNReal.coe_nonneg _)]
 
 end IsPreBrownianVector
@@ -399,14 +373,14 @@ end IsPreBrownianVector
 namespace IsBrownianVector
 
 /-- Applying a row-orthonormal matrix `A` (`A * Aᵀ = 1`) preserves `IsBrownianVector`. -/
-theorem mulVec_of_mul_transpose_eq_one [Fintype ι] [DecidableEq κ]
-    (hB : IsBrownianVector B P) {A : Matrix κ ι ℝ} (hA : A * Aᵀ = 1) :
-    IsBrownianVector (fun k t ω ↦ ∑ i, A k i * B i t ω) P :=
+theorem mulVec_of_mul_transpose_eq_one [Fintype ι] [DecidableEq κ] (hB : IsBrownianVector B P)
+    {A : Matrix κ ι ℝ} (hA : A * Aᵀ = 1) : IsBrownianVector (fun k t ω ↦ (A *ᵥ (B · t ω)) k) P :=
   ⟨hB.toIsPreBrownianVector.mulVec_of_mul_transpose_eq_one hA,
-    fun _ ↦ (ae_all_iff.mpr hB.ae_continuous).mono fun _ _ ↦ by fun_prop⟩
+    fun _ ↦ (ae_all_iff.mpr hB.ae_continuous).mono fun _ _ ↦ by
+      simp only [Matrix.mulVec, dotProduct]; fun_prop⟩
 
 /-- Applying `O ∈ Matrix.orthogonalGroup ι ℝ` preserves `IsBrownianVector`. -/
-theorem orthogonal [Fintype ι] [DecidableEq ι] (hB : IsBrownianVector B P)
+theorem mulVec_of_mem_orthogonalGroup [Fintype ι] [DecidableEq ι] (hB : IsBrownianVector B P)
     {O : Matrix ι ι ℝ} (hO : O ∈ Matrix.orthogonalGroup ι ℝ) :
     IsBrownianVector (fun k t ω ↦ (O *ᵥ (B · t ω)) k) P :=
   hB.mulVec_of_mul_transpose_eq_one ((Matrix.mem_orthogonalGroup_iff ι ℝ).1 hO)
@@ -416,8 +390,7 @@ end IsBrownianVector
 section Constructions
 
 /-- Product construction of `IsPreBrownianVector` from scalar pre-Brownian motions on factors. -/
-theorem _root_.ProbabilityTheory.IsPreBrownianReal.isPreBrownianVector_pi
-    [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
+theorem isPreBrownianVector_pi [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
     {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
     (hB₀ : ∀ i, IsPreBrownianReal (B₀ i) (P₀ i)) :
     IsPreBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.pi P₀) where
@@ -437,20 +410,19 @@ theorem _root_.ProbabilityTheory.IsPreBrownianReal.isPreBrownianVector_pi
       fun _ ↦ .of_eval fun _ ↦ measurable_pi_apply _
 
 /-- Product construction of `IsBrownianVector` from scalar Brownian motions on factors. -/
-theorem _root_.ProbabilityTheory.IsBrownianReal.isBrownianVector_pi
-    [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
+theorem isBrownianVector_pi [Fintype ι] {Ω₀ : ι → Type*} [∀ i, MeasurableSpace (Ω₀ i)]
     {P₀ : ∀ i, Measure (Ω₀ i)} {B₀ : ∀ i, ℝ≥0 → Ω₀ i → ℝ}
     (hB₀ : ∀ i, IsBrownianReal (B₀ i) (P₀ i)) :
     IsBrownianVector (fun i t (ω : ∀ j, Ω₀ j) ↦ B₀ i t (ω i)) (Measure.pi P₀) :=
-  ⟨IsPreBrownianReal.isPreBrownianVector_pi fun i ↦ (hB₀ i).toIsPreBrownianReal, fun i ↦
+  ⟨isPreBrownianVector_pi fun i ↦ (hB₀ i).toIsPreBrownianReal, fun i ↦
     have := fun j ↦ (hB₀ j).isGaussianProcess.isProbabilityMeasure
     (measurePreserving_eval P₀ i).quasiMeasurePreserving.ae (hB₀ i).cont⟩
 
 /-- Canonical coordinate vector pre-Brownian motion on `ι → ℝ≥0 → ℝ` under `Measure.pi`. -/
-theorem isPreBrownianVector_eval_pi_gaussianLimit [Fintype ι] :
+theorem isPreBrownianVector_eval_pi_brownianProjectiveLimit [Fintype ι] :
     IsPreBrownianVector (fun i t (ω : ι → ℝ≥0 → ℝ) ↦ ω i t)
-      (Measure.pi fun _ : ι ↦ gaussianLimit) :=
-  IsPreBrownianReal.isPreBrownianVector_pi fun _ ↦ isPreBrownianReal_eval_gaussianLimit
+      (Measure.pi fun _ : ι ↦ brownianProjectiveLimit) :=
+  isPreBrownianVector_pi fun _ ↦ isPreBrownianReal_eval_brownianProjectiveLimit
 
 end Constructions
 
