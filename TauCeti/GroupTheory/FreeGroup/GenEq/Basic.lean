@@ -210,6 +210,56 @@ theorem segment_suffix_segment {i j k : ℕ} (hij : i ≤ j) :
   simp only [segment_true]
   exact (List.drop_suffix_drop_left _ hij).map _
 
+/-- The word `h[i, j]⁻¹` is the inverse of `h[i, j]` in `F(A)[h]`. -/
+theorem toGX_segment_false (i j : ℕ) :
+    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j false)) =
+      (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j true)))⁻¹ := by
+  rw [segment_false, ← FreeGroup.inv_mk, map_inv]
+
+/-- The word `h[i, j] ^ ±1` avoids the items outside the section `[i, j]`. -/
+theorem toGX_segment_mem_avoiding {i j : ℕ} (s : Bool) {k : Fin Ω.numItems}
+    (hk : (k : ℕ) < i ∨ j ≤ k) :
+    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j s)) ∈ GX.avoiding k := by
+  have htrue :
+      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment i j true)) ∈ GX.avoiding k := by
+    refine EqIneqSystem.toGX_mk_mem_avoiding fun p hp => ?_
+    rw [segment_true] at hp
+    obtain ⟨k', hk', rfl⟩ := List.mem_map.1 hp
+    obtain ⟨m, hm, rfl⟩ := List.mem_iff_getElem.1 hk'
+    simp only [List.length_drop, List.length_take, List.length_finRange] at hm
+    simp only [List.getElem_drop, List.getElem_take, List.getElem_finRange, ne_eq, Sum.inl.injEq,
+      Fin.ext_iff, Fin.val_cast]
+    omega
+  cases s
+  · rw [toGX_segment_false]
+    exact inv_mem htrue
+  · exact htrue
+
+/-- `h[l, r] = h[l, k] hₖ h[k + 1, r]` in `F(A)[h]` for `l ≤ k < r ≤ ρ`. -/
+theorem toGX_segment_eq_mul {l k r : ℕ} (hlk : l ≤ k) (hkr : k < r) (hr : r ≤ Ω.numItems) :
+    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l r true)) =
+      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l k true)) *
+        inr (FreeGroup.of ⟨k, by omega⟩) *
+          EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment (k + 1) r true)) := by
+  have hseg : Ω.segment l r true = Ω.segment l k true ++ [(Sum.inl ⟨k, by omega⟩, true)] ++
+      Ω.segment (k + 1) r true := by
+    rw [← Ω.segment_succ ⟨k, by omega⟩, Ω.segment_append hlk (by simp) (by simp; omega),
+      Ω.segment_append (by simp; omega) (by simp; omega) hr]
+  rw [hseg, ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, map_mul, map_mul]
+  simp [EqIneqSystem.toGX_eq_lift, FreeGroup.lift_mk]
+
+/-- `h[l, r] = h[l, p] (h_p h_{p+1}) h[p + 2, r]` in `F(A)[h]` for `l ≤ p` and `p + 2 ≤ r ≤ ρ`. -/
+theorem toGX_segment_eq_mul_pair {l p r : ℕ} (hlp : l ≤ p) (hpr : p + 2 ≤ r)
+    (hr : r ≤ Ω.numItems) :
+    EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l r true)) =
+      EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment l p true)) *
+        (inr (FreeGroup.of ⟨p, by omega⟩) * inr (FreeGroup.of ⟨p + 1, by omega⟩)) *
+          EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.segment (p + 2) r true)) := by
+  have hnil : Ω.segment (p + 1) (p + 1) true = [] := List.eq_nil_of_length_eq_zero (by simp)
+  rw [Ω.toGX_segment_eq_mul hlp (by omega) hr,
+    Ω.toGX_segment_eq_mul (l := p + 1) (k := p + 1) le_rfl (by omega) hr, hnil]
+  simp [← FreeGroup.one_eq_mk, mul_assoc]
+
 /-- The letters of `A` used by a word `h[i, j] ^ ±1` after substitution of words for the items
 are the letters used by the words of the items between the boundaries `i` and `j`. -/
 theorem exists_mem_substituteVars_segment_iff (u : Fin Ω.numItems → List (A × Bool))
@@ -271,6 +321,14 @@ theorem basicEquation_snd (μ : Fin Ω.numBases) :
     (Ω.basicEquation μ).2 =
       Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) (Ω.sign (Ω.dual μ)) :=
   (rfl)
+
+/-- The basic equations of `μ` and `Δ(μ)` have the same two sides, exchanged: as relators, each is
+the inverse of the other. -/
+theorem mk_basicEquation_dual (μ : Fin Ω.numBases) :
+    FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1 * (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)⁻¹ =
+      (FreeGroup.mk (Ω.basicEquation μ).1 * (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹)⁻¹ := by
+  rw [basicEquation_fst, basicEquation_snd, basicEquation_fst, basicEquation_snd,
+    Ω.dual_involutive, mul_inv_rev, inv_inv]
 
 /-- The left side of the coefficient equation of a constant base on item `k` is `hₖ`. -/
 @[simp]

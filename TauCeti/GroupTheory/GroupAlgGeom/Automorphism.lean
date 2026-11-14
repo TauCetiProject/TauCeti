@@ -36,7 +36,9 @@ Each comes with its values on coefficients and variables, its inverse, and its e
 evaluation: the value of `φ w` at a point `v` is the value of `w` at the point obtained from `v`
 by the corresponding substitution. The words in which `x` does not occur form the subgroup
 `GX.avoiding x`: they are the words unchanged by the substitution `x ↦ 1`, and their values do
-not depend on the coordinate `x` of a point. Transvections of finitely many variables, by words in
+not depend on the coordinate `x` of a point. Together with `x` they generate `G[X]`, so a
+homomorphism out of `G[X]` is determined by its values on them and on `x`
+(`GX.hom_ext_of_avoiding`). Transvections of finitely many variables, by words in
 which none of these variables occurs, are carried out at once by one elementary automorphism,
 which fixes the words in which none of them occurs
 (`GX.exists_mem_elementaryAut_forall_apply_inr_of`).
@@ -149,6 +151,14 @@ theorem eval_congr_of_mem_avoiding (ha : a ∈ avoiding x) {v v' : X → H}
 theorem eval_update_of_mem_avoiding (ha : a ∈ avoiding x) (v : X → H) (c : H) :
     eval ι (update v x c) a = eval ι v a :=
   eval_congr_of_mem_avoiding ι ha fun y hy => by simp [hy]
+
+/-- Two homomorphisms out of `G[X]` agreeing on the words in which `x` does not occur and on `x`
+are equal. -/
+theorem hom_ext_of_avoiding {M F : Type*} [Monoid M] [FunLike F (GX G X) M]
+    [MonoidHomClass F (GX G X) M] {φ ψ : F} (h : ∀ a ∈ avoiding x, φ a = ψ a)
+    (hx : φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
+  ext_hom (fun g => h _ (inl_mem_avoiding x g)) fun y =>
+    if hy : y = x then hy ▸ hx else h _ (inr_of_mem_avoiding hy)
 
 end Avoiding
 
