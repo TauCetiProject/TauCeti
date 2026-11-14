@@ -23,7 +23,8 @@ ambient vertex type rather than by extra data in the carrier.
 
 The complete complex contains every pair and triple. Its face counts are provided both as
 binomial coefficients and as polynomial formulas in division rings, for use in normalizing sums over
-edges and triangles.
+edges and triangles. `TwoComplex.Adj` expresses edge adjacency of two vertices without requiring
+decidable equality on the vertex type.
 -/
 
 public section
@@ -205,6 +206,68 @@ theorem natCast_card_triangles_complete {K : Type*} [DivisionRing K] [CharZero K
   norm_num [descPochhammer_succ_eval, Nat.factorial_succ]
 
 end FiniteVertices
+
+section Adjacency
+
+/-- Two vertices are adjacent in `X` when they are distinct and lie in a common edge of `X`.
+Unlike `{u, v} ∈ X.edges`, this requires no `DecidableEq V` instance. -/
+def Adj (X : TwoComplex V) (u v : V) : Prop :=
+  u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e
+
+theorem adj_iff (X : TwoComplex V) (u v : V) :
+    X.Adj u v ↔ u ≠ v ∧ ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e :=
+  Iff.rfl
+
+theorem Adj.ne {X : TwoComplex V} {u v : V} (h : X.Adj u v) : u ≠ v :=
+  h.1
+
+theorem Adj.exists_mem_edges {X : TwoComplex V} {u v : V} (h : X.Adj u v) :
+    ∃ e ∈ X.edges, u ∈ e ∧ v ∈ e :=
+  h.2
+
+@[simp]
+theorem not_adj_self (X : TwoComplex V) (u : V) : ¬ X.Adj u u :=
+  fun h => h.1 rfl
+
+theorem Adj.symm {X : TwoComplex V} {u v : V} (h : X.Adj u v) : X.Adj v u :=
+  ⟨h.1.symm, let ⟨e, he, hu, hv⟩ := h.2; ⟨e, he, hv, hu⟩⟩
+
+theorem adj_comm (X : TwoComplex V) (u v : V) : X.Adj u v ↔ X.Adj v u :=
+  ⟨Adj.symm, Adj.symm⟩
+
+/-- With decidable vertex equality, adjacency is membership of the unordered pair in `X.edges`. -/
+theorem adj_iff_pair_mem_edges [DecidableEq V] (X : TwoComplex V) (u v : V) :
+    X.Adj u v ↔ ({u, v} : Finset V) ∈ X.edges := by
+  constructor
+  · rintro ⟨huv, e, he, hu, hv⟩
+    have hsub : ({u, v} : Finset V) ⊆ e :=
+      insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩
+    rwa [eq_of_subset_of_card_le hsub (by rw [X.edge_card e he, card_pair huv])]
+  · intro he
+    have hc := X.edge_card _ he
+    have huv : u ≠ v := by
+      rintro rfl
+      simp at hc
+    exact ⟨huv, {u, v}, he, by simp, by simp⟩
+
+/-- Any two distinct vertices of a filled triangle are adjacent. -/
+theorem adj_of_mem_triangle (X : TwoComplex V) {t : Finset V} (ht : t ∈ X.triangles)
+    {u v : V} (hu : u ∈ t) (hv : v ∈ t) (huv : u ≠ v) : X.Adj u v := by
+  classical
+  rw [adj_iff_pair_mem_edges]
+  exact X.edge_mem_of_subset t ht {u, v}
+    (insert_subset_iff.mpr ⟨hu, singleton_subset_iff.mpr hv⟩) (card_pair huv)
+
+/-- In the complete complex, two vertices are adjacent if and only if they are distinct. -/
+@[simp]
+theorem adj_complete [Fintype V] (u v : V) : (complete V).Adj u v ↔ u ≠ v := by
+  classical
+  rw [adj_iff_pair_mem_edges, mem_edges_complete]
+  by_cases huv : u = v
+  · simp [huv]
+  · simp [card_pair huv, huv]
+
+end Adjacency
 
 end TwoComplex
 
