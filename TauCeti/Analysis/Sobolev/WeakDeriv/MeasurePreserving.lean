@@ -12,6 +12,8 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The weak chain rule for measure-preserving Lipschitz changes of variables
@@ -32,6 +34,12 @@ The typical change of variables of this kind is a shear `(t, y) ↦ (t - φ y, y
 which flattens the region above the graph of a Lipschitz function `φ` onto a half-space; it is
 measure-preserving by Fubini's theorem.
 
+Scaling the measure by a finite constant preserves weak derivatives, so by uniqueness of Haar
+measure weak derivatives on a finite-dimensional real normed space do not depend on the choice of
+additive Haar measure. In particular, every continuous linear equivalence `e : E ≃L[ℝ] E'` pushes
+an additive Haar measure to a positive finite multiple of any additive Haar measure on `E'`, so
+the weak chain rule for `e` requires no measure-preservation hypothesis.
+
 ## The argument
 
 Fix an open `W` whose closure is compact and contained in `U`. The image `K = Φ '' closure W` is
@@ -50,10 +58,16 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 
 ## Main declarations
 
+* `TauCeti.HasWeakLineDerivOn.smul_measure`, `TauCeti.HasWeakFDerivOn.smul_measure`,
+  `TauCeti.hasWeakLineDerivOn_smul_measure_iff`, `TauCeti.hasWeakFDerivOn_smul_measure_iff`:
+  scaling the measure by a finite (nonzero) constant preserves weak derivatives.
+* `TauCeti.HasWeakLineDerivOn.of_isAddLeftInvariant`,
+  `TauCeti.HasWeakFDerivOn.of_isAddLeftInvariant`, `TauCeti.hasWeakLineDerivOn_addHaar_iff`,
+  `TauCeti.hasWeakFDerivOn_addHaar_iff`: independence of the choice of additive Haar measure.
 * `TauCeti.HasWeakFDerivOn.comp_measurePreserving`: the weak chain rule.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
-  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the case of a measure-preserving
-  continuous linear equivalence, such as a linear isometry between inner product spaces.
+  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the weak chain rule for any continuous linear
+  equivalence between finite-dimensional real normed spaces carrying additive Haar measures.
 
 ## References
 
@@ -225,31 +239,110 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
   rw [hx]
 
 
+/-! ### Rescaling the measure and changing additive Haar measures -/
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Scaling the measure by a finite constant preserves weak directional derivatives. -/
+theorem HasWeakLineDerivOn.smul_measure {Ω : Opens E} {u u' : E → F} {v : E}
+    (h : HasWeakLineDerivOn μ Ω u u' v) {c : ℝ≥0∞} (hc : c ≠ ∞) :
+    HasWeakLineDerivOn (c • μ) Ω u u' v := by
+  obtain ⟨hcs, hu, hu', hint⟩ := hasWeakLineDerivOn_iff_testFunction.1 h
+  have hsmul {g : E → F} (hg : LocallyIntegrableOn g Ω μ) :
+      LocallyIntegrableOn g Ω (c • μ) := fun x hx =>
+    let ⟨t, ht, hti⟩ := hg x hx
+    ⟨t, ht, by simpa [IntegrableOn] using hti.smul_measure hc⟩
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨hcs, hsmul hu, hsmul hu', fun φ => ?_⟩
+  rw [integral_smul_measure, integral_smul_measure, hint φ, smul_neg]
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Scaling the measure by a finite constant preserves weak Fréchet derivatives. -/
+theorem HasWeakFDerivOn.smul_measure {Ω : Opens E} {u : E → F} {D : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u D) {c : ℝ≥0∞} (hc : c ≠ ∞) :
+    HasWeakFDerivOn (c • μ) Ω u D :=
+  hasWeakFDerivOn_iff.2 fun v => (hasWeakFDerivOn_iff.1 h v).smul_measure hc
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Scaling the measure by a positive finite constant preserves weak directional derivatives in both
+directions. -/
+theorem hasWeakLineDerivOn_smul_measure_iff {Ω : Opens E} {u u' : E → F} {v : E}
+    {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞) :
+    HasWeakLineDerivOn (c • μ) Ω u u' v ↔ HasWeakLineDerivOn μ Ω u u' v :=
+  ⟨fun h => by
+    simpa only [smul_smul, ENNReal.inv_mul_cancel hc₀ hc, one_smul] using
+      h.smul_measure (ENNReal.inv_ne_top.2 hc₀),
+   fun h => h.smul_measure hc⟩
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Scaling the measure by a positive finite constant preserves weak Fréchet derivatives in both
+directions. -/
+theorem hasWeakFDerivOn_smul_measure_iff {Ω : Opens E} {u : E → F} {D : E → E →L[ℝ] F}
+    {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞) :
+    HasWeakFDerivOn (c • μ) Ω u D ↔ HasWeakFDerivOn μ Ω u D :=
+  ⟨fun h => by
+    simpa only [smul_smul, ENNReal.inv_mul_cancel hc₀ hc, one_smul] using
+      h.smul_measure (ENNReal.inv_ne_top.2 hc₀),
+   fun h => h.smul_measure hc⟩
+
+/-- On a finite-dimensional real normed space, a weak directional derivative relative to an additive
+Haar measure remains one relative to every left-invariant measure that is finite on compact sets. -/
+theorem HasWeakLineDerivOn.of_isAddLeftInvariant {Ω : Opens E} {u u' : E → F} {v : E}
+    (h : HasWeakLineDerivOn μ Ω u u' v) (μ' : Measure E)
+    [IsFiniteMeasureOnCompacts μ'] [μ'.IsAddLeftInvariant] :
+    HasWeakLineDerivOn μ' Ω u u' v := by
+  rw [Measure.isAddLeftInvariant_eq_smul μ' μ, ← Measure.coe_nnreal_smul]
+  exact h.smul_measure ENNReal.coe_ne_top
+
+/-- On a finite-dimensional real normed space, a weak Fréchet derivative relative to an additive
+Haar measure remains one relative to every left-invariant measure that is finite on compact sets. -/
+theorem HasWeakFDerivOn.of_isAddLeftInvariant {Ω : Opens E} {u : E → F} {D : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u D) (μ' : Measure E)
+    [IsFiniteMeasureOnCompacts μ'] [μ'.IsAddLeftInvariant] :
+    HasWeakFDerivOn μ' Ω u D :=
+  hasWeakFDerivOn_iff.2 fun v => (hasWeakFDerivOn_iff.1 h v).of_isAddLeftInvariant μ'
+
+/-- Weak directional derivatives on a finite-dimensional real normed space do not depend on the
+choice of additive Haar measure. -/
+theorem hasWeakLineDerivOn_addHaar_iff (μ₁ μ₂ : Measure E)
+    [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure] {Ω : Opens E} {u u' : E → F} {v : E} :
+    HasWeakLineDerivOn μ₁ Ω u u' v ↔ HasWeakLineDerivOn μ₂ Ω u u' v :=
+  ⟨fun h => h.of_isAddLeftInvariant μ₂, fun h => h.of_isAddLeftInvariant μ₁⟩
+
+/-- Weak Fréchet derivatives on a finite-dimensional real normed space do not depend on the choice
+of additive Haar measure. -/
+theorem hasWeakFDerivOn_addHaar_iff (μ₁ μ₂ : Measure E)
+    [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure] {Ω : Opens E} {u : E → F} {D : E → E →L[ℝ] F} :
+    HasWeakFDerivOn μ₁ Ω u D ↔ HasWeakFDerivOn μ₂ Ω u D :=
+  ⟨fun h => h.of_isAddLeftInvariant μ₂, fun h => h.of_isAddLeftInvariant μ₁⟩
+
+/-! ### Linear changes of variables -/
+
+omit [FiniteDimensional ℝ E'] in
 /-- **The weak chain rule for linear changes of variables.** If `u` has weak derivative `D` on the
-open set `V`, and the continuous linear equivalence `e` carries `μ` to `ν` and maps `U` into `V`,
-then `u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U`. Linear isometries between
-finite-dimensional real inner product spaces carry volume to volume
-(`LinearIsometryEquiv.measurePreserving`). -/
+open set `V` and the continuous linear equivalence `e : E ≃L[ℝ] E'` maps `U` into `V`, then `u ∘ e`
+has weak derivative `x ↦ D (e x) ∘L e` on `U`, for any additive Haar measures `μ` on `E` and `ν` on
+`E'`. -/
 theorem HasWeakFDerivOn.comp_continuousLinearEquiv {U : Opens E} {V : Opens E'} {u : E' → F}
-    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E')
-    (he : MeasurePreserving e μ ν) (hUV : MapsTo e U V) :
+    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E') (hUV : MapsTo e U V) :
     HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') := by
-  simpa only [e.fderiv] using h.comp_measurePreserving he
+  have : FiniteDimensional ℝ E' := Module.Finite.equiv e.toLinearEquiv
+  have : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  have he : MeasurePreserving e μ (μ.map e) := ⟨e.continuous.measurable, rfl⟩
+  simpa only [e.fderiv] using (h.of_isAddLeftInvariant (μ.map e)).comp_measurePreserving he
     (e : E →L[ℝ] E').lipschitzWith.locallyLipschitz.locallyLipschitzOn hUV
 
-/-- **Weak derivatives through a linear change of variables.** If the continuous linear
-equivalence `e` carries `μ` to `ν` and `U = e ⁻¹' V`, then `u ∘ e` has weak derivative
-`x ↦ D (e x) ∘L e` on `U` exactly when `u` has weak derivative `D` on `V`. -/
+omit [FiniteDimensional ℝ E'] in
+/-- **Weak derivatives through a linear change of variables.** For any continuous linear equivalence
+`e : E ≃L[ℝ] E'` with `U = e ⁻¹' V` and any additive Haar measures `μ` on `E` and `ν` on `E'`,
+`u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U` if and only if `u` has weak derivative `D` on
+`V`. -/
 theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff {U : Opens E} {V : Opens E'}
-    {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (he : MeasurePreserving e μ ν)
-    (hUV : (U : Set E) = e ⁻¹' V) :
+    {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (hUV : (U : Set E) = e ⁻¹' V) :
     HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
       HasWeakFDerivOn ν V u D := by
-  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e he (hUV ▸ mapsTo_preimage e V)⟩
-  have he' : MeasurePreserving e.symm ν μ :=
-    MeasurePreserving.symm e.toHomeomorph.toMeasurableEquiv he
+  have : FiniteDimensional ℝ E' := Module.Finite.equiv e.toLinearEquiv
+  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e (hUV ▸ mapsTo_preimage e V)⟩
   have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
   simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
-    h.comp_continuousLinearEquiv e.symm he' hVU
+    h.comp_continuousLinearEquiv e.symm hVU
 
 end TauCeti
