@@ -28,6 +28,8 @@ The real coordinates of `z : κ → ℂ` are indexed by `κ ⊕ κ`: `Sum.inl k`
   equation form a semialgebraic set.
 * `TauCeti.isSemialgebraic_setOf_eval_sumElim_star_eq_zero`: the zero set of a polynomial in
   complex coordinates and their conjugates is semialgebraic in the real coordinates.
+* `TauCeti.isSemialgebraic_setOf_mem_ball_complex`: an open complex disc `Metric.ball w₀ R` is
+  semialgebraic in the real coordinates of `ℂ`.
 * `TauCeti.isSemialgebraicOn_complexToRealPi_of_forall_eq_iff`: a map between complex coordinate
   spaces whose graph is cut out by such equations is semialgebraic in the real coordinates.
 -/
@@ -118,5 +120,26 @@ theorem isSemialgebraicOn_complexToRealPi_of_forall_eq_iff {σ τ ι : Type*} [F
   refine forall_congr' fun k ↦ Eq.congr_left (congr_arg (eval · (R k)) ?_)
   funext t
   rcases t with (t | t) | (t | t) <;> simp [f]
+
+/-- An open complex disc `Metric.ball w₀ R` is semialgebraic in the real coordinates
+`y : Unit ⊕ Unit → ℝ` where `w = y (.inl ()) + y (.inr ()) * I`. -/
+theorem isSemialgebraic_setOf_mem_ball_complex (w₀ : ℂ) (R : ℝ) :
+    IsSemialgebraic {y : Unit ⊕ Unit → ℝ |
+      ((y (.inl ()) : ℂ) + y (.inr ()) * I) ∈ Metric.ball w₀ R} := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
+  · have h : {y : Unit ⊕ Unit → ℝ | ((y (.inl ()) : ℂ) + y (.inr ()) * I) ∈ Metric.ball w₀ R} =
+        {y | eval y ((X (.inl ()) - C w₀.re) ^ 2 + (X (.inr ()) - C w₀.im) ^ 2) <
+          eval y (C (R ^ 2))} := by
+      ext y
+      simp only [Set.mem_ofPred_eq]
+      have hsub : ((y (.inl ()) : ℂ) + y (.inr ()) * I) - w₀ =
+          ((y (.inl ()) - w₀.re : ℝ) : ℂ) + (y (.inr ()) - w₀.im : ℝ) * I := by
+        conv_lhs => rw [← Complex.re_add_im w₀]
+        push_cast; ring
+      rw [Metric.mem_ball, dist_eq_norm, hsub, ← sq_lt_sq₀ (norm_nonneg _) hR.le, Complex.sq_norm]
+      simp [Complex.normSq_apply, sq]
+    rw [h]
+    exact isSemialgebraic_eval_lt _ _
 
 end TauCeti

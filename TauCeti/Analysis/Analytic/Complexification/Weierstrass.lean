@@ -69,6 +69,8 @@ open Filter Topology
 
 namespace TauCeti
 
+section Star
+
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [StarAddMonoid E] [StarModule ℂ E] [ContinuousStar E]
 
@@ -137,23 +139,25 @@ theorem eventually_apply_star_of_weierstrassDivision {g : E × ℂ → ℂ} {x�
   · filter_upwards [hrr i] with x hx
     simp [hx]
 
+end Star
+
 end TauCeti
 
-namespace AnalyticAt
+section RealAux
 
-variable {ι : Type} [Fintype ι]
+variable {ι₀ : Type} [Fintype ι₀]
 
-/-- The inclusion of the real points of `ι → ℂ` is real analytic. -/
-private theorem analyticAt_ofReal_pi (x₀ : ι → ℝ) :
-    AnalyticAt ℝ (fun x : ι → ℝ ↦ fun i ↦ (x i : ℂ)) x₀ :=
+/-- The inclusion of the real points of `ι₀ → ℂ` is real analytic. -/
+private theorem analyticAt_ofReal_pi (x₀ : ι₀ → ℝ) :
+    AnalyticAt ℝ (fun x : ι₀ → ℝ ↦ fun i ↦ (x i : ℂ)) x₀ :=
   analyticAt_pi_iff.2 fun i ↦ by
     simpa [Function.comp_def] using
       (Complex.ofRealCLM.analyticAt _).comp
-        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).analyticAt x₀)
+        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι₀ ↦ ℝ) i).analyticAt x₀)
 
-/-- The inclusion of the real points of `(ι → ℂ) × ℂ` is real analytic. -/
-private theorem analyticAt_ofReal_prod (x₀ : ι → ℝ) (t₀ : ℝ) :
-    AnalyticAt ℝ (fun p : (ι → ℝ) × ℝ ↦ ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ))) (x₀, t₀) :=
+/-- The inclusion of the real points of `(ι₀ → ℂ) × ℂ` is real analytic. -/
+private theorem analyticAt_ofReal_prod (x₀ : ι₀ → ℝ) (t₀ : ℝ) :
+    AnalyticAt ℝ (fun p : (ι₀ → ℝ) × ℝ ↦ ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ))) (x₀, t₀) :=
   ((analyticAt_ofReal_pi x₀).comp analyticAt_fst).prod <| by
     simpa [Function.comp_def] using
       (Complex.ofRealCLM.analyticAt _).comp (analyticAt_snd (𝕜 := ℝ) (p := (x₀, t₀)))
@@ -170,16 +174,10 @@ private theorem analyticAt_re_comp_of_eventually_star {X Y : Type*} [NormedAddCo
   ⟨(Complex.reCLM.analyticAt _).comp ((hF.restrictScalars (𝕜 := ℝ)).comp hφ),
     TauCeti.eventually_ofReal_re_eq hφ.continuousAt hφs h⟩
 
-/-- **Real analytic Weierstrass preparation theorem.** Let `f : (ι → ℝ) × ℝ → ℝ` be real analytic
-at `(x₀, t₀)`, with `ι` finite, and suppose the vertical slice `t ↦ f (x₀, t)` has finite order of
-vanishing `d` at `t₀`. Then there exist real analytic coefficient functions `c : Fin d → (ι → ℝ) →
-ℝ` vanishing at `x₀` and a real analytic function `u` nonvanishing at `(x₀, t₀)` such that near
-`(x₀, t₀)`,
-`f (x, t) = (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i x)).eval (t - t₀) * u (x, t)`. -/
-theorem exists_weierstrassPreparation_real {f : (ι → ℝ) × ℝ → ℝ}
-    {x₀ : ι → ℝ} {t₀ : ℝ} {d : ℕ} (hf : AnalyticAt ℝ f (x₀, t₀))
+private theorem exists_weierstrassPreparation_real_type0
+    {f : (ι₀ → ℝ) × ℝ → ℝ} {x₀ : ι₀ → ℝ} {t₀ : ℝ} {d : ℕ} (hf : AnalyticAt ℝ f (x₀, t₀))
     (hd : analyticOrderAt (fun t ↦ f (x₀, t)) t₀ = d) :
-    ∃ (c : Fin d → (ι → ℝ) → ℝ) (u : (ι → ℝ) × ℝ → ℝ),
+    ∃ (c : Fin d → (ι₀ → ℝ) → ℝ) (u : (ι₀ → ℝ) × ℝ → ℝ),
       (∀ i, AnalyticAt ℝ (c i) x₀) ∧ (∀ i, c i x₀ = 0) ∧
       AnalyticAt ℝ u (x₀, t₀) ∧ u (x₀, t₀) ≠ 0 ∧
       f =ᶠ[𝓝 (x₀, t₀)] fun p ↦
@@ -224,16 +222,10 @@ theorem exists_weierstrassPreparation_real {f : (ι → ℝ) × ℝ → ℝ}
   simp only [TauCeti.Polynomial.eval_monicOfCoeff, Complex.ofReal_mul, Complex.ofReal_add,
     Complex.ofReal_pow, Complex.ofReal_sum, Complex.ofReal_sub, hCp, hUp]
 
-/-- **Real analytic Weierstrass division by a Weierstrass polynomial.** Let `c : Fin d → (ι → ℝ) →
-ℝ` be real analytic at `x₀` with `c i x₀ = 0`, with `ι` finite, and let `g : (ι → ℝ) × ℝ → ℝ` be
-real analytic at `(x₀, t₀)`. Then there exist `q` real analytic at `(x₀, t₀)` and
-`r : Fin d → (ι → ℝ) → ℝ` real analytic at `x₀` such that near `(x₀, t₀)`,
-`g (x, t) = (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i x)).eval (t - t₀) * q (x, t) +
-  ∑ i : Fin d, r i x * (t - t₀) ^ (i : ℕ)`. -/
-theorem exists_weierstrassDivision_monicOfCoeff_real {d : ℕ}
-    {c : Fin d → (ι → ℝ) → ℝ} {g : (ι → ℝ) × ℝ → ℝ} {x₀ : ι → ℝ} {t₀ : ℝ}
+private theorem exists_weierstrassDivision_monicOfCoeff_real_type0
+    {d : ℕ} {c : Fin d → (ι₀ → ℝ) → ℝ} {g : (ι₀ → ℝ) × ℝ → ℝ} {x₀ : ι₀ → ℝ} {t₀ : ℝ}
     (hg : AnalyticAt ℝ g (x₀, t₀)) (hc : ∀ i, AnalyticAt ℝ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0) :
-    ∃ (q : (ι → ℝ) × ℝ → ℝ) (r : Fin d → (ι → ℝ) → ℝ),
+    ∃ (q : (ι₀ → ℝ) × ℝ → ℝ) (r : Fin d → (ι₀ → ℝ) → ℝ),
       AnalyticAt ℝ q (x₀, t₀) ∧ (∀ i, AnalyticAt ℝ (r i) x₀) ∧
       g =ᶠ[𝓝 (x₀, t₀)] fun p ↦
         (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * q p +
@@ -266,5 +258,66 @@ theorem exists_weierstrassDivision_monicOfCoeff_real {d : ℕ}
   rw [← hGp, hp]
   simp only [TauCeti.Polynomial.eval_monicOfCoeff, Complex.ofReal_mul, Complex.ofReal_add,
     Complex.ofReal_pow, Complex.ofReal_sum, Complex.ofReal_sub, ← hCp, hQp, hRp]
+
+end RealAux
+
+namespace AnalyticAt
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **Real analytic Weierstrass preparation theorem.** Let `f : (ι → ℝ) × ℝ → ℝ` be real analytic
+at `(x₀, t₀)`, with `ι` finite, and suppose the vertical slice `t ↦ f (x₀, t)` has finite order of
+vanishing `d` at `t₀`. Then there exist real analytic coefficient functions `c : Fin d → (ι → ℝ) →
+ℝ` vanishing at `x₀` and a real analytic function `u` nonvanishing at `(x₀, t₀)` such that near
+`(x₀, t₀)`,
+`f (x, t) = (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i x)).eval (t - t₀) * u (x, t)`. -/
+theorem exists_weierstrassPreparation_real {f : (ι → ℝ) × ℝ → ℝ}
+    {x₀ : ι → ℝ} {t₀ : ℝ} {d : ℕ} (hf : AnalyticAt ℝ f (x₀, t₀))
+    (hd : analyticOrderAt (fun t ↦ f (x₀, t)) t₀ = d) :
+    ∃ (c : Fin d → (ι → ℝ) → ℝ) (u : (ι → ℝ) × ℝ → ℝ),
+      (∀ i, AnalyticAt ℝ (c i) x₀) ∧ (∀ i, c i x₀ = 0) ∧
+      AnalyticAt ℝ u (x₀, t₀) ∧ u (x₀, t₀) ≠ 0 ∧
+      f =ᶠ[𝓝 (x₀, t₀)] fun p ↦
+        (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * u p := by
+  let L : (ι → ℝ) ≃L[ℝ] (Fin (Fintype.card ι) → ℝ) :=
+    (LinearEquiv.piCongrLeft' ℝ (fun _ ↦ ℝ) (Fintype.equivFin ι)).toContinuousLinearEquiv
+  let Lp := L.prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
+  have hLp₀ : Lp.symm (L x₀, t₀) = (x₀, t₀) := Lp.symm_apply_apply (x₀, t₀)
+  obtain ⟨c, u, hc, hc0, hu, hu0, hfac⟩ := exists_weierstrassPreparation_real_type0
+    (hf.comp_of_eq (Lp.symm.analyticAt _) hLp₀)
+    (by simpa [Lp, L.symm_apply_apply] using hd)
+  refine ⟨fun i ↦ c i ∘ L, u ∘ Lp, fun i ↦ (hc i).comp (L.analyticAt _), fun i ↦ hc0 i,
+    hu.comp_of_eq (Lp.analyticAt _) rfl, hu0, ?_⟩
+  filter_upwards [(Lp.continuous.tendsto (x₀, t₀)).eventually hfac] with p hp
+  simpa [Lp, L.symm_apply_apply] using hp
+
+/-- **Real analytic Weierstrass division by a Weierstrass polynomial.** Let `c : Fin d → (ι → ℝ) →
+ℝ` be real analytic at `x₀` with `c i x₀ = 0`, with `ι` finite, and let `g : (ι → ℝ) × ℝ → ℝ` be
+real analytic at `(x₀, t₀)`. Then there exist `q` real analytic at `(x₀, t₀)` and
+`r : Fin d → (ι → ℝ) → ℝ` real analytic at `x₀` such that near `(x₀, t₀)`,
+`g (x, t) = (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i x)).eval (t - t₀) * q (x, t) +
+  ∑ i : Fin d, r i x * (t - t₀) ^ (i : ℕ)`. -/
+theorem exists_weierstrassDivision_monicOfCoeff_real {d : ℕ}
+    {c : Fin d → (ι → ℝ) → ℝ} {g : (ι → ℝ) × ℝ → ℝ} {x₀ : ι → ℝ} {t₀ : ℝ}
+    (hg : AnalyticAt ℝ g (x₀, t₀)) (hc : ∀ i, AnalyticAt ℝ (c i) x₀) (hc0 : ∀ i, c i x₀ = 0) :
+    ∃ (q : (ι → ℝ) × ℝ → ℝ) (r : Fin d → (ι → ℝ) → ℝ),
+      AnalyticAt ℝ q (x₀, t₀) ∧ (∀ i, AnalyticAt ℝ (r i) x₀) ∧
+      g =ᶠ[𝓝 (x₀, t₀)] fun p ↦
+        (TauCeti.Polynomial.monicOfCoeff (fun i ↦ c i p.1)).eval (p.2 - t₀) * q p +
+          ∑ i : Fin d, r i p.1 * (p.2 - t₀) ^ (i : ℕ) := by
+  let L : (ι → ℝ) ≃L[ℝ] (Fin (Fintype.card ι) → ℝ) :=
+    (LinearEquiv.piCongrLeft' ℝ (fun _ ↦ ℝ) (Fintype.equivFin ι)).toContinuousLinearEquiv
+  let Lp := L.prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
+  have hL₀ : L.symm (L x₀) = x₀ := L.symm_apply_apply x₀
+  have hLp₀ : Lp.symm (L x₀, t₀) = (x₀, t₀) := Lp.symm_apply_apply (x₀, t₀)
+  obtain ⟨q, r, hq, hr, hdiv⟩ := exists_weierstrassDivision_monicOfCoeff_real_type0
+    (c := fun i ↦ c i ∘ L.symm)
+    (hg.comp_of_eq (Lp.symm.analyticAt _) hLp₀)
+    (fun i ↦ (hc i).comp_of_eq (L.symm.analyticAt _) hL₀)
+    (fun i ↦ by simp [hL₀, hc0 i])
+  refine ⟨q ∘ Lp, fun i ↦ r i ∘ L, hq.comp_of_eq (Lp.analyticAt _) rfl,
+    fun i ↦ (hr i).comp (L.analyticAt _), ?_⟩
+  filter_upwards [(Lp.continuous.tendsto (x₀, t₀)).eventually hdiv] with p hp
+  simpa [Lp, L.symm_apply_apply] using hp
 
 end AnalyticAt
