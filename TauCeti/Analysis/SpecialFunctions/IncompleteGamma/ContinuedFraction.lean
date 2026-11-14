@@ -46,9 +46,12 @@ to the two three-term relations of `𝐌` proved in
 
 * `Complex.tricomiContFracSolution_add_two` — `f` solves the three-term recurrence
   `f(n + 2) = b_{n+1} f(n + 1) + a_{n+1} f(n)` of DLMF 8.9.1, for all complex `a` and `z`.
-* `Complex.neg_tricomiContFracSolution_one_div_zero` —
+* `Complex.neg_tricomiContFracSolution_one_div_tricomiContFracSolution_zero` —
   `−f(1) / f(0) = Γ(a + 1) e^z γ*(a, z)`, where `f(0) ≠ 0` exactly for `a ∉ {−1, −2, …}`
   (`Complex.tricomiContFracSolution_zero_eq_zero_iff`).
+* `Complex.tricomiContFracPartNum_eq_zero_iff` — where the partial numerators `aₙ`, `n ≥ 1`,
+  vanish; in particular they are nonzero for `z ≠ 0` and `a ∉ {−1, −2, …}`
+  (`Complex.tricomiContFracPartNum_ne_zero`).
 
 ## References
 
@@ -92,6 +95,19 @@ def tricomiContFracSolution (a z : ℂ) : ℕ → ℂ
   | n + 1 => (-1) ^ ((n + 2) / 2) * z ^ n * (ascPochhammer ℂ ((n + 1) / 2 - 1)).eval (a + 1) *
       ((n / 2)! : ℂ) * regularizedHGFun {(((n + 2) / 2 : ℕ) : ℂ)} {a + n + 1} z
 
+/-- The defining formula of the partial numerators `tricomiContFracPartNum`. -/
+theorem tricomiContFracPartNum_def (a z : ℂ) (n : ℕ) :
+    tricomiContFracPartNum a z n =
+      if n = 1 then 1
+      else if n = 2 then -z
+      else if Even n then -(a + (n / 2 : ℕ) - 1) * z
+      else (n / 2 : ℕ) * z := (rfl)
+
+/-- The partial numerator at the unused index `n = 0` is `(1 − a) z`. -/
+@[simp]
+theorem tricomiContFracPartNum_zero (a z : ℂ) : tricomiContFracPartNum a z 0 = (1 - a) * z := by
+  simp [tricomiContFracPartNum]
+
 /-- The first partial numerator of DLMF 8.9.1 is `a₁ = 1`. -/
 @[simp]
 theorem tricomiContFracPartNum_one (a z : ℂ) : tricomiContFracPartNum a z 1 = 1 := by
@@ -115,10 +131,55 @@ theorem tricomiContFracPartNum_two_mul_add_four (a z : ℂ) (k : ℕ) :
     tricomiContFracPartNum a z (2 * k + 4) = -(a + k + 1) * z := by
   have h : (2 * k + 4) / 2 = k + 2 := by omega
   have he : Even (2 * k + 4) := ⟨k + 2, by ring⟩
-  simp only [tricomiContFracPartNum, h, he, show 2 * k + 4 ≠ 1 by omega,
-    show 2 * k + 4 ≠ 2 by omega, ↓reduceIte]
+  have h₁ : 2 * k + 4 ≠ 1 := by omega
+  have h₂ : 2 * k + 4 ≠ 2 := by omega
+  simp only [tricomiContFracPartNum, h, he, h₁, h₂, ↓reduceIte]
   push_cast
   ring
+
+/-- For `n ≥ 1`, the partial numerator `aₙ` of DLMF 8.9.1 vanishes exactly when `n ≠ 1` and
+either `z = 0` or `n = 2k + 4` with `a = −(k + 1)`. -/
+theorem tricomiContFracPartNum_eq_zero_iff (a z : ℂ) {n : ℕ} (hn : n ≠ 0) :
+    tricomiContFracPartNum a z n = 0 ↔
+      n ≠ 1 ∧ (z = 0 ∨ ∃ k : ℕ, n = 2 * k + 4 ∧ a = -(k + 1)) := by
+  obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
+  · rcases k with _ | _ | k
+    · omega
+    · simp
+    · have h : 2 * (k + 2) = 2 * k + 4 := by ring
+      rw [h, tricomiContFracPartNum_two_mul_add_four, mul_eq_zero, neg_eq_zero]
+      constructor
+      · rintro (ha | hz)
+        · exact ⟨by omega, .inr ⟨k, rfl, by linear_combination ha⟩⟩
+        · exact ⟨by omega, .inl hz⟩
+      · rintro ⟨-, hz | ⟨j, hj, ha⟩⟩
+        · exact .inr hz
+        · obtain rfl : k = j := by omega
+          exact .inl (by linear_combination ha)
+  · rcases k with _ | k
+    · simp
+    · have h : 2 * (k + 1) + 1 = 2 * k + 3 := by ring
+      rw [h, tricomiContFracPartNum_two_mul_add_three, mul_eq_zero]
+      have hk : (k : ℂ) + 1 ≠ 0 := Nat.cast_add_one_ne_zero k
+      constructor
+      · rintro (hk' | hz)
+        · exact absurd hk' hk
+        · exact ⟨by omega, .inl hz⟩
+      · rintro ⟨-, hz | ⟨j, hj, -⟩⟩
+        · exact .inr hz
+        · omega
+
+/-- The partial numerators `aₙ`, `n ≥ 1`, of DLMF 8.9.1 are nonzero when `z ≠ 0` and
+`a ∉ {−1, −2, …}`, as Pincherle's theorem requires. -/
+theorem tricomiContFracPartNum_ne_zero {a z : ℂ} (hz : z ≠ 0) (ha : ∀ k : ℕ, a ≠ -(k + 1))
+    {n : ℕ} (hn : n ≠ 0) : tricomiContFracPartNum a z n ≠ 0 := by
+  rw [Ne, tricomiContFracPartNum_eq_zero_iff a z hn]
+  rintro ⟨-, hz' | ⟨k, -, hk⟩⟩
+  exacts [hz hz', ha k hk]
+
+/-- The defining formula of the partial denominators `tricomiContFracPartDen`. -/
+theorem tricomiContFracPartDen_def (a : ℂ) (n : ℕ) :
+    tricomiContFracPartDen a n = if n = 1 then 1 else a + n - 1 := (rfl)
 
 /-- The first partial denominator of DLMF 8.9.1 is `b₁ = 1`. -/
 @[simp]
@@ -135,6 +196,14 @@ theorem tricomiContFracPartDen_of_ne_one (a : ℂ) {n : ℕ} (hn : n ≠ 1) :
 @[simp]
 theorem tricomiContFracSolution_zero (a z : ℂ) :
     tricomiContFracSolution a z 0 = (Gamma (a + 1))⁻¹ := (rfl)
+
+/-- The defining formula of the solution of the recurrence of DLMF 8.9.1 from `n = 1` on:
+`f(n + 1) = (−1)^{⌊(n + 2)/2⌋} z^n (a + 1)_{⌊(n + 1)/2⌋ − 1} ⌊n/2⌋! 𝐌(⌊(n + 2)/2⌋, a + n + 1, z)`,
+with natural-number floor division and truncated subtraction. -/
+theorem tricomiContFracSolution_add_one (a z : ℂ) (n : ℕ) :
+    tricomiContFracSolution a z (n + 1) = (-1) ^ ((n + 2) / 2) * z ^ n *
+      (ascPochhammer ℂ ((n + 1) / 2 - 1)).eval (a + 1) * ((n / 2)! : ℂ) *
+      regularizedHGFun {(((n + 2) / 2 : ℕ) : ℂ)} {a + n + 1} z := (rfl)
 
 /-- The initial value `f(0) = 1 / Γ(a + 1)` vanishes exactly at `a ∈ {−1, −2, …}`, the
 parameters excluded in DLMF 8.9.1. -/
@@ -178,7 +247,7 @@ theorem tricomiContFracSolution_two_mul_add_three (a z : ℂ) (k : ℕ) :
   ring_nf
 
 /-- The recurrence of DLMF 8.9.1 at `n = 2k + 2`, from
-`Complex.regularizedHGFun_singleton_eq_mul_sub_mul`. -/
+`Complex.regularizedHGFun_singleton_singleton_eq_mul_sub_mul`. -/
 private theorem tricomiContFracSolution_add_two_two_mul_add_two (a z : ℂ) (k : ℕ) :
     tricomiContFracSolution a z (2 * k + 4) = tricomiContFracPartDen a (2 * k + 3) *
       tricomiContFracSolution a z (2 * k + 3) +
@@ -186,20 +255,22 @@ private theorem tricomiContFracSolution_add_two_two_mul_add_two (a z : ℂ) (k :
   have hR : regularizedHGFun {(k : ℂ) + 1} {a + 2 * k + 2} z =
       (a + 2 * k + 2) * regularizedHGFun {(k : ℂ) + 2} {a + 2 * k + 3} z -
         (a + k + 1) * z * regularizedHGFun {(k : ℂ) + 2} {a + 2 * k + 4} z := by
-    rw [regularizedHGFun_singleton_eq_mul_sub_mul]
+    rw [regularizedHGFun_singleton_singleton_eq_mul_sub_mul]
     ring_nf
-  rw [show 2 * k + 4 = 2 * (k + 1) + 2 by ring, tricomiContFracSolution_two_mul_add_two,
+  have hn : 2 * k + 4 = 2 * (k + 1) + 2 := by ring
+  have hα : (k : ℂ) + 1 + 1 = k + 2 := by ring
+  have hβ : a + 2 * ((k : ℂ) + 1) + 2 = a + 2 * k + 4 := by ring
+  rw [hn, tricomiContFracSolution_two_mul_add_two,
     tricomiContFracSolution_two_mul_add_three, tricomiContFracSolution_two_mul_add_two,
     tricomiContFracPartNum_two_mul_add_three, tricomiContFracPartDen_of_ne_one _ (by omega)]
   push_cast
-  rw [show (k : ℂ) + 1 + 1 = k + 2 by ring, show a + 2 * ((k : ℂ) + 1) + 2 = a + 2 * k + 4 by
-    ring, ascPochhammer_succ_eval, Nat.factorial_succ]
+  rw [hα, hβ, ascPochhammer_succ_eval, Nat.factorial_succ]
   push_cast
   linear_combination (-1) ^ k * z ^ (2 * k + 2) * (ascPochhammer ℂ k).eval (a + 1) *
     ((k + 1) * (k ! : ℂ)) * hR
 
 /-- The recurrence of DLMF 8.9.1 at `n = 2k + 3`, from
-`Complex.regularizedHGFun_singleton_eq_mul_add_mul`. -/
+`Complex.regularizedHGFun_singleton_singleton_eq_mul_add_mul`. -/
 private theorem tricomiContFracSolution_add_two_two_mul_add_three (a z : ℂ) (k : ℕ) :
     tricomiContFracSolution a z (2 * k + 5) = tricomiContFracPartDen a (2 * k + 4) *
       tricomiContFracSolution a z (2 * k + 4) +
@@ -207,17 +278,19 @@ private theorem tricomiContFracSolution_add_two_two_mul_add_three (a z : ℂ) (k
   have hR : regularizedHGFun {(k : ℂ) + 2} {a + 2 * k + 3} z =
       (a + 2 * k + 3) * regularizedHGFun {(k : ℂ) + 2} {a + 2 * k + 4} z +
         (k + 2) * z * regularizedHGFun {(k : ℂ) + 3} {a + 2 * k + 5} z := by
-    rw [regularizedHGFun_singleton_eq_mul_add_mul]
+    rw [regularizedHGFun_singleton_singleton_eq_mul_add_mul]
     ring_nf
-  rw [show 2 * k + 5 = 2 * (k + 1) + 3 by ring, tricomiContFracSolution_two_mul_add_three,
+  have hn₅ : 2 * k + 5 = 2 * (k + 1) + 3 := by ring
+  have hn₄ : 2 * k + 4 = 2 * (k + 1) + 2 := by ring
+  have hα₃ : (k : ℂ) + 1 + 2 = k + 3 := by ring
+  have hα₂ : (k : ℂ) + 1 + 1 = k + 2 := by ring
+  have hβ₅ : a + 2 * ((k : ℂ) + 1) + 3 = a + 2 * k + 5 := by ring
+  have hβ₄ : a + 2 * ((k : ℂ) + 1) + 2 = a + 2 * k + 4 := by ring
+  rw [hn₅, tricomiContFracSolution_two_mul_add_three,
     tricomiContFracPartNum_two_mul_add_four, tricomiContFracPartDen_of_ne_one _ (by omega),
-    show 2 * k + 4 = 2 * (k + 1) + 2 by ring, tricomiContFracSolution_two_mul_add_two,
-    tricomiContFracSolution_two_mul_add_three]
+    hn₄, tricomiContFracSolution_two_mul_add_two, tricomiContFracSolution_two_mul_add_three]
   push_cast
-  rw [show (k : ℂ) + 1 + 2 = k + 3 by ring, show (k : ℂ) + 1 + 1 = k + 2 by ring,
-    show a + 2 * ((k : ℂ) + 1) + 3 = a + 2 * k + 5 by ring,
-    show a + 2 * ((k : ℂ) + 1) + 2 = a + 2 * k + 4 by ring, ascPochhammer_succ_eval,
-    Nat.factorial_succ, Nat.factorial_succ]
+  rw [hα₃, hα₂, hβ₅, hβ₄, ascPochhammer_succ_eval, Nat.factorial_succ, Nat.factorial_succ]
   push_cast
   linear_combination (-1) ^ k * z ^ (2 * k + 3) * (ascPochhammer ℂ k).eval (a + 1) *
     (a + 1 + k) * ((k + 1) * (k ! : ℂ)) * hR
@@ -241,32 +314,37 @@ theorem tricomiContFracSolution_add_two (a z : ℂ) (n : ℕ) :
         tricomiContFracPartNum_one]
       apply mul_left_cancel₀ (Complex.exp_ne_zero (-z))
       linear_combination hT
-    · rw [show 2 * (k + 1) + 2 = 2 * k + 4 by ring, show 2 * (k + 1) + 1 = 2 * k + 3 by ring,
-        show 2 * (k + 1) = 2 * k + 2 by ring]
+    · have h₄ : 2 * (k + 1) + 2 = 2 * k + 4 := by ring
+      have h₃ : 2 * (k + 1) + 1 = 2 * k + 3 := by ring
+      have h₂ : 2 * (k + 1) = 2 * k + 2 := by ring
+      rw [h₄, h₃, h₂]
       exact tricomiContFracSolution_add_two_two_mul_add_two a z k
   · rcases k with _ | k
-    · -- `n = 1`: the relation `regularizedHGFun_singleton_eq_mul_add_mul`
+    · -- `n = 1`: the relation `regularizedHGFun_singleton_singleton_eq_mul_add_mul`
       have hR : regularizedHGFun {1} {a + 1} z = (a + 1) * regularizedHGFun {1} {a + 2} z +
           z * regularizedHGFun {2} {a + 3} z := by
-        rw [regularizedHGFun_singleton_eq_mul_add_mul]
+        rw [regularizedHGFun_singleton_singleton_eq_mul_add_mul]
         ring_nf
-      rw [tricomiContFracSolution_two_mul_add_three, tricomiContFracSolution_two_mul_add_two,
-        show 2 * 0 + 1 + 1 = 2 by rfl, tricomiContFracPartNum_two]
+      have h₂ : 2 * 0 + 1 + 1 = 2 := rfl
+      rw [tricomiContFracSolution_two_mul_add_three, tricomiContFracSolution_two_mul_add_two, h₂,
+        tricomiContFracPartNum_two]
       simp only [Nat.cast_zero, mul_zero, zero_add, add_zero, pow_zero, pow_one,
         ascPochhammer_zero, Polynomial.eval_one, Nat.factorial_zero, Nat.factorial_one,
         Nat.cast_one, tricomiContFracSolution_one,
-        tricomiContFracPartDen_of_ne_one a (show 2 ≠ 1 by omega)]
+        tricomiContFracPartDen_of_ne_one a (n := 2) (by omega)]
       push_cast
       linear_combination -z * hR
-    · rw [show 2 * (k + 1) + 1 + 2 = 2 * k + 5 by ring,
-        show 2 * (k + 1) + 1 + 1 = 2 * k + 4 by ring, show 2 * (k + 1) + 1 = 2 * k + 3 by ring]
+    · have h₅ : 2 * (k + 1) + 1 + 2 = 2 * k + 5 := by ring
+      have h₄ : 2 * (k + 1) + 1 + 1 = 2 * k + 4 := by ring
+      have h₃ : 2 * (k + 1) + 1 = 2 * k + 3 := by ring
+      rw [h₅, h₄, h₃]
       exact tricomiContFracSolution_add_two_two_mul_add_three a z k
 
 /-- The quotient `−f(1) / f(0)` of the solution `tricomiContFracSolution` is
 `Γ(a + 1) e^z γ*(a, z)`, the candidate value of the continued fraction DLMF 8.9.1. Both sides
 vanish when `f(0) = 0`, that is for `a ∈ {−1, −2, …}`; neither convergence of the fraction nor
 minimality of `f` is asserted. -/
-theorem neg_tricomiContFracSolution_one_div_zero (a z : ℂ) :
+theorem neg_tricomiContFracSolution_one_div_tricomiContFracSolution_zero (a z : ℂ) :
     -tricomiContFracSolution a z 1 / tricomiContFracSolution a z 0 =
       Gamma (a + 1) * cexp z * tricomiIncompleteGamma a z := by
   rw [tricomiContFracSolution_one, tricomiContFracSolution_zero, tricomiIncompleteGamma_def,

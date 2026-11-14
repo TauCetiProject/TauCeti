@@ -36,10 +36,11 @@ produce the explicit solution of the recurrence of the continued fraction DLMF 8
   derivative.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
-* `Complex.regularizedHGFun_eq_mul_add_mul_of_coeff` — a three-term relation between
-  regularized hypergeometric functions follows from the matching relation between coefficients.
-* `Complex.regularizedHGFun_singleton_eq_mul_add_mul` and
-  `Complex.regularizedHGFun_singleton_eq_mul_sub_mul` — the three-term relations
+* `Complex.regularizedHGFun_eq_mul_add_mul_of_coeff` — when each of the three functions has at
+  most as many upper as lower parameters, a three-term relation between regularized
+  hypergeometric functions follows from the matching relation between coefficients.
+* `Complex.regularizedHGFun_singleton_singleton_eq_mul_add_mul` and
+  `Complex.regularizedHGFun_singleton_singleton_eq_mul_sub_mul` — the three-term relations
   `𝐌(α, β, z) = β 𝐌(α, β + 1, z) + α z 𝐌(α + 1, β + 2, z)` and
   `𝐌(α, β, z) = β 𝐌(α + 1, β + 1, z) − (β − α) z 𝐌(α + 1, β + 2, z)`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
@@ -113,7 +114,9 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
       Real.norm_of_nonneg (by positivity)]
     gcongr
 
-/-- A three-term relation between regularized hypergeometric functions follows from the
+/-- When each of the three functions has at most as many upper as lower parameters
+(`a.card ≤ b.card`, `a₁.card ≤ b₁.card` and `a₂.card ≤ b₂.card`), so that their series converge
+everywhere, a three-term relation between regularized hypergeometric functions follows from the
 corresponding relation between their coefficients: if
 `C(a, b; 0) = c C(a₁, b₁; 0)` and `C(a, b; n + 1) = c C(a₁, b₁; n + 1) + d C(a₂, b₂; n)`, then
 `F(a; b; z) = c F(a₁; b₁; z) + d z F(a₂; b₂; z)`. -/
@@ -141,7 +144,7 @@ theorem regularizedHGFunCoeff_singleton_singleton (α β : ℂ) (n : ℕ) :
 /-- A three-term relation of the regularized Kummer function, for all complex parameters:
 `𝐌(α, β, z) = β 𝐌(α, β + 1, z) + α z 𝐌(α + 1, β + 2, z)`. For `α = 0` it is the case
 `1 / Γ(β) = β / Γ(β + 1)` of the Gamma recurrence. -/
-theorem regularizedHGFun_singleton_eq_mul_add_mul (α β z : ℂ) :
+theorem regularizedHGFun_singleton_singleton_eq_mul_add_mul (α β z : ℂ) :
     regularizedHGFun {α} {β} z =
       β * regularizedHGFun {α} {β + 1} z + α * z * regularizedHGFun {α + 1} {β + 2} z := by
   refine regularizedHGFun_eq_mul_add_mul_of_coeff (by simp) (by simp) (by simp) ?_ (fun n => ?_) z
@@ -152,14 +155,15 @@ theorem regularizedHGFun_singleton_eq_mul_add_mul (α β z : ℂ) :
     have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))
     simp only [regularizedHGFunCoeff_singleton_singleton, hP, Nat.factorial_succ, div_eq_mul_inv,
       mul_inv]
+    have h₁ : β + 1 + (n + 1) = β + (n + 1) + 1 := by ring
+    have h₂ : β + 2 + n = β + (n + 1) + 1 := by ring
     push_cast
-    rw [show β + 1 + (n + 1) = β + (n + 1) + 1 by ring, show β + 2 + n = β + (n + 1) + 1 by ring,
-      hG]
+    rw [h₁, h₂, hG]
     field_simp
 
 /-- A three-term relation of the regularized Kummer function, for all complex parameters:
 `𝐌(α, β, z) = β 𝐌(α + 1, β + 1, z) − (β − α) z 𝐌(α + 1, β + 2, z)`. -/
-theorem regularizedHGFun_singleton_eq_mul_sub_mul (α β z : ℂ) :
+theorem regularizedHGFun_singleton_singleton_eq_mul_sub_mul (α β z : ℂ) :
     regularizedHGFun {α} {β} z =
       β * regularizedHGFun {α + 1} {β + 1} z -
         (β - α) * z * regularizedHGFun {α + 1} {β + 2} z := by
@@ -172,9 +176,10 @@ theorem regularizedHGFun_singleton_eq_mul_sub_mul (α β z : ℂ) :
     have hG := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (β + (n + 1))
     simp only [regularizedHGFunCoeff_singleton_singleton, hP, ascPochhammer_succ_eval,
       Nat.factorial_succ, div_eq_mul_inv, mul_inv]
+    have h₁ : β + 1 + (n + 1) = β + (n + 1) + 1 := by ring
+    have h₂ : β + 2 + n = β + (n + 1) + 1 := by ring
     push_cast
-    rw [show β + 1 + (n + 1) = β + (n + 1) + 1 by ring, show β + 2 + n = β + (n + 1) + 1 by ring,
-      hG]
+    rw [h₁, h₂, hG]
     field_simp
     ring
 
