@@ -95,34 +95,36 @@ theorem reducedSource_def (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
 
 variable {P : Polynomial ℂ}
 
+/-- The source of the reduced equation is `h (exp (2w) - 1) / 8` plus the coefficient
+`g - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's functional. -/
+theorem reducedSource_eq_add (w : ℂ → ℝ) (z : ℂ) :
+    reducedSource P w z =
+      backgroundWeight (P.eval ·) z * (Real.exp (2 * w z) - 1) / 8 +
+        (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+          (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) := by
+  have h1 : (1 + ‖P.eval z‖ ^ 2) ≠ 0 := by positivity
+  rw [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
+  field_simp
+  ring
+
 /-- **The source of the reduced equation is square integrable.** For a polynomial `P` of positive
 degree and `w ∈ H¹(ℂ)`, `(exp (2w) h - 1) / 8 + g ∈ L²(ℂ)`. -/
 theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (reducedSource P (W1p.value u)) 2 volume := by
-  have hE : finrank ℝ ℂ = 2 := Complex.finrank_real_complex
   set h : ℂ → ℝ := backgroundWeight (P.eval ·)
   have hh0 (z : ℂ) : 0 ≤ h z := backgroundWeight_nonneg _ z
   have hh1 (z : ℂ) : h z ≤ 1 := by
     rw [show h z = _ from backgroundWeight_def _ z]
     exact div_le_one_of_le₀ (by linarith) (by positivity)
   have hhc : Continuous h := continuous_backgroundWeight P.continuous
-  -- `exp (2w) - 1 ∈ L²`, from the value of `2 • u`.
-  have h2u : (W1p.value ((2 : ℝ) • u) : ℂ → ℝ) =ᵐ[volume] fun z ↦ 2 * W1p.value u z := by
-    have h := W1p.value_smul_ae (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) 2 u
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-    exact h.mono fun z hz ↦ by rw [hz, Pi.smul_apply, smul_eq_mul]
-  have hexp : MemLp (fun z ↦ Real.exp (2 * W1p.value u z) - 1) 2 volume :=
-    (W1p.memLp_exp_value_sub_one volume hE ((2 : ℝ) • u)).ae_eq
-      (h2u.mono fun z hz ↦ by simp only [hz])
+  have hexp := W1p.memLp_exp_two_mul_value_sub_one volume Complex.finrank_real_complex u
   have htop : MemLp h ⊤ volume :=
     memLp_top_of_bound hhc.aestronglyMeasurable 1 (Eventually.of_forall fun z ↦ by
       rw [Real.norm_of_nonneg (hh0 z)]; exact hh1 z)
   have hfirst := (htop.mul (r := 2) hexp).const_mul (1 / 8)
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
-  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_def, backgroundSource_def,
-    backgroundWeight_def, Polynomial.deriv, h]
-  field_simp
+  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_eq_add, h]
   ring
 
 /-- **Weak solutions of the reduced vortex equation lie in `H²`.** Let `P` be a polynomial of

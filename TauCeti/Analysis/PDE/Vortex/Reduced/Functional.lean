@@ -16,10 +16,12 @@ import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.PDE.Vortex.Background
 import TauCeti.Analysis.PDE.Vortex.Potential
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Sobolev.Poincare.Planar
+import TauCeti.Analysis.Sobolev.W1p.Exponential
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -47,8 +49,11 @@ obtains the vortex with prescribed zeros as the minimizer of `I`.
 The direct method minimizes `I` on `H¹(ℂ) = W^{1,2}(ℂ)`. There `I` is
 `TauCeti.Vortex.sobolevReducedFunctional`, with values in `EReal`: the Dirichlet energy
 `‖∇u‖₂² / 2` and the linear term are finite, and the potential is an extended nonnegative integral,
-so `I(u) = ⊤` exactly when the potential is not integrable. On compactly supported `C¹` functions
-the two functionals agree (`TauCeti.Vortex.sobolevReducedFunctional_eq_reducedFunctional`).
+so `I(u) = ⊤` exactly when the potential is not integrable. Since `exp (2u) - 1 ∈ L²(ℂ)` for
+`u ∈ H¹(ℂ)` (`TauCeti.W1p.memLp_exp_two_mul_value_sub_one`), the potential is always integrable and
+`I` is finite on `H¹(ℂ)` (`TauCeti.Vortex.sobolevReducedFunctional_ne_top`). On compactly
+supported `C¹` functions the two functionals agree
+(`TauCeti.Vortex.sobolevReducedFunctional_eq_reducedFunctional`).
 
 The difficulty is coercivity. The potential grows exponentially for positive `u` but only
 linearly for negative `u`, and `h` vanishes at the zeros of `P`, so it does not control `‖u‖₂²`
@@ -233,6 +238,23 @@ theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 
       (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
   ⟨fun hu ↦ by_contra fun h ↦ hu (sobolevReducedFunctional_eq_top h),
     fun hu ↦ by rw [sobolevReducedFunctional_eq_coe hu]; exact EReal.coe_ne_top _⟩
+
+/-- **Taubes's functional is finite on `H¹(ℂ)`.** Its potential `(1 / 16) ∫ h (exp (2u) - 1 - 2u)`
+is finite for every `u ∈ H¹(ℂ)`, by `TauCeti.W1p.integrable_exp_two_mul_value_sub_one_sub` and
+`0 ≤ h ≤ 1`. -/
+theorem sobolevReducedFunctional_ne_top (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P u ≠ ⊤ := by
+  refine sobolevReducedFunctional_ne_top_iff.2
+    ((W1p.integrable_exp_two_mul_value_sub_one_sub volume Complex.finrank_real_complex u).mono'
+      ?_ (ae_of_all _ fun z ↦ ?_))
+  · have hΦ : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t := by fun_prop
+    exact ((continuous_backgroundWeight P.continuous).congr
+      (backgroundWeight_def _)).aestronglyMeasurable.mul
+      (hΦ.comp_aestronglyMeasurable (W1p.memLp_value u).aestronglyMeasurable)
+  · have hψ := Real.exp_two_mul_sub_one_sub_two_mul_nonneg (W1p.value u z)
+    rw [← backgroundWeight_def (P.eval ·), norm_mul,
+      Real.norm_of_nonneg (backgroundWeight_nonneg _ z), Real.norm_of_nonneg hψ]
+    exact mul_le_of_le_one_left hψ (backgroundWeight_lt_one _ z).le
 
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]
