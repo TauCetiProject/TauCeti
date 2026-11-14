@@ -33,10 +33,30 @@ scoped instance mulAction : MulAction (G × K) (X × Y) :=
 
 open scoped TauCeti.IndependentProd
 
-/-- The independent product action acts on each coordinate. -/
-@[to_additive (attr := simp) /-- The independent product additive action acts on each
-coordinate. -/]
+/-- The independent product action acts on each coordinate. Use this as a named rewrite to expand
+an abstract pair; simplification preserves the action and computes projections and constructors. -/
+@[to_additive /-- The independent product additive action acts on each
+coordinate. Use this as a named rewrite to expand an abstract pair; simplification preserves the
+action and computes projections and constructors. -/]
 theorem smul_def (g : G × K) (x : X × Y) : g • x = (g.1 • x.1, g.2 • x.2) := (rfl)
+
+/- These rules run before the generic product rules, which would otherwise expose the actions
+restricted along the projections instead of the original component actions. -/
+
+/-- The first coordinate of the independent product action is the first action. -/
+@[to_additive (attr := simp↓) /-- The first coordinate of the independent product additive action
+is the first action. -/]
+theorem smul_fst (g : G × K) (x : X × Y) : (g • x).1 = g.1 • x.1 := (rfl)
+
+/-- The second coordinate of the independent product action is the second action. -/
+@[to_additive (attr := simp↓) /-- The second coordinate of the independent product additive action
+is the second action. -/]
+theorem smul_snd (g : G × K) (x : X × Y) : (g • x).2 = g.2 • x.2 := (rfl)
+
+/-- The independent product action on a constructed pair acts coordinatewise. -/
+@[to_additive (attr := simp↓) /-- The independent product additive action on a constructed pair
+acts coordinatewise. -/]
+theorem smul_mk (g : G × K) (x : X) (y : Y) : g • (x, y) = (g.1 • x, g.2 • y) := (rfl)
 
 /-- Independent products of free actions are free. -/
 @[to_additive /-- Independent products of free additive actions are free. -/]
