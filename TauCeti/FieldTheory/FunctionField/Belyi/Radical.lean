@@ -9,8 +9,10 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.XPowSubCX
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.FunctionField.Radical.Genus
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Radical algebraic Belyi pairs
@@ -54,6 +56,10 @@ ramification index `n / gcd(n, a)` over `0`, `n / gcd(n, b)` over `1` and `n / g
   `0`, `1` and `∞` are algebraic Belyi pairs.
 * `TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow`: the Belyi pair
   `y ^ n = c t ^ a (t - 1) ^ b`.
+* `TauCeti.isAlgebraicBelyiPair_adjoin_of_pow_eq` and
+  `TauCeti.isAlgebraicBelyiPair_adjoin_of_pow_eq_X_zpow_mul_X_sub_one_zpow`: adjoining an `n`-th
+  root over an algebraically closed constant field `k` yields an algebraic Belyi pair with no
+  coprimality hypothesis.
 * `TauCeti.isAlgebraicBelyiPair_adjoinRoot_X_pow_sub_C_X`: the power map is a Belyi pair.
 
 ## References
@@ -130,6 +136,44 @@ theorem of_pow_eq_X_zpow_mul_X_sub_one_zpow {y : F} {n : ℕ} {c : k} {a b : ℤ
   exact of_pow_eq_of_gcd_ord_eq_one hgen hy hn hdvd P hP
 
 end IsAlgebraicBelyiPair
+
+/-! ### Radical subextensions over an algebraically closed constant field -/
+
+section IsAlgClosed
+
+variable {M : Type*} [Field M] [Algebra k M] [Algebra (RatFunc k) M]
+  [IsScalarTower k (RatFunc k) M] [IsAlgClosed k]
+
+/-- Over an algebraically closed field `k`, adjoining any `n`-th root `y` (`n ≠ 0`) of a rational
+function `u ∈ k(t)` whose order at every unmarked place is divisible by `n` produces a finite
+algebraic Belyi pair. -/
+theorem isAlgebraicBelyiPair_adjoin_of_pow_eq {y : M} {n : ℕ} {u : RatFunc k} (hn : n ≠ 0)
+    (hy : y ^ n = algebraMap (RatFunc k) M u)
+    (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u) :
+    ∃ _ : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯,
+      IsAlgebraicBelyiPair k ↥(RatFunc k)⟮y⟯ := by
+  have hy_int : IsIntegral (RatFunc k) y :=
+    ⟨X ^ n - C u, monic_X_pow_sub_C u hn, by simp [hy]⟩
+  have hfin : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯ :=
+    IntermediateField.adjoin.finiteDimensional hy_int
+  exact ⟨hfin, IsAlgebraicBelyiPair.of_pow_eq isIntegrallyClosedIn_of_isAlgClosed
+    (IntermediateField.adjoin_adjoinSimple_gen_eq_top (F := RatFunc k) y) (Subtype.ext hy) hn hdvd⟩
+
+/-- Over an algebraically closed field `k`, adjoining any `n`-th root `y` (`n ≠ 0`) of a rational
+function `c t ^ a (t - 1) ^ b` (`c ≠ 0`) produces a finite algebraic Belyi pair. Unlike
+`TauCeti.IsAlgebraicBelyiPair.of_pow_eq_X_zpow_mul_X_sub_one_zpow` over a general base field, no
+coprimality hypothesis on `(n, a, b)` is needed because `k` cannot gain algebraic constants. -/
+theorem isAlgebraicBelyiPair_adjoin_of_pow_eq_X_zpow_mul_X_sub_one_zpow
+    {y : M} {n : ℕ} {c : k} (hn : n ≠ 0) (hc : c ≠ 0) (a b : ℤ)
+    (hy : y ^ n = algebraMap (RatFunc k) M
+      (algebraMap k (RatFunc k) c * RatFunc.X ^ a * (RatFunc.X - 1) ^ b)) :
+    ∃ _ : FiniteDimensional (RatFunc k) ↥(RatFunc k)⟮y⟯,
+      IsAlgebraicBelyiPair k ↥(RatFunc k)⟮y⟯ :=
+  isAlgebraicBelyiPair_adjoin_of_pow_eq hn hy fun _ hP ↦ by
+    rw [Place.ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_of_notMem_zeroOneInfty hP hc]
+    exact dvd_zero _
+
+end IsAlgClosed
 
 /-! ### The power map -/
 
