@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
+public import TauCeti.Combinatorics.Network.Excess
 
 /-!
 # Bipartitions of multigraphs
@@ -45,6 +46,9 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
   `Graph.BipartiteHom.sum_incoming_eq_sum_incidentEdges`: sums over arrows at a vertex agree with
   sums over its incident edges.
+* `Graph.IsBipartition.excessAt_bipartiteHom_left` and
+  `Graph.IsBipartition.excessAt_bipartiteHom_right`: the excess of an oriented edge assignment is
+  minus its incident sum on the left side and its incident sum on the right side.
 -/
 
 public section
@@ -215,17 +219,31 @@ theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
     (e : G.BipartiteHom L x y) : y ∈ R :=
   hLR.mem_right_of_isLink e.isLink e.source_mem
 
+/-- For a fixed source, the underlying edge determines the target and bipartite arrow. -/
+theorem outgoing_edge_injective {x : V(G)} :
+    Function.Injective (fun a : Σ y, G.BipartiteHom L x y ↦ a.2.edge) := by
+  rintro ⟨y, a⟩ ⟨z, b⟩ hab
+  dsimp only at hab
+  have hyz : y = z := Subtype.ext (a.isLink.right_unique (hab ▸ b.isLink))
+  subst z
+  exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+
+/-- For a fixed target, the underlying edge determines the source and bipartite arrow. -/
+theorem incoming_edge_injective {x : V(G)} :
+    Function.Injective (fun a : Σ y, G.BipartiteHom L y x ↦ a.2.edge) := by
+  rintro ⟨y, a⟩ ⟨z, b⟩ hab
+  dsimp only at hab
+  have hyz : y = z := Subtype.ext (a.isLink.left_unique (hab ▸ b.isLink))
+  subst z
+  exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+
 /-- The arrows leaving a vertex on the left side of a bipartition are in bijection with the
 actual edges incident with that vertex. -/
 noncomputable def outgoingEquiv {L : Finset V(G)} (x : V(G)) (hx : x ∈ L) :
     (Σ y, G.BipartiteHom L x y) ≃ {e : E(G) // G.Inc e x} :=
   Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_left⟩) ⟨by
-    rintro ⟨y, e⟩ ⟨z, f⟩ h
-    have hef : e.edge = f.edge := congrArg Subtype.val h
-    have hyz : y = z := Subtype.ext (e.isLink.right_unique (hef ▸ f.isLink))
-    subst z
-    exact congrArg (fun a : G.BipartiteHom L x y ↦
-      (⟨y, a⟩ : Σ z, G.BipartiteHom L x z)) (BipartiteHom.ext hef), by
+    intro e f h
+    exact outgoing_edge_injective (congrArg Subtype.val h), by
     intro e
     let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
     refine ⟨⟨y, ⟨e.1, e.2.isLink_other, hx⟩⟩, ?_⟩
@@ -244,12 +262,8 @@ noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
     (x : V(G)) (hx : x ∈ R) :
     (Σ y, G.BipartiteHom L y x) ≃ {e : E(G) // G.Inc e x} :=
   Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_right⟩) ⟨by
-    rintro ⟨y, e⟩ ⟨z, f⟩ h
-    have hef : e.edge = f.edge := congrArg Subtype.val h
-    have hyz : y = z := Subtype.ext (e.isLink.left_unique (hef ▸ f.isLink))
-    subst z
-    exact congrArg (fun a : G.BipartiteHom L y x ↦
-      (⟨y, a⟩ : Σ z, G.BipartiteHom L z x)) (BipartiteHom.ext hef), by
+    intro e f h
+    exact incoming_edge_injective (congrArg Subtype.val h), by
     intro e
     let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
     refine ⟨⟨y, ⟨e.1, e.2.isLink_other.symm,
@@ -324,6 +338,44 @@ theorem sum_incoming_eq_sum_incidentEdges [Fintype V(G)] [Fintype E(G)]
   exact (Finset.sum_subtype (G.incidentEdges {x}) (by simp [mem_incidentEdges]) f).symm
 
 end BipartiteHom
+
+section Excess
+
+open TauCeti
+
+variable [Fintype V(G)] [Fintype E(G)]
+
+/-- An edge assignment, oriented from left to right, has excess minus its incident sum on the
+left side. -/
+theorem IsBipartition.excessAt_bipartiteHom_left (hLR : G.IsBipartition L R)
+    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ L) :
+    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
+      -(∑ e ∈ G.incidentEdges {a}, x e) := by
+  rw [excessAt_def, BipartiteHom.sum_outgoing_eq_sum_incidentEdges a ha]
+  have hin : ∑ y, ∑ e : G.BipartiteHom L y a, x e.edge = 0 := by
+    apply sum_eq_zero
+    intro y _
+    apply sum_eq_zero
+    intro e _
+    exact (disjoint_left.1 hLR.disjoint ha (e.target_mem hLR)).elim
+  rw [hin, zero_sub]
+
+/-- An edge assignment, oriented from left to right, has excess its incident sum on the right
+side. -/
+theorem IsBipartition.excessAt_bipartiteHom_right (hLR : G.IsBipartition L R)
+    {K : Type*} [AddCommGroup K] (x : E(G) → K) {a : V(G)} (ha : a ∈ R) :
+    excessAt (fun {v w} (e : G.BipartiteHom L v w) ↦ x e.edge) a =
+      ∑ e ∈ G.incidentEdges {a}, x e := by
+  rw [excessAt_def, BipartiteHom.sum_incoming_eq_sum_incidentEdges hLR a ha]
+  have hout : ∑ y, ∑ e : G.BipartiteHom L a y, x e.edge = 0 := by
+    apply sum_eq_zero
+    intro y _
+    apply sum_eq_zero
+    intro e _
+    exact (disjoint_left.1 hLR.disjoint e.source_mem ha).elim
+  rw [hout, sub_zero]
+
+end Excess
 
 end Graph
 
