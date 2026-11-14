@@ -86,8 +86,8 @@ theorem specMap_extendSection (M : Model R K C toK) [M.IsProper]
     Spec.map (CommRingCat.ofHom (algebraMap R K)) ≫ M.extendSection p hp = p ≫ M.genericι :=
   (M.existsUnique_section p hp).choose_spec.1.2
 
-/-- The extension takes the value of the rational point at each point of the prescribed generic
-fibre. -/
+/-- At the image in `Spec R` of a point `x` of `Spec K`, the extension takes the value of the
+rational point at `x`, viewed in the total space through `genericι`. -/
 @[simp]
 theorem extendSection_specMap_apply (M : Model R K C toK) [M.IsProper]
     (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) (x : Spec (.of K)) :
@@ -179,5 +179,13 @@ theorem extendSection_hom {M N : Model R K C toK} [M.IsProper] [N.IsProper]
     (f : M ⟶ N) (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
     M.extendSection p hp ≫ f.hom = N.extendSection p hp := by
   apply N.eq_extendSection p hp <;> simp
+
+/-- A morphism between proper models carries each value of an extended marking to the
+corresponding value of the same extended marking. -/
+@[simp]
+theorem extendSection_hom_apply {M N : Model R K C toK} [M.IsProper] [N.IsProper]
+    (f : M ⟶ N) (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) (x : Spec (.of R)) :
+    f.hom (M.extendSection p hp x) = N.extendSection p hp x := by
+  rw [← Scheme.Hom.comp_apply, extendSection_hom]
 
 end TauCeti.Model
