@@ -12,35 +12,40 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.SpecialFunctions.Pow.Sector
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Saddle-point asymptotics and recurrence for Legendre's incomplete Gamma continued fraction
 
-Legendre's continued fraction for the normalized upper incomplete Gamma combination
-`z^{-a} e^z Γ(a, z) = K(0, a - 1; z)` has head `0`, partial denominators `b_n = 1`, and partial
-numerators `a₁ = z⁻¹`, `a_{2k} = (k - a) z⁻¹`, `a_{2k+1} = k z⁻¹` (`k ≥ 1`). By Gautschi's analysis
-of three-term recurrence relations, the minimal solution `(f_n)_{n ≥ 0}` of the associated
-recurrence `f_{n+2} = f_{n+1} + a_{n+1} f_n` with `f₀ = 1` and `-f₁ / f₀ = K(0, a - 1; z)` is
-expressed in terms of the rotated Kummer-Laplace integrals `Complex.kummerLaplace`:
+For `z ∈ Complex.slitPlane`, Legendre's continued fraction for the normalized upper incomplete
+Gamma combination `z^{-a} e^z Γ(a, z) = K(0, a - 1; z)` has head `0`, partial denominators
+`b_n = 1`, and partial numerators `a₁ = z⁻¹`, `a_{2k} = (k - a) z⁻¹`, `a_{2k+1} = k z⁻¹`
+(`k ≥ 1`; non-terminating when `a ∉ {1, 2, ...}`). In terms of the rotated Kummer-Laplace
+integrals `Complex.kummerLaplace`, the sequence `(f_n)_{n ≥ 0}` defined by
 * `f₀ = 1`,
 * `f_{2k+1} = -(1 - a)_k z^{-k} K(k, a - 1 - k; z)`,
-* `f_{2k+2} = (1 - a)_{k+1} z^{-(k+1)} K(k, a - 2 - k; z)`.
+* `f_{2k+2} = (1 - a)_{k+1} z^{-(k+1)} K(k, a - 2 - k; z)`
+
+satisfies the associated three-term recurrence `f_{n+2} = f_{n+1} + a_{n+1} f_n` on
+`Complex.slitPlane` with `f₀ = 1` and `-f₁ / f₀ = K(0, a - 1; z)`. In Gautschi's analysis of
+three-term recurrence relations, this sequence is constructed as the candidate minimal solution
+used to apply Pincherle's theorem in the non-terminating regime `a ∉ {1, 2, ...}`.
 
 On `Complex.slitPlane`, rescaling the rotated Laplace contour around the saddle point
-`t_k = √(k / z)` shows that `K(k, a - 1 - k; z)` has sub-exponential decay `exp(-2 √(kz))` as
-`k → ∞`, providing both eventual nonvanishing of `f_n` (when `a ∉ {1, 2, ...}`) and the exponential
-rate needed for Pincherle's theorem.
+`t_k = √(k / z)` gives the saddle-point asymptotic of `K(k, a - 1 - k; z)` as `k → ∞`, supplying
+both eventual nonvanishing of `f_n` (when `a ∉ {1, 2, ...}`) and the stretched-exponential factor
+`exp(-2 √(kz))` needed for Pincherle's theorem.
 
 ## Main definitions
 
 * `Complex.upperGammaContFracPartNum a z n` — the `n`-th partial numerator of Legendre's continued
   fraction for `z^{-a} e^z Γ(a, z)`.
-* `Complex.upperGammaContFracSolution a z n` — the explicit minimal solution `f_n` of the
-  associated three-term recurrence, normalized by `f₀ = 1`.
+* `Complex.upperGammaContFracSolution a z n` — the Kummer-Laplace solution sequence `f_n` of the
+  associated three-term recurrence on `Complex.slitPlane`, normalized by `f₀ = 1`.
 
 ## Main results
 
@@ -48,12 +53,10 @@ rate needed for Pincherle's theorem.
   `kummerLaplace k (a - 1 - k) z ~ √π e^{z/2} z^{-a/2 - 1/4} k^{a/2 - 1/4} e^{-2 √(kz)}`.
 * `Complex.eventually_kummerLaplace_ne_zero` — for `z ∈ slitPlane`,
   `kummerLaplace k (a - 1 - k) z ≠ 0` eventually as `k → ∞`.
-* `Complex.upperGammaContFracPartNum_ne_zero` — for `z ≠ 0`, `n ≥ 1`, and `a ≠ m + 1` (`m : ℕ`),
-  `upperGammaContFracPartNum a z n ≠ 0`.
+* `Complex.upperGammaContFracPartNum_ne_zero_iff` — `upperGammaContFracPartNum a z n ≠ 0` iff
+  `z ≠ 0` and `(Even n → a ≠ (n / 2 : ℕ))`.
 * `Complex.upperGammaContFracSolution_add_two` — on `slitPlane`,
   `f (n + 2) = f (n + 1) + upperGammaContFracPartNum a z (n + 1) * f n`.
-* `Complex.neg_upperGammaContFracSolution_one_div_zero` — the initial ratio
-  `-f 1 / f 0 = kummerLaplace 0 (a - 1) z`.
 * `Complex.eventually_upperGammaContFracSolution_ne_zero` — for `z ∈ slitPlane` and `a ≠ m + 1`
   (`m : ℕ`), `upperGammaContFracSolution a z n ≠ 0` eventually as `n → ∞`.
 
@@ -75,36 +78,6 @@ open scoped Nat Real Topology
 namespace Complex
 
 /-! ### Saddle-point asymptotics of `kummerLaplace k (a - 1 - k) z` -/
-
-private theorem cpow_half_sq (z : ℂ) : (z ^ (1 / 2 : ℂ)) ^ 2 = z := by
-  rw [one_div]
-  exact cpow_nat_inv_pow z two_ne_zero
-
-private theorem cpow_half_re_pos {z : ℂ} (hz : z ∈ slitPlane) : 0 < (z ^ (1 / 2 : ℂ)).re := by
-  obtain ⟨h1, h2⟩ := abs_lt.mp (abs_arg_lt_pi_of_mem_slitPlane hz)
-  simpa [one_div] using TauCeti.cpow_inv_re_pos_of_arg_mem_sector two_pos (slitPlane_ne_zero hz)
-    ⟨by linarith, by linarith⟩
-
-private theorem cpow_half_ne_zero {z : ℂ} (hz : z ∈ slitPlane) : z ^ (1 / 2 : ℂ) ≠ 0 :=
-  fun h => slitPlane_ne_zero hz (by rw [← cpow_half_sq z, h, zero_pow two_ne_zero])
-
-private theorem log_cpow_half_inv {z : ℂ} (hz : z ∈ slitPlane) :
-    log ((z ^ (1 / 2 : ℂ))⁻¹) = -(log z / 2) := by
-  obtain ⟨h1, h2⟩ := abs_lt.mp (abs_arg_lt_pi_of_mem_slitPlane hz)
-  have hexp : (z ^ (1 / 2 : ℂ))⁻¹ = cexp (-(log z / 2)) := by
-    rw [cpow_def_of_ne_zero (slitPlane_ne_zero hz), ← Complex.exp_neg]
-    congr 1; ring
-  have him : (-(log z / 2)).im = -(z.arg / 2) := by simp [div_eq_mul_inv, log_im]
-  rw [hexp]
-  exact log_exp (by rw [him]; linarith) (by rw [him]; linarith)
-
-private theorem cpow_half_inv_cpow {z : ℂ} (hz : z ∈ slitPlane) (w : ℂ) :
-    ((z ^ (1 / 2 : ℂ))⁻¹) ^ w = z ^ (-w / 2) := by
-  set ζ : ℂ := z ^ (1 / 2 : ℂ)
-  have hlog : log (ζ⁻¹) = -(log z / 2) := log_cpow_half_inv hz
-  rw [cpow_def_of_ne_zero (inv_ne_zero (cpow_half_ne_zero hz)), hlog,
-    cpow_def_of_ne_zero (slitPlane_ne_zero hz)]
-  congr 1; ring
 
 private theorem rpow_neg_quarter {x : ℝ} (hx : 0 ≤ x) :
     x ^ (-1 / 4 : ℝ) = (x ^ (1 / 4 : ℝ))⁻¹ := by
@@ -132,21 +105,6 @@ private theorem tendsto_saddle_u (v : ℝ) :
     exact (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 4)).comp tendsto_natCast_atTop_atTop
   simpa [saddleU] using tendsto_const_nhds.add (ht.mul_const v)
 
-private theorem setIntegral_Ioi_affine {a b : ℝ} (hb : 0 < b) (f : ℝ → ℂ) :
-    (∫ s in Ioi (0 : ℝ), f s) = b • ∫ v in Ioi (-a / b), f (a + b * v) := by
-  have himg : Ioi (0 : ℝ) = (fun v : ℝ => a + b * v) '' Ioi (-a / b) := by
-    ext s; simp only [mem_Ioi, mem_image]
-    refine ⟨fun hs => ⟨(s - a) / b, by rw [div_lt_div_iff_of_pos_right hb]; linarith, ?_⟩, ?_⟩
-    · field_simp [hb.ne']; ring
-    · rintro ⟨v, hv, rfl⟩; rw [div_lt_iff₀ hb] at hv; linarith
-  have hderiv : ∀ v ∈ Ioi (-a / b), HasDerivWithinAt (fun v : ℝ => a + b * v) b (Ioi (-a / b)) v :=
-    fun v _ => by simpa using ((hasDerivAt_id v).const_mul b |>.const_add a).hasDerivWithinAt
-  have hinj : InjOn (fun v : ℝ => a + b * v) (Ioi (-a / b)) :=
-    fun v₁ _ v₂ _ h => mul_left_cancel₀ hb.ne' (add_left_cancel h)
-  rw [himg, integral_image_eq_integral_abs_deriv_smul measurableSet_Ioi hderiv hinj,
-    ← integral_smul]
-  exact setIntegral_congr_fun measurableSet_Ioi fun v _ => by simp [abs_of_pos hb]
-
 private theorem kummerLaplace_eq_sqrt_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     kummerLaplace c d z =
       (z ^ (1 / 2 : ℂ))⁻¹ *
@@ -156,21 +114,27 @@ private theorem kummerLaplace_eq_sqrt_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz
   set ζ : ℂ := z ^ (1 / 2 : ℂ)
   set ω : ℂ := cexp (-(z.arg / 2 : ℝ) * I)
   set ρ : ℝ := Real.exp (-Real.log ‖z‖ / 2)
-  have hζ0 : ζ ≠ 0 := cpow_half_ne_zero hz
+  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
   have hζ_inv : ζ⁻¹ = (ρ : ℂ) * ω := by
-    rw [← exp_log (inv_ne_zero hζ0), log_cpow_half_inv hz, ← re_add_im (log z), log_re, log_im]
-    have hsplit : -(((Real.log ‖z‖ : ℂ) + (z.arg : ℂ) * I) / 2) =
+    rw [← cpow_neg, cpow_def_of_ne_zero (slitPlane_ne_zero hz), ← re_add_im (log z),
+      log_re, log_im]
+    have hsplit : ((Real.log ‖z‖ : ℂ) + (z.arg : ℂ) * I) * -(1 / 2 : ℂ) =
         ((-Real.log ‖z‖ / 2 : ℝ) : ℂ) + (-(z.arg / 2 : ℝ) * I) := by push_cast; ring
     rw [hsplit, Complex.exp_add, ← ofReal_exp]
-  have hsub := setIntegral_Ioi_affine (a := 0) (b := ρ) (Real.exp_pos _) fun r =>
-    cexp (-z * (r * ω)) * (r * ω) ^ c * (1 + r * ω) ^ d
-  simp only [neg_zero, zero_div, zero_add] at hsub
+  have hρ : 0 < ρ := Real.exp_pos _
+  have hsub :
+      (∫ r in Ioi (0 : ℝ), cexp (-z * (r * ω)) * (r * ω) ^ c * (1 + r * ω) ^ d) =
+        ρ • ∫ s in Ioi (0 : ℝ),
+          cexp (-z * (((ρ * s : ℝ) : ℂ) * ω)) * (((ρ * s : ℝ) : ℂ) * ω) ^ c *
+            (1 + ((ρ * s : ℝ) : ℂ) * ω) ^ d := by
+    simpa only [mul_zero] using (integral_comp_mul_left_Ioi'
+      (fun r : ℝ => cexp (-z * (r * ω)) * (r * ω) ^ c * (1 + r * ω) ^ d) 0 hρ).symm
   rw [kummerLaplace_def, hsub, real_smul, ← mul_assoc, mul_comm ω (ρ : ℂ), ← hζ_inv]
   congr 1
   refine setIntegral_congr_fun measurableSet_Ioi fun s _ => ?_
   have hrw : ((ρ * s : ℝ) : ℂ) * ω = (s : ℂ) * ζ⁻¹ := by rw [ofReal_mul, hζ_inv]; ring
   have hzeq : -z * ((s : ℂ) * ζ⁻¹) = -ζ * (s : ℂ) := by
-    have hz_sq : ζ ^ 2 = z := cpow_half_sq z
+    have hz_sq : ζ ^ 2 = z := by simp [ζ, one_div]
     calc -z * ((s : ℂ) * ζ⁻¹) = -ζ * (s : ℂ) * (ζ * ζ⁻¹) := by rw [← hz_sq]; ring
       _ = -ζ * (s : ℂ) := by rw [mul_inv_cancel₀ hζ0, mul_one]
   rw [hrw, hzeq]
@@ -190,6 +154,7 @@ private theorem saddle_prefactor_eq (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) {
         ((Real.sqrt k : ℂ) ^ (a - 1) * (z ^ (1 / 2 : ℂ))⁻¹ ^ (a - 1)) =
       (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a := by
   set ζ : ℂ := z ^ (1 / 2 : ℂ)
+  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
   have hk_pos : 0 < (k : ℝ) := Nat.cast_pos.mpr hk
   have hsk_pos : 0 < Real.sqrt k := Real.sqrt_pos.mpr hk_pos
   have hk_ne : ((k : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr hk_pos.ne'
@@ -202,7 +167,7 @@ private theorem saddle_prefactor_eq (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) {
     congr 1; push_cast; ring
   have hζ_pref : ζ⁻¹ * (ζ⁻¹) ^ (a - 1) = (ζ⁻¹) ^ a := by
     nth_rw 1 [← cpow_one ζ⁻¹]
-    rw [← cpow_add _ _ (inv_ne_zero (cpow_half_ne_zero hz))]; congr 1; ring
+    rw [← cpow_add _ _ (inv_ne_zero hζ0)]; congr 1; ring
   linear_combination (ζ⁻¹ * (ζ⁻¹) ^ (a - 1)) * hk_pref + (k : ℂ) ^ (a / 2 - 1 / 4) * hζ_pref
 
 private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane)
@@ -224,9 +189,10 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
       rw [Real.sqrt_eq_rpow, ← Real.rpow_add hk_pos]; norm_num [q₄]
     dsimp only [s, u, saddleU]; linear_combination -hmul * v
   have hs_pos : 0 < s := by rw [hs_eq]; positivity
-  have hζ0 : ζ ≠ 0 := cpow_half_ne_zero hz
+  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
+  have hζ_re : 0 < ζ.re := by simpa [ζ, sqrt, one_div] using (sqrt_re_pos_iff z).mpr hz
   have hζinv_re : 0 < (ζ⁻¹).re := by
-    rw [inv_re]; exact div_pos (cpow_half_re_pos hz) (normSq_pos.mpr hζ0)
+    rw [inv_re]; exact div_pos hζ_re (normSq_pos.mpr hζ0)
   have h1s_re : 0 < (1 + (s : ℂ) * ζ⁻¹).re := by rw [add_re, one_re, re_ofReal_mul]; nlinarith
   have h1s_ne : 1 + (s : ℂ) * ζ⁻¹ ≠ 0 := fun h => by rw [h, zero_re] at h1s_re; linarith
   have hk_pow : ((s : ℂ) * ζ⁻¹) ^ k * (1 + (s : ℂ) * ζ⁻¹) ^ (a - 1 - k) =
@@ -249,7 +215,7 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
     have hre1 : 0 < ((Real.sqrt k : ℂ) * ζ⁻¹).re := by rw [re_ofReal_mul]; positivity
     have hre2 : 0 < ((u : ℂ) + ζ / (Real.sqrt k : ℂ)).re := by
       rw [add_re, ofReal_re, div_ofReal_re]
-      exact add_pos hu_pos (div_pos (cpow_half_re_pos hz) hsk_pos)
+      exact add_pos hu_pos (div_pos hζ_re hsk_pos)
     rw [hprod, TauCeti.mul_cpow_of_re_pos hre1 hre2, TauCeti.ofReal_mul_cpow hsk_pos.le]
   have hexp_split : cexp (-ζ * (s : ℂ)) =
       cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) * cexp (-(Real.sqrt k : ℂ) * ζ * ((u : ℂ) - 2)) := by
@@ -270,10 +236,13 @@ private theorem kummerLaplace_eq_saddle_integral (a : ℂ) {z : ℂ} (hz : z ∈
         cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
         ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v := by
   have hq₄ : 0 < (k : ℝ) ^ (1 / 4 : ℝ) := Real.rpow_pos_of_pos (Nat.cast_pos.mpr hk) _
-  have hbound : -Real.sqrt k / (k : ℝ) ^ (1 / 4 : ℝ) = -(k : ℝ) ^ (1 / 4 : ℝ) := by
-    rw [neg_div, neg_inj, div_eq_iff hq₄.ne', ← sq, rpow_quarter_sq k]
-  rw [kummerLaplace_eq_sqrt_integral k (a - 1 - k) hz,
-    setIntegral_Ioi_affine (a := Real.sqrt k) hq₄, hbound, real_smul, ← mul_assoc,
+  have h0 : Real.sqrt k + (k : ℝ) ^ (1 / 4 : ℝ) * -(k : ℝ) ^ (1 / 4 : ℝ) = 0 := by
+    rw [mul_neg, ← sq, rpow_quarter_sq k, add_neg_cancel]
+  have hsub := (h0 ▸ TauCeti.integral_comp_add_mul_left_Ioi'
+    (fun s : ℝ => cexp (-(z ^ (1 / 2 : ℂ)) * s) * ((s : ℂ) * (z ^ (1 / 2 : ℂ))⁻¹) ^ k *
+      (1 + (s : ℂ) * (z ^ (1 / 2 : ℂ))⁻¹) ^ (a - 1 - k))
+    (-(k : ℝ) ^ (1 / 4 : ℝ)) (Real.sqrt k) hq₄).symm
+  rw [kummerLaplace_eq_sqrt_integral k (a - 1 - k) hz, hsub, real_smul, ← mul_assoc,
     ← integral_const_mul, kummerLaplaceSaddleIntegrand, integral_indicator measurableSet_Ioi,
     ← integral_const_mul]
   exact setIntegral_congr_fun measurableSet_Ioi fun v hv =>
@@ -283,7 +252,7 @@ private theorem aestronglyMeasurable_kummerLaplaceSaddleIntegrand (a : ℂ) {z :
     (hz : z ∈ slitPlane) {k : ℕ} (hk : 1 ≤ k) :
     AEStronglyMeasurable (kummerLaplaceSaddleIntegrand a z k) volume := by
   have hsk_pos : 0 < Real.sqrt k := Real.sqrt_pos.mpr (Nat.cast_pos.mpr hk)
-  have hζ_re : 0 < (z ^ (1 / 2 : ℂ)).re := cpow_half_re_pos hz
+  have hζ_re : 0 < (z ^ (1 / 2 : ℂ)).re := by simpa [sqrt, one_div] using (sqrt_re_pos_iff z).mpr hz
   refine (aestronglyMeasurable_indicator_iff measurableSet_Ioi).mpr
     (ContinuousOn.aestronglyMeasurable ?_ measurableSet_Ioi)
   intro v hv; unfold kummerLaplaceSaddleCore
@@ -371,7 +340,7 @@ private theorem tendsto_saddle_quadratic_phase (z : ℂ) (v : ℝ) :
     simp [logTaylor_succ, logTaylor_zero]; ring
   have hsk_sq : (Real.sqrt k : ℂ) ^ 2 = (k : ℂ) := by
     rw [← ofReal_pow, Real.sq_sqrt hk_pos.le, ofReal_natCast]
-  have hz_sq : ζ ^ 2 = z := cpow_half_sq z
+  have hz_sq : ζ ^ 2 = z := by simp [ζ, one_div]
   have h1 : (Real.sqrt k : ℂ) ^ 2 * (ζ / ((Real.sqrt k : ℂ) * (u k : ℂ))) =
       (Real.sqrt k : ℂ) * ζ / (u k : ℂ) := by field_simp [hsk_c, hu_ne]
   have h2 : (Real.sqrt k : ℂ) ^ 2 * ((ζ / ((Real.sqrt k : ℂ) * (u k : ℂ))) ^ 2 / 2) =
@@ -438,7 +407,7 @@ private theorem norm_saddle_cpow_factor_le (a : ℂ) {z : ℂ} (hz : z ∈ slitP
   intro ζ y m
   set σ : ℝ := ζ.re
   have hsk_pos : 0 < Real.sqrt k := Real.sqrt_pos.mpr (Nat.cast_pos.mpr hk)
-  have hσ : 0 < σ := cpow_half_re_pos hz
+  have hσ : 0 < σ := by simpa [σ, ζ, sqrt, one_div] using (sqrt_re_pos_iff z).mpr hz
   have hu : 0 < saddleU k v := saddle_u_pos hk hv
   have hy : 0 < y := by dsimp only [y, saddleY]; positivity
   set q : ℂ := (saddleU k v : ℂ) + ζ / (Real.sqrt k : ℂ)
@@ -488,7 +457,8 @@ private theorem norm_kummerLaplaceSaddleCore_exp_bound (a : ℂ) {z : ℂ} (hz :
   have hy_eq : y = u + δ := rfl
   have hk_pos : 0 < (k : ℝ) := Nat.cast_pos.mpr hk
   have hsk_pos : 0 < Real.sqrt k := Real.sqrt_pos.mpr hk_pos
-  have hσ : 0 < σ := cpow_half_re_pos hz; have hu : 0 < u := saddle_u_pos hk hv
+  have hσ : 0 < σ := by simpa [σ, ζ, sqrt, one_div] using (sqrt_re_pos_iff z).mpr hz
+  have hu : 0 < u := saddle_u_pos hk hv
   have hy : 0 < y := by rw [hy_eq]; dsimp only [δ]; positivity
   have h1w_inv : ‖((1 + ζ / ((Real.sqrt k : ℂ) * (u : ℂ))) ^ k)⁻¹‖ ≤
       Real.exp (-Real.sqrt k * σ / y) := by
@@ -547,11 +517,9 @@ private theorem saddle_poly_exp_le_of_le_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ)
       refine div_le_div_of_nonneg_right ?_ hy.le
       calc σ / 8 = (1 * σ / 2) * (1 / 4) := by ring
         _ ≤ (Real.sqrt k * σ / 2) * (y - 1) ^ 2 := by gcongr
-    have hfac := Real.pow_div_factorial_le_exp (x := (σ / 8) / y) (by positivity) m
-    rw [div_pow, div_le_iff₀ (Nat.cast_pos.mpr (Nat.factorial_pos m))] at hfac
     have hinv_le : (y ^ m)⁻¹ * Real.exp (-((σ / 8) / y)) ≤ (m ! : ℝ) / (σ / 8) ^ m := by
-      rw [Real.exp_neg, ← div_eq_mul_inv, div_le_iff₀ (Real.exp_pos _),
-        div_mul_eq_mul_div, le_div_iff₀ (by positivity), inv_mul_eq_div]; linarith
+      simpa [inv_pow, div_eq_mul_inv, neg_mul] using
+        TauCeti.pow_mul_exp_neg_mul_le (a := σ / 8) (t := y⁻¹) (by positivity) (by positivity) m
     calc ((y ^ m)⁻¹ + y ^ m) * Real.exp (-(Real.sqrt k * σ / 2) * ((y - 1) ^ 2 / y))
         ≤ (2 * (y ^ m)⁻¹) * Real.exp (-((σ / 8) / y)) :=
           mul_le_mul hym hexp_y (by positivity) (by positivity)
@@ -664,11 +632,8 @@ private theorem saddle_majorant_gt_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
   have hquad_y : y / 4 ≤ (y - 1) ^ 2 / y := by
     rw [div_le_div_iff₀ (by positivity) hy]
     linarith [mul_nonneg (a := 3 * y - 2) (b := y - 2) (by linarith) (by linarith)]
-  have hfac := Real.pow_div_factorial_le_exp (x := (σ / 8) * y) (by positivity) m
-  rw [mul_pow, div_le_iff₀ (Nat.cast_pos.mpr (Nat.factorial_pos m))] at hfac
-  have hym_exp : y ^ m * Real.exp (-(σ / 8) * y) ≤ (m ! : ℝ) / (σ / 8) ^ m := by
-    rw [neg_mul, Real.exp_neg, ← div_eq_mul_inv, div_le_iff₀ (Real.exp_pos _),
-      div_mul_eq_mul_div, le_div_iff₀ (by positivity)]; linarith
+  have hym_exp : y ^ m * Real.exp (-(σ / 8) * y) ≤ (m ! : ℝ) / (σ / 8) ^ m :=
+    TauCeti.pow_mul_exp_neg_mul_le (by positivity) hy.le m
   have hvy : v ≤ Real.sqrt k * y := by
     have hq0 : q₄ ≠ 0 := (zero_lt_one.trans_le hq1).ne'
     have h1 : q₄ * v ≤ Real.sqrt k * y := by
@@ -695,7 +660,7 @@ private theorem tendsto_integral_kummerLaplaceSaddleIntegrand (a : ℂ) {z : ℂ
       (𝓝 ((Real.sqrt π : ℂ) * cexp (z / 2) * ((z ^ (1 / 2 : ℂ))⁻¹) ^ (1 / 2 : ℂ))) := by
   set ζ : ℂ := z ^ (1 / 2 : ℂ)
   set σ : ℝ := ζ.re
-  have hσ : 0 < σ := cpow_half_re_pos hz
+  have hσ : 0 < σ := by simpa [σ, ζ, sqrt, one_div] using (sqrt_re_pos_iff z).mpr hz
   set m : ℕ := ⌈|(a - 1).re|⌉₊
   set C₀ : ℝ := Real.exp (π * |(a - 1).im|) * (‖ζ‖ / σ) ^ m * Real.exp (σ ^ 2)
   set C₁ : ℝ := 2 * max ((m ! : ℝ) / (σ / 8) ^ m) (2 ^ m) * Real.exp (σ / 16)
@@ -745,61 +710,49 @@ theorem kummerLaplace_isEquivalent (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
       fun k : ℕ => (Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4) *
         (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) := by
   set ζ : ℂ := z ^ (1 / 2 : ℂ)
+  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
   have hdct := tendsto_integral_kummerLaplaceSaddleIntegrand a hz
   have hζ_comb : (ζ⁻¹) ^ a * ((Real.sqrt π : ℂ) * cexp (z / 2) * (ζ⁻¹) ^ (1 / 2 : ℂ)) =
       (Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4) := by
     have hmul : (ζ⁻¹) ^ a * (ζ⁻¹) ^ (1 / 2 : ℂ) = z ^ (-a / 2 - 1 / 4) := by
-      rw [← cpow_add _ _ (inv_ne_zero (cpow_half_ne_zero hz)), cpow_half_inv_cpow hz]
+      rw [← cpow_add _ _ (inv_ne_zero hζ0), inv_cpow_half_cpow]
       congr 1; ring
     linear_combination (Real.sqrt π : ℂ) * cexp (z / 2) * hmul
-  rw [isEquivalent_iff_tendsto_one]
-  · refine ((hdct.const_mul ((ζ⁻¹) ^ a)).div_const
+  refine isEquivalent_of_tendsto_one <|
+    ((hdct.const_mul ((ζ⁻¹) ^ a)).div_const
       ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4))).congr' ?_ |>.trans ?_
-    · filter_upwards [eventually_ge_atTop 1] with k hk
-      simp only [Pi.div_apply]
-      rw [kummerLaplace_eq_saddle_integral a hz hk]
-      set C : ℂ := (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ))
-      have hC : C ≠ 0 := by
-        refine mul_ne_zero ?_ (exp_ne_zero _)
-        rw [cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr (by omega))]; exact exp_ne_zero _
-      have hnum : (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a *
-          cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
-          (∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) =
-          ((ζ⁻¹) ^ a * ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) * C := by
-        dsimp only [ζ, C]; ring
-      have hden : (Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4) *
-          (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) =
-          ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4)) * C := by
-        dsimp only [C]; ring
-      rw [hnum, hden, mul_div_mul_right _ _ hC]
-    · rw [hζ_comb, div_self]
-      refine mul_ne_zero (mul_ne_zero (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos))
-        (exp_ne_zero _)) ?_
-      rw [cpow_def_of_ne_zero (slitPlane_ne_zero hz)]; exact exp_ne_zero _
   · filter_upwards [eventually_ge_atTop 1] with k hk
-    refine mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero
-      (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos)) (exp_ne_zero _)) ?_) ?_)
-      (exp_ne_zero _)
-    · rw [cpow_def_of_ne_zero (slitPlane_ne_zero hz)]; exact exp_ne_zero _
-    · rw [cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr (by omega))]; exact exp_ne_zero _
+    simp only [Pi.div_apply]
+    rw [kummerLaplace_eq_saddle_integral a hz hk]
+    set C : ℂ := (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ))
+    have hC : C ≠ 0 :=
+      mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr (by omega))))
+        (exp_ne_zero _)
+    have hnum : (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a *
+        cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
+        (∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) =
+        ((ζ⁻¹) ^ a * ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) * C := by
+      dsimp only [ζ, C]; ring
+    have hden : (Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4) *
+        (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) =
+        ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4)) * C := by
+      dsimp only [C]; ring
+    rw [hnum, hden, mul_div_mul_right _ _ hC]
+  · rw [hζ_comb, div_self]
+    exact mul_ne_zero (mul_ne_zero (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos))
+      (exp_ne_zero _)) (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz)))
 
 /-- For any `a : ℂ` and `z ∈ slitPlane`, `kummerLaplace k (a - 1 - k) z` is eventually nonzero
 as `k → ∞`. -/
 theorem eventually_kummerLaplace_ne_zero (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     ∀ᶠ k : ℕ in atTop, kummerLaplace k (a - 1 - k) z ≠ 0 := by
-  have heq := kummerLaplace_isEquivalent a hz
-  filter_upwards [heq.isLittleO.bound (by positivity : (0 : ℝ) < 1 / 2),
-    eventually_ge_atTop 1] with k hbound hk hzero
-  simp only [Pi.sub_apply] at hbound
-  rw [hzero, zero_sub, norm_neg] at hbound
-  have hg_ne : (Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4) *
-      (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) ≠ 0 := by
-    refine mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero
-      (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos)) (exp_ne_zero _)) ?_) ?_)
-      (exp_ne_zero _)
-    · rw [cpow_def_of_ne_zero (slitPlane_ne_zero hz)]; exact exp_ne_zero _
-    · rw [cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr (by omega))]; exact exp_ne_zero _
-  linarith [norm_pos_iff.mpr hg_ne]
+  filter_upwards [(kummerLaplace_isEquivalent a hz).isBigO_symm.eq_zero_imp,
+    eventually_ge_atTop 1] with k himp hk hzero
+  refine mul_ne_zero (mul_ne_zero (mul_ne_zero (mul_ne_zero
+    (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos)) (exp_ne_zero _))
+    (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))))
+    (cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr (by omega)))))
+    (exp_ne_zero _) (himp hzero)
 
 /-! ### Partial numerators and recurrence solution of Legendre's continued fraction -/
 
@@ -810,6 +763,19 @@ def upperGammaContFracPartNum (a z : ℂ) (n : ℕ) : ℂ :=
   if n = 1 then z⁻¹
   else if Even n then (((n / 2 : ℕ) : ℂ) - a) * z⁻¹
   else ((n / 2 : ℕ) : ℂ) * z⁻¹
+
+/-- Defining formula for `Complex.upperGammaContFracPartNum`. -/
+theorem upperGammaContFracPartNum_def (a z : ℂ) (n : ℕ) :
+    upperGammaContFracPartNum a z n =
+      if n = 1 then z⁻¹
+      else if Even n then (((n / 2 : ℕ) : ℂ) - a) * z⁻¹
+      else ((n / 2 : ℕ) : ℂ) * z⁻¹ := (rfl)
+
+/-- Zeroth index evaluation `upperGammaContFracPartNum a z 0 = -a * z⁻¹`. -/
+@[simp]
+theorem upperGammaContFracPartNum_zero (a z : ℂ) :
+    upperGammaContFracPartNum a z 0 = -a * z⁻¹ := by
+  simp [upperGammaContFracPartNum]
 
 /-- First partial numerator `a₁ = z⁻¹` of Legendre's continued fraction. -/
 @[simp]
@@ -835,24 +801,26 @@ theorem upperGammaContFracPartNum_two_mul_add_three (a z : ℂ) (k : ℕ) :
   have hdiv : (2 * k + 3) / 2 = k + 1 := by omega
   simp only [upperGammaContFracPartNum, h1, ↓reduceIte, hodd, hdiv, Nat.cast_add, Nat.cast_one]
 
-/-- When `z ≠ 0` and `a` is not a positive integer, every partial numerator
-`upperGammaContFracPartNum a z n` (`n ≥ 1`) is nonzero. -/
-theorem upperGammaContFracPartNum_ne_zero {a z : ℂ} (hz : z ≠ 0) {n : ℕ} (hn : 1 ≤ n)
-    (ha : ∀ m : ℕ, a ≠ m + 1) :
-    upperGammaContFracPartNum a z n ≠ 0 := by
-  rcases eq_or_lt_of_le hn with rfl | hn1
-  · simp [hz]
-  · obtain ⟨k, rfl | rfl⟩ : ∃ k, n = 2 * k + 2 ∨ n = 2 * k + 3 :=
-      ⟨(n - 2) / 2, by omega⟩
-    · rw [upperGammaContFracPartNum_two_mul_add_two]
-      refine mul_ne_zero (sub_ne_zero.mpr fun h => ha k ?_) (inv_ne_zero hz)
-      exact h.symm
-    · rw [upperGammaContFracPartNum_two_mul_add_three]
-      exact mul_ne_zero (by exact_mod_cast Nat.succ_ne_zero k) (inv_ne_zero hz)
+/-- Exact nonvanishing characterization of `upperGammaContFracPartNum a z n`: it is nonzero
+if and only if `z ≠ 0` and, when `n` is even, `a ≠ (n / 2 : ℕ)`. -/
+theorem upperGammaContFracPartNum_ne_zero_iff {a z : ℂ} {n : ℕ} :
+    upperGammaContFracPartNum a z n ≠ 0 ↔ z ≠ 0 ∧ (Even n → a ≠ (n / 2 : ℕ)) := by
+  rcases n with _ | _ | n
+  · simp [and_comm]
+  · simp
+  · rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩
+    · have hev : Even (2 * k + 2) := ⟨k + 1, by ring⟩
+      have hdiv : (2 * k + 2) / 2 = k + 1 := by omega
+      rw [upperGammaContFracPartNum_two_mul_add_two, hdiv]
+      simp [hev, sub_eq_zero, eq_comm (a := a), and_comm]
+    · have hodd : ¬Even (2 * k + 3) := by simp [parity_simps]
+      have hk1 : (k : ℂ) + 1 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero k
+      rw [show 2 * k + 1 + 2 = 2 * k + 3 by ring, upperGammaContFracPartNum_two_mul_add_three]
+      simp [hodd, hk1]
 
-/-- Explicit minimal solution of the three-term recurrence
-`f (n + 2) = f (n + 1) + upperGammaContFracPartNum a z (n + 1) * f n` associated with Legendre's
-continued fraction for `z^{-a} e^z Γ(a, z)`, normalized by `f 0 = 1`:
+/-- Explicit Kummer-Laplace solution sequence of the three-term recurrence
+`f (n + 2) = f (n + 1) + upperGammaContFracPartNum a z (n + 1) * f n` on `Complex.slitPlane`
+associated with Legendre's continued fraction for `z^{-a} e^z Γ(a, z)`, normalized by `f 0 = 1`:
 * `f 0 = 1`,
 * `f (2k + 1) = -(1 - a)_k * z⁻¹ ^ k * kummerLaplace k (a - 1 - k) z`,
 * `f (2k + 2) = (1 - a)_{k+1} * z⁻¹ ^ (k + 1) * kummerLaplace k (a - 2 - k) z`. -/
@@ -871,6 +839,16 @@ def upperGammaContFracSolution (a z : ℂ) : ℕ → ℂ
 theorem upperGammaContFracSolution_zero (a z : ℂ) :
     upperGammaContFracSolution a z 0 = 1 := by rfl
 
+/-- Successor formula for `Complex.upperGammaContFracSolution`. -/
+theorem upperGammaContFracSolution_succ (a z : ℂ) (n : ℕ) :
+    upperGammaContFracSolution a z (n + 1) =
+      if Even n then
+        -(ascPochhammer ℂ (n / 2)).eval (1 - a) * z⁻¹ ^ (n / 2) *
+          kummerLaplace (n / 2) (a - 1 - (n / 2 : ℕ)) z
+      else
+        (ascPochhammer ℂ (n / 2 + 1)).eval (1 - a) * z⁻¹ ^ (n / 2 + 1) *
+          kummerLaplace (n / 2) (a - 2 - (n / 2 : ℕ)) z := (rfl)
+
 /-- Initial value `f 1 = -kummerLaplace 0 (a - 1) z` of `upperGammaContFracSolution`. -/
 @[simp]
 theorem upperGammaContFracSolution_one (a z : ℂ) :
@@ -878,6 +856,7 @@ theorem upperGammaContFracSolution_one (a z : ℂ) :
   simp [upperGammaContFracSolution]
 
 /-- Odd-index formula for `upperGammaContFracSolution`. -/
+@[simp]
 theorem upperGammaContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
     upperGammaContFracSolution a z (2 * k + 1) =
       -(ascPochhammer ℂ k).eval (1 - a) * z⁻¹ ^ k * kummerLaplace k (a - 1 - k) z := by
@@ -886,6 +865,7 @@ theorem upperGammaContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
   simp only [upperGammaContFracSolution, hev, ↓reduceIte, hdiv]
 
 /-- Even-index formula for `upperGammaContFracSolution`. -/
+@[simp]
 theorem upperGammaContFracSolution_two_mul_add_two (a z : ℂ) (k : ℕ) :
     upperGammaContFracSolution a z (2 * k + 2) =
       (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) *
@@ -893,13 +873,6 @@ theorem upperGammaContFracSolution_two_mul_add_two (a z : ℂ) (k : ℕ) :
   have hodd : ¬Even (2 * k + 1) := by simp [parity_simps]
   have hdiv : (2 * k + 1) / 2 = k := by omega
   simp only [upperGammaContFracSolution, hodd, ↓reduceIte, hdiv]
-
-/-- The initial Pincherle ratio `-f 1 / f 0` of `upperGammaContFracSolution a z` equals
-`kummerLaplace 0 (a - 1) z`. -/
-theorem neg_upperGammaContFracSolution_one_div_zero (a z : ℂ) :
-    -upperGammaContFracSolution a z 1 / upperGammaContFracSolution a z 0 =
-      kummerLaplace 0 (a - 1) z := by
-  simp
 
 /-- **Three-term recurrence for Legendre's incomplete Gamma continued fraction.**
 On `slitPlane`, `f := upperGammaContFracSolution a z` satisfies
@@ -954,20 +927,16 @@ theorem upperGammaContFracSolution_add_two (a : ℂ) {z : ℂ} (hz : z ∈ slitP
         pow_succ _ (k + 1)]
       linear_combination (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) * hibp
 
-/-- When `z ∈ slitPlane` and `a` is not a positive integer, the minimal recurrence solution
-`upperGammaContFracSolution a z n` is eventually nonzero as `n → ∞`. -/
+/-- When `z ∈ slitPlane` and `a` is not a positive integer, the Kummer-Laplace recurrence
+solution `upperGammaContFracSolution a z n` is eventually nonzero as `n → ∞`. -/
 theorem eventually_upperGammaContFracSolution_ne_zero {a : ℂ} (ha : ∀ m : ℕ, a ≠ m + 1)
     {z : ℂ} (hz : z ∈ slitPlane) :
     ∀ᶠ n : ℕ in atTop, upperGammaContFracSolution a z n ≠ 0 := by
   have hz0 : z ≠ 0 := slitPlane_ne_zero hz
-  have hp : ∀ k : ℕ, (ascPochhammer ℂ k).eval (1 - a) ≠ 0 := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [ascPochhammer_succ_eval]
-      refine mul_ne_zero ih fun h => ha k ?_
-      linear_combination -h
+  have hp : ∀ k : ℕ, (ascPochhammer ℂ k).eval (1 - a) ≠ 0 := fun k => by
+    rw [ne_eq, ascPochhammer_eval_eq_zero_iff]
+    rintro ⟨m, _, hm⟩
+    exact ha m (by linear_combination -hm)
   obtain ⟨N₁, hN₁⟩ := eventually_atTop.mp (eventually_kummerLaplace_ne_zero a hz)
   obtain ⟨N₂, hN₂⟩ := eventually_atTop.mp (eventually_kummerLaplace_ne_zero (a - 1) hz)
   refine eventually_atTop.mpr ⟨2 * max N₁ N₂ + 1, fun n hn => ?_⟩

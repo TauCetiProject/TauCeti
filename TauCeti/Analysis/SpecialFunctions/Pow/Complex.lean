@@ -92,6 +92,10 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `Complex.log_inv_cpow_half`, `Complex.inv_cpow_half_cpow` -- `log ((z ^ (1/2))⁻¹) = -log z / 2`
+  and `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
+* `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` -- for `|θ| ≤ π / 2` and `0 ≤ r`,
+  `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (1 + r) ^ ⌈d.re⌉₊`.
 -/
 
 public section
@@ -625,6 +629,53 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- The principal logarithm of the reciprocal `(z ^ (1 / 2))⁻¹` of the principal half-power is
+`-log z / 2` for every complex `z` (including at `z = 0` and on the negative real axis, since
+`-arg z / 2 ∈ [-π / 2, π / 2) ⊂ (-π, π]`). -/
+theorem log_inv_cpow_half (z : ℂ) : log ((z ^ (1 / 2 : ℂ))⁻¹) = -log z / 2 := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  rw [← cpow_neg, cpow_def_of_ne_zero hz]
+  have hmul : log z * -(1 / 2 : ℂ) = -log z / 2 := by ring
+  have him : (-log z / 2).im = -arg z / 2 := by simp [div_eq_mul_inv, log_im]
+  rw [hmul]
+  exact log_exp (by rw [him]; linarith [arg_le_pi z, Real.pi_pos])
+    (by rw [him]; linarith [neg_pi_lt_arg z, Real.pi_pos])
+
+/-- Raising the reciprocal `(z ^ (1 / 2))⁻¹` of the principal half-power to any complex exponent `w`
+gives `z ^ (-w / 2)` for all `z, w : ℂ`. -/
+theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w / 2) := by
+  have him : (log z * -(1 / 2 : ℂ)).im = -arg z / 2 := by simp [div_eq_mul_inv, log_im]
+  rw [← cpow_neg, ← cpow_mul _ (by rw [him]; linarith [arg_le_pi z, Real.pi_pos])
+    (by rw [him]; linarith [neg_pi_lt_arg z, Real.pi_pos])]
+  congr 1
+  ring
+
+/-- Along a ray `1 + r * exp (θ * I)` in the closed right half-plane (`|θ| ≤ π / 2`, `0 ≤ r`), the
+principal power `(1 + r * exp (θ * I)) ^ d` has norm at most
+`exp (π * |d.im|) * (1 + r) ^ ⌈d.re⌉₊`. -/
+theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| ≤ Real.pi / 2)
+    (hr : 0 ≤ r) (d : ℂ) :
+    ‖(1 + (r : ℂ) * exp ((θ : ℂ) * I)) ^ d‖ ≤ Real.exp (Real.pi * |d.im|) * (1 + r) ^ ⌈d.re⌉₊ := by
+  set w : ℂ := 1 + (r : ℂ) * exp ((θ : ℂ) * I)
+  have hw1 : 1 ≤ ‖w‖ := (one_le_re_one_add_ofReal_mul_exp_mul_I hθ hr).trans (re_le_norm w)
+  have hwu : ‖w‖ ≤ 1 + r := by
+    calc ‖w‖ ≤ ‖(1 : ℂ)‖ + ‖(r : ℂ) * exp ((θ : ℂ) * I)‖ := norm_add_le _ _
+      _ = 1 + r := by simp [norm_exp_ofReal_mul_I, abs_of_nonneg hr]
+  have hrpow : ‖w‖ ^ d.re ≤ (1 + r) ^ ⌈d.re⌉₊ := by
+    rcases le_or_gt d.re 0 with hd | hd
+    · calc ‖w‖ ^ d.re ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos hw1 hd
+        _ ≤ (1 + r) ^ ⌈d.re⌉₊ := one_le_pow₀ (by linarith)
+    · calc ‖w‖ ^ d.re ≤ (1 + r) ^ d.re := Real.rpow_le_rpow (norm_nonneg _) hwu hd.le
+        _ ≤ (1 + r) ^ (⌈d.re⌉₊ : ℝ) :=
+            Real.rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil _)
+        _ = (1 + r) ^ ⌈d.re⌉₊ := Real.rpow_natCast _ _
+  calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re / Real.exp (w.arg * d.im) := norm_cpow_le w d
+    _ = ‖w‖ ^ d.re * (Real.exp (w.arg * d.im))⁻¹ := div_eq_mul_inv _ _
+    _ ≤ (1 + r) ^ ⌈d.re⌉₊ * Real.exp (Real.pi * |d.im|) :=
+        mul_le_mul hrpow (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im) (by positivity) (by positivity)
+    _ = Real.exp (Real.pi * |d.im|) * (1 + r) ^ ⌈d.re⌉₊ := mul_comm _ _
 
 end Complex
 

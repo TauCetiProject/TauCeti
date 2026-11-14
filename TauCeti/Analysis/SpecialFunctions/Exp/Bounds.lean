@@ -30,11 +30,13 @@ is bounded on `x ≥ 0`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
+* `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
 -/
 
 public section
 
 open Filter Real
+open scoped Nat
 
 namespace TauCeti
 
@@ -106,5 +108,14 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
         rw [mul_pow, sq_abs, ← exp_nat_mul]; push_cast; ring_nf
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
+
+/-- For `0 < a` and `0 ≤ t`, `t ^ m * exp (-a * t) ≤ m! / a ^ m`. -/
+theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ) :
+    t ^ m * exp (-a * t) ≤ (m ! : ℝ) / a ^ m := by
+  have h := pow_div_factorial_le_exp (a * t) (mul_nonneg ha.le ht) m
+  rw [mul_pow, div_le_iff₀ (Nat.cast_pos.2 m.factorial_pos)] at h
+  rw [neg_mul, exp_neg, ← div_eq_mul_inv, div_le_iff₀ (exp_pos _), div_mul_eq_mul_div,
+    le_div_iff₀ (pow_pos ha m)]
+  linarith
 
 end TauCeti
