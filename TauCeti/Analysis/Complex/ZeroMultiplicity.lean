@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Analytic.Order
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Topology.Algebra.Polynomial
@@ -49,7 +51,9 @@ This file proves how zero multiplicities transform:
 If `f` has no zeros near infinity, its multiplicities are the counts of a multiset of points,
 which they determine: the divisor of zeros of `f` (`TauCeti.IsZeroMultiplicity.exists_eq_count`).
 Then `f` is `exp L` times the product of the linear factors of its divisor, for a continuous `L`
-(`TauCeti.IsZeroMultiplicity.exists_continuous_eq_exp_mul_prod_pow`).
+(`TauCeti.IsZeroMultiplicity.exists_continuous_eq_exp_mul_prod_pow`), and when `f` is entire it is
+an entire function without zeros times that product
+(`TauCeti.IsZeroMultiplicity.exists_differentiable_eq_mul_prod_pow`).
 When moreover `f(z) (z / |z|)⁻ᵐ → 1` at infinity, that divisor has `m` points
 (`TauCeti.IsZeroMultiplicity.card_eq_of_tendsto_mul_inv_pow`).
 
@@ -197,6 +201,31 @@ theorem natCast_le_analyticOrderAt_of_eventually_eq_mul (h : IsZeroMultiplicity 
     (hv.mul hu) ?_
   filter_upwards [heq, hfv] with w hw hwv
   rw [hw, hwv, smul_eq_mul, mul_assoc]
+
+/-- **Global holomorphic factorization through the divisor of zeros.** If `f` is entire and its
+zero multiplicities are the counts of a multiset `D`, then
+`f w = g w * ∏ z ∈ D.toFinset, (w - z) ^ count z D` for an entire function `g` without zeros. -/
+theorem exists_differentiable_eq_mul_prod_pow {D : Multiset ℂ}
+    (h : IsZeroMultiplicity f fun z ↦ D.count z) (hf : Differentiable ℂ f) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ z, g z ≠ 0) ∧
+      ∀ w, f w = g w * ∏ z ∈ D.toFinset, (w - z) ^ D.count z := by
+  obtain ⟨L, hL, hfL⟩ := h.exists_continuous_eq_exp_mul_prod_pow
+  have hA : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
+  obtain ⟨g, hg, hfg⟩ := hA.exists_eq_prod_pow_smul D.toFinset (fun z ↦ D.count z) fun z _ ↦
+    h.natCast_le_analyticOrderAt_of_eventually_eq_mul (u := fun _ ↦ 1) (hf.analyticAt z)
+      continuousAt_const (Eventually.of_forall fun w ↦ (mul_one _).symm)
+  have hgd : Differentiable ℂ g := fun z ↦ (hg z (Set.mem_univ z)).differentiableAt
+  -- Off the finite zero set, `g` agrees with `exp ∘ L`, so `g = exp ∘ L` everywhere by continuity.
+  have hgL : g = fun w ↦ Complex.exp (L w) :=
+    Continuous.ext_on (D.toFinset.finite_toSet.countable.dense_compl ℂ) hgd.continuous
+      (Complex.continuous_exp.comp hL) fun w hw ↦ by
+        have hprod : ∏ z ∈ D.toFinset, (w - z) ^ D.count z ≠ 0 :=
+          Finset.prod_ne_zero_iff.2 fun z hz ↦
+            pow_ne_zero _ (sub_ne_zero.2 fun heq ↦ hw (heq ▸ hz))
+        apply mul_right_cancel₀ hprod
+        rw [mul_comm (g w), ← smul_eq_mul, ← hfg w, hfL w]
+  exact ⟨g, hgd, fun z ↦ hgL ▸ Complex.exp_ne_zero (L z),
+    fun w ↦ by rw [hfg w, smul_eq_mul, mul_comm]⟩
 
 /-- **Uniqueness of the holomorphic part modulo `f`.** If `f G₁ + E H₁ = f G₂ + E H₂` near `z`, with
 `G₁`, `G₂`, `E` continuous at `z`, `E z ≠ 0` and `H₁`, `H₂` holomorphic at `z`, then the
