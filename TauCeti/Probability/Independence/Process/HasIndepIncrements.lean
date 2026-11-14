@@ -319,16 +319,17 @@ namespace ProbabilityTheory
 
 variable {T Ω : Type*} [Preorder T] [MeasurableSpace Ω] {P : Measure Ω} {N : T → Ω → ℕ}
 
-/-- Casting a nondecreasing natural-valued process to the integers preserves independent
-increments. Monotonicity is needed because subtraction in the natural numbers is truncated. -/
-theorem HasIndepIncrements.natCast (hN : HasIndepIncrements N P)
-    (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω)) :
-    HasIndepIncrements (fun t ω ↦ (N t ω : ℤ)) P := by
+/-- Casting a nondecreasing natural-valued process to an additive group with one preserves
+independent increments. Monotonicity is needed because subtraction in the natural numbers is
+truncated. -/
+theorem HasIndepIncrements.natCast {R : Type*} [MeasurableSpace R] [AddGroupWithOne R]
+    (hN : HasIndepIncrements N P) (hmono : ∀ᵐ ω ∂P, Monotone (fun t ↦ N t ω)) :
+    HasIndepIncrements (fun t ω ↦ (N t ω : R)) P := by
   intro n t ht
-  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : ℤ)) (fun _ ↦ measurable_of_countable _)
+  have h := (hN n t ht).comp (fun _ (x : ℕ) ↦ (x : R)) (fun _ ↦ measurable_of_countable _)
   refine h.congr fun i ↦ ?_
   filter_upwards [hmono] with ω hω
-  exact Int.ofNat_sub (hω (ht i.castSucc_le_succ))
+  exact Nat.cast_sub (hω (ht i.castSucc_le_succ))
 
 end ProbabilityTheory
 

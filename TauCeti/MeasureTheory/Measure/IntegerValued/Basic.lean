@@ -60,6 +60,13 @@ theorem IsIntegerValued.exists_eq_natCast (hμ : μ.IsIntegerValued) {A : Set X}
     (hA : MeasurableSet A) (hfin : μ A < ∞) : ∃ n : ℕ, μ A = n :=
   isIntegerValued_def.1 hμ hA hfin
 
+/-- Flooring a finite mass of an integer-valued measure and casting back recovers the mass. -/
+theorem IsIntegerValued.natCast_natFloor_eq (hμ : μ.IsIntegerValued) {A : Set X}
+    (hfin : μ A < ∞) : (⌊(μ A).toNNReal⌋₊ : ℝ≥0∞) = μ A := by
+  rw [← measure_toMeasurable A] at hfin ⊢
+  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast (measurableSet_toMeasurable μ A) hfin
+  simp [hn]
+
 /-- An integer-valued measure takes only natural-number or infinite values on measurable sets. -/
 theorem isIntegerValued_iff : μ.IsIntegerValued ↔
     ∀ A : Set X, MeasurableSet A → (∃ n : ℕ, μ A = n) ∨ μ A = ∞ := by
