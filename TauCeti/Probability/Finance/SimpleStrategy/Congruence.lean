@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+public import TauCeti.MeasureTheory.Measure.NNReal
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.MeasureTheory.Measure.Prod
@@ -22,7 +23,9 @@ moment hypothesis on the price is needed.
 
 `simpleGains_congr_on_horizon_of_ae_eq` is the finite-horizon statement.
 `simpleGains_congr_of_ae_eq` gives equality at all times from time-a.e. equality on the whole
-line. The product-measure forms turn time-product-a.e. equality into equality
+line. The half-line forms `simpleGains_congr_of_ae_eq_nnvolume` and
+`simpleGains_congr_of_ae_eq_nnvolume_prod` give the same conclusions in nonnegative time.
+The product-measure forms turn time-product-a.e. equality into equality
 of the gain processes outside one common sample-null set, either on a finite horizon
 or at all times. Thus elementary gains
 respect the equivalence of integrands used in stochastic-integral completion.
@@ -126,5 +129,56 @@ theorem simpleGains_congr_of_ae_eq_prod {mΩ : MeasurableSpace Ω} {P : Measure 
   have hswap := Measure.ae_ae_of_ae_prod
     (Measure.measurePreserving_swap.quasiMeasurePreserving.ae hab)
   exact hswap.mono fun ω hω t ↦ simpleGains_congr_of_ae_eq hτ hρ ω hω t
+
+section NNReal
+
+open scoped NNReal
+
+variable {τ ρ : ℕ → ℝ≥0} {X : ℝ≥0 → Ω → ℝ}
+
+/-- Half-line time-a.e. equal elementary holdings have the same gains against any price path.
+The equality holds at every observation time, without any path regularity assumption. -/
+theorem simpleGains_congr_of_ae_eq_nnvolume (hτ : MonotoneOn τ (Set.Iic n))
+    (hρ : MonotoneOn ρ (Set.Iic m)) (ω : Ω)
+    (hab : (fun u ↦ simpleHolding τ n a u ω) =ᵐ[TauCeti.nnvolume]
+      (fun u ↦ simpleHolding ρ m b u ω)) (t : ℝ≥0) :
+    simpleGains τ n a X t ω = simpleGains ρ m b X t ω := by
+  let e : ℝ≥0 ↪o ℝ := OrderEmbedding.subtype _
+  have hτ' : MonotoneOn (fun j ↦ e (τ j)) (Set.Iic n) := fun i hi j hj hij ↦ hτ hi hj hij
+  have hρ' : MonotoneOn (fun j ↦ e (ρ j)) (Set.Iic m) := fun i hi j hj hij ↦ hρ hi hj hij
+  have hr : (fun u ↦ simpleHolding (fun j ↦ e (τ j)) n a u ω)
+      =ᵐ[volume.restrict (Ici 0)] (fun u ↦ simpleHolding (fun j ↦ e (ρ j)) m b u ω) := by
+    rw [← TauCeti.map_coe_nnvolume]
+    apply NNReal.isClosedEmbedding_coe.measurableEmbedding.ae_map_iff.mpr
+    filter_upwards [hab] with u hu
+    exact (simpleHolding_map τ n a e u ω).trans
+      (hu.trans (simpleHolding_map ρ m b e u ω).symm)
+  have hf : (fun u ↦ simpleHolding (fun j ↦ e (τ j)) n a u ω)
+      =ᵐ[volume] (fun u ↦ simpleHolding (fun j ↦ e (ρ j)) m b u ω) := by
+    filter_upwards [(ae_restrict_iff' measurableSet_Ici).mp hr] with u hu
+    by_cases h0 : 0 ≤ u
+    · exact hu h0
+    · have hτu : u ∉ Ioc (e (τ 0)) (e (τ n)) :=
+        fun h ↦ h0 ((τ 0).coe_nonneg.trans h.1.le)
+      have hρu : u ∉ Ioc (e (ρ 0)) (e (ρ m)) :=
+        fun h ↦ h0 ((ρ 0).coe_nonneg.trans h.1.le)
+      rw [simpleHolding_of_notMem_Ioc hτ' hτu, simpleHolding_of_notMem_Ioc hρ' hρu]
+  have h := simpleGains_congr_of_ae_eq (X := fun u ↦ X u.toNNReal) hτ' hρ' ω hf (e t)
+  have he (u : ℝ≥0) : (e u).toNNReal = u := Real.toNNReal_coe
+  simpa only [simpleGains_map τ n a _ e e.monotone, simpleGains_map ρ m b _ e e.monotone,
+    he] using h
+
+/-- Product-a.e. equal half-line holdings give elementary gains equal at every time outside
+one common sample-null set. The price path need not even be measurable. -/
+theorem simpleGains_congr_of_ae_eq_nnvolume_prod {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [SFinite P] (hτ : MonotoneOn τ (Set.Iic n)) (hρ : MonotoneOn ρ (Set.Iic m))
+    (hab : Function.uncurry (simpleHolding τ n a) =ᵐ[TauCeti.nnvolume.prod P]
+      Function.uncurry (simpleHolding ρ m b)) :
+    ∀ᵐ ω ∂P, ∀ t, simpleGains τ n a X t ω = simpleGains ρ m b X t ω := by
+  have hswap := Measure.ae_ae_of_ae_prod
+    (Measure.measurePreserving_swap.quasiMeasurePreserving.ae hab)
+  exact hswap.mono fun ω hω t ↦ simpleGains_congr_of_ae_eq_nnvolume hτ hρ ω hω t
+
+end NNReal
 
 end TauCeti.Finance

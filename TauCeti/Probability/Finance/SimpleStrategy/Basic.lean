@@ -127,6 +127,22 @@ theorem simpleGains_def (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X 
       ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) :=
   (rfl)
 
+/-- An order embedding of the time axis preserves elementary holdings at embedded times. -/
+@[simp]
+theorem simpleHolding_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (e : ι ↪o κ) (t : ι) (ω : Ω) :
+    simpleHolding (fun j ↦ e (τ j)) n a (e t) ω = simpleHolding τ n a t ω := by
+  simp [simpleHolding_def, Set.indicator_apply]
+
+/-- A monotone change of time preserves elementary gains after pulling back the price path. -/
+@[simp]
+theorem simpleGains_map {κ : Type*} [LinearOrder κ]
+    (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X : κ → Ω → ℝ) (e : ι → κ)
+    (he : Monotone e) (t : ι) (ω : Ω) :
+    simpleGains (fun j ↦ e (τ j)) n a X (e t) ω =
+      simpleGains τ n a (fun u ↦ X (e u)) t ω := by
+  simp only [simpleGains_def, he.map_min]
+
 /-- Elementary gains only inspect the price at the clipped endpoints of the grid.
 No order condition on the grid is needed for this identity. -/
 theorem simpleGains_congr_price {X Y : ι → Ω → ℝ} (ω : Ω)
