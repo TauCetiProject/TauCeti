@@ -82,9 +82,10 @@ The construction combines four local ingredients around each point `x ∈ M`:
 * **Separation, second countability, and empty source.** Neither explicit Hausdorff hypotheses on
   `M` and `G` nor second countability are needed to construct the atlas or prove the submersion
   property, and `M` may be empty. Because the atlas retains the native quotient topology, the
-  quotient automatically inherits `T2Space` from `t2Space_quotient_mulAction_of_properSMul` and
-  `SecondCountableTopology` (whenever `M` is second countable) from Mathlib's quotient instance in
-  `Mathlib.Topology.Algebra.ConstMulAction`.
+  quotient automatically inherits `T2Space` from `t2Space_quotient_mulAction_of_properSMul`, and
+  when `M` is second countable, `SecondCountableTopology` on the quotient is obtained from the
+  theorem `ContinuousConstSMul.secondCountableTopology` together with
+  `ContMDiffSMul.continuousSMul`.
 
 ## Main declarations
 
@@ -474,9 +475,8 @@ theorem isManifold_freeProperQuotient (hn : finrank ℝ E - finrank ℝ EG = n) 
     (FreeProperQuotient.deck_pieceEmbedding (I := I) (IG := IG) (G := G) (M := M) hn)
 
 variable (I IG M G) in
-/-- The orbit projection `M → M ⧸ G` of a free proper Lie group action is smooth: near any `x : M`,
-it factors through the smooth slice-coordinate map into `U_x` followed by the smooth open-piece
-embedding `U_x → M ⧸ G`. -/
+/-- The orbit projection `Quotient.mk (MulAction.orbitRel G M)` of a free proper Lie group action
+is smooth with respect to `freeProperQuotientChartedSpace`. -/
 theorem contMDiff_quotientMk_freeProperQuotient (hn : finrank ℝ E - finrank ℝ EG = n) :
     letI := freeProperQuotientChartedSpace I IG M G hn
     ContMDiff I 𝓘(ℝ, Fin n → ℝ) ∞ (Quotient.mk (MulAction.orbitRel G M)) := by
@@ -518,9 +518,9 @@ theorem contMDiff_quotientMk_freeProperQuotient (hn : finrank ℝ E - finrank �
   · exact (h hy.1).elim
 
 variable (I IG G) in
-/-- At every point `x : M`, the differential of the orbit projection `M → M ⧸ G` is surjective:
-precomposing `Quotient.mk` with the smooth transverse slice `U_x → M` through `x` gives the local
-diffeomorphism `U_x → M ⧸ G` at `0`. -/
+/-- At every point `x : M`, the differential
+`mfderiv I 𝓘(ℝ, Fin n → ℝ) (Quotient.mk (MulAction.orbitRel G M)) x` of the orbit projection is
+surjective. -/
 theorem surjective_mfderiv_quotientMk_freeProperQuotient
     (hn : finrank ℝ E - finrank ℝ EG = n) (x : M) :
     letI := freeProperQuotientChartedSpace I IG M G hn
@@ -669,7 +669,8 @@ boundaryless real Lie group `G` on a finite-dimensional boundaryless smooth real
 admits a smooth manifold structure of dimension `dim E - dim EG`, retaining its quotient topology,
 for which the orbit projection `Quotient.mk''` is a smooth submersion. Neither countability nor
 explicit separation assumptions are needed (`T2Space` of the quotient holds automatically from
-`ProperSMul G M`, and `SecondCountableTopology` is inherited whenever `M` is second countable), and
+`ProperSMul G M`, and when `M` is second countable `SecondCountableTopology` is obtained from
+`ContinuousConstSMul.secondCountableTopology` together with `ContMDiffSMul.continuousSMul`), and
 `M` may be empty. -/
 theorem exists_freeProperQuotient_isSubmersion
     {E EG H HG M G : Type*}
