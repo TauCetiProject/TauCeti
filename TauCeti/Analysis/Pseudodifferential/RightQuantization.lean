@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
@@ -32,7 +33,8 @@ that it is a symbol of order `m` whose quantization is the right quantization of
   position and frequency derivatives are the left symbols of the derivatives of `c`
   (`TauCeti.Symbol.spatialDeriv_ofRight`, `TauCeti.Symbol.frequencyDeriv_ofRight`).
 * `TauCeti.Symbol.quantizeSchwartzValue_ofRight`: `Op(b) v (x)` is the right quantization
-  `∫ exp(2πi ⟪ζ, x⟫) 𝓕 (y ↦ c(y, 2πζ) v(y)) (ζ) dζ` of `c`.
+  `∫ exp(2πi ⟪ζ, x⟫) 𝓕 (y ↦ c(y, 2πζ) v(y)) (ζ) dζ` of `c`; as operators on Schwartz space,
+  `TauCeti.Symbol.quantizeRightUniformCLM_eq_quantizeUniformCLM_ofRight`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_add_smul_le`,
   `TauCeti.Symbol.HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_add_smul`:
   the decay `‖ĉ(θ, ξ + sθ)‖ ≤ C ⟨ξ⟩ ^ m (1 + ‖θ‖) ^ (-(n + 1))` of the shifted Fourier slices and
@@ -723,6 +725,15 @@ theorem quantizeSchwartzValue_ofRight (hc : c.HasCompactSpatialSupport)
       ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 (fun y ↦ c.coefficient (y, (2 * π) • ζ) (v y)) ζ := by
   rw [hc.quantizeSchwartzValue_ofRight_eq]
   simp_rw [hc.fourier_apply_eq_integral]
+
+/-- **The left symbol of the right quantization.** For a symbol `c` with compact spatial support,
+the right quantization of `c` on Schwartz space is the quantization of its left symbol
+`c.ofRight hc`. -/
+theorem quantizeRightUniformCLM_eq_quantizeUniformCLM_ofRight (hc : c.HasCompactSpatialSupport) :
+    quantizeRightUniformCLM c hc.isUniform =
+      quantizeUniformCLM (c.ofRight hc) (isUniform_ofRight hc) := by
+  ext v x
+  rw [quantizeRightUniformCLM_apply, quantizeUniformCLM_apply, quantizeSchwartzValue_ofRight]
 
 /-- The frequency profile `ζ ↦ 𝓕 (y ↦ c(y, 2πζ) v(y)) (ζ)` of the right quantization of a symbol
 with compact spatial support is integrable. -/

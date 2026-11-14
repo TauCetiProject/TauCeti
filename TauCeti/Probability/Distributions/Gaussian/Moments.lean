@@ -19,9 +19,8 @@ centered moment is evaluated first from the Gaussian density and the absolute mo
 `TauCeti.integral_abs_rpow_mul_exp_neg_mul_sq` of `exp(-b x²)`; the
 ordinary even and odd centered moments then follow from this formula and symmetry.
 
-The formulas follow the real-Gaussian entry in the StandardDistributions roadmap and the standard
-calculation in, for example, Johnson, Kotz, and Balakrishnan, *Continuous Univariate
-Distributions*, volume 1, Chapter 13.
+The formulas follow the standard calculation in, for example, Johnson, Kotz, and Balakrishnan,
+*Continuous Univariate Distributions*, volume 1, Chapter 13.
 
 ## Main results
 
