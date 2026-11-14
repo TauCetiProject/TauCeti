@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -62,6 +63,10 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   the form in which the estimate passes to the linearized operator of a Floer solution on a far
   part of a cylindrical end, which is such a perturbation of `D`
   (`TauCeti.Geometry.Symplectic.Floer.EndLinearization`).
+* **The norm of `V`.** Since `g_t` is uniformly equivalent to the norm of `V` for `t ∈ [0, 1]` and
+  `S` is bounded there, an estimate `∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤
+  C₀ ∫ g(η, η)` implies `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖η‖²`
+  (`Floer.exists_forall_setIntegral_norm_sq_le_mul_setIntegral_of_setIntegral_le`).
 
 In contrast, `Floer.eq_zero_of_stationaryCylinderOperator_eq_zero` shows that `D` is injective on
 decaying maps with no nondegeneracy assumption, but without an estimate; at a degenerate orbit
@@ -358,6 +363,79 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
     (hmM z.2 ht _).2 (hmM z.2 ht (η z)).1 (hmM z.2 ht (fderiv ℝ ξ z stdComplexLineReal)).1
     (hmM z.2 ht _).1 (hmM z.2 ht (ξ z)).1 hD
   simpa only [mul_add, add_assoc] using this
+
+/-- **The cylinder estimate in the norm of `V`.** Let each `J_t` be `ω`-tame and depend
+continuously on `t`, and let `S` be continuous. For every `C₀ ≥ 0` there is a `C ≥ 0` with the
+following property. If a `C¹` map `ξ` and a map `η` continuous on `[a, b] × [0, 1]` satisfy
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C₀ ∫ g(η, η)`
+
+over that rectangle, for `g_t = ω(·, J_t ·)`, then
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖η‖²` there. The forms `g_t` are uniformly equivalent to the
+norm of `V` for `t ∈ [0, 1]` and `S` is bounded there, so `C` depends only on `C₀`, `J` and `S`,
+not on `a`, `b`, `ξ` or `η`. -/
+theorem exists_forall_setIntegral_norm_sq_le_mul_setIntegral_of_setIntegral_le
+    (hJ : ∀ t, ω.Tames (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S)
+    {C₀ : ℝ} (hC₀ : 0 ≤ C₀) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → ∀ ⦃a b : ℝ⦄ ⦃η : ℝ × ℝ → V⦄,
+      ContinuousOn η (Icc a b ×ˢ Icc 0 1) →
+      ∫ z in Icc a b ×ˢ Icc 0 1,
+          ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+              (fderiv ℝ ξ z stdComplexLineReal) +
+            ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+              (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+            ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+        C₀ * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (η z) (η z) →
+      ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+        C * ∫ z in Icc a b ×ˢ Icc 0 1, ‖η z‖ ^ 2 := by
+  have he : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+    continuous_clm_apply.2 fun v ↦ by
+      simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
+  -- On `t ∈ [0, 1]`, `m ‖v‖² ≤ g_t(v, v) ≤ M ‖v‖²` and `‖S_t‖ ≤ |B|`.
+  obtain ⟨m, hm, M, hM, hmM⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) he.continuousOn fun t _ ↦ hJ t
+  obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn (s := Icc (0 : ℝ) 1)
+    hSc.continuousOn
+  refine ⟨(2 + 2 * B ^ 2) * C₀ * M / m, by positivity, fun ξ hξ a b η hη hest ↦ ?_⟩
+  have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv one_ne_zero
+  have hQ : Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 :=
+    (((hdξ.clm_apply continuous_const).norm.pow 2).add
+      ((hdξ.clm_apply continuous_const).norm.pow 2)).add (hξ.continuous.norm.pow 2)
+  have hG := (continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc hξ).add
+    (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous)
+  have hgη : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (η z) (η z))
+      (Icc a b ×ˢ Icc 0 1) :=
+    (ω.continuousOn_apply_comp hη (hJc.comp_continuousOn
+      (continuous_snd.continuousOn.prodMk hη))).integrableOn_compact hR
+  -- The metrics dominate the squared norms, with `‖∂t ξ‖² ≤ 2 ‖∂t ξ - S ξ‖² + 2 B² ‖ξ‖²`.
+  have h₁ : m * ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+      (2 + 2 * B ^ 2) * ∫ z in Icc a b ×ˢ Icc 0 1,
+        ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+            (fderiv ℝ ξ z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+            (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+          ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) := by
+    rw [← integral_const_mul, ← integral_const_mul]
+    exact setIntegral_mono_on ((continuous_const.mul hQ).continuousOn.integrableOn_compact hR)
+      ((continuous_const.mul hG).continuousOn.integrableOn_compact hR) hR.measurableSet
+      fun z ⟨_, hz⟩ ↦ TauCeti.mul_norm_sq_add_le_mul_add hm.le
+        (g := fun w ↦ ω.associatedBilinForm (J z.2) w w) (fun w ↦ (hmM z.2 hz w).1)
+        ((ContinuousLinearMap.le_opNorm _ _).trans
+          (by gcongr; exact (hB z.2 hz).trans (le_abs_self B)))
+  -- The metric is bounded by `M` times the squared norm.
+  have h₂ : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (η z) (η z) ≤
+      M * ∫ z in Icc a b ×ˢ Icc 0 1, ‖η z‖ ^ 2 := by
+    rw [← integral_const_mul]
+    exact setIntegral_mono_on hgη ((hη.norm.pow 2).integrableOn_compact hR |>.const_mul M)
+      hR.measurableSet fun z ⟨_, hz⟩ ↦ (hmM z.2 hz (η z)).2
+  have h₃ := mul_le_mul_of_nonneg_left (hest.trans (mul_le_mul_of_nonneg_left h₂ hC₀))
+    (by positivity : (0 : ℝ) ≤ 2 + 2 * B ^ 2)
+  rw [div_mul_eq_mul_div, le_div_iff₀ hm]
+  linarith
 
 /-- **The weighted cylinder estimate.** Under the hypotheses of
 `exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`, for every weight `δ`
