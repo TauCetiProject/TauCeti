@@ -26,6 +26,8 @@ file derives the consequences that do not depend on the law of the increments.
   increments in the sense of `ProbabilityTheory.HasIndepIncrements`.
 * `MeasureTheory.Adapted.indep_comap_sub_Ici`: increments independent of the past make the whole
   future increment process `(X t - X s)_{t ≥ s}` independent of `ℱ s`.
+* `MeasureTheory.Adapted.indep_comap_shift`: in a canonically ordered additive time index, the
+  shifted increment process `(X (s + u) - X s)_u` is independent of `ℱ s`.
 -/
 
 public section
@@ -136,5 +138,21 @@ theorem indep_comap_sub_Ici (hX : Adapted ℱ X)
     exact iSup₂_le fun t ht ↦
       le_iSup₂_of_le (t : ι) (Finset.mem_map_of_mem _ ht) le_rfl
   · exact iSup₂_le fun _ _ ↦ (hX.measurable.sub hX.measurable).comap_le
+
+/-- In a canonically ordered additive time index, increments independent of the past make the
+entire shifted increment process `(X (s + u) - X s)_u` independent of `ℱ s`. -/
+theorem indep_comap_shift [AddMonoid ι] [CanonicallyOrderedAdd ι] (hX : Adapted ℱ X)
+    (hindep : ∀ ⦃s t : ι⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) μ) (s : ι) :
+    Indep (.comap (fun ω u ↦ X (s + u) ω - X s ω) inferInstance) (ℱ s) μ := by
+  refine indep_of_indep_of_le_left (hX.indep_comap_sub_Ici hindep s) ?_
+  have hg : Measurable fun (z : Set.Ici s → E) (u : ι) ↦
+      z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩ :=
+    measurable_pi_iff.mpr fun _ ↦ measurable_pi_apply _
+  have hcomp : (fun ω u ↦ X (s + u) ω - X s ω) =
+      (fun (z : Set.Ici s → E) (u : ι) ↦ z ⟨s + u, Set.mem_Ici.mpr le_self_add⟩) ∘
+        fun ω (t : Set.Ici s) ↦ X t ω - X s ω :=
+    rfl
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  exact MeasurableSpace.comap_mono hg.comap_le
 
 end MeasureTheory.Adapted
