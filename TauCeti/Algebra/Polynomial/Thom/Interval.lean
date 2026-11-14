@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsRealClosed.Basic
-public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.Algebra.Polynomial.Thom.Basic
+import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Algebra.Polynomial.RealClosed.Sign
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
 
