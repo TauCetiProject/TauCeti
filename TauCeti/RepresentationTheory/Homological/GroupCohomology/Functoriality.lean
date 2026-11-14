@@ -29,8 +29,8 @@ induced by its inclusions give the inverse.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
 * `TauCeti.groupCohomology.map_id_add` and `TauCeti.groupCohomology.map_id_nsmul`: the map induced
   on cohomology is additive in the morphism of representations.
-* `TauCeti.groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero` and
-  `TauCeti.groupCohomology.natCard_coe_nsmul_eq_zero`: a natural number annihilating a
+* `groupCohomology.nsmul_eq_zero_of_forall_nsmul_eq_zero` and
+  `groupCohomology.natCard_coe_nsmul_eq_zero`: a natural number annihilating a
   representation annihilates its cohomology in every degree; in particular `Nat.card A` does.
 * `TauCeti.groupCohomology.nsmul_bijective`: bijective multiplication by a natural number on a
   representation induces bijective multiplication on its cohomology in every degree.
@@ -90,20 +90,6 @@ theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
     map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
   (functor k G n).map_nsmul
 
-/-- If `m : ℕ` annihilates every element of the representation `A`, then `m` annihilates
-`Hⁿ(G, A)` in every degree `n`. -/
-theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ}
-    (hA : ∀ a : A, m • a = 0) {n : ℕ} (x : groupCohomology A n) : m • x = 0 := by
-  have h0 : m • (𝟙 A : A ⟶ A) = 0 :=
-    Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext hA
-  simpa using congr((map (MonoidHom.id G) $h0 n).hom x)
-
-/-- The cardinality of the underlying module of `A` annihilates `Hⁿ(G, A)` in every degree `n`
-(when `A` is infinite, `Nat.card A = 0` and the statement is trivial). -/
-theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
-    Nat.card A • x = 0 :=
-  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
-
 /-- If multiplication by `m : ℕ` is bijective on `A`, then it is bijective on `Hⁿ(G, A)` in every
 degree `n`. -/
 theorem nsmul_bijective {A : Rep k G} {m : ℕ}
@@ -122,6 +108,26 @@ theorem nsmul_bijective {A : Rep k G} {m : ℕ}
   exact hfun ▸ ((functor k G n).mapIso eA).toLinearEquiv.bijective
 
 end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- If `m : ℕ` annihilates every element of the representation `A`, then `m` annihilates
+`Hⁿ(G, A)` in every degree `n`. -/
+theorem nsmul_eq_zero_of_forall_nsmul_eq_zero {A : Rep k G} {m : ℕ}
+    (hA : ∀ a : A, m • a = 0) {n : ℕ} (x : groupCohomology A n) : m • x = 0 := by
+  have h0 : m • (𝟙 A : A ⟶ A) = 0 :=
+    Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext hA
+  simpa using congr((map (MonoidHom.id G) $h0 n).hom x)
+
+/-- The cardinality of the underlying module of `A` annihilates `Hⁿ(G, A)` in every degree `n`
+(when `A` is infinite, `Nat.card A = 0` and the statement is trivial). -/
+theorem natCard_coe_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A n) :
+    Nat.card A • x = 0 :=
+  nsmul_eq_zero_of_forall_nsmul_eq_zero (fun _ ↦ card_nsmul_eq_zero') x
+
+end groupCohomology
 
 namespace CategoryTheory.Limits.BinaryBicone.IsBilimit
 
