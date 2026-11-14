@@ -701,50 +701,6 @@ end Inter
 
 /-! ### Analytic families of operators and exact interpolation -/
 
-section ScaleFactor
-
-/-- The factor `M₀ ^ (z - 1) * M₁ ^ (-z)`, of modulus `1 / M₀` on the line `re z = 0` and
-`1 / M₁` on the line `re z = 1`. -/
-private def scaleFactor (M₀ M₁ : ℝ) (z : ℂ) : ℂ :=
-  exp ((z - 1) * Real.log M₀ - z * Real.log M₁)
-
-variable {M₀ M₁ : ℝ}
-
-private theorem differentiable_scaleFactor (M₀ M₁ : ℝ) : Differentiable ℂ (scaleFactor M₀ M₁) := by
-  unfold scaleFactor
-  fun_prop
-
-private theorem norm_scaleFactor (z : ℂ) :
-    ‖scaleFactor M₀ M₁ z‖ = Real.exp ((z.re - 1) * Real.log M₀ - z.re * Real.log M₁) := by
-  simp [scaleFactor, norm_exp]
-
-private theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖scaleFactor M₀ M₁ z‖ ≤ Real.exp (|Real.log M₀| + |Real.log M₁|) := by
-  rw [norm_scaleFactor]
-  refine Real.exp_le_exp.2 ?_
-  have hz' := mem_verticalClosedStrip_iff.1 hz
-  nlinarith [hz'.1, hz'.2, neg_abs_le (Real.log M₀), le_abs_self (Real.log M₀),
-    neg_abs_le (Real.log M₁), le_abs_self (Real.log M₁), abs_nonneg (Real.log M₀),
-    abs_nonneg (Real.log M₁)]
-
-private theorem norm_scaleFactor_mul_I (hM₀ : 0 < M₀) (t : ℝ) :
-    ‖scaleFactor M₀ M₁ (t * I)‖ = M₀⁻¹ := by
-  simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₀]
-
-private theorem norm_scaleFactor_one_add_mul_I (hM₁ : 0 < M₁) (t : ℝ) :
-    ‖scaleFactor M₀ M₁ (1 + t * I)‖ = M₁⁻¹ := by
-  simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₁]
-
-private theorem norm_scaleFactor_mul_rpow (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (θ : ℝ) :
-    ‖scaleFactor M₀ M₁ θ‖ * (M₀ ^ (1 - θ) * M₁ ^ θ) = 1 := by
-  rw [norm_scaleFactor, Real.rpow_def_of_pos hM₀, Real.rpow_def_of_pos hM₁, ← Real.exp_add,
-    ← Real.exp_add, ← Real.exp_zero]
-  congr 1
-  simp only [ofReal_re]
-  ring
-
-end ScaleFactor
-
 section AnalyticFamily
 
 variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁]
