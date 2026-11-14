@@ -287,6 +287,8 @@ theorem id_graph_mapV (v : Γ.V) : (Hom.id 𝔸).graph.mapV v = v := rfl
 
 theorem id_graph_mapE (e : Γ.E) : (Hom.id 𝔸).graph.mapE e = e := rfl
 
+theorem id_graph_mapArrow {a b : Γ.V} (e : a ⟶ b) : (Hom.id 𝔸).graph.mapArrow e = e := rfl
+
 /-- The graph morphism underlying the identity morphism is the identity. -/
 theorem id_graph : (Hom.id 𝔸).graph = SerreGraph.Hom.id Γ := by
   ext <;> simp
@@ -311,6 +313,9 @@ theorem comp_graph_mapV (v : Γ.V) :
 
 theorem comp_graph_mapE (e : Γ.E) :
     (Ψ.comp Φ).graph.mapE e = Ψ.graph.mapE (Φ.graph.mapE e) := rfl
+
+theorem comp_graph_mapArrow {a b : Γ.V} (e : a ⟶ b) :
+    (Ψ.comp Φ).graph.mapArrow e = Ψ.graph.mapArrow (Φ.graph.mapArrow e) := rfl
 
 /-- The graph morphism underlying a composite is the composite of the graph morphisms. -/
 theorem comp_graph : (Ψ.comp Φ).graph = Ψ.graph.comp Φ.graph := by

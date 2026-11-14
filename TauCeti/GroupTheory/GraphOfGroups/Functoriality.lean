@@ -245,7 +245,8 @@ theorem id_mapPath (p : 𝔸.Path x y) : ((Hom.id 𝔸).mapPath p).Homotopic p :
       rw [Hom.mapPath_cons_vertex]
       exact ih.cons _
     | dart f =>
-      rw [Hom.mapPath_cons_dart, Hom.id_twistArrow, Hom.id_twistArrow, inv_one]
+      rw [Hom.mapPath_cons_dart, Hom.id_twistArrow, Hom.id_twistArrow, inv_one,
+        Hom.id_graph_mapArrow]
       exact (Homotopic.one _).trans (((Homotopic.one _).trans ih).cons _)
 
 /-- Merging the twisting letters of a composite: `g₁ g₂, e, (h₁ h₂)⁻¹ ~ g₁, g₂, e, h₂⁻¹, h₁⁻¹`. -/
@@ -272,7 +273,8 @@ theorem comp_mapPath (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) (p : 𝔸.Path x y
     | dart f =>
       rw [Hom.mapPath_cons_dart, Hom.mapPath_cons_dart Φ p f, Hom.mapPath_cons_vertex,
         Hom.mapPath_cons_dart Ψ _ (Φ.graph.mapArrow f), Hom.mapPath_cons_vertex,
-        Hom.comp_twistArrow, Hom.comp_twistArrow, map_inv, SerreGraph.Hom.mapArrow_reverse]
+        Hom.comp_twistArrow, Hom.comp_twistArrow, map_inv, SerreGraph.Hom.mapArrow_reverse,
+        Hom.comp_graph_mapArrow]
       exact cons_mul_dart_mul_inv ih _ _ _ _ _
 
 end Path.Homotopic
@@ -295,6 +297,13 @@ variable (Φ : Hom 𝔸 𝔹)
 
 @[simp] theorem map_mk (p : 𝔸.Path ⟨a⟩ ⟨a⟩) : map Φ a (mk p) = mk (Φ.mapPath p) := lift_mk ..
 
+/-- The induced homomorphisms commute with transport along an equality of base vertices. -/
+theorem map_cast (h : a = b) (x : π₁ 𝔸 a) :
+    map Φ b (MulEquiv.cast (M := π₁ 𝔸) h x) =
+      MulEquiv.cast (M := π₁ 𝔹) (congrArg Φ.graph.mapV h) (map Φ a x) := by
+  subst h
+  rfl
+
 /-- The induced homomorphism sends `p g p⁻¹` to `μ(p) φ(g) μ(p)⁻¹`. -/
 @[simp] theorem map_vertexHom (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (g : 𝔸.vertexGroup b) :
     map Φ a (vertexHom p g) = vertexHom (Φ.mapPath p) (Φ.vertexHom b g) := by
@@ -316,6 +325,13 @@ theorem map_mulEquivOfPath (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (x : π₁ 𝔸 a) :
       Hom.mapPath_comp, Hom.mapPath_reverse]
 
 end map
+
+/-- Equal morphisms induce the same homomorphism, up to transport along the resulting equality of
+the images of the base vertex. -/
+theorem cast_map {Φ Ψ : Hom 𝔸 𝔹} (h : Φ = Ψ) (a : Γ.V) (ha : Φ.graph.mapV a = Ψ.graph.mapV a)
+    (x : π₁ 𝔸 a) : MulEquiv.cast (M := π₁ 𝔹) ha (map Φ a x) = map Ψ a x := by
+  subst h
+  rfl
 
 /-- The identity morphism induces the identity of `π₁(𝔸, a)`. -/
 @[simp] theorem map_id (a : Γ.V) : map (Hom.id 𝔸) a = MonoidHom.id (π₁ 𝔸 a) :=

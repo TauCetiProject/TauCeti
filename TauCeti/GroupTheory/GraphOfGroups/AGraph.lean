@@ -227,6 +227,14 @@ is then not the homomorphism of Kapovich, Weidmann and Myasnikov. -/
 def π₁Hom : π₁ B.toGraphOfGroups B.base →* π₁ 𝔸 v₀ :=
   (MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp (π₁.map B.toHom B.base)
 
+theorem π₁Hom_def : B.π₁Hom =
+    (MulEquiv.cast (M := π₁ 𝔸) B.typ_base).toMonoidHom.comp (π₁.map B.toHom B.base) :=
+  (rfl)
+
+theorem π₁Hom_apply (x : π₁ B.toGraphOfGroups B.base) :
+    B.π₁Hom x = MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.map B.toHom B.base x) :=
+  (rfl)
+
 @[simp] theorem π₁Hom_mk (p : B.toGraphOfGroups.Path ⟨B.base⟩ ⟨B.base⟩) :
     B.π₁Hom (π₁.mk p) = MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.mk (B.toHom.mapPath p)) :=
   congrArg (MulEquiv.cast (M := π₁ 𝔸) B.typ_base) (π₁.map_mk ..)
