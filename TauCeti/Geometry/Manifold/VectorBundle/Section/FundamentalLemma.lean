@@ -89,10 +89,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {μ : Measure M} [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
 
-/-- **The bundle fundamental lemma.** A continuous field of continuous linear maps
+/-- **The bundle fundamental lemma.** On a `C^n` real vector bundle, `n ≤ ∞`, over a
+finite-dimensional Hausdorff smooth manifold, a continuous field of continuous linear maps
 into a real Banach space whose integral pairing with every `C^n` compactly supported
-variation in an open set is zero vanishes pointwise there. Full support of the measure
-is essential to the pointwise conclusion. The bundle and its fibres need not be
+variation in an open set is zero vanishes pointwise there. The measure must make open sets
+measurable, be finite on compact sets, and charge every nonempty open set. This last
+hypothesis is essential to the pointwise conclusion. The bundle and its fibres need not be
 trivial or nonzero. -/
 theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x →L[ℝ] G}
     {U : Set M} (hU : IsOpen U)
@@ -102,19 +104,24 @@ theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x 
   have hs (ℓ : G →L[ℝ] ℝ) (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : x ∈ U) :
       ℓ (η x (s x)) ≤ 0 := by
     by_contra! hpos
-    have hηℓ := ℓ.continuous.comp_continuousOn hη
+    have hηℓ : ContinuousOn (fun p : TotalSpace F V ↦ (ℓ.comp (η p.proj)) p.snd)
+        ((π F V) ⁻¹' U) := by
+      simpa only [ContinuousLinearMap.comp_apply] using ℓ.continuous.comp_continuousOn' hη
     have hc := s.continuousOn_clm_apply (η := fun y ↦ ℓ.comp (η y)) hηℓ
     obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
       (inter_mem (hU.mem_nhds hx)
         ((hc.continuousAt (hU.mem_nhds hx)).preimage_mem_nhds (Ioi_mem_nhds hpos)))
     let g : C^n⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff.of_le ENat.LEInfty.out⟩
+    have hg : ⇑g = ρ := ContMDiffMap.coeFn_mk _ _
     have ht := ContMDiffSection.tsupport_smul_function_subset g s
+    rw [hg] at ht
     have hsc := ContMDiffSection.mem_compactlySupported.mp
       (ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport
-        g ρ.hasCompactSupport s)
+        g (by simpa only [hg] using ρ.hasCompactSupport) s)
     have hsU : (g • s).tsupport ⊆ U := ht.trans (inter_subset_left.trans
       (hρ.trans inter_subset_left))
-    have hgs (y : M) : (g • s) y = ρ y • s y := ContMDiffSection.smul_apply g s y
+    have hgs (y : M) : (g • s) y = ρ y • s y := by
+      simpa only [hg] using ContMDiffSection.smul_apply g s y
     have hcont := (g • s).continuous_clm_apply_of_tsupport_subset
       (η := fun y ↦ ℓ.comp (η y)) hU hηℓ hsU
     have hp := hcont.integral_pos_of_hasCompactSupport_nonneg_ne_zero (μ := μ)
@@ -142,9 +149,12 @@ theorem eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero {η : ∀ x, V x 
   apply le_antisymm (hs ℓ s hx)
   simpa using hs ℓ (-s) hx
 
-/-- Two continuous fields of continuous linear maps into a real Banach space with equal
+/-- On a `C^n` real vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff smooth
+manifold, two continuous fields of continuous linear maps into a real Banach space with equal
 integral pairings against all `C^n` variations compactly supported in an open set coincide there.
-Integrability of the two pairings follows from continuity and compact support, rather than being an
+The measure must make open sets measurable, be finite on compact sets, and charge every nonempty
+open set. Integrability of the two pairings follows from continuity and compact support together
+with open-set measurability and finiteness of the measure on compact sets, rather than being an
 extra premise about formal integral values. -/
 theorem eq_of_integral_clm_apply_contMDiffSection_eq {η ζ : ∀ x, V x →L[ℝ] G}
     {U : Set M} (hU : IsOpen U)
@@ -153,7 +163,8 @@ theorem eq_of_integral_clm_apply_contMDiffSection_eq {η ζ : ∀ x, V x →L[�
     (h : ∀ s : Cₛ^n⟮I; F, V⟯, IsCompact s.tsupport → s.tsupport ⊆ U →
       ∫ x, η x (s x) ∂μ = ∫ x, ζ x (s x) ∂μ) : ∀ x ∈ U, η x = ζ x := by
   have hz := hU.eq_zero_of_integral_clm_apply_contMDiffSection_eq_zero (I := I) (n := n) (μ := μ)
-    (η := fun x ↦ η x - ζ x) (hη.sub hζ) (fun s hsc hsU ↦ ?_)
+    (η := fun x ↦ η x - ζ x) (by simpa only [sub_apply] using hη.fun_sub hζ)
+    (fun s hsc hsU ↦ ?_)
   · intro x hx
     exact sub_eq_zero.mp (hz x hx)
   · simp only [sub_apply]

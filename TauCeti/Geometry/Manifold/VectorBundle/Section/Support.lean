@@ -70,8 +70,8 @@ end Support
 
 section Pairing
 
-variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  {G : Type*} [TopologicalSpace G] [AddCommMonoid G] [Module 𝕜 G]
 
 /-- Fibrewise continuous linear map evaluation does not enlarge the support of a
 `C^n` section. -/
