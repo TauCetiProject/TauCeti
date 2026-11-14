@@ -93,6 +93,10 @@ polynomial `p : MvPolynomial σ R` and so live in the root namespace `MvPolynomi
 * `weightedHomogeneousComponent_aeval_of_mem_weightFiltration`: if moreover `g i` is the
   component of weight `d i` of `c i`, the component of weight `n` of the substitution is the
   substitution of the `g i` into the component of weight `n`.
+* `rescale_mem_weightFiltration`, `rescale_mem_weightFiltrationLT`,
+  `MvPolynomial.map_rescale_weightHomogenization`, `weightReesAeval_comp_mapAlgHom_rescale`:
+  diagonal variable rescaling preserves the steps of the weight filtration, commutes coefficientwise
+  with `weightHomogenization`, and composes with `weightReesAeval` by scaling the generators.
 
 ## References
 
@@ -697,5 +701,43 @@ theorem weightedHomogeneousComponent_aeval_of_mem_weightFiltration {g : ι → M
     ← Polynomial.coeff_zero_eq_aeval_zero, coeff_zero_weightHomogenization hP] using this
 
 end Substitution
+
+section Rescale
+
+variable {w : σ → ℕ}
+
+/-- Rescaling the variables can only shrink supports, so it preserves each step of the weight
+filtration. -/
+theorem rescale_mem_weightFiltration {a : σ → R} {n : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ weightFiltration R w n) : rescale a p ∈ weightFiltration R w n :=
+  mem_weightFiltration_iff.mpr fun u hu ↦
+    mem_weightFiltration_iff.mp hp u (support_rescale_subset a p hu)
+
+/-- Rescaling the variables preserves the strict lower stages of the weight filtration. -/
+theorem rescale_mem_weightFiltrationLT {a : σ → R} {n : ℕ} {p : MvPolynomial σ R}
+    (hp : p ∈ weightFiltrationLT R w n) : rescale a p ∈ weightFiltrationLT R w n :=
+  mem_weightFiltrationLT_iff.mpr fun u hu ↦
+    mem_weightFiltrationLT_iff.mp hp u (support_rescale_subset a p hu)
+
+/-- Rescaling the variables in the coefficients of a weight homogenization is the weight
+homogenization of the rescaled polynomial. -/
+@[simp]
+theorem _root_.MvPolynomial.map_rescale_weightHomogenization (a : σ → R) (n : ℕ)
+    (p : MvPolynomial σ R) :
+    (weightHomogenization R w n p).map (rescale a) = weightHomogenization R w n (rescale a p) := by
+  induction p using MvPolynomial.induction_on' with
+  | monomial u r => simp
+  | add p q hp hq => simp [hp, hq]
+
+/-- Precomposing the Rees presentation map with a diagonal rescaling of the presentation variables
+scales the substituted generators. -/
+theorem weightReesAeval_comp_mapAlgHom_rescale {ι : Type*} (a : ι → R)
+    (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    (weightReesAeval c d).comp (Polynomial.mapAlgHom (rescale a)) =
+      weightReesAeval (fun i ↦ a i • c i) d := by
+  refine Polynomial.algHom_ext' (MvPolynomial.algHom_ext fun i ↦ ?_) ?_ <;>
+    simp [Algebra.smul_def, mul_assoc]
+
+end Rescale
 
 end TauCeti.MvPolynomial
