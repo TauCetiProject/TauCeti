@@ -490,51 +490,6 @@ theorem coe_apply_center_mem_interior_of_closedBall (e : closedBall c r ≃ₜ A
     (e ⟨c, mem_closedBall_self hr.le⟩).val ∈ interior A :=
   (e.coe_apply_mem_interior_iff_of_closedBall I hdim hr.ne' _).mpr (by simpa using hr)
 
-include I in
-/-- A homeomorphism to a closed unit ball characterizes ambient interior points of a subset
-of a charted space over a finite-dimensional real boundaryless model of the same dimension. -/
-theorem norm_coe_apply_lt_one_iff_mem_interior_of_closedBall
-    (e : A ≃ₜ closedBall (0 : F) 1) (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (x : A) :
-    ‖(e x).val‖ < 1 ↔ x.val ∈ interior A := by
-  simpa only [dist_zero_right] using
-    e.dist_coe_apply_lt_iff_mem_interior_of_closedBall I hdim one_ne_zero x
-
-include I in
-/-- A homeomorphism to a closed unit ball characterizes which points of a subset of a charted
-space over a finite-dimensional real boundaryless model of the same dimension lie on its frontier.
--/
-theorem norm_coe_apply_eq_one_iff_mem_frontier_of_closedBall
-    (e : A ≃ₜ closedBall (0 : F) 1) (hdim : Module.finrank ℝ E = Module.finrank ℝ F) (x : A) :
-    ‖(e x).val‖ = 1 ↔ x.val ∈ frontier A := by
-  simpa only [dist_zero_right] using
-    e.dist_coe_apply_eq_iff_mem_frontier_of_closedBall I hdim one_ne_zero x
-
-include I in
-/-- A homeomorphism from a closed unit ball characterizes ambient interior membership of its
-image in a charted space over a finite-dimensional real boundaryless model of the same dimension. -/
-theorem coe_apply_mem_interior_iff_norm_lt_one_of_closedBall
-    (e : closedBall (0 : F) 1 ≃ₜ A) (hdim : Module.finrank ℝ E = Module.finrank ℝ F)
-    (z : closedBall (0 : F) 1) : (e z).val ∈ interior A ↔ ‖z.val‖ < 1 := by
-  simpa only [dist_zero_right] using
-    e.coe_apply_mem_interior_iff_of_closedBall I hdim one_ne_zero z
-
-include I in
-/-- A homeomorphism from a closed unit ball characterizes ambient frontier membership of its
-image in a charted space over a finite-dimensional real boundaryless model of the same dimension. -/
-theorem coe_apply_mem_frontier_iff_norm_eq_one_of_closedBall
-    (e : closedBall (0 : F) 1 ≃ₜ A) (hdim : Module.finrank ℝ E = Module.finrank ℝ F)
-    (z : closedBall (0 : F) 1) : (e z).val ∈ frontier A ↔ ‖z.val‖ = 1 := by
-  simpa only [dist_zero_right] using
-    e.coe_apply_mem_frontier_iff_of_closedBall I hdim one_ne_zero z
-
-include I in
-/-- A homeomorphism from a closed unit ball maps zero into the ambient interior of its image
-in a charted space over a finite-dimensional real boundaryless model of the same dimension. -/
-theorem coe_apply_zero_mem_interior_of_closedBall (e : closedBall (0 : F) 1 ≃ₜ A)
-    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) :
-    (e ⟨0, mem_closedBall_self zero_le_one⟩).val ∈ interior A :=
-  e.coe_apply_center_mem_interior_of_closedBall I hdim zero_lt_one
-
 end Boundaryless
 
 end Homeomorph

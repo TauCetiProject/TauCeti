@@ -333,28 +333,4 @@ theorem coe_symm_apply_center_mem_filledHull_sdiff_frontier_of_closedBall
   (e.symm.coe_apply_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall hr hF _).mpr
     (by simpa using hr)
 
-/-- A point of a planar subset homeomorphic to the closed unit ball in a two-dimensional real
-normed space lies inside its Jordan frontier exactly when its image has norm less than one. -/
-theorem coe_mem_filledHull_sdiff_frontier_iff_norm_lt_one_of_closedBall
-    (e : D ≃ₜ closedBall (0 : F) 1) (hF : Module.finrank ℝ F = 2) (x : D) :
-    x.val ∈ filledHull (frontier D) \ frontier D ↔ ‖(e x).val‖ < 1 := by
-  simpa only [dist_zero_right] using
-    e.coe_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall zero_lt_one hF x
-
-/-- A homeomorphism from the closed unit ball in a two-dimensional real normed space to a planar
-subset maps a point inside the Jordan frontier exactly when that point has norm less than one. -/
-theorem coe_apply_mem_filledHull_sdiff_frontier_iff_norm_lt_one_of_closedBall
-    (e : closedBall (0 : F) 1 ≃ₜ D) (hF : Module.finrank ℝ F = 2)
-    (z : closedBall (0 : F) 1) :
-    (e z).val ∈ filledHull (frontier D) \ frontier D ↔ ‖z.val‖ < 1 := by
-  simpa only [dist_zero_right] using
-    e.coe_apply_mem_filledHull_sdiff_frontier_iff_dist_lt_of_closedBall zero_lt_one hF z
-
-/-- The preimage of zero under a homeomorphism to the closed unit ball in a two-dimensional
-real normed space lies inside the Jordan frontier of its planar domain. -/
-theorem coe_symm_apply_zero_mem_filledHull_sdiff_frontier_of_closedBall
-    (e : D ≃ₜ closedBall (0 : F) 1) (hF : Module.finrank ℝ F = 2) :
-    (e.symm ⟨0, mem_closedBall_self zero_le_one⟩).val ∈ filledHull (frontier D) \ frontier D :=
-  e.coe_symm_apply_center_mem_filledHull_sdiff_frontier_of_closedBall zero_lt_one hF
-
 end Homeomorph
