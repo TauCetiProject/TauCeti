@@ -29,13 +29,15 @@ positive tracial functional `τ` of `B`, the composite `τ ∘ φ` is a positive
 
 * `TauCeti.PositiveTracialFunctional`: positive tracial functionals, with their `FunLike`,
   `LinearMapClass` and `OrderHomClass` instances, and `PositiveTracialFunctional.map_mul_comm`.
-* `TauCeti.PositiveTracialFunctional.toPositiveContinuousLinearMap`: the functional is bounded.
+* `TauCeti.PositiveTracialFunctional.toPositiveContinuousLinearMap`: the functional is bounded,
+  with `PositiveTracialFunctional.norm_apply_le`.
 * `TauCeti.PositiveTracialFunctional.comp`: pullback along a star homomorphism, with
   `comp_id` and `comp_comp`.
 * `TauCeti.PositiveTracialFunctional.IsTracialState`: the functional is a state, that is, a
   point of `TauCeti.stateSpace`; equivalently it has norm one, `isTracialState_iff_opNorm_eq_one`,
   and for unital `A` it takes the value `1` at `1`, `isTracialState_iff_map_one`. Tracial
-  states pull back to tracial states along unital star homomorphisms, `IsTracialState.comp`.
+  states pull back to tracial states along unital star homomorphisms, `IsTracialState.comp`, and
+  are bounded by `1`, `IsTracialState.norm_apply_le`.
 * `TauCeti.not_isTracialState_sndTracialFunctional_comp_inl`: the pullback of the tracial state
   `(a, b) ↦ b` of `ℂ × ℂ` along `λ ↦ (λ, 0)` is zero, a positive tracial functional that is not
   a state.
@@ -90,6 +92,11 @@ theorem ext {τ σ : PositiveTracialFunctional A} (h : ∀ a, τ a = σ a) : τ 
   DFunLike.ext τ σ h
 
 @[simp]
+theorem coe_mk (f : A →ₚ[ℂ] ℂ) (h : ∀ a b, f (a * b) = f (b * a)) :
+    ⇑(⟨f, h⟩ : PositiveTracialFunctional A) = f :=
+  (rfl)
+
+@[simp]
 theorem toPositiveLinearMap_apply (τ : PositiveTracialFunctional A) (a : A) :
     τ.toPositiveLinearMap a = τ a :=
   rfl
@@ -107,6 +114,11 @@ noncomputable def toPositiveContinuousLinearMap (τ : PositiveTracialFunctional 
 theorem toPositiveContinuousLinearMap_apply (τ : PositiveTracialFunctional A) (a : A) :
     τ.toPositiveContinuousLinearMap a = τ a :=
   (rfl)
+
+/-- A positive tracial functional is bounded by the operator norm of its bounded functional. -/
+theorem norm_apply_le (τ : PositiveTracialFunctional A) (a : A) :
+    ‖τ a‖ ≤ ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ * ‖a‖ :=
+  (τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ).le_opNorm a
 
 /-- **Naturality.** The pullback `τ ∘ φ` of a positive tracial functional along a star
 homomorphism. -/
@@ -149,6 +161,11 @@ theorem isTracialState_iff_opNorm_eq_one (τ : PositiveTracialFunctional A) :
     τ.IsTracialState ↔ ‖(τ.toPositiveContinuousLinearMap : A →L[ℂ] ℂ)‖ = 1 :=
   τ.toPositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff
 
+/-- A tracial state is bounded by `1`. -/
+theorem IsTracialState.norm_apply_le {τ : PositiveTracialFunctional A} (hτ : τ.IsTracialState)
+    (a : A) : ‖τ a‖ ≤ ‖a‖ :=
+  norm_apply_le_of_mem_stateSpace hτ a
+
 end PositiveTracialFunctional
 
 end NonUnital
@@ -165,7 +182,8 @@ namespace PositiveTracialFunctional
 theorem isTracialState_iff_map_one (τ : PositiveTracialFunctional A) :
     τ.IsTracialState ↔ τ 1 = 1 := by
   rw [isTracialState_iff_mem_stateSpace, mem_stateSpace_iff_map_one]
-  simpa using fun _ a (ha : 0 ≤ a) => map_nonneg τ ha
+  -- the weak-dual point evaluates as `τ`, and its positivity is that of `τ`
+  exact (and_iff_right fun a ha => by simpa using map_nonneg τ ha).trans (by simp)
 
 /-- Tracial states pull back to tracial states along unital star homomorphisms. -/
 theorem IsTracialState.comp {τ : PositiveTracialFunctional B} (hτ : τ.IsTracialState)
