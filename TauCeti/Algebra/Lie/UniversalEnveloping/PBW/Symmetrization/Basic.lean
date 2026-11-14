@@ -28,8 +28,8 @@ by `⁅x, y⁆`. Hence the symmetrization of a homogeneous Lie invariant `p ∈ 
 symbols are the given invariants, in the proof of the Harish-Chandra isomorphism by Chevalley's
 restriction theorem.
 
-The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
-`Sym[R]^n L`. The Lie algebra module has an independent universe.
+The symmetric power uses `ULift (Fin n)` in the scalar universe. The ordered products
+and the permutation average are expressed using `Fin n`.
 
 ## Main results
 
@@ -60,10 +60,11 @@ open scoped TensorProduct
 namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
+open _root_.SymmetricPower (finTprod)
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -75,23 +76,30 @@ private noncomputable def wordMultilinear (n : ℕ) :
   (MultilinearMap.mkPiAlgebraFin R n U).compLinearMap (fun _ ↦ (ι).toLinearMap)
 
 /-- The average of all ordered products of a symmetric tensor's Lie generators. -/
-noncomputable def pbwSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)) : Sym[R]^n L →ₗ[R] U :=
+noncomputable def pbwSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)) :
+    SymmetricPower R (ULift.{u} (Fin n)) L →ₗ[R] U :=
   (↑hn.unit⁻¹ : R) •
-    ((PiTensorProduct.lift (wordMultilinear R L n)).comp
-      (SymmetricPower.toTensorPower R (Fin n) L))
+    ((PiTensorProduct.lift ((wordMultilinear R L n).domDomCongr Equiv.ulift.symm)).comp
+      (SymmetricPower.toTensorPower R (ULift.{u} (Fin n)) L))
 
 /-- On pure symmetric tensors, symmetrization averages the products over all permutations. -/
 @[simp]
 theorem pbwSymmetrization_tprod (n : ℕ) (hn : IsUnit (n.factorial : R)) (m : Fin n → L) :
-    pbwSymmetrization R L n hn (⨂ₛ[R] i, m i) =
+    pbwSymmetrization R L n hn (finTprod R n m) =
       (↑hn.unit⁻¹ : R) •
         ∑ σ : Equiv.Perm (Fin n), (List.ofFn fun i ↦ ι (m (σ i))).prod := by
-  simp [pbwSymmetrization, wordMultilinear]
+  simp only [pbwSymmetrization, LinearMap.smul_apply, LinearMap.comp_apply,
+    SymmetricPower.finTprod_apply,
+    MultilinearMap.domDomCongr_apply, SymmetricPower.toTensorPower_tprod, map_sum,
+    PiTensorProduct.lift.tprod]
+  rw [← Equiv.sum_comp (Equiv.ulift.symm.permCongr :
+    Equiv.Perm (Fin n) ≃ Equiv.Perm (ULift.{u} (Fin n)))]
+  simp [wordMultilinear]
 
 /-- Over a rational algebra, the unit-normalized average is the usual rational average. -/
 theorem pbwSymmetrization_tprod_rat [Algebra ℚ R] (n : ℕ)
     (hn : IsUnit (n.factorial : R)) (m : Fin n → L) :
-    pbwSymmetrization R L n hn (⨂ₛ[R] i, m i) =
+    pbwSymmetrization R L n hn (finTprod R n m) =
       algebraMap ℚ R ((n.factorial : ℚ)⁻¹) •
         ∑ σ : Equiv.Perm (Fin n), (List.ofFn fun i ↦ ι (m (σ i))).prod := by
   rw [pbwSymmetrization_tprod]
@@ -105,7 +113,7 @@ theorem pbwSymmetrization_tprod_rat [Algebra ℚ R] (n : ℕ)
 /-- Symmetrization sends a pure power to the corresponding power of a Lie generator. -/
 @[simp high] -- Normalize pure powers before expanding the permutation sum.
 theorem pbwSymmetrization_tprod_const (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : L) :
-    pbwSymmetrization R L n hn (⨂ₛ[R] _ : Fin n, x) = (ι x) ^ n := by
+    pbwSymmetrization R L n hn (finTprod R n fun _ ↦ x) = (ι x) ^ n := by
   rw [pbwSymmetrization_tprod]
   -- All `n!` ordered products of `n` copies of `x` are `x ^ n`.
   simp only [List.ofFn_const, List.prod_replicate, Finset.sum_const, Finset.card_univ,
@@ -114,9 +122,9 @@ theorem pbwSymmetrization_tprod_const (n : ℕ) (hn : IsUnit (n.factorial : R)) 
 
 /-- Symmetrization has PBW filtration degree at most its symmetric degree. -/
 theorem pbwSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n.factorial : R))
-    (x : Sym[R]^n L) :
+    (x : SymmetricPower R (ULift.{u} (Fin n)) L) :
     pbwSymmetrization R L n hn x ∈ pbwFiltration R L n := by
-  apply LinearMap.apply_mem_of_forall_symmetricPower_tprod
+  apply LinearMap.apply_mem_of_forall_finTprod
   intro m
   rw [pbwSymmetrization_tprod]
   apply Submodule.smul_mem
@@ -128,7 +136,7 @@ theorem pbwSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n.factorial 
 /-- Symmetrizing a word changes it only in strictly smaller PBW filtration degree. -/
 theorem pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious (n : ℕ)
     (hn : IsUnit (n.factorial : R)) (m : Fin n → L) :
-    pbwSymmetrization R L n hn (⨂ₛ[R] i, m i) - (List.ofFn fun i ↦ ι (m i)).prod ∈
+    pbwSymmetrization R L n hn (finTprod R n m) - (List.ofFn fun i ↦ ι (m i)).prod ∈
       pbwFiltrationPrevious R L n := by
   classical
   have h (σ : Equiv.Perm (Fin n)) :
@@ -148,23 +156,23 @@ theorem pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious (n : ℕ)
 freeness assumption on the Lie algebra module. -/
 @[simp↓] -- Take the symbol before expanding tensor symmetrization.
 theorem mk_pbwSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R))
-    (x : Sym[R]^n L) :
+    (x : SymmetricPower R (ULift.{u} (Fin n)) L) :
     Submodule.Quotient.mk
       (⟨pbwSymmetrization R L n hn x,
         by simpa only [pbwFiltration_def] using
           pbwSymmetrization_mem_pbwFiltration R L n hn x⟩ :
         TauCeti.Algebra.wordFiltration (ι).toLinearMap n) =
       pbwHomogeneousComponentMap R L n (SymmetricPower.toHomogeneous R L n x) := by
-  let lhs : Sym[R]^n L →ₗ[R] PBWGradedPiece R L n :=
+  let lhs : SymmetricPower R (ULift.{u} (Fin n)) L →ₗ[R] PBWGradedPiece R L n :=
     (Submodule.mkQ (TauCeti.Algebra.wordFiltration.previousRestricted (ι).toLinearMap n)).comp
       ((pbwSymmetrization R L n hn).codRestrict _ fun x ↦
         by simpa only [pbwFiltration_def] using
           pbwSymmetrization_mem_pbwFiltration R L n hn x)
   suffices hl : lhs = (pbwHomogeneousComponentMap R L n).comp
       (SymmetricPower.toHomogeneous R L n) from LinearMap.congr_fun hl x
-  apply SymmetricPower.ext
+  apply SymmetricPower.fin_ext
   intro m
-  have hprod : SymmetricPower.toHomogeneous R L n (⨂ₛ[R] i, m i) =
+  have hprod : SymmetricPower.toHomogeneous R L n (finTprod R n m) =
       ⟨((List.ofFn m).map (SymmetricAlgebra.ι R L)).prod,
         by simpa only [List.length_ofFn] using
           prod_map_ι_mem_homogeneousSubmodule R L (List.ofFn m)⟩ := by
@@ -195,7 +203,7 @@ theorem pbwHomogeneousSymmetrization_apply (n : ℕ) (hn : IsUnit (n.factorial :
 /-- The homogeneous map agrees with tensor symmetrization under the canonical comparison. -/
 @[simp]
 theorem pbwHomogeneousSymmetrization_equivHomogeneous (n : ℕ) (hn : IsUnit (n.factorial : R))
-    (x : Sym[R]^n L) :
+    (x : SymmetricPower R (ULift.{u} (Fin n)) L) :
     pbwHomogeneousSymmetrization R L n hn (SymmetricPower.equivHomogeneous n x) =
       pbwSymmetrization R L n hn x := by
   simp [pbwHomogeneousSymmetrization]
@@ -268,7 +276,7 @@ theorem iSup_range_pbwSymmetrization_eq_top (hn : ∀ n : ℕ, IsUnit (n.factori
           exact fun l' hl' ↦ ih l'.length (by omega) l' rfl
       subst hl
       have hsym := pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious R L l.length (hn _) l.get
-      have hmem : pbwSymmetrization R L l.length (hn _) (⨂ₛ[R] i, l.get i) ∈ S :=
+      have hmem : pbwSymmetrization R L l.length (hn _) (finTprod R l.length l.get) ∈ S :=
         Submodule.mem_iSup_of_mem l.length (LinearMap.mem_range_self _ _)
       have hword : (List.ofFn fun i ↦ ι (l.get i)).prod = (l.map ι).prod :=
         congrArg List.prod <|
@@ -286,8 +294,8 @@ symmetrization of `m 0, …, m (n - 1)` with `ι x` gives the sum of the symmetr
 words in which one letter `m k` is replaced by `⁅x, m k⁆`. -/
 theorem lie_ι_pbwSymmetrization_tprod (n : ℕ) (hn : IsUnit (n.factorial : R)) (x : L)
     (m : Fin n → L) :
-    ⁅ι x, pbwSymmetrization R L n hn (⨂ₛ[R] i, m i)⁆ =
-      ∑ k, pbwSymmetrization R L n hn (⨂ₛ[R] i, Function.update m k ⁅x, m k⁆ i) := by
+    ⁅ι x, pbwSymmetrization R L n hn (finTprod R n m)⁆ =
+      ∑ k, pbwSymmetrization R L n hn (finTprod R n (Function.update m k ⁅x, m k⁆)) := by
   have hleib (a b : U) : ⁅ι x, a * b⁆ = ⁅ι x, a⁆ * b + a * ⁅ι x, b⁆ := by
     simp only [LieRing.of_associative_ring_bracket, mul_sub, sub_mul, mul_assoc]
     abel
@@ -319,7 +327,7 @@ theorem lie_ι_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial 
       fun _ hp ↦ lieModuleDerivation_mem_homogeneousSubmodule R L L x hp
   have hD : (LieAlgebra.ad R U (ι x)) ∘ₗ pbwSymmetrization R L n hn =
       pbwSymmetrization R L n hn ∘ₗ e.symm.toLinearMap ∘ₗ D ∘ₗ e.toLinearMap := by
-    refine SymmetricPower.ext fun m ↦ ?_
+    refine SymmetricPower.fin_ext fun m ↦ ?_
     have hleib (a b : SymmetricAlgebra R L) :
         lieModuleDerivation R L L x (a * b) =
           lieModuleDerivation R L L x a * b + a * lieModuleDerivation R L L x b := by
@@ -327,7 +335,7 @@ theorem lie_ι_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial 
     have hprod := map_prod_ofFn_of_leibniz (lieModuleDerivation R L L x) hleib
       fun i ↦ _root_.SymmetricAlgebra.ι R L (m i)
     simp only [List.prod_ofFn] at hprod
-    have hDm : D (e (⨂ₛ[R] i, m i)) = ∑ k, e (⨂ₛ[R] i, Function.update m k ⁅x, m k⁆ i) := by
+    have hDm : D (e (finTprod R n m)) = ∑ k, e (finTprod R n (Function.update m k ⁅x, m k⁆)) := by
       apply Subtype.ext
       simp only [D, e, LinearMap.restrict_apply, Submodule.coe_sum,
         SymmetricPower.coe_equivHomogeneous_apply, SymmetricPower.toSymmetricAlgebra_tprod,
@@ -355,7 +363,8 @@ theorem pbwHomogeneousSymmetrization_mem_center (n : ℕ) (hn : IsUnit (n.factor
     (by rw [mem_lieInvariants.mp hp x, Submodule.coe_zero]), map_zero, neg_zero]
 
 /-- **Symmetrizing a Lie-invariant symmetric tensor gives a central element.** -/
-theorem pbwSymmetrization_mem_center (n : ℕ) (hn : IsUnit (n.factorial : R)) {t : Sym[R]^n L}
+theorem pbwSymmetrization_mem_center (n : ℕ) (hn : IsUnit (n.factorial : R))
+    {t : SymmetricPower R (ULift.{u} (Fin n)) L}
     (ht : SymmetricPower.toSymmetricAlgebra R L n t ∈ lieInvariants R L L) :
     pbwSymmetrization R L n hn t ∈ Subalgebra.center R U := by
   simpa only [pbwHomogeneousSymmetrization_equivHomogeneous] using
@@ -405,7 +414,7 @@ theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.fa
 invariant**, read in `S(L)`, for `L` free over `R`. -/
 @[simp]
 theorem pbwSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.factorial : R))
-    {t : Sym[R]^n L} :
+    {t : SymmetricPower R (ULift.{u} (Fin n)) L} :
     pbwSymmetrization R L n hn t ∈ Subalgebra.center R U ↔
       SymmetricPower.toSymmetricAlgebra R L n t ∈ lieInvariants R L L := by
   simpa only [pbwHomogeneousSymmetrization_equivHomogeneous,

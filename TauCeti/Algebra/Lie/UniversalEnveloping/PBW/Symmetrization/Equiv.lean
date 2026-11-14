@@ -17,8 +17,7 @@ For an arbitrary Lie algebra `L` over a commutative `ℚ`-algebra `R`, the symme
 it carries the word-degree filtration of `Sym_R(L)` onto the PBW filtration of `U_R(L)`. Together
 with `TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrizationMap_injective` this is the
 Poincaré–Birkhoff–Witt theorem over `ℚ`-algebras in its symmetrization form, with no freeness or
-flatness assumption on `L`. The scalar ring lies in `Type`, as for the rest of the symmetrization
-API.
+flatness assumption on `L`. The scalar ring and the Lie algebra may lie in independent universes.
 
 ## Main definitions and results
 
@@ -40,9 +39,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [Algebra ℚ R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 

@@ -36,9 +36,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open scoped TensorProduct
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [Algebra ℚ R]
+variable (R : Type u) (L : Type v) [CommRing R] [Algebra ℚ R]
   [LieRing L] [LieAlgebra R L]
 
 local notation "S" => SymmetricAlgebra R L
