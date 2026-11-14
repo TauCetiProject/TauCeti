@@ -98,11 +98,18 @@ theorem freeAbelianCharEquiv_symm_generator :
   apply Multiplicative.toAdd.injective
   simp [freeAbelianCharEquiv_apply]
 
+/-- A finite product of tropical generators has its prescribed integer exponent vector. -/
+@[simp]
+theorem prod_generator_zpow (m : J →₀ ℤ) :
+    (m.prod fun j n ↦ generator j ^ n) = Multiplicative.ofAdd m := by
+  simpa only [freeAbelianCharEquiv_symm_generator, MonoidHom.id_apply] using
+    (freeAbelianCharEquiv_symm_apply_ofAdd (M := Trop J) generator m).symm
+
 /-- A tropical monomial is the finite product of its generators to their integer exponents. -/
 theorem eq_prod_generator (a : Trop J) :
     a = a.toAdd.prod (fun j n ↦ generator j ^ n) := by
-  simpa only [freeAbelianCharEquiv_symm_generator, MonoidHom.id_apply, ofAdd_toAdd] using
-    freeAbelianCharEquiv_symm_apply_ofAdd (M := Trop J) generator a.toAdd
+  simp
+
 
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]

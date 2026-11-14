@@ -99,24 +99,22 @@ columns, preserves columnwise finite frozen support. -/
 theorem HasFiniteFrozenColumnSupport.submatrix
     {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)}
     (h : B.HasFiniteFrozenColumnSupport) (g : K' → K) {fJ : J' → J}
-    (hfJ : Function.Injective fJ)
-    (hcompat : ∀ k, Sum.map g fJ (Function.Embedding.inl k) = Function.Embedding.inl (g k)) :
-    (B.submatrix (Sum.map g fJ) g hcompat).HasFiniteFrozenColumnSupport := by
+    (hfJ : Function.Injective fJ) :
+    (B.submatrix (Sum.map g fJ) g (fun _ ↦ rfl)).HasFiniteFrozenColumnSupport := by
   intro k
-  simpa only [Function.support, Set.preimage_ofPred_eq, submatrix_matrix,
+  rw [B.submatrix_matrix (Sum.map g fJ) g (fun _ ↦ rfl)]
+  simpa only [Function.support, Set.preimage_ofPred_eq,
     Matrix.submatrix_apply, Sum.map_inr] using (h (g k)).preimage hfJ.injOn
 
-/-- Relabelling preserves columnwise finite frozen support for any compatible proof. -/
+/-- Relabelling mutable and frozen indices preserves columnwise finite frozen support. -/
 theorem HasFiniteFrozenColumnSupport.reindex
     {B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)}
-    (h : B.HasFiniteFrozenColumnSupport) (eK : K ≃ K') (eJ : J ≃ J')
-    (hcompat : ∀ k, Equiv.sumCongr eK eJ (Function.Embedding.inl k) =
-      Function.Embedding.inl (eK k)) :
-    (reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK hcompat
+    (h : B.HasFiniteFrozenColumnSupport) (eK : K ≃ K') (eJ : J ≃ J') :
+    (reindex (row' := Function.Embedding.inl) (Equiv.sumCongr eK eJ) eK (fun _ ↦ rfl)
       B).HasFiniteFrozenColumnSupport := by
   intro k
-  rw [B.reindex_matrix (Equiv.sumCongr eK eJ) eK hcompat]
-  have hs := (h.submatrix eK.symm eJ.symm.injective (fun _ ↦ rfl)) k
+  rw [B.reindex_matrix (Equiv.sumCongr eK eJ) eK (fun _ ↦ rfl)]
+  have hs := (h.submatrix eK.symm eJ.symm.injective) k
   rw [B.submatrix_matrix (Sum.map eK.symm eJ.symm) eK.symm (fun _ ↦ rfl)] at hs
   simpa only [Matrix.submatrix_apply, Equiv.sumCongr_symm, Equiv.sumCongr_apply,
     Sum.map_inr] using hs
@@ -130,9 +128,13 @@ theorem hasFiniteFrozenColumnSupport_reindex_iff (eK : K ≃ K') (eJ : J ≃ J')
         B.HasFiniteFrozenColumnSupport := by
   constructor
   · intro h
-    simpa using h.reindex eK.symm eJ.symm (fun _ ↦ by simp)
+    have h' := h.reindex eK.symm eJ.symm
+    rw [B.reindex_reindex (Equiv.sumCongr eK eJ) eK (fun _ ↦ rfl)
+      (Equiv.sumCongr eK.symm eJ.symm) eK.symm (fun _ ↦ rfl)] at h'
+    simpa only [Equiv.sumCongr_trans, Equiv.self_trans_symm, Equiv.sumCongr_refl,
+      reindex_refl, Equiv.refl_apply] using h'
   · intro h
-    exact h.reindex eK eJ (fun _ ↦ by simp)
+    exact h.reindex eK eJ
 
 /-- Every finite mutation sequence preserves and reflects finite frozen support. -/
 @[simp]

@@ -251,6 +251,18 @@ theorem tropicalYSeedEquiv_toTropicalYSeed
   apply Subtype.ext
   exact B.toExtendedMatrix_toTropicalYSeed h
 
+/-- Reading tropical coefficients cancels from equality, independently of the support proofs. -/
+@[simp]
+theorem toTropicalYSeed_inj
+    {B₁ B₂ : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)}
+    (h₁ : B₁.HasFiniteFrozenColumnSupport) (h₂ : B₂.HasFiniteFrozenColumnSupport) :
+    B₁.toTropicalYSeed h₁ = B₂.toTropicalYSeed h₂ ↔ B₁ = B₂ := by
+  constructor
+  · intro h
+    simpa only [toExtendedMatrix_toTropicalYSeed] using congrArg YSeed.toExtendedMatrix h
+  · rintro rfl
+    rfl
+
 /-- With finite frozen index type `J`, tropical Y-seeds are equivalent to all extended
 exchange matrices on `K ⊕ J` with mutable rows `K`. -/
 noncomputable def tropicalYSeedEquivOfFinite [Finite J] :
@@ -304,5 +316,22 @@ theorem toTropicalYSeed_reindex (eK : K ≃ K') (eJ : J ≃ J')
   · simp
 
 end ExchangeMatrix
+
+namespace YSeed
+
+/-- The extended-matrix presentation determines the entire tropical Y-seed. -/
+theorem toExtendedMatrix_injective :
+    Function.Injective (toExtendedMatrix (K := K) (J := J)) := by
+  intro s t h
+  apply (ExchangeMatrix.tropicalYSeedEquiv (K := K) (J := J)).injective
+  exact Subtype.ext h
+
+/-- Equality of extended-matrix presentations is exactly equality of tropical Y-seeds. -/
+@[simp]
+theorem toExtendedMatrix_inj {s t : YSeed K (Trop J)} :
+    s.toExtendedMatrix = t.toExtendedMatrix ↔ s = t :=
+  toExtendedMatrix_injective.eq_iff
+
+end YSeed
 
 end TauCeti
