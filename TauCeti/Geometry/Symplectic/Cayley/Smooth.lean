@@ -256,6 +256,33 @@ theorem Tames.contMDiffAt_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplex
     ((contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)).inverse hu)).comp_contMDiffAt
     (f := j) hJs
 
+open Topology in
+/-- A family of structures on a manifold which near a point `p` are `ω`-tame, with Cayley
+coordinates relative to an `ω`-tame `J₀` given by a family of continuous endomorphisms which is
+`C^n` at `p`, is `C^n` at `p`. Unlike `SymplecticForm.Compatible.contMDiffAt_cayleyEquiv_symm`,
+nothing is assumed away from a neighbourhood of `p`. -/
+theorem Tames.contMDiffAt_of_eventually_cayley_eq (h₀ : ω.Tames J₀)
+    {f : N → AlmostComplexStructure V} {C : N → V →L[ℝ] V} {n : WithTop ℕ∞} {p : N}
+    (hf : ∀ᶠ y in 𝓝 p, ω.Tames (f y)) (hCs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n C p)
+    (hfC : ∀ᶠ y in 𝓝 p, J₀.cayley (f y) = (C y).toLinearMap) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (f y).toLinearMap) p := by
+  -- Pass to the algebra equivalence `Module.End.toContinuousLinearMap`, which is
+  -- `LinearMap.toContinuousLinearMap` as a function, to move the inverse Cayley formula across.
+  set e := Module.End.toContinuousLinearMap (𝕜 := ℝ) V
+  have key {J : AlmostComplexStructure V} (hJ : ω.Tames J) {C : V →L[ℝ] V}
+      (hC : J₀.cayley J = C.toLinearMap) :
+      IsUnit (1 - C) ∧ e J.toLinearMap = e J₀.toLinearMap * (1 + C) * Ring.inverse (1 - C) := by
+    have hCe : e (J₀.cayley J) = C := by rw [hC]; rfl
+    refine ⟨?_, ?_⟩
+    · simpa only [map_sub, map_one, hCe] using (h₀.isUnit_one_sub_cayley hJ).map e
+    · rw [← h₀.mul_one_add_cayley_mul_ringInverse hJ, map_mul, map_mul, map_ringInverse, map_add,
+        map_sub, map_one, hCe]
+  refine (contMDiffAt_mul_one_add_ringInverse (contMDiffAt_const (c := e J₀.toLinearMap)) hCs
+    (key hf.self_of_nhds hfC.self_of_nhds).1).congr_of_eventuallyEq ?_
+  filter_upwards [hf, hfC] with y hy hyC
+  exact (key hy hyC).2
+
 /-- The inverse Cayley chart relative to an `ω`-compatible `J₀` sends a family in the tame Cayley
 ball, parameterized by a manifold and `C^n` at a point `p`, to a family of tame structures which is
 `C^n` at `p`. -/
@@ -263,11 +290,10 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
     {C : N → V →L[ℝ] V} (hC : ∀ y, (C y).toLinearMap ∈ ω.cayleyBall J₀)
     {n : WithTop ℕ∞} {p : N} (hCs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n C p) :
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => LinearMap.toContinuousLinearMap
-      (h₀.cayleyEquiv.symm ⟨(C y).toLinearMap, hC y⟩).val.toLinearMap) p := by
-  simp_rw [h₀.cayleyEquiv_symm_apply_toContinuousLinearMap]
-  have hu := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
-  exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
-    ((contDiffAt_const.sub contDiffAt_id).inverse hu)).comp_contMDiffAt hCs
+      (h₀.cayleyEquiv.symm ⟨(C y).toLinearMap, hC y⟩).val.toLinearMap) p :=
+  h₀.tames.contMDiffAt_of_eventually_cayley_eq (Filter.Eventually.of_forall fun _ =>
+    (h₀.cayleyEquiv.symm _).2) hCs (Filter.Eventually.of_forall fun y => by
+      rw [← h₀.cayleyEquiv_apply_coe, Equiv.apply_symm_apply])
 
 /-- A family of `ω`-tame structures on a manifold whose Cayley coordinates relative to an
 `ω`-compatible `J₀` are `C^n` at a point `p` is itself `C^n` at `p`: it is the inverse Cayley chart

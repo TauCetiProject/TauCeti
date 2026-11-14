@@ -77,20 +77,11 @@ private theorem receiving_eq_zero_of_lt_re_endCoord (hq : q ≠ inf) (hrq : r �
     (hL : 0 ≤ L) {w : ℂ} (h : L / 2 < (q.endCoord w).re) (H Hout : ℝ → M → ℝ) (x : M) :
     inputEndPerturbation r.endCenter (2 * r.endScale) H w x = 0 ∧
       negativePlanePerturbation Hout w x = 0 := by
-  have hc : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero (by
-    have : 0 ≤ L / 2 := by positivity
-    linarith)
-  have hlt : ‖w - q.endCenter‖ < Real.exp (-(2 * π * (L / 2))) / 2 :=
-    not_le.1 fun h' => (not_le.2 h) ((re_endCoord_le_iff hq hc).2 h')
-  have hexp : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-  have hexp' : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
+  have h₀ : 0 < (q.endCoord w).re := by linarith [(by positivity : 0 ≤ L / 2)]
   refine ⟨inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x,
-    negativePlanePerturbation_eq_zero_of_norm_le ?_ x⟩
-  · rw [norm_two_mul_endScale hr]
-    linarith [one_sub_norm_sub_endCenter_le hq hr hrq w]
-  · have h₁ := norm_add_le (w - q.endCenter) q.endCenter
-    rw [sub_add_cancel] at h₁
-    linarith [norm_endCenter_le_one q, Real.one_le_exp (by positivity : 0 ≤ 2 * π)]
+    negativePlanePerturbation_eq_zero_of_norm_le (norm_le_two_mul_exp_of_re_endCoord_pos hq h₀) x⟩
+  rw [norm_two_mul_endScale hr, one_mul]
+  exact exp_neg_two_pi_div_two_le_norm_sub_endCenter hq hr hrq h₀
 
 /-- On the receiving part `Re z ≤ L/2` of the end `q`, the input ends of the inserted pair of pants
 vanish. -/
@@ -98,27 +89,13 @@ private theorem inserted_eq_zero_of_re_endCoord_le (hq : q ≠ inf) (hL : 0 ≤ 
     (h : (q.endCoord w).re ≤ L / 2) (H₀ H₁ : ℝ → M → ℝ) (x : M) :
     inputEndPerturbation q.endCenter (q.plumbingFactor L) H₀ w x = 0 ∧
       inputEndPerturbation (q.plumbingMap L 1) (-q.plumbingFactor L) H₁ w x = 0 := by
-  set u := Real.exp (-(2 * π * (L / 2)))
-  have hu₀ : 0 < u := Real.exp_pos _
-  have hu₁ : u ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-  have hf : ‖q.plumbingFactor L‖ = u ^ 2 / 4 := by
-    rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
-    ring_nf
-  have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
-  have hψ := q.plumbingMap_one_sub_endCenter L
+  refine ⟨?_, inputEndPerturbation_eq_zero_of_le_norm_sub (by
+    rw [norm_neg]
+    exact norm_plumbingFactor_mul_exp_div_two_le_norm_sub_plumbingMap_one hq hL h) x⟩
   rcases eq_or_ne w q.endCenter with rfl | hc
-  · refine ⟨inputEndPerturbation_self _ _ _ x, inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x⟩
-    rw [norm_neg, norm_sub_rev, hψ, hf]
-    nlinarith
-  · have hge : u / 2 ≤ ‖w - q.endCenter‖ := (re_endCoord_le_iff hq hc).1 h
-    refine ⟨inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x,
-      inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x⟩
-    · rw [hf]
-      nlinarith
-    · have h₁ := norm_sub_norm_le (w - q.endCenter) (q.plumbingMap L 1 - q.endCenter)
-      rw [sub_sub_sub_cancel_right, hψ, hf] at h₁
-      rw [norm_neg, hf]
-      nlinarith
+  · exact inputEndPerturbation_self _ _ _ x
+  · exact inputEndPerturbation_eq_zero_of_le_norm_sub
+      (norm_plumbingFactor_mul_exp_div_two_le_norm_sub_endCenter hq hL hc h) x
 
 /-- **With the neck switched off, the plumbed sphere has moving input ends.** Plumb the output end
 of a pair of pants with Hamiltonians `Ha` into the input end `q ≠ ∞` of one with Hamiltonians
@@ -339,13 +316,7 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (hq : q ≠ in
   -- The point lies in the end disc of the input `i`, where the neck datum vanishes.
   have hlt : ‖plumbedCenters q r L i + plumbedScales q r L i * zero.cylindricalEndLift z -
       plumbedCenters q r L i‖ < ‖plumbedScales q r L i‖ / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [add_sub_cancel_left, norm_mul, h, h2]
-    have : Real.exp (-(2 * π * z.re)) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
+    simpa using norm_mul_cylindricalEndLift_zero_lt ha hz
   rw [plumbedPerturbation_update_smul,
     plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation hq hrq hr (by linarith),
     Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply, ← plumbedCenters_def,
@@ -367,11 +338,7 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le (hq : q ≠
     cases q
     exacts [⟨one, by decide, by decide⟩, ⟨zero, by decide, by decide⟩, absurd rfl hq]
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    gcongr
-    nlinarith [Real.pi_pos]
+    simpa only [mul_one] using two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz
   have hneck : plumbedPerturbation (Pi.single inf G) (Pi.single q G) q L
       (inf.cylindricalEndLift z) x = 0 := by
     refine plumbedPerturbation_single_inf_single_eq_zero hq hL G (Or.inr ?_) x

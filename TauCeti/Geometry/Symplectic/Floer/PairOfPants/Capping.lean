@@ -213,9 +213,8 @@ private theorem abs_single_le (p : Puncture) {B : ℝ} (hB : ∀ t x, |H t x| �
 about the pole, where the signed longitudinal coordinate `-s` of the end is at most `1`. -/
 theorem negativePlanePerturbation_eq_zero_of_norm_le {w : ℂ} (hw : ‖w‖ ≤ 2 * Real.exp (2 * π))
     (x : M) : negativePlanePerturbation H w x = 0 := by
-  have h := neg_re_endCoord_inf_le zero_le_one (w := w) (by simpa using hw)
-  rw [negativePlanePerturbation_def, smoothTransition.zero_of_nonpos (by linarith), zero_mul,
-    zero_smul]
+  rw [negativePlanePerturbation_def, smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le hw,
+    zero_mul, zero_smul]
 
 /-- Near a point of the open pole disc `‖w‖ < 2 exp (2π)`, the negative plane perturbation
 vanishes. -/
@@ -294,8 +293,7 @@ where the longitudinal coordinate `s` of the end at `0` is at most `1`. In parti
 on a neighbourhood of `∞`, the pole of the plane. -/
 theorem positivePlanePerturbation_eq_zero_of_le_norm {w : ℂ}
     (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) (x : M) : positivePlanePerturbation H w x = 0 := by
-  rw [positivePlanePerturbation_def,
-    smoothTransition.zero_of_nonpos (by linarith [re_endCoord_zero_le_one hw]), zero_mul,
+  rw [positivePlanePerturbation_def, smoothTransition_endCoord_zero_eq_zero_of_le_norm hw, zero_mul,
     zero_smul]
 
 /-- Near a point outside the closed disc `‖w‖ ≤ exp (-2π) / 2`, the positive plane perturbation
