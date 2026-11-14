@@ -59,12 +59,8 @@ noncongruence subgroup `Γ` whose projective lift `Γ.withCenter = ±Γ` is cong
 
 ## Main results
 
-* `CongruenceSubgroup.isCongruenceSubgroup_top`, `CongruenceSubgroup.not_isCongruenceSubgroup_bot`,
-  `CongruenceSubgroup.isCongruenceSubgroup_inf_iff`,
-  `CongruenceSubgroup.IsCongruenceSubgroup.sup_left`,
-  `CongruenceSubgroup.IsCongruenceSubgroup.sup_right`,
-  `CongruenceSubgroup.IsCongruenceSubgroup.withCenter`: lattice closure properties of
-  `CongruenceSubgroup.IsCongruenceSubgroup`.
+* `CongruenceSubgroup.not_isCongruenceSubgroup_bot`: the trivial subgroup `⊥ ≤ SL(2, ℤ)` is not a
+  congruence subgroup.
 * `Subgroup.le_congruenceClosure`, `Subgroup.congruenceClosure_le`,
   `Subgroup.congruenceClosure_le_iff`, `Subgroup.congruenceClosure_mono`,
   `Subgroup.congruenceClosure_idem`: universal and closure-operator properties.
@@ -106,46 +102,10 @@ open scoped MatrixGroups Pointwise
 
 namespace CongruenceSubgroup
 
-/-- The full modular group `SL(2, ℤ)` is a congruence subgroup (of level `1`). -/
-@[simp]
-theorem isCongruenceSubgroup_top : IsCongruenceSubgroup ⊤ :=
-  ⟨1, one_ne_zero, le_top⟩
-
 /-- The trivial subgroup `⊥ ≤ SL(2, ℤ)` is not a congruence subgroup. -/
 @[simp]
 theorem not_isCongruenceSubgroup_bot : ¬ IsCongruenceSubgroup ⊥ :=
   fun h ↦ h.strictLevel_ne_zero (by simpa [Gamma_zero_bot] using strictLevel_Gamma 0)
-
-/-- The intersection of two congruence subgroups is a congruence subgroup. -/
-theorem IsCongruenceSubgroup.inf {H K : Subgroup SL(2, ℤ)}
-    (hH : IsCongruenceSubgroup H) (hK : IsCongruenceSubgroup K) :
-    IsCongruenceSubgroup (H ⊓ K) := by
-  obtain ⟨M, hM0, hM⟩ := hH
-  obtain ⟨N, hN0, hN⟩ := hK
-  exact ⟨Nat.lcm M N, Nat.lcm_ne_zero hM0 hN0, Gamma_lcm_eq_inf M N ▸ inf_le_inf hM hN⟩
-
-/-- A binary intersection of subgroups of `SL(2, ℤ)` is a congruence subgroup if and only if both
-factors are congruence subgroups. -/
-@[simp]
-theorem isCongruenceSubgroup_inf_iff {H K : Subgroup SL(2, ℤ)} :
-    IsCongruenceSubgroup (H ⊓ K) ↔ IsCongruenceSubgroup H ∧ IsCongruenceSubgroup K :=
-  ⟨fun h ↦ ⟨isCongruenceSubgroup_trans _ _ inf_le_left h,
-    isCongruenceSubgroup_trans _ _ inf_le_right h⟩, fun ⟨hH, hK⟩ ↦ hH.inf hK⟩
-
-/-- Any join with a congruence subgroup on the left is a congruence subgroup. -/
-theorem IsCongruenceSubgroup.sup_left {H K : Subgroup SL(2, ℤ)} (hH : IsCongruenceSubgroup H) :
-    IsCongruenceSubgroup (H ⊔ K) :=
-  isCongruenceSubgroup_trans _ _ le_sup_left hH
-
-/-- Any join with a congruence subgroup on the right is a congruence subgroup. -/
-theorem IsCongruenceSubgroup.sup_right {H K : Subgroup SL(2, ℤ)} (hK : IsCongruenceSubgroup K) :
-    IsCongruenceSubgroup (H ⊔ K) :=
-  isCongruenceSubgroup_trans _ _ le_sup_right hK
-
-/-- Adjoining `{±I}` to a congruence subgroup produces a congruence subgroup. -/
-theorem IsCongruenceSubgroup.withCenter {Γ : Subgroup SL(2, ℤ)} (h : IsCongruenceSubgroup Γ) :
-    IsCongruenceSubgroup Γ.withCenter :=
-  isCongruenceSubgroup_trans _ _ Γ.le_withCenter h
 
 end CongruenceSubgroup
 
@@ -336,10 +296,7 @@ theorem map_intCast_zmod_strictLevel_congruenceClosure_of_strictLevel_ne_zero
       Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))) := by
   let φ : SL(2, ℤ) →* SL(2, ZMod Γ.strictLevel) :=
     Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))
-  have hker : (CongruenceSubgroup.Gamma Γ.strictLevel).map φ = ⊥ := by
-    rw [eq_bot_iff]
-    rintro _ ⟨γ, hγ, rfl⟩
-    exact CongruenceSubgroup.Gamma_mem'.mp hγ
+  have hker : (CongruenceSubgroup.Gamma Γ.strictLevel).map φ = ⊥ := Subgroup.map_ker_self φ
   rw [congruenceClosure_eq_sup_Gamma_strictLevel_of_strictLevel_ne_zero h, Subgroup.map_sup,
     hker, sup_bot_eq]
 
@@ -360,16 +317,11 @@ theorem congruenceClosure_eq_top_iff_map_intCast_zmod_strictLevel_eq_top_of_stri
       Γ.map (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))) = ⊤ := by
   let φ : SL(2, ℤ) →* SL(2, ZMod Γ.strictLevel) :=
     Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod Γ.strictLevel))
-  refine ⟨fun htop ↦ ?_, fun hmap ↦ ?_⟩
-  · rw [← map_intCast_zmod_strictLevel_congruenceClosure_of_strictLevel_ne_zero h, htop,
-      Subgroup.map_top_of_surjective φ Matrix.SpecialLinearGroup.map_intCast_zmod_surjective]
-  · rw [congruenceClosure_eq_sup_Gamma_strictLevel_of_strictLevel_ne_zero h, eq_top_iff]
-    intro g _
-    obtain ⟨γ, hγ, hγg⟩ := Subgroup.mem_map.mp (hmap ▸ Subgroup.mem_top (φ g))
-    have hker : γ⁻¹ * g ∈ CongruenceSubgroup.Gamma Γ.strictLevel :=
-      CongruenceSubgroup.Gamma_mem'.mpr (by rw [map_mul, map_inv, hγg, inv_mul_cancel])
-    simpa [mul_assoc] using
-      (Γ ⊔ CongruenceSubgroup.Gamma Γ.strictLevel).mul_mem (mem_sup_left hγ) (mem_sup_right hker)
+  have htop_map : (⊤ : Subgroup SL(2, ℤ)).map φ = ⊤ :=
+    Subgroup.map_top_of_surjective φ Matrix.SpecialLinearGroup.map_intCast_zmod_surjective
+  rw [← map_intCast_zmod_strictLevel_congruenceClosure_of_strictLevel_ne_zero h, ← htop_map]
+  exact ⟨fun htop ↦ congr_arg (Subgroup.map φ) htop,
+    Subgroup.map_injective_of_ker_le φ Γ.Gamma_strictLevel_le_congruenceClosure le_top⟩
 
 /-- For a finite-index subgroup `Γ ≤ SL(2, ℤ)`, `Γ.congruenceClosure = ⊤` if and only if `Γ`
 surjects onto `SL(2, ZMod Γ.strictLevel)`. -/

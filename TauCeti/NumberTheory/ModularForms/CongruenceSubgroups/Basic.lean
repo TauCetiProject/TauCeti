@@ -136,6 +136,12 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.exists_mul_eq_of_mem_Gamma1_gcd`: every matrix of `Γ₁(gcd a b)` is a product
   of one of `Γ₁(a)` and one of `Γ₁(b)`; in particular `Γ₁(gcd a b) = Γ₁(a) ⊔ Γ₁(b)`
   (`CongruenceSubgroup.Gamma1_gcd_eq_sup`).
+* `CongruenceSubgroup.isCongruenceSubgroup_top`, `CongruenceSubgroup.IsCongruenceSubgroup.inf`,
+  `CongruenceSubgroup.isCongruenceSubgroup_inf_iff`,
+  `CongruenceSubgroup.IsCongruenceSubgroup.sup_left`,
+  `CongruenceSubgroup.IsCongruenceSubgroup.sup_right`,
+  `CongruenceSubgroup.IsCongruenceSubgroup.withCenter`: lattice closure properties of
+  `CongruenceSubgroup.IsCongruenceSubgroup`.
 * `CongruenceSubgroup.Gamma0_relIndex_Gamma0_of_coprime`: for coprime `a` and `b`,
   `[Γ₀(b) : Γ₀(a) ⊓ Γ₀(b)] = [SL₂(ℤ) : Γ₀(a)]`.
 * `CongruenceSubgroup.Gamma0_index_mul_of_coprime`: the index of `Γ₀` is multiplicative in the
@@ -1042,6 +1048,44 @@ theorem Gamma1_gcd_eq_sup (a b : ℕ) : Gamma1 (Nat.gcd a b) = Gamma1 a ⊔ Gamm
     (Gamma1_le_Gamma1_of_dvd (Nat.gcd_dvd_right a b)))
   obtain ⟨α, hα, β, hβ, rfl⟩ := exists_mul_eq_of_mem_Gamma1_gcd hγ
   exact mul_mem (Subgroup.mem_sup_left hα) (Subgroup.mem_sup_right hβ)
+
+/-! ### Lattice closure properties of `IsCongruenceSubgroup` -/
+
+/-- The full modular group `SL(2, ℤ)` is a congruence subgroup (of level `1`). -/
+@[simp]
+theorem isCongruenceSubgroup_top : IsCongruenceSubgroup ⊤ :=
+  ⟨1, one_ne_zero, le_top⟩
+
+/-- The intersection of two congruence subgroups is a congruence subgroup. -/
+theorem IsCongruenceSubgroup.inf {H K : Subgroup SL(2, ℤ)}
+    (hH : IsCongruenceSubgroup H) (hK : IsCongruenceSubgroup K) :
+    IsCongruenceSubgroup (H ⊓ K) := by
+  obtain ⟨M, hM0, hM⟩ := hH
+  obtain ⟨N, hN0, hN⟩ := hK
+  exact ⟨Nat.lcm M N, Nat.lcm_ne_zero hM0 hN0, Gamma_lcm_eq_inf M N ▸ inf_le_inf hM hN⟩
+
+/-- A binary intersection of subgroups of `SL(2, ℤ)` is a congruence subgroup if and only if both
+factors are congruence subgroups. -/
+@[simp]
+theorem isCongruenceSubgroup_inf_iff {H K : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup (H ⊓ K) ↔ IsCongruenceSubgroup H ∧ IsCongruenceSubgroup K :=
+  ⟨fun h ↦ ⟨isCongruenceSubgroup_trans _ _ inf_le_left h,
+    isCongruenceSubgroup_trans _ _ inf_le_right h⟩, fun ⟨hH, hK⟩ ↦ hH.inf hK⟩
+
+/-- Any join with a congruence subgroup on the left is a congruence subgroup. -/
+theorem IsCongruenceSubgroup.sup_left {H K : Subgroup SL(2, ℤ)} (hH : IsCongruenceSubgroup H) :
+    IsCongruenceSubgroup (H ⊔ K) :=
+  isCongruenceSubgroup_trans _ _ le_sup_left hH
+
+/-- Any join with a congruence subgroup on the right is a congruence subgroup. -/
+theorem IsCongruenceSubgroup.sup_right {H K : Subgroup SL(2, ℤ)} (hK : IsCongruenceSubgroup K) :
+    IsCongruenceSubgroup (H ⊔ K) :=
+  isCongruenceSubgroup_trans _ _ le_sup_right hK
+
+/-- Adjoining `{±I}` to a congruence subgroup produces a congruence subgroup. -/
+theorem IsCongruenceSubgroup.withCenter {Γ : Subgroup SL(2, ℤ)} (h : IsCongruenceSubgroup Γ) :
+    IsCongruenceSubgroup Γ.withCenter :=
+  isCongruenceSubgroup_trans _ _ Γ.le_withCenter h
 
 /-! ### The index of `Γ₀(N)` at every level -/
 
