@@ -36,8 +36,10 @@ derivative is differentiable at `q` with symmetric second derivative without any
 assumption. Applying the identity above to `fderiv ℝ (fderiv ℝ f) q` shows that the left side
 vanishes, because the Fueter operator applied to the first derivative vanishes near `q`, while the
 right side is the Euclidean Laplacian `Δ f q` computed in the orthonormal basis `e`. The converse
-does not hold: `q ↦ ((q.re ^ 2 - q.imI ^ 2 : ℝ) : ℍ)` has vanishing Laplacian everywhere on `ℍ`
-without satisfying either Fueter equation away from `0`.
+does not hold: `q ↦ ((q.re ^ 2 - q.imI ^ 2 : ℝ) : ℍ)` has vanishing Laplacian everywhere on `ℍ`,
+whereas its left and right Fueter operators both equal `⟨2 * q.re, -2 * q.imI, 0, 0⟩`, so it
+satisfies neither Fueter equation outside `{q | q.re = 0 ∧ q.imI = 0}` and is Fueter regular on no
+nonempty open set.
 
 ## Main declarations
 
