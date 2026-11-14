@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
