@@ -35,8 +35,7 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
-(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). Conversely, a conjugate-linear equivalence
-between complex modules is real-linear (`LinearEquiv.toRealLinearEquiv`). The non-instance
+(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The non-instance
 `RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
 for use in constructions on real modules.
 
@@ -47,8 +46,9 @@ at `I` (`Units.conj_complexAlgHom_apply`).
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
 half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 
-The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries
-(`TauCeti.mem_span_range_basisFun_iff`).
+A vector lies in the real span of a complex basis exactly when its coordinates are real
+(`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
+`ι → ℂ` is `ℝ^ι`, the vectors with real entries (`TauCeti.mem_span_real_range_basisFun_iff`).
 -/
 
 public section
@@ -99,6 +99,19 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
 
 end Complex
+
+namespace Module.Basis
+
+/-- A vector lies in the real span of a complex basis exactly when its coordinates are real. -/
+theorem mem_span_real_range_iff {ι M : Type*} [AddCommGroup M] [Module ℝ M] [Module ℂ M]
+    [IsScalarTower ℝ ℂ M] (b : Basis ι ℂ M) (m : M) :
+    m ∈ Submodule.span ℝ (Set.range b) ↔ ∀ i, (b.repr m i).im = 0 := by
+  rw [b.mem_span_iff_repr_mem ℝ]
+  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨(b.repr m i).re, Complex.ext (by simp) (by simp [h])⟩⟩
+  rintro ⟨r, hr⟩
+  simp [← hr]
+
+end Module.Basis
 
 namespace LinearMap
 
@@ -175,12 +188,9 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
   module
 
 /-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
-theorem mem_span_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
+theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → ℂ) :
     w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
-  simp only [(Pi.basisFun ℂ ι).mem_span_iff_repr_mem ℝ, Pi.basisFun_repr]
-  refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨(w i).re, Complex.ext (by simp) (by simp [h])⟩⟩
-  rintro ⟨r, hr⟩
-  simp [← hr]
+  simp [(Pi.basisFun ℂ ι).mem_span_real_range_iff]
 
 end TauCeti
 
@@ -223,30 +233,6 @@ theorem map_smul_eq_conj_smul_of_map_I_smul (u : V →ₗ[ℝ] W)
     Complex.conj_im, smul_neg, neg_smul]
 
 end LinearMap
-
-namespace LinearEquiv
-
-/-- A conjugate-linear equivalence of complex vector spaces is real-linear, since complex
-conjugation fixes the real scalars. -/
-def toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : V ≃ₗ[ℝ] W where
-  toFun := f
-  invFun := f.symm
-  map_add' := map_add f
-  -- `f` sends the real scalar `r`, viewed in `ℂ`, to its conjugate, which is `r` again.
-  map_smul' r x := by simpa [← algebraMap_smul ℂ r] using f.map_smulₛₗ (r : ℂ) x
-  left_inv := f.left_inv
-  right_inv := f.right_inv
-
-@[simp]
-theorem coe_toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : ⇑f.toRealLinearEquiv = f :=
-  (rfl)
-
-@[simp]
-theorem toRealLinearEquiv_symm (f : V ≃ₛₗ[starRingEnd ℂ] W) :
-    f.toRealLinearEquiv.symm = f.symm.toRealLinearEquiv :=
-  (rfl)
-
-end LinearEquiv
 
 end ComplexOfMapISmul
 

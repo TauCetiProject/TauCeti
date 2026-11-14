@@ -31,7 +31,7 @@ public section
 namespace TauCeti.SignedSym
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-variable (G : InternalGrading R V)
+variable (G : InternalGrading R V ℤ)
 
 /-- The length-`n` piece is the `n`-th submodule power of the generating module's image. -/
 def lengthPiece (n : ℕ) : Submodule R (SignedSym G) :=
@@ -179,7 +179,7 @@ theorem decompose_lengthPiece_zero (a : SignedSym G) :
 
 section Map
 
-variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W)
+variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ℤ)
 
 /-- A map induced from the generators preserves word length. -/
 theorem isHomogeneous_map_length (f : V →ₗ[R] W)
