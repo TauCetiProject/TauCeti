@@ -397,6 +397,23 @@ theorem homComplexRetract_r_f_apply (P Q : DGKaroubi R C) {n : ℤ} (f : DGHom R
     ((homComplexRetract P Q).r.f n).hom f = homProj P Q n f :=
   (rfl)
 
+/-! ### Closed morphisms of degree zero -/
+
+/-- The idempotent of an object of the Karoubi envelope is closed of degree zero. -/
+theorem p_mem_dgCycles (P : DGKaroubi R C) : P.p ∈ dgCycles R P.X P.X :=
+  (mem_dgCycles R).2 P.dgDifferential_p
+
+/-- The underlying morphism of a closed morphism of degree zero of the Karoubi envelope is
+closed. -/
+theorem dgHomVal_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P Q}
+    (hf : f ∈ dgCycles R P Q) : dgHomVal 0 f ∈ dgCycles R P.X Q.X :=
+  homComplexRetract_i_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).i hf
+
+/-- The projection `f ↦ p ≫ f ≫ q` of a closed morphism of degree zero is closed. -/
+theorem homProj_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P.X Q.X}
+    (hf : f ∈ dgCycles R P.X Q.X) : homProj P Q 0 f ∈ dgCycles R P Q :=
+  homComplexRetract_r_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).r hf
+
 /-! ### The embedding -/
 
 variable (R C) in

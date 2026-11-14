@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Idempotents.Karoubi
 public import TauCeti.CategoryTheory.DG.Karoubi.Basic
 public import TauCeti.CategoryTheory.Linear.Karoubi
 
@@ -60,21 +59,6 @@ variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C]
 noncomputable section
 
 /-! ### Cohomology classes -/
-
-/-- The idempotent of an object of the Karoubi envelope is closed of degree zero. -/
-theorem p_mem_dgCycles (P : DGKaroubi R C) : P.p ∈ dgCycles R P.X P.X :=
-  (mem_dgCycles R).2 P.dgDifferential_p
-
-/-- The underlying morphism of a closed morphism of degree zero of the Karoubi envelope is
-closed. -/
-theorem dgHomVal_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P Q}
-    (hf : f ∈ dgCycles R P Q) : dgHomVal 0 f ∈ dgCycles R P.X Q.X :=
-  homComplexRetract_i_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).i hf
-
-/-- The projection `f ↦ p ≫ f ≫ q` of a closed morphism of degree zero is closed. -/
-theorem homProj_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P.X Q.X}
-    (hf : f ∈ dgCycles R P.X Q.X) : homProj P Q 0 f ∈ dgCycles R P Q :=
-  homComplexRetract_r_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).r hf
 
 /-- On degree-zero cohomology, the idempotent `ι ∘ π` of the Hom complex of the underlying objects
 acts by `x ↦ [p] ≫ x ≫ [q]`. -/
