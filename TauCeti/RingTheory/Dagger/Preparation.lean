@@ -86,12 +86,8 @@ theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq {g e : W} {s : ℕ}
       (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
         restrictedOptionEquiv (toTate _ K g)) :
     (ω.map (toTate σ K).toRingHom : PowerSeries Tate).gaussNorm norm 1 = 1 := by
-  have hcoeff : ((PowerSeries.coeff s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate) : Tate) :
-        MvPowerSeries σ K) ≠ 0 := fun h ↦ hg.coeff_ne_zero (Subtype.ext h)
-  obtain ⟨d, hd⟩ := (ne_zero_iff_exists_coeff_ne_zero _).mp hcoeff
-  have : Nontrivial K := nontrivial_of_ne _ _ hd
-  have : NormOneClass K := NormMulClass.toNormOneClass
+  have : Nontrivial Tate := nontrivial_of_ne _ _ hg.coeff_ne_zero
+  have : NormOneClass Tate := NormMulClass.toNormOneClass
   have hd := PowerSeries.IsDistinguished.of_isUnit_mul (heq ▸ hg) one_pos
     ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
   rw [← hd.norm_coeff_mul_pow_eq]
