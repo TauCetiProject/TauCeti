@@ -255,6 +255,28 @@ theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C 
   congr 1
   rw [mul_inv, mul_right_comm, ← map_inv₀, ← map_mul, hu]
 
+open _root_.WeierstrassCurve.Affine in
+/-- Conjugating an isogeny `φ : W₁ → W₂` satisfying `φ^*ω₂ = c ω₁` by changes of variables
+`C₁ : W₁ → W₁'` and `C₂ : W₂ → W₂'` scales the pullback constant on invariant differentials by
+`C₂.u / C₁.u`. -/
+theorem pullbackDifferential_variableChangeIsogeny_comp_comp
+    {W₁' W₂' : WeierstrassCurve.Affine F} (φ : Isogeny W₁ W₂) {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    (C₁ C₂ : VariableChange F) (h₁ : C₁⁻¹ • W₁' = W₁) (h₂ : C₂ • W₂ = W₂') :
+    ((variableChangeIsogeny C₂ h₂).comp
+        (φ.comp (variableChangeIsogeny C₁⁻¹ h₁))).pullbackDifferential
+        (invariantDifferential W₂') =
+      (c * C₂.u / C₁.u) • invariantDifferential W₁' := by
+  have hC₁inv : ((C₁⁻¹.u : F)) = (C₁.u : F)⁻¹ := by
+    simp [VariableChange.inv_def]
+  rw [pullbackDifferential_comp, pullbackDifferential_comp, LinearMap.comp_apply,
+    LinearMap.comp_apply, pullbackDifferential_variableChangeIsogeny_invariantDifferential C₂ h₂,
+    LinearMap.map_smul, hc, LinearMap.map_smul, LinearMap.map_smul,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential C₁⁻¹ h₁,
+    hC₁inv, smul_smul, smul_smul]
+  congr 1
+  ring
+
 /-! ### Every isomorphism is a change of variables -/
 
 section Converse

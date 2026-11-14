@@ -65,6 +65,30 @@ theorem tamagawaNumber_def : E.tamagawaNumber v =
   classical
   rfl
 
+/-- Equivalent valuations with discrete valuation rings define the same Tamagawa number. -/
+theorem tamagawaNumber_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    (v' : Valuation F Γ₀') [IsDiscreteValuationRing v'.valuationSubring] (h : v.IsEquiv v') :
+    E.tamagawaNumber v = E.tamagawaNumber v' := by
+  classical
+  have hsub := (Valuation.isEquiv_iff_valuationSubring v v').mp h
+  have hint : ∀ (S : ValuationSubring F),
+      S = v'.valuationSubring → IsIntegral S (E.minimal v'.valuationSubring) := by
+    rintro _ rfl
+    infer_instance
+  have := hint v.valuationSubring hsub
+  have hmin_eq : ∀ (S : ValuationSubring F) [IsDiscreteValuationRing S],
+      S = v'.valuationSubring → E.minimal S = E.minimal v'.valuationSubring := by
+    rintro _ _ rfl
+    rfl
+  have hidx_eq : ∀ {W₁ W₂ : WeierstrassCurve F} [IsIntegral v.valuationSubring W₁]
+      [IsIntegral v.valuationSubring W₂], W₁ = W₂ →
+        (W₁.toAffine.nonsingularReduction v).index =
+          (W₂.toAffine.nonsingularReduction v).index := by
+    rintro _ _ _ _ rfl
+    rfl
+  rw [tamagawaNumber_def, tamagawaNumber_def, hidx_eq (hmin_eq v.valuationSubring hsub),
+    Affine.nonsingularReduction_congr _ h]
+
 variable [E.IsElliptic]
 
 /-- Every isomorphic minimal equation computes the same Tamagawa number.

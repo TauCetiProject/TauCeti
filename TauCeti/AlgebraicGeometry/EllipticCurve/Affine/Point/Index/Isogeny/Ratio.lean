@@ -136,6 +136,13 @@ theorem finiteKummerRatio_id (W : WeierstrassCurve K) [W.IsElliptic]
     (v : HeightOneSpectrum R) : (Isogeny.id W.toAffine).finiteKummerRatio v = 1 := by
   simp only [finiteKummerRatio_def, id_map, kummerRatio_id]
 
+/-- A degree-one isogeny has finite local Kummer ratio one at every height-one prime. -/
+theorem finiteKummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (hφ : φ.degree = 1) (v : HeightOneSpectrum R) :
+    φ.finiteKummerRatio v = 1 := by
+  rw [finiteKummerRatio_def]
+  exact kummerRatio_eq_one_of_degree_eq_one _ (by rw [degree_map, hφ])
+
 end Finite
 
 section Rational
@@ -184,6 +191,13 @@ theorem realKummerRatio_id (W : WeierstrassCurve ℚ) [W.IsElliptic] :
     (Isogeny.id W.toAffine).realKummerRatio = 1 := by
   simp only [realKummerRatio_def, id_map, kummerRatio_id]
 
+/-- A degree-one isogeny over `ℚ` has real local Kummer ratio one. -/
+theorem realKummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (hφ : φ.degree = 1) :
+    φ.realKummerRatio = 1 := by
+  rw [realKummerRatio_def]
+  exact kummerRatio_eq_one_of_degree_eq_one _ (by rw [degree_map, hφ])
+
 /-- The product of local Kummer ratios, including the real place and every finite prime. -/
 def kummerRatioProduct (φ : Isogeny W₁.toAffine W₂.toAffine) : ℚ :=
   φ.realKummerRatio * ∏ᶠ v : HeightOneSpectrum ℤ, φ.finiteKummerRatio v
@@ -227,6 +241,13 @@ theorem kummerRatioProduct_id (W : WeierstrassCurve ℚ) [W.IsElliptic] :
     (Isogeny.id W.toAffine).kummerRatioProduct = 1 := by
   simp only [kummerRatioProduct_def, realKummerRatio_id, finiteKummerRatio_id,
     finprod_one, mul_one]
+
+/-- A degree-one isogeny over `ℚ` has product of local Kummer ratios one. -/
+theorem kummerRatioProduct_eq_one_of_degree_eq_one (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (hφ : φ.degree = 1) :
+    φ.kummerRatioProduct = 1 := by
+  simp [kummerRatioProduct_def, realKummerRatio_eq_one_of_degree_eq_one φ hφ,
+    finiteKummerRatio_eq_one_of_degree_eq_one φ hφ]
 
 end Rational
 
