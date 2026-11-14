@@ -12,6 +12,8 @@ public import Mathlib.NumberTheory.SelbergSieve
 
 For a Mathlib bounding sieve and a real cutoff, the normalized upper-divisor sum gives
 weights whose quadratic main term is the reciprocal truncated sum of `selbergTerms`.
+This identity includes a zero normalizer: totalized weights and the main term are then zero.
+Normalization at one and the finite upper bound still require a cutoff containing one.
 The construction uses the native finite quadratic diagonalization and Möbius inversion.
 It supplies the finite weight calculation for AnalyticNumberTheoryPartI §§3.31a and 3.36b.
 
@@ -174,9 +176,15 @@ theorem selbergWeights_eq_zero_of_lt (s : BoundingSieve) (z : ℝ) (d : ℕ)
     rw [hsum, mul_zero]
   · rfl
 
-/-- The quadratic main term of the normalized Selberg weights is the reciprocal normalizer. -/
-theorem mainSum_lambdaSquared_selbergWeights (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
+/-- The quadratic main term is the reciprocal normalizer for every real cutoff, including
+the totalized zero-normalizer case. -/
+theorem mainSum_lambdaSquared_selbergWeights (s : BoundingSieve) {z : ℝ} :
     s.mainSum (lambdaSquared (s.selbergWeights z)) = (s.truncatedSelbergSum z)⁻¹ := by
+  by_cases hG : s.truncatedSelbergSum z = 0
+  · have hw : s.selbergWeights z = fun _ ↦ 0 := by
+      funext d
+      simp [selbergWeights, hG]
+    simp [hw, mainSum, lambdaSquared, hG]
   rw [mainSum_lambdaSquared_eq_sum_mul_sum_sq]
   calc
     _ = ∑ l ∈ s.prodPrimes.divisors,
@@ -200,13 +208,13 @@ theorem mainSum_lambdaSquared_selbergWeights (s : BoundingSieve) {z : ℝ} (hz :
       intro l _
       split_ifs <;> simp_all
     _ = _ := by
-      rw [sq, ← mul_assoc, mul_inv_cancel₀ (s.truncatedSelbergSum_pos hz).ne', one_mul]
+      rw [sq, ← mul_assoc, mul_inv_cancel₀ hG, one_mul]
 
 /-- The finite Selberg upper bound with its full weighted remainder. -/
 theorem siftedSum_le_selbergWeights (s : BoundingSieve) {z : ℝ} (hz : 1 ≤ z) :
     s.siftedSum ≤ s.totalMass / s.truncatedSelbergSum z +
       s.errSum (lambdaSquared (s.selbergWeights z)) := by
-  simpa only [s.mainSum_lambdaSquared_selbergWeights hz, div_eq_mul_inv] using
+  simpa only [s.mainSum_lambdaSquared_selbergWeights, div_eq_mul_inv] using
     s.siftedSum_le_mainSum_errSum_of_upperMoebius
       (lambdaSquared (s.selbergWeights z)) (upperMoebius_lambdaSquared _ (s.selbergWeights_one hz))
 
