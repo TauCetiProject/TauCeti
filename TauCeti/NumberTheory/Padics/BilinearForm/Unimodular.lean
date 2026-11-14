@@ -117,29 +117,21 @@ theorem IsSymm.four_dvd_det_toMatrix_sub_one_sub_apply_self_add_card (hB : B.IsS
   -- The orthogonal sum `D = B ⊥ ⟨1⟩` on `M × ℤ_[2]`, with the basis `d` extending `b`.
   set D : BilinForm ℤ_[2] (M × ℤ_[2]) := B.prod (LinearMap.mul ℤ_[2] ℤ_[2])
   set d := b.prod (Basis.singleton Unit ℤ_[2])
-  have hDd : D.toMatrix d = Matrix.fromBlocks (B.toMatrix b) 0 0 1 := by
-    rw [toMatrix_prod]
-    congr 1
-    ext i j
-    simp [toMatrix_apply]
-  have hDs : D.IsSymm := isSymm_prod_iff.2
-    ⟨hB, ⟨fun x y ↦ by rw [LinearMap.mul_apply', LinearMap.mul_apply', mul_comm]⟩⟩
   set e := d.reindex (Fintype.equivFin (ι ⊕ Unit))
   have hedet : (D.toMatrix e).det = (B.toMatrix b).det := by
-    rw [det_toMatrix_reindex, hDd, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
+    rw [det_toMatrix_reindex, det_toMatrix_prod_mul]
   obtain ⟨c, hc, hcu⟩ := hB.exists_orthogonal_basis_isUnit_prod_mul b hdet
-  have hw' : D.IsCharacteristic (w, 1) := hw.prod <| isCharacteristic_iff.mpr fun x ↦ by
-    simpa [LinearMap.mul_apply', sq] using (PadicInt.two_dvd_sq_sub_self x).neg_right
+  have hw' : D.IsCharacteristic (w, 1) := hw.prod (isCharacteristic_mul_one
+    PadicInt.two_dvd_sq_sub_self)
   have : Module.Free ℤ_[2] (M × ℤ_[2]) := .of_basis c
   have : D.IsPerfPair := c.isPerfPair_of_isUnit_det c D (hc.isUnit_det_toMatrix hcu)
-  obtain ⟨r, hr⟩ := hw'.eight_dvd_apply_self_sub_apply_self hDs
+  obtain ⟨r, hr⟩ := hw'.eight_dvd_apply_self_sub_apply_self hc.isSymm
     (hc.isCharacteristic_sum PadicInt.two_dvd_sq_sub_self)
   have hD1 : D (w, 1) (w, 1) = B w w + 1 := by simp [D, prod_apply]
   rw [hc.apply_sum_sum, hD1] at hr
   -- The determinants in `e` and in `c` differ by the square of a unit.
-  have hP : IsUnit (c.toMatrix e).det :=
-    Matrix.isUnit_det_of_right_inverse (c.toMatrix_mul_toMatrix_flip e)
-  obtain ⟨s, hs⟩ := PadicInt.eight_dvd_sq_sub_one_of_isUnit hP
+  obtain ⟨s, hs⟩ := PadicInt.eight_dvd_sq_sub_one_of_isUnit (c.isUnit_det e)
+  rw [Basis.det_apply] at hs
   obtain ⟨f, hf⟩ := Finset.sq_dvd_prod_sub_one_sub_sum_add_card Finset.univ
     (u := fun i ↦ D (c i) (c i)) (r := (2 : ℤ_[2])) fun i _ ↦ by
       have hui : IsUnit (D (c i) (c i)) := hcu i

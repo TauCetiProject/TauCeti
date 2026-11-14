@@ -78,6 +78,10 @@ constituent of type II between constituents of type II
   `LinearMap.BilinForm.IsJordanSplitting.finite_support_finrank`: a finitely generated module has
   only finitely many nonzero Jordan constituents, hence only finitely many of nonzero rank.
 * `LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`: Jordan splittings exist.
+* `LinearMap.BilinForm.IsJordanSplitting.finite_of_finrank_eq`: equal constituent ranks transfer
+  finite generation to a splitting with finite free constituents.
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_of_forall_exists_equivalent_restrict`:
+  prefixwise matching and equal constituent ranks imply isometry.
 * `LinearMap.BilinForm.IsJordanSplitting.finrank_eq`: any two Jordan splittings have constituents
   of equal rank.
 * `LinearMap.BilinForm.IsJordanSplitting.finrank_eq_of_equivalent`: the ranks of the constituents
@@ -887,5 +891,66 @@ theorem IsJordanSplitting.exists_basis_restrict_biSup_Iic [IsDomain R] [IsLocalR
   exact ⟨ι, _, _, b, H, hH, hHs, fun h2 heven ↦ hHd h2 fun i hi w hw ↦ heven _ (hi ▸ hw)⟩
 
 end Constituents
+
+/-- Equal constituent ranks transfer finite generation between Jordan splittings with finite free
+constituents. -/
+theorem IsJordanSplitting.finite_of_finrank_eq
+    {R M M' : Type*} [CommRing R] [IsDomain R]
+    [AddCommGroup M] [Module R M] [Module.Finite R M]
+    [AddCommGroup M'] [Module R M']
+    {B : BilinForm R M} {B' : BilinForm R M'} {π : R}
+    {N : ℕ → Submodule R M} {N' : ℕ → Submodule R M'}
+    [∀ i, Module.Free R (N' i)] [∀ i, Module.Finite R (N' i)]
+    (h : B.IsJordanSplitting π N) (h' : B'.IsJordanSplitting π N')
+    (hrank : ∀ i, finrank R (N i) = finrank R (N' i)) : Module.Finite R M' := by
+  classical
+  have hs : {i | N' i ≠ ⊥}.Finite := h.finite_support_finrank.subset fun i hi ↦ by
+    rw [Function.mem_support, hrank i]
+    exact fun hz ↦ hi (Submodule.subsingleton_iff_eq_bot.mp
+      ((Module.finrank_eq_zero_iff_of_free R (N' i)).mp hz))
+  have hfg := Submodule.fg_biSup hs.toFinset N' (fun i _ ↦ Module.Finite.iff_fg.mp inferInstance)
+  have htop : (⨆ i ∈ hs.toFinset, N' i) = ⊤ := by
+    rw [← h'.isInternal.submodule_iSup_eq_top]
+    apply le_antisymm
+    · exact iSup₂_le fun i _ ↦ le_iSup N' i
+    · refine iSup_le fun i ↦ ?_
+      by_cases hi : N' i = ⊥
+      · simp [hi]
+      · exact le_iSup_of_le i (le_iSup_of_le (hs.mem_toFinset.mpr hi) le_rfl)
+  exact .of_fg_top (htop ▸ hfg)
+
+/-- Prefixwise matching Jordan splittings of the same constituent ranks give isometric forms
+once the first splitting has finite support. -/
+theorem IsJordanSplitting.equivalent_of_forall_exists_equivalent_restrict
+    {R M M' : Type*} [CommRing R] [IsDomain R] [IsLocalRing R]
+    [AddCommGroup M] [Module R M] [Module.Finite R M]
+    [AddCommGroup M'] [Module R M'] [Module.Free R M'] [Module.Finite R M']
+    {B : BilinForm R M} {B' : BilinForm R M'} {π : R}
+    {N : ℕ → Submodule R M} {N' : ℕ → Submodule R M'}
+    (h : B.IsJordanSplitting π N) (h' : B'.IsJordanSplitting π N')
+    (hπ : π ≠ 0) (hπu : ¬IsUnit π)
+    (hrank : ∀ i, finrank R (N i) = finrank R (N' i))
+    (hprefix : ∀ k, ∃ N'' : ℕ → Submodule R M', B'.IsJordanSplitting π N'' ∧
+      ∀ i < k, (B.restrict (N i)).Equivalent (B'.restrict (N'' i))) : B.Equivalent B' := by
+  -- Beyond the nonzero constituents of `N`, both splittings vanish.
+  obtain ⟨K, hK⟩ := h.hasFiniteSupport.bddAbove
+  obtain ⟨N'', h'', hlow⟩ := hprefix (K + 1)
+  refine equivalent_of_isInternal h.isInternal h''.isInternal h.apply_eq_zero h''.apply_eq_zero
+    fun i ↦ ?_
+  by_cases hi : i < K + 1
+  · exact hlow i hi
+  have hN : N i = ⊥ := by
+    by_contra hne
+    exact hi (Nat.lt_succ_of_le (hK hne))
+  have hN'' : N'' i = ⊥ := by
+    have := h''.finite i
+    rw [← Submodule.finrank_eq_zero, ← h'.finrank_eq h'' hπ hπu i,
+      ← hrank i, hN, finrank_bot]
+  have := Submodule.subsingleton_iff_eq_bot.mpr hN
+  have := Submodule.subsingleton_iff_eq_bot.mpr hN''
+  exact ⟨⟨LinearEquiv.ofSubsingleton _ _, fun x y ↦ by
+    rw [Subsingleton.elim x 0, Subsingleton.elim y 0]
+    simp⟩⟩
+
 
 end LinearMap.BilinForm

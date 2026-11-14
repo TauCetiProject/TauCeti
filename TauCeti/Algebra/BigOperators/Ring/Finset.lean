@@ -11,7 +11,10 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
-# Identities for finite sums in commutative rings
+# Identities for finite sums and products in commutative rings
+
+`Finset.sq_dvd_prod_sub_one_sub_sum_add_card` expands a product of elements congruent to `1`
+modulo `r`, up to terms divisible by `r ^ 2`.
 
 ## Scaling weighted sums of natural numbers
 

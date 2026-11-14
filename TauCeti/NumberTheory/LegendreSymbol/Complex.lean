@@ -14,7 +14,7 @@ public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 
 /-!
-# Complex values of characters of finite fields
+# Complex values of characters of finite fields and residue rings
 
 Mathlib's `AddChar.FiniteField.primitiveChar_to_Complex` is the canonical primitive additive
 character of a finite field `F` with values in `ℂ`, and
@@ -25,9 +25,12 @@ residue fields of a number field can then be read in a domain containing its rin
 
 A Legendre symbol `(θ/p) = ±1` is also an eighth root of unity, `e^{2πi · 2(1 - (θ/p))/8}`; this is
 the form in which it enters the Gauss-sum invariants of finite quadratic modules, which take values
-in `ℤ/8`.
+in `ℤ/8`. On `ZMod 8`, a sign times `stdAddChar` determines the sign and residue up to
+simultaneously changing the sign and adding `4`.
 
 ## Main results
+
+* `ZMod.χ₈_eq_and_eq_or_of_mul_stdAddChar_eq`: cancellation of sign times `stdAddChar` on `ZMod 8`.
 
 * `TauCeti.exists_primitive_addChar_integralClosure`: `F` has a primitive additive character with
   values in the algebraic integers of `ℂ`.
@@ -67,16 +70,17 @@ end TauCeti
 
 namespace ZMod
 
-/-- If `ε · e(s / 8) = ε' · e(t / 8)` for signs `ε = χ₈ x`, `ε' = χ₈ y` of units, then either the
+/-- If `ε · stdAddChar s = ε' · stdAddChar t` for signs of units `ε = χ₈ x`, `ε' = χ₈ y`, then the
 signs and the residues agree, or both differ, the residues by `4`. -/
-theorem χ₈_eq_and_eq_or_of_mul_stdAddChar_eq {x y s t : ZMod (2 ^ 3)} (hx : x * x = 1)
-    (hy : y * y = 1)
+theorem χ₈_eq_and_eq_or_of_mul_stdAddChar_eq {x y s t : ZMod (2 ^ 3)} (hx : IsUnit x)
+    (hy : IsUnit y)
     (h : ((χ₈ x : ℤ) : ℂ) * stdAddChar s = ((χ₈ y : ℤ) : ℂ) * stdAddChar t) :
     χ₈ x = χ₈ y ∧ s = t ∨ χ₈ x = -χ₈ y ∧ s = t + 4 := by
   have h4 : (stdAddChar (4 : ZMod (2 ^ 3)) : ℂ) = -1 := by
     simpa [stdAddChar_apply] using ZMod.coe_toCircle_natCast_self 4
-  have hχ : ∀ z : ZMod (2 ^ 3), z * z = 1 → χ₈ z = 1 ∨ χ₈ z = -1 := by decide
-  have hz (z : ZMod (2 ^ 3)) (hz : z * z = 1) :
+  have hχ : ∀ z : ZMod (2 ^ 3), IsUnit z → χ₈ z = 1 ∨ χ₈ z = -1 := fun z hz ↦
+    (isQuadratic_χ₈ z).resolve_left ((MulChar.apply_ne_zero_iff).mpr hz)
+  have hz (z : ZMod (2 ^ 3)) (hz : IsUnit z) :
       ((χ₈ z : ℤ) : ℂ) = stdAddChar (if χ₈ z = 1 then 0 else 4 : ZMod (2 ^ 3)) := by
     rcases hχ z hz with h | h <;> simp [h, h4]
   rw [hz x hx, hz y hy, ← AddChar.map_add_eq_mul, ← AddChar.map_add_eq_mul] at h

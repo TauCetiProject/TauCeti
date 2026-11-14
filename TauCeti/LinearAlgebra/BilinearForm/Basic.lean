@@ -149,18 +149,11 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
   simp
 
 /-- Divisibility of self-pairings transports across a rescaling by a non-zero-divisor. -/
-theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    {B : LinearMap.BilinForm R M} {P : Submodule R M} {C : LinearMap.BilinForm R P}
-    {a : R} (ha : a ∈ nonZeroDivisors R) (hC : a • C = B.restrict P) (r : R) :
-    (∀ x, r ∣ C x x) ↔ ∀ x ∈ P, r * a ∣ B x x := by
-  have hBC (x : P) : B x x = a * C x x := by
-    simpa using (LinearMap.congr_fun₂ hC x x).symm
-  refine ⟨fun H x hx ↦ ?_, fun H x ↦ ?_⟩
-  · simpa [← hBC, mul_comm r a] using mul_dvd_mul_left a (H ⟨x, hx⟩)
-  · obtain ⟨c, hc⟩ := H x x.2
-    refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors ha).mp ?_⟩
-    rw [← hBC, hc]
-    ring
+theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B C : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a) (hC : a • C = B) (r : R) :
+    (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
+  subst B
+  simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
 
 /-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/

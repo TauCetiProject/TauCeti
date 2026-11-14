@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
@@ -62,6 +63,24 @@ theorem toMatrix_prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N
     (b : Module.Basis ι R M) (c : Module.Basis κ R N) :
     (B.prod C).toMatrix (b.prod c) = Matrix.fromBlocks (B.toMatrix b) 0 0 (C.toMatrix c) := by
   ext (i | i) (j | j) <;> simp [toMatrix_apply, prod_apply, Module.Basis.prod_apply]
+
+/-- Adding the rank-one multiplication form adds a unit block to the Gram matrix. -/
+theorem toMatrix_prod_mul (B : LinearMap.BilinForm R M) {ι : Type*}
+    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R M) :
+    (B.prod (LinearMap.mul R R)).toMatrix (b.prod (Module.Basis.singleton Unit R)) =
+      Matrix.fromBlocks (B.toMatrix b) 0 0 1 := by
+  rw [toMatrix_prod]
+  congr 1
+  ext i j
+  simp [toMatrix_apply]
+
+/-- Adding the rank-one multiplication form preserves the Gram determinant. -/
+theorem det_toMatrix_prod_mul {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    (B : LinearMap.BilinForm R M) {ι : Type*}
+    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R M) :
+    ((B.prod (LinearMap.mul R R)).toMatrix (b.prod (Module.Basis.singleton Unit R))).det =
+      (B.toMatrix b).det := by
+  rw [toMatrix_prod_mul, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
 
 /-- The quadratic map of a product of bilinear forms is the product of the quadratic maps. -/
 @[simp]

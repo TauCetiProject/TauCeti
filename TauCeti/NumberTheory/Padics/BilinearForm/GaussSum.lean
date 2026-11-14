@@ -13,14 +13,13 @@ public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 import TauCeti.Algebra.Group.AddChar
 import TauCeti.Data.ZMod.MulCastHom.Sum
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
 import TauCeti.LinearAlgebra.Matrix.GaussSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
-import TauCeti.NumberTheory.Padics.BilinearForm.OddUnimodular
+import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
@@ -263,11 +262,12 @@ private theorem iIsOrtho.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq {N : T
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq B c e, hcsum,
     det_toMatrix_eq_det_sq_mul_det e c]
   -- The sign: the determinants differ by the square of a unit.
-  have hP : IsUnit (e.toMatrix c).det :=
-    Matrix.isUnit_det_of_right_inverse (e.toMatrix_mul_toMatrix_flip c)
-  have h1 : ∀ x : ZMod (2 ^ 3), x * x = 1 → χ₈ x ^ 2 = 1 := by decide
-  rw [map_mul, map_mul, map_pow, map_pow,
-    h1 _ (PadicInt.isUnit_iff_toZModPow_three_mul_self.mp hP), one_mul]
+  have hP : IsUnit (e.toMatrix c).det := by
+    simpa only [Basis.det_apply] using e.isUnit_det c
+  have h1 : χ₈ (PadicInt.toZModPow 3 (e.toMatrix c).det) ^ 2 = 1 := by
+    rw [← MulChar.pow_apply' _ two_ne_zero, isQuadratic_χ₈.sq_eq_one,
+      MulChar.one_apply (hP.map _)]
+  rw [map_mul, map_mul, map_pow, map_pow, h1, one_mul]
   -- The oddity: characteristic vectors have the same self-pairing modulo `8`.
   have : Module.Free ℤ_[2] N := .of_basis c
   have : B.IsPerfPair := c.isPerfPair_of_isUnit_det c B (hc.isUnit_det_toMatrix hcu)
@@ -294,17 +294,13 @@ theorem IsSymm.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_χ₈ {C : Bilin
   set f := PadicInt.toZModPow (p := 2) k
   set D : BilinForm ℤ_[2] (M × ℤ_[2]) := C.prod (LinearMap.mul ℤ_[2] ℤ_[2])
   set d := b.prod (Basis.singleton Unit ℤ_[2])
-  have hDd : D.toMatrix d = Matrix.fromBlocks (C.toMatrix b) 0 0 1 := by
-    rw [toMatrix_prod]
-    congr 1
-    ext i j
-    simp [toMatrix_apply]
+  have hDd := toMatrix_prod_mul C b
   set e := d.reindex (Fintype.equivFin (ι ⊕ Unit))
   have hedet : (D.toMatrix e).det = (C.toMatrix b).det := by
-    rw [det_toMatrix_reindex, hDd, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
+    rw [det_toMatrix_reindex, det_toMatrix_prod_mul]
   obtain ⟨c, hc, hcu⟩ := hC.exists_orthogonal_basis_isUnit_prod_mul b hdet
-  have hw' : D.IsCharacteristic (w, 1) := hw.prod <| isCharacteristic_iff.mpr fun x ↦ by
-    simpa [LinearMap.mul_apply', sq] using (PadicInt.two_dvd_sq_sub_self x).neg_right
+  have hw' : D.IsCharacteristic (w, 1) := hw.prod (isCharacteristic_mul_one
+    PadicInt.two_dvd_sq_sub_self)
   have hD := hc.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq hcu e hw' hk
   -- In the basis `d`, the Gauss sum of `D` is that of `C` times that of `⟨1⟩`.
   rw [sum_addChar_dotProduct_toMatrix_map_mulVec_eq D d e, hDd, Matrix.fromBlocks_map,

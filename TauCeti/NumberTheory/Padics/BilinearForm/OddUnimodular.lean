@@ -80,24 +80,6 @@ namespace LinearMap.BilinForm
 
 universe u
 
-/-- Adding the rank-one form `⟨1⟩` to a unimodular symmetric dyadic form gives a form
-with a unit diagonal orthogonal basis. -/
-theorem IsSymm.exists_orthogonal_basis_isUnit_prod_mul {M ι : Type*} [AddCommGroup M]
-    [Module ℤ_[2] M] [Fintype ι] [DecidableEq ι] {B : BilinForm ℤ_[2] M}
-    (hB : B.IsSymm) (b : Basis ι ℤ_[2] M) (hdet : IsUnit (B.toMatrix b).det) :
-    ∃ c : Basis (Fin (Fintype.card (ι ⊕ Unit))) ℤ_[2] (M × ℤ_[2]),
-      (B.prod (LinearMap.mul ℤ_[2] ℤ_[2])).iIsOrtho c ∧
-        ∀ i, IsUnit ((B.prod (LinearMap.mul ℤ_[2] ℤ_[2])) (c i) (c i)) := by
-  let D := B.prod (LinearMap.mul ℤ_[2] ℤ_[2])
-  let e := (b.prod (Basis.singleton Unit ℤ_[2])).reindex (Fintype.equivFin (ι ⊕ Unit))
-  have hDs : D.IsSymm := isSymm_prod_iff.2
-    ⟨hB, ⟨fun x y ↦ by rw [LinearMap.mul_apply', LinearMap.mul_apply', mul_comm]⟩⟩
-  have hedet : (D.toMatrix e).det = (B.toMatrix b).det := by
-    rw [det_toMatrix_reindex, toMatrix_prod, Matrix.det_fromBlocks_zero₂₁]
-    simp [toMatrix_apply]
-  exact hDs.exists_orthogonal_basis_isUnit_of_exists_isUnit_apply_self e
-    (hedet ▸ hdet) ⟨(0, 1), by simp [D, prod_apply]⟩
-
 /-! ### Realizing a prescribed diagonal -/
 
 section Realization
