@@ -129,6 +129,7 @@ theorem continuous_trivial_const_iff {Y : Type*} [TopologicalSpace Y] {n : ℕ}
       Continuous (fun y => (f y).proj) ∧ Continuous (fun y (i : Fin n) => (f y).2 i) :=
   continuous_trivial_iff_of_rank_eq (f := f) fun _ => rfl
 
+variable (𝕜) in
 /-- When `r : LocallyConstant X ℕ` takes the constant value `n` everywhere, the reconstructed total
 space of `trivial 𝕜 r` is homeomorphic to `X × (Fin n → 𝕜)`. -/
 def trivialHomeomorphOfRankEq {r : LocallyConstant X ℕ} {n : ℕ} (hr : ∀ x, r x = n) :
@@ -150,26 +151,27 @@ def trivialHomeomorphOfRankEq {r : LocallyConstant X ℕ} {n : ℕ} (hr : ∀ x,
 
 @[simp] theorem trivialHomeomorphOfRankEq_apply {r : LocallyConstant X ℕ} {n : ℕ}
     (hr : ∀ x, r x = n) (p : TotalSpace Unit (trivial 𝕜 r).Fiber) :
-    trivialHomeomorphOfRankEq (𝕜 := 𝕜) hr p =
+    trivialHomeomorphOfRankEq 𝕜 hr p =
       (p.proj, fun i => p.2 (Fin.cast (hr p.proj).symm i)) := (rfl)
 
 @[simp] theorem trivialHomeomorphOfRankEq_symm_apply {r : LocallyConstant X ℕ} {n : ℕ}
     (hr : ∀ x, r x = n) (q : X × (Fin n → 𝕜)) :
-    (trivialHomeomorphOfRankEq (𝕜 := 𝕜) hr).symm q =
+    (trivialHomeomorphOfRankEq 𝕜 hr).symm q =
       ⟨q.1, fun i => q.2 (Fin.cast (hr q.1) i)⟩ := (rfl)
 
+variable (𝕜 X) in
 /-- For constant rank `n`, the reconstructed total space of `trivial 𝕜 (.const X n)` is
 homeomorphic to `X × (Fin n → 𝕜)`. -/
 def trivialConstHomeomorph (n : ℕ) :
     TotalSpace Unit (trivial 𝕜 (.const X n)).Fiber ≃ₜ X × (Fin n → 𝕜) :=
-  trivialHomeomorphOfRankEq fun _ => rfl
+  trivialHomeomorphOfRankEq 𝕜 fun _ => rfl
 
 @[simp] theorem trivialConstHomeomorph_apply (n : ℕ)
     (p : TotalSpace Unit (trivial 𝕜 (.const X n)).Fiber) :
-    trivialConstHomeomorph (𝕜 := 𝕜) n p = (p.proj, p.2) := (rfl)
+    trivialConstHomeomorph 𝕜 X n p = (p.proj, p.2) := (rfl)
 
 @[simp] theorem trivialConstHomeomorph_symm_apply (n : ℕ) (q : X × (Fin n → 𝕜)) :
-    (trivialConstHomeomorph (𝕜 := 𝕜) (X := X) n).symm q = ⟨q.1, q.2⟩ := (rfl)
+    (trivialConstHomeomorph 𝕜 X n).symm q = ⟨q.1, q.2⟩ := (rfl)
 
 /-- Any atlas whose locally constant rank is identically zero is a zero object. -/
 theorem isZero_of_rank_eq_zero {A : FiniteRankAtlas 𝕜 X} (h : A.rank = 0) : IsZero A :=

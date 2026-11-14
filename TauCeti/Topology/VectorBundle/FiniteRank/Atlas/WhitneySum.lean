@@ -32,8 +32,8 @@ the two-component continuity characterizations `continuous_mk_whitneySum_iff` an
 `continuous_whitneySum_iff`. No compactness, separation, nonemptiness, bounded-rank, or
 scalar-completeness hypothesis is required.
 
-The block-coordinate construction and `Bundle.Prod` comparison parallel the constant-rank
-development for `TauCeti.FiniteRankBundleCore` in
+The block-coordinate construction and direct-sum bundle (`×ᵇ`) comparison parallel the
+constant-rank development for `TauCeti.FiniteRankBundleCore` in
 `TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`, lifting coordinate splitting along
 `TauCeti.splitCoords` and Mathlib's `FiberBundle.Prod` topology to variable-rank atlases.
 Categorical biproducts, universal-property pairing/copairing, and coherence isomorphisms are

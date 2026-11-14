@@ -703,6 +703,7 @@ private theorem continuous_trivialAdd_invFun (r s : LocallyConstant X ℕ) :
   exact (congrFun (h v) (Fin.cast (hrs ⟨⟨x, v⟩, rfl, rfl⟩) i)).trans
     (congrArg (v : Fin (r x + s x) → 𝕜) (Fin.ext rfl))
 
+variable (𝕜) in
 /-- The trivial atlas of rank `r + s` is isomorphic, by the identity on every coordinate fibre, to
 the Whitney sum of the trivial atlases of ranks `r` and `s`. -/
 def trivialAddIso (r s : LocallyConstant X ℕ) :
@@ -713,12 +714,12 @@ def trivialAddIso (r s : LocallyConstant X ℕ) :
 
 @[simp]
 theorem fiberMap_trivialAddIso_hom (r s : LocallyConstant X ℕ) (x : X) :
-    (trivialAddIso (𝕜 := 𝕜) r s).hom.fiberMap x = LinearMap.id :=
+    (trivialAddIso 𝕜 r s).hom.fiberMap x = LinearMap.id :=
   fiberMap_isoMk_hom _ _ _ x
 
 @[simp]
 theorem fiberMap_trivialAddIso_inv (r s : LocallyConstant X ℕ) (x : X) :
-    (trivialAddIso (𝕜 := 𝕜) r s).inv.fiberMap x = LinearMap.id :=
+    (trivialAddIso 𝕜 r s).inv.fiberMap x = LinearMap.id :=
   fiberMap_isoMk_inv _ _ _ x
 
 end Coherence
