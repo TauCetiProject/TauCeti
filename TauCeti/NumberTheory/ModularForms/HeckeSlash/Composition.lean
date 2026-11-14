@@ -59,9 +59,11 @@ its right cosets exactly once, then the composite operator is the operator of `�
 `Γ₁ = Γ₂ = Γ₃ = Γ₁(N)` this is `heckeSlashGamma1ModularFormEnd_mul_of_doubleCoset_eq_mul` and
 its cusp-form companion. The criterion is formally analogous to the ring-side
 single-basis-element criterion `HeckeCosetModule.mul_single_single_of_mulMap_eq`, and the two
-are identified here: `heckeSlashGamma1RingModularFormLinearMap_mul_single_single` and its
-cusp-form companion apply both criteria at once, so the ring product of two basis elements maps
-to the composite of their operators.
+are identified here: `HeckeCoset.mulMap_eq_of_mul_subset_doubleCoset` derives the hypothesis of
+the ring-side criterion from the product-set equation `hD₃`, so
+`heckeSlashGamma1RingModularFormLinearMap_mul_single_single` and its cusp-form companion apply
+both criteria at once, and the ring product of two basis elements maps to the composite of their
+operators.
 
 The general multiplicity-weighted statement — the composite as `∑_D m(D₁, D₂; D) · T_D` — is
 `heckeSlashSum_heckeSlashSum_eq_sum_nsmul`. It partitions the pairs `(v, w)` by the double coset
@@ -341,8 +343,6 @@ The two are parallel rather than one specialising the other: the operators live 
 `Module.End ℂ (ModularForm ..)` and `Module.End ℂ (CuspForm ..)` respectively, so neither
 equation transports to the other, and each is proved from its own composition theorem. -/
 theorem heckeSlashGamma1RingModularFormLinearMap_mul_single_single
-    (hmulMap : ∀ p, HeckeCoset.mulMap ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
-      ((Gamma1 N).map (mapGL ℚ)) D₁.rep D₂.rep p = D₃)
     (hmul : multiplicity ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
       (D₁.rep : GL (Fin 2) ℚ) (D₂.rep : GL (Fin 2) ℚ) (D₃.rep : GL (Fin 2) ℚ) ≤ 1) :
@@ -352,7 +352,10 @@ theorem heckeSlashGamma1RingModularFormLinearMap_mul_single_single
         heckeSlashGamma1RingModularFormLinearMap k (HeckeCosetModule.single ℤ D₁ 1) := by
   have hprod : HeckeCosetModule.single ℤ D₁ 1 * HeckeCosetModule.single ℤ D₂ 1
       = HeckeCosetModule.single ℤ D₃ 1 :=
-    HeckeCosetModule.mul_single_single_of_mulMap_eq ℤ D₁ D₂ D₃ hmulMap hmul
+    HeckeCosetModule.mul_single_single_of_mulMap_eq ℤ D₁ D₂ D₃
+      (fun p ↦ (HeckeCoset.mulMap_eq_of_mul_subset_doubleCoset
+        (by simpa only [HeckeCoset.rep_def] using hD₃.symm.subset) p).trans (HeckeCoset.mk_rep D₃))
+      hmul
   rw [hprod, heckeSlashGamma1RingModularFormLinearMap_single,
     heckeSlashGamma1RingModularFormLinearMap_single,
     heckeSlashGamma1RingModularFormLinearMap_single, one_smul, one_smul, one_smul]
@@ -361,9 +364,9 @@ theorem heckeSlashGamma1RingModularFormLinearMap_mul_single_single
 
 /-- **The Hecke ring acts multiplicatively on cusp forms, where the product of two double cosets
 is again a single double coset.** This is the ring-level reading of
-`heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul`: the two criteria line up, one on each
-side, with `mul_single_single_of_mulMap_eq` supplying the product in the Hecke ring and the
-composition theorem supplying it in `Module.End`.
+`heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul`: the product-set hypothesis `hD₃` feeds
+both criteria, with `mul_single_single_of_mulMap_eq` supplying the product in the Hecke ring and
+the composition theorem supplying it in `Module.End`.
 
 Note the order. `Module.End` multiplies by composition and the slash acts on the right, so the
 basis element `D₁` of the *left* factor becomes the operator applied *first*: the map is an
@@ -374,8 +377,6 @@ constants of a product that spreads over several double cosets with multiplicity
 criteria used here assume the product collapses to the single coset `D₃`. This lemma is the part
 that is provable from what is on hand. -/
 theorem heckeSlashGamma1CuspRingLinearMap_mul_single_single
-    (hmulMap : ∀ p, HeckeCoset.mulMap ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
-      ((Gamma1 N).map (mapGL ℚ)) D₁.rep D₂.rep p = D₃)
     (hmul : multiplicity ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
       (D₁.rep : GL (Fin 2) ℚ) (D₂.rep : GL (Fin 2) ℚ) (D₃.rep : GL (Fin 2) ℚ) ≤ 1) :
@@ -385,7 +386,10 @@ theorem heckeSlashGamma1CuspRingLinearMap_mul_single_single
         heckeSlashGamma1CuspRingLinearMap k (HeckeCosetModule.single ℤ D₁ 1) := by
   have hprod : HeckeCosetModule.single ℤ D₁ 1 * HeckeCosetModule.single ℤ D₂ 1
       = HeckeCosetModule.single ℤ D₃ 1 :=
-    HeckeCosetModule.mul_single_single_of_mulMap_eq ℤ D₁ D₂ D₃ hmulMap hmul
+    HeckeCosetModule.mul_single_single_of_mulMap_eq ℤ D₁ D₂ D₃
+      (fun p ↦ (HeckeCoset.mulMap_eq_of_mul_subset_doubleCoset
+        (by simpa only [HeckeCoset.rep_def] using hD₃.symm.subset) p).trans (HeckeCoset.mk_rep D₃))
+      hmul
   rw [hprod, heckeSlashGamma1CuspRingLinearMap_single,
     heckeSlashGamma1CuspRingLinearMap_single, heckeSlashGamma1CuspRingLinearMap_single,
     one_smul, one_smul, one_smul]
