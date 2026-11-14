@@ -593,7 +593,7 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
   have hI : DistribSMul.toLinearMap ℝ ℂ I ∘ₗ DistribSMul.toLinearMap ℝ ℂ I = -LinearMap.id := by
     ext z
     simp [← mul_assoc]
-  have h := (complexAntilinearPart_isComplexAntilinear J.square_neg hI
+  have h := (isComplexAntilinear_complexAntilinearPart J.square_neg hI
     (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
@@ -618,7 +618,7 @@ theorem covariantDeriv_sub_covariantDBar_isComplexLinear (b : E → E [⋀^Fin 1
     IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
       ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) := by
   rw [coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart]
-  exact complexLinearPart_isComplexLinear J.square_neg Complex.toLinearMap_I_comp_toLinearMap_I _
+  exact isComplexLinear_complexLinearPart J.square_neg Complex.toLinearMap_I_comp_toLinearMap_I _
 
 /-- `∂bar_a α` vanishes at `x` exactly when the covariant derivative `∇_a α` is complex linear
 there, `∇_a α (J v) = i ∇_a α v`. -/

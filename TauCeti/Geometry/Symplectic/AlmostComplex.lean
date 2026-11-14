@@ -422,7 +422,7 @@ underlying endomorphisms. -/
 lemma isComplexLinearMap_iff_isComplexLinear (J : AlmostComplexStructure V)
     (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
     IsComplexLinearMap J J' F ↔ IsComplexLinear J.toLinearMap J'.toLinearMap F :=
-  Iff.rfl
+  isComplexLinear_iff.symm
 
 /-- Rewrite complex-linearity of a real-linear map as the pointwise equation
 `F (J v) = J' (F v)`. -/
@@ -442,7 +442,7 @@ lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V
 @[simp]
 lemma isComplexLinearMap_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
     IsComplexLinearMap J J' (0 : V →ₗ[ℝ] W) :=
-  isComplexLinear_zero
+  (isComplexLinearMap_iff_isComplexLinear J J' 0).mpr isComplexLinear_zero
 
 /-- Complex-linear maps are closed under addition. -/
 lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
@@ -455,7 +455,8 @@ lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexS
 lemma IsComplexLinearMap.neg {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J' (-F) :=
-  IsComplexLinear.neg hF
+  (isComplexLinearMap_iff_isComplexLinear J J' (-F)).mpr
+    ((isComplexLinearMap_iff_isComplexLinear J J' F).mp hF).neg
 
 /-- Negating a map preserves and reflects complex-linearity. -/
 @[simp]
@@ -506,14 +507,16 @@ lemma IsComplexLinearMap.smul {J : AlmostComplexStructure V} {J' : AlmostComplex
 @[simp]
 lemma isComplexLinearMap_id (J : AlmostComplexStructure V) :
     IsComplexLinearMap J J (LinearMap.id : V →ₗ[ℝ] V) :=
-  isComplexLinear_id
+  (isComplexLinearMap_iff_isComplexLinear J J LinearMap.id).mpr isComplexLinear_id
 
 /-- Complex-linear maps are closed under composition. -/
 lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {J'' : AlmostComplexStructure X} {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ] X}
     (hG : IsComplexLinearMap J' J'' G) (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J'' (G.comp F) :=
-  IsComplexLinear.comp hG hF
+  (isComplexLinearMap_iff_isComplexLinear J J'' (G.comp F)).mpr
+    (((isComplexLinearMap_iff_isComplexLinear J' J'' G).mp hG).comp
+      ((isComplexLinearMap_iff_isComplexLinear J J' F).mp hF))
 
 /-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
 the restricted complex structure. -/
