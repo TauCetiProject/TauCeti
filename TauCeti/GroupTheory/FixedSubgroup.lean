@@ -169,7 +169,7 @@ theorem coe_fixedSubgroupCongr_symm_apply (ψ : G ≃* G')
 theorem fixedSubgroupCongr_refl
     (hψ : (MulEquiv.refl G : G →* G).comp F = F.comp (MulEquiv.refl G : G →* G)) :
     fixedSubgroupCongr (MulEquiv.refl G) hψ = MulEquiv.refl ↥(fixedSubgroup F) :=
-  Subgroup.congrOfMapEq_refl _
+  Subgroup.congrOfMapEq_refl
 
 @[simp]
 theorem fixedSubgroupCongr_trans (ψ : G ≃* G')
