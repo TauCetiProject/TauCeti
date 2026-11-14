@@ -8,19 +8,20 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 /-!
-# Finite sums of `MemLp.toLp` classes
+# Basic facts about `Lp` classes
 
 Mathlib provides `MeasureTheory.MemLp.toLp_zero`, `MeasureTheory.MemLp.toLp_add`, and
 `MeasureTheory.Lp.coeFn_finsetSum`, as well as `MeasureTheory.memLp_finsetSum` and
 `MeasureTheory.memLp_finsetSum'`. This file records the companion identities identifying the `Lp`
 class of a finite sum of `Lᵖ` functions with the sum of their `Lp` classes, for any `MemLp`
-witness on the sum.
+witness on the sum, together with the evaluation formula for `ContinuousLinearMap.compLpL`.
 
 ## Main declarations
 
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
+* `ContinuousLinearMap.compLpL_apply`: `L.compLpL p μ f = L.compLp f`.
 -/
 
 public section
@@ -47,3 +48,18 @@ theorem toLp_finsetSum (hsum : MemLp (fun x ↦ ∑ i ∈ s, f i x) p μ) (hf : 
   exact toLp_congr _ _ (.of_forall fun x ↦ (Finset.sum_apply x s f).symm)
 
 end MeasureTheory.MemLp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+/-- Applying `L.compLpL p μ` to an `Lp` function agrees with `L.compLp`. -/
+theorem compLpL_apply {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F]
+    {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (L : E →SL[σ] F) (f : Lp E p μ) :
+    L.compLpL p μ f = L.compLp f :=
+  (rfl)
+
+end ContinuousLinearMap
