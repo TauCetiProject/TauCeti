@@ -96,6 +96,27 @@ theorem finiteJetPolynomial_apply (r : ℕ)
   rw [finiteJetPolynomial, FormalMultilinearSeries.partialSum, ← Fin.sum_univ_eq_sum_range]
   simp only [finiteJetSeries_apply, smul_apply]
 
+/-- The finite Taylor polynomial is additive in its prescribed tuple. -/
+@[simp]
+theorem finiteJetPolynomial_add (r : ℕ)
+    (A B : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x y : E) :
+    finiteJetPolynomial r (A + B) x y =
+      finiteJetPolynomial r A x y + finiteJetPolynomial r B x y := by
+  simp [finiteJetPolynomial_apply, Finset.sum_add_distrib]
+
+/-- The finite Taylor polynomial is homogeneous in its prescribed tuple. -/
+@[simp]
+theorem finiteJetPolynomial_smul (r : ℕ) (c : 𝕜)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x y : E) :
+    finiteJetPolynomial r (c • A) x y = c • finiteJetPolynomial r A x y := by
+  simp [finiteJetPolynomial_apply, Finset.smul_sum, smul_comm c]
+
+/-- The finite Taylor polynomial of the zero tuple vanishes. -/
+@[simp]
+theorem finiteJetPolynomial_zero (r : ℕ) (x y : E) :
+    finiteJetPolynomial r (0 : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) x y = 0 := by
+  simp [finiteJetPolynomial_apply]
+
 /-- The finite Taylor polynomial has its prescribed factorial-normalized finite power series
 on the whole space, expressed as a ball of infinite radius about its center. -/
 theorem finiteJetPolynomial_hasFiniteFPowerSeriesOnBall (r : ℕ)
@@ -147,6 +168,18 @@ theorem iteratedFDeriv_finiteJetPolynomial_eq_zero_of_le (r : ℕ)
   exact hp'.iteratedFDerivWithin_eq_zero
     (contDiff_finiteJetPolynomial r A x (n := ω)).contDiffOn.analyticOn
     uniqueDiffOn_univ (mem_univ y) (hp.finite n hn)
+
+/-- The derivative of order `i ≤ r` of the finite Taylor polynomial at its center is the
+symmetrization of the prescribed coefficient `A i`, divided by `i!`. This needs neither symmetry
+of `A` nor characteristic zero. -/
+theorem iteratedFDeriv_finiteJetPolynomial_self_apply (r : ℕ)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) (i : Fin (r + 1)) (v : Fin i.val → E) :
+    iteratedFDeriv 𝕜 i.val (finiteJetPolynomial r A x) x v =
+      ∑ σ : Equiv.Perm (Fin i.val), (i.val.factorial : 𝕜)⁻¹ • A i (fun j ↦ v (σ j)) := by
+  have hp := finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x
+  rw [hp.toHasFPowerSeriesOnBall.iteratedFDeriv_eq_sum
+    ((contDiff_finiteJetPolynomial r A x (n := ω)).contDiffOn.analyticOn)]
+  simp only [finiteJetSeries_apply, smul_apply]
 
 /-- Every prescribed symmetric derivative of the finite Taylor polynomial has the
 specified value at its center. Symmetry is invariance under permutations of the slots. -/

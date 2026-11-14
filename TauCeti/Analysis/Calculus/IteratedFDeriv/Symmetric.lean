@@ -17,10 +17,15 @@ multilinear map there. Mathlib proves this for second derivatives
 Over a general field the statement uses the smoothness exponent `minSmoothness 𝕜 n`, which is `n`
 over `ℝ` or `ℂ` and `ω` otherwise, following `ContDiffAt.isSymmSndFDerivAt`.
 
-The proof is by induction on `n`. Writing the `(n + 1)`-st derivative as the derivative of the
-`n`-th one shows invariance under permutations fixing the first direction; writing it as the
-`n`-th derivative of the derivative shows invariance under permutations fixing the last one.
-Together with the symmetry of second derivatives, these transpositions generate all permutations.
+The main result is `ContDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness_le`, with the
+bundled form `ContDiffAt.domDomCongr_iteratedFDeriv_of_minSmoothness_le`. It is proved by
+induction on `n` from two auxiliary results: the derivative of a map whose values are invariant
+under a permutation of the arguments is invariant too
+(`TauCeti.domDomCongr_fderiv_apply_of_eventually`), and the `(n + 2)`-nd derivative is the second
+derivative of the `n`-th one (`TauCeti.iteratedFDeriv_add_two_apply`). The first gives invariance
+under the transpositions of two directions other than the first one; the second, with the
+symmetry of second derivatives, gives invariance under the transposition of the first two
+directions. These generate all permutations (`Equiv.Perm.mclosure_swap_castSucc_succ`).
 
 Symmetric Taylor coefficients are the fibres of higher-order jet bundles.
 -/
@@ -34,22 +39,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+namespace TauCeti
+
 /-- A map into multilinear maps whose values near `x` are invariant under a permutation of the
 arguments has invariant derivatives at `x`. -/
-theorem fderiv_domDomCongr_of_eventually {n : ℕ} {Φ : E → E [×n]→L[𝕜] F} {x : E}
-    (σ : Perm (Fin n)) (hΦ : ∀ᶠ y in 𝓝 x, (Φ y).domDomCongr σ = Φ y) (w : E) :
+theorem domDomCongr_fderiv_apply_of_eventually {ι : Type*} [Finite ι] {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {Φ : E → ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ G) F}
+    {x : E} (σ : Perm ι) (hΦ : ∀ᶠ y in 𝓝 x, (Φ y).domDomCongr σ = Φ y) (w : E) :
     (fderiv 𝕜 Φ x w).domDomCongr σ = fderiv 𝕜 Φ x w := by
-  by_cases hd : DifferentiableAt 𝕜 Φ x
-  · let L : (E [×n]→L[𝕜] F) →L[𝕜] E [×n]→L[𝕜] F :=
-      (ContinuousMultilinearMap.domDomCongrₗᵢ 𝕜 E F σ :
-        (E [×n]→L[𝕜] F) →L[𝕜] E [×n]→L[𝕜] F)
-    have h₁ : HasFDerivAt (fun y ↦ L (Φ y)) (L.comp (fderiv 𝕜 Φ x)) x :=
-      L.hasFDerivAt.comp x hd.hasFDerivAt
-    have h₂ : HasFDerivAt (fun y ↦ L (Φ y)) (fderiv 𝕜 Φ x) x :=
-      hd.hasFDerivAt.congr_of_eventuallyEq (hΦ.mono fun y hy ↦ hy)
-    exact congrArg (fun T ↦ T w) (h₁.unique h₂)
-  · ext v
-    simp [fderiv_zero_of_not_differentiableAt hd]
+  cases nonempty_fintype ι
+  -- The isometry `domDomCongrₗᵢ 𝕜 G F σ` is `domDomCongr σ` by definition.
+  let L := ContinuousMultilinearMap.domDomCongrₗᵢ 𝕜 G F σ
+  have h := L.comp_fderiv (f := Φ) (x := x)
+  rw [EventuallyEq.fderiv_eq (f₁ := L ∘ Φ) hΦ] at h
+  exact congr($h.symm w)
 
 /-- The `(n + 2)`-nd iterated derivative is the second derivative of the `n`-th one, with the
 first two directions as arguments of the second derivative. -/
@@ -61,9 +64,11 @@ theorem iteratedFDeriv_add_two_apply {f : E → F} {x : E} {n : ℕ} (v : Fin (n
     (f := fderiv 𝕜 (iteratedFDeriv 𝕜 n f)) (x := x)
   rw [← iteratedFDeriv_succ_eq_comp_left] at h
   rw [iteratedFDeriv_succ_apply_left, h]
-  -- Uncurrying the first argument is `continuousMultilinearCurryLeftEquiv_symm_apply`, which
-  -- holds by definition.
-  rfl
+  simp [tail]
+
+end TauCeti
+
+open TauCeti
 
 /-- **Symmetry of iterated derivatives.** If `f` is `Cⁿ` at `x` (analytic, over a field other
 than `ℝ` or `ℂ`), then its `n`-th iterated derivative at `x` does not depend on the order of its
@@ -93,7 +98,7 @@ theorem ContDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness_le {N : ℕ∞ω} {
         simp [tail, succ_injective _ |>.swap_apply]
       rw [iteratedFDeriv_succ_apply_left, iteratedFDeriv_succ_apply_left, h0, ht]
       exact congrArg (fun M : E [×n]→L[𝕜] F ↦ M (tail v))
-        (fderiv_domDomCongr_of_eventually (swap a b) hev (v 0))
+        (domDomCongr_fderiv_apply_of_eventually (swap a b) hev (v 0))
     -- Invariance under the transposition of the first two directions, by symmetry of second
     -- derivatives.
     have h01 (hn1 : 1 ≤ n) (v : Fin (n + 1) → E) :
@@ -109,41 +114,19 @@ theorem ContDiffAt.iteratedFDeriv_comp_perm_of_minSmoothness_le {N : ℕ∞ω} {
       rw [iteratedFDeriv_add_two_apply, iteratedFDeriv_add_two_apply, htt]
       simp only [comp_apply, swap_apply_left, swap_apply_right]
       rw [hsymm (v 1) (v 0)]
-    have hmul {σ τ : Perm (Fin (n + 1))}
-        (hσ : ∀ v, iteratedFDeriv 𝕜 (n + 1) f x (v ∘ σ) = iteratedFDeriv 𝕜 (n + 1) f x v)
-        (hτ : ∀ v, iteratedFDeriv 𝕜 (n + 1) f x (v ∘ τ) = iteratedFDeriv 𝕜 (n + 1) f x v)
-        (v : Fin (n + 1) → E) :
-        iteratedFDeriv 𝕜 (n + 1) f x (v ∘ ⇑(σ * τ)) = iteratedFDeriv 𝕜 (n + 1) f x v :=
-      (hτ (v ∘ σ)).trans (hσ v)
-    -- Every transposition is a product of the previous ones.
-    have hL' (a b : Fin (n + 1)) (ha : a ≠ 0) (hb : b ≠ 0) (v : Fin (n + 1) → E) :
-        iteratedFDeriv 𝕜 (n + 1) f x (v ∘ swap a b) = iteratedFDeriv 𝕜 (n + 1) f x v := by
-      obtain ⟨a, rfl⟩ := exists_succ_eq.2 ha
-      obtain ⟨b, rfl⟩ := exists_succ_eq.2 hb
-      exact hL a b v
-    have h0 (b : Fin (n + 1)) (hb : b ≠ 0) (v : Fin (n + 1) → E) :
-        iteratedFDeriv 𝕜 (n + 1) f x (v ∘ swap 0 b) = iteratedFDeriv 𝕜 (n + 1) f x v := by
-      have hn1 : 1 ≤ n := by
-        rcases n with _ | n
-        · exact absurd (Fin.ext (by omega)) hb
-        · omega
-      have h10 : (1 : Fin (n + 1)) ≠ 0 := by
-        rw [Ne, Fin.ext_iff, Fin.val_one', Fin.val_zero, Nat.mod_eq_of_lt (by omega)]
-        omega
-      rw [swap_comm, ← swap_mul_swap_mul_swap h10.symm hb.symm]
-      exact hmul (hmul (hL' 1 b h10 hb) (h01 hn1)) (hL' 1 b h10 hb) v
-    have hswap (a b : Fin (n + 1)) (hab : a ≠ b) (v : Fin (n + 1) → E) :
-        iteratedFDeriv 𝕜 (n + 1) f x (v ∘ swap a b) = iteratedFDeriv 𝕜 (n + 1) f x v := by
-      rcases eq_or_ne a 0 with rfl | ha
-      · exact h0 b hab.symm v
-      rcases eq_or_ne b 0 with rfl | hb
-      · rw [swap_comm]
-        exact h0 a ha v
-      · exact hL' a b ha hb v
-    induction σ using Perm.swap_induction_on generalizing v with
-    | one => rfl
-    | swap_mul τ a b hab hτ =>
-      exact (hτ (v ∘ swap a b)).trans (hswap a b hab v)
+    -- These transpositions generate all permutations.
+    suffices ∀ v, iteratedFDeriv 𝕜 (n + 1) f x (v ∘ σ) = iteratedFDeriv 𝕜 (n + 1) f x v from this v
+    have hσ : σ ∈ Submonoid.closure (Set.range fun i : Fin n ↦ swap i.castSucc i.succ) :=
+      Perm.mclosure_swap_castSucc_succ n ▸ Submonoid.mem_top σ
+    induction hσ using Submonoid.closure_induction with
+    | mem τ hτ =>
+      obtain ⟨i, rfl⟩ := hτ
+      obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by have := i.pos; omega⟩
+      induction i using Fin.cases with
+      | zero => simpa using h01 (Nat.succ_pos k)
+      | succ j => simpa [← succ_castSucc] using hL j.castSucc j.succ
+    | one => exact fun v ↦ rfl
+    | mul τ ρ _ _ hτ hρ => exact fun v ↦ (hρ (v ∘ τ)).trans (hτ v)
 
 /-- **Symmetry of iterated derivatives.** If `f` is `Cⁿ` at `x` (analytic, over a field other
 than `ℝ` or `ℂ`), then its `n`-th iterated derivative at `x` is invariant under permutations of
