@@ -48,6 +48,8 @@ This file proves how zero multiplicities transform:
 
 If `f` has no zeros near infinity, its multiplicities are the counts of a multiset of points,
 which they determine: the divisor of zeros of `f` (`TauCeti.IsZeroMultiplicity.exists_eq_count`).
+Then `f` is `exp L` times the product of the linear factors of its divisor, for a continuous `L`
+(`TauCeti.IsZeroMultiplicity.exists_continuous_eq_exp_mul_prod_pow`).
 When moreover `f(z) (z / |z|)⁻ᵐ → 1` at infinity, that divisor has `m` points
 (`TauCeti.IsZeroMultiplicity.card_eq_of_tendsto_mul_inv_pow`).
 
@@ -161,6 +163,17 @@ theorem exists_eq_count (h : IsZeroMultiplicity f n) (htail : ∀ᶠ w in cocomp
   have hfin := finite_support_of_eventually_eq_pow_mul (isZeroMultiplicity_iff.1 h) htail
   refine ⟨(Finsupp.ofSupportFinite n hfin).toMultiset, funext fun z ↦ ?_⟩
   simp [Finsupp.ofSupportFinite_coe]
+
+/-- **Global factorization through the divisor of zeros.** If the zero multiplicities of `f` are
+the counts of a multiset `D`, then `f w = exp (L w) * ∏ z ∈ D.toFinset, (w - z) ^ count z D` for a
+continuous `L`. -/
+theorem exists_continuous_eq_exp_mul_prod_pow {D : Multiset ℂ}
+    (h : IsZeroMultiplicity f fun z ↦ D.count z) :
+    ∃ L : ℂ → ℂ, Continuous L ∧
+      ∀ w, f w = Complex.exp (L w) * ∏ z ∈ D.toFinset, (w - z) ^ D.count z :=
+  TauCeti.exists_continuous_eq_exp_mul_prod_pow h.continuous D.toFinset
+    (fun z _ ↦ isZeroMultiplicity_iff.1 h z)
+    fun _ hw ↦ Multiset.mem_toFinset.2 (Multiset.count_pos.1 (h.pos_iff.2 hw))
 
 /-- **The degree of the divisor of zeros.** If `f(z) (z / |z|)⁻ᵐ → 1` at infinity and the zero
 multiplicities of `f` are the counts of `D`, then `D` has `m` points. -/
