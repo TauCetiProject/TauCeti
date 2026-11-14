@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Smul
 
 /-!

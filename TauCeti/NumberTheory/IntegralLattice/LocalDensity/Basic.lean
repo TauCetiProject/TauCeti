@@ -7,13 +7,13 @@ module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Instances.Rat
-public import TauCeti.Data.ZMod.MulCastHom
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.FiniteField
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.Defs
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -32,8 +32,8 @@ Let `A` be the Gram matrix of a nondegenerate `ℤ_p`-lattice of rank `n`. Its l
 and the local densities at all primes are the local factors of the mass of a genus of
 positive definite lattices. This file defines the count inside the limit,
 `Matrix.localDensityCount A r`, shows that it only depends on `A` up to a change of basis, proves
-that it stabilizes at every prime, defines the local density `Matrix.localDensity A` as the limit,
-and evaluates it at a prime `p` not dividing `2 det A`.
+that its normalized count stabilizes at every prime, defines the local density
+`Matrix.localDensity A` as the limit, and evaluates it at a prime `p` not dividing `2 det A`.
 
 **Stabilization.** Let `A` be symmetric with `2 det A ∣ pᵉ`, for instance `e = v_p(2 det A)`.
 For every `r > 2 e` the count at level `r + 1` is `p ^ (n.choose 2)` times the count at level `r`,
@@ -502,9 +502,9 @@ private theorem natCard_ker_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
   rw [h₁, pow_succ', mul_pow, ← h₀]
   ring
 
-/-- **The local density count stabilizes at every prime.** Let `A` be a symmetric matrix over
-`ℤ_p` and let `2 det A` divide `p ^ e`. Then for every `r > 2 e` the count at level `r + 1` is
-`p ^ (n.choose 2)` times the count at level `r`. -/
+/-- **The local density count grows by the factor `p ^ (n.choose 2)` per level.** Let `A` be a
+symmetric matrix over `ℤ_p` and let `2 det A` divide `p ^ e`. Then for every `r > 2 e` the count at
+level `r + 1` is `p ^ (n.choose 2)` times the count at level `r`. -/
 theorem localDensityCount_succ_of_dvd {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) {e : ℕ}
     (he : 2 * A.det ∣ (p : ℤ_[p]) ^ e) {r : ℕ} (hr : 2 * e < r) :
     A.localDensityCount (r + 1) = p ^ (Fintype.card n).choose 2 * A.localDensityCount r := by
@@ -593,8 +593,8 @@ theorem localDensityCount_div_pow_of_dvd {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A
   rw [localDensity, ht.limUnder_eq]
   exact hconst r hr
 
-/-- **The local density count stabilizes from `r₀ = 2 v_p(2 det A) + 1` on.** If `A` is symmetric
-with nonzero determinant, then for every `r > 2 v_p(2 det A)` the normalized count
+/-- **The normalized local density count stabilizes from `r₀ = 2 v_p(2 det A) + 1` on.** If `A` is
+symmetric with nonzero determinant, then for every `r > 2 v_p(2 det A)` the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` equals `α_p(A)`. -/
 theorem localDensityCount_div_pow_of_det_ne_zero {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A)
     (hdet : A.det ≠ 0) {r : ℕ} (hr : 2 * (2 * A.det).valuation < r) :
@@ -647,9 +647,9 @@ theorem localDensityCount_succ_eq_pow_mul_one (hp : p ≠ 2) {A : Matrix n n ℤ
     rw [localDensityCount_succ_of_isUnit_det hp hA hdet r.succ_ne_zero, ih, ← mul_assoc,
       ← pow_add, add_one_mul, add_comm]
 
-/-- **The local density at a prime not dividing `2 det A`.** The normalized count
-`#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` takes the same value for every `r ≥ 1`,
-namely the count at level `1` divided by `p ^ (n.choose 2)`. -/
+/-- **The normalized count is constant from level `1` on at a prime not dividing `2 det A`.** The
+normalized count `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` takes the same value for
+every `r ≥ 1`, namely the count at level `1` divided by `p ^ (n.choose 2)`. -/
 theorem localDensityCount_div_pow_of_isUnit_det (hp : p ≠ 2) {A : Matrix n n ℤ_[p]}
     (hA : Aᵀ = A) (hdet : IsUnit A.det) {r : ℕ} (hr : r ≠ 0) :
     (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2) =
