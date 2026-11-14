@@ -16,7 +16,8 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test.
+test. Likewise, a real power series converging at every nonnegative radius below `R` remains
+summable on `(-R, R)` after multiplying its coefficients by `n ^ k`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -87,6 +88,30 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
+
+/-- If a real power series `∑ n, a n * r ^ n` converges at every nonnegative radius below `R`,
+then weighting its coefficients by `n ^ k` preserves summability throughout `(-R, R)`. -/
+theorem summable_pow_mul_mul_pow (k : ℕ) {a : ℕ → ℝ} {R : ℝ}
+    (ha : ∀ r : ℝ, 0 ≤ r → r < R → Summable fun n : ℕ ↦ a n * r ^ n)
+    {r : ℝ} (hr : |r| < R) :
+    Summable fun n : ℕ ↦ (n : ℝ) ^ k * a n * r ^ n := by
+  let r' : ℝ := (|r| + R) / 2
+  have hr' : |r| < r' := by dsimp only [r']; linarith
+  have hr'R : r' < R := by dsimp only [r']; linarith
+  have hr'_pos : 0 < r' := (abs_nonneg r).trans_lt hr'
+  obtain ⟨C, hC⟩ := bddAbove_def.mp <|
+    (tendsto_pow_const_mul_const_pow_of_lt_one k (by positivity)
+      ((div_lt_one hr'_pos).mpr hr')).bddAbove_range
+  refine Summable.of_norm_bounded ((ha r' hr'_pos.le hr'R).abs.mul_left C) fun n ↦ ?_
+  have hnC : (n : ℝ) ^ k * (|r| / r') ^ n ≤ C := hC _ ⟨n, rfl⟩
+  have hsplit : |r| ^ n = (|r| / r') ^ n * r' ^ n := by
+    rw [← mul_pow, div_mul_cancel₀ _ hr'_pos.ne']
+  calc ‖(n : ℝ) ^ k * a n * r ^ n‖
+      = ((n : ℝ) ^ k * (|r| / r') ^ n) * |a n * r' ^ n| := by
+        rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_pow, Nat.abs_cast, abs_pow, hsplit,
+          abs_mul, abs_pow, abs_of_pos hr'_pos]
+        ring
+    _ ≤ C * |a n * r' ^ n| := mul_le_mul_of_nonneg_right hnC (abs_nonneg _)
 
 variable {K : Type*} [NormedField K]
 

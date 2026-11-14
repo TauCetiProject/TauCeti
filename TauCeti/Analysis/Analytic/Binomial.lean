@@ -8,15 +8,21 @@ module
 public import Mathlib.Analysis.Analytic.Binomial
 
 /-!
-# Convergence of multichoose power series
+# Convergence and coefficient bounds for multichoose power series
 
-This file determines the exact unconditional summability domain of the power series with
-generalized multichoose coefficients and positive real parameter.  The result applies to both real
-and complex arguments.  These results supply the analytic criterion used to determine the exact
+This file relates ascending Pochhammer quotients `(a)_n / n!` to generalized multichoose
+coefficients `Ring.multichoose a n`, bounds their norms over `ℝ` or `ℂ` by real multichoose
+majorants, and determines the exact unconditional summability domain of the power series with
+generalized multichoose coefficients and positive real parameter. The convergence results apply to
+both real and complex arguments and supply the analytic criterion used to determine the exact
 integrability domain of the negative-binomial probability-generating function.
 
 ## Main declarations
 
+* `TauCeti.ascPochhammer_eval_div_factorial_eq_multichoose` — `(a)_n / n! = Ring.multichoose a n`
+  over a characteristic-zero field.
+* `TauCeti.norm_ascPochhammer_eval_div_factorial_le_multichoose` — norm majorant
+  `‖(a)_n / n!‖ ≤ Ring.multichoose A n` when `‖a‖ ≤ A`.
 * `TauCeti.hasSum_multichoose_mul_geometric_of_abs_lt_one` — the multichoose binomial
   series on the open unit interval.
 * `TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one` — the complex-valued
@@ -28,9 +34,35 @@ integrability domain of the negative-binomial probability-generating function.
 public section
 
 open Filter Set Topology
-open scoped ENNReal
+open scoped ENNReal Nat
 
 namespace TauCeti
+
+/-- In a characteristic-zero field, dividing the ascending Pochhammer polynomial `(a)_n` by `n!`
+gives the generalized multichoose coefficient `Ring.multichoose a n`. -/
+theorem ascPochhammer_eval_div_factorial_eq_multichoose {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂]
+    (a : 𝕂) (n : ℕ) :
+    (ascPochhammer 𝕂 n).eval a / n ! = Ring.multichoose a n := by
+  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
+  rw [nsmul_eq_mul, mul_comm, Polynomial.ascPochhammer_smeval_eq_eval] at h
+  exact (div_eq_iff (Nat.cast_ne_zero.mpr n.factorial_ne_zero)).mpr h.symm
+
+/-- Over `ℝ` or `ℂ`, the norm of `(a)_n / n!` is bounded by `Ring.multichoose A n` for any real
+upper bound `‖a‖ ≤ A`. -/
+theorem norm_ascPochhammer_eval_div_factorial_le_multichoose {𝕂 : Type*} [RCLike 𝕂]
+    {a : 𝕂} {A : ℝ} (ha : ‖a‖ ≤ A) (n : ℕ) :
+    ‖(ascPochhammer 𝕂 n).eval a / (n ! : 𝕂)‖ ≤ Ring.multichoose A n := by
+  rw [norm_div, RCLike.norm_natCast, div_le_iff₀ (Nat.cast_pos.mpr n.factorial_pos), mul_comm,
+    ← nsmul_eq_mul, Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
+    Polynomial.ascPochhammer_smeval_eq_eval]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval, norm_mul]
+    refine mul_le_mul ih ?_ (norm_nonneg _) ((norm_nonneg _).trans ih)
+    calc ‖a + (n : 𝕂)‖ ≤ ‖a‖ + ‖(n : 𝕂)‖ := norm_add_le _ _
+      _ = ‖a‖ + n := by rw [RCLike.norm_natCast]
+      _ ≤ A + n := by gcongr
 
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
 theorem hasSum_multichoose_mul_geometric_of_abs_lt_one {r x : ℝ} (hx : |x| < 1) :

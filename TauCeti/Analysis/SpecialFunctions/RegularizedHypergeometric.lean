@@ -11,18 +11,25 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
-# The regularized hypergeometric function `₀F₁`
+# Regularized hypergeometric functions
 
 Mathlib defines the regularized hypergeometric function `Complex.regularizedHGFun a b` as the sum
-of its power series. This file records that series as a `HasSum` statement and develops the
-function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
-Bessel functions.
+of its power series. This file records that series as a `HasSum` statement, develops the function
+`₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))` (the case `a = 0`, `b = {b}`, which underlies the Bessel
+functions), and establishes the foundational series and terminating-polynomial API for the
+regularized Gaussian hypergeometric function `Complex.regularizedGaussHGFun a b c z`.
 
 For every complex `b`, Mathlib provides the contiguous relation
 `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
 Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a hypothesis on `b`.
+
+In the Gaussian case, the defining power series of `regularizedGaussHGFun a b c z` converges
+absolutely to it on the open unit disk `‖z‖ < 1` for all complex parameters `a`, `b`, `c`. When the
+first upper parameter is a nonpositive integer `-n`, the series terminates as a polynomial of degree
+at most `n` in `z` (DLMF 15.2.4) and satisfies parameter-lowering polynomial recurrences in `b` and
+`c` at all complex parameters, including nonpositive integer values of `c`.
 
 ## Main results
 
@@ -36,14 +43,26 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
+* `Complex.hasSum_regularizedGaussHGFun`, `Complex.summable_norm_regularizedGaussHGFun` — power
+  series and absolute convergence of `regularizedGaussHGFun a b c z` on `‖z‖ < 1`.
+* `Complex.regularizedGaussHGFun_neg_natCast_eq_sum`, `Complex.regularizedGaussHGFun_neg_natCast` —
+  finite-sum formulas for the terminating polynomials `regularizedGaussHGFun (-n) b c z`
+  (DLMF 15.2.4).
+* `Complex.regularizedGaussHGFun_neg_natCast_succ_eq_sub`,
+  `Complex.regularizedGaussHGFun_neg_natCast_succ_eq_add` — parameter-lowering recurrences for
+  `regularizedGaussHGFun (-(n + 1 : ℕ)) b c z`.
+
+## References
+
+* NIST Digital Library of Mathematical Functions, §15.2.4.
 -/
 
 public section
 
 noncomputable section
 
-open Filter Set
-open scoped Nat Topology
+open Filter Polynomial Set
+open scoped ENNReal Nat Topology
 
 namespace Complex
 
@@ -203,5 +222,168 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     calc (n : ℝ) * |z| ^ (n - 1) * ((n ! : ℝ)⁻¹ * |(Real.Gamma (b + n))⁻¹|)
         ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
       _ = C * (n * R ^ (n - 1) / n !) := by ring
+
+/-! ### Power series and terminating polynomials of `regularizedGaussHGFun` -/
+
+/-- On the open unit disk, the defining power series of `regularizedGaussHGFun a b c z` converges
+to it for all complex parameters `a`, `b`, `c`. -/
+theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun k : ℕ => (ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
+        (k ! * Gamma (c + k)) * z ^ k)
+      (regularizedGaussHGFun a b c z) := by
+  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius := by
+    refine Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c) ?_
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+  simpa [regularizedGaussHGFun, regularizedGaussHGFunSeries, regularizedHGFunSeries,
+    regularizedHGFunCoeff, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
+    (regularizedGaussHGFunSeries a b c).hasSum hmem
+
+/-- On the open unit disk, the defining power series of `regularizedGaussHGFun a b c z` converges
+absolutely for all complex parameters `a`, `b`, `c`. -/
+theorem summable_norm_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    Summable fun k : ℕ => ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
+        (k ! * Gamma (c + k)) * z ^ k‖ := by
+  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius := by
+    refine Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c) ?_
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+  simpa [regularizedGaussHGFunSeries, regularizedHGFunSeries, regularizedHGFunCoeff,
+    FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
+    (regularizedGaussHGFunSeries a b c).summable_norm_apply hmem
+
+/-- When the first upper parameter is a nonpositive integer `-n`, the regularized Gauss
+hypergeometric series terminates after `n + 1` terms. -/
+theorem regularizedGaussHGFun_neg_natCast_eq_sum (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-n) b c z =
+      ∑ k ∈ Finset.range (n + 1),
+        (ascPochhammer ℂ k).eval (-(n : ℂ)) * (ascPochhammer ℂ k).eval b /
+          (k ! * Gamma (c + k)) * z ^ k := by
+  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries (-n) b c).radius := by
+    simp [radius_regularizedGaussHGFunSeries_eq_top_of_left]
+  have hs : HasSum (fun k : ℕ => (ascPochhammer ℂ k).eval (-(n : ℂ)) *
+        (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k)) * z ^ k)
+      (regularizedGaussHGFun (-n) b c z) := by
+    simpa [regularizedGaussHGFun, regularizedGaussHGFunSeries, regularizedHGFunSeries,
+      regularizedHGFunCoeff, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
+      (regularizedGaussHGFunSeries (-n) b c).hasSum hmem
+  refine hs.unique (hasSum_sum_of_ne_finset_zero fun k hk => ?_)
+  have hnk : n < k := by simpa [Finset.mem_range, Nat.lt_succ_iff] using hk
+  simp [ascPochhammer_eval_neg_natCast_of_lt hnk]
+
+/-- Binomial-coefficient form of the terminating regularized Gauss hypergeometric polynomial
+(DLMF 15.2.4). -/
+theorem regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-n) b c z =
+      ∑ k ∈ Finset.range (n + 1),
+        (-1) ^ k * n.choose k * (ascPochhammer ℂ k).eval b / Gamma (c + k) * z ^ k := by
+  rw [regularizedGaussHGFun_neg_natCast_eq_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hpoch : (ascPochhammer ℂ k).eval (-(n : ℂ)) = (-1) ^ k * n.choose k * k ! := by
+    rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
+      Nat.descFactorial_eq_factorial_mul_choose]
+    push_cast
+    ring
+  have hfac : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
+  rw [hpoch]
+  field_simp
+
+/-- With first upper parameter `0`, `regularizedGaussHGFun 0 b c z` reduces to `(Gamma c)⁻¹` at
+every complex argument `z`. -/
+@[simp]
+theorem regularizedGaussHGFun_zero_left (b c z : ℂ) :
+    regularizedGaussHGFun 0 b c z = (Gamma c)⁻¹ := by
+  simpa [div_eq_mul_inv] using regularizedGaussHGFun_neg_natCast b c z 0
+
+/-- With second upper parameter `0`, `regularizedGaussHGFun a 0 c z` reduces to `(Gamma c)⁻¹` at
+every complex argument `z`. -/
+@[simp]
+theorem regularizedGaussHGFun_zero_right (a c z : ℂ) :
+    regularizedGaussHGFun a 0 c z = (Gamma c)⁻¹ := by
+  rw [funext_iff.mp (regularizedGaussHGFun_symm a 0 c) z, regularizedGaussHGFun_zero_left]
+
+/-- At zero argument, `regularizedGaussHGFun a b c 0` equals `(Gamma c)⁻¹`. -/
+@[simp]
+theorem regularizedGaussHGFun_zero (a b c : ℂ) :
+    regularizedGaussHGFun a b c 0 = (Gamma c)⁻¹ := by
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun, regularizedHGFun_zero]
+  simp [regularizedHGFunCoeff]
+
+/-- Recurrence relating `regularizedGaussHGFun (-(n + 1 : ℕ)) b c z` to lower-parameter values at
+`c + 1`, valid at all complex parameters including nonpositive integer values of `c`. -/
+theorem regularizedGaussHGFun_neg_natCast_succ_eq_sub (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) b c z =
+      (c + n + 1) * regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) b (c + 1) z -
+        (n + 1) * regularizedGaussHGFun (-n) b (c + 1) z := by
+  have hpoch (k : ℕ) :
+      ((n : ℂ) + 1 - k) * (ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ)) =
+        ((n : ℂ) + 1) * (ascPochhammer ℂ k).eval (-(n : ℂ)) := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval]
+      calc ((n : ℂ) + 1 - ↑(k + 1)) *
+              ((ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ)) * (-((n + 1 : ℕ) : ℂ) + k))
+          = (((n : ℂ) + 1 - k) * (ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ))) *
+              (-(n : ℂ) + k) := by push_cast; ring
+        _ = ((n : ℂ) + 1) * ((ascPochhammer ℂ k).eval (-(n : ℂ)) * (-(n : ℂ) + k)) := by
+          rw [ih]; ring
+  have hext : regularizedGaussHGFun (-n) b (c + 1) z =
+      ∑ k ∈ Finset.range (n + 1 + 1),
+        (ascPochhammer ℂ k).eval (-(n : ℂ)) * (ascPochhammer ℂ k).eval b /
+          (k ! * Gamma (c + 1 + k)) * z ^ k := by
+    rw [regularizedGaussHGFun_neg_natCast_eq_sum b (c + 1) z n, Finset.sum_range_succ _ (n + 1)]
+    simp [ascPochhammer_eval_neg_natCast_of_lt (Nat.lt_succ_self n)]
+  rw [regularizedGaussHGFun_neg_natCast_eq_sum b c z (n + 1),
+    regularizedGaussHGFun_neg_natCast_eq_sum b (c + 1) z (n + 1), hext,
+    Finset.mul_sum, Finset.mul_sum, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hc := mul_regularizedHGFunCoeff_of_mem_right {(-((n + 1 : ℕ) : ℂ)), b} k
+    (Multiset.mem_singleton_self (c + 1))
+  simp only [regularizedHGFunCoeff, Multiset.insert_eq_cons, Multiset.map_cons,
+    Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton, Multiset.erase_singleton,
+    Multiset.cons_zero, add_sub_cancel_right] at hc
+  calc (ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ)) * (ascPochhammer ℂ k).eval b /
+          (k ! * Gamma (c + k)) * z ^ k
+      = (c + k) * ((ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ)) * (ascPochhammer ℂ k).eval b /
+          (k ! * Gamma (c + 1 + k))) * z ^ k := by rw [← hc]
+    _ = ((c + n + 1) * (ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ)) -
+          ((n : ℂ) + 1 - k) * (ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ))) *
+          (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + 1 + k)) * z ^ k := by ring
+    _ = (c + n + 1) * ((ascPochhammer ℂ k).eval (-((n + 1 : ℕ) : ℂ)) *
+          (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + 1 + k)) * z ^ k) -
+        ((n : ℂ) + 1) * ((ascPochhammer ℂ k).eval (-(n : ℂ)) *
+          (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + 1 + k)) * z ^ k) := by
+          rw [hpoch k]; ring
+
+/-- Recurrence relating `regularizedGaussHGFun (-(n + 1 : ℕ)) b c z` to shifted-parameter values at
+`b + 1`, valid at all complex parameters including nonpositive integer values of `c`. -/
+theorem regularizedGaussHGFun_neg_natCast_succ_eq_add (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) b c z =
+      regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) (b + 1) c z +
+        (n + 1) * z * regularizedGaussHGFun (-n) (b + 1) (c + 1) z := by
+  rw [regularizedGaussHGFun_neg_natCast_eq_sum b c z (n + 1),
+    regularizedGaussHGFun_neg_natCast_eq_sum (b + 1) c z (n + 1),
+    regularizedGaussHGFun_neg_natCast_eq_sum (b + 1) (c + 1) z n,
+    Finset.sum_range_succ' _ (n + 1), Finset.sum_range_succ' _ (n + 1)]
+  simp only [ascPochhammer_zero, eval_one, Nat.factorial_zero, Nat.cast_one, one_mul, pow_zero,
+    mul_one, CharP.cast_eq_zero, add_zero, Finset.mul_sum]
+  rw [add_right_comm, ← Finset.sum_add_distrib]
+  congr 1
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hb : (ascPochhammer ℂ (k + 1)).eval b =
+      (ascPochhammer ℂ (k + 1)).eval (b + 1) - (k + 1) * (ascPochhammer ℂ k).eval (b + 1) := by
+    have h := congr_arg (Polynomial.eval b) (ascPochhammer_succ_comp_X_add_one (S := ℂ) k)
+    simp only [nsmul_eq_mul, eval_add, eval_mul, eval_comp, eval_X, eval_one, eval_natCast] at h
+    push_cast at h
+    linear_combination -h
+  have hn : (ascPochhammer ℂ (k + 1)).eval (-((n + 1 : ℕ) : ℂ)) =
+      -((n : ℂ) + 1) * (ascPochhammer ℂ k).eval (-(n : ℂ)) := by
+    have h := congr_arg (Polynomial.eval (-((n + 1 : ℕ) : ℂ))) (ascPochhammer_succ_left (S := ℂ) k)
+    simpa [eval_mul, eval_comp, eval_add, eval_X, eval_one, add_assoc] using h
+  have hfac : ((k + 1 : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero k)
+  have hc1 : c + ((k + 1 : ℕ) : ℂ) = c + 1 + k := by push_cast; ring
+  rw [hb, hn, Nat.factorial_succ, Nat.cast_mul, hc1, pow_succ]
+  field_simp
+  push_cast
+  ring
 
 end Complex
