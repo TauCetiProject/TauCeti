@@ -45,6 +45,10 @@ are deduced from it.
 * `TauCeti.eqOn_of_laplacian_sub_mul_eq_of_eqOn_frontier`: **uniqueness for the Dirichlet problem
   for `-Δ + c`**. Two functions with the same `Δ · - c · ·` on the interior and the same boundary
   values agree on `K`.
+* `TauCeti.nonpos_of_mul_le_laplacian_of_bddAbove`: **maximum principle on the whole space for
+  `-Δ + c`, `c > 0`**. A `C²` subsolution on all of `E` that is bounded above is nonpositive.
+* `TauCeti.eq_zero_of_laplacian_eq_mul_of_isBounded`: a bounded `C²` solution of `Δ f = c f` on
+  all of `E`, `c > 0`, vanishes.
 -/
 
 public section
@@ -169,6 +173,66 @@ theorem eqOn_of_laplacian_sub_mul_eq_of_eqOn_frontier {K : Set E} (hK : IsCompac
   exact sub_eq_zero.mp (abs_nonpos_iff.mp habs)
 
 end Nontrivial
+
+/-! ### The whole space
+
+On all of `E` there is no frontier. For a positive constant `c` an upper bound replaces the
+boundary condition: the perturbation `f - δ ‖·‖²` attains its maximum, where the second-derivative
+test bounds `c f` by `2 (dim E) δ`. -/
+
+/-- **Maximum principle on the whole space for `-Δ + c`, `c > 0`.** A `C²` function on all of `E`
+that is bounded above and a subsolution of `-Δ + c` (`c f ≤ Δ f`) for a positive constant `c` is
+nonpositive. -/
+theorem nonpos_of_mul_le_laplacian_of_bddAbove {c : ℝ} (hc : 0 < c) {f : E → ℝ}
+    (hf : ContDiff ℝ 2 f) (hbdd : BddAbove (Set.range f)) (hsub : ∀ x, c * f x ≤ Δ f x) (x : E) :
+    f x ≤ 0 := by
+  obtain ⟨M, hM⟩ := hbdd
+  set n : ℝ := (Module.finrank ℝ E : ℝ)
+  -- For every `δ > 0`, `f x ≤ δ (2 n / c + ‖x‖²)`.
+  have key : ∀ δ > 0, f x ≤ δ * (2 * n / c + ‖x‖ ^ 2) := by
+    intro δ hδ
+    set v : E → ℝ := fun y => f y + (-δ) • ‖y‖ ^ 2
+    have hv : Continuous v := hf.continuous.add (by fun_prop)
+    have hlim : Filter.Tendsto v (Filter.cocompact E) Filter.atBot := by
+      refine Filter.tendsto_atBot_mono (fun y => ?_ : ∀ y, v y ≤ M + -δ * ‖y‖ ^ 2) ?_
+      · have := hM ⟨y, rfl⟩
+        simp only [v, smul_eq_mul]
+        linarith
+      · exact Filter.tendsto_atBot_add_const_left _ M <| Filter.Tendsto.const_mul_atTop_of_neg
+          (neg_neg_of_pos hδ) <| (Filter.tendsto_pow_atTop two_ne_zero).comp
+            tendsto_norm_cocompact_atTop
+    obtain ⟨x₀, hx₀⟩ := hv.exists_forall_ge hlim
+    have hcd : ContDiffAt ℝ 2 f x₀ := hf.contDiffAt
+    have hlap := laplacian_nonpos_of_isLocalMax
+      (hcd.add ((contDiff_norm_sq ℝ).contDiffAt.const_smul (-δ)))
+      (Filter.Eventually.of_forall hx₀ : IsLocalMax v x₀)
+    rw [laplacian_add_const_smul_norm_sq _ hcd] at hlap
+    have h₀ : f x₀ ≤ 2 * n / c * δ := by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+      linarith [hsub x₀]
+    have hx := hx₀ x
+    simp only [v, smul_eq_mul] at hx
+    nlinarith [sq_nonneg ‖x₀‖]
+  refine ge_of_tendsto (?_ : Filter.Tendsto (fun δ : ℝ => δ * (2 * n / c + ‖x‖ ^ 2))
+    (𝓝[>] 0) (𝓝 0)) (eventually_mem_nhdsWithin.mono key)
+  have hcont : Continuous fun δ : ℝ => δ * (2 * n / c + ‖x‖ ^ 2) := by fun_prop
+  simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+
+/-- **Liouville theorem for `-Δ + c`, `c > 0`.** A bounded `C²` solution of `Δ f = c f` on all
+of `E`, for a positive constant `c`, vanishes. -/
+theorem eq_zero_of_laplacian_eq_mul_of_isBounded {c : ℝ} (hc : 0 < c) {f : E → ℝ}
+    (hf : ContDiff ℝ 2 f) (hbdd : Bornology.IsBounded (Set.range f))
+    (hsol : ∀ x, Δ f x = c * f x) : f = 0 := by
+  rw [isBounded_iff_bddBelow_bddAbove] at hbdd
+  ext x
+  refine le_antisymm (nonpos_of_mul_le_laplacian_of_bddAbove hc hf hbdd.2 (fun y => (hsol y).ge) x)
+    ?_
+  have hneg : BddAbove (Set.range (-f)) := by
+    obtain ⟨m, hm⟩ := hbdd.1
+    exact ⟨-m, by rintro _ ⟨y, rfl⟩; simpa using hm ⟨y, rfl⟩⟩
+  have := nonpos_of_mul_le_laplacian_of_bddAbove (f := -f) hc hf.neg hneg (fun y => ?_) x
+  · simpa using this
+  · rw [laplacian_neg, Pi.neg_apply, Pi.neg_apply, hsol y, mul_neg]
 
 end TauCeti
 

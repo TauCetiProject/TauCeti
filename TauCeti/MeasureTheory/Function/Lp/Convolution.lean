@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -40,8 +41,13 @@ convolution semigroup rests:
 * `TauCeti.convolutionLp_apply`: the defining `Lᵖ`-valued Bochner integral.
 * `TauCeti.norm_convolutionLp_le`: Young's inequality `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`.
 * `TauCeti.convolutionLp_convolution`: `(k₁ ⋆ k₂) ⋆ f = k₁ ⋆ (k₂ ⋆ f)`.
+* `TauCeti.convolutionLp_add`, `TauCeti.convolutionLp_smul`, `TauCeti.convolutionLp_sub`: the
+  operator is linear in the integrable kernel, so Young's inequality also bounds the distance
+  between two convolution operators by the `L¹` distance of their kernels.
+* `TauCeti.convolutionLp_comp_comm`: convolution operators with integrable kernels commute.
 * `TauCeti.convolutionLp_ae_eq_convolution`: the operator is represented almost everywhere by the
-  classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`.
+  classical pointwise convolution `(k ⋆ f)(x) = ∫ y, k(y) • f(x - y) dμ(y)`;
+  `TauCeti.convolutionLp_ae_eq_convolution_coeFn` is the same for an element of `Lᵖ`.
 * `TauCeti.convolutionLp_nonneg`: convolution with a nonnegative kernel preserves positivity.
 * `TauCeti.integral_convolutionLp`: on `L¹`, `∫ k ⋆ f = (∫ k) • ∫ f`.
 * `TauCeti.integrable_convolution_integrand_restrict`: on a set of finite measure, the
@@ -124,6 +130,41 @@ theorem norm_convolutionLp_le (hp : p ≠ ∞) (k : E → ℝ) :
   · rw [convolutionLp_of_not_integrable hp hk, norm_zero]
     exact integral_nonneg fun _ ↦ norm_nonneg _
 
+/-- Convolution on `Lᵖ` is additive in the integrable kernel. -/
+theorem convolutionLp_add (hp : p ≠ ∞) {k₁ k₂ : E → ℝ} (hk₁ : Integrable k₁ μ)
+    (hk₂ : Integrable k₂ μ) :
+    convolutionLp (F := F) hp (k₁ + k₂) μ = convolutionLp hp k₁ μ + convolutionLp hp k₂ μ := by
+  ext1 f
+  rw [add_apply, convolutionLp_apply hp (hk₁.add hk₂), convolutionLp_apply hp hk₁,
+    convolutionLp_apply hp hk₂, ← integral_add (integrable_smul_translateLp hp hk₁ f)
+      (integrable_smul_translateLp hp hk₂ f)]
+  simp only [Pi.add_apply, add_smul]
+
+/-- Convolution on `Lᵖ` is homogeneous in the kernel. -/
+theorem convolutionLp_smul (hp : p ≠ ∞) (c : ℝ) (k : E → ℝ) :
+    convolutionLp (F := F) hp (c • k) μ = c • convolutionLp hp k μ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · ext1 f
+    simp [convolutionLp_apply hp (integrable_zero E ℝ μ)]
+  by_cases hk : Integrable k μ
+  · ext1 f
+    rw [smul_apply, convolutionLp_apply hp (hk.smul c), convolutionLp_apply hp hk,
+      ← integral_smul]
+    simp only [Pi.smul_apply, smul_eq_mul, mul_smul]
+  · have hck : ¬Integrable (c • k) μ := by rwa [integrable_smul_iff hc]
+    rw [convolutionLp_of_not_integrable hp hk, convolutionLp_of_not_integrable hp hck]
+    exact (smul_zero (A := Lp F p μ →L[ℝ] Lp F p μ) c).symm
+
+/-- Convolution on `Lᵖ` turns differences of integrable kernels into differences of operators. -/
+theorem convolutionLp_sub (hp : p ≠ ∞) {k₁ k₂ : E → ℝ} (hk₁ : Integrable k₁ μ)
+    (hk₂ : Integrable k₂ μ) :
+    convolutionLp (F := F) hp (k₁ - k₂) μ = convolutionLp hp k₁ μ - convolutionLp hp k₂ μ := by
+  ext1 f
+  rw [sub_apply, convolutionLp_apply hp (hk₁.sub hk₂), convolutionLp_apply hp hk₁,
+    convolutionLp_apply hp hk₂, ← integral_sub (integrable_smul_translateLp hp hk₁ f)
+      (integrable_smul_translateLp hp hk₂ f)]
+  simp only [Pi.sub_apply, sub_smul]
+
 /-- **Associativity of convolution on `Lᵖ`.** For integrable kernels `k₁` and `k₂`, convolving
 an `Lᵖ` function with `k₁ ⋆ k₂` is convolving it with `k₂` and then with `k₁`. -/
 theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ : E → ℝ}
@@ -159,6 +200,17 @@ theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ 
         simp only [hτ, LinearIsometryEquiv.coe_toLinearIsometry, map_smul, smul_smul]
         rw [add_sub_cancel_right, ← LinearIsometryEquiv.trans_apply, ← Measure.translateLp_add,
           neg_add, add_comm (-z) (-y)]
+
+/-- Convolution operators with integrable kernels commute: `k₁ ⋆ (k₂ ⋆ f) = k₂ ⋆ (k₁ ⋆ f)`. -/
+theorem convolutionLp_comp_comm [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ : E → ℝ}
+    (hk₁ : Integrable k₁ μ) (hk₂ : Integrable k₂ μ) :
+    (convolutionLp (F := F) hp k₁ μ).comp (convolutionLp hp k₂ μ) =
+      (convolutionLp hp k₂ μ).comp (convolutionLp hp k₁ μ) := by
+  have hL : (lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip = lsmul ℝ ℝ := by
+    ext
+    simp
+  rw [← convolutionLp_convolution hp hk₁ hk₂, ← convolutionLp_convolution hp hk₂ hk₁,
+    convolution_symm _ hL]
 
 /-- On a set `s` of finite measure, the convolution integrand `(x, y) ↦ k(y) • f(x - y)` of an
 integrable kernel `k` and an `Lᵖ` function `f` is integrable: `∫_s ‖f(x - y)‖ dx` is bounded
@@ -225,13 +277,19 @@ theorem convolutionLp_ae_eq_convolution [CompleteSpace F] (hp : p ≠ ∞) {k : 
         rw [← integral_integral_swap (integrable_convolution_integrand_restrict hk hf hμs)]
         simp only [convolution_lsmul]
 
+/-- The pointwise representative of `convolutionLp` applied to an element `f` of `Lᵖ`: the class
+`convolutionLp hp k μ f` is represented almost everywhere by `k ⋆ f`, for integrable `k`. -/
+theorem convolutionLp_ae_eq_convolution_coeFn [CompleteSpace F] (hp : p ≠ ∞) {k : E → ℝ}
+    (hk : Integrable k μ) (f : Lp F p μ) :
+    convolutionLp hp k μ f =ᵐ[μ] k ⋆[lsmul ℝ ℝ, μ] (f : E → F) := by
+  simpa only [Lp.toLp_coeFn] using convolutionLp_ae_eq_convolution hp hk (Lp.memLp f)
+
 /-- **Convolution with a nonnegative kernel preserves positivity**: if `k ≥ 0` almost everywhere
 and `f ∈ Lᵖ` is nonnegative, then so is `k ⋆ f`. -/
 theorem convolutionLp_nonneg (hp : p ≠ ∞) {k : E → ℝ} (hk : 0 ≤ᵐ[μ] k) {f : Lp ℝ p μ}
     (hf : 0 ≤ f) : 0 ≤ convolutionLp hp k μ f := by
   by_cases hki : Integrable k μ
-  · have h := convolutionLp_ae_eq_convolution hp hki (Lp.memLp f)
-    rw [Lp.toLp_coeFn] at h
+  · have h := convolutionLp_ae_eq_convolution_coeFn hp hki f
     rw [← Lp.coeFn_nonneg] at hf ⊢
     filter_upwards [h] with x hx
     rw [hx, convolution_lsmul]
@@ -245,9 +303,8 @@ vanish when `k` is not integrable. -/
 theorem integral_convolutionLp [CompleteSpace F] (k : E → ℝ) (f : Lp F 1 μ) :
     ∫ x, convolutionLp ENNReal.one_ne_top k μ f x ∂μ = (∫ x, k x ∂μ) • ∫ x, f x ∂μ := by
   by_cases hk : Integrable k μ
-  · have h := convolutionLp_ae_eq_convolution ENNReal.one_ne_top hk (Lp.memLp f)
-    rw [Lp.toLp_coeFn] at h
-    rw [integral_congr_ae h, integral_convolution _ hk (L1.integrable_coeFn f), lsmul_apply]
+  · rw [integral_congr_ae (convolutionLp_ae_eq_convolution_coeFn ENNReal.one_ne_top hk f),
+      integral_convolution _ hk (L1.integrable_coeFn f), lsmul_apply]
   · rw [convolutionLp_of_not_integrable ENNReal.one_ne_top hk, integral_undef hk, zero_smul,
       _root_.zero_apply, integral_congr_ae (Lp.coeFn_zero F 1 μ)]
     exact integral_zero E F

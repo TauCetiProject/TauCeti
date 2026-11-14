@@ -20,7 +20,8 @@ An essentially bounded function convolves with an integrable function at every p
 measurable additive group with a measure invariant under left translations and negation
 (`MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable` and
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
-sigma-finiteness of the measure is required. For two integrable scalar kernels and an
+sigma-finiteness of the measure is required. For Hölder conjugate exponents `p` and `q`, the
+convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded. For two integrable scalar kernels and an
 essentially bounded function, convolution is associative at every point; this associativity
 statement additionally assumes s-finiteness.
 
@@ -65,6 +66,10 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
 * `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
   `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`: existence of `f ⋆ g` when one
   factor is integrable and the other essentially bounded.
+* `MeasureTheory.isBounded_range_convolution_of_memLp`: the convolution of `f ∈ Lᵖ` with
+  `g ∈ L^q`, for Hölder conjugate `p` and `q`, is bounded.
+* `MeasureTheory.convolution_lsmul_comp_neg_apply_zero`: convolving with the reflection
+  `t ↦ f (-t)` and evaluating at `0` gives the pairing `∫ f • g`.
 * `MeasureTheory.norm_convolution_le_integral_norm_mul_norm`,
   `MeasureTheory.norm_convolution_lsmul_le_integral_norm_mul_norm` and
   `MeasureTheory.norm_convolution_lsmul_add_sub_le`: the sup bound (along a bilinear map and
@@ -149,6 +154,19 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
     have hsub := (Measure.measurePreserving_sub_left μ x).quasiMeasurePreserving
     simpa only [ConvolutionExistsAt, Function.comp_def] using
       L.integrable_of_bilin_of_bdd_right M hf (hg.comp_quasiMeasurePreserving hsub) (hsub.ae hgM)
+
+omit [MeasurableAdd G] in
+/-- If `p` and `q` are Hölder conjugate, the convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded,
+by `‖L‖ ‖f‖_p ‖g‖_q` at every point (`MeasureTheory.eNorm_convolution_le`). -/
+theorem isBounded_range_convolution_of_memLp [NormedSpace ℝ F] [MeasurableAdd₂ G]
+    {p q : ENNReal} [p.HolderConjugate q] (hf : MemLp f p μ) (hg : MemLp g q μ) :
+    Bornology.IsBounded (Set.range (f ⋆[L, μ] g)) := by
+  refine isBounded_iff_forall_norm_le.2 ⟨(‖L‖ₑ * eLpNorm f p μ * eLpNorm g q μ).toReal, ?_⟩
+  rintro _ ⟨x, rfl⟩
+  rw [← toReal_eNorm]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.mul_ne_top eNorm_ne_top
+    hf.eLpNorm_ne_top) hg.eLpNorm_ne_top) (eNorm_convolution_le L hf.aestronglyMeasurable
+      hg.aestronglyMeasurable x)
 
 section Assoc
 
@@ -578,5 +596,19 @@ theorem enorm_sub_convolution_lsmul_le_mul_lintegral [CompleteSpace F] (hψ : Co
     simp [h0]
 
 end Increments
+
+section Reflection
+
+variable {𝕜 G F : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup G] [MeasurableSpace G]
+  [MeasurableAdd G] [MeasurableNeg G] {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
+
+/-- Convolving `g` with the reflection `t ↦ f (-t)` of a scalar kernel and evaluating at `0`
+gives the pairing `∫ f • g`. -/
+theorem convolution_lsmul_comp_neg_apply_zero (f : G → 𝕜) (g : G → F) :
+    ((fun t ↦ f (-t)) ⋆[lsmul 𝕜 𝕜, μ] g) 0 = ∫ t, f t • g t ∂μ := by
+  simp [convolution_lsmul_swap]
+
+end Reflection
 
 end MeasureTheory
