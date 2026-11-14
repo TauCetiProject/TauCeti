@@ -256,26 +256,31 @@ theorem norm_lieMap_lieMap_le (η : ⋀[ℝ]^2 V) :
 
 end Orthogonal
 
-/-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. Each summand
-`b ∧ J b` is killed, since `D_J (b ∧ J b) = J b ∧ J b + b ∧ J (J b) = J b ∧ J b - b ∧ b = 0`; no
-orthogonality of `J` is needed. -/
+omit [FiniteDimensional ℝ V] in
+/-- The derivation action of `J` kills each complex line `v ∧ J v`:
+`D_J (v ∧ J v) = J v ∧ J v + v ∧ J (J v) = J v ∧ J v - v ∧ v = 0`. No orthogonality of `J` is
+needed. -/
 @[simp]
-theorem lieMap_kahlerForm (J : AlmostComplexStructure V) :
-    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
-  rw [kahlerForm_def, map_smul, map_sum]
-  refine smul_eq_zero_of_right _ (Finset.sum_eq_zero fun i _ ↦ ?_)
-  rw [lieMap_two_apply_ιMulti]
+theorem lieMap_ιMulti_apply (J : AlmostComplexStructure V) (v : V) :
+    exteriorPower.lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J v]) = 0 := by
   have h : ∀ x : V, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
     (ιMulti ℝ 2).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp) (by decide)
   have h' : ∀ x : V, ιMulti ℝ 2 ![x, -x] = 0 := fun x ↦ by
-    have := (ιMulti ℝ 2).toMultilinearMap.map_update_neg ![x, x] 1 x
-    have e : Function.update ![x, x] 1 (-x) = ![x, -x] := by
+    have := (ιMulti ℝ 2).map_update_neg ![x, x] 1 x
+    have e : ∀ y : V, Function.update ![x, x] 1 y = ![x, y] := fun y ↦ by
       ext i; fin_cases i <;> simp
-    have e' : Function.update ![x, x] 1 x = ![x, x] := by
-      ext i; fin_cases i <;> simp
-    rw [e, e'] at this
+    rw [e, e] at this
     simpa [h x] using this
+  rw [lieMap_two_apply_ιMulti]
   simp [AlmostComplexStructure.apply_apply, h, h']
+
+/-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. Each summand
+`b ∧ J b` is killed by `lieMap_ιMulti_apply`; no orthogonality of `J` is needed. -/
+@[simp]
+theorem lieMap_kahlerForm (J : AlmostComplexStructure V) :
+    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
+  simp only [kahlerForm_def, map_smul, map_sum, lieMap_ιMulti_apply, Finset.sum_const_zero,
+    smul_zero]
 
 /-! ### Almost complex structures represented by a two-vector -/
 
