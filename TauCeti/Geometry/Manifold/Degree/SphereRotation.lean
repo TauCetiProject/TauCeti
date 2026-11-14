@@ -7,11 +7,13 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Orientation
 public import TauCeti.Geometry.Manifold.Degree.Basic
+public import TauCeti.Geometry.Manifold.Degree.Homological
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Geometry.Sphere.Connected
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.LinearAlgebra.Alternating.ConsCons
@@ -563,5 +565,64 @@ theorem _root_.Orientation.degreeAtRegularValue_sphereRotationFamily_of_even
       (sphereRotationFamily p) q = 2 := by
   rw [o.degreeAtRegularValue_sphereRotationFamily p hqp hqp', hm.neg_one_pow]
   norm_num
+
+/-! ### The image of the fundamental class -/
+
+section FundamentalClass
+
+-- `FiniteDimensional ℝ E` follows from the `Fact`, but is needed as an instance for the
+-- compactness of the spheres in the statement.
+variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
+
+/-- **The rotation family on fundamental classes.** The rotation family `F : Sᵐ × S¹ → Sᵐ⁺¹` sends
+the fundamental class of `Sᵐ × S¹` to `(1 + (-1)ᵐ) • [Sᵐ⁺¹]` in `Hₘ₊₁(Sᵐ⁺¹; ℤ)`, for the
+outward-normal orientations and the product orientation of `Sᵐ × S¹`. Its homological orientation
+is read in any charts in `ℝᵐ⁺¹` obtained from the product charts by a linear equivalence
+`L : ℝᵐ × ℝ ≃ ℝᵐ⁺¹` (`TauCeti.HasLinearModelCharts`). For odd `m + 1` the image is `2 • [Sᵐ⁺¹]`. -/
+theorem _root_.Orientation.mapFundamentalClass_sphereRotationFamily
+    (o : Orientation ℝ E (Fin (m + 1 + 1))) (p : sphere (0 : E) 1)
+    [ChartedSpace (EuclideanSpace ℝ (Fin (m + 1)))
+      (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1)]
+    {L : (EuclideanSpace ℝ (Fin m) × EuclideanSpace ℝ (Fin 1)) ≃L[ℝ]
+      EuclideanSpace ℝ (Fin (m + 1))}
+    (hc : HasLinearModelCharts ((𝓡 m).prod (𝓡 1)) L
+      (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1)) :
+    (((o.orthogonalSpanSingleton (ne_zero_of_mem_unit_sphere p)).sphereOrientation.prod
+        Complex.orientation.sphereOrientation).toHomologicalOrientationOfLinearModel
+          finrank_euclideanSpace_fin hc).mapFundamentalClass finrank_euclideanSpace_fin
+        ⟨sphereRotationFamily p, (contMDiff_sphereRotationFamily (m := m) p).continuous⟩ =
+      (1 + (-1) ^ m) • (o.sphereOrientation.toHomologicalOrientation
+        finrank_euclideanSpace_fin).fundamentalClass finrank_euclideanSpace_fin := by
+  have := connectedSpace_sphere (E := E) (m + 1)
+  -- A regular value: a unit vector `q` orthogonal to `p`, which is neither `p` nor `-p`.
+  have : Nontrivial (ℝ ∙ (p : E))ᗮ := Module.nontrivial_of_finrank_pos (by
+    rw [Submodule.finrank_orthogonal_span_singleton (n := m + 1) (ne_zero_of_mem_unit_sphere p)]
+    omega)
+  obtain ⟨v⟩ : Nonempty (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  let q : sphere (0 : E) 1 :=
+    ⟨((v : (ℝ ∙ (p : E))ᗮ) : E),
+      mem_sphere_zero_iff_norm.2 ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere v))⟩
+  have hp : ⟪(p : E), (p : E)⟫ = 1 := by
+    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
+  have hqp : q ≠ p := fun h ↦ by
+    have h0 := inner_coe_coe_sphere p v
+    rw [show ((v : (ℝ ∙ (p : E))ᗮ) : E) = (p : E) from congrArg Subtype.val h, hp] at h0
+    exact one_ne_zero h0
+  have hqp' : q ≠ -p := fun h ↦ by
+    have h0 := inner_coe_coe_sphere p v
+    rw [show ((v : (ℝ ∙ (p : E))ᗮ) : E) = -(p : E) from congrArg Subtype.val h, inner_neg_right,
+      hp] at h0
+    norm_num at h0
+  rw [← Manifold.Orientation.toHomologicalOrientationOfLinearModel_refl,
+    Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul_of_linearModel _ hc
+      (hasLinearModelCharts_refl _) _ o.sphereOrientation
+      (isRegularValue_sphereRotationFamily p hqp hqp'),
+    ContinuousMap.coe_mk, o.degreeAtRegularValue_sphereRotationFamily p hqp hqp']
+  -- The two sides differ only in proofs of `Prop`-valued instance arguments.
+  congr 1
+
+end FundamentalClass
 
 end TauCeti
