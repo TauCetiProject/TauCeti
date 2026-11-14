@@ -143,19 +143,14 @@ def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
 
 @[simp] theorem coord_add {m : ℕ} (p : Vertex n) (q : Vertex m) (i : Fin 3) :
     (p.add q).coord i = p.coord i + q.coord i := by fin_cases i <;> simp
-
 theorem coord_rotate (p : Vertex n) (i : Fin 3) : p.rotate.coord (i + 1) = p.coord i := by
   fin_cases i <;> simp
-
 theorem coord_reflect (p : Vertex n) (i : Fin 3) : p.reflect.coord (-i) = p.coord i := by
   fin_cases i <;> rfl
-
 @[simp] theorem rotate_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
     (p.add q).rotate = p.rotate.add q.rotate := by ext <;> simp
-
 @[simp] theorem reflect_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
     (p.add q).reflect = p.reflect.add q.reflect := by ext <;> simp
-
 @[simp] theorem add_cornerA_zero (p : Vertex n) : p.add (cornerA 0) = p := by ext <;> simp
 
 /-- Squared length in the ambient barycentric integer coordinates. -/
@@ -285,8 +280,8 @@ instance uniqueZero : Unique (Vertex 0) where
   default := cornerA 0
   uniq p := by have := p.sum_eq; ext <;> simp <;> omega
 
-/-- Splitting `Vertex (n + 1)` into side `B → C` (`x = 0`) and `(1, 0, 0) + Vertex n` (`x > 0`). -/
-def equivFinSumSucc (n : ℕ) : Vertex (n + 1) ≃ Fin (n + 2) ⊕ Vertex n where
+-- Splitting `Vertex (n + 1)` into side `B → C` (`x = 0`) and `(1, 0, 0) + Vertex n` (`x > 0`).
+private def equivFinSumSucc (n : ℕ) : Vertex (n + 1) ≃ Fin (n + 2) ⊕ Vertex n where
   toFun p := if hx : p.x = 0 then Sum.inl ⟨p.z, by have := p.sum_eq; omega⟩
     else Sum.inr ⟨p.x - 1, p.y, p.z, by have := p.sum_eq; omega⟩
   invFun | Sum.inl k => edgePoint (n + 1) 1 k
@@ -296,6 +291,7 @@ def equivFinSumSucc (n : ℕ) : Vertex (n + 1) ≃ Fin (n + 2) ⊕ Vertex n wher
       ext <;> simp <;> have := p.sum_eq <;> omega
   right_inv | Sum.inl _ => by simp | Sum.inr _ => by simp
 
+/-- Twice the number of vertices of `Vertex n` is `(n + 1) * (n + 2)`. -/
 theorem two_mul_card (n : ℕ) : 2 * Fintype.card (Vertex n) = (n + 1) * (n + 2) := by
   induction n with
   | zero => simp
@@ -342,7 +338,6 @@ end Vertex
 def IsUnitEdge {n : ℕ} (p q : Vertex n) : Prop := p.sqDist q = 2
 
 theorem isUnitEdge_def {n : ℕ} (p q : Vertex n) : IsUnitEdge p q ↔ p.sqDist q = 2 := Iff.rfl
-
 instance {n : ℕ} (p q : Vertex n) : Decidable (IsUnitEdge p q) :=
   decidable_of_iff (p.sqDist q = 2) (isUnitEdge_def p q).symm
 
@@ -354,20 +349,15 @@ namespace IsUnitEdge
 variable {n : ℕ} {p q : Vertex n}
 
 theorem symm (h : IsUnitEdge p q) : IsUnitEdge q p := by rwa [isUnitEdge_def, Vertex.sqDist_comm]
-
 theorem ne (h : IsUnitEdge p q) : p ≠ q := by
   rintro rfl; rw [isUnitEdge_def, Vertex.sqDist_self] at h; omega
-
 theorem one_le (h : IsUnitEdge p q) : 1 ≤ n := by
   by_contra hn; obtain rfl : n = 0 := by omega
   exact h.ne (Subsingleton.elim p q)
-
 theorem dist_plane_sq (h : IsUnitEdge p q) : dist p.plane q.plane ^ 2 = 1 := by
   have hsq : p.sqDist q = 2 := h; rw [Vertex.dist_plane_sq, hsq]; norm_num
-
 theorem dist_plane (h : IsUnitEdge p q) : dist p.plane q.plane = 1 := by
   nlinarith [h.dist_plane_sq, dist_nonneg (x := p.plane) (y := q.plane)]
-
 theorem rotate (h : IsUnitEdge p q) : IsUnitEdge p.rotate q.rotate := by simpa [IsUnitEdge] using h
 theorem reflect (h : IsUnitEdge p q) : IsUnitEdge p.reflect q.reflect := by
   simpa [IsUnitEdge] using h
@@ -378,13 +368,10 @@ end IsUnitEdge
 
 theorem isUnitEdge_comm {n : ℕ} {p q : Vertex n} :
     IsUnitEdge p q ↔ IsUnitEdge q p := ⟨IsUnitEdge.symm, IsUnitEdge.symm⟩
-
 @[simp] theorem isUnitEdge_rotate_iff {n : ℕ} {p q : Vertex n} :
     IsUnitEdge p.rotate q.rotate ↔ IsUnitEdge p q := by simp [IsUnitEdge]
-
 @[simp] theorem isUnitEdge_reflect_iff {n : ℕ} {p q : Vertex n} :
     IsUnitEdge p.reflect q.reflect ↔ IsUnitEdge p q := by simp [IsUnitEdge]
-
 @[simp] theorem isUnitEdge_add_left_iff {m n : ℕ} (r : Vertex m) {p q : Vertex n} :
     IsUnitEdge (r.add p) (r.add q) ↔ IsUnitEdge p q := by simp [IsUnitEdge]
 
