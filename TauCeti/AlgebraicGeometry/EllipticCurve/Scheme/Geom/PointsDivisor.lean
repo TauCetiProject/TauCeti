@@ -36,6 +36,8 @@ Particular cases are the divisor `[P] + [2P] + ⋯ + [NP]` of points of exact or
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor E x`: the divisor `∑_a [x a]` of a
   finite family of `S`-points of `E`, as an ideal sheaf on `E`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisorSection E x`: the canonical lifts of the
+  `S`-points `x a` to sections of `V(E.pointsDivisor x) ⟶ S`.
 
 ## Main results
 
@@ -117,10 +119,33 @@ instance locallyOfFinitePresentation_pointsDivisor
 
 /-- Each of the points `x a` lies on the divisor `∑_a [x a]`. -/
 theorem pointsDivisor_le_ker (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (a : A) :
-    E.pointsDivisor x ≤ (x a).left.ker := by
-  classical
-  rw [pointsDivisor, ← Finset.mul_prod_erase _ _ (Finset.mem_univ a)]
-  exact mul_le_of_le_one_right bot_le le_top
+    E.pointsDivisor x ≤ (x a).left.ker :=
+  prod_ker_le_ker (fun b ↦ (x b).left) a
+
+section PointsDivisorSection
+
+variable (E)
+
+/-- The canonical lift of `x a` in a finite family `x : A → E(S)` to a section of the closed
+subscheme `V(E.pointsDivisor x)`. -/
+noncomputable def pointsDivisorSection (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (a : A) :
+    S ⟶ (E.pointsDivisor x).subscheme :=
+  prodKerSection (fun b ↦ (x b).left) a
+
+/-- Composing `E.pointsDivisorSection x a` with the closed immersion into `E` recovers
+`(x a).left`. -/
+@[reassoc (attr := simp)]
+theorem pointsDivisorSection_subschemeι (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (a : A) :
+    E.pointsDivisorSection x a ≫ (E.pointsDivisor x).subschemeι = (x a).left :=
+  prodKerSection_subschemeι (fun b ↦ (x b).left) a
+
+/-- Each `E.pointsDivisorSection x a` is a section of `V(E.pointsDivisor x) ⟶ S`. -/
+@[reassoc]
+theorem pointsDivisorSection_comp (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (a : A) :
+    E.pointsDivisorSection x a ≫ ((E.pointsDivisor x).subschemeι ≫ E.structureMap) = 𝟙 S :=
+  prodKerSection_comp (fun b ↦ left_comp_structureMap (x b)) a
+
+end PointsDivisorSection
 
 /-- The support of the ideal of a section is its image in the elliptic curve. -/
 theorem coe_support_ker_left (x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :

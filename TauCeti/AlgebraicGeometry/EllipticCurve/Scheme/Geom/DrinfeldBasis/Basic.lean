@@ -50,6 +50,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 
 ## Main definitions
 
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionSection E N φ`: the sections of `E[N]` over
+  `S` induced by a homomorphism `φ : (ℤ/Nℤ)² →* E(S)`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis E N φ`: the homomorphism
   `φ : (ℤ/Nℤ)² →* E(S)` is a Drinfeld basis of `E[N]`.
 
@@ -84,7 +86,34 @@ namespace TauCeti.AlgebraicGeometry
 
 namespace EllipticCurveGeom
 
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ) [NeZero N]
+variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ)
+
+/-- The section of `E[N] ⟶ S` assigned to `a ∈ (ℤ/Nℤ)²` by a homomorphism
+`φ : (ℤ/Nℤ)² →* E(S)`. -/
+noncomputable def torsionSection
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
+    (a : Multiplicative (ZMod N × ZMod N)) : S ⟶ (E.torsion N).X.left :=
+  (E.torsionLift (φ a) (range_le_ker_mulBy φ ⟨a, rfl⟩)).left
+
+/-- Composing `torsionSection E N φ a` with the closed immersion `E[N] ⟶ E` recovers `(φ a).left`.
+-/
+@[reassoc (attr := simp)]
+theorem torsionSection_torsionι_left
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
+    (a : Multiplicative (ZMod N × ZMod N)) :
+    E.torsionSection N φ a ≫ (E.torsionι N).left = (φ a).left :=
+  congrArg Over.Hom.left (E.torsionLift_torsionι (φ a) _)
+
+/-- Each `torsionSection E N φ a` is a section of the structure morphism `E[N] ⟶ S`. -/
+@[reassoc (attr := simp)]
+theorem torsionSection_hom
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
+    (a : Multiplicative (ZMod N × ZMod N)) :
+    E.torsionSection N φ a ≫ (E.torsion N).X.hom = 𝟙 S := by
+  rw [← torsionι_left_structureMap, ← Category.assoc, torsionSection_torsionι_left,
+    left_comp_structureMap]
+
+variable [NeZero N]
 
 /-- **Drinfeld bases of `E[N]`** (Drinfeld; Katz–Mazur §3.1). A homomorphism
 `φ : (ℤ/Nℤ)² →* E(S)` to the group of `S`-points of an elliptic curve `E` over `S` is a Drinfeld

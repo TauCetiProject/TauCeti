@@ -151,6 +151,11 @@ morphism `[n]` along the zero section. -/
 theorem flat_torsion_hom {n : ℤ} (hn : n ≠ 0) : Flat (E.torsion n).X.hom :=
   MorphismProperty.of_isPullback (E.isPullback_torsion n) (E.flat_mulBy_left hn)
 
+/-- For `n ≠ 0`, the `n`-torsion `E[n]` is flat over `S`. -/
+instance flat_torsion_hom_of_neZero {n : ℤ} [NeZero n] :
+    Flat (E.torsion n).X.hom :=
+  E.flat_torsion_hom (NeZero.ne n)
+
 /-- The closed subscheme of the ideal sheaf of `E[n]` is finite over `S` for `n ≠ 0`. -/
 instance isFinite_ker_torsionι_left {n : ℤ} [NeZero n] :
     IsFinite ((E.torsionι n).left.ker.subschemeι ≫ E.structureMap) := by

@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
 
@@ -40,7 +41,10 @@ base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ide
 (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
 ideal sheaves of finitely many sections
 (`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`). Taking the ideal sheaf of
-a section, or of a finite family of sections, therefore commutes with arbitrary base change.
+a section, or of a finite family of sections, therefore commutes with arbitrary base change, and
+for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling `x₀.ker` back along
+`δ` agrees with pulling `δ.ker` back along `x₀`
+(`AlgebraicGeometry.Scheme.Hom.ker_comap_section_comm`).
 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
 closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
@@ -225,6 +229,18 @@ theorem prod_ker_pullback_section {ι : Type*} (t : Finset ι) {f : X ⟶ S}
       (∏ i ∈ t, (h i).section_.ker).comap (pullback.fst f g) := by
   simp only [comap_prod, SplitEpi.ker_pullback_section]
 
+/-- **Symmetry of section intersection.** For two closed-immersion sections `δ` and `x₀` of a
+morphism `f : X ⟶ S` (for instance, any two sections when `f` is separated), pulling the ideal
+sheaf of `x₀` back along `δ` agrees with pulling the ideal sheaf of `δ` back along `x₀`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_comap_section_comm {f : X ⟶ S}
+    {δ x₀ : S ⟶ X} [IsClosedImmersion δ] [IsClosedImmersion x₀]
+    (hδ : δ ≫ f = 𝟙 S) (hx₀ : x₀ ≫ f = 𝟙 S) :
+    x₀.ker.comap δ = δ.ker.comap x₀ := by
+  have hp : pullback.fst δ x₀ = pullback.snd δ x₀ := by
+    simpa [hδ, hx₀] using congrArg (· ≫ f) (pullback.condition (f := δ) (g := x₀))
+  rw [← ker_eq_comap_of_isPullback x₀ (IsPullback.of_hasPullback δ x₀),
+    ← ker_eq_comap_of_isPullback δ (IsPullback.of_hasPullback δ x₀).flip, hp]
+
 /-- If the closed subscheme of `I` is flat over `S`, then over an affine open `W` of `S`, the
 quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)` for every affine open `U ⊆ f⁻¹ W`. -/
 theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
@@ -264,6 +280,69 @@ theorem finrank_comap_subschemeι_comp (I : X.IdealSheafData) (f : X ⟶ S)
   rw [← comapIso_hom_fst, Category.assoc, pullback.condition_assoc,
     Scheme.Hom.finrank_comp_left_of_isIso]
   exact Scheme.Hom.finrank_comp _ _ (fun x ↦ by rw [Scheme.Hom.finrank_pullback_snd, hg]) s
+
+/-- Variant of `isPullback_subschemeMap_comap` when the pullback ideal sheaf `D'` is equal, rather
+than syntactically identical, to `D.comap pX`. -/
+theorem isPullback_subschemeMap_of_eq {X' S' : Scheme.{u}} {f : X ⟶ S}
+    {pX : X' ⟶ X} {f' : X' ⟶ S'} {t : S' ⟶ S} {D : X.IdealSheafData} {D' : X'.IdealSheafData}
+    (hD' : D' = D.comap pX) (H : IsPullback pX f' f t) :
+    IsPullback (subschemeMap D' D pX (hD' ▸ D.le_map_comap pX))
+      (D'.subschemeι ≫ f') (D.subschemeι ≫ f) t := by
+  subst hD'
+  exact D.isPullback_subschemeMap_comap f H
+
+/-- **The ideal sheaf of a section pulled back along a pullback square.** Let `x : S ⟶ X` be a
+closed-immersion section of `f : X ⟶ S` and `x' : S' ⟶ X'` a section of the base change
+`f' : X' ⟶ S'` along `t : S' ⟶ S` with `x' ≫ pX = t ≫ x`. Then `x'.ker = x.ker.comap pX`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_eq_comap_of_isPullback_section
+    {X' S' : Scheme.{u}} {f : X ⟶ S} {pX : X' ⟶ X} {f' : X' ⟶ S'} {t : S' ⟶ S}
+    (H : IsPullback pX f' f t) {x : S ⟶ X} [IsClosedImmersion x] (hx : x ≫ f = 𝟙 S)
+    {x' : S' ⟶ X'} (hx' : x' ≫ f' = 𝟙 S') (hcomm : x' ≫ pX = t ≫ x) :
+    x'.ker = x.ker.comap pX :=
+  ker_eq_comap_of_isPullback x
+    (IsPullback.of_right (by rw [hx', hx]; exact .id_horiz t) hcomm H.flip)
+
+section PullbackSubschemeSection
+
+variable {X' S' : Scheme.{u}} {f : X ⟶ S} {pX : X' ⟶ X} {f' : X' ⟶ S'} {t : S' ⟶ S}
+  (H : IsPullback pX f' f t) (I : X.IdealSheafData) {ι : Type*} (s : ι → (S ⟶ I.subscheme))
+  (hs : ∀ i, s i ≫ (I.subschemeι ≫ f) = 𝟙 S)
+
+/-- **Base change of sections of a closed subscheme.** Given a pullback square `H` for `f : X ⟶ S`
+along `t : S' ⟶ S`, sections `s i` of `V(I) ⟶ S` induce sections of `V(I.comap pX) ⟶ S'`. -/
+noncomputable def pullbackSubschemeSection (i : ι) : S' ⟶ (I.comap pX).subscheme :=
+  (I.isPullback_subschemeMap_comap f H).flip.lift (𝟙 S') (t ≫ s i) (by simp [hs i])
+
+/-- Each `pullbackSubschemeSection` is a section of `V(I.comap pX) ⟶ S'`. -/
+@[reassoc (attr := simp)]
+theorem pullbackSubschemeSection_comp (i : ι) :
+    pullbackSubschemeSection H I s hs i ≫ ((I.comap pX).subschemeι ≫ f') = 𝟙 S' :=
+  (I.isPullback_subschemeMap_comap f H).flip.lift_fst _ _ _
+
+/-- Composing `pullbackSubschemeSection` with `V(I.comap pX) ⟶ V(I)` recovers `t ≫ s i`. -/
+@[reassoc (attr := simp)]
+theorem pullbackSubschemeSection_subschemeMap (i : ι) :
+    pullbackSubschemeSection H I s hs i ≫ subschemeMap (I.comap pX) I pX (I.le_map_comap pX) =
+      t ≫ s i :=
+  (I.isPullback_subschemeMap_comap f H).flip.lift_snd _ _ _
+
+/-- For sections `s` of `V(I) ⟶ S` over a separated morphism `f : X ⟶ S`, the product of the kernels
+of `pullbackSubschemeSection H I s hs i ≫ V(I.comap pX) ⟶ X'` is the inverse image along `pX` of
+`∏ i, (s i ≫ V(I) ⟶ X).ker`. -/
+theorem prod_ker_pullbackSubschemeSection [IsSeparated f] [Fintype ι] :
+    ∏ i, (pullbackSubschemeSection H I s hs i ≫ (I.comap pX).subschemeι).ker =
+      (∏ i, (s i ≫ I.subschemeι).ker).comap pX := by
+  rw [comap_prod]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  have hx : (s i ≫ I.subschemeι) ≫ f = 𝟙 S := by rw [Category.assoc, hs i]
+  have hx' : (pullbackSubschemeSection H I s hs i ≫ (I.comap pX).subschemeι) ≫ f' = 𝟙 S' := by
+    rw [Category.assoc, pullbackSubschemeSection_comp]
+  have := Scheme.Hom.isClosedImmersion_of_comp_eq_id (s i ≫ I.subschemeι) hx
+  refine Scheme.Hom.ker_eq_comap_of_isPullback_section H hx hx' ?_
+  rw [Category.assoc, ← subschemeMap_subschemeι (I.comap pX) I pX (I.le_map_comap pX),
+    pullbackSubschemeSection_subschemeMap_assoc]
+
+end PullbackSubschemeSection
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 

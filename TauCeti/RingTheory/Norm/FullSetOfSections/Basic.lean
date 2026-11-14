@@ -164,6 +164,32 @@ theorem isFullSetOfSections_comp_algEquiv_iff {B' : Type*} [CommRing B'] [Algebr
     (IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) ↔ IsFullSetOfSections s :=
   ⟨.of_comp_algEquiv e, fun h ↦ .of_comp_algEquiv e.symm (by simpa [AlgHom.comp_assoc] using h)⟩
 
+/-- Any finite family of sections of a subsingleton algebra is a full set of sections. -/
+@[simp]
+theorem isFullSetOfSections_of_subsingleton [Subsingleton B] (s : ι → B →ₐ[A] A) :
+    IsFullSetOfSections s := by
+  rw [isFullSetOfSections_iff]
+  intro T _ _ _ f
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · have : Subsingleton (T ⊗[A] B) := inferInstance
+    rw [Subsingleton.elim f 1, map_one, Finset.univ_eq_empty, Finset.prod_empty]
+  · have : Subsingleton A := subsingleton_of_zero_eq_one <| by
+      rw [← map_zero (s i₀), ← map_one (s i₀), Subsingleton.elim (0 : B) 1]
+    have : Subsingleton T := subsingleton_of_zero_eq_one <| by
+      rw [← map_zero (algebraMap A T), ← map_one (algebraMap A T), Subsingleton.elim (0 : A) 1]
+    exact Subsingleton.elim _ _
+
+/-- Being a full set of sections is invariant under reindexing by an equivalence. -/
+@[simp]
+theorem isFullSetOfSections_comp_equiv_iff {ι' : Type*} [Fintype ι'] {s : ι → B →ₐ[A] A}
+    (e : ι' ≃ ι) : IsFullSetOfSections (s ∘ e) ↔ IsFullSetOfSections s := by
+  rw [isFullSetOfSections_iff, isFullSetOfSections_iff]
+  refine forall_congr' fun T ↦ forall_congr' fun _ ↦ forall_congr' fun _ ↦
+    forall_congr' fun _ ↦ forall_congr' fun f ↦ ?_
+  simp only [Function.comp_apply]
+  rw [Fintype.prod_equiv e (fun j ↦ (s (e j)).sectionBaseChange T f)
+    (fun i ↦ (s i).sectionBaseChange T f) fun _ ↦ rfl]
+
 /-- The base change of a family of sections along the identity `A → A` is a full set of sections
 if and only if the family itself is. -/
 theorem isFullSetOfSections_sectionBaseChange_self_iff :

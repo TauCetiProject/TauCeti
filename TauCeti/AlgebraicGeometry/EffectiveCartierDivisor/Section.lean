@@ -7,12 +7,15 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.RingTheory.Localization.Ideal
 public import TauCeti.RingTheory.Smooth.Section
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
 # Sections of smooth relative curves are effective Cartier divisors
@@ -206,3 +209,75 @@ theorem isRelativeEffectiveCartier_prod_ker_pullback_section {ι : Type*}
     Hom.isRelativeEffectiveCartier_ker_of_comp_eq_id _ (h i).id U (hU i hi)).comap g
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace TauCeti
+
+open _root_.AlgebraicGeometry
+
+variable {X S : Scheme.{u}} {f : X ⟶ S} [IsSeparated f]
+
+/-- The closed subscheme cut out by a finite product of section kernels of a separated morphism
+locally of finite type is finite over the base, with no properness or smoothness assumption. -/
+theorem isFinite_prod_ker_finset [LocallyOfFiniteType f] {ι : Type*} {x : ι → (S ⟶ X)}
+    {t : Finset ι} (hx : ∀ i ∈ t, x i ≫ f = 𝟙 S) :
+    IsFinite ((∏ i ∈ t, (x i).ker).subschemeι ≫ f) := by
+  refine isFinite_prod_subschemeι_comp t fun i hi ↦ ?_
+  have := Scheme.Hom.isClosedImmersion_of_comp_eq_id (x i) (hx i hi)
+  have := Scheme.Hom.isIso_ker_subschemeι_comp (x i) (hx i hi)
+  infer_instance
+
+/-- The closed subscheme cut out by the product of the kernels of a finite family of sections of a
+separated morphism locally of finite type is finite over the base. -/
+theorem isFinite_prod_ker [LocallyOfFiniteType f] {ι : Type*} [Fintype ι] {x : ι → (S ⟶ X)}
+    (hx : ∀ i, x i ≫ f = 𝟙 S) : IsFinite ((∏ i, (x i).ker).subschemeι ≫ f) :=
+  isFinite_prod_ker_finset fun i _ ↦ hx i
+
+section SmoothCurve
+
+variable [SmoothOfRelativeDimension 1 f]
+
+/-- A finite product of section kernels on a separated smooth curve is a relative effective Cartier
+divisor. -/
+theorem isRelativeEffectiveCartier_prod_ker_finset {ι : Type*} {x : ι → (S ⟶ X)}
+    {t : Finset ι} (hx : ∀ i ∈ t, x i ≫ f = 𝟙 S) :
+    (∏ i ∈ t, (x i).ker).IsRelativeEffectiveCartier f :=
+  isRelativeEffectiveCartier_prod fun i hi ↦
+    Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (x i) (hx i hi)
+
+/-- The divisor sum of a finite family of sections of a separated smooth curve is a relative
+effective Cartier divisor. -/
+theorem isRelativeEffectiveCartier_prod_ker {ι : Type*} [Fintype ι] {x : ι → (S ⟶ X)}
+    (hx : ∀ i, x i ≫ f = 𝟙 S) : (∏ i, (x i).ker).IsRelativeEffectiveCartier f :=
+  isRelativeEffectiveCartier_prod_ker_finset fun i _ ↦ hx i
+
+/-- The closed subscheme cut out by a finite product of section kernels on a separated smooth curve
+is flat over the base. -/
+theorem flat_prod_ker_finset {ι : Type*} {x : ι → (S ⟶ X)} {t : Finset ι}
+    (hx : ∀ i ∈ t, x i ≫ f = 𝟙 S) : Flat ((∏ i ∈ t, (x i).ker).subschemeι ≫ f) :=
+  (isRelativeEffectiveCartier_prod_ker_finset hx).flat
+
+/-- The closed subscheme cut out by the divisor sum of a finite family of sections of a separated
+smooth curve is flat over the base. -/
+theorem flat_prod_ker {ι : Type*} [Fintype ι] {x : ι → (S ⟶ X)} (hx : ∀ i, x i ≫ f = 𝟙 S) :
+    Flat ((∏ i, (x i).ker).subschemeι ≫ f) :=
+  flat_prod_ker_finset fun i _ ↦ hx i
+
+/-- The closed subscheme cut out by a finite product of section kernels on a separated smooth curve
+is locally of finite presentation over the base. -/
+theorem locallyOfFinitePresentation_prod_ker_finset {ι : Type*} {x : ι → (S ⟶ X)}
+    {t : Finset ι} (hx : ∀ i ∈ t, x i ≫ f = 𝟙 S) :
+    LocallyOfFinitePresentation ((∏ i ∈ t, (x i).ker).subschemeι ≫ f) := by
+  have : Smooth f := SmoothOfRelativeDimension.smooth 1 f
+  exact locallyOfFinitePresentation_subschemeι_comp_of_isEffectiveCartier
+    (isRelativeEffectiveCartier_prod_ker_finset hx).isEffectiveCartier
+
+/-- The closed subscheme cut out by the divisor sum of a finite family of sections of a separated
+smooth curve is locally of finite presentation over the base. -/
+theorem locallyOfFinitePresentation_prod_ker {ι : Type*} [Fintype ι] {x : ι → (S ⟶ X)}
+    (hx : ∀ i, x i ≫ f = 𝟙 S) :
+    LocallyOfFinitePresentation ((∏ i, (x i).ker).subschemeι ≫ f) :=
+  locallyOfFinitePresentation_prod_ker_finset fun i _ ↦ hx i
+
+end SmoothCurve
+
+end TauCeti

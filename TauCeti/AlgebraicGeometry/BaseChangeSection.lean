@@ -192,6 +192,56 @@ theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
     sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
   (rfl)
 
+/-- On global sections, `sectionAlgHom g hσ ⊤` transports `b : Γ(Z, g ⁻¹ᵁ ⊤)` along
+`g.preimage_top` and applies `σ.appTop`. -/
+theorem sectionAlgHom_top_apply (b : Γ(Z, g ⁻¹ᵁ ⊤)) :
+    sectionAlgHom g hσ ⊤ b =
+      σ.appTop (Z.presheaf.map (eqToHom g.preimage_top.symm).op b) := by
+  have happ : σ.appLE ⊤ ⊤ σ.preimage_top.ge = σ.appTop := σ.appLE_eq_app
+  rw [sectionAlgHom_apply, ← CommRingCat.comp_apply, ← happ, Scheme.Hom.map_appLE]
+
+/-- Evaluating `sectionAlgHom g hσ ⊤` on a global section `u : Γ(Z, ⊤)` transported to
+`Γ(Z, g ⁻¹ᵁ ⊤)` gives `σ.appTop u`. -/
+theorem sectionAlgHom_top_map_apply (u : Γ(Z, ⊤)) :
+    sectionAlgHom g hσ ⊤ (Z.presheaf.map (eqToHom g.preimage_top).op u) = σ.appTop u := by
+  rw [sectionAlgHom_top_apply,
+    ← CommRingCat.comp_apply (Z.presheaf.map _) (Z.presheaf.map _), ← Functor.map_comp,
+    eqToHom_op, eqToHom_op, eqToHom_trans, eqToHom_refl, CategoryTheory.Functor.map_id,
+    CommRingCat.id_apply]
+
+/-- The kernel of `sectionAlgHom g hσ ⊤` is the image of `RingHom.ker σ.appTop.hom` under
+`Z.presheaf.map (eqToHom g.preimage_top).op`. -/
+theorem ker_sectionAlgHom_top :
+    letI := (g.app ⊤).hom.toAlgebra
+    RingHom.ker (sectionAlgHom g hσ ⊤) =
+      (RingHom.ker σ.appTop.hom).map (Z.presheaf.map (eqToHom g.preimage_top).op).hom := by
+  let _ := (g.app ⊤).hom.toAlgebra
+  let e : Γ(Z, ⊤) ≃+* Γ(Z, g ⁻¹ᵁ ⊤) :=
+    (Z.presheaf.mapIso (eqToIso g.preimage_top).op).commRingCatIsoToRingEquiv
+  have he : (RingHom.ker σ.appTop.hom).map (Z.presheaf.map (eqToHom g.preimage_top).op).hom =
+      (RingHom.ker σ.appTop.hom).map e := rfl
+  have he_symm (b : Γ(Z, g ⁻¹ᵁ ⊤)) :
+      e.symm b = Z.presheaf.map (eqToHom g.preimage_top.symm).op b := rfl
+  rw [he]
+  ext b
+  rw [RingHom.mem_ker, sectionAlgHom_top_apply, ← Ideal.symm_apply_mem_of_equiv_iff,
+    RingHom.mem_ker, he_symm]
+
+/-- Composing `g.app ⊤` with transport along `g.preimage_top.symm` gives `g.appTop`. -/
+@[reassoc]
+theorem app_top_comp_map_preimage_top :
+    g.app ⊤ ≫ Z.presheaf.map (eqToHom g.preimage_top.symm).op = g.appTop := by
+  have htop : g.appLE ⊤ ⊤ g.preimage_top.ge = g.appTop := g.appLE_eq_app
+  rw [g.app_eq_appLE, Scheme.Hom.appLE_map, htop]
+
+/-- Composing `g.appTop` with transport along `g.preimage_top` gives `g.app ⊤`. -/
+@[reassoc]
+theorem appTop_comp_map_preimage_top :
+    g.appTop ≫ Z.presheaf.map (eqToHom g.preimage_top).op = g.app ⊤ := by
+  have htop : g.appLE ⊤ ⊤ g.preimage_top.ge = g.appTop := g.appLE_eq_app
+  rw [← htop, Scheme.Hom.appLE_map]
+  exact g.appLE_eq_app
+
 end SectionAlgHom
 
 end AlgebraicGeometry

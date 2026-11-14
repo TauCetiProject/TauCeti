@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.WeilRestriction
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 /-!
 # Incidence and equality loci of closed subschemes
@@ -156,13 +157,10 @@ theorem comap_incidenceLocus {X' S' : Scheme.{u}} {g : X' ⟶ X} {f' : X' ⟶ S'
   let _ : LocallyOfFinitePresentation ((J.comap g).subschemeι ≫ f') :=
     MorphismProperty.of_isPullback (J.isPullback_subschemeMap_comap f H) inferInstance
   -- both sides have the same morphisms factoring through their closed subschemes
-  have key {T : Scheme.{u}} (s : T ⟶ S') : (incidenceLocus f I J).comap t ≤ s.ker ↔
-      incidenceLocus f' (I.comap g) (J.comap g) ≤ s.ker := by
-    rw [← le_map_iff_comap_le, map_ker, incidenceLocus_le_ker_iff_of_isPullback I J
-      ((IsPullback.of_hasPullback s f').flip.paste_horiz H), incidenceLocus_le_ker_iff,
-      comap_comp, comap_comp]
-  exact le_antisymm (((key _).2 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
-    (((key _).1 (ker_subschemeι _).ge).trans (ker_subschemeι _).le)
+  refine eq_of_forall_le_ker_iff fun s ↦ ?_
+  rw [← le_map_iff_comap_le, map_ker, incidenceLocus_le_ker_iff_of_isPullback I J
+    ((IsPullback.of_hasPullback s f').flip.paste_horiz H), incidenceLocus_le_ker_iff,
+    comap_comp, comap_comp]
 
 end Incidence
 
@@ -261,3 +259,26 @@ theorem comap_equalityLocus {X' S' : Scheme.{u}} {g : X' ⟶ X} {f' : X' ⟶ S'}
 end Equality
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {Z X S : Scheme.{u}} (i : Z ⟶ X) (f : X ⟶ S) [IsClosedImmersion i]
+
+/-- If `i : Z ⟶ X` is a closed immersion with `i ≫ f` finite, then `V(i.ker) ⟶ S` is finite. -/
+instance isFinite_ker_subschemeι_comp [IsFinite (i ≫ f)] : IsFinite (i.ker.subschemeι ≫ f) := by
+  rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]
+  infer_instance
+
+/-- If `i : Z ⟶ X` is a closed immersion with `i ≫ f` flat, then `V(i.ker) ⟶ S` is flat. -/
+instance flat_ker_subschemeι_comp [Flat (i ≫ f)] : Flat (i.ker.subschemeι ≫ f) := by
+  rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]
+  infer_instance
+
+/-- If `i : Z ⟶ X` is a closed immersion with `i ≫ f` locally of finite presentation, then
+`V(i.ker) ⟶ S` is locally of finite presentation. -/
+instance locallyOfFinitePresentation_ker_subschemeι_comp [LocallyOfFinitePresentation (i ≫ f)] :
+    LocallyOfFinitePresentation (i.ker.subschemeι ≫ f) := by
+  rw [← (Iso.inv_comp_eq (asIso i.toImage)).mpr (i.toImage_imageι_assoc f).symm]
+  infer_instance
+
+end AlgebraicGeometry.Scheme.Hom

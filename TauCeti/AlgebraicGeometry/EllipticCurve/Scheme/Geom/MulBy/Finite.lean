@@ -138,4 +138,9 @@ theorem isFinite_torsion_hom {n : ℤ} (hn : n ≠ 0) : IsFinite (E.torsion n).X
   have := E.isFinite_mulBy_left hn
   MorphismProperty.of_isPullback (E.isPullback_torsion n) this
 
+/-- For `n ≠ 0`, the `n`-torsion `E[n]` is finite over `S`. -/
+instance isFinite_torsion_hom_of_neZero {n : ℤ} [NeZero n] :
+    IsFinite (E.torsion n).X.hom :=
+  E.isFinite_torsion_hom (NeZero.ne n)
+
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom
