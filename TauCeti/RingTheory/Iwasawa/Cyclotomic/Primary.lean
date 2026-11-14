@@ -150,7 +150,7 @@ theorem cyclotomicPrimaryFiltration_one :
   simp [mem_cyclotomicPrimaryFiltration]
 
 /-- The cyclotomic-primary submodule is the union of the recursive preimages of delta. -/
-theorem cyclotomicPrimarySubmodule_eq_iSup_filtration :
+theorem cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration :
     cyclotomicPrimarySubmodule p O M = ⨆ r : ℕ, cyclotomicPrimaryFiltration p O M r := by
   ext x
   rw [Submodule.mem_iSup_of_directed _
@@ -161,44 +161,45 @@ theorem cyclotomicPrimarySubmodule_eq_iSup_filtration :
 /-- Every recursive filtration step lies in the cyclotomic-primary submodule. -/
 theorem cyclotomicPrimaryFiltration_le_cyclotomicPrimarySubmodule (r : ℕ) :
     cyclotomicPrimaryFiltration p O M r ≤ cyclotomicPrimarySubmodule p O M := by
-  rw [cyclotomicPrimarySubmodule_eq_iSup_filtration]
+  rw [cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration]
   exact le_iSup (cyclotomicPrimaryFiltration p O M) r
 
 /-- A submodule contains the cyclotomic-primary part exactly when it contains every
 recursive filtration step. -/
-theorem cyclotomicPrimarySubmodule_le_iff_filtration {N : Submodule O⟦X⟧ M} :
+theorem cyclotomicPrimarySubmodule_le_iff_forall_cyclotomicPrimaryFiltration_le
+    {N : Submodule O⟦X⟧ M} :
     cyclotomicPrimarySubmodule p O M ≤ N ↔
       ∀ r : ℕ, cyclotomicPrimaryFiltration p O M r ≤ N := by
-  rw [cyclotomicPrimarySubmodule_eq_iSup_filtration, iSup_le_iff]
+  rw [cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration, iSup_le_iff]
 
 /-- Membership in the cyclotomic-primary submodule means entering a recursive filtration step. -/
-theorem mem_cyclotomicPrimarySubmodule_iff_exists_mem_filtration (x : M) :
+theorem mem_cyclotomicPrimarySubmodule_iff_exists_mem_cyclotomicPrimaryFiltration (x : M) :
     x ∈ cyclotomicPrimarySubmodule p O M ↔
       ∃ r : ℕ, x ∈ cyclotomicPrimaryFiltration p O M r := by
-  rw [cyclotomicPrimarySubmodule_eq_iSup_filtration, Submodule.mem_iSup_of_directed _
-    (monotone_cyclotomicPrimaryFiltration p O M).directed_le]
+  rw [cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration,
+    Submodule.mem_iSup_of_directed _ (monotone_cyclotomicPrimaryFiltration p O M).directed_le]
 
 /-- On a noetherian module the recursive saturation reaches the cyclotomic-primary part
 after finitely many steps. -/
-theorem exists_cyclotomicPrimarySubmodule_eq_filtration [IsNoetherian O⟦X⟧ M] :
+theorem exists_cyclotomicPrimarySubmodule_eq_cyclotomicPrimaryFiltration [IsNoetherian O⟦X⟧ M] :
     ∃ r : ℕ, cyclotomicPrimarySubmodule p O M = cyclotomicPrimaryFiltration p O M r := by
   exact (IsNoetherian.noetherian (cyclotomicPrimarySubmodule p O M)).stabilizes_of_iSup_eq
     ⟨_, monotone_cyclotomicPrimaryFiltration p O M⟩
-    (cyclotomicPrimarySubmodule_eq_iSup_filtration p O M).symm
+    (cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration p O M).symm
 
 /-- Removing the cyclotomic-primary part leaves no delta elements, even without finiteness
 assumptions on the module. -/
 @[simp]
-theorem deltaSubmodule_quotient_cyclotomicPrimarySubmodule :
+theorem deltaSubmodule_quotient_cyclotomicPrimarySubmodule_eq_bot :
     deltaSubmodule p O (M ⧸ cyclotomicPrimarySubmodule p O M) = ⊥ := by
   refine eq_bot_iff.mpr fun q hq ↦ ?_
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   obtain ⟨n, hn⟩ := (mem_deltaSubmodule p O _ _).mp hq
   rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-    mem_cyclotomicPrimarySubmodule_iff_exists_mem_filtration] at hn
+    mem_cyclotomicPrimarySubmodule_iff_exists_mem_cyclotomicPrimaryFiltration] at hn
   obtain ⟨r, hr⟩ := hn
   rw [Submodule.mem_bot, Submodule.Quotient.mk_eq_zero,
-    mem_cyclotomicPrimarySubmodule_iff_exists_mem_filtration]
+    mem_cyclotomicPrimarySubmodule_iff_exists_mem_cyclotomicPrimaryFiltration]
   exact ⟨r + 1, (mem_cyclotomicPrimaryFiltration_succ p O M r x).mpr ⟨n, hr⟩⟩
 
 /-- The cyclotomic-primary submodule is contained in every submodule whose quotient
@@ -206,7 +207,7 @@ has zero delta submodule. -/
 theorem cyclotomicPrimarySubmodule_le_of_deltaSubmodule_quotient_eq_bot
     {N : Submodule O⟦X⟧ M} (hN : deltaSubmodule p O (M ⧸ N) = ⊥) :
     cyclotomicPrimarySubmodule p O M ≤ N := by
-  rw [cyclotomicPrimarySubmodule_le_iff_filtration]
+  rw [cyclotomicPrimarySubmodule_le_iff_forall_cyclotomicPrimaryFiltration_le]
   intro r
   induction r with
   | zero => simp
@@ -273,10 +274,10 @@ theorem cyclotomicPrimarySubmodule_eq_bot [NeZero p] [IsDomain O]
 
 /-- Removing the cyclotomic-primary part leaves no cyclotomic-primary elements. -/
 @[simp]
-theorem cyclotomicPrimarySubmodule_quotient_cyclotomicPrimarySubmodule :
+theorem cyclotomicPrimarySubmodule_quotient_cyclotomicPrimarySubmodule_eq_bot :
     cyclotomicPrimarySubmodule p O (M ⧸ cyclotomicPrimarySubmodule p O M) = ⊥ :=
   (cyclotomicPrimarySubmodule_eq_bot_iff p O _).mpr
-    (deltaSubmodule_quotient_cyclotomicPrimarySubmodule p O M)
+    (deltaSubmodule_quotient_cyclotomicPrimarySubmodule_eq_bot p O M)
 
 /-- The cyclotomic-primary submodule is cyclotomic-primary as a module. -/
 @[simp]
