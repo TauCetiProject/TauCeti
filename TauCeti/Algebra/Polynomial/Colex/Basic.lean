@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.SuccPred
 public import Mathlib.Algebra.Polynomial.Degree.Lemmas
 public import Mathlib.Data.Finsupp.Lex
 public import TauCeti.Algebra.Order.Ring.Synonym
+public import TauCeti.Algebra.Polynomial.Coeff.Basic
 
 /-!
 # The colexicographic order on polynomials
@@ -68,26 +69,6 @@ variable {R : Type*}
 section Semiring
 
 variable [Semiring R]
-
-/-- If `p` has smaller degree than `q`, the largest degree at which `p` and `q` differ is the
-degree of `q`, where the coefficient of `p` is `0`. Here `r` is any irreflexive relation used to
-compare the coefficients there. -/
-private theorem exists_coeff_iff_of_degree_lt {r : R → R → Prop} (hr : ∀ a, ¬ r a a)
-    {p q : R[X]} (h : p.degree < q.degree) :
-    (∃ i, (∀ j, i < j → p.coeff j = q.coeff j) ∧ r (p.coeff i) (q.coeff i)) ↔
-      r 0 q.leadingCoeff := by
-  have hp := coeff_natDegree_eq_zero_of_degree_lt h
-  have hpq (j : ℕ) (hj : q.natDegree < j) : p.coeff j = q.coeff j := by
-    rw [coeff_eq_zero_of_natDegree_lt hj, coeff_eq_zero_of_degree_lt
-      (h.trans_le (degree_le_natDegree.trans (by exact_mod_cast hj.le)))]
-  refine ⟨fun ⟨i, hi, hpqi⟩ ↦ ?_, fun hq ↦ ⟨_, hpq, by rwa [hp, coeff_natDegree]⟩⟩
-  rcases lt_trichotomy i q.natDegree with hlt | rfl | hgt
-  · -- Otherwise `p` and `q` agree at the degree of `q`, where `p` vanishes and `q` does not.
-    exact absurd (by rw [← coeff_natDegree, ← hi _ hlt, hp])
-      (leadingCoeff_ne_zero.2 (ne_zero_of_degree_gt h))
-  · rwa [hp, coeff_natDegree] at hpqi
-  · rw [hpq i hgt] at hpqi
-    exact absurd hpqi (hr _)
 
 section PartialOrder
 
