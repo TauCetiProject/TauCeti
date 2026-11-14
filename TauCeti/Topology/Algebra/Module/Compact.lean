@@ -8,12 +8,14 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
+import Mathlib.Topology.Algebra.Group.Pointwise
 import Mathlib.Topology.Separation.Connected
 
 /-!
@@ -50,6 +52,8 @@ itself.
 
 ## Main results
 
+* `Ideal.FG.isCompact_smul`: for a finitely generated ideal `I` and a compact submodule `P`, the
+  submodule `I • P` is compact under `ContinuousConstSMul R M`.
 * `Submodule.FG.isCompact`: over a compact semiring, a finitely generated submodule of a
   topological module is compact.
 * `Submodule.span_eq_top_of_dense_closure`: over a compact ring, a finite set spans a Hausdorff
@@ -71,11 +75,12 @@ itself.
   `TauCeti.IsCompactModule.eq_zero_of_forall_mem_of_isOpen`,
   `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.submodule`,
   `TauCeti.IsCompactModule.quotient`, `TauCeti.IsCompactModule.finite_quotient_of_isOpen`,
+  `TauCeti.IsCompactModule.isClosed_smul_top`,
   `TauCeti.IsCompactModule.pi`, `TauCeti.IsCompactModule.prod`,
-  `TauCeti.IsCompactModule.subsingleton`, `TauCeti.IsCompactModule.of_continuousLinearEquiv`,
+  `TauCeti.IsCompactModule.of_subsingleton`, `TauCeti.IsCompactModule.of_continuousLinearEquiv`,
   `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
   closed submodules, quotients, products, and continuous linear equivalences, finite index of open
-  submodules, and the self-module witness.
+  submodules, closedness of `I • ⊤` for finitely generated ideals, and the self-module witness.
 
 ## References
 
@@ -86,6 +91,28 @@ itself.
 public section
 
 open Filter Topology
+
+section ContinuousConstSMul
+
+open Pointwise
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M]
+
+/-- **Action of a finitely generated ideal preserves compact submodules.** If `I` is a finitely
+generated ideal and `P` is a compact submodule, then `I • P` is compact. -/
+theorem Ideal.FG.isCompact_smul {I : Ideal R} (hI : I.FG) {P : Submodule R M}
+    (hP : IsCompact (P : Set M)) : IsCompact ((I • P : Submodule R M) : Set M) := by
+  classical
+  obtain ⟨s, rfl⟩ := hI
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s _ ih =>
+    rw [Finset.coe_insert, Ideal.span_insert, Submodule.sup_smul, Submodule.coe_sup,
+      Submodule.ideal_span_singleton_smul, Submodule.coe_pointwise_smul]
+    exact (hP.smul a).add ih
+
+end ContinuousConstSMul
 
 section CompactSemiring
 
@@ -314,7 +341,7 @@ theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
   ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
 
 /-- Every subsingleton module is a compact module, with no continuity assumptions on `M`. -/
-theorem subsingleton [Subsingleton M] : IsCompactModule R M :=
+theorem of_subsingleton [Subsingleton M] : IsCompactModule R M :=
   have : IsTopologicalAddGroup M :=
     { continuous_add := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
       continuous_neg := continuous_of_const fun _ _ ↦ Subsingleton.elim _ _ }
@@ -406,11 +433,7 @@ theorem finite_quotient_of_isOpen (N : Submodule R M) (hN : IsOpen (N : Set M)) 
     Finite (M ⧸ N) := by
   have := hM.isTopologicalAddGroup
   have := hM.compactSpace
-  have := Submodule.Quotient.discreteTopology_of_isOpen N hN
-  have : CompactSpace (M ⧸ N) := ⟨by
-    rw [← Set.image_univ_of_surjective N.mkQ_surjective]
-    exact isCompact_univ.image N.continuous_mkQ⟩
-  exact finite_of_compact_of_discrete
+  exact N.toAddSubgroup.quotient_finite_of_isOpen hN
 
 /-- The binary product of compact modules is a compact module. -/
 theorem prod {N : Type*} [AddCommGroup N] [Module R N] [TopologicalSpace N]
@@ -442,6 +465,21 @@ theorem of_continuousLinearEquiv {N : Type*} [AddCommGroup N] [Module R N] [Topo
 end IsCompactModule
 
 end TauCeti
+
+namespace TauCeti.IsCompactModule
+
+/-- In a compact module over a commutative ring, `I • ⊤` is closed for every finitely generated
+ideal `I`. -/
+theorem isClosed_smul_top {R M : Type*} [CommRing R] [TopologicalSpace R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] (hM : IsCompactModule R M) {I : Ideal R} (hI : I.FG) :
+    IsClosed ((I • (⊤ : Submodule R M) : Submodule R M) : Set M) := by
+  have := hM.isTopologicalAddGroup
+  have := hM.continuousSMul
+  have := hM.compactSpace
+  have := hM.t2Space
+  exact (hI.isCompact_smul (by simpa using isCompact_univ)).isClosed
+
+end TauCeti.IsCompactModule
 
 namespace ContinuousLinearEquiv
 

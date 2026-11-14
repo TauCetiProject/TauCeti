@@ -55,6 +55,8 @@ and so separate points.
   independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
+* `LinearIndependent.surjective_pi_eval`: evaluation against a finite linearly independent family of
+  linear forms on `V` is surjective onto `ι → K`.
 * `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
   `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
   coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
@@ -334,6 +336,18 @@ theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : Linea
   simpa using hz'
 
 end Separation
+
+/-- Evaluation against a finite `K`-linearly independent family of linear forms `V →ₗ[K] K` is
+surjective onto `ι → K`. -/
+theorem surjective_pi_eval {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Finite ι]
+    {f : ι → Dual K V} (hf : LinearIndependent K f) :
+    Function.Surjective (fun v : V ↦ fun i : ι ↦ f i v) := by
+  have hli : LinearIndependent K (fun i : ι ↦ (f i : V → K)) :=
+    hf.map' (LinearMap.ltoFun K V K K) (LinearMap.ker_eq_bot_of_injective DFunLike.coe_injective)
+  have hspan : Submodule.span K (Set.range (LinearMap.pi f)) = ⊤ :=
+    span_flip_eq_top_iff_linearIndependent.mpr hli
+  rw [← LinearMap.coe_range, Submodule.span_eq] at hspan
+  exact LinearMap.range_eq_top.mp hspan
 
 /-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate projection is a
 combination of them. -/

@@ -12,58 +12,74 @@ public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.Topology.Algebra.Module.Compact
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.Logic.Small.Basic
+import Mathlib.Topology.Algebra.GroupWithZero
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
-# Compact linearly topologized vector spaces over discrete fields
+# Lefschetz linear duality for compact linearly topologized vector spaces
 
-Let `V` be a topological vector space over a field `K` whose topology is `K`-linear
-(`IsLinearTopology K V`). Every open subspace `U` of `V` has discrete quotient `V ⧸ U`, so
-extending linear functionals across `V ⧸ U` shows that continuous linear forms `V →L[K] K`
-separate points whenever `V` is `T₁` (for any topology on `K`).
+This file establishes Lefschetz linear duality for compact Hausdorff linearly topologized vector
+spaces: every such vector space `V` over a `T₂` topological field `K` is topologically isomorphic to
+a product `I → K` via evaluation against a basis of its continuous dual `V →L[K] K`. In
+nonarchimedean algebra, reducing a compact module `M` over a compact Hausdorff noetherian local ring
+`R` modulo its maximal ideal `𝔪` produces a compact vector space `M ⧸ 𝔪M` over the finite discrete
+residue field `R ⧸ 𝔪`; decomposing `M ⧸ 𝔪M ≃L[R ⧸ 𝔪] (I → R ⧸ 𝔪)` supplies the mod-`𝔪` coordinate
+functionals that lift to pseudobases of profinite flat modules.
 
-When `K` has the discrete topology and `V` is compact and Hausdorff (`CompactSpace V` and
-`T2Space V`), Lefschetz linear duality identifies `V` with a product of copies of `K`:
+Let `V` be a topological vector space over a division ring or field `K` whose topology is `K`-linear
+(`IsLinearTopology K V`):
 
-1. If `V` is nontrivial, any nonzero continuous linear functional on `V` is surjective onto `K`, so
-   compactness of `V` forces the discrete field `K` to be finite.
-2. Any `K`-linearly independent family `f : ι → (V →ₗ[K] K)` evaluates surjectively onto finite
-   coordinate tuples `s → K`, so `(fun v i ↦ f i v) : V → (ι → K)` has dense range.
-3. For any `K`-basis `b : Module.Basis ι K (V →L[K] K)` of the continuous dual, the joint
-   evaluation map `V →L[K] (ι → K)` is injective (by point separation), has dense compact range
-   (hence is surjective), and is therefore a topological linear isomorphism
-   `b.continuousDualEquivPi : V ≃L[K] (ι → K)`.
-4. Because `V →L[K] K` embeds into `V → K` and `K` is `Small.{v}` whenever `V : Type v` is
-   nontrivial (or else `V →L[K] K` is subsingleton), the continuous dual has a basis indexed in
-   `Type v`, giving `∃ I : Type v, Nonempty (V ≃L[K] (I → K))` with no universe restriction on `K`.
+1. Over any division ring `K` (for any topology on `K`), open subspaces have discrete quotients, so
+   extending linear forms across `V ⧸ U` shows that continuous linear forms `V →L[K] K` separate
+   points whenever `V` is `T₁` (`TauCeti.exists_continuousLinearMap_apply_ne_zero`). As a standalone
+   consequence for discrete division rings `K`, compactness of a nontrivial `T₁` linearly
+   topologized `K`-vector space forces `K` to be finite
+   (`TauCeti.finite_of_compactSpace_of_isLinearTopology`).
+2. Over any field `K` (with any topology on `K`), any `K`-linearly independent family
+   `f : ι → (V →ₗ[K] K)` evaluates surjectively onto finite coordinate tuples and therefore has
+   dense range in `ι → K` (`LinearIndependent.denseRange_pi_eval`).
+3. Over any `T₂` topological field `K` (`[IsTopologicalRing K] [T2Space K]`), when `V` is compact
+   and Hausdorff, joint evaluation against any `K`-basis `b : Module.Basis ι K (V →L[K] K)` of the
+   continuous dual is injective (by point separation) and has dense compact range (hence is
+   surjective), yielding `b.continuousDualEquivPi : V ≃L[K] (ι → K)`. Shrinking a dual basis into
+   `Type v` gives `TauCeti.exists_continuousLinearEquiv_pi_of_isLinearTopology`.
+4. Over a compact Hausdorff topological field `K` (`[IsTopologicalRing K] [CompactSpace K]
+   [T2Space K]`, such as any finite discrete field), `TauCeti.IsCompactModule K V` is equivalent to
+   `∃ I : Type v, Nonempty (V ≃L[K] (I → K))`
+   (`TauCeti.IsCompactModule.iff_exists_continuousLinearEquiv_pi_of_field`).
 
 ## Main definitions and results
 
-* `LinearIndependent.surjective_pi_eval`, `LinearIndependent.denseRange_pi_eval`: evaluation of a
-  linearly independent family of linear forms is surjective on finite index types and has dense
-  range in `ι → K`.
+* `LinearIndependent.denseRange_pi_eval`: evaluation against a linearly independent family of linear
+  forms has dense range in `ι → K` for any topology on `K`.
 * `TauCeti.exists_continuousLinearMap_apply_ne_zero`,
   `TauCeti.exists_continuousLinearMap_apply_eq_one`: continuous linear forms separate points on a
   `T₁` linearly topologized vector space over a division ring or field.
 * `TauCeti.small_continuousLinearMap_self`: `Small.{v} (V →L[K] K)` for `V : Type v`.
-* `TauCeti.finite_of_compactSpace_of_isLinearTopology`: if `V` is compact, `T₁`, linearly
-  topologized, and nontrivial over discrete `K`, then `Finite K`.
-* `Module.Basis.continuousDualEquivPi`: a `K`-basis `b` of `V →L[K] K` induces a continuous linear
-  equivalence `V ≃L[K] (ι → K)` sending `v` to `fun i ↦ b i v`.
-* `TauCeti.exists_continuousLinearEquiv_pi_of_isLinearTopology`,
-  `TauCeti.IsCompactModule.exists_continuousLinearEquiv_pi_of_field`,
-  `TauCeti.IsCompactModule.iff_exists_continuousLinearEquiv_pi_of_field`: every compact Hausdorff
-  linearly topologized vector space over a discrete field is topologically isomorphic to `I → K`.
+* `TauCeti.finite_of_compactSpace_of_isLinearTopology`: for a discrete division ring `K`, if `V` is
+  compact, `T₁`, linearly topologized, and nontrivial, then `Finite K`.
+* `Module.Basis.continuousDualEquivPi`, `Module.Basis.apply_continuousDualEquivPi_symm`: over a `T₂`
+  topological field `K`, a `K`-basis `b` of `V →L[K] K` induces `V ≃L[K] (ι → K)` sending `v` to
+  `fun i ↦ b i v`.
+* `TauCeti.exists_continuousLinearEquiv_pi_of_isLinearTopology`: over a `T₂` topological field `K`,
+  every compact Hausdorff linearly topologized vector space `V : Type v` is topologically isomorphic
+  to `I → K` for some `I : Type v`.
+* `TauCeti.IsCompactModule.exists_continuousLinearEquiv_pi_of_field`,
+  `TauCeti.IsCompactModule.iff_exists_continuousLinearEquiv_pi_of_field`: over a compact Hausdorff
+  topological field `K` (`[IsTopologicalRing K] [CompactSpace K] [T2Space K]`), a topological
+  `K`-vector space `V : Type v` is a compact module if and only if it is topologically isomorphic to
+  `I → K` for some `I : Type v`.
 
 ## References
 
 * [S. Lefschetz, *Algebraic Topology*], Ch. II, §6, (25.4)–(27.1), for linear compactness and the
   product decomposition of linearly compact vector spaces via their continuous dual.
-* [N. Bourbaki, *Algebra II*], Ch. IV, §2, Exercises, for linearly topologized vector spaces.
+* [N. Bourbaki, *Algebra I*], Ch. II, §7, Exercises, and [N. Bourbaki, *Commutative Algebra*],
+  Ch. III, §2, Exercises, for linearly topologized vector spaces.
 -/
 
 public section
@@ -75,41 +91,6 @@ namespace LinearIndependent
 section Field
 
 variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] {f : ι → (V →ₗ[K] K)}
-
-/-- Evaluation against a finite `K`-linearly independent family of linear forms `V →ₗ[K] K` is
-surjective onto `ι → K`. -/
-theorem surjective_pi_eval [Finite ι] (hf : LinearIndependent K f) :
-    Function.Surjective (fun v : V ↦ fun i : ι ↦ f i v) := by
-  classical
-  have := Fintype.ofFinite ι
-  let E : V →ₗ[K] (ι → K) := LinearMap.pi f
-  intro y
-  by_contra hy_ex
-  have hy : y ∉ LinearMap.range E := fun ⟨v, hv⟩ ↦ hy_ex ⟨v, hv⟩
-  let q := (LinearMap.range E).mkQ
-  have hqy : q y ≠ 0 := fun h ↦ hy ((Submodule.Quotient.mk_eq_zero _).mp h)
-  obtain ⟨ℓ, hℓ⟩ := Module.Projective.exists_dual_ne_zero K hqy
-  let ψ : (ι → K) →ₗ[K] K := ℓ.comp q
-  let c : ι → K := fun i ↦ ψ (Pi.single i 1)
-  have hpi : ∀ z : ι → K, ∑ i : ι, z i • Pi.single i (1 : K) = z := fun z ↦ by
-    ext j
-    simp [Pi.single_apply]
-  have hrel : ∑ i : ι, c i • f i = 0 := by
-    ext v
-    have hEv : ψ (E v) = 0 := by
-      have hv_mem : E v ∈ LinearMap.range E := ⟨v, rfl⟩
-      simp [ψ, q, (Submodule.Quotient.mk_eq_zero _).mpr hv_mem]
-    calc
-      (∑ i : ι, c i • f i) v = ∑ i : ι, f i v * ψ (Pi.single i 1) := by
-        simp [LinearMap.sum_apply, c, mul_comm]
-      _ = ψ (∑ i : ι, E v i • Pi.single i 1) := by simp [E, map_sum, map_smul]
-      _ = ψ (E v) := by rw [hpi (E v)]
-      _ = 0 := hEv
-  have hc : ∀ i : ι, c i = 0 := Fintype.linearIndependent_iff.mp hf c hrel
-  have hψy : ψ y = 0 := by
-    rw [← hpi y, map_sum]
-    simp [map_smul, c, hc]
-  exact hℓ hψy
 
 /-- Evaluation against any `K`-linearly independent family of linear forms `V →ₗ[K] K` has dense
 range in `ι → K` for any topology on `K`. -/
@@ -255,6 +236,11 @@ theorem continuousDualEquivPi_apply (b : Module.Basis ι K (V →L[K] K)) (v : V
     b.continuousDualEquivPi v i = b i v :=
   (rfl)
 
+@[simp]
+theorem apply_continuousDualEquivPi_symm (b : Module.Basis ι K (V →L[K] K)) (c : ι → K)
+    (i : ι) : b i (b.continuousDualEquivPi.symm c) = c i := by
+  rw [← continuousDualEquivPi_apply, ContinuousLinearEquiv.apply_symm_apply]
+
 end Module.Basis
 
 namespace TauCeti
@@ -295,13 +281,15 @@ theorem exists_continuousLinearEquiv_pi_of_field [IsTopologicalRing K] [CompactS
   have := hV.t2Space
   exact exists_continuousLinearEquiv_pi_of_isLinearTopology K V
 
-/-- Over a compact totally disconnected topological field `K` (such as any finite discrete field),
-a topological `K`-vector space `V : Type v` is a compact module if and only if it is topologically
+/-- Over a compact Hausdorff topological field `K` (such as any finite discrete field), a
+topological `K`-vector space `V : Type v` is a compact module if and only if it is topologically
 isomorphic to a product `I → K` for some `I : Type v`. -/
 theorem iff_exists_continuousLinearEquiv_pi_of_field [IsTopologicalRing K] [CompactSpace K]
-    [TotallyDisconnectedSpace K] :
+    [T2Space K] :
     IsCompactModule K V ↔ ∃ I : Type v, Nonempty (V ≃L[K] (I → K)) := by
   refine ⟨fun hV ↦ hV.exists_continuousLinearEquiv_pi_of_field, fun ⟨I, ⟨e⟩⟩ ↦ ?_⟩
+  have : DiscreteTopology K :=
+    discreteTopology_iff_isOpen_singleton_zero.mpr GroupWithZero.isOpen_singleton_zero
   exact (IsCompactModule.pi fun _ : I ↦ IsCompactModule.self (R := K)).of_continuousLinearEquiv
     e.symm
 
