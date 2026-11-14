@@ -42,23 +42,22 @@ coordinate. Use this as a named rewrite to expand an abstract pair; simplificati
 action and computes projections and constructors. -/]
 theorem smul_def (g : G × K) (x : X × Y) : g • x = (g.1 • x.1, g.2 • x.2) := (rfl)
 
-/- These rules run before generic product normalization, preserving the original component
-actions in the resulting expressions. -/
-
 /-- The first coordinate of the independent product action is the first action. -/
-@[to_additive (attr := simp↓) /-- The first coordinate of the independent product additive action
+@[to_additive /-- The first coordinate of the independent product additive action
 is the first action. -/]
 theorem smul_fst (g : G × K) (x : X × Y) : (g • x).1 = g.1 • x.1 := (rfl)
 
 /-- The second coordinate of the independent product action is the second action. -/
-@[to_additive (attr := simp↓) /-- The second coordinate of the independent product additive action
+@[to_additive /-- The second coordinate of the independent product additive action
 is the second action. -/]
 theorem smul_snd (g : G × K) (x : X × Y) : (g • x).2 = g.2 • x.2 := (rfl)
 
 /-- The independent product action on a constructed pair acts coordinatewise. -/
-@[to_additive (attr := simp↓) /-- The independent product additive action on a constructed pair
+@[to_additive /-- The independent product additive action on a constructed pair
 acts coordinatewise. -/]
 theorem smul_mk (g : G × K) (x : X) (y : Y) : g • (x, y) = (g.1 • x, g.2 • y) := (rfl)
+
+attribute [scoped simp] smul_fst vadd_fst smul_snd vadd_snd smul_mk vadd_mk
 
 /-- Independent products of left-cancellative scalar actions are left-cancellative. -/
 @[to_additive /-- Independent products of left-cancellative additive actions are

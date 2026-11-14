@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Algebra.GroupAction.Prod
 
 /-!
