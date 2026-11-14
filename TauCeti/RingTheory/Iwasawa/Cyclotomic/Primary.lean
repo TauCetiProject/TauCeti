@@ -16,8 +16,9 @@ The cyclotomic-primary submodule consists of elements killed by a power of some
 cyclotomic factors. It is the saturation obtained by repeatedly taking the preimage of the
 delta submodule of the quotient. Its quotient has zero delta submodule.
 
-For a finite power-series module over a complete noetherian coefficient ring, this submodule
-is finite over the coefficients: one power of one `ωₙ` kills it, and that power is distinguished.
+For a noetherian power-series module, one power of one `ωₙ` kills this submodule. When the
+coefficient ring is `I`-adically complete for an ideal `I` containing the prime `p`, that power is
+distinguished at `I`, so the submodule is finite over the coefficients.
 Thus it separates the cyclotomic-primary part before studying the remaining Iwasawa module.
 
 The construction uses Mathlib's `Ideal.primaryComponent` for the ideals `(ωₙ)`.
@@ -40,13 +41,26 @@ variable (p : ℕ) (O M : Type*) [CommRing O] [AddCommGroup M] [Module O⟦X⟧ 
 def cyclotomicPrimarySubmodule : Submodule O⟦X⟧ M :=
   ⨆ n : ℕ, (Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)}).primaryComponent M
 
-private theorem monotone_cyclotomicPrimaryComponent :
+/-- The cyclotomic-primary submodule is the supremum of the finite-level primary components. -/
+theorem cyclotomicPrimarySubmodule_def :
+    cyclotomicPrimarySubmodule p O M =
+      ⨆ n : ℕ, (Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)}).primaryComponent M := (rfl)
+
+variable {O M} in
+/-- If `a` divides `b`, then every vector killed by `a` is killed by `b`. -/
+private theorem smul_eq_zero_of_dvd {a b : O⟦X⟧} (hab : a ∣ b) {x : M} (hx : a • x = 0) :
+    b • x = 0 := by
+  obtain ⟨c, rfl⟩ := hab
+  rw [mul_comm, mul_smul, hx, smul_zero]
+
+/-- The primary components defining the cyclotomic-primary submodule increase with the level. -/
+theorem monotone_primaryComponent_span_one_add_X_pow_sub_one :
     Monotone fun n : ℕ ↦
       (Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)}).primaryComponent M := by
   intro m n hmn x hx
   obtain ⟨k, hk⟩ := (Ideal.mem_primaryComponent_span_singleton_iff _).mp hx
   exact (Ideal.mem_primaryComponent_span_singleton_iff _).mpr
-    ⟨k, torsionBy_le_torsionBy_of_dvd _ _
+    ⟨k, smul_eq_zero_of_dvd
       (pow_dvd_pow_of_dvd (dvd_pow_sub_one_of_dvd (pow_dvd_pow p hmn)) k) hk⟩
 
 /-- An element is cyclotomic-primary exactly when a power of some `ωₙ` kills it. -/
@@ -55,7 +69,7 @@ theorem mem_cyclotomicPrimarySubmodule (x : M) :
     x ∈ cyclotomicPrimarySubmodule p O M ↔
       ∃ n k : ℕ, (((1 + X) ^ p ^ n - 1 : O⟦X⟧) ^ k) • x = 0 := by
   rw [cyclotomicPrimarySubmodule, Submodule.mem_iSup_of_directed _
-    (monotone_cyclotomicPrimaryComponent p O M).directed_le]
+    (monotone_primaryComponent_span_one_add_X_pow_sub_one p O M).directed_le]
   simp only [Ideal.mem_primaryComponent_span_singleton_iff]
 
 /-- Every delta element is cyclotomic-primary. -/
@@ -64,6 +78,12 @@ theorem deltaSubmodule_le_cyclotomicPrimarySubmodule :
   intro x hx
   obtain ⟨n, hn⟩ := (mem_deltaSubmodule p O M x).mp hx
   exact (mem_cyclotomicPrimarySubmodule p O M x).mpr ⟨n, 1, by simpa using hn⟩
+
+/-- Each finite-level primary component belongs to the cyclotomic-primary submodule. -/
+theorem primaryComponent_le_cyclotomicPrimarySubmodule (n : ℕ) :
+    (Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)}).primaryComponent M ≤
+      cyclotomicPrimarySubmodule p O M :=
+  le_iSup (fun n : ℕ ↦ (Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)}).primaryComponent M) n
 
 /-- A submodule contains the cyclotomic-primary part if it contains each `(ωₙ)`-primary part. -/
 theorem cyclotomicPrimarySubmodule_le_iff {N : Submodule O⟦X⟧ M} :
@@ -81,13 +101,20 @@ def cyclotomicPrimaryFiltration : ℕ → Submodule O⟦X⟧ M
 @[simp]
 theorem cyclotomicPrimaryFiltration_zero : cyclotomicPrimaryFiltration p O M 0 = ⊥ := (rfl)
 
+/-- The next filtration step is the preimage of the delta submodule of the quotient. -/
+theorem cyclotomicPrimaryFiltration_succ (r : ℕ) :
+    cyclotomicPrimaryFiltration p O M (r + 1) =
+      (deltaSubmodule p O (M ⧸ cyclotomicPrimaryFiltration p O M r)).comap
+        (cyclotomicPrimaryFiltration p O M r).mkQ := (rfl)
+
 /-- A vector enters the next filtration step when a cyclotomic element carries it into
 the preceding step. -/
 theorem mem_cyclotomicPrimaryFiltration_succ (r : ℕ) (x : M) :
     x ∈ cyclotomicPrimaryFiltration p O M (r + 1) ↔
       ∃ n : ℕ, ((1 + X) ^ p ^ n - 1 : O⟦X⟧) • x ∈
         cyclotomicPrimaryFiltration p O M r := by
-  simp only [cyclotomicPrimaryFiltration, mem_comap, mem_deltaSubmodule, Submodule.mkQ_apply]
+  simp only [cyclotomicPrimaryFiltration_succ, mem_comap, mem_deltaSubmodule,
+    Submodule.mkQ_apply]
   simp only [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
 
 /-- The `r`-th step consists exactly of vectors killed by `ωₙ ^ r` for some level `n`. -/
@@ -106,10 +133,9 @@ theorem mem_cyclotomicPrimaryFiltration (r : ℕ) (x : M) :
         dvd_pow_sub_one_of_dvd (pow_dvd_pow p (le_max_left m n))
       have hnl : ((1 + X) ^ p ^ n - 1 : O⟦X⟧) ∣ (1 + X) ^ p ^ l - 1 :=
         dvd_pow_sub_one_of_dvd (pow_dvd_pow p (le_max_right m n))
-      refine ⟨l, ?_⟩
-      exact torsionBy_le_torsionBy_of_dvd _ _
+      refine ⟨l, smul_eq_zero_of_dvd
         (by simpa [pow_succ] using mul_dvd_mul (pow_dvd_pow_of_dvd hml r) hnl)
-        (by simpa only [mem_torsionBy_iff, mul_smul] using hm)
+        (by simpa only [mul_smul] using hm)⟩
     · rintro ⟨n, hn⟩
       exact ⟨n, n, by simpa only [pow_succ, mul_smul] using hn⟩
 
@@ -118,7 +144,14 @@ theorem monotone_cyclotomicPrimaryFiltration : Monotone (cyclotomicPrimaryFiltra
   intro r s hrs x hx
   obtain ⟨n, hn⟩ := (mem_cyclotomicPrimaryFiltration p O M r x).mp hx
   exact (mem_cyclotomicPrimaryFiltration p O M s x).mpr
-    ⟨n, torsionBy_le_torsionBy_of_dvd _ _ (pow_dvd_pow _ hrs) hn⟩
+    ⟨n, smul_eq_zero_of_dvd (pow_dvd_pow _ hrs) hn⟩
+
+/-- The first filtration step is the delta submodule. -/
+@[simp]
+theorem cyclotomicPrimaryFiltration_one :
+    cyclotomicPrimaryFiltration p O M 1 = deltaSubmodule p O M := by
+  ext x
+  simp [mem_cyclotomicPrimaryFiltration]
 
 /-- The cyclotomic-primary submodule is the union of the recursive preimages of delta. -/
 theorem cyclotomicPrimarySubmodule_eq_iSup_filtration :
@@ -130,7 +163,7 @@ theorem cyclotomicPrimarySubmodule_eq_iSup_filtration :
   exact exists_comm
 
 /-- Membership in the cyclotomic-primary submodule means entering a recursive filtration step. -/
-theorem mem_cyclotomicPrimarySubmodule_iff_exists (x : M) :
+theorem mem_cyclotomicPrimarySubmodule_iff_exists_mem_filtration (x : M) :
     x ∈ cyclotomicPrimarySubmodule p O M ↔
       ∃ r : ℕ, x ∈ cyclotomicPrimaryFiltration p O M r := by
   rw [cyclotomicPrimarySubmodule_eq_iSup_filtration, Submodule.mem_iSup_of_directed _
@@ -153,10 +186,10 @@ theorem deltaSubmodule_quotient_cyclotomicPrimarySubmodule :
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   obtain ⟨n, hn⟩ := (mem_deltaSubmodule p O _ _).mp hq
   rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-    mem_cyclotomicPrimarySubmodule_iff_exists] at hn
+    mem_cyclotomicPrimarySubmodule_iff_exists_mem_filtration] at hn
   obtain ⟨r, hr⟩ := hn
   rw [Submodule.mem_bot, Submodule.Quotient.mk_eq_zero,
-    mem_cyclotomicPrimarySubmodule_iff_exists]
+    mem_cyclotomicPrimarySubmodule_iff_exists_mem_filtration]
   exact ⟨r + 1, (mem_cyclotomicPrimaryFiltration_succ p O M r x).mpr ⟨n, hr⟩⟩
 
 /-- On a noetherian module one power of one cyclotomic element kills the entire
@@ -166,19 +199,19 @@ theorem exists_cyclotomicPrimarySubmodule_eq_torsionBy [IsNoetherian O⟦X⟧ M]
       torsionBy O⟦X⟧ M (((1 + X) ^ p ^ n - 1 : O⟦X⟧) ^ k) := by
   obtain ⟨n, hn⟩ :=
     (IsNoetherian.noetherian (cyclotomicPrimarySubmodule p O M)).stabilizes_of_iSup_eq
-      ⟨_, monotone_cyclotomicPrimaryComponent p O M⟩ rfl
+      ⟨_, monotone_primaryComponent_span_one_add_X_pow_sub_one p O M⟩ rfl
   obtain ⟨k, hk⟩ := Ideal.exists_le_torsionBySet_pow_of_le_primaryComponent
       (𝔞 := Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)})
       (IsNoetherian.noetherian (cyclotomicPrimarySubmodule p O M)) hn.le
   refine ⟨n, k, le_antisymm ?_ ?_⟩
   · simpa only [Ideal.span_singleton_pow, torsionBySet_ideal_span_singleton_eq] using hk
   · intro x hx
-    exact (mem_cyclotomicPrimarySubmodule p O M x).mpr ⟨n, k, hx⟩
+    exact (mem_cyclotomicPrimarySubmodule p O M x).mpr ⟨n, k, (mem_torsionBy_iff _ _).mp hx⟩
 
-/-- Over complete noetherian coefficients, the cyclotomic-primary part of a finite
-power-series module is finite over the coefficients. -/
-theorem finite_cyclotomicPrimarySubmodule [Fact p.Prime] [IsNoetherianRing O]
-    [Module O M] [IsScalarTower O O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
+/-- If the coefficients are `I`-adically complete for an ideal `I` containing the prime `p`, the
+cyclotomic-primary part of a noetherian power-series module is finite over the coefficients. -/
+theorem finite_cyclotomicPrimarySubmodule [Fact p.Prime]
+    [Module O M] [IsScalarTower O O⟦X⟧ M] [IsNoetherian O⟦X⟧ M]
     {I : Ideal O} [IsAdicComplete I O] (hp : (p : O) ∈ I) :
     Module.Finite O (cyclotomicPrimarySubmodule p O M) := by
   obtain ⟨n, k, hnk⟩ := exists_cyclotomicPrimarySubmodule_eq_torsionBy p O M
@@ -192,17 +225,41 @@ theorem finite_cyclotomicPrimarySubmodule [Fact p.Prime] [IsNoetherianRing O]
   apply hF.finite_of_isTorsionBy
   simpa using hkill
 
-/-- A torsion-free power-series module has no cyclotomic-primary part. -/
-@[simp]
-theorem cyclotomicPrimarySubmodule_eq_bot [NeZero p] [IsDomain O]
-    [Module.IsTorsionFree O⟦X⟧ M] : cyclotomicPrimarySubmodule p O M = ⊥ := by
+/-- A module has no cyclotomic-primary part exactly when it has no delta elements. -/
+theorem cyclotomicPrimarySubmodule_eq_bot_iff :
+    cyclotomicPrimarySubmodule p O M = ⊥ ↔ deltaSubmodule p O M = ⊥ := by
+  refine ⟨fun h ↦ eq_bot_iff.mpr (h ▸ deltaSubmodule_le_cyclotomicPrimarySubmodule p O M),
+    fun h ↦ ?_⟩
   apply eq_bot_iff.mpr
   apply (cyclotomicPrimarySubmodule_le_iff p O M).mpr
   intro n
   apply le_of_eq
   apply (Ideal.primaryComponent_span_singleton_eq_bot_iff _).mpr
   apply (isSMulRegular_iff_torsionBy_eq_bot M _).mpr
-  exact le_antisymm ((torsionBy_le_deltaSubmodule p O M n).trans (by simp)) bot_le
+  exact le_antisymm ((torsionBy_le_deltaSubmodule p O M n).trans h.le) bot_le
+
+/-- Over a domain, for `p ≠ 0`, a torsion-free power-series module has no cyclotomic-primary
+part. -/
+@[simp]
+theorem cyclotomicPrimarySubmodule_eq_bot [NeZero p] [IsDomain O]
+    [Module.IsTorsionFree O⟦X⟧ M] : cyclotomicPrimarySubmodule p O M = ⊥ :=
+  (cyclotomicPrimarySubmodule_eq_bot_iff p O M).mpr (deltaSubmodule_eq_bot p O M)
+
+/-- Removing the cyclotomic-primary part leaves no cyclotomic-primary elements. -/
+@[simp]
+theorem cyclotomicPrimarySubmodule_quotient_cyclotomicPrimarySubmodule :
+    cyclotomicPrimarySubmodule p O (M ⧸ cyclotomicPrimarySubmodule p O M) = ⊥ :=
+  (cyclotomicPrimarySubmodule_eq_bot_iff p O _).mpr
+    (deltaSubmodule_quotient_cyclotomicPrimarySubmodule p O M)
+
+/-- The cyclotomic-primary submodule is cyclotomic-primary as a module. -/
+@[simp]
+theorem cyclotomicPrimarySubmodule_cyclotomicPrimarySubmodule :
+    cyclotomicPrimarySubmodule p O (cyclotomicPrimarySubmodule p O M) = ⊤ := by
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  obtain ⟨n, k, h⟩ := (mem_cyclotomicPrimarySubmodule p O M x).mp x.property
+  refine (mem_cyclotomicPrimarySubmodule p O _ x).mpr ⟨n, k, ?_⟩
+  rw [← Submodule.coe_eq_zero, Submodule.coe_smul, h]
 
 end TauCeti.Iwasawa
 
@@ -246,6 +303,27 @@ theorem map_cyclotomicPrimarySubmodule (e : M ≃ₗ[O⟦X⟧] N) (p : ℕ) :
     Submodule.map_comap_eq_of_surjective e.surjective]
 
 end LinearEquiv
+
+namespace Submodule
+
+open TauCeti.Iwasawa
+
+variable {O M : Type*} [CommRing O] [AddCommGroup M] [Module O⟦X⟧ M]
+
+/-- The cyclotomic-primary part of a submodule is the restriction of the ambient one. -/
+@[simp]
+theorem comap_cyclotomicPrimarySubmodule_subtype (S : Submodule O⟦X⟧ M) (p : ℕ) :
+    (cyclotomicPrimarySubmodule p O M).comap S.subtype = cyclotomicPrimarySubmodule p O S :=
+  S.subtype.comap_cyclotomicPrimarySubmodule_of_injective S.subtype_injective p
+
+/-- Taking the cyclotomic-primary submodule commutes with passage to a submodule. -/
+@[simp]
+theorem map_cyclotomicPrimarySubmodule_subtype (S : Submodule O⟦X⟧ M) (p : ℕ) :
+    (cyclotomicPrimarySubmodule p O S).map S.subtype = S ⊓ cyclotomicPrimarySubmodule p O M := by
+  rw [← comap_cyclotomicPrimarySubmodule_subtype, Submodule.map_comap_eq,
+    Submodule.range_subtype, inf_comm]
+
+end Submodule
 
 namespace TauCeti.Iwasawa
 
