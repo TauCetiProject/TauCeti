@@ -219,20 +219,21 @@ theorem sum_div_eq_sub_sum_of_mul_eq_eval₂ {R F : Type*} [Ring R] [Field F] (f
     (hxz : x * z = P.eval₂ f y) (hyw : y * w = Q.eval₂ f x) :
     (∑ a ∈ Q.support, f (Q.coeff a) * f (P.coeff 0) ^ a * z ^ (e - a)) / y =
       z ^ e * w - ∑ a ∈ Q.support, f (Q.coeff a) * z ^ (e - a) * (divX (P ^ a)).eval₂ f y := by
-  rw [eq_sub_sum_mul_inv_of_mul_eq_add_sum (x := x) (z := y) (xs := z) (zs := w) (φ := 1)
+  refine (eq_sub_sum_mul_inv_of_mul_eq_add_sum (x := x) (z := y) (xs := z) (zs := w) (φ := 1)
     (n₀ := 0) (m₀ := 0) (N := e) (n := fun a ↦ a) (c := fun a ↦ f (Q.coeff a))
     (d := fun a ↦ f (P.coeff 0) ^ a * f (Q.coeff a)) (g := fun a ↦ f (P.coeff 0) ^ a)
     hx hy (fun a ha ↦ le_trans (le_natDegree_of_mem_supp a ha) he) (mul_zero _) ?_ ?_
-    (fun a _ ↦ by rw [mul_one, inv_mul_cancel₀ (pow_ne_zero a hx), mul_one]), mul_one,
-    Finset.sum_mul]
-  · refine congrArg _ (Finset.sum_congr rfl fun a _ ↦ ?_)
-    rw [pow_mul_pow_sub_eq_mul_eval₂_divX f P hxz, mul_one, inv_mul_cancel₀ (pow_ne_zero a hx),
-      mul_one]
-    field_simp
+    (fun a _ ↦ by rw [mul_one, inv_mul_cancel₀ (pow_ne_zero a hx), mul_one])).trans ?_
   · rw [mul_comm w y, hyw, eval₂_eq_sum, Polynomial.sum_def, zero_add]
     exact Finset.sum_congr rfl fun a _ ↦ mul_comm _ _
   · rw [div_mul_cancel₀ _ hy, mul_zero, zero_add]
     exact Finset.sum_congr rfl fun a _ ↦ by ring
+  rw [mul_one, Finset.sum_mul]
+  refine congrArg _ (Finset.sum_congr rfl fun a _ ↦ ?_)
+  rw [pow_mul_pow_sub_eq_mul_eval₂_divX f P hxz, mul_one, inv_mul_cancel₀ (pow_ne_zero a hx),
+    mul_one]
+  calc _ = f (Q.coeff a) * z ^ (e - a) * (divX (P ^ a)).eval₂ f y * (y * y⁻¹) := by ring
+    _ = _ := by rw [mul_inv_cancel₀ hy, mul_one]
 
 /-- **Polynomial replacement, membership.** Under the hypotheses of
 `sum_div_eq_sub_sum_of_mul_eq_eval₂`, the element
