@@ -290,21 +290,17 @@ theorem norm_borelPathToOne_sub_one_le (u : unitary (H →L[ℂ] H)) (t : I) :
   gcongr
   exact Real.cos_le_cos_of_nonneg_of_le_pi (norm_nonneg _) (norm_borelArg_le_pi u) ht
 
-/-- Every unitary operator on a complex Hilbert space is joined to `1` in `unitary (H →L[ℂ] H)`. -/
-theorem joined_one (u : unitary (H →L[ℂ] H)) : Joined 1 u :=
-  ⟨borelPathToOne u⟩
-
 /-- **Putnam–Wintner theorem.** The unitary group `unitary (H →L[ℂ] H)` of any complex Hilbert
 space `H` is norm-path-connected. -/
 instance instPathConnectedSpace : PathConnectedSpace (unitary (H →L[ℂ] H)) where
   nonempty := ⟨1⟩
-  joined u v := (joined_one u).symm.trans (joined_one v)
+  joined u v := ⟨(borelPathToOne u).symm.trans (borelPathToOne v)⟩
 
 /-- The path component of `1` in `unitary (H →L[ℂ] H)` is the entire unitary group. -/
 @[simp]
 theorem pathComponent_one_eq_univ :
     pathComponent (1 : unitary (H →L[ℂ] H)) = Set.univ :=
-  Set.eq_univ_of_forall joined_one
+  Set.eq_univ_of_forall (PathConnectedSpace.joined 1)
 
 /-- The set of unitary operators in `H →L[ℂ] H` is path-connected in the operator norm topology. -/
 theorem isPathConnected :
