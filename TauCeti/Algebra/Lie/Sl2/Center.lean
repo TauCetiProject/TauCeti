@@ -201,6 +201,12 @@ theorem weylVector_slTwoCartanGenerator :
       (slTwoCartanGenerator K) = 1 := by
   rw [← coroot'_slTwoRootIndex, coroot'_weylVector _ _ slTwoRootIndex_mem_support]
 
+/-- **The Weyl vector of `sl₂` is the weight `1`**, half the simple root. -/
+theorem weylVector_slTwoPositiveBase :
+    weylVector (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K) =
+      slTwoWeight 1 :=
+  dual_ext_slTwoCartanGenerator <| by simp
+
 /-- `χ_n(Ω) = n (n + 2)`, the central character at the highest weight `n`. -/
 theorem vermaCentralCharacter_slTwoWeight_natCast (n : ℕ) :
     vermaCentralCharacter (slTwoPositiveBase K) (slTwoWeight (n : K)) (slTwoOmegaCenter K) =
