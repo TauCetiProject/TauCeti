@@ -69,12 +69,9 @@ theorem norm_mk_eq (a : A) : ‖mk I a‖ = sInf ((‖a + ·‖) '' (I : Set A))
 
 /-- The quotient projection `mk I` is continuous. -/
 @[fun_prop]
-theorem continuous_mk : Continuous (mk I) := by
-  have hmk : (mk I : A → A ⧸ I) = (QuotientAddGroup.mk : A → A ⧸ I.toAddSubgroup) := by
-    ext a
-    exact (quotientAddGroupMk_eq_mk I a).symm
-  rw [hmk]
-  exact QuotientAddGroup.continuous_mk
+theorem continuous_mk : Continuous (mk I) :=
+  (QuotientAddGroup.continuous_mk (N := I.toAddSubgroup)).congr fun a =>
+    quotientAddGroupMk_eq_mk I a
 
 noncomputable instance nonUnitalSeminormedRing : NonUnitalSeminormedRing (A ⧸ I) where
   dist_eq := dist_eq_norm_neg_add
