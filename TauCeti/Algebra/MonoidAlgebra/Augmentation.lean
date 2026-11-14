@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
@@ -29,6 +30,8 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
 * `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over an additively torsion-free semiring,
   an element invariant under every right translation and with augmentation `|G|` is the norm.
+* `MonoidAlgebra.eq_zero_of_mul_single_eq_self`: an element invariant under right translation by
+  an element of infinite order is zero.
 
 ## References
 
@@ -116,5 +119,24 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [IsAddTor
     rw [nsmul_eq_mul, nsmul_one, ← h, hε]
   ext g
   simp [coeff_sum, coeff_single, Finsupp.single_apply, hcoeff, hγ1]
+
+/-- An element of a group algebra invariant under right multiplication by an element `g` of
+infinite order is zero. -/
+theorem eq_zero_of_mul_single_eq_self {R G : Type*} [Semiring R] [Group G] {g : G}
+    (hg : ¬IsOfFinOrder g) {γ : MonoidAlgebra R G} (hγ : γ * single g 1 = γ) : γ = 0 := by
+  have hcoeff (h : G) (n : ℕ) : γ.coeff (h * g ^ n) = γ.coeff h := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have := congrArg (fun z : MonoidAlgebra R G ↦ z.coeff (h * g ^ n * g)) hγ
+      simp only [coeff_mul_single_apply, mul_one, mul_inv_cancel_right] at this
+      rw [pow_succ, ← mul_assoc, ← this, ih]
+  ext h
+  by_contra hh
+  have hinj : Function.Injective fun n : ℕ ↦ h * g ^ n :=
+    (mul_right_injective h).comp (injective_pow_iff_not_isOfFinOrder.2 hg)
+  refine (Set.infinite_range_of_injective hinj).mono ?_ γ.coeff.support.finite_toSet
+  rintro _ ⟨n, rfl⟩
+  simpa [hcoeff] using hh
 
 end MonoidAlgebra
