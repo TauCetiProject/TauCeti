@@ -66,11 +66,17 @@ boundary equations through `μ` belong to both `Ω` and `Ω′`, and identify ea
 ## Main results
 
 * `TauCeti.GenEq.baseItems_transferBase_subset_dual`: in the result, `ψ` is contained in `Δ(μ)`.
-* `TauCeti.GenEq.degree_transferBase_add_one`, `TauCeti.GenEq.degree_transferBase_of_notMem`:
-  transferring `ψ` off an item outside `Δ(μ)` drops that item's degree by `1` and leaves the
-  degrees of other items outside `Δ(μ)` unchanged, lowering degrees in `σ(μ) \ σ(Δμ)` towards `1`.
-* `TauCeti.GenEq.IsTransferable.transferBase`: transferring `ψ` along `μ` preserves transferability
-  of any other base `ψ' ≠ ψ` along `μ`.
+* `TauCeti.GenEq.closedSections_transferBase`,
+  `TauCeti.GenEq.closedSectionOfBase_transferBase_self`: transferring a base preserves constant and
+  free items, open and closed boundaries, and the closed sections `Σ_Ω`, while moving `ψ` into the
+  closed section of `Δ(μ)`.
+* `TauCeti.GenEq.degree_transferBase_add_one`,
+  `TauCeti.GenEq.degree_transferBase_eq_degree_add_one`,
+  `TauCeti.GenEq.degree_transferBase_eq_degree_iff`: effect of transferring `ψ` on item degrees;
+  in particular, transferring `ψ` off an item not in its transferred section lowers that item's
+  degree by `1` (lowering degrees in `σ(μ) \ σ(Δμ)` towards `1`).
+* `TauCeti.GenEq.isTransferable_transferBase_of_ne`: for `ψ' ≠ ψ`, transferability along `μ` is
+  preserved and reflected by transferring `ψ` along `μ`.
 * `TauCeti.GenEq.card_connections_transferBase`: transferring a base preserves the number of
   boundary connections.
 * `TauCeti.GenEq.V_toSystem_transferBase`: ET2 preserves the points of `Ω*` in every `F(A)`-group.
@@ -282,6 +288,30 @@ theorem transferConnection_dual
         (Ω.transferConnection μ ψ c).1) := by
   simp only [transferConnection_def, Ω.dual_involutive.eq_iff, Ω.dual_involutive ψ]
 
+/-- Relocating connections along `μ` is injective on `Ω.connections` when `Ω` is formally
+consistent and every connection through `ψ` has its `ψ`-boundary `μ`-tied. -/
+theorem IsFormallyConsistent.injOn_transferConnection (hΩ : Ω.IsFormallyConsistent)
+    (hc : ∀ c ∈ Ω.connections, c.2.1 = ψ → ∃ q, Ω.IsTiedTo μ c.1 q) :
+    Set.InjOn (Ω.transferConnection μ ψ) Ω.connections := by
+  rintro ⟨p₁, ν₁, r₁⟩ hc₁ ⟨p₂, ν₂, r₂⟩ hc₂ heq
+  rw [transferConnection_def, transferConnection_def, Prod.mk.injEq, Prod.mk.injEq] at heq
+  obtain ⟨hp, rfl, hr⟩ := heq
+  refine Prod.ext ?_ (Prod.ext rfl ?_)
+  · by_cases h₁ : ν₁ = ψ
+    · subst ν₁
+      simp only [ite_true] at hp
+      exact hΩ.injOn_tiedBoundary (hc _ hc₁ rfl) (hc _ hc₂ rfl) hp
+    · simpa [h₁] using hp
+  · by_cases h₂ : ν₁ = Ω.dual ψ
+    · subst ν₁
+      simp only [ite_true] at hr
+      have hd₁ : (r₁, ψ, p₁) ∈ Ω.connections := by
+        simpa [Ω.dual_involutive ψ] using Ω.dual_mem_connections _ hc₁
+      have hd₂ : (r₂, ψ, p₂) ∈ Ω.connections := by
+        simpa [Ω.dual_involutive ψ] using Ω.dual_mem_connections _ hc₂
+      exact hΩ.injOn_tiedBoundary (hc _ hd₁ rfl) (hc _ hd₂ rfl) hr
+    · simpa [h₂] using hr
+
 section Consistent
 
 variable (hΩ : Ω.IsFormallyConsistent) (h : Ω.IsTransferable μ ψ)
@@ -436,40 +466,174 @@ theorem baseItems_transferBase_of_ne {ν : Fin Ω.numBases} (hν : ν ≠ ψ) :
     (Ω.transferBase hΩ h).baseItems ν = Ω.baseItems ν := by
   simp [baseItems_def, hν]
 
-/-- Outside `σ(Δμ)`, transferring `ψ` along `μ` removes `ψ` from the variable bases containing an
-item and leaves every other base unchanged. -/
-theorem filter_mem_baseItems_transferBase_of_notMem_dual {k : Fin Ω.numItems}
-    (hk : k ∉ Ω.baseItems (Ω.dual μ)) :
+/-- Transferring `ψ` along `μ` inserts `ψ` into the variable bases containing `hₖ` when `hₖ` lies
+in the transferred section of `ψ`, and erases `ψ` otherwise. -/
+theorem filter_mem_baseItems_transferBase (k : Fin Ω.numItems) :
     ({ν | k ∈ (Ω.transferBase hΩ h).baseItems ν} : Finset (Fin Ω.numBases)) =
-      ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases)).erase ψ := by
+      if k ∈ (Ω.transferBase hΩ h).baseItems ψ then
+        insert ψ ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases))
+      else
+        ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases)).erase ψ := by
   ext ν
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase]
-  by_cases hν : ν = ψ
-  · subst ν
-    exact ⟨fun hmem => absurd (baseItems_transferBase_subset_dual hΩ h hmem) hk,
-      fun h' => absurd rfl h'.1⟩
-  · rw [baseItems_transferBase_of_ne hΩ h hν]
-    exact ⟨fun hmem => ⟨hν, hmem⟩, And.right⟩
+  split_ifs with hk
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert]
+    by_cases hν : ν = ψ
+    · subst ν
+      exact ⟨fun _ => Or.inl rfl, fun _ => hk⟩
+    · rw [baseItems_transferBase_of_ne hΩ h hν]
+      exact ⟨Or.inr, fun h' => h'.resolve_left hν⟩
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase]
+    by_cases hν : ν = ψ
+    · subst ν
+      exact ⟨fun hmem => absurd hmem hk, fun h' => absurd rfl h'.1⟩
+    · rw [baseItems_transferBase_of_ne hΩ h hν]
+      exact ⟨fun hmem => ⟨hν, hmem⟩, And.right⟩
 
-/-- If an item `hₖ` belongs to `ψ` but not to `Δ(μ)`, transferring `ψ` along `μ` decreases its
-degree by `1`. -/
+/-- If `hₖ` belongs to `ψ` in `Ω` but not in `Ω.transferBase hΩ h`, transferring `ψ` along `μ`
+decreases its degree by `1`. -/
 theorem degree_transferBase_add_one {k : Fin Ω.numItems} (hkψ : k ∈ Ω.baseItems ψ)
-    (hk : k ∉ Ω.baseItems (Ω.dual μ)) :
+    (hk : k ∉ (Ω.transferBase hΩ h).baseItems ψ) :
     (Ω.transferBase hΩ h).degree k + 1 = Ω.degree k := by
   have hmem : ψ ∈ ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases)) :=
     Finset.mem_filter.2 ⟨Finset.mem_univ _, hkψ⟩
-  rw [degree_def, degree_def, filter_mem_baseItems_transferBase_of_notMem_dual hΩ h hk,
+  rw [degree_def, degree_def, filter_mem_baseItems_transferBase hΩ h k, ite_eq_right hk,
     add_right_comm, Finset.card_erase_add_one hmem]
 
-/-- If an item `hₖ` belongs neither to `ψ` nor to `Δ(μ)`, transferring `ψ` along `μ` leaves its
-degree unchanged. -/
+/-- If `hₖ` belongs to `ψ` in `Ω.transferBase hΩ h` but not in `Ω`, transferring `ψ` along `μ`
+increases its degree by `1`. -/
+theorem degree_transferBase_eq_degree_add_one {k : Fin Ω.numItems} (hkψ : k ∉ Ω.baseItems ψ)
+    (hk : k ∈ (Ω.transferBase hΩ h).baseItems ψ) :
+    (Ω.transferBase hΩ h).degree k = Ω.degree k + 1 := by
+  have hnotMem : ψ ∉ ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases)) :=
+    fun hmem => hkψ (Finset.mem_filter.1 hmem).2
+  rw [degree_def, degree_def, filter_mem_baseItems_transferBase hΩ h k, ite_eq_left hk,
+    Finset.card_insert_of_notMem hnotMem, add_right_comm]
+
+/-- If `hₖ` belongs to `ψ` neither in `Ω` nor in `Ω.transferBase hΩ h`, transferring `ψ` along `μ`
+leaves its degree unchanged. -/
 theorem degree_transferBase_of_notMem {k : Fin Ω.numItems} (hkψ : k ∉ Ω.baseItems ψ)
-    (hk : k ∉ Ω.baseItems (Ω.dual μ)) :
+    (hk : k ∉ (Ω.transferBase hΩ h).baseItems ψ) :
     (Ω.transferBase hΩ h).degree k = Ω.degree k := by
   have hnotMem : ψ ∉ ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases)) :=
     fun hmem => hkψ (Finset.mem_filter.1 hmem).2
-  rw [degree_def, degree_def, filter_mem_baseItems_transferBase_of_notMem_dual hΩ h hk,
+  rw [degree_def, degree_def, filter_mem_baseItems_transferBase hΩ h k, ite_eq_right hk,
     Finset.erase_eq_of_notMem hnotMem]
+
+/-- If `hₖ` belongs to `ψ` both in `Ω` and in `Ω.transferBase hΩ h`, transferring `ψ` along `μ`
+leaves its degree unchanged. -/
+theorem degree_transferBase_of_mem {k : Fin Ω.numItems} (hkψ : k ∈ Ω.baseItems ψ)
+    (hk : k ∈ (Ω.transferBase hΩ h).baseItems ψ) :
+    (Ω.transferBase hΩ h).degree k = Ω.degree k := by
+  have hmem : ψ ∈ ({ν | k ∈ Ω.baseItems ν} : Finset (Fin Ω.numBases)) :=
+    Finset.mem_filter.2 ⟨Finset.mem_univ _, hkψ⟩
+  rw [degree_def, degree_def, filter_mem_baseItems_transferBase hΩ h k, ite_eq_left hk,
+    Finset.insert_eq_of_mem hmem]
+
+/-- Transferring `ψ` along `μ` preserves the degree of `hₖ` if and only if `hₖ` belongs to the
+transferred section of `ψ` exactly when it belongs to `ψ` in `Ω`. -/
+theorem degree_transferBase_eq_degree_iff {k : Fin Ω.numItems} :
+    (Ω.transferBase hΩ h).degree k = Ω.degree k ↔
+      (k ∈ (Ω.transferBase hΩ h).baseItems ψ ↔ k ∈ Ω.baseItems ψ) := by
+  by_cases hk : k ∈ (Ω.transferBase hΩ h).baseItems ψ <;> by_cases hkψ : k ∈ Ω.baseItems ψ
+  · exact iff_of_true (degree_transferBase_of_mem hΩ h hkψ hk) ⟨fun _ => hkψ, fun _ => hk⟩
+  · have hdeg := degree_transferBase_eq_degree_add_one hΩ h hkψ hk
+    exact iff_of_false (by omega) (fun hiff => hkψ (hiff.1 hk))
+  · have hdeg := degree_transferBase_add_one hΩ h hkψ hk
+    exact iff_of_false (by omega) (fun hiff => hk (hiff.2 hkψ))
+  · exact iff_of_true (degree_transferBase_of_notMem hΩ h hkψ hk)
+      ⟨fun h' => absurd h' hk, fun h' => absurd h' hkψ⟩
+
+/-- Transferring a variable base preserves constant items. -/
+@[simp]
+theorem isConstantItem_transferBase {k : Fin Ω.numItems} :
+    (Ω.transferBase hΩ h).IsConstantItem k ↔ Ω.IsConstantItem k := by
+  simp only [isConstantItem_iff]
+
+/-- Transferring a variable base preserves free items: the carrier `μ` and its dual `Δ(μ)` still
+cover the old and new sections of `ψ`. -/
+@[simp]
+theorem isFreeItem_transferBase {k : Fin Ω.numItems} :
+    (Ω.transferBase hΩ h).IsFreeItem k ↔ Ω.IsFreeItem k := by
+  simp only [isFreeItem_iff, isConstantItem_transferBase]
+  refine and_congr_left fun _ => ⟨fun hk ν => ?_, fun hk ν => ?_⟩
+  · by_cases hν : ν = ψ
+    · subst ν
+      exact fun hm => (baseItems_transferBase_of_ne hΩ h h.ne_carrier.symm ▸ hk μ)
+        (h.baseItems_subset hm)
+    · exact baseItems_transferBase_of_ne hΩ h hν ▸ hk ν
+  · by_cases hν : ν = ψ
+    · subst ν
+      exact fun hm => hk (Ω.dual μ) (baseItems_transferBase_subset_dual hΩ h hm)
+    · exact (baseItems_transferBase_of_ne hΩ h hν).symm ▸ hk ν
+
+/-- Transferring a variable base preserves open boundaries: any boundary crossing `ψ` before or
+after the transfer also crosses `μ` or `Δ(μ)`. -/
+@[simp]
+theorem isOpenBoundary_transferBase {i : Fin (Ω.numItems + 1)} :
+    (Ω.transferBase hΩ h).IsOpenBoundary i ↔ Ω.IsOpenBoundary i := by
+  rw [isOpenBoundary_iff, isOpenBoundary_iff]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨ν, hνc⟩
+    rw [crosses_iff] at hνc
+    by_cases hν : ν = ψ
+    · subst ν
+      exact ⟨Ω.dual μ, (crosses_iff _).2 ⟨(left_dual_le_left_transferBase hΩ h).trans_lt hνc.1,
+        hνc.2.trans_le (right_transferBase_le_right_dual hΩ h)⟩⟩
+    · rw [left_transferBase_of_ne hΩ h hν, right_transferBase_of_ne hΩ h hν] at hνc
+      exact ⟨ν, (crosses_iff _).2 hνc⟩
+  · rintro ⟨ν, hνc⟩
+    rw [crosses_iff] at hνc
+    by_cases hν : ν = ψ
+    · subst ν
+      refine ⟨μ, (crosses_iff _).2 ?_⟩
+      rw [left_transferBase_of_ne hΩ h h.ne_carrier.symm,
+        right_transferBase_of_ne hΩ h h.ne_carrier.symm]
+      exact ⟨h.left_le.trans_lt hνc.1, hνc.2.trans_le h.right_le⟩
+    · refine ⟨ν, (crosses_iff _).2 ?_⟩
+      rwa [left_transferBase_of_ne hΩ h hν, right_transferBase_of_ne hΩ h hν]
+
+/-- Transferring a variable base preserves closed boundaries. -/
+@[simp]
+theorem isClosedBoundary_transferBase {i : Fin (Ω.numItems + 1)} :
+    (Ω.transferBase hΩ h).IsClosedBoundary i ↔ Ω.IsClosedBoundary i := by
+  rw [← not_isOpenBoundary, ← not_isOpenBoundary, isOpenBoundary_transferBase]
+
+/-- Transferring a variable base preserves closed sections. -/
+@[simp]
+theorem isClosedSection_transferBase {i j : Fin (Ω.numItems + 1)} :
+    (Ω.transferBase hΩ h).IsClosedSection i j ↔ Ω.IsClosedSection i j := by
+  simp only [isClosedSection_iff, isClosedBoundary_transferBase, isOpenBoundary_transferBase]
+
+/-- Transferring a variable base preserves the set `Σ_Ω` of closed sections. -/
+@[simp]
+theorem closedSections_transferBase :
+    (Ω.transferBase hΩ h).closedSections = Ω.closedSections := by
+  ext s
+  simp
+
+/-- Transferring a variable base preserves the closed section of every item. -/
+@[simp]
+theorem closedSectionOfItem_transferBase (k : Fin Ω.numItems) :
+    (Ω.transferBase hΩ h).closedSectionOfItem k = Ω.closedSectionOfItem k := by
+  rw [closedSectionOfItem_eq_iff, closedSections_transferBase, sectionItems_transferBase]
+  exact Ω.closedSectionOfItem_eq_iff.1 rfl
+
+/-- After transferring `ψ` along `μ`, the closed section of `ψ` is the closed section of `Δ(μ)`. -/
+@[simp]
+theorem closedSectionOfBase_transferBase_self :
+    (Ω.transferBase hΩ h).closedSectionOfBase ψ = Ω.closedSectionOfBase (Ω.dual μ) := by
+  rw [closedSectionOfBase_eq_iff, closedSections_transferBase, sectionItems_transferBase]
+  exact ⟨Ω.closedSectionOfBase_mem_closedSections (Ω.dual μ),
+    (baseItems_transferBase_subset_dual hΩ h).trans
+      (Ω.baseItems_subset_sectionItems_closedSectionOfBase (Ω.dual μ))⟩
+
+/-- Transferring `ψ` along `μ` preserves the closed section of every variable base other than
+`ψ`. -/
+theorem closedSectionOfBase_transferBase_of_ne {ν : Fin Ω.numBases} (hν : ν ≠ ψ) :
+    (Ω.transferBase hΩ h).closedSectionOfBase ν = Ω.closedSectionOfBase ν := by
+  rw [closedSectionOfBase_eq_iff, closedSections_transferBase, sectionItems_transferBase,
+    baseItems_transferBase_of_ne hΩ h hν]
+  exact Ω.closedSectionOfBase_eq_iff.1 rfl
 
 /-- Membership in the boundary connections of `Ω.transferBase hΩ h`. -/
 theorem mem_connections_transferBase
@@ -489,42 +653,10 @@ theorem mem_connections_transferBase_of_ne
   rw [transferConnection_snd_fst] at h₁ h₂
   rwa [transferConnection_of_ne h₁ h₂]
 
-include hΩ h in
-/-- Relocating connections is injective on `Ω.connections` when `Ω` is formally consistent and `ψ`
-is transferable along `μ`. -/
-theorem injOn_transferConnection :
-    Set.InjOn (Ω.transferConnection μ ψ) Ω.connections := by
-  rintro ⟨p₁, ν₁, r₁⟩ hc₁ ⟨p₂, ν₂, r₂⟩ hc₂ heq
-  have hν : ν₁ = ν₂ := congrArg (fun c => c.2.1) heq
-  subst ν₂
-  by_cases h₁ : ν₁ = ψ
-  · subst ν₁
-    rw [transferConnection_of_eq h.ne_dual_self rfl, transferConnection_of_eq h.ne_dual_self rfl,
-      Prod.mk.injEq, Prod.mk.injEq] at heq
-    obtain ⟨hp, -, rfl⟩ := heq
-    have hp' : p₁ = p₂ := hΩ.injOn_tiedBoundary
-      (h.exists_isTiedTo_of_mem_connections _ hc₁ rfl)
-      (h.exists_isTiedTo_of_mem_connections _ hc₂ rfl) hp
-    rw [hp']
-  · by_cases h₂ : ν₁ = Ω.dual ψ
-    · subst ν₁
-      rw [transferConnection_of_eq_dual h.ne_dual_self rfl,
-        transferConnection_of_eq_dual h.ne_dual_self rfl, Prod.mk.injEq, Prod.mk.injEq] at heq
-      obtain ⟨rfl, -, hr⟩ := heq
-      have hd₁ : (r₁, ψ, p₁) ∈ Ω.connections := by
-        simpa [Ω.dual_involutive ψ] using Ω.dual_mem_connections _ hc₁
-      have hd₂ : (r₂, ψ, p₁) ∈ Ω.connections := by
-        simpa [Ω.dual_involutive ψ] using Ω.dual_mem_connections _ hc₂
-      have hr' : r₁ = r₂ := hΩ.injOn_tiedBoundary
-        (h.exists_isTiedTo_of_mem_connections _ hd₁ rfl)
-        (h.exists_isTiedTo_of_mem_connections _ hd₂ rfl) hr
-      rw [hr']
-    · rwa [transferConnection_of_ne h₁ h₂, transferConnection_of_ne h₁ h₂] at heq
-
 /-- Transferring a base preserves the number of boundary connections. -/
 theorem card_connections_transferBase :
     (Ω.transferBase hΩ h).connections.card = Ω.connections.card :=
-  Finset.card_image_of_injOn (injOn_transferConnection hΩ h)
+  Finset.card_image_of_injOn (hΩ.injOn_transferConnection h.exists_isTiedTo_of_mem_connections)
 
 /-- Away from `{ψ, Δ(ψ)}`, `transferBase` preserves ties. -/
 theorem isTiedTo_transferBase_of_ne {ν : Fin Ω.numBases} {p q : Fin (Ω.numItems + 1)}
@@ -545,6 +677,25 @@ theorem tiedBoundary_transferBase_of_ne {ν : Fin Ω.numBases} (p : Fin (Ω.numI
   · have hex' : ¬ ∃ q, (Ω.transferBase hΩ h).IsTiedTo ν p q := by
       simpa only [isTiedTo_transferBase_of_ne hΩ h h₁ h₂] using hex
     rw [tiedBoundary_of_not_exists hex', tiedBoundary_of_not_exists hex]
+
+/-- For any base `ψ' ≠ ψ`, transferability along `μ` in `Ω.transferBase hΩ h` is equivalent to
+transferability along `μ` in `Ω`. -/
+theorem isTransferable_transferBase_of_ne {ψ' : Fin Ω.numBases} (hne : ψ' ≠ ψ) :
+    (Ω.transferBase hΩ h).IsTransferable μ ψ' ↔ Ω.IsTransferable μ ψ' := by
+  have htied : ∀ {p q}, (Ω.transferBase hΩ h).IsTiedTo μ p q ↔ Ω.IsTiedTo μ p q :=
+    isTiedTo_transferBase_of_ne hΩ h h.ne_carrier.symm h.dual_ne_carrier.symm
+  rw [isTransferable_iff, isTransferable_iff, left_transferBase_of_ne hΩ h hne,
+    right_transferBase_of_ne hΩ h hne]
+  refine and_congr_right fun _ => and_congr_right fun _ => and_congr_right fun _ =>
+    and_congr (exists_congr fun _ => htied) <|
+      and_congr (exists_congr fun _ => htied) ?_
+  rw [show (Ω.transferBase hΩ h).connections = Ω.connections.image (Ω.transferConnection μ ψ)
+    from rfl, Finset.forall_mem_image]
+  refine forall₂_congr fun c _ => ?_
+  rw [transferConnection_snd_fst]
+  refine imp_congr_right fun hc => ?_
+  rw [transferConnection_fst, ite_eq_right (hc ▸ hne)]
+  exact exists_congr fun _ => htied
 
 /-! ### Equations and group solutions -/
 
@@ -595,10 +746,10 @@ private theorem lift_mk_segment_transferBase_self {H : Type*} [Group H]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
   · simp only [hs, ite_true]
     rw [hΩ.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs h.isTiedTo_tiedBoundary_left
-      h.isTiedTo_tiedBoundary_right hb hc]
+      h.isTiedTo_tiedBoundary_right hb (hc _ · rfl) (hc _ · rfl)]
   · simp only [hs, ite_false]
     rw [hΩ.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs h.isTiedTo_tiedBoundary_left
-      h.isTiedTo_tiedBoundary_right hb hc]
+      h.isTiedTo_tiedBoundary_right hb (hc _ · rfl) (hc _ · rfl)]
     cases Ω.sign ψ <;>
       simp only [Bool.not_false, Bool.not_true, Bool.cond_false, Bool.cond_true, inv_inv]
 
@@ -657,7 +808,7 @@ private theorem lift_mk_boundaryEquation_snd_transferConnection_dual {H : Type*}
         Ω.boundaryEquation_snd_of_sign_eq (by rwa [Ω.dual_involutive ψ]),
         Ω.dual_involutive ψ, segment_transferBase, left_transferBase_self, ite_eq_left hs]
       exact (hΩ.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs h.isTiedTo_tiedBoundary_left hr_tied
-        hb hc).symm
+        hb (hc _ · rfl) (hc _ · rfl)).symm
     · have hsψ' : (Ω.transferBase hΩ h).sign (Ω.dual ψ) ≠
           (Ω.transferBase hΩ h).sign (Ω.dual (Ω.dual ψ)) := by
         cases h₁ : Ω.sign (Ω.dual ψ) <;> cases h₂ : Ω.sign ψ <;>
@@ -667,7 +818,7 @@ private theorem lift_mk_boundaryEquation_snd_transferConnection_dual {H : Type*}
         Ω.dual_involutive ψ, segment_transferBase, right_transferBase_self, ite_eq_left hs,
         Ω.lift_mk_segment_false, Ω.lift_mk_segment_false, inv_inj]
       exact (hΩ.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs hr_tied h.isTiedTo_tiedBoundary_right
-        hb hc).symm
+        hb (hc _ · rfl) (hc _ · rfl)).symm
   · by_cases hsψ : Ω.sign (Ω.dual ψ) = Ω.sign ψ
     · have hsψ' : (Ω.transferBase hΩ h).sign (Ω.dual ψ) ≠
           (Ω.transferBase hΩ h).sign (Ω.dual (Ω.dual ψ)) := by
@@ -678,7 +829,7 @@ private theorem lift_mk_boundaryEquation_snd_transferConnection_dual {H : Type*}
         Ω.dual_involutive ψ, segment_transferBase, right_transferBase_self, ite_eq_right hs,
         Ω.lift_mk_segment_false]
       exact (hΩ.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs h.isTiedTo_tiedBoundary_left
-        hr_tied hb hc).symm
+        hr_tied hb (hc _ · rfl) (hc _ · rfl)).symm
     · have hsψ' : (Ω.transferBase hΩ h).sign (Ω.dual ψ) =
           (Ω.transferBase hΩ h).sign (Ω.dual (Ω.dual ψ)) := by
         cases h₁ : Ω.sign (Ω.dual ψ) <;> cases h₂ : Ω.sign ψ <;>
@@ -688,7 +839,7 @@ private theorem lift_mk_boundaryEquation_snd_transferConnection_dual {H : Type*}
         Ω.dual_involutive ψ, segment_transferBase, left_transferBase_self, ite_eq_right hs,
         Ω.lift_mk_segment_false,
         hΩ.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs hr_tied
-          h.isTiedTo_tiedBoundary_right hb hc,
+          h.isTiedTo_tiedBoundary_right hb (hc _ · rfl) (hc _ · rfl),
         inv_inv]
 
 /-- Under any group assignment satisfying the equations of `μ` and the basic equation of `ψ`, every
@@ -982,25 +1133,8 @@ end Consistent
 /-- Transferring `ψ` along `μ` preserves transferability of any other base `ψ' ≠ ψ` along `μ`. -/
 theorem IsTransferable.transferBase {ψ' : Fin Ω.numBases} (h' : Ω.IsTransferable μ ψ')
     (hΩ : Ω.IsFormallyConsistent) (h : Ω.IsTransferable μ ψ) (hne : ψ' ≠ ψ) :
-    (Ω.transferBase hΩ h).IsTransferable μ ψ' where
-  ne_dual_self := h'.ne_dual_self
-  ne_carrier := h'.ne_carrier
-  ne_dual_carrier := h'.ne_dual_carrier
-  exists_isTiedTo_left := by
-    rw [left_transferBase_of_ne hΩ h hne]
-    exact h'.exists_isTiedTo_left.imp fun q =>
-      (isTiedTo_transferBase_of_ne hΩ h h.ne_carrier.symm h.dual_ne_carrier.symm).2
-  exists_isTiedTo_right := by
-    rw [right_transferBase_of_ne hΩ h hne]
-    exact h'.exists_isTiedTo_right.imp fun q =>
-      (isTiedTo_transferBase_of_ne hΩ h h.ne_carrier.symm h.dual_ne_carrier.symm).2
-  exists_isTiedTo_of_mem_connections := by
-    rintro c' hc' hψ'
-    obtain ⟨c, hc, rfl⟩ := (mem_connections_transferBase hΩ h).1 hc'
-    rw [transferConnection_snd_fst] at hψ'
-    rw [transferConnection_fst, ite_eq_right (hψ' ▸ hne)]
-    exact (h'.exists_isTiedTo_of_mem_connections c hc hψ').imp fun q =>
-      (isTiedTo_transferBase_of_ne hΩ h h.ne_carrier.symm h.dual_ne_carrier.symm).2
+    (Ω.transferBase hΩ h).IsTransferable μ ψ' :=
+  (isTransferable_transferBase_of_ne hΩ h hne).2 h'
 
 end TransferBase
 
@@ -1042,7 +1176,9 @@ example :
   have ht2 : equalSignExample.tiedBoundary 0 2 = 5 :=
     hΩ.tiedBoundary_eq (isTiedTo_of_mem_connections (by decide))
   have hdeg := degree_transferBase_add_one hΩ h (k := 0)
-    (equalSignExample.mem_baseItems.2 (by decide)) (by rw [equalSignExample.mem_baseItems]; decide)
+    (equalSignExample.mem_baseItems.2 (by decide))
+    (fun hm => absurd (baseItems_transferBase_subset_dual hΩ h hm)
+      (by rw [equalSignExample.mem_baseItems]; decide))
   have hdeg₀ : equalSignExample.degree 0 = 2 := by
     simp only [degree_def, equalSignExample.mem_baseItems]
     decide

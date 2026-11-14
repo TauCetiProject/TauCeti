@@ -489,11 +489,22 @@ theorem eval_point_mk (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
   rw [mk_substituteVars, EqIneqSystem.eval_eq_lift]
   rfl
 
+/-- Both sides of any equation of `Ω` evaluate to the same element of `F(A)` under the item words
+of a solution `U`. -/
+theorem lift_mk_eq_of_mem_equations
+    {e : List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool)}
+    (he : e ∈ Ω.equations) :
+    FreeGroup.lift (Sum.elim (fun x => FreeGroup.mk (U.word x)) FreeGroup.of)
+        (FreeGroup.mk e.1) =
+      FreeGroup.lift (Sum.elim (fun x => FreeGroup.mk (U.word x)) FreeGroup.of)
+        (FreeGroup.mk e.2) := by
+  simpa only [mk_substituteVars] using congrArg FreeGroup.mk (U.subst_eq e he)
+
 /-- A solution of a generalised equation is a solution of the system `Ω*` in `F(A)`. -/
-theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := by
-  refine Ω.mem_V_toSystem_iff.2 fun e he => ?_
-  rw [MonoidHom.coe_id, Function.id_comp, ← EqIneqSystem.eval_eq_lift, U.eval_point_mk,
-    U.eval_point_mk, U.subst_eq e he]
+theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem :=
+  Ω.mem_V_toSystem_iff.2 fun _ he => by
+    simpa only [MonoidHom.coe_id, Function.id_comp, funext U.point_apply] using
+      U.lift_mk_eq_of_mem_equations he
 
 /-- In a solution, a nonempty word in the items and the letters of `A` has a nonempty substituted
 word: every item carries a nonempty word. -/
