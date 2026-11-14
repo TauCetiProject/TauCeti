@@ -11,14 +11,16 @@ public import TauCeti.NumberTheory.Multiquadratic.Unramified.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Unramified.Subfields
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Subfactorization
+import TauCeti.NumberTheory.NumberField.ExistsRamified
 
 /-!
 # Maximality of the candidate genus field
 
-Let `d` be a squarefree integer that is not a rational square, let `M / ℚ` be an abelian number
-field extension, and let `y ∈ M` be a square root of `d` generating a quadratic subfield
-`F = ℚ(√d)` of `M`. If `M / F` is unramified at every finite prime, then `M` embeds over `ℚ` into
-the candidate genus field `candidateGenusField hd`. Since that field is itself such an extension —
+Let `d` be a squarefree integer, let `M / ℚ` be an abelian number field extension, and let
+`y ∈ M` be a square root of `d` generating the subfield `F = ℚ(√d)` of `M`. (When `d = 1` the
+subfield is `ℚ` and an extension unramified over it is `ℚ` itself, which embeds trivially.) If
+`M / F` is unramified at every finite prime, then `M` embeds over `ℚ` into the candidate genus
+field `candidateGenusField hd`. Since that field is itself such an extension —
 it is abelian over `ℚ`, contains a square root of `d`, and is unramified over `ℚ(√d)` at every
 finite prime — this makes it the *largest* one, which is the maximality half of the genus-field
 characterisation.
@@ -50,15 +52,16 @@ x² + ny²*, §6.A, and F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenst
 
 In the namespace `TauCeti.Multiquadratic`:
 
-* `exists_mem_candidateGenusField_sq_eq_intCast`: a quadratic subfield `ℚ(√a)` of such an `M` has
-  its square root inside the candidate genus field.
+* `exists_mem_candidateGenusField_sq_eq_intCast`: a square root `√a` in such an `M` of an
+  integer `a` has a counterpart inside the candidate genus field.
 * `nonempty_algHom_candidateGenusField`: `M` embeds over `ℚ` into the candidate genus field.
 * `finrank_le_finrank_candidateGenusField`: hence `[M : ℚ] ≤ [K_gen : ℚ]`, and
   `finrank_le_two_pow_card_genusPrimeDiscriminants` reads that bound off as `2 ^ t`.
 * `nonempty_algEquiv_candidateGenusField`: an extension attaining the bound is `ℚ`-isomorphic to
   the candidate genus field.
-* `exists_isUnramifiedIn_and_finrank_eq_two_pow_card`: the candidate genus field is itself such an
-  extension, so the bound is attained and the uniqueness statement is not vacuous.
+* `exists_isUnramifiedIn_and_finrank_eq_two_pow_card`: when `d` is not a rational square, the
+  candidate genus field is itself such an extension, so the bound is attained and the uniqueness
+  statement is not vacuous.
 -/
 
 public section
@@ -111,20 +114,25 @@ section IsGalois
 
 variable [IsGalois ℚ M]
 
-/-- **A quadratic subfield of an unramified Galois extension lies in the candidate genus field.**
-Let `M / ℚ` be Galois, let `y ∈ M` be a square root of a squarefree non-square `d` generating a
-quadratic subfield, and assume `M` is unramified over that subfield at every finite prime. Then for
-every squarefree `a` with a square root in `M`, the candidate genus field
-`candidateGenusField hd` contains an element squaring to `a`.
-
-This is the arithmetic core of maximality: the discriminant of `ℚ(√a)` is a *subproduct* of the
-prime-discriminant factorization of the discriminant of `ℚ(√d)`. -/
-theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) (hsfa : Squarefree a)
+/-- The squarefree case of `exists_mem_candidateGenusField_sq_eq_intCast`. -/
+private theorem exists_mem_candidateGenusField_sq_eq_intCast_of_squarefree {d a : ℤ}
+    (hd : Squarefree d) (hsfa : Squarefree a)
     {x y : M} (hx : x ^ 2 = algebraMap ℤ M a) (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q) :
     ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a : ℤ) : ℂ) := by
+  by_cases hsqd : IsSquare ((d : ℤ) : ℚ)
+  · -- `ℚ(y) = ℚ`, so `M` is unramified over `ℚ` and is `ℚ` itself: `x` is rational.
+    have hF : Module.finrank ℚ (adjoin ℚ {y} : IntermediateField ℚ M) = 1 :=
+      finrank_adjoin_simple_eq_one_iff.mpr <| adjoin_simple_eq_bot_iff.mp <|
+        (IntermediateField.adjoin_simple_eq_bot_iff_isSquare
+          (by rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ M]; norm_num)).mpr hsqd
+    obtain ⟨q, rfl⟩ := (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp
+      (finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn hF hunr)).2 x
+    have hq : q ^ 2 = ((a : ℤ) : ℚ) := (algebraMap ℚ M).injective <| by
+      rw [map_pow, hx, IsScalarTower.algebraMap_apply ℤ ℚ M]
+      norm_num
+    exact ⟨algebraMap ℚ ℂ q, IntermediateField.algebraMap_mem _ _, by rw [← map_pow, hq]; simp⟩
   have hdQ : ((d : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hd.ne_zero
   by_cases hsq : IsSquare (((a * d : ℤ)) : ℚ)
   · -- `a` and `d` are in the same square class: rescale the square root of `d`.
@@ -149,10 +157,37 @@ theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefre
         (fun p hp hpa =>
           dvd_fundamentalDiscriminant_base_of_dvd_subfield hsfa hd hx hy hunr hp hpa)
         fun h2 => ?_)
-    have hdeg := finrank_adjoin_sq_eq_intCast hnsqd hy
+    have hdeg := finrank_adjoin_sq_eq_intCast hsqd hy
     have h := not_dvd_fundamentalDiscriminant_mul_of_dvd_subfield hsfa hsfc hx hy hdeg hunr he hce
       (p := 2) Nat.prime_two (by exact_mod_cast h2)
     exact_mod_cast h
+
+/-- **A square root of an integer in an unramified Galois extension lies in the candidate genus
+field.** Let `M / ℚ` be Galois, let `y ∈ M` be a square root of a squarefree integer `d`, and
+assume `M` is unramified over the subfield `ℚ(y)` it generates (which is `ℚ` when `d = 1`) at every
+finite prime. Then for every integer `a` with a square root in `M`, the candidate genus field
+`candidateGenusField hd` contains an element squaring to `a`.
+
+This is the arithmetic core of maximality. -/
+theorem exists_mem_candidateGenusField_sq_eq_intCast {d a : ℤ} (hd : Squarefree d)
+    {x y : M} (hx : x ^ 2 = algebraMap ℤ M a) (hy : y ^ 2 = algebraMap ℤ M d)
+    (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
+      Algebra.IsUnramifiedIn (𝓞 M) q) :
+    ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a : ℤ) : ℂ) := by
+  by_cases ha : a = 0
+  · exact ⟨0, zero_mem _, by simp [ha]⟩
+  obtain ⟨c, e, hsfc, he, hce⟩ := Int.exists_squarefree_mul_sq ha
+  have he' : (e : M) ≠ 0 := Int.cast_ne_zero.mpr he
+  have hxe : (x / e) ^ 2 = algebraMap ℤ M c := by
+    rw [div_pow, hx, hce]
+    simp only [map_mul, map_pow, eq_intCast]
+    field_simp
+  obtain ⟨z, hz, hzsq⟩ :=
+    exists_mem_candidateGenusField_sq_eq_intCast_of_squarefree hd hsfc hxe hy hunr
+  refine ⟨e * z, mul_mem (IntermediateField.intCast_mem _ _) hz, ?_⟩
+  rw [mul_pow, hzsq, hce]
+  push_cast
+  ring
 
 end IsGalois
 
@@ -161,27 +196,37 @@ section IsAbelianGalois
 variable [IsAbelianGalois ℚ M]
 
 /-- **Maximality of the candidate genus field.** Let `M / ℚ` be an abelian number-field extension
-containing a square root `y` of a squarefree non-square `d` that generates a quadratic subfield, and
-suppose `M` is unramified over that subfield at every finite prime. Then `M` admits a `ℚ`-embedding
-into `candidateGenusField hd`.
+containing a square root `y` of a squarefree integer `d`, and suppose `M` is unramified over the
+subfield `ℚ(y)` it generates (which is `ℚ` when `d = 1`) at every finite prime. Then `M` admits a
+`ℚ`-embedding into `candidateGenusField hd`.
 
 Together with the facts that `candidateGenusField hd` is itself abelian over `ℚ`, contains a square
 root of `d`, and is unramified over `ℚ(√d)` at every finite prime, this says it is the largest such
 extension — the maximality half of the genus-field characterisation. -/
 theorem nonempty_algHom_candidateGenusField {d : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
+    {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q) :
     Nonempty (M →ₐ[ℚ] candidateGenusField hd) := by
-  have hdeg := finrank_adjoin_sq_eq_intCast hnsqd hy
-  obtain ⟨n, a, root, hsf, hroot, _, htop, -⟩ :=
+  by_cases hsq : IsSquare ((d : ℤ) : ℚ)
+  · -- A rational square generates only `ℚ`, so `M` is unramified over `ℚ` and is `ℚ` itself.
+    have hF : Module.finrank ℚ (adjoin ℚ {y} : IntermediateField ℚ M) = 1 :=
+      finrank_adjoin_simple_eq_one_iff.mpr <| adjoin_simple_eq_bot_iff.mp <|
+        (IntermediateField.adjoin_simple_eq_bot_iff_isSquare
+          (by rw [hy, IsScalarTower.algebraMap_apply ℤ ℚ M]; norm_num)).mpr hsq
+    have h1 := finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn hF hunr
+    exact ⟨(Algebra.ofId ℚ (candidateGenusField hd)).comp
+      (AlgEquiv.ofBijective (Algebra.ofId ℚ M)
+        (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h1)).symm.toAlgHom⟩
+  have hdeg := finrank_adjoin_sq_eq_intCast hsq hy
+  obtain ⟨n, a, root, _, hroot, _, htop, -⟩ :=
     exists_squarefree_root_adjoin_range_eq_top_of_isUnramifiedIn_over_quadratic
       (adjoin ℚ {y} : IntermediateField ℚ M) hdeg hunr
   have key : ∀ i, ∃ z ∈ candidateGenusField hd, z ^ 2 = ((a i : ℤ) : ℂ) := fun i => by
     have hxi : root i ^ 2 = algebraMap ℤ M (a i) := by
       rw [hroot i, IsScalarTower.algebraMap_apply ℤ ℚ M]
       norm_num
-    exact exists_mem_candidateGenusField_sq_eq_intCast hd hnsqd (hsf i) hxi hy hunr
+    exact exists_mem_candidateGenusField_sq_eq_intCast hd hxi hy hunr
   choose z hzmem hzsq using key
   set φ : M →ₐ[ℚ] ℂ := IsAlgClosed.lift
   have hle : adjoin ℚ (Set.range root) ≤ (candidateGenusField hd).comap φ := by
@@ -201,48 +246,51 @@ theorem nonempty_algHom_candidateGenusField {d : ℤ} (hd : Squarefree d)
 `nonempty_algHom_candidateGenusField`, the degree of `M` over `ℚ` is at most the degree of the
 candidate genus field. -/
 theorem finrank_le_finrank_candidateGenusField {d : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
+    {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q) :
     Module.finrank ℚ M ≤ Module.finrank ℚ (candidateGenusField hd) := by
-  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hnsqd hy hunr
+  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hy hunr
   exact LinearMap.finrank_le_finrank_of_injective (f := φ.toLinearMap)
     fun _ _ h => φ.toRingHom.injective h
 
 /-- **`[M : ℚ] ≤ 2 ^ t`.** An abelian extension of `ℚ` that is unramified at every finite prime
-over its quadratic subfield `ℚ(√d)` has degree at most `2 ^ t`, where `t` is the number of prime
-discriminants dividing `fundamentalDiscriminant d` — equivalently, by
+over the subfield `ℚ(√d)` generated by a square root of `d` (which is `ℚ` when `d = 1`) has
+degree at most `2 ^ t`, where `t` is the number of prime discriminants dividing
+`fundamentalDiscriminant d`. For `d ≠ 1` this is, by
 `card_genusPrimeDiscriminants_eq_ncard_ramifiedPrimes`, the number of rational primes ramifying in
-`ℚ(√d)`. The bound is attained by the candidate genus field itself. -/
+`ℚ(√d)`; for `d = 1`, `genusPrimeDiscriminants_eq_empty_of_isSquare` gives `t = 0`. The bound is
+attained by the candidate genus field itself. -/
 theorem finrank_le_two_pow_card_genusPrimeDiscriminants {d : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
+    {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q) :
     Module.finrank ℚ M ≤ 2 ^ (genusPrimeDiscriminants hd).card :=
-  (finrank_le_finrank_candidateGenusField hd hnsqd hy hunr).trans
+  (finrank_le_finrank_candidateGenusField hd hy hunr).trans
     (finrank_candidateGenusField hd).le
 
 /-- **Uniqueness at the maximal degree.** An abelian extension of `ℚ` that is unramified at every
-finite prime over its quadratic subfield `ℚ(√d)` and attains the maximal degree `2 ^ t` is
-`ℚ`-isomorphic to the candidate genus field: the embedding of
-`nonempty_algHom_candidateGenusField` is then forced to be onto. -/
+finite prime over the subfield `ℚ(√d)` generated by a square root of `d` (which is `ℚ` when
+`d = 1`) and attains the maximal degree `2 ^ t` is `ℚ`-isomorphic to the candidate genus field:
+the embedding of `nonempty_algHom_candidateGenusField` is then forced to be onto. -/
 theorem nonempty_algEquiv_candidateGenusField {d : ℤ} (hd : Squarefree d)
-    (hnsqd : ¬ IsSquare ((d : ℤ) : ℚ)) {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
+    {y : M} (hy : y ^ 2 = algebraMap ℤ M d)
     (hunr : ∀ q : Ideal (𝓞 (adjoin ℚ {y} : IntermediateField ℚ M)), q.IsPrime → q ≠ ⊥ →
       Algebra.IsUnramifiedIn (𝓞 M) q)
     (hfr : Module.finrank ℚ M = 2 ^ (genusPrimeDiscriminants hd).card) :
     Nonempty (M ≃ₐ[ℚ] candidateGenusField hd) := by
-  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hnsqd hy hunr
+  obtain ⟨φ⟩ := nonempty_algHom_candidateGenusField hd hy hunr
   have hrank : Module.finrank ℚ M = Module.finrank ℚ (candidateGenusField hd) := by
     rw [hfr, finrank_candidateGenusField hd]
   exact ⟨φ.algEquivOfFinrankEq hrank⟩
 
 end IsAbelianGalois
 
-/-- **The maximality bound is attained.** The candidate genus field of `ℚ(√d)` is itself an
-abelian extension of `ℚ` of the kind the bound governs: its chosen square root of `d` generates a
-quadratic subfield over which it is unramified at every finite prime, and its degree over `ℚ` is
-exactly `2 ^ t`. So the bound `finrank_le_two_pow_card_genusPrimeDiscriminants` is sharp, and
+/-- **The maximality bound is attained.** For `d` not a rational square, the candidate genus field
+of `ℚ(√d)` is itself an abelian extension of `ℚ` of the kind the bound governs: its chosen square
+root of `d` generates a quadratic subfield over which it is unramified at every finite prime, and
+its degree over `ℚ` is exactly `2 ^ t`. So the bound
+`finrank_le_two_pow_card_genusPrimeDiscriminants` is sharp, and
 `nonempty_algEquiv_candidateGenusField` applies to a nonempty class of extensions. -/
 theorem exists_isUnramifiedIn_and_finrank_eq_two_pow_card {d : ℤ} (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
