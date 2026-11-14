@@ -13,10 +13,13 @@ import Mathlib.Topology.Order.LeftRight
 /-!
 # Continuity of the measure of strict superlevel sets
 
-For a measure `μ` and a function `f` into a linear order with the order topology, the map
-`s ↦ μ {y | s < f y}` is the distribution function of `f`. It is right continuous at every point,
-by continuity from below of `μ` along the increasing union of the sets `{s < f}` as `s ↓ t`.
-No measurability, finiteness or integrability hypothesis is needed.
+For a measure `μ` and a function `f` into a linear order `β` with the order topology, the map
+`s ↦ μ {y | s < f y}` is the distribution function of `f`. We assume that `β` is first countable
+and show that this map is right continuous at every point `t`. If `t` has no immediate successor,
+this is continuity from below of `μ` along the sets `{s < f}`, which increase to `{t < f}` as
+`s ↓ t`. If `t` has an immediate successor, the right neighbourhood filter of `t` is trivial, so
+right continuity at `t` holds for free. No measurability, finiteness or integrability hypothesis
+on `μ` or `f` is needed.
 
 ## Main statements
 
@@ -37,8 +40,9 @@ variable {α β : Type*} [MeasurableSpace α] [LinearOrder β] [TopologicalSpace
   [FirstCountableTopology β] (μ : Measure α) {f : α → β} {t : β}
 
 /-- **Right continuity of the distribution function.** The map `s ↦ μ {y | s < f y}` is continuous
-from the right at every `t`: the strict superlevel set `{t < f}` is the increasing union of the
-sets `{s < f}` for `s ↓ t`. -/
+from the right at every `t`. When `t` has no immediate successor, the strict superlevel set
+`{t < f}` is the increasing union of the sets `{s < f}` for `s ↓ t`, and this is continuity from
+below of `μ`; otherwise the right neighbourhood filter of `t` is trivial. -/
 theorem continuousWithinAt_measure_setOf_lt :
     ContinuousWithinAt (fun s ↦ μ {y | s < f y}) (Ici t) t := by
   rw [← continuousWithinAt_Ioi_iff_Ici]
@@ -59,8 +63,9 @@ theorem continuousWithinAt_measure_setOf_lt :
   · obtain ⟨b, hb⟩ := Order.not_isPredPrelimit_iff.1 ht
     simp [ContinuousWithinAt, hb.nhdsGT]
 
-/-- If `c < μ {y | t < f y}`, then `c < μ {y | s < f y}` for some `s > t`: the measure of the
-strict superlevel set `{t < f}` is approached from below by those of strictly higher levels. -/
+/-- If `c < μ {y | t < f y}`, then `c < μ {y | s < f y}` for some `s > t`. This follows from right
+continuity of the distribution function; density of the order makes `t` a right accumulation
+point, so the higher level `s` can be chosen strictly above `t`. -/
 theorem exists_lt_lt_measure_setOf_lt [DenselyOrdered β] {c : ℝ≥0∞} (h : c < μ {y | t < f y}) :
     ∃ s, t < s ∧ c < μ {y | s < f y} := by
   obtain ⟨y, hy⟩ := nonempty_of_measure_ne_zero (zero_le.trans_lt h).ne'
