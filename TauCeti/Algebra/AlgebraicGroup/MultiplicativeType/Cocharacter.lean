@@ -419,13 +419,8 @@ theorem characterCocharacterPairing_eq_iff_comp_eq_powEndGroupSchemeMap
     characterCocharacterPairing T x f = n ↔
       f ≫ geometricCharacterGroupSchemeMap T x =
         DiagonalizableGroup.powEndGroupSchemeMap (R := AlgebraicClosure k) n := by
-  constructor
-  · intro h
-    rw [cocharacter_comp_geometricCharacterGroupSchemeMap, h]
-  · intro h
-    apply DiagonalizableGroup.powEndGroupSchemeMap_injective (R := AlgebraicClosure k)
-    rw [← cocharacter_comp_geometricCharacterGroupSchemeMap]
-    exact h
+  rw [cocharacter_comp_geometricCharacterGroupSchemeMap]
+  simp
 
 /-- The character--cocharacter pairing is invariant under the diagonal absolute-Galois action. -/
 theorem characterCocharacterPairing_galois_invariant (T : MultiplicativeTypeCommHopfAlgCat k)
