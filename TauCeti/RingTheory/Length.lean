@@ -87,8 +87,9 @@ applies to the quotients appearing here without any further appeal to defeq.
   a finite module `M` over a noetherian ring when the radical of `I` is maximal.
 * `Ideal.length_localizedModule_quotient_eq_one`: for a prime `𝔭`, the localization of `A ⧸ 𝔭`
   at `𝔭` has length one over `A_𝔭`, being its residue field.
-* `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
-  over a noetherian local ring.
+* `TauCeti.isFiniteLength_quotient_maximalIdeal_pow` and
+  `Ideal.isFiniteLength_quotient_sup_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` and `A ⧸ (I ⊔ 𝔪 ⁿ)` have finite
+  length for every `n` and ideal `I` over a noetherian local ring.
 * `Submodule.eq_of_le_of_length_eq`: a submodule contained in another of the same finite length
   is equal to it.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
@@ -454,6 +455,12 @@ theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
   · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
       rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
       infer_instance
+
+/-- Over a noetherian local ring `A`, every quotient `A ⧸ (I ⊔ 𝔪 ^ n)` has finite length. -/
+theorem isFiniteLength_quotient_sup_maximalIdeal_pow (I : Ideal A) (n : ℕ) :
+    IsFiniteLength A (A ⧸ (I ⊔ maximalIdeal A ^ n)) :=
+  (TauCeti.isFiniteLength_quotient_maximalIdeal_pow n).of_surjective
+    (f := Submodule.factor le_sup_right) (Submodule.factor_surjective le_sup_right)
 
 end NoetherianLocalRing
 

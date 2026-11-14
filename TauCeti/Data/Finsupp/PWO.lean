@@ -101,12 +101,12 @@ private theorem not_strictAnti_toLex_diagramHilbert {σ : Type*} [Finite σ]
     Pi.toLex_monotone (diagramHilbert_anti hsub)
   have hlt₁ : toLex (diagramHilbert (D (j₀ + 1))) < toLex (diagramHilbert Dlim) :=
     (hanti (Nat.lt_succ_self j₀)).trans_le hle₀
-  obtain ⟨n₁, heq₁, hlt_n₁⟩ := toLex_lt_toLex.mp hlt₁
+  obtain ⟨n₁, heq₁, hlt_n₁⟩ := Pi.Lex.toLex_lt_toLex.mp hlt₁
   have hgt_ev : ∀ᶠ j in (𝓤 : Filter ℕ), j₀ + 1 < j :=
     Ultrafilter.of_le Filter.atTop (Filter.eventually_gt_atTop (j₀ + 1))
   obtain ⟨j₂, hj₂_eq, hj₂_gt⟩ := (hfin_deg n₁ |>.and hgt_ev).exists
   have hlt₂ : toLex (diagramHilbert (D (j₀ + 1))) < toLex (diagramHilbert (D j₂)) :=
-    toLex_lt_toLex.mpr ⟨n₁, fun m hm ↦ (heq₁ m hm).trans (hj₂_eq m hm.le).symm,
+    Pi.Lex.toLex_lt_toLex.mpr ⟨n₁, fun m hm ↦ (heq₁ m hm).trans (hj₂_eq m hm.le).symm,
       lt_of_lt_of_eq hlt_n₁ (hj₂_eq n₁ le_rfl).symm⟩
   exact (hanti hj₂_gt).not_gt hlt₂
 

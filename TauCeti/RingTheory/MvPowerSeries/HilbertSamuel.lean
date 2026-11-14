@@ -10,11 +10,10 @@ public import TauCeti.RingTheory.LocalRing.HilbertSamuel
 public import TauCeti.RingTheory.MvPowerSeries.FormalDivision
 import Mathlib.Data.Set.Card
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.RingTheory.LocalRing.Length
 import TauCeti.Data.Finsupp.PWO
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.PiLex
-import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Length
 
 /-!
 # Hilbert–Samuel functions of formal power series ideals and lexicographic stabilization
@@ -26,10 +25,9 @@ many variables, Hironaka's formal division theorem identifies `MvPowerSeries σ 
 `MonomialOrder.complementSubmoduleEquivFun`). Passing to `I ⊔ 𝔪 ^ (n + 1)` adjoins all exponents of
 total degree at least `n + 1` to the graded lexicographic initial diagram
 (`MonomialOrder.initialDiagram_degLex_sup_maximalIdeal_pow`), while local length over
-`MvPowerSeries σ R` agrees with `R`-module length over any local base ring `R` because the natural
-inclusion induces an isomorphism of residue fields (`TauCeti.length_mvPowerSeries_restrictScalars`).
-Consequently, over a field `K`, `TauCeti.localQuotientHilbertSamuel (MvPowerSeries σ K) I n` counts
-the exponents `α : σ →₀ ℕ` of total degree at most `n` outside `degLex.initialDiagram I`
+`MvPowerSeries σ K` agrees with `K`-vector space length (`MvPowerSeries.length_restrictScalars`).
+Consequently, `TauCeti.localQuotientHilbertSamuel (MvPowerSeries σ K) I n` counts the exponents
+`α : σ →₀ ℕ` of total degree at most `n` outside `degLex.initialDiagram I`
 (`TauCeti.localQuotientHilbertSamuel_mvPowerSeries`, Bierstone–Milman 1997, Corollary 3.20). For
 the zero ideal this recovers the binomial count `Nat.choose (Nat.card σ + n) (Nat.card σ)`
 (`TauCeti.localQuotientHilbertSamuel_mvPowerSeries_bot`).
@@ -44,8 +42,6 @@ Bierstone–Milman–Temkin 2011, §6.1).
 
 ## Main results
 
-* `TauCeti.length_mvPowerSeries_restrictScalars`: over any local commutative ring `R`,
-  `Module.length (MvPowerSeries σ R) M = Module.length R M`.
 * `TauCeti.localQuotientHilbertSamuel_mvPowerSeries`: `H_I(n)` equals the `Nat.card` of
   `{α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ degLex.initialDiagram I}`.
 * `TauCeti.localQuotientHilbertSamuel_eq_of_initialDiagram_degLex_eq`: ideals with equal
@@ -79,30 +75,6 @@ open scoped MonomialOrder
 
 namespace TauCeti
 
-section RestrictScalars
-
-/-- Over a local commutative ring `R`, the `(MvPowerSeries σ R)`-module length of any module `M`
-agrees with its `R`-module length, because `R → MvPowerSeries σ R` induces an isomorphism of
-residue fields. -/
-theorem length_mvPowerSeries_restrictScalars {σ R M : Type*} [CommRing R] [IsLocalRing R]
-    [AddCommGroup M] [Module R M] [Module (MvPowerSeries σ R) M]
-    [IsScalarTower R (MvPowerSeries σ R) M] :
-    Module.length (MvPowerSeries σ R) M = Module.length R M := by
-  have hsurj : Function.Surjective
-      (algebraMap (IsLocalRing.ResidueField R)
-        (IsLocalRing.ResidueField (MvPowerSeries σ R))) := fun y ↦ by
-    obtain ⟨f, rfl⟩ := IsLocalRing.residue_surjective y
-    refine ⟨IsLocalRing.residue R (MvPowerSeries.constantCoeff f), ?_⟩
-    rw [IsLocalRing.ResidueField.algebraMap_residue, ← MvPowerSeries.c_eq_algebraMap,
-      MvPowerSeries.residue_C_constantCoeff]
-  have hres : Module.length (IsLocalRing.ResidueField R)
-      (IsLocalRing.ResidueField (MvPowerSeries σ R)) = 1 := by
-    rw [Module.length_eq_of_surjective hsurj, Module.length_eq_one]
-  symm
-  rw [IsLocalRing.length_restrictScalars R (MvPowerSeries σ R) M, hres, mul_one]
-
-end RestrictScalars
-
 section FormalHilbertSamuel
 
 /-- **Bierstone–Milman Corollary 3.20**: over a field `K` in finitely many linearly ordered
@@ -133,7 +105,7 @@ theorem localQuotientHilbertSamuel_mvPowerSeries {σ K : Type*} [Field K] [Finit
     ((MonomialOrder.degLex.quotientEquivComplementSubmodule J).trans
       (MonomialOrder.degLex.complementSubmoduleEquivFun J)).trans
       (LinearEquiv.funCongrLeft K K finEquiv.symm)
-  rw [localQuotientHilbertSamuel_def, length_mvPowerSeries_restrictScalars (R := K),
+  rw [localQuotientHilbertSamuel_def, MvPowerSeries.length_restrictScalars (R := K),
     linEquiv.length_eq, Module.length_eq_finrank, Module.finrank_fin_fun]
 
 /-- Two ideals of `MvPowerSeries σ K` with the same graded lexicographic initial diagram have the
@@ -177,11 +149,8 @@ theorem localQuotientHilbertSamuel_mvPowerSeries_span_image_X {σ : Type*} (K : 
   rw [hspan, MonomialOrder.degLex.initialDiagram_span_monomial]
   have hnotMem : ∀ α : σ →₀ ℕ,
       (α ∉ ⋃ β ∈ (fun i ↦ Finsupp.single i 1) '' S, Set.Ici β) ↔ ↑α.support ⊆ Sᶜ := fun α ↦ by
-    simp only [Set.mem_iUnion, Set.mem_image, Set.mem_Ici, not_exists, forall_exists_index,
-      and_imp, forall_apply_eq_imp_iff₂, Finsupp.single_le_iff, Nat.one_le_iff_ne_zero,
-      Set.subset_compl_iff_disjoint_right, Set.disjoint_left, Finset.mem_coe,
-      Finsupp.mem_support_iff]
-    exact ⟨fun h i hi hS ↦ h i hS hi, fun h i hS hi ↦ h hi hS⟩
+    simp [Finsupp.single_le_iff, Set.subset_compl_iff_disjoint_right, Set.disjoint_left]
+    grind
   let e₁ : {α : σ →₀ ℕ //
       α.degree ≤ n ∧ α ∉ ⋃ β ∈ (fun i ↦ Finsupp.single i 1) '' S, Set.Ici β} ≃
       {α : {α : σ →₀ ℕ // ↑α.support ⊆ Sᶜ} // α.1.degree ≤ n} :=
@@ -256,8 +225,8 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex {σ K : Type*} [Fi
       (dCount j n : ℕ∞) := fun j n ↦
     localQuotientHilbertSamuel_mvPowerSeries (I j) n
   have hlex : ∀ j, toLex (dCount (j + 1)) ≤ toLex (dCount j) := fun j ↦ by
-    rw [toLex_le_toLex]
-    rcases toLex_le_toLex.mp (h j) with heq | ⟨m, hprev, hltm⟩
+    rw [Pi.Lex.toLex_le_toLex]
+    rcases Pi.Lex.toLex_le_toLex.mp (h j) with heq | ⟨m, hprev, hltm⟩
     · refine Or.inl (funext fun n ↦ ?_)
       exact Nat.cast_inj.mp ((hval (j + 1) n).symm.trans ((congr_fun heq n).trans (hval j n)))
     · refine Or.inr ⟨m, fun k hk ↦ ?_, ?_⟩
@@ -278,7 +247,7 @@ theorem hsLexStabilization (K : Type*) [Field K] (n : ℕ)
         (localQuotientHilbertSamuel _ (I j))) :
     ∃ j₀, ∀ j, j₀ ≤ j →
       localQuotientHilbertSamuel _ (I j) = localQuotientHilbertSamuel _ (I j₀) :=
-  exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex I fun j ↦ toLex_le_toLex.mpr (h j)
+  exists_forall_ge_localQuotientHilbertSamuel_eq_of_lex I fun j ↦ Pi.Lex.toLex_le_toLex.mpr (h j)
 
 /-- **Pointwise Hilbert–Samuel stabilization** over `MvPowerSeries σ K` (`[Finite σ]`): every
 pointwise nonincreasing sequence of Hilbert–Samuel functions realized by ideals in

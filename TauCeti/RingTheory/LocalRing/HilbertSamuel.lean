@@ -71,7 +71,7 @@ Hilbert–Samuel function without any Noetherian hypothesis
 * `TauCeti.length_quotient_sup_maximalIdeal_pow_restrictScalars`,
   `TauCeti.length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField`: comparison between
   `A`-length and local base-ring length via the residue-field length.
-* `Ideal.isFiniteLength_quotient_sup_maximalIdeal_pow`,
+* `TauCeti.localQuotientHilbertSamuel_ne_top`,
   `TauCeti.localQuotientHilbertSamuel_lt_top`,
   `TauCeti.natCast_toNat_localQuotientHilbertSamuel`: finiteness over Noetherian local rings.
 * `TauCeti.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq`,
@@ -89,19 +89,6 @@ Hilbert–Samuel function without any Noetherian hypothesis
 -/
 
 public section
-
-namespace Ideal
-
-/-- Over a Noetherian local ring `A`, every quotient `A ⧸ (I + 𝔪 ^ n)` has finite length. -/
-theorem isFiniteLength_quotient_sup_maximalIdeal_pow {A : Type*} [CommRing A] [IsLocalRing A]
-    [IsNoetherianRing A] (I : Ideal A) (n : ℕ) :
-    IsFiniteLength A (A ⧸ (I ⊔ IsLocalRing.maximalIdeal A ^ n)) := by
-  rw [← Module.length_ne_top_iff, ← lt_top_iff_ne_top]
-  exact (TauCeti.length_quotient_anti le_sup_right).trans_lt
-    (lt_top_iff_ne_top.mpr (Module.length_ne_top_iff.mpr
-      (TauCeti.isFiniteLength_quotient_maximalIdeal_pow n)))
-
-end Ideal
 
 namespace TauCeti
 
@@ -230,19 +217,19 @@ theorem localQuotientHilbertSamuel_map_of_surjective {B F : Type*}
   have hQ : Q = (I ⊔ IsLocalRing.maximalIdeal A ^ (n + 1)).map φ := by
     rw [Ideal.map_sup, Ideal.map_pow, h𝔪, Ideal.map_coe]
   let ψ : A →ₐ[A] B ⧸ Q := Algebra.ofId A (B ⧸ Q)
+  have hψa (a : A) : ψ a = Ideal.Quotient.mk Q (f a) := by
+    rw [Algebra.ofId_apply, IsScalarTower.algebraMap_apply A B (B ⧸ Q),
+      RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq, RingHom.coe_coe]
   have hψ : Function.Surjective ψ := fun y ↦ by
     obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
     obtain ⟨a, rfl⟩ := hf b
-    refine ⟨a, ?_⟩
-    rw [Algebra.ofId_apply, IsScalarTower.algebraMap_apply A B (B ⧸ Q),
-      RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq, RingHom.coe_coe]
+    exact ⟨a, hψa a⟩
   have hker : RingHom.ker ψ =
       (RingHom.ker f ⊔ I) ⊔ IsLocalRing.maximalIdeal A ^ (n + 1) := by
     ext a
-    rw [RingHom.mem_ker, Algebra.ofId_apply, IsScalarTower.algebraMap_apply A B (B ⧸ Q),
-      RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq, RingHom.coe_coe,
-      Ideal.Quotient.eq_zero_iff_mem, hQ, Ideal.map_coe, ← Ideal.mem_comap,
-      Ideal.comap_map_of_surjective' f hf, sup_comm _ (RingHom.ker f), sup_assoc]
+    rw [RingHom.mem_ker, hψa, Ideal.Quotient.eq_zero_iff_mem, hQ, Ideal.map_coe,
+      ← Ideal.mem_comap, Ideal.comap_map_of_surjective' f hf, sup_comm _ (RingHom.ker f),
+      sup_assoc]
   rw [localQuotientHilbertSamuel_def, ← Module.length_eq_of_surjective hφ,
     ← (Ideal.quotientKerAlgEquivOfSurjective hψ).toLinearEquiv.length_eq,
     (Ideal.quotientEquivAlgOfEq A hker).toLinearEquiv.length_eq,

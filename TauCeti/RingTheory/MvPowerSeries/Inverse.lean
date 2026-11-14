@@ -5,16 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.Data.Finsupp.WellFounded
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 /-!
-# Monoid homomorphisms and `invOfUnit`
+# Monoid homomorphisms, `invOfUnit`, and local ring structure of power series
 
 `MvPowerSeries.invOfUnit D u` inverts a power series whose constant coefficient is the unit `u`.
 Monoid homomorphisms between power series rings preserve this inverse, provided the constant
 coefficient of the image is also a specified unit. The inverse of `1 - Xᵢ` is the geometric series
 `∑ₙ Xᵢⁿ`, and the coefficients of its powers `Xᵢⁿ` are all `1`.
+
+Because invertibility in `MvPowerSeries σ R` is detected by the constant coefficient
+(`MvPowerSeries.isUnit_iff_constantCoeff`), the constant-series inclusion `C` is a local
+homomorphism (`MvPowerSeries.isLocalHom_C`, `MvPowerSeries.isLocalHom_algebraMap`), and over a local
+commutative ring `R` the maximal ideal of `MvPowerSeries σ R` consists of series with constant
+coefficient in `𝔪_R` (`MvPowerSeries.mem_maximalIdeal_iff_constantCoeff`). Consequently every
+coordinate indeterminate `X i` lies in the maximal ideal (`MvPowerSeries.X_mem_maximalIdeal`) and
+every series is congruent to `C (constantCoeff f)` modulo the maximal ideal
+(`MvPowerSeries.residue_C_constantCoeff`).
 
 ## Main results
 
@@ -28,6 +39,12 @@ coefficient of the image is also a specified unit. The inverse of `1 - Xᵢ` is 
   `PowerSeries.map_inv`: the corresponding statements in one variable.
 * `MvPowerSeries.coeff_single_eq_one_of_one_sub_X_mul_eq_one`: a right inverse of `1 - Xᵢ` has
   coefficient `1` at every power `Xᵢⁿ`.
+* `MvPowerSeries.isLocalHom_C`, `MvPowerSeries.isLocalHom_algebraMap`: the constant-series map into
+  `MvPowerSeries σ R` is a local homomorphism.
+* `MvPowerSeries.mem_maximalIdeal_iff_constantCoeff`,
+  `MvPowerSeries.mem_maximalIdeal_iff_constantCoeff_eq_zero`,
+  `MvPowerSeries.X_mem_maximalIdeal`, `MvPowerSeries.residue_C_constantCoeff`: maximal-ideal
+  membership and residue-class reduction in `MvPowerSeries σ R`.
 
 ## Implementation notes
 
@@ -49,6 +66,8 @@ and the coefficient rings need not be commutative.
 -/
 
 public section
+
+section Inverse
 
 variable {σ τ R S : Type*} [Ring R] [Ring S]
 
@@ -166,3 +185,57 @@ protected theorem map_inv {k l : Type*} [Field k] [Field l] (f : k →+* l) (φ 
   MvPowerSeries.map_inv f φ
 
 end PowerSeries
+
+end Inverse
+
+namespace MvPowerSeries
+
+/-- The constant-series embedding `C : R →+* MvPowerSeries σ R` is a local homomorphism. -/
+instance isLocalHom_C {σ R : Type*} [Ring R] : IsLocalHom (C (σ := σ) (R := R)) where
+  map_nonunit r hr := by
+    rw [isUnit_iff_constantCoeff, constantCoeff_C] at hr
+    exact hr
+
+/-- The canonical algebra map `R →+* MvPowerSeries σ R` is a local homomorphism. -/
+instance isLocalHom_algebraMap {σ R : Type*} [CommRing R] :
+    IsLocalHom (algebraMap R (MvPowerSeries σ R)) :=
+  c_eq_algebraMap (σ := σ) (R := R) ▸ isLocalHom_C
+
+section LocalRing
+
+variable {σ R : Type*} [CommRing R] [IsLocalRing R]
+
+/-- Over a local commutative ring `R`, a power series lies in the maximal ideal of
+`MvPowerSeries σ R` if and only if its constant coefficient lies in the maximal ideal of `R`. -/
+theorem mem_maximalIdeal_iff_constantCoeff {f : MvPowerSeries σ R} :
+    f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ↔
+      constantCoeff f ∈ IsLocalRing.maximalIdeal R := by
+  simp only [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, isUnit_iff_constantCoeff]
+
+/-- Every coordinate indeterminate `X i` belongs to the maximal ideal of `MvPowerSeries σ R`. -/
+theorem X_mem_maximalIdeal (i : σ) :
+    (X i : MvPowerSeries σ R) ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) := by
+  rw [mem_maximalIdeal_iff_constantCoeff, constantCoeff_X]
+  exact zero_mem _
+
+/-- Every power series is congruent to its constant term modulo the maximal ideal of
+`MvPowerSeries σ R`. -/
+@[simp]
+theorem residue_C_constantCoeff (f : MvPowerSeries σ R) :
+    IsLocalRing.residue (MvPowerSeries σ R) (C (constantCoeff f)) =
+      IsLocalRing.residue (MvPowerSeries σ R) f := by
+  rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
+    mem_maximalIdeal_iff_constantCoeff]
+  simp
+
+end LocalRing
+
+/-- Over a field `K`, a power series belongs to the maximal ideal of `MvPowerSeries σ K` if and
+only if its constant coefficient is zero. -/
+theorem mem_maximalIdeal_iff_constantCoeff_eq_zero {σ K : Type*} [Field K]
+    {f : MvPowerSeries σ K} :
+    f ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ↔ constantCoeff f = 0 := by
+  rw [mem_maximalIdeal_iff_constantCoeff]
+  simp
+
+end MvPowerSeries
