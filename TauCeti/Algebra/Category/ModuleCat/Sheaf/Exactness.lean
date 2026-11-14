@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Adjunction.FullyFaithfulLimits
@@ -49,6 +50,9 @@ sectionwise composition and sheafification then preserve the required finite lim
 * `CategoryTheory.Sheaf.preservesHomology_sheafCompose_forget₂_moduleCat`: forgetting the module
   structures sectionwise preserves homology, so it commutes with the homology of complexes of
   sheaves of `R`-modules.
+* `CategoryTheory.Sheaf.preservesFiniteLimits_sheafCompose_forget₂_moduleCat` and
+  `CategoryTheory.Sheaf.preservesFiniteColimits_sheafCompose_forget₂_moduleCat`: this sectionwise
+  forgetful functor is exact, so it induces maps on `Ext` groups.
 * `RingHom.preservesFiniteLimits_composeAndSheafify_extendScalars_of_flat` and
   `RingHom.shortExact_map_composeAndSheafify_extendScalars_of_flat`: sheafifying sectionwise
   scalar extension preserves finite limits and short exact sequences when the coefficient
@@ -155,6 +159,18 @@ is additive and preserves kernels and epimorphisms. -/
 instance preservesHomology_sheafCompose_forget₂_moduleCat :
     (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).PreservesHomology :=
   Functor.preservesHomology_of_preservesEpis_and_kernels _
+
+/-- Forgetting the module structures of sheaves of `R`-modules sectionwise preserves finite
+limits. -/
+instance preservesFiniteLimits_sheafCompose_forget₂_moduleCat :
+    PreservesFiniteLimits (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})) :=
+  Functor.preservesFiniteLimits_of_preservesHomology _
+
+/-- Forgetting the module structures of sheaves of `R`-modules sectionwise preserves finite
+colimits, since it preserves homology. -/
+instance preservesFiniteColimits_sheafCompose_forget₂_moduleCat :
+    PreservesFiniteColimits (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})) :=
+  Functor.preservesFiniteColimits_of_preservesHomology _
 
 end CategoryTheory.Sheaf
 
