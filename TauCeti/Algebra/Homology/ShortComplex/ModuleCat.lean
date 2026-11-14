@@ -22,7 +22,8 @@ elements exactly when their difference is in the range of the first map
 (`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  This file also records
 two finiteness consequences of that description:
 
-* over a ring for which the middle module is noetherian, the homology is finitely generated;
+* over a ring for which the middle module is noetherian, the homology is noetherian (and hence
+  finitely generated);
 * over a ring satisfying the strong rank condition, when the middle term is finite, the
   homology has rank at most that of the middle term; if the ring also satisfies rank-nullity
   (for instance a division ring or a commutative domain), the rank of the homology plus the rank
@@ -46,13 +47,18 @@ universe u v
 
 namespace CategoryTheory.ShortComplex
 
+/-- The homology of a short complex of modules with noetherian middle term is noetherian. -/
+instance isNoetherian_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k))
+    [IsNoetherian k S.X₂] : IsNoetherian k S.homology :=
+  -- The homology object of `S.moduleCatLeftHomologyData` is this quotient by construction.
+  have : IsNoetherian k S.moduleCatLeftHomologyData.H :=
+    inferInstanceAs (IsNoetherian k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
+  isNoetherian_of_linearEquiv S.moduleCatHomologyIso.toLinearEquiv.symm
+
 /-- The homology of a short complex of modules with noetherian middle term is finitely generated. -/
 theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k))
     [IsNoetherian k S.X₂] : Module.Finite k S.homology :=
-  -- The homology object of `S.moduleCatLeftHomologyData` is this quotient by construction.
-  have : Module.Finite k S.moduleCatLeftHomologyData.H :=
-    inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
-  .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
+  Module.IsNoetherian.finite k S.homology
 
 variable {k : Type u} [Ring k] [StrongRankCondition k]
 
