@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
-public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Metric
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -19,8 +19,8 @@ A `Spinᶜ` structure on an oriented Riemannian four-manifold `X` is a principal
 associated with `P` through the half-spin representations `[s, z] ↦ z ρ^±(s)` and through the
 determinant character `[s, z] ↦ z²`. This file constructs them for an arbitrary principal
 `Spinᶜ(4)`-bundle `P`, as instances of the associated-bundle construction
-`TauCeti.AssociatedBundle`, and equips their fibers with the determinant and Hermitian structure
-of the model representations.
+`TauCeti.AssociatedBundle`, and equips their fibers with the determinant structure of the model
+representations.
 
 The model fibers are the representation spaces
 
@@ -36,8 +36,7 @@ when `P` is a `C^k` principal bundle.
 
 A point `p` of `P` over `x` identifies the model with the fiber over `x` by `v ↦ [p, v]`, and
 changing `p` acts on the model by the representation. Structure on the model that is compatible
-with the representation therefore descends to the fibers (`TauCeti.AssociatedBundle.alternatingMap`,
-`TauCeti.AssociatedBundle.sesqForm`):
+with the representation therefore descends to the fibers:
 
 * `Spinᶜ(4)` acts on a two-dimensional `W^ε` with determinant `z²`
   (`Orientation.det_realSpinCHalfSpinSmoothHom`), so every alternating two-form `η` on the model,
@@ -48,10 +47,12 @@ with the representation therefore descends to the fibers (`TauCeti.AssociatedBun
   For `η ≠ 0` it induces, for each `x`, a linear isomorphism `⋀² W^ε_x ≃ L_x` of fibers
   (`Orientation.spinorDetEquiv`). That these isomorphisms form a continuous or smooth bundle
   isomorphism is not established here.
-* The inner product of the model descends to the Hermitian form `Orientation.spinorInner` of the
-  fibers. When the Clifford generators act skew-adjointly, `Spinᶜ(4)` acts unitarily on `W^ε`
-  (`Orientation.inner_realSpinCHalfSpinSmoothHom_apply`), and the Hermitian form is the model
-  inner product in every frame (`Orientation.spinorInner_mk`).
+* When the Clifford generators act skew-adjointly, `Spinᶜ(4)` acts isometrically on `W^ε`
+  (`Orientation.SpinCHalfSpinor.isIsometricSMul`). Given this, the fibers of the spinor bundle
+  carry the Hermitian inner product of the associated bundle
+  (`TauCeti.AssociatedBundle.instInnerProductSpace`), which is the model inner product in every
+  frame (`TauCeti.AssociatedBundle.inner_mk`) and is smooth along smooth sections
+  (`ContMDiff.inner_associatedBundle`).
 
 The identification of `P ×_{Spinᶜ(4)} ℝ⁴` with the tangent bundle for a lift of the frame bundle,
 Clifford multiplication as a bundle map, and `Spinᶜ` connections are not constructed here.
@@ -197,58 +198,5 @@ theorem spinorDetEquiv_symm_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε
   rw [LinearEquiv.symm_apply_eq, spinorDetEquiv_ιMulti_mk]
 
 end Normed
-
-/-! ### The Hermitian metric -/
-
-section Hermitian
-
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
-  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
-  {B : Type*} [TopologicalSpace B]
-  (P : B → Type*) [TopologicalSpace (TotalSpace SpinC P)] [∀ x, TopologicalSpace (P x)]
-  [FiberBundle SpinC P] [∀ x, MulAction SpinCᵐᵒᵖ (P x)] [PrincipalBundle SpinC P]
-
-/-- The Hermitian form on the fibers of the spinor bundle `W^ε`, conjugate-linear in the first
-argument, induced by the inner product of the model half-spinors. It is the model inner product
-read in a fixed reference point of `P x`. When the Clifford generators act skew-adjointly it is
-the model inner product in every frame (`Orientation.spinorInner_mk`), so it does not depend on
-that choice. -/
-def spinorInner (x : B) :
-    o.spinorBundle hQ b ρ ε P x →ₗ⋆[ℂ] o.spinorBundle hQ b ρ ε P x →ₗ[ℂ] ℂ :=
-  AssociatedBundle.sesqForm SpinC P (innerₛₗ ℂ) x
-
-/-- `spinorInner` is the form induced by the model inner product through
-`TauCeti.AssociatedBundle.sesqForm`. -/
-theorem spinorInner_def (x : B) :
-    o.spinorInner hQ b ρ ε P x = AssociatedBundle.sesqForm SpinC P (innerₛₗ ℂ) x :=
-  (rfl)
-
-/-- **The Hermitian form in a frame.** If the Clifford generators act skew-adjointly on `W`,
-then for every frame `p` of `P` over `x` the Hermitian form of the classes `[p, ψ]` and `[p, χ]`
-is the inner product `⟪ψ, χ⟫`. -/
-@[simp]
-theorem spinorInner_mk (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {x : B}
-    (p : P x) (ψ χ : SpinCHalfSpinor o hQ b ρ ε) :
-    o.spinorInner hQ b ρ ε P x (AssociatedBundle.mk SpinC p ψ) (AssociatedBundle.mk SpinC p χ) =
-      ⟪ψ, χ⟫_ℂ :=
-  AssociatedBundle.sesqForm_mk (SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ) p ψ χ
-
-/-- The Hermitian form of the spinor bundle is conjugate-symmetric. -/
-theorem spinorInner_conj_symm {x : B} (w w' : o.spinorBundle hQ b ρ ε P x) :
-    starRingEnd ℂ (o.spinorInner hQ b ρ ε P x w' w) = o.spinorInner hQ b ρ ε P x w w' :=
-  (AssociatedBundle.isSymm_sesqForm ⟨fun ψ χ ↦ inner_conj_symm χ ψ⟩ x).eq w' w
-
-/-- The diagonal values of the Hermitian form of the spinor bundle have nonnegative real part. -/
-theorem re_spinorInner_self_nonneg {x : B} (w : o.spinorBundle hQ b ρ ε P x) :
-    0 ≤ (o.spinorInner hQ b ρ ε P x w w).re :=
-  AssociatedBundle.re_sesqForm_self_nonneg (f := innerₛₗ ℂ) (fun ψ ↦ inner_self_nonneg (x := ψ)) w
-
-/-- The Hermitian form of the spinor bundle vanishes on the diagonal only at zero. -/
-@[simp]
-theorem spinorInner_self_eq_zero {x : B} {w : o.spinorBundle hQ b ρ ε P x} :
-    o.spinorInner hQ b ρ ε P x w w = 0 ↔ w = 0 :=
-  AssociatedBundle.sesqForm_self_eq_zero (fun ψ ↦ (inner_self_eq_zero (𝕜 := ℂ) (x := ψ)).1)
-
-end Hermitian
 
 end Orientation

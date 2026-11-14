@@ -28,7 +28,8 @@ requires a positively oriented frame separately.
 The type synonym `Orientation.SpinCHalfSpinor` of a chirality eigenspace carries the descended
 action as a smooth `Spinᶜ(4)`-action. In complex rank two every alternating two-form on it, with
 values in the determinant representation `CliffordAlgebra.spinCGroup.DetFiber`, is equivariant
-(`Orientation.SpinCHalfSpinor.alternatingMap_apply_smul`).
+(`Orientation.SpinCHalfSpinor.alternatingMap_apply_smul`). When the Clifford generators act
+skew-adjointly the action is isometric (`Orientation.SpinCHalfSpinor.isIsometricSMul`).
 
 ## References
 
@@ -329,5 +330,13 @@ theorem SpinCHalfSpinor.inner_smul_smul (hρ : ∀ v, LinearMap.adjoint (ρ (ι 
     (g : SpinC) (ψ χ : SpinCHalfSpinor o hQ b ρ ε) : ⟪g • ψ, g • χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
   rw [SpinCHalfSpinor.smul_def, SpinCHalfSpinor.smul_def]
   exact inner_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hρ g ψ χ
+
+/-- If the Clifford generators act skew-adjointly on `W`, `Spinᶜ(4)` acts isometrically on the
+half-spinor model. -/
+theorem SpinCHalfSpinor.isIsometricSMul (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) :
+    IsIsometricSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
+  ⟨fun g ↦ AddMonoidHomClass.isometry_of_norm (DistribSMul.toAddMonoidHom _ g) fun ψ ↦ by
+    rw [DistribSMul.toAddMonoidHom_apply, @norm_eq_sqrt_re_inner ℂ,
+      @norm_eq_sqrt_re_inner ℂ, SpinCHalfSpinor.inner_smul_smul o hQ b ρ ε hρ]⟩
 
 end Orientation

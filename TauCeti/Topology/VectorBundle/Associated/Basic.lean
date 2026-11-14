@@ -9,8 +9,6 @@ public import TauCeti.Topology.FiberBundle.Associated.Basic
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Alternating.Basic
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
-public import Mathlib.Analysis.RCLike.Basic
 
 /-!
 # Vector structures on associated bundles
@@ -22,15 +20,9 @@ that point acts by the given representation, with the convention `[p g, v] = [p,
 
 Structure on the model that is compatible with the representation therefore descends to the
 fibers: an equivariant alternating map `η` induces `TauCeti.AssociatedBundle.alternatingMap`, which
-reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`), and
-an invariant sesquilinear form `f` induces `TauCeti.AssociatedBundle.sesqForm`, which reads
-`[p, v], [p, w] ↦ f v w` in every frame (`TauCeti.AssociatedBundle.sesqForm_mk`).
+reads `[p, v i] ↦ [p, η v]` in every frame `p` (`TauCeti.AssociatedBundle.alternatingMap_mk`).
 The induced alternating map vanishes only when `η` does
-(`TauCeti.AssociatedBundle.alternatingMap_eq_zero_iff`). Symmetry of a sesquilinear form,
-nonnegativity of the real part of its diagonal values, and anisotropy (`f v v = 0` only for
-`v = 0`) pass to the induced form, with no invariance assumption
-(`TauCeti.AssociatedBundle.isSymm_sesqForm`, `TauCeti.AssociatedBundle.re_sesqForm_self_nonneg`,
-`TauCeti.AssociatedBundle.sesqForm_self_eq_zero`).
+(`TauCeti.AssociatedBundle.alternatingMap_eq_zero_iff`).
 
 ## References
 
@@ -245,65 +237,5 @@ theorem alternatingMap_eq_zero_iff {η : F [⋀^ι]→ₗ[𝕜] F'} (b : B) :
       (mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv)
 
 end AlternatingMap
-
-section SesqForm
-
-variable {σ : 𝕜 →+* 𝕜}
-
-variable (G P) in
-/-- The sesquilinear form on the fiber over `b` induced by a sesquilinear form `f` on the model,
-read through a fixed reference point of the principal fiber over `b`. When `f` is invariant it
-reads `[p, v], [p, w] ↦ f v w` in every frame `p` (`TauCeti.AssociatedBundle.sesqForm_mk`), so it
-does not depend on that choice. -/
-def sesqForm (f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜) (b : B) :
-    AssociatedBundle G P F b →ₛₗ[σ] AssociatedBundle G P F b →ₗ[𝕜] 𝕜 :=
-  (f.comp ((mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv :
-      AssociatedBundle G P F b →ₗ[𝕜] F)).compl₂
-    ((mkContinuousLinearEquiv 𝕜 G (F := F) (refPoint G P b)).symm.toLinearEquiv :
-      AssociatedBundle G P F b →ₗ[𝕜] F)
-
-/-- **An invariant sesquilinear form in a frame.** If `f (g • v) (g • w) = f v w`, then in every
-frame `p` the induced form of the classes `[p, v]` and `[p, w]` is `f v w`. -/
-@[simp]
-theorem sesqForm_mk {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜} (hf : ∀ (g : G) (v w : F), f (g • v) (g • w) = f v w)
-    {b : B} (p : P b) (v w : F) :
-    sesqForm G P f b (mk G p v) (mk G p w) = f v w := by
-  simp only [sesqForm, LinearMap.compl₂_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_toLinearEquiv, mkContinuousLinearEquiv_symm_apply_mk, hf]
-
-/-- The form induced by a symmetric sesquilinear form is symmetric. -/
-theorem isSymm_sesqForm {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜} (hfs : f.IsSymm) (b : B) :
-    (sesqForm G P f b).IsSymm :=
-  ⟨fun v w ↦ by simp only [sesqForm, LinearMap.compl₂_apply, LinearMap.comp_apply, hfs.eq]⟩
-
-/-- The form induced by an anisotropic sesquilinear form, one with `f v v = 0` only for `v = 0`,
-is anisotropic. -/
-theorem sesqForm_self_eq_zero {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜} (hf₀ : ∀ v, f v v = 0 → v = 0) {b : B}
-    {w : AssociatedBundle G P F b} :
-    sesqForm G P f b w w = 0 ↔ w = 0 := by
-  simp only [sesqForm, LinearMap.compl₂_apply, LinearMap.comp_apply]
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  exact (map_eq_zero_iff _ (LinearEquiv.injective _)).1 (hf₀ _ h)
-
-end SesqForm
-
-end TauCeti.AssociatedBundle
-
-namespace TauCeti.AssociatedBundle
-
-variable {𝕜 B G F : Type*} [RCLike 𝕜]
-  [TopologicalSpace B] [Group G] [TopologicalSpace G]
-  {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
-  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [DistribMulAction G F] [SMulCommClass G 𝕜 F] [ContinuousSMul G F]
-
-/-- If the diagonal values `f v v` of a sesquilinear form have nonnegative real part, so do the
-diagonal values of the induced form. -/
-theorem re_sesqForm_self_nonneg {σ : 𝕜 →+* 𝕜} {f : F →ₛₗ[σ] F →ₗ[𝕜] 𝕜}
-    (hf₀ : ∀ v, 0 ≤ RCLike.re (f v v)) {b : B} (w : AssociatedBundle G P F b) :
-    0 ≤ RCLike.re (sesqForm G P f b w w) := by
-  simp only [sesqForm, LinearMap.compl₂_apply, LinearMap.comp_apply]
-  exact hf₀ _
 
 end TauCeti.AssociatedBundle
