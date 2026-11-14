@@ -948,12 +948,12 @@ open Floer
 open scoped _root_.Manifold
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M]
   {K : ℂ → M → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → M → ℝ} {u : ℝ × ℝ → M} {T₀ : ℝ}
 
 section Parts
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- The components of a datum which is `C¹` on `S × M`, read in real coordinates, are `C¹`
 jointly in the domain point of `S` and the target point. -/
 private theorem contMDiffOn_perturbation
@@ -970,7 +970,7 @@ private theorem contMDiffOn_perturbation
   exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
     contMDiffAt_const).contMDiffWithinAt
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- A datum which is `C¹` on `S × M`, evaluated along a map which is `C¹` on `S`, is `C¹` on
 `S`. -/
 private theorem contDiffOn_perturbation_comp
@@ -1019,7 +1019,7 @@ private noncomputable def boundaryForm (K : ℂ → M → ℂ →L[ℝ] ℝ) (u 
     fderiv ℝ (SymplecticForm.truncation T) z stdComplexLineImag *
       K (Complex.equivRealProdCLM.symm z) (u z) 1
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 private theorem integrable_boundaryForm
     (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
@@ -1030,7 +1030,7 @@ private theorem integrable_boundaryForm
     (SymplecticForm.integrable_fderiv_truncation_mul T _
       (contDiffOn_perturbation_comp hK hu 1).continuousOn)
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- The exterior derivative of `K(u)`, weighted by the cutoff at height `T`, integrates to minus
 the integral of `dχ ∧ K(u)`. -/
 private theorem integral_truncation_mul_exteriorDeriv_eq
@@ -1170,7 +1170,7 @@ private theorem integral_Ico_eq_intervalIntegral (hH : ∀ q, Periodic (H q) 1) 
     intervalIntegral.integral_of_le (by norm_num)] at h
   rw [integral_Ico_eq_integral_Ioc, h]
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- **The boundary term on one end, for a manifold target.** For `T ≥ 2` with `K = H_q dt` beyond
 height `T₀ ≤ T`, the integral of `dχ ∧ K(u)` over the end `q` is `-±∫ β'(±s - T) h_q(s) ds`,
 where `h_q(s) = ∫₀¹ H_q(t, u(φ_q(s, t))) dt`; the weighted integrals `h_q` are integrable. -/
@@ -1277,7 +1277,7 @@ section Limit
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
-omit [IsManifold I ⊤ M] [FiniteDimensional ℝ E] in
+omit [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] in
 /-- As the height tends to infinity, the integrals of the end Hamiltonians averaged against
 `β'(±s - T)` tend to their limits along the ends. -/
 private theorem tendsto_sum_integral_deriv_smoothTransition_mul

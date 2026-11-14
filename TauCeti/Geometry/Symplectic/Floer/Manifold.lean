@@ -216,6 +216,14 @@ theorem perturbedMFDeriv_apply_stdComplexLineImag (ω : SmoothTwoForm I M)
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) := by
   simp [perturbedMFDeriv_apply]
 
+/-- At a domain point `z`, the perturbed derivative depends only on the perturbation slices `Ks z`
+and `Kt z`. -/
+theorem perturbedMFDeriv_congr (ω : SmoothTwoForm I M) {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ}
+    (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z) (ht : Kt z = Kt' z) :
+    ω.perturbedMFDeriv Ks Kt u z = ω.perturbedMFDeriv Ks' Kt' u z := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [perturbedMFDeriv_apply, hs, ht]
+
 /-- The perturbed derivative is complex linear exactly when the coordinate Floer equation
 `∂s u - X_(Ks) + J (∂t u - X_(Kt)) = 0` holds in the target tangent fiber. -/
 theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)

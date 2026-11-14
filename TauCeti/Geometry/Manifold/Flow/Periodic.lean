@@ -70,6 +70,10 @@ isolated, fixed points is finite.
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
+* `TauCeti.eventually_eq_of_mem_periodicSolutions_of_eventually_not_isFixedPt` and
+  `TauCeti.IsNondegenerateFixedPt.eventually_eq_of_mem_periodicSolutions`: a global solution whose
+  initial point is an isolated or nondegenerate fixed point of the return map is isolated among
+  periodic solutions.
 * `TauCeti.finite_periodicSolutions`: on a compact boundaryless finite-dimensional manifold, a
   field whose periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
@@ -88,7 +92,7 @@ public section
 
 noncomputable section
 
-open Function Set
+open Filter Function Set Topology
 open scoped Manifold
 
 namespace TauCeti
@@ -308,7 +312,49 @@ theorem timeDependentFlowOf_add_period_eq_iff (hT : Periodic X T) (s t : ℝ) (x
 
 end Complete
 
+omit [CompleteSpace E] in
+/-- **Periodic solutions through isolated fixed points are isolated.** If the value `γ s` of a
+global solution `γ` is isolated among the fixed points of the return map from time `s` to time
+`s + T`, then for `p` in a neighbourhood of `γ s` every `T`-periodic solution `η` with `η s = p`
+is `γ` itself. This is the manifold counterpart of
+`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`. -/
+theorem eventually_eq_of_mem_periodicSolutions_of_eventually_not_isFixedPt {γ : ℝ → M}
+    (hγ : ∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t))))
+    (hiso : ∀ᶠ p in 𝓝[≠] γ s, ¬IsFixedPt (timeDependentFlowOf X s (s + T)) p) :
+    ∀ᶠ p in 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s = p → η = γ := by
+  filter_upwards [eventually_nhdsWithin_iff.1 hiso] with p hp η hη rfl
+  -- The initial point `η s` is a fixed point of the return map close to `γ s`, hence equal to it.
+  have hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) (η s) :=
+    (timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u (_ : u ∈ Ioo (s - |T| - 1) (s + |T| + 1)) ↦
+      hη.1 u) ⟨by linarith [abs_nonneg T], by linarith [abs_nonneg T]⟩
+      ⟨by linarith [neg_abs_le T], by linarith [le_abs_self T]⟩).trans (hη.2 s)
+  have hηs : η s = γ s := by
+    by_contra hne
+    exact hp (mem_compl_singleton_iff.2 hne) hfix
+  funext t
+  have hs : s ∈ Ioo (min s t - 1) (max s t + 1) :=
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+  have ht : t ∈ Ioo (min s t - 1) (max s t + 1) :=
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  rw [← timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hη.1 u) hs ht,
+    ← timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hγ u) hs ht, hηs]
+
 end Flow
+
+/-- **Periodic solutions through nondegenerate fixed points are isolated.** On a boundaryless
+Hausdorff manifold modelled on a finite-dimensional space, if `γ` is a global solution of a jointly
+`C¹` time-dependent field `X` and `γ s` is a nondegenerate fixed point of the return map
+`timeDependentFlowOf X s (s + T)`, then for `p` in a neighbourhood of `γ s` every `T`-periodic
+solution `η` with `η s = p` is `γ` itself. -/
+theorem IsNondegenerateFixedPt.eventually_eq_of_mem_periodicSolutions [FiniteDimensional ℝ E]
+    [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] {γ : ℝ → M}
+    (hnd : IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hγ : ∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t)))) :
+    ∀ᶠ p in 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s = p → η = γ :=
+  eventually_eq_of_mem_periodicSolutions_of_eventually_not_isFixedPt hX hγ
+    hnd.eventually_not_isFixedPt
 
 /-- **Finiteness of nondegenerate periodic solutions.** Let `X` be a jointly `C¹` time-dependent
 vector field on a compact boundaryless manifold modelled on a finite-dimensional space, `T`-periodic
