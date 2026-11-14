@@ -138,7 +138,7 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
   entries lexicographically.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
-* `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
+* `TauCeti.notMem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
 * `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
   ends below it and never equals it drops below the level at some step.
@@ -839,7 +839,7 @@ theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
 open Set
 
 /-- No value of a monotone `Fin` family lies strictly between consecutive entries. -/
-theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
+theorem notMem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin (n + 1) → β)
     (ha : Monotone a) (i : Fin n) (k : Fin (n + 1)) :
     a k ∉ Set.Ioo (a i.castSucc) (a i.succ) := by
   intro hk
