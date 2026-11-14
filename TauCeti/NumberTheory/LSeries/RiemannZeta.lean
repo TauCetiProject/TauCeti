@@ -8,8 +8,10 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
+import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
+import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.NumberTheory.LSeries.Convergence
@@ -20,7 +22,8 @@ import TauCeti.NumberTheory.LSeries.SumCoeff
 
 For a real `s > 1`, Mathlib's `riemannZeta s` is the sum of the complex Dirichlet series
 `∑ 1 / n ^ s`. This file records the corresponding statements for the real series: the real
-`p`-series `∑ (n + 1) ^ (-s)` sums to the real part of `riemannZeta s`. Together with Mathlib's
+`p`-series `∑ (n + 1) ^ (-s)` sums to the real part of `riemannZeta s`, so `s ↦ Re ζ(s)` is
+antitone on `(1, ∞)` and bounded strictly by `2` on `[2, ∞)`. Together with Mathlib's
 `riemannZeta_re_pos_of_one_lt` and `riemannZeta_im_eq_zero_of_one_lt`, this identifies the
 real normalizing constant of a `p`-series, as needed for the Zipf law on the positive integers.
 
@@ -40,6 +43,8 @@ Siegel's theorem on real zeros.
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
+* `TauCeti.antitoneOn_riemannZeta_re` and `TauCeti.riemannZeta_re_lt_two`: `s ↦ Re ζ(s)` is
+  antitone on `(1, ∞)` and satisfies `Re ζ(s) < 2` for `s ≥ 2`;
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
 * `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
   `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
@@ -80,6 +85,25 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
   rw [← hasSum_nat_add_iff' 1]
   simpa [Real.zero_rpow (by linarith : -s ≠ 0)] using
     hasSum_nat_add_one_rpow_neg_riemannZeta_re hs
+
+/-- On `(1, ∞)`, the real part of `riemannZeta` is antitone. -/
+theorem antitoneOn_riemannZeta_re : AntitoneOn (fun s : ℝ ↦ (riemannZeta s).re) (Set.Ioi 1) := by
+  intro s hs t ht hst
+  exact hasSum_mono (hasSum_nat_add_one_rpow_neg_riemannZeta_re ht)
+    (hasSum_nat_add_one_rpow_neg_riemannZeta_re hs) fun n ↦
+    Real.rpow_le_rpow_of_exponent_le (by linarith : (1 : ℝ) ≤ (n : ℝ) + 1) (neg_le_neg hst)
+
+/-- For every real `s ≥ 2`, `Re ζ(s) < 2`. -/
+theorem riemannZeta_re_lt_two {s : ℝ} (hs : 2 ≤ s) : (riemannZeta s).re < 2 := by
+  have hle : (riemannZeta s).re ≤ (riemannZeta 2).re := by
+    simpa using antitoneOn_riemannZeta_re (Set.mem_Ioi.mpr one_lt_two)
+      (Set.mem_Ioi.mpr (one_lt_two.trans_le hs)) hs
+  have h2 : (riemannZeta 2).re = Real.pi ^ 2 / 6 := by
+    rw [riemannZeta_two]
+    norm_cast
+  have hpi : Real.pi ^ 2 < 3.15 ^ 2 :=
+    pow_lt_pow_left₀ Real.pi_lt_d2 Real.pi_pos.le (by norm_num)
+  linarith
 
 /-- The Riemann zeta function is measurable: it is continuous away from its pole at `1`. -/
 @[fun_prop]
