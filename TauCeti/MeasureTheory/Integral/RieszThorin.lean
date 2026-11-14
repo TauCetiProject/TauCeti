@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.Analysis.Complex.Hadamard
+import TauCeti.Analysis.Complex.InterpolatedExponent
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
@@ -120,67 +121,14 @@ private theorem norm_powSign_le_exp (w c : ℂ) :
     simp only [mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
     exact (le_abs_self _).trans (abs_mul _ _).le
 
-/-- The slope `(a₁ - a₀) / a` of the exponent family, where `a = (1 - θ) a₀ + θ a₁`. -/
-private noncomputable def slope (a₀ a₁ θ : ℝ) : ℝ := (a₁ - a₀) / ((1 - θ) * a₀ + θ * a₁)
-
-/-- The exponent of the analytic family, `1 + (z - θ) (a₁ - a₀) / a`. It equals `1` at `z = θ`,
-and its real part is `a₀ / a` on the line `Re z = 0` and `a₁ / a` on the line `Re z = 1`. If
-`a = 0` then `a₀ = a₁ = 0` and the exponent is constantly `1`. -/
-private noncomputable def expo (a₀ a₁ θ : ℝ) (z : ℂ) : ℂ := 1 + (z - θ) * (slope a₀ a₁ θ : ℂ)
-
-private theorem re_expo (a₀ a₁ θ : ℝ) (z : ℂ) :
-    (expo a₀ a₁ θ z).re = 1 + (z.re - θ) * slope a₀ a₁ θ := by
-  simp [expo]
-
-private theorem expo_self (a₀ a₁ θ : ℝ) : expo a₀ a₁ θ θ = 1 := by simp [expo]
-
-private theorem re_expo_mul {a₀ a₁ θ : ℝ} (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
-    (hθ : θ ∈ Set.Ioo (0 : ℝ) 1) (z : ℂ) :
-    (expo a₀ a₁ θ z).re * ((1 - θ) * a₀ + θ * a₁) = (1 - z.re) * a₀ + z.re * a₁ := by
-  obtain ⟨hθ0, hθ1⟩ := hθ
-  rw [re_expo, slope]
-  rcases eq_or_ne ((1 - θ) * a₀ + θ * a₁) 0 with ha | ha
-  · obtain ⟨rfl, rfl⟩ : a₀ = 0 ∧ a₁ = 0 := by
-      constructor <;> nlinarith [mul_nonneg (sub_pos.2 hθ1).le ha₀, mul_nonneg hθ0.le ha₁]
-    simp
-  · rw [add_mul, one_mul, mul_assoc, div_mul_cancel₀ _ ha]
-    ring
-
-private theorem re_expo_nonneg {a₀ a₁ θ : ℝ} (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁)
-    (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
-    {z : ℂ} (hz : z.re ∈ Set.Icc (0 : ℝ) 1) : 0 ≤ (expo a₀ a₁ θ z).re := by
-  have h := re_expo_mul ha₀ ha₁ hθ z
-  obtain ⟨hθ0, hθ1⟩ := hθ
-  have ha : 0 ≤ (1 - θ) * a₀ + θ * a₁ := by
-    have := sub_pos.2 hθ1
-    positivity
-  rcases ha.eq_or_lt with ha | ha
-  · obtain ⟨rfl, rfl⟩ : a₀ = 0 ∧ a₁ = 0 := by
-      constructor <;> nlinarith [mul_nonneg (sub_pos.2 hθ1).le ha₀, mul_nonneg hθ0.le ha₁]
-    simp [re_expo, slope]
-  · have : 0 ≤ (1 - z.re) * a₀ + z.re * a₁ := by
-      have := hz.1
-      have := sub_nonneg.2 hz.2
-      positivity
-    nlinarith
-
-private theorem abs_re_expo_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1) {z : ℂ}
-    (hz : z.re ∈ Set.Icc (0 : ℝ) 1) :
-    |(expo a₀ a₁ θ z).re| ≤ 1 + |slope a₀ a₁ θ| := by
-  rw [re_expo]
-  have h1 : |z.re - θ| ≤ 1 := abs_le.2 ⟨by linarith [hz.1, hθ.2], by linarith [hz.2, hθ.1]⟩
-  calc _ ≤ |(1 : ℝ)| + |(z.re - θ) * slope a₀ a₁ θ| := abs_add_le _ _
-    _ ≤ 1 + 1 * |slope a₀ a₁ θ| := by
-        rw [abs_one, abs_mul]; gcongr
-    _ = _ := by ring
-
 /-- On the closed strip `0 ≤ Re z ≤ 1` the members of the analytic family are bounded uniformly
 in `z`. -/
 private theorem norm_powSign_expo_le {a₀ a₁ θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1) {z : ℂ}
     (hz : z.re ∈ Set.Icc (0 : ℝ) 1) (c : ℂ) :
-    ‖powSign (expo a₀ a₁ θ z) c‖ ≤ Real.exp ((1 + |slope a₀ a₁ θ|) * |Real.log ‖c‖|) :=
+    ‖powSign (interpExponent a₀ a₁ θ z) c‖ ≤
+      Real.exp ((1 + |interpSlope a₀ a₁ θ|) * |Real.log ‖c‖|) :=
   (norm_powSign_le_exp _ _).trans (Real.exp_le_exp.2
-    (mul_le_mul_of_nonneg_right (abs_re_expo_le hθ hz) (abs_nonneg _)))
+    (mul_le_mul_of_nonneg_right (abs_re_interpExponent_le hθ hz) (abs_nonneg _)))
 
 /-- The indicator of the fibre `u ⁻¹' {c}` of a simple function. -/
 private noncomputable def fiberInd (u : SimpleFunc γ ℂ) (c : ℂ) : SimpleFunc γ ℂ :=
@@ -245,28 +193,6 @@ private theorem integral_map_powSign_eq_sum (T : SimpleFunc α ℂ →ₗ[ℂ] (
         rw [integral_finsetSum _ fun d hd => hterm c hc d hd]
         exact Finset.sum_congr rfl fun d _ => integral_const_mul _ _
 
-/-- Along the interpolating family, the exponent `1 / s(z)` of the endpoint spaces is reached at
-the real part of `expo`. -/
-private theorem ofReal_re_expo_mul_inv {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) {θ : ℝ}
-    (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
-    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) {z : ℂ}
-    (hz : z.re ∈ Set.Icc (0 : ℝ) 1) :
-    ENNReal.ofReal (expo (s₀⁻¹).toReal (s₁⁻¹).toReal θ z).re * s⁻¹ =
-      ENNReal.ofReal (1 - z.re) * s₀⁻¹ + ENNReal.ofReal z.re * s₁⁻¹ := by
-  have h₀ : s₀⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₀
-  have h₁ : s₁⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₁
-  have hz1 : 0 ≤ 1 - z.re := sub_nonneg.2 hz.2
-  have hre := re_expo_mul (ENNReal.toReal_nonneg (a := s₀⁻¹)) (ENNReal.toReal_nonneg (a := s₁⁻¹))
-    hθ z
-  have hnn := re_expo_nonneg (ENNReal.toReal_nonneg (a := s₀⁻¹))
-    (ENNReal.toReal_nonneg (a := s₁⁻¹)) hθ hz
-  have h0 : (0 : ℝ) ≤ (s₀⁻¹).toReal := ENNReal.toReal_nonneg
-  have h1 : (0 : ℝ) ≤ (s₁⁻¹).toReal := ENNReal.toReal_nonneg
-  rw [inv_eq_ofReal_of_inv_eq hs₀ hs₁ (Set.Ioo_subset_Icc_self hθ) hs, ← ENNReal.ofReal_mul hnn,
-    hre, ENNReal.ofReal_add (mul_nonneg hz1 h0) (mul_nonneg hz.1 h1),
-    ENNReal.ofReal_mul hz1, ENNReal.ofReal_mul hz.1, ENNReal.ofReal_toReal h₀,
-    ENNReal.ofReal_toReal h₁]
-
 /-- The member `u_w = sgn(u) |u| ^ w` of the analytic family through `u` has `Lᵗ` norm at most
 one, where `1 / t = Re w / s`, whenever `u` has `Lˢ` norm at most one. -/
 private theorem eLpNorm_map_powSign_le_one (u : SimpleFunc γ ℂ) {s t : ℝ≥0∞} {w : ℂ}
@@ -295,24 +221,20 @@ private theorem eLpNorm_map_powSign_expo_le_one_of_re_eq_zero (u : SimpleFunc γ
     {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹)
     (hu : eLpNorm u s ρ ≤ 1) {z : ℂ} (hz : z.re = 0) :
-    eLpNorm (u.map (powSign (expo (s₀⁻¹).toReal (s₁⁻¹).toReal θ z))) s₀ ρ ≤ 1 := by
-  have hz' : z.re ∈ Set.Icc (0 : ℝ) 1 := by simp [hz]
-  refine eLpNorm_map_powSign_le_one u (re_expo_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg
-    hθ hz') ?_ hu
-  rw [ofReal_re_expo_mul_inv hs₀ hs₁ hθ hs hz', hz]
-  simp
+    eLpNorm (u.map (powSign (interpExponent (s₀⁻¹).toReal (s₁⁻¹).toReal θ z))) s₀ ρ ≤ 1 := by
+  exact eLpNorm_map_powSign_le_one u (re_interpExponent_nonneg ENNReal.toReal_nonneg
+    ENNReal.toReal_nonneg hθ (by simp [hz]))
+    (ofReal_re_interpExponent_mul_inv_of_re_eq_zero hs₀ hs₁ hθ hs hz).symm hu
 
 /-- On the line `Re z = 1` the analytic family through `u` lies in the unit ball of `L^{s₁}`. -/
 private theorem eLpNorm_map_powSign_expo_le_one_of_re_eq_one (u : SimpleFunc γ ℂ)
     {s₀ s₁ s : ℝ≥0∞} (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
     (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹)
     (hu : eLpNorm u s ρ ≤ 1) {z : ℂ} (hz : z.re = 1) :
-    eLpNorm (u.map (powSign (expo (s₀⁻¹).toReal (s₁⁻¹).toReal θ z))) s₁ ρ ≤ 1 := by
-  have hz' : z.re ∈ Set.Icc (0 : ℝ) 1 := by simp [hz]
-  refine eLpNorm_map_powSign_le_one u (re_expo_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg
-    hθ hz') ?_ hu
-  rw [ofReal_re_expo_mul_inv hs₀ hs₁ hθ hs hz', hz]
-  simp
+    eLpNorm (u.map (powSign (interpExponent (s₀⁻¹).toReal (s₁⁻¹).toReal θ z))) s₁ ρ ≤ 1 := by
+  exact eLpNorm_map_powSign_le_one u (re_interpExponent_nonneg ENNReal.toReal_nonneg
+    ENNReal.toReal_nonneg hθ (by simp [hz]))
+    (ofReal_re_interpExponent_mul_inv_of_re_eq_one hs₀ hs₁ hθ hs hz).symm hu
 
 private theorem map_powSign_one (u : SimpleFunc γ ℂ) : u.map (powSign 1) = u :=
   SimpleFunc.ext fun x => powSign_one (u x)
@@ -347,13 +269,13 @@ private theorem integrable_mul_fiberInd (T : SimpleFunc α ℂ →ₗ[ℂ] (β �
       Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν := by
   intro c _ hc d _ hd
   have hχ : MemLp (fiberInd f c) p₀ μ :=
-    memLp_fiberInd f (w := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ 0) hc <| memLp_iff.2 <|
+    memLp_fiberInd f (w := interpExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ 0) hc <| memLp_iff.2 <|
       (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
         ENNReal.one_lt_top
   have hTχ : MemLp (T (fiberInd f c)) q₀ ν :=
     memLp_iff.2 ((h₀ _).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hχ.eLpNorm_lt_top))
   have hχ' : MemLp (fiberInd g d) q₀' ν :=
-    memLp_fiberInd g (w := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ 0) hd <| memLp_iff.2 <|
+    memLp_fiberInd g (w := interpExponent (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ 0) hd <| memLp_iff.2 <|
       (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
         ENNReal.one_lt_top
   exact hTχ.integrable_mul hχ'
@@ -372,8 +294,8 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
     ‖∫ y, T f y * g y ∂ν‖ ≤ (M₀ : ℝ) ^ (1 - θ) * (M₁ : ℝ) ^ θ := by
   have hq₀' : q₀' ≠ 0 := hq₀.symm.ne_zero
   have hq₁' : q₁' ≠ 0 := hq₁.symm.ne_zero
-  set P := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ with hP
-  set Q := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ with hQ
+  set P := interpExponent (p₀⁻¹).toReal (p₁⁻¹).toReal θ with hP
+  set Q := interpExponent (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ with hQ
   -- The fibre indicators of `f` and `g` lie in the endpoint spaces, so the pairing of the two
   -- analytic families expands into a finite exponential sum `Φ`.
   have hint := integrable_mul_fiberInd T hp₀ hp₁ hθ hp hq₀' hq₁' hq' h₀ hf hg
@@ -383,12 +305,13 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
   have hΦ : ∀ z, Φ z = ∫ y, T (f.map (powSign (P z))) y * g.map (powSign (Q z)) y ∂ν :=
     fun z => (integral_map_powSign_eq_sum T f g _ _ hint).symm
   have hdiff : Differentiable ℂ Φ := by
-    simp only [hΦ_def, hP, hQ, expo, powSign]
+    simp only [hΦ_def, hP, hQ, powSign]
     fun_prop
   have hbdd : BddAbove ((norm ∘ Φ) '' Complex.HadamardThreeLines.verticalClosedStrip 0 1) := by
     refine ⟨∑ c ∈ f.range, ∑ d ∈ g.range,
-      Real.exp ((1 + |slope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|) * |Real.log ‖c‖|) *
-        Real.exp ((1 + |slope (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ|) * |Real.log ‖d‖|) * ‖I c d‖, ?_⟩
+      Real.exp ((1 + |interpSlope (p₀⁻¹).toReal (p₁⁻¹).toReal θ|) * |Real.log ‖c‖|) *
+        Real.exp ((1 + |interpSlope (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ|) * |Real.log ‖d‖|) *
+          ‖I c d‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     have hz : z.re ∈ Set.Icc (0 : ℝ) 1 := hz
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun c _ => (norm_sum_le _ _).trans
@@ -413,7 +336,8 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
   have key := Complex.HadamardThreeLines.norm_le_interp_of_mem_verticalClosedStrip'
     (z := (θ : ℂ)) zero_lt_one (by simp [Complex.HadamardThreeLines.verticalClosedStrip,
       hθ.1.le, hθ.2.le]) hdiff.diffContOnCl hbdd hb₀ hb₁
-  rw [hΦ, hP, hQ, expo_self, expo_self, map_powSign_one, map_powSign_one] at key
+  rw [hΦ, hP, hQ, interpExponent_self, interpExponent_self, map_powSign_one,
+    map_powSign_one] at key
   simpa using key
 
 /-- The bilinear form of the three-lines estimate, for simple functions of arbitrary finite
