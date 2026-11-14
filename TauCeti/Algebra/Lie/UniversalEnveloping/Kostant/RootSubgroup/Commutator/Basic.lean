@@ -164,7 +164,7 @@ theorem kostantRootSubgroupPoints_mul_of_lie_eq {i j k : ι} {c : ℤ}
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
   rw [hw]
-  exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hij hik hjk hi hj hk _ _ _ _ _
+  exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hij hik hjk hk _ _ _ _ _
 
 /-- The Chevalley commutator relation with the third `𝔾ₐ`-point written out: it is the point whose
 parameter is `c` times the product of the parameters of `f` and `g`. -/

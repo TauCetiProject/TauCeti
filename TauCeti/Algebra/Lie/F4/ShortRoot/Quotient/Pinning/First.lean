@@ -270,8 +270,7 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_rootColumn_of_long
       (by rwa [f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv δ, hii])
     simpa only [hii, Subtype.coe_eta] using h
   simp only [f4ShortRootQuotientFirstColumn_eq, f4ShortRootQuotientLift_symm_inl,
-    f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge _ _ hk
-      ((f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property) hopp
+    f4ShortRootSubspace_mkQ_lie_rootVector_eq_zero_of_no_specialMap_edge _ _ hopp
       fun δ hδ hδeq => hedge ⟨δ, hδ, by rwa [hii] at hδeq⟩, map_zero]
   refine (f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum (isogenyReverse k) i
     i.property (fun heq => hopp ?_) fun δ hδ hδeq =>

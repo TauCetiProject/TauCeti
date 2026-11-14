@@ -57,10 +57,10 @@ theorem _root_.Polynomial.degree_mul_lt_of_degree_lt_of_natDegree_le {A q : R[X]
       _ = ((a + n : ℕ) : WithBot ℕ) := by push_cast; rfl
 
 /-- A relation with multipliers of degrees below `m - j` and `n - j` has degree below
-`(m - j) + (n - j) + j`, provided the input degrees are bounded by `m` and `n` and `j` lies
-below both bounds. Either input or multiplier may be zero. -/
+`(m - j) + (n - j) + j`, provided the input degrees are bounded by `m` and `n`. Either input or
+multiplier may be zero. -/
 theorem degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le {p q A B : R[X]} {m n j : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j ≤ m) (hjn : j ≤ n)
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (hA : A.degree < (m - j : ℕ)) (hB : B.degree < (n - j : ℕ)) :
     (A * q + B * p).degree < (((m - j) + (n - j) + j : ℕ) : WithBot ℕ) := by
   apply (degree_add_le _ _).trans_lt
@@ -75,22 +75,18 @@ degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g`
 `A`, `B` have degrees below `m - d` and `n - d`: the combination then has degree below `d`, so
 the divisor `g` forces it to vanish. -/
 theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommSemiring S]
-    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ} (hp : p ≠ 0)
+    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q)
     (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
     (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
       (A * q + B * p).coeff (i + g.natDegree) = 0) :
     A * q + B * p = 0 := by
-  have hg0 : g ≠ 0 := ne_zero_of_dvd_ne_zero hp hgp
+  rcases eq_or_ne g 0 with rfl | hg0
+  · rw [zero_dvd_iff] at hgp hgq
+    simp [hgp, hgq]
   set d := g.natDegree
-  have hdm : d ≤ m := (natDegree_le_of_dvd hgp hp).trans hm
-  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
-    rcases eq_or_ne q 0 with rfl | hq0
-    · rw [mul_zero, zero_add]
-      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm).trans_le
-        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
-    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hdm
-        ((natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) :=
+    degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hAdeg hBdeg
   have hdeg : (A * q + B * p).degree < d := by
     rw [degree_lt_iff_coeff_zero]
     intro e he
