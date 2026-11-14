@@ -147,7 +147,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_divergence
     rw [Real.norm_eq_abs, abs_pow]
     exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
   have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq u).bdd_mul hψ2 hψ2M
+    (Lp.memLp (W1p.gradient u)).norm.integrable_sq.bdd_mul hψ2 hψ2M
   have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
     (Lp.memLp (W1p.value u)).integrable_sq.bdd_mul
       ((ContDiff.continuous_gradient hψ (by simp)).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
