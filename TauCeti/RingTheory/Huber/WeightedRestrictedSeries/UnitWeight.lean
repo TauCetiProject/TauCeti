@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -19,22 +19,33 @@ coefficient of the rescaled series `f(u⁻¹ X)` (Mathlib's `MvPowerSeries.resca
 is `T`-restricted exactly when `f(u⁻¹ X)` is restricted for the trivial weight, and `f` lies in the
 neighbourhood `U⟨X⟩` exactly when every coefficient of `f(u⁻¹ X)` lies in `U`.
 
+More generally, for any singleton weights `Tᵢ = {uᵢ}`, each weight power `Tν` is a singleton and
+therefore bounded whenever multiplication is separately continuous. Over a nonarchimedean ring
+`A`, this makes the coefficient maps continuous and registers `T0Space` and `CompleteSpace`
+instances on `TauCeti.Huber.weightedRestrictedSubring` from those on `A`.
+
 Over a normed ring whose units `uᵢ` scale norms exactly, this turns the weighted bound into the
 Gauss-norm bound at the radii `‖uᵢ‖⁻¹`; that comparison is in
-`TauCeti.RingTheory.Huber.Restricted.GaussNorm`.
+`TauCeti.RingTheory.Huber.Restricted.GaussNorm` and
+`TauCeti.RingTheory.Huber.Restricted.UnitWeight`.
 
 ## Main results
 
-* `TauCeti.Huber.weightPow_singleton`: for singleton weights, `Tν` is the singleton of `uᵛ`.
+* `TauCeti.Huber.weightPow_singleton` and `TauCeti.Huber.isBounded_weightPow_singleton`: for
+  singleton weights, `Tν` is the singleton of `uᵛ` and is bounded.
 * `TauCeti.Huber.mem_weightMul_units_iff`: `a ∈ uᵛ · U ↔ u⁻ᵛ a ∈ U`.
 * `TauCeti.Huber.isWeightFamily_units`: unit weights satisfy Wedhorn's standing hypothesis.
 * `TauCeti.Huber.isWeightedRestricted_units_iff`: `f` is restricted for the unit weights exactly
   when `f(u⁻¹ X)` is restricted for the trivial weight.
 * `TauCeti.Huber.mem_weightedNhd_units_iff`: the neighbourhoods `U⟨X⟩` in the same terms.
+* `TauCeti.Huber.t0Space_weightedRestrictedSubring_singleton` and
+  `TauCeti.Huber.completeSpace_weightedRestrictedSubring_singleton`: Hausdorffness and
+  completeness of `A⟨X⟩_T` for singleton weights.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Remark and Definition 5.48 and equation (5.6.1).
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Remark and Definition 5.48, equation (5.6.1), and
+  Proposition 5.49(2)–(3).
 -/
 
 public section
@@ -113,5 +124,57 @@ theorem mem_weightedNhd_units_iff [NonarchimedeanRing A] (u : Fin k → Aˣ)
     f ∈ weightedNhd _ hT U ↔
       ∀ ν, coeff ν (rescale (fun i ↦ (((u i)⁻¹ : Aˣ) : A)) (f : MvPowerSeries (Fin k) A)) ∈ U := by
   simp only [mem_weightedNhd, coeff_mem_weightMul_units_iff]
+
+section Bounded
+
+variable {B : Type*} [CommMonoidWithZero B] [TopologicalSpace B] [SeparatelyContinuousMul B]
+
+/-- For singleton weights `Tᵢ = {uᵢ}`, every weight power `Tν` is bounded, being a singleton. -/
+@[simp]
+theorem isBounded_weightPow_singleton (u : Fin k → B) (ν : Fin k →₀ ℕ) :
+    IsBounded (weightPow (fun i ↦ ({u i} : Set B)) ν) := by
+  rw [weightPow_singleton]
+  exact isBounded_singleton _
+
+end Bounded
+
+section Complete
+
+/-- For singleton weights `Tᵢ = {uᵢ}`, every coefficient map on `A⟨X⟩_T` is continuous. -/
+theorem continuous_coeff_singleton [NonarchimedeanRing A] (u : Fin k → A)
+    (hT : IsWeightFamily (fun i ↦ ({u i} : Set A))) (ν : Fin k →₀ ℕ) :
+    Continuous fun f : weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT ↦
+      coeff ν (f : MvPowerSeries (Fin k) A) :=
+  hT.continuous_coeff (isBounded_weightPow_singleton u ν)
+
+/-- **Singleton-weight restricted series over a Hausdorff base are Hausdorff**
+(Wedhorn, Proposition 5.49(2)). -/
+instance t0Space_weightedRestrictedSubring_singleton [NonarchimedeanRing A] [T0Space A]
+    {u : Fin k → A} {hT : IsWeightFamily (fun i ↦ ({u i} : Set A))} :
+    T0Space (weightedRestrictedSubring (fun i ↦ ({u i} : Set A)) hT) :=
+  t0Space_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
+
+end Complete
+
+section Uniform
+
+variable {B : Type*} [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
+
+/-- For singleton weights `Tᵢ = {uᵢ}`, every coefficient map on `B⟨X⟩_T` is uniformly
+continuous. -/
+theorem uniformContinuous_coeff_singleton (u : Fin k → B)
+    (hT : IsWeightFamily (fun i ↦ ({u i} : Set B))) (ν : Fin k →₀ ℕ) :
+    UniformContinuous fun f : weightedRestrictedSubring (fun i ↦ ({u i} : Set B)) hT ↦
+      coeff ν (f : MvPowerSeries (Fin k) B) :=
+  hT.uniformContinuous_coeff (isBounded_weightPow_singleton u ν)
+
+/-- **Singleton-weight restricted series over a complete base are complete**
+(Wedhorn, Proposition 5.49(3)). -/
+instance completeSpace_weightedRestrictedSubring_singleton [CompleteSpace B]
+    {u : Fin k → B} {hT : IsWeightFamily (fun i ↦ ({u i} : Set B))} :
+    CompleteSpace (weightedRestrictedSubring (fun i ↦ ({u i} : Set B)) hT) :=
+  completeSpace_weightedRestrictedSubring hT (isBounded_weightPow_singleton u)
+
+end Uniform
 
 end TauCeti.Huber
