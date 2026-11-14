@@ -106,14 +106,14 @@ namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
-/-- A submodule on which the restricted form is nondegenerate meets its orthogonal complement only
-in zero. This converse of `LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal`
+/-- A submodule on which the restricted form is right-separating meets its orthogonal complement
+only in zero. This converse of `LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal`
 needs no reflexivity. -/
-theorem disjoint_orthogonal_of_restrict_nondegenerate {B : LinearMap.BilinForm K V}
-    {W : Submodule K V} (h : (B.restrict W).Nondegenerate) : Disjoint W (B.orthogonal W) := by
+theorem disjoint_orthogonal_of_restrict_separatingRight {B : LinearMap.BilinForm K V}
+    {W : Submodule K V} (h : (B.restrict W).SeparatingRight) : Disjoint W (B.orthogonal W) := by
   rw [Submodule.disjoint_def]
   intro x hx hx'
-  have hx0 : (⟨x, hx⟩ : W) = 0 := h.2 _ fun y => (mem_orthogonal_iff.mp hx') y y.2
+  have hx0 : (⟨x, hx⟩ : W) = 0 := h _ fun y => (mem_orthogonal_iff.mp hx') y y.2
   simpa using congrArg Subtype.val hx0
 
 /-- A family of pairwise orthogonal submodules, on each of which the form is right-separating, is
@@ -356,7 +356,7 @@ finite-dimensionality. -/
 theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm R M}
     (hB : B.IsRefl) {W : Submodule R M} :
     (B.restrict W).Nondegenerate ↔ Disjoint W (B.orthogonal W) :=
-  ⟨disjoint_orthogonal_of_restrict_nondegenerate,
+  ⟨fun h ↦ disjoint_orthogonal_of_restrict_separatingRight h.2,
     B.nondegenerate_restrict_of_disjoint_orthogonal hB⟩
 
 /-- For a reflexive form, and in particular for an alternating one, the restriction to a

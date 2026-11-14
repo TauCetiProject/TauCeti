@@ -424,9 +424,9 @@ lemma one_le_pairRoot_dotProduct_iff {p q : Signed n} (h : q ≠ signedNeg p)
 `-p` with `q`, and fixes everything else. On a long root `p = q` the two exchanges coincide and this
 is the sign change at the index of `p`.
 
-This is the reflection in a root only under `q ≠ signedNeg p`, the hypothesis of every lemma below;
-on the excluded diagonal `q = -p` there is no root `p + q` to reflect in and the value here is
-auxiliary data. -/
+This is the reflection in a root only under `q ≠ signedNeg p`, the hypothesis of the
+reflection-axiom lemmas below; on the excluded diagonal `q = -p` there is no root `p + q` to
+reflect in and the value here is auxiliary data. -/
 def signedReflection (p q z : Signed n) : Signed n :=
   if z = p then signedNeg q
   else if z = signedNeg q then p
@@ -438,12 +438,15 @@ def signedReflection (p q z : Signed n) : Signed n :=
     signedReflection p q p = signedNeg q := by
   rw [signedReflection, ite_eq_left rfl]
 
-@[simp] lemma signedReflection_signedNeg_right {p q : Signed n} (h : q ≠ signedNeg p) :
+@[simp] lemma signedReflection_signedNeg_right (p q : Signed n) :
     signedReflection p q (signedNeg q) = p := by
-  rw [signedReflection, ite_eq_right fun hc => h (by rw [← hc, signedNeg_signedNeg]),
-    ite_eq_left rfl]
+  rw [signedReflection]
+  by_cases hc : signedNeg q = p
+  · rw [ite_eq_left hc]
+    exact hc
+  · rw [ite_eq_right hc, ite_eq_left rfl]
 
-@[simp] lemma signedReflection_signedNeg_left {p q : Signed n} (h : q ≠ signedNeg p) :
+@[simp] lemma signedReflection_signedNeg_left (p q : Signed n) :
     signedReflection p q (signedNeg p) = q := by
   rcases eq_or_ne p q with rfl | hne
   · rw [signedReflection, ite_eq_right (signedNeg_ne p), ite_eq_left rfl]
@@ -451,12 +454,15 @@ def signedReflection (p q z : Signed n) : Signed n :=
       ite_eq_right fun hc => hne (by simpa only [signedNeg_signedNeg] using congrArg signedNeg hc),
       ite_eq_left rfl]
 
-@[simp] lemma signedReflection_right {p q : Signed n} (h : q ≠ signedNeg p) :
+@[simp] lemma signedReflection_right (p q : Signed n) :
     signedReflection p q q = signedNeg p := by
   rcases eq_or_ne p q with rfl | hne
   · rw [signedReflection, ite_eq_left rfl]
-  · rw [signedReflection, ite_eq_right hne.symm, ite_eq_right (Ne.symm (signedNeg_ne q)),
-      ite_eq_right h, ite_eq_left rfl]
+  · rw [signedReflection, ite_eq_right hne.symm, ite_eq_right (Ne.symm (signedNeg_ne q))]
+    by_cases h : q = signedNeg p
+    · rw [ite_eq_left h]
+      exact h
+    · rw [ite_eq_right h, ite_eq_left rfl]
 
 @[simp] lemma signedReflection_of_ne {p q z : Signed n} (h1 : z ≠ p) (h2 : z ≠ q)
     (h3 : z ≠ signedNeg p) (h4 : z ≠ signedNeg q) : signedReflection p q z = z := by
@@ -504,14 +510,14 @@ lemma signedWeight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
   · rw [signedReflection_left, dotProduct_pairCoroot_left h, signedWeight_signedNeg, pairRoot]
     module
   · rcases eq_or_ne z q with rfl | h2
-    · rw [signedReflection_right h, dotProduct_pairCoroot_right h, signedWeight_signedNeg, pairRoot]
+    · rw [signedReflection_right, dotProduct_pairCoroot_right h, signedWeight_signedNeg, pairRoot]
       module
     · rcases eq_or_ne z (signedNeg p) with rfl | h3
-      · rw [signedReflection_signedNeg_left h, signedWeight_signedNeg, neg_dotProduct,
+      · rw [signedReflection_signedNeg_left, signedWeight_signedNeg, neg_dotProduct,
           dotProduct_pairCoroot_left h, pairRoot]
         module
       · rcases eq_or_ne z (signedNeg q) with rfl | h4
-        · rw [signedReflection_signedNeg_right h, signedWeight_signedNeg, neg_dotProduct,
+        · rw [signedReflection_signedNeg_right, signedWeight_signedNeg, neg_dotProduct,
             dotProduct_pairCoroot_right h, pairRoot]
           module
         · rw [signedReflection_of_ne h1 h2 h3 h4, dotProduct_pairCoroot_of_ne h1 h2 h3 h4]
@@ -532,7 +538,7 @@ lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
     · rw [signedReflection_left, hcoeff, signedCoweight_signedNeg, pairCoroot, ite_eq_left rfl]
       module
     · rcases eq_or_ne z (signedNeg p) with rfl | h3
-      · rw [signedReflection_signedNeg_left h, signedCoweight_signedNeg, dotProduct_neg, hcoeff,
+      · rw [signedReflection_signedNeg_left, signedCoweight_signedNeg, dotProduct_neg, hcoeff,
           pairCoroot, ite_eq_left rfl]
         module
       · rw [signedReflection_of_ne h1 h1 h3 h3, pairRoot_dotProduct_of_ne h1 h1 h3 h3]
@@ -548,41 +554,47 @@ lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
     · rw [signedReflection_left, hleft, signedCoweight_signedNeg, pairCoroot, ite_eq_right hne]
       module
     · rcases eq_or_ne z q with rfl | h2
-      · rw [signedReflection_right h, hright, signedCoweight_signedNeg, pairCoroot,
+      · rw [signedReflection_right, hright, signedCoweight_signedNeg, pairCoroot,
           ite_eq_right hne]
         module
       · rcases eq_or_ne z (signedNeg p) with rfl | h3
-        · rw [signedReflection_signedNeg_left h, signedCoweight_signedNeg, dotProduct_neg, hleft,
+        · rw [signedReflection_signedNeg_left, signedCoweight_signedNeg, dotProduct_neg, hleft,
             pairCoroot, ite_eq_right hne]
           module
         · rcases eq_or_ne z (signedNeg q) with rfl | h4
-          · rw [signedReflection_signedNeg_right h, signedCoweight_signedNeg, dotProduct_neg,
+          · rw [signedReflection_signedNeg_right, signedCoweight_signedNeg, dotProduct_neg,
               hright, pairCoroot, ite_eq_right hne]
             module
           · rw [signedReflection_of_ne h1 h2 h3 h4, pairRoot_dotProduct_of_ne h1 h2 h3 h4]
             module
 
-lemma signedReflection_injective {p q : Signed n} (h : q ≠ signedNeg p) :
-    Injective (signedReflection p q) := by
-  intro z w hzw
-  -- In these coordinates `Module.preReflection` in the root `p + q` is definitionally the map
-  -- `v ↦ v - (v ⬝ᵥ pairCoroot p q) • pairRoot p q`; Mathlib provides no named bridge, so the
-  -- `change` below is what turns the goal left by its injectivity into the reflection formula.
-  refine signedWeight_injective ((Module.involutive_preReflection (x := pairRoot p q)
-    (f := (dotProductBilin ℤ ℤ).flip (pairCoroot p q))
-    (pairRoot_dotProduct_pairCoroot_self h)).injective ?_)
-  change signedWeight z - (signedWeight z ⬝ᵥ pairCoroot p q) • pairRoot p q
-      = signedWeight w - (signedWeight w ⬝ᵥ pairCoroot p q) • pairRoot p q
-  rw [← signedWeight_signedReflection h z, ← signedWeight_signedReflection h w, hzw]
+lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) := by
+  refine Involutive.injective fun z => ?_
+  by_cases h1 : z = p
+  · rw [h1, signedReflection_left, signedReflection_signedNeg_right]
+  by_cases h2 : z = q
+  · rw [h2, signedReflection_right, signedReflection_signedNeg_left]
+  by_cases h3 : z = signedNeg p
+  · rw [h3, signedReflection_signedNeg_left, signedReflection_right]
+  by_cases h4 : z = signedNeg q
+  · rw [h4, signedReflection_signedNeg_right, signedReflection_left]
+  rw [signedReflection_of_ne h1 h2 h3 h4, signedReflection_of_ne h1 h2 h3 h4]
 
-lemma signedReflection_signedNeg {p q : Signed n} (h : q ≠ signedNeg p)
-    (z : Signed n) :
+lemma signedReflection_signedNeg (p q z : Signed n) :
     signedReflection p q (signedNeg z) = signedNeg (signedReflection p q z) := by
-  refine signedWeight_injective ?_
-  rw [signedWeight_signedReflection h (signedNeg z),
-    signedWeight_signedNeg (signedReflection p q z), signedWeight_signedReflection h z,
-    signedWeight_signedNeg z, neg_dotProduct, neg_smul]
-  module
+  by_cases h1 : z = p
+  · rw [h1, signedReflection_left, signedReflection_signedNeg_left, signedNeg_signedNeg]
+  by_cases h2 : z = q
+  · rw [h2, signedReflection_right, signedReflection_signedNeg_right, signedNeg_signedNeg]
+  by_cases h3 : z = signedNeg p
+  · rw [h3, signedReflection_signedNeg_left, signedNeg_signedNeg, signedReflection_left]
+  by_cases h4 : z = signedNeg q
+  · rw [h4, signedReflection_signedNeg_right, signedNeg_signedNeg, signedReflection_right]
+  rw [signedReflection_of_ne h1 h2 h3 h4,
+    signedReflection_of_ne (fun hc => h3 (by rw [← hc, signedNeg_signedNeg]))
+      (fun hc => h4 (by rw [← hc, signedNeg_signedNeg]))
+      (fun hc => h1 (by rw [← signedNeg_signedNeg z, hc, signedNeg_signedNeg]))
+      (fun hc => h2 (by rw [← signedNeg_signedNeg z, hc, signedNeg_signedNeg]))]
 
 /-- Reflection in the root `p + q` transports the root of a pair to the root of the reflected
 pair. -/
@@ -604,7 +616,7 @@ lemma pairCoroot_reflection {p q : Signed n} (h : q ≠ signedNeg p) (x y : Sign
   by_cases hxy : x = y
   · subst hxy
     rw [pairCoroot_self, pairCoroot_self, signedCoweight_signedReflection h x]
-  · rw [pairCoroot_of_ne hxy, pairCoroot_of_ne fun hc => hxy (signedReflection_injective h hc),
+  · rw [pairCoroot_of_ne hxy, pairCoroot_of_ne fun hc => hxy (signedReflection_injective p q hc),
       signedCoweight_signedReflection h x, signedCoweight_signedReflection h y, dotProduct_add]
     module
 

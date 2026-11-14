@@ -214,6 +214,16 @@ theorem IsJordanSplitting.pow_dvd_apply {π : R} {N : ℕ → Submodule R M}
   · rw [h.apply_eq_zero i k hik x hx y hy]
     exact dvd_zero _
 
+/-- The vectors of the constituents of index at least `j` of a Jordan splitting pair into
+`π ^ j R`. -/
+theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup {π : R} {N : ℕ → Submodule R M}
+    (h : B.IsJordanSplitting π N) {j : ℕ} {x : M} (hx : x ∈ ⨆ i ∈ Set.Ici j, N i) (y : M) :
+    π ^ j ∣ B x y := by
+  have hle : ⨆ i ∈ Set.Ici j, N i ≤ ⨅ y, Submodule.comap (B.flip y) (Ideal.span {π ^ j}) :=
+    iSup₂_le fun i hi x hx ↦ Submodule.mem_iInf _ |>.mpr fun y ↦ by
+      simpa [Ideal.mem_span_singleton] using (pow_dvd_pow π hi).trans (h.pow_dvd_apply hx y)
+  simpa [Ideal.mem_span_singleton] using Submodule.mem_iInf _ |>.mp (hle hx) y
+
 /-- Pairing a recomposed vector with the `i`-th constituent only sees its `i`-th component. -/
 theorem IsJordanSplitting.apply_dfinsuppSum {π : R} {N : ℕ → Submodule R M}
     [∀ i (x : N i), Decidable (x ≠ 0)]
@@ -386,15 +396,6 @@ section Uniqueness
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {π : R}
   {N : ℕ → Submodule R M}
-
-/-- The vectors of the constituents of index at least `j` of a Jordan splitting pair into
-`π ^ j R`. -/
-theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup (h : B.IsJordanSplitting π N) {j : ℕ}
-    {x : M} (hx : x ∈ ⨆ i ∈ Set.Ici j, N i) (y : M) : π ^ j ∣ B x y := by
-  have hle : ⨆ i ∈ Set.Ici j, N i ≤ ⨅ y, Submodule.comap (B.flip y) (Ideal.span {π ^ j}) :=
-    iSup₂_le fun i hi x hx ↦ Submodule.mem_iInf _ |>.mpr fun y ↦ by
-      simpa [Ideal.mem_span_singleton] using (pow_dvd_pow π hi).trans (h.pow_dvd_apply hx y)
-  simpa [Ideal.mem_span_singleton] using Submodule.mem_iInf _ |>.mp (hle hx) y
 
 /-- **A vector pairing into `π ^ j R` lies in the constituents of index at least `j`, modulo `π`.**
 If `π` is a non-zero-divisor and every value `B x y` is divisible by `π ^ j`, then `x` is the sum

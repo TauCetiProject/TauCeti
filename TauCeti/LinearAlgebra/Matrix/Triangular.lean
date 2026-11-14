@@ -525,7 +525,7 @@ theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
 /-- Replacing the column `a` of both factors of a product leaves every earlier column `c < a` of
 the product unchanged, when the right factor is upper triangular. -/
 theorem updateCol_mul_updateCol_apply_of_lt {T l p : Type*} [NonUnitalNonAssocSemiring T]
-    [Fintype p] [LinearOrder p] {J : Matrix l p T} {H : Matrix p p T}
+    [Fintype p] [DecidableEq p] [Preorder p] {J : Matrix l p T} {H : Matrix p p T}
     (hH : H.IsUpperTriangular) {a c : p} (hca : c < a) (x : l → T) (y : p → T) (i : l) :
     (J.updateCol a x * H.updateCol a y) i c = (J * H) i c := by
   simp only [Matrix.mul_apply, updateCol_apply, hca.ne, ↓reduceIte]
