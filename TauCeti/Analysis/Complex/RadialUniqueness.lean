@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.JensenFormula
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 public import TauCeti.Analysis.Complex.IsolatedZero
 public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
+import TauCeti.Analysis.Complex.JensenFormula
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -30,11 +30,6 @@ boundary point along almost every radius ending in an arc of the circle.
 
 ## Main results
 
-* `AnalyticOnNhd.le_circleAverage_log_norm` — Jensen's inequality from below: the circle average
-  of `log ‖f‖` is at least `k * log r + log ‖τ‖`, where `k` is the order of `f` at the centre and
-  `τ` its trailing coefficient there.
-* `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm` — a uniform lower bound for these
-  averages on circles with radii in `[s, R)`.
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le` — the sequential form:
   a function whose circle averages of `log⁺ ‖f‖` are bounded on a sequence of circles with radii in
   `[s, R)`, and whose values on these circles tend to `0` at every angle of a set of positive
@@ -51,10 +46,12 @@ boundary point along almost every radius ending in an arc of the circle.
 ## Implementation notes
 
 Suppose `f` does not vanish identically. Jensen's formula bounds the circle averages of `log ‖f‖`
-from below on circles near the boundary, and `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖`, so the averages of
-`log⁺ ‖f‖⁻¹` stay bounded along a sequence of radii tending to `R`. On the angles with radial limit
-`0`, which up to the countably many zeros of `f` on those circles form a set of positive measure in
-one period, `log⁺ ‖f‖⁻¹` tends to `∞`, and Fatou's lemma makes the averages unbounded.
+from below on circles near the boundary (`AnalyticOnNhd.exists_forall_le_circleAverage_log_norm`
+in `TauCeti.Analysis.Complex.JensenFormula`), and `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖`, so the
+averages of `log⁺ ‖f‖⁻¹` stay bounded along a sequence of radii tending to `R`. On the angles with
+radial limit `0`, which up to the countably many zeros of `f` on those circles form a set of
+positive measure in one period, `log⁺ ‖f‖⁻¹` tends to `∞`, and Fatou's lemma makes the averages
+unbounded.
 
 ## References
 
@@ -70,37 +67,6 @@ open Real
 open scoped ENNReal
 
 variable {f : ℂ → ℂ} {c : ℂ} {r R : ℝ}
-
-/-- **Jensen's inequality from below.** If `f` is analytic on the closed disc of radius `|r|`
-about `c`, with `r ≠ 0`, the circle average of `log ‖f‖` is at least `k * log r + log ‖τ‖`, where
-`k` is the order of `f` at `c` and `τ` its trailing coefficient there.
-
-This is Jensen's formula `MeromorphicOn.circleAverage_log_norm` with the contributions of the zeros
-other than `c` dropped, each of which is nonnegative. -/
-theorem AnalyticOnNhd.le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|))
-    (hr : r ≠ 0) :
-    analyticOrderNatAt f c * Real.log r + Real.log ‖meromorphicTrailingCoeffAt f c‖ ≤
-      circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
-  rw [hf.meromorphicOn.circleAverage_log_norm hr,
-    MeromorphicOn.AnalyticOnNhd.divisor_apply hf (by simp)]
-  have hsum : 0 ≤ ∑ᶠ u, (MeromorphicOn.divisor f (closedBall c |r|) u : ℝ) *
-      Real.log (r * ‖c - u‖⁻¹) := by
-    refine finsum_nonneg fun u ↦ ?_
-    by_cases hu : u ∈ closedBall c |r|
-    · refine mul_nonneg (mod_cast MeromorphicOn.AnalyticOnNhd.divisor_nonneg hf u) ?_
-      rcases eq_or_ne u c with rfl | huc
-      · simp
-      · rw [mem_closedBall, dist_comm, dist_eq_norm] at hu
-        have hpos : 0 < ‖c - u‖ := norm_pos_iff.2 (sub_ne_zero.2 huc.symm)
-        rw [← Real.log_abs]
-        exact Real.log_nonneg (by simpa [← div_eq_mul_inv, abs_div, one_le_div hpos] using hu)
-    · simp [hu]
-  have hord : ((((analyticOrderAt f c).map (Nat.cast : ℕ → ℤ)).untop₀ : ℤ) : ℝ) =
-      analyticOrderNatAt f c := by
-    unfold analyticOrderNatAt
-    induction analyticOrderAt f c using ENat.recTopCoe <;> simp
-  rw [hord]
-  linarith
 
 namespace TauCeti
 
@@ -120,19 +86,6 @@ private lemma volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero {ρ : ℕ → ℝ
     rw [neg_add_eq_sub, ← zsmul_eq_mul]
     exact (periodic_circleMap c r).zsmul k |>.sub_eq θ
   simp [Set.mem_vadd_set_iff_neg_vadd_mem, AddSubgroup.vadd_def, hθ]
-
-/-- By Jensen's inequality, the circle averages of `log ‖f‖` of a function analytic on `ball c R`
-are bounded below on the circles about `c` with radii in `[s, R)`, for any `s > 0`. -/
-theorem _root_.AnalyticOnNhd.exists_forall_le_circleAverage_log_norm
-    (hf : AnalyticOnNhd ℂ f (ball c R))
-    {s : ℝ} (hs : 0 < s) :
-    ∃ L, ∀ r ∈ Ico s R, L ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
-  refine ⟨analyticOrderNatAt f c * Real.log s + Real.log ‖meromorphicTrailingCoeffAt f c‖,
-    fun r hr ↦ le_trans ?_ ((hf.mono ?_).le_circleAverage_log_norm (hs.trans_le hr.1).ne')⟩
-  · gcongr
-    exact hr.1
-  · rw [abs_of_pos (hs.trans_le hr.1)]
-    exact closedBall_subset_ball hr.2
 
 /-- **F. and M. Riesz uniqueness theorem, sequential form.** Let `f` be holomorphic on the disc
 `ball c R`, and let `ρ n ∈ [s, R)` be radii, with `s > 0`, on whose circles about `c` the averages
