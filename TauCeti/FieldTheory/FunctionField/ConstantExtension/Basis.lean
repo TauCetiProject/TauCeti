@@ -44,8 +44,8 @@ subextension.  This is how an inseparable constant field extension is compared w
   `TauCeti.linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq` deduces linear
   disjointness for an algebraic `k' / k` from equality for its finite subextensions.
 * `TauCeti.isIntegrallyClosedIn_constantCompositum_of_linearDisjoint`: if `F` and `k'` are
-  linearly disjoint and `k'` is exact in `F'`, then every finite subextension `M` of `k' / k` is
-  exact in `F · M`, with no separability hypothesis.
+  linearly disjoint and `k'` is exact in `F'`, then every subextension `M` of `k' / k` is exact in
+  `F · M`, with no separability or finiteness hypothesis.
 * `TauCeti.constantBasis`: the `F`-basis of `F' = F · k'` given by a `k`-basis of `k'`.
 * `TauCeti.constantBasis_repr_algebraMap`: the coordinates of a constant in a basis of constants
   are the images of its coordinates over `k`.
@@ -202,53 +202,29 @@ theorem constantBasisOfFinrankEq_repr_algebraMap {ι : Type*} [Fintype ι] (b : 
 
 end FinrankEq
 
-/-! ### Exact constants over finite subextensions -/
+/-! ### Exact constants over subextensions -/
 
-/-- Under linear disjointness, a finite subextension `M ≤ M'` of `k' / k` whose compositum with `F`
-is no larger than that of `M` equals `M'`: both have `[M : k]` and `[M' : k]` as their degree over
-`F`. -/
-private theorem eq_of_constantCompositum_le_of_linearDisjoint
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    {M M' : IntermediateField k k'} [FiniteDimensional k M']
-    [FiniteDimensional F (constantCompositum F M F')]
-    (hMM' : M ≤ M') (hle : constantCompositum F M' F' ≤ constantCompositum F M F') : M = M' := by
-  have h₁ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M' F'
-    (H.fieldRange_intermediateField M')
-  have h₂ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M F'
-    (H.fieldRange_intermediateField M)
-  exact IntermediateField.eq_of_le_of_finrank_le hMM' (by
-    rw [← h₁, ← h₂]
-    exact IntermediateField.finrank_le_of_le_right hle)
-
-/-- **Exact constants descend to finite subextensions.** If `F` and `k'` are linearly disjoint
-over `k` inside `F'` and `k'` is the exact constant field of `F'`, then every finite subextension
-`M` of `k' / k` is the exact constant field of the compositum `F · M`. No separability of
-`k' / k` is needed: a constant `c ∈ k'` of `F · M` satisfies `F · M(c) = F · M`, so linear
-disjointness gives `[M(c) : k] = [M : k]`. -/
+/-- **Exact constants descend to subextensions.** If `F` and `k'` are linearly disjoint over `k`
+inside `F'` and `k'` is the exact constant field of `F'`, then every subextension `M` of `k' / k`
+is the exact constant field of the compositum `F · M`. Neither separability of `k' / k` nor
+finiteness of `M / k` is needed: a constant `c ∈ k'` of `F · M` satisfies `F · M(c) ≤ F · M`, so
+linear disjointness gives `M(c) = M` (`TauCeti.eq_of_constantCompositum_le_of_linearDisjoint`). -/
 theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (hex' : IsIntegrallyClosedIn k' F') (M : IntermediateField k k') [FiniteDimensional k M] :
+    (hex' : IsIntegrallyClosedIn k' F') (M : IntermediateField k k') :
     letI := constantCompositumAlgebra F M F'
     IsIntegrallyClosedIn M (constantCompositum F M F') := by
   let FM := constantCompositum F M F'
   let := constantCompositumAlgebra F M F'
   have := isScalarTower_constantCompositum F M F'
-  have := isScalarTower_base_constantCompositum k F M F'
-  have hFM : constantCompositum F M FM = ⊤ := (constantCompositum_eq_top_iff F M F' FM).2 rfl
-  have := finiteDimensional_of_constantCompositum_eq_top (k := k) hFM
   refine isIntegrallyClosedIn_iff_forall_isAlgebraic.2 fun z hz ↦ ?_
-  -- `z` is the image of a constant `c` of `F'`, algebraic over `M` and hence over `k`.
+  -- `z` is the image of a constant `c` of `F'`.
   have hzM : IsIntegral M (z : F') := hz.isIntegral.map (IsScalarTower.toAlgHom M FM F')
   obtain ⟨c, hc⟩ :=
     isIntegrallyClosedIn_iff_forall_isAlgebraic.1 hex' _ hzM.tower_top.isAlgebraic
-  have hcint : IsIntegral M c := by
-    rw [← isIntegral_algHom_iff (IsScalarTower.toAlgHom M k' F') (algebraMap k' F').injective]
-    simpa [hc] using hzM
   -- Adjoining `c` to `M` does not enlarge the compositum, so by linear disjointness it does not
   -- enlarge `M` either.
   let M' : IntermediateField k k' := M ⊔ k⟮c⟯
-  have : FiniteDimensional k k⟮c⟯ :=
-    IntermediateField.adjoin.finiteDimensional (isIntegral_trans (R := k) c hcint)
   have hle : constantCompositum F M' F' ≤ FM := by
     -- The constants of `F'` lying in `F · M` form an intermediate field containing `M` and `c`.
     let N : IntermediateField k k' :=

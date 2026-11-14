@@ -79,7 +79,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   linear-disjointness and persistence-of-linear-independence statements from which that degree
   equality follows.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`: it also follows from
-  `IntermediateField.LinearDisjoint`.
+  `IntermediateField.LinearDisjoint`, under which `F · M' ≤ F · M` forces `M = M'` for
+  subextensions `M ≤ M'` of `k' / k` (`TauCeti.eq_of_constantCompositum_le_of_linearDisjoint`).
 * `TauCeti.geometricDegree_eq_relfinrank_adjoin`: the geometric degree is the degree
   `[F' · K : F · K]` after a separable algebraic constant field extension `K / k'`.
 * `TauCeti.finrank_eq_relfinrank_adjoin_mul_finrank`: `[F' : F] = [F' · K : F · K] · [k' : k]`
@@ -441,6 +442,28 @@ theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint
         Module.rank F (constantCompositum F k' F') := H.rank_left_le_adjoin_rank
     have := Module.rank_lt_aleph0_iff.mp (h2.trans_lt (Module.rank_lt_aleph0_iff.mpr hfin))
     exact hk' (Module.Finite.equiv e.symm.toLinearEquiv)
+
+variable {F k' F'} in
+/-- Under linear disjointness, subextensions `M ≤ M'` of `k' / k` with `F · M' ≤ F · M` are
+equal. -/
+theorem eq_of_constantCompositum_le_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    {M M' : IntermediateField k k'} (hMM' : M ≤ M')
+    (hle : constantCompositum F M' F' ≤ constantCompositum F M F') : M = M' := by
+  refine hMM'.antisymm fun m hm ↦ by_contra fun hmM ↦ ?_
+  -- `1` and `m` are independent over `M`, hence over `F · M`, which contains `m`.
+  have h1m : LinearIndependent M ![(1 : k'), m] :=
+    (LinearIndependent.pair_iff' one_ne_zero).2 fun a ha ↦ hmM (by
+      rw [← ha, Algebra.smul_def, mul_one]
+      exact a.2)
+  have hli := H.symm'.linearIndependent_adjoin_algebraMap_comp M h1m
+  rw [show algebraMap k' F' ∘ ![1, m] = ![1, algebraMap k' F' m] by ext i; fin_cases i <;> simp,
+    ← constantCompositum_def] at hli
+  have hmF : algebraMap k' F' m ∈ constantCompositum F M F' :=
+    hle (algebraMap_mem_constantCompositum F M' F' ⟨m, hm⟩)
+  exact (LinearIndependent.pair_iff' one_ne_zero).1 hli ⟨_, hmF⟩ (by
+    rw [Algebra.smul_def, mul_one]
+    rfl)
 
 /-- **Adjoining a separable constant field extension to the lower function field preserves
 finrank**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`, which for
