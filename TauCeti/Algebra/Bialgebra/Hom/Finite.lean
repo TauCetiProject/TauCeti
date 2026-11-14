@@ -12,7 +12,7 @@ import TauCeti.RingTheory.WeilRestriction.Finite
 /-!
 # Homomorphisms from finite constant monoid schemes to finite monoid schemes
 
-For a finite, finitely presented affine monoid scheme `Spec H` and a split finite monoid
+For a finite affine monoid scheme `Spec H` and a split finite monoid
 scheme `Spec G` (for example, a finite constant monoid scheme), the scheme of homomorphisms
 `Spec G → Spec H` is finite. The ambient scheme of maps is finite by the split-algebra
 Weil restriction theorem, and the homomorphism equations define a closed subscheme.
@@ -32,11 +32,11 @@ open scoped TensorProduct
 namespace TauCeti.Bialgebra.HomAlgebra
 
 variable {R H G : Type*} [CommRing R] [CommRing H] [CommRing G]
-  [Bialgebra R H] [Bialgebra R G] [Algebra.FinitePresentation R H]
+  [Bialgebra R H] [Bialgebra R G]
   [Module.Finite R G] [Module.Projective R G]
 
-/-- The scheme of homomorphisms from a split finite monoid scheme to a finite,
-finitely presented affine monoid scheme is finite over the base. -/
+/-- The scheme of homomorphisms from a split finite monoid scheme to a finite
+affine monoid scheme is finite over the base. -/
 theorem moduleFinite_of_split [Module.Finite R H] {ι : Type*}
     (e : G ≃ₐ[R] (ι → R)) : Module.Finite R (HomAlgebra R H G) := by
   classical
@@ -52,7 +52,7 @@ theorem moduleFinite_of_split [Module.Finite R H] {ι : Type*}
   · have := not_nontrivial_iff_subsingleton.mp hR
     infer_instance
 
-/-- Homomorphisms from a finite constant monoid scheme to a finite, finitely presented
+/-- Homomorphisms from a finite constant monoid scheme to a finite
 affine monoid scheme form a finite scheme. -/
 instance (A : Type*) [Monoid A] [Finite A] [Module.Finite R H] :
     Module.Finite R (HomAlgebra R H (ConstantGroup.coordinateRing R A)) :=

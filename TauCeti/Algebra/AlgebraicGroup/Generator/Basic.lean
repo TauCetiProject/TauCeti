@@ -176,8 +176,7 @@ open ConstantGroup TauCeti.Bialgebra
 variable (R : Type u) (H : Type v) [CommRing R] [CommRing H] [Bialgebra R H]
   [Module.Free R H] [Module.Finite R H] (A : Type*) [Monoid A] [Fintype A]
 
--- `HomAlgebra` asks for the target to be finitely presented as an algebra, which holds for a
--- finite free `H`
+-- A finite free `H` is finitely presented as an algebra, so its scheme of generators is too.
 attribute [local instance] Module.finitePresentation_of_projective
 
 -- The universal family of points of `Spec H` on the scheme of homomorphisms from `A_R`: the points
@@ -191,6 +190,7 @@ variable {R H A}
 
 -- Specializing the universal family along `φ` gives the points of the homomorphism classified by
 -- `φ`; this is the naturality `HomAlgebra.homEquiv_comp_one_tmul`.
+omit [Module.Free R H] [Module.Finite R H] in
 private theorem liftEquiv_comp_generatorFamily {T : Type w} [CommRing T] [Algebra R T]
     (φ : HomAlgebra R H (coordinateRing R A) →ₐ[R] T) (a : A) :
     AlgHom.liftEquiv R T H T (φ.comp (generatorFamily R H A a)) =
