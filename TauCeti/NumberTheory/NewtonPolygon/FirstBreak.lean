@@ -46,7 +46,9 @@ unit times a monic polynomial of degree `j`, and that polynomial is pure of slop
 * `PowerSeries.isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished`: with bounded
   weighted coefficients at a larger radius, a first break is exactly this pair of active indices.
 * `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak`: first-segment
-  factorisation by Weierstrass preparation, with a pure polynomial factor.
+  unique factorisation by Weierstrass preparation.
+* `PowerSeries.forall_mem_newtonSlopes_eq_of_isFirstBreak`: the polynomial factor is pure of
+  the first slope, even without completeness.
 
 ## References
 
@@ -89,8 +91,7 @@ theorem isFirstBreak_newtonPolygon_iff {a : ℕ} (ha : f.order = a) (hva : v (co
     rw [newtonPolygon_def]
     exact lowerConvexEnvelope_of_not_isAdmissible hadm
   refine iff_of_false (fun hb ↦ ?_) fun ⟨_, c, hc, _⟩ ↦ hadm hc.isAdmissible
-  obtain ⟨a', ha'j, -, hedge, -⟩ := isFirstBreak_iff.mp hb
-  exact (mem_finiteEdges.mp (hedge a' ⟨le_rfl, ha'j⟩).1).1 (by rw [htop, Pi.top_apply])
+  exact hb.ne_top (by rw [htop, Pi.top_apply])
 
 /-- The Newton polygon of `f` has its first break at `j` with slope `m` exactly when its face of
 slope `m` runs from the order of vanishing `a < j` of `f` to `j`. Here `v` is finite on the
@@ -121,6 +122,13 @@ variable {K : Type*} [NormedDivisionRing K] {f : K⟦X⟧}
 
 include hb hv
 
+/-- A first break makes the series restricted at the radius of its first slope. -/
+theorem isRestricted_of_isFirstBreak_newtonPolygon {m : ℝ} {j : ℕ}
+    (hbr : IsFirstBreak (f.newtonPolygon v) m j) : f.IsRestricted (b ^ m) := by
+  obtain ⟨a, -, -, hface⟩ :=
+    (f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace.mp hbr
+  exact isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface
+
 /-- **A first break gives distinguishedness.** If the Newton polygon of `f` has its first break at
 `j` with slope `m`, then at the radius `b ^ m` the series `f` is distinguished of degree `j`, and
 its order of vanishing `a` is its lowest dominant degree. No restrictedness is needed: the
@@ -131,30 +139,35 @@ theorem isLowestDominant_and_isDistinguished_of_isFirstBreak_newtonPolygon {a : 
       TauCeti.PowerSeries.IsDistinguished (b ^ m) j f := by
   obtain ⟨-, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace ha
     (v.ne_top_iff.mpr (order_eq_nat.mp ha).1)).mp hbr
-  have hadm : IsAdmissible fun n ↦ v (coeff n f) :=
-    isAdmissible_of_lowerConvexEnvelope_ne_top (f.newtonPolygon_def v ▸ hface.left_ne_top)
-  obtain ⟨c, hc, -⟩ := hface.exists_intercept
-  have hG : f.HasGaussNorm norm (b ^ m) :=
-    (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv m).mpr <| ne_bot_of_le_ne_bot
-      (EReal.coe_ne_bot c) (isSupportingLine_iff.mp
-        ((f.isLowerConvexEnvelope_newtonPolygon hadm).isSupportingLine_iff.mp hc))
-  exact isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hG hface
+  exact isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hface
 
 /-- **First breaks as active indices.** Suppose the weighted coefficients of `f` are bounded at a
-radius `b ^ τ` with `m < τ`, and let `a < j` with `a` the order of vanishing of `f`. Then the
+radius `b ^ τ` with `m < τ`, and let `a` be the order of vanishing of `f`. Then the
 Newton polygon of `f` has its first break at `j` with slope `m` exactly when, at the radius
-`b ^ m`, the order of vanishing is the lowest dominant degree of `f` and `f` is distinguished of
-degree `j`. The larger radius is needed: at a convergence boundary the last dominant coefficient
-can lie on a polygon ray of slope `m` that continues past it. -/
+`b ^ m`, `a < j`, the order of vanishing is the lowest dominant degree of `f`, and `f` is
+distinguished of degree `j`. The larger radius is needed: at a convergence boundary the last
+dominant coefficient can lie on a polygon ray of slope `m` that continues past it. -/
 theorem isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished {τ : ℝ}
-    (hf : f.HasGaussNorm norm (b ^ τ)) {m : ℝ} (hmτ : m < τ) {a j : ℕ} (ha : f.order = a)
-    (haj : a < j) :
-    IsFirstBreak (f.newtonPolygon v) m j ↔
+    (hf : f.HasGaussNorm norm (b ^ τ)) {m : ℝ} (hmτ : m < τ) {a j : ℕ} (ha : f.order = a) :
+    IsFirstBreak (f.newtonPolygon v) m j ↔ a < j ∧
       TauCeti.PowerSeries.IsLowestDominant (b ^ m) a f ∧
         TauCeti.PowerSeries.IsDistinguished (b ^ m) j f := by
   rw [isFirstBreak_newtonPolygon_iff_isFiniteFace ha (v.ne_top_iff.mpr (order_eq_nat.mp ha).1),
     isFiniteFace_newtonPolygon_iff f v hb hv hf hmτ]
-  exact and_iff_right haj
+
+/-- Every polynomial factor of degree at most the first break, with a restricted unit as
+cofactor at the first-slope radius, is pure of that slope. -/
+theorem forall_mem_newtonSlopes_eq_of_isFirstBreak [IsUltrametricDist K] {m : ℝ} {j : ℕ}
+    (hbr : IsFirstBreak (f.newtonPolygon v) m j)
+    {u : IsRestricted.subring (R := K) (b ^ m)} (hu : IsUnit u)
+    {P : Polynomial K} (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) :
+    ∀ s ∈ P.newtonSlopes v, s = m := by
+  have hf0 : f ≠ 0 := fun hf ↦ hbr.ne_top (by simp [hf])
+  have ha : f.order = f.order.toNat := (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm
+  obtain ⟨-, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace ha
+    (v.ne_top_iff.mpr (order_eq_nat.mp ha).1)).mp hbr
+  exact forall_mem_newtonSlopes_eq_of_isFiniteFace_of_order_eq v hb hv
+    (isRestricted_of_isFirstBreak_newtonPolygon v hb hv hbr) hface ha hu hPdeg hmul
 
 end NormedDivisionRing
 
@@ -168,40 +181,20 @@ include hb hv
 
 /-- **First-segment factorisation.** Over a complete ultrametric normed field, suppose the Newton
 polygon of `f` has its first break at `j` with slope `m`. Then `f` is in exactly one way a unit of
-the ring of series restricted at `b ^ m` times a monic polynomial of degree `j`, and this
-polynomial is pure of slope `m`: every finite slope of its Newton polygon equals `m`. The series
+the ring of series restricted at `b ^ m` times a monic polynomial of degree `j`. Purity of
+this polynomial follows from `forall_mem_newtonSlopes_eq_of_isFirstBreak`. The series
 is automatically restricted at `b ^ m`, since its polygon has a supporting line of strictly larger
 slope after the break. -/
 theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak {m : ℝ} {j : ℕ}
     (hbr : IsFirstBreak (f.newtonPolygon v) m j) :
     ∃! p : IsRestricted.subring (R := K) (b ^ m) × Polynomial K,
-      IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f ∧
-        ∀ s ∈ p.2.newtonSlopes v, s = m := by
-  have hf0 : f ≠ 0 := by
-    rintro rfl
-    obtain ⟨a, haj, -, hedge, -⟩ := isFirstBreak_iff.mp hbr
-    exact (mem_finiteEdges.mp (hedge a ⟨le_rfl, haj⟩).1).1 (by simp)
-  have ha : f.order = f.order.toNat := (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm
-  have hfd := (isLowestDominant_and_isDistinguished_of_isFirstBreak_newtonPolygon v hb hv ha hbr).2
-  -- A supporting line of slope `τ > m` bounds the weighted coefficients at `b ^ τ > b ^ m`.
-  obtain ⟨τ, hmτ, d, hd⟩ := hbr.exists_gt_isSupportingLine (f.isConvexSeq_newtonPolygon v)
-  have hadm : IsAdmissible fun n ↦ v (coeff n f) :=
-    isAdmissible_iff_exists_supportingValue_ne_bot.mpr
-      ⟨m, (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv m).mp hfd.hasGaussNorm⟩
-  have hG : f.HasGaussNorm norm (b ^ τ) :=
-    (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv τ).mpr <| ne_bot_of_le_ne_bot
-      (EReal.coe_ne_bot d) (isSupportingLine_iff.mp
-        ((f.isLowerConvexEnvelope_newtonPolygon hadm).isSupportingLine_iff.mp hd))
-  have hfr : f.IsRestricted (b ^ m) := hG.isRestricted_of_abs_lt
-    ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m)).trans_lt
-      (Real.rpow_lt_rpow_of_exponent_lt hb hmτ))
-  obtain ⟨-, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace ha
-    (v.ne_top_iff.mpr (order_eq_nat.mp ha).1)).mp hbr
-  obtain ⟨p, ⟨hu, hmon, hmul⟩, huniq⟩ := hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq
-    hfd.coeff_ne_zero.isUnit (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m) hfr
-  refine ⟨p, ⟨hu, hmon, hmul, ?_⟩, fun q hq ↦ huniq q ⟨hq.1, hq.2.1, hq.2.2.1⟩⟩
-  exact forall_mem_newtonSlopes_eq_of_isFiniteFace_of_order_eq v hb hv hfr hface ha hu
-    hmon.natDegree_eq.le hmul
+      IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f := by
+  obtain ⟨a, -, -, hface⟩ :=
+    (f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace.mp hbr
+  have hfr := isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface
+  have hfd := isDistinguished_of_isFiniteFace v hb hv hfr hface
+  exact hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m) hfr
 
 end NormedField
 
@@ -227,5 +220,62 @@ theorem isFirstBreak_newtonPolygon_iff (htr : v f.trailingCoeff ≠ ⊤) {m : �
     (f.finite_setOf_addValuation_coeff_ne_top v) htr fun n hn ↦ by
       rw [coeff_eq_zero_of_lt_natTrailingDegree hn, AddValuation.map_zero]]
   simp only [mem_supportingFace, trailingCoeff]
+
+/-- A polynomial has its first break at `j` of slope `m` exactly when its face of slope `m`
+runs from its trailing degree to `j`, with positive width. -/
+theorem isFirstBreak_newtonPolygon_iff_isFiniteFace (htr : v f.trailingCoeff ≠ ⊤)
+    {m : ℝ} {j : ℕ} :
+    IsFirstBreak (f.newtonPolygon v) m j ↔
+      f.natTrailingDegree < j ∧ IsFiniteFace (f.newtonPolygon v) m f.natTrailingDegree j := by
+  rw [(f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace]
+  refine ⟨fun ⟨a, haj, hpre, hface⟩ ↦ ?_, fun ⟨haj, hface⟩ ↦
+    ⟨f.natTrailingDegree, haj, fun n hn ↦ f.newtonPolygon_eq_top_of_lt_natTrailingDegree v hn,
+      hface⟩⟩
+  obtain rfl : a = f.natTrailingDegree := le_antisymm
+    (not_lt.mp fun h ↦ htr (by simpa using hpre f.natTrailingDegree h))
+    (not_lt.mp fun h ↦ hface.left_ne_top (f.newtonPolygon_eq_top_of_lt_natTrailingDegree v h))
+  exact ⟨haj, hface⟩
+
+/-- The terminal endpoint is a first break of slope `m` exactly when the Newton polygon has
+positive width and all its finite slopes equal `m`. -/
+theorem isFirstBreak_newtonPolygon_natDegree_iff (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) {m : ℝ} :
+    IsFirstBreak (f.newtonPolygon v) m f.natDegree ↔
+      f.natTrailingDegree < f.natDegree ∧ ∀ s ∈ f.newtonSlopes v, s = m := by
+  constructor
+  · intro hbr
+    obtain ⟨haj, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace htr).mp hbr
+    refine ⟨haj, fun s hs ↦ ?_⟩
+    obtain ⟨i, hi, rfl⟩ := (f.mem_newtonSlopes v).mp hs
+    rw [f.finiteEdges_newtonPolygon_of_ne_top v htr hld] at hi
+    exact hface.unitSlope_eq hi.1 hi.2
+  · rintro ⟨haj, hpure⟩
+    refine isFirstBreak_iff.mpr ⟨f.natTrailingDegree, haj,
+      fun n hn ↦ f.newtonPolygon_eq_top_of_lt_natTrailingDegree v hn, fun i hi ↦ ?_, ?_⟩
+    · have hedge : i ∈ finiteEdges (f.newtonPolygon v) := by
+        rwa [f.finiteEdges_newtonPolygon_of_ne_top v htr hld]
+      exact ⟨hedge, hpure _ ((f.mem_newtonSlopes v).mpr ⟨i, hedge, rfl⟩)⟩
+    · intro hedge
+      rw [f.finiteEdges_newtonPolygon_of_ne_top v htr hld] at hedge
+      exact (lt_irrefl _ hedge.2).elim
+
+/-- At every radius, a polynomial has its first break at `j` of slope `m` exactly when the
+trailing degree is strictly below `j` and these are its first and last active indices. -/
+theorem isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished
+    {K : Type*} [NormedDivisionRing K] (f : K[X]) (v : AddValuation K (WithTop ℝ))
+    {b : ℝ} (hb : 1 < b) (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {m : ℝ} {j : ℕ} :
+    IsFirstBreak (f.newtonPolygon v) m j ↔ f.natTrailingDegree < j ∧
+      TauCeti.PowerSeries.IsLowestDominant (b ^ m) f.natTrailingDegree (f : K⟦X⟧) ∧
+      TauCeti.PowerSeries.IsDistinguished (b ^ m) j (f : K⟦X⟧) := by
+  by_cases hf : f = 0
+  · subst f
+    constructor
+    · intro hbr
+      exact (hbr.ne_top (by simp)).elim
+    · rintro ⟨-, hl, -⟩
+      exact (hl.ne_zero (by simp)).elim
+  rw [isFirstBreak_newtonPolygon_iff_isFiniteFace
+    (v.ne_top_iff.mpr (trailingCoeff_ne_zero.mpr hf)),
+    isFiniteFace_newtonPolygon_iff f v hb hv]
 
 end Polynomial

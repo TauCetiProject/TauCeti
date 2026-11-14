@@ -30,6 +30,16 @@ namespace TauCeti.FirstBreakExample
 noncomputable def heights (n : ℕ) : WithTop ℝ :=
   if n ≤ 1 then 0 else (((n : ℝ)⁻¹ : ℝ) : WithTop ℝ)
 
+/-- The defining formula for the example heights. -/
+theorem heights_def (n : ℕ) :
+    heights n = if n ≤ 1 then 0 else (((n : ℝ)⁻¹ : ℝ) : WithTop ℝ) := by rfl
+
+/-- The initial height is zero. -/
+@[simp] theorem heights_zero : heights 0 = 0 := by simp [heights_def]
+
+/-- The height at index one is zero. -/
+@[simp] theorem heights_one : heights 1 = 0 := by simp [heights_def]
+
 /-- Every point after `1` lies strictly above the horizontal line through the points at `0` and
 `1`. -/
 theorem zero_lt_heights {n : ℕ} (hn : 1 < n) : (0 : WithTop ℝ) < heights n := by
@@ -49,22 +59,18 @@ the horizontal line through its first two points lies strictly below all later p
 theorem not_isFirstBreak_lowerConvexEnvelope_heights (m : ℝ) (j : ℕ) :
     ¬IsFirstBreak (lowerConvexEnvelope heights) m j := by
   have hh := isLowerConvexEnvelope_lowerConvexEnvelope isSupportingLine_heights.isAdmissible
-  have h0 : heights 0 = 0 := by rw [heights, ite_eq_left zero_le_one]
-  have h1 : heights 1 = 0 := by rw [heights, ite_eq_left le_rfl]
-  rw [hh.isFirstBreak_iff (a := 0) (by rw [h0]; exact WithTop.coe_ne_top)
+  rw [hh.isFirstBreak_iff (a := 0) (by simp)
     fun n hn ↦ absurd hn (Nat.not_lt_zero n)]
   rintro ⟨hj, c, hc, hc0, hcj, τ, hτ, hτc⟩
-  rw [mem_supportingFace, h0, Nat.cast_zero, mul_zero, add_zero, ← WithTop.coe_zero,
-    WithTop.coe_eq_coe] at hc0
+  have hc0 : c = 0 := by simpa [mem_supportingFace] using hc0
   subst hc0
   -- The supporting line through `(0, 0)` cannot rise, as it lies below the point `(1, 0)`.
   have hm : m ≤ 0 := by
-    have := isSupportingLine_iff_forall.mp hc 1
-    rwa [h1, ← WithTop.coe_zero, WithTop.coe_le_coe, Nat.cast_one, mul_one, zero_add] at this
+    simpa using isSupportingLine_iff_forall.mp hc 1
   rw [mem_supportingFace] at hcj
   rcases (Nat.one_le_iff_ne_zero.mpr hj.ne').eq_or_lt with rfl | hj2
   · -- At `j = 1` the slope is `0`, and no steeper line stays below the heights `1 / n`.
-    rw [h1, ← WithTop.coe_zero, WithTop.coe_eq_coe, Nat.cast_one, mul_one, zero_add] at hcj
+    have hcj : m = 0 := by simpa using hcj
     subst hcj
     set n := ⌈τ⁻¹⌉₊ + 1
     have hτn := isSupportingLine_iff_forall.mp hτc n

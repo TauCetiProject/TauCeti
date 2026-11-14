@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.Sequence.Face
 import TauCeti.Analysis.Convex.Sequence.Vertex
+import TauCeti.Analysis.Convex.Sequence.Derivative
 
 /-!
 # The first break of a convex height sequence
@@ -36,8 +37,6 @@ to continue along a ray of slope `m` beyond `j`.
 ## Main results
 
 * `TauCeti.IsFirstBreak.unique`: the first break and its slope are unique.
-* `TauCeti.IsFirstBreak.exists_gt_isSupportingLine`: after a first break of slope `m`, a convex
-  sequence has a supporting line of strictly larger slope.
 * `TauCeti.IsConvexSeq.isFirstBreak_iff_isFiniteFace`: for a convex sequence, a first break at
   `j` of slope `m` is a finite face of slope `m` from the first finite index to `j`.
 * `TauCeti.IsLowerConvexEnvelope.isFirstBreak_iff`: the coefficient-line criterion for a first
@@ -71,6 +70,27 @@ theorem isFirstBreak_iff {h : ℕ → WithTop ℝ} {m : ℝ} {j : ℕ} :
       (∀ i ∈ Set.Ico a j, i ∈ finiteEdges h ∧ unitSlope h i = m) ∧
       (j ∈ finiteEdges h → m < unitSlope h j) :=
   Iff.rfl
+
+/-- A first break has positive index. -/
+theorem IsFirstBreak.pos {h : ℕ → WithTop ℝ} {m : ℝ} {j : ℕ}
+    (hb : IsFirstBreak h m j) : 0 < j := by
+  obtain ⟨a, haj, _⟩ := hb
+  exact (Nat.zero_le a).trans_lt haj
+
+/-- The height at a first break is finite. -/
+theorem IsFirstBreak.ne_top {h : ℕ → WithTop ℝ} {m : ℝ} {j : ℕ}
+    (hb : IsFirstBreak h m j) : h j ≠ ⊤ := by
+  obtain ⟨a, haj, -, hedge, -⟩ := hb
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt haj
+  exact (mem_finiteEdges.mp (hedge (a + k) ⟨by omega, by omega⟩).1).2
+
+/-- The everywhere infinite sequence has no first break. -/
+@[simp] theorem not_isFirstBreak_top (m : ℝ) (j : ℕ) :
+    ¬IsFirstBreak (⊤ : ℕ → WithTop ℝ) m j := fun hb ↦ hb.ne_top rfl
+
+/-- A first break cannot occur at index zero. -/
+@[simp] theorem not_isFirstBreak_zero (h : ℕ → WithTop ℝ) (m : ℝ) :
+    ¬IsFirstBreak h m 0 := fun hb ↦ (Nat.lt_irrefl 0) hb.pos
 
 /-- A height sequence has at most one first break, and its first slope is determined. -/
 theorem IsFirstBreak.unique {h : ℕ → WithTop ℝ} {m m' : ℝ} {j j' : ℕ}
@@ -122,45 +142,21 @@ theorem IsConvexSeq.isFirstBreak_iff_isFiniteFace {h : ℕ → WithTop ℝ} (hh 
     refine ⟨a, haj, hpre, isFiniteFace_iff.mpr
       ⟨haj.le, _, hsupp, Set.Subset.antisymm (fun n hn ↦ ?_)
         fun n hn ↦ mem_supportingFace.mpr (hline n hn)⟩⟩
-    rw [mem_supportingFace] at hn
-    have hnf : h n ≠ ⊤ := by rw [hn]; exact WithTop.coe_ne_top
+    have hnf : h n ≠ ⊤ := by
+      rw [mem_supportingFace] at hn
+      rw [hn]
+      exact WithTop.coe_ne_top
     refine ⟨not_lt.mp fun hna ↦ hnf (hpre n hna), not_lt.mp fun hjn ↦ ?_⟩
     -- After `j` the next edge is finite and steeper, so `h n` lies strictly above the line.
     have hj := hline j ⟨haj.le, le_rfl⟩
     have hjf : h j ≠ ⊤ := by rw [hj]; exact WithTop.coe_ne_top
     have hedge_j : j ∈ finiteEdges h :=
       mem_finiteEdges.mpr ⟨hjf, hh.ne_top_of_le_of_le hjf hnf (Nat.le_succ j) hjn⟩
-    have hs := hh.mul_slope_le_sub hnf hjf hjn.le le_rfl
-    rw [hn, hj, WithTop.untop₀_coe, WithTop.untop₀_coe, Nat.cast_sub hjn.le] at hs
-    have hpos : (0 : ℝ) < n - j := sub_pos.mpr (Nat.cast_lt.mpr hjn)
-    nlinarith [hnext hedge_j]
+    exact (not_lt_of_ge
+      (hh.supportingFace_subset_Iic_of_lt_unitSlope hsupp hedge_j (hnext hedge_j) hn)) hjn
   · rintro ⟨a, haj, hpre, hf⟩
-    refine ⟨a, haj, hpre, fun i hi ↦ ⟨mem_finiteEdges.mpr
-      ⟨hh.ne_top_of_le_of_le hf.left_ne_top hf.right_ne_top hi.1 hi.2.le,
-        hh.ne_top_of_le_of_le hf.left_ne_top hf.right_ne_top (hi.1.trans (Nat.le_succ i)) hi.2⟩,
-      hf.unitSlope_eq hi.1 hi.2⟩, fun hj ↦ hf.lt_unitSlope hh hj le_rfl⟩
-
-/-- After a first break of slope `m`, a convex height sequence has a supporting line of some
-strictly larger slope: the line through the edge leaving the break, or any line when the finite
-domain ends at the break. -/
-theorem IsFirstBreak.exists_gt_isSupportingLine {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h)
-    {m : ℝ} {j : ℕ} (hb : IsFirstBreak h m j) : ∃ τ > m, ∃ d : ℝ, IsSupportingLine h τ d := by
-  obtain ⟨a, haj, -, hedge, hnext⟩ := hb
-  by_cases hj : j ∈ finiteEdges h
-  · refine ⟨unitSlope h j, hnext hj, (h j).untop₀ - unitSlope h j * j,
-      isSupportingLine_iff_forall.mpr fun k ↦ ?_⟩
-    refine le_trans (le_of_eq (congrArg _ ?_))
-      (hh.supportingLine_le (mem_finiteEdges.mp hj).1 (mem_finiteEdges.mp hj).2 k)
-    ring
-  -- Otherwise the finite domain ends at `j`, so lines of every slope support `h`.
-  have hja : h j ≠ ⊤ := by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt haj
-    exact (mem_finiteEdges.mp (hedge (a + k) ⟨by omega, by omega⟩).1).2
-  have hfin : {n | h n ≠ ⊤}.Finite := (Set.finite_Iic j).subset fun n hn ↦
-    Set.mem_Iic.mpr <| not_lt.mp fun hjn ↦
-      hj (mem_finiteEdges.mpr ⟨hja, hh.ne_top_of_le_of_le hja hn (Nat.le_succ j) hjn⟩)
-  obtain ⟨d, hd⟩ := supportingValue_ne_bot_iff.mp (supportingValue_ne_bot_of_finite hfin (m + 1))
-  exact ⟨m + 1, by linarith, d, isSupportingLine_iff_forall.mpr hd⟩
+    exact ⟨a, haj, hpre, fun i hi ↦ (hf.setOf_unitSlope_eq hh).symm.subset hi,
+      fun hj ↦ hf.lt_unitSlope hh hj le_rfl⟩
 
 namespace IsLowerConvexEnvelope
 
@@ -233,29 +229,15 @@ theorem isFirstBreak_iff (hh : IsLowerConvexEnvelope y h) {a : ℕ} (hya : y a �
     have hjc : h j = ((c + m * j : ℝ) : WithTop ℝ) := by
       rw [hh.eq_right_of_isFiniteFace hf]
       exact mem_supportingFace.mp hgreatest.1
-    by_cases hj : j ∈ finiteEdges h
-    · -- The edge leaving `j` is steeper, and its line supports the envelope.
-      refine ⟨unitSlope h j, hf.lt_unitSlope hh.isConvexSeq hj le_rfl,
-        isSupportingLine_iff_forall.mpr fun n ↦ ?_⟩
-      have hl := hh.isConvexSeq.supportingLine_le (mem_finiteEdges.mp hj).1
-        (mem_finiteEdges.mp hj).2 (j + n)
-      rw [hjc, WithTop.untop₀_coe] at hl
-      refine le_trans (le_of_eq (congrArg _ ?_)) (hl.trans (hh.le _))
-      push_cast
-      ring
-    · -- No point of `y` lies after `j`, so any steeper line works.
-      have hj' : h (j + 1) = ⊤ := by
-        by_contra hj'
-        exact hj (mem_finiteEdges.mpr ⟨hf.right_ne_top, hj'⟩)
-      refine ⟨m + 1, by linarith, isSupportingLine_iff_forall.mpr fun n ↦ ?_⟩
-      rcases Nat.eq_zero_or_pos n with rfl | hn
-      · simpa using (mem_supportingFace.mp hgreatest.1).ge
-      · have hyn : y (j + n) = ⊤ := by
-          by_contra hyn
-          exact hh.isConvexSeq.ne_top_of_le_of_le hf.right_ne_top
-            (ne_top_of_le_ne_top hyn (hh.le _)) (Nat.le_succ j) (by omega) hj'
-        rw [hyn]
-        exact le_top
+    obtain ⟨ε, hε, heq⟩ := hf.exists_pos_supportingValue_eq_right hh.isConvexSeq
+    have hτ : IsSupportingLine h (m + ε) ((h j).untop₀ - (m + ε) * j) :=
+      TauCeti.isSupportingLine_iff.mpr (heq _ ⟨by linarith, le_rfl⟩).ge
+    refine ⟨m + ε, by linarith, isSupportingLine_iff_forall.mpr fun n ↦ ?_⟩
+    have hl := isSupportingLine_iff_forall.mp (hh.isSupportingLine_iff.mp hτ) (j + n)
+    rw [hjc, WithTop.untop₀_coe] at hl
+    refine le_trans (le_of_eq (congrArg _ ?_)) hl
+    push_cast
+    ring
   · rintro ⟨haj, c, hc, hca, hcj, τ, hτ, hτc⟩
     exact ⟨a, haj, fun n hn ↦ hh.eq_top_of_lt hpre hn,
       hh.isFiniteFace_of_isSupportingLine hpre haj hc hca hcj hτ hτc⟩
