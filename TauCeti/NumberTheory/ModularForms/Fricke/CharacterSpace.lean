@@ -67,17 +67,16 @@ open scoped MatrixGroups ModularForm
 
 namespace TauCeti
 
-variable {N : ℕ} [NeZero N]
-
-omit [NeZero N] in
 /-- The character round trip `χ⁻¹⁻¹ = χ`, proved pointwise.
 
 This is mathlib's `inv_inv` mathematically, but that lemma is stated for `InvolutiveInv` and does
 not match the `Inv (M →* G)` instance path syntactically, so neither `rw` nor `simp` closes the
 goal with it. Proving it pointwise reduces to `inv_inv` in `ℂˣ`, which is a genuine group. -/
-private theorem inv_inv_monoidHom (χ : (ZMod N)ˣ →* ℂˣ) : χ⁻¹⁻¹ = χ := by
+private theorem inv_inv_monoidHom {N : ℕ} (χ : (ZMod N)ˣ →* ℂˣ) : χ⁻¹⁻¹ = χ := by
   ext d
   simp
+
+variable {N : ℕ} [NeZero N]
 
 /-- **The Fricke operator shifts the nebentypus to its inverse**: it carries `M_k(Γ₁(N), χ)` into
 `M_k(Γ₁(N), χ⁻¹)`.
