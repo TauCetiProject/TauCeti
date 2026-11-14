@@ -191,6 +191,26 @@ theorem contMDiff_coe :
       (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) :=
   contMDiff_subtype_val (U := upperHalfSpaceOpens E)
 
+/-- The height function of the upper half-space is analytic. -/
+theorem contMDiff_height :
+    ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ) ω (height : UpperHalfSpace E → ℝ) :=
+  (WithLp.sndL 2 ℝ E ℝ).contDiff.contMDiff.comp contMDiff_coe
+
+/-- The differential of the height function is the last coordinate of a tangent vector. -/
+theorem mvfderiv_height_apply (x : UpperHalfSpace E)
+    (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+    mvfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) height x v =
+      (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v).snd := by
+  rw [show height = WithLp.sndL 2 ℝ E ℝ ∘ coe from rfl,
+    mvfderiv_comp_apply x (WithLp.sndL 2 ℝ E ℝ).differentiableAt.mdifferentiableAt
+      ((contMDiff_coe x).mdifferentiableAt (by simp)) v, mvfderiv_eq_fderiv,
+    ContinuousLinearMap.fderiv,
+    show mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) coe x = _ from
+      TauCeti.Manifold.mfderiv_subtype_val (show upperHalfSpaceOpens E from x)]
+  -- The open-subset and model-space identifications of tangent vectors are both the identity.
+  exact congrArg (WithLp.sndL 2 ℝ E ℝ)
+    (TauCeti.Manifold.tangentSpaceOpenEquiv_apply (show upperHalfSpaceOpens E from x) v)
+
 /-- The conformal factor `t⁻²` of the hyperbolic metric is analytic on the upper half-space. -/
 theorem contMDiff_inv_height_sq :
     ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ) ω fun x : UpperHalfSpace E ↦ (height x ^ 2)⁻¹ := by
