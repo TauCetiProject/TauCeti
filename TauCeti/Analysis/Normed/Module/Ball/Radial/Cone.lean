@@ -6,18 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
+public import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.Normed.Module.RCLike.Basic
 
 /-!
-# Cones over maps on the unit sphere
+# Cones and radial extensions over maps on the unit sphere
 
-A map `f` defined on the unit sphere of a real normed space `E` extends to a positively homogeneous
-map on all of `E`, its **cone** `TauCeti.sphereCone f`: a vector `x ≠ 0` goes to
-`‖x‖ • f (‖x‖⁻¹ • x)`, the direction `‖x‖⁻¹ • x` being read off the polar coordinates
-`homeomorphUnitSphereProd`, and the origin goes to the origin. On the ray through a unit vector `u`
-it is `r • u ↦ r • f u` (`TauCeti.sphereCone_smul_coe`). It is continuous when `f` is continuous
-and bounded (`TauCeti.continuous_sphereCone`), since near the origin it is bounded by a multiple of
-the norm.
+A map `f` defined on the unit sphere of a real normed space `E` extends radially to all of `E` in
+two canonical ways:
+
+* its **`0`-homogeneous radial extension** `TauCeti.sphereExtend f`, sending `x ≠ 0` to
+  `f (‖x‖⁻¹ • x)` and `0` to `0`;
+* its **cone** (`1`-homogeneous extension) `TauCeti.sphereCone f`, sending `x ≠ 0` to
+  `‖x‖ • f (‖x‖⁻¹ • x)` (read off `homeomorphUnitSphereProd`) and `0` to `0`, so
+  `sphereCone f x = ‖x‖ • sphereExtend f x` (`TauCeti.sphereCone_eq_norm_smul_sphereExtend`).
+
+On the ray through a unit vector `u`, `sphereExtend f` is constant for `r > 0`
+(`TauCeti.sphereExtend_smul_of_pos`) while `sphereCone f` is `r • u ↦ r • f u`
+(`TauCeti.sphereCone_smul_coe`). The cone is continuous when `f` is continuous and bounded
+(`TauCeti.continuous_sphereCone`), since near the origin it is bounded by a multiple of the norm.
 
 When `f` maps the unit sphere of `E` to the unit sphere of `F`, the cone preserves norms, and taking
 cones is compatible with composition (`TauCeti.sphereCone_sphereCone`). So a homeomorphism `σ`
@@ -27,12 +34,16 @@ extension used in the Alexander trick.
 
 ## Main definitions
 
+* `TauCeti.sphereExtend f`: the `0`-homogeneous extension `x ↦ f (‖x‖⁻¹ • x)` (`0 ↦ 0`) of `f`.
 * `TauCeti.sphereCone f`: the cone `x ↦ ‖x‖ • f (‖x‖⁻¹ • x)` over a map `f` on the unit sphere.
 * `Homeomorph.sphereCone σ`: the cone over a homeomorphism of unit spheres, a homeomorphism of
   the ambient spaces.
 
 ## Main results
 
+* `TauCeti.sphereExtend_coe`, `TauCeti.sphereExtend_smul_of_pos`,
+  `TauCeti.sphereCone_eq_norm_smul_sphereExtend`: restriction, `0`-homogeneity, and relation to
+  `TauCeti.sphereCone`.
 * `TauCeti.sphereCone_smul_coe`: the cone sends `r • u` to `r • f u` for `r ≥ 0`.
 * `TauCeti.sphereCone_smul`: the cone is positively homogeneous.
 * `TauCeti.continuous_sphereCone`: the cone over a continuous bounded map is continuous.
@@ -157,6 +168,83 @@ theorem sphereCone_sphereCone (g : sphere (0 : F) 1 → G) (f : sphere (0 : E) 1
   · simp
   rw [sphereCone_smul_coe hr.le, sphereCone_smul_coe hr.le, Function.comp_apply,
     sphereCone_smul_coe hr.le, Function.comp_apply]
+
+/-- The **`0`-homogeneous radial extension** of a map `f` on the unit sphere of `E`: sends `x ≠ 0`
+to `f (‖x‖⁻¹ • x)` and `0` to `0`. -/
+def sphereExtend {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H) (x : E) : H :=
+  open scoped Classical in
+  if hx : x = 0 then 0
+  else f ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩
+
+theorem sphereExtend_def {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H) (x : E) :
+    sphereExtend f x =
+      open scoped Classical in
+      if hx : x = 0 then 0
+      else f ⟨NormedSpace.normalize x,
+        mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩ :=
+  (rfl)
+
+@[simp]
+theorem sphereExtend_zero {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H) :
+    sphereExtend f 0 = 0 := by
+  simp [sphereExtend]
+
+theorem sphereExtend_of_ne_zero {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H) {x : E}
+    (hx : x ≠ 0) :
+    sphereExtend f x =
+      f ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩ := by
+  simp [sphereExtend, hx]
+
+/-- The `0`-homogeneous radial extension of `f` restricts to `f` on the unit sphere. -/
+@[simp]
+theorem sphereExtend_coe {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H)
+    (p : sphere (0 : E) 1) :
+    sphereExtend f (p : E) = f p := by
+  rw [sphereExtend_of_ne_zero f (norm_ne_zero_iff.1 (by simp [norm_eq_of_mem_sphere p]))]
+  congr 1
+  exact Subtype.ext (NormedSpace.normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere p))
+
+@[simp]
+theorem sphereExtend_comp_coe {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H) :
+    sphereExtend f ∘ ((↑) : sphere (0 : E) 1 → E) = f :=
+  funext (sphereExtend_coe f)
+
+/-- The `0`-homogeneous radial extension is constant along open rays (`r > 0`). -/
+theorem sphereExtend_smul_of_pos {H : Type*} [Zero H] (f : sphere (0 : E) 1 → H) {r : ℝ}
+    (hr : 0 < r) (x : E) :
+    sphereExtend f (r • x) = sphereExtend f x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [sphereExtend_of_ne_zero f (smul_ne_zero hr.ne' hx), sphereExtend_of_ne_zero f hx]
+    congr 1
+    exact Subtype.ext (NormedSpace.normalize_smul_of_pos hr x)
+
+@[simp]
+theorem sphereExtend_zero_fun {H : Type*} [Zero H] :
+    sphereExtend (0 : sphere (0 : E) 1 → H) = 0 := by
+  ext x
+  by_cases hx : x = 0 <;> simp [sphereExtend, hx]
+
+theorem sphereExtend_add {H : Type*} [AddZeroClass H] (f₁ f₂ : sphere (0 : E) 1 → H) :
+    sphereExtend (f₁ + f₂) = sphereExtend f₁ + sphereExtend f₂ := by
+  ext x
+  by_cases hx : x = 0 <;> simp [sphereExtend, hx]
+
+theorem sphereExtend_smul_fun {R H : Type*} [Zero H] [SMulZeroClass R H] (c : R)
+    (f : sphere (0 : E) 1 → H) :
+    sphereExtend (c • f) = c • sphereExtend f := by
+  ext x
+  by_cases hx : x = 0 <;> simp [sphereExtend, hx]
+
+/-- The cone over `f` is `‖x‖` times its `0`-homogeneous radial extension `sphereExtend f`. -/
+theorem sphereCone_eq_norm_smul_sphereExtend (f : sphere (0 : E) 1 → F) (x : E) :
+    sphereCone f x = ‖x‖ • sphereExtend f x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · rw [sphereCone_of_ne_zero hx, sphereExtend_of_ne_zero f hx]
+    congr 2
+    ext
+    exact homeomorphUnitSphereProd_apply_fst_coe E ⟨x, mem_compl_singleton_iff.2 hx⟩
 
 end TauCeti
 
