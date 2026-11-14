@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.PDCode.Reidemeister.Three.Basic
 public import TauCeti.KnotTheory.PDCode.Kauffman
 import TauCeti.KnotTheory.PDCode.Reidemeister.Three.Local
+import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -417,15 +418,6 @@ private theorem sum_smoothingWeight_pairingValue_eq {R : Type*} [CommRing R] (a 
   simp only [Fintype.sum_bool, smoothingWeight, pairingValue, Bool.false_eq_true, ↓reduceIte]
   linear_combination (P - S) * (overWeight_coefficients_eq a ba bb bc height)
 
-private theorem sum_pi_fin_three_bool {R : Type*} [AddCommMonoid R] (f : (Fin 3 → Bool) → R) :
-    (∑ q : Fin 3 → Bool, f q) = ∑ u : Bool, ∑ v : Bool, ∑ t : Bool, f ![u, v, t] := by
-  let e : Bool × Bool × Bool ≃ (Fin 3 → Bool) :=
-    (Equiv.prodCongr (Equiv.refl Bool) (piFinTwoEquiv (fun _ ↦ Bool)).symm).trans
-      (Fin.consEquiv (fun _ ↦ Bool))
-  rw [← e.sum_comp]
-  simp only [Fintype.sum_prod_type]
-  rfl
-
 -- Equality for each fixed exterior state, before summing over the surrounding diagram.
 private theorem sum_smoothingWeight_pairingValue_fin_three_eq {R : Type*} [CommRing R]
     (a : Rˣ) (ba bb bc : Bool) (height : ba = bc → bb = ba) (P Q Rv S I : R) :
@@ -435,7 +427,7 @@ private theorem sum_smoothingWeight_pairingValue_fin_three_eq {R : Type*} [CommR
     (∑ q : Fin 3 → Bool,
       (∏ i, smoothingWeight a (![bc, bb, ba] i) (q i)) *
         pairingValue (jonesDelta a) S Rv Q P I (q 0) (q 1) (q 2)) := by
-  rw [sum_pi_fin_three_bool, sum_pi_fin_three_bool]
+  rw [Fintype.sum_finThreeArrow, Fintype.sum_finThreeArrow]
   simp only [Fin.prod_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two]
   exact sum_smoothingWeight_pairingValue_eq a ba bb bc height P Q Rv S I
