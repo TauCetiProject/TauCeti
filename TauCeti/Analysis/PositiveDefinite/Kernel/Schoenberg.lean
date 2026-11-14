@@ -70,7 +70,7 @@ theorem CondNegSemidef.posSemidef_cexp_neg_mul {ψ : Matrix n n ℂ} (hψ : ψ.C
     (by exact_mod_cast ht : (0 : ℂ) ≤ t)
   have hrank : PosSemidef (of fun a b ↦ star (Complex.exp (-(t * ψ a₀ a))) *
       Complex.exp (-(t * ψ a₀ b))) :=
-    TauCeti.posSemidef_rankOne fun b ↦ Complex.exp (-(t * ψ a₀ b))
+    posSemidef_vecMulVec_star_self fun b ↦ Complex.exp (-(t * ψ a₀ b))
   -- The diagonal value `ψ(a₀, a₀)` is real, so `exp (t ψ(a₀, a₀))` is a nonnegative scalar.
   have hreal : ((ψ a₀ a₀).re : ℂ) = ψ a₀ a₀ := Complex.conj_eq_iff_re.mp (hsymm a₀ a₀)
   have hc : (0 : ℂ) ≤ Complex.exp (t * ψ a₀ a₀) := by

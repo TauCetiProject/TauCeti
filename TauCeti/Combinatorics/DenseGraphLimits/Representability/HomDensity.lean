@@ -301,15 +301,9 @@ theorem isReflectionPositive_homDensityParam : IsReflectionPositive (homDensityP
   rw [hM]
   refine posSemidef_integral (Filter.Eventually.of_forall fun x => ?_)
     fun i j => integrable_glue W (A i) (A j)
-  have h := (posSemidef_prod_union (fun i => labelEdges (A i)) (edgeFactor_nonneg W x)
-    (edgeFactor_le_one W x)).hadamard (posSemidef_rankOne fun i => outerDensity W (A i) x)
-  have heq : (Matrix.of fun i j => ∏ e ∈ labelEdges (A i) ∪ labelEdges (A j), edgeFactor W x e) ⊙
-      (Matrix.of fun i j => star (outerDensity W (A i) x) * outerDensity W (A j) x) =
-      fun i j => (∏ e ∈ labelEdges (A i) ∪ labelEdges (A j), edgeFactor W x e) *
-        (outerDensity W (A i) x * outerDensity W (A j) x) := by
-    ext i j
-    rw [Matrix.hadamard_apply, Matrix.of_apply, Matrix.of_apply, star_trivial]
-  exact heq ▸ h
+  exact (posSemidef_prod_union (fun i => labelEdges (A i)) (edgeFactor_nonneg W x)
+    (edgeFactor_le_one W x)).hadamard
+    (Matrix.posSemidef_vecMulVec_star_self fun i => outerDensity W (A i) x)
 
 end ReflectionPositive
 
