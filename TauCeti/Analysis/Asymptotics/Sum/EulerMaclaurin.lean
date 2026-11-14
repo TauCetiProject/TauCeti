@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.NumberTheory.ZetaValues
 
 /-!
 # The Euler–Maclaurin summation formula
@@ -21,12 +22,19 @@ Bernoulli numbers, and an exact remainder integral against the periodic Bernoull
 complex-valued `f` is included.
 
 It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`, such as those of
-`∑ j^α`, `∑ 1/j` and `∑ j log j`: the remainder integral is controlled by `f^{(k)}` alone.
+`∑ j^α`, `∑ 1/j` and `∑ j log j`: the remainder integral is controlled by `f^{(k)}` alone, and
+when `f^{(2m)}` has a constant sign on `(n, ∞)` the alternating sign of `B_{2m} - B_{2m}({x})`
+determines the sign of the tail remainder integral.
 
 ## Main results
 
-* `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
-  `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
+* `MeasureTheory.IntegrableOn.bernoulliFun_fract_smul`,
+  `MeasureTheory.IntegrableOn.bernoulli_sub_bernoulliFun_fract_smul`, and
+  `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands `Bₖ({x}) • u(x)` and
+  `(Bₖ - Bₖ({x})) • u(x)` inherit integrability from `u`.
+* `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos`: for
+  `k ≠ 0` and positive continuous integrable `w` on `(a, ∞)`,
+  `(-1)^(k + 1) * ∫ x in Ioi a, (B_{2k} - B_{2k}({x})) * w x > 0`.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
   family `g` with `g 0 = f` continuous on `[a, n]` up to order `k - 1`, each `g i` having
   derivative `g (i + 1)` on `(a, n)`, and `g k` interval integrable:
@@ -56,21 +64,107 @@ open scoped Nat
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
 omit [CompleteSpace E] in
+/-- Multiplying an integrable function on `s` by the bounded periodic Bernoulli function
+`Bₖ({x})` preserves `IntegrableOn`. -/
+theorem MeasureTheory.IntegrableOn.bernoulliFun_fract_smul {u : ℝ → E} {s : Set ℝ}
+    (hu : IntegrableOn u s) (k : ℕ) :
+    IntegrableOn (fun x => bernoulliFun k (Int.fract x) • u x) s := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    (continuous_bernoulliFun k).continuousOn
+  exact Integrable.bdd_smul hu C
+    ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x =>
+      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+
+omit [CompleteSpace E] in
+/-- Multiplying an integrable function on `s` by the Euler–Maclaurin kernel
+`Bₖ - Bₖ({x})` preserves `IntegrableOn`. -/
+theorem MeasureTheory.IntegrableOn.bernoulli_sub_bernoulliFun_fract_smul {u : ℝ → E} {s : Set ℝ}
+    (hu : IntegrableOn u s) (k : ℕ) :
+    IntegrableOn (fun x => ((bernoulli k : ℝ) - bernoulliFun k (Int.fract x)) • u x) s := by
+  have hsub : (fun x => ((bernoulli k : ℝ) - bernoulliFun k (Int.fract x)) • u x) =
+      fun x => (bernoulli k : ℝ) • u x - bernoulliFun k (Int.fract x) • u x :=
+    funext fun _ => sub_smul _ _ _
+  rw [hsub]
+  exact (hu.smul (bernoulli k : ℝ)).sub (hu.bernoulliFun_fract_smul k)
+
+omit [CompleteSpace E] in
 /-- The product of an interval integrable function with the periodic Bernoulli function
 `Bₖ({x})`, where `{x} = x - ⌊x⌋`, is interval integrable, so the remainder integrals of the
 Euler–Maclaurin formula exist. -/
 theorem IntervalIntegrable.bernoulliFun_fract_smul {u : ℝ → E} {a b : ℝ}
     (hu : IntervalIntegrable u volume a b) (k : ℕ) :
     IntervalIntegrable (fun x => bernoulliFun k (Int.fract x) • u x) volume a b := by
-  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
-    (continuous_bernoulliFun k).continuousOn
   rw [intervalIntegrable_iff] at hu ⊢
-  exact hu.bdd_smul C
-    ((continuous_bernoulliFun k).measurable.comp measurable_fract).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x =>
-      hC _ ⟨Int.fract_nonneg x, (Int.fract_lt_one x).le⟩)
+  exact hu.bernoulliFun_fract_smul k
 
 namespace TauCeti
+
+/-- If `w` is integrable and nonnegative on `(a, ∞)`, the Euler–Maclaurin tail integral against
+`B_{2k} - B_{2k}({x})` (`k ≠ 0`) has sign `(-1)^(k + 1)`. -/
+theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_nonneg {k : ℕ}
+    (hk : k ≠ 0) {a : ℝ} {w : ℝ → ℝ}
+    (hw : ∀ x ∈ Set.Ioi a, 0 ≤ w x) :
+    0 ≤ (-1 : ℝ) ^ (k + 1) *
+      ∫ x in Set.Ioi a, ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * w x := by
+  rw [← MeasureTheory.integral_const_mul]
+  refine setIntegral_nonneg measurableSet_Ioi fun x hx => ?_
+  rw [← mul_assoc]
+  exact mul_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg hk x) (hw x hx)
+
+/-- If `w` is integrable, continuous, and strictly positive on `(a, ∞)`, the Euler–Maclaurin tail
+integral against `B_{2k} - B_{2k}({x})` (`k ≠ 0`) has strict sign `(-1)^(k + 1)`. -/
+theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos {k : ℕ}
+    (hk : k ≠ 0) {a : ℝ} {w : ℝ → ℝ} (hw : IntegrableOn w (Set.Ioi a))
+    (hcont : ContinuousOn w (Set.Ioi a)) (hpos : ∀ x ∈ Set.Ioi a, 0 < w x) :
+    0 < (-1 : ℝ) ^ (k + 1) *
+      ∫ x in Set.Ioi a, ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * w x := by
+  set F : ℝ → ℝ := fun x => (-1 : ℝ) ^ (k + 1) *
+    (((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * w x)
+  have hF_int : IntegrableOn F (Set.Ioi a) :=
+    (hw.bernoulli_sub_bernoulliFun_fract_smul (2 * k)).const_mul ((-1 : ℝ) ^ (k + 1))
+  -- Restrict to `[m + 1/4, m + 3/4] ⊆ (m, m + 1) ⊆ (a, ∞)`, where `{x} = x - m`.
+  set m : ℤ := ⌊a⌋ + 1
+  have ham : a < (m : ℝ) := by
+    simp only [m, Int.cast_add, Int.cast_one]
+    exact Int.lt_floor_add_one a
+  set p : ℝ := (m : ℝ) + 1 / 4
+  set q : ℝ := (m : ℝ) + 3 / 4
+  have hpq : p < q := by dsimp [p, q]; linarith
+  have hsub_Ioi : Set.Icc p q ⊆ Set.Ioi a := fun x hx => by
+    simp only [Set.mem_Ioi]; dsimp [p] at hx; linarith [hx.1]
+  have hfract : ∀ x ∈ Set.Icc p q, Int.fract x = x - m := fun x hx => by
+    have h1 : (m : ℝ) ≤ x := by dsimp [p] at hx; linarith [hx.1]
+    have h2 : x < (m : ℝ) + 1 := by dsimp [q] at hx; linarith [hx.2]
+    simp only [Int.fract, Int.floor_eq_iff.2 ⟨h1, h2⟩]
+  set G : ℝ → ℝ := fun x => (-1 : ℝ) ^ (k + 1) *
+    (((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (x - m)) * w x)
+  have hG_cont : ContinuousOn G (Set.Icc p q) :=
+    continuousOn_const.mul ((continuousOn_const.sub
+      ((continuous_bernoulliFun (2 * k)).comp
+        (continuous_id.sub continuous_const)).continuousOn).mul
+      (hcont.mono hsub_Ioi))
+  have hG_pos : 0 < ∫ x in p..q, G x := by
+    refine intervalIntegral_pos_of_pos_on (hG_cont.intervalIntegrable_of_Icc hpq.le)
+      (fun x hx => ?_) hpq
+    have hx' : x - m ∈ Set.Ioo (0 : ℝ) 1 := by
+      dsimp [p, q] at hx; constructor <;> linarith [hx.1, hx.2]
+    rw [show G x = ((-1 : ℝ) ^ (k + 1) *
+        ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (x - m))) * w x by ring]
+    exact mul_pos (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_pos hk hx')
+      (hpos x (hsub_Ioi (Set.Ioo_subset_Icc_self hx)))
+  have hFG : ∫ x in p..q, G x = ∫ x in Set.Ioc p q, F x := by
+    rw [integral_of_le hpq.le]
+    exact setIntegral_congr_fun measurableSet_Ioc fun x hx => by
+      simp only [F, G, hfract x (Set.Ioc_subset_Icc_self hx)]
+  rw [← MeasureTheory.integral_const_mul]
+  exact (hFG ▸ hG_pos).trans_le (setIntegral_mono_set hF_int
+    (ae_restrict_of_forall_mem measurableSet_Ioi fun x hx => by
+      dsimp [F]
+      rw [← mul_assoc]
+      exact mul_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg hk x)
+        (hpos x hx).le)
+    ((Set.Ioc_subset_Icc_self.trans hsub_Ioi).eventuallySubset))
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
@@ -193,6 +287,55 @@ theorem sum_Icc_eq_eulerMaclaurin_of_hasDerivAt {g : ℕ → ℝ → E} {a n : �
     rw [hlast, hΔ]
     linear_combination (norm := module) hunit
 
+/-- Even-order **Euler–Maclaurin formula** for an explicit derivative family `g : ℕ → ℝ → E`.
+Compared with `sum_Icc_eq_eulerMaclaurin`, this avoids rewriting `iteratedDerivWithin` when the
+successive derivatives `g i` are given in closed form. -/
+theorem sum_Icc_eq_eulerMaclaurin_of_hasDerivAt_two_mul {g : ℕ → ℝ → E} {a n : ℤ} (han : a ≤ n)
+    {m : ℕ} (hm : 1 ≤ m) (hcont : ∀ i < 2 * m, ContinuousOn (g i) (Set.Icc (a : ℝ) n))
+    (hderiv : ∀ i < 2 * m, ∀ x ∈ Set.Ioo (a : ℝ) n, HasDerivAt (g i) (g (i + 1) x) x)
+    (hint : IntervalIntegrable (g (2 * m)) volume a n) :
+    ∑ j ∈ Icc a n, g 0 j = (∫ x in a..n, g 0 x) + (2 : ℝ)⁻¹ • g 0 a + (2 : ℝ)⁻¹ • g 0 n +
+      ∑ s ∈ Ico 1 m, (bernoulli (2 * s) / (2 * s)! : ℝ) • (g (2 * s - 1) n - g (2 * s - 1) a) +
+      ∫ x in a..n, ((bernoulli (2 * m) - bernoulliFun (2 * m) (Int.fract x)) / (2 * m)!) •
+        g (2 * m) x := by
+  have han' : (a : ℝ) ≤ n := by exact_mod_cast han
+  have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt (g := g) han (k := 2 * m) (by omega)
+    hcont hderiv hint
+  -- The odd-index terms `s = 2r + 3` vanish, since `B_{2r+3} = 0`.
+  have heven : ∀ m' ≥ 1,
+      ∑ s ∈ Icc 2 (2 * m'), (bernoulli s / s ! : ℝ) • (g (s - 1) n - g (s - 1) a) =
+        ∑ s ∈ Icc 1 m', (bernoulli (2 * s) / (2 * s)! : ℝ) •
+          (g (2 * s - 1) n - g (2 * s - 1) a) := by
+    intro m' hm'
+    induction m', hm' using Nat.le_induction with
+    | base => simp
+    | succ m' hm' ih =>
+      have h3 : bernoulli (2 * m' + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m', rfl⟩ (by omega)
+      rw [show 2 * (m' + 1) = 2 * m' + 1 + 1 by ring, sum_Icc_succ_top (by omega),
+        sum_Icc_succ_top (by omega), sum_Icc_succ_top (by omega), ih, h3]
+      simp [mul_add]
+  -- Absorb the `s = m` term into the remainder via `∫_a^n g_{2m} = g_{2m-1}(n) - g_{2m-1}(a)`.
+  have hFTC : ∫ x in a..n, g (2 * m) x = g (2 * m - 1) n - g (2 * m - 1) a := by
+    have h := integral_eq_sub_of_hasDerivAt_of_le han' (hcont (2 * m - 1) (by omega))
+      (fun x hx => hderiv (2 * m - 1) (by omega) x hx)
+      (by rwa [Nat.sub_add_cancel (by omega)])
+    rwa [Nat.sub_add_cancel (by omega)] at h
+  rw [heven m hm, ← Finset.Ico_add_one_right_eq_Icc 1 m, sum_Ico_succ_top hm] at hEM
+  have hR : ∫ x in a..n, ((bernoulli (2 * m) - bernoulliFun (2 * m) (Int.fract x)) / (2 * m)!) •
+        g (2 * m) x =
+      (bernoulli (2 * m) / (2 * m)! : ℝ) • (∫ x in a..n, g (2 * m) x) -
+        (1 / (2 * m)! : ℝ) • ∫ x in a..n, bernoulliFun (2 * m) (Int.fract x) • g (2 * m) x := by
+    have h₁ : IntervalIntegrable (fun x => (bernoulli (2 * m) / (2 * m)! : ℝ) • g (2 * m) x)
+        volume a n := hint.smul _
+    have h₂ : IntervalIntegrable (fun x => (1 / (2 * m)! : ℝ) •
+        bernoulliFun (2 * m) (Int.fract x) • g (2 * m) x) volume a n :=
+      (hint.bernoulliFun_fract_smul _).smul _
+    rw [← intervalIntegral.integral_smul, ← intervalIntegral.integral_smul,
+      ← intervalIntegral.integral_sub h₁ h₂]
+    exact integral_congr fun x _ => by module
+  rw [hEM, hR, hFTC, pow_mul, neg_one_sq, one_pow]
+  module
+
 /-- **Euler–Maclaurin formula** (DLMF 2.10.1). For integers `a ≤ n`, `m ≥ 1` and `f` of class
 `C^{2m}` on `[a, n]`, with derivatives `f^{(i)}` taken within `[a, n]`,
 `∑_{j=a}^n f(j) = ∫_a^n f + f(a)/2 + f(n)/2
@@ -224,43 +367,8 @@ theorem sum_Icc_eq_eulerMaclaurin {f : ℝ → E} {a n : ℤ} (han : a ≤ n) {m
       (Set.Ioo_subset_Icc_self hx)
     simp only [hg, iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx']
     exact (hd.differentiableAt hx').hasDerivAt
-  have hint : ∀ i ≤ 2 * m, IntervalIntegrable (g i) volume a n := fun i hi =>
-    (hcont i hi).intervalIntegrable_of_Icc han'
-  have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt (g := g) han.le (k := 2 * m) (by omega)
-    (fun i hi => hcont i hi.le) hderiv (hint _ le_rfl)
-  -- The odd-index terms `s = 2r + 3` vanish, since `B_{2r+3} = 0`.
-  have heven : ∀ m' ≥ 1, ∑ s ∈ Icc 2 (2 * m'), (bernoulli s / s ! : ℝ) • (g (s - 1) n - g (s - 1) a)
-      = ∑ s ∈ Icc 1 m', (bernoulli (2 * s) / (2 * s)! : ℝ) •
-        (g (2 * s - 1) n - g (2 * s - 1) a) := by
-    intro m' hm'
-    induction m', hm' using Nat.le_induction with
-    | base => simp
-    | succ m' hm' ih =>
-      have h3 : bernoulli (2 * m' + 1) = 0 := bernoulli_eq_zero_of_odd ⟨m', rfl⟩ (by omega)
-      rw [show 2 * (m' + 1) = 2 * m' + 1 + 1 by ring, sum_Icc_succ_top (by omega),
-        sum_Icc_succ_top (by omega), sum_Icc_succ_top (by omega), ih, h3]
-      simp [mul_add]
-  -- The `s = m` term is absorbed into the remainder by
-  -- `∫_a^n f^{(2m)} = f^{(2m-1)}(n) - f^{(2m-1)}(a)`.
-  have hFTC : ∫ x in a..n, g (2 * m) x = g (2 * m - 1) n - g (2 * m - 1) a := by
-    have h := integral_eq_sub_of_hasDerivAt_of_le han' (hcont (2 * m - 1) (by omega))
-      (fun x hx => hderiv (2 * m - 1) (by omega) x hx) (hint (2 * m - 1 + 1) (by omega))
-    rwa [Nat.sub_add_cancel (by omega)] at h
-  rw [heven m hm, ← Finset.Ico_add_one_right_eq_Icc 1 m, sum_Ico_succ_top hm] at hEM
-  have hR : ∫ x in a..n, ((bernoulli (2 * m) - bernoulliFun (2 * m) (Int.fract x)) / (2 * m)!) •
-        g (2 * m) x =
-      (bernoulli (2 * m) / (2 * m)! : ℝ) • (∫ x in a..n, g (2 * m) x) -
-        (1 / (2 * m)! : ℝ) • ∫ x in a..n, bernoulliFun (2 * m) (Int.fract x) • g (2 * m) x := by
-    have h₁ : IntervalIntegrable (fun x => (bernoulli (2 * m) / (2 * m)! : ℝ) • g (2 * m) x)
-        volume a n := (hint _ le_rfl).smul _
-    have h₂ : IntervalIntegrable (fun x => (1 / (2 * m)! : ℝ) •
-        bernoulliFun (2 * m) (Int.fract x) • g (2 * m) x) volume a n :=
-      ((hint _ le_rfl).bernoulliFun_fract_smul _).smul _
-    rw [← intervalIntegral.integral_smul, ← intervalIntegral.integral_smul,
-      ← intervalIntegral.integral_sub h₁ h₂]
-    exact integral_congr fun x _ => by module
-  simp only [hg, iteratedDerivWithin_zero] at hEM hR hFTC ⊢
-  rw [hEM, hR, hFTC, pow_mul, neg_one_sq, one_pow]
-  module
+  simpa only [hg, iteratedDerivWithin_zero] using
+    sum_Icc_eq_eulerMaclaurin_of_hasDerivAt_two_mul (g := g) han.le hm
+      (fun i hi => hcont i hi.le) hderiv ((hcont _ le_rfl).intervalIntegrable_of_Icc han')
 
 end TauCeti
