@@ -171,7 +171,7 @@ theorem range_zigzagProjectiveVolumeMul (i : V) :
   apply le_antisymm
   · rintro _ ⟨y, rfl⟩
     rw [mem_zigzagProjectiveRadicalPower_iff, coe_zigzagProjectiveVolumeMul_apply]
-    exact (Ring.jacobson Z ^ 2).mul_mem_left _ (zigzagVolume_mem_jacobson_sq hns i)
+    exact (Ring.jacobson Z ^ 2).mul_mem_left _ (zigzagVolume_mem_jacobson_sq i)
   · intro x hx
     have hx' : x ∈ (zigzagProjectiveRadicalPower k G i 2).restrictScalars k := hx
     rw [restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns,
@@ -205,7 +205,7 @@ theorem ker_zigzagProjectiveVolumeMul (i : V) :
     apply Subtype.ext
     rw [coe_zigzagProjectiveVolumeMul_apply, ZeroMemClass.coe_zero]
     exact mul_eq_zero_of_mem_jacobson_pow hns (m := 1) (n := 2) rfl two_ne_zero
-      (by rwa [Submodule.pow_one]) (zigzagVolume_mem_jacobson_sq hns i)
+      (by rwa [Submodule.pow_one]) (zigzagVolume_mem_jacobson_sq i)
 
 /-! ### The arrow map -/
 
