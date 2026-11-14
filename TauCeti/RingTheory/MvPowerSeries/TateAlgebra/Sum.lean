@@ -50,6 +50,10 @@ interval rings of the Fargues–Fontaine curve are strongly noetherian.
 * `TauCeti.MvPowerSeries.restrictedSumCongr` and
   `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedSumCongr`: renaming each family of
   variables, and the compatibility of iteration with these renamings.
+* `TauCeti.MvPowerSeries.restrictedFinAddEquiv` and
+  `TauCeti.MvPowerSeries.restrictedFinAddFirstBlockAlgHom`: separating a block `Fin (k + m)` into
+  `Fin k` inner variables and `Fin m` outer variables, and the isometric inclusion of the first
+  block.
 
 Its compatibility with bounded coefficient maps is
 `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`, in
@@ -380,5 +384,199 @@ theorem coe_restrictedSumEquiv_restrictedSumCongr
   simp [hab]
 
 end Rename
+
+/-! ### Splitting a finite block `Fin (k + m)` of variables -/
+
+section FinAdd
+
+variable {k m : ℕ} {r : Fin (k + m) → ℝ} [∀ l, Fact (0 < r l)]
+
+omit [∀ l, Fact (0 < r l)] in
+/-- **Inclusion of the first `k` variables** into restricted series in `k + m` variables,
+sending `X i` to `X (Fin.castAdd m i)`. -/
+noncomputable def restrictedFinAddFirstBlockAlgHom :
+    IsRestricted.subring (R := R) (r ∘ Fin.castAdd m) →ₐ[R]
+      IsRestricted.subring (R := R) r where
+  __ := ((rename (Fin.castAddEmb m)).toRingHom.comp
+    (IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)).subtype).codRestrict _
+    fun f ↦ f.property.rename_of_injective (Fin.castAddEmb m)
+  commutes' a := Subtype.ext (rename_C _ a)
+
+omit [∀ l, Fact (0 < r l)] in
+/-- `restrictedFinAddFirstBlockAlgHom` acts as `MvPowerSeries.rename (Fin.castAddEmb m)` on the
+underlying series. -/
+@[simp]
+theorem coe_restrictedFinAddFirstBlockAlgHom
+    (f : IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) :
+    (restrictedFinAddFirstBlockAlgHom (m := m) f : MvPowerSeries (Fin (k + m)) R) =
+      rename (Fin.castAddEmb m) (f : MvPowerSeries (Fin k) R) := (rfl)
+
+omit [∀ l, Fact (0 < r l)] in
+/-- `restrictedFinAddFirstBlockAlgHom` sends `X i` to `X (Fin.castAdd m i)`. -/
+@[simp]
+theorem restrictedFinAddFirstBlockAlgHom_X (i : Fin k) :
+    restrictedFinAddFirstBlockAlgHom (m := m) ⟨X i, isRestricted_X (r ∘ Fin.castAdd m) i⟩ =
+      (⟨X (Fin.castAdd m i), isRestricted_X r (Fin.castAdd m i)⟩ :
+        IsRestricted.subring (R := R) r) :=
+  Subtype.ext (rename_X _ i)
+
+/-- **Restricted series in `k + m` variables are restricted series in the last `m` variables over
+restricted series in the first `k` variables.** Reindexing `Fin (k + m)` into `Fin m ⊕ Fin k` and
+applying `restrictedSumEquiv` gives a Gauss-norm-preserving ring isomorphism
+`R{X₁, …, X_{k+m} / r} ≃+* R{X₁, …, Xₖ / r₁}{Y₁, …, Yₘ / r₂}`, matching the variable convention of
+`TauCeti.Huber.iterateRingEquiv`. -/
+noncomputable def restrictedFinAddEquiv :
+    IsRestricted.subring (R := R) r ≃+*
+      IsRestricted.subring
+        (R := IsRestricted.subring (R := R) (r ∘ Fin.castAdd m))
+        (r ∘ Fin.natAdd k) :=
+  (IsRestricted.renameAlgEquivOfEq
+    (finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)))
+    (Sum.elim (r ∘ Fin.natAdd k) (r ∘ Fin.castAdd m))
+    (funext fun l ↦ Fin.addCases (fun i ↦ by simp) (fun j ↦ by simp) l)).toRingEquiv.trans
+    restrictedSumEquiv
+
+/-- `restrictedFinAddEquiv` sends constants over any coefficient algebra `S` to constants. -/
+@[simp]
+theorem restrictedFinAddEquiv_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    restrictedFinAddEquiv (algebraMap S (IsRestricted.subring (R := R) r) s) =
+      algebraMap S _ s := by
+  have hren : IsRestricted.renameAlgEquivOfEq
+      (finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)))
+      (Sum.elim (r ∘ Fin.natAdd k) (r ∘ Fin.castAdd m))
+      (funext fun l ↦ Fin.addCases (fun i ↦ by simp) (fun j ↦ by simp) l)
+      (algebraMap S (IsRestricted.subring (R := R) r) s) =
+      algebraMap S _ s :=
+    Subtype.ext (by simp [coe_algebraMap_isRestrictedSubring_apply])
+  simp [restrictedFinAddEquiv, hren]
+
+/-- `restrictedFinAddEquiv` as an `S`-algebra isomorphism over any algebra `S` of coefficients. -/
+noncomputable def restrictedFinAddAlgEquiv {S : Type*} [CommSemiring S] [Algebra S R] :
+    IsRestricted.subring (R := R) r ≃ₐ[S]
+      IsRestricted.subring
+        (R := IsRestricted.subring (R := R) (r ∘ Fin.castAdd m))
+        (r ∘ Fin.natAdd k) :=
+  AlgEquiv.ofRingEquiv restrictedFinAddEquiv_algebraMap
+
+/-- `restrictedFinAddAlgEquiv` has the same underlying map as `restrictedFinAddEquiv`. -/
+@[simp]
+theorem coe_restrictedFinAddAlgEquiv {S : Type*} [CommSemiring S] [Algebra S R] :
+    ⇑(restrictedFinAddAlgEquiv (S := S) (R := R) (r := r) (k := k) (m := m)) =
+      restrictedFinAddEquiv := (rfl)
+
+/-- The inverse of `restrictedFinAddAlgEquiv` has the same underlying map as
+`restrictedFinAddEquiv.symm`. -/
+@[simp]
+theorem coe_restrictedFinAddAlgEquiv_symm {S : Type*} [CommSemiring S] [Algebra S R] :
+    ⇑(restrictedFinAddAlgEquiv (S := S) (R := R) (r := r) (k := k) (m := m)).symm =
+      restrictedFinAddEquiv.symm := (rfl)
+
+/-- `restrictedFinAddEquiv` preserves the Gauss norms. -/
+@[simp]
+theorem norm_restrictedFinAddEquiv (f : IsRestricted.subring (R := R) r) :
+    ‖restrictedFinAddEquiv f‖ = ‖f‖ := by
+  simp [restrictedFinAddEquiv]
+
+/-- The inverse of `restrictedFinAddEquiv` preserves the Gauss norms. -/
+@[simp]
+theorem norm_restrictedFinAddEquiv_symm
+    (g : IsRestricted.subring
+      (R := IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) (r ∘ Fin.natAdd k)) :
+    ‖(restrictedFinAddEquiv (r := r)).symm g‖ = ‖g‖ := by
+  rw [← norm_restrictedFinAddEquiv ((restrictedFinAddEquiv (r := r)).symm g),
+    RingEquiv.apply_symm_apply]
+
+/-- `restrictedFinAddEquiv` is an isometry for the Gauss norms. -/
+theorem isometry_restrictedFinAddEquiv :
+    Isometry (restrictedFinAddEquiv (k := k) (m := m) (R := R) (r := r)) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedFinAddEquiv
+
+/-- The inverse of `restrictedFinAddEquiv` is an isometry for the Gauss norms. -/
+theorem isometry_restrictedFinAddEquiv_symm :
+    Isometry (restrictedFinAddEquiv (k := k) (m := m) (R := R) (r := r)).symm :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedFinAddEquiv_symm
+
+/-- `restrictedFinAddEquiv` sends a variable of the first block `Fin.castAdd m i` to the
+corresponding variable of the inner algebra, read as a constant of the outer algebra. -/
+@[simp]
+theorem restrictedFinAddEquiv_X_castAdd (i : Fin k) :
+    restrictedFinAddEquiv (⟨X (Fin.castAdd m i), isRestricted_X r _⟩ :
+        IsRestricted.subring (R := R) r) =
+      algebraMap (IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) _
+        ⟨X i, isRestricted_X (r ∘ Fin.castAdd m) i⟩ := by
+  have hX : IsRestricted.renameAlgEquivOfEq
+      (finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)))
+      (Sum.elim (r ∘ Fin.natAdd k) (r ∘ Fin.castAdd m))
+      (funext fun l ↦ Fin.addCases (fun i ↦ by simp) (fun j ↦ by simp) l)
+      (⟨X (Fin.castAdd m i), isRestricted_X r _⟩ : IsRestricted.subring (R := R) r) =
+      (⟨X (.inr i), isRestricted_X _ _⟩ : IsRestricted.subring (R := R) _) :=
+    Subtype.ext (by simp [renameEquiv_apply])
+  simp [restrictedFinAddEquiv, hX]
+
+/-- `restrictedFinAddEquiv` sends a variable of the second block `Fin.natAdd k j` to the `j`-th
+variable of the outer algebra. -/
+@[simp]
+theorem restrictedFinAddEquiv_X_natAdd (j : Fin m) :
+    restrictedFinAddEquiv (⟨X (Fin.natAdd k j), isRestricted_X r _⟩ :
+        IsRestricted.subring (R := R) r) =
+      ⟨X j, isRestricted_X (r ∘ Fin.natAdd k) j⟩ := by
+  have hX : IsRestricted.renameAlgEquivOfEq
+      (finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)))
+      (Sum.elim (r ∘ Fin.natAdd k) (r ∘ Fin.castAdd m))
+      (funext fun l ↦ Fin.addCases (fun i ↦ by simp) (fun j ↦ by simp) l)
+      (⟨X (Fin.natAdd k j), isRestricted_X r _⟩ : IsRestricted.subring (R := R) r) =
+      (⟨X (.inl j), isRestricted_X _ _⟩ : IsRestricted.subring (R := R) _) :=
+    Subtype.ext (by simp [renameEquiv_apply])
+  simp [restrictedFinAddEquiv, hX]
+
+/-- Splitting after including the first block of variables is the constant-series inclusion into
+the outer algebra. -/
+@[simp]
+theorem restrictedFinAddEquiv_restrictedFinAddFirstBlockAlgHom
+    (f : IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) :
+    restrictedFinAddEquiv (restrictedFinAddFirstBlockAlgHom f) =
+      algebraMap (IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) _ f := by
+  apply eq_of_map_subtype_eq
+  have hcomp : ((finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)) : _ → _) ∘
+      Fin.castAddEmb m) = Function.Embedding.inr := funext fun i ↦ by simp
+  have hren : ((IsRestricted.renameAlgEquivOfEq
+      (finSumFinEquiv.symm.trans (Equiv.sumComm (Fin k) (Fin m)))
+      (Sum.elim (r ∘ Fin.natAdd k) (r ∘ Fin.castAdd m))
+      (funext fun l ↦ Fin.addCases (fun i ↦ by simp) (fun j ↦ by simp) l)).toRingEquiv
+      (restrictedFinAddFirstBlockAlgHom f) : MvPowerSeries (Fin m ⊕ Fin k) R) =
+      rename Function.Embedding.inr (f : MvPowerSeries (Fin k) R) := by
+    rw [AlgEquiv.coe_toRingEquiv, IsRestricted.coe_renameAlgEquivOfEq,
+      coe_restrictedFinAddFirstBlockAlgHom]
+    change rename _ (rename _ _) = _
+    rw [rename_rename]
+    simp only [hcomp]
+  rw [restrictedFinAddEquiv, RingEquiv.trans_apply, map_subtype_restrictedSumEquiv, hren]
+  ext a b
+  rw [coeff_coeff_sumAlgEquiv, coe_algebraMap_isRestrictedSubring_apply, map_C,
+    Algebra.algebraMap_self_apply, Subring.subtype_apply, coeff_C]
+  split_ifs with ha
+  · subst ha
+    have hb : (0 : Fin m →₀ ℕ).sumElim b = Finsupp.embDomain Function.Embedding.inr b := by
+      ext (j | i) <;> simp
+    rw [hb]
+    exact coeff_embDomain_rename Function.Embedding.inr (f : MvPowerSeries (Fin k) R) b
+  · obtain ⟨j, hj⟩ := Finsupp.ne_iff.mp ha
+    exact coeff_rename_eq_zero_of_apply_ne_zero Function.Embedding.inr
+      (f : MvPowerSeries (Fin k) R) (j := .inl j) (by simp) (by simpa using hj)
+
+/-- Including the first block of variables preserves the Gauss norm. -/
+@[simp]
+theorem norm_restrictedFinAddFirstBlockAlgHom
+    (f : IsRestricted.subring (R := R) (r ∘ Fin.castAdd m)) :
+    ‖restrictedFinAddFirstBlockAlgHom (m := m) f‖ = ‖f‖ := by
+  rw [← norm_restrictedFinAddEquiv, restrictedFinAddEquiv_restrictedFinAddFirstBlockAlgHom,
+    norm_algebraMap_isRestrictedSubring]
+
+/-- Including the first block of variables is an isometry for the Gauss norms. -/
+theorem isometry_restrictedFinAddFirstBlockAlgHom :
+    Isometry (restrictedFinAddFirstBlockAlgHom (k := k) (m := m) (R := R) (r := r)) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedFinAddFirstBlockAlgHom
+
+end FinAdd
 
 end TauCeti.MvPowerSeries
