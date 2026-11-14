@@ -74,8 +74,10 @@ theorem exists_binary_isPerfPair_isCompl_orthogonal_localIntegralForm (L : Integ
       finrank ℤ_[p] S = 2 ∧ ((L.localIntegralForm p).restrict S).IsPerfPair ∧
         IsCompl S ((L.localIntegralForm p).orthogonal S) := by
   have := L.isPerfPair_localIntegralForm_of_isUnit_determinant p hdet
-  exact (L.isSymm_localIntegralForm p).exists_binary_isPerfPair_isCompl_orthogonal _
-    (by rwa [Module.finrank_baseChange])
+  obtain ⟨S, ⟨c⟩, hS, hc⟩ :=
+    (L.isSymm_localIntegralForm p).exists_binary_isPerfPair_isCompl_orthogonal
+      (by rwa [Module.finrank_baseChange])
+  exact ⟨S, by simpa using Module.finrank_eq_card_basis c, hS, hc⟩
 
 /-- Integrally isometric localizations have equal ranks and determinant products that are
 squares, at every prime and without any determinant-unit hypothesis. -/

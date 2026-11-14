@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
-public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular

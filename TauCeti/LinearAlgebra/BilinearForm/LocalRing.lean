@@ -291,6 +291,7 @@ theorem IsSymm.exists_mem_maximalIdeal_of_mem_span_pair (hB : B.IsSymm) {e f : M
     exact 𝔪.sub_mem hse (𝔪.mul_mem_right _ hα)
   exact ⟨α, hα, β, hβ, rfl⟩
 
+variable {B} in
 /-- A symmetric perfect pairing splits off a binary perfect pairing if some vector with nonunit
 self-pairing is taken to one by a linear functional. The summand is supplied with a basis and is
 complementary to its orthogonal complement. -/
@@ -310,31 +311,29 @@ theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one
     B.isCompl_orthogonal_of_restrict_bijective _ (hB.restrict _)
       (LinearMap.IsPerfPair.bijective_left _)⟩
 
+variable {B} in
 /-- **Symmetric perfect pairings split off a perfect binary summand.** Over a local ring, a
-symmetric perfect pairing on a finite free module of rank at least two has a rank-two submodule
-which carries a perfect restriction of the form and is complementary to its orthogonal
-complement. Neither evenness nor any condition on `2` is needed. -/
-theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal [Module.Free R M] [Module.Finite R M]
+symmetric perfect pairing on a free module of rank at least two has a submodule with a basis of
+two elements which carries a perfect restriction of the form and is complementary to its
+orthogonal complement. Neither evenness nor any condition on `2` is needed. -/
+theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal [Module.Free R M]
     [B.IsPerfPair] (hB : B.IsSymm) (hrank : 2 ≤ finrank R M) :
-    ∃ S : Submodule R M,
-      finrank R S = 2 ∧ (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
+    ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
+      (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
   classical
-  suffices h : ∃ S : Submodule R M, Nonempty (Basis (Fin 2) R S) ∧
-      (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) by
-    obtain ⟨S, ⟨c⟩, hS, hc⟩ := h
-    exact ⟨S, by simpa using Module.finrank_eq_card_basis c, hS, hc⟩
+  have : Module.Finite R M := Module.finite_of_finrank_pos (by omega)
   let b := Module.finBasisOfFinrankEq R M (Nat.sub_add_cancel hrank).symm
   -- A basis vector with nonunit self-pairing lies in a binary summand.
   by_cases h0 : IsUnit (B (b 0) (b 0))
   swap
-  · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B (b 0) h0
+  · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one (b 0) h0
       (b.coord 0) (by simp)
   -- Otherwise project `b 1` orthogonally to `b 0`; the projection has `b 1`-coordinate one.
   obtain ⟨u, hu⟩ := h0
   set x := b 1 - (↑u⁻¹ * B (b 0) (b 1)) • b 0
   by_cases hx : IsUnit (B x x)
   swap
-  · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B x hx
+  · exact hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one x hx
       (b.coord 1) (by simp [x])
   -- Both `b 0` and its orthogonal vector `x` have unit self-pairing: they span the summand.
   have h0x : B (b 0) x = 0 := by
