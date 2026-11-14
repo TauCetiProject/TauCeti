@@ -524,6 +524,36 @@ namespace TauCeti
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
+omit [FiniteDimensional ℝ P] in
+/-- Read on a Euclidean model `W` through `T`, an operator on `P` with the properties of the
+normalizing transport is the normalizing transport of the pair pulled back along `T⁻¹`. -/
+private theorem eq_comp_normalizingTransport_comp {W : Type*} [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) {q h : P →L[ℝ] P →L[ℝ] ℝ}
+    (hqs : ∀ u v, q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P) u v =
+      q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P) v u)
+    (hqi : Function.Injective (q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)))
+    (hhp : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ)
+      (h.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P))))
+    {S : P →L[ℝ] P} (hhS : ∀ u v, h (S u) v = h u (S v)) (hpos : ∀ u, 0 ≤ h (S u) u)
+    (hqS : ∀ u v, q (S u) v = q u (S v))
+    (hneg : ∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0),
+      S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Iio 0) ∧
+        q (S u) (S u) = -h u u)
+    (hposS : ∀ u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0),
+      S u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm (Ioi 0) ∧
+        q (S u) (S u) = h u u) :
+    S = (T.symm : W →L[ℝ] P) ∘L
+      (q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)).normalizingTransport
+        (h.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)) ∘L (T : P →L[ℝ] W) := by
+  have hS := ContinuousLinearMap.eq_normalizingTransport_of_mem_relativeSpectralSubspace
+    (S := (T : P →L[ℝ] W) ∘L S ∘L (T.symm : W →L[ℝ] P)) hhp hqs hqi
+    (fun x y ↦ by simpa using hhS (T.symm x) (T.symm y)) (fun x ↦ by simpa using hpos (T.symm x))
+    (fun x y ↦ by simpa using hqS (T.symm x) (T.symm y))
+    (fun x hx ↦ by simpa using hneg _ (by simpa using hx))
+    (fun x hx ↦ by simpa using hposS _ (by simpa using hx))
+  ext u
+  simpa using congr((T.symm : W →L[ℝ] P) ($hS (T u)))
+
 open ContinuousLinearMap in
 /-- **Smooth normalization of nondegenerate forms on a finite-dimensional normed space.** There is
 a family `Ψ` of invertible operators of `P`, indexed by the pairs `(q, h)` of a symmetric
@@ -609,16 +639,6 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   · simpa [hTsT] using
       apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Ioi
         hhp hqs hqi (u := T u) (hmem.mpr (by rwa [hTsT]))
-  -- Uniqueness: read `S` on `W`, where it is the normalizing transport of the pulled-back pair.
-  · have hS := eq_normalizingTransport_of_mem_relativeSpectralSubspace
-      (S := (T : P →L[ℝ] W) ∘L S ∘L Ts) hhp hqs hqi
-      (fun x y ↦ by simpa [Ts] using hhS (Ts x) (Ts y)) (fun x ↦ by simpa [Ts] using hpos (Ts x))
-      (fun x y ↦ by simpa [Ts] using hqS (Ts x) (Ts y))
-      (fun x hx ↦ ⟨hmem.mpr (by simpa [Ts] using (hneg _ (hmem.mp hx)).1),
-        by simpa [Ts] using (hneg _ (hmem.mp hx)).2⟩)
-      (fun x hx ↦ ⟨hmem.mpr (by simpa [Ts] using (hposS _ (hmem.mp hx)).1),
-        by simpa [Ts] using (hposS _ (hmem.mp hx)).2⟩)
-    ext u
-    simpa [Ts] using congr(Ts ($hS (T u)))
+  · exact eq_comp_normalizingTransport_comp T hqs hqi hhp hhS hpos hqS hneg hposS
 
 end TauCeti
