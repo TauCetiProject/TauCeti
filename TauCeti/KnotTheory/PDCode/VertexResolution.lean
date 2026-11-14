@@ -465,6 +465,27 @@ theorem resolvedTurn_def :
     simp
   · simp [hj]
 
+/-- `resolvedTurn` is a perfect matching of the half-edge labels. -/
+theorem isPerfectMatching_resolvedTurn : IsPerfectMatching (D.resolvedTurn c t) := by
+  refine isPerfectMatching_iff.mpr ⟨D.resolvedTurn_apply_apply c t, fun h hh ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨j, k⟩, rfl⟩ := (crossingSlotEquiv (n + 1)).surjective x
+  by_cases hj : j = c
+  · subst hj
+    rw [resolvedTurn_crossing_self, crossing_apply, D.halfEdge.apply_eq_iff_eq,
+      (crossingSlotEquiv (n + 1)).apply_eq_iff_eq, Prod.mk.injEq] at hh
+    exact slotSmoothing_ne _ _ hh.2
+  · rw [resolvedTurn_crossing_of_ne D c t hj, crossing_apply, D.halfEdge.apply_eq_iff_eq,
+      (crossingSlotEquiv (n + 1)).apply_eq_iff_eq, Prod.mk.injEq] at hh
+    exact Fin.oppositeCrossingSlot_ne _ hh.2
+
+/-- Mirroring exchanges the two smoothings of `resolvedTurn`. -/
+@[simp] theorem resolvedTurn_mirror : D.mirror.resolvedTurn c t = D.resolvedTurn c !t := by
+  rw [resolvedTurn_def, resolvedTurn_def, mirror_halfEdge]
+  congr 3
+  funext j
+  split_ifs <;> cases t <;> simp
+
 /-- On `Fin (4 * n) ⊕ Fin 4`, `resolvedTurn` acts by `crossingTurn` on the resolution of `c` and
 by the local smoothing on the four slots of `c`. -/
 private theorem permCongr_resolvedTurn :

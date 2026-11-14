@@ -308,7 +308,7 @@ private theorem coherentOrientation_edgePair (x : Fin (4 * n)) :
 /-- **Coherent resolution of an oriented crossing.** Resolving crossing `c` in its Seifert direction
 `D.seifertState c` preserves the orientations of all remaining half-edges and crossings, and adjoins
 any detached circles with orientation `true`. -/
-noncomputable def resolveCrossingCoherent : OrientedPDCode n where
+def resolveCrossingCoherent : OrientedPDCode n where
   toPDCode := D.toPDCode.resolveCrossing c (D.seifertState c)
   orientation := D.coherentOrientation c
   orientation_edgePair := D.coherentOrientation_edgePair c
@@ -425,8 +425,7 @@ private theorem slotSmoothing_not_xor_mul_oppositeCrossingSlot (a b : Bool) :
     revert k <;> decide
 
 private theorem outSlotEven_ne_outSlotOdd (a b : Bool) : outSlotEven a ≠ outSlotOdd b := by
-  revert a b
-  decide
+  cases a <;> cases b <;> decide
 
 private theorem orientation_crossing_outSlotEven :
     D.orientation (D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))) = true := by
@@ -465,12 +464,8 @@ private theorem crossingComponentOfHalfEdge_outSlotOdd :
 /-- Two half-edges in the same directed orbit of `D.toPDCode.componentPerm` have the same
 orientation. -/
 private theorem orientation_eq_of_sameCycle_componentPerm {x y : Fin (4 * (n + 1))}
-    (h : D.toPDCode.componentPerm.SameCycle x y) : D.orientation x = D.orientation y := by
-  obtain ⟨k, rfl⟩ := h.exists_nat_pow_eq
-  clear h
-  induction k with
-  | zero => simp
-  | succ k ih => rw [pow_succ', Perm.mul_apply, D.orientation_componentPerm, ih]
+    (h : D.toPDCode.componentPerm.SameCycle x y) : D.orientation x = D.orientation y :=
+  h.apply_eq_of_apply_eq D.orientation_componentPerm
 
 /-- Two half-edges of opposite orientations cannot share a directed orbit of `componentPerm`. -/
 private theorem not_sameCycle_componentPerm_of_orientation {x y : Fin (4 * (n + 1))}
@@ -498,48 +493,22 @@ private theorem sameCycle_swap_incoming_mul_componentPerm_iff
     (hu₀ : D.orientation u₀ = true) :
     (Equiv.swap v₀ v₁ * D.toPDCode.componentPerm).SameCycle u₀ u₁ ↔
       D.toPDCode.componentPerm.SameCycle u₀ u₁ := by
-  have hpow (k : ℕ) :
-      ((Equiv.swap v₀ v₁ * D.toPDCode.componentPerm) ^ k) u₀ =
-        (D.toPDCode.componentPerm ^ k) u₀ := by
-    induction k with
-    | zero => rfl
-    | succ k ih =>
-      have hk_or : D.orientation ((D.toPDCode.componentPerm ^ (k + 1)) u₀) = true := by
-        have hsc : D.toPDCode.componentPerm.SameCycle u₀
-            ((D.toPDCode.componentPerm ^ (k + 1)) u₀) :=
-          ⟨((k + 1 : ℕ) : ℤ), by rw [zpow_natCast]⟩
-        exact (D.orientation_eq_of_sameCycle_componentPerm hsc).symm.trans hu₀
-      have hne₀ : D.toPDCode.componentPerm ((D.toPDCode.componentPerm ^ k) u₀) ≠ v₀ := by
-        intro h
-        rw [← Perm.mul_apply, ← pow_succ'] at h
-        simp [h, hv₀] at hk_or
-      have hne₁ : D.toPDCode.componentPerm ((D.toPDCode.componentPerm ^ k) u₀) ≠ v₁ := by
-        intro h
-        rw [← Perm.mul_apply, ← pow_succ'] at h
-        simp [h, hv₁] at hk_or
-      rw [pow_succ', Perm.mul_apply, ih, Perm.mul_apply,
-        Equiv.swap_apply_of_ne_of_ne hne₀ hne₁, pow_succ', Perm.mul_apply]
-  constructor <;> intro h
-  · obtain ⟨k, rfl⟩ := h.exists_nat_pow_eq
-    exact ⟨(k : ℤ), by rw [zpow_natCast, hpow k]⟩
-  · obtain ⟨k, rfl⟩ := h.exists_nat_pow_eq
-    exact ⟨(k : ℤ), by rw [zpow_natCast, hpow k]⟩
-
-private theorem sameCycle_componentPermOutgoing_iff
-    (h k : {x : Fin (4 * (n + 1)) // D.orientation x = true}) :
-    D.componentPermOutgoing.SameCycle h k ↔ D.toPDCode.componentPerm.SameCycle h.val k.val := by
-  have hpow (m : ℕ) : ((D.componentPermOutgoing ^ m) h).val =
-      (D.toPDCode.componentPerm ^ m) h.val := by
-    induction m with
-    | zero => rfl
-    | succ m ih =>
-      rw [pow_succ', Perm.mul_apply, componentPermOutgoing_apply, Subtype.coe_mk, ih, pow_succ',
-        Perm.mul_apply]
-  constructor <;> intro hs
-  · obtain ⟨m, rfl⟩ := hs.exists_nat_pow_eq
-    exact ⟨(m : ℤ), by rw [zpow_natCast, ← hpow m]⟩
-  · obtain ⟨m, hm⟩ := hs.exists_nat_pow_eq
-    exact ⟨(m : ℤ), Subtype.ext (by rw [zpow_natCast, hpow m, hm])⟩
+  have hor (z : Fin (4 * (n + 1))) :
+      D.orientation ((Equiv.swap v₀ v₁ * D.toPDCode.componentPerm) z) = D.orientation z := by
+    rw [Perm.mul_apply, ← D.orientation_componentPerm z, swap_apply_def]
+    split_ifs with h₁ h₂
+    · rw [h₁, hv₀, hv₁]
+    · rw [h₂, hv₀, hv₁]
+    · rfl
+  refine ⟨fun h ↦ h.sameCycle_or_of_swap_mul.resolve_right ?_, fun h ↦ ?_⟩
+  · rintro ⟨h₀ | h₁, -⟩
+    · exact D.not_sameCycle_componentPerm_of_orientation hu₀ hv₀ h₀
+    · exact D.not_sameCycle_componentPerm_of_orientation hu₀ hv₁ h₁
+  · rw [← Equiv.swap_mul_self_mul v₀ v₁ D.toPDCode.componentPerm] at h
+    refine h.sameCycle_or_of_swap_mul.resolve_right ?_
+    rintro ⟨h₀ | h₁, -⟩
+    · exact absurd (h₀.apply_eq_of_apply_eq hor) (by simp [hu₀, hv₀])
+    · exact absurd (h₁.apply_eq_of_apply_eq hor) (by simp [hu₀, hv₁])
 
 /-- The two strands at crossing `c` lie on the same component iff their outgoing half-edges lie in
 the same `componentPerm` orbit. -/
@@ -549,11 +518,16 @@ private theorem crossingComponentOfHalfEdge_zero_eq_one_iff :
       D.toPDCode.componentPerm.SameCycle
         (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
         (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) := by
+  have hsub : D.componentPermOutgoing =
+      D.toPDCode.componentPerm.subtypePerm (fun h ↦ by rw [orientation_componentPerm]) := by
+    ext x
+    simp
   rw [← D.crossingComponentOfHalfEdge_outSlotEven c, ← D.crossingComponentOfHalfEdge_outSlotOdd c,
     D.crossingComponentOfHalfEdge_of_outgoing _ (D.orientation_crossing_outSlotEven c),
     D.crossingComponentOfHalfEdge_of_outgoing _ (D.orientation_crossing_outSlotOdd c),
     Quotient.eq]
-  exact D.sameCycle_componentPermOutgoing_iff _ _
+  change D.componentPermOutgoing.SameCycle _ _ ↔ _
+  rw [hsub, sameCycle_subtypePerm]
 
 /-- At crossing `j`, `resolvedTurn c t * crossingTurn` acts on slot `k` by
 `slotSmoothing * oppositeCrossingSlot` when `j = c` and fixes the half-edge when `j ≠ c`. -/
@@ -574,6 +548,35 @@ private theorem crossing_swap_apply (j : Fin (n + 1)) (s₁ s₂ k : Fin 4) :
   simp only [swap_apply_def, D.toPDCode.crossing_eq_crossing_iff, true_and]
   split_ifs <;> rfl
 
+private theorem resolvedTurn_mul_edgePair_eq_of_slotSmoothing_mul_eq (t : Bool)
+    (s₁ s₂ t₁ t₂ : Fin 4)
+    (hslot : PDCode.slotSmoothing (bif t then D.overPair c else !D.overPair c) *
+        PDCode.oppositeCrossingSlot =
+      Equiv.swap s₁ s₂ * Equiv.swap t₁ t₂) :
+    D.toPDCode.resolvedTurn c t * D.edgePair.val =
+      Equiv.swap (D.crossing c s₁) (D.crossing c s₂) *
+        (Equiv.swap (D.crossing c t₁) (D.crossing c t₂) * D.toPDCode.componentPerm) := by
+  have hturn : D.toPDCode.resolvedTurn c t * D.toPDCode.crossingTurn =
+      Equiv.swap (D.crossing c s₁) (D.crossing c s₂) *
+        Equiv.swap (D.crossing c t₁) (D.crossing c t₂) := by
+    ext h
+    obtain ⟨j, k, rfl⟩ := D.exists_crossing_eq h
+    rw [D.resolvedTurn_mul_crossingTurn_crossing c, hslot]
+    split_ifs with hj
+    · subst j
+      simp only [Perm.mul_apply]
+      rw [D.crossing_swap_apply, D.crossing_swap_apply]
+    · have hne (s : Fin 4) : D.crossing j k ≠ D.crossing c s := fun h ↦
+        hj (D.toPDCode.crossing_eq_crossing_iff.mp h).1
+      rw [Perm.mul_apply, swap_apply_of_ne_of_ne (hne _) (hne _),
+        swap_apply_of_ne_of_ne (hne _) (hne _)]
+  calc D.toPDCode.resolvedTurn c t * D.edgePair.val
+      = (D.toPDCode.resolvedTurn c t * D.toPDCode.crossingTurn) *
+          D.toPDCode.componentPerm := by
+        ext h
+        simp [Perm.mul_apply, PDCode.componentPerm_apply]
+    _ = _ := by rw [hturn, mul_assoc]
+
 /-- At `t = D.seifertState c`, `resolvedTurn * edgePair` differs from `componentPerm` by swapping
 the two outgoing half-edges at `c` and swapping the two incoming half-edges at `c`. -/
 private theorem resolvedTurn_seifertState_mul_edgePair_eq :
@@ -583,37 +586,16 @@ private theorem resolvedTurn_seifertState_mul_edgePair_eq :
         (Equiv.swap (D.crossingTurn (D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))))
             (D.crossingTurn (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))) *
           D.toPDCode.componentPerm) := by
-  have hturn : D.toPDCode.resolvedTurn c (D.seifertState c) * D.toPDCode.crossingTurn =
-      Equiv.swap (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-          (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1)))) *
-        Equiv.swap (D.crossingTurn (D.crossing c (outSlotEven (D.orientation (D.crossing c 0)))))
-          (D.crossingTurn (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))) := by
-    have hchoice : (bif D.seifertState c then D.overPair c else !D.overPair c) =
-        Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) := by
-      rw [← D.smoothingChoice_seifertState c]
-      cases hs : D.seifertState c <;> simp [hs]
-    have hct (s : Fin 4) : D.crossingTurn (D.crossing c s) =
-        D.crossing c (PDCode.oppositeCrossingSlot s) := by
-      rw [PDCode.crossing_apply, PDCode.crossingTurn_crossing]
-    ext h
-    obtain ⟨j, k, rfl⟩ := D.exists_crossing_eq h
-    rw [D.resolvedTurn_mul_crossingTurn_crossing c, hchoice,
-      slotSmoothing_xor_mul_oppositeCrossingSlot]
-    simp only [hct]
-    split_ifs with hj
-    · subst j
-      simp only [Perm.mul_apply]
-      rw [D.crossing_swap_apply, D.crossing_swap_apply]
-    · have hne (s : Fin 4) : D.crossing j k ≠ D.crossing c s := fun h ↦
-        hj (D.toPDCode.crossing_eq_crossing_iff.mp h).1
-      rw [Perm.mul_apply, swap_apply_of_ne_of_ne (hne _) (hne _),
-        swap_apply_of_ne_of_ne (hne _) (hne _)]
-  calc D.toPDCode.resolvedTurn c (D.seifertState c) * D.edgePair.val
-      = (D.toPDCode.resolvedTurn c (D.seifertState c) * D.toPDCode.crossingTurn) *
-          D.toPDCode.componentPerm := by
-        ext h
-        simp [Perm.mul_apply, PDCode.componentPerm_apply]
-    _ = _ := by rw [hturn, mul_assoc]
+  have hchoice : (bif D.seifertState c then D.overPair c else !D.overPair c) =
+      Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) := by
+    rw [← D.smoothingChoice_seifertState c]
+    cases hs : D.seifertState c <;> simp [hs]
+  have hct (s : Fin 4) : D.crossingTurn (D.crossing c s) =
+      D.crossing c (PDCode.oppositeCrossingSlot s) := by
+    rw [PDCode.crossing_apply, PDCode.crossingTurn_crossing]
+  simp only [hct]
+  exact D.resolvedTurn_mul_edgePair_eq_of_slotSmoothing_mul_eq c _ _ _ _ _
+    (by rw [hchoice, slotSmoothing_xor_mul_oppositeCrossingSlot])
 
 /-- At `t = !D.seifertState c`, `resolvedTurn * edgePair` differs from `componentPerm` by two
 outgoing-to-incoming transpositions at `c`. -/
@@ -624,37 +606,16 @@ private theorem resolvedTurn_not_seifertState_mul_edgePair_eq :
         (Equiv.swap (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
             (D.crossingTurn (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))) *
           D.toPDCode.componentPerm) := by
-  have hturn : D.toPDCode.resolvedTurn c (!D.seifertState c) * D.toPDCode.crossingTurn =
-      Equiv.swap (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))
-          (D.crossingTurn (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))) *
-        Equiv.swap (D.crossing c (outSlotEven (D.orientation (D.crossing c 0))))
-          (D.crossingTurn (D.crossing c (outSlotOdd (D.orientation (D.crossing c 1))))) := by
-    have hchoice : (bif !D.seifertState c then D.overPair c else !D.overPair c) =
-        !Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) := by
-      rw [← D.smoothingChoice_seifertState c]
-      cases hs : D.seifertState c <;> simp [hs]
-    have hct (s : Fin 4) : D.crossingTurn (D.crossing c s) =
-        D.crossing c (PDCode.oppositeCrossingSlot s) := by
-      rw [PDCode.crossing_apply, PDCode.crossingTurn_crossing]
-    ext h
-    obtain ⟨j, k, rfl⟩ := D.exists_crossing_eq h
-    rw [D.resolvedTurn_mul_crossingTurn_crossing c, hchoice,
-      slotSmoothing_not_xor_mul_oppositeCrossingSlot]
-    simp only [hct]
-    split_ifs with hj
-    · subst j
-      simp only [Perm.mul_apply]
-      rw [D.crossing_swap_apply, D.crossing_swap_apply]
-    · have hne (s : Fin 4) : D.crossing j k ≠ D.crossing c s := fun h ↦
-        hj (D.toPDCode.crossing_eq_crossing_iff.mp h).1
-      rw [Perm.mul_apply, swap_apply_of_ne_of_ne (hne _) (hne _),
-        swap_apply_of_ne_of_ne (hne _) (hne _)]
-  calc D.toPDCode.resolvedTurn c (!D.seifertState c) * D.edgePair.val
-      = (D.toPDCode.resolvedTurn c (!D.seifertState c) * D.toPDCode.crossingTurn) *
-          D.toPDCode.componentPerm := by
-        ext h
-        simp [Perm.mul_apply, PDCode.componentPerm_apply]
-    _ = _ := by rw [hturn, mul_assoc]
+  have hchoice : (bif !D.seifertState c then D.overPair c else !D.overPair c) =
+      !Bool.xor (D.orientation (D.crossing c 0)) (D.orientation (D.crossing c 1)) := by
+    rw [← D.smoothingChoice_seifertState c]
+    cases hs : D.seifertState c <;> simp [hs]
+  have hct (s : Fin 4) : D.crossingTurn (D.crossing c s) =
+      D.crossing c (PDCode.oppositeCrossingSlot s) := by
+    rw [PDCode.crossing_apply, PDCode.crossingTurn_crossing]
+  simp only [hct]
+  exact D.resolvedTurn_mul_edgePair_eq_of_slotSmoothing_mul_eq c _ _ _ _ _
+    (by rw [hchoice, slotSmoothing_not_xor_mul_oppositeCrossingSlot])
 
 /-- **Coherent resolution of a self-crossing splits the component.** When the two strands at `c`
 belong to the same component of `D`, smoothing `c` by `D.seifertState c` increases the number of
@@ -820,10 +781,7 @@ theorem componentCount_resolveCrossing_add_one_of_ne
   by_cases ht : t = D.seifertState c
   · subst ht
     exact D.componentCount_resolveCrossing_seifertState_add_one_of_ne c hc
-  · have ht' : t = !D.seifertState c := by
-      revert ht
-      generalize D.seifertState c = s
-      cases t <;> cases s <;> decide
+  · have ht' : t = !D.seifertState c := by cases t <;> cases h : D.seifertState c <;> simp_all
     subst ht'
     exact D.componentCount_resolveCrossing_not_seifertState_add_one_of_ne c hc
 

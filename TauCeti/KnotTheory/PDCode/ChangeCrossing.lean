@@ -96,21 +96,15 @@ theorem flipStateEquiv_apply (i : Fin n) (s : Fin n → Bool) :
     (hj : j ≠ i) : flipStateEquiv i s j = s j := by
   simp [flipStateEquiv_apply, hj]
 
+/-- `flipStateEquiv i` is its own inverse. -/
+@[simp] theorem flipStateEquiv_symm (i : Fin n) :
+    (flipStateEquiv i).symm = flipStateEquiv i :=
+  Function.Involutive.toPerm_symm _
+
 /-- Flipping the state at `i` twice returns the original state. -/
 @[simp] theorem flipStateEquiv_flipStateEquiv (i : Fin n) (s : Fin n → Bool) :
     flipStateEquiv i (flipStateEquiv i s) = s := by
-  funext j
-  by_cases hj : j = i
-  · subst hj
-    simp
-  · simp [hj]
-
-/-- `flipStateEquiv i` is its own inverse. -/
-@[simp] theorem flipStateEquiv_symm (i : Fin n) :
-    (flipStateEquiv i).symm = flipStateEquiv i := by
-  ext s j
-  exact congrFun ((flipStateEquiv i).injective
-    (by rw [apply_symm_apply, flipStateEquiv_flipStateEquiv])) j
+  simpa [flipStateEquiv_symm] using (flipStateEquiv i).symm_apply_apply s
 
 /-- Flipping a state at `i` increases the count of `false` entries by one when `s i = true`. -/
 theorem card_false_flipStateEquiv_of_true (i : Fin n) {s : Fin n → Bool} (hs : s i = true) :
@@ -474,8 +468,7 @@ theorem positiveCrossingCount_changeCrossing_of_eq_neg_one (hi : D.crossingSign 
   omega
 
 /-- **Across a crossing change, flipping the state bit at `i` preserves the parity of
-`#{j | s j = false} + n₋`.** Both `#{j | s j = false}` and `n₋` change by `±1`, so their sum
-changes by `-2`, `0`, or `2`. -/
+`#{j | s j = false} + n₋`.** -/
 theorem card_false_flipStateEquiv_add_negativeCrossingCount_mod_two (s : Fin n → Bool) :
     (#{j | PDCode.flipStateEquiv i s j = false} + (D.changeCrossing i).negativeCrossingCount) % 2 =
       (#{j | s j = false} + D.negativeCrossingCount) % 2 := by

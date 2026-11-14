@@ -62,10 +62,12 @@ particular over `ℤ` and `ℚ`—the graded Euler characteristic `χ_q Kh(D; R)
 
 * `TauCeti.OrientedPDCode.eval₂_one_enhancedStateSum`: evaluating `enhancedStateSum` at `q = 1`
   yields `enhancedStateEulerSum`.
-* `TauCeti.OrientedPDCode.enhancedStateEulerSum_changeCrossing`: crossing-change invariance of
-  `E(D)` via the `A`/`B` state bijection.
-* `TauCeti.OrientedPDCode.enhancedStateEulerSum_congr_toPDCode`: reorientation invariance of `E(D)`
-  for planar diagrams.
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum_changeCrossing` and
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_mirror`: crossing-change and mirror invariance of
+  `E(D)`.
+* `TauCeti.OrientedPDCode.negativeCrossingCount_mod_two_congr_toPDCode` and
+  `TauCeti.OrientedPDCode.enhancedStateEulerSum_congr_toPDCode`: reorientation invariance of
+  `n₋ % 2` and `E(D)` for planar diagrams.
 * `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_of_toPDCode_resolveCrossing` and
   `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_resolveCrossingOriented`: the normalized parity
   recurrence across arbitrary oriented smoothings of a crossing.
@@ -155,8 +157,7 @@ theorem enhancedStateEulerSum_of_zero (D : OrientedPDCode 0) :
 /-! ### Crossing-change invariance and diagram symmetries -/
 
 /-- **Crossing-change invariance of `E(D)`.** Switching crossing `i` between over and under leaves
-`E(D)` unchanged, proved directly by the `A`/`B` state-flip bijection
-`TauCeti.PDCode.flipStateEquiv i` without any planarity assumption. -/
+`E(D)` unchanged, without any planarity assumption. -/
 theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) :
     (D.changeCrossing i).enhancedStateEulerSum = D.enhancedStateEulerSum := by
   rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def,
@@ -177,6 +178,40 @@ theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) 
     D.reverse.enhancedStateEulerSum = D.enhancedStateEulerSum := by
   simp [enhancedStateEulerSum_def]
 
+/-- Reading a crossing from its next slot preserves `E(D)`. -/
+@[simp] theorem enhancedStateEulerSum_rotateCrossing (D : OrientedPDCode n) (i : Fin n) :
+    (D.rotateCrossing i).enhancedStateEulerSum = D.enhancedStateEulerSum := by
+  simp [enhancedStateEulerSum_def, negativeCrossingCount_def]
+
+/-- Mirroring an oriented PD-code preserves `E(D)`, without any planarity assumption. -/
+@[simp] theorem enhancedStateEulerSum_mirror (D : OrientedPDCode n) :
+    D.mirror.enhancedStateEulerSum = D.enhancedStateEulerSum := by
+  rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def,
+    ← (Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot).sum_comp]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  have hcard : #{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} +
+      #{j | s j = false} = n := by
+    have htrue : #{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} =
+        #{j | ¬(s j = false)} := by
+      refine congrArg card (Finset.ext fun j ↦ ?_)
+      simp [Equiv.arrowCongr_apply, Equiv.boolNot]
+    rw [htrue, add_comm, card_filter_add_card_filter_not, card_univ, Fintype.card_fin]
+  have hn := D.positiveCrossingCount_add_negativeCrossingCount
+  have hsign : (-1 : ℤ) ^
+        (#{j | Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s j = false} +
+          D.mirror.negativeCrossingCount) =
+      (-1 : ℤ) ^ (#{j | s j = false} + D.negativeCrossingCount) := by
+    rw [negativeCrossingCount_mirror, ← Int.coe_negOnePow_natCast, ← Int.coe_negOnePow_natCast]
+    congr 1
+    rw [Int.negOnePow_eq_iff, Int.even_iff]
+    omega
+  have hloop : D.mirror.toPDCode.stateLoopCount
+      (Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s) = D.toPDCode.stateLoopCount s := by
+    have hfn : Equiv.arrowCongr (Equiv.refl (Fin n)) Equiv.boolNot s = fun i ↦ !s i := rfl
+    rw [mirror_toPDCode, hfn, D.toPDCode.stateLoopCount_mirror]
+    simp only [Bool.not_not]
+  rw [hsign, hloop]
+
 /-- Relabelling half-edges and crossings preserves `E(D)`. -/
 @[simp] theorem enhancedStateEulerSum_relabel {m : ℕ} (D : OrientedPDCode n)
     (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
@@ -185,11 +220,8 @@ theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) 
     ← (Equiv.arrowCongr cross (Equiv.refl Bool)).sum_comp]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   have hcard : #{j | Equiv.arrowCongr cross (Equiv.refl Bool) s j = false} =
-      #{j | s j = false} := by
-    refine Finset.card_bij (fun j _ ↦ cross.symm j) (fun j hj ↦ ?_)
-      (fun _ _ _ _ h ↦ cross.symm.injective h)
-      (fun j hj ↦ ⟨cross j, by simpa [Equiv.arrowCongr_apply] using hj, cross.symm_apply_apply j⟩)
-    simpa [Equiv.arrowCongr_apply] using hj
+      #{j | s j = false} :=
+    Finset.card_equiv cross.symm fun j ↦ by simp [Equiv.arrowCongr_apply]
   have hloop : (D.relabel half cross).toPDCode.stateLoopCount
       (Equiv.arrowCongr cross (Equiv.refl Bool) s) = D.toPDCode.stateLoopCount s := by
     have hfn : Equiv.arrowCongr cross (Equiv.refl Bool) s = s ∘ cross.symm := rfl
@@ -201,12 +233,11 @@ theorem enhancedStateEulerSum_changeCrossing (D : OrientedPDCode n) (i : Fin n) 
 
 /-! ### Planar parity, reorientation invariance, and the normalized recurrence -/
 
-/-- **Reorientation invariance of `E(D)` for planar diagrams.** Any two oriented PD-codes sharing
-the same underlying planar PD-code have the same `negativeCrossingCount` modulo `2`, hence the same
-enhanced-state Euler sum. -/
-theorem enhancedStateEulerSum_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
+/-- Two oriented PD-codes sharing the same underlying planar PD-code have the same number of
+negative crossings modulo `2`. -/
+theorem negativeCrossingCount_mod_two_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
     (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
-    D₁.enhancedStateEulerSum = D₂.enhancedStateEulerSum := by
+    D₁.negativeCrossingCount % 2 = D₂.negativeCrossingCount % 2 := by
   have hD₂ : D₂.toPDCode.IsPlanar := h ▸ hD₁
   have hp₁ := D₁.stateQuantumShift_add_stateLoopCount_mod_two hD₁ (fun _ ↦ true)
   have hp₂ := D₂.stateQuantumShift_add_stateLoopCount_mod_two hD₂ (fun _ ↦ true)
@@ -216,6 +247,14 @@ theorem enhancedStateEulerSum_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
       D₂.toPDCode.stateLoopCount (fun _ ↦ true) := by rw [h]
   have hcomp : D₁.toPDCode.componentCount = D₂.toPDCode.componentCount := by rw [h]
   rw [stateQuantumShift_def] at hp₁ hp₂
+  omega
+
+/-- **Reorientation invariance of `E(D)` for planar diagrams.** Two oriented PD-codes sharing the
+same underlying planar PD-code have the same enhanced-state Euler sum. -/
+theorem enhancedStateEulerSum_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
+    (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
+    D₁.enhancedStateEulerSum = D₂.enhancedStateEulerSum := by
+  have hmod := negativeCrossingCount_mod_two_congr_toPDCode hD₁ h
   rw [enhancedStateEulerSum_def, enhancedStateEulerSum_def]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   have hsign : (-1 : ℤ) ^ (#{i | s i = false} + D₁.negativeCrossingCount) =
@@ -224,8 +263,7 @@ theorem enhancedStateEulerSum_congr_toPDCode {D₁ D₂ : OrientedPDCode n}
     congr 1
     rw [Int.negOnePow_eq_iff, Int.even_iff]
     omega
-  have hs_loop : D₁.toPDCode.stateLoopCount s = D₂.toPDCode.stateLoopCount s := by rw [h]
-  rw [hsign, hs_loop]
+  rw [hsign, h]
 
 /-- At a single smoothing branch `t : Bool` of crossing `c` of a planar diagram `D`, the signed
 state sum over states sending `c ↦ t` equals `-(-1) ^ c(D) * (-1) ^ c(E) * E.enhancedStateEulerSum`
@@ -320,12 +358,8 @@ theorem enhancedStateEulerSum_eq_two_pow_componentCount :
         rw [← pow_add, ← two_mul, pow_mul]
         norm_num
       rcases D.componentCount_resolveCrossing_true_and_false_of_eq 0 hc with
-          ⟨hcA, hcB⟩ | ⟨hcA, hcB⟩
-      · rw [hcA, hcB, pow_succ (-1 : ℤ), pow_succ (2 : ℤ)]
-        calc _ = ((-1 : ℤ) ^ D.toPDCode.componentCount * (-1 : ℤ) ^ D.toPDCode.componentCount) *
-              (2 : ℤ) ^ D.toPDCode.componentCount := by ring
-          _ = (2 : ℤ) ^ D.toPDCode.componentCount := by rw [hsq, one_mul]
-      · rw [hcA, hcB, pow_succ (-1 : ℤ), pow_succ (2 : ℤ)]
+          ⟨hcA, hcB⟩ | ⟨hcA, hcB⟩ <;>
+        rw [hcA, hcB, pow_succ (-1 : ℤ), pow_succ (2 : ℤ)] <;>
         calc _ = ((-1 : ℤ) ^ D.toPDCode.componentCount * (-1 : ℤ) ^ D.toPDCode.componentCount) *
               (2 : ℤ) ^ D.toPDCode.componentCount := by ring
           _ = (2 : ℤ) ^ D.toPDCode.componentCount := by rw [hsq, one_mul]
