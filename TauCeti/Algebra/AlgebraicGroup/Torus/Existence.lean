@@ -85,7 +85,7 @@ theorem exists_isMaximalTorus_le {I : HopfIdeal k H}
       (fun J : HopfIdeal k H ↦
         torusCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.quotient H J) ∧ J ≤ I)
       (fun ⟨hJ, _⟩ ↦ torusCommHopfAlgProperty.smooth k _ hJ)
-      (fun ⟨hJ, _⟩ ↦ geometricallyConnectedCommHopfAlgProperty.connectedSpace k _
+      (fun ⟨hJ, _⟩ ↦ geometricallyConnectedCommHopfAlgProperty.connectedSpace
         (torusCommHopfAlgProperty.geometricallyConnected k _ hJ))
       ⟨I, hI, le_rfl⟩
   refine ⟨J, hJI, ?_⟩

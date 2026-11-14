@@ -59,7 +59,7 @@ private theorem isCompletelyReducible_of_reductive_of_isAlgClosed
     (hH : reductiveCommHopfAlgProperty k H)
     {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M] :
     IsCompletelyReducible k H M := by
-  let _ : ConnectedSpace (PrimeSpectrum H) := hH.geometricallyConnected.connectedSpace k H.obj
+  let _ : ConnectedSpace (PrimeSpectrum H) := hH.geometricallyConnected.connectedSpace
   let _ := hH.hasCentralRadical_lieAlgebra
   let _ : LieRing (Module.End k M) := LieRing.ofAssociativeRing
   let _ : LieRingModule (Derivation k H (Bialgebra.CounitAlgebra k H k)) M :=

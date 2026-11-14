@@ -68,7 +68,7 @@ theorem reductiveCommHopfAlgProperty.semisimple_of_moduleFinite_centerCoordinate
   let _ : Algebra.Smooth K R := hR.smooth
   let _ : IsReduced R := isReduced_of_smooth K R
   let _ : ConnectedSpace (PrimeSpectrum R) :=
-    hR.geometricallyConnected.connectedSpace K R.obj
+    hR.geometricallyConnected.connectedSpace
   have htrivial : HopfIdeal.augmentation K R = ⊥ :=
     HopfIdeal.augmentation_eq_bot_of_moduleFinite
   apply le_antisymm (HopfIdeal.le_augmentation K G I)
