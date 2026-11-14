@@ -30,7 +30,8 @@ for `⟪V, γ'⟫` along `γ`.  They are the pointwise content of the Gauss lemm
 ## Main results
 
 * `TauCeti.Manifold.hasDerivAt_norm_sq_curveVelocity`: the transverse derivative of the squared
-  speed is `2 ⟪D_t V, γ'⟫`.
+  speed is `2 ⟪D_t V, γ'⟫`; `TauCeti.Manifold.hasDerivAt_norm_sq_curveVelocity_curveVelocity_fst`
+  is the same formula at any parameter of the family.
 * `TauCeti.Manifold.hasDerivAt_inner_variationField_curveVelocity`: the product rule
   `d/dt ⟪V, γ'⟫ = ⟪D_t V, γ'⟫ + ⟪V, D_t γ'⟫`.
 
@@ -61,6 +62,34 @@ variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
+/-- **The transverse derivative of the squared speed at any parameter of the family.** At a point
+`(u, t)` where the family is `C²`, the function `s ↦ ‖∂_t F (s, t)‖²` has derivative
+`2 ⟪D_t W(t), ∂_t F (u, t)⟫` at `s = u`, where `W(r) = ∂_s F (u, r)` is the transverse velocity
+along the curve `F u`. -/
+theorem hasDerivAt_norm_sq_curveVelocity_curveVelocity_fst {u t : ℝ}
+    (hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (u, t)) :
+    HasDerivAt (fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2)
+      (2 * inner ℝ (alongCurve (leviCivitaConnection I M) (F u)
+          (fun r ↦ curveVelocity I (fun q ↦ F q r) u) t)
+        (curveVelocity I (F u) t)) u := by
+  have : IsManifold I (minSmoothness ℝ 2) M := by
+    rw [minSmoothness_of_isRCLikeNormedField]
+    infer_instance
+  have hbase : F u t ∈ (trivializationAt E (TangentSpace I) (F u t)).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F u t)
+  have hPcoord := hf.differentiableAt_sectionCoord_curveVelocity_snd (f := F) hbase
+  have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) u :=
+    (hf.comp u (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) t)).contMDiffAt)
+      |>.mdifferentiableAt two_ne_zero
+  have hprod := (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
+    |>.hasDerivAt_inner_alongCurve hcurve hPcoord hPcoord
+  have hswap := alongCurve_curveVelocity_comm (leviCivitaConnection I M)
+    ((isTorsionFree_iff_torsion_eq_zero _).2 (torsion_leviCivitaConnection_eq_zero I))
+    (f := F) (u := u) (v := t) (hf.of_le (by simp))
+  rw [← hswap, real_inner_comm (curveVelocity I (F u) t), ← two_mul, real_inner_comm] at hprod
+  exact hprod.congr_of_eventuallyEq
+    (Eventually.of_forall fun s ↦ (real_inner_self_eq_norm_sq _).symm)
+
 /-- **The transverse derivative of the squared speed.** At a parameter `t` where the family is
 `C²`, the function `s ↦ ‖∂_t F (s, t)‖²` has derivative `2 ⟪D_t V(t), γ'(t)⟫` at `s = 0`, where
 `V` is the variation field and `γ = F 0`.  Integrated over `[a, b]`, this is the derivative of
@@ -70,24 +99,8 @@ theorem hasDerivAt_norm_sq_curveVelocity {t : ℝ}
     HasDerivAt (fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2)
       (2 * inner ℝ (alongCurve (leviCivitaConnection I M) (F 0) (variationField I F) t)
         (curveVelocity I (F 0) t)) 0 := by
-  have : IsManifold I (minSmoothness ℝ 2) M := by
-    rw [minSmoothness_of_isRCLikeNormedField]
-    infer_instance
-  have hbase : F 0 t ∈ (trivializationAt E (TangentSpace I) (F 0 t)).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 t)
-  have hPcoord := hf.differentiableAt_sectionCoord_curveVelocity_snd (f := F) hbase
-  have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) 0 :=
-    (hf.comp 0 (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) t)).contMDiffAt)
-      |>.mdifferentiableAt two_ne_zero
-  have hprod := (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
-    |>.hasDerivAt_inner_alongCurve hcurve hPcoord hPcoord
-  have hswap := alongCurve_curveVelocity_comm (leviCivitaConnection I M)
-    ((isTorsionFree_iff_torsion_eq_zero _).2 (torsion_leviCivitaConnection_eq_zero I))
-    (f := F) (u := 0) (v := t) (hf.of_le (by simp))
-  rw [← hswap, real_inner_comm (curveVelocity I (F 0) t), ← two_mul, real_inner_comm] at hprod
   rw [variationField_def]
-  exact hprod.congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ (real_inner_self_eq_norm_sq _).symm)
+  exact hasDerivAt_norm_sq_curveVelocity_curveVelocity_fst hf
 
 /-- **The product rule for the variation field against the velocity.** At a parameter where the
 family is `C²`, the function `t ↦ ⟪V(t), γ'(t)⟫` has derivative `⟪D_t V, γ'⟫ + ⟪V, D_t γ'⟫`.
