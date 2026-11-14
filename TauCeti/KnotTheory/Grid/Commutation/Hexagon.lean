@@ -749,8 +749,8 @@ theorem commutationHomotopy_single_apply (C : ColumnCommutationData G) (x y : Gr
   rw [commutationHomotopy_apply, Finsupp.add_apply, hexagonMap_single_apply,
     initialHexagonMap_single_apply, commutationHexagonCoefficient_def]
 
-/-- The coefficient formula for the commutation homotopy on an arbitrary chain: its matrix
-coefficients are the sums of those of the two hexagon maps. -/
+/-- The coefficient formula for the commutation homotopy on an arbitrary chain: it is the
+`c`-weighted sum of the commutation hexagon coefficients. -/
 @[simp]
 theorem commutationHomotopy_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
