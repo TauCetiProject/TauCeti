@@ -17,42 +17,41 @@ import TauCeti.FieldTheory.RatFunc.Map
 /-!
 # Ramification over the rational function field after extending constants
 
-Let `F` be a field over `k(t)` and let `F' = F · k'` be its compositum with an extension `k' / k`
-of a perfect field, carrying the `k'(t)`-algebra structure in which `t` acts as it does on `F`.
-Geometrically, `F / k(t)` is a finite map from a curve to the projective line, and `F' / k'(t)` is
-its base change to `k'`.
+Let `F` be a field over `k(t)` and let `F' = F · k'` be its compositum with an algebraic
+extension `k' / k` of a perfect field, finite or not, carrying the `k'(t)`-algebra structure in
+which `t` acts as it does on `F`. Geometrically, `F / k(t)` is a finite map from a curve to the
+projective line, and `F' / k'(t)` is its base change to `k'`. This file shows that base change
+does not change ramification over the line: a place `Q'` of `F'` has the same ramification index
+over `k'(t)` as the place `Q` of `F` below it has over `k(t)`, and the place of `k'(t)` below `Q'`
+gives every polynomial in `t` with coefficients in `k` the same order as the place of `k(t)`
+below `Q`.
 
-When `k' / k` is separable algebraic, every place `Q'` of `F'` restricts to a place `Q` of `F`
-with the same ramification index over `k'(t)` as `Q` has over `k(t)`, and the places of `k'(t)` and
-`k(t)` below `Q'` give every polynomial in `t` over `k` the same order.
+Both statements come from comparing the orders at `Q'` of a polynomial in `t` computed through
+`F` and through `k'(t)`. The constant field extension `F' / F` is unramified
+(`TauCeti.Place.ramificationIdx_eq_one_of_constantCompositum_eq_top`), so through `F` the order is
+`e(Q ∣ k(t))` times the order at the place of `k(t)` below `Q`, and through `k'(t)` it is
+`e(Q' ∣ k'(t))` times the order at the place of `k'(t)` below `Q'`. At the place at infinity the
+polynomial `t` has a simple pole on both sides. At the place of an irreducible `q` the polynomial
+`q` has order one, and it has order at most one at every finite place of `k'(t)`, because `q`
+stays squarefree over `k'`, `k` being perfect.
 
-When `k' / k` is an arbitrary (possibly transcendental) extension:
-* If `Q'` is trivial on `F` (a vertical place moving with transcendental constants in `k'`), every
-  nonzero polynomial over `k` has order zero at the place of `k'(t)` below `Q'`, and if
-  `F / k(t)` is finite and separable then `Q'` is unramified over `k'(t)`
-  (`e(Q' ∣ k'(t)) = 1`), since the minimal polynomial of a primitive element of `F / k(t)` has
-  separable derivative in `Fˣ`, whose valuation at `Q'` is `1`.
-* If `Q'` contracts to a place `Q` of `F / k` and `k` is exact in `F`, then `Q'` is unramified
-  over `Q` (`TauCeti.Place.ord_algebraMap_eq_of_integers_comap_eq`), so `e(Q' ∣ k'(t)) =
-  e(Q ∣ k(t))` and the places of `k(t)` and `k'(t)` below `Q` and `Q'` give every polynomial over
-  `k` the same order.
+For arbitrary (possibly transcendental) extensions `k' / k`, places of `F'` trivial on `F` are
+unramified over `k'(t)` when `F / k(t)` is finite separable, while places contracting to `Q` on `F`
+preserve `e(Q ∣ k(t))` and polynomial orders whenever `k` is exact in `F`.
 
-For a Belyi map this makes being unramified outside `t = 0`, `t = 1` and `t = ∞` invariant under
-arbitrary extensions of the constant field
+For a Belyi map this is what makes being unramified outside `t = 0`, `t = 1` and `t = ∞`
+invariant under extension of the constant field
 (`TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`).
 
 ## Main results
 
-* `TauCeti.Place.ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top` and
-  `TauCeti.Place.ord_restrict_algebraMap_eq_of_constantCompositum_eq_top`: ramification and
-  polynomial orders under separable algebraic constant extensions.
-* `TauCeti.Place.ord_restrict_algebraMap_eq_zero_of_isTrivialOn` and
-  `TauCeti.Place.ramificationIdx_ratFunc_eq_one_of_isTrivialOn`: places of `F'` trivial on `F`
-  have order zero on nonzero polynomials over `k` and are unramified over `k'(t)`.
-* `TauCeti.Place.ramificationIdx_ratFunc_eq_of_integers_comap_eq` and
-  `TauCeti.Place.ord_restrict_algebraMap_eq_of_integers_comap_eq`: places of `F'` contracting to a
-  place `Q` of `F` preserve ramification over `k(t)` and orders of polynomials over `k` without any
-  algebraicity assumption on `k' / k`.
+* `TauCeti.Place.ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top`:
+  `e(Q' ∣ k'(t)) = e(Q ∣ k(t))`.
+* `TauCeti.Place.ord_restrict_algebraMap_eq_of_constantCompositum_eq_top`: the places of `k(t)`
+  and `k'(t)` below `Q'` give a polynomial over `k` the same order.
+* `TauCeti.Place.ramificationIdx_ratFunc_eq_one_of_isTrivialOn` and
+  `TauCeti.Place.ramificationIdx_ratFunc_eq_of_integers_comap_eq`: ramification under arbitrary
+  constant extensions.
 
 ## References
 
@@ -69,14 +68,17 @@ namespace TauCeti
 
 namespace Place
 
-section Helpers
+section Algebraic
 
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
   [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+  [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [Algebra.IsIntegral (RatFunc k) F]
   [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
+  [Algebra.IsIntegral (RatFunc k') F'] [Algebra.IsIntegral F F']
 
+omit [Algebra.IsIntegral (RatFunc k) F] [Algebra.IsIntegral (RatFunc k') F']
+  [Algebra.IsIntegral F F'] in
 /-- A polynomial in `t` over `k` has the same image in `F'` through `F` as through `k'(t)`. -/
 private theorem algebraMap_algebraMap_polynomial
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
@@ -91,52 +93,7 @@ private theorem algebraMap_algebraMap_polynomial
     RatFunc.aeval_X_left_eq_algebraMap] at h₁ h₂
   rw [← h₁, ← h₂, hX, aeval_map_algebraMap]
 
-omit [Algebra k F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-/-- Shared comparison of ramification indices over `k(t)` and `k'(t)` once the polynomial-order
-identity `(e(Q ∣ k(t)) : ℤ) * ord_P(p) = e(Q' ∣ k'(t)) * ord_{P'}(p)` holds for all `p : k[X]`. -/
-private theorem ramificationIdx_ratFunc_eq_of_mul_ord_eq [PerfectField k]
-    [Algebra.IsIntegral (RatFunc k) F] [Algebra.IsIntegral (RatFunc k') F']
-    {Q : Place k F} {Q' : Place k' F'}
-    (hord : ∀ p : k[X], (ramificationIdx (RatFunc k) Q : ℤ) *
-        (Q.restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) p) =
-      ramificationIdx (RatFunc k') Q' * (Q'.restrict k' (RatFunc k')).ord
-        (algebraMap k'[X] (RatFunc k') (p.map (algebraMap k k')))) :
-    ramificationIdx (RatFunc k') Q' = ramificationIdx (RatFunc k) Q := by
-  have he := ramificationIdx_pos (RatFunc k) Q
-  rcases eq_infty_or_exists_eq_adicOfIrreducible (Q.restrict k (RatFunc k)) with
-    hP | ⟨q, hq, hP⟩
-  · have h := hord X
-    rw [Polynomial.map_X, RatFunc.algebraMap_X, RatFunc.algebraMap_X, hP, ord_infty,
-      RatFunc.intDegree_X] at h
-    have hP' : Q'.restrict k' (RatFunc k') = infty k' := by
-      refine X_notMem_integers_iff_eq_infty.mp fun hmem ↦ ?_
-      have := (Q'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg.mp hmem
-      nlinarith
-    rw [hP', ord_infty, RatFunc.intDegree_X] at h
-    omega
-  have h := hord q
-  rw [hP, ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl q),
-    mul_one] at h
-  have hsq : Squarefree (q.map (algebraMap k k')) :=
-    (PerfectField.separable_of_irreducible hq).map.squarefree
-  rcases eq_infty_or_exists_eq_adicOfIrreducible (Q'.restrict k' (RatFunc k')) with
-    hP' | ⟨q', hq', hP'⟩
-  · rw [hP', ord_infty, RatFunc.intDegree_polynomial] at h
-    nlinarith
-  rw [hP', ord_adicOfIrreducible_algebraMap_of_squarefree hq' hsq] at h
-  split_ifs at h <;> omega
-
-end Helpers
-
-section AlgebraicExtension
-
-variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
-  [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [Algebra.IsIntegral (RatFunc k) F]
-  [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
-  [Algebra.IsIntegral (RatFunc k') F'] [Algebra.IsIntegral F F']
-  [Algebra.IsSeparable k k']
+variable [Algebra.IsSeparable k k']
 
 /-- The order at `Q'` of a polynomial in `t`, computed through `F` and through `k'(t)`. -/
 private theorem ramificationIdx_mul_ord_eq (hcomp : constantCompositum F k' F' = ⊤)
@@ -162,8 +119,33 @@ theorem ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top
     (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) (Q' : Place k' F') :
-    ramificationIdx (RatFunc k') Q' = ramificationIdx (RatFunc k) (Q'.restrict k F) :=
-  ramificationIdx_ratFunc_eq_of_mul_ord_eq (ramificationIdx_mul_ord_eq hcomp hX Q')
+    ramificationIdx (RatFunc k') Q' = ramificationIdx (RatFunc k) (Q'.restrict k F) := by
+  have he := ramificationIdx_pos (RatFunc k) (Q'.restrict k F)
+  have hord := ramificationIdx_mul_ord_eq hcomp hX Q'
+  rcases eq_infty_or_exists_eq_adicOfIrreducible ((Q'.restrict k F).restrict k (RatFunc k)) with
+    hP | ⟨q, hq, hP⟩
+  · -- At infinity `t` has a simple pole, below `Q'` in `k(t)` and hence also in `k'(t)`.
+    have h := hord X
+    rw [Polynomial.map_X, RatFunc.algebraMap_X, RatFunc.algebraMap_X, hP, ord_infty,
+      RatFunc.intDegree_X] at h
+    have hP' : Q'.restrict k' (RatFunc k') = infty k' := by
+      refine X_notMem_integers_iff_eq_infty.mp fun hmem ↦ ?_
+      have := (Q'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg.mp hmem
+      nlinarith
+    rw [hP', ord_infty, RatFunc.intDegree_X] at h
+    omega
+  -- At the place of `q`, the order of `q` is one, and `q` stays squarefree over `k'`.
+  have h := hord q
+  rw [hP, ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl q),
+    mul_one] at h
+  have hsq : Squarefree (q.map (algebraMap k k')) :=
+    (PerfectField.separable_of_irreducible hq).map.squarefree
+  rcases eq_infty_or_exists_eq_adicOfIrreducible (Q'.restrict k' (RatFunc k')) with
+    hP' | ⟨q', hq', hP'⟩
+  · rw [hP', ord_infty, RatFunc.intDegree_polynomial] at h
+    nlinarith
+  rw [hP', ord_adicOfIrreducible_algebraMap_of_squarefree hq' hsq] at h
+  split_ifs at h <;> omega
 
 /-- **Extending constants does not change orders of polynomials in `t`**: under the hypotheses of
 `TauCeti.Place.ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top`, the place of `k(t)` below
@@ -180,7 +162,7 @@ theorem ord_restrict_algebraMap_eq_of_constantCompositum_eq_top
   rw [ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top hcomp hX Q'] at h
   exact mul_left_cancel₀ (by exact_mod_cast (ramificationIdx_pos _ _).ne') h
 
-end AlgebraicExtension
+end Algebraic
 
 section ArbitraryExtension
 
@@ -190,28 +172,24 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
   [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
 
-/-- Coefficient map `k(t) →+* k'(t)` induced by `algebraMap k k'`. -/
-private noncomputable def ratFuncMapRingHom (k k' : Type*) [Field k] [Field k'] [Algebra k k'] :
-    RatFunc k →+* RatFunc k' :=
-  RatFunc.mapRingHom (Polynomial.mapRingHom (algebraMap k k'))
+private noncomputable def ratFuncMapRingHom (k₀ k₁ : Type*) [Field k₀] [Field k₁] [Algebra k₀ k₁] :
+    RatFunc k₀ →+* RatFunc k₁ :=
+  RatFunc.mapRingHom (Polynomial.mapRingHom (algebraMap k₀ k₁))
     (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-      (Polynomial.map_injective _ (algebraMap k k').injective))
+      (Polynomial.map_injective _ (algebraMap k₀ k₁).injective))
 
-/-- Every rational function in `k(t)` has the same image in `F'` through `F` as through `k'(t)`. -/
 private theorem algebraMap_ratFuncMapRingHom
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) (r : RatFunc k) :
     algebraMap (RatFunc k') F' (ratFuncMapRingHom k k' r) =
       algebraMap F F' (algebraMap (RatFunc k) F r) := by
   have h : (algebraMap (RatFunc k') F').comp (ratFuncMapRingHom k k') =
-      (algebraMap F F').comp (algebraMap (RatFunc k) F) := by
-    refine IsFractionRing.ringHom_ext (A := k[X]) fun p ↦ ?_
-    simp only [RingHom.comp_apply, ratFuncMapRingHom, RatFunc.mapRingHom_algebraMap,
-      Polynomial.coe_mapRingHom, algebraMap_algebraMap_polynomial hX]
+      (algebraMap F F').comp (algebraMap (RatFunc k) F) :=
+    IsFractionRing.ringHom_ext (A := k[X]) fun p ↦ by
+      simp only [RingHom.comp_apply, ratFuncMapRingHom, RatFunc.mapRingHom_algebraMap,
+        Polynomial.coe_mapRingHom, algebraMap_algebraMap_polynomial hX]
   exact congr($h r)
 
-/-- At a place `Q'` of `F'` trivial on `F`, every nonzero element of `k(t)` maps to an element of
-`k'(t)` of order zero at the place below `Q'`. -/
 private theorem ord_restrict_ratFuncMapRingHom_eq_zero_of_isTrivialOn
     [Algebra.IsIntegral (RatFunc k') F']
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
@@ -226,21 +204,18 @@ private theorem ord_restrict_ratFuncMapRingHom_eq_zero_of_isTrivialOn
   exact (mul_eq_zero.mp hord0).resolve_left
     (by exact_mod_cast (ramificationIdx_pos (RatFunc k') Q').ne')
 
-/-- **At a place of `F'` trivial on `F`, every nonzero polynomial over `k` has order zero below**:
-the place of `k'(t)` under a vertical place of `F'` cannot be `t = ∞` or the place of any
-irreducible over `k`. -/
+/-- **At a place of `F'` trivial on `F`, every nonzero polynomial over `k` has order zero.** -/
 theorem ord_restrict_algebraMap_eq_zero_of_isTrivialOn [Algebra.IsIntegral (RatFunc k') F']
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) {Q' : Place k' F'}
     (hQ' : Q'.valuation.IsTrivialOn F) {p : k[X]} (hp : p ≠ 0) :
     (Q'.restrict k' (RatFunc k')).ord
-      (algebraMap k'[X] (RatFunc k') (p.map (algebraMap k k'))) = 0 := by
+      (algebraMap k'[X] (RatFunc k') (p.map (algebraMap k k'))) = 0 :=
   have hr : algebraMap k[X] (RatFunc k) p ≠ 0 :=
     (map_ne_zero_iff _ (IsFractionRing.injective k[X] (RatFunc k))).mpr hp
-  simpa [ratFuncMapRingHom, RatFunc.mapRingHom_algebraMap] using
+  by simpa [ratFuncMapRingHom, RatFunc.mapRingHom_algebraMap] using
     ord_restrict_ratFuncMapRingHom_eq_zero_of_isTrivialOn hX hQ' hr
 
-/-- A primitive element of `F / k(t)` also generates `F' = F · k'` over `k'(t)`. -/
 private theorem adjoin_primitive_ratFunc_eq_top (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) {y : F} (hy : (RatFunc k)⟮y⟯ = ⊤) :
@@ -248,24 +223,20 @@ private theorem adjoin_primitive_ratFunc_eq_top (hcomp : constantCompositum F k'
   let E := (RatFunc k')⟮algebraMap F F' y⟯
   let L : IntermediateField (RatFunc k) F :=
     (E.toSubfield.comap (algebraMap F F')).toIntermediateField fun r ↦ by
-      rw [Subfield.mem_comap, ← algebraMap_ratFuncMapRingHom hX]
-      exact E.algebraMap_mem _
-  have hyL : y ∈ L := IntermediateField.mem_adjoin_simple_self _ _
-  have hL : L = ⊤ :=
-    top_le_iff.mp (hy.symm.le.trans (IntermediateField.adjoin_simple_le_iff.mpr hyL))
-  have hFE : ∀ x : F, algebraMap F F' x ∈ E.toSubfield := fun x ↦ by
-    have hx : x ∈ L.toSubfield := (IntermediateField.mem_toSubfield L x).mpr (hL ▸ trivial)
-    rwa [Subfield.toIntermediateField_toSubfield, Subfield.mem_comap] at hx
-  let M : IntermediateField F F' := { E.toSubfield with algebraMap_mem' := hFE }
+      rw [Subfield.mem_comap, ← algebraMap_ratFuncMapRingHom hX]; exact E.algebraMap_mem _
+  have hL : L = ⊤ := top_le_iff.mp (hy.symm.le.trans <|
+    IntermediateField.adjoin_simple_le_iff.mpr (IntermediateField.mem_adjoin_simple_self _ _))
+  let M : IntermediateField F F' :=
+    { E.toSubfield with
+      algebraMap_mem' := fun x ↦ by
+        have hx : x ∈ L.toSubfield := (IntermediateField.mem_toSubfield L x).mpr (hL ▸ trivial)
+        rwa [Subfield.toIntermediateField_toSubfield, Subfield.mem_comap] at hx }
   have hM : constantCompositum F k' F' ≤ M := (constantCompositum_le_iff F k' F').mpr fun c ↦ by
     change algebraMap k' F' c ∈ E.toSubfield
-    rw [IsScalarTower.algebraMap_apply k' (RatFunc k') F']
-    exact E.algebraMap_mem _
+    rw [IsScalarTower.algebraMap_apply k' (RatFunc k') F']; exact E.algebraMap_mem _
   exact top_le_iff.mp fun z _ ↦ hM (hcomp ▸ IntermediateField.mem_top)
 
-/-- **Places of `F' = F · k'` trivial on `F` are unramified over `k'(t)`** whenever `F / k(t)` is
-finite and separable: the minimal polynomial of a primitive element of `F / k(t)` has coefficients
-of valuation `1` and nonzero separable derivative in `F`, hence unit derivative at `Q'`. -/
+/-- Places of `F' = F · k'` trivial on `F` are unramified over `k'(t)` (`F / k(t)` separable). -/
 theorem ramificationIdx_ratFunc_eq_one_of_isTrivialOn [FiniteDimensional (RatFunc k) F]
     [Algebra.IsSeparable (RatFunc k) F] (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
@@ -279,13 +250,12 @@ theorem ramificationIdx_ratFunc_eq_one_of_isTrivialOn [FiniteDimensional (RatFun
   have hgen : (RatFunc k')⟮y'⟯ = ⊤ := adjoin_primitive_ratFunc_eq_top hcomp hX hy
   let p := minpoly (RatFunc k) y
   let p' := p.map (ratFuncMapRingHom k k')
-  have hpmonic : p'.Monic := (minpoly.monic (Algebra.IsSeparable.isIntegral (RatFunc k) y)).map _
+  have hcomp_rh : (algebraMap (RatFunc k') F').comp (ratFuncMapRingHom k k') =
+      (algebraMap F F').comp (algebraMap (RatFunc k) F) :=
+    RingHom.ext (algebraMap_ratFuncMapRingHom hX)
   have hmap_eval (q : (RatFunc k)[X]) :
       aeval y' (q.map (ratFuncMapRingHom k k')) = algebraMap F F' (aeval y q) := by
-    have hhom : (algebraMap (RatFunc k') F').comp (ratFuncMapRingHom k k') =
-        (algebraMap F F').comp (algebraMap (RatFunc k) F) :=
-      RingHom.ext (algebraMap_ratFuncMapRingHom hX)
-    rw [aeval_def, eval₂_map, hhom,
+    rw [aeval_def, eval₂_map, hcomp_rh,
       ← hom_eval₂ q (algebraMap (RatFunc k) F) (algebraMap F F') y, ← aeval_def]
   have hroot : aeval y' p' = 0 := by rw [hmap_eval, minpoly.aeval, map_zero]
   have : Algebra.IsSeparable (RatFunc k') F' := by
@@ -299,23 +269,20 @@ theorem ramificationIdx_ratFunc_eq_one_of_isTrivialOn [FiniteDimensional (RatFun
     · simp [h0]
     · rw [(Q'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg,
         ord_restrict_ratFuncMapRingHom_eq_zero_of_isTrivialOn hX hQ' h0]
-  have hderiv_ne : aeval y (derivative p) ≠ 0 :=
-    (Algebra.IsSeparable.isSeparable (RatFunc k) y).aeval_derivative_ne_zero
-      (minpoly.aeval (RatFunc k) y)
   have hderiv : Q'.valuation (aeval y' (derivative p')) = 1 := by
     rw [derivative_map, hmap_eval]
-    exact hQ'.eq_one _ hderiv_ne
-  have hdiff := differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k' (RatFunc k')
-    hgen hpmonic hpcoeff hroot hderiv
+    exact hQ'.eq_one _ ((Algebra.IsSeparable.isSeparable (RatFunc k) y).aeval_derivative_ne_zero
+      (minpoly.aeval (RatFunc k) y))
   have hunram : Algebra.IsUnramifiedAt (Q'.restrict k' (RatFunc k')).integers
       (centerIntegralClosure k' (RatFunc k') Q').asIdeal :=
-    (differentExponent_eq_zero_iff k' (RatFunc k') Q').mp hdiff
+    (differentExponent_eq_zero_iff k' (RatFunc k') Q').mp
+      (differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k' (RatFunc k') hgen
+        ((minpoly.monic (Algebra.IsSeparable.isIntegral (RatFunc k) y)).map _) hpcoeff hroot hderiv)
   rw [ramificationIdx_eq_ramificationIdx_center (R := (Q'.restrict k' (RatFunc k')).integers)
     k' (RatFunc k') Q' (algebraMap_mem_integers_of_mem_integralClosure k' (RatFunc k') Q'),
     ← centerIntegralClosure_def]
   exact Ideal.ramificationIdx_eq_one_of_isUnramifiedAt
 
-/-- Order identity across an arbitrary constant extension at a place `Q'` contracting to `Q`. -/
 private theorem ramificationIdx_mul_ord_eq_of_integers_comap_eq [PerfectField k]
     [FiniteDimensional (RatFunc k) F] [Algebra.IsIntegral (RatFunc k') F']
     (hex : IsIntegrallyClosedIn k F) (hcomp : constantCompositum F k' F' = ⊤)
@@ -326,33 +293,46 @@ private theorem ramificationIdx_mul_ord_eq_of_integers_comap_eq [PerfectField k]
         (Q.restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) p) =
       ramificationIdx (RatFunc k') Q' * (Q'.restrict k' (RatFunc k')).ord
         (algebraMap k'[X] (RatFunc k') (p.map (algebraMap k k'))) := by
-  have hF : IsFunctionField k F :=
-    isFunctionField_iff_functionField.mpr (inferInstance : FunctionField k F)
+  have hF : IsFunctionField k F := (IsFunctionField.ratFunc k).finite_extension
   obtain ⟨x₀, hx₀, _⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
   have : Algebra.IsGeometricallyReduced k F := isGeometricallyReduced_of_separating hx₀
-  have H := linearDisjoint_of_isGeometricallyReduced_ratFunc hex hX
   rw [← ord_algebraMap_restrict k (RatFunc k) Q, ← ord_algebraMap_restrict k' (RatFunc k') Q',
     ← algebraMap_algebraMap_polynomial hX,
-    ord_algebraMap_eq_of_integers_comap_eq hF hex H hcomp hQ']
+    ord_algebraMap_eq_of_integers_comap_eq hF hex
+      (linearDisjoint_of_isGeometricallyReduced_ratFunc hex hX) hcomp hQ']
 
-/-- **Extending constants by an arbitrary extension preserves ramification over `k(t)`** at every
-place `Q'` of `F' = F · k'` contracting to a place `Q` of `F / k`, provided `k` is perfect and
-exact in `F`. -/
+/-- Extending constants by an arbitrary extension preserves ramification over `k(t)` at contracting
+places (`k` perfect and exact in `F`). -/
 theorem ramificationIdx_ratFunc_eq_of_integers_comap_eq [PerfectField k]
     [FiniteDimensional (RatFunc k) F]
     (hex : IsIntegrallyClosedIn k F) (hcomp : constantCompositum F k' F' = ⊤)
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) {Q : Place k F} {Q' : Place k' F'}
     (hQ' : Q'.integers.comap (algebraMap F F') = Q.integers) :
-    ramificationIdx (RatFunc k') Q' = ramificationIdx (RatFunc k) Q :=
+    ramificationIdx (RatFunc k') Q' = ramificationIdx (RatFunc k) Q := by
   have : FiniteDimensional (RatFunc k') F' :=
     finiteDimensional_ratFunc_of_constantCompositum_eq_top hcomp hX
-  ramificationIdx_ratFunc_eq_of_mul_ord_eq
-    (ramificationIdx_mul_ord_eq_of_integers_comap_eq hex hcomp hX hQ')
+  have he := ramificationIdx_pos (RatFunc k) Q
+  have hord := ramificationIdx_mul_ord_eq_of_integers_comap_eq hex hcomp hX hQ'
+  rcases eq_infty_or_exists_eq_adicOfIrreducible (Q.restrict k (RatFunc k)) with hP | ⟨q, hq, hP⟩
+  · have h := hord X
+    rw [Polynomial.map_X, RatFunc.algebraMap_X, RatFunc.algebraMap_X, hP, ord_infty,
+      RatFunc.intDegree_X] at h
+    have hP' : Q'.restrict k' (RatFunc k') = infty k' := X_notMem_integers_iff_eq_infty.mp fun hm ↦
+      by have := (Q'.restrict k' (RatFunc k')).mem_integers_iff_ord_nonneg.mp hm; nlinarith
+    rw [hP', ord_infty, RatFunc.intDegree_X] at h; omega
+  have h := hord q
+  rw [hP, ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl q),
+    mul_one] at h
+  have hsq : Squarefree (q.map (algebraMap k k')) :=
+    (PerfectField.separable_of_irreducible hq).map.squarefree
+  rcases eq_infty_or_exists_eq_adicOfIrreducible (Q'.restrict k' (RatFunc k')) with
+    hP' | ⟨q', hq', hP'⟩
+  · rw [hP', ord_infty, RatFunc.intDegree_polynomial] at h; nlinarith
+  rw [hP', ord_adicOfIrreducible_algebraMap_of_squarefree hq' hsq] at h
+  split_ifs at h <;> omega
 
-/-- **Extending constants by an arbitrary extension preserves orders of polynomials over `k`** at
-every place `Q'` of `F' = F · k'` contracting to a place `Q` of `F / k`, provided `k` is perfect
-and exact in `F`. -/
+/-- Extending constants preserves orders of polynomials over `k` at contracting places. -/
 theorem ord_restrict_algebraMap_eq_of_integers_comap_eq [PerfectField k]
     [FiniteDimensional (RatFunc k) F] [Algebra.IsIntegral (RatFunc k') F']
     (hex : IsIntegrallyClosedIn k F) (hcomp : constantCompositum F k' F' = ⊤)
