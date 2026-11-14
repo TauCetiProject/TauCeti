@@ -26,7 +26,7 @@ image of `f`, that is, when `x` lies in the positive-multiple saturation of
 `AddMonoidHom.mrange f`. When `c` is not nilpotent and `N` is cancellative, this is also
 necessary. For the inclusion of a submonoid `S ≤ N` it follows that `R[sat S]` is integral over
 `R[S]`; if `T ≤ sat S` is finitely generated, `R[T]` is even module-finite over `R[S]`
-(`AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation`).
+(`TauCeti.AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation`).
 
 When `N = G` is a torsion-free abelian group (`[Module.IsTorsionFree ℤ G]`) and `R` is reduced,
 `AddMonoidAlgebra.isIntegralElem_single_coeff` shows that the integral closure of `R[M]` in `R[G]`
@@ -37,13 +37,17 @@ For a submonoid `S ≤ G`, let `L_S = AddSubgroup.closure (S : Set G)` be the su
 monomials (`AddSubmonoid.isLocalization_addMonoidAlgebra_groupClosure`), any fraction ring `K` of
 `R[S]` is canonically a fraction ring of `R[L_S]` (`AddSubmonoid.groupClosureToFractionRing`,
 `AddSubmonoid.isFractionRing_addMonoidAlgebra_groupClosure`). When `R` is an integrally closed
-domain, `R[L_S]` is integrally closed (`AddMonoidAlgebra.isIntegrallyClosed`), so the integral
-closure of `R[S]` in `K` coincides with its integral closure in `R[L_S]`, namely
+domain, `R[L_S]` is integrally closed (`TauCeti.AddMonoidAlgebra.isIntegrallyClosed`), so the
+integral closure of `R[S]` in `K` coincides with its integral closure in `R[L_S]`, namely
 `R[sat S ⊓ L_S]` (`AddSubmonoid.isIntegralClosure_nsmulSaturation_inf_closure`,
 `AddSubmonoid.integralClosureEquiv`). When `S` is finitely generated, this normalization is a
-finitely generated `R[S]`-module (`AddSubmonoid.moduleFinite_integralClosure`).
+finitely generated `R[S]`-module
+(`AddSubmonoid.FG.moduleFinite_integralClosure_addMonoidAlgebra`).
 
-Combining both directions yields the exact normality criterion over any integral domain `R`
+Conversely, whenever `R[S]` is integrally closed, `R` is integrally closed
+(`IsIntegrallyClosed.of_addMonoidAlgebra`), and when `R` is nontrivial, `S` is saturated inside
+`L_S` (`AddSubmonoid.nsmulSaturation_inf_closure_eq`). Combining both directions yields the exact
+normality criterion over any integral domain `R`
 (`AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_iff`): `R[S]` is integrally closed if and only
 if `R` is integrally closed and `S.nsmulSaturation ⊓ L_S = S`.
 
@@ -56,9 +60,9 @@ if `R` is integrally closed and `S.nsmulSaturation ⊓ L_S = S`.
 
 ## Main results
 
-* `AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation`,
-  `AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation`, and
-  `AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure`: finite
+* `TauCeti.AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation`,
+  `TauCeti.AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation`, and
+  `TauCeti.AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure`: finite
   normalization of semigroup algebras.
 * `AddMonoidAlgebra.isIntegralElem_iff_forall_mem_support`: for a torsion-free abelian group `G`
   and a reduced ring `R`, an element of `R[G]` is integral over `R[M]` iff its support lies in the
@@ -66,7 +70,8 @@ if `R` is integrally closed and `S.nsmulSaturation ⊓ L_S = S`.
 * `AddSubmonoid.isIntegralClosure_nsmulSaturation_inf_closure`: over an integrally closed domain
   `R`, `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` is the integral closure of `R[S]` in its
   fraction field `K`.
-* `AddSubmonoid.moduleFinite_integralClosure`: finite generation of the normalization when `S.FG`.
+* `AddSubmonoid.FG.moduleFinite_integralClosure_addMonoidAlgebra`: finite generation of the
+  normalization when `S.FG`.
 * `AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_iff`: over a domain `R`, `R[S]` is integrally
   closed iff `R` is integrally closed and `S` is saturated inside `AddSubgroup.closure S`.
 
@@ -131,49 +136,6 @@ theorem isIntegral_mapDomainRingHom_inclusion_nsmulSaturation (S : AddSubmonoid 
     exact isIntegralElem_single _ (AddSubmonoid.mem_nsmulSaturation.mpr
       ⟨n, hn, ⟨n • (x : N), hnx⟩, Subtype.ext (by simp)⟩) r
 
-/-- **Finite normalization for submonoids inside the saturation.** If `S ≤ T ≤ S.nsmulSaturation`
-and `T` is finitely generated, then `R[T]` is a finite `R[S]`-algebra. -/
-theorem finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation {S T : AddSubmonoid N}
-    (hST : S ≤ T) (hTS : T ≤ S.nsmulSaturation) (hT : T.FG) :
-    (mapDomainRingHom R (AddSubmonoid.inclusion hST)).Finite := by
-  classical
-  let := (mapDomainRingHom R (AddSubmonoid.inclusion hST)).toAlgebra
-  obtain ⟨F, hFT, hdecomp⟩ := hT.exists_finset_subset_forall_exists_add hTS
-  let gens : Finset (AddMonoidAlgebra R T) := F.attach.image fun z ↦ single ⟨z.1, hFT z.2⟩ (1 : R)
-  have hspan (x : AddMonoidAlgebra R T) :
-      x ∈ Submodule.span (AddMonoidAlgebra R S) (gens : Set (AddMonoidAlgebra R T)) := by
-    induction x using induction_linear with
-    | zero => exact Submodule.zero_mem _
-    | add x y hx hy => exact Submodule.add_mem _ hx hy
-    | single t r =>
-      obtain ⟨z, hzF, y, hyS, ht⟩ := hdecomp t.1 t.2
-      have hmem : single (⟨z, hFT hzF⟩ : T) (1 : R) ∈
-          Submodule.span (AddMonoidAlgebra R S) (gens : Set (AddMonoidAlgebra R T)) :=
-        Submodule.subset_span (Finset.mem_image_of_mem _ (Finset.mem_attach _ ⟨z, hzF⟩))
-      have hsmul := Submodule.smul_mem _ (single (⟨y, hyS⟩ : S) r) hmem
-      have heq : AddSubmonoid.inclusion hST ⟨y, hyS⟩ + ⟨z, hFT hzF⟩ = t :=
-        Subtype.ext (by simp [ht, add_comm])
-      simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
-        mapDomain_single, single_mul_single, heq] using hsmul
-  exact Module.Finite.of_fg_top ⟨gens, top_unique fun x _ ↦ hspan x⟩
-
-/-- In a free `ℤ`-module `G`, the algebra `R[sat S]` of the saturation of a finitely generated
-submonoid `S` is a finite `R[S]`-algebra. -/
-theorem finite_mapDomainRingHom_inclusion_nsmulSaturation {G : Type*} [AddCommGroup G]
-    [Module.Free ℤ G] {S : AddSubmonoid G} (hS : S.FG) :
-    (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
-  finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation S.le_nsmulSaturation le_rfl
-    hS.nsmulSaturation
-
-/-- In a torsion-free abelian group `G`, the algebra `R[sat S ⊓ AddSubgroup.closure S]` of a
-finitely generated submonoid `S` is a finite `R[S]`-algebra. -/
-theorem finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure {G : Type*} [AddCommGroup G]
-    [Module.IsTorsionFree ℤ G] {S : AddSubmonoid G} (hS : S.FG) :
-    (mapDomainRingHom R
-      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
-  finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation _ inf_le_left
-    hS.nsmulSaturation_inf_closure
-
 section TorsionFreeGroup
 
 variable {G : Type*} [AddCommGroup G] [Module.IsTorsionFree ℤ G]
@@ -196,24 +158,92 @@ end TorsionFreeGroup
 
 end AddMonoidAlgebra
 
+namespace TauCeti.AddMonoidAlgebra
+
+open _root_.AddMonoidAlgebra
+
+variable {R N : Type*} [CommRing R] [AddCommMonoid N]
+
+/-- **Finite normalization for submonoids inside the saturation.** If `S ≤ T ≤ S.nsmulSaturation`
+and `T` is finitely generated, then `R[T]` is a finite `R[S]`-algebra. -/
+theorem finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation {S T : AddSubmonoid N}
+    (hST : S ≤ T) (hTS : T ≤ S.nsmulSaturation) (hT : T.FG) :
+    (mapDomainRingHom R (AddSubmonoid.inclusion hST)).Finite := by
+  classical
+  let := (mapDomainRingHom R (AddSubmonoid.inclusion hST)).toAlgebra
+  obtain ⟨F, hFT, hdecomp⟩ := hT.exists_finset_subset_forall_exists_add hTS
+  let gens : Finset (_root_.AddMonoidAlgebra R T) :=
+    F.attach.image fun z ↦ single ⟨z.1, hFT z.2⟩ (1 : R)
+  have hspan (x : _root_.AddMonoidAlgebra R T) :
+      x ∈ Submodule.span (_root_.AddMonoidAlgebra R S)
+        (gens : Set (_root_.AddMonoidAlgebra R T)) := by
+    induction x using induction_linear with
+    | zero => exact Submodule.zero_mem _
+    | add x y hx hy => exact Submodule.add_mem _ hx hy
+    | single t r =>
+      obtain ⟨z, hzF, y, hyS, ht⟩ := hdecomp t.1 t.2
+      have hmem : single (⟨z, hFT hzF⟩ : T) (1 : R) ∈
+          Submodule.span (_root_.AddMonoidAlgebra R S)
+            (gens : Set (_root_.AddMonoidAlgebra R T)) :=
+        Submodule.subset_span (Finset.mem_image_of_mem _ (Finset.mem_attach _ ⟨z, hzF⟩))
+      have hsmul := Submodule.smul_mem _ (single (⟨y, hyS⟩ : S) r) hmem
+      have heq : AddSubmonoid.inclusion hST ⟨y, hyS⟩ + ⟨z, hFT hzF⟩ = t :=
+        Subtype.ext (by simp [ht, add_comm])
+      simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply,
+        mapDomain_single, single_mul_single, heq] using hsmul
+  exact Module.Finite.of_fg_top ⟨gens, top_unique fun x _ ↦ hspan x⟩
+
+/-- In a free `ℤ`-module `G`, the algebra `R[sat S]` of the saturation of a finitely generated
+submonoid `S` is a finite `R[S]`-algebra. -/
+theorem finite_mapDomainRingHom_inclusion_nsmulSaturation {G : Type*} [AddCommGroup G]
+    [Module.Free ℤ G] {S : AddSubmonoid G} (hS : S.FG) :
+    (mapDomainRingHom R (AddSubmonoid.inclusion S.le_nsmulSaturation)).Finite :=
+  finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation S.le_nsmulSaturation le_rfl
+    hS.nsmulSaturation
+
+/-- In any abelian group `G`, the algebra `R[sat S ⊓ AddSubgroup.closure S]` of a finitely
+generated submonoid `S` is a finite `R[S]`-algebra. -/
+theorem finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure {G : Type*} [AddCommGroup G]
+    {S : AddSubmonoid G} (hS : S.FG) :
+    (mapDomainRingHom R
+      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).Finite :=
+  finite_mapDomainRingHom_inclusion_of_le_nsmulSaturation _ inf_le_left
+    hS.nsmulSaturation_inf_closure
+
+end TauCeti.AddMonoidAlgebra
+
 namespace AddSubmonoid
 
 open AddMonoidAlgebra
 
 variable {N : Type*} [AddCommMonoid N] [IsRightCancelAdd N]
 
-/-- If the algebra of `S` is an integrally closed domain, then `S` is saturated relative to its
-differences: when `b ∈ S`, `x + b ∈ S` and `n • x ∈ S` for some `n ≠ 0`, already `x ∈ S`. -/
-theorem mem_of_nsmul_mem_of_add_mem (S : AddSubmonoid N) (R : Type*) [CommRing R]
-    [IsDomain (AddMonoidAlgebra R S)] [IsIntegrallyClosed (AddMonoidAlgebra R S)]
+/-- Over a nontrivial commutative ring `R`, if the algebra `R[S]` of a submonoid `S` of a
+right-cancellative additive commutative monoid is integrally closed, then `S` is saturated relative
+to its differences: when `b ∈ S`, `x + b ∈ S` and `n • x ∈ S` for some `n ≠ 0`, already `x ∈ S`. -/
+theorem mem_of_nsmul_mem_of_add_mem (S : AddSubmonoid N) (R : Type*) [CommRing R] [Nontrivial R]
+    [IsIntegrallyClosed (AddMonoidAlgebra R S)]
     {x b : N} (hb : b ∈ S) (hxb : x + b ∈ S) {n : ℕ} (hn : n ≠ 0) (hnx : n • x ∈ S) :
     x ∈ S := by
-  have hpow : single (⟨b, hb⟩ : S) (1 : R) ^ n ∣ single (⟨x + b, hxb⟩ : S) (1 : R) ^ n :=
-    ⟨single ⟨n • x, hnx⟩ 1, by
-      simp only [single_pow, one_pow, single_mul_single, mul_one]
-      congr 1
-      exact Subtype.ext (by simp [add_comm])⟩
-  obtain ⟨d, hd⟩ := (IsIntegrallyClosed.pow_dvd_pow_iff hn).mp hpow
+  have : IsCancelAdd N := AddCommMagma.IsRightCancelAdd.toIsCancelAdd N
+  let A := AddMonoidAlgebra R S
+  let K := FractionRing A
+  let b_nzd : nonZeroDivisors A :=
+    ⟨single ⟨b, hb⟩ 1, TauCeti.AddMonoidAlgebra.single_one_mem_nonZeroDivisors R (⟨b, hb⟩ : S)⟩
+  have hpow : single (⟨x + b, hxb⟩ : S) (1 : R) ^ n =
+      single ⟨n • x, hnx⟩ 1 * single (⟨b, hb⟩ : S) (1 : R) ^ n := by
+    simp only [single_pow, one_pow, single_mul_single, mul_one]
+    congr 1
+    exact Subtype.ext (by simp)
+  have hz : IsLocalization.mk' K (single ⟨x + b, hxb⟩ 1) b_nzd ^ n =
+      algebraMap A K (single ⟨n • x, hnx⟩ 1) := by
+    rw [← IsLocalization.mk'_pow, IsLocalization.mk'_eq_iff_eq_mul, SubmonoidClass.coe_pow,
+      ← map_mul, hpow]
+  obtain ⟨d, hd'⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow
+    (Nat.pos_of_ne_zero hn) (hz ▸ isIntegral_algebraMap)
+  have hd : single (⟨b, hb⟩ : S) (1 : R) * d = single ⟨x + b, hxb⟩ 1 :=
+    IsFractionRing.injective A K <| by
+      rw [map_mul, mul_comm, IsLocalization.eq_mk'_iff_mul_eq.mp hd']
   by_contra hx
   have hne (e : S) : ⟨b, hb⟩ + e ≠ ⟨x + b, hxb⟩ := fun he ↦ by
     have he' : (e : N) + b = x + b := by rw [add_comm]; exact congr_arg Subtype.val he
@@ -221,13 +251,13 @@ theorem mem_of_nsmul_mem_of_add_mem (S : AddSubmonoid N) (R : Type*) [CommRing R
   have hcoeff := congr(($hd).coeff ⟨x + b, hxb⟩)
   rw [coeff_single_mul_of_forall_add_ne _ _ hne,
     coeff_single, Finsupp.single_eq_same] at hcoeff
-  exact one_ne_zero (α := AddMonoidAlgebra R S) (by rw [one_def, hcoeff, single_zero])
+  exact zero_ne_one hcoeff
 
-/-- If the algebra of a submonoid `S` of an abelian group is an integrally closed domain, then
-`S` is saturated inside the group it generates: the saturation of `S` meets
-`AddSubgroup.closure S` exactly in `S`. -/
+/-- Over a nontrivial commutative ring `R`, if the algebra `R[S]` of a submonoid `S` of an abelian
+group is integrally closed, then `S` is saturated inside the group it generates: the saturation of
+`S` meets `AddSubgroup.closure S` exactly in `S`. -/
 theorem nsmulSaturation_inf_closure_eq {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
-    (R : Type*) [CommRing R] [IsDomain (AddMonoidAlgebra R S)]
+    (R : Type*) [CommRing R] [Nontrivial R]
     [IsIntegrallyClosed (AddMonoidAlgebra R S)] :
     S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid = S := by
   refine le_antisymm (fun x hx ↦ ?_) (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
@@ -355,8 +385,7 @@ theorem isIntegralClosure_nsmulSaturation [IsReduced R] :
   refine ⟨mapDomain_injective S.nsmulSaturation.subtype_injective, fun {x} ↦ ?_⟩
   rw [IsIntegral, RingHom.algebraMap_toAlgebra, isIntegralElem_iff_forall_mem_support,
     mrange_subtype, RingHom.algebraMap_toAlgebra]
-  simp only [mapDomainRingHom_apply, ← Set.mem_range,
-    mem_range_mapDomain_iff S.nsmulSaturation.subtype_injective]
+  simp only [mapDomainRingHom_apply, ← Set.mem_range, mem_range_mapDomain_iff]
   simp
 
 /-- **Normality relative to the ambient group algebra.** For a submonoid `S` of a torsion-free
@@ -372,13 +401,13 @@ theorem isIntegrallyClosedIn_iff_nsmulSaturated [Nontrivial R] [IsReduced R] :
       exact isIntegralElem_single S.subtype
         (mem_nsmulSaturation.mpr ⟨n, Nat.pos_of_ne_zero hn, S.mrange_subtype.symm ▸ hnx⟩) 1
     obtain ⟨y, hy⟩ := (isIntegrallyClosedIn_iff.mp h).2 hx
-    obtain ⟨s, hs⟩ := (mem_range_mapDomain_iff S.subtype_injective (single x (1 : R))).mp
-      ⟨y, hy⟩ x (by simp)
+    obtain ⟨s, hs⟩ := (mem_range_mapDomain_iff (single x (1 : R))).mp ⟨y, hy⟩ x (by simp)
     exact hs ▸ s.2
   · have h := S.isIntegralClosure_nsmulSaturation R
     rwa [nsmulSaturation_eq_self hS] at h
 
-/-- **The integral closure of `R[S]` in `R[AddSubgroup.closure S]`.** Over a reduced ring `R`,
+/-- **The integral closure of `R[S]` in `R[AddSubgroup.closure S]`.** For a submonoid `S` of a
+torsion-free abelian group `G` and a reduced ring `R`,
 `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` is the integral closure of `R[S]` in the group
 algebra of the subgroup generated by `S`. -/
 theorem isIntegralClosure_nsmulSaturation_inf_closure_groupClosure [IsReduced R] :
@@ -393,8 +422,7 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure_groupClosure [IsReduced R]
   refine ⟨mapDomain_injective S.nsmulSaturationInfClosureToGroupClosure_injective, fun {x} ↦ ?_⟩
   rw [IsIntegral, RingHom.algebraMap_toAlgebra, isIntegralElem_iff_forall_mem_support,
     ← S.mrange_nsmulSaturationInfClosureToGroupClosure, RingHom.algebraMap_toAlgebra]
-  simp only [mapDomainRingHom_apply, ← Set.mem_range,
-    mem_range_mapDomain_iff S.nsmulSaturationInfClosureToGroupClosure_injective,
+  simp only [mapDomainRingHom_apply, ← Set.mem_range, mem_range_mapDomain_iff,
     AddMonoidHom.mem_mrange]
 
 /-- **The integral closure of a semigroup algebra in its fraction field.** For a submonoid `S` of a
@@ -426,7 +454,8 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure [IsDomain R] [IsIntegrally
     (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
     (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) K
 
-/-- The `(AddMonoidAlgebra R S)`-algebra isomorphism between
+/-- For a submonoid `S` of a torsion-free abelian group `G` and an integrally closed domain `R`,
+the `(AddMonoidAlgebra R S)`-algebra isomorphism between
 `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` and the integral closure of `R[S]` in its fraction
 ring `K`. -/
 noncomputable def integralClosureEquiv [IsDomain R] [IsIntegrallyClosed R]
@@ -445,7 +474,8 @@ noncomputable def integralClosureEquiv [IsDomain R] [IsIntegrallyClosed R]
     (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
     K (integralClosure (AddMonoidAlgebra R S) K)
 
-/-- In the ambient fraction ring `K`, `S.integralClosureEquiv R K` acts by
+/-- For a submonoid `S` of a torsion-free abelian group `G` and an integrally closed domain `R`,
+`S.integralClosureEquiv R K` acts in the ambient fraction ring `K` by
 `S.nsmulSaturationInfClosureToFractionRing R K`. -/
 @[simp]
 theorem coe_integralClosureEquiv_apply [IsDomain R] [IsIntegrallyClosed R]
@@ -465,20 +495,21 @@ theorem coe_integralClosureEquiv_apply [IsDomain R] [IsIntegrallyClosed R]
     (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
     K (integralClosure (AddMonoidAlgebra R S) K) x
 
-/-- **Finite normalization of affine semigroup algebras.** Over an integrally closed domain `R`,
-the integral closure of `R[S]` in its fraction ring `K` is a finitely generated `R[S]`-module
-whenever `S` is a finitely generated submonoid of a torsion-free abelian group. -/
-theorem moduleFinite_integralClosure [IsDomain R] [IsIntegrallyClosed R] {S : AddSubmonoid G}
-    (hS : S.FG) (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
-    [IsFractionRing (AddMonoidAlgebra R S) K] :
-    Module.Finite (AddMonoidAlgebra R S) (integralClosure (AddMonoidAlgebra R S) K) := by
+/-- For a submonoid `S` of a torsion-free abelian group `G` and an integrally closed domain `R`,
+`(S.integralClosureEquiv R K).symm` is a section of `S.nsmulSaturationInfClosureToFractionRing R K`
+in the ambient fraction ring `K`. -/
+@[simp]
+theorem nsmulSaturationInfClosureToFractionRing_integralClosureEquiv_symm
+    [IsDomain R] [IsIntegrallyClosed R]
+    (K : Type*) [CommRing K] [Algebra (AddMonoidAlgebra R S) K]
+    [IsFractionRing (AddMonoidAlgebra R S) K]
+    (y : integralClosure (AddMonoidAlgebra R S) K) :
+    letI := (mapDomainRingHom R
+      (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+    S.nsmulSaturationInfClosureToFractionRing R K ((S.integralClosureEquiv R K).symm y) = y := by
   let := (mapDomainRingHom R
     (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  have : Module.Finite (AddMonoidAlgebra R S)
-      (AddMonoidAlgebra R
-        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :=
-    finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure hS
-  exact Module.Finite.equiv (S.integralClosureEquiv R K).toLinearEquiv
+  rw [← S.coe_integralClosureEquiv_apply R K, AlgEquiv.apply_symm_apply]
 
 /-- **Normality iff saturation.** For a submonoid `S` of a torsion-free abelian group `G` and an
 integral domain `R`, the semigroup algebra `R[S]` is integrally closed if and only if `R` is
@@ -501,31 +532,56 @@ theorem isIntegrallyClosed_addMonoidAlgebra_iff [IsDomain R] :
   obtain ⟨x, rfl⟩ := mapDomain_surjective (R := R) hsurj y
   exact ⟨x, (S.nsmulSaturationInfClosureToFractionRing_mapDomain_inclusion R K x).symm⟩
 
-/-- Over an integrally closed domain `R`, a semigroup algebra `R[S]` is integrally closed if and
-only if `S` is saturated inside `AddSubgroup.closure S`. -/
+/-- For a submonoid `S` of a torsion-free abelian group `G` and an integrally closed domain `R`,
+the semigroup algebra `R[S]` is integrally closed if and only if `S` is saturated inside
+`AddSubgroup.closure S`. -/
 theorem isIntegrallyClosed_addMonoidAlgebra_iff_of_isIntegrallyClosed
     [IsDomain R] [IsIntegrallyClosed R] :
     IsIntegrallyClosed (AddMonoidAlgebra R S) ↔
       S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid = S := by
   simp [S.isIntegrallyClosed_addMonoidAlgebra_iff R, ‹IsIntegrallyClosed R›]
 
+/-- Over an integral domain `R`, when a submonoid `S` generates the full ambient torsion-free
+abelian group `G`, `R[S]` is integrally closed if and only if `R` is integrally closed and `S` is
+saturated in `G`. -/
+theorem isIntegrallyClosed_addMonoidAlgebra_iff_of_closure_eq_top [IsDomain R]
+    (hS : AddSubgroup.closure (S : Set G) = ⊤) :
+    IsIntegrallyClosed (AddMonoidAlgebra R S) ↔ IsIntegrallyClosed R ∧ S.NSMulSaturated := by
+  rw [S.isIntegrallyClosed_addMonoidAlgebra_iff R, hS]
+  simp
+
+end TorsionFreeGroup
+
+section TorsionFreeGroupDot
+
+open AddMonoidAlgebra
+
+variable {G : Type*} [AddCommGroup G] [Module.IsTorsionFree ℤ G]
+
+/-- **Finite normalization of affine semigroup algebras.** Over an integrally closed domain `R`,
+the integral closure of `R[S]` in its fraction ring `K` is a finitely generated `R[S]`-module
+whenever `S` is a finitely generated submonoid of a torsion-free abelian group. -/
+theorem FG.moduleFinite_integralClosure_addMonoidAlgebra {S : AddSubmonoid G} (hS : S.FG)
+    (R K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
+    [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] :
+    Module.Finite (AddMonoidAlgebra R S) (integralClosure (AddMonoidAlgebra R S) K) := by
+  let := (mapDomainRingHom R
+    (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+  have : Module.Finite (AddMonoidAlgebra R S)
+      (AddMonoidAlgebra R
+        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :=
+    TauCeti.AddMonoidAlgebra.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure hS
+  exact Module.Finite.equiv (S.integralClosureEquiv R K).toLinearEquiv
+
 /-- If `S` is saturated in a torsion-free abelian group `G` and `R` is an integrally closed domain,
 then `R[S]` is integrally closed. -/
-theorem isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated
-    [IsDomain R] [IsIntegrallyClosed R] {S : AddSubmonoid G} (hS : S.NSMulSaturated) :
+theorem NSMulSaturated.isIntegrallyClosed_addMonoidAlgebra {S : AddSubmonoid G}
+    (hS : S.NSMulSaturated) (R : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] :
     IsIntegrallyClosed (AddMonoidAlgebra R S) :=
   (S.isIntegrallyClosed_addMonoidAlgebra_iff_of_isIntegrallyClosed R).mpr <| by
     rw [nsmulSaturation_eq_self hS, inf_eq_left]
     exact AddSubgroup.subset_closure
 
-/-- When `S` generates the full ambient torsion-free abelian group `G`, `R[S]` is integrally closed
-if and only if `R` is integrally closed and `S` is saturated in `G`. -/
-theorem isIntegrallyClosed_addMonoidAlgebra_iff_nsmulSaturated [IsDomain R]
-    {S : AddSubmonoid G} (hS : AddSubgroup.closure (S : Set G) = ⊤) :
-    IsIntegrallyClosed (AddMonoidAlgebra R S) ↔ IsIntegrallyClosed R ∧ S.NSMulSaturated := by
-  rw [S.isIntegrallyClosed_addMonoidAlgebra_iff R, hS]
-  simp [nsmulSaturation_eq_self_iff]
-
-end TorsionFreeGroup
+end TorsionFreeGroupDot
 
 end AddSubmonoid

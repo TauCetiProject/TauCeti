@@ -16,12 +16,13 @@ elements whose positive power lies in `s`, that is `{x : M | ∃ n, 0 < n ∧ x 
 least `PowSaturated` submonoid containing `s` (a submonoid `t` is `PowSaturated` when `x ^ n ∈ t`
 forces `n = 0` or `x ∈ t`). Applying saturation to an already `PowSaturated` submonoid is a no-op.
 
-All declarations are stated multiplicatively and translated with `@[to_additive]` to their
-additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmulSaturation` and
-`Submonoid.mem_powSaturation` becomes `AddSubmonoid.mem_nsmulSaturation`. For an additive submonoid
-`S` of an abelian group `G`, `AddSubmonoid.nsmulSaturationInfClosureToGroupClosure` embeds the
-saturation of `S` inside `AddSubgroup.closure S` into `AddSubgroup.closure S`, identifying its image
-with the saturation of `AddMonoidHom.mrange S.toGroupClosure`.
+The general `Submonoid` saturation declarations carry `@[to_additive]` to generate their additive
+counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmulSaturation` and
+`Submonoid.mem_powSaturation` becomes `AddSubmonoid.mem_nsmulSaturation`. The generated-subgroup
+inclusion API (`AddSubmonoid.nsmulSaturationInfClosureToGroupClosure` and its accompanying lemmas)
+is additive-only: for an additive submonoid `S` of an abelian group `G`, it embeds the saturation
+of `S` inside `AddSubgroup.closure S` into `AddSubgroup.closure S`, identifying its image with the
+saturation of `AddMonoidHom.mrange S.toGroupClosure`.
 
 ## Main results
 
@@ -145,7 +146,7 @@ theorem powSaturation_eq_self {s : Submonoid M} (hs : PowSaturated s) : s.powSat
   · exact le_powSaturation
 
 /-- A submonoid equals its saturation if and only if it is `PowSaturated`. -/
-@[to_additive /-- An additive submonoid equals its saturation if and only if it is
+@[to_additive (attr := simp) /-- An additive submonoid equals its saturation if and only if it is
 `NSMulSaturated`. -/]
 theorem powSaturation_eq_self_iff {s : Submonoid M} : s.powSaturation = s ↔ s.PowSaturated :=
   ⟨fun h ↦ h ▸ powSaturated_powSaturation, powSaturation_eq_self⟩
@@ -203,6 +204,24 @@ theorem nsmulSaturationInfClosureToGroupClosure_injective :
     (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype.injective_codRestrict _ _).mpr
     (subtype_injective _)
 
+/-- Injectivity of `S.nsmulSaturationInfClosureToGroupClosure` on elements of
+`S.nsmulSaturation ⊓ AddSubgroup.closure S`. -/
+@[simp]
+theorem nsmulSaturationInfClosureToGroupClosure_inj
+    {x y : ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)} :
+    S.nsmulSaturationInfClosureToGroupClosure x = S.nsmulSaturationInfClosureToGroupClosure y ↔
+      x = y :=
+  S.nsmulSaturationInfClosureToGroupClosure_injective.eq_iff
+
+/-- Composing `S.nsmulSaturationInfClosureToGroupClosure` with the ambient subgroup inclusion
+recovers the subtype inclusion of `S.nsmulSaturation ⊓ AddSubgroup.closure S`. -/
+@[simp]
+theorem subtype_comp_nsmulSaturationInfClosureToGroupClosure :
+    (AddSubgroup.closure (S : Set G)).subtype.comp S.nsmulSaturationInfClosureToGroupClosure =
+      (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype := by
+  ext x
+  rfl
+
 /-- Restricting `S.nsmulSaturationInfClosureToGroupClosure` to `S` gives `S.toGroupClosure`. -/
 @[simp]
 theorem nsmulSaturationInfClosureToGroupClosure_comp_inclusion :
@@ -248,12 +267,7 @@ theorem map_nsmulSaturation_mrange_toGroupClosure :
     ((AddMonoidHom.mrange S.toGroupClosure).nsmulSaturation).map
         (AddSubgroup.closure (S : Set G)).subtype =
       S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid := by
-  have hcomp : (AddSubgroup.closure (S : Set G)).subtype.comp
-      S.nsmulSaturationInfClosureToGroupClosure =
-        (S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid).subtype := by
-    ext x
-    simp
-  rw [← S.mrange_nsmulSaturationInfClosureToGroupClosure, AddMonoidHom.map_mrange, hcomp,
-    mrange_subtype]
+  rw [← S.mrange_nsmulSaturationInfClosureToGroupClosure, AddMonoidHom.map_mrange,
+    S.subtype_comp_nsmulSaturationInfClosureToGroupClosure, mrange_subtype]
 
 end AddSubmonoid

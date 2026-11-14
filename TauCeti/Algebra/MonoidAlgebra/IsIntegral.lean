@@ -145,15 +145,19 @@ over `A[G]` are integral over `A`. -/
 theorem isIntegralElem_coeff [Module.IsTorsionFree ℤ G] (φ : A →+* B) {y : AddMonoidAlgebra B G}
     (hy : (mapRingHom G φ).IsIntegralElem y) (g : G) : φ.IsIntegralElem (y.coeff g) := by
   obtain ⟨p, hp, hpy⟩ := hy
-  obtain ⟨H, hH, hsH, p₀, hp₀, -, hp₀_monic⟩ :=
-    exists_fg_addSubgroup_lifts (y.coeff.support.finite_toSet.insert g) hp
+  obtain ⟨H, hH, hsH, p₀, hp₀⟩ :=
+    TauCeti.AddMonoidAlgebra.exists_fg_subset_exists_map_mapDomainRingHom_eq
+      (y.coeff.support.finite_toSet.insert g) p
   have : H.FG := hH
+  have hinj : Function.Injective (mapDomainRingHom B H.subtype) :=
+    mapDomain_injective H.subtype_injective
+  have hp₀_monic : p₀.Monic :=
+    Polynomial.monic_of_injective (mapDomain_injective H.subtype_injective) (hp₀.symm ▸ hp)
   obtain ⟨y₀, hy₀⟩ : y ∈ Set.range (mapDomainRingHom B H.subtype) :=
-    (mem_range_mapDomain_iff H.subtype_injective y).mpr fun a ha ↦ ⟨⟨a, hsH (.inr ha)⟩, rfl⟩
+    (mem_range_mapDomain_iff y).mpr fun a ha ↦ ⟨⟨a, hsH (.inr ha)⟩, rfl⟩
   have hy₀_int : (mapRingHom H φ).IsIntegralElem y₀ :=
-    RingHom.IsIntegralElem.of_map (g := mapDomainRingHom B H.subtype)
-      (mapDomain_injective H.subtype_injective) ⟨p₀, hp₀_monic, by
-        rw [← mapRingHom_comp_mapDomainRingHom, ← Polynomial.eval₂_map, hp₀, hy₀, hpy]⟩
+    RingHom.IsIntegralElem.of_map (g := mapDomainRingHom B H.subtype) hinj ⟨p₀, hp₀_monic, by
+      rw [← mapRingHom_comp_mapDomainRingHom, ← Polynomial.eval₂_map, hp₀, hy₀, hpy]⟩
   have hgH : g ∈ H := hsH (.inl rfl)
   have hcoeff : y.coeff g = y₀.coeff ⟨g, hgH⟩ := by
     rw [← hy₀, mapDomainRingHom_apply, coeff_mapDomain]

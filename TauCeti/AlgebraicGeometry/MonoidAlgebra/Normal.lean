@@ -57,7 +57,7 @@ submonoid `S` of a torsion-free abelian group `G` is normal. -/
 theorem isNormalScheme_Spec_addMonoidAlgebra_of_nsmulSaturated (R : Type*) [CommRing R]
     [IsDomain R] [IsIntegrallyClosed R] {S : AddSubmonoid G} (hS : S.NSMulSaturated) :
     IsNormalScheme (Spec (.of (AddMonoidAlgebra R S))) :=
-  have := AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated R hS
+  have := hS.isIntegrallyClosed_addMonoidAlgebra R
   inferInstance
 
 /-- The integral affine semigroup model `Spec ℤ[S]` of a submonoid `S` of a torsion-free abelian

@@ -42,6 +42,19 @@ theorem coe_toGroupClosure (s : S) : (S.toGroupClosure s : G) = s :=
 theorem toGroupClosure_injective : Function.Injective S.toGroupClosure :=
   (S.subtype.injective_codRestrict _ _).mpr S.subtype_injective
 
+/-- Injectivity of `S.toGroupClosure` on elements of `S`. -/
+@[simp]
+theorem toGroupClosure_inj {x y : S} :
+    S.toGroupClosure x = S.toGroupClosure y ↔ x = y :=
+  S.toGroupClosure_injective.eq_iff
+
+/-- Composing `S.toGroupClosure` with the ambient subgroup inclusion recovers `S.subtype`. -/
+@[simp]
+theorem subtype_comp_toGroupClosure :
+    (AddSubgroup.closure (S : Set G)).subtype.comp S.toGroupClosure = S.subtype := by
+  ext s
+  rfl
+
 /-- The additive range of `S.toGroupClosure` is the preimage of `S` in the generated subgroup. -/
 @[simp]
 theorem mrange_toGroupClosure :

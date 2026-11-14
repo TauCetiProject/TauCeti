@@ -8,16 +8,15 @@ module
 public import TauCeti.Algebra.Module.Torsion.Hom
 public import TauCeti.AlgebraicGeometry.MonoidAlgebra.Normal
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
-public import TauCeti.Geometry.Toric.Algebraic.IntegralModel
 
 /-!
 # Normality of toric coordinate rings, integral models, and toric schemes
 
 Every pointed cone `σ` in an integral lattice `(N, V, i)` has a saturated dual semigroup
-`dualSemigroup hi σ ≤ (N →+ ℤ)` (`TauCeti.Toric.dualSemigroup_nsmulSaturated`), and the character
-group `N →+ ℤ` is torsion-free over `ℤ` (`AddMonoidHom.instModuleIsTorsionFree`). Together with
-`TauCeti.Algebra.Group.UniqueProds.TorsionFree` and
-`AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated`, this shows that the
+`dualSemigroup hi σ ≤ (N →+ ℤ)` (`TauCeti.Toric.nsmulSaturated_dualSemigroup`), and the character
+group `N →+ ℤ` is torsion-free over `ℤ` (`TauCeti.AddMonoidHom.instModuleIsTorsionFree`). Together
+with `TauCeti.Algebra.Group.UniqueProds.TorsionFree` and
+`AddSubmonoid.NSMulSaturated.isIntegrallyClosed_addMonoidAlgebra`, this shows that the
 dual-semigroup algebra `AddMonoidAlgebra R (dualSemigroup hi σ)` over any integrally closed domain
 `R` is an integrally closed domain, with no rationality, salience, or finite-generation hypothesis
 on `σ`.
@@ -67,8 +66,7 @@ closed. -/
 instance isIntegrallyClosed_addMonoidAlgebra_dualSemigroup (R : Type*) [CommRing R] [IsDomain R]
     [IsIntegrallyClosed R] (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     IsIntegrallyClosed (AddMonoidAlgebra R (dualSemigroup hi σ)) :=
-  AddSubmonoid.isIntegrallyClosed_addMonoidAlgebra_of_nsmulSaturated R
-    (dualSemigroup_nsmulSaturated hi σ)
+  (nsmulSaturated_dualSemigroup hi σ).isIntegrallyClosed_addMonoidAlgebra R
 
 /-- The complex coordinate ring of the affine toric chart of any cone is integrally closed. -/
 instance isIntegrallyClosed_affineCoordinateRing (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
@@ -81,7 +79,7 @@ instance isNormalScheme_addMonoidAlgebraIntegralModel_dualSemigroup
     (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     IsNormalScheme (addMonoidAlgebraIntegralModel (dualSemigroup hi σ)) :=
   isNormalScheme_addMonoidAlgebraIntegralModel_of_nsmulSaturated
-    (dualSemigroup_nsmulSaturated hi σ)
+    (nsmulSaturated_dualSemigroup hi σ)
 
 /-- The native affine toric scheme of any cone is normal. -/
 instance isNormalScheme_affineToricScheme (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
