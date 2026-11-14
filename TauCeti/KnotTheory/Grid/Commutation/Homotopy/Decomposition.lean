@@ -300,8 +300,8 @@ theorem toRectangleDecomposition_injective :
     Function.Injective (toRectangleDecomposition (a := a) (s := s) (s' := s')
       (x := x) (z := z)) :=
   GridTwoStepDecomposition.map_injective
-    (fun _ _ => GridCommutationHexagonBetween.toGridRectangleBetween_injective)
-    fun _ _ => Function.injective_id
+    (fun _ => GridCommutationHexagonBetween.toGridRectangleBetween_injective)
+    fun _ => Function.injective_id
 
 end GridHexagonRectangleDecomposition
 
@@ -331,8 +331,8 @@ abbrev toRectangleDecomposition (D : GridRectangleHexagonDecomposition a s s' x 
 theorem toRectangleDecomposition_injective :
     Function.Injective (toRectangleDecomposition (a := a) (s := s) (s' := s')
       (x := x) (z := z)) :=
-  GridTwoStepDecomposition.map_injective (fun _ _ => Function.injective_id)
-    fun _ _ => GridCommutationHexagonBetween.toGridRectangleBetween_injective
+  GridTwoStepDecomposition.map_injective (fun _ => Function.injective_id)
+    fun _ => GridCommutationHexagonBetween.toGridRectangleBetween_injective
 
 end GridRectangleHexagonDecomposition
 
@@ -430,8 +430,8 @@ theorem toRectangleDecomposition_injective :
     Function.Injective (toRectangleDecomposition (a := a) (s := s) (b := b) (t := t)
       (x := x) (z := z)) :=
   GridTwoStepDecomposition.map_injective
-    (fun _ _ => GridCommutationPentagonBetween.toGridRectangleBetween_injective)
-    fun _ _ => GridCommutationPentagonBetween.toGridRectangleBetween_injective
+    (fun _ => GridCommutationPentagonBetween.toGridRectangleBetween_injective)
+    fun _ => GridCommutationPentagonBetween.toGridRectangleBetween_injective
 
 end GridPentagonPairDecomposition
 

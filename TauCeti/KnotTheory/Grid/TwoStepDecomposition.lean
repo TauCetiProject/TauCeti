@@ -77,20 +77,59 @@ section map
 
 variable {A' B' : GridState n → GridState n → Type*}
 
-/-- Apply a map of domains to each step of a two-step decomposition. -/
-abbrev map (f : ∀ u v : GridState n, A u v → A' u v) (g : ∀ u v : GridState n, B u v → B' u v)
+/-- Apply a map of domains to each step of a two-step decomposition from `x` to `z`. As the source
+`x` and the target `z` are fixed, the step maps `f` and `g` are indexed by the intermediate state
+alone. -/
+@[expose] def map (f : ∀ y : GridState n, A x y → A' x y) (g : ∀ y : GridState n, B y z → B' y z)
     (D : GridTwoStepDecomposition A B x z) : GridTwoStepDecomposition A' B' x z :=
-  ⟨D.middle, f _ _ D.first, g _ _ D.second⟩
+  ⟨D.middle, f _ D.first, g _ D.second⟩
+
+/-- `map` on an explicit decomposition. -/
+@[simp]
+theorem map_mk (f : ∀ y : GridState n, A x y → A' x y) (g : ∀ y : GridState n, B y z → B' y z)
+    (m : GridState n) (P : A x m) (Q : B m z) :
+    map f g ⟨m, P, Q⟩ = ⟨m, f m P, g m Q⟩ := (rfl)
+
+/-- `map` keeps the intermediate state. -/
+@[simp]
+theorem map_middle (f : ∀ y : GridState n, A x y → A' x y)
+    (g : ∀ y : GridState n, B y z → B' y z) (D : GridTwoStepDecomposition A B x z) :
+    (D.map f g).middle = D.middle := (rfl)
+
+/-- The first step of a mapped decomposition is the image of the first step. -/
+@[simp]
+theorem map_first (f : ∀ y : GridState n, A x y → A' x y)
+    (g : ∀ y : GridState n, B y z → B' y z) (D : GridTwoStepDecomposition A B x z) :
+    (D.map f g).first = f D.middle D.first := (rfl)
+
+/-- The second step of a mapped decomposition is the image of the second step. -/
+@[simp]
+theorem map_second (f : ∀ y : GridState n, A x y → A' x y)
+    (g : ∀ y : GridState n, B y z → B' y z) (D : GridTwoStepDecomposition A B x z) :
+    (D.map f g).second = g D.middle D.second := (rfl)
+
+/-- Mapping both steps by the identity does nothing. -/
+@[simp]
+theorem map_id (D : GridTwoStepDecomposition A B x z) :
+    D.map (fun _ => id) (fun _ => id) = D := (rfl)
+
+/-- Mapping twice is mapping by the composites. -/
+@[simp]
+theorem map_map {A'' B'' : GridState n → GridState n → Type*}
+    (f : ∀ y : GridState n, A x y → A' x y) (g : ∀ y : GridState n, B y z → B' y z)
+    (f' : ∀ y : GridState n, A' x y → A'' x y) (g' : ∀ y : GridState n, B' y z → B'' y z)
+    (D : GridTwoStepDecomposition A B x z) :
+    (D.map f g).map f' g' = D.map (fun y => f' y ∘ f y) (fun y => g' y ∘ g y) := (rfl)
 
 /-- Mapping both steps by injective maps is injective. -/
-theorem map_injective {f : ∀ u v : GridState n, A u v → A' u v}
-    {g : ∀ u v : GridState n, B u v → B' u v}
-    (hf : ∀ u v, Function.Injective (f u v)) (hg : ∀ u v, Function.Injective (g u v)) :
-    Function.Injective (map (x := x) (z := z) f g) := by
+theorem map_injective {f : ∀ y : GridState n, A x y → A' x y}
+    {g : ∀ y : GridState n, B y z → B' y z}
+    (hf : ∀ y, Function.Injective (f y)) (hg : ∀ y, Function.Injective (g y)) :
+    Function.Injective (map f g) := by
   rintro ⟨m, P, Q⟩ ⟨m', P', Q'⟩ h
   obtain rfl : m = m' := congrArg middle h
-  simp only [map, mk.injEq, heq_eq_eq, true_and] at h
-  rw [hf _ _ h.1, hg _ _ h.2]
+  simp only [map_mk, mk.injEq, heq_eq_eq, true_and] at h
+  rw [hf _ h.1, hg _ h.2]
 
 end map
 
