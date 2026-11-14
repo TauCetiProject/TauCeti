@@ -45,6 +45,10 @@ energy and elliptic estimates.
   `F : ℝ × ℝ →ₗ[ℝ] V`, `F (0, 1) = J (F (1, 0))`.
 * `TauCeti.IsComplexLinearMap.apply_stdComplexLine`: such an `F` is determined by
   `F (1, 0)`, via `F (s, t) = s • v + t • J v`.
+* `TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`: a complex-linear endomorphism of the standard
+  complex line with `F (1, 0) = (a, b)` has determinant `a² + b²`, and
+  `TauCeti.IsComplexLinearMap.apply_apply_stdComplexLineImag` expands its value `F (0, 1) = (-b, a)`
+  under a real-linear map.
 * `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
   for Frechet derivatives of constant-structure `J`-holomorphic maps.
@@ -246,6 +250,27 @@ lemma apply_stdComplexLineReal_ne_zero
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hFne : F ≠ 0) :
     F stdComplexLineReal ≠ 0 := by
   exact fun hreal => hFne ((hF.eq_zero_iff_apply_stdComplexLineReal).mpr hreal)
+
+/-- A complex-linear endomorphism of the standard complex line, multiplication by the complex
+number `a + b i` with `(a, b) = F(1, 0)`, has real determinant `a² + b²`. -/
+lemma det_eq_sq_add_sq {F : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ}
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) F) :
+    LinearMap.det F = (F stdComplexLineReal).1 ^ 2 + (F stdComplexLineReal).2 ^ 2 := by
+  have h := hF.apply_stdComplexLineImag
+  rw [stdComplexLineReal_eq, stdComplexLineImag_eq] at h
+  rw [LinearMap.det_finTwoProd, h, stdComplexLineReal_eq, AlmostComplexStructure.product_apply]
+  ring
+
+/-- For a complex-linear endomorphism `F` of the standard complex line with `F(1, 0) = (a, b)`, so
+that `F(0, 1) = (-b, a)`, a real-linear map `L` sends `F(0, 1)` to `-b L(1, 0) + a L(0, 1)`. -/
+lemma apply_apply_stdComplexLineImag {F : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ}
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) F) (L : (ℝ × ℝ) →ₗ[ℝ] V) :
+    L (F stdComplexLineImag) =
+      -(F stdComplexLineReal).2 • L stdComplexLineReal +
+        (F stdComplexLineReal).1 • L stdComplexLineImag := by
+  rw [hF.apply_stdComplexLineImag, AlmostComplexStructure.product_apply, L.apply_stdComplexLine]
 
 variable {ω : SymplecticForm V}
 
