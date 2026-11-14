@@ -46,7 +46,12 @@ single homotopy `K`, continuous in `p`, deforms `χ₁ p` to `χ₀ p ∘ h p` k
 in `M_{c-ε}`. The small negative discs are joined by
 `TauCeti.exists_negativeDisc_homotopy_family_of_charts_euclidean`, with one radius `d` for every
 `p`, and the homotopy is extended to the whole discs by
-`TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc`.
+`TauCeti.exists_homotopy_morseCharacteristicFamily_of_innerDisc`. Applied to each index of
+families of charts `φ₀ i p`, `φ₁ i p`, this gives a homotopy over `P` from the characteristic
+family of `φ₁` (`TauCeti.morseCharacteristicFamily`) to that of `φ₀` composed with the disk maps
+of the polar factors (`TauCeti.exists_homotopy_morseCharacteristicFamily_polarFactor`). These are
+the self-maps of the discs and the homotopies from which `TauCeti.fiberwiseCellReattachment`
+builds the reattachment map between the fiberwise adjunction spaces of the two attaching families.
 
 When `det A_uu > 0` the polar factor lies in the special orthogonal group and can be removed, so
 the attaching maps `∂D^k → M_{c-ε}` of the two charts are homotopic
@@ -70,6 +75,9 @@ factor `h`, which does not depend on the widths.
   of the transition.
 * `TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor_family`: the same comparison for
   compact families of charts, continuously in the parameter.
+* `TauCeti.exists_homotopy_morseCharacteristicFamily_polarFactor`: the comparison of two indexed
+  families of charts over a compact parameter space, as homotopies over `P` of their
+  characteristic families.
 * `TauCeti.homotopic_morseAttachingMap_of_det_pos`: when that negative block preserves
   orientation, the two attaching maps are homotopic.
 * `TauCeti.exists_homotopic_morseAttachingMap_retraction_comp_polarFactor`,
@@ -240,18 +248,6 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor_family (hf : ContMDif
   obtain ⟨G, hG0, hG1, hGf⟩ := hG (√ε * d) ⟨mul_pos hsε hd,
     (mul_le_mul_of_nonneg_left (min_le_right _ _) hsε.le).trans_eq (mul_div_cancel₀ _ hsε.ne')⟩
   have hεd : 0 < ε * (d : ℝ) ^ 2 := by positivity
-  -- The two families of characteristic maps, as maps on `P × D^k`.
-  have hχ (ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
-      (hs : ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (ψ q.1).symm q.2)
-        (univ ×ˢ closedBall 0 √ε))
-      (h : P → EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k))
-      (hh : Continuous fun q : P × EuclideanSpace ℝ (Fin k) ↦ h q.1 q.2) :
-      Continuous fun q : P × TopCat.disk.{u} k ↦ (ψ q.1).morseCellMap hk ε (h q.1 q.2.down) :=
-    (continuousOn_morseCellMap_family hk hs).comp_continuous
-      (continuous_fst.prodMk (hh.comp (by fun_prop : Continuous fun q : P × TopCat.disk.{u} k ↦
-        (q.1, (q.2.down : EuclideanSpace ℝ (Fin k)))))) fun q ↦ ⟨mem_univ _,
-      mem_closedBall_zero_iff.2 (((h q.1).norm_map _).trans_le
-        (mem_closedBall_zero_iff.1 q.2.down.2))⟩
   have hχf (ψ : P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
       (hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target)
       (hfψ : ∀ p, ∀ y ∈ (ψ p).source,
@@ -263,9 +259,22 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor_family (hf : ContMDif
       ((h p).norm_map _).trans_le (mem_closedBall_zero_iff.1 w.down.2)
     exact ((ψ p).apply_morseCellMap_eq_sub_mul_norm_sq (hball p) (hfψ p) hk hε.le hw).trans_le
       (by rw [(h p).norm_map])
-  let χ₀ : C(P × TopCat.disk.{u} k, M) := ⟨_, hχ ψ₀ hs₀ g hgc⟩
-  let χ₁ : C(P × TopCat.disk.{u} k, M) :=
-    ⟨_, hχ ψ₁ hs₁ (fun _ ↦ .refl ℝ _) continuous_snd⟩
+  -- The two families of characteristic maps, as maps on `P × D^k`.
+  let χ₀ : C(P × TopCat.disk.{u} k, M) := (⟨Subtype.val, continuous_subtype_val⟩ :
+      C({x : M | f x ≤ c + ε}, M)).comp ((morseCharacteristicFamily (fun (_ : Unit) ↦ ψ₀)
+        (fun _ ↦ k) (fun _ ↦ hk) hε.le (fun _ ↦ hball₀) (fun _ ↦ hf₀) (fun _ ↦ hs₀) ()).comp
+          (ContinuousMap.fst.prodMk (TopCat.diskMapFamily g hgc)))
+  let χ₁ : C(P × TopCat.disk.{u} k, M) := (⟨Subtype.val, continuous_subtype_val⟩ :
+      C({x : M | f x ≤ c + ε}, M)).comp (morseCharacteristicFamily (fun (_ : Unit) ↦ ψ₁)
+        (fun _ ↦ k) (fun _ ↦ hk) hε.le (fun _ ↦ hball₁) (fun _ ↦ hf₁) (fun _ ↦ hs₁) ())
+  have hχ₀ (p : P) (w : TopCat.disk.{u} k) : χ₀ (p, w) = (ψ₀ p).morseCellMap hk ε (g p w.down) := by
+    simp only [χ₀, ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.prod_eval,
+      ContinuousMap.fst_apply, TopCat.diskMapFamily_apply, morseCharacteristicFamily_apply]
+    exact (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ p) (hf₀ p) hk hε.le
+      ((g p).diskMap w)).trans (congrArg _ ((g p).coe_diskMap_apply_down w))
+  have hχ₁ (p : P) (w : TopCat.disk.{u} k) : χ₁ (p, w) = (ψ₁ p).morseCellMap hk ε w.down := by
+    simp only [χ₁, ContinuousMap.comp_apply, ContinuousMap.coe_mk, morseCharacteristicFamily_apply]
+    exact OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₁ p) (hf₁ p) hk hε.le w
   -- Rescale `G` onto the discs of radius `d`, where it joins the two families.
   have hmem (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d) :
       √ε • (w : EuclideanSpace ℝ (Fin k)) ∈ closedBall 0 (√ε * d) := by
@@ -279,13 +288,10 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor_family (hf : ContMDif
     rw [norm_smul, Real.norm_of_nonneg hsε.le, mul_pow, Real.sq_sqrt hε.le]
   have hG'₀ (p : P) (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d) :
       G' (0, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₁ (p, w) := by
-    rw [hG', hG0, map_smul]
-    simp only [χ₁, ContinuousMap.coe_mk, LinearIsometryEquiv.coe_refl, id_eq,
-      OpenPartialHomeomorph.morseCellMap_def]
+    rw [hG', hG0, map_smul, hχ₁, OpenPartialHomeomorph.morseCellMap_def]
   have hG'₁ (p : P) (w : TopCat.disk.{u} k) (hw : ‖w.down.1‖ ≤ d) :
       G' (1, p, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) = χ₀ (p, w) := by
-    rw [hG', hG1, ← hg, map_smul, map_smul]
-    simp only [χ₀, ContinuousMap.coe_mk, OpenPartialHomeomorph.morseCellMap_def]
+    rw [hG', hG1, ← hg, map_smul, map_smul, hχ₀, OpenPartialHomeomorph.morseCellMap_def]
   have hG'f (q : I × (P × closedBall (0 : EuclideanSpace ℝ (Fin k)) d)) : f (G' q) ≤ c + ε := by
     obtain ⟨t, p, w⟩ := q
     rw [hG']
@@ -296,18 +302,85 @@ theorem exists_homotopy_morseCharacteristicMap_polarFactor_family (hf : ContMDif
     refine (hGf p t _).trans_eq ?_
     rw [hnorm, hw]
   obtain ⟨K, hKf, hKb⟩ := exists_homotopy_morseCharacteristicFamily_of_innerDisc hf hε.le
-    (χ₀ := χ₀) (χ₁ := χ₁) (hχf ψ₀ hball₀ hf₀ g) (hχf ψ₁ hball₁ hf₁ fun _ ↦ .refl ℝ _)
+    (χ₀ := χ₀) (χ₁ := χ₁) (fun p w ↦ hχ₀ p w ▸ hχf ψ₀ hball₀ hf₀ g p w)
+    (fun p w ↦ hχ₁ p w ▸ hχf ψ₁ hball₁ hf₁ (fun _ ↦ .refl ℝ _) p w)
     (unitInterval.coe_pos.1 hd)
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
       (preimage_mono (Icc_subset_Icc le_rfl (by linarith))))
     (fun x h₁ h₂ ↦ hreg x h₁ (by linarith)) G' hG'₀ hG'₁ hG'f hG'd
   refine ⟨g, hg, hgc, ⟨fun q ↦ ⟨K q, hKf q⟩, by fun_prop⟩, fun p w ↦ Subtype.ext ?_,
     fun p w ↦ Subtype.ext ?_, hKb⟩
-  · exact (K.apply_zero _).trans (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply
-      (hball₁ p) (hf₁ p) hk hε.le w).symm
-  · exact (K.apply_one _).trans ((OpenPartialHomeomorph.coe_morseCharacteristicMap_apply
-      (hball₀ p) (hf₀ p) hk hε.le ((g p).diskMap w)).trans
-        (congrArg _ ((g p).coe_diskMap_apply_down w))).symm
+  · exact (K.apply_zero _).trans ((hχ₁ p w).trans
+      (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₁ p) (hf₁ p) hk hε.le w).symm)
+  · exact (K.apply_one _).trans ((hχ₀ p w).trans
+      ((OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball₀ p) (hf₀ p) hk hε.le
+        ((g p).diskMap w)).trans (congrArg _ ((g p).coe_diskMap_apply_down w))).symm)
+
+section Comparison
+
+variable {ι : Type*} {P : Type*} [TopologicalSpace P]
+
+/-- **Milnor's comparison of two families of Morse charts over a compact parameter space.** Let
+`φ₀ i p` and `φ₁ i p`, for `p` in a compact space `P`, be charts with common centres in which
+`f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²` and whose targets contain the closed ball of radius
+`√ε`. Suppose that their inverses are jointly continuous in `p` and in the point of that ball, and
+that on a ball of radius `r i` about the origin the transitions `φ₀ i p ∘ (φ₁ i p)⁻¹` are defined
+and differentiable with derivatives `D i p y` jointly continuous in `p` and `y`. Suppose that
+`f⁻¹[c - ε, c]` is compact and that `f` has no critical point with value in `[c - ε, c)`. Let
+`g i p` be the polar factor of the negative block `ι† (D i p 0) ι` of `D i p 0`, where
+`ι : ℝ^{k i} → ℝⁿ` extends by zero onto the first `k i` coordinates. Then each `g i p` is a linear
+isometry, jointly continuous in `p` and the point of `ℝ^{k i}`, and a homotopy `K i` over `P`
+deforms the characteristic family of `φ₁` to the characteristic family of `φ₀` composed with the
+disk maps of `g i`, keeping the boundary spheres in the lower sublevel `M_{c-ε}`.
+
+These are the self-maps of the discs and the homotopies from which
+`TauCeti.fiberwiseCellReattachment` builds the reattachment map between the fiberwise adjunction
+spaces of the attaching families of `φ₁` and `φ₀`. -/
+theorem exists_homotopy_morseCharacteristicFamily_polarFactor [CompactSpace P]
+    (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+    (φ₀ φ₁ : ι → P → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+    (hk : ∀ i, k i ≤ n) (hε : 0 < ε) (hball₀ : ∀ i p, closedBall 0 √ε ⊆ (φ₀ i p).target)
+    (hball₁ : ∀ i p, closedBall 0 √ε ⊆ (φ₁ i p).target)
+    (hf₀ : ∀ i p, ∀ y ∈ (φ₀ i p).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ₀ i p y j ^ 2)
+    (hf₁ : ∀ i p, ∀ y ∈ (φ₁ i p).source,
+      f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ₁ i p y j ^ 2)
+    (hs₀ : ∀ i, ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (φ₀ i q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε))
+    (hs₁ : ∀ i, ContinuousOn (fun q : P × EuclideanSpace ℝ (Fin n) ↦ (φ₁ i q.1).symm q.2)
+      (univ ×ˢ closedBall 0 √ε))
+    (hp : ∀ i p, (φ₀ i p).symm 0 = (φ₁ i p).symm 0) {r : ι → ℝ} (hr : ∀ i, 0 < r i)
+    (htr : ∀ i p, ball (0 : EuclideanSpace ℝ (Fin n)) (r i) ⊆ (φ₁ i p).symm ⁻¹' (φ₀ i p).source)
+    {D : ι → P → EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ]
+      EuclideanSpace ℝ (Fin n)}
+    (hT : ∀ i p, ∀ y ∈ ball (0 : EuclideanSpace ℝ (Fin n)) (r i),
+      HasFDerivAt (fun z ↦ φ₀ i p ((φ₁ i p).symm z)) (D i p y) y)
+    (hD : ∀ i, ContinuousOn (Function.uncurry (D i)) (univ ×ˢ ball 0 (r i)))
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) c))
+    (hreg : ∀ x, c - ε ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0) :
+    ∃ (g : ∀ i, P → EuclideanSpace ℝ (Fin (k i)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (k i)))
+      (hg : ∀ i, Continuous fun q : P × EuclideanSpace ℝ (Fin (k i)) ↦ g i q.1 q.2),
+      (∀ i p, ⇑(g i p) = (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap ∘L D i p 0 ∘L
+            (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (hk i))).toContinuousLinearMap).polarFactor) ∧
+      ∃ K : ∀ i, (morseCharacteristicFamily φ₁ k hk hε.le hball₁ hf₁ hs₁ i).Homotopy
+          ((morseCharacteristicFamily φ₀ k hk hε.le hball₀ hf₀ hs₀ i).comp
+            (ContinuousMap.fst.prodMk (TopCat.diskMapFamily (g i) (hg i)))),
+        ∀ i t p s, K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) ∈
+          {y : {x | f x ≤ c + ε} | f y ≤ c - ε} := by
+  choose g hg hgc K hK₀ hK₁ hKb using fun i ↦
+    exists_homotopy_morseCharacteristicMap_polarFactor_family hfs (φ₀ i) (φ₁ i) (hk i) hε
+      (hball₀ i) (hball₁ i) (hf₀ i) (hf₁ i) (hs₀ i) (hs₁ i) (hp i) (hr i) (htr i) (hT i) (hD i)
+      hcompact hreg
+  exact ⟨g, hgc, hg, fun i ↦
+    { toContinuousMap := K i
+      map_zero_left q :=
+        (hK₀ i q.1 q.2).trans (morseCharacteristicFamily_apply _ _ _ _ _ _ _ i q).symm
+      map_one_left := by
+        rintro ⟨p, w⟩
+        simpa using hK₁ i p w }, hKb⟩
+
+end Comparison
 
 /-- **Two Morse charts whose negative blocks preserve orientation have homotopic attaching
 maps.** Under the hypotheses of `TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor`, if
