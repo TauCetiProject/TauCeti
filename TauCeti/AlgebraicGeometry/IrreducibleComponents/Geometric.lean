@@ -19,9 +19,10 @@ import TauCeti.Topology.Irreducible
 
 Let `X` be a quasi-compact scheme locally of finite type over a field `K`. Its irreducible
 components need not be geometrically irreducible, but they become so after one finite separable
-extension: there is a finite separable `L / K` such that, for every field extension `M / L`,
-taking preimages under `X_M ⟶ X_L` is a bijection between the irreducible components of `X_L`
-and those of `X_M`. This splits and labels the geometric irreducible components of `X`.
+extension: there is a finite separable `L / K` such that, for every tower of field extensions
+`M / F / L`, taking preimages under `X_M ⟶ X_F` is a bijection between the irreducible components
+of `X_F` and those of `X_M`. This splits and labels the geometric irreducible components of `X`,
+and the splitting persists after enlarging `L`.
 
 The argument runs in two steps.
 

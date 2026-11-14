@@ -41,8 +41,8 @@ components at once.
   base field and every extension of it, the nodes of a proper nodal curve split into rational
   points and its branch scheme into two copies of them.
 * `AlgebraicGeometry.Scheme.exists_split_branchScheme_irreducibleComponents`: over one finite
-  separable extension, the nodes and branches split and every irreducible component is
-  geometrically irreducible.
+  separable extension and every extension of it, the nodes and branches split and every
+  irreducible component is geometrically irreducible.
 
 ## References
 

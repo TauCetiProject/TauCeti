@@ -29,7 +29,8 @@ schemes split over a common finite Galois extension, one splitting their disjoin
 
 A splitting persists under every base change of the field
 (`CategoryTheory.IsPullback.exists_split`), since
-`F ⊗[L] (Fin n → L) ≃ Fin n → F`.
+`F ⊗[L] (Fin n → L) ≃ Fin n → F`. This theorem applies to any finite index type and any
+commutative base rings, and records compatibility with both pullback projections.
 
 Once a finite étale scheme `S` and an `S`-scheme `E` of constant rank `d` are both
 split over the base field, `E` is `d` copies of `S`
