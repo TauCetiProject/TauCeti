@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
+import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -143,32 +142,21 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   have hsa : IsSelfAdjoint M := isSelfAdjoint_of_forall_isSelfAdjoint_sum fun x => by
     rw [hform]
     exact .of_nonneg (hQ x)
-  -- It remains to show that the negative part `N` of `M` vanishes.
-  refine CStarAlgebra.nonneg_iff_isSelfAdjoint_and_negPart_eq_zero.mpr ⟨hsa, ?_⟩
-  set N := M⁻
-  have hN : 0 ≤ N := CFC.negPart_nonneg M
-  obtain ⟨R, hR⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hN
-  have hMN : M * N = -(star R * R * N) := by
-    conv_lhs => rw [← CFC.posPart_sub_negPart M hsa]
-    rw [sub_mul, CFC.posPart_mul_negPart, zero_sub, ← hR]
-  -- Evaluating the quadratic form at `N y` shows `R N y = 0` for every `y`.
-  have hRN : R * N = 0 := by
-    classical
-    have hv (y : n → A) : ofMatrix.symm (R * N) *ᵥ y = 0 := by
-      have hneg : ofMatrix.symm (-(star R * R * N)) = -ofMatrix.symm (star R * R * N) :=
-        ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
-      have h := hQ (ofMatrix.symm N *ᵥ y)
-      rw [mulVec_mulVec, ← ofMatrix_symm_mul, hMN, hneg, neg_mulVec, dotProduct_neg,
-        ofMatrix_symm_mul, ← mulVec_mulVec, key, Left.nonneg_neg_iff] at h
-      rw [ofMatrix_symm_mul, ← mulVec_mulVec]
-      exact dotProduct_star_self_eq_zero.mp (le_antisymm h (dotProduct_star_self_nonneg _))
-    refine ext fun i j => ?_
-    have h := congrFun (hv (Pi.single j (star ((R * N) i j)))) i
-    simp only [mulVec_single, Pi.smul_apply, col_apply, MulOpposite.smul_eq_mul_unop,
-      MulOpposite.unop_op, ofMatrix_symm_apply, Pi.zero_apply, mul_star_self_eq_zero] at h
-    rw [h, zero_apply]
-  rw [← star_mul_self_eq_zero, hN.star_eq]
-  calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
-    _ = 0 := by rw [hRN, mul_zero]
+  -- Reduce positivity to showing no compression `star N * M * N` equals a nonzero `-(star R * R)`.
+  refine TauCeti.nonneg_of_isSelfAdjoint_of_star_mul_mul_eq_neg hsa fun R N hRN => ?_
+  classical
+  have hv (y : n → A) : ofMatrix.symm R *ᵥ y = 0 := by
+    have hneg : ofMatrix.symm (-(star R * R)) = -ofMatrix.symm (star R * R) :=
+      ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
+    have h := hQ (ofMatrix.symm N *ᵥ y)
+    rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, ← ofMatrix_symm_star,
+      ← ofMatrix_symm_mul, ← ofMatrix_symm_mul, hRN, hneg, neg_mulVec, dotProduct_neg, key,
+      Left.nonneg_neg_iff] at h
+    exact dotProduct_star_self_eq_zero.mp (le_antisymm h (dotProduct_star_self_nonneg _))
+  refine ext fun i j => ?_
+  have h := congrFun (hv (Pi.single j (star (R i j)))) i
+  simp only [mulVec_single, Pi.smul_apply, col_apply, MulOpposite.smul_eq_mul_unop,
+    MulOpposite.unop_op, ofMatrix_symm_apply, Pi.zero_apply, mul_star_self_eq_zero] at h
+  rw [h, zero_apply]
 
 end CStarMatrix
