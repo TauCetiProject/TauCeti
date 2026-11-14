@@ -11,7 +11,7 @@ import TauCeti.MeasureTheory.Measure.Smul
 /-!
 # The engulfing property of sections of Monge–Ampère solutions
 
-Let `E` be a real inner product space of finite dimension `n ≥ 1` with an additive Haar measure
+Let `E` be a real inner product space of finite dimension `n` with an additive Haar measure
 `μ`, and let `u` be convex on an open set `Ω` with `λ μ ≤ MA_u ≤ Λ μ` on `Ω`, where `MA_u` is the
 Aleksandrov Monge–Ampère measure of `u` and `0 < λ`. Write
 `S(x, h) = {y ∈ Ω | u y < u x + ℓ (y - x) + h}` for the section of `u` at `x` with a supporting
@@ -76,11 +76,16 @@ section Chord
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- **Distance to the boundary along a chord, in normalized position.** Let `T` be an affine
-equivalence mapping `G` into the unit ball. If `y, z ∈ G` and the point `y + t (y - z)`, with
+equivalence mapping `G` into the unit ball. If `z ∈ G` and the point `y + t (y - z)`, with
 `t ≥ 0`, lies outside `G`, then `T y` is within `2 t` of the complement of `T '' G`. -/
 theorem infDist_image_compl_le_of_add_smul_sub_notMem {G : Set E} (T : E ≃ᵃ[ℝ] E)
-    (hT : T '' G ⊆ ball 0 1) {y z : E} (hy : y ∈ G) (hz : z ∈ G) {t : ℝ} (ht : 0 ≤ t)
+    (hT : T '' G ⊆ ball 0 1) {y z : E} (hz : z ∈ G) {t : ℝ} (ht : 0 ≤ t)
     (hw : y + t • (y - z) ∉ G) : infDist (T y) (T '' G)ᶜ ≤ 2 * t := by
+  -- If `y ∉ G`, then `T y` lies in the complement of `T '' G`, at distance `0`.
+  by_cases hy : y ∈ G
+  swap
+  · rw [infDist_zero_of_mem fun h' => hy (T.injective.mem_set_image.1 h')]
+    linarith
   -- `T` maps `y + t (y - z)` to `T y + t (T y - T z)`, and `‖T y - T z‖ < 2`.
   have hline (a b : E) : a + t • (a - b) = AffineMap.lineMap a b (-t) := by
     rw [AffineMap.lineMap_apply_module']
@@ -97,7 +102,7 @@ theorem infDist_image_compl_le_of_add_smul_sub_notMem {G : Set E} (T : E ≃ᵃ[
 end Chord
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
 /-- **Deep points are far from the boundary along chords.** There is a constant `C`, depending
 only on `E` and `μ`, with the following property. Let `G` be a bounded open set and `v` convex on
@@ -115,6 +120,10 @@ theorem exists_add_smul_sub_mem_of_mongeAmpereMeasure_le :
       ∀ y ∈ G, 0 ≤ h → v y ≤ -h → ∀ z ∈ G, ∀ t : ℝ, 0 ≤ t →
         C * Lam * k ^ finrank ℝ E * t < lam * h ^ finrank ℝ E → y + t • (y - z) ∈ G := by
   classical
+  rcases subsingleton_or_nontrivial E with _ | _
+  · -- In a subsingleton space every point is `y`.
+    exact ⟨0, fun G _ v lam Lam h k _ _ _ _ _ _ _ _ y hy _ _ z _ t _ _ =>
+      by rwa [Subsingleton.elim (y + t • (y - z)) y]⟩
   obtain ⟨C₁, hC₁⟩ := exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure μ
     (E := E)
   obtain ⟨C₂, hC₂⟩ := exists_mul_measure_sq_le_mul_ofReal_pow μ (E := E)
@@ -126,7 +135,7 @@ theorem exists_add_smul_sub_mem_of_mongeAmpereMeasure_le :
   -- If `y + t (y - z)` leaves `G`, then `y` is within `2 t` of the boundary in every normalized
   -- position, so the depth bound applies with `d = 2 t`; the volume estimate bounds `λ μ(G)²`.
   have hdepth := hC₁ G v (2 * t) hGo hGb hv hvc (fun p hp => (hfr p hp).ge) y hy
-    fun T hT => infDist_image_compl_le_of_add_smul_sub_notMem T hT hy hz ht hw
+    fun T hT => infDist_image_compl_le_of_add_smul_sub_notMem T hT hz ht hw
   have hvol := hC₂ G v lam k hGo hGb hv hvc (fun p hp => (hfr p hp).le) hlow hMA
   set M := mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G
   set X := ENNReal.ofReal h ^ n
@@ -194,6 +203,15 @@ theorem exists_convexSection_subset_convexSection :
       ∀ y ∈ convexSection Ω u x ℓ h, ∀ m : E →ₗ[ℝ] ℝ, (∀ z ∈ Ω, u y + (m z - m y) ≤ u z) →
         convexSection Ω u x ℓ h ⊆ convexSection Ω u y m ((1 + C * Lam / lam) * h) := by
   classical
+  rcases subsingleton_or_nontrivial E with _ | _
+  · -- In a subsingleton space a section is centred at its only point `y`.
+    refine ⟨0, fun Ω _ u x ℓ h lam Lam _ _ hℓx _ _ _ _ _ y hy m _ z hz => ?_⟩
+    obtain rfl : z = y := Subsingleton.elim z y
+    have hh : 0 < h := pos_of_mem_convexSection (hℓx z (convexSection_subset hy)) hy
+    rw [mem_convexSection_iff]
+    refine ⟨convexSection_subset hz, ?_⟩
+    simp only [sub_self, map_zero, add_zero, NNReal.coe_zero, zero_mul, zero_div]
+    linarith
   obtain ⟨C₁, hC₁⟩ := exists_add_smul_sub_mem_of_mongeAmpereMeasure_le μ (E := E)
   set n := finrank ℝ E
   refine ⟨2 ^ (n + 2) * C₁ + 1, fun Ω _ u x ℓ h lam Lam hΩ hu hℓx hSb hSΩ hlam hMA hMA' y hy m
