@@ -507,7 +507,7 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
       ← fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hyt)
         (I.uniqueDiffOn _ (extChartAt_target_subset_range x hyt))
         ((hg _ hyt).differentiableWithinAt one_ne_zero),
-      (hf.mdifferentiableAt one_ne_zero).fderivWithin_comp_extChartAt_symm x hy]
+      TauCeti.fderivWithin_comp_extChartAt_symm x hy]
     -- The change of tangent coordinates is invertible, so it can be cancelled.
     have hsurj : ∀ w, tangentCoordChange I x y y (tangentCoordChange I y x y w) = w := fun w ↦ by
       rw [tangentCoordChange_comp (w := y) ⟨⟨mem_extChartAt_source y, hy⟩,

@@ -136,7 +136,7 @@ theorem mem_positiveSubgroup_iff_exists_prod
       refine congrArg List.prod (List.map_congr_left fun i _ => ?_)
       simp only [Function.comp_apply, ofAdd_toAdd]
       rfl
-  · have : (t.rationalRootSystem ht).IsNotG2 := isNotG2_rationalRootSystem_of_ne_G2 ht hG2
+  · have : (t.rationalRootSystem ht).IsNotG2 := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) hG2
     rw [mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A l hl hcover]
     constructor

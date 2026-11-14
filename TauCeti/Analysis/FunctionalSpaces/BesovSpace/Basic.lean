@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
-import TauCeti.Analysis.Distribution.TemperedDistribution.BesselPotential
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex

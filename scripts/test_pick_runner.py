@@ -26,7 +26,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
-    source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
+    source = source.replace("!contains", "not contains").replace("!startsWith", "not startsWith").replace("!(", "not (").replace(".labels.*.name", ".label_names")
     github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
         action=action, workflow_run=SimpleNamespace(event=upstream_event, display_title=upstream_title), label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
@@ -118,17 +118,20 @@ class PickerWorkflow(unittest.TestCase):
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-pr-approved"), "pr-build pr=7 head=" + "a" * 40)
         self.assertEqual(expression(BUILD["run-name"], event="repository_dispatch", action="tauceti-bors-staging"), "bors branch=main batch=12 head=" + "a" * 40 + " base=" + "b" * 40)
 
-    def test_label_events_only_route_self_tested_prs(self):
+    def test_self_tested_prs_skip_picker_before_allocating_any_runner(self):
         condition = BUILD["jobs"]["pick-runner"]["if"]
+        self.assertTrue(expression(condition))
+        for action in ("labeled", "unlabeled", "synchronize", "opened"):
+            self.assertFalse(expression(condition, action=action, label="self-tested", labels=("self-tested",)))
+        self.assertTrue(expression(condition, action="unlabeled", label="self-tested"))
+        for label in ("full-lint", "lint-repair"):
+            self.assertTrue(expression(condition, action="labeled", label=label, labels=("self-tested", label)))
+        self.assertTrue(expression(condition, event="repository_dispatch", action="tauceti-bors-staging",
+                                   labels=("self-tested",)))
+        self.assertTrue(expression(condition, labels=("self-tested",), head_ref="lint-repair/main"))
         for action in ("labeled", "unlabeled"):
             self.assertFalse(expression(condition, action=action))
-            self.assertTrue(expression(condition, action=action, label="self-tested"))
-            self.assertFalse(expression(condition, action=action, labels=("self-tested",)))
-            self.assertFalse(expression(condition, action=action, label="full-lint"))
-            for label in ("full-lint", "lint-repair"):
-                self.assertTrue(expression(condition, action=action, label=label, labels=("self-tested",)))
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
-        self.assertTrue(expression(condition))
 
     def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
@@ -176,10 +179,9 @@ class PickerWorkflow(unittest.TestCase):
             "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
             "fleet-74773fc7f54d4877add11d80113fe340"])
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
-        token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
-        self.assertTrue(token["continue-on-error"])
-        self.assertIn("inputs.pr-number > 0", token["if"])
-        self.assertIn("'self-tested'", token["if"])
+        self.assertFalse(any("create-github-app-token" in s.get("uses", "") for s in pick["steps"]))
+        self.assertFalse(any("self_tested.py" in s.get("run", "") for s in pick["steps"]))
+        self.assertNotIn("skip-pr-build", pick["outputs"])
         self.assertTrue(pick["continue-on-error"])
         step = next(s for s in pick["steps"] if s.get("id") == "pick")
         self.assertEqual(step["run"], "python3 scripts/fleet_runner.py --route")

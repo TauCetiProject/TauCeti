@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 -- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
--- Private: `Module.Finite.of_finite_end` shows that a spinor module is finite-dimensional.
+-- Private: `Module.Finite.of_surjective_end` shows that a spinor module is finite-dimensional.
 import TauCeti.LinearAlgebra.Dual.Lemmas
 -- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
@@ -314,8 +314,7 @@ the endomorphism algebra of `S`, then `finrank K V` is even: comparing dimension
 theorem even_finrank_of_algEquiv_end [Module.Finite K V] {S : Type*}
     [AddCommGroup S] [Module K S] (ρ : CliffordAlgebra Q ≃ₐ[K] Module.End K S) :
     Even (finrank K V) := by
-  have : Module.Finite K (Module.End K S) := Module.Finite.equiv ρ.toLinearEquiv
-  have := Module.Finite.of_finite_end K S
+  have := Module.Finite.of_surjective_end ρ ρ.surjective
   have hdim := ρ.toLinearEquiv.finrank_eq
   rw [finrank_eq_two_pow, Module.finrank_linearMap] at hdim
   obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow Nat.prime_two).1 (Dvd.intro _ hdim.symm)
@@ -333,8 +332,7 @@ theorem finrank_eq_two_pow_of_bijective_lsmul [Module.Finite K V]
     finrank K S = 2 ^ (finrank K V / 2) := by
   let ρ := AlgEquiv.ofBijective _ h
   have hV := even_finrank_of_algEquiv_end Q ρ
-  have : Module.Finite K (Module.End K S) := Module.Finite.equiv ρ.toLinearEquiv
-  have := Module.Finite.of_finite_end K S
+  have := Module.Finite.of_surjective_end ρ ρ.surjective
   have hdim := ρ.toLinearEquiv.finrank_eq
   rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
     sq] at hdim
