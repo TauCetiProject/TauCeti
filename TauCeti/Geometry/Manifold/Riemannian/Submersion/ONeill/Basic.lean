@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Smoothness
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # O'Neill's fundamental tensors
@@ -20,11 +21,17 @@ its vertical part. Both are continuous bilinear maps on each tangent space,
 not differential operators on freely chosen extensions of tangent vectors.
 
 The construction uses the induced endomorphism connection to differentiate the
-native horizontal orthogonal projection. The evaluation theorems identify it with
+native horizontal orthogonal projection. Conversely, the endomorphism-connection
+derivatives of the horizontal and vertical orthogonal projections are recovered
+from `oneillA + oneillT` by `hom_starProjection_orthogonal_ker_apply` and
+`hom_starProjection_ker_apply`. The evaluation theorems identify the tensors with
 O'Neill's formulas on differentiable vector fields. For a fixed first argument, both tensors are
 skew-adjoint, by metric compatibility of the Levi-Civita connection. Both tensors are smooth
 sections of the native iterated Hom bundle, so smooth vector fields give smooth
-evaluations.
+evaluations, and both are bounded in the Riemannian fibre norm near each point
+and on every compact subset of the source (`eventually_norm_oneillA_le`,
+`exists_norm_oneillA_le_of_isCompact`, `eventually_norm_oneillT_le`,
+`exists_norm_oneillT_le_of_isCompact`).
 
 ## References
 
@@ -38,8 +45,8 @@ orthogonal projections from `Submersion.Smoothness`.
 
 public section
 
-open Bundle Manifold
-open scoped ContDiff InnerProductSpace Manifold
+open Bundle Filter Manifold Set
+open scoped ContDiff InnerProductSpace Manifold Topology
 
 noncomputable section
 
@@ -261,6 +268,229 @@ theorem contMDiff_oneillT :
     h.contMDiff_exchangeTensor_apply hQX hY
 
 end Smoothness
+
+section Bounds
+
+private theorem contMDiffOn_exchangeTensor_apply {u : Set M} (hu : IsOpen u)
+    {X Y : Π x : M, TangentSpace I x}
+    (hX : ContMDiffOn I I.tangent ∞ (T% X) u)
+    (hY : ContMDiffOn I I.tangent ∞ (T% Y) u) :
+    ContMDiffOn I I.tangent ∞
+      (T% (fun x ↦ exchangeTensor (I := I) (J := J) (f := f) x (X x) (Y x))) u := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hP := (h.contMDiff_starProjection_orthogonal_ker (n := ∞) (by simp)).contMDiffOn (s := u)
+  have hQ := (h.contMDiff_starProjection_ker (n := ∞) (by simp)).contMDiffOn (s := u)
+  have hPY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (∞ + 1)
+      (T% (fun x ↦ (mfderiv I J f x).kerᗮ.starProjection (Y x))) u :=
+    (hP.clm_bundle_apply hY).of_le (by simp)
+  have hQY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (∞ + 1)
+      (T% (fun x ↦ (mfderiv I J f x).ker.starProjection (Y x))) u :=
+    (hQ.clm_bundle_apply hY).of_le (by simp)
+  have hD₁ := (CovariantDerivative.contMDiffOn_leviCivitaConnection (I := I) (M := M)
+    (n := ∞) (m := ∞) (k := ∞) hu (by simp) (by simp) hPY).clm_bundle_apply hX
+  have hD₂ := (CovariantDerivative.contMDiffOn_leviCivitaConnection (I := I) (M := M)
+    (n := ∞) (m := ∞) (k := ∞) hu (by simp) (by simp) hQY).clm_bundle_apply hX
+  refine ContMDiffOn.congr (fun x hx ↦ ((hQ.clm_bundle_apply hD₁) x hx).add_section
+      ((hP.clm_bundle_apply hD₂) x hx)) fun x hx ↦ ?_
+  exact congrArg (TotalSpace.mk' E x)
+    (h.exchangeTensor_apply (((hY x hx).contMDiffAt (hu.mem_nhds hx)).mdifferentiableAt (by simp))
+      (X x))
+
+private theorem eventually_norm_exchangeTensor_le (x : M) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ᶠ y in 𝓝 x, ∀ u v : TangentSpace I y,
+      ‖exchangeTensor (I := I) (J := J) (f := f) y u v‖ ≤ C * ‖u‖ * ‖v‖ := by
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun y : M ↦ TangentSpace I y)
+  let e := trivializationAt E (TangentSpace I) x
+  let b := Module.finBasis ℝ E
+  let L := fun i ↦ (b.coord i).toContinuousLinearMap
+  let W := fun i j y ↦
+    exchangeTensor (I := I) (J := J) (f := f) y (e.localFrame b i y) (e.localFrame b j y)
+  have hxe : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x
+  have hW (i j : Fin (Module.finrank ℝ E)) :
+      ∀ᶠ y in 𝓝 x, ‖W i j y‖ ≤ ‖W i j x‖ + 1 := by
+    have hc := (contMDiffOn_exchangeTensor_apply h e.open_baseSet
+      (e.contMDiffOn_localFrame_baseSet (I := I) ∞ b i)
+      (e.contMDiffOn_localFrame_baseSet (I := I) ∞ b j)).contMDiffAt
+      (e.open_baseSet.mem_nhds hxe)
+    exact ((TauCeti.continuous_norm_bundle E (TangentSpace I)).continuousAt.comp
+      hc.continuousAt).eventually (Iic_mem_nhds (lt_add_one _))
+  obtain ⟨K, hKpos, hK⟩ :=
+    eventually_norm_trivializationAt_lt E (fun y : M ↦ TangentSpace I y) x
+  refine ⟨∑ i, ∑ j, (‖L i‖ * K) * (‖L j‖ * K) * (‖W i j x‖ + 1),
+    Finset.sum_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦ by positivity, ?_⟩
+  filter_upwards [e.open_baseSet.mem_nhds hxe, hK,
+    Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦ hW i j]
+    with y hye hyK hyW u v
+  have hexp : exchangeTensor (I := I) (J := J) (f := f) y u v =
+      ∑ i, ∑ j, (b.repr (e.continuousLinearMapAt ℝ y u) i *
+        b.repr (e.continuousLinearMapAt ℝ y v) j) • W i j y := by
+    conv_lhs => rw [b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := ℝ) hye u]
+    simp only [map_sum, map_smul, sum_apply, smul_apply]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    conv_lhs => rw [b.eq_sum_repr_continuousLinearMapAt_smul_localFrame (𝕜 := ℝ) hye v]
+    simp only [map_sum, map_smul, Finset.smul_sum, smul_smul, W]
+  have hcoord {z : TangentSpace I y} (i : Fin (Module.finrank ℝ E)) :
+      |b.repr (e.continuousLinearMapAt ℝ y z) i| ≤ ‖L i‖ * (K * ‖z‖) := by
+    have hLi : b.repr (e.continuousLinearMapAt ℝ y z) i =
+        L i (e.continuousLinearMapAt ℝ y z) := rfl
+    rw [← Real.norm_eq_abs, hLi]
+    exact ((L i).le_opNorm _).trans <| mul_le_mul_of_nonneg_left
+      (((e.continuousLinearMapAt ℝ y).le_opNorm z).trans
+        (mul_le_mul_of_nonneg_right hyK.le (norm_nonneg z))) (norm_nonneg _)
+  rw [hexp, Finset.sum_mul, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [Finset.sum_mul, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [norm_smul, Real.norm_eq_abs, abs_mul]
+  calc |b.repr (e.continuousLinearMapAt ℝ y u) i| *
+          |b.repr (e.continuousLinearMapAt ℝ y v) j| * ‖W i j y‖
+      ≤ (‖L i‖ * (K * ‖u‖)) * (‖L j‖ * (K * ‖v‖)) * (‖W i j x‖ + 1) := by
+        gcongr
+        · exact hcoord i
+        · exact hcoord j
+        · exact hyW i j
+    _ = (‖L i‖ * K) * (‖L j‖ * K) * (‖W i j x‖ + 1) * ‖u‖ * ‖v‖ := by ring
+
+/-- O'Neill's horizontal fundamental tensor is locally bounded in the Riemannian fibre norm. -/
+theorem eventually_norm_oneillA_le (x : M) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ᶠ y in 𝓝 x, ∀ u v : TangentSpace I y,
+      ‖h.oneillA y u v‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ := eventually_norm_exchangeTensor_le h x
+  refine ⟨C, hC0, hC.mono fun y hy u v ↦ ?_⟩
+  rw [oneillA, h.horizontalLift_comp_mfderiv, ContinuousLinearMap.comp_apply]
+  refine (hy _ v).trans ?_
+  gcongr
+  exact Submodule.norm_starProjection_apply_le _ _
+
+/-- O'Neill's vertical fundamental tensor is locally bounded in the Riemannian fibre norm. -/
+theorem eventually_norm_oneillT_le (x : M) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ᶠ y in 𝓝 x, ∀ u v : TangentSpace I y,
+      ‖h.oneillT y u v‖ ≤ C * ‖u‖ * ‖v‖ := by
+  obtain ⟨C, hC0, hC⟩ := eventually_norm_exchangeTensor_le h x
+  refine ⟨C, hC0, hC.mono fun y hy u v ↦ ?_⟩
+  rw [oneillT, h.id_sub_horizontalLift_comp_mfderiv, ContinuousLinearMap.comp_apply]
+  refine (hy _ v).trans ?_
+  gcongr
+  exact Submodule.norm_starProjection_apply_le _ _
+
+/-- O'Neill's horizontal fundamental tensor is bounded in the Riemannian fibre norm on every
+compact subset of the source manifold. -/
+theorem exists_norm_oneillA_le_of_isCompact {K : Set M} (hK : IsCompact K) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ u v : TangentSpace I x,
+      ‖h.oneillA x u v‖ ≤ C * ‖u‖ * ‖v‖ := by
+  refine hK.induction_on ⟨0, le_rfl, by simp⟩
+    (fun _ _ hst ⟨C, hC0, hC⟩ ↦ ⟨C, hC0, fun x hx ↦ hC x (hst hx)⟩)
+    (fun _ _ ⟨C, hC0, hC⟩ ⟨C', _, hC'⟩ ↦ ⟨max C C', le_max_of_le_left hC0, fun x hx u v ↦ ?_⟩)
+    fun x _ ↦ ?_
+  · rcases hx with hx | hx
+    · exact (hC x hx u v).trans (by gcongr; exact le_max_left C C')
+    · exact (hC' x hx u v).trans (by gcongr; exact le_max_right C C')
+  · obtain ⟨C, hC0, hC⟩ := h.eventually_norm_oneillA_le x
+    exact ⟨{y | ∀ u v : TangentSpace I y, ‖h.oneillA y u v‖ ≤ C * ‖u‖ * ‖v‖},
+      mem_nhdsWithin_of_mem_nhds hC, C, hC0, fun _ hy ↦ hy⟩
+
+/-- O'Neill's vertical fundamental tensor is bounded in the Riemannian fibre norm on every
+compact subset of the source manifold. -/
+theorem exists_norm_oneillT_le_of_isCompact {K : Set M} (hK : IsCompact K) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ u v : TangentSpace I x,
+      ‖h.oneillT x u v‖ ≤ C * ‖u‖ * ‖v‖ := by
+  refine hK.induction_on ⟨0, le_rfl, by simp⟩
+    (fun _ _ hst ⟨C, hC0, hC⟩ ↦ ⟨C, hC0, fun x hx ↦ hC x (hst hx)⟩)
+    (fun _ _ ⟨C, hC0, hC⟩ ⟨C', _, hC'⟩ ↦ ⟨max C C', le_max_of_le_left hC0, fun x hx u v ↦ ?_⟩)
+    fun x _ ↦ ?_
+  · rcases hx with hx | hx
+    · exact (hC x hx u v).trans (by gcongr; exact le_max_left C C')
+    · exact (hC' x hx u v).trans (by gcongr; exact le_max_right C C')
+  · obtain ⟨C, hC0, hC⟩ := h.eventually_norm_oneillT_le x
+    exact ⟨{y | ∀ u v : TangentSpace I y, ‖h.oneillT y u v‖ ≤ C * ‖u‖ * ‖v‖},
+      mem_nhdsWithin_of_mem_nhds hC, C, hC0, fun _ hy ↦ hy⟩
+
+end Bounds
+
+section Projections
+
+omit [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
+private theorem oneillA_add_oneillT (x : M) (u : TangentSpace I x) :
+    h.oneillA x u + h.oneillT x u = exchangeTensor (I := I) (J := J) (f := f) x u := by
+  simp only [oneillA, oneillT, ContinuousLinearMap.comp_apply, sub_apply,
+    ContinuousLinearMap.id_apply, map_sub, add_sub_cancel]
+
+omit [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
+/-- The endomorphism-connection derivative of the horizontal orthogonal projection is expressed
+in terms of O'Neill's tensors by `(∇_u P) w = Q (A_u w + T_u w) - P (A_u w + T_u w)`. -/
+theorem hom_starProjection_orthogonal_ker_apply (x : M) (u w : TangentSpace I x) :
+    (CovariantDerivative.leviCivitaConnection I M).hom
+        (CovariantDerivative.leviCivitaConnection I M)
+        (fun y ↦ (mfderiv I J f y).kerᗮ.starProjection) x u w =
+      (mfderiv I J f x).ker.starProjection (h.oneillA x u w + h.oneillT x u w) -
+        (mfderiv I J f x).kerᗮ.starProjection (h.oneillA x u w + h.oneillT x u w) := by
+  let P := (mfderiv I J f x).kerᗮ.starProjection
+  let Q := (mfderiv I J f x).ker.starProjection
+  let z := (CovariantDerivative.leviCivitaConnection I M).hom
+    (CovariantDerivative.leviCivitaConnection I M)
+    (fun y ↦ (mfderiv I J f y).kerᗮ.starProjection) x u w
+  have hPP : P (P z) = P z :=
+    Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)
+  have hQQ : Q (Q z) = Q z :=
+    Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)
+  have hPQ : P (Q z) = 0 :=
+    Submodule.starProjection_orthogonal_apply_eq_zero (Submodule.starProjection_apply_mem _ _)
+  have hQP : Q (P z) = 0 := by
+    simpa only [Submodule.orthogonal_orthogonal] using
+      Submodule.starProjection_orthogonal_apply_eq_zero
+        (Submodule.starProjection_apply_mem (mfderiv I J f x).kerᗮ z)
+  have hsum : Q z + P z = z := by
+    simp only [P, Q, Submodule.starProjection_orthogonal, sub_apply,
+      ContinuousLinearMap.id_apply, add_sub_cancel]
+  have hex : h.oneillA x u w + h.oneillT x u w = Q z - P z := by
+    rw [← add_apply, oneillA_add_oneillT h]
+    simp [exchangeTensor, P, Q, z]
+  rw [hex]
+  dsimp only [P, Q] at hPP hQQ hPQ hQP hsum
+  rw [map_sub, map_sub, hQQ, hQP, hPQ, hPP, sub_zero, zero_sub, sub_neg_eq_add, hsum]
+
+/-- The endomorphism-connection derivative of the vertical orthogonal projection is expressed
+in terms of O'Neill's tensors by `(∇_u Q) w = P (A_u w + T_u w) - Q (A_u w + T_u w)`. -/
+theorem hom_starProjection_ker_apply (x : M) (u w : TangentSpace I x) :
+    (CovariantDerivative.leviCivitaConnection I M).hom
+        (CovariantDerivative.leviCivitaConnection I M)
+        (fun y ↦ (mfderiv I J f y).ker.starProjection) x u w =
+      (mfderiv I J f x).kerᗮ.starProjection (h.oneillA x u w + h.oneillT x u w) -
+        (mfderiv I J f x).ker.starProjection (h.oneillA x u w + h.oneillT x u w) := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  let P := fun y ↦ (mfderiv I J f y).kerᗮ.starProjection
+  let Q := fun y ↦ (mfderiv I J f y).ker.starProjection
+  let cov := CovariantDerivative.leviCivitaConnection I M
+  let Y := FiberBundle.extend E w
+  have hP := (h.contMDiff_starProjection_orthogonal_ker (n := ∞) (by simp)).mdifferentiableAt
+    (by simp) (x := x)
+  have hQ := (h.contMDiff_starProjection_ker (n := ∞) (by simp)).mdifferentiableAt
+    (by simp) (x := x)
+  have hY : MDiffAt (T% Y) x := FiberBundle.mdifferentiableAt_extend I E w
+  have hsplit : (fun y ↦ Q y (Y y)) = Y - fun y ↦ P y (Y y) := by
+    ext y
+    simp only [P, Q, Submodule.starProjection_orthogonal, sub_apply,
+      ContinuousLinearMap.id_apply, Pi.sub_apply]
+    abel
+  have hQY : cov (fun y ↦ Q y (Y y)) x u =
+      cov Y x u - cov (fun y ↦ P y (Y y)) x u := by
+    rw [hsplit, cov.isCovariantDerivativeOnUniv.sub hY (hP.clm_bundle_apply hY)]
+    rfl
+  have hhomQ := CovariantDerivative.hom_apply cov cov hQ hY u
+  have hhomP := CovariantDerivative.hom_apply cov cov hP hY u
+  simp only [Y, FiberBundle.extend_apply_self] at hhomQ hhomP hQY
+  have hneg : cov.hom cov Q x u w = -cov.hom cov P x u w := by
+    rw [hhomQ, hhomP, hQY]
+    simp only [P, Submodule.starProjection_orthogonal, sub_apply,
+      ContinuousLinearMap.id_apply]
+    abel
+  dsimp only [P, Q, cov] at hneg
+  rw [hneg, h.hom_starProjection_orthogonal_ker_apply, neg_sub]
+
+end Projections
 
 omit [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
