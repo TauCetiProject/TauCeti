@@ -14,7 +14,6 @@ public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Associated
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Topology.Algebra.Ring.Compact
@@ -37,7 +36,7 @@ topological monoid, recorded here as a shortcut instance; the instance
 `TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
-divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
+divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
 multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
 This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
 
@@ -290,34 +289,15 @@ theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
   have := (Units.mul_left_dvd (u := unitCoeff hy)).2 hx
   rwa [← unitCoeff_spec hy] at this
 
-/-- **A family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
+/-- **A nonempty family of `p`-adic integers is a multiple of a family with a coordinate `1`**: for
 `v : ι → ℤ_p` with `ι` nonempty there are an index `i₀`, a scalar `q` and a family `w`
-with `w i₀ = 1` and `v = q • w`. One may take `i₀` of maximal norm (minimal valuation among the
-nonzero `v i`) and `q = v i₀`, which then divides every coordinate. -/
+with `w i₀ = 1` and `v = q • w`. -/
 theorem exists_apply_eq_one_and_eq_smul {ι : Type*} [Nonempty ι] (v : ι → ℤ_[p]) :
     ∃ (i₀ : ι) (q : ℤ_[p]) (w : ι → ℤ_[p]), w i₀ = 1 ∧ v = q • w := by
-  classical
-  by_cases h : ∃ i, v i ≠ 0
-  · obtain ⟨i₀, hi₀, hmin⟩ :
-        ∃ i₀, v i₀ ≠ 0 ∧ ∀ i, v i ≠ 0 → (v i₀).valuation ≤ (v i).valuation := by
-      have hne : {n : ℕ | ∃ i, v i ≠ 0 ∧ (v i).valuation = n}.Nonempty := by
-        obtain ⟨i, hi⟩ := h
-        exact ⟨_, i, hi, rfl⟩
-      obtain ⟨i₀, hi₀, he⟩ := Nat.sInf_mem hne
-      exact ⟨i₀, hi₀, fun i hi ↦ he ▸ Nat.sInf_le ⟨i, hi, rfl⟩⟩
-    obtain ⟨w, hw, hv⟩ := TauCeti.exists_eq_smul_of_forall_dvd (v := v) (x₀ := i₀) fun i ↦ by
-      rcases eq_or_ne (v i) 0 with hi | hi
-      · rw [hi]
-        exact dvd_zero _
-      · refine dvd_of_norm_le ?_
-        rw [norm_eq_zpow_neg_valuation hi, norm_eq_zpow_neg_valuation hi₀]
-        gcongr
-        · exact_mod_cast (Fact.out : p.Prime).one_le
-        · exact_mod_cast hmin i hi
-    exact ⟨i₀, v i₀, w, hw, hv⟩
-  · push Not at h
-    obtain ⟨i₀⟩ := ‹Nonempty ι›
-    exact ⟨i₀, 0, fun _ ↦ 1, rfl, funext fun i ↦ by simp [h i]⟩
+  obtain ⟨i₀, hi₀⟩ := ENat.exists_eq_iInf fun i : ι ↦ IsDiscreteValuationRing.addVal ℤ_[p] (v i)
+  obtain ⟨w, hw, hv⟩ := TauCeti.exists_eq_smul_of_forall_dvd (v := v) (x₀ := i₀) fun i ↦
+    IsDiscreteValuationRing.addVal_le_iff_dvd.mp (hi₀.trans_le (iInf_le _ i))
+  exact ⟨i₀, v i₀, w, hw, hv⟩
 
 end PadicInt
 
