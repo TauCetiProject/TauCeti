@@ -417,13 +417,20 @@ theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ critic
 theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
   IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
 
-/-- A global minimum is a critical point. -/
-theorem _root_.IsMinOn.mem_criticalPoints (h : IsMinOn f univ x) : x ∈ criticalPoints I f :=
-  (h.isLocalMin univ_mem).mem_criticalPoints
+/-- An extremum of `f` on a neighbourhood of `x` is a critical point. -/
+theorem _root_.IsExtrOn.mem_criticalPoints {s : Set M} (h : IsExtrOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  (h.isLocalExtr hs).mem_criticalPoints
 
-/-- A global maximum is a critical point. -/
-theorem _root_.IsMaxOn.mem_criticalPoints (h : IsMaxOn f univ x) : x ∈ criticalPoints I f :=
-  (h.isLocalMax univ_mem).mem_criticalPoints
+/-- A minimum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
+theorem _root_.IsMinOn.mem_criticalPoints {s : Set M} (h : IsMinOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hs
+
+/-- A maximum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
+theorem _root_.IsMaxOn.mem_criticalPoints {s : Set M} (h : IsMaxOn f s x)
+    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hs
 
 /-- If the only critical points of `f` are a global minimum `x₀` and a point `x₁` with a larger
 value, then `x₀` is the only point at which `f` attains its minimum: any other such point would be
@@ -1089,15 +1096,13 @@ theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (h : (criticalPoint
     {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
       ∑ x ∈ h.toFinset, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
-  have hs : (h.toFinset : Set M) = criticalPoints I f := h.coe_toFinset
-  generalize h.toFinset = s at hs ⊢
   rw [← sum_card_filter_nsmul_eq_sum_comp fun x _ ↦
       Finset.mem_range.2 (Nat.lt_succ_of_le (manifoldMorseIndex_le_finrank.trans hn))]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hi : {x ∈ criticalPoints I f | manifoldMorseIndex I f x = i} =
-      ↑({x ∈ s | manifoldMorseIndex I f x = i} : Finset M) := by
+      ↑({x ∈ h.toFinset | manifoldMorseIndex I f x = i} : Finset M) := by
     ext x
-    simp [← hs]
+    simp
   rw [criticalCount_def, hi, encard_coe_eq_coe_finsetCard]
   simp [mul_comm]
 

@@ -117,14 +117,9 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (hf : I
         finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) i).obj V).obj
           (TopCat.of M)) ≡
       finrank k V * (totalCriticalCount I f).toNat [ZMOD 2] := by
-  have hfin := hf.finite_criticalPoints
-  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn,
-    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hfin hn,
-    totalCriticalCount_def, hfin.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
-    Finset.card_eq_sum_ones]
-  push_cast
-  refine (Int.ModEq.sum fun x _ ↦ ?_).mul_left _
-  simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x))
+  rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V hn]
+  exact (toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount
+    hf.finite_criticalPoints hn).symm.mul_left _
 
 /-- Any two Morse functions on a compact boundaryless manifold have numbers of critical points of
 the same parity. -/
