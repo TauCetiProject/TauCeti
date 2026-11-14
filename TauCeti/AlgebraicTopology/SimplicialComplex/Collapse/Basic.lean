@@ -179,6 +179,15 @@ theorem finite_faces (h : CollapsesTo K L) (hL : L.faces.Finite) : K.faces.Finit
     · exact Or.inr (by simp [hωτ])
     exact Or.inl ((hmem ω).mpr ⟨hω, hωσ, hωτ⟩)
 
+/-- A complex without free pairs only collapses to itself: a nonempty collapse sequence starts by
+deleting a free pair. -/
+theorem eq_of_forall_not_isFreePair (h : CollapsesTo K L) (hK : ∀ σ τ, ¬ IsFreePair K σ τ) :
+    K = L := by
+  rcases h.eq_or_exists_head with hKL | ⟨P, hP, -⟩
+  · exact hKL
+  · obtain ⟨σ, τ, hfree, -⟩ := hP.exists_pair
+    exact (hK σ τ hfree).elim
+
 end CollapsesTo
 
 /-- A simplicial complex is collapsible when it collapses to a one-vertex complex. -/
@@ -225,12 +234,9 @@ theorem exists_vertex (h : Collapsible K) : ∃ v : ι, ({v} : Finset ι) ∈ K 
 /-- A collapsible complex without free pairs is a one-vertex complex: a nonempty collapse
 sequence starts by deleting a free pair. -/
 theorem exists_eq_point_of_forall_not_isFreePair (h : Collapsible K)
-    (hK : ∀ σ τ, ¬ IsFreePair K σ τ) : ∃ v : ι, K = PreAbstractSimplicialComplex.point v := by
-  obtain ⟨v, hv⟩ := h
-  rcases hv.eq_or_exists_head with hKv | ⟨P, hP, -⟩
-  · exact ⟨v, hKv⟩
-  · obtain ⟨σ, τ, hfree, -⟩ := hP.exists_pair
-    exact (hK σ τ hfree).elim
+    (hK : ∀ σ τ, ¬ IsFreePair K σ τ) : ∃ v : ι, K = PreAbstractSimplicialComplex.point v :=
+  let ⟨v, hv⟩ := h
+  ⟨v, hv.eq_of_forall_not_isFreePair hK⟩
 
 /-- A collapsible complex has finitely many faces. -/
 theorem finite_faces (h : Collapsible K) : K.faces.Finite := by
@@ -243,3 +249,20 @@ end Collapsible
 
 end PreAbstractSimplicialComplex
 
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*} [Nontrivial ι] {K : AbstractSimplicialComplex ι}
+
+/-- An abstract simplicial complex on at least two vertices without free pairs is not
+collapsible: it would have to be a one-vertex complex, but it contains every vertex. -/
+theorem not_collapsible_of_forall_not_isFreePair
+    (hK : ∀ σ τ, ¬ PreAbstractSimplicialComplex.IsFreePair K.toPreAbstractSimplicialComplex σ τ) :
+    ¬ PreAbstractSimplicialComplex.Collapsible K.toPreAbstractSimplicialComplex := by
+  intro hcol
+  obtain ⟨v, hv⟩ := hcol.exists_eq_point_of_forall_not_isFreePair hK
+  obtain ⟨w, hw⟩ := exists_ne v
+  have hmem : ({w} : Finset ι) ∈ K.toPreAbstractSimplicialComplex := K.singleton_mem w
+  rw [hv, PreAbstractSimplicialComplex.singleton_mem_point] at hmem
+  exact hw hmem
+
+end AbstractSimplicialComplex
