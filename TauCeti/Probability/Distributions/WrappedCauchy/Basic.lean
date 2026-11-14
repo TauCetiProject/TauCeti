@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.Probability.Distributions.Cauchy.Affine
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
@@ -159,23 +160,7 @@ theorem tendsto_wrappedCauchyMeasure_nhds_zero_dirac (m : AddCircle (2 * π)) :
 theorem integral_fourier_wrappedCauchyMeasure (m : AddCircle (2 * π)) (γ : ℝ≥0) (n : ℤ) :
     ∫ θ, fourier n θ ∂wrappedCauchyMeasure m γ =
       fourier n m * (Real.exp (-((γ : ℝ) * |(n : ℝ)|)) : ℂ) := by
-  have hadd (x : ℝ) :
-      fourier n (m + (x : AddCircle (2 * π))) =
-        fourier n m * fourier n (x : AddCircle (2 * π)) := by
-    rw [fourier_apply, fourier_apply, fourier_apply, zsmul_add, AddCircle.toCircle_add,
-      Circle.coe_mul]
-  have hexp (x : ℝ) :
-      fourier n (x : AddCircle (2 * π)) = Complex.exp (((n : ℝ) : ℂ) * x * Complex.I) := by
-    have hπ : (π : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 pi_ne_zero
-    rw [fourier_coe_apply]
-    congr 1
-    push_cast
-    field_simp
-  rw [wrappedCauchyMeasure_def, integral_map (by fun_prop) (by fun_prop)]
-  simp only [hadd, hexp, integral_const_mul]
-  have h := charFun_cauchyMeasure 0 γ n
-  rw [charFun_apply_real] at h
-  rw [h, Complex.ofReal_exp]
+  rw [wrappedCauchyMeasure_def, integral_fourier_map_add_coe, charFun_cauchyMeasure]
   push_cast
   ring_nf
 
