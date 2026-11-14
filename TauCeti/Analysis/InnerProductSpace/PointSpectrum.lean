@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 import TauCeti.LinearAlgebra.Dimension.DirectSum
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!
 # Restricted point spectra and point-spectral subspaces
@@ -77,6 +78,10 @@ spectrum from that of its orthogonal complement.
   point-spectral subspaces.
 * `Module.End.map_pointSpectralSubspace_le_of_commute`: an endomorphism commuting with `A`
   preserves the point-spectral subspaces of `A`.
+* `Module.End.pointSpectralSubspace_sub_smul_id` and `Module.End.pointSpectralSubspace_add_smul_id`:
+  shifting `A` by a real scalar `c` shifts its point-spectral subspaces by `c`.
+* `Module.End.finrank_pointSpectralSubspace_union`: the dimension of the point-spectral subspace is
+  additive over disjoint sets of eigenvalues.
 * `Module.End.finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace`: in finite dimension, the
   dimension of `A.pointSpectralSubspace Ω` is the sum of the dimensions of `A.eigenspace μ` over
   `μ ∈ Ω`.
@@ -269,6 +274,19 @@ theorem pointSpectralSubspace_mono (h : Ω ⊆ Ω') :
 theorem pointSpectralSubspace_empty : A.pointSpectralSubspace ∅ = ⊥ := by
   simp [pointSpectralSubspace]
 
+/-- The point-spectral subspace selected by `Ω` vanishes exactly when `A` has no eigenvalue in
+`Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_eq_bot_iff :
+    A.pointSpectralSubspace Ω = ⊥ ↔ ∀ μ ∈ Ω, ¬A.HasEigenvalue (μ : 𝕜) := by
+  rw [← le_bot_iff, pointSpectralSubspace_le_iff]
+  simp only [le_bot_iff, hasEigenvalue_iff, not_not]
+
+/-- The point-spectral subspace selected by a single real `μ` is the eigenspace at `μ`. -/
+@[simp]
+theorem pointSpectralSubspace_singleton : A.pointSpectralSubspace {μ} = A.eigenspace (μ : 𝕜) := by
+  simp [pointSpectralSubspace]
+
 /-- The point-spectral subspace of a union is the sum of the two point-spectral subspaces. -/
 @[simp]
 theorem pointSpectralSubspace_union :
@@ -341,6 +359,83 @@ theorem pointSpectralSubspace_neg :
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
 
+/-- Shifting an endomorphism by a real scalar `c` shifts its point-spectral subspaces: the
+point-spectral subspace of `A - (c : 𝕜) • id` selected by `Ω` is that of `A` selected by `Ω + c`,
+the preimage of `Ω` under `μ ↦ μ - c`. -/
+@[simp]
+theorem pointSpectralSubspace_sub_ofReal_smul_id (c : ℝ) :
+    (A - (c : 𝕜) • LinearMap.id).pointSpectralSubspace Ω =
+      A.pointSpectralSubspace ((· - c) ⁻¹' Ω) := by
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [eigenspace_sub_smul_id, ← RCLike.ofReal_add]
+    exact eigenspace_le_pointSpectralSubspace (by simpa using hμ)
+  · have h := eigenspace_le_pointSpectralSubspace (A := A - (c : 𝕜) • LinearMap.id)
+      (μ := μ - c) hμ
+    rwa [eigenspace_sub_smul_id, ← RCLike.ofReal_add, sub_add_cancel] at h
+
+/-- Shifting an endomorphism by a real scalar `c` shifts its point-spectral subspaces: the
+point-spectral subspace of `A + (c : 𝕜) • id` selected by `Ω` is that of `A` selected by `Ω - c`,
+the preimage of `Ω` under `μ ↦ μ + c`. -/
+@[simp]
+theorem pointSpectralSubspace_add_ofReal_smul_id (c : ℝ) :
+    (A + (c : 𝕜) • LinearMap.id).pointSpectralSubspace Ω =
+      A.pointSpectralSubspace ((· + c) ⁻¹' Ω) := by
+  simpa [sub_eq_add_neg] using pointSpectralSubspace_sub_ofReal_smul_id (A := A) (Ω := Ω) (-c)
+
+/-- A real scalar operator `(ρ : 𝕜) • id` has the single eigenvalue `ρ`: its point-spectral
+subspace selected by `Ω` is everything if `ρ ∈ Ω` and zero otherwise. -/
+@[simp]
+theorem pointSpectralSubspace_ofReal_smul_id (ρ : ℝ) [Decidable (ρ ∈ Ω)] :
+    ((ρ : 𝕜) • LinearMap.id : Module.End 𝕜 E).pointSpectralSubspace Ω =
+      if ρ ∈ Ω then ⊤ else ⊥ := by
+  have h := pointSpectralSubspace_sub_ofReal_smul_id (A := (0 : Module.End 𝕜 E)) (Ω := Ω) (-ρ)
+  rw [RCLike.ofReal_neg, neg_smul, sub_neg_eq_add, zero_add] at h
+  rw [h]
+  split_ifs with hρ
+  · refine eq_top_iff.2 fun x _ ↦ eigenspace_le_pointSpectralSubspace (μ := 0) (by simpa) ?_
+    simp
+  · refine pointSpectralSubspace_eq_bot_iff.2 fun μ hμ hμ' ↦ hρ ?_
+    obtain ⟨x, hx⟩ := hμ'.exists_hasEigenvector
+    have h0 : (μ : 𝕜) = 0 := by
+      by_contra h0
+      exact hx.2 (by simpa [h0] using hx.apply_eq_smul.symm)
+    simpa [RCLike.ofReal_eq_zero.1 h0] using hμ
+
+section RealSMul
+
+variable [Module ℝ E] [IsScalarTower ℝ 𝕜 E]
+
+private theorem real_smul_id_eq_ofReal_smul_id (c : ℝ) :
+    c • (LinearMap.id : Module.End 𝕜 E) = (c : 𝕜) • LinearMap.id := by
+  ext x
+  exact RCLike.real_smul_eq_coe_smul (K := 𝕜) c x
+
+/-- Shifting an endomorphism by a real scalar `c`, acting through the real scalar action, shifts
+its point-spectral subspaces: the point-spectral subspace of `A - c • id` selected by `Ω` is that
+of `A` selected by `Ω + c`. -/
+@[simp]
+theorem pointSpectralSubspace_sub_smul_id (c : ℝ) :
+    (A - c • LinearMap.id).pointSpectralSubspace Ω = A.pointSpectralSubspace ((· - c) ⁻¹' Ω) := by
+  rw [real_smul_id_eq_ofReal_smul_id, pointSpectralSubspace_sub_ofReal_smul_id]
+
+/-- Shifting an endomorphism by a real scalar `c`, acting through the real scalar action, shifts
+its point-spectral subspaces: the point-spectral subspace of `A + c • id` selected by `Ω` is that
+of `A` selected by `Ω - c`. -/
+@[simp]
+theorem pointSpectralSubspace_add_smul_id (c : ℝ) :
+    (A + c • LinearMap.id).pointSpectralSubspace Ω = A.pointSpectralSubspace ((· + c) ⁻¹' Ω) := by
+  rw [real_smul_id_eq_ofReal_smul_id, pointSpectralSubspace_add_ofReal_smul_id]
+
+/-- A real scalar operator `ρ • id`, acting through the real scalar action, has the single
+eigenvalue `ρ`: its point-spectral subspace selected by `Ω` is everything if `ρ ∈ Ω` and zero
+otherwise. -/
+@[simp]
+theorem pointSpectralSubspace_smul_id (ρ : ℝ) [Decidable (ρ ∈ Ω)] :
+    (ρ • LinearMap.id : Module.End 𝕜 E).pointSpectralSubspace Ω = if ρ ∈ Ω then ⊤ else ⊥ := by
+  rw [real_smul_id_eq_ofReal_smul_id, pointSpectralSubspace_ofReal_smul_id]
+
+end RealSMul
+
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
 `A`. -/
@@ -392,6 +487,29 @@ theorem finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace [FiniteDimens
     exact hμ0 (by simp [hbot])
   · rw [Set.Finite.coe_toFinset]
     exact Set.inter_subset_left
+
+/-- The dimension of the point-spectral subspace selected by the union of two disjoint sets is the
+sum of the dimensions of the two point-spectral subspaces, when these are finite-dimensional. -/
+theorem finrank_pointSpectralSubspace_union [FiniteDimensional 𝕜 (A.pointSpectralSubspace Ω)]
+    [FiniteDimensional 𝕜 (A.pointSpectralSubspace Ω')] (h : Disjoint Ω Ω') :
+    Module.finrank 𝕜 (A.pointSpectralSubspace (Ω ∪ Ω')) =
+      Module.finrank 𝕜 (A.pointSpectralSubspace Ω) +
+        Module.finrank 𝕜 (A.pointSpectralSubspace Ω') := by
+  have hsup := Submodule.finrank_sup_add_finrank_inf_eq (A.pointSpectralSubspace Ω)
+    (A.pointSpectralSubspace Ω')
+  rw [(disjoint_pointSpectralSubspace h).eq_bot, finrank_bot, add_zero] at hsup
+  rw [pointSpectralSubspace_union, hsup]
+
+/-- If `μ` is the only eigenvalue of `A` in `Ω`, the point-spectral subspace selected by `Ω` is
+the eigenspace at `μ`. -/
+theorem pointSpectralSubspace_eq_eigenspace (hμ : μ ∈ Ω)
+    (h : ∀ ν ∈ Ω, A.HasEigenvalue (ν : 𝕜) → ν = μ) :
+    A.pointSpectralSubspace Ω = A.eigenspace (μ : 𝕜) := by
+  refine le_antisymm (iSup₂_le fun ν hν ↦ ?_) (eigenspace_le_pointSpectralSubspace hμ)
+  by_cases hν' : A.HasEigenvalue (ν : 𝕜)
+  · rw [h ν hν hν']
+  · rw [hasEigenvalue_iff, not_not] at hν'
+    simp [hν']
 
 end Module.End
 
