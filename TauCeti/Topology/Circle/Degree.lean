@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Topology.Path.Map
 
 /-!
 # The degree of a loop and the angle swept by a path in the circle
@@ -70,6 +71,10 @@ continuous part of the Maslov index of a path of Lagrangian frames.
 * `Circle.exists_lift`: every path in the circle has a continuous lift through `Circle.exp`.
 * `Circle.angleChange`: the angle swept by a path in the circle.
 * `Circle.angleChange_eq_sub`: it is `θ 1 - θ 0` for every continuous lift `θ`.
+* `Circle.angleChange_eq_sub_of_reparam`: a reparametrization `t ↦ Q (r t)` of a path `Q` with a
+  continuous lift `θ` sweeps the angle `θ (r 1) - θ (r 0)`.
+* `Circle.angleChange_map'_eq_sub_of_reparam`: the same for the images `Path.map'` of paths under
+  a map to the circle continuous on a set containing them.
 * `Circle.angleChange_eq_of_homotopy`, `Circle.angleChange_eq_of_homotopic`: it is invariant
   under homotopies along which the quotient of the endpoints is constant, in particular under
   those fixing the endpoints.
@@ -184,6 +189,25 @@ theorem angleChange_congr {x y x' y' : Circle} (γ : Path x y) (γ' : Path x' y'
   obtain ⟨θ, hθ⟩ := exists_lift γ
   rw [angleChange_eq_sub γ θ.continuous hθ,
     angleChange_eq_sub γ' θ.continuous fun t => (hθ t).trans (h t)]
+
+/-- A path `P` which is a reparametrization `t ↦ Q (r t)` of a path `Q` sweeps the angle
+`θ (r 1) - θ (r 0)`, for every continuous lift `θ` of `Q`. -/
+theorem angleChange_eq_sub_of_reparam {x y x' y' : Circle} (P : Path x y) (Q : Path x' y')
+    {θ : I → ℝ} (hθ : Continuous θ) (hθQ : ∀ s, exp (θ s) = Q s) {r : I → I} (hr : Continuous r)
+    (h : ∀ t, P t = Q (r t)) : angleChange P = θ (r 1) - θ (r 0) :=
+  angleChange_eq_sub P (hθ.comp hr) fun t => by simp [hθQ, h]
+
+/-- A map `H` to the circle which is continuous on a set `U` sweeps, along a path `u` in `U` that
+reparametrizes a path `v` in `U` by `r`, the angle `θ (r 1) - θ (r 0)` for every continuous lift
+`θ` of `H` along `v`. -/
+theorem angleChange_map'_eq_sub_of_reparam {Y : Type*} [TopologicalSpace Y] {H : Y → Circle}
+    {U : Set Y} (hH : ContinuousOn H U) {a b c d : Y} {u : Path a b} {v : Path c d}
+    (hu : ∀ t, u t ∈ U) (hv : ∀ t, v t ∈ U) {θ : I → ℝ} (hθ : Continuous θ)
+    (hθv : ∀ s, exp (θ s) = v.map' (hH.mono (Set.range_subset_iff.2 hv)) s) {r : I → I}
+    (hr : Continuous r) (h : ∀ t, u t = v (r t)) :
+    angleChange (u.map' (hH.mono (Set.range_subset_iff.2 hu))) = θ (r 1) - θ (r 0) :=
+  angleChange_eq_sub_of_reparam _ _ hθ hθv hr fun t => by
+    simp only [Path.map'_coe, Function.comp_apply, h]
 
 /-- The exponential of the angle swept by a path from `x` to `y` is `y / x`. -/
 theorem exp_angleChange {x y : Circle} (γ : Path x y) : exp (angleChange γ) = y / x := by

@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Constructions
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Topology.FiberBundle.Pullback
 
 /-!
 # Fibres and linear charts of pullback bundles
@@ -22,6 +25,11 @@ linear trivialization also induces the original fibre equivalence at the image p
 `Bundle.Trivialization.continuousLinearEquivAt_pullback`). Hom coordinates between pullbacks by two
 different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
+
+A family of fibrewise isomorphisms `Φ z : E (f z) ≃L[𝕜] E x`, continuous on total spaces together
+with its inverse, identifies the pullback `f *ᵖ E` with the trivial bundle with fibre `E x`
+(`TauCeti.IsPullbackTrivialization`). Such identifications pull back along continuous maps, and
+their coordinate expressions in the trivialization of `E` at `x` are continuous.
 -/
 
 public section
@@ -158,3 +166,110 @@ theorem inCoordinates_pullback_of_mem (f : K) (g : L) (x₀ x : X)
   rfl
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+section PullbackTrivialization
+
+variable {𝕜 : Type*} [Semiring 𝕜] {X : Type*} {Z : Type*} [TopologicalSpace Z] {F : Type*}
+  {E : X → Type*} [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)]
+
+variable (F) in
+/-- `Φ` identifies the pullback `f *ᵖ E` of `E` along `f : Z → X` with the trivial bundle over `Z`
+whose fibre is the fibre `E x` over a fixed point `x`: the fibrewise isomorphisms
+`Φ z : E (f z) ≃L[𝕜] E x` are continuous on total spaces, and so are their inverses. -/
+structure IsPullbackTrivialization (f : Z → X) (x : X) (Φ : ∀ z, E (f z) ≃L[𝕜] E x) : Prop where
+  /-- The isomorphisms `Φ z` are continuous on total spaces. -/
+  continuous_apply : Continuous (fun v : TotalSpace F (f *ᵖ E) ↦
+    TotalSpace.mk' F (E := (fun _ : Z ↦ x) *ᵖ E) v.proj (Φ v.proj v.2))
+  /-- The inverses `(Φ z)⁻¹` are continuous on total spaces. -/
+  continuous_symm_apply : Continuous (fun v : TotalSpace F ((fun _ : Z ↦ x) *ᵖ E) ↦
+    TotalSpace.mk' F (E := f *ᵖ E) v.proj ((Φ v.proj).symm v.2))
+
+/-- A pullback trivialization pulls back along continuous maps. -/
+theorem IsPullbackTrivialization.comp {Z' : Type*} [TopologicalSpace Z'] {f : Z → X} {x : X}
+    {Φ : ∀ z, E (f z) ≃L[𝕜] E x} (hΦ : IsPullbackTrivialization F f x Φ) {g : Z' → Z}
+    (hg : Continuous g) : IsPullbackTrivialization F (f ∘ g) x (fun z ↦ Φ (g z)) := by
+  have hι : Continuous fun v : TotalSpace F ((f ∘ g) *ᵖ E) ↦
+      TotalSpace.mk' F (E := f *ᵖ E) (g v.proj) v.2 :=
+    Pullback.continuous_iff.2 ⟨hg.comp (Pullback.continuous_proj F E _),
+      Pullback.continuous_lift F E _⟩
+  have hι' : Continuous fun v : TotalSpace F ((fun _ : Z' ↦ x) *ᵖ E) ↦
+      TotalSpace.mk' F (E := (fun _ : Z ↦ x) *ᵖ E) (g v.proj) v.2 :=
+    Pullback.continuous_iff.2 ⟨hg.comp (Pullback.continuous_proj F E _),
+      Pullback.continuous_lift F E _⟩
+  refine ⟨Pullback.continuous_iff.2 ⟨Pullback.continuous_proj F E _, ?_⟩,
+    Pullback.continuous_iff.2 ⟨Pullback.continuous_proj F E _, ?_⟩⟩
+  · -- Both maps send a vector to the same point of the total space of `E`.
+    have h := (Pullback.continuous_lift F E _).comp (hΦ.continuous_apply.comp hι)
+    simp only [Function.comp_def, Pullback.lift_mk] at h ⊢
+    exact h
+  · have h := (Pullback.continuous_lift F E _).comp (hΦ.continuous_symm_apply.comp hι')
+    simp only [Function.comp_def, Pullback.lift_mk] at h ⊢
+    exact h
+
+end PullbackTrivialization
+
+section Coordinates
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {X : Type*} [TopologicalSpace X] {Z : Type*} [TopologicalSpace Z]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {E : X → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
+  [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle 𝕜 F E] {f : Z → X} {x : X}
+
+/-- The coordinate expression `e ∘ Ψ z ∘ (Φ z)⁻¹ ∘ e⁻¹` of the transition between two pullback
+trivializations, in the trivialization `e` of `E` at `x`, depends continuously on `z`. -/
+theorem IsPullbackTrivialization.continuous_coord_trans {Φ Ψ : ∀ z, E (f z) ≃L[𝕜] E x}
+    (hΦ : IsPullbackTrivialization F f x Φ) (hΨ : IsPullbackTrivialization F f x Ψ) :
+    Continuous fun z ↦ (trivializationAt F E x).continuousLinearMapAt 𝕜 x ∘L
+      (Ψ z : E (f z) →L[𝕜] E x) ∘L ((Φ z).symm : E x →L[𝕜] E (f z)) ∘L
+      (trivializationAt F E x).symmL 𝕜 x := by
+  set e := trivializationAt F E x
+  refine continuous_clm_apply.2 fun w ↦ ?_
+  have h₀ : Continuous fun z : Z ↦
+      TotalSpace.mk' F (E := (fun _ : Z ↦ x) *ᵖ E) z (e.symmL 𝕜 x w) :=
+    Pullback.continuous_iff.2 ⟨continuous_id, by
+      simp only [TotalSpace.mk', Pullback.lift_mk]
+      exact continuous_const⟩
+  have h := (Pullback.continuous_lift F E _).comp
+    (hΨ.continuous_apply.comp (hΦ.continuous_symm_apply.comp h₀))
+  have h' := (e.continuousOn.comp_continuous h fun z ↦
+    e.mem_source.2 (FiberBundle.mem_baseSet_trivializationAt' x)).snd
+  refine h'.congr fun z ↦ ?_
+  simp only [Function.comp_apply, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
+    Pullback.lift_mk, TotalSpace.mk']
+  exact (e.continuousLinearMapAt_apply_of_mem 𝕜
+    (FiberBundle.mem_baseSet_trivializationAt' x) _).symm
+
+/-- The coordinate expression `e ∘ Φ z ∘ e⁻¹` of a pullback trivialization, read in the
+trivialization `e` of `E` at `x` on both sides, depends continuously on `z` wherever `f z` lies in
+the base set of `e`. -/
+theorem IsPullbackTrivialization.continuousOn_coord {Φ : ∀ z, E (f z) ≃L[𝕜] E x}
+    (hΦ : IsPullbackTrivialization F f x Φ) (hf : Continuous f) :
+    ContinuousOn (fun z ↦ (trivializationAt F E x).continuousLinearMapAt 𝕜 x ∘L
+      (Φ z : E (f z) →L[𝕜] E x) ∘L (trivializationAt F E x).symmL 𝕜 (f z))
+      (f ⁻¹' (trivializationAt F E x).baseSet) := by
+  set e := trivializationAt F E x
+  refine continuousOn_clm_apply.2 fun w ↦ ?_
+  have h₀ : ContinuousOn (fun z : Z ↦ TotalSpace.mk' F (E := f *ᵖ E) z (e.symmL 𝕜 (f z) w))
+      (f ⁻¹' e.baseSet) := by
+    refine (inducing_pullbackTotalSpaceEmbedding F E f).continuousOn_iff.2 ?_
+    refine continuousOn_id.prodMk ?_
+    refine (e.continuousOn_symm.comp (hf.prodMk continuous_const).continuousOn
+      fun z hz ↦ Set.mk_mem_prod hz (Set.mem_univ w)).congr fun z hz ↦ ?_
+    simp [e.symmL_apply hz]
+  have h := (Pullback.continuous_lift F E _).comp_continuousOn
+    (hΦ.continuous_apply.comp_continuousOn h₀)
+  have h' := (e.continuousOn.comp h fun z _ ↦
+    e.mem_source.2 (FiberBundle.mem_baseSet_trivializationAt' x)).snd
+  refine h'.congr fun z _ ↦ ?_
+  simp only [Function.comp_apply, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
+    Pullback.lift_mk, TotalSpace.mk']
+  exact (e.continuousLinearMapAt_apply_of_mem 𝕜 (FiberBundle.mem_baseSet_trivializationAt' x) _)
+
+end Coordinates
+
+end TauCeti
