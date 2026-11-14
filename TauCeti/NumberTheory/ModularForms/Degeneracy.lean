@@ -291,14 +291,8 @@ lemma le_conjAct_inv_scaleGL_mul {d e : ℕ} [NeZero d] [NeZero e]
     (h₁ : 𝒢'' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢')
     (h₂ : 𝒢' ≤ ConjAct.toConjAct (scaleGL e)⁻¹ • 𝒢) :
     𝒢'' ≤ ConjAct.toConjAct (scaleGL (e * d))⁻¹ • 𝒢 := by
-  intro g hg
-  have k₁ : scaleGL d * g * (scaleGL d)⁻¹ ∈ 𝒢' := mem_conjAct_inv_scaleGL_iff.mp (h₁ hg)
-  have k₂ := mem_conjAct_inv_scaleGL_iff.mp (h₂ k₁)
-  have key : scaleGL (e * d) * g * (scaleGL (e * d))⁻¹ =
-      scaleGL e * (scaleGL d * g * (scaleGL d)⁻¹) * (scaleGL e)⁻¹ := by
-    rw [scaleGL_mul]; group
-  rw [mem_conjAct_inv_scaleGL_iff, key]
-  exact k₂
+  exact h₁.trans <| (Subgroup.pointwise_smul_le_pointwise_smul_iff.2 h₂).trans_eq <| by
+    rw [smul_smul, ← map_mul, ← _root_.mul_inv_rev, scaleGL_mul]
 
 /-- At `d = 1` the conjugation condition *is* the subgroup inclusion: `diag(1, 1)` is the
 identity, so `𝒢' ≤ diag(1, 1)⁻¹ 𝒢 diag(1, 1)` says no more than `𝒢' ≤ 𝒢`. This is what lets
@@ -622,11 +616,10 @@ lemma mem_gamma1Conj_iff [NeZero q] {γ : SL(2, ℤ)} :
     rw [ConjAct.toConjAct_smul] at hγ
     rw [← hγ]; group
   have h10 := congrArg (fun g : GL (Fin 2) ℝ ↦ (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0) hmul
-  simp only [Fin.isValue, Units.val_mul, coe_scaleGL, mapGL_coe_matrix, algebraMap_int_eq,
-    map_apply_coe, RingHom.mapMatrix_apply, Int.coe_castRingHom, Matrix.mul_apply, of_apply,
-    cons_val', cons_val_fin_one, cons_val_one, map_apply, Fin.sum_univ_two, cons_val_zero,
-    zero_mul, one_mul, zero_add, mul_zero, add_zero] at h10
-  have hc : δ 1 0 = q * γ 1 0 := by exact_mod_cast h10.trans (mul_comm _ _)
+  have hc : δ 1 0 = q * γ 1 0 := by
+    have h10' : (δ 1 0 : ℝ) = γ 1 0 * q := by
+      simpa [Matrix.mul_apply, Fin.sum_univ_two] using h10
+    exact_mod_cast h10'.trans (mul_comm _ _)
   refine ⟨δ, hδ, γ 1 0, hc, (mapGL_inj (S := ℝ) _ _).mp ?_⟩
   rw [← mapGL_conjScale, ← hγ, ConjAct.toConjAct_smul]
 

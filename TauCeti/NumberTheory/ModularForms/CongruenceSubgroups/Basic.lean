@@ -682,11 +682,7 @@ private lemma Gamma0_prime_index_surj :
   · refine ⟨⟨p, p.lt_succ_self⟩, ?_⟩
     rw [QuotientGroup.eq, Gamma0_mem]
     simpa [Gamma0Rep] using h
-  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := by
-      have : Fact (Nat.Prime p) := ⟨hp⟩
-      obtain ⟨j, hj⟩ : ∃ j : ZMod p, j * ((σ.1 1 0 : ℤ) : ZMod p) = 1 :=
-        Finite.surjective_of_injective (mul_left_injective₀ h) 1
-      exact IsUnit.of_mul_eq_one _ (by rwa [mul_comm] at hj)
+  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := Ne.isUnit h
     obtain ⟨j₀, hj₀⟩ := ZMod.exists_dvd_sub_val_mul p (σ.1 0 0) (σ.1 1 0) hunit
     refine ⟨⟨j₀.val, Nat.lt_succ_of_lt (ZMod.val_lt j₀)⟩, ?_⟩
     rw [QuotientGroup.eq, mem_Gamma0_iff_dvd]
