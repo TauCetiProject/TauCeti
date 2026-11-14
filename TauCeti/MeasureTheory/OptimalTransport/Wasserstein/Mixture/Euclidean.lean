@@ -20,8 +20,8 @@ is induced by a measurable map. This discharges the map hypothesis of the genera
 theorem `TauCeti.wassersteinEDist_smul_add_smul_rpow_lt`, so `ν ↦ W₂(μ, ν) ^ 2` is strictly convex
 whenever `μ` gives zero mass to Lipschitz graphs over hyperplanes—in particular whenever `μ`
 vanishes on Borel sets with `dimH A + 1 ≤ finrank ℝ E`, whenever `μ` vanishes on small sets
-(`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier Proposition 2.3), and whenever `μ` is absolutely
-continuous with respect to an additive Haar measure.
+(`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier §3.1, Definition 3.2 and the proof of Proposition 3.5),
+and whenever `μ` is absolutely continuous with respect to an additive Haar measure.
 
 ## Main statements
 
@@ -35,7 +35,7 @@ continuous with respect to an additive Haar measure.
 ## References
 
 * M. Agueh and G. Carlier, *Barycenters in the Wasserstein space*, SIAM J. Math. Anal. 43 (2011),
-  904–924, Proposition 2.3.
+  904–924, §3.1 (Definition 3.2 and the proof of Proposition 3.5).
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, Chapter 7,
   for strict convexity of `ν ↦ W₂(μ, ν) ^ 2` through Brenier's theorem.
 -/
@@ -81,7 +81,9 @@ theorem wassersteinEDist_two_smul_add_smul_sq_lt_of_null_lipschitz_graphs {μ ν
   exact ⟨T, hT.aemeasurable, hπT⟩
 
 /-- **Strict convexity of `ν ↦ W₂(μ, ν) ^ 2` when `μ` vanishes on Borel sets with
-`dimH A + 1 ≤ finrank ℝ E`.** This hypothesis holds in every finite dimension, including `0`. -/
+`dimH A + 1 ≤ finrank ℝ E`.** The hypothesis `hμ` is satisfiable by probability measures in every
+finite dimension (holding vacuously when `finrank ℝ E = 0`, where `ν₀ ≠ ν₁` is impossible for
+probability laws). -/
 theorem wassersteinEDist_two_smul_add_smul_sq_lt_of_dimH_add_one_le {μ ν₀ ν₁ : Measure E}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν₀] [IsProbabilityMeasure ν₁]
     (hμ : ∀ A, MeasurableSet A → dimH A + 1 ≤ (finrank ℝ E : ℝ≥0∞) → μ A = 0)
@@ -94,7 +96,8 @@ theorem wassersteinEDist_two_smul_add_smul_sq_lt_of_dimH_add_one_le {μ ν₀ ν
     hab ha hb h₀ h₁ hne
 
 /-- **Strict convexity of `ν ↦ W₂(μ, ν) ^ 2` when `μ` vanishes on small sets
-(`dimH A ≤ finrank ℝ E - 1`)** (Agueh–Carlier, Proposition 2.3). -/
+(`dimH A ≤ finrank ℝ E - 1`)** (Agueh–Carlier, §3.1, Definition 3.2 and the proof of
+Proposition 3.5). -/
 theorem wassersteinEDist_two_smul_add_smul_sq_lt_of_dimH_le {μ ν₀ ν₁ : Measure E}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν₀] [IsProbabilityMeasure ν₁]
     (hμ : ∀ A, MeasurableSet A → dimH A ≤ ((finrank ℝ E - 1 : ℕ) : ℝ≥0∞) → μ A = 0)
@@ -103,7 +106,9 @@ theorem wassersteinEDist_two_smul_add_smul_sq_lt_of_dimH_le {μ ν₀ ν₁ : Me
     wassersteinEDist 2 μ (a • ν₀ + b • ν₁) ^ 2
       < a * wassersteinEDist 2 μ ν₀ ^ 2 + b * wassersteinEDist 2 μ ν₁ ^ 2 :=
   wassersteinEDist_two_smul_add_smul_sq_lt_of_dimH_add_one_le
-    (fun _ hA hdim => measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hμ hA hdim)
+    (fun _ hA hdim => hμ _ hA (by
+      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim))
     hab ha hb h₀ h₁ hne
 
 /-- **Strict convexity of `ν ↦ W₂(μ, ν) ^ 2` for an absolutely continuous `μ`.** On a

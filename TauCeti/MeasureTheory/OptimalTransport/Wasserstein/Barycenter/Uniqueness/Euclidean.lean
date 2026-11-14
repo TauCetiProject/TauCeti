@@ -83,8 +83,9 @@ theorem subsingleton_frechetBarycenters_two_of_null_lipschitz_graphs
     (wassersteinEDist_ne_top measurable_edist m ν)
   exact ⟨T, hT.aemeasurable, hπT⟩
 
-/-- **Uniqueness of quadratic Wasserstein barycenters under `dimH A + 1 ≤ finrank ℝ E`.** This
-hypothesis holds in every finite dimension, including `0`. -/
+/-- **Uniqueness of quadratic Wasserstein barycenters under `dimH A + 1 ≤ finrank ℝ E`.** The
+hypothesis `hP` is satisfiable by probability laws `P` in every finite dimension, including `0`
+(where every nonzero `P` satisfies `hP`). -/
 theorem subsingleton_frechetBarycenters_two_of_dimH_add_one_le
     {P : Measure (WassersteinSpace 2 E)}
     (hP : P {m : WassersteinSpace 2 E | ∀ A, MeasurableSet A →
@@ -107,7 +108,9 @@ theorem subsingleton_frechetBarycenters_two_of_dimH_le
   refine subsingleton_frechetBarycenters_two_of_dimH_add_one_le
     (mt (measure_mono_null ?_) hP)
   intro m hm _ hA hdim
-  exact measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hm hA hdim
+  exact hm _ hA (by
+    simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+      ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
 
 /-- **Uniqueness of quadratic Wasserstein barycenters.** On a finite-dimensional real inner
 product space, a law `P` on `P₂(E)` that gives positive mass to the laws absolutely continuous

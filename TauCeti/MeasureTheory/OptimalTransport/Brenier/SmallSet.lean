@@ -27,10 +27,11 @@ representation of optimal `edist ^ 2` plans—holds under this weaker geometric 
 
 Since globally Lipschitz graphs over `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) are closed and satisfy
 `dimH + 1 ≤ finrank ℝ E`, the same conclusions hold whenever `μ` vanishes on all Borel sets `A`
-satisfying `dimH A + 1 ≤ finrank ℝ E` (a condition valid in every dimension, including `0`, and
-satisfied by every measure absolutely continuous with respect to an additive Haar measure), and in
-particular whenever `μ` vanishes on all Borel sets of Hausdorff dimension at most
-`finrank ℝ E - 1`—the "vanishing on small sets" hypothesis of Villani and of Agueh and Carlier.
+satisfying `dimH A + 1 ≤ finrank ℝ E` (a condition satisfiable by probability measures in every
+finite dimension, including `0`, and satisfied by every measure absolutely continuous with respect
+to an additive Haar measure), and in particular whenever `μ` vanishes on all Borel sets of
+Hausdorff dimension at most `finrank ℝ E - 1`—the "vanishing on small sets" hypothesis of Villani
+and of Agueh and Carlier.
 
 ## Main statements
 
@@ -54,7 +55,7 @@ particular whenever `μ` vanishes on all Borel sets of Hausdorff dimension at mo
 * C. Villani, *Topics in Optimal Transportation*, Graduate Studies in Mathematics 58, 2003,
   Theorem 2.12(ii) and §2.4.
 * M. Agueh and G. Carlier, *Barycenters in the Wasserstein space*, SIAM J. Math. Anal. 43 (2011),
-  904–924, Proposition 2.1 and Definition 2.2.
+  904–924, §3.1 and Definition 3.2.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser, 2015, Theorem 1.22.
 -/
 
@@ -165,8 +166,9 @@ end NullLipschitzGraphs
 section SmallSets
 
 /-- **Brenier's theorem for sources vanishing on Borel sets with `dimH A + 1 ≤ finrank ℝ E`.**
-This hypothesis holds in every finite dimension, including `0`, and is satisfied by every measure
-absolutely continuous with respect to an additive Haar measure. -/
+This hypothesis is satisfiable by probability measures in every finite dimension, including `0`
+(where it holds vacuously), and is satisfied by every measure absolutely continuous with respect to
+an additive Haar measure. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_of_dimH_add_one_le
     [IsProbabilityMeasure μ]
     (hμ : ∀ A, MeasurableSet A → dimH A + 1 ≤ (finrank ℝ E : ℝ≥0∞) → μ A = 0)
@@ -200,7 +202,9 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_of_dimH_le
         IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
           μ ν S → S =ᵐ[μ] ∇ fun x => (u x).toReal :=
   exists_isKantorovichOptimalTransportMap_gradient_of_dimH_add_one_le
-    (fun _ hA hdim => measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hμ hA hdim) hfin
+    (fun _ hA hdim => hμ _ hA (by
+      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)) hfin
 
 /-- **Brenier's theorem for `edist ^ 2` out of a source vanishing on Borel sets with
 `dimH A + 1 ≤ finrank ℝ E`.** -/
@@ -220,7 +224,9 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_dimH_le [IsFiniteMeasure μ]
     (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
     ∃ T : E → E, Measurable T ∧ π = graphPlan T μ :=
   h.exists_eq_graphPlan_of_dimH_add_one_le
-    (fun _ hA hdim => measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hμ hA hdim) hfin
+    (fun _ hA hdim => hμ _ hA (by
+      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)) hfin
 
 end SmallSets
 

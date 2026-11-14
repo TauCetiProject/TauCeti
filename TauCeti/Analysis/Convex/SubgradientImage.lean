@@ -52,6 +52,9 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 * `TauCeti.isCompact_setOf_mem_subdifferential` and `TauCeti.isCompact_subgradientImage` — the
   graph of the subdifferential over a compact subset of `D`, and the subgradient image of such a
   set, are compact;
+* `TauCeti.continuousAt_of_subsingleton_subdifferential` — any local selection of subgradients is
+  continuous at an interior point of the effective domain where the subdifferential is a
+  subsingleton;
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
   point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
   around which `f` is finite;
@@ -171,6 +174,32 @@ theorem isCompact_setOf_mem_subdifferential {K : Set E} (hK : IsCompact K)
     (isClosed_setOf_mem_subdifferential hbot hK.isClosed (hKD.trans interior_subset)
       ((convexOn_toReal hf hbot).continuousOn_interior.mono hKD))
     fun z hz => ⟨hz.1, mem_closedBall_zero_iff.2 (hR z.1 hz.1 z.2 hz.2)⟩
+
+open scoped Topology in
+/-- A local selection of subgradients of a convex function on a finite-dimensional real inner
+product space is continuous at any interior point of the effective domain where the
+subdifferential is a subsingleton. -/
+theorem continuousAt_of_subsingleton_subdifferential {x : E} (hx : x ∈ interior {x | f x ≠ ⊤})
+    (hsub : (subdifferential (innerₗ E) f x).Subsingleton) {T : E → E}
+    (hT : ∀ᶠ z in 𝓝 x, T z ∈ subdifferential (innerₗ E) f z) :
+    ContinuousAt T x := by
+  obtain ⟨r, hr, hrD⟩ : ∃ r > 0, closedBall x r ⊆ interior {x | f x ≠ ⊤} :=
+    nhds_basis_closedBall.mem_iff.1 (isOpen_interior.mem_nhds hx)
+  have hG :
+      IsCompact {p : E × E | p.1 ∈ closedBall x r ∧ p.2 ∈ subdifferential (innerₗ E) f p.1} :=
+    isCompact_setOf_mem_subdifferential hf hbot (isCompact_closedBall x r) hrD
+  have hball : ∀ᶠ z in 𝓝 x, z ∈ closedBall x r := closedBall_mem_nhds x hr
+  have hmem : ∀ᶠ z in 𝓝 x,
+      (z, T z) ∈ {p : E × E | p.1 ∈ closedBall x r ∧ p.2 ∈ subdifferential (innerₗ E) f p.1} :=
+    hball.and hT
+  have hpair : Filter.Tendsto (fun z => (z, T z)) (𝓝 x) (𝓝 (x, T x)) := by
+    refine hG.tendsto_nhds_of_unique_mapClusterPt hmem ?_
+    rintro ⟨z, y⟩ ⟨-, hy⟩ hcl
+    have hzx : z = x := eq_of_nhds_neBot
+      (mapClusterPt_id_iff.mp (hcl.continuousAt_comp continuous_fst.continuousAt))
+    subst hzx
+    exact Prod.ext rfl (hsub hy hT.self_of_nhds)
+  exact continuous_snd.continuousAt.tendsto.comp hpair
 
 /-- **Subgradient images of compact sets are compact.** For a convex `f : E → EReal` on a
 finite-dimensional real inner product space, the subgradient image of a compact subset of the

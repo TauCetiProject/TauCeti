@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.BoundedVariation.Approximation
 import TauCeti.Analysis.BoundedVariation.Countable
-import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
+import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Slicing
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.Instances.ENNReal

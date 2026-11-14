@@ -101,13 +101,11 @@ theorem Convex.exists_ne_zero_forall_closure_inner_sub_nonpos {E : Type*} [Norme
       rw [← direction_affineSpan]
       exact AffineSubspace.vsub_mem_direction (hcl_sub hz) (hcl_sub hx_cl)
     exact (Submodule.inner_right_of_mem_orthogonal hsub_mem hy_mem).le
-  · obtain ⟨L, hL⟩ := geometric_hahn_banach_open_point hC.interior isOpen_interior hx_not_int
-    have hcl_le : closure C ⊆ {z : E | L z ≤ L x} := by
-      rw [← hC.closure_interior_eq_closure_of_nonempty_interior hint]
-      exact closure_minimal (fun z hz => (hL z hz).le) (isClosed_le L.continuous continuous_const)
-    obtain ⟨z₀, hz₀⟩ := hint
-    have hL0 : L ≠ 0 := fun h0 => by simpa [h0] using hL z₀ hz₀
+  · have hcl_int : interior (closure C) = interior C :=
+      hC.interior_closure_eq_interior_of_nonempty_interior hint
+    obtain ⟨L, hL0, hcl_le⟩ := geometric_hahn_banach_of_nonempty_interior_point hC.closure
+      (hcl_int ▸ hx_not_int) (hcl_int.symm ▸ hint)
     refine ⟨(InnerProductSpace.toDual ℝ E).symm L, by simpa using hL0, fun z hz => ?_⟩
     rw [real_inner_comm, ← InnerProductSpace.toDual_apply_apply,
       LinearIsometryEquiv.apply_symm_apply, map_sub, sub_nonpos]
-    exact hcl_le hz
+    exact hcl_le z hz

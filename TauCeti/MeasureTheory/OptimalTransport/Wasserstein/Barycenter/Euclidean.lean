@@ -116,10 +116,12 @@ theorem existsUnique_isFrechetBarycenter_two_of_dimH_le
     (hP : P {m : WassersteinSpace 2 E | ∀ A, MeasurableSet A →
       dimH A ≤ ((finrank ℝ E - 1 : ℕ) : ℝ≥0∞) →
         ((m : ProbabilityMeasure E) : Measure E) A = 0} ≠ 0) :
-    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 P ν :=
-  existsUnique_isFrechetBarycenter_two_of_dimH_add_one_le P hP2
-    (mt (measure_mono_null fun _ hm _ hA hdim =>
-      measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hm hA hdim) hP)
+    ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 P ν := by
+  refine existsUnique_isFrechetBarycenter_two_of_dimH_add_one_le P hP2
+    (mt (measure_mono_null ?_) hP)
+  exact fun _ hm _ hA hdim => hm _ hA (by
+    simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+      ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
 
 /-- **Existence and uniqueness of population quadratic Wasserstein barycenters** (Le Gouic–Loubes)
 when `P` gives positive mass to laws absolutely continuous with respect to an additive Haar
@@ -168,7 +170,9 @@ theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_le
       ((μ j : ProbabilityMeasure E) : Measure E) A = 0) :
     ∃! ν : WassersteinSpace 2 E, IsFrechetBarycenter 2 (∑ i, w i • Measure.dirac (μ i)) ν :=
   existsUnique_isFrechetBarycenter_two_sum_smul_dirac_of_dimH_add_one_le hw μ hj
-    fun _ hA hdim => measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hμj hA hdim
+    fun _ hA hdim => hμj _ hA (by
+      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
 
 /-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`**
 (Agueh–Carlier) when one positively weighted input law is absolutely continuous with respect to an
@@ -230,7 +234,9 @@ theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_le
       IsMinOn (fun ν : ProbabilityMeasure E =>
         ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (ν : Measure E) (μ i) ^ 2) univ ν :=
   existsUnique_isMinOn_sum_mul_wassersteinEDist_sq_of_dimH_add_one_le w hw μ hμ hj
-    fun _ hA hdim => measure_eq_zero_of_dimH_add_one_le_of_forall_dimH_le hsmall hA hdim
+    fun _ hA hdim => hsmall _ hA (by
+      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
+        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
 
 /-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`**
 (Agueh–Carlier) when one positively weighted input law is absolutely continuous with respect to an
