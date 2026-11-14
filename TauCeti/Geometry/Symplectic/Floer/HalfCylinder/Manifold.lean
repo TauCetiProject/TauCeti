@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
+import TauCeti.Topology.Maps.Restrict
 
 /-!
 # Periodic orbits at the ends of finite-energy Floer half-cylinders in a manifold
@@ -105,28 +106,6 @@ theorem sliceDefect_comp_eq_mvfderiv_sub {u : ℝ × ℝ → M} {z : ℝ × ℝ}
       (mvfderiv_comp_apply z he hu _)
   rw [sliceDefect_def, ← stdComplexLineImag_eq, hd, comp_apply, hY, map_sub]
 
-omit [NormedSpace ℝ F] in
-/-- On a subset `K` embedded into `F` by `e`, neighbourhoods in `M` of points of `K` are
-controlled by neighbourhoods in `F` of their images. -/
-private theorem exists_mem_nhds_of_isEmbedding {K : Set M}
-    (hemb : IsEmbedding fun p : K ↦ e p) {p : M} (hp : p ∈ K) {W : Set M} (hW : W ∈ 𝓝 p) :
-    ∃ V ∈ 𝓝 (e p), ∀ q ∈ K, e q ∈ V → q ∈ W := by
-  have hWK : {q : K | (q : M) ∈ W} ∈ 𝓝 (⟨p, hp⟩ : K) :=
-    continuous_subtype_val.tendsto ⟨p, hp⟩ hW
-  rw [hemb.nhds_eq_comap] at hWK
-  obtain ⟨V, hV, hVW⟩ := mem_comap.1 hWK
-  exact ⟨V, hV, fun q hq heq ↦ @hVW ⟨q, hq⟩ heq⟩
-
-omit [NormedSpace ℝ F] in
-private theorem tendsto_of_isEmbedding {α : Type*} {l : Filter α} {K : Set M}
-    (hemb : IsEmbedding fun p : K ↦ e p) {g : α → M} {p : M} (hp : p ∈ K)
-    (hgK : ∀ᶠ a in l, g a ∈ K) (hg : Tendsto (fun a ↦ e (g a)) l (𝓝 (e p))) :
-    Tendsto g l (𝓝 p) :=
-  tendsto_def.2 fun W hW ↦ by
-    obtain ⟨V, hV, hVW⟩ := exists_mem_nhds_of_isEmbedding hemb hp hW
-    filter_upwards [hgK, tendsto_def.1 hg V hV] with a ha hVa
-    exact hVW (g a) ha hVa
-
 namespace SmoothTwoForm
 
 variable [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ}
@@ -182,7 +161,7 @@ variable [FiniteDimensional ℝ F]
 /-- A `1`-periodic solution of an extension `Y` of `d e (X_{H_t})` staying in `e '' K` lifts to a
 `1`-periodic orbit of `X_{H_t}` in `K`. -/
 private theorem exists_mem_periodicSolutions_of_hasDerivAt {K : Set M}
-    (hemb : IsEmbedding fun p : K ↦ e p) (he_inj : InjOn e K)
+    (hemb : IsEmbedding (K.domRestrict e)) (he_inj : InjOn e K)
     (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {Y : ℝ → F → F}
     (hYe : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p))
     {x' : ℝ → F} (hx'per : Periodic x' 1) (hx' : ∀ t, HasDerivAt x' (Y t (x' t)) t)
@@ -218,12 +197,12 @@ private theorem IsNondegenerate.exists_extension_sliceDefect_ne_top (hω : ω.Is
         ω.hamiltonianVectorField (H z.2) (u z)) = 0)
     (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
-    IsClosedEmbedding (fun p : K ↦ e p) ∧
+    IsClosedEmbedding (K.domRestrict e) ∧
       ∃ Y : ℝ → F → F, Continuous (uncurry Y) ∧ (∀ v, Periodic (fun t ↦ Y t v) 1) ∧
         (∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p)) ∧
         ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect Y (e ∘ u) z‖ ^ 2) ≠ ⊤ := by
   have := isCompact_iff_compactSpace.1 hK
-  have hemb : IsClosedEmbedding fun p : K ↦ e p :=
+  have hemb : IsClosedEmbedding (K.domRestrict e) :=
     (he.continuous.comp continuous_subtype_val).isClosedEmbedding fun p q h ↦
       Subtype.ext (he_inj p.2 q.2 h)
   have hXe : Continuous fun q : ℝ × M ↦ mvfderiv I e q.2 (ω.hamiltonianVectorField (H q.1) q.2) :=
@@ -288,9 +267,9 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_of_floer_o
     hde hYe' hx'per hx' fun t ↦ (hK.image he.continuous).isClosed.mem_of_tendsto
       (hconv.tendsto_at t) (Eventually.of_forall fun n ↦ mem_image_of_mem e (huK _ (hφa n) t))
   have hU : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
-  refine ⟨x, hx, hxK, φ, hφa, hφ, hex ▸ hconv, fun t ↦ tendsto_of_isEmbedding hemb.isEmbedding
-    (hxK t) (Eventually.of_forall fun n ↦ huK _ (hφa n) t)
-    (by simpa only [← hex, comp_apply] using hconv.tendsto_at t),
+  refine ⟨x, hx, hxK, φ, hφa, hφ, hex ▸ hconv,
+    fun t ↦ (hemb.isInducing.tendsto_nhds_iff_of_domRestrict (hxK t)
+      (Eventually.of_forall fun n ↦ huK _ (hφa n) t)).2 ((hex ▸ hconv).tendsto_at t),
     hL2.congr fun n ↦ intervalIntegral.integral_congr fun t _ ↦ ?_⟩
   have hmem : (φ n, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hφa n, mem_univ t⟩
   rw [sliceDefect_comp_eq_mvfderiv_sub (he.mdifferentiableAt one_ne_zero)
@@ -374,7 +353,8 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
       obtain ⟨x, hx, hxK, hex⟩ := exists_mem_periodicSolutions_of_hasDerivAt hemb.isEmbedding
         he_inj hde hYe' hx'per hx' hx'K
       obtain ⟨U, hU, hxU⟩ := hiso x hx hxK
-      obtain ⟨V, hV, hVU⟩ := exists_mem_nhds_of_isEmbedding hemb.isEmbedding (hxK 0) hU
+      obtain ⟨V, hV, hVU⟩ := (hemb.isInducing.mem_nhdsWithin_iff_of_domRestrict (hxK 0)).1
+        (mem_nhdsWithin_of_mem_nhds hU)
       have hx0 : e (x 0) = x' 0 := congrFun hex 0
       obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hx0 ▸ hV)
       refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
@@ -388,9 +368,9 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
         tendsto_natCast_atTop_atTop))
       (Eventually.of_forall fun n : ℕ ↦ mem_image_of_mem e
         (huK _ (by linarith [n.cast_nonneg (α := ℝ)]) t))
-  exact ⟨x, hx, hxK, hex ▸ hconv, fun t ↦ tendsto_of_isEmbedding hemb.isEmbedding (hxK t)
-    ((eventually_gt_atTop a).mono fun s hs ↦ huK s hs t)
-    (by simpa only [← hex, comp_apply] using hconv.tendsto_at t)⟩
+  exact ⟨x, hx, hxK, hex ▸ hconv,
+    fun t ↦ (hemb.isInducing.tendsto_nhds_iff_of_domRestrict (hxK t)
+      ((eventually_gt_atTop a).mono fun s hs ↦ huK s hs t)).2 ((hex ▸ hconv).tendsto_at t)⟩
 
 /-- **Convergence along the whole half-cylinder to a nondegenerate periodic orbit.** Let `ω` be a
 nondegenerate two-form on a Hausdorff boundaryless manifold `M`, `H` a `C²` Hamiltonian,

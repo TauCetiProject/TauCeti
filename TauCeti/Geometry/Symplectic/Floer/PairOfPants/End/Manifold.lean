@@ -15,15 +15,16 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 /-!
 # Asymptotic orbits and end convergence for Floer pairs of pants in manifolds
 
-Let `K` be a Hamiltonian perturbation datum on the pair of pants `S = ℂ ∖ {0, 1}` with values in a
-finite-dimensional manifold `M` carrying a nondegenerate two-form `ω`, equal to `H_q(t) dt` beyond
-some height `T₀` on each end `q`, for period-one Hamiltonians `H_q`, and let `u` solve the Floer
-equation `(du - X_K)^{0,1} = 0` on `S` for almost complex structures `J z` on the tangent spaces
-`T_{u z} M`. Suppose that `u` maps `S` into a compact set `B ⊆ M` and has finite Floer energy. This
-file shows that `u` breaks off a `1`-periodic orbit of `X_{H_q}` at each end `q`, that the end
-loops converge along the whole end `s → ∞` when the periodic orbits of `H_q` in `B` are
-nondegenerate and the end derivative is bounded, and that the pair-of-pants energy identity holds
-with the boundary terms evaluated at these asymptotic periodic orbits.
+Let `K` be a Hamiltonian perturbation datum on the pair of pants `S = ℂ ∖ {0, 1}` — a one-form on
+`S` valued in functions on a finite-dimensional target manifold `M` carrying a nondegenerate
+two-form `ω` — equal to `H_q(t) dt` beyond some height `T₀` on each end `q`, for period-one
+Hamiltonians `H_q`, and let `u : S → M` solve the Floer equation `(du - X_K)^{0,1} = 0` on `S` for
+uniformly tame almost complex structures `J z` on the tangent spaces `T_{u z} M`. Suppose that `u`
+maps `S` into a compact set `B ⊆ M` and has finite Floer energy. This file shows that `u` breaks
+off a `1`-periodic orbit of `X_{H_q}` at each end `q`, that the end loops converge along the whole
+end `s → ∞` when the periodic orbits of `H_q` in `B` are nondegenerate and the end derivative is
+bounded, and that the pair-of-pants energy identity holds with the boundary terms evaluated at
+these asymptotic periodic orbits.
 
 **Positive end charts on a manifold.** In the positive end chart `φ'_q(s, t) = φ_q(±s, ±t)`
 (`TauCeti.Floer.positiveEndChart`), where `s → +∞` along every end, the perturbation `K` pulls back
@@ -210,11 +211,13 @@ private theorem perturbedMFDeriv_comp_positiveEndChart_eq
       perturbationPullback_positiveEndChart_stdComplexLineImag_of_le (q := q) hKH hH hζ x]
 
 /-- **The ends of a Floer pair of pants in a manifold solve the Floer equation of a
-half-cylinder.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` solve the
-Floer equation `(du - X_K)^{0,1} = 0` for the almost complex structure `J` on `T_{u(φ'_q(ζ))} M` at
-the image `φ'_q(ζ)` of a point `ζ` with `s ≥ T₀` of the positive end chart. Then `u ∘ φ'_q` solves
-the half-cylinder Floer equation `∂_s v + J (∂_t v - X_{H'_q}(v)) = 0` at `ζ`, for the end
-Hamiltonian `H'_q` of the positive end. -/
+half-cylinder.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for Hamiltonians
+`H_q` that are `1`-periodic in time and differentiable in the target variable, and let `u` be
+differentiable at the image `φ'_q(ζ)` of a point `ζ` with `s ≥ T₀` of the positive end chart and
+solve the Floer equation `(du - X_K)^{0,1} = 0` there for the almost complex structure `J` on
+`T_{u(φ'_q(ζ))} M`. Then `u ∘ φ'_q` solves the half-cylinder Floer equation
+`∂_s v + J (∂_t v - X_{H'_q}(v)) = 0` at `ζ`, for the end Hamiltonian `H'_q` of the positive
+end. -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -238,8 +241,9 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
     (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
 
-/-- **The energy of an end of a Floer pair of pants in a manifold.** Under the hypotheses of
-`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart`, the energy of
+/-- **The energy of an end of a Floer pair of pants in a manifold.** Let `K` be equal to
+`H_q(t) dt` beyond `T₀` on each end `q`, for Hamiltonians `H_q` that are `1`-periodic in time and
+differentiable in the target variable, and let `u` be differentiable on `S`. Then the energy of
 `u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
 `a ≥ max T₀ 0`, is at most the energy of `u` over `S`. -/
 theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
