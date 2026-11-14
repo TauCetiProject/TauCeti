@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.FiniteMap
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
 
 /-!
-# The projective line is the two-chart model of `k(X)`
+# The projective line as a regular proper curve
 
 The projective line `ℙ¹_k = Proj k[X₀, X₁]` over a field `k`
 (`TauCeti.AlgebraicGeometry.projectiveLine`) is a regular proper curve over `k` whose function
@@ -19,6 +19,12 @@ field is the rational function field `k(X)`, the function `X₁ / X₀` going to
 (`TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv`). By the classification of regular
 proper curves (`AlgebraicGeometry.Scheme.isoTwoChartModel`), it is therefore isomorphic over `k` to
 the two-chart model of `k(X)` built from `X`, the scheme glued from `Spec k[X]` and `Spec k[X⁻¹]`.
+
+Conversely, `ℙ¹_k` is the only regular proper curve over `k` with rational function field: for an
+integral scheme proper over `k` whose local rings at codimension-one points are discrete valuation
+rings, a `k`-isomorphism of `k(X)` with its function field induces an isomorphism with `ℙ¹_k` over
+`k` (`AlgebraicGeometry.Scheme.isoProjectiveLine`), whose pullback of rational functions is the
+given isomorphism (`AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`).
 
 For a function field `F` finite over `k(X)`, the two-chart model of `F` built from the image `x` of
 `X` maps finitely to the two-chart model of `k(X)`
@@ -33,6 +39,8 @@ morphism over `k` whose pullback of rational functions is the inclusion `k(X) �
   two-chart model of `k(X)` built from `X`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.toProjectiveLine`: the projection `ν_F` of the
   two-chart model of `F` to `ℙ¹_k`.
+* `AlgebraicGeometry.Scheme.isoProjectiveLine`: the isomorphism over `k` of a regular proper curve
+  with `ℙ¹_k` induced by a `k`-isomorphism of `k(X)` with its function field.
 
 ## Main results
 
@@ -46,6 +54,8 @@ morphism over `k` whose pullback of rational functions is the inclusion `k(X) �
 * `TauCeti.AlgebraicGeometry.twoChartModel.isFinite_toProjectiveLine`: `ν_F` is finite.
 * `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_functionFieldMap_toProjectiveLine`:
   the pullback of rational functions along `ν_F` is the inclusion `k(X) → F`.
+* `AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`: the pullback of rational
+  functions along `X.isoProjectiveLine e` is `e`.
 
 ## References
 
@@ -200,3 +210,47 @@ theorem functionFieldEquiv_functionFieldMap_toProjectiveLine (z : RatFunc k) :
 end twoChartModel
 
 end TauCeti.AlgebraicGeometry
+
+/-! ### Regular proper curves with rational function field -/
+
+namespace AlgebraicGeometry.Scheme
+
+open TauCeti TauCeti.AlgebraicGeometry
+
+variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [IsIntegral X]
+  [IsProper (X ↘ Spec (.of k))]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+/-- **A regular proper curve with rational function field is the projective line**: for an
+integral scheme `X` proper over `k` whose local rings at codimension-one points are discrete
+valuation rings, and a `k`-isomorphism `e` from the rational function field `RatFunc k` to the
+function field of `X`, the isomorphism `X ≅ ℙ¹_k` over `k` whose pullback of rational functions
+is `e`, the function field of `ℙ¹_k` being identified with `RatFunc k` by
+`projectiveLine.functionFieldEquiv` (`functionFieldMap_isoProjectiveLine_hom`). Such an `X` is a
+curve over `k`: its dimension is the transcendence degree one of `RatFunc k`. -/
+noncomputable def isoProjectiveLine (e : RatFunc k ≃ₐ[k] X.functionField) :
+    X ≅ projectiveLine k :=
+  isoOfFunctionFieldAlgEquiv
+    (Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one (by
+      rw [topologicalKrullDim_eq_toNat_trdeg_functionField k, e.symm.trdeg_eq,
+        (IsFunctionField.ratFunc k).trdeg_eq_one]
+      simp))
+    (IsCurveOver.valuationRing_stalk k (projectiveLine k))
+    ((projectiveLine.functionFieldEquiv k).trans e)
+
+/-- The isomorphism `X ⟶ ℙ¹_k` of `isoProjectiveLine` is a morphism over `k`. -/
+instance (e : RatFunc k ≃ₐ[k] X.functionField) :
+    (X.isoProjectiveLine e).hom.IsOver (Spec (.of k)) := by
+  rw [isoProjectiveLine]
+  infer_instance
+
+/-- **The pullback of rational functions along `X ≅ ℙ¹_k` is `e`**: under the identification of the
+function field of `ℙ¹_k` with `RatFunc k`, the pullback along `X.isoProjectiveLine e` is `e`. -/
+@[simp]
+theorem functionFieldMap_isoProjectiveLine_hom (e : RatFunc k ≃ₐ[k] X.functionField)
+    (z : RatFunc k) :
+    (X.isoProjectiveLine e).hom.functionFieldMap ((projectiveLine.functionFieldEquiv k).symm z) =
+      e z := by
+  simp [isoProjectiveLine]
+
+end AlgebraicGeometry.Scheme
