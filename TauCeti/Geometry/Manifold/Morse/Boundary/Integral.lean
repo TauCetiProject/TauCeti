@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
+public import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
 # The integral Morse boundary
@@ -34,9 +35,15 @@ with coefficients in `ZMod 2` is the mod-two Morse boundary, whatever the orient
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundary_eq_morseBoundary`), so that the
 integral boundary reduces modulo two to the mod-two boundary.
 
+The definitions take no Morse–Smale hypothesis, so that they make sense for every adapted
+pseudo-gradient, but they are the signed counts of trajectories only when `X` is Morse–Smale.
+Otherwise `signedTrajectoryCount` is a junk value: a trajectory along which the stable and
+unstable manifolds are not transverse contributes `0`, and the count is `0` when infinitely many
+trajectories contribute.
+
 Reversing the orientations at the critical points of a set `S` (`TauCeti.MorseOrientation.reverse`)
 conjugates the boundary by the involution of the chains that negates the coefficients of the
-points of `S` (`TauCeti.morseChainReversal`,
+points of `S` (`Finsupp.signReversal`,
 `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse`). Any two choices of orientations
 in the same Morse charts differ in this way (`TauCeti.MorseOrientation.exists_reverse_eq`), so
 the boundaries they define are isomorphic.
@@ -51,7 +58,6 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
   unstable coordinates, at all critical points of `f`.
 * `TauCeti.MorseOrientation.reverse`: the reversal of these orientations on a set of critical
   points.
-* `TauCeti.morseChainReversal`: the involution of the chains negating the coefficients on a set.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff`: the signed count of the trajectories
   from `p` to `q`, or `0` unless `ind p = ind q + 1`.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary`: the Morse boundary with coefficients in a
@@ -68,7 +74,7 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
 * `TauCeti.MorseOrientation.exists_reverse_eq`: two choices of orientations in the same charts
   differ by a reversal.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse`: reversing orientations conjugates
-  the boundary by `TauCeti.morseChainReversal`.
+  the boundary by `Finsupp.signReversal`.
 
 ## References
 
@@ -174,73 +180,16 @@ theorem exists_reverse_eq (o : (p : criticalPoints 𝓘(ℝ, E) f) →
 
 end MorseOrientation
 
-section Reversal
-
-variable (R : Type*) [Ring R] (S : Set (criticalPoints 𝓘(ℝ, E) f)) [DecidablePred (· ∈ S)]
-
-/-- The **orientation-reversal isomorphism** of the Morse chains with coefficients in `R`: it
-negates the coefficients of the critical points of `S`, and is its own inverse. It intertwines the
-Morse boundaries for orientations differing exactly on `S`
-(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse`). -/
-noncomputable def morseChainReversal :
-    (criticalPoints 𝓘(ℝ, E) f →₀ R) ≃ₗ[R] (criticalPoints 𝓘(ℝ, E) f →₀ R) :=
-  LinearEquiv.ofInvolutive
-    (Finsupp.linearCombination R fun p ↦ Finsupp.single p (if p ∈ S then -1 else 1)) <| by
-      intro c
-      induction c using Finsupp.induction_linear with
-      | zero => simp
-      | add c d hc hd => simp only [map_add] at hc hd ⊢; rw [hc, hd]
-      | single p a => by_cases hp : p ∈ S <;> simp [hp]
-
-variable {R S}
-
-/-- The reversal negates a basis chain `a • p` exactly when `p ∈ S`. -/
-@[simp]
-theorem morseChainReversal_single (p : criticalPoints 𝓘(ℝ, E) f) (a : R) :
-    morseChainReversal R S (Finsupp.single p a) = Finsupp.single p (if p ∈ S then -a else a) := by
-  have h : ⇑(morseChainReversal R S) =
-      Finsupp.linearCombination R fun p ↦ Finsupp.single p (if p ∈ S then (-1 : R) else 1) :=
-    LinearEquiv.coe_ofInvolutive _ _
-  rw [h, Finsupp.linearCombination_single, Finsupp.smul_single, smul_eq_mul]
-  split_ifs <;> simp
-
-/-- The coefficient of `q` in the reversal of a chain `c` is `-c q` on `S` and `c q` off `S`. -/
-@[simp]
-theorem morseChainReversal_apply (c : criticalPoints 𝓘(ℝ, E) f →₀ R)
-    (q : criticalPoints 𝓘(ℝ, E) f) :
-    morseChainReversal R S c q = if q ∈ S then -c q else c q := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => by_cases hq : q ∈ S <;> simp_all [add_comm]
-  | single p a =>
-    by_cases hpq : p = q
-    · subst hpq
-      by_cases hp : p ∈ S <;> simp [hp]
-    · by_cases hp : p ∈ S <;> by_cases hq : q ∈ S <;> simp [hp, hq, Finsupp.single_eq_of_ne' hpq]
-
-/-- The reversal is an involution. -/
-@[simp]
-theorem morseChainReversal_morseChainReversal (c : criticalPoints 𝓘(ℝ, E) f →₀ R) :
-    morseChainReversal R S (morseChainReversal R S c) = c := by
-  ext q
-  by_cases hq : q ∈ S <;> simp [hq]
-
-/-- The reversal is its own inverse. -/
-@[simp]
-theorem morseChainReversal_symm : (morseChainReversal R S).symm = morseChainReversal R S :=
-  LinearEquiv.ext fun c ↦ (morseChainReversal R S).symm_apply_eq.2
-    (morseChainReversal_morseChainReversal c).symm
-
-end Reversal
-
 namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   (hX : IsAdaptedPseudoGradient f X) (𝔬 : MorseOrientation f X)
 
 /-- The coefficient of the critical point `q` in the integral Morse boundary of the critical point
-`p`: the number of trajectories from `p` to `q` counted with their signs when
-`ind p = ind q + 1`, and `0` otherwise. -/
+`p`: `TauCeti.IsAdaptedPseudoGradient.signedTrajectoryCount` when `ind p = ind q + 1`, and `0`
+otherwise. When `X` is Morse–Smale, this is the number of trajectories from `p` to `q` counted
+with their signs; otherwise it is a junk value (for instance `0` if infinitely many trajectories
+have a nonzero sign). -/
 noncomputable def signedMorseBoundaryCoeff (p q : criticalPoints 𝓘(ℝ, E) f) : ℤ :=
   if hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
     hX.signedTrajectoryCount (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq
@@ -294,8 +243,9 @@ section Boundary
 variable (hX 𝔬) in
 /-- **The Morse boundary with coefficients in a ring `R`.** The `R`-linear endomorphism of the free
 module on the critical points of `f` sending a critical point `p` to the sum of the critical points
-`q` with `ind q = ind p - 1`, each weighted by the number of trajectories from `p` to `q` counted
-with their signs. For `R = ℤ` this is the integral Morse boundary. -/
+`q` with `ind q = ind p - 1`, each weighted by `signedMorseBoundaryCoeff`. When `X` is
+Morse–Smale, that weight is the number of trajectories from `p` to `q` counted with their signs,
+and for `R = ℤ` this is the integral Morse boundary; otherwise it is built from junk values. -/
 noncomputable def signedMorseBoundary (hf : IsMorse 𝓘(ℝ, E) f) (R : Type*) [Ring R] :
     (criticalPoints 𝓘(ℝ, E) f →₀ R) →ₗ[R] (criticalPoints 𝓘(ℝ, E) f →₀ R) :=
   haveI := hf.finite_criticalPoints.to_subtype
@@ -333,16 +283,16 @@ theorem mapRange_signedMorseBoundary {R' : Type*} [Ring R'] (g : R →+* R')
 
 /-- **Reversing orientations conjugates the boundary.** The Morse boundary for the orientations
 reversed at the critical points of `S` is the conjugate of the original boundary by the
-involution `TauCeti.morseChainReversal` negating the coefficients on `S`. In particular, the two
+involution `Finsupp.signReversal` negating the coefficients on `S`. In particular, the two
 boundaries are isomorphic. -/
 theorem signedMorseBoundary_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
     [DecidablePred (· ∈ S)] :
     hX.signedMorseBoundary (𝔬.reverse S) hf R =
-      (morseChainReversal R S).toLinearMap ∘ₗ hX.signedMorseBoundary 𝔬 hf R ∘ₗ
-        (morseChainReversal R S).toLinearMap := by
+      (Finsupp.signReversal R S).toLinearMap ∘ₗ hX.signedMorseBoundary 𝔬 hf R ∘ₗ
+        (Finsupp.signReversal R S).toLinearMap := by
   refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [signedMorseBoundary_single_apply, morseChainReversal_single, morseChainReversal_apply,
+  rw [signedMorseBoundary_single_apply, Finsupp.signReversal_single, Finsupp.signReversal_apply,
     signedMorseBoundaryCoeff_reverse]
   by_cases hp : p ∈ S <;> by_cases hq : q ∈ S <;> simp [hp, hq]
 
