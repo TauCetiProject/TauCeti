@@ -23,8 +23,8 @@ Let `E → B` be a real vector bundle of finite rank `r` whose fibre norm is con
 space, over a Hausdorff space `B` which is a finite CW complex relative to its base `A`. Then
 the unit disc bundle `D(E)` (`TauCeti.discBundle`), taken as a space, is a finite CW complex
 relative to `S(E) ∪ D(E)|_A`, the unit sphere bundle together with the disc bundle over `A`
-(`TauCeti.discBundleRelCWComplex`). Its `(n + r)`-cells are the `n`-cells of `B`
-(`TauCeti.discBundleRelCWComplexCellAddRankEquiv`), and it has no other cells
+(`TauCeti.discBundleRelCWComplex`). Its `m`-cells are the `n`-cells of `B` with `n + r = m`
+(`TauCeti.discBundleRelCWComplexCellEquiv`), so it has no cells below dimension `r`
 (`TauCeti.isEmpty_cell_discBundleRelCWComplex_of_lt`). No orientation of `E` is needed. In rank `0`
 the sphere bundle is empty, `D(E)` is the total space and its cells are those of `B`.
 
@@ -35,11 +35,12 @@ along `φ`. The closed unit ball is contractible, so `E` has an orthonormal fram
 splits the coordinates of `x ∈ ℝⁿ⁺ʳ` into base coordinates `y` first and fibre coordinates `z`
 last (`Fin.appendIsometryOfEq`), and sends `x` to the vector `L y (ρ z)` over `φ y`, where `ρ`
 is the radial homeomorphism of the sup-norm unit ball of `ℝʳ` onto the Euclidean one
-(`ContinuousLinearEquiv.unitBallHomeomorph`). So the open cell over `j` consists of the vectors of
-norm less than one over the open cell of `j` (`TauCeti.openCell_discBundleRelCWComplex`), the
-closed cell is the disc bundle over the closed cell of `j`
-(`TauCeti.closedCell_discBundleRelCWComplex`), and the frontier is the disc bundle over the
-frontier of `j` together with the sphere bundle over its closed cell
+(`ContinuousLinearEquiv.unitBallHomeomorph`); this form is exported as
+`TauCeti.exists_linearIsometryEquiv_map_discBundleRelCWComplex`. So the open cell over `j`
+consists of the vectors of norm less than one over the open cell of `j`
+(`TauCeti.openCell_discBundleRelCWComplex`), the closed cell is the disc bundle over the closed
+cell of `j` (`TauCeti.closedCell_discBundleRelCWComplex`), and the frontier is the disc bundle over
+the frontier of `j` together with the sphere bundle over its closed cell
 (`TauCeti.cellFrontier_discBundleRelCWComplex`). The inverse of a characteristic map is continuous
 on its open cell because the closed ball is compact
 (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`), and the weak topology is automatic for
@@ -59,6 +60,9 @@ compactness of the disc fibre, and is not treated here.
   `TauCeti.cellFrontier_discBundleRelCWComplex`: its open cells, closed cells and cell frontiers.
 * `TauCeti.proj_map_discBundleRelCWComplex`, `TauCeti.norm_map_discBundleRelCWComplex`: its
   characteristic maps cover those of `B` and read the fibre coordinates radially.
+* `TauCeti.exists_linearIsometryEquiv_map_discBundleRelCWComplex`: over each base point, its
+  characteristic maps are a continuous orthonormal frame applied to the radial image of the fibre
+  coordinates.
 
 ## References
 
@@ -505,6 +509,27 @@ theorem norm_map_discBundleRelCWComplex {x : Fin m → ℝ} (hx : x ∈ closedBa
   have hv := coe_discCellFun_of_mem (E := E) j h hx hy
   rw [← LinearIsometryEquiv.norm_map (cellFrame (F := F) (E := E) j ⟨_, hy⟩)]
   exact congrArg (fun v : TotalSpace F E ↦ ‖v.2‖) hv
+
+/-- The characteristic map of the cell of the disc bundle `D(E)` over the `n`-cell `j` of `B`, with
+characteristic map `φ`, is fibrewise a linear isometry: there is an orthonormal frame
+`L y : ℝʳ ≃ₗᵢ E (φ y)` along `φ`, depending continuously on `y`, such that the point of the closed
+unit ball with base coordinates `y` and fibre coordinates `z` goes to the vector `L y (ρ z)` over
+`φ y`, where `ρ` is the radial homeomorphism of the sup-norm and Euclidean unit balls of `ℝʳ`. -/
+theorem exists_linearIsometryEquiv_map_discBundleRelCWComplex {n : ℕ}
+    (j : cell (univ : Set B) n) (h : n + finrank ℝ F = m) :
+    ∃ L : ∀ y : closedBall (0 : Fin n → ℝ) 1,
+        EuclideanSpace ℝ (Fin (finrank ℝ F)) ≃ₗᵢ[ℝ] E (map n j y),
+      (Continuous fun p : closedBall (0 : Fin n → ℝ) 1 × EuclideanSpace ℝ (Fin (finrank ℝ F)) ↦
+        TotalSpace.mk' F (map n j p.1) (L p.1 p.2)) ∧
+      ∀ (y : Fin n → ℝ) (hy : y ∈ closedBall 0 1) (z : Fin (finrank ℝ F) → ℝ),
+        z ∈ closedBall 0 1 →
+          ((@map (discBundle F E) _ univ _ (discBundleRelCWComplex F E A) m
+              ((discBundleRelCWComplexCellEquiv F E A m).symm ⟨⟨n, j⟩, h⟩)
+              (Fin.appendIsometryOfEq h (y, z)) : discBundle F E) : TotalSpace F E) =
+            TotalSpace.mk' F (map n j y) (L ⟨y, hy⟩
+              ((EuclideanSpace.equiv (Fin (finrank ℝ F)) ℝ).symm.unitBallHomeomorph z)) :=
+  ⟨cellFrame j, continuous_cellFrame j,
+    fun _ hy _ hz ↦ coe_discCellFun_appendIsometryOfEq j h hy hz⟩
 
 /-- The open cell of the disc bundle `D(E)` over a cell of `B` consists of the vectors of norm
 less than one over its open cell. -/
