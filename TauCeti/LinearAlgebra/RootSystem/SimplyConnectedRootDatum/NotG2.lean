@@ -10,39 +10,66 @@ public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
-# Pinned rational root systems outside G₂
+# The pinned root systems outside G₂
 
-A valid pinned rational system whose Dynkin type is not G₂ has no triple root strings.
-Instances make these root-string bounds available for types B and C in arbitrary valid rank
-and for F₄, in particular for collecting their positive root subgroups.
+The Cartan integers of the pinned rational systems of simply-laced types and types B, C,
+and F₄ have absolute value at most two. These instances make the root-string bounds outside
+G₂ available for collecting positive root subgroups and for punctured-positive normalization.
+The proof specializes `HasCartanType.isNotG2` to the pinned rational root systems.
 
 ## References
 
-* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Plates II, III and VIII.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Plates I–VIII.
 -/
 
 public section
 
 namespace TauCeti.DynkinType
 
-/-- A valid pinned rational root system outside type G₂ has no triple root strings. -/
-theorem isNotG2_rationalRootSystem (t : DynkinType) (ht : t.Valid) (hG2 : t ≠ G2) :
-    (t.rationalRootSystem ht).IsNotG2 :=
-  (hasCartanType_rationalRootSystem t ht).isNotG2 ht hG2
-
-/-- The rational F₄ system has no triple root strings. -/
-instance instIsNotG2RationalRootSystemF4 (ht : F4.Valid) :
-    (F4.rationalRootSystem ht).IsNotG2 :=
-  isNotG2_rationalRootSystem F4 ht (by intro h; cases h)
+/-- The pinned rational root system of every Dynkin type other than G₂ has no triple
+root strings. -/
+theorem isNotG2_rationalRootSystem_of_ne_G2 {t : DynkinType} {ht : t.Valid}
+    (h : t ≠ G2) : (t.rationalRootSystem ht).IsNotG2 :=
+  (hasCartanType_rationalRootSystem t ht).isNotG2 ht h
 
 /-- The Cartan integers of the rational type-B system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemB (n : ℕ) (hn : (B n).Valid) :
     ((B n).rationalRootSystem hn).IsNotG2 :=
-  isNotG2_rationalRootSystem (B n) hn (by intro h; cases h)
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
 
 /-- The Cartan integers of the rational type-C system lie between `-2` and `2`. -/
 instance instIsNotG2RationalRootSystemC (n : ℕ) (hn : (C n).Valid) :
     ((C n).rationalRootSystem hn).IsNotG2 :=
-  isNotG2_rationalRootSystem (C n) hn (by intro h; cases h)
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- The Cartan integers of the rational F₄ system lie between `-2` and `2`. -/
+instance instIsNotG2RationalRootSystemF4 (ht : F4.Valid) :
+    (F4.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- The rational type-A root system has no triple root strings. -/
+instance instIsNotG2RationalRootSystemA (n : ℕ) (ht : (A n).Valid) :
+    ((A n).rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- The rational type-D root system has no triple root strings. -/
+instance instIsNotG2RationalRootSystemD (n : ℕ) (ht : (D n).Valid) :
+    ((D n).rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- The rational E₆ root system has no triple root strings. -/
+instance instIsNotG2RationalRootSystemE6 (ht : E6.Valid) :
+    (E6.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- The rational E₇ root system has no triple root strings. -/
+instance instIsNotG2RationalRootSystemE7 (ht : E7.Valid) :
+    (E7.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
+
+/-- The rational E₈ root system has no triple root strings. -/
+instance instIsNotG2RationalRootSystemE8 (ht : E8.Valid) :
+    (E8.rationalRootSystem ht).IsNotG2 :=
+  isNotG2_rationalRootSystem_of_ne_G2 nofun
 
 end TauCeti.DynkinType
