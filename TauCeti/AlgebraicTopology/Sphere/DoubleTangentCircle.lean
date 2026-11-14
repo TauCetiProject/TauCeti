@@ -33,7 +33,7 @@ two pointwise orthonormal tangent vector fields (two of the quaternionic fields
 `TauCeti.quaternionFrame`, say), to obtain a fibred family of two-spheres; this file treats the
 fibre over one point.
 
-The main result is Proposition 6.21 of the same paper, for `n ≥ 4`: the map `σ : Σ → Ω²Sⁿ`
+The main result is Proposition 6.21 of the same paper, for `n ≥ 3`: the map `σ : Σ → Ω²Sⁿ`
 induces an isomorphism `σ_* : H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`
 (`TauCeti.isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop`). Both groups are infinite
 cyclic, so `σ_*` sends the fundamental class of `Σ` to a generator of `H_{n-2}(Ω²Sⁿ; ℤ)`.
@@ -45,8 +45,11 @@ class of the cube `(y, s, t) ↦ σ(c y)(s)(t)`, which is, up to the order of th
 the family of circles through the circles through the points of `c` (`TauCeti.tangentCircleGenLoop`,
 applied twice). That cube is again a homeomorphism off the boundary, so its class generates
 `πₙ(Sⁿ)`. By the Hurewicz theorems for `Sⁿ` and for the `(n - 3)`-connected space `Ω²Sⁿ`
-(`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`), the Hurewicz class of `σ ∘ c`
-generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` generates `H_{n-2}(Σ; ℤ)`.
+(`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`,
+`HomotopyGroup.bijective_hurewiczIntHom_loopSpace_loopSpace`), the Hurewicz class of `σ ∘ c`
+generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` generates `H_{n-2}(Σ; ℤ)`. For `n = 3` the
+Hurewicz theorem for `Ω²S³` is the one in degree one, which applies because
+`π₁(Ω²S³) ≅ π₂(ΩS³)` is commutative.
 
 ## Main declarations
 
@@ -193,14 +196,14 @@ private theorem bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDouble
 
 /-- **The double loops generate the homology of the double loop space** (Proposition 6.21 of
 Barraud–Damian–Humilière–Oancea). For a unit vector `u` of a real inner product space `E` of
-dimension `n + 1 ≥ 5`, a unit vector `v` of `u⊥` and a point `p₀` of the equator `Σ` of the unit
+dimension `n + 1 ≥ 4`, a unit vector `v` of `u⊥` and a point `p₀` of the equator `Σ` of the unit
 sphere of `u⊥` orthogonal to `v`, the family of double loops `σ : Σ → Ω²Sⁿ` of Example 6.20
 induces an isomorphism `σ_* : H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`. As `Σ` is a sphere of dimension
 `n - 2`, this says that `σ_*` sends the fundamental class of `Σ` to a generator of
 `H_{n-2}(Ω²Sⁿ; ℤ) ≅ ℤ`. -/
 theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
-    (hE : Module.finrank ℝ E = m + 5) (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀ : sphereEquator v) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
+    (hE : Module.finrank ℝ E = m + 4) (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀ : sphereEquator v) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj (ModuleCat.of ℤ ℤ)).map
       (TopCat.ofHom (tangentCircleDoubleLoop hu hv p₀))) := by
   let R := ModuleCat.of ℤ ℤ
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
@@ -210,11 +213,11 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   have hv0 : v ≠ 0 := by
     rintro rfl
     simp at hv
-  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 4 := by
-    have : Fact (Module.finrank ℝ E = m + 4 + 1) := ⟨hE⟩
+  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 3 := by
+    have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
     exact Submodule.finrank_orthogonal_span_singleton hu0
   -- A generalized loop `c` of `Σ` that is a homeomorphism off the boundary of its cube.
-  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 2) hV p₀
+  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 1) hV p₀
   have hcs' : Function.Surjective c := fun q ↦ by
     by_cases hq : q = p₀
     · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
@@ -224,35 +227,31 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   -- Read through `σ` and the loop-space shifts, `c` becomes a cube `Q` of `Sⁿ` that is again a
   -- homeomorphism off the boundary.
   set γ := GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀) c
-  set Q := GenLoop.genLoopLoopHomeomorph _ (m + 3) (GenLoop.genLoopLoopHomeomorph _ (m + 2) γ)
+  set Q := GenLoop.genLoopLoopHomeomorph _ (m + 2) (GenLoop.genLoopLoopHomeomorph _ (m + 1) γ)
   have hQiso : IsIso (GenLoop.hurewicz R Q) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
     (bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDoubleLoop hu hv c hcs hci)
   -- Connectivity of `Sⁿ` and of `Ω²Sⁿ`, for the Hurewicz theorem.
   have hS (x : sphere (0 : E) 1) :
-      ∀ k < m + 2 + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
-    fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 4) hE (by simpa using hk) x
-  have hΩ (x : sphere (0 : E) 1) : ∀ k < m + 2,
-      Subsingleton (HomotopyGroup (Fin k) (Ω (Ω (sphere (0 : E) 1) x) (Path.refl x))
-        (Path.refl (Path.refl x))) := fun k hk ↦
-    (subsingleton_homotopyGroup_loopSpace_iff _ k).2
-      ((subsingleton_homotopyGroup_loopSpace_iff x (k + 1)).2 (hS x (k + 1 + 1) (by omega)))
+      ∀ k < m + 1 + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
+    fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 3) hE (by simpa using hk) x
   -- The two loop-space shifts send the class of `γ` to the class of `Q`.
-  have hshift : HomotopyGroup.pathLoopSpaceMulEquiv (m + 2)
-      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 1) ⟦γ⟧) = ⟦Q⟧ := by
+  have hshift : HomotopyGroup.pathLoopSpaceMulEquiv (m + 1)
+      (HomotopyGroup.pathLoopSpaceMulEquiv m ⟦γ⟧) = ⟦Q⟧ := by
     rw [HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph,
       HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
   -- Through the Hurewicz theorems for `Sⁿ` and for `Ω²Sⁿ`, the Hurewicz class of `γ` generates.
   have hQgen := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hS _) Q).1 hQiso
-  have hF : ((HomotopyGroup.pathLoopSpaceMulEquiv (m + 1)).trans
-      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 2))).toAdditive
-        (Additive.ofMul (α := π_ (m + 1 + 1) (Ω (Ω (sphere (0 : E) 1) _) (Path.refl _)) _) ⟦γ⟧) =
-      Additive.ofMul (α := π_ (m + 2 + 2) (sphere (0 : E) 1) _) ⟦Q⟧ := by
-    -- `toMul (ofMul ⟦γ⟧)` is `⟦γ⟧`, read in `π_ (m + 1 + 1)`
+  have hF : ((HomotopyGroup.pathLoopSpaceMulEquiv m).trans
+      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 1))).toAdditive
+        (Additive.ofMul (α := π_ (m + 1) (Ω (Ω (sphere (0 : E) 1) _) (Path.refl _)) _) ⟦γ⟧) =
+      Additive.ofMul (α := π_ (m + 1 + 2) (sphere (0 : E) 1) _) ⟦Q⟧ := by
+    -- `toMul (ofMul ⟦γ⟧)` is `⟦γ⟧`, read in `π_ (m + 1)`
     rw [MulEquiv.toAdditive_apply_apply, MulEquiv.trans_apply]
     exact congrArg Additive.ofMul hshift
   rw [← hF] at hQgen
   have hγgen := (AddEquiv.bijective_zmultiplesHom_apply_iff _ _).1 hQgen
-  have hγ := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hΩ _) γ).2 hγgen
+  have hγ := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom_of_bijective
+    (HomotopyGroup.bijective_hurewiczIntHom_loopSpace_loopSpace (hS _)) γ).2 hγgen
   rw [GenLoop.hurewicz_map] at hγ
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _
 
