@@ -198,22 +198,6 @@ private theorem norm_iteratedFDeriv_coord_fderiv_symm_comp_le {ι : Type*} [Fint
         gcongr
     _ = M.factorial * max 1 L ^ (M + 1) := by rw [pow_succ']; ring
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Uniform Leibniz bound for the product of two scalar functions `E → ℂ`. -/
-private theorem norm_iteratedFDeriv_mul_le_two_pow_mul {M : ℕ} {g₁ g₂ : E → ℂ} {G₁ G₂ : ℝ}
-    (hg₁ : ContDiff ℝ M g₁) (hg₂ : ContDiff ℝ M g₂)
-    (hG₁ : ∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g₁ x‖ ≤ G₁)
-    (hG₂ : ∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g₂ x‖ ≤ G₂) {n : ℕ} (hn : n ≤ M) (x : E) :
-    ‖iteratedFDeriv ℝ n (g₁ * g₂) x‖ ≤ 2 ^ M * (G₁ * G₂) := by
-  have hB : ‖ContinuousLinearMap.mul ℝ ℂ‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ by simp
-  have hG₁0 : 0 ≤ G₁ := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hG₁).1
-  have hG₂0 : 0 ≤ G₂ := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hG₂).1
-  refine ((ContinuousLinearMap.mul ℝ ℂ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear hB hg₁ hg₂
-    hG₁ hG₂ hn x).trans ?_
-  exact mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hn) (mul_nonneg hG₁0 hG₂0)
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Derivative bounds for `x ↦ bᵢ^*(Dφ⁻¹(φ x) b_ℓ) * g(x)` and its directional derivative along
 `bᵢ`, used in the low-output-frequency induction step. -/
@@ -242,19 +226,6 @@ private theorem norm_iteratedFDeriv_coord_symm_mul_and_fderiv_le {ι : Type*} [F
   refine ⟨hc, hcg, fun n hn x ↦ ?_⟩
   simpa [b.orthonormal.1] using (hc.mul hg).1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le
     (by rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hcg (b i) n hn x
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Bounded derivatives of positive orders `1 ≤ n ≤ N` admit a single common bound. -/
-private theorem exists_forall_norm_iteratedFDeriv_le_of_pos {H : Type*} [NormedAddCommGroup H]
-    [NormedSpace ℝ H] {f : E → H} {N : ℕ}
-    (hbd : ∀ n, 1 ≤ n → n ≤ N → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) :
-    ∃ L, ∀ n, 1 ≤ n → n ≤ N → ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ L := by
-  choose C hC using fun n ↦ (em (1 ≤ n ∧ n ≤ N)).elim
-    (fun hn ↦ (hbd n hn.1 hn.2).imp fun _ h _ ↦ h) fun hn ↦ ⟨0, fun h ↦ absurd h hn⟩
-  exact ⟨∑ n ∈ Finset.Icc 1 N, max (C n) 0, fun n hn₁ hn₂ x ↦
-    (hC n ⟨hn₁, hn₂⟩ x).trans ((le_max_left _ _).trans
-      (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
-        (fun _ _ ↦ le_max_right _ _) (Finset.mem_Icc.2 ⟨hn₁, hn₂⟩)))⟩
 
 end ChainRuleCoeffs
 
@@ -1058,15 +1029,6 @@ private theorem compCLM_congr_equiv {φ₁ φ₂ : E ≃ E} (h : φ₁ = φ₂)
   subst h
   rfl
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_iteratedFDeriv_addRight_le (a : E) {n : ℕ} (hn : 1 ≤ n) (x : E) :
-    ‖iteratedFDeriv ℝ n (Equiv.addRight a) x‖ ≤ 1 := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  have hfn : (Equiv.addRight a : E → E) = fun y ↦ ContinuousLinearMap.id ℝ E y + a := rfl
-  rw [hfn, iteratedFDeriv_succ_add_const]
-  exact ((ContinuousLinearMap.id ℝ E).norm_iteratedFDeriv_le_norm (by omega) x).trans
-    ContinuousLinearMap.norm_id_le
-
 variable (F χ s p q) in
 /-- **Translation equivalence on Besov spaces.** Translating by `a ∈ E` (`u ↦ u(· + a)`) is a
 bounded linear automorphism of `B^s_{p,q}(E; F)` whose operator norm is bounded uniformly in `a`,
@@ -1111,9 +1073,9 @@ theorem translateEquiv_add (a b : E) :
   have hab : Equiv.addRight (a + b) = (Equiv.addRight a).trans (Equiv.addRight b) := by
     ext x; simp [add_assoc]
   have h₁ : ((Equiv.addRight a).trans (Equiv.addRight b) : E → E).HasTemperateGrowth := by
-    change (fun x ↦ x + a + b).HasTemperateGrowth; fun_prop
+    rw [← hab, Equiv.coe_addRight]; fun_prop
   have h₂ : (((Equiv.addRight a).trans (Equiv.addRight b)).symm : E → E).HasTemperateGrowth := by
-    change (fun x ↦ x + -b + -a).HasTemperateGrowth; fun_prop
+    rw [← hab, Equiv.addRight_symm, Equiv.coe_addRight]; fun_prop
   rw [ContinuousLinearEquiv.trans_apply, toDistr_translateEquiv, toDistr_translateEquiv,
     toDistr_translateEquiv, compCLM_congr_equiv hab _ _ h₁ h₂,
     TemperedDistribution.compCLM_trans, ContinuousLinearMap.comp_apply]

@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -145,26 +146,6 @@ theorem pushforwardCLM_postcompCLM {G : Type*} [NormedAddCommGroup G] [NormedSpa
   rw [postcompCLM_apply, pushforwardCLM_apply, pushforwardCLM_apply, postcompCLM_apply,
     ← RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, RCLike.ofReal_real_eq_id, id_eq]
 
-/-- Two real Schwartz functions that have the same `L²` pairing against every real Schwartz
-function are equal. -/
-private theorem eq_of_forall_integral_mul_eq [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
-    [μ.IsAddHaarMeasure] {s₁ s₂ : 𝓢(E, ℝ)}
-    (h : ∀ θ : 𝓢(E, ℝ), ∫ y, s₁ y * θ y ∂μ = ∫ y, s₂ y * θ y ∂μ) : s₁ = s₂ := by
-  have hmul_int (f₁ f₂ : 𝓢(E, ℝ)) : Integrable (fun x ↦ f₁ x * f₂ x) μ :=
-    (f₁.pairing (ContinuousLinearMap.mul ℝ ℝ) f₂).integrable
-  set δ : 𝓢(E, ℝ) := s₁ - s₂
-  have hδ0 : ∫ y, δ y * δ y ∂μ = 0 := by
-    have hsub : (fun y ↦ δ y * δ y) = fun y ↦ s₁ y * δ y - s₂ y * δ y :=
-      funext fun y ↦ sub_mul (s₁ y) (s₂ y) (δ y)
-    rw [hsub, integral_sub (hmul_int s₁ δ) (hmul_int s₂ δ), h δ, sub_self]
-  have hae : (fun y ↦ δ y * δ y) =ᵐ[μ] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun y ↦ mul_self_nonneg (δ y)) (hmul_int δ δ)).1 hδ0
-  have hzero : ∀ y, δ y * δ y = 0 :=
-    congrFun (((δ.continuous.mul δ.continuous).ae_eq_iff_eq μ continuous_const).1 hae)
-  refine sub_eq_zero.1 ?_
-  ext y
-  exact mul_self_eq_zero.1 (hzero y)
-
 /-- Real scalar case of `pushforwardCLM_lineDerivOp`, proved by testing against Schwartz functions
 via the change of variables formula and integration by parts. -/
 private theorem pushforwardCLM_lineDerivOp_real {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ E)
@@ -179,7 +160,7 @@ private theorem pushforwardCLM_lineDerivOp_real {ι : Type*} [Fintype ι] (b : M
     (b.coord i).toContinuousLinearMap.hasTemperateGrowth.comp (hφ.fderiv_apply w)
   have hmul_int (s₁ s₂ : 𝓢(E, ℝ)) : Integrable (fun x ↦ s₁ x * s₂ x) μ :=
     (s₁.pairing (ContinuousLinearMap.mul ℝ ℝ) s₂).integrable
-  refine eq_of_forall_integral_mul_eq μ fun θ ↦ ?_
+  refine eq_of_forall_integral_mul_eq (μ := μ) fun θ ↦ ?_
   set θφ : 𝓢(E, ℝ) := compCLM ℝ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) θ
   have hθφ : ⇑θφ = θ ∘ φ := rfl
   have hchain (x : E) : ∂_{w} θφ x = ∑ i, b.coord i (fderiv ℝ φ x w) * ∂_{b i} θ (φ x) := by
