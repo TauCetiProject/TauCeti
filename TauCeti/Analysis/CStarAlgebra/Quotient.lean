@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
-import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
@@ -25,8 +24,9 @@ dense-range `⋆`-homomorphism between C⋆-algebras is surjective.
 To prove the C⋆-identity `‖x‖ ^ 2 ≤ ‖star x * x‖` on `A ⧸ I`, let `x = mk I a` and `z ∈ I`. Along
 the increasing approximate unit `e` of `I.toNonUnitalStarSubalgebra`, ideal absorption gives
 `mk I a = mk I (a - a * e)`, while in the unitization `A⁺¹` with `u = 1 - e` (`0 ≤ u ≤ 1`),
-`star (a * u) * (a * u) = u * (star a * a + z) * u - u * (z - z * e)`,
-giving `‖mk I a‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z * e - z‖ → ‖star a * a + z‖` and taking the infimum
+`star (a * u) * (a * u) = u * (star a * a + z) * u - u * (z - z * e)`
+(`TauCeti.CStarAlgebra.norm_sub_mul_sq_le`),
+giving `‖mk I a‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖ → ‖star a * a + z‖` and taking the infimum
 over `z ∈ I` (see Gerard J. Murphy, *C*-Algebras and Operator Theory*, Theorem 3.1.4, or Kenneth R.
 Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 
@@ -129,70 +129,24 @@ instance instCStarRing : CStarRing (A ⧸ I) where
     have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
     have := hl.neBot
     let z' : S := ⟨z, I.mem_toNonUnitalStarSubalgebra.mpr hz⟩
-    have hz_lim : Tendsto (fun e : S => ‖star a * a + z‖ + ‖(z' * e - z' : S)‖) l
+    have hz_lim : Tendsto (fun e : S => ‖star a * a + z‖ + ‖(z' - z' * e : S)‖) l
         (𝓝 ‖star a * a + z‖) := by
-      simpa only [add_zero] using tendsto_const_nhds.add
+      simpa only [add_zero, norm_sub_rev] using tendsto_const_nhds.add
         (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left z'))
     refine ge_of_tendsto hz_lim ?_
     filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
-    -- Step 2: Bound `‖mk I a‖² ≤ ‖a - a * e‖²` and pass to `A⁺¹` with `u = 1 - e`.
-    have heI : (e : A) ∈ I := I.mem_toNonUnitalStarSubalgebra.mp e.2
+    -- Step 2: Ideal absorption gives `mk I a = mk I (a - a * e)`; then apply the C⋆-estimate
+    -- `TauCeti.CStarAlgebra.norm_sub_mul_sq_le` for the positive contraction `e`.
     have hmk_eq : mk I a = mk I (a - a * (e : A)) := by
-      rw [map_sub, eq_zero_iff_mem.mpr (I.mul_mem_left a (e : A) heI), sub_zero]
-    have hmk_sq : ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
-      rw [hmk_eq]
-      exact pow_le_pow_left₀ (norm_nonneg _) (norm_mk_le I _) 2
-    have heA₀ : 0 ≤ (e : A) := he₀
-    have heA₁ : ‖(e : A)‖ ≤ 1 := he₁
-    have he_icc : ((e : A) : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-      CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨heA₀, heA₁⟩
-    have h1_icc : 1 - ((e : A) : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-      Set.sub_mem_Icc_zero_iff_right.mpr he_icc
-    obtain ⟨h1_nonneg, h1_norm⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp h1_icc
-    have h1_star : star (1 - ((e : A) : A⁺¹)) = 1 - ((e : A) : A⁺¹) :=
-      (IsSelfAdjoint.of_nonneg h1_nonneg).star_eq
-    let u : A⁺¹ := 1 - ((e : A) : A⁺¹)
-    let b : A⁺¹ := (a : A⁺¹) * u
-    have hb_norm : ‖a - a * (e : A)‖ = ‖b‖ := by
-      rw [← Unitization.norm_inr (𝕜 := ℂ), Unitization.inr_sub, Unitization.inr_mul]
-      congr 1
-      dsimp only [b, u]
-      rw [mul_sub, mul_one]
-    -- Step 3: Apply the C⋆-identity to `b = a * u` and use `‖u‖ ≤ 1` to bound by `‖a⋆ * a + z‖`.
-    have hb_mul : star b * b =
-        u * ((star a * a + z : A) : A⁺¹) * u - u * ((z - z * (e : A) : A) : A⁺¹) := by
-      simp only [b, u, star_mul, h1_star, Unitization.inr_add, Unitization.inr_sub,
-        Unitization.inr_mul, Unitization.inr_star]
-      noncomm_ring
+      rw [map_sub, eq_zero_iff_mem.mpr
+        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.2)), sub_zero]
     calc
-      ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := hmk_sq
-      _ = ‖b‖ ^ 2 := by rw [hb_norm]
-      _ = ‖star b * b‖ := by rw [sq, ← CStarRing.norm_star_mul_self]
-      _ = ‖u * ((star a * a + z : A) : A⁺¹) * u - u * ((z - z * (e : A) : A) : A⁺¹)‖ := by
-          rw [hb_mul]
-      _ ≤ ‖u * ((star a * a + z : A) : A⁺¹) * u‖ + ‖u * ((z - z * (e : A) : A) : A⁺¹)‖ :=
-          norm_sub_le _ _
-      _ ≤ ‖star a * a + z‖ + ‖(z' * e - z' : S)‖ := by
-          refine add_le_add ?_ ?_
-          · calc
-              ‖u * ((star a * a + z : A) : A⁺¹) * u‖
-                ≤ ‖u * ((star a * a + z : A) : A⁺¹)‖ * ‖u‖ := norm_mul_le _ _
-              _ ≤ (‖u‖ * ‖((star a * a + z : A) : A⁺¹)‖) * 1 :=
-                  mul_le_mul (norm_mul_le _ _) h1_norm (norm_nonneg _)
-                    (mul_nonneg (norm_nonneg _) (norm_nonneg _))
-              _ ≤ (1 * ‖star a * a + z‖) * 1 := by
-                  rw [Unitization.norm_inr]
-                  gcongr
-              _ = ‖star a * a + z‖ := by ring
-          · calc
-              ‖u * ((z - z * (e : A) : A) : A⁺¹)‖
-                ≤ ‖u‖ * ‖((z - z * (e : A) : A) : A⁺¹)‖ := norm_mul_le _ _
-              _ ≤ 1 * ‖z - z * (e : A)‖ := by
-                  rw [Unitization.norm_inr]
-                  exact mul_le_mul_of_nonneg_right h1_norm (norm_nonneg _)
-              _ = ‖(z' * e - z' : S)‖ := by
-                  rw [one_mul, norm_sub_rev]
-                  rfl
+      ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
+        rw [hmk_eq]
+        exact pow_le_pow_left₀ (norm_nonneg _) (norm_mk_le I _) 2
+      _ ≤ ‖star a * a + z‖ + ‖z - z * (e : A)‖ :=
+        TauCeti.CStarAlgebra.norm_sub_mul_sq_le (e := (e : A)) he₀ he₁ a z
+      _ = ‖star a * a + z‖ + ‖(z' - z' * e : S)‖ := rfl
 
 /-- The quotient of a nonunital C⋆-algebra by a closed two-sided ideal is a nonunital C⋆-algebra.
 -/
