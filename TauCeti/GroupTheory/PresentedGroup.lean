@@ -197,6 +197,14 @@ theorem unionEquivQuotient_symm_mk (w : FreeGroup α) :
       mk (R ∪ S) w := by
   rw [MulEquiv.symm_apply_eq, unionEquivQuotient_mk]
 
+/-- The inverse of the quotient description sends the class of a generator to the generator. -/
+@[simp]
+theorem unionEquivQuotient_symm_of (a : α) :
+    (unionEquivQuotient R S).symm
+        ((of a : PresentedGroup R) : PresentedGroup R ⧸ Subgroup.normalClosure (mk R '' S)) =
+      of a :=
+  unionEquivQuotient_symm_mk R S (FreeGroup.of a)
+
 end Union
 
 section CoprodFreeGroup

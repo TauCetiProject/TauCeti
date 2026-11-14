@@ -285,6 +285,17 @@ noncomputable def roseGraphPresentationEquivFreeGroup (α : Type w) :
   rw [← roseGraphPresentationEquivFreeGroup_of_true, ← map_inv]
   exact congrArg _ (GraphPresentation.of_rev (Γ := rose α) (a, true))
 
+/-- The rose dictionary reads a word in the darts as a word in the petals, the dart `(a, true)`
+as the petal `a` and the dart `(a, false)` as its inverse. -/
+@[simp] theorem roseGraphPresentationEquivFreeGroup_mk {α : Type w} (r : FreeGroup (rose α).E) :
+    roseGraphPresentationEquivFreeGroup α (PresentedGroup.mk _ r) =
+      FreeGroup.lift (fun e => cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹) r := by
+  refine FreeGroup.lift_unique ((roseGraphPresentationEquivFreeGroup α).toMonoidHom.comp
+    (PresentedGroup.mk _)) fun e => ?_
+  obtain ⟨a, _ | _⟩ := e
+  exacts [roseGraphPresentationEquivFreeGroup_of_false a,
+    roseGraphPresentationEquivFreeGroup_of_true a]
+
 @[simp] theorem roseGraphPresentationEquivFreeGroup_symm_of {α : Type w} (a : α) :
     (roseGraphPresentationEquivFreeGroup α).symm (FreeGroup.of a) =
       PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true) := by
