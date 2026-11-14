@@ -27,8 +27,10 @@ piece, with the norm
 the finite-atlas `C^k` norm `ContMDiffMap.finiteAtlasSeminorm` plus the Hölder seminorms of the
 `k`th coordinate derivatives on the pieces. It is a Banach space when `M` is boundaryless and
 modelled on a locally compact space over `ℝ` or `ℂ`, and `F` is complete
-(`TauCeti.CompactChartAtlas.CkHolderSpace.instCompleteSpace`). The comparison of the spaces
-and norms of two atlases, by chart-change estimates, is not part of this file.
+(`TauCeti.CompactChartAtlas.CkHolderSpace.instCompleteSpace`). For `α ≤ 1` and a boundaryless
+`C^{k+1}` manifold `M` over `ℝ` or `ℂ`, the spaces of two atlases consist of the same maps, and
+under the completeness assumptions above their norms are equivalent
+(`TauCeti.CompactChartAtlas.CkHolderSpace.atlasEquiv`).
 
 The usual Hölder spaces are those with `0 < α ≤ 1`, but the definitions accept every `α`.
 
