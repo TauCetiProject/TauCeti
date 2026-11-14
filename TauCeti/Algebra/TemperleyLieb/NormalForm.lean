@@ -9,7 +9,8 @@ public import Mathlib.Combinatorics.Enumerative.Catalan.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.TemperleyLieb.Basic
-import Mathlib.Data.List.Chain
+public import TauCeti.Data.Fin.DescendingRun
+import Mathlib.Data.List.Shortlex
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Combinatorics.PlanarMatching.HalfDiagram
 
@@ -35,31 +36,34 @@ union of `NormalWord (n + 1)` and extensions `(w, j)` with `(w.lowerBound : ℕ)
 
 ## Reduction and low-strand bases
 
-Any generator word `l` decomposes uniquely into maximal descending-by-one runs with
-`(iₖ₊₁ : ℕ) + 1 ≠ jₖ`. If `l` is not in Jones normal form, its first adjacent pair `(i₁, j₁)`,
-`(i₂, j₂)` violating `i₁ < i₂ ∧ j₁ < j₂` reduces by distant commutation (`(i₂ : ℕ) + 2 ≤ j₁`,
-preserving length and strictly decreasing lexicographic rank), quadratic absorption (`i₂ = j₁`,
-decreasing length by `1`), or left/right zig-zag absorption (`e i * e (i ± 1) * e i = e i`,
-decreasing length by `2`). On `n ≤ 3` strands, reading off the first column of the matrix
-representations (`algEquivOfLeOne`, `twoStrandRep`, and the `5 × 5` left-regular representation
-`threeStrandRep`) supplies an `R`-linear left inverse, proving that `NormalWord n` forms an
-`R`-basis of `TemperleyLieb R δ n` over every commutative semiring `R` (`basisOfLeThree`).
+Any generator word `l` decomposes uniquely into maximal descending-by-one runs via `Fin.parseRuns`
+with `(iₖ₊₁ : ℕ) + 1 ≠ jₖ`. If `l` is not in Jones normal form, its first adjacent pair `(i₁, j₁)`,
+`(i₂, j₂)` violating `i₁ < i₂ ∧ j₁ < j₂` reduces strictly in `List.Shortlex`: by distant commutation
+(`(i₂ : ℕ) + 2 ≤ j₁`, preserving length and strictly decreasing lexicographic order), quadratic
+absorption (`i₂ = j₁`, decreasing length by `1`), or left/right zig-zag absorption
+(`e i * e (i ± 1) * e i = e i`, decreasing length by `2`). On `n ≤ 3` strands, reading off the first
+column of the faithful matrix representations (`algEquivOfLeOne`, `twoStrandRep`, and the `5 × 5`
+left-regular representation `threeStrandRep`) supplies an `R`-linear left inverse, proving that
+`NormalWord n` forms an `R`-basis of `TemperleyLieb R δ n` over every commutative semiring `R`
+(`basisOfLeThree`).
 
 ## Main definitions and results
 
-* `TauCeti.TemperleyLieb.wordProd`, `TauCeti.TemperleyLieb.descendingRun`: generator word products
-  and descending index runs `[i, …, j]`.
+* `TauCeti.TemperleyLieb.wordProd`: generator word products `(l.map (e δ)).prod` on
+  `List (Fin (n - 1))`.
 * `TauCeti.TemperleyLieb.NormalWord`, `NormalWord.eval`, `NormalWord.strandIncl`,
-  `NormalWord.stepEquiv`: Jones normal words, their evaluation, strand inclusion, and Catalan
-  branching equivalence.
+  `NormalWord.snocLast`, `NormalWord.stepEquiv`: Jones normal words, their evaluation, strand
+  inclusion, final-run extension, and Catalan branching equivalence.
 * `TauCeti.TemperleyLieb.NormalWord.toList_injective`,
   `TauCeti.TemperleyLieb.NormalWord.card_eq_catalan`: normal words spell distinct generator lists
   and have cardinality `catalan n`.
 * `TauCeti.TemperleyLieb.span_range_eval_eq_top`, `TauCeti.TemperleyLieb.rank_le_catalan`,
   `TauCeti.TemperleyLieb.finrank_le_catalan`: spanning by normal words and the Catalan rank bound.
-* `TauCeti.TemperleyLieb.threeStrandRep`, `TauCeti.TemperleyLieb.basisTwo`,
-  `TauCeti.TemperleyLieb.basisThree`, `TauCeti.TemperleyLieb.basisOfLeThree`: exact bases on up to
-  three strands, yielding `finrank_two`, `finrank_three`, `e_ne_zero_three`, and
+* `TauCeti.TemperleyLieb.threeStrandRep`, `TauCeti.TemperleyLieb.twoStrandRep_injective`,
+  `TauCeti.TemperleyLieb.threeStrandRep_injective`, `TauCeti.TemperleyLieb.basisTwo`,
+  `TauCeti.TemperleyLieb.basisThree`, `TauCeti.TemperleyLieb.basisOfLeThree`: faithful low-strand
+  matrix representations and exact bases on up to three strands, yielding `free_of_le_three`,
+  `finrank_zero`, `finrank_one`, `finrank_two`, `finrank_three`, `e_ne_zero_of_le_three`, and
   `strandIncl_injective_of_le_one`.
 
 ## References
@@ -76,7 +80,7 @@ namespace TauCeti.TemperleyLieb
 
 open Finset
 
-/-! ### Generator words and descending runs -/
+/-! ### Generator words -/
 
 section WordProd
 
@@ -86,6 +90,10 @@ variable {R : Type*} [CommSemiring R] {n : ℕ}
 `l : List (Fin (n - 1))`. -/
 def wordProd (δ : R) (l : List (Fin (n - 1))) : TemperleyLieb R δ n :=
   (l.map (e δ)).prod
+
+/-- `wordProd δ l` is the list product `(l.map (e δ)).prod`. -/
+theorem wordProd_def (δ : R) (l : List (Fin (n - 1))) :
+    wordProd δ l = (l.map (e δ)).prod := (rfl)
 
 /-- The empty generator word evaluates to `1`. -/
 @[simp]
@@ -122,108 +130,22 @@ theorem aug_wordProd (δ : R) (l : List (Fin (n - 1))) :
 /-- Products of generators span `TemperleyLieb R δ n` as an `R`-module. -/
 theorem span_range_wordProd_eq_top (δ : R) :
     Submodule.span R (Set.range (wordProd (R := R) (n := n) δ)) = ⊤ := by
-  set M := Submodule.span R (Set.range (wordProd (R := R) (n := n) δ))
-  have hword (l : List (Fin (n - 1))) : wordProd δ l ∈ M := Submodule.subset_span ⟨l, rfl⟩
-  have hmul : ∀ x ∈ M, ∀ y ∈ M, x * y ∈ M := by
-    intro x hx y hy
-    induction hx using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨l₁, rfl⟩ := hx
-      induction hy using Submodule.span_induction with
-      | mem _ hy => obtain ⟨l₂, rfl⟩ := hy; simpa only [← wordProd_append] using hword (l₁ ++ l₂)
-      | zero => simp
-      | add _ _ _ _ ha hb => simpa only [mul_add] using M.add_mem ha hb
-      | smul r _ _ ha => simpa only [mul_smul_comm] using M.smul_mem r ha
-    | zero => simp
-    | add _ _ _ _ ha hb => simpa only [add_mul] using M.add_mem ha hb
-    | smul r _ _ ha => simpa only [smul_mul_assoc] using M.smul_mem r ha
-  refine Submodule.eq_top_iff'.2 fun x ↦ ?_
-  induction x using TemperleyLieb.induction with
-  | e i => simpa using hword [i]
-  | algebraMap r =>
-    rw [Algebra.algebraMap_eq_smul_one, ← wordProd_nil δ]
-    exact M.smul_mem r (hword [])
-  | add _ _ hx hy => exact M.add_mem hx hy
-  | mul _ _ hx hy => exact hmul _ hx _ hy
+  have hrange : Set.range (wordProd (R := R) (n := n) δ) =
+      (Submonoid.closure (Set.range (e (R := R) (n := n) δ)) : Set _) := by
+    rw [← FreeMonoid.mrange_lift, MonoidHom.coe_mrange]
+    ext x
+    simp [FreeMonoid.exists, FreeMonoid.lift_ofList, wordProd_def]
+  rw [hrange, ← Algebra.adjoin_eq_span, adjoin_range_e]
+  rfl
 
 /-- If every letter of `l` is at distance at least `2` from `x`, then `e δ x` commutes past
 `wordProd δ l`. -/
 private theorem wordProd_mul_e_comm {δ : R} {x : Fin (n - 1)} {l : List (Fin (n - 1))}
     (h : ∀ a ∈ l, (a : ℕ) + 2 ≤ x ∨ (x : ℕ) + 2 ≤ a) :
-    wordProd δ l * e δ x = e δ x * wordProd δ l := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    have ha := (commute_e (δ := δ) (h a List.mem_cons_self)).eq
-    rw [wordProd_cons, mul_assoc, ih fun b hb ↦ h b (List.mem_cons_of_mem _ hb),
-      ← mul_assoc, ha, mul_assoc]
+    wordProd δ l * e δ x = e δ x * wordProd δ l :=
+  (Commute.list_prod_left _ _ <| List.forall_mem_map.mpr fun a ha ↦ commute_e (h a ha)).eq
 
 end WordProd
-
-section DescendingRun
-
-variable {m : ℕ}
-
-/-- The descending run `[i, i - 1, …, j]` in `Fin m` (with `i.val + 1 - j.val` entries, so
-nonempty whenever `j ≤ i`). -/
-def descendingRun (i j : Fin m) : List (Fin m) :=
-  (List.range (i.val + 1 - j.val)).map fun k ↦
-    ⟨i.val - k, (Nat.sub_le i.val k).trans_lt i.isLt⟩
-
-/-- A descending run from `i` to `i` is the singleton `[i]`. -/
-@[simp]
-theorem descendingRun_self (i : Fin m) : descendingRun i i = [i] := by
-  have h : i.val + 1 - i.val = 1 := by omega
-  rw [descendingRun, h, List.range_one]; simp
-
-/-- The length of `descendingRun i j` is `i.val + 1 - j.val`. -/
-@[simp]
-theorem length_descendingRun (i j : Fin m) : (descendingRun i j).length = i.val + 1 - j.val := by
-  simp [descendingRun]
-
-/-- For `j ≤ i`, the entries of `descendingRun i j` are the indices between `j` and `i`. -/
-theorem mem_descendingRun {i j a : Fin m} (h : j ≤ i) :
-    a ∈ descendingRun i j ↔ j ≤ a ∧ a ≤ i := by
-  simp only [descendingRun, List.mem_map, List.mem_range, Fin.ext_iff, Fin.le_def]
-  refine ⟨fun ⟨k, hk, hka⟩ ↦ ?_, fun ⟨_, _⟩ ↦ ⟨i.val - a.val, by omega, by omega⟩⟩
-  have : j.val ≤ i.val := h
-  omega
-
-/-- Splitting a descending run `[i, …, j]` at an intermediate cut `k` with `j < k ≤ i`. -/
-theorem descendingRun_split {i k j : Fin m} (hik : k ≤ i) (hjk : j < k) :
-    descendingRun i j =
-      descendingRun i k ++ descendingRun ⟨k.val - 1, by have := k.isLt; omega⟩ j := by
-  have _ : k.val ≤ i.val := hik
-  have _ : j.val < k.val := hjk
-  apply List.ext_getElem
-  · simp only [List.length_append, length_descendingRun]; omega
-  · intro t ht₁ ht₂
-    rw [List.getElem_append]
-    simp only [descendingRun, List.length_map, List.length_range, List.getElem_map,
-      List.getElem_range]
-    split_ifs with hlt
-    · rfl
-    · ext; dsimp only; omega
-
-/-- Peeling the first entry `i` off `descendingRun i j` when `j < i`. -/
-theorem descendingRun_cons {i j : Fin m} (h : j < i) :
-    descendingRun i j = i :: descendingRun ⟨i.val - 1, by have := i.isLt; omega⟩ j := by
-  simpa using descendingRun_split le_rfl h
-
-/-- Peeling the last entry `j` off `descendingRun i j` when `j < i`. -/
-theorem descendingRun_concat {i j : Fin m} (h : j < i) :
-    descendingRun i j = descendingRun i ⟨j.val + 1, by have := i.isLt; omega⟩ ++ [j] := by
-  have hk : (⟨j.val + 1, by have := i.isLt; omega⟩ : Fin m) ≤ i := h
-  have hjk : j < (⟨j.val + 1, by have := i.isLt; omega⟩ : Fin m) := Nat.lt_succ_self j.val
-  simpa using descendingRun_split hk hjk
-
-/-- Mapping `Fin.castSucc` across a descending run gives the descending run of cast endpoints. -/
-@[simp]
-theorem map_castSucc_descendingRun (i j : Fin m) :
-    (descendingRun i j).map Fin.castSucc = descendingRun i.castSucc j.castSucc := by
-  simp [descendingRun, List.map_map, Function.comp_def]
-
-end DescendingRun
 
 /-! ### Words in Jones normal form and their Catalan count -/
 
@@ -253,6 +175,10 @@ def empty : NormalWord n := ⟨[], by simp, by simp, by simp⟩
 
 instance : Inhabited (NormalWord n) := ⟨empty⟩
 
+/-- The default `NormalWord n` is `NormalWord.empty`. -/
+@[simp]
+theorem default_eq_empty : (default : NormalWord n) = empty := (rfl)
+
 /-- The normal word consisting of a single descending run `[i, …, j]` with `j ≤ i`. -/
 def run {i j : Fin (n - 1)} (h : j ≤ i) : NormalWord n :=
   ⟨[(i, j)], by simpa using h, by simp, by simp⟩
@@ -263,11 +189,19 @@ def single (i : Fin (n - 1)) : NormalWord n := run (le_refl i)
 /-- The flat list of generator indices spelled by a normal word, obtained by concatenating its
 descending runs. -/
 def toList (w : NormalWord n) : List (Fin (n - 1)) :=
-  w.runs.flatMap fun r ↦ descendingRun r.1 r.2
+  w.runs.flatMap fun r ↦ Fin.descendingRun r.1 r.2
+
+/-- Explicit `List.flatMap` formula for `NormalWord.toList`. -/
+theorem toList_def (w : NormalWord n) :
+    w.toList = w.runs.flatMap fun r ↦ Fin.descendingRun r.1 r.2 := (rfl)
 
 /-- The element of `TemperleyLieb R δ n` represented by a normal word `w`. -/
 def eval {R : Type*} [CommSemiring R] (δ : R) (w : NormalWord n) : TemperleyLieb R δ n :=
   wordProd δ w.toList
+
+/-- `NormalWord.eval` evaluates the underlying generator list via `wordProd`. -/
+theorem eval_def {R : Type*} [CommSemiring R] (δ : R) (w : NormalWord n) :
+    w.eval δ = wordProd δ w.toList := (rfl)
 
 /-- The empty normal word has no runs. -/
 @[simp]
@@ -282,15 +216,23 @@ theorem toList_empty : (empty : NormalWord n).toList = [] := (rfl)
 theorem eval_empty {R : Type*} [CommSemiring R] (δ : R) :
     (empty : NormalWord n).eval δ = 1 := (rfl)
 
-/-- A single-run normal word spells `descendingRun i j`. -/
+/-- A single-run normal word has `[(i, j)]` as its list of runs. -/
 @[simp]
-theorem toList_run {i j : Fin (n - 1)} (h : j ≤ i) : (run h).toList = descendingRun i j := by
+theorem runs_run {i j : Fin (n - 1)} (h : j ≤ i) : (run h).runs = [(i, j)] := (rfl)
+
+/-- A single-run normal word spells `Fin.descendingRun i j`. -/
+@[simp]
+theorem toList_run {i j : Fin (n - 1)} (h : j ≤ i) : (run h).toList = Fin.descendingRun i j := by
   simp [toList, run]
 
 /-- Evaluating a single-run normal word evaluates its descending run. -/
 @[simp]
 theorem eval_run {R : Type*} [CommSemiring R] (δ : R) {i j : Fin (n - 1)} (h : j ≤ i) :
-    (run h).eval δ = wordProd δ (descendingRun i j) := by simp [eval]
+    (run h).eval δ = wordProd δ (Fin.descendingRun i j) := by simp [eval]
+
+/-- A single-letter normal word has `[(i, i)]` as its list of runs. -/
+@[simp]
+theorem runs_single (i : Fin (n - 1)) : (single i).runs = [(i, i)] := (rfl)
 
 /-- A single-letter normal word spells the singleton list `[i]`. -/
 @[simp]
@@ -321,7 +263,18 @@ def strandIncl (w : NormalWord (n + 1)) : NormalWord (n + 2) where
     simpa using List.pairwise_iff_getElem.mp w.pairwise_lower a b (by simpa using ha)
       (by simpa using hb) hab
 
+/-- `NormalWord.strandIncl` maps both endpoints of each run by `Fin.castSucc`. -/
+@[simp]
+theorem runs_strandIncl (w : NormalWord (n + 1)) :
+    w.strandIncl.runs = w.runs.map (Prod.map Fin.castSucc Fin.castSucc) := (rfl)
+
+/-- Including the empty normal word gives the empty normal word. -/
+@[simp]
+theorem strandIncl_empty : (empty : NormalWord (n + 1)).strandIncl = empty := by
+  ext1; simp
+
 /-- `NormalWord.strandIncl` is injective. -/
+@[grind inj]
 theorem strandIncl_injective : Function.Injective (strandIncl (n := n)) := by
   intro w₁ w₂ h
   have hinj : Function.Injective (Prod.map (Fin.castSucc (n := n)) (Fin.castSucc (n := n))) := by
@@ -330,6 +283,12 @@ theorem strandIncl_injective : Function.Injective (strandIncl (n := n)) := by
       (Fin.castSucc_injective n (congrArg Prod.snd hpair))
   ext1
   exact List.map_injective_iff.mpr hinj (congrArg NormalWord.runs h)
+
+/-- Two normal words have equal `strandIncl` if and only if they are equal. -/
+@[simp]
+theorem strandIncl_inj {w₁ w₂ : NormalWord (n + 1)} :
+    w₁.strandIncl = w₂.strandIncl ↔ w₁ = w₂ :=
+  strandIncl_injective.eq_iff
 
 /-- Including a normal word shifts its underlying generator list by `Fin.castSucc`. -/
 @[simp]
@@ -351,6 +310,13 @@ def lowerBound (w : NormalWord (n + 1)) : Fin (n + 1) :=
   | none => 0
   | some r => r.2.succ
 
+/-- Explicit `List.getLast?` formula for `NormalWord.lowerBound`. -/
+theorem lowerBound_def (w : NormalWord (n + 1)) :
+    w.lowerBound =
+      match w.runs.getLast? with
+      | none => 0
+      | some r => r.2.succ := (rfl)
+
 /-- The empty normal word has `lowerBound = 0`. -/
 @[simp]
 theorem lowerBound_empty : (empty : NormalWord (n + 1)).lowerBound = 0 := (rfl)
@@ -362,23 +328,31 @@ theorem lowerBound_strandIncl (w : NormalWord (n + 1)) :
   unfold lowerBound strandIncl
   cases h : w.runs.getLast? <;> simp [List.getLast?_map, h]
 
-/-- Every run of `w` has lower endpoint strictly below `k` whenever `(w.lowerBound : ℕ) ≤ k`. -/
-private theorem lower_lt_of_lowerBound_le {w : NormalWord (n + 1)} {k : ℕ}
-    (hk : (w.lowerBound : ℕ) ≤ k) {r : Fin n × Fin n} (hr : r ∈ w.runs) :
-    (r.2 : ℕ) < k := by
-  have hne : w.runs ≠ [] := List.ne_nil_of_mem hr
-  have hget : w.runs.getLast? = some (w.runs.getLast hne) :=
-    List.getLast?_eq_getLast_of_ne_nil hne
-  have hbound : ((w.runs.getLast hne).2 : ℕ) + 1 ≤ k := by simpa [lowerBound, hget] using hk
-  have hsplit := List.dropLast_append_getLast hne
-  rw [← hsplit, List.mem_append, List.mem_singleton] at hr
-  rcases hr with hr | rfl
-  · have hpw := w.pairwise_lower
-    rw [← hsplit, List.map_append, List.pairwise_append] at hpw
-    have hlt : (r.2 : ℕ) < ((w.runs.getLast hne).2 : ℕ) :=
-      hpw.2.2 r.2 (List.mem_map_of_mem hr) (w.runs.getLast hne).2 (by simp)
-    omega
-  · omega
+/-- `(w.lowerBound : ℕ) ≤ k` holds if and only if every run of `w` has lower endpoint strictly
+below `k`. -/
+theorem val_lowerBound_le_iff {w : NormalWord (n + 1)} {k : ℕ} :
+    (w.lowerBound : ℕ) ≤ k ↔ ∀ r ∈ w.runs, (r.2 : ℕ) < k := by
+  refine ⟨fun hk r hr ↦ ?_, fun h ↦ ?_⟩
+  · have hne : w.runs ≠ [] := List.ne_nil_of_mem hr
+    have hget : w.runs.getLast? = some (w.runs.getLast hne) :=
+      List.getLast?_eq_getLast_of_ne_nil hne
+    have hbound : ((w.runs.getLast hne).2 : ℕ) + 1 ≤ k := by simpa [lowerBound, hget] using hk
+    have hsplit := List.dropLast_append_getLast hne
+    rw [← hsplit, List.mem_append, List.mem_singleton] at hr
+    rcases hr with hr | rfl
+    · have hpw := w.pairwise_lower
+      rw [← hsplit, List.map_append, List.pairwise_append] at hpw
+      have hlt : (r.2 : ℕ) < ((w.runs.getLast hne).2 : ℕ) :=
+        Fin.lt_def.mp (hpw.2.2 r.2 (List.mem_map_of_mem hr) (w.runs.getLast hne).2 (by simp))
+      omega
+    · omega
+  · rw [lowerBound_def]
+    cases hget : w.runs.getLast? with
+    | none => exact Nat.zero_le k
+    | some r =>
+      have hr : (r.2 : ℕ) < k := h r (List.mem_of_getLast? hget)
+      rw [Fin.val_succ]
+      omega
 
 /-- Append a final descending run `(Fin.last n, j)` to an included normal word `w` satisfying
 `(w.lowerBound : ℕ) ≤ j`. -/
@@ -406,7 +380,36 @@ def snocLast (j : Fin (n + 1)) (w : NormalWord (n + 1)) (hw : (w.lowerBound : �
     obtain ⟨r, hr, rfl⟩ := ha
     rw [List.mem_singleton] at hb
     rcases hb with rfl
-    exact lower_lt_of_lowerBound_le hw hr
+    simp only [Function.comp_apply, Prod.map_snd, Fin.lt_def, Fin.val_castSucc]
+    exact val_lowerBound_le_iff.mp hw r hr
+
+/-- `NormalWord.snocLast` appends `(Fin.last n, j)` after the cast runs of `w`. -/
+@[simp]
+theorem runs_snocLast (j : Fin (n + 1)) (w : NormalWord (n + 1))
+    (hw : (w.lowerBound : ℕ) ≤ j) :
+    (snocLast j w hw).runs =
+      w.runs.map (Prod.map (Fin.castSucc (n := n)) (Fin.castSucc (n := n))) ++
+        [(Fin.last n, j)] := by
+  simp [snocLast]
+
+/-- `NormalWord.snocLast` appends `Fin.descendingRun (Fin.last n) j` to the cast generator list of
+`w`. -/
+@[simp]
+theorem toList_snocLast (j : Fin (n + 1)) (w : NormalWord (n + 1))
+    (hw : (w.lowerBound : ℕ) ≤ j) :
+    (snocLast j w hw).toList =
+      w.toList.map (Fin.castSucc (n := n)) ++ Fin.descendingRun (Fin.last n) j := by
+  rw [toList_def, snocLast, List.flatMap_append, List.flatMap_singleton, ← toList_def,
+    toList_strandIncl]
+
+/-- Evaluating `NormalWord.snocLast j w hw` right-multiplies `strandIncl (w.eval δ)` by the
+descending run from `Fin.last n` to `j`. -/
+@[simp]
+theorem eval_snocLast {R : Type*} [CommSemiring R] (δ : R) (j : Fin (n + 1))
+    (w : NormalWord (n + 1)) (hw : (w.lowerBound : ℕ) ≤ j) :
+    (snocLast j w hw).eval δ =
+      TemperleyLieb.strandIncl (w.eval δ) * wordProd δ (Fin.descendingRun (Fin.last n) j) := by
+  rw [eval_def, toList_snocLast, wordProd_append, ← strandIncl_wordProd, ← eval_def]
 
 /-- Appending `(Fin.last n, j)` sets `lowerBound` to `j.succ`. -/
 @[simp]
@@ -489,7 +492,10 @@ private theorem dropLastRun_lowerBound_le (u : NormalWord (n + 2)) (hne : u.runs
     have hrmem : r ∈ u.runs.dropLast := List.mem_of_getLast? hdl
     have hpw := u.pairwise_lower
     rw [← List.dropLast_append_getLast hne, List.map_append, List.pairwise_append] at hpw
-    exact hpw.2.2 r.2 (List.mem_map_of_mem hrmem) (u.runs.getLast hne).2 (by simp)
+    have hlt : r.2 < (u.runs.getLast hne).2 :=
+      hpw.2.2 r.2 (List.mem_map_of_mem hrmem) (u.runs.getLast hne).2 (by simp)
+    rw [Fin.val_succ]
+    exact Fin.lt_def.mp hlt
 
 /-- Inverse map of `stepEquiv`, splitting off a final `(Fin.last n, j)` run when present. -/
 private def stepEquivInv (u : NormalWord (n + 2)) :
@@ -514,7 +520,7 @@ def stepEquiv (n : ℕ) :
       NormalWord (n + 2) where
   toFun
     | Sum.inl w => w.strandIncl
-    | Sum.inr ⟨j, w, hw⟩ => snocLast j w hw
+    | Sum.inr s => snocLast s.1 s.2.1 s.2.2
   invFun := stepEquivInv
   left_inv := by
     have hsigma : ∀ {j₁ j₂ : Fin (n + 1)} {w₁ w₂ : NormalWord (n + 1)}
@@ -554,25 +560,56 @@ def stepEquiv (n : ℕ) :
       rw [hpair, List.dropLast_append_getLast hne]
     · exact strandIncl_unstrandIncl u _
 
+/-- `NormalWord.stepEquiv` sends `Sum.inl w` to `w.strandIncl`. -/
+@[simp]
+theorem stepEquiv_inl (w : NormalWord (n + 1)) :
+    stepEquiv n (Sum.inl w) = w.strandIncl := (rfl)
+
+/-- `NormalWord.stepEquiv` sends `Sum.inr s` to `snocLast s.1 s.2.1 s.2.2`. -/
+@[simp]
+theorem stepEquiv_inr
+    (s : Σ j : Fin (n + 1), {w : NormalWord (n + 1) // (w.lowerBound : ℕ) ≤ j}) :
+    stepEquiv n (Sum.inr s) = snocLast s.1 s.2.1 s.2.2 := (rfl)
+
+/-- `(NormalWord.stepEquiv n).symm` recovers `Sum.inl w` on `w.strandIncl`. -/
+@[simp]
+theorem stepEquiv_symm_strandIncl (w : NormalWord (n + 1)) :
+    (stepEquiv n).symm w.strandIncl = Sum.inl w :=
+  (stepEquiv n).symm_apply_apply (Sum.inl w)
+
+/-- `(NormalWord.stepEquiv n).symm` recovers `Sum.inr ⟨j, w, hw⟩` on `snocLast j w hw`. -/
+@[simp]
+theorem stepEquiv_symm_snocLast (j : Fin (n + 1)) (w : NormalWord (n + 1))
+    (hw : (w.lowerBound : ℕ) ≤ j) :
+    (stepEquiv n).symm (snocLast j w hw) = Sum.inr ⟨j, w, hw⟩ :=
+  (stepEquiv n).symm_apply_apply (Sum.inr ⟨j, w, hw⟩)
+
+/-- Every normal word on at most one strand is `NormalWord.empty`. -/
+theorem eq_empty_of_le_one {n : ℕ} (h : n ≤ 1) (w : NormalWord n) : w = empty := by
+  ext1
+  cases hruns : w.runs with
+  | nil => rfl
+  | cons r _ => exact absurd r.1.isLt (by omega)
+
 /-- On at most one strand there are no generators, so the empty word is the unique normal word. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def uniqueOfLeOne (h : n ≤ 1) : Unique (NormalWord n) where
   default := empty
-  uniq w := by
-    ext1
-    cases hruns : w.runs with
-    | nil => rfl
-    | cons r _ => exact absurd r.1.isLt (by omega)
+  uniq := eq_empty_of_le_one h
+
+/-- On zero strands, `NormalWord.empty` is the unique normal word. -/
+instance : Unique (NormalWord 0) := uniqueOfLeOne (Nat.zero_le 1)
+
+/-- On one strand, `NormalWord.empty` is the unique normal word. -/
+instance : Unique (NormalWord 1) := uniqueOfLeOne le_rfl
 
 instance : Fintype (NormalWord n) := by
   induction n with
-  | zero =>
-    letI := uniqueOfLeOne (n := 0) (Nat.zero_le 1)
-    exact Fintype.ofSubsingleton empty
+  | zero => exact Fintype.ofSubsingleton empty
   | succ m ih =>
     cases m with
     | zero =>
-      letI := uniqueOfLeOne (n := 1) le_rfl
+      letI := uniqueOfLeOne (n := 0 + 1) le_rfl
       exact Fintype.ofSubsingleton empty
     | succ k =>
       letI : Fintype (NormalWord (k + 1)) := ih
@@ -583,10 +620,7 @@ private def countLe (m b : ℕ) : ℕ :=
   #{w : NormalWord (m + 1) | (w.lowerBound : ℕ) ≤ b}
 
 private theorem countLe_zero_zero : countLe 0 0 = 1 := by
-  have huniq : ∀ w : NormalWord 1, w = empty := (uniqueOfLeOne le_rfl).uniq
-  have huniv : (Finset.univ : Finset (NormalWord 1)) = {empty} := by
-    ext w; simp [huniq w]
-  simp [countLe, huniv]
+  simp [countLe, Finset.univ_unique]
 
 private theorem countLe_succ (m b : ℕ) :
     countLe (m + 1) b =
@@ -608,12 +642,12 @@ private theorem countLe_succ (m b : ℕ) :
       (Σ j : {j : Fin (m + 1) // (j : ℕ) + 1 ≤ b},
         {w : NormalWord (m + 1) // (w.lowerBound : ℕ) ≤ j.1}) :=
     { toFun := fun
-        | ⟨Sum.inl w, hw⟩ => Sum.inl ⟨w, by simpa [stepEquiv, P] using hw⟩
+        | ⟨Sum.inl w, hw⟩ => Sum.inl ⟨w, by simpa [P] using hw⟩
         | ⟨Sum.inr ⟨j, w, hjw⟩, hw⟩ =>
-          Sum.inr ⟨⟨j, by simpa [stepEquiv, P] using hw⟩, ⟨w, hjw⟩⟩
+          Sum.inr ⟨⟨j, by simpa [P] using hw⟩, ⟨w, hjw⟩⟩
       invFun := fun
-        | Sum.inl ⟨w, hw⟩ => ⟨Sum.inl w, by simpa [stepEquiv, P] using hw⟩
-        | Sum.inr ⟨⟨j, hj⟩, ⟨w, hjw⟩⟩ => ⟨Sum.inr ⟨j, w, hjw⟩, by simpa [stepEquiv, P] using hj⟩
+        | Sum.inl ⟨w, hw⟩ => ⟨Sum.inl w, by simpa [P] using hw⟩
+        | Sum.inr ⟨⟨j, hj⟩, ⟨w, hjw⟩⟩ => ⟨Sum.inr ⟨j, w, hjw⟩, by simpa [P] using hj⟩
       left_inv := by rintro (⟨w | ⟨j, w, _⟩, _⟩) <;> rfl
       right_inv := by rintro (⟨w, _⟩ | ⟨⟨j, _⟩, ⟨w, _⟩⟩) <;> rfl }
   rw [Fintype.card_congr eSum, Fintype.card_sum, Fintype.card_sigma]
@@ -653,21 +687,29 @@ private theorem countLe_eq_halfCount :
   | m + 1, c + 1, hb => by
     rw [countLe_succ_succ m c (by omega), countLe_eq_halfCount (m + 1) c (by omega)]
     rcases lt_or_eq_of_le hb with hlt | heq
-    · rw [countLe_eq_halfCount m (c + 1) (by omega),
-        show m + 1 + 1 + (c + 1) = (m + 2 + c) + 1 by omega,
-        show m + 1 + 1 - (c + 1) = (m - c) + 1 by omega,
-        show m + 1 + (c + 1) = m + 2 + c by omega,
-        show m + 1 - (c + 1) = m - c by omega,
-        show m + 1 + 1 - c = (m - c) + 2 by omega, halfCount_succ_succ, add_comm]
+    · rw [countLe_eq_halfCount m (c + 1) (by omega)]
+      have hlhs : halfCount (m + 1 + 1 + c) (m + 1 + 1 - c) +
+          halfCount (m + 1 + (c + 1)) (m + 1 - (c + 1)) =
+          halfCount (m + 2 + c) ((m - c) + 2) + halfCount (m + 2 + c) (m - c) := by
+        congr 1 <;> congr 1 <;> omega
+      have hrhs : halfCount (m + 1 + 1 + (c + 1)) (m + 1 + 1 - (c + 1)) =
+          halfCount ((m + 2 + c) + 1) ((m - c) + 1) := by
+        congr 1; omega
+      rw [hlhs, hrhs, halfCount_succ_succ, add_comm]
     · have hcm : c = m := by omega
       subst hcm
       rw [countLe_of_ge c (Nat.le_succ c), ← countLe_of_ge c le_rfl,
         countLe_eq_halfCount c c le_rfl]
-      have hzero : halfCount (c + 1 + c) 1 = halfCount (2 * c + 2) 0 := by
-        rw [show 2 * c + 2 = (c + 1 + c) + 1 by omega, halfCount_succ_zero]
-      rw [show c + 1 + 1 + (c + 1) = (2 * c + 2) + 1 by omega,
-        show c + 1 + 1 - (c + 1) = 1 by omega, show c + 1 + 1 + c = 2 * c + 2 by omega,
-        show c + 1 + 1 - c = 2 by omega, show c + 1 - c = 1 by omega, hzero, add_comm]
+      have hzero : halfCount (c + 1 + c) (c + 1 - c) = halfCount (2 * c + 2) 0 := by
+        have h₁ : 2 * c + 2 = (c + 1 + c) + 1 := by omega
+        have h₂ : c + 1 - c = 1 := by omega
+        rw [h₁, h₂, halfCount_succ_zero]
+      have hlhs : halfCount (c + 1 + 1 + c) (c + 1 + 1 - c) = halfCount (2 * c + 2) 2 := by
+        congr 1 <;> omega
+      have hrhs : halfCount (c + 1 + 1 + (c + 1)) (c + 1 + 1 - (c + 1)) =
+          halfCount ((2 * c + 2) + 1) 1 := by
+        congr 1 <;> omega
+      rw [hlhs, hzero, hrhs, add_comm]
       exact (halfCount_succ_succ (2 * c + 2) 0).symm
 
 /-- **Catalan count of Jones normal words.** There are `catalan n` words in Jones normal form on
@@ -676,12 +718,12 @@ private theorem countLe_eq_halfCount :
 theorem card_eq_catalan (n : ℕ) : Fintype.card (NormalWord n) = catalan n := by
   cases n with
   | zero =>
-    rw [catalan_zero, Fintype.card_eq_one_iff]
-    exact ⟨empty, (uniqueOfLeOne (Nat.zero_le 1)).uniq⟩
+    rw [catalan_zero, Fintype.card_unique]
   | succ m =>
-    rw [← countLe_of_ge m le_rfl, countLe_eq_halfCount m m le_rfl,
-      show m + 1 + m = 2 * m + 1 by omega, show m + 1 - m = 1 by omega, ← halfCount_succ_zero,
-      show 2 * m + 1 + 1 = 2 * (m + 1) by omega, halfCount_two_mul_zero]
+    rw [← countLe_of_ge m le_rfl, countLe_eq_halfCount m m le_rfl]
+    have h₁ : halfCount (m + 1 + m) (m + 1 - m) = halfCount (2 * m + 1) 1 := by congr 1 <;> omega
+    have h₂ : 2 * m + 1 + 1 = 2 * (m + 1) := by omega
+    rw [h₁, ← halfCount_succ_zero, h₂, halfCount_two_mul_zero]
 
 end NormalWord
 
@@ -689,214 +731,43 @@ end NormalWord
 
 section Reduction
 
-variable {m : ℕ}
-
-/-- Decompose a generator word into maximal descending-by-one runs `(i, j)`. -/
-private def parseRuns : List (Fin m) → List (Fin m × Fin m)
-  | [] => []
-  | [x] => [(x, x)]
-  | x :: y :: rest =>
-    match parseRuns (y :: rest) with
-    | [] => [(x, x)]
-    | (i, j) :: rs =>
-      if (y : ℕ) + 1 = x then (x, j) :: rs else (x, x) :: (i, j) :: rs
-
-private theorem parseRuns_cons_nonempty (y : Fin m) (rest : List (Fin m)) :
-    ∃ j rs, parseRuns (y :: rest) = (y, j) :: rs := by
-  induction rest generalizing y with
-  | nil => exact ⟨y, [], rfl⟩
-  | cons z rest ih =>
-    obtain ⟨j, rs, h⟩ := ih z
-    simp only [parseRuns, h]
-    split_ifs <;> exact ⟨_, _, rfl⟩
-
-private theorem lower_le_upper_parseRuns (l : List (Fin m)) :
-    ∀ r ∈ parseRuns l, r.2 ≤ r.1 := by
-  induction l with
-  | nil => simp [parseRuns]
-  | cons x rest ih =>
-    cases rest with
-    | nil => simp [parseRuns]
-    | cons y tl =>
-      obtain ⟨j, rs, h⟩ := parseRuns_cons_nonempty y tl
-      have hj : j ≤ y := ih (y, j) (by simp [h])
-      have hrs : ∀ r ∈ rs, r.2 ≤ r.1 := fun r hr ↦ ih r (by simp [h, hr])
-      simp only [parseRuns, h]
-      split_ifs with hyx
-      · intro r hr
-        simp only [List.mem_cons] at hr
-        rcases hr with rfl | hr
-        · have : j.val ≤ y.val := hj
-          rw [Fin.le_def]; dsimp only; omega
-        · exact hrs r hr
-      · intro r hr
-        simp only [List.mem_cons] at hr
-        rcases hr with rfl | rfl | hr
-        · exact le_rfl
-        · exact hj
-        · exact hrs r hr
-
-private theorem flatMap_parseRuns (l : List (Fin m)) :
-    (parseRuns l).flatMap (fun r ↦ descendingRun r.1 r.2) = l := by
-  induction l with
-  | nil => rfl
-  | cons x rest ih =>
-    cases rest with
-    | nil => simp [parseRuns]
-    | cons y tl =>
-      obtain ⟨j, rs, h⟩ := parseRuns_cons_nonempty y tl
-      have hj : j ≤ y := lower_le_upper_parseRuns (y :: tl) (y, j) (by simp [h])
-      simp only [parseRuns, h, List.flatMap_cons] at ih ⊢
-      split_ifs with hyx
-      · have hlt : j < x := by
-          have : j.val ≤ y.val := hj
-          rw [Fin.lt_def]; omega
-        have hpred : (⟨x.val - 1, by have := x.isLt; omega⟩ : Fin m) = y := by
-          ext; dsimp only; omega
-        rw [List.flatMap_cons, descendingRun_cons hlt, hpred, List.cons_append, ih]
-      · simpa [List.flatMap_cons] using ih
-
-/-- Adjacent runs `(i₁, j₁), (i₂, j₂)` produced by `parseRuns` never satisfy `i₂ + 1 = j₁`. -/
-private theorem isChain_parseRuns (l : List (Fin m)) :
-    (parseRuns l).IsChain fun r₁ r₂ ↦ (r₂.1 : ℕ) + 1 ≠ r₁.2 := by
-  induction l with
-  | nil => simp [parseRuns]
-  | cons x rest ih =>
-    cases rest with
-    | nil => simp [parseRuns]
-    | cons y tl =>
-      obtain ⟨j, rs, h⟩ := parseRuns_cons_nonempty y tl
-      rw [h] at ih
-      simp only [parseRuns, h]
-      split_ifs with hyx
-      · cases rs with
-        | nil => simp
-        | cons _ _ =>
-          rw [List.isChain_cons_cons] at ih ⊢
-          exact ih
-      · exact List.isChain_cons_cons.mpr ⟨hyx, ih⟩
-
-/-- Prepending a descending run `[i, …, j]` before `rest` prepends `(i, j)` to `parseRuns` whenever
-the first letter of `rest` is not `j - 1`. -/
-private theorem parseRuns_descendingRun_append {i j : Fin m} (hji : j ≤ i) {rest : List (Fin m)}
-    (hsep : ∀ y rest', rest = y :: rest' → (y : ℕ) + 1 ≠ j) :
-    parseRuns (descendingRun i j ++ rest) = (i, j) :: parseRuns rest := by
-  obtain ⟨d, hd⟩ : ∃ d, i.val - j.val = d := ⟨_, rfl⟩
-  induction d generalizing i with
-  | zero =>
-    have hij : i = j := by have : j.val ≤ i.val := hji; ext; omega
-    subst hij
-    rw [descendingRun_self, List.singleton_append]
-    cases rest with
-    | nil => rfl
-    | cons y rest' =>
-      obtain ⟨j₂, rs, h⟩ := parseRuns_cons_nonempty y rest'
-      simp [parseRuns, h, hsep y rest' rfl]
-  | succ d ih =>
-    have hlt : j < i := by rw [Fin.lt_def]; omega
-    let i' : Fin m := ⟨i.val - 1, by have := i.isLt; omega⟩
-    have hji' : j ≤ i' := by rw [Fin.le_def]; dsimp only [i']; omega
-    rw [descendingRun_cons hlt, List.cons_append]
-    have hrec := ih hji' (by dsimp only [i']; omega)
-    rcases hdl : descendingRun i' j with _ | ⟨y, zs⟩
-    · have := congrArg List.length hdl
-      simp [length_descendingRun] at this; omega
-    · have hy : y = i' := by
-        rcases eq_or_lt_of_le hji' with hEq | hlt'
-        · rw [← hEq, descendingRun_self, List.cons.injEq] at hdl
-          exact hdl.1.symm.trans hEq
-        · rw [descendingRun_cons hlt', List.cons.injEq] at hdl
-          exact hdl.1.symm
-      rw [hdl, List.cons_append] at hrec
-      rw [List.cons_append]
-      have hyi : (y : ℕ) + 1 = i := by rw [hy]; dsimp only [i']; omega
-      simp [parseRuns, hrec, hyi]
-
 /-- Re-parsing the flat generator list of a `NormalWord` recovers its exact list of runs. -/
 private theorem parseRuns_toList {n : ℕ} (w : NormalWord n) :
-    parseRuns w.toList = w.runs := by
-  obtain ⟨runs, hle, hup, hlow⟩ := w
-  dsimp only [NormalWord.toList]
-  induction runs with
-  | nil => rfl
-  | cons r rs ih =>
-    rw [List.map_cons, List.pairwise_cons] at hup hlow
-    have hr : r.2 ≤ r.1 := hle r List.mem_cons_self
-    rw [List.flatMap_cons, parseRuns_descendingRun_append hr,
-      ih (fun x hx ↦ hle x (List.mem_cons_of_mem _ hx)) hup.2 hlow.2]
-    intro y rest' hrest
-    cases rs with
-    | nil => simp at hrest
-    | cons r₂ rs' =>
-      have hr₂ : r₂.2 ≤ r₂.1 := hle r₂ (List.mem_cons_of_mem _ List.mem_cons_self)
-      have hy : y = r₂.1 := by
-        rw [List.flatMap_cons] at hrest
-        rcases eq_or_lt_of_le hr₂ with hEq | hlt
-        · rw [← hEq, descendingRun_self, List.singleton_append, List.cons.injEq] at hrest
-          exact hrest.1.symm.trans hEq
-        · rw [descendingRun_cons hlt, List.cons_append, List.cons.injEq] at hrest
-          exact hrest.1.symm
-      have hlt : r.1 < r₂.1 := hup.1 r₂.1 (by simp)
-      have _ : r.2.val ≤ r.1.val := hr
-      have _ : r.1.val < r₂.1.val := hlt
-      rw [hy]; omega
+    Fin.parseRuns w.toList = w.runs := by
+  refine Fin.parseRuns_eq_iff.mpr ⟨w.lower_le_upper, ?_, w.toList_def.symm⟩
+  have hchain : (w.runs.map Prod.fst).IsChain (· < ·) :=
+    List.isChain_iff_pairwise.mpr w.pairwise_upper
+  rw [List.isChain_map] at hchain
+  rw [List.isChain_iff_forall_rel_of_append_cons_cons] at hchain ⊢
+  intro r₁ r₂ l₁ l₂ hruns
+  have hr₁ : r₁.2.val ≤ r₁.1.val :=
+    Fin.le_def.mp (w.lower_le_upper r₁ (by rw [hruns]; simp))
+  have hlt : r₁.1.val < r₂.1.val := Fin.lt_def.mp (hchain hruns)
+  omega
 
 /-- **Distinct normal words spell distinct generator words.** -/
+@[grind inj]
 theorem NormalWord.toList_injective {n : ℕ} :
     Function.Injective (NormalWord.toList (n := n)) := by
   intro w₁ w₂ h
   ext1
   rw [← parseRuns_toList w₁, ← parseRuns_toList w₂, h]
 
-/-- Base-`m` lexicographic code of a word in `Fin m`, strictly monotone under lexicographic order
-among words of the same length. -/
-private def lexCode {m : ℕ} : List (Fin m) → ℕ
-  | [] => 0
-  | x :: xs => x.val * m ^ xs.length + lexCode xs
+/-- Two normal words spell the same generator list if and only if they are equal. -/
+@[simp]
+theorem NormalWord.toList_inj {n : ℕ} {w₁ w₂ : NormalWord n} :
+    w₁.toList = w₂.toList ↔ w₁ = w₂ :=
+  NormalWord.toList_injective.eq_iff
 
-private theorem lexCode_lt_pow {m : ℕ} (hm : 0 < m) :
-    ∀ l : List (Fin m), lexCode l < m ^ l.length
-  | [] => by simp [lexCode]
-  | x :: xs => by
-    calc
-      x.val * m ^ xs.length + lexCode xs < x.val * m ^ xs.length + m ^ xs.length :=
-        Nat.add_lt_add_left (lexCode_lt_pow hm xs) _
-      _ = (x.val + 1) * m ^ xs.length := by ring
-      _ ≤ m * m ^ xs.length := Nat.mul_le_mul_right _ x.isLt
-      _ = m ^ (x :: xs).length := by simp [pow_succ']
-
-private theorem lexCode_cons_lt {m : ℕ} {x y : Fin m} (hxy : x < y) {xs ys : List (Fin m)}
-    (hlen : xs.length = ys.length) :
-    lexCode (x :: xs) < lexCode (y :: ys) := by
-  have hm : 0 < m := (Nat.zero_le x.val).trans_lt x.isLt
-  simp only [lexCode]
-  calc
-    x.val * m ^ xs.length + lexCode xs < x.val * m ^ xs.length + m ^ xs.length :=
-      Nat.add_lt_add_left (lexCode_lt_pow hm xs) _
-    _ = (x.val + 1) * m ^ ys.length := by rw [hlen]; ring
-    _ ≤ y.val * m ^ ys.length := Nat.mul_le_mul_right _ hxy
-    _ ≤ y.val * m ^ ys.length + lexCode ys := Nat.le_add_right _ _
-
-private theorem lexCode_append {m : ℕ} (u v : List (Fin m)) :
-    lexCode (u ++ v) = lexCode u * m ^ v.length + lexCode v := by
-  induction u with
-  | nil => simp [lexCode]
-  | cons x xs ih =>
-    simp only [List.cons_append, lexCode, List.length_append, ih, pow_add]
-    ring
-
-/-- Strictly smaller `lexCode` on equal-length subwords is preserved by flanking with a common
-prefix and suffix. -/
-private theorem lexCode_append_lt_append {m : ℕ} (pre : List (Fin m)) {u v : List (Fin m)}
-    (post : List (Fin m)) (huv : u.length = v.length) (hlt : lexCode u < lexCode v) :
-    lexCode (pre ++ u ++ post) < lexCode (pre ++ v ++ post) := by
-  have hm : 0 < m := by
-    cases u with
-    | nil => cases v <;> simp [lexCode] at huv hlt
-    | cons x _ => exact (Nat.zero_le x.val).trans_lt x.isLt
-  have hpow : 0 < m ^ post.length := Nat.pow_pos hm
-  simp only [lexCode_append, huv]
-  exact Nat.add_lt_add_right (Nat.mul_lt_mul_of_pos_right (Nat.add_lt_add_left hlt _) hpow) _
+/-- The augmentation of a normal word's evaluation is `1` on `NormalWord.empty` and `0` on every
+nonempty normal word. -/
+@[simp]
+theorem NormalWord.aug_eval {R : Type*} [CommSemiring R] {n : ℕ} (δ : R) (w : NormalWord n) :
+    aug (w.eval δ) = if w = NormalWord.empty then 1 else 0 := by
+  rw [NormalWord.eval_def, aug_wordProd]
+  have h : (w.toList.isEmpty = true) ↔ w = NormalWord.empty := by
+    rw [List.isEmpty_iff, ← NormalWord.toList_empty, NormalWord.toList_inj]
+  simp only [h]
 
 section AlgebraicSteps
 
@@ -907,114 +778,117 @@ second run commutes left past the first run, preserving word length and placing 
 private theorem reduce_distant {i₁ j₁ i₂ j₂ : Fin (n - 1)}
     (h₁ : j₁ ≤ i₁) (h₂ : j₂ ≤ i₂) (hdist : (i₂ : ℕ) + 2 ≤ j₁) :
     ∃ mid : List (Fin (n - 1)),
-      wordProd δ (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) = wordProd δ mid ∧
-      mid.length = (descendingRun i₁ j₁ ++ descendingRun i₂ j₂).length ∧
-      lexCode mid < lexCode (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) := by
-  obtain ⟨t₁, ht₁⟩ : ∃ t₁, descendingRun i₁ j₁ = i₁ :: t₁ :=
-    (eq_or_lt_of_le h₁).elim (fun h ↦ ⟨[], h ▸ descendingRun_self i₁⟩)
-      fun h ↦ ⟨_, descendingRun_cons h⟩
-  obtain ⟨t₂, ht₂⟩ : ∃ t₂, descendingRun i₂ j₂ = i₂ :: t₂ :=
-    (eq_or_lt_of_le h₂).elim (fun h ↦ ⟨[], h ▸ descendingRun_self i₂⟩)
-      fun h ↦ ⟨_, descendingRun_cons h⟩
-  refine ⟨i₂ :: (descendingRun i₁ j₁ ++ t₂), ?_, ?_, ?_⟩
-  · have hcomm := wordProd_mul_e_comm (δ := δ) (x := i₂) (l := descendingRun i₁ j₁)
-      fun a ha ↦ Or.inr (hdist.trans (mem_descendingRun h₁ |>.mp ha).1)
+      wordProd δ (Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) = wordProd δ mid ∧
+      ∀ post, List.Shortlex (· < ·) (mid ++ post)
+        ((Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) ++ post) := by
+  obtain ⟨t₁, ht₁⟩ := Fin.exists_cons_descendingRun h₁
+  obtain ⟨t₂, ht₂⟩ := Fin.exists_cons_descendingRun h₂
+  refine ⟨i₂ :: (Fin.descendingRun i₁ j₁ ++ t₂), ?_, fun post ↦ ?_⟩
+  · have hcomm := wordProd_mul_e_comm (δ := δ) (x := i₂) (l := Fin.descendingRun i₁ j₁)
+      fun a ha ↦ Or.inr (hdist.trans (Fin.le_def.mp (Fin.mem_descendingRun.mp ha).1))
     rw [ht₂, wordProd_append, wordProd_cons, ← mul_assoc, hcomm, mul_assoc,
       ← wordProd_append, ← wordProd_cons]
-  · simp only [ht₂, List.length_cons, List.length_append]
-    omega
-  · have hlt : i₂ < i₁ := by have : j₁.val ≤ i₁.val := h₁; rw [Fin.lt_def]; omega
-    rw [ht₁, List.cons_append]
-    exact lexCode_cons_lt hlt
-      (by simp only [ht₂, List.append_eq, List.length_cons, List.length_append]; omega)
+  · have hlt : i₂ < i₁ := by
+      have _ : j₁.val ≤ i₁.val := Fin.le_def.mp h₁
+      rw [Fin.lt_def]; omega
+    rw [ht₁, List.cons_append, List.cons_append, List.cons_append]
+    exact List.Shortlex.of_lex
+      (by simp only [ht₂, List.length_cons, List.length_append]; omega)
+      (List.Lex.rel hlt)
 
-/-- Core left zig-zag step: for `j₁ < x`, `descendingRun x j₁` times `e δ x` reduces in length. -/
+/-- Core left zig-zag step: for `j₁ < x`, `Fin.descendingRun x j₁` times `e δ x` reduces in
+length. -/
 private theorem reduce_left_zigzag_core {x j₁ : Fin (n - 1)} (h : j₁ < x) :
     ∃ mid : List (Fin (n - 1)),
-      wordProd δ (descendingRun x j₁) * e δ x = wordProd δ mid ∧
-      mid.length < (descendingRun x j₁).length + 1 := by
-  have _ : j₁.val < x.val := h
+      wordProd δ (Fin.descendingRun x j₁) * e δ x = wordProd δ mid ∧
+      mid.length < (Fin.descendingRun x j₁).length + 1 := by
+  have _ : j₁.val < x.val := Fin.lt_def.mp h
   let x₁ : Fin (n - 1) := ⟨x.val - 1, by have := x.isLt; omega⟩
+  have hx₁_eq : (⟨x.val - 1, by have := x.isLt; omega⟩ : Fin (n - 1)) = x₁ := rfl
   have hx₁ : (x₁ : ℕ) + 1 = x := by dsimp only [x₁]; omega
-  rcases eq_or_lt_of_le (show j₁ ≤ x₁ by rw [Fin.le_def]; dsimp only [x₁]; omega) with hEq | hlt
-  · refine ⟨[x], ?_, by simp only [List.length_singleton, length_descendingRun]; omega⟩
-    rw [descendingRun_cons h]
-    change wordProd δ (x :: descendingRun x₁ j₁) * e δ x = wordProd δ [x]
-    rw [hEq, descendingRun_self, wordProd_cons, wordProd_singleton, wordProd_singleton,
-      e_mul_e_mul_e (Or.inr hx₁)]
+  have hj₁x₁ : j₁ ≤ x₁ := by rw [Fin.le_def]; dsimp only [x₁]; omega
+  rcases eq_or_lt_of_le hj₁x₁ with hEq | hlt
+  · refine ⟨[x], ?_, by simp only [List.length_singleton, Fin.length_descendingRun]; omega⟩
+    rw [Fin.descendingRun_cons h, hx₁_eq, hEq, Fin.descendingRun_self, wordProd_cons,
+      wordProd_singleton, wordProd_singleton, e_mul_e_mul_e (Or.inr hx₁)]
   · let x₂ : Fin (n - 1) := ⟨x.val - 2, by have := x.isLt; omega⟩
     have hx₂ : (⟨x₁.val - 1, by have := x₁.isLt; omega⟩ : Fin (n - 1)) = x₂ := by
       ext; dsimp only [x₁, x₂]; omega
-    refine ⟨x :: descendingRun x₂ j₁, ?_, ?_⟩
-    · have hcomm := wordProd_mul_e_comm (δ := δ) (x := x) (l := descendingRun x₂ j₁)
+    refine ⟨x :: Fin.descendingRun x₂ j₁, ?_, ?_⟩
+    · have hcomm := wordProd_mul_e_comm (δ := δ) (x := x) (l := Fin.descendingRun x₂ j₁)
         fun a ha ↦ Or.inl <| by
-          have ha_le := (mem_descendingRun (show j₁ ≤ x₂ by rw [Fin.le_def]; dsimp only [x₂]; omega)
-            |>.mp ha).2
-          have : a.val ≤ x₂.val := ha_le
-          dsimp only [x₂] at this; omega
-      rw [descendingRun_cons h]
-      change wordProd δ (x :: descendingRun x₁ j₁) * e δ x = wordProd δ (x :: descendingRun x₂ j₁)
-      rw [descendingRun_cons hlt, hx₂, wordProd_cons, wordProd_cons,
-        mul_assoc (e δ x), mul_assoc (e δ x₁), hcomm, ← mul_assoc (e δ x₁),
-        ← mul_assoc (e δ x), ← mul_assoc (e δ x) (e δ x₁) (e δ x),
-        e_mul_e_mul_e (Or.inr hx₁), ← wordProd_cons]
-    · simp only [List.length_cons, length_descendingRun]
-      have hltv : j₁.val < x₁.val := hlt
+          have ha_le : a.val ≤ x₂.val := Fin.le_def.mp (Fin.mem_descendingRun.mp ha).2
+          dsimp only [x₂] at ha_le; omega
+      calc
+        wordProd δ (Fin.descendingRun x j₁) * e δ x
+            = e δ x * (e δ x₁ * (wordProd δ (Fin.descendingRun x₂ j₁) * e δ x)) := by
+              rw [Fin.descendingRun_cons h, hx₁_eq, Fin.descendingRun_cons hlt, hx₂]
+              simp only [wordProd_cons, mul_assoc]
+        _ = (e δ x * e δ x₁ * e δ x) * wordProd δ (Fin.descendingRun x₂ j₁) := by
+              rw [hcomm]; simp only [mul_assoc]
+        _ = wordProd δ (x :: Fin.descendingRun x₂ j₁) := by
+              rw [e_mul_e_mul_e (Or.inr hx₁), wordProd_cons]
+    · simp only [List.length_cons, Fin.length_descendingRun]
+      have hltv : j₁.val < x₁.val := Fin.lt_def.mp hlt
       dsimp only [x₁, x₂] at hltv ⊢; omega
 
-/-- Core right zig-zag step: for `j₁ < i₂`, `e δ j₁` times `descendingRun i₂ j₁` reduces in
+/-- Core right zig-zag step: for `j₁ < i₂`, `e δ j₁` times `Fin.descendingRun i₂ j₁` reduces in
 length. -/
 private theorem reduce_right_zigzag_core {i₂ j₁ : Fin (n - 1)} (h : j₁ < i₂) :
     ∃ mid : List (Fin (n - 1)),
-      e δ j₁ * wordProd δ (descendingRun i₂ j₁) = wordProd δ mid ∧
-      mid.length < (descendingRun i₂ j₁).length + 1 := by
-  have _ : j₁.val < i₂.val := h
+      e δ j₁ * wordProd δ (Fin.descendingRun i₂ j₁) = wordProd δ mid ∧
+      mid.length < (Fin.descendingRun i₂ j₁).length + 1 := by
+  have _ : j₁.val < i₂.val := Fin.lt_def.mp h
   let j' : Fin (n - 1) := ⟨j₁.val + 1, by have := i₂.isLt; omega⟩
+  have hj'_eq : (⟨j₁.val + 1, by have := i₂.isLt; omega⟩ : Fin (n - 1)) = j' := rfl
   have hj' : (j₁ : ℕ) + 1 = j' := rfl
-  rcases eq_or_lt_of_le (show j' ≤ i₂ from h) with hEq | hlt
-  · refine ⟨[j₁], ?_, by simp only [List.length_singleton, length_descendingRun]; omega⟩
-    rw [descendingRun_concat h]
-    change e δ j₁ * wordProd δ (descendingRun i₂ j' ++ [j₁]) = wordProd δ [j₁]
-    rw [← hEq, descendingRun_self, wordProd_append, wordProd_singleton,
-      wordProd_singleton, ← mul_assoc, e_mul_e_mul_e (Or.inl hj')]
+  have hj'i₂ : j' ≤ i₂ := by rw [Fin.le_def]; exact Fin.lt_def.mp h
+  rcases eq_or_lt_of_le hj'i₂ with hEq | hlt
+  · refine ⟨[j₁], ?_, by simp only [List.length_singleton, Fin.length_descendingRun]; omega⟩
+    rw [Fin.descendingRun_concat h, hj'_eq, ← hEq, Fin.descendingRun_self, wordProd_append,
+      wordProd_singleton, wordProd_singleton, ← mul_assoc, e_mul_e_mul_e (Or.inl hj')]
   · let j'' : Fin (n - 1) := ⟨j₁.val + 2, by have := i₂.isLt; omega⟩
     have hj'' : (⟨j'.val + 1, by have := i₂.isLt; omega⟩ : Fin (n - 1)) = j'' := rfl
-    refine ⟨descendingRun i₂ j'' ++ [j₁], ?_, ?_⟩
-    · have hcomm := (wordProd_mul_e_comm (δ := δ) (x := j₁) (l := descendingRun i₂ j'')
-        fun a ha ↦ Or.inr (mem_descendingRun (show j'' ≤ i₂ from hlt) |>.mp ha).1).symm
-      rw [descendingRun_concat h]
-      change e δ j₁ * wordProd δ (descendingRun i₂ j' ++ [j₁]) =
-        wordProd δ (descendingRun i₂ j'' ++ [j₁])
-      rw [descendingRun_concat hlt, hj'', wordProd_append, wordProd_append,
-        wordProd_singleton, wordProd_singleton, ← mul_assoc (e δ j₁),
-        ← mul_assoc (e δ j₁) (wordProd δ _), hcomm, mul_assoc (wordProd δ _),
-        mul_assoc (wordProd δ _), e_mul_e_mul_e (Or.inl hj'),
-        ← wordProd_singleton δ j₁, ← wordProd_append]
-    · simp only [List.length_append, List.length_singleton, length_descendingRun]
-      have hltv : j'.val < i₂.val := hlt
+    refine ⟨Fin.descendingRun i₂ j'' ++ [j₁], ?_, ?_⟩
+    · have hcomm := (wordProd_mul_e_comm (δ := δ) (x := j₁) (l := Fin.descendingRun i₂ j'')
+        fun a ha ↦ Or.inr <| by
+          have ha_ge : j''.val ≤ a.val := Fin.le_def.mp (Fin.mem_descendingRun.mp ha).1
+          dsimp only [j''] at ha_ge; omega).symm
+      calc
+        e δ j₁ * wordProd δ (Fin.descendingRun i₂ j₁)
+            = (e δ j₁ * wordProd δ (Fin.descendingRun i₂ j'')) * e δ j' * e δ j₁ := by
+              rw [Fin.descendingRun_concat h, hj'_eq, Fin.descendingRun_concat hlt, hj'']
+              simp only [wordProd_append, wordProd_cons, wordProd_nil, mul_one, mul_assoc]
+        _ = wordProd δ (Fin.descendingRun i₂ j'') * (e δ j₁ * e δ j' * e δ j₁) := by
+              rw [hcomm]; simp only [mul_assoc]
+        _ = wordProd δ (Fin.descendingRun i₂ j'' ++ [j₁]) := by
+              rw [e_mul_e_mul_e (Or.inl hj')]
+              simp only [wordProd_append, wordProd_cons, wordProd_nil, mul_one]
+    · simp only [List.length_append, List.length_singleton, Fin.length_descendingRun]
+      have hltv : j'.val < i₂.val := Fin.lt_def.mp hlt
       dsimp only [j', j''] at hltv ⊢; omega
 
 /-- Left zig-zag reduction on two adjacent runs when `j₁ < i₂ ≤ i₁`. -/
 private theorem reduce_left_zigzag {i₁ j₁ i₂ j₂ : Fin (n - 1)}
     (h₂ : j₂ ≤ i₂) (hj₁ : j₁ < i₂) (hi₂ : i₂ ≤ i₁) :
     ∃ mid : List (Fin (n - 1)),
-      wordProd δ (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) = wordProd δ mid ∧
-      mid.length < (descendingRun i₁ j₁ ++ descendingRun i₂ j₂).length := by
-  obtain ⟨tail₂, htail₂⟩ : ∃ tail₂, descendingRun i₂ j₂ = i₂ :: tail₂ :=
-    (eq_or_lt_of_le h₂).elim (fun h ↦ ⟨[], h ▸ descendingRun_self i₂⟩)
-      fun h ↦ ⟨_, descendingRun_cons h⟩
-  obtain ⟨pre₁, hpre₁⟩ : ∃ pre₁, descendingRun i₁ j₁ = pre₁ ++ descendingRun i₂ j₁ := by
+      wordProd δ (Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) = wordProd δ mid ∧
+      mid.length < (Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂).length := by
+  obtain ⟨tail₂, htail₂⟩ := Fin.exists_cons_descendingRun h₂
+  obtain ⟨pre₁, hpre₁⟩ : ∃ pre₁, Fin.descendingRun i₁ j₁ = pre₁ ++ Fin.descendingRun i₂ j₁ := by
     rcases eq_or_lt_of_le hi₂ with rfl | hlt
     · exact ⟨[], rfl⟩
     · let k : Fin (n - 1) := ⟨i₂.val + 1, by have := i₁.isLt; omega⟩
-      have hjk : j₁ < k := hj₁.trans (Nat.lt_succ_self i₂.val)
+      have hki₁ : k ≤ i₁ := by rw [Fin.le_def]; exact Fin.lt_def.mp hlt
+      have hjk : j₁ < k := by
+        have _ := Fin.lt_def.mp hj₁
+        rw [Fin.lt_def]; dsimp only [k]; omega
       have hkpred : (⟨k.val - 1, by have := k.isLt; omega⟩ : Fin (n - 1)) = i₂ := rfl
-      refine ⟨descendingRun i₁ k, ?_⟩
-      simpa only [hkpred] using descendingRun_split (show k ≤ i₁ from hlt) hjk
+      exact ⟨Fin.descendingRun i₁ k, hkpred ▸ Fin.descendingRun_split hki₁ hjk⟩
   obtain ⟨mid₀, hmid₀, hlen₀⟩ := reduce_left_zigzag_core (δ := δ) hj₁
   refine ⟨pre₁ ++ mid₀ ++ tail₂, ?_, ?_⟩
   · rw [hpre₁, htail₂, wordProd_append, wordProd_append, wordProd_cons,
-      mul_assoc (wordProd δ pre₁), ← mul_assoc (wordProd δ (descendingRun i₂ j₁)), hmid₀,
+      mul_assoc (wordProd δ pre₁), ← mul_assoc (wordProd δ (Fin.descendingRun i₂ j₁)), hmid₀,
       ← wordProd_append, ← wordProd_append, List.append_assoc]
   · simp only [hpre₁, htail₂, List.length_append, List.length_cons]
     omega
@@ -1023,140 +897,101 @@ private theorem reduce_left_zigzag {i₁ j₁ i₂ j₂ : Fin (n - 1)}
 private theorem reduce_right_zigzag {i₁ j₁ i₂ j₂ : Fin (n - 1)}
     (h₁ : j₁ ≤ i₁) (hj₁ : j₁ < i₂) (hj₂ : j₂ ≤ j₁) :
     ∃ mid : List (Fin (n - 1)),
-      wordProd δ (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) = wordProd δ mid ∧
-      mid.length < (descendingRun i₁ j₁ ++ descendingRun i₂ j₂).length := by
-  obtain ⟨init₁, hinit₁⟩ : ∃ init₁, descendingRun i₁ j₁ = init₁ ++ [j₁] :=
-    (eq_or_lt_of_le h₁).elim (fun h ↦ ⟨[], by simp [h]⟩) fun h ↦ ⟨_, descendingRun_concat h⟩
-  obtain ⟨post₂, hpost₂⟩ : ∃ post₂, descendingRun i₂ j₂ = descendingRun i₂ j₁ ++ post₂ :=
+      wordProd δ (Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) = wordProd δ mid ∧
+      mid.length < (Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂).length := by
+  obtain ⟨init₁, hinit₁⟩ := Fin.exists_concat_descendingRun h₁
+  obtain ⟨post₂, hpost₂⟩ : ∃ post₂, Fin.descendingRun i₂ j₂ = Fin.descendingRun i₂ j₁ ++ post₂ :=
     (eq_or_lt_of_le hj₂).elim (fun h ↦ ⟨[], by simp [h]⟩)
-      fun h ↦ ⟨_, descendingRun_split hj₁.le h⟩
+      fun h ↦ ⟨_, Fin.descendingRun_split hj₁.le h⟩
   obtain ⟨mid₀, hmid₀, hlen₀⟩ := reduce_right_zigzag_core (δ := δ) hj₁
   refine ⟨init₁ ++ mid₀ ++ post₂, ?_, ?_⟩
   · rw [hinit₁, hpost₂, wordProd_append, wordProd_append, wordProd_append, wordProd_singleton,
-      mul_assoc (wordProd δ init₁), ← mul_assoc (e δ j₁) (wordProd δ (descendingRun i₂ j₁)),
+      mul_assoc (wordProd δ init₁), ← mul_assoc (e δ j₁) (wordProd δ (Fin.descendingRun i₂ j₁)),
       hmid₀, ← wordProd_append, ← wordProd_append, List.append_assoc]
   · simp only [hinit₁, hpost₂, List.length_append, List.length_singleton]
     omega
 
-/-- Any adjacent pair of runs `(i₁, j₁), (i₂, j₂)` from `parseRuns` violating `i₁ < i₂ ∧ j₁ < j₂`
-reduces either to a scalar multiple of a strictly shorter word or to an equal-length word with a
-strictly smaller lexicographic code. -/
+/-- Any adjacent pair of runs `(i₁, j₁), (i₂, j₂)` from `Fin.parseRuns` violating
+`i₁ < i₂ ∧ j₁ < j₂` reduces to a scalar multiple of a word strictly smaller in `List.Shortlex`
+before any suffix `post`. -/
 private theorem reduce_bad_pair {i₁ j₁ i₂ j₂ : Fin (n - 1)}
     (h₁ : j₁ ≤ i₁) (h₂ : j₂ ≤ i₂) (hsep : (i₂ : ℕ) + 1 ≠ j₁) (hbad : ¬ (i₁ < i₂ ∧ j₁ < j₂)) :
-    (∃ (c : R) (mid : List (Fin (n - 1))),
-        wordProd δ (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) = c • wordProd δ mid ∧
-        mid.length < (descendingRun i₁ j₁ ++ descendingRun i₂ j₂).length) ∨
-      (∃ mid : List (Fin (n - 1)),
-        wordProd δ (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) = wordProd δ mid ∧
-        mid.length = (descendingRun i₁ j₁ ++ descendingRun i₂ j₂).length ∧
-        lexCode mid < lexCode (descendingRun i₁ j₁ ++ descendingRun i₂ j₂)) := by
+    ∃ (c : R) (mid : List (Fin (n - 1))),
+      wordProd δ (Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) = c • wordProd δ mid ∧
+      ∀ post, List.Shortlex (· < ·) (mid ++ post)
+        ((Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) ++ post) := by
   by_cases hdist : (i₂ : ℕ) + 2 ≤ j₁
-  · exact Or.inr (reduce_distant h₁ h₂ hdist)
-  · left
-    by_cases heq : i₂ = j₁
+  · obtain ⟨mid, hmid, hshort⟩ := reduce_distant (δ := δ) h₁ h₂ hdist
+    exact ⟨1, mid, by simpa using hmid, hshort⟩
+  · by_cases heq : i₂ = j₁
     · subst heq
-      obtain ⟨init₁, hinit₁⟩ : ∃ init₁, descendingRun i₁ i₂ = init₁ ++ [i₂] :=
-        (eq_or_lt_of_le h₁).elim (fun h ↦ ⟨[], by simp [h]⟩) fun h ↦ ⟨_, descendingRun_concat h⟩
-      obtain ⟨tail₂, htail₂⟩ : ∃ tail₂, descendingRun i₂ j₂ = i₂ :: tail₂ :=
-        (eq_or_lt_of_le h₂).elim (fun h ↦ ⟨[], h ▸ descendingRun_self i₂⟩)
-          fun h ↦ ⟨_, descendingRun_cons h⟩
-      refine ⟨δ, init₁ ++ i₂ :: tail₂, ?_, by simp [hinit₁, htail₂]⟩
-      rw [hinit₁, htail₂, wordProd_append, wordProd_append, wordProd_singleton, wordProd_cons,
-        mul_assoc (wordProd δ init₁), ← mul_assoc (e δ i₂), e_mul_self, smul_mul_assoc,
-        mul_smul_comm, ← wordProd_cons, ← wordProd_append]
+      obtain ⟨init₁, hinit₁⟩ := Fin.exists_concat_descendingRun h₁
+      obtain ⟨tail₂, htail₂⟩ := Fin.exists_cons_descendingRun h₂
+      refine ⟨δ, init₁ ++ i₂ :: tail₂, ?_, fun post ↦ List.Shortlex.of_length_lt ?_⟩
+      · rw [hinit₁, htail₂, wordProd_append, wordProd_append, wordProd_singleton, wordProd_cons,
+          mul_assoc (wordProd δ init₁), ← mul_assoc (e δ i₂), e_mul_self, smul_mul_assoc,
+          mul_smul_comm, ← wordProd_cons, ← wordProd_append]
+      · simp [hinit₁, htail₂]
     · have hj₁_lt_i₂ : j₁ < i₂ := by
-        have : i₂.val ≠ j₁.val := Fin.val_ne_of_ne heq
+        have _ : i₂.val ≠ j₁.val := Fin.val_ne_of_ne heq
         rw [Fin.lt_def]; omega
       by_cases hi₂_le_i₁ : i₂ ≤ i₁
       · obtain ⟨mid, hmid, hlen⟩ := reduce_left_zigzag (δ := δ) h₂ hj₁_lt_i₂ hi₂_le_i₁
-        exact ⟨1, mid, by simpa using hmid, hlen⟩
+        exact ⟨1, mid, by simpa using hmid, fun post ↦
+          List.Shortlex.of_length_lt (by simp only [List.length_append] at hlen ⊢; omega)⟩
       · rw [not_and_or, not_lt, not_lt] at hbad
         obtain ⟨mid, hmid, hlen⟩ := reduce_right_zigzag (δ := δ) h₁ hj₁_lt_i₂
           (hbad.resolve_left hi₂_le_i₁)
-        exact ⟨1, mid, by simpa using hmid, hlen⟩
+        exact ⟨1, mid, by simpa using hmid, fun post ↦
+          List.Shortlex.of_length_lt (by simp only [List.length_append] at hlen ⊢; omega)⟩
 
-/-- Extract the first adjacent pair violating `P` when `IsChain P rs` fails. -/
-private theorem exists_append_not_rel_of_not_isChain {α : Type*} {P : α → α → Prop} :
-    ∀ {rs : List α}, ¬ rs.IsChain P → ∃ pre a b post, rs = pre ++ a :: b :: post ∧ ¬ P a b
-  | [], h => absurd List.IsChain.nil h
-  | [_], h => absurd (List.IsChain.singleton _) h
-  | a :: b :: rest, h => by
-    classical
-    rw [List.isChain_cons_cons] at h
-    by_cases hab : P a b
-    · obtain ⟨pre, x, y, post, heq, hxy⟩ :=
-        exists_append_not_rel_of_not_isChain (fun hc ↦ h ⟨hab, hc⟩)
-      exact ⟨a :: pre, x, y, post, by simp [heq], hxy⟩
-    · exact ⟨[], a, b, rest, rfl, hab⟩
-
-/-- A word `l` whose runs are not strictly increasing in both endpoints reduces globally either in
-word length or in lexicographic code. -/
+/-- A word `l` whose runs are not strictly increasing in both endpoints reduces globally in
+`List.Shortlex`. -/
 private theorem reduce_not_isChain (δ : R) {l : List (Fin (n - 1))}
-    (hgood : ¬ (parseRuns l).IsChain fun r₁ r₂ ↦ r₁.1 < r₂.1 ∧ r₁.2 < r₂.2) :
-    (∃ (c : R) (l' : List (Fin (n - 1))), wordProd δ l = c • wordProd δ l' ∧
-        l'.length < l.length) ∨
-      (∃ l' : List (Fin (n - 1)), wordProd δ l = wordProd δ l' ∧
-        l'.length = l.length ∧ lexCode l' < lexCode l) := by
-  obtain ⟨rsPre, ⟨i₁, j₁⟩, ⟨i₂, j₂⟩, rsPost, hrs_eq, hbad⟩ :=
-    exists_append_not_rel_of_not_isChain hgood
-  have hle := lower_le_upper_parseRuns l
+    (hgood : ¬ (Fin.parseRuns l).IsChain fun r₁ r₂ ↦ r₁.1 < r₂.1 ∧ r₁.2 < r₂.2) :
+    ∃ (c : R) (l' : List (Fin (n - 1))),
+      wordProd δ l = c • wordProd δ l' ∧ List.Shortlex (· < ·) l' l := by
+  obtain ⟨⟨i₁, j₁⟩, ⟨i₂, j₂⟩, rsPre, rsPost, hrs_eq, hbad⟩ := by
+    simpa only [List.isChain_iff_forall_rel_of_append_cons_cons, Classical.not_forall, not_imp]
+      using hgood
+  have hle := Fin.lower_le_upper_parseRuns l
   have h₁ : j₁ ≤ i₁ := hle (i₁, j₁) (by rw [hrs_eq]; simp)
   have h₂ : j₂ ≤ i₂ := hle (i₂, j₂) (by rw [hrs_eq]; simp)
-  have hchain := isChain_parseRuns l
-  rw [hrs_eq, List.isChain_append] at hchain
-  have hsep : (i₂ : ℕ) + 1 ≠ j₁ := (List.isChain_cons_cons.mp hchain.2.1).1
-  let pre := rsPre.flatMap fun r ↦ descendingRun r.1 r.2
-  let post := rsPost.flatMap fun r ↦ descendingRun r.1 r.2
-  have hl_eq : l = pre ++ (descendingRun i₁ j₁ ++ descendingRun i₂ j₂) ++ post := by
-    have hf := flatMap_parseRuns l
+  have hsep : (i₂ : ℕ) + 1 ≠ j₁ :=
+    List.isChain_iff_forall_rel_of_append_cons_cons.mp (Fin.isChain_parseRuns l) hrs_eq
+  let pre := rsPre.flatMap fun r ↦ Fin.descendingRun r.1 r.2
+  let post := rsPost.flatMap fun r ↦ Fin.descendingRun r.1 r.2
+  have hl_eq : l = pre ++ ((Fin.descendingRun i₁ j₁ ++ Fin.descendingRun i₂ j₂) ++ post) := by
+    have hf := Fin.flatMap_parseRuns l
     rw [hrs_eq, List.flatMap_append, List.flatMap_cons, List.flatMap_cons] at hf
     simpa [pre, post, List.append_assoc] using hf.symm
-  rcases reduce_bad_pair (δ := δ) h₁ h₂ hsep hbad with
-    ⟨c, mid, hmid_eq, hmid_len⟩ | ⟨mid, hmid_eq, hmid_len, hmid_lex⟩
-  · refine Or.inl ⟨c, pre ++ mid ++ post, ?_, ?_⟩
-    · rw [hl_eq, wordProd_append, wordProd_append, hmid_eq, mul_smul_comm, smul_mul_assoc,
-        ← wordProd_append, ← wordProd_append]
-    · rw [hl_eq]
-      simp only [List.length_append] at hmid_len ⊢
-      omega
-  · refine Or.inr ⟨pre ++ mid ++ post, ?_, ?_, ?_⟩
-    · rw [hl_eq, wordProd_append, wordProd_append, hmid_eq, ← wordProd_append, ← wordProd_append]
-    · rw [hl_eq]
-      simp only [List.length_append] at hmid_len ⊢
-      omega
-    · rw [hl_eq]
-      exact lexCode_append_lt_append pre post hmid_len hmid_lex
+  obtain ⟨c, mid, hmid_eq, hshort⟩ := reduce_bad_pair (δ := δ) h₁ h₂ hsep hbad
+  refine ⟨c, pre ++ (mid ++ post), ?_, ?_⟩
+  · rw [hl_eq, wordProd_append, wordProd_append, hmid_eq, smul_mul_assoc, mul_smul_comm,
+      ← wordProd_append, ← wordProd_append]
+  · rw [hl_eq]
+    exact (hshort post).append_left pre
 
 /-- Every generator word lies in the `R`-span of the evaluations of `NormalWord n`. -/
 theorem wordProd_mem_span_range_eval (δ : R) :
     ∀ l : List (Fin (n - 1)),
       wordProd δ l ∈ Submodule.span R (Set.range (NormalWord.eval (R := R) (n := n) δ)) := by
   set M := Submodule.span R (Set.range (NormalWord.eval (R := R) (n := n) δ))
-  suffices ∀ len code : ℕ, ∀ l : List (Fin (n - 1)),
-      l.length = len → lexCode l = code → wordProd δ l ∈ M from
-    fun l ↦ this l.length (lexCode l) l rfl rfl
-  intro len
-  induction len using Nat.strong_induction_on with
-  | _ len ih_len =>
-    intro code
-    induction code using Nat.strong_induction_on with
-    | _ code ih_code =>
-      intro l hlen hcode
-      by_cases hgood : (parseRuns l).IsChain fun r₁ r₂ ↦ r₁.1 < r₂.1 ∧ r₁.2 < r₂.2
-      · have hup : ((parseRuns l).map Prod.fst).Pairwise (· < ·) :=
-          List.isChain_iff_pairwise.mp (List.isChain_map _ |>.mpr (hgood.imp fun _ _ h ↦ h.1))
-        have hlow : ((parseRuns l).map Prod.snd).Pairwise (· < ·) :=
-          List.isChain_iff_pairwise.mp (List.isChain_map _ |>.mpr (hgood.imp fun _ _ h ↦ h.2))
-        let w : NormalWord n := ⟨parseRuns l, lower_le_upper_parseRuns l, hup, hlow⟩
-        have hw : w.eval δ = wordProd δ l := by
-          simp [NormalWord.eval, NormalWord.toList, w, flatMap_parseRuns]
-        exact hw ▸ Submodule.subset_span ⟨w, rfl⟩
-      · rcases reduce_not_isChain δ hgood with
-          ⟨c, l', hprod, hlt_len⟩ | ⟨l', hprod, heq_len, hlt_lex⟩
-        · rw [hprod]
-          exact M.smul_mem c (ih_len l'.length (hlen ▸ hlt_len) (lexCode l') l' rfl rfl)
-        · rw [hprod]
-          exact ih_code (lexCode l') (hcode ▸ hlt_lex) l' (heq_len.trans hlen) rfl
+  intro l
+  refine (List.Shortlex.wf (r := ((· < ·) : Fin (n - 1) → Fin (n - 1) → Prop))
+    wellFounded_lt).induction (C := fun l ↦ wordProd δ l ∈ M) l fun l ih ↦ ?_
+  by_cases hgood : (Fin.parseRuns l).IsChain fun r₁ r₂ ↦ r₁.1 < r₂.1 ∧ r₁.2 < r₂.2
+  · have hup : ((Fin.parseRuns l).map Prod.fst).Pairwise (· < ·) :=
+      List.isChain_iff_pairwise.mp (List.isChain_map _ |>.mpr (hgood.imp fun _ _ h ↦ h.1))
+    have hlow : ((Fin.parseRuns l).map Prod.snd).Pairwise (· < ·) :=
+      List.isChain_iff_pairwise.mp (List.isChain_map _ |>.mpr (hgood.imp fun _ _ h ↦ h.2))
+    let w : NormalWord n := ⟨Fin.parseRuns l, Fin.lower_le_upper_parseRuns l, hup, hlow⟩
+    have hw : w.eval δ = wordProd δ l := by
+      simp [NormalWord.eval, NormalWord.toList, w]
+    exact hw ▸ Submodule.subset_span ⟨w, rfl⟩
+  · obtain ⟨c, l', hprod, hlt⟩ := reduce_not_isChain δ hgood
+    rw [hprod]
+    exact M.smul_mem c (ih l' hlt)
 
 /-- **Jones normal form spanning theorem.** Over every commutative semiring `R` and for every loop
 value `δ : R`, the evaluations of `NormalWord n` span `TemperleyLieb R δ n` as an `R`-module. -/
@@ -1199,52 +1034,18 @@ section SmallBases
 
 variable {R : Type*} [CommSemiring R]
 
-/-- Build a finite `Module.Basis` from a spanning family `v` and a linear coordinate map sending
-`v i` to `Pi.single i 1`. -/
-private noncomputable def basisOfSpanOfCoord {M ι : Type*} [AddCommMonoid M] [Module R M]
-    [Fintype ι] [DecidableEq ι] (v : ι → M) (hspan : Submodule.span R (Set.range v) = ⊤)
-    (coord : M →ₗ[R] (ι → R)) (hcoord : ∀ i, coord (v i) = Pi.single i 1) :
-    Module.Basis ι R M := by
-  let rMap : M →ₗ[R] (ι →₀ R) :=
-    (Finsupp.linearEquivFunOnFinite R R ι).symm.toLinearMap.comp coord
-  have hleft : ∀ c : ι →₀ R, rMap (Finsupp.linearCombination R v c) = c := by
-    have hcomp : rMap.comp (Finsupp.linearCombination R v) = LinearMap.id := by
-      ext i j
-      simp [rMap, hcoord, Finsupp.single_apply]
-    exact fun c ↦ LinearMap.congr_fun hcomp c
-  have hright : ∀ x : M, Finsupp.linearCombination R v (rMap x) = x := by
-    intro x
-    have hx : x ∈ LinearMap.range (Finsupp.linearCombination R v) := by
-      rw [Finsupp.range_linearCombination, hspan]; trivial
-    obtain ⟨c, rfl⟩ := hx
-    rw [hleft]
-  exact Module.Basis.ofRepr
-    { rMap with
-      invFun := Finsupp.linearCombination R v
-      left_inv := hright
-      right_inv := hleft }
-
-@[simp]
-private theorem coe_basisOfSpanOfCoord {M ι : Type*} [AddCommMonoid M] [Module R M]
-    [Fintype ι] [DecidableEq ι] (v : ι → M) (hspan : Submodule.span R (Set.range v) = ⊤)
-    (coord : M →ₗ[R] (ι → R)) (hcoord : ∀ i, coord (v i) = Pi.single i 1) :
-    ⇑(basisOfSpanOfCoord v hspan coord hcoord) = v := by
-  ext i
-  rw [basisOfSpanOfCoord, Module.Basis.coe_ofRepr]
-  simp
-
 /-- On at most one strand, `NormalWord n` forms an `R`-basis of `TemperleyLieb R δ n`. -/
 private noncomputable def basisOfLeOne (δ : R) {n : ℕ} (hn : n ≤ 1) :
     Module.Basis (NormalWord n) R (TemperleyLieb R δ n) :=
-  basisOfSpanOfCoord (NormalWord.eval δ) (span_range_eval_eq_top δ n)
-    { toFun := fun x _ ↦ aug x
-      map_add' := fun x y ↦ by ext; simp
-      map_smul' := fun r x ↦ by ext; simp }
-    fun w ↦ by
-      have huniq (v : NormalWord n) : v = NormalWord.empty := (NormalWord.uniqueOfLeOne hn).uniq v
-      ext u
-      rw [huniq w, huniq u]
-      simp
+  letI := NormalWord.uniqueOfLeOne hn
+  (Module.Basis.singleton (NormalWord n) R).map (algEquivOfLeOne δ hn).symm.toLinearEquiv
+
+private theorem coe_basisOfLeOne (δ : R) {n : ℕ} (hn : n ≤ 1) :
+    ⇑(basisOfLeOne (R := R) δ hn) = NormalWord.eval δ := by
+  let _ := NormalWord.uniqueOfLeOne hn
+  ext w
+  rw [NormalWord.eq_empty_of_le_one hn w]
+  simp [basisOfLeOne]
 
 /-- Enumeration `(1, e 0)` of the two normal words on two strands. -/
 private def twoStrandWord : Fin 2 → NormalWord 2
@@ -1265,28 +1066,50 @@ private theorem twoStrandWord_surjective : Function.Surjective twoStrandWord := 
     rw [Fintype.card_fin, NormalWord.card_eq_catalan, catalan_eq_centralBinom_div]; decide
   exact ((Fintype.bijective_iff_injective_and_card twoStrandWord).mpr ⟨hinj, hcard⟩).2
 
+/-- First-column coordinate map of `twoStrandRep`. -/
+private def twoStrandCoord (δ : R) : TemperleyLieb R δ 2 →ₗ[R] (NormalWord 2 → R) where
+  toFun x w := twoStrandRep δ x (twoStrandIdx w) 0
+  map_add' x y := by ext w; simp
+  map_smul' r x := by ext w; simp
+
+private theorem twoStrandCoord_eval (δ : R) (w : NormalWord 2) :
+    twoStrandCoord δ (w.eval δ) = Pi.single w 1 := by
+  ext u
+  dsimp only [twoStrandCoord, LinearMap.coe_mk, AddHom.coe_mk]
+  obtain ⟨i, rfl⟩ := twoStrandWord_surjective w
+  obtain ⟨j, rfl⟩ := twoStrandWord_surjective u
+  have hinj : Function.Injective twoStrandWord :=
+    Function.LeftInverse.injective twoStrandIdx_twoStrandWord
+  rw [twoStrandIdx_twoStrandWord, Pi.single_apply]
+  simp only [hinj.eq_iff]
+  fin_cases i <;> fin_cases j <;> simp [twoStrandWord]
+
 /-- On two strands, the normal words `(1, e δ 0)` form an `R`-basis of `TemperleyLieb R δ 2` over
 every commutative semiring `R`. -/
 noncomputable def basisTwo (δ : R) : Module.Basis (NormalWord 2) R (TemperleyLieb R δ 2) :=
-  basisOfSpanOfCoord (NormalWord.eval δ) (span_range_eval_eq_top δ 2)
-    { toFun := fun x w ↦ twoStrandRep δ x (twoStrandIdx w) 0
-      map_add' := fun x y ↦ by ext w; simp
-      map_smul' := fun r x ↦ by ext w; simp }
-    fun w ↦ by
-      ext u
-      dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
-      obtain ⟨i, rfl⟩ := twoStrandWord_surjective w
-      obtain ⟨j, rfl⟩ := twoStrandWord_surjective u
-      have hinj : Function.Injective twoStrandWord :=
-        Function.LeftInverse.injective twoStrandIdx_twoStrandWord
-      rw [twoStrandIdx_twoStrandWord, Pi.single_apply]
-      simp only [hinj.eq_iff]
-      fin_cases i <;> fin_cases j <;> simp [twoStrandWord]
+  Module.Basis.mk
+    (LinearIndependent.of_comp (twoStrandCoord δ) <| by
+      simpa only [Function.comp_def, twoStrandCoord_eval] using
+        Pi.linearIndependent_single_one (NormalWord 2) R)
+    (span_range_eval_eq_top δ 2).ge
 
 /-- `basisTwo` evaluates each normal word via `NormalWord.eval`. -/
 @[simp]
 theorem coe_basisTwo (δ : R) : ⇑(basisTwo (R := R) δ) = NormalWord.eval δ :=
-  coe_basisOfSpanOfCoord _ _ _ _
+  Module.Basis.coe_mk _ _
+
+/-- The two-dimensional representation `twoStrandRep` is faithful over every commutative semiring
+`R` and at every loop value `δ`. -/
+theorem twoStrandRep_injective (δ : R) :
+    Function.Injective (twoStrandRep (R := R) δ) := by
+  have hcoord : ∀ x w, twoStrandCoord δ x w = (basisTwo δ).repr x w := fun x w ↦ by
+    conv_lhs => rw [← (basisTwo δ).sum_repr x]
+    simp [map_sum, map_smul, twoStrandCoord_eval, Pi.single_apply]
+  intro x y hxy
+  apply (basisTwo δ).repr.injective
+  ext w
+  rw [← hcoord, ← hcoord]
+  exact congrArg (fun M ↦ M (twoStrandIdx w) 0) hxy
 
 /-- The `5 × 5` matrix of left multiplication by `e δ 0` on
 `(1, e 0, e 1, e 0 * e 1, e 1 * e 0)`. -/
@@ -1356,34 +1179,56 @@ private theorem eval_threeStrandWord (δ : R) :
     ((threeStrandWord 4).eval δ = e δ 1 * e δ 0) := by
   refine ⟨by simp [threeStrandWord], by simp [threeStrandWord], by simp [threeStrandWord], ?_, ?_⟩
   · simp [threeStrandWord, NormalWord.eval, NormalWord.toList, wordProd]
-  · have hdr : descendingRun (1 : Fin (3 - 1)) 0 = [1, 0] := by
-      rw [descendingRun_cons (by decide)]; rfl
+  · have hdr : Fin.descendingRun (1 : Fin (3 - 1)) 0 = [1, 0] := by
+      rw [Fin.descendingRun_cons (by decide)]; simp
     simp [threeStrandWord, hdr, wordProd]
+
+/-- First-column coordinate map of `threeStrandRep`. -/
+private def threeStrandCoord (δ : R) : TemperleyLieb R δ 3 →ₗ[R] (NormalWord 3 → R) where
+  toFun x w := threeStrandRep δ x (threeStrandIdx w) 0
+  map_add' x y := by ext w; simp
+  map_smul' r x := by ext w; simp
+
+private theorem threeStrandCoord_eval (δ : R) (w : NormalWord 3) :
+    threeStrandCoord δ (w.eval δ) = Pi.single w 1 := by
+  ext u
+  dsimp only [threeStrandCoord, LinearMap.coe_mk, AddHom.coe_mk]
+  obtain ⟨i, rfl⟩ := threeStrandWord_surjective w
+  obtain ⟨j, rfl⟩ := threeStrandWord_surjective u
+  have hinj : Function.Injective threeStrandWord :=
+    Function.LeftInverse.injective threeStrandIdx_threeStrandWord
+  have hev := eval_threeStrandWord δ
+  rw [threeStrandIdx_threeStrandWord, Pi.single_apply]
+  simp only [hinj.eq_iff]
+  fin_cases i <;> fin_cases j <;>
+    simp [hev.1, hev.2.1, hev.2.2.1, hev.2.2.2.1, hev.2.2.2.2]
 
 /-- On three strands, the five normal words `(1, e 0, e 1, e 0 * e 1, e 1 * e 0)` form an `R`-basis
 of `TemperleyLieb R δ 3` over every commutative semiring `R` and at every loop value `δ`. -/
 noncomputable def basisThree (δ : R) : Module.Basis (NormalWord 3) R (TemperleyLieb R δ 3) :=
-  basisOfSpanOfCoord (NormalWord.eval δ) (span_range_eval_eq_top δ 3)
-    { toFun := fun x w ↦ threeStrandRep δ x (threeStrandIdx w) 0
-      map_add' := fun x y ↦ by ext w; simp
-      map_smul' := fun r x ↦ by ext w; simp }
-    fun w ↦ by
-      ext u
-      dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
-      obtain ⟨i, rfl⟩ := threeStrandWord_surjective w
-      obtain ⟨j, rfl⟩ := threeStrandWord_surjective u
-      have hinj : Function.Injective threeStrandWord :=
-        Function.LeftInverse.injective threeStrandIdx_threeStrandWord
-      have hev := eval_threeStrandWord δ
-      rw [threeStrandIdx_threeStrandWord, Pi.single_apply]
-      simp only [hinj.eq_iff]
-      fin_cases i <;> fin_cases j <;>
-        simp [hev.1, hev.2.1, hev.2.2.1, hev.2.2.2.1, hev.2.2.2.2]
+  Module.Basis.mk
+    (LinearIndependent.of_comp (threeStrandCoord δ) <| by
+      simpa only [Function.comp_def, threeStrandCoord_eval] using
+        Pi.linearIndependent_single_one (NormalWord 3) R)
+    (span_range_eval_eq_top δ 3).ge
 
 /-- `basisThree` evaluates each normal word via `NormalWord.eval`. -/
 @[simp]
 theorem coe_basisThree (δ : R) : ⇑(basisThree (R := R) δ) = NormalWord.eval δ :=
-  coe_basisOfSpanOfCoord _ _ _ _
+  Module.Basis.coe_mk _ _
+
+/-- The five-dimensional left-regular representation `threeStrandRep` is faithful over every
+commutative semiring `R` and at every loop value `δ`. -/
+theorem threeStrandRep_injective (δ : R) :
+    Function.Injective (threeStrandRep (R := R) δ) := by
+  have hcoord : ∀ x w, threeStrandCoord δ x w = (basisThree δ).repr x w := fun x w ↦ by
+    conv_lhs => rw [← (basisThree δ).sum_repr x]
+    simp [map_sum, map_smul, threeStrandCoord_eval, Pi.single_apply]
+  intro x y hxy
+  apply (basisThree δ).repr.injective
+  ext w
+  rw [← hcoord, ← hcoord]
+  exact congrArg (fun M ↦ M (threeStrandIdx w) 0) hxy
 
 /-- For `n ≤ 3`, the normal words `NormalWord n` form an `R`-basis of `TemperleyLieb R δ n` over
 every commutative semiring `R` and for every loop value `δ`. -/
@@ -1401,8 +1246,8 @@ theorem coe_basisOfLeThree (δ : R) {n : ℕ} (hn : n ≤ 3) :
     ⇑(basisOfLeThree (R := R) δ hn) = NormalWord.eval δ := by
   unfold basisOfLeThree
   rcases n with _ | _ | _ | _ | _
-  · exact coe_basisOfSpanOfCoord _ _ _ _
-  · exact coe_basisOfSpanOfCoord _ _ _ _
+  · exact coe_basisOfLeOne δ (Nat.zero_le 1)
+  · exact coe_basisOfLeOne δ le_rfl
   · exact coe_basisTwo δ
   · exact coe_basisThree δ
   · omega
@@ -1412,12 +1257,36 @@ semiring `R` and loop value `δ`. -/
 theorem free_of_le_three (δ : R) {n : ℕ} (hn : n ≤ 3) : Module.Free R (TemperleyLieb R δ n) :=
   Module.Free.of_basis (basisOfLeThree δ hn)
 
+/-- The zero-strand Temperley–Lieb algebra is a free `R`-module. -/
+instance (δ : R) : Module.Free R (TemperleyLieb R δ 0) := free_of_le_three δ (by decide)
+
+/-- The one-strand Temperley–Lieb algebra is a free `R`-module. -/
+instance (δ : R) : Module.Free R (TemperleyLieb R δ 1) := free_of_le_three δ (by decide)
+
+/-- The two-strand Temperley–Lieb algebra is a free `R`-module. -/
+instance (δ : R) : Module.Free R (TemperleyLieb R δ 2) := free_of_le_three δ (by decide)
+
+/-- The three-strand Temperley–Lieb algebra is a free `R`-module. -/
+instance (δ : R) : Module.Free R (TemperleyLieb R δ 3) := free_of_le_three δ (by decide)
+
 /-- On at most three strands, `TemperleyLieb R δ n` has `finrank` equal to `catalan n` over every
 commutative semiring satisfying `StrongRankCondition` (in particular over every nontrivial
 commutative ring or field). -/
 theorem finrank_eq_catalan_of_le_three [StrongRankCondition R] (δ : R) {n : ℕ} (hn : n ≤ 3) :
     Module.finrank R (TemperleyLieb R δ n) = catalan n := by
   rw [Module.finrank_eq_card_basis (basisOfLeThree (R := R) δ hn), NormalWord.card_eq_catalan]
+
+/-- The zero-strand Temperley–Lieb algebra has dimension `1` at every loop parameter `δ`. -/
+@[simp]
+theorem finrank_zero [StrongRankCondition R] (δ : R) :
+    Module.finrank R (TemperleyLieb R δ 0) = 1 := by
+  rw [finrank_eq_catalan_of_le_three δ (by decide), catalan_zero]
+
+/-- The one-strand Temperley–Lieb algebra has dimension `1` at every loop parameter `δ`. -/
+@[simp]
+theorem finrank_one [StrongRankCondition R] (δ : R) :
+    Module.finrank R (TemperleyLieb R δ 1) = 1 := by
+  rw [finrank_eq_catalan_of_le_three δ (by decide), catalan_one]
 
 /-- The two-strand Temperley–Lieb algebra has dimension `2` at every loop parameter `δ`. -/
 @[simp]
@@ -1431,17 +1300,11 @@ theorem finrank_three [StrongRankCondition R] (δ : R) :
     Module.finrank R (TemperleyLieb R δ 3) = 5 := by
   rw [finrank_eq_catalan_of_le_three δ (by decide), catalan_eq_centralBinom_div]; decide
 
-/-- Both generators of the three-strand Temperley–Lieb algebra are nonzero over any nontrivial
-commutative semiring. -/
-theorem e_ne_zero_three [Nontrivial R] {δ : R} (i : Fin (3 - 1)) : e δ i ≠ 0 := by
-  intro h
-  fin_cases i
-  · have h0 : threeStrandRep δ (e δ 0) 1 0 = threeStrandRep δ 0 1 0 :=
-      congrArg (fun x ↦ threeStrandRep δ x 1 0) h
-    simp at h0
-  · have h1 : threeStrandRep δ (e δ 1) 2 0 = threeStrandRep δ 0 2 0 :=
-      congrArg (fun x ↦ threeStrandRep δ x 2 0) h
-    simp at h1
+/-- Every generator of `TemperleyLieb R δ n` for `n ≤ 3` is nonzero over any nontrivial
+commutative semiring `R`. -/
+theorem e_ne_zero_of_le_three [Nontrivial R] {δ : R} {n : ℕ} (hn : n ≤ 3) (i : Fin (n - 1)) :
+    e δ i ≠ 0 := by
+  simpa using (basisOfLeThree (R := R) δ hn).ne_zero (NormalWord.single i)
 
 /-- Adding a straight strand is injective from `1` to `2` strands and from `2` to `3` strands, over
 every commutative semiring `R` and at every loop value `δ`. -/
@@ -1449,24 +1312,12 @@ theorem strandIncl_injective_of_le_one (δ : R) {n : ℕ} (hn : n ≤ 1) :
     Function.Injective (strandIncl (R := R) (δ := δ) (n := n)) := by
   let b₁ := basisOfLeThree (R := R) δ (n := n + 1) (by omega)
   let b₂ := basisOfLeThree (R := R) δ (n := n + 2) (by omega)
-  let f : TemperleyLieb R δ (n + 1) →ₗ[R] (NormalWord (n + 1) → R) :=
-    { toFun := fun x w ↦ b₂.repr (strandIncl x) w.strandIncl
-      map_add' := fun x y ↦ by ext w; simp
-      map_smul' := fun r x ↦ by ext w; simp }
-  let g : TemperleyLieb R δ (n + 1) →ₗ[R] (NormalWord (n + 1) → R) :=
-    { toFun := fun x w ↦ b₁.repr x w
-      map_add' := fun x y ↦ by ext w; simp
-      map_smul' := fun r x ↦ by ext w; simp }
-  have hfg : f = g := b₁.ext fun u ↦ by
-    ext w
-    have hb : strandIncl (b₁ u) = b₂ u.strandIncl := by simp [b₁, b₂]
-    simp [f, g, hb, Finsupp.single_apply, NormalWord.strandIncl_injective.eq_iff]
-  intro x y hxy
-  apply b₁.repr.injective
-  ext w
-  have hx : f x = f y := by simp [f, hxy]
-  rw [hfg] at hx
-  exact congr_fun hx w
+  have heq : b₁.constr R (b₂ ∘ NormalWord.strandIncl) =
+      (strandIncl (R := R) (δ := δ) (n := n)).toLinearMap :=
+    b₁.constr_eq R fun u ↦ by simp [b₁, b₂]
+  simpa only [heq, AlgHom.coe_toLinearMap] using
+    b₁.injective_constr_of_linearIndependent (R₂ := R)
+      (b₂.linearIndependent.comp _ NormalWord.strandIncl_injective)
 
 end SmallBases
 
