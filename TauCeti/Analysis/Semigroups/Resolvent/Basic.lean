@@ -37,11 +37,10 @@ open MeasureTheory
 
 namespace TauCeti.Semigroups
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-! ## The Resolvent (general growth bound) -/
 
-omit [CompleteSpace X] in
 /-- The growth-bound estimate for a polynomially weighted Laplace-transform integrand:
 `‖t^n e^{-λt} S(t) x‖ ≤ M ‖x‖ t^n e^{-(λ-ω)t}` for `t ≥ 0`. -/
 lemma StronglyContinuousSemigroup.norm_pow_mul_resolvent_integrand_le
@@ -64,7 +63,6 @@ lemma StronglyContinuousSemigroup.norm_pow_mul_resolvent_integrand_le
         rw [h_exp_exponent, Real.exp_add]
         ring
 
-omit [CompleteSpace X] in
 /-- The growth-bound estimate for the integrand in the defining resolvent integral. -/
 lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
@@ -75,13 +73,14 @@ lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
     S.norm_pow_mul_resolvent_integrand_le hb 0 lambda x ht
 
 private lemma StronglyContinuousSemigroup.aestronglyMeasurable_pow_mul_resolvent_integrand
-    (S : StronglyContinuousSemigroup X) (n : ℕ) (lambda : ℝ) (x : X) :
+    (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M) (n : ℕ)
+    (lambda : ℝ) (x : X) :
     AEStronglyMeasurable
       (fun t : ℝ ↦ (t ^ n * Real.exp (-(lambda * t))) • S.realOperator t x)
       (volume.restrict (Set.Ioi 0)) := by
   apply ContinuousOn.aestronglyMeasurable _ measurableSet_Ioi
   exact (by fun_prop : Continuous (fun t : ℝ ↦ t ^ n * Real.exp (-(lambda * t)))).continuousOn.smul
-    ((S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self)
+    (hb.continuous_realOperator_apply x).continuousOn
 
 /-- The polynomially weighted Laplace-transform integrand `t^n e^{-λt} S(t) x` is integrable
 on `(0, ∞)` for `ω < λ`. -/
@@ -94,7 +93,7 @@ lemma StronglyContinuousSemigroup.integrableOn_pow_mul_resolvent_integrand
   unfold MeasureTheory.IntegrableOn
   apply MeasureTheory.Integrable.mono'
     ((integrableOn_pow_mul_exp_neg_mul_Ioi n hpos).integrable.const_mul (M * ‖x‖))
-  · exact S.aestronglyMeasurable_pow_mul_resolvent_integrand n lambda x
+  · exact S.aestronglyMeasurable_pow_mul_resolvent_integrand hb n lambda x
   · apply (ae_restrict_mem measurableSet_Ioi).mono
     intro t (ht : 0 < t)
     exact S.norm_pow_mul_resolvent_integrand_le hb n lambda x ht.le
@@ -109,7 +108,9 @@ lemma StronglyContinuousSemigroup.integrableOn_resolvent_integrand
 
 /-- The resolvent `R(λ) x = ∫₀^∞ e^{-λt} S(t)x dt` of a C₀-semigroup with growth bound
 `(ω, M)`, for `λ > ω`. A pointwise `X`-valued Bochner integral (so it is well-defined for
-the merely strongly continuous `t ↦ S t`), with built-in norm bound `‖R λ‖ ≤ M/(λ-ω)`. -/
+the merely strongly continuous `t ↦ S t`), with built-in norm bound `‖R λ‖ ≤ M/(λ-ω)`.
+No completeness is assumed: on an incomplete space the Bochner integral, and hence the
+resolvent, takes the junk value `0`. -/
 noncomputable def StronglyContinuousSemigroup.resolvent
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) : X →L[ℝ] X :=
@@ -161,9 +162,8 @@ theorem StronglyContinuousSemigroup.resolvent_apply
 /-! ## Resolvent-Generator Interface
 
 The resolvent maps into the generator domain and satisfies the right-inverse identity
-from [EN] Thm. II.1.10(i) / [Linares] eq. 0.15. -/
+from [EN] Thm. II.1.10(i) / [Linares] eq. 0.15. These results need `X` to be complete. -/
 
-omit [CompleteSpace X] in
 /-- Translation of set integral: `∫_{Ioi 0} f(t + h) = ∫_{Ioi h} f(u)`. -/
 private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
     ∫ t in Set.Ioi 0, f (t + h) = ∫ u in Set.Ioi h, f u := by
@@ -178,6 +178,10 @@ private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
   simp_rw [key]
   -- Apply translation invariance of Lebesgue measure
   exact MeasureTheory.integral_add_right_eq_self _ h
+
+section CompleteSpace
+
+variable [CompleteSpace X]
 
 /-- The resolvent shift identity for a nonnegative time increment. -/
 private theorem StronglyContinuousSemigroup.resolvent_shift_identity
@@ -296,6 +300,8 @@ theorem StronglyContinuousSemigroup.resolventRightInv
     (S.resolvent_generator_tendsto hb lambda hlam x)]
   abel
 
+end CompleteSpace
+
 /-- **Hille–Yosida resolvent bound**: `‖R λ‖ ≤ M/(λ-ω)` for a C₀ semigroup with
 growth bound `(ω, M)` and `λ > ω` (Hille 1948, Yosida 1948; Engel–Nagel Ch. II). -/
 theorem StronglyContinuousSemigroup.resolvent_norm_le
@@ -372,6 +378,10 @@ theorem ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent
   rw [ContractionSemigroup.resolvent_apply,
     StronglyContinuousSemigroup.resolvent_apply]
 
+section CompleteSpace
+
+variable [CompleteSpace X]
+
 /-- The contraction resolvent maps into the generator domain. -/
 theorem ContractionSemigroup.resolvent_mem_domain (S : ContractionSemigroup X)
     (lambda : ℝ) (hlam : 0 < lambda) (x : X) :
@@ -390,6 +400,8 @@ theorem ContractionSemigroup.resolventRightInv (S : ContractionSemigroup X)
             exact S.resolvent_mem_domain lambda hlam x⟩ = x :=
   S.toStronglyContinuousSemigroup.resolventRightInv S.hasGrowthBound lambda
     (by simpa using hlam) x
+
+end CompleteSpace
 
 /-- The contraction resolvent bound `‖R λ‖ ≤ 1/λ`, the `(0, 1)` case. -/
 theorem ContractionSemigroup.resolvent_norm_le (S : ContractionSemigroup X)
