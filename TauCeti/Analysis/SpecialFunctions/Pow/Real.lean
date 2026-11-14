@@ -119,6 +119,9 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
+* `TauCeti.two_rpow_mul_norm_sum_le`: the weighted window-sum estimate
+  `2^{as} ‖∑_{j ∈ t} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{j ∈ t} 2^{wⱼ s} ‖xⱼ‖` when `‖gⱼ‖ ≤ C ‖xⱼ‖` and
+  `|a - wⱼ| ≤ L` on `t`.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
@@ -489,5 +492,25 @@ theorem exp_neg_mul_abs_isLittleO_abs_rpow_cocompact {a : ℝ} (ha : 0 < a) (s :
   simpa only [Function.comp_def, Real.norm_eq_abs, neg_mul] using
     (isLittleO_exp_neg_mul_rpow_atTop ha s).comp_tendsto
       (tendsto_norm_cocompact_atTop (E := ℝ))
+
+/-! ### Weighted window sums -/
+
+/-- **Weighted window sums.** If `‖gⱼ‖ ≤ C ‖xⱼ‖` for every `j` and every index `j ∈ t` has
+`|a - wⱼ| ≤ L`, then `2^{as} ‖∑_{j ∈ t} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{j ∈ t} 2^{wⱼ s} ‖xⱼ‖`: moving
+each dyadic weight from `a` to the nearby exponent `wⱼ` costs at most the factor `2^{|s| L}`. -/
+theorem two_rpow_mul_norm_sum_le {ι G H : Type*} [SeminormedAddCommGroup G]
+    [SeminormedAddCommGroup H] (s : ℝ) {C : ℝ} {g : ι → G} {x : ι → H}
+    (hg : ∀ j, ‖g j‖ ≤ C * ‖x j‖) {t : Finset ι} {a L : ℝ} {w : ι → ℝ}
+    (ht : ∀ j ∈ t, |a - w j| ≤ L) :
+    (2 : ℝ) ^ (s * a) * ‖∑ j ∈ t, g j‖ ≤
+      max C 0 * 2 ^ (|s| * L) * ∑ j ∈ t, 2 ^ (s * w j) * ‖x j‖ := by
+  refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+  rw [Finset.mul_sum, Finset.mul_sum]
+  refine Finset.sum_le_sum fun j hj ↦ ?_
+  calc 2 ^ (s * a) * ‖g j‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * w j) * (max C 0 * ‖x j‖) := by
+        gcongr
+        · exact Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s (ht j hj)
+        · exact (hg j).trans (by gcongr; exact le_max_left C 0)
+    _ = _ := by ring
 
 end TauCeti

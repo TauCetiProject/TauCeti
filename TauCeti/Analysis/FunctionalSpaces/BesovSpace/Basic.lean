@@ -114,15 +114,11 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
     [SeminormedAddCommGroup H] (s : ℝ) {C : ℝ} {g : ℕ → G} {x : ℕ → H}
     (hg : ∀ j, ‖g j‖ ≤ C * ‖x j‖) (k L : ℕ) :
     (2 : ℝ) ^ (s * k) * ‖∑ j ∈ Finset.Ico (k - L) (k + L), g j‖ ≤
-      max C 0 * 2 ^ (|s| * L) * ∑ j ∈ Finset.Ico (k - L) (k + L), 2 ^ (s * j) * ‖x j‖ := by
-  refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
-  rw [Finset.mul_sum, Finset.mul_sum]
-  refine Finset.sum_le_sum fun j hj ↦ ?_
-  calc 2 ^ (s * k) * ‖g j‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * j) * (max C 0 * ‖x j‖) := by
-        gcongr
-        · exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s hj
-        · exact (hg j).trans (by gcongr; exact le_max_left C 0)
-    _ = _ := by ring
+      max C 0 * 2 ^ (|s| * L) * ∑ j ∈ Finset.Ico (k - L) (k + L), 2 ^ (s * j) * ‖x j‖ :=
+  TauCeti.two_rpow_mul_norm_sum_le s hg fun j hj ↦ by
+    rw [Finset.mem_Ico] at hj
+    refine abs_sub_le_iff.2 ⟨?_, ?_⟩
+    all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
 
 /-- **Weighted tail sums.** Let `gⱼ` be vectors that vanish for `j + N ≤ k`, with `‖gⱼ‖ ≤ K xⱼ`
 and `2^{js} xⱼ ≤ aⱼ`. Splitting `∑ⱼ gⱼ` at `j = k`, the contributing terms below `k` lie within
