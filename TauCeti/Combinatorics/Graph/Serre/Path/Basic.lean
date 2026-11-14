@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Quiver.Vertices
 public import Mathlib.Algebra.FreeMonoid.Basic
 public import Mathlib.Combinatorics.Quiver.Cast
 public import Mathlib.Combinatorics.Quiver.Path.Decomposition
@@ -98,6 +99,21 @@ theorem Path.exists_eq_cons_comp_of_mem_darts {a b : Γ.V} (p : Γ.Path a b)
       congr 1
       apply Subtype.ext
       simp
+
+variable {Γ} in
+/-- The source of any dart traversed by a path lies in its vertex list. -/
+theorem Path.src_mem_vertices_of_mem_darts {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.src e ∈ p.vertices := by
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  exact (Quiver.Path.mem_vertices_comp _ _).mpr
+    (.inl ((Quiver.Path.mem_vertices_cons _ _).mpr (.inl q.end_mem_vertices)))
+
+variable {Γ} in
+/-- The target of any dart traversed by a path lies in its vertex list. -/
+theorem Path.tgt_mem_vertices_of_mem_darts {a b : Γ.V} {p : Γ.Path a b} {e : Γ.E}
+    (he : e ∈ Path.darts Γ p) : Γ.tgt e ∈ p.vertices := by
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  exact (Quiver.Path.mem_vertices_comp _ _).mpr (.inl (q.cons (Γ.dart e)).end_mem_vertices)
 
 /-- A Serre path has no consecutive pair of mutually reversed darts. -/
 def Path.IsReduced {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Prop

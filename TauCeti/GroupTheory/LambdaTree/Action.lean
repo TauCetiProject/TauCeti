@@ -142,14 +142,14 @@ theorem isFreeAction_iff_subsingleton [Nonempty X] [Subsingleton X] :
     exact (h g hg).1 ⟨x, Subsingleton.elim _ _⟩
   rw [hfix g₁, hfix g₂]
 
-/-- A free action of a group on a nonempty set has no inversions. -/
-theorem IsFreeAction.not_isInversion [Nonempty X] (hfree : IsFreeAction G X) (g : G) :
+/-- A free action has no inversions. -/
+theorem IsFreeAction.not_isInversion (hfree : IsFreeAction G X) (g : G) :
     ¬IsInversion X g := by
   intro hinv
   obtain ⟨hne, hsq⟩ := isInversion_iff.1 hinv
-  by_cases hg : g = 1
-  · subst hg
-    exact hne isElliptic_one
+  rcases eq_or_ne g 1 with rfl | hg
+  · rw [one_pow] at hsq
+    exact hne hsq
   · exact (isHyperbolic_iff.1 (isFreeAction_iff.1 hfree g hg)).2 hsq
 
 end Classification
@@ -286,9 +286,10 @@ isometrically parametrises `[x, g • x]` on `[0, d x (g • x)]`, then `g` reve
 theorem smul_apply_of_sq_smul_eq {g : G} {x : X} (hx : g ^ 2 • x = x) {f : Λ → X}
     (hf0 : f 0 = x) (hfD : f (d x (g • x)) = g • x)
     (hf : d.IsometricOn f (Set.Icc 0 (d x (g • x))))
-    (hσ : f '' Set.Icc 0 (d x (g • x)) = hd.segment x (g • x))
     {t : Λ} (ht : t ∈ Set.Icc 0 (d x (g • x))) :
     g • f t = f (d x (g • x) - t) := by
+  have hσ : f '' Set.Icc 0 (d x (g • x)) = hd.segment x (g • x) :=
+    hd.isSegment_iff_eq_segment.1 (d.isSegment_iff.2 ⟨f, hf0, hfD, hf, rfl⟩)
   set D := d x (g • x)
   obtain ⟨ht0, htD⟩ := ht
   have ht' : D - t ∈ Set.Icc 0 D := ⟨sub_nonneg.2 htD, sub_le_self D ht0⟩

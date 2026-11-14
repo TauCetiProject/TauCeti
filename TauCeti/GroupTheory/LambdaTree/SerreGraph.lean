@@ -286,10 +286,8 @@ variable {X : Type*}
 
 /-- The Serre graph attached to a `ℤ`-metric `d` on `X`: its vertices are the points of `X`, and
 its darts are the ordered pairs `(x, y)` at distance `1`, with reversal swapping the endpoints.
-The body is exposed so that the coordinate equivalences `toSerreGraphVertexEquiv` and
-`toSerreGraphDartEquiv` compile under the `module` code generator; use those equivalences rather
-than unfolding `toSerreGraph`. -/
-@[expose] def toSerreGraph (d : LambdaMetric ℤ X) : SerreGraph where
+Access its vertices and darts through `toSerreGraphVertexEquiv` and `toSerreGraphDartEquiv`. -/
+def toSerreGraph (d : LambdaMetric ℤ X) : SerreGraph where
   V := X
   E := { p : X × X // d p.1 p.2 = 1 }
   src e := e.1.1
@@ -302,11 +300,11 @@ than unfolding `toSerreGraph`. -/
     omega
 
 /-- The vertices of `d.toSerreGraph` are the points of `X`. -/
-def toSerreGraphVertexEquiv (d : LambdaMetric ℤ X) : d.toSerreGraph.V ≃ X :=
+noncomputable def toSerreGraphVertexEquiv (d : LambdaMetric ℤ X) : d.toSerreGraph.V ≃ X :=
   Equiv.refl X
 
 /-- The darts of `d.toSerreGraph` are the ordered pairs of points at distance `1`. -/
-def toSerreGraphDartEquiv (d : LambdaMetric ℤ X) :
+noncomputable def toSerreGraphDartEquiv (d : LambdaMetric ℤ X) :
     d.toSerreGraph.E ≃ { p : X × X // d p.1 p.2 = 1 } :=
   Equiv.refl _
 
@@ -328,10 +326,21 @@ theorem toSerreGraphDartEquiv_rev (e : d.toSerreGraph.E) :
       (d.toSerreGraphDartEquiv e).1.swap :=
   (rfl)
 
+/-- Two darts of `d.toSerreGraph` with the same source and the same target are equal. -/
+theorem toSerreGraph_eq_of_src_eq_of_tgt_eq {e₁ e₂ : d.toSerreGraph.E}
+    (hsrc : d.toSerreGraph.src e₁ = d.toSerreGraph.src e₂)
+    (htgt : d.toSerreGraph.tgt e₁ = d.toSerreGraph.tgt e₂) : e₁ = e₂ := by
+  apply d.toSerreGraphDartEquiv.injective
+  apply Subtype.ext
+  refine Prod.ext ?_ ?_
+  · simpa only [toSerreGraphVertexEquiv_src] using congrArg d.toSerreGraphVertexEquiv hsrc
+  · simpa only [toSerreGraphVertexEquiv_tgt] using congrArg d.toSerreGraphVertexEquiv htgt
+
 private theorem toSerreGraph_hom_dist {a b : d.toSerreGraph.V} (e : Quiver.Hom a b) :
     d (d.toSerreGraphVertexEquiv a) (d.toSerreGraphVertexEquiv b) = 1 := by
-  rcases e with ⟨⟨⟨_, _⟩, hxy⟩, rfl, rfl⟩
-  exact hxy
+  rcases e with ⟨e, rfl, rfl⟩
+  rw [toSerreGraphVertexEquiv_src, toSerreGraphVertexEquiv_tgt]
+  exact (d.toSerreGraphDartEquiv e).2
 
 /-- Every path in `d.toSerreGraph` has length at least the `d`-distance between its endpoints. -/
 theorem dist_le_toSerreGraph_length {u v : d.toSerreGraph.V} (p : d.toSerreGraph.Path u v) :
@@ -362,7 +371,9 @@ private theorem exists_toSerreGraph_path_of_isometricOn {f : ℤ → X} {n : ℕ
       simpa using this
     let e : Quiver.Hom (V := d.toSerreGraph.V) (d.toSerreGraphVertexEquiv.symm (f k))
         (d.toSerreGraphVertexEquiv.symm (f (k + 1 : ℕ))) :=
-      ⟨⟨(f k, f (k + 1 : ℕ)), hstep⟩, rfl, rfl⟩
+      ⟨d.toSerreGraphDartEquiv.symm ⟨(f k, f (k + 1 : ℕ)), hstep⟩,
+        d.toSerreGraphVertexEquiv.injective (by simp),
+        d.toSerreGraphVertexEquiv.injective (by simp)⟩
     exact ⟨p.cons e, by rw [Quiver.Path.length_cons, hp]⟩
 
 /-- For a geodesic `ℤ`-metric `d`, any two vertices of `d.toSerreGraph` are joined by a path whose
@@ -451,9 +462,9 @@ theorem IsTree.dist_eq_toSerreGraph_length (hd : d.IsTree) {u v : d.toSerreGraph
         have haw_ne : φ a ≠ φ w := by
           intro haw
           obtain rfl := φ.injective haw
-          refine hne (Subtype.ext (Prod.ext ?_ ?_))
-          · exact f.2.1.trans e.2.2.symm
-          · exact f.2.2.trans e.2.1.symm
+          refine hne (toSerreGraph_eq_of_src_eq_of_tgt_eq ?_ ?_)
+          · rw [d.toSerreGraph.src_rev, f.2.1, e.2.2]
+          · rw [d.toSerreGraph.tgt_rev, f.2.2, e.2.1]
         have haw_pos : 0 < d (φ a) (φ w) := d.pos_iff.2 haw_ne
         have haw_le : d (φ a) (φ w) ≤ 2 := by
           have := d.triangle (φ a) (φ b) (φ w)

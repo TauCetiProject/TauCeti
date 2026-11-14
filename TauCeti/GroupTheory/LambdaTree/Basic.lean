@@ -321,6 +321,13 @@ theorem dist_eq_abs_sub (h : d.IsSegment σ x y) {u v : X} (hu : u ∈ σ) (hv :
   obtain ⟨t, ht, rfl⟩ := hv
   rw [hf s hs t ht, dist_apply_of_isometricOn hf0 hf hs, dist_apply_of_isometricOn hf0 hf ht]
 
+/-- A point of a segment from `x` to `y` is uniquely determined by its distance from `x`. -/
+theorem eq_of_dist_eq (h : d.IsSegment σ x y) {u v : X} (hu : u ∈ σ) (hv : v ∈ σ)
+    (huv : d x u = d x v) : u = v := by
+  have hdist := h.dist_eq_abs_sub hu hv
+  rw [huv, sub_self, abs_zero, d.eq_zero_iff] at hdist
+  exact hdist
+
 /-- A point of a segment from `x` to `y` lies between `x` and `y`. -/
 theorem dist_add_dist (h : d.IsSegment σ x y) {u : X} (hu : u ∈ σ) : d x u + d u y = d x y := by
   obtain ⟨f, hf0, hfD, hf, rfl⟩ := h

@@ -50,9 +50,9 @@ axioms (T2) and (T3).
   `u₂ ∈ [v, y]`.
 * `TauCeti.LambdaMetric.IsTree.min_dist_add_dist_sub_dist_le`,
   `TauCeti.LambdaMetric.IsTree.four_point`: `Λ`-trees are `0`-hyperbolic.
-* `TauCeti.LambdaMetric.isTree_of_isGeodesic`, `TauCeti.LambdaMetric.isTree_iff_four_point`: a
-  nonempty geodesic `Λ`-metric space is a `Λ`-tree if and only if its Gromov products lie in `Λ`
-  and are `0`-hyperbolic.
+* `TauCeti.LambdaMetric.isTree_of_min_dist_add_dist_sub_dist_le`,
+  `TauCeti.LambdaMetric.isTree_iff_four_point`: a nonempty geodesic `Λ`-metric space is a `Λ`-tree
+  if and only if its Gromov products lie in `Λ` and are `0`-hyperbolic.
 
 ## References
 
@@ -169,10 +169,8 @@ theorem mem_segment_iff {x y u : X} : u ∈ hd.segment x y ↔ d x u + d u y = d
 /-- In a `Λ`-tree, a point of the segment `[x, y]` is uniquely determined by its distance from
 `x`. -/
 theorem eq_of_mem_segment_of_dist_eq {x y u v : X} (hu : u ∈ hd.segment x y)
-    (hv : v ∈ hd.segment x y) (h : d x u = d x v) : u = v := by
-  have hdist := (hd.isSegment_segment x y).dist_eq_abs_sub hu hv
-  rw [h, sub_self, abs_zero, d.eq_zero_iff] at hdist
-  exact hdist
+    (hv : v ∈ hd.segment x y) (h : d x u = d x v) : u = v :=
+  (hd.isSegment_segment x y).eq_of_dist_eq hu hv h
 
 /-- In a `Λ`-tree, the distance between `u₁ ∈ [v, x]` and `u₂ ∈ [v, y]` depends only on their
 distances from `v` and the doubled Gromov product `d v x + d v y - d x y`. -/
@@ -437,7 +435,7 @@ theorem isTree_of_four_point [Nonempty X] (hgeo : d.IsGeodesic)
 
 /-- A geodesic `Λ`-metric space with a base point `v₀` at which the doubled Gromov products are
 even and `0`-hyperbolic is a `Λ`-tree (Chiswell, Theorem 2.1.6). -/
-theorem isTree_of_isGeodesic (v₀ : X) (hgeo : d.IsGeodesic)
+theorem isTree_of_min_dist_add_dist_sub_dist_le (v₀ : X) (hgeo : d.IsGeodesic)
     (heven : ∀ x y : X, Even (d v₀ x + d v₀ y - d x y))
     (hhyp : ∀ x y z : X,
       min (d v₀ x + d v₀ y - d x y) (d v₀ y + d v₀ z - d y z) ≤ d v₀ x + d v₀ z - d x z) :

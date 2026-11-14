@@ -21,38 +21,41 @@ products of `l` lie in `Λ` (axiom (L4)).
 Geometrically `l.Chiswell` glues together copies `{(g, s) | 0 ≤ s ≤ l g}` of the intervals
 `[0, l g]` along their initial segments `[0, c(g, f)]`: two pairs `(g, s)` and `(f, t)` represent
 the same point when `s = t ≤ c(g, f)`, and the distance between `(g, s)` and `(f, t)` is
-`s + t - 2 min(s, t, c(g, f))`. Neither the carrier, the `Λ`-metric, nor the isometric `G`-action
-requires axiom (L4), because all comparisons with `c(g, f)` are stated for the doubled Gromov
-product `l g + l f - l (g⁻¹ * f) ∈ Λ`. Axiom (L4) is the exact condition under which the branch
-point `(g, c(g, f))` exists in `l.Chiswell`, making `l.chiswellMetric` geodesic and therefore a
-`Λ`-tree.
+`s + t - 2 min(s, t, c(g, f))`. Neither the carrier, the geodesic `Λ`-metric
+(`TauCeti.LyndonLength.isGeodesic_chiswellMetric`), nor the isometric `G`-action requires axiom
+(L4), because all comparisons with `c(g, f)` are stated for the doubled Gromov product
+`l g + l f - l (g⁻¹ * f) ∈ Λ`. Axiom (L4) is the exact condition under which the branch point
+`(g, c(g, f))` exists in `l.Chiswell`, making `l.chiswellMetric` a `Λ`-tree.
 
 Moreover, for any isometric `G`-action on a `Λ`-tree `X` with a base point `x₀` whose based length
-function is `l`, there is a `G`-equivariant isometric embedding `l.chiswellEmbed` of `l.Chiswell`
-into `X` sending `l.chiswellBase` to `x₀`, with range the union of segments `⋃ g : G, [x₀, g • x₀]`.
-Combining Chiswell's construction with `isFree_basedLength_iff` shows that a group has a free
-`Λ`-valued Lyndon length function if and only if it acts freely on a `Λ`-tree
-(`TauCeti.LyndonLength.exists_isFree_iff`).
+function is `l`, there is a unique `G`-equivariant isometric embedding `l.chiswellEmbed` of
+`l.Chiswell` into `X` sending `l.chiswellBase` to `x₀`, with range the union of segments
+`⋃ g : G, [x₀, g • x₀]`. Combining Chiswell's construction with `isFree_basedLength_iff` shows
+that a group has a free `Λ`-valued Lyndon length function if and only if it acts freely on a
+`Λ`-tree (`TauCeti.LyndonLength.exists_isFree_iff`).
 
 ## Main definitions
 
 * `TauCeti.LyndonLength.Chiswell`: the quotient of `{(g, s) : G × Λ | 0 ≤ s ≤ l g}` by the
   equivalence relation `(g, s) ≈ (f, t) ↔ s = t ∧ 2 • s ≤ l g + l f - l (g⁻¹ * f)`.
-* `TauCeti.LyndonLength.chiswellMk`: the point of `l.Chiswell` represented by `(g, s)` for
-  `0 ≤ s ≤ l g`.
+* `TauCeti.LyndonLength.chiswellMk`, `TauCeti.LyndonLength.chiswellLift`: constructor and quotient
+  eliminator for `l.Chiswell`.
 * `TauCeti.LyndonLength.chiswellBase`: the base point `(1, 0)` of `l.Chiswell`.
-* `TauCeti.LyndonLength.chiswellMetric`: the `Λ`-metric on `l.Chiswell`.
+* `TauCeti.LyndonLength.chiswellMetric`: the geodesic `Λ`-metric on `l.Chiswell`.
 * `TauCeti.LyndonLength.instMulActionChiswell`: the isometric `G`-action on `l.Chiswell`.
 * `TauCeti.LyndonLength.chiswellEmbed`: the `G`-equivariant isometric embedding of `l.Chiswell`
   onto `⋃ g : G, [x₀, g • x₀]` in any based `G`-`Λ`-tree realising `l`.
 
 ## Main results
 
-* `TauCeti.LyndonLength.isIsometricAction_chiswell`: `G` acts on `l.Chiswell` by isometries.
+* `TauCeti.LyndonLength.isGeodesic_chiswellMetric`: `l.chiswellMetric` is geodesic.
+* `TauCeti.LyndonLength.isIsometricAction_chiswellMetric`: `G` acts on `l.Chiswell` by isometries.
 * `TauCeti.LyndonLength.isTree_chiswellMetric`, `TauCeti.LyndonLength.isTree_chiswellMetric_iff`:
   `l.chiswellMetric` is a `Λ`-tree if and only if the Gromov products of `l` lie in `Λ`.
 * `TauCeti.LyndonLength.basedLength_chiswellBase`: at `l.chiswellBase`, the based length function of
   `l.Chiswell` is `l`.
+* `TauCeti.LyndonLength.chiswellEmbed_unique`: `chiswellEmbed` is the unique `G`-equivariant
+  isometric map `l.Chiswell → X` sending `l.chiswellBase` to `x₀`.
 * `TauCeti.LyndonLength.isFreeAction_chiswell_iff`: when `l` satisfies (L4), the action of `G` on
   `l.Chiswell` is free if and only if `l` is free.
 * `TauCeti.LyndonLength.exists_basedLength_eq_iff`: `l` is the based length function of an isometric
@@ -62,12 +65,12 @@ Combining Chiswell's construction with `isFree_basedLength_iff` shows that a gro
 
 ## References
 
-* I. Chiswell, *Introduction to Λ-trees*, World Scientific, 2001, Theorem 2.2.1 and §3.1.
+* I. Chiswell, *Introduction to Λ-trees*, World Scientific, 2001, §§2.2, 2.4, and 3.1.
 * R. C. Lyndon, *Length functions in groups*, Math. Scand. 12 (1963), 209–234.
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Groups with free regular length
-  functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), Theorem 2.2.
+  functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), §2.1, Theorem 1.
 * O. Kharlampovich, A. Myasnikov, D. Serbin, *Actions, length functions, and non-Archimedean
-  words*, Internat. J. Algebra Comput. 23 (2013), Theorem 4.
+  words*, Internat. J. Algebra Comput. 23 (2013), §5.
 -/
 
 public section
@@ -182,6 +185,26 @@ theorem chiswell_inductionOn {motive : l.Chiswell → Prop} (x : l.Chiswell)
     (mk : ∀ (g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g), motive (l.chiswellMk g s hs₀ hs)) :
     motive x :=
   Quotient.inductionOn x fun ⟨⟨g, s⟩, hs₀, hs⟩ => mk g s hs₀ hs
+
+/-- Lift a function on raw pairs `(g, s)` (`0 ≤ s ≤ l g`) respecting the Chiswell equivalence
+relation to `l.Chiswell`. -/
+def chiswellLift {β : Sort*} (f : ∀ (g : G) (s : Λ), 0 ≤ s → s ≤ l g → β)
+    (hf : ∀ (g₁ g₂ : G) (s : Λ) (hs₀ : 0 ≤ s) (h₁ : s ≤ l g₁) (h₂ : s ≤ l g₂),
+      2 • s ≤ l g₁ + l g₂ - l (g₁⁻¹ * g₂) → f g₁ s hs₀ h₁ = f g₂ s hs₀ h₂) :
+    l.Chiswell → β :=
+  Quotient.lift (fun p => f p.1.1 p.1.2 p.2.1 p.2.2) fun p q ⟨hst, hle⟩ => by
+    cases p with | mk p hp => cases q with | mk q hq =>
+    cases p with | mk g₁ s => cases q with | mk g₂ t =>
+    subst hst
+    exact hf g₁ g₂ s hp.1 hp.2 hq.2 hle
+
+@[simp]
+theorem chiswellLift_chiswellMk {β : Sort*} (f : ∀ (g : G) (s : Λ), 0 ≤ s → s ≤ l g → β)
+    (hf : ∀ (g₁ g₂ : G) (s : Λ) (hs₀ : 0 ≤ s) (h₁ : s ≤ l g₁) (h₂ : s ≤ l g₂),
+      2 • s ≤ l g₁ + l g₂ - l (g₁⁻¹ * g₂) → f g₁ s hs₀ h₁ = f g₂ s hs₀ h₂)
+    (g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g) :
+    l.chiswellLift f hf (l.chiswellMk g s hs₀ hs) = f g s hs₀ hs :=
+  (rfl)
 
 /-- The raw distance `s + t - min (2 • s, 2 • t, 2 c(g, f))` between two raw pairs. -/
 private def rawDist (p q : RawPair l) : Λ :=
@@ -330,36 +353,120 @@ private theorem smulRaw_congr (k : G) {p q : RawPair l} (hpq : rawRel l p q) :
       (rawRel_iff_forall_rawDist_vertexRaw l).1 hpq]
 
 /-- Scalar multiplication by `G` on `l.Chiswell`. -/
-def chiswellSMul (k : G) (x : l.Chiswell) : l.Chiswell :=
+private def chiswellSMul (k : G) (x : l.Chiswell) : l.Chiswell :=
   Quotient.map (smulRaw l k) (fun _ _ => smulRaw_congr l k) x
 
-/-- The identity element of `G` acts trivially on `l.Chiswell`. -/
-theorem chiswellSMul_one (x : l.Chiswell) : chiswellSMul l 1 x = x :=
+private theorem chiswellSMul_one (x : l.Chiswell) : chiswellSMul l 1 x = x :=
   Quotient.inductionOn x fun p => Quotient.sound (s := rawSetoid l) <|
     (rawRel_iff_forall_rawDist_vertexRaw l).2 fun h => by
       rw [rawDist_vertexRaw_smulRaw, inv_one, one_mul]
 
-/-- Scalar multiplication on `l.Chiswell` satisfies the associative action law. -/
-theorem chiswellSMul_mul (k₁ k₂ : G) (x : l.Chiswell) :
+private theorem chiswellSMul_mul (k₁ k₂ : G) (x : l.Chiswell) :
     chiswellSMul l (k₁ * k₂) x = chiswellSMul l k₁ (chiswellSMul l k₂ x) :=
   Quotient.inductionOn x fun p => Quotient.sound (s := rawSetoid l) <|
     (rawRel_iff_forall_rawDist_vertexRaw l).2 fun h => by
       rw [rawDist_vertexRaw_smulRaw, rawDist_vertexRaw_smulRaw, rawDist_vertexRaw_smulRaw,
         mul_inv_rev, mul_assoc]
 
-instance instMulActionChiswell : MulAction G l.Chiswell where
-  smul := chiswellSMul l
-  one_smul := chiswellSMul_one l
-  mul_smul := chiswellSMul_mul l
+private theorem smulRaw_quotientMk (k g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g)
+    (h₁ : ∀ (_ : 2 • s ≤ l k + l g - l (k * g)), 0 ≤ l k - s)
+    (h₂ : ∀ (_ : ¬(2 • s ≤ l k + l g - l (k * g))), 0 ≤ s + l (k * g) - l g)
+    (h₃ : ∀ (_ : ¬(2 • s ≤ l k + l g - l (k * g))), s + l (k * g) - l g ≤ l (k * g)) :
+    (if h : 2 • s ≤ l k + l g - l (k * g) then
+      l.chiswellMk k (l k - s) (h₁ h) (sub_le_self (l k) hs₀)
+    else
+      l.chiswellMk (k * g) (s + l (k * g) - l g) (h₂ h) (h₃ h)) =
+      Quotient.mk (rawSetoid l) (smulRaw l k ⟨(g, s), hs₀, hs⟩) := by
+  rw [smulRaw]
+  split_ifs <;> rfl
 
-private theorem smul_chiswellMk (k g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g) :
-    k • l.chiswellMk g s hs₀ hs =
-      (Quotient.mk (rawSetoid l) (smulRaw l k ⟨(g, s), hs₀, hs⟩) : l.Chiswell) :=
+private theorem chiswellLift_smulRaw_eq (k : G)
+    (h₁ : ∀ (g : G) (s : Λ), 0 ≤ s → s ≤ l g →
+      2 • s ≤ l k + l g - l (k * g) → 0 ≤ l k - s)
+    (h₂ : ∀ (g : G) (s : Λ), 0 ≤ s → s ≤ l g →
+      ¬(2 • s ≤ l k + l g - l (k * g)) → 0 ≤ s + l (k * g) - l g)
+    (h₃ : ∀ (g : G) (s : Λ), 0 ≤ s → s ≤ l g →
+      ¬(2 • s ≤ l k + l g - l (k * g)) → s + l (k * g) - l g ≤ l (k * g))
+    (hf : _) (x : l.Chiswell) :
+    l.chiswellLift
+      (fun g s hs₀ hs =>
+        if h : 2 • s ≤ l k + l g - l (k * g) then
+          l.chiswellMk k (l k - s) (h₁ g s hs₀ hs h) (sub_le_self (l k) hs₀)
+        else
+          l.chiswellMk (k * g) (s + l (k * g) - l g) (h₂ g s hs₀ hs h) (h₃ g s hs₀ hs h))
+      hf x = chiswellSMul l k x := by
+  refine chiswell_inductionOn l x fun g s hs₀ hs => ?_
+  rw [chiswellLift_chiswellMk, smulRaw_quotientMk l k g s hs₀ hs]
   rfl
+
+instance instMulActionChiswell : MulAction G l.Chiswell where
+  smul k := l.chiswellLift
+    (fun g s hs₀ hs =>
+      if h : 2 • s ≤ l k + l g - l (k * g) then
+        l.chiswellMk k (l k - s)
+          (by
+            have htri : l g ≤ l k + l (k * g) := by
+              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
+            rw [two_nsmul] at h
+            grind)
+          (sub_le_self (l k) hs₀)
+      else
+        l.chiswellMk (k * g) (s + l (k * g) - l g)
+          (by
+            have htri : l g ≤ l k + l (k * g) := by
+              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
+            rw [two_nsmul] at h
+            grind)
+          (by grind))
+    (by
+      intro g₁ g₂ s hs₀ h₁ h₂ hle
+      rw [smulRaw_quotientMk l k g₁ s hs₀ h₁, smulRaw_quotientMk l k g₂ s hs₀ h₂]
+      exact Quotient.sound (s := rawSetoid l) (smulRaw_congr l k ⟨rfl, hle⟩))
+  one_smul x := by
+    exact (chiswellLift_smulRaw_eq l 1 _ _ _ _ x).trans (chiswellSMul_one l x)
+  mul_smul k₁ k₂ x := by
+    exact (chiswellLift_smulRaw_eq l (k₁ * k₂) _ _ _ _ x).trans <|
+      (chiswellSMul_mul l k₁ k₂ x).trans <|
+        (congrArg (chiswellSMul l k₁) (chiswellLift_smulRaw_eq l k₂ _ _ _ _ x).symm).trans
+          (chiswellLift_smulRaw_eq l k₁ _ _ _ _ _).symm
+
+private theorem smul_eq_chiswellSMul (k : G) (x : l.Chiswell) :
+    k • x = chiswellSMul l k x :=
+  chiswellLift_smulRaw_eq l k _ _ _ _ x
+
+private theorem smul_chiswellMk_raw (k g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g) :
+    k • l.chiswellMk g s hs₀ hs =
+      (Quotient.mk (rawSetoid l) (smulRaw l k ⟨(g, s), hs₀, hs⟩) : l.Chiswell) := by
+  rw [smul_eq_chiswellSMul]
+  rfl
+
+/-- Left multiplication by `k : G` on a point `l.chiswellMk g s hs₀ hs`: along the triangle
+`1, k, k * g`, the initial segment `2 • s ≤ l k + l g - l (k * g)` folds onto `[0, l k]` toward
+`k`, and the remainder runs along `[0, l (k * g)]` toward `k * g`. -/
+theorem smul_chiswellMk (k g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g) :
+    k • l.chiswellMk g s hs₀ hs =
+      if h : 2 • s ≤ l k + l g - l (k * g) then
+        l.chiswellMk k (l k - s)
+          (by
+            have htri : l g ≤ l k + l (k * g) := by
+              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
+            rw [two_nsmul] at h
+            grind)
+          (sub_le_self (l k) hs₀)
+      else
+        l.chiswellMk (k * g) (s + l (k * g) - l g)
+          (by
+            have htri : l g ≤ l k + l (k * g) := by
+              simpa [map_inv_eq_map] using map_mul_le_add l k⁻¹ (k * g)
+            rw [two_nsmul] at h
+            grind)
+          (by grind) := by
+  rw [smul_chiswellMk_raw, smulRaw]
+  split_ifs <;> rfl
 
 theorem smul_chiswellBase (g : G) :
     g • l.chiswellBase = l.chiswellMk g (l g) (apply_nonneg l g) le_rfl := by
-  rw [chiswellBase, smul_chiswellMk]
+  rw [chiswellBase, smul_chiswellMk_raw]
   refine Quotient.sound (s := rawSetoid l) ((rawRel_iff_forall_rawDist_vertexRaw l).2 fun h => ?_)
   have h₁ : rawDist l (vertexRaw l (g⁻¹ * h)) ⟨(1, 0), le_rfl, by simp⟩ = l (h⁻¹ * g) := by
     have hinv : l (g⁻¹ * h) = l (h⁻¹ * g) := by
@@ -418,11 +525,12 @@ private theorem rawDist_smulRaw (k : G) (p q : RawPair l) :
     grind
 
 /-- `G` acts on `l.Chiswell` by isometries of `l.chiswellMetric`. -/
-theorem isIsometricAction_chiswell : l.chiswellMetric.IsIsometricAction G :=
-  l.chiswellMetric.isIsometricAction_iff.2 fun k x y =>
-    Quotient.inductionOn₂ x y fun p q => rawDist_smulRaw l k p q
+theorem isIsometricAction_chiswellMetric : l.chiswellMetric.IsIsometricAction G :=
+  l.chiswellMetric.isIsometricAction_iff.2 fun k x y => by
+    rw [smul_eq_chiswellSMul, smul_eq_chiswellSMul]
+    exact Quotient.inductionOn₂ x y fun p q => rawDist_smulRaw l k p q
 
-/-! ### Geodesicity and the `Λ`-tree property under (L4) -/
+/-! ### Geodesicity and the `Λ`-tree property -/
 
 /-- The ray `[0, l g] → l.Chiswell` from `chiswellBase` to `g • chiswellBase`, clamped outside
 `[0, l g]`. -/
@@ -447,36 +555,84 @@ private theorem chiswellMetric_chiswellRay_same (g : G) {a b : Λ} (ha : a ∈ I
   · rw [abs_of_nonneg (sub_nonneg.2 hab)]
     grind [ha.2, hb.2]
 
-/-- Given a common bound `m ≤ c(g, f)`, the path from `(g, s)` down to `(g, m) = (f, m)` and up to
-`(f, t)` is a geodesic segment in `l.Chiswell`. -/
-private theorem exists_isSegment_chiswellMk {g f : G} {s t c : Λ} (hs₀ : 0 ≤ s) (hs : s ≤ l g)
-    (ht₀ : 0 ≤ t) (ht : t ≤ l f) (hc : 2 • c = l g + l f - l (g⁻¹ * f)) :
+private theorem exists_isSegment_chiswellMk_same (g : G) {a b : Λ} (ha₀ : 0 ≤ a) (ha : a ≤ l g)
+    (hb₀ : 0 ≤ b) (hb : b ≤ l g) :
+    ∃ σ, l.chiswellMetric.IsSegment σ (l.chiswellMk g a ha₀ ha) (l.chiswellMk g b hb₀ hb) := by
+  rcases le_total a b with hab | hab
+  · have hdist : l.chiswellMetric (l.chiswellMk g a ha₀ ha) (l.chiswellMk g b hb₀ hb) = b - a := by
+      rw [← chiswellRay_eq_chiswellMk l g ha₀ ha, ← chiswellRay_eq_chiswellMk l g hb₀ hb,
+        chiswellMetric_chiswellRay_same l g ⟨ha₀, ha⟩ ⟨hb₀, hb⟩, abs_sub_comm,
+        abs_of_nonneg (sub_nonneg.2 hab)]
+    let φ : Λ → l.Chiswell := fun r => chiswellRay l g (a + r)
+    refine ⟨_, LambdaMetric.isSegment_iff.2 ⟨φ, ?_, ?_, (LambdaMetric.isometricOn_iff _).2 ?_, rfl⟩⟩
+    · simp [φ, chiswellRay_eq_chiswellMk l g ha₀ ha]
+    · rw [hdist]
+      simp [φ, add_sub_cancel, chiswellRay_eq_chiswellMk l g hb₀ hb]
+    · rw [hdist]
+      intro u hu v hv
+      rw [chiswellMetric_chiswellRay_same l g ⟨by grind, by grind⟩ ⟨by grind, by grind⟩]
+      congr 1
+      grind
+  · have hdist : l.chiswellMetric (l.chiswellMk g a ha₀ ha) (l.chiswellMk g b hb₀ hb) = a - b := by
+      rw [← chiswellRay_eq_chiswellMk l g ha₀ ha, ← chiswellRay_eq_chiswellMk l g hb₀ hb,
+        chiswellMetric_chiswellRay_same l g ⟨ha₀, ha⟩ ⟨hb₀, hb⟩,
+        abs_of_nonneg (sub_nonneg.2 hab)]
+    let φ : Λ → l.Chiswell := fun r => chiswellRay l g (a - r)
+    refine ⟨_, LambdaMetric.isSegment_iff.2 ⟨φ, ?_, ?_, (LambdaMetric.isometricOn_iff _).2 ?_, rfl⟩⟩
+    · simp [φ, chiswellRay_eq_chiswellMk l g ha₀ ha]
+    · rw [hdist]
+      simp [φ, sub_sub_cancel, chiswellRay_eq_chiswellMk l g hb₀ hb]
+    · rw [hdist]
+      intro u hu v hv
+      rw [chiswellMetric_chiswellRay_same l g ⟨by grind, by grind⟩ ⟨by grind, by grind⟩,
+        sub_sub_sub_cancel_left, abs_sub_comm]
+
+/-- Any two points `(g, s)` and `(f, t)` in `l.Chiswell` are joined by a geodesic segment: either
+one lies in the common initial segment `2 • r ≤ l g + l f - l (g⁻¹ * f)` so both lie on a single
+ray, or the path runs down the `g`-ray and up the `f`-ray across the branch threshold. -/
+private theorem exists_isSegment_chiswellMk {g f : G} {s t : Λ} (hs₀ : 0 ≤ s) (hs : s ≤ l g)
+    (ht₀ : 0 ≤ t) (ht : t ≤ l f) :
     ∃ σ, l.chiswellMetric.IsSegment σ (l.chiswellMk g s hs₀ hs) (l.chiswellMk f t ht₀ ht) := by
-  set m := min s (min t c)
-  have hm₀ : 0 ≤ m := le_min hs₀ (le_min ht₀ <| by
-    have hnn := doubleGromov_nonneg l g f
-    rw [doubleGromov, ← hc, two_nsmul] at hnn
-    grind)
-  have hms : m ≤ s := min_le_left _ _
-  have hmt : m ≤ t := (min_le_right _ _).trans (min_le_left _ _)
-  have hmc : m ≤ c := (min_le_right _ _).trans (min_le_right _ _)
+  set D := doubleGromov l g f
+  have hD₀ : 0 ≤ D := doubleGromov_nonneg l g f
+  have hDg : D ≤ 2 • l g := doubleGromov_le_two_nsmul_left l g f
+  have hDf : D ≤ 2 • l f := doubleGromov_le_two_nsmul_right l g f
+  by_cases hsD : 2 • s ≤ D
+  · have hsf : s ≤ l f := by
+      have := hsD.trans hDf
+      rw [two_nsmul, two_nsmul] at this
+      grind
+    have heq : l.chiswellMk g s hs₀ hs = l.chiswellMk f s hs₀ hsf :=
+      l.chiswellMk_eq_chiswellMk_iff.2 ⟨rfl, hsD⟩
+    rw [heq]
+    exact exists_isSegment_chiswellMk_same l f hs₀ hsf ht₀ ht
+  by_cases htD : 2 • t ≤ D
+  · have htg : t ≤ l g := by
+      have := htD.trans hDg
+      rw [two_nsmul, two_nsmul] at this
+      grind
+    have heq : l.chiswellMk f t ht₀ ht = l.chiswellMk g t ht₀ htg :=
+      l.chiswellMk_eq_chiswellMk_iff.2 ⟨rfl, by rwa [← doubleGromov, doubleGromov_comm]⟩
+    rw [heq]
+    exact exists_isSegment_chiswellMk_same l g hs₀ hs ht₀ htg
+  have hDs : D < 2 • s := lt_of_not_ge hsD
+  have hDt : D < 2 • t := lt_of_not_ge htD
   have hdist : l.chiswellMetric (l.chiswellMk g s hs₀ hs) (l.chiswellMk f t ht₀ ht) =
-      (s - m) + (t - m) := by
-    rw [chiswellMetric_chiswellMk, ← hc, two_nsmul, two_nsmul, two_nsmul]
+      s + t - D := by
+    rw [chiswellMetric_chiswellMk, ← doubleGromov]
+    rw [two_nsmul] at hDs hDt ⊢
+    rw [two_nsmul]
     grind
   let φ : Λ → l.Chiswell := fun r =>
-    if r ≤ s - m then chiswellRay l g (s - r) else chiswellRay l f (m + (r - (s - m)))
+    if D ≤ 2 • (s - r) then chiswellRay l g (s - r) else chiswellRay l f (r - s + D)
   refine ⟨_, LambdaMetric.isSegment_iff.2 ⟨φ, ?_, ?_, (LambdaMetric.isometricOn_iff _).2 ?_, rfl⟩⟩
-  · simp [φ, sub_nonneg.2 hms, chiswellRay_eq_chiswellMk l g hs₀ hs]
+  · simp [φ, hDs.le, chiswellRay_eq_chiswellMk l g hs₀ hs]
   · rw [hdist]
-    simp only [φ]
-    split_ifs with htm
-    · have ht_eq : t - m = 0 := by grind
-      have hmt' : m = t := by grind
-      rw [ht_eq, add_zero, sub_sub_cancel, chiswellRay_eq_chiswellMk l g hm₀ (hms.trans hs)]
-      exact l.chiswellMk_eq_chiswellMk_iff.2 ⟨hmt', hc ▸ nsmul_le_nsmul_right hmc 2⟩
-    · have hmrt : m + (s - m + (t - m) - (s - m)) = t := by grind
-      rw [hmrt, chiswellRay_eq_chiswellMk l f ht₀ ht]
+    have hbranch : ¬(D ≤ 2 • (s - (s + t - D))) := by
+      rw [two_nsmul] at hDt ⊢
+      grind
+    have hend : s + t - D - s + D = t := by grind
+    simp [φ, hbranch, hend, chiswellRay_eq_chiswellMk l f ht₀ ht]
   · rw [hdist]
     intro a ha b hb
     wlog hab : a ≤ b generalizing a b
@@ -485,32 +641,39 @@ private theorem exists_isSegment_chiswellMk {g f : G} {s t c : Λ} (hs₀ : 0 �
     rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hab)]
     simp only [φ]
     split_ifs with ha' hb' hb'
-    · rw [chiswellMetric_chiswellRay_same l g ⟨by grind, by grind⟩ ⟨by grind, by grind⟩,
+    · rw [chiswellMetric_chiswellRay_same l g
+        ⟨by rw [two_nsmul] at ha'; grind, by grind⟩
+        ⟨by rw [two_nsmul] at hb'; grind, by grind⟩,
         sub_sub_sub_cancel_left, abs_of_nonneg (sub_nonneg.2 hab)]
-    · rw [chiswellRay_eq_chiswellMk l g (by grind) (by grind),
-        chiswellRay_eq_chiswellMk l f (by grind) (by grind), chiswellMetric_chiswellMk, ← hc,
-        two_nsmul, two_nsmul, two_nsmul]
+    · rw [chiswellRay_eq_chiswellMk l g (by rw [two_nsmul] at ha'; grind) (by grind),
+        chiswellRay_eq_chiswellMk l f (by rw [two_nsmul] at hb'; grind) (by grind),
+        chiswellMetric_chiswellMk, ← doubleGromov]
+      rw [two_nsmul] at ha' hb' ⊢
+      rw [two_nsmul]
       grind
-    · grind
-    · rw [chiswellMetric_chiswellRay_same l f ⟨by grind, by grind⟩ ⟨by grind, by grind⟩,
-        abs_sub_comm, abs_of_nonneg (by grind)]
+    · exfalso
+      rw [two_nsmul] at ha' hb'
       grind
+    · rw [chiswellMetric_chiswellRay_same l f
+        ⟨by rw [two_nsmul] at ha'; grind, by grind⟩
+        ⟨by rw [two_nsmul] at hb'; grind, by grind⟩]
+      have hdiff : (a - s + D) - (b - s + D) = a - b := by grind
+      rw [hdiff, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hab)]
 
-/-- When the Gromov products of `l` lie in `Λ` (axiom (L4)), `l.chiswellMetric` is geodesic. -/
-theorem isGeodesic_chiswellMetric
-    (hl : ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f) :
-    l.chiswellMetric.IsGeodesic := by
-  refine LambdaMetric.isGeodesic_iff.2 fun x y => ?_
-  refine chiswell_inductionOn l x fun g s hs₀ hs => chiswell_inductionOn l y fun f t ht₀ ht => ?_
-  obtain ⟨c, hc⟩ := hl g f
-  exact exists_isSegment_chiswellMk l hs₀ hs ht₀ ht (l.coe_eq_gromovProduct_iff.1 hc)
+/-- Chiswell's metric `l.chiswellMetric` is geodesic (without assuming axiom (L4)). -/
+theorem isGeodesic_chiswellMetric : l.chiswellMetric.IsGeodesic :=
+  LambdaMetric.isGeodesic_iff.2 fun x y =>
+    chiswell_inductionOn l x fun _ _ hs₀ hs =>
+      chiswell_inductionOn l y fun _ _ ht₀ ht =>
+        exists_isSegment_chiswellMk l hs₀ hs ht₀ ht
 
 /-- Chiswell's theorem (existence): when the Gromov products of `l` lie in `Λ`, `l.chiswellMetric`
 makes `l.Chiswell` a `Λ`-tree. -/
 theorem isTree_chiswellMetric
     (hl : ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f) :
     l.chiswellMetric.IsTree := by
-  refine LambdaMetric.isTree_of_isGeodesic l.chiswellBase (l.isGeodesic_chiswellMetric hl)
+  refine LambdaMetric.isTree_of_min_dist_add_dist_sub_dist_le l.chiswellBase
+    l.isGeodesic_chiswellMetric
     (fun x y => chiswell_inductionOn l x fun g s hs₀ hs =>
       chiswell_inductionOn l y fun f t ht₀ ht => ?_)
     (fun x y z => chiswell_inductionOn l x fun g s hs₀ hs =>
@@ -526,21 +689,15 @@ theorem isTree_chiswellMetric
     rw [← hmono.map_min, ← hmono.map_min, two_nsmul]
   · have hul := min_doubleGromov_le l g f h
     simp only [doubleGromov] at hul
-    rw [chiswellMetric_chiswellBase_chiswellMk, chiswellMetric_chiswellBase_chiswellMk,
-      chiswellMetric_chiswellBase_chiswellMk, chiswellMetric_chiswellMk,
-      chiswellMetric_chiswellMk, chiswellMetric_chiswellMk,
-      sub_sub_cancel, sub_sub_cancel, sub_sub_cancel]
-    exact le_min ((min_le_left _ _).trans (min_le_left _ _))
-      (le_min ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _)))
-        ((min_le_min ((min_le_right _ _).trans (min_le_right _ _))
-          ((min_le_right _ _).trans (min_le_right _ _))).trans hul))
+    simp only [chiswellMetric_chiswellBase_chiswellMk, chiswellMetric_chiswellMk, sub_sub_cancel]
+    grind
 
-/-- At `l.chiswellBase`, the based length function of `G` acting on the `Λ`-tree `l.Chiswell` is `l`
-itself. -/
+/-- At `l.chiswellBase`, the based length function of any `Λ`-tree and isometric action witnesses
+on `l.Chiswell` is `l` itself. -/
 @[simp]
-theorem basedLength_chiswellBase
-    (hl : ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f) :
-    (l.isTree_chiswellMetric hl).basedLength l.isIsometricAction_chiswell l.chiswellBase = l := by
+theorem basedLength_chiswellBase {hd : l.chiswellMetric.IsTree}
+    {hG : l.chiswellMetric.IsIsometricAction G} :
+    hd.basedLength hG l.chiswellBase = l := by
   ext g
   simp
 
@@ -548,21 +705,20 @@ theorem basedLength_chiswellBase
 in `Λ`. -/
 theorem isTree_chiswellMetric_iff :
     l.chiswellMetric.IsTree ↔
-      ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f := by
-  refine ⟨fun hd => ?_, l.isTree_chiswellMetric⟩
-  have hlen : hd.basedLength l.isIsometricAction_chiswell l.chiswellBase = l := by
-    ext g
-    simp
-  exact hlen ▸ hd.exists_coe_eq_gromovProduct_basedLength l.isIsometricAction_chiswell
-    l.chiswellBase
+      ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f :=
+  ⟨fun hd =>
+      l.basedLength_chiswellBase (hd := hd) (hG := l.isIsometricAction_chiswellMetric) ▸
+        hd.exists_coe_eq_gromovProduct_basedLength l.isIsometricAction_chiswellMetric
+          l.chiswellBase,
+    l.isTree_chiswellMetric⟩
 
 /-- When `l` satisfies (L4), the action of `G` on `l.Chiswell` is free if and only if `l` is a free
 Lyndon length function. -/
 theorem isFreeAction_chiswell_iff
     (hl : ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f) :
     LambdaMetric.IsFreeAction G l.Chiswell ↔ l.IsFree := by
-  rw [← (l.isTree_chiswellMetric hl).isFree_basedLength_iff l.isIsometricAction_chiswell
-    l.chiswellBase, l.basedLength_chiswellBase hl]
+  rw [← (l.isTree_chiswellMetric hl).isFree_basedLength_iff l.isIsometricAction_chiswellMetric
+    l.chiswellBase, l.basedLength_chiswellBase]
 
 /-! ### Universal equivariant isometric embedding and Chiswell's theorem -/
 
@@ -639,7 +795,7 @@ theorem chiswellEmbed_smul (k : G) (x : l.Chiswell) :
     chiswellEmbed hd hG x₀ hlen (k • x) = k • chiswellEmbed hd hG x₀ hlen x := by
   refine chiswell_inductionOn l x fun g s hs₀ hs => ?_
   let p : RawPair l := ⟨(g, s), hs₀, hs⟩
-  rw [smul_chiswellMk, chiswellMk, chiswellEmbed_quotientMk, chiswellEmbed_quotientMk]
+  rw [smul_chiswellMk_raw, chiswellMk, chiswellEmbed_quotientMk, chiswellEmbed_quotientMk]
   set u := embedRaw hd hG x₀ hlen p
   set q := smulRaw l k p
   set v := embedRaw hd hG x₀ hlen q
@@ -661,8 +817,39 @@ theorem chiswellEmbed_smul (k : G) (x : l.Chiswell) :
       (embedRaw_mem_segment hd hG x₀ hlen q)
   exact (hd.eq_of_mem_segment_of_dist_eq hmem (embedRaw_mem_segment hd hG x₀ hlen q) h₁).symm
 
-/-- The range of `chiswellEmbed` is the union of the segments `[x₀, g • x₀]` in `X`, the minimal
-`G`-invariant subtree of `X` containing `x₀` when `X` has no proper invariant subtrees. -/
+/-- The image of `l.chiswellMk g s hs₀ hs` under `chiswellEmbed` lies on the segment
+`[x₀, g • x₀]`. -/
+theorem chiswellEmbed_chiswellMk_mem_segment (g : G) (s : Λ) (hs₀ : 0 ≤ s) (hs : s ≤ l g) :
+    chiswellEmbed hd hG x₀ hlen (l.chiswellMk g s hs₀ hs) ∈ hd.segment x₀ (g • x₀) :=
+  embedRaw_mem_segment hd hG x₀ hlen ⟨(g, s), hs₀, hs⟩
+
+/-- `chiswellEmbed` is the unique `G`-equivariant isometric map `l.Chiswell → X` sending
+`l.chiswellBase` to `x₀`. -/
+theorem chiswellEmbed_unique {f : l.Chiswell → X}
+    (hf_dist : ∀ x y : l.Chiswell, d (f x) (f y) = l.chiswellMetric x y)
+    (hf_base : f l.chiswellBase = x₀)
+    (hf_smul : ∀ (g : G) (x : l.Chiswell), f (g • x) = g • f x) :
+    f = chiswellEmbed hd hG x₀ hlen := by
+  ext x
+  refine chiswell_inductionOn l x fun g s hs₀ hs => ?_
+  have hfx₀ : d x₀ (f (l.chiswellMk g s hs₀ hs)) = s := by
+    rw [← hf_base, hf_dist, chiswellMetric_chiswellBase_chiswellMk]
+  have hfg : d (f (l.chiswellMk g s hs₀ hs)) (g • x₀) = l g - s := by
+    rw [← hf_base, ← hf_smul, hf_dist, smul_chiswellBase, chiswellMetric_chiswellMk]
+    have hgg : l g + l g - l (g⁻¹ * g) = 2 • l g := by simp [two_nsmul]
+    rw [hgg, two_nsmul, two_nsmul]
+    grind
+  have hmem : f (l.chiswellMk g s hs₀ hs) ∈ hd.segment x₀ (g • x₀) := by
+    rw [hd.mem_segment_iff, hfx₀, hfg]
+    have hg : d x₀ (g • x₀) = l g := by simp [← hlen]
+    rw [hg, add_sub_cancel]
+  refine hd.eq_of_mem_segment_of_dist_eq hmem
+    (chiswellEmbed_chiswellMk_mem_segment hd hG x₀ hlen g s hs₀ hs) ?_
+  have hemb := dist_chiswellEmbed hd hG x₀ hlen l.chiswellBase (l.chiswellMk g s hs₀ hs)
+  rw [chiswellEmbed_chiswellBase, chiswellMetric_chiswellBase_chiswellMk] at hemb
+  exact hfx₀.trans hemb.symm
+
+/-- The range of `chiswellEmbed` is the union of the segments `[x₀, g • x₀]` in `X`. -/
 theorem range_chiswellEmbed :
     range (chiswellEmbed hd hG x₀ hlen) = ⋃ g : G, hd.segment x₀ (g • x₀) := by
   refine Set.ext fun u => ?_
@@ -691,7 +878,7 @@ theorem exists_basedLength_eq_iff :
       ∀ g f : G, ∃ c : Λ, (c : DivisibleHull Λ) = l.gromovProduct g f :=
   ⟨fun ⟨_, _, _, hd, hG, x, hlen⟩ => hlen ▸ hd.exists_coe_eq_gromovProduct_basedLength hG x,
     fun hl => ⟨l.Chiswell, inferInstance, l.chiswellMetric, l.isTree_chiswellMetric hl,
-      l.isIsometricAction_chiswell, l.chiswellBase, l.basedLength_chiswellBase hl⟩⟩
+      l.isIsometricAction_chiswellMetric, l.chiswellBase, l.basedLength_chiswellBase⟩⟩
 
 /-- Chiswell's theorem on free length functions: a group `G` has a free `Λ`-valued Lyndon length
 function if and only if `G` acts freely by isometries on a `Λ`-tree. -/
@@ -701,7 +888,7 @@ theorem exists_isFree_iff (G : Type u) (Λ : Type v) [Group G] [AddCommGroup Λ]
       ∃ (X : Type (max u v)) (_ : MulAction G X) (d : LambdaMetric Λ X),
         d.IsTree ∧ d.IsIsometricAction G ∧ LambdaMetric.IsFreeAction G X := by
   refine ⟨fun ⟨l, hl⟩ => ⟨l.Chiswell, inferInstance, l.chiswellMetric,
-    l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct, l.isIsometricAction_chiswell,
+    l.isTree_chiswellMetric hl.exists_coe_eq_gromovProduct, l.isIsometricAction_chiswellMetric,
     (l.isFreeAction_chiswell_iff hl.exists_coe_eq_gromovProduct).2 hl⟩, ?_⟩
   rintro ⟨X, _, d, hd, hG, hfree⟩
   obtain ⟨x⟩ := hd.nonempty
