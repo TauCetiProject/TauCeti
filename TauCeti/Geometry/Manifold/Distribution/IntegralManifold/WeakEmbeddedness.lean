@@ -18,7 +18,8 @@ import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 An injective integral immersion of an involutive constant-rank distribution with a
 second-countable intrinsic carrier is weakly embedded: every `C^m` map into its image has a
 `C^m` factorization through that carrier. The factor is continuous even for a continuous test
-map from a locally connected space.
+map from a locally connected space. Equivalently, regularity of a map into the integral carrier
+is detected by composing with the ambient immersion.
 
 The ambient normed model is finite dimensional and real. The integral immersion has regularity
 `m ≥ 1`, and the ambient manifold has regularity `r` with `m + 1 ≤ r`. Both manifolds are
@@ -28,6 +29,7 @@ boundaryless, but their models may have boundary. The carrier retains its given 
 
 * `TauCeti.IsIntegralManifold.continuous_of_comp_eq`: continuity of the intrinsic lift.
 * `TauCeti.IsIntegralManifold.exists_contMDiff_factor`: weak embeddedness.
+* `TauCeti.IsIntegralManifold.contMDiff_iff_comp`: regularity detected by the ambient immersion.
 
 ## References
 
@@ -206,5 +208,25 @@ theorem IsIntegralManifold.exists_contMDiff_factor
   have hc : Continuous h := hf.continuous_of_comp_eq hm hinj hmr hinv hD hg.continuous hcomp
   exact ⟨h, (ContMDiff.iff_comp_isImmersion hf.isImmersion).mpr
     ⟨hc, hcomp.symm ▸ hg⟩, hcomp⟩
+
+/-- `C^m` regularity into an injective integral manifold is detected after composition with its
+ambient immersion. The intrinsic carrier is second countable, as in weak embeddedness. -/
+theorem IsIntegralManifold.contMDiff_iff_comp
+    (hf : IsIntegralManifold J m D f) (hm : 1 ≤ m) (hinj : Injective f)
+    (hmr : (m : ℕ∞ω) + 1 ≤ r)
+    (hinv : let _ : IsManifold I 1 M :=
+      .of_le ((show (1 : ℕ∞ω) ≤ (m : ℕ∞ω) + 1 from le_add_self).trans hmr)
+      IsInvolutiveDistribution I D) {k : ℕ}
+    (hD : let _ : IsManifold I 1 M :=
+      .of_le ((show (1 : ℕ∞ω) ≤ (m : ℕ∞ω) + 1 from le_add_self).trans hmr)
+      IsContMDiffDistribution I m k D)
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {A : Type*} [TopologicalSpace A] {K : ModelWithCorners ℝ V A}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace A P] {g : P → N} :
+    ContMDiff K J m g ↔ ContMDiff K I m (f ∘ g) := by
+  let _ : LocallyPathConnectedSpace P := K.locallyPathConnectedSpace_of_chartedSpace P
+  refine ⟨hf.contMDiff.comp, fun hg ↦ ?_⟩
+  exact (ContMDiff.iff_comp_isImmersion hf.isImmersion).mpr
+    ⟨hf.continuous_of_comp_eq hm hinj hmr hinv hD hg.continuous rfl, hg⟩
 
 end TauCeti
