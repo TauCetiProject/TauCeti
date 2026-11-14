@@ -89,7 +89,11 @@ private lemma intervalIntegrable_majorant (A B : ℝ) :
     ((hlocal.integrableOn_isCompact
       (isCompact_uIcc (a := 1 - A) (b := 1 - B))).intervalIntegrable).comp_sub_left 1
 
-private lemma majorantIntegral_eq : majorantIntegral = 3 * Real.sqrt 6 := by
+/-- The exact integral of the square-root majorant for the positive logarithmic singularity
+on `[1 / 4, 4]`, including its totalized value at `t = 1`. -/
+theorem integral_sqrt_two_div_abs_one_sub :
+    (∫ t : ℝ in (1 / 4 : ℝ)..(4 : ℝ), Real.sqrt (2 / |1 - t|)) =
+      3 * Real.sqrt 6 := by
   have hpoint (u : ℝ) : Real.sqrt (2 / |u|) =
       Real.sqrt 2 * |u| ^ (-(1 / 2 : ℝ)) := by
     rw [Real.sqrt_div (by norm_num)]
@@ -127,7 +131,6 @@ private lemma majorantIntegral_eq : majorantIntegral = 3 * Real.sqrt 6 := by
   have hsqrt : Real.sqrt 2 * Real.sqrt 3 = Real.sqrt 6 := by
     rw [← Real.sqrt_mul (by norm_num)]
     norm_num
-  dsimp only [majorantIntegral]
   rw [← intervalIntegral.integral_add_adjacent_intervals hl hr, hleft, hright]
   have hs4 : Real.sqrt (4 : ℝ) = 2 := by
     convert Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2) using 1; norm_num
@@ -215,7 +218,7 @@ private lemma integral_kernel_dyadic_le {A : ℝ} (hA : 0 ≤ A) :
     _ ≤ averageBound * A := by
       apply mul_le_mul_of_nonneg_right _ hA
       dsimp only [averageBound]
-      rw [majorantIntegral_eq]
+      rw [majorantIntegral, integral_sqrt_two_div_abs_one_sub]
       linarith [Real.log_nonneg (by norm_num : (1 : ℝ) ≤ 2)]
 
 
