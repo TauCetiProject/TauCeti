@@ -15,6 +15,10 @@ zero is injective (`Bundle.zeroSection_injective`). The image of a section `s` m
 the zero section exactly over the zeros of `s` (`Bundle.range_mk_inter_range_zeroSection`): two
 sections of a bundle meet only over the points where they agree. No topology or linear structure
 is used.
+
+In a vector bundle, the fibre over `b` parametrized by the model fibre through the trivialization
+at `b` passes through the zero vector at `0` (`Bundle.mk_trivializationAt_symm_zero`), since the
+trivialization is linear on that fibre.
 -/
 
 public section
@@ -45,5 +49,23 @@ theorem range_mk_inter_range_zeroSection (s : ∀ x, E x) :
     exact ⟨y, (TotalSpace.mk_inj.mp hy).symm, hy⟩
   · rintro ⟨x, hx, rfl⟩
     exact ⟨⟨x, by rw [zeroSection, hx]⟩, x, rfl⟩
+
+section VectorBundle
+
+variable (𝕜 : Type*) {B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace B] [∀ x, AddCommMonoid (E x)]
+  [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle 𝕜 F E]
+
+include 𝕜 in
+/-- The fibre over `b`, parametrized by the model fibre through the trivialization at `b`, passes
+through the zero vector at `0`. -/
+theorem mk_trivializationAt_symm_zero (b : B) :
+    (⟨b, (trivializationAt F E b).symm b 0⟩ : TotalSpace F E) = zeroSection F E b := by
+  rw [← (trivializationAt F E b).symmL_apply (R := 𝕜) (mem_baseSet_trivializationAt F E b),
+    map_zero]
+  rfl
+
+end VectorBundle
 
 end Bundle
