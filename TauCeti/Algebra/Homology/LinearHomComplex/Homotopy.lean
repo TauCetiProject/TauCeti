@@ -23,10 +23,13 @@ Hence the linear Hom complex descends to a bifunctor
 contravariant in the source and covariant in the target. Composed with a K-injective
 replacement in the target, this bifunctor computes derived `Hom` complexes.
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.linearHomComplexPrecompHomotopy` and `TauCeti.linearHomComplexPostcompHomotopy`:
   the homotopies induced by a homotopy in the source or in the target.
+* `TauCeti.homologyMap_linearHomComplexPrecomp_eq_of_homotopy` and
+  `TauCeti.homologyMap_linearHomComplexPostcomp_eq_of_homotopy`: homotopic morphisms induce equal
+  maps on cohomology of `linearHomComplex`.
 * `TauCeti.linearHomComplexHomotopyFunctor`: the linear Hom complex on homotopy categories.
 
 ## References
@@ -103,6 +106,22 @@ def linearHomComplexPrecompHomotopy {φ φ' : F₁ ⟶ F₂} (h : Homotopy φ φ
     rw [δ_comp (Cochain.ofHomotopy h) z _ 0 (p + 1) p (by omega) (by omega) rfl, δ_ofHomotopy,
       Cochain.sub_comp, Int.negOnePow_succ, smul_add, smul_smul, Int.units_mul_self]
     simp⟩
+
+/-- Homotopic morphisms in the target induce equal maps on the cohomology of `linearHomComplex`. -/
+theorem homologyMap_linearHomComplexPostcomp_eq_of_homotopy
+    (F : CochainComplex C ℤ) {ψ ψ' : G₁ ⟶ G₂} (h : Homotopy ψ ψ') (i : ℤ)
+    [(linearHomComplex R F G₁).HasHomology i] [(linearHomComplex R F G₂).HasHomology i] :
+    HomologicalComplex.homologyMap (linearHomComplexPostcomp R F ψ) i =
+      HomologicalComplex.homologyMap (linearHomComplexPostcomp R F ψ') i :=
+  (linearHomComplexPostcompHomotopy R F h).homologyMap_eq i
+
+/-- Homotopic morphisms in the source induce equal maps on the cohomology of `linearHomComplex`. -/
+theorem homologyMap_linearHomComplexPrecomp_eq_of_homotopy
+    {φ φ' : F₁ ⟶ F₂} (h : Homotopy φ φ') (G : CochainComplex C ℤ) (i : ℤ)
+    [(linearHomComplex R F₂ G).HasHomology i] [(linearHomComplex R F₁ G).HasHomology i] :
+    HomologicalComplex.homologyMap (linearHomComplexPrecomp R φ G) i =
+      HomologicalComplex.homologyMap (linearHomComplexPrecomp R φ' G) i :=
+  (linearHomComplexPrecompHomotopy R h G).homologyMap_eq i
 
 end Homotopy
 

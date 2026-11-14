@@ -185,6 +185,36 @@ lemma linearHomComplexPrecomp_postcomp_comm (φ : F₁ ⟶ F₂) (ψ : G₁ ⟶ 
   simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.coe_comp]
   exact Cochain.comp_assoc _ _ _ (zero_add n) (add_zero n) (by omega)
 
+/-- Precomposing `linearHomComplex` with the zero chain map gives the zero morphism. -/
+@[simp]
+lemma linearHomComplexPrecomp_zero (F₁ F₂ G : CochainComplex C ℤ) :
+    linearHomComplexPrecomp R (0 : F₁ ⟶ F₂) G = 0 := by
+  ext n (z : ModuleCat.of R (Cochain F₂ G n))
+  simp [linearHomComplexPrecomp_f_apply]
+
+/-- Precomposition in `linearHomComplex` is additive in the source chain map. -/
+@[simp]
+lemma linearHomComplexPrecomp_add (φ₁ φ₂ : F₁ ⟶ F₂) (G : CochainComplex C ℤ) :
+    linearHomComplexPrecomp R (φ₁ + φ₂) G =
+      linearHomComplexPrecomp R φ₁ G + linearHomComplexPrecomp R φ₂ G := by
+  ext n (z : ModuleCat.of R (Cochain F₂ G n))
+  simp [linearHomComplexPrecomp_f_apply, Cochain.ofHom_add, Cochain.add_comp]
+
+/-- Postcomposing `linearHomComplex` with the zero chain map gives the zero morphism. -/
+@[simp]
+lemma linearHomComplexPostcomp_zero (F G₁ G₂ : CochainComplex C ℤ) :
+    linearHomComplexPostcomp R F (0 : G₁ ⟶ G₂) = 0 := by
+  ext n (z : ModuleCat.of R (Cochain F G₁ n))
+  simp [linearHomComplexPostcomp_f_apply]
+
+/-- Postcomposition in `linearHomComplex` is additive in the target chain map. -/
+@[simp]
+lemma linearHomComplexPostcomp_add (F : CochainComplex C ℤ) (ψ₁ ψ₂ : G₁ ⟶ G₂) :
+    linearHomComplexPostcomp R F (ψ₁ + ψ₂) =
+      linearHomComplexPostcomp R F ψ₁ + linearHomComplexPostcomp R F ψ₂ := by
+  ext n (z : ModuleCat.of R (Cochain F G₁ n))
+  simp [linearHomComplexPostcomp_f_apply, Cochain.ofHom_add, Cochain.comp_add]
+
 /-- The `R`-linear Hom complex as a bifunctor: contravariant in the source cochain complex and
 covariant in the target one. -/
 @[expose, simps]
@@ -200,6 +230,10 @@ def linearHomComplexFunctor :
       naturality _ _ ψ := (linearHomComplexPrecomp_postcomp_comm R φ.unop ψ).symm }
   map_id F := by ext G : 2; exact linearHomComplexPrecomp_id R F.unop G
   map_comp φ φ' := by ext G : 2; exact linearHomComplexPrecomp_comp R φ'.unop φ.unop G
+
+instance (F : (CochainComplex C ℤ)ᵒᵖ) :
+    ((linearHomComplexFunctor (C := C) R).obj F).Additive where
+  map_add {_ _} f g := linearHomComplexPostcomp_add R F.unop f g
 
 end Functoriality
 
