@@ -5,18 +5,16 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.LKJ.Basic
+public import TauCeti.Probability.Distributions.LKJ.Symmetry
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Powers
 public import Mathlib.Probability.Distributions.Beta
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.Probability.Distributions.Beta.Symmetric
 import TauCeti.Probability.Distributions.LKJ.Cholesky.Moments
 import TauCeti.Probability.Distributions.LKJ.Marginal
 import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
-import TauCeti.Probability.Distributions.LKJ.Symmetry
 
 /-!
 # Mixed entry moments of LKJ correlation matrices
@@ -51,7 +49,8 @@ closed Beta-quotient moments of all natural orders.
   invariance, permutation invariance, and odd-degree vanishing of mixed moments;
 * `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure`: single-entry moments of all natural
-  orders;
+  orders (with unexponentiated first moments re-exported from
+  `TauCeti.Probability.Distributions.LKJ.Symmetry`);
 * `ProbabilityTheory.HasLaw.integral_prod_pow_coe_apply_lkjMeasure` and companions: transfers to
   random matrices with LKJ law.
 
