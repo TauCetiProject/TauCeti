@@ -35,8 +35,8 @@ unimodular shear; the matrix before the shear is treated in
 `TauCeti.Examples.NumberTheory.Height.Arakelov.BombieriVaaler`.
 
 The Gram determinant `det (A * Aᵀ)` is mostly treated elsewhere: its behaviour under
-`A ↦ B * A` and its independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its
-positivity, a consequence of the Cauchy–Binet formula, is in
+`A ↦ B * A` and its independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram.Basic`, and
+its positivity, a consequence of the Cauchy–Binet formula, is in
 `TauCeti.LinearAlgebra.ExteriorPower.Plucker`. Only its integer case under independence over `ℚ`,
 `Matrix.det_mul_transpose_pos`, is stated here, next to the matching `Matrix.one_le_minorGcd`.
 

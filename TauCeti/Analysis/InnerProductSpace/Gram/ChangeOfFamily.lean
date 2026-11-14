@@ -20,8 +20,8 @@ rectangular. For square `U`, taking determinants,
 Neither linear independence of `v` nor any hypothesis on the dimension of the space is needed: for
 dependent `v` both determinants vanish. When the family is the rows of a matrix `A` in Euclidean
 space the real identity is `Matrix.det_mul_transpose_mul_left` in
-`TauCeti.LinearAlgebra.Matrix.Gram`; the statements here concern a family in an arbitrary inner
-product space, where no coordinate matrix is given.
+`TauCeti.LinearAlgebra.Matrix.Gram.Basic`; the statements here concern a family in an arbitrary
+inner product space, where no coordinate matrix is given.
 
 ## Main results
 

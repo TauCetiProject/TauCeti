@@ -8,7 +8,7 @@ module
 public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 public import TauCeti.NumberTheory.Height.Arakelov.Subspace.Covolume
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!

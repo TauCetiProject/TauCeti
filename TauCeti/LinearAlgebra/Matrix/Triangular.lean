@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
@@ -41,6 +42,8 @@ Lie-algebra theory.
   matrix with nonnegative diagonal is the identity.
 * `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
   diagonal are determined by their product with their transpose.
+* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic_min` — each entry `(L * Lᵀ) i j` of a
+  lower-triangular Gram matrix sums up to `min i j`.
 * `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
   lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
 * `Matrix.IsUpperTriangular.submatrix_mul` and `submatrix_pow` — restriction to order-connected
@@ -259,6 +262,20 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hB hki, mul_zero]
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- Each entry `(L * Lᵀ) i j` of a lower-triangular Gram matrix sums only over columns up to
+`min i j`, since columns strictly above `i` or `j` vanish in `L`. -/
+theorem IsLowerTriangular.mul_transpose_apply_eq_sum_Iic_min [LocallyFiniteOrderBot n]
+    {L : Matrix n n R} (hL : L.IsLowerTriangular) (i j : n) :
+    (L * Lᵀ) i j = ∑ k ∈ Finset.Iic (min i j), L i k * L j k := by
+  rw [Matrix.mul_apply]
+  simp only [Matrix.transpose_apply]
+  symm
+  refine Finset.sum_subset (Finset.subset_univ _) fun k _ hk ↦ ?_
+  simp only [Finset.mem_Iic, le_min_iff, not_and_or, not_le] at hk
+  rcases hk with hik | hjk
+  · rw [hL hik, zero_mul]
+  · rw [hL hjk, mul_zero]
 
 /-- **The leading principal submatrix of a lower-triangular Gram matrix is a Gram matrix.** The
 first `q` rows of a lower-triangular matrix vanish outside their first `q` columns, so the leading

@@ -41,6 +41,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
   distinct entries is itself diagonal.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
+* `Matrix.prod_pow_mul_apply_mul`: scaling rows and columns of `M` by `s` multiplies an entry
+  monomial `∏ q, M q.1 q.2 ^ n q` by `∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`.
 -/
 
 public section
@@ -130,3 +132,31 @@ theorem toMatrix_eq_diagonal_iff
   · simp [hf, Matrix.toLin_self, Matrix.diagonal_apply]
 
 end Module.Basis
+
+namespace Matrix
+
+/-- Scaling rows and columns of `M` by `s` multiplies an entry monomial `∏ q, M q.1 q.2 ^ n q` by
+`∏ i, s i ^ ∑ j, (n (i, j) + n (j, i))`. -/
+theorem prod_pow_mul_apply_mul {ι R : Type*} [Fintype ι] [CommMonoid R]
+    (M : Matrix ι ι R) (s : ι → R) (n : ι × ι → ℕ) :
+    (∏ q : ι × ι, (s q.1 * M q.1 q.2 * s q.2) ^ n q) =
+      (∏ i : ι, s i ^ ∑ j : ι, (n (i, j) + n (j, i))) *
+        ∏ q : ι × ι, M q.1 q.2 ^ n q := by
+  have hterm (q : ι × ι) :
+      (s q.1 * M q.1 q.2 * s q.2) ^ n q =
+        (s q.1 ^ n q * s q.2 ^ n q) * M q.1 q.2 ^ n q := by
+    rw [mul_right_comm, mul_pow, mul_pow]
+  simp_rw [hterm]
+  rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib]
+  congr 1
+  have hleft : (∏ q : ι × ι, s q.1 ^ n q) = ∏ i : ι, s i ^ ∑ j : ι, n (i, j) := by
+    rw [Fintype.prod_prod_type]
+    exact Finset.prod_congr rfl fun i _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
+  have hright : (∏ q : ι × ι, s q.2 ^ n q) = ∏ i : ι, s i ^ ∑ j : ι, n (j, i) := by
+    rw [Fintype.prod_prod_type, Finset.prod_comm]
+    exact Finset.prod_congr rfl fun i _ ↦ by simp [Finset.prod_pow_eq_pow_sum]
+  rw [hleft, hright, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [← pow_add, ← Finset.sum_add_distrib]
+
+end Matrix
