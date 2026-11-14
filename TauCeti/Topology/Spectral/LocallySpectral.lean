@@ -37,7 +37,9 @@ compose through a locally spectral middle space.
 * `TauCeti.IsLocallySpectralSpace.isTopologicalBasis`: the spectral open subsets of a locally
   spectral space form a basis.
 * `Topology.IsOpenEmbedding.isLocallySpectralSpace`: open subspaces of locally spectral spaces are
-  locally spectral.
+  locally spectral; `IsCompact.spectralSpace_of_isOpen` gives spectrality of compact open
+  subspaces when the ambient space is quasiseparated.
+* `Topology.IsOpenEmbedding.isLocallySpectralMap`: open embeddings are locally spectral.
 * `TauCeti.IsLocallySpectralMap.of_forall_exists`: local spectrality of a map tested on one cover.
 * `TauCeti.IsLocallySpectralMap.comp`: composition through a locally spectral middle space.
 
@@ -150,6 +152,14 @@ theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralSpace {Z : Type*} [Topo
   have : CompactSpace (e ⁻¹' W) := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
 
+/-- A compact open subset of a quasiseparated locally spectral space is spectral. -/
+theorem _root_.IsCompact.spectralSpace_of_isOpen [QuasiSeparatedSpace X] {U : Set X}
+    (hUc : IsCompact U) (hUo : IsOpen U) (hX : IsLocallySpectralSpace X) : SpectralSpace U :=
+  spectralSpace_iff_isLocallySpectralSpace.mpr
+    ⟨hUo.isOpenEmbedding_subtypeVal.isLocallySpectralSpace hX,
+      isCompact_iff_compactSpace.mp hUc,
+      hUo.isOpenEmbedding_subtypeVal.quasiSeparatedSpace⟩
+
 /-- A map is **locally spectral** if it is continuous and every restriction between spectral open
 subspaces is a spectral map. This is a relative condition: no global compactness is imposed on
 the inverse image of a compact open. -/
@@ -194,6 +204,15 @@ theorem isLocallySpectralMap_id : IsLocallySpectralMap (id : X → X) := by
     rfl
   rw [heq]
   exact hemb.isSpectralMap
+
+/-- Every open embedding is locally spectral: any restriction between spectral open subspaces is an
+open embedding from a compact space into a quasiseparated space. -/
+theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralMap {f : X → Y} (hf : IsOpenEmbedding f) :
+    IsLocallySpectralMap f :=
+  .of_isSpectralMap_restrict hf.continuous fun U V hUV hUo _ hUs hVs ↦ by
+    let _ : SpectralSpace U := hUs
+    let _ : SpectralSpace V := hVs
+    exact (hf.restrict hUV hUo).isSpectralMap
 
 /-- On spectral spaces, a locally spectral map is a spectral map. -/
 theorem IsLocallySpectralMap.isSpectralMap [SpectralSpace X] [SpectralSpace Y] {f : X → Y}

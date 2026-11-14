@@ -50,6 +50,7 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 * `TauCeti.spectralSpace_univ` : the full subspace of a spectral space is spectral.
 * `IsSpectralMap.isConstructible_preimage` : constructible sets pull back along spectral maps
   from quasiseparated spaces to compact spaces.
+* `Homeomorph.spectralSpace` : spectrality transports along a homeomorphism.
 
 ## References
 
@@ -208,6 +209,17 @@ theorem _root_.Topology.IsOpenEmbedding.isSpectralMap [CompactSpace X] [QuasiSep
 theorem spectralSpace_univ [SpectralSpace X] : SpectralSpace (Set.univ : Set X) := by
   let _ : CompactSpace (univ : Set X) := (Homeomorph.Set.univ X).symm.compactSpace
   exact isOpen_univ.isOpenEmbedding_subtypeVal.spectralSpace
+
+/-- Spectrality transports along a homeomorphism. -/
+protected theorem _root_.Homeomorph.spectralSpace [SpectralSpace X] (e : X ≃ₜ Y) :
+    SpectralSpace Y := by
+  have : CompactSpace Y := e.compactSpace
+  exact e.symm.isOpenEmbedding.spectralSpace
+
+/-- Two homeomorphic topological spaces are spectral simultaneously. -/
+protected theorem _root_.Homeomorph.spectralSpace_iff (e : X ≃ₜ Y) :
+    SpectralSpace X ↔ SpectralSpace Y :=
+  ⟨fun _ ↦ e.spectralSpace, fun _ ↦ e.symm.spectralSpace⟩
 
 end TauCeti
 
