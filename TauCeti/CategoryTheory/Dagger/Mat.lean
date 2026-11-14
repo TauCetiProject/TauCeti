@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.BigOperators
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
-public import TauCeti.CategoryTheory.Dagger.Linear
+public import TauCeti.CategoryTheory.Dagger.Basic
 public import TauCeti.CategoryTheory.Linear.Mat
 
 /-!
@@ -34,7 +34,7 @@ the adjoint of the corresponding operator.
 
 public section
 
-open TauCeti TauCeti.DaggerCategory
+open TauCeti
 
 universe w u
 
@@ -47,6 +47,10 @@ variable {R : Type u} [Semiring R] [StarRing R]
 /-- The conjugate transpose makes the matrix category `Mat R` a dagger category. -/
 instance instDaggerCategory : DaggerCategory (Mat R) where
   dagger f := Matrix.conjTranspose f
+  dagger_id X := by
+    ext i j
+    change star ((𝟙 X : Matrix X X R) j i) = (𝟙 X : Matrix X X R) i j
+    by_cases h : i = j <;> simp [h, eq_comm]
   dagger_comp f g := by
     ext
     simp [star_sum]

@@ -5,233 +5,343 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Equiv.Defs
+public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Algebra.Star.Unitary
-public import Mathlib.CategoryTheory.Endomorphism
+public import Mathlib.CategoryTheory.Linear.Basic
 
 /-!
 # Dagger categories
 
-A *dagger structure* on a category `C` assigns to every morphism `f : X ⟶ Y` a morphism
-`dagger f : Y ⟶ X` in the opposite direction, such that `dagger (f ≫ g) = dagger g ≫ dagger f`
-and `dagger (dagger f) = f`. It is chosen data on Mathlib's native `Category`, not a property:
-the same category can carry several daggers. The identity law `dagger (𝟙 X) = 𝟙 X` follows from
-the other two axioms (`TauCeti.DaggerCategory.dagger_id`).
+A dagger is chosen identity-on-objects, contravariant involutive data on a native category.
+Additive and conjugate-linear compatibility are separate properties of this data; in particular,
+none of these interfaces imposes norm, completeness, or positivity assumptions.
 
-The standard example is the category of Hilbert spaces and bounded operators, with the operator
-adjoint as dagger; its skeleton on finite-dimensional spaces is the matrix category with the
-conjugate transpose (`TauCeti/CategoryTheory/Dagger/Mat.lean`). The dagger is distinct from any
-duality of a rigid category: it reverses arrows but fixes every object.
-
-In a dagger category the dagger turns each endomorphism monoid `End X` into a star monoid, so
-that the theory of `star` (self-adjoint elements, Mathlib's `unitary` submonoid) applies to
-endomorphisms. A morphism is *unitary* if its dagger is a two-sided inverse; for an endomorphism
-this is membership in `unitary (End X)`. A *dagger functor* is a functor commuting with the
-daggers; it preserves unitary morphisms.
-
-Additivity and conjugate-linearity of the dagger on a preadditive or linear category are the
-separate mixins of `TauCeti/CategoryTheory/Dagger/Linear.lean`.
-
-## Main declarations
-
-* `TauCeti.DaggerCategory`: a dagger structure on a category, with the laws
-  `TauCeti.DaggerCategory.dagger_comp`, `TauCeti.DaggerCategory.dagger_dagger` and
-  `TauCeti.DaggerCategory.dagger_id`;
-* `TauCeti.DaggerCategory.dagger_inv`: the dagger of an isomorphism is an isomorphism, with
-  `dagger (inv f) = inv (dagger f)`;
-* `TauCeti.IsUnitary`: unitary morphisms, closed under identities, composition and the dagger;
-  `TauCeti.IsUnitary.inv_eq` identifies the inverse of a unitary with its dagger, and
-  `TauCeti.isUnitary_iff_dagger_eq_inv` characterises unitary isomorphisms;
-* `CategoryTheory.End.instStarMul`: the star monoid structure on `End X`, with
-  `CategoryTheory.End.star_asHom`; `CategoryTheory.End.mem_unitary_iff` and
-  `CategoryTheory.End.isSelfAdjoint_iff` identify its unitary and self-adjoint elements;
-* `CategoryTheory.Functor.IsDagger`: dagger functors, closed under identities and composition,
-  and `TauCeti.IsUnitary.map`: they preserve unitary morphisms.
-
-## References
-
-* P. Selinger, *Dagger compact closed categories and completely positive maps*, Electron. Notes
-  Theor. Comput. Sci. 170 (2007), 139–163
-* C. Heunen, J. Vicary, *Categories for Quantum Theory*, Oxford University Press (2019), Chapter 2
+Unitary arrows have their dagger as a two-sided inverse. They compose, and define native
+categorical isomorphisms. Endomorphisms inherit the usual algebraic star structures, with
+Mathlib's operator-order multiplication on `CategoryTheory.End`, so that unitary and
+self-adjoint endomorphisms are those of Mathlib's star theory (`CategoryTheory.End.mem_unitary_iff`,
+`CategoryTheory.End.isSelfAdjoint_iff`). Over a commutative star semiring, an additive and
+conjugate-linear dagger is a semilinear equivalence of Hom modules (`TauCeti.daggerLinearEquiv`).
 -/
 
 public section
 
 open CategoryTheory
 
-universe v₁ v₂ v₃ u₁ u₂ u₃
+universe w v u
 
 namespace TauCeti
 
-/-- A *dagger structure* on a category `C`: an operation sending each morphism `f : X ⟶ Y` to a
-morphism `dagger f : Y ⟶ X`, which reverses composition and is involutive. It preserves
-identities by `TauCeti.DaggerCategory.dagger_id`. -/
-@[ext]
-class DaggerCategory (C : Type u₁) [Category.{v₁} C] where
-  /-- The dagger `Y ⟶ X` of a morphism `X ⟶ Y`. -/
-  dagger {X Y : C} : (X ⟶ Y) → (Y ⟶ X)
+/-- An identity-on-objects contravariant involution on a category. -/
+class DaggerCategory (C : Type u) [Category.{v} C] where
+  /-- The dagger reverses the direction of an arrow. -/
+  dagger : {X Y : C} → (X ⟶ Y) → (Y ⟶ X)
+  /-- The dagger fixes identity arrows. -/
+  dagger_id : ∀ X : C, dagger (𝟙 X) = 𝟙 X
   /-- The dagger reverses composition. -/
-  dagger_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : dagger (f ≫ g) = dagger g ≫ dagger f
-  /-- The dagger is involutive. -/
-  dagger_dagger {X Y : C} (f : X ⟶ Y) : dagger (dagger f) = f
+  dagger_comp : ∀ {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z),
+    dagger (f ≫ g) = dagger g ≫ dagger f
+  /-- Applying the dagger twice recovers the original arrow. -/
+  dagger_dagger : ∀ {X Y : C} (f : X ⟶ Y), dagger (dagger f) = f
+
+export DaggerCategory (dagger dagger_id dagger_comp dagger_dagger)
+
+attribute [simp] dagger_id dagger_comp dagger_dagger
+attribute [grind =] dagger_id dagger_dagger
+attribute [grind _=_] dagger_comp
 
 namespace DaggerCategory
 
-attribute [simp] dagger_comp dagger_dagger
-
-variable {C : Type u₁} [Category.{v₁} C] [DaggerCategory C]
-
-/-- The dagger preserves identities. -/
-@[simp]
-theorem dagger_id (X : C) : dagger (𝟙 X) = 𝟙 X :=
-  calc dagger (𝟙 X) = dagger (𝟙 X) ≫ dagger (dagger (𝟙 X)) := by simp
-    _ = 𝟙 X := by rw [← dagger_comp, Category.comp_id, dagger_dagger]
-
-theorem dagger_injective {X Y : C} :
-    Function.Injective (dagger : (X ⟶ Y) → (Y ⟶ X)) :=
-  fun f g h => by rw [← dagger_dagger f, h, dagger_dagger]
-
-@[simp]
-theorem dagger_inj {X Y : C} {f g : X ⟶ Y} : dagger f = dagger g ↔ f = g :=
-  dagger_injective.eq_iff
-
-theorem dagger_eq_iff_eq_dagger {X Y : C} {f : X ⟶ Y} {g : Y ⟶ X} :
-    dagger f = g ↔ f = dagger g := by
-  rw [← dagger_inj, dagger_dagger]
-
-instance isIso_dagger {X Y : C} (f : X ⟶ Y) [IsIso f] : IsIso (dagger f) :=
-  ⟨⟨dagger (inv f), by simp [← dagger_comp], by simp [← dagger_comp]⟩⟩
-
-/-- The dagger of the inverse of an isomorphism is the inverse of its dagger. -/
-@[simp]
-theorem dagger_inv {X Y : C} (f : X ⟶ Y) [IsIso f] : dagger (inv f) = inv (dagger f) := by
-  apply IsIso.eq_inv_of_hom_inv_id
-  simp [← dagger_comp]
+/-- Postfix notation for the chosen dagger. -/
+scoped postfix:max "†" => TauCeti.DaggerCategory.dagger
 
 end DaggerCategory
 
-open DaggerCategory
+variable {C : Type u} [Category.{v} C] [DaggerCategory C]
+variable {W X Y Z : C}
 
-variable {C : Type u₁} [Category.{v₁} C] [DaggerCategory C]
+/-- Taking daggers is a bijection between opposite Hom spaces. -/
+def daggerEquiv (X Y : C) : (X ⟶ Y) ≃ (Y ⟶ X) where
+  toFun := dagger
+  invFun := dagger
+  left_inv := dagger_dagger
+  right_inv := dagger_dagger
 
-/-- A morphism `f` of a dagger category is *unitary* if its dagger is a two-sided inverse:
-`f ≫ dagger f = 𝟙 X` and `dagger f ≫ f = 𝟙 Y`. -/
-@[mk_iff]
-structure IsUnitary {X Y : C} (f : X ⟶ Y) : Prop where
-  /-- First `f`, then its dagger, is the identity. -/
-  hom_dagger_id : f ≫ dagger f = 𝟙 X
-  /-- First the dagger of `f`, then `f`, is the identity. -/
-  dagger_hom_id : dagger f ≫ f = 𝟙 Y
+/-- Evaluation of the dagger bijection. -/
+@[simp] theorem daggerEquiv_apply (f : X ⟶ Y) : daggerEquiv X Y f = dagger f := (rfl)
+
+/-- The inverse dagger bijection also takes daggers. -/
+theorem daggerEquiv_symm_apply (f : Y ⟶ X) :
+    (daggerEquiv X Y).symm f = dagger f := (rfl)
+
+/-- The inverse dagger bijection reverses its endpoints. -/
+@[simp] theorem daggerEquiv_symm : (daggerEquiv X Y).symm = daggerEquiv Y X := (rfl)
+
+/-- Taking the dagger reverses an equality arrow. -/
+@[simp, grind =] theorem dagger_eqToHom (h : X = Y) :
+    dagger (eqToHom h) = eqToHom h.symm := by
+  cases h
+  simp
+
+/-- Taking daggers detects equality. -/
+@[simp] theorem dagger_inj {f g : X ⟶ Y} : dagger f = dagger g ↔ f = g :=
+  (daggerEquiv X Y).injective.eq_iff
+
+/-- Taking the dagger preserves invertibility. -/
+instance isIso_dagger (f : X ⟶ Y) [IsIso f] : IsIso (dagger f) where
+  out := ⟨dagger (inv f), by
+    rw [← dagger_comp, IsIso.inv_hom_id, dagger_id], by
+    rw [← dagger_comp, IsIso.hom_inv_id, dagger_id]⟩
+
+/-- Taking the dagger preserves and reflects invertibility. -/
+@[simp] theorem isIso_dagger_iff (f : X ⟶ Y) : IsIso (dagger f) ↔ IsIso f := by
+  constructor
+  · intro h
+    have := h
+    simpa only [dagger_dagger] using (isIso_dagger (dagger f))
+  · intro h
+    have := h
+    infer_instance
+
+/-- Taking the dagger commutes with the inverse of an invertible arrow. -/
+@[simp] theorem dagger_inv (f : X ⟶ Y) [IsIso f] :
+    dagger (inv f) = inv (dagger f) := by
+  apply IsIso.eq_inv_of_hom_inv_id
+  rw [← dagger_comp, IsIso.inv_hom_id, dagger_id]
+
+/-- Additive compatibility of the chosen dagger on a preadditive category. -/
+class DaggerPreadditive (C : Type u) [Category.{v} C] [DaggerCategory C]
+    [Preadditive C] : Prop where
+  /-- Taking daggers commutes with addition. -/
+  dagger_add : ∀ {X Y : C} (f g : X ⟶ Y), dagger (f + g) = dagger f + dagger g
+
+export DaggerPreadditive (dagger_add)
+attribute [simp, grind =] dagger_add
+
+section Preadditive
+
+variable [Preadditive C] [DaggerPreadditive C]
+
+/-- The dagger as an additive equivalence of Hom groups. -/
+def daggerAddEquiv (X Y : C) : (X ⟶ Y) ≃+ (Y ⟶ X) where
+  toEquiv := daggerEquiv X Y
+  map_add' := dagger_add
+
+/-- Evaluation of the additive dagger equivalence. -/
+@[simp] theorem daggerAddEquiv_apply (f : X ⟶ Y) :
+    daggerAddEquiv X Y f = dagger f := (rfl)
+
+/-- The inverse additive dagger equivalence reverses its endpoints. -/
+@[simp] theorem daggerAddEquiv_symm : (daggerAddEquiv X Y).symm = daggerAddEquiv Y X := (rfl)
+
+/-- Forgetting additivity recovers the dagger bijection. -/
+@[simp] theorem daggerAddEquiv_toEquiv :
+    (daggerAddEquiv X Y : (X ⟶ Y) ≃ (Y ⟶ X)) = daggerEquiv X Y := (rfl)
+
+/-- The dagger fixes the zero arrow. -/
+@[simp, grind =] theorem dagger_zero : dagger (0 : X ⟶ Y) = 0 :=
+  (daggerAddEquiv X Y).map_zero
+
+/-- An arrow has zero dagger precisely when it is zero. -/
+@[simp] theorem dagger_eq_zero (f : X ⟶ Y) : dagger f = 0 ↔ f = 0 :=
+  (daggerAddEquiv X Y).map_eq_zero_iff
+
+/-- The dagger commutes with negation. -/
+@[simp, grind =] theorem dagger_neg (f : X ⟶ Y) : dagger (-f) = -dagger f :=
+  (daggerAddEquiv X Y).map_neg f
+
+/-- The dagger commutes with subtraction. -/
+@[simp, grind =] theorem dagger_sub (f g : X ⟶ Y) : dagger (f - g) = dagger f - dagger g :=
+  (daggerAddEquiv X Y).map_sub f g
+
+/-- Taking daggers commutes with natural scalar multiplication. -/
+@[simp, grind =] theorem dagger_nsmul (n : ℕ) (f : X ⟶ Y) :
+    dagger (n • f) = n • dagger f :=
+  map_nsmul (daggerAddEquiv X Y) n f
+
+/-- Taking daggers commutes with integer scalar multiplication. -/
+@[simp, grind =] theorem dagger_zsmul (n : ℤ) (f : X ⟶ Y) :
+    dagger (n • f) = n • dagger f :=
+  map_zsmul (daggerAddEquiv X Y) n f
+
+/-- Taking daggers commutes with finite sums of arrows. -/
+@[simp] theorem dagger_sum {ι : Type*} (s : Finset ι) (f : ι → (X ⟶ Y)) :
+    dagger (∑ i ∈ s, f i) = ∑ i ∈ s, dagger (f i) :=
+  map_sum (daggerAddEquiv X Y) f s
+
+end Preadditive
+
+/-- Conjugate-scalar compatibility for a dagger on a native linear category.
+The scalar star operation is arbitrary; complex conjugation is its standard specialization. -/
+class DaggerLinear (R : Type w) [Semiring R] [Star R]
+    (C : Type u) [Category.{v} C] [DaggerCategory C] [Preadditive C]
+    [Linear R C] : Prop where
+  /-- Taking daggers conjugates the scalar. -/
+  dagger_smul : ∀ {X Y : C} (r : R) (f : X ⟶ Y),
+    dagger (r • f) = star r • dagger f
+
+export DaggerLinear (dagger_smul)
+attribute [simp, grind =] dagger_smul
+
+section Linear
+
+variable [Preadditive C] [DaggerPreadditive C]
+variable (R : Type w) [CommSemiring R] [StarRing R] [Linear R C] [DaggerLinear R C]
+
+/-- The additive and conjugate-linear dagger, as a semilinear equivalence
+`(X ⟶ Y) ≃ₗ⋆[R] (Y ⟶ X)` with respect to `starRingEnd R`. -/
+def daggerLinearEquiv (X Y : C) : (X ⟶ Y) ≃ₗ⋆[R] (Y ⟶ X) where
+  __ := daggerAddEquiv X Y
+  map_smul' := dagger_smul
+
+/-- Evaluation of the semilinear dagger equivalence. -/
+@[simp] theorem daggerLinearEquiv_apply (f : X ⟶ Y) :
+    daggerLinearEquiv R X Y f = dagger f := (rfl)
+
+/-- The inverse semilinear dagger equivalence reverses its endpoints. -/
+@[simp] theorem daggerLinearEquiv_symm :
+    (daggerLinearEquiv R X Y).symm = daggerLinearEquiv R Y X := (rfl)
+
+/-- Forgetting scalars recovers the additive dagger equivalence. -/
+@[simp] theorem daggerLinearEquiv_toAddEquiv :
+    (daggerLinearEquiv R X Y).toAddEquiv = daggerAddEquiv X Y := (rfl)
+
+end Linear
+
+/-- An arrow is unitary when its dagger is its two-sided inverse. -/
+def IsUnitary (f : X ⟶ Y) : Prop :=
+  f ≫ dagger f = 𝟙 X ∧ dagger f ≫ f = 𝟙 Y
+
+/-- The two inverse equations characterize a unitary arrow. -/
+theorem isUnitary_iff (f : X ⟶ Y) :
+    IsUnitary f ↔ f ≫ dagger f = 𝟙 X ∧ dagger f ≫ f = 𝟙 Y := Iff.rfl
 
 namespace IsUnitary
 
-attribute [reassoc (attr := simp)] hom_dagger_id dagger_hom_id
+/-- A unitary arrow composed with its dagger is the identity. -/
+@[reassoc (attr := simp), grind =] theorem hom_dagger_id {f : X ⟶ Y} (hf : IsUnitary f) :
+    f ≫ dagger f = 𝟙 X := hf.1
 
-variable {X Y Z : C} {f : X ⟶ Y}
+/-- The dagger of a unitary arrow composed with that arrow is the identity. -/
+@[reassoc (attr := simp), grind =] theorem dagger_hom_id {f : X ⟶ Y} (hf : IsUnitary f) :
+    dagger f ≫ f = 𝟙 Y := hf.2
 
-/-- A unitary morphism is an isomorphism. -/
-theorem isIso (hf : IsUnitary f) : IsIso f :=
-  ⟨⟨dagger f, hf.hom_dagger_id, hf.dagger_hom_id⟩⟩
+/-- Identity arrows are unitary. -/
+@[simp] theorem id (X : C) : IsUnitary (𝟙 X) := by
+  simp [isUnitary_iff]
 
-/-- The inverse of a unitary morphism is its dagger. -/
-theorem inv_eq (hf : IsUnitary f) [IsIso f] : inv f = dagger f :=
-  IsIso.inv_eq_of_hom_inv_id hf.hom_dagger_id
+/-- The dagger of a unitary arrow is unitary. -/
+theorem dagger {f : X ⟶ Y} (hf : IsUnitary f) : IsUnitary (TauCeti.dagger f) := by
+  simpa only [isUnitary_iff, dagger_dagger] using And.intro hf.2 hf.1
 
-/-- The dagger of a unitary morphism is unitary. -/
-theorem dagger (hf : IsUnitary f) : IsUnitary (dagger f) :=
-  ⟨by simpa using hf.dagger_hom_id, by simpa using hf.hom_dagger_id⟩
+/-- Composites of unitary arrows are unitary. -/
+theorem comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsUnitary f) (hg : IsUnitary g) :
+    IsUnitary (f ≫ g) := by
+  constructor <;> simp [Category.assoc, hg.hom_dagger_id_assoc, hf.dagger_hom_id_assoc,
+    hf.hom_dagger_id, hg.dagger_hom_id]
 
-/-- The composite of two unitary morphisms is unitary. -/
-theorem comp (hf : IsUnitary f) {g : Y ⟶ Z} (hg : IsUnitary g) : IsUnitary (f ≫ g) :=
-  ⟨by simp [hg.hom_dagger_id_assoc, hf.hom_dagger_id],
-    by simp [hf.dagger_hom_id_assoc, hg.dagger_hom_id]⟩
+/-- A unitary arrow determines an isomorphism whose inverse is its dagger. -/
+def toIso {f : X ⟶ Y} (hf : IsUnitary f) : X ≅ Y where
+  hom := f
+  inv := TauCeti.dagger f
+  hom_inv_id := hf.1
+  inv_hom_id := hf.2
+
+/-- The isomorphism of a unitary arrow has the original arrow as its forward map. -/
+@[simp, grind =] theorem toIso_hom {f : X ⟶ Y} (hf : IsUnitary f) : hf.toIso.hom = f := (rfl)
+
+/-- The isomorphism of a unitary arrow has the dagger as its inverse. -/
+@[simp, grind =] theorem toIso_inv {f : X ⟶ Y} (hf : IsUnitary f) :
+    hf.toIso.inv = TauCeti.dagger f := (rfl)
+
+/-- A unitary arrow is invertible. -/
+theorem isIso {f : X ⟶ Y} (hf : IsUnitary f) : IsIso f := hf.toIso.isIso_hom
 
 end IsUnitary
 
-/-- Identities are unitary. -/
-@[simp]
-theorem isUnitary_id (X : C) : IsUnitary (𝟙 X) :=
-  ⟨by simp, by simp⟩
+/-- Equality arrows are unitary. -/
+@[simp] theorem isUnitary_eqToHom (h : X = Y) : IsUnitary (eqToHom h) := by
+  cases h
+  simp
 
-@[simp]
-theorem isUnitary_dagger_iff {X Y : C} {f : X ⟶ Y} : IsUnitary (dagger f) ↔ IsUnitary f :=
-  ⟨fun hf => by simpa using hf.dagger, IsUnitary.dagger⟩
+/-- Taking the dagger preserves and reflects unitarity. -/
+@[simp] theorem isUnitary_dagger_iff (f : X ⟶ Y) : IsUnitary (dagger f) ↔ IsUnitary f :=
+  ⟨fun h => by simpa using h.dagger, IsUnitary.dagger⟩
 
-/-- An isomorphism is unitary exactly when its dagger is its inverse. -/
-theorem isUnitary_iff_dagger_eq_inv {X Y : C} (f : X ⟶ Y) [IsIso f] :
-    IsUnitary f ↔ dagger f = inv f :=
-  ⟨fun hf => hf.inv_eq.symm, fun h => ⟨by simp [h], by simp [h]⟩⟩
+/-- Taking inverses preserves and reflects unitarity. -/
+@[simp] theorem isUnitary_inv_iff (f : X ⟶ Y) [IsIso f] :
+    IsUnitary (inv f) ↔ IsUnitary f := by
+  constructor
+  · intro h
+    have hd : dagger (inv f) = f := by
+      simpa only [IsIso.inv_inv] using IsIso.eq_inv_of_hom_inv_id h.hom_dagger_id
+    simpa only [hd] using h.dagger
+  · intro h
+    have hd : dagger f = inv f := IsIso.eq_inv_of_hom_inv_id h.hom_dagger_id
+    simpa only [hd] using h.dagger
 
 end TauCeti
 
-namespace CategoryTheory
+namespace CategoryTheory.Iso
 
-open TauCeti TauCeti.DaggerCategory
+open TauCeti
 
-namespace End
+variable {C : Type u} [Category.{v} C] [DaggerCategory C] {X Y : C}
 
-variable {C : Type u₁} [Category.{v₁} C] [DaggerCategory C]
+/-- An isomorphism is unitary precisely when its inverse is its dagger. -/
+theorem isUnitary_hom_iff (e : X ≅ Y) : IsUnitary e.hom ↔ dagger e.hom = e.inv := by
+  constructor
+  · intro h
+    exact (cancel_epi e.hom).mp (h.1.trans e.hom_inv_id.symm)
+  · intro h
+    simp [isUnitary_iff, h]
 
-/-- In a dagger category the dagger makes `End X` a star monoid. Multiplication in `End X` is
-composition in operator order, which the dagger reverses. -/
-instance instStarMul (X : C) : StarMul (End X) where
+/-- The inverse of a unitary isomorphism is its dagger. -/
+theorem dagger_hom_eq_inv_of_isUnitary (e : X ≅ Y) (h : IsUnitary e.hom) :
+    dagger e.hom = e.inv :=
+  e.isUnitary_hom_iff.mp h
+
+end CategoryTheory.Iso
+
+namespace CategoryTheory.End
+
+open TauCeti
+
+variable {C : Type u} [Category.{v} C] [DaggerCategory C] {X : C}
+
+/-- The dagger is the star operation on endomorphisms. -/
+instance daggerStar : Star (End X) where
   star f := .of (dagger f.asHom)
-  star_involutive f := End.ext (dagger_dagger f.asHom)
-  star_mul f g := End.ext (dagger_comp g.asHom f.asHom)
 
-@[simp]
-theorem star_asHom {X : C} (f : End X) : (star f).asHom = dagger f.asHom :=
-  (rfl)
+/-- The endomorphism star acts by the dagger on its underlying arrow. -/
+@[simp, grind =] theorem star_asHom (f : End X) : (star f).asHom = dagger f.asHom := (rfl)
 
-/-- An endomorphism is unitary in the sense of the star monoid `End X` exactly when it is a
-unitary morphism. -/
-theorem mem_unitary_iff {X : C} (f : End X) : f ∈ unitary (End X) ↔ IsUnitary f.asHom := by
+/-- The endomorphism dagger is involutive. -/
+instance daggerInvolutiveStar : InvolutiveStar (End X) where
+  star_involutive f := by ext; simp
+
+/-- Operator-order multiplication makes endomorphisms a star monoid. -/
+instance daggerStarMul : StarMul (End X) where
+  star_mul f g := by ext; simp
+
+/-- In an additive dagger category the endomorphism ring is a star ring. -/
+instance [Preadditive C] [DaggerPreadditive C] : StarRing (End X) where
+  star_add f g := by ext; simp
+
+/-- The scalar action on endomorphisms is compatible with the dagger involution. -/
+instance {R : Type w} [Semiring R] [Star R] [Preadditive C] [Linear R C]
+    [DaggerLinear R C] : StarModule R (End X) where
+  star_smul r f := by ext; simp
+
+/-- An endomorphism is unitary in the star monoid `End X` exactly when it is a unitary arrow. -/
+theorem mem_unitary_iff (f : End X) : f ∈ unitary (End X) ↔ IsUnitary f.asHom := by
   simp [Unitary.mem_iff, End.ext_iff, isUnitary_iff]
 
 /-- An endomorphism is self-adjoint in the star monoid `End X` exactly when it equals its
 dagger. -/
-theorem isSelfAdjoint_iff {X : C} (f : End X) : IsSelfAdjoint f ↔ dagger f.asHom = f.asHom := by
+theorem isSelfAdjoint_iff (f : End X) : IsSelfAdjoint f ↔ dagger f.asHom = f.asHom := by
   rw [IsSelfAdjoint, End.ext_iff, star_asHom]
 
-end End
-
-namespace Functor
-
-variable {C : Type u₁} [Category.{v₁} C] [DaggerCategory C]
-  {D : Type u₂} [Category.{v₂} D] [DaggerCategory D]
-  {E : Type u₃} [Category.{v₃} E] [DaggerCategory E]
-
-/-- A functor between dagger categories is a *dagger functor* if it commutes with the
-daggers. -/
-class IsDagger (F : C ⥤ D) : Prop where
-  /-- The functor commutes with the daggers. -/
-  map_dagger {X Y : C} (f : X ⟶ Y) : F.map (dagger f) = dagger (F.map f)
-
-@[simp]
-theorem map_dagger (F : C ⥤ D) [F.IsDagger] {X Y : C} (f : X ⟶ Y) :
-    F.map (dagger f) = dagger (F.map f) :=
-  IsDagger.map_dagger f
-
-instance isDagger_id : (𝟭 C).IsDagger :=
-  ⟨fun _ => by simp⟩
-
-instance isDagger_comp (F : C ⥤ D) (G : D ⥤ E) [F.IsDagger] [G.IsDagger] :
-    (F ⋙ G).IsDagger :=
-  ⟨fun f => by simp⟩
-
-end Functor
-
-end CategoryTheory
-
-namespace TauCeti.IsUnitary
-
-variable {C : Type u₁} [Category.{v₁} C] [DaggerCategory C]
-  {D : Type u₂} [Category.{v₂} D] [DaggerCategory D]
-
-/-- A dagger functor maps unitary morphisms to unitary morphisms. -/
-theorem map {X Y : C} {f : X ⟶ Y} (hf : IsUnitary f) (F : C ⥤ D) [F.IsDagger] :
-    IsUnitary (F.map f) :=
-  ⟨by rw [← F.map_dagger, ← F.map_comp, hf.hom_dagger_id, F.map_id],
-    by rw [← F.map_dagger, ← F.map_comp, hf.dagger_hom_id, F.map_id]⟩
-
-end TauCeti.IsUnitary
+end CategoryTheory.End
