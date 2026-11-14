@@ -216,7 +216,8 @@ private theorem toTemperedDistribution_apply_cutoff (T : 𝓓'(Ω, ℂ)) {χ : �
 /-- The tempered extension of `T` depends only on the germ of the Schwartz function along the
 support of `T`. -/
 theorem toTemperedDistribution_apply_eq_of_eventuallyEq (T : 𝓓'(Ω, ℂ))
-    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) {f g : 𝓢(E, ℂ)} (h : (f : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] g) :
+    (hT : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω) {f g : 𝓢(E, ℂ)}
+    (h : (f : E → ℂ) =ᶠ[𝓝ˢ (dsupport T)] g) :
     T.toTemperedDistribution f = T.toTemperedDistribution g := by
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hT hTΩ
   rw [toTemperedDistribution_apply_cutoff T hχ, toTemperedDistribution_apply_cutoff T hχ]
