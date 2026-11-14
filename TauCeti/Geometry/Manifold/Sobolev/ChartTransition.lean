@@ -54,17 +54,13 @@ theorem MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas (hk : k ≤ 1)
     (hu : MemWkpLoc p U k u) :
     MemWkpLoc p ((φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U) k
       (fun y ↦ u (ψ (φ.symm y))) := by
-  -- The chart transition has an invertible derivative on its source.
-  have hdet : ∀ y ∈ (φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U,
-      (fderiv ℝ (φ.symm.trans ψ) y).det ≠ 0 := fun y hy ↦ by
-    obtain ⟨L, hL⟩ := exists_hasFDerivAt_symm_trans one_ne_zero hφ hψ hy.1
-    rw [hL.fderiv]
-    exact L.toLinearEquiv.isUnit_det'.ne_zero
   -- As a function, the chart transition is `ψ ∘ φ.symm` (`OpenPartialHomeomorph.coe_trans`).
   simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply] using
     hu.comp_contDiffOn_diffeo hk (φ.symm.trans ψ).open_source
       (contDiffOn_symm_trans_of_mem_maximalAtlas hφ hψ)
-      ((φ.symm.trans ψ).injOn.mono inter_subset_left) hdet inter_subset_left fun y hy ↦ hy.2
+      ((φ.symm.trans ψ).injOn.mono inter_subset_left)
+      (fun y hy ↦ det_fderiv_symm_trans_ne_zero one_ne_zero hφ hψ hy.1) inter_subset_left
+      fun y hy ↦ hy.2
 
 /-- **Changes of chart preserve the local classes of every order.** Let `n ≠ 0` and `k ≤ n`, and
 let either `k ≤ 1` or `1 ≤ p < ∞`. For charts `φ` and `ψ` of the maximal `Cⁿ` atlas of `M` and a
@@ -86,17 +82,11 @@ theorem MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas_of_le [FiniteDimensional �
     exact hu.comp_symm_trans_of_mem_maximalAtlas hk (h₁ hφ) (h₁ hψ)
   obtain ⟨hp₁, hp⟩ := hkp.resolve_left hk.not_ge
   have : Fact (1 ≤ p) := ⟨hp₁⟩
-  -- The chart transition has an invertible derivative on its source.
-  have hdet : ∀ y ∈ (φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U,
-      (fderiv ℝ (φ.symm.trans ψ) y).det ≠ 0 := fun y hy ↦ by
-    obtain ⟨L, hL⟩ := exists_hasFDerivAt_symm_trans hn hφ hψ hy.1
-    rw [hL.fderiv]
-    exact L.toLinearEquiv.isUnit_det'.ne_zero
   -- As a function, the chart transition is `ψ ∘ φ.symm` (`OpenPartialHomeomorph.coe_trans`).
   simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply, Opens.coe_mk] using
     hu.comp_contDiffOn (U := ⟨_, (φ.symm.trans ψ).isOpen_inter_preimage hU⟩) (V := ⟨U, hU⟩) hp
       hk.le
       (((contDiffOn_symm_trans_of_mem_maximalAtlas hφ hψ).of_le hkn).mono inter_subset_left)
-      hdet fun y hy ↦ hy.2
+      (fun y hy ↦ det_fderiv_symm_trans_ne_zero hn hφ hψ hy.1) fun y hy ↦ hy.2
 
 end TauCeti

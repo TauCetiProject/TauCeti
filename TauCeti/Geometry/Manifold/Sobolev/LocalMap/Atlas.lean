@@ -111,11 +111,9 @@ private theorem memWkpLoc_comp_chart_transition {φ φ' : OpenPartialHomeomorph 
   have hW' : W ⊆ (φ'.symm.trans φ).source := hsrc ▸ hW
   have hΦ : ContDiffOn ℝ 1 (φ'.symm.trans φ) (φ'.symm.trans φ).source := fun z hz ↦
     (contDiffAt_symm_trans_of_mem_maximalAtlas hφ'R hφR hz).contDiffWithinAt
-  refine hg.comp_contDiffOn_diffeo (Φ := φ'.symm.trans φ) hk (φ'.symm.trans φ).open_source hΦ
-    ((φ'.symm.trans φ).injOn.mono hW') (fun z hz ↦ ?_) hW' hmaps
-  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans one_ne_zero hφ'R hφR (hW' hz)
-  rw [hA.fderiv]
-  exact A.toLinearEquiv.isUnit_det'.ne_zero
+  exact hg.comp_contDiffOn_diffeo (Φ := φ'.symm.trans φ) hk (φ'.symm.trans φ).open_source hΦ
+    ((φ'.symm.trans φ).injOn.mono hW')
+    (fun z hz ↦ det_fderiv_symm_trans_ne_zero one_ne_zero hφ'R hφR (hW' hz)) hW' hmaps
 
 /-- **Change of target chart through a `C¹` map.** If `ψ ∘ v` is a continuous `W^{1,p}_loc` map on
 an open set `W` with `v` mapping `W` into the source of `ψ`, and `f` is `C¹` on an open set
