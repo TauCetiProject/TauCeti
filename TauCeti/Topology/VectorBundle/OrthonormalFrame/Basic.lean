@@ -79,6 +79,8 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply`: applying frames to vectors
   is jointly continuous.
+* `TauCeti.OrthonormalFrameBundle.continuous_mk_repr_symm`: orthonormal bases with continuous basis
+  vectors form a continuous map into the frame bundle.
 * `Bundle.Trivialization.continuous_orthonormalFrame`,
   `Bundle.Trivialization.continuous_orthonormalFrame_symm_apply`: the local orthonormal frame is a
   continuous local section, and reading vectors in it is continuous.
@@ -314,6 +316,31 @@ theorem continuous_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
   refine hc.congr ?_
   filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds hU] with q hq
   exact coord_apply hq q.2
+
+/-- Orthonormal bases of the fibres over a continuous base map, whose basis vectors are continuous
+maps into the total space of `E`, form a continuous map into the orthonormal frame bundle
+modelled on `EuclideanSpace 𝕜 ι`. -/
+theorem continuous_mk_repr_symm {X : Type*} [TopologicalSpace X] {ι : Type*} [Fintype ι]
+    {b : X → B} (hb : Continuous b) {u : ∀ x, OrthonormalBasis ι 𝕜 (E (b x))}
+    (hu : ∀ i, Continuous fun x ↦ TotalSpace.mk' F (b x) (u x i)) :
+    Continuous fun x ↦
+      (⟨b x, (u x).repr.symm⟩ : OrthonormalFrameBundle 𝕜 F E (EuclideanSpace 𝕜 ι)) := by
+  refine continuous_iff.2 fun v ↦ continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  let e := trivializationAt F E (b x₀)
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨hb.continuousAt, ?_⟩
+  -- In the coordinates of `e`, the frame applied to `v` is the matching combination of the
+  -- coordinates of the basis vectors.
+  have hsum : ContinuousAt (fun x ↦ ∑ i, v i • (e ⟨b x, u x i⟩).2) x₀ :=
+    tendsto_finsetSum _ fun i _ ↦ continuousAt_const.smul
+      ((FiberBundle.continuousAt_totalSpace F _).1 (hu i).continuousAt).2
+  refine hsum.congr ?_
+  filter_upwards [hb.continuousAt.preimage_mem_nhds
+    (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E _))] with x hx
+  rw [← e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx ((u x).repr.symm v),
+    ← OrthonormalBasis.sum_repr_symm, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [map_smul, e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx]
 
 -- Here and below, `CompleteSpace V` follows from `FiniteDimensional 𝕜 V`, but instance search does
 -- not find it for a variable field `𝕜`; it is needed for the star structure on `V →L[𝕜] V`.

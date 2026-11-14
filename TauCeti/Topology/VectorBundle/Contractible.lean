@@ -8,8 +8,12 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.VectorBundle.HomotopyInvariance
 public import TauCeti.Topology.VectorBundle.OrthonormalTrivialization
+public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.VectorBundle.GramSchmidt
+import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Vector bundles over contractible bases are trivial
@@ -37,7 +41,11 @@ closed unit ball of `F`, by a homeomorphism carrying the unit sphere bundle `S(E
 
 These are the product structures used to build cells of disc bundles over a CW complex: pulled
 back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle becomes
-`Dᵠ × (Dʳ, Sʳ⁻¹)`.
+`Dᵠ × (Dʳ, Sʳ⁻¹)`. Read in `E` itself, this is an orthonormal frame along a map `φ : K → B` from
+a contractible paracompact R₁ space: linear isometries `ℝʳ ≃ₗᵢ E (φ y)` depending continuously on
+`y`, for any finite-rank real bundle whose fibre norm is continuous on the total space
+(`TauCeti.exists_continuous_linearIsometryEquiv_of_contractibleSpace`). It is Gram–Schmidt applied
+to a global trivialization of the pullback, read in `E`.
 
 ## Main results
 
@@ -50,6 +58,8 @@ back along the characteristic map of a cell `Dᵠ → X`, a rank `r` bundle beco
   by fibrewise linear isometries.
 * `TauCeti.exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace`: its disc and sphere
   bundles form the product pair `B × (D(F), S(F))`.
+* `TauCeti.exists_continuous_linearIsometryEquiv_of_contractibleSpace`: an orthonormal frame of a
+  finite-rank bundle along a map out of a contractible paracompact R₁ space.
 
 ## References
 
@@ -203,5 +213,57 @@ theorem exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace :
   rw [mem_sphereBundle, (hk v).2, mem_sphere_zero_iff_norm, LinearIsometryEquiv.norm_map]
 
 end Disc
+
+section Frame
+
+open InnerProductSpace Module
+
+variable {K : Type*} [TopologicalSpace K] [R1Space K] [ParacompactSpace K] [ContractibleSpace K]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {E : B → Type*} [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousFiberNorm F E]
+
+variable (F E) in
+/-- **Orthonormal frames along a map out of a contractible space.** For a finite-rank real vector
+bundle `E → B` with continuous fibre norm and a continuous map `φ` from a contractible paracompact
+R₁ space `K`, there are linear isometries `L y : ℝʳ ≃ₗᵢ E (φ y)`, `r` the rank, which depend
+continuously on `y`: the map `(y, w) ↦ L y w` from `K × ℝʳ` to the total space is continuous. This
+is a global orthonormal frame of the pullback `φ *ᵖ E`. -/
+theorem exists_continuous_linearIsometryEquiv_of_contractibleSpace (φ : C(K, B)) :
+    ∃ L : ∀ y, EuclideanSpace ℝ (Fin (finrank ℝ F)) ≃ₗᵢ[ℝ] E (φ y),
+      Continuous fun p : K × EuclideanSpace ℝ (Fin (finrank ℝ F)) ↦
+        TotalSpace.mk' F (φ p.1) (L p.1 p.2) := by
+  let : FiberBundle F ((φ : K → B) *ᵖ E) := FiberBundle.pullback φ
+  have : VectorBundle ℝ F ((φ : K → B) *ᵖ E) := VectorBundle.pullback ℝ φ
+  obtain ⟨e, he_lin, he⟩ :=
+    exists_trivialization_baseSet_eq_univ_of_contractibleSpace ℝ F ((φ : K → B) *ᵖ E)
+  have := he_lin
+  have hmem (y : K) : y ∈ e.baseSet := he ▸ mem_univ y
+  -- A global frame of the pullback, read as a family of bases of the fibres `E (φ y)`.
+  let d : ∀ y : K, Module.Basis (Fin (finrank ℝ F)) ℝ (E (φ y)) :=
+    fun y ↦ (Module.finBasis ℝ F).map (e.linearEquivAt ℝ y (hmem y)).symm
+  have hd (k : Fin (finrank ℝ F)) : Continuous fun y : K ↦ (d y k : TotalSpace F E) := by
+    have H : Continuous fun y : K ↦
+        (TotalSpace.mk' F y (e.symm y (Module.finBasis ℝ F k)) : TotalSpace F ((φ : K → B) *ᵖ E)) :=
+      (continuousOn_univ.1 (he ▸ e.continuousOn_symm_prodMk_left)).congr fun y ↦
+        (e.mk_symm (hmem y) _).symm
+    refine ((Pullback.continuous_lift F E φ).comp H).congr fun y ↦ ?_
+    -- Both sides are `⟨φ y, e.symm y (finBasis ℝ F k)⟩`. The lemmas `Pullback.lift_mk`,
+    -- `Module.Basis.map_apply` and `Trivialization.linearEquivAt_symm_apply` hold by `rfl` but do
+    -- not rewrite here: `d` reads the fibre `(φ *ᵖ E) y` of `e` as its unfolding `E (φ y)`.
+    exact rfl
+  -- Gram–Schmidt makes it orthonormal, continuously in `y`.
+  let u : ∀ y : K, OrthonormalBasis (Fin (finrank ℝ F)) ℝ (E (φ y)) := fun y ↦
+    OrthonormalBasis.mk (gramSchmidtNormed_orthonormal (d y).linearIndependent)
+      (by rw [span_gramSchmidtNormed_range, span_gramSchmidt, (d y).span_eq])
+  have hu (k : Fin (finrank ℝ F)) : Continuous fun y : K ↦ (u y k : TotalSpace F E) := by
+    simpa [u] using Continuous.gramSchmidtNormed_bundle (b := fun y : K ↦ φ y) k
+      (fun j _ ↦ hd j) fun y ↦ (d y).linearIndependent.linearIndepOn _
+  exact ⟨fun y ↦ (u y).repr.symm, OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
+    ((OrthonormalFrameBundle.continuous_mk_repr_symm φ.continuous hu).prodMap continuous_id)⟩
+
+end Frame
 
 end TauCeti

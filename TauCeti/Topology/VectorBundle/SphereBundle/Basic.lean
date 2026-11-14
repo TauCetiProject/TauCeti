@@ -15,7 +15,8 @@ import TauCeti.Topology.VectorBundle.Smul
 Let `E → B` be a real vector bundle whose fibres carry norms, such that the fibre norm is a
 continuous function on the total space; for instance a continuous Riemannian vector bundle
 (`TauCeti.continuous_norm_bundle`). Its unit disc bundle `D(E)` and unit sphere bundle `S(E)` are
-the vectors of norm at most one and exactly one (`TauCeti.discBundle`, `TauCeti.sphereBundle`).
+the vectors of norm at most one and exactly one (`TauCeti.discBundle`, `TauCeti.sphereBundle`),
+closed subsets of the total space (`TauCeti.isClosed_discBundle`, `TauCeti.isClosed_sphereBundle`).
 The sphere bundle projects continuously onto the base (`TauCeti.sphereBundleProj`).
 
 Radial rescaling compares them with the Thom pair `(E, E₀)` of the bundle, where `E₀` is the
@@ -90,6 +91,16 @@ theorem sphereBundle_subset_zeroSectionCompl : sphereBundle F E ⊆ zeroSectionC
   mem_zeroSectionCompl.2 (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hv).symm ▸ one_ne_zero))
 
 variable [TopologicalSpace (TotalSpace F E)]
+
+/-- The disc bundle is closed when the fibre norm is continuous on the total space. -/
+theorem isClosed_discBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    IsClosed (discBundle F E) :=
+  isClosed_le hnorm continuous_const
+
+/-- The sphere bundle is closed when the fibre norm is continuous on the total space. -/
+theorem isClosed_sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) :
+    IsClosed (sphereBundle F E) :=
+  isClosed_eq hnorm continuous_const
 
 /-- The disc-sphere pair `(D(E), S(E))` of a bundle with normed fibres. -/
 abbrev discSpherePair : TopPair.{w} :=
