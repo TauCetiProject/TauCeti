@@ -39,6 +39,8 @@ equivalence has no such restriction.
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebraBaseChangeIso`: the bundled isomorphism.
+* `TauCeti.AdditiveGroup.coordinateHopfAlgebraBaseChangeIso_hom_hom_tmul_ι`: its value on
+  `s ⊗ ι(r)`.
 * `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra`:
   the base-changed coordinate algebra has connected prime spectrum over a domain.
 * `TauCeti.AdditiveGroup.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra`:
@@ -67,6 +69,12 @@ variable (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [Algebra k K]
 noncomputable abbrev coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k) ≅ coordinateHopfAlgebra K :=
   _root_.CommHopfAlgCat.isoMk (gaScalarTensorBialgEquiv (k := k) (K := K))
+
+/-- The bundled base-change isomorphism of `𝔾ₐ` sends `s ⊗ ι(r)` to `s • ι(algebraMap k K r)`. -/
+theorem coordinateHopfAlgebraBaseChangeIso_hom_hom_tmul_ι (s : K) (r : k) :
+    (coordinateHopfAlgebraBaseChangeIso k K).hom.hom (s ⊗ₜ[k] SymmetricAlgebra.ι k k r) =
+      s • SymmetricAlgebra.ι K K (algebraMap k K r) :=
+  gaScalarTensorBialgEquiv_tmul_ι s r
 
 /-- The base change of the coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum
 when the extension ring is a domain. -/
