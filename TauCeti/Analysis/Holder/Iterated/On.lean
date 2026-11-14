@@ -124,9 +124,7 @@ differentiable with bounded derivatives through order `k` and whose `k`-th itera
           (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F
             (field j.succ J x)) (x : E)}
       zero_mem' := fun j x ↦ by
-        simp only [map_zero, FunLike.coe_zero, Pi.zero_apply]
-        rw [show Function.extend ((↑) : Ω → E) (0 : Ω → E [×j]→L[ℝ] F) 0 = 0 from by
-          simp]
+        simp only [map_zero, FunLike.coe_zero, Pi.zero_apply, Function.extend_zero]
         exact hasFDerivAt_const (x := (x : E)) (c := (0 : E [×j]→L[ℝ] F))
       add_mem' := fun {J K} hJ hK j x ↦ by
         simp only [Set.mem_ofPred_eq, map_add, FunLike.coe_add,
