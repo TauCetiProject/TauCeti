@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Quotient
 public import TauCeti.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
@@ -19,6 +19,9 @@ A `G`-tree is a Serre tree with an action of `G` by graph automorphisms without 
 element maps a dart to its reverse. This file sets up the vocabulary of Bass–Serre theory for
 such actions.
 
+* The quotient graph `T / G` of a `G`-tree (`GTree.quotient`) has the orbits of vertices and
+  of darts as its vertices and darts; it is connected, and the projection `GTree.quotientMap`
+  onto it is surjective with the orbits as fibres.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
@@ -40,13 +43,16 @@ every `G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex. 
 `G`-tree is such a tree. In a `G`-tree with trivial vertex stabilizers only the trivial subgroup
 is elliptic, so such a tree is relative to every family containing the trivial subgroup and every
 family of trivial subgroups. The line, a `G`-tree for the infinite cyclic group, is in
-`TauCeti.GroupTheory.GTree.Line`. The automorphism of the segment exchanging its vertices inverts
+`TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element is in
+`TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices inverts
 its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
 exchanges the endpoints of a dart.
 
 ## Main declarations
 
 * `TauCeti.GTree`: a Serre tree with an action of `G` without inversions.
+* `TauCeti.GTree.quotient`, `TauCeti.GTree.quotientMap`: the quotient graph and the projection
+  onto it.
 * `TauCeti.GTree.IsElliptic`, `TauCeti.GTree.IsHyperbolic`,
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
@@ -119,6 +125,157 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
+
+/-! ### The quotient graph -/
+
+section Quotient
+
+/-- The quotient graph `T / G` of a `G`-tree. -/
+abbrev quotient : SerreGraph.{u, v} :=
+  T.toSerreGraph.quotient T.action T.smul_ne_rev
+
+/-- The projection of a `G`-tree to its quotient graph. -/
+abbrev quotientMap : T.toSerreGraph.Hom T.quotient :=
+  T.toSerreGraph.quotientMap T.action T.smul_ne_rev
+
+/-- Every vertex of the quotient graph is the image of a vertex of the tree. -/
+theorem quotientMap_mapV_surjective : Function.Surjective T.quotientMap.mapV :=
+  SerreGraph.quotientMap_mapV_surjective _ _ _
+
+/-- Every dart of the quotient graph is the image of a dart of the tree. -/
+theorem quotientMap_mapE_surjective : Function.Surjective T.quotientMap.mapE :=
+  SerreGraph.quotientMap_mapE_surjective _ _ _
+
+/-- The quotient graph of a `G`-tree is connected. -/
+theorem quotient_connected : T.quotient.Connected :=
+  SerreGraph.quotient_connected T.isTree.connected
+
+variable {T}
+
+/-- Two vertices of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapV_eq_iff {a b : T.V} :
+    T.quotientMap.mapV a = T.quotientMap.mapV b ↔ ∃ g : G, g • a = b :=
+  SerreGraph.quotientMap_mapV_eq_iff
+
+/-- Two darts of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapE_eq_iff {e f : T.E} :
+    T.quotientMap.mapE e = T.quotientMap.mapE f ↔ ∃ g : G, g • e = f :=
+  SerreGraph.quotientMap_mapE_eq_iff
+
+/-- A vertex of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapV_smul (g : G) (a : T.V) :
+    T.quotientMap.mapV (g • a) = T.quotientMap.mapV a :=
+  SerreGraph.quotientMap_mapV_smul g a
+
+/-- A dart of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapE_smul (g : G) (e : T.E) :
+    T.quotientMap.mapE (g • e) = T.quotientMap.mapE e :=
+  SerreGraph.quotientMap_mapE_smul g e
+
+end Quotient
+
+section Translate
+
+variable {T}
+
+/-- The translate of a path by an element of the group: the path through the translates of its
+darts. -/
+def smulPath (g : G) {a b : T.V} (p : T.Path a b) : T.Path (g • a) (g • b) :=
+  (T.action g).smulPath p
+
+/-- The translate of a path by `g` is its translate by the automorphism by which `g` acts. -/
+theorem smulPath_def (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p = (T.action g).smulPath p := (rfl)
+
+/-- The translate of the empty path is empty. -/
+@[simp] theorem smulPath_nil (g : G) (a : T.V) :
+    smulPath g (Quiver.Path.nil : T.Path a a) = Quiver.Path.nil :=
+  Aut.smulPath_nil (T.action g) a
+
+/-- The translate of a path extended by a dart is the translate extended by the translated
+dart. -/
+@[simp] theorem smulPath_cons (g : G) {a b c : T.V} (p : T.Path a b) (e : Quiver.Hom b c) :
+    smulPath g (p.cons e) =
+      (smulPath g p).cons ⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :=
+  Aut.smulPath_cons (T.action g) p e
+
+/-- The translate of a one-dart path is the one-dart path through the translated dart. -/
+@[simp] theorem smulPath_toPath (g : G) {a b : T.V} (e : Quiver.Hom a b) :
+    smulPath g e.toPath =
+      Quiver.Hom.toPath (⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :
+        Quiver.Hom (g • a) (g • b)) :=
+  Aut.smulPath_toPath (T.action g) e
+
+/-- The translate of a concatenation is the concatenation of the translates. -/
+@[simp] theorem smulPath_comp (g : G) {a b c : T.V} (p : T.Path a b) (q : T.Path b c) :
+    smulPath g (p.comp q) = (smulPath g p).comp (smulPath g q) :=
+  Aut.smulPath_comp (T.action g) p q
+
+/-- The translate of a reversed path is the reverse of the translate. -/
+@[simp] theorem smulPath_reverse (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p.reverse = (smulPath g p).reverse :=
+  Aut.smulPath_reverse (T.action g) p
+
+/-- The translate of a path passes through the translates of its vertices. -/
+@[simp] theorem vertices_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).vertices = p.vertices.map (g • ·) :=
+  Aut.vertices_smulPath (T.action g) p
+
+/-- The identity translates every path to itself. -/
+theorem one_smulPath {a b : T.V} (p : T.Path a b) :
+    smulPath (1 : G) p = p.cast (one_smul G a).symm (one_smul G b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_one T.action)).trans
+    (heq_of_eq (Aut.one_smulPath p))
+
+/-- Translating by a product is translating by each factor in turn. -/
+theorem mul_smulPath (g h : G) {a b : T.V} (p : T.Path a b) :
+    smulPath (g * h) p = (smulPath g (smulPath h p)).cast (mul_smul g h a).symm
+      (mul_smul g h b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_mul T.action g h)).trans
+    (heq_of_eq (Aut.mul_smulPath _ _ p))
+
+/-- The translate of a path traverses the translates of its darts. -/
+@[simp] theorem darts_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.darts T.toSerreGraph (smulPath g p) = (Path.darts T.toSerreGraph p).map (g • ·) :=
+  Aut.darts_smulPath (T.action g) p
+
+/-- The translate of a path is reduced exactly when the path is. -/
+@[simp] theorem isReduced_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.IsReduced T.toSerreGraph (smulPath g p) ↔ Path.IsReduced T.toSerreGraph p :=
+  Aut.isReduced_smulPath (T.action g) p
+
+/-- The translate of a path has the same length as the path. -/
+@[simp] theorem length_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).length = p.length :=
+  Aut.length_smulPath (T.action g) p
+
+end Translate
+
+/-- The `n`-th power of an element moves a vertex by at most `n` times as much as the element. -/
+theorem dist_pow_smul_le (g : G) (v : T.V) (n : ℕ) :
+    T.dist v (g ^ n • v) ≤ n * T.dist v (g • v) := by
+  rw [smul_vertex_def, smul_vertex_def, map_pow]
+  exact Aut.dist_pow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- The `n`-th power of an element moves a vertex by at most `|n|` times as much as the
+element. -/
+theorem dist_zpow_smul_le (g : G) (v : T.V) (n : ℤ) :
+    T.dist v (g ^ n • v) ≤ n.natAbs * T.dist v (g • v) := by
+  rw [smul_vertex_def, smul_vertex_def, map_zpow]
+  exact Aut.dist_zpow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- A vertex `v` is moved by at most the displacement of another vertex `a` plus twice the
+distance between them. -/
+theorem dist_smul_le_dist_smul_add_two_mul_dist (g : G) (a v : T.V) :
+    T.dist v (g • v) ≤ T.dist a (g • a) + 2 * T.dist v a := by
+  have h₁ := dist_triangle (T.nonempty_path v a) (T.nonempty_path a (g • v))
+  have h₂ := dist_triangle (T.nonempty_path a (g • a)) (T.nonempty_path (g • a) (g • v))
+  rw [dist_smul, dist_comm a v] at h₂
+  omega
 
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
@@ -226,10 +383,14 @@ theorem IsHyperbolic.ne_one {g : G} (hg : T.IsHyperbolic g) : g ≠ 1 := by
     T.IsEllipticSubgroup (Subgroup.zpowers g) ↔ T.IsElliptic g := by
   simp only [isEllipticSubgroup_iff, Subgroup.zpowers_le, mem_stabilizer_iff, isElliptic_iff]
 
-/-- The powers of an elliptic element are elliptic. -/
+/-- The integer powers of an elliptic element are elliptic. -/
 theorem IsElliptic.zpow {g : G} (hg : T.IsElliptic g) (n : ℤ) : T.IsElliptic (g ^ n) := by
   obtain ⟨v, hv⟩ := isEllipticSubgroup_zpowers_iff.mpr hg
   exact ⟨v, hv (Subgroup.zpow_mem_zpowers g n)⟩
+
+/-- The natural powers of an elliptic element are elliptic. -/
+theorem IsElliptic.pow {g : G} (hg : T.IsElliptic g) (n : ℕ) : T.IsElliptic (g ^ n) := by
+  simpa only [zpow_natCast] using hg.zpow n
 
 /-- Elements of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.isElliptic {H : Subgroup G} (hH : T.IsEllipticSubgroup H) {g : G}
@@ -548,10 +709,10 @@ end
 
 /-- The one-vertex `G`-tree, with the trivial action. -/
 def point (G : Type w) [Group G] : GTree.{u, v} G where
-  toSerreGraph := SerreGraph.point
+  toSerreGraph := SerreGraph.noEdge PUnit
   isTree := single_vertex_isTree
   action := 1
-  action_smul_ne_rev _ e := e.elim
+  action_smul_ne_rev _ e := isEmptyElim e
 
 instance {G : Type w} [Group G] : Subsingleton (point.{u, v} G).V :=
   inferInstanceAs (Subsingleton PUnit)

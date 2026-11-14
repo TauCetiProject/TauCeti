@@ -67,7 +67,8 @@ this pairs `α ∈ Hᵖ(X; M)` with `β ∈ H^q(X; k)`, the general coefficient 
 a pair `(X, A)` the same identities hold for the relative cap product of a relative class
 `α ∈ Hᵖ(X, A; R, M)` with a relative class `x ∈ Hₙ(X, A; T)`, with the relative cup product
 `α ⌣ β ∈ Hⁿ(X, A; T, N')` along the relative Alexander–Whitney diagonal
-(`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
+(`TopPair.singularCap_comp_singularKronecker`, for `α` with values in the tensor unit,
+`TopPair.singularCap_comp_singularKronecker_of_homologyMap_eq` and
 `TopPair.singularCap_comp_singularKronecker_of_isIso`).
 
 ## References
@@ -392,5 +393,24 @@ theorem singularCap_comp_singularKronecker_of_isIso (P : TopPair.{w}) (k : Type*
         (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) ν p q n h α β) := by
   rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
   exact TauCeti.ChainComplex.cap_comp_kronecker_of_isIso _ _ ν p q n h α β
+
+/-- **The Kronecker pairing of a relative singular cap product**, `⟨β, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: the
+relative form of `TopCat.singularCap_comp_singularKronecker`. For a pair `(X, A)`, a relative class
+`α ∈ Hᵖ(X, A; R, 𝟙)` with values in the tensor unit, capped along `u` and the left unitor, and an
+absolute class `β ∈ H^q(X; S, N)`, evaluating `β` on `x ⌢ α` is evaluating on `x` the relative cup
+product `α ⌣ β ∈ Hⁿ(X, A; T, N)` along the relative Alexander–Whitney diagonal
+`P.alexanderWhitneyDiagonal u` and the left unitor of `N`. -/
+theorem singularCap_comp_singularKronecker (P : TopPair.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (p q n : ℕ) (h : p + q = n)
+    (α : P.singularCohomology R k (𝟙_ C) p) (β : P.fst.singularCohomology S k N q) :
+    P.singularCap k u (λ_ S).hom p q n h α ≫ P.fst.singularKronecker k q β =
+      P.singularKronecker k n
+        (TauCeti.ChainComplex.cup k (P.alexanderWhitneyDiagonal u) (λ_ N).hom p q n h α β) := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
+  rw [singularCap_def, singularKronecker_def, TopCat.singularKronecker_def]
+  refine TauCeti.ChainComplex.cap_comp_kronecker _ _ _ p q n h φ ψ ψ ?_
+  rw [SSet.chainComplexPairing_leftUnitor_hom_f]
+  exact (leftUnitor_naturality _).symm
 
 end TopPair
