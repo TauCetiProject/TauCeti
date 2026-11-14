@@ -38,11 +38,11 @@ is written as `v * (m * m) + (z - a) * m + 1`, the shape used by Mathlib's `disc
   Catalan moments.
 * `TauCeti.Probability.resolventTransform_semicircleReal_quadratic_eq_zero`: the quadratic
   equation off the support.
-* `TauCeti.Probability.eq_resolventTransform_semicircleReal_iff`: in the upper half-plane, `m(z)`
+* `TauCeti.Probability.resolventTransform_semicircleReal_eq_iff`: in the upper half-plane, `m(z)`
   is the only root of the quadratic with positive imaginary part.
 * `TauCeti.Probability.resolventTransform_semicircleReal_zero_one_I`: for the standard law,
   `m(i) = i (√5 - 1) / 2`.
-* `TauCeti.Probability.tendsto_resolventTransform_semicircleReal_boundary`: the complex boundary
+* `TauCeti.Probability.tendsto_resolventTransform_semicircleReal_of_mem_Icc`: the complex boundary
   value on the support of a positive-variance semicircle law.
 
 ## Implementation notes
@@ -172,7 +172,7 @@ theorem resolventTransform_semicircleReal_quadratic_eq_zero
 
 /-- In the upper half-plane, the resolvent transform of `semicircleReal a v` is the unique root of
 `v * (w * w) + (z - a) * w + 1 = 0` with positive imaginary part. -/
-theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
+theorem resolventTransform_semicircleReal_eq_iff (hz : 0 < z.im) {w : ℂ} :
     w = resolventTransform (semicircleReal a v) z ↔
       0 < w.im ∧ (v : ℂ) * (w * w) + (z - a) * w + 1 = 0 := by
   set m := resolventTransform (semicircleReal a v) z
@@ -198,7 +198,7 @@ theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
 
 /-- On the positive imaginary axis through its centre, the semicircle resolvent has zero real
 part and its imaginary part satisfies the quadratic equation. -/
-theorem re_eq_zero_and_sq_im_add_mul_eq_one_resolventTransform_semicircleReal_mul_I
+theorem resolventTransform_semicircleReal_mul_I_re_eq_zero_and_im_sq_add_mul_eq_one
     (a t : ℝ) (v : ℝ≥0) (ht : 0 < t) :
     (resolventTransform (semicircleReal a v) ((a : ℂ) + t * Complex.I)).re = 0 ∧
       (v : ℝ) * (resolventTransform (semicircleReal a v)
@@ -242,7 +242,7 @@ theorem resolventTransform_semicircleReal_zero_one_I :
   have h5 : (1 : ℝ) < √5 := (Real.lt_sqrt zero_le_one).2 (by norm_num)
   have h5c : ((√5 : ℝ) : ℂ) ^ 2 = 5 := by
     exact_mod_cast Real.sq_sqrt (show (0 : ℝ) ≤ 5 by norm_num)
-  refine ((eq_resolventTransform_semicircleReal_iff (by simp)).2
+  refine ((resolventTransform_semicircleReal_eq_iff (by simp)).2
     ⟨by rw [mul_I_im, ofReal_re]; linarith, ?_⟩).symm
   push_cast
   linear_combination (-1 / 4 : ℂ) * h5c + (((√5 : ℂ) - 1) / 2 * (((√5 : ℂ) - 1) / 2) +
@@ -250,15 +250,6 @@ theorem resolventTransform_semicircleReal_zero_one_I :
 
 private def standardSemicircleResolvent (z : ℂ) : ℂ :=
   resolventTransform (semicircleReal 0 1) z
-
-private theorem standardSemicircleResolvent_quad (hz : 0 < z.im) :
-    standardSemicircleResolvent z * standardSemicircleResolvent z +
-      z * standardSemicircleResolvent z + 1 = 0 := by
-  have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z) (by
-    rintro ⟨x, -, hx⟩
-    have h : z.im = 0 := by rw [← hx]; simp
-    linarith)
-  simpa [standardSemicircleResolvent] using h
 
 private theorem standardSemicircleResolvent_im_pos (hz : 0 < z.im) :
     0 < (standardSemicircleResolvent z).im :=
@@ -290,7 +281,12 @@ private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
     rw [Complex.star_def, Complex.mul_conj, Complex.normSq_apply]
     simp [a, b, q]
     ring
-  have hmul := congrArg (fun w : ℂ ↦ w * c) (standardSemicircleResolvent_quad hz)
+  have hquad : standardSemicircleResolvent z * standardSemicircleResolvent z +
+      z * standardSemicircleResolvent z + 1 = 0 := by
+    have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1)
+      (z := z) (Complex.notMem_image_ofReal_of_im_ne_zero hz.ne')
+    simpa [standardSemicircleResolvent] using h
+  have hmul := congrArg (fun w => w * c) hquad
   have hrelmul : (q : ℂ) * standardSemicircleResolvent z + z * (q : ℂ) + c =
       (standardSemicircleResolvent z * standardSemicircleResolvent z +
         z * standardSemicircleResolvent z + 1) * c := by
@@ -514,7 +510,7 @@ private theorem tendsto_standard_resolvent_im_of_mem_Icc {x : ℝ}
 
 /-- On `[-2, 2]`, the standard semicircle resolvent has boundary value
 `-x / 2 + i √(1 - x² / 4)` when approached from the upper half-plane. -/
-theorem tendsto_resolventTransform_semicircleReal_zero_one_boundary {x : ℝ}
+theorem tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc {x : ℝ}
     (hx : x ∈ Icc (-2) 2) :
     Tendsto
       (fun ε : ℝ ↦ resolventTransform (semicircleReal 0 1)
@@ -545,7 +541,7 @@ theorem tendsto_resolventTransform_semicircleReal_zero_one_boundary {x : ℝ}
 
 /-- On the support of a positive-variance semicircle law, the resolvent transform has the
 boundary value obtained from the standard semicircle law by affine transport. -/
-theorem tendsto_resolventTransform_semicircleReal_boundary {a x : ℝ} {v : ℝ≥0}
+theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : ℝ≥0}
     (hv : 0 < v) (hx : x ∈ Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) :
     Tendsto
       (fun ε : ℝ ↦ resolventTransform (semicircleReal a v)
@@ -587,7 +583,7 @@ theorem tendsto_resolventTransform_semicircleReal_boundary {a x : ℝ} {v : ℝ�
     exact div_pos hε hs
   have hscale : Tendsto (fun ε : ℝ ↦ ε / s) (𝓝[>] 0) (𝓝[>] 0) :=
     tendsto_nhdsWithin_iff.2 ⟨hscale0, hscale_pos⟩
-  have hstd := (tendsto_resolventTransform_semicircleReal_zero_one_boundary hx₀).comp hscale
+  have hstd := (tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc hx₀).comp hscale
   have hmul := (tendsto_const_nhds :
       Tendsto (fun _ : ℝ ↦ (s : ℂ)⁻¹) (𝓝[>] 0) (𝓝 ((s : ℂ)⁻¹))).mul hstd
   have hmul' : Tendsto

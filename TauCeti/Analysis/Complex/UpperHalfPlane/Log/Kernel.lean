@@ -28,7 +28,7 @@ theorem continuous_log_sub_of_im_pos {w : ℂ} (hw : 0 < w.im) :
     (sub_ofReal_mem_slitPlane_of_im_pos hw)
 
 /-- A bound for the logarithmic kernel near the real axis on a bounded set. -/
-theorem norm_log_norm_add_mul_I_sub_le (x y ε R : ℝ) (hε : |ε| ≤ 1)
+theorem norm_log_norm_add_mul_I_sub_le_of_ne_of_abs_le (x y ε R : ℝ) (hε : |ε| ≤ 1)
     (hy : |y| ≤ R) (hxy : y ≠ x) :
     ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤
       ‖Real.log |x - y|‖ + Real.log (|x| + R + 1) := by
