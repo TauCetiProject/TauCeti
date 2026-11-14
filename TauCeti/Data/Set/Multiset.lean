@@ -21,9 +21,13 @@ multiplicities:
   `Set.Finite.count_map_toFinset_val_eq_natCard`);
 * consequently `hs.toFinset.val.map f = m` holds if and only if each fibre `{x // x ∈ s ∧ f x = b}`
   has cardinality `m.count b` (`Set.Finite.map_toFinset_val_eq_iff`);
-* for any additive commutative monoid `M` and `g : β → M`, summing `g (f x)` over `x ∈ s` equals the
-  multiset sum `((hs.toFinset.val.map f).map g).sum`
-  (`Set.Finite.finsum_mem_comp_eq_multiset_sum_map`).
+* for any commutative monoid `M` and `g : β → M`, taking the product (or sum) of `g (f x)` over
+  `x ∈ s` equals `((hs.toFinset.val.map f).map g).prod`
+  (`Set.Finite.finprod_mem_comp_eq_multiset_prod_map`,
+  `Set.Finite.finsum_mem_comp_eq_multiset_sum_map`), and for an arbitrary (possibly infinite) set
+  `s : Set α` there always exists a multiset `m : Multiset β` representing `∏ᶠ x ∈ s, g (f x)` as
+  `(m.map g).prod` (`Set.exists_finprod_mem_comp_eq_multiset_prod_map`,
+  `Set.exists_finsum_mem_comp_eq_multiset_sum_map`).
 -/
 
 public section
@@ -65,17 +69,41 @@ theorem map_toFinset_val_eq_iff_ncard [DecidableEq β] (hs : s.Finite) (f : α �
   rw [Multiset.ext]
   simp_rw [hs.count_map_toFinset_val]
 
-/-- Summing `f` over a finite set `s` agrees with summing `hs.toFinset.val.map f`. -/
-theorem finsum_mem_eq_multiset_sum_map [AddCommMonoid M] (hs : s.Finite) (f : α → M) :
-    ∑ᶠ x ∈ s, f x = (hs.toFinset.val.map f).sum := by
-  rw [finsum_mem_eq_finite_toFinset_sum _ hs, Finset.sum_eq_multiset_sum]
+/-- Taking the product of `f` over a finite set `s` agrees with taking the product of
+`hs.toFinset.val.map f`. -/
+@[to_additive /-- Summing `f` over a finite set `s` agrees with summing `hs.toFinset.val.map f`. -/]
+theorem finprod_mem_eq_multiset_prod_map [CommMonoid M] (hs : s.Finite) (f : α → M) :
+    ∏ᶠ x ∈ s, f x = (hs.toFinset.val.map f).prod := by
+  rw [finprod_mem_eq_finite_toFinset_prod _ hs, Finset.prod_eq_multiset_prod]
 
-/-- Summing `g (f x)` over `x ∈ s` factors through the multiset `hs.toFinset.val.map f` of values
-of `f` on `s`. -/
-theorem finsum_mem_comp_eq_multiset_sum_map [AddCommMonoid M] (hs : s.Finite) (f : α → β)
+/-- Taking the product of `g (f x)` over `x ∈ s` factors through the multiset
+`hs.toFinset.val.map f` of values of `f` on `s`. -/
+@[to_additive /-- Summing `g (f x)` over `x ∈ s` factors through the multiset
+`hs.toFinset.val.map f` of values of `f` on `s`. -/]
+theorem finprod_mem_comp_eq_multiset_prod_map [CommMonoid M] (hs : s.Finite) (f : α → β)
     (g : β → M) :
-    ∑ᶠ x ∈ s, g (f x) = ((hs.toFinset.val.map f).map g).sum := by
-  rw [hs.finsum_mem_eq_multiset_sum_map, Multiset.map_map]
+    ∏ᶠ x ∈ s, g (f x) = ((hs.toFinset.val.map f).map g).prod := by
+  rw [hs.finprod_mem_eq_multiset_prod_map, Multiset.map_map]
   rfl
 
 end Set.Finite
+
+namespace Set
+
+variable {α β M : Type*}
+
+/-- For any set `s : Set α`, `f : α → β`, and `g : β → M`, there exists a multiset `m : Multiset β`
+such that `∏ᶠ x ∈ s, g (f x) = (m.map g).prod` (namely `ht.toFinset.val.map f` when
+`s ∩ Function.mulSupport (g ∘ f)` is finite, and `0` otherwise). -/
+@[to_additive /-- For any set `s : Set α`, `f : α → β`, and `g : β → M`, there exists a multiset
+`m : Multiset β` such that `∑ᶠ x ∈ s, g (f x) = (m.map g).sum` (namely `ht.toFinset.val.map f` when
+`s ∩ Function.support (g ∘ f)` is finite, and `0` otherwise). -/]
+theorem exists_finprod_mem_comp_eq_multiset_prod_map [CommMonoid M] (s : Set α) (f : α → β)
+    (g : β → M) :
+    ∃ m : Multiset β, ∏ᶠ x ∈ s, g (f x) = (m.map g).prod := by
+  by_cases ht : (s ∩ Function.mulSupport fun x ↦ g (f x)).Finite
+  · exact ⟨ht.toFinset.val.map f, by
+      rw [← finprod_mem_inter_mulSupport, ht.finprod_mem_comp_eq_multiset_prod_map]⟩
+  · exact ⟨0, by rw [finprod_mem_eq_one_of_infinite ht, Multiset.map_zero, Multiset.prod_zero]⟩
+
+end Set

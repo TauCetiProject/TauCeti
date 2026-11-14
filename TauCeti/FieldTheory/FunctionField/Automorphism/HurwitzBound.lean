@@ -19,7 +19,7 @@ public import TauCeti.FieldTheory.Galois.FixedField
 -- Non-public, all four in the proofs only: the numerical bound on the deficit of branch data, the
 -- branch-data form of the tame different, the tame Hurwitz genus formula, and the Galois group
 -- instance on fixed fields.
-import TauCeti.Data.Rat.BranchDeficit
+import TauCeti.Algebra.Order.Field.OrbifoldDeficit
 import TauCeti.FieldTheory.FunctionField.Different.Galois
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 import TauCeti.FieldTheory.Galois.IsGaloisGroup
@@ -110,11 +110,6 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
   -- The branch data: each ramified place contributes its index, once per degree.
   set e : Multiset ℕ := s.val.bind fun P ↦ Multiset.replicate P.degree (P.ramificationIdxIn F)
     with he
-  have hetwo : ∀ n ∈ e, 2 ≤ n := by
-    intro n hn
-    obtain ⟨P, hP, hn⟩ := Multiset.mem_bind.mp hn
-    rw [Multiset.eq_of_mem_replicate hn]
-    exact hfinite.mem_toFinset.mp hP
   have hsum : (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum =
       ∑ P ∈ s, (1 - 1 / (P.ramificationIdxIn F : ℚ)) * P.degree := by
     rw [he, Multiset.map_bind, Multiset.sum_bind, Finset.sum]
@@ -128,7 +123,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     rw [hbranch] at hcastQ
     rw [hD, hsum, ← hcard]
     linarith [hcastQ]
-  exact card_le_eighty_four_mul_sub_one hgenus hGpos hetwo hkey
+  exact card_le_eighty_four_mul_sub_one hgenus hGpos hkey
 
 /-- **The Hurwitz bound for a group of order prime to the characteristic** (Stichtenoth,
 Exercise 3.18): over a perfect constant field of characteristic `p`, a finite group `G` of
