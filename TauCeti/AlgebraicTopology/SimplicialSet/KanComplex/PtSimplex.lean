@@ -314,6 +314,31 @@ private lemma stdSimplex_map_comp_map_eq_const {d : ℕ} (θ : ⦋d⦌ ⟶ ⦋n 
     rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc, hδ, hδ,
       (by simpa using h.δ_castSucc_map : stdSimplex.δ 0 ≫ h.map = p.map), p.δ_map, comp_const]
 
+/-- The collapse `Δ[n] ⊗ Δ[1] ⟶ Δ[n + 1]` of a simplex `(a, b)` whose first component lies in
+`∂Δ[n]` misses a vertex: if `a` misses the vertex `j` of `Δ[n]`, the image misses `j + 1` when
+`j ≠ 0`, and both `0` and `1` when `j = 0`. -/
+private lemma collapse_boundary_misses_vertex {d : ℕ} {a : Δ[n] _⦋d⦌} (ha : a ∈ (∂Δ[n]).obj _)
+    (b : Δ[1] _⦋d⦌) {θ : ⦋d⦌ ⟶ ⦋n + 1⦌}
+    (hθ : θ = SimplexCategory.Hom.mk ((prodStdSimplex₁.collapseOrderHom n).comp
+      ((stdSimplex.objEquiv a).toOrderHom.prod (stdSimplex.objEquiv b).toOrderHom))) :
+    (∃ v : Fin (n + 2), 1 < v ∧ ∀ t, θ.toOrderHom t ≠ v) ∨
+      ∀ t, θ.toOrderHom t ≠ 0 ∧ θ.toOrderHom t ≠ 1 := by
+  subst hθ
+  obtain ⟨j, hj⟩ := (mem_boundary_iff_notMem_range a).1 ha
+  obtain rfl | ⟨j, rfl⟩ := j.eq_zero_or_eq_succ
+  · refine Or.inr fun t ↦ ?_
+    have hat : a t ≠ 0 := fun h' ↦ hj ⟨t, h'⟩
+    simp only [Fin.ne_iff_vne, Fin.val_zero] at hat
+    simp [prodStdSimplex₁.collapseOrderHom_apply, Fin.ext_iff, hat]
+  · refine Or.inl ⟨j.succ.succ, by simp [Fin.lt_def], fun t ↦ ?_⟩
+    have hat : a t ≠ j.succ := fun h' ↦ hj ⟨t, h'⟩
+    simp only [SimplexCategory.Hom.toOrderHom_mk, OrderHom.comp_coe, Function.comp_apply,
+      OrderHom.prod_coe, prodStdSimplex₁.collapseOrderHom_apply]
+    split_ifs
+    · simp only [ne_eq, Fin.ext_iff, Fin.val_castLE, Fin.val_succ]
+      lia
+    · exact fun h' ↦ hat (Fin.succ_injective _ h')
+
 /-- Given `h : RelStruct₀ p q`, the homotopy from `q` to `p` obtained by precomposing the
 `(n + 1)`-simplex of `h` with the map `Δ[n] ⊗ Δ[1] ⟶ Δ[n + 1]` which collapses the edges
 `{k} × Δ[1]` for `k ≠ 0`. -/
@@ -326,8 +351,8 @@ noncomputable def homotopy : Homotopy q p where
     rw [← Category.assoc, prodStdSimplex₁.ι₁_collapse]
     simpa using h.δ_castSucc_map
   rel := by
-    -- A simplex of `∂Δ[n] ⊗ Δ[1]` misses a vertex `j` of `Δ[n]` in its first projection, so its
-    -- image under `collapse` misses `j + 1` if `j ≠ 0`, and both `0` and `1` if `j = 0`.
+    -- A simplex of `∂Δ[n] ⊗ Δ[1]` is sent by `collapse` to a simplex of `Δ[n + 1]` missing a
+    -- vertex (`collapse_boundary_misses_vertex`), on which `h.map` is constant.
     rw [Subcomplex.ofSimplex_ι, comp_const, comp_const]
     refine hom_ext_uliftYoneda fun ⟨d⟩ φ ↦ ?_
     let a : Δ[n] _⦋d⦌ := (yonedaEquiv φ).1.1
@@ -341,21 +366,7 @@ noncomputable def homotopy : Homotopy q p where
       -- both sides are the simplex `collapse` assigns to `yonedaEquiv φ`, by definition
       rfl
     rw [reassoc_of% this, comp_const]
-    apply stdSimplex_map_comp_map_eq_const
-    obtain ⟨j, hj⟩ := (mem_boundary_iff_notMem_range a).1 ha
-    obtain rfl | ⟨j, rfl⟩ := j.eq_zero_or_eq_succ
-    · refine Or.inr fun t ↦ ?_
-      have hat : a t ≠ 0 := fun h' ↦ hj ⟨t, h'⟩
-      simp only [Fin.ne_iff_vne, Fin.val_zero] at hat
-      simp [prodStdSimplex₁.collapseOrderHom_apply, Fin.ext_iff, hat]
-    · refine Or.inl ⟨j.succ.succ, by simp [Fin.lt_def], fun t ↦ ?_⟩
-      have hat : a t ≠ j.succ := fun h' ↦ hj ⟨t, h'⟩
-      simp only [SimplexCategory.Hom.toOrderHom_mk, OrderHom.comp_coe, Function.comp_apply,
-        OrderHom.prod_coe, prodStdSimplex₁.collapseOrderHom_apply]
-      split_ifs
-      · simp only [ne_eq, Fin.ext_iff, Fin.val_castLE, Fin.val_succ]
-        lia
-      · exact fun h' ↦ hat (Fin.succ_injective _ h')
+    exact stdSimplex_map_comp_map_eq_const h _ (collapse_boundary_misses_vertex ha _ rfl)
 
 end RelStruct₀
 
