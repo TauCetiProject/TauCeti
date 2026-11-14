@@ -58,9 +58,11 @@ Two consequences follow directly from uniform separation:
 * `TauCeti.RelationalConfiguration.exists_uniform_bfSeparation`: an analytic set of non-isomorphic
   pairs on a countable carrier is uniformly separated at a single countable back-and-forth level.
 * `TauCeti.RelationalConfiguration.exists_bfLevel_saturated_of_analyticSet`,
-  `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`, and
-  `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`: asymptotic saturation
-  of isomorphism-invariant analytic and relatively Borel splits.
+  `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet`,
+  `TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_measurableSet`,
+  `TauCeti.RelationalConfiguration.IsomorphismInvariant.exists_bfLevel_mem_iff_of_analyticSet`, and
+  `TauCeti.RelationalConfiguration.IsomorphismInvariant.exists_bfLevel_mem_iff_of_measurableSet`:
+  asymptotic saturation of isomorphism-invariant analytic and Borel sets and splits.
 * `TauCeti.RelationalConfiguration.not_hasCantorAntichainOn_of_countable_bfEquivSetoid` and
   `TauCeti.RelationalConfiguration.isThinOn_of_countable_bfEquivSetoid`: countable level quotients
   forbid Cantor antichains unconditionally and force thinness in countable vocabularies.
@@ -411,6 +413,32 @@ theorem exists_bfLevel_mem_iff_of_measurableSet [Countable V] [∀ n, Countable 
       ∀ β ≥ α, ∀ c ∈ C, ∀ d ∈ C, bfEquivSetoid L V β c d → (c ∈ B ↔ d ∈ B) :=
   exists_bfLevel_mem_iff_of_analyticSet (hC.inter_measurableSet hB)
     (@Set.sdiff_eq _ C B ▸ hC.inter_measurableSet hB.compl) hinv
+
+/-- **Back-and-forth saturation of an invariant bi-analytic set.** On a countable carrier, if an
+isomorphism-invariant set `B` of configurations and its complement `Bᶜ` are both analytic, then
+from some countable level `α < ω₁` onward, `bfEquivSetoid L V β`-equivalent configurations lie on
+the same side of `B`. No countability hypothesis on `L` is required. -/
+theorem IsomorphismInvariant.exists_bfLevel_mem_iff_of_analyticSet [Countable V]
+    {B : Set (RelationalConfiguration L V)}
+    (hinv : IsomorphismInvariant B) (hB : AnalyticSet B) (hBc : AnalyticSet Bᶜ) :
+    ∃ α : Ordinal.{o}, α < ω₁ ∧
+      ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,
+        bfEquivSetoid L V β c d → (c ∈ B ↔ d ∈ B) := by
+  obtain ⟨α, hα, hsat⟩ := TauCeti.RelationalConfiguration.exists_bfLevel_mem_iff_of_analyticSet
+    (C := univ) (by simpa using hB) (by simpa [compl_eq_univ_sdiff] using hBc)
+    fun _ _ _ _ hiso hb => (hinv.mem_iff hiso).mp hb
+  exact ⟨α, hα, fun β hαβ c d hcd => hsat β hαβ c (mem_univ c) d (mem_univ d) hcd⟩
+
+/-- **Back-and-forth saturation of an invariant Borel set.** On a countable carrier in a vocabulary
+with countably many relation symbols of each arity, every isomorphism-invariant Borel set `B` of
+configurations is saturated at all back-and-forth levels from some countable `α < ω₁` onward. -/
+theorem IsomorphismInvariant.exists_bfLevel_mem_iff_of_measurableSet [Countable V]
+    [∀ n, Countable (L.Relations n)] {B : Set (RelationalConfiguration L V)}
+    (hinv : IsomorphismInvariant B) (hB : MeasurableSet B) :
+    ∃ α : Ordinal.{o}, α < ω₁ ∧
+      ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,
+        bfEquivSetoid L V β c d → (c ∈ B ↔ d ∈ B) :=
+  hinv.exists_bfLevel_mem_iff_of_analyticSet hB.analyticSet hB.compl.analyticSet
 
 /-! ### Cantor antichains and thinness from countable level quotients -/
 
