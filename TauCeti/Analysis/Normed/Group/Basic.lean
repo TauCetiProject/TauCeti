@@ -16,7 +16,8 @@ import Mathlib.Topology.MetricSpace.Bounded
 
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
-`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
+`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
+three times the sum of their squared norms. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
 distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
@@ -40,6 +41,7 @@ contains `0`.
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
+* `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
   most `1`.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
@@ -71,6 +73,13 @@ theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E
   (pow_le_pow_left₀ (norm_nonneg _)
     ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
     add_sq_le
+
+/-- **Squared triangle inequality for three summands.** The squared norm of `a + b + c` is at most
+three times the sum of the squared norms of `a`, `b` and `c`. -/
+theorem norm_add_add_sq_le_three_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E) :
+    ‖a + b + c‖ ^ 2 ≤ 3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) :=
+  (pow_le_pow_left₀ (norm_nonneg _) norm_add₃_le 2).trans <| by
+    nlinarith [sq_nonneg (‖a‖ - ‖b‖), sq_nonneg (‖b‖ - ‖c‖), sq_nonneg (‖a‖ - ‖c‖)]
 
 /-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
 theorem inv_one_add_norm_sub_sq_le_one {E : Type*} [SeminormedAddCommGroup E] (x a : E) :
