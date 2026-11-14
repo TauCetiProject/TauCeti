@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
+import TauCeti.RingTheory.Flat.NonZeroDivisors
 
 /-!
 # Flat ring homomorphisms
@@ -18,9 +19,12 @@ symmetry arguments reduce flatness of a morphism to flatness at one point.
 
 The file also states the equational criterion for flatness for a ring homomorphism
 `g : A →+* B`, without an `Algebra A B` instance
-(`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero`). This form applies to endomorphisms such
-as Frobenius, where `B = A` already carries its own `A`-module structure. It is deduced from
-`Module.Flat.isTrivialRelation_of_sum_smul_eq_zero`.
+(`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero`), as well as preservation of nonzerodivisors
+along a flat ring homomorphism (`RingHom.Flat.map_mem_nonZeroDivisors`). These forms apply when `B`
+does not carry a canonical `A`-algebra structure (for instance to endomorphisms such as Frobenius
+or power-substitution maps). They are deduced from
+`Module.Flat.isTrivialRelation_of_sum_smul_eq_zero` and
+`Module.Flat.algebraMap_mem_nonZeroDivisors`.
 
 ## References
 
@@ -64,5 +68,11 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq_zero {A B : Type*} [CommRing A] [Co
   obtain ⟨k, a, y, hxy, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero (R := A)
     (M := B) (f := f) (x := x) (by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using h)
   exact ⟨k, a, y, fun j ↦ by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hxy j, ha⟩
+
+/-- A flat ring homomorphism sends nonzerodivisors to nonzerodivisors. -/
+theorem Flat.map_mem_nonZeroDivisors {g : R →+* S} (hg : g.Flat) {r : R}
+    (hr : r ∈ nonZeroDivisors R) : g r ∈ nonZeroDivisors S := by
+  algebraize [g]
+  exact Module.Flat.algebraMap_mem_nonZeroDivisors (A := S) hr
 
 end RingHom
