@@ -27,7 +27,9 @@ The real coordinate comparison uses `(Im z, Re z)`: Mathlib's `EuclideanHalfSpac
 its *first* coordinate to be nonnegative. Thus the normal coordinate precedes the tangential one,
 whereas complex coordinates conventionally write `z = s + it`. The comparison is a smooth
 real diffeomorphism up to the boundary. Smooth chart changes preserve the real boundary, by
-Mathlib's invariance of the manifold interior under local diffeomorphisms. Reading the charts of a
+Mathlib's invariance of the manifold interior under local diffeomorphisms, and a chart of the `C¹`
+maximal atlas sends exactly the manifold boundary to the real axis
+(`TauCeti.mem_boundary_iff_im_eq_zero`). Reading the charts of a
 `C^n` manifold modelled on the closed upper half-plane through the comparison makes it a `C^n`
 manifold modelled on `𝓡∂ 2` (`ClosedUpperHalfPlane.isManifold_euclideanHalfSpace`).
 
@@ -353,6 +355,17 @@ theorem ClosedUpperHalfPlane.im_eq_zero_iff_of_mem_contDiffGroupoid {n : ℕ∞�
     (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0 := by
   simpa only [closedUpperHalfPlaneModel_isBoundaryPoint_iff] using
     ModelWithCorners.isBoundaryPoint_iff_of_mem_contDiffGroupoid he hn hz
+
+/-- A point in the source of a chart of the `C¹` maximal atlas of a charted space modelled on the
+closed upper half-plane is a manifold boundary point exactly when the chart sends it to the real
+axis. -/
+theorem mem_boundary_iff_im_eq_zero {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (he : e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M) {x : M}
+    (hx : x ∈ e.source) :
+    x ∈ closedUpperHalfPlaneModel.boundary M ↔ (e x : ℂ).im = 0 := by
+  simpa [ModelWithCorners.boundary, frontier_setOfPred_le_im] using
+    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range one_ne_zero he hx
 
 /-- The native coordinate comparison, as a homeomorphism, is the underlying homeomorphism of the
 diffeomorphism `ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph n`. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Double
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Interior
 public import TauCeti.Topology.Constructions.DoubleAlong.Separation
 
 /-!
@@ -43,15 +42,15 @@ chart changes would not be holomorphic across the real axis
 
 * `TauCeti.schottkyDoubleChart_symm_trans_eqOnSource`: the chart changes of the double are the
   Schwarz reflections of the chart changes of `M`.
-* `TauCeti.hasGroupoid_schottkyDouble` and `TauCeti.isManifold_schottkyDouble`: the double is an
-  analytic manifold modelled on `ℂ`, that is, a Riemann surface.
+* `TauCeti.isManifold_schottkyDouble`: the double is an analytic manifold modelled on `ℂ`, that
+  is, a Riemann surface.
 * `TauCeti.schottkyDoubleChart_mem_maximalAtlas`: every doubled chart is a holomorphic chart of the
   double.
 * `TauCeti.eqOn_writtenInExtChartAt_schottkyDouble_swap`: in every chart of the double the sheet
   exchange is complex conjugation, so it is an antiholomorphic involution.
 * `TauCeti.t2Space_schottkyDouble` and `TauCeti.secondCountableTopology_schottkyDouble`: the double
-  of a Hausdorff, respectively second countable, surface is Hausdorff, respectively second
-  countable. The double of a compact surface is compact.
+  of a Hausdorff, respectively second countable, `C^1` surface with boundary is Hausdorff,
+  respectively second countable. The double of a compact surface is compact.
 * `TauCeti.chartAt_schottkyDouble_closedUpperHalfPlane_source` and
   `TauCeti.chartAt_schottkyDouble_closedUpperHalfPlane_target`: the double of the closed upper
   half-plane is covered by a single chart onto `ℂ`.
@@ -83,15 +82,13 @@ boundary, it is a Riemann surface without boundary (`TauCeti.isManifold_schottky
 abbrev SchottkyDouble : Type _ :=
   DoubleAlong (closedUpperHalfPlaneModel.boundary M)
 
-variable {M} [HasGroupoid M borderedHolomorphicGroupoid]
+variable {M}
 
-omit [HasGroupoid M borderedHolomorphicGroupoid] in
 /-- Charts of a Riemann surface with boundary are charts of its underlying `C^1` manifold. -/
 private theorem mem_maximalAtlas_one {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
     (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
     e ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 M :=
-  StructureGroupoid.maximalAtlas_mono
-    (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans (contDiffGroupoid_le (by simp))) he
+  maximalAtlas_borderedHolomorphicGroupoid_subset (by simp) he
 
 /-! ### The doubled chart -/
 
@@ -112,7 +109,6 @@ private def doubleChartInvFun (e : OpenPartialHomeomorph M ClosedUpperHalfPlane)
     ℂ → SchottkyDouble M := fun w ↦
   if 0 ≤ w.im then DoubleAlong.inl _ (e.symm (fold w)) else DoubleAlong.inr _ (e.symm (fold w))
 
-omit [HasGroupoid M borderedHolomorphicGroupoid] in
 private theorem doubleChartFun_inl (x : M) :
     doubleChartFun e (DoubleAlong.inl _ x) = e x := by
   simp [doubleChartFun]
@@ -128,21 +124,10 @@ private theorem doubleChartFun_inr (he : e ∈ borderedHolomorphicGroupoid.maxim
     exact (mem_boundary_iff_im_eq_zero (mem_maximalAtlas_one he) hx).1 hb
   · simp [doubleChartFun, h]
 
-omit [HasGroupoid M borderedHolomorphicGroupoid] in
 private theorem fold_doubleChartInvFun (w : ℂ) :
     DoubleAlong.fold _ (doubleChartInvFun e w) = e.symm (fold w) := by
   unfold doubleChartInvFun
   split_ifs <;> simp
-
-omit [HasGroupoid M borderedHolomorphicGroupoid] in
-private theorem doubleChartInvFun_of_im_nonneg {w : ℂ} (hw : 0 ≤ w.im) :
-    doubleChartInvFun e w = DoubleAlong.inl _ (e.symm (fold w)) := by
-  simp [doubleChartInvFun, hw]
-
-omit [HasGroupoid M borderedHolomorphicGroupoid] in
-private theorem doubleChartInvFun_of_im_neg {w : ℂ} (hw : w.im < 0) :
-    doubleChartInvFun e w = DoubleAlong.inr _ (e.symm (fold w)) := by
-  simp [doubleChartInvFun, not_le.2 hw]
 
 private theorem mapsTo_doubleChartFun (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
     MapsTo (doubleChartFun e) (DoubleAlong.fold _ ⁻¹' e.source) (fold ⁻¹' e.target) := by
@@ -267,12 +252,12 @@ theorem schottkyDoubleChart_inr {x : M} (hx : x ∈ e.source) :
 /-- Over the closed upper half-plane, the inverse of the doubled chart lands in the first copy. -/
 theorem schottkyDoubleChart_symm_apply_of_im_nonneg {w : ℂ} (hw : 0 ≤ w.im) :
     (schottkyDoubleChart e he).symm w = DoubleAlong.inl _ (e.symm (fold w)) :=
-  doubleChartInvFun_of_im_nonneg hw
+  ite_eq_left hw
 
 /-- Over the open lower half-plane, the inverse of the doubled chart lands in the second copy. -/
 theorem schottkyDoubleChart_symm_apply_of_im_neg {w : ℂ} (hw : w.im < 0) :
     (schottkyDoubleChart e he).symm w = DoubleAlong.inr _ (e.symm (fold w)) :=
-  doubleChartInvFun_of_im_neg hw
+  ite_eq_right (not_le.2 hw)
 
 /-- Folding the inverse of the doubled chart is the inverse of the chart of `M` after folding. -/
 @[simp]
@@ -319,7 +304,24 @@ theorem schottkyDoubleChart_symm_trans_mem_contDiffGroupoid :
       (borderedHolomorphicGroupoid.compatible_of_mem_maximalAtlas he he'))
     (schottkyDoubleChart_symm_trans_eqOnSource he he')
 
+/-! ### Separation -/
+
+/-- The Schottky double of a Hausdorff `C^1` manifold modelled on the closed upper half-plane, for
+instance a Hausdorff Riemann surface with boundary, is Hausdorff. -/
+instance t2Space_schottkyDouble [IsManifold closedUpperHalfPlaneModel 1 M] [T2Space M] :
+    T2Space (SchottkyDouble M) :=
+  DoubleAlong.t2Space _ (closedUpperHalfPlaneModel.isClosed_boundary (M := M) (n := 1) one_ne_zero)
+
+/-- The Schottky double of a second countable `C^1` manifold modelled on the closed upper
+half-plane, for instance a second countable Riemann surface with boundary, is second countable. -/
+instance secondCountableTopology_schottkyDouble [IsManifold closedUpperHalfPlaneModel 1 M]
+    [SecondCountableTopology M] : SecondCountableTopology (SchottkyDouble M) :=
+  DoubleAlong.secondCountableTopology _
+    (closedUpperHalfPlaneModel.isClosed_boundary (M := M) (n := 1) one_ne_zero)
+
 /-! ### The Schottky double as a Riemann surface -/
+
+variable [HasGroupoid M borderedHolomorphicGroupoid]
 
 /-- The Schottky double of a Riemann surface with boundary is a charted space modelled on `ℂ`:
 the chart at `z` is the doubled chart of the chart of `M` at the fold of `z`. -/
@@ -337,7 +339,7 @@ instance instChartedSpaceSchottkyDouble : ChartedSpace ℂ (SchottkyDouble M) wh
 theorem chartAt_schottkyDouble (z : SchottkyDouble M) :
     chartAt ℂ z = schottkyDoubleChart (chartAt ClosedUpperHalfPlane (DoubleAlong.fold _ z))
       (borderedHolomorphicGroupoid.chart_mem_maximalAtlas _) :=
-  rfl
+  (rfl)
 
 /-- The sheet exchange of the double does not change the chart. -/
 @[simp]
@@ -345,16 +347,12 @@ theorem chartAt_schottkyDouble_swap (z : SchottkyDouble M) :
     chartAt ℂ (DoubleAlong.swap _ z) = chartAt ℂ z := by
   simp only [chartAt_schottkyDouble, DoubleAlong.fold_swap]
 
-/-- The Schottky double of a Riemann surface with boundary has holomorphic transition maps. -/
-instance hasGroupoid_schottkyDouble :
-    HasGroupoid (SchottkyDouble M) (contDiffGroupoid ω 𝓘(ℂ)) where
+/-- **The Schottky double of a Riemann surface with boundary is a Riemann surface**: its
+transition maps are holomorphic. -/
+instance isManifold_schottkyDouble : IsManifold 𝓘(ℂ) ω (SchottkyDouble M) where
   compatible := by
     rintro _ _ ⟨z, rfl⟩ ⟨z', rfl⟩
     exact schottkyDoubleChart_symm_trans_mem_contDiffGroupoid _ _
-
-/-- **The Schottky double of a Riemann surface with boundary is a Riemann surface.** -/
-instance isManifold_schottkyDouble : IsManifold 𝓘(ℂ) ω (SchottkyDouble M) :=
-  IsManifold.mk' _ _ _
 
 /-- The doubled chart of a bordered holomorphic chart of `M` is a holomorphic chart of the
 double. -/
@@ -366,7 +364,7 @@ theorem schottkyDoubleChart_mem_maximalAtlas :
     schottkyDoubleChart_symm_trans_mem_contDiffGroupoid _ _⟩
 
 /-- In the chart of the double at `z`, the sheet exchange is complex conjugation. -/
-theorem chartAt_schottkyDouble_swap_apply (z : SchottkyDouble M) {z' : SchottkyDouble M}
+theorem chartAt_schottkyDouble_apply_swap (z : SchottkyDouble M) {z' : SchottkyDouble M}
     (hz' : z' ∈ (chartAt ℂ z).source) :
     chartAt ℂ z (DoubleAlong.swap _ z') = conj (chartAt ℂ z z') :=
   schottkyDoubleChart_swap _ hz'
@@ -381,20 +379,7 @@ theorem eqOn_writtenInExtChartAt_schottkyDouble_swap (z : SchottkyDouble M) :
     preimage_id_eq, id_eq, range_id, inter_univ] at hw
   simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
     modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq, chartAt_schottkyDouble_swap]
-  rw [chartAt_schottkyDouble_swap_apply z ((chartAt ℂ z).map_target hw), (chartAt ℂ z).right_inv hw]
-
-/-! ### Separation -/
-
-/-- The Schottky double of a Hausdorff Riemann surface with boundary is Hausdorff. -/
-instance t2Space_schottkyDouble [T2Space M] : T2Space (SchottkyDouble M) :=
-  DoubleAlong.t2Space _ (closedUpperHalfPlaneModel.isClosed_boundary (M := M) (n := 1) one_ne_zero)
-
-/-- The Schottky double of a second countable Riemann surface with boundary is second
-countable. -/
-instance secondCountableTopology_schottkyDouble [SecondCountableTopology M] :
-    SecondCountableTopology (SchottkyDouble M) :=
-  DoubleAlong.secondCountableTopology _
-    (closedUpperHalfPlaneModel.isClosed_boundary (M := M) (n := 1) one_ne_zero)
+  rw [chartAt_schottkyDouble_apply_swap z ((chartAt ℂ z).map_target hw), (chartAt ℂ z).right_inv hw]
 
 /-! ### Check: the double of the closed upper half-plane -/
 

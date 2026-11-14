@@ -119,8 +119,7 @@ theorem _root_.ContMDiffOn.memWkpLocMapOnBordered [CompleteSpace F] {n : ℕ∞�
     MemWkpLocMapOnBordered I p k u s := by
   refine memWkpLocMapOnGroupoid_iff.2 ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ ?_⟩
   have hφ' : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel k X :=
-    StructureGroupoid.maximalAtlas_mono (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
-      (contDiffGroupoid_le (by exact_mod_cast le_top))) hφ
+    maximalAtlas_borderedHolomorphicGroupoid_subset (by exact_mod_cast le_top) hφ
   have hψ' : ContMDiffOn I 𝓘(ℝ, F) k (ψ.extend I) ψ.source :=
     (ψ.contMDiffOn_extend hψ).of_le (by exact_mod_cast le_top)
   have hcomp : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, F) k
@@ -173,8 +172,7 @@ theorem MemWkpLocMapOn.memWkpLocMapOnBordered_image [CompleteSpace F]
   obtain ⟨x₀, -, -⟩ := hz₀.2.1
   have hne : Nonempty (borderedInterior X) := ⟨x₀⟩
   have hφ1 : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 X :=
-    StructureGroupoid.maximalAtlas_mono (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
-      (contDiffGroupoid_le (by exact_mod_cast le_top))) hφ
+    maximalAtlas_borderedHolomorphicGroupoid_subset (by exact_mod_cast le_top) hφ
   set φi := φ.subtypeRestr hne ≫ₕ upperHalfPlaneChart
   -- Every point of `V` lies in the test set of `φi`, where the two coordinate expressions agree.
   have hmem : ∀ z ∈ V, z ∈ φi.target ∩ φi.symm ⁻¹' (s ∩ (u ∘ (↑)) ⁻¹' ψ.source) ∧
