@@ -40,11 +40,10 @@ to `1`. That is `valence_formula_weighted` below, stated over `ℚ` because the 
 rational and the two sides are; the level-one shape above is the special case obtained by
 splitting off the two orbits at which `e_P ≠ 1`.
 
-The uniform shape is what the general-level formula of the Tau Ceti ModularForms roadmap's
-Layer 1 milestone **"General level — by the coset norm"** consumes: there the level-one formula
-is applied to the norm `∏_{γ ∈ Γ \ SL₂(ℤ)} f ∣[k] γ`, and each level-one weight `1 / e_P` is
-redistributed over the `Γ`-orbits inside the `SL₂(ℤ)`-orbit of `P` by a stabiliser count. Only
-in the uniform form is there a single weight per orbit to redistribute.
+The uniform shape is what the general-level formula by the coset norm consumes: there the
+level-one formula is applied to the norm `∏_{γ ∈ Γ \ SL₂(ℤ)} f ∣[k] γ`, and each level-one
+weight `1 / e_P` is redistributed over the `Γ`-orbits inside the `SL₂(ℤ)`-orbit of `P` by a
+stabiliser count. Only in the uniform form is there a single weight per orbit to redistribute.
 
 ## Main declarations
 
@@ -62,8 +61,8 @@ The statement shape follows AINTLIB's `valence_formula_textbook_orbit_finsum`
 ([github.com/CBirkbeck/AINTLIB](https://github.com/CBirkbeck/AINTLIB), commit `2baa76f742`,
 Apache 2.0, `projects/LeanModularForms/LeanModularForms/ForMathlib/ValenceFormula.lean`),
 with its `h_core` hypothesis discharged by the contour development rather than assumed.
-The uniform form is the one displayed in the roadmap and follows the divisor-of-automorphic-forms
-development in Diamond–Shurman, *A First Course in Modular Forms*, §§3.5–3.6.
+The uniform form follows the divisor-of-automorphic-forms development in Diamond–Shurman,
+*A First Course in Modular Forms*, §§3.5–3.6.
 -/
 
 public section

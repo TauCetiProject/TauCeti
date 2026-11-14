@@ -47,8 +47,6 @@ Existence of the converse triplet is proved in
 
 * R. Schilling, R. Song, Z. Vondracek, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012), Theorem 3.2.
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Levy--Khintchine
-  representation of Bernstein functions).
 -/
 
 public section

@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the McLaughlin group
 
-This file carries the `McL` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records John Bray's ATLAS version 3 presentation of
-the McLaughlin group on its standard generators `a` and `b` as a `TauCeti.GroupPresentation`,
-together with the source, the generator convention, transcription notes, and the expected counts.
+This file carries the `McL` row of the sporadic presentation data. It records John Bray's ATLAS
+version 3 presentation of the McLaughlin group on its standard generators `a` and `b` as a
+`TauCeti.GroupPresentation`, together with the source, the generator convention, transcription
+notes, and the expected counts.
 
 Writing `s₁ = ab`, `s₂ = ab²`, `s₋₁ = ab⁻¹` and `s₋₂ = ab⁻²` for the four syllables that occur, the
 fifteen transcribed relators are
@@ -77,7 +77,7 @@ the redundant relators `R0`, `R1`, and `R2` but retains them inside the construc
 row correctly retains all fifteen. The rendered presentation page omits those three and reorders
 some of the short active relations; the row deliberately follows the raw Magma order. This
 comparison was performed from the pinned source bytes independently of the original transcription
-and closes this row's S1 source-to-Lean read-through.
+and closes this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -102,7 +102,7 @@ the pair therefore generates the pinned group of order `898128000`.
 The check used Python 3.14.6 and SymPy 1.14.0. Concatenating the forward image tables for `a` and
 then `b`, with each image stored as a two-byte little-endian integer, has SHA-256
 `40408769e39c23b86c576421ba328889cd061d4ed14910271c2731b110e79c63`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau Ceti.
+comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

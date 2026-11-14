@@ -62,8 +62,9 @@ again.
   those two families being simply laced, the constant-one vector is a symmetriser for them, and
   its symmetrisation is the Cartan matrix itself read over `ℚ`; so the Gram models give positive
   definiteness of the Cartan matrix with no symmetriser in the way, and the finite-type statements
-  for `A` and `D` are read off these. `TauCeti.posDef_cartanMatrix_A` is the type-`A` statement
-  read back over `ℤ`. Types `B` and `C` have no such statement at rank `2` and
+  for `A` and `D` are read off these. `TauCeti.posDef_cartanMatrix_A` and
+  `TauCeti.posDef_cartanMatrix_D` are the corresponding statements read back over `ℤ`. Types `B`
+  and `C` have no such statement at rank `2` and
   above, where their Cartan matrices are not symmetric; the degenerate ranks `0` and `1`, at which
   they coincide with `A 0` and `A 1`, are handled in
   `TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced`.
@@ -83,10 +84,9 @@ selects the first coordinate of the type `D` fork row.
 
 ## References
 
-This file supplies the classical half of the "finite-type condition" item of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The coordinate models are the standard
-ones of Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-IV, and of J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, section 12.1.
+The coordinate models are the standard ones of Bourbaki, *Lie Groups and Lie Algebras, Chapters
+4-6*, plates I-IV, and of J. E. Humphreys, *Introduction to Lie Algebras and Representation
+Theory*, section 12.1.
 -/
 
 public section
@@ -351,7 +351,7 @@ the chain rows are then triangular on the coordinates below the top. -/
 private lemma simpleCorootsD_vecMul_injective (k : ℕ) :
     Function.Injective (simpleCorootsD k).vecMul := by
   refine (injective_iff_map_eq_zero (simpleCorootsD k).vecMulLinear.toAddMonoidHom).2 fun x hx ↦ ?_
-  set M := simpleCorootsD k with hM
+  set M := simpleCorootsD k
   have hx' : x ᵥ* M = 0 := by
     calc
       x ᵥ* M = M.vecMulLinear x := (Matrix.vecMulLinear_apply M x).symm
@@ -396,6 +396,10 @@ theorem posDef_map_intCast_cartanMatrix_D :
   | (k + 2) => by
       rw [← simpleCorootsD_mul_conjTranspose]
       exact Matrix.PosDef.mul_conjTranspose_self _ (simpleCorootsD_vecMul_injective k)
+
+/-- **The Cartan matrix of type `Dₙ` is positive definite** over `ℤ`, at every rank. -/
+theorem posDef_cartanMatrix_D (n : ℕ) : (CartanMatrix.D n).PosDef :=
+  Matrix.posDef_map_intCast_iff.mp (posDef_map_intCast_cartanMatrix_D n)
 
 /-- **The Cartan matrix of type `Dₙ` is of finite type**, at every rank. The family is simply
 laced, so the constant-one vector is a symmetriser and `TauCeti.posDef_map_intCast_cartanMatrix_D`

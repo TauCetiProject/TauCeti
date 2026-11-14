@@ -85,7 +85,7 @@ theorem isCompactOperator_integralOperatorLp_sum_indicator {ι : Type*} [Fintype
       p hK hA hB) := by
   classical
   have : CompleteSpace 𝕜 := IsLeftUniformAddGroup.completeSpace_of_weaklyLocallyCompactSpace 𝕜
-  have : CompleteSpace G := FiniteDimensional.complete 𝕜 G
+  have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
   let ind (i : ι) : G →ₗ[𝕜] Lp G p μ :=
     { toFun := indicatorConstLp p (hPm i) (hμP i)
       map_add' _ _ := indicatorConstLp_add.symm
@@ -131,7 +131,7 @@ theorem isCompactOperator_integralOperatorLp_of_continuousOn {K : α → β → 
     {hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A} {hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B} :
     IsCompactOperator (integralOperatorLp K p hK hA hB) := by
   have : CompleteSpace 𝕜 := IsLeftUniformAddGroup.completeSpace_of_weaklyLocallyCompactSpace 𝕜
-  have : CompleteSpace G := FiniteDimensional.complete 𝕜 G
+  have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
   have hsm : MeasurableSet s := hs.isClosed.measurableSet
   have htm : MeasurableSet t := ht.isClosed.measurableSet
   have hμs : μ s ≠ ∞ := hs.measure_lt_top.ne
