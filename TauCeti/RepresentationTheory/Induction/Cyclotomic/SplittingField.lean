@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Induction.Cyclotomic.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Realization
+import Mathlib.Algebra.Group.Shrink
+import Mathlib.Data.Fintype.Shrink
 import TauCeti.RepresentationTheory.Induction.Brauer.Induction
 import TauCeti.RepresentationTheory.Induction.Monomial
 public import TauCeti.NumberTheory.Cyclotomic.Adjoin
@@ -30,8 +32,14 @@ integral character identity to an actual representation uses
 `FDRep.exists_simple_nonempty_iso_baseChange_of_character_eq`; having values in `K` alone would
 not suffice.
 
-The fields and the group share a universe, as required by the existing nilpotent-group
-monomiality theorem. No cyclotomic hypothesis on the whole ambient field `L` is needed.
+The character statement allows `K`, `L` and `G` in independent universes. The monomiality
+theorem for nilpotent groups puts the group in the universe of `L`, so the Brauer argument runs on
+the copy `Shrink G` of `G` in that universe, and its conclusion returns to `G` by pulling virtual
+characters back along the group isomorphism `Shrink.mulEquiv`
+(`TauCeti.comp_mem_virtualCharacters`). The reverse inclusion shrinks the carrier of a scalar
+extension with `FDRep.ofShrink`. The realization statements keep `K` and `L` in one universe,
+since they compare the scalar extension with a representation over `L`. No cyclotomic hypothesis
+on the whole ambient field `L` is needed.
 
 ## References
 
@@ -42,64 +50,92 @@ public section
 
 open CategoryTheory
 
-universe u
+universe u v w
 
 namespace TauCeti
 
-variable {K L G : Type u} [Field K] [Field L] [Algebra K L] [CharZero K]
-variable [Group G] [Finite G] [IsAlgClosed L]
+section
+
+variable {K : Type u} {L : Type w} [Field K] [Field L] [Algebra K L] [CharZero K] [IsAlgClosed L]
+
+/-- The descent of virtual characters when the group lives in the universe of `L`, where
+Brauer's induction theorem and the monomiality of nilpotent groups apply directly. -/
+private theorem virtualCharacters_le_map_of_isPrimitiveRoot_aux {G : Type w} [Group G] [Finite G]
+    {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) :
+    virtualCharacters L G ≤
+      (virtualCharacters K G).map ((algebraMap K L).toAddMonoidHom.compLeft G) := by
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
+  -- Brauer reduces the inclusion to elementary-group irreducibles.
+  rw [← ClassFunction.indVirtualCharacters_eq_virtualCharacters_isElementary,
+    ClassFunction.indVirtualCharacters_eq_indCharacterSpanInt
+      (fun E _ => isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))]
+  refine ClassFunction.indCharacterSpanInt_le_iff.mpr fun E hE d ρ hρ => ?_
+  have : Group.IsNilpotent E := hE.isNilpotent
+  have : Representation.IsIrreducible (FDRep.of ρ).ρ := by
+    simpa only [FDRep.of_ρ'] using hρ
+  have : Simple (FDRep.of ρ) := FDRep.simple_of_isIrreducible _
+  obtain ⟨D, χ, hχ⟩ := (FDRep.of ρ).exists_character_eq_indClassFun_of_isNilpotent
+  -- Read the subgroup of `E` as a subgroup of `G`, then induce in stages.
+  obtain ⟨H, hHE, rfl⟩ : ∃ H ≤ E, H.subgroupOf E = D :=
+    ⟨D.map E.subtype, Subgroup.map_subtype_le D,
+      Subgroup.comap_map_eq_self_of_injective E.subtype_injective D⟩
+  let ψ : H →* Lˣ := χ.comp (Subgroup.subgroupOfEquivOfLe hHE).symm.toMonoidHom
+  have hind : ((Subgroup.indClassFunction E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
+      G → L) = (indFDRep (FDRep.ofLinearCharacter ψ)).character := by
+    rw [← Subgroup.indClassFun_ofFDRep_character]
+    have hψχ : (FDRep.ofLinearCharacter ψ).character = fun h => (ψ h : L) :=
+      funext (FDRep.char_ofLinearCharacter ψ)
+    rw [hψχ]
+    have hρχ : ((ClassFunction.ofCharacter ρ : ClassFunction L E) : E → L) =
+        (FDRep.of ρ).character := funext fun g => by simp
+    have hInd : ((Subgroup.indClassFunction E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
+        G → L) = Subgroup.indClassFun E (ClassFunction.ofCharacter ρ) :=
+      funext (Subgroup.indClassFunction_apply E (ClassFunction.ofCharacter ρ))
+    rw [hInd, hρχ, hχ]
+    convert Subgroup.indClassFun_indClassFun_subgroupOf H hHE
+      (ClassFunction.mem_iff.mp (MonoidHom.comp_mem_classFunction ψ Units.val)) using 1
+    simp [ψ]
+  obtain ⟨f, hf, hdescent⟩ := exists_virtualCharacter_indFDRep_of_isPrimitiveRoot hζ hG ψ
+  rw [hind, hdescent]
+  exact AddSubgroup.mem_map.mpr ⟨f, hf, rfl⟩
+
+variable {G : Type v} [Group G] [Finite G]
 
 /-- **Brauer induction in its field-of-definition form.** If `K` contains a primitive root
 whose order is divisible by the exponent of `G`, coefficient extension identifies its
 virtual-character lattice with the entire virtual-character lattice over the algebraically
-closed extension `L`. The coefficients in both lattices are integers. -/
+closed extension `L`. The coefficients in both lattices are integers, and `K`, `L` and `G` may
+live in any universes. -/
 theorem virtualCharacters_eq_map_of_isPrimitiveRoot {n : ℕ} [NeZero n] {ζ : K}
     (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) :
     virtualCharacters L G =
       (virtualCharacters K G).map ((algebraMap K L).toAddMonoidHom.compLeft G) := by
-  have : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   apply le_antisymm
-  · -- Brauer reduces the forward inclusion to elementary-group irreducibles.
-    rw [← ClassFunction.indVirtualCharacters_eq_virtualCharacters_isElementary,
-      ClassFunction.indVirtualCharacters_eq_indCharacterSpanInt
-        (fun E _ => isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))]
-    refine ClassFunction.indCharacterSpanInt_le_iff.mpr fun E hE d ρ hρ => ?_
-    have : Group.IsNilpotent E := hE.isNilpotent
-    have : Representation.IsIrreducible (FDRep.of ρ).ρ := by
-      simpa only [FDRep.of_ρ'] using hρ
-    have : Simple (FDRep.of ρ) := FDRep.simple_of_isIrreducible _
-    obtain ⟨D, χ, hχ⟩ := (FDRep.of ρ).exists_character_eq_indClassFun_of_isNilpotent
-    -- Read the subgroup of `E` as a subgroup of `G`, then induce in stages.
-    obtain ⟨H, hHE, rfl⟩ : ∃ H ≤ E, H.subgroupOf E = D :=
-      ⟨D.map E.subtype, Subgroup.map_subtype_le D,
-        Subgroup.comap_map_eq_self_of_injective E.subtype_injective D⟩
-    let ψ : H →* Lˣ := χ.comp (Subgroup.subgroupOfEquivOfLe hHE).symm.toMonoidHom
-    have hind : ((Subgroup.indClassFunction E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
-        G → L) = (indFDRep (FDRep.ofLinearCharacter ψ)).character := by
-      rw [← Subgroup.indClassFun_ofFDRep_character]
-      have hψχ : (FDRep.ofLinearCharacter ψ).character = fun h => (ψ h : L) :=
-        funext (FDRep.char_ofLinearCharacter ψ)
-      rw [hψχ]
-      have hρχ : ((ClassFunction.ofCharacter ρ : ClassFunction L E) : E → L) =
-          (FDRep.of ρ).character := funext fun g => by simp
-      have hInd : ((Subgroup.indClassFunction E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
-          G → L) = Subgroup.indClassFun E (ClassFunction.ofCharacter ρ) :=
-        funext (Subgroup.indClassFunction_apply E (ClassFunction.ofCharacter ρ))
-      rw [hInd, hρχ, hχ]
-      convert Subgroup.indClassFun_indClassFun_subgroupOf H hHE
-        (ClassFunction.mem_iff.mp (MonoidHom.comp_mem_classFunction ψ Units.val)) using 1
-      simp [ψ]
-    obtain ⟨f, hf, hdescent⟩ := exists_virtualCharacter_indFDRep_of_isPrimitiveRoot hζ hG ψ
-    rw [hind, hdescent]
-    exact AddSubgroup.mem_map.mpr ⟨f, hf, rfl⟩
+  · -- Descend on the copy of `G` in the universe of `L`, then pull back to `G`.
+    intro f hf
+    let e : Shrink.{w} G ≃* G := Shrink.mulEquiv
+    have hG' : Monoid.exponent (Shrink.{w} G) ∣ n := Monoid.exponent_eq_of_mulEquiv e ▸ hG
+    obtain ⟨g, hg, hgf⟩ := AddSubgroup.mem_map.mp
+      (virtualCharacters_le_map_of_isPrimitiveRoot_aux hζ hG'
+        (comp_mem_virtualCharacters e.toMonoidHom hf))
+    refine AddSubgroup.mem_map.mpr ⟨g ∘ e.symm, comp_mem_virtualCharacters e.symm.toMonoidHom hg,
+      funext fun x => ?_⟩
+    simpa using congrFun hgf (e.symm x)
   · -- Genuine characters over `K` extend to genuine characters over `L`.
     apply AddSubgroup.map_le_iff_le_comap.mpr
     refine virtualCharacters_le fun V => ?_
     rw [AddSubgroup.mem_comap]
-    convert character_mem_virtualCharacters (FDRep.of (Representation.baseChange L V.ρ))
+    convert character_mem_virtualCharacters (FDRep.ofShrink (Representation.baseChange L V.ρ))
       using 1
-    rw [FDRep.character_baseChange]
-    rfl
+    funext g
+    simp
+
+end
+
+section
+
+variable {K L : Type u} [Field K] [Field L] [Algebra K L] [CharZero K] [IsAlgClosed L]
+variable {G : Type v} [Group G] [Finite G]
 
 /-- **A field containing the requisite roots of unity realizes every irreducible
 representation.** The realizing representation over `K` is simple and its endomorphisms are
@@ -128,11 +164,13 @@ theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_of_isCyclotomicExtens
   W.exists_simple_nonempty_iso_baseChange_of_isPrimitiveRoot
     (IsCyclotomicExtension.zeta_spec (Monoid.exponent G) ℚ K) (dvd_refl _)
 
+end
+
 end TauCeti
 
 namespace TauCeti
 
-variable {G : Type} [Group G] [Finite G]
+variable {G : Type v} [Group G] [Finite G]
 
 /-- **Every irreducible complex representation is defined over `ℚ(ζ_e)`.** Here `e` is the
 exponent of `G` and the cyclotomic field is the actual intermediate field of `ℂ` generated by
