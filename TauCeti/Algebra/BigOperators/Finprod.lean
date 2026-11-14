@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Ring.NegOnePow
 
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Regrouping finitely supported products
@@ -18,7 +19,8 @@ import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
-finitely supported factor whose product is `1`. A finitely supported telescoping product
+finitely supported factor whose product is `1`, or regrouping a product over `ℤ` into consecutive
+blocks of length `m`. A finitely supported telescoping product
 `∏ᶠ i : ℕ, f i / f (i + 1)` equals `f 0`, and a family indexed by `S × ℕ` telescopes along each
 ray `{i} × ℕ` to its starting values. Shifting the index of an alternating product over
 `ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
@@ -39,6 +41,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
 * `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
   `g` over `t`.
+* `TauCeti.finprod_int_mul_add` and `TauCeti.finsum_int_mul_add`: regroup a finitely supported
+  product or sum over `ℤ` into consecutive blocks `m * q + r`, `r : Fin m`.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
@@ -158,6 +162,26 @@ theorem finprod_mem_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (
     split_ifs with ha
     · exact mulIndicator_of_notMem (by simp_all) f
     · rfl
+
+/-- Regroup a finitely supported product over `ℤ` into consecutive blocks `m * q + r` of length
+`m`. -/
+@[to_additive finsum_int_mul_add /-- Regroup a finitely supported sum over `ℤ` into consecutive
+blocks `m * q + r` of length `m`. -/]
+theorem finprod_int_mul_add (m : ℕ) [NeZero m] {f : ℤ → M} (hf : HasFiniteMulSupport f) :
+    (∏ᶠ q : ℤ, ∏ r : Fin m, f (m * q + r)) = ∏ᶠ n : ℤ, f n := by
+  have heq : (fun p : ℤ × Fin m ↦ f (m * p.1 + p.2)) = f ∘ (Int.divModEquiv m).symm := by
+    ext ⟨q, r⟩
+    simp [Int.divModEquiv_symm_apply, mul_comm]
+  have hf' : HasFiniteMulSupport (fun p : ℤ × Fin m ↦ f (m * p.1 + p.2)) := by
+    rw [heq]
+    exact hf.preimage (Int.divModEquiv m).symm.injective.injOn
+  calc
+    (∏ᶠ q : ℤ, ∏ r : Fin m, f (m * q + r)) =
+        ∏ᶠ q : ℤ, ∏ᶠ r : Fin m, f (m * q + r) :=
+      finprod_congr fun q ↦ (finprod_eq_prod_of_fintype _).symm
+    _ = ∏ᶠ p : ℤ × Fin m, f (m * p.1 + p.2) := (finprod_curry _ hf').symm
+    _ = ∏ᶠ p : ℤ × Fin m, f ((Int.divModEquiv m).symm p) := congrArg finprod heq
+    _ = ∏ᶠ n : ℤ, f n := finprod_comp_equiv (Int.divModEquiv m).symm
 
 /-- Multiplying a family by a finitely supported family whose product is `1` does not change its
 product. The other family need not have finite multiplicative support: if it does not, neither

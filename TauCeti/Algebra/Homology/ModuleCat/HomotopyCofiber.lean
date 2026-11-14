@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.Algebra.Homology.ModuleCat.Shift.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.LinearAlgebra.Basis.Prod
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Mapping cones of complexes of modules
@@ -23,7 +25,11 @@ of `L.X i` followed by that of `K.X (i - 1)`.
 
 The mapping cone of `K ⟶ 0` is `K` shifted by one degree: its terms are identified with those of
 `K` by `HomologicalComplex.homotopyCofiber.zeroEquiv`, under which its differentials become the
-negatives of those of `K` (`HomologicalComplex.homotopyCofiber.zeroEquiv_d`).
+negatives of those of `K` (`HomologicalComplex.homotopyCofiber.zeroEquiv_d`), its homology is
+identified with that of `K` one degree down
+(`HomologicalComplex.homotopyCofiber.zeroHomologyEquiv`), and the connecting map of
+`coneShortComplex φ` is `homologyMap φ` composed with that identification
+(`HomologicalComplex.homotopyCofiber.coneShortComplex_δ_eq`).
 -/
 
 public section
@@ -154,5 +160,63 @@ theorem zeroEquiv_zeroBasis (i : ℤ) (k : Fin (nK (i + 1 - 1))) :
   exact key _ (by simp) k _
 
 end Basis
+
+section Homology
+
+variable {K L : ChainComplex (ModuleCat R) ℤ} (φ : K ⟶ L)
+
+variable (K) in
+/-- The isomorphism `(homotopyCofiber (0 : K ⟶ 0)).homology (i + 1) ≃ₗ[R] K.homology i` induced by
+`zeroEquiv`. -/
+def zeroHomologyEquiv (i : ℤ) :
+    (homotopyCofiber (0 : K ⟶ 0)).homology (i + 1) ≃ₗ[R] K.homology i :=
+  homologyEquivOfShift (fun j ↦ zeroEquiv K (by simp))
+    (fun j ↦ zeroEquiv_d K (i := j + 1 + 1) (j := j + 1) (k := j) (by simp) (by simp)) i
+
+variable (K) in
+/-- `zeroHomologyEquiv K` is `homologyEquivOfShift` for `zeroEquiv K`. -/
+theorem zeroHomologyEquiv_eq (i : ℤ) :
+    zeroHomologyEquiv K i = homologyEquivOfShift (fun j ↦ zeroEquiv K (by simp))
+      (fun j ↦ zeroEquiv_d K (i := j + 1 + 1) (j := j + 1) (k := j) (by simp) (by simp)) i := by
+  rfl
+
+/-- The connecting map of `coneShortComplex φ` in degree `i + 1` is `homologyMap φ i` composed with
+`zeroHomologyEquiv K i`. -/
+theorem coneShortComplex_δ_eq (hc : ∀ j : ℤ, ∃ i, (ComplexShape.down ℤ).Rel i j) (i : ℤ) :
+    ((coneShortComplex_shortExact φ hc).δ (i + 1) i rfl).hom =
+      (homologyMap φ i).hom ∘ₗ (zeroHomologyEquiv K i).toLinearMap := by
+  ext x
+  obtain ⟨z, rfl⟩ := (homotopyCofiber (0 : K ⟶ 0)).moduleCat_homologyπ_surjective (i + 1) x
+  set zK : K.cycles i :=
+    cyclesEquivOfShift (fun j ↦ zeroEquiv K (by simp))
+      (fun j ↦ zeroEquiv_d K (i := j + 1 + 1) (j := j + 1) (k := j) (by simp) (by simp)) i z
+  let x₂ : (homotopyCofiber φ).X (i + 1) := (inlX φ i (i + 1) (by simp)).hom ((K.iCycles i).hom zK)
+  have hx₂ : ((coneShortComplex φ hc).g.f (i + 1)).hom x₂ =
+      ((homotopyCofiber (0 : K ⟶ 0)).iCycles (i + 1)).hom z := by
+    have hzero : (inlX (0 : K ⟶ 0) i (i + 1) (by simp)).hom ((K.iCycles i).hom zK) =
+        ((homotopyCofiber (0 : K ⟶ 0)).iCycles (i + 1)).hom z := by
+      apply (zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1) i)).injective
+      simpa [zK] using (LinearEquiv.apply_symm_apply
+        (zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1) i)) ((K.iCycles i).hom zK))
+    dsimp [coneShortComplex, x₂]
+    exact congr(($(inlX_mapArrowHom_f φ (0 : K ⟶ 0) hc (Arrow.homMk (𝟙 K) 0) i (i + 1)
+      (by simp))).hom ((K.iCycles i).hom zK)).trans (by simpa using hzero)
+  have hzL : ((coneShortComplex φ hc).f.f i).hom ((L.iCycles i).hom ((cyclesMap φ i).hom zK)) =
+      ((homotopyCofiber φ).d (i + 1) i).hom x₂ := by
+    have hd := congr(($(inlX_d φ (i + 1) i (i - 1) (by simp) (by simp))).hom ((K.iCycles i).hom zK))
+    have hdzK : (K.d i (i - 1)).hom ((K.iCycles i).hom zK) = 0 :=
+      K.moduleCat_d_iCycles_apply i (i - 1) zK
+    have hcyc := congr(($(cyclesMap_i φ i)).hom zK)
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_add, LinearMap.add_apply,
+      ModuleCat.hom_neg, LinearMap.neg_apply, hdzK, map_zero, neg_zero, zero_add] at hd hcyc
+    simpa [coneShortComplex, x₂, hcyc] using hd.symm
+  have hδ := (coneShortComplex_shortExact φ hc).moduleCat_δ_homologyπ (i + 1) i rfl z x₂ hx₂
+    ((cyclesMap φ i).hom zK) hzL
+  have hnat := congr(($(homologyπ_naturality φ i)).hom zK)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, zeroHomologyEquiv,
+    homologyEquivOfShift_homologyπ]
+  exact hδ.trans hnat.symm
+
+end Homology
 
 end HomologicalComplex.homotopyCofiber

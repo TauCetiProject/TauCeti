@@ -62,6 +62,12 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 * `HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_finprod_det` and
   `HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology`: the change of
   the torsion under a change of the chain bases and of the homology bases.
+* `HomologicalComplex.reidemeisterTorsionWithHomology_reindex` and
+  `HomologicalComplex.reidemeisterTorsionWithHomology_reindex_homology`: reordering the chain or
+  homology bases multiplies the torsion by the product of the permutation signs.
+* `HomologicalComplex.reidemeisterTorsionWithHomology_map` and
+  `HomologicalComplex.reidemeisterTorsionWithHomology_eq_mul_finprod_det_toMatrix`: isomorphism
+  invariance of `τ(C, c, h)` and comparison with arbitrary chain bases via transition determinants.
 
 ## References
 
@@ -110,7 +116,8 @@ private def bracketBasis : Basis ((Fin p ⊕ Fin m) ⊕ Fin q) F (C.X (j + 1)) :
     (cyclesBasis b₁ h y hy) b₀ s fun k ↦ Subtype.ext (hs k)
 
 include c b₁ h y hy b₀ s hs in
-private theorem eq_add_add : n (j + 1) = p + m + q := by
+/-- The rank `n (j + 1)` of `Cⱼ₊₁` is the sum of the ranks of `Bⱼ₊₁`, `Hⱼ₊₁` and `Bⱼ`. -/
+theorem eq_add_add : n (j + 1) = p + m + q := by
   simpa using Fintype.card_congr ((c (j + 1)).indexEquiv (bracketBasis b₁ h y hy b₀ s hs))
 
 /-- The reindexing of `Fin (p + m + q)` by `(Fin p ⊕ Fin m) ⊕ Fin q`, in increasing order. -/
@@ -247,7 +254,7 @@ variable (hn : {i | n i ≠ 0}.Finite)
 
 include hn in
 /-- For a bounded complex, the alternating brackets have finite multiplicative support. -/
-private theorem hasFiniteMulSupport_torsionBracketWithHomology {r : ℤ → ℕ}
+theorem hasFiniteMulSupport_torsionBracketWithHomology {r : ℤ → ℕ}
     (b : ∀ j, Basis (Fin (r j)) F (LinearMap.range (C.d (j + 1) j).hom))
     (y : ∀ i, Fin (m i) → C.cycles i) (hy : ∀ i k, C.homologyπ i (y i k) = h i k)
     (s : ∀ j, Fin (r j) → C.X (j + 1)) (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
@@ -307,6 +314,37 @@ theorem reidemeisterTorsionWithHomology_ne_zero : C.reidemeisterTorsionWithHomol
   exact finprod_ne_zero fun j ↦ zpow_ne_zero _ (torsionBracketWithHomology_ne_zero c _ _ _ _ _ _ _)
 
 end Bounded
+
+include c h in
+/-- The rank `n (j + 1)` of `Cⱼ₊₁` is `dim Bⱼ₊₁ + dim Hⱼ₊₁ + dim Bⱼ`. -/
+theorem finrank_eq_add_add (j : ℤ) :
+    n (j + 1) = finrank F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom) + m (j + 1) +
+      finrank F (LinearMap.range (C.d (j + 1) j).hom) :=
+  eq_add_add c (chosenBoundaryBasis C c (j + 1 + 1) (j + 1)) (h (j + 1))
+    (chosenCycle C h (j + 1)) (chosenCycle_spec C h (j + 1))
+    (chosenBoundaryBasis C c (j + 1) j) (chosenBoundaryLift C c (j + 1) j)
+    (chosenBoundaryLift_spec C c (j + 1) j)
+
+include c h in
+/-- The homology basis in a degree where the complex vanishes is empty. -/
+theorem homology_rank_eq_zero_of_eq_zero {i : ℤ} (hi : n i = 0) : m i = 0 := by
+  have : IsEmpty (Fin (n i)) := by rw [hi]; infer_instance
+  have := (c i).repr.toEquiv.subsingleton
+  have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+  have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+  exact Nat.eq_zero_of_not_pos fun hm ↦ (h i).ne_zero ⟨0, hm⟩ (Subsingleton.elim _ _)
+
+include c h in
+/-- For a bounded based complex, only finitely many homology ranks `m i` are nonzero. -/
+theorem finite_setOf_homology_ne_zero (hn : {i | n i ≠ 0}.Finite) : {i | m i ≠ 0}.Finite :=
+  hn.subset fun _ hm hn₀ ↦ hm (homology_rank_eq_zero_of_eq_zero (c := c) (h := h) hn₀)
+
+/-- The torsion `τ(C, c, h)` vanishes if and only if the complex is unbounded. -/
+@[simp]
+theorem reidemeisterTorsionWithHomology_eq_zero_iff :
+    C.reidemeisterTorsionWithHomology c h = 0 ↔ ¬{i | n i ≠ 0}.Finite :=
+  ⟨fun h₀ hn ↦ reidemeisterTorsionWithHomology_ne_zero hn h₀,
+    reidemeisterTorsionWithHomology_of_not_finite C c h⟩
 
 /-- For an acyclic complex, whose homology bases are necessarily empty, the torsion `τ(C, c, h)` is
 the torsion `HomologicalComplex.reidemeisterTorsion` of the based acyclic complex. -/
@@ -382,16 +420,11 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
   -- then differ by the factor `[h'ⱼ₊₁ / hⱼ₊₁] ^ ((-1) ^ j)`.
   have hD : Function.HasFiniteMulSupport fun j : ℤ ↦
       (h (j + 1)).det (h' (j + 1)) ^ ((j + 1 + 1).negOnePow : ℤ) :=
-    (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
+    ((finite_setOf_homology_ne_zero (c := c) (h := h) hn).preimage
+      (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-        -- The homology vanishes where the complex vanishes.
-        have hn0 : n (j + 1) = 0 := by simpa using hj
-        have : IsEmpty (Fin (n (j + 1))) := by
-          rw [hn0]; infer_instance
-        have := (c (j + 1)).repr.toEquiv.subsingleton
-        have hC : C.ExactAt (j + 1) := .of_isZero (ModuleCat.isZero_of_subsingleton _)
-        have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
-        have : IsEmpty (Fin (m (j + 1))) := ⟨fun k ↦ (h (j + 1)).ne_zero k (Subsingleton.elim _ _)⟩
+        have hm0 : m (j + 1) = 0 := by simpa using hj
+        have : IsEmpty (Fin (m (j + 1))) := by rw [hm0]; infer_instance
         simp
   have hshift : ∏ᶠ i : ℤ, (h i).det (h' i) ^ ((i + 1).negOnePow : ℤ) =
       ∏ᶠ j : ℤ, (h (j + 1)).det (h' (j + 1)) ^ ((j + 1 + 1).negOnePow : ℤ) :=
@@ -411,7 +444,116 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
     (chosenCycle_spec C h (j + 1)) (b j) (s j) (hs j)]
   simp [Basis.det_self, mul_zpow, Int.negOnePow_succ]
 
+/-- Reordering the chain bases `c i` of `C` by permutations `σ i` multiplies `τ(C, c, h)` by the
+product of the signs of the `σ i`. -/
+theorem reidemeisterTorsionWithHomology_reindex (σ : ∀ i, Equiv.Perm (Fin (n i))) :
+    C.reidemeisterTorsionWithHomology (fun i ↦ (c i).reindex (σ i)) h =
+      C.reidemeisterTorsionWithHomology c h * ∏ᶠ i : ℤ, ((Equiv.Perm.sign (σ i) : ℤ) : F) := by
+  rw [reidemeisterTorsionWithHomology_eq_mul_finprod_det (c := c)]
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.coe_reindex, AlternatingMap.map_perm, Basis.det_self, Equiv.Perm.sign_symm]
+  rcases Int.units_eq_one_or (Equiv.Perm.sign (σ i)) with hσ | hσ <;>
+    rcases Int.units_eq_one_or i.negOnePow with hi | hi <;>
+    simp only [hσ, hi, one_smul, Units.val_one, Int.cast_one, Units.neg_smul,
+      Units.val_neg, Int.cast_neg, zpow_neg, zpow_one, inv_neg, inv_one]
+
+/-- Reordering the homology bases `h i` of `C` by permutations `σ i` multiplies `τ(C, c, h)` by the
+product of the signs of the `σ i`. -/
+theorem reidemeisterTorsionWithHomology_reindex_homology (σ : ∀ i, Equiv.Perm (Fin (m i))) :
+    C.reidemeisterTorsionWithHomology c (fun i ↦ (h i).reindex (σ i)) =
+      C.reidemeisterTorsionWithHomology c h * ∏ᶠ i : ℤ, ((Equiv.Perm.sign (σ i) : ℤ) : F) := by
+  rw [reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology (h := h)]
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.coe_reindex, AlternatingMap.map_perm, Basis.det_self, Equiv.Perm.sign_symm]
+  rcases Int.units_eq_one_or (Equiv.Perm.sign (σ i)) with hσ | hσ <;>
+    rcases Int.units_eq_one_or (i + 1).negOnePow with hi | hi <;>
+    simp only [hσ, hi, one_smul, Units.val_one, Int.cast_one, Units.neg_smul,
+      Units.val_neg, Int.cast_neg, zpow_neg, zpow_one, inv_neg, inv_one]
+
 end BasisChange
+
+section Iso
+
+variable {D : ChainComplex (ModuleCat F) ℤ} (e : C ≅ D)
+
+/-- The torsion `τ(C, c, h)` is invariant under isomorphisms of based complexes: transporting both
+the chain bases `c i` and the homology bases `h i` along an isomorphism `e : C ≅ D` gives bases for
+which `D` has the same torsion as `C`. -/
+theorem reidemeisterTorsionWithHomology_map :
+    D.reidemeisterTorsionWithHomology
+      (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv)
+      (fun i ↦ (h i).map (homologyMapIso e i).toLinearEquiv) =
+      C.reidemeisterTorsionWithHomology c h := by
+  by_cases hn : {i | n i ≠ 0}.Finite
+  swap
+  · simp [hn]
+  set eX : ∀ i, C.X i ≃ₗ[F] D.X i := fun i ↦ (Hom.isoApp e i).toLinearEquiv
+  have hcomm (j : ℤ) (x : C.X (j + 1)) :
+      (D.d (j + 1) j).hom (eX (j + 1) x) = eX j ((C.d (j + 1) j).hom x) :=
+    Hom.comm_apply e.hom (j + 1) j x
+  have hrange (j : ℤ) :
+      (LinearMap.range (C.d (j + 1) j).hom).map (eX j : C.X j →ₗ[F] D.X j) =
+        LinearMap.range (D.d (j + 1) j).hom := by
+    rw [← LinearMap.range_comp, show (eX j : C.X j →ₗ[F] D.X j) ∘ₗ (C.d (j + 1) j).hom =
+      (D.d (j + 1) j).hom ∘ₗ (eX (j + 1) : C.X (j + 1) →ₗ[F] D.X (j + 1)) from
+      LinearMap.ext fun x ↦ (hcomm j x).symm,
+      LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+  let bC (j : ℤ) := chosenBoundaryBasis C c (j + 1) j
+  let sC (j : ℤ) := chosenBoundaryLift C c (j + 1) j
+  have hsC (j : ℤ) := chosenBoundaryLift_spec C c (j + 1) j
+  let bD (j : ℤ) :=
+    (bC j).map (((eX j).submoduleMap _).trans (LinearEquiv.ofEq _ _ (hrange j)))
+  have hbD (j : ℤ) (k) : (bD j k : D.X j) = eX j (bC j k) := by simp [bD]
+  let sD (j : ℤ) := eX (j + 1) ∘ sC j
+  have hsD (j : ℤ) (k) : (D.d (j + 1) j).hom (sD j k) = bD j k := by
+    rw [hbD]
+    exact (hcomm j (sC j k)).trans (congrArg (eX j) (hsC j k))
+  let yD (i : ℤ) := (cyclesMapIso e i).toLinearEquiv ∘ chosenCycle C h i
+  have hyD (i : ℤ) (k) :
+      D.homologyπ i (yD i k) = (h i).map (homologyMapIso e i).toLinearEquiv k :=
+    congr(($(homologyπ_naturality e.hom i)).hom (chosenCycle C h i k)).symm.trans
+      (congrArg _ (chosenCycle_spec C h i k))
+  have hinv (i : ℤ) (x : C.X i) : (e.inv.f i).hom ((e.hom.f i).hom x) = x :=
+    congr(($(e.hom_inv_id).f i).hom x)
+  rw [reidemeisterTorsionWithHomology_eq_finprod (C := D) hn bD yD hyD sD hsD,
+    reidemeisterTorsionWithHomology_eq_finprod (C := C) hn bC (chosenCycle C h)
+      (chosenCycle_spec C h) sC hsC]
+  refine finprod_congr fun j ↦ congrArg (· ^ (j.negOnePow : ℤ)) ?_
+  have hn' := eq_add_add c (bC (j + 1)) (h (j + 1)) (chosenCycle C h (j + 1))
+    (chosenCycle_spec C h (j + 1)) (bC j) (sC j) (hsC j)
+  rw [torsionBracketWithHomology_eq_det_append _ _ _ _ _ _ _ _ hn',
+    torsionBracketWithHomology_eq_det_append _ _ _ _ _ _ _ _ hn', Basis.det_map]
+  congr 1
+  ext k
+  obtain ⟨k, rfl⟩ := (finCongr hn'.symm).surjective k
+  induction k using Fin.addCases with
+  | left k =>
+    induction k using Fin.addCases with
+    | left k => simp [hbD, eX, hinv]
+    | right k => simp [yD, hinv]
+  | right k => simp [sD, eX, hinv]
+
+/-- Under an isomorphism `e : C ≅ D` of complexes with chain bases `c i` and `c' i`,
+`τ(C, c, h) = τ(D, c', e_* h) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`, where `Aᵢ` is the matrix of
+`eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`. -/
+theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_toMatrix
+    (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.reidemeisterTorsionWithHomology c h =
+      D.reidemeisterTorsionWithHomology c'
+        (fun i ↦ (h i).map (homologyMapIso e i).toLinearEquiv) *
+        ∏ᶠ i : ℤ, (LinearMap.toMatrix (c i) (c' i) (e.hom.f i).hom).det ^ (i.negOnePow : ℤ) := by
+  rw [← reidemeisterTorsionWithHomology_map (c := c) (h := h) e,
+    reidemeisterTorsionWithHomology_eq_mul_finprod_det (c := c')]
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.det_apply]
+  congr 3
+  ext k
+  simp
+
+end Iso
 
 end Torsion
 

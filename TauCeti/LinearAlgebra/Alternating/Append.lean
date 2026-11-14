@@ -20,9 +20,12 @@ blocks `y` and `z` permutes the arguments by a block swap, which has `b * c` inv
 (`AlternatingMap.map_append_append_comm`). This is the Koszul sign rule for reordering two blocks
 of vectors in a determinant, as in the multiplicativity of the torsion of chain complexes.
 
-Similarly, negating the last block `y` of a concatenation `(x, y)` of families of lengths `a` and
-`b` multiplies the value of an alternating map by `(-1) ^ b` (`AlternatingMap.map_append_neg`), as
-for the negated differential of a shifted chain complex.
+Similarly, interleaving three blocks `(x₁, x₂, x₃)` with three blocks `(y₁, y₂, y₃)` as
+`(x₁, y₁, x₂, y₂, x₃, y₃)` multiplies the value of an alternating map by
+`(-1) ^ (b₁ * a₂ + (b₁ + b₂) * a₃)` (`AlternatingMap.map_append_append_append_comm`), and negating
+the last block `y` of a concatenation `(x, y)` of families of lengths `a` and `b` multiplies it by
+`(-1) ^ b` (`AlternatingMap.map_append_neg`), as for the negated differential of a shifted chain
+complex.
 -/
 
 public section
@@ -89,6 +92,41 @@ theorem map_append_append_comm (f : M [⋀^Fin (a + b + (c + d))]→ₗ[R] N) (x
     | left q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₁, h₂] <;> simp
     | right q => induction q using Fin.addCases <;> simp only [Function.comp_apply, h₃, h₄] <;> simp
   rw [← hv, f.map_perm, hsign]
+
+/-- Reordering the interleaved concatenation `((x₁, y₁), (x₂, y₂), (x₃, y₃))` of six families of
+lengths `a₁`, `b₁`, `a₂`, `b₂`, `a₃`, `b₃` into `((x₁, x₂, x₃), (y₁, y₂, y₃))` multiplies the
+value of an alternating map by `(-1) ^ (b₁ * a₂ + (b₁ + b₂) * a₃)`. -/
+theorem map_append_append_append_comm {a₁ a₂ a₃ b₁ b₂ b₃ : ℕ}
+    (f : M [⋀^Fin (a₁ + a₂ + a₃ + (b₁ + b₂ + b₃))]→ₗ[R] N)
+    (x₁ : Fin a₁ → M) (x₂ : Fin a₂ → M) (x₃ : Fin a₃ → M)
+    (y₁ : Fin b₁ → M) (y₂ : Fin b₂ → M) (y₃ : Fin b₃ → M) :
+    f (Fin.append (Fin.append (Fin.append x₁ y₁) (Fin.append x₂ y₂)) (Fin.append x₃ y₃) ∘
+        Fin.cast (by omega)) =
+      (-1 : ℤˣ) ^ (b₁ * a₂ + (b₁ + b₂) * a₃) •
+        f (Fin.append (Fin.append (Fin.append x₁ x₂) x₃) (Fin.append (Fin.append y₁ y₂) y₃)) := by
+  -- First exchange `y₁` and `x₂`, then exchange `(y₁, y₂)` and `x₃`.
+  set e : Fin (a₁ + a₂ + (b₁ + (b₂ + (a₃ + b₃)))) ≃ Fin (a₁ + a₂ + a₃ + (b₁ + b₂ + b₃)) :=
+    finCongr (by omega)
+  have h₁ := (f.domDomCongr e.symm).map_append_append_comm x₁ x₂ y₁
+    (Fin.append y₂ (Fin.append x₃ y₃))
+  simp only [domDomCongr_apply] at h₁
+  have h₂ := f.map_append_append_comm (Fin.append x₁ x₂) x₃ (Fin.append y₁ y₂) y₃
+  have hlhs : Fin.append (Fin.append (Fin.append x₁ y₁) (Fin.append x₂ y₂)) (Fin.append x₃ y₃) ∘
+      Fin.cast (by omega : a₁ + a₂ + a₃ + (b₁ + b₂ + b₃) =
+        a₁ + b₁ + (a₂ + b₂) + (a₃ + b₃)) =
+      (Fin.append (Fin.append x₁ y₁) (Fin.append x₂ (Fin.append y₂ (Fin.append x₃ y₃))) ∘
+        Fin.cast (by omega)) ∘ e.symm := by
+    ext p
+    simp only [Function.comp_apply, Fin.append_assoc, Fin.append_cast_left, Fin.append_cast_right]
+    exact congrArg _ (Fin.ext rfl)
+  have hmid : (Fin.append (Fin.append x₁ x₂) (Fin.append y₁ (Fin.append y₂ (Fin.append x₃ y₃)))) ∘
+      e.symm =
+      Fin.append (Fin.append (Fin.append x₁ x₂) (Fin.append y₁ y₂)) (Fin.append x₃ y₃) ∘
+        Fin.cast (by omega) := by
+    ext p
+    simp only [Function.comp_apply, Fin.append_assoc, Fin.append_cast_left, Fin.append_cast_right]
+    exact congrArg _ (Fin.ext rfl)
+  rw [hlhs, h₁, hmid, h₂, smul_smul, ← pow_add, mul_comm a₂ b₁, mul_comm a₃ (b₁ + b₂)]
 
 /-- Negating the last block of arguments, of length `b`, of an alternating map evaluated on a
 concatenation of two families multiplies its value by `(-1) ^ b`. -/

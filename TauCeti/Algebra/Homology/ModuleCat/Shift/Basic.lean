@@ -14,9 +14,10 @@ import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 Let `C` and `D` be chain complexes of modules over a ring, and let `D` be `C` shifted up by one
 degree with negated differentials: isomorphisms `e i : D.X (i + 1) ≃ C.X i` turn the differential
-of `D` into the negative of that of `C`. Then `e` identifies the boundaries and the cycles of `D`
-with those of `C` one degree down (`HomologicalComplex.map_range_d_of_shift`,
-`HomologicalComplex.boundaryEquivOfShift`, `HomologicalComplex.map_ker_d_of_shift`), so `D` is
+of `D` into the negative of that of `C`. Then `e` identifies the boundaries, the cycles and the
+homology of `D` with those of `C` one degree down (`HomologicalComplex.map_range_d_of_shift`,
+`HomologicalComplex.boundaryEquivOfShift`, `HomologicalComplex.map_ker_d_of_shift`,
+`HomologicalComplex.cyclesEquivOfShift`, `HomologicalComplex.homologyEquivOfShift`), so `D` is
 exact in degree `i + 1 + 1` exactly when `C` is exact in degree `i + 1`
 (`HomologicalComplex.exactAt_iff_of_shift`), and `D` is acyclic exactly when `C` is
 (`HomologicalComplex.acyclic_iff_of_shift`).
@@ -95,5 +96,81 @@ theorem acyclic_iff_of_shift : D.Acyclic ↔ C.Acyclic := by
     exact (exactAt_iff_of_shift e he i).1 (h _)
   · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 + 1 := ⟨j - 2, by omega⟩
     exact (exactAt_iff_of_shift e he i).2 (h _)
+
+/-- `e i` packaged as an isomorphism `D.X (i + 1) ≅ C.X i` in `ModuleCat R`. -/
+private def shiftXIso (i : ℤ) : D.X (i + 1) ≅ C.X i where
+  hom := ModuleCat.ofHom (e i).toLinearMap
+  inv := ModuleCat.ofHom (e i).symm.toLinearMap
+  hom_inv_id := by ext x; simp
+  inv_hom_id := by ext x; simp
+
+/-- `-e i` packaged as an isomorphism `D.X (i + 1) ≅ C.X i` in `ModuleCat R`. -/
+private def negShiftXIso (i : ℤ) : D.X (i + 1) ≅ C.X i where
+  hom := -ModuleCat.ofHom (e i).toLinearMap
+  inv := -ModuleCat.ofHom (e i).symm.toLinearMap
+  hom_inv_id := by ext x; simp
+  inv_hom_id := by ext x; simp
+
+include he
+
+/-- The isomorphism `D.sc (i + 1) ≅ C.sc i` of short complexes induced by
+`(-e (i + 1), e i, -e (i - 1))`: acting by `+e i` on degree `i + 1` and negating the adjacent
+degrees absorbs the negated differentials of `D`. -/
+private def scShiftIso (i : ℤ) : D.sc (i + 1) ≅ C.sc i := by
+  have h₂₃ : ∀ j (hj : i = j + 1),
+      D.d (i + 1) i ≫ (D.XIsoOfEq hj).hom ≫ (negShiftXIso e j).hom =
+        (shiftXIso e i).hom ≫ C.d i j := by
+    rintro j rfl
+    ext x
+    simp [shiftXIso, negShiftXIso, he j x]
+  exact D.isoSc' (i + 1 + 1) (i + 1) i (by simp) (by simp) ≪≫
+    ShortComplex.isoMk (S₁ := D.sc' (i + 1 + 1) (i + 1) i) (S₂ := C.sc' (i + 1) i (i - 1))
+      (negShiftXIso e (i + 1))
+      (shiftXIso e i)
+      (D.XIsoOfEq (by omega : i = i - 1 + 1) ≪≫ negShiftXIso e (i - 1))
+      (by ext x; simpa [shiftXIso, negShiftXIso] using (he i x).symm)
+      (by simpa using (h₂₃ (i - 1) (by omega)).symm) ≪≫
+    (C.isoSc' (i + 1) i (i - 1) (by simp) (by simp)).symm
+
+/-- The isomorphism between the cycles of `D` in degree `i + 1` and those of `C` in degree `i`
+induced by a shift `e` with negated differentials. -/
+def cyclesEquivOfShift (i : ℤ) : D.cycles (i + 1) ≃ₗ[R] C.cycles i :=
+  (ShortComplex.cyclesMapIso (scShiftIso e he i)).toLinearEquiv
+
+/-- The isomorphism `cyclesEquivOfShift` acts on underlying elements as `e i`. -/
+@[simp]
+theorem iCycles_cyclesEquivOfShift (i : ℤ) (z : D.cycles (i + 1)) :
+    (C.iCycles i).hom (cyclesEquivOfShift e he i z) = e i ((D.iCycles (i + 1)).hom z) :=
+  congr(($(ShortComplex.cyclesMap_i (scShiftIso e he i).hom)).hom z).trans
+    (by simp [scShiftIso, shiftXIso, iCycles])
+
+/-- The inverse of `cyclesEquivOfShift` acts on underlying elements as `(e i).symm`. -/
+@[simp]
+theorem iCycles_cyclesEquivOfShift_symm (i : ℤ) (z : C.cycles i) :
+    (D.iCycles (i + 1)).hom ((cyclesEquivOfShift e he i).symm z) =
+      (e i).symm ((C.iCycles i).hom z) :=
+  (e i).injective (by simp [← iCycles_cyclesEquivOfShift e he i])
+
+/-- The isomorphism between the homology of `D` in degree `i + 1` and that of `C` in degree `i`
+induced by a shift `e` with negated differentials, sending the class of a cycle `z` to the class
+of `e i z`. -/
+def homologyEquivOfShift (i : ℤ) : D.homology (i + 1) ≃ₗ[R] C.homology i :=
+  (ShortComplex.homologyMapIso (scShiftIso e he i)).toLinearEquiv
+
+/-- `homologyEquivOfShift` sends the homology class of a cycle `z` to the class of
+`cyclesEquivOfShift e he i z`. -/
+@[simp]
+theorem homologyEquivOfShift_homologyπ (i : ℤ) (z : D.cycles (i + 1)) :
+    homologyEquivOfShift e he i ((D.homologyπ (i + 1)).hom z) =
+      (C.homologyπ i).hom (cyclesEquivOfShift e he i z) :=
+  congr(($(ShortComplex.homologyπ_naturality (scShiftIso e he i).hom)).hom z)
+
+/-- The inverse of `homologyEquivOfShift` sends the homology class of a cycle `z` to the class of
+`(cyclesEquivOfShift e he i).symm z`. -/
+@[simp]
+theorem homologyEquivOfShift_symm_homologyπ (i : ℤ) (z : C.cycles i) :
+    (homologyEquivOfShift e he i).symm ((C.homologyπ i).hom z) =
+      (D.homologyπ (i + 1)).hom ((cyclesEquivOfShift e he i).symm z) :=
+  (homologyEquivOfShift e he i).injective (by simp)
 
 end HomologicalComplex

@@ -16,8 +16,8 @@ Let `X₁`, `X₂`, `X₃` be three `ℤ`-indexed families of free modules over 
 bases of ranks `m₁ q`, `m₂ q` and `m₃ q`, and maps making up an interleaved chain complex
 `ChainComplex.interleave`. This file assembles bases of the terms of that complex. The rank in
 degree `n` is `ChainComplex.interleave.rank`, which is `m₁ q`, `m₂ q` or `m₃ q` according as
-`n = 3q + 2`, `3q + 1` or `3q`, and it has finite support when the three rank functions do
-(`ChainComplex.interleave.finite_setOf_rank_ne_zero`).
+`n = 3q + 2`, `3q + 1` or `3q`, and it has finite support if and only if the three rank functions
+do (`ChainComplex.interleave.finite_setOf_rank_ne_zero_iff`).
 
 The main application is the based long exact homology sequence, whose Reidemeister torsion is
 the correction term in Milnor's multiplicativity formula
@@ -25,7 +25,8 @@ the correction term in Milnor's multiplicativity formula
 
 ## Main declarations
 
-* `ChainComplex.interleave.rank`: the rank function of the interleaved complex.
+* `ChainComplex.interleave.rank` and `ChainComplex.interleave.finite_setOf_rank_ne_zero_iff`: the
+  rank function of the interleaved complex and finiteness of its support.
 * `ChainComplex.interleave.basis`: the basis of the interleaved complex in each degree.
 * `ChainComplex.interleave.XIso₁_hom_basis` and its two companions: the basis vectors are the given
   ones under the identifications of the terms.
@@ -76,6 +77,20 @@ theorem finite_setOf_rank_ne_zero (h₁ : {q | m₁ q ≠ 0}.Finite) (h₂ : {q 
   · exact .inl <| .inl ⟨q, (rank_of_eq_three_mul_add_two hq).symm.trans_ne hn, hq.symm⟩
   · exact .inl <| .inr ⟨q, (rank_of_eq_three_mul_add_one hq).symm.trans_ne hn, hq.symm⟩
   · exact .inr ⟨q, (rank_of_eq_three_mul hq).symm.trans_ne hn, hq.symm⟩
+
+/-- `rank` has finite support if and only if each of the three rank functions has finite
+support. -/
+theorem finite_setOf_rank_ne_zero_iff :
+    {n | rank m₁ m₂ m₃ n ≠ 0}.Finite ↔
+      {q | m₁ q ≠ 0}.Finite ∧ {q | m₂ q ≠ 0}.Finite ∧ {q | m₃ q ≠ 0}.Finite :=
+  ⟨fun h ↦
+    ⟨(h.preimage (f := fun q ↦ 3 * q + 2) fun a _ b _ (hq : 3 * a + 2 = 3 * b + 2) ↦
+        by omega).subset fun _ hq ↦ (rank_of_eq_three_mul_add_two rfl).trans_ne hq,
+      (h.preimage (f := fun q ↦ 3 * q + 1) fun a _ b _ (hq : 3 * a + 1 = 3 * b + 1) ↦
+        by omega).subset fun _ hq ↦ (rank_of_eq_three_mul_add_one rfl).trans_ne hq,
+      (h.preimage (f := fun q ↦ 3 * q) fun a _ b _ (hq : 3 * a = 3 * b) ↦
+        by omega).subset fun _ hq ↦ (rank_of_eq_three_mul rfl).trans_ne hq⟩,
+    fun ⟨h₁, h₂, h₃⟩ ↦ finite_setOf_rank_ne_zero h₁ h₂ h₃⟩
 
 end Rank
 

@@ -93,6 +93,8 @@ is the contractible mapping cone of `𝟙 X₁`.
   monomorphisms is a degreewise monomorphism.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom`: a map of mapping cones induced by
   quasi-isomorphisms is a quasi-isomorphism.
+* `HomologicalComplex.homotopyCofiber.acyclic_iff_quasiIso`: a mapping cone is acyclic if and only
+  if the morphism is a quasi-isomorphism.
 * `HomologicalComplex.homotopyCofiber.quasiIso_mapArrowHom_id`: any morphism induces a
   quasi-isomorphism between the mapping cones of identities.
 
@@ -465,6 +467,35 @@ lemma quasiIso_mapArrowHom (α : Arrow.mk φ ⟶ Arrow.mk φ') [QuasiIso α.left
         congr 1
         ext <;> simp }
     (coneShortComplex_shortExact φ hc) (coneShortComplex_shortExact φ' hc) inferInstance h₃
+
+include hc in
+/-- **A mapping cone is acyclic if and only if the morphism is a quasi-isomorphism.** -/
+lemma acyclic_iff_quasiIso : (homotopyCofiber φ).Acyclic ↔ QuasiIso φ := by
+  refine ⟨fun h => ?_, fun _ => ?_⟩
+  · have h₂ : QuasiIso (mapArrowHom (𝟙 F) φ hc (Arrow.homMk (𝟙 F) φ)) := by
+      rw [quasiIso_iff]
+      exact fun i => (quasiIsoAt_iff_exactAt _ i (acyclic_id F hc i)).2 (h i)
+    exact HomologySequence.quasiIso_τ₁
+      (S₁ := coneShortComplex (𝟙 F) hc) (S₂ := coneShortComplex φ hc)
+      { τ₁ := φ
+        τ₂ := mapArrowHom (𝟙 F) φ hc (Arrow.homMk (𝟙 F) φ)
+        τ₃ := 𝟙 _
+        comm₁₂ := by simp
+        comm₂₃ := by
+          simp only [Category.comp_id, ← mapArrowHom_comp]
+          congr 1
+          ext <;> simp }
+      (coneShortComplex_shortExact _ hc) (coneShortComplex_shortExact _ hc) h₂ inferInstance
+  · let α : Arrow.mk (𝟙 F) ⟶ Arrow.mk φ := Arrow.homMk (𝟙 F) φ
+    have : QuasiIso α.left := by dsimp [α]; infer_instance
+    have : QuasiIso α.right := by dsimp [α]; infer_instance
+    have := quasiIso_mapArrowHom (𝟙 F) φ hc α
+    exact fun i => (exactAt_iff_of_quasiIsoAt (mapArrowHom (𝟙 F) φ hc α) i).1 (acyclic_id F hc i)
+
+include hc in
+/-- The mapping cone of a quasi-isomorphism is acyclic. -/
+lemma acyclic_of_quasiIso [QuasiIso φ] : (homotopyCofiber φ).Acyclic :=
+  (acyclic_iff_quasiIso φ hc).2 inferInstance
 
 end QuasiIso
 
