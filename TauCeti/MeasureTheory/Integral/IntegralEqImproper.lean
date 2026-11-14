@@ -20,7 +20,9 @@ derivative. These results apply to Banach-space-valued integrands and support di
 closure arguments for improper integrals.
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
-ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`).
+ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
+Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
+change of variables `y = c + b * x` (`0 < b`) on `Ioi a`.
 
 If nonnegative functions `f` and `g` satisfy `∫_{φ i} f ≤ ∫_{φ i} g + e i` along an exhaustion `φ`
 with errors `e i → 0`, and `g` is integrable, then `f` is integrable with `∫ f ≤ ∫ g`
@@ -186,5 +188,14 @@ theorem lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall {α X ι : Type*}
   rw [← ofReal_integral_eq_lintegral_ofReal
     (hφ.integrable_of_integral_tendsto_of_nonneg_ae c hfi hf hc) hf,
     hφ.integral_eq_of_tendsto_of_nonneg_ae c hf hfi hc]
+
+/-- Affine substitution `y = c + b * x` (`0 < b`) in a Bochner integral over `Ioi a`. -/
+theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (g : ℝ → E) (a c : ℝ) {b : ℝ} (hb : 0 < b) :
+    b • ∫ x in Ioi a, g (c + b * x) = ∫ y in Ioi (c + b * a), g y := by
+  rw [integral_comp_mul_left_Ioi' (fun y ↦ g (c + y)) a hb,
+    ← (measurePreserving_add_left volume c).setIntegral_preimage_emb (measurableEmbedding_addLeft c)
+      g (Ioi (c + b * a)),
+    preimage_const_add_Ioi, add_sub_cancel_left]
 
 end TauCeti
