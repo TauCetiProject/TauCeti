@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Presheaf.Basic
+public import TauCeti.CategoryTheory.Comma.Over.CostructuredArrow
 
 /-!
 # Presheaves over a representable presheaf
@@ -14,17 +15,16 @@ For an object `X` of a category `C`, presheaves of types on `C` lying over the r
 presheaf `yoneda.obj X` are the same as presheaves of types on the slice category `Over X`. This
 specializes Mathlib's `overEquivPresheafCostructuredArrow`, which identifies presheaves over any
 presheaf `A` with presheaves on `CostructuredArrow yoneda A`, using that `Over X` is equivalent to
-`CostructuredArrow F (F.obj X)` for any fully faithful functor `F`, in particular for `yoneda`.
+`CostructuredArrow F (F.obj X)` for any fully faithful functor `F`, in particular for `yoneda`
+(`CategoryTheory.Functor.FullyFaithful.overEquivCostructuredArrow`).
 Under this equivalence the presheaf `yoneda.obj Y ⟶ yoneda.obj X` induced by an object `Y` of
 `Over X` goes to the representable presheaf `yoneda.obj Y` on `Over X`.
 
 ## Main definitions
 
-* `CategoryTheory.Functor.FullyFaithful.overEquivCostructuredArrow hF X`: for a fully faithful
-  functor `F`, the equivalence between `Over X` and `CostructuredArrow F (F.obj X)`.
-* `CategoryTheory.overYonedaEquivPresheafOver X`: the equivalence between `Over (yoneda.obj X)`
+* `TauCeti.overYonedaEquivPresheafOver X`: the equivalence between `Over (yoneda.obj X)`
   and presheaves of types on `Over X`.
-* `CategoryTheory.overYonedaEquivPresheafOverYonedaIso X`: the equivalence sends the object
+* `TauCeti.overYonedaEquivPresheafOverYonedaIso X`: the equivalence sends the object
   `yoneda.map Y.hom` of `Over (yoneda.obj X)` to `yoneda.obj Y`, naturally in `Y : Over X`.
 
 ## References
@@ -32,38 +32,19 @@ Under this equivalence the presheaf `yoneda.obj Y ⟶ yoneda.obj X` induced by a
 * M. Kashiwara, P. Schapira, *Categories and Sheaves*, Lemma 1.4.12
 -/
 
-@[expose] public section
+public section
 
 universe v u
 
-namespace CategoryTheory
+namespace TauCeti
 
-open Opposite OverPresheafAux
+open CategoryTheory Opposite OverPresheafAux
 
 variable {C : Type u} [Category.{v} C]
 
-/-- For a fully faithful functor `F : C ⥤ D`, the slice category `Over X` is equivalent to the
-category of costructured arrows from `F` to `F.obj X`, sending `f : Y ⟶ X` to `F.map f`. -/
-noncomputable def Functor.FullyFaithful.overEquivCostructuredArrow {D : Type*} [Category D]
-    {F : C ⥤ D} (hF : F.FullyFaithful) (X : C) :
-    Over X ≌ CostructuredArrow F (F.obj X) :=
-  have := hF.full
-  have := hF.faithful
-  (CostructuredArrow.post (𝟭 C) F X).asEquivalence.trans
-    (CostructuredArrow.pre (𝟭 C) F (F.obj X)).asEquivalence
-
-@[simp]
-lemma Functor.FullyFaithful.overEquivCostructuredArrow_functor_obj {D : Type*} [Category D]
-    {F : C ⥤ D} (hF : F.FullyFaithful) {X : C} (Y : Over X) :
-    (hF.overEquivCostructuredArrow X).functor.obj Y = CostructuredArrow.mk (F.map Y.hom) := rfl
-
-@[simp]
-lemma Functor.FullyFaithful.overEquivCostructuredArrow_functor_map_left {D : Type*} [Category D]
-    {F : C ⥤ D} (hF : F.FullyFaithful) {X : C} {Y Z : Over X} (f : Y ⟶ Z) :
-    ((hF.overEquivCostructuredArrow X).functor.map f).left = f.left := rfl
-
 /-- Presheaves of types on `C` lying over the representable presheaf `yoneda.obj X` are equivalent
 to presheaves of types on the slice category `Over X`. -/
+@[expose]
 noncomputable def overYonedaEquivPresheafOver (X : C) :
     Over (yoneda.obj X) ≌ ((Over X)ᵒᵖ ⥤ Type v) :=
   (overEquivPresheafCostructuredArrow (yoneda.obj X)).trans
@@ -110,7 +91,7 @@ noncomputable def overYonedaEquivPresheafOverYonedaIso (X : C) :
     uliftYonedaIsoYoneda
 
 lemma overYonedaEquivPresheafOverYonedaIso_inv_app_app_val (X : C) (Y Z : Over X) (f : Z ⟶ Y) :
-    (((overYonedaEquivPresheafOverYonedaIso X).inv.app Y).app (op Z) f).val = f.left := rfl
+    (((overYonedaEquivPresheafOverYonedaIso X).inv.app Y).app (op Z) f).val = f.left := (rfl)
 
 lemma overYonedaEquivPresheafOverYonedaIso_hom_app_app_left (X : C) (Y Z : Over X)
     (u : ((Over.post yoneda ⋙ (overYonedaEquivPresheafOver X).functor).obj Y).obj (op Z)) :
@@ -119,4 +100,4 @@ lemma overYonedaEquivPresheafOverYonedaIso_hom_app_app_left (X : C) (Y Z : Over 
     ← NatTrans.comp_app, Iso.hom_inv_id_app]
   rfl
 
-end CategoryTheory
+end TauCeti
