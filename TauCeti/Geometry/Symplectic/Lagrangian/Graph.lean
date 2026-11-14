@@ -18,7 +18,7 @@ smooth two-forms is Lagrangian for `pr₁*σ - pr₂*τ` exactly when `φ*τ = �
 In particular the diagonal is Lagrangian. These are the canonical transformations and
 identity correspondences of symplectic geometry.
 
-For the product form `pr₁*σ + pr₂*τ` instead, the graph of a differentiable map `f` has symplectic
+For the product form `pr₁*σ + pr₂*τ` instead, the graph of a map `f` has symplectic
 tangent images exactly when `σ + f*τ` is nondegenerate at every point
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hasSymplecticTangentImages_graph_iff`), by
 `SymplecticForm.isSymplectic_graph_iff` on the tangent fibres. For a constant map this says that
@@ -89,11 +89,12 @@ theorem IsNondegenerate.isLagrangianMap_graph_iff
     intro v w
     rw [← SmoothForm.eval₂_mpullback φ φ.contMDiff τ, h]
 
-/-- The graph of a differentiable map `f : M → N` has symplectic tangent images for the product
+/-- The graph of a map `f : M → N` has symplectic tangent images for the product
 form `pr₁*σ + pr₂*τ` exactly when the form `σ + f*τ` is nondegenerate at every point: a tangent
-vector `v` with `σ(v, w) + τ(df v, df w) = 0` for every `w` is zero. -/
+vector `v` with `σ(v, w) + τ(df v, df w) = 0` for every `w` is zero. At a point where `f` is not
+differentiable both sides hold trivially, so no differentiability of `f` is assumed. -/
 theorem IsNondegenerate.hasSymplecticTangentImages_graph_iff
-    (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) {f : M → N} (hf : MDifferentiable I J f) :
+    (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) {f : M → N} :
     (hσ.prod hτ).HasSymplecticTangentImages I (fun x ↦ (x, f x)) ↔
       ∀ x (v : TangentSpace I x),
         (∀ w, SmoothBundleForm.eval₂ σ x v w +
@@ -101,17 +102,23 @@ theorem IsNondegenerate.hasSymplecticTangentImages_graph_iff
           v = 0 := by
   rw [IsNondegenerate.hasSymplecticTangentImages_iff_forall]
   refine forall_congr' fun x ↦ ?_
-  rw [← SymplecticForm.isSymplectic_map_transport_iff
-      (e := (Manifold.tangentSpaceProdEquiv (x, f x)).toLinearEquiv),
-    IsNondegenerate.symplecticFormAt_prod hσ hτ, Manifold.map_range_mfderiv_graph (hf x),
-    SymplecticForm.isSymplectic_graph_iff]
-  simp only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
+  by_cases hf : MDifferentiableAt I J f x
+  · rw [← SymplecticForm.isSymplectic_map_transport_iff
+        (e := (Manifold.tangentSpaceProdEquiv (x, f x)).toLinearEquiv),
+      IsNondegenerate.symplecticFormAt_prod hσ hτ, Manifold.map_range_mfderiv_graph hf,
+      SymplecticForm.isSymplectic_graph_iff]
+    simp only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
+  · have hg : ¬ MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x := fun h ↦
+      hf ((mdifferentiableAt_prod_iff _).1 h).2
+    rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hf]
+    refine iff_of_true (by simp) fun v hv ↦
+      isNondegenerate_iff_separatingLeft.1 hσ x v fun w ↦ by simpa using hv w
 
 /-- Every slice `x ↦ (x, c)` of a product has symplectic tangent images for the product form. -/
 theorem IsNondegenerate.hasSymplecticTangentImages_prodMkLeft
     (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) (c : N) :
     (hσ.prod hτ).HasSymplecticTangentImages I (fun x : M ↦ (x, c)) := by
-  refine (hσ.hasSymplecticTangentImages_graph_iff hτ mdifferentiable_const).2 fun x v hv ↦
+  refine (hσ.hasSymplecticTangentImages_graph_iff hτ).2 fun x v hv ↦
     isNondegenerate_iff_separatingLeft.1 hσ x v fun w ↦ ?_
   simpa [mfderiv_const] using hv w
 
