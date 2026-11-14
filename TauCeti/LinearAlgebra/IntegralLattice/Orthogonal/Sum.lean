@@ -68,23 +68,12 @@ universe u v w x y z
 variable {V : Type u} {W : Type v}
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-/-- The product of the carriers of two integral lattices is a full lattice in the product space. -/
-private theorem isLattice_prod (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.carrier.prod M.carrier).IsLattice ℚ := by
-  constructor
-  · rw [← Module.Finite.iff_fg]
-    exact Module.Finite.equiv (Submodule.prodEquiv L.carrier M.carrier).symm
-  · rw [Submodule.prod_coe,
-      Submodule.span_prod_eq (R := ℚ) L.carrier.zero_mem M.carrier.zero_mem,
-      Submodule.IsLattice.span_eq_top, Submodule.IsLattice.span_eq_top,
-      Submodule.prod_top]
-
 /-- The orthogonal sum of two integral lattices: the product carrier with the block-diagonal
 product form. -/
 def orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) : IntegralLattice (V × W) where
   carrier := L.carrier.prod M.carrier
   form := L.form.prod M.form
-  isLattice := isLattice_prod L M
+  isLattice := inferInstance
   isSymm := LinearMap.BilinForm.isSymm_prod_iff.mpr ⟨L.isSymm, M.isSymm⟩
   le_dual := by
     intro p hp
