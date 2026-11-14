@@ -26,6 +26,10 @@ Any additive subgroup closed under the involution of a `NormedStarGroup` inherit
 * `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
 * `CStarRing.isCompact_unitary`: the unitary elements of a proper C⋆-ring form a compact set.
 * `CStarRing.instCompactSpaceUnitary`: the unitary group of a proper C⋆-ring is compact.
+* `IsStarProjection.norm_eq_zero_or_one`, `IsStarProjection.norm_eq_one`,
+  `IsStarProjection.eq_zero_of_norm_lt_one`, `IsStarProjection.eq_one_of_norm_sub_one_lt_one`:
+  in a C⋆-ring, every star projection has norm `0` or `1`, so a star projection of norm strictly
+  below `1` vanishes and a star projection within distance `< 1` of `1` equals `1`.
 -/
 
 public section
@@ -53,3 +57,46 @@ instance instCompactSpaceUnitary : CompactSpace (unitary E) :=
   isCompact_iff_compactSpace.1 isCompact_unitary
 
 end CStarRing
+
+namespace IsStarProjection
+
+section NonUnital
+
+variable {E : Type*} [NonUnitalNormedRing E] [StarRing E] [CStarRing E] {e : E}
+
+/-- In a C⋆-ring, the norm of any star projection is either `0` or `1`. -/
+theorem norm_eq_zero_or_one (he : IsStarProjection e) : ‖e‖ = 0 ∨ ‖e‖ = 1 := by
+  have h : ‖e‖ * (‖e‖ - 1) = 0 := by
+    simp [mul_sub, ← CStarRing.norm_star_mul_self, he.isSelfAdjoint.star_eq,
+      he.isIdempotentElem.eq]
+  exact (mul_eq_zero.mp h).imp id sub_eq_zero.mp
+
+/-- A nonzero star projection in a C⋆-ring has norm `1`. -/
+theorem norm_eq_one (he : IsStarProjection e) (he0 : e ≠ 0) : ‖e‖ = 1 :=
+  he.norm_eq_zero_or_one.resolve_left (norm_ne_zero_iff.mpr he0)
+
+/-- A star projection in a C⋆-ring with norm strictly less than `1` is `0`. -/
+theorem eq_zero_of_norm_lt_one (he : IsStarProjection e) (h : ‖e‖ < 1) : e = 0 := by
+  by_contra he0
+  exact h.ne (he.norm_eq_one he0)
+
+end NonUnital
+
+section Unital
+
+variable {E : Type*} [NormedRing E] [StarRing E] [CStarRing E] {e : E}
+
+/-- For a star projection `e ≠ 1` in a unital C⋆-ring, `‖e - 1‖ = 1`. -/
+theorem norm_sub_one_eq_one (he : IsStarProjection e) (he1 : e ≠ 1) : ‖e - 1‖ = 1 := by
+  rw [norm_sub_rev]
+  exact he.one_sub.norm_eq_one (sub_ne_zero.mpr he1.symm)
+
+/-- A star projection in a unital C⋆-ring within distance strictly less than `1` of `1` equals
+`1`. -/
+theorem eq_one_of_norm_sub_one_lt_one (he : IsStarProjection e) (h : ‖e - 1‖ < 1) : e = 1 := by
+  by_contra he1
+  exact h.ne (he.norm_sub_one_eq_one he1)
+
+end Unital
+
+end IsStarProjection
