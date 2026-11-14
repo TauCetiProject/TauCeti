@@ -13,6 +13,8 @@ public import Mathlib.Topology.EMetricSpace.Weak
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
+-- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
+import TauCeti.MeasureTheory.Measure.Continuity
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -94,32 +96,6 @@ open scoped ENNReal
 
 namespace TauCeti
 
-section Distribution
-
-variable {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ≥0∞}
-
-/-- **Right continuity of the distribution function.** The measure of a strict superlevel set
-`{t < f}` is approached by those of strictly higher levels, so anything below it is already below
-`μ {s < f}` for some `s > t`. -/
-theorem exists_lt_lt_measure_setOf_lt {t c : ℝ≥0∞} (h : c < μ {y | t < f y}) :
-    ∃ s, t < s ∧ c < μ {y | s < f y} := by
-  have ht : t ≠ ∞ := by
-    rintro rfl
-    simp at h
-  obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictAnti_tendsto' (lt_top_iff_ne_top.2 ht)
-  have hunion : {y | t < f y} = ⋃ n, {y | u n < f y} := by
-    ext y
-    simp only [mem_ofPred_eq, mem_iUnion]
-    exact ⟨fun hy ↦ (hlim.eventually (gt_mem_nhds hy)).exists,
-      fun ⟨n, hn⟩ ↦ (hut n).1.trans hn⟩
-  have hmono : Monotone fun n ↦ {y | u n < f y} :=
-    fun m n hmn y hy ↦ (hu.antitone hmn).trans_lt hy
-  rw [hunion, hmono.measure_iUnion, lt_iSup_iff] at h
-  obtain ⟨n, hn⟩ := h
-  exact ⟨u n, (hut n).1, hn⟩
-
-end Distribution
-
 section Measure
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] (μ : Measure E)
@@ -148,7 +124,7 @@ theorem lt_schwarzRearrangement_iff {x : E} {t : ℝ≥0∞} :
     obtain ⟨hball, hts⟩ := hs
     exact hball.trans_le (measure_mono fun y hy ↦ hts.trans hy)
   · intro h
-    obtain ⟨s, hts, hs⟩ := exists_lt_lt_measure_setOf_lt μ h
+    obtain ⟨s, hts, hs⟩ := μ.exists_lt_lt_measure_setOf_lt h
     exact ⟨s, lt_iSup_iff.2 ⟨hs, hts⟩⟩
 
 /-- The strict superlevel sets of the Schwarz rearrangement, as sets. -/
