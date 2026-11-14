@@ -132,6 +132,7 @@ namespace Slope
 /-- The slope represented by a primitive class `v : M`. -/
 def mk (v : M) (h : IsPrimitive v) : Slope M := Quotient.mk (slopeSetoid M) ⟨v, h⟩
 
+/-- Primitive classes that agree up to sign represent the same slope. -/
 theorem mk_eq_mk {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w)
     (h : v = w ∨ v = -w) : mk v hv = mk w hw :=
   Quotient.sound h
@@ -144,6 +145,8 @@ theorem mk_eq_mk_iff {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w) :
   · exact Quotient.exact
   · exact mk_eq_mk hv hw
 
+/-- Induction principle for slopes: it suffices to prove a property for `Slope.mk v hv` with `v`
+primitive. -/
 @[elab_as_elim]
 theorem induction_on {C : Slope M → Prop} (s : Slope M)
     (h : ∀ (v : M) (hv : IsPrimitive v), C (mk v hv)) : C s :=
@@ -169,6 +172,7 @@ def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
         · exact Or.inl (φ.injective h)
         · exact Or.inr (φ.injective (by rw [map_neg]; exact h))
 
+/-- Transporting the slope of a primitive class `v` along `φ` gives the slope of `φ v`. -/
 @[simp]
 theorem congr_mk (φ : M ≃ₗ[ℤ] N) (v : M) (h : IsPrimitive v) :
     congr φ (mk v h) = mk (φ v) (φ.isPrimitive_iff.mpr h) :=
@@ -228,9 +232,11 @@ ratio of the meridian- and longitude-coordinates in a framing. -/
 def slopeValue (v : ℤ × ℤ) : OnePoint ℚ :=
   if v.2 = 0 then ∞ else ((v.1 : ℚ) / (v.2 : ℚ) : ℚ)
 
+/-- The value of a class `(p, 0)` with vanishing second coordinate is `∞`. -/
 @[simp]
 theorem slopeValue_of_snd_eq_zero {v : ℤ × ℤ} (hq : v.2 = 0) : slopeValue v = ∞ := ite_eq_left hq
 
+/-- The value of a class `(p, q)` with `q ≠ 0` is the rational `p / q`. -/
 @[simp]
 theorem slopeValue_of_snd_ne_zero {v : ℤ × ℤ} (hq : v.2 ≠ 0) :
     slopeValue v = ((v.1 : ℚ) / (v.2 : ℚ) : ℚ) := ite_eq_right hq
@@ -251,6 +257,7 @@ def Slope.value : Slope (ℤ × ℤ) → OnePoint ℚ :=
     · rw [h]
     · rw [h, slopeValue_neg]
 
+/-- The value of the slope of a primitive class `v` of `ℤ × ℤ` is `slopeValue v`. -/
 @[simp]
 theorem Slope.value_mk (v : ℤ × ℤ) (h : IsPrimitive v) :
     Slope.value (Slope.mk v h) = slopeValue v := (rfl)
@@ -261,9 +268,12 @@ def slopeOfValue : OnePoint ℚ → Slope (ℤ × ℤ)
   | ∞ => Slope.mk (1, 0) isPrimitive_prod_one_zero
   | (r : ℚ) => Slope.mk (r.num, (r.den : ℤ)) (isPrimitive_num_den r)
 
+/-- The slope attached to `∞` is the class `(1, 0)`. -/
 @[simp]
 theorem slopeOfValue_infty : slopeOfValue ∞ = Slope.mk (1, 0) isPrimitive_prod_one_zero := (rfl)
 
+/-- The slope attached to a rational `r` is the class of its reduced fraction
+`(r.num, r.den)`. -/
 @[simp]
 theorem slopeOfValue_coe (r : ℚ) :
     slopeOfValue (r : OnePoint ℚ) = Slope.mk (r.num, (r.den : ℤ)) (isPrimitive_num_den r) := (rfl)
@@ -317,9 +327,11 @@ def slopeEquivStd : Slope (ℤ × ℤ) ≃ OnePoint ℚ where
   left_inv := slopeOfValue_value
   right_inv := value_slopeOfValue
 
+/-- The standard slope parametrisation sends a slope to its value. -/
 @[simp]
 theorem slopeEquivStd_apply (s : Slope (ℤ × ℤ)) : slopeEquivStd s = Slope.value s := (rfl)
 
+/-- The inverse of the standard slope parametrisation is `slopeOfValue`. -/
 @[simp]
 theorem slopeEquivStd_symm_apply (x : OnePoint ℚ) : slopeEquivStd.symm x = slopeOfValue x := (rfl)
 
@@ -376,10 +388,12 @@ basis-dependent. -/
 noncomputable def coord : T.H ≃ₗ[ℤ] ℤ × ℤ :=
   T.basis.equivFun ≪≫ₗ LinearEquiv.finTwoArrow ℤ ℤ
 
+/-- The coordinates of the first basis vector `μ` of a framing are `(1, 0)`. -/
 @[simp]
 theorem coord_basis_zero : T.coord (T.basis 0) = (1, 0) := by
   simp [coord, LinearEquiv.finTwoArrow_apply]
 
+/-- The coordinates of the second basis vector `λ` of a framing are `(0, 1)`. -/
 @[simp]
 theorem coord_basis_one : T.coord (T.basis 1) = (0, 1) := by
   simp [coord, LinearEquiv.finTwoArrow_apply]
@@ -393,9 +407,11 @@ theorem coord_symm_apply (v : ℤ × ℤ) : T.coord.symm v = v.1 • T.basis 0 +
   rw [← Int.cast_smul_eq_zsmul ℤ v.1 (T.basis 0), ← Int.cast_smul_eq_zsmul ℤ v.2 (T.basis 1)]
   simp [coord, Basis.equivFun_symm_apply, Fin.sum_univ_two]
 
+/-- The first basis vector `μ` of a framing is primitive. -/
 theorem isPrimitive_basis_zero : IsPrimitive (T.basis 0) :=
   T.coord.isPrimitive_iff.mp (by rw [T.coord_basis_zero]; exact isPrimitive_prod_one_zero)
 
+/-- The second basis vector `λ` of a framing is primitive. -/
 theorem isPrimitive_basis_one : IsPrimitive (T.basis 1) :=
   T.coord.isPrimitive_iff.mp (by rw [T.coord_basis_one]; exact isPrimitive_prod_zero_one)
 
@@ -417,6 +433,7 @@ biject with `ℚ ∪ {∞}`, a reduced fraction `p / q` corresponding to the cla
 noncomputable def slopeEquiv : Slope T.H ≃ OnePoint ℚ :=
   (Slope.congr T.coord).trans slopeEquivStd
 
+/-- The framed slope parametrisation sends a slope to its framed value. -/
 @[simp]
 theorem slopeEquiv_apply (s : Slope T.H) : T.slopeEquiv s = T.value s := (rfl)
 
