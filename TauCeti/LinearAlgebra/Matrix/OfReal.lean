@@ -23,8 +23,12 @@ and it is positive definite when `Mᴴ M` is, in particular when `M` has indepen
 
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.IsHermitian.eq_map_ofReal_map_re_of_transpose_eq`: a Hermitian complex matrix equal to
+  its transpose is real.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
+* `Matrix.conjTranspose_mul_self_map_ofReal_add_I_smul`: the Gram matrix of `P + i Q` for real
+  matrices `P` and `Q` has real part `Pᵀ P + Qᵀ Q` and imaginary part `Pᵀ Q - Qᵀ P`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
   definite.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
@@ -53,6 +57,15 @@ theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
 
+/-- A Hermitian complex matrix that is equal to its transpose is real. -/
+theorem IsHermitian.eq_map_ofReal_map_re_of_transpose_eq {q : Matrix n n ℂ} (hq : q.IsHermitian)
+    (hT : qᵀ = q) : q = (q.map Complex.re).map ((↑) : ℝ → ℂ) := by
+  ext i j
+  have h : star (q i j) = q i j := by
+    rw [← conjTranspose_apply, hq.eq, ← transpose_apply q i j, hT]
+  simp only [map_apply]
+  exact (Complex.conj_eq_iff_re.1 h).symm
+
 /-- The real Gram matrix `Re ((M N)ᴴ (M N))` of the columns of `M N`, for a real matrix `N`, is
 `Nᵀ Re (Mᴴ M) N`. -/
 theorem map_re_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M : Matrix m n ℂ)
@@ -64,6 +77,21 @@ theorem map_re_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M 
   exact ((map_algebraMap_mul Complex.reLm Nᵀ _).trans
     (congrArg (Nᵀ * ·) (map_mul_algebraMap Complex.reLm N (Mᴴ * M)))).trans
       (Matrix.mul_assoc _ _ _).symm
+
+/-- The Gram matrix of the complex matrix `P + i Q`, for real matrices `P` and `Q`, has real part
+`Pᵀ P + Qᵀ Q` and imaginary part `Pᵀ Q - Qᵀ P`. -/
+theorem conjTranspose_mul_self_map_ofReal_add_I_smul [Fintype m] (P Q : Matrix m n ℝ) :
+    (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map ((↑) : ℝ → ℂ))ᴴ *
+        (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map ((↑) : ℝ → ℂ)) =
+      (Pᵀ * P + Qᵀ * Q).map ((↑) : ℝ → ℂ) +
+        Complex.I • (Pᵀ * Q - Qᵀ * P).map ((↑) : ℝ → ℂ) := by
+  ext i j
+  simp only [Matrix.mul_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply,
+    Matrix.conjTranspose_apply, Matrix.sub_apply, smul_eq_mul, Matrix.transpose_apply]
+  apply Complex.ext
+  · simp [Complex.mul_re, Finset.sum_add_distrib, Complex.re_sum]
+  · simp [Complex.mul_im, Finset.sum_add_distrib, Complex.im_sum]
+    ring_nf
 
 /-- The real part of a positive definite complex matrix is positive definite. -/
 theorem PosDef.map_re [Finite n] {K : Matrix n n ℂ} (hK : K.PosDef) :
