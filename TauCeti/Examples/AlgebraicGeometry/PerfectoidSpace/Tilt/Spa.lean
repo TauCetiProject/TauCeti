@@ -71,7 +71,7 @@ example (x : spa (Pair.powerBounded ℂ_[p]).plus) (f g : uniformTilt p ℂ_[p])
       ‖uniformTilt.coeff p ℂ_[p] 0 f‖ ≤ ‖uniformTilt.coeff p ℂ_[p] 0 g‖ := by
   have hx : x.1 ∈ spa (powerBoundedSubring ℂ_[p]) := by
     simpa only [Pair.powerBounded_plus] using x.2
-  rw [Pair.spaTilt_val, spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa hx]
+  rw [Pair.spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa hx]
 
 /-- Powers of a compatible-root pseudouniformiser `w` are strictly ordered at an inhabited tilted
 point of `Spa(ℂ_p♭, ℂ_p♭°)`: `v(w²) < v(w) < 1`. -/

@@ -144,9 +144,10 @@ end Tate
 
 namespace Pair
 
-variable (A B : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 
+variable (A B) in
 /-- The first projection `(A × B, (A × B)°) → (A, A°)` of maximal Huber pairs. -/
 def powerBoundedFst [IsHuberRing A] [IsHuberRing (A × B)] :
     Hom (powerBounded (A × B)) (powerBounded A) where
@@ -161,6 +162,7 @@ def powerBoundedFst [IsHuberRing A] [IsHuberRing (A × B)] :
 theorem Hom.toRingHom_powerBoundedFst [IsHuberRing A] [IsHuberRing (A × B)] :
     (powerBoundedFst A B).toRingHom = RingHom.fst A B := (rfl)
 
+variable (A B) in
 /-- The second projection `(A × B, (A × B)°) → (B, B°)` of maximal Huber pairs. -/
 def powerBoundedSnd [IsHuberRing B] [IsHuberRing (A × B)] :
     Hom (powerBounded (A × B)) (powerBounded B) where

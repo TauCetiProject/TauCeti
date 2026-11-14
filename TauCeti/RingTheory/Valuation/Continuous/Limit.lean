@@ -109,8 +109,7 @@ filter and `v (f i) = γ` eventually, then `v x = γ`. -/
 theorem IsContinuous.eq_of_tendsto {v : Valuation A Γ₀} (hv : v.IsContinuous) {ι : Type*}
     {l : Filter ι} [l.NeBot] {f : ι → A} {x : A} {γ : Γ₀} (hf : Tendsto f l (𝓝 x))
     (heq : ∀ᶠ i in l, v (f i) = γ) : v x = γ := by
-  obtain ⟨i₀, hi₀⟩ := heq.exists
-  subst hi₀
+  obtain ⟨i₀, rfl⟩ := heq.exists
   exact le_antisymm (hv.le_of_tendsto hf (heq.mono fun _ h ↦ h.le))
     (hv.ge_of_tendsto hf (heq.mono fun _ h ↦ h.ge))
 
