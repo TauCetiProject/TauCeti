@@ -61,13 +61,6 @@ def radialVector (r : radiusDomain) : TangentSpace 𝓘(ℝ) r :=
   (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) r).symm
     ((NormedSpace.fromTangentSpace (r : ℝ)).symm 1)
 
-/-- The radial coordinate has derivative one on the outward radial vector. -/
-@[simp]
-theorem mvfderiv_radius_radialVector (r : radiusDomain) :
-    mvfderiv 𝓘(ℝ) (Subtype.val : radiusDomain → ℝ) r (radialVector r) = 1 := by
-  simp only [radialVector, mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_subtype_val,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
-
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -129,7 +122,9 @@ theorem mvfderiv_parametrization_radial {f : M → F} {p : radiusDomain × M}
     mvfderiv ((𝓘(ℝ)).prod I) (parametrization f) p
       ((tangentSpaceProdEquiv p).symm (radialVector p.1, 0)) = f p.2 := by
   rw [mvfderiv_parametrization hf, ContinuousLinearEquiv.apply_symm_apply]
-  simp only [map_zero, smul_zero, mvfderiv_radius_radialVector, one_smul, zero_add]
+  simp only [map_zero, smul_zero, zero_add, radialVector, mvfderiv,
+    ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply, one_smul]
 
 variable [IsManifold I 1 M]
 
