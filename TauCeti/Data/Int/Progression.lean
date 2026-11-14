@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.Algebra.Ring.Int.Parity
+public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Data.Int.Order.Units
 import Mathlib.Tactic.Linarith
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Terms of arithmetic progressions in `ℤ`
@@ -18,6 +20,9 @@ A progression with positive step contains a positive odd term if either its init
 term or its step is odd. The index can be chosen nonnegative. This is useful when a translation
 must fix a congruence class while also arranging the sign and parity of a matrix entry.
 
+When the initial term and the step are coprime, the progression also contains a term coprime to
+any prescribed nonzero integer `m`.
+
 For every non-unit `d`, the progression `1 + max |d| 2 * ℤ` avoids the multiples of `d`, so
 integers of arbitrarily large absolute value avoid them.
 
@@ -25,6 +30,8 @@ integers of arbitrarily large absolute value avoid them.
 
 * `Int.exists_nat_add_mul_pos_odd`: a positive odd term at a nonnegative index.
 * `Int.not_dvd_one_add_max_abs_mul`: `d ∤ 1 + max |d| 2 * k` for a non-unit `d`.
+* `IsCoprime.exists_isCoprime_add_mul`: a progression `a + ℤ * b` with `a` and `b` coprime
+  contains a term coprime to any nonzero `m : ℤ`.
 -/
 
 public section
@@ -71,3 +78,23 @@ theorem not_dvd_one_add_max_abs_mul {d : ℤ} (hd : ¬ IsUnit d) (k : ℤ) :
       (dvd_add_right (((dvd_abs d d).mpr dvd_rfl).mul_right k)).mp hdvd
 
 end Int
+
+/-- An arithmetic progression `a + ℤ * b` with coprime initial term `a` and step `b` contains a
+term coprime to any nonzero integer `m`. The hypothesis `m ≠ 0` is needed because at `m = 0`
+coprimality to `m` means `±1`, which `3 + 5 * ℤ` never attains. -/
+theorem IsCoprime.exists_isCoprime_add_mul {a b m : ℤ} (hab : IsCoprime a b) (hm : m ≠ 0) :
+    ∃ k : ℤ, IsCoprime (a + k * b) m := by
+  have : NeZero m.natAbs := ⟨Int.natAbs_ne_zero.mpr hm⟩
+  have hgcd : Int.gcd a b.natAbs = 1 := by
+    rw [Int.gcd, Int.natAbs_natCast, ← Int.gcd]
+    exact Int.isCoprime_iff_gcd_eq_one.mp hab
+  obtain ⟨u, hu⟩ := Int.isUnit_intCast_iff_gcd_eq_one.mpr hgcd
+  obtain ⟨t, ht_cop, ht_eq⟩ := ZMod.exists_isCoprime_mul_intCast_eq m.natAbs u
+  have hdvd : b ∣ t - a := Int.natAbs_dvd.mp
+    ((ZMod.intCast_eq_intCast_iff_dvd_sub a t b.natAbs).mp (hu.symm.trans ht_eq.symm))
+  obtain ⟨k, hk⟩ := hdvd
+  refine ⟨k, ?_⟩
+  have ht : a + k * b = t := by linarith
+  have hcop' : IsCoprime t ((m.natAbs : ℤ) * b.natAbs) := by simpa only [Nat.cast_mul] using ht_cop
+  rw [ht, Int.isCoprime_iff_gcd_eq_one, Int.gcd, ← Int.natAbs_natCast m.natAbs, ← Int.gcd]
+  exact Int.isCoprime_iff_gcd_eq_one.mp hcop'.of_mul_right_left
