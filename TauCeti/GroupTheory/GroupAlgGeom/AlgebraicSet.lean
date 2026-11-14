@@ -525,16 +525,24 @@ theorem Rad_eq_top_of_V_eq_empty (hS : V ι S = ∅) : Rad ι S = ⊤ := by
   rw [Rad_def, hS, I_empty]
 
 variable (ι) in
+/-- A word map between sets of points pulls equations vanishing on the target back to equations
+vanishing on the source. -/
+theorem I_le_comap_of_mapsTo_wordMap {Y : Type*} {s : Set (X → H)} {t : Set (Y → H)}
+    {w : Y → GX G X} (hw : Set.MapsTo (wordMap ι w) s t) :
+    I ι t ≤ (I ι s).comap (eval (inl : G →* GX G X) w) := by
+  intro u hu
+  rw [Subgroup.mem_comap, mem_I]
+  intro v hv
+  rw [← MonoidHom.comp_apply, eval_comp_eval]
+  exact (mem_I.mp hu) _ (hw hv)
+
+variable (ι) in
 /-- A word map between algebraic sets pulls equations vanishing on the target back to
 equations vanishing on the source. -/
 theorem Rad_le_comap_of_mapsTo_wordMap {Y : Type*} (S : Set (GX G X)) (T : Set (GX G Y))
     (w : Y → GX G X) (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T)) :
-    Rad ι T ≤ (Rad ι S).comap (eval (inl : G →* GX G X) w) := by
-  intro t ht
-  rw [Subgroup.mem_comap, mem_Rad]
-  intro v hv
-  rw [← MonoidHom.comp_apply, eval_comp_eval]
-  exact (mem_Rad.mp ht) _ (hw hv)
+    Rad ι T ≤ (Rad ι S).comap (eval (inl : G →* GX G X) w) :=
+  I_le_comap_of_mapsTo_wordMap ι hw
 
 /-- The word homomorphism `σ` maps the radical of the inverse-image system into the
 radical of the original system. -/
