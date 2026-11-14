@@ -76,7 +76,7 @@ variable {𝕜 G ι : Type*} {V : ι → Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
   [∀ i, FiniteDimensional 𝕜 (V i)]
 
 local instance instCompleteSpaceOrthonormalSystem (i : ι) : CompleteSpace (V i) :=
-  FiniteDimensional.complete 𝕜 (V i)
+  FiniteDimensional.completeSpace 𝕜 (V i)
 
 variable (π : ∀ i, ContRepresentation 𝕜 G (V i)) (hπ : ∀ i, Continuous (π i))
 

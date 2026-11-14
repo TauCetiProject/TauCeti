@@ -100,9 +100,9 @@ theorem det_submatrix_inr_eq_sign_mul_det_mul_det_submatrix_inl
   have hdetQ : Q.det = ((Perm.sign τ : ℤ) : R) *
       (((Perm.sign σ : ℤ) : R) * (B.submatrix (⇑σ ∘ Sum.inl) (⇑τ ∘ Sum.inl)).det) := by
     have hback : Q = ((Q.submatrix σ τ).submatrix ⇑σ.symm id).submatrix id ⇑τ.symm := by
-      simp [Matrix.submatrix_submatrix]
-    rw [hback, Matrix.det_permute', Matrix.det_permute, hQblocks,
-      Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one, Perm.sign_symm, Perm.sign_symm]
+      simp [submatrix_submatrix]
+    rw [hback, det_permute', det_permute, hQblocks,
+      det_fromBlocks_zero₁₂, det_one, mul_one, Perm.sign_symm, Perm.sign_symm]
   -- Multiplying by `A` collapses the columns carrying `B` and exposes columns of `A`.
   have hcol₁ : ∀ (x : m ⊕ p) (j : m),
       (A * Q) x (τ (Sum.inl j)) = if x = τ (Sum.inl j) then 1 else 0 := by
@@ -122,9 +122,9 @@ theorem det_submatrix_inr_eq_sign_mul_det_mul_det_submatrix_inl
     ext u v
     rcases u with u | u <;> rcases v with v | v <;> simp [hcol₁, hcol₂, Matrix.one_apply]
   have hdetA : (A.submatrix (⇑τ ∘ Sum.inr) (⇑σ ∘ Sum.inr)).det = A.det * Q.det := by
-    have hdet := congrArg Matrix.det hAQblocks
-    rw [Matrix.det_submatrix_equiv_self, Matrix.det_mul, Matrix.det_fromBlocks_zero₂₁,
-      Matrix.det_one, one_mul] at hdet
+    have hdet := congrArg det hAQblocks
+    rw [det_submatrix_equiv_self, det_mul, det_fromBlocks_zero₂₁,
+      det_one, one_mul] at hdet
     exact hdet.symm
   -- The two evaluations of `det (A * Q)` meet.
   rw [hdetA, hdetQ]
@@ -139,10 +139,10 @@ theorem det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl
       ((Perm.sign σ : ℤ) : R) * ((Perm.sign τ : ℤ) : R) * A.det *
         (B.submatrix (⇑σ ∘ ⇑e ∘ Sum.inl) (⇑τ ∘ ⇑e ∘ Sum.inl)).det := by
   have hAB' : A.submatrix e e * B.submatrix e e = 1 := by
-    rw [Matrix.submatrix_mul_equiv A B _ e _, hAB, Matrix.submatrix_one_equiv]
+    rw [submatrix_mul_equiv A B _ e _, hAB, submatrix_one_equiv]
   have key := det_submatrix_inr_eq_sign_mul_det_mul_det_submatrix_inl (A.submatrix e e)
     (B.submatrix e e) hAB' (e.symm.permCongr σ) (e.symm.permCongr τ)
-  simpa [Matrix.submatrix_submatrix, Function.comp_def, Equiv.permCongr_apply] using key
+  simpa [submatrix_submatrix, Function.comp_def, Equiv.permCongr_apply] using key
 
 /-- Jacobi's complementary-minor identity for a pair of inverse matrices of determinant one: a
 minor of `A` and the complementary minor of `B` agree up to the signs of the two permutations. -/
@@ -164,6 +164,6 @@ theorem det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsin
       ((Perm.sign σ : ℤ) : R) * ((Perm.sign τ : ℤ) : R) * A.det *
         (A⁻¹.submatrix (⇑σ ∘ ⇑e ∘ Sum.inl) (⇑τ ∘ ⇑e ∘ Sum.inl)).det :=
   det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl A A⁻¹
-    (Matrix.mul_nonsing_inv A hA) e σ τ
+    (mul_nonsing_inv A hA) e σ τ
 
 end Matrix

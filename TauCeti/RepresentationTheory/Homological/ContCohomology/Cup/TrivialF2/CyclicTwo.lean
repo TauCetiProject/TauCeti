@@ -170,17 +170,16 @@ theorem cyclicTwoCohomLinearEquiv_symm_character (hG : Nat.card G = 2) :
 
 private def cyclicTwoPolynomialLinearEquiv (hG : Nat.card G = 2) :
     (ZMod 2)[X] ≃ₗ[ZMod 2] gradedCohomF2 G :=
-  (Polynomial.toFinsuppIsoLinear (ZMod 2)).trans
-    ((AddMonoidAlgebra.coeffLinearEquiv (ZMod 2)).trans
-      ((finsuppLEquivDirectSum (ZMod 2) (ZMod 2) ℕ).trans
-        (DirectSum.congrLinearEquiv (cyclicTwoCohomLinearEquiv G hG))))
+  (AddMonoidAlgebra.coeffLinearEquiv (ZMod 2)).trans
+    ((finsuppLEquivDirectSum (ZMod 2) (ZMod 2) ℕ).trans
+      (DirectSum.congrLinearEquiv (cyclicTwoCohomLinearEquiv G hG)))
 
 private theorem cyclicTwoPolynomialLinearEquiv_monomial (hG : Nat.card G = 2)
     (n : ℕ) (r : ZMod 2) :
     cyclicTwoPolynomialLinearEquiv G hG (monomial n r) =
       DirectSum.of (cohomF2 G) n (cyclicTwoCohomLinearEquiv G hG n r) := by
   simp [cyclicTwoPolynomialLinearEquiv, DirectSum.coe_congrLinearEquiv,
-    DirectSum.lof_eq_of, Polynomial.toFinsuppIsoLinear, Polynomial.toFinsupp_monomial]
+    DirectSum.lof_eq_of, Polynomial.coeff_monomial]
 
 private theorem cyclicTwoPolynomialLinearEquiv_apply_component (hG : Nat.card G = 2)
     (p : (ZMod 2)[X]) (n : ℕ) :
@@ -188,8 +187,7 @@ private theorem cyclicTwoPolynomialLinearEquiv_apply_component (hG : Nat.card G 
       cyclicTwoCohomLinearEquiv G hG n (p.coeff n) := by
   simp only [cyclicTwoPolynomialLinearEquiv, LinearEquiv.trans_apply,
     DirectSum.coe_congrLinearEquiv, DirectSum.lmap_apply, finsuppLEquivDirectSum_apply,
-    AddMonoidAlgebra.coeffLinearEquiv_apply, Polynomial.toFinsuppIsoLinear_apply,
-    Polynomial.toFinsupp_apply, LinearEquiv.coe_toLinearMap]
+    AddMonoidAlgebra.coeffLinearEquiv_apply, LinearEquiv.coe_toLinearMap]
 
 private theorem cyclicTwoPolynomialLinearEquiv_eq_aeval (hG : Nat.card G = 2)
     (p : (ZMod 2)[X]) :

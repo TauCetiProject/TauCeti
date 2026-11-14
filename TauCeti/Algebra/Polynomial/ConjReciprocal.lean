@@ -74,7 +74,8 @@ theorem mem_conjReciprocalPolynomials_iff :
 
 /-- For `k < 0` the only conjugate-reciprocal polynomial of degree at most `k` is zero. -/
 theorem conjReciprocalPolynomials_eq_bot (hk : k < 0) : conjReciprocalPolynomials k = ⊥ :=
-  (Submodule.eq_bot_iff _).mpr fun p hp => ext fun n => by simpa using hp.1 n (by omega)
+  (Submodule.eq_bot_iff _).mpr fun p hp => AddMonoidAlgebra.ext <| Finsupp.ext fun n => by
+    simpa using hp.1 n (by omega)
 
 /-- The conjugation `a ↦ conj ∘ a ∘ rev` of `Fin N → ℂ`, whose real points are the coefficient
 vectors of conjugate-reciprocal polynomials of degree less than `N`. -/

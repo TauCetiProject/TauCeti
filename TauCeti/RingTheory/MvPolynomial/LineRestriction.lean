@@ -52,7 +52,7 @@ theorem coeff_aeval_C_mul_X (p : MvPolynomial σ R) (v : σ → R) (m : ℕ) :
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   by_cases h : d.degree = m
   · simp [h]
-  · simp [h, Ne.symm h]
+  · simp [Ne.symm h]
 
 /-- Evaluation of the affine-line restriction is evaluation at the corresponding point. -/
 @[simp]

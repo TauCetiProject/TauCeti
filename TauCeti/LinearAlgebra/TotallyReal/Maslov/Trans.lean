@@ -12,7 +12,7 @@ import Mathlib.Topology.Subpath
 /-!
 # Concatenation and base-point invariance of the Maslov index of loops
 
-Let `E` be a finite-dimensional complex normed space. This file proves the two loop-level facts
+Let `E` be a complex normed space. This file proves the two loop-level facts
 behind the boundary formula for the Maslov index of a bundle pair over a surface with several
 boundary circles, and behind the composition axiom for gluing surfaces along boundary circles.
 
@@ -120,7 +120,7 @@ theorem shift_zero (Λ : TotallyRealLoop E) (s : I) : Λ.shift s 0 = Λ s := by
 
 end
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **Concatenation of loops adds Maslov indices:** for loops `Λ`, `Γ` with the same base
 subspace, `μ(Λ ⬝ Γ) = μ(Λ) + μ(Γ)`. -/

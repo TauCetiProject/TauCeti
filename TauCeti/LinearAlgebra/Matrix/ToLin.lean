@@ -46,6 +46,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
+  matrix of `φ` applied to `x`.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
@@ -192,6 +194,22 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
     refine LinearMap.ext fun x ↦ funext fun q ↦ ?_
     rcases q with b | d <;>
       simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
+
+end LinearMap
+
+namespace LinearMap
+
+open Matrix
+
+/-- **Coordinates through the coefficient matrix.** The coordinate vector of
+`φ (∑ j, x j • v j)` in the basis `b` is the coefficient matrix `LinearMap.toMatrix v b φ` applied
+to `x`. -/
+theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ] [Finite ι]
+    (v : Module.Basis κ R V) (b : Module.Basis ι R M) (φ : V →ₗ[R] M) (x : κ → R) :
+    toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
+  rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
+    LinearEquiv.apply_symm_apply]
 
 end LinearMap
 
