@@ -271,9 +271,15 @@ private theorem mem_avoiding_iff_of_shear {p : ℕ} (hp : p + 1 < Ω.numItems)
       GX.avoiding (⟨p + 1, hp⟩ : Fin Ω.numItems)) ⊔
         Subgroup.zpowers (inr (FreeGroup.of ⟨p, by omega⟩) * inr (FreeGroup.of ⟨p + 1, hp⟩)) := by
   obtain ⟨hfix, hpair'⟩ := mem_avoiding_of_shear hp hkk' hχ hpair
-  refine ⟨fun hc => ?_, fun hc => (show _ ≤ (GX.avoiding k).comap χ.toMonoidHom from
-    sup_le (fun c hc => hfix c (Subgroup.mem_inf.1 hc).1 (Subgroup.mem_inf.1 hc).2)
-      (Subgroup.zpowers_le.2 hpair')) hc⟩
+  have hle : (GX.avoiding (⟨p, by omega⟩ : Fin Ω.numItems) ⊓
+      GX.avoiding (⟨p + 1, hp⟩ : Fin Ω.numItems)) ⊔
+        Subgroup.zpowers (inr (FreeGroup.of ⟨p, by omega⟩) * inr (FreeGroup.of ⟨p + 1, hp⟩)) ≤
+      (GX.avoiding k).comap χ.toMonoidHom := by
+    refine sup_le (fun c hc => ?_) (Subgroup.zpowers_le.2 ?_) <;>
+      rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom]
+    exacts [hfix c (Subgroup.mem_inf.1 hc).1 (Subgroup.mem_inf.1 hc).2, hpair']
+  refine ⟨fun hc => ?_, fun hc => by
+    simpa only [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom] using hle hc⟩
   -- `χ⁻¹` after the substitution `hₖ ↦ 1` maps every word into the subgroup on the right.
   rw [← χ.symm_apply_apply c, ← GX.mem_avoiding.1 hc]
   generalize χ c = a
