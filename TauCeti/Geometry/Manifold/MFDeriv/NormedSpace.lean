@@ -42,8 +42,10 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `Submodule.map_mvfderiv_eq_map_mfderiv`: both derivatives have the same image of a tangent
   submodule.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
-* `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
+* `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in a division semiring, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
+  a normed algebra acting on the target.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
   differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
@@ -266,20 +268,42 @@ theorem mvfderiv_const_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass
   exact fderivWithin_const_smul I.uniqueDiffWithinAt_image hd c
 
 /-- A version of `TauCeti.mvfderiv_const_smul` without differentiability hypothesis, for a scalar in
-the base field: the derivative of a vector-valued function, read in the target space, commutes
-with multiplication by any constant. -/
+a division semiring, such as the base field or `ℂ` acting on a complex normed space regarded as a
+real one: the derivative of a vector-valued function, read in the target space, commutes with
+multiplication by any constant. -/
 @[simp]
-theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
+theorem mvfderiv_const_smul_field {R : Type*} [DivisionSemiring R] [Module R F]
+    [SMulCommClass 𝕜 R F] [ContinuousConstSMul R F] (g : M → F) (x : M) (c : R) :
     mvfderiv I (c • g) x = c • mvfderiv I g x := by
   by_cases hg : MDiffAt g x
   · exact mvfderiv_const_smul hg c
   rcases eq_or_ne c 0 with rfl | hc
   · simp [mvfderiv_zero]
   -- Neither `g` nor `c • g` is differentiable at `x`, so both derivatives vanish.
-  have hcg : ¬MDiffAt (c • g) x := fun hcg ↦
-    hg (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcg.const_smul c⁻¹)
+  have hcg : ¬MDiffAt (c • g) x := fun hcg ↦ hg (by
+    simpa [Function.comp_def, smul_smul, inv_mul_cancel₀ hc] using
+      ((c⁻¹ • ContinuousLinearMap.id 𝕜 F).mdifferentiableAt (x := (c • g) x)).comp x hcg)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
+
+/-- The Leibniz rule for the derivative of a vector-valued function, read in the target space,
+multiplied by a function with values in a normed algebra acting on the target, such as a complex
+valued function and a complex normed space regarded as a real one. This generalizes
+`mvfderiv_smul` from functions with values in the base field. -/
+theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 𝕜 𝕜'] [Module 𝕜' F]
+    [IsBoundedSMul 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {a : M → 𝕜'} {g : M → F} {x : M}
+    (ha : MDifferentiableAt I 𝓘(𝕜, 𝕜') a x) (hg : MDiffAt g x) :
+    mvfderiv I (a • g) x = a x • mvfderiv I g x + (mvfderiv I a x).smulRight (g x) := by
+  have hd := ha.differentiableWithinAt_writtenInExtChartAt.smul
+    hg.differentiableWithinAt_writtenInExtChartAt
+  have hag : MDiffAt (a • g) x :=
+    (mdifferentiableAt_iff _ _).2 ⟨ha.continuousAt.smul hg.continuousAt, hd⟩
+  rw [hag.mvfderiv, ha.mvfderiv, hg.mvfderiv]
+  have h := fderivWithin_smul (x := extChartAt I x x) I.uniqueDiffWithinAt_image
+    ha.differentiableWithinAt_writtenInExtChartAt hg.differentiableWithinAt_writtenInExtChartAt
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.id_comp] at h ⊢
+  rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
 
 /-- Adding a constant does not change the derivative of a vector-valued function, read in the
 target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
