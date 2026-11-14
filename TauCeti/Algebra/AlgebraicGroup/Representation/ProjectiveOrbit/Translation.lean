@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Rescaling
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Translation
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.CoordinateMap
@@ -89,33 +90,6 @@ theorem leftTranslationAlgEquiv_comp_orbitCoordinates
         (SymmetricAlgebra.map R (basePointsRepresentation M g).dualMap) := by
   ext φ
   simp [leftTranslationAlgEquiv_matrixCoefficient, LinearMap.dualMap_apply']
-
-/-- Right translation of a matrix coefficient acts on its vector by the base-point
-representation. -/
-@[simp]
-theorem rightTranslationAlgEquiv_matrixCoefficient (g : WithConv (H →ₐ[R] R))
-    (φ : Module.Dual R M) (m : M) :
-    HopfAlgebra.rightTranslationAlgEquiv g (matrixCoefficient (C := H) φ m) =
-      matrixCoefficient (C := H) φ (basePointsRepresentation M g m) := by
-  let c := AlgHom.mapValue (H := H) (Algebra.ofId R H) g
-  have h := LinearMap.congr_fun (endOfPoint_convMul M (toConv (AlgHom.id R H)) c)
-    ((1 : H) ⊗ₜ[R] m)
-  rw [← HopfAlgebra.toConv_rightTranslationAlgEquiv g, LinearMap.comp_apply,
-    endOfPoint_mapValue_algebraOfId_tmul] at h
-  have heval := congrArg (fun z ↦ TauCeti.Module.Dual.baseChangeEvaluation
-    (R := R) (M := M) (A := H) ((1 : H) ⊗ₜ[R] φ) z) h
-  simpa only [ofConv_toConv, baseChangeEvaluation_endOfPoint_tmul, one_mul,
-    AlgHom.id_apply, AlgEquiv.coe_toAlgHom] using heval
-
-/-- Right translation as an algebra endomorphism acts on a matrix coefficient through the
-base-point representation on the vector. -/
-@[simp]
-theorem rightTranslationAlgHom_matrixCoefficient (g : WithConv (H →ₐ[R] R))
-    (φ : Module.Dual R M) (m : M) :
-    HopfAlgebra.rightTranslationAlgHom g (matrixCoefficient (C := H) φ m) =
-      matrixCoefficient (C := H) φ (basePointsRepresentation M g m) := by
-  rw [← HopfAlgebra.rightTranslationAlgEquiv_toAlgHom, AlgEquiv.toAlgHom_apply,
-    rightTranslationAlgEquiv_matrixCoefficient]
 
 /-- Right translation of the homogeneous orbit coordinates of `m` produces the homogeneous orbit
 coordinates of `g • m`. -/

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 
 /-!
@@ -22,8 +21,10 @@ assumptions are needed.
 
 * `TauCeti.HopfAlgebra.comul_rightTranslationAlgHom`: right translation commutes with
   comultiplication in the second tensor factor.
-* `TauCeti.HopfAlgebra.rightTranslationAlgHom_matrixCoefficient`: right-translating a matrix
-  coefficient evaluates the matrix coefficient on the point-translated vector.
+* `TauCeti.Comodule.rightTranslationAlgHom_matrixCoefficient`: right-translating a matrix
+  coefficient as an algebra endomorphism acts on the vector via `basePointsRepresentation`.
+* `TauCeti.Comodule.rightTranslationAlgEquiv_matrixCoefficient`: right-translating a matrix
+  coefficient as an algebra automorphism acts on the vector via `basePointsRepresentation`.
 
 ## References
 
@@ -38,7 +39,7 @@ open WithConv
 
 namespace TauCeti.HopfAlgebra
 
-universe u v w
+universe u v
 
 variable {R : Type u} [CommRing R] {H : Type v} [CommRing H] [_root_.HopfAlgebra R H]
 
@@ -74,18 +75,37 @@ theorem comul_rightTranslationAlgHom (u : WithConv (H →ₐ[R] R)) (x : H) :
     LinearMap.rTensor_def, LinearMap.lTensor_def] at hcoassoc
   rw [rightTranslationAlgHom_apply, ← hleft, ← hcoassoc, hright]
 
-/-- Right-translating a matrix coefficient of a vector in a right `H`-comodule by a base-valued
-point evaluates the matrix coefficient on the vector acted on by that point. -/
+end TauCeti.HopfAlgebra
+
+namespace TauCeti.Comodule
+
+universe u v w
+
+variable {R : Type u} {H : Type v} {M : Type w}
+variable [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [AddCommMonoid M] [Module R M] [Comodule R H M]
+
+/-- Right translation as an algebra endomorphism acts on a matrix coefficient through the
+base-point representation on the vector. -/
 @[simp]
-theorem rightTranslationAlgHom_matrixCoefficient {M : Type w} [AddCommMonoid M] [Module R M]
-    [Comodule R H M] (u : WithConv (H →ₐ[R] R)) (ψ : Module.Dual R M) (m : M) :
-    rightTranslationAlgHom u (Comodule.matrixCoefficient (R := R) (C := H) ψ m) =
-      Comodule.matrixCoefficient (R := R) (C := H) ψ
-        (Comodule.basePointsRepresentation (H := H) M u m) := by
-  rw [rightTranslationAlgHom_apply, Comodule.comul_matrixCoefficient,
-    Comodule.basePointsRepresentation_apply, Comodule.endOfPoint_tmul, one_smul]
-  induction Comodule.coact (R := R) (C := H) m using TensorProduct.inductionOn with
+theorem rightTranslationAlgHom_matrixCoefficient (g : WithConv (H →ₐ[R] R))
+    (φ : Module.Dual R M) (m : M) :
+    HopfAlgebra.rightTranslationAlgHom g (matrixCoefficient (C := H) φ m) =
+      matrixCoefficient (C := H) φ (basePointsRepresentation M g m) := by
+  rw [HopfAlgebra.rightTranslationAlgHom_apply, comul_matrixCoefficient,
+    basePointsRepresentation_apply, endOfPoint_tmul, one_smul]
+  induction coact (R := R) (C := H) m using TensorProduct.inductionOn with
   | tmul v a => simp
   | add x y hx hy => simp [hx, hy]
 
-end TauCeti.HopfAlgebra
+/-- Right translation of a matrix coefficient acts on its vector by the base-point
+representation. -/
+@[simp]
+theorem rightTranslationAlgEquiv_matrixCoefficient (g : WithConv (H →ₐ[R] R))
+    (φ : Module.Dual R M) (m : M) :
+    HopfAlgebra.rightTranslationAlgEquiv g (matrixCoefficient (C := H) φ m) =
+      matrixCoefficient (C := H) φ (basePointsRepresentation M g m) := by
+  rw [← AlgEquiv.toAlgHom_apply, HopfAlgebra.rightTranslationAlgEquiv_toAlgHom,
+    rightTranslationAlgHom_matrixCoefficient]
+
+end TauCeti.Comodule

@@ -438,7 +438,7 @@ private theorem average_mem_fixedSubcomodule_of_identityComponent_fixed
       congr 1
       refine Finset.sum_congr rfl fun C _ ↦ ?_
       rw [Comodule.matrixCoefficientLinear_apply,
-        ← HopfAlgebra.rightTranslationAlgHom_matrixCoefficient, ← ha']
+        ← Comodule.rightTranslationAlgHom_matrixCoefficient, ← ha']
       have htr := AlgHom.congr_fun (BialgHom.comp_rightTranslationAlgHom ι (g C)) a
       simpa only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, hmap C] using htr.symm
     obtain ⟨r, hr⟩ := ConstantGroup.sum_rightTranslationAlgHom_toPoints_mem_range (R := k) a
