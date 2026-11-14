@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal

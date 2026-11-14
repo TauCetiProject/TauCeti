@@ -300,7 +300,7 @@ inner product. -/
 theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ E]
     {h : E →L[ℝ] E →L[ℝ] ℝ} :
     IsStrictlyPositive h♯ ↔ (∀ u v, h u v = h v u) ∧ ∀ v, v ≠ 0 → 0 < h v v := by
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   have hinner : ∀ u v, ⟪u, h♯ v⟫_ℝ = h v u := fun u v ↦ by
     rw [real_inner_comm, continuousLinearMapOfBilin_apply]
   rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,

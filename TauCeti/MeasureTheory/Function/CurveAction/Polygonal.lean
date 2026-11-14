@@ -216,7 +216,7 @@ private lemma metricDerivative_of_eqOn_polygonalInterpolation {f : ℝ → E} (h
   have hdiff : f s - f t = (s - t) • h⁻¹ • (x (k + 1) - x k) := by
     rw [← hs, hft, add_sub_add_left_eq_sub, ← sub_smul, smul_smul, div_sub_div_same,
       sub_sub_sub_cancel_right, div_eq_mul_inv]
-  rw [edist_eq_enorm_sub (f s), hdiff, enorm_smul (s - t), ← edist_eq_enorm_sub s t,
+  rw [eDist_eq_eNorm_sub (f s), hdiff, eNorm_smul (s - t), ← eDist_eq_eNorm_sub s t,
     ENNReal.div_eq_inv_mul, ENNReal.inv_mul_cancel_left (by simpa using hst) (edist_ne_top s t)]
 
 /-- **The action of a polygonal interpolation is the discrete action.** For every real `p`, the
@@ -235,7 +235,7 @@ theorem curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpol
   have hlen : a + (k + 1) * h - (a + k * h) = h := by ring
   -- The constant speed of the cell, as an extended real.
   have hspeed : ‖h⁻¹ • (x (k + 1) - x k)‖ₑ = (ENNReal.ofReal h)⁻¹ * edist (x k) (x (k + 1)) := by
-    rw [enorm_smul, enorm_inv hh.ne', Real.enorm_of_nonneg hh.le, edist_comm, edist_eq_enorm_sub]
+    rw [eNorm_smul, eNorm_inv hh.ne', Real.eNorm_of_nonneg hh.le, edist_comm, eDist_eq_eNorm_sub]
   calc curveAction p f (a + k * h) (a + (k + 1) * h)
       = ∫⁻ _ in Ioo (a + k * h) (a + (k + 1) * h), ‖h⁻¹ • (x (k + 1) - x k)‖ₑ ^ p := by
         rw [curveAction_def, uIoc_of_le (by nlinarith), ← setLIntegral_congr Ioo_ae_eq_Ioc]

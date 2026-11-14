@@ -122,8 +122,9 @@ module through which every homomorphism to an abelian group factors
 (`TauCeti.RelHomotopyGroup.abelianizationLift`). -/
 @[expose]
 def abelianizationFunctor [Nonempty N] : BasedTopPair.{u} ⥤ ModuleCat.{max u v} ℤ where
-  obj X := ModuleCat.of ℤ (Additive (Abelianization (RelHomotopyGroup N X)))
-  map f := ModuleCat.ofHom (MonoidHom.toAdditive (Abelianization.map (mapHom f))).toIntLinearMap
+  obj X := ModuleCat.of ℤ (Additive (Group.Abelianization (RelHomotopyGroup N X)))
+  map f := ModuleCat.ofHom (MonoidHom.toAdditive (Group.Abelianization.map (mapHom
+      f))).toIntLinearMap
   map_id _ := by
     ext a
     simp
@@ -136,9 +137,11 @@ Mathlib's abelianization functor `GrpCat.abelianize`, applied to `π_{n+1}(X, A,
 def abelianizationFunctorCompForget₂Iso [Nonempty N] :
     abelianizationFunctor.{u} N ⋙ forget₂ (ModuleCat ℤ) AddCommGrpCat ≅
       grpFunctor N ⋙ GrpCat.abelianize ⋙ CommGrpCat.toAddCommGrp :=
-  -- Both functors send a morphism `f` to the additive form of `Abelianization.map (mapHom f)`:
-  -- `GrpCat.abelianize` is defined by `Abelianization.lift (Abelianization.of.comp _)`, which
-  -- is `Abelianization.map` by definition (`Abelianization.lift_of_comp`).
+  -- Both functors send a morphism `f` to the additive form of `Group.Abelianization.map (mapHom
+  -- f)`:
+  -- `GrpCat.abelianize` is defined by `Group.Abelianization.lift (Group.Abelianization.of.comp _)`,
+  -- which
+  -- is `Group.Abelianization.map` by definition (`Group.Abelianization.lift_of_comp`).
   NatIso.ofComponents (fun _ => Iso.refl _) fun _ => rfl
 
 variable {N} [Nonempty N] {X Y : BasedTopPair.{u}}
@@ -146,8 +149,8 @@ variable {N} [Nonempty N] {X Y : BasedTopPair.{u}}
 /-- The quotient map from `π_{n+1}(X, A, a₀)` onto its abelianization, for `n ≥ 1`. It carries
 products to sums (`TauCeti.RelHomotopyGroup.toAbelianization_mul`). -/
 def toAbelianization (a : RelHomotopyGroup N X) :
-    Additive (Abelianization (RelHomotopyGroup N X)) :=
-  Additive.ofMul (Abelianization.of a)
+    Additive (Group.Abelianization (RelHomotopyGroup N X)) :=
+  Additive.ofMul (Group.Abelianization.of a)
 
 @[simp]
 theorem toAbelianization_mul (a b : RelHomotopyGroup N X) :
@@ -168,7 +171,7 @@ their quotient lies in the commutator subgroup. -/
 theorem toAbelianization_eq_toAbelianization_iff {a b : RelHomotopyGroup N X} :
     toAbelianization a = toAbelianization b ↔ a * b⁻¹ ∈ commutator (RelHomotopyGroup N X) :=
   Additive.ofMul.injective.eq_iff.trans <| by
-    rw [← div_eq_one, ← map_div, ← MonoidHom.mem_ker, Abelianization.ker_of, div_eq_mul_inv]
+    rw [← div_eq_one, ← map_div, ← MonoidHom.mem_ker, Group.Abelianization.ker_of, div_eq_mul_inv]
 
 /-- The quotient map onto the abelianization is surjective: every element of the abelianization
 of `π_{n+1}(X, A, a₀)` is represented by an element of `π_{n+1}(X, A, a₀)`. -/
@@ -183,13 +186,13 @@ theorem toAbelianization_bijective_of_subsingleton
     (hA : Subsingleton (HomotopyGroup N X.pair.snd X.basepoint)) :
     Function.Bijective (toAbelianization : RelHomotopyGroup N X → _) :=
   letI : CommGroup (RelHomotopyGroup N X) := { mul_comm := mul_comm_of_subsingleton hA }
-  Additive.ofMul.bijective.comp Abelianization.equivOfComm.bijective
+  Additive.ofMul.bijective.comp Group.Abelianization.equivOfComm.bijective
 
 /-- The quotient map onto the abelianization is natural in the based pair. -/
 @[simp]
 theorem abelianizationFunctor_map_toAbelianization (f : X ⟶ Y) (a : RelHomotopyGroup N X) :
     (abelianizationFunctor N).map f (toAbelianization a) = toAbelianization (map f a) :=
-  congrArg (fun b => Additive.ofMul (Abelianization.of b)) (mapHom_apply f a)
+  congrArg (fun b => Additive.ofMul (Group.Abelianization.of b)) (mapHom_apply f a)
 
 /-- Two morphisms out of the abelianization of `π_{n+1}(X, A, a₀)` agree when they agree on the
 image of `π_{n+1}(X, A, a₀)`. -/
@@ -206,10 +209,11 @@ multiplicatively, induces a morphism from the abelianization of `π_{n+1}(X, A, 
 def abelianizationLift {M : ModuleCat.{max u v} ℤ}
     (φ : RelHomotopyGroup N X →* Multiplicative M) : (abelianizationFunctor N).obj X ⟶ M :=
   ModuleCat.ofHom
-    { toFun := MonoidHom.toAdditiveLeft (Abelianization.lift φ)
+    { toFun := MonoidHom.toAdditiveLeft (Group.Abelianization.lift φ)
       map_add' := map_add _
       map_smul' n a := by
-        simpa using map_intCast_smul (MonoidHom.toAdditiveLeft (Abelianization.lift φ)) ℤ ℤ n a }
+        simpa using map_intCast_smul (MonoidHom.toAdditiveLeft (Group.Abelianization.lift
+            φ)) ℤ ℤ n a }
 
 @[simp]
 theorem abelianizationLift_toAbelianization {M : ModuleCat.{max u v} ℤ}
@@ -260,7 +264,7 @@ def moduleFunctorIsoAbelianizationFunctor [Nontrivial N] :
     moduleFunctor.{u} N ≅ abelianizationFunctor N :=
   NatIso.ofComponents
     (fun X => (MulEquiv.toAdditive
-      (Abelianization.equivOfComm (H := RelHomotopyGroup N X))).toIntLinearEquiv.toModuleIso)
+      (Group.Abelianization.equivOfComm (H := RelHomotopyGroup N X))).toIntLinearEquiv.toModuleIso)
     fun f => by
       ext a
       rfl
