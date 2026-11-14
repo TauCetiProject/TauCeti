@@ -30,6 +30,8 @@ constant field along a constant curve.
   fields.
 * `TauCeti.Manifold.IsJacobiFieldOn.comp_add_const` and
   `TauCeti.Manifold.IsJacobiFieldOn.comp_mul_left`: the time-translation and scaling cases.
+* `TauCeti.Manifold.IsJacobiFieldOn.congr_totalSpace`: transporting a Jacobi field to a curve and
+  field whose tangent-bundle lifts agree on the parameter set.
 
 ## References
 
@@ -54,6 +56,49 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {s u : Set ℝ} {t : ℝ}
+
+/-- Being a Jacobi field on `s` depends only on the curve and the tangent-bundle lift of the field
+on `s`. This transports Jacobi fields across curves that agree on `s`, such as a geodesic and its
+reparametrized maximal geodesic. -/
+theorem IsJacobiFieldOn.congr_totalSpace
+    {δ : ℝ → M} {W : ∀ t, TangentSpace I (δ t)}
+    (h : IsJacobiFieldOn I γ V s)
+    (hEq : ∀ r ∈ s, TotalSpace.mk' E (δ r) (W r) = TotalSpace.mk' E (γ r) (V r)) :
+    IsJacobiFieldOn I δ W s := by
+  let cov := leviCivitaConnection I M
+  have hcurve : EqOn δ γ s := fun r hr ↦ congrArg TotalSpace.proj (hEq r hr)
+  have hheq : ∀ r ∈ s, HEq (W r) (V r) := fun r hr ↦ (TotalSpace.ext_iff.mp (hEq r hr)).2
+  have hfirst : ∀ r ∈ s,
+      HEq (alongCurveWithin cov δ W s r) (alongCurveWithin cov γ V s r) := fun r hr ↦
+    alongCurveWithin_congr_heq cov W (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin)
+      (hcurve hr) (mem_of_superset self_mem_nhdsWithin hheq) (hheq r hr)
+  refine ⟨h.isGeodesicCurveOn.congr hcurve, h.contMDiffOn.congr hEq, fun r hr ↦ ?_⟩
+  have hsecond : HEq (alongCurveWithin cov δ (alongCurveWithin cov δ W s) s r)
+      (alongCurveWithin cov γ (alongCurveWithin cov γ V s) s r) :=
+    alongCurveWithin_congr_heq cov (alongCurveWithin cov δ W s)
+      (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin) (hcurve hr)
+      (mem_of_superset self_mem_nhdsWithin hfirst) (hfirst r hr)
+  have hvel : HEq (curveVelocityWithin I δ s r) (curveVelocityWithin I γ s r) := by
+    have hlift := (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin).curveVelocityLiftWithin_eq
+      (I := I) (hcurve hr)
+    rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at hlift
+    exact (TotalSpace.ext_iff.mp hlift).2
+  have hpt : δ r = γ r := hcurve hr
+  have hwv : HEq (W r) (V r) := hheq r hr
+  have heq_r := h.equation r hr
+  generalize alongCurveWithin cov δ (alongCurveWithin cov δ W s) s r = d₂W at hsecond ⊢
+  generalize alongCurveWithin cov γ (alongCurveWithin cov γ V s) s r = d₂V at hsecond heq_r
+  generalize curveVelocityWithin I δ s r = uδ at hvel ⊢
+  generalize curveVelocityWithin I γ s r = uγ at hvel heq_r
+  generalize W r = wr at hwv ⊢
+  generalize V r = vr at hwv heq_r
+  generalize δ r = x at hpt d₂W uδ wr ⊢
+  generalize γ r = y at hpt d₂V uγ vr hsecond hvel hwv heq_r
+  subst hpt
+  cases eq_of_heq hsecond
+  cases eq_of_heq hvel
+  cases eq_of_heq hwv
+  exact heq_r
 
 /-- The covariant derivative of a Jacobi field reparametrized by `t ↦ a * t + b` is `a` times the
 reparametrized covariant derivative. -/
