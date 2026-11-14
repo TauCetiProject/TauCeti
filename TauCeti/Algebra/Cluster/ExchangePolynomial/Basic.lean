@@ -20,7 +20,9 @@ unit dilation and unit scaling do not use addition. This allows the same data to
 scalar exchange polynomials and coefficients realized by a merely multiplicative map.
 
 The endpoint dilation factor is the coefficient propagation used when mutating another
-direction. Reversal and negation of the corresponding matrix entry invert this factor.
+direction. Its integer argument is the divided matrix entry `B (row k) j / r j`, not the
+undivided entry `B (row k) j`; this is the unscaled matrix entry of Chekhov–Shapiro and
+Nakanishi. Reversal and negation of the divided entry invert this factor.
 
 The coefficient transformations follow Chekhov–Shapiro, *Teichmüller spaces of Riemann surfaces
 with orbifold points of arbitrary order and cluster variables*, §2.1, and Nakanishi,
@@ -330,7 +332,8 @@ noncomputable def leadingUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff
   ext
   simp
 
-/-- The propagation factor `h_r^[b]₊ h_0^(-[-b]₊)` for an integer matrix entry `b`. -/
+/-- The propagation factor `h_r^[b]₊ h_0^(-[-b]₊)` at the divided matrix entry
+`b = B (row k) j / r j`, the unscaled matrix entry of Chekhov–Shapiro and Nakanishi. -/
 noncomputable def dilationFactor (H : ExchangePolynomial K) (b : ℤ) : Kˣ :=
   H.leadingUnit ^ (b⁺ : ℤ) * (H.constantUnit ^ (b⁻ : ℤ))⁻¹
 
@@ -341,7 +344,8 @@ theorem dilationFactor_def (H : ExchangePolynomial K) (b : ℤ) :
 @[simp] theorem dilationFactor_zero (H : ExchangePolynomial K) : H.dilationFactor 0 = 1 := by
   simp [dilationFactor_def]
 
-/-- Reversal swaps the endpoint factors, with an inverse at the negated matrix entry. -/
+/-- Reversal swaps the endpoint factors, inverting the factor at the negated divided matrix entry
+`B (row k) j / r j`. -/
 @[simp] theorem dilationFactor_reverse (H : ExchangePolynomial K) (b : ℤ) :
     H.reverse.dilationFactor b = (H.dilationFactor (-b))⁻¹ := by
   simp [dilationFactor, mul_comm]
@@ -358,12 +362,14 @@ theorem dilationFactor_def (H : ExchangePolynomial K) (b : ℤ) :
   simp only [dilationFactor, constantUnit_dilate, leadingUnit_dilate, mul_zpow]
   ac_rfl
 
-/-- For a nonnegative matrix entry the leading endpoint supplies the propagation factor. -/
+/-- For a nonnegative divided matrix entry `B (row k) j / r j`, the leading endpoint supplies the
+propagation factor. -/
 theorem dilationFactor_of_nonneg (H : ExchangePolynomial K) {b : ℤ} (hb : 0 ≤ b) :
     H.dilationFactor b = H.leadingUnit ^ b := by
   simp [dilationFactor, posPart_eq_self.mpr hb, negPart_eq_zero.mpr hb]
 
-/-- For a nonpositive matrix entry the inverse constant endpoint supplies the factor. -/
+/-- For a nonpositive divided entry `b = B (row k) j / r j`, the factor is
+`H.constantUnit ^ b = (H.constantUnit)⁻¹ ^ (-b)`. -/
 theorem dilationFactor_of_nonpos (H : ExchangePolynomial K) {b : ℤ} (hb : b ≤ 0) :
     H.dilationFactor b = H.constantUnit ^ b := by
   simp [dilationFactor, posPart_eq_zero.mpr hb, negPart_eq_neg.mpr hb]

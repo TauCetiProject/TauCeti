@@ -165,7 +165,8 @@ end Map
   · simp [coeff_reflect, revAt_eq_self_of_lt (by omega : H.degree < i), hi,
       H.coeff_eq_zero i (by omega)]
 
-/-- Reflection agrees with Mathlib's degree-based reversal, including over the zero semiring. -/
+/-- Realizing an exchange polynomial reversal agrees with `Polynomial.reverse`, including over
+ the zero semiring. -/
 theorem toPolynomial_reverse_eq_reverse (H : ExchangePolynomial R) :
     H.reverse.toPolynomial = H.toPolynomial.reverse := by
   rcases subsingleton_or_nontrivial R with _ | _
