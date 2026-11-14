@@ -154,6 +154,17 @@ theorem isZero_singularHomology_zero [PathConnectedSpace P.fst] [Nonempty P.snd]
   rw [h0] at hπ
   exact IsZero.of_epi_zero ((toSSetPair.obj P).right.homology R 0) _
 
+/-- **The connecting morphism vanishes when the subspace has no reduced homology**: if the reduced
+homology of `A` vanishes in degree `k`, then `Hₖ(A) ⟶ Hₖ(X)` is a monomorphism, so the connecting
+morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)` is zero. -/
+theorem singularHomologyδ_eq_zero_of_isZero {k : ℕ}
+    (h₀ : IsZero ((reducedSingularHomologyFunctor R k).obj P.snd)) :
+    P.singularHomologyδ R (k + 1) k = 0 :=
+  -- `TopCat.Hom.mono_singularHomologyMap_of_isZero` is stated with `singularHomologyFunctor`, whose
+  -- map is `SSet.homologyMap` of the singular simplicial sets by definition.
+  (P.map.mono_singularHomologyMap_of_isZero R h₀).right_cancellation _ _
+    ((P.singularHomologyδ_comp R (k + 1) k).trans zero_comp.symm)
+
 /-- **The quotient map to relative homology is an isomorphism when the subspace is acyclic in the
 adjacent degrees**: if the reduced homology of `A` vanishes in degrees `k` and `k + 1`, then
 `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism.  This applies when `A` is contractible, for instance a
@@ -168,11 +179,9 @@ theorem isIso_singularHomologyπ {k : ℕ}
     h₁.of_iso ((reducedSingularHomologySuccIso R k).app P.snd).symm
   have : Mono (P.singularHomologyπ R (k + 1)) :=
     (P.singularHomology_exact_space R (k + 1)).mono_g (hA.eq_of_src _ _)
-  have hδ : P.singularHomologyδ R (k + 1) k = 0 :=
-    (P.map.mono_singularHomologyMap_of_isZero R h₀).right_cancellation _ _
-      ((P.singularHomologyδ_comp R (k + 1) k).trans zero_comp.symm)
   have : Epi (P.singularHomologyπ R (k + 1)) :=
-    (P.singularHomology_exact_relative R (k + 1) k).epi_f hδ
+    (P.singularHomology_exact_relative R (k + 1) k).epi_f
+      (P.singularHomologyδ_eq_zero_of_isZero R h₀)
   exact isIso_of_mono_of_epi _
 
 end TopPair
