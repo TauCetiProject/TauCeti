@@ -20,10 +20,10 @@ a continuous homomorphism from the Spin group of `Q` to the determinant-one orth
 viewed as a subgroup of `GL(n, ℝ)`. It sends a Spin element to the matrix, in the basis `b`, of its
 vector action.
 
-This frame projection is onto and, in positive dimension, a covering map whose kernel consists of
-`1` and `-1`. These are the properties of the compact Spin double cover, transported along the
-frame to the unit-group carrier of `SO(n)` that serves as the structure group of orthonormal frame
-bundles.
+This frame projection is onto and a covering map whose kernel consists of `1` and `-1` (only `1`
+in dimension zero, where the Spin group is trivial). These are the properties of the compact Spin
+double cover, transported along the frame to the unit-group carrier of `SO(n)` that serves as the
+structure group of orthonormal frame bundles.
 
 ## Main definitions
 
@@ -35,10 +35,9 @@ bundles.
 * `OrthonormalBasis.coe_realCliffordSpinFrameProjection_apply`: the frame projection of `x` is the
   matrix of the vector action of `x` in the basis `b`.
 * `OrthonormalBasis.realCliffordSpinFrameProjection_surjective`: the frame projection is onto.
-* `OrthonormalBasis.realCliffordSpinFrameProjection_eq_one_iff`: in positive dimension its kernel
-  consists of `1` and `-1`.
-* `OrthonormalBasis.isCoveringMap_realCliffordSpinFrameProjection`: in positive dimension it is a
-  covering map.
+* `OrthonormalBasis.realCliffordSpinFrameProjection_eq_one_iff`: its kernel consists of `1`
+  and `-1` (only `1` in dimension zero, where `-1` is not a Spin element).
+* `OrthonormalBasis.isCoveringMap_realCliffordSpinFrameProjection`: it is a covering map.
 * `OrthonormalBasis.realCliffordSpinFrameProjection_eq_conj` and
   `OrthonormalBasis.exists_realCliffordSpinFrameProjection_eq_conj`: changing to an equally
   oriented frame conjugates the frame projection by the projection of a Spin element.
@@ -104,9 +103,8 @@ theorem realCliffordSpinFrameProjection_surjective :
     ((b.isometryEquivRealCliffordFormZero hQ).spinGroupContinuousMulEquiv.trans
       (realCliffordSpinContinuousMulEquivUnitsRange n)).surjective
 
-/-- In positive dimension, a Spin element of `Q` has trivial frame projection exactly when it is
-`1` or `-1`. -/
-theorem realCliffordSpinFrameProjection_eq_one_iff [NeZero n] (x : spinGroup Q) :
+/-- A Spin element of `Q` has trivial frame projection exactly when it is `1` or `-1`. -/
+theorem realCliffordSpinFrameProjection_eq_one_iff (x : spinGroup Q) :
     b.realCliffordSpinFrameProjection hQ x = 1 ↔
       (x : CliffordAlgebra Q) = 1 ∨ (x : CliffordAlgebra Q) = -1 := by
   rw [realCliffordSpinFrameProjection_apply, realCliffordSpinContinuousMulEquivUnitsRange_apply,
@@ -143,8 +141,8 @@ theorem exists_realCliffordSpinFrameProjection_eq_conj
   obtain ⟨s, hs⟩ := (b.exists_spinVectorAction_eq_iff_orientation_eq b' hQ).mpr h
   exact ⟨_, b.realCliffordSpinFrameProjection_eq_conj b' hQ s hs⟩
 
-/-- In positive dimension, the frame projection is a covering map. -/
-theorem isCoveringMap_realCliffordSpinFrameProjection [NeZero n] :
+/-- The frame projection is a covering map. -/
+theorem isCoveringMap_realCliffordSpinFrameProjection :
     IsCoveringMap (b.realCliffordSpinFrameProjection hQ) :=
   (isCoveringMap_realCliffordSpinToSpecialOrthogonalRange n).comp_homeomorph
     ((b.isometryEquivRealCliffordFormZero hQ).spinGroupContinuousMulEquiv.trans
