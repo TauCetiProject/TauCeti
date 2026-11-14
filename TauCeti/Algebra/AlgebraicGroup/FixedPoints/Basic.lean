@@ -284,28 +284,17 @@ theorem swapEnd_hom (H : _root_.CommHopfAlgCat.{v} R) :
 /-- Swapping the two tensor factors twice is the identity. -/
 @[simp]
 theorem swapEnd_comp_swapEnd (H : _root_.CommHopfAlgCat.{v} R) :
-    swapEnd H ≫ swapEnd H = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) := by
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply BialgHom.coe_toAlgHom_injective
-  apply Algebra.TensorProduct.ext'
-  intro x y
-  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_apply,
-    BialgHom.coe_toAlgHom, swapEnd_hom]
-  rfl
+    swapEnd H ≫ swapEnd H = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) :=
+  _root_.CommHopfAlgCat.hom_ext <| BialgHom.coe_toAlgHom_injective <|
+    Algebra.TensorProduct.ext' fun _ _ ↦ rfl
 
 /-- Multiplication `H ⊗[R] H →ₐc[R] H` is invariant under swapping the two tensor factors of a
 commutative Hopf algebra `H`, representing contravariantly the diagonal inclusion `G ↪ G × G`. -/
 theorem swapEnd_comp_mulBialgHom (H : _root_.CommHopfAlgCat.{v} R) :
     swapEnd H ≫ _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) =
-      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) := by
-  apply _root_.CommHopfAlgCat.hom_ext
-  apply BialgHom.coe_toAlgHom_injective
-  apply Algebra.TensorProduct.ext'
-  intro x y
-  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom, AlgHom.comp_apply,
-    BialgHom.coe_toAlgHom, swapEnd_hom, _root_.CommHopfAlgCat.hom_ofHom,
-    _root_.Bialgebra.mulBialgHom_toAlgHom]
-  exact mul_comm y x
+      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) :=
+  _root_.CommHopfAlgCat.hom_ext <| BialgHom.coe_toAlgHom_injective <|
+    Algebra.TensorProduct.ext' fun x y ↦ mul_comm y x
 
 private theorem comp_mulBialgHom_of_eq_id_or_swapEnd (H : _root_.CommHopfAlgCat.{v} R) {ι : Type w}
     {f : ι → (_root_.CommHopfAlgCat.of R (H ⊗[R] H) ⟶ _root_.CommHopfAlgCat.of R (H ⊗[R] H))}
@@ -336,20 +325,16 @@ noncomputable def fixedPointsOfSwapIso (H : _root_.CommHopfAlgCat.{v} R) {ι : T
     rw [← Category.assoc, mkFixedPoints_comp_liftFixedPoints, Category.comp_id]
     obtain ⟨i₀, hi₀⟩ := hswap
     have hmk_swap : swapEnd H ≫ mkFixedPoints f = mkFixedPoints f := by
-      rw [← hi₀]
-      exact comp_mkFixedPoints f i₀
-    apply _root_.CommHopfAlgCat.hom_ext
-    apply BialgHom.coe_toAlgHom_injective
-    apply Algebra.TensorProduct.ext'
-    intro x y
+      rw [← hi₀]; exact comp_mkFixedPoints f i₀
+    refine _root_.CommHopfAlgCat.hom_ext (BialgHom.coe_toAlgHom_injective ?_)
+    refine Algebra.TensorProduct.ext' fun x y ↦ ?_
     have hswap_y :
         (Bialgebra.Quotient.mkBialgHom (R := R) (fixedPointsHopfIdeal f).toIdeal)
             ((1 : H) ⊗ₜ[R] y) =
           (Bialgebra.Quotient.mkBialgHom (R := R) (fixedPointsHopfIdeal f).toIdeal)
             (y ⊗ₜ[R] (1 : H)) := by
       have h := congrArg (fun m : _ ⟶ fixedPoints f ↦ m.hom (y ⊗ₜ[R] (1 : H))) hmk_swap
-      rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply, swapEnd_hom, hom_mkQuotient] at h
-      exact h
+      rwa [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply, swapEnd_hom, hom_mkQuotient] at h
     have hmul_xy : (x ⊗ₜ[R] y : H ⊗[R] H) = (x ⊗ₜ[R] (1 : H)) * ((1 : H) ⊗ₜ[R] y) := by simp
     have hmul_left : ((x * y) ⊗ₜ[R] (1 : H) : H ⊗[R] H) =
         (x ⊗ₜ[R] (1 : H)) * (y ⊗ₜ[R] (1 : H)) := by simp
@@ -359,9 +344,7 @@ noncomputable def fixedPointsOfSwapIso (H : _root_.CommHopfAlgCat.{v} R) {ι : T
     rw [hmul_left, map_mul, hmul_xy, map_mul, hswap_y]
   inv_hom_id := by
     rw [Category.assoc, mkFixedPoints_comp_liftFixedPoints]
-    apply _root_.CommHopfAlgCat.hom_ext
-    ext x
-    simp
+    exact _root_.CommHopfAlgCat.hom_ext (by ext x; simp)
 
 /-- Precomposing `(fixedPointsOfSwapIso H hswap hf).hom` with `mkFixedPoints f` recovers the
 diagonal coordinate map `mulBialgHom R H`. -/
@@ -371,10 +354,8 @@ theorem mkFixedPoints_comp_fixedPointsOfSwapIso_hom (H : _root_.CommHopfAlgCat.{
     (hswap : ∃ i, f i = swapEnd H)
     (hf : ∀ i, f i = 𝟙 (_root_.CommHopfAlgCat.of R (H ⊗[R] H)) ∨ f i = swapEnd H) :
     mkFixedPoints f ≫ (fixedPointsOfSwapIso H hswap hf).hom =
-      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) := by
-  rw [fixedPointsOfSwapIso]
-  dsimp only
-  exact mkFixedPoints_comp_liftFixedPoints _ _
+      _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.mulBialgHom R H) :=
+  mkFixedPoints_comp_liftFixedPoints _ (comp_mulBialgHom_of_eq_id_or_swapEnd H hf)
 
 end Swap
 

@@ -104,11 +104,7 @@ theorem sub_mem_coinvariantIdeal (θ : Θ) (a : A) :
 theorem coinvariantIdeal_le_iff {J : Ideal A} :
     coinvariantIdeal Θ A ≤ J ↔ ∀ (θ : Θ) (a : A), θ • a - a ∈ J := by
   rw [coinvariantIdeal_def, Ideal.span_le]
-  constructor
-  · intro h θ a
-    exact h ⟨θ, a, rfl⟩
-  · rintro h _ ⟨θ, a, rfl⟩
-    exact h θ a
+  exact ⟨fun h θ a ↦ h ⟨θ, a, rfl⟩, by rintro h _ ⟨θ, a, rfl⟩; exact h θ a⟩
 
 /-- A ring homomorphism out of `A` kills `coinvariantIdeal Θ A` if and only if it is
 `Θ`-invariant. -/
@@ -149,10 +145,7 @@ def coinvariantAlgHomEquiv (R Θ A B : Type*) [CommRing R] [CommRing A] [CommRin
   toFun g := ⟨g.comp (Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A)), fun θ a ↦ by simp⟩
   invFun f := Ideal.Quotient.liftₐ (coinvariantIdeal Θ A) f.1 fun x hx ↦
     RingHom.mem_ker.mp ((coinvariantIdeal_le_ker_iff f.1.toRingHom).mpr f.2 hx)
-  left_inv g := by
-    ext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rfl
+  left_inv g := AlgHom.ext fun x ↦ by obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x; rfl
   right_inv f := Subtype.ext <| AlgHom.ext fun _ ↦ rfl
 
 /-- The forward direction of `coinvariantAlgHomEquiv` precomposes with the quotient map. -/
@@ -189,11 +182,8 @@ theorem range_comp_mkₐ_coinvariantIdeal (R Θ A B : Type*) [CommRing R] [CommR
         g.comp (Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A))) =
       { f : A →ₐ[R] B | ∀ (θ : Θ) (a : A), f (θ • a) = f a } := by
   ext f
-  constructor
-  · rintro ⟨g, rfl⟩ θ a
-    simp
-  · intro hf
-    exact ⟨(coinvariantAlgHomEquiv R Θ A B).symm ⟨f, hf⟩, AlgHom.ext fun _ ↦ rfl⟩
+  exact ⟨by rintro ⟨g, rfl⟩ θ a; simp,
+    fun hf ↦ ⟨(coinvariantAlgHomEquiv R Θ A B).symm ⟨f, hf⟩, AlgHom.ext fun _ ↦ rfl⟩⟩
 
 end SMul
 
@@ -318,41 +308,25 @@ noncomputable def reynoldsInfinitesimalLift (hΘ : IsUnit (Nat.card Θ : R)) :
     (↑hΘ.unit⁻¹ : R) • ∑ θ : Θ, Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A ^ 2) (θ • a)
   map_one' := by
     let _ : Fintype Θ := Fintype.ofFinite Θ
-    have hcard : (Fintype.card Θ : R) = (hΘ.unit : R) := by
-      rw [IsUnit.unit_spec, Nat.card_eq_fintype_card]
     have hinv : (↑hΘ.unit⁻¹ : R) * (Fintype.card Θ : R) = 1 := by
-      rw [hcard, Units.inv_mul]
+      rw [← Nat.card_eq_fintype_card, hΘ.val_inv_mul]
     simp only [smul_one, map_one, Finset.sum_const, Finset.card_univ,
       ← Nat.cast_smul_eq_nsmul R, smul_smul, hinv, one_smul]
   map_mul' a b := by
     let _ : Fintype Θ := Fintype.ofFinite Θ
-    let q := Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A ^ 2)
     have hu : (hΘ.unit : R) = (Fintype.card Θ : R) := by
-      rw [IsUnit.unit_spec, Nat.card_eq_fintype_card]
+      rw [hΘ.unit_spec, Nat.card_eq_fintype_card]
     dsimp only
     rw [← mkₐ_add_reynoldsDisplacement hΘ.unit hu, ← mkₐ_add_reynoldsDisplacement hΘ.unit hu,
       ← mkₐ_add_reynoldsDisplacement hΘ.unit hu, map_mul, reynoldsDisplacement_mul_apply]
-    calc
-      q a * q b +
-          (q a * reynoldsDisplacement Θ hΘ.unit b + reynoldsDisplacement Θ hΘ.unit a * q b)
-          = q a * q b + q a * reynoldsDisplacement Θ hΘ.unit b +
-              reynoldsDisplacement Θ hΘ.unit a * q b +
-              reynoldsDisplacement Θ hΘ.unit a * reynoldsDisplacement Θ hΘ.unit b := by
-            rw [reynoldsDisplacement_mul_reynoldsDisplacement, add_zero, add_assoc]
-      _ = (q a + reynoldsDisplacement Θ hΘ.unit a) *
-            (q b + reynoldsDisplacement Θ hΘ.unit b) := by ring
-  map_zero' := by
-    let _ : Fintype Θ := Fintype.ofFinite Θ
-    simp
+    linear_combination -reynoldsDisplacement_mul_reynoldsDisplacement (Θ := Θ) hΘ.unit a b
+  map_zero' := by let _ := Fintype.ofFinite Θ; simp
   map_add' a b := by
-    let _ : Fintype Θ := Fintype.ofFinite Θ
-    simp only [smul_add, map_add, Finset.sum_add_distrib]
+    let _ := Fintype.ofFinite Θ; simp only [smul_add, map_add, Finset.sum_add_distrib]
   commutes' r := by
     let _ : Fintype Θ := Fintype.ofFinite Θ
-    have hcard : (Fintype.card Θ : R) = (hΘ.unit : R) := by
-      rw [IsUnit.unit_spec, Nat.card_eq_fintype_card]
     have hinv : (↑hΘ.unit⁻¹ : R) * (Fintype.card Θ : R) = 1 := by
-      rw [hcard, Units.inv_mul]
+      rw [← Nat.card_eq_fintype_card, hΘ.val_inv_mul]
     have hsmul (θ : Θ) : θ • algebraMap R A r = algebraMap R A r := by
       rw [Algebra.algebraMap_eq_smul_one, smul_comm, smul_one]
     simp only [hsmul, AlgHom.commutes, Finset.sum_const, Finset.card_univ,
@@ -384,10 +358,8 @@ theorem factor_reynoldsInfinitesimalLift_apply (hΘ : IsUnit (Nat.card Θ : R)) 
         (reynoldsInfinitesimalLift hΘ a) =
       Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A) a := by
   let _ : Fintype Θ := Fintype.ofFinite Θ
-  have hcard : (Fintype.card Θ : R) = (hΘ.unit : R) := by
-    rw [IsUnit.unit_spec, Nat.card_eq_fintype_card]
   have hinv : (↑hΘ.unit⁻¹ : R) * (Fintype.card Θ : R) = 1 := by
-    rw [hcard, Units.inv_mul]
+    rw [← Nat.card_eq_fintype_card, hΘ.val_inv_mul]
   simp only [reynoldsInfinitesimalLift_apply, map_smul, map_sum, Ideal.Quotient.mkₐ_eq_mk,
     Ideal.Quotient.factorₐ_apply, Ideal.Quotient.factor_mk, mk_smul_coinvariantIdeal,
     Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul R, smul_smul, hinv, one_smul]
@@ -441,9 +413,8 @@ theorem formallySmooth_quotient_coinvariantIdeal [Algebra.FormallySmooth R A]
     (hΘ : IsUnit (Nat.card Θ : R)) :
     Algebra.FormallySmooth R (A ⧸ coinvariantIdeal Θ A) := by
   let f : A →ₐ[R] A ⧸ coinvariantIdeal Θ A := Ideal.Quotient.mkₐ R (coinvariantIdeal Θ A)
-  have hker : coinvariantIdeal Θ A ^ 2 = RingHom.ker f.toRingHom ^ 2 := by
-    congr 1
-    exact (Ideal.Quotient.mkₐ_ker R (coinvariantIdeal Θ A)).symm
+  have hker : coinvariantIdeal Θ A ^ 2 = RingHom.ker f.toRingHom ^ 2 :=
+    congrArg (· ^ 2) (Ideal.Quotient.mkₐ_ker R (coinvariantIdeal Θ A)).symm
   let e : (A ⧸ (coinvariantIdeal Θ A ^ 2)) ≃ₐ[R] (A ⧸ (RingHom.ker f.toRingHom ^ 2)) :=
     Ideal.quotientEquivAlgOfEq R hker
   refine Algebra.FormallySmooth.of_split f (e.toAlgHom.comp (reynoldsInfinitesimalSection hΘ)) ?_
@@ -451,8 +422,7 @@ theorem formallySmooth_quotient_coinvariantIdeal [Algebra.FormallySmooth R A]
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (coinvariantIdeal Θ A) x
   have hlift (z : A ⧸ (coinvariantIdeal Θ A ^ 2)) :
       f.kerSquareLift (e z) = Ideal.Quotient.factorₐ R (Ideal.pow_le_self two_ne_zero) z := by
-    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective z
-    rfl
+    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective z; rfl
   rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     reynoldsInfinitesimalSection_mkₐ, hlift, factor_reynoldsInfinitesimalLift_apply,
     AlgHom.id_apply]
@@ -484,10 +454,9 @@ theorem formallySmooth_quotient_of_eq_iSup_span_range_sub [Algebra.FormallySmoot
     Algebra.FormallySmooth R (A ⧸ I) := by
   let _ : MulSemiringAction Θ A := MulSemiringAction.compHom A ρ
   let _ : SMulCommClass Θ R A := SMul.comp.smulCommClass ρ
-  have hEq : coinvariantIdeal Θ A = I := (coinvariantIdeal_eq_iSup Θ A).trans hI.symm
-  have _ : Algebra.FormallySmooth R (A ⧸ coinvariantIdeal Θ A) :=
-    formallySmooth_quotient_coinvariantIdeal (R := R) (A := A) hΘ
-  exact Algebra.FormallySmooth.of_equiv (Ideal.quotientEquivAlgOfEq R hEq)
+  have _ := formallySmooth_quotient_coinvariantIdeal (R := R) (A := A) hΘ
+  exact Algebra.FormallySmooth.of_equiv
+    (Ideal.quotientEquivAlgOfEq R ((coinvariantIdeal_eq_iSup Θ A).trans hI.symm))
 
 /-- Explicit-homomorphism form of `smooth_quotient_coinvariantIdeal`: if `ρ : Θ →* (A ≃ₐ[R] A)` is
 an action of a finite group whose order is invertible in `R` on a smooth `R`-algebra `A`, and `I` is
@@ -499,10 +468,9 @@ theorem smooth_quotient_of_eq_iSup_span_range_sub [Algebra.Smooth R A]
     Algebra.Smooth R (A ⧸ I) := by
   let _ : MulSemiringAction Θ A := MulSemiringAction.compHom A ρ
   let _ : SMulCommClass Θ R A := SMul.comp.smulCommClass ρ
-  have hEq : coinvariantIdeal Θ A = I := (coinvariantIdeal_eq_iSup Θ A).trans hI.symm
-  have _ : Algebra.Smooth R (A ⧸ coinvariantIdeal Θ A) :=
-    smooth_quotient_coinvariantIdeal (R := R) (A := A) hΘ
-  exact Algebra.Smooth.of_equiv (Ideal.quotientEquivAlgOfEq R hEq)
+  have _ := smooth_quotient_coinvariantIdeal (R := R) (A := A) hΘ
+  exact Algebra.Smooth.of_equiv
+    (Ideal.quotientEquivAlgOfEq R ((coinvariantIdeal_eq_iSup Θ A).trans hI.symm))
 
 end AlgEquivAction
 

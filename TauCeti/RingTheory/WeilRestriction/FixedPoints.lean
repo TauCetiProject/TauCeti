@@ -285,12 +285,8 @@ variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 indeterminate `X`. -/
 def polynomialCoefficientAction : Γ →* RingAut B[X] where
   toFun γ := Polynomial.mapEquiv (ρB γ).toRingEquiv
-  map_one' := by
-    ext p n
-    simp [map_one ρB]
-  map_mul' γ δ := by
-    ext p n
-    simp [map_mul ρB]
+  map_one' := by ext p n; simp [map_one ρB]
+  map_mul' γ δ := by ext p n; simp [map_mul ρB]
 
 /-- `polynomialCoefficientAction` acts on constant polynomials `C b` through `ρB`. -/
 @[simp]
@@ -306,8 +302,7 @@ theorem polynomialCoefficientAction_X (γ : Γ) :
 
 /-- Semilinearity of `polynomialCoefficientAction` over `ρB`. -/
 theorem polynomialCoefficientAction_algebraMap (γ : Γ) (b : B) :
-    polynomialCoefficientAction ρB γ (algebraMap B B[X] b) = algebraMap B B[X] (ρB γ b) := by
-  simp
+    polynomialCoefficientAction ρB γ (algebraMap B B[X] b) = algebraMap B B[X] (ρB γ b) := by simp
 
 /-- A `B`-algebra map `y : B[X] →ₐ[B] B ⊗[A] T` is `Γ`-equivariant for the coefficient action if
 and only if `y X` is fixed by every `ρB γ ⊗ id_T`. -/
@@ -317,20 +312,15 @@ theorem polynomialCoefficientAction_equivariant_iff {T : Type*} [CommRing T] [Al
         Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B) (y p)) ↔
       ∀ γ : Γ, Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B) (y Polynomial.X) =
         y Polynomial.X := by
-  constructor
-  · intro hy γ
-    simpa using (hy γ Polynomial.X).symm
-  · intro hX γ
-    have hHom : y.toRingHom.comp (polynomialCoefficientAction ρB γ : B[X] →+* B[X]) =
-        (Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B)).toRingHom.comp y.toRingHom := by
-      ext b
-      · simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_comp, RingHom.coe_coe,
-          Function.comp_apply, polynomialCoefficientAction_C]
-        rw [← Polynomial.algebraMap_eq, y.commutes, y.commutes]
-        simp
-      · simpa using (hX γ).symm
-    intro p
-    exact DFunLike.congr_fun hHom p
+  refine ⟨fun hy γ ↦ by simpa using (hy γ Polynomial.X).symm, fun hX γ p ↦ ?_⟩
+  have hHom : y.toRingHom.comp (polynomialCoefficientAction ρB γ : B[X] →+* B[X]) =
+      (Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B)).toRingHom.comp y.toRingHom := by
+    ext b
+    · simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_comp, RingHom.coe_coe,
+        Function.comp_apply, polynomialCoefficientAction_C]
+      rw [← Polynomial.algebraMap_eq, y.commutes, y.commutes]; simp
+    · simpa using (hX γ).symm
+  exact DFunLike.congr_fun hHom p
 
 -- Under `|Γ| ∈ Aˣ`, injectivity of `A → B`, and `B^Γ = A`, Reynolds averaging retracts `B` onto `A`
 -- as an `A`-module.
@@ -343,8 +333,7 @@ private def reynoldsBaseProj {Γ : Type*} [Group Γ] [Fintype Γ] (ρB : Γ →*
     hinv (avg b) fun φ ↦ by
       simp only [avg, LinearMap.smul_apply, LinearMap.sum_apply, AlgHom.toLinearMap_apply,
         AlgEquiv.coe_toAlgHom, map_smul, map_sum, ← AlgEquiv.mul_apply, ← map_mul]
-      congr 1
-      exact Fintype.sum_equiv (Equiv.mulLeft φ) _ _ fun _ ↦ rfl
+      exact congrArg _ (Fintype.sum_equiv (Equiv.mulLeft φ) _ _ fun _ ↦ rfl)
   (LinearEquiv.ofInjective (Algebra.linearMap A B) hinj).symm.toLinearMap.comp
     (avg.codRestrict (LinearMap.range (Algebra.linearMap A B)) hmem)
 
@@ -357,16 +346,14 @@ private theorem algebraMap_reynoldsBaseProj {Γ : Type*} [Group Γ] [Fintype Γ]
       algebraMap A B ((LinearEquiv.ofInjective (Algebra.linearMap A B) hinj).symm c) = c.1 :=
     congrArg Subtype.val ((LinearEquiv.ofInjective (Algebra.linearMap A B) hinj).apply_symm_apply c)
   unfold reynoldsBaseProj
-  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, key]
-  simp
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, key]; simp
 
 private theorem reynoldsBaseProj_algebraMap {Γ : Type*} [Group Γ] [Fintype Γ]
     (ρB : Γ →* (B ≃ₐ[A] B)) (u : Aˣ) (hu : (u : A) = (Fintype.card Γ : A))
     (hinj : Function.Injective (algebraMap A B))
     (hinv : ∀ b : B, (∀ γ : Γ, ρB γ b = b) → b ∈ Set.range (algebraMap A B)) (a : A) :
     reynoldsBaseProj ρB u hinj hinv (algebraMap A B a) = a := by
-  have hunit : (↑u⁻¹ : A) * (Fintype.card Γ : A) = 1 := by
-    rw [← hu, Units.inv_mul]
+  have hunit : (↑u⁻¹ : A) * (Fintype.card Γ : A) = 1 := by rw [← hu, Units.inv_mul]
   apply hinj
   rw [algebraMap_reynoldsBaseProj ρB u hinj hinv]
   simp only [AlgEquiv.commutes, Finset.sum_const, Finset.card_univ,
@@ -405,35 +392,22 @@ private theorem includeRight_reynoldsTensorProj_of_fixed {Γ : Type*} [Group Γ]
     {T : Type*} [CommRing T] [Algebra A T] {z : B ⊗[A] T}
     (hz : ∀ γ : Γ, Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B) z = z) :
     Algebra.TensorProduct.includeRight (reynoldsTensorProj ρB u hinj hinv T z) = z := by
-  have hunit : (↑u⁻¹ : A) * (Fintype.card Γ : A) = 1 := by
-    rw [← hu, Units.inv_mul]
+  have hunit : (↑u⁻¹ : A) * (Fintype.card Γ : A) = 1 := by rw [← hu, Units.inv_mul]
   let lhs : B ⊗[A] T →ₗ[A] B ⊗[A] T :=
     Algebra.TensorProduct.includeRight.toLinearMap.comp (reynoldsTensorProj ρB u hinj hinv T)
   let rhs : B ⊗[A] T →ₗ[A] B ⊗[A] T :=
     (↑u⁻¹ : A) • ∑ γ : Γ, (Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B)).toLinearMap
-  have hEq : lhs = rhs := by
-    ext b t
-    calc
-      lhs (b ⊗ₜ[A] t)
-          = 1 ⊗ₜ[A] (reynoldsBaseProj ρB u hinj hinv b • t) := by
-              simp [lhs, reynoldsTensorProj]
-      _ = algebraMap A B (reynoldsBaseProj ρB u hinj hinv b) ⊗ₜ[A] t := by
-            rw [← TensorProduct.smul_tmul, Algebra.algebraMap_eq_smul_one]
-      _ = ((↑u⁻¹ : A) • ∑ γ : Γ, ρB γ b) ⊗ₜ[A] t := by
-            rw [algebraMap_reynoldsBaseProj ρB u hinj hinv b]
-      _ = (↑u⁻¹ : A) • ∑ γ : Γ, (ρB γ b ⊗ₜ[A] t) := by
-            rw [← TensorProduct.smul_tmul', TensorProduct.sum_tmul]
-      _ = rhs (b ⊗ₜ[A] t) := by
-            simp [rhs]
-  calc
-    Algebra.TensorProduct.includeRight (reynoldsTensorProj ρB u hinj hinv T z)
-        = lhs z := rfl
-    _ = rhs z := DFunLike.congr_fun hEq z
-    _ = (↑u⁻¹ : A) • ∑ _γ : Γ, z := by
-          simp only [rhs, LinearMap.smul_apply, LinearMap.sum_apply, AlgHom.toLinearMap_apply, hz]
-    _ = z := by
-          simp only [Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul A, smul_smul,
-            hunit, one_smul]
+  have hEq : lhs = rhs := TensorProduct.ext' fun b t ↦ by
+    simp only [lhs, reynoldsTensorProj, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+      LinearEquiv.coe_coe, TensorProduct.lid_tmul, AlgHom.toLinearMap_apply,
+      Algebra.TensorProduct.includeRight_apply]
+    rw [← TensorProduct.smul_tmul, ← Algebra.algebraMap_eq_smul_one,
+      algebraMap_reynoldsBaseProj ρB u hinj hinv b, ← TensorProduct.smul_tmul',
+      TensorProduct.sum_tmul]
+    simp [rhs]
+  simpa only [lhs, rhs, LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.smul_apply,
+    LinearMap.sum_apply, hz, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul A,
+    smul_smul, hunit, one_smul] using DFunLike.congr_fun hEq z
 
 private def toPolynomialAlgHom [Module.Finite A B] [Module.Projective A B]
     {Γ : Type*} [Monoid Γ] (ρB : Γ →* (B ≃ₐ[A] B)) :
@@ -466,11 +440,7 @@ private theorem lTensor_toPolynomialAlgHom_universalPoint_X
   have hcomp := fixedHomEquiv_apply ρB (polynomialCoefficientAction ρB)
     (polynomialCoefficientAction_algebraMap ρB) (toPolynomialAlgHom ρB)
   have hX := congrArg (fun f : B[X] →ₐ[B] B ⊗[A] A[X] ↦ f Polynomial.X) hcomp
-  have hlhs : (fixedHomEquiv ρB (polynomialCoefficientAction ρB)
-      (polynomialCoefficientAction_algebraMap ρB) A[X] (toPolynomialAlgHom ρB)).1 Polynomial.X =
-      Algebra.TensorProduct.includeRight Polynomial.X := by
-    simp [toPolynomialAlgHom]
-  exact hX.symm.trans hlhs
+  exact hX.symm.trans (by simp [toPolynomialAlgHom])
 
 private theorem includeRight_fromPolynomialAlgHom_X [Module.Finite A B] [Module.Projective A B]
     {Γ : Type*} [Group Γ] [_root_.Finite Γ] (ρB : Γ →* (B ≃ₐ[A] B))
@@ -538,10 +508,7 @@ theorem fixedHomEquiv_fixedCoordinateRingPolynomialEquiv
         (fixedCoordinateRingPolynomialEquiv ρB hΓ hinj hinv).toAlgHom).1 =
       Polynomial.aeval (Algebra.TensorProduct.includeRight Polynomial.X) := by
   have hcoe : (fixedCoordinateRingPolynomialEquiv ρB hΓ hinj hinv).toAlgHom =
-      toPolynomialAlgHom ρB := by
-    rw [fixedCoordinateRingPolynomialEquiv]
-    ext x
-    rfl
+      toPolynomialAlgHom ρB := AlgHom.ext fun _ ↦ rfl
   rw [hcoe, toPolynomialAlgHom]
   exact congrArg Subtype.val ((fixedHomEquiv ρB (polynomialCoefficientAction ρB)
     (polynomialCoefficientAction_algebraMap ρB) A[X]).apply_symm_apply _)

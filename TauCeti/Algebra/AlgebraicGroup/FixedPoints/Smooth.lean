@@ -295,11 +295,8 @@ private theorem exists_nontrivial_idempotent_fixedPoints_multiplicativeGroup [No
       exact LaurentPolynomial.antipode_T 1
     rwa [hant] at hcomp
   have ht_sq : t * t = 1 := by
-    calc t * t = q.hom (LaurentPolynomial.T (-1)) * q.hom (LaurentPolynomial.T 1) := by
-          rw [ht_inv]
-      _ = q.hom (LaurentPolynomial.T (-1 + 1)) := by
-          rw [← map_mul, ← LaurentPolynomial.T_add]
-      _ = 1 := by rw [neg_add_cancel, LaurentPolynomial.T_zero, map_one]
+    nth_rw 1 [← ht_inv]
+    rw [← map_mul, ← LaurentPolynomial.T_add, neg_add_cancel, LaurentPolynomial.T_zero, map_one]
   let c : R := ((h2.unit⁻¹ : Rˣ) : R)
   have hc2 : c * 2 = 1 := by
     rw [← h2.unit_spec, ← Units.val_mul, inv_mul_cancel, Units.val_one]
@@ -319,18 +316,13 @@ private theorem exists_nontrivial_idempotent_fixedPoints_multiplicativeGroup [No
       (fun m : WithConv (R[T;T⁻¹] →ₐ[R] R) ↦ m.ofConv (LaurentPolynomial.T 1)) hp
     rw [BialgHom.mapDomain_apply_apply] at hpT
     exact hpT.trans (by
-      dsimp only [g]
-      rw [MultiplicativeGroup.pointsMulEquiv_symm_apply]
-      exact laurentEval_T_one u)
+      dsimp only [g]; rw [MultiplicativeGroup.pointsMulEquiv_symm_apply]; exact laurentEval_T_one u)
   rcases heval 1 (one_pow 2) with ⟨φ₁, hφ₁⟩
   rcases heval (-1) (by simp) with ⟨φ₂, hφ₂⟩
   refine ⟨c • (1 + t), ?_, fun he0 ↦ ?_, fun he1 ↦ ?_⟩
   · change c • (1 + t) * (c • (1 + t)) = c • (1 + t)
     have h1t : (1 + t) * (1 + t) = (2 : R) • (1 + t) := by
-      rw [Algebra.smul_def, map_ofNat]
-      calc (1 + t) * (1 + t) = 1 + t + t + t * t := by ring
-        _ = 1 + t + t + 1 := by rw [ht_sq]
-        _ = 2 * (1 + t) := by ring
+      rw [Algebra.smul_def, map_ofNat]; linear_combination ht_sq
     rw [smul_mul_smul_comm, h1t, ← mul_smul, mul_assoc, hc2, mul_one]
   · have h1 := congrArg φ₁ he0
     rw [map_zero, show φ₁ (c • (1 + t)) = c * (1 + φ₁ t) by simp [Algebra.smul_def], hφ₁,
