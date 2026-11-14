@@ -28,7 +28,8 @@ duals of `Hom` modules in Auslander-Reiten theory.
 * The `AddCommGroup` instance on `TauCeti.ExactStructure.Ext1 E Z X` is the Baer sum.
 * The `Module R` instance on `TauCeti.ExactStructure.Ext1 E Z X`, for `R`-linear categories.
 * `TauCeti.ExactStructure.Ext1.pushoutLinearMap` and
-  `TauCeti.ExactStructure.Ext1.pullbackLinearMap`: cobase and base change as `R`-linear maps.
+  `TauCeti.ExactStructure.Ext1.pullbackLinearMap`: cobase and base change as `R`-linear maps, and
+  `TauCeti.ExactStructure.Ext1.pullbackLinearEquiv`: base change along an isomorphism.
 
 ## Main results
 
@@ -332,6 +333,16 @@ theorem pullback_neg (ξ : E.Ext1 Z X) (u : Z' ⟶ Z) : ξ.pullback (-u) = -ξ.p
 theorem neg_pullback (ξ : E.Ext1 Z X) (u : Z' ⟶ Z) : (-ξ).pullback u = -ξ.pullback u := by
   rw [neg_eq_pullback, pullback_pullback, Preadditive.comp_neg, Category.comp_id, pullback_neg]
 
+/-- Base change is additive in the morphism, for finite sums. -/
+theorem pullback_sum {ι : Type*} (s : Finset ι) (ξ : E.Ext1 Z X) (u : ι → (Z' ⟶ Z)) :
+    ξ.pullback (∑ i ∈ s, u i) = ∑ i ∈ s, ξ.pullback (u i) :=
+  map_sum (AddMonoidHom.mk' (fun u ↦ ξ.pullback u) (pullback_add ξ)) u s
+
+/-- Cobase change is additive in the morphism, for finite sums. -/
+theorem pushout_sum {ι : Type*} (s : Finset ι) (ξ : E.Ext1 Z X) (v : ι → (X ⟶ X')) :
+    ξ.pushout (∑ i ∈ s, v i) = ∑ i ∈ s, ξ.pushout (v i) :=
+  map_sum (AddMonoidHom.mk' (fun v ↦ ξ.pushout v) (pushout_add ξ)) v s
+
 /-! ### The module structure -/
 
 section Linear
@@ -411,6 +422,22 @@ noncomputable def pullbackLinearMap (u : Z' ⟶ Z) : E.Ext1 Z X →ₗ[R] E.Ext1
 @[simp]
 theorem pullbackLinearMap_apply (u : Z' ⟶ Z) (ξ : E.Ext1 Z X) :
     pullbackLinearMap R u ξ = ξ.pullback u := (rfl)
+
+/-- **Base change along an isomorphism** `e : Z' ≅ Z`, as an `R`-linear equivalence
+`Ext¹_E(Z, X) ≃ Ext¹_E(Z', X)`. -/
+noncomputable def pullbackLinearEquiv (e : Z' ≅ Z) : E.Ext1 Z X ≃ₗ[R] E.Ext1 Z' X :=
+  { pullbackLinearMap R e.hom with
+    invFun ξ := ξ.pullback e.inv
+    left_inv ξ := by simp
+    right_inv ξ := by simp }
+
+@[simp]
+theorem pullbackLinearEquiv_apply (e : Z' ≅ Z) (ξ : E.Ext1 Z X) :
+    pullbackLinearEquiv R e ξ = ξ.pullback e.hom := (rfl)
+
+@[simp]
+theorem pullbackLinearEquiv_symm_apply (e : Z' ≅ Z) (ξ : E.Ext1 Z' X) :
+    (pullbackLinearEquiv R e).symm ξ = ξ.pullback e.inv := (rfl)
 
 end Linear
 
