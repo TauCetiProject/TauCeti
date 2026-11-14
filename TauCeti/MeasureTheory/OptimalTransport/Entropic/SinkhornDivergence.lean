@@ -219,7 +219,7 @@ private theorem comp_swap_eq_of_posSemidef (hcB : ∀ z, c z ≤ B) (hε : ε �
   have h := hk.isHermitian.apply z.1 z.2
   rw [star_trivial, entropicGibbsKernel_of_ne_top (hfin _),
     entropicGibbsKernel_of_ne_top (hfin _), Real.exp_eq_exp,
-    div_left_inj' (NNReal.coe_ne_zero.2 hε), neg_inj] at h
+    div_left_inj₀ (NNReal.coe_ne_zero.2 hε), neg_inj] at h
   exact (ENNReal.toReal_eq_toReal_iff' (hfin _) (hfin _)).1 h
 
 variable [TopologicalSpace X] [CompactSpace X]

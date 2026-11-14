@@ -58,6 +58,21 @@ theorem mem_orbit (x : 𝟙_ (Over S) ⟶ X) (p : X.left) :
 theorem orbit_def (x : 𝟙_ (Over S) ⟶ X) :
     orbit G x = Set.range (orbitMap G x).left := (rfl)
 
+/-- The orbit morphism sends a section `g` of `G` to the translate `g • x`, as a morphism of
+underlying schemes. -/
+@[reassoc (attr := simp)]
+theorem left_comp_orbitMap_left (x : 𝟙_ (Over S) ⟶ X) (g : 𝟙_ (Over S) ⟶ G) :
+    g.left ≫ (orbitMap G x).left = (g • x).left := by
+  simpa only [toUnit_unit, Category.id_comp, Over.comp_left] using
+    congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
+
+/-- The points underlying a translate of a section `x` by a section of `G` lie in the geometric
+orbit of `x`. -/
+theorem smul_left_apply_mem_orbit (x : 𝟙_ (Over S) ⟶ X) (g : 𝟙_ (Over S) ⟶ G)
+    (a : (𝟙_ (Over S)).left) :
+    (g • x).left a ∈ orbit G x :=
+  (mem_orbit G x _).mpr ⟨g.left a, by rw [← Scheme.Hom.comp_apply, left_comp_orbitMap_left]⟩
+
 /-- The closure of the full geometric orbit image. -/
 def orbitClosure (x : 𝟙_ (Over S) ⟶ X) : Set X.left := closure (orbit G x)
 
