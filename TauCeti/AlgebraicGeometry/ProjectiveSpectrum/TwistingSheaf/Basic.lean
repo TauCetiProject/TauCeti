@@ -227,12 +227,6 @@ def twistingPresheafInAb (n : ℤ) : (Opens (ProjectiveSpectrum.top 𝒜))ᵒᵖ
   map_id _ := rfl
   map_comp _ _ := rfl
 
-/-- The presheaf of abelian groups `𝒪(n)` has the sheaf of types `𝒪(n)` as underlying presheaf
-of types. -/
-def twistingPresheafInAbCompForget (n : ℤ) :
-    twistingPresheafInAb 𝒜 n ⋙ forget Ab ≅ (twistingSheafInType 𝒜 n).obj :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
-
 /-- The twisting sheaf `𝒪(n)` as a presheaf of modules over the structure sheaf of `Proj`. -/
 def twistingPresheaf (n : ℤ) : PresheafOfModules.{u} (Proj 𝒜).ringCatSheaf.obj :=
   letI (U : (Proj 𝒜).Opensᵒᵖ) :
@@ -254,8 +248,7 @@ fractions `r / s` of homogeneous elements with `deg r = deg s + n`. -/
 def twistingSheaf (n : ℤ) : (Proj 𝒜).Modules where
   val := twistingPresheaf 𝒜 n
   isSheaf := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) _).2
-    (TopCat.Presheaf.isSheaf_of_iso (twistingPresheafInAbCompForget 𝒜 n).symm
-      (twistingSheafInType 𝒜 n).2)
+    (twistingSheafInType 𝒜 n).2
 
 namespace twistingSheaf
 
