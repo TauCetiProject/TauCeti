@@ -240,6 +240,10 @@ theorem components_multiset_injective :
     simpa only [Multiset.map_coe] using
       congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.1.numRoots)) h)
 
+/-- Every row of the rootful rank-24 table has at least one component. -/
+instance instNeZeroLengthComponents (r : RootfulNiemeierType) : NeZero r.components.length :=
+  ⟨by cases r <;> decide⟩
+
 /-- The ADE components of a row as a family indexed by their positions. -/
 @[expose] def componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
     DynkinType :=

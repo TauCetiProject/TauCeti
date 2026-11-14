@@ -46,11 +46,13 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
   `Π i, A_i ≅ A_(⊥ i, L i)` induced by summandwise isometries `A_i ≅ A_(L i)`, with coordinates
   `TauCeti.IntegralLattice.discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry`.
-* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry` and
-  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, in
+* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry`,
+  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, and
+  `discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry`, in
   `TauCeti.IntegralLattice`: naturality of that isometry under coordinatewise isometries
-  (`TauCeti.IntegralLattice.Isometry.pi`) and under reindexing
-  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`).
+  (`TauCeti.IntegralLattice.Isometry.pi`), under reindexing
+  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`), and under their combination
+  (`TauCeti.IntegralLattice.Isometry.piCongr`).
 
 ## References
 
@@ -327,6 +329,55 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
     Equiv.piCongrLeft_apply_apply]
   refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft L σ _ k).trans ?_
   rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+
+section PiCongr
+
+variable {L}
+variable {U : κ → Type w} [∀ k, AddCommGroup (U k)] [∀ k, Module ℚ (U k)]
+  {N : ∀ k, IntegralLattice (U k)}
+
+/-- Under `Isometry.piCongr σ f`, coordinate `σ i` of the image discriminant class is the image of
+coordinate `i` under `f i`. -/
+@[simp]
+theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr (σ : ι ≃ κ)
+    (f : ∀ i, Isometry (L i) (N (σ i))) (c : (pi L).DiscriminantGroup) (i : ι) :
+    discriminantGroupPiEquiv N ((Isometry.piCongr σ f).discriminantGroupEquiv c) (σ i) =
+      (f i).discriminantGroupEquiv (discriminantGroupPiEquiv L c i) := by
+  induction c using Submodule.Quotient.induction_on with
+  | _ x =>
+    simp only [Isometry.discriminantGroupEquiv_mk, discriminantGroupPiEquiv_mk]
+    exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
+
+/-- **Naturality of the summandwise alphabet isometry under summandwise isometries combined with
+reindexing.**  Let `a i : A_i ≅ A_(L i)` and `b k : B_k ≅ A_(N k)` be alphabet isometries, and
+`g i : A_i → B_(σ i)` maps compatible with `f i : L i ≅ N (σ i)`.  Then `Isometry.piCongr σ f`
+transports the class of an alphabet family `x` over `ι` to the class of the family over `κ` whose
+coordinate at `σ i` is `g i (x i)`. -/
+theorem discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
+    [∀ i, (L i).IsNondegenerate] [∀ k, (N k).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {hN : ∀ k, (N k).IsEven}
+    {A : ι → FiniteQuadraticModule.{u}} {B : κ → FiniteQuadraticModule.{w}}
+    (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (b : ∀ k, FiniteQuadraticModule.Isometry (B k) ((N k).discriminantQuadraticModule (hN k)))
+    (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (N (σ i))) (g : ∀ i, A i → B (σ i))
+    (h : ∀ i x, b (σ i) (g i x) = (f i).discriminantQuadraticIsometry (hL i) (a i x))
+    (x : ∀ i, A i) :
+    (Isometry.piCongr σ f).discriminantQuadraticIsometry (isEven_pi hL)
+        (discriminantQuadraticIsometryPiOfIsometry L a x) =
+      discriminantQuadraticIsometryPiOfIsometry N b
+        (Equiv.piCongrLeft (fun k ↦ B k) σ fun i ↦ g i (x i)) := by
+  refine (Isometry.discriminantQuadraticIsometry_apply (Isometry.piCongr σ f)
+    (isEven_pi hL) _).trans ?_
+  apply (discriminantGroupPiEquiv N).injective
+  funext k
+  obtain ⟨i, rfl⟩ := σ.surjective k
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry,
+    Equiv.piCongrLeft_apply_apply, h]
+  refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr σ f _ i).trans ?_
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+  exact ((f i).discriminantQuadraticIsometry_apply (hL i) (a i (x i))).symm
+
+end PiCongr
 
 end Naturality
 
