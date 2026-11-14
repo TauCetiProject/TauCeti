@@ -53,9 +53,7 @@ private theorem exists_equiv_add_hasFiniteRange (hu : u.IsCompletelyContinuous) 
     (opNorm_le_bound _ (by positivity) (by simpa using huv)).trans_lt one_half_lt_one
   let e := ContinuousLinearEquiv.ofUnit (Units.oneSub (u - v) huv')
   -- The forward map of ofUnit is the unit's value, identified by val_oneSub.
-  have he : (e : E →L[K] E) = 1 - (u - v) := by
-    ext x
-    exact congrArg (fun f : E →L[K] E ↦ f x) (Units.val_oneSub (u - v) huv')
+  have he : (e : E →L[K] E) = 1 - (u - v) := Units.val_oneSub (u - v) huv'
   refine ⟨e, -v, by simpa using hv.hasFiniteRange.neg, ?_⟩
   rw [he]
   abel
