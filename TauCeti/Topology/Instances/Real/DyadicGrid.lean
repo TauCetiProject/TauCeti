@@ -16,6 +16,7 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
 
 ## Main results
 
+* `TauCeti.dyadicTime`: the dyadic grid of `[0, T]` as nonnegative times.
 * `TauCeti.dyadicPoint`: the finite-indexed dyadic grid as points of the closed interval.
 * `TauCeti.exists_dyadicPoint_eq_of_le`: the finite-indexed dyadic grids are nested.
 * `TauCeti.dense_iUnion_range_dyadicPoint`: the union of the finite-indexed grids is dense
@@ -29,6 +30,7 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
 public section
 
 open Set
+open scoped NNReal
 
 namespace TauCeti
 
@@ -107,5 +109,63 @@ theorem dense_iUnion_range_dyadicPoint {a b : ℝ} (hab : a ≤ b) :
   rintro t ⟨n, k, hk, ht⟩
   refine mem_iUnion.2 ⟨n, ⟨⟨k, Nat.lt_succ_of_le hk⟩, Subtype.ext ?_⟩⟩
   simpa only [coe_dyadicPoint, Fin.val_mk] using ht.symm
+
+/-- The `k`th level-`n` dyadic time `k T / 2 ^ n` of the horizon `[0, T]`, as a time of a
+process indexed by `ℝ≥0`. Its real value is that of `dyadicPoint T.coe_nonneg n k`. -/
+noncomputable def dyadicTime (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) : ℝ≥0 :=
+  ⟨dyadicPoint T.coe_nonneg n k, (dyadicPoint T.coe_nonneg n k).2.1⟩
+
+/-- The real value of a dyadic time is that of the corresponding point of `[0, T]`. -/
+theorem coe_dyadicTime_eq_coe_dyadicPoint (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    (dyadicTime T n k : ℝ) = dyadicPoint T.coe_nonneg n k :=
+  (rfl)
+
+/-- The real value of a dyadic time. -/
+@[simp]
+theorem coe_dyadicTime (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    (dyadicTime T n k : ℝ) = k * (T / 2 ^ n) := by
+  simp [coe_dyadicTime_eq_coe_dyadicPoint]
+
+/-- The nonnegative real value of a dyadic time. -/
+theorem dyadicTime_def (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    dyadicTime T n k = k * (T / 2 ^ n) := by
+  apply NNReal.eq
+  simp
+
+/-- The first dyadic time of every level is the initial time. -/
+@[simp]
+theorem dyadicTime_zero (T : ℝ≥0) (n : ℕ) : dyadicTime T n 0 = 0 :=
+  NNReal.eq (by simp)
+
+/-- The last dyadic time of every level is the horizon. -/
+@[simp]
+theorem dyadicTime_last (T : ℝ≥0) (n : ℕ) : dyadicTime T n (Fin.last (2 ^ n)) = T := by
+  rw [dyadicTime_def]
+  simp only [Fin.val_last, Nat.cast_pow, Nat.cast_ofNat]
+  exact mul_div_cancel₀ _ (by positivity)
+
+/-- The dyadic times of each level are nondecreasing, including at a zero horizon. -/
+theorem monotone_dyadicTime (T : ℝ≥0) (n : ℕ) : Monotone (dyadicTime T n) := by
+  intro i j hij
+  rw [dyadicTime_def, dyadicTime_def]
+  exact mul_le_mul_of_nonneg_right (by exact_mod_cast hij) (by positivity)
+
+/-- Dyadic times lie in the horizon. -/
+theorem dyadicTime_le (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) : dyadicTime T n k ≤ T :=
+  NNReal.coe_le_coe.1 (dyadicPoint T.coe_nonneg n k).2.2
+
+/-- For a positive horizon, the dyadic times of each level are strictly increasing. -/
+theorem strictMono_dyadicTime {T : ℝ≥0} (hT : 0 < T) (n : ℕ) :
+    StrictMono (dyadicTime T n) := by
+  intro i j hij
+  rw [← NNReal.coe_lt_coe, coe_dyadicTime, coe_dyadicTime]
+  exact mul_lt_mul_of_pos_right (by exact_mod_cast hij) (by positivity)
+
+/-- A dyadic time of level `m` is also a dyadic time of every finer level. -/
+theorem exists_dyadicTime_eq_of_le (T : ℝ≥0) {m n : ℕ} (k : Fin (2 ^ m + 1)) (hmn : m ≤ n) :
+    ∃ j, dyadicTime T m k = dyadicTime T n j := by
+  obtain ⟨j, hj⟩ := exists_dyadicPoint_eq_of_le T.coe_nonneg k hmn
+  exact ⟨j, NNReal.eq (by rw [coe_dyadicTime_eq_coe_dyadicPoint,
+    coe_dyadicTime_eq_coe_dyadicPoint, hj])⟩
 
 end TauCeti

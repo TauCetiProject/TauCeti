@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.BrownianMotion.NormalizedIncrements
 public import TauCeti.Probability.Distributions.Gaussian.Hermite.Pi.Pullback
 public import TauCeti.Probability.Process.DyadicGrid
-import TauCeti.MeasureTheory.Function.ConditionalExpectation.Completion
 import TauCeti.Probability.BrownianMotion.RightContinuity
 import TauCeti.Probability.Process.FiniteGrid
 
@@ -24,10 +23,10 @@ natural filtration of `W` at `T`. Claims measurable for the usual augmentation o
 filtration, which also contains all null events and is right-continuous, are included: they
 have the same square-integrable classes.
 
-At a single dyadic level, the Hermite products of that level form a Hilbert basis of the
-square-integrable claims measurable for the observations at the grid times. This only uses the
-Gaussian law of the increments and `W 0 = 0` almost surely, not path continuity. Passing to
-all levels uses almost sure path continuity, through the convergence of conditional
+On any strictly increasing finite grid starting at zero, the Hermite products form a Hilbert
+basis of the square-integrable claims measurable for the observations at the grid times. This
+only uses the Gaussian law of the increments and `W 0 = 0` almost surely, not path continuity.
+Passing to all levels uses almost sure path continuity, through the convergence of conditional
 expectations on the dyadic observations, and the right continuity of the null-augmented
 natural filtration.
 
@@ -39,17 +38,20 @@ contains every square-integrable claim measurable for the Brownian filtration at
 
 The density results are in the namespace `ProbabilityTheory`.
 
+* `IsPreBrownianReal.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap`:
+  the finite-grid basis identification for any strictly increasing grid starting at zero.
 * `IsPreBrownianReal.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural`:
   the closed span of the level-`n` Hermite products is the space of square-integrable claims
   measurable for the level-`n` dyadic observations.
 * `IsBrownianReal.mem_topologicalClosure_span_gaussianVectorHermite`:
   claims measurable for the usual augmented natural filtration at `T` lie in the closed span
   of the Hermite products of all levels.
-* `IsBrownianReal.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas`:
+* `IsBrownianReal.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_natural`:
   this closed span is the space of square-integrable claims measurable for the natural
   filtration at `T`.
 * `IsBrownianReal.lpMeas_rightCont_nullAugment_natural_eq_lpMeas_natural`:
-  the usual augmentation has the same square-integrable claims as the natural filtration.
+  the usual augmentation has the same `Lᵖ` claims, at every exponent and time, as the natural
+  filtration (in `TauCeti.Probability.BrownianMotion.RightContinuity`).
 
 ## References
 
@@ -66,53 +68,32 @@ open scoped NNReal ENNReal Topology
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ} {T : ℝ≥0}
 
-namespace TauCeti
-
-/-- The standardized increments over a dyadic grid are measurable for the observations at the
-grid times. -/
-theorem measurable_normalizedBrownianIncrements_dyadicTime (hmeas : ∀ t, Measurable (W t))
-    (T : ℝ≥0) (n : ℕ) : Measurable[Filtration.dyadicNatural W hmeas T n]
-      (normalizedBrownianIncrements W (dyadicTime T n)) := by
-  -- Measurability lemmas for differences and vectors take the source σ-algebra as an
-  -- instance, so make the observation σ-algebra the ambient one locally.
-  let : MeasurableSpace Ω := Filtration.dyadicNatural W hmeas T n
-  have hW (k : Fin (2 ^ n + 1)) : Measurable (W (dyadicTime T n k)) :=
-    measurable_iff_comap_le.2 (Filtration.comap_le_dyadicNatural T n k)
-  have heq : normalizedBrownianIncrements W (dyadicTime T n) = fun ω (i : Fin (2 ^ n)) ↦
-      (W (dyadicTime T n i.succ) ω - W (dyadicTime T n i.castSucc) ω) /
-        Real.sqrt ((dyadicTime T n i.succ : ℝ) - dyadicTime T n i.castSucc) :=
-    funext fun ω ↦ funext fun i ↦ normalizedBrownianIncrements_apply ω i
-  rw [heq]
-  exact Measurable.of_eval fun i ↦ ((hW _).sub (hW _)).div_const _
-
-end TauCeti
-
 namespace ProbabilityTheory
 
 namespace IsPreBrownianReal
 
-/-- At each dyadic level of a positive horizon, the closed linear span of the normalized Hermite
-products of the standardized increments of a pre-Brownian motion over the grid is exactly the
+/-- On any strictly increasing finite grid starting at zero, the closed linear span of the
+normalized Hermite products of the standardized increments of a pre-Brownian motion is exactly the
 space of square-integrable claims measurable for its observations at the grid times. These
 products are orthonormal (`ProbabilityTheory.HasLaw.orthonormal_gaussianVectorHermite`), so
 they form a Hilbert basis of that space. The initial observation is discarded because `W 0 = 0`
 almost surely; no path regularity is needed. -/
-theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
-    (hW : IsPreBrownianReal W P) (hmeas : ∀ t, Measurable (W t)) (hT : 0 < T) (n : ℕ) :
+theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap
+    (hW : IsPreBrownianReal W P) (hmeas : ∀ s, Measurable (W s))
+    {k : ℕ} {t : Fin (k + 1) → ℝ≥0} (ht : StrictMono t) (ht0 : t 0 = 0) :
     (Submodule.span ℝ (range (HasLaw.gaussianVectorHermite
-      (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
+      (hW.hasLaw_normalizedBrownianIncrements ht)
       (measurable_normalizedBrownianIncrements hmeas)))).topologicalClosure =
-      lpMeas ℝ ℝ (Filtration.dyadicNatural W hmeas T n) 2 P := by
-  set t := dyadicTime T n
-  have hX := hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n)
+      lpMeas ℝ ℝ (⨆ j, (inferInstance : MeasurableSpace ℝ).comap (W (t j))) 2 P := by
+  have hX := hW.hasLaw_normalizedBrownianIncrements ht
   have hY := measurable_normalizedBrownianIncrements (t := t) hmeas
   refine le_antisymm (Submodule.topologicalClosure_minimal _ ?_
-    (isClosed_aestronglyMeasurable ((Filtration.dyadicNatural W hmeas T).le n))) fun u hu ↦ ?_
+    (isClosed_aestronglyMeasurable (iSup_le fun j ↦ (hmeas (t j)).comap_le))) fun u hu ↦ ?_
   · -- Each Hermite product is a function of the observations at the grid times.
     refine Submodule.span_le.2 ?_
     rintro _ ⟨a, rfl⟩
-    set f := gaussianHermitePiBasis ℝ (Fin (2 ^ n)) a
-    have hYG := measurable_normalizedBrownianIncrements_dyadicTime hmeas T n
+    set f := gaussianHermitePiBasis ℝ (Fin k) a
+    have hYG := measurable_normalizedBrownianIncrements_iSup_comap W t
     rw [← HasLaw.gaussianVectorL2Isometry_gaussianHermitePiBasis hX hY,
       SetLike.mem_coe, mem_lpMeas_iff_aestronglyMeasurable]
     refine ⟨(Lp.aestronglyMeasurable f).mk f ∘ normalizedBrownianIncrements W t,
@@ -123,19 +104,19 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
   -- Conversely, write an observation-measurable claim as a Borel function of the
   -- standardized increments.
   obtain ⟨g₀, hg₀, hug₀⟩ := mem_lpMeas_iff_aestronglyMeasurable.1 hu
-  rw [Filtration.dyadicNatural_apply] at hg₀
-  have ha (i : Fin (2 ^ n)) : Real.sqrt ((t i.succ : ℝ) - t i.castSucc) ≠ 0 :=
+  rw [← MeasurableSpace.comap_process_pi] at hg₀
+  have ha (i : Fin k) : Real.sqrt ((t i.succ : ℝ) - t i.castSucc) ≠ 0 :=
     Real.sqrt_ne_zero'.2 (sub_pos.2 (NNReal.coe_lt_coe.2
-      (strictMono_dyadicTime hT n Fin.castSucc_lt_succ)))
+      (ht Fin.castSucc_lt_succ)))
   have h0 : ∀ᵐ ω ∂P, W (t 0) ω = 0 := by
-    simpa only [t, dyadicTime_zero] using hW.eval_zero_ae_eq_zero
+    simpa only [ht0] using hW.eval_zero_ae_eq_zero
   obtain ⟨g, hg, hg₀g⟩ := exists_measurable_comp_increments_ae (fun ω k ↦ W (t k) ω)
     _ ha 0 h0 hg₀.measurable
   have hug : (u : Ω → ℝ) =ᵐ[P] g ∘ normalizedBrownianIncrements W t :=
     hug₀.trans (hg₀g.trans (EventuallyEq.of_eq (funext fun ω ↦ congrArg g
       (funext fun i ↦ (normalizedBrownianIncrements_apply ω i).symm))))
   -- The Borel function is square-integrable for the Gaussian law of the increments.
-  have hgLp : MemLp g 2 (Measure.pi fun _ : Fin (2 ^ n) ↦ gaussianReal 0 1) := by
+  have hgLp : MemLp g 2 (Measure.pi fun _ : Fin k ↦ gaussianReal 0 1) := by
     rw [← hX.map_eq]
     exact (memLp_map_measure_iff hg.aestronglyMeasurable hY.aemeasurable).2
       ((Lp.memLp u).ae_eq hug)
@@ -148,6 +129,19 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
   exact mem_closure_of_tendsto (HasLaw.hasSum_gaussianVectorHermite hX hY (hgLp.toLp g))
     (Eventually.of_forall fun s ↦ Submodule.sum_mem _
       fun a _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨a, rfl⟩))
+
+/-- At each dyadic level of a positive horizon, the closed span of the normalized Hermite
+products is exactly the space of square-integrable claims measurable for that level's
+observations. -/
+theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_dyadicNatural
+    (hW : IsPreBrownianReal W P) (hmeas : ∀ t, Measurable (W t)) (hT : 0 < T) (n : ℕ) :
+    (Submodule.span ℝ (range (HasLaw.gaussianVectorHermite
+      (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
+      (measurable_normalizedBrownianIncrements hmeas)))).topologicalClosure =
+      lpMeas ℝ ℝ (Filtration.dyadicNatural W hmeas T n) 2 P := by
+  rw [Filtration.dyadicNatural_eq_iSup]
+  exact hW.topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_iSup_comap hmeas
+    (strictMono_dyadicTime hT n) (dyadicTime_zero T n)
 
 end IsPreBrownianReal
 
@@ -188,7 +182,7 @@ theorem mem_topologicalClosure_span_gaussianVectorHermite (hW : IsBrownianReal W
 /-- For a Brownian motion and a positive time `T`, the closed linear span of the normalized
 Hermite products of the standardized increments over all dyadic grids of `[0, T]` is exactly the
 space of square-integrable claims measurable for the natural filtration at `T`. -/
-theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas (hW : IsBrownianReal W P)
+theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (hT : 0 < T) :
     (Submodule.span ℝ (⋃ n, range (HasLaw.gaussianVectorHermite
       (hW.hasLaw_normalizedBrownianIncrements (strictMono_dyadicTime hT n))
@@ -209,25 +203,6 @@ theorem topologicalClosure_span_gaussianVectorHermite_eq_lpMeas (hW : IsBrownian
       (((mem_lpMeas_iff_aestronglyMeasurable.1 hξ).mono
         ((Filtration.natural W hmeas).le_nullAugment P T)).mono
         (((Filtration.natural W hmeas).nullAugment P).le_rightCont T))
-
-/-- The usual augmentation of the natural filtration of a Brownian motion has the same `Lᵖ`
-claims, `1 ≤ p`, at every time as the natural filtration itself. -/
-theorem lpMeas_rightCont_nullAugment_natural_eq_lpMeas_natural (hW : IsBrownianReal W P)
-    (hmeas : ∀ t, StronglyMeasurable (W t)) {p : ℝ≥0∞} (hp : 1 ≤ p) (T : ℝ≥0) :
-    lpMeas ℝ ℝ (((Filtration.natural W hmeas).nullAugment P).rightCont T) p P =
-      lpMeas ℝ ℝ (Filtration.natural W hmeas T) p P := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  ext ξ
-  simp only [mem_lpMeas_iff_aestronglyMeasurable]
-  refine ⟨fun hξ ↦ ?_, fun hξ ↦ (hξ.mono ((Filtration.natural W hmeas).le_nullAugment P T)).mono
-    (((Filtration.natural W hmeas).nullAugment P).le_rightCont T)⟩
-  -- Right continuity leaves only the null events, which conditional expectation discards.
-  have hξ' : AEStronglyMeasurable[(Filtration.natural W hmeas).nullAugment P T] ξ P :=
-    hξ.mono ((hW.isRightContinuous_nullAugment_natural hmeas).RC T)
-  rw [Filtration.nullAugment_apply] at hξ'
-  exact stronglyMeasurable_condExp.aestronglyMeasurable.congr
-    (TauCeti.MeasureTheory.condExp_of_aestronglyMeasurable_eventuallyMeasurableSpace
-      ((Filtration.natural W hmeas).le T) hξ' ((Lp.memLp ξ).integrable hp))
 
 end IsBrownianReal
 
