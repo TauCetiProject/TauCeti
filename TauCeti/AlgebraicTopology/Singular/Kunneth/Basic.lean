@@ -112,12 +112,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [CategoryWithHomology C]
   [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
   [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight T)]
 
-/-- The shuffle map `C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` is a quasi-isomorphism, being the
-inverse of the Eilenberg–Zilber chain homotopy equivalence. -/
-instance quasiIso_shuffle (X Y : TopCat.{w}) (R S : C) : QuasiIso (shuffle X Y R S) := by
-  rw [← eilenbergZilberHomotopyEquiv_inv]
-  infer_instance
-
 section Kunneth
 
 variable (X Y : TopCat.{w}) (R S : C) (n : ℕ)

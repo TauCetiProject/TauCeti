@@ -153,23 +153,13 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
   rfl
 
 /-- The inclusion of the summand `X₁ i₁ ⊗ X₂ i₂` into the tensor product of graded objects in
-degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms: a retraction is the
-identity on this summand and zero on the others. -/
+degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms, being a coprojection
+into a coproduct. -/
 instance isSplitMono_ιTensorObj [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
     (X₁ X₂ : GradedObject I C) [HasTensor X₁ X₂] (i₁ i₂ i₁₂ : I) (h : i₁ + i₂ = i₁₂) :
     IsSplitMono (ιTensorObj X₁ X₂ i₁ i₂ i₁₂ h) := by
-  classical
-  exact ⟨⟨{ retraction := Cofan.IsColimit.desc (isColimitCofanMapObj _ _ i₁₂) fun x ↦
-              if hx : x.1 = (i₁, i₂) then
-                eqToHom (congrArg (((mapBifunctor (curriedTensor C) I I).obj X₁).obj X₂) hx)
-              else 0
-            id := by
-              refine (Cofan.IsColimit.fac (isColimitCofanMapObj _ _ i₁₂) _
-                ⟨(i₁, i₂), by exact h⟩).trans ?_
-              -- `simp` selects the summand; the remaining `eqToHom` is between definitionally equal
-              -- objects, so it is the identity by `rfl`.
-              simp
-              rfl }⟩⟩
+  unfold ιTensorObj ιMapBifunctorMapObj GradedObject.ιMapObj
+  exact isSplitMono_sigma_ι _ _
 
 variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
   [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))
