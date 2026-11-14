@@ -208,21 +208,15 @@ theorem hopfIdealPointsSubgroup_eq :
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at h
   simpa only [MulEquiv.apply_symm_apply] using h
 
-/-- Restricting the identity on `GL_n(A)` along the cut-out subgroup equality identifies the
-generic Hopf-ideal point subgroup with the upper-triangular matrix group. -/
-private noncomputable def hopfIdealPointsSubgroupMulEquiv :
-    GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n) A ≃*
-      upperTriangularGroup (Fin n) A :=
-  MulEquiv.subgroupCongr (hopfIdealPointsSubgroup_eq R n)
-
 /-- The group of algebra-valued points of the upper-triangular coordinate Hopf algebra is the
-group of invertible upper-triangular matrices. -/
+group of invertible upper-triangular matrices: the generic Hopf-ideal point subgroup, identified
+with the upper-triangular matrix group along the cut-out subgroup equality. -/
 noncomputable def pointsMulEquiv :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A) ≃*
       upperTriangularGroup (Fin n) A :=
   (GeneralLinear.hopfIdealPointsSubgroupMulEquiv n (definingHopfIdeal R n)
       (CommAlgCat.of R A)).trans
-    (hopfIdealPointsSubgroupMulEquiv R n)
+    (MulEquiv.subgroupCongr (hopfIdealPointsSubgroup_eq R n))
 
 /-- Under the upper-triangular and general-linear point equivalences, the quotient-point
 inclusion is the ordinary inclusion of upper-triangular matrices into `GL_n`. -/
@@ -235,8 +229,8 @@ theorem pointsMulEquiv_coe
           (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
           (CommAlgCat.of R A) f) =
       (pointsMulEquiv (R := R) (n := n) (A := A) f : GL (Fin n) A) := by
-  simpa only [pointsMulEquiv, MulEquiv.trans_apply, hopfIdealPointsSubgroupMulEquiv,
-    MulEquiv.subgroupCongr_apply, GeneralLinear.pointsMulEquiv_apply] using
+  simpa only [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    GeneralLinear.pointsMulEquiv_apply] using
       (GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply n
         (definingHopfIdeal R n) (CommAlgCat.of R A) f).symm
 
