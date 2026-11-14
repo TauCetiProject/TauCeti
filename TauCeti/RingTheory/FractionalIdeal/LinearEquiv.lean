@@ -68,7 +68,7 @@ noncomputable def spanSingletonMulEquiv [IsLocalization S P] {a : P} (ha : IsLef
     (I : FractionalIdeal S P) : I ≃ₗ[R] (spanSingleton S a * I : FractionalIdeal S P) :=
   (Submodule.equivMapOfInjective (LinearMap.mulLeft R a) ha (I : Submodule R P)).trans <|
     LinearEquiv.ofEq _ _ <| by
-      rw [coe_mul, coe_spanSingleton, Submodule.span_singleton_mul]
+      rw [coeToSubmodule_mul, coeToSubmodule_spanSingleton, Submodule.span_singleton_mul]
       ext x
       simp [Submodule.mem_smul_pointwise_iff_exists, eq_comm]
 

@@ -161,27 +161,46 @@ section SimpleCoordinates
 -- to the proof; and an instance deriving it from `[FiniteDimensional k A]` has no synthesization
 -- order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
-  [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A) [∀ i, IsSimpleModule A (S i)]
-  (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[A] S j))
+  [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A)
+  (hnoniso : Pairwise fun i j ↦
+    IsSimpleModule A (S i) → IsSimpleModule A (S j) → IsEmpty ((S i : Type u) ≃ₗ[A] S j))
   (hexhaustive : IsExhaustiveSimpleFamily S)
 
 include hnoniso hexhaustive in
 /-- **The dimension of a class is its Jordan--Hölder expansion weighted by the dimensions of the
 simple modules.** For the class of a module this is the statement that the dimension of a module is
-the sum of the dimensions of its composition factors. -/
+the sum of the dimensions of its composition factors. The members of the family need not be
+simple, nor pairwise nonisomorphic when they are not simple: a member that is not simple has
+Jordan--Hölder coordinate zero, so it contributes nothing. -/
 theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
     (x : ExactK0 (finiteModulesExactStructure A)) :
     finrankK0 k A x =
       ∑ i, jordanHolderCoordinate A (S i) x * (Module.finrank k (S i).obj : ℤ) := by
   classical
-  set b := simpleClassBasis S hnoniso hexhaustive with hb
-  calc finrankK0 k A x = finrankK0 k A (∑ i, b.repr x i • b i) := by rw [b.sum_repr x]
-    _ = ∑ i, b.repr x i • finrankK0 k A (b i) := by
-        rw [map_sum]
-        exact Finset.sum_congr rfl fun i _ ↦ map_zsmul _ _ _
-    _ = _ := by
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [hb, simpleClassBasis_apply, simpleClassBasis_repr_apply, finrankK0_of, smul_eq_mul]
+  let S' : {i // IsSimpleModule A (S i)} → FGModuleCat.{u} A := fun j ↦ S j
+  have : ∀ j, IsSimpleModule A (S' j) := fun j ↦ j.2
+  have hnoniso' : Pairwise fun i j ↦ IsEmpty ((S' i : Type u) ≃ₗ[A] S' j) :=
+    fun i j hij ↦ hnoniso (fun h ↦ hij (Subtype.ext h)) i.2 j.2
+  have hexhaustive' : IsExhaustiveSimpleFamily S' := by
+    rw [isExhaustiveSimpleFamily_iff] at hexhaustive ⊢
+    intro M hM
+    obtain ⟨i, ⟨e⟩⟩ := hexhaustive M hM
+    exact ⟨⟨i, IsSimpleModule.congr e.symm⟩, ⟨e⟩⟩
+  set b := simpleClassBasis S' hnoniso' hexhaustive' with hb
+  have hsum : finrankK0 k A x =
+      ∑ j, jordanHolderCoordinate A (S' j) x * (Module.finrank k (S' j).obj : ℤ) :=
+    calc finrankK0 k A x = finrankK0 k A (∑ j, b.repr x j • b j) := by rw [b.sum_repr x]
+      _ = ∑ j, b.repr x j • finrankK0 k A (b j) := by
+          rw [map_sum]
+          exact Finset.sum_congr rfl fun j _ ↦ map_zsmul _ _ _
+      _ = _ := by
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [hb, simpleClassBasis_apply, simpleClassBasis_repr_apply, finrankK0_of, smul_eq_mul]
+  have hzero (i : I) (hi : ¬ IsSimpleModule A (S i)) : jordanHolderCoordinate A (S i) x = 0 := by
+    rw [jordanHolderCoordinate_eq_zero_of_not_isSimpleModule A _ hi, AddMonoidHom.zero_apply]
+  rw [hsum, ← Finset.sum_subtype (Finset.univ.filter fun i ↦ IsSimpleModule A (S i)) (by simp)
+    fun i ↦ jordanHolderCoordinate A (S i) x * (Module.finrank k (S i).obj : ℤ),
+    Finset.sum_filter_of_ne fun i _ h ↦ by_contra fun hi ↦ h (by simp [hzero i hi])]
 
 end SimpleCoordinates
 

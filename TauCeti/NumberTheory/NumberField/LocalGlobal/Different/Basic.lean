@@ -203,9 +203,10 @@ theorem extended_dual_one_eq_dual_one_adicCompletionIntegers :
   have hdual : ((FractionalIdeal.dual (𝒪 K) K (1 : FractionalIdeal (𝒪 L)⁰ L)) : Set L) =
       Submodule.traceDual (𝒪 K) K (1 : Submodule (𝒪 L) L) := by
     ext x
-    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coe, FractionalIdeal.coe_dual_one]
-  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coe_extended_eq_span, hmap, hdual,
-    FractionalIdeal.coe_dual_one]
+    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
+      FractionalIdeal.coeToSubmodule_dual_one]
+  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_extended_eq_span,
+    hmap, hdual, FractionalIdeal.coeToSubmodule_dual_one]
   exact span_traceDual_one_eq_traceDual_one_adicCompletionIntegers v w
 
 /-- **The different commutes with completion.** The different ideal of `𝒪 L` over `𝒪 K` generates

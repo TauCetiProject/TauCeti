@@ -132,7 +132,8 @@ open TauCeti Ideal
 variable {H : Type*} [Monoid H] {R : Type*} [CommRing R] {A : Type u} [Ring A] [Algebra R A]
   [TopologicalSpace A] [IsTopologicalRing A] (a : H →* (A ≃ₐ[R] A))
   (χ : Subalgebra.center R A →ₐ[R] R) (ha : ∀ h, Continuous (a h).symm)
-  (ha' : ∀ h, Continuous (a h)) (hχ : ∀ h, χ.comp (centerCongr (a h)).symm.toAlgHom = χ)
+  (ha' : ∀ h, Continuous (a h))
+  (hχ : ∀ h, χ.comp (Subalgebra.centerCongr (a h).symm).toAlgHom = χ)
 
 /-- The quotient presentation of a strict discrete character fiber is equivariant. The source
 carries the twisting action through the automorphisms of the closed central quotient induced by

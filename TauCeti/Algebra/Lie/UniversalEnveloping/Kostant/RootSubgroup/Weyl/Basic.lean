@@ -292,8 +292,8 @@ theorem kostantWeylPoints_conj_baseChangeExp (u : A) :
     exact hMneg
   rw [kostantWeylPoints_toLinearMap, kostantWeylPoints_symm_toLinearMap, kostantWeylRestrict,
     baseChange_integralUnitRestrict_conj_baseChangeExp
-      (R := A) _ M _ _ _ _ hi u,
-    baseChangeExp_congr hconj M hMconj hMneg, baseChangeExp_neg _ M hMneg hMj hj]
+      (R := A) _ M _ _ _ _ u,
+    baseChangeExp_congr hconj M hMconj hMneg, baseChangeExp_neg _ M hMneg hMj]
 
 /-- The Weyl element is natural in the ring of points: it is the scalar extension of a single
 integral automorphism, so applying a ring homomorphism to the scalar coordinate of every tensor

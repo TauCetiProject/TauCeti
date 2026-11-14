@@ -59,7 +59,7 @@ theorem integrable_rpow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
   have hcomp : (fun x : ℝ => x ^ q) ∘ Real.exp = fun y => Real.exp (q * y) := by
     funext y
     rw [Function.comp_apply, ← Real.exp_mul, mul_comm]
-  rw [logLogisticMeasure_of_pos ha hb,
+  rw [logLogisticMeasure_of_pos ha,
     integrable_map_measure (by fun_prop) Real.measurable_exp.aemeasurable, hcomp,
     integrable_exp_mul_id_logisticMeasure_iff (inv_pos.mpr hb), div_inv_eq_mul, neg_one_mul,
     one_div, inv_inv, abs_lt]
@@ -69,7 +69,6 @@ theorem integrable_rpow_logLogisticMeasure_iff (ha : 0 < a) (hb : 0 < b) (q : �
 theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hq : |q| < b) :
     ∫ x, x ^ q ∂logLogisticMeasure a b =
       a ^ q * Real.Gamma (1 + q / b) * Real.Gamma (1 - q / b) := by
-  have hb : 0 < b := (abs_nonneg q).trans_lt hq
   have hq' := abs_lt.mp hq
   have hmem : q ∈ Ioo (-1 / b⁻¹) (1 / b⁻¹) := by
     rw [div_inv_eq_mul, neg_one_mul, one_div, inv_inv]
@@ -78,9 +77,9 @@ theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hq : |q| < b) :
   have hmgf : ∫ y, Real.exp y ^ q ∂logisticMeasure (Real.log a) b⁻¹ =
       mgf id (logisticMeasure (Real.log a) b⁻¹) q := by
     simp only [mgf, id_eq, ← Real.exp_mul, mul_comm q]
-  rw [logLogisticMeasure_of_pos ha hb,
+  rw [logLogisticMeasure_of_pos ha,
     integral_map Real.measurable_exp.aemeasurable (by fun_prop), hmgf,
-    mgf_id_logisticMeasure (inv_pos.mpr hb) hmem, Real.rpow_def_of_pos ha, inv_mul_eq_div]
+    mgf_id_logisticMeasure hmem, Real.rpow_def_of_pos ha, inv_mul_eq_div]
   ring_nf
 
 /-- A natural power `X ^ n` of a log-logistic variable is integrable exactly when `n < b`. -/
