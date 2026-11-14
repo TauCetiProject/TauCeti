@@ -42,6 +42,8 @@ computes the same values from the three-term recurrence.
 * `TauCeti.qInt_mul`: `[mn]` at `δ` is `[m]` at `δ` times `[n]` at `Cₘ(δ)`, where `Cₘ` is the
   rescaled Chebyshev polynomial of the first kind, so that `Cₘ(q + q⁻¹) = qᵐ + q⁻ᵐ`.
 * `TauCeti.qInt_dvd_qInt`: `[m] ∣ [n]` whenever `m ∣ n`.
+* `TauCeti.qInt_neg_left`, `TauCeti.isUnit_qInt_neg_left`: negating the loop parameter multiplies
+  `[n]` by `(-1)^(n+1)` and preserves invertibility.
 * `TauCeti.qInt_two_left`, `TauCeti.qInt_neg_two_left`: at `δ = 2` and `δ = -2`, `[n]` is `n` and
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
@@ -124,6 +126,21 @@ theorem qInt_mul (δ : R) (m n : ℕ) :
 theorem qInt_dvd_qInt (δ : R) {m n : ℕ} (h : m ∣ n) : qInt R δ m ∣ qInt R δ n := by
   obtain ⟨k, rfl⟩ := h
   exact Dvd.intro _ (qInt_mul δ m k).symm
+
+/-- Negating the loop parameter multiplies the quantum integer `[n]` by `(-1)^(n+1)`. -/
+theorem qInt_neg_left (δ : R) (n : ℕ) : qInt R (-δ) n = (-1) ^ (n + 1) * qInt R δ n := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp
+  | one => simp
+  | more n ih0 ih1 =>
+    simp only [qInt_add_two, ih0, ih1, pow_succ]
+    ring
+
+/-- Negating the loop parameter preserves invertibility of the quantum integers. -/
+@[simp]
+theorem isUnit_qInt_neg_left {δ : R} {n : ℕ} :
+    IsUnit (qInt R (-δ) n) ↔ IsUnit (qInt R δ n) := by
+  simp [qInt_neg_left]
 
 /-- At the loop parameter `δ = 2` the quantum integer `[n]` is the integer `n`. -/
 @[simp]
