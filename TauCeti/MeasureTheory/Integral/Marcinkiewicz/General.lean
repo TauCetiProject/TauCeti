@@ -101,60 +101,6 @@ open scoped ENNReal
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
   {f : α → ℝ≥0∞} {u : β → ℝ≥0∞} {p p₀ p₁ q s c : ℝ} {A₀ A₁ : ℝ≥0∞}
 
-/-- **The weighted mass of the part of `f` above the height `c * t`.** For `-1 < s` the weight
-`t ^ s` is integrable at the origin, and the double integral of the upper truncations of `f ^ q`
-against it is exactly a multiple of `∫⁻ f ^ (q + (s + 1))`. -/
-private theorem lintegral_mul_setLIntegral_lt_of_measurable [SFinite μ] (hf : Measurable f)
-    (hq : 0 ≤ q)
-    (hs : -1 < s) (hc : 0 < c) :
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
-        ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
-      ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) * ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
-  have hs1 : (0 : ℝ) ≤ s + 1 := by linarith
-  have hR : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1) < f z.2} :=
-    measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd)
-  rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
-      (w := fun t : ℝ => ENNReal.ofReal (t ^ s))
-      (R := fun t x => ENNReal.ofReal (c * t) < f x) hR (hf.pow_const q).aemeasurable
-      ((measurable_id.pow measurable_const).ennreal_ofReal.aemeasurable),
-    ← lintegral_const_mul _ (hf.pow_const _)]
-  refine lintegral_congr fun x => ?_
-  rw [lintegral_indicator_ofReal_rpow_Ioi hs hc (f x), ENNReal.rpow_add_of_nonneg q (s + 1) hq hs1]
-  ring
-
-/-- **The weighted mass of the part of `f` above the height `c * t`.** For `-1 < s` the weight
-`t ^ s` is integrable at the origin, and the double integral of the upper truncations of `f ^ q`
-against it is exactly a multiple of `∫⁻ f ^ (q + (s + 1))`. -/
-theorem lintegral_mul_setLIntegral_lt [SFinite μ] (hf : AEMeasurable f μ) (hq : 0 ≤ q)
-    (hs : -1 < s) (hc : 0 < c) :
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
-        ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
-      ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) * ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
-  let g := hf.mk f
-  have hfg : f =ᵐ[μ] g := hf.ae_eq_mk
-  have hinner : ∀ t : ℝ,
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
-        ∫⁻ x in {x | ENNReal.ofReal (c * t) < g x}, g x ^ q ∂μ := by
-    intro t
-    have hset : {x | ENNReal.ofReal (c * t) < f x} =ᵐ[μ]
-        {x | ENNReal.ofReal (c * t) < g x} :=
-      hfg.mono fun _ hx => by simp only [Set.mem_ofPred_eq]; rw [hx]
-    rw [Measure.restrict_congr_set hset]
-    exact lintegral_congr_ae (ae_restrict_of_ae (hfg.fun_comp fun z => z ^ q))
-  calc
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
-        ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
-        ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
-          ∫⁻ x in {x | ENNReal.ofReal (c * t) < g x}, g x ^ q ∂μ := by
-      exact lintegral_congr fun t => congrArg (ENNReal.ofReal (t ^ s) * ·) (hinner t)
-    _ = ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) *
-        ∫⁻ x, g x ^ (q + (s + 1)) ∂μ :=
-      lintegral_mul_setLIntegral_lt_of_measurable hf.measurable_mk hq hs hc
-    _ = ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) *
-        ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
-      exact congrArg (ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) * ·)
-        (lintegral_congr_ae (hfg.fun_comp fun z => z ^ (q + (s + 1)))).symm
-
 /-- **The weighted mass of the part of `f` below the height `c * t`.** For `s < -1` the weight
 `t ^ s` is integrable at infinity, and the double integral of the lower truncations of `f ^ q`
 against it is at most a multiple of `∫⁻ f ^ (q + (s + 1))`.
