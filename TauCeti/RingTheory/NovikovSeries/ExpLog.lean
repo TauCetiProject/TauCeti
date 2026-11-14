@@ -43,6 +43,8 @@ they differentiate the logarithm of a principal unit logarithmically: `u * D (lo
 * `TauCeti.NovikovSeries.coe_exp_nonnegSubring`: the exponential of a series of the nonnegative
   subring does not depend on whether it is computed in the nonnegative subring or in the Novikov
   ring.
+* `TauCeti.NovikovSeries.support_log_subset`: the logarithm preserves support in an additive
+  submonoid of the exponent monoid.
 * `TauCeti.NovikovSeries.mul_degreeDerivation_log`: the logarithmic derivative of the logarithm
   along a degree derivation.
 
@@ -74,6 +76,41 @@ theorem coe_exp_nonnegSubring (a : nonnegSubring K N) :
     NormedSpace.exp_eq_tsum_rat (𝔸 := NovikovSeries K H N)]
   exact (isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
     (g := (nonnegSubring K N).subtype.toAddMonoidHom) _).trans (by simp)
+
+/-- The logarithm of a series supported in an additive submonoid is supported in that
+submonoid. This holds for the totalized logarithm without a positivity assumption. -/
+theorem support_log_subset (u : nonnegSubring K N) {S : AddSubmonoid H}
+    (hu : (u : NovikovSeries K H N).support ⊆ S) :
+    ((NormedSpace.log u : nonnegSubring K N) : NovikovSeries K H N).support ⊆ S := by
+  have h_one : (1 : NovikovSeries K H N).support ⊆ S := by
+    intro h hh
+    rw [← single_zero_one] at hh
+    exact (Set.mem_singleton_iff.1 (support_single_subset 0 1 hh)) ▸ S.zero_mem
+  have h_sub : ((u : NovikovSeries K H N) - 1).support ⊆ S :=
+    (support_sub_subset _ _).trans (Set.union_subset hu h_one)
+  have h_pow (n : ℕ) : (((u : NovikovSeries K H N) - 1) ^ n).support ⊆ S := by
+    induction n with
+    | zero => simpa using h_one
+    | succ n hn =>
+      rw [pow_succ]
+      intro h hh
+      obtain ⟨a, ha, b, hb, rfl⟩ := support_mul_subset _ _ hh
+      exact S.add_mem (hn ha) (h_sub hb)
+  rw [NormedSpace.log_eq_tsum ℚ]
+  -- Present the subtype coercion as its bundled additive map so that `map_tsum` applies.
+  change ((nonnegSubring K N).subtype.toAddMonoidHom
+    (∑' n : ℕ, ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n)).support ⊆ S
+  rw [isClosed_nonnegSubring.isClosedEmbedding_subtypeVal.map_tsum
+    (g := (nonnegSubring K N).subtype.toAddMonoidHom)]
+  intro h hh
+  by_contra hs
+  apply mem_support.1 hh
+  apply coeff_tsum_eq_zero
+  intro n
+  by_contra hn
+  apply hs
+  apply h_pow n
+  exact support_smul_subset ((-1) ^ (n + 1) / n : ℚ) _ (by simpa using mem_support.2 hn)
 
 end Ring
 

@@ -20,9 +20,9 @@ For a finite-index subgroup `K ≤ H`, the norm of Novikov series is Mathlib's
 have period shifts given by the chosen coset representatives. Those shifts cancel
 in every determinant term. Consequently the norm multiplies a lower support bound
 by the index, preserves the nonnegative subring, and is continuous in the period
-topology. A perturbation of `1` above a nonnegative cutoff has norm congruent to `1`
-above the same cutoff. In particular, the norm preserves principal units with
-strictly positive nonconstant support.
+topology. A perturbation of `1` supported in periods at least a nonnegative cutoff
+has norm agreeing with `1` below the same cutoff. In particular, the norm preserves
+principal units with strictly positive nonconstant support.
 
 These estimates apply to arbitrary finite-index subgroups, not only cyclic
 quotients, and allow dense periods, noninjective period maps and torsion in `H`.
@@ -38,7 +38,7 @@ of a principal unit into the trace of its logarithm
 `log (Norm u) = Tr (log u)`.
 
 At an exponent in `K`, this multiplies the logarithmic coefficient by `K.index`
-(`TauCeti.NovikovSeries.coeff_log_normNonnegSubring`). Thus a norm congruent to `1`
+(`TauCeti.NovikovSeries.coeff_log_normNonnegSubring`). Thus a norm agreeing with `1`
 below a cutoff forces the original logarithmic coefficients at subgroup exponents
 below that cutoff to vanish
 (`TauCeti.NovikovSeries.coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration`).
@@ -46,13 +46,7 @@ below that cutoff to vanish
 The exponential form of the trace-log identity is `Norm (exp a) = exp (Tr a)` for `a` in the
 positive ideal
 (`TauCeti.NovikovSeries.algebraNorm_exp`). This is the identity that compares the dynamical zeta
-functions of the two coverings. The proof
-differentiates both sides along the degree derivations `f ∘ N` of
-`TauCeti/RingTheory/NovikovSeries/Derivation.lean`. The logarithmic derivative of the norm is the
-trace of the logarithmic derivative (`Derivation.leibniz_norm`), and a continuous derivation
-differentiates the logarithm logarithmically (`IsTopologicallyNilpotent.mul_derivation_log`). So
-the difference of the two sides is killed by every degree derivation along the period. It is
-supported in strictly positive periods, so it vanishes.
+functions of the two coverings.
 
 ## References
 
@@ -105,8 +99,8 @@ theorem algebraNorm_mem_periodFiltration {a : NovikovSeries R H N} {D : ℝ}
     (fun q => N (Quotient.out q))
     (leftMulMatrix_cosetBasis_mem_periodFiltration K _ _ ha)
 
-/-- Norms of two series supported above `D` agree above `C + [H : K] * D` if the
-series agree above `C + D`. Unlike an estimate at `1`, this permits negative `D`. -/
+/-- Norms of two series supported in periods at least `D` agree below `C + [H : K] * D`
+if the series agree below `C + D`. Unlike an estimate at `1`, this permits negative `D`. -/
 theorem algebraNorm_sub_algebraNorm_mem_periodFiltration {a b : NovikovSeries R H N} {C D : ℝ}
     (ha : a ∈ periodFiltration R N D) (hb : b ∈ periodFiltration R N D)
     (hab : a - b ∈ periodFiltration R N (C + D)) :
@@ -169,8 +163,8 @@ theorem continuous_normNonnegSubring : Continuous (normNonnegSubring (R := R) (N
   apply Continuous.subtype_mk
   exact (continuous_algebraNorm K).comp continuous_subtype_val
 
-/-- A perturbation of `1` above a nonnegative cutoff has norm congruent to `1` above
-that same cutoff, without losing a constant depending on coset representatives. -/
+/-- A perturbation of `1` supported in periods at least a nonnegative cutoff has norm
+agreeing with `1` below that same cutoff, without a loss depending on coset representatives. -/
 theorem algebraNorm_one_add_sub_one_mem_periodFiltration {a : NovikovSeries R H N} {C : ℝ}
     (hC : 0 ≤ C) (ha : a ∈ periodFiltration R N C) :
     Algebra.norm (NovikovSeries R K (N.comp K.subtype)) (1 + a) - 1 ∈
@@ -240,8 +234,9 @@ theorem log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
       (degreeDerivation ℓ) (degreeDerivation_algebraMap_addSubgroup ℓ), htrace,
     hU, ← mul_degreeDerivation_log ℓ hu, ← hU, ← mul_assoc, Units.inv_mul, one_mul, sub_self]
 
-/-- At an exponent in a finite-index subgroup, the logarithm of the subgroup norm
-has coefficient equal to the subgroup index times the original logarithmic coefficient. -/
+/-- Over a commutative `ℚ`-algebra, at an exponent in a finite-index subgroup, the
+logarithm of the subgroup norm of a principal unit `u` (`u - 1 ∈ posIdeal R N`) has
+coefficient equal to the subgroup index times the original logarithmic coefficient. -/
 theorem coeff_log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
     (hu : u - 1 ∈ posIdeal R N) (x : K) :
     ((NormedSpace.log (normNonnegSubring K u) : nonnegSubring R (N.comp K.subtype)) :
@@ -251,9 +246,10 @@ theorem coeff_log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
     trace_eq_index_smul_comap (exists_period_rescale_subtype _) (by simp),
     coeff_smul, coeff_comap, AddSubgroup.subtype_apply]
 
-/-- If the norm over a finite-index subgroup is congruent to `1` below `C`,
-the original logarithm has zero coefficient at every subgroup exponent of period below `C`.
-The coefficient ring may be any commutative `ℚ`-algebra, including one with zero divisors. -/
+/-- If the norm of a principal unit `u` (`u - 1 ∈ posIdeal R N`) over a finite-index
+subgroup agrees with `1` below `C`, the original logarithm has zero coefficient at every
+subgroup exponent of period below `C`. The coefficient ring may be any commutative
+`ℚ`-algebra, including one with zero divisors. -/
 theorem coeff_log_eq_zero_of_algebraNorm_sub_one_mem_periodFiltration [Algebra ℚ R]
     {u : nonnegSubring R N} (hu : u - 1 ∈ posIdeal R N) {g : H} (hg : g ∈ K)
     {C : ℝ} (hC : N g < C)
