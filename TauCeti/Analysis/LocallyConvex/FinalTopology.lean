@@ -157,6 +157,25 @@ theorem eq_of_rightInverse [t : TopologicalSpace F] [IsTopologicalAddGroup F]
     rwa [Function.comp_def, funext hs] at hc
   exact (@continuous_id_iff_le F t (finalLocallyConvexTopology f)).1 h
 
+/-- When the generating maps are linear over a commutative real algebra `A` whose fixed scalars act
+continuously on each generating space, fixed scalars of `A` also act continuously for the final
+locally convex topology. -/
+theorem continuousConstSMul {A : Type*} [CommSemiring A] [Algebra ℝ A]
+    [∀ i, Module A (E i)] [∀ i, IsScalarTower ℝ A (E i)] [∀ i, ContinuousConstSMul A (E i)]
+    [Module A F] [IsScalarTower ℝ A F] (g : ∀ i, E i →ₗ[A] F) :
+    @ContinuousConstSMul A F (finalLocallyConvexTopology fun i ↦ (g i).restrictScalars ℝ) _ := by
+  let := finalLocallyConvexTopology fun i ↦ (g i).restrictScalars ℝ
+  have : SMulCommClass ℝ A F := ⟨fun r a x ↦ by
+    rw [← algebraMap_smul A r, ← algebraMap_smul A r, smul_smul, smul_smul, mul_comm]⟩
+  refine ⟨fun a ↦ ?_⟩
+  let sa : F →ₗ[ℝ] F :=
+    { toFun x := a • x
+      map_add' := smul_add a
+      map_smul' r x := by simpa using (smul_comm r a x).symm }
+  exact (continuous_iff_continuous_comp (fun i ↦ (g i).restrictScalars ℝ) sa).2 fun i ↦
+    ((continuous (fun j ↦ (g j).restrictScalars ℝ) i).comp
+      (continuous_const_smul a)).congr fun x ↦ (g i).map_smul a x
+
 end FinalLocallyConvexTopology
 
 end TauCeti
