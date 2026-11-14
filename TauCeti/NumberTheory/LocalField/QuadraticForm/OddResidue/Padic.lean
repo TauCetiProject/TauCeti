@@ -204,7 +204,7 @@ theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
   · have hsq := (hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer h2 hu
       (TauCeti.Padic.isUniformizer_natCast_self p)).mp h
     exact absurd (Units.isSquare_coe_iff.mpr hsq)
-      (by simpa using not_isSquare_neg_one_of_mod_four_eq_three p hp)
+      (by simpa using not_isSquare_neg_one_of_mod_four_ne_one p (by omega))
   · exact h
 
 end Padic
