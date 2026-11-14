@@ -80,7 +80,7 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
   obtain ⟨r, hr⟩ := (eventually_exists_isCyclic_brLocalization_eq_zero K hℓ x hx).exists
   have : NeZero (ℓ ^ r) := ⟨pow_ne_zero r hℓ.ne_zero⟩
   -- The cyclotomic field `C = K(μ_{ℓ^r})` inside `Kˢ`.
-  set C : IntermediateField K (SeparableClosure K) := adjoin K {b | b ^ (ℓ ^ r) = 1}
+  let C : IntermediateField K (SeparableClosure K) := adjoin K {b | b ^ (ℓ ^ r) = 1}
   have : IsCyclotomicExtension {ℓ ^ r} K C :=
     (HasEnoughRootsOfUnity.prim (M := SeparableClosure K) (n := ℓ ^ r)).choose_spec
       |>.isCyclotomicExtension_adjoin_nth_roots
@@ -89,7 +89,7 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
   obtain ⟨E, _, _, hE⟩ := hr C
   -- By the Hasse principle over `E`, the class `x` dies in `E`, hence in its copy `E'` in `Kˢ`.
   have hxE : brBaseChange K E x = 0 := brLocalization_injective E (hE.trans (map_zero _).symm)
-  set E' : IntermediateField K (SeparableClosure K) := lift E
+  let E' : IntermediateField K (SeparableClosure K) := lift E
   let e : E ≃ₐ[K] E' := liftAlgEquiv E
   have : FiniteDimensional K E' := e.toLinearEquiv.finiteDimensional
   have : IsGalois K E' := IsGalois.of_algEquiv e
