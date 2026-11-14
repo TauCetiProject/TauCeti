@@ -64,7 +64,7 @@ namespace TauCeti
 universe uR uM
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
-  (G : InternalGrading R M)
+  (G : InternalGrading R M ℤ)
 
 open TensorAlgebra InternalGrading
 
