@@ -77,8 +77,8 @@ def geckTorusPositiveBaseChangeIdeal :
         (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))) :=
   CommHopfAlgCat.baseChangeHopfIdeal (t.geckTorusPositiveDefiningIdeal ht)
 
-/-- The Kostant torus-subsystem ideal of the positive Geck datum, which
-`geckTorusPositiveBaseChangeIdeal` unfolds to. -/
+/-- The base-changed Kostant torus-subsystem ideal of the positive Geck datum over `A`, equal to
+`geckTorusPositiveBaseChangeIdeal` via `geckTorusPositiveBaseChangeIdeal_eq_kostant`. -/
 private abbrev geckTorusPositiveKostantIdeal :
     HopfIdeal A
       (CommHopfAlgCat.baseChange (K := A)
@@ -143,10 +143,7 @@ private theorem mkQuotient_comp_geckTorusPositiveBaseChangeCoordinateTransportIs
 /-- The positive Geck base-change ideal is the scalar extension of the named integral ideal. -/
 theorem geckTorusPositiveBaseChangeIdeal_def :
     t.geckTorusPositiveBaseChangeIdeal ht A =
-      CommHopfAlgCat.baseChangeHopfIdeal (t.geckTorusPositiveDefiningIdeal ht) := by
-  rw [t.geckTorusPositiveBaseChangeIdeal_eq_kostant ht A, geckTorusPositiveKostantIdeal,
-    kostantTorusSubsystemBaseChangeIdeal_def,
-    t.geckTorusPositiveDefiningIdeal_def ht]
+      CommHopfAlgCat.baseChangeHopfIdeal (t.geckTorusPositiveDefiningIdeal ht) := (rfl)
 
 private def geckTorusPositiveIntegralCoordinateTransportIso :
     CommHopfAlgCat.baseChange (K := A)
