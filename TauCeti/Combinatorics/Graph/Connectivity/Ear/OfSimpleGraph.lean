@@ -112,6 +112,18 @@ theorem toWalk_toSimpleGraph (e : (Graph.ofSimpleGraph G).Ear K) :
   | «open» => unfold toSimpleGraph; rw [SimpleGraph.Ear.toWalk_open, Graph.Ear.toWalk_open]
   | «closed» => unfold toSimpleGraph; rw [SimpleGraph.Ear.toWalk_closed, Graph.Ear.toWalk_closed]
 
+/-- Transport identifies the graph traced by an ear with the simple subgraph traced by the
+transported ear. -/
+@[simp]
+theorem toSimpleGraphSubgraph_toGraph (e : (Graph.ofSimpleGraph G).Ear K)
+    (h : e.toGraph ≤ Graph.ofSimpleGraph G) :
+    e.toGraph.toSimpleGraphSubgraph h = e.toSimpleGraph.toSubgraph := by
+  cases e with
+  | «open» hKG p hp hs ht hst hinter hedge =>
+      simp
+  | closed hKG p hp hs hinter hedge =>
+      simp
+
 /-- Transport commutes with adjoining an ear to its base graph. -/
 @[simp]
 theorem toSimpleGraphSubgraph_add (e : (Graph.ofSimpleGraph G).Ear K)
@@ -119,33 +131,14 @@ theorem toSimpleGraphSubgraph_add (e : (Graph.ofSimpleGraph G).Ear K)
     e.add.toSimpleGraphSubgraph hAdd = e.toSimpleGraph.adjoin := by
   ext x y
   · simp only [Graph.verts_toSimpleGraphSubgraph, Graph.Ear.vertexSet_add,
-      Graph.Ear.vertexSet_toGraph, Set.mem_union, Set.mem_ofPred_eq,
-      SimpleGraph.Ear.verts_adjoin, SimpleGraph.Ear.toSubgraph_eq_toWalk,
-      SimpleGraph.Walk.verts_toSubgraph]
-    rw [toWalk_toSimpleGraph, Graph.Walk.support_toSimpleGraph]
+      SimpleGraph.Ear.verts_adjoin, Set.mem_union]
+    rw [← Graph.verts_toSimpleGraphSubgraph e.toGraph e.toGraph_le,
+      e.toSimpleGraphSubgraph_toGraph]
   · rw [← SimpleGraph.Subgraph.mem_edgeSet, ← SimpleGraph.Subgraph.mem_edgeSet]
     simp only [Graph.edgeSet_toSimpleGraphSubgraph, Graph.Ear.edgeSet_add,
-      Graph.Ear.edgeSet_toGraph, Set.mem_union, Set.mem_ofPred_eq,
-      SimpleGraph.Ear.edgeSet_adjoin,
-      SimpleGraph.Ear.toSubgraph_eq_toWalk, SimpleGraph.Walk.edgeSet_toSubgraph]
-    rw [toWalk_toSimpleGraph]
-    simp only [SimpleGraph.Walk.edgeSet, Graph.Walk.edges_toSimpleGraph, Set.mem_ofPred_eq]
-
-/-- Transport identifies the graph traced by an ear with the simple subgraph traced by the
-transported ear. -/
-@[simp]
-theorem toSimpleGraphSubgraph_toGraph (e : (Graph.ofSimpleGraph G).Ear K)
-    (h : e.toGraph ≤ Graph.ofSimpleGraph G) :
-    e.toGraph.toSimpleGraphSubgraph h = e.toSimpleGraph.toSubgraph := by
-  ext x y
-  · rw [Graph.verts_toSimpleGraphSubgraph, Graph.Ear.vertexSet_toGraph,
-      SimpleGraph.Ear.toSubgraph_eq_toWalk, SimpleGraph.Walk.verts_toSubgraph,
-      toWalk_toSimpleGraph, Graph.Walk.support_toSimpleGraph]
-  · rw [← SimpleGraph.Subgraph.mem_edgeSet, Graph.edgeSet_toSimpleGraphSubgraph,
-      Graph.Ear.edgeSet_toGraph, SimpleGraph.Ear.toSubgraph_eq_toWalk,
-      ← SimpleGraph.Subgraph.mem_edgeSet, SimpleGraph.Walk.edgeSet_toSubgraph,
-      toWalk_toSimpleGraph]
-    simp only [SimpleGraph.Walk.edgeSet, Graph.Walk.edges_toSimpleGraph, Set.mem_ofPred_eq]
+      SimpleGraph.Ear.edgeSet_adjoin, Set.mem_union]
+    rw [← Graph.edgeSet_toSimpleGraphSubgraph e.toGraph e.toGraph_le,
+      e.toSimpleGraphSubgraph_toGraph]
 
 end Graph.Ear
 

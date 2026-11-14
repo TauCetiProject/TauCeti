@@ -178,7 +178,7 @@ theorem toSimpleGraphSubgraph_walkGraph (p : (Graph.ofSimpleGraph H).Walk x y)
 /-- Converting the subgraph traced by a simple-graph walk to a graph recovers the graph traced by
 the corresponding edge-labelled walk. -/
 @[simp]
-theorem _root_.SimpleGraph.Walk.toSubgraph_toGraph (p : H.Walk x y) :
+theorem _root_.SimpleGraph.Walk.toGraph_toSubgraph (p : H.Walk x y) :
     p.toSubgraph.toGraph = (Graph.ofSimpleGraph H).walkGraph p.toGraph := by
   have h := Graph.Walk.toSimpleGraphSubgraph_walkGraph p.toGraph
     (p.toGraph.walkGraph_le (by simp))

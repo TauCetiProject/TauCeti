@@ -359,17 +359,17 @@ variable {V : Type u} {G : SimpleGraph V}
 
 /-- The top simple subgraph corresponds to its whole edge-labelled graph. -/
 @[simp]
-theorem top_toGraph : (⊤ : G.Subgraph).toGraph = Graph.ofSimpleGraph G := by
+theorem toGraph_top : (⊤ : G.Subgraph).toGraph = Graph.ofSimpleGraph G := by
   simpa using Graph.toGraph_toSimpleGraphSubgraph (Graph.ofSimpleGraph G) le_rfl
 
 /-- The bottom simple subgraph corresponds to the graph with no vertices or edges. -/
 @[simp]
-theorem bot_toGraph : (⊥ : G.Subgraph).toGraph = Graph.noEdge ∅ (Sym2 V) := by
+theorem toGraph_bot : (⊥ : G.Subgraph).toGraph = ⊥ := by
   apply Graph.ext <;> simp
 
 /-- A singleton simple subgraph corresponds to the one-vertex graph with no edges. -/
 @[simp]
-theorem singletonSubgraph_toGraph (v : V) :
+theorem toGraph_singletonSubgraph (v : V) :
     (G.singletonSubgraph v).toGraph = Graph.noEdge {v} (Sym2 V) := by
   apply Graph.ext <;> simp
 
@@ -419,6 +419,7 @@ theorem toSimpleGraphSubgraph_le_toSimpleGraphSubgraph
   simp
 
 /-- Forgetting edge identities is injective on subgraphs of `Graph.ofSimpleGraph G`. -/
+@[simp]
 theorem toSimpleGraphSubgraph_inj
     {K L : Graph V (Sym2 V)} (hK : K ≤ Graph.ofSimpleGraph G)
     (hL : L ≤ Graph.ofSimpleGraph G) :
