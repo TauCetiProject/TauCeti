@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
@@ -15,6 +16,9 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Schwarz
+import Mathlib.Analysis.Complex.Liouville
+import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
@@ -45,6 +49,17 @@ injective:
 * **Injectivity (identity theorem).** If `V` is finite-dimensional, `E` is complete, and every
   connected component of `U` meets `U'`, restriction is injective
   (`TauCeti.BoundedHolomorphicFunctions.restrict_injective`).
+
+For `E` complete, the **point jets** `TauCeti.BoundedHolomorphicFunctions.iteratedLineDeriv`, the
+`k`-th derivatives at `t = 0` of `t ↦ f (x + t • v)` for a point `x` of `U` and a direction `v`, are
+continuous linear maps `H^∞(U, E) → E` by Cauchy's estimate
+(`TauCeti.BoundedHolomorphicFunctions.norm_iteratedLineDeriv_apply_le`), and commute with
+restriction. If all of them vanish at `x`, then `f` vanishes near `x`; consequently, if `V` is
+finite-dimensional and every connected component of `U` meets `K`, the point jets at the points
+of `K` separate `H^∞(U, E)`
+(`TauCeti.BoundedHolomorphicFunctions.eq_zero_of_forall_iteratedLineDeriv_eq_zero`). Since they
+only depend on the map near `x`, this is the input for the Hausdorff property of the inductive limit
+of holomorphic germs along `K`.
 
 ## References
 
@@ -306,6 +321,151 @@ theorem restrict_injective [FiniteDimensional ℂ V] [CompleteSpace E] (h : U' �
   rw [← extend_apply f x]
   exact (hg'.mono (connectedComponentIn_subset _ _)).eqOn_zero_of_preconnected_of_eventuallyEq_zero
     isPreconnected_connectedComponentIn hyx hev (mem_connectedComponentIn x.2)
+
+/-- The zero extension of a sum is the sum of the zero extensions. -/
+@[simp]
+theorem extend_add (f g : boundedHolomorphicFunctions E U) :
+    extend (f + g) = extend f + extend g := by
+  funext z
+  by_cases hz : z ∈ U
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+/-- The zero extension of a scalar multiple is the scalar multiple of the zero extension. -/
+@[simp]
+theorem extend_smul (c : ℂ) (f : boundedHolomorphicFunctions E U) :
+    extend (c • f) = c • extend f := by
+  funext z
+  by_cases hz : z ∈ U
+  · simp [extend_apply _ ⟨z, hz⟩]
+  · simp [extend_apply_of_notMem _ hz]
+
+section IteratedLineDeriv
+
+/-- The parameters `t` for which `x + t • v` lies in `U` form an open set. -/
+private theorem isOpen_preimage_line (x v : V) :
+    IsOpen ((fun t : ℂ => x + t • v) ⁻¹' (U : Set V)) :=
+  U.isOpen.preimage (by fun_prop)
+
+/-- On the complex line through `x` in the direction `v`, the zero extension of a bounded
+holomorphic map is holomorphic wherever the line lies in `U`. -/
+private theorem differentiableOn_extend_line (f : boundedHolomorphicFunctions E U) (x v : V) :
+    DifferentiableOn ℂ (fun t : ℂ => extend f (x + t • v))
+      ((fun t : ℂ => x + t • v) ⁻¹' (U : Set V)) :=
+  (differentiableOn_extend f).comp
+    ((by fun_prop : Differentiable ℂ fun t : ℂ => x + t • v).differentiableOn) fun _ ht => ht
+
+variable [CompleteSpace E]
+
+private theorem contDiffAt_extend_line (f : boundedHolomorphicFunctions E U) (x : U) (v : V)
+    (k : ℕ) : ContDiffAt ℂ k (fun t : ℂ => extend f ((x : V) + t • v)) 0 :=
+  ((differentiableOn_extend_line f x v).contDiffOn (isOpen_preimage_line (x : V) v)).contDiffAt
+    ((isOpen_preimage_line (x : V) v).mem_nhds (by simp))
+
+/-- Cauchy's estimate for the derivatives along the line through `x` in the direction `v`, when
+the closed disc of parameters of radius `R` is mapped into `U`. -/
+private theorem norm_iteratedDeriv_extend_line_le (f : boundedHolomorphicFunctions E U)
+    {x v : V} (k : ℕ) {R : ℝ} (hR : 0 < R) (hRU : ∀ t : ℂ, ‖t‖ ≤ R → x + t • v ∈ U) :
+    ‖iteratedDeriv k (fun t : ℂ => extend f (x + t • v)) 0‖ ≤ k.factorial * ‖f‖ / R ^ k := by
+  refine Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le k hR ?_
+    fun _ _ => norm_extend_apply_le f _
+  refine ((differentiableOn_extend_line f x v).mono fun t ht => hRU t ?_).diffContOnCl
+  rwa [closure_ball _ hR.ne', mem_closedBall_zero_iff] at ht
+
+/-- The derivative of order `k` at `x` in the direction `v`, as a linear map on `H^∞(U, E)`. -/
+private noncomputable def iteratedLineDerivₗ (x : U) (v : V) (k : ℕ) :
+    boundedHolomorphicFunctions E U →ₗ[ℂ] E where
+  toFun f := iteratedDeriv k (fun t : ℂ => extend f ((x : V) + t • v)) 0
+  map_add' f g := by
+    simp only [extend_add, Pi.add_apply]
+    exact iteratedDeriv_fun_add (contDiffAt_extend_line f x v k) (contDiffAt_extend_line g x v k)
+  map_smul' c f := by
+    simp only [extend_smul, Pi.smul_apply, RingHom.id_apply]
+    exact iteratedDeriv_fun_const_smul_field c _
+
+/-- **Point jets.** For a point `x` of `U`, a direction `v` and an order `k`, the `k`-th
+derivative at `x` in the direction `v`, that is, the `k`-th derivative at `0` of
+`t ↦ f (x + t • v)`, as a continuous linear map `H^∞(U, E) → E`. It is continuous by Cauchy's
+estimate `norm_iteratedLineDeriv_apply_le`. -/
+noncomputable def iteratedLineDeriv (x : U) (v : V) (k : ℕ) :
+    boundedHolomorphicFunctions E U →L[ℂ] E :=
+  (iteratedLineDerivₗ x v k).mkContinuousOfExistsBound <| by
+    obtain ⟨R, hR, hRU⟩ := nhds_basis_closedBall.mem_iff.1
+      ((isOpen_preimage_line (U := U) (x : V) v).mem_nhds (x := 0) (by simp))
+    refine ⟨k.factorial / R ^ k, fun f => ?_⟩
+    rw [div_mul_eq_mul_div]
+    exact norm_iteratedDeriv_extend_line_le f k hR fun t ht =>
+      hRU (mem_closedBall_zero_iff.2 ht)
+
+/-- The point jet of order `k` is the `k`-th derivative at `0` along the line `t ↦ x + t • v`. -/
+theorem iteratedLineDeriv_apply (x : U) (v : V) (k : ℕ) (f : boundedHolomorphicFunctions E U) :
+    iteratedLineDeriv x v k f = iteratedDeriv k (fun t : ℂ => extend f ((x : V) + t • v)) 0 :=
+  (rfl)
+
+/-- **Cauchy's estimate for point jets.** If `x + t • v ∈ U` whenever `‖t‖ ≤ R`, then the
+derivative of order `k` at `x` in the direction `v` has norm at most `k! * ‖f‖ / R ^ k`. -/
+theorem norm_iteratedLineDeriv_apply_le (x : U) (v : V) (k : ℕ) {R : ℝ} (hR : 0 < R)
+    (hRU : ∀ t : ℂ, ‖t‖ ≤ R → (x : V) + t • v ∈ U) (f : boundedHolomorphicFunctions E U) :
+    ‖iteratedLineDeriv x v k f‖ ≤ k.factorial * ‖f‖ / R ^ k :=
+  norm_iteratedDeriv_extend_line_le f k hR hRU
+
+/-- Point jets only depend on the map near the point: they commute with restriction. -/
+@[simp]
+theorem iteratedLineDeriv_restrict (h : U' ≤ U) (x : U') (v : V) (k : ℕ)
+    (f : boundedHolomorphicFunctions E U) :
+    iteratedLineDeriv x v k (restrict h f) = iteratedLineDeriv (⟨x, h x.2⟩ : U) v k f := by
+  simp only [iteratedLineDeriv_apply]
+  refine Filter.EventuallyEq.iteratedDeriv_eq k ?_
+  filter_upwards [(isOpen_preimage_line (U := U') (x : V) v).mem_nhds (by simp)] with t ht
+  rw [extend_apply (restrict h f) ⟨_, ht⟩, restrict_apply, extend_apply f ⟨_, h ht⟩]
+
+/-- **Vanishing jets force local vanishing.** If all derivatives of all orders of `f` at `x` in
+all directions vanish, then `f` vanishes near `x`. -/
+theorem extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero (x : U)
+    {f : boundedHolomorphicFunctions E U} (hf : ∀ v k, iteratedLineDeriv x v k f = 0) :
+    extend f =ᶠ[𝓝 (x : V)] 0 := by
+  obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.mp U.isOpen x x.2
+  filter_upwards [ball_mem_nhds (x : V) hρ] with z hz
+  set v := z - x
+  have hv : ‖v‖ < ρ := by rwa [mem_ball, dist_eq_norm] at hz
+  -- Along the line `t ↦ x + t • v`, the parameter disc of radius `r > 1` lies in `ball x ρ`, and
+  -- the Taylor series of `t ↦ f (x + t • v)` at `0` vanishes identically on it.
+  set r := 2 * ρ / (‖v‖ + ρ)
+  have hr : r * ‖v‖ < ρ := by
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith [mul_pos hρ (sub_pos.2 hv)]
+  have hg : DifferentiableOn ℂ (fun t : ℂ => extend f (x + t • v)) (ball 0 r) := by
+    refine (differentiableOn_extend_line f x v).mono fun t ht => hρU ?_
+    rw [mem_ball_zero_iff] at ht
+    simp only [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul]
+    exact lt_of_le_of_lt (mul_le_mul_of_nonneg_right ht.le (norm_nonneg v)) hr
+  have h1 : (1 : ℂ) ∈ ball (0 : ℂ) r := by
+    rw [mem_ball_zero_iff, norm_one]
+    exact (one_lt_div (by positivity)).2 (by linarith)
+  have H := Complex.hasSum_taylorSeries_on_ball hg h1
+  simp only [← iteratedLineDeriv_apply, hf, smul_zero] at H
+  simpa [v] using H.unique hasSum_zero
+
+/-- **Point jets along `K` separate bounded holomorphic maps.** If `V` is finite-dimensional and
+every connected component of `U` meets `K`, then a bounded holomorphic map on `U` all of whose
+derivatives of all orders, in all directions, vanish at every point of `K ∩ U` is zero. -/
+theorem eq_zero_of_forall_iteratedLineDeriv_eq_zero [FiniteDimensional ℂ V] {K : Set V}
+    (hK : ∀ x ∈ U, (connectedComponentIn (U : Set V) x ∩ K).Nonempty)
+    {f : boundedHolomorphicFunctions E U}
+    (hf : ∀ (x : U), (x : V) ∈ K → ∀ v k, iteratedLineDeriv x v k f = 0) : f = 0 := by
+  -- `f` vanishes on the open set `U'` where its zero extension vanishes locally, which contains
+  -- `K ∩ U`, so the identity theorem `restrict_injective` applies to the restriction to `U'`.
+  let U' : Opens V := U ⊓ ⟨interior {z | extend f z = 0}, isOpen_interior⟩
+  refine restrict_injective (E := E) (U' := U') inf_le_left (fun x hx => ?_) ?_
+  · obtain ⟨y, hyx, hyK⟩ := hK x hx
+    have hyU : y ∈ U := connectedComponentIn_subset _ _ hyx
+    exact ⟨y, hyx, hyU, mem_interior_iff_mem_nhds.2
+      (extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero ⟨y, hyU⟩ (hf _ hyK))⟩
+  · refine Subtype.ext (BoundedContinuousFunction.ext fun z => ?_)
+    rw [restrict_apply, ← extend_apply]
+    exact interior_subset z.2.2
+
+end IteratedLineDeriv
 
 end BoundedHolomorphicFunctions
 
