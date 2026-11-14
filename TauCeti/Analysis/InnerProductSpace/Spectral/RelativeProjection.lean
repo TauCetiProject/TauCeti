@@ -75,6 +75,8 @@ vector bundle with a fibre metric, such as the normal Hessian of a Morse–Bott 
   linear equivalence pulls back their relative spectral subspaces.
 * `ContinuousLinearMap.contDiffOn_negativeSpectralProjection` and
   `ContDiffOn.negativeSpectralProjection`: the projection depends smoothly on `(q, h)`.
+* `TauCeti.mapsTo_bilinearComp_symm`: pulled back to a Euclidean model, symmetric nondegenerate
+  forms stay so and positive definite forms get strictly positive Riesz operators.
 * `TauCeti.contDiffOn_conj_bilinearComp`: smooth functions of forms on a Euclidean model give
   smooth functions of forms on a finite-dimensional normed space.
 * `TauCeti.exists_contDiffOn_range_eq_relativeSpectralSubspace`: on a finite-dimensional normed
@@ -160,6 +162,14 @@ private theorem ker_continuousLinearMapOfBilin_bilinearComp (hh : IsStrictlyPosi
   have h0 : h.metricChangeTransport u = 0 := hq (by rw [hTu, map_zero])
   simpa [sqrt_apply_metricChangeTransport_apply hh] using
     congr(CFC.sqrt h♯ $h0)
+
+/-- The pullback of a nondegenerate form along the transport of a positive definite `h` has an
+invertible Riesz operator. -/
+theorem isUnit_continuousLinearMapOfBilin_bilinearComp_metricChangeTransport
+    (hh : IsStrictlyPositive h♯) (hq : Function.Injective q) :
+    IsUnit (q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ :=
+  isUnit_continuousLinearMapOfBilin (injective_bilinearComp hq
+    (isUnit_iff_bijective.mp (isStrictlyPositive_metricChangeTransport hh).isUnit))
 
 /-- The negative spectral projection relative to a positive definite metric is a projection. -/
 theorem isIdempotentElem_negativeSpectralProjection (hh : IsStrictlyPositive h♯) :
@@ -517,9 +527,7 @@ theorem contDiffOn_negativeSpectralProjection {n : ℕ∞ω} :
       (contDiff_fst.contDiffOn.clm_bilinearComp hT hT)
   have hP := hA.starProjection_pointSpectralSubspace_Iio_zero
     (fun p hp ↦ isSelfAdjoint_continuousLinearMapOfBilin fun _ _ ↦ hp.1 _ _)
-    (fun p hp ↦ isUnit_continuousLinearMapOfBilin
-      (injective_bilinearComp hp.2.1
-        (isUnit_iff_bijective.mp (isStrictlyPositive_metricChangeTransport hp.2.2).isUnit)))
+    (fun p hp ↦ isUnit_continuousLinearMapOfBilin_bilinearComp_metricChangeTransport hp.2.2 hp.2.1)
   exact (hT.mul hP).mul hS
 
 /-- **A smooth family of nondegenerate forms and positive definite metrics has a smooth family
@@ -579,6 +587,25 @@ namespace TauCeti
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
 omit [FiniteDimensional ℝ P] in
+/-- **Pulling forms back to a Euclidean model.** Let `T : P ≃L[ℝ] W` identify `P` with a
+finite-dimensional inner product space `W`. Pulled back to `W` along `T⁻¹`, a symmetric
+nondegenerate form on `P` stays symmetric and nondegenerate, and a positive definite symmetric form
+on `P` gets a strictly positive Riesz operator. -/
+theorem mapsTo_bilinearComp_symm {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) :
+    MapsTo (fun x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) ↦
+        (x.1.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P),
+          x.2.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)))
+      {x | (∀ u v, x.1 u v = x.1 v u) ∧ Function.Injective x.1 ∧ (∀ u v, x.2 u v = x.2 v u) ∧
+        ∀ u, u ≠ 0 → 0 < x.2 u u}
+      {p | (∀ u v, p.1 u v = p.1 v u) ∧ Function.Injective p.1 ∧
+        IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) p.2)} := by
+  rintro x ⟨hq, hq', hh, hh'⟩
+  exact ⟨fun u v ↦ hq _ _, ContinuousLinearMap.injective_bilinearComp hq' T.symm.bijective,
+    isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr ⟨fun u v ↦ hh _ _,
+      fun u hu ↦ hh' _ ((map_ne_zero_iff _ T.symm.injective).mpr hu)⟩⟩
+
+omit [FiniteDimensional ℝ P] in
 /-- **Smooth families through a Euclidean model.** Let `T : P ≃L[ℝ] W` identify `P` with a
 finite-dimensional inner product space `W`. A function `Φ` of a symmetric nondegenerate form and a
 positive definite metric on `W`, of class `C^n` on such pairs, gives a `C^n` function of the pairs
@@ -600,12 +627,8 @@ theorem contDiffOn_conj_bilinearComp {W : Type*} [NormedAddCommGroup W] [InnerPr
     contDiffOn_univ.mp ((contDiff_fst.contDiffOn.clm_bilinearComp contDiffOn_const
       contDiffOn_const).prodMk (contDiff_snd.contDiffOn.clm_bilinearComp contDiffOn_const
       contDiffOn_const))
-  -- Pulled back to `W`, a nondegenerate form and a metric on `P` stay so.
-  refine contDiffOn_const.clm_comp ((hΦ.comp hc.contDiffOn ?_).clm_comp contDiffOn_const)
-  rintro x ⟨hq, hq', hh, hh'⟩
-  exact ⟨fun u v ↦ hq _ _, ContinuousLinearMap.injective_bilinearComp hq' T.symm.bijective,
-    isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr ⟨fun u v ↦ hh _ _,
-      fun u hu ↦ hh' _ ((map_ne_zero_iff _ T.symm.injective).mpr hu)⟩⟩
+  exact contDiffOn_const.clm_comp
+    ((hΦ.comp hc.contDiffOn (mapsTo_bilinearComp_symm T)).clm_comp contDiffOn_const)
 
 /-- **Smooth negative relative spectral projections on a finite-dimensional normed space.** There
 is a family `Φ` of projections of `P`, indexed by the pairs `(q, h)` of a symmetric nondegenerate
@@ -630,11 +653,7 @@ theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
     contDiffOn_conj_bilinearComp T ContinuousLinearMap.contDiffOn_negativeSpectralProjection,
     fun q h hq hq' hh hh' ↦ ?_⟩
   -- Pulled back to `W`, a nondegenerate form and a metric on `P` stay so.
-  have hqs (u v : W) : q.bilinearComp Ts Ts u v = q.bilinearComp Ts Ts v u := hq _ _
-  have hqi := ContinuousLinearMap.injective_bilinearComp (u := Ts) hq' T.symm.bijective
-  have hhp : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) (h.bilinearComp Ts Ts)) :=
-    isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr ⟨fun u v ↦ hh _ _,
-      fun u hu ↦ hh' _ ((map_ne_zero_iff _ T.symm.injective).mpr hu)⟩
+  obtain ⟨hqs, hqi, hhp⟩ := mapsTo_bilinearComp_symm T (x := (q, h)) ⟨hq, hq', hh, hh'⟩
   set N := (q.bilinearComp Ts Ts).negativeSpectralProjection (h.bilinearComp Ts Ts)
   -- The relative spectral subspaces of the pulled-back forms are carried to those of `q` and `h`.
   have hmap (Ω : Set ℝ) : ((h.bilinearComp Ts Ts).toBilinForm.relativeSpectralSubspace

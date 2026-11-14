@@ -55,7 +55,7 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   and positive relative spectral subspaces.
 * `exists_contMDiffOn_normalHessian_normalization`: in each normal-bundle trivialization, a `C^k`
   family of invertible operators carries the normal Hessian to the positive-minus-negative fibre
-  quadratic form of a `C^k` fibre metric.
+  quadratic form of a `C^k` fibre metric, and is determined by its listed properties.
 * `normalSpaceTrivialization_symm_negativeSpectralProjection_apply`: in a normal-bundle
   trivialization, the negative spectral projection of the normal Hessian relative to a fibre
   metric `g` reads the projection onto the negative normal space for `g`
@@ -231,8 +231,8 @@ subspaces of `N s` with respect to `G s` into themselves, and carries `N s` to `
 negative one and to `G s` on the positive one. Since these subspaces are complementary and
 orthogonal for both `G s` and `N s`, this reads `N s (Ψ s w) (Ψ s w) = G s (w⁺, w⁺) - G s (w⁻, w⁻)`
 for `w = w⁻ + w⁺`: in the coordinates `w = (Ψ s)⁻¹ u` the normal Hessian is the
-positive-minus-negative fibre quadratic form. These properties determine each `Ψ s`
-(`ContinuousLinearMap.eq_normalizingTransport_iff`). -/
+positive-minus-negative fibre quadratic form. These properties determine each `Ψ s`: any operator
+on `P` with them, even only positive semidefinite for `G s`, is `Ψ s`. -/
 theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifold I (k + 2) M]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
@@ -254,11 +254,25 @@ theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifol
           Ψ s u ∈ (G s).toBilinForm.relativeSpectralSubspace
             ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0) ∧
           h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s (Ψ s u)) = -G s u u) ∧
-        ∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+        (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
             ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0),
           Ψ s u ∈ (G s).toBilinForm.relativeSpectralSubspace
             ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0) ∧
-          h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s (Ψ s u)) = G s u u := by
+          h.normalHessian hn s (e.symm s (Ψ s u)) (e.symm s (Ψ s u)) = G s u u) ∧
+        ∀ L : P →L[ℝ] P, (∀ u v, G s (L u) v = G s u (L v)) → (∀ u, 0 ≤ G s (L u) u) →
+          (∀ u v, h.normalHessian hn s (e.symm s (L u)) (e.symm s v) =
+            h.normalHessian hn s (e.symm s u) (e.symm s (L v))) →
+          (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0),
+            L u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Iio 0) ∧
+            h.normalHessian hn s (e.symm s (L u)) (e.symm s (L u)) = -G s u u) →
+          (∀ u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0),
+            L u ∈ (G s).toBilinForm.relativeSpectralSubspace
+              ((h.normalHessian hn s).compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)) (Ioi 0) ∧
+            h.normalHessian hn s (e.symm s (L u)) (e.symm s (L u)) = G s u u) →
+          L = Ψ s := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   obtain ⟨Q, hsmooth, hQ⟩ :=
     exists_normalHessian_normalSpaceTrivialization_contMDiffOn hn h hk hf hdim s₀ hG hGsymm hGpos
@@ -267,9 +281,11 @@ theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifol
   refine ⟨fun s ↦ Ψ (Q s, G s), hsmooth Ψ hΨ, fun s hs ↦ ?_⟩
   -- In the trivialization the normal Hessian is `Q s`.
   obtain ⟨hsymm, hinj, hN, hQN⟩ := hQ s hs
-  obtain ⟨hunit, hGS, hGpos', hQS, hneg, hpos⟩ :=
+  obtain ⟨hunit, hGS, hGpos', hQS, hneg, hpos, huniq⟩ :=
     hΨp (Q s) (G s) hsymm hinj (hGsymm s hs.1) (hGpos s hs.1)
-  refine ⟨hunit, hGS, hGpos', fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_⟩
+  refine ⟨hunit, hGS, hGpos', fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_,
+    fun L hGL hposL hNL hnegL hposL' ↦ huniq L hGL hposL (fun u v ↦ ?_) (fun u hu ↦ ?_)
+      (fun u hu ↦ ?_)⟩
   · rw [hN, hN]
     exact hQS u v
   · rw [← hQN] at hu ⊢
@@ -278,6 +294,15 @@ theorem exists_contMDiffOn_normalHessian_normalization {k : ℕ∞ω} [IsManifol
   · rw [← hQN] at hu ⊢
     rw [hN]
     exact hpos u hu
+  -- Uniqueness: read the hypotheses on `L` through the trivialization.
+  · rw [← hN, ← hN]
+    exact hNL u v
+  · rw [hQN] at hu ⊢
+    rw [← hN]
+    exact hnegL u hu
+  · rw [hQN] at hu ⊢
+    rw [← hN]
+    exact hposL' u hu
 
 end NormedSpace
 

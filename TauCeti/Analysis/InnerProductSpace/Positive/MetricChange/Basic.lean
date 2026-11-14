@@ -303,24 +303,18 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ
   have := FiniteDimensional.completeSpace ℝ E
   have hinner : ∀ u v, ⟪u, h♯ v⟫_ℝ = h v u := fun u v ↦ by
     rw [real_inner_comm, continuousLinearMapOfBilin_apply]
-  rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,
-    ContinuousLinearMap.isPositive_iff]
   have hsymm_iff : (h♯ : E →ₗ[ℝ] E).IsSymmetric ↔ ∀ u v, h u v = h v u :=
     forall₂_congr fun u v ↦ by
       rw [ContinuousLinearMap.coe_coe, continuousLinearMapOfBilin_apply, hinner]
-  have hnonneg_iff : (∀ x, 0 ≤ ⟪h♯ x, x⟫_ℝ) ↔ ∀ x, 0 ≤ h x x :=
-    forall_congr' fun x ↦ by rw [continuousLinearMapOfBilin_apply]
-  rw [hsymm_iff, hnonneg_iff]
-  refine ⟨fun ⟨⟨hsymm, hnonneg⟩, hunit⟩ ↦ ⟨hsymm, fun v hv ↦ (hnonneg v).lt_of_ne fun h0 ↦ hv ?_⟩,
-    fun ⟨hsymm, hpos⟩ ↦ ⟨⟨hsymm, fun v ↦ ?_⟩, ?_⟩⟩
-  · -- A vector with `h v v = 0` is killed by `CFC.sqrt h♯`, hence by the injective `h♯`.
-    have hH : 0 ≤ h♯ := ContinuousLinearMap.nonneg_iff_isPositive.mpr <|
-      (ContinuousLinearMap.isPositive_iff _).mpr ⟨hsymm_iff.mpr hsymm, hnonneg_iff.mpr hnonneg⟩
-    have hsqrt : CFC.sqrt h♯ v = 0 := by
-      rw [← inner_self_eq_zero (𝕜 := ℝ), ContinuousLinearMap.inner_sqrt_apply_sqrt_apply hH, h0]
-    refine (ContinuousLinearMap.isUnit_iff_bijective.mp hunit).1 ?_
-    rw [map_zero, ← CFC.sqrt_mul_sqrt_self _ hH, mul_apply_eq_comp, hsqrt, map_zero]
-  · rcases eq_or_ne v 0 with rfl | hv
+  refine ⟨fun hH ↦ ⟨hsymm_iff.mp
+      (ContinuousLinearMap.nonneg_iff_isPositive.mp hH.nonneg).isSymmetric,
+    fun v hv ↦ by simpa only [continuousLinearMapOfBilin_apply] using hH.inner_pos_left hv⟩,
+    fun ⟨hsymm, hpos⟩ ↦ ?_⟩
+  rw [IsStrictlyPositive.iff_of_unital, ContinuousLinearMap.nonneg_iff_isPositive,
+    ContinuousLinearMap.isPositive_iff, hsymm_iff]
+  refine ⟨⟨hsymm, fun v ↦ ?_⟩, ?_⟩
+  · rw [continuousLinearMapOfBilin_apply]
+    rcases eq_or_ne v 0 with rfl | hv
     · simp
     · exact (hpos v hv).le
   · rw [ContinuousLinearMap.isUnit_iff_bijective]
