@@ -46,6 +46,20 @@ evaluation through the composite transport maps and lose that defeq.
 
 public section
 
+namespace MonoidHom
+
+variable {σ : Type*}
+
+/-- A homomorphism from finitely supported integer exponents is determined by its values on the
+standard generators. -/
+@[ext]
+theorem ext_finsupp_mint {N : Type*} [Monoid N] ⦃f g : Multiplicative (σ →₀ ℤ) →* N⦄
+    (h : ∀ i, f (Multiplicative.ofAdd (Finsupp.single i 1)) =
+      g (Multiplicative.ofAdd (Finsupp.single i 1))) : f = g :=
+  Finsupp.mulHom_ext' fun i => MonoidHom.ext_mint (h i)
+
+end MonoidHom
+
 namespace TauCeti
 
 variable {σ : Type*} {M : Type*} [CommGroup M]
@@ -82,13 +96,6 @@ theorem freeAbelianCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ ℤ)
     (freeAbelianCharEquiv (M := M)).symm c (Multiplicative.ofAdd m) =
       m.prod fun i n => c i ^ n := by
   simp [freeAbelianCharEquiv, Finsupp.prod, Finsupp.sum]
-
-/-- A homomorphism from the free abelian group is determined by its values on the generators. -/
-@[ext]
-theorem freeAbelianChar_hom_ext (f g : Multiplicative (σ →₀ ℤ) →* M)
-    (h : ∀ i, f (Multiplicative.ofAdd (Finsupp.single i 1)) =
-      g (Multiplicative.ofAdd (Finsupp.single i 1))) : f = g :=
-  freeAbelianCharEquiv.injective (funext h)
 
 /-- Reading off generator values is natural in the target group: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeAbelianCharEquiv`. -/
