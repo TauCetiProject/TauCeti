@@ -52,6 +52,10 @@ theorem equilibriumExcessLaw_def (F : Measure ℝ≥0) :
     equilibriumExcessLaw F = (volume.restrict (Ioi 0)).withDensity (fun t =>
       (∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹ * F {u | t < (u : ℝ)}) := (rfl)
 
+/-- The equilibrium excess-life measure of the zero measure is zero. -/
+@[simp] theorem equilibriumExcessLaw_zero : equilibriumExcessLaw 0 = 0 := by
+  simp [equilibriumExcessLaw_def]
+
 /-- Evaluation on a measurable set is the normalized integral of the interarrival tail. -/
 theorem equilibriumExcessLaw_apply (F : Measure ℝ≥0) {s : Set ℝ} (hs : MeasurableSet s) :
     equilibriumExcessLaw F s = (∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹ *
@@ -97,6 +101,14 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
   apply (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).1
   filter_upwards [hae] with u hu
   simpa using hu
+
+/-- For a probability interarrival law not concentrated at zero, the equilibrium excess-life
+measure has total mass one if and only if the extended mean is finite. -/
+theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_measure_singleton_lt_one
+    (F : Measure ℝ≥0) [IsProbabilityMeasure F] (hzero : F {0} < 1) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ :=
+  ⟨fun h => (F.isProbabilityMeasure_equilibriumExcessLaw_iff.1 h).2,
+    F.isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one hzero⟩
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)
