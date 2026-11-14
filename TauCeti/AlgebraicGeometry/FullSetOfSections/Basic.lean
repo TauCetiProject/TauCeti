@@ -244,7 +244,7 @@ theorem fullSetLocus_le_ker_iff_of_isPullback :
     -- over `V'`, the sections `s'` are a full set, so the ideal of their locus vanishes
     have hfull := (fullSetLocus_ideal_le_ker_iff g s hs H hs' hss' ⟨US, hUS⟩ ⟨V', hV'⟩
       fun y hy ↦ (hV'le hy).2).1
-      ((h ⟨US, hUS⟩).trans ((t.ideal_ker_le _).trans (t.ker_app_le_ker_appLE _)))
+      ((fullSetLocus g s hs).ideal_le_ker_appLE h ⟨US, hUS⟩ _)
     have hbot : (fullSetLocus g' s' hs').ideal ⟨V', hV'⟩ = ⊥ := by
       let := (g'.app V').hom.toAlgebra
       have : Module.Finite Γ(T, V') Γ(Z', g' ⁻¹ᵁ V') := g'.finite_app V' hV'
@@ -255,13 +255,8 @@ theorem fullSetLocus_le_ker_iff_of_isPullback :
     rw [map_zero]
     exact hmem
   · intro h
-    refine le_ofIdeals_iff.2 fun U a ha ↦ RingHom.mem_ker.2 <|
-      T.IsSheaf.section_ext fun q hq ↦ ?_
-    obtain ⟨_, ⟨UT, hUT, rfl⟩, hqUT, hUTle⟩ :=
-      T.isBasis_affineOpens.exists_subset_of_mem_open hq (t ⁻¹ᵁ U.1).2
-    refine ⟨UT, hUTle, hqUT, ?_⟩
-    have := (fullSetLocus_ideal_le_ker_iff g s hs H hs' hss' U ⟨UT, hUT⟩ hUTle).2 (h _) ha
-    simpa [Scheme.Hom.appLE] using this
+    refine (fullSetLocus g s hs).le_ker_iff t |>.2 fun U V hVU ↦ fun a ha ↦ ?_
+    exact (fullSetLocus_ideal_le_ker_iff g s hs H hs' hss' U V hVU).2 (h _) ha
 
 end IsPullback
 

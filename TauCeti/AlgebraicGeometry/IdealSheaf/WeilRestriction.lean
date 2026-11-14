@@ -164,46 +164,27 @@ private theorem weilRestriction_ideal_le_ker_iff (I : Y.IdealSheafData) {T : Sch
 change along `g`. -/
 private theorem le_ker_snd_of_weilRestriction_le_ker (I : Y.IdealSheafData) {T : Scheme.{u}}
     (t : T ⟶ S) (h : I.weilRestriction g ≤ t.ker) : I ≤ (pullback.snd t g).ker := by
-  refine le_ofIdeals_iff.2 fun V x hx ↦ RingHom.mem_ker.2 <|
-    (pullback t g).IsSheaf.section_ext fun p hp ↦ ?_
-  -- near `p`, choose affine opens `US ⊆ S`, `V' ⊆ V ∩ g⁻¹ US` and `UT ⊆ t⁻¹ US`
+  refine I.le_ker_of_forall_exists _ fun p ↦ ?_
+  -- near `p`, choose affine opens `US ⊆ S` and `UT ⊆ t⁻¹ US`
   obtain ⟨_, ⟨US, hUS, rfl⟩, hpUS, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
     (Set.mem_univ (g (pullback.snd t g p))) isOpen_univ
-  have hpVUS : pullback.snd t g p ∈ V.1 ⊓ g ⁻¹ᵁ US := ⟨hp, hpUS⟩
-  obtain ⟨_, ⟨V', hV', rfl⟩, hpV', hV'le⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open hpVUS (V.1 ⊓ g ⁻¹ᵁ US).2
   have htp : t (pullback.fst t g p) = g (pullback.snd t g p) := by
     rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
   have hpUS' : t (pullback.fst t g p) ∈ (US : Set S) := htp ▸ hpUS
   obtain ⟨_, ⟨UT, hUT, rfl⟩, hpUT, hUTle⟩ :=
     T.isBasis_affineOpens.exists_subset_of_mem_open hpUS' (t ⁻¹ᵁ US).2
-  have hW : pullback.snd t g ⁻¹ᵁ V' ⊓ pullback.fst t g ⁻¹ᵁ UT ≤ pullback.snd t g ⁻¹ᵁ V.1 :=
-    inf_le_left.trans ((pullback.snd t g).preimage_mono fun y hy ↦ (hV'le hy).1)
-  refine ⟨_, hW, ⟨hpV', hpUT⟩, ?_⟩
   -- over `UT`, the content of `I(g⁻¹ US)` vanishes, so `I(g⁻¹ US)` vanishes on `T ×_S Y`
-  have hcore := (weilRestriction_ideal_le_ker_iff I t ⟨US, hUS⟩ ⟨UT, hUT⟩ hUTle).1
-    ((h ⟨US, hUS⟩).trans ((t.ideal_ker_le _).trans (t.ker_app_le_ker_appLE hUTle)))
-  have hV'V : (⟨V', hV'⟩ : Y.affineOpens) ≤ V := fun y hy ↦ (hV'le hy).1
-  have := I.ideal_le_ker_appLE_of_le (pullback.snd t g) (U' := ⟨V', hV'⟩)
-    (fun y hy ↦ (hV'le hy).2) (inf_le_inf_right _ ((pullback.snd t g).preimage_mono
-      fun y hy ↦ (hV'le hy).2)) _ inf_le_left hcore (I.ideal_le_comap_ideal hV'V hx)
-  rw [RingHom.mem_ker, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE] at this
-  simpa [Scheme.Hom.appLE] using this
+  exact ⟨⟨g ⁻¹ᵁ US, hUS.preimage g⟩, _, inf_le_left, ⟨hpUS, hpUT⟩,
+    (weilRestriction_ideal_le_ker_iff I t ⟨US, hUS⟩ ⟨UT, hUT⟩ hUTle).1
+      ((I.weilRestriction g).ideal_le_ker_appLE h ⟨US, hUS⟩ hUTle)⟩
 
 /-- The converse: if `I` vanishes after base change along `g`, the Weil restriction of `I`
 vanishes on `T`. -/
 private theorem weilRestriction_le_ker_of_le_ker_snd (I : Y.IdealSheafData) {T : Scheme.{u}}
-    (t : T ⟶ S) (h : I ≤ (pullback.snd t g).ker) : I.weilRestriction g ≤ t.ker := by
-  refine le_ofIdeals_iff.2 fun U a ha ↦ RingHom.mem_ker.2 <|
-    T.IsSheaf.section_ext fun q hq ↦ ?_
-  obtain ⟨_, ⟨UT, hUT, rfl⟩, hqUT, hUTle⟩ :=
-    T.isBasis_affineOpens.exists_subset_of_mem_open hq (t ⁻¹ᵁ U.1).2
-  refine ⟨UT, hUTle, hqUT, ?_⟩
-  have := (weilRestriction_ideal_le_ker_iff I t U ⟨UT, hUT⟩ hUTle).2
-    ((h ⟨g ⁻¹ᵁ U, U.2.preimage g⟩).trans
-      (((pullback.snd t g).ideal_ker_le _).trans
-        ((pullback.snd t g).ker_app_le_ker_appLE inf_le_left))) ha
-  simpa [Scheme.Hom.appLE] using this
+    (t : T ⟶ S) (h : I ≤ (pullback.snd t g).ker) : I.weilRestriction g ≤ t.ker :=
+  (I.weilRestriction g).le_ker_iff t |>.2 fun U UT hUTle _ ha ↦
+    (weilRestriction_ideal_le_ker_iff I t U UT hUTle).2
+      (I.ideal_le_ker_appLE h ⟨g ⁻¹ᵁ U, U.2.preimage g⟩ inf_le_left) ha
 
 /-- **The universal property of the Weil restriction of a closed subscheme.** Let `g : Y ⟶ S` be
 finite locally free and `I` an ideal sheaf on `Y`. A morphism `t : T ⟶ S` factors through the
