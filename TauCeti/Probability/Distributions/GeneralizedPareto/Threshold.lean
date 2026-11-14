@@ -71,11 +71,11 @@ theorem map_sub_cond_generalizedParetoMeasure {s ξ v : ℝ} (hs : 0 < s) (hv : 
     exact (strictMono_generalizedParetoMap hs ξ).lt_iff_lt
   have hG : HasLaw (generalizedParetoMap s ξ) (generalizedParetoMeasure s ξ)
       (expMeasure 1) :=
-    ⟨(measurable_generalizedParetoMap_right s ξ).aemeasurable,
+    ⟨(measurable_generalizedParetoMap s ξ).aemeasurable,
       (generalizedParetoMeasure_of_pos hs ξ).symm⟩
   have hcond := (hG.cond (s := Ioi v) measurableSet_Ioi).map_eq
   rw [hpre] at hcond
-  rw [← hcond, Measure.map_map (by fun_prop) (measurable_generalizedParetoMap_right s ξ)]
+  rw [← hcond, Measure.map_map (by fun_prop) (measurable_generalizedParetoMap s ξ)]
   calc
     (cond (expMeasure 1) (Ioi a)).map
         ((fun x => x - v) ∘ generalizedParetoMap s ξ) =
@@ -86,7 +86,7 @@ theorem map_sub_cond_generalizedParetoMeasure {s ξ v : ℝ} (hs : 0 < s) (hv : 
       simpa only [Function.comp_apply, hav] using generalizedParetoMap_sub_threshold s ξ a e
     _ = ((cond (expMeasure 1) (Ioi a)).map (fun e => e - a)).map
         (generalizedParetoMap (s + ξ * v) ξ) := by
-      rw [Measure.map_map (measurable_generalizedParetoMap_right _ _) (by fun_prop)]
+      rw [Measure.map_map (measurable_generalizedParetoMap _ _) (by fun_prop)]
     _ = generalizedParetoMeasure (s + ξ * v) ξ := by
       rw [map_sub_cond_expMeasure one_pos ha, generalizedParetoMeasure_of_pos hw]
 
