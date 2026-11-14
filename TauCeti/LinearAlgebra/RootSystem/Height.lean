@@ -104,44 +104,34 @@ theorem map_eq_of_forall_mem_support {b : P.Base} {u : P.Aut}
   exact ext <| Finset.eq_of_subset_of_card_le (by simpa [Finset.image_subset_iff] using hu)
     (by rw [support_map_eq, Finset.card_image_of_injective _ u.indexEquiv.injective])
 
-/-- An automorphism mapping `b.support` into itself permutes `b.support`: an index belongs to
-`b.support` if and only if its image does. -/
+/-- An automorphism mapping `b.support` into itself permutes `b.support`. -/
 theorem indexEquiv_mem_support_iff (b : P.Base) {σ : P.Aut}
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {i : ι} :
     σ.indexEquiv i ∈ b.support ↔ i ∈ b.support := by
   classical
   refine ⟨fun hi ↦ ?_, hσ i⟩
-  have hmap : σ.indexEquiv i ∈ (b.map σ).support := by
-    rwa [b.map_eq_of_forall_mem_support hσ]
-  rw [b.support_map_eq, Finset.mem_image] at hmap
-  obtain ⟨j, hj, hji⟩ := hmap
+  have hmap : σ.indexEquiv i ∈ (b.map σ).support := by rwa [b.map_eq_of_forall_mem_support hσ]
+  rw [b.support_map_eq, Finset.mem_image] at hmap; rcases hmap with ⟨j, hj, hji⟩
   exact σ.indexEquiv.injective hji ▸ hj
 
 /-- The permutation of `b.support` induced by an automorphism stabilizing `b.support`. -/
 noncomputable def supportPerm (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
-    Equiv.Perm b.support :=
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) : Equiv.Perm b.support :=
   Equiv.Perm.subtypePerm σ.indexEquiv fun _ ↦ b.indexEquiv_mem_support_iff hσ
 
-@[simp]
-theorem coe_supportPerm_apply (b : P.Base) {σ : P.Aut}
+@[simp] theorem coe_supportPerm_apply (b : P.Base) {σ : P.Aut}
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : b.support) :
-    (b.supportPerm hσ i : ι) = σ.indexEquiv i := by
-  simp [supportPerm]
-
-@[simp]
-theorem coe_supportPerm_symm_apply (b : P.Base) {σ : P.Aut}
+    (b.supportPerm hσ i : ι) = σ.indexEquiv i := by simp [supportPerm]
+@[simp] theorem coe_supportPerm_symm_apply (b : P.Base) {σ : P.Aut}
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : b.support) :
-    ((b.supportPerm hσ).symm i : ι) = σ.indexEquiv.symm i := by
-  rfl
+    ((b.supportPerm hσ).symm i : ι) = σ.indexEquiv.symm i := by rfl
 
-@[simp]
-theorem sameCycle_supportPerm_iff (b : P.Base) {σ : P.Aut}
+@[simp] theorem sameCycle_supportPerm_iff (b : P.Base) {σ : P.Aut}
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {i j : b.support} :
     Equiv.Perm.SameCycle (b.supportPerm hσ) i j ↔
-      Equiv.Perm.SameCycle σ.indexEquiv (i : ι) (j : ι) := by
-  refine exists_congr fun k ↦ ?_
-  rw [← Subtype.coe_inj, supportPerm, Equiv.Perm.subtypePerm_zpow, Equiv.Perm.subtypePerm_apply]
+      Equiv.Perm.SameCycle σ.indexEquiv (i : ι) (j : ι) :=
+  exists_congr fun k ↦ by
+    rw [← Subtype.coe_inj, supportPerm, Equiv.Perm.subtypePerm_zpow, Equiv.Perm.subtypePerm_apply]
 
 /-- **Heights are transported along equivalences of root pairings.** The image of a root under an
 equivalence `e` has, relative to the transported base `b.map e`, the height of the original root

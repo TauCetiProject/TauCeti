@@ -139,21 +139,15 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
   ext k
   fin_cases k <;> simp [Hom.root_weightMap_apply]
 
-/-- A homomorphism of root pairings with injective weight map transports reducedness from the
-source to the target. -/
+/-- A homomorphism with injective weight map transports reducedness to the target. -/
 theorem isReduced [P.IsReduced] : P₂.IsReduced := by
-  rw [isReduced_iff']
-  intro i₂ j₂ hij hdep
+  rw [isReduced_iff']; intro i₂ j₂ hij hdep
   obtain ⟨i, rfl⟩ := f.indexEquiv.surjective i₂
   obtain ⟨j, rfl⟩ := f.indexEquiv.surjective j₂
-  have hdep' : ¬ LinearIndependent R ![P.root i, P.root j] :=
-    mt (f.linearIndependent_root_indexEquiv_iff hf i j).mpr hdep
-  rcases IsReduced.eq_or_eq_neg i j hdep' with hroot | hroot
+  rcases IsReduced.eq_or_eq_neg i j (mt (f.linearIndependent_root_indexEquiv_iff hf i j).mpr hdep)
+    with hroot | hroot
   · exact absurd (congrArg f.indexEquiv (P.root.injective hroot)) hij
-  · calc P₂.root (f.indexEquiv i)
-      _ = f.weightMap (P.root i) := (Hom.root_weightMap_apply P P₂ i f).symm
-      _ = f.weightMap (-P.root j) := by rw [hroot]
-      _ = -P₂.root (f.indexEquiv j) := by rw [map_neg, Hom.root_weightMap_apply P P₂ j f]
+  · rw [← Hom.root_weightMap_apply P P₂ i f, hroot, map_neg, Hom.root_weightMap_apply P P₂ j f]
 
 end Injective
 
