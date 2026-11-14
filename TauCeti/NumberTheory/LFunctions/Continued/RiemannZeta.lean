@@ -36,7 +36,8 @@ private theorem continuedL_eventuallyEq_riemannZeta (s : ℂ) :
     · subst s
       exact self_mem_nhdsWithin
     · exact nhdsWithin_le_nhds (eventually_ne_nhds hs)
-  filter_upwards [riemannZetaData_hasMeromorphicContinuation.continuedL_eventuallyEq s, h0]
+  filter_upwards [AnalyticLFunctionData.continuedL_eventuallyEq
+    riemannZetaData_hasMeromorphicContinuation.meromorphic s, h0]
     with z hz hz0
   rw [hz, uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero hz0]
 
@@ -51,7 +52,8 @@ theorem riemannZetaData_continuedL : riemannZetaData.continuedL = riemannZeta :=
     rw [riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_gammaFactor_ne_zero
       (by rw [riemannZetaData_gammaFactor, Gammaℝ_one]; exact one_ne_zero)]
     rw [uncompletedProduct_riemannZetaData, riemannZeta_def_of_ne_zero one_ne_zero]
-  · exact riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_eventuallyEq
+  · exact AnalyticLFunctionData.continuedL_eq_of_eventuallyEq
+      riemannZetaData_hasMeromorphicContinuation.meromorphic
       (analyticOn_riemannZeta s hs).continuousAt heq
 
 -- The cancelled pole at zero is filled with the genuine value of zeta, not zero.
