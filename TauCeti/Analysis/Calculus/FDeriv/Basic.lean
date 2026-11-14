@@ -31,8 +31,12 @@ public section
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {x : E}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*}
+
+section Topological
+
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] {f : E → F} {x : E}
 
 /-- A function is differentiable wherever its totalized derivative does not vanish. -/
 theorem differentiableAt_of_fderiv_ne_zero (h : fderiv 𝕜 f x ≠ 0) : DifferentiableAt 𝕜 f x := by
@@ -48,6 +52,10 @@ theorem differentiableAt_of_fderiv_surjective (h : Function.Surjective (fderiv �
   rw [fderiv_zero_of_not_differentiableAt h]
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
   exact fun hs ↦ hv (by simpa using (hs v).choose_spec.symm)
+
+end Topological
+
+variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] {x : E}
 
 /-- If two combinations `a F + b G` and `c F + d G` with `a d - b c ≠ 0` are differentiable at a
 point, then so are `F` and `G`: they are recovered by inverting the coefficient matrix. -/

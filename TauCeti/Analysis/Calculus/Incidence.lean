@@ -66,6 +66,70 @@ theorem incidenceEquation_eq_zero {F : E × P → V} {j : W → V} {z : (E × W)
 
 end Equation
 
+section Continuity
+
+variable [TopologicalSpace E] [TopologicalSpace W] [TopologicalSpace P]
+  [AddGroup V] [TopologicalSpace V] [ContinuousSub V]
+
+/-- The incidence equation is continuous wherever its two maps are continuous. -/
+@[fun_prop]
+theorem _root_.ContinuousAt.incidenceEquation {F : E × P → V} {j : W → V}
+    {x : E} {y : W} {p : P} (hF : ContinuousAt F (x, p)) (hj : ContinuousAt j y) :
+    ContinuousAt (incidenceEquation F j) ((x, y), p) := by
+  exact (hF.comp (f := fun z : (E × W) × P ↦ (z.1.1, z.2))
+    (x := ((x, y), p)) (continuousAt_fst.fst.prodMk continuousAt_snd)).sub
+    (hj.comp (f := fun z : (E × W) × P ↦ z.1.2)
+      (x := ((x, y), p)) continuousAt_fst.snd)
+
+/-- The incidence equation is continuous when its two maps are continuous. -/
+@[fun_prop]
+theorem _root_.Continuous.incidenceEquation {F : E × P → V} {j : W → V}
+    (hF : Continuous F) (hj : Continuous j) : Continuous (incidenceEquation F j) := by
+  rw [continuous_iff_continuousAt]
+  rintro ⟨⟨x, y⟩, p⟩
+  exact (hF.continuousAt (x := (x, p))).incidenceEquation hj.continuousAt
+
+variable [IsTopologicalAddGroup V]
+
+omit [ContinuousSub V] in
+/-- The incidence equation is continuous at a point exactly when the family and the map
+are continuous at the corresponding points. -/
+@[simp]
+theorem continuousAt_incidenceEquation_iff {F : E × P → V} {j : W → V}
+    {z : (E × W) × P} :
+    ContinuousAt (incidenceEquation F j) z ↔
+      ContinuousAt F (z.1.1, z.2) ∧ ContinuousAt j z.1.2 := by
+  obtain ⟨⟨x, y⟩, p⟩ := z
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h ↦ h.1.incidenceEquation h.2⟩
+  · have hF : F = fun q ↦ incidenceEquation F j ((q.1, y), q.2) + j y := by
+      funext q
+      simp
+    rw [hF]
+    exact (h.comp (f := fun q : E × P ↦ ((q.1, y), q.2)) (x := (x, p)) (by fun_prop)).add_const _
+  · have hj : j = fun w ↦ -incidenceEquation F j ((x, w), p) + F (x, p) := by
+      funext w
+      simp
+    rw [hj]
+    exact (h.comp (f := fun w : W ↦ ((x, w), p)) (x := y) (by fun_prop)).neg.add_const _
+
+omit [ContinuousSub V] in
+/-- On nonempty source and parameter spaces, the incidence equation is continuous exactly
+when its two maps are continuous. -/
+@[simp]
+theorem continuous_incidenceEquation_iff [Nonempty E] [Nonempty W] [Nonempty P]
+    {F : E × P → V} {j : W → V} :
+    Continuous (incidenceEquation F j) ↔ Continuous F ∧ Continuous j := by
+  inhabit E
+  inhabit W
+  inhabit P
+  simp only [continuous_iff_continuousAt]
+  exact ⟨fun h ↦ ⟨fun z ↦ (continuousAt_incidenceEquation_iff.1
+    (h ((z.1, default), z.2))).1,
+    fun y ↦ (continuousAt_incidenceEquation_iff.1 (h ((default, y), default))).2⟩,
+    fun h z ↦ (h.1 _).incidenceEquation (h.2 _)⟩
+
+end Continuity
+
 section Derivative
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -226,12 +290,16 @@ theorem fderiv_incidenceEquation_comp_inl
 /-- The parameter derivative of the incidence equation is that of the family. -/
 theorem fderiv_incidenceEquation_comp_inr
     {F : E × P → V} {j : W → V} {x : E} {y : W} {p : P}
-    (hF : DifferentiableAt 𝕜 F (x, p)) (hj : DifferentiableAt 𝕜 j y) :
+    (hj : DifferentiableAt 𝕜 j y) :
     (fderiv 𝕜 (incidenceEquation F j) ((x, y), p)).comp
         (ContinuousLinearMap.inr 𝕜 (E × W) P) =
       (fderiv 𝕜 F (x, p)).comp (ContinuousLinearMap.inr 𝕜 E P) := by
-  ext q
-  simp [fderiv_incidenceEquation_apply hF hj]
+  by_cases hF : DifferentiableAt 𝕜 F (x, p)
+  · ext q
+    simp [fderiv_incidenceEquation_apply hF hj]
+  · have h : ¬ DifferentiableAt 𝕜 (incidenceEquation F j) ((x, y), p) :=
+      fun h ↦ hF (differentiableAt_incidenceEquation_iff.1 h).1
+    simp [fderiv_zero_of_not_differentiableAt hF, fderiv_zero_of_not_differentiableAt h]
 
 end Derivative
 
@@ -258,10 +326,9 @@ theorem IsRegularIncidenceParameter.differentiableAt
     {F : E × P → V} {j : W → V} {p : P} {x : E} {y : W}
     (h : IsRegularIncidenceParameter F j p) (hxy : F (x, p) = j y) :
     DifferentiableAt ℝ F (x, p) ∧ DifferentiableAt ℝ j y := by
-  have hs := (isRegularParameter_iff.1 (isRegularIncidenceParameter_iff.1 h)) (x, y)
-    (incidenceEquation_eq_zero.2 hxy)
-  rw [ContinuousLinearMap.coe_comp] at hs
-  exact differentiableAt_incidenceEquation_iff.1 (differentiableAt_of_fderiv_surjective hs.of_comp)
+  exact differentiableAt_incidenceEquation_iff.1
+    ((isRegularIncidenceParameter_iff.1 h).differentiableAt
+      (x := (x, y)) (incidenceEquation_eq_zero.2 hxy))
 
 /-- At an incidence point, regularity gives surjectivity of the source linearization. -/
 theorem IsRegularIncidenceParameter.surjective
@@ -339,10 +406,12 @@ theorem isRegularIncidenceParameter_of_surjective_fderiv
   obtain ⟨w, hw⟩ := hs x y hxy (-v)
   exact ⟨(0, w), by simp [hw, ← Prod.zero_eq_mk]⟩
 
-/-- Every differentiable family is transverse to the identity map at every parameter. -/
-theorem isRegularIncidenceParameter_id {F : E × P → V} {p : P}
-    (hF : ∀ x, DifferentiableAt ℝ F (x, p)) :
-    IsRegularIncidenceParameter F (id : V → V) p := by
+/-- Incidence with the identity is regular exactly when the family is differentiable
+at every source point of the parameter slice. -/
+@[simp]
+theorem isRegularIncidenceParameter_id {F : E × P → V} {p : P} :
+    IsRegularIncidenceParameter F (id : V → V) p ↔ ∀ x, DifferentiableAt ℝ F (x, p) := by
+  refine ⟨fun h x ↦ (h.differentiableAt (y := F (x, p)) rfl).1, fun hF ↦ ?_⟩
   apply isRegularIncidenceParameter_of_surjective_fderiv
     (fun x _ _ ↦ hF x)
   intro _ y _
@@ -355,11 +424,7 @@ theorem isRegularIncidenceParameter_const {F : E × P → V} {c : V} {p : P} :
   refine ⟨fun h ↦ isRegularParameter_iff.2 fun x hx v ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨⟨u, _⟩, hu⟩ := h.surjective (y := 0) hx v
     exact ⟨u, by simpa using hu⟩
-  · have hF (x : E) (_ : W) (hx : F (x, p) = c) : DifferentiableAt ℝ F (x, p) := by
-      have hs := isRegularParameter_iff.1 h x hx
-      rw [ContinuousLinearMap.coe_comp] at hs
-      exact differentiableAt_of_fderiv_surjective hs.of_comp
-    refine (isRegularIncidenceParameter_iff_surjective hF
+  · refine (isRegularIncidenceParameter_iff_surjective (fun _ _ hx ↦ h.differentiableAt hx)
       fun _ _ _ ↦ differentiableAt_const c).2 fun x _ hx v ↦ ?_
     obtain ⟨u, hu⟩ := isRegularParameter_iff.1 h x hx v
     exact ⟨(u, 0), by simpa using hu⟩
