@@ -14,16 +14,17 @@ public import TauCeti.Analysis.Convex.SimplyConnected
 /-!
 # Polynomial exponents of finite-order exponentials
 
-An entire function whose exponential has nonnegative order at most `ρ` is a polynomial of
+An entire function whose exponential has order at most any real `ρ` is a polynomial of
 natural degree at most `⌊ρ⌋₊`. In particular, at order at most one it is affine. Consequently, every
 zero-free entire function of order at most one has the form `exp(a + b z)`. The latter is the
-zero-free case of Hadamard factorization. For functions with zeros, comparison with a canonical
+zero-free case of Hadamard factorization. For negative `ρ`, the natural floor is zero, so the
+exponent is constant. For functions with zeros, comparison with a canonical
 product additionally requires a growth bound on the quotient.
 
 ## Main results
 
 * `TauCeti.OrderLE.exists_eq_polynomial_eval_of_cexp` gives the polynomial exponent and its
-  floor degree bound at every nonnegative order.
+  floor degree bound at every real order.
 * `TauCeti.OrderLE.eq_affine_of_cexp` identifies the exponent by its value and derivative
   at zero.
 * `TauCeti.OrderLE.exists_eq_cexp_add_logDeriv_mul` writes a zero-free entire function of
@@ -44,42 +45,39 @@ open Complex Filter Bornology Topology Asymptotics
 
 namespace TauCeti
 
-private lemma norm_rpow_littleO_pow {p : ℝ} {n : ℕ} (hp : p < n) :
-    (fun z : ℂ ↦ ‖z‖ ^ p) =o[cobounded ℂ] (fun z : ℂ ↦ z ^ n) := by
-  have hr : (fun r : ℝ ↦ r ^ p) =o[atTop] (fun r : ℝ ↦ r ^ n) := by
-    have hgf : ∀ᶠ r : ℝ in atTop, r ^ n = 0 → r ^ p = 0 := by
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
-      exact fun hz ↦ False.elim ((pow_ne_zero n hr.ne') hz)
-    apply (isLittleO_iff_tendsto' hgf).mpr
-    apply (tendsto_rpow_neg_atTop (sub_pos.mpr hp)).congr'
-    filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
-    rw [← Real.rpow_natCast, ← Real.rpow_sub hr]
-    congr 1
-    ring
-  have h := hr.comp_tendsto
-    (tendsto_norm_cobounded_atTop : Tendsto (fun z : ℂ ↦ ‖z‖) (cobounded ℂ) atTop)
-  have hrnorm : (fun z : ℂ ↦ ‖z‖ ^ p) =o[cobounded ℂ] (fun z : ℂ ↦ ‖z‖ ^ n) := h
-  have hnorm : (fun z : ℂ ↦ ‖z‖ ^ n) =O[cobounded ℂ] (fun z : ℂ ↦ z ^ n) :=
-    isBigO_of_le _ (fun z ↦ by simp [norm_pow])
-  exact hrnorm.trans_isBigO hnorm
-
-/-- An entire exponent whose exponential has order at most `ρ ≥ 0` is a polynomial of
+/-- An entire exponent whose exponential has order at most `ρ : ℝ` is a polynomial of
 natural degree at most `⌊ρ⌋₊`. -/
-theorem OrderLE.exists_eq_polynomial_eval_of_cexp {H : ℂ → ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ)
+theorem OrderLE.exists_eq_polynomial_eval_of_cexp {H : ℂ → ℂ} {ρ : ℝ}
     (h : OrderLE (fun z ↦ exp (H z)) ρ) (hH : Differentiable ℂ H) :
     ∃ P : Polynomial ℂ, P.natDegree ≤ ⌊ρ⌋₊ ∧ H = P.eval := by
-  obtain ⟨p, hρp, hpn⟩ := exists_between (Nat.lt_floor_add_one (a := ρ))
-  have hp : 0 ≤ p := hρ.trans hρp.le
-  have hG := hH.isBigO_of_cexp_isBigO hp (h.isBigO hρp)
-  have hlo : H =o[cobounded ℂ] (fun z : ℂ ↦ z ^ (⌊ρ⌋₊ + 1)) :=
-    hG.trans_isLittleO (norm_rpow_littleO_pow (by exact_mod_cast hpn))
+  have htop : max ρ 0 < (⌊ρ⌋₊ : ℝ) + 1 :=
+    max_lt (Nat.lt_floor_add_one ρ) (by positivity)
+  obtain ⟨p, hp, hpn⟩ := exists_between htop
+  have hG := hH.isBigO_of_cexp_isBigO ((le_max_right ρ 0).trans hp.le)
+    (h.isBigO ((le_max_left ρ 0).trans_lt hp))
+  have hr : (fun r : ℝ ↦ r ^ p) =o[atTop] (fun r : ℝ ↦ r ^ (⌊ρ⌋₊ + 1)) := by
+    have he := (isLittleO_exp_mul_rpow_of_lt 0 hpn).comp_tendsto Real.tendsto_log_atTop
+    apply he.congr'
+    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
+      simp only [Function.comp_apply, Real.rpow_zero, mul_one, Real.rpow_def_of_pos hr,
+        mul_comm p]
+    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
+      rw [Function.comp_apply, ← Real.rpow_natCast, Real.rpow_def_of_pos hr]
+      congr 1
+      push_cast
+      ring
+  have hlo : H =o[cobounded ℂ] (fun z : ℂ ↦ z ^ (⌊ρ⌋₊ + 1)) := by
+    apply hG.trans_isLittleO
+    rw [← isLittleO_norm_right]
+    simpa only [Function.comp_def, norm_pow] using hr.comp_tendsto
+      (tendsto_norm_cobounded_atTop : Tendsto (fun z : ℂ ↦ ‖z‖) (cobounded ℂ) atTop)
   exact hH.exists_eq_polynomial_eval_of_isLittleO_pow hlo
 
 /-- An entire exponent whose exponential has order at most one is affine. -/
 theorem OrderLE.eq_affine_of_cexp {H : ℂ → ℂ}
     (h : OrderLE (fun z ↦ exp (H z)) 1) (hH : Differentiable ℂ H) :
     ∀ z, H z = H 0 + deriv H 0 * z := by
-  obtain ⟨P, hP, rfl⟩ := h.exists_eq_polynomial_eval_of_cexp (by norm_num) hH
+  obtain ⟨P, hP, rfl⟩ := h.exists_eq_polynomial_eval_of_cexp hH
   have hlin : P.eval = fun z ↦ P.coeff 0 + P.coeff 1 * z := by
     rw [Polynomial.eq_X_add_C_of_natDegree_le_one (p := P) (by simpa using hP)]
     funext z
