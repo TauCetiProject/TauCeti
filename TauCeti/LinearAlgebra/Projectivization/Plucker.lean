@@ -7,8 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Basis.Basic
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Plucker
+
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # The Plücker point of a subspace
