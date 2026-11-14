@@ -76,7 +76,7 @@ theorem ker_branchPermHom [IsAlgClosed k] :
   · refine ker_placePermHomOfInvariant_le _ hx.isFunctionField_adjoin
       ((k⟮x⟯).val.isIntegrallyClosedIn (k⟮x⟯).val.injective hex) (branchPlaces hx) _
       (fun P _ ↦ P.degree_eq_one_of_isAlgClosed_of_isFunctionField hx.isFunctionField_adjoin) ?_
-    rw [genus_adjoin_simple_eq_zero hx, card_branchPlaces hx hdeg]
+    rw [genus_adjoin_simple_eq_zero, card_branchPlaces hx hdeg]
     omega
   · rw [MonoidHom.mem_ker] at hσ ⊢
     refine Equiv.ext fun P ↦ Subtype.ext ?_
