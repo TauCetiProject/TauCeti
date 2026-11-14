@@ -160,6 +160,14 @@ theorem map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
   filter_upwards [hμ] with t ht
   simpa using Real.sqrt_sq ht
 
+/-- **Squaring undoes square roots** for a measure carried by the nonnegative half-line. -/
+theorem map_sq_map_sqrt (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
+    (μ.map Real.sqrt).map (fun t : ℝ ↦ t ^ 2) = μ := by
+  rw [Measure.map_map (by fun_prop) (by fun_prop)]
+  refine (Measure.map_congr ?_).trans Measure.map_id
+  filter_upwards [hμ] with t ht
+  exact Real.sq_sqrt ht
+
 end MeasureTheory.Measure
 
 namespace TauCeti
