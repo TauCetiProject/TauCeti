@@ -66,6 +66,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
 * `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
   linear equivalence is homogeneous.
+* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_mem_piece_iff`: a degree-zero homogeneous
+  equivalence preserves and reflects membership in each piece.
+* `TauCeti.LinearMap.IsHomogeneous.pieceEquiv`: restriction of a degree-zero homogeneous
+  equivalence to one piece.
 * `TauCeti.LinearMap.IsHomogeneous.map_decompose`: a homogeneous map commutes with homogeneous
   projection, up to the shift of degree.
 * `TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker` and
@@ -348,28 +352,32 @@ namespace LinearMap.IsHomogeneous
 variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
   [AddCommMonoid M] [Module R M] [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
 
-/-- The inverse of a degree-zero homogeneous linear equivalence of internally graded modules is
-again homogeneous of degree zero. The equivalence may be linear over a ring `S` other than the
-ring `R` over which the homogeneous pieces are submodules. -/
+/-- The inverse of a degree-zero homogeneous linear equivalence of additive decompositions is
+again homogeneous of degree zero. The homogeneous pieces need only be additive subobjects;
+no scalar closure is required. -/
 theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
-    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[S] N}
-    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) :
-    IsHomogeneous e.symm.toLinearMap H.piece G.piece 0 := by
-  -- The restrictions `ep p : G.piece p → H.piece p` assemble to a map of direct sums lying over
+    {σM σN : Type*} [SetLike σM M] [SetLike σN N]
+    [AddSubmonoidClass σM M] [AddSubmonoidClass σN N]
+    {ℳ : ι → σM} {𝓝 : ι → σN} [DirectSum.Decomposition ℳ]
+    [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) :
+    IsHomogeneous e.symm.toLinearMap 𝓝 ℳ 0 := by
+  -- The restrictions `ep p : ℳ p → 𝓝 p` assemble to a map of direct sums lying over
   -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
-  let ep : (p : ι) → G.piece p →+ H.piece p := fun p ↦
+  let ep : (p : ι) → ℳ p →+ 𝓝 p := fun p ↦
     { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.2⟩
       map_zero' := Subtype.ext (map_zero e.toLinearMap)
       map_add' := fun x y ↦ Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }
-  have hcomm : (DirectSum.coeAddMonoidHom H.piece).comp (DirectSum.map ep) =
-      e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom G.piece) := by
+  have hcomm : (DirectSum.coeAddMonoidHom 𝓝).comp (DirectSum.map ep) =
+      e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom ℳ) := by
     apply DirectSum.addHom_ext
     intro p x
     simp [ep]
   have hmap_surj : Function.Surjective (DirectSum.map ep) := by
     intro y
-    obtain ⟨x, hx⟩ := G.isInternal.surjective (e.symm (DirectSum.coeAddMonoidHom H.piece y))
-    refine ⟨x, H.isInternal.injective ?_⟩
+    obtain ⟨x, hx⟩ := (DirectSum.Decomposition.isInternal ℳ).surjective
+      (e.symm (DirectSum.coeAddMonoidHom 𝓝 y))
+    refine ⟨x, (DirectSum.Decomposition.isInternal 𝓝).injective ?_⟩
     have hc := DFunLike.congr_fun hcomm x
     rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, hx] at hc
     exact hc.trans (e.apply_symm_apply _)
@@ -381,6 +389,51 @@ theorem linearEquiv_symm {ι : Type*} [DecidableEq ι] [AddMonoid ι]
     rw [← e.symm_apply_apply (x : M)]
     exact congrArg e.symm (congrArg Subtype.val hx).symm
   simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+/-- A degree-zero equivalence of additive decompositions preserves and reflects each piece.
+The homogeneous pieces need only be additive subobjects. -/
+theorem linearEquiv_mem_piece_iff {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {σM σN : Type*} [SetLike σM M] [SetLike σN N]
+    [AddSubmonoidClass σM M] [AddSubmonoidClass σN N]
+    {ℳ : ι → σM} {𝓝 : ι → σN} [DirectSum.Decomposition ℳ]
+    [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : M) :
+    e x ∈ 𝓝 p ↔ x ∈ ℳ p := by
+  constructor
+  · intro hx
+    simpa only [add_zero, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
+      he.linearEquiv_symm.map_mem hx
+  · intro hx
+    simpa only [add_zero, LinearEquiv.coe_coe] using he.map_mem hx
+
+/-- Restrict a degree-zero homogeneous equivalence to one piece of submodule decompositions. -/
+noncomputable def pieceEquiv {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) :
+    ℳ p ≃ₗ[R] 𝓝 p :=
+  e.ofSubmodules _ _ (by
+    ext y
+    rw [Submodule.mem_map_equiv, ← he.linearEquiv_mem_piece_iff p,
+      LinearEquiv.apply_symm_apply])
+
+/-- The piece equivalence applies the original equivalence to the underlying element. -/
+@[simp]
+theorem coe_pieceEquiv_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : ℳ p) :
+    (he.pieceEquiv p x : N) = e x.1 := by
+  rw [pieceEquiv, LinearEquiv.ofSubmodules_apply]
+
+/-- The inverse piece equivalence applies the original inverse to the underlying element. -/
+@[simp]
+theorem coe_pieceEquiv_symm_apply {ι : Type*} [DecidableEq ι] [AddMonoid ι]
+    {ℳ : ι → Submodule R M} {𝓝 : ι → Submodule R N}
+    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝓝] {e : M ≃ₗ[R] N}
+    (he : IsHomogeneous e.toLinearMap ℳ 𝓝 0) (p : ι) (x : 𝓝 p) :
+    ((he.pieceEquiv p).symm x : M) = e.symm x.1 := by
+  rw [pieceEquiv, LinearEquiv.ofSubmodules_symm_apply]
 
 section Decompose
 

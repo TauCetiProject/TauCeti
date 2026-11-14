@@ -77,44 +77,48 @@ local notation "S" => MvPolynomial {c : Fin (n + 1) // c ≠ j} R
 local notation "BaseA" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* A)
 local notation "BaseS" => ModuleCat.restrictScalars (MvPolynomial.C : R →+* S)
 
-/-- **The stabilization comparison on the one-variable specialization preserves the bigrading.**
-Every homogeneous class of bidegree `g` in the specialization `V_{s.castSucc.succAbove i} = 0` of
-`G.stabilizeX s` maps to a homogeneous class of bidegree `g` in the specialization `V_i = 0` of
-`G`. -/
-theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece {g : ℤ × ℤ}
-    {y : (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ())}
-    (hy : y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g) :
-    G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y ∈
-      G.bigradedHatHomologyPiece R i g := by
-  -- Unfold semireducible `OddComponentGridDiagram.stabilizeX` so `(G.stabilizeX s).1` reduces by
-  -- projection at `implicit` transparency (`dsimp only [val_stabilizeX]` makes no progress here).
-  dsimp only [stabilizeX] at y hy ⊢
-  obtain ⟨z, hz, rfl⟩ := (mem_bigradedHatHomologyPiece_iff _ R j).mp hy
-  have heq : (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R
-      ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).oneVariableSpecializationHomologyClass
-        R j z) :
-      (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) =
-    G.1.oneVariableSpecializationHomologyClass R i
-      (G.1.oneVariableSpecializationStabilizeXCyclesMap s i R z) :=
-    G.1.oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
-      s i R z
-  rw [heq]
-  refine G.oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece R i ?_
-  rw [simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap]
-  exact G.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R hz
-
 /-- As an `R`-linear equivalence, the stabilization comparison on the homology of the one-variable
 specialization is homogeneous of bidegree `(0, 0)`. -/
 theorem isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv :
     LinearMap.IsHomogeneous
       (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).toLinearMap
       ((G.stabilizeX s).bigradedHatHomologyGrading R j).piece
-      (G.bigradedHatHomologyGrading R i).piece 0 :=
-  LinearMap.isHomogeneous_def.2 fun g y hy => by
-    rw [bigradedHatHomologyGrading_piece] at hy
-    rw [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
-      G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y]
-    exact G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece s i R hy
+      (G.bigradedHatHomologyGrading R i).piece 0 := by
+  dsimp only [stabilizeX]
+  refine isHomogeneous_oneVariableSpecializationHomologyMap
+    ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, (G.stabilizeX s).property⟩ R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).toLinearMap
+    (G.1.oneVariableSpecializationStabilizeXCyclesMap s i R) ?_ ?_
+  · intro z
+    exact (G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R _).trans
+      (G.1.oneVariableSpecializationStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
+        s i R z)
+  · intro g z hz
+    rw [simplyBlockedChainEquiv_oneVariableSpecializationStabilizeXCyclesMap]
+    simpa only [add_zero] using G.simplyBlockedStabilizeXMap_mem_bigradedChainHatPiece s i R hz
+
+/-- The total stabilization equivalence preserves and reflects homology bidegrees. -/
+@[simp]
+theorem oneVariableSpecializationStabilizeXHomologyEquiv_mem_bigradedHatHomologyPiece_iff
+    (g : ℤ × ℤ)
+    (y : (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ())) :
+    G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R y ∈
+        G.bigradedHatHomologyPiece R i g ↔
+      y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g :=
+  (G.stabilizeX s).bigradedHatHomologyEquiv_mem_piece_iff R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
+    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
+
+/-- The inverse stabilization equivalence preserves and reflects homology bidegrees. -/
+@[simp]
+theorem oneVariableSpecializationStabilizeXHomologyEquiv_symm_mem_bigradedHatHomologyPiece_iff
+    (g : ℤ × ℤ) (y : (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) :
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y ∈
+        (G.stabilizeX s).bigradedHatHomologyPiece R j g ↔
+      y ∈ G.bigradedHatHomologyPiece R i g :=
+  (G.stabilizeX s).bigradedHatHomologyEquiv_symm_mem_piece_iff R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
+    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
 
 /-- The stabilization comparison on the one-variable specialization reflects homology bidegrees as
 well as preserving them. -/
@@ -122,56 +126,44 @@ well as preserving them. -/
 theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff
     (g : ℤ × ℤ)
     (y : (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ())) :
-    G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y ∈
+    (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y :
+        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
         G.bigradedHatHomologyPiece R i g ↔
       y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g := by
-  constructor
-  · intro hy
-    let e : (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ()) ≃ₗ[R]
-        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ()) :=
-      G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R
-    have he : LinearMap.IsHomogeneous e.toLinearMap
-        ((G.stabilizeX s).bigradedHatHomologyGrading R j).piece
-        (G.bigradedHatHomologyGrading R i).piece 0 :=
-      G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R
-    have he_apply : e y =
-        (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y :
-          (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) :=
-      G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y
-    have hz : e y ∈ (G.bigradedHatHomologyGrading R i).piece g := by
-      rw [bigradedHatHomologyGrading_piece, he_apply]
-      exact hy
-    simpa only [add_zero, bigradedHatHomologyGrading_piece, LinearEquiv.coe_coe,
-      LinearEquiv.symm_apply_apply] using he.linearEquiv_symm.map_mem hz
-  · exact G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece s i R
+  have h := (G.stabilizeX s).bigradedHatHomologyEquiv_mem_piece_iff R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
+    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
+  exact (G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y) ▸ h
+
+/-- Every homogeneous class maps under stabilization to a class of the same bidegree. -/
+theorem oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece {g : ℤ × ℤ}
+    {y : (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ())}
+    (hy : y ∈ (G.stabilizeX s).bigradedHatHomologyPiece R j g) :
+    (G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y :
+        (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) ∈
+      G.bigradedHatHomologyPiece R i g :=
+  (G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff s i R g y).2 hy
 
 /-- The stabilization comparison identifies each homogeneous piece of the homology of the
 one-variable specialization with the piece of the same bidegree in the original grid. -/
 noncomputable def oneVariableSpecializationStabilizeXHomologyPieceEquiv (g : ℤ × ℤ) :
     (G.stabilizeX s).bigradedHatHomologyPiece R j g ≃ₗ[R]
       G.bigradedHatHomologyPiece R i g :=
-  (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).ofSubmodules _ _ (by
-    -- Unfold semireducible `OddComponentGridDiagram.stabilizeX` so the ambient module carrier
-    -- `(G.stabilizeX s).1` matches the domain of `oneVariableSpecializationStabilizeXHomologyEquiv`
-    -- at `implicit` transparency.
-    dsimp only [stabilizeX]
-    ext y
-    rw [Submodule.mem_map_equiv]
-    have h := G.oneVariableSpecializationStabilizeXHomologyMap_mem_bigradedHatHomologyPiece_iff
-      s i R g ((G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y)
-    rw [← GridDiagram.oneVariableSpecializationStabilizeXHomologyEquiv_apply,
-      LinearEquiv.apply_symm_apply] at h
-    exact h.symm)
+  (G.stabilizeX s).bigradedHatHomologyPieceEquiv R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
+    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g
 
 /-- On homogeneous classes, `oneVariableSpecializationStabilizeXHomologyPieceEquiv` is the
-semilinear stabilization comparison. -/
+total stabilization equivalence. -/
 @[simp]
 theorem coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_apply (g : ℤ × ℤ)
     (y : (G.stabilizeX s).bigradedHatHomologyPiece R j g) :
     (G.oneVariableSpecializationStabilizeXHomologyPieceEquiv s i R g y :
         (BaseA).obj ((G.1.simplyBlockedComplex R i).homology ())) =
-      G.1.oneVariableSpecializationStabilizeXHomologyMap s i R y.1 :=
-  G.1.oneVariableSpecializationStabilizeXHomologyEquiv_apply s i R y.1
+      G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R y.1 := by
+  exact (G.stabilizeX s).coe_bigradedHatHomologyPieceEquiv_apply R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
+    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
 
 /-- The inverse piece equivalence is the inverse of the total homology equivalence. -/
 @[simp]
@@ -179,8 +171,10 @@ theorem coe_oneVariableSpecializationStabilizeXHomologyPieceEquiv_symm_apply (g 
     (y : G.bigradedHatHomologyPiece R i g) :
     ((G.oneVariableSpecializationStabilizeXHomologyPieceEquiv s i R g).symm y :
         (BaseS).obj ((((G.stabilizeX s).1).simplyBlockedComplex R j).homology ())) =
-      (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y :=
-  (rfl)
+      (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R).symm y := by
+  exact (G.stabilizeX s).coe_bigradedHatHomologyPieceEquiv_symm_apply R j G i
+    (G.1.oneVariableSpecializationStabilizeXHomologyEquiv s i R)
+    (G.isHomogeneous_oneVariableSpecializationStabilizeXHomologyEquiv s i R) g y
 
 /-- The south-west corner `X`-stabilization `G.stabilizeX s` preserves the `R`-rank of every
 homogeneous piece of the homology of the one-variable specialization. -/
