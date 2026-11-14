@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.Floer.CylinderAction
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # The pair of pants capped at `1` as a Floer cylinder
@@ -59,9 +61,9 @@ same holds for the limiting actions at the two ends
 This is the action filtration shift of the capping family, the same at every neck length.
 
 For a manifold target `M` with a nondegenerate two-form `ω`, such as a closed symplectic
-manifold, the curvature bound, the energy identity and the action bound between loops at finite
-ends hold, with actions depending on discs bounding the loops; the bound on limiting actions at
-the two ends is not proved for a manifold target here. The curvature bound
+manifold, the curvature bound, the energy identity and the action bound hold both between loops
+at finite ends, with actions depending on discs bounding the loops, and between the asymptotic
+loops at the two ends. The curvature bound
 holds along every map into `M`
 (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le`; the
 vector space bound is its case `TauCeti.SymplecticForm.constSmooth`). For a `C¹` map `u` with
@@ -80,6 +82,18 @@ Hence for a Floer solution with tamed almost complex structures,
 (`IsNondegenerate.cappedLoopAction_le_add_add_sum_of_cappedCylinderComponent`). These
 identities assume that the energy density and the curvature along `u` are integrable over the
 rectangle.
+
+Over the whole cylinder, for a `C¹` map `u`, `1`-periodic in `t`, whose loops `u(a i, ·)` and
+`u(b i, ·)` converge pointwise to loops `x_inf` and `x₀` along some `a i → -∞` and `b i → ∞`, and
+whose energy, area and curvature densities are integrable over `ℝ × [0, 1]`,
+
+`∫ E = ∫ u^*ω + ∫₀¹ H_0(t, x₀(t)) dt - ∫₀¹ H_∞(t, x_inf(t)) dt - ∫ R_K(u)`
+
+(`IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_univ_prod`), and for a Floer
+solution with tamed almost complex structures
+`∫₀¹ H_∞(t, x_inf(t)) dt ≤ ∫ u^*ω + ∫₀¹ H_0(t, x₀(t)) dt + B_1 + (B_0 + B_1 + B_∞)`
+(`IsNondegenerate.intervalIntegral_le_add_add_sum_of_cappedCylinderComponent`).
+This is the manifold counterpart of the bound on limiting actions for a vector space target.
 
 Capping the input at `0` instead leaves the cylinder `ℂ ∖ {1}`, whose remaining end at `1` is
 centred at `1` while the output end is centred at `0`; the two end coordinates then differ by more
@@ -518,6 +532,101 @@ theorem IsNondegenerate.cappedLoopAction_le_add_add_sum_of_cappedCylinderCompone
   have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le hHb hHbs
     hL hBb hu hper ha hb hD hE hR)).2
   linarith
+
+/-- **The energy identity of the capped cylinder over the whole cylinder**, for a manifold target.
+Let `ω` be a nondegenerate two-form on a finite-dimensional manifold, `Hb` bounded period-one `C¹`
+Hamiltonians and `L > 4`, and let `u` be a `C¹` map with `u(s, 1) = u(s, 0)`, whose energy density,
+symplectic area density and curvature for the capped datum are integrable over the strip
+`ℝ × [0, 1]`. If along a countably generated filter `a i → -∞` and `b i → ∞`, and the loops
+`u(a i, ·)` and `u(b i, ·)` converge pointwise to loops `x_inf` and `x₀`, then
+
+`∫ E = ∫ u^*ω + ∫₀¹ Hb 0 (t, x₀(t)) dt - ∫₀¹ Hb ∞ (t, x_inf(t)) dt - ∫ R_K(u)`
+
+over the strip: the input loop `x₀` is asymptotic to the end at `0` and the output loop `x_inf`
+to the end at `∞`. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_univ_prod
+    {ι : Type*} (hω : ω.IsNondegenerate) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x_inf x₀ : ℝ → M}
+    (hx_inf : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x_inf t)))
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₀ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)) (univ ×ˢ Icc 0 1)) :
+    ∫ z in univ ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) u z =
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, Hb zero t (x₀ t)) - (∫ t in 0..1, Hb inf t (x_inf t)) -
+        ∫ z in univ ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+          (cappedCylinderComponent Hb L Complex.I) z (u z) := by
+  have hL₂ : 2 ≤ L := by linarith
+  refine hω.integral_floerEnergyDensity_univ_prod (c := 3)
+    (contMDiff_cappedCylinderComponent hHb hHbs hL 1)
+    (contMDiff_cappedCylinderComponent hHb hHbs hL Complex.I)
+    (fun s ↦ funext fun x ↦ by simpa using congrFun (periodic_cappedCylinderComponent Hb L 1 s 0) x)
+    (fun z hz ↦ funext fun x ↦ ?_) (fun z hz ↦ funext fun x ↦ ?_)
+    (fun t _ ↦ hBb inf t) (fun t _ ↦ hBb zero t) hu hper ha hb hx_inf hx₀ hE hA hR
+  · simp [cappedCylinderComponent_of_le_neg_three (hHb inf) hL₂ hz]
+  · simp [cappedCylinderComponent_of_two_le (hHb zero) hL₂ (by linarith : 2 ≤ z.1)]
+
+/-- **The action bound of the capped cylinder at its asymptotic loops**, for a manifold target.
+Under the hypotheses of
+`IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_univ_prod`, if `u` solves the
+Floer equation on the strip `ℝ × [0, 1]` for almost complex structures `J z` on `T_{u z} M` tamed
+by `ω`, then
+
+`∫₀¹ Hb ∞ (t, x_inf(t)) dt ≤ ∫ u^*ω + ∫₀¹ Hb 0 (t, x₀(t)) dt + Bb 1 + ∑ r, Bb r`.
+
+For a disc `D` bounding the output loop `x_inf`, this bounds the capped action of the output by
+that of the input capped by `D` glued to `u`, up to the same constant at every neck length: the
+action filtration shift of the capping family between asymptotic orbits. -/
+theorem IsNondegenerate.intervalIntegral_le_add_add_sum_of_cappedCylinderComponent
+    {ι : Type*} (hω : ω.IsNondegenerate) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x_inf x₀ : ℝ → M}
+    (hx_inf : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x_inf t)))
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₀ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)) (univ ×ˢ Icc 0 1))
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, IsComplexLinearMap
+      (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv (cappedCylinderComponent Hb L 1)
+        (cappedCylinderComponent Hb L Complex.I) u z).toLinearMap) :
+    ∫ t in 0..1, Hb inf t (x_inf t) ≤
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, Hb zero t (x₀ t)) + Bb one + ∑ r, Bb r := by
+  have hpos := setIntegral_nonneg (μ := volume) (MeasurableSet.univ.prod measurableSet_Icc)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  rw [hω.integral_floerEnergyDensity_cappedCylinderComponent_univ_prod hHb hHbs hL hBb hu hper ha
+    hb hx_inf hx₀ hE hA hR] at hpos
+  -- The curvature over the strip is the limit of its integrals over rectangles, each of which is
+  -- at most `Bb 1 + ∑ r, Bb r` in absolute value.
+  have hcurv : |∫ z in univ ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) z (u z)| ≤ Bb one + ∑ r, Bb r :=
+    le_of_tendsto (tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hR).abs
+      (Eventually.of_forall fun i ↦
+        ω.abs_setIntegral_hamiltonianCurvature_cappedCylinderComponent_le hHb hHbs hL hBb u (a i)
+          (b i))
+  linarith [(abs_le.1 hcurv).1]
 
 end TauCeti.SmoothTwoForm
 
