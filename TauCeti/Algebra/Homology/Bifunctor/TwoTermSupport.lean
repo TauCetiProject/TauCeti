@@ -434,6 +434,40 @@ private theorem supportι_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
   simp only [TwoTermSupport.ι, mkHomFromSingle_f, Functor.map_comp, NatTrans.comp_app,
     Category.assoc, Iso.map_inv_hom_id_app_assoc]
 
+omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c] in
+private theorem supportπ_twoSummandX_ι_low (N : CochainComplex C₂ ℤ) (j : ℤ)
+    (hpq : ComplexShape.π c c c (s.a, j + -s.a) = j) :
+    ιMapBifunctor s.K N F c s.a (j + -s.a) j hpq ≫ (mapBifunctorMap s.π (𝟙 N) F c).f j =
+      ιMapBifunctor s.K N F c s.a (j + -s.a) j hpq ≫
+        (F.twoSummandX s N j).hom ≫ biprod.snd ≫
+          (F.map (singleObjXSelf c s.a s.A).inv).app (N.X (j + -s.a)) ≫
+            ((single C₁ c s.a).obj s.A).ιMapBifunctor N F c s.a (j + -s.a) j
+              (add_neg_cancel_comm_assoc _ _) := by
+  have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
+    c s.a (j + -s.a) j hpq
+  simp only [HomologicalComplex.id_f] at hm
+  rw [((F).obj (((single C₁ c s.a).obj s.A).X s.a)).map_id, id_comp] at hm
+  rw [hm, reassoc_of% (F.twoSummandX_ι_low s N j)]
+  simp only [TwoTermSupport.π, mkHomToSingle_f, Functor.map_comp, NatTrans.comp_app,
+    Category.assoc, biprod.inr_snd_assoc]
+
+omit [∀ N : CochainComplex C₂ ℤ, HasMapBifunctor ((single C₁ c s.b).obj s.B) N F c] in
+private theorem supportπ_twoSummandX_ι_high (N : CochainComplex C₂ ℤ) (j : ℤ)
+    (hpq : ComplexShape.π c c c (s.b, j + -s.b) = j) :
+    ιMapBifunctor s.K N F c s.b (j + -s.b) j hpq ≫ (mapBifunctorMap s.π (𝟙 N) F c).f j =
+      ιMapBifunctor s.K N F c s.b (j + -s.b) j hpq ≫
+        (F.twoSummandX s N j).hom ≫ biprod.snd ≫
+          (F.map (singleObjXSelf c s.a s.A).inv).app (N.X (j + -s.a)) ≫
+            ((single C₁ c s.a).obj s.A).ιMapBifunctor N F c s.a (j + -s.a) j
+              (add_neg_cancel_comm_assoc _ _) := by
+  have hπ : (TwoTermSupport.π s).f s.b = 0 :=
+    (isZero_single_obj_X c s.a s.A s.b s.ne.symm).eq_of_tgt _ _
+  have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
+    c s.b (j + -s.b) j hpq
+  rw [hm, reassoc_of% (F.twoSummandX_ι_high s N j)]
+  simp only [hπ, Functor.map_zero, NatTrans.app_zero, zero_comp,
+    biprod.inl_snd_assoc, comp_zero]
+
 private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
     (((F.mapTwoTermSupport s).g.app N).f j) ≫
         (F.singleX s.A s.a N (j + -s.a) j
@@ -456,25 +490,12 @@ private theorem supportπ_twoSummandX (N : CochainComplex C₂ ℤ) (j : ℤ) :
   · subst p
     obtain rfl : q = j + -s.a := by
       simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
-    have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
-      c s.a (j + -s.a) j hpq
-    simp only [HomologicalComplex.id_f] at hm
-    rw [((F).obj (((single C₁ c s.a).obj s.A).X s.a)).map_id, id_comp] at hm
-    rw [hm, reassoc_of% (F.twoSummandX_ι_low s N j)]
-    simp only [TwoTermSupport.π, mkHomToSingle_f, Functor.map_comp, NatTrans.comp_app,
-      Category.assoc,
-      biprod.inr_snd_assoc]
+    exact F.supportπ_twoSummandX_ι_low s N j hpq
   · by_cases hp₁ : p = s.b
     · subst p
       obtain rfl : q = j + -s.b := by
         simpa only [sub_eq_add_neg] using (eq_sub_of_add_eq' hpq)
-      have hπ : (TwoTermSupport.π s).f s.b = 0 :=
-        (isZero_single_obj_X c s.a s.A s.b s.ne.symm).eq_of_tgt _ _
-      have hm := ι_mapBifunctorMap (TwoTermSupport.π s) (𝟙 N) (F)
-        c s.b (j + -s.b) j hpq
-      rw [hm, reassoc_of% (F.twoSummandX_ι_high s N j)]
-      simp only [hπ, Functor.map_zero, NatTrans.app_zero, zero_comp,
-        biprod.inl_snd_assoc, comp_zero]
+      exact F.supportπ_twoSummandX_ι_high s N j hpq
     · have hzero := ((F).flip.obj (N.X q)).map_isZero
         (s.support p hp₀ hp₁)
       exact hzero.eq_of_src _ _
