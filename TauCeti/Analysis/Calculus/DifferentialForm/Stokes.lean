@@ -17,12 +17,19 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# Stokes' formula for one-forms on rectangles and annuli
+# Stokes' formula for one-forms on rectangles, annular sectors and annuli
 
-The integral of the exterior derivative of a vector-valued real one-form over a rectangle or
-closed annulus is its positively oriented boundary integral. Zero inner radius gives the disc
-formula. Only C¹ regularity near the region of integration is required; in the annular
-case no regularity on the missing inner disc is needed. On a rectangle the formula is stated both
+The integral of the exterior derivative of a vector-valued real one-form over a rectangle,
+annular sector or closed annulus is its positively oriented boundary integral. An annular
+sector is the set of points at distance between `a` and `b` from `z₀` whose argument about `z₀`
+lies in `[c, d] ⊆ [-π, π]` (`TauCeti.integral_extDeriv_annularSector`); its boundary consists of
+two arcs and two radial edges, and the upper half-annulus `[c, d] = [0, π]` is the domain of the
+boundary analysis of holomorphic half-discs. Zero inner radius gives the disc formula. Only C¹
+regularity near the region of integration is required; in the annular case no regularity on the
+missing inner disc is needed. For an annular sector the region is the closed polar image
+`circleMap z₀ '' (Icc a b ×ˢ Icc c d)`, which can be larger than the set defined through
+`Complex.arg` by a null set (the ray at angle `-π` and the centre `z₀`). On a rectangle the
+formula is stated both
 for the set integral over `Icc a b` (`TauCeti.integral_extDeriv_prod_Icc`) and for the iterated
 integral over oriented intervals (`TauCeti.integral2_extDeriv`). For a scalar one-form
 `f_s ds + f_t dt` it is Green's theorem `TauCeti.integral_fderiv_sub_fderiv_Icc`, written in
@@ -41,8 +48,9 @@ provide the area calculation used to exclude holomorphic discs with exact Lagran
 
 The proofs use Mathlib's rectangular divergence theorem, naturality of the exterior
 derivative, and the polar change of variables. Applying the rectangle formula to the polar
-pullback gives the annulus formula: the seam edges cancel, and the radial Jacobian is given by
-`extDeriv_pullback_polarCoord_symm_apply`. The bilinear Green formulas in
+pullback gives the sector formula, with the radial Jacobian given by
+`extDeriv_pullback_polarCoord_symm_apply`. For the whole annulus the two radial edges are the same
+seam and cancel. The bilinear Green formulas in
 `TauCeti.MeasureTheory.Integral.DivergenceTheorem` are special cases.
 
 ## References
@@ -282,6 +290,63 @@ theorem extDeriv_pullback_polarCoord_symm_apply
     ContinuousLinearMap.coe_coe, LinearMap.id_apply, hB] using
     B.toLinearMap₁₂.apply_exp_circleMap_sub_swap (LinearMap.id) p.1 p.2
 
+/-- Stokes' formula for a real one-form near an annular sector, the points `z` with
+`a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀` lies in `[c, d] ⊆ [-π, π]`. The boundary integral
+is the outer arc minus the inner arc, both traversed counterclockwise, minus the radial edge at
+angle `d` plus the radial edge at angle `c`, both traversed outward. The inner radius may be zero.
+The one-form is required to be C¹ on the image of the closed polar rectangle `[a, b] × [c, d]`
+under `(r, θ) ↦ circleMap z₀ r θ`. This closed sector can differ from the domain of integration
+by a null set, the ray at angle `-π` and the centre `z₀`, since `Complex.arg` takes values in
+`(-π, π]` with `arg 0 = 0`. -/
+theorem integral_extDeriv_annularSector
+    {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} (z₀ : ℂ) {a b c d : ℝ}
+    (ha : 0 ≤ a) (hab : a ≤ b) (hc : -π ≤ c) (hcd : c ≤ d) (hd : d ≤ π)
+    (hω : ∀ r ∈ Icc a b, ∀ θ ∈ Icc c d, ContDiffAt ℝ 1 ω (circleMap z₀ r θ)) :
+    (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d},
+        extDeriv ω z ![1, I]) =
+      ((∫ θ in c..d, ω (circleMap z₀ b θ) (fun _ ↦ circleMap 0 b θ * I)) -
+        ∫ θ in c..d, ω (circleMap z₀ a θ) (fun _ ↦ circleMap 0 a θ * I)) -
+      ((∫ r in a..b, ω (circleMap z₀ r d) (fun _ ↦ exp (d * I))) -
+        ∫ r in a..b, ω (circleMap z₀ r c) (fun _ ↦ exp (c * I))) := by
+  -- Pull back to a polar rectangle. The pullback is C¹ even at radius zero.
+  let P : ℝ × ℝ → ℂ := fun p ↦ z₀ + Complex.polarCoord.symm p
+  let η := fun p ↦ (ω (P p)).compContinuousLinearMap (fderiv ℝ P p)
+  have hP : ContDiff ℝ 2 P := contDiff_add_polarCoord_symm z₀
+  have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ :=
+    add_polarCoord_symm_eq_circleMap z₀ (r, θ)
+  have hωP (p : ℝ × ℝ) (hp : p ∈ Icc (a, c) (b, d)) : ContDiffAt ℝ 1 ω (P p) :=
+    hPc p.1 p.2 ▸ hω p.1 ⟨hp.1.1, hp.2.1⟩ p.2 ⟨hp.1.2, hp.2.2⟩
+  have hη p (hp : p ∈ Icc (a, c) (b, d)) : ContDiffAt ℝ 1 η p :=
+    hP.contDiffAt.differentialForm_pullback (hωP p hp)
+  have hgreen := integral_extDeriv_prod_Icc (a := (a, c)) (b := (b, d)) ⟨hab, hcd⟩ hη
+  have hDP p : fderiv ℝ P p =
+      Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p) :=
+    (hasFDerivAt_add_polarCoord_symm p z₀).fderiv
+  have hdr p : fderiv ℝ P p (1, 0) = exp (p.2 * I) := by
+    simp only [hDP, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero]
+  have hdt p : fderiv ℝ P p (0, 1) = circleMap 0 p.1 p.2 * I := by
+    simp only [hDP, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
+  -- Naturality and the polar Jacobian convert the interior integral back to the sector.
+  have harea : (∫ p in Icc (a, c) (b, d), extDeriv η p ![(1, 0), (0, 1)]) =
+      ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d},
+        extDeriv ω z ![1, I] := by
+    rw [← Complex.integral_comp_polarCoord_symm_Icc_Icc _ z₀ ha hc hd]
+    exact setIntegral_congr_fun measurableSet_Icc fun p hp ↦
+      extDeriv_pullback_polarCoord_symm_apply z₀ p ((hωP p hp).differentiableAt one_ne_zero)
+  -- The radial sides of the rectangle give the two arcs, its angular sides the radial edges.
+  have hcircle r : (∫ θ in c..d, η (r, θ) (fun _ ↦ (0, 1))) =
+      ∫ θ in c..d, ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I) := by
+    simp [η, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
+      hdt, hPc]
+  have hedge θ : (∫ r in a..b, η (r, θ) (fun _ ↦ (1, 0))) =
+      ∫ r in a..b, ω (circleMap z₀ r θ) (fun _ ↦ exp (θ * I)) := by
+    simp [η, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
+      hdr, hPc]
+  rw [harea, hcircle, hcircle, hedge, hedge] at hgreen
+  exact hgreen
+
 /-- Stokes' formula for a real one-form near a closed annulus. Both circles are traversed
 counterclockwise; the inner circle is subtracted. The inner radius may be zero. -/
 theorem integral_extDeriv_annulus
@@ -291,49 +356,21 @@ theorem integral_extDeriv_annulus
     (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, extDeriv ω z ![1, I]) =
       (∫ θ in -π..π, ω (circleMap z₀ b θ) (fun _ ↦ circleMap 0 b θ * I)) -
         ∫ θ in -π..π, ω (circleMap z₀ a θ) (fun _ ↦ circleMap 0 a θ * I) := by
-  -- Pull back to a polar rectangle. The pullback is C¹ even at radius zero.
-  let P : ℝ × ℝ → ℂ := fun p ↦ z₀ + Complex.polarCoord.symm p
-  let η := fun p ↦ (ω (P p)).compContinuousLinearMap (fderiv ℝ P p)
-  have hP : ContDiff ℝ 2 P := contDiff_add_polarCoord_symm z₀
-  have hmem (p : ℝ × ℝ) (hp : p ∈ Icc (a, -π) (b, π)) :
-      P p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
-    add_polarCoord_symm_mem_annulus z₀ ha ⟨hp.1.1, hp.2.1⟩
-  have hη p (hp : p ∈ Icc (a, -π) (b, π)) : ContDiffAt ℝ 1 η p :=
-    hP.contDiffAt.differentialForm_pullback (hω _ (hmem p hp))
-  have hgreen := integral_extDeriv_prod_Icc
-    (a := (a, -π)) (b := (b, π)) ⟨hab, by linarith [Real.pi_pos]⟩ hη
-  have hd p : fderiv ℝ P p =
-      Complex.equivRealProdCLM.symm.toContinuousLinearMap.comp (fderivPolarCoordSymm p) :=
-    (hasFDerivAt_add_polarCoord_symm p z₀).fderiv
-  have hdr p : fderiv ℝ P p (1, 0) = exp (p.2 * I) := by
-    simp only [hd, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero]
-  have hdt p : fderiv ℝ P p (0, 1) = circleMap 0 p.1 p.2 * I := by
-    simp only [hd, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
-  -- Naturality and the polar Jacobian convert the interior integral back to the annulus.
-  have harea : (∫ p in Icc (a, -π) (b, π), extDeriv η p ![(1, 0), (0, 1)]) =
-      ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, extDeriv ω z ![1, I] := by
-    rw [← Complex.integral_comp_polarCoord_symm_Icc _ z₀ ha]
-    exact setIntegral_congr_fun measurableSet_Icc fun p hp ↦
-      extDeriv_pullback_polarCoord_symm_apply z₀ p
-        ((hω _ (hmem p hp)).differentiableAt one_ne_zero)
-  -- The radial edges give the two circles; the angular seam edges cancel.
-  have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ :=
-    add_polarCoord_symm_eq_circleMap z₀ (r, θ)
-  have hcircle r : (∫ θ in -π..π, η (r, θ) (fun _ ↦ (0, 1))) =
-      ∫ θ in -π..π, ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I) := by
-    simp [η, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
-      hdt, hPc]
-  have hseam : (∫ r in a..b, η (r, π) (fun _ ↦ (1, 0))) =
-      ∫ r in a..b, η (r, -π) (fun _ ↦ (1, 0)) := by
-    apply intervalIntegral.integral_congr
-    intro r _
-    simp only [η, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      Function.comp_def, hdr]
-    simp [P, Complex.polarCoord_symm_apply, Complex.exp_mul_I]
-  rw [harea, hcircle, hcircle, hseam, sub_self, sub_zero] at hgreen
-  exact hgreen
+  have hπ : -π ≤ π := by linarith [Real.pi_pos]
+  have h := integral_extDeriv_annularSector z₀ ha hab le_rfl hπ le_rfl
+    fun r hr θ _ ↦ hω _ (add_polarCoord_symm_eq_circleMap z₀ (r, θ) ▸
+      add_polarCoord_symm_mem_annulus z₀ ha hr)
+  have hset : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc (-π) π} =
+      {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+    ext z
+    simp [(neg_pi_lt_arg _).le, arg_le_pi]
+  -- The two radial edges at angles `π` and `-π` are the same segment, traversed the same way.
+  have hseam : (fun r : ℝ ↦ ω (circleMap z₀ r π) (fun _ ↦ exp (π * I))) =
+      fun r ↦ ω (circleMap z₀ r (-π)) (fun _ ↦ exp (↑(-π) * I)) := by
+    funext r
+    simp [circleMap, Complex.exp_mul_I]
+  rw [hset, hseam, sub_self, sub_zero] at h
+  exact h
 
 /-- Stokes' formula on a closed disc. The tangent vector in the boundary integral is the
 derivative of the counterclockwise circle parametrization. -/

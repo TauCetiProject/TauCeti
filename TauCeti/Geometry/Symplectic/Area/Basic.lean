@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
+public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.Deriv.CompMul
@@ -16,6 +17,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Duality
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
@@ -26,7 +28,12 @@ symplectic area of a `C²` map on a closed rectangle with the integral of `λ` o
 oriented boundary (`TauCeti.SymplecticForm.integral_fderiv_apply_prod_Icc`), and the symplectic
 area of a `C²` map on a closed annulus with the difference of its boundary actions.
 The outer and inner circles are both parametrized counterclockwise on `[-π, π]`, and the inner
-action is subtracted. No extension across the inner disc is needed. Together with the
+action is subtracted. No extension across the inner disc is needed. On a closed upper half-annulus
+whose two straight boundary segments are mapped into an isotropic subspace `L`, as for a half-disc
+with Lagrangian boundary condition along the real axis, the straight edges contribute nothing,
+because `λ` vanishes on vectors of `L` at points of `L`; the area is again the difference of the
+actions of the two boundary half-circles
+(`TauCeti.SymplecticForm.integral_fderiv_apply_halfAnnulus`). Together with the
 isoperimetric inequality for the boundary loops, this is the Stokes step used in energy decay
 and removal of singularities for holomorphic curves.
 
@@ -403,6 +410,95 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
   have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
+  linarith
+
+/-- Along a radial segment `r ↦ circleMap z₀ r θ` mapped by `u` into an isotropic subspace `L`,
+the primitive `λₓ(v) = ½ ω(x, v)` evaluated on the radial derivative vanishes at every interior
+point of the segment where `u` is differentiable: both `u` and its radial derivative lie in `L`. -/
+private theorem apply_fderiv_exp_mul_I_eq_zero_of_isIsotropic [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) {L : Submodule ℝ V} (hL : ω.IsIsotropic L) {u : ℂ → V} (z₀ : ℂ)
+    {a b θ r : ℝ} (huL : ∀ s ∈ Icc a b, u (circleMap z₀ s θ) ∈ L) (hr : r ∈ Ioo a b)
+    (hu : DifferentiableAt ℝ u (circleMap z₀ r θ)) :
+    ω (u (circleMap z₀ r θ)) (fderiv ℝ u (circleMap z₀ r θ) (exp (θ * I))) = 0 := by
+  let φ : V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (ω.toBilinForm (u (circleMap z₀ r θ)))
+  have hφ (v : V) : φ v = ω (u (circleMap z₀ r θ)) v := by simp [φ]
+  have hγ : HasDerivAt (fun s : ℝ ↦ circleMap z₀ s θ) (exp (θ * I)) r := by
+    have h := ((hasDerivAt_id r).ofReal_comp.mul_const (exp (θ * I))).const_add z₀
+    simpa [circleMap] using h
+  have hg := φ.hasFDerivAt.comp_hasDerivAt r (hu.hasFDerivAt.comp_hasDerivAt r hγ)
+  -- The function `s ↦ ω(u(γ r), u(γ s))` vanishes near `r`, so its derivative is zero.
+  have hzero : (fun s : ℝ ↦ φ (u (circleMap z₀ s θ))) =ᶠ[𝓝 r] fun _ ↦ 0 := by
+    filter_upwards [Ioo_mem_nhds hr.1 hr.2] with s hs
+    rw [hφ]
+    exact (ω.isIsotropic_iff.mp hL) _ (huL r (Ioo_subset_Icc_self hr)) _
+      (huL s (Ioo_subset_Icc_self hs))
+  have h := hg.unique ((hasDerivAt_const r (0 : ℝ)).congr_of_eventuallyEq hzero)
+  simpa only [Function.comp_def, hφ] using h
+
+/-- **Stokes' formula for symplectic area on a half-annulus with isotropic boundary.** Let `u` be
+`C²` near the closed upper half-annulus of radii `0 ≤ a ≤ b` about `z₀`, and let it map the two
+straight boundary segments `z₀ ± r`, `a ≤ r ≤ b`, into an isotropic subspace `L`. Then the
+symplectic area of `u` over the half-annulus is the outer minus the inner boundary action of the
+primitive `λₓ(v) = ½ ω(x, v)`, both along upper half-circles parametrized counterclockwise on
+`[0, π]`. The straight edges contribute nothing, because `λ` vanishes on vectors of `L` at points
+of `L`. -/
+theorem integral_fderiv_apply_halfAnnulus [FiniteDimensional ℝ V]
+    (ω : SymplecticForm V) {L : Submodule ℝ V} (hL : ω.IsIsotropic L) {u : ℂ → V} (z₀ : ℂ)
+    {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b)
+    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im}, ContDiffAt ℝ 2 u z)
+    (huL : ∀ r ∈ Icc a b, u (z₀ + r) ∈ L ∧ u (z₀ - r) ∈ L) :
+    ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im},
+      ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
+      (1 / 2 : ℝ) * ((∫ θ in 0..π, ω (u (circleMap z₀ b θ))
+        (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ)) -
+      ∫ θ in 0..π, ω (u (circleMap z₀ a θ))
+        (deriv (fun θ ↦ u (circleMap z₀ a θ)) θ)) := by
+  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
+    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
+  have hB (x y : V) : B x y = ω x y := by simp [B]
+  have hskew (x y : V) : B x y - B y x = 2 * ω x y := by
+    rw [hB, hB, ← ω.neg_eq]
+    ring
+  have hu' (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) (hθ : θ ∈ Icc 0 π) :
+      ContDiffAt ℝ 2 u (circleMap z₀ r θ) :=
+    hu _ (circleMap_mem_halfAnnulus z₀ ha hr hθ)
+  have hcircle (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) (hθ : θ ∈ Icc 0 π) :
+      deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
+        fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) :=
+    (((hu' r hr θ hθ).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
+      (hasDerivAt_circleMap z₀ r θ)).deriv
+  -- Each straight edge is a radial segment on which `u` takes values in `L`.
+  have hedge (θ : ℝ) (hθ : θ ∈ Icc 0 π) (huθ : ∀ s ∈ Icc a b, u (circleMap z₀ s θ) ∈ L) :
+      ∫ r in a..b, B (u (circleMap z₀ r θ)) (fderiv ℝ u (circleMap z₀ r θ) (exp (θ * I))) =
+        0 := by
+    rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo]
+    refine setIntegral_eq_zero_of_forall_eq_zero fun r hr ↦ ?_
+    rw [hB]
+    exact apply_fderiv_exp_mul_I_eq_zero_of_isIsotropic ω hL z₀ huθ hr
+      ((hu' r (Ioo_subset_Icc_self hr) θ hθ).differentiableAt (by norm_num))
+  have hπ : (0 : ℝ) ≤ π := Real.pi_pos.le
+  have hright : ∫ r in a..b, B (u (circleMap z₀ r 0))
+      (fderiv ℝ u (circleMap z₀ r 0) (exp ((0 : ℝ) * I))) = 0 :=
+    hedge 0 ⟨le_rfl, hπ⟩ fun s hs ↦ by simpa using (huL s hs).1
+  have hleft : ∫ r in a..b, B (u (circleMap z₀ r π))
+      (fderiv ℝ u (circleMap z₀ r π) (exp (π * I))) = 0 :=
+    hedge π ⟨hπ, le_rfl⟩ fun s hs ↦ by simpa using (huL s hs).2
+  have hgreen := B.integral_bilinear_fderiv_sub_annularSector z₀ ha hab
+    (by linarith [Real.pi_pos]) hπ le_rfl hu'
+  have hset : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc 0 π} =
+      {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ 0 ≤ (z - z₀).im} := by
+    ext z
+    simp [arg_le_pi, arg_nonneg_iff]
+  rw [hset, hright, hleft, sub_self, sub_zero] at hgreen
+  simp only [hskew, integral_const_mul] at hgreen
+  have hint (r : ℝ) (hr : r ∈ Icc a b) :
+      (∫ θ in 0..π, B (u (circleMap z₀ r θ)) (fderiv ℝ u (circleMap z₀ r θ)
+        (circleMap 0 r θ * I))) =
+        ∫ θ in 0..π, ω (u (circleMap z₀ r θ)) (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ) := by
+    refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
+    rw [uIcc_of_le hπ] at hθ
+    simp only [hB, hcircle r hr θ hθ]
+  rw [hint b ⟨hab, le_rfl⟩, hint a ⟨le_rfl, hab⟩] at hgreen
   linarith
 
 end SymplecticForm
