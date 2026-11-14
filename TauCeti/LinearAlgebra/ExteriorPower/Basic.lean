@@ -556,7 +556,10 @@ theorem alternatingMapLinearEquiv_bijective {n : ℕ} (hV : Module.finrank K V =
     (hW : Module.finrank K W = 1) {η : V [⋀^Fin n]→ₗ[K] W} (hη : η ≠ 0) :
     Function.Bijective (_root_.exteriorPower.alternatingMapLinearEquiv η) := by
   have hdom : Module.finrank K (⋀[K]^n V) = 1 := by
-    rw [_root_.exteriorPower.finrank_eq, hV, Nat.choose_self]
+    by_cases hfin : Module.Finite K V
+    · rw [_root_.exteriorPower.finrank_eq, hV, Nat.choose_self]
+    obtain rfl : n = 0 := hV.symm.trans (Module.finrank_of_not_finite hfin)
+    rw [(_root_.exteriorPower.zeroEquiv K V).finrank_eq, Module.finrank_self]
   have : FiniteDimensional K (⋀[K]^n V) := Module.finite_of_finrank_eq_succ hdom
   have : FiniteDimensional K W := Module.finite_of_finrank_eq_succ hW
   have hsurj : Function.Surjective (_root_.exteriorPower.alternatingMapLinearEquiv η) :=

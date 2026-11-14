@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
-public import TauCeti.Geometry.Manifold.VectorBundle.Associated
+public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
