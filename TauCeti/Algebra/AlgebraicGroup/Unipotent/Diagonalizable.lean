@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
 public import TauCeti.Algebra.Bialgebra.Equiv
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Triangular
 
 /-!
 # Homomorphisms from diagonalizable groups to unipotent groups are trivial
@@ -31,14 +30,12 @@ assumption on the subgroup: this is the scheme-theoretic form, which also sees i
 subgroups such as `μₚ`. It is the input showing that a torus of a smooth connected solvable
 group meets its unipotent radical trivially.
 
+The representation-theoretic input, that a group with a faithful upper-unitriangular
+representation admits only trivial homomorphisms from diagonalizable groups, is proved in
+`TauCeti.Algebra.AlgebraicGroup.Representation.UpperUnitriangular` (in the `Module.Basis`
+namespace).
+
 ## Main declarations
-
-In the `Module.Basis` namespace:
-
-* `bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top`:
-  over a domain, if an upper-unitriangular representation of `H` has surjective coordinate
-  morphism, then a bialgebra morphism from `H` to a torsion-free group-like-spanned bialgebra is
-  the counit followed by the unit.
 
 In the `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` namespace:
 
@@ -60,45 +57,6 @@ public section
 open scoped TensorProduct
 
 universe u v w x
-
-namespace Module.Basis
-
-open TauCeti TauCeti.Comodule
-
-variable {R : Type u} {H : Type v} {K : Type w} {M : Type x} [CommRing R] [IsDomain R]
-  [CommRing H] [HopfAlgebra R H] [Ring K] [Bialgebra R K] [Module.IsTorsionFree R K]
-  [AddCommMonoid M] [Module R M] [Comodule R H M] {n : ℕ}
-
-/-- **A group with a faithful upper-unitriangular representation admits only trivial
-homomorphisms from diagonalizable groups.** Over a domain, suppose that an `H`-comodule has an
-upper-unitriangular coefficient matrix whose coordinate morphism `O(GLₙ) → H` is surjective. Then
-every bialgebra morphism from `H` to a torsion-free bialgebra spanned by its group-like elements
-is the counit followed by the unit. -/
-theorem
-    bialgHom_eq_unit_comp_counit_of_isUpperUnitriangular_of_surjective_of_groupLikeSetSpan_eq_top
-    (b : Module.Basis (Fin n) R M) (hb : (coefficientMatrix (C := H) b).IsUpperUnitriangular)
-    (hsurj : Function.Surjective (coordinateBialgHom (H := H) b))
-    (hK : Subcoalgebra.groupLikeSetSpan (R := R) (C := K) Set.univ = ⊤) (φ : H →ₐc[R] K) :
-    φ = (Bialgebra.unitBialgHom R K).comp (Bialgebra.counitBialgHom R H) := by
-  have hone := b.map_coefficientMatrix_eq_one_of_isUpperTriangular_of_groupLikeSetSpan_eq_top
-    φ.toCoalgHom (hb.isUpperTriangular.map φ.toCoalgHom) hK fun i ↦ by
-      rw [hb.apply_diag i]
-      exact map_one φ
-  have hcomp : φ.toAlgHom.comp (coordinateBialgHom (H := H) b).toAlgHom =
-      ((Algebra.ofId R K).comp (Bialgebra.counitAlgHom R H)).comp
-        (coordinateBialgHom (H := H) b).toAlgHom := by
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext R n
-    intro i j
-    have h : φ (coefficientMatrix (C := H) b i j) = (1 : Matrix (Fin n) (Fin n) K) i j := by
-      simpa only [Matrix.map_apply, BialgHom.toCoalgHom_apply] using congrFun (congrFun hone i) j
-    simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, coordinateBialgHom_X, h,
-      Bialgebra.counitAlgHom_apply, counit_coefficientMatrix, Matrix.one_apply]
-    split_ifs <;> simp
-  ext x
-  obtain ⟨y, rfl⟩ := hsurj x
-  simpa using AlgHom.congr_fun hcomp y
-
-end Module.Basis
 
 namespace TauCeti
 
