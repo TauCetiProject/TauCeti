@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.CoefficientSemifield.Basic
+public import TauCeti.Algebra.Cluster.CoefficientSemifield.Hom
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 public import Mathlib.Algebra.Tropical.Basic
 public import Mathlib.Data.Finsupp.Basic
@@ -88,6 +88,29 @@ theorem eval_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
     freeAbelianCharEquiv.symm q (generator j) = q j := by
   simpa only [generator] using freeAbelianCharEquiv_symm_apply_ofAdd_single q j
 
+/-- Extending the family of tropical generators gives the identity group homomorphism. -/
+@[simp]
+theorem freeAbelianCharEquiv_symm_generator :
+    freeAbelianCharEquiv.symm (generator (J := J)) = MonoidHom.id (Trop J) := by
+  apply freeAbelianCharEquiv.injective
+  rw [MulEquiv.apply_symm_apply]
+  funext j
+  apply Multiplicative.toAdd.injective
+  simp [freeAbelianCharEquiv_apply]
+
+/-- A finite product of tropical generators has its prescribed integer exponent vector. -/
+@[simp]
+theorem prod_generator_zpow (m : J →₀ ℤ) :
+    (m.prod fun j n ↦ generator j ^ n) = Multiplicative.ofAdd m := by
+  simpa only [freeAbelianCharEquiv_symm_generator, MonoidHom.id_apply] using
+    (freeAbelianCharEquiv_symm_apply_ofAdd (M := Trop J) generator m).symm
+
+/-- A tropical monomial is the finite product of its generators to their integer exponents. -/
+theorem eq_prod_generator (a : Trop J) :
+    a = a.toAdd.prod (fun j n ↦ generator j ^ n) := by
+  simp
+
+
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]
 theorem generator_add_generator {i j : J} (h : i ≠ j) : generator i + generator j = 1 := by
@@ -140,13 +163,27 @@ theorem reindex_refl : reindex (Equiv.refl J) = RingEquiv.refl (Trop J) := by
 /-- Relabellings compose in the same order as equivalences of the index sets. -/
 @[simp]
 theorem reindex_trans (e : J ≃ J') (e' : J' ≃ J'') :
-    reindex (e.trans e') = (reindex e).trans (reindex e') := by
+    (reindex e).trans (reindex e') = reindex (e.trans e') := by
   ext a j
   simp
 
 @[simp]
 theorem reindex_symm (e : J ≃ J') : (reindex e).symm = reindex e.symm := by
   rfl
+
+/-- Nested tropical relabellings collapse to the composite index equivalence. -/
+@[simp]
+theorem reindex_reindex (e : J ≃ J') (e' : J' ≃ J'') (a : Trop J) :
+    reindex e' (reindex e a) = reindex (e.trans e') a := by
+  simpa only [RingEquiv.trans_apply] using
+    congrArg (fun f : Trop J ≃+* Trop J'' ↦ f a) (reindex_trans e e')
+
+/-- Tropical relabelling homomorphisms compose by composing their index equivalences. -/
+@[simp]
+theorem reindex_toCoefficientSemifieldHom_comp (e : J ≃ J') (e' : J' ≃ J'') :
+    (reindex e').toCoefficientSemifieldHom.comp (reindex e).toCoefficientSemifieldHom =
+      (reindex (e.trans e')).toCoefficientSemifieldHom := by
+  rw [← RingEquiv.toCoefficientSemifieldHom_trans, reindex_trans]
 
 /-- Group evaluation is compatible with relabelling the generators. The evaluation is a group
 homomorphism, with no assertion that it preserves auxiliary addition. -/
