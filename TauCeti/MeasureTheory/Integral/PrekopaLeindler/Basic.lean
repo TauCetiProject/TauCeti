@@ -18,6 +18,7 @@ import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Real
+import TauCeti.MeasureTheory.Measure.AEMeasurable
 
 /-!
 # The Prékopa–Leindler inequality
@@ -56,6 +57,8 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
 ## Main results
 
 * `MeasureTheory.Measure.HasPrekopaLeindler`: the measurable extended-integral inequality.
+* `MeasureTheory.Measure.HasPrekopaLeindler.lintegral`: the lower-integral inequality with
+  a.e. measurable majorant and arbitrary input functions, retaining the pointwise bound.
 * `MeasureTheory.Measure.HasPrekopaLeindler.prod`: tensorization over product measures.
 * `MeasureTheory.Measure.HasPrekopaLeindler.pi`: tensorization over finite products.
 * `MeasureTheory.Measure.HasPrekopaLeindler.map`: transport by a measure-preserving affine map.
@@ -127,6 +130,23 @@ theorem hasPrekopaLeindler_def (mu : Measure E) (theta : ℝ) :
         (∫⁻ x, f x ∂mu).rpow (1 - theta) * (∫⁻ x, g x ∂mu).rpow theta ≤
           ∫⁻ x, h x ∂mu :=
   Iff.rfl
+
+/-- **Prékopa–Leindler with an a.e. measurable majorant.** At a weight in `[0,1]`, the
+lower-integral inequality holds for arbitrary input functions and an a.e. measurable upper
+function. The hypothesis still concerns the supplied representatives at every pair of points.
+Zero and infinite integrals use the extended nonnegative power and product conventions. -/
+theorem HasPrekopaLeindler.lintegral {μ : Measure E} {θ : ℝ}
+    (hμ : μ.HasPrekopaLeindler θ) (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1)
+    {f g h : E → ℝ≥0∞} (hh : AEMeasurable h μ)
+    (hfg : ∀ x y, f x ^ (1 - θ) * g y ^ θ ≤ h ((1 - θ) • x + θ • y)) :
+    (∫⁻ x, f x ∂μ) ^ (1 - θ) * (∫⁻ x, g x ∂μ) ^ θ ≤ ∫⁻ x, h x ∂μ := by
+  obtain ⟨f', hf', hle_f, hIf⟩ := exists_measurable_le_lintegral_eq μ f
+  obtain ⟨g', hg', hle_g, hIg⟩ := exists_measurable_le_lintegral_eq μ g
+  obtain ⟨h', hh', hle_h, heq_h⟩ := hh.exists_measurable_ge_ae_eq
+  rw [hIf, hIg, lintegral_congr_ae heq_h]
+  exact hμ hf' hg' hh' fun x y =>
+    (mul_le_mul' (ENNReal.rpow_le_rpow (hle_f x) (sub_nonneg.mpr hθ₁))
+      (ENNReal.rpow_le_rpow (hle_g y) hθ₀)).trans ((hfg x y).trans (hle_h _))
 
 /-- A Dirac mass has the Prékopa–Leindler property at every weight. -/
 theorem hasPrekopaLeindler_dirac (a : E) (theta : ℝ) :

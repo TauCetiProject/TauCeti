@@ -198,9 +198,8 @@ theorem exists_arclength_homeomorph (hγ : BoundedVariationOn γ (Icc a b))
       StrictMono e ∧ ∀ t, (e t : ℝ) = variationOnFromTo γ (Icc a b) a t := by
   let s := variationOnFromTo γ (Icc a b) a
   let L := (eVariationOn γ (Icc a b)).toReal
-  have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
   have hm : StrictMonoOn s (Icc a b) :=
-    hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo ha hinj
+    hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo hinj
   have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   let S : Icc a b → Icc 0 L := fun t ↦ ⟨s t, himage ▸ mem_image_of_mem s t.property⟩
   have hS : StrictMono S := fun t u htu ↦ hm t.property u.property htu
@@ -219,7 +218,7 @@ theorem toReal_eVariationOn_pos_of_injOn_Ioo (hγ : BoundedVariationOn γ (Icc a
     (hab : a < b) (hinj : InjOn γ (Ioo a b)) :
     0 < (eVariationOn γ (Icc a b)).toReal := by
   have hm := hγ.locallyBoundedVariationOn.strictMonoOn_variationOnFromTo_of_injOn_Ioo
-    (left_mem_Icc.mpr hab.le) hinj
+    (c := a) hinj
   simpa only [variationOnFromTo.self, variationOnFromTo.eq_of_le _ _ hab.le, inter_self] using
     hm (left_mem_Icc.mpr hab.le) (right_mem_Icc.mpr hab.le) hab
 

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Basis
-public import Mathlib.RingTheory.Nilpotent.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Product
 public import TauCeti.AlgebraicTopology.Cohomology.Point
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
+public import TauCeti.Topology.Category.TopCat.Monoidal
 
 /-!
 # The Leray–Hirsch theorem for a product with fibrewise basis classes
@@ -18,7 +19,7 @@ Let `k` be a commutative ring and let `F` be a space whose homology `Hₚ(F; k)`
 every degree and finitely generated in degrees `p ≤ n`. Let `X` be a space and, for every degree
 `p`, let `c p : ι p → Hᵖ(X × F; k)` be a family of classes on the product, finite for `p ≤ n`,
 whose restrictions `c p i |_{x} ∈ Hᵖ(F; k)` along the inclusion `f ↦ (x, f)` of the fibre over `x`
-(`TopCat.prodFibreInclusion`) form a basis of `Hᵖ(F; k)` for every point `x : X`. Then the
+(`TopCat.prodFiberInclusion`) form a basis of `Hᵖ(F; k)` for every point `x : X`. Then the
 **Leray–Hirsch map** of the classes `c` in degree `n`,
 
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ c_{p,i}`,
@@ -28,7 +29,12 @@ This is the trivial-bundle case of the Leray–Hirsch theorem with the hypothesi
 theorem: the classes are global classes on the total space restricting to a basis of the
 cohomology of every fibre, not pullbacks of a basis of the fibre. For the pullbacks
 `pr₂^* b_{p,i}` of a basis `b` of the cohomology of `F` it is the Leray–Hirsch map
-`TopCat.lerayHirschProd` (`TopCat.lerayHirschProdOfClasses_snd`).
+`TopCat.lerayHirschProd` (`TopCat.lerayHirschProdOfClasses_snd`). Restricted to the fibre over
+`x`, the image of `a` is the combination of the restricted classes with coefficients the values at
+`x` of the base-degree-zero components of `a`
+(`TopCat.singularCohomologyMap_prodFiberInclusion_lerayHirschProdOfClasses`), and the map is
+natural for maps of products covering a map of the bases
+(`TopCat.singularCohomologyMap_lerayHirschProdOfClasses`).
 
 The proof reduces to `TopCat.lerayHirschProd_bijective` for the basis `b` of `Hᵖ(F; k)` given by
 the restrictions of the classes to the fibre over a chosen point. Expanding every class
@@ -38,8 +44,8 @@ of the cup product write the Leray–Hirsch map of `c` as that of `b` after the 
 map is block triangular for the fibre degree. Its diagonal blocks are the matrices of degree-zero
 classes `γ_{p,i;p,i'} ∈ H⁰(X; k)` whose values at a point `x` form the change of basis matrix from
 `b` to the restrictions of `c` to the fibre over `x`
-(`TopCat.singularCohomologyMap_prodFibreInclusion_lerayHirschProd`). Since these are invertible
-at every point, the diagonal blocks are invertible (`TopCat.exists_singularCup_matrix_eq_one`,
+(`TopCat.singularCohomologyMap_prodFiberInclusion_lerayHirschProd`). Since these are invertible
+at every point, the diagonal blocks are invertible (`TauCeti.exists_singularCup_matrix_eq_one`,
 applied on each path component), and the coefficient map is an invertible block diagonal map times
 a unipotent one.
 
@@ -65,19 +71,6 @@ variable {k : Type w} [CommRing k]
 section Definition
 
 variable (X F : TopCat.{w})
-
-/-- The inclusion `f ↦ (x, f)` of the fibre `F` over `x : X` into the product `X × F`. -/
-def prodFibreInclusion (x : X) : F ⟶ X ⊗ F :=
-  lift (TopCat.ofHom (ContinuousMap.const F x)) (𝟙 F)
-
-@[simp]
-lemma prodFibreInclusion_fst (x : X) :
-    prodFibreInclusion X F x ≫ fst X F = TopCat.ofHom (ContinuousMap.const F x) :=
-  lift_fst _ _
-
-@[simp]
-lemma prodFibreInclusion_snd (x : X) : prodFibreInclusion X F x ≫ snd X F = 𝟙 F :=
-  lift_snd _ _
 
 variable (n : ℕ) {ι : ℕ → Type w} [∀ p, DecidableEq (ι p)]
   (c : ∀ p, ι p → (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
@@ -107,6 +100,30 @@ lemma lerayHirschProdOfClasses_lof (p q : ℕ) (h : p + q = n) (i : ι p)
       (X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom q p n (by omega)
         (TopCat.singularCohomologyMap (fst X F) q a) (c p i) := by
   simp [lerayHirschProdOfClasses]
+
+/-- **Naturality of the Leray–Hirsch map of the classes**: for a map `φ : X × F ⟶ X' × F'` covering
+`f : X ⟶ X'`, pulling back the image of `a` along `φ` gives the image of `f^* a` for the
+pulled-back classes `φ^* c`. -/
+lemma singularCohomologyMap_lerayHirschProdOfClasses {X' F' : TopCat.{w}} (φ : X ⊗ F ⟶ X' ⊗ F')
+    (f : X ⟶ X') (hφ : φ ≫ fst X' F' = fst X F ≫ f)
+    (c : ∀ p, ι p → (X' ⊗ F').singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
+    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
+        X'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    TopCat.singularCohomologyMap φ n (lerayHirschProdOfClasses X' F' n c a) =
+      lerayHirschProdOfClasses X F n (fun p i ↦ TopCat.singularCohomologyMap φ p (c p i))
+        (DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+          (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.1.2).hom) a) := by
+  suffices h : (TopCat.singularCohomologyMap φ n).hom ∘ₗ lerayHirschProdOfClasses X' F' n c =
+      lerayHirschProdOfClasses X F n (fun p i ↦ TopCat.singularCohomologyMap φ p (c p i)) ∘ₗ
+        DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+          (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
+            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.1.2).hom) from LinearMap.congr_fun h a
+  refine DirectSum.linearMap_ext k fun ⟨⟨⟨p, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
+  simp only [LinearMap.comp_apply, DirectSum.lmap_lof]
+  rw [lerayHirschProdOfClasses_lof, lerayHirschProdOfClasses_lof, ← singularCup_naturality,
+    ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp,
+    ← singularCohomologyMap_comp, hφ]
 
 /-- For the pullbacks `pr₂^* b` of classes `b` on `F`, the Leray–Hirsch map of the classes is the
 Leray–Hirsch map `TopCat.lerayHirschProd` of the product. -/
@@ -248,7 +265,7 @@ private lemma diagMap_comp (n : ℕ)
 private lemma diagMap_eq_id (n : ℕ)
     (E : ∀ p, ι p → ι p → X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
     (hs : ∀ p ≤ n, ∀ i, i ∈ s p)
-    (hE : ∀ p ≤ n, ∀ i l, E p i l = if i = l then singularCohomologyZeroOne X else 0) :
+    (hE : ∀ p ≤ n, ∀ i l, E p i l = if i = l then X.singularCohomologyZeroOne else 0) :
     diagMap s n E = LinearMap.id :=
   lhSource_ext fun p q h i a ↦ by
     rw [diagMap_lof, LinearMap.id_apply, Finset.sum_eq_single_of_mem i (hs p (by omega) i)]
@@ -347,9 +364,49 @@ private lemma coeffMap_sub_diagMap_lof_mem (n : ℕ) (hs : ∀ p ≤ n, ∀ i, i
     rw [diagMap_lof, diagPart, map_sum]
     refine Finset.sum_congr rfl fun l _ ↦ ?_
     rw [shiftCup_lof]
+    -- The summand index `q + 0` and the cup product degree `q + 0` reduce to `q` by `Nat.add`.
     rfl
   rw [coeffMap_lof, hdiag, ← map_sub]
   exact shiftCup_filt_le n p q h a (sub_diagPart_mem_filt s p (hs p (by omega)) (γ p i))
+
+/-- Block diagonal maps whose blocks are, in degrees `p ≤ n`, inverse matrices for the cup product
+compose to the identity. -/
+private lemma diagMap_mul_eq_one (n : ℕ) (hs : ∀ p ≤ n, ∀ i, i ∈ s p)
+    (E E' : ∀ p, ι p → ι p →
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+    (h : ∀ p ≤ n, ∀ i l, ∑ j ∈ s p, X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl (E' p i j)
+      (E p j l) = if i = l then X.singularCohomologyZeroOne else 0) :
+    diagMap s n E * diagMap s n E' = 1 := by
+  rw [Module.End.mul_eq_comp, diagMap_comp, Module.End.one_eq_id]
+  exact diagMap_eq_id s n _ hs h
+
+/-- **The coefficient map is invertible** when its diagonal blocks, the matrices of base-degree-zero
+components of `γ p i` for `p ≤ n`, have an inverse `B` for the cup product: it is the invertible
+block diagonal map times `1 + T` with `T` nilpotent, since `T` lowers the fibre degree. -/
+private lemma isUnit_coeffMap (n : ℕ) (hs : ∀ p ≤ n, ∀ i, i ∈ s p)
+    (γ : ∀ p, ι p → LHSource k X ι p)
+    (B : ∀ p, ι p → ι p → X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
+    (hAB : ∀ p ≤ n, ∀ i l, ∑ j ∈ s p, X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl
+      (γ p i ⟨⟨(p, 0), add_zero p⟩, j⟩) (B p j l) =
+        if i = l then X.singularCohomologyZeroOne else 0)
+    (hBA : ∀ p ≤ n, ∀ i l, ∑ j ∈ s p, X.singularCup k (λ_ _).inv (λ_ _).hom 0 0 0 rfl
+      (B p i j) (γ p j ⟨⟨(p, 0), add_zero p⟩, l⟩) =
+        if i = l then X.singularCohomologyZeroOne else 0) :
+    IsUnit (coeffMap n γ) := by
+  let A (p : ℕ) (i i' : ι p) := γ p i ⟨⟨(p, 0), add_zero p⟩, i'⟩
+  have hD : diagMap s n A * diagMap s n B = 1 := diagMap_mul_eq_one s n hs _ _ hBA
+  -- The coefficient map is `D (1 + T)` with `D` block diagonal and `T` lowering the fibre degree.
+  let T : Module.End k (LHSource k X ι n) := diagMap s n B * (coeffMap n γ - diagMap s n A)
+  have hT (m : ℕ) : filt n (m + 1) ≤ (filt n m).comap T :=
+    filt_le_iff.2 fun p q h i a hp ↦ diagMap_filt_le s n m B
+      (filt_mono (by omega) (coeffMap_sub_diagMap_lof_mem s n hs γ p q h i a))
+  have hU : IsUnit (1 + T) := (Module.End.isUnit_iff _).2 <|
+    Module.End.bijective_of_sub_mem_filtration (filt_zero n)
+      (fun _ ↦ ⟨n + 1, by rw [filt_succ_self]; trivial⟩) fun m v hv ↦ by simpa using hT m hv
+  have hM : coeffMap n γ = diagMap s n A * (1 + T) := by
+    rw [mul_add, mul_one, ← mul_assoc, hD, one_mul, add_sub_cancel]
+  rw [hM]
+  exact (Units.mk _ _ hD (diagMap_mul_eq_one s n hs _ _ hAB)).isUnit.mul hU
 
 end Diagonal
 
@@ -372,34 +429,35 @@ private lemma lerayHirschProdOfClasses_eq (n : ℕ)
     rw [lerayHirschProd_lof, shiftCup_lof, lerayHirschProd_lof, ← singularCup_naturality,
       (X ⊗ F).singularCup_assoc_unit k (m' := p) rfl (by omega) (by omega) (by omega)]
 
-/-- **The restriction of the Leray–Hirsch map of a basis to a fibre**: restricting the image of `g`
-to the fibre over `x` gives the combination of the basis with coefficients the values at `x` of
-the base-degree-zero components of `g`. -/
-theorem singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (p : ℕ)
+variable (X) in
+/-- **The restriction of the Leray–Hirsch map of the classes to a fibre**: restricting the image of
+`g` to the fibre over `x` gives the combination of the restrictions of the classes with coefficients
+the values at `x` of the base-degree-zero components of `g`. -/
+theorem singularCohomologyMap_prodFiberInclusion_lerayHirschProdOfClasses (x : X) (p : ℕ)
     [Fintype (ι p)]
-    (b : ∀ p, Module.Basis (ι p) k
-      (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p))
+    (c : ∀ p, ι p → (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
     (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
       X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
-    TopCat.singularCohomologyMap (prodFibreInclusion X F x) p (lerayHirschProd X F p b g) =
-      ∑ i', singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) • b p i' := by
+    TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (lerayHirschProdOfClasses X F p c g) =
+      ∑ i', TauCeti.singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) •
+        TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i') := by
   -- In positive degrees the constant map induces zero.
   have hpos {q : ℕ} (hq : q ≠ 0) :
       TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-        (M := 𝟙_ (ModuleCat.{w} k)) (TopCat.ofHom (ContinuousMap.const F x)) q = 0 :=
-    singularCohomologyMap_eq_zero_of_nullhomotopic
-      (ContinuousMap.nullhomotopic_of_constant x) hq
+        (M := 𝟙_ (ModuleCat.{w} k)) (TopCat.const (X := F) x) q = 0 :=
+    singularCohomologyMap_eq_zero_of_nullhomotopic (by
+      rw [show (TopCat.const (X := F) x).hom = ContinuousMap.const F x from
+        ContinuousMap.ext fun _ ↦ TopCat.const_apply _ _]
+      exact ContinuousMap.nullhomotopic_of_constant x) hq
   have hlof (q' p' : ℕ) (h' : p' + q' = p) (i : ι p')
       (β : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q') :
-      TopCat.singularCohomologyMap (prodFibreInclusion X F x) p
-          (lerayHirschProd X F p b (lhLof p p' q' h' i β)) =
+      TopCat.singularCohomologyMap (prodFiberInclusion X F x) p
+          (lerayHirschProdOfClasses X F p c (lhLof p p' q' h' i β)) =
         F.singularCup k (λ_ _).inv (λ_ _).hom q' p' p (by omega)
-          (TopCat.singularCohomologyMap (TopCat.ofHom (ContinuousMap.const F x)) q' β)
-          (b p' i) := by
-    rw [lerayHirschProd_lof, ← singularCup_naturality, ← ConcreteCategory.comp_apply,
-      ← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp, ← singularCohomologyMap_comp,
-      prodFibreInclusion_fst, prodFibreInclusion_snd, singularCohomologyMap_id]
-    rfl
+          (TopCat.singularCohomologyMap (TopCat.const (X := F) x) q' β)
+          (TopCat.singularCohomologyMap (prodFiberInclusion X F x) p' (c p' i)) := by
+    rw [lerayHirschProdOfClasses_lof, ← singularCup_naturality, ← ConcreteCategory.comp_apply,
+      ← singularCohomologyMap_comp, prodFiberInclusion_fst]
   induction g using lhSource_induction with
   | zero => simp
   | add g g' hg hg' =>
@@ -409,8 +467,8 @@ theorem singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (p : �
     by_cases hq : q' = 0
     · subst hq
       obtain rfl : p' = p := by omega
-      rw [singularCohomologyMap_const_zero, LinearMap.map_smul₂,
-        singularCup_singularCohomologyZeroOne_left, Finset.sum_eq_single i]
+      rw [TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul,
+        LinearMap.map_smul₂, singularCup_singularCohomologyZeroOne_left, Finset.sum_eq_single i]
       · rw [lhLof_apply_self]
       · intro l _ hl
         rw [lhLof_apply_of_ne _ _ hl, map_zero, zero_smul]
@@ -418,6 +476,25 @@ theorem singularCohomologyMap_prodFibreInclusion_lerayHirschProd (x : X) (p : �
     · simp only [hpos hq, ModuleCat.hom_zero, LinearMap.zero_apply, map_zero]
       refine (Finset.sum_eq_zero fun l _ ↦ ?_).symm
       rw [lhLof_apply_of_ne_zero _ _ _ _ hq, map_zero, zero_smul]
+
+variable (X) in
+/-- **The restriction of the Leray–Hirsch map of a basis to a fibre**: restricting the image of `g`
+to the fibre over `x` gives the combination of the basis with coefficients the values at `x` of
+the base-degree-zero components of `g`. -/
+theorem singularCohomologyMap_prodFiberInclusion_lerayHirschProd (x : X) (p : ℕ)
+    [Fintype (ι p)]
+    (b : ∀ p, Module.Basis (ι p) k
+      (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p))
+    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (lerayHirschProd X F p b g) =
+      ∑ i', TauCeti.singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) • b p i' := by
+  rw [← lerayHirschProdOfClasses_snd,
+    singularCohomologyMap_prodFiberInclusion_lerayHirschProdOfClasses]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
+  rw [← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp, prodFiberInclusion_snd,
+    singularCohomologyMap_id]
+  rfl
 
 variable (X) [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
     (𝟙_ (ModuleCat.{w} k))).obj F)]
@@ -434,10 +511,10 @@ theorem lerayHirschProdOfClasses_bijective (n : ℕ)
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ (x : X) (p : ℕ),
-      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (prodFibreInclusion X F x) p
+      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (prodFiberInclusion X F x) p
         (c p i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
-        TopCat.singularCohomologyMap (prodFibreInclusion X F x) p (c p i))) :
+        TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i))) :
     Function.Bijective (lerayHirschProdOfClasses X F n c) := by
   rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
   · -- Over an empty base both sides vanish.
@@ -472,13 +549,13 @@ theorem lerayHirschProdOfClasses_bijective (n : ℕ)
   let A (p : ℕ) (i i' : ι p) := γ p i ⟨⟨(p, 0), add_zero p⟩, i'⟩
   have hA (p : ℕ) (hp : p ≤ n) (x : X) :
       letI := hfin p hp
-      IsUnit (Matrix.of fun i i' ↦ singularCohomologyZeroEval x (A p i i')) := by
+      IsUnit (Matrix.of fun i i' ↦ TauCeti.singularCohomologyZeroEval x (A p i i')) := by
     let := hfin p hp
-    have hmat : (Matrix.of fun i i' ↦ singularCohomologyZeroEval x (A p i i')) =
+    have hmat : (Matrix.of fun i i' ↦ TauCeti.singularCohomologyZeroEval x (A p i i')) =
         ((b p).toMatrix (bx x p))ᵀ := by
       ext i i'
       rw [Matrix.transpose_apply, Module.Basis.toMatrix_apply, Module.Basis.mk_apply, ← hγ p hp i,
-        singularCohomologyMap_prodFibreInclusion_lerayHirschProd,
+        singularCohomologyMap_prodFiberInclusion_lerayHirschProd,
         ← Module.Basis.equivFun_symm_apply, ← Module.Basis.equivFun_apply,
         LinearEquiv.apply_symm_apply]
       rfl
@@ -487,40 +564,13 @@ theorem lerayHirschProdOfClasses_bijective (n : ℕ)
     exact isUnit_of_invertible _
   choose B hB using fun p (hp : p ≤ n) ↦
     letI := hfin p hp
-    exists_singularCup_matrix_eq_one (A p) (hA p hp)
+    TauCeti.exists_singularCup_matrix_eq_one (A p) (hA p hp)
   let B' (p : ℕ) : ι p → ι p →
       X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 :=
     if hp : p ≤ n then B p hp else 0
-  have hAB : diagMap s n A * diagMap s n B' = 1 := by
-    rw [Module.End.mul_eq_comp, diagMap_comp, Module.End.one_eq_id]
-    refine diagMap_eq_id s n _ hs fun p hp i l ↦ ?_
-    simp only [s, B', hp, ↓reduceDIte]
-    exact (hB p hp).2 i l
-  have hBA : diagMap s n B' * diagMap s n A = 1 := by
-    rw [Module.End.mul_eq_comp, diagMap_comp, Module.End.one_eq_id]
-    refine diagMap_eq_id s n _ hs fun p hp i l ↦ ?_
-    simp only [s, B', hp, ↓reduceDIte]
-    exact (hB p hp).1 i l
-  -- The coefficient map is `D (1 + T)` with `D` block diagonal and `T` lowering the fibre degree.
-  let T : Module.End k (LHSource k X ι n) := diagMap s n B' * (coeffMap n γ - diagMap s n A)
-  have hT (m : ℕ) : filt n (m + 1) ≤ (filt n m).comap T :=
-    filt_le_iff.2 fun p q h i a hp ↦ diagMap_filt_le s n m B'
-      (filt_mono (by omega) (coeffMap_sub_diagMap_lof_mem s n hs γ p q h i a))
-  have hTpow (r : ℕ) : ∀ m, filt n (m + r) ≤ (filt n m).comap (T ^ r) := by
-    induction r with
-    | zero => intro m v hv; simpa using hv
-    | succ r ih =>
-      intro m v hv
-      rw [Submodule.mem_comap, pow_succ, Module.End.mul_eq_comp, LinearMap.comp_apply]
-      exact ih m (hT (m + r) (by rwa [← add_assoc] at hv))
-  have hnil : IsNilpotent T := ⟨n + 1, LinearMap.ext fun v ↦ by
-    have := hTpow (n + 1) 0 (x := v) (by rw [zero_add, filt_succ_self]; trivial)
-    rwa [Submodule.mem_comap, filt_zero, Submodule.mem_bot] at this⟩
-  have hM : coeffMap n γ = diagMap s n A * (1 + T) := by
-    rw [mul_add, mul_one, ← mul_assoc, hAB, one_mul, add_sub_cancel]
-  have hunit : IsUnit (coeffMap n γ) := by
-    rw [hM]
-    exact (Units.mk _ _ hAB hBA).isUnit.mul hnil.isUnit_one_add
+  have hunit : IsUnit (coeffMap n γ) := isUnit_coeffMap s n hs γ B'
+    (fun p hp i l ↦ by simpa only [s, B', hp, ↓reduceDIte] using (hB p hp).1 i l)
+    (fun p hp i l ↦ by simpa only [s, B', hp, ↓reduceDIte] using (hB p hp).2 i l)
   rw [lerayHirschProdOfClasses_eq n c b γ hγ]
   exact (lerayHirschProd_bijective X b hF).comp ((Module.End.isUnit_iff _).1 hunit)
 
@@ -534,10 +584,10 @@ def lerayHirschProdOfClassesEquiv (n : ℕ)
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ (x : X) (p : ℕ),
-      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (prodFibreInclusion X F x) p
+      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (prodFiberInclusion X F x) p
         (c p i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
-        TopCat.singularCohomologyMap (prodFibreInclusion X F x) p (c p i))) :
+        TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i))) :
     (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ≃ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
@@ -551,10 +601,10 @@ lemma lerayHirschProdOfClassesEquiv_apply (n : ℕ)
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ (x : X) (p : ℕ),
-      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (prodFibreInclusion X F x) p
+      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (prodFiberInclusion X F x) p
         (c p i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
-        TopCat.singularCohomologyMap (prodFibreInclusion X F x) p (c p i)))
+        TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i)))
     (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
     lerayHirschProdOfClassesEquiv X n c hι hF hc a = lerayHirschProdOfClasses X F n c a :=
