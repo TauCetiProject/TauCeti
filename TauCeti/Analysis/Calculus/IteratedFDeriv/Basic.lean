@@ -25,7 +25,8 @@ Where a function `ζ` equals one on a neighbourhood of a point, every iterated d
 to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
-(`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`).
+(`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`).
 -/
 
 public section
@@ -125,6 +126,13 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Adding a constant to a function does not change its iterated derivatives of positive order. No
+differentiability is needed, since the derivative of `f + c` is that of `f` everywhere. -/
+theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
+    iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
+  funext x
+  simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}

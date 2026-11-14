@@ -8,16 +8,24 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
-# Differentiability of a function composed with the logarithm
+# Differentiation involving the logarithm
 
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
+The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`.
 
 ## Main results
 
 * `TauCeti.differentiableAt_comp_log_iff`: differentiability of `v ∘ log` at `x ≠ 0` is
   differentiability of `v` at `log x`.
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
+* `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
+  exponent, assuming `log x ≠ 0`.
+
+The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
+[PrimeNumberTheoremAnd project][PNTLogPower].
+
+[PNTLogPower]: https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/dc6e36e/PrimeNumberTheoremAnd/IEANTN/Ramanujan/Ramanujan.lean
 -/
 
 public section
@@ -65,3 +73,26 @@ theorem mul_deriv_comp_log (hx : x ≠ 0) :
 end
 
 end TauCeti
+
+namespace TauCeti.Real
+
+/-- The derivative of `t ↦ t / log t ^ n` wherever `log t ≠ 0`, for every natural exponent. -/
+theorem hasDerivAt_div_log_pow (n : ℕ) {t : ℝ} (ht : Real.log t ≠ 0) :
+    HasDerivAt (fun u : ℝ ↦ u / Real.log u ^ n)
+      ((Real.log t ^ n)⁻¹ - (n : ℝ) * (Real.log t ^ (n + 1))⁻¹) t := by
+  have ht₀ : t ≠ 0 := by
+    intro h
+    exact ht (by simp [h])
+  cases n with
+  | zero =>
+      simpa only [pow_zero, inv_one, Nat.cast_zero, zero_mul, sub_zero, div_one] using
+        hasDerivAt_id' t
+  | succ n =>
+      have hd := (hasDerivAt_id' t).div ((Real.hasDerivAt_log ht₀).pow (n + 1))
+        (pow_ne_zero _ ht)
+      apply hd.congr_deriv
+      simp only [Pi.pow_apply, Nat.add_one_sub_one, one_mul]
+      field_simp [pow_succ, ht, ht₀]
+      ring
+
+end TauCeti.Real

@@ -88,10 +88,9 @@ instantiation is `A := W₁.CoordinateRing`, `M := φ.intermediateRing`, `R := W
 
 ## Provenance
 
-⚠ *mathlib-track*. Adapted from D. Angdinata's shared isogeny development, `Isogeny.lean`, by
-David Kurniadi Angdinata, declarations `pushClassMonoidHom` and `pushClass`, which builds
-`pushClass` by ideal extension and relative norm (`ClassGroup.extendedRelNormHom`) on the way to
-`toPointHom`.
+Adapted from D. Angdinata's isogeny development, `Isogeny.lean`, by David Kurniadi Angdinata,
+declarations `pushClassMonoidHom` and `pushClass`, which builds `pushClass` by ideal extension and
+relative norm (`ClassGroup.extendedRelNormHom`) on the way to `toPointHom`.
 
 Two adaptations are forced by how this repository states the surrounding API:
 

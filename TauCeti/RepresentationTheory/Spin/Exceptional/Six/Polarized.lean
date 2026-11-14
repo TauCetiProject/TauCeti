@@ -23,7 +23,7 @@ half-spin identifications taken along the same equivalence `f : spinGroup Q ≃*
 
 ## Main result
 
-* `exists_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_and_halfSpin_equiv_stdSLRep_and_dual`:
+* `exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual`:
   a polarization of a six-dimensional quadratic space over a field of characteristic different
   from two identifies its Spin group with `SL₄`, its even half-spin representation with the
   standard module, and its odd half-spin representation with the dual standard module.
@@ -58,7 +58,7 @@ quadratic space identifies its Spin group with `SL₄` so that the even half-spi
 is standard and the odd half-spin representation is its dual, along the same equivalence
 `f : spinGroup Q ≃* SL₄`. -/
 theorem
-    exists_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_and_halfSpin_equiv_stdSLRep_and_dual
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
     [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6) :
     ∃ hline : P.line = ⊥, ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K,
       Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
@@ -88,7 +88,7 @@ theorem
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let P := SpinPolarizationData.ofNondegenerate Q hQ
   obtain ⟨hline, f, hplus, hminus⟩ :=
-    exists_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_and_halfSpin_equiv_stdSLRep_and_dual
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_halfSpin_equiv_stdSLRep_and_dual
       P hV
   exact ⟨P, hline, f, hplus, hminus⟩
 

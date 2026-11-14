@@ -58,9 +58,9 @@ over a separably closed field. Functoriality in `φ` beyond the identity is not 
 ## Provenance
 
 The construction — conjugate the class-group map induced by extension and relative norm by the
-point--class dictionary — is adapted from D. Angdinata's shared isogeny development,
-`Isogeny.lean`, by David Kurniadi Angdinata, declaration `toPointHom`, restated in the
-coordinate-ring form this repository gives `pushClass`. The identity law is not in that source;
+point--class dictionary — is adapted from D. Angdinata's isogeny development, `Isogeny.lean`, by
+David Kurniadi Angdinata, declaration `toPointHom`, restated in the coordinate-ring form this
+repository gives `pushClass`. The identity law is not in that source;
 it is original here.
 
 ## References
