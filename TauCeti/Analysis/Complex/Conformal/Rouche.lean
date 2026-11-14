@@ -245,9 +245,9 @@ theorem rouche_symm
       circleIntegral.integral_sub (circleIntegrable_logDeriv hR.le hg hneg)
         (circleIntegrable_logDeriv hR.le hf hnef)] at h0
     linear_combination h0
-  rw [TauCeti.Contour.argumentPrinciple_divisor hR hg.meromorphicOn
+  rw [TauCeti.Contour.argumentPrinciple_divisor hR.le hg.meromorphicOn
         (fun z hz => order_eq_zero hg (sphere_subset_closedBall hz) (hneg z hz)),
-    TauCeti.Contour.argumentPrinciple_divisor hR hf.meromorphicOn
+    TauCeti.Contour.argumentPrinciple_divisor hR.le hf.meromorphicOn
         (fun z hz => order_eq_zero hf (sphere_subset_closedBall hz) (hnef z hz))] at hsplit
   have hpi : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := by
     simp [Real.pi_ne_zero, Complex.I_ne_zero]
