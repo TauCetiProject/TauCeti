@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Subalgebra.Basic
+public import TauCeti.Algebra.Group.Submonoid.Membership
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Veronese.Subalgebra
 
@@ -212,26 +212,28 @@ noncomputable def awayVeroneseEquiv :
     Away (veroneseGrading 𝒜 d) f ≃ₐ[R] Away 𝒜 (f : A) :=
   AlgEquiv.ofBijective
     (veroneseHomogeneousLocalizationMap 𝒜 d
-      (Subalgebra.powers_le_comap_val_powers (f := f)))
+      (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f))
     ⟨veroneseHomogeneousLocalizationMap_injective 𝒜 d
-        (Subalgebra.powers_le_comap_val_powers (f := f))
+        (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f)
         (Submonoid.map_powers (veronese 𝒜 d).val f).ge,
       veroneseHomogeneousLocalizationMap_surjective 𝒜 d
-        (Subalgebra.powers_le_comap_val_powers (f := f))
-        (fun _ ⟨n, hn⟩ ↦ ⟨n, Subtype.ext hn⟩)⟩
+        (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f)
+        (Submonoid.comap_powers_of_injective (veronese 𝒜 d).val.toRingHom
+          Subtype.val_injective f).le⟩
 
 /-- The algebra homomorphism underlying the Veronese chart equivalence. -/
 theorem toAlgHom_awayVeroneseEquiv :
     (awayVeroneseEquiv f).toAlgHom = veroneseHomogeneousLocalizationMap 𝒜 d
-      (Subalgebra.powers_le_comap_val_powers (f := f)) := by
+      (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f) := by
   ext x
   rfl
 
 @[simp]
 theorem val_awayVeroneseEquiv (x : Away (veroneseGrading 𝒜 d) f) :
     (awayVeroneseEquiv f x).val =
-      IsLocalization.map (Localization.Away (f : A)) (veronese 𝒜 d).val.toRingHom
-        (Subalgebra.powers_le_comap_val_powers (f := f)) x.val :=
+      IsLocalization.map (T := Submonoid.powers (f : A))
+        (Localization.Away (f : A)) (veronese 𝒜 d).val.toRingHom
+        (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f) x.val :=
   val_veroneseHomogeneousLocalizationMap 𝒜 d _ x
 
 variable {f}

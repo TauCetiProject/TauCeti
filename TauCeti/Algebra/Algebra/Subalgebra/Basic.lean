@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
-public import Mathlib.Algebra.Group.Submonoid.Membership
 
 /-!
-# Basic results on subalgebras
+# Subalgebras over different base rings with the same underlying set
 
 Mathlib's `Subalgebra.equivOfEq` identifies two equal subalgebras of an algebra `A` over one and
 the same base ring `R`. Two subalgebras of `A` over *different* base rings cannot be equal, since
@@ -20,8 +19,6 @@ compatible with the two inclusions into `A`.
 
 ## Main results
 
-* `Subalgebra.powers_le_comap_val_powers`: powers of a subalgebra element map into its powers
-  in the ambient algebra.
 * `Subalgebra.ringEquivOfSetEq`: the ring isomorphism between two subalgebras of `A`, over possibly
   different base rings, with the same underlying set.
 * `Subalgebra.coe_ringEquivOfSetEq_apply` and `Subalgebra.coe_ringEquivOfSetEq_symm_apply`: the
@@ -31,13 +28,6 @@ compatible with the two inclusions into `A`.
 public section
 
 namespace Subalgebra
-
-variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-
-/-- The powers of a subalgebra element map into its powers in the ambient algebra. -/
-theorem powers_le_comap_val_powers {S : Subalgebra R A} {f : S} :
-    Submonoid.powers f ≤ (Submonoid.powers (f : A)).comap S.val.toRingHom :=
-  Submonoid.map_le_iff_le_comap.mp (Submonoid.map_powers S.val f).le
 
 variable {R₁ R₂ A : Type*} [CommSemiring R₁] [CommSemiring R₂] [Semiring A] [Algebra R₁ A]
   [Algebra R₂ A]
