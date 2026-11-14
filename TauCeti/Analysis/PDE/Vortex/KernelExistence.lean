@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.LogVariation
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Analysis.PDE.Schrodinger.Stationary
-import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
+import TauCeti.Analysis.PDE.Vortex.ZeroMode
 
 /-!
 # Kernel elements of the vortex operator with prescribed poles
@@ -42,8 +41,9 @@ The construction cuts the pole off: `η₀ = χ c / (w - z)^(j+1)`, with `χ` a 
 `z`, has smooth logarithmic variation `y₀`, because `α` vanishes to order at least `j + 1` at
 `z` and `c / (w - z)^(j+1)` is holomorphic, and `L_x y₀` is smooth with compact support and
 vanishing `∂bar` rows. Its two remaining rows are the source of the Schrödinger equation
-`Δξ = P ξ + g` for the correction `ξ`, which has a solution in `L²` with `L²` derivative because
-`P ≥ 0` is bounded and positive near infinity (`TauCeti.exists_contDiff_laplacian_eq_mul_add`).
+`Δξ = P ξ + g` for the correction `ξ`, which has a smooth solution in `H²(ℂ; ℂ)` because
+`P ≥ 0` is bounded and positive near infinity
+(`TauCeti.Vortex.exists_contDiff_laplacian_eq_mul_sub`).
 Then `y = y₀ + logVariation x ξ`.
 
 ## References
@@ -135,17 +135,9 @@ private theorem exists_cutoffPole (hx : ContDiff ℝ ∞ x) {z : ℂ} {j : ℕ} 
     filter_upwards [isOpen_ball.mem_nhds hw] with w' hw'
     simp [η₀, ζ, hχ₁ w' hw']
   -- The logarithmic variation of `η₀`, completed at `z` by the smooth field `g₀` with `δα = c q`.
-  set g₀ : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦
-    !₂[0, 0, (c * q w / 2).re, (c * q w / 2).im]
-  have hg₀ : ContDiff ℝ ∞ g₀ := by
-    have hcq : ContDiff ℝ ∞ fun w ↦ c * q w / 2 := (contDiff_const.mul hq).div_const 2
-    refine contDiff_euclidean.2 fun i ↦ ?_
-    fin_cases i
-    exacts [contDiff_const, contDiff_const, reCLM.contDiff.comp hcq, imCLM.contDiff.comp hcq]
-  have hsection_g₀ (w : ℂ) : sectionValue g₀ w = c * q w := by
-    rw [sectionValue_apply]
-    simp only [g₀]
-    apply Complex.ext <;> simp <;> ring
+  set g₀ := sectionVariation fun w ↦ c * q w
+  have hg₀ : ContDiff ℝ ∞ g₀ := contDiff_sectionVariation (contDiff_const.mul hq)
+  have hsection_g₀ (w : ℂ) : sectionValue g₀ w = c * q w := sectionValue_sectionVariation _ w
   set y₀ := Function.update (logVariation x η₀) z (g₀ z)
   have hy₀_off (w : ℂ) (hw : w ≠ z) : y₀ =ᶠ[𝓝 w] logVariation x η₀ := by
     filter_upwards [isOpen_ne.mem_nhds hw] with w' hw'
@@ -205,21 +197,6 @@ private theorem gaugeFixedOperator_apply_eq_zero_of_eventuallyEq_logVariation
   exact congrFun (Continuous.ext_on (dense_compl_singleton z) hcont
     (continuous_const (y := (0 : ℝ))) fun w' hw' ↦ hoff w' hw') w
 
-/-- A continuous potential `P = p² + q²` with `4 P → 1` at infinity is bounded. -/
-private theorem exists_forall_le_of_tendsto
-    (hP : Continuous fun w ↦ x w 2 ^ 2 + x w 3 ^ 2)
-    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ C, ∀ w, x w 2 ^ 2 + x w 3 ^ 2 ≤ C := by
-  have ht : Tendsto (fun w ↦ x w 2 ^ 2 + x w 3 ^ 2 - 1 / 4) (cocompact ℂ) (𝓝 0) := by
-    have h := (hlim.const_mul (1 / 4 : ℝ)).sub_const (1 / 4)
-    norm_num at h
-    simpa [← mul_assoc] using h
-  obtain ⟨C, hC⟩ := (⟨⟨_, hP.sub continuous_const⟩, ht⟩ : C₀(ℂ, ℝ)).isBounded_range.exists_norm_le
-  refine ⟨C + 1 / 4, fun w ↦ ?_⟩
-  have h := hC _ (mem_range_self w)
-  simp only [ZeroAtInftyContinuousMap.coe_mk, Real.norm_eq_abs, Pi.sub_apply] at h
-  linarith [le_abs_self (x w 2 ^ 2 + x w 3 ^ 2 - 1 / 4)]
-
 /-- **Kernel elements with a prescribed pole.** Let `x` be a smooth field with `∂bar_a α = 0` and
 `|α| → 1` at infinity, and let `α = (w - z)ⁿ v` near `z` with `v` smooth at `z`. For `j < n` and
 every `c ∈ ℂ` there is a smooth square-integrable `y` with `L_x y = 0` whose section variation
@@ -251,53 +228,29 @@ theorem exists_gaugeFixedOperator_eq_zero_sectionValue_eq_mul_div_pow_add (hx : 
     simp only [G, gaugeFixedOperator_congr_nhds x h0, gaugeFixedOperator_zero, Pi.zero_apply]
   have hGrow := gaugeFixedOperator_apply_eq_zero_of_eventuallyEq_logVariation
     (hx.differentiable (by simp)) hhol (hy₀.of_le (by simp)) hη₀ hy₀η
-  -- The potential `P = |α|² / 4` is smooth, nonnegative, bounded, and at least `1 / 8` far out.
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := contDiff_euclidean.1 hx i
-  set P : ℂ → ℝ := fun w ↦ x w 2 ^ 2 + x w 3 ^ 2
-  have hP : ContDiff ℝ ∞ P := ((hxi 2).pow 2).add ((hxi 3).pow 2)
-  have hP₀ (w : ℂ) : 0 ≤ P w := by positivity
-  obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  obtain ⟨C, hPC⟩ := exists_forall_le_of_tendsto hP.continuous hlim
-  -- The correction `ξ = ξr + i ξi` solving `Δξ = P ξ + (G₁ + i G₀)`.
-  have hsrc (i : Fin 4) : MemLp (fun w ↦ G w i) 2 volume :=
-    (contDiff_euclidean.1 hG i).continuous.memLp_of_hasCompactSupport
-      (hGc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp))
-  obtain ⟨ξr, hξr, hξr2, hdξr, -, hΔr⟩ := exists_contDiff_laplacian_eq_mul_add (k := ⊤) le_top
-    (by simpa using hP) hP₀ hPC (by norm_num : (0 : ℝ) < 1 / 8)
-    (fun w hw ↦ (hR w hw).le) (by simpa using contDiff_euclidean.1 hG 1) (hsrc 1)
-  obtain ⟨ξi, hξi, hξi2, hdξi, -, hΔi⟩ := exists_contDiff_laplacian_eq_mul_add (k := ⊤) le_top
-    (by simpa using hP) hP₀ hPC (by norm_num : (0 : ℝ) < 1 / 8)
-    (fun w hw ↦ (hR w hw).le) (by simpa using contDiff_euclidean.1 hG 0) (hsrc 0)
-  set ξ : ℂ → ℂ := fun w ↦ (ξr w : ℂ) + ξi w * I
-  have hξ : ContDiff ℝ ∞ ξ := (ofRealCLM.contDiff.comp (hξr.of_le le_self_add)).add
-    ((ofRealCLM.contDiff.comp (hξi.of_le le_self_add)).mul contDiff_const)
-  -- The real and imaginary parts of `ξ` are `ξr` and `ξi`.
-  have hre : (fun w ↦ (ξ w).re) = ξr := by funext w; simp [ξ]
-  have him : (fun w ↦ (ξ w).im) = ξi := by funext w; simp [ξ]
-  have hΔre (w : ℂ) : (Δ ξ w).re = Δ ξr w := by
-    rw [← hre]
-    exact ((hξ.of_le (by simp)).contDiffAt.laplacian_CLM_comp_left (l := reCLM)).symm
-  have hΔim (w : ℂ) : (Δ ξ w).im = Δ ξi w := by
-    rw [← him]
-    exact ((hξ.of_le (by simp)).contDiffAt.laplacian_CLM_comp_left (l := imCLM)).symm
+  -- The correction `ξ` solving `Δξ = P ξ + (G₁ + i G₀)`.
+  set g : ℂ → ℂ := fun w ↦ -((G w 1 : ℂ) + G w 0 * I)
+  have hg : ContDiff ℝ ∞ g := ((ofRealCLM.contDiff.comp (contDiff_euclidean.1 hG 1)).add
+    ((ofRealCLM.contDiff.comp (contDiff_euclidean.1 hG 0)).mul contDiff_const)).neg
+  have hgc : HasCompactSupport g :=
+    hGc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ -((v 1 : ℂ) + v 0 * I)) (by simp)
+  obtain ⟨ξ, hξ, hξ₁, hξ₂, hΔξ⟩ := exists_contDiff_laplacian_eq_mul_sub hx hlim hg
+    (hg.continuous.memLp_of_hasCompactSupport hgc)
   -- The kernel element `y = y₀ + logVariation x ξ`.
-  have hB (w : ℂ) : |x w 2| ≤ √C ∧ |x w 3| ≤ √C := by
-    have := hPC w
-    exact ⟨Real.abs_le_sqrt (by nlinarith [sq_nonneg (x w 3)]),
-      Real.abs_le_sqrt (by nlinarith [sq_nonneg (x w 2)])⟩
   refine ⟨y₀ + logVariation x ξ, hy₀.add (contDiff_logVariation hx (by simpa using hξ)),
     (hy₀.continuous.memLp_of_hasCompactSupport hy₀c).add
-      (memLp_logVariation hx.continuous hB (hre ▸ hξr2) (him ▸ hξi2) (hre ▸ hdξr)
-        (him ▸ hdξi)), fun w ↦ ?_,
+      (memLp_logVariation_of_mem_realSobolevFunctions
+        (memLp_top_apply hx.continuous hlim (by simp))
+        (memLp_top_apply hx.continuous hlim (by simp)) (hξ.of_le (by simp)) hξ₁ hξ₂), fun w ↦ ?_,
     fun w ↦ ζ w + ξ w, hζ.add hξ, fun w hw ↦ ?_⟩
   · rw [gaugeFixedOperator_add x (hy₀.differentiable (by simp) w)
       ((contDiff_logVariation hx (by simpa using hξ)).differentiable (by simp) w),
       gaugeFixedOperator_logVariation (hx.differentiable (by simp) w) (hξ.contDiffAt.of_le
-        (by simp)), (hhol w).1, (hhol w).2, hΔre, hΔim, hΔr, hΔi]
+        (by simp)), (hhol w).1, (hhol w).2, hΔξ w]
     ext i
     fin_cases i
-    · simp [ξ, P, G]
-    · simp [ξ, P, G]
+    · simp [g, G, -ofReal_pow]
+    · simp [g, G, -ofReal_pow]
     · simpa [G] using hGrow 2 (by simp) w
     · simpa [G] using hGrow 3 (by simp) w
   · rw [sectionValue_add, sectionValue_apply, (hy₀η w hw).eq_of_nhds, ← sectionValue_apply,

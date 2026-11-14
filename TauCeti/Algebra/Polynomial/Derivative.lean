@@ -38,6 +38,9 @@ satisfies `p' (1) = g p (1)`: the coefficients in degrees `i` and `2 g - i` agre
 weights `i - g` and `g - i` cancel. The characteristic polynomial of a symplectic matrix is the
 basic example.
 
+Over a domain of characteristic zero, a polynomial of degree less than `card D` whose derivatives
+of order below `count a D` vanish at every `a` is zero.
+
 For `δ ≠ 0` over a semiring without zero divisors, the operator `q ↦ q' + δ q` and all of its
 iterates preserve the degree of a polynomial and have trivial kernel.
 
@@ -62,6 +65,25 @@ theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
     fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
   exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
     fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+/-- **A polynomial vanishing to prescribed orders is zero.** Over a domain of characteristic zero,
+let `D` be a multiset and `p` a polynomial of degree less than `card D`. If the derivatives of `p`
+of order below `count a D` vanish at every `a`, then `p = 0`: otherwise `D` would be contained in
+the roots of `p`, counted with multiplicity. -/
+theorem eq_zero_of_natDegree_lt_card_of_isRoot_iterate_derivative [CharZero R] [DecidableEq R]
+    {p : R[X]} {D : Multiset R} (hp : p.natDegree < Multiset.card D)
+    (h : ∀ a, ∀ j < D.count a, (derivative^[j] p).IsRoot a) : p = 0 := by
+  by_contra hp0
+  have hle : D ≤ p.roots := Multiset.le_iff_count.2 fun a ↦ by
+    rw [count_roots]
+    rcases Nat.eq_zero_or_pos (D.count a) with h0 | hpos
+    · simp [h0]
+    have := lt_rootMultiplicity_of_isRoot_iterate_derivative_of_mem_nonZeroDivisors'
+      (n := D.count a - 1) hp0 (fun j hj ↦ h a j (by omega))
+      (fun j _ hj ↦ mem_nonZeroDivisors_of_ne_zero (Nat.cast_ne_zero.2 hj))
+    omega
+  have := (Multiset.card_le_card hle).trans p.card_roots'
+  omega
 
 end Polynomial
 

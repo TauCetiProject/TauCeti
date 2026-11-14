@@ -80,6 +80,9 @@ It is square integrable, because `h ∈ H²` and the remaining part is supported
   part `c / (z - a)^k`.
 * `TauCeti.Vortex.exists_gaugeFixedOperator_eq_zero_eq_logVariation`: a smooth square-integrable
   kernel element of `L_x` whose `δα / α` has principal part `c / (z - a)^k`.
+* `TauCeti.Vortex.exists_contDiff_laplacian_eq_mul_sub`: the smooth `H²(ℂ; ℂ)` solution of
+  `Δh = P h - g` at a smooth field with `|α| → 1` at infinity, also used by
+  `TauCeti.Analysis.PDE.Vortex.KernelExistence` and `TauCeti.Analysis.PDE.Vortex.TangentKernel`.
 
 ## References
 
@@ -344,7 +347,7 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
 
 /-- The section coordinates of a continuous field whose section has unit modulus at infinity are
 bounded. -/
-private theorem memLp_top_apply (hx : Continuous x)
+theorem memLp_top_apply (hx : Continuous x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
     (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
   obtain ⟨M, hM⟩ := exists_forall_potential_le hx hlim
@@ -433,23 +436,11 @@ private theorem exists_contDiff_hasCompactSupport_eq_logVariation (hx : ContDiff
   have hαu (z : ℂ) (hz : z ≠ a) : sectionValue x z * u z = c * ψ z :=
     sectionValue_mul_div_sub_pow hαψ c hz
   -- The smooth continuation `Y₀` of `logVariation x u` across `a`.
-  set Y₀ : ℂ → EuclideanSpace ℝ (Fin 4) := fun w ↦
-    !₂[0, 0, (c * ψ w / 2).re, (c * ψ w / 2).im] with hY₀def
+  set Y₀ : ℂ → EuclideanSpace ℝ (Fin 4) := sectionVariation fun w ↦ c * ψ w
   have hY₀u (z : ℂ) (hz : z ≠ a) : logVariation x u z = Y₀ z := by
-    rw [logVariation_eq_of_differentiableAt x (hu z hz).differentiableAt, mul_div_assoc,
-      ← mul_div_assoc, hαu z hz]
-  have hY₀s : ContDiff ℝ ∞ Y₀ := by
-    have hcψ : ContDiff ℝ ∞ (fun w ↦ c * ψ w / 2) := (contDiff_const.mul hψ).div_const 2
-    refine contDiff_euclidean.mpr fun i ↦ ?_
-    fin_cases i
-    · simpa [hY₀def] using (contDiff_const : ContDiff ℝ ∞ fun _ : ℂ ↦ (0 : ℝ))
-    · simpa [hY₀def] using (contDiff_const : ContDiff ℝ ∞ fun _ : ℂ ↦ (0 : ℝ))
-    · convert reCLM.contDiff.comp hcψ using 1
-      funext w
-      simp [hY₀def]
-    · convert imCLM.contDiff.comp hcψ using 1
-      funext w
-      simp [hY₀def]
+    rw [logVariation_eq_of_differentiableAt x (hu z hz).differentiableAt]
+    exact apply_eq_of_sectionValue_eq (by simp [Y₀]) (by simp [Y₀]) (by simp [Y₀, hαu z hz])
+  have hY₀s : ContDiff ℝ ∞ Y₀ := contDiff_sectionVariation (contDiff_const.mul hψ)
   refine ⟨fun w ↦ Y₀ w - logVariation x v w,
     hY₀s.sub (contDiff_logVariation hx (hv.of_le (by simp))), ?_, fun z hz ↦ ?_⟩
   · refine hρc.mono' fun w hw ↦ ?_
@@ -467,7 +458,7 @@ private theorem exists_contDiff_hasCompactSupport_eq_logVariation (hx : ContDiff
 
 /-- For a smooth field whose section has unit modulus at infinity and a smooth `g ∈ L²(ℂ; ℂ)`,
 the equation `Δh = P h - g`, `P = |α|² / 4`, has a smooth solution `h ∈ H²(ℂ; ℂ)`. -/
-private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
+theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → ℂ}
     (hgs : ContDiff ℝ ∞ g) (hg2 : MemLp g 2 volume) :
     ∃ h : ℂ → ℂ, ContDiff ℝ ∞ h ∧ (fun z ↦ (h z).re) ∈ realSobolevFunctions ℂ 2 2 ∧
@@ -479,12 +470,6 @@ private theorem exists_contDiff_laplacian_eq_mul_sub (hx : ContDiff ℝ ∞ x)
     exists_contDiff_re_im_mem_realSobolevFunctions_two_neg_laplacian_add_mul_eq
       (((hxi 2).pow 2).add ((hxi 3).pow 2)) hP hP₀ (by norm_num : (0 : ℝ) < 1 / 8) hPa hgs hg2
   exact ⟨h, hhs, hh₁, hh₂, fun z ↦ by linear_combination -he z⟩
-
-/-- The potential `P = |α|² / 4` in terms of the section `α`. -/
-private theorem ofReal_potential_eq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) =
-      starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
-  apply Complex.ext <;> simp [sectionValue_apply, sq] <;> ring
 
 /-- At a point where `u` is holomorphic, if `h` solves `Δh = P h - g` for the defect
 `g = -Δv - P (u - v)` of `u - v`, then `η = h + (u - v)` solves `Δη = P η` there. -/
