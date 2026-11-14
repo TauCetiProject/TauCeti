@@ -370,7 +370,6 @@ def realCliffordSplitIsometry (p₁ p₂ q₁ q₂ : ℕ) :
           · simp [y, realCliffordSplitLinearEquiv, realCliffordSplitWeight_inr] }
 
 /-- The first output block receives the first positive-coordinate block. -/
-@[simp]
 theorem realCliffordSplitIsometry_fst_pos (p₁ p₂ q₁ q₂ : ℕ)
     (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin p₁) :
     (realCliffordSplitIsometry p₁ p₂ q₁ q₂ x).1 (Fin.castAdd q₁ i) =
@@ -380,7 +379,6 @@ theorem realCliffordSplitIsometry_fst_pos (p₁ p₂ q₁ q₂ : ℕ)
   simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The first output block receives the first negative-coordinate block. -/
-@[simp]
 theorem realCliffordSplitIsometry_fst_neg (p₁ p₂ q₁ q₂ : ℕ)
     (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin q₁) :
     (realCliffordSplitIsometry p₁ p₂ q₁ q₂ x).1 (Fin.natAdd p₁ i) =
@@ -390,7 +388,6 @@ theorem realCliffordSplitIsometry_fst_neg (p₁ p₂ q₁ q₂ : ℕ)
   simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The second output block receives the second positive-coordinate block. -/
-@[simp]
 theorem realCliffordSplitIsometry_snd_pos (p₁ p₂ q₁ q₂ : ℕ)
     (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin p₂) :
     (realCliffordSplitIsometry p₁ p₂ q₁ q₂ x).2 (Fin.castAdd q₂ i) =
@@ -400,7 +397,6 @@ theorem realCliffordSplitIsometry_snd_pos (p₁ p₂ q₁ q₂ : ℕ)
   simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The second output block receives the second negative-coordinate block. -/
-@[simp]
 theorem realCliffordSplitIsometry_snd_neg (p₁ p₂ q₁ q₂ : ℕ)
     (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin q₂) :
     (realCliffordSplitIsometry p₁ p₂ q₁ q₂ x).2 (Fin.natAdd p₂ i) =
