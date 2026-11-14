@@ -16,7 +16,9 @@ as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFD
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The first iterated derivative, uncurried, is the Fréchet derivative
 (`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
-`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`). The file also supplies the
+`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), so agreement of the iterated
+derivatives of orders at most one is agreement of value and Fréchet derivative
+(`TauCeti.forall_le_one_iteratedFDeriv_eq_iff`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
@@ -77,6 +79,20 @@ these derivatives are junk-valued. -/
 theorem fderiv_eq_continuousMultilinearCurryFin1_comp (f : E → F) :
     fderiv 𝕜 f = continuousMultilinearCurryFin1 𝕜 E F ∘ iteratedFDeriv 𝕜 1 f :=
   funext fun x ↦ (continuousMultilinearCurryFin1_iteratedFDeriv_one f x).symm
+
+/-- Two maps have the same iterated derivatives of orders zero and one at a point exactly when
+they have the same value and the same Fréchet derivative there. -/
+theorem forall_le_one_iteratedFDeriv_eq_iff {f g : E → F} {x : E} :
+    (∀ k ≤ 1, iteratedFDeriv 𝕜 k f x = iteratedFDeriv 𝕜 k g x) ↔
+      f x = g x ∧ fderiv 𝕜 f x = fderiv 𝕜 g x := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hv, hd⟩ k hk ↦ ?_⟩
+  · simpa using congrArg (fun m ↦ m Fin.elim0) (h 0 zero_le_one)
+  · simpa using congrArg (continuousMultilinearCurryFin1 𝕜 E F) (h 1 le_rfl)
+  · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hk with rfl | rfl
+    · ext m
+      simp [hv]
+    · ext m
+      simp [hd]
 
 /-- Currying the second iterated derivative gives the Fréchet derivative of the first
 Fréchet derivative, including at points where these derivatives are junk-valued. -/
