@@ -120,6 +120,17 @@ theorem f4ModularSimpleCoroot_eq_basis (i : Fin F4.rank) :
       f4ModularSimpleCoroot ((F4.lieBasis valid_F4).baseSupportEquiv.symm j) := by
   rw [f4ModularSimpleCoroot_eq_basis, Equiv.apply_symm_apply]
 
+/-- The coordinates of a modular simple coroot in the Chevalley basis are the single coordinate
+of its own simple-root support label. -/
+-- Not `@[simp]`: it would rewrite the left-hand side of the simp lemma
+-- `f4ModularChevalleyBasis_repr_simpleCoroot_inl` to an application of `Finsupp.single` that
+-- the default simp set leaves unsolved (the simp lemma `rank_F4` blocks the side goal
+-- `Sum.inl _ ≠ Sum.inr _` of `Finsupp.single_eq_of_ne`).
+theorem f4ModularChevalleyBasis_repr_simpleCoroot (i : Fin F4.rank) :
+    f4ModularChevalleyBasis.repr (f4ModularSimpleCoroot i) =
+      Finsupp.single (Sum.inr ((F4.lieBasis valid_F4).baseSupportEquiv i)) 1 := by
+  simp only [f4ModularSimpleCoroot_eq_basis, Basis.repr_self]
+
 @[simp] theorem coe_f4IntegralRootVector (i : Fin 48) :
     (f4IntegralRootVector i : F4.lieAlgebra valid_F4) =
       f4ChevalleyRootVector (f4KillingRoot i) := by
@@ -437,8 +448,8 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     (i : Fin F4.rank) (γ : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularSimpleCoroot i)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  simp only [f4ModularSimpleCoroot_eq_basis, Basis.repr_self]
-  exact Finsupp.single_eq_of_ne (by simp)
+  rw [f4ModularChevalleyBasis_repr_simpleCoroot]
+  exact Finsupp.single_eq_of_ne Sum.inl_ne_inr
 
 /-- A modular coroot has no root-vector coordinate. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_coroot_inl

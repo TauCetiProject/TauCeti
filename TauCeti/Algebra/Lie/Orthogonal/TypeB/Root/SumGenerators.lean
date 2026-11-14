@@ -133,11 +133,7 @@ theorem typeBSumNegativeRootMatrix_def (i j : ι) :
 /-- The positive sum-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBSumRootMatrix_mem_typeB (i j : ι) :
     typeBSumRootMatrix (K := K) i j ∈ LieAlgebra.Orthogonal.typeB ι K := by
-  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Unfold subtype membership to expose the ambient skew-adjoint matrix equation.
-  change (typeBSumRootMatrix (K := K) i j)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-    LieAlgebra.Orthogonal.JB ι K * (-typeBSumRootMatrix (K := K) i j)
+  rw [LieAlgebra.Orthogonal.typeB.mem_iff]
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBSumRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
       Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]
@@ -145,11 +141,7 @@ theorem typeBSumRootMatrix_mem_typeB (i j : ι) :
 /-- The negative sum-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBSumNegativeRootMatrix_mem_typeB (i j : ι) :
     typeBSumNegativeRootMatrix (K := K) i j ∈ LieAlgebra.Orthogonal.typeB ι K := by
-  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Unfold subtype membership to expose the ambient skew-adjoint matrix equation.
-  change (typeBSumNegativeRootMatrix (K := K) i j)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-    LieAlgebra.Orthogonal.JB ι K * (-typeBSumNegativeRootMatrix (K := K) i j)
+  rw [LieAlgebra.Orthogonal.typeB.mem_iff]
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBSumNegativeRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
       Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]

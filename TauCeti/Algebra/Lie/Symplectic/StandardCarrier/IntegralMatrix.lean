@@ -97,9 +97,7 @@ theorem rootIntMatrix_inr_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n) :
 
 /-- The matrix of a carrier root subgroup point is `1 + u X` for the integral matrix `X` of the
 corresponding root generator. -/
--- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
--- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
--- unreachable. Consumers rewrite with it by name.
+@[simp]
 theorem coe_rootSubgroupPoints_eq_one_add_smul (k : Fin (n + 1) ⊕ Fin (n + 1))
     (A : Type v) [CommRing A] (u : Multiplicative A) :
     ((rootSubgroupPoints n k A u :

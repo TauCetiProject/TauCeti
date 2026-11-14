@@ -397,11 +397,7 @@ theorem _root_.Module.Basis.toLinAlgEquiv_typeBDifferenceRootMatrix_apply_basis
 /-- The difference-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBDifferenceRootMatrix_mem_typeB (i j : ι) (hij : i ≠ j) :
     typeBDifferenceRootMatrix (K := K) i j hij ∈ LieAlgebra.Orthogonal.typeB ι K := by
-  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Unfold subtype membership to expose the ambient skew-adjoint matrix equation.
-  change (typeBDifferenceRootMatrix (K := K) i j hij)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-    LieAlgebra.Orthogonal.JB ι K * (-typeBDifferenceRootMatrix (K := K) i j hij)
+  rw [LieAlgebra.Orthogonal.typeB.mem_iff]
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBDifferenceRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
       Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm, ite_and]
@@ -497,11 +493,7 @@ theorem _root_.Module.Basis.toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_bas
 /-- The positive short-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBShortRootMatrix_mem_typeB (i : ι) :
     typeBShortRootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB ι K := by
-  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Unfold subtype membership to expose the ambient skew-adjoint matrix equation.
-  change (typeBShortRootMatrix (K := K) i)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-    LieAlgebra.Orthogonal.JB ι K * (-typeBShortRootMatrix (K := K) i)
+  rw [LieAlgebra.Orthogonal.typeB.mem_iff]
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBShortRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
       Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]
@@ -509,11 +501,7 @@ theorem typeBShortRootMatrix_mem_typeB (i : ι) :
 /-- The negative short-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBShortNegativeRootMatrix_mem_typeB (i : ι) :
     typeBShortNegativeRootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB ι K := by
-  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Unfold subtype membership to expose the ambient skew-adjoint matrix equation.
-  change (typeBShortNegativeRootMatrix (K := K) i)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-    LieAlgebra.Orthogonal.JB ι K * (-typeBShortNegativeRootMatrix (K := K) i)
+  rw [LieAlgebra.Orthogonal.typeB.mem_iff]
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBShortNegativeRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
       Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]
