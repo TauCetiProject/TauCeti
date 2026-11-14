@@ -26,8 +26,8 @@ wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
 
 where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
 additive on words with disjoint supports; weight is also subadditive. Scaling coordinatewise by `c`
-intersects the support with `supp c`. The weight of the image of an integer vector in any additive
-group with one, such as its reduction modulo `n`, is at most the vector's sum of squares.
+intersects the support with `supp c`. The weight of an integer vector, and of its image in any
+additive group with one (such as its reduction modulo `n`), is at most the vector's sum of squares.
 
 The file also records that Hamming weight and distance on a function whose domain is a disjoint
 union split as sums over the two coordinate types. Weight also splits over a retained coordinate
@@ -173,21 +173,24 @@ theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a :
     hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
   by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
 
-/-- The Hamming weight of the image of an integer vector in any additive group with one, such as
-its reduction modulo `n`, is bounded by its sum of squares. -/
-theorem hammingNorm_intCast_le_sum_sq [Fintype ι] (R : Type*) [AddGroupWithOne R]
-    [DecidableEq R] (z : ι → ℤ) : (hammingNorm (fun i ↦ (z i : R)) : ℤ) ≤ ∑ i, z i ^ 2 := by
-  have hsum : ∑ i, (if (z i : R) ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
+/-- The Hamming weight of an integer vector is bounded by its sum of squares. -/
+theorem hammingNorm_le_sum_sq [Fintype ι] (z : ι → ℤ) : (hammingNorm z : ℤ) ≤ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (if z i ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
     apply Finset.sum_le_sum
     intro i _
-    split_ifs with hi
-    · have hz : z i ≠ 0 := by
-        rintro h
-        simp [h] at hi
-      have := sq_pos_of_ne_zero hz
+    split_ifs with hz
+    · have := sq_pos_of_ne_zero hz
       omega
     · exact sq_nonneg _
   simpa only [Finset.sum_boole, hammingNorm] using hsum
+
+/-- The Hamming weight of the image of an integer vector in any additive group with one, such as
+its reduction modulo `n`, is bounded by its sum of squares. -/
+theorem hammingNorm_intCast_le_sum_sq [Fintype ι] (R : Type*) [AddGroupWithOne R]
+    [DecidableEq R] (z : ι → ℤ) : (hammingNorm (fun i ↦ (z i : R)) : ℤ) ≤ ∑ i, z i ^ 2 :=
+  -- Casting coordinatewise sends `0` to `0`, so it cannot increase the Hamming weight.
+  (Nat.cast_le.mpr <| hammingNorm_comp_le_hammingNorm (fun _ ↦ Int.cast) fun _ ↦
+    Int.cast_zero).trans (hammingNorm_le_sum_sq z)
 
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
