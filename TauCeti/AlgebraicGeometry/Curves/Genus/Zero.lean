@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
-public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.RationalPoint.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
@@ -22,7 +21,6 @@ import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Scheme.Place.Proper
 import TauCeti.FieldTheory.FunctionField.Consequences.SeparablePlace
-import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
 # Curves of genus zero and the projective line
@@ -39,11 +37,8 @@ This is the geometric form of Stichtenoth's Proposition 1.6.3. The genus of `X` 
 `k(X)` (`TauCeti.AlgebraicGeometry.SchemeWeilDivisor.genus_eq_genus_functionField`), and a divisor
 of degree one on `X` is a divisor of degree one of `k(X)`, so the function field is rational
 (`TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`). A `k`-isomorphism
-`k(X) ≃ k(t)` then identifies `X` with `ℙ¹_k` through the two-chart models of the two function
-fields: `X` is the two-chart model of `k(X)` (`AlgebraicGeometry.Scheme.isoTwoChartModel`), an
-isomorphism of function fields induces an isomorphism of two-chart models
-(`TauCeti.AlgebraicGeometry.twoChartModel.isoOfAlgEquiv`), and `ℙ¹_k` is the two-chart model of
-`k(t)` (`TauCeti.AlgebraicGeometry.projectiveLine.isoTwoChartModel`).
+`k(t) ≃ k(X)` then induces an isomorphism `X ≅ ℙ¹_k` over `k`
+(`AlgebraicGeometry.Scheme.isoProjectiveLine`).
 
 Genus zero alone does not suffice: the function field of a conic without rational points has genus
 zero but no divisor of degree one
@@ -59,15 +54,8 @@ place is the place of a closed point `x` of `X`, with the same residue field. Ov
 integral and of genus zero, and it has a `K`-rational point, so it is `ℙ¹_K`. Taking `K = κ(x)`,
 `X` becomes the projective line over a separable extension of degree at most two.
 
-## Main definitions
-
-* `AlgebraicGeometry.Scheme.isoProjectiveLine`: the isomorphism `X ≅ ℙ¹_k` over `k` induced by a
-  `k`-isomorphism `k(t) ≃ k(X)`.
-
 ## Main results
 
-* `AlgebraicGeometry.Scheme.functionFieldMap_isoProjectiveLine_hom`: the pullback of rational
-  functions along `X.isoProjectiveLine e` is `e`.
 * `AlgebraicGeometry.Scheme.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`:
   a regular proper curve of genus zero with a divisor of degree one has rational function field.
 * `AlgebraicGeometry.Scheme.exists_iso_projectiveLine_of_genus_eq_zero_of_divisor_degree_eq_one`:
@@ -104,44 +92,6 @@ universe u
 
 variable {k : Type u} [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))] [X.IsCurveOver k]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
-
-/-! ### The isomorphism induced by a rational function field -/
-
-/-- **A curve with rational function field is the projective line**: the isomorphism `X ≅ ℙ¹_k`
-induced by a `k`-isomorphism `e : k(t) ≃ k(X)`, through the two-chart models of `k(X)`, built from
-the function `e t`, and of `k(t)`, built from `t`. Its pullback of rational functions is `e`
-(`functionFieldMap_isoProjectiveLine_hom`). -/
-noncomputable def isoProjectiveLine (e : RatFunc k ≃ₐ[k] X.functionField) :
-    X ≅ projectiveLine k :=
-  X.isoTwoChartModel (RatFunc.transcendental_apply_X e.toAlgHom e.injective).ne_zero
-      (RatFunc.transcendental_apply_X e.toAlgHom e.injective) ≪≫
-    twoChartModel.isoOfAlgEquiv (IsFunctionField.ratFunc k) _ RatFunc.X_ne_zero
-      (RatFunc.transcendental_apply_X e.toAlgHom e.injective).ne_zero e
-      (hxt := RatFunc.transcendental_X)
-      (hx't := RatFunc.transcendental_apply_X e.toAlgHom e.injective) ≪≫
-    (projectiveLine.isoTwoChartModel k).symm
-
-/-- The isomorphism `X ⟶ ℙ¹_k` of `isoProjectiveLine` is a morphism over `k`. -/
-instance (e : RatFunc k ≃ₐ[k] X.functionField) :
-    (X.isoProjectiveLine e).hom.IsOver (Spec (.of k)) := by
-  rw [isoProjectiveLine, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom,
-    twoChartModel.isoOfAlgEquiv_hom]
-  infer_instance
-
-/-- **The pullback of rational functions along `X ≅ ℙ¹_k` is `e`**: under the identification of the
-function field of `ℙ¹_k` with `k(t)`, the pullback along `X.isoProjectiveLine e` is `e`. -/
-@[simp]
-theorem functionFieldMap_isoProjectiveLine_hom (e : RatFunc k ≃ₐ[k] X.functionField)
-    (z : RatFunc k) :
-    (X.isoProjectiveLine e).hom.functionFieldMap ((projectiveLine.functionFieldEquiv k).symm z) =
-      e z := by
-  simp only [isoProjectiveLine, Iso.trans_hom, Iso.symm_hom, twoChartModel.isoOfAlgEquiv_hom,
-    Hom.functionFieldMap_comp, CommRingCat.comp_apply]
-  rw [(AlgEquiv.eq_symm_apply _).mpr
-      (projectiveLine.functionFieldEquiv_functionFieldMap_isoTwoChartModel_inv k z),
-    (AlgEquiv.eq_symm_apply _).mpr
-      (twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom ..),
-    functionFieldMap_isoTwoChartModel_hom, AlgEquiv.coe_toAlgHom]
 
 /-! ### Curves of genus zero -/
 
