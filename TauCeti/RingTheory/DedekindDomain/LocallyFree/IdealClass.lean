@@ -83,32 +83,51 @@ theorem classOf_toPrincipalIdeal (x : Kˣ) :
 
 end FractionalIdeal
 
-/-- An invertible fractional ideal in a faithful algebra has zero reduced projective class exactly
-when it is principal. -/
-theorem classOf_eq_zero_iff_isPrincipal {S : Submonoid A} {P : Type u} [CommRing P] [Algebra A P]
-    [FaithfulSMul A P] (I : (FractionalIdeal S P)ˣ) :
-    classOf A (I : FractionalIdeal S P) 1 = 0 ↔ (I : Submodule A P).IsPrincipal := by
+section Invertible
+
+variable {M : Type u} [AddCommGroup M] [Module A M] [Module.Invertible A M]
+
+/-- An invertible module has zero reduced projective class exactly when it is free. -/
+theorem classOf_eq_zero_iff_free : classOf A M 1 = 0 ↔ Module.Free A M := by
   constructor
   · rw [classOf_eq_zero_iff]
     rintro ⟨k, ⟨e⟩⟩
-    -- A stably free invertible module is free, hence isomorphic to `A`.
+    -- A stably free invertible module is free.
     have := Module.Free.of_equiv e.symm
-    have : Module.IsStablyFree A (I : FractionalIdeal S P) := .of_free_prod A _ (Fin k → A)
-    obtain ⟨f⟩ := Module.Invertible.free_iff_linearEquiv.mp
-      (Module.free_of_isStablyFree_of_invertible A (I : FractionalIdeal S P))
+    have : Module.IsStablyFree A M := .of_free_prod A _ (Fin k → A)
+    exact Module.free_of_isStablyFree_of_invertible A M
+  · intro h
+    obtain ⟨e⟩ := Module.Invertible.free_iff_linearEquiv.mp h
+    rw [classOf_congr e]
+    simp [classOf_def]
+
+/-- An invertible submodule has zero reduced projective class exactly when it is principal. -/
+theorem classOf_submodule_eq_zero_iff_isPrincipal {P : Type u} [AddCommGroup P] [Module A P]
+    (I : Submodule A P) [Module.Invertible A I] : classOf A I 1 = 0 ↔ I.IsPrincipal := by
+  rw [classOf_eq_zero_iff_free, Module.Invertible.free_iff_linearEquiv]
+  constructor
+  · rintro ⟨f⟩
     exact ⟨_, Submodule.eq_span_singleton_of_surjective f.symm.surjective⟩
   · rintro ⟨x, hx⟩
     -- Multiplication by the generator maps `A` onto `I`, hence isomorphically.
-    let f : A →ₗ[A] (I : FractionalIdeal S P) :=
-      (LinearMap.toSpanSingleton A P x).codRestrict (I : Submodule A P) fun a ↦ by
+    let f : A →ₗ[A] I :=
+      (LinearMap.toSpanSingleton A P x).codRestrict I fun a ↦ by
         rw [hx]
         exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self x)
     have hf : Function.Surjective f := by
       rintro ⟨y, hy⟩
       obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hx ▸ hy : y ∈ Submodule.span A {x})
       exact ⟨a, rfl⟩
-    rw [← classOf_congr (.ofBijective f (Module.Invertible.bijective_of_surjective hf))]
-    simp [classOf_def]
+    exact ⟨(LinearEquiv.ofBijective f (Module.Invertible.bijective_of_surjective hf)).symm⟩
+
+end Invertible
+
+/-- An invertible fractional ideal in a faithful algebra has zero reduced projective class exactly
+when it is principal. -/
+theorem classOf_eq_zero_iff_isPrincipal {S : Submonoid A} {P : Type u} [CommRing P] [Algebra A P]
+    [FaithfulSMul A P] (I : (FractionalIdeal S P)ˣ) :
+    classOf A (I : FractionalIdeal S P) 1 = 0 ↔ (I : Submodule A P).IsPrincipal :=
+  classOf_submodule_eq_zero_iff_isPrincipal (I : Submodule A P)
 
 variable [IsDedekindDomain A]
 
@@ -138,14 +157,22 @@ noncomputable def idealClassHom :
       rintro _ ⟨x, rfl⟩
       exact congrArg Multiplicative.ofAdd (classOf_toPrincipalIdeal x))).toAdditiveLeft
 
-/-- The ideal-class homomorphism evaluated on a fractional ideal in the canonical fraction field. -/
+/-- The ideal-class homomorphism evaluated on an invertible fractional ideal. -/
 @[simp]
-theorem idealClassHom_mk (I : (FractionalIdeal A⁰ (FractionRing A))ˣ) :
-    idealClassHom A (Additive.ofMul (ClassGroup.mk (FractionRing A) I)) =
-      classOf A (I : FractionalIdeal A⁰ (FractionRing A)) 1 := by
-  rw [← ClassGroup.Quot_mk_eq_mk]
-  exact congrArg Multiplicative.toAdd
-    (QuotientGroup.lift_quot_mk _ _ I)
+theorem idealClassHom_mk (I : (FractionalIdeal A⁰ K)ˣ) :
+    idealClassHom A (Additive.ofMul (ClassGroup.mk K I)) =
+      classOf A (I : FractionalIdeal A⁰ K) 1 := by
+  rw [← ClassGroup.mk_canonicalEquiv (K := K) (FractionRing A) I, ← ClassGroup.Quot_mk_eq_mk]
+  refine (congrArg Multiplicative.toAdd (QuotientGroup.lift_quot_mk _ _ _)).trans ?_
+  -- Changing the fraction field is an isomorphism of `A`-modules on each fractional ideal.
+  let g := IsLocalization.algEquiv A⁰ K (FractionRing A)
+  refine (classOf_congr ?_ 1).symm
+  exact ((I : Submodule A K).equivMapOfInjective g.toLinearMap g.injective).trans
+    (LinearEquiv.ofEq _ _ (by
+      ext
+      simp only [Submodule.mem_map, FractionalIdeal.mem_coeToSubmodule,
+        AlgEquiv.toLinearMap_apply, g, IsLocalization.algEquiv_apply, Units.coe_map,
+        MonoidHom.coe_ofClass, FractionalIdeal.mem_canonicalEquiv_apply]))
 
 /-- On a nonzero integral ideal the homomorphism is its reduced projective class.
 The projectivity instance is required to express the right-hand side using `classOf`. -/
@@ -179,10 +206,10 @@ theorem idealClassHom_eq_zero {c : Additive (ClassGroup A)} : idealClassHom A c 
 
 /-- A nonzero integral ideal has zero reduced projective class exactly when it is principal.
 The projectivity instance is required to express the left-hand side using `classOf`. -/
-theorem classOf_ideal_eq_zero_iff_isPrincipal (I : (Ideal A)⁰)
-    [Module.Projective A (I : Ideal A)] :
-    classOf A (I : Ideal A) 1 = 0 ↔ (I : Ideal A).IsPrincipal := by
-  rw [← idealClassHom_mk0, idealClassHom_eq_zero, ofMul_eq_zero, ClassGroup.mk0_eq_one_iff]
+theorem classOf_ideal_eq_zero_iff_isPrincipal {I : Ideal A} [Module.Projective A I] (hI : I ≠ ⊥) :
+    classOf A I 1 = 0 ↔ I.IsPrincipal := by
+  rw [← idealClassHom_mk0 ⟨I, mem_nonZeroDivisors_of_ne_zero hI⟩, idealClassHom_eq_zero,
+    ofMul_eq_zero, ClassGroup.mk0_eq_one_iff]
 
 variable (K) in
 /-- Every reduced class of a finite projective module over a Dedekind domain comes from an
@@ -308,11 +335,11 @@ theorem ofIdealClassEquiv_symm_classOf_ideal (hA : ¬IsField A) (I : (Ideal A)�
 /-- The ideal class corresponding to the reduced class of an invertible fractional ideal is its
 class. -/
 @[simp]
-theorem ofIdealClassEquiv_symm_classOf_fractionalIdeal (hA : ¬IsField A)
-    (I : (FractionalIdeal A⁰ (FractionRing A))ˣ)
-    (h : classOf A (I : FractionalIdeal A⁰ (FractionRing A)) 1 ∈ classGroup A K A) :
-    (ofIdealClassEquiv A K hA).symm ⟨classOf A (I : FractionalIdeal A⁰ (FractionRing A)) 1, h⟩ =
-      Additive.ofMul (ClassGroup.mk (FractionRing A) I) := by
+theorem ofIdealClassEquiv_symm_classOf_fractionalIdeal {K' : Type u} [Field K'] [Algebra A K']
+    [IsFractionRing A K'] (hA : ¬IsField A) (I : (FractionalIdeal A⁰ K')ˣ)
+    (h : classOf A (I : FractionalIdeal A⁰ K') 1 ∈ classGroup A K A) :
+    (ofIdealClassEquiv A K hA).symm ⟨classOf A (I : FractionalIdeal A⁰ K') 1, h⟩ =
+      Additive.ofMul (ClassGroup.mk K' I) := by
   rw [AddEquiv.symm_apply_eq]
   exact Subtype.ext (idealClassHom_mk I).symm
 
