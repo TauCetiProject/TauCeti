@@ -19,7 +19,8 @@ Writing `σ` for the `q`-power Frobenius involution of `𝔽_{q²}`, the represe
 normalizes the torus by `t ↦ σ(t)⁻¹`, and lies outside it, including in characteristic two.
 
 The coefficient formula records the actual matrix over the algebraic closure, not merely
-an abstract isomorphic copy. No generation, Bruhat decomposition or simplicity is asserted.
+an abstract isomorphic copy. The API is in `TauCeti.TypeALieIndex.RankTwo` to distinguish it
+from the general-rank comparison. No generation, Bruhat decomposition or simplicity is asserted.
 
 ## References
 
@@ -33,7 +34,7 @@ noncomputable section
 
 open Matrix
 
-namespace TauCeti.TypeALieIndex
+namespace TauCeti.TypeALieIndex.RankTwo
 
 variable (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).Valid)
 
@@ -155,4 +156,4 @@ theorem unitaryFixedWeylRepresentative_notMem_range_unitaryTorusHom :
     ← specialIsometryEquivFixedPoints_weyl] at ht
   exact ⟨t, (specialIsometryEquivFixedPoints 2 q hv).injective ht⟩
 
-end TauCeti.TypeALieIndex
+end TauCeti.TypeALieIndex.RankTwo
