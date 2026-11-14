@@ -31,6 +31,8 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
   only depends on `#A`.
 * `TauCeti.AddCommGroup.natCard_primaryComponent`: for a prime `p` and a finite group,
   `#A[p^∞] = p ^ v_p(#A)`.
+* `TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent`: finite commutative groups whose
+  `p`-primary components have equal orders at every prime have equal orders.
 -/
 
 public section
@@ -120,6 +122,20 @@ theorem natCard_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] {p : �
   rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
     Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite]
   simp [hp.factorization_pow, hi]
+
+/-- **Finite commutative groups whose prime-primary components have the same order at every prime
+have the same order.** -/
+theorem natCard_eq_of_forall_primaryComponent [Finite A] [Finite B]
+    (h : ∀ p : ℕ, p.Prime →
+      Nat.card (AddCommGroup.primaryComponent A p) =
+        Nat.card (AddCommGroup.primaryComponent B p)) :
+    Nat.card A = Nat.card B := by
+  refine Nat.factorization_inj Nat.card_pos.ne' Nat.card_pos.ne' (Finsupp.ext fun p ↦ ?_)
+  by_cases hp : p.Prime
+  · have hpow := h p hp
+    rw [natCard_primaryComponent A hp, natCard_primaryComponent B hp] at hpow
+    exact Nat.pow_right_injective hp.one_lt hpow
+  · rw [Nat.factorization_eq_zero_of_not_prime _ hp, Nat.factorization_eq_zero_of_not_prime _ hp]
 
 end AddCommGroup
 

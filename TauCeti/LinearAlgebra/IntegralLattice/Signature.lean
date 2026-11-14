@@ -40,7 +40,8 @@ preserves every definiteness predicate.
 * `TauCeti.IntegralLattice.isPosDef_ofGramMatrix_iff`: a lattice presented by a Gram matrix is
   positive definite exactly when the matrix is, read over `ℚ`.
 * `TauCeti.IntegralLattice.determinant_eq_neg_one_pow_sigNeg_mul_discriminant`: the sign of the
-  determinant is `(-1) ^ n₋`.
+  determinant is `(-1) ^ n₋`, so equal signatures and equal discriminants force equal signed
+  determinants (`TauCeti.IntegralLattice.determinant_eq_of_signature_eq_of_discriminant_eq`).
 * `TauCeti.IntegralLattice.finrank_eq_of_signature_eq`: equal signatures force equal ranks, and
   `TauCeti.IntegralLattice.IsPosDef.signature_eq`: a positive definite lattice of rank `n` has
   signature `(n, 0, 0)`.
@@ -164,6 +165,16 @@ theorem determinant_eq_neg_one_pow_sigNeg_mul_discriminant :
     rw [← abs_of_pos hpos', abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
   rw [discriminant_def, Int.natCast_natAbs, h1, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg,
     one_pow, one_mul]
+
+/-- Integral lattices with equal signatures and equal discriminants have equal signed determinants,
+without any nondegeneracy assumption. -/
+theorem determinant_eq_of_signature_eq_of_discriminant_eq {L : IntegralLattice V}
+    {M : IntegralLattice W} (hsig : L.signature = M.signature)
+    (hdisc : L.discriminant = M.discriminant) :
+    L.determinant = M.determinant := by
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
+  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
+    M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hneg, hdisc]
 
 /-- An integral lattice is positive-definite when its quadratic form is positive on every nonzero
 vector. -/

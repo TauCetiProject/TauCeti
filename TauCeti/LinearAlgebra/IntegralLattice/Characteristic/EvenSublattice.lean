@@ -23,6 +23,15 @@ For an odd lattice the quotient by this submodule is canonically `ℤ/2` through
 The even sublattice supplies the discriminant-form construction used to prove
 van der Blij's characteristic-norm congruence for odd unimodular lattices.
 
+## Main declarations
+
+* `TauCeti.IntegralLattice.evenSubmodule` and `TauCeti.IntegralLattice.evenSublattice`: the
+  norm-parity kernel and the canonical full even sublattice.
+* `TauCeti.IntegralLattice.relIndex_evenSublattice_pos`,
+  `TauCeti.IntegralLattice.relIndex_evenSublattice_le_two`, and
+  `TauCeti.IntegralLattice.not_dvd_relIndex_evenSublattice_of_ne_two`: the index of the even
+  sublattice in `L` is `1` or `2`, so no odd prime divides it.
+
 ## References
 
 * J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Appendix 4.
@@ -173,9 +182,9 @@ theorem natCard_quotient_evenSubmodule (hL : ¬ L.IsEven) :
   rw [Nat.card_congr (L.evenSubmoduleQuotientEquiv hL).toEquiv]
   exact Nat.card_zmod 2
 
-/-- The even sublattice has index at most two in the lattice: it is the kernel of norm parity. -/
-theorem relIndex_evenSublattice_le_two :
-    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup ≤ 2 := by
+private theorem relIndex_evenSublattice_eq_natCard_range_normParity :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup =
+      Nat.card L.normParity.range := by
   have htop : (⊤ : AddSubgroup L).map (L.carrier.subtype : L →+ V) =
       L.carrier.toAddSubgroup :=
     (AddSubgroup.map_top _).trans (AddSubgroup.range_subtype L.carrier.toAddSubgroup)
@@ -185,6 +194,26 @@ theorem relIndex_evenSublattice_le_two :
   rw [evenSublattice_carrier, Submodule.map_toAddSubgroup, ← htop, hker,
     AddSubgroup.relIndex_map_map_of_injective _ _ L.carrier.injective_subtype,
     AddSubgroup.relIndex_top_right, AddSubgroup.index_ker]
+
+/-- The index of the even sublattice in the lattice is positive. -/
+theorem relIndex_evenSublattice_pos :
+    0 < L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by
+  rw [L.relIndex_evenSublattice_eq_natCard_range_normParity]
+  exact Nat.card_pos
+
+/-- The even sublattice has index at most two in the lattice: it is the kernel of norm parity. -/
+theorem relIndex_evenSublattice_le_two :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup ≤ 2 := by
+  rw [L.relIndex_evenSublattice_eq_natCard_range_normParity]
   exact (Nat.card_le_card_of_injective _ Subtype.coe_injective).trans (Nat.card_zmod 2).le
+
+/-- No odd prime divides the index of the even sublattice in the lattice. -/
+theorem not_dvd_relIndex_evenSublattice_of_ne_two {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
+    ¬ p ∣ L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by
+  intro hdvd
+  have hle := (Nat.le_of_dvd L.relIndex_evenSublattice_pos hdvd).trans
+    L.relIndex_evenSublattice_le_two
+  have hge := hp.two_le
+  omega
 
 end TauCeti.IntegralLattice

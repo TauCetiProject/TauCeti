@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.LinearAlgebra.Determinant
+import TauCeti.Data.Fintype.Fiber
 
 /-!
 # Diagonal quadratic forms
@@ -18,6 +19,8 @@ of squares.
 ## Main results
 
 * `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
+* `TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`: fiberwise equivalences of unscaled
+  diagonal forms assemble into an equivalence of fiber-scaled diagonal forms.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
 * `QuadraticMap.associated_weightedSumSquares`, `QuadraticForm.toMatrix'_weightedSumSquares`, and
@@ -175,6 +178,56 @@ theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
     map_app' := fun x => ?_ }⟩
   simp only [QuadraticMap.weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
   simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
+
+/-- Fiberwise equivalences of unscaled diagonal forms assemble into an equivalence of the scaled
+diagonal forms `∑ uᵢ s(kᵢ) xᵢ²` and `∑ vⱼ s(lⱼ) yⱼ²`. -/
+theorem equivalent_weightedSumSquares_mul_of_forall_fiber {S : Type*} [DecidableEq S]
+    (k : ι → S) (l : κ → S) (u : ι → R) (v : κ → R) (s : S → R)
+    (h : ∀ m : S,
+      (QuadraticMap.weightedSumSquares R (fun i : {i : ι // k i = m} => u i.1)).Equivalent
+        (QuadraticMap.weightedSumSquares R (fun j : {j : κ // l j = m} => v j.1))) :
+    (QuadraticMap.weightedSumSquares R (fun i => u i * s (k i))).Equivalent
+      (QuadraticMap.weightedSumSquares R (fun j => v j * s (l j))) := by
+  let e m := (h m).some
+  let E : (ι → R) ≃ₗ[R] (κ → R) :=
+    (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv k)).trans <|
+      (LinearEquiv.piCurry R fun (m : S) (_ : {i : ι // k i = m}) => R).trans <|
+        (LinearEquiv.piCongrRight fun m : S => (e m).toLinearEquiv).trans <|
+          (LinearEquiv.piCurry R fun (m : S) (_ : {j : κ // l j = m}) => R).symm.trans
+            (LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv l).symm)
+  refine ⟨{ toLinearEquiv := E, map_app' := fun x => ?_ }⟩
+  have hE (m : S) (j : {j : κ // l j = m}) :
+      E x j.1 = e m (fun i => x i.1) j := by
+    have hj : (Equiv.sigmaFiberEquiv l).symm j.1 = ⟨m, j⟩ :=
+      (Equiv.sigmaFiberEquiv l).symm_apply_eq.mpr rfl
+    simp only [E, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
+      LinearMap.funLeft_apply, LinearEquiv.piCurry_apply, LinearEquiv.piCurry_symm_apply,
+      LinearEquiv.piCongrRight, Sigma.uncurry]
+    rw [hj]
+    rfl
+  let T : Finset S := Finset.univ.image k ∪ Finset.univ.image l
+  have hkT (i : ι) : k i ∈ T :=
+    Finset.mem_union_left _ (Finset.mem_image_of_mem k (Finset.mem_univ i))
+  have hlT (j : κ) : l j ∈ T :=
+    Finset.mem_union_right _ (Finset.mem_image_of_mem l (Finset.mem_univ j))
+  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
+  rw [← Function.sum_fiber_subtype l hlT, ← Function.sum_fiber_subtype k hkT]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  have hmap := (e m).map_app (fun i => x i.1)
+  simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul] at hmap
+  calc ∑ j : {j : κ // l j = m},
+          (v j.1 * s (l j.1)) * (E x j.1 * E x j.1)
+      = s m * ∑ j : {j : κ // l j = m},
+          v j.1 * (e m (fun i => x i.1) j * e m (fun i => x i.1) j) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ => ?_
+        rw [hE m j, j.2, mul_comm (v j.1) (s m), mul_assoc]
+    _ = s m * ∑ i : {i : ι // k i = m}, u i.1 * (x i.1 * x i.1) := by
+        rw [hmap]
+    _ = ∑ i : {i : ι // k i = m}, (u i.1 * s (k i.1)) * (x i.1 * x i.1) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [i.2, mul_comm (u i.1) (s m), mul_assoc]
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :

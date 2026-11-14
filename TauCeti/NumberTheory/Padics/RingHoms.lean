@@ -41,9 +41,12 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
-  reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
-  two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
-  difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+  reduction and truncation, as divisibility statements; `PadicInt.toZMod_eq_iff_dvd_sub`,
+  `PadicInt.toZModPow_eq_iff_dvd_sub`: two `p`-adic integers reduce or truncate to the same
+  residue exactly when `p` or `p ^ n` divides their difference;
+  `PadicInt.toZMod_eq_intCast_of_dvd` and `PadicInt.isCoprime_of_dvd_unit_sub`: integer
+  representatives modulo `p` and coprimality for `p`-adic units;
+  `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is the case `p ^ n = 8`.
 * `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
   `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
@@ -157,6 +160,24 @@ theorem continuous_toZMod : Continuous (toZMod : ℤ_[p] → ZMod p) := by
 /-- A `p`-adic integer reduces to `0` modulo `p` exactly when `p` divides it. -/
 theorem toZMod_eq_zero_iff_dvd (x : ℤ_[p]) : toZMod x = 0 ↔ (p : ℤ_[p]) ∣ x := by
   rw [← RingHom.mem_ker, ker_toZMod, maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
+
+/-- Two `p`-adic integers have the same reduction modulo `p` exactly when `p` divides their
+difference. -/
+theorem toZMod_eq_iff_dvd_sub {x y : ℤ_[p]} :
+    toZMod x = toZMod y ↔ (p : ℤ_[p]) ∣ y - x := by
+  rw [eq_comm, ← sub_eq_zero, ← map_sub, toZMod_eq_zero_iff_dvd]
+
+/-- If `p` divides `u - t` in `ℤ_[p]` for an integer `t`, then `u` reduces to `t` modulo `p`. -/
+theorem toZMod_eq_intCast_of_dvd {u : ℤ_[p]} {t : ℤ} (ht : (p : ℤ_[p]) ∣ u - t) :
+    toZMod u = (t : ZMod p) :=
+  (toZMod_eq_iff_dvd_sub.mpr ht).symm.trans (map_intCast toZMod t)
+
+/-- Any integer congruent modulo `p` in `ℤ_[p]` to a `p`-adic unit is coprime to `p`. -/
+theorem isCoprime_of_dvd_unit_sub {u : ℤ_[p]ˣ} {t : ℤ} (ht : (p : ℤ_[p]) ∣ u - t) :
+    IsCoprime (p : ℤ) t := by
+  refine (ZMod.isUnit_intCast_iff_isCoprime t p).mp ?_
+  rw [← toZMod_eq_intCast_of_dvd ht]
+  exact u.isUnit.map toZMod
 
 -- This is the `p = 2` case of the congruence `x ^ p ≡ x` modulo `p`; the general case would need
 -- `ZMod.pow_card`, whose finite-field import closure is far wider than this file's.

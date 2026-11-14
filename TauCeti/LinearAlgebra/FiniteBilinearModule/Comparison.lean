@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wentao Li
+Authors: Wentao Li, The Tau Ceti contributors
 -/
 module
 
@@ -26,6 +26,8 @@ the quadratic maps.
   between nondegenerate quadratic modules with equal Gauss-sum invariants.
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq`:
   the classification comparison theorem.
+* `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_bilinear_isometry_of_odd`: at odd order, a
+  bilinear isometry preserves the Gauss-sum invariant.
 
 ## References
 
@@ -182,5 +184,13 @@ theorem nonempty_isometry_iff_bilinear_isometry_and_gaussSign_eq
     exact ⟨⟨f.toFiniteBilinearModule⟩, f.gaussSign_eq⟩
   · rintro ⟨⟨f⟩, h⟩
     exact ⟨isometryOfBilinearIsometry hA f h⟩
+
+/-! ### Odd order -/
+
+/-- At odd order, a bilinear isometry preserves the Gauss-sum invariant. -/
+theorem gaussSign_eq_of_bilinear_isometry_of_odd (hA : Odd (Nat.card A))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    A.gaussSign = B.gaussSign :=
+  (isometryOfBilinearIsometryOfOdd hA f).gaussSign_eq
 
 end TauCeti.FiniteQuadraticModule

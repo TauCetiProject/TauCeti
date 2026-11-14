@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.IndexNSmul
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
 # Cardinality of an integral lattice's discriminant group
@@ -33,7 +34,9 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_eq_natAbs_gramDet`: the basis-relative
   cardinality formula.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup`: the discriminant-group cardinality is the
-  lattice discriminant.
+  lattice discriminant, so equal signatures and equal discriminant-group orders force equal signed
+  determinants
+  (`TauCeti.IntegralLattice.determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq`).
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_ofGramMatrix`: the formula for a lattice
   constructed from an integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
@@ -107,6 +110,16 @@ theorem natCard_discriminantGroup (L : IntegralLattice V) :
   classical
   rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
     L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
+
+/-- Equal signatures and equal discriminant-group orders imply equal signed determinants, without
+any nondegeneracy assumption. -/
+theorem determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq
+    {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V} {M : IntegralLattice W}
+    (hsig : L.signature = M.signature)
+    (hcard : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup) :
+    L.determinant = M.determinant := by
+  refine determinant_eq_of_signature_eq_of_discriminant_eq hsig ?_
+  rwa [← L.natCard_discriminantGroup, ← M.natCard_discriminantGroup]
 
 /-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
 `p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. -/
