@@ -243,6 +243,12 @@ def eqRHS {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) : EqConstra
   | Sum.inl () => 0
   | Sum.inr (s, i) => B s i
 
+@[simp] theorem eqRHS_inl {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (u : Unit) :
+    eqRHS B (Sum.inl u) = 0 := (rfl)
+
+@[simp] theorem eqRHS_inr {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (s : Fin 3)
+    (i : Fin n) : eqRHS B (Sum.inr (s, i)) = B s i := (rfl)
+
 /-- Inequality constraint matrix over `R` encoding `f b + f d - (f a + f c) ≤ 0` on `Rhombus n`. -/
 def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n) R :=
   fun r => Pi.single r.1.2.1 1 + Pi.single r.1.2.2.2 1 -
@@ -263,6 +269,14 @@ def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n)
   simp only [Matrix.mulVec, rhombusMatrix, sub_dotProduct, add_dotProduct, single_one_dotProduct,
     rhombusSlack_def]
   abel
+
+/-- The inequalities `rhombusMatrix R n *ᵥ f ≤ 0` say exactly that `f` is rhombus-concave. -/
+theorem rhombusMatrix_mulVec_nonpos_iff {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] {f : Vertex n → R} :
+    rhombusMatrix R n *ᵥ f ≤ 0 ↔ IsRhombusConcave f := by
+  rw [isRhombusConcave_iff_rhombusSlack_nonneg]
+  exact ⟨fun hf a b c d hr => by simpa using hf ⟨(a, b, c, d), hr⟩,
+    fun hf r => by simpa using hf r.2⟩
 
 /-- Over any ring `R`, `eqMatrix R n` is the base change of `eqMatrix ℤ n`. -/
 @[simp] theorem map_intCast_eqMatrix (R : Type*) [Ring R] (n : ℕ) :
