@@ -217,12 +217,6 @@ theorem hasUnitProOrder_top_iff : HasUnitProOrder A (⊤ : Subgroup U) ↔ HasUn
       continuous_toFun := continuous_subtype_val
       continuous_invFun := continuous_id.subtype_mk _ }
 
-/-- The top open subgroup of `U` has invertible pro-order if and only if `U` does. -/
-@[simp]
-theorem _root_.OpenSubgroup.hasUnitProOrder_top_iff :
-    HasUnitProOrder A (⊤ : OpenSubgroup U) ↔ HasUnitProOrder A U :=
-  TauCeti.hasUnitProOrder_top_iff
-
 /-- On a discrete group `U` (finite or infinite), `HasUnitProOrder A U` holds if and only if
 `Nat.card U` casts to a unit in `A`. When `U` is infinite, `Nat.card U = 0`, and both sides hold
 only for the zero semiring. -/
