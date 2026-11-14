@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Coarsening
 public import TauCeti.Combinatorics.Hypergraph.Polyad.SupportStability
 public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
+import TauCeti.Combinatorics.Hypergraph.Triadic.Slicing
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Positivity
 
@@ -32,7 +33,10 @@ colors mapped by `g` moves at most `3 |E| |V|` triples
 (`Polyad3.card_filter_ofTriple_ne_coarsen_ofTriple_le` in `Polyad/Coarsening.lean`). The new
 pair palette may be larger, for example by a fresh color for the pairs inside the cells. For
 polyad decompositions of triadic complexes this yields
-`Colored3Graph.TopRegularOverMostPolyads.of_pairRecoloring`.
+`Colored3Graph.TopRegularOverMostPolyads.of_pairRecoloring`. When `D.skeleton.vertexPart` also
+refines `C.skeleton.vertexPart` (as in lower-skeleton regularization), factoring through the
+intermediate complex with the fine vertex cells and the coarse pair coloring combines slicing with
+pair recoloring (`Colored3Graph.TopRegularOverMostPolyads.of_refinement_pairRecoloring`).
 
 ## Main results
 
@@ -40,6 +44,9 @@ polyad decompositions of triadic complexes this yields
   polyad decompositions grows by at most a multiple of the proportion of moved triples.
 * `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_pairRecoloring`: top regularity over
   most polyads survives recoloring few pairs of the lower skeleton.
+* `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_refinement_pairRecoloring`: top regularity
+  over most polyads survives refining the vertex partition while injectively recoloring the pairs
+  outside a small exception set.
 
 ## References
 
@@ -95,6 +102,32 @@ theorem TopRegularOverMostPolyads.of_pairRecoloring {C D : TriadicComplex3 V} {�
     hε hη hbudget).trans (add_le_add h ?_)
   gcongr
   exact Polyad3.card_filter_ofTriple_ne_coarsen_ofTriple_le hV.le g
+
+/-- **Top regularity after refining vertex cells and recoloring few pairs.** Let `C` and `D` be
+polyad decompositions with `D.skeleton.vertexPart ≤ C.skeleton.vertexPart`, and suppose the pair
+colors of `D` agree with those of `C` mapped along an injective `g` outside a set `E` of ordered
+pairs. For `0 < α`, `1 ≤ r`, `0 < ε`, `0 < η`, and `max (2δ) (δ / α) + 2η + η / ε ≤ ε`, top
+regularity over most polyads of `C` passes to `D` with extra exceptional mass at most
+`α t'³ m³ + (1 + 2 / η) 3 |E| |V| / |V|.descFactorial 3`, where `t'` is the fine vertex-cell count
+and `m = C.pairColorCount`. -/
+theorem TopRegularOverMostPolyads.of_refinement_pairRecoloring {C D : TriadicComplex3 V}
+    {α ε₀ : ℝ} (h : H.TopRegularOverMostPolyads C δ ε₀ r)
+    (hC : C.IsPolyadDecomposition) (hD : D.IsPolyadDecomposition)
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    {g : Fin C.pairColorCount → Fin D.pairColorCount} (hg : Function.Injective g)
+    (hα : 0 < α) (hr : 1 ≤ r) (hε : 0 < ε) (hη : 0 < η)
+    (hbudget : max (2 * δ) (δ / α) + 2 * η + η / ε ≤ ε) :
+    H.TopRegularOverMostPolyads D ε
+      (ε₀ + α * ((#D.skeleton.vertexPart.parts ^ 3 * C.pairColorCount ^ 3 : ℕ) : ℝ) +
+        (1 + 2 / η) *
+          (3 * #{p | D.skeleton.pairColors.color p ≠ g (C.skeleton.pairColors.color p)} *
+            Fintype.card V : ℕ) / (Fintype.card V).descFactorial 3) r := by
+  let C' : TriadicComplex3 V :=
+    ⟨C.pairColorCount, ⟨D.skeleton.vertexPart, C.skeleton.pairColors⟩, univ⟩
+  have hC' : C'.IsPolyadDecomposition :=
+    C'.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ mem_univ _
+  have hslice := h.of_refinement hC hC' hV id (fun _ ↦ rfl) hα hr
+  exact hslice.of_pairRecoloring hC' hD rfl hg hε hη hbudget
 
 end Colored3Graph
 
