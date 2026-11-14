@@ -66,7 +66,8 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
   -- Read `A` as the map `A'` into the product space `n → n → 𝕜` of its entries, and the
   -- determinant as a function on that space through the identification `L` with matrices.
   let A' : M → n → n → 𝕜 := fun y ↦ Matrix.of.symm (A y)
-  let L : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 := ⟨(Matrix.ofLinearEquiv 𝕜).toLinearMap, continuous_id⟩
+  let L : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 :=
+    (Matrix.ofContinuousLinearEquiv 𝕜).toContinuousLinearMap
   have hA'row (i : n) : MDifferentiableAt I 𝓘(𝕜, n → 𝕜) (fun y ↦ A' y i) x :=
     mdifferentiableAt_pi_space.2 fun j ↦ hA i j
   have hA' : MDifferentiableAt I 𝓘(𝕜, n → n → 𝕜) A' x := mdifferentiableAt_pi_space.2 hA'row
@@ -76,12 +77,13 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at h₁ h₂
     rw [← h₁]
     exact h₂
-  have hdet' : HasFDerivAt (fun B : n → n → 𝕜 ↦ (L B).det)
-      ((fderiv 𝕜 (Matrix.det : Matrix n n 𝕜 → 𝕜) (A x)).comp L) (A' x) :=
-    (Matrix.differentiable_det (A x)).hasFDerivAt.comp (A' x) L.hasFDerivAt
   -- `L` is the entrywise identification `Matrix.of`, as a continuous linear map.
-  have hL (B : n → n → 𝕜) : L B = Matrix.of B := by
-    exact (congrFun (ContinuousLinearMap.coe_mk' _ _) B).trans (by simp)
+  have hL (B : n → n → 𝕜) : L B = Matrix.of B :=
+    congrFun (Matrix.coe_ofContinuousLinearEquiv 𝕜) B
+  have hdet' : HasFDerivAt (fun B : n → n → 𝕜 ↦ (L B).det)
+      ((fderiv 𝕜 (Matrix.det : Matrix n n 𝕜 → 𝕜) (A x)).comp L) (A' x) := by
+    have h := (Matrix.differentiable_det (L (A' x))).hasFDerivAt.comp (A' x) L.hasFDerivAt
+    rwa [hL, Equiv.apply_symm_apply] at h
   have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by
     have hAy : Matrix.of (A y).row = A y := by ext; simp only [Matrix.of_apply, Matrix.row_apply]
     simp [hL, A', hAy]
