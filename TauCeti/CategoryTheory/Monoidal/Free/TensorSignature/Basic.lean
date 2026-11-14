@@ -614,7 +614,7 @@ theorem monoidalNatIso_hom_app (X : S.FreeMonoidal) :
 theorem monoidalNatIso_hom_app_of (a : S.Obj) :
     (monoidalNatIso he).hom.app (of a) = (e a).hom := by rfl
 
-instance : NatTrans.IsMonoidal (monoidalNatIso he).hom where
+instance isMonoidal_monoidalNatIso_hom : NatTrans.IsMonoidal (monoidalNatIso he).hom where
   unit := by
     rw [monoidalNatIso_hom_app, wordIso_tensorUnit_hom, Functor.Monoidal.ε_η_assoc]
   tensor X Y := by

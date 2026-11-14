@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 
 /-!
-# Monoidal natural automorphisms
+# Monoidal natural automorphisms and the category of strong monoidal functors
 
 Mathlib makes the bundled lax monoidal functors `LaxMonoidalFunctor C D` into a category whose
 morphisms are the monoidal natural transformations, so for a lax monoidal functor `F` the group
@@ -28,6 +28,12 @@ acting on the pivotal structures of a rigid monoidal category.
 A natural transformation between lax monoidal functors that is an epimorphism at the tensor unit
 and compatible with the tensorators is already monoidal: compatibility with the unit comparisons
 follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
+
+Bundled strong monoidal functors `TauCeti.MonoidalFunctor C D`, with the monoidal natural
+transformations as morphisms, embed fully faithfully into `LaxMonoidalFunctor C D`
+(`TauCeti.MonoidalFunctor.fullyFaithfulForget`). Their isomorphisms are the monoidal natural
+isomorphisms, so the core of this category is the groupoid of strong monoidal functors in which
+universal properties of free monoidal categories are stated.
 -/
 
 public section
@@ -133,3 +139,107 @@ theorem of_tensor {F G : C ⥤ D} [F.LaxMonoidal] [G.LaxMonoidal] (τ : F ⟶ G)
   tensor := h
 
 end CategoryTheory.NatTrans.IsMonoidal
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable (C : Type u₁) [Category.{v₁} C] [MonoidalCategory C]
+variable (D : Type u₂) [Category.{v₂} D] [MonoidalCategory D]
+
+/-- Bundled strong monoidal functors. They form a category whose morphisms are the monoidal
+natural transformations, which embeds fully faithfully into `LaxMonoidalFunctor C D`. -/
+structure MonoidalFunctor extends C ⥤ D where
+  /-- The strong monoidal structure of the underlying functor. -/
+  monoidal : toFunctor.Monoidal := by infer_instance
+
+namespace MonoidalFunctor
+
+attribute [instance] monoidal
+
+variable {C D}
+
+/-- Constructor for `MonoidalFunctor C D`. -/
+@[expose, simps toFunctor]
+def of (F : C ⥤ D) [F.Monoidal] : MonoidalFunctor C D where
+  toFunctor := F
+
+/-- The underlying lax monoidal functor of a strong monoidal functor. -/
+@[expose, simps! toFunctor]
+def toLaxMonoidalFunctor (F : MonoidalFunctor C D) : LaxMonoidalFunctor C D :=
+  LaxMonoidalFunctor.of F.toFunctor
+
+/-- The type of monoidal natural transformations between strong monoidal functors. -/
+@[ext]
+structure Hom (F G : MonoidalFunctor C D) where
+  /-- The underlying natural transformation. -/
+  hom : F.toFunctor ⟶ G.toFunctor
+  isMonoidal : NatTrans.IsMonoidal hom := by infer_instance
+
+attribute [instance] Hom.isMonoidal
+
+/-- Strong monoidal functors and monoidal natural transformations. -/
+instance : Category (MonoidalFunctor C D) where
+  Hom := Hom
+  comp α β := ⟨α.hom ≫ β.hom, inferInstance⟩
+  id _ := ⟨𝟙 _, inferInstance⟩
+
+@[ext]
+theorem hom_ext {F G : MonoidalFunctor C D} {α β : F ⟶ G} (h : α.hom = β.hom) : α = β :=
+  Hom.ext h
+
+@[simp]
+theorem id_hom (F : MonoidalFunctor C D) : Hom.hom (𝟙 F) = 𝟙 F.toFunctor :=
+  (rfl)
+
+@[reassoc, simp]
+theorem comp_hom {F G H : MonoidalFunctor C D} (α : F ⟶ G) (β : G ⟶ H) :
+    (α ≫ β).hom = α.hom ≫ β.hom :=
+  (rfl)
+
+/-- Constructor for morphisms of strong monoidal functors. -/
+@[expose, simps]
+def homMk {F G : MonoidalFunctor C D} (f : F.toFunctor ⟶ G.toFunctor) [NatTrans.IsMonoidal f] :
+    F ⟶ G :=
+  ⟨f, inferInstance⟩
+
+/-- Constructor for isomorphisms of strong monoidal functors. -/
+@[expose, simps]
+def isoMk {F G : MonoidalFunctor C D} (e : F.toFunctor ≅ G.toFunctor)
+    [NatTrans.IsMonoidal e.hom] : F ≅ G where
+  hom := homMk e.hom
+  inv := homMk e.inv
+
+variable (C D) in
+/-- The forgetful functor from strong to lax monoidal functors. -/
+@[expose, simps]
+def forget : MonoidalFunctor C D ⥤ LaxMonoidalFunctor C D where
+  obj F := F.toLaxMonoidalFunctor
+  map α := ⟨α.hom, α.isMonoidal⟩
+
+variable (C D) in
+/-- The forgetful functor from strong to lax monoidal functors is fully faithful. -/
+def fullyFaithfulForget : (forget C D).FullyFaithful where
+  preimage α := ⟨α.hom, α.isMonoidal⟩
+
+instance : (forget C D).Full :=
+  (fullyFaithfulForget C D).full
+
+instance : (forget C D).Faithful :=
+  (fullyFaithfulForget C D).faithful
+
+/-- The natural isomorphism between the underlying functors of an isomorphism of strong monoidal
+functors. -/
+@[expose, simps]
+def toFunctorIso {F G : MonoidalFunctor C D} (e : F ≅ G) : F.toFunctor ≅ G.toFunctor where
+  hom := e.hom.hom
+  inv := e.inv.hom
+  hom_inv_id := by rw [← comp_hom, e.hom_inv_id, id_hom]
+  inv_hom_id := by rw [← comp_hom, e.inv_hom_id, id_hom]
+
+instance {F G : MonoidalFunctor C D} (e : F ≅ G) : NatTrans.IsMonoidal (toFunctorIso e).hom :=
+  e.hom.isMonoidal
+
+end MonoidalFunctor
+
+end TauCeti
