@@ -10,6 +10,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Local coefficient systems on topological spaces
@@ -85,6 +86,14 @@ theorem pullback_obj_obj {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
     (x : FundamentalGroupoid X) :
     ((pullback (R := R) f).obj L).obj x = L.obj ((FundamentalGroupoid.map f).obj x) :=
   rfl
+
+/-- The fibres of a pulled-back local coefficient system are fibres of the original system, so
+they are projective when those are. -/
+instance projective_pullback_obj_obj {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    (L : LocalCoefficientSystem.{u, v₂, w} R Y) [∀ y, Projective (L.obj y)]
+    (x : FundamentalGroupoid X) :
+    Projective (((pullback (R := R) f).obj L).obj x) :=
+  inferInstanceAs (Projective (L.obj _))
 
 @[simp]
 theorem pullback_obj_map {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
