@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
+import TauCeti.Algebra.Polynomial.OfFn
 import TauCeti.NumberTheory.GeometryOfNumbers.LinearForms
 
 /-!
@@ -18,7 +19,7 @@ Let `β₀, …, βₙ` be `n + 1` pairwise distinct real numbers, so that the V
 bounds `a₀, …, aₙ` whose product is at least `|det V|`, Minkowski's linear forms theorem
 (`Matrix.exists_ne_zero_int_abs_sum_mul_le`) produces a nonzero integer vector `z` satisfying
 `|∑ₖ βᵢ ^ k zₖ| ≤ aᵢ` for every `i`. Assembling `z` as the coefficients of
-`P = ∑ₖ C (zₖ) * X ^ k ∈ ℤ[X]` gives a nonzero integer polynomial of degree at most `n` with
+`P = ofFn (n + 1) z ∈ ℤ[X]` gives a nonzero integer polynomial of degree at most `n` with
 `|P(βᵢ)| ≤ aᵢ`, while inverting `V` as a continuous linear equivalence on `ℝ ^ (n + 1)` bounds the
 coefficient sup norm `P.supNorm` by `c * ‖a‖` for a constant `c ≥ 1` depending only on `β`.
 
@@ -61,16 +62,11 @@ theorem exists_one_le_forall_exists_ne_zero_abs_aeval_le_supNorm_le {n : ℕ}
   set c := max 1 ‖(e.symm : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ))‖
   refine ⟨c, le_max_left _ _, fun a ha hprod ↦ ?_⟩
   obtain ⟨z, hz0, hz⟩ := V.exists_ne_zero_int_abs_sum_mul_le hdet ha hprod
-  set P : ℤ[X] := ∑ k : Fin (n + 1), C (z k) * X ^ (k : ℕ)
-  have hcoeff (k : Fin (n + 1)) : P.coeff k = z k := by
-    simp only [P, finsetSum_coeff, coeff_C_mul_X_pow]
-    simp [Fin.val_inj]
-  have hP0 : P ≠ 0 := fun h0 ↦ hz0 <| _root_.funext fun k : Fin (n + 1) ↦
-    (hcoeff k).symm.trans (by simp [h0])
-  have hPdeg : P.natDegree ≤ n := natDegree_sum_le_of_forall_le _ _ fun k _ ↦
-    (natDegree_C_mul_X_pow_le _ _).trans (Nat.lt_succ_iff.1 k.isLt)
+  set P : ℤ[X] := ofFn (n + 1) z
+  have hP0 : P ≠ 0 := fun h0 ↦ hz0 (injective_ofFn (n + 1) (h0.trans (ofFn_zero _).symm))
+  have hPdeg : P.natDegree ≤ n := Nat.lt_succ_iff.1 (ofFn_natDegree_lt n.succ_pos z)
   have heval (i : Fin (n + 1)) : aeval (β i) P = ∑ k, V i k * (z k : ℝ) := by
-    simp [P, map_sum, V, Matrix.vandermonde, mul_comm]
+    simp [P, aeval_def, V, Matrix.vandermonde, mul_comm]
   -- Invert `V` continuously to bound the integer coefficient vector `z` by `c * ‖a‖`.
   set zR : Fin (n + 1) → ℝ := fun k ↦ z k
   have hez : ‖e zR‖ ≤ ‖a‖ := (pi_norm_le_iff_of_nonneg (norm_nonneg a)).2 fun i ↦ by
@@ -87,9 +83,8 @@ theorem exists_one_le_forall_exists_ne_zero_abs_aeval_le_supNorm_le {n : ℕ}
     rw [P.supNorm_eq_iSup]
     refine ciSup_le fun m ↦ ?_
     by_cases hm : m < n + 1
-    · simpa [hcoeff ⟨m, hm⟩, zR, Int.norm_eq_abs] using norm_le_pi_norm zR ⟨m, hm⟩
-    · rw [coeff_eq_zero_of_natDegree_lt (by omega), norm_zero]
-      exact norm_nonneg zR
+    · simpa [P, hm, zR, Int.norm_eq_abs] using norm_le_pi_norm zR ⟨m, hm⟩
+    · simp [P, not_lt.1 hm]
   exact ⟨P, hP0, hPdeg, fun i ↦ heval i ▸ hz i, hPsup.trans hzR⟩
 
 end Polynomial

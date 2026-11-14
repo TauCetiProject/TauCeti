@@ -239,7 +239,7 @@ private theorem exists_real_root_of_poly_wirsing {m : ℕ} {ξ H w' : ℝ}
     have hγnorm : ‖γ j‖ ≤ |ξ| + m + 2 := by simpa [γ, Complex.norm_real] using hbound j
     exact hjH.trans_lt (hpsup ▸ hPloc.trans_le (mul_le_mul_of_nonneg_right
       (pow_le_pow_left₀ (by positivity) (by gcongr) _) P.supNorm_nonneg))
-  obtain ⟨α, hinj, henum, _, hdist⟩ := p.exists_isRootEnumeration_of_forall_norm_eval_lt
+  obtain ⟨α, _, henum, _, hdist⟩ := p.exists_isRootEnumeration_of_forall_norm_eval_lt
     (by simpa [Fintype.card_fin] using Polynomial.natDegree_map_le.trans hPdeg)
     (by norm_num) (by norm_num) hγsep (by simpa [Fintype.card_fin] using hγeval)
   -- Every root `α j` (`j ≠ 0`) stays at distance `≥ 1` from `ξ`, and all have norm `≤ |ξ| + m + 3`.
@@ -256,10 +256,10 @@ private theorem exists_real_root_of_poly_wirsing {m : ℕ} {ξ H w' : ℝ}
     have hγj : ‖γ j‖ ≤ |ξ| + m + 2 := by simpa [γ, Complex.norm_real] using hbound j
     linarith [hdist j]
   have hdist0 : ‖(ξ : ℂ) - α 0‖ < 1 / 2 := by simpa [γ, wirsingPoints] using hdist 0
-  have henumZ : P.IsRootEnumeration α := (P.isRootEnumeration_map α).1 henum
+  have henumZ : P.IsRootEnumeration α := by simpa [p] using henum
   obtain ⟨x, hxC, hxP⟩ :=
     henumZ.exists_ofReal_eq_and_aeval_eq_zero_of_norm_sub_lt (i := 0) (x := ξ) fun j hj ↦
-      hdist0.trans_le ((by norm_num : (1 / 2 : ℝ) ≤ 1).trans (hfar j (hinj.ne_iff.1 hj)))
+      hdist0.trans_le ((by norm_num : (1 / 2 : ℝ) ≤ 1).trans (hfar j (ne_of_apply_ne α hj)))
   have hxne : x ≠ ξ :=
     fun h ↦ aeval_ne_zero_of_not_natDegree_minpoly_rat_le hξ hP0 hPdeg (h ▸ hxP)
   have hest := henum.supNorm_mul_norm_sub_le_two_mul_pow_mul_norm_eval 0
@@ -393,8 +393,7 @@ private theorem exists_real_approx_lt_eps {m : ℕ} {ξ u ε : ℝ}
   have hmin : minpoly ℚ (x : ℂ) = minpoly ℚ x :=
     minpoly.algebraMap_eq (algebraMap ℝ ℂ).injective x
   simp only [Set.mem_preimage, mem_algebraicApproximations, hmin, ← Complex.ofReal_sub,
-    Complex.norm_real, Real.norm_eq_abs,
-    show naiveHeight (x : ℂ) = naiveHeight x from naiveHeight_map Complex.ofRealHom x]
+    Complex.norm_real, Real.norm_eq_abs, naiveHeight_eq_of_minpoly_eq hmin]
   exact ⟨halg.algebraMap, hxdeg, hxpos, hxle⟩
 
 /-! ### Real algebraic approximants and the infinite-exponent regime -/
@@ -429,16 +428,15 @@ private theorem infinite_preimage_ofReal_of_not_natDegree_le {m : ℕ} {ξ w : �
   have hq_pos : 0 < w₀ / (w₀ - m) := div_pos hw₀_pos hwm_pos
   have hu : max w 0 < w₀ / (w₀ - m) := max_lt ((ENNReal.ofReal_lt_ofReal_iff hq_pos).1 hw) hq_pos
   set S := Complex.ofReal ⁻¹' algebraicApproximations (m + 1) ξ (max w 0)
-  have hS : S.Infinite := fun hfin ↦
-    @Set.infinite_of_forall_exists_lt (Set.Ioi (0 : ℝ)) _
-      (Subtype.val ⁻¹' ((|ξ - ·|) '' S)) ⟨⟨1, zero_lt_one⟩⟩
-      (fun ε ↦ by
-        obtain ⟨x, hx, hlt⟩ := exists_real_approx_lt_eps hξ htop hw₀ (le_max_right w 0) hu ε.2
-        have hx0 : 0 < |ξ - x| := by
-          simpa [← Complex.ofReal_sub, Complex.norm_real] using
-            (mem_algebraicApproximations.1 hx).2.2.1
-        exact ⟨⟨|ξ - x|, hx0⟩, ⟨x, hx, rfl⟩, hlt⟩)
-      ((hfin.image _).preimage Subtype.val_injective.injOn)
+  have hS : S.Infinite :=
+    Set.Infinite.of_image (fun x ↦ |ξ - x|⁻¹) <| Set.infinite_of_forall_exists_gt fun M ↦ by
+      have hM : 0 < max 1 M := zero_lt_one.trans_le (le_max_left 1 M)
+      obtain ⟨x, hx, hlt⟩ := exists_real_approx_lt_eps hξ htop hw₀ (le_max_right w 0) hu
+        (inv_pos.2 hM)
+      have hx0 : 0 < |ξ - x| := by
+        simpa [← Complex.ofReal_sub, Complex.norm_real] using
+          (mem_algebraicApproximations.1 hx).2.2.1
+      exact ⟨_, ⟨x, hx, rfl⟩, (le_max_right 1 M).trans_lt ((lt_inv_comm₀ hM hx0).2 hlt)⟩
   exact hS.mono (Set.preimage_mono (algebraicApproximations_antitone _ _ (le_max_left w 0)))
 
 /-- **Wirsing's theorem with real algebraic approximants** (Wirsing 1961; Bugeaud, Theorem 3.4).
@@ -486,17 +484,20 @@ theorem infinite_preimage_ofReal_algebraicApproximations_of_lt_max {n : ℕ} (hn
       exact infinite_preimage_ofReal_of_not_natDegree_le halg hwdiv
 
 /-- Single-polynomial complex root location: if `ξ` is transcendental and a polynomial `P ∈ ℤ[X]`
-of degree at most `n ≥ 1` has sufficiently large `P.supNorm` and satisfies
+of degree at most `n` has sufficiently large `P.supNorm` and satisfies
 `0 < |P(ξ)| ≤ P.supNorm ^ (-(n (u + 2)))`, then `P` has a root in `algebraicApproximations n ξ u`
 within `8 (|ξ| + 1) / P.supNorm` of `ξ`. -/
-private theorem exists_mem_algebraicApproximations_of_abs_aeval_le {n : ℕ} (hn1 : 1 ≤ n) {ξ u : ℝ}
+private theorem exists_mem_algebraicApproximations_of_abs_aeval_le {n : ℕ} {ξ u : ℝ}
     (htrans : ¬IsAlgebraic ℚ ξ) (hu0 : 0 < u) {P : ℤ[X]} (hPdeg : P.natDegree ≤ n)
-    (hHP1 : 1 < P.supNorm) (hKP : 8 * (|ξ| + 1) < P.supNorm)
     (hK2 : 8 * (|ξ| + 1) * (2 ^ n : ℝ) ^ (u + 1) < P.supNorm)
     (hPpos : 0 < |aeval ξ P|) (hPle : |aeval ξ P| ≤ P.supNorm ^ (-(n * (u + 2)))) :
     ∃ α ∈ algebraicApproximations n ξ u, ‖(ξ : ℂ) - α‖ ≤ 8 * (|ξ| + 1) / P.supNorm := by
-  have hHP0 : 0 < P.supNorm := zero_lt_one.trans hHP1
   set K : ℝ := 8 * (|ξ| + 1)
+  have hKP : K < P.supNorm :=
+    (le_mul_of_one_le_right (by positivity)
+      (Real.one_le_rpow (one_le_pow₀ one_le_two) (by linarith))).trans_lt hK2
+  have hHP1 : 1 < P.supNorm := (by linarith [abs_nonneg ξ] : 1 < K).trans hKP
+  have hHP0 : 0 < P.supNorm := zero_lt_one.trans hHP1
   set r : ℝ := K * P.supNorm ^ (-(u + 2))
   have hr_inv : r ≤ K / P.supNorm := by
     rw [div_eq_mul_inv, ← Real.rpow_neg_one]
@@ -510,9 +511,8 @@ private theorem exists_mem_algebraicApproximations_of_abs_aeval_le {n : ℕ} (hn
       rw [mul_pow, ← Real.rpow_natCast (P.supNorm ^ (-(u + 2))) n, ← Real.rpow_mul hHP0.le]; ring_nf
     have hpsup : p.supNorm = P.supNorm := by simp [p]
     rw [P.norm_eval_map_algebraMap_ofReal, hquot_r, hpow_r, hpsup]
-    have h2n : (1 : ℝ) < 2 ^ n * P.supNorm := by
-      have : (2 : ℝ) ≤ 2 ^ n := by simpa using pow_le_pow_right₀ (by norm_num : (1 : ℝ) ≤ 2) hn1
-      nlinarith
+    have h2n : (1 : ℝ) < 2 ^ n * P.supNorm :=
+      one_lt_mul_of_le_of_lt (one_le_pow₀ one_le_two) hHP1
     exact (hPle.trans_lt (lt_mul_of_one_lt_right (by positivity) h2n)).trans_eq (by ring)
   obtain ⟨α, hαroot, hαr⟩ := p.exists_isRoot_norm_sub_lt_of_norm_eval_lt (ξ : ℂ)
     (Polynomial.natDegree_map_le.trans hPdeg) (by positivity)
@@ -549,7 +549,6 @@ private theorem exists_mem_algebraicApproximations_of_abs_aeval_le {n : ℕ} (hn
 private theorem exists_algebraicApprox_lt_eps_of_mahlerExponent_eq_top {n : ℕ} {ξ u ε : ℝ}
     (htop : mahlerExponent n ξ = ⊤) (hu0 : 0 < u) (hε_pos : 0 < ε) :
     ∃ α ∈ algebraicApproximations n ξ u, ‖(ξ : ℂ) - α‖ < ε := by
-  have hn1 : 1 ≤ n := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at htop
   have htrans : ¬IsAlgebraic ℚ ξ := fun halg ↦ by
     have := halg.mahlerExponent_le n
     simp [htop] at this
@@ -557,7 +556,7 @@ private theorem exists_algebraicApprox_lt_eps_of_mahlerExponent_eq_top {n : ℕ}
   have hS : (linearFormApproximations (fun j : Fin n ↦ ξ ^ (j.val + 1)) w).Infinite :=
     infinite_linearFormApproximations_of_lt (by simp [← mahlerExponent_def, htop])
   set K : ℝ := 8 * (|ξ| + 1)
-  set M : ℝ := max 1 (max K (max (K / ε) (K * (2 ^ n : ℝ) ^ (u + 1))))
+  set M : ℝ := max (K / ε) (K * (2 ^ n : ℝ) ^ (u + 1))
   obtain ⟨x, hxS, hxM⟩ :
       ∃ x ∈ linearFormApproximations (fun j : Fin n ↦ ξ ^ (j.val + 1)) w, M < ‖x‖ := by
     by_contra! hle
@@ -565,26 +564,24 @@ private theorem exists_algebraicApprox_lt_eps_of_mahlerExponent_eq_top {n : ℕ}
       fun x hx ↦ mem_closedBall_zero_iff.2 (hle x hx))
   rw [mem_linearFormApproximations, ← aeval_linearFormPoly, ← supNorm_linearFormPoly] at hxS
   rw [← supNorm_linearFormPoly] at hxM
-  simp only [M, max_lt_iff] at hxM
-  obtain ⟨hHP1, hKP, hKε, hK2⟩ := hxM
-  obtain ⟨α, hαmem, hαle⟩ := exists_mem_algebraicApproximations_of_abs_aeval_le hn1 htrans hu0
-    (natDegree_linearFormPoly_le x) hHP1 hKP hK2 hxS.1 hxS.2
+  obtain ⟨hKε, hK2⟩ := max_lt_iff.1 hxM
+  obtain ⟨α, hαmem, hαle⟩ := exists_mem_algebraicApproximations_of_abs_aeval_le htrans hu0
+    (natDegree_linearFormPoly_le x) hK2 hxS.1 hxS.2
   refine ⟨α, hαmem, hαle.trans_lt ?_⟩
-  rw [div_lt_iff₀ (zero_lt_one.trans hHP1)]
+  rw [div_lt_iff₀ ((by positivity : 0 < K * (2 ^ n : ℝ) ^ (u + 1)).trans hK2)]
   linarith [(div_lt_iff₀ hε_pos).1 hKε]
 
 /-- When `wₙ(ξ) = ⊤` and `0 < u`, there are infinitely many algebraic approximations to `ξ` of
 degree at most `n` and exponent `u`. -/
 private theorem infinite_algebraicApproximations_of_mahlerExponent_eq_top {n : ℕ} {ξ u : ℝ}
     (htop : mahlerExponent n ξ = ⊤) (hu0 : 0 < u) :
-    (algebraicApproximations n ξ u).Infinite := fun hfin ↦
-  @Set.infinite_of_forall_exists_lt (Set.Ioi (0 : ℝ)) _
-    (Subtype.val ⁻¹' ((fun α ↦ ‖(ξ : ℂ) - α‖) '' algebraicApproximations n ξ u))
-    ⟨⟨1, zero_lt_one⟩⟩
-    (fun ε ↦ by
-      obtain ⟨α, hα, hlt⟩ := exists_algebraicApprox_lt_eps_of_mahlerExponent_eq_top htop hu0 ε.2
-      exact ⟨⟨‖(ξ : ℂ) - α‖, (mem_algebraicApproximations.1 hα).2.2.1⟩, ⟨α, hα, rfl⟩, hlt⟩)
-    ((hfin.image _).preimage Subtype.val_injective.injOn)
+    (algebraicApproximations n ξ u).Infinite :=
+  Set.Infinite.of_image (fun α ↦ ‖(ξ : ℂ) - α‖⁻¹) <| Set.infinite_of_forall_exists_gt fun M ↦ by
+    have hM : 0 < max 1 M := zero_lt_one.trans_le (le_max_left 1 M)
+    obtain ⟨α, hα, hlt⟩ := exists_algebraicApprox_lt_eps_of_mahlerExponent_eq_top htop hu0
+      (inv_pos.2 hM)
+    exact ⟨_, ⟨α, hα, rfl⟩, (le_max_right 1 M).trans_lt
+      ((lt_inv_comm₀ hM (mem_algebraicApproximations.1 hα).2.2.1).2 hlt)⟩
 
 /-- **Infinite Koksma and Mahler exponents coincide.** For every `n : ℕ` and `ξ : ℝ`,
 `w*ₙ(ξ) = ⊤ ↔ wₙ(ξ) = ⊤`: Mahler's `U`-numbers and Koksma's `U*`-numbers agree in every degree. -/

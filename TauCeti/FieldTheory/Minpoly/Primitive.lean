@@ -246,24 +246,27 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
     (associated_map_primitiveMinpoly hx).dvd_iff_dvd_left]
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
 
-/-- Any root in a characteristic-zero division ring of a nonzero integer polynomial is algebraic
-over `ℚ`. -/
-theorem isAlgebraic_rat_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P ≠ 0) (hx : aeval x P = 0) :
+/-- Any root in a `ℚ`-algebra of a nonzero integer polynomial is algebraic over `ℚ`. -/
+theorem isAlgebraic_rat_of_aeval_eq_zero {A : Type*} [Ring A] [Algebra ℚ A] {x : A} {P : ℤ[X]}
+    (hP : P ≠ 0) (hx : aeval x P = 0) :
     IsAlgebraic ℚ x :=
   IsAlgebraic.extendScalars (RingHom.injective_int (algebraMap ℤ ℚ)) ⟨P, hP, hx⟩
 
 /-- If a nonzero integer polynomial `P` vanishes at `x`, then `x` has degree over `ℚ` at most
 `P.natDegree`. -/
-theorem natDegree_minpoly_rat_le_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P ≠ 0)
-    (hx : aeval x P = 0) : (minpoly ℚ x).natDegree ≤ P.natDegree :=
-  natDegree_primitiveMinpoly x ▸
-    Polynomial.natDegree_le_of_dvd
-      ((primitiveMinpoly_dvd_iff (isAlgebraic_rat_of_aeval_eq_zero hP hx)).2 hx) hP
+theorem natDegree_minpoly_rat_le_of_aeval_eq_zero {A : Type*} [Ring A] [Algebra ℚ A] {x : A}
+    {P : ℤ[X]} (hP : P ≠ 0) (hx : aeval x P = 0) :
+    (minpoly ℚ x).natDegree ≤ P.natDegree := by
+  have hinj := RingHom.injective_int (algebraMap ℤ ℚ)
+  rw [← natDegree_map_eq_of_injective hinj P]
+  exact Polynomial.natDegree_le_natDegree
+    (minpoly.degree_le_of_ne_zero ℚ x ((Polynomial.map_ne_zero_iff hinj).2 hP)
+      (by rwa [aeval_map_algebraMap]))
 
 /-- If `x` is not algebraic over `ℚ` of degree at most `n`, no nonzero integer polynomial of
 degree at most `n` vanishes at `x`. -/
-theorem aeval_ne_zero_of_not_natDegree_minpoly_rat_le {x : F} {n : ℕ}
-    (hx : ¬(IsAlgebraic ℚ x ∧ (minpoly ℚ x).natDegree ≤ n)) {P : ℤ[X]} (hP0 : P ≠ 0)
+theorem aeval_ne_zero_of_not_natDegree_minpoly_rat_le {A : Type*} [Ring A] [Algebra ℚ A] {x : A}
+    {n : ℕ} (hx : ¬(IsAlgebraic ℚ x ∧ (minpoly ℚ x).natDegree ≤ n)) {P : ℤ[X]} (hP0 : P ≠ 0)
     (hP : P.natDegree ≤ n) : aeval x P ≠ 0 := fun h0 ↦
   hx ⟨isAlgebraic_rat_of_aeval_eq_zero hP0 h0,
     (natDegree_minpoly_rat_le_of_aeval_eq_zero hP0 h0).trans hP⟩

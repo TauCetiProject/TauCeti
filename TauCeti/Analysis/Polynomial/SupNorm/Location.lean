@@ -78,30 +78,6 @@ private theorem div_two_mul_norm_add_one_mul_max_le_norm_sub {z α : ℂ} {r : �
       _ ≤ ‖α‖ - ‖z‖ := by linarith
       _ ≤ ‖z - α‖ := htri
 
-/-- Multiplying the single-factor estimate over a multiset of roots bounds the product of
-`max 1 ‖α‖` by the product of `‖z - α‖`. -/
-private theorem multiset_prod_max_le_norm_prod_sub (s : Multiset ℂ) (z : ℂ) {r : ℝ}
-    (hr₀ : 0 ≤ r) (hr₁ : r ≤ 1) (h : ∀ α ∈ s, r ≤ ‖z - α‖) :
-    (r / (2 * (‖z‖ + 1))) ^ Multiset.card s * (s.map fun α ↦ max 1 ‖α‖).prod ≤
-      ‖(s.map fun α ↦ z - α).prod‖ := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons α s ih =>
-    simp only [Multiset.card_cons, Multiset.map_cons, Multiset.prod_cons, pow_succ, norm_mul]
-    have hα := div_two_mul_norm_add_one_mul_max_le_norm_sub hr₀ hr₁
-      (h α (Multiset.mem_cons_self α s))
-    have hs := ih fun β hβ ↦ h β (Multiset.mem_cons_of_mem hβ)
-    have hpos : 0 ≤ (s.map fun β ↦ max 1 ‖β‖).prod :=
-      Multiset.prod_nonneg fun x hx ↦ by
-        obtain ⟨β, -, rfl⟩ := Multiset.mem_map.1 hx
-        positivity
-    calc (r / (2 * (‖z‖ + 1))) ^ Multiset.card s * (r / (2 * (‖z‖ + 1))) *
-          (max 1 ‖α‖ * (s.map fun β ↦ max 1 ‖β‖).prod)
-        = (r / (2 * (‖z‖ + 1)) * max 1 ‖α‖) *
-            ((r / (2 * (‖z‖ + 1))) ^ Multiset.card s * (s.map fun β ↦ max 1 ‖β‖).prod) := by ring
-      _ ≤ ‖z - α‖ * ‖(s.map fun β ↦ z - β).prod‖ :=
-          mul_le_mul hα hs (by positivity) (norm_nonneg _)
-
 /-- If `p ∈ ℂ[X]` has no root within `r` (`0 ≤ r ≤ 1`) of `z`, then its Mahler measure is bounded
 in terms of `‖p.eval z‖`: `(r / (2 (‖z‖ + 1))) ^ deg p * M(p) ≤ ‖p(z)‖`. -/
 theorem pow_mul_mahlerMeasure_le_norm_eval_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {r : ℝ}
@@ -114,8 +90,12 @@ theorem pow_mul_mahlerMeasure_le_norm_eval_of_forall_isRoot_le_norm_sub (p : ℂ
     conv_lhs => rw [(IsAlgClosed.splits p).eq_prod_roots]
     simp [eval_multiset_prod]
   rw [heval, norm_mul, mahlerMeasure_eq_leadingCoeff_mul_prod_roots, ← hcards]
-  have hprod := multiset_prod_max_le_norm_prod_sub p.roots z hr₀ hr₁
-    fun α hα ↦ hroot α ((mem_roots hp).1 hα)
+  have hprod : (r / (2 * (‖z‖ + 1))) ^ Multiset.card p.roots *
+      (p.roots.map fun α ↦ max 1 ‖α‖).prod ≤ ‖(p.roots.map fun α ↦ z - α).prod‖ := by
+    rw [← Multiset.prod_replicate, ← Multiset.map_const' p.roots, ← Multiset.prod_map_mul,
+      Multiset.norm_prod_map]
+    exact Multiset.prod_map_le_prod_map₀ _ _ (fun α _ ↦ by positivity) fun α hα ↦
+      div_two_mul_norm_add_one_mul_max_le_norm_sub hr₀ hr₁ (hroot α ((mem_roots hp).1 hα))
   calc (r / (2 * (‖z‖ + 1))) ^ Multiset.card p.roots *
         (‖p.leadingCoeff‖ * (p.roots.map fun α ↦ max 1 ‖α‖).prod)
       = ‖p.leadingCoeff‖ *

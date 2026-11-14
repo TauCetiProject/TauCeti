@@ -106,6 +106,14 @@ theorem isRootEnumeration_map {S : Type*} [CommRing S] [Algebra R S] [Algebra S 
   rw [isRootEnumeration_iff, isRootEnumeration_iff, Polynomial.map_map,
     ← IsScalarTower.algebraMap_eq]
 
+/-- Base change from `ℤ[X]` along `Int.castRingHom S` preserves root enumerations (`simp`-normal
+companion to `isRootEnumeration_map` after `algebraMap_int_eq`). -/
+@[simp]
+theorem isRootEnumeration_map_intCastRingHom {S : Type*} [CommRing S] [Algebra S L]
+    (f : ℤ[X]) (x : ι → L) :
+    (f.map (Int.castRingHom S)).IsRootEnumeration x ↔ f.IsRootEnumeration x := by
+  simpa only [algebraMap_int_eq] using isRootEnumeration_map (R := ℤ) (S := S) f x
+
 namespace IsRootEnumeration
 
 /-- The number of entries of an enumeration is the number of roots of `f` in `L`. -/
