@@ -107,6 +107,14 @@ section DegreeZero
 variable {G : Type u} [Group G] [TopologicalSpace G] {U : Subgroup G}
   {A : Type v} [AddCommGroup A] [DistribMulAction U A]
 
+/-- A family of elements of `Coind_U^G A` over a space `P` is continuous, for the discrete topology
+on `Coind_U^G A`, as soon as `(p, x) ↦ F p x` is continuous on `P × G`, because `G` is compact. -/
+private theorem continuous_of_continuous_uncurry [CompactSpace G] [TopologicalSpace A]
+    [DiscreteTopology A] {P : Type*} [TopologicalSpace P]
+    {F : P → DiscreteCoind G U A} (hF : Continuous fun p : P × G ↦ F p.1 p.2) : Continuous F :=
+  (IsLocallyConstant.iff_continuous F).1 <| .of_uncurry_coe <|
+    (IsLocallyConstant.iff_continuous _).2 hF
+
 variable (G) in
 /-- The constant function at a `U`-invariant coefficient, as an element of `Coind_U^G A`. It is
 the inverse of the degree-zero Shapiro map. -/
@@ -324,14 +332,12 @@ variable [CompactSpace G]
 theorem coindCochain1_mem_Z1 :
     coindCochain1 w c hw hwmul hccont hccoc ∈ Z1 G (DiscreteCoind G U A) := by
   have hL := continuous_shapiroLift w c hw hccont
-  have hlc : IsLocallyConstant (coindCochain1 w c hw hwmul hccont hccoc) :=
-    .of_uncurry_coe <| (IsLocallyConstant.iff_continuous _).2 <|
-      (hL.comp (continuous_snd.mul continuous_fst)).sub (hL.comp continuous_snd)
-  refine mem_Z1_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 hlc, fun g h => ?_⟩
-  refine DiscreteCoind.ext fun x => ?_
-  simp only [DiscreteCoind.coe_add, Pi.add_apply, DiscreteCoind.coe_smul, coindCochain1_apply,
-    ← mul_assoc]
-  abel
+  refine mem_Z1_iff.2 ⟨continuous_of_continuous_uncurry ?_, fun g h => ?_⟩
+  · exact (hL.comp (continuous_snd.mul continuous_fst)).sub (hL.comp continuous_snd)
+  · refine DiscreteCoind.ext fun x => ?_
+    simp only [DiscreteCoind.coe_add, Pi.add_apply, DiscreteCoind.coe_smul, coindCochain1_apply,
+      ← mul_assoc]
+    abel
 
 /-- **The inverse Shapiro cochain, as a continuous `1`-cocycle.** -/
 noncomputable def coindCocycle1 : Z1 G (DiscreteCoind G U A) :=
@@ -593,8 +599,7 @@ theorem coindCochain2_mem_Z2 (hccoc : groupCohomology.IsCocycle₂ c) :
     coindCochain2 w c hw hwmul hccont ∈ Z2 G (DiscreteCoind G U A) := by
   have hg : Continuous fun p : (G × G) × G => p.2 * p.1.1 :=
     continuous_snd.mul (continuous_fst.comp continuous_fst)
-  refine mem_Z2_iff.2 ⟨(IsLocallyConstant.iff_continuous _).1 <| .of_uncurry_coe <|
-    (IsLocallyConstant.iff_continuous _).2 <| continuous_homogeneous2 hccont
+  refine mem_Z2_iff.2 ⟨continuous_of_continuous_uncurry <| continuous_homogeneous2 hccont
       (hw.comp continuous_snd) (hw.comp hg)
       (hw.comp (hg.mul (continuous_snd.comp continuous_fst))),
     isCocycle₂_coindCochain2 w c hw hwmul hccont hccoc⟩
@@ -631,9 +636,8 @@ makes the inverse construction descend to cohomology. -/
 theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
     coindCochain2 w c hw hwmul hccont ∈ B2 G (DiscreteCoind G U A) := by
   obtain ⟨α, hαcont, hα⟩ := mem_B2_iff.1 hcB
-  have hN : IsLocallyConstant fun p : G × G => homogeneous1 α (w p.1) (w p.2) :=
-    (IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous1 hαcont
-      (hw.comp continuous_fst) (hw.comp continuous_snd))
+  have hN : Continuous fun p : G × G => homogeneous1 α (w p.1) (w p.2) :=
+    continuous_homogeneous1 hαcont (hw.comp continuous_fst) (hw.comp continuous_snd)
   refine mem_B2_iff.2 ⟨fun g => DiscreteCoind.mk G U A
     (fun y => homogeneous1 α (w y) (w (y * g)))
     ((IsLocallyConstant.iff_continuous _).2 (continuous_homogeneous1 hαcont hw
@@ -642,7 +646,7 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
       have h1 : (u : G) * y * g = (u : G) * (y * g) := by group
       rw [h1, hwmul u y, hwmul u (y * g)]
       exact homogeneous1_smul α u (w y) (w (y * g))), ?_, ?_⟩
-  · exact (IsLocallyConstant.iff_continuous _).1 <| .of_uncurry_coe <| hN.comp_continuous <|
+  · exact continuous_of_continuous_uncurry <| hN.comp <|
       continuous_snd.prodMk (continuous_snd.mul continuous_fst)
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q
@@ -664,19 +668,18 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
   have hfcont : Continuous (f : G × G → DiscreteCoind G U A) := (mem_Z2_iff.1 f.2).1
   have hfcoc : groupCohomology.IsCocycle₂ (f : G × G → DiscreteCoind G U A) :=
     (mem_Z2_iff.1 f.2).2
-  have hN : IsLocallyConstant (shapiroPrimitive2 w (f : G × G → DiscreteCoind G U A)) :=
-    (IsLocallyConstant.iff_continuous _).2
-      (continuous_shapiroPrimitive2 w hw (f : G × G → DiscreteCoind G U A) hfcont)
+  have hN : Continuous (shapiroPrimitive2 w (f : G × G → DiscreteCoind G U A)) :=
+    continuous_shapiroPrimitive2 w hw (f : G × G → DiscreteCoind G U A) hfcont
   refine mem_B2_iff.2 ⟨fun g => DiscreteCoind.mk G U A
     (fun y => shapiroPrimitive2 w (f : G × G → DiscreteCoind G U A) (y, y * g))
     ((IsLocallyConstant.iff_continuous _).2
-      (hN.continuous.comp (continuous_id.prodMk (continuous_mul_const g))))
+      (hN.comp (continuous_id.prodMk (continuous_mul_const g))))
     (fun u y => by
       have hu : (u : G) * y * g = (u : G) * (y * g) := by group
       rw [hu]
       exact shapiroPrimitive2_smul w hwmul (f : G × G → DiscreteCoind G U A) u y (y * g)),
     ?_, ?_⟩
-  · exact (IsLocallyConstant.iff_continuous _).1 <| .of_uncurry_coe <| hN.comp_continuous <|
+  · exact continuous_of_continuous_uncurry <| hN.comp <|
       continuous_snd.prodMk (continuous_snd.mul continuous_fst)
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q

@@ -203,7 +203,8 @@ theorem cupCochain_cochainsMap_right_id {X' Z' : TopRep.{max v w} R G} (P' : Top
     (a : (TopRep.homogeneousCochains X).X m) (b : (TopRep.homogeneousCochains Y).X n) :
     (cochainsMap (ContinuousMonoidHom.id G) h).f (m + n) (P.cupCochain m n a b) =
       P'.cupCochain m n ((cochainsMap (ContinuousMonoidHom.id G) f).f m a) b := by
-  have := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G) f (𝟙 Y) h hcompat m n a b
+  have := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G) f (𝟙 Y) h
+    (fun x y ↦ (hcompat x y).trans (congrArg (P'.bil (f x)) (TopRep.id_apply Y y).symm)) m n a b
   rw [cochainsMap_id] at this
   simpa only [HomologicalComplex.id_f, ConcreteCategory.id_apply] using this
 
@@ -217,7 +218,8 @@ theorem cupCochain_cochainsMap_left_id {Y' Z' : TopRep.{max v w} R G} (P' : TopP
     (a : (TopRep.homogeneousCochains X).X m) (b : (TopRep.homogeneousCochains Y).X n) :
     (cochainsMap (ContinuousMonoidHom.id G) h).f (m + n) (P.cupCochain m n a b) =
       P'.cupCochain m n a ((cochainsMap (ContinuousMonoidHom.id G) g).f n b) := by
-  have := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G) (𝟙 X) g h hcompat m n a b
+  have := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G) (𝟙 X) g h
+    (fun x y ↦ (hcompat x y).trans (congrArg (P'.bil · (g y)) (TopRep.id_apply X x).symm)) m n a b
   rw [cochainsMap_id] at this
   simpa only [HomologicalComplex.id_f, ConcreteCategory.id_apply] using this
 
