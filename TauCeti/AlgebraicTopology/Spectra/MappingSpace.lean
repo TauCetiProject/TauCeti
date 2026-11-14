@@ -34,9 +34,13 @@ subsets `S` of `Fin n` of `X_{#S} ∧ (G₀ K)_{#Sᶜ}`, every summand with `S �
 
 * `SymmetricSequence.tensorFreeZeroι X K n`: the isomorphism `X_n ∧ K ⟶ (X ⊗ G₀ K)_n`, natural in
   `X` and `K` and `Σ_n`-equivariant.
-* `SymmetricSpectrum.levelSmash X`: the functor `K ↦ X ∧ K`.
-* `SymmetricSpectrum.mappingSpace X`: the functor `Y ↦ Map(X, Y)`.
-* `SymmetricSpectrum.levelSmashMappingSpaceAdjunction X`: the adjunction `X ∧ - ⊣ Map(X, -)`.
+* `SymmetricSpectrum.levelSmash X` and `SymmetricSpectrum.levelSmashFunctor`: smashing spectra with
+  pointed simplicial sets, `X ↦ K ↦ X ∧ K`.
+* `SymmetricSpectrum.mappingSpace X` and `SymmetricSpectrum.mappingSpaceFunctor`: the pointed
+  mapping simplicial sets `(X, Y) ↦ Map(X, Y)`.
+* `SymmetricSpectrum.levelSmashMappingSpaceAdjunction X` and
+  `SymmetricSpectrum.levelSmashMappingSpaceAdjunction₂`: the adjunction `X ∧ - ⊣ Map(X, -)` and its
+  parametrized form in both variables.
 * `SymmetricSpectrum.levelSmashUnitIso X`: the unit isomorphism `X ∧ S⁰ ≅ X`.
 * `SymmetricSpectrum.mappingSpaceSimplexEquiv`: the `m`-simplices of `Map(X, Y)` are the maps
   `X ∧ Δ[m]₊ ⟶ Y`.
@@ -283,6 +287,123 @@ lemma unitHomMappingSpaceEquiv_symm_apply (X Y : SymmetricSpectrum) (f : X ⟶ Y
     (unitHomMappingSpaceEquiv X Y).symm f =
       (levelSmashMappingSpaceAdjunction X).homEquiv _ _ ((levelSmashUnitIso X).hom ≫ f) := by
   simp [unitHomMappingSpaceEquiv]
+
+/-- Smashing a symmetric spectrum with a pointed simplicial set, curried in both variables:
+`X ↦ K ↦ X ∧ K`. -/
+noncomputable abbrev levelSmashFunctor :
+    SymmetricSpectrum ⥤ PointedSSet.{0} ⥤ SymmetricSpectrum :=
+  Mod.curriedTensor ⋙ (Functor.whiskeringLeft _ _ _).obj (SymmetricSequence.free 0)
+
+/-- The pointed mapping simplicial set `(X, Y) ↦ Map(X, Y)` of symmetric spectra, contravariant
+in `X` and covariant in `Y`. -/
+noncomputable abbrev mappingSpaceFunctor :
+    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} :=
+  Mod.ihomFunctor ⋙ (Functor.whiskeringRight _ _ _).obj
+    ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
+      (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0))
+
+instance (X : SymmetricSpectrum) : (levelSmash X).IsLeftAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
+
+instance (X : SymmetricSpectrum) : (mappingSpace X).IsRightAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isRightAdjoint
+
+instance (X : SymmetricSpectrum) : (levelSmashFunctor.obj X).IsLeftAdjoint :=
+  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
+
+instance (X : SymmetricSpectrumᵒᵖ) : (mappingSpaceFunctor.obj X).IsRightAdjoint :=
+  (levelSmashMappingSpaceAdjunction X.unop).isRightAdjoint
+
+/-- The parametrized adjunction between `(X, K) ↦ X ∧ K` and `(X, Y) ↦ Map(X, Y)`. -/
+noncomputable def levelSmashMappingSpaceAdjunction₂ :
+    levelSmashFunctor ⊣₂ mappingSpaceFunctor :=
+  ParametrizedAdjunction.mk' levelSmashMappingSpaceAdjunction fun {X X'} f {K Y} g ↦ by
+    rw [levelSmashMappingSpaceAdjunction_homEquiv_apply,
+      levelSmashMappingSpaceAdjunction_homEquiv_apply]
+    have h := Mod.ihomAdjunction₂.homEquiv_naturality_one f g
+    rw [ParametrizedAdjunction.homEquiv_eq, ParametrizedAdjunction.homEquiv_eq,
+      Mod.ihomAdjunction₂_adj, Mod.ihomAdjunction₂_adj,
+      Mod.ihomAdjunction_homEquiv, Mod.ihomAdjunction_homEquiv] at h
+    exact (congrArg (SymmetricSequence.freeι 0 K ≫ ·)
+      (congrArg (fun u ↦ u.natTrans.app (FiniteBijection.mk 0)) h)).trans
+      (Category.assoc _ _ _).symm
+
+@[simp]
+lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
+    levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X := by
+  simp [levelSmashMappingSpaceAdjunction₂]
+
+/-- The unit isomorphism `X ∧ S⁰ ≅ X` is natural in `X`. -/
+@[reassoc]
+lemma levelSmashFunctor_map_app_comp_levelSmashUnitIso_hom {X X' : SymmetricSpectrum}
+    (f : X ⟶ X') :
+    (levelSmashFunctor.map f).app (𝟙_ _) ≫ (levelSmashUnitIso X').hom =
+      (levelSmashUnitIso X).hom ≫ f := by
+  apply Mod.Hom.ext
+  simp only [levelSmashFunctor, Mod.curriedTensor, Functor.comp_map,
+    Functor.whiskeringLeft_obj_map, Functor.whiskerLeft_app, Mod.Hom.mk'_hom,
+    levelSmashUnitIso, Iso.trans_hom, Functor.mapIso_hom, Mod.comp_hom',
+    Mod.tensorLeftUnitIso_hom_hom, Category.assoc]
+  rw [← whisker_exchange_assoc, rightUnitor_naturality]
+
+/-- Precomposition on mapping spaces is level zero of precomposition on internal function
+spectra. -/
+lemma mappingSpaceFunctor_map_app {X X' : SymmetricSpectrum} (f : X ⟶ X')
+    (Y : SymmetricSpectrum) :
+    (mappingSpaceFunctor.map f.op).app Y = (evaluation 0).map ((MonoidalClosed.pre f).app Y) :=
+  congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk 0))
+    (Mod.pre_app_hom_eq_ihomPre_app f Y).symm
+
+/-- Postcomposing the vertex classified by `X' ⟶ Y` with `Map(f, Y)` classifies `X ⟶ X' ⟶ Y`. -/
+@[reassoc]
+lemma unitHomMappingSpaceEquiv_symm_comp_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (g : X' ⟶ Y) :
+    (unitHomMappingSpaceEquiv X' Y).symm g ≫ (mappingSpaceFunctor.map f.op).app Y =
+      (unitHomMappingSpaceEquiv X Y).symm (f ≫ g) := by
+  rw [unitHomMappingSpaceEquiv_symm_apply, unitHomMappingSpaceEquiv_symm_apply]
+  have h := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f
+    ((levelSmashUnitIso X').hom ≫ g)
+  rw [ParametrizedAdjunction.homEquiv_eq, ParametrizedAdjunction.homEquiv_eq,
+    levelSmashMappingSpaceAdjunction₂_adj, levelSmashMappingSpaceAdjunction₂_adj,
+    ← Category.assoc, levelSmashFunctor_map_app_comp_levelSmashUnitIso_hom, Category.assoc] at h
+  exact h.symm
+
+/-- Postcomposing a vertex `S⁰ ⟶ Map(X', Y)` with `Map(f, Y)` precomposes the corresponding
+spectrum map `X' ⟶ Y` with `f : X ⟶ X'`. -/
+lemma unitHomMappingSpaceEquiv_comp_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (g : 𝟙_ PointedSSet.{0} ⟶ (mappingSpace X').obj Y) :
+    unitHomMappingSpaceEquiv X Y (g ≫ (mappingSpaceFunctor.map f.op).app Y) =
+      f ≫ unitHomMappingSpaceEquiv X' Y g := by
+  apply (unitHomMappingSpaceEquiv X Y).symm.injective
+  rw [Equiv.symm_apply_apply, ← unitHomMappingSpaceEquiv_symm_comp_mappingSpaceFunctor_map_app,
+    Equiv.symm_apply_apply]
+
+/-- Applying `Map(f, Y)` to an `m`-simplex of `Map(X', Y)` precomposes the corresponding
+spectrum map `X' ∧ Δ[m]₊ ⟶ Y` with `f ∧ Δ[m]₊`. -/
+lemma mappingSpaceSimplexEquiv_mappingSpaceFunctor_map_app {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (m : SimplexCategory)
+    (x : ((mappingSpace X').obj Y).right.obj (Opposite.op m)) :
+    mappingSpaceSimplexEquiv X Y m (((mappingSpaceFunctor.map f.op).app Y).right.app _ x) =
+      (levelSmashFunctor.map f).app _ ≫ mappingSpaceSimplexEquiv X' Y m x := by
+  rw [mappingSpaceSimplexEquiv_apply, mappingSpaceSimplexEquiv_apply,
+    ← SSet.yonedaEquiv_symm_comp,
+    ← PointedSSet.addBasepointHomEquiv_symm_comp (X := (mappingSpace X').obj Y)]
+  simpa only [ParametrizedAdjunction.homEquiv_eq, levelSmashMappingSpaceAdjunction₂_adj] using
+    levelSmashMappingSpaceAdjunction₂.homEquiv_symm_naturality_one f
+      ((PointedSSet.addBasepointHomEquiv (SSet.stdSimplex.obj m) ((mappingSpace X').obj Y)).symm
+        (SSet.yonedaEquiv.symm x))
+
+/-- Applying `Map(f, Y)` to the `m`-simplex classified by `X' ∧ Δ[m]₊ ⟶ Y` classifies its
+precomposition with `f ∧ Δ[m]₊`. -/
+lemma mappingSpaceFunctor_map_app_mappingSpaceSimplexEquiv_symm {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (m : SimplexCategory)
+    (g : (levelSmash X').obj (PointedSSet.addBasepoint.obj (SSet.stdSimplex.obj m)) ⟶ Y) :
+    ((mappingSpaceFunctor.map f.op).app Y).right.app _
+        ((mappingSpaceSimplexEquiv X' Y m).symm g) =
+      (mappingSpaceSimplexEquiv X Y m).symm ((levelSmashFunctor.map f).app _ ≫ g) := by
+  apply (mappingSpaceSimplexEquiv X Y m).injective
+  rw [mappingSpaceSimplexEquiv_mappingSpaceFunctor_map_app, Equiv.apply_symm_apply,
+    Equiv.apply_symm_apply]
 
 end SymmetricSpectrum
 

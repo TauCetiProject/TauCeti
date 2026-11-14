@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.AddBasepoint
 public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
 public import TauCeti.AlgebraicTopology.Spectra.Colimits
 public import TauCeti.AlgebraicTopology.Spectra.Free
+public import TauCeti.AlgebraicTopology.Spectra.Limits
 public import TauCeti.CategoryTheory.MorphismProperty.LiftingProperty
 public import Mathlib.CategoryTheory.Presentable.Finite
 
@@ -189,6 +190,19 @@ fibration. -/
 lemma levelFibrations_iff {E E' : SymmetricSpectrum} (f : E ⟶ E') :
     levelFibrations f ↔ ∀ n, Fibration ((evaluation n).map f).right := by
   simp only [levelFibrations, levelwise_iff, HomotopicalAlgebra.fibration_iff]
+
+/-- The map `E ⟶ ⊤` to the terminal symmetric spectrum is a level fibration exactly when every
+level of `E` is a Kan complex. -/
+lemma levelFibrations_terminal_from_iff (E : SymmetricSpectrum) :
+    levelFibrations (terminal.from E) ↔
+      ∀ n, SSet.KanComplex ((evaluation n).obj E).right := by
+  rw [levelFibrations_iff]
+  refine forall_congr' fun n ↦ ?_
+  have : (evaluation n ⋙ forgetBasepoint).IsRightAdjoint :=
+    (freeAddBasepointAdjunction n).isRightAdjoint
+  have hT := terminalIsTerminal.isTerminalObj
+    (evaluation n ⋙ forgetBasepoint) (⊤_ SymmetricSpectrum)
+  exact (isFibrant_iff_of_isTerminal _ hT).symm
 
 /-- A map is a level trivial fibration exactly when its underlying map in every level lifts
 against all monomorphisms. -/
