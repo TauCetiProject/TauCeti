@@ -76,6 +76,14 @@ def MulAction.orbitRelQuotientProdDiffeomorph :
     intro x
     exact MulAction.orbitRelQuotientProdEquiv_symm_mk x.1 x.2
 
+/-- The quotient-product diffeomorphism has the canonical orbit-space equivalence. -/
+@[to_additive (attr := simp) AddAction.orbitRelQuotientProdDiffeomorph_toEquiv /-- The
+quotient-product diffeomorphism has the canonical orbit-space equivalence. -/]
+theorem MulAction.orbitRelQuotientProdDiffeomorph_toEquiv :
+    (MulAction.orbitRelQuotientProdDiffeomorph (I := I) (J := J) (n := n)
+      (G := G) (K := K) (M := M) (N := N)).toEquiv =
+        MulAction.orbitRelQuotientProdEquiv := (rfl)
+
 /-- The diffeomorphism sends the orbit of a pair to its component orbits. -/
 @[to_additive (attr := simp) AddAction.orbitRelQuotientProdDiffeomorph_mk /-- The diffeomorphism
 sends the orbit of a pair to its component orbits. -/]
@@ -99,9 +107,7 @@ theorem MulAction.orbitRelQuotientProdDiffeomorph_toHomeomorph :
     (MulAction.orbitRelQuotientProdDiffeomorph (I := I) (J := J) (n := n)
       (G := G) (K := K) (M := M) (N := N)).toHomeomorph =
         MulAction.orbitRelQuotientProdHomeomorph := by
-  apply Homeomorph.ext
-  intro q
-  induction q using Quotient.inductionOn with | h x =>
+  apply Homeomorph.toEquiv_injective
   simp
 
 end TauCeti

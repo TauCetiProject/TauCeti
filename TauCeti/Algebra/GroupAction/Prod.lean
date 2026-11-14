@@ -21,17 +21,19 @@ public section
 
 namespace TauCeti.IndependentProd
 
-variable {G K X Y : Type*} [Monoid G] [Monoid K] [MulAction G X] [MulAction K Y]
+variable {G K X Y : Type*}
 
-/-- The independent product action, obtained by restricting the two actions along the group
-projections and taking their product. This is scoped to avoid a diamond with diagonal actions. -/
+/-- The independent product scalar action, scoped to avoid competing with diagonal actions. -/
 @[to_additive /-- The independent product additive action, scoped to avoid competing with
  diagonal actions. -/]
-scoped instance mulAction : MulAction (G × K) (X × Y) :=
-  @Prod.mulAction (G × K) X Y _
-    (MulAction.compHom X (MonoidHom.fst G K)) (MulAction.compHom Y (MonoidHom.snd G K))
+scoped instance smul [SMul G X] [SMul K Y] : SMul (G × K) (X × Y) where
+  smul g x := (g.1 • x.1, g.2 • x.2)
 
 open scoped TauCeti.IndependentProd
+
+section SMul
+
+variable [SMul G X] [SMul K Y]
 
 /-- The independent product action acts on each coordinate. Use this as a named rewrite to expand
 an abstract pair; simplification preserves the action and computes projections and constructors. -/
@@ -40,8 +42,8 @@ coordinate. Use this as a named rewrite to expand an abstract pair; simplificati
 action and computes projections and constructors. -/]
 theorem smul_def (g : G × K) (x : X × Y) : g • x = (g.1 • x.1, g.2 • x.2) := (rfl)
 
-/- These rules run before the generic product rules, which would otherwise expose the actions
-restricted along the projections instead of the original component actions. -/
+/- These rules run before generic product normalization, preserving the original component
+actions in the resulting expressions. -/
 
 /-- The first coordinate of the independent product action is the first action. -/
 @[to_additive (attr := simp↓) /-- The first coordinate of the independent product additive action
@@ -58,16 +60,34 @@ theorem smul_snd (g : G × K) (x : X × Y) : (g • x).2 = g.2 • x.2 := (rfl)
 acts coordinatewise. -/]
 theorem smul_mk (g : G × K) (x : X) (y : Y) : g • (x, y) = (g.1 • x, g.2 • y) := (rfl)
 
-/-- Independent products of free actions are free. -/
-@[to_additive /-- Independent products of free additive actions are free. -/]
-scoped instance isCancelSMul [IsCancelSMul G X] [IsCancelSMul K Y] :
-    IsCancelSMul (G × K) (X × Y) where
+/-- Independent products of left-cancellative scalar actions are left-cancellative. -/
+@[to_additive /-- Independent products of left-cancellative additive actions are
+left-cancellative. -/]
+scoped instance isLeftCancelSMul [IsLeftCancelSMul G X] [IsLeftCancelSMul K Y] :
+    IsLeftCancelSMul (G × K) (X × Y) where
   left_cancel' g x y h := Prod.ext
     (IsLeftCancelSMul.left_cancel g.1 x.1 y.1 (congrArg Prod.fst h))
     (IsLeftCancelSMul.left_cancel g.2 x.2 y.2 (congrArg Prod.snd h))
+
+/-- Independent products of cancellative scalar actions are cancellative. -/
+@[to_additive /-- Independent products of cancellative additive actions are cancellative. -/]
+scoped instance isCancelSMul [IsCancelSMul G X] [IsCancelSMul K Y] :
+    IsCancelSMul (G × K) (X × Y) where
   right_cancel' g h x hx := Prod.ext
     (IsCancelSMul.right_cancel g.1 h.1 x.1 (congrArg Prod.fst hx))
     (IsCancelSMul.right_cancel g.2 h.2 x.2 (congrArg Prod.snd hx))
+
+end SMul
+
+/-- The independent product action, obtained by restricting the two actions along the monoid
+projections and taking their product, with the independent product scalar action. -/
+@[to_additive /-- The independent product additive action, obtained by restricting the two
+actions along the additive monoid projections and taking their product. -/]
+scoped instance mulAction [Monoid G] [Monoid K] [MulAction G X] [MulAction K Y] :
+    MulAction (G × K) (X × Y) :=
+  { @Prod.mulAction (G × K) X Y _
+      (MulAction.compHom X (MonoidHom.fst G K)) (MulAction.compHom Y (MonoidHom.snd G K)) with
+    toSMul := smul }
 
 end TauCeti.IndependentProd
 

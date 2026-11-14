@@ -28,8 +28,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F H'}
   {M N G K : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace N] [ChartedSpace H' N] [Monoid G] [Monoid K]
-  [MulAction G M] [MulAction K N] {n : ℕ∞ω}
+  [TopologicalSpace N] [ChartedSpace H' N] [SMul G M] [SMul K N] {n : ℕ∞ω}
 
 /-- Independent products of `C^n` action maps are `C^n`. -/
 @[to_additive /-- Independent products of `C^n` additive action maps are `C^n`. -/]

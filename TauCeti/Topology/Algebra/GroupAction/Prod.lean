@@ -25,7 +25,7 @@ open scoped TauCeti.IndependentProd
 
 namespace TauCeti.IndependentProd
 
-variable {G K X Y : Type*} [Monoid G] [Monoid K] [MulAction G X] [MulAction K Y]
+variable {G K X Y : Type*} [SMul G X] [SMul K Y]
   [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- Independent products of continuous action maps are continuous. -/
@@ -75,6 +75,13 @@ def MulAction.orbitRelQuotientProdHomeomorph :
     apply (continuous_quotient_mk' (s := MulAction.orbitRel (G × K) (X × Y))).congr
     intro x
     exact (MulAction.orbitRelQuotientProdEquiv_symm_mk x.1 x.2).symm
+
+/-- The quotient-product homeomorphism has the canonical orbit-space equivalence. -/
+@[to_additive (attr := simp) AddAction.orbitRelQuotientProdHomeomorph_toEquiv /-- The
+quotient-product homeomorphism has the canonical orbit-space equivalence. -/]
+theorem MulAction.orbitRelQuotientProdHomeomorph_toEquiv :
+    (MulAction.orbitRelQuotientProdHomeomorph (G := G) (K := K) (X := X) (Y := Y)).toEquiv =
+      MulAction.orbitRelQuotientProdEquiv := (rfl)
 
 /-- The homeomorphism sends the orbit of a pair to the pair of component orbits. -/
 @[to_additive (attr := simp) AddAction.orbitRelQuotientProdHomeomorph_mk /-- The homeomorphism
