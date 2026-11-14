@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Analysis.Normed.Group.Prod
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -29,7 +30,9 @@ homomorphism from `Sol` into its isometry group, and already its image acts tran
 
 * `TauCeti.Sol`: the model geometry Sol, with the coordinate equivalence `Sol.toProd` to `ℝ³`,
   its smooth version `Sol.toProdDiffeomorph`, and the coordinates `Sol.x`, `Sol.y`, `Sol.z`.
-* `TauCeti.Sol.instGroup`: the group structure of `Sol`.
+* `TauCeti.Sol.instGroup`: the group structure of `Sol`; multiplication and inversion are
+  analytic, so `Sol` is a real-analytic Lie group (`LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol`) and a
+  topological group.
 * `TauCeti.Sol.riemannianMetric`: the analytic metric `e^{2z} dx² + e^{-2z} dy² + dz²`, which is
   the `RiemannianBundle` instance of `Sol`.
 * `TauCeti.Sol.toIsom`: left multiplication, as a homomorphism from `Sol` to its isometry group.
@@ -82,6 +85,12 @@ instance : ChartedSpace (ℝ × ℝ × ℝ) Sol := inferInstanceAs (ChartedSpace
 
 instance : IsManifold 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol :=
   inferInstanceAs (IsManifold 𝓘(ℝ, ℝ × ℝ × ℝ) ω (ℝ × ℝ × ℝ))
+
+instance : T3Space Sol := inferInstanceAs (T3Space (ℝ × ℝ × ℝ))
+
+instance : LocallyCompactSpace Sol := inferInstanceAs (LocallyCompactSpace (ℝ × ℝ × ℝ))
+
+instance : SecondCountableTopology Sol := inferInstanceAs (SecondCountableTopology (ℝ × ℝ × ℝ))
 
 /-- The point of `Sol` with coordinates `(x, y, z)`. -/
 def mk (x y z : ℝ) : Sol := toProd.symm (x, y, z)
@@ -453,6 +462,30 @@ This is transferred along `toIsom` from the transitive action of `Sol` on itself
 multiplication. -/
 instance isPretransitive_isom : MulAction.IsPretransitive (Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Sol) Sol :=
   .of_smul_eq toIsom fun {_ _} ↦ by rw [RiemannianIsometry.smul_def, toIsom_apply, smul_eq_mul]
+
+/-! ### The Lie group structure -/
+
+/-- `Sol` is a real-analytic Lie group: in the global coordinates, multiplication and inversion
+are given by analytic formulas. -/
+instance : LieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol where
+  contMDiff_mul := by
+    have h : ContMDiff (𝓘(ℝ, ℝ × ℝ × ℝ).prod 𝓘(ℝ, ℝ × ℝ × ℝ)) 𝓘(ℝ, ℝ × ℝ × ℝ) ω
+        fun r : (ℝ × ℝ × ℝ) × ℝ × ℝ × ℝ ↦
+          (exp (-r.1.2.2) * r.2.1 + r.1.1, exp r.1.2.2 * r.2.2.1 + r.1.2.1, r.1.2.2 + r.2.2.2) := by
+      rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+      exact ContDiff.contMDiff (by fun_prop)
+    have hp : ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ω toProd := contMDiff_id
+    have hs : ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ω toProd.symm := contMDiff_id
+    have hf : ContMDiff (𝓘(ℝ, ℝ × ℝ × ℝ).prod 𝓘(ℝ, ℝ × ℝ × ℝ))
+        (𝓘(ℝ, ℝ × ℝ × ℝ).prod 𝓘(ℝ, ℝ × ℝ × ℝ)) ω fun p : Sol × Sol ↦ (toProd p.1, toProd p.2) :=
+      (hp.comp contMDiff_fst).prodMk (hp.comp contMDiff_snd)
+    exact hs.comp (h.comp hf)
+  contMDiff_inv := by
+    change ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) ω
+      (fun r : ℝ × ℝ × ℝ ↦ (-(exp r.2.2 * r.1), -(exp (-r.2.2) * r.2.1), -r.2.2))
+    exact ContDiff.contMDiff (by fun_prop)
+
+instance : IsTopologicalGroup Sol := topologicalGroup_of_lieGroup 𝓘(ℝ, ℝ × ℝ × ℝ) ω
 
 end Sol
 
