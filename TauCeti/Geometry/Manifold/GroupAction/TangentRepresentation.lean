@@ -132,6 +132,13 @@ theorem mem_invariants_tangentRepresentation_iff_of_mem_fixedPoints
   rw [mem_invariants_tangentRepresentation_iff]
   exact ⟨fun h g ↦ h g (hx g), fun h g _ ↦ h g⟩
 
+variable (I G) in
+/-- For a group acting by `C^1` maps, every element of the stabilizer of `x` acts differentiably
+at `x`, as the tangent representation at `x` requires. -/
+theorem mdifferentiableAt_smul_of_mem_stabilizer [ContMDiffConstSMul I 1 G M] (x : M) :
+    ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x :=
+  fun g _ ↦ (contMDiff_const_smul g).mdifferentiableAt one_ne_zero
+
 /-- **Conjugation of tangent representations along an orbit.** The derivative at `x` of the action
 of `h` intertwines the tangent representation at `x` with the tangent representation at `h • x`,
 along the conjugation isomorphism `g ↦ h * g * h⁻¹` between the stabilizers. -/

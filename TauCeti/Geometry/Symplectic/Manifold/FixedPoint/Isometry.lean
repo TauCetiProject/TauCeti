@@ -20,7 +20,7 @@ let `p` be a common fixed point. Each differential `dΦ_i` at `p` is a linear is
 symplectomorphism of `(T_p M, σ_p)`, so it commutes with the polar normalization `J_p` of `σ_p` for
 the inner product of `T_p M`
 (`TauCeti.SymplecticForm.IsSymplectomorphism.polarComplexStructure_apply`). Hence `J_p` preserves
-the fixed tangent subspace `TauCeti.RiemannianIsometry.fixedTangentSubspace Φ p`
+the fixed tangent subspace `TauCeti.fixedTangentSubspace I (Φ ·) p`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.polarComplexStructure_mem_fixedTangentSubspace`), and since
 `σ_p` tames `J_p`, the form `σ_p` is nondegenerate on it
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_fixedTangentSubspace`). Everything is pointwise
@@ -65,10 +65,9 @@ fixed tangent subspace of the `Φ i`. -/
 theorem IsNondegenerate.polarComplexStructure_mem_fixedTangentSubspace (h : σ.IsNondegenerate)
     (hΦ : ∀ i, SmoothForm.mpullback (Φ i) (Φ i).toDiffeomorph.contMDiff σ = σ)
     (hp : p ∈ ⋂ i, fixedPoints (Φ i)) {v : TangentSpace I p}
-    (hv : v ∈ RiemannianIsometry.fixedTangentSubspace Φ p) :
-    (h.symplecticFormAt p).polarComplexStructure v ∈
-      RiemannianIsometry.fixedTangentSubspace Φ p := by
-  refine RiemannianIsometry.mem_fixedTangentSubspace.2 fun i ↦ ?_
+    (hv : v ∈ fixedTangentSubspace I (Φ ·) p) :
+    (h.symplecticFormAt p).polarComplexStructure v ∈ fixedTangentSubspace I (Φ ·) p := by
+  refine mem_fixedTangentSubspace.2 fun i ↦ ?_
   -- `dΦ_i` is a linear isometric symplectomorphism from `T_p M` to `T_(Φ_i p) M`, so it intertwines
   -- the polar normalizations there; it fixes `v`, and `Φ_i p = p`.
   have he : SymplecticForm.IsSymplectomorphism (h.symplecticFormAt p)
@@ -81,7 +80,7 @@ theorem IsNondegenerate.polarComplexStructure_mem_fixedTangentSubspace (h : σ.I
   have hJ := he.polarComplexStructure_apply v
   rw [RiemannianIsometry.mfderivToLinearIsometryEquiv_apply,
     RiemannianIsometry.mfderivToLinearIsometryEquiv_apply,
-    RiemannianIsometry.mem_fixedTangentSubspace.1 hv i,
+    mem_fixedTangentSubspace.1 hv i,
     (mem_fixedPoints.1 (mem_iInter.1 hp i) : Φ i p = p)] at hJ
   exact hJ.symm
 
@@ -91,7 +90,7 @@ fixed tangent subspace of the `Φ i` is a symplectic subspace of `(T_p M, σ_p)`
 theorem IsNondegenerate.isSymplectic_fixedTangentSubspace (h : σ.IsNondegenerate)
     (hΦ : ∀ i, SmoothForm.mpullback (Φ i) (Φ i).toDiffeomorph.contMDiff σ = σ)
     (hp : p ∈ ⋂ i, fixedPoints (Φ i)) :
-    (h.symplecticFormAt p).IsSymplectic (RiemannianIsometry.fixedTangentSubspace Φ p) :=
+    (h.symplecticFormAt p).IsSymplectic (fixedTangentSubspace I (Φ ·) p) :=
   (h.symplecticFormAt p).compatible_polarComplexStructure.tames.isSymplectic_of_mem_invtSubmodule <|
     (Module.End.mem_invtSubmodule _).2 fun _ hv ↦
       h.polarComplexStructure_mem_fixedTangentSubspace hΦ hp hv
