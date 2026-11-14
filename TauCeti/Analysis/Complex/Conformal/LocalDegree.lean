@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Rouche
 public import TauCeti.Analysis.Complex.IsolatedZero
 import Mathlib.Data.Set.Card.Arithmetic
+import TauCeti.Analysis.Analytic.IsolatedCriticalPoints
 
 /-!
 # The open-mapping degree
@@ -272,26 +273,6 @@ private lemma not_injOn_ball_of_deriv_eq_zero {f : ℂ → ℂ} {z₀ : ℂ} {r 
   obtain ⟨a, ha, b, hb, hab⟩ := hnontriv
   exact fun hinj => hab (hinj ha.1 hb.1 (ha.2.trans hb.2.symm))
 
-/-- **A non-locally-constant analytic function has eventually nonvanishing derivative.** If `f` is
-analytic at `z₀` and takes a value different from `f z₀` at every point of some punctured
-neighbourhood, then `deriv f` is nonzero on a punctured neighbourhood of `z₀`. -/
-private theorem eventually_deriv_ne_zero_of_eventually_ne {f : ℂ → ℂ} {z₀ : ℂ}
-    (hf : AnalyticAt ℂ f z₀) (hne : ∀ᶠ z in 𝓝[≠] z₀, f z ≠ f z₀) :
-    ∀ᶠ z in 𝓝[≠] z₀, deriv f z ≠ 0 := by
-  rcases hf.deriv.eventually_eq_zero_or_eventually_ne_zero with hz | hz
-  · exfalso
-    obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.mp (hz.and hf.eventually_analyticAt)
-    have hfd : Set.EqOn (deriv f) 0 (ball z₀ ε) := fun x hx => (hball (mem_ball.mp hx)).1
-    have hdiff : DifferentiableOn ℂ f (ball z₀ ε) := fun x hx =>
-      ((hball (mem_ball.mp hx)).2.differentiableAt).differentiableWithinAt
-    have hpunct : ∀ᶠ z in 𝓝[≠] z₀, z ∈ ball z₀ ε ∧ f z ≠ f z₀ := by
-      filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds z₀ hε), hne] with z h1 h2
-      exact ⟨h1, h2⟩
-    obtain ⟨b, hbball, hbne⟩ := hpunct.exists
-    exact hbne (isOpen_ball.is_const_of_deriv_eq_zero
-      (convex_ball z₀ ε).isPreconnected hdiff hfd hbball (mem_ball_self hε))
-  · exact hz
-
 /-- **Local injectivity fails at a critical point.** An analytic function whose derivative vanishes
 at `z₀` is not injective on *any* neighbourhood of `z₀`.
 
@@ -312,24 +293,14 @@ theorem not_injOn_of_deriv_eq_zero {f : ℂ → ℂ} {z₀ : ℂ}
       exact ⟨h1, by simpa using h2, by simpa [sub_eq_zero] using h3⟩
     obtain ⟨a, haV, hane, haeq⟩ := hpunct.exists
     exact hane (hinj haV hz₀V haeq)
-  · -- `f` is non-constant near `z₀`; find a disc where the degree argument applies
-    have hderiv : ∀ᶠ z in 𝓝[≠] z₀, deriv f z ≠ 0 :=
-      eventually_deriv_ne_zero_of_eventually_ne hf (hisol.mono fun _ h => sub_ne_zero.mp h)
-    -- one neighbourhood on which every requirement holds at once
-    have hall : ∀ᶠ z in 𝓝 z₀, AnalyticAt ℂ f z ∧ z ∈ V ∧
-        (z ≠ z₀ → f z ≠ f z₀) ∧ (z ≠ z₀ → deriv f z ≠ 0) := by
-      filter_upwards [hf.eventually_analyticAt, hV, eventually_nhdsWithin_iff.mp hisol,
-        eventually_nhdsWithin_iff.mp hderiv] with z h1 h2 h3 h4
-      exact ⟨h1, h2, fun hz => sub_ne_zero.mp (h3 (by simpa using hz)),
-        fun hz => h4 (by simpa using hz)⟩
-    obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.mp hall
-    have hr : 0 < ε / 2 := by linarith
-    have hsub : ∀ z ∈ closedBall z₀ (ε / 2), dist z z₀ < ε := fun z hz =>
-      lt_of_le_of_lt (mem_closedBall.mp hz) (by linarith)
-    refine absurd (hinj.mono (fun z hz => (hball (hsub z (ball_subset_closedBall hz))).2.1))
-      (not_injOn_ball_of_deriv_eq_zero hr (fun z hz => (hball (hsub z hz)).1)
-        (fun z hz hzn => (hball (hsub z hz)).2.2.1 hzn)
-        (fun z hz hzn => (hball (hsub z (ball_subset_closedBall hz))).2.2.2 hzn) hd₀)
+  · -- `f` is non-constant near `z₀`; find a disc inside `V` where the degree argument applies
+    obtain ⟨r, hrV, ⟨hfr, hisolr, hderivr⟩, hr⟩ :=
+      (((eventually_closedBall_subset hV).filter_mono nhdsWithin_le_nhds).and
+        ((hf.eventually_analyticOnNhd_closedBall_and_ne_and_deriv_ne_zero
+          (hisol.mono fun _ h => sub_ne_zero.mp h)).and
+          self_mem_nhdsWithin)).exists
+    exact not_injOn_ball_of_deriv_eq_zero hr hfr hisolr hderivr hd₀
+      (hinj.mono (ball_subset_closedBall.trans hrV))
 
 /-- **The local injectivity criterion.** An analytic function is injective on some neighbourhood of
 `z₀` exactly when its derivative there is nonzero.
