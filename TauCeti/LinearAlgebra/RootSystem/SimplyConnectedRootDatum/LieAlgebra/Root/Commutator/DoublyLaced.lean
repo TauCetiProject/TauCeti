@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.MultiplyLacedRelations
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
+import TauCeti.LinearAlgebra.RootSystem.Finite.DoubleChain
 
 /-!
 # The doubly-laced Chevalley commutator formula
@@ -21,62 +21,36 @@ no factorial is inverted in the value ring. The result therefore holds over ever
 ring, including characteristic two, and for any Kostant-stable lattice with nilpotent simple
 root operators.
 
-The proof specializes
-`TauCeti.UniversalEnvelopingAlgebra.commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq'`
-to the pinned Chevalley system, discharging its bracket hypotheses from the integral root datum.
-The all-root Kostant form preserves the same lattice, and its parametrized root subgroups agree
-with the native all-root maps.
+The multiplication and commutator identities specialize the two-factor formulas in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic`,
+discharging their non-root hypotheses from the integral root datum.
+
+Outside type `G₂`, the double chain implies that `3α + β` and `α + 2β` are not roots,
+so `commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add` applies. The non-root
+exclusions are proved in `TauCeti.LinearAlgebra.RootSystem.Finite.DoubleChain`, using the
+Cartan-integer bound outside `G₂` from
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2`.
+Alternatively, the root-string conditions `chainBotCoeff α β = 0` and
+`chainTopCoeff α β = 2` supply the same non-root hypotheses, without excluding `G₂`.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15, with the convention
   `⁅x, y⁆ = x y x⁻¹ y⁻¹`.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
+* J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 
 public section
 
 namespace TauCeti.DynkinType
 
-open TauCeti.UniversalEnvelopingAlgebra
+open TauCeti.UniversalEnvelopingAlgebra RootPairing
 open scoped commutatorElement
 
 noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid}
-
-private theorem doublyLaced_vanishing_brackets {α β γ δ : Fin t.numRoots}
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hδ : (t.simplyConnectedRootDatum ht).root δ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
-    (hαδ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
-      Set.range (t.simplyConnectedRootDatum ht).root) :
-    ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 ∧
-      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 ∧
-      ⁅t.chevalleySystem ht β, t.chevalleySystem ht δ⁆ = 0 := by
-  have := t.isReduced_simplyConnectedRootDatum ht
-  have hlin := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
-    (i := α) (j := β) ⟨γ, hγ⟩
-  have hind := LinearIndependent.pair_iff.mp hlin
-  refine ⟨lie_chevalleySystem_eq_zero hαδ fun hz => ?_,
-    lie_chevalleySystem_eq_zero hβγ fun hz => ?_, ?_⟩
-  · have := (hind 3 1 (by rw [hδ, hγ] at hz; linear_combination hz)).1
-    norm_num at this
-  · have := (hind 1 2 (by rw [hγ] at hz; linear_combination hz)).1
-    norm_num at this
-  · have hsum : (t.simplyConnectedRootDatum ht).root β +
-        (t.simplyConnectedRootDatum ht).root δ =
-          2 • (t.simplyConnectedRootDatum ht).root γ := by
-      rw [hδ, hγ]
-      module
-    refine lie_chevalleySystem_eq_zero ?_ fun hz => ?_
-    · rw [hsum]
-      exact (t.simplyConnectedRootDatum ht).nsmul_notMem_range_root (n := 2)
-    · have := (hind 2 2 (by rw [hδ, hγ] at hz; linear_combination hz)).1
-      norm_num at this
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -88,56 +62,112 @@ variable (hnil : ∀ i, IsNilpotent
 
 attribute [local instance high] Algebra.toModule
 
-/-- The Chevalley commutator formula for the roots `α + β` and `2α + β`, with the native
-structure constants and the exact integral coefficient `N_{α,β} N_{α,α+β} / 2`. -/
-theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
+/-- Reorder two root-subgroup elements along a double string. The `α`-string through `β`
+starts at `β` and has top coefficient two. The correction coefficients are computed in `ℤ`. -/
+theorem chevalleyRootSubgroup_mul_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
     {α β γ δ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
-    (hαδ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
     (A : CommAlgCat ℤ) (u v : A) :
-    ⁅chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u),
-        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
-      chevalleyRootSubgroup ρ M hM hnil γ A
-          (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+    chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
         chevalleyRootSubgroup ρ M hM hnil δ A
-          (Multiplicative.ofAdd
-            (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
-              (u ^ 2 * v))) := by
-  obtain ⟨hil, hjk, hjl⟩ := doublyLaced_vanishing_brackets hγ hδ hαδ hβγ
-  let e := t.chevalleySystem ht
-  let d := t.structureConstant ht α β * t.structureConstant ht α γ / 2
-  have hdiv : 2 * d = t.structureConstant ht α β * t.structureConstant ht α γ :=
-    Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ)
-  have hiij : ⁅e α, ⁅e α, e β⁆⁆ = (2 * d) • e δ := by
-    rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
-      lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
-  have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
-  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
-    kostantRootSubgroupParam_apply]
-  -- Normalize the stored integer algebra without destructuring the bundled value ring.
-  have halg := Subsingleton.elim
-    (inferInstance : Algebra ℤ ((CategoryTheory.forget (CommAlgCat ℤ)).obj A))
-    (Ring.toIntAlgebra A)
-  dsimp only [inferInstance] at halg
-  rw [halg]
-  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
-    commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' e (t.lieBasis ht).h ρ M hM'
-      (A := A)
-      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hiij hil hjk hjl
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
-      ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
-        (Multiplicative.ofAdd u))
-      ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
-        (Multiplicative.ofAdd v))
+          (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+            (u ^ 2 * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  exact chevalleyRootSubgroup_mul_of_root_eq_add_of_root_eq_add ρ M hM hnil hγ hδ
+    (root_add_root_notMem_range_root_of_chainTopCoeff_le_two
+      (t.simplyConnectedRootDatum ht) hγ hδ htop.le)
+    (root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+      (t.simplyConnectedRootDatum ht) hγ hbot htop) A u v
+
+/-- The Chevalley element-commutator formula when the `α`-string through `β` starts at `β`
+and has top coefficient two. No restriction on the characteristic of the value ring is needed. -/
+theorem commutatorElement_chevalleyRootSubgroup_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
+    (A : CommAlgCat ℤ) (u v : A) :
+    ⁅chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u),
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v)⁆ =
+      chevalleyRootSubgroup ρ M hM hnil γ A
+        (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+      chevalleyRootSubgroup ρ M hM hnil δ A
+        (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+          (u ^ 2 * v))) := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  exact commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add
+    ρ M hM hnil hγ hδ
+    (root_add_root_notMem_range_root_of_chainTopCoeff_le_two
+      (t.simplyConnectedRootDatum ht) hγ hδ htop.le)
+    (root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+      (t.simplyConnectedRootDatum ht) hγ hbot htop) A u v
+
+/-- Outside `G₂`, the double chain itself supplies the non-root hypotheses of the
+root-subgroup reordering formula. -/
+theorem chevalleyRootSubgroup_mul_of_ne_G2_of_root_eq_add_of_root_eq_add (h : t ≠ .G2)
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil δ A
+          (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+            (u ^ 2 * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  exact chevalleyRootSubgroup_mul_of_root_eq_add_of_root_eq_add ρ M hM hnil hγ hδ
+    (root_add_root_notMem_range_root_left_of_pairingIn_mem_zero_one_two_of_double_chain
+      (t.simplyConnectedRootDatum ht)
+      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ)
+    (root_add_root_notMem_range_root_right_of_pairingIn_mem_zero_one_two_of_double_chain
+      (t.simplyConnectedRootDatum ht)
+      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ) A u v
+
+/-- Outside `G₂`, the double chain implies that `3α + β` and `α + 2β` are not roots,
+so `commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add` applies over every
+commutative value ring. -/
+theorem commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add (h : t ≠ .G2)
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (A : CommAlgCat ℤ) (u v : A) :
+    ⁅chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u),
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v)⁆ =
+      chevalleyRootSubgroup ρ M hM hnil γ A
+        (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+      chevalleyRootSubgroup ρ M hM hnil δ A
+        (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+          (u ^ 2 * v))) := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  exact commutatorElement_chevalleyRootSubgroup_of_root_eq_add_of_root_eq_add
+    ρ M hM hnil hγ hδ
+    (root_add_root_notMem_range_root_left_of_pairingIn_mem_zero_one_two_of_double_chain
+      (t.simplyConnectedRootDatum ht)
+      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ)
+    (root_add_root_notMem_range_root_right_of_pairingIn_mem_zero_one_two_of_double_chain
+      (t.simplyConnectedRootDatum ht)
+      (pairingIn_simplyConnectedRootDatum_mem_zero_one_two_of_ne_G2 ht h) hγ hδ) A u v
 
 end
 
