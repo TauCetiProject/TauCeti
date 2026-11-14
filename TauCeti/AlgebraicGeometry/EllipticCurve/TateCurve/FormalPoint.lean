@@ -578,8 +578,9 @@ absolute value larger than `N`, and the symmetry in `u` and `v` moves the coeffi
 vanish because `F(2) = 0`.
 
 This is a formal counterpart of the non-archimedean Liouville theorem in Tate, *A review of
-non-Archimedean elliptic functions*: an analytic function on `Kˣ` invariant under `u ↦ q u` is
-constant. -/
+non-Archimedean elliptic functions*: over a complete non-archimedean field `K` and for `q ∈ Kˣ`
+with `|q| < 1`, a holomorphic function on `Kˣ`, that is, a Laurent series converging on all of
+`Kˣ`, which is invariant under `u ↦ q u` is constant. -/
 private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSeries.swap G = G)
     {f : (Polynomial ℚ)⟦X⟧} (hj : toLaurent G = map psi (C wP * f)) : G = 0 := by
   set L : ℕ → LaurentPolynomial ℚ := fun N ↦ symmHom (coeff N (C wP * f)) with hLdef
