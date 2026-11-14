@@ -275,6 +275,25 @@ theorem pointSpectralSubspace_union :
     A.pointSpectralSubspace (Ω ∪ Ω') = A.pointSpectralSubspace Ω ⊔ A.pointSpectralSubspace Ω' :=
   iSup_union
 
+/-- Every vector lies in the `μ`-eigenspace of the scalar operator `μ • 1`, so its
+point-spectral subspace selected by a set containing `μ` is the whole space. -/
+@[simp]
+theorem pointSpectralSubspace_smul_one_of_mem (h : μ ∈ Ω) :
+    ((μ : 𝕜) • 1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊤ :=
+  eq_top_iff.2 fun _ _ ↦ eigenspace_le_pointSpectralSubspace h (by simp)
+
+/-- The scalar operator `μ • 1` has no eigenvalue other than `μ`, so its point-spectral subspace
+selected by a set not containing `μ` is zero. -/
+@[simp]
+theorem pointSpectralSubspace_smul_one_of_notMem (h : μ ∉ Ω) :
+    ((μ : 𝕜) • 1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊥ := by
+  refine eq_bot_iff.2 (pointSpectralSubspace_le_iff.2 fun ν hν x hx ↦ ?_)
+  have hx' : (μ : 𝕜) • x = (ν : 𝕜) • x := by simpa using mem_eigenspace_iff.1 hx
+  have hne : (μ : 𝕜) - ν ≠ 0 :=
+    sub_ne_zero.2 (RCLike.ofReal_injective.ne (ne_of_mem_of_not_mem hν h).symm)
+  exact (Submodule.mem_bot 𝕜).2
+    ((smul_eq_zero.1 (by rw [sub_smul, hx', sub_self])).resolve_left hne)
+
 /-- An endomorphism commuting with `A` maps each point-spectral subspace of `A` into itself,
 since it maps each eigenspace of `A` into itself. -/
 theorem map_pointSpectralSubspace_le_of_commute {B : Module.End 𝕜 E} (h : Commute A B) :

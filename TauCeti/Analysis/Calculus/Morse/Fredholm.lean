@@ -368,8 +368,7 @@ theorem finrank_squareIntegrableSolutionsOn_Iio_hessianOperator
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
   obtain ⟨α, hα, hminus, -⟩ := exists_pos_mul_norm_le_hessianOperator hp hp
   rw [finrank_squareIntegrableSolutionsOn_Iio (A := fun s ↦ hessianOperator f (γ s))
-      (hH.comp hγ.continuous)
-      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hminus
+      (hH.comp hγ.continuous) hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hminus
       ((hH.tendsto p).comp hbot),
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 
@@ -386,8 +385,7 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_hessianOperator_add_morseIndex
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
   obtain ⟨α, hα, hplus, -⟩ := exists_pos_mul_norm_le_hessianOperator hq hq
   rw [finrank_squareIntegrableSolutionsOn_Ioi (A := fun s ↦ hessianOperator f (γ s))
-      (hH.comp hγ.continuous)
-      (fun _ ↦ hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric) hα hplus
+      (hH.comp hγ.continuous) hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric hα hplus
       ((hH.tendsto q).comp htop),
     ← hq.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
   exact hq.finrank_stableLinearSubspace_add_morseIndex
@@ -409,7 +407,10 @@ theorem surjective_trajectoryOperator_hessianOperator_iff_sup_eq_top
         squareIntegrableSolutionsOn (fun s ↦ hessianOperator f (γ s)) (Ioi 0) = ⊤ := by
   obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop⟩ :=
     trajectory_hypotheses hγ hf hp hq hbot htop
-  exact surjective_trajectoryOperator_iff_sup_eq_top hA hsym hα hminus hplus hAbot hAtop AL hAL
+  exact surjective_trajectoryOperator_iff_sup_eq_top hA
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hAbot hα hminus)
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hAtop hα hplus) hAbot hAtop
+    AL hAL
 
 end IsIntegralCurve
 

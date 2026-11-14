@@ -31,16 +31,24 @@ For the linearization `A(s) = Hess f(γ s)` along a gradient trajectory `γ` fro
 classically the stable and unstable solutions are the tangent spaces at `γ 0` of the stable set of
 `q` and of the unstable set of `p`; that identification is not formalized here.
 
-For a continuous family of symmetric operators with invertible limits `A±` at `±∞` this file
-computes their dimensions and identifies the cokernel of `D_A` with the failure of the stable and
-unstable solutions to span `E`:
+For a continuous family whose limits `A±` at `±∞` have Lyapunov forms (no symmetry of `A` is
+assumed) this file computes their dimensions and identifies the cokernel of `D_A` with the failure
+of the stable and unstable solutions to span `E`:
 
-* the stable solutions have the dimension of the positive spectral subspace of `A⁺`
-  (`TauCeti.finrank_squareIntegrableSolutionsOn_Ioi`), and the unstable ones that of the negative
-  spectral subspace of `A⁻` (`TauCeti.finrank_squareIntegrableSolutionsOn_Iio`);
-* the square-integrable solutions of the adjoint equation `w' = A w`, which model the cokernel of
-  `D_A`, are the orthogonal complement of the sum of the stable and unstable solutions
-  (`TauCeti.squareIntegrableSolutions_neg_eq_orthogonal_sup`);
+* if `S` is a symmetric Lyapunov form of `A⁺`, the stable solutions have dimension `dim E - n⁻(S)`
+  and the stable solutions of the formal adjoint equation `w' = A† w` have dimension `n⁻(S)`, where
+  `n⁻` counts negative eigenvalues
+  (`TauCeti.finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace`,
+  `TauCeti.finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi`); for a symmetric invertible `A⁺`
+  this is the dimension of its positive spectral subspace
+  (`TauCeti.finrank_squareIntegrableSolutionsOn_Ioi`), and dually at `-∞`
+  (`TauCeti.finrank_squareIntegrableSolutionsOn_Iio`);
+* on each half-line the decaying solutions of the adjoint equation are the orthogonal complement of
+  those of `v' + A v = 0` (`TauCeti.squareIntegrableSolutionsOn_neg_adjoint_Ioi_eq_orthogonal`,
+  `TauCeti.squareIntegrableSolutionsOn_neg_adjoint_Iio_eq_orthogonal`);
+* so the square-integrable solutions of the adjoint equation, which model the cokernel of `D_A`,
+  are the orthogonal complement of the sum of the stable and unstable solutions
+  (`TauCeti.squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup`);
 * hence `D_A` is surjective exactly when the stable and unstable solutions span `E`
   (`TauCeti.WeakDerivStep.surjective_trajectoryOperator_iff_sup_eq_top`).
 
@@ -51,26 +59,30 @@ description as intersections of unstable and stable sets.
 
 ## Proofs
 
-If `v` solves `v' = -A v` and `w` solves the adjoint equation `w' = A w`, then `⟪v, w⟫` is
-constant, by symmetry of `A`. When both are square integrable on a half-line this constant is
-integrable there, hence zero; so the adjoint solutions square integrable on a half-line are
-orthogonal to the solutions square integrable on the same half-line
-(`TauCeti.squareIntegrableSolutionsOn_neg_le_orthogonal`). This gives one inclusion of the
-cokernel identification, and the other follows by counting dimensions with the index formula
-`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`.
+If `v` solves `v' = -A v` and `w` solves the adjoint equation `w' = A† w`, then `⟪v, w⟫` is
+constant. When both are square integrable on a half-line this constant is integrable there, hence
+zero; so the adjoint solutions square integrable on a half-line are orthogonal to the solutions
+square integrable on the same half-line (`TauCeti.squareIntegrableSolutionsOn_neg_le_orthogonal`).
+Equality is a dimension count at each end.
 
-The dimension of the stable solutions is itself computed with the index formula. The stable
-solutions only depend on `A` on `[0, ∞)`
-(`TauCeti.squareIntegrableSolutionsOn_Ioi_congr`), so `A` may be replaced on `(-∞, 0]` by a
-family equal to `-id` before time `-1`. For the new family every solution is square integrable on
-`(-∞, 0)` and no nonzero adjoint solution is, so its trajectory operator has the stable
-solutions of `A` as kernel, no cokernel, and index the dimension of the positive spectral subspace
-of `A⁺`. The
-unstable solutions of `A` are the stable solutions of the reflected family `s ↦ -A(-s)`
+The dimensions are computed with two index formulas for the trajectory operator, one through the
+square-integrable solutions of the equation and of its adjoint, and one through the inertia of
+the Lyapunov forms of the limits (both in the namespace `TauCeti.WeakDerivStep`:
+`index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm` and
+`index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner`). The
+stable solutions only depend on `A` on `[0, ∞)` (`TauCeti.squareIntegrableSolutionsOn_Ioi_congr`),
+so `A` may be replaced on `(-∞, 0]` by a family equal to `∓1` before time `-1`. There every
+solution of one of the two equations decays on `(-∞, 0)` and no nonzero solution of the other does,
+so one of the two whole-line spaces is the stable space of `A` or of its adjoint and the other is
+zero. The statements at `-∞` follow by reflecting time: the unstable solutions of `A` are the
+stable solutions of the reflected family `s ↦ -A(-s)`
 (`TauCeti.squareIntegrableSolutionsOn_Iio_eq_Ioi`).
 
 ## References
 
+* K. J. Palmer, *Exponential dichotomies and transversal homoclinic points*, J. Differential
+  Equations **55** (1984), 225--256, Lemma 4.2 (the range of `d/ds + A` and the adjoint
+  equation).
 * M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 2 (the kernel and cokernel of the
   linearized trajectory operator through decaying solutions, and transversality).
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic Geometry and Topology*, IAS/Park City
@@ -202,25 +214,25 @@ end Solutions
 
 section InnerProduct
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A : ℝ → E →L[ℝ] E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A B : ℝ → E →L[ℝ] E}
   {s : Set ℝ}
 
-/-- **Adjoint solutions decaying on a set are orthogonal to solutions decaying there.** For a
-family of symmetric operators, if `v' = -A v` and `w' = A w`, then `⟪v, w⟫` is constant. When `v`
-and `w` are square integrable on a set `s` of infinite measure, such as a half-line, this constant
-is integrable on `s`, hence zero. So the solutions of the adjoint equation square integrable on
-`s` are orthogonal to the solutions of `v' + A v = 0` square integrable on `s`. -/
+/-- **Adjoint solutions decaying on a set are orthogonal to solutions decaying there.** Let `B` be
+pointwise adjoint to `A`: `⟪A τ x, y⟫ = ⟪x, B τ y⟫`. If `v' = -A v` and `w' = B w`, then
+`⟪v, w⟫` is constant. When `v` and `w` are square integrable on a set `s` of infinite measure,
+such as a half-line, this constant is integrable on `s`, hence zero. So the solutions of the
+adjoint equation `w' = B w` square integrable on `s` are orthogonal to the solutions of
+`v' + A v = 0` square integrable on `s`. -/
 theorem squareIntegrableSolutionsOn_neg_le_orthogonal
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) (hs : volume s = ∞) :
-    squareIntegrableSolutionsOn (-A) s ≤ (squareIntegrableSolutionsOn A s)ᗮ := by
+    (hAB : ∀ τ x y, ⟪A τ x, y⟫_ℝ = ⟪x, B τ y⟫_ℝ) (hs : volume s = ∞) :
+    squareIntegrableSolutionsOn (fun τ ↦ -B τ) s ≤ (squareIntegrableSolutionsOn A s)ᗮ := by
   rintro _ ⟨w, rfl, hw, hw2⟩
   refine (Submodule.mem_orthogonal _ _).2 fun _ ⟨v, hv0, hv, hv2⟩ ↦ ?_
   subst hv0
-  -- The pairing `⟪v, w⟫` has derivative `⟪-A v, w⟫ + ⟪v, A w⟫ = 0`, so it is constant.
+  -- The pairing `⟪v, w⟫` has derivative `⟪-A v, w⟫ + ⟪v, B w⟫ = 0`, so it is constant.
   have hderiv (τ : ℝ) : HasDerivAt (fun τ ↦ ⟪v τ, w τ⟫_ℝ) 0 τ := by
     have h := (hv τ).inner ℝ (hw τ)
-    rwa [Pi.neg_apply, neg_apply, neg_neg, inner_neg_left, (hsym τ).apply_clm,
-      add_neg_cancel] at h
+    rwa [neg_apply, neg_neg, inner_neg_left, hAB, add_neg_cancel] at h
   have hconst (τ : ℝ) : ⟪v τ, w τ⟫_ℝ = ⟪v 0, w 0⟫_ℝ :=
     is_const_of_deriv_eq_zero (fun τ ↦ (hderiv τ).differentiableAt) (fun τ ↦ (hderiv τ).deriv)
       τ 0
@@ -231,6 +243,15 @@ theorem squareIntegrableSolutionsOn_neg_le_orthogonal
   rw [integrableOn_const_iff, hs] at hint
   simpa using hint
 
+/-- If every solution of `v' + A v = 0` is square integrable on `(-∞, 0)`, then no nonzero
+solution of the adjoint equation `w' = B w` is. -/
+private theorem squareIntegrableSolutionsOn_Iio_eq_bot
+    (hAB : ∀ τ x y, ⟪A τ x, y⟫_ℝ = ⟪x, B τ y⟫_ℝ)
+    (hA : squareIntegrableSolutionsOn A (Iio 0) = ⊤) :
+    squareIntegrableSolutionsOn (fun τ ↦ -B τ) (Iio 0) = ⊥ :=
+  eq_bot_iff.2 ((squareIntegrableSolutionsOn_neg_le_orthogonal hAB Real.volume_Iio).trans
+    (by rw [hA, Submodule.top_orthogonal_eq_bot]))
+
 end InnerProduct
 
 /-! ### The dimensions of the stable and unstable solutions -/
@@ -239,55 +260,47 @@ section Dimension
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A : ℝ → E →L[ℝ] E}
 
-/-- The family `A` capped on the left: equal to `A` on `[0, ∞)` and to `-id` on `(-∞, -1]`,
+/-- The family `A` capped on the left by `C`: equal to `A` on `[0, ∞)` and to `C` on `(-∞, -1]`,
 interpolating by Mathlib's smooth transition function in between. -/
-private def leftCap (A : ℝ → E →L[ℝ] E) (τ : ℝ) : E →L[ℝ] E :=
-  Real.smoothTransition (-τ) • (-ContinuousLinearMap.id ℝ E) +
-    (1 - Real.smoothTransition (-τ)) • A τ
+private def leftCap (A : ℝ → E →L[ℝ] E) (C : E →L[ℝ] E) (τ : ℝ) : E →L[ℝ] E :=
+  Real.smoothTransition (-τ) • C + (1 - Real.smoothTransition (-τ)) • A τ
 
-private theorem leftCap_of_nonneg {τ : ℝ} (hτ : 0 ≤ τ) : leftCap A τ = A τ := by
+private theorem leftCap_of_nonneg {C : E →L[ℝ] E} {τ : ℝ} (hτ : 0 ≤ τ) :
+    leftCap A C τ = A τ := by
   simp [leftCap, Real.smoothTransition.zero_of_nonpos (neg_nonpos.2 hτ)]
 
-private theorem leftCap_of_le_neg_one {τ : ℝ} (hτ : τ ≤ -1) :
-    leftCap A τ = -ContinuousLinearMap.id ℝ E := by
+private theorem leftCap_of_le_neg_one {C : E →L[ℝ] E} {τ : ℝ} (hτ : τ ≤ -1) :
+    leftCap A C τ = C := by
   simp [leftCap, Real.smoothTransition.one_of_one_le (le_neg_of_le_neg hτ)]
 
-private theorem continuous_leftCap (hA : Continuous A) : Continuous (leftCap A) :=
+private theorem continuous_leftCap (hA : Continuous A) (C : E →L[ℝ] E) :
+    Continuous (leftCap A C) :=
   ((Real.smoothTransition.continuous.comp continuous_neg).smul continuous_const).add
     ((continuous_const.sub (Real.smoothTransition.continuous.comp continuous_neg)).smul hA)
 
-private theorem isSymmetric_leftCap (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) (τ : ℝ) :
-    (leftCap A τ).toLinearMap.IsSymmetric := fun x y ↦ by
-  simp only [leftCap, ContinuousLinearMap.coe_coe, add_apply, smul_apply, neg_apply,
-    ContinuousLinearMap.id_apply,
-    inner_add_left, inner_add_right, inner_smul_left, inner_smul_right, inner_neg_left,
-    inner_neg_right, (hsym τ).apply_clm, RCLike.conj_to_real]
-
-private theorem tendsto_leftCap_atBot :
-    Tendsto (leftCap A) atBot (𝓝 (-ContinuousLinearMap.id ℝ E)) :=
+private theorem tendsto_leftCap_atBot (C : E →L[ℝ] E) : Tendsto (leftCap A C) atBot (𝓝 C) :=
   tendsto_const_nhds.congr' <| (eventually_le_atBot (-1)).mono fun _ hτ ↦
     (leftCap_of_le_neg_one hτ).symm
 
-private theorem tendsto_leftCap_atTop {Aplus : E →L[ℝ] E} (htop : Tendsto A atTop (𝓝 Aplus)) :
-    Tendsto (leftCap A) atTop (𝓝 Aplus) :=
+private theorem tendsto_leftCap_atTop {Aplus : E →L[ℝ] E} (htop : Tendsto A atTop (𝓝 Aplus))
+    (C : E →L[ℝ] E) : Tendsto (leftCap A C) atTop (𝓝 Aplus) :=
   htop.congr' <| (eventually_ge_atTop 0).mono fun _ hτ ↦ (leftCap_of_nonneg hτ).symm
 
 variable [FiniteDimensional ℝ E]
 
-/-- Every solution of `v' = -leftCap A v` is square integrable on `(-∞, 0)`: before time `-1` it
-is `exp (τ + 1) v(-1)`. -/
-private theorem squareIntegrableSolutionsOn_leftCap_Iio (hA : Continuous A) :
-    squareIntegrableSolutionsOn (leftCap A) (Iio 0) = ⊤ := by
+/-- Every solution of `v' + B v = 0` is square integrable on `(-∞, 0)` when `B = -1` before
+time `-1`: there it is `exp (τ + 1) v(-1)`. -/
+private theorem squareIntegrableSolutionsOn_Iio_eq_top {B : ℝ → E →L[ℝ] E} (hB : Continuous B)
+    (hB₁ : ∀ τ ≤ -1, B τ = -1) : squareIntegrableSolutionsOn B (Iio 0) = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ ?_
-  set v : ℝ → E := fun τ ↦ dysonSeriesLeft (-leftCap A) τ x
-  have hv (τ : ℝ) : HasDerivAt v (-leftCap A τ (v τ)) τ := by
-    simpa [v] using hasDerivAt_dysonSeriesLeft_apply (continuous_leftCap hA).neg x τ
+  set v : ℝ → E := fun τ ↦ dysonSeriesLeft (-B) τ x
+  have hv (τ : ℝ) : HasDerivAt v (-B τ (v τ)) τ := by
+    simpa [v] using hasDerivAt_dysonSeriesLeft_apply hB.neg x τ
   have hvc : Continuous v := continuous_iff_continuousAt.2 fun τ ↦ (hv τ).continuousAt
   refine ⟨v, by simp [v], hv, ?_⟩
   rw [memLp_two_iff_integrable_sq_norm hvc.aestronglyMeasurable]
   have hexp (τ : ℝ) (hτ : τ ≤ -1) : v τ = Real.exp (1 * (τ - -1)) • v (-1) :=
-    eq_exp_smul_of_hasDerivAt_smul_of_le
-      (fun σ hσ ↦ by simpa [leftCap_of_le_neg_one hσ] using hv σ) hτ
+    eq_exp_smul_of_hasDerivAt_smul_of_le (fun σ hσ ↦ by simpa [hB₁ σ hσ] using hv σ) hτ
   -- Split `(-∞, 0)` at `-1`: an exponential tail and a compact piece.
   have hsplit : Iio (0 : ℝ) ⊆ Iic (-1) ∪ Icc (-1) 0 := fun τ hτ ↦ by
     rcases le_total τ (-1) with h | h
@@ -306,157 +319,244 @@ private theorem squareIntegrableSolutionsOn_leftCap_Iio (hA : Continuous A) :
     ring
   · exact ((hvc.norm.pow 2).continuousOn).integrableOn_compact isCompact_Icc
 
-/-- No nonzero solution of the adjoint equation `w' = leftCap A w` is square integrable on the
-whole line: before time `-1` it is `exp (-(τ + 1)) w(-1)`. -/
-private theorem squareIntegrableSolutions_neg_leftCap (hA : Continuous A)
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) :
-    squareIntegrableSolutions (-leftCap A) = ⊥ := by
-  refine eq_bot_iff.2 ((squareIntegrableSolutions_le_squareIntegrableSolutionsOn _ (Iio 0)).trans
-    ((squareIntegrableSolutionsOn_neg_le_orthogonal (isSymmetric_leftCap hsym)
-      Real.volume_Iio).trans ?_))
-  rw [squareIntegrableSolutionsOn_leftCap_Iio hA, Submodule.top_orthogonal_eq_bot]
-
-/-- The two index formulas for the trajectory operator of a continuous family of symmetric
-operators with invertible limits `A±`, equated: the square-integrable solutions of `v' + A v = 0`
-and `E` have the same total dimension as the square-integrable solutions of `w' = A w`, the
-negative spectral subspace of `A⁻` and the positive spectral subspace of `A⁺`. -/
-private theorem finrank_squareIntegrableSolutions_add_finrank (hA : Continuous A)
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
-    Module.finrank ℝ (squareIntegrableSolutions A) + Module.finrank ℝ E =
-      Module.finrank ℝ (squareIntegrableSolutions (-A)) +
-        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) +
-        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)) := by
+open WeakDerivStep in
+/-- The index of the trajectory operator of `leftCap A C`, for an operator `C` that is its own
+symmetric Lyapunov form (such as `C = ±1`), computed in two ways: by the square-integrable
+solutions of the equation and of its formal adjoint, and by the negative inertia of the Lyapunov
+forms `C` and `S` of its two limits. -/
+private theorem finrank_sub_finrank_leftCap (hA : Continuous A) {C Aplus S : E →L[ℝ] E}
+    (hC : (C : E →ₗ[ℝ] E).IsSymmetric) (hCC : ∀ v, 1 * ‖v‖ ^ 2 ≤ ⟪C (C v), v⟫_ℝ)
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ} (hc : 0 < c)
+    (hplus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aplus v), v⟫_ℝ) (htop : Tendsto A atTop (𝓝 Aplus)) :
+    (Module.finrank ℝ (squareIntegrableSolutions (leftCap A C)) : ℤ) -
+        Module.finrank ℝ
+          (squareIntegrableSolutions fun τ ↦ -ContinuousLinearMap.adjoint (leftCap A C τ)) =
+      Module.finrank ℝ (Module.End.pointSpectralSubspace (C : E →ₗ[ℝ] E) (Iio 0)) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)) := by
+  have hB := continuous_leftCap hA C
+  have hBbot := tendsto_leftCap_atBot (A := A) C
+  have hBtop := tendsto_leftCap_atTop htop C
   -- A continuous family with limits at both ends is bounded, so it has an `L∞` class.
-  obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  set AL := (memLp_top_of_bound (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-    hA.aestronglyMeasurable M (.of_forall hM)).toLp A
-  have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A := MemLp.coeFn_toLp _
-  have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
-  have h1 := WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-    hA (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
-    hsymplus hα hminus hplus hbot htop AL hAL
-  have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hA hsym hα hminus hplus
-    hbot htop AL hAL
-  -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
-  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
-  have hcompl := Submodule.finrank_add_eq_of_isCompl
-    (hsymplus.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
+  obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hB hBbot hBtop
+  set BL := (memLp_top_of_bound (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+    hB.aestronglyMeasurable M (.of_forall hM)).toLp (leftCap A C)
+  have hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] leftCap A C := MemLp.coeFn_toLp _
+  rw [← index_trajectoryOperator_eq_finrank_sub_finrank_of_hasLyapunovForm hB
+      (ContinuousLinearMap.hasLyapunovForm_iff.2 ⟨C, hC, 1, one_pos, hCC⟩)
+      (ContinuousLinearMap.hasLyapunovForm_iff.2 ⟨S, hS, c, hc, hplus⟩) hBbot hBtop BL hBL,
+    index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of_forall_le_inner hB hC
+      hS one_pos hc hCC hplus hBbot hBtop BL hBL]
+
+/-- **The dimension of the stable solutions.** Let `A` be a continuous family of operators on a
+finite-dimensional real inner product space tending at `+∞` to an operator `A⁺` with a symmetric
+Lyapunov form `S`: `c ‖v‖² ≤ ⟪S (A⁺ v), v⟫` with `c > 0`. Then the initial values of the
+solutions of `v' + A v = 0` square integrable on `(0, ∞)` form a space of dimension
+`dim E - n⁻(S)`, where `n⁻(S)` is the number of negative eigenvalues of `S`. -/
+theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace
+    (hA : Continuous A) {Aplus S : E →L[ℝ] E} (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ}
+    (hc : 0 < c) (hplus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aplus v), v⟫_ℝ)
+    (htop : Tendsto A atTop (𝓝 Aplus)) :
+    Module.finrank ℝ (squareIntegrableSolutionsOn A (Ioi 0)) +
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)) =
+      Module.finrank ℝ E := by
+  have hsym : ((-1 : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
+    rw [ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_one]
+    exact LinearMap.IsSymmetric.one.neg
+  have h := finrank_sub_finrank_leftCap hA hsym (by simp) hS hc hplus htop
+  set B := leftCap A (-1)
+  have hB : Continuous B := continuous_leftCap hA _
+  have hBadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (B τ) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hB).neg
+  -- At `-∞`, where `B = -1`, every solution of `v' + B v = 0` decays and no nonzero solution of
+  -- the adjoint equation does.
+  have hU : squareIntegrableSolutionsOn B (Iio 0) = ⊤ :=
+    squareIntegrableSolutionsOn_Iio_eq_top hB fun τ hτ ↦ leftCap_of_le_neg_one hτ
+  have hU' := squareIntegrableSolutionsOn_Iio_eq_bot
+    (fun τ x y ↦ (ContinuousLinearMap.adjoint_inner_right (B τ) x y).symm) hU
+  -- All eigenvalues of `-1` are negative.
+  have hneg : Module.End.pointSpectralSubspace ((-1 : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊤ := by
+    simpa using Module.End.pointSpectralSubspace_smul_one_of_mem (𝕜 := ℝ) (E := E) (μ := -1)
+      (Ω := Iio 0) (by norm_num)
+  -- So the whole-line solutions of `B` are the stable solutions of `A`, and those of the adjoint
+  -- equation vanish.
+  have hsol : squareIntegrableSolutions B = squareIntegrableSolutionsOn A (Ioi 0) := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, top_inf_eq]
+    exact squareIntegrableSolutionsOn_Ioi_congr hB hA fun τ hτ ↦ leftCap_of_nonneg hτ
+  have hsol' : squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) = ⊥ := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', bot_inf_eq]
+  rw [hsol, hsol', hneg, finrank_bot, finrank_top] at h
   omega
 
-/-- **The dimension of the stable solutions.** Let `A` be a continuous family of symmetric
-operators on a finite-dimensional real inner product space, with an invertible limit `A⁺` at
-`+∞`. Then the initial values of the solutions of `v' + A v = 0` square integrable on `(0, ∞)`
-form a space of the dimension of the positive spectral subspace of `A⁺`: the number of positive
-eigenvalues of `A⁺`, counted with multiplicity. -/
-theorem finrank_squareIntegrableSolutionsOn_Ioi (hA : Continuous A)
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) {Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+/-- **The dimension of the stable solutions of the adjoint equation.** Let `A` be a continuous
+family of operators on a finite-dimensional real inner product space tending at `+∞` to an
+operator `A⁺` with a symmetric Lyapunov form `S`: `c ‖v‖² ≤ ⟪S (A⁺ v), v⟫` with `c > 0`. Then
+the initial values of the solutions of the formal adjoint equation `w' = A† w` square integrable
+on `(0, ∞)` form a space of dimension `n⁻(S)`, the number of negative eigenvalues of `S`. -/
+theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi
+    (hA : Continuous A) {Aplus S : E →L[ℝ] E} (hS : (S : E →ₗ[ℝ] E).IsSymmetric) {c : ℝ}
+    (hc : 0 < c) (hplus : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (Aplus v), v⟫_ℝ)
+    (htop : Tendsto A atTop (𝓝 Aplus)) :
+    Module.finrank ℝ
+        (squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) (Ioi 0)) =
+      Module.finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Iio 0)) := by
+  have hsym : ((1 : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
+    rw [ContinuousLinearMap.toLinearMap_one]
+    exact LinearMap.IsSymmetric.one
+  have h := finrank_sub_finrank_leftCap hA hsym (by simp) hS hc hplus htop
+  set B := leftCap A 1
+  have hB : Continuous B := continuous_leftCap hA _
+  have hBadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (B τ) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hB).neg
+  have hAadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (A τ) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
+  -- At `-∞`, where `B = 1`, every solution of the adjoint equation decays and no nonzero solution
+  -- of `v' + B v = 0` does.
+  have hU' : squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) (Iio 0) =
+      ⊤ :=
+    squareIntegrableSolutionsOn_Iio_eq_top hBadj fun τ hτ ↦ by
+      simp [B, leftCap_of_le_neg_one hτ, ContinuousLinearMap.adjoint_one]
+  have hU : squareIntegrableSolutionsOn B (Iio 0) = ⊥ := by
+    simpa using squareIntegrableSolutionsOn_Iio_eq_bot (B := fun τ ↦ -B τ)
+      (fun τ x y ↦ by
+        simp [inner_neg_left, inner_neg_right, ContinuousLinearMap.adjoint_inner_left]) hU'
+  -- No eigenvalue of `1` is negative.
+  have hpos : Module.End.pointSpectralSubspace ((1 : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊥ := by
+    simpa using Module.End.pointSpectralSubspace_smul_one_of_notMem (𝕜 := ℝ) (E := E) (μ := 1)
+      (Ω := Iio 0) (by norm_num)
+  -- So the whole-line solutions of `B` vanish, and those of the adjoint equation are the stable
+  -- solutions of the adjoint equation of `A`.
+  have hsol : squareIntegrableSolutions B = ⊥ := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, bot_inf_eq]
+  have hsol' : squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) =
+      squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) (Ioi 0) := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', top_inf_eq]
+    exact squareIntegrableSolutionsOn_Ioi_congr hBadj hAadj fun τ hτ ↦ by
+      simp [B, leftCap_of_nonneg hτ]
+  rw [hsol, hsol', hpos, finrank_bot] at h
+  omega
+
+/-- **The dimension of the stable solutions for an invertible symmetric limit.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space tending at `+∞`
+to a symmetric operator `A⁺` with `α ‖v‖ ≤ ‖A⁺ v‖`, `α > 0`. Then the initial values of the
+solutions of `v' + A v = 0` square integrable on `(0, ∞)` form a space of the dimension of the
+positive spectral subspace of `A⁺`: the number of positive eigenvalues of `A⁺`, counted with
+multiplicity. -/
+theorem finrank_squareIntegrableSolutionsOn_Ioi (hA : Continuous A) {Aplus : E →L[ℝ] E}
+    (hsym : (Aplus : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
     (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖) (htop : Tendsto A atTop (𝓝 Aplus)) :
     Module.finrank ℝ (squareIntegrableSolutionsOn A (Ioi 0)) =
       Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)) := by
-  -- Compute the index of the trajectory operator of the capped family in two ways.
-  have hC := continuous_leftCap hA
-  have hβ : 0 < min α 1 := lt_min hα one_pos
-  have hminus' : ∀ v : E, min α 1 * ‖v‖ ≤ ‖(-ContinuousLinearMap.id ℝ E) v‖ := fun v ↦ by
-    simpa using mul_le_of_le_one_left (norm_nonneg v) (min_le_right α 1)
-  have hplus' : ∀ v : E, min α 1 * ‖v‖ ≤ ‖Aplus v‖ := fun v ↦
-    (mul_le_mul_of_nonneg_right (min_le_left α 1) (norm_nonneg v)).trans (hplus v)
-  have h := finrank_squareIntegrableSolutions_add_finrank hC (isSymmetric_leftCap hsym) hβ hminus'
-    hplus' tendsto_leftCap_atBot (tendsto_leftCap_atTop htop)
-  -- All eigenvalues of `-id` are negative.
-  have hid : Module.End.pointSpectralSubspace
-      ((-ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊤ :=
-    eq_top_iff.2 fun x _ ↦ Module.End.eigenspace_le_pointSpectralSubspace
-      (show (-1 : ℝ) ∈ Iio 0 by norm_num) (Module.End.mem_eigenspace_iff.2 (by simp))
-  -- The kernel is the stable solutions of `A`, and there is no cokernel.
-  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hC, squareIntegrableSolutionsOn_leftCap_Iio hA,
-    top_inf_eq, squareIntegrableSolutionsOn_Ioi_congr hC hA fun τ hτ ↦ leftCap_of_nonneg hτ,
-    squareIntegrableSolutions_neg_leftCap hA hsym, finrank_bot, hid, finrank_top] at h
+  -- `A⁺` is its own Lyapunov form.
+  have hform : ∀ v, α ^ 2 * ‖v‖ ^ 2 ≤ ⟪Aplus (Aplus v), v⟫_ℝ := fun v ↦ by
+    rw [hsym.apply_clm, real_inner_self_eq_norm_sq, ← mul_pow]
+    exact pow_le_pow_left₀ (by positivity) (hplus v) 2
+  have h₁ := finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace hA hsym
+    (by positivity) hform htop
+  -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
+  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
+    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
+  have h₂ :=
+    (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)).finrank_add_finrank_orthogonal
+  rw [hsym.orthogonal_pointSpectralSubspace_Ioi_zero hker] at h₂
   omega
 
-/-- **The dimension of the unstable solutions.** Let `A` be a continuous family of symmetric
-operators on a finite-dimensional real inner product space, with an invertible limit `A⁻` at
-`-∞`. Then the initial values of the solutions of `v' + A v = 0` square integrable on `(-∞, 0)`
-form a space of the dimension of the negative spectral subspace of `A⁻`: the number of negative
-eigenvalues of `A⁻`, counted with multiplicity. -/
-theorem finrank_squareIntegrableSolutionsOn_Iio (hA : Continuous A)
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) {Aminus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+/-- **The dimension of the unstable solutions for an invertible symmetric limit.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space tending at `-∞`
+to a symmetric operator `A⁻` with `α ‖v‖ ≤ ‖A⁻ v‖`, `α > 0`. Then the initial values of the
+solutions of `v' + A v = 0` square integrable on `(-∞, 0)` form a space of the dimension of the
+negative spectral subspace of `A⁻`: the number of negative eigenvalues of `A⁻`, counted with
+multiplicity. -/
+theorem finrank_squareIntegrableSolutionsOn_Iio (hA : Continuous A) {Aminus : E →L[ℝ] E}
+    (hsym : (Aminus : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
     (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hbot : Tendsto A atBot (𝓝 Aminus)) :
     Module.finrank ℝ (squareIntegrableSolutionsOn A (Iio 0)) =
       Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) := by
   rw [squareIntegrableSolutionsOn_Iio_eq_Ioi,
     finrank_squareIntegrableSolutionsOn_Ioi (A := fun τ ↦ -A (-τ)) (hA.comp continuous_neg).neg
-      (fun τ ↦ (hsym (-τ)).neg) hα (Aplus := -Aminus) (by simpa using hminus)
-      (hbot.comp tendsto_neg_atTop_atBot).neg,
+      (by rw [ContinuousLinearMap.toLinearMap_neg]; exact hsym.neg) hα (Aplus := -Aminus)
+      (by simpa using hminus) (hbot.comp tendsto_neg_atTop_atBot).neg,
     ContinuousLinearMap.toLinearMap_neg, Module.End.pointSpectralSubspace_neg, neg_Ioi, neg_zero]
 
 /-! ### The cokernel of the trajectory operator -/
 
-/-- **The cokernel of the trajectory operator is the failure of transversality.** Let `A` be a
-continuous family of symmetric operators on a finite-dimensional real inner product space, with
-invertible limits at `±∞`. Then the initial values of the square-integrable solutions of the
-adjoint equation `w' = A w` are the orthogonal complement of the sum of the unstable and stable
-solutions of `v' + A v = 0`, those square integrable on `(-∞, 0)` and on `(0, ∞)`. -/
-theorem squareIntegrableSolutions_neg_eq_orthogonal_sup (hA : Continuous A)
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
-    squareIntegrableSolutions (-A) =
-      (squareIntegrableSolutionsOn A (Iio 0) ⊔ squareIntegrableSolutionsOn A (Ioi 0))ᗮ := by
-  have hU := finrank_squareIntegrableSolutionsOn_Iio hA hsym hα hminus hbot
-  have hW := finrank_squareIntegrableSolutionsOn_Ioi hA hsym hα hplus htop
-  have hinf := squareIntegrableSolutionsOn_Iio_inf_Ioi hA
-  set U := squareIntegrableSolutionsOn A (Iio 0)
-  set W := squareIntegrableSolutionsOn A (Ioi 0)
-  -- The adjoint solutions are orthogonal to the unstable and to the stable solutions.
-  have hle : squareIntegrableSolutions (-A) ≤ (U ⊔ W)ᗮ := by
-    rw [← Submodule.inf_orthogonal]
-    exact le_inf
-      ((squareIntegrableSolutions_le_squareIntegrableSolutionsOn _ _).trans
-        (squareIntegrableSolutionsOn_neg_le_orthogonal hsym Real.volume_Iio))
-      ((squareIntegrableSolutions_le_squareIntegrableSolutionsOn _ _).trans
-        (squareIntegrableSolutionsOn_neg_le_orthogonal hsym Real.volume_Ioi))
-  -- Equality by counting dimensions with the index formula.
-  refine Submodule.eq_of_le_of_finrank_eq hle ?_
-  have h := finrank_squareIntegrableSolutions_add_finrank hA hsym hα hminus hplus hbot htop
-  have hsup := Submodule.finrank_sup_add_finrank_inf_eq U W
-  have horth := (U ⊔ W).finrank_add_finrank_orthogonal
-  rw [hinf] at hsup
+/-- **The stable solutions of the adjoint equation are the orthogonal complement.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space tending at `+∞`
+to an operator with a Lyapunov form. Then the initial values of the solutions of the formal
+adjoint equation `w' = A† w` square integrable on `(0, ∞)` are exactly the vectors orthogonal to
+the initial values of the solutions of `v' + A v = 0` square integrable on `(0, ∞)`. -/
+theorem squareIntegrableSolutionsOn_neg_adjoint_Ioi_eq_orthogonal (hA : Continuous A)
+    {Aplus : E →L[ℝ] E} (hplus : Aplus.HasLyapunovForm) (htop : Tendsto A atTop (𝓝 Aplus)) :
+    squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) (Ioi 0) =
+      (squareIntegrableSolutionsOn A (Ioi 0))ᗮ := by
+  obtain ⟨S, hS, c, hc, hcS⟩ := ContinuousLinearMap.hasLyapunovForm_iff.1 hplus
+  refine Submodule.eq_of_le_of_finrank_eq
+    (squareIntegrableSolutionsOn_neg_le_orthogonal
+      (fun τ x y ↦ (ContinuousLinearMap.adjoint_inner_right (A τ) x y).symm) Real.volume_Ioi) ?_
+  have h₁ := finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspace hA hS hc
+    hcS htop
+  have h₂ := finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi hA hS hc hcS htop
+  have h₃ := (squareIntegrableSolutionsOn A (Ioi 0)).finrank_add_finrank_orthogonal
   omega
 
+/-- **The unstable solutions of the adjoint equation are the orthogonal complement.** Let `A` be
+a continuous family of operators on a finite-dimensional real inner product space tending at `-∞`
+to an operator with a Lyapunov form. Then the initial values of the solutions of the formal
+adjoint equation `w' = A† w` square integrable on `(-∞, 0)` are exactly the vectors orthogonal to
+the initial values of the solutions of `v' + A v = 0` square integrable on `(-∞, 0)`. -/
+theorem squareIntegrableSolutionsOn_neg_adjoint_Iio_eq_orthogonal (hA : Continuous A)
+    {Aminus : E →L[ℝ] E} (hminus : Aminus.HasLyapunovForm) (hbot : Tendsto A atBot (𝓝 Aminus)) :
+    squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) (Iio 0) =
+      (squareIntegrableSolutionsOn A (Iio 0))ᗮ := by
+  -- Reverse time: `A` becomes `τ ↦ -A (-τ)`, which tends to `-A⁻` at `+∞`.
+  have h := squareIntegrableSolutionsOn_neg_adjoint_Ioi_eq_orthogonal
+    (A := fun τ ↦ -A (-τ)) (hA.comp continuous_neg).neg hminus.neg
+    (hbot.comp tendsto_neg_atTop_atBot).neg
+  rw [squareIntegrableSolutionsOn_Iio_eq_Ioi, squareIntegrableSolutionsOn_Iio_eq_Ioi, ← h]
+  simp
+
+/-- **The cokernel of the trajectory operator is the failure of transversality.** Let `A` be a
+continuous family of operators on a finite-dimensional real inner product space whose limits at
+`±∞` have Lyapunov forms. Then the initial values of the square-integrable solutions of the formal
+adjoint equation `w' = A† w`, which model the cokernel of `D_A`, are the orthogonal complement of
+the sum of the unstable and stable solutions of `v' + A v = 0`, those square integrable on
+`(-∞, 0)` and on `(0, ∞)`. -/
+theorem squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup (hA : Continuous A)
+    {Aminus Aplus : E →L[ℝ] E} (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
+    squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) =
+      (squareIntegrableSolutionsOn A (Iio 0) ⊔ squareIntegrableSolutionsOn A (Ioi 0))ᗮ := by
+  have hAadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (A τ) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
+  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hAadj,
+    squareIntegrableSolutionsOn_neg_adjoint_Iio_eq_orthogonal hA hminus hbot,
+    squareIntegrableSolutionsOn_neg_adjoint_Ioi_eq_orthogonal hA hplus htop,
+    Submodule.inf_orthogonal]
+
 /-- **The trajectory operator is onto exactly when the stable and unstable solutions span.** Let
-`A` be a continuous family of symmetric operators on a finite-dimensional real inner product
-space, with invertible limits at `±∞`. Then `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to
-`L²(ℝ, E)` is surjective if and only if every vector of `E` is the sum of the value at time `0`
-of a solution of `v' + A v = 0` square integrable on `(-∞, 0)` and of one square integrable on
-`(0, ∞)`. -/
+`A` be a continuous family of operators on a finite-dimensional real inner product space whose
+limits at `±∞` have Lyapunov forms. Then `D_A u = u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is
+surjective if and only if every vector of `E` is the sum of the value at time `0` of a solution
+of `v' + A v = 0` square integrable on `(-∞, 0)` and of one square integrable on `(0, ∞)`. -/
 theorem WeakDerivStep.surjective_trajectoryOperator_iff_sup_eq_top (hA : Continuous A)
-    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    {Aminus Aplus : E →L[ℝ] E} (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) AL) ↔
       squareIntegrableSolutionsOn A (Iio 0) ⊔ squareIntegrableSolutionsOn A (Ioi 0) = ⊤ := by
-  have hclosed := WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm hA
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot hα hminus)
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop hα hplus) hbot htop
-    AL hAL
-  -- The coefficient is its own pointwise adjoint.
-  have hadj : ∀ᵐ τ ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      AL τ = ContinuousLinearMap.adjoint (AL τ) := by
-    filter_upwards [hAL] with τ hτ
-    rw [hτ]
-    exact (hsym τ).clm_adjoint_eq.symm
-  have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] -A := by
-    filter_upwards [Lp.coeFn_neg AL, hAL] with τ hτ hAτ
-    simp only [hτ, Pi.neg_apply, hAτ]
-  rw [WeakDerivStep.surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed,
-    WeakDerivStep.ker_trajectoryOperator_eq_bot_iff hA.neg (-AL) hnegAL,
-    squareIntegrableSolutions_neg_eq_orthogonal_sup hA hsym hα hminus hplus hbot htop,
+  obtain ⟨BL, hBL⟩ := WeakDerivStep.exists_ae_eq_adjoint AL hAL
+  have hneg : -BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun τ ↦ -ContinuousLinearMap.adjoint (A τ) := by
+    filter_upwards [Lp.coeFn_neg BL, hBL] with τ hτ hBτ
+    simp only [hτ, Pi.neg_apply, hBτ]
+  have hAadj : Continuous fun τ ↦ -ContinuousLinearMap.adjoint (A τ) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
+  rw [WeakDerivStep.surjective_trajectoryOperator_iff_ker_neg_eq_bot
+      (WeakDerivStep.ae_eq_adjoint_of_ae_eq hAL hBL)
+      (WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot
+        htop AL hAL),
+    WeakDerivStep.ker_trajectoryOperator_eq_bot_iff hAadj (-BL) hneg,
+    squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup hA hminus hplus hbot htop,
     Submodule.orthogonal_eq_bot_iff]
 
 end Dimension
