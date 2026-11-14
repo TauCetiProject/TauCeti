@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Volume
+import TauCeti.Topology.Algebra.Module.Alternating.Wedge.TwoForm
 
 /-!
 # The symplectic volume form and orientation of a symplectic manifold
@@ -41,6 +42,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.volumeForm_one`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
@@ -89,6 +91,14 @@ def volumeForm (σ : SmoothTwoForm I M) (n : ℕ) : SmoothForm I M ℝ (2 * n) :
 theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).1 x = ((n.factorial : ℝ)⁻¹) • (σ.1 x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
+
+/-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
+volume form of `σ`. -/
+@[simp]
+theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
+  ext x : 2
+  rw [volumeForm_apply, ContinuousAlternatingMap.wedgePow_one, Nat.factorial_one, Nat.cast_one,
+    inv_one, one_smul]
 
 /-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
 @[simp]

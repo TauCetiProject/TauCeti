@@ -35,7 +35,9 @@ The orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` is oriented w
 normal: a basis of `(ℝ ∙ p)ᗮ` is positive exactly when `p` followed by it is a positive basis of
 the whole space (`Orientation.orthogonalSpanSingleton`,
 `Orientation.orientation_eq_orthogonalSpanSingleton_iff`). This orients the tangent hyperplanes of
-spheres.
+spheres. For a normal `p`, the volume `|vol(p, w₁, …, wₘ)|` is `‖p‖` times the square root of the
+Gram determinant of the `wᵢ` alone (`Orientation.abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram`),
+the `m`-dimensional volume of their parallelepiped in the hyperplane.
 -/
 
 public section
@@ -196,6 +198,21 @@ section OrthogonalSpanSingleton
 variable {m : ℕ}
 
 variable [Fact (Module.finrank ℝ E = m + 1)]
+
+/-- **The volume of a normal followed by a family of vectors.** If `p` is orthogonal to every
+`wᵢ`, then `|vol(p, w₁, …, wₘ)| = ‖p‖ √(det ⟪wᵢ, wⱼ⟫)`: `‖p‖` times the `m`-dimensional volume
+of the parallelepiped spanned by the `wᵢ`. -/
+theorem abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram (o : Orientation ℝ E (Fin (m + 1))) {p : E}
+    {w : Fin m → E} (hw : ∀ i, inner ℝ p (w i) = 0) :
+    |o.volumeForm (Fin.cons p w)| = ‖p‖ * √(Matrix.gram ℝ w).det := by
+  -- The Gram matrix of `(p, w)` is block diagonal, with blocks `‖p‖²` and the Gram matrix of `w`.
+  rw [o.abs_volumeForm_apply_eq_sqrt_det_gram, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
+    Finset.sum_eq_zero fun j _ ↦ ?_]
+  · simp only [Matrix.gram_apply, Fin.cons_zero, real_inner_self_eq_norm_sq, Fin.val_zero,
+      pow_zero, one_mul, Fin.succAbove_zero, add_zero]
+    rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+    congr 3
+  · simp [Matrix.gram_apply, hw]
 
 /-- The top form `w ↦ vol(p, w₀, …, wₘ₋₁)` on the orthogonal complement of `p`. -/
 private def orthogonalSpanSingletonForm (o : Orientation ℝ E (Fin (m + 1))) (p : E) :

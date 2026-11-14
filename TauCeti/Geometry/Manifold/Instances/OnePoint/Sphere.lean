@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
+public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
@@ -40,8 +41,20 @@ In a chart coordinate `c` both sides are `4 (1 + |c|²)⁻² Re (conj a * b)`: o
 is the conformal factor of inverse stereographic projection
 (`TauCeti.inner_fderiv_stereoInvFunAux`), and on the Fubini–Study side it is `4π` times the density
 `(π (1 + |c|²)²)⁻¹`. The factor `4π` is the area of the unit sphere, matching the normalization of
-`ω_FS` to total area one (`OnePoint.integral_fubiniStudyDensity`); the comparison of areas is not
-carried out here.
+`ω_FS` to total area one (`OnePoint.integral_fubiniStudyDensity`).
+
+This gives the area of the two-sphere. For an orientation `o` of `E`, the volume form
+`vol(u, ·, ·)` of `S²` (`Orientation.sphereVolumeForm`) has total measure `4π`
+(`Orientation.measure_sphereVolumeForm_univ`). At a point `u` of the sphere, the area
+`|vol(u, a, b)|` of two tangent vectors is `√(|a|² |b|² - ⟪a, b⟫²)`, as `u` is a unit normal
+(`Orientation.abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram`). With Lagrange's identity
+`|a|² |b|² - (Re (conj a * b))² = (Im (conj a * b))²` this gives
+
+`|σ^* vol| = 4π |ω_FS|`
+
+pointwise (`Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply`), and `ω_FS` has
+total measure one (`OnePoint.measure_fubiniStudyForm_univ`). No orientation of the Riemann sphere
+is compared: the measure of a top form only depends on its absolute value.
 
 ## Main definitions
 
@@ -57,6 +70,9 @@ carried out here.
   projection from `v`.
 * `OnePoint.inner_mfderiv_diffeomorphSphere`: the round metric pulls back to `4π` times the
   Fubini–Study metric.
+* `Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply`: the volume form of `S²`
+  pulls back to the Riemann sphere with absolute value `4π |ω_FS|`.
+* `Orientation.measure_sphereVolumeForm_univ`: the volume form of `S²` has total measure `4π`.
 
 ## References
 
@@ -68,7 +84,7 @@ carried out here.
 
 public section
 
-open Metric Module Set Filter ComplexConjugate TauCeti
+open Metric Module Set Filter MeasureTheory ComplexConjugate TauCeti
 open scoped Bundle InnerProductSpace Manifold Topology ContDiff TauCeti.ComplexManifold
 
 noncomputable section
@@ -413,5 +429,72 @@ theorem inner_mfderiv_diffeomorphSphere (x : OnePoint ℂ) (a b : ℂ) :
   rw [inner_tangentSpace_sphere, hd a, hd b, inner_mvfderiv_coe_toSphere]
   rw [eval₂_fubiniStudyForm_I_mul, fubiniStudyDensity_def]
   field_simp
+
+/-! ### The area of the two-sphere -/
+
+section Area
+
+/-- **The volume form of `S²` on the Riemann sphere.** Along the inverse stereographic projection
+`σ = diffeomorphSphere v ι`, the volume form of the unit sphere pulls back to a form with the
+absolute values of `4π ω_FS`, where `ω_FS` is the Fubini–Study form. -/
+theorem _root_.Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply
+    (o : Orientation ℝ E (Fin (2 + 1))) (x : OnePoint ℂ) (u : Fin 2 → TangentSpace 𝓘(ℝ, ℂ) x) :
+    |mpullback 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) o.sphereVolumeForm.1 x u| =
+      |4 * Real.pi * fubiniStudyForm.1 x u| := by
+  -- The round metric pulls back to `4π` times the Fubini–Study metric.
+  have hinner (p q : ℂ) :
+      ⟪mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
+          (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x p),
+        mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
+          (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x q)⟫_ℝ =
+        4 * Real.pi * fubiniStudyDensity (chartAt ℂ x x) * (conj p * q).re := by
+    rw [← inner_tangentSpace_sphere, inner_mfderiv_diffeomorphSphere, eval₂_fubiniStudyForm_I_mul]
+    ring
+  -- The point is a unit normal to the tangent vectors, so only their Gram determinant remains.
+  rw [mpullback_apply, Orientation.sphereVolumeForm_apply,
+    o.abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram
+      fun i ↦ inner_coe_mvfderiv_subtypeVal_sphere _ _, norm_eq_of_mem_sphere, one_mul,
+    Matrix.det_fin_two, SmoothBundleForm.apply_eq_eval₂]
+  obtain ⟨a, b, rfl⟩ : ∃ a b : ℂ, u = ![a, b] :=
+    ⟨u 0, u 1, funext fun i ↦ by fin_cases i <;> rfl⟩
+  simp only [Matrix.gram_apply, Matrix.cons_val_zero, Matrix.cons_val_one, hinner,
+    eval₂_fubiniStudyForm]
+  rw [← Real.sqrt_sq_eq_abs]
+  congr 1
+  -- Lagrange's identity `|a|² |b|² - (Re (conj a * b))² = (Im (conj a * b))²`.
+  simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_real_complex_fact
+
+/-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the volume form of the unit
+sphere of an oriented three-dimensional inner product space gives the whole sphere measure `4π`. -/
+theorem _root_.Orientation.measure_sphereVolumeForm_univ (o : Orientation ℝ E (Fin (2 + 1))) :
+    RoughForm.measure o.sphereVolumeForm.1 (univ : Set (sphere (0 : E) 1)) =
+      ENNReal.ofReal (4 * Real.pi) := by
+  -- Transport along inverse stereographic projection from a point `v` of the sphere.
+  have : Nontrivial E :=
+    Module.nontrivial_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = 2 + 1)]; norm_num)
+  obtain ⟨w, hw⟩ := exists_ne (0 : E)
+  have : Fact (finrank ℝ E = 3) := ⟨Fact.out (p := finrank ℝ E = 2 + 1)⟩
+  set v : sphere (0 : E) 1 := ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw]⟩
+  set Φ := diffeomorphSphere v
+    (complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v))
+  let _ : MeasurableSpace (OnePoint ℂ) := borel _
+  have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
+  have hΦ := Φ.toHomeomorph.measurePreserving_measure_mpullback (Φ.mdifferentiable (by simp))
+    o.sphereVolumeForm.1
+  have habs (x : OnePoint ℂ) (u : Fin 2 → TangentSpace 𝓘(ℝ, ℂ) x) :
+      |mpullback 𝓘(ℝ, ℂ) (𝓡 2) Φ.toHomeomorph o.sphereVolumeForm.1 x u| =
+        |((4 * Real.pi) • fubiniStudyForm.1) x u| :=
+    o.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply v _ x u
+  rw [← hΦ.map_eq, Measure.map_apply hΦ.measurable MeasurableSet.univ, preimage_univ,
+    RoughForm.measure_eq_of_forall_abs_apply_eq habs, RoughForm.measure_smul, FunLike.coe_smul,
+    Pi.smul_apply, measure_fubiniStudyForm_univ, smul_eq_mul, mul_one,
+    abs_of_pos (by positivity)]
+
+end Area
 
 end OnePoint

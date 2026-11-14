@@ -33,6 +33,7 @@ nondegenerate, through the volume criterion `ContinuousAlternatingMap.wedgePow_n
 ## Main results
 
 * `ContinuousAlternatingMap.pairedWedge_mul_apply_two_two`: the six-term formula for `ω ∧ β`.
+* `ContinuousAlternatingMap.wedgePow_one`: the first power of a two-form is the form itself.
 * `ContinuousAlternatingMap.wedgePow_two_eq`: the square of a two-form is its wedge with itself.
 * `ContinuousAlternatingMap.wedgePow_two_apply`: the Pfaffian formula for `ω²`.
 * `ContinuousAlternatingMap.wedgePow_two_add`: `(ω + β)² = ω² + 2 ω ∧ β + β²`.
@@ -100,15 +101,18 @@ theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b 
     hswap β b a, hswap β c a, hswap β d a, hswap β c b, hswap β d b, hswap β d c]
   ring
 
+/-- The first power of a two-form is the two-form itself. -/
+@[simp]
+theorem wedgePow_one (ω : E [⋀^Fin 2]→L[ℝ] ℝ) : wedgePow ω 1 = ω := by
+  ext v
+  rw [wedgePow_succ, pairedWedge_apply_zero_left, wedgePow_zero_apply]
+  simp only [Fin.cast_refl, CompTriple.comp_eq, ContinuousLinearMap.mul_apply', one_mul]
+
 /-- The square of a two-form is its wedge with itself. -/
 theorem wedgePow_two_eq (ω : E [⋀^Fin 2]→L[ℝ] ℝ) :
     wedgePow ω 2 =
       pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ ω ω := by
-  rw [wedgePow_succ]
-  congr 1
-  ext v
-  rw [wedgePow_succ, pairedWedge_apply_zero_left, wedgePow_zero_apply]
-  simp only [Fin.cast_refl, CompTriple.comp_eq, ContinuousLinearMap.mul_apply', one_mul]
+  rw [wedgePow_succ, wedgePow_one]
 
 /-- **The Pfaffian formula**: the square of a two-form `ω` takes on `(a, b, c, d)` twice the
 value `ω(a, b) ω(c, d) - ω(a, c) ω(b, d) + ω(a, d) ω(b, c)`. -/
