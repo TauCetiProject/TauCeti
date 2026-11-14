@@ -23,7 +23,8 @@ exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_f
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
 `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
 (`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
-of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the restriction of an exact pair to a
+submodule and its preimage (`Function.Exact.restrict_comap`), the isomorphisms on kernels and
 cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
@@ -136,6 +137,21 @@ theorem rangeRestrict (h : Exact f g) : Exact f g.rangeRestrict := fun x ↦ by
 inclusion of the range of `f`. -/
 theorem range_subtype (h : Exact f g) : Exact (LinearMap.range f).subtype g :=
   LinearMap.exact_iff.2 (by rw [Submodule.range_subtype, h.linearMap_ker_eq])
+
+/-- Restricting an exact pair `f : M →ₗ[R] N`, `g : N →ₗ[R] P` to a submodule `q` of `N` and its
+preimage `q.comap f` in `M` gives an exact pair, for any submodule `r` of `P` containing the image
+of `q` under `g`. -/
+theorem restrict_comap (h : Exact f g) {q : Submodule R N} {r : Submodule R P}
+    (hqr : ∀ x ∈ q, g x ∈ r) :
+    Exact (f.restrict (p := q.comap f) fun _ hx ↦ hx) (g.restrict hqr) := by
+  rintro ⟨y, hy⟩
+  constructor
+  · intro hg
+    obtain ⟨x, rfl⟩ := (h y).1 (congrArg Subtype.val hg)
+    exact ⟨⟨x, hy⟩, rfl⟩
+  · rintro ⟨⟨x, _⟩, hx⟩
+    rw [← hx]
+    exact Subtype.ext (h.apply_apply_eq_zero x)
 
 end Semiring
 

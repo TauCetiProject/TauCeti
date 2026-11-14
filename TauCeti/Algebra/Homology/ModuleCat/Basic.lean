@@ -65,9 +65,15 @@ short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
-(`HomologicalComplex.Hom.boundaryMap_eq_zero`), and injective where the chain map is; for a
+(`HomologicalComplex.Hom.boundaryMap_eq_zero`), injective where the chain map is, and surjective
+where the chain map is in the source degree (`HomologicalComplex.Hom.boundaryMap_surjective`); for a
 degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
-exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
+exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`). More generally, without exactness
+of the target, the preimage of the boundaries of `L` under a chain map `φ : K ⟶ L` injective in the
+outgoing degree sits in a short exact sequence between the boundaries of `K` and the kernel of the
+induced map on homology (`HomologicalComplex.Hom.comapBoundaryHomologyClass`,
+`HomologicalComplex.Hom.exact_inclusion_comapBoundaryHomologyClass`,
+`HomologicalComplex.Hom.comapBoundaryHomologyClass_surjective`).  A family of chain endomorphisms
 that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
@@ -187,6 +193,16 @@ theorem Hom.boundaryMap_eq_zero (φ : K ⟶ L) {i j : ι} (h : K.d i j = 0) :
 theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
     (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.boundaryMap i j) :=
   fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
+
+/-- A chain map that is surjective in degree `i` is surjective on the images of the differentials
+out of degree `i`. -/
+theorem Hom.boundaryMap_surjective (φ : K ⟶ L) {i : ι} (j : ι)
+    (hφ : Function.Surjective (φ.f i).hom) : Function.Surjective (φ.boundaryMap i j) := by
+  rintro ⟨_, y, rfl⟩
+  obtain ⟨x, rfl⟩ := hφ y
+  refine ⟨⟨(K.d i j).hom x, x, rfl⟩, Subtype.ext ?_⟩
+  rw [coe_boundaryMap]
+  exact (Hom.comm_apply φ i j x).symm
 
 /-- Let `K ⟶ L ⟶ M` be chain maps of complexes of modules, let `h = c.prev i` and
 `j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degree `i`, `L ⟶ M` is
@@ -426,6 +442,92 @@ theorem exact_inclusion_moduleCatKerHomologyClass {p : ι} (hp : c.prev n = p) :
     exact ⟨y, rfl⟩
 
 end KerHomologyClass
+
+section ComapBoundaryHomologyClass
+
+variable {K n} {L : HomologicalComplex (ModuleCat R) c}
+
+/-- A chain map sends the image of `K.d p q` into the preimage of the image of `L.d p q`. -/
+theorem Hom.range_d_le_comap_range_d (φ : K ⟶ L) (p q : ι) :
+    LinearMap.range (K.d p q).hom ≤ (LinearMap.range (L.d p q).hom).comap (φ.f q).hom := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨(φ.f p).hom x, Hom.comm_apply φ p q x⟩
+
+/-- If a chain map `φ : K ⟶ L` is injective in degree `m`, every element of `K.X n` mapped into the
+image of `L.d p n` is killed by `K.d n m`. -/
+theorem Hom.d_apply_eq_zero_of_mem_comap_range_d (φ : K ⟶ L) {p m : ι}
+    (hφ : Function.Injective (φ.f m).hom) {x : K.X n}
+    (hx : x ∈ (LinearMap.range (L.d p n).hom).comap (φ.f n).hom) :
+    (K.d n m).hom x = 0 := by
+  obtain ⟨w, hw⟩ := hx
+  apply hφ
+  have h := (Hom.comm_apply φ n m x).symm.trans (congrArg (L.d n m).hom hw.symm)
+  exact h.trans ((L.d_comp_d_apply p n m w).trans (map_zero _).symm)
+
+/-- Let `φ : K ⟶ L` be a chain map injective in degree `m = c.next n`. Every element of `K.X n`
+mapped into the image of `L.d p n` is a cycle whose homology class lies in the kernel of
+`homologyMap φ n`; `comapBoundaryHomologyClass` is this class map. -/
+noncomputable def Hom.comapBoundaryHomologyClass (φ : K ⟶ L) (p : ι) {m : ι} (hm : c.next n = m)
+    (hφ : Function.Injective (φ.f m).hom) :
+    (LinearMap.range (L.d p n).hom).comap (φ.f n).hom →ₗ[R]
+      LinearMap.ker (homologyMap φ n).hom :=
+  (K.moduleCatHomologyClass hm (Submodule.subtype _)
+    fun z ↦ φ.d_apply_eq_zero_of_mem_comap_range_d hφ z.2).codRestrict _ fun z ↦ by
+      obtain ⟨w, hw⟩ := z.2
+      rw [LinearMap.mem_ker, moduleCatHomologyClass_apply]
+      simp only [Submodule.subtype_apply]
+      refine (moduleCat_homologyMap_homologyπ φ n _).trans ?_
+      have hc : cyclesMap φ n (K.moduleCatCyclesMk z.1 m hm
+          (φ.d_apply_eq_zero_of_mem_comap_range_d hφ z.2)) = L.toCycles p n w :=
+        L.moduleCat_iCycles_injective n <| by
+          rw [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk,
+            moduleCat_iCycles_toCycles_apply]
+          exact hw.symm
+      rw [hc, ← ModuleCat.comp_apply, toCycles_comp_homologyπ]
+      rfl
+
+/-- On a cycle `y` of `K` mapped into the image of `L.d p n`, `comapBoundaryHomologyClass` gives
+the homology class of `y`. -/
+@[simp]
+theorem Hom.coe_comapBoundaryHomologyClass_iCycles (φ : K ⟶ L) (p : ι) {m : ι}
+    (hm : c.next n = m) (hφ : Function.Injective (φ.f m).hom) (y : K.cycles n)
+    (hy : (φ.f n).hom (K.iCycles n y) ∈ LinearMap.range (L.d p n).hom) :
+    (φ.comapBoundaryHomologyClass p hm hφ ⟨K.iCycles n y, hy⟩ : K.homology n) =
+      K.homologyπ n y := by
+  rw [comapBoundaryHomologyClass, LinearMap.codRestrict_apply, moduleCatHomologyClass_apply]
+  congr 1
+  exact K.moduleCat_iCycles_injective n (K.iCycles_moduleCatCyclesMk _ _ _ _ _)
+
+/-- For `p = c.prev n` and `m = c.next n`, the kernel of `φ.comapBoundaryHomologyClass` is the
+image of `K.d p n`. -/
+theorem Hom.exact_inclusion_comapBoundaryHomologyClass (φ : K ⟶ L) {p m : ι} (hp : c.prev n = p)
+    (hm : c.next n = m) (hφ : Function.Injective (φ.f m).hom) :
+    Function.Exact (Submodule.inclusion (φ.range_d_le_comap_range_d p n))
+      (φ.comapBoundaryHomologyClass p hm hφ) := by
+  intro z
+  rw [← Subtype.coe_inj, Submodule.coe_zero, comapBoundaryHomologyClass,
+    LinearMap.codRestrict_apply, K.moduleCatHomologyClass_eq_zero_iff hm _ _ hp]
+  exact ⟨fun ⟨y, hy⟩ ↦ ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩,
+    fun ⟨⟨_, y, rfl⟩, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩⟩
+
+/-- For `p = c.prev n` and `m = c.next n`, every homology class of `K` killed by `homologyMap φ n`
+is represented by an element of `K.X n` mapped into the image of `L.d p n`. -/
+theorem Hom.comapBoundaryHomologyClass_surjective (φ : K ⟶ L) {p m : ι} (hp : c.prev n = p)
+    (hm : c.next n = m) (hφ : Function.Injective (φ.f m).hom) :
+    Function.Surjective (φ.comapBoundaryHomologyClass p hm hφ) := by
+  rintro ⟨x, hx⟩
+  obtain ⟨y, rfl⟩ := K.moduleCat_homologyπ_surjective n x
+  have hx' : homologyMap φ n (K.homologyπ n y) = 0 := hx
+  rw [moduleCat_homologyMap_homologyπ, L.moduleCat_homologyπ_eq_zero_iff hp] at hx'
+  obtain ⟨w, hw⟩ := hx'
+  have hy : (φ.f n).hom (K.iCycles n y) ∈ LinearMap.range (L.d p n).hom := by
+    refine ⟨w, ?_⟩
+    have h := congrArg (L.iCycles n) hw
+    rw [moduleCat_iCycles_toCycles_apply, moduleCat_iCycles_cyclesMap_apply] at h
+    exact h
+  exact ⟨⟨K.iCycles n y, hy⟩, Subtype.ext (φ.coe_comapBoundaryHomologyClass_iCycles p hm hφ y hy)⟩
+
+end ComapBoundaryHomologyClass
 
 section CochainPresentation
 
