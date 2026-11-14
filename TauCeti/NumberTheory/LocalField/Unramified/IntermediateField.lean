@@ -8,6 +8,9 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
+import TauCeti.FieldTheory.IntermediateField.Map
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # The unramified part of a finite subextension
@@ -23,6 +26,14 @@ value zero on infinite extensions. It uses the same local-field adapters and tot
 `IntermediateField.discriminantExponent`. Its invariance under algebra equivalence includes
 the infinite case, so residue degree can be used as a weight on isomorphism classes.
 
+## Main definitions
+
+* `IntermediateField.inertiaDegree`: the residue degree of a subextension of `SeparableClosure K`,
+  extended by zero to infinite subextensions.
+* `IntermediateField.equivTotallyRamifiedOfDegree`: the bijection between subextensions of
+  `SeparableClosure K / K` containing an unramified extension `F` of degree `f(F / K) * e` and
+  residue degree `f(F / K)` and `totallyRamifiedOfDegree F e`.
+
 ## Main results
 
 * `IntermediateField.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
@@ -30,6 +41,8 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
   ramified exactly when its residue degree is one.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
+* `TauCeti.encard_finrank_and_inertiaDegree_eq`: the extended cardinality of subextensions of
+  degree `f * e` and residue degree `f ≠ 0` equals `#σ_{K_f}(e)`.
 
 ## References
 
@@ -189,5 +202,174 @@ theorem inf_maximalUnramifiedExtension (L : IntermediateField K (SeparableClosur
           (Dvd.intro _ (TauCeti.inertiaDegree_tower (K := K) (L := E) L).symm)
   · exact le_inf (unramifiedExtension_inertiaDegree_le L)
       (unramifiedExtension_le_maximalUnramifiedExtension K (SeparableClosure K) _)
+
+section Transport
+
+variable (F : Type*) [Field F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
+  [Algebra K F] [ValuativeExtension K F] [Algebra F (SeparableClosure K)]
+  [IsScalarTower K F (SeparableClosure K)] (Φ : SeparableClosure F ≃ₐ[F] SeparableClosure K)
+
+/-- Over a finite base extension `F / K`, the residue degree of `E.restrictScalars K` over `K` is
+`f(F / K)` times that of the transported intermediate field over `F`. -/
+theorem inertiaDegree_restrictScalars_eq_mul (E : IntermediateField F (SeparableClosure K))
+    (hE : Module.Finite F (E.map Φ.symm.toAlgHom)) :
+    (E.restrictScalars K).inertiaDegree =
+      TauCeti.inertiaDegree K F * (E.map Φ.symm.toAlgHom).inertiaDegree := by
+  let e₁ := restrictScalarsAlgEquiv K E
+  let e₂ : E ≃ₐ[F] E.map Φ.symm.toAlgHom := intermediateFieldMap Φ.symm E
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  have : Module.Finite F E := Module.Finite.equiv e₂.symm.toLinearEquiv
+  have : Module.Finite K E := Module.Finite.trans F E
+  have : Module.Finite K (E.restrictScalars K) := Module.Finite.equiv e₁.symm.toLinearEquiv
+  rw [IntermediateField.inertiaDegree_eq, IntermediateField.inertiaDegree_eq]
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) (E.restrictScalars K)
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) (E.restrictScalars K)
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K)
+    (E.restrictScalars K)
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) (E.restrictScalars K)
+  let _ := finiteIntermediateFieldValuativeRel F (SeparableClosure F) (E.map Φ.symm.toAlgHom)
+  let _ := finiteIntermediateFieldTopology F (SeparableClosure F) (E.map Φ.symm.toAlgHom)
+  have := finiteIntermediateField_isNonarchimedeanLocalField F (SeparableClosure F)
+    (E.map Φ.symm.toAlgHom)
+  have := finiteIntermediateField_valuativeExtension F (SeparableClosure F) (E.map Φ.symm.toAlgHom)
+  let _ := finiteIntermediateFieldValuativeRel F (SeparableClosure K) E
+  let _ := finiteIntermediateFieldTopology F (SeparableClosure K) E
+  have := finiteIntermediateField_isNonarchimedeanLocalField F (SeparableClosure K) E
+  have := finiteIntermediateField_valuativeExtension F (SeparableClosure K) E
+  have : ValuativeExtension K E := ValuativeExtension.trans K F E
+  rw [TauCeti.inertiaDegree_eq_of_algEquiv K _ E e₁, TauCeti.inertiaDegree_tower K F E,
+    TauCeti.inertiaDegree_eq_of_algEquiv F E _ e₂]
+
+/-- Over a finite base extension `F / K`, the transported intermediate field lies in `σ_F(e)` if
+and only if `E.restrictScalars K` has degree `[F : K] * e` and residue degree `f(F / K)` over
+`K`. -/
+theorem map_mem_totallyRamifiedOfDegree_iff (E : IntermediateField F (SeparableClosure K))
+    (e : ℕ) :
+    E.map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e ↔
+      Module.finrank K (E.restrictScalars K) = Module.finrank K F * e ∧
+        (E.restrictScalars K).inertiaDegree = TauCeti.inertiaDegree K F := by
+  let e₁ := restrictScalarsAlgEquiv K E
+  let e₂ : E ≃ₐ[F] E.map Φ.symm.toAlgHom := intermediateFieldMap Φ.symm E
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  have hrank : Module.finrank K (E.restrictScalars K) =
+      Module.finrank K F * Module.finrank F (E.map Φ.symm.toAlgHom) := by
+    rw [e₁.toLinearEquiv.finrank_eq, ← e₂.toLinearEquiv.finrank_eq, Module.finrank_mul_finrank]
+  have hf : 0 < TauCeti.inertiaDegree K F := TauCeti.inertiaDegree_pos
+  rw [mem_totallyRamifiedOfDegree_iff, hrank,
+    IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one]
+  constructor
+  · rintro ⟨he, hM⟩
+    have : Module.Finite F (E.map Φ.symm.toAlgHom) := by
+      by_contra h
+      rw [← inertiaDegree_eq_zero_iff] at h
+      omega
+    rw [he, inertiaDegree_restrictScalars_eq_mul F Φ E this, hM, mul_one]
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨he, hi⟩
+    have : Module.Finite K (E.restrictScalars K) := by
+      by_contra h
+      rw [← inertiaDegree_eq_zero_iff] at h
+      omega
+    have : Module.Finite K E := Module.Finite.equiv e₁.toLinearEquiv
+    have : Module.Finite F E := Module.Finite.of_restrictScalars_finite K F E
+    have : Module.Finite F (E.map Φ.symm.toAlgHom) := Module.Finite.equiv e₂.toLinearEquiv
+    rw [inertiaDegree_restrictScalars_eq_mul F Φ E this] at hi
+    exact ⟨Nat.eq_of_mul_eq_mul_left Module.finrank_pos he,
+      Nat.eq_of_mul_eq_mul_left hf (hi.trans (mul_one _).symm)⟩
+
+variable [IsUnramified K F]
+
+/-- Over an unramified extension `F / K` inside `SeparableClosure K`, an `F`-algebra equivalence
+`Φ : SeparableClosure F ≃ₐ[F] SeparableClosure K` identifies the subextensions of
+`SeparableClosure K / K` containing `F` of degree `f(F / K) * e` and residue degree `f(F / K)`
+with `totallyRamifiedOfDegree F e`. -/
+def equivTotallyRamifiedOfDegree (e : ℕ) :
+    {L : IntermediateField K (SeparableClosure K) //
+      (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
+        Module.finrank K L = TauCeti.inertiaDegree K F * e ∧
+          L.inertiaDegree = TauCeti.inertiaDegree K F} ≃
+      totallyRamifiedOfDegree F e :=
+  let ρ : IntermediateField F (SeparableClosure K) ≃
+      {L : IntermediateField K (SeparableClosure K) //
+        ∀ x : F, algebraMap F (SeparableClosure K) x ∈ L} :=
+    { toFun E := ⟨E.restrictScalars K, E.algebraMap_mem⟩
+      invFun L := L.1.toSubfield.toIntermediateField L.2
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  have hfr : Module.finrank K F = TauCeti.inertiaDegree K F :=
+    IsUnramified.inertiaDegree_eq_finrank.symm
+  (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
+    (Equiv.subtypeEquiv (ρ.symm.trans (orderIsoMapComap Φ.symm).toEquiv) fun L ↦ by
+      rw [Equiv.trans_apply, OrderIso.coe_toEquiv, orderIsoMapComap_apply,
+        map_mem_totallyRamifiedOfDegree_iff F Φ (ρ.symm L) e, hfr]
+      rfl)
+
+/-- `equivTotallyRamifiedOfDegree` acts by viewing `L` over `F` and transporting along `Φ.symm`. -/
+@[simp]
+theorem coe_equivTotallyRamifiedOfDegree_apply {e : ℕ}
+    (L : {L : IntermediateField K (SeparableClosure K) //
+      (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
+        Module.finrank K L = TauCeti.inertiaDegree K F * e ∧
+          L.inertiaDegree = TauCeti.inertiaDegree K F}) :
+    (equivTotallyRamifiedOfDegree F Φ e L : IntermediateField F (SeparableClosure F)) =
+      (L.1.toSubfield.toIntermediateField L.2.1).map Φ.symm.toAlgHom := by
+  simp only [equivTotallyRamifiedOfDegree, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
+    OrderIso.coe_toEquiv, orderIsoMapComap_apply]
+  rfl
+
+/-- The inverse of `equivTotallyRamifiedOfDegree` pulls back along `Φ.symm` and restricts scalars
+to `K`. -/
+@[simp]
+theorem coe_equivTotallyRamifiedOfDegree_symm_apply {e : ℕ} (M : totallyRamifiedOfDegree F e) :
+    ((equivTotallyRamifiedOfDegree F Φ e).symm M : IntermediateField K (SeparableClosure K)) =
+      (M.1.comap Φ.symm.toAlgHom).restrictScalars K := by
+  simp only [equivTotallyRamifiedOfDegree, Equiv.symm_trans_apply, Equiv.subtypeEquiv_symm,
+    Equiv.subtypeEquiv_apply, Equiv.symm_symm]
+  exact congrArg (restrictScalars K) (orderIsoMapComap_symm_apply Φ.symm M.1)
+
+end Transport
+
+/-- **Tower decomposition of fixed-residue-degree extensions.** For `f ≠ 0`, the subextensions of
+`SeparableClosure K / K` of degree `f * e` and residue degree `f` have the same extended
+cardinality as `totallyRamifiedOfDegree K_f e`, where `K_f` is the canonical unramified extension
+of degree `f` equipped with any compatible local-field structure. -/
+theorem _root_.TauCeti.encard_finrank_and_inertiaDegree_eq {f : ℕ} (hf : f ≠ 0) (e : ℕ)
+    [ValuativeRel (unramifiedExtension K (SeparableClosure K) f)]
+    [TopologicalSpace (unramifiedExtension K (SeparableClosure K) f)]
+    [IsNonarchimedeanLocalField (unramifiedExtension K (SeparableClosure K) f)]
+    [ValuativeExtension K (unramifiedExtension K (SeparableClosure K) f)] :
+    {L : IntermediateField K (SeparableClosure K) |
+      Module.finrank K L = f * e ∧ L.inertiaDegree = f}.encard =
+      (totallyRamifiedOfDegree (unramifiedExtension K (SeparableClosure K) f) e).encard := by
+  have : IsUnramified K (unramifiedExtension K (SeparableClosure K) f) :=
+    isUnramified_unramifiedExtension
+  have hUf : TauCeti.inertiaDegree K (unramifiedExtension K (SeparableClosure K) f) = f := by
+    rw [IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hf]
+  have := isSepClosure_tower_top K (unramifiedExtension K (SeparableClosure K) f)
+    (SeparableClosure K)
+  let Φ := IsSepClosure.equiv (unramifiedExtension K (SeparableClosure K) f)
+    (SeparableClosure (unramifiedExtension K (SeparableClosure K) f)) (SeparableClosure K)
+  have hle : ∀ {L : IntermediateField K (SeparableClosure K)}, L.inertiaDegree = f →
+      unramifiedExtension K (SeparableClosure K) f ≤ L := by
+    intro L hL
+    have : Module.Finite K L := by
+      by_contra h
+      rw [← inertiaDegree_eq_zero_iff] at h
+      omega
+    simpa [hL] using L.unramifiedExtension_inertiaDegree_le
+  let τ : {L : IntermediateField K (SeparableClosure K) //
+      Module.finrank K L = f * e ∧ L.inertiaDegree = f} ≃
+      {L : IntermediateField K (SeparableClosure K) //
+        (∀ x : unramifiedExtension K (SeparableClosure K) f,
+            algebraMap (unramifiedExtension K (SeparableClosure K) f) (SeparableClosure K) x ∈ L) ∧
+          Module.finrank K L =
+            TauCeti.inertiaDegree K (unramifiedExtension K (SeparableClosure K) f) * e ∧
+            L.inertiaDegree =
+              TauCeti.inertiaDegree K (unramifiedExtension K (SeparableClosure K) f)} :=
+    Equiv.subtypeEquivRight fun L ↦ by
+      rw [hUf]
+      exact ⟨fun h ↦ ⟨fun x ↦ hle h.2 x.2, h⟩, And.right⟩
+  exact Set.encard_congr
+    (τ.trans (equivTotallyRamifiedOfDegree (unramifiedExtension K (SeparableClosure K) f) Φ e))
 
 end IntermediateField

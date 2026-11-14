@@ -40,11 +40,11 @@ concrete p-adic norm and valuation APIs.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
-* `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
-  number with `padicValNat`, and `Padic.natCastValuation_self` and
-  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`; by
-  the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
-  `p`.
+* `Padic.natCastValuation_eq_padicValNat` and `Padic.natValuation_eq` identify the normalized
+  valuation of a natural number with `padicValNat`, and `Padic.natCastValuation_self`,
+  `Padic.natValuation_self`, and `Padic.natCastValuation_two` are the values they take on the
+  residue prime and on `2`; by the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit
+  of the integer ring for odd `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
   with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
@@ -213,6 +213,28 @@ theorem natCastValuation_self :
     TauCeti.natCastValuation ℚ_[p] p (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) = 1 := by
   rw [natCastValuation_eq_padicValNat, Nat.padicValNat_def,
     Nat.multiplicity_self (Fact.out : p.Prime).one_lt]
+
+/-- The `ℕ∞`-valued normalized valuation of a nonzero natural number in `ℚ_[p]` is its `p`-adic
+valuation. -/
+theorem natValuation_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
+    TauCeti.natValuation ℚ_[p] n = padicValNat p n := by
+  rw [TauCeti.natValuation_of_cast_ne_zero ℚ_[p] (Nat.cast_ne_zero.mpr hn),
+    natCastValuation_eq_padicValNat]
+
+/-- The `ℕ∞`-valued normalized valuation of a natural number in `ℚ_[p]` is `⊤` at `0` and
+`padicValNat p n` otherwise. -/
+theorem natValuation_eq (n : ℕ) :
+    TauCeti.natValuation ℚ_[p] n = if n = 0 then (⊤ : ℕ∞) else (padicValNat p n : ℕ∞) := by
+  split_ifs with hn
+  · subst hn; exact TauCeti.natValuation_zero ℚ_[p]
+  · exact natValuation_of_ne_zero p hn
+
+/-- The `ℕ∞`-valued normalized valuation of the residue prime `p` in `ℚ_[p]` is `1`. -/
+@[simp]
+theorem natValuation_self :
+    TauCeti.natValuation ℚ_[p] p = 1 := by
+  rw [TauCeti.natValuation_of_cast_ne_zero ℚ_[p]
+    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero), natCastValuation_self, Nat.cast_one]
 
 /-- The normalized valuation of `2` in `ℚ_[p]` vanishes for every odd `p`. -/
 theorem natCastValuation_two (hp : p ≠ 2) :

@@ -38,6 +38,7 @@ characteristic is the absolute ramification index of `K`.
 
 * `TauCeti.natCastValuation`: the normalized valuation of the image of a natural number in a
   nonarchimedean local field, as a natural number.
+* `TauCeti.natValuation`: the `ℕ∞`-valued extension taking the value `⊤` when `(n : K) = 0`.
 
 ## Main results
 
@@ -67,7 +68,10 @@ characteristic is the absolute ramification index of `K`.
   condition of the deep-unit power lemmas holds at depth `v_K(p) + 1` for every prime.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
-* `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
+* `TauCeti.natValuation_mul` and `TauCeti.natValuation_pow`: additivity of `natValuation` on
+  products and powers in `ℕ∞`.
+* `TauCeti.IsDiscreteValuationRing.addVal_natCast` and
+  `TauCeti.IsDiscreteValuationRing.addVal_natCast_eq_natValuation`: the same valuation in the
   discrete-valuation-ring convention.
 
 ## References
@@ -376,5 +380,119 @@ theorem normalizedAbsoluteValue_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
       = ((Nat.card 𝓀[K] : ℚ≥0)⁻¹) ^ natCastValuation K n hn := by
   rw [normalizedAbsoluteValue_apply_ne_zero (n : K) hn, normalizedValuation_natCast K n hn,
     toAdd_ofAdd, zpow_neg, zpow_natCast, inv_pow]
+
+/-! ### The `ℕ∞`-valued valuation of a natural number -/
+
+variable (K) in
+/-- The normalized valuation `v_K(h)` of the image of a natural number `h` in a nonarchimedean
+local field `K`, valued in `ℕ∞` so that it takes the value `⊤` when `(h : K) = 0`. -/
+def natValuation (h : ℕ) : ℕ∞ := by
+  classical
+  exact if hh : (h : K) = 0 then ⊤ else natCastValuation K h hh
+
+variable (K) in
+/-- When `(n : K) = 0`, `natValuation K n` is `⊤`. -/
+theorem natValuation_of_cast_eq_zero {n : ℕ} (hn : (n : K) = 0) :
+    natValuation K n = ⊤ := by
+  classical
+  rw [natValuation, dite_eq_left hn]
+
+variable (K) in
+/-- When `(n : K) ≠ 0`, `natValuation K n` is the coercion of `natCastValuation K n hn`. -/
+theorem natValuation_of_cast_ne_zero {n : ℕ} (hn : (n : K) ≠ 0) :
+    natValuation K n = natCastValuation K n hn := by
+  classical
+  rw [natValuation, dite_eq_right hn]
+
+variable (K) in
+/-- The `ℕ∞`-valued normalized valuation of `0` is `⊤`. -/
+@[simp]
+theorem natValuation_zero : natValuation K 0 = ⊤ :=
+  natValuation_of_cast_eq_zero K Nat.cast_zero
+
+variable (K) in
+/-- The `ℕ∞`-valued normalized valuation of `1` is `0`. -/
+@[simp]
+theorem natValuation_one : natValuation K 1 = 0 := by
+  rw [natValuation_of_cast_ne_zero K (by simp), natCastValuation_one, Nat.cast_zero]
+
+variable (K) in
+/-- `natValuation K n` is `⊤` if and only if `(n : K) = 0`. -/
+@[simp]
+theorem natValuation_eq_top_iff {n : ℕ} : natValuation K n = ⊤ ↔ (n : K) = 0 := by
+  by_cases hn : (n : K) = 0
+  · simp [natValuation_of_cast_eq_zero K hn, hn]
+  · simp [natValuation_of_cast_ne_zero K hn, hn]
+
+variable (K) in
+/-- `natValuation K n` is finite if and only if `(n : K) ≠ 0`. -/
+theorem natValuation_ne_top_iff {n : ℕ} : natValuation K n ≠ ⊤ ↔ (n : K) ≠ 0 :=
+  (natValuation_eq_top_iff K).not
+
+variable (K) in
+/-- `natValuation K n` vanishes if and only if `n` is invertible in the ring of integers. -/
+@[simp]
+theorem natValuation_eq_zero_iff {n : ℕ} :
+    natValuation K n = 0 ↔ IsUnit (n : 𝒪[K]) := by
+  by_cases hn : (n : K) = 0
+  · refine iff_of_false (by simp [natValuation_of_cast_eq_zero K hn])
+      fun hu ↦ natCast_ne_zero_of_isUnit hu hn
+  · rw [natValuation_of_cast_ne_zero K hn, Nat.cast_eq_zero, natCastValuation_eq_zero_iff]
+
+variable (K) in
+/-- `natValuation K n` vanishes if and only if the residue characteristic of `K` does not divide
+`n`. -/
+theorem natValuation_eq_zero_iff_not_dvd {n : ℕ} :
+    natValuation K n = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
+  rw [natValuation_eq_zero_iff, IsLocalRing.isUnit_natCast_iff_not_dvd]
+
+variable (K) in
+/-- In equal characteristic, `natValuation K n` is `⊤` when `ringChar K ∣ n` and `0` otherwise. -/
+theorem natValuation_of_ringChar_ne_zero (hK : ringChar K ≠ 0) (n : ℕ) :
+    natValuation K n = if ringChar K ∣ n then ⊤ else 0 := by
+  split_ifs with h
+  · exact natValuation_of_cast_eq_zero K ((ringChar.spec K n).mpr h)
+  · have hn : (n : K) ≠ 0 := fun hn ↦ h ((ringChar.spec K n).mp hn)
+    rw [natValuation_of_cast_ne_zero K hn,
+      natCastValuation_eq_zero_of_ringChar_ne_zero K hK n hn, Nat.cast_zero]
+
+variable (K) in
+/-- The `ℕ∞`-valued normalized valuation of a product of natural numbers is the sum of their
+valuations. -/
+@[simp]
+theorem natValuation_mul (m n : ℕ) :
+    natValuation K (m * n) = natValuation K m + natValuation K n := by
+  by_cases hm : (m : K) = 0
+  · rw [natValuation_of_cast_eq_zero K hm, top_add,
+      natValuation_of_cast_eq_zero K (by simp [hm])]
+  by_cases hn : (n : K) = 0
+  · rw [natValuation_of_cast_eq_zero K hn, add_top,
+      natValuation_of_cast_eq_zero K (by simp [hn])]
+  have hmn : ((m * n : ℕ) : K) ≠ 0 := by simpa only [Nat.cast_mul] using mul_ne_zero hm hn
+  rw [natValuation_of_cast_ne_zero K hmn, natValuation_of_cast_ne_zero K hm,
+    natValuation_of_cast_ne_zero K hn, natCastValuation_mul K hm hn, Nat.cast_add]
+
+variable (K) in
+/-- The `ℕ∞`-valued normalized valuation of a power of a natural number. -/
+@[simp]
+theorem natValuation_pow (n k : ℕ) :
+    natValuation K (n ^ k) = k • natValuation K n := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ, natValuation_mul, ih, succ_nsmul]
+
+namespace IsDiscreteValuationRing
+
+variable (K) in
+/-- The additive valuation of any natural-number cast in `𝒪[K]` agrees with `natValuation K n`,
+including when `(n : K) = 0`. -/
+theorem addVal_natCast_eq_natValuation (n : ℕ) :
+    _root_.IsDiscreteValuationRing.addVal 𝒪[K] (n : 𝒪[K]) = natValuation K n := by
+  by_cases hn : (n : K) = 0
+  · have hn' : (n : 𝒪[K]) = 0 := Subtype.ext (by simpa using hn)
+    rw [hn', _root_.IsDiscreteValuationRing.addVal_zero, natValuation_of_cast_eq_zero K hn]
+  · rw [addVal_natCast K n hn, natValuation_of_cast_ne_zero K hn]
+
+end IsDiscreteValuationRing
 
 end TauCeti
