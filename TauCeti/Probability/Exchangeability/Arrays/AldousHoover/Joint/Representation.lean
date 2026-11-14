@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
 import TauCeti.Probability.Process.Array.AldousHoover.NoiseSplit
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.OffDiagonalCoding
 import TauCeti.Probability.Exchangeability.Arrays.Strip.VertexCoding
@@ -294,32 +295,6 @@ private theorem jointArray_jointCoding (φ : I → (ℕ × ℕ → α) × (ℕ �
 
 variable [StandardBorelSpace α] {ρ : Measure (ℕ × ℕ → α)}
 
-/-- **A swap-invariant coding has a swap-invariant swapped coding.** Let `sw` be a measurable
-involution of the context space that preserves the context law `L`, and let `g` code a pair from
-its context and a uniform variable. If the joint law of the context and the coded pair is invariant
-under `sw` on the context and the swap of the pair, then coding at the swapped context and swapping
-the output gives the same joint law as the coding itself. -/
-private theorem map_prod_coding_swap_eq {Z β : Type*} [MeasurableSpace Z] [MeasurableSpace β]
-    {sw : Z → Z} (hsw : Measurable sw) (hsw₂ : ∀ z, sw (sw z) = z) {L : Measure Z}
-    (hL : L.map sw = L) {g : Z → I → β × β} (hg : Measurable (Function.uncurry g))
-    (hJ : ((L.prod (volume : Measure I)).map (fun p => (p.1, g p.1 p.2))).map
-        (Prod.map sw Prod.swap) = (L.prod (volume : Measure I)).map (fun p => (p.1, g p.1 p.2))) :
-    (L.prod (volume : Measure I)).map (fun p => (p.1, (g (sw p.1) p.2).swap)) =
-      (L.prod (volume : Measure I)).map (fun p => (p.1, g p.1 p.2)) := by
-  have hg' : Measurable (Function.uncurry fun z s => (g (sw z) s).swap) :=
-    measurable_swap.comp (hg.comp (hsw.prodMap measurable_id))
-  have hfun : (fun p : Z × I => (p.1, (g (sw p.1) p.2).swap)) ∘ Prod.map sw id =
-      Prod.map sw Prod.swap ∘ fun p => (p.1, g p.1 p.2) := by
-    funext p
-    simp [hsw₂]
-  have hF : Measurable fun p : Z × I => (p.1, g p.1 p.2) := measurable_fst.prodMk hg
-  have hF' : Measurable fun p : Z × I => (p.1, (g (sw p.1) p.2).swap) :=
-    measurable_fst.prodMk hg'
-  conv_lhs => rw [← hL, ← Measure.map_id (μ := (volume : Measure I)),
-    Measure.map_prod_map _ _ hsw measurable_id,
-    Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
-    ← Measure.map_map (hsw.prodMap measurable_swap) hF, hJ]
-
 /-- **The common pair coding is swap-equivariant in law.** Suppose `g` codes the pair
 `(x (i, j), x (j, i))` from its square context and a uniform variable. Exchanging the vertices `i`
 and `j` swaps the pair and both components of the square context, and preserves their joint law by
@@ -366,7 +341,7 @@ private theorem ae_map_swap_pairCoding_eq [IsFiniteMeasure ρ]
     measurable_swap.comp (hg.comp (hsw.prodMap measurable_id))
   have hcode' : (L.prod (volume : Measure I)).map (fun p => (p.1, (g (sw p.1) p.2).swap)) =
       (L.prod (volume : Measure I)).map (fun p => (p.1, g p.1 p.2)) := by
-    refine map_prod_coding_swap_eq hsw (fun z => by simp [sw]) hL hg ?_
+    refine Measure.map_prod_swap_apply_eq hsw (fun z => by simp [sw]) hL hg ?_
     rw [hcode]
     exact hsym
   -- Equal joint laws with the square context have almost everywhere equal fibre laws.
