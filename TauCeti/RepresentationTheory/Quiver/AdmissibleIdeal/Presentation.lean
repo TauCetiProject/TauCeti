@@ -125,46 +125,42 @@ section Admissible
 
 variable {k : Type w} [Field k] [Algebra k A]
 
-include he hl hr in
+omit [Fintype Q] he in
+include hl hr in
 /-- The classes of the vertex idempotents and of the arrows in `A ⧸ J ^ 2` are linearly
-independent together, when the vertex idempotents are nonzero, the arrows lie in the nilpotent
-ideal `J`, and for all vertices `i` and `j` the classes of the arrows `i ⟶ j` are linearly
+independent together, when the vertex idempotents are orthogonal and nonzero, the arrows lie in the
+nilpotent ideal `J`, and for all vertices `i` and `j` the classes of the arrows `i ⟶ j` are linearly
 independent. -/
-private theorem linearIndependent_vertex_sum_arrow (hJ : IsNilpotent J) (hne : ∀ i, e i ≠ 0)
-    (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
+private theorem linearIndependent_vertex_sum_arrow (he : OrthogonalIdempotents e)
+    (hJ : IsNilpotent J) (hne : ∀ i, e i ≠ 0) (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
     (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
     LinearIndependent k (Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
       (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2))) := by
-  classical
   have hJ2 : J ^ 2 ≤ J := Ideal.pow_le_self two_ne_zero
+  let ψ := (Ideal.Quotient.factorₐ k hJ2).toLinearMap
   -- A nonzero idempotent is not nilpotent, so it does not lie in `J`.
   have hnotMem (i : Q) : e i ∉ J := fun hmem => by
     obtain ⟨n, hn⟩ := hJ
     exact hne i ((he.idem i).eq_zero_of_isNilpotent
       ⟨n, by simpa [hn] using Ideal.pow_mem_pow hmem n⟩)
-  -- The vertex classes, the arrow classes, and the disjointness of their spans.
-  have hvert (I : Ideal A) [I.IsTwoSided] (hI : I ≤ J) :
-      LinearIndependent k fun i => Ideal.Quotient.mk I (e i) :=
-    (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk I)).linearIndependent fun i h =>
-      hnotMem i (hI (Ideal.Quotient.eq_zero_iff_mem.mp h))
+  -- The vertex classes are independent in `A ⧸ J`, hence in `A ⧸ J ^ 2`, and their span meets the
+  -- span of the arrow classes, which lies in the kernel of `ψ`, trivially.
+  have hvert : LinearIndependent k (ψ ∘ fun i => Ideal.Quotient.mk (J ^ 2) (e i)) :=
+    (he.map (Ideal.Quotient.mk J)).linearIndependent fun i h =>
+      hnotMem i (Ideal.Quotient.eq_zero_iff_mem.mp h)
   have harrowIndependent : LinearIndependent k fun a : (Σ i j : Q, i ⟶ j) =>
       Ideal.Quotient.mk (J ^ 2) (f a.2.2) :=
-    (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
+    (he.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
       (fun i j a => Ideal.Quotient.mk (J ^ 2) (f a))
       (fun i j a => by rw [Function.comp_apply, ← map_mul, hl a])
       (fun i j a => by rw [Function.comp_apply, ← map_mul, hr a]) hind
-  refine (hvert _ hJ2).sum_type harrowIndependent ?_
-  rw [Submodule.disjoint_def]
-  intro y hy hy'
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp hy
-  let ψ := (Ideal.Quotient.factorₐ k hJ2).toLinearMap
   have hψ : Submodule.span k (Set.range fun a : Σ i j : Q, i ⟶ j =>
       Ideal.Quotient.mk (J ^ 2) (f a.2.2)) ≤ LinearMap.ker ψ := by
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨a, rfl⟩
     simpa [ψ, Ideal.Quotient.eq_zero_iff_mem] using harrows a.2.2
-  have hc := Fintype.linearIndependent_iff.mp (hvert J le_rfl) c (by simpa [ψ] using hψ hy')
-  simp [hc]
+  exact (LinearIndependent.of_comp ψ hvert).sum_type harrowIndependent
+    ((Submodule.range_ker_disjoint hvert).mono_right hψ)
 
 /-- **Admissibility criterion for a bound-quiver presentation.** Let `J` be a nilpotent two-sided
 ideal containing the arrow values, and let the vertex idempotents be nonzero. If for all vertices
@@ -174,17 +170,11 @@ theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀
     (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
     (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
     IsAdmissibleIdeal (RingHom.ker (liftAlgHomOfArrows k e he f hl hr).toRingHom) := by
-  classical
   refine (liftAlgHomOfArrows k e he f hl hr).isAdmissibleIdeal_ker J hJ
     (fun i j a => by simpa [ofArrow_eq_ofPath] using harrows a) ?_
-  rw [← linearIndependent_equiv shortPathTwoEquiv]
-  have hfun : (fun p : ShortPath Q 2 => Ideal.Quotient.mk (J ^ 2)
-      (liftAlgHomOfArrows k e he f hl hr (ofPath p.1))) ∘ shortPathTwoEquiv =
-      Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
-        (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2)) := by
-    ext (i | ⟨i, j, a⟩) <;> simp
-  rw [hfun]
-  exact linearIndependent_vertex_sum_arrow e he f hl hr J hJ hne harrows hind
+  refine (linearIndependent_equiv' shortPathTwoEquiv ?_).mp
+    (linearIndependent_vertex_sum_arrow e f hl hr J he.toOrthogonalIdempotents hJ hne harrows hind)
+  ext (i | ⟨i, j, a⟩) <;> simp
 
 end Admissible
 
