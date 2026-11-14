@@ -71,6 +71,15 @@ theorem isArtinian_linearMap_of_finite (M : Type w) [AddCommGroup M] [Module R M
   exact isArtinian_of_injective (e.toLinearMap.comp (f.lcomp R E))
     (e.injective.comp (LinearMap.lcomp_injective_of_surjective f hf))
 
+/-- Over a Noetherian local ring, an `R`-module is finitely generated if and only if its Matlis
+dual is Artinian. Completeness of `R` is not required. -/
+theorem finite_iff_isArtinian_linearMap (M : Type w) [AddCommGroup M] [Module R M] :
+    Module.Finite R M ↔ IsArtinian R (M →ₗ[R] E) := by
+  refine ⟨fun _ ↦ hι.isArtinian_linearMap_of_finite M, fun _ ↦ ?_⟩
+  have := hι.moduleInjective
+  have : IsNoetherian R M := isNoetherian_of_isArtinian_linearMap R hι.injective
+  infer_instance
+
 variable [IsAdicComplete (maximalIdeal R) R]
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [Module.Finite R M]
