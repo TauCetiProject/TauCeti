@@ -8,35 +8,40 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.SumCoeff
 import TauCeti.NumberTheory.LSeries.SumCoeff
+import TauCeti.Analysis.Complex.HalfPlaneIdentity
 
 /-!
 # The ordinary Abel integral for the Riemann zeta function
 
-For `0 < re s` and `s ≠ 1`, partial summation and analytic continuation give
-`ζ(s) = s / (s - 1) - s ∫₁^∞ {t} t^(-s - 1) dt`. The fractional-part kernel has absolute integral
-at most `1 / re s`, giving `‖ζ(s)‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / re s`.
+The fractional-part integral isolates the simple pole of the Riemann zeta function and
+bounds its analytic remainder throughout the right half-plane. Unlike the alternating-series
+representation, this formula has no factor `1 - 2 ^ (1 - s)`, which vanishes at additional
+points on `re s = 1`. It gives polynomial vertical growth bounds for the pole-subtracted
+function and for `ζ` away from its pole.
 
-The identity on `re s > 1` specializes Mathlib's `LSeries_eq_mul_integral` to constant
-coefficients. The general-kernel lemmas of `TauCeti.NumberTheory.LSeries.SumCoeff`, built on
-Mathlib's Mellin analyticity theorem, give holomorphy, integrability and the `1 / re s` bound for
-the bounded measurable fractional-part kernel on `[1, ∞)`. The identity theorem then
-compares the entire pole-cleared zeta function `riemannZeta₁` with the pole-cleared integral.
-No value at `s = 1` is identified with its meromorphic germ.
+## Main results
 
-This is the ordinary fractional-part formula; the alternating-series integral in
-`TauCeti.NumberTheory.LSeries.RiemannZeta` includes the different factor `1 - 2 ^ (1 - s)`.
+* `TauCeti.riemannZeta₀_eq_one_sub_mul_integral_fract`: on `0 < re s`, including `s = 1`,
+  the entire pole-subtracted function satisfies `ζ₀(s) = 1 - s ∫₁^∞ {t} t^(-s-1) dt`.
+* `TauCeti.norm_riemannZeta₀_le_of_re_pos`: `‖ζ₀(s)‖ ≤ 1 + ‖s‖ / re s` on that half-plane.
+* `TauCeti.riemannZeta_eq_sub_integral_fract` and `TauCeti.norm_riemannZeta_le_of_re_pos`:
+  the ordinary Abel formula and bound for `ζ(s)` when `0 < re s` and `s ≠ 1`.
+
+## References
+
+* E. C. Titchmarsh, *The Theory of the Riemann Zeta-Function*, 2nd ed., §2.1.
 
 ## Provenance
 
-The ordinary formula and its quantitative use are formalized in PNT+, the project of
-Alex Kontorovich and Terence Tao. Matteo Cipollina's `RiemannZetaAbelKernel` and
-`RiemannZetaAbelContinuation` provide its fractional-part integral formulation. This proof
-reuses Mathlib's Mellin and Abel APIs rather than copying the fork's parameter-integral and
-finite partial-sum infrastructure.
+The ordinary formula and its quantitative use were formalized by Matteo Cipollina in
+[PNT+ RiemannZetaAbelKernel.lean](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/e316efa96ec1faa14c06dccf912b7f1bcefb4d2a/PrimeNumberTheoremAnd/Mathlib/NumberTheory/LSeries/RiemannZetaAbelKernel.lean)
+and [RiemannZetaAbelContinuation.lean](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/e316efa96ec1faa14c06dccf912b7f1bcefb4d2a/PrimeNumberTheoremAnd/Mathlib/NumberTheory/LSeries/RiemannZetaAbelContinuation.lean),
+the project of Alex Kontorovich and Terence Tao. The present proof uses the native Mellin and
+Abel APIs.
 -/
 
 public section
@@ -100,57 +105,59 @@ private theorem abel_initial (s : ℂ) (hs : 1 < s.re) :
   rw [H]
   ring
 
-/-- The ordinary Abel integral for `ζ` on the punctured right half-plane. The value at the pole
-is excluded: `riemannZeta 1` is a totalized value, while this formula represents its pole germ. -/
+/-- The Abel integral for the entire pole-subtracted zeta function on `0 < s.re`,
+including `s = 1`. -/
+theorem riemannZeta₀_eq_one_sub_mul_integral_fract {s : ℂ} (hs : 0 < s.re) :
+    riemannZeta₀ s = 1 - s *
+      ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  let G : ℂ → ℂ := fun z ↦ 1 - z *
+    ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1))
+  have hG : DifferentiableOn ℂ G {z : ℂ | 0 < z.re} :=
+    (differentiableOn_const (1 : ℂ)).sub (differentiableOn_id.mul
+      (LSeries.differentiableOn_integral_mul_cpow_of_isBigO locallyIntegrableOn_fract
+        isBigO_fract))
+  have heq : EqOn G riemannZeta₀ {z : ℂ | 1 < z.re} := by
+    intro z hz
+    have hz1 : z ≠ 1 := by intro h; subst z; norm_num at hz
+    have hratio : z / (z - 1) = 1 + (z - 1)⁻¹ := by
+      field_simp [sub_ne_zero.mpr hz1]
+      ring
+    have H := abel_initial z hz
+    rw [riemannZeta_eq_inv_sub_add hz1, hratio] at H
+    dsimp only [G]
+    linear_combination -H
+  exact (hG.eqOn_of_eqOn_re_gt differentiable_riemannZeta₀.differentiableOn heq hs).symm
+
+/-- On the right half-plane, the pole-subtracted zeta function satisfies
+`‖ζ₀(s)‖ ≤ 1 + ‖s‖ / s.re`, including at `s = 1`. -/
+theorem norm_riemannZeta₀_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
+    ‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / s.re := by
+  rw [riemannZeta₀_eq_one_sub_mul_integral_fract hs]
+  calc
+    _ ≤ 1 + ‖s‖ * ‖∫ t in Ioi (1 : ℝ),
+        ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ := by
+      simpa only [norm_one, norm_mul] using norm_sub_le (1 : ℂ)
+        (s * ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
+    _ ≤ 1 + ‖s‖ * (1 / s.re) :=
+      add_le_add le_rfl (mul_le_mul_of_nonneg_left
+        (LSeries.norm_integral_mul_cpow_le_of_bound (fun t _ ↦ norm_fract_le t) hs)
+        (norm_nonneg s))
+    _ = _ := by ring
+
+/-- On `0 < s.re`, `s ≠ 1`, the ordinary Abel formula isolates the simple pole of `ζ`.
+The identity excludes `s = 1`, where both expressions have totalized values. -/
 theorem riemannZeta_eq_sub_integral_fract {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠ 1) :
     riemannZeta s = s / (s - 1) - s *
       ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
-  let G : ℂ → ℂ := fun z ↦ z - z * (z - 1) *
-    ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1))
-  have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
-  have hG : AnalyticOnNhd ℂ G {z : ℂ | 0 < z.re} := by
-    intro z hz
-    apply DifferentiableOn.analyticAt (s := {z : ℂ | 0 < z.re}) ?_ (hopen.mem_nhds hz)
-    intro w hw
-    exact (differentiableAt_id.sub ((differentiableAt_id.mul
-      (differentiableAt_id.sub_const 1)).mul
-      ((LSeries.differentiableOn_integral_mul_cpow_of_isBigO locallyIntegrableOn_fract
-        isBigO_fract).differentiableAt (hopen.mem_nhds hw)))).differentiableWithinAt
-  have hZ : AnalyticOnNhd ℂ riemannZeta₁ {z : ℂ | 0 < z.re} :=
-    differentiable_riemannZeta₁.differentiableOn.analyticOnNhd hopen
-  have heq : G =ᶠ[𝓝 (2 : ℂ)] riemannZeta₁ := by
-    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
-      (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
-    have hz1 : z ≠ 1 := by intro h; subst z; norm_num at hz
-    have H := abel_initial z hz
-    rw [riemannZeta_eq_inv_sub_mul hz1] at H
-    dsimp only [G]
-    have hz' := sub_ne_zero.mpr hz1
-    field_simp [hz'] at H
-    linear_combination -H
-  have H := hG.eqOn_of_preconnected_of_eventuallyEq hZ
-    (convex_halfSpace_re_gt 0).isPreconnected (by norm_num) heq hs
-  rw [riemannZeta_eq_inv_sub_mul hs1]
-  dsimp only [G] at H
-  have hs' := sub_ne_zero.mpr hs1
-  field_simp [hs']
-  linear_combination -H
+  rw [riemannZeta_eq_inv_sub_add hs1, riemannZeta₀_eq_one_sub_mul_integral_fract hs]
+  field_simp [sub_ne_zero.mpr hs1]
+  ring
 
-/-- The ordinary Abel integral bounds `ζ` by its pole term and `‖s‖ / re s`. -/
+/-- On the punctured right half-plane `0 < s.re`, `s ≠ 1`,
+`‖ζ(s)‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / s.re`. -/
 theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) (hs1 : s ≠ 1) :
     ‖riemannZeta s‖ ≤ 1 + ‖(s - 1)⁻¹‖ + ‖s‖ / s.re := by
-  rw [riemannZeta_eq_sub_integral_fract hs hs1, show s / (s - 1) = 1 + (s - 1)⁻¹ by
-    field_simp [sub_ne_zero.mpr hs1]; ring]
-  calc
-    _ ≤ ‖1 + (s - 1)⁻¹‖ + ‖s‖ * ‖∫ t in Ioi (1 : ℝ),
-        ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1))‖ := by
-      simpa only [norm_mul] using norm_sub_le (1 + (s - 1)⁻¹)
-        (s * ∫ t in Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
-    _ ≤ (1 + ‖(s - 1)⁻¹‖) + ‖s‖ * (1 / s.re) :=
-      add_le_add (by simpa using norm_add_le (1 : ℂ) (s - 1)⁻¹)
-        (mul_le_mul_of_nonneg_left
-          (LSeries.norm_integral_mul_cpow_le_of_bound (fun t _ ↦ norm_fract_le t) hs)
-          (norm_nonneg s))
-    _ = _ := by ring
+  rw [riemannZeta_eq_inv_sub_add hs1]
+  exact (norm_add_le _ _).trans (by linarith [norm_riemannZeta₀_le_of_re_pos hs])
 
 end TauCeti

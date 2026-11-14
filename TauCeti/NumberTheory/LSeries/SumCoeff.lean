@@ -11,6 +11,7 @@ import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.NumberTheory.AbelSummation
 
 /-!
@@ -70,16 +71,15 @@ restricted to `[1, ∞)`. -/
 private theorem integral_Ioi_one_eq_mellin_indicator (g : ℝ → ℂ) (s : ℂ) :
     ∫ t in Set.Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(s + 1)) =
       mellin ((Set.Ici 1).indicator g) (-s) := by
-  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • (Set.Ici 1).indicator g t)
-      ((Set.Ici (1 : ℝ)).indicator fun t ↦ g t * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 0) := by
-    intro t _
-    dsimp only
-    by_cases h1 : t ∈ Set.Ici (1 : ℝ)
-    · rw [Set.indicator_of_mem h1, Set.indicator_of_mem h1, smul_eq_mul, mul_comm, neg_add']
-    · rw [Set.indicator_of_notMem h1, Set.indicator_of_notMem h1, smul_zero]
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi hEq,
-    setIntegral_indicator measurableSet_Ici,
-    Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
+  calc
+    _ = mellin ((Set.Ioi 1).indicator g) (-s) := by
+      rw [TauCeti.mellin_indicator_Ioi _ zero_le_one]
+      simp only [smul_eq_mul, neg_add', mul_comm]
+    _ = _ := by
+      apply integral_congr_ae
+      filter_upwards [ae_restrict_of_ae (indicator_ae_eq_of_ae_eq_set (f := g)
+        (Ioi_ae_eq_Ici (a := (1 : ℝ))))] with t ht
+      rw [ht]
 
 private theorem locallyIntegrableOn_indicator_Ici_one {g : ℝ → ℂ}
     (hg : LocallyIntegrableOn g (Set.Ici 1)) :
