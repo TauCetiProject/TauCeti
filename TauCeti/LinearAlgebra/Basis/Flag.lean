@@ -190,6 +190,7 @@ theorem mem_flag_of_repr_flagPivots_eq_zero {k : Fin (n + 1)} {x : M} (hx : x �
   exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs))
     (h _ (max'_support_mem_flagPivots hx hs) (hj.trans (Fin.castSucc_le_castSucc_iff.mpr hjk)))
 
+variable (b) in
 /-- A vector of `W` whose coordinates at the pivots of `W` all vanish is zero. -/
 theorem eq_zero_of_repr_flagPivots_eq_zero {x : M} (hx : x ∈ W)
     (h : ∀ i ∈ b.flagPivots W, b.repr x i = 0) : x = 0 := by
@@ -326,7 +327,7 @@ theorem existsUnique_flagEchelon (i : Fin n) :
     have hφ : Function.Injective φ := by
       rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
       intro x hx
-      refine Subtype.ext (eq_zero_of_repr_flagPivots_eq_zero (b := b) x.2.1 fun j hj ↦ ?_)
+      refine Subtype.ext (b.eq_zero_of_repr_flagPivots_eq_zero x.2.1 fun j hj ↦ ?_)
       by_cases hji : j.castSucc < i.succ
       · simpa [φ] using congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
       · exact hlt x.2.2 hji
@@ -342,7 +343,7 @@ theorem existsUnique_flagEchelon (i : Fin n) :
       rintro rfl
       exact hji Fin.castSucc_lt_succ
   · rw [← sub_eq_zero]
-    refine eq_zero_of_repr_flagPivots_eq_zero (b := b) (W.sub_mem hx.1.1 hy.1.1) fun j hj ↦ ?_
+    refine b.eq_zero_of_repr_flagPivots_eq_zero (W.sub_mem hx.1.1 hy.1.1) fun j hj ↦ ?_
     rw [map_sub, Finsupp.sub_apply, hx.2 j hj, hy.2 j hj, sub_self]
 
 /-- The span of a family indexed by `S`, whose `s`-th member lies in `b.flag s.succ` and has the
@@ -366,14 +367,18 @@ at an index which is not a pivot it is `0` (`Module.Basis.flagEchelon_of_notMem`
 noncomputable def flagEchelon (i : Fin n) : V :=
   (existsUnique_flagEchelon b W i).exists.choose
 
+variable (b W) in
+@[simp]
 theorem flagEchelon_mem (i : Fin n) : b.flagEchelon W i ∈ W :=
   (existsUnique_flagEchelon b W i).exists.choose_spec.1.1
 
+variable (b W) in
+@[simp]
 theorem flagEchelon_mem_flag (i : Fin n) : b.flagEchelon W i ∈ b.flag i.succ :=
   (existsUnique_flagEchelon b W i).exists.choose_spec.1.2
 
 @[simp]
-theorem repr_flagEchelon {i j : Fin n} (hj : j ∈ b.flagPivots W) :
+theorem repr_flagEchelon (i : Fin n) {j : Fin n} (hj : j ∈ b.flagPivots W) :
     b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j :=
   (existsUnique_flagEchelon b W i).exists.choose_spec.2 j hj
 
@@ -381,23 +386,27 @@ theorem repr_flagEchelon {i j : Fin n} (hj : j ∈ b.flagPivots W) :
 `b.flagEchelon W i`, for any index `i`. -/
 theorem eq_flagEchelon {i : Fin n} {x : V} (hx : x ∈ W)
     (h : ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j) : x = b.flagEchelon W i :=
-  sub_eq_zero.mp <| eq_zero_of_repr_flagPivots_eq_zero (b := b) (W.sub_mem hx (flagEchelon_mem i))
-    fun j hj ↦ by simp [h j hj, repr_flagEchelon hj]
+  sub_eq_zero.mp <| b.eq_zero_of_repr_flagPivots_eq_zero (W.sub_mem hx (b.flagEchelon_mem W i))
+    fun j hj ↦ by simp [h j hj, repr_flagEchelon i hj]
 
 @[simp]
 theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 :=
   Eq.symm <| eq_flagEchelon (zero_mem W) fun _ hj ↦ by simp [hj.ne_of_notMem hi]
 
+variable (b W) in
 theorem linearIndependent_flagEchelon :
     LinearIndependent K fun i : b.flagPivots W ↦ b.flagEchelon W i :=
-  linearIndependent_of_repr_eq_single fun _ _ hj ↦ repr_flagEchelon hj
+  linearIndependent_of_repr_eq_single fun _ _ hj ↦ repr_flagEchelon _ hj
 
+variable (b W) in
 /-- The reduced echelon basis vectors of `W` span `W`. -/
+@[simp]
 theorem span_flagEchelon : span K (Set.range fun i : b.flagPivots W ↦ b.flagEchelon W i) = W := by
   have := Module.Finite.of_basis b
-  refine eq_of_le_of_finrank_eq (span_le.mpr (Set.range_subset_iff.mpr fun i ↦ flagEchelon_mem _))
-    ?_
-  rw [finrank_span_eq_card linearIndependent_flagEchelon, Fintype.card_coe, card_flagPivots]
+  refine eq_of_le_of_finrank_eq
+    (span_le.mpr (Set.range_subset_iff.mpr fun i ↦ b.flagEchelon_mem W i)) ?_
+  rw [finrank_span_eq_card (b.linearIndependent_flagEchelon W), Fintype.card_coe,
+    card_flagPivots]
 
 end DivisionRing
 
@@ -462,17 +471,17 @@ noncomputable def flagCellEquiv (S : Finset (Fin n)) :
   left_inv := by
     rintro ⟨W, rfl⟩
     refine Subtype.ext ((congrArg (span K) (congrArg Set.range (funext fun s ↦ ?_))).trans
-      span_flagEchelon)
+      (b.span_flagEchelon W))
     -- The row built from the free entries of the echelon basis vector is that vector.
     refine b.repr.injective (Finsupp.ext fun j ↦ ?_)
     by_cases hj : j ∈ b.flagPivots W
-    · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon hj]
+    · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon _ hj]
     rw [repr_echelonRow, ite_eq_right (fun h : j = s ↦ hj (h ▸ s.2))]
     split_ifs with h
     · rfl
     · have hsj : (s : Fin n) < j := lt_of_not_ge fun hjs ↦ h (mem_echelonFreeEntries.mpr
         ⟨s.2, lt_of_le_of_ne hjs fun h' : j = s ↦ hj (h' ▸ s.2), hj⟩)
-      exact ((b.mem_flag_iff_repr_eq_zero.mp (flagEchelon_mem_flag (s : Fin n))) j
+      exact ((b.mem_flag_iff_repr_eq_zero.mp (b.flagEchelon_mem_flag W s)) j
         (Fin.succ_le_castSucc_iff.mpr hsj)).symm
   right_inv a := by
     funext ⟨⟨s, j⟩, hx⟩
