@@ -141,16 +141,7 @@ private theorem powerResidueSymbolIdeal_three_of_absNorm_eq_five {π μ : 𝓞 K
   have : (span {π}).IsMaximal :=
     hprime.isMaximal fun h ↦ by rw [h, absNorm_bot] at hN; exact absurd hN (by norm_num)
   have hcop : (absNorm (span {π})).Coprime 4 := by rw [hN]; norm_num
-  have h3 : ((3 : ℤ) : 𝓞 K ⧸ span {π}) ≠ 0 := by
-    -- Otherwise `π ∣ 3` and `π ∣ μ - 3`, so `π` divides the unit `μ`.
-    intro h
-    rw [← map_intCast (Quotient.mk (span {π})), Quotient.eq_zero_iff_mem,
-      mem_span_singleton] at h
-    have hu : IsUnit π := isUnit_of_dvd_unit (by simpa using dvd_add hπ h)
-      (IsUnit.of_pow_eq_one hμ (by norm_num))
-    rw [span_singleton_eq_top.mpr hu, absNorm_top] at hN
-    exact absurd hN (by norm_num)
-  rw [powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbol_eq_iff hcop h3 hμ, hN,
+  rw [powerResidueSymbolIdeal_of_isMaximal, powerResidueSymbol_eq_iff hcop hμ, hN,
     ← map_intCast (Quotient.mk (span {π})), pow_one, Quotient.eq, mem_span_singleton]
   simpa using hπ
 
