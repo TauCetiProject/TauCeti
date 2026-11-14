@@ -108,6 +108,14 @@ theorem contractibleSpace_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
   have := hstar.contractibleSpace hne
   exact (e.homeomorphOfImageSubsetSource hs rfl).contractibleSpace
 
+/-- The subspace `{h ≤ a}` of the sublevel pair of the height is contractible for
+`-1 ≤ a < 1`. -/
+private theorem contractibleSpace_sublevelPair_snd_sphereHeight (v : sphere (0 : E) 1) {a b : ℝ}
+    (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) :
+    ContractibleSpace (sublevelPair (sphereHeight v) hab).snd :=
+  -- The subspace of `sublevelPair` is `TopCat.of {x | sphereHeight v x ≤ a}` by definition.
+  contractibleSpace_sublevel_sphereHeight v ha ha'
+
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
 variable {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
@@ -177,9 +185,7 @@ coefficients (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`)
 theorem isIso_singularHomologyπ_sublevelPair_sphereHeight (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) (k : ℕ) :
     IsIso ((sublevelPair (sphereHeight v) hab).singularHomologyπ R (k + 1)) := by
-  have := contractibleSpace_sublevel_sphereHeight v ha ha'
-  -- The subspace of `sublevelPair` is `TopCat.of {x | sphereHeight v x ≤ a}` by definition.
-  have : ContractibleSpace (sublevelPair (sphereHeight v) hab).snd := this
+  have := contractibleSpace_sublevelPair_snd_sphereHeight v ha ha' hab
   exact TopPair.isIso_singularHomologyπ_of_contractibleSpace _ R k
 
 /-- **The top cell of the height is a cycle.** For `-1 ≤ a < 1` and `a ≤ b`, the connecting
@@ -189,9 +195,7 @@ component of the lower sublevel. -/
 theorem singularHomologyδ_sublevelPair_sphereHeight_eq_zero (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) (k : ℕ) :
     (sublevelPair (sphereHeight v) hab).singularHomologyδ R (k + 1) k = 0 := by
-  have := contractibleSpace_sublevel_sphereHeight v ha ha'
-  -- The subspace of `sublevelPair` is `TopCat.of {x | sphereHeight v x ≤ a}` by definition.
-  have : ContractibleSpace (sublevelPair (sphereHeight v) hab).snd := this
+  have := contractibleSpace_sublevelPair_snd_sphereHeight v ha ha' hab
   exact TopPair.singularHomologyδ_eq_zero_of_contractibleSpace _ R k
 
 end TauCeti
