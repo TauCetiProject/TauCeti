@@ -75,9 +75,6 @@ universe v w
 
 noncomputable section
 
--- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
-attribute [local instance high] Algebra.toModule
-
 variable (t : DynkinType) (ht : t.Valid)
 variable (A : Type v) [CommRing A]
 
