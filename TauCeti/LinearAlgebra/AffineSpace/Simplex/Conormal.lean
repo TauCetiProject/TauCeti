@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Alternating.Conormal
 public import Mathlib.LinearAlgebra.AffineSpace.Simplex.Basic
 public import Mathlib.LinearAlgebra.Projection
+import TauCeti.LinearAlgebra.AffineSpace.Transverse
 
 /-!
 # Conormal forms on transverse simplices
@@ -48,13 +49,8 @@ theorem conormal_apply_ne_zero (s : Simplex R P n) {W : Submodule R V}
       Fin.succAbove_zero] using
       ((affineIndependent_iff_linearIndependent_vsub R s.points 0).mp s.independent).comp
         (finSuccAboveEquiv 0) (finSuccAboveEquiv 0).injective
-  have hspan : Submodule.span R (range v) = vectorSpan R (range s.points) := by
-    rw [vectorSpan_range_eq_span_range_vsub_right_ne R s.points 0]
-    congr 1
-    simpa only [v, Function.comp_def, finSuccAboveEquiv_apply,
-      Fin.succAbove_zero] using
-      (finSuccAboveEquiv 0).surjective.range_comp
-        (fun j : {j : Fin (n + 1) // j ≠ 0} => s.points j -ᵥ s.points 0)
+  have hspan : Submodule.span R (range v) = vectorSpan R (range s.points) :=
+    span_range_succ_vsub_zero_eq_vectorSpan s.points
   let T := Submodule.span R (range v)
   have hWT : IsCompl W T := by simpa only [T, hspan] using hW
   let e := W.quotientEquivOfIsCompl T hWT

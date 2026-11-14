@@ -123,13 +123,8 @@ theorem IsWeaklyTransverse.isCompl {σ : OrientedCell h k} {v : Fin (k + 1) → 
     rw [← Submodule.map_mkQ_eq_top W (Submodule.span ℝ (range e)),
       LinearMap.map_span, ← Set.range_comp]
     exact hspan
-  have hvec : Submodule.span ℝ (range e) = vectorSpan ℝ (range v) := by
-    rw [vectorSpan_range_eq_span_range_vsub_right_ne ℝ v 0]
-    congr 1
-    simpa only [e, Function.comp_def, finSuccAboveEquiv_apply,
-      Fin.succAbove_zero, vsub_eq_sub] using
-      (finSuccAboveEquiv 0).surjective.range_comp
-        (fun j : {j : Fin (k + 1) // j ≠ 0} => v j - v 0)
+  have hvec : Submodule.span ℝ (range e) = vectorSpan ℝ (range v) :=
+    span_range_succ_vsub_zero_eq_vectorSpan v
   rwa [hvec] at hcompl
 
 /-- A weakly transverse test meeting a cell is affinely independent. -/
@@ -218,12 +213,6 @@ theorem isWeaklyTransverse_pair_iff (σ : OrientedCell h 1) (a b : V) :
         Matrix.cons_val_one, Matrix.cons_val_zero]
       apply hi
       rwa [← hhull]
-
-/-- Reversing a segment preserves weak transversality. -/
-theorem isWeaklyTransverse_pair_swap_iff (σ : OrientedCell h 1) (a b : V) :
-    σ.IsWeaklyTransverse ![b, a] ↔ σ.IsWeaklyTransverse ![a, b] := by
-  simpa only [Matrix.cons_cons_comp_swap_zero_one] using
-    σ.isWeaklyTransverse_comp_equiv_iff ![a, b] (Equiv.swap 0 1)
 
 /-- An affinely independent subsimplex of a weakly transverse test is weakly transverse.
 Affine independence is needed only when the subsimplex meets the cell. -/
@@ -363,12 +352,6 @@ theorem isTransverse_pair_iff (σ : OrientedCell h 1) (a b : V) :
     fin_cases j
     · simpa using hb
     · simpa using ha
-
-/-- Reversing a segment preserves transversality. -/
-theorem isTransverse_pair_swap_iff (σ : OrientedCell h 1) (a b : V) :
-    σ.IsTransverse ![b, a] ↔ σ.IsTransverse ![a, b] := by
-  simpa only [Matrix.cons_cons_comp_swap_zero_one] using
-    σ.isTransverse_comp_equiv_iff ![a, b] (Equiv.swap 0 1)
 
 /-- Reversing a cell's orientation preserves transversality of an affine test simplex. -/
 @[simp]
