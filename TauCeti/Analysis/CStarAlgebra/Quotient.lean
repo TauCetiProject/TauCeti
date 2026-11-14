@@ -270,10 +270,8 @@ theorem quotStarAlgEquivOfEq_mk {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
 @[simp]
 theorem quotStarAlgEquivOfEq_symm {I J : TwoSidedIdeal A} [IsClosed (I : Set A)]
     [IsClosed (J : Set A)] (h : I = J) :
-    (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm := by
-  ext x
-  obtain ⟨a, rfl⟩ := mk_surjective J x
-  exact (factorStarAlgHom_mk h.ge a).trans (quotStarAlgEquivOfEq_mk h.symm a).symm
+    (quotStarAlgEquivOfEq h).symm = quotStarAlgEquivOfEq h.symm :=
+  (rfl)
 
 end NonUnital
 
@@ -316,9 +314,8 @@ theorem mkUnitalStarAlgHom_apply (a : A) : mkUnitalStarAlgHom I a = mk I a :=
 
 @[simp]
 theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
-    (mkUnitalStarAlgHom I).toNonUnitalStarAlgHom = mkStarAlgHom I := by
-  ext a
-  rfl
+    (mkUnitalStarAlgHom I).toNonUnitalStarAlgHom = mkStarAlgHom I :=
+  (rfl)
 
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
@@ -354,9 +351,8 @@ theorem liftUnitalStarAlgHom_comp_mkUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (h
 @[simp]
 theorem toNonUnitalStarAlgHom_liftUnitalStarAlgHom (f : A →⋆ₐ[ℂ] B) (hf : ∀ a ∈ I, f a = 0) :
     (liftUnitalStarAlgHom I f hf).toNonUnitalStarAlgHom =
-      liftStarAlgHom I f.toNonUnitalStarAlgHom hf := by
-  ext x
-  rfl
+      liftStarAlgHom I f.toNonUnitalStarAlgHom hf :=
+  (rfl)
 
 end Unital
 
@@ -389,13 +385,9 @@ theorem isometry_quotientKerHom : Isometry φ.quotientKerHom :=
 
 @[simp]
 theorem range_quotientKerHom : Set.range φ.quotientKerHom = Set.range φ := by
-  ext b
-  constructor
-  · rintro ⟨x, rfl⟩
-    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ) x
-    exact ⟨a, (φ.quotientKerHom_mk a).symm⟩
-  · rintro ⟨a, rfl⟩
-    exact ⟨TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker φ) a, φ.quotientKerHom_mk a⟩
+  simpa only [Function.comp_def, φ.quotientKerHom_mk] using
+    ((TwoSidedIdeal.Quotient.mk_surjective (TwoSidedIdeal.ker φ)).range_comp
+      φ.quotientKerHom).symm
 
 /-- Every `⋆`-algebra homomorphism between C⋆-algebras has closed range as a subset of `B`. -/
 theorem isClosed_setRange : IsClosed (Set.range φ) := by
