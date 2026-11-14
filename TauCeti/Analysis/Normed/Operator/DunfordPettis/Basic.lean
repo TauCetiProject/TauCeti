@@ -68,7 +68,7 @@ Dunford–Pettis property.
 
 public section
 
-open Filter Function Metric NormedSpace Set Topology
+open Filter Set Topology
 open scoped ZeroAtInfty
 
 namespace ContinuousLinearMap
@@ -215,7 +215,7 @@ theorem IsWeaklyCompact.isDunfordPettis_of_tendsto_apply {T : E →L[𝕜] F}
   obtain ⟨h₀, φ, hφ, hlim⟩ := TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure
     (isWeaklyCompact_def.1 hT.precomp) (u := fun n ↦ ContinuousLinearMap.precomp 𝕜 T (g n))
     fun n ↦ mem_image_of_mem _ (mem_closedBall_zero_iff.2 (hg n))
-  -- Apply the criterion to the weakly null sequences `x ∘ ψ ∘ φ` and `g ∘ φ ∘ T - h₀`.
+  -- Apply the criterion to the weakly null sequences `x ∘ ψ ∘ φ` and `n ↦ g (φ n) ∘ T - h₀`.
   have hx' : Tendsto (fun n ↦ toWeakSpace 𝕜 E (x (ψ (φ n)))) atTop (𝓝 0) :=
     hx.comp (hψ.comp hφ).tendsto_atTop
   have h₁ := h hx' (f := fun n ↦ ContinuousLinearMap.precomp 𝕜 T (g (φ n)) - h₀)
