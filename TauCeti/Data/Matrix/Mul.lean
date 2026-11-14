@@ -8,7 +8,9 @@ module
 public import Mathlib.Data.Matrix.Mul
 
 /-!
-# Matrix products: positivity of powers and nonvanishing of factors
+# Matrix products: outer products, positivity of powers and nonvanishing of factors
+
+The outer-product lemmas describe row and column reindexing and constant vectors.
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -33,6 +35,19 @@ public section
 open scoped Matrix
 
 namespace Matrix
+
+/-- Reindexing the rows and columns of an outer product reindexes its two vectors. -/
+theorem submatrix_vecMulVec {α m n p q : Type*} [Mul α]
+    (u : m → α) (v : n → α) (r : p → m) (c : q → n) :
+    (vecMulVec u v).submatrix r c = vecMulVec (u ∘ r) (v ∘ c) := by
+  ext i j
+  simp [vecMulVec_apply]
+
+/-- The outer product of constant vectors is the constant matrix of their product. -/
+theorem vecMulVec_const_const {α m n : Type*} [Mul α] (a b : α) :
+    vecMulVec (fun _ : m ↦ a) (fun _ : n ↦ b) = of (fun _ _ ↦ a * b) := by
+  ext
+  simp [vecMulVec_apply]
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 

@@ -171,6 +171,35 @@ theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 �
     rw [covariancePseudoInverse_of_not_posSemidef hC, covariancePseudoInverse_of_not_posSemidef hcC,
       smul_zero]
 
+/-- The covariance pseudoinverse of `vecMulVec v v` is that same outer product divided by
+the square of `v ⬝ᵥ v`. The formula also holds for `v = 0`. -/
+theorem covariancePseudoInverse_vecMulVec (v : ι → ℝ) :
+    (vecMulVec v v).covariancePseudoInverse = (v ⬝ᵥ v)⁻¹ ^ 2 • vecMulVec v v := by
+  by_cases hv : v = 0
+  · simp [hv]
+  have hd : v ⬝ᵥ v ≠ 0 := fun h ↦ hv (dotProduct_self_eq_zero.mp h)
+  have hpos : (vecMulVec v v).PosSemidef := by
+    simpa using posSemidef_vecMulVec_self_star v
+  have hmul : vecMulVec v v * vecMulVec v v = (v ⬝ᵥ v) • vecMulVec v v := by
+    rw [vecMulVec_mul_vecMulVec, vecMulVec_smul]
+  have hprod : vecMulVec v v * ((v ⬝ᵥ v)⁻¹ ^ 2 • vecMulVec v v) =
+      (v ⬝ᵥ v)⁻¹ • vecMulVec v v := by
+    rw [Matrix.mul_smul, hmul, smul_smul]
+    congr 1
+    field_simp
+  have hprod' : ((v ⬝ᵥ v)⁻¹ ^ 2 • vecMulVec v v) * vecMulVec v v =
+      (v ⬝ᵥ v)⁻¹ • vecMulVec v v := by
+    simpa only [Matrix.mul_smul, Matrix.smul_mul] using hprod
+  refine (eq_covariancePseudoInverse_of_penrose hpos ?_ ?_ ?_ ?_).symm
+  · rw [hprod, Matrix.smul_mul, hmul, smul_smul, inv_mul_cancel₀ hd, one_smul]
+  · rw [hprod', Matrix.mul_smul, Matrix.smul_mul, hmul, smul_smul, smul_smul]
+    congr 1
+    field_simp
+  · rw [hprod]
+    exact hpos.isHermitian.smul (by simp [isSelfAdjoint_iff])
+  · rw [hprod']
+    exact hpos.isHermitian.smul (by simp [isSelfAdjoint_iff])
+
 /-- The covariance construction agrees with the existing Moore–Penrose inverse of the
 Euclidean operator. -/
 theorem toEuclideanLin_covariancePseudoInverse {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
