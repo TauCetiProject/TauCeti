@@ -103,6 +103,14 @@ theorem sum_map_snd_shiftTimed (χ : V) (p : List (𝕜 × V)) :
     simp only [shiftTimed_cons, List.map_cons, List.sum_cons, ih, duration_cons, add_smul]
     ac_rfl
 
+/-- Reversing a shifted timed presentation negates the added velocity. -/
+@[simp]
+theorem reverseTimed_shiftTimed {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+    (χ : M) (p : List (R × M)) :
+    reverseTimed (shiftTimed χ p) = shiftTimed (-χ) (reverseTimed p) := by
+  simp [reverseTimed_def, shiftTimed_def, List.map_reverse, Function.comp_def, smul_neg,
+    neg_add_rev, add_comm]
+
 end Algebra
 
 section OrderedField
