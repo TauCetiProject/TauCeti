@@ -311,13 +311,12 @@ theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ}
     Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
       m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
   rcases eq_or_ne m 0 with rfl | hm
-  · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul]
+  · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot]
     rcases subsingleton_or_nontrivial E with _ | _
     · have _ (M : Submodule ℤ E) : Unique (DiscriminantGroup M) :=
         ⟨⟨0⟩, fun x ↦ Subsingleton.elim _ _⟩
       rw [Module.finrank_zero_of_subsingleton, Nat.card_unique, Nat.card_unique, pow_zero, mul_one]
-    · have := infinite_discriminantGroup_bot (E := E)
-      rw [Nat.card_eq_zero_of_infinite, zero_pow Module.finrank_pos.ne', zero_mul]
+    · rw [Nat.card_eq_zero_of_infinite, zero_pow Module.finrank_pos.ne', zero_mul]
   by_cases hfull : span ℝ (L : Set E) = ⊤
   · borelize E
     have := h.discreteTopology

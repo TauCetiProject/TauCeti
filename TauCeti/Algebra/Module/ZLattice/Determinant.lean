@@ -196,7 +196,7 @@ theorem infinite_discriminantGroup_of_span_ne_top [FiniteDimensional ℝ E]
 
 /-- In a nontrivial space, the zero lattice `⊥` has an infinite discriminant group: its dual is
 the whole space. -/
-theorem infinite_discriminantGroup_bot [Nontrivial E] :
+instance infinite_discriminantGroup_bot [Nontrivial E] :
     Infinite (DiscriminantGroup (⊥ : Submodule ℤ E)) := by
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
   refine Infinite.of_injective

@@ -141,8 +141,8 @@ theorem signedDiscr_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : sig
 /-- In a nontrivial space, the zero lattice `⊥` has signed discriminant `0`: its dual is the whole
 space, so its discriminant group is infinite. -/
 @[simp]
-theorem signedDiscr_bot [Nontrivial E] : signedDiscr (⊥ : Submodule ℤ E) = 0 := by
-  exact signedDiscr_eq_zero_iff.mpr infinite_discriminantGroup_bot
+theorem signedDiscr_bot [Nontrivial E] : signedDiscr (⊥ : Submodule ℤ E) = 0 :=
+  signedDiscr_eq_zero_iff.mpr inferInstance
 
 /-- The signed discriminant is invariant under linear isometry equivalences. -/
 @[simp]
