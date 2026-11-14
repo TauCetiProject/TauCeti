@@ -69,17 +69,15 @@ theorem degree_toBasedLoop_eq_of_joined {f g : C(Circle, Circle)} (h : Joined f 
 @[simp]
 theorem degree_toBasedLoop_zpow (n : ℤ) :
     degree (⟨(· ^ n), continuous_zpow n⟩ : C(Circle, Circle)).toBasedLoop = n := by
-  rcases n with k | k
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
   · rw [degree_congr _ (expLoop.map (continuous_pow k)) fun t ↦ by
         rw [ContinuousMap.toBasedLoop_apply]
         simp [unitToCircle_apply],
       degree_map_pow, degree_expLoop, mul_one]
-    rfl
-  · rw [degree_congr _ (expLoop.map (continuous_pow (k + 1))).inv fun t ↦ by
+  · rw [degree_congr _ (expLoop.map (continuous_pow k)).inv fun t ↦ by
         rw [ContinuousMap.toBasedLoop_apply]
-        simp [unitToCircle_apply, zpow_negSucc],
+        simp [unitToCircle_apply],
       degree_inv, degree_map_pow, degree_expLoop, mul_one]
-    rfl
 
 /-- **Free loops of the circle are classified by their degree.** Two maps `S¹ → S¹` are joined by
 a path in `C(S¹, S¹)` exactly when they have the same degree. -/

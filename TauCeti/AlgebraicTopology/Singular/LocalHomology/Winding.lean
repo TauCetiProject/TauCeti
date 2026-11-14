@@ -8,10 +8,11 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.LinearAlgebra.Complex.Determinant
-import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Analysis.Complex.Determinant
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import Mathlib.Topology.Homotopy.Affine
+import TauCeti.Analysis.Complex.Determinant
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
 # The local degree of a plane map is the winding number of its boundary loop
@@ -148,11 +149,7 @@ there. -/
 private theorem localDegree_eq_of_eq_smul {f₀ f₁ : C(ℂ, ℂ)} (R : ℝ)
     (h : ∀ z, R < ‖z‖ → f₀ z ≠ 0 ∧ ∃ c : ℝ, 0 < c ∧ f₁ z = c • f₀ z) :
     o.localDegree o finrank_real_complex f₀ 0 = o.localDegree o finrank_real_complex f₁ 0 := by
-  let H : f₀.Homotopy f₁ :=
-    { toFun p := (1 - (p.1 : ℝ)) • f₀ p.2 + (p.1 : ℝ) • f₁ p.2
-      continuous_toFun := by fun_prop
-      map_zero_left := by simp
-      map_one_left := by simp }
+  let H := ContinuousMap.Homotopy.affine f₀ f₁
   refine o.localDegree_eq_of_homotopy_of_norm_le H R fun ⟨s, z⟩ hsz ↦ not_lt.1 fun hz ↦ ?_
   obtain ⟨h₀, c, hc, h₁⟩ := h z hz
   have hpos : 0 < 1 - (s : ℝ) + s * c := by
@@ -160,52 +157,43 @@ private theorem localDegree_eq_of_eq_smul {f₀ f₁ : C(ℂ, ℂ)} (R : ℝ)
     · simp [← hs]
     · nlinarith [s.2.2, mul_pos hs hc]
   have hsum : (1 - (s : ℝ) + s * c) • f₀ z = 0 := by
-    have : H (s, z) = (1 - (s : ℝ)) • f₀ z + (s : ℝ) • f₁ z := rfl
-    rw [← hsz, this, h₁, smul_smul, ← add_smul]
+    rw [← hsz, ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module, h₁, smul_smul,
+      ← add_smul]
   exact h₀ ((smul_eq_zero.1 hsum).resolve_left hpos.ne')
 
 /-! ### The model maps `z ↦ zᵏ` and `z ↦ conj (zᵏ)` -/
 
-/-- The map `z ↦ zᵏ` is proper for `k ≥ 1`. -/
-private theorem isProperMap_pow {k : ℕ} (hk : k ≠ 0) : IsProperMap fun z : ℂ ↦ z ^ k := by
-  simpa using (Polynomial.X ^ k : Polynomial ℂ).isProperMap_eval (by simp [Nat.pos_of_ne_zero hk])
+/-- At a `k`-th root of unity `x`, the derivative `k x^(k-1)` of `z ↦ zᵏ` has positive Jacobian
+`‖k x^(k-1)‖²`. -/
+private theorem det_pos_of_pow_eq_one {k : ℕ} (hk : k ≠ 0) {x : ℂ} (hx : x ^ k = 1) :
+    0 < ((smulRight (1 : ℂ →L[ℂ] ℂ) ((k : ℂ) * x ^ (k - 1))).restrictScalars ℝ).det := by
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    simp [zero_pow hk] at hx
+  rw [det_restrictScalars_smulRight_one]
+  exact pow_pos (norm_pos_iff.2 (mul_ne_zero (by exact_mod_cast hk) (pow_ne_zero _ hx0))) 2
 
-/-- The `k`-th roots of unity in `ℂ` are `k` points. -/
-private theorem ncard_pow_eq_one {k : ℕ} (hk : k ≠ 0) :
-    ((fun z : ℂ ↦ z ^ k) ⁻¹' {1}).ncard = k := by
-  have h : (fun z : ℂ ↦ z ^ k) ⁻¹' {1} = ↑(Polynomial.nthRootsFinset k (1 : ℂ)) := by
-    ext z
-    simp [Polynomial.mem_nthRootsFinset (Nat.pos_of_ne_zero hk)]
-  rw [h, ncard_coe_finset, (isPrimitiveRoot_exp k hk).card_nthRootsFinset]
+/-- The `k`-th roots of unity in `ℂ` are `k` points. For `k = 0` every point is one, and the
+infinite set `ℂ` has `ncard` zero. -/
+private theorem ncard_preimage_pow_one (k : ℕ) :
+    (((fun z : ℂ ↦ z ^ k) ⁻¹' {1}).ncard : ℤ) = k := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  exact_mod_cast (isPrimitiveRoot_exp k hk).ncard_setOf_pow_eq_one hk
 
 /-- **The local degree of `z ↦ zᵏ` at `0` is `k`.** -/
 theorem localDegree_pow (k : ℕ) :
     o.localDegree o finrank_real_complex ⟨(· ^ k), continuous_pow k⟩ 0 = k := by
   rcases eq_or_ne k 0 with rfl | hk
   · exact o.localDegree_eq_zero_of_notMem_range o _ finrank_real_complex _ (by simp)
-  have hx (x : ℂ) (hx : x ∈ (fun z : ℂ ↦ z ^ k) ⁻¹' {1}) : x ≠ 0 := by
-    rintro rfl
-    simp [zero_pow hk] at hx
-  have hdet (x : ℂ) (hx' : x ∈ (fun z : ℂ ↦ z ^ k) ⁻¹' {1}) :
-      0 < ((smulRight (1 : ℂ →L[ℂ] ℂ) ((k : ℂ) * x ^ (k - 1))).restrictScalars ℝ).det := by
-    rw [det_restrictScalars_smulRight_one]
-    exact pow_pos (norm_pos_iff.2 (mul_ne_zero (by exact_mod_cast hk) (pow_ne_zero _ (hx x hx')))) 2
+  have hdet (x : ℂ) (hx : x ∈ (fun z : ℂ ↦ z ^ k) ⁻¹' {1}) := det_pos_of_pow_eq_one hk hx
   rw [o.localDegree_eq_degree o _ finrank_real_complex (isProperMap_pow hk),
     o.degree_eq_ncard_sub_ncard finrank_real_complex (isProperMap_pow hk) (y := 1)
       (fun x _ ↦ (hasDerivAt_pow k x).hasFDerivAt.restrictScalars ℝ) fun x hx ↦ (hdet x hx).ne']
   simp only [ContinuousMap.coe_mk]
-  rw [inter_eq_right.2 fun x hx ↦ hdet x hx]
-  convert_to (((fun z : ℂ ↦ z ^ k) ⁻¹' {1}).ncard : ℤ) - ((∅ : Set ℂ).ncard : ℤ) = k using 3
-  · refine congrArg ncard (eq_empty_of_forall_notMem fun x hx ↦ ?_)
-    exact (hdet x hx.2).not_gt hx.1
-  simpa using congrArg ((↑) : ℕ → ℤ) (ncard_pow_eq_one hk)
-
-/-- Conjugation reverses orientation: composing with it negates the Jacobian. -/
-private theorem det_conjCLE_comp (A : ℂ →L[ℝ] ℂ) :
-    ((conjCLE : ℂ →L[ℝ] ℂ).comp A).det = -A.det := by
-  have h : ((conjCLE : ℂ →L[ℝ] ℂ) : ℂ →ₗ[ℝ] ℂ) = conjAe.toLinearEquiv.toLinearMap := rfl
-  refine (LinearMap.det_comp ((conjCLE : ℂ →L[ℝ] ℂ) : ℂ →ₗ[ℝ] ℂ) (A : ℂ →ₗ[ℝ] ℂ)).trans ?_
-  rw [h, det_conjAe, neg_one_mul, ContinuousLinearMap.det]
+  rw [inter_eq_right.2 fun x hx ↦ hdet x hx,
+    (disjoint_right.2 fun x hx hx' ↦ (hdet x hx).not_gt hx').inter_eq, ncard_empty,
+    Nat.cast_zero, sub_zero, ncard_preimage_pow_one k]
 
 /-- **The local degree of `z ↦ conj (zᵏ)` at `0` is `-k`.** -/
 theorem localDegree_conj_pow (k : ℕ) :
@@ -218,25 +206,19 @@ theorem localDegree_conj_pow (k : ℕ) :
     ext z
     rw [mem_preimage, mem_preimage, mem_singleton_iff, mem_singleton_iff,
       map_eq_one_iff _ (RingHom.injective _)]
-  have hx (x : ℂ) (hx : x ∈ (fun z : ℂ ↦ z ^ k) ⁻¹' {1}) : x ≠ 0 := by
-    rintro rfl
-    simp [zero_pow hk] at hx
-  have hdet (x : ℂ) (hx' : x ∈ (fun z : ℂ ↦ conj (z ^ k)) ⁻¹' {1}) :
+  have hdet (x : ℂ) (hx : x ∈ (fun z : ℂ ↦ conj (z ^ k)) ⁻¹' {1}) :
       ((conjCLE : ℂ →L[ℝ] ℂ).comp
         ((smulRight (1 : ℂ →L[ℂ] ℂ) ((k : ℂ) * x ^ (k - 1))).restrictScalars ℝ)).det < 0 := by
-    rw [det_conjCLE_comp, det_restrictScalars_smulRight_one, neg_lt_zero]
-    exact pow_pos (norm_pos_iff.2
-      (mul_ne_zero (by exact_mod_cast hk) (pow_ne_zero _ (hx x (hfib ▸ hx'))))) 2
+    rw [det_conjCLE_comp, neg_lt_zero]
+    exact det_pos_of_pow_eq_one hk (show x ∈ (fun z : ℂ ↦ z ^ k) ⁻¹' {1} from hfib ▸ hx)
   rw [o.localDegree_eq_degree o _ finrank_real_complex hprop,
     o.degree_eq_ncard_sub_ncard finrank_real_complex hprop (y := 1)
       (fun x _ ↦ conjCLE.hasFDerivAt.comp x
         ((hasDerivAt_pow k x).hasFDerivAt.restrictScalars ℝ)) fun x hx ↦ (hdet x hx).ne]
   simp only [ContinuousMap.coe_mk]
-  convert_to ((∅ : Set ℂ).ncard : ℤ) - (((fun z : ℂ ↦ z ^ k) ⁻¹' {1}).ncard : ℤ) = -k using 3
-  · refine congrArg ncard (eq_empty_of_forall_notMem fun x hx ↦ ?_)
-    exact (hdet x hx.2).not_gt hx.1
-  · rw [inter_eq_right.2 fun x hx ↦ hdet x hx, hfib]
-  simpa using congrArg ((↑) : ℕ → ℤ) (ncard_pow_eq_one hk)
+  rw [(disjoint_right.2 fun x hx hx' ↦ (hdet x hx).not_gt hx').inter_eq,
+    inter_eq_right.2 fun x hx ↦ hdet x hx, ncard_empty, Nat.cast_zero, zero_sub, hfib,
+    ncard_preimage_pow_one k]
 
 /-! ### The boundary winding number -/
 
