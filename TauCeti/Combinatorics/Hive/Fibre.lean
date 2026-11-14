@@ -63,7 +63,8 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 * `TauCeti.Hive.EqConstraintIndex`, `TauCeti.Hive.eqMatrix`, `TauCeti.Hive.eqRHS`,
   `TauCeti.Hive.rhombusMatrix`: finite equality and inequality matrices over any ring.
 * `TauCeti.Hive.properCone`, `TauCeti.Hive.realFibre`: closed real hive cone and polytope fibres.
-* `TauCeti.Hive.FixedIntegerHive`, `TauCeti.Hive.hiveCount`: integer hive fibres and counts.
+* `TauCeti.Hive.FixedIntegerHive`, `TauCeti.Hive.hiveCount`, `TauCeti.Hive.rotateRotateEquiv`:
+  integer hive fibres, counts, and cyclic-to-product boundary rotation.
 
 ## Main results
 
@@ -527,6 +528,27 @@ instance uniqueFixedIntegerHiveZero (n : ℕ) :
       invFun := fun h => ⟨h.1.rotate, by ext s i; simp [h.2]⟩
       left_inv := fun _ => by ext p; simp
       right_inv := fun _ => by ext p; simp }
+
+/-- Rotating twice identifies integer hives of clockwise cyclic boundary `![lam.1, μ.1, ν.1]` with
+integer hives of product boundary `productBoundary ν lam μ.dual`. -/
+def rotateRotateEquiv {n : ℕ} (lam μ ν : DominantWeight n) :
+    FixedIntegerHive ![lam.1, μ.1, ν.1] ≃ FixedIntegerHive (productBoundary ν lam μ.dual) where
+  toFun h := ⟨h.1.rotate.rotate, by
+    ext s r
+    fin_cases s <;> simp [boundary_rotate, h.2]⟩
+  invFun k := ⟨k.1.rotate, by
+    ext s r
+    fin_cases s <;> simp [boundary_rotate, k.2]⟩
+  left_inv _ := Subtype.ext (by simp)
+  right_inv _ := Subtype.ext (by simp)
+
+@[simp] theorem rotateRotateEquiv_apply_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (h : FixedIntegerHive ![lam.1, μ.1, ν.1]) :
+    (rotateRotateEquiv lam μ ν h).1 = h.1.rotate.rotate := (rfl)
+
+@[simp] theorem rotateRotateEquiv_symm_apply_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (k : FixedIntegerHive (productBoundary ν lam μ.dual)) :
+    ((rotateRotateEquiv lam μ ν).symm k).1 = k.1.rotate := (rfl)
 
 /-- Reflection of the boundary preserves `hiveCount`. -/
 @[simp] theorem hiveCount_reflect {n : ℕ} (B : Fin 3 → Fin n → ℤ) :

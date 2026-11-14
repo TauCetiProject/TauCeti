@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Shift
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
@@ -27,7 +29,7 @@ arbitrary integer weight rather than a nonnegative composition or an antitone se
 sum to `∑ i, P.topRow i`, every component lies between the last and first entries of `P.topRow`,
 and shifting every informative entry of `P` by `m` adds `m` to every component of `P.weight`. In
 the polynomial regime, where `TauCeti.gtPatternEquivSSYT` identifies patterns with bounded
-semistandard Young tableaux, `P.weight` agrees with `SemistandardYoungTableau.content`.
+semistandard Young tableaux, `P.weight` agrees with Tau Ceti's `SemistandardYoungTableau.content`.
 
 ## Main definitions
 
@@ -35,15 +37,21 @@ semistandard Young tableaux, `P.weight` agrees with `SemistandardYoungTableau.co
 * `TauCeti.GTPattern.weight`: the torus weight `fun r => P.rowSum (r + 1) - P.rowSum r`.
 * `TauCeti.GTPattern.weightAddMonoidHom`: `GTPattern.weight` bundled as an additive monoid
   homomorphism `GTPattern n →+ (Fin n → ℤ)`.
+* `TauCeti.GTPattern.gtPatternThreeAdjointZeroEquiv`: explicit bijection between the weight-`0`
+  Gelfand–Tsetlin fibre over the `SL 3` adjoint top row `(1, 0, -1)` and `Bool`.
 
 ## Main results
 
-* `TauCeti.GTPattern.sum_weight_lt` and `TauCeti.GTPattern.sum_weight`: leading partial sums of
+* `TauCeti.GTPattern.prefixSum_weight` and `TauCeti.GTPattern.sum_weight`: leading prefix sums of
   `P.weight` recover `P.rowSum`, and the total sum equals `∑ i, P.topRow i`.
 * `TauCeti.GTPattern.weight_shift`: determinant translation by `m` shifts every entry of `P.weight`
   by `m`.
 * `TauCeti.GTPattern.weight_mem_Icc`: every entry of `P.weight` lies between the last and first
   entries of `P.topRow`, so nonnegative patterns have nonnegative weights (`weight_nonneg`).
+* `TauCeti.GTPattern.eq_of_topRow_eq_of_weight_eq_two`,
+  `TauCeti.GTPattern.card_gtPattern_two_topRow_weight`, and
+  `TauCeti.GTPattern.card_gtPattern_three_adjoint_weight_zero`: low-rank weight-fibre uniqueness and
+  explicit counts.
 * `SemistandardYoungTableau.weight_toGTPattern` and `TauCeti.GTPattern.natCast_content_toTableau`:
   under the pattern–tableau correspondence, `GTPattern.weight` equals tableau `content`.
 
@@ -78,7 +86,7 @@ theorem rowSum_zero (P : GTPattern n) : P.rowSum 0 = 0 := by
   simp [rowSum_def]
 
 @[simp]
-theorem rowSum_of_lt (P : GTPattern n) {j : ℕ} (hj : n < j) : P.rowSum j = 0 := by
+theorem rowSum_eq_zero_of_lt (P : GTPattern n) {j : ℕ} (hj : n < j) : P.rowSum j = 0 := by
   simp [rowSum_def, P.entry_eq_zero_of_lt hj]
 
 /-- The sum of row `n` is the sum of `P.topRow`. -/
@@ -87,16 +95,16 @@ theorem rowSum_top (P : GTPattern n) : P.rowSum n = ∑ i : Fin n, P.topRow i :=
   simp [topRow_apply]
 
 @[simp]
-theorem zero_rowSum (j : ℕ) : (0 : GTPattern n).rowSum j = 0 := by
+theorem rowSum_zero_left (j : ℕ) : (0 : GTPattern n).rowSum j = 0 := by
   simp [rowSum_def, zero_apply]
 
 @[simp]
-theorem add_rowSum (P Q : GTPattern n) (j : ℕ) :
+theorem rowSum_add (P Q : GTPattern n) (j : ℕ) :
     (P + Q).rowSum j = P.rowSum j + Q.rowSum j := by
   simp [rowSum_def, add_apply, Finset.sum_add_distrib]
 
 @[simp]
-theorem nsmul_rowSum (k : ℕ) (P : GTPattern n) (j : ℕ) :
+theorem rowSum_nsmul (k : ℕ) (P : GTPattern n) (j : ℕ) :
     (k • P).rowSum j = k • P.rowSum j := by
   rw [rowSum_def, rowSum_def, ← Finset.sum_nsmul]
   simp [nsmul_apply]
@@ -153,12 +161,12 @@ theorem weight_zero : (0 : GTPattern n).weight = 0 := by
 
 @[simp]
 theorem weight_add (P Q : GTPattern n) : (P + Q).weight = P.weight + Q.weight := by
-  ext r; simp only [weight_apply, Pi.add_apply, add_rowSum]; abel
+  ext r; simp only [weight_apply, Pi.add_apply, rowSum_add]; abel
 
 @[simp]
 theorem weight_nsmul (k : ℕ) (P : GTPattern n) : (k • P).weight = k • P.weight := by
   ext r
-  simp only [weight_apply, Pi.smul_apply, nsmul_rowSum, nsmul_eq_mul]
+  simp only [weight_apply, Pi.smul_apply, rowSum_nsmul, nsmul_eq_mul]
   ring
 
 /-- `GTPattern.weight` bundled as an additive monoid homomorphism `GTPattern n →+ (Fin n → ℤ)`. -/
@@ -188,25 +196,16 @@ theorem weight_shift (P : GTPattern n) (m : ℤ) :
   ring
 
 /-- Summing the first `j ≤ n` components of `P.weight` telescopes to `P.rowSum j`. -/
-theorem sum_weight_lt (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
-    (∑ r : Fin n with r.val < j, P.weight r) = P.rowSum j := by
-  have hmap : ({r : Fin n | r.val < j} : Finset (Fin n)) = Finset.univ.map (Fin.castLEEmb hj) := by
-    ext r
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map, Fin.castLEEmb_apply]
-    exact ⟨fun hr => ⟨⟨r.val, hr⟩, Fin.ext rfl⟩, fun ⟨s, hs⟩ => hs ▸ s.isLt⟩
-  rw [hmap, Finset.sum_map]
-  have hfin : (∑ s : Fin j, P.weight (Fin.castLEEmb hj s)) =
-      ∑ k ∈ Finset.range j, (P.rowSum (k + 1) - P.rowSum k) := by
-    rw [← Fin.sum_univ_eq_sum_range]
-    rfl
-  rw [hfin, Finset.sum_range_sub, P.rowSum_zero, sub_zero]
+theorem prefixSum_weight (P : GTPattern n) {j : ℕ} (hj : j ≤ n) :
+    TauCeti.prefixSum j P.weight = P.rowSum j := by
+  unfold weight
+  rw [TauCeti.prefixSum_eq_sum_range j (fun k => P.rowSum (k + 1) - P.rowSum k),
+    min_eq_left hj, Finset.sum_range_sub, P.rowSum_zero, sub_zero]
 
 /-- The entries of `P.weight` sum to the sum of `P.topRow`. -/
 @[simp]
 theorem sum_weight (P : GTPattern n) : (∑ r : Fin n, P.weight r) = ∑ i : Fin n, P.topRow i := by
-  have hall : ({r : Fin n | r.val < n} : Finset (Fin n)) = Finset.univ := by
-    ext r; simp
-  simpa [hall, P.rowSum_top] using P.sum_weight_lt le_rfl
+  rw [← TauCeti.prefixSum_of_le le_rfl, P.prefixSum_weight le_rfl, P.rowSum_top]
 
 @[simp]
 theorem weight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
@@ -219,6 +218,7 @@ theorem weight_extend_castSucc (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : 
     (r : Fin n) : (Q.extend l h).weight r.castSucc = Q.weight r := by
   rw [← weight_truncate, truncate_extend]
 
+@[simp]
 theorem weight_extend_last (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow) :
     (Q.extend l h).weight (Fin.last n) = (∑ i, l i) - ∑ i, Q.topRow i := by
   rw [weight_apply, Fin.val_last, rowSum_extend_top,
@@ -252,11 +252,158 @@ theorem weight_mem_Icc (P : GTPattern n) (r : Fin n) :
 theorem weight_nonneg {P : GTPattern n} (hP : 0 ≤ P) (r : Fin n) : 0 ≤ P.weight r :=
   (zero_le_iff_topRow.mp hP ⟨n - 1, by have := r.isLt; omega⟩).trans (P.weight_mem_Icc r).1
 
-/-- Any refinement of a fixed-top-row pattern subtype is finite. -/
-instance finite_topRow_eq_and (l : Fin n → ℤ) (p : GTPattern n → Prop) :
-    Finite {P : GTPattern n // P.topRow = l ∧ p P} :=
-  Finite.of_injective (fun P => (⟨P.1, P.2.1⟩ : {P : GTPattern n // P.topRow = l}))
-    fun _ _ h => Subtype.ext (by simpa using h)
+/-! ### Low-rank weight fibres -/
+
+/-- Two rank-`2` patterns with the same top row and weight are equal. -/
+theorem eq_of_topRow_eq_of_weight_eq_two {P Q : GTPattern 2} (ht : P.topRow = Q.topRow)
+    (hw : P.weight = Q.weight) : P = Q := by
+  ext i j
+  by_cases hij : i < j ∧ j ≤ 2
+  · obtain ⟨hlt, hle⟩ := hij
+    rcases (by omega : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2)) with
+        ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · have hP1 : P.weight 0 = P 0 1 := by simp [weight_apply, rowSum_def]
+      have hQ1 : Q.weight 0 = Q 0 1 := by simp [weight_apply, rowSum_def]
+      linarith [congrFun hw 0]
+    · simpa [topRow_apply] using congrFun ht 0
+    · simpa [topRow_apply] using congrFun ht 1
+  · rw [P.entry_eq_zero (by omega), Q.entry_eq_zero (by omega)]
+
+/-- Cardinality of a rank-`2` Gelfand–Tsetlin weight fibre over an integer sequence `l`. -/
+theorem card_gtPattern_two_topRow_weight (l w : Fin 2 → ℤ) :
+    Nat.card {P : GTPattern 2 // P.topRow = l ∧ P.weight = w} =
+      if w 0 + w 1 = l 0 + l 1 ∧ l 1 ≤ w 0 ∧ w 0 ≤ l 0 then 1 else 0 := by
+  have : Subsingleton {P : GTPattern 2 // P.topRow = l ∧ P.weight = w} :=
+    ⟨fun P Q => Subtype.ext (eq_of_topRow_eq_of_weight_eq_two (P.2.1.trans Q.2.1.symm)
+      (P.2.2.trans Q.2.2.symm))⟩
+  split_ifs with hcond
+  · obtain ⟨hsum, hlo, hhi⟩ := hcond
+    let Q₁ : GTPattern 1 := equivOne.symm ![w 0]
+    have hQ₁ : Q₁.topRow = ![w 0] :=
+      (equivOne_apply Q₁).symm.trans (equivOne.apply_symm_apply ![w 0])
+    have hint : Interlaces l Q₁.topRow :=
+      interlaces_iff.mpr fun i => by rw [Subsingleton.elim i 0, hQ₁]; exact ⟨hhi, hlo⟩
+    let P : GTPattern 2 := Q₁.extend l hint
+    have hPtop : P.topRow = l := topRow_extend Q₁ l hint
+    have hPw0 : P.weight 0 = w 0 := by
+      have h0 : P.weight 0 = Q₁.weight 0 := weight_extend_castSucc Q₁ l hint 0
+      have hs := Q₁.sum_weight
+      simp only [Fin.sum_univ_one, hQ₁, Matrix.cons_val_zero] at hs
+      exact h0.trans hs
+    have hPw1 : P.weight 1 = w 1 := by
+      have hs := P.sum_weight
+      simp only [Fin.sum_univ_two, hPtop, hPw0] at hs
+      omega
+    have hPw : P.weight = w := by ext r; fin_cases r; exacts [hPw0, hPw1]
+    have : Unique {Q : GTPattern 2 // Q.topRow = l ∧ Q.weight = w} :=
+      uniqueOfSubsingleton ⟨P, hPtop, hPw⟩
+    exact Nat.card_unique
+  · refine Nat.card_eq_zero.mpr (Or.inl ⟨fun ⟨P, hPt, hPw⟩ => hcond ?_⟩)
+    have hsum : w 0 + w 1 = l 0 + l 1 := by
+      have hs := P.sum_weight; simp only [hPw, hPt, Fin.sum_univ_two] at hs; exact hs
+    have hmem := P.weight_mem_Icc 0
+    rw [hPw, hPt] at hmem
+    exact ⟨hsum, hmem.1, hmem.2⟩
+
+/-- Rank-`2` check: the weight-`(1, 1)` Gelfand–Tsetlin fibre over `(2, 0)` has cardinality `1`. -/
+theorem card_gtPattern_two_two_zero_one_one :
+    Nat.card {P : GTPattern 2 // P.topRow = ![2, 0] ∧ P.weight = ![1, 1]} = 1 := by
+  rw [card_gtPattern_two_topRow_weight]
+  decide
+
+private def adjointZeroPattern (b : Bool) : GTPattern 3 where
+  entry i j :=
+    match i, j with
+    | 0, 3 => 1
+    | 2, 3 => -1
+    | 0, 2 => if b then 1 else 0
+    | 1, 2 => if b then -1 else 0
+    | _, _ => 0
+  zeros' {i j} hout := by
+    match i, j with
+    | 0, 3 | 2, 3 | 0, 2 | 1, 2 => omega
+    | 0, 0 | 0, 1 | 1, 0 | 1, 1 | 1, 3 | 2, 0 | 2, 1 | 2, 2 => rfl
+    | i + 3, _ => rfl
+    | 0, j + 4 | 1, j + 4 | 2, j + 4 => rfl
+  interlacing' {i j} hij hj := by
+    have : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2) := by omega
+    rcases this with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> cases b <;> decide
+
+@[simp]
+private theorem adjointZeroPattern_apply (b : Bool) (i j : ℕ) :
+    adjointZeroPattern b i j =
+      match i, j with
+      | 0, 3 => 1
+      | 2, 3 => -1
+      | 0, 2 => if b then 1 else 0
+      | 1, 2 => if b then -1 else 0
+      | _, _ => 0 := by
+  rw [← congrFun₂ (entry_eq_coe (P := adjointZeroPattern b)) i j]
+  rfl
+
+private theorem adjointZeroPattern_topRow (b : Bool) :
+    (adjointZeroPattern b).topRow = ![1, 0, -1] := by
+  ext i; fin_cases i <;> simp [topRow_apply]
+
+private theorem adjointZeroPattern_weight (b : Bool) :
+    (adjointZeroPattern b).weight = 0 := by
+  ext r; fin_cases r <;> cases b <;>
+    simp [weight_apply, rowSum_def, Finset.sum_range_succ]
+
+/-- Explicit bijection between the weight-`0` Gelfand–Tsetlin fibre over the rational `SL 3`
+adjoint top row `(1, 0, -1)` and `Bool`, corresponding to the two middle rows `(0, 0)` and
+`(1, -1)`. -/
+def gtPatternThreeAdjointZeroEquiv :
+    {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0} ≃ Bool where
+  toFun P := decide (P.1 0 2 = 1)
+  invFun b := ⟨adjointZeroPattern b, adjointZeroPattern_topRow b, adjointZeroPattern_weight b⟩
+  left_inv := by
+    rintro ⟨P, hTop, hW⟩
+    have h03 : P 0 3 = 1 := by simpa [topRow_apply] using congrFun hTop 0
+    have h13 : P 1 3 = 0 := by simpa [topRow_apply] using congrFun hTop 1
+    have h23 : P 2 3 = -1 := by simpa [topRow_apply] using congrFun hTop 2
+    have h01 : P 0 1 = 0 := by simpa [weight_apply, rowSum_def] using congrFun hW 0
+    have hrow2 : P 0 2 + P 1 2 = 0 := by
+      simpa [weight_apply, rowSum_def, Finset.sum_range_succ, h01] using congrFun hW 1
+    have h02_lo : 0 ≤ P 0 2 := by
+      simpa [h13] using P.entry_succ_succ_le_entry (i := 0) (j := 2) (by decide)
+    have h02_hi : P 0 2 ≤ 1 := by
+      simpa [h03] using P.entry_le_entry_succ_row (i := 0) (j := 2) (by decide) (by decide)
+    set b := decide (P 0 2 = 1)
+    have hb02 : P 0 2 = if b then 1 else 0 := by
+      rcases (by omega : P 0 2 = 0 ∨ P 0 2 = 1) with h02 | h02 <;> simp [b, h02]
+    have hb12 : P 1 2 = if b then -1 else 0 := by
+      rcases (by omega : P 0 2 = 0 ∨ P 0 2 = 1) with h02 | h02 <;> simp [b, h02] <;> omega
+    apply Subtype.ext
+    ext i j
+    dsimp only
+    by_cases hij : i < j ∧ j ≤ 3
+    · rcases (by omega : (i = 0 ∧ j = 1) ∨ (i = 0 ∧ j = 2) ∨ (i = 1 ∧ j = 2) ∨
+          (i = 0 ∧ j = 3) ∨ (i = 1 ∧ j = 3) ∨ (i = 2 ∧ j = 3)) with
+          ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+        simp [h01, hb02, hb12, h03, h13, h23]
+    · rw [(adjointZeroPattern b).entry_eq_zero (by omega), P.entry_eq_zero (by omega)]
+  right_inv b := by cases b <;> simp
+
+@[simp] theorem gtPatternThreeAdjointZeroEquiv_apply
+    (P : {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0}) :
+    gtPatternThreeAdjointZeroEquiv P = decide (P.1 0 2 = 1) := (rfl)
+
+@[simp] theorem gtPatternThreeAdjointZeroEquiv_symm_apply (b : Bool) (i j : ℕ) :
+    (gtPatternThreeAdjointZeroEquiv.symm b).1 i j =
+      match i, j with
+      | 0, 3 => 1
+      | 2, 3 => -1
+      | 0, 2 => if b then 1 else 0
+      | 1, 2 => if b then -1 else 0
+      | _, _ => 0 :=
+  adjointZeroPattern_apply b i j
+
+/-- Rank-`3` check: the weight-`0` Gelfand–Tsetlin fibre over the `SL 3` adjoint weight `(1, 0, -1)`
+has cardinality `2` (the `2`-dimensional zero weight space of `𝔰𝔩₃`). -/
+theorem card_gtPattern_three_adjoint_weight_zero :
+    Nat.card {P : GTPattern 3 // P.topRow = ![1, 0, -1] ∧ P.weight = 0} = 2 := by
+  simp [Nat.card_congr gtPatternThreeAdjointZeroEquiv]
 
 end TauCeti.GTPattern
 
@@ -269,29 +416,15 @@ below `j`, i.e., `∑ k ∈ Finset.range j, (T.content k : ℤ)`. -/
 theorem rowSum_toGTPattern (T : SemistandardYoungTableau μ) (n : ℕ) {j : ℕ} (hj : j ≤ n) :
     (T.toGTPattern n).rowSum j = ∑ k ∈ Finset.range j, (T.content k : ℤ) := by
   have hnj : ¬ n < j := Nat.not_lt.mpr hj
-  rw [TauCeti.GTPattern.rowSum_def, ← Nat.cast_sum, sum_content_eq_card_filter]
-  have hpart : ({c ∈ μ.cells | T c.1 c.2 < j}).card =
-      ∑ i ∈ Finset.range j,
-        (({c ∈ μ.cells | T c.1 c.2 < j}).filter fun c => c.1 = i).card := by
-    refine Finset.card_eq_sum_card_fiberwise fun c hc => ?_
-    have hc' := T.filter_entry_lt_subset_filter_fst_lt j (Finset.mem_coe.mp hc)
-    exact Finset.mem_range.mpr (Finset.mem_filter.mp hc').2
-  rw [hpart, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [toGTPattern_apply, patternEntry_def, ite_eq_right hnj, Nat.cast_inj]
-  refine Finset.card_bij (fun col _ => (i, col)) (fun col hcol => ?_)
-    (fun _ _ _ _ h => Prod.mk.inj h |>.2) (fun c hc => ?_)
-  · obtain ⟨hcr, hlt⟩ := Finset.mem_filter.mp hcol
-    exact Finset.mem_filter.mpr ⟨Finset.mem_filter.mpr
-      ⟨(YoungDiagram.mem_cells (i, col)).mpr
-          (YoungDiagram.mem_iff_lt_rowLen.mpr (Finset.mem_range.mp hcr)),
-        hlt⟩, rfl⟩
-  · obtain ⟨hmem, rfl⟩ := Finset.mem_filter.mp hc
-    obtain ⟨hcell, hlt⟩ := Finset.mem_filter.mp hmem
-    exact ⟨c.2, Finset.mem_filter.mpr
-      ⟨Finset.mem_range.mpr
-          (YoungDiagram.mem_iff_lt_rowLen.mp ((YoungDiagram.mem_cells c).mp hcell)),
-        hlt⟩, Prod.eta c⟩
+  rw [TauCeti.GTPattern.rowSum_def, ← Nat.cast_sum, sum_content_eq_card_filter,
+    YoungDiagram.card_filter_cells μ (fun c => T c.1 c.2 < j) (le_max_right j (μ.colLen 0)),
+    Nat.cast_sum]
+  have hcell (i : ℕ) : (((Finset.range (μ.rowLen i)).filter fun c => T i c < j).card : ℤ) =
+      (T.toGTPattern n) i j := by
+    rw [toGTPattern_apply, patternEntry_def, ite_eq_right hnj]
+  simp_rw [hcell]
+  exact Finset.sum_subset (Finset.range_mono (le_max_left j (μ.colLen 0))) fun i _ hi =>
+    (T.toGTPattern n).entry_eq_zero_of_le (Nat.not_lt.mp (Finset.mem_range.not.mp hi))
 
 /-- The weight of the Gelfand–Tsetlin pattern read off a semistandard Young tableau `T` agrees on
 `Fin n` with `T.content`. -/
