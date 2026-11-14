@@ -654,18 +654,14 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
 `‖(1 + z) ^ d‖ ≤ exp (π * |d.im|) * (1 + ‖z‖) ^ max 0 d.re`. -/
 theorem norm_one_add_cpow_le {z : ℂ} (hz : 0 ≤ z.re) (d : ℂ) :
     ‖(1 + z) ^ d‖ ≤ Real.exp (Real.pi * |d.im|) * (1 + ‖z‖) ^ max 0 d.re := by
-  have hw1 : 1 ≤ ‖1 + z‖ := one_le_norm_one_add hz
-  have hwu : ‖1 + z‖ ≤ 1 + ‖z‖ := (norm_add_le 1 z).trans_eq (by simp)
   have hrpow : ‖1 + z‖ ^ d.re ≤ (1 + ‖z‖) ^ max 0 d.re := by
     rcases le_or_gt d.re 0 with hd | hd
     · rw [max_eq_left hd, Real.rpow_zero]
-      exact Real.rpow_le_one_of_one_le_of_nonpos hw1 hd
+      exact Real.rpow_le_one_of_one_le_of_nonpos (one_le_norm_one_add hz) hd
     · rw [max_eq_right hd.le]
-      exact Real.rpow_le_rpow (norm_nonneg _) hwu hd.le
-  calc ‖(1 + z) ^ d‖ ≤ ‖1 + z‖ ^ d.re * Real.exp (Real.pi * |d.im|) := norm_cpow_le_mul_exp _ _
-    _ ≤ (1 + ‖z‖) ^ max 0 d.re * Real.exp (Real.pi * |d.im|) :=
-        mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le
-    _ = Real.exp (Real.pi * |d.im|) * (1 + ‖z‖) ^ max 0 d.re := mul_comm _ _
+      exact Real.rpow_le_rpow (norm_nonneg _) ((norm_add_le 1 z).trans_eq (by simp)) hd.le
+  exact (norm_cpow_le_mul_exp _ _).trans <|
+    (mul_comm _ _).trans_le (mul_le_mul_of_nonneg_left hrpow (Real.exp_pos _).le)
 
 /-- Along any ray `1 + r * exp (θ * I)` avoiding the negative real axis (`|θ| < π`, `0 ≤ r`),
 `‖(1 + r * exp (θ * I)) ^ d‖ ≤ exp (π * |d.im|) * (cos (θ / 2)) ^ min 0 d.re *
@@ -689,11 +685,8 @@ theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| < Rea
       exact Real.rpow_le_rpow_of_nonpos hc hw_lo hd
     · rw [min_eq_left hd.le, max_eq_right hd.le, Real.rpow_zero, one_mul]
       exact Real.rpow_le_rpow (norm_nonneg _) hw_hi hd.le
-  calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) := norm_cpow_le_mul_exp w d
-    _ ≤ ((Real.cos (θ / 2)) ^ min 0 d.re * (1 + r) ^ max 0 d.re) * Real.exp (Real.pi * |d.im|) :=
-        mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le
-    _ = Real.exp (Real.pi * |d.im|) * (Real.cos (θ / 2)) ^ min 0 d.re * (1 + r) ^ max 0 d.re := by
-        ring
+  exact (norm_cpow_le_mul_exp w d).trans <|
+    (mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le).trans_eq (by ring)
 
 end Complex
 

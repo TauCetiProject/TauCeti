@@ -139,9 +139,8 @@ private theorem norm_kummerLaplaceRayIntegrand_le (c : ℕ) (d : ℂ) {z : ℂ} 
       mul_le_mul (mul_le_mul_of_nonneg_left hcos_rpow (by positivity)) hr_rpow
         (by positivity) (by positivity)
   have hexp_re : (-z * (r * cexp (θ * I))).re = -r * (z * cexp (θ * I)).re := by
-    have hmul : -z * ((r : ℂ) * cexp (θ * I)) = -(r : ℂ) * (z * cexp (θ * I)) := by ring
-    rw [hmul, neg_mul, neg_re, re_ofReal_mul]
-    ring
+    rw [show -z * ((r : ℂ) * cexp (θ * I)) = ((-r : ℝ) : ℂ) * (z * cexp (θ * I)) by
+      push_cast; ring, re_ofReal_mul]
   have hexp_le : Real.exp (-r * (z * cexp (θ * I)).re) ≤ Real.exp (-(η + η) * r) :=
     Real.exp_le_exp.mpr (by nlinarith)
   have hrc : ‖((r : ℂ) * cexp (θ * I)) ^ c‖ ≤ (1 + r) ^ c := by
@@ -293,8 +292,7 @@ private theorem tendsto_vertical_left_kummerLaplaceLogIntegrand (c : ℕ) (d : �
     simpa using (Real.tendsto_exp_atBot.comp tendsto_neg_atTop_atBot).const_mul
       (kummerLaplaceMajorantConst c d α η * |θ₂ - θ₁|)
   refine squeeze_zero_norm (fun R => ?_) hzero
-  have hnegR : -(R : ℂ) = ((-R : ℝ) : ℂ) := by push_cast; rfl
-  rw [hnegR]
+  rw [show -(R : ℂ) = ((-R : ℝ) : ℂ) by push_cast; rfl]
   refine (norm_integral_kummerLaplaceLogIntegrand_vertical_le c d hα hη hstrip (-R)).trans ?_
   have hcos_pos : 0 < Real.cos (α / 2) :=
     Real.cos_pos_of_mem_Ioo ⟨by linarith [Real.pi_pos], by linarith⟩
@@ -318,25 +316,21 @@ private theorem tendsto_sub_horizontal_kummerLaplaceLogIntegrand (c : ℕ) (d : 
   set η := (z * cexp (θm * I)).re / 2
   have hη : 0 < η := half_pos (re_mul_exp_mul_I_pos_of_mem_uIcc hθ₁₂ hre₁ hre₂ hθm_mem)
   have hstrip : ∀ y ∈ [[θ₁, θ₂]], |y| ≤ α ∧ 2 * η ≤ (z * cexp (y * I)).re := fun y hy => by
-    have h₁l := (abs_le.mp (le_max_left |θ₁| |θ₂|)).1
-    have h₁r := (abs_le.mp (le_max_left |θ₁| |θ₂|)).2
-    have h₂l := (abs_le.mp (le_max_right |θ₁| |θ₂|)).1
-    have h₂r := (abs_le.mp (le_max_right |θ₁| |θ₂|)).2
+    obtain ⟨h₁l, h₁r⟩ := abs_le.mp (le_max_left |θ₁| |θ₂|)
+    obtain ⟨h₂l, h₂r⟩ := abs_le.mp (le_max_right |θ₁| |θ₂|)
     have hy_abs : |y| ≤ α := by
       rcases mem_uIcc.mp hy with ⟨hl, hr⟩ | ⟨hl, hr⟩ <;>
         exact abs_le.mpr ⟨by linarith, by linarith⟩
-    have hmin : (z * cexp (θm * I)).re ≤ (z * cexp (y * I)).re := hθm_min hy
-    exact ⟨hy_abs, by dsimp only [η]; linarith⟩
+    exact ⟨hy_abs, by dsimp only [η]; linarith [show (z * cexp (θm * I)).re ≤ _ from hθm_min hy]⟩
   have hrect : ∀ R : ℝ,
       ((∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₁ * I)) -
         (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₂ * I))) +
         I • (∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z ((R : ℂ) + y * I)) -
         I • (∫ y in θ₁..θ₂, kummerLaplaceLogIntegrand c d z (-(R : ℂ) + y * I)) = 0 := fun R => by
-    have := integral_boundary_rect_eq_zero_of_differentiableOn
+    simpa using integral_boundary_rect_eq_zero_of_differentiableOn
       (kummerLaplaceLogIntegrand c d z) ((-R : ℝ) + θ₁ * I) ((R : ℝ) + θ₂ * I)
       ((differentiableOn_kummerLaplaceLogIntegrand c d z).mono fun w hw =>
         (hstrip w.im (by simpa using hw.2)).1.trans_lt hα)
-    simpa using this
   have hcomb :=
     ((tendsto_vertical_left_kummerLaplaceLogIntegrand c d hα0 hα hη hstrip).const_smul I).sub
       ((tendsto_vertical_right_kummerLaplaceLogIntegrand c d hα hη hstrip).const_smul I)
@@ -362,11 +356,9 @@ theorem kummerLaplace_eq_ray_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ 
     exact mul_pos (norm_pos_iff.2 (slitPlane_ne_zero hz))
       (Real.cos_pos_of_mem_Ioo (abs_lt.mp harg))
   have hsep : |-(z.arg / 2) - θ| ≤ π := by
-    have h1 := abs_arg_div_two_le_pi_div_two z
     calc |-(z.arg / 2) - θ| = |-(z.arg + θ) + z.arg / 2| := by ring_nf
       _ ≤ |-(z.arg + θ)| + |z.arg / 2| := abs_add_le _ _
-      _ = |z.arg + θ| + |z.arg / 2| := by rw [abs_neg]
-      _ ≤ π := by linarith [harg.le]
+      _ ≤ π := by rw [abs_neg]; linarith [harg.le, abs_arg_div_two_le_pi_div_two z]
   -- Exhaust both horizontal lines by `[-R, R]` and cancel their difference via Cauchy-Goursat.
   have hlim₀ := intervalIntegral_tendsto_integral
     (integrable_kummerLaplaceLogIntegrand_horizontal c d hθ₀ hre₀)
@@ -401,9 +393,8 @@ integral along `(0, ∞)`. -/
 theorem kummerLaplace_eq_integral_of_re_pos (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0 < z.re) :
     kummerLaplace c d z =
       ∫ t in Ioi (0 : ℝ), cexp (-z * t) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d := by
-  have h := kummerLaplace_eq_ray_integral_of_abs_le_of_re_mul_exp_mul_I_pos c d (z := z) (θ := 0)
+  simpa using kummerLaplace_eq_ray_integral_of_abs_le_of_re_mul_exp_mul_I_pos c d (z := z) (θ := 0)
     (by rw [abs_zero]; positivity) (by simpa using hz)
-  simpa using h
 
 /-- For a positive real argument `x > 0` and any complex `a`, `kummerLaplace 0 (a - 1) x` is
 `x ^ (-a) * exp x` times Euler's upper incomplete Gamma integral `∫_x^∞ t^{a-1} e^{-t} dt`. -/
@@ -423,17 +414,13 @@ theorem kummerLaplace_zero_ofReal_eq_cpow_neg_mul_exp_mul_integral (a : ℂ) {x 
     rw [← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
   have hpow : (x : ℂ) ^ (-a) * (x : ℂ) * (x : ℂ) ^ (a - 1) = 1 := by
     nth_rw 2 [← cpow_one (x : ℂ)]
-    rw [← cpow_add _ _ hx0, ← cpow_add _ _ hx0]
-    simp
-  have hmul_x : (x + x * r : ℝ) = x * (1 + r) := by ring
-  have hneg_xr : -((x : ℂ) * (1 + (r : ℂ))) = -(x : ℂ) + (-(x : ℂ) * (r : ℂ)) := by ring
-  rw [hmul_x, ofReal_mul, TauCeti.ofReal_mul_cpow hx.le, ofReal_add, ofReal_one, hneg_xr,
-    Complex.exp_add]
-  calc cexp (-(x : ℂ) * (r : ℂ)) * (r : ℂ) ^ 0 * (1 + (r : ℂ)) ^ (a - 1)
-      = 1 * 1 * (cexp (-(x : ℂ) * (r : ℂ)) * (1 + (r : ℂ)) ^ (a - 1)) := by simp
-    _ = ((x : ℂ) ^ (-a) * (x : ℂ) * (x : ℂ) ^ (a - 1)) * (cexp (x : ℂ) * cexp (-(x : ℂ))) *
-          (cexp (-(x : ℂ) * (r : ℂ)) * (1 + (r : ℂ)) ^ (a - 1)) := by rw [hpow, hexp]
-    _ = _ := by ring
+    rw [← cpow_add _ _ hx0, ← cpow_add _ _ hx0]; simp
+  rw [show (x + x * r : ℝ) = x * (1 + r) by ring, ofReal_mul, TauCeti.ofReal_mul_cpow hx.le,
+    ofReal_add, ofReal_one,
+    show -((x : ℂ) * (1 + (r : ℂ))) = -(x : ℂ) + -(x : ℂ) * (r : ℂ) by ring,
+    Complex.exp_add, pow_zero, mul_one]
+  linear_combination -(cexp (-(x : ℂ) * (r : ℂ)) * (1 + (r : ℂ)) ^ (a - 1)) *
+    (cexp (x : ℂ) * cexp (-(x : ℂ)) * hpow + hexp)
 
 /-! ### Holomorphy in `z` and `d` -/
 

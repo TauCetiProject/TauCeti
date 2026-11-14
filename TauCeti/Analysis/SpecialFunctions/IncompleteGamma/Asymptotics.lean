@@ -701,18 +701,13 @@ theorem kummerLaplace_isEquivalent (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     rw [kummerLaplace_eq_saddle_integral a hz hk]
     set C : ℂ := (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ))
     have hC : C ≠ 0 :=
-      mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr (by omega))))
-        (exp_ne_zero _)
-    have hnum : (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a *
-        cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
-        (∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) =
-        ((ζ⁻¹) ^ a * ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) * C := by
-      dsimp only [ζ, C]; ring
-    have hden : (Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4) *
-        (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) =
-        ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4)) * C := by
-      dsimp only [C]; ring
-    rw [hnum, hden, mul_div_mul_right _ _ hC]
+      mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr (by omega)))) (exp_ne_zero _)
+    rw [show (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a *
+          cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
+          (∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) =
+        ((ζ⁻¹) ^ a * ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) * C by dsimp only [ζ, C]; ring,
+      mul_assoc ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4)),
+      mul_div_mul_right _ _ hC]
   · rw [hζ_comb, div_self]
     exact mul_ne_zero (mul_ne_zero (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos))
       (exp_ne_zero _)) (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz)))

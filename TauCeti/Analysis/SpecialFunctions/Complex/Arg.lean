@@ -250,19 +250,13 @@ theorem one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I (θ r : ℝ
     (1 + r) * Real.cos (θ / 2) ≤ ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ := by
   have hrot : (1 + (r : ℂ) * exp ((θ : ℂ) * I)) * exp ((-(θ / 2) : ℝ) * I) =
       exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I) := by
-    rw [add_mul, one_mul, mul_assoc, ← exp_add]
-    congr 3
-    push_cast
-    ring
+    rw [add_mul, one_mul, mul_assoc, ← exp_add,
+      show (θ : ℂ) * I + (-(θ / 2) : ℝ) * I = ((θ / 2 : ℝ) : ℂ) * I by push_cast; ring]
   have hre : (exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I)).re =
       (1 + r) * Real.cos (θ / 2) := by
-    rw [add_re, re_ofReal_mul, exp_ofReal_mul_I_re, exp_ofReal_mul_I_re, Real.cos_neg]
-    ring
-  calc (1 + r) * Real.cos (θ / 2)
-      ≤ ‖exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I)‖ :=
-        hre ▸ re_le_norm _
-    _ = ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ := by
-        rw [← hrot, norm_mul, norm_exp_ofReal_mul_I, mul_one]
+    rw [add_re, re_ofReal_mul, exp_ofReal_mul_I_re, exp_ofReal_mul_I_re, Real.cos_neg]; ring
+  exact (hre ▸ re_le_norm _).trans_eq <| by
+    rw [← hrot, norm_mul, norm_exp_ofReal_mul_I, mul_one]
 
 /-- For any real angle `θ` and real scalar `r`, `‖1 + r * exp (θ * I)‖ ≤ 1 + |r|`. -/
 theorem norm_one_add_ofReal_mul_exp_mul_I_le (θ r : ℝ) :
@@ -293,16 +287,15 @@ theorem abs_arg_div_two_lt_pi_div_two {z : ℂ} (hz : arg z ≠ π) : |arg z / 2
 /-- In polar coordinates, the real part of `z * exp (y * I)` is `‖z‖ * cos (arg z + y)`. -/
 theorem re_mul_exp_ofReal_mul_I_eq_norm_mul_cos (z : ℂ) (y : ℝ) :
     (z * exp ((y : ℂ) * I)).re = ‖z‖ * Real.cos (arg z + y) := by
-  have hsum : (arg z : ℂ) * I + (y : ℂ) * I = ((arg z + y : ℝ) : ℂ) * I := by push_cast; ring
   nth_rw 1 [(norm_mul_exp_arg_mul_I z).symm]
-  rw [mul_assoc, ← exp_add, hsum, re_ofReal_mul, exp_ofReal_mul_I_re]
+  rw [mul_assoc, ← exp_add, show (arg z : ℂ) * I + (y : ℂ) * I = ((arg z + y : ℝ) : ℂ) * I by
+    push_cast; ring, re_ofReal_mul, exp_ofReal_mul_I_re]
 
 /-- Rotating a point `z` of the slit plane by `-arg z / 2` lands in the open right half-plane,
 with real part `‖z‖ * cos (arg z / 2) > 0`. -/
 theorem re_mul_exp_neg_arg_div_two_mul_I_pos {z : ℂ} (hz : z ∈ slitPlane) :
     0 < (z * exp ((-(arg z / 2) : ℝ) * I)).re := by
-  have hhalf : arg z + -(arg z / 2) = arg z / 2 := by ring
-  rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, hhalf]
+  rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, show arg z + -(arg z / 2) = arg z / 2 by ring]
   exact mul_pos (norm_pos_iff.2 (slitPlane_ne_zero hz))
     (Real.cos_pos_of_mem_Ioo (abs_lt.1 (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz))))
 
@@ -315,10 +308,8 @@ theorem abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos {z : ℂ} {�
   rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, mul_pos_iff_of_pos_left (norm_pos_iff.2 hz0)]
     at hre
   by_contra! hge
-  have hub : |arg z + θ| ≤ 3 * π / 2 := by
-    calc |arg z + θ| ≤ |arg z| + |θ| := abs_add_le _ _
-      _ ≤ π + π / 2 := add_le_add (abs_arg_le_pi z) hθ
-      _ = 3 * π / 2 := by ring
+  have hub : |arg z + θ| ≤ 3 * π / 2 :=
+    (abs_add_le _ _).trans (by linarith [abs_arg_le_pi z])
   have hsin : 0 ≤ Real.sin (|arg z + θ| - π / 2) :=
     Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith)
   rw [Real.sin_sub_pi_div_two, Real.cos_abs] at hsin
@@ -330,8 +321,7 @@ theorem mem_slitPlane_of_abs_le_of_re_mul_exp_mul_I_pos {z : ℂ} {θ : ℝ}
     (hθ : |θ| ≤ π / 2) (hre : 0 < (z * exp ((θ : ℂ) * I)).re) : z ∈ slitPlane := by
   have hz0 : z ≠ 0 := fun hz => by simp [hz] at hre
   have hlt := (abs_lt.1 (abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos hθ hre)).2
-  have hθ_lo := (abs_le.1 hθ).1
-  exact mem_slitPlane_iff_arg.2 ⟨by linarith, hz0⟩
+  exact mem_slitPlane_iff_arg.2 ⟨by linarith [(abs_le.1 hθ).1], hz0⟩
 
 /-- If `z * exp (θ₁ * I)` and `z * exp (θ₂ * I)` both have positive real part at two angles
 separated by `|θ₁ - θ₂| ≤ π`, then `z * exp (θ * I)` stays in the open right half-plane at every
@@ -344,10 +334,8 @@ theorem re_mul_exp_mul_I_pos_of_mem_uIcc {z : ℂ} {θ₁ θ₂ θ : ℝ}
   set w : ℂ := z * exp ((m : ℂ) * I)
   have hshift (y : ℝ) : (w * exp (((y - m : ℝ) : ℂ) * I)).re = (z * exp ((y : ℂ) * I)).re := by
     dsimp only [w]
-    rw [mul_assoc, ← exp_add]
-    congr 3
-    push_cast
-    ring
+    rw [mul_assoc, ← exp_add, show (m : ℂ) * I + ((y - m : ℝ) : ℂ) * I = (y : ℂ) * I by
+      push_cast; ring]
   have hδ₁ : |θ₁ - m| ≤ π / 2 := by
     rw [show θ₁ - m = (θ₁ - θ₂) / 2 by dsimp only [m]; ring, abs_div, abs_two]
     exact div_le_div_of_nonneg_right hθ₁₂ two_pos.le

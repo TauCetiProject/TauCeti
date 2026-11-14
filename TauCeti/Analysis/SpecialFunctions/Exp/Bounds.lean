@@ -124,25 +124,14 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
 /-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
 theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
-  have hpow := pow_mul_exp_neg_mul_le ha (by linarith : 0 ≤ 1 + t) n
-  have hsplit : exp (-a * t) = exp (-a * (1 + t)) * exp a := by
-    rw [← exp_add]
-    congr 1
-    ring
-  calc (1 + t) ^ n * exp (-a * t)
-      = ((1 + t) ^ n * exp (-a * (1 + t))) * exp a := by rw [hsplit, mul_assoc]
-    _ ≤ ((n ! : ℝ) / a ^ n) * exp a := mul_le_mul_of_nonneg_right hpow (exp_pos a).le
-    _ = (n ! : ℝ) * exp a / a ^ n := div_mul_eq_mul_div _ _ _
+  rw [show -a * t = -a * (1 + t) + a by ring, exp_add, ← mul_assoc, ← div_mul_eq_mul_div]
+  exact mul_le_mul_of_nonneg_right (pow_mul_exp_neg_mul_le ha (by linarith) n) (exp_pos a).le
 
 /-- For `0 < a`, any `b : ℝ`, and `-1 ≤ t`, `(1 + t) ^ n * exp (-(a + b) * t)` is bounded by
 `((n ! * exp a) / a ^ n) * exp (-b * t)`. -/
 theorem one_add_pow_mul_exp_neg_add_mul_le {a b t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-(a + b) * t) ≤ ((n ! : ℝ) * exp a / a ^ n) * exp (-b * t) := by
-  have hsplit : exp (-(a + b) * t) = exp (-a * t) * exp (-b * t) := by
-    rw [← exp_add]
-    congr 1
-    ring
-  rw [hsplit, ← mul_assoc]
+  rw [show -(a + b) * t = -a * t + -b * t by ring, exp_add, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right (one_add_pow_mul_exp_neg_mul_le ha ht n) (exp_pos _).le
 
 end TauCeti
