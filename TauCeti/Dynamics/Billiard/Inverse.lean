@@ -83,13 +83,6 @@ variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 
 /-! ### Time reversal -/
 
-/-- Reversing the tangential component of a state subtracts twice that component times the unit
-tangent from its outgoing velocity. -/
-theorem outgoingDir_neg (s v : ℝ) :
-    χ.outgoingDir s (-v) = χ.outgoingDir s v - (2 * v) • deriv χ s := by
-  rw [outgoingDir_def, outgoingDir_def, neg_sq]
-  module
-
 /-- The state at the next collision point with reversed tangential component leaves along the
 reversed incoming velocity `-u`. -/
 theorem outgoingDir_nextParam_neg_nextTangential {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
