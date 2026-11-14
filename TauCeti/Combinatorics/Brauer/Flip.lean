@@ -111,8 +111,9 @@ theorem flip_val_inr (j : Fin k) : D.flip.val (Sum.inr j) = (D.val (Sum.inl j)).
 
 /-- **Reflection is an involution**: reflecting twice restores the diagram. -/
 @[simp]
-theorem flip_flip : D.flip.flip = D :=
-  Subtype.ext (Equiv.ext fun x => by rw [flip_val, flip_val_swap, Sum.swap_swap])
+theorem flip_flip : D.flip.flip = D := by
+  ext x
+  rw [flip_val, flip_val_swap, Sum.swap_swap]
 
 /-- Reflection is injective, being an involution. -/
 theorem flip_injective : Function.Injective (flip (k := k)) :=
@@ -172,7 +173,7 @@ strand `σ i ↦ i`. -/
 @[simp]
 theorem flip_permToBrauer (σ : Equiv.Perm (Fin k)) :
     (permToBrauer σ).flip = permToBrauer σ⁻¹ := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · simp [Equiv.Perm.inv_def]
   · simp [Equiv.Perm.inv_def]
@@ -227,7 +228,7 @@ diagrams, the multiplication the Brauer algebra carries on its diagram basis. -/
 @[simp]
 theorem flip_composeDiagram (D₁ D₂ : BrauerDiagram k) :
     (composeDiagram D₁ D₂).flip = composeDiagram D₂.flip D₁.flip := by
-  refine Subtype.ext (Equiv.ext fun z => ?_)
+  ext z
   obtain ⟨x, rfl⟩ : ∃ x, z = x.swap := ⟨z.swap, (Sum.swap_swap z).symm⟩
   rw [BrauerDiagram.flip_val_swap]
   refine ((composeDiagram_val_eq_iff D₂.flip D₁.flip).mpr ?_).symm

@@ -462,7 +462,8 @@ the `A`- and `B`-smoothings. -/
     rw [pinchedTwice, pinchedTwice, hS, hO]
   apply PDCode.ext
   · simp
-  · refine Subtype.ext (Equiv.ext fun y ↦ Sum.inl_injective (β := Fin 4) ?_)
+  · ext y : 1
+    apply Sum.inl_injective
     rw [mirror_edgePair, resolveCrossing_edgePair_val, resolveCrossing_edgePair_val,
       PerfectMatching.inl_restrictInl_val, PerfectMatching.inl_restrictInl_val, hT]
   · simp [detachedCircleCount, hS, hM, hO]
