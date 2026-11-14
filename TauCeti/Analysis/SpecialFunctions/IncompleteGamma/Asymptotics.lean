@@ -82,7 +82,7 @@ private theorem tendsto_saddle_u (v : ℝ) :
     exact (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 4)).comp tendsto_natCast_atTop_atTop
   simpa [saddleU] using tendsto_const_nhds.add (ht.mul_const v)
 
-private theorem kummerLaplace_eq_sqrt_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
+private theorem kummerLaplace_eq_sqrt_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz : z ≠ 0) :
     kummerLaplace c d z =
       (z ^ (1 / 2 : ℂ))⁻¹ *
         ∫ s in Ioi (0 : ℝ),
@@ -91,9 +91,9 @@ private theorem kummerLaplace_eq_sqrt_integral (c : ℕ) (d : ℂ) {z : ℂ} (hz
   set ζ : ℂ := z ^ (1 / 2 : ℂ)
   set ω : ℂ := cexp (-(z.arg / 2 : ℝ) * I)
   set ρ : ℝ := Real.exp (-Real.log ‖z‖ / 2)
-  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
+  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz)
   have hζ_inv : ζ⁻¹ = (ρ : ℂ) * ω := by
-    rw [← cpow_neg, cpow_def_of_ne_zero (slitPlane_ne_zero hz), ← re_add_im (log z),
+    rw [← cpow_neg, cpow_def_of_ne_zero hz, ← re_add_im (log z),
       log_re, log_im]
     have hsplit : ((Real.log ‖z‖ : ℂ) + (z.arg : ℂ) * I) * -(1 / 2 : ℂ) =
         ((-Real.log ‖z‖ / 2 : ℝ) : ℂ) + (-(z.arg / 2 : ℝ) * I) := by push_cast; ring
@@ -126,12 +126,12 @@ private def kummerLaplaceSaddleCore (a z : ℂ) (k : ℕ) (v : ℝ) : ℂ :=
 private def kummerLaplaceSaddleIntegrand (a z : ℂ) (k : ℕ) : ℝ → ℂ :=
   (Ioi (-(k : ℝ) ^ (1 / 4 : ℝ))).indicator (kummerLaplaceSaddleCore a z k)
 
-private theorem saddle_prefactor_eq (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) {k : ℕ} (hk : 1 ≤ k) :
+private theorem saddle_prefactor_eq (a : ℂ) {z : ℂ} (hz : z ≠ 0) {k : ℕ} (hk : 1 ≤ k) :
     (z ^ (1 / 2 : ℂ))⁻¹ * (((k : ℝ) ^ (1 / 4 : ℝ) : ℝ) : ℂ) *
         ((Real.sqrt k : ℂ) ^ (a - 1) * (z ^ (1 / 2 : ℂ))⁻¹ ^ (a - 1)) =
       (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a := by
   set ζ : ℂ := z ^ (1 / 2 : ℂ)
-  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
+  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz)
   have hk_pos : 0 < (k : ℝ) := Nat.cast_pos.mpr hk
   have hsk_pos : 0 < Real.sqrt k := Real.sqrt_pos.mpr hk_pos
   have hk_ne : ((k : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr hk_pos.ne'
@@ -166,7 +166,7 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
       rw [Real.sqrt_eq_rpow, ← Real.rpow_add hk_pos]; norm_num [q₄]
     dsimp only [s, u, saddleU]; linear_combination -hmul * v
   have hs_pos : 0 < s := by rw [hs_eq]; positivity
-  have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz))
+  have hz0 : z ≠ 0 := slitPlane_ne_zero hz; have hζ0 : ζ ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
   have hζ_re : 0 < ζ.re := (cpow_one_half_re_pos_iff z).mpr hz
   have hζinv_re : 0 < (ζ⁻¹).re := by rw [inv_re]; exact div_pos hζ_re (normSq_pos.mpr hζ0)
   have h1s_re : 0 < (1 + (s : ℂ) * ζ⁻¹).re := by rw [add_re, one_re, re_ofReal_mul]; positivity
@@ -203,7 +203,7 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
   rw [mul_assoc (cexp _), hk_pow, hcpow_split, hexp_split]
   linear_combination (cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
     ((u : ℂ) + ζ / (Real.sqrt k : ℂ)) ^ (a - 1) * cexp (-(Real.sqrt k : ℂ) * ζ * ((u : ℂ) - 2)) *
-    ((1 + ζ / ((Real.sqrt k : ℂ) * (u : ℂ))) ^ k)⁻¹) * saddle_prefactor_eq a hz hk
+    ((1 + ζ / ((Real.sqrt k : ℂ) * (u : ℂ))) ^ k)⁻¹) * saddle_prefactor_eq a hz0 hk
 
 private theorem kummerLaplace_eq_saddle_integral (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane)
     {k : ℕ} (hk : 1 ≤ k) :
@@ -218,9 +218,9 @@ private theorem kummerLaplace_eq_saddle_integral (a : ℂ) {z : ℂ} (hz : z ∈
     (fun s : ℝ => cexp (-(z ^ (1 / 2 : ℂ)) * s) * ((s : ℂ) * (z ^ (1 / 2 : ℂ))⁻¹) ^ k *
       (1 + (s : ℂ) * (z ^ (1 / 2 : ℂ))⁻¹) ^ (a - 1 - k))
     (-(k : ℝ) ^ (1 / 4 : ℝ)) (Real.sqrt k) hq₄).symm
-  rw [kummerLaplace_eq_sqrt_integral k (a - 1 - k) hz, hsub, real_smul, ← mul_assoc,
-    ← integral_const_mul, kummerLaplaceSaddleIntegrand, integral_indicator measurableSet_Ioi,
-    ← integral_const_mul]
+  rw [kummerLaplace_eq_sqrt_integral k (a - 1 - k) (slitPlane_ne_zero hz), hsub, real_smul,
+    ← mul_assoc, ← integral_const_mul, kummerLaplaceSaddleIntegrand,
+    integral_indicator measurableSet_Ioi, ← integral_const_mul]
   exact setIntegral_congr_fun measurableSet_Ioi fun v hv =>
     kummerLaplace_saddle_pointwise a hz hk hv
 
@@ -414,10 +414,9 @@ private theorem norm_saddle_cpow_factor_le (a : ℂ) {z : ℂ} (hz : z ∈ slitP
           _ ≤ ((‖ζ‖ / σ) * y) ^ m := pow_le_pow_left₀ (norm_nonneg _) hq_hi m
       rw [mul_pow] at h1
       nlinarith [inv_nonneg.mpr (pow_nonneg hy.le m), pow_nonneg (zero_le_one.trans hζ_ge) m]
-  calc ‖q ^ (a - 1)‖ ≤ ‖q‖ ^ (a - 1).re * (Real.exp (q.arg * (a - 1).im))⁻¹ := by
-        rw [← div_eq_mul_inv]; exact norm_cpow_le _ _
+  calc ‖q ^ (a - 1)‖ ≤ ‖q‖ ^ (a - 1).re * Real.exp (π * |(a - 1).im|) := norm_cpow_le_mul_exp _ _
     _ ≤ ((‖ζ‖ / σ) ^ m * ((y ^ m)⁻¹ + y ^ m)) * Real.exp (π * |(a - 1).im|) :=
-        mul_le_mul hrpow (inv_exp_arg_mul_le_exp_pi_mul_abs _ _) (by positivity) (by positivity)
+        mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le
     _ = Real.exp (π * |(a - 1).im|) * (‖ζ‖ / σ) ^ m * ((y ^ m)⁻¹ + y ^ m) := by ring
 
 private theorem norm_kummerLaplaceSaddleCore_exp_bound (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane)

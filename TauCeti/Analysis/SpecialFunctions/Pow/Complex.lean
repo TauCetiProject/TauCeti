@@ -93,8 +93,11 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
-* `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` -- for `|θ| ≤ π / 2` and `0 ≤ r`,
-  `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (1 + r) ^ ⌈d.re⌉₊`.
+* `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
+  `‖(1 + z) ^ d‖ ≤ exp (π |d.im|) (1 + ‖z‖) ^ max 0 d.re` for `0 ≤ z.re`, and
+  `‖(1 + r e^{iθ}) ^ d‖ ≤ exp (π |d.im|) (cos (θ / 2)) ^ min 0 d.re (1 + r) ^ max 0 d.re`
+  for `|θ| < π` and `0 ≤ r`.
 -/
 
 public section
@@ -638,28 +641,59 @@ theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w 
   congr 1
   ring
 
-/-- Along a ray `1 + r * exp (θ * I)` in the closed right half-plane (`|θ| ≤ π / 2`, `0 ≤ r`), the
-principal power `(1 + r * exp (θ * I)) ^ d` has norm at most
-`exp (π * |d.im|) * (1 + r) ^ ⌈d.re⌉₊`. -/
-theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| ≤ Real.pi / 2)
-    (hr : 0 ≤ r) (d : ℂ) :
-    ‖(1 + (r : ℂ) * exp ((θ : ℂ) * I)) ^ d‖ ≤ Real.exp (Real.pi * |d.im|) * (1 + r) ^ ⌈d.re⌉₊ := by
-  set w : ℂ := 1 + (r : ℂ) * exp ((θ : ℂ) * I)
-  have hw1 : 1 ≤ ‖w‖ := one_le_norm_one_add_ofReal_mul_exp_mul_I hθ hr
-  have hwu : ‖w‖ ≤ 1 + r := norm_one_add_ofReal_mul_exp_mul_I_le θ hr
-  have hrpow : ‖w‖ ^ d.re ≤ (1 + r) ^ ⌈d.re⌉₊ := by
-    rcases le_or_gt d.re 0 with hd | hd
-    · calc ‖w‖ ^ d.re ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos hw1 hd
-        _ ≤ (1 + r) ^ ⌈d.re⌉₊ := one_le_pow₀ (by linarith)
-    · calc ‖w‖ ^ d.re ≤ (1 + r) ^ d.re := Real.rpow_le_rpow (norm_nonneg _) hwu hd.le
-        _ ≤ (1 + r) ^ (⌈d.re⌉₊ : ℝ) :=
-            Real.rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil _)
-        _ = (1 + r) ^ ⌈d.re⌉₊ := Real.rpow_natCast _ _
+/-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/
+theorem norm_cpow_le_mul_exp (w d : ℂ) :
+    ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) := by
   calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re / Real.exp (w.arg * d.im) := norm_cpow_le w d
     _ = ‖w‖ ^ d.re * (Real.exp (w.arg * d.im))⁻¹ := div_eq_mul_inv _ _
-    _ ≤ (1 + r) ^ ⌈d.re⌉₊ * Real.exp (Real.pi * |d.im|) :=
-        mul_le_mul hrpow (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im) (by positivity) (by positivity)
-    _ = Real.exp (Real.pi * |d.im|) * (1 + r) ^ ⌈d.re⌉₊ := mul_comm _ _
+    _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
+        mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
+          (Real.rpow_nonneg (norm_nonneg w) _)
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`) and any `d : ℂ`,
+`‖(1 + z) ^ d‖ ≤ exp (π * |d.im|) * (1 + ‖z‖) ^ max 0 d.re`. -/
+theorem norm_one_add_cpow_le {z : ℂ} (hz : 0 ≤ z.re) (d : ℂ) :
+    ‖(1 + z) ^ d‖ ≤ Real.exp (Real.pi * |d.im|) * (1 + ‖z‖) ^ max 0 d.re := by
+  have hw1 : 1 ≤ ‖1 + z‖ := one_le_norm_one_add hz
+  have hwu : ‖1 + z‖ ≤ 1 + ‖z‖ := (norm_add_le 1 z).trans_eq (by simp)
+  have hrpow : ‖1 + z‖ ^ d.re ≤ (1 + ‖z‖) ^ max 0 d.re := by
+    rcases le_or_gt d.re 0 with hd | hd
+    · rw [max_eq_left hd, Real.rpow_zero]
+      exact Real.rpow_le_one_of_one_le_of_nonpos hw1 hd
+    · rw [max_eq_right hd.le]
+      exact Real.rpow_le_rpow (norm_nonneg _) hwu hd.le
+  calc ‖(1 + z) ^ d‖ ≤ ‖1 + z‖ ^ d.re * Real.exp (Real.pi * |d.im|) := norm_cpow_le_mul_exp _ _
+    _ ≤ (1 + ‖z‖) ^ max 0 d.re * Real.exp (Real.pi * |d.im|) :=
+        mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le
+    _ = Real.exp (Real.pi * |d.im|) * (1 + ‖z‖) ^ max 0 d.re := mul_comm _ _
+
+/-- Along any ray `1 + r * exp (θ * I)` avoiding the negative real axis (`|θ| < π`, `0 ≤ r`),
+`‖(1 + r * exp (θ * I)) ^ d‖ ≤ exp (π * |d.im|) * (cos (θ / 2)) ^ min 0 d.re *
+(1 + r) ^ max 0 d.re`. -/
+theorem norm_one_add_ofReal_mul_exp_mul_I_cpow_le {θ r : ℝ} (hθ : |θ| < Real.pi)
+    (hr : 0 ≤ r) (d : ℂ) :
+    ‖(1 + (r : ℂ) * exp ((θ : ℂ) * I)) ^ d‖ ≤
+      Real.exp (Real.pi * |d.im|) * (Real.cos (θ / 2)) ^ min 0 d.re *
+        (1 + r) ^ max 0 d.re := by
+  set w : ℂ := 1 + (r : ℂ) * exp ((θ : ℂ) * I)
+  obtain ⟨hθ₁, hθ₂⟩ := abs_lt.mp hθ
+  have hc : 0 < Real.cos (θ / 2) := Real.cos_pos_of_mem_Ioo ⟨by linarith, by linarith⟩
+  have hw_lo : Real.cos (θ / 2) ≤ ‖w‖ :=
+    (le_mul_of_one_le_left hc.le (by linarith)).trans
+      (one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I θ r)
+  have hw_hi : ‖w‖ ≤ 1 + r :=
+    (norm_one_add_ofReal_mul_exp_mul_I_le θ r).trans_eq (by rw [abs_of_nonneg hr])
+  have hrpow : ‖w‖ ^ d.re ≤ (Real.cos (θ / 2)) ^ min 0 d.re * (1 + r) ^ max 0 d.re := by
+    rcases le_or_gt d.re 0 with hd | hd
+    · rw [min_eq_right hd, max_eq_left hd, Real.rpow_zero, mul_one]
+      exact Real.rpow_le_rpow_of_nonpos hc hw_lo hd
+    · rw [min_eq_left hd.le, max_eq_right hd.le, Real.rpow_zero, one_mul]
+      exact Real.rpow_le_rpow (norm_nonneg _) hw_hi hd.le
+  calc ‖w ^ d‖ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) := norm_cpow_le_mul_exp w d
+    _ ≤ ((Real.cos (θ / 2)) ^ min 0 d.re * (1 + r) ^ max 0 d.re) * Real.exp (Real.pi * |d.im|) :=
+        mul_le_mul_of_nonneg_right hrpow (Real.exp_pos _).le
+    _ = Real.exp (Real.pi * |d.im|) * (Real.cos (θ / 2)) ^ min 0 d.re * (1 + r) ^ max 0 d.re := by
+        ring
 
 end Complex
 

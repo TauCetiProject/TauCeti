@@ -31,8 +31,9 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
-* `TauCeti.one_add_pow_mul_exp_neg_two_mul_le`:
-  `(1 + t) ^ n exp (-2 a t) ≤ (n! exp a / a ^ n) exp (-a t)` for `0 < a`, `0 ≤ t`.
+* `TauCeti.one_add_pow_mul_exp_neg_mul_le`, `TauCeti.one_add_pow_mul_exp_neg_add_mul_le`:
+  `(1 + t) ^ n exp (-a t) ≤ n! exp a / a ^ n` and
+  `(1 + t) ^ n exp (-(a + b) t) ≤ (n! exp a / a ^ n) exp (-b t)` for `0 < a`, `-1 ≤ t`.
 -/
 
 public section
@@ -120,19 +121,28 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
     le_div_iff₀ (pow_pos ha m)]
   linarith
 
-/-- For `0 < a` and `0 ≤ t`, `(1 + t) ^ n * exp (-2 * a * t)` is bounded by the integrable
-exponential majorant `((n ! * exp a) / a ^ n) * exp (-a * t)`. -/
-theorem one_add_pow_mul_exp_neg_two_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (n : ℕ) :
-    (1 + t) ^ n * exp (-2 * a * t) ≤ ((n ! : ℝ) * exp a / a ^ n) * exp (-a * t) := by
+/-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
+theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
+    (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
   have hpow := pow_mul_exp_neg_mul_le ha (by linarith : 0 ≤ 1 + t) n
-  have hsplit : exp (-2 * a * t) = exp (-a * (1 + t)) * (exp a * exp (-a * t)) := by
-    rw [← exp_add, ← exp_add]
+  have hsplit : exp (-a * t) = exp (-a * (1 + t)) * exp a := by
+    rw [← exp_add]
     congr 1
     ring
-  calc (1 + t) ^ n * exp (-2 * a * t)
-      = ((1 + t) ^ n * exp (-a * (1 + t))) * (exp a * exp (-a * t)) := by rw [hsplit, mul_assoc]
-    _ ≤ ((n ! : ℝ) / a ^ n) * (exp a * exp (-a * t)) :=
-        mul_le_mul_of_nonneg_right hpow (by positivity)
-    _ = ((n ! : ℝ) * exp a / a ^ n) * exp (-a * t) := by ring
+  calc (1 + t) ^ n * exp (-a * t)
+      = ((1 + t) ^ n * exp (-a * (1 + t))) * exp a := by rw [hsplit, mul_assoc]
+    _ ≤ ((n ! : ℝ) / a ^ n) * exp a := mul_le_mul_of_nonneg_right hpow (exp_pos a).le
+    _ = (n ! : ℝ) * exp a / a ^ n := div_mul_eq_mul_div _ _ _
+
+/-- For `0 < a`, any `b : ℝ`, and `-1 ≤ t`, `(1 + t) ^ n * exp (-(a + b) * t)` is bounded by
+`((n ! * exp a) / a ^ n) * exp (-b * t)`. -/
+theorem one_add_pow_mul_exp_neg_add_mul_le {a b t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
+    (1 + t) ^ n * exp (-(a + b) * t) ≤ ((n ! : ℝ) * exp a / a ^ n) * exp (-b * t) := by
+  have hsplit : exp (-(a + b) * t) = exp (-a * t) * exp (-b * t) := by
+    rw [← exp_add]
+    congr 1
+    ring
+  rw [hsplit, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (one_add_pow_mul_exp_neg_mul_le ha ht n) (exp_pos _).le
 
 end TauCeti

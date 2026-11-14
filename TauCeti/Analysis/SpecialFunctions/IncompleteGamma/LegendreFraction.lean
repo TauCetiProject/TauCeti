@@ -30,21 +30,22 @@ eventual nonvanishing follows from the saddle-point asymptotics in
 
 ## Main definitions
 
-* `Complex.upperGammaContFracPartNum a z n` — the `n`-th partial numerator of Legendre's continued
-  fraction for `z^{-a} e^z Γ(a, z)`.
-* `Complex.upperGammaContFracSolution a z n` — the Kummer-Laplace solution sequence `f_n` of the
-  associated three-term recurrence on `Complex.slitPlane`, normalized by `f₀ = 1`.
+* `Complex.upperIncompleteGammaContFracPartNum a z n` — the `n`-th partial numerator of Legendre's
+  continued fraction for `z^{-a} e^z Γ(a, z)`.
+* `Complex.upperIncompleteGammaContFracSolution a z n` — the Kummer-Laplace solution sequence
+  `f_n` of the associated three-term recurrence on `Complex.slitPlane`, normalized by `f₀ = 1`.
 
 ## Main results
 
-* `Complex.upperGammaContFracPartNum_ne_zero_iff` — `upperGammaContFracPartNum a z n ≠ 0` iff
-  `z ≠ 0` and `(Even n → a ≠ (n / 2 : ℕ))`.
-* `Complex.upperGammaContFracSolution_zero`, `Complex.upperGammaContFracSolution_one` — initial
-  values `f₀ = 1` and `f₁ = -kummerLaplace 0 (a - 1) z`.
-* `Complex.upperGammaContFracSolution_add_two` — on `slitPlane`,
-  `f (n + 2) = f (n + 1) + upperGammaContFracPartNum a z (n + 1) * f n`.
-* `Complex.eventually_upperGammaContFracSolution_ne_zero` — for `z ∈ slitPlane` and `a ≠ m + 1`
-  (`m : ℕ`), `upperGammaContFracSolution a z n ≠ 0` eventually as `n → ∞`.
+* `Complex.upperIncompleteGammaContFracPartNum_ne_zero_iff` —
+  `upperIncompleteGammaContFracPartNum a z n ≠ 0` iff `z ≠ 0` and `(Even n → a ≠ (n / 2 : ℕ))`.
+* `Complex.upperIncompleteGammaContFracSolution_zero`,
+  `Complex.upperIncompleteGammaContFracSolution_one` — initial values `f₀ = 1` and
+  `f₁ = -kummerLaplace 0 (a - 1) z`.
+* `Complex.upperIncompleteGammaContFracSolution_add_two` — on `slitPlane`,
+  `f (n + 2) = f (n + 1) + upperIncompleteGammaContFracPartNum a z (n + 1) * f n`.
+* `Complex.eventually_upperIncompleteGammaContFracSolution_ne_zero` — for `z ∈ slitPlane` and
+  `a ≠ m + 1` (`m : ℕ`), `upperIncompleteGammaContFracSolution a z n ≠ 0` eventually as `n → ∞`.
 
 ## References
 
@@ -64,72 +65,76 @@ namespace Complex
 /-- The `n`-th partial numerator of Legendre's continued fraction for `z^{-a} e^z Γ(a, z)`:
 `a₁ = z⁻¹`, `a_{2k} = (k - a) * z⁻¹` (`k ≥ 1`), and `a_{2k+1} = k * z⁻¹` (`k ≥ 1`), paired with
 partial denominators `b_n = 1` and head `b₀ = 0`. -/
-def upperGammaContFracPartNum (a z : ℂ) (n : ℕ) : ℂ :=
+def upperIncompleteGammaContFracPartNum (a z : ℂ) (n : ℕ) : ℂ :=
   if n = 1 then z⁻¹
   else if Even n then (((n / 2 : ℕ) : ℂ) - a) * z⁻¹
   else ((n / 2 : ℕ) : ℂ) * z⁻¹
 
-/-- Defining formula for `Complex.upperGammaContFracPartNum`. -/
-theorem upperGammaContFracPartNum_def (a z : ℂ) (n : ℕ) :
-    upperGammaContFracPartNum a z n =
+/-- Defining formula for `Complex.upperIncompleteGammaContFracPartNum`. -/
+theorem upperIncompleteGammaContFracPartNum_def (a z : ℂ) (n : ℕ) :
+    upperIncompleteGammaContFracPartNum a z n =
       if n = 1 then z⁻¹
       else if Even n then (((n / 2 : ℕ) : ℂ) - a) * z⁻¹
       else ((n / 2 : ℕ) : ℂ) * z⁻¹ := (rfl)
 
-/-- Zeroth index evaluation `upperGammaContFracPartNum a z 0 = -a * z⁻¹`. -/
+/-- Zeroth index evaluation `upperIncompleteGammaContFracPartNum a z 0 = -a * z⁻¹`. -/
 @[simp]
-theorem upperGammaContFracPartNum_zero (a z : ℂ) :
-    upperGammaContFracPartNum a z 0 = -a * z⁻¹ := by
-  simp [upperGammaContFracPartNum]
+theorem upperIncompleteGammaContFracPartNum_zero (a z : ℂ) :
+    upperIncompleteGammaContFracPartNum a z 0 = -a * z⁻¹ := by
+  simp [upperIncompleteGammaContFracPartNum]
 
 /-- First partial numerator `a₁ = z⁻¹` of Legendre's continued fraction. -/
 @[simp]
-theorem upperGammaContFracPartNum_one (a z : ℂ) :
-    upperGammaContFracPartNum a z 1 = z⁻¹ := by
-  simp [upperGammaContFracPartNum]
+theorem upperIncompleteGammaContFracPartNum_one (a z : ℂ) :
+    upperIncompleteGammaContFracPartNum a z 1 = z⁻¹ := by
+  simp [upperIncompleteGammaContFracPartNum]
 
 /-- Even partial numerator `a_{2k+2} = (k + 1 - a) * z⁻¹` of Legendre's continued fraction. -/
 @[simp]
-theorem upperGammaContFracPartNum_two_mul_add_two (a z : ℂ) (k : ℕ) :
-    upperGammaContFracPartNum a z (2 * k + 2) = ((k : ℂ) + 1 - a) * z⁻¹ := by
+theorem upperIncompleteGammaContFracPartNum_two_mul_add_two (a z : ℂ) (k : ℕ) :
+    upperIncompleteGammaContFracPartNum a z (2 * k + 2) = ((k : ℂ) + 1 - a) * z⁻¹ := by
   have h1 : 2 * k + 2 ≠ 1 := by omega
   have hev : Even (2 * k + 2) := ⟨k + 1, by ring⟩
   have hdiv : (2 * k + 2) / 2 = k + 1 := by omega
-  simp only [upperGammaContFracPartNum, h1, ↓reduceIte, hev, hdiv, Nat.cast_add, Nat.cast_one]
+  simp only [upperIncompleteGammaContFracPartNum, h1, ↓reduceIte, hev, hdiv, Nat.cast_add,
+    Nat.cast_one]
 
 /-- Odd partial numerator `a_{2k+3} = (k + 1) * z⁻¹` of Legendre's continued fraction. -/
 @[simp]
-theorem upperGammaContFracPartNum_two_mul_add_three (a z : ℂ) (k : ℕ) :
-    upperGammaContFracPartNum a z (2 * k + 3) = ((k : ℂ) + 1) * z⁻¹ := by
+theorem upperIncompleteGammaContFracPartNum_two_mul_add_three (a z : ℂ) (k : ℕ) :
+    upperIncompleteGammaContFracPartNum a z (2 * k + 3) = ((k : ℂ) + 1) * z⁻¹ := by
   have h1 : 2 * k + 3 ≠ 1 := by omega
   have hodd : ¬Even (2 * k + 3) := by simp [parity_simps]
   have hdiv : (2 * k + 3) / 2 = k + 1 := by omega
-  simp only [upperGammaContFracPartNum, h1, ↓reduceIte, hodd, hdiv, Nat.cast_add, Nat.cast_one]
+  simp only [upperIncompleteGammaContFracPartNum, h1, ↓reduceIte, hodd, hdiv, Nat.cast_add,
+    Nat.cast_one]
 
-/-- Exact nonvanishing characterization of `upperGammaContFracPartNum a z n`: it is nonzero
-if and only if `z ≠ 0` and, when `n` is even, `a ≠ (n / 2 : ℕ)`. -/
-theorem upperGammaContFracPartNum_ne_zero_iff {a z : ℂ} {n : ℕ} :
-    upperGammaContFracPartNum a z n ≠ 0 ↔ z ≠ 0 ∧ (Even n → a ≠ (n / 2 : ℕ)) := by
+/-- Exact nonvanishing characterization of `upperIncompleteGammaContFracPartNum a z n`: it is
+nonzero if and only if `z ≠ 0` and, when `n` is even, `a ≠ (n / 2 : ℕ)`. -/
+theorem upperIncompleteGammaContFracPartNum_ne_zero_iff {a z : ℂ} {n : ℕ} :
+    upperIncompleteGammaContFracPartNum a z n ≠ 0 ↔ z ≠ 0 ∧ (Even n → a ≠ (n / 2 : ℕ)) := by
   rcases n with _ | _ | n
   · simp [and_comm]
   · simp
   · rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩
     · have hev : Even (2 * k + 2) := ⟨k + 1, by ring⟩
       have hdiv : (2 * k + 2) / 2 = k + 1 := by omega
-      rw [upperGammaContFracPartNum_two_mul_add_two, hdiv]
+      rw [upperIncompleteGammaContFracPartNum_two_mul_add_two, hdiv]
       simp [hev, sub_eq_zero, eq_comm (a := a), and_comm]
     · have hodd : ¬Even (2 * k + 3) := by simp [parity_simps]
       have hk1 : (k : ℂ) + 1 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero k
-      rw [show 2 * k + 1 + 2 = 2 * k + 3 by ring, upperGammaContFracPartNum_two_mul_add_three]
+      rw [show 2 * k + 1 + 2 = 2 * k + 3 by ring,
+        upperIncompleteGammaContFracPartNum_two_mul_add_three]
       simp [hodd, hk1]
 
 /-- Explicit Kummer-Laplace solution sequence of the three-term recurrence
-`f (n + 2) = f (n + 1) + upperGammaContFracPartNum a z (n + 1) * f n` on `Complex.slitPlane`
-associated with Legendre's continued fraction for `z^{-a} e^z Γ(a, z)`, normalized by `f 0 = 1`:
+`f (n + 2) = f (n + 1) + upperIncompleteGammaContFracPartNum a z (n + 1) * f n` on
+`Complex.slitPlane` associated with Legendre's continued fraction for `z^{-a} e^z Γ(a, z)`,
+normalized by `f 0 = 1`:
 * `f 0 = 1`,
 * `f (2k + 1) = -(1 - a)_k * z⁻¹ ^ k * kummerLaplace k (a - 1 - k) z`,
 * `f (2k + 2) = (1 - a)_{k+1} * z⁻¹ ^ (k + 1) * kummerLaplace k (a - 2 - k) z`. -/
-def upperGammaContFracSolution (a z : ℂ) : ℕ → ℂ
+def upperIncompleteGammaContFracSolution (a z : ℂ) : ℕ → ℂ
   | 0 => 1
   | n + 1 =>
       if Even n then
@@ -139,14 +144,14 @@ def upperGammaContFracSolution (a z : ℂ) : ℕ → ℂ
         (ascPochhammer ℂ (n / 2 + 1)).eval (1 - a) * z⁻¹ ^ (n / 2 + 1) *
           kummerLaplace (n / 2) (a - 2 - (n / 2 : ℕ)) z
 
-/-- Normalization `f 0 = 1` of `upperGammaContFracSolution`. -/
+/-- Normalization `f 0 = 1` of `upperIncompleteGammaContFracSolution`. -/
 @[simp]
-theorem upperGammaContFracSolution_zero (a z : ℂ) :
-    upperGammaContFracSolution a z 0 = 1 := by rfl
+theorem upperIncompleteGammaContFracSolution_zero (a z : ℂ) :
+    upperIncompleteGammaContFracSolution a z 0 = 1 := by rfl
 
-/-- Successor formula for `Complex.upperGammaContFracSolution`. -/
-theorem upperGammaContFracSolution_succ (a z : ℂ) (n : ℕ) :
-    upperGammaContFracSolution a z (n + 1) =
+/-- Successor formula for `Complex.upperIncompleteGammaContFracSolution`. -/
+theorem upperIncompleteGammaContFracSolution_succ (a z : ℂ) (n : ℕ) :
+    upperIncompleteGammaContFracSolution a z (n + 1) =
       if Even n then
         -(ascPochhammer ℂ (n / 2)).eval (1 - a) * z⁻¹ ^ (n / 2) *
           kummerLaplace (n / 2) (a - 1 - (n / 2 : ℕ)) z
@@ -154,92 +159,87 @@ theorem upperGammaContFracSolution_succ (a z : ℂ) (n : ℕ) :
         (ascPochhammer ℂ (n / 2 + 1)).eval (1 - a) * z⁻¹ ^ (n / 2 + 1) *
           kummerLaplace (n / 2) (a - 2 - (n / 2 : ℕ)) z := (rfl)
 
-/-- Initial value `f 1 = -kummerLaplace 0 (a - 1) z` of `upperGammaContFracSolution`. -/
+/-- Initial value `f 1 = -kummerLaplace 0 (a - 1) z` of `upperIncompleteGammaContFracSolution`. -/
 @[simp]
-theorem upperGammaContFracSolution_one (a z : ℂ) :
-    upperGammaContFracSolution a z 1 = -kummerLaplace 0 (a - 1) z := by
-  simp [upperGammaContFracSolution]
+theorem upperIncompleteGammaContFracSolution_one (a z : ℂ) :
+    upperIncompleteGammaContFracSolution a z 1 = -kummerLaplace 0 (a - 1) z := by
+  simp [upperIncompleteGammaContFracSolution]
 
-/-- Odd-index formula for `upperGammaContFracSolution`. -/
+/-- Odd-index formula for `upperIncompleteGammaContFracSolution`. -/
 @[simp]
-theorem upperGammaContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
-    upperGammaContFracSolution a z (2 * k + 1) =
+theorem upperIncompleteGammaContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
+    upperIncompleteGammaContFracSolution a z (2 * k + 1) =
       -(ascPochhammer ℂ k).eval (1 - a) * z⁻¹ ^ k * kummerLaplace k (a - 1 - k) z := by
   have hev : Even (2 * k) := ⟨k, by ring⟩
   have hdiv : (2 * k) / 2 = k := by omega
-  simp only [upperGammaContFracSolution, hev, ↓reduceIte, hdiv]
+  simp only [upperIncompleteGammaContFracSolution, hev, ↓reduceIte, hdiv]
 
-/-- Even-index formula for `upperGammaContFracSolution`. -/
+/-- Even-index formula for `upperIncompleteGammaContFracSolution`. -/
 @[simp]
-theorem upperGammaContFracSolution_two_mul_add_two (a z : ℂ) (k : ℕ) :
-    upperGammaContFracSolution a z (2 * k + 2) =
+theorem upperIncompleteGammaContFracSolution_two_mul_add_two (a z : ℂ) (k : ℕ) :
+    upperIncompleteGammaContFracSolution a z (2 * k + 2) =
       (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) *
         kummerLaplace k (a - 2 - k) z := by
   have hodd : ¬Even (2 * k + 1) := by simp [parity_simps]
   have hdiv : (2 * k + 1) / 2 = k := by omega
-  simp only [upperGammaContFracSolution, hodd, ↓reduceIte, hdiv]
+  simp only [upperIncompleteGammaContFracSolution, hodd, ↓reduceIte, hdiv]
 
 /-- **Three-term recurrence for Legendre's incomplete Gamma continued fraction.**
-On `slitPlane`, `f := upperGammaContFracSolution a z` satisfies
-`f (n + 2) = f (n + 1) + upperGammaContFracPartNum a z (n + 1) * f n` for every `n : ℕ`. -/
-theorem upperGammaContFracSolution_add_two (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) (n : ℕ) :
-    upperGammaContFracSolution a z (n + 2) =
-      upperGammaContFracSolution a z (n + 1) +
-        upperGammaContFracPartNum a z (n + 1) * upperGammaContFracSolution a z n := by
+On `slitPlane`, `f := upperIncompleteGammaContFracSolution a z` satisfies
+`f (n + 2) = f (n + 1) + upperIncompleteGammaContFracPartNum a z (n + 1) * f n` for every
+`n : ℕ`. -/
+theorem upperIncompleteGammaContFracSolution_add_two (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane)
+    (n : ℕ) :
+    upperIncompleteGammaContFracSolution a z (n + 2) =
+      upperIncompleteGammaContFracSolution a z (n + 1) +
+        upperIncompleteGammaContFracPartNum a z (n + 1) *
+          upperIncompleteGammaContFracSolution a z n := by
   have hz0 : z ≠ 0 := slitPlane_ne_zero hz
   rcases eq_or_ne n 0 with rfl | hn0
   · -- Base step `n = 0`: integration by parts at `c = 0`.
     have hibp := congr_arg (z⁻¹ * ·) (mul_kummerLaplace_zero (a - 1) hz)
     simp only [← mul_assoc, inv_mul_cancel₀ hz0, one_mul, mul_add, mul_one,
       show a - 1 - 1 = a - 2 by ring] at hibp
-    have h2 : upperGammaContFracSolution a z 2 = (1 - a) * z⁻¹ * kummerLaplace 0 (a - 2) z := by
-      simpa [ascPochhammer_one] using upperGammaContFracSolution_two_mul_add_two a z 0
-    rw [h2, upperGammaContFracSolution_one, upperGammaContFracPartNum_one,
-      upperGammaContFracSolution_zero, mul_one]
+    have h2 : upperIncompleteGammaContFracSolution a z 2 =
+        (1 - a) * z⁻¹ * kummerLaplace 0 (a - 2) z := by
+      simpa [ascPochhammer_one] using upperIncompleteGammaContFracSolution_two_mul_add_two a z 0
+    rw [h2, upperIncompleteGammaContFracSolution_one, upperIncompleteGammaContFracPartNum_one,
+      upperIncompleteGammaContFracSolution_zero, mul_one]
     linear_combination hibp
-  · obtain ⟨k, rfl | rfl⟩ : ∃ k, n = 2 * k + 1 ∨ n = 2 * k + 2 :=
-      ⟨(n - 1) / 2, by omega⟩
+  · obtain ⟨k, rfl | rfl⟩ : ∃ k, n = 2 * k + 1 ∨ n = 2 * k + 2 := ⟨(n - 1) / 2, by omega⟩
     · -- Odd step `n = 2k + 1`: contiguous difference in the middle parameter.
-      have h3 : upperGammaContFracSolution a z (2 * k + 1 + 2) =
-          -(ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) *
-            kummerLaplace (k + 1) (a - 2 - k) z := by
-        simpa [show 2 * (k + 1) + 1 = 2 * k + 1 + 2 by ring,
-          show a - 1 - ((k : ℂ) + 1) = a - 2 - k by ring] using
-          upperGammaContFracSolution_two_mul_add_one a z (k + 1)
       have hdiff := kummerLaplace_sub_kummerLaplace_sub_one k (a - 1 - k) hz
       rw [show a - 1 - (k : ℂ) - 1 = a - 2 - k by ring] at hdiff
-      rw [h3, show 2 * k + 1 + 1 = 2 * k + 2 from rfl,
-        upperGammaContFracSolution_two_mul_add_two, upperGammaContFracPartNum_two_mul_add_two,
-        upperGammaContFracSolution_two_mul_add_one, ascPochhammer_succ_eval, pow_succ]
+      rw [show 2 * k + 1 + 2 = 2 * (k + 1) + 1 by ring, show 2 * k + 1 + 1 = 2 * k + 2 from rfl,
+        upperIncompleteGammaContFracSolution_two_mul_add_one,
+        upperIncompleteGammaContFracSolution_two_mul_add_two,
+        upperIncompleteGammaContFracPartNum_two_mul_add_two,
+        upperIncompleteGammaContFracSolution_two_mul_add_one,
+        show a - 1 - ((k + 1 : ℕ) : ℂ) = a - 2 - k by push_cast; ring,
+        ascPochhammer_succ_eval, pow_succ]
       linear_combination (ascPochhammer ℂ k).eval (1 - a) * (1 - a + (k : ℂ)) *
         (z⁻¹ ^ k * z⁻¹) * hdiff
     · -- Even step `n = 2k + 2`: integration by parts at `c = k + 1`.
-      have h4 : upperGammaContFracSolution a z (2 * k + 2 + 2) =
-          (ascPochhammer ℂ (k + 2)).eval (1 - a) * z⁻¹ ^ (k + 2) *
-            kummerLaplace (k + 1) (a - 3 - k) z := by
-        simpa [show 2 * (k + 1) + 2 = 2 * k + 2 + 2 by ring,
-          show a - 2 - ((k : ℂ) + 1) = a - 3 - k by ring] using
-          upperGammaContFracSolution_two_mul_add_two a z (k + 1)
-      have h3 : upperGammaContFracSolution a z (2 * k + 2 + 1) =
-          -(ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) *
-            kummerLaplace (k + 1) (a - 2 - k) z := by
-        simpa [show 2 * (k + 1) + 1 = 2 * k + 2 + 1 by ring,
-          show a - 1 - ((k : ℂ) + 1) = a - 2 - k by ring] using
-          upperGammaContFracSolution_two_mul_add_one a z (k + 1)
       have hibp := congr_arg (z⁻¹ * ·) (mul_kummerLaplace_add_one k (a - 2 - k) hz)
       simp only [← mul_assoc, inv_mul_cancel₀ hz0, one_mul, mul_add,
         show a - 2 - (k : ℂ) - 1 = a - 3 - k by ring] at hibp
-      rw [h4, h3, show 2 * k + 2 + 1 = 2 * k + 3 from rfl,
-        upperGammaContFracPartNum_two_mul_add_three, upperGammaContFracSolution_two_mul_add_two,
-        show k + 2 = (k + 1) + 1 from rfl, ascPochhammer_succ_eval, Nat.cast_add, Nat.cast_one,
-        pow_succ _ (k + 1)]
+      rw [show 2 * k + 2 + 2 = 2 * (k + 1) + 2 by ring,
+        show 2 * k + 2 + 1 = 2 * (k + 1) + 1 by ring,
+        upperIncompleteGammaContFracSolution_two_mul_add_two,
+        upperIncompleteGammaContFracSolution_two_mul_add_one,
+        show 2 * (k + 1) + 1 = 2 * k + 3 by ring,
+        upperIncompleteGammaContFracPartNum_two_mul_add_three,
+        upperIncompleteGammaContFracSolution_two_mul_add_two,
+        show a - 2 - ((k + 1 : ℕ) : ℂ) = a - 3 - k by push_cast; ring,
+        show a - 1 - ((k + 1 : ℕ) : ℂ) = a - 2 - k by push_cast; ring,
+        ascPochhammer_succ_eval, Nat.cast_add, Nat.cast_one, pow_succ _ (k + 1)]
       linear_combination (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) * hibp
 
 /-- When `z ∈ slitPlane` and `a` is not a positive integer, the Kummer-Laplace recurrence
-solution `upperGammaContFracSolution a z n` is eventually nonzero as `n → ∞`. -/
-theorem eventually_upperGammaContFracSolution_ne_zero {a : ℂ} (ha : ∀ m : ℕ, a ≠ m + 1)
-    {z : ℂ} (hz : z ∈ slitPlane) :
-    ∀ᶠ n : ℕ in atTop, upperGammaContFracSolution a z n ≠ 0 := by
+solution `upperIncompleteGammaContFracSolution a z n` is eventually nonzero as `n → ∞`. -/
+theorem eventually_upperIncompleteGammaContFracSolution_ne_zero {a : ℂ}
+    (ha : ∀ m : ℕ, a ≠ m + 1) {z : ℂ} (hz : z ∈ slitPlane) :
+    ∀ᶠ n : ℕ in atTop, upperIncompleteGammaContFracSolution a z n ≠ 0 := by
   have hz0 : z ≠ 0 := slitPlane_ne_zero hz
   have hp : ∀ k : ℕ, (ascPochhammer ℂ k).eval (1 - a) ≠ 0 := fun k => by
     rw [ne_eq, ascPochhammer_eval_eq_zero_iff]
@@ -250,12 +250,12 @@ theorem eventually_upperGammaContFracSolution_ne_zero {a : ℂ} (ha : ∀ m : �
   refine eventually_atTop.mpr ⟨2 * max N₁ N₂ + 1, fun n hn => ?_⟩
   obtain ⟨k, rfl | rfl⟩ : ∃ k, n = 2 * k + 1 ∨ n = 2 * k + 2 :=
     ⟨(n - 1) / 2, by omega⟩
-  · rw [upperGammaContFracSolution_two_mul_add_one]
+  · rw [upperIncompleteGammaContFracSolution_two_mul_add_one]
     refine mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr (hp k)) (pow_ne_zero k (inv_ne_zero hz0)))
       (hN₁ k ?_)
     have : max N₁ N₂ ≤ k := by omega
     exact (le_max_left N₁ N₂).trans this
-  · rw [upperGammaContFracSolution_two_mul_add_two]
+  · rw [upperIncompleteGammaContFracSolution_two_mul_add_two]
     refine mul_ne_zero (mul_ne_zero (hp (k + 1)) (pow_ne_zero (k + 1) (inv_ne_zero hz0))) ?_
     have hk2 : N₂ ≤ k := (le_max_right N₁ N₂).trans (by omega)
     simpa [show a - 1 - 1 - (k : ℂ) = a - 2 - k by ring] using hN₂ k hk2
