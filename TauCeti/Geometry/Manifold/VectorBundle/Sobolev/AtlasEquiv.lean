@@ -121,29 +121,6 @@ theorem TransfersTo.trans {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A
   let ⟨w', hw'⟩ := h w s hs
   h' w' s hw'
 
-/-- The chart data of a sum are almost everywhere the readings of the sum of the sections. -/
-private theorem chartValueL_add_ae {w w' : SobolevSection A μ p k} {s t : ∀ x, V x}
-    (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
-    (ht : ∀ i, A.sectionChartData.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)] A.coord i t)
-    (i : Fin A.n) :
-    A.sectionChartData.chartValueL μ p k i (w + w' : SobolevSection A μ p k)
-      =ᵐ[μ.restrict (A.image i)] A.coord i (s + t) := by
-  filter_upwards [hs i, ht i, ae_restrict_mem (A.image i).isOpen.measurableSet,
-    Lp.coeFn_add (A.sectionChartData.chartValueL μ p k i w)
-      (A.sectionChartData.chartValueL μ p k i w')] with y hy hy' hyU hadd
-  rw [Submodule.coe_add, map_add, hadd, Pi.add_apply, hy, hy', A.coord_add i s t hyU]
-
-/-- The chart data of a multiple are almost everywhere the readings of the multiple of the
-section. -/
-private theorem chartValueL_smul_ae (c : ℝ) {w : SobolevSection A μ p k} {s : ∀ x, V x}
-    (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
-    (i : Fin A.n) :
-    A.sectionChartData.chartValueL μ p k i (c • w : SobolevSection A μ p k)
-      =ᵐ[μ.restrict (A.image i)] A.coord i (c • s) := by
-  filter_upwards [hs i, ae_restrict_mem (A.image i).isOpen.measurableSet,
-    Lp.coeFn_smul c (A.sectionChartData.chartValueL μ p k i w)] with y hy hyU hsmul
-  rw [Submodule.coe_smul, map_smul, hsmul, Pi.smul_apply, hy, A.coord_smul i c s hyU]
-
 /-- The element of `W^{k,p}(V)` for `A'` with the same section as `w`, before continuity is
 established. -/
 private def changeAtlasAux (h : TransfersTo A A' μ p k) (w : SobolevSection A μ p k) :
@@ -261,6 +238,7 @@ theorem changeAtlas_refl (w : SobolevSection A μ p k) :
   obtain ⟨s, hs⟩ := exists_ae_eq_coord w
   exact changeAtlas_eq_of_ae_eq_coord _ hs hs
 
+@[simp]
 theorem changeAtlas_changeAtlas {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A' μ p k)
     (h' : TransfersTo A' A'' μ p k) (w : SobolevSection A μ p k) :
     changeAtlas h' (changeAtlas h w) = changeAtlas (h.trans h') w := by
@@ -268,6 +246,7 @@ theorem changeAtlas_changeAtlas {A'' : FiniteBundleAtlas E M F V} (h : Transfers
   exact (changeAtlas_eq_of_ae_eq_coord h' (chartValueL_changeAtlas_ae h hs)
     (chartValueL_changeAtlas_ae (h.trans h') hs))
 
+@[simp]
 theorem changeAtlas_comp {A'' : FiniteBundleAtlas E M F V} (h : TransfersTo A A' μ p k)
     (h' : TransfersTo A' A'' μ p k) :
     (changeAtlas h').comp (changeAtlas h) = changeAtlas (h.trans h') :=
@@ -287,11 +266,11 @@ theorem atlasEquiv_apply (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ
     (w : SobolevSection A μ p k) : atlasEquiv h h' w = changeAtlas h w :=
   (rfl)
 
-@[simp]
 theorem atlasEquiv_symm_apply (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k)
     (w : SobolevSection A' μ p k) : (atlasEquiv h h').symm w = changeAtlas h' w :=
   (rfl)
 
+@[simp]
 theorem atlasEquiv_symm (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     (atlasEquiv h h').symm = atlasEquiv h' h :=
   ContinuousLinearEquiv.ext (funext fun w ↦ atlasEquiv_symm_apply h h' w)
@@ -302,6 +281,7 @@ theorem atlasEquiv_refl :
       ContinuousLinearEquiv.refl ℝ _ :=
   ContinuousLinearEquiv.ext (funext changeAtlas_refl)
 
+@[simp]
 theorem atlasEquiv_trans {A'' : FiniteBundleAtlas E M F V} (h₁ : TransfersTo A A' μ p k)
     (h₁' : TransfersTo A' A μ p k) (h₂ : TransfersTo A' A'' μ p k)
     (h₂' : TransfersTo A'' A' μ p k) :

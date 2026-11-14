@@ -76,6 +76,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
   section whose coordinates its chart data are.
 * `TauCeti.SobolevSection.exists_ae_eq_coord`: every element of `W^{k,p}(V)` consists of the
   coordinates of a section.
+* `TauCeti.SobolevSection.chartValueL_add_ae`, `TauCeti.SobolevSection.chartValueL_smul_ae`: the
+  chart data of a sum or a multiple are the coordinates of the sum or the multiple of the sections.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
 
@@ -712,6 +714,31 @@ theorem SobolevSection.exists_ae_eq_coord (w : SobolevSection A μ p k) :
       A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s := by
   obtain ⟨s, hs⟩ := SectionChartData.exists_section _ μ p k w
   exact ⟨s, fun i ↦ (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)⟩
+
+variable {A μ p k} in
+/-- The chart data of a sum are almost everywhere the readings of the sum of the sections. -/
+theorem SobolevSection.chartValueL_add_ae {w w' : SobolevSection A μ p k} {s t : ∀ x, V x}
+    (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (ht : ∀ i, A.sectionChartData.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)] A.coord i t)
+    (i : Fin A.n) :
+    A.sectionChartData.chartValueL μ p k i (w + w' : SobolevSection A μ p k)
+      =ᵐ[μ.restrict (A.image i)] A.coord i (s + t) := by
+  filter_upwards [hs i, ht i, ae_restrict_mem (A.image i).isOpen.measurableSet,
+    Lp.coeFn_add (A.sectionChartData.chartValueL μ p k i w)
+      (A.sectionChartData.chartValueL μ p k i w')] with y hy hy' hyU hadd
+  rw [Submodule.coe_add, map_add, hadd, Pi.add_apply, hy, hy', A.coord_add i s t hyU]
+
+variable {A μ p k} in
+/-- The chart data of a multiple are almost everywhere the readings of the multiple of the
+section. -/
+theorem SobolevSection.chartValueL_smul_ae (c : ℝ) {w : SobolevSection A μ p k} {s : ∀ x, V x}
+    (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (i : Fin A.n) :
+    A.sectionChartData.chartValueL μ p k i (c • w : SobolevSection A μ p k)
+      =ᵐ[μ.restrict (A.image i)] A.coord i (c • s) := by
+  filter_upwards [hs i, ae_restrict_mem (A.image i).isOpen.measurableSet,
+    Lp.coeFn_smul c (A.sectionChartData.chartValueL μ p k i w)] with y hy hyU hsmul
+  rw [Submodule.coe_smul, map_smul, hsmul, Pi.smul_apply, hy, A.coord_smul i c s hyU]
 
 end Sobolev
 
