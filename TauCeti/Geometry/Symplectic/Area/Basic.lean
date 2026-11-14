@@ -49,7 +49,9 @@ by `L`: `|a(x) - a(y)| ≤ ‖ω‖ L sup ‖x - y‖`, with no closeness of the
 (`TauCeti.SymplecticForm.abs_loopArea_sub_loopArea_le`). So the loop areas, and the actions, of
 loops of bounded speed are controlled by their uniform limits.
 
-A square-integrable differential also gives an integrable symplectic area density, on any domain.
+A square-integrable differential also gives an integrable symplectic area density, on any domain
+and along any two directions
+(`TauCeti.SymplecticForm.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq`).
 Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
 integrals of the symplectic form that tend to zero
 (`TauCeti.SymplecticForm.tendsto_integral_apply_of_tendsto_integral_norm`).
@@ -71,31 +73,30 @@ namespace SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- A square-integrable differential has integrable symplectic area density. -/
+/-- A square-integrable differential has integrable symplectic area density
+`ω(du(z) a, du(z) b)`, on any domain and for any two directions `a, b`; for maps of `ℂ` take
+`a = 1`, `b = I`. -/
 theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
-    [FiniteDimensional ℝ V]
-    (ω : SymplecticForm V) {u : ℂ → V} {D : Set ℂ}
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D) :
-    IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) D := by
+    [FiniteDimensional ℝ V] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+    (ω : SymplecticForm V) {u : E → V} {D : Set E} (a b : E)
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) D μ) :
+    IntegrableOn (fun z ↦ ω (fderiv ℝ u z a) (fderiv ℝ u z b)) D μ := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let : MeasurableSpace V := borel V
   let : BorelSpace V := ⟨rfl⟩
   let B := ω.toBilinForm.toContinuousBilinearMap
   have hmeas : AEStronglyMeasurable
-      (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) (volume.restrict D) := by
+      (fun z ↦ ω (fderiv ℝ u z a) (fderiv ℝ u z b)) (μ.restrict D) := by
     have hc : Continuous (fun p : V × V ↦ B p.1 p.2) := by fun_prop
-    exact (hc.measurable.comp ((measurable_fderiv_apply_const ℝ u 1).prodMk
-      (measurable_fderiv_apply_const ℝ u I))).aestronglyMeasurable
-  refine (henergy.const_mul ‖B‖).mono' hmeas (ae_of_all _ fun z ↦ ?_)
-  have h₁ : ‖fderiv ℝ u z 1‖ ≤ ‖fderiv ℝ u z‖ := by
-    simpa using (fderiv ℝ u z).le_opNorm (1 : ℂ)
-  have hI : ‖fderiv ℝ u z I‖ ≤ ‖fderiv ℝ u z‖ := by
-    simpa using (fderiv ℝ u z).le_opNorm I
-  calc ‖ω (fderiv ℝ u z 1) (fderiv ℝ u z I)‖
-      ≤ ‖B‖ * ‖fderiv ℝ u z 1‖ * ‖fderiv ℝ u z I‖ := B.le_opNorm₂ _ _
-    _ ≤ ‖B‖ * ‖fderiv ℝ u z‖ ^ 2 := by
-      rw [pow_two, ← mul_assoc]
-      gcongr
+    exact (hc.measurable.comp ((measurable_fderiv_apply_const ℝ u a).prodMk
+      (measurable_fderiv_apply_const ℝ u b))).aestronglyMeasurable
+  refine (henergy.const_mul (‖B‖ * ‖a‖ * ‖b‖)).mono' hmeas (ae_of_all _ fun z ↦ ?_)
+  calc ‖ω (fderiv ℝ u z a) (fderiv ℝ u z b)‖
+      ≤ ‖B‖ * ‖fderiv ℝ u z a‖ * ‖fderiv ℝ u z b‖ := B.le_opNorm₂ _ _
+    _ ≤ ‖B‖ * (‖fderiv ℝ u z‖ * ‖a‖) * (‖fderiv ℝ u z‖ * ‖b‖) := by
+      gcongr <;> exact (fderiv ℝ u z).le_opNorm _
+    _ = ‖B‖ * ‖a‖ * ‖b‖ * ‖fderiv ℝ u z‖ ^ 2 := by ring
 
 /-- **Pairing with functions of vanishing mean norm.** If the loops `y_i` are bounded by `R` and the
 integrals over `[0, 1]` of the norms of the continuous `d_i` tend to `0`, then so do the integrals
