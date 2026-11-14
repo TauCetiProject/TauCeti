@@ -471,16 +471,9 @@ the terms at those positions. -/
 theorem sum_range_eq_of_eq_zero_off_pair {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
     {a b : ℕ} {v : N} (ha : a < t) (hb : b < t) (hab : a ≠ b)
     (hz : ∀ j < t, j ≠ a → j ≠ b → f j = 0) (hv : f a + f b = v) :
-    ∑ j ∈ range t, f j = v := by
-  classical
-  rw [← sum_subset (s₁ := ({a, b} : Finset ℕ)) (s₂ := range t)
-    (fun x hx ↦ by
-      simp only [mem_insert, mem_singleton] at hx
-      rcases hx with rfl | rfl <;> simpa using by omega)
-    (fun x hx hx' ↦ by
-      simp only [mem_insert, mem_singleton, not_or] at hx'
-      exact hz x (mem_range.mp hx) hx'.1 hx'.2),
-    sum_pair hab, hv]
+    ∑ j ∈ range t, f j = v :=
+  (sum_eq_add_of_mem a b (mem_range.2 ha) (mem_range.2 hb) hab
+    fun c hc h ↦ hz c (mem_range.1 hc) h.1 h.2).trans hv
 
 /-- A sum over `Finset.range t` whose terms vanish outside three pairwise distinct positions is
 the sum of the terms at those positions. -/

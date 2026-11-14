@@ -56,7 +56,7 @@ private theorem restrict_line_stabilizer {I : HopfIdeal k H} (hI : I.IsNormal)
             (L'.baseChange A).map (Comodule.endOfPoint W g.ofConv) = L'.baseChange A := by
   let W := hI.iSupWeightSpaceSubcomodule V
   let : AddCommGroup W := Module.addCommMonoidToAddCommGroup k
-  let : Module.Finite k W := W.finite
+  let : Module.Finite k W := inferInstance
   have hL : L ≤ W.toSubmodule := by
     rw [IsNormal.iSupWeightSpaceSubcomodule_toSubmodule]
     exact hχ.trans (le_iSup (I.weightSpace V) χ)

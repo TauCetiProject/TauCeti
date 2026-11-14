@@ -28,7 +28,6 @@ groups.
 
 * `TauCeti.Subcomodule`: a submodule stable under the coaction.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
-* `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
 * `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
 * `TauCeti.Subcomodule.rid_lTensor_coact_mem`: a subcomodule is stable under contracting the
   coaction against a linear functional on the coalgebra.
@@ -117,11 +116,6 @@ theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m âˆˆ N.toSubmodule â†
 
 theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
   rfl
-
-/-- A subcomodule of a noetherian module is finitely generated as an `R`-module. -/
-theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
-    Module.Finite R N.toSubmodule := by
-  infer_instance
 
 /-- The subtype of a subcomodule of a noetherian module is finitely generated as an `R`-module.
 This is the form needed to treat a subcomodule of a finite-dimensional comodule over a field as a
