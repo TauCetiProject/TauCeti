@@ -273,6 +273,26 @@ private theorem polynomialExtensionIsoStabilizeXCenter_hom_comp_eval :
     CategoryTheory.Functor.map_id, Category.id_comp, ← HomologicalComplex.comp_f_assoc,
     Iso.hom_inv_id_assoc]
 
+/-- Send a pure tensor `p ⊗ₜ[A] f` of the polynomial extension of `GC⁻(G)` into the center complex
+by the identification with the polynomial extension. Undoing that identification and evaluating at
+`V_s` maps this image to `f` scaled by the polynomial factor `p` evaluated at `V_s`. -/
+private theorem polynomialExtensionEval_stabilizeXCenter_tmul (p : Polynomial A)
+    (f : GridChainMinus R n) :
+    ((ModuleCat.restrictScalars
+        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+          (eqToHom (G.stabilizeXCenterComplex_X s R ()).symm) ≫
+        (G.polynomialExtensionIsoStabilizeXCenter s R).inv.f () ≫
+          ((G.unblockedComplex R).polynomialExtensionEval (MvPolynomial.X s)).f () ≫
+            eqToHom (G.unblockedComplex_X R ())).hom
+      ((ModuleCat.of A (Polynomial A) ◁ eqToHom (G.unblockedComplex_X R ()).symm ≫
+        (G.polynomialExtensionIsoStabilizeXCenter s R).hom.f () ≫
+          (ModuleCat.restrictScalars
+            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
+            (eqToHom (G.stabilizeXCenterComplex_X s R ()))).hom (p ⊗ₜ[A] f)) =
+      Polynomial.eval (MvPolynomial.X s) p • f := by
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+    polynomialExtensionIsoStabilizeXCenter_hom_comp_eval, polynomialExtensionEval_X_tmul]
+
 /-- On the center complex, the inverse of the identification with the polynomial extension of
 `GC⁻(G)`, followed by evaluation at `V_s`, renames every coefficient along `s.predAbove`: the
 variables `V_{s.castSucc}` and `V_{s.succ}` of the new block both become `V_s`. -/
@@ -302,28 +322,12 @@ private theorem polynomialExtensionEval_stabilizeXCenter_apply (g : GridState n 
       (finSuccEquiv' R s.castSucc q) (Finsupp.single x 1)
     rw [AlgEquiv.symm_apply_apply, Finsupp.mapRange_single, map_one, Finsupp.smul_single,
       smul_eq_mul, mul_one] at hpre
-    -- Categorically, undoing the identification and evaluating acts on pure tensors by
-    -- evaluating the polynomial factor at `V_s`.
-    have hcat : ∀ (p : Polynomial A) (f : GridChainMinus R n),
-        ((ModuleCat.restrictScalars
-            (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-              (eqToHom (G.stabilizeXCenterComplex_X s R ()).symm) ≫
-            (G.polynomialExtensionIsoStabilizeXCenter s R).inv.f () ≫
-              ((G.unblockedComplex R).polynomialExtensionEval (MvPolynomial.X s)).f () ≫
-                eqToHom (G.unblockedComplex_X R ())).hom
-          ((ModuleCat.of A (Polynomial A) ◁ eqToHom (G.unblockedComplex_X R ()).symm ≫
-            (G.polynomialExtensionIsoStabilizeXCenter s R).hom.f () ≫
-              (ModuleCat.restrictScalars
-                (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-                (eqToHom (G.stabilizeXCenterComplex_X s R ()))).hom (p ⊗ₜ[A] f)) =
-          Polynomial.eval (MvPolynomial.X s) p • f := fun p f => by
-      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-        polynomialExtensionIsoStabilizeXCenter_hom_comp_eval, polynomialExtensionEval_X_tmul]
     -- Evaluating the singled-out variable at `V_s` renames along `s.predAbove`.
     have heval : Polynomial.eval (MvPolynomial.X s) (finSuccEquiv' R s.castSucc q) =
         rename s.predAbove q := by
       rw [polynomial_eval_finSuccEquiv', hX, ← rename_eq_aeval]
-    rw [Finsupp.mapRange_single, ← hpre, hcat, heval, Finsupp.smul_single, smul_eq_mul, mul_one]
+    rw [Finsupp.mapRange_single, ← hpre, polynomialExtensionEval_stabilizeXCenter_tmul, heval,
+      Finsupp.smul_single, smul_eq_mul, mul_one]
 
 /-- **The chain map of an `X`-stabilization on chains.** On a chain `c` of `GC⁻(G')`,
 `stabilizeXMap` is `H_I^N` applied to the off-center part of `c`, followed by renaming every

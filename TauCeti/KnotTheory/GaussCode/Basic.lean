@@ -108,43 +108,6 @@ theorem visit_partner (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
     D.visit (D.partner.val i) = D.visit i := by
   exact (D.visit_eq_iff i (D.partner.val i)).mpr (Or.inr rfl) |>.symm
 
-/-- Every crossing label occurs in the traversal. -/
-theorem visit_surjective (D : BasedOrientedGaussCode n) : Function.Surjective D.visit := by
-  classical
-  let s := Finset.univ.image D.visit
-  have hfiber (c : Fin n) (hc : c ∈ s) :
-      (Finset.univ.filter fun i => D.visit i = c).card = 2 := by
-    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hc
-    have heq : (Finset.univ.filter fun j => D.visit j = D.visit i) = {i, D.partner.val i} := by
-      ext j
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Finset.mem_singleton]
-      constructor
-      · intro h
-        exact (D.visit_eq_iff i j).mp h.symm
-      · intro h
-        exact ((D.visit_eq_iff i j).mpr h).symm
-    rw [heq]
-    rw [Finset.card_insert_of_notMem]
-    · simp
-    · simpa using (D.partner.apply_ne i).symm
-  have hcount : 2 * n = 2 * s.card := by
-    calc
-      2 * n = Finset.univ.card := by simp
-      _ = ∑ c ∈ s, (Finset.univ.filter fun i => D.visit i = c).card :=
-        Finset.card_eq_sum_card_image D.visit Finset.univ
-      _ = ∑ _c ∈ s, 2 := by
-        apply Finset.sum_congr rfl
-        intro c hc
-        exact hfiber c hc
-      _ = 2 * s.card := by simp [Nat.mul_comm]
-  have hcard : s.card = n := by omega
-  have hs : s = Finset.univ := s.eq_univ_of_card (by simpa using hcard)
-  intro c
-  have hc : c ∈ s := by rw [hs]; simp
-  obtain ⟨i, -, hi⟩ := Finset.mem_image.mp hc
-  exact ⟨i, hi⟩
-
 /-- The two visits at every crossing have opposite over/under data. -/
 theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
     D.over (D.partner.val i) ≠ D.over i := by
@@ -189,6 +152,10 @@ theorem visitData_bijective (D : BasedOrientedGaussCode n) : Function.Bijective 
     · subst j
       exact (D.over_partner_ne i hover.symm).elim
   · simp [Nat.mul_comm]
+
+/-- Every crossing label occurs in the traversal. -/
+theorem visit_surjective (D : BasedOrientedGaussCode n) : Function.Surjective D.visit :=
+  fun c ↦ let ⟨i, hi⟩ := D.visitData_bijective.2 (c, true); ⟨i, congrArg Prod.fst hi⟩
 
 /-- Visits are equivalent to pairs consisting of a crossing and an over/under choice. -/
 noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) ≃ Fin n × Bool :=
