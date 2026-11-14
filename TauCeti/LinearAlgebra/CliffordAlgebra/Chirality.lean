@@ -622,6 +622,12 @@ variable {K W : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W
 def positiveHalfSpinors : Submodule K W :=
   Module.End.eigenspace (ρ (chirality Q o)) 1
 
+/-- The positive half-spinors are the `1`-eigenspace of `Γ`, the space on which the half-spin
+representations with `ε = 1` act. -/
+theorem positiveHalfSpinors_eq_eigenspace :
+    positiveHalfSpinors o ρ = Module.End.eigenspace (ρ (chirality Q o)) 1 :=
+  (rfl)
+
 variable {o ρ} in
 /-- A vector is a positive half-spinor exactly when `Γ ψ = ψ`. -/
 @[simp]

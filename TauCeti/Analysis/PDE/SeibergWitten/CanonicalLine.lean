@@ -53,6 +53,9 @@ plane vortex equations, in the convention `∂bar_a α = (∇₁ α + i ∇₂ �
 * `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`: `c(J v) ψ = i c(v) ψ`
   for `P_α ψ = ψ`, and `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_zero`:
   `c(J v) β = -i c(v) β` for `P_α β = 0`.
+* `TauCeti.SeibergWitten.cliffordProjection_kahlerForm_apply_eq_self_iff` and
+  `TauCeti.SeibergWitten.cliffordProjection_kahlerForm_apply_eq_zero_iff`: conversely, these
+  relations cut out the two eigenspaces.
 * `TauCeti.SeibergWitten.inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self`:
   `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`.
 * `TauCeti.SeibergWitten.sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`: the Dirac symbol
@@ -261,5 +264,75 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
   · have h2 := h (e 2)
     rw [h₂] at h2
     linear_combination Complex.I * h2 + L (e 2) * Complex.I_sq
+
+/-! ### The eigenspaces are cut out by `J` -/
+
+include hQ he h₀ h₂ in
+/-- Splitting `ψ = P_α ψ + (ψ - P_α ψ)` along the two eigenspaces, on which `J` acts by `i` and
+`-i`: `c(J e₀) ψ = i c(e₀) (P_α ψ) - i c(e₀) (ψ - P_α ψ)`. -/
+private theorem ι_apply_apply_eq_sub_of_cliffordProjection (ψ : positiveHalfSpinors o ρ) :
+    ρ (ι Q (J (e 0))) ψ =
+      Complex.I • ρ (ι Q (e 0)) (cliffordProjection o ρ J.kahlerForm ψ) -
+        Complex.I • ρ (ι Q (e 0))
+          (ψ - cliffordProjection o ρ J.kahlerForm ψ : positiveHalfSpinors o ρ) := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  set P := cliffordProjection o ρ J.kahlerForm
+  have hP : IsIdempotentElem P := isIdempotentElem_cliffordProjection o ρ hQ hkl
+    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he)
+    (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂))
+  have hφ : P (P ψ) = P ψ := by rw [← mul_apply_eq_comp, hP.eq]
+  have hβ : P (ψ - P ψ) = 0 := by rw [map_sub, hφ, sub_self]
+  have hψ : (ψ : W) = (P ψ : W) + ((ψ - P ψ : positiveHalfSpinors o ρ) : W) := by simp
+  conv_lhs => rw [hψ]
+  rw [map_add, ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hφ (e 0),
+    ι_apply_apply_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hβ (e 0), neg_smul,
+    ← sub_eq_add_neg]
+
+omit [FiniteDimensional ℂ W] in
+include hQ in
+/-- Clifford multiplication by the unit vector `e₀` is injective: `(2i) c(e₀) φ = 0` forces
+`φ = 0`. -/
+private theorem eq_zero_of_two_mul_I_smul_ι_apply_eq_zero {φ : positiveHalfSpinors o ρ}
+    (h : (2 * Complex.I) • ρ (ι Q (e 0)) φ = 0) : φ = 0 :=
+  Submodule.coe_eq_zero.1 ((injective_iff_map_eq_zero _).1
+    (map_ι_injective ρ (Q := Q) (v := e 0) (by simp [hQ, e.orthonormal.1 0])) _
+    ((smul_eq_zero.1 h).resolve_left (by simp)))
+
+include hQ he h₀ h₂ in
+/-- **The canonical eigenspace is cut out by `J`**: a positive half-spinor `ψ` is fixed by `P_α`
+exactly when Clifford multiplication turns `J` into `i` on it, `c(J v) ψ = i c(v) ψ` for every
+`v`. -/
+theorem cliffordProjection_kahlerForm_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
+    cliffordProjection o ρ J.kahlerForm ψ = ψ ↔
+      ∀ v, ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  refine ⟨fun hψ ↦ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ,
+    fun h ↦ ?_⟩
+  -- `c(e₀)` kills the component `ψ - P_α ψ` in the complementary eigenspace.
+  have h0 : ψ - cliffordProjection o ρ J.kahlerForm ψ = 0 := by
+    refine eq_zero_of_two_mul_I_smul_ι_apply_eq_zero hQ (e := e) ?_
+    have h₃ := ι_apply_apply_eq_sub_of_cliffordProjection hQ he h₀ h₂ ψ
+    rw [h (e 0)] at h₃
+    simp only [Submodule.coe_sub, map_sub] at h₃ ⊢
+    linear_combination (norm := module) h₃
+  exact (sub_eq_zero.1 h0).symm
+
+include hQ he h₀ h₂ in
+/-- **The complementary eigenspace is cut out by `J`**: a positive half-spinor `β` is killed by
+`P_α` exactly when Clifford multiplication turns `J` into `-i` on it, `c(J v) β = -i c(v) β` for
+every `v`. -/
+theorem cliffordProjection_kahlerForm_apply_eq_zero_iff {β : positiveHalfSpinors o ρ} :
+    cliffordProjection o ρ J.kahlerForm β = 0 ↔
+      ∀ v, ρ (ι Q (J v)) β = -Complex.I • ρ (ι Q v) β := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  refine ⟨fun hβ ↦ ι_apply_apply_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hβ,
+    fun h ↦ ?_⟩
+  -- `c(e₀)` kills the component `P_α β` in the canonical eigenspace.
+  refine eq_zero_of_two_mul_I_smul_ι_apply_eq_zero hQ (e := e) ?_
+  have h₃ := ι_apply_apply_eq_sub_of_cliffordProjection hQ he h₀ h₂ β
+  rw [h (e 0)] at h₃
+  simp only [Submodule.coe_sub, map_sub] at h₃
+  linear_combination (norm := module) -h₃
 
 end TauCeti.SeibergWitten
