@@ -105,34 +105,27 @@ theorem washnitzerAlgebra.exists_finite_injective {σ : Type v} [Finite σ]
     {π : W σ →ₐ[K] A} (hπ : π.Finite) :
     ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] A),
       n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite := by
-  suffices H : ∀ (B : Type w) [CommRing B] [Algebra K B] [Nontrivial B]
-      (π : W σ →ₐ[K] B), π.Finite →
-      ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] B),
-        n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite by
-    exact H A π hπ
   refine Finite.induction_empty_option
-    (P := fun σ ↦ ∀ (A : Type w) [CommRing A] [Algebra K A] [Nontrivial A]
-      (π : W σ →ₐ[K] A), π.Finite →
+    (P := fun σ ↦ ∀ π : W σ →ₐ[K] A, π.Finite →
       ∃ (n : ℕ) (g : W (Fin n) →ₐ[K] A),
         n ≤ Nat.card σ ∧ Function.Injective g ∧ g.Finite)
-    (fun {α β} e ih A _ _ _ π hπ ↦ ?_) (fun A _ _ _ π hπ ↦ ?_)
-    (fun {σ} _ ih A _ _ _ π hπ ↦ ?_) σ
+    (fun {α β} e ih π hπ ↦ ?_) (fun π hπ ↦ ?_) (fun {σ} _ ih π hπ ↦ ?_) σ π hπ
   · let r := washnitzerAlgebra.renameAlgEquiv (R := K) e
-    obtain ⟨n, g, hn, hg, hfin⟩ := ih A (π.comp r.toAlgHom)
+    obtain ⟨n, g, hn, hg, hfin⟩ := ih (π.comp r.toAlgHom)
       (hπ.comp (AlgHom.Finite.of_surjective _ r.surjective))
     exact ⟨n, g, hn.trans_eq (Nat.card_congr e), hg, hfin⟩
   · -- In zero variables the source is the coefficient field, so the map is injective.
-    have hinj : Function.Injective π := by
-      intro a b hab
-      obtain ⟨x, ha⟩ := washnitzerAlgebra.algebraMap_surjective a
-      obtain ⟨y, hb⟩ := washnitzerAlgebra.algebraMap_surjective b
-      rw [← ha, ← hb, π.commutes, π.commutes] at hab
-      rw [← ha, ← hb, (FaithfulSMul.algebraMap_injective K A) hab]
+    have hinj : Function.Injective π :=
+      Function.Injective.of_comp_right (g := algebraMap K _)
+        (by
+          rw [show ⇑π ∘ algebraMap K _ = algebraMap K A from funext π.commutes]
+          exact FaithfulSMul.algebraMap_injective K A)
+        washnitzerAlgebra.algebraMap_surjective
     exact exists_finite_injective_of_injective hπ hinj
   · by_cases h : Function.Injective π
     · exact exists_finite_injective_of_injective hπ h
     · obtain ⟨γ, hγ⟩ := exists_finite_map_of_not_injective hπ h
-      obtain ⟨n, g, hn, hg, hfin⟩ := ih A γ hγ
+      obtain ⟨n, g, hn, hg, hfin⟩ := ih γ hγ
       exact ⟨n, g, hn.trans (by simp), hg, hfin⟩
 
 /-- A field finite over a finite-variable Monsky–Washnitzer algebra is finite-dimensional over
