@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Henselian.Strict
 public import TauCeti.RingTheory.StrictHenselization.Lift
 import TauCeti.RingTheory.StrictHenselization.Map
 
@@ -16,14 +17,16 @@ field is `R` itself. More generally, the same holds when the pointing algebra is
 with the residue field as an `R`-algebra. The inverse to the structure map is the unique
 henselian lift of that identification.
 
-In particular, if `R` is strictly henselian and its residue field is chosen as its own
-separable closure, its strict henselization is canonically isomorphic to `R`. No
-separable-closedness assumption is needed for the more general pointed-colimit statement:
-pointing in the residue field, rather than a larger separable closure, is essential here.
+In particular, if `R` is strictly henselian, any separable algebraic extension `Ω` of its residue
+field (such as a separable closure) is canonically isomorphic to `ResidueField R`, so its strict
+henselization `algebra R Ω` is canonically isomorphic to `R`
+(`algEquivOfIsStrictlyHenselianLocalRing`). No separable-closedness assumption is needed for the
+more general pointed-colimit statement `algEquivOfResidueFieldEquiv`: pointing in the residue
+field, rather than a larger separable closure, is what drives the equivalence.
 
 ## References
 
-* Stacks Project, Tags 04GQ and 08HQ.
+* Stacks Project, Tags 04GP, 04GQ and 08HQ.
 * `TauCeti.StrictHenselization.lift` supplies the stagewise henselian lifts;
   `TauCeti.StrictHenselization.map_unique` supplies uniqueness of pointed-colimit maps.
 -/
@@ -35,6 +38,8 @@ open IsLocalRing
 universe u
 
 namespace TauCeti.StrictHenselization
+
+section Henselian
 
 variable (R Ω : Type u) [CommRing R] [HenselianLocalRing R] [CommRing Ω] [Algebra R Ω]
 
@@ -55,8 +60,8 @@ theorem algebraMap_lift_residueFieldEquiv (e : Ω ≃ₐ[R] ResidueField R) (x :
   simpa using DFunLike.congr_fun h x
 
 /-- The pointed étale colimit over a henselian local ring is the base ring when its pointing
-algebra is identified with the base residue field. For a strictly henselian ring, taking
-`Ω = ResidueField R` and `e = AlgEquiv.refl` identifies its strict henselization with `R`. -/
+algebra is identified with the base residue field. For a strictly henselian ring, see
+`algEquivOfIsStrictlyHenselianLocalRing`. -/
 noncomputable def algEquivOfResidueFieldEquiv (e : Ω ≃ₐ[R] ResidueField R) :
     algebra R Ω ≃ₐ[R] R :=
   AlgEquiv.ofAlgHom (lift R Ω e.toAlgHom) (Algebra.ofId R (algebra R Ω))
@@ -74,5 +79,32 @@ isomorphism of rings. -/
 theorem algEquivOfResidueFieldEquiv_symm_apply (e : Ω ≃ₐ[R] ResidueField R) (r : R) :
     (algEquivOfResidueFieldEquiv R Ω e).symm r = algebraMap R (algebra R Ω) r :=
   (rfl)
+
+end Henselian
+
+section StrictlyHenselian
+
+variable (R Ω : Type u) [CommRing R] [IsStrictlyHenselianLocalRing R] [Field Ω] [Algebra R Ω]
+  [Algebra (ResidueField R) Ω] [IsScalarTower R (ResidueField R) Ω]
+  [Algebra.IsSeparable (ResidueField R) Ω]
+
+/-- Over a strictly henselian local ring `R`, the pointed étale colimit `algebra R Ω` for any
+separable algebraic extension `Ω` of `ResidueField R` (in particular, the strict henselization of
+`R` with respect to any separable closure `Ω` of `ResidueField R`) is canonically `R`-isomorphic to
+`R` itself. -/
+@[stacks 04GQ]
+noncomputable def algEquivOfIsStrictlyHenselianLocalRing : algebra R Ω ≃ₐ[R] R :=
+  have := IsStrictlyHenselianLocalRing.isSepClosed_residueField (S := R)
+  algEquivOfResidueFieldEquiv R Ω
+    (AlgEquiv.ofBijective (IsScalarTower.toAlgHom R (ResidueField R) Ω)
+      (IsSepClosed.algebraMap_bijective (ResidueField R) Ω)).symm
+
+/-- The inverse of `algEquivOfIsStrictlyHenselianLocalRing` is `algebraMap R (algebra R Ω)`. -/
+@[simp]
+theorem algEquivOfIsStrictlyHenselianLocalRing_symm_apply (r : R) :
+    (algEquivOfIsStrictlyHenselianLocalRing R Ω).symm r = algebraMap R (algebra R Ω) r :=
+  (rfl)
+
+end StrictlyHenselian
 
 end TauCeti.StrictHenselization
