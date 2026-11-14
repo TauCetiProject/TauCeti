@@ -53,9 +53,9 @@ so they never compete with `Algebra.id`. The algebraic interface parallels
   surjectivity for any finite `F' / F` and integral `k' / k` (without separability of `F' / F`).
 * `TauCeti.Place.trace_eq_sum_trace_semilocalEquiv`,
   `TauCeti.Place.completionEmbedding_trace_eq_sum_trace`,
-  `TauCeti.Place.trace_semilocalEquiv_symm_single_mul`,
-  `TauCeti.Place.trace_integralSemilocalToField_tmul_mul`,
-  `TauCeti.Place.sum_trace_mul_smul_completionEmbedding_eq`: local-global trace decomposition and
+  `TauCeti.Place.trace_semilocalEquiv_symm_single_mul`: local-global trace decomposition.
+* `TauCeti.Place.trace_integralSemilocalToField_tmul_mul`,
+  `TauCeti.Place.sum_trace_mul_smul_completionEmbedding_eq`: integral-tensor trace pairing and
   transfer of trace-dual expansions to completions (without `[Algebra.IsIntegral k k']`).
 * `TauCeti.Place.norm_eq_prod_norm_semilocalEquiv`,
   `TauCeti.Place.completionEmbedding_norm_eq_prod_norm`: local-global norm decomposition.
