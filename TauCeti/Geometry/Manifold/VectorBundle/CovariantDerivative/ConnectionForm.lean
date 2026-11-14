@@ -48,8 +48,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
   [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  {ι : Type*} {s : ι → Π x, V x} {u : Set M}
-  (hs : IsLocalFrameOn I F 2 s u) (cov : CovariantDerivative I F V)
+  {ι : Type*} {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
+  (hs : IsLocalFrameOn I F n s u) (cov : CovariantDerivative I F V)
 
 /-- The connection coefficient one-form `Aˡⱼ` in a local frame. The input frame
 index `j` precedes the output coefficient `l`, as in the Christoffel-symbol API. -/
@@ -66,9 +66,10 @@ theorem connectionForm_apply (j l : ι) (x : M) (v : Fin 1 → TangentSpace I x)
 
 variable [IsManifold I 2 M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle 2 F V I]
+  (hn : 2 ≤ n)
   (hu : IsOpen u) [ContMDiffCovariantDerivativeOn F 1 cov.toFun u]
 
-include hu in
+include hn hu in
 /-- The connection one-forms of a C¹ connection in a C² local frame are C¹
 at every point of the open frame domain. -/
 theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
@@ -89,10 +90,11 @@ theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
   have hd : CMDiff[u ∩ e.baseSet] 1
       (T% (fun y ↦ cov (s j) y (e.symmL ℝ y (v 0)))) :=
     ContMDiffOn.clm_bundle_apply
-      ((ContMDiffCovariantDerivativeOn.contMDiff (hs.contMDiffOn j)).mono inter_subset_left)
+      ((ContMDiffCovariantDerivativeOn.contMDiff
+        ((hs.contMDiffOn j).of_le hn)).mono inter_subset_left)
       (hdir.mono inter_subset_right)
   have hc := (hs.mono inter_subset_left).contMDiffOn_coeff
-    (hu.inter e.open_baseSet) one_le_two hd l
+    (hu.inter e.open_baseSet) (one_le_two.trans hn) hd l
   refine (hc.contMDiffAt ((hu.inter e.open_baseSet).mem_nhds ⟨hx, he⟩)).congr_of_eventuallyEq ?_
   filter_upwards [(hu.inter e.open_baseSet).mem_nhds ⟨hx, he⟩] with y hy
   have hy' : y ∈ u ∩ (chartAt H x).source := hy
@@ -103,7 +105,7 @@ theorem contMDiffAt_connectionForm {x : M} (hx : x ∈ u) (j l : ι) :
 
 variable [Fintype ι]
 
-include hu in
+include hn hu in
 /-- **Cartan's second structure equation**, evaluated on C¹ direction fields in
 a C² local frame: `Fˡⱼ = dAˡⱼ + ∑ₘ Aˡₘ ∧ Aᵐⱼ`.
 Section coefficients are columns, and the order of the wedge factors is matrix
@@ -115,11 +117,12 @@ theorem coeff_curvatureOperator_eq_mextDeriv_add_wedge {x : M} (hx : x ∈ u)
       TauCeti.mextDeriv (hs.connectionForm cov j l) x ![X x, Y x] +
         ∑ m, ((hs.connectionForm cov m l).wedge (hs.connectionForm cov j m))
           x ![X x, Y x] := by
+  have hcurv := hs.coeff_curvatureOperator hn hu cov hx hX hY j l
   rw [TauCeti.mextDeriv_apply_one
-    ((hs.contMDiffAt_connectionForm cov hu hx j l).mdifferentiableAt one_ne_zero)
+    ((hs.contMDiffAt_connectionForm cov hn hu hx j l).mdifferentiableAt one_ne_zero)
     ((hX.contMDiffAt (hu.mem_nhds hx)).mdifferentiableAt one_ne_zero)
     ((hY.contMDiffAt (hu.mem_nhds hx)).mdifferentiableAt one_ne_zero),
-    hs.coeff_curvatureOperator hu cov hx hX hY j l]
+    hcurv]
   simp only [TauCeti.RoughForm.wedge_apply_one_one, connectionForm_apply,
     Matrix.cons_val_zero]
   simp only [mul_comm]
