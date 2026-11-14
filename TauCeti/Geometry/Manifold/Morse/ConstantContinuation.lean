@@ -219,7 +219,7 @@ theorem isMIntegralCurve_constantContinuationField_and_tendsto_iff_of_le (hC : 0
       by_contra hqp
       exact (h.manifoldMorseIndex_lt hf (Ne.symm hqp) ⟨y, hy⟩).not_ge hind
     -- A trajectory of `X` from `p` back to `p` is constant.
-    obtain rfl := hX.eq_of_mem_unstableSet_inter_stableSet_self hy
+    obtain rfl := hX.eq_of_mem_unstableSet_inter_stableSet hy
     exact ⟨rfl, τ, funext fun s ↦ by rw [hfix]⟩
   · rintro ⟨rfl, τ, rfl⟩
     exact ⟨q, ⟨Flow.self_mem_unstableSet_iff.2 hfix, Flow.self_mem_stableSet_iff.2 hfix⟩, τ,
