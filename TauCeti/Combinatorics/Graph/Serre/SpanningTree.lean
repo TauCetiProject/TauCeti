@@ -414,12 +414,13 @@ def roseTree (α : Type*) : (rose α).SpanningTree where
 
 @[simp] theorem roseTree_darts (α : Type*) : (roseTree α).darts = ∅ := (rfl)
 
-/-- A rose has exactly one spanning tree, with no darts: each petal is a reduced loop. -/
+/-- A spanning tree of a rose has no darts: each petal is a reduced loop. -/
+instance (α : Type*) (T : (rose α).SpanningTree) : IsEmpty T.darts :=
+  ⟨fun ⟨_, he⟩ => T.src_ne_tgt he rfl⟩
+
+/-- A rose has exactly one spanning tree, the one with no darts. -/
 instance (α : Type*) : Unique (rose α).SpanningTree where
   default := roseTree α
-  uniq T := by
-    ext e
-    simp only [roseTree_darts, Set.mem_empty_iff_false, iff_false]
-    exact fun he => T.src_ne_tgt he rfl
+  uniq T := SpanningTree.ext ((Set.eq_empty_of_isEmpty T.darts).trans (roseTree_darts α).symm)
 
 end TauCeti.SerreGraph
