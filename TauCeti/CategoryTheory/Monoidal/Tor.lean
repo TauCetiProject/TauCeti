@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 import Mathlib.CategoryTheory.Abelian.Exact
 import TauCeti.CategoryTheory.Monoidal.Preadditive
-import TauCeti.CategoryTheory.ObjectProperty.Homology
 import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 
 /-!

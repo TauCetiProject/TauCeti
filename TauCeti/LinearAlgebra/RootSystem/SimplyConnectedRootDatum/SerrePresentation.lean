@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.Serre.Automorphism
 public import TauCeti.Algebra.Lie.Presentation.Serre.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
-import TauCeti.Algebra.Lie.Presentation.Serre.Injective
+public import TauCeti.Algebra.Lie.Presentation.Serre.Injective
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Killing
 
 /-!
@@ -51,6 +51,8 @@ Through the isomorphism, a representation of the presented algebra is a represen
   pinned Cartan matrix of a Dynkin type.
 * `TauCeti.DynkinType.serreLift`: the homomorphism from it onto the pinned split Lie algebra.
 * `TauCeti.DynkinType.serreLiftEquiv`: the same map as an isomorphism of Lie algebras.
+* `TauCeti.DynkinType.lieEquivOfBasis`: the pinned algebra identified with any rational Killing
+  Lie algebra carrying a Lie algebra basis for the same numbered Cartan matrix.
 
 ## Main results
 
@@ -70,29 +72,28 @@ Through the isomorphism, a representation of the presented algebra is a represen
 * `TauCeti.DynkinType.serreLift_serreChevalleyInvolution`: the comparison map intertwines the
   two Chevalley involutions.
 
-## References
+## Implementation notes
 
-* [J.P. Serre, *Complex Semisimple Lie Algebras*][serre1965], chapter VI
-* M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
-  Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
-
-## Roadmap
-
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` asks for the split reductive group scheme
-over `ℤ` to be constructed "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
-algebra", and insists on constructions rather than existence theorems.
+Chevalley's construction builds the split reductive group scheme over `ℤ` from a Chevalley basis and
+the Kostant `ℤ`-form of the enveloping algebra; the group scheme itself is not formalised here.
 `TauCeti.serreKostantForm` of `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/Serre.lean` is that
-Kostant form, written against `Matrix.ToLieAlgebra ℚ CM`; this file pins `CM` to the numbered
-Cartan matrix of a Dynkin type and identifies the presented algebra's image with the concrete
-carrier `TauCeti.DynkinType.lieAlgebra`. Milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` is the downstream consumer, reaching a Dynkin type
-through `TauCeti.ValidLieTypeIndex.dynkinType` and `TauCeti.ValidLieTypeIndex.dynkinType_valid`.
+Kostant form, written against `Matrix.ToLieAlgebra ℚ CM`; this file pins `CM` to the numbered Cartan
+matrix of a Dynkin type and identifies the presented algebra's image with the concrete carrier
+`TauCeti.DynkinType.lieAlgebra`. The Lie-type indices of the classification of finite simple groups
+reach a Dynkin type through `TauCeti.ValidLieTypeIndex.dynkinType` and
+`TauCeti.ValidLieTypeIndex.dynkinType_valid`.
 
 The higher Serre relations come from `TauCeti/Algebra/Lie/Presentation/Serre/Basis.lean`, which
 proves them for any `LieAlgebra.Basis` on a Noetherian Lie algebra. The root-string form in
 `TauCeti/Algebra/Lie/Presentation/Serre/Killing.lean` does not apply here: the pinned algebra is
 built over `ℚ`, and Mathlib establishes a trivial radical for Geck's construction only over an
 algebraically closed field.
+
+## References
+
+* [J.P. Serre, *Complex Semisimple Lie Algebras*][serre1965], chapter VI
+* M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
+  Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 -/
 
 public section
@@ -221,25 +222,19 @@ theorem serreLift_serreChevalleyInvolution (x : t.SerreLieAlgebra) :
 
 /-- **Serre's theorem for the pinned split Lie algebra**: the comparison map from the Lie algebra
 presented by Serre's relations for the pinned Cartan matrix is injective. -/
-theorem serreLift_injective : Function.Injective (t.serreLift ht) := by
-  -- The comparison map is the lift of the basis generators, for the matrix `(t.lieBasis ht).Aᵀ`
-  -- rewritten to `t.cartanMatrixᵀ`.
-  have key : ∀ {CM : Matrix (Fin t.rank) (Fin t.rank) ℤ}, (t.lieBasis ht).Aᵀ = CM →
-      ∀ h : IsSerreSystem ℚ CM (t.lieBasis ht).h (t.lieBasis ht).e (t.lieBasis ht).f,
-        Function.Injective (_root_.TauCeti.serreLift h) := by
-    rintro _ rfl h
-    exact (t.lieBasis ht).serreLift_injective
-  exact key (by rw [lieBasis_A_eq]) _
+theorem serreLift_injective : Function.Injective (t.serreLift ht) :=
+  (t.lieBasis ht).serreLift_injective_of_A_transpose_eq
+    (by rw [lieBasis_A_eq]) (t.isSerreSystem_lieBasis ht)
 
 /-- **The Serre presentation of the pinned split Lie algebra**: the comparison map
 `TauCeti.DynkinType.serreLift` as an isomorphism of Lie algebras. -/
 def serreLiftEquiv : t.SerreLieAlgebra ≃ₗ⁅ℚ⁆ t.lieAlgebra ht :=
-  LieEquiv.ofBijective (t.serreLift ht) ⟨t.serreLift_injective ht, t.serreLift_surjective ht⟩
+  (t.lieBasis ht).serreLiftEquiv (by rw [lieBasis_A_eq])
 
 /-- The Serre presentation isomorphism of the pinned split Lie algebra is the comparison map. -/
 @[simp]
-theorem coe_serreLiftEquiv : ⇑(t.serreLiftEquiv ht) = t.serreLift ht :=
-  (rfl)
+theorem coe_serreLiftEquiv : ⇑(t.serreLiftEquiv ht) = t.serreLift ht := by
+  simp only [serreLiftEquiv, LieAlgebra.Basis.coe_serreLiftEquiv, serreLift]
 
 /-- The inverse of the Serre presentation sends each pinned Cartan generator `hᵢ` to the Serre
 generator with the same Bourbaki number. -/
@@ -261,6 +256,53 @@ generator with the same Bourbaki number. -/
 theorem serreLiftEquiv_symm_lieBasis_f (i : Fin t.rank) :
     (t.serreLiftEquiv ht).symm ((t.lieBasis ht).f i) = serreF ℚ t.cartanMatrixᵀ i := by
   rw [LieEquiv.symm_apply_eq, coe_serreLiftEquiv, serreLift_serreF]
+
+/-! ## Comparison with another numbered Lie algebra basis -/
+
+variable {L : Type*} [LieRing L] [LieAlgebra ℚ L] [FiniteDimensional ℚ L]
+  [LieAlgebra.IsKilling ℚ L] {H : LieSubalgebra ℚ L}
+  (b : LieAlgebra.Basis (Fin t.rank) H) (hA : b.A = t.cartanMatrix)
+
+/-- The pinned rational Lie algebra of a Dynkin type is any Killing Lie algebra carrying a
+Lie algebra basis with the same numbered Cartan matrix, preserving all basis generators. -/
+def lieEquivOfBasis : t.lieAlgebra ht ≃ₗ⁅ℚ⁆ L :=
+  (t.lieBasis ht).lieEquivOfCartanMatrixEq b ((t.lieBasis_A_eq ht).trans hA.symm)
+
+/-- The comparison preserves the numbered Cartan generators. -/
+@[simp]
+theorem lieEquivOfBasis_lieBasis_h (i : Fin t.rank) :
+    t.lieEquivOfBasis ht b hA ((t.lieBasis ht).h i) = b.h i := by
+  simp [lieEquivOfBasis]
+
+/-- The comparison preserves the numbered raising generators. -/
+@[simp]
+theorem lieEquivOfBasis_lieBasis_e (i : Fin t.rank) :
+    t.lieEquivOfBasis ht b hA ((t.lieBasis ht).e i) = b.e i := by
+  simp [lieEquivOfBasis]
+
+/-- The comparison preserves the numbered lowering generators. -/
+@[simp]
+theorem lieEquivOfBasis_lieBasis_f (i : Fin t.rank) :
+    t.lieEquivOfBasis ht b hA ((t.lieBasis ht).f i) = b.f i := by
+  simp [lieEquivOfBasis]
+
+/-- The inverse comparison preserves the numbered Cartan generators. -/
+@[simp]
+theorem lieEquivOfBasis_symm_h (i : Fin t.rank) :
+    (t.lieEquivOfBasis ht b hA).symm (b.h i) = (t.lieBasis ht).h i := by
+  rw [LieEquiv.symm_apply_eq, lieEquivOfBasis_lieBasis_h]
+
+/-- The inverse comparison preserves the numbered raising generators. -/
+@[simp]
+theorem lieEquivOfBasis_symm_e (i : Fin t.rank) :
+    (t.lieEquivOfBasis ht b hA).symm (b.e i) = (t.lieBasis ht).e i := by
+  rw [LieEquiv.symm_apply_eq, lieEquivOfBasis_lieBasis_e]
+
+/-- The inverse comparison preserves the numbered lowering generators. -/
+@[simp]
+theorem lieEquivOfBasis_symm_f (i : Fin t.rank) :
+    (t.lieEquivOfBasis ht b hA).symm (b.f i) = (t.lieBasis ht).f i := by
+  rw [LieEquiv.symm_apply_eq, lieEquivOfBasis_lieBasis_f]
 
 end
 

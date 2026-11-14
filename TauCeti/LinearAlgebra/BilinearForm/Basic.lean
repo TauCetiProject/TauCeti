@@ -49,6 +49,8 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
+  by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
@@ -145,6 +147,20 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
     (r • B).restrict N = r • B.restrict N := by
   ext x y
   simp
+
+/-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
+form. -/
+theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a)
+    (h : ∀ x y, a ∣ B x y) : ∃ C : LinearMap.BilinForm R M, a • C = B := by
+  -- `B` factors through multiplication by `a`, an injective endomorphism of `R` whose range
+  -- contains every value of `B`.
+  have hi : Function.Injective (DistribSMul.toLinearMap R R a) :=
+    fun r s hrs ↦ ha (by simpa using hrs)
+  refine ⟨B.codRestrict₂ _ hi fun x y ↦ ?_, LinearMap.ext₂ fun x y ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := h x y
+    exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
+  · simpa using B.codRestrict₂_apply _ hi _ x y
 
 end LinearMap.BilinForm
 

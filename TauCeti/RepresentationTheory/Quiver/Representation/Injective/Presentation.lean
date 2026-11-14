@@ -44,13 +44,12 @@ open scoped ModuleCat.Algebra
 universe u v w t
 
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
-  [Finite (Quiver.TotalPath Q)] [Small.{t} (pathAlgebra k Q)]
+  [Finite (Quiver.TotalPath Q)]
 
 namespace TauCeti.QuiverRep
 
 /-- A finite-dimensional representation of a quiver with finitely many paths has an
-ambient injective presentation whose target remains finite-dimensional. Smallness lets
-the target stay in the universe of the given representation. -/
+ambient injective presentation whose target remains finite-dimensional. -/
 theorem exists_injectivePresentation_of_isFinDim (M : QuiverRep.{u, v, w, t} k Q)
     (hM : IsFinDim k Q M) :
     ∃ I : InjectivePresentation M, IsFinDim k Q I.J := by

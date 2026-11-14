@@ -116,10 +116,10 @@ theorem map_rootSpace_eq (χ : H → R) :
     exact map_mem_rootSpace σ hσ hz
   · have hcomp : (χ ∘ (σ.ofSubalgebras H H hσ).symm) ∘
         (σ.symm.ofSubalgebras H H
-          (LieSubalgebra.map_symm_eq_self_of_map_eq_self σ hσ)).symm = χ :=
+          ((LieSubalgebra.map_symm_eq_iff σ).2 hσ)).symm = χ :=
       funext fun y => congrArg χ (Subtype.ext (by simp))
     have h := map_mem_rootSpace σ.symm
-      (LieSubalgebra.map_symm_eq_self_of_map_eq_self σ hσ) hw
+      ((LieSubalgebra.map_symm_eq_iff σ).2 hσ) hw
     rwa [hcomp] at h
 
 /-- The root space of `χ ∘ (σ|H)⁻¹` is nonzero whenever the root space of `χ` is. -/
@@ -153,7 +153,7 @@ include hσ
 normalising `H`. -/
 def weightPerm : Equiv.Perm (Weight R H L) where
   toFun := weightMap σ hσ
-  invFun := weightMap σ.symm (LieSubalgebra.map_symm_eq_self_of_map_eq_self σ hσ)
+  invFun := weightMap σ.symm ((LieSubalgebra.map_symm_eq_iff σ).2 hσ)
   left_inv χ := by
     ext y
     exact congrArg (χ : H → R) (Subtype.ext (by simp))
@@ -174,7 +174,7 @@ theorem weightPerm_apply_apply (χ : Weight R H L) (y : H) :
 automorphism. -/
 theorem weightPerm_symm :
     (weightPerm σ hσ).symm =
-      weightPerm σ.symm (LieSubalgebra.map_symm_eq_self_of_map_eq_self σ hσ) :=
+      weightPerm σ.symm ((LieSubalgebra.map_symm_eq_iff σ).2 hσ) :=
   Equiv.ext fun _ => rfl
 
 /-- The inverse of the induced permutation precomposes a weight with the restriction of `σ`
@@ -202,7 +202,7 @@ theorem map_mem_rootSpace_weightPerm_iff {χ : Weight R H L} {z : L} :
     σ z ∈ rootSpace H (weightPerm σ hσ χ) ↔ z ∈ rootSpace H χ := by
   refine ⟨fun hz => ?_, map_mem_rootSpace_weightPerm σ hσ⟩
   have h := map_mem_rootSpace_weightPerm σ.symm
-    (LieSubalgebra.map_symm_eq_self_of_map_eq_self σ hσ) hz
+    ((LieSubalgebra.map_symm_eq_iff σ).2 hσ) hz
   rwa [LieEquiv.symm_apply_apply, ← weightPerm_symm σ hσ, Equiv.symm_apply_apply] at h
 
 /-- A weight is zero exactly when its image under the induced permutation is. -/

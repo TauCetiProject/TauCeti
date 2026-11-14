@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 /-!
 # The localized Calderón–Zygmund estimate on a domain
 
-Let `0 < n`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whole-space
+Let `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whole-space
 `W^{2,p}` estimate for coefficients of small oscillation
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le`) to a
 strong solution on `Ω`, by a smooth cutoff
@@ -112,7 +112,7 @@ private theorem ae_extendByZeroₗᵢ_of_ae {Omega : Opens (EuclideanSpace ℝ (
     · rw [h2 hxΩ, h4 hxΩ, map_zero]
 
 /-- **The localized Calderón–Zygmund estimate for coefficients of small oscillation.**
-Let `0 < n` and `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
+Let `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
 with the following property. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, let `Ω` be
 open, and let `ζ` be smooth with compact support in `Ω`, `‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`. Let `a` be
 a measurable matrix-valued coefficient on `Ω` with `|aᵢⱼ(x) - Aᵢⱼ| ≤ ε` and `|aᵢⱼ(x)| ≤ Λ` for
@@ -124,7 +124,7 @@ almost every `x` in the support of `ζ`, where `ε ≤ δ λ` and `0 ≤ Λ`. Th
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u` and `∇u` is the weak gradient
 `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`. No boundary condition on `u` and
 no regularity of `Ω` is assumed. -/
-theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le (hn : 0 < n)
+theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -146,7 +146,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
             (C / lam * n ^ 2 * Λ + 1) *
               (2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + M₂ * ‖Wkp.value 2 u‖) := by
   obtain ⟨C, δ, hδ, hCZ⟩ :=
-    exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le hn hp hp_top
+    exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le hp hp_top
   refine ⟨C, δ, hδ, fun {A lam} hlam hA {Omega zeta M₁ M₂} hζ hcpt hts hM₁ hM₂
     {a ε Λ} ha_meas hε ha hΛ haΛ u f hf => ?_⟩
   -- The cutoff `w = ζ u ∈ W^{2,p}_0(Ω)` and its weak Hessian `ζ D²u + T`, where the Leibniz
@@ -174,7 +174,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   have hE : MemLp (fun x => Matrix.contraction (a x) (TL x)) p (volume.restrict Omega) :=
     (Lp.memLp TL).of_le_mul hEmeas hEle
   have hζf : MemLp (fun x => zeta x * f x) p (volume.restrict Omega) := hζ_top.smul (Lp.memLp f)
-  set FL := hζf.toLp _ + hE.toLp _ with hFL_def
+  set FL := hζf.toLp _ + hE.toLp _
   have hFLnorm : ‖FL‖ ≤ lpNorm (fun x => zeta x * f x) p (volume.restrict Omega)
       + n ^ 2 * Λ * ‖TL‖ := by
     refine (norm_add_le _ _).trans (add_le_add (Lp.norm_toLp _ _).le ?_)
@@ -205,7 +205,6 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
       exact hx)
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   rw [hζD]
   calc ‖Wkp.iteratedGradient 1 w - TL‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖TL‖ := norm_sub_le _ _

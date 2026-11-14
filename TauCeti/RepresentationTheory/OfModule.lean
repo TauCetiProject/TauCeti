@@ -111,6 +111,28 @@ theorem ofModule'AsModuleEquiv_apply
 
 end Semiring
 
+section Comp
+
+variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
+variable {M N : Type*} [AddCommMonoid M] [Module k M] [Module k[G] M] [IsScalarTower k k[G] M]
+  [Module k[H] M] [AddCommMonoid N] [Module k N] [Module k[G] N] [IsScalarTower k k[G] N]
+  [Module k[H] N]
+
+/-- **Linear maps over a restricted group algebra are equivariant.** If `k[H]` acts on `M` and
+`N` through `f : H →* G`, then a `k[H]`-linear map `M → N` commutes with the action of `f h` in
+`Representation.ofModule'`. -/
+theorem map_ofModule'_comp (f : H →* G)
+    (hM : ∀ (a : k[H]) (x : M), a • x = MonoidAlgebra.mapDomainRingHom k f a • x)
+    (hN : ∀ (a : k[H]) (y : N), a • y = MonoidAlgebra.mapDomainRingHom k f a • y)
+    (e : M →ₗ[k[H]] N) (h : H) (x : M) :
+    e (_root_.Representation.ofModule' (k := k) (G := G) M (f h) x) =
+      _root_.Representation.ofModule' (k := k) (G := G) N (f h) (e x) := by
+  simp only [ofModule'_apply]
+  have := e.map_smul (MonoidAlgebra.single h 1) x
+  rwa [hM, hN, MonoidAlgebra.mapDomainRingHom_apply, MonoidAlgebra.mapDomain_single] at this
+
+end Comp
+
 section Field
 
 variable {k G : Type*} [Field k] [Monoid G]

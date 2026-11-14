@@ -17,7 +17,9 @@ since it is neither `0` nor `∞` unless `X = 0`, in which case the conclusion i
 the last step of every norming argument for `Lᵖ` norms, where `X` is a norm and `X ^ r` is its
 pairing with the extremal function. In the same way, `m ≤ K * m ^ p` for a finite `m` and an
 exponent `p < 1` gives `m ^ (1 - p) ≤ K`, which turns an estimate `μ(A) ≤ K μ(A) ^ (1/n)` into the
-isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
+isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`. Two variants of this cancellation, with an extra
+factor `x` or an outer power `s`, turn the inequalities of Maz'ya's truncation method into
+Sobolev–Poincaré inequalities.
 
 The product `x ^ y * x ^ z` is at most `x ^ (y + z)` for all real exponents `y` and `z`, with no
 hypothesis on `x`; this combines the powers of a function at two exponents when one of them may be
@@ -45,6 +47,10 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+Writing `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` turns into
+`a ^ p ≤ b ^ (p - q) * a ^ q`. Applied to `a = ‖f x‖ₑ` and integrated, this compares `Lᵖ` and
+`L^q` norms of a function whose values are bounded above or below by `b`.
+
 A real power `y ↦ y ^ d` on `ℝ≥0∞` is upper semicontinuous from the right uniformly on intervals:
 for `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to `x`.
 For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is antitone. Enlarging a
@@ -56,6 +62,9 @@ the corresponding bound in the limit of the `Lᵖ` seminorms.
 A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
 densities and Hausdorff measures.
+For nonnegative bases and exponents, `ofReal a ^ p * ofReal b ^ q` is the image under
+`ENNReal.ofReal` of the real product `a ^ p * b ^ q`; this transfers weighted geometric means
+of nonnegative real functions to `ℝ≥0∞`.
 
 For a finite `x`, or a negative exponent `q`, the extended product `x * x ^ q` is the image under
 `ENNReal.ofReal` of the real product `x.toReal * x.toReal ^ q`; both sides vanish at `x = 0` and,
@@ -72,18 +81,27 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 
 ## Main declarations
 
+* `ENNReal.pow_rpow_comm`: natural and real powers commute in `ℝ≥0∞`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
+* `ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow`: `x a ≤ c a ^ θ` gives
+  `x ^ (1 - θ)⁻¹ a ≤ c ^ (1 - θ)⁻¹` for a finite `a` and `θ < 1`.
+* `ENNReal.rpow_le_of_le_rpow_mul_rpow`: `X ≤ (Z X ^ a) ^ s` gives `X ^ b ≤ Z` for a finite `X`
+  when `s⁻¹ = b + a` and `b, s > 0`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
 * `ENNReal.le_rpow_add`: `x ^ y * x ^ z ≤ x ^ (y + z)` for all real `y` and `z`.
 * `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
   `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
 * `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
+* `ENNReal.ofReal_rpow_mul_ofReal_rpow`: `ofReal a ^ p * ofReal b ^ q = ofReal (a ^ p * b ^ q)`
+  for nonnegative `a`, `b`, `p`, `q`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
+  `a ^ p ≤ b ^ (p - q) * a ^ q` for `a ≠ ∞` and `0 < p`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
   near `x`.
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
@@ -110,6 +128,10 @@ open scoped ENNReal NNReal Topology
 
 namespace ENNReal
 
+/-- Natural and real powers commute in `ℝ≥0∞`. -/
+theorem pow_rpow_comm (x : ℝ≥0∞) (n : ℕ) (y : ℝ) : (x ^ n) ^ y = (x ^ y) ^ n := by
+  rw [← rpow_natCast_mul, mul_comm, rpow_mul_natCast]
+
 /-- If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`. -/
 theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ ∞)
     (h : X ^ r ≤ C * X ^ (r - 1)) : X ≤ C := by
@@ -131,6 +153,36 @@ theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1)
     exact zero_le
   rwa [rpow_sub _ _ h0 hm, rpow_one, ENNReal.div_le_iff
     (rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (rpow_ne_top_of_ne_zero h0 hm)]
+
+/-- From `x a ≤ c a^θ` with `a` finite and `θ < 1`, cancelling `a^θ` and raising to the power
+`(1 - θ)⁻¹` gives `x^{(1 - θ)⁻¹} a ≤ c^{(1 - θ)⁻¹}`. -/
+theorem rpow_mul_le_rpow_of_mul_le_mul_rpow {x a c : ℝ≥0∞} {θ : ℝ} (hθ1 : θ < 1)
+    (ha : a ≠ ∞) (h : x * a ≤ c * a ^ θ) :
+    x ^ (1 - θ)⁻¹ * a ≤ c ^ (1 - θ)⁻¹ := by
+  rcases eq_or_ne a 0 with ha0 | ha0
+  · simp [ha0]
+  have hr : 0 < (1 - θ)⁻¹ := inv_pos.2 (sub_pos.2 hθ1)
+  have h' : x * a ^ (1 - θ) ≤ c := by
+    refine (ENNReal.mul_le_mul_iff_left (rpow_pos (pos_iff_ne_zero.2 ha0) ha).ne'
+      (rpow_ne_top_of_ne_zero (y := θ) ha0 ha)).1 ?_
+    rwa [mul_assoc, ← rpow_add _ _ ha0 ha, sub_add_cancel, rpow_one]
+  calc x ^ (1 - θ)⁻¹ * a = (x * a ^ (1 - θ)) ^ (1 - θ)⁻¹ := by
+        rw [mul_rpow_of_nonneg _ _ hr.le, ← rpow_mul, mul_inv_cancel₀ (sub_pos.2 hθ1).ne',
+          rpow_one]
+    _ ≤ c ^ (1 - θ)⁻¹ := rpow_le_rpow h' hr.le
+
+/-- From `X ≤ (Z X^a)^s` with `X` finite and `s⁻¹ = b + a`, `b > 0`, cancelling `X^a` gives
+`X^b ≤ Z`. -/
+theorem rpow_le_of_le_rpow_mul_rpow {X Z : ℝ≥0∞} {a b s : ℝ} (hb : 0 < b) (hs : 0 < s)
+    (hsab : s⁻¹ = b + a) (hX : X ≠ ∞) (h : X ≤ (Z * X ^ a) ^ s) : X ^ b ≤ Z := by
+  rcases eq_or_ne X 0 with h0 | h0
+  · simp [h0, zero_rpow_of_pos hb]
+  have h1 : X ^ s⁻¹ ≤ Z * X ^ a :=
+    calc X ^ s⁻¹ ≤ ((Z * X ^ a) ^ s) ^ s⁻¹ := rpow_le_rpow h (inv_nonneg.2 hs.le)
+      _ = Z * X ^ a := by rw [← rpow_mul, mul_inv_cancel₀ hs.ne', rpow_one]
+  rw [hsab, rpow_add _ _ h0 hX] at h1
+  exact (ENNReal.mul_le_mul_iff_left (rpow_pos (pos_iff_ne_zero.2 h0) hX).ne'
+    (rpow_ne_top_of_ne_zero h0 hX)).1 h1
 
 /-- For `p ∈ [0, 1]`, the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`. -/
 theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
@@ -184,6 +236,14 @@ theorem ofReal_mul_rpow {a : ℝ} (ha : 0 ≤ a) (r d : ℝ) :
     ENNReal.ofReal (a * r) ^ d = ENNReal.ofReal a ^ d * ENNReal.ofReal r ^ d := by
   rw [ofReal_mul ha, mul_rpow_of_ne_top ofReal_ne_top ofReal_ne_top]
 
+/-- For nonnegative bases and exponents, `ENNReal.ofReal` commutes with a product of real powers
+`a ^ p * b ^ q`. -/
+theorem ofReal_rpow_mul_ofReal_rpow {a b p q : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 0 ≤ p)
+    (hq : 0 ≤ q) :
+    ENNReal.ofReal a ^ p * ENNReal.ofReal b ^ q = ENNReal.ofReal (a ^ p * b ^ q) := by
+  rw [ofReal_rpow_of_nonneg ha hp, ofReal_rpow_of_nonneg hb hq,
+    ofReal_mul (Real.rpow_nonneg ha p)]
+
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :
     min x y ≤ x ^ (1 - p) * y ^ p :=
@@ -198,6 +258,17 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
+
+/-- Since `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` gives
+`a ^ p ≤ b ^ (p - q) * a ^ q`, trading the power `p` of `a` for the power `q`. For `0 < p` the
+case `a = 0` holds trivially, so only `a ≠ ∞` is assumed. -/
+theorem rpow_le_rpow_sub_mul_rpow {a b : ℝ≥0∞} {p q : ℝ} (hp : 0 < p) (ha : a ≠ ∞)
+    (h : a ^ (p - q) ≤ b ^ (p - q)) : a ^ p ≤ b ^ (p - q) * a ^ q := by
+  rcases eq_or_ne a 0 with rfl | ha0
+  · rw [zero_rpow_of_pos hp]
+    exact zero_le
+  rw [← sub_add_cancel p q, rpow_add _ _ ha0 ha, add_sub_cancel_right]
+  gcongr
 
 /-- For `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to
 `x`. -/
@@ -239,7 +310,7 @@ agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
 theorem ofReal_inv_sqrt_le_enorm_rpow (x : ℝ) : ENNReal.ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹ : ℝ) := by
   rcases le_or_gt x 0 with hx | hx
   · simp [Real.sqrt_eq_zero'.mpr hx]
-  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.enorm_of_nonneg hx.le]
+  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.eNorm_of_nonneg hx.le]
   norm_num
 
 /-- If `y > 0` and `y³ ≤ 2 |d|`, then `1 / √d ≤ √2 y^(-3/2)`, as values in `ℝ≥0∞`. This is the
@@ -428,7 +499,7 @@ at `0`. -/
 theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup E] (c : ℝ≥0)
     {a : ℝ} (ha : 0 < a) : Filter.Tendsto (fun x : E ↦ c * ‖x‖₊ ^ a) (𝓝 0) (𝓝 0) := by
   have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
-    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnnorm)
+    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnNorm)
   simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
 
 end TauCeti

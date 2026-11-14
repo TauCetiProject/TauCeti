@@ -59,7 +59,7 @@ variable {R : Type uR} {C : Type uC} [CommRing R] [AddCommGroup C] [Module R C]
 coassociative coproduct `Δ` of degree zero and a differential `d` of degree one which squares to
 zero and satisfies the Koszul-signed co-Leibniz rule `Δ ∘ d = (d ⊗ 1 + τ ⊗ d) ∘ Δ`, where `τ`
 multiplies an element of degree `p` by `(-1) ^ p`. -/
-structure IsNonCounitalDGCoalgebra (G : InternalGrading R C) (Δ : C →ₗ[R] C ⊗[R] C)
+structure IsNonCounitalDGCoalgebra (G : InternalGrading R C ℤ) (Δ : C →ₗ[R] C ⊗[R] C)
     (d : C →ₗ[R] C) : Prop where
   /-- The coproduct is coassociative. -/
   coassoc : (TensorProduct.assoc R C C C).toLinearMap ∘ₗ Δ.rTensor C ∘ₗ Δ = Δ.lTensor C ∘ₗ Δ
@@ -74,7 +74,7 @@ structure IsNonCounitalDGCoalgebra (G : InternalGrading R C) (Δ : C →ₗ[R] C
 
 namespace IsNonCounitalDGCoalgebra
 
-variable {G : InternalGrading R C} {Δ : C →ₗ[R] C ⊗[R] C} {d : C →ₗ[R] C}
+variable {G : InternalGrading R C ℤ} {Δ : C →ₗ[R] C ⊗[R] C} {d : C →ₗ[R] C}
 
 /-- Coassociativity, on elements. -/
 theorem coassoc_apply (h : IsNonCounitalDGCoalgebra G Δ d) (c : C) :

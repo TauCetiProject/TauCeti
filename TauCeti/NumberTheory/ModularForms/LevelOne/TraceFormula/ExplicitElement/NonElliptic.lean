@@ -108,7 +108,7 @@ private theorem eq_one_of_le_neg_le {a b c d : ℤ} (htr : a + d = t) (hdet : a 
     (hn : 0 < n) (ht : n < t) (hc : 0 ≤ c) (hca : c < a) (h₁ : a - d ≤ -b) (h₂ : -b ≤ c) :
     a = 1 := by
   -- `-b c = a² - a t + n`, and `4 (-b c) = (a - d)² - (t² - 4 n)` with `t² - 4 n ≥ (n - 1)²`
-  have hf : -b * c = a ^ 2 - a * t + n := by rw [← htr, ← hdet]; ring
+  have _ : -b * c = a ^ 2 - a * t + n := by rw [← htr, ← hdet]; ring
   have hD : (n - 1) ^ 2 ≤ t ^ 2 - 4 * n := by nlinarith
   rcases lt_or_ge a d with had | had
   · -- `-b c ≥ (a - d) c ≥ (a - d) (a - 1)`, so `(a - 1)² ≤ n - t + 1 ≤ 0`
@@ -122,7 +122,6 @@ private theorem eq_one_of_le_neg_le {a b c d : ℤ} (htr : a + d = t) (hdet : a 
     have h₄ : (-b) * (-b) ≤ -b * c := mul_le_mul_of_nonneg_left h₂ (by omega)
     have h₅ : t ^ 2 - 4 * n = 0 := by nlinarith
     have h₆ : n = 1 := by nlinarith [sq_nonneg (n - 1)]
-    have h₇ : (a - d) ^ 2 = 0 := by nlinarith
     have : a = d := by nlinarith [sq_nonneg (a - d)]
     nlinarith
 
@@ -189,7 +188,7 @@ private theorem sum_range_weight_upperTriangular (N : ℕ) (hN : 0 < N) :
   have hw : ∀ k ∈ Finset.range N, ((weight !![1, (k : ℤ); 0, (N : ℤ)] : ℤ) : ℚ) =
       12 * upperTriangularCoeff ((1 : ℕ) : ℤ) (k : ℤ) N := by
     intro k _
-    rw [weight_upperTriangular _ _ _ one_pos (by omega), upperTriangularCoeff_def]
+    rw [weight_upperTriangular _ _ _ one_pos, upperTriangularCoeff_def]
     push_cast
     split_ifs <;> norm_num
   rw [← Int.cast_inj (α := ℚ), Int.cast_sum, Finset.sum_congr rfl hw, ← Finset.mul_sum,
@@ -228,7 +227,7 @@ private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
     simp only [Function.mem_support, ne_eq, ite_eq_right_iff, Classical.not_imp] at hM
     obtain ⟨⟨ha, hc⟩, hne⟩ := hM
     obtain ⟨htr, -⟩ := mem_traceDetFiber_fin_two.mp M.2
-    rw [weight_upperTriangular _ _ _ one_pos (by omega)] at hne
+    rw [weight_upperTriangular _ _ _ one_pos] at hne
     have hb : 0 ≤ M.1 0 1 ∧ M.1 0 1 < N := by split_ifs at hne <;> omega
     refine Finset.mem_image.mpr ⟨(M.1 0 1).toNat, Finset.mem_range.mpr (by omega),
       Subtype.ext (Eq.trans ?_ (eta_fin_two M.1).symm)⟩

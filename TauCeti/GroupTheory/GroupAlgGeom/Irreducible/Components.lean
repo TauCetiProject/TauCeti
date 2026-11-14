@@ -22,12 +22,19 @@ Every irreducible closed set is algebraic
 (`TauCeti.GroupAlgGeom.V_I_eq_of_isIrreducible_of_isClosed`), so over an equationally Noetherian
 group, every closed set `Y ⊆ H^X` is an irredundant finite union `Y₁ ∪ ⋯ ∪ Yₘ` of irreducible
 algebraic sets. The `Yᵢ` are the maximal irreducible subsets of `Y`, so the
-decomposition is unique (`TauCeti.eq_setOf_maximal_isIrreducible_of_isAntichain`).
+decomposition is unique (`TauCeti.eq_setOf_maximal_isIrreducible_of_isAntichain`). Each `Yᵢ` is
+the solution set of a finite system, and two irredundant families of systems for `Y` have the same
+solution sets up to a bijection of the indices (`TauCeti.exists_equiv_eq_of_iUnion_eq`, solution
+sets being closed). More generally, if the irreducible solution sets of finitely many systems
+cover `Y`, possibly with repetitions and with members contained in others, the components of `Y`
+are the inclusion-maximal members of the cover (`TauCeti.maximal_isIrreducible_subset_iUnion_iff`).
 
 If the solution set of `S` is covered by those of systems `Tᵢ`, contained in it, the coordinate
 group `G_{R(S)}` embeds in `∏ᵢ G_{R(Tᵢ)}` compatibly with the coefficients, because
 `Rad_H(S) = ⋂ᵢ Rad_H(Tᵢ)`. Applied to the irreducible components, this embeds the coordinate group
-of an algebraic set in the product of the coordinate groups of its components.
+of an algebraic set in the product of the coordinate groups of its components. Over a domain `H`
+no Noetherian hypothesis is needed for two pieces: the union `V_H(S) ∪ V_H(T)` is cut out by
+`unionEquations S T`, and its coordinate group embeds in `G_{R(S)} × G_{R(T)}`.
 
 ## Main definitions
 
@@ -39,16 +46,20 @@ of an algebraic set in the product of the coordinate groups of its components.
   Noetherian if and only if the Zariski topology on `H^X` is Noetherian for every finite `X`.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_irreducible_decomposition`: closed sets
   are irredundant finite unions of irreducible algebraic sets.
+* `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_finite_irreducible_systems`: closed sets
+  are irredundant finite unions of irreducible solution sets of finite systems.
 * `TauCeti.GroupAlgGeom.CoordGroup.toPi_injective`: the coordinate group embeds in the product of
   the coordinate groups of a covering family.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_injective_coordGroup_toPi`: the coordinate
   group of an algebraic set embeds in the product of those of its irreducible components.
+* `TauCeti.GroupAlgGeom.CoordGroup.exists_injective_toPi_unionEquations`: over a domain, the
+  coordinate group of `V_H(S) ∪ V_H(T)` embeds in `G_{R(S)} × G_{R(T)}`.
 
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §3.6, Proposition 10, Theorem D1, Corollaries 10–11
-  and Proposition 12.
+  and ideal theory*, J. Algebra 219 (1999), §3.1, Lemma 6; §3.6, Proposition 10, Theorem D1,
+  Corollaries 10–11 and Proposition 12.
 -/
 
 public section
@@ -135,6 +146,41 @@ theorem IsEquationallyNoetherian.exists_irreducible_decomposition
   exact ⟨𝒴, hfin, fun Z hZ ↦ ⟨hi Z hZ, V_I_eq_of_isIrreducible_of_isClosed (hi Z hZ) (hc Z hZ)⟩,
     hanti, rfl⟩
 
+/-- Over an equationally Noetherian group, every Zariski closed set in finitely many variables is
+an irredundant finite union of irreducible solution sets `V_H(T₁), …, V_H(Tₘ)` of *finite*
+systems `Tᵢ`. -/
+theorem IsEquationallyNoetherian.exists_finite_irreducible_systems
+    (h : IsEquationallyNoetherian ι) [Finite X] {Y : Set (X → H)}
+    (hY : @IsClosed (X → H) (zariskiTopology ι X) Y) :
+    ∃ (m : ℕ) (T : Fin m → Set (GX G X)), (∀ i, (T i).Finite) ∧
+      (∀ i, @IsIrreducible (X → H) (zariskiTopology ι X) (V ι (T i))) ∧
+      (∀ i j, V ι (T i) ⊆ V ι (T j) → i = j) ∧ Y = ⋃ i, V ι (T i) := by
+  obtain ⟨𝒴, hfin, hirr, hanti, rfl⟩ := h.exists_irreducible_decomposition hY
+  -- Enumerate the components and take finite subsystems of their ideals as defining systems.
+  have := hfin.to_subtype
+  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin 𝒴
+  choose T hTfin hV using fun i : Fin m ↦
+    (h.exists_finite (I ι (e.symm i : Set (X → H)) : Set (GX G X))).imp fun _ hT ↦ hT.2
+  have hVT (i : Fin m) : V ι (T i) = e.symm i := (hV i).trans (hirr _ (e.symm i).2).2
+  refine ⟨m, T, hTfin, fun i ↦ (hVT i).symm ▸ (hirr _ (e.symm i).2).1,
+    fun i j hij ↦ e.symm.injective (Subtype.ext ?_), ?_⟩
+  · rw [hVT, hVT] at hij
+    exact hanti.eq (e.symm i).2 (e.symm j).2 hij
+  · simp_rw [hVT, Set.sUnion_eq_iUnion]
+    exact (e.symm.surjective.iUnion_comp _).symm
+
+/-- The maximal irreducible subsets of a finite set of tuples of coefficients are its points.
+The enumeration of the points may be empty or repeat points. -/
+theorem maximal_isIrreducible_subset_range_comp_iff {κ : Type*} [Finite κ] (g : κ → X → G)
+    {Z : Set (X → H)} :
+    Maximal (fun Z ↦ @IsIrreducible (X → H) (zariskiTopology ι X) Z ∧
+      Z ⊆ Set.range fun k ↦ (ι ∘ g k : X → H)) Z ↔ ∃ k, Z = {(ι ∘ g k : X → H)} := by
+  let := zariskiTopology ι X
+  rw [← Set.iUnion_singleton_eq_range, maximal_isIrreducible_subset_iUnion_iff
+    (fun k ↦ isClosed_singleton_comp (g k)) fun _ ↦ isIrreducible_singleton]
+  exact exists_congr fun k ↦ and_iff_left fun l hkl ↦ by
+    rw [Set.singleton_subset_singleton.1 hkl]
+
 /-! ### Coordinate groups of coverings -/
 
 namespace CoordGroup
@@ -169,6 +215,19 @@ theorem toPi_injective {S : Set (GX G X)} {T : κ → Set (GX G X)} (hT : ∀ i,
   rw [I_iUnion]
   exact Subgroup.mem_iInf.2 hw
 
+/-- **The coordinate group of a union embeds in the product.** Over a domain `H` over `G`, the
+solution set of `unionEquations S T` is `V_H(S) ∪ V_H(T)` (`V_unionEquations`), and the canonical
+map from its coordinate group to the product of `G_{R(S)}` and `G_{R(T)}`, indexed by `Fin 2`, is
+injective. -/
+theorem exists_injective_toPi_unionEquations (hdom : IsGDomain ι) (S T : Set (GX G X)) :
+    ∃ hT : ∀ i, V ι (![S, T] i) ⊆ V ι (unionEquations S T),
+      Function.Injective (toPi ι (unionEquations S T) ![S, T] hT) := by
+  refine ⟨Fin.forall_fin_two.2 ⟨Set.subset_union_left.trans (union_subset_V_unionEquations S T),
+    Set.subset_union_right.trans (union_subset_V_unionEquations S T)⟩, toPi_injective _ ?_⟩
+  rw [V_unionEquations hdom]
+  exact Set.union_subset (Set.subset_iUnion_of_subset 0 le_rfl)
+    (Set.subset_iUnion_of_subset 1 le_rfl)
+
 end CoordGroup
 
 /-- Over an equationally Noetherian group, the solution set of a system `S` in finitely many
@@ -181,19 +240,8 @@ theorem IsEquationallyNoetherian.exists_injective_coordGroup_toPi
       (∀ i, @IsIrreducible (X → H) (zariskiTopology ι X) (V ι (T i))) ∧
       (∀ i j, V ι (T i) ⊆ V ι (T j) → i = j) ∧ V ι S = ⋃ i, V ι (T i) ∧
       Function.Injective (CoordGroup.toPi ι S T hT) := by
-  obtain ⟨𝒴, hfin, hirr, hanti, hS⟩ := h.exists_irreducible_decomposition (isClosed_V S)
-  -- Enumerate the components and take their ideals as defining systems.
-  have := hfin.to_subtype
-  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin 𝒴
-  let T : Fin m → Set (GX G X) := fun i ↦ I ι (e.symm i : Set (X → H))
-  have hVT (i : Fin m) : V ι (T i) = e.symm i := (hirr _ (e.symm i).2).2
-  have hU : V ι S = ⋃ i, V ι (T i) := by
-    simp_rw [hVT, hS, Set.sUnion_eq_iUnion]
-    exact (e.symm.surjective.iUnion_comp _).symm
+  obtain ⟨m, T, -, hirr, hinj, hU⟩ := h.exists_finite_irreducible_systems (isClosed_V S)
   have hT (i : Fin m) : V ι (T i) ⊆ V ι S := hU ▸ Set.subset_iUnion (fun j ↦ V ι (T j)) i
-  refine ⟨m, T, hT, fun i ↦ (hVT i).symm ▸ (hirr _ (e.symm i).2).1,
-    fun i j hij ↦ e.symm.injective (Subtype.ext ?_), hU, CoordGroup.toPi_injective hT hU.le⟩
-  rw [hVT, hVT] at hij
-  exact hanti.eq (e.symm i).2 (e.symm j).2 hij
+  exact ⟨m, T, hT, hirr, hinj, hU, CoordGroup.toPi_injective hT hU.le⟩
 
 end TauCeti.GroupAlgGeom
