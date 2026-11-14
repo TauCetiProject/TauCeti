@@ -75,6 +75,7 @@ section LocalMass
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Localization of the mass bound.** If the support of a test `φ` is covered by finitely many
 open sets `W i`, and `‖φ‖ ≤ c i` on `W i`, then `‖T φ‖ ≤ ∑ i, localMass T (W i) * c i`. -/
 theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
@@ -98,6 +99,7 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
         rw [Finset.sum_coe_sort s fun i => localMass T (W i) * c i]
         exact Finset.sum_le_sum_of_subset (Finset.subset_univ s)
 
+omit [FiniteDimensional ℝ E] in
 /-- The local mass is subadditive on pairs of open sets. -/
 theorem localMass_union_le {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
     [LinearMapClass 𝓖 ℝ 𝓓^{n}(Ω, F) V] (T : 𝓖) {U U' : Set E} (hU : IsOpen U)
@@ -108,6 +110,7 @@ theorem localMass_union_le {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) V]
     (fun _ x _ => by simpa [← ofReal_norm] using hφ1 x)
   simpa [add_comm] using h
 
+omit [FiniteDimensional ℝ E] in
 /-- **Additivity of the local mass on disjoint open sets.** -/
 theorem localMass_union_of_disjoint (T : 𝓕) {U U' : Set E} (hU : IsOpen U) (hU' : IsOpen U')
     (h : Disjoint U U') : localMass T (U ∪ U') = localMass T U + localMass T U' :=

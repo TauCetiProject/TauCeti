@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 
@@ -40,12 +41,12 @@ real test functions it is the product of the pairings,
 
 `(S ⊗ T) ((x, y) ↦ φ x ψ y) = S φ * T ψ`,
 
-and when `D` is also finite-dimensional and `V = Ω ×ˢ O` it is the only distribution with this
-property, because such tensor products span a dense subspace of the test functions on `Ω ×ˢ O`
-(`TestFunction.ext_prodSMulCLM`). The tensor product is bilinear and satisfies the Leibniz rule
-`∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`; when `D` is also finite-dimensional it is
-supported in the product of the supports. The tensor product of the point masses at `a` and `b`
-is the point mass at `(a, b)`.
+and when `V = Ω ×ˢ O` it is the only distribution with this property: when `D` is
+finite-dimensional, such tensor products span a dense subspace of the test functions on `Ω ×ˢ O`
+(`TestFunction.ext_prodSMulCLM`), and otherwise every test function on `V` is zero. The tensor
+product is bilinear, satisfies the Leibniz rule
+`∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`, and is supported in the product of the
+supports. The tensor product of the point masses at `a` and `b` is the point mass at `(a, b)`.
 
 ## Main declarations
 
@@ -429,11 +430,16 @@ theorem complexPairing_tensorProduct_eq_mul (hV' : (Ω : Set E) ×ˢ (O : Set D)
 /-- **Uniqueness of the tensor product.** When `V = Ω ×ˢ O`, the tensor product `S ⊗ T` is the
 only distribution on `V` taking the value `S φ * T ψ` on every tensor product
 `(x, y) ↦ φ x ψ y` of real test functions. -/
-theorem tensorProduct_eq [FiniteDimensional ℝ D]
-    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {U : 𝓓'(V, ℂ)}
+theorem tensorProduct_eq (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) {U : 𝓓'(V, ℂ)}
     (h : ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), U (prodSMulCLM ψ hV.symm.subset φ) = S φ * T ψ) :
-    S.tensorProduct T hV.subset = U :=
-  ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
+    S.tensorProduct T hV.subset = U := by
+  by_cases hD : FiniteDimensional ℝ D
+  · exact ext_prodSMulCLM hV fun ψ φ ↦ by rw [tensorProduct_prodSMulCLM, h]
+  -- Otherwise `E × D` is infinite-dimensional, so every test function on `V` is zero.
+  have hED : ¬FiniteDimensional ℝ (E × D) := fun _ ↦
+    hD (Module.Finite.of_surjective (LinearMap.snd ℝ E D) LinearMap.snd_surjective)
+  ext φ
+  simp [eq_zero_of_not_finiteDimensional φ hED]
 
 @[simp]
 theorem add_tensorProduct (S' : 𝓓'(Ω, ℂ)) :
@@ -483,7 +489,7 @@ theorem tensorProduct_delta (a : E) (b : D) :
   simp [tensorProduct_apply]
 
 /-- **Support of the tensor product.** `supp (S ⊗ T) ⊆ supp S ×ˢ supp T`. -/
-theorem dsupport_tensorProduct_subset [FiniteDimensional ℝ D] :
+theorem dsupport_tensorProduct_subset :
     dsupport (S.tensorProduct T hV) ⊆ dsupport S ×ˢ dsupport T := by
   refine sInter_subset_of_mem ⟨fun φ hφ ↦ ?_, isClosed_dsupport.prod isClosed_dsupport⟩
   -- `B` is the first projection of the part of the support of `φ` lying over `supp T`. Off `B`
