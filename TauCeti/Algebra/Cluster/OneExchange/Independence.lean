@@ -115,7 +115,7 @@ theorem map_exchangeProduct {A F : Type*} [Monoid A] [FunLike F Bˣ Aˣ]
 
 end Units
 
-namespace SubmonoidClass
+namespace TauCeti
 
 variable {B S : Type*} [Monoid B] [SetLike S B] [SubmonoidClass S B] (C : S) (x E : Bˣ)
 
@@ -128,11 +128,15 @@ theorem exchangeProduct_mem
   | zero => simp
   | succ n ih => simpa only [Units.exchangeProduct_succ', Units.val_mul] using mul_mem hE (hx _ ih)
 
-end SubmonoidClass
+end TauCeti
 
-namespace SubsemiringClass
+namespace TauCeti
 
 variable {B S : Type*} [Semiring B] [SetLike S B] [SubsemiringClass S B] (C : S) (x E : Bˣ)
+
+/-- An element of a `SetLike` subtype acts by its coercion to the ambient type. -/
+private theorem SetLike.coe_smul {B S α : Type*} [SetLike S B] [SMul B α]
+    (C : S) (c : C) (a : α) : c • a = (c : B) • a := rfl
 
 /-- Independence of natural powers of `x` implies independence of natural powers of
 `E * x⁻¹`, with left coefficients in `C`. The numerator need only be a unit in the
@@ -143,15 +147,14 @@ theorem linearIndependent_mul_inv_pow
     LinearIndependent C (fun n : ℕ ↦ (↑((E * x⁻¹) ^ n) : B)) := by
   classical
   let p (n : ℕ) : C := ⟨Units.exchangeProduct x E n,
-    SubmonoidClass.exchangeProduct_mem C x E hx hE n⟩
+    exchangeProduct_mem C x E hx hE n⟩
   have hp (n : ℕ) : IsRightRegular (p n) :=
     fun _ _ h ↦ Subtype.ext <| (Units.exchangeProduct x E n).isRegular.right
       (congrArg ((↑) : C → B) h)
   have hi := ((Units.linearIndependent_zpow_iff x).mpr hli).comp (fun n : ℕ ↦ -(n : ℤ))
     (neg_injective.comp Nat.cast_injective)
   have hsmul (c : C) (b : B) : c • b = (c : B) * b := by
-    change (c : B) • b = _
-    rw [smul_eq_mul]
+    rw [SetLike.coe_smul, smul_eq_mul]
   have hfactor : (p • ((fun n : ℤ ↦ (↑(x ^ n) : B)) ∘ fun n : ℕ ↦ -(n : ℤ))) =
       fun n : ℕ ↦ (↑((E * x⁻¹) ^ n) : B) := by
     funext n
@@ -169,4 +172,4 @@ theorem linearIndependent_mul_inv_zpow
   (Units.linearIndependent_zpow_iff (R := C) _).mpr
     (linearIndependent_mul_inv_pow C x E hx hE ((Units.linearIndependent_zpow_iff x).mp hli))
 
-end SubsemiringClass
+end TauCeti
