@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Function.Floor
 /-!
 # The mass measure of a functional of locally finite mass
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E` and let
+Let `Ω` be an open set of a real normed space `E` and let
 `T : 𝓓^{n}(Ω, F) → ℝ` be a real-linear map on `F`-valued test functions with locally finite mass
 (`Distribution.HasLocallyFiniteMass`). With `F = E [⋀^Fin k]→L[ℝ] ℝ` this is a `k`-current of
 locally finite mass. This file constructs its **mass measure** `‖T‖`, a regular Borel measure on
@@ -24,9 +24,10 @@ the subtype `Ω`, finite on compact subsets of `Ω`, such that:
 * `|T φ| ≤ ∫ ‖φ‖ d‖T‖` for every test `φ`;
 * `‖T‖` is the least outer regular measure with this domination property.
 
-The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`. The
-local-mass estimates, the construction of `‖T‖` and its values on open sets do not use finite
-dimension; its regularity, the domination and the minimality do.
+The measure lives on `Ω` and not on `E`: it need not be finite near the frontier of `Ω`. None of
+this uses finite dimension: on an infinite-dimensional space every test function is zero, so
+`T` has zero mass and `‖T‖` is the zero measure
+(`Distribution.massMeasure_eq_zero_of_not_finiteDimensional`).
 No Radon representation is claimed for functionals that do not have locally finite mass; for
 these `Distribution.massMeasure` is the zero measure by convention.
 
@@ -45,6 +46,8 @@ them by open sets of almost the same measure.
 * `Distribution.massMeasure`: the mass measure `‖T‖`.
 * `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
   sets and its total mass.
+* `Distribution.massMeasure_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space
+  the mass measure is zero.
 * `Distribution.lintegral_massMeasure_le_mul_mass`: a function bounded by `L` has integral at most
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
@@ -255,18 +258,30 @@ theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU :
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
   simpa using massMeasure_preimage_coe hT isOpen_univ
 
+/-- On an infinite-dimensional space the mass measure is zero: every test function is zero, so
+`T` has zero mass. -/
+theorem massMeasure_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional ℝ E) :
+    massMeasure T = 0 := by
+  by_cases hT : HasLocallyFiniteMass T
+  · rw [← Measure.measure_univ_eq_zero, massMeasure_univ hT, mass_eq_zero_iff]
+    exact funext fun φ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
+  · exact massMeasure_of_not_hasLocallyFiniteMass hT
+
+/-- The mass measure is regular. In finite dimension `Ω` is locally compact; otherwise the mass
+measure is zero. -/
+instance : (massMeasure T).Regular := by
+  by_cases hE : FiniteDimensional ℝ E
+  · have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+    unfold massMeasure
+    split_ifs <;> infer_instance
+  · rw [massMeasure_eq_zero_of_not_finiteDimensional hE]
+    infer_instance
+
 /-- A function bounded by `L` on `Ω` has integral at most `L M(T)` against the mass measure. -/
 theorem lintegral_massMeasure_le_mul_mass (hT : HasLocallyFiniteMass T) {f : Ω → ℝ≥0∞}
     {L : ℝ≥0∞} (hf : ∀ x, f x ≤ L) : ∫⁻ x, f x ∂massMeasure T ≤ L * mass T := by
   calc ∫⁻ x, f x ∂massMeasure T ≤ ∫⁻ _, L ∂massMeasure T := lintegral_mono hf
     _ = L * mass T := by rw [lintegral_const, massMeasure_univ hT]
-
-variable [FiniteDimensional ℝ E]
-
-instance : (massMeasure T).Regular := by
-  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  unfold massMeasure
-  split_ifs <;> infer_instance
 
 /-- The level-set estimate behind the domination: if `W` is an open neighbourhood of the support
 of `φ` of finite mass `M`, then `‖T φ‖ ≤ ∫ ‖φ‖ d‖T‖ + ε * (3 * M + 1)` for every `ε > 0`. -/
@@ -332,12 +347,10 @@ private theorem enorm_apply_le_lintegral_add_mul (hT : HasLocallyFiniteMass T)
 theorem enorm_apply_le_lintegral_massMeasure (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T := by
   -- A neighbourhood `W` of the support of `φ` of finite measure `M`.
-  obtain ⟨W, hW, hφW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure
-    φ.hasCompactSupport.isCompact Ω.isOpen φ.tsupport_subset
-  set M := massMeasure T ((↑) ⁻¹' W)
-  have hM : M ≠ ⊤ := (massMeasure_preimage_coe hT hW).trans_ne <|
-    ne_top_of_le_ne_top ((hasLocallyFiniteMass_iff_localMass_ne_top T).1 hT _ hWc hWΩ)
-      (localMass_mono subset_closure)
+  obtain ⟨W, hφW, hWM⟩ :=
+    hT.exists_open_localMass_ne_top φ.hasCompactSupport.isCompact φ.tsupport_subset
+  set M := massMeasure T ((↑) ⁻¹' (W : Set E))
+  have hM : M ≠ ⊤ := (massMeasure_preimage_coe hT W.isOpen).trans_ne hWM
   -- Let `ε → 0` in the level-set estimate.
   set I := ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T
   have h0 : Tendsto ENNReal.ofReal (𝓝[>] (0 : ℝ)) (𝓝 0) := ENNReal.ofReal_zero ▸
@@ -345,7 +358,7 @@ theorem enorm_apply_le_lintegral_massMeasure (hT : HasLocallyFiniteMass T) (φ :
   have hlim : Tendsto (fun ε : ℝ => I + ENNReal.ofReal ε * (3 * M + 1)) (𝓝[>] 0) (𝓝 I) := by
     simpa using (ENNReal.Tendsto.mul_const h0 (Or.inr (by finiteness : 3 * M + 1 ≠ ⊤))).const_add I
   exact ge_of_tendsto hlim <| eventually_nhdsWithin_of_forall fun ε hε =>
-    enorm_apply_le_lintegral_add_mul hT φ hW hφW hM hε
+    enorm_apply_le_lintegral_add_mul hT φ W.isOpen hφW hM hε
 
 /-- **Minimality of the mass measure.** Every outer regular measure `ν` on `Ω` dominating
 evaluation, `‖T φ‖ ≤ ∫ ‖φ‖ dν` for every test `φ`, is at least the mass measure. -/

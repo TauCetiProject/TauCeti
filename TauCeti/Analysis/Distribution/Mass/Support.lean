@@ -141,8 +141,6 @@ theorem support_massMeasure (hT : HasLocallyFiniteMass T) :
       ⟨(↑) ⁻¹' U, (hU.preimage continuous_subtype_val).mem_nhds hxU,
         (massMeasure_preimage_coe_eq_zero_iff hT hU).2 hvan⟩
 
-variable [FiniteDimensional ℝ E]
-
 /-- The mass measure gives zero mass to the complement of the distributional support. -/
 @[simp]
 theorem massMeasure_compl_dsupport (hT : HasLocallyFiniteMass T) :

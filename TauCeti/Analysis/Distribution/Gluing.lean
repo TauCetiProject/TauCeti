@@ -23,10 +23,11 @@ With `F = ℝ` this glues distributions; with `F = E [⋀^Fin k]→L[ℝ] ℝ` a
 `k`-currents. The cover is arbitrary: it need not be locally finite or countable.
 
 The glued map is `S φ = ∑ i ∈ s, T i (χ i • φ)` for finitely many smooth cutoffs `χ i`, supported in
-`U i`, whose sum is one on the support of `φ` (`IsCompact.exists_finset_sum_contDiff_eq_one`).
-Compatibility shows that this value does not depend on the cutoffs: for a second family `χ'`, both
-sums equal `∑ i, ∑ j, T (χ i • χ' j • φ)`. Using one family of cutoffs for all tests supported in a
-fixed compact set gives continuity for the LF topology. Uniqueness is the localization principle
+`U i`, whose sum is one on the support of `φ`
+(`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Compatibility shows that this
+value does not depend on the cutoffs: for a second family `χ'`, both sums equal
+`∑ i, ∑ j, T (χ i • χ' j • φ)`. Using one family of cutoffs for all tests supported in a fixed
+compact set gives continuity for the LF topology. Uniqueness is the localization principle
 `AddMonoidHom.eq_zero_of_locally_vanishing`. On an infinite-dimensional space every test function
 is zero (`TestFunction.eq_zero_of_not_finiteDimensional`), and the glued map is zero.
 
@@ -138,11 +139,12 @@ theorem existsUnique_gluing (hU : ⨆ i, U i = Ω)
       simp [eq_zero_of_not_finiteDimensional φ hE]
   have hUΩ (i : ι) : U i ≤ Ω := hU ▸ le_iSup U i
   -- Finitely many smooth cutoffs subordinate to the cover summing to one on each compact `K ⊆ Ω`.
-  choose s χ hχ' hχU' hsum using fun (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) ↦
-    hK.exists_finset_sum_contDiff_eq_one (fun i ↦ (U i).isOpen) (by rwa [← Opens.coe_iSup, hU])
-  have hχ K hK hKΩ i : ContDiff ℝ n (χ K hK hKΩ i) := (hχ' K hK hKΩ i).of_le (by simp)
+  choose s χ hχ' _ _ hsum using fun (K : Set E) (hK : IsCompact K) (hKΩ : K ⊆ Ω) ↦
+    hK.exists_contDiff_tsupport_subset_finset_sum_eq_one (fun i ↦ (U i).isOpen)
+      (by rwa [← Opens.coe_iSup, hU])
+  have hχ K hK hKΩ i : ContDiff ℝ n (χ K hK hKΩ i) := (hχ' K hK hKΩ i).1.of_le (by simp)
   have hχU K hK hKΩ i : tsupport (χ K hK hKΩ i) ∩ Ω ⊆ U i :=
-    inter_subset_left.trans (hχU' K hK hKΩ i)
+    inter_subset_left.trans (hχ' K hK hKΩ i).2.2
   -- The glued value on `φ`, computed with the cutoffs chosen for `tsupport φ`.
   let S₀ : 𝓓^{n}(Ω, F) → V := fun φ ↦
     ∑ i ∈ s _ φ.hasCompactSupport φ.tsupport_subset,
