@@ -28,7 +28,10 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
-polynomials at `I` are closed under finite products, including the empty product `1`.
+polynomials at `I` are monotone in `I` and closed under finite products, including the empty
+product `1`. Every monic divisor of a polynomial distinguished at `I` is distinguished at
+`I.radical`; in particular, distinguished polynomials at `I` are closed under taking monic factors
+if and only if `I` is radical.
 
 ## Main results
 
@@ -42,6 +45,13 @@ polynomials at `I` are closed under finite products, including the empty product
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
   `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
   polynomials are distinguished.
+* `Polynomial.IsWeaklyEisensteinAt.mono`, `Polynomial.IsDistinguishedAt.mono`: weak Eisensteinness
+  and distinguishedness are monotone in the ideal.
+* `Polynomial.IsDistinguishedAt.of_dvd_radical`, `Polynomial.IsDistinguishedAt.of_dvd`,
+  `Polynomial.Monic.isDistinguishedAt_mul_iff`: monic factors of polynomials distinguished at `I`
+  are distinguished at `I.radical`, hence at `I` when `I` is radical.
+* `Ideal.isRadical_iff_forall_isDistinguishedAt_of_dvd`: an ideal `I` is radical if and only if
+  distinguishedness at `I` is closed under monic divisors.
 -/
 
 public section
@@ -135,3 +145,102 @@ theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
   rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
 
 end Polynomial.IsDistinguishedAt
+
+namespace Polynomial
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] {I J : Ideal R} {f : R[X]}
+
+/-- Weak Eisensteinness at an ideal is monotone in the ideal. -/
+theorem IsWeaklyEisensteinAt.mono (hf : f.IsWeaklyEisensteinAt I) (hIJ : I ≤ J) :
+    f.IsWeaklyEisensteinAt J :=
+  ⟨fun hn ↦ hIJ (hf.mem hn)⟩
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {I J : Ideal R}
+
+/-- Distinguishedness at an ideal is monotone in the ideal. -/
+theorem IsDistinguishedAt.mono {f : R[X]} (hf : f.IsDistinguishedAt I) (hIJ : I ≤ J) :
+    f.IsDistinguishedAt J :=
+  ⟨hf.toIsWeaklyEisensteinAt.mono hIJ, hf.monic⟩
+
+/-- Over a prime ideal `P`, every monic divisor of a polynomial distinguished at `P` is
+distinguished at `P`: modulo `P` it is a monic divisor of `X ^ n` over an integral domain, hence
+a power of `X`. -/
+private theorem IsDistinguishedAt.of_dvd_of_isPrime {w p : R[X]} {P : Ideal R} [P.IsPrime]
+    (hw : w.IsDistinguishedAt P) (hp : p.Monic) (hpw : p ∣ w) : p.IsDistinguishedAt P := by
+  have := Ideal.Quotient.isDomain P
+  have hdvd : p.map (Ideal.Quotient.mk P) ∣ X ^ w.natDegree :=
+    hw.map_eq_X_pow ▸ Polynomial.map_dvd (Ideal.Quotient.mk P) hpw
+  obtain ⟨k, -, hk⟩ := (dvd_prime_pow Polynomial.prime_X w.natDegree).1 hdvd
+  have hpmap : p.map (Ideal.Quotient.mk P) = X ^ k :=
+    eq_of_monic_of_associated (hp.map _) (monic_X_pow k) hk
+  have hk_eq : k = p.natDegree := by
+    simpa [hp.natDegree_map] using congrArg natDegree hpmap.symm
+  refine ⟨⟨fun {n} hn ↦ Ideal.Quotient.eq_zero_iff_mem.1 ?_⟩, hp⟩
+  have hcoeff := congrArg (fun q ↦ q.coeff n) (hk_eq ▸ hpmap)
+  simpa [coeff_X_pow, hn.ne] using hcoeff
+
+/-- Every monic divisor of a polynomial distinguished at `I` is distinguished at `I.radical`. -/
+theorem IsDistinguishedAt.of_dvd_radical {w p : R[X]} (hw : w.IsDistinguishedAt I)
+    (hp : p.Monic) (hpw : p ∣ w) : p.IsDistinguishedAt I.radical := by
+  refine ⟨⟨fun {n} hn ↦ ?_⟩, hp⟩
+  rw [Ideal.radical_eq_sInf, Submodule.mem_sInf]
+  rintro P ⟨hIP, hP⟩
+  exact ((hw.mono hIP).of_dvd_of_isPrime hp hpw).mem hn
+
+/-- Over a radical ideal `I`, every monic divisor of a polynomial distinguished at `I` is
+distinguished at `I`. -/
+theorem IsDistinguishedAt.of_dvd {w p : R[X]} (hw : w.IsDistinguishedAt I) (hI : I.IsRadical)
+    (hp : p.Monic) (hpw : p ∣ w) : p.IsDistinguishedAt I :=
+  hI.radical ▸ hw.of_dvd_radical hp hpw
+
+/-- Over a radical ideal `I`, a product of two monic polynomials is distinguished at `I` if and
+only if each factor is distinguished at `I`. -/
+theorem Monic.isDistinguishedAt_mul_iff {f g : R[X]} (hf : f.Monic) (hg : g.Monic)
+    (hI : I.IsRadical) :
+    (f * g).IsDistinguishedAt I ↔ f.IsDistinguishedAt I ∧ g.IsDistinguishedAt I :=
+  ⟨fun h ↦ ⟨h.of_dvd hI hf (dvd_mul_right f g), h.of_dvd hI hg (dvd_mul_left g f)⟩,
+    fun ⟨h₁, h₂⟩ ↦ h₁.mul h₂⟩
+
+end CommRing
+
+end Polynomial
+
+namespace Ideal
+
+open scoped Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- **An ideal is radical if and only if distinguishedness at it is closed under monic divisors.**
+When `a ^ n ∈ I` with `n ≠ 0`, `X - C a` is a monic divisor of the distinguished polynomial
+`X ^ n - C (a ^ n)`. -/
+theorem isRadical_iff_forall_isDistinguishedAt_of_dvd (I : Ideal R) :
+    I.IsRadical ↔ ∀ ⦃w p : R[X]⦄, w.IsDistinguishedAt I → p.Monic → p ∣ w →
+      p.IsDistinguishedAt I := by
+  refine ⟨fun hI _ _ hw hp hpw ↦ hw.of_dvd hI hp hpw, fun h a ⟨n, han⟩ ↦ ?_⟩
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim a 0 ▸ I.zero_mem
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact I.eq_top_iff_one.2 (pow_zero a ▸ han) ▸ Submodule.mem_top
+  have hw : (Polynomial.X ^ n - Polynomial.C (a ^ n)).IsDistinguishedAt I := by
+    refine ⟨⟨fun {k} hk ↦ ?_⟩, Polynomial.monic_X_pow_sub_C (a ^ n) hn⟩
+    rw [Polynomial.natDegree_X_pow_sub_C] at hk
+    rw [Polynomial.coeff_sub, Polynomial.coeff_X_pow, ite_eq_right hk.ne, zero_sub,
+      Polynomial.coeff_C]
+    rcases eq_or_ne k 0 with rfl | hk0
+    · simpa using I.neg_mem han
+    · simp [hk0]
+  have hp := h hw (Polynomial.monic_X_sub_C a)
+    (map_pow Polynomial.C a n ▸ sub_dvd_pow_sub_pow Polynomial.X (Polynomial.C a) n)
+  have h0 := hp.mem (n := 0) (by simp)
+  exact I.neg_mem_iff.1 (by simpa using h0)
+
+end Ideal
+
+end
