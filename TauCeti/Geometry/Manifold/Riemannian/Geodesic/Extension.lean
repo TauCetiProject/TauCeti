@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.IntegralCurve.Extension
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -41,6 +42,10 @@ assumed about the completeness of the manifold.
 * `TauCeti.Manifold.IsGeodesicCurveOn.exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc`: a
   geodesic on `(a, b)` which is continuous on `[a, b]` agrees on `[a, b]` with a geodesic on an
   open interval containing `[a, b]`.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_contMDiff_eventuallyEq`: a geodesic on an open
+  interval agrees near any closed subset with a globally smooth curve.
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_contMDiff_isGeodesicCurveOn_Icc`: a geodesic on a
+  closed interval has a globally smooth extension preserving its endpoint velocities.
 
 ## References
 
@@ -63,6 +68,23 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {a b : ℝ}
+
+section SmoothExtension
+
+variable [I.Boundaryless] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A geodesic on a nonempty open preconnected set agrees near any closed subset with a curve
+smooth on the whole line. -/
+theorem IsGeodesicCurveOn.exists_contMDiff_eventuallyEq {γ : ℝ → M} {U K : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ U) (hU : IsOpen U) (hconn : IsPreconnected U)
+    (hU₀ : U.Nonempty) (hK : IsClosed K) (hKU : K ⊆ U) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧ ∀ t ∈ K, f =ᶠ[𝓝 t] γ := by
+  obtain ⟨c, hc⟩ := hU₀
+  exact hγ.contMDiffOn_infty.exists_contMDiff_eventuallyEq_of_starConvex hU
+    (hconn.ordConnected.convex.starConvex hc) hc hK hKU
+
+end SmoothExtension
 
 namespace IsGeodesicCurveOn
 
@@ -177,5 +199,33 @@ theorem exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc (hγ : IsGeodesicCurveO
     · exact heq₁ ⟨hat, htb⟩
 
 end IsGeodesicCurveOn
+
+variable [I.Boundaryless] [T2Space M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- A geodesic on a nondegenerate closed interval has a globally smooth extension agreeing on
+that interval, with the same velocity lift, including at the endpoints. -/
+theorem IsGeodesicCurveOn.exists_contMDiff_isGeodesicCurveOn_Icc
+    (hγ : IsGeodesicCurveOn I γ (Icc a b)) (hab : a < b) :
+    ∃ f : ℝ → M, ContMDiff 𝓘(ℝ) I ∞ f ∧ EqOn f γ (Icc a b) ∧
+      IsGeodesicCurveOn I f (Icc a b) ∧ ∀ u ∈ Icc a b,
+        curveVelocityLift I f u = curveVelocityLiftWithin I γ (Icc a b) u := by
+  have hγopen := hγ.mono (uniqueDiffOn_Ioo a b) Ioo_subset_Icc_self
+  obtain ⟨c, hc, d, hd, δ, hδ, hδγ⟩ :=
+    hγopen.exists_isGeodesicCurveOn_Ioo_of_continuousOn_Icc hab hγ.continuousOn
+  have hsub : Icc a b ⊆ Ioo c d := fun u hu ↦ ⟨hc.trans_le hu.1, hu.2.trans_lt hd⟩
+  obtain ⟨f, hf, hevent⟩ := hδ.exists_contMDiff_eventuallyEq isOpen_Ioo isPreconnected_Ioo
+    ⟨a, hsub (left_mem_Icc.2 hab.le)⟩ isClosed_Icc hsub
+  have heq : EqOn f γ (Icc a b) := fun u hu ↦ (hevent u hu).self_of_nhds.trans (hδγ hu)
+  refine ⟨f, hf, heq, hγ.congr heq, fun u hu ↦ ?_⟩
+  have hev : f =ᶠ[𝓝[Icc a b] u] γ := by
+    filter_upwards [self_mem_nhdsWithin] with t ht using heq ht
+  calc
+    curveVelocityLift I f u = curveVelocityLiftWithin I f (Icc a b) u := by
+      rw [curveVelocityLiftWithin_apply, curveVelocityLift_apply,
+        curveVelocityWithin_subset (subset_univ _) ((uniqueDiffOn_Icc hab) u hu)
+          ((hf.mdifferentiable (by simp)) u).mdifferentiableWithinAt,
+        curveVelocityWithin_univ]
+    _ = curveVelocityLiftWithin I γ (Icc a b) u := hev.curveVelocityLiftWithin_eq (heq hu)
 
 end TauCeti.Manifold

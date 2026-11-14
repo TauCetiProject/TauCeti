@@ -24,6 +24,9 @@ neighbourhood of a point has the germ there of a globally smooth map
 (`ContMDiffOn.exists_contMDiffMap_eventuallyEq`), with no paracompactness assumption.
 A smooth map on an open subset, extended arbitrarily outside it, stays smooth on that subset
 (`ContMDiffMap.contMDiffOn_extend`).
+For manifold-valued maps on an open star-convex subset of a finite-dimensional real space,
+`ContMDiffOn.exists_contMDiff_eventuallyEq_of_starConvex` gives a global map agreeing near
+any closed subset of the domain.
 A closed set inside an open set has a smooth `[0, 1]`-valued cutoff equal to one exactly on the
 closed set, with topological support in the open set
 (`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`).
@@ -52,6 +55,28 @@ theorem contMDiffOn_extend (U : TopologicalSpace.Opens M) (f : C^n⟮I, U; I', M
   exact f.contMDiff _
 
 end ContMDiffMap
+
+/-- A manifold-valued `C^n` map on an open star-convex subset of a finite-dimensional real
+space agrees near any closed subset of that set with a globally `C^n` map. -/
+theorem ContMDiffOn.exists_contMDiff_eventuallyEq_of_starConvex
+    {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {n : ℕ∞}
+    {γ : F → M} {U K : Set F} {c : F} (hγ : ContMDiffOn 𝓘(ℝ, F) I n γ U)
+    (hU : IsOpen U) (hstar : StarConvex ℝ c U) (hc : c ∈ U)
+    (hK : IsClosed K) (hKU : K ⊆ U) :
+    ∃ f : F → M, ContMDiff 𝓘(ℝ, F) I n f ∧ ∀ t ∈ K, f =ᶠ[𝓝 t] γ := by
+  obtain ⟨ρ, hρ1, hρ0, hρI⟩ := exists_contMDiffMap_one_nhds_of_subset_interior
+    𝓘(ℝ, F) hK (by rwa [hU.interior_eq]) (n := n)
+  have hφU (x : F) : c + ρ x • (x - c) ∈ U := by
+    by_cases hx : x ∈ U
+    · exact hstar.add_smul_sub_mem hx (hρI x).1 (hρI x).2
+    · simp [hρ0 x hx, hc]
+  refine ⟨fun x ↦ γ (c + ρ x • (x - c)), fun x ↦ ?_, fun t ht ↦ ?_⟩
+  · exact (hγ.contMDiffAt (hU.mem_nhds (hφU x))).comp x
+      (contMDiff_const.add (ρ.contMDiff.smul (contMDiff_id.sub contMDiff_const))).contMDiffAt
+  · filter_upwards [eventually_nhdsSet_iff_forall.1 hρ1 t ht] with x hx
+    simp [hx]
 
 variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
