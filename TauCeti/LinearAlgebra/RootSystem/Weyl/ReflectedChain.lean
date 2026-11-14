@@ -66,8 +66,9 @@ the direction `τ` splits into `sᵢ τ ⋗ τ`, a cover with bond `H(τ)`.
 * `TauCeti.IsAChain.exists_isAChain_simple_mul_last` and
   `TauCeti.IsAChain.exists_isAChain_simple_mul_head`: **Littelmann's chains at the ends of a
   reflected piece**.
-* `TauCeti.exists_isAChain_simple_mul_of_coroot'_pos`: the cover `u ⋖ sᵢ u` is an `a`-chain
-  exactly when `a H(u)` is an integer.
+* `TauCeti.exists_isAChain_simple_mul_of_coroot'_pos` and
+  `TauCeti.exists_isAChain_simple_mul_of_coroot'_neg`: the cover between `u` and `sᵢ u` is an
+  `a`-chain when `a H(u)` is an integer.
 
 ## References
 
@@ -207,6 +208,29 @@ theorem exists_isAChain_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantChambe
     (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)).snoc ⟨u, hu⟩ h,
     by simp, by simp, (isAChain_snoc_iff h).mpr ⟨isAChain_singleton _, ?_⟩⟩
   rwa [RelSeries.last_singleton, reflectionBond_simple_mul_smul_smul]
+
+omit [P.flip.IsReduced] in
+/-- **The cover `sᵢ u ⋖ u` is an `a`-chain when `a ⟨u λ, αᵢ^∨⟩` is an integer.** For a minimal coset
+representative `u` of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ < 0`, the saturated chain `u ⋗ sᵢ u` has the
+single bond `-⟨u λ, αᵢ^∨⟩`. -/
+theorem exists_isAChain_simple_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
+    {u : P.weylGroup}
+    (hu : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) u) {i : b.support}
+    (hi : P.coroot' i (u • lam) < 0) (ha : ∃ z : ℤ, a * P.coroot' i (u • lam) = z) :
+    ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
+      C.head.1 = u ∧ C.last.1 = (weylCoxeterSystem P b).simple i * u ∧ IsAChain a lam C := by
+  have hu' : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam)
+      ((weylCoxeterSystem P b).simple i * u) :=
+    isMinimalCosetRep_simple_mul_of_coroot'_ne_zero hu hi.ne
+  have hi' : 0 < P.coroot' i (((weylCoxeterSystem P b).simple i * u) • lam) := by
+    rwa [simple_mul_smul_eq_reflection, coroot'_reflection_self, neg_pos]
+  obtain ⟨z, hz⟩ := ha
+  obtain ⟨C, hhead, hlast, hC⟩ := exists_isAChain_simple_mul_of_coroot'_pos (a := a) hlam hu' hi'
+    ⟨-z, by
+      rw [simple_mul_smul_eq_reflection, coroot'_reflection_self]
+      push_cast at hz ⊢
+      linarith⟩
+  exact ⟨C, by rw [hhead, (weylCoxeterSystem P b).simple_mul_simple_cancel_left], hlast, hC⟩
 
 /-- **Integrality where an `a`-chain enters the positive side of a simple wall.** Let
 `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of `W / W_λ` and `αᵢ` a simple root with

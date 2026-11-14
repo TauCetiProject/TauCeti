@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
 import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 
 /-!
 # Faithful realization of Lakshmibai–Seshadri encodings
@@ -19,9 +20,10 @@ an injective map from encodings to timed presentations.
 If distinct realized orbit weights never lie in the same ray, the distinguished-presentation
 uniqueness theorem also recovers the timed presentation from the unparametrized path. Thus
 `LSPath.toPLPath_injective` identifies encodings with their realized paths, rather than merely
-counting presentations. This allows root operators on paths to be transferred to encodings
-once their stability is established. Zero and central shapes are included; no regularity of
-the dominant shape is required.
+counting presentations; when height forms agree with the simple coroots on `f`, this ray condition
+holds automatically (`LSPath.toPLPath_injective_of_coroot'`). This allows root operators on paths to
+be transferred to encodings once their stability is established. Zero and central shapes are
+included; no regularity of the dominant shape is required.
 
 ## References
 
@@ -115,5 +117,25 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
       fun u v ↦ ¬ SameRay 𝕜 u v) {π π' : LSPath P b lam} :
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
+
+/-- When height forms `F` on `V` agree with the simple coroots on `f`, distinct points of the
+realized orbit never lie in the same ray (`RootPairing.pairwise_not_sameRay_range_smul`), so orbit
+injectivity of `f` alone makes `LSPath.toPLPath` injective on `LSPath P b lam`. -/
+theorem toPLPath_injective_of_coroot' (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (m : M), F i (f m) = (P.coroot' i m : 𝕜)) :
+    Function.Injective (fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) :=
+  toPLPath_injective hlam hf (P.pairwise_not_sameRay_range_smul b hF lam)
+
+/-- Equality of realized LS paths is equality of encodings whenever `f` separates the Weyl orbit
+and `F` realizes the simple coroots. -/
+theorem toPLPath_inj_of_coroot' (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (m : M), F i (f m) = (P.coroot' i m : 𝕜))
+    {π π' : LSPath P b lam} :
+    π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
+  (toPLPath_injective_of_coroot' hlam hf hF).eq_iff
 
 end TauCeti.LSPath

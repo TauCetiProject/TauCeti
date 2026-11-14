@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Basic
 public import TauCeti.RepresentationTheory.LSPath.RootOperator
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.RepresentationTheory.LSPath.Concatenation
 
 /-!
@@ -19,14 +20,15 @@ to the raising and lowering operators. In particular the raising and lowering st
 lengths exactly `-min H` and `H(1) - min H`, not just their integer parts, by the
 iteration criteria in `TauCeti.RepresentationTheory.LSPath.StringLength`.
 
-The same chain conditions control the shape of the height around a lowering step. After the last
-time `t₀` at which the height `⟨π(t), αᵢ^∨⟩` attains its minimum `h`, it rises strictly until it
-reaches `h + 1`, and it never returns below `h + 1` afterwards
+The same chain conditions control the shape of the height around lowering and raising steps. After
+the last time `t₀` at which the height `⟨π(t), αᵢ^∨⟩` attains its minimum `h`, it rises strictly
+until it reaches `h + 1`, and never returns below `h + 1` afterwards
 (`TauCeti.exists_isLeast_sum_coroot'_Icc_of_isAChain` and the lemmas following it). Hence
-Littelmann's lowering operator `f_αᵢ` acts on an LS path by reflecting the single piece of the path
-between `t₀` and the first time `t₁` at which the height is `h + 1`, cutting the segment containing
-`t₁` there, and keeping the rest (`TauCeti.LSPath.exists_lower_toPLPath_eq`). This is the form in
-which Littelmann proves that `f_αᵢ` preserves LS paths.
+Littelmann's lowering operator `f_αᵢ` reflects the single piece between `t₀` and the first time
+`t₁` at which the height is `h + 1` (`TauCeti.LSPath.exists_lower_toPLPath_eq`). Dually, when
+`h ≤ -1`, the raising operator `e_αᵢ` reflects the single falling piece from the last crossing of
+`h + 1` down to the first time at which the height is `h`
+(`TauCeti.LSPath.exists_raise_toPLPath_eq`).
 
 The realization may use any vector space over a linearly ordered field and any additive map
 from the weight lattice. A height form on that vector space must agree with the indicated
@@ -174,6 +176,26 @@ theorem exists_minHeight_eq_intCast (π : LSPath P b lam)
     π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp [π.natTime_last]⟩ i
   exact ⟨z, by rw [π.minHeight_eq_of_isLeast f i F hF hz, Rat.cast_intCast]⟩
 
+omit [P.flip.IsReduced] in
+/-- **Realization-independent integer minimum height.** Any two realizations inducing the same
+simple coroot `⟨-, αᵢ^∨⟩` assign the same nonpositive integer minimum height to an LS path of
+dominant shape. -/
+theorem exists_intCast_minHeight_eq_and_minHeight_eq (π : LSPath P b lam)
+    (hlam : lam ∈ dominantChamber P b) (i : b.support)
+    (f : M →+ V) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
+    {𝕜' V' : Type*} [Field 𝕜'] [LinearOrder 𝕜'] [IsStrictOrderedRing 𝕜']
+    [AddCommGroup V'] [Module 𝕜' V']
+    (f' : M →+ V') (F' : Module.Dual 𝕜' V') (hF' : ∀ m, F' (f' m) = (P.coroot' i m : 𝕜')) :
+    ∃ z : ℤ, z ≤ 0 ∧ (π.toPLPath 𝕜 f).minHeight F = z ∧ (π.toPLPath 𝕜' f').minHeight F' = z := by
+  have := P.flip_isReduced
+  obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam
+    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp [π.natTime_last]⟩ i
+  have hz0 : z ≤ 0 := by
+    have hle : (z : ℚ) ≤ 0 := by simpa using hz.2 ⟨0, Nat.zero_le _, rfl⟩
+    exact_mod_cast hle
+  exact ⟨z, hz0, by rw [π.minHeight_eq_of_isLeast f i F hF hz, Rat.cast_intCast],
+    by rw [π.minHeight_eq_of_isLeast f' i F' hF' hz, Rat.cast_intCast]⟩
+
 /-- The raising and lowering heights of an LS path are natural numbers. Their difference is
 the final simple-coroot height, so they are the normal-crystal string parameters. -/
 theorem exists_neg_minHeight_eq_natCast_and_apply_endpoint_sub_minHeight_eq_natCast
@@ -316,5 +338,103 @@ theorem exists_lower_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantC
   · intro j hj
     rw [hmin', hHF]
     exact_mod_cast hafter (min j s) (le_min hj hk₁s) (Nat.min_le_right j s)
+
+omit [P.flip.IsReduced] in
+/-- **Littelmann's raising operator on an LS path reflects one strictly falling piece.** Let `π` be
+an LS path of dominant shape `λ`, realized in `V` by `f`, and let `F` be a form on `V` inducing the
+simple coroot pairing `⟨-, αᵢ^∨⟩`, with minimal height `h` along the path. Write `[v₀, …, v_l]` for
+the segments `vⱼ = (a_{j+1} - a_j) f (τⱼ λ)` of its distinguished presentation. If the raising
+operator `e_x`, for any `x : V`, is defined, that is `h ≤ -1`, there are a segment `j₀`, a vertex
+`k₁` with `j₀ < k₁ ≤ l + 1`, and a fraction `0 ≤ θ < 1` such that
+
+* the height is at least `h + 1` at every vertex up to `j₀`, reaches `h + 1` after the fraction `θ`
+  of `v_{j₀}`, falls strictly along `v_{j₀}, …, v_{k₁ - 1}`, and attains `h` at the vertex `k₁` for
+  the first time;
+* the raising operator keeps `v₀, …, v_{j₀ - 1}, θ v_{j₀}`, reflects `(1 - θ) v_{j₀}, v_{j₀ + 1},
+  …, v_{k₁ - 1}` by `s = Module.preReflection x F`, and keeps `v_{k₁}, …, v_l`. -/
+theorem exists_raise_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantChamber P b)
+    (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
+    (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (x : V)
+    (h : (π.toPLPath 𝕜 f).minHeight F ≤ -1) :
+    ∃ (j₀ : Fin (π.length + 1)) (k₁ : ℕ) (θ : 𝕜),
+      (j₀ : ℕ) < k₁ ∧ k₁ ≤ π.length + 1 ∧ 0 ≤ θ ∧ θ < 1 ∧
+      F (((π.timed 𝕜 f).map Prod.snd).take k₁).sum = (π.toPLPath 𝕜 f).minHeight F ∧
+      (∀ j < k₁, (π.toPLPath 𝕜 f).minHeight F <
+        F (((π.timed 𝕜 f).map Prod.snd).take j).sum) ∧
+      (∀ j ≤ (j₀ : ℕ), (π.toPLPath 𝕜 f).minHeight F + 1 ≤
+        F (((π.timed 𝕜 f).map Prod.snd).take j).sum) ∧
+      (∀ j, (j₀ : ℕ) ≤ j → j < k₁ →
+        F (((π.timed 𝕜 f).map Prod.snd).take (j + 1)).sum <
+          F (((π.timed 𝕜 f).map Prod.snd).take j).sum) ∧
+      F (((π.timed 𝕜 f).map Prod.snd).take j₀).sum +
+          θ * F ((π.duration j₀ : 𝕜) • f ((π.dir j₀).1 • lam)) =
+        (π.toPLPath 𝕜 f).minHeight F + 1 ∧
+      PLPath.raise F x (π.toPLPath 𝕜 f) = some (PLPath.ofSegments 𝕜
+        (((π.timed 𝕜 f).map Prod.snd).take j₀ ++
+          [(θ * π.duration j₀) • f ((π.dir j₀).1 • lam)] ++
+          (((1 - θ) * π.duration j₀) • f ((π.dir j₀).1 • lam) ::
+            (((π.timed 𝕜 f).map Prod.snd).take k₁).drop (j₀ + 1)).map
+              (Module.preReflection x F) ++
+          ((π.timed 𝕜 f).map Prod.snd).drop k₁)) := by
+  have := P.flip_isReduced
+  set L := (π.timed 𝕜 f).map Prod.snd with hL
+  set s := π.length + 1
+  set H : ℕ → ℚ := fun j ↦ ∑ k ∈ Finset.range j, (π.natTime (k + 1) - π.natTime k) *
+    (P.coroot' i (π.natDir k • lam) : ℚ)
+  have hlen : L.length = s := by simp only [L, s, List.length_map, timed_def, List.length_ofFn]
+  have hHF' : ∀ k ≤ s, F (L.take k).sum = (H k : 𝕜) := fun k hk ↦
+    π.apply_sum_take f F (P.coroot' i) hF k hk
+  have hgap : ∃ j ≤ s, H j ≤ -1 := by
+    obtain ⟨k, hk⟩ := PLPath.exists_listMinHeight_eq (f := F) L
+    have htake : L.take (min k s) = L.take k := by
+      simpa only [hlen] using (List.take_eq_take_min (l := L) (i := k)).symm
+    refine ⟨min k s, Nat.min_le_right k s, ?_⟩
+    rw [toPLPath_def, PLPath.minHeight_ofSegments, ← hL, hk, ← htake,
+      hHF' _ (Nat.min_le_right k s)] at h
+    exact_mod_cast h
+  obtain ⟨k₀, k₁, hk₀₁, hk₁s, hleast, habove_before, hbefore, hfall, hbelow⟩ :=
+    exists_strictly_falling_of_isAChain hlam π.natTime_zero π.natDir_chain π.natTime_strictMono
+      ⟨1, by simp [π.natTime_last]⟩ i hgap
+  have hmin : (π.toPLPath 𝕜 f).minHeight F = (H k₁ : 𝕜) := π.minHeight_eq_of_isLeast f i F hF hleast
+  set j₀ : Fin s := ⟨k₀, lt_of_lt_of_le hk₀₁ hk₁s⟩
+  have hseg' : L[k₀]'(by omega) = (π.duration j₀ : 𝕜) • f ((π.dir j₀).1 • lam) := by
+    simp only [L, timed_def, List.getElem_map, List.getElem_ofFn, j₀]
+  have hseg : F ((π.duration j₀ : 𝕜) • f ((π.dir j₀).1 • lam)) = ((H (k₀ + 1) - H k₀ : ℚ) : 𝕜) := by
+    rw [Rat.cast_sub, ← hHF' (k₀ + 1) (by omega), ← hHF' k₀ (by omega),
+      List.sum_take_succ _ _ (by omega), map_add, add_sub_cancel_left, hseg']
+  have hslope : H (k₀ + 1) - H k₀ < 0 := sub_neg.mpr (hfall k₀ le_rfl hk₀₁)
+  set θ : 𝕜 := (((H k₁ + 1 - H k₀) / (H (k₀ + 1) - H k₀) : ℚ) : 𝕜) with hθ_def
+  have hθ0 : 0 ≤ θ := by
+    rw [hθ_def, Rat.cast_nonneg]
+    exact div_nonneg_of_nonpos (by linarith [hbefore k₀ le_rfl]) hslope.le
+  have hθ1 : θ < 1 := by
+    have hq : (H k₁ + 1 - H k₀) / (H (k₀ + 1) - H k₀) < 1 :=
+      (div_lt_one_of_neg hslope).mpr (by linarith [hbelow (k₀ + 1) (Nat.lt_succ_self k₀) hk₀₁])
+    rw [hθ_def]
+    exact_mod_cast hq
+  have hθeq : F (L.take j₀).sum + θ * F ((π.duration j₀ : 𝕜) • f ((π.dir j₀).1 • lam)) =
+      (π.toPLPath 𝕜 f).minHeight F + 1 := by
+    rw [hseg, show (j₀ : ℕ) = k₀ from rfl, hHF' k₀ (by omega), hmin, hθ_def, ← Rat.cast_mul,
+      div_mul_cancel₀ _ hslope.ne]
+    push_cast; ring
+  have hbefore_cast : ∀ j ≤ k₀, (π.toPLPath 𝕜 f).minHeight F + 1 ≤ F (L.take j).sum :=
+    fun j hj ↦ by rw [hHF' j (by omega), hmin]; exact_mod_cast hbefore j hj
+  have hfall_cast : ∀ j, k₀ ≤ j → j < k₁ → F (L.take (j + 1)).sum < F (L.take j).sum :=
+    fun j h1 h2 ↦ by
+      rw [hHF' (j + 1) (by omega), hHF' j (by omega), Rat.cast_lt]; exact hfall j h1 h2
+  have hmin' : PLPath.listMinHeight F L = (π.toPLPath 𝕜 f).minHeight F := by
+    rw [toPLPath_def, PLPath.minHeight_ofSegments]
+  refine ⟨j₀, k₁, θ, hk₀₁, hk₁s, hθ0, hθ1, by rw [hHF' k₁ hk₁s, hmin],
+    fun j hj ↦ by rw [hHF' j (by omega), hmin, Rat.cast_lt]; exact habove_before j hj,
+    hbefore_cast, hfall_cast, hθeq, ?_⟩
+  rw [toPLPath_def, ← hL, PLPath.raise_ofSegments_eq_of_strictly_falling (k₀ := k₀) (k₁ := k₁)
+    (θ := θ) hk₀₁ (by omega)]
+  · simp only [hseg', smul_smul, j₀]
+  · rw [hmin', hHF' k₁ hk₁s, hmin]
+  · exact fun j hj ↦ hmin' ▸ hbefore_cast j hj
+  · exact hfall_cast
+  · rwa [hmin', hseg']
+  · rw [hmin', hmin, hHF' (k₀ + 1) (by omega)]
+    exact_mod_cast (hbelow (k₀ + 1) (Nat.lt_succ_self k₀) hk₀₁).le
 
 end TauCeti.LSPath
