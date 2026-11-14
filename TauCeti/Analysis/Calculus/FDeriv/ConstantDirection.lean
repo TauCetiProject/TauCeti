@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.RCLike.Basic
 
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -17,23 +18,27 @@ import Mathlib.Analysis.Calculus.MeanValue
 # Differentiable maps with constant derivative in one direction
 
 If a differentiable map `f` has the same derivative `w` in the direction `v` at every point,
-then it moves along every line `t ↦ p + t • v` by the affine amount `t • w`. Dually, a map which
-is even along a line has zero derivative in that direction.
+then it moves along every line `t ↦ p + t • v` by the affine amount `t • w`; this holds over
+`ℝ` and `ℂ` (any `RCLike` field). For a function of one variable, taking `v = 1` says that a
+function whose `deriv` is constant is affine. Dually, a map which is even along a real line has
+zero derivative in that direction.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- A differentiable map whose derivative in the direction `v` is `w` at every point satisfies
 `f (p + t • v) = f p + t • w`. -/
-theorem apply_add_smul_eq_of_fderiv_apply_eq {f : E → F} (hf : Differentiable ℝ f) {v : E} {w : F}
-    (hd : ∀ q, fderiv ℝ f q v = w) (p : E) (t : ℝ) : f (p + t • v) = f p + t • w := by
-  have hl (s : ℝ) : HasDerivAt (fun s : ℝ => f (p + s • v) - s • w) 0 s := by
-    have hc : HasDerivAt (fun s : ℝ => p + s • v) v s := by
+theorem apply_add_smul_eq_of_fderiv_apply_eq {f : E → F} (hf : Differentiable 𝕜 f) {v : E} {w : F}
+    (hd : ∀ q, fderiv 𝕜 f q v = w) (p : E) (t : 𝕜) : f (p + t • v) = f p + t • w := by
+  have hl (s : 𝕜) : HasDerivAt (fun s : 𝕜 => f (p + s • v) - s • w) 0 s := by
+    have hc : HasDerivAt (fun s : 𝕜 => p + s • v) v s := by
       simpa using ((hasDerivAt_id s).smul_const v).const_add p
     have := ((hf (p + s • v)).hasFDerivAt.comp_hasDerivAt s hc).sub
       ((hasDerivAt_id s).smul_const w)
@@ -44,6 +49,10 @@ theorem apply_add_smul_eq_of_fderiv_apply_eq {f : E → F} (hf : Differentiable 
   simp only [zero_smul, add_zero, sub_zero] at h
   rw [sub_eq_iff_eq_add] at h
   exact h
+
+end RCLike
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The derivative of a function in a direction along which it is even vanishes: the function
 `t ↦ f (x + t • v)` has the same value at `t` and `-t`. If `f` is not differentiable at `x`, then
