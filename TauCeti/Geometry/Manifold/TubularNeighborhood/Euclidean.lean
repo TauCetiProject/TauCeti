@@ -58,19 +58,84 @@ open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 section Local
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-omit [FiniteDimensional ℝ E] in
+/-- The normal map is injective on the normal vectors of length less than `δ` at points of `s`,
+given a local homeomorphism `h` and a map `ρ` into its source which invert it there. -/
+private theorem injOn_normal_of_forall_mem_source {g : E → V} {W₀ : Submodule ℝ V}
+    {Q : E → V →L[ℝ] V} {h : OpenPartialHomeomorph (E × W₀) V} {ρ : E × V → E × W₀} {s : Set E}
+    {δ : ℝ} (hρ₁ : ∀ p, (ρ p).1 = p.1)
+    (hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
+      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2 ∧ h (ρ p) = g p.1 + p.2) :
+    InjOn (fun p : E × V => g p.1 + p.2)
+      {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ} := by
+  rintro p ⟨hu, hv, hvδ⟩ p' ⟨hu', hv', hvδ'⟩ heq
+  obtain ⟨hρp, hQp, hΨp⟩ := hkey p hu hv hvδ
+  obtain ⟨hρp', hQp', hΨp'⟩ := hkey p' hu' hv' hvδ'
+  have hρ : ρ p = ρ p' := h.injOn hρp hρp' (by rw [hΨp, hΨp']; exact heq)
+  have h1 : p.1 = p'.1 := (hρ₁ p).symm.trans ((congrArg Prod.fst hρ).trans (hρ₁ p'))
+  refine Prod.ext h1 ?_
+  rw [← hQp, ← hQp', h1, hρ]
+
+/-- The normal map sends relatively open sets of normal vectors of length less than `δ` at points
+of `s` to open sets, given a local homeomorphism `h` and a map `ρ` into its source which invert it
+there. -/
+private theorem isOpen_image_normal_of_forall_mem_source {g : E → V} {W₀ : Submodule ℝ V}
+    {Q : E → V →L[ℝ] V} (hQmem : ∀ u w, Q u w ∈ (fderiv ℝ g u).rangeᗮ)
+    {h : OpenPartialHomeomorph (E × W₀) V} {ρ : E × V → E × W₀} {s : Set E} {δ : ℝ}
+    (hs : IsOpen s) (hQc : ∀ u ∈ s, ContinuousAt Q u) (hρ₁ : ∀ p, (ρ p).1 = p.1)
+    (hΨh : ∀ q, h q = g q.1 + Q q.1 q.2)
+    (hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
+      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2)
+    (O : Set (E × V)) (hO : IsOpen O) :
+    IsOpen ((fun p : E × V => g p.1 + p.2) ''
+      (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ})) := by
+  -- The image is the image under `h` of an open subset of its source.
+  let θ : E × W₀ → E × V := fun q => (q.1, Q q.1 q.2)
+  have hθc : ContinuousOn θ (h.source ∩ s ×ˢ univ) := by
+    rintro ⟨u, w⟩ ⟨-, hu, -⟩
+    refine (continuousAt_fst.prodMk ?_).continuousWithinAt
+    exact ContinuousAt.clm_apply (ContinuousAt.comp (g := Q) (f := Prod.fst) (x := (u, w))
+      (hQc u hu) continuousAt_fst)
+      (W₀.subtypeL.continuous.comp continuous_snd).continuousAt
+  have himage : (fun p : E × V => g p.1 + p.2) ''
+      (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ}) =
+      h '' ((h.source ∩ s ×ˢ univ) ∩ θ ⁻¹' (O ∩ univ ×ˢ Metric.ball 0 δ)) := by
+    ext y
+    constructor
+    · rintro ⟨p, ⟨hpO, hu, hv, hvδ⟩, rfl⟩
+      obtain ⟨hρp, hQp⟩ := hkey p hu hv hvδ
+      -- `h (ρ p) = g p.1 + p.2`, from `hΨh` and `Q p.1 (ρ p).2 = p.2`.
+      have hΨp : h (ρ p) = g p.1 + p.2 := by
+        rw [hΨh, hρ₁, hQp]
+      refine ⟨ρ p, ⟨⟨hρp, by rw [hρ₁]; exact hu, mem_univ _⟩, ?_⟩, hΨp⟩
+      have hθρ : θ (ρ p) = p :=
+        Prod.ext (hρ₁ p) ((congrArg (fun u => Q u (ρ p).2) (hρ₁ p)).trans hQp)
+      rw [mem_preimage, hθρ]
+      exact ⟨hpO, mem_univ _, mem_ball_zero_iff.mpr hvδ⟩
+    · rintro ⟨⟨u, w⟩, ⟨⟨-, hu, -⟩, hθO, -, hθδ⟩, rfl⟩
+      refine ⟨θ (u, w), ⟨hθO, hu, hQmem _ _,
+        mem_ball_zero_iff.mp hθδ⟩, ?_⟩
+      rw [hΨh]
+  rw [himage]
+  exact h.isOpen_image_of_subset_source
+    (hθc.isOpen_inter_preimage (h.open_source.inter (hs.prod isOpen_univ))
+      (hO.inter (isOpen_univ.prod Metric.isOpen_ball))) fun q hq => hq.1.1
+
+variable [FiniteDimensional ℝ V]
+
 /-- The compression to the normal space `(fderiv ℝ g u₀).rangeᗮ` at `u₀` of the orthogonal
 projection onto the normal space `(fderiv ℝ g u).rangeᗮ` at `u`. -/
 private noncomputable def localNormalCompression (g : E → V) (u₀ u : E) :
     (fderiv ℝ g u₀).rangeᗮ →L[ℝ] (fderiv ℝ g u₀).rangeᗮ :=
   (fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
     (fderiv ℝ g u).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL
+
+variable [FiniteDimensional ℝ E]
 
 /-- The compression `localNormalCompression g u₀` is continuous at `u₀`, equals the identity
 there, and so is invertible near `u₀`, where `g` is also `C²` with injective derivative. -/
@@ -176,70 +241,6 @@ private theorem exists_openPartialHomeomorph_normal_of_isUnit_compression {g : E
   · obtain ⟨hρp, hQp⟩ := hkey p hu hv hvδ
     exact ⟨hρp, hQp, hΨρ p hQp⟩
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-/-- The normal map is injective on the normal vectors of length less than `δ` at points of `s`,
-given a local homeomorphism `h` and a map `ρ` into its source which invert it there. -/
-private theorem injOn_normal_of_forall_mem_source {g : E → V} {W₀ : Submodule ℝ V}
-    {Q : E → V →L[ℝ] V} {h : OpenPartialHomeomorph (E × W₀) V} {ρ : E × V → E × W₀} {s : Set E}
-    {δ : ℝ} (hρ₁ : ∀ p, (ρ p).1 = p.1)
-    (hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
-      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2 ∧ h (ρ p) = g p.1 + p.2) :
-    InjOn (fun p : E × V => g p.1 + p.2)
-      {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ} := by
-  rintro p ⟨hu, hv, hvδ⟩ p' ⟨hu', hv', hvδ'⟩ heq
-  obtain ⟨hρp, hQp, hΨp⟩ := hkey p hu hv hvδ
-  obtain ⟨hρp', hQp', hΨp'⟩ := hkey p' hu' hv' hvδ'
-  have hρ : ρ p = ρ p' := h.injOn hρp hρp' (by rw [hΨp, hΨp']; exact heq)
-  have h1 : p.1 = p'.1 := (hρ₁ p).symm.trans ((congrArg Prod.fst hρ).trans (hρ₁ p'))
-  refine Prod.ext h1 ?_
-  rw [← hQp, ← hQp', h1, hρ]
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-/-- The normal map sends relatively open sets of normal vectors of length less than `δ` at points
-of `s` to open sets, given a local homeomorphism `h` and a map `ρ` into its source which invert it
-there. -/
-private theorem isOpen_image_normal_of_forall_mem_source {g : E → V} {W₀ : Submodule ℝ V}
-    {Q : E → V →L[ℝ] V} (hQmem : ∀ u w, Q u w ∈ (fderiv ℝ g u).rangeᗮ)
-    {h : OpenPartialHomeomorph (E × W₀) V} {ρ : E × V → E × W₀} {s : Set E} {δ : ℝ}
-    (hs : IsOpen s) (hQc : ∀ u ∈ s, ContinuousAt Q u) (hρ₁ : ∀ p, (ρ p).1 = p.1)
-    (hΨh : ∀ q, h q = g q.1 + Q q.1 q.2)
-    (hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
-      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2)
-    (O : Set (E × V)) (hO : IsOpen O) :
-    IsOpen ((fun p : E × V => g p.1 + p.2) ''
-      (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ})) := by
-  -- The image is the image under `h` of an open subset of its source.
-  let θ : E × W₀ → E × V := fun q => (q.1, Q q.1 q.2)
-  have hθc : ContinuousOn θ (h.source ∩ s ×ˢ univ) := by
-    rintro ⟨u, w⟩ ⟨-, hu, -⟩
-    refine (continuousAt_fst.prodMk ?_).continuousWithinAt
-    exact ContinuousAt.clm_apply (ContinuousAt.comp (g := Q) (f := Prod.fst) (x := (u, w))
-      (hQc u hu) continuousAt_fst)
-      (W₀.subtypeL.continuous.comp continuous_snd).continuousAt
-  have himage : (fun p : E × V => g p.1 + p.2) ''
-      (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ}) =
-      h '' ((h.source ∩ s ×ˢ univ) ∩ θ ⁻¹' (O ∩ univ ×ˢ Metric.ball 0 δ)) := by
-    ext y
-    constructor
-    · rintro ⟨p, ⟨hpO, hu, hv, hvδ⟩, rfl⟩
-      obtain ⟨hρp, hQp⟩ := hkey p hu hv hvδ
-      -- `h (ρ p) = g p.1 + p.2`, from `hΨh` and `Q p.1 (ρ p).2 = p.2`.
-      have hΨp : h (ρ p) = g p.1 + p.2 := by
-        rw [hΨh, hρ₁, hQp]
-      refine ⟨ρ p, ⟨⟨hρp, by rw [hρ₁]; exact hu, mem_univ _⟩, ?_⟩, hΨp⟩
-      have hθρ : θ (ρ p) = p :=
-        Prod.ext (hρ₁ p) ((congrArg (fun u => Q u (ρ p).2) (hρ₁ p)).trans hQp)
-      rw [mem_preimage, hθρ]
-      exact ⟨hpO, mem_univ _, mem_ball_zero_iff.mpr hvδ⟩
-    · rintro ⟨⟨u, w⟩, ⟨⟨-, hu, -⟩, hθO, -, hθδ⟩, rfl⟩
-      refine ⟨θ (u, w), ⟨hθO, hu, hQmem _ _,
-        mem_ball_zero_iff.mp hθδ⟩, ?_⟩
-      rw [hΨh]
-  rw [himage]
-  exact h.isOpen_image_of_subset_source
-    (hθc.isOpen_inter_preimage (h.open_source.inter (hs.prod isOpen_univ))
-      (hO.inter (isOpen_univ.prod Metric.isOpen_ball))) fun q hq => hq.1.1
-
 /-- **Local tubular neighbourhood theorem.** For a map `g : E → V` which is `C²` at `u₀` with
 injective derivative there, the normal map `(u, v) ↦ g u + v`, restricted to the normal vectors
 of length less than `δ` at points of a neighbourhood `s` of `u₀`, is injective and sends relatively
@@ -259,49 +260,21 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     isOpen_image_normal_of_forall_mem_source (Q := fun u => (fderiv ℝ g u).rangeᗮ.starProjection)
       (fun _ _ => Submodule.starProjection_apply_mem _ _) hs_open hQc hρ₁ hΨh
       fun p hu hv hvδ => (hkey p hu hv hvδ).imp_right And.left⟩
+
 end Local
 
 section Manifold
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-variable (I) in
 /-- The normal space of a map `f : M → V` into a real inner product space at `x`: the orthogonal
 complement in `V` of the range of the differential of `f` at `x`. It realizes the quotient normal
 space `TauCeti.SmoothEmbedding.NormalSpace` as a subspace of `V`, using the inner product. -/
 @[expose] noncomputable def normalSubspace (f : M → V) (x : M) : Submodule ℝ V :=
   (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).rangeᗮ
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-/-- A normal space is complete when the ambient inner product space is complete. -/
-instance instCompleteSpaceNormalSubspace [CompleteSpace V] (f : M → V) (x : M) :
-    CompleteSpace (normalSubspace I f x) := by
-  unfold normalSubspace
-  exact (Submodule.isClosed_orthogonal (𝕜 := ℝ) (E := V)
-    (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).range).completeSpace_coe
-
-omit [FiniteDimensional ℝ E] in
-/-- At an immersion point, the dimension of the normal space is the codimension. -/
-theorem finrank_normalSubspace {f : M → V} {x : M}
-    (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) :
-    Module.finrank ℝ (normalSubspace I f x) = Module.finrank ℝ V - Module.finrank ℝ E := by
-  unfold normalSubspace
-  exact LinearMap.finrank_orthogonal_range_of_injective (V := V)
-    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap) himm
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-/-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
-differential of `f` at `x`. -/
-@[simp]
-theorem mem_normalSubspace_iff {f : M → V} {x : M} {v : V} :
-    v ∈ normalSubspace I f x ↔ ∀ u : E, ⟪v, (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V) u⟫_ℝ = 0 :=
-  ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
-    fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-variable (I) in
 /-- The orthogonal complement of `(mvfderiv I f x).range` in a real inner product space `V` is
 `TauCeti.normalSubspace I f x`. -/
 theorem orthogonal_range_mvfderiv_eq_normalSubspace (f : M → V) (x : M) :
@@ -316,7 +289,31 @@ theorem orthogonal_range_mvfderiv_eq_normalSubspace (f : M → V) (x : M) :
       exact ⟨(tangentSpaceCastModel I x).symm v, by rw [mvfderiv_apply_eq_mfderiv_apply]; rfl⟩
   rw [normalSubspace, hr]
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- The normal vectors along `f : M → V` of length less than `ε`, as a subset of `M × V`. -/
+def normalTube (f : M → V) (ε : ℝ) : Set (M × V) :=
+  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε}
+
+/-- The normal vectors along `f` shorter than a radius depending on their base point. -/
+def normalTubeOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
+  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1}
+
+variable {I}
+
+/-- A normal space is complete when the ambient inner product space is complete. -/
+instance instCompleteSpaceNormalSubspace [CompleteSpace V] (f : M → V) (x : M) :
+    CompleteSpace (normalSubspace I f x) := by
+  unfold normalSubspace
+  exact (Submodule.isClosed_orthogonal (𝕜 := ℝ) (E := V)
+    (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).range).completeSpace_coe
+
+/-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
+differential of `f` at `x`. -/
+@[simp]
+theorem mem_normalSubspace_iff {f : M → V} {x : M} {v : V} :
+    v ∈ normalSubspace I f x ↔ ∀ u : E, ⟪v, (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V) u⟫_ℝ = 0 :=
+  ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
+    fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
+
 /-- Membership in `TauCeti.normalSubspace I f x` in terms of `mvfderiv I f x`. -/
 theorem mem_normalSubspace_iff_mvfderiv {f : M → V} {x : M} {v : V} :
     v ∈ normalSubspace I f x ↔ ∀ u : TangentSpace I x, ⟪v, mvfderiv I f x u⟫_ℝ = 0 := by
@@ -324,43 +321,27 @@ theorem mem_normalSubspace_iff_mvfderiv {f : M → V} {x : M} {v : V} :
   refine ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
     fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
 
-omit [FiniteDimensional ℝ V] in
-variable (I) in
-/-- When the model space `E` is finite-dimensional, `(mvfderiv I f x).range` is finite-dimensional
-and hence complete, so `TauCeti.normalSubspace I f x` has an orthogonal projection even when the
-ambient inner product space `V` is not complete. -/
-instance instHasOrthogonalProjectionNormalSubspace (f : M → V) (x : M) :
-    (normalSubspace I f x).HasOrthogonalProjection := by
-  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
-  have : FiniteDimensional ℝ (TangentSpace I x) :=
-    Module.Finite.equiv (tangentSpaceCastModel I x).symm.toLinearEquiv
-  have : FiniteDimensional ℝ (mvfderiv I f x).range :=
-    Module.Finite.range (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] V)
-  infer_instance
+/-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement
+of the range of the derivative of the coordinate expression of `f`. -/
+theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : M}
+    (hy : y ∈ (extChartAt I x).source)
+    (hg : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x y)) :
+    normalSubspace I f y = (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x y)).rangeᗮ := by
+  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
+  rw [normalSubspace, mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
+  congr 1
+  exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr L.surjective)
 
-variable (I) in
-/-- The normal vectors along `f : M → V` of length less than `ε`, as a subset of `M × V`. -/
-def normalTube (f : M → V) (ε : ℝ) : Set (M × V) :=
-  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε}
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 @[simp]
 theorem mem_normalTube {f : M → V} {ε : ℝ} {p : M × V} :
     p ∈ normalTube I f ε ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < ε :=
   Iff.rfl
 
-variable (I) in
-/-- The normal vectors along `f` shorter than a radius depending on their base point. -/
-def normalTubeOfRadius (f : M → V) (r : M → ℝ) : Set (M × V) :=
-  {p | p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1}
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 @[simp]
 theorem mem_normalTubeOfRadius {f : M → V} {r : M → ℝ} {p : M × V} :
     p ∈ normalTubeOfRadius I f r ↔ p.2 ∈ normalSubspace I f p.1 ∧ ‖p.2‖ < r p.1 :=
   Iff.rfl
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- A constant radius gives the usual normal tube. -/
 @[simp]
 theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
@@ -368,7 +349,6 @@ theorem normalTubeOfRadius_const (f : M → V) (ε : ℝ) :
   ext p
   simp
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- Shrinking a variable normal tube to a smaller continuous radius preserves the open
 embedding of normal addition. No regularity of the original radius is needed. -/
 theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
@@ -389,25 +369,66 @@ theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
   simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
   exact and_iff_right (mem_normalTubeOfRadius.mp p.2).1
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-/-- At a point `y` of the source of a chart, the normal space of `f` is the orthogonal complement
-of the range of the derivative of the coordinate expression of `f`. -/
-theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : M}
-    (hy : y ∈ (extChartAt I x).source)
-    (hg : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x y)) :
-    normalSubspace I f y = (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x y)).rangeᗮ := by
-  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
-  rw [normalSubspace, mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL]
-  congr 1
-  exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr L.surjective)
+/-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`,
+independently of its model-fibre parameter `F`. -/
+instance instTopologicalSpaceTotalSpaceNormalSubspace {F : Type*} (f : M → V) :
+    TopologicalSpace (TotalSpace F fun x : M => normalSubspace I f x) :=
+  TopologicalSpace.induced (fun p => (p.proj, (p.2 : V))) inferInstance
 
-omit [FiniteDimensional ℝ E] in
+/-- The total space of the normal bundle of `f` is embedded in `M × V`. -/
+theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
+    IsEmbedding fun p : TotalSpace F (fun x : M => normalSubspace I f x) =>
+      (p.proj, (p.2 : V)) := by
+  refine ⟨⟨rfl⟩, ?_⟩
+  rintro ⟨x, v⟩ ⟨y, w⟩ h
+  simp only [Prod.mk.injEq] at h
+  obtain ⟨rfl, h⟩ := h
+  rw [Subtype.ext h]
+
+end Manifold
+
+section FiniteDimensionalModel
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- When the model space `E` is finite-dimensional, `(mvfderiv I f x).range` is finite-dimensional
+and hence complete, so `TauCeti.normalSubspace I f x` has an orthogonal projection even when the
+ambient inner product space `V` is not complete. -/
+instance instHasOrthogonalProjectionNormalSubspace (f : M → V) (x : M) :
+    (normalSubspace I f x).HasOrthogonalProjection := by
+  rw [← orthogonal_range_mvfderiv_eq_normalSubspace]
+  have : FiniteDimensional ℝ (TangentSpace I x) :=
+    Module.Finite.equiv (tangentSpaceCastModel I x).symm.toLinearEquiv
+  have : FiniteDimensional ℝ (mvfderiv I f x).range :=
+    Module.Finite.range (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] V)
+  infer_instance
+
+end FiniteDimensionalModel
+
+section FiniteDimensionalAmbient
+
+variable [FiniteDimensional ℝ V]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- At an immersion point, the dimension of the normal space is the codimension. -/
+theorem finrank_normalSubspace {f : M → V} {x : M}
+    (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) :
+    Module.finrank ℝ (normalSubspace I f x) = Module.finrank ℝ V - Module.finrank ℝ E := by
+  unfold normalSubspace
+  exact LinearMap.finrank_orthogonal_range_of_injective (V := V)
+    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap) himm
+
+variable [I.Boundaryless] [IsManifold I 2 M]
+
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
-theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
-    {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f) (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
-    (x₀ : M) :
+theorem exists_injOn_isOpen_image_normalTube {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
+    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ : M) :
     ∃ W : Set M, IsOpen W ∧ x₀ ∈ W ∧ ∃ δ > 0,
       InjOn (fun p : M × V => f p.1 + p.2) {p | p.1 ∈ W ∧ p ∈ normalTube I f δ} ∧
       ∀ O : Set (M × V), IsOpen O →
@@ -466,12 +487,12 @@ theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
         exact hv
       · simp [g]
 
-omit [FiniteDimensional ℝ E] in
+variable [CompactSpace M]
+
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space: for some `ε > 0`, the map `(x, v) ↦ f x + v` is an open embedding of the normal vectors of
 length less than `ε` into `V`. -/
-theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [CompactSpace M]
-    {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
+theorem exists_isOpenEmbedding_normalTube {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f) :
     ∃ ε > 0, IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨_⟩⟩
@@ -527,31 +548,12 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     rw [himage]
     exact isOpen_biUnion fun x _ => hopen x _ (hO₁.inter (isOpen_univ.prod Metric.isOpen_ball))
 
-/-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`,
-independently of its model-fibre parameter `F`. -/
-instance instTopologicalSpaceTotalSpaceNormalSubspace {F : Type*} (f : M → V) :
-    TopologicalSpace (TotalSpace F fun x : M => normalSubspace I f x) :=
-  TopologicalSpace.induced (fun p => (p.proj, (p.2 : V))) inferInstance
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
-/-- The total space of the normal bundle of `f` is embedded in `M × V`. -/
-theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
-    IsEmbedding fun p : TotalSpace F (fun x : M => normalSubspace I f x) =>
-      (p.proj, (p.2 : V)) := by
-  refine ⟨⟨rfl⟩, ?_⟩
-  rintro ⟨x, v⟩ ⟨y, w⟩ h
-  simp only [Prod.mk.injEq] at h
-  obtain ⟨rfl, h⟩ := h
-  rw [Subtype.ext h]
-
-omit [FiniteDimensional ℝ E] in
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space, as `IsTubularNeighborhood` data: for some `ε > 0`, the normal vectors of length less than
 `ε`, in the total space of the normal bundle, are mapped by `(x, v) ↦ f x + v` homeomorphically
 onto an open subset of `V`. The model-fibre parameter of `Bundle.TotalSpace` is taken to be `V`,
 which contains every fibre. -/
-theorem exists_isTubularNeighborhood_normalBundle [I.Boundaryless] [IsManifold I 2 M]
-    [CompactSpace M] {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
+theorem exists_isTubularNeighborhood_normalBundle {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f) :
     ∃ ε > 0, IsTubularNeighborhood f
       {p : TotalSpace V (fun x : M => normalSubspace I f x) | ‖(p.2 : V)‖ < ε}
@@ -588,6 +590,6 @@ theorem exists_isTubularNeighborhood_normalBundle [I.Boundaryless] [IsManifold I
           continuous_subtype_val.comp continuous_fst
         exact h1.fst.prodMk (h2.smul h1.snd) }
 
-end Manifold
+end FiniteDimensionalAmbient
 
 end TauCeti

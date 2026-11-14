@@ -195,7 +195,7 @@ end Localization
 
 section LivesOver
 
-variable {Λ : Type w} [Ring Λ] (R : ModuleCat.{w} Λ)
+variable {Λ : Type*} [Ring Λ] (R : ModuleCat.{w} Λ)
   {E E' M : Type w} [TopologicalSpace E] [TopologicalSpace E']
 
 /-- Pointwise form of `TauCeti.fiberLocalization_id`: for the identity of `M`, the localization of
