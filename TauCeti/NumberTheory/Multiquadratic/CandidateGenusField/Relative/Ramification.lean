@@ -61,9 +61,13 @@ variable {d : ℤ}
 
 This is the finite-place half of the genus-field property of `candidateGenusField hd`. -/
 theorem isUnramifiedIn_candidateGenusField (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ))
-    (𝔭 : Ideal (𝓞 (candidateGenusFieldBase hd))) [𝔭.IsPrime] :
+    (𝔭 : Ideal (𝓞 (candidateGenusFieldBase hd))) :
     Algebra.IsUnramifiedIn (𝓞 (candidateGenusField hd)) 𝔭 := by
   classical
+  -- a nonprime ideal has no prime over it
+  by_cases h𝔭 : 𝔭.IsPrime
+  swap
+  · exact fun Q hQ hl ↦ absurd (hl.over ▸ Ideal.comap_isPrime _ Q) h𝔭
   obtain ⟨hs, heven, hprod⟩ := genusPrimeDiscriminants_spec hd
   refine isUnramifiedIn_of_forall_ramificationIdx_eq_two
     (fun P : {P // P ∈ genusPrimeDiscriminants hd} => P.val) (candidateGenusFieldGen hd)
