@@ -154,6 +154,16 @@ theorem coe_det (e : Isometry L L) :
 theorem det_eq_one_or_neg_one (e : Isometry L L) : det L e = 1 ∨ det L e = -1 :=
   Int.units_eq_one_or (det L e)
 
+/-- Any self-isometry satisfying an odd-exponent power relation `e ^ n = 1` has determinant `1`. -/
+theorem det_eq_one_of_pow_eq_one {e : Isometry L L} {n : ℕ} (hn : Odd n) (he : e ^ n = 1) :
+    det L e = 1 := by
+  rcases det_eq_one_or_neg_one e with h | h
+  · exact h
+  · exfalso
+    have h1 : det L e ^ n = 1 := by rw [← map_pow, he, map_one]
+    rw [h, hn.neg_one_pow] at h1
+    exact absurd h1 (by decide)
+
 /-- A self-isometry preserves a finite carrier basis orientation exactly when its determinant
 is one. -/
 theorem orientation_map_eq_iff {ι : Type*} [Fintype ι] [DecidableEq ι]

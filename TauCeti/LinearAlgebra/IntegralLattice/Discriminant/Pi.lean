@@ -46,11 +46,14 @@ and permutations of the components.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryPiOfIsometry`: the isometry
   `Π i, A_i ≅ A_(⊥ i, L i)` induced by summandwise isometries `A_i ≅ A_(L i)`, with coordinates
   `TauCeti.IntegralLattice.discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry`.
-* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry` and
-  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`, in
+* `discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry`,
+  `discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry`,
+  `discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry`, and
+  `discriminantQuadraticIsometry_piCongr'_discriminantQuadraticIsometryPiOfIsometry`, in
   `TauCeti.IntegralLattice`: naturality of that isometry under coordinatewise isometries
-  (`TauCeti.IntegralLattice.Isometry.pi`) and under reindexing
-  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`).
+  (`TauCeti.IntegralLattice.Isometry.pi`), reindexing
+  (`TauCeti.IntegralLattice.Isometry.piCongrLeft`), and their composites
+  (`TauCeti.IntegralLattice.Isometry.piCongr`, `TauCeti.IntegralLattice.Isometry.piCongr'`).
 
 ## References
 
@@ -327,6 +330,93 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
     Equiv.piCongrLeft_apply_apply]
   refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft L σ _ k).trans ?_
   rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+
+section PiCongr
+
+variable {L}
+variable {W' : κ → Type w} [∀ k, AddCommGroup (W' k)] [∀ k, Module ℚ (W' k)]
+  {M' : ∀ k, IntegralLattice (W' k)}
+
+/-- `Isometry.piCongr` acts on discriminant-group coordinates by moving coordinate `i` to `σ i`
+through `(f i).discriminantGroupEquiv`. -/
+@[simp]
+theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr (σ : ι ≃ κ)
+    (f : ∀ i, Isometry (L i) (M' (σ i))) (c : (pi L).DiscriminantGroup) (i : ι) :
+    discriminantGroupPiEquiv M' ((Isometry.piCongr σ f).discriminantGroupEquiv c) (σ i) =
+      (f i).discriminantGroupEquiv (discriminantGroupPiEquiv L c i) := by
+  induction c using Submodule.Quotient.induction_on with
+  | _ x =>
+    simp only [Isometry.discriminantGroupEquiv_mk, discriminantGroupPiEquiv_mk]
+    exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
+
+/-- `Isometry.piCongr'` acts on discriminant-group coordinates by reading coordinate `k` from
+`σ.symm k` through `(f k).discriminantGroupEquiv`. -/
+@[simp]
+theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr' (σ : ι ≃ κ)
+    (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) (c : (pi L).DiscriminantGroup) (k : κ) :
+    discriminantGroupPiEquiv M' ((Isometry.piCongr' σ f).discriminantGroupEquiv c) k =
+      (f k).discriminantGroupEquiv (discriminantGroupPiEquiv L c (σ.symm k)) := by
+  induction c using Submodule.Quotient.induction_on with
+  | _ x =>
+    simp only [Isometry.discriminantGroupEquiv_mk, discriminantGroupPiEquiv_mk]
+    exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
+
+/-- **Naturality of the summandwise alphabet isometry under `Isometry.piCongr`.**  Given
+`σ : ι ≃ κ`, summandwise lattice isometries `f i : L i ≅ M' (σ i)`, and compatible alphabet maps
+`g i : A i → B (σ i)`, `Isometry.piCongr σ f` transports the class of an alphabet family `x` to the
+class of `Equiv.piCongrLeft B σ (fun i ↦ g i (x i))`. -/
+theorem discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
+    [∀ i, (L i).IsNondegenerate] [∀ k, (M' k).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {hM' : ∀ k, (M' k).IsEven}
+    {A : ι → FiniteQuadraticModule} {B : κ → FiniteQuadraticModule}
+    (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (b : ∀ k, FiniteQuadraticModule.Isometry (B k) ((M' k).discriminantQuadraticModule (hM' k)))
+    (σ : ι ≃ κ) (f : ∀ i, Isometry (L i) (M' (σ i))) (g : ∀ i, A i → B (σ i))
+    (h : ∀ i x, b (σ i) (g i x) = (f i).discriminantQuadraticIsometry (hL i) (a i x))
+    (x : ∀ i, A i) :
+    (Isometry.piCongr σ f).discriminantQuadraticIsometry (isEven_pi hL)
+        (discriminantQuadraticIsometryPiOfIsometry L a x) =
+      discriminantQuadraticIsometryPiOfIsometry M' b
+        (Equiv.piCongrLeft (fun k ↦ B k) σ fun i ↦ g i (x i)) := by
+  refine (Isometry.discriminantQuadraticIsometry_apply (Isometry.piCongr σ f)
+    (isEven_pi hL) _).trans ?_
+  apply (discriminantGroupPiEquiv M').injective
+  funext k
+  obtain ⟨i, rfl⟩ := σ.surjective k
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry,
+    Equiv.piCongrLeft_apply_apply, h]
+  refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr σ f _ i).trans ?_
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+  exact ((f i).discriminantQuadraticIsometry_apply (hL i) (a i (x i))).symm
+
+/-- **Naturality of the summandwise alphabet isometry under `Isometry.piCongr'`.**  Given
+`σ : ι ≃ κ`, summandwise lattice isometries `f k : L (σ.symm k) ≅ M' k`, and compatible alphabet
+maps `g k : A (σ.symm k) → B k`, `Isometry.piCongr' σ f` transports the class of an alphabet family
+`x` to the class of `fun k ↦ g k (x (σ.symm k))`. -/
+theorem discriminantQuadraticIsometry_piCongr'_discriminantQuadraticIsometryPiOfIsometry
+    [∀ i, (L i).IsNondegenerate] [∀ k, (M' k).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {hM' : ∀ k, (M' k).IsEven}
+    {A : ι → FiniteQuadraticModule} {B : κ → FiniteQuadraticModule}
+    (a : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (b : ∀ k, FiniteQuadraticModule.Isometry (B k) ((M' k).discriminantQuadraticModule (hM' k)))
+    (σ : ι ≃ κ) (f : ∀ k, Isometry (L (σ.symm k)) (M' k)) (g : ∀ k, A (σ.symm k) → B k)
+    (h : ∀ k x, b k (g k x) =
+      (f k).discriminantQuadraticIsometry (hL (σ.symm k)) (a (σ.symm k) x))
+    (x : ∀ i, A i) :
+    (Isometry.piCongr' σ f).discriminantQuadraticIsometry (isEven_pi hL)
+        (discriminantQuadraticIsometryPiOfIsometry L a x) =
+      discriminantQuadraticIsometryPiOfIsometry M' b fun k ↦ g k (x (σ.symm k)) := by
+  refine (Isometry.discriminantQuadraticIsometry_apply (Isometry.piCongr' σ f)
+    (isEven_pi hL) _).trans ?_
+  apply (discriminantGroupPiEquiv M').injective
+  funext k
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry, h]
+  refine (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr' σ f _ k).trans ?_
+  rw [discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry]
+  exact ((f k).discriminantQuadraticIsometry_apply (hL (σ.symm k))
+    (a (σ.symm k) (x (σ.symm k)))).symm
+
+end PiCongr
 
 end Naturality
 
