@@ -163,6 +163,17 @@ theorem finrank_pos [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
   rw [finrank_eq_two_pow]
   positivity
 
+/-- The generators of the Clifford algebra of a free module are a faithful copy of the module,
+over every commutative ring and for every quadratic form: `changeForm` sends `ι Q` to the
+generator of the exterior algebra. Compare `CliffordAlgebra.ι_injective`, which needs no freeness
+but requires `2` to be invertible. -/
+theorem ι_injective_of_free [Module.Free R M] : Function.Injective (ι Q) := by
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-Q)
+  intro m n hmn
+  have := congrArg (changeForm (hB.trans (zero_sub Q).symm)) hmn
+  rw [changeForm_ι, changeForm_ι] at this
+  exact (ExteriorAlgebra.ι_inj R m n).1 this
+
 end General
 
 section CommRing

@@ -54,7 +54,6 @@ universe u v
 section FieldDimension
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [Invertible (2 : K)]
 
 /-- In dimension two, every odd Clifford element is a vector generator. -/
 theorem range_ι_eq_evenOdd_one_of_finrank_eq_two (Q : QuadraticForm K V)
@@ -63,7 +62,7 @@ theorem range_ι_eq_evenOdd_one_of_finrank_eq_two (Q : QuadraticForm K V)
     FiniteDimensional.of_finrank_pos (by rw [hV]; decide)
   let _ : Nontrivial V := Module.nontrivial_of_finrank_pos (by rw [hV]; decide)
   apply Submodule.eq_of_le_of_finrank_eq (range_ι_le_evenOdd_one Q)
-  rw [LinearMap.finrank_range_of_inj (ι_injective Q), finrank_evenOdd Q, hV]
+  rw [LinearMap.finrank_range_of_inj (ι_injective_of_free Q), finrank_evenOdd Q, hV]
   norm_num
 
 /-- In dimension two, the even Clifford elements are exactly the products `ι a * ι w`, for any
