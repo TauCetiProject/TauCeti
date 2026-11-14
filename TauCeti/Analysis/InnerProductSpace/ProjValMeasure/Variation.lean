@@ -22,7 +22,8 @@ uniform norm control for integration against polarized spectral measures: integr
 a bounded measurable function is bounded in absolute value by its supremum norm times
 `‖ψ‖ * ‖ξ‖`.
 
-On the diagonal, the variation of `P.polarizedComplexMeasure ξ ξ` is exactly `P.diag ξ`.
+On the diagonal, the variation of `P.polarizedComplexMeasure ξ ξ` is exactly `P.diag ξ`, and in
+general the variation is symmetric in the two vectors (`variation_polarizedComplexMeasure_comm`).
 
 The finite-variation instance makes this property available to the vector-measure
 integration API and subsequent spectral-integral estimates.
@@ -96,6 +97,21 @@ instance instIsFiniteMeasurePolarizedVariation (P : ProjValMeasure X H) (ψ ξ :
   refine ⟨?_⟩
   exact (P.polarizedComplexMeasure_variation_univ_le ψ ξ).trans_lt
     ENNReal.ofReal_lt_top
+
+/-- Swapping the two vectors conjugates the polarized complex measure and therefore leaves its
+variation unchanged. -/
+theorem variation_polarizedComplexMeasure_comm (P : ProjValMeasure X H) (ψ ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).variation = (P.polarizedComplexMeasure ξ ψ).variation := by
+  have hle (u v : H) :
+      (P.polarizedComplexMeasure u v).variation ≤ (P.polarizedComplexMeasure v u).variation := by
+    refine VectorMeasure.variation_le_of_forall_eNorm_le fun B hB => ?_
+    have hstar : P.polarizedComplexMeasure u v B = star (P.polarizedComplexMeasure v u B) := by
+      rw [P.polarizedComplexMeasure_apply u v B hB, P.polarizedComplexMeasure_apply v u B hB,
+        ← ContinuousLinearMap.adjoint_inner_left, (P.isSelfAdjoint_proj B hB).adjoint_eq,
+        RCLike.star_def, inner_conj_symm]
+    simpa [hstar, ← ofReal_norm] using
+      VectorMeasure.eNorm_measure_le_variation (P.polarizedComplexMeasure v u) B
+  exact le_antisymm (hle ψ ξ) (hle ξ ψ)
 
 /-- The variation of the diagonal polarized measure is the diagonal measure. -/
 @[simp]
