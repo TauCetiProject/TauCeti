@@ -194,10 +194,11 @@ private theorem exists_lpNorm_iteratedGradient_inter_ball_le (hp : 1 < p) (hp_to
     (by positivity) hAΛ u g (hu0 ψ hψ hcpt (hψB.trans hrU)) hgeq
   rw [hG, hV] at key
   -- Compare both sides of the localized estimate with the norms in the statement.
-  have hlow := lpNorm_restrict_inter_le_lpNorm_smul measurableSet_ball
+  have hlow := lpNorm_restrict_le_lpNorm_smul measurableSet_ball
     (fun y hy => hψ1 (ball_subset_closedBall hy))
     ((hψ.continuous.memLp_top_of_hasCompactSupport hcpt _).smul (r := p)
       (Lp.memLp (Wkp.iteratedGradient 1 u)))
+  rw [Measure.restrict_restrict measurableSet_ball, Set.inter_comm] at hlow
   refine le_mul_add_add_of_le (by positivity) hβ hγ (by positivity) (by positivity) (by positivity)
     (norm_nonneg f) (norm_nonneg G) (norm_nonneg V) ?_
   calc _ ≤ _ := hlow
@@ -206,8 +207,9 @@ private theorem exists_lpNorm_iteratedGradient_inter_ball_le (hp : 1 < p) (hp_to
         (C₀ / lam * Module.finrank ℝ (WithLp 2 (ℝ × E)) * (‖A₀‖ + δ * lam) + 1) *
           (2 * (c₀ / r) * ‖G‖ + c₀ / r ^ 2 * ‖V‖) := by
         gcongr
-        exact (lpNorm_mul_le_of_ae_norm_le_one hψ.continuous.aestronglyMeasurable (Lp.memLp g)
-          (.of_forall hψabs)).trans ((Lp.norm_eq_lpNorm_of_ae_eq .rfl).ge.trans hgnorm)
+        exact ((lpNorm_smul_le_mul_lpNorm_of_ae_le (Lp.memLp g) (.of_forall hψabs)).trans_eq
+          (one_mul _)).trans
+          ((Lp.norm_eq_lpNorm_of_ae_eq .rfl).ge.trans hgnorm)
     _ = _ := by ring
 
 /-- **The Calderón–Zygmund estimate near a flat boundary for continuous coefficients.** Let

@@ -21,11 +21,11 @@ the `lpNorm` form of Mathlib's `MeasureTheory.eLpNorm_le_mul_eLpNorm_of_ae_le_mu
 multiplication by a bounded measurable coefficient, as for the lower-order terms of a
 differential operator.
 
-Multiplying by a function bounded by one does not increase the `Lᵖ` norm
-(`MeasureTheory.lpNorm_mul_le_of_ae_norm_le_one`). For `1 ≤ p`, the lower-order terms
-`⟪b, G⟫ + c V` of a second-order operator, with `‖b‖ ≤ β` and `|c| ≤ γ`, lie in `Lᵖ` with norm at
-most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so they can be moved to
-the right-hand side of an equation
+In particular, scalar multiplication by a function bounded by `c` multiplies the `Lᵖ` norm by at
+most `c` (`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, the lower-order terms
+`⟪b, G⟫ + c V` of a second-order operator over `ℝ` or `ℂ`, with `‖b‖ ≤ β` and `‖c‖ ≤ γ`, lie in
+`Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
+they can be moved to the right-hand side of an equation
 (`MeasureTheory.Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq`).
 -/
 
@@ -51,47 +51,53 @@ theorem lpNorm_le_mul_lpNorm_of_ae_le_mul {f : α → F} {g : α → G} {c : ℝ
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hg.eLpNorm_ne_top)
     (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hf h p)
 
-/-- **Multiplying by a function bounded by one.** If `f ∈ Lᵖ(μ)` and `‖ψ x‖ ≤ 1` for almost every
-`x`, then `lpNorm (ψ * f) p μ ≤ lpNorm f p μ`. -/
-theorem lpNorm_mul_le_of_ae_norm_le_one {R : Type*} [NormedRing R] {ψ f : α → R}
-    (hψ : AEStronglyMeasurable ψ μ) (hf : MemLp f p μ) (h : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ 1) :
-    lpNorm (fun x => ψ x * f x) p μ ≤ lpNorm f p μ := by
-  simpa only [one_mul] using lpNorm_le_mul_lpNorm_of_ae_le_mul (f := fun x => ψ x * f x) (c := 1)
-    (hψ.mul hf.aestronglyMeasurable) hf (h.mono fun x hx =>
-      (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _)))
+/-- **Multiplying by a bounded function.** If `f ∈ Lᵖ(μ)` and `‖ψ x‖ ≤ c` for almost every `x`,
+then `lpNorm (ψ • f) p μ ≤ c * lpNorm f p μ`. -/
+theorem lpNorm_smul_le_mul_lpNorm_of_ae_le {𝕜 : Type*} [NormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {ψ : α → 𝕜} {f : α → F} {c : ℝ} (hf : MemLp f p μ)
+    (h : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ c) : lpNorm (fun x => ψ x • f x) p μ ≤ c * lpNorm f p μ := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- For `c < 0` the bound `‖ψ x‖ ≤ c` forces `μ = 0`.
+    obtain rfl : μ = 0 := ae_eq_bot.1 (Filter.eventually_false_iff_eq_bot.1
+      (h.mono fun x hx => (norm_nonneg (ψ x)).not_gt (hx.trans_lt hc)))
+    simp
+  by_cases hm : AEStronglyMeasurable (fun x => ψ x • f x) μ
+  · exact lpNorm_le_mul_lpNorm_of_ae_le_mul hm hf (h.mono fun _ hx =>
+      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _)))
+  rw [lpNorm_of_not_aestronglyMeasurable hm]
+  exact mul_nonneg hc lpNorm_nonneg
 
-/-- **The lower-order terms lie in `Lᵖ`.** For `1 ≤ p`, let `G ∈ Lᵖ(μ)` take values in a real
-inner product space and `V ∈ Lᵖ(μ)` be real, and let `b` and `c` be measurable with `‖b‖ ≤ β` and
-`|c| ≤ γ` almost everywhere. Then `⟪b, G⟫ + c V` lies in `Lᵖ(μ)`, with `Lᵖ` norm at most
-`β ‖G‖ + γ ‖V‖`. -/
-theorem memLp_inner_add_mul_and_lpNorm_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] (hp : 1 ≤ p) {b G : α → E} {c V : α → ℝ} {β γ : ℝ}
+/-- **The lower-order terms lie in `Lᵖ`.** For `1 ≤ p`, let `G ∈ Lᵖ(μ)` take values in an inner
+product space over `𝕜 = ℝ` or `ℂ` and `V ∈ Lᵖ(μ)` be `𝕜`-valued, and let `b` and `c` be
+measurable with `‖b‖ ≤ β` and `‖c‖ ≤ γ` almost everywhere. Then `⟪b, G⟫ + c V` lies in `Lᵖ(μ)`,
+with `Lᵖ` norm at most `β ‖G‖ + γ ‖V‖`. -/
+theorem memLp_inner_add_mul_and_lpNorm_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] (hp : 1 ≤ p) {b G : α → E} {c V : α → 𝕜} {β γ : ℝ}
     (hb : AEStronglyMeasurable b μ) (hbβ : ∀ᵐ x ∂μ, ‖b x‖ ≤ β) (hc : AEStronglyMeasurable c μ)
-    (hcγ : ∀ᵐ x ∂μ, |c x| ≤ γ) (hG : MemLp G p μ) (hV : MemLp V p μ) :
-    MemLp (fun x => ⟪b x, G x⟫_ℝ + c x * V x) p μ ∧
-      lpNorm (fun x => ⟪b x, G x⟫_ℝ + c x * V x) p μ ≤ β * lpNorm G p μ + γ * lpNorm V p μ := by
-  have hdm : AEStronglyMeasurable (fun x => ⟪b x, G x⟫_ℝ) μ := hb.inner hG.aestronglyMeasurable
-  have hzm : AEStronglyMeasurable (fun x => c x * V x) μ := hc.mul hV.aestronglyMeasurable
-  have hdle : ∀ᵐ x ∂μ, ‖⟪b x, G x⟫_ℝ‖ ≤ β * ‖G x‖ := hbβ.mono fun x hx => by
-    rw [Real.norm_eq_abs]
-    exact (abs_real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
-  have hzle : ∀ᵐ x ∂μ, ‖c x * V x‖ ≤ γ * ‖V x‖ := hcγ.mono fun x hx => by
-    rw [norm_mul, Real.norm_eq_abs]
-    exact mul_le_mul_of_nonneg_right hx (norm_nonneg _)
-  have hd : MemLp (fun x => ⟪b x, G x⟫_ℝ) p μ := hG.of_le_mul hdm hdle
-  refine ⟨hd.add (hV.of_le_mul hzm hzle), (lpNorm_add_le hd hp).trans ?_⟩
+    (hcγ : ∀ᵐ x ∂μ, ‖c x‖ ≤ γ) (hG : MemLp G p μ) (hV : MemLp V p μ) :
+    MemLp (fun x => ⟪b x, G x⟫_𝕜 + c x * V x) p μ ∧
+      lpNorm (fun x => ⟪b x, G x⟫_𝕜 + c x * V x) p μ ≤ β * lpNorm G p μ + γ * lpNorm V p μ := by
+  have hdm : AEStronglyMeasurable (fun x => ⟪b x, G x⟫_𝕜) μ := hb.inner hG.aestronglyMeasurable
+  have hdle : ∀ᵐ x ∂μ, ‖⟪b x, G x⟫_𝕜‖ ≤ β * ‖G x‖ := hbβ.mono fun x hx =>
+    (norm_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
+  have hzle : ∀ᵐ x ∂μ, ‖c x * V x‖ ≤ γ * ‖V x‖ := hcγ.mono fun x hx =>
+    (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
+  have hd : MemLp (fun x => ⟪b x, G x⟫_𝕜) p μ := hG.of_le_mul hdm hdle
+  refine ⟨hd.add (hV.of_le_mul (hc.mul hV.aestronglyMeasurable) hzle),
+    (lpNorm_add_le hd hp).trans ?_⟩
   exact add_le_add (lpNorm_le_mul_lpNorm_of_ae_le_mul hdm hG hdle)
-    (lpNorm_le_mul_lpNorm_of_ae_le_mul hzm hV hzle)
+    (lpNorm_smul_le_mul_lpNorm_of_ae_le hV hcγ)
 
-/-- **Moving the lower-order terms to the right-hand side.** For `1 ≤ p`, if `P + ⟪b, G⟫ + c V = f`
-almost everywhere, where `f`, `G` and `V` lie in `Lᵖ(μ)` and `‖b‖ ≤ β`, `|c| ≤ γ` almost everywhere,
-then `P` agrees almost everywhere with some `g ∈ Lᵖ(μ)` with `‖g‖ ≤ ‖f‖ + β ‖G‖ + γ ‖V‖`. -/
-theorem Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [Fact (1 ≤ p)] {P : α → ℝ} {b : α → E} {c : α → ℝ} {β γ : ℝ}
-    (hb : AEStronglyMeasurable b μ) (hbβ : ∀ᵐ x ∂μ, ‖b x‖ ≤ β) (hc : AEStronglyMeasurable c μ)
-    (hcγ : ∀ᵐ x ∂μ, |c x| ≤ γ) (G : Lp E p μ) (V : Lp ℝ p μ) (f : Lp ℝ p μ)
-    (heq : ∀ᵐ x ∂μ, P x + ⟪b x, G x⟫_ℝ + c x * V x = f x) :
-    ∃ g : Lp ℝ p μ, P =ᵐ[μ] g ∧ ‖g‖ ≤ ‖f‖ + β * ‖G‖ + γ * ‖V‖ := by
+/-- **Moving the lower-order terms to the right-hand side.** For `1 ≤ p` and `𝕜 = ℝ` or `ℂ`, if
+`P + ⟪b, G⟫ + c V = f` almost everywhere, where `f`, `G` and `V` lie in `Lᵖ(μ)` and `‖b‖ ≤ β`,
+`‖c‖ ≤ γ` almost everywhere, then `P` agrees almost everywhere with some `g ∈ Lᵖ(μ)` with
+`‖g‖ ≤ ‖f‖ + β ‖G‖ + γ ‖V‖`. -/
+theorem Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fact (1 ≤ p)] {P : α → 𝕜} {b : α → E}
+    {c : α → 𝕜} {β γ : ℝ} (hb : AEStronglyMeasurable b μ) (hbβ : ∀ᵐ x ∂μ, ‖b x‖ ≤ β)
+    (hc : AEStronglyMeasurable c μ) (hcγ : ∀ᵐ x ∂μ, ‖c x‖ ≤ γ) (G : Lp E p μ) (V : Lp 𝕜 p μ)
+    (f : Lp 𝕜 p μ) (heq : ∀ᵐ x ∂μ, P x + ⟪b x, G x⟫_𝕜 + c x * V x = f x) :
+    ∃ g : Lp 𝕜 p μ, P =ᵐ[μ] g ∧ ‖g‖ ≤ ‖f‖ + β * ‖G‖ + γ * ‖V‖ := by
   obtain ⟨hL, hLle⟩ :=
     memLp_inner_add_mul_and_lpNorm_le Fact.out hb hbβ hc hcγ (Lp.memLp G) (Lp.memLp V)
   rw [← Lp.norm_eq_lpNorm_of_ae_eq hL.coeFn_toLp, ← Lp.norm_eq_lpNorm_of_ae_eq (f := G) .rfl,
