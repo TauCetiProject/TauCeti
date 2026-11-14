@@ -53,6 +53,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
+* `Subgroup.le_map_conj_of_forall_coe_eq`: `V` lies in `gUg⁻¹` when a map `V → U` sends each `v`
+  to `g⁻¹ v g`.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
@@ -366,6 +368,15 @@ theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
       R.map (MulAut.conj (h * g)).toMonoidHom := by
   simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
     ← MulEquiv.toMonoidHom_trans, ← MulAut.mul_def, ← map_mul]
+
+/-- A subgroup `V` lies in the conjugate `gUg⁻¹` of `U` as soon as some map `κ : V → U` sends
+each `v` to `g⁻¹ v g`.
+
+The map `κ` only witnesses `g⁻¹ v g ∈ U` for each `v ∈ V`; it need not be a homomorphism or
+continuous. -/
+theorem _root_.Subgroup.le_map_conj_of_forall_coe_eq (V U : Subgroup G) (g : G) (κ : V → U)
+    (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) : V ≤ U.map (MulAut.conj g).toMonoidHom :=
+  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.
