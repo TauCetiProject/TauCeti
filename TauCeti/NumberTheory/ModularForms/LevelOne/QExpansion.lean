@@ -263,6 +263,22 @@ section Period
 
 variable {N : ℕ} [NeZero N]
 
+/-- The normalized Eisenstein series has coefficients in every subfield of `ℂ`, also
+when expanded in the parameter of any positive integral period. -/
+theorem qExpansion_natCast_E_coeff_mem {K : Subfield ℂ} {k : ℕ} (hk : 3 ≤ k) (i : ℕ) :
+    (qExpansion N (E hk)).coeff i ∈ K := by
+  have hperiod : qExpansion N (E hk) =
+      PowerSeries.expand N (NeZero.ne N) (qExpansion 1 (E hk)) := by
+    simpa using TauCeti.qExpansion_nat_mul one_ne_zero (NeZero.pos N)
+      (SlashInvariantFormClass.periodic_comp_ofComplex (E hk) one_mem_strictPeriods_SL)
+      (ModularFormClass.analyticAt_cuspFunction_zero (E hk) one_pos one_mem_strictPeriods_SL)
+  obtain ⟨P, hP⟩ := qExpansion_E_mem_range_map K.subtype hk
+  rw [hperiod, ← hP, PowerSeries.coeff_expand]
+  split_ifs
+  · simpa only [PowerSeries.coeff_map, Subfield.subtype_apply] using
+      (P.coeff (i / N)).property
+  · exact K.zero_mem
+
 /-- The expansion of `Δ` at period `N` is its expansion at period `1` in the variable `qᴺ`. -/
 theorem qExpansion_natCast_discriminant :
     qExpansion N discriminant =
