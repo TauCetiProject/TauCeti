@@ -32,17 +32,18 @@ have uniformly bounded even moments of every order:
 
 ## Main results
 
-* `TauCeti.Probability.ae_tendsto_spectralMeasure_wignerMatrix_of_seq` — almost-sure weak
-  convergence of empirical spectral measures for a sequence of Wigner arrays with uniformly bounded
-  even moments.
-* `TauCeti.Probability.ae_tendsto_spectralMeasure_wignerMatrix` — almost-sure weak convergence for
-  the corners of a single infinite Wigner array with uniformly bounded even moments.
-* `TauCeti.Probability.ae_tendsto_spectralMeasure_wignerMatrix_of_identDistrib` — almost-sure weak
-  convergence when the off-diagonal and diagonal entries are identically distributed with reference
-  variables having finite even moments of all orders.
-* `TauCeti.Probability.tendsto_integral_spectralMeasure_wignerMatrix_probability` — convergence in
+In the `TauCeti.Probability` namespace:
+
+* `ae_tendsto_spectralMeasure_wignerMatrix_of_seq` — almost-sure weak convergence of empirical
+  spectral measures for a sequence of Wigner arrays with uniformly bounded even moments.
+* `ae_tendsto_spectralMeasure_wignerMatrix` — almost-sure weak convergence for the corners of a
+  single infinite Wigner array with uniformly bounded even moments.
+* `ae_tendsto_spectralMeasure_wignerMatrix_of_identDistrib` — almost-sure weak convergence when the
+  off-diagonal and diagonal entries are identically distributed with reference variables having
+  finite even moments of all orders.
+* `tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability` — convergence in
   probability of bounded continuous linear statistics on possibly varying probability spaces.
-* `TauCeti.Probability.tendsto_integral_spectralMeasure_wignerMatrix_probability_of_identDistrib` —
+* `tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability_of_identDistrib` —
   in-probability convergence when the entries at each matrix size are identically distributed with
   fixed reference variables.
 
@@ -222,7 +223,7 @@ off-diagonal second absolute moments, and for every `k` the `2 * k`th absolute m
 bounded across `n` and the entry indices, then for every bounded continuous function `f : ℝ →ᵇ ℝ`
 and every `ε > 0`,
 `P n {ω | ε ≤ |∫ f dL_{H_{n+1}(ω)} - ∫ f d(semicircleReal 0 1)|} → 0` as `n → ∞`. -/
-theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
+theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ}
     (hindep : ∀ n, iIndepFun
@@ -282,10 +283,10 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
       (measure_mono (hsub n)).trans (measure_biUnion_finset_le (range (N + 1)) _)
 
 /-- **Wigner's semicircle law (in probability, identically distributed entries).** Specialization of
-`tendsto_integral_spectralMeasure_wignerMatrix_probability` when for each matrix size `n` the
-entries `ξ n ij` and `η n i` are identically distributed with reference variables `ξ₀` and `η₀`
-possessing finite even moments of all orders. -/
-theorem tendsto_integral_spectralMeasure_wignerMatrix_probability_of_identDistrib
+`tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability` when for each
+matrix size `n` the entries `ξ n ij` and `η n i` are identically distributed with reference
+variables `ξ₀` and `η₀` possessing finite even moments of all orders. -/
+theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability_of_identDistrib
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {Ω₀ Ω₁ : Type*} [MeasurableSpace Ω₀] [MeasurableSpace Ω₁]
     {P₀ : Measure Ω₀} {P₁ : Measure Ω₁}
@@ -305,7 +306,7 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_probability_of_identDistri
       |(∫ x, f x ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) -
       ∫ x, f x ∂semicircleReal 0 1|}) atTop (𝓝 0) :=
-  tendsto_integral_spectralMeasure_wignerMatrix_probability hindep
+  tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability hindep
     (fun n ij ↦ (hξid n ij).integral_eq.trans hξzero)
     (fun n i ↦ (hηid n i).integral_eq.trans hηzero)
     (fun n ij ↦ ((hξid n ij).comp (by fun_prop : Measurable fun z : ℂ ↦ ‖z‖ ^ 2)).integral_eq.trans
