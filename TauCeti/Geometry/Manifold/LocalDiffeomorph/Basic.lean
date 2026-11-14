@@ -37,10 +37,9 @@ every differential.
 The file also records that maximal-atlas charts and their inverses are local diffeomorphisms, and
 that being a local diffeomorphism at a point is an open condition: the partial diffeomorphism
 witnessing it at one point witnesses it at every nearby point, and that a local diffeomorphism can
-be cancelled on the right of a composite local diffeomorphism, and on the left when the map being
-cancelled is continuous. Conversely, an open partial
-homeomorphism to the model space which is a local diffeomorphism on its source is a chart of the
-maximal atlas.
+be cancelled on the right of a composite local diffeomorphism, and on the left when the remaining
+right factor is continuous at the point. Conversely, an open partial homeomorphism to the model
+space which is a local diffeomorphism on its source is a chart of the maximal atlas.
 
 The extended-chart constructor lets maximal-atlas coordinates, including Frobenius flat charts,
 serve as partial diffeomorphisms in constructions of local submanifolds. A partial
