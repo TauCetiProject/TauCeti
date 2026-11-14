@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 Matteo Cipollina and The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: OpenAI Codex
+Authors: Matteo Cipollina, OpenAI Codex
 -/
 module
 
@@ -22,6 +22,14 @@ The definition uses Mathlib's `Complex.logTaylor`, with an equivalent finite-sum
 At genus one this is `(1 - z) * exp z`. Its quadratic deviation and global logarithmic
 bounds supply the estimates for the genus-one product and reciprocal Gamma function.
 The paired rational logarithmic derivative retains this genus-one specialization.
+
+## Provenance
+
+The all-genus elementary-factor definition, normalization and simple-zero formalization are
+adapted from Matteo Cipollina's
+[PNT+ development](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/fc979d1d71a79bdcd497ee2881413224c59a46b0/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/WeierstrassFactor.lean).
+The generic logarithmic-Taylor formulation here also retains the existing native genus-one
+estimates and their Mathlib-based proofs.
 
 ## References
 
