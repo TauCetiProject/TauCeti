@@ -22,12 +22,16 @@ initial projection of a classical Schauder basis, gives a finite linear combinat
 coordinate functionals.
 
 An unconditional basis indexed by `ℕ` is also a classical Schauder basis: convergence along the
-net of all finite sets implies convergence along initial segments. The conversion
-`UnconditionalSchauderBasis.toSchauderBasis` keeps the basis vectors and coordinate functionals,
-so the classical theory of shrinking and boundedly complete bases applies to unconditional bases
-such as the coordinate bases of `c₀` and `ℓᵖ`.
+net of all finite sets implies convergence along initial segments. Conversely, a classical
+Schauder basis whose expansion converges unconditionally is an unconditional basis indexed by `ℕ`.
+The conversions `UnconditionalSchauderBasis.toSchauderBasis` and
+`GeneralSchauderBasis.toUnconditionalSchauderBasis` keep the basis vectors and coordinate
+functionals, so the classical theory of shrinking and boundedly complete bases applies to
+unconditional bases such as the coordinate bases of `c₀` and `ℓᵖ`, and classical bases with
+unconditional expansions inherit the multiplier and rearrangement theory of unconditional bases.
 
-The conversion follows Mathlib's `HilbertBasis.toSchauderBasis`.
+The conversions follow Mathlib's `HilbertBasis.toSchauderBasis` and
+`HilbertBasis.toUnconditionalSchauderBasis`.
 -/
 
 public section
@@ -104,6 +108,39 @@ theorem tsum_coord_smulRight_apply_basis [CompleteSpace F] (v : β → F)
 
 end CoordinateSeries
 
+/-- A generalized Schauder basis whose expansion also converges unconditionally is an
+unconditional basis, with the same basis vectors and coordinate functionals. -/
+protected def toUnconditionalSchauderBasis
+    (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    UnconditionalSchauderBasis β 𝕜 X where
+  basis := b
+  coord := b.coord
+  ortho := b.ortho
+  expansion := h
+
+/-- The basis vectors of the unconditional basis are the original basis vectors. -/
+@[simp]
+theorem coe_toUnconditionalSchauderBasis
+    (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    ⇑(b.toUnconditionalSchauderBasis h) = ⇑b :=
+  (rfl)
+
+/-- The coordinate functionals of the unconditional basis are the original coordinate
+functionals. -/
+@[simp]
+theorem toUnconditionalSchauderBasis_coord
+    (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) :
+    (b.toUnconditionalSchauderBasis h).coord = b.coord :=
+  (rfl)
+
+/-- The finite projections of the unconditional basis are the finite projections of the original
+basis. -/
+@[simp]
+theorem toUnconditionalSchauderBasis_proj
+    (h : ∀ x, HasSum (fun i ↦ b.coord i x • b i) x) (A : Finset β) :
+    (b.toUnconditionalSchauderBasis h).proj A = b.proj A :=
+  (rfl)
+
 end GeneralSchauderBasis
 
 namespace SchauderBasis
@@ -111,14 +148,39 @@ namespace SchauderBasis
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   (b : SchauderBasis 𝕜 X)
 
+/-- Each term of a classical Schauder expansion is the difference of consecutive initial
+projections. -/
+theorem proj_succ_sub_proj (n : ℕ) (x : X) :
+    b.proj (n + 1) x - b.proj n x = b.coord n x • b n := by
+  rw [proj_apply, proj_apply, Finset.sum_range_succ, add_sub_cancel_left]
+
 /-- Precomposition with an initial projection is a finite linear combination of coordinates. -/
 theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (n : ℕ) :
     f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
   rw [proj, GeneralSchauderBasis.comp_proj_eq_sum]
 
+/-- A uniform bound on the initial projections bounds the basis constant of a classical Schauder
+basis. -/
+theorem nnNormProjBound_le {C : NNReal} (hC : ∀ n : ℕ, ‖b.proj n‖ ≤ C) :
+    b.nnNormProjBound ≤ C :=
+  ciSup_le fun n ↦ hC n
+
 end SchauderBasis
 
 namespace UnconditionalSchauderBasis
+
+section General
+
+variable {β 𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  (b : UnconditionalSchauderBasis β 𝕜 X)
+
+/-- A uniform bound on the finite projections bounds the basis constant of an unconditional
+basis. -/
+theorem nnNormProjBound_le {C : NNReal} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C) :
+    b.nnNormProjBound ≤ C :=
+  ciSup_le fun A ↦ hC A
+
+end General
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
   (b : UnconditionalSchauderBasis ℕ 𝕜 X)
@@ -146,6 +208,21 @@ onto initial segments. -/
 @[simp]
 theorem toSchauderBasis_proj (n : ℕ) :
     b.toSchauderBasis.proj n = b.proj (Finset.range n) :=
+  (rfl)
+
+/-- Converting a classical basis to an unconditional basis and back recovers the original basis. -/
+@[simp]
+theorem toSchauderBasis_toUnconditionalSchauderBasis (c : SchauderBasis 𝕜 X)
+    (h : ∀ x, HasSum (fun i ↦ c.coord i x • c i) x) :
+    (c.toUnconditionalSchauderBasis h).toSchauderBasis = c :=
+  (rfl)
+
+/-- Converting an `ℕ`-indexed unconditional basis to a classical basis and back recovers the
+original basis. -/
+@[simp]
+theorem _root_.GeneralSchauderBasis.toUnconditionalSchauderBasis_toSchauderBasis
+    (h : ∀ x, HasSum (fun i ↦ b.toSchauderBasis.coord i x • b.toSchauderBasis i) x) :
+    b.toSchauderBasis.toUnconditionalSchauderBasis h = b :=
   (rfl)
 
 end UnconditionalSchauderBasis

@@ -19,10 +19,15 @@ coefficients change the norm of `∑ i ∈ s, a i • v i` by a bounded factor:
   give `2 * t * S`;
 * `TauCeti.norm_sum_smul_le_four_mul`: scalar coefficients of norm at most `t` give `4 * t * S`.
 
+Conversely, if every `±1`-signed combination `∑ i ∈ s, ε i • v i` has norm at most `S`, then real
+coefficients of absolute value at most `t` give `t * S` without losing a factor of `2`
+(`TauCeti.norm_sum_ofReal_smul_le_of_forall_abs_eq_one`), and scalar coefficients of norm at most
+`t` give `2 * t * S` (`TauCeti.norm_sum_smul_le_two_mul_of_forall_abs_eq_one`).
+
 The first estimate peels off the smallest coefficient, which multiplies the full sum; the others
-split coefficients into positive and negative parts and into real and imaginary parts. These are
-the estimates by which the coordinate projections of an unconditional basis control its bounded
-coordinate multipliers.
+split coefficients into positive and negative parts, into signs and magnitudes, and into real and
+imaginary parts. These are the estimates by which the coordinate projections and signed
+multipliers of an unconditional basis control its bounded coordinate multipliers.
 
 ## References
 
@@ -118,5 +123,86 @@ theorem norm_sum_smul_le_four_mul (hS : ∀ u ⊆ s, ‖∑ i ∈ u, v i‖ ≤ 
         (norm_sum_ofReal_smul_le_two_mul hI ht fun i hi ↦
           (RCLike.abs_im_le_norm _).trans (ha i hi)))
     _ = 4 * t * S := by ring
+
+/-- If every signed combination `∑ i ∈ s, ε i • v i` with `|ε i| = 1` has norm at most `S`, then
+every combination of the `v i` over `s` with real coefficients of absolute value at most `t` has
+norm at most `t * S`. -/
+theorem norm_sum_ofReal_smul_le_of_forall_abs_eq_one
+    (hS : ∀ ε : ι → ℝ, (∀ i, |ε i| = 1) → ‖∑ i ∈ s, (ε i : 𝕜) • v i‖ ≤ S) (ht : 0 ≤ t)
+    {a : ι → ℝ} (ha : ∀ i ∈ s, |a i| ≤ t) :
+    ‖∑ i ∈ s, (a i : 𝕜) • v i‖ ≤ t * S := by
+  classical
+  -- Factor `a i = |a i| * σ i` with `σ i = ±1`; every subsum of `σ i • v i` over `u ⊆ s` is the
+  -- midpoint of two full `±1`-combinations over `s`.
+  let σ : ι → ℝ := fun i ↦ if 0 ≤ a i then 1 else -1
+  have hσ (i : ι) : |σ i| = 1 := by
+    dsimp only [σ]
+    split_ifs <;> norm_num
+  have haσ (i : ι) : a i = |a i| * σ i := by
+    dsimp only [σ]
+    rcases le_or_gt 0 (a i) with h | h
+    · simp [h, abs_of_nonneg h]
+    · simp [h.not_ge, abs_of_neg h]
+  have hw : ∀ u ⊆ s, ‖∑ i ∈ u, (σ i : 𝕜) • v i‖ ≤ S := fun u hu ↦ by
+    let ε₁ : ι → ℝ := fun i ↦ if i ∈ u then σ i else 1
+    let ε₂ : ι → ℝ := fun i ↦ if i ∈ u then σ i else -1
+    have hε₁ (i : ι) : |ε₁ i| = 1 := by dsimp only [ε₁]; split_ifs <;> simp [hσ]
+    have hε₂ (i : ι) : |ε₂ i| = 1 := by dsimp only [ε₂]; split_ifs <;> simp [hσ]
+    have hmid : ∑ i ∈ u, (σ i : 𝕜) • v i =
+        ((2⁻¹ : ℝ) : 𝕜) • ∑ i ∈ s, (ε₁ i : 𝕜) • v i +
+          ((2⁻¹ : ℝ) : 𝕜) • ∑ i ∈ s, (ε₂ i : 𝕜) • v i := by
+      rw [Finset.smul_sum, Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_subset hu]
+      · refine Finset.sum_congr rfl fun i hi ↦ ?_
+        simp only [ε₁, ε₂, hi, ↓reduceIte]
+        rw [← add_smul, ← RCLike.ofReal_add]
+        norm_num
+      · intro i _ hiu
+        simp [ε₁, ε₂, hiu]
+    calc
+      ‖∑ i ∈ u, (σ i : 𝕜) • v i‖ ≤ 2⁻¹ * S + 2⁻¹ * S := by
+        rw [hmid]
+        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+        · rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by norm_num)]
+          exact mul_le_mul_of_nonneg_left (hS ε₁ hε₁) (by norm_num)
+        · rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by norm_num)]
+          exact mul_le_mul_of_nonneg_left (hS ε₂ hε₂) (by norm_num)
+      _ = S := by ring
+  have heq : ∑ i ∈ s, (a i : 𝕜) • v i = ∑ i ∈ s, ((|a i| : ℝ) : 𝕜) • (σ i : 𝕜) • v i :=
+    Finset.sum_congr rfl fun i _ ↦ by rw [smul_smul, ← RCLike.ofReal_mul, ← haσ]
+  rw [heq]
+  exact norm_sum_ofReal_smul_le_of_nonneg hw ht (fun i _ ↦ abs_nonneg _) ha
+
+/-- If every signed combination `∑ i ∈ s, ε i • v i` with `|ε i| = 1` has norm at most `S`, then
+every combination of the `v i` over `s` with scalar coefficients of norm at most `t` has norm at
+most `2 * t * S`. -/
+theorem norm_sum_smul_le_two_mul_of_forall_abs_eq_one
+    (hS : ∀ ε : ι → ℝ, (∀ i, |ε i| = 1) → ‖∑ i ∈ s, (ε i : 𝕜) • v i‖ ≤ S) (ht : 0 ≤ t)
+    {a : ι → 𝕜} (ha : ∀ i ∈ s, ‖a i‖ ≤ t) :
+    ‖∑ i ∈ s, a i • v i‖ ≤ 2 * t * S := by
+  have hI : ∀ ε : ι → ℝ, (∀ i, |ε i| = 1) → ‖∑ i ∈ s, (ε i : 𝕜) • (RCLike.I : 𝕜) • v i‖ ≤ S :=
+    fun ε hε ↦ by
+      have hcomm : ∑ i ∈ s, (ε i : 𝕜) • (RCLike.I : 𝕜) • v i =
+          (RCLike.I : 𝕜) • ∑ i ∈ s, (ε i : 𝕜) • v i := by
+        rw [Finset.smul_sum]
+        exact Finset.sum_congr rfl fun i _ ↦ smul_comm _ _ _
+      rw [hcomm, norm_smul]
+      refine (mul_le_of_le_one_left (norm_nonneg _) ?_).trans (hS ε hε)
+      rw [RCLike.norm_I]
+      split_ifs <;> norm_num
+  have hsplit : ∑ i ∈ s, a i • v i =
+      ∑ i ∈ s, (RCLike.re (a i) : 𝕜) • v i +
+        ∑ i ∈ s, (RCLike.im (a i) : 𝕜) • (RCLike.I : 𝕜) • v i := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [smul_smul, ← add_smul, RCLike.re_add_im]
+  calc
+    ‖∑ i ∈ s, a i • v i‖ ≤ t * S + t * S := by
+      rw [hsplit]
+      exact (norm_add_le _ _).trans (add_le_add
+        (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hS ht fun i hi ↦
+          (RCLike.abs_re_le_norm _).trans (ha i hi))
+        (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hI ht fun i hi ↦
+          (RCLike.abs_im_le_norm _).trans (ha i hi)))
+    _ = 2 * t * S := by ring
 
 end TauCeti

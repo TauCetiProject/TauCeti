@@ -57,6 +57,9 @@ Conditioning on it replaces a function on each atom by its average there.
   expectations of a real or complex `f ∈ Lᵖ` converge to `f` in `Lᵖ` for `1 ≤ p < ∞`.
 * `TauCeti.unitInterval.tendsto_ae_condExp_dyadicFiltration`: the dyadic conditional expectations
   of an integrable function converge to it almost everywhere.
+* `TauCeti.unitInterval.setAverage_dyadicCell_eq_half` and
+  `TauCeti.unitInterval.integral_comp_dyadicAtom`: midpoint identity for averages on dyadic cells
+  and atom-sum formula for integrals of functions of `dyadicAtom N`.
 
 ## References
 
@@ -270,6 +273,11 @@ theorem volume_dyadicCell_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
   push_cast
   ring
 
+/-- Each half of a positively numbered dyadic cell has half its real volume. -/
+theorem measureReal_dyadicCell_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
+    volume.real (dyadicCell (2 * n + e)) = volume.real (dyadicCell n) / 2 := by
+  simp [Measure.real, volume_dyadicCell_two_mul_add hn he, ENNReal.toReal_div]
+
 /-- The dyadic cell numbered `n < 2 * N` is measurable for the dyadic filtration at step `N`. -/
 theorem measurableSet_dyadicFiltration_dyadicCell {N n : ℕ} (hn : n < 2 * N) :
     MeasurableSet[dyadicFiltration N] (dyadicCell n) := by
@@ -284,6 +292,25 @@ theorem measurableSet_dyadicFiltration_dyadicCell {N n : ℕ} (hn : n < 2 * N) :
 @[measurability]
 theorem measurableSet_dyadicCell (n : ℕ) : MeasurableSet (dyadicCell n) :=
   dyadicFiltration.le (n + 1) _ (measurableSet_dyadicFiltration_dyadicCell (by omega))
+
+/-- The average of an integrable function on `dyadicCell n` (`0 < n`) is the midpoint of its
+averages on the two halves `dyadicCell (2 * n)` and `dyadicCell (2 * n + 1)`. -/
+theorem setAverage_dyadicCell_eq_half {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : I → E} (hf : Integrable f) {n : ℕ} (hn : 0 < n) :
+    (⨍ y in dyadicCell n, f y) =
+      (2⁻¹ : ℝ) • ((⨍ y in dyadicCell (2 * n), f y) + ⨍ y in dyadicCell (2 * n + 1), f y) := by
+  have hunion : ∫ y in dyadicCell n, f y =
+      (∫ y in dyadicCell (2 * n), f y) + ∫ y in dyadicCell (2 * n + 1), f y := by
+    conv_lhs => rw [dyadicCell_eq_union hn]
+    exact setIntegral_union disjoint_dyadicCell_two_mul (measurableSet_dyadicCell _)
+      hf.integrableOn hf.integrableOn
+  have hv0 : volume.real (dyadicCell (2 * n)) = volume.real (dyadicCell n) / 2 := by
+    simpa using measureReal_dyadicCell_two_mul_add (e := 0) hn two_pos
+  have hv1 : volume.real (dyadicCell (2 * n + 1)) = volume.real (dyadicCell n) / 2 :=
+    measureReal_dyadicCell_two_mul_add (e := 1) hn one_lt_two
+  have hc : (2⁻¹ : ℝ) * (2 / volume.real (dyadicCell n)) = (volume.real (dyadicCell n))⁻¹ := by
+    ring
+  simp only [setAverage_eq, hunion, hv0, hv1, inv_div, smul_add, smul_smul, hc]
 
 /-- The number of the dyadic cell containing `x` among the `N` cells numbered `N, …, 2 * N - 1`.
 For `0 < N` these cells partition the unit interval (`dyadicAtom_mem_Ico`,
@@ -340,6 +367,29 @@ theorem preimage_dyadicAtom_singleton_of_mem {N n : ℕ} (hn : n ∈ Set.Ico N (
 theorem preimage_dyadicAtom_singleton_of_notMem {N n : ℕ} (hN : 0 < N)
     (hn : n ∉ Set.Ico N (2 * N)) : dyadicAtom N ⁻¹' {n} = ∅ :=
   Set.eq_empty_of_forall_notMem fun x hx => hn (hx ▸ dyadicAtom_mem_Ico hN x)
+
+/-- An atom of `dyadicFiltration (N + 1)` numbered below `2 * N` is already the atom of
+`dyadicFiltration N` containing the same point. -/
+theorem dyadicAtom_eq_of_lt_two_mul {N : ℕ} {x : I} (hm : dyadicAtom (N + 1) x < 2 * N) :
+    dyadicAtom N x = dyadicAtom (N + 1) x := by
+  obtain ⟨h1, _⟩ := dyadicAtom_mem_Ico (Nat.add_one_pos N) x
+  exact (dyadicAtom_eq_iff ⟨by omega, hm⟩).2 (mem_dyadicCell_dyadicAtom (N + 1) x)
+
+/-- The two new atoms `2 * N` and `2 * N + 1` of `dyadicFiltration (N + 1)` have half-index `N`. -/
+theorem dyadicAtom_succ_div_two {N : ℕ} {x : I} (hm : 2 * N ≤ dyadicAtom (N + 1) x) :
+    dyadicAtom (N + 1) x / 2 = N := by
+  obtain ⟨_, h2⟩ := dyadicAtom_mem_Ico (Nat.add_one_pos N) x
+  omega
+
+/-- For `0 < N`, a point whose atom in `dyadicFiltration (N + 1)` is `2 * N` or `2 * N + 1` has
+atom `N` in `dyadicFiltration N`. -/
+theorem dyadicAtom_eq_of_two_mul_le {N : ℕ} (hN : 0 < N) {x : I}
+    (hm : 2 * N ≤ dyadicAtom (N + 1) x) :
+    dyadicAtom N x = N := by
+  have hdiv := dyadicAtom_succ_div_two hm
+  refine (dyadicAtom_eq_iff ⟨le_rfl, by omega⟩).2 ?_
+  rw [← hdiv]
+  exact mem_dyadicCell_div_two (by omega) (mem_dyadicCell_dyadicAtom (N + 1) x)
 
 @[fun_prop]
 theorem measurable_dyadicAtom (N : ℕ) : Measurable (dyadicAtom N) := by
@@ -485,5 +535,25 @@ theorem condExp_dyadicFiltration_ae_eq {E : Type*} [NormedAddCommGroup E] [Norme
       · rw [Set.preimage_const_of_notMem (by simpa using Ne.symm h1)]
         simp
     · simp [preimage_dyadicAtom_singleton_of_notMem hN hn]
+
+/-- For `0 < N`, the integral of a function factoring through `dyadicAtom N` is the
+measure-weighted sum of its values on the `N` atoms `N, …, 2 * N - 1`. -/
+theorem integral_comp_dyadicAtom {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {N : ℕ} (hN : 0 < N) (F : ℕ → E) :
+    ∫ x, F (dyadicAtom N x) =
+      ∑ m ∈ Finset.Ico N (2 * N), volume.real (dyadicCell m) • F m := by
+  have hpt : (fun x => F (dyadicAtom N x)) =
+      fun x => ∑ m ∈ Finset.Ico N (2 * N), (dyadicCell m).indicator (fun _ => F m) x := by
+    ext x
+    have hx := dyadicAtom_mem_Ico hN x
+    rw [Finset.sum_eq_single_of_mem (dyadicAtom N x) (Finset.mem_Ico.2 hx)]
+    · simp [Set.indicator_of_mem (mem_dyadicCell_dyadicAtom N x)]
+    · intro m hm hmx
+      have hx_not : x ∉ dyadicCell m :=
+        fun hc => hmx ((dyadicAtom_eq_iff (Finset.mem_Ico.1 hm)).2 hc).symm
+      simp [hx_not]
+  rw [hpt, integral_finsetSum _ fun m _ =>
+    (integrable_const (F m)).indicator (measurableSet_dyadicCell m)]
+  exact Finset.sum_congr rfl fun m _ => integral_indicator_const (F m) (measurableSet_dyadicCell m)
 
 end TauCeti.unitInterval
