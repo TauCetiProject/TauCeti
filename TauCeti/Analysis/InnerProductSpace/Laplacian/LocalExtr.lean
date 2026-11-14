@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Calculus.DerivativeTest
 
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+
 /-!
 # The Laplacian at an interior local extremum
 
@@ -40,7 +42,8 @@ theorem laplacian_nonpos_of_isLocalMax (hf : ContDiffAt ℝ 2 f x) (hmax : IsLoc
     Δ f x ≤ 0 := by
   rw [laplacian_eq_iteratedFDeriv_orthonormalBasis f (stdOrthonormalBasis ℝ E)]
   exact Finset.sum_nonpos fun i _ => by
-    simpa [iteratedFDeriv_two_apply] using fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax _
+    simpa [iteratedFDeriv_two_apply] using fderiv_fderiv_self_nonpos_of_isLocalMax
+      (hf.eventually_differentiableAt (by norm_num)) hmax _
 
 /-- **Minimum principle, second-derivative form.** At an interior local minimum of a `C²`
 function the Laplacian is nonnegative. -/

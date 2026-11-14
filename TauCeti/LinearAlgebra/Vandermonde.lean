@@ -176,21 +176,8 @@ theorem factorial_mul_sum_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ)
   classical
   -- Multilinearity of the determinant in the rows, used in every row at once: a term of the
   -- expansion is a choice of one summand in each row, so the terms are indexed by the box.
-  have hbox : (Matrix.of fun i j : Fin n =>
-        ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t).det
-      = ∑ y ∈ Fintype.piFinset fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1),
-          (Matrix.of fun i j : Fin n => (descPochhammer ℤ (j : ℕ)).eval (y i)).det := by
-    have key := (Matrix.detRowAlternating (R := ℤ) (n := Fin n)).toMultilinearMap.map_sum_finset
-      (A := fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
-      (g := fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t)
-    have hrow : (fun i : Fin n => ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1),
-          fun j : Fin n => (descPochhammer ℤ (j : ℕ)).eval t)
-        = fun i j : Fin n =>
-          ∑ t ∈ Finset.Icc (x i.castSucc) (x i.succ - 1), (descPochhammer ℤ (j : ℕ)).eval t := by
-      funext i j
-      exact Finset.sum_apply j _ _
-    rw [hrow] at key
-    exact key
+  have hbox := Matrix.det_of_sum_rows (fun i : Fin n => Finset.Icc (x i.castSucc) (x i.succ - 1))
+    fun (_ : Fin n) (t : ℤ) (j : Fin n) => (descPochhammer ℤ (j : ℕ)).eval t
   have hsum : (∑ y ∈ Finset.Icc (fun i : Fin n => x i.castSucc) (fun i : Fin n => x i.succ - 1),
       (Matrix.vandermonde y).det)
       = (Matrix.of fun i j : Fin n =>
