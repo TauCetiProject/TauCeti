@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Prod
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The sum of two height functions on a product of spheres is a Morse function

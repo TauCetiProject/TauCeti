@@ -74,7 +74,7 @@ private local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
 
 private local instance : CompleteSpace (LeftInvariantDerivation I G) :=
-  FiniteDimensional.complete ℝ _
+  FiniteDimensional.completeSpace ℝ _
 
 /-- The linear algebra closing the computation of the second derivative of the local BCH germ:
 a symmetric bilinear map `S` on pairs of left-invariant derivations whose quadratic form vanishes
