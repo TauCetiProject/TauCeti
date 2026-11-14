@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.Matrix.Minor
 public import TauCeti.Order.Hom.PowersetCard
 
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-import Mathlib.Tactic.FinCases
 import TauCeti.LinearAlgebra.ExteriorPower.Plucker
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
@@ -54,8 +53,11 @@ higher adjugate `A.higherAdjugate r` has `(T, S)`-entry equal to the signed comp
 * `Matrix.compound_mul_higherAdjugate` and `Matrix.higherAdjugate_mul_compound`:
   `A.compound r * A.higherAdjugate r = A.det • 1` and
   `A.higherAdjugate r * A.compound r = A.det • 1`.
+* `Matrix.higherAdjugate_smul` and `Matrix.higherAdjugate_mul_distrib`: scalar and multiplicative
+  laws for `Matrix.higherAdjugate`.
 * `Matrix.reindex_ofSingleton_higherAdjugate_one` and `Matrix.higherAdjugate_one_ofSingleton`:
-  for `r = 1`, the higher adjugate on `Fin m` agrees with `Matrix.adjugate`.
+  for `r = 1`, the higher adjugate agrees with `Matrix.adjugate` on any finite linearly ordered
+  index type.
 * `LinearMap.det_smul_mem_range_exteriorPower_map`: for an endomorphism `φ` of a finite free
   module `F`, `LinearMap.det φ` multiplies `⋀[R]^r F` into
   `LinearMap.range (exteriorPower.map r φ)`.
@@ -71,7 +73,7 @@ carries the bound `r ≤ Fintype.card ι` (`Set.powersetCard.sub_add_eq_card`), 
 ## References
 
 * [N. Bourbaki, *Algebra I*, Chapter III, §8][bourbaki1989]
-* [S. Dasgupta and M. Kakde, *On the Brumer–Stark conjecture*, Lemma 3.9][dasguptakakde2023]
+* S. Dasgupta, M. Kakde, *On the Brumer–Stark conjecture*, Ann. of Math. (2) 197 (2023), Lemma 3.9.
 -/
 
 public section
@@ -114,6 +116,15 @@ theorem compound_map {R' : Type*} [CommRing R'] (φ : R →+* R') (A : Matrix ι
   ext S T
   rw [compound_apply, map_apply, compound_apply, RingHom.map_det]
   rfl
+
+/-- Submatrices along order embeddings commute with `Matrix.compound`. -/
+theorem compound_submatrix_orderEmbedding {ι' κ' : Type*} [LinearOrder ι'] [LinearOrder κ']
+    (e : ι' ↪o ι) (f : κ' ↪o κ) (A : Matrix ι κ R) (r : ℕ) :
+    (A.submatrix e f).compound r =
+      (A.compound r).submatrix (Set.powersetCard.map r e.toEmbedding)
+        (Set.powersetCard.map r f.toEmbedding) := by
+  ext S T
+  simp [compound_apply, submatrix_submatrix, Function.comp_def]
 
 /-- Scaling a matrix by `c` scales its `r`-th compound matrix by `c ^ r`. -/
 @[simp]
@@ -165,6 +176,14 @@ theorem compound_one (r : ℕ) : (1 : Matrix ι ι R).compound r = 1 := by
       exact hxT ((Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem T _).mp ⟨b, heq.symm⟩)
     simp [one_apply_ne hne]
 
+/-- Compound matrices commute with matrix powers. -/
+@[simp]
+theorem compound_pow [Fintype ι] (A : Matrix ι ι R) (r k : ℕ) :
+    (A ^ k).compound r = A.compound r ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ, compound_mul, ih, pow_succ]
+
 /-- Every entry of the `0`-th compound matrix is `1`. -/
 theorem compound_zero_apply (A : Matrix ι κ R)
     (S : Set.powersetCard ι 0) (T : Set.powersetCard κ 0) :
@@ -193,21 +212,13 @@ theorem reindex_ofSingleton_compound_one (A : Matrix ι κ R) :
   ext i k
   simp
 
-private theorem ofFinEmbEquiv_symm_pair {α : Type*} [LinearOrder α]
-    {U : Set.powersetCard α 2} {a b : α} (hab : a < b) (hU : U.val = {a, b}) :
-    ⇑(ofFinEmbEquiv.symm U) = ![a, b] := by
-  rw [ofFinEmbEquiv_symm_apply]
-  exact (Finset.orderEmbOfFin_unique U.prop
-    (fun x ↦ by fin_cases x <;> simp [hU])
-    (Fin.strictMono_iff_lt_succ.mpr fun x ↦ by fin_cases x; exact hab)).symm
-
 /-- The second compound matrix evaluates on `{i, j}` (`i < j`) and `{k, l}` (`k < l`) to
 `Matrix.pairMinor A (i, j) (k, l)`. -/
 theorem compound_two_eq_pairMinor (A : Matrix ι κ R)
     {S : Set.powersetCard ι 2} {T : Set.powersetCard κ 2} {i j : ι} {k l : κ}
     (hij : i < j) (hkl : k < l) (hS : S.val = {i, j}) (hT : T.val = {k, l}) :
     A.compound 2 S T = A.pairMinor (i, j) (k, l) := by
-  rw [compound_apply, ofFinEmbEquiv_symm_pair hij hS, ofFinEmbEquiv_symm_pair hkl hT,
+  rw [compound_apply, coe_ofFinEmbEquiv_symm_pair hij hS, coe_ofFinEmbEquiv_symm_pair hkl hT,
     det_fin_two, pairMinor_eq]
   simp
 
@@ -228,19 +239,19 @@ theorem compound_card_apply [Fintype ι] (A : Matrix ι ι R)
   let e : Fin (Fintype.card ι) ≃ ι := Equiv.ofBijective _ hbij
   exact det_submatrix_equiv_self e A
 
+/-- When `d = Fintype.card ι`, every entry of `A.compound d` equals `A.det`. -/
+theorem compound_eq_det_of_card_eq [Fintype ι] {d : ℕ} (hd : d = Fintype.card ι)
+    (A : Matrix ι ι R) (S T : Set.powersetCard ι d) :
+    A.compound d S T = A.det := by
+  subst hd
+  exact compound_card_apply A S T
+
 /-- On `Fin m`, the `m`-th compound matrix has sole entry `A.det`. -/
 @[simp]
 theorem compound_self_fin_apply {m : ℕ} (A : Matrix (Fin m) (Fin m) R)
     (S T : Set.powersetCard (Fin m) m) :
-    A.compound m S T = A.det := by
-  have hST : S = T := by
-    apply Subtype.ext
-    rw [Finset.eq_univ_of_card S.val (by simp), Finset.eq_univ_of_card T.val (by simp)]
-  subst hST
-  have hbij : Function.Bijective (ofFinEmbEquiv.symm S) :=
-    (Fintype.bijective_iff_injective_and_card _).mpr
-      ⟨(ofFinEmbEquiv.symm S).injective, by simp⟩
-  exact det_submatrix_equiv_self (Equiv.ofBijective _ hbij) A
+    A.compound m S T = A.det :=
+  compound_eq_det_of_card_eq (Fintype.card_fin m).symm A S T
 
 -- Check: `C_1(A)_{{i},{k}} = A i k` for a `2 × 3` matrix.
 example (A : Matrix (Fin 2) (Fin 3) R) (i : Fin 2) (k : Fin 3) :
@@ -309,42 +320,6 @@ private theorem exteriorPower_map_toLin'_transpose_apply (A : Matrix ι ι R) {d
   rw [LinearMap.toMatrix_apply, ← compound_transpose, transpose_apply] at hmat
   rw [hmat]
 
-/-- The volume-normalised wedge pairing on `ι → R` evaluates on standard exterior-power basis
-vectors `(T, U)` to `sign T • 1` when `U = compl hk T` and `0` otherwise, and scales by `A.det`
-under `exteriorPower.map _ Aᵀ.toLin'`. -/
-private theorem exists_wedgePairing_pi [Nontrivial R] {k r : ℕ} (hk : k + r = Fintype.card ι) :
-    ∃ P : ⋀[R]^r (ι → R) →ₗ[R] ⋀[R]^k (ι → R) →ₗ[R] R,
-      (∀ (T : Set.powersetCard ι r) (U : Set.powersetCard ι k),
-        P ((Pi.basisFun R ι).exteriorPower r T) ((Pi.basisFun R ι).exteriorPower k U) =
-          if U = compl hk T then Set.powersetCard.sign T • (1 : R) else 0) ∧
-      ∀ (A : Matrix ι ι R) (x : ⋀[R]^r (ι → R)) (y : ⋀[R]^k (ι → R)),
-        P (exteriorPower.map r Aᵀ.toLin' x) (exteriorPower.map k Aᵀ.toLin' y) =
-          A.det • P x y := by
-  let b := Pi.basisFun R ι
-  have hcard : Module.finrank R (ι → R) = Fintype.card ι := Module.finrank_eq_card_basis b
-  have hkl : r + k = Module.finrank R (ι → R) := by omega
-  let topIdx : Set.powersetCard ι (Module.finrank R (ι → R)) := ⟨Finset.univ, by simp [hcard]⟩
-  have : Subsingleton (Set.powersetCard ι (Module.finrank R (ι → R))) :=
-    ⟨fun s t ↦ Subtype.ext <| by
-      rw [Finset.eq_univ_of_card s.val (by simp [hcard]),
-        Finset.eq_univ_of_card t.val (by simp [hcard])]⟩
-  let vol : ⋀[R]^(Module.finrank R (ι → R)) (ι → R) ≃ₗ[R] R :=
-    (b.exteriorPower (Module.finrank R (ι → R))).repr.trans
-      (Finsupp.uniqueLinearEquiv R R topIdx)
-  have hvol : vol b.topVector = 1 := by
-    rw [LinearEquiv.trans_apply, Finsupp.uniqueLinearEquiv_apply,
-      ← b.topVector_eq_exteriorPower topIdx, Module.Basis.repr_self, Finsupp.single_eq_same]
-  refine ⟨exteriorPower.wedgePairing vol hkl, fun T U ↦ ?_, fun A x y ↦ ?_⟩
-  · rw [exteriorPower.wedgePairing_exteriorPower_apply vol hkl b T U, hvol, one_smul]
-    simp only [disjoint_comm.trans (Set.powersetCard.disjoint_iff_eq_compl hk)]
-    split_ifs <;> simp
-  · have hdet := LinearMap.congr_fun
-      (LinearMap.congr_fun
-        (exteriorPower.wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul rfl hkl
-          (vol : ⋀[R]^(Module.finrank R (ι → R)) (ι → R) →ₗ[R] R) Aᵀ.toLin') x) y
-    simpa only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, LinearMap.det_toLin',
-      det_transpose] using hdet
-
 /-- **Generalised Laplace expansion (general index form).** For a square matrix `A : Matrix ι ι R`
 on a finite linearly ordered index type `ι`, `k + r = Fintype.card ι`, and `r`-subsets `S, S'` of
 `ι`, summing `(sign S' * sign T) • (det A[S, T] * det A[S'ᶜ, Tᶜ])` over all `r`-subsets `T` gives
@@ -357,7 +332,26 @@ theorem sum_sign_compound_mul_compound_compl (A : Matrix ι ι R) {k r : ℕ}
       if S = S' then A.det else 0 := by
   nontriviality R
   let b := Pi.basisFun R ι
-  obtain ⟨P, hpair, hdet⟩ := exists_wedgePairing_pi (R := R) hk
+  have hcard : Module.finrank R (ι → R) = Fintype.card ι := Module.finrank_eq_card_basis b
+  have hkl : r + k = Module.finrank R (ι → R) := by omega
+  let topIdx : Set.powersetCard ι (Module.finrank R (ι → R)) := ⟨Finset.univ, by simp [hcard]⟩
+  have : Subsingleton (Set.powersetCard ι (Module.finrank R (ι → R))) :=
+    ⟨fun s t ↦ Subtype.ext <| by
+      rw [Finset.eq_univ_of_card s.val (by simp [hcard]),
+        Finset.eq_univ_of_card t.val (by simp [hcard])]⟩
+  let vol : ⋀[R]^(Module.finrank R (ι → R)) (ι → R) ≃ₗ[R] R :=
+    (b.exteriorPower (Module.finrank R (ι → R))).repr.trans
+      (Finsupp.uniqueLinearEquiv R R topIdx)
+  let P := exteriorPower.wedgePairing vol hkl
+  have hpair (T : Set.powersetCard ι r) (U : Set.powersetCard ι k) :
+      P (b.exteriorPower r T) (b.exteriorPower k U) =
+        if U = compl hk T then Set.powersetCard.sign T • (1 : R) else 0 := by
+    have hvol : vol b.topVector = 1 := by
+      rw [LinearEquiv.trans_apply, Finsupp.uniqueLinearEquiv_apply,
+        ← b.topVector_eq_exteriorPower topIdx, Module.Basis.repr_self, Finsupp.single_eq_same]
+    rw [exteriorPower.wedgePairing_exteriorPower_apply vol hkl b T U, hvol, one_smul]
+    simp only [disjoint_comm.trans (Set.powersetCard.disjoint_iff_eq_compl hk)]
+    split_ifs <;> simp
   have hlhs :
       P (exteriorPower.map r Aᵀ.toLin' (b.exteriorPower r S))
         (exteriorPower.map k Aᵀ.toLin' (b.exteriorPower k (compl hk S'))) =
@@ -373,28 +367,21 @@ theorem sum_sign_compound_mul_compound_compl (A : Matrix ι ι R) {k r : ℕ}
       ring
     · intro U _ hU
       rw [map_smul, map_smul P, LinearMap.smul_apply, hpair, ite_eq_right hU, smul_zero, smul_zero]
-    · intro hmem
-      exact absurd (Finset.mem_univ _) hmem
-  have hrhs :
-      A.det • P (b.exteriorPower r S) (b.exteriorPower k (compl hk S')) =
-        if S = S' then Set.powersetCard.sign S' • A.det else 0 := by
-    rw [hpair S (compl hk S')]
-    simp only [(compl hk).injective.eq_iff, eq_comm (a := S')]
-    split_ifs with hSS'
-    · subst hSS'
-      simp [Units.smul_def, smul_eq_mul, mul_comm]
-    · simp
+    · exact fun hmem ↦ absurd (Finset.mem_univ _) hmem
+  have hdet := LinearMap.congr_fun₂
+    (exteriorPower.wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul rfl hkl
+      (vol : ⋀[R]^(Module.finrank R (ι → R)) (ι → R) →ₗ[R] R) Aᵀ.toLin')
+    (b.exteriorPower r S) (b.exteriorPower k (compl hk S'))
+  simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, LinearMap.det_toLin',
+    det_transpose] at hdet
   -- Multiply `hdet` by `sign S'`, cancelling `(sign S') ^ 2 = 1` on the diagonal.
-  have hmul := congrArg (fun x : R ↦ Set.powersetCard.sign S' • x)
-    (hlhs.symm.trans ((hdet A _ _).trans hrhs))
-  simpa only [Finset.smul_sum, smul_smul, apply_ite (Set.powersetCard.sign S' • ·), smul_zero,
-    Int.units_mul_self, one_smul] using hmul
-
-/-- Cast `(u : ℤˣ) • x` for `u = (-1) ^ n` to `(-1 : R) ^ n * x`. -/
-private theorem neg_one_units_pow_smul (n : ℕ) (x : R) :
-    ((-1 : ℤˣ) ^ n) • x = (-1 : R) ^ n * x := by
-  rw [Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, zsmul_eq_mul,
-    Int.cast_pow, Int.cast_neg, Int.cast_one]
+  have hmul := congrArg (Set.powersetCard.sign S' • ·) (hlhs.symm.trans hdet)
+  rw [Finset.smul_sum, smul_comm _ A.det, hpair S (compl hk S')] at hmul
+  simp only [smul_smul, (compl hk).injective.eq_iff, eq_comm (a := S')] at hmul
+  split_ifs at hmul ⊢ with hSS'
+  · subst hSS'
+    simpa [smul_smul, Int.units_mul_self] using hmul
+  · simpa using hmul
 
 /-- **Generalised Laplace expansion.** For an `m × m` matrix `A` and `r`-subsets `S, S'` of
 `Fin m`, summing `(-1) ^ (∑ i ∈ S', i + ∑ j ∈ T, j) * det A[S, T] * det A[S'ᶜ, Tᶜ]` over all
@@ -407,7 +394,8 @@ theorem sum_compound_mul_compound_compl {m k r : ℕ} (A : Matrix (Fin m) (Fin m
       if S = S' then A.det else 0 := by
   rw [← sum_sign_compound_mul_compound_compl A hk S S']
   refine Finset.sum_congr rfl fun T _ ↦ ?_
-  rw [Set.powersetCard.sign_mul_sign_fin, neg_one_units_pow_smul, mul_assoc]
+  rw [Set.powersetCard.sign_mul_sign_fin]
+  simp [Units.smul_def, mul_assoc]
 
 /-- **Generalised Laplace expansion along the rows `S`.** For an `r`-subset `S` of `Fin m` and
 `k + r = Fintype.card (Fin m)`, `A.det` is the signed sum over `r`-subsets `T` of
@@ -470,7 +458,8 @@ theorem higherAdjugate_fin_apply {m : ℕ} (A : Matrix (Fin m) (Fin m) R) (r : �
           (compl (Set.powersetCard.sub_add_eq_card_fin S) S)
           (compl (Set.powersetCard.sub_add_eq_card_fin T) T) := by
   rw [higherAdjugate_apply_of_add_eq A (Set.powersetCard.sub_add_eq_card_fin S) T S,
-    Set.powersetCard.sign_mul_sign_fin, neg_one_units_pow_smul]
+    Set.powersetCard.sign_mul_sign_fin]
+  simp [Units.smul_def]
 
 /-- Higher adjugates commute with transposition. -/
 theorem higherAdjugate_transpose (A : Matrix ι ι R) (r : ℕ) :
@@ -484,6 +473,58 @@ theorem higherAdjugate_map {R' : Type*} [CommRing R'] (φ : R →+* R') (A : Mat
     (A.map φ).higherAdjugate r = (A.higherAdjugate r).map φ := by
   ext T S
   simp [higherAdjugate_apply, compound_map, Units.smul_def]
+
+/-- Reindexing a square matrix along an order isomorphism commutes with `Matrix.higherAdjugate`. -/
+@[simp]
+theorem higherAdjugate_submatrix_orderIso {ι' : Type*} [LinearOrder ι'] [Fintype ι']
+    (e : ι' ≃o ι) (A : Matrix ι ι R) (r : ℕ) :
+    (A.submatrix e e).higherAdjugate r =
+      (A.higherAdjugate r).submatrix (Set.powersetCard.map r e.toEmbedding)
+        (Set.powersetCard.map r e.toEmbedding) := by
+  ext T S
+  have hk' := Set.powersetCard.sub_add_eq_card S
+  have hk : Fintype.card ι' - r + r = Fintype.card ι :=
+    hk'.trans (Fintype.card_congr e.toEquiv)
+  have hlhs :=
+    congr_fun (congr_fun (compound_submatrix_orderEmbedding e.toOrderEmbedding
+      e.toOrderEmbedding A (Fintype.card ι' - r)) (compl hk' S)) (compl hk' T)
+  rw [higherAdjugate_apply_of_add_eq (A.submatrix e e) hk' T S, submatrix_apply,
+    higherAdjugate_apply_of_add_eq A hk]
+  simpa only [OrderIso.coe_toOrderEmbedding, submatrix_apply,
+    show e.toOrderEmbedding.toEmbedding = e.toEquiv.toEmbedding from rfl,
+    show e.toEmbedding = e.toEquiv.toEmbedding from rfl,
+    Set.powersetCard.map_compl_equiv hk' e.toEquiv,
+    ← show e.toEmbedding = e.toEquiv.toEmbedding from rfl,
+    Set.powersetCard.sign_map_orderIso] using
+    congrArg ((Set.powersetCard.sign S * Set.powersetCard.sign T) • ·) hlhs
+
+/-- Scaling `A` by `c` scales `A.higherAdjugate r` by `c ^ (Fintype.card ι - r)`. -/
+@[simp]
+theorem higherAdjugate_smul (c : R) (A : Matrix ι ι R) (r : ℕ) :
+    (c • A).higherAdjugate r = c ^ (Fintype.card ι - r) • A.higherAdjugate r := by
+  ext T S
+  simp [higherAdjugate_apply, mul_smul_comm]
+
+/-- Higher adjugates reverse multiplication:
+`(A * B).higherAdjugate r = B.higherAdjugate r * A.higherAdjugate r`. -/
+theorem higherAdjugate_mul_distrib (A B : Matrix ι ι R) (r : ℕ) :
+    (A * B).higherAdjugate r = B.higherAdjugate r * A.higherAdjugate r := by
+  ext T S
+  have hk := Set.powersetCard.sub_add_eq_card S
+  rw [higherAdjugate_apply_of_add_eq (A * B) hk T S, compound_mul, Matrix.mul_apply,
+    Matrix.mul_apply, ← (compl hk).sum_comp, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun U _ ↦ ?_
+  rw [higherAdjugate_apply_of_add_eq B hk T U, higherAdjugate_apply_of_add_eq A hk U S]
+  have hsign : (Set.powersetCard.sign U * Set.powersetCard.sign T) *
+      (Set.powersetCard.sign S * Set.powersetCard.sign U) =
+      Set.powersetCard.sign S * Set.powersetCard.sign T := by
+    calc (Set.powersetCard.sign U * Set.powersetCard.sign T) *
+          (Set.powersetCard.sign S * Set.powersetCard.sign U)
+        = (Set.powersetCard.sign S * Set.powersetCard.sign T) *
+            (Set.powersetCard.sign U * Set.powersetCard.sign U) := by ac_rfl
+      _ = Set.powersetCard.sign S * Set.powersetCard.sign T := by
+            rw [Int.units_mul_self, mul_one]
+  rw [smul_mul_smul_comm, hsign, mul_comm (B.compound _ _ _)]
 
 /-- **Cramer's rule for compound matrices (right)**:
 `A.compound r * A.higherAdjugate r = A.det • 1`. -/
@@ -509,6 +550,14 @@ theorem higherAdjugate_mul_compound (A : Matrix ι ι R) (r : ℕ) :
 theorem higherAdjugate_one (r : ℕ) : (1 : Matrix ι ι R).higherAdjugate r = 1 := by
   simpa using compound_mul_higherAdjugate (1 : Matrix ι ι R) r
 
+/-- Higher adjugates commute with matrix powers. -/
+@[simp]
+theorem higherAdjugate_pow (A : Matrix ι ι R) (r k : ℕ) :
+    (A ^ k).higherAdjugate r = A.higherAdjugate r ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ', higherAdjugate_mul_distrib, ih, pow_succ]
+
 /-- The `0`-th higher adjugate of `A` is `A.det • 1`. -/
 @[simp]
 theorem higherAdjugate_zero (A : Matrix ι ι R) : A.higherAdjugate 0 = A.det • 1 := by
@@ -527,16 +576,20 @@ theorem higherAdjugate_card (A : Matrix ι ι R) :
   rw [higherAdjugate_apply_of_add_eq A (Nat.zero_add (Fintype.card ι)) T T]
   simp [Int.units_mul_self]
 
+/-- When `d = Fintype.card ι`, `A.higherAdjugate d` is the `1 × 1` identity matrix. -/
+theorem higherAdjugate_eq_one_of_card_eq {d : ℕ} (hd : d = Fintype.card ι) (A : Matrix ι ι R) :
+    A.higherAdjugate d = 1 := by
+  subst hd
+  exact higherAdjugate_card A
+
 /-- On `Fin m`, the `m`-th higher adjugate `A.higherAdjugate m` is the `1 × 1` identity matrix. -/
 @[simp]
 theorem higherAdjugate_self_fin {m : ℕ} (A : Matrix (Fin m) (Fin m) R) :
-    A.higherAdjugate m = 1 := by
-  have h := higherAdjugate_card A
-  rwa [Fintype.card_fin] at h
+    A.higherAdjugate m = 1 :=
+  higherAdjugate_eq_one_of_card_eq (Fintype.card_fin m).symm A
 
-/-- On `Fin m`, the first higher adjugate evaluated at singletons `{i}` and `{j}` agrees with
-`Matrix.adjugate A i j`. -/
-theorem higherAdjugate_one_ofSingleton {m : ℕ} (A : Matrix (Fin m) (Fin m) R) (i j : Fin m) :
+private theorem higherAdjugate_one_ofSingleton_fin {m : ℕ} (A : Matrix (Fin m) (Fin m) R)
+    (i j : Fin m) :
     A.higherAdjugate 1 (ofSingleton i) (ofSingleton j) = A.adjugate i j := by
   cases m with
   | zero => exact i.elim0
@@ -547,12 +600,26 @@ theorem higherAdjugate_one_ofSingleton {m : ℕ} (A : Matrix (Fin m) (Fin m) R) 
       adjugate_fin_succ_eq_det_submatrix]
     simp
 
-/-- Reindexing the first higher adjugate of `A : Matrix (Fin m) (Fin m) R` along
-`Set.powersetCard.ofSingleton` recovers `A.adjugate`. -/
-theorem reindex_ofSingleton_higherAdjugate_one {m : ℕ} (A : Matrix (Fin m) (Fin m) R) :
+/-- The first higher adjugate evaluated at singletons `{i}` and `{j}` agrees with
+`Matrix.adjugate A i j`. -/
+@[simp]
+theorem higherAdjugate_one_ofSingleton (A : Matrix ι ι R) (i j : ι) :
+    A.higherAdjugate 1 (ofSingleton i) (ofSingleton j) = A.adjugate i j := by
+  let e : Fin (Fintype.card ι) ≃o ι := Fintype.orderIsoFinOfCardEq ι rfl
+  have h := higherAdjugate_one_ofSingleton_fin (A.submatrix e e) (e.symm i) (e.symm j)
+  have hadj : (A.submatrix e e).adjugate (e.symm i) (e.symm j) = A.adjugate i j := by
+    simpa using congr_fun (congr_fun (adjugate_submatrix_equiv_self e.toEquiv A)
+      (e.symm i)) (e.symm j)
+  rw [higherAdjugate_submatrix_orderIso, submatrix_apply, Set.powersetCard.map_ofSingleton,
+    Set.powersetCard.map_ofSingleton, hadj] at h
+  simpa using h
+
+/-- Reindexing the first higher adjugate of `A` along `Set.powersetCard.ofSingleton` recovers
+`A.adjugate`. -/
+theorem reindex_ofSingleton_higherAdjugate_one (A : Matrix ι ι R) :
     Matrix.reindex ofSingleton.symm ofSingleton.symm (A.higherAdjugate 1) = A.adjugate := by
   ext i j
-  exact higherAdjugate_one_ofSingleton A i j
+  simp
 
 -- Check: for a `3 × 3` matrix, `adj_1` agrees with `Matrix.adjugate`.
 example (A : Matrix (Fin 3) (Fin 3) R) :
