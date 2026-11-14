@@ -11,10 +11,10 @@ public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.GroupTheory.Perm.DomMulAct
 import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Normed.Module.InfiniteSum
+import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 
 /-!
@@ -244,9 +244,8 @@ theorem prod_factorial_smul_mvTaylorCoeff [DecidableEq ι] [CompleteSpace F]
   -- Group permutations `σ` by the rearranged coordinate tuple `v ∘ σ ∈ S`.
   have hmaps (σ : Equiv.Perm (Fin (∑ i, α i))) : v ∘ σ ∈ S := by
     rw [mem_filter]
-    refine ⟨mem_univ _, fun i ↦ ?_⟩
-    rw [← hv i, ← Fintype.card_subtype]
-    exact Fintype.card_congr (σ.subtypeEquiv fun _ ↦ Iff.rfl)
+    exact ⟨mem_univ _, fun i ↦ by
+      simp only [Fintype.card_subtype, Function.comp_apply, TauCeti.card_filter_comp_perm, hv]⟩
   rw [← sum_fiberwise_of_maps_to (fun σ _ ↦ hmaps σ), smul_sum]
   refine sum_congr rfl fun a ha ↦ ?_
   have hconst : ∀ σ ∈ univ.filter (fun σ : Equiv.Perm (Fin (∑ i, α i)) ↦ v ∘ σ = a),
@@ -255,21 +254,19 @@ theorem prod_factorial_smul_mvTaylorCoeff [DecidableEq ι] [CompleteSpace F]
     fun σ hσ ↦ congrArg (p (∑ i, α i)) (funext fun j ↦ by simp [← congrFun (mem_filter.1 hσ).2 j])
   rw [sum_congr rfl hconst, sum_const]
   congr 1
-  -- Every fiber `v ∘ σ = a` is a coset of the stabilizer `{τ | v ∘ τ = v}`, of size `∏ i, (α i)!`.
-  have ha_card : ∀ i, Fintype.card {j // a j = i} = Fintype.card {j // v j = i} := fun i ↦ by
-    rw [(mem_filter.1 ha).2 i, Fintype.card_subtype, hv i]
-  let σ₀ : Equiv.Perm (Fin (∑ i, α i)) :=
-    Equiv.ofFiberEquiv fun i ↦ Fintype.equivOfCardEq (ha_card i)
-  have hσ₀ : v ∘ σ₀ = a := funext (Equiv.ofFiberEquiv_map _)
-  have hcoset : Fintype.card {σ : Equiv.Perm (Fin (∑ i, α i)) // v ∘ σ = a} =
-      Fintype.card {τ : Equiv.Perm (Fin (∑ i, α i)) // v ∘ τ = v} := by
-    refine Fintype.card_congr ((Equiv.mulRight σ₀⁻¹).subtypeEquiv fun σ ↦ ?_)
-    rw [← hσ₀, funext_iff, funext_iff]
-    refine ⟨fun h j ↦ ?_, fun h j ↦ ?_⟩
-    · simpa [Equiv.Perm.mul_apply] using h (σ₀⁻¹ j)
-    · simpa [Equiv.Perm.mul_apply] using h (σ₀ j)
-  rw [← Fintype.card_subtype, hcoset, DomMulAct.stabilizer_card]
-  exact prod_congr rfl fun i _ ↦ by rw [Fintype.card_subtype, hv i]
+  -- Every fiber `v ∘ σ = a` is a coset of `TauCeti.fiberSubgroup v`, of size `∏ i, (α i)!`.
+  obtain ⟨σ₀, hσ₀⟩ : ∃ σ₀ : Equiv.Perm (Fin (∑ i, α i)), v ∘ σ₀ = a :=
+    Function.exists_perm_of_occCount_eq fun i ↦ by
+      rw [Function.occCount_eq_card_filter, ← Fintype.card_subtype, (mem_filter.1 ha).2 i,
+        Function.occCount_eq_card_filter, hv i]
+  have hcoset : {σ : Equiv.Perm (Fin (∑ i, α i)) // v ∘ σ = a} ≃ TauCeti.fiberSubgroup v :=
+    (Equiv.mulRight σ₀⁻¹).subtypeEquiv fun σ ↦ by
+      rw [← hσ₀, funext_iff, TauCeti.mem_fiberSubgroup]
+      exact ⟨fun h j ↦ by simpa [Equiv.Perm.mul_apply] using h (σ₀⁻¹ j),
+        fun h j ↦ by simpa [Equiv.Perm.mul_apply] using h (σ₀ j)⟩
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, Nat.card_congr hcoset,
+    TauCeti.natCard_fiberSubgroup]
+  exact prod_congr rfl fun i _ ↦ by rw [hv i]
 
 /-- **Norm bound in terms of `iteratedFDeriv`**: for `f` analytic at `x`,
 `‖(∏ i, (α i)!) • mvTaylorCoeff f x α‖` is at most the operator norm of the `(∑ i, α i)`-th
