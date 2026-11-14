@@ -5,22 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Complement
+public import TauCeti.GroupTheory.Complement.Basic
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.Algebra.Group.Subgroup.Normalizer
 
 /-!
 # Local complements of subgroups
 
 A local complement of `N` in `H` is a subgroup `K` with `N ⊓ K = ⊥` and `N ⊔ K = H`.
-When `N` is normal in `H`, this is equivalently a complement of `N.subgroupOf H` inside `H`.
+Normality of `N` in `H` is then equivalent to `K` normalizing `N`, and in that case `K` is
+equivalently a complement of `N.subgroupOf H` inside `H`.
 In particular every element of `H` has a unique decomposition as a product from `N` and `K`.
 The right component is a homomorphism with kernel `N.subgroupOf H`; the left component
-is a projection, without any assertion that it is a homomorphism. Restricting a local complement
-to an intermediate subgroup containing `N` restricts its left projection. For `N` normal in `G`,
-conjugating a local complement `K` of `N` in `H` by `g` gives a local complement of `N` in
-`g H g⁻¹` whose left projection is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the left projection
-along `K` and `G` acts on `N` by conjugation.
+is a projection satisfying the conjugation-twisted product law `leftProjection_mul_eq`, without
+any assertion that it is a homomorphism. Restricting a local complement to an intermediate
+subgroup containing `N` restricts its left projection. For `N` normal in `G`, conjugating a local
+complement `K` of `N` in `H` by `g` gives a local complement of `N` in `g H g⁻¹` whose left
+projection is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the left projection along `K` and `G` acts
+on `N` by conjugation.
 
 These constructions reuse Mathlib's `Subgroup.IsComplement.equiv` for global complements.
 Restriction of a complement to an intermediate subgroup uses Dedekind's modular law.
@@ -81,6 +84,12 @@ theorem restrict [(N.subgroupOf H).Normal] (hNL : N ≤ L) (hLH : L ≤ H) :
       inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _
         (h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le))) hNL,
       sup_comm K N, h.sup_eq, inf_eq_left.mpr hLH]
+
+/-- For a local complement `K` of `N` in `H`, `N` is normal in `H` precisely when `K`
+normalizes `N`. -/
+theorem normal_subgroupOf_iff_right_le_normalizer :
+    (N.subgroupOf H).Normal ↔ K ≤ normalizer (N : Set G) :=
+  h.sup_eq ▸ normal_subgroupOf_sup_iff_le_normalizer
 
 end IsLocalComplement
 
@@ -212,6 +221,10 @@ include h
 /-- View a local complement as a global complement inside its ambient subgroup. -/
 theorem isComplement'_subgroupOf : (N.subgroupOf H).IsComplement' (K.subgroupOf H) :=
   (isLocalComplement_iff_isComplement'_subgroupOf h.left_le h.right_le).mp h
+
+/-- The complementary subgroup normalizes `N` when `N` is normal in the ambient subgroup `H`. -/
+theorem right_le_normalizer : K ≤ normalizer (N : Set G) :=
+  h.normal_subgroupOf_iff_right_le_normalizer.mp inferInstance
 
 /-- The unique decomposition of an element of `H` into its `N` and `K` components. -/
 noncomputable def equiv : H ≃ N × K :=
@@ -369,6 +382,28 @@ theorem leftProjection_restrict [(N.subgroupOf L).Normal] (hNL : N ≤ L) (hLH :
   rw [leftProjection_eq_iff]
   refine ⟨(h.leftProjection_eq_iff _ _).mp rfl, ?_⟩
   exact L.mul_mem (L.inv_mem (hNL (h.leftProjection _).property)) x.property
+
+/-- For any local complement `K` of a subgroup `N` normal in `H` (not necessarily abelian), the
+left projection of a product twists the second factor by conjugation by the right projection of the
+first. -/
+theorem leftProjection_mul_eq (x y : H) :
+    h.leftProjection (x * y) =
+      h.leftProjection x *
+        ((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)
+          (h.rightProjection x) (h.leftProjection y)) := by
+  let n := h.leftProjection x *
+    ((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)
+      (h.rightProjection x) (h.leftProjection y))
+  let k := h.rightProjection x * h.rightProjection y
+  have hxy : x * y = ⟨(n : G) * k, H.mul_mem (h.left_le n.property) (h.right_le k.property)⟩ := by
+    apply Subtype.ext
+    calc
+      ((x * y : H) : G) = ((h.leftProjection x : G) * h.rightProjection x) *
+          ((h.leftProjection y : G) * h.rightProjection y) := by
+        rw [coe_mul, ← h.leftProjection_mul_rightProjection x,
+          ← h.leftProjection_mul_rightProjection y]
+      _ = (n : G) * k := by simp [n, k, mul_assoc]
+  rw [hxy, h.leftProjection_mul]
 
 end IsLocalComplement
 

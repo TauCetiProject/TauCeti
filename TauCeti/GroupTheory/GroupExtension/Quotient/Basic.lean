@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupExtension.Splitting
 public import TauCeti.GroupTheory.GroupExtension.Of.Surjective
+import TauCeti.GroupTheory.Complement.Basic
 
 /-!
 # The quotient extension and subgroup complements
@@ -64,6 +65,12 @@ theorem IsComplement'.quotientSplitting_mk (h : N.IsComplement' D) (d : D) :
   have hd : h.symm.QuotientMulEquiv.symm d = ((d : G) : G ⧸ N) :=
     h.symm.QuotientMulEquiv_symm_apply d
   rw [← hd, MulEquiv.apply_symm_apply]
+
+/-- Evaluating the quotient splitting of a complement `D` of `N` at the coset of `g` returns the
+`D`-component of `g` in the complement decomposition. -/
+theorem IsComplement'.quotientSplitting_mk_eq_coe_equiv_snd (h : N.IsComplement' D) (g : G) :
+    h.quotientSplitting (g : G ⧸ N) = (h.equiv g).2 := by
+  rw [quotientSplitting_apply, h.symm_quotientMulEquiv_mk]
 
 /-- The splitting constructed from a complement has exactly that complement as its range. -/
 @[simp]
