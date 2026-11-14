@@ -53,6 +53,7 @@ one power of the scalar annihilates the whole module.
 
 * B. Bhatt, *On the direct summand conjecture and its derived variant*, Invent. Math. 212 (2018),
   §3 (pro-zero towers, in their almost form).
+* Stacks Project, Lemma 52.12.7 (0EII): the bounded-cohomology-obstruction inverse-limit step.
 -/
 
 public section
