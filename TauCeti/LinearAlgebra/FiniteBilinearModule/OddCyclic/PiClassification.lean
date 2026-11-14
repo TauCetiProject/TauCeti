@@ -12,7 +12,6 @@ import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.ElementaryDivisors
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Relations

@@ -422,10 +422,9 @@ bilinear form `b_L`. -/
 theorem nonempty_isometry_discriminantBilinearModule (h : L.SameGenus M) :
     Nonempty (FiniteBilinearModule.Isometry L.discriminantBilinearModule
       M.discriminantBilinearModule) :=
-  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent
-    h.natCard_discriminantGroup_eq fun p hp ↦
-      have : Fact p.Prime := ⟨hp⟩
-      (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
+  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
+    have : Fact p.Prime := ⟨hp⟩
+    (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
 
 /-- **Even lattices in one genus have isometric discriminant quadratic forms.** This is the easy
 half of Nikulin's Corollary 1.9.4: the genus of an even nondegenerate lattice determines its
@@ -433,11 +432,10 @@ discriminant quadratic form `q_L`. -/
 theorem nonempty_isometry_discriminantQuadraticModule (h : L.SameGenus M) (hL : L.IsEven) :
     Nonempty (FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
       (M.discriminantQuadraticModule (h.isEven_iff.mp hL))) :=
-  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent
-    h.natCard_discriminantGroup_eq fun p hp ↦
-      have : Fact p.Prime := ⟨hp⟩
-      (h.localIntegralForm_equivalent p).map
-        (primaryDiscriminantQuadraticIsometry hL (h.isEven_iff.mp hL))
+  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
+    have : Fact p.Prime := ⟨hp⟩
+    (h.localIntegralForm_equivalent p).map
+      (primaryDiscriminantQuadraticIsometry hL (h.isEven_iff.mp hL))
 
 end SameGenus
 

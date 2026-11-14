@@ -53,6 +53,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 
 ## Main results
 
+* `MulEquiv.primaryComponent`, `AddEquiv.primaryComponent`: a group isomorphism restricts to an
+  isomorphism between `n`-primary components, functorially in `refl`, `trans`, and `symm`.
 * `TauCeti.isAddPGroup_iff_primaryComponent_eq_top`: `M` is `p`-primary torsion exactly when its
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
@@ -72,6 +74,64 @@ additive inverses. -/
 theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G] (p : ℕ) :
     (AddCommGroup.primaryComponent G p).toAddSubmonoid = AddCommMonoid.primaryComponent G p :=
   (rfl)
+
+namespace MulEquiv
+
+variable {A B C : Type*} [CommGroup A] [CommGroup B] [CommGroup C]
+
+/-- A multiplicative equivalence restricts to an equivalence between `n`-primary components. -/
+@[to_additive
+  /-- An additive equivalence restricts to an equivalence between `n`-primary components. -/]
+def primaryComponent (e : A ≃* B) (n : ℕ) :
+    CommGroup.primaryComponent A n ≃* CommGroup.primaryComponent B n where
+  toFun x := ⟨e x, by
+    obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp x.2
+    exact CommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_pow, hk, map_one]⟩⟩
+  invFun y := ⟨e.symm y, by
+    obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp y.2
+    exact CommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_pow, hk, map_one]⟩⟩
+  left_inv x := Subtype.ext (e.symm_apply_apply x)
+  right_inv y := Subtype.ext (e.apply_symm_apply y)
+  map_mul' x y := Subtype.ext (e.map_mul x y)
+
+/-- Restricting a multiplicative equivalence to `n`-primary components commutes with coercion to
+the ambient group. -/
+@[to_additive (attr := simp)
+  /-- Restricting an additive equivalence to `n`-primary components commutes with coercion to the
+  ambient group. -/]
+theorem coe_primaryComponent_apply (e : A ≃* B) (n : ℕ)
+    (x : CommGroup.primaryComponent A n) : (e.primaryComponent n x : B) = e x :=
+  (rfl)
+
+/-- The inverse of the restriction to `n`-primary components is the restriction of the inverse. -/
+@[to_additive (attr := simp)
+  /-- The inverse of the restriction to `n`-primary components is the restriction of the
+  inverse. -/]
+theorem symm_primaryComponent (e : A ≃* B) (n : ℕ) :
+    (e.primaryComponent n).symm = e.symm.primaryComponent n :=
+  (rfl)
+
+/-- Restricting the identity multiplicative equivalence to `n`-primary components gives the
+identity. -/
+@[to_additive (attr := simp)
+  /-- Restricting the identity additive equivalence to `n`-primary components gives the
+  identity. -/]
+theorem refl_primaryComponent (n : ℕ) :
+    (MulEquiv.refl A).primaryComponent n = MulEquiv.refl (CommGroup.primaryComponent A n) := by
+  ext x
+  rfl
+
+/-- Restricting a composition of multiplicative equivalences to `n`-primary components is the
+composition of their restrictions. -/
+@[to_additive (attr := simp)
+  /-- Restricting a composition of additive equivalences to `n`-primary components is the
+  composition of their restrictions. -/]
+theorem trans_primaryComponent (e₁ : A ≃* B) (e₂ : B ≃* C) (n : ℕ) :
+    (e₁.trans e₂).primaryComponent n = (e₁.primaryComponent n).trans (e₂.primaryComponent n) := by
+  ext x
+  rfl
+
+end MulEquiv
 
 namespace TauCeti
 

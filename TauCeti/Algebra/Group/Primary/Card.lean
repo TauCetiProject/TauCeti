@@ -23,7 +23,6 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
 
 ## Main results
 
-* `AddEquiv.primaryComponent`: an additive equivalence restricts to each `n`-primary component.
 * `TauCeti.AddCommGroup.coprime_index_primaryComponent`: `[A : A[n^∞]]` is prime to `n`.
 * `TauCeti.AddCommGroup.dvd_of_prime_dvd_natCard_primaryComponent`: a prime dividing `#A[n^∞]`
   divides `n`.
@@ -37,38 +36,6 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
 -/
 
 public section
-
-namespace AddEquiv
-
-variable {A B : Type*} [AddCommGroup A] [AddCommGroup B]
-
-/-- An additive equivalence restricts to an equivalence between `n`-primary components. -/
-def primaryComponent (e : A ≃+ B) (n : ℕ) :
-    AddCommGroup.primaryComponent A n ≃+ AddCommGroup.primaryComponent B n where
-  toFun x := ⟨e x, by
-    obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
-    exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-  invFun y := ⟨e.symm y, by
-    obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
-    exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-  left_inv x := Subtype.ext (e.symm_apply_apply x)
-  right_inv y := Subtype.ext (e.apply_symm_apply y)
-  map_add' x y := Subtype.ext (e.map_add x y)
-
-/-- Restricting an additive equivalence to `n`-primary components commutes with coercion to the
-ambient group. -/
-@[simp]
-theorem coe_primaryComponent_apply (e : A ≃+ B) (n : ℕ)
-    (x : AddCommGroup.primaryComponent A n) : (e.primaryComponent n x : B) = e x :=
-  (rfl)
-
-/-- The inverse of the restriction to `n`-primary components is the restriction of the inverse. -/
-@[simp]
-theorem symm_primaryComponent (e : A ≃+ B) (n : ℕ) :
-    (e.primaryComponent n).symm = e.symm.primaryComponent n :=
-  (rfl)
-
-end AddEquiv
 
 namespace TauCeti
 

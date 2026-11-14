@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Primary.Decomposition
+public import TauCeti.GroupTheory.Torsion
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 
 /-!
@@ -27,6 +29,8 @@ orthogonality and finite-sum identities proved in
   bilinear isometry.
 * `TauCeti.FiniteQuadraticModule.primaryDecomposition`: the canonical primary decomposition as a
   quadratic isometry.
+* `TauCeti.FiniteQuadraticModule.primaryComponentsIsometryPi`: canonical isometry identifying
+  `primaryComponents` with the orthogonal sum `pi` of the prime-primary restrictions.
 * `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponents` and
   `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponents`: nondegeneracy is equivalent
   to nondegeneracy of the orthogonal product.
@@ -167,13 +171,50 @@ theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u
     (x : primaryComponent A n) : (f.restrictPrimaryComponent n x : B) = f x :=
   f.toAddEquiv.coe_primaryComponent_apply n x
 
-/-- **Primary components decide isometry.** Two finite bilinear modules of the same order are
-isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+/-- The additive equivalence underlying a restricted bilinear isometry is the restricted additive
+equivalence. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toAddEquiv {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toAddEquiv = f.toAddEquiv.primaryComponent n :=
+  (rfl)
+
+/-- Restricting the identity bilinear isometry to an `n`-primary component gives the identity
+bilinear isometry. -/
+@[simp]
+theorem Isometry.refl_restrictPrimaryComponent (A : FiniteBilinearModule.{u}) (n : ℕ) :
+    (Isometry.refl A).restrictPrimaryComponent n =
+      Isometry.refl (A.restrict (primaryComponent A n)) :=
+  Isometry.toAddEquiv_injective (by simp)
+
+/-- Restricting the inverse bilinear isometry to `n`-primary components gives the inverse of the
+restricted isometry. -/
+@[simp]
+theorem Isometry.symm_restrictPrimaryComponent {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ) :
+    f.symm.restrictPrimaryComponent n = (f.restrictPrimaryComponent n).symm :=
+  Isometry.toAddEquiv_injective (by simp)
+
+/-- Restricting a composite bilinear isometry to `n`-primary components gives the composite of the
+restricted isometries. -/
+@[simp]
+theorem Isometry.trans_restrictPrimaryComponent {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} {C : FiniteBilinearModule}
+    (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
+    (f.trans g).restrictPrimaryComponent n =
+      (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) :=
+  Isometry.toAddEquiv_injective (by simp)
+
+/-- **Primary components decide isometry.** Two finite bilinear modules are isometric as soon as,
+at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteBilinearModule.{u}}
-    {B : FiniteBilinearModule.{v}} (hcard : Nat.card A = Nat.card B)
+    {B : FiniteBilinearModule.{v}}
     (h : ∀ p : ℕ, p.Prime →
       Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
+  have hcard : Nat.card A = Nat.card B :=
+    TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent fun p hp ↦
+      Nat.card_congr (h p hp).some.toAddEquiv.toEquiv
   let f p hp := (h p hp).some
   let g := primaryComponentsAddEquiv hcard fun p hp ↦ (f p hp).toAddEquiv
   refine ⟨A.primaryDecomposition.symm.trans (Isometry.trans ⟨g, fun x y ↦ ?_⟩
@@ -191,10 +232,7 @@ theorem nonempty_isometry_iff_forall_primaryComponent {A : FiniteBilinearModule.
       ∀ p : ℕ, p.Prime →
         Nonempty (Isometry (A.restrict (primaryComponent A p))
           (B.restrict (primaryComponent B p))) :=
-  ⟨fun ⟨f⟩ p _ ↦ ⟨f.restrictPrimaryComponent p⟩, fun h ↦
-    nonempty_isometry_of_forall_primaryComponent
-      (TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent fun p hp ↦
-        Nat.card_congr (h p hp).some.toAddEquiv.toEquiv) h⟩
+  ⟨fun ⟨f⟩ p _ ↦ ⟨f.restrictPrimaryComponent p⟩, nonempty_isometry_of_forall_primaryComponent⟩
 
 end FiniteBilinearModule
 
@@ -226,6 +264,38 @@ theorem primaryComponents_quadratic (x : A.primaryComponents) :
   apply Finset.sum_congr rfl
   intro p _
   rfl
+
+/-- `primaryComponents` has the same carrier and quadratic map as the orthogonal sum `pi` of the
+prime-primary restrictions. -/
+noncomputable def primaryComponentsIsometryPi :
+    Isometry A.primaryComponents
+      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1)) where
+  toLinearEquiv := LinearEquiv.refl ℤ _
+  map_app' x := by
+    rw [primaryComponents_quadratic, pi_quadratic]
+    rfl
+
+/-- `primaryComponentsIsometryPi` acts as the identity on each prime-factor coordinate. -/
+@[simp]
+theorem primaryComponentsIsometryPi_apply (x : A.primaryComponents)
+    (p : (Nat.card A).primeFactors) :
+    A.primaryComponentsIsometryPi x p = x p :=
+  (rfl)
+
+/-- The inverse of `primaryComponentsIsometryPi` acts as the identity on each prime-factor
+coordinate. -/
+@[simp]
+theorem primaryComponentsIsometryPi_symm_apply
+    (x : pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1))
+    (p : (Nat.card A).primeFactors) :
+    A.primaryComponentsIsometryPi.symm x p = x p :=
+  (rfl)
+
+/-- The additive equivalence underlying `primaryComponentsIsometryPi` is the identity. -/
+@[simp]
+theorem primaryComponentsIsometryPi_toAddEquiv :
+    A.primaryComponentsIsometryPi.toAddEquiv = AddEquiv.refl _ :=
+  (rfl)
 
 /-- The canonical primary decomposition is a quadratic isometry. -/
 noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
@@ -265,21 +335,75 @@ def Isometry.restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
   map_app' x :=
     (congrArg B.quadratic (f.toAddEquiv.coe_primaryComponent_apply n x)).trans (f.map_app x.1)
 
-/-- Restricting a quadratic isometry to `n`-primary components commutes with inclusion into the
+/-- Restricting a quadratic isometry to `n`-primary components commutes with coercion to the
 ambient module. -/
 @[simp]
-theorem Isometry.val_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
+theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
-    (x : primaryComponent A n) : (Isometry.restrictPrimaryComponent f n x).1 = f x.1 :=
+    (x : A.restrict (primaryComponent A n)) : (f.restrictPrimaryComponent n x : B) = f x :=
   f.toAddEquiv.coe_primaryComponent_apply n x
 
-/-- **Primary components decide isometry.** Two finite quadratic modules of the same order are
-isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+/-- The additive equivalence underlying a restricted quadratic isometry is the restricted additive
+equivalence. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toAddEquiv {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toAddEquiv = f.toAddEquiv.primaryComponent n :=
+  (rfl)
+
+/-- Restricting the identity quadratic isometry to an `n`-primary component gives the identity
+quadratic isometry. -/
+@[simp]
+theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (n : ℕ) :
+    Isometry.restrictPrimaryComponent (QuadraticMap.IsometryEquiv.refl A.quadratic) n =
+      QuadraticMap.IsometryEquiv.refl (A.restrict (primaryComponent A n)).quadratic :=
+  DFunLike.ext _ _ fun x ↦ restrictCoe_injective <| by
+    rw [Isometry.coe_restrictPrimaryComponent_apply]
+    rfl
+
+/-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
+restricted isometry. -/
+@[simp]
+theorem Isometry.symm_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    Isometry.restrictPrimaryComponent f.symm n = (f.restrictPrimaryComponent n).symm :=
+  DFunLike.ext _ _ fun y ↦ by
+    apply EquivLike.injective (f.restrictPrimaryComponent n)
+    rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
+    exact restrictCoe_injective (by simp)
+
+/-- Restricting a composite quadratic isometry to `n`-primary components gives the composite of the
+restricted isometries. -/
+@[simp]
+theorem Isometry.trans_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} {C : FiniteQuadraticModule}
+    (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
+    Isometry.restrictPrimaryComponent (f.trans g) n =
+      (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) :=
+  DFunLike.ext _ _ fun _ ↦ restrictCoe_injective (by simp)
+
+/-- Forgetting the quadratic structure of a restricted quadratic isometry gives the restricted
+polar bilinear isometry. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toFiniteBilinearModule {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toFiniteBilinearModule =
+      f.toFiniteBilinearModule.restrictPrimaryComponent n := by
+  apply FiniteBilinearModule.Isometry.toAddEquiv_injective
+  rw [Isometry.toFiniteBilinearModule_toAddEquiv, Isometry.restrictPrimaryComponent_toAddEquiv,
+    FiniteBilinearModule.Isometry.restrictPrimaryComponent_toAddEquiv,
+    Isometry.toFiniteBilinearModule_toAddEquiv]
+
+/-- **Primary components decide isometry.** Two finite quadratic modules are isometric as soon as,
+at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteQuadraticModule.{u}}
-    {B : FiniteQuadraticModule.{v}} (hcard : Nat.card A = Nat.card B)
+    {B : FiniteQuadraticModule.{v}}
     (h : ∀ p : ℕ, p.Prime →
       Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
+  have hcard : Nat.card A = Nat.card B :=
+    TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent fun p hp ↦
+      Nat.card_congr (h p hp).some.toLinearEquiv.toEquiv
   let f p hp := (h p hp).some
   let g := FiniteBilinearModule.primaryComponentsAddEquiv hcard fun p hp ↦
     (f p hp).toLinearEquiv.toAddEquiv
@@ -300,10 +424,8 @@ theorem nonempty_isometry_iff_forall_primaryComponent {A : FiniteQuadraticModule
       ∀ p : ℕ, p.Prime →
         Nonempty (Isometry (A.restrict (primaryComponent A p))
           (B.restrict (primaryComponent B p))) :=
-  ⟨fun ⟨f⟩ p _ ↦ ⟨Isometry.restrictPrimaryComponent f p⟩, fun h ↦
-    nonempty_isometry_of_forall_primaryComponent
-      (TauCeti.AddCommGroup.natCard_eq_of_forall_primaryComponent fun p hp ↦
-        Nat.card_congr (h p hp).some.toLinearEquiv.toEquiv) h⟩
+  ⟨fun ⟨f⟩ p _ ↦ ⟨Isometry.restrictPrimaryComponent f p⟩,
+    nonempty_isometry_of_forall_primaryComponent⟩
 
 end FiniteQuadraticModule
 

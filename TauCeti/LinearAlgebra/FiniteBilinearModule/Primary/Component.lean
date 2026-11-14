@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
+import TauCeti.Algebra.Group.Primary.Card
 
 /-!
 # Primary components of finite bilinear and quadratic modules
@@ -30,6 +31,9 @@ in pairwise distinct primary components.
   corresponding inclusion of additive subgroups.
 * `TauCeti.FiniteBilinearModule.isNondegenerate_restrict_primaryComponent`: a nondegenerate
   pairing restricts nondegenerately to each prime-primary component.
+* `TauCeti.FiniteBilinearModule.odd_natCard_restrict_primaryComponent` and
+  `TauCeti.FiniteQuadraticModule.odd_natCard_restrict_primaryComponent`: for an odd prime `p`, the
+  `p`-primary restriction has odd cardinality.
 * `TauCeti.FiniteBilinearModule.pairing_sum_eq_sum_pairing_of_mem_primaryComponent`: a bilinear
   pairing of primary decompositions is the sum of the component pairings.
 * `TauCeti.FiniteQuadraticModule.quadratic_sum_of_mem_primaryComponent`: a quadratic value on a
@@ -157,6 +161,13 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
 
+/-- For an odd prime `p`, the `p`-primary restriction of a finite bilinear module has odd
+cardinality. -/
+theorem odd_natCard_restrict_primaryComponent {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
+    Odd (Nat.card (A.restrict (AddCommGroup.primaryComponent A p))) := by
+  rw [FiniteBilinearModule.restrict, TauCeti.AddCommGroup.natCard_primaryComponent A hp]
+  exact (hp.odd_of_ne_two hp2).pow
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
@@ -169,6 +180,13 @@ theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : 
     (hp : p.Prime) :
     (A.restrict (AddCommGroup.primaryComponent A p)).IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_restrict_primaryComponent hA hp
+
+/-- For an odd prime `p`, the `p`-primary restriction of a finite quadratic module has odd
+cardinality. -/
+theorem odd_natCard_restrict_primaryComponent {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
+    Odd (Nat.card (A.restrict (AddCommGroup.primaryComponent A p))) := by
+  rw [A.natCard_restrict, TauCeti.AddCommGroup.natCard_primaryComponent A hp]
+  exact (hp.odd_of_ne_two hp2).pow
 
 /-- A quadratic map is additive on elements belonging to primary components for distinct primes. -/
 theorem quadratic_add_of_mem_primaryComponent {p q : ℕ} (hp : p.Prime) (hq : q.Prime)
