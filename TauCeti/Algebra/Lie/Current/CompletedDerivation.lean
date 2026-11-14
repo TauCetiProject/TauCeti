@@ -13,9 +13,11 @@ public import TauCeti.Algebra.Lie.Derivation.Completion
 # Vector-field derivations on completed current enveloping algebras
 
 Every Laurent vector field `h d/dt` extends uniquely to a continuous derivation of the completed
-level enveloping algebra. Positive-order fields additionally preserve every stage kernel.
-In particular the degree derivation `t d/dt` acts on a current mode `x_n` by `n x_n`, also inside
-the completion. The extensions commute with the completed level comparison, including at level zero.
+level enveloping algebra, and continuous derivations of the completion are determined by their
+values on the current mode generators `x ⊗ tᵐ`. Positive-order fields additionally preserve every
+stage kernel. In particular the Witt vector field `t^{m+1} d/dt` sends `x_k` to `k x_{m+k}`, and
+the degree derivation `t d/dt` acts on `x_n` by `n x_n`, also inside the completion. The extensions
+commute with the completed level comparison, including at level zero.
 
 The extension uses the complete topological algebra, not ring structures on the left-module
 quotients. The degree derivation is the operator implemented by the Sugawara degree element
@@ -153,6 +155,88 @@ theorem vectorFieldCompletedEnvelopingDerivation_mem_completedOrderLeftIdeal (h 
     vectorFieldCompletedEnvelopingDerivation_toLimQuotients] using
     (toCompletedEnveloping_mem_completedOrderLeftIdeal_iff.mpr
       (vectorFieldEnvelopingDerivation_mem_orderLeftIdeal Φ hΦ hΦs a hh hb'))
+
+/-- Two continuous derivations of the completed level enveloping algebra agree as soon as they
+agree on the current mode generators `x ⊗ tᵐ`. -/
+theorem derivationLieAlgebra_ext_single {D E : derivationLieAlgebra R Û}
+    (hD : Continuous (D : Module.End R Û)) (hE : Continuous (E : Module.End R Û))
+    (h : ∀ (m : ℤ) (x : L),
+      (D : Module.End R Û) (i (envelopingι c a (HahnSeries.single m (1 : R) ⊗ₜ[R] x))) =
+        (E : Module.End R Û) (i (envelopingι c a (HahnSeries.single m (1 : R) ⊗ₜ[R] x)))) :
+    D = E := by
+  let S : Subalgebra R Û :=
+    { carrier := {y | (D : Module.End R Û) y = (E : Module.End R Û) y}
+      mul_mem' {x y} hx hy := by
+        rw [Set.mem_ofPred_eq] at hx hy ⊢
+        rw [derivationLieAlgebra.leibniz, derivationLieAlgebra.leibniz, hx, hy]
+      one_mem' := by simp
+      add_mem' {x y} hx hy := by
+        rw [Set.mem_ofPred_eq] at hx hy ⊢
+        rw [map_add, map_add, hx, hy]
+      zero_mem' := by simp
+      algebraMap_mem' r := by simp }
+  have hpoly (p : LieAlgebra.loopAlgebra R ℤ L) :
+      i (envelopingι c a (ofLoop R L p)) ∈ S := by
+    obtain ⟨v, rfl⟩ := (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).symm.surjective p
+    induction v using Finsupp.induction_linear with
+    | zero => simp
+    | add v w hv hw => simpa only [map_add] using S.add_mem hv hw
+    | single m x =>
+      rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single, ofLoop_tmul,
+        LaurentPolynomial.toLaurentSeries_single]
+      exact h m x
+  have hcur (u : currentAlgebra R L) : i (envelopingι c a u) ∈ S :=
+    (isClosed_eq hD hE).mem_of_tendsto
+      (tendsto_toCompletedEnveloping_envelopingι_ofLoop_trunc Φ hΦ hΦs a u)
+      (Filter.Eventually.of_forall fun N ↦ hpoly _)
+  have hU : (⊤ : Subalgebra R U) ≤ S.comap i := by
+    rw [← LieAlgebra.ofTwoCocycle.adjoin_range_envelopingι c a, Algebra.adjoin_le_iff]
+    rintro _ ⟨u, rfl⟩
+    exact hcur u
+  refine derivationLieAlgebra.ext fun x ↦ ?_
+  induction x using (denseRange_toCompletedEnveloping Φ hΦ hΦs a).induction_on with
+  | hp => exact isClosed_eq hD hE
+  | ih b => exact hU Algebra.mem_top
+
+/-- The completed vector field of `-h` is the negative of the completed vector field of `h`. -/
+@[simp]
+theorem vectorFieldCompletedEnvelopingDerivation_neg (h : R⸨X⸩) :
+    vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (-h) =
+      -vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a h := by
+  have hneg : Continuous ((-vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a h :
+      derivationLieAlgebra R Û) : Module.End R Û) := by
+    rw [NegMemClass.coe_neg]
+    exact (continuous_vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a h).neg
+  refine derivationLieAlgebra_ext_single Φ hΦ hΦs a
+    (continuous_vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (-h)) hneg fun m x ↦ ?_
+  simp only [NegMemClass.coe_neg, LinearMap.neg_apply, coe_toCompletedEnveloping,
+    vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
+    vectorFieldEnvelopingDerivation_envelopingι, vectorFieldDerivation_neg,
+    LieDerivation.neg_apply, map_neg]
+
+section WittMode
+
+attribute [local instance 1100] HahnSeries.instAlgebra
+
+/-- The Witt vector field `t^{m+1} d/dt` on completed current generators sends `x_k` to
+`k x_{m+k}`. -/
+theorem vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_single_tmul
+    (m k : ℤ) (r : R) (x : L) :
+    (vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single (m + 1) 1) :
+        Module.End R Û)
+        (i (envelopingι c a (HahnSeries.single k r ⊗ₜ[R] x))) =
+      k • i (envelopingι c a (HahnSeries.single (m + k) r ⊗ₜ[R] x)) := by
+  have hcur : vectorFieldDerivation R L (HahnSeries.single (m + 1) 1)
+      (HahnSeries.single k r ⊗ₜ[R] x) = k • (HahnSeries.single (m + k) r ⊗ₜ[R] x) := by
+    rw [vectorFieldDerivation_tmul, LaurentSeries.derivative_apply,
+      LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one,
+      HahnSeries.single_mul_single, one_mul, show m + 1 + (k - 1) = m + k by ring,
+      TensorProduct.smul_tmul']
+    exact congrArg (· ⊗ₜ[R] x) (map_zsmul (HahnSeries.single.addMonoidHom (m + k)) k r)
+  simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
+    vectorFieldEnvelopingDerivation_envelopingι, hcur, map_zsmul]
+
+end WittMode
 
 end TauCeti.CurrentAlgebra
 

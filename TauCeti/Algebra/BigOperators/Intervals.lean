@@ -31,7 +31,8 @@ and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, t
 The sum of squares `∑_{r < n} r ^ 2 = n (n - 1) (2 n - 1) / 6` holds in `ℕ`, and with the
 denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r = n (n - 1)`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
-form of Gauss's sum.
+form of Gauss's sum; their squares sum to `k (k - 1) (2 k - 1) / 6`, and the products `j (k - j)`
+sum to `(k ^ 3 - k) / 6`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 
@@ -47,8 +48,10 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
 * `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
   `1` for odd `n`.
-* `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
-  `k (k - 1)` for every `k : ℤ`.
+* `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`,
+  `Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq`,
+  `Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub`: signed sums of `j`, `j ^ 2`, and
+  `j (k - j)` between `0` and `k : ℤ`, with denominators cleared.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
 -/
@@ -185,6 +188,38 @@ theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
     rw [Ico_eq_empty_of_le hi] at ih
     simp only [sum_empty, zero_sub] at ih ⊢
     linear_combination ih
+
+/-- Counted with sign, the squares of the integers between `0` and `k` sum to
+`k (k - 1) (2 k - 1) / 6`: six times `∑_{0 ≤ j < k} j ^ 2 - ∑_{k ≤ j < 0} j ^ 2` is
+`k (k - 1) (2 k - 1)` for every `k : ℤ`. -/
+theorem six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq (k : ℤ) :
+    6 * (∑ j ∈ Ico 0 k, j ^ 2 - ∑ j ∈ Ico k 0, j ^ 2) = k * (k - 1) * (2 * k - 1) := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ i ih =>
+    have hi : (0 : ℤ) ≤ i := by positivity
+    rw [← insert_Ico_right_eq_Ico_add_one hi, sum_insert (by simp),
+      Ico_eq_empty_of_le (by omega : (0 : ℤ) ≤ i + 1)]
+    rw [Ico_eq_empty_of_le hi] at ih
+    simp only [sum_empty, sub_zero] at ih ⊢
+    linear_combination ih
+  | pred i ih =>
+    have hi : -(i : ℤ) ≤ 0 := by omega
+    rw [← insert_Ico_left_eq_Ico_sub_one hi, sum_insert (by simp),
+      Ico_eq_empty_of_le (by omega : -(i : ℤ) - 1 ≤ 0)]
+    rw [Ico_eq_empty_of_le hi] at ih
+    simp only [sum_empty, zero_sub] at ih ⊢
+    linear_combination ih
+
+/-- Counted with sign, the products `j (k - j)` for integers between `0` and `k` sum to
+`(k ^ 3 - k) / 6`: six times `∑_{0 ≤ j < k} j * (k - j) - ∑_{k ≤ j < 0} j * (k - j)` is
+`k ^ 3 - k` for every `k : ℤ`. -/
+theorem six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub (k : ℤ) :
+    6 * (∑ j ∈ Ico 0 k, j * (k - j) - ∑ j ∈ Ico k 0, j * (k - j)) = k ^ 3 - k := by
+  simp only [mul_sub, ← sq, sum_sub_distrib, ← sum_mul]
+  linear_combination
+    3 * k * two_mul_sum_Ico_zero_sub_sum_Ico_zero k -
+      six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq k
 
 /-- A window sum `∑_{j - L ≤ k < j + L} f k` is the sum of `2 L` shifts of `f`: the `d`-th one
 reads `f` at `j + d - L`, where this index is defined. -/
