@@ -21,9 +21,10 @@ Integrating against an inverse measure is equivalent to precomposing the integra
 inversion. This transports integrals between left and right Haar measures.
 
 For a measure invariant under addition, an integral over a ball can be translated to a ball
-about the origin. Only measurability of translations is needed; the measure need not be an
-additive Haar measure, and the function need not be integrable. If the measure is also invariant
-under negation, the centre of a ball is its barycentre.
+about the origin, and the integral of a translate of a function over a ball is the integral of
+the function over the translated ball. Only measurability of translations is needed; the measure
+need not be an additive Haar measure, and the function need not be integrable. If the measure is
+also invariant under negation, the centre of a ball is its barycentre.
 
 For a right-invariant `s`-finite measure `μ`, integrating `z ↦ f (x * g z)` or `z ↦ f (x / g z)`
 against an `s`-finite measure `ν` (or over a set `s`) and then `x` against `μ` factors out
@@ -42,6 +43,8 @@ invariance.
   onto a bounded measurable test function inside an integral.
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
+* `TauCeti.setIntegral_ball_comp_add_right`: the integral of a translate over a ball is the
+  integral over the translated ball.
 * `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
   under translation and negation, the centre of a ball is its barycentre.
 * `TauCeti.lintegral_lintegral_mul_right`, `TauCeti.lintegral_lintegral_add_right`,
@@ -79,6 +82,17 @@ theorem setIntegral_ball_eq_setIntegral_ball_zero_add
     ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
   simpa using ((measurePreserving_add_right μ x₀).setIntegral_preimage_emb
     (MeasurableEquiv.addRight x₀).measurableEmbedding f (ball x₀ R)).symm
+
+/-- For a measure invariant under right addition, integrating the translate `y ↦ f (y + a)` over
+`ball x₀ R` is integrating `f` over the translated ball `ball (x₀ + a) R`. No integrability
+hypothesis is needed. -/
+theorem setIntegral_ball_comp_add_right
+    {E F : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
+    {μ : Measure E} [μ.IsAddRightInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E → F) (x₀ a : E) (R : ℝ) :
+    ∫ y in ball x₀ R, f (y + a) ∂μ = ∫ y in ball (x₀ + a) R, f y ∂μ := by
+  simpa using ((measurePreserving_add_right μ a).setIntegral_preimage_emb
+    (MeasurableEquiv.addRight a).measurableEmbedding f (ball (x₀ + a) R))
 
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the integral of `x - x₀` over `ball x₀ R`

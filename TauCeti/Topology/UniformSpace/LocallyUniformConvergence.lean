@@ -25,6 +25,10 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+Locally uniform convergence on the members of an open cover, to possibly different limits, is
+locally uniform convergence on the union to the pointwise limit
+(`tendstoLocallyUniformlyOn_iUnion_limUnder`).
+
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
@@ -54,6 +58,17 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- **Locally uniform limits on an open cover glue.** If `F` converges locally uniformly on each
+open set `S i`, possibly to a different limit `g i` on each, then it converges locally uniformly on
+`⋃ i, S i` to its pointwise limit, which agrees with each `g i` on `S i`. -/
+theorem tendstoLocallyUniformlyOn_iUnion_limUnder {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] [T2Space β] [Nonempty β] {F : ι → α → β} {p : Filter ι} [p.NeBot]
+    {S : ι' → Set α} {g : ι' → α → β} (hS : ∀ i, IsOpen (S i))
+    (h : ∀ i, TendstoLocallyUniformlyOn F (g i) p (S i)) :
+    TendstoLocallyUniformlyOn F (fun x ↦ limUnder p fun n ↦ F n x) p (⋃ i, S i) :=
+  tendstoLocallyUniformlyOn_iUnion hS fun i ↦
+    (h i).congr_right fun _ hx ↦ ((h i).tendsto_at hx).limUnder_eq.symm
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}

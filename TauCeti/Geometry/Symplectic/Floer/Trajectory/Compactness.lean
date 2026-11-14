@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
-import Mathlib.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Integral.Bochner.PeriodicStrip
 import TauCeti.Order.Filter.AtTopBot
+import TauCeti.Topology.Order.Compact
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness of Floer trajectories off finitely many bubbling points
@@ -113,7 +116,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
   set e : ℕ ≃ ℤ × ℤ := (Denumerable.eqv (ℤ × ℤ)).symm
   set c : ℕ → ℝ × ℝ := fun j ↦ (((e j).1 : ℝ), ((e j).2 : ℝ)) with hc
   set f : ℕ → ℝ × ℝ → ℝ := fun k ↦ ω.floerEnergyDensity Ks Kt (u k)
-  set S : Set (ℝ × ℝ) := univ ×ˢ Ico 0 1 with hS
+  set S : Set (ℝ × ℝ) := univ ×ˢ Ico 0 1
   set W : Set (ℝ × ℝ) := univ ×ˢ Ico (-1) 1 with hW
   have hf0 (k : ℕ) (y : ℝ × ℝ) : 0 ≤ f k y :=
     ω.floerEnergyDensity_nonneg (hJt y _ (huK k y)) (hfl k y)
@@ -125,12 +128,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       IntegrableOn g (ball z ε) :=
     (hg.continuousOn.integrableOn_compact (isCompact_closedBall z ε)).mono_set
       ball_subset_closedBall
+  -- Lebesgue measure on the plane is the product measure, which is translation invariant.
+  have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
+    rw [Measure.volume_eq_prod]
+    infer_instance
   have hfa (k : ℕ) (a : ℝ × ℝ) : Continuous fun z ↦ f k (z + a) :=
     (hfc k).comp (continuous_id.add continuous_const)
   have hKsc (j : ℕ) : (fun z ↦ Ks (z + c j)) = Ks := funext fun z ↦ hKsper _ _ z
   have hKtc (j : ℕ) : (fun z ↦ Kt (z + c j)) = Kt := funext fun z ↦ hKtper _ _ z
-  have hmp (a : ℝ × ℝ) : MeasurePreserving (· + a) (volume : Measure (ℝ × ℝ)) volume :=
-    (measurePreserving_add_right volume a.1).prod (measurePreserving_add_right volume a.2)
   -- The windows solve the Floer equation, and their energy densities are translates.
   have hflw (j k : ℕ) (z : ℝ × ℝ) : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J z (u k (z + c j)))
@@ -151,40 +156,22 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     have hKt0 : (fun w ↦ Kt (w + (0, (n : ℝ)))) = Kt := funext fun w ↦ by simpa using hKtper 0 n w
     have hu0 : (fun w ↦ u k (w + (0, (n : ℝ)))) = u k := funext fun w ↦ by
       obtain ⟨s, t⟩ := w
-      simpa using (show Periodic (fun t ↦ u k (s, t)) 1 from hper k s).int_mul n t
+      -- `Periodic g 1` is by definition `∀ t, g (t + 1) = g t`, which is `hper k s`.
+      have hp : Periodic (fun t ↦ u k (s, t)) 1 := fun t ↦ hper k s t
+      simpa using hp.int_mul n t
     have h := ω.floerEnergyDensity_comp_add_right Ks Kt (u k) (0, (n : ℝ)) y
     rw [hKs0, hKt0, hu0] at h
     exact h.symm
-  -- Translating a ball does not change the energy over it.
-  have hball (a : ℝ × ℝ) (k : ℕ) (z : ℝ × ℝ) (ε : ℝ) :
-      ∫ y in ball z ε, f k (y + a) = ∫ y in ball (z + a) ε, f k y := by
-    have h : ball z ε = (· + a) ⁻¹' ball (z + a) ε := by
-      ext y
-      simp
-    rw [h]
-    exact (hmp a).setIntegral_preimage_emb (measurableEmbedding_addRight a) (f k) _
   -- The energy over two periods of the strip is at most `2 * E`.
-  have hSm : MeasurableSet S := MeasurableSet.univ.prod measurableSet_Ico
   have hWm : MeasurableSet W := MeasurableSet.univ.prod measurableSet_Ico
   have hWint (k : ℕ) : IntegrableOn (f k) W ∧ ∫ y in W, f k y ≤ 2 * E := by
-    have hpre : (· + ((0 : ℝ), (1 : ℝ))) ⁻¹' S = univ ×ˢ Ico (-1) 0 := by
-      ext y
-      simp only [hS, mem_preimage, mem_prod, mem_univ, mem_Ico, Prod.snd_add, true_and]
-      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
-    have hf1 : (fun y ↦ f k (y + ((0 : ℝ), (1 : ℝ)))) = f k :=
-      funext fun y ↦ by simpa using hfper k 1 y
-    have hemb := measurableEmbedding_addRight ((0 : ℝ), (1 : ℝ))
-    have h1 : IntegrableOn (f k) (univ ×ˢ Ico (-1) 0) := by
-      rw [← hpre, ← hf1]
-      exact ((hmp _).integrableOn_comp_preimage hemb).2 (hint k)
-    have h2 : ∫ y in univ ×ˢ Ico (-1) 0, f k y = ∫ y in S, f k y := by
-      rw [← hpre, ← (hmp _).setIntegral_preimage_emb hemb (f k) S, hf1]
-    have hWu : W = univ ×ˢ Ico (-1) 0 ∪ S := by
-      rw [hW, hS, ← prod_union, Ico_union_Ico_eq_Ico (by norm_num) (by norm_num)]
-    rw [hWu]
-    refine ⟨h1.union (hint k), ?_⟩
-    rw [setIntegral_union (disjoint_prod.2 (Or.inr Ico_disjoint_Ico_same)) hSm h1 (hint k), h2]
-    linarith [hE k]
+    have hfk (s t : ℝ) : f k (s, t + 1) = f k (s, t) := by simpa using hfper k 1 (s, t)
+    have hk : IntegrableOn (f k) (univ ×ˢ Ico 0 (0 + 1)) := by simpa using hint k
+    have h1 := integrableOn_prod_Ico_sub_add_of_periodic (μ := volume) hfk hk
+    have h2 := setIntegral_prod_Ico_sub_add_of_periodic (μ := volume) MeasurableSet.univ hfk hk
+    rw [← Measure.volume_eq_prod] at h1 h2
+    norm_num at h1 h2
+    exact ⟨h1, by rw [hW, h2]; linarith [hE k]⟩
   -- So the energy of each window is at most `2 * E`.
   have hwin (j k : ℕ) : ∫ z in B, f k (z + c j) ≤ 2 * E := by
     set a : ℝ × ℝ := (((e j).1 : ℝ), 0)
@@ -197,7 +184,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       exact ⟨mem_univ _, by simp only [a] at hy; linarith [hy.2.1], by
         simp only [a] at hy; linarith [hy.2.2]⟩
     calc ∫ z in B, f k (z + c j) = ∫ z in B, f k (z + a) := by simp_rw [ha]
-      _ = ∫ z in ball a 1, f k z := by rw [hB, hball a k 0 1, zero_add]
+      _ = ∫ z in ball a 1, f k z := by rw [hB, setIntegral_ball_comp_add_right, zero_add]
       _ ≤ ∫ z in W, f k z := setIntegral_mono_set (hWint k).1
           (Eventually.of_forall fun y ↦ hf0 _ _) haW.eventuallySubset
       _ ≤ 2 * E := (hWint k).2
@@ -208,14 +195,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       (∀ z ∈ Z', ∀ ε > 0, ∀ᶠ k in l, δ ≤ ∫ y in ball z ε ∩ B, f k (y + c j)) ∧
       (∀ C, IsCompact C → C ⊆ B \ ↑Z' →
         ∃ M, ∀ᶠ k in l, ∀ y ∈ C, ‖fderiv ℝ (u k) (y + c j)‖ ≤ M) ∧
-      ContinuousOn v' (B \ ↑Z') ∧ MapsTo v' (B \ ↑Z') K ∧
       TendstoLocallyUniformlyOn (fun k y ↦ u k (y + c j)) v' l (B \ ↑Z'))
-    (fun j l l' hl ⟨Z', v', hZ', hconc, hbd, hvc, hvK, hlim⟩ ↦ ⟨Z', v', hZ',
+    (fun j l l' hl ⟨Z', v', hZ', hconc, hbd, hlim⟩ ↦ ⟨Z', v', hZ',
       fun z hz ε hε ↦ (hconc z hz ε hε).filter_mono hl,
-      fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl, hvc, hvK,
+      fun C hC hCZ ↦ (hbd C hC hCZ).imp fun _ hM ↦ hM.filter_mono hl,
       fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, h.filter_mono hl⟩⟩)
     (fun j ψ _ ↦ by
-      obtain ⟨ψ', Z', v', hψ', hZ', -, hconc, hbd, hvc, hvK, hlim⟩ :=
+      obtain ⟨ψ', Z', v', hψ', hZ', -, hconc, hbd, -, -, hlim⟩ :=
         hconv (Ω := B) (u := fun k y ↦ u (ψ k) (y + c j)) (E := 2 * E) isOpen_ball
           ball_subset_closedBall
           (fun k ↦ ((hu (ψ k)).comp (contDiff_id.add contDiff_const)).contDiffOn)
@@ -225,7 +211,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
           (fun k ↦ by
             rw [setIntegral_congr_fun isOpen_ball.measurableSet fun z _ ↦ hfw j (ψ k) z]
             exact hwin j (ψ k))
-      refine ⟨ψ', hψ', Z', v', hZ', fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_, hvc, hvK,
+      refine ⟨ψ', hψ', Z', v', hZ', fun z hz ε hε ↦ ?_, fun C hC hCZ ↦ ?_,
         fun U hU x hx ↦ (hlim U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, eventually_map.2 h⟩⟩
       · refine eventually_map.2 ((hconc z hz ε hε).mono fun n hn ↦ ?_)
         rwa [setIntegral_congr_fun (measurableSet_ball.inter isOpen_ball.measurableSet)
@@ -233,7 +219,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
       · obtain ⟨M, hM⟩ := hbd C hC hCZ
         refine ⟨M, eventually_map.2 (Eventually.of_forall fun n y hy ↦ ?_)⟩
         simpa [fderiv_comp_add_right] using hM n y hy)
-  choose Z v _ hconc hbd hvc hvK hlim using hP
+  choose Z v _ hconc hbd hlim using hP
   set l : Filter ℕ := map φ atTop
   -- The bubbling points of all windows, carried back to the plane.
   set Zall : Set (ℝ × ℝ) := ⋃ j, (· + c j) '' (Z j : Set (ℝ × ℝ)) with hZall
@@ -246,11 +232,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     filter_upwards [hconc j z hz ε hε] with k hk
     exact (hk.trans (setIntegral_mono_set (hintball (hfa k (c j)) z ε)
       (Eventually.of_forall fun y ↦ hf0 _ _) inter_subset_left.eventuallySubset)).trans_eq
-        (hball (c j) k z ε)
+        (setIntegral_ball_comp_add_right (f k) z (c j) ε)
   have hZcper (y : ℝ × ℝ) (n : ℤ) (hy : y ∈ Zc) : y + (0, (n : ℝ)) ∈ Zc := by
     intro ε hε
     filter_upwards [hy ε hε] with k hk
-    rw [← hball (0, (n : ℝ)) k y ε]
+    rw [← setIntegral_ball_comp_add_right (f k) y (0, (n : ℝ)) ε]
     simpa only [hfper] using hk
   -- Finitely many of them lie in the strip `S`.
   have hcard (F : Finset (ℝ × ℝ)) (hF : ↑F ⊆ Zc ∩ S) : F.card * δ ≤ 2 * E :=
@@ -294,71 +280,38 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     refine ⟨e.symm m, hm, fun hZ ↦ hy ?_⟩
     rw [hZall, mem_iUnion]
     exact ⟨e.symm m, y - c (e.symm m), hZ, sub_add_cancel _ _⟩
-  -- The limit is the pointwise limit, which on each good part is the limit of its window.
+  -- The limits of the windows glue to the pointwise limit, off the translates of `Zc ∩ S`.
   set v' : ℝ × ℝ → V := fun y ↦ limUnder l fun k ↦ u k y
-  have hv' (j : ℕ) {y : ℝ × ℝ} (hy : y ∈ G j) : v' y = v j (y - c j) := by
-    have h := (hlim j).tendsto_at hy
-    simp only [sub_add_cancel] at h
-    exact h.limUnder_eq
-  have hlimG (j : ℕ) : TendstoLocallyUniformlyOn u v' l (G j) :=
-    (((hlim j).comp (· - c j) (mapsTo_preimage _ _) (continuous_sub_right _).continuousOn).congr
-      fun k y _ ↦ by simp).congr_right fun y hy ↦ (hv' j hy).symm
-  have hcontG (j : ℕ) {y : ℝ × ℝ} (hy : y ∈ G j) : ContinuousAt v' y :=
-    (((hvc j).comp (continuous_sub_right _).continuousOn (mapsTo_preimage _ _)).continuousAt
-      ((hGopen j).mem_nhds hy)).congr_of_eventuallyEq
-        (eventually_of_mem ((hGopen j).mem_nhds hy) fun y' hy' ↦ hv' j hy')
+  have hlimv : TendstoLocallyUniformlyOn u v' l {y | (y.1, Int.fract y.2) ∉ hfin.toFinset} :=
+    (tendstoLocallyUniformlyOn_iUnion_limUnder hGopen fun j ↦
+      ((hlim j).comp (· - c j) (mapsTo_preimage _ _) (continuous_sub_right _).continuousOn).congr
+        fun k y _ ↦ by simp).mono fun y hy ↦ mem_iUnion.2 (hcover y (hgood hy))
   refine ⟨φ, hfin.toFinset, v', hφ, fun z hz ↦ (hfin.mem_toFinset.1 hz).2, ?_,
     fun z hz ε hε ↦ (eventually_map.1 ((hfin.mem_toFinset.1 hz).1 ε hε)).mono fun n hn ↦
-      (half_le_self hδ.le).trans hn, fun C hC hCZ ↦ ?_, ?_, ?_,
-    fun s t ↦ by simp only [v', hper], ?_⟩
+      (half_le_self hδ.le).trans hn, fun C hC hCZ ↦ ?_,
+    hlimv.continuousOn (Frequently.of_forall fun k ↦ (hu k).continuous.continuousOn),
+    fun y hy ↦ hK.isClosed.mem_of_tendsto (hlimv.tendsto_at hy)
+      (Eventually.of_forall fun k ↦ huK k y),
+    fun s t ↦ by simp only [v', hper],
+    fun U hU x hx ↦ (hlimv U hU x hx).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, eventually_map.1 h⟩⟩
   · have h := hcard hfin.toFinset (by simp)
     linarith
-  · -- Cover `C` by finitely many closed discs, each in a good part of some window.
-    replace hCZ := hCZ.trans hgood
-    have hloc (x : ℝ × ℝ) (hx : x ∈ C) : ∃ j, ∃ r > 0, closedBall x r ⊆ G j := by
-      obtain ⟨j, hj⟩ := hcover x (hCZ hx)
-      exact ⟨j, nhds_basis_closedBall.mem_iff.1 ((hGopen j).mem_nhds hj)⟩
-    choose! jx rx hrx hsub using hloc
-    obtain ⟨T, hTC, hCT⟩ := hC.elim_nhds_subcover (fun x ↦ closedBall x (rx x))
-      fun x hx ↦ closedBall_mem_nhds x (hrx x hx)
-    have hMx (x : ℝ × ℝ) (hx : x ∈ T) :
-        ∃ M, ∀ᶠ k in l, ∀ y ∈ closedBall x (rx x), ‖fderiv ℝ (u k) y‖ ≤ M := by
-      have hsub' : closedBall (x - c (jx x)) (rx x) ⊆ B \ ↑(Z (jx x)) := fun y hy ↦ by
-        have h := hsub x (hTC x hx) (show y + c (jx x) ∈ closedBall x (rx x) by
-          rw [mem_closedBall] at hy ⊢
-          rwa [← dist_add_right y (x - c (jx x)) (c (jx x)), sub_add_cancel] at hy)
-        simpa [hG] using h
-      obtain ⟨M, hM⟩ := hbd (jx x) _ (isCompact_closedBall _ _) hsub'
-      refine ⟨M, hM.mono fun k hk y hy ↦ ?_⟩
-      have h := hk (y - c (jx x)) (by rwa [mem_closedBall, dist_sub_right])
-      rwa [sub_add_cancel] at h
-    choose! M hM using hMx
-    have hev : ∀ᶠ k in l, ∀ y ∈ C, ‖fderiv ℝ (u k) y‖ ≤ ∑ x ∈ T, |M x| :=
-      ((eventually_all_finset T).2 hM).mono fun k hk y hy ↦ by
-        obtain ⟨x, hxT, hyx⟩ := mem_iUnion₂.1 (hCT hy)
-        exact (hk x hxT y hyx).trans ((le_abs_self _).trans
-          (Finset.single_le_sum (fun i _ ↦ abs_nonneg (M i)) hxT))
-    -- The finitely many earlier terms are bounded on `C` one at a time.
-    obtain ⟨N, hN⟩ := eventually_atTop.1 (eventually_map.1 hev)
-    choose D hD using fun n ↦ hC.exists_bound_of_continuousOn
-      ((hu (φ n)).continuous_fderiv (by norm_num)).continuousOn
-    refine ⟨max (∑ x ∈ T, |M x|) (∑ n ∈ Finset.range N, |D n|), fun n y hy ↦ ?_⟩
-    rcases lt_or_ge n N with hn | hn
-    · exact (hD n y hy).trans ((le_abs_self _).trans ((Finset.single_le_sum
-        (fun i _ ↦ abs_nonneg (D i)) (Finset.mem_range.2 hn)).trans (le_max_right _ _)))
-    · exact (hN n hn y hy).trans (le_max_left _ _)
-  · intro y hy
-    obtain ⟨j, hj⟩ := hcover y (hgood hy)
-    exact (hcontG j hj).continuousWithinAt
-  · intro y hy
-    obtain ⟨j, hj⟩ := hcover y (hgood hy)
-    rw [hv' j hj]
-    exact hvK j hj
-  · intro U hU x hx
-    obtain ⟨j, hj⟩ := hcover x (hgood hx)
-    obtain ⟨t, ht, h⟩ := hlimG j U hU x hj
-    exact ⟨t, mem_nhdsWithin_of_mem_nhds (by rwa [(hGopen j).nhdsWithin_eq hj] at ht),
-      eventually_map.1 h⟩
+  -- Each point of `C` has a closed disc in a good part of some window, on which that window
+  -- eventually bounds the differentials.
+  refine hC.exists_forall_le_of_eventually_nhds
+    (fun n ↦ ((hu (φ n)).continuous_fderiv (by norm_num)).norm.continuousOn) fun x hx ↦ ?_
+  obtain ⟨j, hj⟩ := hcover x (hgood (hCZ hx))
+  obtain ⟨r, hr, hsub⟩ := nhds_basis_closedBall.mem_iff.1 ((hGopen j).mem_nhds hj)
+  have hsub' : closedBall (x - c j) r ⊆ B \ ↑(Z j) := fun y hy ↦ by
+    have hy' : y + c j ∈ closedBall x r := by
+      rw [mem_closedBall] at hy ⊢
+      rwa [← dist_add_right y (x - c j) (c j), sub_add_cancel] at hy
+    simpa [hG] using hsub hy'
+  obtain ⟨M, hM⟩ := hbd j _ (isCompact_closedBall _ _) hsub'
+  refine ⟨closedBall x r, closedBall_mem_nhds x hr, M,
+    (eventually_map.1 hM).mono fun n hn y hy ↦ ?_⟩
+  have h := hn (y - c j) (by rwa [mem_closedBall, dist_sub_right])
+  rwa [sub_add_cancel] at h
 
 /-- **Floer trajectories converge off finitely many bubbling points.** Let `H` be a `C³`
 Hamiltonian, `1`-periodic in time, and `J_t(x)` a `C²` family of almost complex structures,
