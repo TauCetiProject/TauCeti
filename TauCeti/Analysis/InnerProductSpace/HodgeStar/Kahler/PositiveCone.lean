@@ -171,13 +171,9 @@ theorem kahlerForm_mem_positiveCone {J : AlmostComplexStructure V}
 /-- A complex line `v ∧ J v` is a positive `(1,1)`-form, for an orthogonal `J`. -/
 theorem ιMulti_mem_positiveCone {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) : ιMulti ℝ 2 ![v, J v] ∈ J.positiveCone := by
-  refine ⟨?_, fun w ↦ ?_⟩
-  · rw [lieMap_two_apply_ιMulti]
-    refine ext_inner_ιMulti_two fun a b ↦ ?_
-    simp only [inner_add_left, inner_ιMulti_two, inner_zero_left, apply_apply, inner_neg_left]
-    ring
-  · rw [inner_ιMulti_two, hJ, inner_apply_left hJ]
-    nlinarith [sq_nonneg ⟪v, w⟫, sq_nonneg ⟪v, J w⟫]
+  refine ⟨lieMap_ιMulti_apply J v, fun w ↦ ?_⟩
+  rw [inner_ιMulti_two, hJ, inner_apply_left hJ]
+  nlinarith [sq_nonneg ⟪v, w⟫, sq_nonneg ⟪v, J w⟫]
 
 /-- **Distance to the cone of positive `(1,1)`-forms.** For an orthogonal `J`, if
 `η(v, J v) ≥ -s ‖v‖²` for every `v`, with `s ≥ 0`, then the distance from `η` to the cone is at
