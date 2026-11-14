@@ -146,4 +146,10 @@ theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
     infinitePi_dirac, Measure.map_dirac' measurable_sum]
   simp
 
+/-- The sigma-finite sampling law realizes a Poisson random measure with its specified intensity. -/
+theorem isPoissonRandomMeasure_poissonLaw (Λ : Measure X) [SigmaFinite Λ] :
+    IsPoissonRandomMeasure Λ.poissonLaw id Λ :=
+  isPoissonRandomMeasure_of_laplaceFunctional measurable_id
+    (fun _ hf ↦ laplaceFunctional_poissonLaw Λ hf)
+
 end MeasureTheory.Measure
