@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Compactification.OnePoint.Sphere
 public import TauCeti.Topology.Homotopy.Cube.OnePoint
+import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Collapsing the boundary of the cube onto a sphere
@@ -20,6 +21,9 @@ homeomorphic to `S^k`, with `∞` at any prescribed basepoint
 
 * `TauCeti.sphereCollapse`: the continuous map `I^k → S^k` collapsing the cube boundary to a given
   basepoint of the sphere, a quotient map for `k ≥ 1` (`TauCeti.sphereCollapse_surjective`).
+* `TauCeti.isQuotientMap_prodMap_id_sphereCollapse`: for every space `P`, the map
+  `P × I^k → P × S^k` is a quotient map, so families of generalized loops parametrized by `P`
+  descend to maps `P × S^k → X`.
 -/
 
 public section
@@ -71,5 +75,13 @@ variable [NeZero k] (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
 theorem sphereCollapse_surjective : Function.Surjective (sphereCollapse k s₀) := by
   have : Nonempty (Fin k) := ⟨⟨0, Nat.pos_of_neZero k⟩⟩
   exact (onePointHomeomorphSphere k s₀).surjective.comp cubeToOnePoint_surjective
+
+/-- For every space `P`, the product of the identity of `P` with the collapse `I^k → S^k` is a
+quotient map `P × I^k → P × S^k`, since it is proper and surjective. -/
+theorem isQuotientMap_prodMap_id_sphereCollapse (P : Type*) [TopologicalSpace P] :
+    Topology.IsQuotientMap ((ContinuousMap.id P).prodMap (sphereCollapse k s₀)) :=
+  (isProperMap_id.prodMap (sphereCollapse k s₀).continuous.isProperMap).isClosedMap.isQuotientMap
+    (continuous_id.prodMap (sphereCollapse k s₀).continuous)
+    (Function.surjective_id.prodMap (sphereCollapse_surjective k s₀))
 
 end TauCeti

@@ -107,4 +107,17 @@ theorem orthonormal_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
   ext j
   fin_cases j <;> simp
 
+/-- A unit vector `x` followed by the first two vectors `x <• i`, `x <• j` of its quaternionic
+frame is orthonormal: these are two pointwise orthonormal tangent vector fields on the unit
+sphere. -/
+theorem orthonormal_vecCons_quaternionFrame {x : E} (hx : ‖x‖ = 1) :
+    Orthonormal ℝ ![x, quaternionFrame x 0, quaternionFrame x 1] := by
+  have h := (orthonormal_quaternionFrame hx).comp ![0, 1] (by decide)
+  refine orthonormal_vecCons_iff.2 ⟨hx, fun i ↦ ?_, ?_⟩
+  · rw [real_inner_comm]
+    fin_cases i <;> simp
+  · convert h using 1
+    ext i
+    fin_cases i <;> rfl
+
 end TauCeti
