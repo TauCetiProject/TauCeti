@@ -185,6 +185,79 @@ theorem comap {K : Type*} [Group K] (hH : IsTISubgroup H) (f : K →* G)
     simpa only [Subgroup.mem_comap, map_mul, map_inv] using hgx
   simpa only [map_one] using hH hfg hfx hfgx
 
+/-- If `y⁻¹ * h * y` and `y'⁻¹ * h * y'` both lie in a malnormal subgroup `H` for the same
+nonidentity element `h`, then `y` and `y'` lie in the same left coset of `H`. -/
+theorem inv_mul_mem_of_inv_mul_mul_mem (hH : IsTISubgroup H) {h y y' : G} (hh : h ≠ 1)
+    (hy : y⁻¹ * h * y ∈ H) (hy' : y'⁻¹ * h * y' ∈ H) : y⁻¹ * y' ∈ H := by
+  by_contra hnot
+  refine hH.conj_notMem hnot hy' (fun h1 => hh ?_) ?_
+  · simpa [mul_assoc] using congrArg (fun z => y' * z * y'⁻¹) h1
+  · convert hy using 1; group
+
+/-- Distinct integer powers of an element of infinite order outside a malnormal subgroup lie
+in distinct left cosets of that subgroup. -/
+theorem eq_of_inv_zpow_mul_zpow_mem (hH : IsTISubgroup H) {v : G} (hv : v ∉ H)
+    (hvo : ¬IsOfFinOrder v) {n n' : ℤ} (h : (v ^ n)⁻¹ * v ^ n' ∈ H) : n = n' := by
+  by_contra hne
+  rw [← zpow_neg, ← zpow_add, neg_add_eq_sub] at h
+  have hd : v ^ (n' - n) ≠ 1 := fun h1 => hne (sub_eq_zero.1
+    (injective_zpow_iff_not_isOfFinOrder.2 hvo (h1.trans (zpow_zero v).symm))).symm
+  exact hv (hH.centralizer_singleton_le h hd
+    (Subgroup.mem_centralizer_singleton_iff.2 (Commute.self_zpow v _).eq))
+
+/-- Let `v` be an element of infinite order outside a malnormal subgroup `H`. On a finite index
+set `s`, for a finite set `T` of prescribed elements, powers `v ^ m x` can be chosen so that
+`(v ^ m x)⁻¹ * h * v ^ m x' ∉ H` for all `x, x' ∈ s` and every nonidentity `h ∈ T`, and also
+for `h = 1` whenever `x ≠ x'`; the latter says that distinct indices give distinct left cosets
+of `H`. -/
+theorem exists_inv_pow_mul_mul_pow_notMem (hH : IsTISubgroup H) {ι : Type*} {v : G}
+    (hv : v ∉ H) (hvo : ¬IsOfFinOrder v) (s : Finset ι) (T : Set G) (hT : T.Finite) :
+    ∃ m : ι → ℕ, ∀ x ∈ s, ∀ x' ∈ s, ∀ h : G, (h = 1 ∧ x ≠ x' ∨ h ∈ T ∧ h ≠ 1) →
+      (v ^ m x)⁻¹ * h * v ^ m x' ∉ H := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, by simp⟩
+  | @insert a s ha ih =>
+    obtain ⟨m, hm⟩ := ih
+    -- Each condition on the new conjugator `v ^ n` excludes at most one `n`.
+    have hsub : ∀ P : ℕ → Prop,
+        (∀ n n', P n → P n' → (v ^ n)⁻¹ * v ^ n' ∈ H) → {n | P n}.Finite :=
+      fun P hP => Set.Subsingleton.finite fun n hn n' hn' => by
+        have heq := hH.eq_of_inv_zpow_mul_zpow_mem hv hvo
+          (n := (n : ℤ)) (n' := (n' : ℤ)) (by simpa only [zpow_natCast] using hP n n' hn hn')
+        exact_mod_cast heq
+    have hT1 : (insert 1 T).Finite := hT.insert 1
+    have hfin : ((⋃ x' ∈ (s : Set ι), ⋃ h ∈ insert 1 T,
+          {n | (v ^ n)⁻¹ * h * v ^ m x' ∈ H}) ∪
+        (⋃ x' ∈ (s : Set ι), ⋃ h ∈ insert 1 T,
+          {n | (v ^ m x')⁻¹ * h * v ^ n ∈ H}) ∪
+        ⋃ h ∈ T \ {1}, {n | (v ^ n)⁻¹ * h * v ^ n ∈ H}).Finite := by
+      refine .union (.union ?_ ?_) ?_
+      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
+          hsub _ fun n n' hn hn' => ?_
+        convert H.mul_mem hn (H.inv_mem hn') using 1
+        group
+      · refine s.finite_toSet.biUnion fun x' _ => hT1.biUnion fun h _ =>
+          hsub _ fun n n' hn hn' => ?_
+        convert H.mul_mem (H.inv_mem hn) hn' using 1
+        group
+      · exact hT.sdiff.biUnion fun h hh =>
+          hsub _ fun n n' hn hn' => hH.inv_mul_mem_of_inv_mul_mul_mem hh.2 hn hn'
+    obtain ⟨n, hn⟩ := hfin.exists_notMem
+    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_insert_iff, Finset.mem_coe,
+      Set.mem_sdiff, Set.mem_singleton_iff, not_or, not_exists] at hn
+    obtain ⟨⟨hn₁, hn₂⟩, hn₃⟩ := hn
+    refine ⟨Function.update m a n, fun x hx x' hx' h hh => ?_⟩
+    have hT' : h = 1 ∨ h ∈ T := hh.imp And.left And.left
+    rw [Finset.mem_insert] at hx hx'
+    have hxa : ∀ y ∈ s, y ≠ a := fun y hy hya => ha (hya ▸ hy)
+    rcases hx with rfl | hx <;> rcases hx' with rfl | hx'
+    · obtain ⟨hh, h1⟩ := hh.resolve_left fun h => h.2 rfl
+      simpa using hn₃ h ⟨hh, h1⟩
+    · simpa [hxa x' hx'] using hn₁ x' hx' h hT'
+    · simpa [hxa x hx] using hn₂ x hx h hT'
+    · simpa [hxa x hx, hxa x' hx'] using hm x hx x' hx' h hh
+
 /-- **A trivial-intersection subgroup of an infinite group has index `0` or `1`.**  A proper
 subgroup of finite index meets each of its conjugates in a subgroup of finite index, which is
 infinite in an infinite group and so cannot be trivial. -/
