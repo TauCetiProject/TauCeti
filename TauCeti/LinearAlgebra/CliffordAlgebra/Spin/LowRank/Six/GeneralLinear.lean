@@ -38,7 +38,9 @@ determinant-one matrices, by `TauCeti.hyperbolicSixSpinEquivSpecialLinear`.
 ## Main results
 
 * `TauCeti.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply`:
-  the matrix attached to a Spin element is the first factor of its image in the model.
+  for a polarized six-dimensional space, the matrix assigned to a Spin element in the half-spin
+  matrix-product model is the matrix of its even half-spin action (`spinPlusAction`) in the basis
+  `TauCeti.spinPlusFinBasisOfFinrankEqSix`.
 
 ## References
 
