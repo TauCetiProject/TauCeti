@@ -65,9 +65,15 @@ open DynkinType IntegralLattice
 
 /-! ### Component types and the `[2(024)0]` block permutation -/
 
+/-- The `A₅⁴ D₄` row has five components: four of type `A₅` and one of type `D₄`. -/
+-- Not `@[simp]`: `simp` would rewrite `a5FourthD4.components.length` inside dependent indices
+-- `Fin a5FourthD4.components.length`.
+theorem length_components_a5FourthD4 : a5FourthD4.components.length = 5 := by
+  simp [components]
+
 /-- The `A₅⁴ D₄` row has five components, so numerals index `Fin a5FourthD4.components.length`. -/
 instance instNeZeroLengthComponentsA5FourthD4 : NeZero a5FourthD4.components.length :=
-  inferInstanceAs (NeZero 5)
+  ⟨by rw [length_components_a5FourthD4]; decide⟩
 
 /-- The first four components of `A₅⁴ D₄` have type `A₅`. -/
 theorem componentType_a5FourthD4_of_lt {i : Fin a5FourthD4.components.length} (hi : i.val < 4) :
@@ -145,35 +151,49 @@ theorem a5FourthD4BlockPerm_pow_three : a5FourthD4BlockPerm ^ 3 = 1 := by decide
 theorem orderOf_a5FourthD4BlockPerm : orderOf a5FourthD4BlockPerm = 3 :=
   orderOf_eq_prime a5FourthD4BlockPerm_pow_three (by decide)
 
+private theorem eq_of_fin_components_a5FourthD4 (k : Fin a5FourthD4.components.length) :
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 := by
+  have hk : k.val < 5 := k.isLt.trans_eq length_components_a5FourthD4
+  interval_cases h : k.val
+  · exact Or.inl (Fin.ext (by simpa [length_components_a5FourthD4] using h))
+  · exact Or.inr (Or.inl (Fin.ext (by simpa [length_components_a5FourthD4] using h)))
+  · exact Or.inr (Or.inr (Or.inl (Fin.ext (by simpa [length_components_a5FourthD4] using h))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inl
+      (Fin.ext (by simpa [length_components_a5FourthD4] using h)))))
+  · exact Or.inr (Or.inr (Or.inr (Or.inr
+      (Fin.ext (by simpa [length_components_a5FourthD4] using h)))))
+
 /-- `a5FourthD4BlockPerm` preserves the component Dynkin types of `A₅⁴ D₄`. -/
 theorem componentType_a5FourthD4_a5FourthD4BlockPerm (k : Fin a5FourthD4.components.length) :
     a5FourthD4.componentType (a5FourthD4BlockPerm k) = a5FourthD4.componentType k := by
-  fin_cases k
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm 0) = a5FourthD4.componentType 0
-    rw [a5FourthD4BlockPerm_apply_zero]
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm 1) = a5FourthD4.componentType 1
-    rw [a5FourthD4BlockPerm_apply_one]; rfl
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm 2) = a5FourthD4.componentType 2
-    rw [a5FourthD4BlockPerm_apply_two]; rfl
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm 3) = a5FourthD4.componentType 3
-    rw [a5FourthD4BlockPerm_apply_three]; rfl
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm 4) = a5FourthD4.componentType 4
-    rw [a5FourthD4BlockPerm_apply_four]
+  rcases eq_of_fin_components_a5FourthD4 k with rfl | rfl | rfl | rfl | rfl
+  · rw [a5FourthD4BlockPerm_apply_zero]
+  · rw [a5FourthD4BlockPerm_apply_one,
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
+  · rw [a5FourthD4BlockPerm_apply_two,
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
+  · rw [a5FourthD4BlockPerm_apply_three,
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
+  · rw [a5FourthD4BlockPerm_apply_four]
 
 /-- `a5FourthD4BlockPerm⁻¹` preserves the component Dynkin types of `A₅⁴ D₄`. -/
 theorem componentType_a5FourthD4_a5FourthD4BlockPerm_inv (k : Fin a5FourthD4.components.length) :
     a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ k) = a5FourthD4.componentType k := by
-  fin_cases k
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ 0) = a5FourthD4.componentType 0
-    rw [a5FourthD4BlockPerm_inv_apply_zero]
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ 1) = a5FourthD4.componentType 1
-    rw [a5FourthD4BlockPerm_inv_apply_one]; rfl
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ 2) = a5FourthD4.componentType 2
-    rw [a5FourthD4BlockPerm_inv_apply_two]; rfl
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ 3) = a5FourthD4.componentType 3
-    rw [a5FourthD4BlockPerm_inv_apply_three]; rfl
-  · change a5FourthD4.componentType (a5FourthD4BlockPerm⁻¹ 4) = a5FourthD4.componentType 4
-    rw [a5FourthD4BlockPerm_inv_apply_four]
+  rcases eq_of_fin_components_a5FourthD4 k with rfl | rfl | rfl | rfl | rfl
+  · rw [a5FourthD4BlockPerm_inv_apply_zero]
+  · rw [a5FourthD4BlockPerm_inv_apply_one,
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
+  · rw [a5FourthD4BlockPerm_inv_apply_two,
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
+  · rw [a5FourthD4BlockPerm_inv_apply_three,
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4]),
+      componentType_a5FourthD4_of_lt (by simp [length_components_a5FourthD4])]
+  · rw [a5FourthD4BlockPerm_inv_apply_four]
 
 /-! ### Action of block rotation plus `D₄` triality on glue words -/
 
@@ -245,11 +265,10 @@ private theorem a5FourthD4BlockTrialityGlueEquiv_apply_aux (w : a5FourthD4.glueM
             (a5FourthD4.isSimplyLaced_componentType (a5FourthD4BlockPerm⁻¹ k))
             (a5FourthD4.isSimplyLaced_componentType k))
           (w (a5FourthD4BlockPerm⁻¹ k))) := by
-  change a5FourthD4TrialityGlueComponent k
-      (piGlueAlphabetCongr a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
-        a5FourthD4BlockPerm⁻¹ componentType_a5FourthD4_a5FourthD4BlockPerm_inv
-        (hs := a5FourthD4.isSimplyLaced_componentType) w k) = _
-  rw [piGlueAlphabetCongr_apply]
+  rw [a5FourthD4BlockTrialityGlueEquiv, QuadraticMap.IsometryEquiv.trans_apply,
+    ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv (QuadraticMap.IsometryEquiv.pi _),
+    QuadraticMap.IsometryEquiv.pi_toLinearEquiv, LinearEquiv.piCongrRight_apply,
+    QuadraticMap.IsometryEquiv.coe_toLinearEquiv, piGlueAlphabetCongr_apply]
 
 private theorem ofEq_glueAlphabet_apply_eq (w : a5FourthD4.glueModule)
     {a b : Fin a5FourthD4.components.length} (hab : a = b)
@@ -356,6 +375,19 @@ private def a5FourthD4BlockTrialityDigits (l : List ℕ) : List ℕ :=
     | 3 => 1
     | d => d]
 
+private theorem ofFn_fin_components_a5FourthD4 {α : Type*}
+    (h : Fin a5FourthD4.components.length → α) :
+    List.ofFn h = [h 0, h 1, h 2, h 3, h 4] := by
+  refine List.ext_getElem (by simp [length_components_a5FourthD4]) fun i hi₁ hi₂ ↦ ?_
+  rw [List.getElem_ofFn]
+  simp only [List.length_cons, List.length_nil] at hi₂
+  interval_cases i
+  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
+  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
+  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
+  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
+  · exact congrArg h (Fin.ext (by simp [length_components_a5FourthD4]))
+
 private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv (w : a5FourthD4.glueModule) :
     encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
         (a5FourthD4BlockTrialityGlueEquiv w) =
@@ -367,14 +399,12 @@ private theorem encodeGlueWord_a5FourthD4BlockTrialityGlueEquiv (w : a5FourthD4.
         (((a5FourthD4.componentType i).glueLabelEquiv
           (a5FourthD4.isSimplyLaced_componentType i)).symm (w i)).val := by
     rw [List.getD_eq_getElem _ _ (by simp [l]), getElem_encodeGlueWord]
-  let f : Fin a5FourthD4.components.length → ℕ := fun i ↦
+  rw [encodeGlueWord_def]
+  set f : Fin a5FourthD4.components.length → ℕ := fun i ↦
     (((a5FourthD4.componentType i).glueLabelEquiv
       (a5FourthD4.isSimplyLaced_componentType i)).symm
       (a5FourthD4BlockTrialityGlueEquiv w i)).val
-  have hofFn : List.ofFn f = [f 0, f 1, f 2, f 3, f 4] := rfl
-  rw [encodeGlueWord_def]
-  change List.ofFn f = a5FourthD4BlockTrialityDigits l
-  rw [hofFn, a5FourthD4BlockTrialityDigits]
+  rw [ofFn_fin_components_a5FourthD4, a5FourthD4BlockTrialityDigits]
   have hf0 : f 0 = l.getD 0 0 :=
     (congrArg
       (fun x ↦ (((A 5).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType 0)).symm x).val)
@@ -610,17 +640,16 @@ theorem a5FourthD4BlockTrialityIsometry_pow_three :
     a5FourthD4BlockTrialityIsometry ^ 3 = 1 := by
   refine Isometry.ext fun x ↦ funext fun k ↦ ?_
   simp only [pow_three, Isometry.mul_apply, Isometry.one_apply]
-  fin_cases k
-  · change a5FourthD4BlockTrialityIsometry _ 0 = x 0
-    simp
-  · change a5FourthD4BlockTrialityIsometry _ 1 = x 1
-    simp
-  · change a5FourthD4BlockTrialityIsometry _ 2 = x 2
-    simp
-  · change a5FourthD4BlockTrialityIsometry _ 3 = x 3
-    simp
-  · change a5FourthD4BlockTrialityIsometry _ 4 = x 4
-    simp only [a5FourthD4BlockTrialityIsometry_apply_four]
+  rcases eq_of_fin_components_a5FourthD4 k with rfl | rfl | rfl | rfl | rfl
+  · rw [a5FourthD4BlockTrialityIsometry_apply_zero, a5FourthD4BlockTrialityIsometry_apply_zero,
+      a5FourthD4BlockTrialityIsometry_apply_zero]
+  · rw [a5FourthD4BlockTrialityIsometry_apply_one, a5FourthD4BlockTrialityIsometry_apply_three,
+      a5FourthD4BlockTrialityIsometry_apply_two]
+  · rw [a5FourthD4BlockTrialityIsometry_apply_two, a5FourthD4BlockTrialityIsometry_apply_one,
+      a5FourthD4BlockTrialityIsometry_apply_three]
+  · rw [a5FourthD4BlockTrialityIsometry_apply_three, a5FourthD4BlockTrialityIsometry_apply_two,
+      a5FourthD4BlockTrialityIsometry_apply_one]
+  · simp only [a5FourthD4BlockTrialityIsometry_apply_four]
     have htri (ht : (D 4).IsSimplyLaced) (y : Fin (D 4).rank → ℚ) :
         typeD4Triality ht (typeD4Triality ht (typeD4Triality ht y)) = y := by
       have h := congrArg (fun f ↦ f y) (typeD4Triality_pow_three ht)

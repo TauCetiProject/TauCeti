@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4
 
 /-!
@@ -357,6 +355,9 @@ private theorem exists_a5FourthD4WitnessPairs_lt_four :
         s ≠ [0, 0, 0, 0, 0] ∧ glueWordMinimum a5FourthD4.componentType s < 4 := by
   decide +kernel
 
+private theorem val_four_a5FourthD4 : (4 : Fin a5FourthD4.components.length).val = 4 := by
+  simp [length_components_a5FourthD4]
+
 /-- **`A₅⁴ D₄` has no nontrivial pure-position glue symmetry**: every type-preserving permutation
 of its five components other than the identity moves some word of `a5FourthD4.glueSubgroup` outside
 that subgroup. -/
@@ -367,8 +368,8 @@ theorem glueSymmetries_a5FourthD4_eq_bot : a5FourthD4.glueSymmetries = ⊥ := by
   have hg4 : g 4 = 4 := by
     by_contra hne
     have hlt : (g 4).val < 4 := by
-      have hlt5 : (g 4).val < 5 := (g 4).isLt
-      have hval : (g 4).val ≠ 4 := fun hv ↦ hne (Fin.ext hv)
+      have hlt5 : (g 4).val < 5 := (g 4).isLt.trans_eq length_components_a5FourthD4
+      have hval : (g 4).val ≠ 4 := fun hv ↦ hne (Fin.ext (hv.trans val_four_a5FourthD4.symm))
       omega
     have hA := componentType_a5FourthD4_of_lt hlt
     rw [a5FourthD4.componentType_apply_of_mem_glueSymmetries hg 4,
@@ -376,29 +377,36 @@ theorem glueSymmetries_a5FourthD4_eq_bot : a5FourthD4.glueSymmetries = ⊥ := by
     cases hA
   have hg_lt {i : Fin a5FourthD4.components.length} (hi : i ≠ 4) : (g i).val < 4 := by
     have hgi4 : g i ≠ 4 := fun h ↦ hi (g.injective (h.trans hg4.symm))
-    have hval : (g i).val ≠ 4 := fun hv ↦ hgi4 (Fin.ext hv)
-    have hlt5 : (g i).val < 5 := (g i).isLt
+    have hval : (g i).val ≠ 4 := fun hv ↦ hgi4 (Fin.ext (hv.trans val_four_a5FourthD4.symm))
+    have hlt5 : (g i).val < 5 := (g i).isLt.trans_eq length_components_a5FourthD4
     omega
+  have hi_lt (i : Fin 4) : i.val < a5FourthD4.components.length := by
+    rw [length_components_a5FourthD4]
+    exact Nat.lt_trans i.isLt (by decide)
   let f (i : Fin 4) : Fin 4 :=
-    ⟨(g ⟨i.val, by have := i.isLt; change i.val < 5; omega⟩).val,
+    ⟨(g ⟨i.val, hi_lt i⟩).val,
       hg_lt fun h ↦ by
-        have hv := congrArg Fin.val h
-        change i.val = 4 at hv
-        omega⟩
+        have hv : i.val = 4 := (congrArg Fin.val h).trans val_four_a5FourthD4
+        exact absurd hv (Nat.ne_of_lt i.isLt)⟩
+  have hf_val (i : Fin 4) (k : Fin a5FourthD4.components.length) (hik : i.val = k.val) :
+      (f i).val = (g k).val :=
+    congrArg (fun x ↦ (g x).val) (Fin.ext hik)
   have hfinj : Function.Injective f := fun i j hij ↦ by
-    have hgij : g ⟨i.val, _⟩ = g ⟨j.val, _⟩ := Fin.ext (congrArg (@Fin.val 4) hij)
+    have hgij : g ⟨i.val, hi_lt i⟩ = g ⟨j.val, hi_lt j⟩ := Fin.ext (congrArg (@Fin.val 4) hij)
     exact Fin.ext (congrArg (@Fin.val a5FourthD4.components.length) (g.injective hgij))
   by_contra hg1
   have hf_not_id : ¬(f 0 = 0 ∧ f 1 = 1 ∧ f 2 = 2 ∧ f 3 = 3) := by
     rintro ⟨h0, h1, h2, h3⟩
     apply hg1
     refine Equiv.ext fun k ↦ ?_
-    fin_cases k
-    · exact Fin.ext (congrArg (@Fin.val 4) h0)
-    · exact Fin.ext (congrArg (@Fin.val 4) h1)
-    · exact Fin.ext (congrArg (@Fin.val 4) h2)
-    · exact Fin.ext (congrArg (@Fin.val 4) h3)
-    · exact hg4
+    have hk : k.val < 5 := k.isLt.trans_eq length_components_a5FourthD4
+    interval_cases hkv : k.val
+    · exact Fin.ext (((hf_val 0 k hkv.symm).symm.trans (congrArg Fin.val h0)).trans hkv.symm)
+    · exact Fin.ext (((hf_val 1 k hkv.symm).symm.trans (congrArg Fin.val h1)).trans hkv.symm)
+    · exact Fin.ext (((hf_val 2 k hkv.symm).symm.trans (congrArg Fin.val h2)).trans hkv.symm)
+    · exact Fin.ext (((hf_val 3 k hkv.symm).symm.trans (congrArg Fin.val h3)).trans hkv.symm)
+    · have hk4 : k = 4 := Fin.ext (hkv.trans val_four_a5FourthD4.symm)
+      exact hk4 ▸ hg4
   obtain ⟨p, hp, hs0, hslt⟩ := exists_a5FourthD4WitnessPairs_lt_four (f 0) (f 1) (f 2) (f 3)
     (hfinj.ne (by decide)) (hfinj.ne (by decide)) (hfinj.ne (by decide))
     (hfinj.ne (by decide)) (hfinj.ne (by decide)) (hfinj.ne (by decide)) hf_not_id
@@ -412,11 +420,18 @@ theorem glueSymmetries_a5FourthD4_eq_bot : a5FourthD4.glueSymmetries = ⊥ := by
   have hofFn : (List.ofFn fun k : Fin a5FourthD4.components.length ↦ p.1.getD (g k).val 0) =
       [p.1.getD (f 0).val 0, p.1.getD (f 1).val 0, p.1.getD (f 2).val 0, p.1.getD (f 3).val 0,
         p.1.getD 4 0] := by
-    have h4val : (g 4).val = 4 := congrArg Fin.val hg4
-    change [p.1.getD (g 0).val 0, p.1.getD (g 1).val 0, p.1.getD (g 2).val 0,
-      p.1.getD (g 3).val 0, p.1.getD (g 4).val 0] = _
-    rw [h4val]
-    rfl
+    refine List.ext_getElem (by simp [length_components_a5FourthD4]) fun i hi₁ hi₂ ↦ ?_
+    rw [List.getElem_ofFn]
+    simp only [List.length_cons, List.length_nil] at hi₂
+    interval_cases i
+    · exact congrArg (p.1.getD · 0) (hf_val 0 ⟨0, hi₁⟩ rfl).symm
+    · exact congrArg (p.1.getD · 0) (hf_val 1 ⟨1, hi₁⟩ rfl).symm
+    · exact congrArg (p.1.getD · 0) (hf_val 2 ⟨2, hi₁⟩ rfl).symm
+    · exact congrArg (p.1.getD · 0) (hf_val 3 ⟨3, hi₁⟩ rfl).symm
+    · have hk4 : (⟨4, hi₁⟩ : Fin a5FourthD4.components.length) = 4 :=
+        Fin.ext val_four_a5FourthD4.symm
+      exact congrArg (p.1.getD · 0)
+        ((congrArg Fin.val ((congrArg g hk4).trans hg4)).trans val_four_a5FourthD4)
   have henc_wg : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
       w_g = [p.1.getD (f 0).val 0, p.1.getD (f 1).val 0, p.1.getD (f 2).val 0,
         p.1.getD (f 3).val 0, p.1.getD 4 0] := by
@@ -430,8 +445,8 @@ theorem glueSymmetries_a5FourthD4_eq_bot : a5FourthD4.glueSymmetries = ⊥ := by
             p.1.getD (f 3).val 0, p.1.getD 4 0] p.2 := by
     rw [encodeGlueWord_add, henc_wg, hw'l]
   have hne : w_g + w' ≠ 0 := fun h0 ↦ hs0 <| by
-    rw [← henc_sum, h0, encodeGlueWord_zero]
-    rfl
+    rw [← henc_sum, h0, encodeGlueWord_zero, length_components_a5FourthD4]
+    decide
   have hge := four_le_sum_glueMinimum_of_mem_glueSubgroup a5FourthD4 (add_mem hwg hw') hne
   rw [← glueWordMinimum_encodeGlueWord, henc_sum] at hge
   exact not_le_of_gt hslt hge

@@ -387,20 +387,24 @@ theorem typeD4Triality_single (i : Fin 4) :
 -- Not `@[simp]`: `simp` rewrites `(D 4).rank` inside `x` by `rank_D`.
 theorem typeD4Triality_apply_eq (x : Fin (D 4).rank → ℚ) (j : Fin 4) :
     typeD4Triality ht x j = x (trialityPermD4.symm j) := by
-  let e : (Fin 4 → ℚ) ≃ₗ[ℚ] Fin 4 → ℚ := (typeD4Triality ht).toIsometryEquiv.toLinearEquiv
-  let y : Fin 4 → ℚ := x
   obtain ⟨k, rfl⟩ := trialityPermD4.surjective j
-  change e y (trialityPermD4 k) = y (trialityPermD4.symm (trialityPermD4 k))
-  conv_lhs => rw [pi_eq_sum_univ' y, map_sum, Finset.sum_apply]
-  have hsum : ∑ i : Fin 4, e (y i • Pi.single i 1) (trialityPermD4 k) =
-      ∑ i : Fin 4, (y i • Pi.single (trialityPermD4 i) (1 : ℚ)) (trialityPermD4 k) :=
-    Finset.sum_congr rfl fun i _ ↦ by
-      rw [map_smul]
-      exact congrArg (fun v : Fin 4 → ℚ ↦ (y i • v) (trialityPermD4 k))
-        (typeD4Triality_single ht i)
-  rw [hsum]
-  simp only [Pi.smul_apply, Pi.single_apply, trialityPermD4.injective.eq_iff, smul_eq_mul,
-    mul_boole, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, Equiv.symm_apply_apply]
+  have h1 : typeD4Triality ht x =
+      ∑ i : Fin (D 4).rank, x i • typeD4Triality ht (Pi.single i 1) := by
+    conv_lhs => rw [pi_eq_sum_univ' x, map_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ map_smul (typeD4Triality ht) (x i) (Pi.single i 1)
+  let y : Fin 4 → ℚ := fun i ↦ x (Fin.cast (rank_D 4).symm i)
+  -- As in `typeD4Triality_single`, `(D 4).rank` unfolds to `4` (`rank_D`), identifying
+  -- coordinates indexed by `Fin (D 4).rank` with `Fin 4` so `Fin.cast (rank_D 4).symm` is
+  -- definitionally the identity.
+  have h2 : (∑ i : Fin (D 4).rank, x i • typeD4Triality ht (Pi.single i 1)) =
+      (∑ i : Fin 4, y i • Pi.single (trialityPermD4 i) (1 : ℚ)) :=
+    Finset.sum_congr rfl fun i _ ↦ congrArg (y i • ·) (typeD4Triality_single ht i)
+  have h3 : (∑ i : Fin 4, y i • Pi.single (trialityPermD4 i) (1 : ℚ)) (trialityPermD4 k) =
+      y (trialityPermD4.symm (trialityPermD4 k)) := by
+    simp only [Finset.sum_apply, Pi.smul_apply, Pi.single_apply,
+      trialityPermD4.injective.eq_iff, smul_eq_mul, mul_boole, Finset.sum_ite_eq,
+      Finset.mem_univ, ↓reduceIte, Equiv.symm_apply_apply]
+  exact (congrFun (h1.trans h2) (trialityPermD4 k)).trans h3
 
 /-- **Triality has order three.** -/
 @[simp]
