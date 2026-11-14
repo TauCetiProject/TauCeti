@@ -22,7 +22,8 @@ atlas or on the transition functions of `E`.
 This file provides general `C^n` criteria for morphisms and bundle maps whose local coordinates are
 intertwined by a fixed continuous linear map:
 
-* `FiniteRankBundleCore.contMDiff_of_localTriv_snd` and
+* `FiniteRankBundleCore.contMDiff_of_localTriv_snd`,
+  `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_mem_baseSet`, and
   `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_coordChange` establish `C^n` regularity on total
   spaces without `C^n` assumptions on the cores;
 * `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_coordChange_comp` and
@@ -76,17 +77,35 @@ theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpa
     (Filter.Eventually.of_forall fun p ↦ hL p₀.proj p)
 
 /-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the
+point-to-chart transitions on `E`'s chart domains with a fixed continuous linear map `L` glues to a
+`C^n` map of total spaces, without any smoothness assumption on the base or on the cores. -/
+theorem contMDiff_totalSpaceMap_of_mem_baseSet {E E' : FiniteRankBundleCore 𝕜 B} (a : E ⟶ E')
+    (L : (Fin E.rank → 𝕜) →L[𝕜] (Fin E'.rank → 𝕜))
+    (hL : ∀ x b, x ∈ E.core.baseSet b → ∀ v,
+      E'.core.coordChange x b x (a.fiberMap x v) = L (E.core.coordChange x b x v)) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin E'.rank → 𝕜)) n
+      a.totalSpaceMap := by
+  intro p₀
+  rw [Bundle.contMDiffAt_totalSpace_iff, a.totalSpaceMap_proj p₀]
+  refine ⟨((contMDiff_proj E.core.Fiber).congr a.totalSpaceMap_proj).contMDiffAt, ?_⟩
+  have hp₀ : p₀ ∈ (E.core.localTriv p₀.proj).source :=
+    (E.core.mem_localTriv_source p₀.proj p₀).2 (E.mem_baseSet_self p₀.proj)
+  have hU := (E.core.localTriv p₀.proj).open_source.mem_nhds hp₀
+  refine (L.contDiff.comp_contMDiffAt (E.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq ?_
+  filter_upwards [hU] with ⟨x, v⟩ hq
+  rw [E'.trivializationAt_core]
+  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, E.indexAt_eq, E'.indexAt_eq]
+  exact hL x p₀.proj ((E.core.mem_localTriv_source p₀.proj ⟨x, v⟩).1 hq) v
+
+/-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the
 point-to-chart transitions with a fixed continuous linear map `L` glues to a `C^n` map of total
 spaces, without any smoothness assumption on the base or on the cores. -/
 theorem contMDiff_totalSpaceMap_of_coordChange {E E' : FiniteRankBundleCore 𝕜 B} (a : E ⟶ E')
     (L : (Fin E.rank → 𝕜) →L[𝕜] (Fin E'.rank → 𝕜))
     (hL : ∀ x b v, E'.core.coordChange x b x (a.fiberMap x v) = L (E.core.coordChange x b x v)) :
     ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin E'.rank → 𝕜)) n
-      a.totalSpaceMap := by
-  refine E.contMDiff_of_localTriv_snd a.totalSpaceMap a.totalSpaceMap_proj L fun b ⟨x, v⟩ ↦ ?_
-  rw [E'.trivializationAt_core]
-  simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, E.indexAt_eq, E'.indexAt_eq]
-  exact hL x b v
+      a.totalSpaceMap :=
+  contMDiff_totalSpaceMap_of_mem_baseSet a L fun x b _ v ↦ hL x b v
 
 /-- If `E.core.baseSet i ⊆ E'.core.baseSet i`, `E'` is a `C^n` core, and `a : E ⟶ E'` intertwines
 the transitions from `i` to each point `x` with a fixed continuous linear map `L`, then the
