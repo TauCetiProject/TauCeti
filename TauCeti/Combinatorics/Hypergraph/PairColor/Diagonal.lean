@@ -204,6 +204,24 @@ theorem isPairColorRegular_fillDiagonal {ε : ℝ}
   exact isRegularPair_iff.1 hpair c s hs t ht hs' ht'
 
 open Classical in
+/-- Ordered distinct pairs whose color in `T` differs from `f`-mapped color in `S` are in bijection
+with all vertex pairs `(u, v)` whose `colorOfPair` in `T` differs from `(S.colorOfPair u v).map f`,
+since diagonal pairs have `colorOfPair = none` on both sides. -/
+theorem card_color_ne_eq_card_colorOfPair_ne {κ' : Type*}
+    (T : PairColorSystem κ' V) (f : κ → κ') :
+    #{p : {p : V × V // p.1 ≠ p.2} | T.color p ≠ f (S.color p)} =
+      #{p : V × V | T.colorOfPair p.1 p.2 ≠ (S.colorOfPair p.1 p.2).map f} := by
+  classical
+  refine card_bij (fun p _ ↦ p.1) (fun p hp ↦ ?_) (fun _ _ _ _ h ↦ Subtype.ext h) fun p hp ↦ ?_
+  · simp only [mem_filter, mem_univ, true_and, colorOfPair_of_ne _ p.2, Option.map_some, ne_eq,
+      Option.some.injEq] at hp ⊢
+    exact hp
+  · simp only [mem_filter, mem_univ, true_and] at hp
+    have hne : p.1 ≠ p.2 := fun heq ↦ hp (by simp [heq])
+    refine ⟨⟨p, hne⟩, ?_, rfl⟩
+    simpa [colorOfPair_of_ne _ hne] using hp
+
+open Classical in
 /-- The exact number of edited ordered pairs is the sum of the within-cell distinct-pair
 counts. There is no factor of two or contribution from equal vertices. -/
 theorem card_fillDiagonal_colorOfPair_ne :

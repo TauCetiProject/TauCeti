@@ -159,6 +159,14 @@ theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u
   · exact absurd ht (by simpa using hε)
   simpa using hε.le
 
+/-- Renaming the palette preserves `ε`-regularity of a pair of sets. -/
+@[simp]
+theorem isRegularPair_relabel_iff {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).IsRegularPair ε s t ↔ S.IsRegularPair ε s t := by
+  refine ⟨fun h c s' hs' t' ht' hs ht ↦ ?_, fun h c s' hs' t' ht' hs ht ↦ ?_⟩
+  · simpa using h (e c) s' hs' t' ht' hs ht
+  · simpa using h (e.symm c) s' hs' t' ht' hs ht
+
 section Discrepancy
 
 variable [DecidableEq κ] {s' t' : Finset V} {c : κ}
@@ -310,6 +318,19 @@ theorem relabel_vertexPart {κ' : Type*} (e : κ ≃ κ') : (S.relabel e).vertex
 theorem relabel_pairColors {κ' : Type*} (e : κ ≃ κ') :
     (S.relabel e).pairColors = S.pairColors.relabel e :=
   (rfl)
+
+/-- Renaming the pair palette preserves pair-color regularity of a lower skeleton. -/
+@[simp]
+theorem isPairColorRegular_relabel_iff {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).IsPairColorRegular ε ↔ S.IsPairColorRegular ε := by
+  simp [IsPairColorRegular]
+
+/-- Renaming the pair palette preserves scheduled lower-skeleton regularity. -/
+@[simp]
+theorem lowerSkeletonRegular_relabel_iff {κ' : Type*} [Fintype κ] [Fintype κ'] (e : κ ≃ κ')
+    {F : ℕ → ℝ} :
+    (S.relabel e).LowerSkeletonRegular F ↔ S.LowerSkeletonRegular F := by
+  simp [LowerSkeletonRegular, Fintype.card_congr e]
 
 end PairSkeleton3
 
