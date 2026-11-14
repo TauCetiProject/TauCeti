@@ -258,6 +258,19 @@ lemma totalSpaceSchemeBaseChangeIso_hom_app (E : FiniteLocallyFreeSheaf X) :
             (op ((toQuasicoherent X).obj (dual E))) :=
   (rfl)
 
+/-- The inverse component of `totalSpaceSchemeBaseChangeIso` at `E`: the inverse component of
+`relativeSpecSymmetricAlgebraBaseChangeIso` at `E^∨`, followed by relative Spec of the symmetric
+algebra of the inverses of the two identifications in `totalSpaceSchemeBaseChangeIso_hom_app`. -/
+lemma totalSpaceSchemeBaseChangeIso_inv_app (E : FiniteLocallyFreeSheaf X) :
+    (totalSpaceSchemeBaseChangeIso f).inv.app E =
+      (relativeSpecSymmetricAlgebraBaseChangeIso f).inv.app
+          (op ((toQuasicoherent X).obj (dual E))) ≫
+        (relativeSpec Y).map
+          ((symmetricAlgebra Y).map ((pullbackToQuasicoherentIso f).hom.app (dual E))).op ≫
+          (relativeSpec Y).map
+            ((symmetricAlgebra Y).map ((toQuasicoherent Y).map (pullbackDualIso f E).inv)).op :=
+  (rfl)
+
 variable (E : FiniteLocallyFreeSheaf X)
 
 /-- The projection `𝕍(f^* E) ⟶ 𝕍(E)` from the total space of the pulled-back bundle, as a morphism
