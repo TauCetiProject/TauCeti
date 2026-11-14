@@ -9,8 +9,12 @@ public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Order.Monotone.Defs
 
 /-!
-# Injectivity from three injective pieces
+# Injectivity on order intervals
 
+Injectivity criteria for functions on intervals of an order.
+A function on a closed interval `Icc a b` which is injective on the interior `Ioo a b`, and sends
+that interior into a set to which neither endpoint value belongs, repeats values at most between the
+two endpoints: on the unit interval, a path is then a simple arc, except that it may be a loop.
 A function on a linear order which is injective on `Iic a`, `Icc a b` and `Ici b`, sends the two
 outer pieces into disjoint sets, and meets those sets inside `Icc a b` only at the endpoint values,
 is injective.
@@ -18,6 +22,8 @@ is injective.
 ## Main results
 
 * `TauCeti.injective_of_injOn_Iic_Icc_Ici`: injectivity from the three injective pieces.
+* `TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo`: repetitions only between the
+  endpoints.
 -/
 
 public section
@@ -52,5 +58,22 @@ theorem injective_of_injOn_Iic_Icc_Ici {ι X : Type*} [LinearOrder ι] {f : ι �
     · have hx := hTb x ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ (heq ▸ hT y hyn)
       exact hxb.ne (hm ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ ⟨hab, le_rfl⟩ hx)
     · exact hxy.ne (hm ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ ⟨hya.le, (lt_of_not_ge hyn).le⟩ heq)
+
+/-- **A function on a closed interval repeats only at the endpoints when the interior avoids both
+endpoint values.** If `γ` maps the open interval `Ioo a b` into `S`, neither endpoint value lies in
+`S`, and `γ` is injective on the open interval, then two points of `Icc a b` with a common value
+are equal or are the two endpoints.
+
+Purely a statement about function values, with no topology anywhere: a `Path` specializes through
+its coercion, with `a = 0` and `b = 1` in `unitInterval`. It is stated for a bare function, with no
+hypothesis on how it was built, because a consumer typically receives its path from an existential
+and knows only a parametrisation formula for it, from which it establishes the membership and
+injectivity hypotheses. -/
+theorem eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo {X α : Type*} [PartialOrder α]
+    {a b x y : α} {γ : α → X} {S : Set X}
+    (ha : γ a ∉ S) (hb : γ b ∉ S) (hmem : ∀ t ∈ Ioo a b, γ t ∈ S) (hinj : InjOn γ (Ioo a b))
+    (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) (hxy : γ x = γ y) :
+    x = y ∨ (x = a ∧ y = b) ∨ (x = b ∧ y = a) := by
+  grind [eq_endpoints_or_mem_Ioo_of_mem_Icc, InjOn]
 
 end TauCeti
