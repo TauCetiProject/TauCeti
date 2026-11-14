@@ -37,6 +37,8 @@ locus of a section of an invertible sheaf.
   when `e` is a basis of `L` over `U`.
 * `AlgebraicGeometry.Scheme.Modules.bijective_smul_tensorPowSection`: if `e` is a basis of `L`
   over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`.
+* `AlgebraicGeometry.Scheme.Modules.tmulRight_tensorPowSection_add`: tensoring `t ⊗ eᵐ` with `eⁿ`
+  gives `t ⊗ eⁿ⁺ᵐ` under the associator and the block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ`.
 -/
 
 public section
@@ -121,6 +123,26 @@ theorem rightUnitor_inv_app_eq_tmulRight {U : X.Opens} (t : Γ(F, U)) :
   rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, Iso.hom_inv_id, Hom.id_app]
   -- The identity of `Γ(F, U)` in `AddCommGrpCat` acts as the identity function.
   rfl
+
+/-- The left unitor `𝒪_X ⊗ L ≅ L` sends `r ⊗ e` to `r • e`. -/
+@[simp]
+theorem leftUnitor_hom_app_tmulRight {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U)) :
+    (λ_ L).hom.app U (tmulRight (𝟙_ X.Modules) e r) = r • e := by
+  have h := congrArg (fun φ ↦ φ.hom (r ⊗ₜ e))
+    (Functor.LaxMonoidal.left_unitality (sectionsFunctor U) L)
+  simp only [sectionsFunctor_ε, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  exact h.symm
+
+/-- The associator `(F ⊗ L) ⊗ G ≅ F ⊗ (L ⊗ G)` sends `(t ⊗ e) ⊗ e'` to `t ⊗ (e ⊗ e')`. -/
+@[simp]
+theorem associator_hom_app_tmulRight {G : X.Modules} {U : X.Opens} (e' : Γ(G, U))
+    (e : Γ(L, U)) (t : Γ(F, U)) :
+    (α_ F L G).hom.app U (tmulRight (F ⊗ L) e' (tmulRight F e t)) =
+      tmulRight F (tmulRight L e' e) t := by
+  have h := congrArg (fun φ ↦ φ.hom ((t ⊗ₜ e) ⊗ₜ e'))
+    (Functor.LaxMonoidal.associativity (sectionsFunctor U) F L G)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  exact h
 
 /-- Restriction to an open subscheme commutes with tensoring sections: the tensor map
 `F|_Y ⊗ L|_Y ⟶ (F ⊗ L)|_Y` of the restriction along an open immersion `j : Y ⟶ X` sends `t ⊗ e`
@@ -207,6 +229,13 @@ theorem bijective_tmulRight {U : X.Opens} (e : Γ(L, U))
 
 /-! ### Tensor powers of a section -/
 
+/-- The tensor powers of a quasi-coherent `𝒪_X`-module are quasi-coherent. -/
+instance isQuasicoherent_tensorPow (L : X.Modules) [L.IsQuasicoherent] (n : ℕ) :
+    (tensorPow L n).IsQuasicoherent := by
+  induction n with
+  | zero => exact inferInstanceAs (𝟙_ X.Modules).IsQuasicoherent
+  | succ n ih => exact inferInstanceAs (L ⊗ tensorPow L n).IsQuasicoherent
+
 /-- The tensor powers `eⁿ ∈ Γ(Lⁿ, U)` of a section `e` of `L` over `U`, for the tensor powers
 `Lⁿ = TauCeti.tensorPow L n` nested to the right: `e⁰ = 1` and `eⁿ⁺¹ = e ⊗ eⁿ`. -/
 def tensorPowSection {U : X.Opens} (e : Γ(L, U)) : (n : ℕ) → Γ(tensorPow L n, U)
@@ -255,6 +284,35 @@ theorem tmulRight_tensorPowSection_smul {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, 
     tmulRight F (tensorPowSection (r • e) n) t =
       tmulRight F (tensorPowSection e n) (r ^ n • t) := by
   rw [tensorPowSection_smul, tmulRight_smul, LinearMap.map_smul]
+
+/-- The block decomposition `Lᵐ ⊗ Lⁿ ≅ Lⁿ⁺ᵐ` sends `eᵐ ⊗ eⁿ` to `eⁿ⁺ᵐ`. -/
+@[simp]
+theorem tensorPowAddIso_hom_app_tmulRight_tensorPowSection {U : X.Opens} (e : Γ(L, U))
+    (m n : ℕ) :
+    (tensorPowAddIso L m n).hom.app U
+        (tmulRight (tensorPow L m) (tensorPowSection e n) (tensorPowSection e m)) =
+      tensorPowSection e (n + m) := by
+  induction m with
+  | zero =>
+    rw [tensorPowAddIso_zero]
+    exact (leftUnitor_hom_app_tmulRight (1 : Γ(X, U)) (tensorPowSection e n)).trans
+      (one_smul _ _)
+  | succ m ih =>
+    rw [tensorPowAddIso_succ_hom, Hom.comp_app, ConcreteCategory.comp_apply,
+      tensorPowSection_succ, associator_hom_app_tmulRight, whiskerLeft_app_tmulRight, ih]
+    -- `n + (m + 1)` is definitionally `n + m + 1`, the index of the recursive step.
+    rfl
+
+/-- **Tensoring with powers of a section is multiplicative.** Tensoring `t ⊗ eᵐ` further with
+`eⁿ` gives `t ⊗ eⁿ⁺ᵐ`, after the identification `(F ⊗ Lᵐ) ⊗ Lⁿ ≅ F ⊗ Lⁿ⁺ᵐ` given by the
+associator and the block decomposition of tensor powers. -/
+theorem tmulRight_tensorPowSection_add {U : X.Opens} (e : Γ(L, U)) (m n : ℕ) (t : Γ(F, U)) :
+    tmulRight F (tensorPowSection e (n + m)) t =
+      ((α_ F (tensorPow L m) (tensorPow L n)).hom ≫ F ◁ (tensorPowAddIso L m n).hom).app U
+        (tmulRight (F ⊗ tensorPow L m) (tensorPowSection e n)
+          (tmulRight F (tensorPowSection e m) t)) := by
+  rw [Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
+    whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tmulRight_tensorPowSection]
 
 /-- If `e` is a basis of `L` over `U`, then `eⁿ` is a basis of `Lⁿ` over `U`. -/
 theorem bijective_smul_tensorPowSection {U : X.Opens} (e : Γ(L, U))

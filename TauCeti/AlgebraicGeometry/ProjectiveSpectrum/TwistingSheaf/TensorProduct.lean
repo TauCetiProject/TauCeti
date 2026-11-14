@@ -27,6 +27,8 @@ sheafified tensor product follows the Cartier divisor construction in
 
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorPresheafHom`: multiplication of sections, as a
   morphism from the sectionwise tensor product of `𝒪(m)` and `𝒪(n)` to `𝒪(m + n)`.
+* `AlgebraicGeometry.Proj.twistingSheaf.tensorObjIso`: the same isomorphism for the tensor
+  product of the monoidal category of `𝒪_{Proj A}`-modules.
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso`: the isomorphism
   `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` when the degree-one standard opens cover `Proj A`, with
   `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors.
@@ -243,6 +245,25 @@ theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 
         (twistingSheaf 𝒜 n)).inv ≫ (tensorProductIso f hf hcover m n).hom) U
       ((adj.unit.app P).app (op U) (s ⊗ₜ t)) = mul 𝒜 U m n s t at hU
   exact hU
+
+open MonoidalCategory in
+/-- **`𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` in the monoidal category of `𝒪_{Proj A}`-modules**, when the
+standard opens of degree-one elements cover `Proj A`: the isomorphism `tensorProductIso`, read
+through the identification of the monoidal tensor product with the sheafified one. -/
+def tensorObjIso : twistingSheaf 𝒜 m ⊗ twistingSheaf 𝒜 n ≅ twistingSheaf 𝒜 (m + n) :=
+  (twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n) ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).symm ≪≫
+    tensorProductIso f hf hcover m n
+
+open MonoidalCategory in
+/-- The monoidal form of the multiplication isomorphism is `tensorProductIso`, composed with the
+comparison of the monoidal and the sheafified tensor products. -/
+theorem tensorObjIso_hom :
+    (tensorObjIso f hf hcover m n).hom =
+      ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n)).hom ≫
+        (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).inv ≫
+        (tensorProductIso f hf hcover m n).hom :=
+  (rfl)
 
 end Cover
 
