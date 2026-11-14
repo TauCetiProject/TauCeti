@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.CategoryTheory.Retract
+public import Mathlib.RingTheory.Finiteness.Projective
 
 /-!
 # Categorical and module projectivity
@@ -18,6 +20,8 @@ splitting of the surjection is produced by the lifting property of the object it
 
 * `LinearMap.moduleProjective_of_projective_of_surjective`: categorical projectivity of a module
   that is the image of a projective module gives `Module.Projective`.
+* `ModuleCat.exists_retract_pi_of_finite_projective`: a finitely generated projective module is a
+  retract of a finite free module.
 -/
 
 public section
@@ -40,3 +44,9 @@ theorem LinearMap.moduleProjective_of_projective_of_surjective {P M : Type v}
   have hs : s ≫ ModuleCat.ofHom f = 𝟙 (ModuleCat.of R M) := Projective.factorThru_comp _ _
   exact Module.Projective.of_split s.hom f
     (by ext x; simpa using ConcreteCategory.congr_hom hs x)
+
+/-- **A finitely generated projective module is a retract of a finite free module.** -/
+theorem ModuleCat.exists_retract_pi_of_finite_projective (M : ModuleCat.{u} R) [Module.Finite R M]
+    [Module.Projective R M] : ∃ k : ℕ, Nonempty (Retract M (ModuleCat.of R (Fin k → R))) := by
+  obtain ⟨k, f, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  exact ⟨k, ⟨⟨ModuleCat.ofHom s, ModuleCat.ofHom f, by ext x; exact congr($hs x)⟩⟩⟩
