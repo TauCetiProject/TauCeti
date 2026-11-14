@@ -37,10 +37,10 @@ is discrete; in particular, where the stabilizer is trivial on a Hausdorff manif
 (`TauCeti.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`) and the orbit map is an immersion
 (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
 moreover a closed topological embedding at such a point
-(`ProperSMul.isClosedEmbedding_smul_const`), and for a free proper action `𝔤_x = 0` holds at every
-point without an explicit Hausdorff hypothesis
-(`TauCeti.isotropy_fundamental_eq_bot_of_properSMul`). Hence **the orbit map of a free point of a
-proper smooth action is a smooth embedding with closed image**
+(`ProperSMul.isClosedEmbedding_smul_const`), and `𝔤_x = 0` holds at such a point without an
+explicit Hausdorff hypothesis
+(`TauCeti.isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot`). Hence **the orbit map of
+a free point of a proper smooth action is a smooth embedding with closed image**
 (`TauCeti.isSmoothEmbedding_smul_const`). This is the first step of the proof of the quotient
 manifold theorem for free proper actions.
 
@@ -90,11 +90,11 @@ theorem isImmersion_smul_const_iff {x : M} :
 
 variable [FiniteDimensional ℝ E]
 
-omit [FiniteDimensional ℝ E'] [I.Boundaryless] in
+omit [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless] in
 /-- Where the stabilizer of `x` is trivial, the isotropy Lie algebra `𝔤_x` of a smooth action on a
-Hausdorff manifold vanishes. -/
-theorem isotropy_fundamental_eq_bot_of_stabilizer_eq_bot [T2Space M] {x : M}
-    (hx : MulAction.stabilizer G x = ⊥) :
+Hausdorff boundaryless manifold vanishes. -/
+theorem isotropy_fundamental_eq_bot_of_stabilizer_eq_bot [BoundarylessManifold I' M] [T2Space M]
+    {x : M} (hx : MulAction.stabilizer G x = ⊥) :
     (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : Subsingleton (MulAction.stabilizer G x) := by
@@ -122,12 +122,15 @@ theorem isSmoothEmbedding_smul_const [ProperSMul G M] {x : M}
   exact ⟨isImmersion_smul_const_of_stabilizer_eq_bot hx,
     (ProperSMul.isClosedEmbedding_smul_const hx).isEmbedding⟩
 
-omit [FiniteDimensional ℝ E'] [I.Boundaryless] in
-/-- At every point of a free proper smooth Lie group action, the isotropy Lie algebra vanishes. -/
-theorem isotropy_fundamental_eq_bot_of_properSMul [ProperSMul G M] [IsCancelSMul G M] (x : M) :
+omit [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless] in
+/-- Where the stabilizer of `x` is trivial, the isotropy Lie algebra `𝔤_x` of a proper smooth Lie
+group action on a boundaryless manifold vanishes (without an explicit Hausdorffness assumption on
+`M`). -/
+theorem isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot [BoundarylessManifold I' M]
+    [ProperSMul G M] {x : M} (hx : MulAction.stabilizer G x = ⊥) :
     (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
-  exact isotropy_fundamental_eq_bot_of_stabilizer_eq_bot (IsCancelSMul.stabilizer_eq_bot x)
+  exact isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx
 
 end TauCeti

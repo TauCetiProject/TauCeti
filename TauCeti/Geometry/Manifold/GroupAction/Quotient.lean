@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 public import TauCeti.Topology.Algebra.GroupAction.Quotient
 public import TauCeti.Topology.Algebra.ProperAction.Basic
+import TauCeti.Geometry.Manifold.Gluing.Basic
 import TauCeti.Geometry.Manifold.GroupAction.SliceChart
 import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -37,10 +38,11 @@ dimension `dim M - dim G` (`TauCeti.freeProperQuotientChartedSpace`,
 orbit tangent space `𝔤 · x` (`TauCeti.ker_mfderiv_freeProperQuotientMk`).
 
 The charts are built from the transverse chart slices of
-`TauCeti.Geometry.Manifold.GroupAction.TransverseSlice`:
-* freeness and properness make the orbit map at every `x : M` an immersion
-  (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`), so `𝔤_x = 0`
-  (`TauCeti.isotropy_fundamental_eq_bot_of_properSMul`);
+`TauCeti.Geometry.Manifold.GroupAction.TransverseSlice` and glued via
+`TauCeti.Geometry.Manifold.Gluing.Basic`:
+* freeness gives trivial stabilizers and properness makes `M` Hausdorff, so the isotropy Lie
+  algebra vanishes at every `x : M`
+  (`TauCeti.isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot`);
 * choosing a linear complement `W` of `𝔤 · x` in `T_x M` gives a transverse chart slice whose slice
   map `(g, u) ↦ g • τ u` is a smooth local diffeomorphism at `(1, 0)`
   (`TauCeti.isLocalDiffeomorphAt_smul_extChartAt_symm`), hence along `G × U` for a small open
@@ -49,8 +51,10 @@ The charts are built from the transverse chart slices of
 * properness and triviality of stabilizers shrink `U` further so that the slice map is injective on
   `G × U` (`ProperSMul.exists_mem_nhds_injOn_smul_slice`), making `u ↦ [τ u]` an open embedding of
   `U` into `M ⧸ G` (`TauCeti.MulAction.isOpenEmbedding_quotientMk_slice`);
-* the smoothness of chart transitions and of the orbit projection is read off from the smooth local
-  inverses of slice maps (`TauCeti.exists_contMDiffAt_quotientMk_slice_eq_iff`).
+* the smoothness of overlap transitions and of the orbit projection is read off from the smooth
+  local inverses of slice maps (`TauCeti.exists_contMDiffAt_quotientMk_slice_eq_iff`), gluing the
+  open slice pieces via `TauCeti.chartedSpaceOfIsOpenEmbedding` and
+  `TauCeti.isManifold_chartedSpaceOfIsOpenEmbedding`.
 
 Neither Hausdorffness nor second-countability needs to be assumed: `T2Space G` follows from the Lie
 group structure (`ModelWithCorners.t2Space_of_lieGroup`), `T2Space M` and
@@ -59,23 +63,26 @@ group structure (`ModelWithCorners.t2Space_of_lieGroup`), `T2Space M` and
 second countable `ContinuousConstSMul.secondCountableTopology` (and
 `ContinuousConstVAdd.secondCountableTopology`; see also
 `Topology.IsOpenQuotientMap.secondCountableTopology`) supplies `SecondCountableTopology` on the
-orbit space. The manifold `M` may be empty.
+orbit space. The manifold `M` may be empty; when `M` is nonempty, `dim G ≤ dim M`
+(`TauCeti.finrank_le_of_properSMul_of_isCancelSMul`,
+`TauCeti.finrank_le_of_properVAdd_of_isCancelVAdd`).
 
 `TauCeti.freeProperQuotientChartedSpace` is an `@[instance_reducible]` definition rather than a
 global `ChartedSpace` instance: its model space `Fin (dim E - dim EG) → ℝ` depends on `E` and `EG`,
 which cannot be inferred from `MulAction.orbitRel.Quotient G M`, and when `G` is discrete
 (`dim EG = 0`) a global instance would create a diamond with `MulAction.instChartedSpaceQuotient`.
 
-By `Equiv.diffeomorphOfSubmersions`, any surjective smooth submersion `p : M → Q` whose fibres are
-the `G`-orbits induces a canonical diffeomorphism `(M ⧸ G) ≃ₘ Q`
-(`TauCeti.diffeomorphOfOrbitSubmersion`), and any `C^m` (`m ≠ 0`) submersion at `x` whose fibres are
-the `G`-orbits has vertical kernel `𝔤 · x`
+For a free proper smooth action of `G` on `M`, by `Equiv.diffeomorphOfSubmersions` any surjective
+smooth submersion `p : M → Q` whose fibres are the `G`-orbits induces a canonical diffeomorphism
+`(M ⧸ G) ≃ₘ Q` (`TauCeti.diffeomorphOfOrbitSubmersion`), and any `C^m` (`m ≠ 0`) submersion at `x`
+whose fibres are the `G`-orbits has vertical kernel `𝔤 · x`
 (`TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`). Smoothness of `G`-invariant
 `C^m` maps (`m ≤ ∞`) descends to the orbit space
-(`TauCeti.contMDiff_orbitRelQuotientLift_of_freeProper_iff`,
+(`TauCeti.contMDiff_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul`,
 `TauCeti.existsUnique_contMDiff_comp_freeProperQuotientMk_eq`), equivariant maps and `C^m`
-diffeomorphisms descend functorially (`TauCeti.contMDiff_orbitRelQuotientMap_of_freeProper`,
-`TauCeti.orbitRelQuotientDiffeomorphOfFreeProper`), and the additive Lie group counterpart on
+diffeomorphisms descend functorially
+(`TauCeti.contMDiff_orbitRelQuotientMap_of_properSMul_of_isCancelSMul`,
+`TauCeti.freeProperQuotientDiffeomorph`), and the additive Lie group counterpart on
 `AddAction.orbitRel.Quotient G M` is obtained by pulling back the multiplicative atlas of
 `Multiplicative G` (`TauCeti.freeProperAddQuotientDiffeomorphMultiplicative`).
 
@@ -83,14 +90,16 @@ diffeomorphisms descend functorially (`TauCeti.contMDiff_orbitRelQuotientMap_of_
 
 * `TauCeti.freeProperQuotientChartedSpace`: the slice-chart atlas on
   `MulAction.orbitRel.Quotient G M` for a free proper smooth Lie group action.
-* `TauCeti.diffeomorphOfOrbitSubmersion`: the canonical diffeomorphism `(M ⧸ G) ≃ₘ Q` induced by any
-  surjective smooth submersion `p : M → Q` whose fibres are the `G`-orbits.
-* `TauCeti.orbitRelQuotientDiffeomorphOfFreeProper`: the `C^m` diffeomorphism of free-proper orbit
-  manifolds induced by an equivariant `C^m` diffeomorphism (`m ≤ ∞`).
+* `TauCeti.diffeomorphOfOrbitSubmersion`: for a free proper smooth Lie group action, the canonical
+  diffeomorphism `(M ⧸ G) ≃ₘ Q` induced by any surjective smooth submersion `p : M → Q` whose
+  fibres are the `G`-orbits.
+* `TauCeti.freeProperQuotientDiffeomorph`, `TauCeti.freeProperAddQuotientDiffeomorph`: the `C^m`
+  diffeomorphism of free-proper orbit manifolds induced by an equivariant `C^m` diffeomorphism
+  (`m ≤ ∞`).
 * `TauCeti.freeProperAddQuotientChartedSpace`,
   `TauCeti.freeProperAddQuotientDiffeomorphMultiplicative`,
-  `TauCeti.diffeomorphOfAddOrbitSubmersion`: the additive Lie group action counterparts on
-  `AddAction.orbitRel.Quotient G M`.
+  `TauCeti.diffeomorphOfAddOrbitSubmersion`: the additive free proper Lie group action counterparts
+  on `AddAction.orbitRel.Quotient G M`.
 
 ## Main results
 
@@ -100,16 +109,20 @@ diffeomorphisms descend functorially (`TauCeti.contMDiff_orbitRelQuotientMap_of_
   `TauCeti.exists_freeProperQuotient_isSubmersion`: the quotient manifold theorem for free proper
   Lie group actions.
 * `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`,
-  `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt`: identification
-  of `ker dp_x` with `𝔤 · x` for any `C^m` (`m ≠ 0`) submersion at `x` whose fibres are the orbits.
-* `TauCeti.contMDiffAt_orbitRelQuotientLift_of_freeProper_iff`,
-  `TauCeti.contMDiff_orbitRelQuotientLift_of_freeProper_iff`,
+  `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt`: for a free
+  proper smooth (multiplicative or additive) Lie group action, identification of `ker dp_x` with
+  `𝔤 · x` for any `C^m` (`m ≠ 0`) submersion at `x` whose fibres are the orbits.
+* `TauCeti.contMDiffAt_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul`,
+  `TauCeti.contMDiff_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul`,
   `TauCeti.existsUnique_contMDiff_comp_freeProperQuotientMk_eq`,
-  `TauCeti.contMDiff_orbitRelQuotientMap_of_freeProper`: smooth descent and equivariant maps.
+  `TauCeti.contMDiff_orbitRelQuotientMap_of_properSMul_of_isCancelSMul`: smooth descent and
+  equivariant maps.
 * `TauCeti.isManifold_freeProperAddQuotient`,
   `TauCeti.isSubmersionOfComplement_freeProperAddQuotientMk`,
   `TauCeti.isSubmersion_freeProperAddQuotientMk`, `TauCeti.ker_mfderiv_freeProperAddQuotientMk`,
   `TauCeti.exists_contMDiffOn_section_freeProperAddQuotientMk`,
+  `TauCeti.contMDiff_addOrbitRelQuotientLift_iff_of_properVAdd_of_isCancelVAdd`,
+  `TauCeti.contMDiff_addOrbitRelQuotientMap_of_properVAdd_of_isCancelVAdd`,
   `TauCeti.exists_freeProperAddQuotient_isSubmersion`: the additive quotient manifold theorem.
 
 ## References
@@ -134,13 +147,14 @@ namespace TauCeti
 namespace FreeProperQuotient
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable {E EG H HG M G : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
   [TopologicalSpace H] [TopologicalSpace HG]
   (I : ModelWithCorners ℝ E H) (IG : ModelWithCorners ℝ EG HG)
-  [I.Boundaryless] [IG.Boundaryless]
+  [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [TopologicalSpace G] [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
   [MulAction G M] [ContMDiffSMul IG I ∞ G M] [ProperSMul G M] [IsCancelSMul G M]
@@ -166,8 +180,7 @@ private structure SliceData (x : M) where
     IsLocalDiffeomorphOn (IG.prod 𝓘(ℝ, ModelSpace E EG)) I ∞
       (fun p : G × ModelSpace E EG ↦ p.1 • τ p.2) (univ ×ˢ U)
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ EG] [I.Boundaryless] [IG.Boundaryless]
-  [IsManifold I ∞ M] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ EG] [I.Boundaryless] [IsManifold I ∞ M] in
 /-- Shrink a smooth slice `τ : S → M` whose slice map `(g, s) ↦ g • τ s` is a smooth local
 diffeomorphism at `(1, s₀)` to an open neighbourhood `U ⊆ D` of `s₀` on which `τ` is smooth and the
 slice map is injective and a smooth local diffeomorphism on `G × U`. -/
@@ -194,7 +207,8 @@ private theorem exists_isOpen_slice_of_isLocalDiffeomorphAt {ES HS S : Type*}
 private theorem nonempty_sliceData (x : M) : Nonempty (SliceData I IG (G := G) x) := by
   have := FiniteDimensional.completeSpace ℝ E
   have := FiniteDimensional.completeSpace ℝ EG
-  have hx := isotropy_fundamental_eq_bot_of_properSMul (I := IG) (I' := I) (G := G) x
+  have hx := isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot (I := IG) (I' := I)
+    (IsCancelSMul.stabilizer_eq_bot (G := G) x)
   -- `TangentSpace I x` is `E` by definition, so `orbitTangent x` is a submodule of `E`.
   let O : Submodule ℝ E := (InfinitesimalAction.fundamental IG G I M).orbitTangent x
   obtain ⟨W, hW⟩ := O.exists_isCompl
@@ -242,67 +256,73 @@ private theorem nonempty_sliceData (x : M) : Nonempty (SliceData I IG (G := G) x
 private def sliceData (x : M) : SliceData I IG (G := G) x :=
   (nonempty_sliceData I IG x).some
 
-/-- The open embedding `U → M ⧸ G` associated with `sliceData x`. -/
-private theorem isOpenEmbedding_sliceChart (x : M) :
-    let s := sliceData I IG (G := G) x
-    IsOpenEmbedding fun u : s.U ↦ Quotient.mk (MulAction.orbitRel G M) (s.τ u) :=
+/-- The open slice domain `U ⊆ ℝ^(dim M - dim G)` of `sliceData x`, bundled as `Opens`. -/
+private def sliceOpens (x : M) : TopologicalSpace.Opens (ModelSpace E EG) :=
+  ⟨(sliceData I IG (G := G) x).U, (sliceData I IG (G := G) x).isOpen_U⟩
+
+/-- The slice chart embedding `u ↦ [τ u]` from `sliceOpens x` into `M ⧸ G`. -/
+private def sliceMap (x : M) (u : sliceOpens I IG (G := G) x) :
+    MulAction.orbitRel.Quotient G M :=
+  Quotient.mk (MulAction.orbitRel G M) ((sliceData I IG (G := G) x).τ u)
+
+private theorem sliceMap_eq_comp (x : M) :
+    sliceMap I IG (G := G) x =
+      Quotient.mk (MulAction.orbitRel G M) ∘ (sliceData I IG (G := G) x).τ ∘ Subtype.val :=
+  rfl
+
+/-- Every `sliceMap x` is an open embedding into `M ⧸ G`. -/
+private theorem isOpenEmbedding_sliceMap (x : M) :
+    IsOpenEmbedding (sliceMap I IG (G := G) x) :=
   let s := sliceData I IG (G := G) x
   MulAction.isOpenEmbedding_quotientMk_slice s.isOpen_U s.injOn_smul
     s.isLocalDiffeomorphOn_smul.isLocalHomeomorphOn
 
-/-- The slice chart of `M ⧸ G` centred at `[x]`, sending `[τ u]` (`u ∈ U`) to `u`. -/
-private def chartAtPoint (x : M) :
-    OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) (ModelSpace E EG) :=
-  let s := sliceData I IG (G := G) x
-  let Uo : TopologicalSpace.Opens (ModelSpace E EG) := ⟨s.U, s.isOpen_U⟩
-  (Uo.openPartialHomeomorphSubtypeCoe ⟨⟨0, s.zero_mem_U⟩⟩).lift_openEmbedding
-    (isOpenEmbedding_sliceChart I IG x)
+/-- The images of the open embeddings `sliceMap x` cover `M ⧸ G`. -/
+private theorem exists_sliceMap_eq (q : MulAction.orbitRel.Quotient G M) :
+    ∃ (x : M) (u : sliceOpens I IG (G := G) x), sliceMap I IG (G := G) x u = q :=
+  ⟨q.out, ⟨0, (sliceData I IG (G := G) q.out).zero_mem_U⟩,
+    (congrArg (Quotient.mk (MulAction.orbitRel G M))
+      (sliceData I IG (G := G) q.out).τ_zero).trans (Quotient.out_eq q)⟩
 
-private theorem chartAtPoint_source (x : M) :
-    (chartAtPoint I IG (G := G) x).source =
-      (fun u : (sliceData I IG (G := G) x).U ↦
-        Quotient.mk (MulAction.orbitRel G M) ((sliceData I IG (G := G) x).τ u)) '' univ := by
-  let s := sliceData I IG (G := G) x
-  let Uo : TopologicalSpace.Opens (ModelSpace E EG) := ⟨s.U, s.isOpen_U⟩
-  rw [chartAtPoint, OpenPartialHomeomorph.lift_openEmbedding_source,
-    Uo.openPartialHomeomorphSubtypeCoe_source ⟨⟨0, s.zero_mem_U⟩⟩]
+/-- Lift `exists_contMDiffAt_quotientMk_slice_eq_iff` to a smooth map into `sliceOpens y`: if
+`f : P → M` is smooth at `z` and `sliceMap y v = [f z]`, then near `z` the orbit `[f z']` equals
+`sliceMap y (T z')` for a map `T : P → sliceOpens y` smooth at `z`. -/
+private theorem exists_contMDiffAt_sliceMap_comp_eventuallyEq
+    {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {LP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+    {f : P → M} {z : P} (hf : ContMDiffAt LP I ∞ f z)
+    (y : M) (v : sliceOpens I IG (G := G) y)
+    (hfv : sliceMap I IG (G := G) y v = Quotient.mk (MulAction.orbitRel G M) (f z)) :
+    ∃ T : P → sliceOpens I IG (G := G) y,
+      ContMDiffAt LP 𝓘(ℝ, ModelSpace E EG) ∞ T z ∧
+      sliceMap I IG (G := G) y ∘ T =ᶠ[𝓝 z] Quotient.mk (MulAction.orbitRel G M) ∘ f := by
+  let sy := sliceData I IG (G := G) y
+  obtain ⟨t, ht_diff, -, ht_ev⟩ := exists_contMDiffAt_quotientMk_slice_eq_iff sy.isOpen_U
+    sy.injOn_smul sy.isLocalDiffeomorphOn_smul hf v.2 hfv
+  classical
+  let T : P → sliceOpens I IG (G := G) y := fun z' ↦
+    if h : t z' ∈ sy.U then ⟨t z', h⟩ else v
+  have hT_val : Subtype.val ∘ T =ᶠ[𝓝 z] t := by
+    filter_upwards [ht_ev] with z' ⟨htz', _⟩
+    simp only [comp_apply, T, dite_eq_left htz']
+  refine ⟨T, (_root_.ContMDiffAt.subtypeVal_comp_iff (sliceOpens I IG (G := G) y) T z).1
+    (ht_diff.congr_of_eventuallyEq hT_val), ?_⟩
+  filter_upwards [ht_ev] with z' ⟨htz', hiff⟩
+  simp only [comp_apply, sliceMap, T, dite_eq_left htz']
+  exact (hiff (t z') htz').2 rfl
 
-private theorem chartAtPoint_target (x : M) :
-    (chartAtPoint I IG (G := G) x).target = (sliceData I IG (G := G) x).U := by
-  let s := sliceData I IG (G := G) x
-  let Uo : TopologicalSpace.Opens (ModelSpace E EG) := ⟨s.U, s.isOpen_U⟩
-  rw [chartAtPoint, OpenPartialHomeomorph.lift_openEmbedding_target,
-    Uo.openPartialHomeomorphSubtypeCoe_target ⟨⟨0, s.zero_mem_U⟩⟩]
-  rfl
-
-private theorem mem_chartAtPoint_source (x : M) :
-    Quotient.mk (MulAction.orbitRel G M) x ∈ (chartAtPoint I IG (G := G) x).source := by
-  rw [chartAtPoint_source]
-  exact ⟨⟨0, (sliceData I IG (G := G) x).zero_mem_U⟩, mem_univ _,
-    by dsimp only; rw [(sliceData I IG (G := G) x).τ_zero]⟩
-
-private theorem chartAtPoint_symm_apply (x : M) {u : ModelSpace E EG}
-    (hu : u ∈ (sliceData I IG (G := G) x).U) :
-    (chartAtPoint I IG (G := G) x).symm u =
-      Quotient.mk (MulAction.orbitRel G M) ((sliceData I IG (G := G) x).τ u) := by
-  let s := sliceData I IG (G := G) x
-  let Uo : TopologicalSpace.Opens (ModelSpace E EG) := ⟨s.U, s.isOpen_U⟩
-  let e0 := Uo.openPartialHomeomorphSubtypeCoe ⟨⟨0, s.zero_mem_U⟩⟩
-  have hu' : u ∈ e0.target := by rwa [Uo.openPartialHomeomorphSubtypeCoe_target]
-  have hcoe : ((e0.symm u : Uo) : ModelSpace E EG) = u := by
-    rw [← Uo.openPartialHomeomorphSubtypeCoe_coe ⟨⟨0, s.zero_mem_U⟩⟩]
-    exact e0.right_inv hu'
-  rw [chartAtPoint, OpenPartialHomeomorph.lift_openEmbedding_symm, comp_apply]
-  exact congrArg (fun v ↦ Quotient.mk (MulAction.orbitRel G M) (s.τ v)) hcoe
-
-private theorem chartAtPoint_apply_quotientMk_τ (x : M) {u : ModelSpace E EG}
-    (hu : u ∈ (sliceData I IG (G := G) x).U) :
-    chartAtPoint I IG (G := G) x
-        (Quotient.mk (MulAction.orbitRel G M) ((sliceData I IG (G := G) x).τ u)) = u := by
-  have htarget : u ∈ (chartAtPoint I IG (G := G) x).target := by
-    rwa [chartAtPoint_target]
-  rw [← chartAtPoint_symm_apply I IG x hu]
-  exact (chartAtPoint I IG (G := G) x).right_inv htarget
+/-- Overlap transitions between `sliceMap` embeddings are smooth. -/
+private theorem exists_contMDiffAt_sliceMap_transition
+    (x y : M) (u : sliceOpens I IG (G := G) x) (v : sliceOpens I IG (G := G) y)
+    (huv : sliceMap I IG (G := G) x u = sliceMap I IG (G := G) y v) :
+    ∃ T : sliceOpens I IG (G := G) x → sliceOpens I IG (G := G) y,
+      ContMDiffAt 𝓘(ℝ, ModelSpace E EG) 𝓘(ℝ, ModelSpace E EG) ∞ T u ∧
+      sliceMap I IG (G := G) y ∘ T =ᶠ[𝓝 u] sliceMap I IG (G := G) x := by
+  let sx := sliceData I IG (G := G) x
+  have hτx : ContMDiffAt 𝓘(ℝ, ModelSpace E EG) I ∞ (sx.τ ∘ Subtype.val) u :=
+    (sx.contMDiffOn_τ.contMDiffAt (sx.isOpen_U.mem_nhds u.2)).comp u
+      (contMDiff_subtype_val (U := sliceOpens I IG (G := G) x)).contMDiffAt
+  exact exists_contMDiffAt_sliceMap_comp_eventuallyEq I IG hτx y v huv.symm
 
 end FreeProperQuotient
 
@@ -317,21 +337,22 @@ variable {E EG H HG : Type*}
   [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
   [TopologicalSpace H] [TopologicalSpace HG]
   (I : ModelWithCorners ℝ E H) (IG : ModelWithCorners ℝ EG HG)
-  [I.Boundaryless] [IG.Boundaryless]
+  [I.Boundaryless]
   {G M : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [TopologicalSpace G] [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
   [MulAction G M] [ContMDiffSMul IG I ∞ G M] [ProperSMul G M] [IsCancelSMul G M]
 
 include I IG G in
-omit [IG.Boundaryless] in
-/-- When a Lie group `G` acts smoothly, freely and properly on a nonempty manifold `M`, we have
-`dim G ≤ dim M`. -/
-theorem finrank_le_of_freeProper [Nonempty M] :
+omit [I.Boundaryless] in
+/-- When a Lie group `G` acts smoothly, freely and properly on a nonempty boundaryless manifold `M`,
+we have `dim G ≤ dim M`. -/
+theorem finrank_le_of_properSMul_of_isCancelSMul [BoundarylessManifold I M] [Nonempty M] :
     Module.finrank ℝ EG ≤ Module.finrank ℝ E := by
   obtain ⟨x⟩ := ‹Nonempty M›
   have hle := (InfinitesimalAction.fundamental IG G I M).finrank_le_of_isotropy_eq_bot
-    (isotropy_fundamental_eq_bot_of_properSMul (I := IG) (I' := I) (G := G) x)
+    (isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot (I := IG) (I' := I)
+      (IsCancelSMul.stabilizer_eq_bot x))
   rwa [finrank_tangentSpace] at hle
 
 variable (G M) in
@@ -343,50 +364,20 @@ instance because the model space depends on `E` and `EG`. -/
 @[instance_reducible]
 def freeProperQuotientChartedSpace :
     ChartedSpace (Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
-      (MulAction.orbitRel.Quotient G M) where
-  atlas := range (FreeProperQuotient.chartAtPoint I IG (G := G))
-  chartAt q := FreeProperQuotient.chartAtPoint I IG (G := G) q.out
-  mem_chart_source q := by
-    have hq : Quotient.mk (MulAction.orbitRel G M) q.out = q := Quotient.out_eq q
-    simpa only [hq] using FreeProperQuotient.mem_chartAtPoint_source I IG (G := G) q.out
-  chart_mem_atlas q := ⟨q.out, rfl⟩
+      (MulAction.orbitRel.Quotient G M) :=
+  chartedSpaceOfIsOpenEmbedding (FreeProperQuotient.isOpenEmbedding_sliceMap I IG (G := G))
+    (FreeProperQuotient.exists_sliceMap_eq I IG (G := G))
 
 /-- **Smoothness of the quotient manifold.** Equipped with `freeProperQuotientChartedSpace`, the
 orbit space `MulAction.orbitRel.Quotient G M` is a smooth (`C^∞`) manifold. -/
 theorem isManifold_freeProperQuotient :
     letI := freeProperQuotientChartedSpace I IG G M
     IsManifold 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ∞
-      (MulAction.orbitRel.Quotient G M) := by
-  let := freeProperQuotientChartedSpace I IG G M
-  refine isManifold_of_contDiffOn _ ∞ _ ?_
-  rintro _ _ ⟨x, rfl⟩ ⟨y, rfl⟩ u hu
-  let sx := FreeProperQuotient.sliceData I IG (G := G) x
-  let sy := FreeProperQuotient.sliceData I IG (G := G) y
-  have hu_mem : u ∈ sx.U ∧
-      Quotient.mk (MulAction.orbitRel G M) (sx.τ u) ∈
-        (FreeProperQuotient.chartAtPoint I IG (G := G) y).source := by
-    obtain ⟨hu1, hu2⟩ : u ∈ (FreeProperQuotient.chartAtPoint I IG (G := G) x).target ∧
-        (FreeProperQuotient.chartAtPoint I IG (G := G) x).symm u ∈
-          (FreeProperQuotient.chartAtPoint I IG (G := G) y).source := by
-      simpa only [mfld_simps] using hu
-    rw [FreeProperQuotient.chartAtPoint_target] at hu1
-    rw [FreeProperQuotient.chartAtPoint_symm_apply I IG x hu1] at hu2
-    exact ⟨hu1, hu2⟩
-  obtain ⟨huU, hq_mem⟩ := hu_mem
-  rw [FreeProperQuotient.chartAtPoint_source] at hq_mem
-  obtain ⟨⟨v, hvU⟩, -, hvu⟩ := hq_mem
-  have hτx_at : ContMDiffAt 𝓘(ℝ, FreeProperQuotient.ModelSpace E EG) I ∞ sx.τ u :=
-    sx.contMDiffOn_τ.contMDiffAt (sx.isOpen_U.mem_nhds huU)
-  obtain ⟨t, ht_diff, -, ht_ev⟩ := exists_contMDiffAt_quotientMk_slice_eq_iff sy.isOpen_U
-    sy.injOn_smul sy.isLocalDiffeomorphOn_smul hτx_at hvU hvu
-  have hcont : ContDiffAt ℝ ∞ t u := contMDiffAt_iff_contDiffAt.1 ht_diff
-  refine (hcont.congr_of_eventuallyEq ?_).contDiffWithinAt
-  filter_upwards [sx.isOpen_U.mem_nhds huU, ht_ev] with u' hu'U ⟨htu', hiff⟩
-  have hq_eq : Quotient.mk (MulAction.orbitRel G M) (sy.τ (t u')) =
-      Quotient.mk (MulAction.orbitRel G M) (sx.τ u') := (hiff (t u') htu').2 rfl
-  simp only [mfld_simps]
-  rw [FreeProperQuotient.chartAtPoint_symm_apply I IG x hu'U, ← hq_eq,
-    FreeProperQuotient.chartAtPoint_apply_quotientMk_τ I IG y htu']
+      (MulAction.orbitRel.Quotient G M) :=
+  isManifold_chartedSpaceOfIsOpenEmbedding
+    (FreeProperQuotient.isOpenEmbedding_sliceMap I IG (G := G))
+    (FreeProperQuotient.exists_sliceMap_eq I IG (G := G))
+    (FreeProperQuotient.exists_contMDiffAt_sliceMap_transition I IG (G := G))
 
 /-- The orbit projection `M → M ⧸ G` is smooth for `freeProperQuotientChartedSpace`. -/
 theorem contMDiff_freeProperQuotientMk :
@@ -394,25 +385,17 @@ theorem contMDiff_freeProperQuotientMk :
     ContMDiff I 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) ∞
       (Quotient.mk (MulAction.orbitRel G M)) := by
   let := freeProperQuotientChartedSpace I IG G M
-  have := isManifold_freeProperQuotient I IG (G := G) (M := M)
   intro x
-  set s := FreeProperQuotient.sliceData I IG (G := G) x
-  obtain ⟨t, ht_diff, ht0, ht_ev⟩ := exists_contMDiffAt_quotientMk_slice_eq_iff s.isOpen_U
-    s.injOn_smul s.isLocalDiffeomorphOn_smul (contMDiffAt_id (I := I) (x := x)) s.zero_mem_U
+  let s := FreeProperQuotient.sliceData I IG (G := G) x
+  obtain ⟨T, hT, hT_eq⟩ := FreeProperQuotient.exists_contMDiffAt_sliceMap_comp_eventuallyEq I IG
+    (contMDiffAt_id (I := I) (x := x)) x ⟨0, s.zero_mem_U⟩
     (congrArg (Quotient.mk (MulAction.orbitRel G M)) s.τ_zero)
-  have hchart_mem : FreeProperQuotient.chartAtPoint I IG (G := G) x ∈
-      IsManifold.maximalAtlas 𝓘(ℝ, FreeProperQuotient.ModelSpace E EG) ∞
-        (MulAction.orbitRel.Quotient G M) :=
-    IsManifold.subset_maximalAtlas ⟨x, rfl⟩
-  have h0_target : t x ∈ (FreeProperQuotient.chartAtPoint I IG (G := G) x).target := by
-    rw [FreeProperQuotient.chartAtPoint_target, ht0]
-    exact s.zero_mem_U
-  have hsymm := (contMDiffAt_symm_of_mem_maximalAtlas hchart_mem h0_target).comp x ht_diff
-  refine hsymm.congr_of_eventuallyEq ?_
-  filter_upwards [ht_ev] with x' ⟨htx', hiff⟩
-  have hq_eq : Quotient.mk (MulAction.orbitRel G M) (s.τ (t x')) =
-      Quotient.mk (MulAction.orbitRel G M) x' := (hiff (t x') htx').2 rfl
-  rw [comp_apply, FreeProperQuotient.chartAtPoint_symm_apply I IG x htx', hq_eq]
+  have hφ := contMDiff_chartedSpaceOfIsOpenEmbedding
+    (I := 𝓘(ℝ, FreeProperQuotient.ModelSpace E EG)) (n := ∞)
+    (FreeProperQuotient.isOpenEmbedding_sliceMap I IG (G := G))
+    (FreeProperQuotient.exists_sliceMap_eq I IG (G := G))
+    (FreeProperQuotient.exists_contMDiffAt_sliceMap_transition I IG (G := G)) x
+  exact ((hφ (T x)).comp x hT).congr_of_eventuallyEq hT_eq.symm
 
 /-- At every `x : M`, the differential of the orbit projection `M → M ⧸ G` is surjective. -/
 theorem surjective_mfderiv_freeProperQuotientMk (x : M) :
@@ -421,33 +404,24 @@ theorem surjective_mfderiv_freeProperQuotientMk (x : M) :
       (Quotient.mk (MulAction.orbitRel G M)) x) := by
   let := freeProperQuotientChartedSpace I IG G M
   have := isManifold_freeProperQuotient I IG (G := G) (M := M)
-  set s := FreeProperQuotient.sliceData I IG (G := G) x
+  let s := FreeProperQuotient.sliceData I IG (G := G) x
+  let u₀ : FreeProperQuotient.sliceOpens I IG (G := G) x := ⟨0, s.zero_mem_U⟩
   let JQ := 𝓘(ℝ, FreeProperQuotient.ModelSpace E EG)
-  have hchart_mem : FreeProperQuotient.chartAtPoint I IG (G := G) x ∈
-      IsManifold.maximalAtlas JQ ∞ (MulAction.orbitRel.Quotient G M) :=
-    IsManifold.subset_maximalAtlas ⟨x, rfl⟩
-  have h0_target : (0 : FreeProperQuotient.ModelSpace E EG) ∈
-      (FreeProperQuotient.chartAtPoint I IG (G := G) x).target := by
-    rw [FreeProperQuotient.chartAtPoint_target]
-    exact s.zero_mem_U
-  have hloc_symm := (FreeProperQuotient.chartAtPoint I IG (G := G) x)
-    |>.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas hchart_mem h0_target
-  have hinv_symm := hloc_symm.isInvertible_mfderiv (by simp)
-  have heq : (Quotient.mk (MulAction.orbitRel G M) ∘ s.τ) =ᶠ[𝓝 0]
-      (FreeProperQuotient.chartAtPoint I IG (G := G) x).symm := by
-    filter_upwards [s.isOpen_U.mem_nhds s.zero_mem_U] with u hu
-    exact (FreeProperQuotient.chartAtPoint_symm_apply I IG x hu).symm
-  have hτ_diff : MDifferentiableAt JQ I s.τ 0 :=
-    (s.contMDiffOn_τ.contMDiffAt (s.isOpen_U.mem_nhds s.zero_mem_U)).mdifferentiableAt (by simp)
-  have hq_diff : MDifferentiableAt I JQ (Quotient.mk (MulAction.orbitRel G M)) (s.τ 0) :=
-    ((contMDiff_freeProperQuotientMk I IG (G := G) (M := M)) (s.τ 0)).mdifferentiableAt (by simp)
-  have hsurj_comp : Surjective
-      (mfderiv JQ JQ (Quotient.mk (MulAction.orbitRel G M) ∘ s.τ) 0) := by
-    rw [heq.mfderiv_eq]
-    exact hinv_symm.surjective
-  rw [mfderiv_comp 0 hq_diff hτ_diff, ContinuousLinearMap.coe_comp] at hsurj_comp
+  have hloc := isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding (I := JQ) (n := ∞)
+    (FreeProperQuotient.isOpenEmbedding_sliceMap I IG (G := G))
+    (FreeProperQuotient.exists_sliceMap_eq I IG (G := G))
+    (FreeProperQuotient.exists_contMDiffAt_sliceMap_transition I IG (G := G)) x u₀
+  have hsurj_comp := (hloc.isInvertible_mfderiv (by simp)).surjective
+  rw [FreeProperQuotient.sliceMap_eq_comp] at hsurj_comp
+  have hτ_diff : MDifferentiableAt JQ I (s.τ ∘ Subtype.val) u₀ :=
+    ((s.contMDiffOn_τ.contMDiffAt (s.isOpen_U.mem_nhds u₀.2)).comp u₀
+      (contMDiff_subtype_val (U := FreeProperQuotient.sliceOpens I IG (G := G) x)).contMDiffAt)
+      |>.mdifferentiableAt (by simp)
+  have hq_diff : MDifferentiableAt I JQ (Quotient.mk (MulAction.orbitRel G M)) (s.τ u₀) :=
+    ((contMDiff_freeProperQuotientMk I IG (G := G) (M := M)) (s.τ u₀)).mdifferentiableAt (by simp)
+  rw [mfderiv_comp u₀ hq_diff hτ_diff, ContinuousLinearMap.coe_comp] at hsurj_comp
   have hsurj_τ0 := hsurj_comp.of_comp
-  rwa [s.τ_zero] at hsurj_τ0
+  rwa [comp_apply, s.τ_zero] at hsurj_τ0
 
 /-- **The orbit projection is a smooth submersion with fibre complement `EG`.** Even when `M` is
 empty, the orbit projection has the submersion normal form with complement `EG`. -/
@@ -459,7 +433,7 @@ theorem isSubmersionOfComplement_freeProperQuotientMk :
   have := isManifold_freeProperQuotient I IG (G := G) (M := M)
   by_cases hM : Nonempty M
   · have hle : Module.finrank ℝ EG ≤ Module.finrank ℝ E :=
-      finrank_le_of_freeProper I IG (G := G) (M := M)
+      finrank_le_of_properSMul_of_isCancelSMul I IG (G := G) (M := M)
     have hsub := (contMDiff_freeProperQuotientMk I IG (G := G) (M := M))
       |>.isSubmersionOfComplement_of_surjective_mfderiv (by simp)
         (surjective_mfderiv_freeProperQuotientMk I IG (G := G) (M := M))
@@ -493,9 +467,10 @@ theorem ker_mfderiv_freeProperQuotientMk (x : M) :
   have := isManifold_freeProperQuotient I IG (G := G) (M := M)
   have : Nonempty M := ⟨x⟩
   have hle : Module.finrank ℝ EG ≤ Module.finrank ℝ E :=
-    finrank_le_of_freeProper I IG (G := G) (M := M)
+    finrank_le_of_properSMul_of_isCancelSMul I IG (G := G) (M := M)
   refine ker_mfderiv_eq_orbitTangent_fundamental
-    (isotropy_fundamental_eq_bot_of_properSMul (I := IG) (I' := I) (G := G) x)
+    (isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot (I := IG) (I' := I)
+      (IsCancelSMul.stabilizer_eq_bot x))
     (((contMDiff_freeProperQuotientMk I IG (G := G) (M := M)) x).mdifferentiableAt (by simp))
     (Eventually.of_forall fun g ↦ MulAction.orbitRel.Quotient.quotient_smul_eq)
     (surjective_mfderiv_freeProperQuotientMk I IG x) ?_
@@ -528,7 +503,7 @@ theorem exists_freeProperQuotient_isSubmersion
     [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
     [TopologicalSpace H] [TopologicalSpace HG]
     (I : ModelWithCorners ℝ E H) (IG : ModelWithCorners ℝ EG HG)
-    [I.Boundaryless] [IG.Boundaryless]
+    [I.Boundaryless]
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
     [TopologicalSpace G] [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
     [MulAction G M] [ProperSMul G M]
@@ -560,7 +535,7 @@ variable {E EG H HG : Type*}
   [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
   [TopologicalSpace H] [TopologicalSpace HG]
   (I : ModelWithCorners ℝ E H) (IG : ModelWithCorners ℝ EG HG)
-  [I.Boundaryless] [IG.Boundaryless]
+  [I.Boundaryless]
   {G M : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [TopologicalSpace G] [ChartedSpace HG G] [Group G] [LieGroup IG ∞ G]
@@ -572,7 +547,7 @@ variable {E EG H HG : Type*}
 /-- For a free proper smooth Lie group action and `m ≤ ∞`, the descent
 `MulAction.orbitRelQuotientLift f hf` of a `G`-invariant map `f : M → N` is `C^m` at `[x]`
 exactly when `f` is `C^m` at `x`. -/
-theorem contMDiffAt_orbitRelQuotientLift_of_freeProper_iff (hm : m ≤ ∞) {f : M → N}
+theorem contMDiffAt_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul (hm : m ≤ ∞) {f : M → N}
     {hf : ∀ (g : G) (x : M), f (g • x) = f x} {x : M} :
     letI := freeProperQuotientChartedSpace I IG G M
     ContMDiffAt 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) IN m
@@ -586,7 +561,7 @@ theorem contMDiffAt_orbitRelQuotientLift_of_freeProper_iff (hm : m ≤ ∞) {f :
 /-- **Smooth descent to the orbit space.** For a free proper smooth Lie group action and `m ≤ ∞`,
 the descent `MulAction.orbitRelQuotientLift f hf` of a `G`-invariant map `f : M → N` is `C^m` on
 `M ⧸ G` exactly when `f` is `C^m` on `M`. -/
-theorem contMDiff_orbitRelQuotientLift_of_freeProper_iff (hm : m ≤ ∞) {f : M → N}
+theorem contMDiff_orbitRelQuotientLift_iff_of_properSMul_of_isCancelSMul (hm : m ≤ ∞) {f : M → N}
     {hf : ∀ (g : G) (x : M), f (g • x) = f x} :
     letI := freeProperQuotientChartedSpace I IG G M
     ContMDiff 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ) IN m
@@ -612,9 +587,10 @@ theorem existsUnique_contMDiff_comp_freeProperQuotientMk_eq (hm : m ≤ ∞) {f 
   obtain ⟨g, rfl⟩ := MulAction.orbitRel_apply.1 (Quotient.exact hxy)
   exact hf_inv g y
 
-/-- **Canonical diffeomorphism with any orbit submersion.** If `p : M → Q` is a surjective smooth
-submersion whose fibres are the `G`-orbits (`p x = p y ↔ ∃ g : G, g • y = x`), then `p` descends to
-a diffeomorphism `(M ⧸ G) ≃ₘ Q` sending `[x]` to `p x`. -/
+/-- **Canonical diffeomorphism with any orbit submersion.** For a free proper smooth Lie group
+action of `G` on `M`, if `p : M → Q` is a surjective smooth submersion whose fibres are the
+`G`-orbits (`p x = p y ↔ ∃ g : G, g • y = x`), then `p` descends to a diffeomorphism `(M ⧸ G) ≃ₘ Q`
+sending `[x]` to `p x`. -/
 def diffeomorphOfOrbitSubmersion
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
@@ -663,7 +639,7 @@ theorem diffeomorphOfOrbitSubmersion_comp_mk
 
 /-- The inverse of `diffeomorphOfOrbitSubmersion` sends `p x` back to `[x]`. -/
 @[simp]
-theorem diffeomorphOfOrbitSubmersion_symm_apply_apply
+theorem diffeomorphOfOrbitSubmersion_symm_apply
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
     (p : M → Q) (hp : IsSubmersion I JQ ∞ p) (hp_surj : Surjective p)
@@ -675,8 +651,9 @@ theorem diffeomorphOfOrbitSubmersion_symm_apply_apply
   exact (diffeomorphOfOrbitSubmersion I IG p hp hp_surj hfib).symm_apply_eq.2
     (diffeomorphOfOrbitSubmersion_mk I IG p hp hp_surj hfib x).symm
 
-/-- If `p : M → Q` is a `C^m` (`m ≠ 0`) submersion at `x` whose fibres are the `G`-orbits, then its
-vertical tangent space at `x` is the orbit tangent space `ker dp_x = 𝔤 · x`. -/
+/-- For a free proper smooth Lie group action of `G` on `M`, if `p : M → Q` is a `C^m` (`m ≠ 0`)
+submersion at `x` whose fibres are the `G`-orbits, then its vertical tangent space at `x` is the
+orbit tangent space `ker dp_x = 𝔤 · x`. -/
 theorem ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
@@ -711,7 +688,7 @@ variable {E' EG' H' HG' : Type*}
   [NormedAddCommGroup EG'] [NormedSpace ℝ EG'] [FiniteDimensional ℝ EG']
   [TopologicalSpace H'] [TopologicalSpace HG']
   (I' : ModelWithCorners ℝ E' H') (IG' : ModelWithCorners ℝ EG' HG')
-  [I'.Boundaryless] [IG'.Boundaryless]
+  [I'.Boundaryless]
   {G' M' : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
   [TopologicalSpace G'] [ChartedSpace HG' G'] [Group G'] [LieGroup IG' ∞ G']
@@ -719,8 +696,8 @@ variable {E' EG' H' HG' : Type*}
 
 /-- **Smoothness of equivariant maps on orbit spaces.** For `m ≤ ∞`, a `C^m` map `φ : M →ₑ[σ] M'`
 between two free proper smooth Lie group actions descends to a `C^m` map `M ⧸ G → M' ⧸ G'`. -/
-theorem contMDiff_orbitRelQuotientMap_of_freeProper (hm : m ≤ ∞) {σ : G → G'} {φ : M →ₑ[σ] M'}
-    (hφ : ContMDiff I I' m φ) :
+theorem contMDiff_orbitRelQuotientMap_of_properSMul_of_isCancelSMul (hm : m ≤ ∞) {σ : G → G'}
+    {φ : M →ₑ[σ] M'} (hφ : ContMDiff I I' m φ) :
     letI := freeProperQuotientChartedSpace I IG G M
     letI := freeProperQuotientChartedSpace I' IG' G' M'
     ContMDiff 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
@@ -736,7 +713,7 @@ theorem contMDiff_orbitRelQuotientMap_of_freeProper (hm : m ≤ ∞) {σ : G →
 manifolds.** For `m ≤ ∞`, if `e : M ≃ₘ^m⟮I, I'⟯ M'` intertwines the actions of `G` and `G'` along a
 group isomorphism `φ : G ≃* G'`, then `MulAction.orbitRelQuotientCongr φ e.toEquiv he` is a `C^m`
 diffeomorphism `(M ⧸ G) ≃ₘ^m (M' ⧸ G')`. No smoothness assumption on `φ` is needed. -/
-def orbitRelQuotientDiffeomorphOfFreeProper (hm : m ≤ ∞) (φ : G ≃* G') (e : M ≃ₘ^m⟮I, I'⟯ M')
+def freeProperQuotientDiffeomorph (hm : m ≤ ∞) (φ : G ≃* G') (e : M ≃ₘ^m⟮I, I'⟯ M')
     (he : ∀ (g : G) (x : M), e (g • x) = φ g • e x) :
     letI := freeProperQuotientChartedSpace I IG G M
     letI := freeProperQuotientChartedSpace I' IG' G' M'
@@ -747,59 +724,46 @@ def orbitRelQuotientDiffeomorphOfFreeProper (hm : m ≤ ∞) (φ : G ≃* G') (e
   letI := freeProperQuotientChartedSpace I IG G M
   letI := freeProperQuotientChartedSpace I' IG' G' M'
   { toEquiv := MulAction.orbitRelQuotientCongr φ e.toEquiv he
-    contMDiff_toFun := by
-      rw [← (isSubmersion_freeProperQuotientMk I IG (G := G) (M := M)).contMDiff_comp_iff
-        Quotient.mk_surjective hm]
-      have hcomp : ⇑(MulAction.orbitRelQuotientCongr φ e.toEquiv he) ∘
-          Quotient.mk (MulAction.orbitRel G M) =
-          Quotient.mk (MulAction.orbitRel G' M') ∘ ⇑e := by
-        ext x
-        exact MulAction.orbitRelQuotientCongr_mk φ e.toEquiv he x
-      rw [hcomp]
-      exact ((contMDiff_freeProperQuotientMk I' IG' (G := G') (M := M')).of_le hm).comp e.contMDiff
-    contMDiff_invFun := by
-      rw [← (isSubmersion_freeProperQuotientMk I' IG' (G := G') (M := M')).contMDiff_comp_iff
-        Quotient.mk_surjective hm]
-      have hcomp : ⇑(MulAction.orbitRelQuotientCongr φ e.toEquiv he).symm ∘
-          Quotient.mk (MulAction.orbitRel G' M') =
-          Quotient.mk (MulAction.orbitRel G M) ∘ ⇑e.symm := by
-        ext y
-        exact MulAction.orbitRelQuotientCongr_symm_mk φ e.toEquiv he y
-      rw [hcomp]
-      exact ((contMDiff_freeProperQuotientMk I IG (G := G) (M := M)).of_le hm).comp
-        e.symm.contMDiff }
+    contMDiff_toFun :=
+      ((isSubmersion_freeProperQuotientMk I IG).contMDiff_comp_iff Quotient.mk_surjective hm).1 <|
+        (((contMDiff_freeProperQuotientMk I' IG').of_le hm).comp e.contMDiff).congr fun x ↦
+          MulAction.orbitRelQuotientCongr_mk φ e.toEquiv he x
+    contMDiff_invFun :=
+      ((isSubmersion_freeProperQuotientMk I' IG').contMDiff_comp_iff Quotient.mk_surjective hm).1 <|
+        (((contMDiff_freeProperQuotientMk I IG).of_le hm).comp e.symm.contMDiff).congr fun y ↦
+          MulAction.orbitRelQuotientCongr_symm_mk φ e.toEquiv he y }
 
-/-- The underlying equivalence of `orbitRelQuotientDiffeomorphOfFreeProper` is
+/-- The underlying equivalence of `freeProperQuotientDiffeomorph` is
 `MulAction.orbitRelQuotientCongr`. -/
 @[simp]
-theorem orbitRelQuotientDiffeomorphOfFreeProper_toEquiv (hm : m ≤ ∞) (φ : G ≃* G')
+theorem freeProperQuotientDiffeomorph_toEquiv (hm : m ≤ ∞) (φ : G ≃* G')
     (e : M ≃ₘ^m⟮I, I'⟯ M') (he : ∀ (g : G) (x : M), e (g • x) = φ g • e x) :
     letI := freeProperQuotientChartedSpace I IG G M
     letI := freeProperQuotientChartedSpace I' IG' G' M'
-    (orbitRelQuotientDiffeomorphOfFreeProper I IG I' IG' hm φ e he).toEquiv =
+    (freeProperQuotientDiffeomorph I IG I' IG' hm φ e he).toEquiv =
       MulAction.orbitRelQuotientCongr φ e.toEquiv he :=
   (rfl)
 
-/-- `orbitRelQuotientDiffeomorphOfFreeProper` sends `[x]` to `[e x]`. -/
+/-- `freeProperQuotientDiffeomorph` sends `[x]` to `[e x]`. -/
 @[simp]
-theorem orbitRelQuotientDiffeomorphOfFreeProper_mk (hm : m ≤ ∞) (φ : G ≃* G')
+theorem freeProperQuotientDiffeomorph_mk (hm : m ≤ ∞) (φ : G ≃* G')
     (e : M ≃ₘ^m⟮I, I'⟯ M') (he : ∀ (g : G) (x : M), e (g • x) = φ g • e x) (x : M) :
     letI := freeProperQuotientChartedSpace I IG G M
     letI := freeProperQuotientChartedSpace I' IG' G' M'
-    orbitRelQuotientDiffeomorphOfFreeProper I IG I' IG' hm φ e he
+    freeProperQuotientDiffeomorph I IG I' IG' hm φ e he
       (Quotient.mk (MulAction.orbitRel G M) x) =
       Quotient.mk (MulAction.orbitRel G' M') (e x) := by
   let := freeProperQuotientChartedSpace I IG G M
   let := freeProperQuotientChartedSpace I' IG' G' M'
   exact MulAction.orbitRelQuotientCongr_mk φ e.toEquiv he x
 
-/-- The inverse of `orbitRelQuotientDiffeomorphOfFreeProper` sends `[y]` to `[e.symm y]`. -/
+/-- The inverse of `freeProperQuotientDiffeomorph` sends `[y]` to `[e.symm y]`. -/
 @[simp]
-theorem orbitRelQuotientDiffeomorphOfFreeProper_symm_mk (hm : m ≤ ∞) (φ : G ≃* G')
+theorem freeProperQuotientDiffeomorph_symm_mk (hm : m ≤ ∞) (φ : G ≃* G')
     (e : M ≃ₘ^m⟮I, I'⟯ M') (he : ∀ (g : G) (x : M), e (g • x) = φ g • e x) (y : M') :
     letI := freeProperQuotientChartedSpace I IG G M
     letI := freeProperQuotientChartedSpace I' IG' G' M'
-    (orbitRelQuotientDiffeomorphOfFreeProper I IG I' IG' hm φ e he).symm
+    (freeProperQuotientDiffeomorph I IG I' IG' hm φ e he).symm
       (Quotient.mk (MulAction.orbitRel G' M') y) =
       Quotient.mk (MulAction.orbitRel G M) (e.symm y) := by
   let := freeProperQuotientChartedSpace I IG G M
@@ -821,11 +785,19 @@ variable {E EG H HG : Type*}
   [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
   [TopologicalSpace H] [TopologicalSpace HG]
   (I : ModelWithCorners ℝ E H) (IG : ModelWithCorners ℝ EG HG)
-  [I.Boundaryless] [IG.Boundaryless]
+  [I.Boundaryless]
   {G M : Type*}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [TopologicalSpace G] [ChartedSpace HG G] [AddGroup G] [LieAddGroup IG ∞ G]
   [AddAction G M] [ContMDiffVAdd IG I ∞ G M] [ProperVAdd G M] [IsCancelVAdd G M]
+
+include I IG G in
+omit [I.Boundaryless] in
+/-- When an additive Lie group `G` acts smoothly, freely and properly on a nonempty boundaryless
+manifold `M`, we have `dim G ≤ dim M`. -/
+theorem finrank_le_of_properVAdd_of_isCancelVAdd [BoundarylessManifold I M] [Nonempty M] :
+    Module.finrank ℝ EG ≤ Module.finrank ℝ E :=
+  finrank_le_of_properSMul_of_isCancelSMul I IG (G := Multiplicative G) (M := M)
 
 variable (G M) in
 /-- **The transverse-slice atlas on `AddAction.orbitRel.Quotient G M`.** Pulled back from
@@ -953,8 +925,9 @@ theorem exists_contMDiffOn_section_freeProperAddQuotientMk (x : M) :
   ((isSubmersion_freeProperAddQuotientMk I IG (G := G) (M := M)).isSubmersionAt
     x).exists_contMDiffOn_section
 
-/-- If `p : M → Q` is a `C^m` (`m ≠ 0`) submersion at `x` whose fibres are the additive `G`-orbits,
-then `ker dp_x` is the orbit tangent space of `Multiplicative G` at `x`. -/
+/-- For a free proper smooth action of an additive Lie group `G` on `M`, if `p : M → Q` is a `C^m`
+(`m ≠ 0`) submersion at `x` whose fibres are the additive `G`-orbits, then `ker dp_x` is the orbit
+tangent space of `Multiplicative G` at `x`. -/
 theorem ker_mfderiv_eq_orbitTangent_fundamental_multiplicative_of_isSubmersionAt
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
@@ -980,7 +953,7 @@ theorem ker_mfderiv_freeProperAddQuotientMk (x : M) :
 
 /-- Pointwise smooth descent (`m ≤ ∞`) for a `G`-invariant map out of a free proper smooth additive
 Lie group action. -/
-theorem contMDiffAt_addOrbitRelQuotientLift_of_freeProper_iff
+theorem contMDiffAt_addOrbitRelQuotientLift_iff_of_properVAdd_of_isCancelVAdd
     {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
     {m : ℕ∞ω} (hm : m ≤ ∞) {f : M → N} {hf : ∀ (g : G) (x : M), f (g +ᵥ x) = f x} {x : M} :
@@ -995,7 +968,7 @@ theorem contMDiffAt_addOrbitRelQuotientLift_of_freeProper_iff
 
 /-- Smooth descent (`m ≤ ∞`) for a `G`-invariant map out of a free proper smooth additive Lie group
 action. -/
-theorem contMDiff_addOrbitRelQuotientLift_of_freeProper_iff
+theorem contMDiff_addOrbitRelQuotientLift_iff_of_properVAdd_of_isCancelVAdd
     {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N]
     {m : ℕ∞ω} (hm : m ≤ ∞) {f : M → N} {hf : ∀ (g : G) (x : M), f (g +ᵥ x) = f x} :
@@ -1024,8 +997,9 @@ theorem existsUnique_contMDiff_comp_freeProperAddQuotientMk_eq
   obtain ⟨g, rfl⟩ := _root_.AddAction.orbitRel_apply.1 (Quotient.exact hxy)
   exact hf_inv g y
 
-/-- Canonical diffeomorphism between `AddAction.orbitRel.Quotient G M` and the target of any
-surjective smooth submersion `p : M → Q` whose fibres are the additive `G`-orbits. -/
+/-- For a free proper smooth action of an additive Lie group `G` on `M`, the canonical
+diffeomorphism between `AddAction.orbitRel.Quotient G M` and the target of any surjective smooth
+submersion `p : M → Q` whose fibres are the additive `G`-orbits. -/
 def diffeomorphOfAddOrbitSubmersion
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
@@ -1069,7 +1043,7 @@ theorem diffeomorphOfAddOrbitSubmersion_comp_mk
 
 /-- The inverse of `diffeomorphOfAddOrbitSubmersion` sends `p x` back to `[x]`. -/
 @[simp]
-theorem diffeomorphOfAddOrbitSubmersion_symm_apply_apply
+theorem diffeomorphOfAddOrbitSubmersion_symm_apply
     {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
     {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
     (p : M → Q) (hp : IsSubmersion I JQ ∞ p) (hp_surj : Surjective p)
@@ -1081,6 +1055,102 @@ theorem diffeomorphOfAddOrbitSubmersion_symm_apply_apply
   exact (diffeomorphOfAddOrbitSubmersion I IG p hp hp_surj hfib).symm_apply_eq.2
     (diffeomorphOfAddOrbitSubmersion_mk I IG p hp hp_surj hfib x).symm
 
+section Equivariant
+
+variable {E' EG' H' HG' : Type*}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [NormedAddCommGroup EG'] [NormedSpace ℝ EG'] [FiniteDimensional ℝ EG']
+  [TopologicalSpace H'] [TopologicalSpace HG']
+  (I' : ModelWithCorners ℝ E' H') (IG' : ModelWithCorners ℝ EG' HG')
+  [I'.Boundaryless]
+  {G' M' : Type*}
+  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
+  [TopologicalSpace G'] [ChartedSpace HG' G'] [AddGroup G'] [LieAddGroup IG' ∞ G']
+  [AddAction G' M'] [ContMDiffVAdd IG' I' ∞ G' M'] [ProperVAdd G' M'] [IsCancelVAdd G' M']
+  {m : ℕ∞ω}
+
+/-- **Smoothness of equivariant maps on additive orbit spaces.** For `m ≤ ∞`, a `C^m` equivariant
+map `φ : AddActionHom σ M M'` between two free proper smooth additive Lie group actions descends to
+a `C^m` map of additive orbit spaces. -/
+theorem contMDiff_addOrbitRelQuotientMap_of_properVAdd_of_isCancelVAdd (hm : m ≤ ∞) {σ : G → G'}
+    {φ : AddActionHom σ M M'} (hφ : ContMDiff I I' m φ) :
+    letI := freeProperAddQuotientChartedSpace I IG G M
+    letI := freeProperAddQuotientChartedSpace I' IG' G' M'
+    ContMDiff 𝓘(ℝ, Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ)
+      𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ EG') → ℝ) m
+      (AddActionHom.orbitRelQuotientMap φ) := by
+  let := freeProperAddQuotientChartedSpace I IG G M
+  let := freeProperAddQuotientChartedSpace I' IG' G' M'
+  rw [← (isSubmersion_freeProperAddQuotientMk I IG (G := G) (M := M)).contMDiff_comp_iff
+    Quotient.mk_surjective hm, AddActionHom.orbitRelQuotientMap_comp_mk]
+  exact ((contMDiff_freeProperAddQuotientMk I' IG' (G := G') (M := M')).of_le hm).comp hφ
+
+/-- **An equivariant `C^m` diffeomorphism induces a `C^m` diffeomorphism of additive free-proper
+orbit manifolds.** For `m ≤ ∞`, if `e : M ≃ₘ^m⟮I, I'⟯ M'` intertwines the additive actions of `G`
+and `G'` along an additive group isomorphism `φ : G ≃+ G'`, then
+`AddAction.orbitRelQuotientCongr φ e.toEquiv he` is a `C^m` diffeomorphism of additive orbit
+spaces. No smoothness assumption on `φ` is needed. -/
+def freeProperAddQuotientDiffeomorph (hm : m ≤ ∞) (φ : G ≃+ G') (e : M ≃ₘ^m⟮I, I'⟯ M')
+    (he : ∀ (g : G) (x : M), e (g +ᵥ x) = φ g +ᵥ e x) :
+    letI := freeProperAddQuotientChartedSpace I IG G M
+    letI := freeProperAddQuotientChartedSpace I' IG' G' M'
+    _root_.AddAction.orbitRel.Quotient G M ≃ₘ^m⟮𝓘(ℝ,
+      Fin (Module.finrank ℝ E - Module.finrank ℝ EG) → ℝ),
+      𝓘(ℝ, Fin (Module.finrank ℝ E' - Module.finrank ℝ EG') → ℝ)⟯
+      _root_.AddAction.orbitRel.Quotient G' M' :=
+  letI := freeProperAddQuotientChartedSpace I IG G M
+  letI := freeProperAddQuotientChartedSpace I' IG' G' M'
+  { toEquiv := AddAction.orbitRelQuotientCongr φ e.toEquiv he
+    contMDiff_toFun :=
+      ((isSubmersion_freeProperAddQuotientMk I IG).contMDiff_comp_iff Quotient.mk_surjective
+        hm).1 <|
+        (((contMDiff_freeProperAddQuotientMk I' IG').of_le hm).comp e.contMDiff).congr fun x ↦
+          AddAction.orbitRelQuotientCongr_mk φ e.toEquiv he x
+    contMDiff_invFun :=
+      ((isSubmersion_freeProperAddQuotientMk I' IG').contMDiff_comp_iff Quotient.mk_surjective
+        hm).1 <|
+        (((contMDiff_freeProperAddQuotientMk I IG).of_le hm).comp e.symm.contMDiff).congr fun y ↦
+          AddAction.orbitRelQuotientCongr_symm_mk φ e.toEquiv he y }
+
+/-- The underlying equivalence of `freeProperAddQuotientDiffeomorph` is
+`AddAction.orbitRelQuotientCongr`. -/
+@[simp]
+theorem freeProperAddQuotientDiffeomorph_toEquiv (hm : m ≤ ∞) (φ : G ≃+ G')
+    (e : M ≃ₘ^m⟮I, I'⟯ M') (he : ∀ (g : G) (x : M), e (g +ᵥ x) = φ g +ᵥ e x) :
+    letI := freeProperAddQuotientChartedSpace I IG G M
+    letI := freeProperAddQuotientChartedSpace I' IG' G' M'
+    (freeProperAddQuotientDiffeomorph I IG I' IG' hm φ e he).toEquiv =
+      AddAction.orbitRelQuotientCongr φ e.toEquiv he :=
+  (rfl)
+
+/-- `freeProperAddQuotientDiffeomorph` sends `[x]` to `[e x]`. -/
+@[simp]
+theorem freeProperAddQuotientDiffeomorph_mk (hm : m ≤ ∞) (φ : G ≃+ G')
+    (e : M ≃ₘ^m⟮I, I'⟯ M') (he : ∀ (g : G) (x : M), e (g +ᵥ x) = φ g +ᵥ e x) (x : M) :
+    letI := freeProperAddQuotientChartedSpace I IG G M
+    letI := freeProperAddQuotientChartedSpace I' IG' G' M'
+    freeProperAddQuotientDiffeomorph I IG I' IG' hm φ e he
+      (Quotient.mk (_root_.AddAction.orbitRel G M) x) =
+      Quotient.mk (_root_.AddAction.orbitRel G' M') (e x) := by
+  let := freeProperAddQuotientChartedSpace I IG G M
+  let := freeProperAddQuotientChartedSpace I' IG' G' M'
+  exact AddAction.orbitRelQuotientCongr_mk φ e.toEquiv he x
+
+/-- The inverse of `freeProperAddQuotientDiffeomorph` sends `[y]` to `[e.symm y]`. -/
+@[simp]
+theorem freeProperAddQuotientDiffeomorph_symm_mk (hm : m ≤ ∞) (φ : G ≃+ G')
+    (e : M ≃ₘ^m⟮I, I'⟯ M') (he : ∀ (g : G) (x : M), e (g +ᵥ x) = φ g +ᵥ e x) (y : M') :
+    letI := freeProperAddQuotientChartedSpace I IG G M
+    letI := freeProperAddQuotientChartedSpace I' IG' G' M'
+    (freeProperAddQuotientDiffeomorph I IG I' IG' hm φ e he).symm
+      (Quotient.mk (_root_.AddAction.orbitRel G' M') y) =
+      Quotient.mk (_root_.AddAction.orbitRel G M) (e.symm y) := by
+  let := freeProperAddQuotientChartedSpace I IG G M
+  let := freeProperAddQuotientChartedSpace I' IG' G' M'
+  exact AddAction.orbitRelQuotientCongr_symm_mk φ e.toEquiv he y
+
+end Equivariant
+
 /-- **The additive quotient manifold theorem.** Let a finite-dimensional additive real Lie group `G`
 act smoothly, freely and properly on a finite-dimensional boundaryless smooth real manifold `M`.
 Then `AddAction.orbitRel.Quotient G M`, with its quotient topology, admits a smooth (`C^∞`) manifold
@@ -1091,7 +1161,7 @@ theorem exists_freeProperAddQuotient_isSubmersion
     [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDimensional ℝ EG]
     [TopologicalSpace H] [TopologicalSpace HG]
     (I : ModelWithCorners ℝ E H) (IG : ModelWithCorners ℝ EG HG)
-    [I.Boundaryless] [IG.Boundaryless]
+    [I.Boundaryless]
     [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
     [TopologicalSpace G] [ChartedSpace HG G] [AddGroup G] [LieAddGroup IG ∞ G]
     [AddAction G M] [ProperVAdd G M]
