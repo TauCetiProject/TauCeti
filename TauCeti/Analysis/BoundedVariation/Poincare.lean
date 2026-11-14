@@ -384,8 +384,11 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_integrableOn
         totalVariationOn μ Ω u := by
   -- Replace `S` by a measurable subset of `Ω` with the same restricted measure.
   have hSfin : μ S ≠ ∞ := ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono hS)
-  obtain ⟨S', hS'Ω, hS'm, hres⟩ :=
-    exists_measurableSet_subset_restrict_eq Ω.isOpen.measurableSet hS hSfin
+  obtain ⟨S', hS'Ω, hS'm, hres⟩ : ∃ S' ⊆ (Ω : Set E), MeasurableSet S' ∧
+      μ.restrict S' = μ.restrict S :=
+    ⟨Ω ∩ toMeasurable μ S, inter_subset_left,
+      Ω.isOpen.measurableSet.inter (measurableSet_toMeasurable μ S),
+      Measure.restrict_inter_toMeasurable hSfin Ω.isOpen.measurableSet hS⟩
   have hμ : μ S' = μ S := by
     rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
   have havg : ⨍ y in S', u y ∂μ = ⨍ y in S, u y ∂μ := by rw [hres]

@@ -307,8 +307,11 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
     ((measure_mono subset_closure).trans_lt hb.isCompact_closure.measure_lt_top).ne
   have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
   -- Replace `S` by a measurable set with the same restricted measure.
-  obtain ⟨S', hS'Ω, hS'm, hres⟩ :=
-    exists_measurableSet_subset_restrict_eq Omega.isOpen.measurableSet hS hSfin
+  obtain ⟨S', hS'Ω, hS'm, hres⟩ : ∃ S' ⊆ (Omega : Set E), MeasurableSet S' ∧
+      mu.restrict S' = mu.restrict S :=
+    ⟨Omega ∩ toMeasurable mu S, inter_subset_left,
+      Omega.isOpen.measurableSet.inter (measurableSet_toMeasurable mu S),
+      Measure.restrict_inter_toMeasurable hSfin Omega.isOpen.measurableSet hS⟩
   have hmu : mu S' = mu S := by
     rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
   have hmuR : mu.real S' = mu.real S := by rw [measureReal_def, measureReal_def, hmu]

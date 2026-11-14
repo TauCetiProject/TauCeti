@@ -168,7 +168,7 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
       (by exact_mod_cast hpp ▸ hp1) (by exact_mod_cast hpp ▸ hpq)
       (by rwa [ENNReal.coe_toNNReal_eq_toReal]) hδn
 
-/-- **The Sobolev inequality on `W^{1,p}_0` of a ball.** Let `n ≥ 1` be the dimension and
+/-- **The Sobolev inequality on `W^{1,p}_0` of a ball.** Let `n` be the dimension and
 `ω = μ(B(0, 1))`, and let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`. If `Ω = B(x₀, R)`, then every
 `u ∈ W^{1,p}_0(Ω)` satisfies
 

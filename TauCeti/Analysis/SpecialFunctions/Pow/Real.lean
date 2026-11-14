@@ -33,9 +33,9 @@ A real power of a nonnegative base can also be written as a power of its square:
 For `i < d`, comparing the `(d - i)`-th root `x ^ (1 / (d - i))` with `y` is comparing `x` with
 the natural power `y ^ (d - i)`, the form in which spectral values of polynomials are bounded.
 
-For `n ≠ 0`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)` for nonnegative `x`, the form in
-which the volume factor `V ^ (1 - 1/n)` of an isoperimetric inequality is raised to the `n`-th
-power.
+The `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)` for nonnegative `x`, where `n - 1` is natural
+subtraction (both sides are `1` at `n = 0`), the form in which the volume factor `V ^ (1 - 1/n)` of
+an isoperimetric inequality is raised to the `n`-th power.
 
 Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then `C₀ (r / R) ^ α X ≤ 2 (C r ^ α)`
 for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`.
@@ -69,7 +69,7 @@ power-law exponent is read off from testing an inequality on `n` copies of one v
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
 
-A positive real raised to a finitely supported sum of exponents is the product of the powers:
+A positive real raised to a `finsum` of exponents is the `finprod` of the powers:
 `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i`, the `finsum` form of `Real.rpow_sum_of_pos`.
 
 An exponential upper bound on a nonnegative base passes to its nonnegative real powers: if
@@ -98,7 +98,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_div_two_sq`: `(x ^ (s / 2)) ^ 2 = x ^ s` for `0 ≤ x`.
 * `Real.rpow_one_div_natCast_sub_le_iff`: `x ^ (1 / (d - i)) ≤ y ↔ x ≤ y ^ (d - i)` for `i < d`
   and nonnegative `x`, `y`.
-* `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x`.
+* `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x`,
+  with natural subtraction `n - 1`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.pow_succ_rpow_mul_pow_rpow`: `(a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n`
   for `0 < a`.
@@ -205,8 +206,9 @@ theorem rpow_one_div_natCast_sub_le_iff {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y
   rw [← Nat.cast_sub h.le, one_div,
     rpow_inv_le_iff_of_pos hx hy (by exact_mod_cast Nat.sub_pos_of_lt h), rpow_natCast]
 
-/-- For nonnegative `x`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)`. -/
-theorem rpow_one_sub_inv_natCast_pow {x : ℝ} (hx : 0 ≤ x) {n : ℕ} :
+/-- For nonnegative `x`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)`, where `n - 1` is
+natural subtraction, so both sides are `1` at `n = 0`. -/
+theorem rpow_one_sub_inv_natCast_pow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) :
     (x ^ (1 - (n : ℝ)⁻¹)) ^ n = x ^ (n - 1) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
@@ -460,7 +462,7 @@ theorem Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow {α : Type*} (g :
 /-- A positive real raised to a finsum is the finprod of the powers. When `f` has infinite
 support, both sides equal `1`: on the left `a ^ 0 = 1`; on the right `1 ^ f i = 1` if `a = 1`,
 and otherwise `a ^ f i` has infinite multiplicative support, so the `finprod` is `1`. -/
-theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → ℝ} :
+theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) (f : α → ℝ) :
     a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
   by_cases hf : f.HasFiniteSupport
   swap
