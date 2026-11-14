@@ -39,9 +39,9 @@ namespace IsPrimitiveRoot
 
 open TauCeti
 
-universe u v
+universe u v w
 
-variable {K L : Type u} {G : Type v} [Field K] [Field L] [Algebra K L] [CharZero K]
+variable {K : Type u} {L : Type w} {G : Type v} [Field K] [Field L] [Algebra K L] [CharZero K]
   [Group G] [Finite G] [IsAlgClosed L]
   {n : ℕ} [NeZero n] {ζ : K}
 

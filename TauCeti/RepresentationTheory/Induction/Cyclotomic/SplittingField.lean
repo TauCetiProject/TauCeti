@@ -32,11 +32,14 @@ integral character identity to an actual representation uses
 `FDRep.exists_simple_nonempty_iso_baseChange_of_character_eq`; having values in `K` alone would
 not suffice.
 
-The group may live in any universe. The monomiality theorem for nilpotent groups puts the group
-in the universe of the fields, so the Brauer argument runs on the copy `Shrink G` of `G` in that
-universe, and its conclusion returns to `G` by pulling virtual characters back along the group
-isomorphism `Shrink.mulEquiv` (`TauCeti.comp_mem_virtualCharacters`). No cyclotomic hypothesis on
-the whole ambient field `L` is needed.
+The character statement allows `K`, `L` and `G` in independent universes. The monomiality
+theorem for nilpotent groups puts the group in the universe of `L`, so the Brauer argument runs on
+the copy `Shrink G` of `G` in that universe, and its conclusion returns to `G` by pulling virtual
+characters back along the group isomorphism `Shrink.mulEquiv`
+(`TauCeti.comp_mem_virtualCharacters`). The reverse inclusion shrinks the carrier of a scalar
+extension with `FDRep.ofShrink`. The realization statements keep `K` and `L` in one universe,
+since they compare the scalar extension with a representation over `L`. No cyclotomic hypothesis
+on the whole ambient field `L` is needed.
 
 ## References
 
@@ -47,15 +50,17 @@ public section
 
 open CategoryTheory
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
-variable {K L : Type u} [Field K] [Field L] [Algebra K L] [CharZero K] [IsAlgClosed L]
+section
 
-/-- The descent of virtual characters when the group lives in the universe of the fields, where
+variable {K : Type u} {L : Type w} [Field K] [Field L] [Algebra K L] [CharZero K] [IsAlgClosed L]
+
+/-- The descent of virtual characters when the group lives in the universe of `L`, where
 Brauer's induction theorem and the monomiality of nilpotent groups apply directly. -/
-private theorem virtualCharacters_le_map_of_isPrimitiveRoot_aux {G : Type u} [Group G] [Finite G]
+private theorem virtualCharacters_le_map_of_isPrimitiveRoot_aux {G : Type w} [Group G] [Finite G]
     {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) :
     virtualCharacters L G ≤
       (virtualCharacters K G).map ((algebraMap K L).toAddMonoidHom.compLeft G) := by
@@ -99,17 +104,17 @@ variable {G : Type v} [Group G] [Finite G]
 /-- **Brauer induction in its field-of-definition form.** If `K` contains a primitive root
 whose order is divisible by the exponent of `G`, coefficient extension identifies its
 virtual-character lattice with the entire virtual-character lattice over the algebraically
-closed extension `L`. The coefficients in both lattices are integers, and `G` may live in any
-universe. -/
+closed extension `L`. The coefficients in both lattices are integers, and `K`, `L` and `G` may
+live in any universes. -/
 theorem virtualCharacters_eq_map_of_isPrimitiveRoot {n : ℕ} [NeZero n] {ζ : K}
     (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) :
     virtualCharacters L G =
       (virtualCharacters K G).map ((algebraMap K L).toAddMonoidHom.compLeft G) := by
   apply le_antisymm
-  · -- Descend on the copy of `G` in the universe of the fields, then pull back to `G`.
+  · -- Descend on the copy of `G` in the universe of `L`, then pull back to `G`.
     intro f hf
-    let e : Shrink.{u} G ≃* G := Shrink.mulEquiv
-    have hG' : Monoid.exponent (Shrink.{u} G) ∣ n := Monoid.exponent_eq_of_mulEquiv e ▸ hG
+    let e : Shrink.{w} G ≃* G := Shrink.mulEquiv
+    have hG' : Monoid.exponent (Shrink.{w} G) ∣ n := Monoid.exponent_eq_of_mulEquiv e ▸ hG
     obtain ⟨g, hg, hgf⟩ := AddSubgroup.mem_map.mp
       (virtualCharacters_le_map_of_isPrimitiveRoot_aux hζ hG'
         (comp_mem_virtualCharacters e.toMonoidHom hf))
@@ -120,10 +125,17 @@ theorem virtualCharacters_eq_map_of_isPrimitiveRoot {n : ℕ} [NeZero n] {ζ : K
     apply AddSubgroup.map_le_iff_le_comap.mpr
     refine virtualCharacters_le fun V => ?_
     rw [AddSubgroup.mem_comap]
-    convert character_mem_virtualCharacters (FDRep.of (Representation.baseChange L V.ρ))
+    convert character_mem_virtualCharacters (FDRep.ofShrink (Representation.baseChange L V.ρ))
       using 1
-    rw [FDRep.character_baseChange]
-    rfl
+    funext g
+    simp
+
+end
+
+section
+
+variable {K L : Type u} [Field K] [Field L] [Algebra K L] [CharZero K] [IsAlgClosed L]
+variable {G : Type v} [Group G] [Finite G]
 
 /-- **A field containing the requisite roots of unity realizes every irreducible
 representation.** The realizing representation over `K` is simple and its endomorphisms are
@@ -151,6 +163,8 @@ theorem _root_.FDRep.exists_simple_nonempty_iso_baseChange_of_isCyclotomicExtens
   have : CharZero K := algebraRat.charZero K
   W.exists_simple_nonempty_iso_baseChange_of_isPrimitiveRoot
     (IsCyclotomicExtension.zeta_spec (Monoid.exponent G) ℚ K) (dvd_refl _)
+
+end
 
 end TauCeti
 
