@@ -42,6 +42,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.cosh_add_le_exp_abs_mul_cosh` — `cosh (x + y) ≤ exp |y| * cosh x`: a shift by `y` changes
+  `Real.cosh` by a factor between `exp (-|y|)` and `exp |y|`.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
@@ -284,6 +286,18 @@ theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
 theorem tendsto_cosh_atBot : Filter.Tendsto cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- A shift by `y` multiplies the hyperbolic cosine by at most `exp |y|`:
+`cosh (x + y) ≤ exp |y| * cosh x`. -/
+theorem cosh_add_le_exp_abs_mul_cosh (x y : ℝ) : cosh (x + y) ≤ exp |y| * cosh x := by
+  have h₁ : exp (x + y) ≤ exp |y| * exp x := by
+    rw [← exp_add]
+    exact exp_le_exp.2 (by linarith [le_abs_self y])
+  have h₂ : exp (-(x + y)) ≤ exp |y| * exp (-x) := by
+    rw [← exp_add]
+    exact exp_le_exp.2 (by linarith [neg_abs_le y])
+  rw [cosh_eq, cosh_eq]
+  linarith
 
 /-- The derivative of `log (cosh x)` is `tanh x`. -/
 theorem _root_.Real.hasDerivAt_log_cosh (x : ℝ) :

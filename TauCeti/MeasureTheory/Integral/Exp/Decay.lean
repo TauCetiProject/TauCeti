@@ -9,7 +9,9 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Exponential integrals on the real line and radial exponentials
@@ -40,6 +42,8 @@ inclusion.
 * `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
 * `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
   of `c * exp (-(a * |·|))`.
+* `TauCeti.eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs`: an integral operator whose kernel is
+  bounded by `c * exp (-(a * |t - s|))` is bounded on every `Lᵖ` with norm at most `2 c / a`.
 * `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
@@ -159,6 +163,40 @@ theorem lintegral_ofReal_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (c : ℝ) :
     simp only [ENNReal.ofReal_of_nonpos hc',
       ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hc (Real.exp_pos _).le),
       lintegral_zero]
+
+/-- **Integral operators with a two-sided exponential kernel are bounded on `Lᵖ`.** If `‖u t‖ₑ` is
+at most the integral of `‖f‖ₑ` against the kernel `c * exp (-(a * |t - s|))` for every `t`, then
+`‖u‖_{Lᵖ} ≤ 2 c / a * ‖f‖_{Lᵖ}` for every `1 ≤ p ≤ ∞`. This is Schur's test
+(`TauCeti.eLpNorm_lintegral_mul_le`) for a kernel whose row and column integrals are both
+`2 c / a`. -/
+theorem eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs {E F : Type*} [NormedAddCommGroup E]
+    [NormedAddCommGroup F] {a : ℝ} (ha : 0 < a) (c : ℝ) {u : ℝ → E} {f : ℝ → F}
+    (hu : AEStronglyMeasurable u) (hf : AEStronglyMeasurable f)
+    (h : ∀ t, ‖u t‖ₑ ≤ ∫⁻ s, ENNReal.ofReal (c * Real.exp (-(a * |t - s|))) * ‖f s‖ₑ)
+    {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm u p volume ≤ ENNReal.ofReal (2 * c / a) * eLpNorm f p volume := by
+  set k : ℝ → ℝ → ℝ≥0∞ := fun t s ↦ ENNReal.ofReal (c * Real.exp (-(a * |t - s|)))
+  have hk : AEMeasurable (Function.uncurry k) (volume.prod volume) :=
+    (ENNReal.continuous_ofReal.comp (continuous_const.mul (Real.continuous_exp.comp
+      (continuous_const.mul (continuous_fst.sub continuous_snd).abs).neg))).measurable.aemeasurable
+  have hrow (t : ℝ) : ∫⁻ s, k t s ≤ ENNReal.ofReal (2 * c / a) :=
+    (lintegral_sub_left_eq_self (fun x ↦ ENNReal.ofReal (c * Real.exp (-(a * |x|)))) t).trans
+      (lintegral_ofReal_mul_exp_neg_mul_abs ha c) |>.le
+  have hcol (s : ℝ) : ∫⁻ t, k t s ≤ ENNReal.ofReal (2 * c / a) :=
+    (lintegral_sub_right_eq_self (fun x ↦ ENNReal.ofReal (c * Real.exp (-(a * |x|)))) s).trans
+      (lintegral_ofReal_mul_exp_neg_mul_abs ha c) |>.le
+  have hexp : (1 - p.toReal⁻¹) + p.toReal⁻¹ = 1 := sub_add_cancel _ _
+  calc eLpNorm u p volume
+      ≤ eLpNorm (fun t ↦ ∫⁻ s, k t s * ‖f s‖ₑ) p volume :=
+        eLpNorm_mono_eNorm hu fun t ↦ by simpa only [eNorm_eq_self] using h t
+    _ ≤ ENNReal.ofReal (2 * c / a) ^ (1 - p.toReal⁻¹) *
+          ENNReal.ofReal (2 * c / a) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖f s‖ₑ) p volume :=
+        eLpNorm_lintegral_mul_le hk hf.eNorm hp (ae_of_all _ hrow) (ae_of_all _ hcol)
+    _ = ENNReal.ofReal (2 * c / a) * eLpNorm f p volume := by
+      have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
+        simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
+      rw [← ENNReal.rpow_add_of_nonneg _ _ h₀ (inv_nonneg.2 ENNReal.toReal_nonneg), hexp,
+        ENNReal.rpow_one, eLpNorm_eNorm _ hf]
 
 /-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
 the line. -/

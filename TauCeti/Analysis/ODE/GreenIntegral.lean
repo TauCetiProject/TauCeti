@@ -7,14 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.ODE.LyapunovPerron.Basic
--- Private: the improper integrals, the exponential identities, the two-sided exponential integral
--- and Schur's test are used only inside the proofs below.
+-- Private: the improper integrals, the exponential identities and the two-sided exponential
+-- kernel bound are used only inside the proofs below.
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Normed.Operator.Exponential
-import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Exp.Decay
-import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # The whole-line Green integral of an exponential dichotomy
@@ -280,32 +278,10 @@ and rate `α > 0`, `‖G g‖_{Lᵖ} ≤ 2 K / α ‖g‖_{Lᵖ}` for every cont
 the kernel `K exp (-α |t - s|)`, whose row and column integrals are `2 K / α`. -/
 theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s, ‖g s‖ ≤ M)
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    eLpNorm (greenIntegral A P g) p volume ≤ ENNReal.ofReal (2 * K / α) * eLpNorm g p volume := by
-  set k : ℝ → ℝ → ℝ≥0∞ := fun t s ↦ ENNReal.ofReal (K * Real.exp (-(α * |t - s|)))
-  have hk : AEMeasurable (Function.uncurry k) (volume.prod volume) :=
-    (ENNReal.continuous_ofReal.comp (continuous_const.mul (Real.continuous_exp.comp
-      (continuous_const.mul (continuous_fst.sub continuous_snd).abs).neg))).measurable.aemeasurable
-  have hrow (t : ℝ) : ∫⁻ s, k t s ≤ ENNReal.ofReal (2 * K / α) :=
-    (lintegral_sub_left_eq_self (fun x ↦ ENNReal.ofReal (K * Real.exp (-(α * |x|)))) t).trans
-      (TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs (NNReal.coe_pos.2 hα) K) |>.le
-  have hcol (s : ℝ) : ∫⁻ t, k t s ≤ ENNReal.ofReal (2 * K / α) :=
-    (lintegral_sub_right_eq_self (fun x ↦ ENNReal.ofReal (K * Real.exp (-(α * |x|)))) s).trans
-      (TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs (NNReal.coe_pos.2 hα) K) |>.le
-  have hexp : (1 - p.toReal⁻¹) + p.toReal⁻¹ = 1 := sub_add_cancel _ _
-  calc eLpNorm (greenIntegral A P g) p volume
-      ≤ eLpNorm (fun t ↦ ∫⁻ s, k t s * ‖g s‖ₑ) p volume :=
-        eLpNorm_mono_eNorm (continuous_greenIntegral hs hu hα hg hgM).aestronglyMeasurable
-          fun t ↦ by simpa only [eNorm_eq_self] using enorm_greenIntegral_le hs hu g t
-    _ ≤ ENNReal.ofReal (2 * K / α) ^ (1 - p.toReal⁻¹) *
-          ENNReal.ofReal (2 * K / α) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖g s‖ₑ) p volume :=
-        TauCeti.eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.eNorm hp (ae_of_all _ hrow)
-          (ae_of_all _ hcol)
-    _ = ENNReal.ofReal (2 * K / α) * eLpNorm g p volume := by
-      have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
-        simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
-      rw [← ENNReal.rpow_add_of_nonneg _ _ h₀
-        (inv_nonneg.2 ENNReal.toReal_nonneg), hexp, ENNReal.rpow_one,
-        eLpNorm_eNorm _ hg.aestronglyMeasurable]
+    eLpNorm (greenIntegral A P g) p volume ≤ ENNReal.ofReal (2 * K / α) * eLpNorm g p volume :=
+  TauCeti.eLpNorm_le_of_enorm_le_lintegral_exp_neg_mul_abs (NNReal.coe_pos.2 hα) K
+    (continuous_greenIntegral hs hu hα hg hgM).aestronglyMeasurable hg.aestronglyMeasurable
+    (enorm_greenIntegral_le hs hu g) hp
 
 end Bounds
 
