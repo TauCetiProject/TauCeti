@@ -43,6 +43,7 @@ instances of it.
   `TauCeti.derivationLieAlgebra.apply_one_eq_zero`: a derivation of a unital algebra kills the
   unit; and `TauCeti.derivationLieAlgebra.apply_mul_eq_zero`: its constants are closed under
   multiplication.
+* `TauCeti.derivationLieAlgebra.mul_apply_mul_eq_zero`: `p D(p) p = 0` for an idempotent `p`.
 * `TauCeti.ad_mem_derivationLieAlgebra_commutatorRing`: the adjoint action of a Lie algebra is by
   derivations -- the Jacobi identity in Leibniz form; and
   `TauCeti.ad_mem_derivationLieAlgebra`: the same for the commutator of an associative algebra.
@@ -254,6 +255,25 @@ theorem derivationLieAlgebra.apply_one_eq_zero (D : derivationLieAlgebra R A) :
   simpa using derivationLieAlgebra.leibniz D 1 1
 
 end Unital
+
+section NonUnitalAssociative
+
+variable {R : Type u} {A : Type v} [CommRing R] [NonUnitalRing A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A]
+
+/-- **A derivation is off-diagonal at an idempotent**: `p D(p) p = 0` for an idempotent `p`, since
+differentiating `p = p p` gives `D p = D p * p + p * D p`. -/
+theorem derivationLieAlgebra.mul_apply_mul_eq_zero (D : derivationLieAlgebra R A) {p : A}
+    (hp : IsIdempotentElem p) : p * (D : Module.End R A) p * p = 0 := by
+  have h := derivationLieAlgebra.leibniz D p p
+  rw [hp.eq] at h
+  have h' : p * (D : Module.End R A) p * p =
+      p * (D : Module.End R A) p * p + p * (D : Module.End R A) p * p := by
+    conv_lhs => rw [h]
+    rw [mul_add, add_mul, ← mul_assoc, mul_assoc _ _ p, hp.eq, ← mul_assoc p p, hp.eq]
+  simpa using h'
+
+end NonUnitalAssociative
 
 section Associative
 
