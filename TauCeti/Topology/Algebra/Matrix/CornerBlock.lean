@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.CornerBlock
 
 /-!
-# Topology of block-diagonal, reindexed, and `1 × 1` unitary matrices
+# Topology of block-diagonal matrices `diag(c, B)` and unitary corner blocks
 
 For a topological space `α` with zero, the block-diagonal map
 `(c, B) ↦ Matrix.cornerBlockSucc c B = diag(c, B)` from `α × Matrix (Fin m) (Fin m) α` to
@@ -29,20 +28,10 @@ In particular `Matrix.unitaryOneBlockSuccEquivRange` identifies `unitary (Matrix
 as a topological group with its image `(Matrix.unitaryOneBlockSucc α m).range`, the stabilizer of
 `e₀`.
 
-Finally, reindexing rows and columns along an equivalence `e : m ≃ n` induces an isomorphism of
-topological groups `Matrix.unitaryReindexContinuousMulEquiv` between `unitary (Matrix m m α)` and
-`unitary (Matrix n n α)`, and for `[Unique m]` reading off the single entry induces an isomorphism
-of topological groups `Matrix.unitaryUniqueContinuousMulEquiv` between `unitary (Matrix m m α)` and
-`unitary α`.
-
 ## Main definitions
 
 * `Matrix.unitaryOneBlockSuccEquivRange`: the isomorphism of topological groups from
   `unitary (Matrix (Fin m) (Fin m) α)` onto `(Matrix.unitaryOneBlockSucc α m).range`.
-* `Matrix.unitaryReindexContinuousMulEquiv`: the isomorphism of topological groups
-  `unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α)` induced by `e : m ≃ n`.
-* `Matrix.unitaryUniqueContinuousMulEquiv`: the isomorphism of topological groups
-  `unitary (Matrix m m α) ≃ₜ* unitary α` for `[Unique m]`.
 
 ## Main results
 
@@ -69,17 +58,9 @@ variable {X α : Type*} {m : ℕ} [TopologicalSpace X] [TopologicalSpace α] [Ze
 theorem Continuous.matrix_cornerBlockSucc {c : X → α} {B : X → Matrix (Fin m) (Fin m) α}
     (hc : Continuous c) (hB : Continuous B) :
     Continuous fun x ↦ Matrix.cornerBlockSucc (c x) (B x) := by
-  refine continuous_pi fun p ↦ continuous_pi fun q ↦ ?_
-  refine Fin.cases ?_ (fun i ↦ ?_) p
-  · refine Fin.cases ?_ (fun j ↦ ?_) q
-    · simpa only [Matrix.cornerBlockSucc_zero_zero] using hc
-    · simpa only [Matrix.cornerBlockSucc_zero_succ] using continuous_const
-  · refine Fin.cases ?_ (fun j ↦ ?_) q
-    · simpa only [Matrix.cornerBlockSucc_succ_zero] using continuous_const
-    · have h : (fun x ↦ Matrix.cornerBlockSucc (c x) (B x) i.succ j.succ) = fun x ↦ B x i j :=
-        funext fun x ↦ Matrix.cornerBlockSucc_succ_succ (c x) (B x) i j
-      rw [h]
-      exact (continuous_apply j).comp ((continuous_apply i).comp hB)
+  simp_rw [Matrix.cornerBlockSucc_def]
+  exact ((hc.finCons continuous_const).finCons
+    (continuous_pi fun i ↦ continuous_const.finCons ((continuous_apply i).comp hB))).matrixOf
 
 /-- Continuity on a set of the block-diagonal matrix `diag(c x, B x)`. -/
 theorem ContinuousOn.matrix_cornerBlockSucc {c : X → α} {B : X → Matrix (Fin m) (Fin m) α}
@@ -221,73 +202,5 @@ theorem unitaryOneBlockSucc_unitaryOneBlockSuccEquivRange_symm_apply
   rw [← coe_unitaryOneBlockSuccEquivRange_apply, ContinuousMulEquiv.apply_symm_apply]
 
 end UnitaryBlock
-
-section Reindex
-
-variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
-  (α : Type*) [Semiring α] [StarRing α] [TopologicalSpace α]
-
-/-- Reindexing rows and columns along an equivalence `e : m ≃ n` induces an isomorphism of
-topological groups between `unitary (Matrix m m α)` and `unitary (Matrix n n α)`. -/
-def unitaryReindexContinuousMulEquiv (e : m ≃ n) :
-    unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α) where
-  __ := (Unitary.mapEquiv
-    { (reindexRingEquiv α e).toMulEquiv with map_star' := fun _ ↦ rfl }).toMulEquiv
-  continuous_toFun := continuous_induced_rng.2 (continuous_subtype_val.matrix_reindex e e)
-  continuous_invFun :=
-    continuous_induced_rng.2 (continuous_subtype_val.matrix_reindex e.symm e.symm)
-
-variable {α} in
-@[simp]
-theorem coe_unitaryReindexContinuousMulEquiv_apply (e : m ≃ n) (A : unitary (Matrix m m α)) :
-    (unitaryReindexContinuousMulEquiv α e A : Matrix n n α) = reindex e e A.1 := by
-  rfl
-
-variable {α} in
-@[simp]
-theorem unitaryReindexContinuousMulEquiv_symm (e : m ≃ n) :
-    (unitaryReindexContinuousMulEquiv α e).symm = unitaryReindexContinuousMulEquiv α e.symm := by
-  rfl
-
-end Reindex
-
-section Unique
-
-variable (m α : Type*) [Fintype m] [DecidableEq m] [Unique m]
-  [Semiring α] [StarRing α] [TopologicalSpace α]
-
-private def uniqueMatrixStarEquiv : Matrix m m α ≃⋆* α where
-  toFun M := M default default
-  invFun a := Matrix.of fun _ _ ↦ a
-  left_inv M := Matrix.ext fun i j ↦ by
-    simp [Subsingleton.elim i default, Subsingleton.elim j default]
-  right_inv _ := rfl
-  map_mul' M N := by simp [Matrix.mul_apply]
-  map_star' M := by simp [Matrix.star_apply]
-
-/-- Reading off the unique entry identifies `1 × 1` unitary matrices over `α` with `unitary α` as
-topological groups. -/
-def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α where
-  __ := (Unitary.mapEquiv (uniqueMatrixStarEquiv m α)).toMulEquiv
-  continuous_toFun :=
-    continuous_induced_rng.2
-      ((continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val))
-  continuous_invFun :=
-    continuous_induced_rng.2 (continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtype_val)
-
-variable {m α} in
-@[simp]
-theorem coe_unitaryUniqueContinuousMulEquiv_apply (A : unitary (Matrix m m α)) :
-    (unitaryUniqueContinuousMulEquiv m α A : α) = A.1 default default := by
-  rfl
-
-variable {m α} in
-@[simp]
-theorem coe_unitaryUniqueContinuousMulEquiv_symm_apply (u : unitary α) :
-    ((unitaryUniqueContinuousMulEquiv m α).symm u : Matrix m m α) =
-      Matrix.of fun _ _ ↦ (u : α) := by
-  rfl
-
-end Unique
 
 end Matrix

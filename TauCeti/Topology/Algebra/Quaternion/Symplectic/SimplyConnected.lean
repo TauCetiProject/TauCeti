@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import TauCeti.Topology.Algebra.Quaternion.Symplectic.FirstColumn
 public import TauCeti.Topology.Algebra.Quaternion.Unitary
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected

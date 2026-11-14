@@ -371,8 +371,8 @@ private theorem firstColumnCoord0_mul_phase
   by_cases hx : firstColumnCoord0 x = 0
   · simp [firstColumnPhase, hx]
   · have hn : ‖firstColumnCoord0 x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-    rw [firstColumnPhase, mul_smul_comm, self_mul_star, normSq_eq_norm_mul_self,
-      ← coe_mul_eq_smul, ← coe_mul, ← mul_assoc, inv_mul_cancel₀ hn, one_mul]
+    rw [firstColumnPhase, mul_smul_comm, self_mul_star, normSq_eq_norm_mul_self]
+    ext <;> simp; field_simp
 
 private theorem neg_star_firstColumnPhase_mem_unitary
     {x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
@@ -432,13 +432,11 @@ private theorem star_dotProduct_firstColumnHouseholderVec
     (hx : x ∈ firstColumnSectionDomain n) :
     star (firstColumnHouseholderVec x) ⬝ᵥ firstColumnHouseholderVec x =
       ((firstColumnScale x : ℝ) : ℍ) := by
-  have hsingle : star (Pi.single 0 (1 : ℍ) : Fin (n + 1) → ℍ) = Pi.single 0 1 := by
-    funext i
-    by_cases hi : i = 0 <;> simp [hi]
-  rw [firstColumnHouseholderVec, star_add, add_dotProduct, dotProduct_add, dotProduct_add,
-    hsingle, single_dotProduct, one_mul, Pi.single_eq_same, single_dotProduct, one_mul,
-    dotProduct_single, mul_one, Pi.star_apply, firstColumnAligned_zero, star_coe,
-    star_dotProduct_firstColumnAligned hx, firstColumnScale]
+  suffices (1 : ℍ) + ((‖firstColumnCoord0 x‖ : ℝ) : ℍ) + (((‖firstColumnCoord0 x‖ : ℝ) : ℍ) + 1) =
+      ((firstColumnScale x : ℝ) : ℍ) by
+    simpa [firstColumnHouseholderVec, add_dotProduct, dotProduct_add, firstColumnAligned_zero,
+      star_dotProduct_firstColumnAligned hx]
+  rw [firstColumnScale]
   ext <;> simp; ring
 
 /-- The Householder reflection `H(x) = 1 - (2 / s(x)) w(x) w(x)ᴴ` sending `e₀` to `-y(x)`. -/
@@ -473,8 +471,8 @@ private theorem firstColumnHouseholder_mulVec_single
     unfold firstColumnScale
     field_simp
   rw [firstColumnHouseholder, Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec,
-    Matrix.vecMulVec_mulVec, hw0, hop, smul_smul, hcancel, one_smul, firstColumnHouseholderVec,
-    sub_add_cancel_left]
+    Matrix.vecMulVec_mulVec, hw0, hop]
+  simp [smul_smul, hcancel, firstColumnHouseholderVec]
 
 private theorem continuousOn_firstColumnHouseholder :
     ContinuousOn (firstColumnHouseholder (n := n)) (firstColumnSectionDomain n) := by
@@ -544,9 +542,7 @@ private theorem firstColumnRawSection_one :
       Matrix.cornerBlockSucc (-1) 1 := by
     rw [firstColumnHouseholder, hw, hs]
     refine Matrix.ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) fun i j ↦ ?_
-    · rw [Matrix.sub_apply, Matrix.one_apply_eq, Matrix.smul_apply, Matrix.vecMulVec_apply,
-        Pi.star_apply, Pi.single_eq_same, Matrix.cornerBlockSucc_zero_zero]
-      ext <;> simp; norm_num
+    · ext <;> simp [Matrix.vecMulVec_apply]; norm_num
     · simp [Matrix.vecMulVec_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero j).symm]
     · simp [Matrix.vecMulVec_apply, Fin.succ_ne_zero]
     · simp [Matrix.vecMulVec_apply, Fin.succ_ne_zero, Matrix.one_apply]
@@ -571,9 +567,9 @@ private theorem coe_firstColumnSection
   simp only [firstColumnSection, hx, ↓reduceDIte]
 
 variable (n) in
-/-- **Normalized continuous local section of `Sp(n + 1) → S^(4n + 3)`.** On the open hemisphere
-complement `{x ∈ S^(4n + 3) | x₀ ≠ 0}` around `e₀`, there is a continuous map `s` into `Sp(n + 1)`
-with `s e₀ = 1` and `s(x) e₀ = x`. -/
+/-- **Normalized continuous local section of `Sp(n + 1) → S^(4n + 3)`.** On the open neighborhood
+`{x ∈ S^(4n + 3) | x₀ ≠ 0}` of `e₀`, there is a continuous map `s` into `Sp(n + 1)` with
+`s e₀ = 1` and `s(x) e₀ = x`. -/
 theorem exists_quaternionUnitaryFirstColumn_localSection :
     ∃ U : Set (sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1),
       IsOpen U ∧ quaternionUnitaryFirstColumn n 1 ∈ U ∧
