@@ -14,6 +14,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Local Sobolev maps from a Riemann surface into a manifold
@@ -285,7 +286,7 @@ theorem _root_.ContMDiffOn.memWkpLocMapOn [CompleteSpace F] {n : ℕ∞ω}
     MemWkpLocMapOn I p k u s := by
   refine memWkpLocMapOn_iff.2 ⟨hu.continuousOn, fun φ hφ ψ hψ ↦ ?_⟩
   have hV : IsOpen (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :=
-    φ.isOpen_inter_preimage_symm (hu.continuousOn.isOpen_inter_preimage hs ψ.open_source)
+    φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs ψ.open_source
   have hφ' : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) k φ.symm φ.target :=
     contMDiffOn_symm_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero _ one_ne_zero hφ)
