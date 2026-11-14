@@ -45,6 +45,8 @@ space by them.
 * `IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdiff`: a component of `U \ S`
   that is not all of a preconnected `U` has closure meeting `S ∩ U`.
 * `IsClosed.connectedComponentIn`: a connected component of a closed set is closed.
+* `TauCeti.exists_isClopen_between_connectedComponent`: in a compact Hausdorff space, a clopen set
+  sits between the connected component of a point and any open set containing it.
 * `IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier`: in a locally compact Hausdorff
   space, a compact connected component of a closed set `F` has an open neighbourhood with compact
   closure whose frontier misses `F`.
@@ -284,12 +286,11 @@ protected theorem _root_.IsClosed.connectedComponentIn {F : Set X} {x : X} (hF :
 
 /-- In a compact Hausdorff space, a clopen set sits between the connected component of a point and
 any open set containing that component. -/
-private theorem exists_isClopen_between_connectedComponent {Y : Type*} [TopologicalSpace Y]
-    [T2Space Y] [CompactSpace Y] (y : Y) {U : Set Y} (hU : IsOpen U)
-    (h : connectedComponent y ⊆ U) :
-    ∃ s : Set Y, IsClopen s ∧ connectedComponent y ⊆ s ∧ s ⊆ U := by
+theorem exists_isClopen_between_connectedComponent [T2Space X] [CompactSpace X] (x : X)
+    {U : Set X} (hU : IsOpen U) (h : connectedComponent x ⊆ U) :
+    ∃ s : Set X, IsClopen s ∧ connectedComponent x ⊆ s ∧ s ⊆ U := by
   obtain ⟨u, hu⟩ := hU.isClosed_compl.isCompact
-    |>.elim_finite_subfamily_closed (fun s : {s : Set Y // IsClopen s ∧ y ∈ s} => s.1)
+    |>.elim_finite_subfamily_closed (fun s : {s : Set X // IsClopen s ∧ x ∈ s} => s.1)
       (fun s => s.2.1.1) (by
         rw [← connectedComponent_eq_iInter_isClopen, disjoint_compl_left_iff_subset]
         exact h)
@@ -521,22 +522,31 @@ theorem connectedComponentIn_compl_Icc_eq_Iio {α : Type*} [ConditionallyComplet
     (mem_connectedComponentIn fun h => not_lt.2 h.1 hx) hy ⟨hx.le, (hab.trans_lt hyb).le⟩)
     ⟨le_rfl, hab⟩
 
-/-- In a closed splitting of `Uᶜ` into two pieces, the piece missing a point of the frontier is
-empty: it avoids `closure U`, so it lies in the open exterior, where it is the complement of
-the other piece. As `X` is preconnected, that piece is empty or everything. -/
+/-- In a preconnected space, let `t` and `t'` be closed sets covering the complement of a set `U`
+whose frontier is nonempty, and disjoint on `Uᶜ`. If `t'` misses the frontier of `U`, then it
+misses `Uᶜ`. -/
 private theorem compl_inter_eq_empty_of_frontier_inter_eq_empty [PreconnectedSpace X] {U : Set X}
-    (hU : IsOpen U) {p : X} (hp : p ∈ frontier U) {t t' : Set X} (ht : IsClosed t)
-    (ht' : IsClosed t') (hcov : Uᶜ ⊆ t ∪ t') (hdisj : Uᶜ ∩ (t ∩ t') = ∅)
-    (hft' : frontier U ∩ t' = ∅) : Uᶜ ∩ t' = ∅ := by
-  have hext : Uᶜ ∩ t' = (closure U)ᶜ ∩ tᶜ := by
+    {p : X} (hp : p ∈ frontier U) {t t' : Set X} (ht : IsClosed t) (ht' : IsClosed t')
+    (hcov : Uᶜ ⊆ t ∪ t') (hdisj : Uᶜ ∩ (t ∩ t') = ∅) (hft' : frontier U ∩ t' = ∅) :
+    Uᶜ ∩ t' = ∅ := by
+  -- a point of `t'` in the closure of `U` lies in its interior, as `t'` misses the frontier
+  have hint {x : X} (hxt' : x ∈ t') (hxc : x ∈ closure U) : x ∈ interior U :=
+    of_not_not fun hxi ↦ (eq_empty_iff_forall_notMem.1 hft') x
+      ⟨(⟨hxc, hxi⟩ : x ∈ closure U \ interior U), hxt'⟩
+  have hcl : Uᶜ ∩ t' = (interior U)ᶜ ∩ t' := by
     ext x
-    refine ⟨fun hx ↦ ⟨fun hxc ↦ ?_, fun hxt ↦ ?_⟩, fun hx ↦ ?_⟩
-    · exact (eq_empty_iff_forall_notMem.1 hft') x ⟨hU.frontier_eq ▸ ⟨hxc, hx.1⟩, hx.2⟩
+    exact ⟨fun hx ↦ ⟨fun hxi ↦ hx.1 (interior_subset hxi), hx.2⟩,
+      fun hx ↦ ⟨fun hxU ↦ hx.1 (hint hx.2 (subset_closure hxU)), hx.2⟩⟩
+  have hop : Uᶜ ∩ t' = (closure U)ᶜ ∩ tᶜ := by
+    ext x
+    refine ⟨fun hx ↦ ⟨fun hxc ↦ hx.1 (interior_subset (hint hx.2 hxc)), fun hxt ↦ ?_⟩,
+      fun hx ↦ ?_⟩
     · exact (eq_empty_iff_forall_notMem.1 hdisj) x ⟨hx.1, hxt, hx.2⟩
     · have hxU : x ∉ U := fun hxU ↦ hx.1 (subset_closure hxU)
       exact ⟨hxU, (hcov hxU).resolve_left hx.2⟩
   have hclo : IsClopen (Uᶜ ∩ t') :=
-    ⟨hU.isClosed_compl.inter ht', hext ▸ isClosed_closure.isOpen_compl.inter ht.isOpen_compl⟩
+    ⟨hcl ▸ isOpen_interior.isClosed_compl.inter ht',
+      hop ▸ isClosed_closure.isOpen_compl.inter ht.isOpen_compl⟩
   by_contra hne
   have huniv := hclo.eq_univ (nonempty_iff_ne_empty.2 hne)
   exact (eq_empty_iff_forall_notMem.1 hft') p ⟨hp, (huniv ▸ mem_univ p : p ∈ Uᶜ ∩ t').2⟩
@@ -561,14 +571,15 @@ theorem isPreconnected_compl_of_isPreconnected_frontier [PreconnectedSpace X] {U
     exact (eq_empty_iff_forall_notMem.1 hdisj) x ⟨hfU hx.1, hx.2⟩
   by_cases hft' : (frontier U ∩ t').Nonempty
   · have hft : frontier U ∩ t = ∅ := not_nonempty_iff_eq_empty.1 fun h ↦ hboth ⟨h, hft'⟩
-    exact (eq_empty_iff_forall_notMem.1 (compl_inter_eq_empty_of_frontier_inter_eq_empty hU hp
+    exact (eq_empty_iff_forall_notMem.1 (compl_inter_eq_empty_of_frontier_inter_eq_empty hp
       ht' ht (by rwa [union_comm]) (by rwa [inter_comm t' t]) hft)) a ⟨haU, hat⟩
-  · exact (eq_empty_iff_forall_notMem.1 (compl_inter_eq_empty_of_frontier_inter_eq_empty hU hp
+  · exact (eq_empty_iff_forall_notMem.1 (compl_inter_eq_empty_of_frontier_inter_eq_empty hp
       ht ht' hcov hdisj (not_nonempty_iff_eq_empty.1 hft'))) b ⟨hbU, hbt'⟩
 
-/-- Extending an open set `w` by the points of a closed set `s` whose punctured neighbourhood `V x`
-lies in `w` gives an open set, provided each punctured neighbourhood avoids `s`. -/
-private theorem isOpen_diff_union_of_punctured_subset {s : Set X} (hs : IsClosed s) {V : X → Set X}
+/-- Let `s` be a closed set and, for each `x ∈ s`, let `V x` be a neighbourhood of `x` whose
+punctured version `V x \ {x}` avoids `s`. Removing `s` from an open set `w` and adjoining the
+points `x ∈ s` with `V x \ {x} ⊆ w` gives an open set. -/
+private theorem isOpen_sdiff_union_setOf {s : Set X} (hs : IsClosed s) {V : X → Set X}
     (hVn : ∀ x ∈ s, V x ∈ 𝓝 x) (hVs : ∀ x ∈ s, V x \ {x} ⊆ sᶜ) {w : Set X} (hw : IsOpen w) :
     IsOpen (w \ s ∪ {x | x ∈ s ∧ V x \ {x} ⊆ w}) := by
   refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
@@ -608,8 +619,8 @@ theorem isPreconnected_compl_of_isDiscrete [PreconnectedSpace X] {s : Set X} (hs
   -- Extending each side by the removed points whose punctured neighbourhood it contains
   -- separates the whole space.
   rcases isPreconnected_iff_subset_of_disjoint.1 isPreconnected_univ _ _
-    (isOpen_diff_union_of_punctured_subset hs hVn hVs hu)
-    (isOpen_diff_union_of_punctured_subset hs hVn hVs hv)
+    (isOpen_sdiff_union_setOf hs hVn hVs hu)
+    (isOpen_sdiff_union_setOf hs hVn hVs hv)
     (fun y _ ↦ by
       by_cases hys : y ∈ s
       · exact (hside y hys).imp (fun h ↦ Or.inr ⟨hys, h⟩) fun h ↦ Or.inr ⟨hys, h⟩
