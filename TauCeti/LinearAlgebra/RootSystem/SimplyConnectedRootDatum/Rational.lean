@@ -47,6 +47,7 @@ instead deduced over `ℚ` from connectedness of the pinned Dynkin diagram.
 * `TauCeti.DynkinType.hasCartanType_rationalRootSystem`: the rational system realizes its own
   Dynkin type against the pinned numbering.
 * `TauCeti.DynkinType.pairingIn_rationalRootSystem`: its Cartan integers are those of the datum.
+* `TauCeti.DynkinType.height_rationalBase`: rational base change preserves root heights.
 * `TauCeti.DynkinType.instIsReducedRationalRootSystem` and
   `TauCeti.DynkinType.instIsIrreducibleRationalRootSystem`: the rational system is reduced and
   irreducible.
@@ -268,6 +269,22 @@ theorem simpleIndex_mem_support (i : Fin t.rank) :
     t.simpleIndex ht i ∈ (t.rationalBase ht).support := by
   rw [← coe_simpleSupportEquiv]
   exact (t.simpleSupportEquiv ht i).2
+
+variable {t ht} in
+/-- A simple root belongs to the positive roots of the pinned rational base. -/
+theorem simpleIndex_mem_posRoots (i : Fin t.rank) :
+    t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
+  (mem_posRoots _ _ _).mpr
+    (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))
+
+variable {t ht} in
+/-- The positive roots split into the roots other than a chosen simple root and that root. -/
+theorem posRoots_eq_diff_union_simpleIndex (i : Fin t.rank) :
+    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
+        {t.simpleIndex ht i} :=
+  (Set.sdiff_union_of_subset
+    (Set.singleton_subset_iff.mpr (simpleIndex_mem_posRoots i))).symm
 
 variable {t ht} in
 /-- Every element of the support of the pinned base is a Bourbaki-numbered simple root

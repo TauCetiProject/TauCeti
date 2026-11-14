@@ -115,7 +115,8 @@ theorem Set.OrdConnected.exists_ae_eq_Ioo {I : Set ℝ} (hI : I.OrdConnected) (h
       exact hI.out hy hwI ⟨hz, hwz.le⟩
   have hsub := IsConnected.Ioo_csInf_csSup_subset ⟨⟨y, hy⟩, hI.isPreconnected⟩ hbdd.1 hbdd.2
   have hae : I =ᵐ[volume] Ioo (sInf I) (sSup I) :=
-    ((subset_Icc_csInf_csSup hbdd.1 hbdd.2).eventuallyLE.trans Ioo_ae_eq_Icc.symm.le).antisymm
-      hsub.eventuallyLE
+    ((subset_Icc_csInf_csSup hbdd.1 hbdd.2).eventuallySubset.trans
+        Ioo_ae_eq_Icc.symm.subset).antisymm
+      hsub.eventuallySubset
   refine ⟨sInf I, sSup I, lt_of_not_ge fun hle => h0 ?_, hae⟩
   rw [measure_congr hae, Ioo_eq_empty_of_le hle, measure_empty]

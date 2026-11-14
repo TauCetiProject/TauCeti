@@ -113,11 +113,11 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
         IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' ∧
         IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' ∧
         D' (e.symm p) = Submodule.prod ⊤ ⊥ := by
-  let _ : CompleteSpace E := FiniteDimensional.complete 𝕜 _
+  let _ : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 _
   obtain ⟨T, hT⟩ := (distributionModelFiber D p).exists_isCompl
   refine ⟨T, hT, ?_⟩
-  let _ : CompleteSpace (distributionModelFiber D p) := FiniteDimensional.complete 𝕜 _
-  let _ : CompleteSpace T := FiniteDimensional.complete 𝕜 _
+  let _ : CompleteSpace (distributionModelFiber D p) := FiniteDimensional.completeSpace 𝕜 _
+  let _ : CompleteSpace T := FiniteDimensional.completeSpace 𝕜 _
   let e : (distributionModelFiber D p × T) ≃L[𝕜] E :=
     (Submodule.prodEquivOfIsCompl (distributionModelFiber D p) T hT).toContinuousLinearEquiv
   let Dt : (q : distributionModelFiber D p × T) →

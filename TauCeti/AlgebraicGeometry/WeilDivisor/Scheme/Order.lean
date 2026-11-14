@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.DVR
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
@@ -26,12 +26,11 @@ This is the local algebraic input for the scheme-theoretic principal-divisor map
 that map also requires the separate global theorem that a nonzero rational function has nonzero
 order at only finitely many codimension-one points; no finiteness assumption is hidden here.
 
-Elementary facts about `Scheme.ord` itself are recorded first: the order of one vanishes
-(`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), orders
-are invariant under dominant open immersions, in particular isomorphisms, of schemes
-(`Scheme.ord_functionFieldMap`), and a
-function regular on `U` has nonnegative order at every point of `U`
-(`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
+Elementary facts about `Scheme.ord` itself are recorded first, alongside Mathlib's
+`Scheme.ord_one` and `Scheme.ord_inv`: orders are invariant under dominant open immersions, in
+particular isomorphisms, of schemes (`Scheme.ord_functionFieldMap`), and a function regular on
+`U` has nonnegative order at every point of `U` (`Scheme.ord_germToFunctionField_nonneg`), that
+is, it has no poles where it is defined. On an
 element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
 quotient (`Scheme.ord_algebraMap_stalk`). More generally, at a codimension-one generization `η`
 of a point `x`, the order of a germ at `x` is the `Ring.ord` of its image in `𝒪_{X,η}`
@@ -64,24 +63,6 @@ noncomputable section
 
 namespace Scheme
 
-/-- The constant function one has order zero at every point: it is a global regular unit. -/
-@[simp]
-lemma ord_one {x : X} : X.ord (1 : X.functionField) x = 0 := by
-  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
-  -- Naming this proof fixes the open set before elaborating `ord_of_isUnit`.
-  have hx_top : x ∈ (⊤ : X.Opens) := by simp
-  simpa using X.ord_of_isUnit (U := ⊤) isUnit_one hx_top
-
-/-- The order of an inverse is the negative of the order. Both sides vanish at the zero function,
-whose inverse is again zero. -/
-@[simp]
-lemma ord_inv (f : X.functionField) {x : X} : X.ord f⁻¹ x = -X.ord f x := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  · have h := X.ord_mul (x := x) hf (inv_ne_zero hf)
-    rw [mul_inv_cancel₀ hf, ord_one] at h
-    omega
-
 open CategoryTheory in
 /-- **Orders of vanishing are local.** For a dominant open immersion `f : W ⟶ X` of locally
 Noetherian integral schemes (for instance an isomorphism), the order of the pullback `f^* g` of a
@@ -113,7 +94,8 @@ lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · have h := Scheme.ord_le_smul hx ha (1 : X.functionField)
-    rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, ord_one] at h
+    rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra,
+      AlgebraicGeometry.Scheme.ord_one, Pi.zero_apply] at h
 
 /-- At a codimension-one point `x`, the order of the image in the function field of an element `c`
 of the local ring `𝒪_{X,x}` is its order of vanishing `Ring.ord`, the length of `𝒪_{X,x} ⧸ (c)`.
@@ -134,7 +116,7 @@ theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1)
     (map_ne_zero_iff _ (IsFractionRing.injective _ _)).mpr hc
   rw [X.ord_eq_iff hx hne, ← hn, ENat.toNat_natCast]
   simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
-  rw [Ring.ordFrac_eq_ord _ hc, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
+  rw [Ring.ordFrac_eq_ord _, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
 
 /-- At a codimension-one generization `η` of `x`, the order of a germ at `x` is the order of
 vanishing `Ring.ord` of its image in the one-dimensional local ring `𝒪_{X,η}`. -/

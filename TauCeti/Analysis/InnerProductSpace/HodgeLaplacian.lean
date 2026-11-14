@@ -139,7 +139,7 @@ theorem exact_iff_injective_hodgeLaplacian (hBA : B ∘L A = 0)
 to invertibility of the Laplacian at `V`. -/
 theorem exact_iff_isInvertible_hodgeLaplacian [FiniteDimensional 𝕜 V] (hBA : B ∘L A = 0) :
     Function.Exact A B ↔ (A.hodgeLaplacian B).IsInvertible := by
-  rw [A.exact_iff_injective_hodgeLaplacian B hBA (Submodule.closed_of_finiteDimensional _),
+  rw [A.exact_iff_injective_hodgeLaplacian B hBA (Submodule.isClosed_of_finiteDimensional _),
     isInvertible_iff_bijective, Function.Bijective, ← coe_coe,
     ← LinearMap.injective_iff_surjective, and_self]
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Disk
 public import TauCeti.AlgebraicTopology.Singular.Excision
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 
 /-!
 # Local homology of a Serre fibration along a fibre
@@ -27,14 +27,11 @@ For the identity of `B` this is the local homology of `B` at `b`
 with untwisted coefficients on the total space. Barraud, Damian, Humilière and Oancea read their
 `j_!` through `Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E|_{B'}) ≅ Hₙ(F)`, where `B'` is the `(r - 1)`-skeleton of a CW
 structure on `B` with a single top cell containing `b` (their Proposition 2.6), and use it to
-detect classes **living above the fundamental class** of the base: a class
-`α ∈ Hₖ(E)` lives above the fundamental class at `b` when its image in `Hₖ(E, E ∖ F)` is nonzero
-(`TauCeti.TopCat.LivesAboveFundamentalClass`), equivalently when `j_! α ≠ 0`
-(`TauCeti.TopCat.livesAboveFundamentalClass_iff_singularHomologyComplFiberIso`). Such a class has
-degree at least `r` (`TauCeti.TopCat.LivesAboveFundamentalClass.finrank_le`). For the identity
-fibration of a compact connected oriented manifold `M`, the classes of `Hₙ(M; ℤ)` living above the
-fundamental class are exactly the nonzero multiples of the fundamental class
-(`TauCeti.HomologicalOrientation.livesAboveFundamentalClass_id_iff`), which motivates the name.
+detect classes **living over the fundamental class** of the base. A class `α ∈ Hₖ(E)` lives over
+the fundamental class at `b` when its localization in `Hₖ(E, E ∖ F)` is nonzero
+(`TauCeti.LivesOverFundamentalClass`). For a Serre fibration this happens exactly when
+`j_! α ≠ 0` (`TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`), and
+only in degrees at least `r` (`TauCeti.LivesOverFundamentalClass.finrank_le`).
 
 The relative group, rather than the shriek map itself, is used in the definition because it does
 not depend on the chart: the identification `Hₙ₊ᵣ(E, E ∖ F) ≅ Hₙ(F)` does.
@@ -56,14 +53,9 @@ over the punctured base is the shifted homology of the fibre
 
 * `TauCeti.TopCat.singularHomologyComplFiberIso`: `Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))`.
 * `TauCeti.TopCat.isZero_singularHomology_complFiber`: `Hₘ(E, E ∖ p⁻¹(b)) = 0` for `m < r`.
-* `TauCeti.TopCat.LivesAboveFundamentalClass`: classes of `Hₖ(E)` with nonzero image in
-  `Hₖ(E, E ∖ p⁻¹(b))`.
-* `TauCeti.TopCat.livesAboveFundamentalClass_iff_singularHomologyComplFiberIso`: the same
-  condition read in `Hₖ₋ᵣ(p⁻¹(b))`.
-* `TauCeti.TopCat.LivesAboveFundamentalClass.of_map`: a class whose image under a map over `B`
-  lives above the fundamental class lives above it.
-* `TauCeti.HomologicalOrientation.livesAboveFundamentalClass_id_iff`: for the identity fibration
-  of a compact connected oriented manifold, these are the nonzero multiples of `[M]`.
+* `TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`: a class lives
+  over the fundamental class exactly when its image in `Hₖ₋ᵣ(p⁻¹(b))` is nonzero.
+* `TauCeti.LivesOverFundamentalClass.finrank_le`: such a class has degree at least `r`.
 
 ## References
 
@@ -257,139 +249,39 @@ def singularHomologyComplFiberIso (hp : serreFibrations p) (n m : ℕ)
 
 end Chart
 
-/-! ### Classes living above the fundamental class -/
-
-section LivesAbove
-
-variable {E B E' : _root_.TopCat.{u}} {k : Type*} [Ring k] (M : ModuleCat.{u} k)
-
-/-- A class `α ∈ H_d(E; M)` **lives above the fundamental class** of the base at `b`, for a map
-`p : E ⟶ B`, if its image in the local homology `H_d(E, E ∖ p⁻¹(b); M)` along the fibre is
-nonzero. For a Serre fibration over a manifold of dimension `r`, this group is
-`H_{d-r}(p⁻¹(b))`, and the condition says that the shriek map of the inclusion of the point `b`
-does not kill `α` (`TauCeti.TopCat.livesAboveFundamentalClass_iff_singularHomologyComplFiberIso`).
--/
-def LivesAboveFundamentalClass (p : E ⟶ B) (b : B) {d : ℕ}
-    (α : ((_root_.TopCat.toSSet.obj E).homology M d : ModuleCat.{u} k)) : Prop :=
-  ((TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set E)).singularHomologyπ M d).hom α ≠ 0
-
-theorem livesAboveFundamentalClass_iff (p : E ⟶ B) (b : B) {d : ℕ}
-    (α : ((_root_.TopCat.toSSet.obj E).homology M d : ModuleCat.{u} k)) :
-    LivesAboveFundamentalClass M p b α ↔
-      ((TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set E)).singularHomologyπ M d).hom α ≠ 0 :=
-  Iff.rfl
-
-variable {M}
-
-/-- The zero class does not live above the fundamental class. -/
-@[simp]
-theorem not_livesAboveFundamentalClass_zero (p : E ⟶ B) (b : B) (d : ℕ) :
-    ¬ LivesAboveFundamentalClass M p b
-      (0 : ((_root_.TopCat.toSSet.obj E).homology M d : ModuleCat.{u} k)) :=
-  fun h ↦ h (map_zero _)
-
-/-- **Pulling back along a map over the base.** If `f : E ⟶ E'` is a map over `B`, from `p` to
-`p'`, and the image `f_* α` lives above the fundamental class for `p'`, then `α` lives above the
-fundamental class for `p`. -/
-theorem LivesAboveFundamentalClass.of_map {p : E ⟶ B} {p' : E' ⟶ B} (f : E ⟶ E')
-    (hf : f ≫ p' = p) {b : B} {d : ℕ}
-    {α : ((_root_.TopCat.toSSet.obj E).homology M d : ModuleCat.{u} k)}
-    (h : LivesAboveFundamentalClass M p' b
-      ((SSet.homologyMap (_root_.TopCat.toSSet.map f) M d).hom α)) :
-    LivesAboveFundamentalClass M p b α := by
-  have hmaps : MapsTo f ((p ⁻¹' {b})ᶜ) ((p' ⁻¹' {b})ᶜ) := fun x hx ↦ by
-    simpa [← hf] using hx
-  intro hα
-  apply h
-  have := ConcreteCategory.congr_hom
-    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap f hmaps) M d) α
-  rw [TopPair.ofSubsetMap_fst] at this
-  -- The composites are stated between definitionally equal homology objects, so the element-level
-  -- identities are closed by `rfl` rather than by rewriting with `ConcreteCategory.comp_apply`.
-  calc _ = ((SSet.homologyMap (_root_.TopCat.toSSet.map f) M d ≫
-          (TopPair.ofSubset ((p' ⁻¹' {b})ᶜ : Set E')).singularHomologyπ M d).hom α) := rfl
-    _ = (TopPair.singularHomologyMap (TopPair.ofSubsetMap f hmaps) M d).hom
-          (((TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set E)).singularHomologyπ M d).hom α) := this
-    _ = 0 := by rw [hα, map_zero]
-
-variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  [T1Space B] {p : E ⟶ B} {R : Type u} [Ring R]
-  (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
-
-/-- **Living above the fundamental class through the shriek map.** For a Serre fibration over a
-`T₁` space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; R)` lives above the
-fundamental class at `b` exactly when its image under
-`Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))` is nonzero. -/
-theorem livesAboveFundamentalClass_iff_singularHomologyComplFiberIso (hp : serreFibrations p)
-    {n m : ℕ} (h : n + finrank ℝ V = m)
-    (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) m : ModuleCat.{u} R)) :
-    LivesAboveFundamentalClass (ModuleCat.of R R) p b α ↔
-      (singularHomologyComplFiberIso R e hb hp n m h).hom.hom
-        (((TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set E)).singularHomologyπ (ModuleCat.of R R) m).hom
-          α) ≠ 0 := by
-  rw [livesAboveFundamentalClass_iff, not_iff_not]
-  exact ⟨fun hα ↦ by rw [hα, map_zero], fun hα ↦ by
-    simpa using congrArg (singularHomologyComplFiberIso R e hb hp n m h).inv.hom hα⟩
-
-include hb in
-/-- **A class living above the fundamental class has degree at least the dimension of the base.**
--/
-theorem LivesAboveFundamentalClass.finrank_le (hp : serreFibrations p) {d : ℕ}
-    {α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) d : ModuleCat.{u} R)}
-    (h : LivesAboveFundamentalClass (ModuleCat.of R R) p b α) : finrank ℝ V ≤ d := by
-  by_contra hd
-  have := ModuleCat.isZero_iff_subsingleton.1 (isZero_singularHomology_complFiber R e hb hp
-    (not_le.1 hd))
-  exact h (Subsingleton.elim _ _)
-
-end LivesAbove
-
 end TopCat
 
-/-! ### The identity fibration of an oriented manifold -/
+/-! ### Classes living over the fundamental class -/
 
-namespace HomologicalOrientation
+variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {R : Type u} [Ring R]
+  (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
 
-variable {M E : Type} [TopologicalSpace M] [T2Space M]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
-  {n : ℕ} (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n) [CompactSpace M]
+/-- **Living over the fundamental class through the shriek map.** For a Serre fibration over a
+`T₁` space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; R)` lives over the
+fundamental class at `b` exactly when its image under the shriek map
+`Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))` of the inclusion of `b` is nonzero. -/
+theorem livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero
+    (hp : TopCat.serreFibrations p) {n m : ℕ} (h : n + finrank ℝ V = m)
+    (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) m : ModuleCat.{u} R)) :
+    LivesOverFundamentalClass (ModuleCat.of R R) p b α ↔
+      (TopCat.singularHomologyComplFiberIso R e hb hp n m h).hom.hom
+        ((fiberLocalization (ModuleCat.of R R) p b m).hom α) ≠ 0 := by
+  rw [livesOverFundamentalClass_iff, not_iff_not]
+  exact ⟨fun hα ↦ by rw [hα, map_zero], fun hα ↦ by
+    simpa using congrArg (TopCat.singularHomologyComplFiberIso R e hb hp n m h).inv.hom hα⟩
 
-/-- The image of `c • [M]` in the local homology at `x` is `c • o x`. -/
-private theorem singularHomologyπ_zsmul_fundamentalClass (x : M) (c : ℤ) :
-    ((TopPair.ofSubset (((𝟙 (_root_.TopCat.of M)) ⁻¹' {x})ᶜ : Set (_root_.TopCat.of M)))
-      |>.singularHomologyπ (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (c • o.fundamentalClass hn) =
-      c • (o x).val :=
-  (map_zsmul _ c _).trans (congrArg (c • ·)
-    ((o.singularHomologyπ_fundamentalClass hn isCompact_singleton).trans
-      (o.fundamentalClassOn_singleton hn x isCompact_singleton)))
-
-/-- **The fundamental class lives above itself.** For the identity fibration of a compact oriented
-manifold `M`, the fundamental class lives above the fundamental class at every point. -/
-theorem livesAboveFundamentalClass_fundamentalClass (x : M) :
-    TopCat.LivesAboveFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (𝟙 (_root_.TopCat.of M)) x
-      (o.fundamentalClass hn) := by
-  intro h
-  refine one_ne_zero (((o.zsmul_left_injective hn x).eq_iff' (zero_zsmul _)).1 ?_)
-  rw [← o.singularHomologyπ_zsmul_fundamentalClass hn x, one_zsmul]
-  exact h
-
-/-- **Classes living above the fundamental class of a manifold.** For the identity fibration of a
-compact connected oriented manifold `M`, a class of `Hₙ(M; ℤ)` lives above the fundamental class at
-a point exactly when it is a nonzero multiple of the fundamental class. -/
-theorem livesAboveFundamentalClass_id_iff [ConnectedSpace M] (x : M)
-    (γ : ((_root_.TopCat.toSSet.obj (_root_.TopCat.of M)).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) n : ModuleCat.{0} ℤ)) :
-    TopCat.LivesAboveFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (𝟙 (_root_.TopCat.of M)) x
-      γ ↔ ∃ c : ℤ, c ≠ 0 ∧ γ = c • o.fundamentalClass hn := by
-  obtain ⟨c, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hn γ
-  refine (not_congr (((congrArg (· = 0)
-    (o.singularHomologyπ_zsmul_fundamentalClass hn x c)).to_iff).trans
-      ((o.zsmul_left_injective hn x).eq_iff' (zero_zsmul _)))).trans ?_
-  refine ⟨fun hc ↦ ⟨c, hc, rfl⟩, ?_⟩
-  rintro ⟨c', hc', h⟩
-  rwa [((o.fundamentalClassEquiv hn).injective ((o.fundamentalClassEquiv_apply hn c).trans
-    (h.trans (o.fundamentalClassEquiv_apply hn c').symm)))]
-
-end HomologicalOrientation
+include hb in
+/-- **A class living over the fundamental class has degree at least the dimension of the base.**
+For a Serre fibration over a `T₁` space with a chart of dimension `r` at `b`, the local homology
+`Hₖ(E, E ∖ p⁻¹(b))` vanishes for `k < r`, so no class of degree below `r` lives over the
+fundamental class at `b`. -/
+theorem LivesOverFundamentalClass.finrank_le (hp : TopCat.serreFibrations p) {d : ℕ}
+    {α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) d : ModuleCat.{u} R)}
+    (h : LivesOverFundamentalClass (ModuleCat.of R R) p b α) : finrank ℝ V ≤ d := by
+  by_contra hd
+  have := ModuleCat.isZero_iff_subsingleton.1 (TopCat.isZero_singularHomology_complFiber R e hb hp
+    (not_le.1 hd))
+  exact (livesOverFundamentalClass_iff _ _ _ _).1 h (Subsingleton.elim _ _)
 
 end TauCeti

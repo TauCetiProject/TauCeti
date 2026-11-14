@@ -671,20 +671,14 @@ section Conj
 open scoped Pointwise
 
 /-- **Conjugation preserves discreteness**: if `H'` is the conjugate `g H g⁻¹` of a discrete
-subgroup `H` of a group with continuous translations, then `H'` is discrete, since
-`x ↦ g⁻¹ x g` embeds it in `H`. -/
+subgroup `H` of a group with continuous translations, then `H'` is discrete. This is Mathlib's
+instance for the pointwise action of `ConjAct G` on subgroups, in the form of an equation
+hypothesis. -/
 theorem discreteTopology_of_conjAct_smul_eq {G : Type*} [Group G] [TopologicalSpace G]
     [SeparatelyContinuousMul G] {H H' : _root_.Subgroup G} {g : G} [DiscreteTopology H]
     (h : ConjAct.toConjAct g • H = H') : DiscreteTopology H' := by
   subst h
-  let φ : (ConjAct.toConjAct g • H : _root_.Subgroup G) → H := fun x ↦
-    ⟨g⁻¹ * x * g, by
-      have := _root_.Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp x.2
-      rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this⟩
-  have hφ : Topology.IsEmbedding (Subtype.val ∘ φ) :=
-    ((Homeomorph.mulLeft g⁻¹).trans (Homeomorph.mulRight g)).isEmbedding.comp
-      Topology.IsEmbedding.subtypeVal
-  exact ((Topology.IsEmbedding.of_comp_iff Topology.IsEmbedding.subtypeVal).mp hφ).discreteTopology
+  infer_instance
 
 end Conj
 
