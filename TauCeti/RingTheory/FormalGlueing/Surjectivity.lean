@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
-public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.RingTheory.Localization.Module
+import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import TauCeti.RingTheory.FormalGlueing.ExtensionComparison
 import TauCeti.RingTheory.FormalGlueing.Injectivity
-import TauCeti.Algebra.Homology.Ext.Map.Surjective
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.LinearAlgebra.TensorProduct.Torsion
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
@@ -43,10 +41,6 @@ compatible with the maps to `N`, so the comparison map is onto.
 
 ## Main results
 
-* `LinearMap.existsUnique_comp_eq_of_primaryComponent_eq_top`: maps into a module with the
-  gluing property extend uniquely along injections with `I`-power torsion cokernel.
-* `LinearMap.exists_isBaseChange_comp_eq_of_primaryComponent_eq_top`: an `S`-module containing
-  `S ⊗[R] K` with `I`-power torsion cokernel is the base change of an `R`-module containing `K`.
 * `LinearMap.isBaseChange_snd_ker_coprod_of_formalGlueing`: the module of compatible pairs
   reconstructs the prescribed module on the formal neighbourhood.
 
@@ -60,108 +54,11 @@ compatible with the maps to `N`, so the comparison map is onto.
 
 public section
 
-open Function TensorProduct CategoryTheory
-open scoped ChangeOfRings
+open Function TensorProduct
 
 universe u
 
 namespace LinearMap
-
-variable {R : Type*} [CommRing R] {K E M : Type*} [AddCommGroup K] [Module R K]
-  [AddCommGroup E] [Module R E] [AddCommGroup M] [Module R M]
-
-/-- If the cokernel of `i` is `(G)`-power torsion, a single power of every generator moves a
-given element into the image of `i`. -/
-private theorem exists_forall_exists_eq_pow_smul (i : K →ₗ[R] E) (G : Finset R)
-    (hE : (Ideal.span (G : Set R)).primaryComponent (E ⧸ range i) = ⊤) (x : E) :
-    ∃ n : ℕ, ∀ a ∈ G, ∃ k : K, i k = a ^ n • x := by
-  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem _ _ _).mp
-    (hE ▸ Submodule.mem_top : (range i).mkQ x ∈ _)
-  refine ⟨n, fun a ha ↦ ?_⟩
-  have h := (Submodule.mem_torsionBySet_iff _ _).mp hn
-    ⟨_, Ideal.pow_mem_pow (Ideal.subset_span ha) n⟩
-  rwa [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at h
-
-/-- Let `M` be a module without `(G)`-power torsion in which every family `(mₐ)_{a ∈ G}` with
-`aⁿ m_b = bⁿ mₐ` is of the form `(aⁿ x)`; that is, `M` is the module of sections of its
-restriction to the cover of the complement of `V(G)` by the basic opens `D(a)`. Then maps into
-`M` extend uniquely along an injection whose cokernel is `(G)`-power torsion. -/
-theorem existsUnique_comp_eq_of_primaryComponent_eq_top (i : K →ₗ[R] E) (hi : Injective i)
-    (G : Finset R) (hE : (Ideal.span (G : Set R)).primaryComponent (E ⧸ range i) = ⊤)
-    (hM : (Ideal.span (G : Set R)).primaryComponent M = ⊥)
-    (hglue : ∀ (n : ℕ) (m : G → M), (∀ a b : G, (a : R) ^ n • m b = (b : R) ^ n • m a) →
-      ∃ x : M, ∀ a : G, (a : R) ^ n • x = m a)
-    (φ : K →ₗ[R] M) :
-    ∃! ψ : E →ₗ[R] M, ψ ∘ₗ i = φ := by
-  classical
-  -- The extension is defined pointwise: its value at `x` glues the values of `φ` at the
-  -- elements `aⁿ x ∈ range i`. Uniqueness of gluing makes it well defined and linear.
-  -- An element killed by one power of every generator vanishes.
-  have hzero (n : ℕ) (y : M) (hy : ∀ a : G, (a : R) ^ n • y = 0) : y = 0 := by
-    have : y ∈ (Ideal.span (G : Set R)).primaryComponent M :=
-      (Ideal.mem_primaryComponent_span_iff G).mpr fun a ha ↦ ⟨n, hy ⟨a, ha⟩⟩
-    rwa [hM, Submodule.mem_bot] at this
-  have htors (x : E) : ∃ n : ℕ, ∀ a : G, ∃ k : K, i k = (a : R) ^ n • x :=
-    (exists_forall_exists_eq_pow_smul i G hE x).imp fun _ h a ↦ h a a.2
-  -- `Rel x m` says that `m` is the value at `x` of every extension of `φ`.
-  let Rel (x : E) (m : M) : Prop :=
-    ∃ n : ℕ, ∀ a : G, ∃ k : K, i k = (a : R) ^ n • x ∧ (a : R) ^ n • m = φ k
-  have hunique (x : E) (m m' : M) (h : Rel x m) (h' : Rel x m') : m = m' := by
-    obtain ⟨n, hn⟩ := h
-    obtain ⟨n', hn'⟩ := h'
-    refine sub_eq_zero.mp (hzero (n + n') _ fun a ↦ ?_)
-    obtain ⟨k, hk, hkm⟩ := hn a
-    obtain ⟨k', hk', hkm'⟩ := hn' a
-    have hkk : (a : R) ^ n' • k = (a : R) ^ n • k' :=
-      hi (by rw [map_smul, map_smul, hk, hk', smul_smul, smul_smul, mul_comm])
-    have h₁ : (a : R) ^ (n + n') • m = φ ((a : R) ^ n' • k) := by
-      rw [pow_add, mul_comm, mul_smul, hkm, map_smul]
-    have h₂ : (a : R) ^ (n + n') • m' = φ ((a : R) ^ n • k') := by
-      rw [pow_add, mul_smul, hkm', map_smul]
-    rw [smul_sub, h₁, h₂, hkk, sub_self]
-  have hexists (x : E) : ∃ m, Rel x m := by
-    obtain ⟨n, hn⟩ := htors x
-    choose k hk using hn
-    obtain ⟨m, hm⟩ := hglue n (fun a ↦ φ (k a)) fun a b ↦ by
-      rw [← map_smul, ← map_smul]
-      congr 1
-      exact hi (by rw [map_smul, map_smul, hk, hk, smul_smul, smul_smul, mul_comm])
-    exact ⟨m, n, fun a ↦ ⟨k a, hk a, hm a⟩⟩
-  have hadd (x y : E) (m m' : M) (h : Rel x m) (h' : Rel y m') : Rel (x + y) (m + m') := by
-    obtain ⟨n, hn⟩ := h
-    obtain ⟨n', hn'⟩ := h'
-    refine ⟨n + n', fun a ↦ ?_⟩
-    obtain ⟨k, hk, hkm⟩ := hn a
-    obtain ⟨k', hk', hkm'⟩ := hn' a
-    refine ⟨(a : R) ^ n' • k + (a : R) ^ n • k', ?_, ?_⟩
-    · rw [map_add, map_smul, map_smul, hk, hk', smul_add, smul_smul, smul_smul, ← pow_add,
-        ← pow_add, add_comm n']
-    · rw [map_add, map_smul, map_smul, ← hkm, ← hkm', smul_add, smul_smul, smul_smul, ← pow_add,
-        ← pow_add, add_comm n']
-  have hsmul (r : R) (x : E) (m : M) (h : Rel x m) : Rel (r • x) (r • m) := by
-    obtain ⟨n, hn⟩ := h
-    refine ⟨n, fun a ↦ ?_⟩
-    obtain ⟨k, hk, hkm⟩ := hn a
-    exact ⟨r • k, by rw [map_smul, hk, smul_comm], by rw [map_smul, ← hkm, smul_comm]⟩
-  have hbase (k : K) : Rel (i k) (φ k) := ⟨0, fun _ ↦ ⟨k, by simp, by simp⟩⟩
-  let ψ : E →ₗ[R] M :=
-    { toFun x := (hexists x).choose
-      map_add' x y := hunique _ _ _ (hexists (x + y)).choose_spec
-        (hadd _ _ _ _ (hexists x).choose_spec (hexists y).choose_spec)
-      map_smul' r x := hunique _ _ _ (hexists (r • x)).choose_spec
-        (hsmul r _ _ (hexists x).choose_spec) }
-  have hψ : ψ ∘ₗ i = φ :=
-    LinearMap.ext fun k ↦ hunique _ _ _ (hexists (i k)).choose_spec (hbase k)
-  refine ⟨ψ, hψ, ?_⟩
-  -- Two extensions differ by a map killing `range i`, whose values are therefore torsion.
-  intro ψ' hψ'
-  refine LinearMap.ext fun x ↦ sub_eq_zero.mp ?_
-  obtain ⟨n, hn⟩ := htors x
-  refine hzero n _ fun a ↦ ?_
-  obtain ⟨k, hk⟩ := hn a
-  rw [smul_sub, ← map_smul, ← map_smul, ← hk, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
-    hψ', hψ, sub_self]
-
 
 section FormalGlueing
 
@@ -224,94 +121,7 @@ private theorem exists_pow_smul_mem_range_liftBaseChange_snd_ker_coprod
 -- Mathlib's `ModuleCat.extendRestrictScalarsAdj`, which underlies the Ext comparison, relates
 -- modules in one universe.
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
-
-/-- **Descent of an extension with torsion cokernel.** Let `R → S` be flat and induce
-`R/I ≅ S/IS`, where `I` is generated by a finite set `G`. Let `j : K → N` be an `R`-linear map
-into an `S`-module whose scalar extension `S ⊗[R] K → N` is injective with `I`-power torsion
-cokernel. Then `N` is the base change of an `R`-module `E` containing `K` with `I`-power torsion
-quotient, by a map `ε : E → N` restricting to `j` on `K`. -/
-theorem exists_isBaseChange_comp_eq_of_primaryComponent_eq_top {K N : Type u}
-    [AddCommGroup K] [Module R K] [AddCommGroup N] [Module R N] [Module S N]
-    [IsScalarTower R S N] (j : K →ₗ[R] N) (G : Finset R)
-    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
-      (algebraMap R S) Ideal.le_comap_map))
-    (hj : Injective (j.liftBaseChange S))
-    (hQ : (Ideal.span (G : Set R)).primaryComponent (N ⧸ range (j.liftBaseChange S)) = ⊤) :
-    ∃ (E : ModuleCat.{u} R) (i : K →ₗ[R] E) (ε : E →ₗ[R] N), Injective i ∧
-      (Ideal.span (G : Set R)).primaryComponent (E ⧸ range i) = ⊤ ∧ ε ∘ₗ i = j ∧
-        IsBaseChange S ε := by
-  classical
-  set I := Ideal.span (G : Set R)
-  set c := j.liftBaseChange S
-  set Q := N ⧸ range c
-  have hQS : (I.map (algebraMap R S)).primaryComponent Q = ⊤ := by
-    refine eq_top_iff.mpr fun q _ ↦ ?_
-    have hq := (Ideal.mem_primaryComponent_span_iff G).mp (hQ ▸ Submodule.mem_top (x := q))
-    rw [Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff]
-    intro s hs
-    obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hs
-    obtain ⟨n, hn⟩ := hq a ha
-    exact ⟨n, by rw [← map_pow, algebraMap_smul, hn]⟩
-  -- Descend the extension `0 → S ⊗ K → N → Q → 0` along extension of scalars `F`.
-  have hflat : (algebraMap R S).Flat := RingHom.flat_algebraMap_iff.mpr inferInstance
-  let F := ModuleCat.extendScalars.{u, u, u} (algebraMap R S)
-  let := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hflat
-  have hsurj : Surjective (F.mapExtAddHom (ModuleCat.of R Q) (ModuleCat.of R K) 1) :=
-    (RingHom.mapExt_one_bijective_of_primaryComponent_eq_top (algebraMap R S) hflat I
-      ⟨G, rfl⟩ hG (ModuleCat.of R Q) (ModuleCat.of R K) hQ).2
-  let eK := ModuleCat.extendScalarsAlgebraMapIso (S := S) (ModuleCat.of R K)
-  let eQ := ModuleCat.extendScalarsAlgebraMapIso (S := S) (ModuleCat.of R Q)
-  let bQ := (TauCeti.isBaseChange_of_primaryComponent_eq_top hG hQS).equiv
-  let i : F.obj (ModuleCat.of R K) ⟶ ModuleCat.of S N := eK.hom ≫ ModuleCat.ofHom c
-  let p : ModuleCat.of S N ⟶ F.obj (ModuleCat.of R Q) :=
-    ModuleCat.ofHom (bQ.symm.toLinearMap ∘ₗ (range c).mkQ) ≫ eQ.inv
-  have hi (x) : i x = c (eK.hom x) := rfl
-  have hp (y : N) : p y = eQ.symm.toLinearEquiv (bQ.symm ((range c).mkQ y)) := rfl
-  have hp0 (y : N) : p y = 0 ↔ y ∈ range c := by
-    rw [hp, LinearEquiv.map_eq_zero_iff, LinearEquiv.map_eq_zero_iff, Submodule.mkQ_apply,
-      Submodule.Quotient.mk_eq_zero]
-  have hip : i ≫ p = 0 := by
-    refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
-    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_zero,
-      LinearMap.zero_apply] using (hp0 (i x)).mpr ⟨_, (hi x).symm⟩
-  have hT : (ShortComplex.mk i p hip).ShortExact := by
-    refine ModuleCat.shortComplex_shortExact _ (fun y ↦ (hp0 y).trans ?_) ?_ ?_
-    · refine ⟨fun ⟨x, hx⟩ ↦ ⟨eK.inv x, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨eK.hom x, hx⟩⟩
-      simpa only [hi, Iso.inv_hom_id_apply] using hx
-    · exact hj.comp eK.toLinearEquiv.injective
-    · exact eQ.symm.toLinearEquiv.surjective.comp
-        (bQ.symm.surjective.comp (range c).mkQ_surjective)
-  obtain ⟨E, i₀, p₀, hi₀p₀, hS, e, he₁, -⟩ :=
-    F.exists_shortExact_map_of_mapExt_one_surjective _ _ hsurj i p hip hT
-  -- Read off the descended extension as linear maps.
-  have hex : Function.Exact i₀ p₀ :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hS.exact
-  have hE : I.primaryComponent (E ⧸ range i₀.hom) = ⊤ := by
-    refine eq_top_iff.mpr fun q _ ↦ ?_
-    obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-    refine (Ideal.mem_primaryComponent_span_iff G).mpr fun a ha ↦ ?_
-    obtain ⟨n, hn⟩ := (Ideal.mem_primaryComponent_span_iff G).mp
-      (hQ ▸ Submodule.mem_top (x := p₀ x)) a ha
-    obtain ⟨k, hk⟩ := (hex _).mp (by rw [map_smul, hn])
-    refine ⟨n, ?_⟩
-    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, ← hk]
-    exact LinearMap.mem_range_self _ k
-  let eL : S ⊗[R] E ≃ₗ[S] N :=
-    ((ModuleCat.extendScalarsAlgebraMapIso E).symm ≪≫ e).toLinearEquiv
-  let ε : E →ₗ[R] N := eL.toLinearMap.restrictScalars R ∘ₗ TensorProduct.mk R S E 1
-  have hε (x : E) : ε x = eL (1 ⊗ₜ x) := rfl
-  have he (y) : e.hom (F.map i₀ y) = i y := by rw [← he₁, ConcreteCategory.comp_apply]
-  refine ⟨E, i₀.hom, ε, hS.moduleCat_injective_f, hE, LinearMap.ext fun k ↦ ?_,
-    IsBaseChange.of_equiv eL fun x ↦ (hε x).symm⟩
-  have h : F.map i₀ (eK.inv ((1 : S) ⊗ₜ[R] k)) =
-      (ModuleCat.extendScalarsAlgebraMapIso E).inv ((1 : S) ⊗ₜ[R] i₀ k) := by
-    rw [ModuleCat.extendScalarsAlgebraMapIso_inv_tmul,
-      ModuleCat.extendScalarsAlgebraMapIso_inv_tmul]
-    exact ModuleCat.ExtendScalars.map_tmul _ _ _ _
-  rw [LinearMap.comp_apply, hε, Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom,
-    ConcreteCategory.comp_apply, ← h, he, hi, Iso.inv_hom_id_apply, liftBaseChange_tmul, one_smul]
-
-variable {M N P : Type u} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {M N P : Type u} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [Module S N] [IsScalarTower R S N] [AddCommGroup P] [Module R P] [Module S P]
   [IsScalarTower R S P]
 
