@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Conj.Prod
 public import TauCeti.RepresentationTheory.Tensor.External
+public import TauCeti.RepresentationTheory.CharacterTable.ExternalProduct
 public import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.FDRep.Basic
 
@@ -24,15 +25,14 @@ of rows of the tables of `G` and `H`, the row of `(i, j)` carrying the character
 `(g, h) ↦ χᵢ(g) χⱼ(h)`. Its columns correspond to pairs of conjugacy classes. Under these two
 relabellings the table of `G × H` is the Kronecker product of the two tables.
 
-Class functions of the two factors combine in the same way: their external product
-`(g, h) ↦ f(g) f'(h)` is a class function of `G × H`, and for two characters it is the character
-of the external tensor product.
+Class functions of the two factors combine in the same way: for two characters, their external
+product `TauCeti.ClassFunction.externalProduct`, `(g, h) ↦ f(g) f'(h)`, is the character of the
+external tensor product.
 
 ## Main definitions
 
 * `TauCeti.irreducibleIndexProdEquiv`: the rows of the character table of `G × H` as pairs of
   rows of the tables of `G` and `H`.
-* `TauCeti.ClassFunction.externalProduct`: the external product of class functions of `G` and `H`.
 
 ## Main results
 
@@ -232,26 +232,6 @@ namespace TauCeti
 /-! ### External products of class functions -/
 
 namespace ClassFunction
-
-section ExternalProduct
-
-variable {k G H : Type*} [Semiring k] [Group G] [Group H]
-
-/-- The **external product** of a class function `f` of `G` and a class function `g` of `H` is the
-class function `(x, y) ↦ f(x) g(y)` of `G × H`. For two characters it is the character of the
-external tensor product (`TauCeti.ClassFunction.ofCharacter_externalTensor`). -/
-def externalProduct (f : ClassFunction k G) (g : ClassFunction k H) : ClassFunction k (G × H) :=
-  ⟨fun p => f.1 p.1 * g.1 p.2, mem_iff.2 fun p c => by
-    simp only [Prod.fst_mul, Prod.snd_mul, Prod.fst_inv, Prod.snd_inv, mem_iff.1 f.2 p.1 c.1,
-      mem_iff.1 g.2 p.2 c.2]⟩
-
-/-- The external product evaluates to the product of the values on the two components. -/
-@[simp]
-theorem externalProduct_apply (f : ClassFunction k G) (g : ClassFunction k H) (p : G × H) :
-    (externalProduct f g).1 p = f.1 p.1 * g.1 p.2 :=
-  (rfl)
-
-end ExternalProduct
 
 /-- The class function of an external tensor product of finite-dimensional representations is the
 external product of the class functions of the factors. It is not a `simp` lemma, since

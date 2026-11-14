@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.External
+public import TauCeti.RepresentationTheory.CharacterTable.ExternalProduct
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Symmetric.FrobeniusCharacteristic
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
@@ -33,8 +33,6 @@ union of the cycle types of its blocks, and the average splits as a product.
 
 ## Main definitions
 
-* `Equiv.Perm.finSumPermEquivRange m n`: `Sₘ × Sₙ` is isomorphic to the block subgroup, the range of
-  `Equiv.Perm.finSumPermHom m n`.
 * `TauCeti.ClassFunction.inductionProduct f g`: the induction product of class functions of `Sₘ`
   and `Sₙ`, a class function of `S_(m+n)`.
 
@@ -43,8 +41,6 @@ union of the cycle types of its blocks, and the average splits as a product.
 * `TauCeti.frobeniusCharacteristic_indClassFunction`: for a subgroup `S` of `Sₙ`, the Frobenius
   characteristic of a class function induced from `S` is the average over `S` of the power-sum
   products, `ch(Ind_S^(Sₙ) F) = (1 / |S|) ∑_(s ∈ S) F(s) p_(ρ(s))`.
-* `TauCeti.psumPart_partition_finSumPerm`: the power-sum product of a block permutation is the
-  product of the power-sum products of its blocks.
 * `TauCeti.frobeniusCharacteristic_inductionProduct`: **the Frobenius characteristic is
   multiplicative**, `ch(f ∘ g) = ch(f) · ch(g)`.
 
@@ -58,33 +54,6 @@ union of the cycle types of its blocks, and the average splits as a product.
 public section
 
 open Equiv MvPolynomial
-
-namespace Equiv.Perm
-
-variable (m n : ℕ)
-
-/-- `Sₘ × Sₙ` is isomorphic to the block subgroup, the range of the block embedding
-`Equiv.Perm.finSumPermHom m n`: the subgroup of permutations of `Fin (m + n)` preserving the first
-`m` points. -/
-noncomputable def finSumPermEquivRange :
-    Perm (Fin m) × Perm (Fin n) ≃* (finSumPermHom m n).range :=
-  MonoidHom.ofInjective (finSumPermHom_injective m n)
-
-variable {m n}
-
-/-- The image of a pair of permutations in the block subgroup is their block sum. -/
-@[simp]
-theorem coe_finSumPermEquivRange (p : Perm (Fin m) × Perm (Fin n)) :
-    (finSumPermEquivRange m n p : Perm (Fin (m + n))) = finSumPerm p.1 p.2 :=
-  (MonoidHom.ofInjective_apply _).trans (finSumPermHom_apply p)
-
-/-- An element of the block subgroup is the block sum of its two blocks. -/
-@[simp]
-theorem finSumPerm_finSumPermEquivRange_symm (s : (finSumPermHom m n).range) :
-    finSumPerm ((finSumPermEquivRange m n).symm s).1 ((finSumPermEquivRange m n).symm s).2 = s := by
-  rw [← coe_finSumPermEquivRange, MulEquiv.apply_symm_apply]
-
-end Equiv.Perm
 
 namespace TauCeti
 
@@ -102,12 +71,52 @@ noncomputable def inductionProduct (f : ClassFunction k (Perm (Fin m)))
 
 /-- The induction product is induced from the external product, transported to the block
 subgroup along `Equiv.Perm.finSumPermEquivRange`. -/
-theorem inductionProduct_eq (f : ClassFunction k (Perm (Fin m)))
+theorem inductionProduct_def (f : ClassFunction k (Perm (Fin m)))
     (g : ClassFunction k (Perm (Fin n))) :
     inductionProduct f g =
       Subgroup.indClassFunction (Perm.finSumPermHom m n).range
         (comap (Perm.finSumPermEquivRange m n).symm.toMonoidHom (externalProduct f g)) :=
   (rfl)
+
+/-- The induction product with the zero class function on the left is zero. -/
+@[simp]
+theorem inductionProduct_zero_left (g : ClassFunction k (Perm (Fin n))) :
+    inductionProduct (0 : ClassFunction k (Perm (Fin m))) g = 0 := by
+  simp only [inductionProduct_def, externalProduct_zero_left, map_zero]
+
+/-- The induction product with the zero class function on the right is zero. -/
+@[simp]
+theorem inductionProduct_zero_right (f : ClassFunction k (Perm (Fin m))) :
+    inductionProduct f (0 : ClassFunction k (Perm (Fin n))) = 0 := by
+  simp only [inductionProduct_def, externalProduct_zero_right, map_zero]
+
+/-- The induction product is additive in its left factor. -/
+@[simp]
+theorem inductionProduct_add_left (f₁ f₂ : ClassFunction k (Perm (Fin m)))
+    (g : ClassFunction k (Perm (Fin n))) :
+    inductionProduct (f₁ + f₂) g = inductionProduct f₁ g + inductionProduct f₂ g := by
+  simp only [inductionProduct_def, externalProduct_add_left, map_add]
+
+/-- The induction product is additive in its right factor. -/
+@[simp]
+theorem inductionProduct_add_right (f : ClassFunction k (Perm (Fin m)))
+    (g₁ g₂ : ClassFunction k (Perm (Fin n))) :
+    inductionProduct f (g₁ + g₂) = inductionProduct f g₁ + inductionProduct f g₂ := by
+  simp only [inductionProduct_def, externalProduct_add_right, map_add]
+
+/-- The induction product is linear in its left factor. -/
+@[simp]
+theorem inductionProduct_smul_left (c : k) (f : ClassFunction k (Perm (Fin m)))
+    (g : ClassFunction k (Perm (Fin n))) :
+    inductionProduct (c • f) g = c • inductionProduct f g := by
+  simp only [inductionProduct_def, externalProduct_smul_left, map_smul]
+
+/-- Over a commutative semiring, the induction product is linear in its right factor. -/
+@[simp]
+theorem inductionProduct_smul_right {k : Type*} [CommSemiring k] (c : k)
+    (f : ClassFunction k (Perm (Fin m))) (g : ClassFunction k (Perm (Fin n))) :
+    inductionProduct f (c • g) = c • inductionProduct f g := by
+  simp only [inductionProduct_def, externalProduct_smul_right, map_smul]
 
 end ClassFunction
 
@@ -147,17 +156,10 @@ theorem frobeniusCharacteristic_indClassFunction {n : ℕ} (h : n ≤ Fintype.ca
 
 variable {m n : ℕ}
 
-/-- The power-sum product of the cycle type of a block permutation is the product of the
-power-sum products of the cycle types of its two blocks. -/
-theorem psumPart_partition_finSumPerm (R : Type*) [CommSemiring R] (a : Perm (Fin m))
-    (b : Perm (Fin n)) :
-    psumPart σ R (Perm.finSumPerm a b).partition =
-      psumPart σ R a.partition * psumPart σ R b.partition := by
-  simp only [psumPart, Perm.parts_partition_finSumPerm, Multiset.map_add, Multiset.prod_add]
-
 /-- **The Frobenius characteristic is multiplicative**: in an alphabet of at least `m + n` letters,
 the Frobenius characteristic of the induction product of class functions `f` of `Sₘ` and `g` of
 `Sₙ` is the product of their Frobenius characteristics, `ch(f ∘ g) = ch(f) · ch(g)`. -/
+@[simp]
 theorem frobeniusCharacteristic_inductionProduct (h : m + n ≤ Fintype.card σ)
     (f : ClassFunction ℂ (Perm (Fin m))) (g : ClassFunction ℂ (Perm (Fin n))) :
     (frobeniusCharacteristic σ (m + n) h (ClassFunction.inductionProduct f g) :
@@ -166,10 +168,8 @@ theorem frobeniusCharacteristic_inductionProduct (h : m + n ≤ Fintype.card σ)
         frobeniusCharacteristic σ n ((Nat.le_add_left n m).trans h) g := by
   classical
   let e := Perm.finSumPermEquivRange m n
-  have hS : Nat.card (Perm.finSumPermHom m n).range = m.factorial * n.factorial := by
-    rw [← Nat.card_congr e.toEquiv, Nat.card_prod, Nat.card_perm, Nat.card_perm,
-      Nat.card_eq_fintype_card, Fintype.card_fin, Nat.card_eq_fintype_card, Fintype.card_fin]
-  rw [ClassFunction.inductionProduct_eq, frobeniusCharacteristic_indClassFunction, hS,
+  rw [ClassFunction.inductionProduct_def, frobeniusCharacteristic_indClassFunction,
+    Perm.card_range_finSumPermHom,
     frobeniusCharacteristic_eq_sum_psumPart, frobeniusCharacteristic_eq_sum_psumPart]
   -- transport the average over the block subgroup to `Sₘ × Sₙ`, where it splits as a product
   rw [Finset.sum_equiv e.toEquiv.symm (t := Finset.univ)

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.FiberSubgroup
+public import TauCeti.GroupTheory.Perm.SumCongr
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
@@ -36,6 +37,8 @@ characters of the Young permutation modules.
 * `TauCeti.psumPart_isSymmetric` and `TauCeti.isHomogeneous_psumPart`: a product of power sums
   over a partition of `n` is symmetric and homogeneous of degree `n`, that is, it lies in
   `TauCeti.symmetricHomogeneousSubmodule` (`TauCeti.psumPart_mem_symmetricHomogeneousSubmodule`).
+* `TauCeti.psumPart_partition_finSumPerm`: the power-sum product of a block permutation is the
+  product of the power-sum products of its two blocks.
 * `TauCeti.psumPart_partition_eq_sum_prod_X`: **the power-sum product over the cycle type of `π`
   is the generating function of the `π`-invariant colourings.**
 * `TauCeti.coeff_psumPart_partition`: its coefficient at `x^d` counts the `π`-invariant colourings
@@ -97,6 +100,15 @@ partitions. -/
 theorem psumPart_mem_symmetricHomogeneousSubmodule [Fintype σ] {n : ℕ} (μ : n.Partition) :
     psumPart σ R μ ∈ symmetricHomogeneousSubmodule σ R n :=
   mem_symmetricHomogeneousSubmodule.mpr ⟨psumPart_isSymmetric R μ, isHomogeneous_psumPart R μ⟩
+
+/-- The power-sum product of the cycle type of a block permutation is the product of the
+power-sum products of the cycle types of its two blocks. -/
+@[simp]
+theorem psumPart_partition_finSumPerm [Fintype σ] {m n : ℕ} (a : Perm (Fin m))
+    (b : Perm (Fin n)) :
+    psumPart σ R (finSumPerm a b).partition =
+      psumPart σ R a.partition * psumPart σ R b.partition := by
+  simp only [psumPart, parts_partition_finSumPerm, Multiset.map_add, Multiset.prod_add]
 
 variable {α : Type*}
 

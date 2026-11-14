@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.SwapFactors
+import Mathlib.Data.Finite.Perm
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.Basic
 
@@ -38,7 +40,9 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
-* `Equiv.Perm.finSumPermHom_injective`: a block permutation determines its two blocks.
+* `Equiv.Perm.finSumPermHom_injective`: a block permutation determines its two blocks, so
+  `Equiv.Perm.finSumPermEquivRange` identifies `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)` with the
+  block subgroup, of order `m! n!` (`Equiv.Perm.card_range_finSumPermHom`).
 * `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
 * `Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm`: the cyclic rotation of `Fin (m + n)` is the
   blockwise rotation followed by one transposition between the blocks.
@@ -347,6 +351,39 @@ theorem finSumPermHom_injective (m n : ℕ) : Function.Injective (finSumPermHom 
   refine Prod.ext (Equiv.ext fun i => ?_) (Equiv.ext fun j => ?_)
   · simpa using congr($hpq (Fin.castAdd n i))
   · simpa using congr($hpq (Fin.natAdd m j))
+
+/-- `Sₘ × Sₙ` is isomorphic to the block subgroup, the range of the block embedding
+`Equiv.Perm.finSumPermHom m n`: the subgroup of permutations of `Fin (m + n)` preserving the first
+`m` points. -/
+noncomputable def finSumPermEquivRange (m n : ℕ) :
+    Perm (Fin m) × Perm (Fin n) ≃* (finSumPermHom m n).range :=
+  MonoidHom.ofInjective (finSumPermHom_injective m n)
+
+/-- The image of a pair of permutations in the block subgroup is their block sum. -/
+@[simp]
+theorem coe_finSumPermEquivRange (p : Perm (Fin m) × Perm (Fin n)) :
+    (finSumPermEquivRange m n p : Perm (Fin (m + n))) = finSumPerm p.1 p.2 :=
+  (MonoidHom.ofInjective_apply _).trans (finSumPermHom_apply p)
+
+/-- The block sum `σ ⊕ τ`, as an element of the block subgroup, corresponds to the pair `(σ, τ)`. -/
+@[simp]
+theorem finSumPermEquivRange_symm_mk (σ : Perm (Fin m)) (τ : Perm (Fin n))
+    (h : finSumPerm σ τ ∈ (finSumPermHom m n).range) :
+    (finSumPermEquivRange m n).symm ⟨finSumPerm σ τ, h⟩ = (σ, τ) :=
+  (MulEquiv.symm_apply_eq _).2 (Subtype.ext (coe_finSumPermEquivRange (σ, τ)).symm)
+
+/-- An element of the block subgroup is the block sum of its two blocks. -/
+@[simp]
+theorem finSumPerm_finSumPermEquivRange_symm (s : (finSumPermHom m n).range) :
+    finSumPerm ((finSumPermEquivRange m n).symm s).1 ((finSumPermEquivRange m n).symm s).2 = s := by
+  rw [← coe_finSumPermEquivRange, MulEquiv.apply_symm_apply]
+
+/-- The block subgroup `Sₘ × Sₙ` of `S_(m+n)` has order `m! n!`. -/
+theorem card_range_finSumPermHom (m n : ℕ) :
+    Nat.card (finSumPermHom m n).range = m.factorial * n.factorial := by
+  rw [← Nat.card_congr (finSumPermEquivRange m n).toEquiv, Nat.card_prod, Nat.card_perm,
+    Nat.card_perm, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.card_eq_fintype_card,
+    Fintype.card_fin]
 
 @[simp]
 theorem finSumPerm_one :
