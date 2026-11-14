@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RowCompact
-public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
 
 /-!
 # Complete continuity implies row compactness
@@ -57,7 +57,7 @@ theory itself, and the implication from row compactness to complete continuity, 
 
 public section
 
-open Filter Topology ZeroAtInftyContinuousMap
+open Filter ZeroAtInftyContinuousMap
 open scoped ZeroAtInfty
 
 variable {I J R : Type*} [TopologicalSpace I] [DiscreteTopology I] [TopologicalSpace J]
