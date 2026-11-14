@@ -78,9 +78,10 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-/-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
-`|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
-private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
+/-- **A single time pairing.** If the time pairings decay from `L^{r'}` to `L^r`,
+`‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-γ) ‖g‖_{r'}` for `s ≠ t`, then for `s ≠ t`,
+`|⟪U(s)* f, U(t)* g⟫| ≤ A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
+theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
