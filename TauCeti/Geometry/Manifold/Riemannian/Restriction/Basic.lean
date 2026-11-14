@@ -284,6 +284,22 @@ theorem inner_tangentSpace_open
       (tangentSpaceOpenEquiv (I := I) x v) (tangentSpaceOpenEquiv (I := I) x w) := by
   exact Bundle.RiemannianMetric.restrictOpenTangentSpace_inner RiemannianBundle.g U x v w
 
+/-- On an open subset of a real inner product space, the inherited tangent inner product
+is the ambient inner product of the coordinate velocities. -/
+theorem inner_tangentSpace_open_vectorSpace
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (U : Opens F) (x : U) (v w : TangentSpace 𝓘(ℝ, F) x) :
+    letI := instRiemannianBundleOpen (I := 𝓘(ℝ, F)) U
+    inner ℝ v w = inner ℝ
+      (mvfderiv 𝓘(ℝ, F) (Subtype.val : U → F) x v)
+      (mvfderiv 𝓘(ℝ, F) (Subtype.val : U → F) x w) := by
+  rw [inner_tangentSpace_open]
+  simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_subtype_val,
+    ContinuousLinearEquiv.coe_coe]
+  -- The native model-space metric is the inner product transported along
+  -- `NormedSpace.fromTangentSpace`.
+  rfl
+
 /-- The norm installed on an open submanifold is the ambient Riemannian norm under the canonical
 tangent-space identification. -/
 @[simp]
