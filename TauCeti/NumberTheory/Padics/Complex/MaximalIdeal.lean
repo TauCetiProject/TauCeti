@@ -29,19 +29,20 @@ open scoped NNReal
 
 variable (p : ℕ) [Fact p.Prime]
 
+/-- The prime `p` lies in the maximal ideal of the ring of integers of `ℂ_p`. -/
+theorem natCast_mem_maximalIdeal : (p : 𝓞_ℂ_[p]) ∈ maximalIdeal 𝓞_ℂ_[p] := by
+  have hp : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
+    rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
+    exact (div_lt_one (zero_lt_one.trans hp)).mpr hp
+  exact (Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv
+
 /-- The maximal ideal of the ring of integers of `ℂ_p` is not finitely generated. -/
 theorem not_fg_maximalIdeal : ¬ (maximalIdeal 𝓞_ℂ_[p]).FG := by
-  have hp : (1 : ℝ≥0) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-  have hpv : Valued.v (p : ℂ_[p]) < 1 := by
-    rw [PadicComplex.valuation_p]
-    exact (div_lt_one (zero_lt_one.trans hp)).mpr hp
-  let x : 𝓞_ℂ_[p] := ⟨p, hpv.le⟩
-  have hx : x ∈ maximalIdeal 𝓞_ℂ_[p] :=
-    (Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv
   have hne : maximalIdeal 𝓞_ℂ_[p] ≠ ⊥ := by
     intro h
-    have hx0 : x = 0 := by simpa [h] using hx
-    have : (p : ℂ_[p]) = 0 := congrArg Subtype.val hx0
+    have hx0 : (p : 𝓞_ℂ_[p]) = 0 := by simpa [h] using natCast_mem_maximalIdeal p
+    have : (p : ℂ_[p]) = 0 := by simpa using congrArg Subtype.val hx0
     exact (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) this
   exact (ValuationRing.isIdempotentElem_maximalIdeal_iff hne).mp
     (Valuation.isIdempotentElem_maximalIdeal_of_isAlgClosed (PadicComplex.valued p).v)

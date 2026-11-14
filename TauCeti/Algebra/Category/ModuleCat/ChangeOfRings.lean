@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.Localization
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
@@ -29,7 +30,10 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
   `T⁻¹R ⊗_R M` is isomorphic to the localized module `T⁻¹M` as a `T⁻¹R`-module, by
   `s ⊗ m ↦ s • m / 1` (`ModuleCat.extendScalarsLocalizationIso`). This identifies the
   restriction of the quasi-coherent sheaf `M~` on `Spec R` to a basic open `D(r)` with the sheaf
-  associated with `M_r` on `Spec R_r`.
+  associated with `M_r` on `Spec R_r`. Removing `Shrink` from `ModuleCat.localizedModuleFunctor`
+  (`ModuleCat.localizedModuleObjIso`) assembles these objectwise comparisons into a natural
+  isomorphism `ModuleCat.extendScalarsIsoLocalizedModuleFunctor` between extension of scalars to
+  `T⁻¹R` and `ModuleCat.localizedModuleFunctor T`.
 
 Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars is the tensor
 product `S ⊗[R] M` taken with the algebra module structure of `S`
@@ -192,6 +196,130 @@ theorem extendScalarsLocalizationIso_inv_mk (m : M) (t : T) :
       (by rw [mul_one])
 
 end Localization
+
+section LocalizedModuleFunctor
+
+variable {R : Type u} [CommRing R]
+
+/-- Removing `Shrink.{u}` from `(ModuleCat.localizedModuleFunctor.{u} T).obj M` identifies it with
+`LocalizedModule T M` when `R` and `M` live in universe `u`. -/
+noncomputable def localizedModuleObjIso (M : ModuleCat.{u} R) (T : Submonoid R) :
+    (localizedModuleFunctor.{u} T).obj M ≅ of (Localization T) (LocalizedModule T M) :=
+  (Shrink.linearEquiv.{u} (Localization T) (LocalizedModule T M)).toModuleIso
+
+/-- `localizedModuleObjIso` sends the canonical localization image of `m` to `m / 1`. -/
+@[simp]
+theorem localizedModuleObjIso_hom_mkLinearMap (M : ModuleCat.{u} R) (T : Submonoid R) (m : M) :
+    (M.localizedModuleObjIso T).hom (M.localizedModuleMkLinearMap T m) =
+      LocalizedModule.mk m 1 := by
+  -- Both `Shrink.linearEquiv` maps come from the same underlying `equivShrink`.
+  change Shrink.linearEquiv.{u} (Localization T) (LocalizedModule T M)
+    ((Shrink.linearEquiv.{u} R (LocalizedModule T M)).symm (LocalizedModule.mk m 1)) = _
+  simp
+
+/-- The inverse of `localizedModuleObjIso` sends `m / 1` to the canonical localization image of
+`m`. -/
+@[simp]
+theorem localizedModuleObjIso_inv_mk_one (M : ModuleCat.{u} R) (T : Submonoid R) (m : M) :
+    (M.localizedModuleObjIso T).inv (LocalizedModule.mk m 1) =
+      M.localizedModuleMkLinearMap T m := by
+  rw [← M.localizedModuleObjIso_hom_mkLinearMap T m]
+  exact ConcreteCategory.congr_hom (M.localizedModuleObjIso T).hom_inv_id
+    (M.localizedModuleMkLinearMap T m)
+
+/-- Naturality of `localizedModuleObjIso`: `(localizedModuleFunctor T).map f` corresponds to
+`LocalizedModule.map T f.hom`. -/
+@[reassoc]
+theorem localizedModuleObjIso_naturality (T : Submonoid R) {M₁ M₂ : ModuleCat.{u} R}
+    (f : M₁ ⟶ M₂) :
+    (localizedModuleFunctor.{u} T).map f ≫ (M₂.localizedModuleObjIso T).hom =
+      (M₁.localizedModuleObjIso T).hom ≫ ofHom (LocalizedModule.map T f.hom) := by
+  rw [localizedModuleFunctor_map]
+  -- Express the domain as `M₁.localizedModule T` so `Module R` and `IsScalarTower R` are found.
+  change localizedModuleMap T f ≫ (M₂.localizedModuleObjIso T).hom =
+    (M₁.localizedModuleObjIso T).hom ≫ ofHom (LocalizedModule.map T f.hom)
+  apply hom_ext
+  apply LinearMap.restrictScalars_injective R
+  apply IsLocalizedModule.linearMap_ext T (M₁.localizedModuleMkLinearMap T)
+    (LocalizedModule.mkLinearMap T M₂)
+  ext x
+  -- Evaluate both `ModuleCat` composites directly on `M₁.localizedModuleMkLinearMap T x`.
+  change (M₂.localizedModuleObjIso T).hom
+      ((IsLocalizedModule.mapExtendScalars T (M₁.localizedModuleMkLinearMap T)
+        (M₂.localizedModuleMkLinearMap T) (Localization T) f.hom)
+        (M₁.localizedModuleMkLinearMap T x)) =
+    LocalizedModule.map T f.hom
+      ((M₁.localizedModuleObjIso T).hom (M₁.localizedModuleMkLinearMap T x))
+  calc (M₂.localizedModuleObjIso T).hom
+        ((IsLocalizedModule.mapExtendScalars T (M₁.localizedModuleMkLinearMap T)
+          (M₂.localizedModuleMkLinearMap T) (Localization T) f.hom)
+          (M₁.localizedModuleMkLinearMap T x))
+      = (M₂.localizedModuleObjIso T).hom (M₂.localizedModuleMkLinearMap T (f.hom x)) :=
+        congrArg (M₂.localizedModuleObjIso T).hom
+          (IsLocalizedModule.map_apply T (M₁.localizedModuleMkLinearMap T)
+            (M₂.localizedModuleMkLinearMap T) f.hom x)
+    _ = LocalizedModule.mk (f.hom x) 1 :=
+        M₂.localizedModuleObjIso_hom_mkLinearMap T (f.hom x)
+    _ = LocalizedModule.map T f.hom (LocalizedModule.mk x 1) :=
+        (LocalizedModule.map_mk T f.hom x 1).symm
+    _ = LocalizedModule.map T f.hom
+          ((M₁.localizedModuleObjIso T).hom (M₁.localizedModuleMkLinearMap T x)) :=
+        congrArg (LocalizedModule.map T f.hom)
+          (M₁.localizedModuleObjIso_hom_mkLinearMap T x).symm
+
+/-- Extension of scalars to `Localization T` is naturally isomorphic to
+`ModuleCat.localizedModuleFunctor T`. -/
+noncomputable def extendScalarsIsoLocalizedModuleFunctor (T : Submonoid R) :
+    extendScalars.{u, u, u} (algebraMap R (Localization T)) ≅ localizedModuleFunctor.{u} T :=
+  NatIso.ofComponents
+    (fun M ↦ M.extendScalarsLocalizationIso T ≪≫ (M.localizedModuleObjIso T).symm)
+    fun {M₁ M₂} f ↦ by
+      rw [← cancel_mono (M₂.localizedModuleObjIso T).hom]
+      simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc, Iso.inv_hom_id, Category.comp_id,
+        localizedModuleObjIso_naturality, Iso.inv_hom_id_assoc]
+      apply ExtendScalars.hom_ext
+      intro x
+      -- Express `1 ⊗ₜ x` with the `ChangeOfRings` tensor notation and evaluate both composites.
+      change (M₂.extendScalarsLocalizationIso T).hom
+          ((extendScalars (algebraMap R (Localization T))).map f
+            ((1 : Localization T) ⊗ₜ[R, algebraMap R (Localization T)] x)) =
+        (ofHom (LocalizedModule.map T f.hom))
+          ((M₁.extendScalarsLocalizationIso T).hom
+            ((1 : Localization T) ⊗ₜ[R, algebraMap R (Localization T)] x))
+      calc (M₂.extendScalarsLocalizationIso T).hom
+            ((extendScalars (algebraMap R (Localization T))).map f
+              ((1 : Localization T) ⊗ₜ[R, algebraMap R (Localization T)] x))
+          = (M₂.extendScalarsLocalizationIso T).hom
+              ((1 : Localization T) ⊗ₜ[R, algebraMap R (Localization T)] f x) :=
+            congrArg (M₂.extendScalarsLocalizationIso T).hom
+              (ExtendScalars.map_tmul (algebraMap R (Localization T)) f 1 x)
+        _ = LocalizedModule.mk (f x) 1 :=
+            M₂.extendScalarsLocalizationIso_hom_one_tmul T (f x)
+        _ = (ofHom (LocalizedModule.map T f.hom)) (LocalizedModule.mk x 1) :=
+            (LocalizedModule.map_mk T f.hom x 1).symm
+        _ = (ofHom (LocalizedModule.map T f.hom))
+              ((M₁.extendScalarsLocalizationIso T).hom
+                ((1 : Localization T) ⊗ₜ[R, algebraMap R (Localization T)] x)) :=
+            congrArg (ofHom (LocalizedModule.map T f.hom))
+              (M₁.extendScalarsLocalizationIso_hom_one_tmul T x).symm
+
+/-- The forward component of `extendScalarsIsoLocalizedModuleFunctor` is
+`extendScalarsLocalizationIso` followed by the inverse of `localizedModuleObjIso`. -/
+@[simp]
+theorem extendScalarsIsoLocalizedModuleFunctor_hom_app (T : Submonoid R) (M : ModuleCat.{u} R) :
+    (extendScalarsIsoLocalizedModuleFunctor T).hom.app M =
+      (M.extendScalarsLocalizationIso T).hom ≫ (M.localizedModuleObjIso T).inv :=
+  (rfl)
+
+/-- The inverse component of `extendScalarsIsoLocalizedModuleFunctor` is
+`localizedModuleObjIso` followed by the inverse of `extendScalarsLocalizationIso`. -/
+@[simp]
+theorem extendScalarsIsoLocalizedModuleFunctor_inv_app (T : Submonoid R) (M : ModuleCat.{u} R) :
+    (extendScalarsIsoLocalizedModuleFunctor T).inv.app M =
+      (M.localizedModuleObjIso T).hom ≫ (M.extendScalarsLocalizationIso T).inv := by
+  simp [extendScalarsIsoLocalizedModuleFunctor]
+
+end LocalizedModuleFunctor
 
 section AlgebraMap
 
