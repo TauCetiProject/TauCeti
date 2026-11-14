@@ -13,6 +13,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Data.Finsupp.Order
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.Data.Sym.NatCard
 
 /-!
 # Weights of finitely supported functions
@@ -298,14 +299,15 @@ theorem card_degree_eq (σ : Type*) [Fintype σ] (n : ℕ)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]).trans ?_
   rw [Finset.card_finsuppAntidiag_nat_eq_multichoose, Finset.card_univ]
 
-/-- The `Nat.card` of exponent vectors of degree `n` in finitely many variables `σ` is
+/-- The `Nat.card` of exponent vectors of degree `n` in variables `σ` is
 `(Nat.card σ).multichoose n`. -/
 @[simp]
-theorem natCard_degree_eq (σ : Type*) [Finite σ] (n : ℕ) :
+theorem natCard_degree_eq (σ : Type*) (n : ℕ) :
     Nat.card {s : σ →₀ ℕ // s.degree = n} = (Nat.card σ).multichoose n := by
   classical
-  cases nonempty_fintype σ
-  simp [Nat.card_eq_fintype_card]
+  have e : {s : σ →₀ ℕ // s.degree = n} ≃ Sym σ n :=
+    (Equiv.subtypeEquivRight fun s ↦ by rw [degree_apply]; rfl).trans (Sym.equivNatSum σ n).symm
+  rw [Nat.card_congr e, Sym.natCard_sym_eq_multichoose]
 
 /-- The number of exponent vectors of degree at most `n` in `Fintype.card σ` variables is
 `(Fintype.card σ + n).choose (Fintype.card σ)`. -/

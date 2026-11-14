@@ -35,12 +35,20 @@ finiteness of attained values are established.
 ## Main results
 
 * `TauCeti.eventually_le_of_upperSemicontinuousWithinAt`,
-  `TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt`: coordinatewise upper (resp. lower)
+  `TauCeti.eventually_le_of_upperSemicontinuousAt`,
+  `TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt`,
+  `TauCeti.eventually_ge_of_lowerSemicontinuousAt`: coordinatewise upper (resp. lower)
   semicontinuity together with locally finite range implies `f x' ≤ f x` (resp. `f x ≤ f x'`)
   eventually near `x`.
 * `Monotone.upperSemicontinuousWithinAt_comp_of_finite`,
-  `Monotone.lowerSemicontinuousWithinAt_comp_of_finite`: post-composing a coordinatewise
-  semicontinuous locally finite family with any monotone map preserves semicontinuity.
+  `Monotone.upperSemicontinuousAt_comp_of_finite`,
+  `Monotone.upperSemicontinuousOn_comp_of_finite`,
+  `Monotone.upperSemicontinuous_comp_of_finite`,
+  `Monotone.lowerSemicontinuousWithinAt_comp_of_finite`,
+  `Monotone.lowerSemicontinuousAt_comp_of_finite`,
+  `Monotone.lowerSemicontinuousOn_comp_of_finite`,
+  `Monotone.lowerSemicontinuous_comp_of_finite`: post-composing a coordinatewise semicontinuous
+  locally finite family with any monotone map preserves semicontinuity.
 * `TauCeti.upperSemicontinuousWithinAt_toLex`, `TauCeti.upperSemicontinuousAt_toLex`,
   `TauCeti.upperSemicontinuousOn_toLex`, `TauCeti.upperSemicontinuous_toLex`: coordinatewise upper
   semicontinuity lifts to `Lex (∀ i, β i)` whenever `f` locally takes finitely many values.
@@ -81,6 +89,17 @@ theorem eventually_le_of_upperSemicontinuousWithinAt {f : α → ∀ i, β i} {s
   exact hnotle fun i ↦
     (hf i).frequently (v i) (hvfreq.mono fun _ hx' ↦ (congr_fun hx' i).symm.le)
 
+/-- If each coordinate of `f` is upper semicontinuous at `x` and `f` takes finitely many values on
+a neighbourhood of `x`, then `f x' ≤ f x` eventually in `𝓝 x`. -/
+theorem eventually_le_of_upperSemicontinuousAt {f : α → ∀ i, β i} {x : α}
+    (hf : ∀ i, UpperSemicontinuousAt (f · i) x)
+    (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
+    ∀ᶠ x' in 𝓝 x, f x' ≤ f x := by
+  rw [← nhdsWithin_univ]
+  refine eventually_le_of_upperSemicontinuousWithinAt
+    (fun i ↦ (hf i).upperSemicontinuousWithinAt univ) ?_
+  rwa [nhdsWithin_univ]
+
 /-- If each coordinate of `f` is lower semicontinuous within `s` at `x` and `f` takes finitely many
 values on a neighbourhood of `x` within `s`, then `f x ≤ f x'` eventually in `𝓝[s] x`. -/
 theorem eventually_ge_of_lowerSemicontinuousWithinAt {f : α → ∀ i, β i} {s : Set α} {x : α}
@@ -102,6 +121,17 @@ theorem eventually_ge_of_lowerSemicontinuousWithinAt {f : α → ∀ i, β i} {s
   exact (eventually_le_of_upperSemicontinuousWithinAt hf' hfin').mono
     fun _ hx' i ↦ OrderDual.toDual_le_toDual.mp (hx' i)
 
+/-- If each coordinate of `f` is lower semicontinuous at `x` and `f` takes finitely many values on
+a neighbourhood of `x`, then `f x ≤ f x'` eventually in `𝓝 x`. -/
+theorem eventually_ge_of_lowerSemicontinuousAt {f : α → ∀ i, β i} {x : α}
+    (hf : ∀ i, LowerSemicontinuousAt (f · i) x)
+    (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
+    ∀ᶠ x' in 𝓝 x, f x ≤ f x' := by
+  rw [← nhdsWithin_univ]
+  refine eventually_ge_of_lowerSemicontinuousWithinAt
+    (fun i ↦ (hf i).lowerSemicontinuousWithinAt univ) ?_
+  rwa [nhdsWithin_univ]
+
 end Eventually
 
 end TauCeti
@@ -121,6 +151,34 @@ theorem Monotone.upperSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) �
   (TauCeti.eventually_le_of_upperSemicontinuousWithinAt hf hfin).mono
     fun _ hx' ↦ (hg hx').trans_lt hy
 
+/-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
+preserves `UpperSemicontinuousAt`. -/
+theorem Monotone.upperSemicontinuousAt_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i} {x : α}
+    (hf : ∀ i, UpperSemicontinuousAt (f · i) x)
+    (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
+    UpperSemicontinuousAt (fun x' ↦ g (f x')) x := fun _ hy ↦
+  (TauCeti.eventually_le_of_upperSemicontinuousAt hf hfin).mono
+    fun _ hx' ↦ (hg hx').trans_lt hy
+
+/-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
+preserves `UpperSemicontinuousOn`. -/
+theorem Monotone.upperSemicontinuousOn_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α}
+    (hf : ∀ i, UpperSemicontinuousOn (f · i) s)
+    (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
+    UpperSemicontinuousOn (fun x' ↦ g (f x')) s :=
+  fun x hx ↦ hg.upperSemicontinuousWithinAt_comp_of_finite (fun i ↦ hf i x hx) (hfin x hx)
+
+/-- Post-composing a coordinatewise upper semicontinuous locally finite family with a monotone map
+preserves `UpperSemicontinuous`. -/
+theorem Monotone.upperSemicontinuous_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i}
+    (hf : ∀ i, UpperSemicontinuous (f · i))
+    (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
+    UpperSemicontinuous (fun x' ↦ g (f x')) :=
+  fun x ↦ hg.upperSemicontinuousAt_comp_of_finite (fun i ↦ hf i x) (hfin x)
+
 /-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
 preserves `LowerSemicontinuousWithinAt`. -/
 theorem Monotone.lowerSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) → γ}
@@ -130,6 +188,34 @@ theorem Monotone.lowerSemicontinuousWithinAt_comp_of_finite {g : (∀ i, β i) �
     LowerSemicontinuousWithinAt (fun x' ↦ g (f x')) s x := fun _ hy ↦
   (TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt hf hfin).mono
     fun _ hx' ↦ hy.trans_le (hg hx')
+
+/-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
+preserves `LowerSemicontinuousAt`. -/
+theorem Monotone.lowerSemicontinuousAt_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i} {x : α}
+    (hf : ∀ i, LowerSemicontinuousAt (f · i) x)
+    (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
+    LowerSemicontinuousAt (fun x' ↦ g (f x')) x := fun _ hy ↦
+  (TauCeti.eventually_ge_of_lowerSemicontinuousAt hf hfin).mono
+    fun _ hx' ↦ hy.trans_le (hg hx')
+
+/-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
+preserves `LowerSemicontinuousOn`. -/
+theorem Monotone.lowerSemicontinuousOn_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α}
+    (hf : ∀ i, LowerSemicontinuousOn (f · i) s)
+    (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
+    LowerSemicontinuousOn (fun x' ↦ g (f x')) s :=
+  fun x hx ↦ hg.lowerSemicontinuousWithinAt_comp_of_finite (fun i ↦ hf i x hx) (hfin x hx)
+
+/-- Post-composing a coordinatewise lower semicontinuous locally finite family with a monotone map
+preserves `LowerSemicontinuous`. -/
+theorem Monotone.lowerSemicontinuous_comp_of_finite {g : (∀ i, β i) → γ}
+    (hg : Monotone g) {f : α → ∀ i, β i}
+    (hf : ∀ i, LowerSemicontinuous (f · i))
+    (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
+    LowerSemicontinuous (fun x' ↦ g (f x')) :=
+  fun x ↦ hg.lowerSemicontinuousAt_comp_of_finite (fun i ↦ hf i x) (hfin x)
 
 end MonotoneComp
 
@@ -154,11 +240,8 @@ a neighbourhood of `x`, then `fun x' ↦ toLex (f x')` is upper semicontinuous a
 theorem upperSemicontinuousAt_toLex {f : α → ∀ i, β i} {x : α}
     (hf : ∀ i, UpperSemicontinuousAt (f · i) x)
     (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
-    UpperSemicontinuousAt (fun x' ↦ toLex (f x')) x := by
-  rw [← upperSemicontinuousWithinAt_univ_iff]
-  refine upperSemicontinuousWithinAt_toLex
-    (fun i ↦ (hf i).upperSemicontinuousWithinAt univ) ?_
-  rwa [nhdsWithin_univ]
+    UpperSemicontinuousAt (fun x' ↦ toLex (f x')) x :=
+  Pi.toLex_monotone.upperSemicontinuousAt_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is upper semicontinuous on `s` and `f` locally takes finitely many
 values within `s`, then `fun x' ↦ toLex (f x')` is upper semicontinuous on `s`. -/
@@ -166,7 +249,7 @@ theorem upperSemicontinuousOn_toLex {f : α → ∀ i, β i} {s : Set α}
     (hf : ∀ i, UpperSemicontinuousOn (f · i) s)
     (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
     UpperSemicontinuousOn (fun x' ↦ toLex (f x')) s :=
-  fun x hx ↦ upperSemicontinuousWithinAt_toLex (fun i ↦ hf i x hx) (hfin x hx)
+  Pi.toLex_monotone.upperSemicontinuousOn_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is upper semicontinuous and `f` locally takes finitely many values,
 then `fun x' ↦ toLex (f x')` is upper semicontinuous. -/
@@ -174,7 +257,7 @@ theorem upperSemicontinuous_toLex {f : α → ∀ i, β i}
     (hf : ∀ i, UpperSemicontinuous (f · i))
     (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
     UpperSemicontinuous (fun x' ↦ toLex (f x')) :=
-  fun x ↦ upperSemicontinuousAt_toLex (fun i ↦ hf i x) (hfin x)
+  Pi.toLex_monotone.upperSemicontinuous_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is lower semicontinuous within `s` at `x` and `f` takes finitely many
 values on a neighbourhood of `x` within `s`, then `fun x' ↦ toLex (f x')` is lower semicontinuous
@@ -190,11 +273,8 @@ a neighbourhood of `x`, then `fun x' ↦ toLex (f x')` is lower semicontinuous a
 theorem lowerSemicontinuousAt_toLex {f : α → ∀ i, β i} {x : α}
     (hf : ∀ i, LowerSemicontinuousAt (f · i) x)
     (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
-    LowerSemicontinuousAt (fun x' ↦ toLex (f x')) x := by
-  rw [← lowerSemicontinuousWithinAt_univ_iff]
-  refine lowerSemicontinuousWithinAt_toLex
-    (fun i ↦ (hf i).lowerSemicontinuousWithinAt univ) ?_
-  rwa [nhdsWithin_univ]
+    LowerSemicontinuousAt (fun x' ↦ toLex (f x')) x :=
+  Pi.toLex_monotone.lowerSemicontinuousAt_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is lower semicontinuous on `s` and `f` locally takes finitely many
 values within `s`, then `fun x' ↦ toLex (f x')` is lower semicontinuous on `s`. -/
@@ -202,7 +282,7 @@ theorem lowerSemicontinuousOn_toLex {f : α → ∀ i, β i} {s : Set α}
     (hf : ∀ i, LowerSemicontinuousOn (f · i) s)
     (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
     LowerSemicontinuousOn (fun x' ↦ toLex (f x')) s :=
-  fun x hx ↦ lowerSemicontinuousWithinAt_toLex (fun i ↦ hf i x hx) (hfin x hx)
+  Pi.toLex_monotone.lowerSemicontinuousOn_comp_of_finite hf hfin
 
 /-- If each coordinate of `f` is lower semicontinuous and `f` locally takes finitely many values,
 then `fun x' ↦ toLex (f x')` is lower semicontinuous. -/
@@ -210,7 +290,7 @@ theorem lowerSemicontinuous_toLex {f : α → ∀ i, β i}
     (hf : ∀ i, LowerSemicontinuous (f · i))
     (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
     LowerSemicontinuous (fun x' ↦ toLex (f x')) :=
-  fun x ↦ lowerSemicontinuousAt_toLex (fun i ↦ hf i x) (hfin x)
+  Pi.toLex_monotone.lowerSemicontinuous_comp_of_finite hf hfin
 
 end PiLex
 

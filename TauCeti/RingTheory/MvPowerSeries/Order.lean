@@ -72,8 +72,8 @@ Over a ring, vanishing of the constant coefficient then puts the remainder after
 `X + Y` in order at least two, and over a commutative ring the linear part of `f(x, y)` is the
 sum of the linear parts of `x` and `y` (`MvPowerSeries.homogeneousComponent_one_subst_pair`).
 
-Over a local commutative ring `R`, every pure monomial `monomial α 1` lies in `𝔪 ^ α.degree`
-(`MvPowerSeries.monomial_one_mem_maximalIdeal_pow`), and in finitely many variables every series of
+Over a local commutative ring `R`, every monomial `monomial α r` lies in `𝔪 ^ α.degree`
+(`MvPowerSeries.monomial_mem_maximalIdeal_pow`), and in finitely many variables every series of
 order at least `k` lies in `𝔪 ^ k` (`MvPowerSeries.mem_maximalIdeal_pow_of_le_order`). Over a field
 `K`, the converse also holds in any number of variables
 (`MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow`), so membership in `𝔪 ^ k` coincides with
@@ -746,17 +746,19 @@ section LocalRing
 
 variable {σ R : Type*} [CommRing R] [IsLocalRing R]
 
-/-- Every pure monomial `monomial α 1` lies in `𝔪 ^ α.degree`. -/
-theorem monomial_one_mem_maximalIdeal_pow (α : σ →₀ ℕ) :
-    monomial α (1 : R) ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ α.degree := by
-  refine Finsupp.induction_linear α ?_ ?_ ?_
-  · simp
-  · intro β γ hβ hγ
-    rw [map_add, pow_add, ← one_mul (1 : R), ← monomial_mul_monomial]
-    exact Ideal.mul_mem_mul hβ hγ
-  · intro i m
-    rw [← X_pow_eq, Finsupp.degree_single]
-    exact Ideal.pow_mem_pow (X_mem_maximalIdeal i) m
+/-- Every monomial `monomial α r` lies in `𝔪 ^ α.degree`. -/
+theorem monomial_mem_maximalIdeal_pow (α : σ →₀ ℕ) (r : R) :
+    monomial α r ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ α.degree := by
+  have h1 : monomial α (1 : R) ∈ IsLocalRing.maximalIdeal (MvPowerSeries σ R) ^ α.degree := by
+    refine Finsupp.induction_linear α (by simp) (fun β γ hβ hγ ↦ ?_) fun i m ↦ ?_
+    · rw [map_add, pow_add, ← one_mul (1 : R), ← monomial_mul_monomial]
+      exact Ideal.mul_mem_mul hβ hγ
+    · rw [← X_pow_eq, Finsupp.degree_single]
+      exact Ideal.pow_mem_pow (X_mem_maximalIdeal i) m
+  have hr : monomial α r = C r * monomial α 1 := by
+    rw [← monomial_zero_eq_C_apply, monomial_mul_monomial, zero_add, mul_one]
+  rw [hr]
+  exact Ideal.mul_mem_left _ _ h1
 
 /-- Over a local commutative ring `R` in finitely many variables `σ`, any power series of order at
 least `k` belongs to `𝔪 ^ k`. -/

@@ -39,8 +39,8 @@ every series is congruent to `C (constantCoeff f)` modulo the maximal ideal
   `PowerSeries.map_inv`: the corresponding statements in one variable.
 * `MvPowerSeries.coeff_single_eq_one_of_one_sub_X_mul_eq_one`: a right inverse of `1 - Xᵢ` has
   coefficient `1` at every power `Xᵢⁿ`.
-* `MvPowerSeries.isLocalHom_C`, `MvPowerSeries.isLocalHom_algebraMap`: the constant-series map into
-  `MvPowerSeries σ R` is a local homomorphism.
+* `MvPowerSeries.isLocalHom_C`, `MvPowerSeries.isLocalHom_algebraMap`: the constant-series map and
+  canonical algebra map from a local base into `MvPowerSeries σ A` are local homomorphisms.
 * `MvPowerSeries.mem_maximalIdeal_iff_constantCoeff`,
   `MvPowerSeries.mem_maximalIdeal_iff_constantCoeff_eq_zero`,
   `MvPowerSeries.X_mem_maximalIdeal`, `MvPowerSeries.residue_C_constantCoeff`: maximal-ideal
@@ -191,15 +191,17 @@ end Inverse
 namespace MvPowerSeries
 
 /-- The constant-series embedding `C : R →+* MvPowerSeries σ R` is a local homomorphism. -/
-instance isLocalHom_C {σ R : Type*} [Ring R] : IsLocalHom (C (σ := σ) (R := R)) where
-  map_nonunit r hr := by
-    rw [isUnit_iff_constantCoeff, constantCoeff_C] at hr
-    exact hr
+instance isLocalHom_C {σ R : Type*} [Semiring R] : IsLocalHom (C (σ := σ) (R := R)) :=
+  isLocalHom_of_leftInverse constantCoeff constantCoeff_C
 
-/-- The canonical algebra map `R →+* MvPowerSeries σ R` is a local homomorphism. -/
-instance isLocalHom_algebraMap {σ R : Type*} [CommRing R] :
-    IsLocalHom (algebraMap R (MvPowerSeries σ R)) :=
-  c_eq_algebraMap (σ := σ) (R := R) ▸ isLocalHom_C
+/-- For any local algebra `R → A`, the canonical algebra map `R →+* MvPowerSeries σ A` is a local
+homomorphism. -/
+instance isLocalHom_algebraMap {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [IsLocalHom (algebraMap R A)] :
+    IsLocalHom (algebraMap R (MvPowerSeries σ A)) where
+  map_nonunit r hr := by
+    rw [algebraMap_apply] at hr
+    exact IsLocalHom.map_nonunit r (IsLocalHom.map_nonunit _ hr)
 
 section LocalRing
 

@@ -74,9 +74,10 @@ adjoins all exponents of total degree at least `k` to `degLex.initialDiagram I`
 * `MonomialOrder.initialDiagram_span_monomial`: the initial diagram of a monomial-generated ideal
   is the union of the cones of its generating exponents.
 * `MonomialOrder.initialDiagram_degLex_sup_maximalIdeal_pow`,
+  `MonomialOrder.initialDiagram_degLex_sup_maximalIdeal`,
   `MonomialOrder.initialDiagram_degLex_maximalIdeal_pow`,
   `MonomialOrder.initialDiagram_degLex_maximalIdeal`: graded lexicographic initial diagrams of
-  `I ⊔ 𝔪 ^ k`, `𝔪 ^ k`, and `𝔪` over a field.
+  `I ⊔ 𝔪 ^ k`, `I ⊔ 𝔪`, `𝔪 ^ k`, and `𝔪` over a field.
 
 ## References
 
@@ -865,6 +866,7 @@ variable {σ K : Type*} [Field K] [LinearOrder σ] [WellFoundedGT σ]
 
 /-- Over a field `K`, adjoining the `k`-th power of the maximal ideal of `MvPowerSeries σ K` to an
 ideal `I` adjoins all exponents of total degree at least `k` to `degLex.initialDiagram I`. -/
+@[simp]
 theorem initialDiagram_degLex_sup_maximalIdeal_pow
     (I : Ideal (MvPowerSeries σ K)) (k : ℕ) :
     degLex.initialDiagram (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) =
@@ -896,14 +898,23 @@ theorem initialDiagram_degLex_sup_maximalIdeal_pow
     · have hmem : MvPowerSeries.monomial α (1 : K) ∈
           I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k :=
         Ideal.mem_sup_right
-          (Ideal.pow_le_pow_right hk (MvPowerSeries.monomial_one_mem_maximalIdeal_pow α))
+          (Ideal.pow_le_pow_right hk (MvPowerSeries.monomial_mem_maximalIdeal_pow α 1))
       refine ⟨MvPowerSeries.monomial α 1, hmem, ?_,
         degLex.initialExp_monomial_of_ne_zero α one_ne_zero⟩
       intro h0
       simpa using congrArg (MvPowerSeries.coeff α) h0
 
+/-- Over a field `K`, adjoining the maximal ideal of `MvPowerSeries σ K` to an ideal `I` adjoins
+all nonzero exponents (`1 ≤ α.degree`) to `degLex.initialDiagram I`. -/
+@[simp]
+theorem initialDiagram_degLex_sup_maximalIdeal (I : Ideal (MvPowerSeries σ K)) :
+    degLex.initialDiagram (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K)) =
+      degLex.initialDiagram I ∪ {α : σ →₀ ℕ | 1 ≤ α.degree} := by
+  simpa using initialDiagram_degLex_sup_maximalIdeal_pow I 1
+
 /-- Over a field `K`, the graded lexicographic initial diagram of `𝔪 ^ k` in `MvPowerSeries σ K`
 consists of all exponents of total degree at least `k`. -/
+@[simp]
 theorem initialDiagram_degLex_maximalIdeal_pow (k : ℕ) :
     degLex.initialDiagram (IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) =
       {α : σ →₀ ℕ | k ≤ α.degree} := by

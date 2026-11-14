@@ -105,7 +105,7 @@ theorem localQuotientHilbertSamuel_mvPowerSeries {σ K : Type*} [Field K] [Finit
     ((MonomialOrder.degLex.quotientEquivComplementSubmodule J).trans
       (MonomialOrder.degLex.complementSubmoduleEquivFun J)).trans
       (LinearEquiv.funCongrLeft K K finEquiv.symm)
-  rw [localQuotientHilbertSamuel_def, MvPowerSeries.length_restrictScalars (R := K),
+  rw [localQuotientHilbertSamuel_def, ← MvPowerSeries.length_restrictScalars (R := K),
     linEquiv.length_eq, Module.length_eq_finrank, Module.finrank_fin_fun]
 
 /-- Two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂` with the same graded lexicographic
@@ -136,6 +136,7 @@ theorem localQuotientHilbertSamuel_mvPowerSeries_bot (σ K : Type*) [Field K] [F
 /-- For any subset `S : Set σ` of finitely many variables, the Hilbert–Samuel value of the
 coordinate ideal `Ideal.span (MvPowerSeries.X '' S)` at degree `n` is
 `((Nat.card ↥Sᶜ + n).choose (Nat.card ↥Sᶜ) : ℕ∞)`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_mvPowerSeries_span_image_X {σ : Type*} (K : Type*) [Field K]
     [Finite σ] (S : Set σ) (n : ℕ) :
     localQuotientHilbertSamuel (MvPowerSeries σ K) (Ideal.span (MvPowerSeries.X '' S)) n =

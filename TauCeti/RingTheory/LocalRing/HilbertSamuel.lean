@@ -76,8 +76,8 @@ Hilbert–Samuel function without any Noetherian hypothesis
   `TauCeti.natCast_toNat_localQuotientHilbertSamuel`: finiteness over Noetherian local rings.
 * `TauCeti.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq`,
   `TauCeti.localQuotientHilbertSamuel_adicCompletion`,
-  `TauCeti.localQuotientHilbertSamuel_adicCompletion_bot`: invariance under flat unramified local
-  extensions and `𝔪`-adic completion.
+  `TauCeti.localQuotientHilbertSamuel_adicCompletion_bot`: invariance under flat local extensions
+  with `𝔪_A B = 𝔪_B` and `𝔪`-adic completion.
 
 ## References
 
@@ -237,6 +237,7 @@ theorem localQuotientHilbertSamuel_map_of_surjective {B F : Type*}
 
 /-- Computing `localQuotientHilbertSamuel` on a local quotient `A ⧸ I` at `J.map (Quotient.mk I)`
 agrees with computing it on `A` at `I ⊔ J`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_quotient_map (I J : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
     localQuotientHilbertSamuel (A ⧸ I) (J.map (Ideal.Quotient.mk I)) n =
       localQuotientHilbertSamuel A (I ⊔ J) n := by
@@ -251,6 +252,7 @@ theorem localQuotientHilbertSamuel_quotient_bot (I : Ideal A) [IsLocalRing (A �
 
 /-- Any ring or algebra equivalence `e : A ≃ B` between local rings preserves
 `localQuotientHilbertSamuel` under `Ideal.map e`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_map_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
     (e : E) (I : Ideal A) (n : ℕ) :
@@ -260,6 +262,7 @@ theorem localQuotientHilbertSamuel_map_equiv {B E : Type*}
 
 /-- Any ring or algebra equivalence `e : A ≃ B` between local rings preserves
 `localQuotientHilbertSamuel` under `Ideal.comap e`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_comap_equiv {B E : Type*}
     [CommRing B] [IsLocalRing B] [EquivLike E A B] [RingEquivClass E A B]
     (e : E) (J : Ideal B) (n : ℕ) :
@@ -354,6 +357,7 @@ theorem localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq
 
 /-- Extending an ideal `I` of a Noetherian local ring `A` to its `𝔪`-adic completion preserves
 every value of `localQuotientHilbertSamuel`. -/
+@[simp]
 theorem localQuotientHilbertSamuel_adicCompletion
     {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A] (I : Ideal A) (n : ℕ) :
     localQuotientHilbertSamuel (AdicCompletion (IsLocalRing.maximalIdeal A) A)
