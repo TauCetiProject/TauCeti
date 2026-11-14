@@ -214,20 +214,20 @@ variable (cov covT)
 /-- The value of `∇R` on fibre vectors, computed on chosen smooth extensions. -/
 private def derivCurvatureValue (x : M) (v u w : TangentSpace I x) (s : V x) : V x :=
   derivCurvatureAux cov covT
-    (Classical.choose (exists_contMDiff_section_eq I E ∞ u))
-    (Classical.choose (exists_contMDiff_section_eq I E ∞ w))
-    (Classical.choose (exists_contMDiff_section_eq I F ∞ s)) x v
+    (globalSection I E ∞ u)
+    (globalSection I E ∞ w)
+    (globalSection I F ∞ s) x v
 
 private theorem derivCurvatureValue_eq (x : M) (v : TangentSpace I x)
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ)) :
     derivCurvatureValue cov covT x v (Y x) (Z x) (σ x) = derivCurvatureAux cov covT Y Z σ x v :=
   congrFun (derivCurvatureAux_congr
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Z x))).1 hZ
-    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).1 hσ
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Z x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).2) v
+    (contMDiff_globalSection I E ∞ (Y x)) hY
+    (contMDiff_globalSection I E ∞ (Z x)) hZ
+    (contMDiff_globalSection I F ∞ (σ x)) hσ
+    (globalSection_apply_self I E ∞ (Y x))
+    (globalSection_apply_self I E ∞ (Z x))
+    (globalSection_apply_self I F ∞ (σ x))) v
 
 private theorem derivCurvatureValue_add_dir (x : M) (v v' u w : TangentSpace I x) (s : V x) :
     derivCurvatureValue cov covT x (v + v') u w s =

@@ -17,8 +17,9 @@ import Mathlib.Geometry.Manifold.BumpFunction
 Let `V` be a `C^n` real vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff smooth
 manifold. Every vector in `V` is the value of a global `C^n` section. This lets tensorial
 operations on globally `C^n` sections define maps on individual fibres. The construction cuts off
-Mathlib's locally `C^n` `FiberBundle.extend` with a smooth bump function. Equivalently,
-evaluation of global `C^n` sections at a point is surjective.
+Mathlib's locally `C^n` `FiberBundle.extend` with a smooth bump function, and
+`FiberBundle.globalSection` chooses such a section. Equivalently, evaluation of global `C^n`
+sections at a point is surjective.
 
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
@@ -53,6 +54,23 @@ theorem exists_contMDiff_section_eq (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVe
   refine ⟨(ρ : M → ℝ) • extend F v, ?_, by simp⟩
   exact (ρ.contMDiff.of_le ENat.LEInfty.out).contMDiffOn.smul_section_of_tsupport
     isOpen_interior hρ (hs.mono interior_subset)
+
+/-- A chosen global `C^n` section of `V` whose value at the base point of `v` is `v`
+(`FiberBundle.exists_contMDiff_section_eq`). -/
+noncomputable def globalSection (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {x : M} (v : V x) : Π y : M, V y :=
+  Classical.choose (exists_contMDiff_section_eq I F n v)
+
+/-- The chosen global section through `v` is `C^n`. -/
+theorem contMDiff_globalSection (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {x : M} (v : V x) : CMDiff n (T% (globalSection I F n v)) :=
+  (Classical.choose_spec (exists_contMDiff_section_eq I F n v)).1
+
+/-- The chosen global section through `v` takes the value `v` at its base point. -/
+@[simp]
+theorem globalSection_apply_self (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {x : M} (v : V x) : globalSection I F n v x = v :=
+  (Classical.choose_spec (exists_contMDiff_section_eq I F n v)).2
 
 end FiberBundle
 
