@@ -264,7 +264,6 @@ theorem isSmoothing_kernelCutoff_sub [CompleteSpace W] (hχ : (χ : CoordinateSp
   set N := ⌈m - m'⌉₊
   set t : ℝ := m - ((N + 1 : ℕ) + β.length)
   choose A hA0 hA using fun r : Fin (N + 1) → Fin n ↦ a.exists_bound K hK α (List.ofFn r ++ β)
-  obtain ⟨C₀, -, hC₀⟩ := a.exists_bound K hK α β
   refine ⟨(∑ r, A r) * 2 ^ (|t| / 2) / N ! *
     ∫ η, (1 + ‖(2 * π) • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2) * ‖𝓕 χ η‖,
     mul_nonneg (div_nonneg (mul_nonneg (Finset.sum_nonneg fun r _ ↦ hA0 r) (by positivity))
@@ -290,7 +289,7 @@ theorem isSmoothing_kernelCutoff_sub [CompleteSpace W] (hχ : (χ : CoordinateSp
       ← sub_eq_add_neg]
   rw [hsub]
   refine (SchwartzMap.norm_integral_fourier_smul_sub_smul_sub_le χ hχ (hh.of_le (by simp))
-    (hC₀ x hx) hD (2 * π) ξ).trans
+    hD (2 * π) ξ).trans
     (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ ?_)
       (mul_nonneg (div_nonneg (mul_nonneg (Finset.sum_nonneg fun r _ ↦ hA0 r) (by positivity))
         (by positivity)) (integral_nonneg fun _ ↦ by positivity)))
@@ -393,6 +392,7 @@ private lemma quantizeSchwartzValue_smulLeftCLM_sub_eq_integral (χ : 𝓢(Coord
   rw [e]
   ring
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **The quantization of a kernel cutoff.** `Op(a_χ)` evaluated at `x` is `Op(a)` evaluated at
 `x` on the cut-off input `y ↦ χ(x - y) u(y)`: the kernel `K_a(x, y)` of `Op(a)` is multiplied by
 `χ(x - y)`. -/
@@ -400,6 +400,14 @@ theorem quantizeSchwartzValue_kernelCutoff (χ : 𝓢(CoordinateSpace n, ℂ)) (
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (kernelCutoff χ a).coefficient u x =
       quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V (fun y ↦ χ (x - y)) u) x := by
+  -- If `V` is not complete then `𝓕 u = 0`, and if `W` is not complete then every `W`-valued
+  -- integral is `0`; either way both sides vanish.
+  by_cases hV : CompleteSpace V
+  swap
+  · simp [quantizeSchwartzValue_def, SchwartzMap.fourier_eq_zero_of_not_completeSpace hV]
+  by_cases hW : CompleteSpace W
+  swap
+  · simp [quantizeSchwartzValue_def, integral_of_not_completeSpace hW]
   set G : CoordinateSpace n × CoordinateSpace n → W := fun p ↦
     𝓕 χ p.2 • (𝐞 ⟪p.1, x⟫ : ℂ) • a.coefficient (x, (2 * π) • p.1 - (2 * π) • p.2) (𝓕 u p.1)
   set F : CoordinateSpace n × CoordinateSpace n → W := fun p ↦
@@ -423,6 +431,7 @@ theorem quantizeSchwartzValue_kernelCutoff (χ : 𝓢(CoordinateSpace n, ℂ)) (
   rw [← integral_add_right_eq_self (fun ζ' ↦ G (ζ', η)) η, hFG]
   simp [add_comm]
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Proper support.** The quantization of a kernel cutoff `a_χ` moves supports by at most the
 support of `χ`: `Op(a_χ) u` vanishes outside `supp u + supp χ`. -/
 theorem support_quantizeSchwartzValue_kernelCutoff_subset (χ : 𝓢(CoordinateSpace n, ℂ))
@@ -446,6 +455,7 @@ theorem support_quantizeSchwartzValue_kernelCutoff_subset (χ : 𝓢(CoordinateS
     exact absurd hmem hcon
   rw [quantizeSchwartzValue_kernelCutoff, hzero, quantizeSchwartzValue_zero_right]
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Proper support**, closed form: for a compactly supported `χ`,
 `supp Op(a_χ) u ⊆ supp u + supp χ`. -/
 theorem tsupport_quantizeSchwartzValue_kernelCutoff_subset {χ : 𝓢(CoordinateSpace n, ℂ)}
@@ -455,6 +465,7 @@ theorem tsupport_quantizeSchwartzValue_kernelCutoff_subset {χ : 𝓢(Coordinate
       (Set.add_subset_add (subset_tsupport _) (subset_tsupport _)))
     ((isClosed_tsupport _).add_right_of_isCompact hχ.isCompact)
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- For a compactly supported `χ`, the quantization of a kernel cutoff sends compactly supported
 Schwartz functions to compactly supported functions. -/
 theorem hasCompactSupport_quantizeSchwartzValue_kernelCutoff {χ : 𝓢(CoordinateSpace n, ℂ)}
@@ -464,6 +475,7 @@ theorem hasCompactSupport_quantizeSchwartzValue_kernelCutoff {χ : 𝓢(Coordina
   (hu.isCompact.add hχ.isCompact).of_isClosed_subset (isClosed_tsupport _)
     (tsupport_quantizeSchwartzValue_kernelCutoff_subset hχ a u)
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Properly supported representatives.** Every symbol differs by a smoothing symbol from one
 whose quantization moves supports by at most `ε`: `supp Op(b) u ⊆ supp u + closedBall 0 ε` for
 every Schwartz function `u`. The symbol `b` is the kernel cutoff of `a` by a bump function equal to
@@ -473,21 +485,32 @@ theorem exists_isSmoothing_sub_and_tsupport_quantizeSchwartzValue_subset (a : Sy
     ∃ b : Symbol n V W m, (b - a).IsSmoothing ∧ ∀ u : 𝓢(CoordinateSpace n, V),
       tsupport (quantizeSchwartzValue b.coefficient u) ⊆
         tsupport u + Metric.closedBall (0 : CoordinateSpace n) ε := by
+  -- If `W` is not complete, every `W`-valued integral is `0`, so `b = a` works.
+  by_cases hW : CompleteSpace W
+  swap
+  · refine ⟨a, by simp, fun u ↦ ?_⟩
+    have h0 : quantizeSchwartzValue a.coefficient u = 0 := funext fun x ↦ by
+      rw [quantizeSchwartzValue_def, integral_of_not_completeSpace hW, Pi.zero_apply]
+    rw [h0, tsupport_zero]
+    exact Set.empty_subset _
   let f : ContDiffBump (0 : CoordinateSpace n) := ⟨ε / 2, ε, half_pos hε, half_lt_self hε⟩
   have hfc : HasCompactSupport fun y ↦ (f y : ℂ) :=
     f.hasCompactSupport.comp_left Complex.ofReal_zero
   let χ : 𝓢(CoordinateSpace n, ℂ) :=
     hfc.toSchwartzMap (Complex.ofRealCLM.contDiff.comp f.contDiff)
+  have hχ : (χ : CoordinateSpace n → ℂ) = fun y ↦ (f y : ℂ) := funext (hfc.toSchwartzMap_toFun _)
   have hχ₁ : (χ : CoordinateSpace n → ℂ) =ᶠ[𝓝 0] 1 := by
     filter_upwards [Metric.closedBall_mem_nhds 0 (half_pos hε)] with y hy
-    -- `χ` is the bump function `f` with values cast to `ℂ`.
-    change ((f y : ℝ) : ℂ) = 1
-    rw [f.one_of_mem_closedBall hy, Complex.ofReal_one]
+    simp [hχ, f.one_of_mem_closedBall hy]
   have hχ₂ : tsupport χ ⊆ Metric.closedBall 0 ε := by
+    rw [hχ]
     refine (tsupport_comp_subset Complex.ofReal_zero f).trans ?_
     rw [f.tsupport_eq]
+  have hχc : HasCompactSupport χ := by
+    rw [HasCompactSupport, hχ]
+    exact hfc
   refine ⟨kernelCutoff χ a, isSmoothing_kernelCutoff_sub hχ₁ a, fun u ↦ ?_⟩
-  exact (tsupport_quantizeSchwartzValue_kernelCutoff_subset hfc a u).trans
+  exact (tsupport_quantizeSchwartzValue_kernelCutoff_subset hχc a u).trans
     (Set.add_subset_add le_rfl hχ₂)
 
 end Symbol

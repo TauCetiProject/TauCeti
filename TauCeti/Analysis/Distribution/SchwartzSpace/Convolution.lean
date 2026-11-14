@@ -221,7 +221,7 @@ theorem fourier_smulLeftCLM_sub_apply (χ : 𝓢(E, ℂ)) (u : 𝓢(E, F)) (x ζ
   -- `t ↦ exp(-2πi ⟪x, t⟫) 𝓕 χ(-t)`, by translation and reflection.
   set ψ : 𝓢(E, ℂ) := compCLMOfAntilipschitz ℂ (g := fun y ↦ x - y) (K := 1) (by fun_prop)
     (fun _ _ ↦ by simp [edist_sub_left]) χ
-  have hψx : (ψ : E → ℂ) = fun y ↦ χ (x - y) := rfl
+  have hψx : (ψ : E → ℂ) = fun y ↦ χ (x - y) := compCLMOfAntilipschitz_apply ℂ _ _ χ
   have hψ (t : E) : 𝓕 ψ t = (𝐞 (-⟪x, t⟫) : ℂ) * 𝓕 χ (-t) := by
     have hψx' : (ψ : E → ℂ) = fun y ↦ (χ ∘ LinearIsometryEquiv.neg ℝ) (y - x) := by
       ext y

@@ -7,12 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Taylor
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Calculus.TaylorIntegral
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Taylor polynomials and remainder estimates
@@ -58,10 +56,6 @@ function divided by its parameter is completely monotone.
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
-* `TauCeti.norm_sub_sum_iteratedFDeriv_le`: Taylor's theorem with a bound on the remainder for a
-  function on a normed space, along a segment, from a bound on the next Fréchet derivative.
-* `TauCeti.norm_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow`: the Taylor remainder of a
-  function whose next derivative has polynomial growth, `C' ⟨ξ⟩ ^ t ⟨v⟩ ^ (|t| + N + 1)`.
 
 ## References
 
@@ -237,77 +231,5 @@ theorem iteratedDeriv_div_id {f : ℝ → ℝ} {s : Set ℝ} {n : ℕ} {t : ℝ}
     pow_add (-1 : ℝ) k m]
   field_simp
   simp [pow_right_comm _ k 2]
-
-
-/-! ### Taylor's theorem along a segment -/
-
-section Segment
-
-variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
-  [NormedSpace ℝ G] [CompleteSpace G]
-
-/-- **Taylor's theorem along a segment**, with a bound on the remainder. If the `(N + 1)`-st
-derivative of `h` is bounded by `B` on the segment from `ξ` to `ξ + v`, then `h (ξ + v)` differs
-from the Taylor polynomial `∑_{k ≤ N} D^k h(ξ) (v, …, v) / k!` by at most
-`B ‖v‖ ^ (N + 1) / N!`. This bounds the integral remainder of Mathlib's
-`map_add_eq_sum_add_integral_iteratedFDeriv`. -/
-theorem norm_sub_sum_iteratedFDeriv_le {h : E → G} {N : ℕ} (hh : ContDiff ℝ (N + 1) h)
-    (ξ v : E) {B : ℝ}
-    (hB : ∀ s ∈ Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (N + 1) h (ξ + s • v)‖ ≤ B) :
-    ‖h (ξ + v) - ∑ k ∈ Finset.range (N + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ v)‖ ≤
-      B * ‖v‖ ^ (N + 1) / N ! := by
-  rw [map_add_eq_sum_add_integral_iteratedFDeriv fun t _ ↦ hh.contDiffAt, add_sub_cancel_left,
-    norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_eq_div]
-  gcongr
-  refine (intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦ ?_).trans_eq
-    (by rw [sub_zero, abs_one, mul_one])
-  rw [uIoc_of_le zero_le_one] at ht
-  have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
-  rw [norm_smul, norm_pow, Real.norm_eq_abs, abs_of_nonneg (by linarith [ht'.2])]
-  refine (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (by linarith [ht'.2])
-    (by linarith [ht'.1]))).trans ?_
-  refine ((iteratedFDeriv ℝ (N + 1) h (ξ + t • v)).le_opNorm _).trans ?_
-  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-  gcongr
-  exact hB t ht'
-
-/-- **Taylor's theorem with a weighted remainder.** If the `(N + 1)`-st derivative of `h` grows
-like `‖D^{N+1} h ζ‖ ≤ C ⟨ζ⟩ ^ t`, then by Peetre's inequality `h (ξ + v)` differs from its Taylor
-polynomial of order `N` at `ξ` by at most `C 2 ^ (|t| / 2) / N! ⟨ξ⟩ ^ t ⟨v⟩ ^ (|t| + N + 1)`, where
-`⟨x⟩ ^ s = (1 + ‖x‖ ^ 2) ^ (s / 2)`. -/
-theorem norm_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow {h : E → G} {N : ℕ}
-    (hh : ContDiff ℝ (N + 1) h) {C t : ℝ}
-    (hN : ∀ ζ, ‖iteratedFDeriv ℝ (N + 1) h ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (t / 2)) (ξ v : E) :
-    ‖h (ξ + v) - ∑ k ∈ Finset.range (N + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ v)‖ ≤
-      C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2) *
-        (1 + ‖v‖ ^ 2) ^ ((|t| + (N + 1)) / 2) := by
-  have hC : 0 ≤ C := by
-    have := (norm_nonneg _).trans (hN 0)
-    exact nonneg_of_mul_nonneg_left this (by positivity)
-  set w := 1 + ‖v‖ ^ 2
-  -- Peetre's inequality bounds the `(N + 1)`-st derivative along the segment.
-  have hB : ∀ s ∈ Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (N + 1) h (ξ + s • v)‖ ≤
-      C * (2 ^ (|t| / 2) * w ^ (|t| / 2) * (1 + ‖ξ‖ ^ 2) ^ (t / 2)) := fun s hs ↦ by
-    refine (hN _).trans (mul_le_mul_of_nonneg_left ?_ hC)
-    refine (one_add_norm_sq_rpow_le_mul_sub t (ξ + s • v) ξ).trans ?_
-    gcongr
-    rw [add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hs.1]
-    have : s * ‖v‖ ≤ ‖v‖ := mul_le_of_le_one_left (norm_nonneg _) hs.2
-    have : 0 ≤ s * ‖v‖ := mul_nonneg hs.1 (norm_nonneg _)
-    simp only [w]
-    nlinarith
-  refine (norm_sub_sum_iteratedFDeriv_le hh ξ v hB).trans (le_of_le_of_eq
-    (b := C * (2 ^ (|t| / 2) * w ^ (|t| / 2) * (1 + ‖ξ‖ ^ 2) ^ (t / 2)) *
-      w ^ (((N + 1 : ℕ) : ℝ) / 2) / N !) ?_ ?_)
-  · gcongr
-    exact norm_pow_le_one_add_norm_sq_rpow _ _
-  · have hw : w ^ (|t| / 2) * w ^ (((N + 1 : ℕ) : ℝ) / 2) = w ^ ((|t| + (N + 1)) / 2) := by
-      rw [← Real.rpow_add (by positivity)]
-      push_cast
-      ring_nf
-    rw [← hw]
-    field_simp
-
-end Segment
 
 end TauCeti

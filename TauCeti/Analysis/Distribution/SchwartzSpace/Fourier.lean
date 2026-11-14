@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
-import TauCeti.Analysis.Calculus.Taylor.Basic
+import TauCeti.Analysis.Calculus.Taylor.Integral
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
@@ -444,6 +444,7 @@ theorem integral_prod_inner_smul_fourier_eq_zero (χ : 𝓢(E, ℂ))
   rw [integral_smul] at hzero
   exact (smul_eq_zero.1 hzero).resolve_left (pow_ne_zero _ (by simp [Real.pi_ne_zero]))
 
+omit [CompleteSpace F] in
 /-- **Vanishing moments.** If a Schwartz function `χ` equals `1` near `0`, then every moment of
 positive order of its Fourier transform vanishes: `∫ 𝓕 χ (v) M (v, …, v) dv = 0` for every
 continuous multilinear map `M` of positive arity. -/
@@ -451,6 +452,9 @@ theorem integral_fourier_smul_apply_eq_zero (χ : 𝓢(E, ℂ)) (hχ : (χ : E �
     {k : ℕ} (hk : k ≠ 0) (M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ E) F) :
     ∫ v, 𝓕 χ v • M (fun _ ↦ v) = 0 := by
   classical
+  by_cases hF : CompleteSpace F
+  swap
+  · exact integral_of_not_completeSpace hF
   rw [fourier_coe]
   set b := stdOrthonormalBasis ℝ E
   -- Expand `M (v, …, v)` in the coordinates of `v` in an orthonormal basis.
@@ -519,13 +523,11 @@ theorem integral_fourier_smul_sum_iteratedFDeriv_eq (χ : 𝓢(E, ℂ)) (hχ : (
 
 open scoped Nat in
 /-- **Taylor remainder of an average of translates.** If a Schwartz function `χ` equals `1` near
-`0`, averaging the translates `η ↦ h (ξ - c • η)` of a function `h` of polynomial growth against
-`𝓕 χ` changes `h ξ` by at most the size of the `(N + 1)`-st derivative of `h`: if
-`‖D^{N+1} h ζ‖ ≤ C ⟨ζ⟩ ^ t`, then `‖∫ 𝓕 χ(η) h(ξ - c • η) dη - h(ξ)‖ ≤ C' ⟨ξ⟩ ^ t`, with `C'`
-independent of `ξ`. -/
+`0`, averaging the translates `η ↦ h (ξ - c • η)` of a smooth function `h` against `𝓕 χ` changes
+`h ξ` by at most the size of the `(N + 1)`-st derivative of `h`: if `‖D^{N+1} h ζ‖ ≤ C ⟨ζ⟩ ^ t`,
+then `‖∫ 𝓕 χ(η) h(ξ - c • η) dη - h(ξ)‖ ≤ C' ⟨ξ⟩ ^ t`, with `C'` independent of `ξ`. -/
 theorem norm_integral_fourier_smul_sub_smul_sub_le (χ : 𝓢(E, ℂ))
-    (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1) {h : E → F} {N : ℕ} (hh : ContDiff ℝ (N + 1) h) {C₀ s₀ : ℝ}
-    (h₀ : ∀ ζ, ‖h ζ‖ ≤ C₀ * (1 + ‖ζ‖ ^ 2) ^ (s₀ / 2)) {C t : ℝ}
+    (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1) {h : E → F} {N : ℕ} (hh : ContDiff ℝ (N + 1) h) {C t : ℝ}
     (hN : ∀ ζ, ‖iteratedFDeriv ℝ (N + 1) h ζ‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (t / 2)) (c : ℝ) (ξ : E) :
     ‖(∫ η, 𝓕 χ η • h (ξ - c • η)) - h ξ‖ ≤
       C * 2 ^ (|t| / 2) / N ! *
@@ -537,23 +539,34 @@ theorem norm_integral_fourier_smul_sub_smul_sub_le (χ : 𝓢(E, ℂ))
     simp_rw [T, Finset.smul_sum, smul_comm (𝓕 χ _) ((_ : ℕ) ! : ℝ)⁻¹]
     exact integrable_finsetSum _ fun k _ ↦
       ((𝓕 χ).integrable_smul_continuousMultilinearMap_apply_smul _ _).smul _
-  have hhi := (𝓕 χ).integrable_smul_apply_sub_smul (μ := volume) hh.continuous h₀ c ξ
-  rw [← integral_fourier_smul_sum_iteratedFDeriv_eq χ hχ h ξ (-c) N, ← integral_sub hhi hTi]
-  simp_rw [← smul_sub]
-  refine (norm_integral_le_of_norm_le (((𝓕 χ).integrable_one_add_norm_smul_sq_rpow_mul_norm
-    c (|t| + (N + 1))).const_mul (C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2)))
-    (.of_forall fun η ↦ ?_)).trans (le_of_eq ?_)
-  · have hT := TauCeti.norm_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow hh hN ξ ((-c) • η)
+  set K := C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2)
+  -- Taylor's formula bounds the remainder against each translate.
+  have hR (η : E) : ‖𝓕 χ η • (h (ξ - c • η) - T η)‖ ≤
+      K * ((1 + ‖c • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2) * ‖𝓕 χ η‖) := by
+    have hT := TauCeti.norm_sub_sum_iteratedFDeriv_le_one_add_norm_sq_rpow hh hN ξ ((-c) • η)
     have he : ξ + (-c) • η = ξ - c • η := by rw [neg_smul, ← sub_eq_add_neg]
     have hn : ‖(-c) • η‖ = ‖c • η‖ := by rw [neg_smul, norm_neg]
     rw [he, hn] at hT
     rw [norm_smul]
     calc ‖𝓕 χ η‖ * ‖h (ξ - c • η) - T η‖
-        ≤ ‖𝓕 χ η‖ * (C * 2 ^ (|t| / 2) / N ! * (1 + ‖ξ‖ ^ 2) ^ (t / 2) *
-            (1 + ‖c • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2)) := by gcongr
+        ≤ ‖𝓕 χ η‖ * (K * (1 + ‖c • η‖ ^ 2) ^ ((|t| + (N + 1)) / 2)) := by gcongr
       _ = _ := by ring
-  · rw [integral_const_mul]
-    ring
+  have hmaj := ((𝓕 χ).integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := volume) c
+    (|t| + (N + 1))).const_mul K
+  have hTc : Continuous T := by
+    simp only [T]
+    fun_prop
+  have hRc : Continuous fun η ↦ 𝓕 χ η • (h (ξ - c • η) - T η) :=
+    (𝓕 χ).continuous.smul ((hh.continuous.comp (by fun_prop)).sub hTc)
+  have hRi : Integrable fun η ↦ 𝓕 χ η • (h (ξ - c • η) - T η) :=
+    hmaj.mono' hRc.aestronglyMeasurable (.of_forall hR)
+  have hhi : Integrable fun η ↦ 𝓕 χ η • h (ξ - c • η) :=
+    (hRi.add hTi).congr (.of_forall fun η ↦ by simp only [Pi.add_apply, smul_sub, sub_add_cancel])
+  rw [← integral_fourier_smul_sum_iteratedFDeriv_eq χ hχ h ξ (-c) N, ← integral_sub hhi hTi]
+  simp_rw [← smul_sub]
+  refine (norm_integral_le_of_norm_le hmaj (.of_forall hR)).trans (le_of_eq ?_)
+  rw [integral_const_mul]
+  ring
 
 end Moment
 
