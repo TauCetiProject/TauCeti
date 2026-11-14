@@ -44,6 +44,7 @@ results that identify the operator as the derivative of the gradient and prove s
 ## Main declarations
 
 * `TauCeti.hessianOperator`: the Riesz-represented Hessian as an endomorphism of the Hilbert space.
+* `TauCeti.hessianOperator_eq_iteratedGradientChain`: it is the order-one iterated-gradient field.
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
@@ -107,6 +108,11 @@ totalized by zero. Twice continuous differentiability is assumed when this opera
 the derivative of the gradient. -/
 def hessianOperator (f : E → ℝ) (x : E) : E →L[ℝ] E :=
   iteratedGradientChain f 1 x
+
+/-- The Hessian operator is the order-one field of the iterated-gradient chain. -/
+theorem hessianOperator_eq_iteratedGradientChain (f : E → ℝ) (x : E) :
+    hessianOperator f x = iteratedGradientChain f 1 x :=
+  (rfl)
 
 /-- The Fréchet derivative of the gradient is the Hessian operator, with no regularity assumption:
 both sides use Mathlib's totalized derivatives. -/
