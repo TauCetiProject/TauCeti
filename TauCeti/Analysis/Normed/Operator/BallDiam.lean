@@ -17,8 +17,8 @@ maps an open ball `Metric.ball y ρ` of positive radius `ρ` into a bounded set 
 
 `‖B‖ ≤ Metric.diam s / (2 * ρ)`.
 
-Indeed, for any nonzero vector `u` and `0 < t < ρ`, the antipodal points `y ± (t / ‖u‖) • u` lie in
-`Metric.ball y ρ`, so their affine images lie in `s` at distance `(2 * t / ‖u‖) * ‖B u‖ ≤ diam s`;
+Indeed, for any unit vector `u` and `0 < t < ρ`, the antipodal points `y ± (t : 𝕜) • u` lie in
+`Metric.ball y ρ`, so their affine images lie in `s` at distance `2 * t * ‖B u‖ ≤ diam s`;
 letting `t` approach `ρ` yields the operator-norm estimate. When `B` is a continuous linear
 equivalence and `s = (fun x ↦ B x + b) ⁻¹' w`, applying the same argument to the inverse affine map
 `z ↦ B.symm z - B.symm b` bounds `‖B.symm‖` in terms of `Metric.diam s` and the radius of any ball
@@ -60,47 +60,39 @@ theorem opNorm_le_diam_div_two_mul_of_mapsTo_add_ball (B : E →L[𝕜] F) {b : 
     {s : Set F} (hρ : 0 < ρ) (hs : Bornology.IsBounded s)
     (h : MapsTo (fun x ↦ B x + b) (ball y ρ) s) :
     ‖B‖ ≤ diam s / (2 * ρ) := by
-  refine B.opNorm_le_bound (div_nonneg diam_nonneg (by positivity)) fun u ↦ ?_
-  rcases eq_or_lt_of_le (norm_nonneg u) with hu0 | hu
-  · rw [← hu0, mul_zero]
-    exact by simpa [← hu0] using B.le_opNorm u
+  refine B.opNorm_le_of_unit_norm (div_nonneg diam_nonneg (by positivity)) fun u hu ↦ ?_
   rcases eq_or_lt_of_le (norm_nonneg (B u)) with hBu0 | hBu
   · rw [← hBu0]
-    exact mul_nonneg (div_nonneg diam_nonneg (by positivity)) hu.le
-  -- Test on antipodal points `y ± (t / ‖u‖) • u` inside `ball y ρ` for `0 < t < ρ`.
-  suffices hle : ρ ≤ diam s * ‖u‖ / (2 * ‖B u‖) by
+    exact div_nonneg diam_nonneg (by positivity)
+  -- Test on antipodal points `y ± (t : 𝕜) • u` inside `ball y ρ` for `0 < t < ρ`.
+  suffices hle : ρ ≤ diam s / (2 * ‖B u‖) by
     rw [le_div_iff₀ (by positivity)] at hle
-    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+    rw [le_div_iff₀ (by positivity)]
     linarith
   refine le_of_forall_lt_imp_le_of_dense fun t ht ↦ ?_
   rcases le_or_gt t 0 with ht0 | ht0
   · exact ht0.trans (by positivity)
-  let c : 𝕜 := (t / ‖u‖ : ℝ)
-  let v : E := c • u
+  let v : E := (t : 𝕜) • u
   have hv : ‖v‖ = t := by
-    rw [norm_smul, RCLike.norm_ofReal, abs_of_pos (div_pos ht0 hu), div_mul_cancel₀ _ hu.ne']
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_pos ht0, hu, mul_one]
   have hplus : B (y + v) + b ∈ s := h (by simpa [dist_eq_norm, hv] using ht)
   have hminus : B (y - v) + b ∈ s := h (by simpa [dist_eq_norm, hv] using ht)
   have hdist : dist (B (y + v) + b) (B (y - v) + b) ≤ diam s :=
     dist_le_diam_of_mem hs hplus hminus
-  have hdiff : (B (y + v) + b) - (B (y - v) + b) = ((2 * t / ‖u‖ : ℝ) : 𝕜) • B u := by
-    have hv2 : (y + v) - (y - v) = ((2 * t / ‖u‖ : ℝ) : 𝕜) • u := by
+  have hdiff : (B (y + v) + b) - (B (y - v) + b) = ((2 * t : ℝ) : 𝕜) • B u := by
+    have hv2 : (y + v) - (y - v) = ((2 * t : ℝ) : 𝕜) • u := by
       calc (y + v) - (y - v) = v + v := by abel
-        _ = (c + c) • u := (add_smul c c u).symm
-        _ = ((2 * t / ‖u‖ : ℝ) : 𝕜) • u := by
+        _ = ((t : 𝕜) + (t : 𝕜)) • u := (add_smul (t : 𝕜) (t : 𝕜) u).symm
+        _ = ((2 * t : ℝ) : 𝕜) • u := by
           congr 1
-          dsimp only [c]
           push_cast
           ring
     calc (B (y + v) + b) - (B (y - v) + b) = B ((y + v) - (y - v)) := by
           rw [add_sub_add_right_eq_sub, ← map_sub]
-      _ = ((2 * t / ‖u‖ : ℝ) : 𝕜) • B u := by rw [hv2, map_smul]
+      _ = ((2 * t : ℝ) : 𝕜) • B u := by rw [hv2, map_smul]
   rw [dist_eq_norm, hdiff, norm_smul, RCLike.norm_ofReal,
     abs_of_pos (by positivity)] at hdist
   rw [le_div_iff₀ (by positivity)]
-  have hmul := mul_le_mul_of_nonneg_right hdist hu.le
-  have hsimp : 2 * t / ‖u‖ * ‖B u‖ * ‖u‖ = t * (2 * ‖B u‖) := by
-    field_simp
   linarith
 
 /-- If a continuous linear map `B` sends an open ball of positive radius `ρ` into a bounded set

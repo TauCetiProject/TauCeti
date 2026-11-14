@@ -11,12 +11,11 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Affine
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
-public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
--- Private: group-measure pushforward, submodule restriction of continuous linear maps, and
--- translation of test functions are used only inside proofs.
-import Mathlib.MeasureTheory.Group.Measure
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
+-- Private: submodule restriction of continuous linear equivalences, translation of test functions,
+-- and restricted Haar pushforward bounds are used only inside proofs and private helpers.
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.Distribution.TestFunction.Translation
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Affine transport and order-by-order seminorm scaling in `W^{k,p}`
@@ -62,12 +61,16 @@ product spaces carrying additive Haar measures `μ` and `ν`, let `b : E'`, and 
 * `TauCeti.Wkp.compAffineEquiv_mem_wkp0Submodule_iff`, `TauCeti.Wkp0.compAffineEquiv`: invariance
   of `W^{k,p}_0` under invertible affine maps.
 * `TauCeti.Wkp.norm_value_compAffineEquiv`,
+  `TauCeti.Wkp.norm_value_eq_mul_norm_value_compAffineEquiv`,
   `TauCeti.Wkp.norm_iteratedGradient_compAffineEquiv_le`,
-  `TauCeti.Wkp.norm_iteratedGradient_le_norm_compAffineEquiv`: two-sided order-by-order scaling.
+  `TauCeti.Wkp.norm_iteratedGradient_le_mul_norm_iteratedGradient_compAffineEquiv`: two-sided
+  order-by-order scaling.
 * `TauCeti.Wkp.norm_iteratedGradient_compAffineEquiv_le_of_ball_subset`,
-  `TauCeti.Wkp.norm_iteratedGradient_le_of_ball_subset_norm_compAffineEquiv`: Ciarlet geometric
-  scaling bounds.
-* `TauCeti.Wkp.norm_iteratedGradient_compAffineEquiv_smul`: exact dilation identity at every order.
+  `TauCeti.Wkp.norm_iteratedGradient_le_mul_norm_iteratedGradient_compAffineEquiv_of_ball_subset`:
+  Ciarlet geometric scaling bounds.
+* `TauCeti.Wkp.norm_value_compAffineEquiv_smulLeft`,
+  `TauCeti.Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft`: exact dilation identities at every
+  order.
 
 ## References
 
@@ -97,35 +100,7 @@ variable {E E' : Type*}
 
 namespace Wkp
 
-/-! ### Dominated pushforward and `Lᵖ` pullbacks along an affine map -/
-
-omit [FiniteDimensional ℝ E] in
-private theorem map_restrict_affine_le (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
-    (b : E') (hUW : MapsTo (fun x ↦ B x + b) U W) :
-    (μ.restrict U).map (fun x ↦ B x + b) ≤
-      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict W := by
-  have hmeas : Measurable (fun x ↦ B x + b) := (B.continuous.add continuous_const).measurable
-  have hcomp : (fun x ↦ B x + b) = (· + b) ∘ B := rfl
-  have hmap_full : μ.map (fun x ↦ B x + b) =
-      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν := by
-    rw [hcomp, ← Measure.map_map (measurable_add_const b) B.continuous.measurable,
-      map_add_right_eq_self]
-    exact Measure.isAddLeftInvariant_eq_smul (μ.map B) ν
-  calc
-    (μ.restrict U).map (fun x ↦ B x + b)
-        ≤ (μ.restrict ((fun x ↦ B x + b) ⁻¹' W)).map (fun x ↦ B x + b) :=
-          Measure.map_mono (Measure.restrict_mono hUW.subset_preimage le_rfl) hmeas
-    _ = (μ.map (fun x ↦ B x + b)).restrict W :=
-          (Measure.restrict_map hmeas W.isOpen.measurableSet).symm
-    _ = (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict W := by
-          rw [hmap_full, Measure.restrict_smul]
-
-omit [FiniteDimensional ℝ E] in
-private theorem quasiMeasurePreserving_restrict_affine (μ : Measure E) [μ.IsAddHaarMeasure]
-    (B : E ≃L[ℝ] E') (b : E') (hUW : MapsTo (fun x ↦ B x + b) U W) :
-    QuasiMeasurePreserving (fun x ↦ B x + b) (μ.restrict U) (ν.restrict W) :=
-  .of_map_le_smul (B.continuous.add (continuous_const (y := b))).measurable
-    (map_restrict_affine_le μ B b hUW)
+/-! ### `Lᵖ` pullbacks along an affine map -/
 
 /-- Precomposition `f ↦ f (B · + b)` on `Lᵖ`. -/
 private def compAffineLp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -134,7 +109,8 @@ private def compAffineLp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     Lp F p (ν.restrict W) →L[ℝ] Lp F p (μ.restrict U) :=
   Lp.compOfMapLeSmul ℝ (B.continuous.add (continuous_const (y := b))).measurable
     (ENNReal.coe_ne_top (r := Measure.addHaarScalarFactor (μ.map B) ν))
-    (map_restrict_affine_le μ B b hUW)
+    (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b W.isOpen.measurableSet
+      hUW)
 
 omit [FiniteDimensional ℝ E] in
 private theorem compAffineLp_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -143,7 +119,8 @@ private theorem compAffineLp_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
     compAffineLp μ B b hUW f =ᵐ[μ.restrict U] fun x ↦ f (B x + b) :=
   Lp.coeFn_compOfMapLeSmul (B.continuous.add (continuous_const (y := b))).measurable
     (ENNReal.coe_ne_top (r := Measure.addHaarScalarFactor (μ.map B) ν))
-    (map_restrict_affine_le μ B b hUW) f
+    (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b W.isOpen.measurableSet
+      hUW) f
 
 /-- Contravariant pullback of `Lᵖ` iterated-gradient fields along `x ↦ B x + b`. -/
 private def pullbackGradientLp (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
@@ -168,8 +145,7 @@ private theorem hasWeakFDerivOn_compAffineW1p (μ : Measure E) [μ.IsAddHaarMeas
     (B : E ≃L[ℝ] E') (b : E') (hUW : MapsTo (fun x ↦ B x + b) U W) (u : W1p ν W p) :
     HasWeakFDerivOn μ U (compAffineLp μ B b hUW (W1p.value u))
       (fun x ↦ innerSL ℝ (pullbackGradientLp μ B b hUW 0 (W1p.gradient u) x)) := by
-  have hweak :=
-    (W1p.hasWeakFDerivOn u).comp_continuousLinearEquiv_add_of_isAddHaarMeasure μ B b hUW
+  have hweak := (W1p.hasWeakFDerivOn u).comp_continuousLinearEquiv_add μ B b hUW
   refine (hweak.congr_ae (compAffineLp_ae μ B b hUW (W1p.value u)).symm).congr_ae_deriv ?_
   filter_upwards [pullbackGradientLp_ae μ B b hUW 0 (W1p.gradient u)] with x hx
   ext w
@@ -200,8 +176,7 @@ private def compAffineSpec (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[�
       (pullbackGradientLp μ B b hUW (k + 1) (iteratedGradient (k + 1) u)) (by
         rw [(compAffineSpec μ B b hUW k).2]
         have h :=
-          ((hasWeakFDerivOn_iteratedGradient k
-            u).comp_continuousLinearEquiv_add_of_isAddHaarMeasure μ B b hUW).clm_comp
+          ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv_add μ B b hUW).clm_comp
             ((B : E →L[ℝ] E').iteratedGradientPullback k)
         refine (h.congr_ae (pullbackGradientLp_ae μ B b hUW k _).symm).congr_ae_deriv ?_
         filter_upwards [pullbackGradientLp_ae μ B b hUW (k + 1) (iteratedGradient (k + 1) u)]
@@ -246,17 +221,16 @@ private theorem norm_compAffineSpec_le (μ : Measure E) [μ.IsAddHaarMeasure] (B
     ∀ (k : ℕ) (u : Wkp ν W p (k + 1)),
       ‖(compAffineSpec μ B b hUW k).1 u‖ ≤ compAffineBound (ν := ν) (p := p) μ B b hUW k * ‖u‖
   | 0, u => by
-      -- At order one `compAffineSpec` is `compAffineW1p`, and `Wkp _ _ p 1` is `W1p _ _ p`.
-      change ‖compAffineW1p μ B b hUW u‖ ≤
-        compAffineBound (ν := ν) (p := p) μ B b hUW 0 * ‖(u : W1p ν W p)‖
-      refine (W1p.norm_le_norm_value_add_norm_gradient _).trans ?_
-      dsimp only [compAffineW1p, compAffineBound]
-      rw [W1p.value_mk, W1p.gradient_mk, add_mul]
+      refine (norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 _).trans ?_
+      have hlow : lowerOrder 0 ((compAffineSpec μ B b hUW 0).1 u) =
+          compAffineLp μ B b hUW (value 1 u) :=
+        (value_zero _).symm.trans ((value_succ 0 _).symm.trans (value_compAffineSpec μ B b hUW 0 u))
+      rw [hlow, (compAffineSpec μ B b hUW 0).2, compAffineBound, add_mul]
       exact add_le_add
         (((compAffineLp μ B b hUW).le_opNorm _).trans
-          (mul_le_mul_of_nonneg_left (W1p.norm_value_le u) (norm_nonneg _)))
+          (mul_le_mul_of_nonneg_left (norm_value_le 1 u) (norm_nonneg _)))
         (((pullbackGradientLp μ B b hUW 0).le_opNorm _).trans
-          (mul_le_mul_of_nonneg_left (W1p.norm_gradient_le u) (norm_nonneg _)))
+          (mul_le_mul_of_nonneg_left (norm_iteratedGradient_le 0 u) (norm_nonneg _)))
   | k + 1, u => by
       refine (norm_le_norm_lowerOrder_add_norm_iteratedGradient (k + 1) _).trans ?_
       rw [lowerOrder_compAffineSpec, (compAffineSpec μ B b hUW (k + 1)).2, compAffineBound, add_mul]
@@ -288,12 +262,19 @@ def compAffineL (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b :
   | k + 1 => (compAffineₗ μ B b hUW (k + 1)).mkContinuous
       (compAffineBound (ν := ν) (p := p) μ B b hUW k) (norm_compAffineSpec_le μ B b hUW k)
 
+private theorem compAffineL_succ_apply (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
+    (b : E') (hUW : MapsTo (fun x ↦ B x + b) U W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
+    compAffineL μ B b hUW (k + 1) u = (compAffineSpec μ B b hUW k).1 u := by
+  simp [compAffineL, compAffineₗ]
+
 private theorem value_compAffineL_eq (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : MapsTo (fun x ↦ B x + b) U W) :
     ∀ (k : ℕ) (u : Wkp ν W p k),
       value k (compAffineL μ B b hUW k u) = compAffineLp μ B b hUW (value k u)
   | 0, u => by simp [compAffineL]
-  | k + 1, u => value_compAffineSpec μ B b hUW k u
+  | k + 1, u => by
+      rw [compAffineL_succ_apply]
+      exact value_compAffineSpec μ B b hUW k u
 
 /-- The value of `compAffineL μ B b hUW k u` is `x ↦ value k u (B x + b)` almost everywhere on
 `U`. -/
@@ -311,9 +292,7 @@ theorem iteratedGradient_compAffineL_ae (μ : Measure E) [μ.IsAddHaarMeasure] (
     (b : E') (hUW : MapsTo (fun x ↦ B x + b) U W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     iteratedGradient k (compAffineL μ B b hUW (k + 1) u) =ᵐ[μ.restrict U]
       fun x ↦ (B : E →L[ℝ] E').iteratedGradientPullback k (iteratedGradient k u (B x + b)) := by
-  -- At order `k + 1`, `compAffineL` evaluates `(compAffineSpec μ B b hUW k).1` by definition.
-  rw [show compAffineL μ B b hUW (k + 1) u = (compAffineSpec μ B b hUW k).1 u from rfl,
-    (compAffineSpec μ B b hUW k).2]
+  rw [compAffineL_succ_apply, (compAffineSpec μ B b hUW k).2]
   exact pullbackGradientLp_ae μ B b hUW k (iteratedGradient k u)
 
 /-- An element of `W^{k,p}(U)` equals `compAffineL μ B b hUW k u` if and only if its value is
@@ -370,7 +349,7 @@ theorem compAffineL_comp {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpa
   ext1 u
   symm
   refine (compAffineL_eq_iff μ _ _ hUO k u _).2 ?_
-  have hqmp := quasiMeasurePreserving_restrict_affine (ν := ν) μ B₁ b₁ hUW
+  have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ ν B₁ b₁ hUW
   filter_upwards [value_compAffineL_ae μ B₁ b₁ hUW k (compAffineL ν B₂ b₂ hWO k u),
     hqmp.ae (value_compAffineL_ae ν B₂ b₂ hWO k u)] with x h1 h2
   rw [ContinuousLinearMap.comp_apply, h1, h2]
@@ -400,12 +379,18 @@ theorem compAffineL_eq_compL {μ : Measure E} [μ.IsAddHaarMeasure] {V : Opens E
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E'] [MeasurableSpace E'] [BorelSpace E'] in
+private theorem eq_preimage_symm_add_neg (B : E ≃L[ℝ] E') (b : E')
+    (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) :
+    (W : Set E') = (fun y ↦ B.symm y + -B.symm b) ⁻¹' U := by
+  ext y
+  simp [hUW, B.apply_symm_apply]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E'] [MeasurableSpace E'] [BorelSpace E'] in
 private theorem inv_affine_mapsTo (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) :
-    MapsTo (fun y ↦ B.symm y + -B.symm b) W U := fun y hy ↦ by
-  rw [hUW, mem_preimage, map_add, map_neg, B.apply_symm_apply, B.apply_symm_apply,
-    neg_add_cancel_right]
-  exact hy
+    MapsTo (fun y ↦ B.symm y + -B.symm b) W U :=
+  eq_preimage_symm_add_neg B b hUW ▸ mapsTo_preimage _ _
 
 /-- **Affine Banach-space isomorphism of `W^{k,p}` for all `1 ≤ p ≤ ∞`.** When
 `U = (fun x ↦ B x + b) ⁻¹' W`, precomposition with `x ↦ B x + b` is a continuous linear equivalence
@@ -432,39 +417,104 @@ def compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') 
 /-- Evaluating `compAffineEquiv` applies `compAffineL` along the preimage inclusion. -/
 theorem compAffineEquiv_apply (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
-    compAffineEquiv μ B b hUW k u = compAffineL μ B b (hUW ▸ mapsTo_preimage _ _) k u :=
-  (rfl)
+    compAffineEquiv μ B b hUW k u = compAffineL μ B b (hUW ▸ mapsTo_preimage _ _) k u := by
+  simp [compAffineEquiv]
+
+/-- As a continuous linear map, `compAffineEquiv` is `compAffineL` along the preimage inclusion. -/
+@[simp]
+theorem coe_compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) :
+    (compAffineEquiv (ν := ν) (p := p) μ B b hUW k : Wkp ν W p k →L[ℝ] Wkp μ U p k) =
+      compAffineL μ B b (hUW ▸ mapsTo_preimage _ _) k := by
+  ext1 u
+  exact compAffineEquiv_apply μ B b hUW k u
+
+/-- Evaluating `(compAffineEquiv μ B b hUW k).symm` applies `compAffineL` along the inverse affine
+map `y ↦ B.symm y + -B.symm b`. -/
+theorem compAffineEquiv_symm_apply (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W)
+    (hWU : MapsTo (fun y ↦ B.symm y + -B.symm b) W U) (k : ℕ) (w : Wkp μ U p k) :
+    (compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm w =
+      compAffineL ν B.symm (-B.symm b) hWU k w := by
+  simp [compAffineEquiv]
 
 /-- The inverse of `compAffineEquiv μ B b` is `compAffineEquiv ν B.symm (-B.symm b)`. -/
 theorem compAffineEquiv_symm (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W)
     (hWU : (W : Set E') = (fun y ↦ B.symm y + -B.symm b) ⁻¹' U) (k : ℕ) :
     (compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm =
-      compAffineEquiv ν B.symm (-B.symm b) hWU k := by
-  ext u
-  rfl
+      compAffineEquiv ν B.symm (-B.symm b) hWU k :=
+  ContinuousLinearEquiv.ext <| funext fun w ↦ by
+    rw [compAffineEquiv_symm_apply μ B b hUW (hWU ▸ mapsTo_preimage _ _) k w, compAffineEquiv_apply]
+
+/-- An element of `W^{k,p}(U)` equals `compAffineEquiv μ B b hUW k u` if and only if its value is
+`x ↦ value k u (B x + b)` almost everywhere on `U`. -/
+theorem compAffineEquiv_eq_iff (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) (w : Wkp μ U p k) :
+    compAffineEquiv μ B b hUW k u = w ↔
+      (value k w : E → ℝ) =ᵐ[μ.restrict U] fun x ↦ value k u (B x + b) := by
+  rw [compAffineEquiv_apply]
+  exact compAffineL_eq_iff μ B b (hUW ▸ mapsTo_preimage _ _) k u w
 
 /-- The value of `compAffineEquiv μ B b hUW k u` is `x ↦ value k u (B x + b)` almost everywhere on
 `U`. -/
 theorem value_compAffineEquiv_ae (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
     (value k (compAffineEquiv μ B b hUW k u) : E → ℝ) =ᵐ[μ.restrict U]
-      fun x ↦ value k u (B x + b) :=
-  value_compAffineL_ae μ B b (hUW ▸ mapsTo_preimage _ _) k u
+      fun x ↦ value k u (B x + b) := by
+  rw [compAffineEquiv_apply]
+  exact value_compAffineL_ae μ B b (hUW ▸ mapsTo_preimage _ _) k u
 
 /-- **All-order chain rule for `compAffineEquiv`.** -/
 theorem iteratedGradient_compAffineEquiv_ae (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
     (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     iteratedGradient k (compAffineEquiv μ B b hUW (k + 1) u) =ᵐ[μ.restrict U]
-      fun x ↦ (B : E →L[ℝ] E').iteratedGradientPullback k (iteratedGradient k u (B x + b)) :=
-  iteratedGradient_compAffineL_ae μ B b (hUW ▸ mapsTo_preimage _ _) k u
+      fun x ↦ (B : E →L[ℝ] E').iteratedGradientPullback k (iteratedGradient k u (B x + b)) := by
+  rw [compAffineEquiv_apply]
+  exact iteratedGradient_compAffineL_ae μ B b (hUW ▸ mapsTo_preimage _ _) k u
 
 /-- `compAffineEquiv` commutes with forgetting the highest derivative. -/
 theorem lowerOrder_compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     lowerOrder k (compAffineEquiv μ B b hUW (k + 1) u) =
-      compAffineEquiv μ B b hUW k (lowerOrder k u) :=
-  lowerOrder_compAffineL μ B b (hUW ▸ mapsTo_preimage _ _) k u
+      compAffineEquiv μ B b hUW k (lowerOrder k u) := by
+  rw [compAffineEquiv_apply, compAffineEquiv_apply]
+  exact lowerOrder_compAffineL μ B b (hUW ▸ mapsTo_preimage _ _) k u
+
+/-- `compAffineEquiv` commutes with taking the first-order Sobolev component. -/
+theorem firstOrder_compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
+    firstOrder k (compAffineEquiv μ B b hUW (k + 1) u) =
+      (compAffineEquiv μ B b hUW 1 (firstOrder k u) : W1p μ U p) := by
+  rw [compAffineEquiv_apply]
+  exact (firstOrder_compAffineL μ B b (hUW ▸ mapsTo_preimage _ _) k u).trans
+    (compAffineEquiv_apply μ B b hUW 1 (firstOrder k u)).symm
+
+/-- Precomposing with the identity affine map `x ↦ x + 0` is the identity equivalence on
+`W^{k,p}(U)`. -/
+@[simp]
+theorem compAffineEquiv_refl_zero (μ : Measure E) [μ.IsAddHaarMeasure]
+    (hU : (U : Set E) = (fun x : E ↦ ContinuousLinearEquiv.refl ℝ E x + 0) ⁻¹' U) (k : ℕ) :
+    compAffineEquiv (ν := μ) (p := p) μ (ContinuousLinearEquiv.refl ℝ E) 0 hU k =
+      ContinuousLinearEquiv.refl ℝ (Wkp μ U p k) :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ by simp [compAffineEquiv_apply]
+
+/-- **Contravariant functoriality of `compAffineEquiv`.** Transporting along `y ↦ B₂ y + b₂` and
+then along `x ↦ B₁ x + b₁` equals transporting along `x ↦ (B₁.trans B₂) x + (B₂ b₁ + b₂)`. -/
+theorem compAffineEquiv_trans {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [MeasurableSpace E''] [BorelSpace E''] {ρ : Measure E''}
+    [ρ.IsAddHaarMeasure] (μ : Measure E) [μ.IsAddHaarMeasure] {O : Opens E''}
+    (B₁ : E ≃L[ℝ] E') (b₁ : E') (hUW : (U : Set E) = (fun x ↦ B₁ x + b₁) ⁻¹' W)
+    (B₂ : E' ≃L[ℝ] E'') (b₂ : E'') (hWO : (W : Set E') = (fun y ↦ B₂ y + b₂) ⁻¹' O)
+    (hUO : (U : Set E) = (fun x ↦ (B₁.trans B₂) x + (B₂ b₁ + b₂)) ⁻¹' O) (k : ℕ) :
+    (compAffineEquiv (ν := ρ) (p := p) ν B₂ b₂ hWO k).trans
+        (compAffineEquiv (ν := ν) (p := p) μ B₁ b₁ hUW k) =
+      compAffineEquiv (ν := ρ) (p := p) μ (B₁.trans B₂) (B₂ b₁ + b₂) hUO k :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ by
+    simp only [ContinuousLinearEquiv.trans_apply, compAffineEquiv_apply,
+      ← ContinuousLinearMap.comp_apply,
+      compAffineL_comp μ B₁ b₁ (hUW ▸ mapsTo_preimage _ _) B₂ b₂ (hWO ▸ mapsTo_preimage _ _)
+        (hUO ▸ mapsTo_preimage _ _) k]
 
 /-- Pulling back a compactly supported test function on `W` along `x ↦ B x + b` lands in the
 embedded test functions on `U`. -/
@@ -487,7 +537,7 @@ theorem exists_compAffineEquiv_ofTestFunctionₗ (μ : Measure E) [μ.IsAddHaarM
   refine ⟨ψ, ?_, hψ⟩
   rw [compAffineEquiv_apply]
   refine (compAffineL_eq_iff μ _ _ _ k (ofTestFunctionₗ k φ) (ofTestFunctionₗ k ψ)).2 ?_
-  have hqmp := quasiMeasurePreserving_restrict_affine (ν := ν) μ B b
+  have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict μ ν B b
     (hUW ▸ mapsTo_preimage _ _)
   filter_upwards [value_ofTestFunctionₗ (mu := μ) (p := p) k ψ ▸ testFunctionLp_apply_ae p ψ,
     hqmp.ae (value_ofTestFunctionₗ (mu := ν) (p := p) k φ ▸ testFunctionLp_apply_ae p φ)]
@@ -513,9 +563,7 @@ theorem compAffineEquiv_mem_wkp0Submodule_iff (μ : Measure E) [μ.IsAddHaarMeas
     (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) {u : Wkp ν W p k} :
     compAffineEquiv μ B b hUW k u ∈ wkp0Submodule μ U p k ↔ u ∈ wkp0Submodule ν W p k := by
   refine ⟨fun hu ↦ ?_, compAffineEquiv_mem_wkp0Submodule μ B b hUW k⟩
-  have hWU : (W : Set E') = (fun y ↦ B.symm y + -B.symm b) ⁻¹' U := by
-    ext y
-    simp [hUW, B.apply_symm_apply]
+  have hWU := eq_preimage_symm_add_neg B b hUW
   have h := compAffineEquiv_mem_wkp0Submodule (ν := μ) (p := p) ν B.symm (-B.symm b) hWU k hu
   rwa [← compAffineEquiv_symm μ B b hUW hWU k, ContinuousLinearEquiv.symm_apply_apply] at h
 
@@ -525,27 +573,75 @@ end Wkp
 def Wkp0.compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) :
     Wkp0 ν W p k ≃L[ℝ] Wkp0 μ U p k :=
-  ContinuousLinearEquiv.equivOfInverse
-    ((Wkp.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).toContinuousLinearMap.restrict
-      (p := (wkp0Submodule ν W p k).toSubmodule) (q := (wkp0Submodule μ U p k).toSubmodule)
-      fun _ hu ↦ Wkp.compAffineEquiv_mem_wkp0Submodule μ B b hUW k hu)
-    (((Wkp.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm).toContinuousLinearMap.restrict
-      (p := (wkp0Submodule μ U p k).toSubmodule) (q := (wkp0Submodule ν W p k).toSubmodule)
-      fun _ hu ↦ by
-        have hWU : (W : Set E') = (fun y ↦ B.symm y + -B.symm b) ⁻¹' U := by
-          ext y
-          simp [hUW, B.apply_symm_apply]
-        simpa [Wkp.compAffineEquiv_symm μ B b hUW hWU k] using
-          Wkp.compAffineEquiv_mem_wkp0Submodule ν B.symm (-B.symm b) hWU k hu)
-    (fun u ↦ Subtype.ext ((Wkp.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm_apply_apply u))
-    (fun u ↦ Subtype.ext ((Wkp.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).apply_symm_apply u))
+  (Wkp.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).ofSubmodules
+    (wkp0Submodule ν W p k).toSubmodule (wkp0Submodule μ U p k).toSubmodule <| by
+      ext w
+      constructor
+      · rintro ⟨u, hu, rfl⟩
+        exact Wkp.compAffineEquiv_mem_wkp0Submodule μ B b hUW k hu
+      · intro hw
+        exact ⟨(Wkp.compAffineEquiv μ B b hUW k).symm w,
+          (Wkp.compAffineEquiv_mem_wkp0Submodule_iff μ B b hUW k).1 (by simpa using hw),
+          by simp⟩
 
+/-- Forgetting the zero-boundary condition intertwines `Wkp0.compAffineEquiv` with
+`Wkp.compAffineEquiv`. -/
 @[simp]
 theorem Wkp0.coe_compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp0 ν W p k) :
     (Wkp0.compAffineEquiv μ B b hUW k u : Wkp μ U p k) =
-      Wkp.compAffineEquiv μ B b hUW k (u : Wkp ν W p k) :=
-  (rfl)
+      Wkp.compAffineEquiv μ B b hUW k (u : Wkp ν W p k) := by
+  simp [Wkp0.compAffineEquiv]
+
+/-- Forgetting the zero-boundary condition intertwines `(Wkp0.compAffineEquiv ...).symm` with
+`(Wkp.compAffineEquiv ...).symm`. -/
+@[simp]
+theorem Wkp0.coe_compAffineEquiv_symm (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
+    (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (w : Wkp0 μ U p k) :
+    ((Wkp0.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm w : Wkp ν W p k) =
+      (Wkp.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm (w : Wkp μ U p k) := by
+  simp [Wkp0.compAffineEquiv]
+
+/-- The inverse of `Wkp0.compAffineEquiv μ B b` is `Wkp0.compAffineEquiv ν B.symm (-B.symm b)`. -/
+theorem Wkp0.compAffineEquiv_symm (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
+    (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W)
+    (hWU : (W : Set E') = (fun y ↦ B.symm y + -B.symm b) ⁻¹' U) (k : ℕ) :
+    (Wkp0.compAffineEquiv (ν := ν) (p := p) μ B b hUW k).symm =
+      Wkp0.compAffineEquiv ν B.symm (-B.symm b) hWU k :=
+  ContinuousLinearEquiv.ext <| funext fun w ↦ Subtype.ext <| by
+    simp [Wkp.compAffineEquiv_symm μ B b hUW hWU k]
+
+/-- Precomposing with the identity affine map `x ↦ x + 0` is the identity equivalence on
+`W^{k,p}_0(U)`. -/
+@[simp]
+theorem Wkp0.compAffineEquiv_refl_zero (μ : Measure E) [μ.IsAddHaarMeasure]
+    (hU : (U : Set E) = (fun x : E ↦ ContinuousLinearEquiv.refl ℝ E x + 0) ⁻¹' U) (k : ℕ) :
+    Wkp0.compAffineEquiv (ν := μ) (p := p) μ (ContinuousLinearEquiv.refl ℝ E) 0 hU k =
+      ContinuousLinearEquiv.refl ℝ (Wkp0 μ U p k) :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ Subtype.ext <| by simp
+
+/-- **Contravariant functoriality of `Wkp0.compAffineEquiv`.** -/
+theorem Wkp0.compAffineEquiv_trans {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [MeasurableSpace E''] [BorelSpace E''] {ρ : Measure E''}
+    [ρ.IsAddHaarMeasure] (μ : Measure E) [μ.IsAddHaarMeasure] {O : Opens E''}
+    (B₁ : E ≃L[ℝ] E') (b₁ : E') (hUW : (U : Set E) = (fun x ↦ B₁ x + b₁) ⁻¹' W)
+    (B₂ : E' ≃L[ℝ] E'') (b₂ : E'') (hWO : (W : Set E') = (fun y ↦ B₂ y + b₂) ⁻¹' O)
+    (hUO : (U : Set E) = (fun x ↦ (B₁.trans B₂) x + (B₂ b₁ + b₂)) ⁻¹' O) (k : ℕ) :
+    (Wkp0.compAffineEquiv (ν := ρ) (p := p) ν B₂ b₂ hWO k).trans
+        (Wkp0.compAffineEquiv (ν := ν) (p := p) μ B₁ b₁ hUW k) =
+      Wkp0.compAffineEquiv (ν := ρ) (p := p) μ (B₁.trans B₂) (B₂ b₁ + b₂) hUO k :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ Subtype.ext <| by
+    simpa using congrArg (fun e ↦ e (u : Wkp ρ O p k))
+      (Wkp.compAffineEquiv_trans μ B₁ b₁ hUW B₂ b₂ hWO hUO k)
+
+/-- `Wkp0.compAffineEquiv` commutes with forgetting the highest derivative (`Wkp0.lowerOrderL`). -/
+theorem Wkp0.lowerOrderL_compAffineEquiv (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E')
+    (b : E') (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp0 ν W p (k + 1)) :
+    Wkp0.lowerOrderL k (Wkp0.compAffineEquiv μ B b hUW (k + 1) u) =
+      Wkp0.compAffineEquiv μ B b hUW k (Wkp0.lowerOrderL k u) :=
+  Subtype.ext <| by
+    rw [Wkp0.coe_lowerOrderL, Wkp0.coe_compAffineEquiv, Wkp.lowerOrder_compAffineEquiv,
+      Wkp0.coe_compAffineEquiv, Wkp0.coe_lowerOrderL]
 
 end GeneralSpaces
 
@@ -636,7 +732,7 @@ theorem norm_value_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
     ENNReal.toReal_mul, toReal_ofReal_abs_inv_det_rpow (p := p) B]
 
 /-- **Reverse exact order-zero scaling on preimages.** -/
-theorem norm_value_eq_mul_norm_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
+theorem norm_value_eq_mul_norm_value_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp μ W p k) :
     ‖value k u‖ =
       |LinearMap.det (B : E →ₗ[ℝ] E)| ^ (1 / p).toReal *
@@ -657,25 +753,17 @@ theorem norm_iteratedGradient_compAffineEquiv_le (B : E ≃L[ℝ] E) (b : E)
 
 /-- **Reverse order-by-order seminorm scaling (`1 ≤ p ≤ ∞`).** When `U = (fun x ↦ B x + b) ⁻¹' W`,
 `|u|_{k+1,p,W} ≤ ‖B.symm‖ ^ (k + 1) * |det B| ^ (1/p) * |u ∘ F|_{k+1,p,U}`. -/
-theorem norm_iteratedGradient_le_norm_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
+theorem norm_iteratedGradient_le_mul_norm_iteratedGradient_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) (k : ℕ) (u : Wkp μ W p (k + 1)) :
     ‖iteratedGradient k u‖ ≤
       ‖(B.symm : E →L[ℝ] E)‖ ^ (k + 1) * |LinearMap.det (B : E →ₗ[ℝ] E)| ^ (1 / p).toReal *
         ‖iteratedGradient k (compAffineEquiv μ B b hUW (k + 1) u)‖ := by
-  have hWU : (W : Set E) = (fun y ↦ B.symm y + -B.symm b) ⁻¹' U := by
-    ext y
-    simp [hUW, B.apply_symm_apply]
+  have hWU := eq_preimage_symm_add_neg B b hUW
   have hsymm := norm_iteratedGradient_compAffineEquiv_le (μ := μ) (p := p)
     B.symm (-B.symm b) hWU k (compAffineEquiv μ B b hUW (k + 1) u)
   rw [← compAffineEquiv_symm μ B b hUW hWU (k + 1), ContinuousLinearEquiv.symm_apply_apply] at hsymm
-  have hcomp : (B.symm : E →ₗ[ℝ] E).comp (B : E →ₗ[ℝ] E) = LinearMap.id := by
-    ext x
-    exact B.symm_apply_apply x
-  have hdet : |LinearMap.det (B.symm : E →ₗ[ℝ] E)|⁻¹ = |LinearMap.det (B : E →ₗ[ℝ] E)| := by
-    have hmul : |LinearMap.det (B.symm : E →ₗ[ℝ] E)| * |LinearMap.det (B : E →ₗ[ℝ] E)| = 1 := by
-      rw [← abs_mul, ← LinearMap.det_comp, hcomp, LinearMap.det_id, abs_one]
-    exact inv_eq_of_mul_eq_one_right hmul
-  rwa [hdet] at hsymm
+  rwa [ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm, abs_inv,
+    inv_inv] at hsymm
 
 /-- **Ciarlet forward geometric seminorm bound.** If `U = (fun x ↦ B x + b) ⁻¹' W`, `W` is bounded,
 and `U` contains a ball of positive radius `ρ'`, then the `(k + 1)`-st weak derivative of `u ∘ F` on
@@ -696,7 +784,8 @@ theorem norm_iteratedGradient_compAffineEquiv_le_of_ball_subset (B : E ≃L[ℝ]
 /-- **Ciarlet reverse geometric seminorm bound.** If `U = (fun x ↦ B x + b) ⁻¹' W`, `U` is bounded,
 and `W` contains a ball of positive radius `ρ`, then the `(k + 1)`-st weak derivative of `u` on `W`
 is bounded in terms of `diam U / (2 * ρ)` and `|det B| ^ (1 / p).toReal`. -/
-theorem norm_iteratedGradient_le_of_ball_subset_norm_compAffineEquiv (B : E ≃L[ℝ] E) (b : E)
+theorem norm_iteratedGradient_le_mul_norm_iteratedGradient_compAffineEquiv_of_ball_subset
+    (B : E ≃L[ℝ] E) (b : E)
     (hUW : (U : Set E) = (fun x ↦ B x + b) ⁻¹' W) {z : E} {ρ : ℝ} (hρ : 0 < ρ)
     (hbdd : Bornology.IsBounded (U : Set E)) (hball : Metric.ball z ρ ⊆ (W : Set E))
     (k : ℕ) (u : Wkp μ W p (k + 1)) :
@@ -704,7 +793,7 @@ theorem norm_iteratedGradient_le_of_ball_subset_norm_compAffineEquiv (B : E ≃L
       (Metric.diam (U : Set E) / (2 * ρ)) ^ (k + 1) *
         |LinearMap.det (B : E →ₗ[ℝ] E)| ^ (1 / p).toReal *
         ‖iteratedGradient k (compAffineEquiv μ B b hUW (k + 1) u)‖ := by
-  refine (norm_iteratedGradient_le_norm_compAffineEquiv B b hUW k u).trans ?_
+  refine (norm_iteratedGradient_le_mul_norm_iteratedGradient_compAffineEquiv B b hUW k u).trans ?_
   have hB : ‖(B.symm : E →L[ℝ] E)‖ ≤ Metric.diam (U : Set E) / (2 * ρ) :=
     B.opNorm_symm_le_diam_div_two_mul_of_eq_preimage hρ hbdd hUW hball
   gcongr
@@ -726,7 +815,7 @@ private theorem abs_inv_det_smulLeft_rpow {F : Type*} [NormedAddCommGroup F] [No
     div_eq_mul_inv]
 
 /-- **Exact order-zero dilation identity** along `x ↦ r • x + b` (`r ≠ 0`). -/
-theorem norm_value_compAffineEquiv_smul {r : ℝ} (hr : r ≠ 0) (b : E)
+theorem norm_value_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) (b : E)
     (hUW : (U : Set E) = (fun x ↦ ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) x + b) ⁻¹' W)
     (k : ℕ) (u : Wkp μ W p k) :
     ‖value k (compAffineEquiv μ (ContinuousLinearEquiv.smulLeft (Units.mk0 r hr)) b hUW k u)‖ =
@@ -735,7 +824,7 @@ theorem norm_value_compAffineEquiv_smul {r : ℝ} (hr : r ≠ 0) (b : E)
 
 /-- **Exact order-`k + 1` dilation identity** along `x ↦ r • x + b` (`r ≠ 0`), valid for every
 order `k` and every exponent `1 ≤ p ≤ ∞`. -/
-theorem norm_iteratedGradient_compAffineEquiv_smul {r : ℝ} (hr : r ≠ 0) (b : E)
+theorem norm_iteratedGradient_compAffineEquiv_smulLeft {r : ℝ} (hr : r ≠ 0) (b : E)
     (hUW : (U : Set E) = (fun x ↦ ContinuousLinearEquiv.smulLeft (Units.mk0 r hr) x + b) ⁻¹' W)
     (k : ℕ) (u : Wkp μ W p (k + 1)) :
     ‖iteratedGradient k
@@ -787,9 +876,9 @@ example (u : Wkp volume (realOpenIoo 1 3) 2 1) :
   intro B hUW
   refine ⟨?_, ?_⟩
   · simpa [Module.finrank_self] using
-      Wkp.norm_value_compAffineEquiv_smul two_ne_zero (1 : ℝ) hUW 1 u
+      Wkp.norm_value_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) hUW 1 u
   · simpa [Module.finrank_self] using
-      Wkp.norm_iteratedGradient_compAffineEquiv_smul two_ne_zero (1 : ℝ) hUW 0 u
+      Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) hUW 0 u
 
 example (u : Wkp volume (realOpenIoo 1 3) ⊤ 2) :
     let B : ℝ ≃L[ℝ] ℝ := ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero)
@@ -804,9 +893,9 @@ example (u : Wkp volume (realOpenIoo 1 3) ⊤ 2) :
         4 * ‖Wkp.iteratedGradient 1 u‖ := by
   intro B hUW
   refine ⟨?_, ?_⟩
-  · simpa using Wkp.norm_iteratedGradient_compAffineEquiv_smul two_ne_zero (1 : ℝ) hUW 0
+  · simpa using Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) hUW 0
       (Wkp.lowerOrder 1 u)
-  · have h := Wkp.norm_iteratedGradient_compAffineEquiv_smul two_ne_zero (1 : ℝ) hUW 1 u
+  · have h := Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) hUW 1 u
     norm_num [ENNReal.toReal_top] at h
     exact h
 

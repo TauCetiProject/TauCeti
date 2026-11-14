@@ -46,8 +46,9 @@ differentiability assumptions.
   with `(e.iteratedGradientCongr j).symm`.
 * `ContinuousLinearEquiv.iteratedGradientPullbackEquiv`: the induced continuous linear equivalence
   on `IteratedGradient` along `e : E ≃L[ℝ] E'`.
-* `TauCeti.iteratedGradientChain_comp_continuousLinearEquiv_add`: unconditional chain rule for
-  `iteratedGradientChain` along an invertible affine map `y ↦ e y + b`.
+* `ContinuousLinearEquiv.iteratedGradientChain_comp_right`,
+  `ContinuousLinearEquiv.iteratedGradientChain_comp_add`: unconditional chain rules for
+  `iteratedGradientChain` along `e` and along an invertible affine map `y ↦ e y + b`.
 -/
 
 public section
@@ -211,6 +212,24 @@ theorem LinearIsometryEquiv.iteratedGradientPullback_coe (e : E ≃ₗᵢ[ℝ] E
       rw [ContinuousLinearMap.iteratedGradientPullback_succ_apply, ih]
       exact (e.iteratedGradientCongr_symm_succ_apply j G).symm
 
+namespace TauCeti
+
+/-- Classical iterated gradients commute with right translation; no differentiability hypothesis is
+needed. -/
+theorem iteratedGradientChain_comp_add_right (f : E → ℝ) (b : E) (j : ℕ) (x : E) :
+    iteratedGradientChain (fun y ↦ f (y + b)) j x = iteratedGradientChain f j (x + b) := by
+  induction j generalizing x with
+  | zero =>
+      simp only [iteratedGradientChain_zero, gradient, fderiv_comp_add_right]
+  | succ j ih =>
+      simp only [iteratedGradientChain_succ]
+      have hfun : iteratedGradientChain (fun y ↦ f (y + b)) j =
+          fun y ↦ iteratedGradientChain f j (y + b) :=
+        funext ih
+      rw [hfun, fderiv_comp_add_right]
+
+end TauCeti
+
 namespace ContinuousLinearEquiv
 
 /-- The continuous linear equivalence on `TauCeti.IteratedGradient` induced by `e : E ≃L[ℝ] E'`,
@@ -248,55 +267,60 @@ theorem iteratedGradientPullbackEquiv_symm (e : E ≃L[ℝ] E') (j : ℕ) :
     (e.iteratedGradientPullbackEquiv j).symm = e.symm.iteratedGradientPullbackEquiv j :=
   (rfl)
 
-end ContinuousLinearEquiv
+/-- Pullback of iterated gradients along the identity continuous linear equivalence is the identity
+equivalence. -/
+@[simp]
+theorem iteratedGradientPullbackEquiv_refl (j : ℕ) :
+    (ContinuousLinearEquiv.refl ℝ E).iteratedGradientPullbackEquiv j =
+      ContinuousLinearEquiv.refl ℝ (TauCeti.IteratedGradient E j) :=
+  ext <| funext fun G ↦ by
+    rw [iteratedGradientPullbackEquiv_apply, coe_refl,
+      ContinuousLinearMap.iteratedGradientPullback_id]
+    rfl
 
-namespace TauCeti
-
-/-- Classical iterated gradients commute with right translation; no differentiability hypothesis is
-needed. -/
-theorem iteratedGradientChain_comp_add_right (f : E → ℝ) (b : E) (j : ℕ) (x : E) :
-    iteratedGradientChain (fun y ↦ f (y + b)) j x = iteratedGradientChain f j (x + b) := by
-  induction j generalizing x with
-  | zero =>
-      simp only [iteratedGradientChain_zero, gradient, fderiv_comp_add_right]
-  | succ j ih =>
-      simp only [iteratedGradientChain_succ]
-      have hfun : iteratedGradientChain (fun y ↦ f (y + b)) j =
-          fun y ↦ iteratedGradientChain f j (y + b) :=
-        funext ih
-      rw [hfun, fderiv_comp_add_right]
+/-- Pullback of iterated gradients as a continuous linear equivalence is contravariant:
+`(e₁.trans e₂).iteratedGradientPullbackEquiv j =
+  (e₂.iteratedGradientPullbackEquiv j).trans (e₁.iteratedGradientPullbackEquiv j)`. -/
+theorem iteratedGradientPullbackEquiv_trans {E'' : Type*} [NormedAddCommGroup E'']
+    [InnerProductSpace ℝ E''] [CompleteSpace E''] (e₁ : E ≃L[ℝ] E') (e₂ : E' ≃L[ℝ] E'')
+    (j : ℕ) :
+    (e₁.trans e₂).iteratedGradientPullbackEquiv j =
+      (e₂.iteratedGradientPullbackEquiv j).trans (e₁.iteratedGradientPullbackEquiv j) :=
+  ext <| funext fun G ↦ by
+    simpa [← comp_coe] using congrArg (fun T ↦ T G)
+      (ContinuousLinearMap.iteratedGradientPullback_comp
+        (e₂ : E' →L[ℝ] E'') (e₁ : E →L[ℝ] E') j)
 
 /-- Classical iterated gradients transform by `ContinuousLinearMap.iteratedGradientPullback` along
 a continuous linear equivalence `e : E ≃L[ℝ] E'`, without any differentiability hypothesis. -/
-theorem iteratedGradientChain_comp_continuousLinearEquiv (e : E ≃L[ℝ] E') (f : E' → ℝ)
-    (j : ℕ) (x : E) :
-    iteratedGradientChain (f ∘ e) j x =
-      (e : E →L[ℝ] E').iteratedGradientPullback j (iteratedGradientChain f j (e x)) := by
+theorem iteratedGradientChain_comp_right (e : E ≃L[ℝ] E') (f : E' → ℝ) (j : ℕ) (x : E) :
+    TauCeti.iteratedGradientChain (f ∘ e) j x =
+      (e : E →L[ℝ] E').iteratedGradientPullback j (TauCeti.iteratedGradientChain f j (e x)) := by
   induction j generalizing x with
   | zero =>
-      simp only [iteratedGradientChain_zero, ContinuousLinearMap.iteratedGradientPullback_zero]
+      simp only [TauCeti.iteratedGradientChain_zero,
+        ContinuousLinearMap.iteratedGradientPullback_zero]
       refine ext_inner_right ℝ fun v ↦ ?_
       rw [gradient, gradient, e.comp_right_fderiv, ContinuousLinearMap.adjoint_inner_left,
         InnerProductSpace.toDual_symm_apply, InnerProductSpace.toDual_symm_apply,
         ContinuousLinearMap.comp_apply]
   | succ j ih =>
-      simp only [iteratedGradientChain_succ]
-      have hfun : iteratedGradientChain (f ∘ e) j =
-          (e.iteratedGradientPullbackEquiv j) ∘ (iteratedGradientChain f j ∘ e) :=
+      simp only [TauCeti.iteratedGradientChain_succ]
+      have hfun : TauCeti.iteratedGradientChain (f ∘ e) j =
+          (e.iteratedGradientPullbackEquiv j) ∘ (TauCeti.iteratedGradientChain f j ∘ e) :=
         funext ih
       rw [hfun, (e.iteratedGradientPullbackEquiv j).comp_fderiv, e.comp_right_fderiv]
       rfl
 
 /-- Classical iterated gradients transform by `ContinuousLinearMap.iteratedGradientPullback` along
 an invertible affine map `y ↦ e y + b`, without any differentiability hypothesis. -/
-theorem iteratedGradientChain_comp_continuousLinearEquiv_add (e : E ≃L[ℝ] E') (b : E')
-    (f : E' → ℝ) (j : ℕ) (x : E) :
-    iteratedGradientChain (fun y ↦ f (e y + b)) j x =
-      (e : E →L[ℝ] E').iteratedGradientPullback j (iteratedGradientChain f j (e x + b)) := by
+theorem iteratedGradientChain_comp_add (e : E ≃L[ℝ] E') (b : E') (f : E' → ℝ) (j : ℕ) (x : E) :
+    TauCeti.iteratedGradientChain (fun y ↦ f (e y + b)) j x =
+      (e : E →L[ℝ] E').iteratedGradientPullback j
+        (TauCeti.iteratedGradientChain f j (e x + b)) := by
   have hcomp : (fun y ↦ f (e y + b)) = (fun z ↦ f (z + b)) ∘ e := rfl
-  rw [hcomp, iteratedGradientChain_comp_continuousLinearEquiv,
-    iteratedGradientChain_comp_add_right]
+  rw [hcomp, e.iteratedGradientChain_comp_right, TauCeti.iteratedGradientChain_comp_add_right]
 
-end TauCeti
+end ContinuousLinearEquiv
 
 end Pullback

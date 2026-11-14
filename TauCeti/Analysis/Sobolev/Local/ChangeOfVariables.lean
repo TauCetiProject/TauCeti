@@ -165,7 +165,7 @@ theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc
       fun z => ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (A : ℂ →L[ℝ] ℂ)) (D (Φ z)), ?_,
       (ih hk).clm_comp _⟩
     simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, Φ] using
-      hD.comp_continuousLinearEquiv_add (U := Opens.interior U) A b (by simpa using hint)
+      hD.comp_continuousLinearEquiv_add (U := Opens.interior U) volume A b (by simpa using hint)
 
 /-! ### Checks -/
 
@@ -189,7 +189,7 @@ theorem HasWeakFDerivOn.comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ]
     HasWeakFDerivOn volume U (fun z => u (2 * z)) (fun z => (2 : ℝ) • Du (2 * z)) := by
   set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
   have hA : ∀ z, A z = 2 * z := fun z => by simp [A, Complex.real_smul]
-  have h := hu.comp_continuousLinearEquiv_add (U := U) A 0 fun z hz => by
+  have h := hu.comp_continuousLinearEquiv_add (U := U) volume A 0 fun z hz => by
     simpa [hA] using hUV hz
   convert h using 2 with z
   · simp [hA]
