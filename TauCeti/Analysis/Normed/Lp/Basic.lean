@@ -33,6 +33,9 @@ vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
 most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
+A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
+operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
+
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
 dense subsets are dense.
@@ -44,8 +47,43 @@ operators on `lp E p` that converges on every `single i x` converges at every ve
 
 public section
 
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 open Filter
+
+namespace ContinuousLinearMap
+
+variable {ι 𝕜 X : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+
+/-- A uniformly bounded family of operators, assembled into an operator with values in `ℓ∞`. -/
+noncomputable def piLpInfty (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C) :
+    X →L[𝕜] lp E ∞ :=
+  LinearMap.mkContinuous
+    { toFun x := ⟨fun i ↦ f i x, memℓp_infty ⟨C * ‖x‖, by
+        rintro _ ⟨i, rfl⟩
+        exact (f i).le_opNorm x |>.trans
+          (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x))⟩⟩
+      map_add' x y := lp.ext <| funext fun i ↦ (f i).map_add x y
+      map_smul' c x := lp.ext <| funext fun i ↦ (f i).map_smul c x }
+    C fun x ↦ lp.norm_le_of_forall_le (by positivity) fun i ↦
+      (f i).le_opNorm x |>.trans
+        (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x))
+
+/-- Each coordinate of the assembled operator is the corresponding member of the family. -/
+@[simp]
+theorem piLpInfty_apply (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C)
+    (x : X) (i : ι) : piLpInfty f C hf x i = f i x := (rfl)
+
+/-- The norm of the assembled operator is at most the uniform bound. -/
+theorem nnnorm_piLpInfty_le (f : ∀ i, X →L[𝕜] E i) (C : ℝ≥0) (hf : ∀ i, ‖f i‖₊ ≤ C) :
+    ‖piLpInfty f C hf‖₊ ≤ C := by
+  refine opNNNorm_le_bound _ _ fun x ↦ ?_
+  exact_mod_cast lp.norm_le_of_forall_le (by positivity : 0 ≤ (C : ℝ) * ‖x‖)
+    (fun i ↦ (f i).le_opNorm x |>.trans
+      (mul_le_mul_of_nonneg_right (by exact_mod_cast hf i) (norm_nonneg x)))
+
+end ContinuousLinearMap
 
 namespace lp
 
