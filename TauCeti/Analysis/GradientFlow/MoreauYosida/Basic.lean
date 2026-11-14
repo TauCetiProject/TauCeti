@@ -177,6 +177,11 @@ theorem apply_ne_bot_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolv
   rw [h, EReal.bot_add, le_bot_iff, EReal.add_eq_bot_iff] at this
   exact this.elim hφy (EReal.coe_ennreal_ne_bot _)
 
+/-- If `φ_τ(x) ≠ ⊥`, then `φ z ≠ ⊥` at every point `z` at finite distance from `x`. -/
+theorem apply_ne_bot_of_moreauYosida_ne_bot (hx : moreauYosida φ τ x ≠ ⊥) {z : X}
+    (hz : edist x z ≠ ⊤) : φ z ≠ ⊥ := fun h ↦
+  hx <| le_bot_iff.1 <| by simpa [h] using moreauYosida_le φ τ hz
+
 /-- **Minimality of a resolvent step, in real numbers.** For a resolvent step `y ∈ J_τ x` with
 `τ > 0`, a point `z` at finite distance from `x`, and real energies `φ y = a` and `φ z = b`, the
 minimality of `y` against `z` is the real inequality

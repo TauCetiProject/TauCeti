@@ -109,15 +109,6 @@ private theorem moreauYosida_ne_bot_of_mem {τ σ : ℝ≥0} {z : X}
   rw [hbot, EReal.bot_add, le_bot_iff, EReal.add_eq_bot_iff] at h
   exact h.elim hτ (EReal.coe_ennreal_ne_bot _)
 
-/-- A resolvent step from a point where the Moreau–Yosida approximation is not `⊥` has energy
-other than `⊥`. -/
-private theorem apply_ne_bot_of_moreauYosida_ne_bot {τ : ℝ≥0} {z : X}
-    (hz : z ∈ moreauYosidaResolvent φ τ x)
-    (hτ : moreauYosida φ τ x ≠ ⊥) : φ z ≠ ⊥ := by
-  intro h
-  rw [← (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hz).2, h, EReal.bot_add] at hτ
-  exact hτ rfl
-
 /-- `TauCeti.moreauYosida_add_le_of_mem_moreauYosidaResolvent` in real numbers, for positive real
 time steps `s` and `t` at which the Moreau–Yosida approximation is finite. -/
 private theorem toReal_moreauYosida_add_le {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {z : X}
@@ -201,7 +192,8 @@ private theorem monotoneOn_toReal_edist {y : ℝ → X} {s : Set ℝ} (hs : s �
   refine ENNReal.toReal_mono (edist_ne_top_of_mem_moreauYosidaResolvent (hy t ht))
     (edist_le_edist_of_mem_moreauYosidaResolvent
     ?_ (hy r hr) (hy t ht)
-    (apply_ne_bot_of_moreauYosida_ne_bot (hy r hr) (hfin r hr).2) (hfin r hr).1)
+    (apply_ne_bot_of_moreauYosida_ne_bot (hfin r hr).2
+      (edist_ne_top_of_mem_moreauYosidaResolvent (hy r hr))) (hfin r hr).1)
   exact Real.toNNReal_lt_toNNReal_iff'.2 ⟨hrt, hs ht⟩
 
 /-- The Moreau–Yosida approximation is finite at every time of `[a, b]` if it is not `⊤` at `a`

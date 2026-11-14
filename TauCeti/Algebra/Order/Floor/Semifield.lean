@@ -36,6 +36,8 @@ jet conditions on an integer interval of radius `B`.
 * `TauCeti.card_biUnion_Ico_ceil_div_le`: the union of these index sets over `k` intervals has at
   most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
+* `TauCeti.mem_Ico_floor_mul`: `t ∈ [⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)` for `τ > 0` and `t ≥ 0`.
+* `TauCeti.ceil_eq_floor_or_add_one`: `⌈x⌉₊ = ⌊x⌋₊ ∨ ⌈x⌉₊ = ⌊x⌋₊ + 1`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 -/
@@ -77,6 +79,20 @@ theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] (hτ : 0 ≤ τ)
 theorem mem_Ico_ceil_div_iff (hτ : 0 < τ) {n : ℕ} :
     n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊ ↔ n * τ ∈ Set.Ico s t := by
   rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, div_le_iff₀ hτ, lt_div_iff₀ hτ, Set.mem_Ico]
+
+/-- For a step `τ > 0` and `t ≥ 0`, `t` lies in the step interval
+`[⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)`. -/
+theorem mem_Ico_floor_mul (hτ : 0 < τ) (ht : 0 ≤ t) :
+    t ∈ Set.Ico ((⌊t / τ⌋₊ : K) * τ) (((⌊t / τ⌋₊ : K) + 1) * τ) :=
+  ⟨(le_div_iff₀ hτ).1 (Nat.floor_le (div_nonneg ht hτ.le)),
+    (div_lt_iff₀ hτ).1 (Nat.lt_floor_add_one _)⟩
+
+/-- The natural ceiling `⌈x⌉₊` equals either `⌊x⌋₊` or `⌊x⌋₊ + 1`. -/
+theorem ceil_eq_floor_or_add_one {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring R]
+    (x : R) : ⌈x⌉₊ = ⌊x⌋₊ ∨ ⌈x⌉₊ = ⌊x⌋₊ + 1 := by
+  have := Nat.floor_le_ceil x
+  have := Nat.ceil_le_floor_add_one x
+  omega
 
 /-- For a step `τ > 0`, the index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of the multiples of `τ` in
 `[sᵢ, tᵢ)` are pairwise disjoint whenever the intervals `(sᵢ, tᵢ]` are. -/

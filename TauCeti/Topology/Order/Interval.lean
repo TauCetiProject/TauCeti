@@ -58,6 +58,8 @@ A path that starts in an open set and leaves it has a first exit time.
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 * `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
   it has a first exit time.
+* `TauCeti.continuousOn_Ici_of_forall_Icc` — a map continuous on `[a, b]` for every `b ≥ a` is
+  continuous on `[a, ∞)`.
 -/
 
 public section
@@ -292,5 +294,18 @@ theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
     (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
     (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
   ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
+
+/-- A map that is continuous on `[a, b]` for every `b ≥ a` is continuous on the half-line
+`[a, ∞)`. -/
+theorem continuousOn_Ici_of_forall_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] [NoMaxOrder α] [TopologicalSpace X] {f : α → X} {a : α}
+    (h : ∀ b ≥ a, ContinuousOn f (Icc a b)) : ContinuousOn f (Ici a) := by
+  intro t ht
+  obtain ⟨b, htb⟩ := exists_gt t
+  have hab : a ≤ b := ht.trans htb.le
+  have hmem : Icc a b ∈ 𝓝[Ici a] t :=
+    mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+      ⟨Iio b, Iio_mem_nhds htb, fun _ hu ↦ ⟨hu.2, hu.1.le⟩⟩
+  exact (h b hab t ⟨ht, htb.le⟩).mono_of_mem_nhdsWithin hmem
 
 end TauCeti

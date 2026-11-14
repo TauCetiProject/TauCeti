@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 
 /-!
 # Grönwall-type estimates
@@ -36,8 +37,10 @@ For a monotone `g` the differential form needs neither continuity nor differenti
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
 `E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`), that `z ↦ E_λ(z - t)` has derivative `1`
-at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), and `E_λ(T) ≤ T e^{|λ|T}`
-(`TauCeti.integral_exp_mul_le`).
+at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), `E_λ(T) ≤ T e^{|λ|T}`
+(`TauCeti.integral_exp_mul_le`), and the discrete geometric-sum limit
+`τ ∑_{k < N} (1 + λ τ) ^ k → E_λ(T)` as `τ → 0` and `N τ → T`
+(`TauCeti.tendsto_mul_sum_one_add_mul_pow`).
 
 Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
 satisfies `g' ≤ -λ g` on `[T, ∞)` is bounded by `g T exp (-λ (t - T))` there
@@ -277,5 +280,22 @@ theorem norm_sq_le_exp_mul_integral_norm_sq {F : Type*} [NormedAddCommGroup F]
     _ ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 :=
       mul_le_mul_of_nonneg_left (setIntegral_le_integral hint (.of_forall fun _ ↦ by positivity))
         (Real.exp_pos _).le
+
+/-- **Euler-step geometric-sum limit.** If `τ j → 0` and `N j * τ j → T` along a filter `l`, then
+`τ j * ∑_{k < N j} (1 + lam * τ j) ^ k → ∫ r in 0..T, exp (lam * r)`. -/
+theorem tendsto_mul_sum_one_add_mul_pow {ι : Type*} {l : Filter ι} (lam T : ℝ) {τ : ι → ℝ}
+    (hτ0 : Tendsto τ l (𝓝 0)) {N : ι → ℕ}
+    (hN : Tendsto (fun j ↦ (N j : ℝ) * τ j) l (𝓝 T)) :
+    Tendsto (fun j ↦ τ j * ∑ k ∈ Finset.range (N j), (1 + lam * τ j) ^ k) l
+      (𝓝 (∫ r in 0..T, Real.exp (lam * r))) := by
+  rcases eq_or_ne lam 0 with rfl | hlam
+  · simpa [mul_comm] using hN
+  rw [intervalIntegral.integral_comp_mul_left (fun r ↦ Real.exp r) hlam, integral_exp]
+  simp only [mul_zero, Real.exp_zero, smul_eq_mul, ← div_eq_inv_mul]
+  refine (((tendsto_one_add_mul_pow_exp lam T hτ0 hN).sub_const 1).div_const lam).congr
+    fun j ↦ ?_
+  rcases eq_or_ne (τ j) 0 with h0 | hτne
+  · simp [h0]
+  · rw [geom_sum_eq (by simp [hlam, hτne])]; field_simp; ring
 
 end TauCeti
