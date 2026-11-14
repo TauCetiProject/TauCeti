@@ -48,7 +48,9 @@ For the lower bound on the norm, the dilates `φ(r⁻¹ ·)` of a smooth compact
 are approximate solutions of `Δ u = 0`: they lie in the domain of the generator, which acts on
 them as the Laplacian (`TauCeti.generator_heatSemigroup`), and their Laplacian has `Lᵖ` norm `r⁻²`
 times smaller than their own. Writing `φ(r⁻¹ ·) = (λ - Δ)⁻¹ (λ φ(r⁻¹ ·) - Δ φ(r⁻¹ ·))` therefore
-gives `1 ≤ λ ‖(λ - Δ)⁻¹‖ + O(r⁻²)`, and `r → ∞` gives `λ ‖(λ - Δ)⁻¹‖ ≥ 1`.
+gives `1 ≤ λ ‖(λ - Δ)⁻¹‖ + O(r⁻²)`, and `r → ∞` gives `λ ‖(λ - Δ)⁻¹‖ ≥ 1`; this approximate
+eigenvector argument holds for any C₀-semigroup
+(`TauCeti.Semigroups.StronglyContinuousSemigroup.inv_abs_sub_le_norm_resolvent_of_tendsto`).
 
 ## Main declarations
 
@@ -201,9 +203,8 @@ theorem resolvent_heatSemigroup_ae_eq_convolution_coeFn (hp : p ≠ ∞) (hlambd
 @[simp]
 theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlambda : 0 < lambda) :
     ‖(heatSemigroup (E := E) (F := F) hp).resolvent lambda hlambda‖ = lambda⁻¹ := by
-  set R := (heatSemigroup (E := E) (F := F) hp).resolvent lambda hlambda
-  refine le_antisymm (((heatSemigroup hp).resolvent_norm_le lambda hlambda).trans_eq
-    (one_div _)) ?_
+  set S := heatSemigroup (E := E) (F := F) hp
+  refine le_antisymm ((S.resolvent_norm_le lambda hlambda).trans_eq (one_div _)) ?_
   -- A nonzero smooth compactly supported test function `φ = b • v`.
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
   let b : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
@@ -222,57 +223,50 @@ theorem norm_resolvent_heatSemigroup [Nontrivial F] (hp : p ≠ ∞) (hlambda : 
     have h1 := congr_fun h0 0
     simp only [φ, hb0, one_smul] at h1
     exact h1
-  -- For every `r > 0`, the dilate `φ(r⁻¹ ·)` gives `1 ≤ λ ‖R‖ + λ⁻¹ r⁻² c / a`.
-  have key : ∀ r : ℝ, 0 < r → 1 ≤ lambda * ‖R‖ + lambda⁻¹ * (r ^ 2)⁻¹ * (c / a) := by
-    intro r hr
-    set φr : E → F := fun x ↦ φ (r⁻¹ • x)
-    have hφr : ContDiff ℝ 2 φr := hφ.comp (contDiff_const_smul _)
-    have hφrc : HasCompactSupport φr := hφc.comp_smul (inv_ne_zero hr.ne')
-    have hf := hφr.continuous.memLp_of_hasCompactSupport (μ := volume) (p := p) hφrc
-    have hg := hφr.continuous_laplacian.memLp_of_hasCompactSupport (μ := volume) (p := p)
-      hφrc.laplacian
-    -- Write `f = (λ - Δ)⁻¹ (λ f - Δ f)` to get `‖f‖ ≤ λ ‖(λ - Δ)⁻¹‖ ‖f‖ + λ⁻¹ ‖Δ f‖`.
-    have h : ‖hf.toLp φr‖ ≤ lambda * ‖R‖ * ‖hf.toLp φr‖ + lambda⁻¹ * ‖hg.toLp (Δ φr)‖ := by
-      have hle := (heatSemigroup (E := E) (F := F) hp).toStronglyContinuousSemigroup
-        |>.norm_le_norm_resolvent_mul_norm_smul_sub_generator
-          (heatSemigroup hp).hasGrowthBound (lambda := lambda) (by simpa using hlambda)
-          ⟨hf.toLp φr, by
-            rw [StronglyContinuousSemigroup.generator_domain]
-            exact mem_domain_heatSemigroup hp hφr hφrc hf.coeFn_toLp⟩
-      rw [← ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent,
-        generator_heatSemigroup hp hφr hφrc hf.coeFn_toLp hg.coeFn_toLp] at hle
-      have hR : ‖R‖ ≤ lambda⁻¹ :=
-        ((heatSemigroup hp).resolvent_norm_le lambda hlambda).trans_eq (one_div _)
-      calc ‖hf.toLp φr‖ ≤ ‖R‖ * (lambda * ‖hf.toLp φr‖ + ‖hg.toLp (Δ φr)‖) := by
-            refine hle.trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-            refine (norm_sub_le _ _).trans_eq ?_
-            rw [norm_smul, norm_of_nonneg hlambda.le]
-        _ = lambda * ‖R‖ * ‖hf.toLp φr‖ + ‖R‖ * ‖hg.toLp (Δ φr)‖ := by ring
-        _ ≤ lambda * ‖R‖ * ‖hf.toLp φr‖ + lambda⁻¹ * ‖hg.toLp (Δ φr)‖ := by gcongr
-    -- The `Lᵖ` norms of the dilate and of its Laplacian scale like `r^{n/p}` and `r^{n/p - 2}`.
-    set s := r ^ ((Module.finrank ℝ E : ℝ) / p.toReal)
+  -- The dilates `φ(r⁻¹ ·)`, `r = n + 1`, lie in the generator domain, where the generator acts
+  -- as the Laplacian.
+  have hr (n : ℕ) : (0 : ℝ) < n + 1 := n.cast_add_one_pos
+  have hφr (n : ℕ) : ContDiff ℝ 2 fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x) :=
+    hφ.comp (contDiff_const_smul _)
+  have hφrc (n : ℕ) : HasCompactSupport fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x) :=
+    hφc.comp_smul (inv_ne_zero (hr n).ne')
+  have hf (n : ℕ) :=
+    (hφr n).continuous.memLp_of_hasCompactSupport (μ := volume) (p := p) (hφrc n)
+  have hg (n : ℕ) := (hφr n).continuous_laplacian.memLp_of_hasCompactSupport (μ := volume)
+    (p := p) (hφrc n).laplacian
+  let f (n : ℕ) : S.generator.domain := ⟨(hf n).toLp _, by
+    rw [StronglyContinuousSemigroup.generator_domain]
+    exact mem_domain_heatSemigroup hp (hφr n) (hφrc n) (hf n).coeFn_toLp⟩
+  -- They are nonzero approximate solutions of `Δ u = 0`: the `Lᵖ` norms of the dilate and of its
+  -- Laplacian scale like `r^{n/p}` and `r^{n/p - 2}`.
+  have hf_ratio (n : ℕ) : (f n : Lp F p (volume : Measure E)) ≠ 0 ∧
+      ‖S.generator (f n) - (0 : ℝ) • (f n : Lp F p (volume : Measure E))‖ /
+        ‖(f n : Lp F p (volume : Measure E))‖ = (((n : ℝ) + 1) ^ 2)⁻¹ * (c / a) := by
+    set s := ((n : ℝ) + 1) ^ ((Module.finrank ℝ E : ℝ) / p.toReal)
     have hs : 0 < s := by positivity
-    have hnf : ‖hf.toLp φr‖ = s * a := by
-      rw [Lp.norm_toLp, Measure.eLpNorm_comp_inv_smul volume φ hr.ne', abs_of_pos hr]
+    have hnf : ‖(f n : Lp F p (volume : Measure E))‖ = s * a := by
+      rw [Lp.norm_toLp, Measure.eLpNorm_comp_inv_smul volume φ (hr n).ne', abs_of_pos (hr n)]
       simp [ENNReal.toReal_ofReal hs.le, s, a]
-    have hng : ‖hg.toLp (Δ φr)‖ = (r ^ 2)⁻¹ * (s * c) := by
-      have hΔ : Δ φr = (r⁻¹) ^ 2 • fun x ↦ Δ φ (r⁻¹ • x) := laplacian_comp_smul_right r⁻¹ φ
-      rw [Lp.norm_toLp, hΔ, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ hr.ne',
-        abs_of_pos hr]
-      simp [ENNReal.toReal_ofReal hs.le, abs_of_pos hr, s, c]
-    rw [hnf, hng] at h
-    refine le_of_mul_le_mul_right ?_ (mul_pos hs ha)
-    calc 1 * (s * a) ≤ lambda * ‖R‖ * (s * a) + lambda⁻¹ * ((r ^ 2)⁻¹ * (s * c)) := by
-          rwa [one_mul]
-      _ = (lambda * ‖R‖ + lambda⁻¹ * (r ^ 2)⁻¹ * (c / a)) * (s * a) := by
-          field_simp
+    have hng : ‖(hg n).toLp (Δ fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x))‖ =
+        (((n : ℝ) + 1) ^ 2)⁻¹ * (s * c) := by
+      have hΔ : (Δ fun x ↦ φ (((n : ℝ) + 1)⁻¹ • x)) =
+          (((n : ℝ) + 1)⁻¹) ^ 2 • fun x ↦ Δ φ (((n : ℝ) + 1)⁻¹ • x) :=
+        laplacian_comp_smul_right _ φ
+      rw [Lp.norm_toLp, hΔ, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (hr n).ne',
+        abs_of_pos (hr n)]
+      simp [ENNReal.toReal_ofReal hs.le, abs_of_pos (hr n), s, c]
+    refine ⟨norm_ne_zero_iff.1 (hnf ▸ (mul_pos hs ha).ne'), ?_⟩
+    rw [zero_smul, sub_zero,
+      generator_heatSemigroup hp (hφr n) (hφrc n) (hf n).coeFn_toLp (hg n).coeFn_toLp, hng, hnf]
+    field_simp
   -- Let `r → ∞`.
-  have hlim : Tendsto (fun r : ℝ ↦ lambda * ‖R‖ + lambda⁻¹ * (r ^ 2)⁻¹ * (c / a)) atTop
-      (𝓝 (lambda * ‖R‖)) := by
-    have h0 : Tendsto (fun r : ℝ ↦ (r ^ 2)⁻¹) atTop (𝓝 0) :=
-      tendsto_inv_atTop_zero.comp (tendsto_pow_atTop two_ne_zero)
-    simpa using tendsto_const_nhds.add ((h0.const_mul lambda⁻¹).mul_const (c / a))
-  have h1 : 1 ≤ lambda * ‖R‖ := ge_of_tendsto hlim ((eventually_gt_atTop 0).mono key)
-  rwa [inv_le_iff_one_le_mul₀' hlambda]
+  have h := S.inv_abs_sub_le_norm_resolvent_of_tendsto S.hasGrowthBound (lambda := lambda)
+    (by simpa using hlambda) (mu := 0) (l := atTop) f
+    (Eventually.of_forall fun n ↦ (hf_ratio n).1) ?_
+  · rwa [sub_zero, abs_of_pos hlambda,
+      ← ContractionSemigroup.resolvent_eq_stronglyContinuousSemigroup_resolvent] at h
+  · refine (tendsto_congr fun n ↦ (hf_ratio n).2).2 ?_
+    simpa [one_div, inv_pow] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat.pow 2).mul_const (c / a)
 
 end TauCeti
