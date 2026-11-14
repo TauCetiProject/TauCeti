@@ -94,9 +94,11 @@ comparison of the two energies holds with constants independent of `p`. The stat
 datum is the case of a constant family over a one-point window.
 
 The limit is only shown to be continuous here. For smooth solutions,
-`TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence` upgrades the convergence off `Z` to
-convergence in `C¹` to a `C¹` solution
-(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`). The rescaled
+`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset` (in
+`TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence`) upgrades the convergence off `Z` in the
+unparametrized coordinate statement
+`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` to convergence in
+`C¹` to a `C¹` solution; the Floer-energy and parametric versions are not upgraded. The rescaled
 bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling point) and
 breaking along cylindrical ends are not treated here.
 
