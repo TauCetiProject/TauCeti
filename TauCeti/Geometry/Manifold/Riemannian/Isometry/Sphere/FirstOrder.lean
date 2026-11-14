@@ -33,7 +33,7 @@ and `LinearIsometryEquiv.extendOrthogonalComplement`.
   restriction sends the source point to the target point.
 * `LinearIsometryEquiv.mfderiv_unitSphereEquiv_extendSphereTangent`: the sphere
   restriction has the prescribed manifold differential.
-* `LinearIsometryEquiv.eq_extendSphereTangent`: characterize the extension by its value
+* `LinearIsometryEquiv.eq_extendSphereTangent_iff`: characterize the extension by its value
   and action on tangent vectors.
 * `TauCeti.RiemannianIsometry.exists_linearIsometryEquiv_apply_eq_and_mfderiv_eq`:
   match a Riemannian isometry at a point to first order by an ambient linear isometry.
@@ -112,15 +112,18 @@ theorem mfderiv_unitSphereEquiv_extendSphereTangent
   erw [h, mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
   exact e.extendSphereTangent_apply_mfderiv v
 
-/-- The ambient extension is uniquely characterized by its radial value and its
-prescribed action on tangent vectors. -/
-theorem eq_extendSphereTangent
-    (e : TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] TangentSpace (𝓡 k) y) (f : E →ₗᵢ[ℝ] F)
-    (hfx : f (x : E) = y)
-    (hf : ∀ v : TangentSpace (𝓡 n) x,
-      f (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) =
-        mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) y (e v)) :
-    f = e.extendSphereTangent.toLinearIsometry := by
+/-- An ambient linear isometry is the extension if and only if it sends the source point to
+the target point and acts on tangent vectors, read through the sphere inclusions, as the
+prescribed tangent isometry. -/
+theorem eq_extendSphereTangent_iff
+    (e : TangentSpace (𝓡 n) x ≃ₗᵢ[ℝ] TangentSpace (𝓡 k) y) (f : E →ₗᵢ[ℝ] F) :
+    f = e.extendSphereTangent.toLinearIsometry ↔
+      f (x : E) = y ∧ ∀ v : TangentSpace (𝓡 n) x,
+        f (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) =
+          mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) y (e v) := by
+  refine ⟨?_, fun ⟨hfx, hf⟩ ↦ ?_⟩
+  · rintro rfl
+    exact ⟨e.extendSphereTangent_apply_self, e.extendSphereTangent_apply_mfderiv⟩
   rw [extendSphereTangent]
   refine (eq_extendOrthogonalComplement_iff _ _ _ f).mpr ⟨hfx, fun v ↦ ?_⟩
   obtain ⟨w, rfl⟩ := (TauCeti.sphereTangentEquiv (n := n) x).surjective v
