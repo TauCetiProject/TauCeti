@@ -564,6 +564,22 @@ theorem mem_realSobolevFunctions_of_hasCompactSupport {f : E → ℝ}
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
   simp [h₁, h₂]
 
+/-- A real function differing from a real Bessel-potential function by a smooth compactly
+supported function is again a real Bessel-potential function of the same order. -/
+theorem mem_realSobolevFunctions_of_hasCompactSupport_sub {f g : E → ℝ}
+    (hfg : ContDiff ℝ (⊤ : ℕ∞) (f - g)) (hc : HasCompactSupport (f - g)) {s : ℝ}
+    (hg : g ∈ realSobolevFunctions E s p) : f ∈ realSobolevFunctions E s p := by
+  simpa using add_mem (mem_realSobolevFunctions_of_hasCompactSupport hfg hc s) hg
+
+/-- A function that differs from an element `g` of `Lᵖ ∩ H^{s,p}` by a smooth function and agrees
+with `g` outside a compact set lies in `Lᵖ ∩ H^{s,p}`. -/
+theorem mem_realSobolevFunctions_of_eventuallyEq_cocompact {f g : E → ℝ}
+    (hfg : ContDiff ℝ (⊤ : ℕ∞) (f - g)) (h : f =ᶠ[Filter.cocompact E] g) {s : ℝ}
+    (hg : g ∈ realSobolevFunctions E s p) : f ∈ realSobolevFunctions E s p :=
+  mem_realSobolevFunctions_of_hasCompactSupport_sub hfg (hasCompactSupport_iff_eventuallyEq.2 <| by
+    rw [Filter.coclosedCompact_eq_cocompact]
+    exact h.sub_eq) hg
+
 end realFunctions
 
 end TemperedDistribution

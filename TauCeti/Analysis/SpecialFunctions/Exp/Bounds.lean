@@ -28,6 +28,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
+* `TauCeti.abs_exp_sub_one_le_mul_exp_max`: `|exp t - 1| ≤ |t| exp (max t 0)` for every real
+  `t`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 -/
@@ -89,6 +91,15 @@ theorem abs_exp_sub_one_le_mul_exp_abs (t : ℝ) : |exp t - 1| ≤ |t| * exp |t|
     div_one, pow_one] at h
   rwa [← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
     Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs] at h
+
+/-- `|exp t - 1| ≤ |t| exp (max t 0)` for every real `t`: the exponential factor is only needed
+for positive `t`. -/
+theorem abs_exp_sub_one_le_mul_exp_max (t : ℝ) : |exp t - 1| ≤ |t| * exp (max t 0) := by
+  rcases le_or_gt t 0 with h | h
+  · rw [max_eq_right h, exp_zero, mul_one, abs_of_nonpos (by linarith [exp_le_one_iff.2 h]),
+      abs_of_nonpos h]
+    linarith [add_one_le_exp t]
+  · simpa [max_eq_left h.le, abs_of_pos h] using abs_exp_sub_one_le_mul_exp_abs t
 
 /-- `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real `t`. The right-hand side is the power series
 `∑ 2 · 4ⁿ t ^ (2n + 2) / (2n)!`, so this bounds `(exp t - 1)²` by a series of even powers. -/

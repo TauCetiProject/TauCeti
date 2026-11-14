@@ -184,6 +184,23 @@ theorem integrable_one_sub_normSq
   rw [Real.norm_eq_abs, abs_of_nonneg (by linarith)]
   exact hK z
 
+/-- The modulus defect `1 - |α|²` of a vortex on the whole plane with `|α| → 1` at infinity is
+square integrable. -/
+theorem memLp_one_sub_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    MemLp (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) 2 μ := by
+  have hcont : Continuous fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
+    continuous_const.sub (continuous_const.mul ((hp.continuous.pow 2).add (hq.continuous.pow 2)))
+  refine (memLp_two_iff_integrable_sq hcont.aestronglyMeasurable).2 <|
+    (integrable_one_sub_normSq μ hp hq hsol hlim).mono (hcont.pow 2).aestronglyMeasurable
+      (.of_forall fun z ↦ ?_)
+  have h₀ : 0 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by positivity
+  have h₁ := normSq_le_one_of_tendsto hp hq hsol hlim z
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), abs_of_nonneg (by linarith)]
+  nlinarith [h₀, h₁]
+
 /-- **Integrability of the curvature of a plane vortex.** A vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity has integrable curvature coefficient `∂₁ b₂ - ∂₂ b₁`. -/
 theorem integrable_curvature
