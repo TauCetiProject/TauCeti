@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Basic
 public import Mathlib.AlgebraicGeometry.Noetherian
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.DVR
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
