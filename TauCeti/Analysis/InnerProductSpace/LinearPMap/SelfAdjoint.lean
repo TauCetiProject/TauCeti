@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5, Adam Bornemann
+Authors: The Tau Ceti contributors
 -/
 module
 
@@ -65,20 +65,6 @@ linear maps used by the semigroup development.
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
   scalar is self-adjoint.
-
-## Provenance
-
-The shifted-surjectivity and domain-density criteria added here are adapted from
-[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Basic.lean)
-and
-[`ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean`](https://github.com/AIQ-Kitware/aiq-dkps-formalization/blob/main/ForTauCeti/Analysis/InnerProductSpace/OneParameterUnitaryGroup/Stone.lean)
-in the AIQ-Kitware DKPS formalization (copyright (c) 2026 Kitware, Inc.;
-authors Jon Crall and Claude Opus 5; Apache-2.0). The donor `Basic.lean`
-credits the earlier
-[`Spectra/OneParameterUnitaryGroup/Basic.lean`](https://github.com/adambornemann-glitch/Spectra/blob/8dbaaf6728d1342ae16acf79fd7eef7c59b37e63/Spectra/OneParameterUnitaryGroup/Basic.lean)
-at commit `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63` (copyright (c) 2026
-Spectra Formalization Project; author Adam Bornemann; Apache-2.0).
-The present formulations use TauCeti's canonical `LinearPMap` adjoint API.
 
 ## References
 
