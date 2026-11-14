@@ -96,6 +96,37 @@ theorem gradedProjectiveExtEuler_simple_eq_mul_invert_repr
 
 omit [Finite I] in
 include he₀ hne hbP in
+/-- For a target `Sᵢ` concentrated in degree `0`, the `i`th projective coordinate of `x` scaled by
+`gdim(eᵢ • Sᵢ)` is the Laurent conjugate of the q-Euler pairing `χ_q(x, [Sᵢ])`. -/
+theorem smulGradedDimension_mul_repr
+    (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) {i : I}
+    (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) :
+    (S i).obj.smulGradedDimension (e i) * bP.repr x i =
+      invert (gradedProjectiveExtEuler 𝒜 x (LaurentK0.of.{uA} _ (S i))) := by
+  have hpair := congrArg (invert (R := ℤ))
+    (gradedProjectiveExtEuler_simple_eq_mul_invert_repr S he he₀ hI hne bP hbP x i)
+  have hfixed : invert ((S i).obj.smulGradedDimension (e i)) =
+      (S i).obj.smulGradedDimension (e i) := by
+    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ hconc, invert_C]
+  simpa only [map_mul, hfixed, involutive_invert (R := ℤ) (bP.repr x i)] using hpair.symm
+
+omit [Finite I] in
+include he₀ hne hbP in
+/-- **Reading projective multiplicity shifts via graded Hom into shifted simples.** For any finite
+graded projective `P` and degree-zero target `Sᵢ`, the `d`th Laurent coefficient of
+`gdim(eᵢ • Sᵢ) * bP.repr [P] i` is `dim_k Hom_{gr-A}(P, Sᵢ{d})`. -/
+theorem coeff_smulGradedDimension_mul_repr
+    (P : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) {i : I}
+    (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (d : ℤ) :
+    ((S i).obj.smulGradedDimension (e i) * bP.repr (LaurentK0.of.{uA} _ P) i).coeff d =
+      (Module.finrank k (P.obj ⟶ (S i).obj.shiftObj d) : ℤ) := by
+  let _ : Module.Projective A P.obj := (gradedFiniteProjectiveModules_iff.mp P.property).2
+  rw [smulGradedDimension_mul_repr S he he₀ hI hne bP hbP _ hconc, invert_apply,
+    gradedProjectiveExtEuler_of_of, gradedExtEuler_projective, coeff_targetShiftGradedDimension,
+    neg_neg, (GradedModuleCat.homShiftPowEquiv 𝒜 P.obj (S i).obj d).finrank_eq]
+
+omit [Finite I] in
+include he₀ hne hbP in
 /-- The projective coordinate of a module generated in degree `d` is a single monomial,
 scaled by the idempotent dimension of its degree-zero simple target. -/
 theorem smulGradedDimension_mul_repr_of_isGeneratedInDegree
@@ -105,17 +136,10 @@ theorem smulGradedDimension_mul_repr_of_isGeneratedInDegree
     (S i).obj.smulGradedDimension (e i) * bP.repr (LaurentK0.of.{uA} _ P) i =
       C (Module.finrank k (P.obj ⟶ (S i).obj.shiftObj d) : ℤ) * T d := by
   let _ : Module.Projective A P.obj := (gradedFiniteProjectiveModules_iff.mp P.property).2
-  have hpair := gradedProjectiveExtEuler_simple_eq_mul_invert_repr
-    S he he₀ hI hne bP hbP (LaurentK0.of.{uA} _ P) i
-  rw [gradedProjectiveExtEuler_of_of,
-    GradedModuleCat.gradedExtEuler_eq_C_mul_T_of_isGeneratedInDegree
-      P.obj (S i).obj hP (hconc i)] at hpair
-  have hinv := congrArg (LaurentPolynomial.invert (R := ℤ)) hpair
-  have hfixed : invert ((S i).obj.smulGradedDimension (e i)) =
-      (S i).obj.smulGradedDimension (e i) := by
-    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), invert_C]
-  simpa only [map_mul, invert_C, invert_T, neg_neg, hfixed,
-    involutive_invert (R := ℤ) (bP.repr (LaurentK0.of.{uA} _ P) i)] using hinv.symm
+  rw [smulGradedDimension_mul_repr S he he₀ hI hne bP hbP _ (hconc i),
+    gradedProjectiveExtEuler_of_of,
+    GradedModuleCat.gradedExtEuler_eq_C_mul_T_of_isGeneratedInDegree P.obj (S i).obj hP (hconc i),
+    map_mul, invert_C, invert_T, neg_neg]
 
 section NeZero
 

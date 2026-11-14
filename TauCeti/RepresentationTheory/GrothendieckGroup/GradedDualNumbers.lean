@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+public import TauCeti.Algebra.Category.GradedModuleCat.Betti.Cartan
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Matrix
 public import TauCeti.Algebra.Category.GradedModuleCat.Free
 public import TauCeti.Algebra.DualNumber.Basic
@@ -16,7 +17,7 @@ public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
-# The graded Cartan matrix of the dual numbers
+# The graded Cartan matrix and Betti Poincaré series of the dual numbers
 
 Let `k` be a field and grade the dual numbers `A = k[ε]` with `ε` in degree two
 (`TauCeti.dualNumberIntegerGrade`). The degree-zero piece of `A` is `k`, spanned by the idempotent
@@ -36,6 +37,14 @@ counterpart of the dual-numbers rejection `TauCeti.not_isEulerAdmissible_dualNum
 also shows that `S` has no finite resolution by finite graded projectives, the graded counterpart
 of `TauCeti.not_admitsFiniteResolution_dualNumberResidue`.
 
+By contrast, the periodic minimal graded resolution `⋯ ⟶ A{4} ⟶ A{2} ⟶ A ⟶ S ⟶ 0`
+(`TauCeti.dualNumberGradedResolution`) has well-defined graded Betti Poincaré series
+`B(q, t) = ∑_{n ≥ 0} q^{2n} tⁿ = (1 - q² t)⁻¹ ∈ (ℤ[q,q⁻¹])⟦t⟧`. Because its `n = 1` term lies in
+internal degree `2 ≠ 1`, the resolution is not linear. Passing from `ℤ[q,q⁻¹]` to formal power
+series `ℤ⟦q⟧`, where `1 + q²` becomes invertible, the `t = -1` specialization `B(q, -1) =
+1 - q² + q⁴ - ⋯` satisfies `(1 + q²) · B(q, -1) = 1`, illustrating the unbounded Cartan–Betti
+identity `TauCeti.gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincareMatrix_eq_one`.
+
 ## Main definitions
 
 * `TauCeti.dualNumberGradedProjectiveBasis` and `TauCeti.dualNumberGradedResidueBasis`: the bases
@@ -49,6 +58,12 @@ of `TauCeti.not_admitsFiniteResolution_dualNumberResidue`.
   Euler-admissible.
 * `TauCeti.not_admitsFiniteResolution_dualNumberGradedResidue`: `S` has no finite resolution by
   finite graded projectives.
+* `TauCeti.coeff_bettiPoincareSeries_dualNumberGradedResolution` and
+  `TauCeti.bettiPoincareSeries_dualNumberGradedResolution_eq_rescale`: the graded Betti Poincaré
+  series of `S` is `∑_{n ≥ 0} q^{2n} tⁿ`.
+* `TauCeti.not_isLinear_dualNumberGradedResolution`: the periodic minimal resolution is not linear.
+* `TauCeti.one_add_X_sq_mul_eulerPowerSeries_bettiPoincareSeries_dualNumber`: in `ℤ⟦q⟧`,
+  `(1 + q²) · B(q, -1) = 1`.
 
 ## Implementation notes
 
@@ -64,6 +79,9 @@ Importing modules activate it in the same way to restate these results.
 * Ibrahim Assem, Daniel Simson and Andrzej Skowroński, *Elements of the Representation Theory of
   Associative Algebras I*, Chapter III, Section 3, for the ungraded Cartan matrix and the role of
   finite global dimension in unimodularity.
+* Alexander Beilinson, Victor Ginzburg and Wolfgang Soergel, "Koszul duality patterns in
+  representation theory", *Journal of the AMS* 9 (1996), Sections 1.2 and 2.11, for graded Betti
+  Poincaré series and formal power-series Cartan inversion.
 -/
 
 public section
@@ -214,5 +232,139 @@ theorem not_admitsFiniteResolution_dualNumberGradedResidue :
     have := hasExt_of_enoughProjectives.{u} (GradedModuleCat.{u} (dualNumberIntegerGrade k))
     exact not_isGradedEulerAdmissible_dualNumberGradedResidue k
       (isGradedEulerAdmissible_of_admitsFiniteProjectiveResolution h)
+
+/-! ### The Betti Poincaré series and formal power-series Cartan inversion -/
+
+/-- **In `K₀^gr(proj k[ε])`, the `n`th term `A{2n}` of the minimal periodic resolution has Betti
+polynomial `q^{2n}`**, computed directly in `[A]` without `HasExt`. -/
+theorem coeff_bettiPoincareSeries_dualNumberGradedResolution (n : ℕ) (i : Unit) :
+    PowerSeries.coeff n
+      ((dualNumberGradedResolution k).bettiPoincareSeries
+        (dualNumberGradedProjectiveBasis k) i) = T (2 * n : ℤ) := by
+  cases i
+  rw [GradedProjectiveResolution.coeff_bettiPoincareSeries]
+  have hI : (Ideal.span {(1 : DualNumber k)} : Ideal (DualNumber k)).IsHomogeneous
+      (dualNumberIntegerGrade k) :=
+    Ideal.isHomogeneous_span_singleton _ ⟨0, one_mem_dualNumberIntegerGrade_zero k⟩
+  let P₀ : (gradedFiniteProjectiveModules (dualNumberIntegerGrade k)).FullSubcategory :=
+    ⟨GradedModuleCat.ofIdeal (dualNumberIntegerGrade k) (Ideal.span {1}) hI,
+      gradedFiniteProjectiveModules_ofIdeal_span_singleton IsIdempotentElem.one hI⟩
+  let eTerm : (dualNumberGradedResolution k).finiteProjectiveTerm n ≅
+      ⟨P₀.obj.shiftObj (2 * n : ℤ), gradedFiniteProjectiveModules_shiftObj P₀.property _⟩ :=
+    ObjectProperty.isoMk _ (eqToIso ((dualNumberGradedResolution k).finiteProjectiveTerm_obj n) ≪≫
+      eqToIso (dualNumberGradedResolution_termObj k n) ≪≫
+      (GradedModuleCat.shiftFunctor (𝒜 := dualNumberIntegerGrade k) (2 * n : ℤ)).mapIso
+        (GradedModuleCat.ofIdealSpanOneIsoRegular hI).symm)
+  rw [LaurentK0.of_congr.{u} _ eTerm, laurentK0_projective_of_shiftObj,
+    ← dualNumberGradedProjectiveBasis_apply k (), LinearEquiv.map_smul, Module.Basis.repr_self,
+    Finsupp.smul_apply, Finsupp.single_eq_same, smul_eq_mul, mul_one]
+
+/-- **The graded Betti Poincaré series of the dual-numbers residue field is `∑_{n ≥ 0} q^{2n} tⁿ`**,
+that is `(1 - q² t)⁻¹` (`PowerSeries.rescale (T 2) (PowerSeries.mk 1)`). -/
+theorem bettiPoincareSeries_dualNumberGradedResolution_eq_rescale :
+    (dualNumberGradedResolution k).bettiPoincareSeries (dualNumberGradedProjectiveBasis k) () =
+      PowerSeries.rescale (T 2) (PowerSeries.mk 1) := by
+  apply PowerSeries.ext
+  intro n
+  rw [coeff_bettiPoincareSeries_dualNumberGradedResolution, PowerSeries.coeff_rescale,
+    PowerSeries.coeff_mk, Pi.one_apply, mul_one, mul_comm (2 : ℤ) (n : ℤ), T_pow]
+
+/-- The diagonal graded dimension `gdim(1 • S)` of the dual-numbers residue field is nonzero. -/
+private theorem smulGradedDimension_dualNumberGradedResidue_ne_zero :
+    (dualNumberGradedResidue k).smulGradedDimension (1 : DualNumber k) ≠ 0 := by
+  simpa using (smulGradedDimension_gradedIdempotentHead
+    (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k)
+    (completeOrthogonalIdempotents_one k).toOrthogonalIdempotents
+    (fun _ => one_mem_dualNumberIntegerGrade_zero k) (dualNumberIntegerGrade_zero_le_span k)
+    () () one_ne_zero).trans_ne one_ne_zero
+
+/-- **The minimal periodic resolution of `k[ε]/(ε)` (with `ε` in degree two) is not linear**: its
+`n = 1` Betti polynomial `q²` does not lie on the Koszul diagonal `d = n`. -/
+theorem not_isLinear_dualNumberGradedResolution :
+    ¬ (dualNumberGradedResolution k).IsLinear := by
+  have := hasExt_of_enoughProjectives.{u} (GradedModuleCat.{u} (dualNumberIntegerGrade k))
+  let S : Unit → (gradedFiniteModules (dualNumberIntegerGrade k)).FullSubcategory := fun _ =>
+    ⟨dualNumberGradedResidue k, gradedFiniteModules_gradedPositiveMulQuotient _ _⟩
+  intro hlin
+  have hdiag := ((isMinimal_dualNumberGradedResolution k).isLinear_iff_diagonal_bettiPoincareSeries
+    S (fun _ => IsIdempotentElem.one) (fun _ => one_mem_dualNumberIntegerGrade_zero k)
+    (fun _ => Ideal.isHomogeneous_span_singleton _ ⟨0, one_mem_dualNumberIntegerGrade_zero k⟩)
+    (fun i j hij => (hij (Subsingleton.elim i j)).elim)
+    (dualNumberGradedProjectiveBasis k) (dualNumberGradedProjectiveBasis_apply k)
+    (fun _ => smulGradedDimension_dualNumberGradedResidue_ne_zero k)
+    (isExhaustiveGradedSimpleFamily_gradedIdempotentHead
+      (hcomplete := completeOrthogonalIdempotents_one k)
+      (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k)
+      (fun _ => one_mem_dualNumberIntegerGrade_zero k) (dualNumberIntegerGrade_zero_le_span k))
+    (fun _ _ hp => dualNumberGradedResidue_piece_eq_bot k hp)
+    (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k)).1 hlin () 1 2 (by decide)
+  rw [coeff_bettiPoincareSeries_dualNumberGradedResolution, ← mul_one (T (2 * (1 : ℕ) : ℤ)),
+    coeff_T_mul, coeff_one] at hdiag
+  simp at hdiag
+
+/-- The Betti Poincaré series of the dual-numbers residue field admits the `t = -1` Euler
+specialization in `PowerSeries ℤ`. -/
+theorem hasEulerPowerSeries_bettiPoincareSeries_dualNumber :
+    Bigraded.HasEulerPowerSeries
+      ((dualNumberGradedResolution k).bettiPoincareSeries
+        (dualNumberGradedProjectiveBasis k) ()) :=
+  Bigraded.HasEulerPowerSeries.of_lowerTriangular fun n d hdn => by
+    rw [coeff_bettiPoincareSeries_dualNumberGradedResolution, ← mul_one (T (2 * n : ℤ)),
+      coeff_T_mul, coeff_one, ite_eq_right_iff]
+    omega
+
+/-- In `PowerSeries ℤ`, the truncated graded Cartan entry of `k[ε]` is `1 + X ^ 2`. -/
+private theorem trunc_gradedCartanMatrix_dualNumber (i j : Unit) :
+    ((gradedCartanMatrix (dualNumberIntegerGrade k)
+      (dualNumberGradedProjectiveBasis k) (dualNumberGradedResidueBasis k) i j).trunc :
+        PowerSeries ℤ) = 1 + PowerSeries.X ^ 2 := by
+  rw [gradedCartanMatrix_dualNumber, Matrix.of_apply]
+  apply PowerSeries.ext
+  intro m
+  rw [Polynomial.coeff_coe, LaurentPolynomial.coeff_trunc, AddMonoidAlgebra.coeff_add,
+    Finsupp.add_apply, ← mul_one (T 2 : LaurentPolynomial ℤ), coeff_T_mul, coeff_one, coeff_one]
+  rcases m with _ | (_ | (_ | m))
+  · simp [PowerSeries.coeff_zero_eq_constantCoeff]
+  · simp
+  · simp
+  · simp [PowerSeries.coeff_X_pow]; omega
+
+/-- **Formal power-series Cartan–Betti inversion for the dual numbers.** Although `C(q) = 1 + q²`
+is not invertible in `ℤ[q,q⁻¹]`, its truncation `1 + q² ∈ ℤ⟦q⟧` inverts the `t = -1` specialization
+`B(q, -1) = 1 - q² + q⁴ - ⋯` of the Betti Poincaré series in `PowerSeries ℤ`. -/
+theorem one_add_X_sq_mul_eulerPowerSeries_bettiPoincareSeries_dualNumber :
+    (1 + PowerSeries.X ^ 2 : PowerSeries ℤ) *
+      Bigraded.eulerPowerSeries
+        (hasEulerPowerSeries_bettiPoincareSeries_dualNumber k) = 1 := by
+  have := hasExt_of_enoughProjectives.{u} (GradedModuleCat.{u} (dualNumberIntegerGrade k))
+  let S : Unit → (gradedFiniteModules (dualNumberIntegerGrade k)).FullSubcategory := fun _ =>
+    ⟨dualNumberGradedResidue k, gradedFiniteModules_gradedPositiveMulQuotient _ _⟩
+  let hB : ∀ i j : Unit, Bigraded.HasEulerPowerSeries
+      (bettiPoincareMatrix (dualNumberGradedProjectiveBasis k)
+        (fun _ : Unit => dualNumberGradedResolution k) i j) := fun i j => by
+    cases i; cases j
+    rw [bettiPoincareMatrix_apply]
+    exact hasEulerPowerSeries_bettiPoincareSeries_dualNumber k
+  have hmat := congrFun₂
+    (gradedCartanMatrix_trunc_mul_eulerPowerSeries_bettiPoincareMatrix_eq_one
+      S (fun _ => IsIdempotentElem.one) (fun _ => one_mem_dualNumberIntegerGrade_zero k)
+      (fun _ => Ideal.isHomogeneous_span_singleton _ ⟨0, one_mem_dualNumberIntegerGrade_zero k⟩)
+      (fun i j hij => (hij (Subsingleton.elim i j)).elim)
+      (fun _ => smulGradedDimension_dualNumberGradedResidue_ne_zero k)
+      (isExhaustiveGradedSimpleFamily_gradedIdempotentHead
+        (hcomplete := completeOrthogonalIdempotents_one k)
+        (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k)
+        (fun _ => one_mem_dualNumberIntegerGrade_zero k) (dualNumberIntegerGrade_zero_le_span k))
+      (dualNumberGradedProjectiveBasis k) (dualNumberGradedProjectiveBasis_apply k)
+      (dualNumberGradedResidueBasis k) (dualNumberGradedResidueBasis_apply k)
+      (fun _ => dualNumberGradedResolution k) (fun _ => isMinimal_dualNumberGradedResolution k)
+      (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k)
+      (fun _ _ hp => dualNumberGradedResidue_piece_eq_bot k hp) hB) () ()
+  rw [Matrix.mul_apply, Fintype.sum_unique, Matrix.map_apply, Matrix.of_apply,
+    Matrix.one_apply_eq, trunc_gradedCartanMatrix_dualNumber,
+    Bigraded.eulerPowerSeries_congr (hB default ()) _
+      (bettiPoincareMatrix_apply (dualNumberGradedProjectiveBasis k)
+        (fun _ : Unit => dualNumberGradedResolution k) default ())] at hmat
+  exact hmat
 
 end TauCeti

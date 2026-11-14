@@ -148,6 +148,11 @@ theorem dualNumberGradedResolution_termObj (n : ℕ) :
       (GradedModuleCat.regular (𝒜 := dualNumberIntegerGrade k)).shiftObj (2 * n : ℤ) :=
   (rfl)
 
+/-- Every term of the periodic graded resolution is finitely generated over `DualNumber k`. -/
+instance finite_dualNumberGradedResolution_X (n : ℕ) :
+    Module.Finite (DualNumber k) ((dualNumberGradedResolution k).X n) :=
+  inferInstanceAs (Module.Finite (DualNumber k) (DualNumber k))
+
 /-- Every differential of the periodic graded resolution is multiplication by `ε`. -/
 private theorem dualNumberGradedResolution_d_apply (n : ℕ)
     (x : (dualNumberGradedResolution k).X (n + 1)) :

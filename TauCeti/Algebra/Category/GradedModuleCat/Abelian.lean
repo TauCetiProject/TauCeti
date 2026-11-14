@@ -216,6 +216,27 @@ abbrev directSumObj : GradedModuleCat.{max w v} 𝒜 where
     rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx ⊢
     exact fun j ↦ SetLike.GradedSMul.smul_mem (B := (M j).grading.piece) ha (hx j)⟩
 
+/-- A graded direct sum over a one-element index type is canonically isomorphic to its unique
+summand. -/
+noncomputable def directSumObjIsoOfUnique {J : Type w} [Unique J]
+    (M : J → GradedModuleCat.{max w v} 𝒜) :
+    directSumObj M ≅ M default :=
+  letI : DecidableEq J := Classical.decEq J
+  { hom := ofHom (DirectSum.component A J (fun j ↦ M j) default) <|
+      LinearMap.isHomogeneous_def.2 fun _ _ hx => by
+        rw [InternalGrading.directSum_piece, InternalGrading.mem_directSumPiece_iff] at hx
+        rw [add_zero]
+        exact hx default
+    inv := ofHom (DirectSum.lof A J (fun j ↦ M j) default) <|
+      LinearMap.isHomogeneous_def.2 fun p x hx => by
+        rw [InternalGrading.directSum_piece, add_zero]
+        exact InternalGrading.lof_mem_directSumPiece (fun j ↦ (M j).grading) p default ⟨x, hx⟩
+    hom_inv_id := hom_ext <| LinearMap.ext fun x => DFinsupp.ext fun j => by
+      obtain rfl := Unique.eq_default j
+      simp [DirectSum.lof_eq_of]
+      rfl
+    inv_hom_id := hom_ext <| LinearMap.ext fun x => by simp }
+
 end DirectSum
 
 section Product
