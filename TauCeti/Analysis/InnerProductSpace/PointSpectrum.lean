@@ -75,6 +75,8 @@ spectrum from that of its orthogonal complement.
   has restricted point spectrum in `Ω`.
 * `Module.End.pointSpectralSubspace_conj`: conjugating by a linear equivalence transports the
   point-spectral subspaces.
+* `Module.End.pointSpectralSubspace_sub_smul_one`: shifting `A` by a real scalar shifts the
+  selected eigenvalues.
 * `Module.End.map_pointSpectralSubspace_le_of_commute`: an endomorphism commuting with `A`
   preserves the point-spectral subspaces of `A`.
 * `Module.End.finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace`: in finite dimension, the
@@ -99,6 +101,10 @@ spectrum from that of its orthogonal complement.
   spectral subspace.
 * `ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum`: every real eigenvalue of a
   bounded operator `T` has absolute value at most `‖T‖`.
+* `ContinuousLinearMap.injective_sub_smul_id_iff`: `T - c • id` is injective exactly when `c` is
+  not an eigenvalue of `T`.
+* `ContinuousLinearMap.pointSpectralSubspace_sub_smul_id`: the shift
+  `Module.End.pointSpectralSubspace_sub_smul_one` for a real operator `T - ρ • id`.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
@@ -340,6 +346,22 @@ theorem pointSpectralSubspace_neg :
     exact eigenspace_le_pointSpectralSubspace (Set.neg_mem_neg.mpr hμ)
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
+
+/-- Shifting an endomorphism by a real scalar shifts its eigenvalues: the point-spectral subspace
+of `A - ρ • 1` selected by `Ω` is the point-spectral subspace of `A` selected by `Ω + ρ`, the
+preimage of `Ω` under `μ ↦ μ - ρ`. -/
+theorem pointSpectralSubspace_sub_smul_one (ρ : ℝ) :
+    (A - (ρ : 𝕜) • 1).pointSpectralSubspace Ω = A.pointSpectralSubspace ((· - ρ) ⁻¹' Ω) := by
+  have h (μ : ℝ) : (A - (ρ : 𝕜) • 1).eigenspace (μ : 𝕜) = A.eigenspace ((μ + ρ : ℝ) : 𝕜) := by
+    ext x
+    simp only [mem_eigenspace_iff, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
+      RCLike.ofReal_add, add_smul, sub_eq_iff_eq_add]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [h]
+    exact eigenspace_le_pointSpectralSubspace (by simpa using hμ)
+  · have hle := eigenspace_le_pointSpectralSubspace (A := A - (ρ : 𝕜) • 1) (μ := μ - ρ) (Ω := Ω)
+      (Set.mem_preimage.1 hμ)
+    rwa [h, sub_add_cancel] at hle
 
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
@@ -763,6 +785,23 @@ theorem abs_le_norm_of_mem_restrictedPointSpectrum {T : E →L[𝕜] E} {U : Sub
   have h := T.le_opNorm x
   rw [← coe_coe, hx, norm_smul, RCLike.norm_ofReal] at h
   exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)
+
+/-- A shifted operator `T - c • id` is injective exactly when `c` is not an eigenvalue of `T`. -/
+theorem injective_sub_smul_id_iff {T : E →L[𝕜] E} {c : 𝕜} :
+    Function.Injective (T - c • ContinuousLinearMap.id 𝕜 E) ↔
+      ¬ Module.End.HasEigenvalue (T : E →ₗ[𝕜] E) c := by
+  rw [Module.End.hasEigenvalue_iff, not_not, Module.End.eigenspace_def, LinearMap.ker_eq_bot,
+    Module.End.one_eq_id, ← coe_id, ← toLinearMap_smul, ← toLinearMap_sub, coe_coe]
+
+/-- The real-operator form of `Module.End.pointSpectralSubspace_sub_smul_one`: the point-spectral
+subspace of `T - ρ • id` selected by `Ω` is that of `T` selected by `(· - ρ) ⁻¹' Ω`. -/
+theorem pointSpectralSubspace_sub_smul_id {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (T : F →L[ℝ] F) (ρ : ℝ) (Ω : Set ℝ) :
+    Module.End.pointSpectralSubspace ((T - ρ • ContinuousLinearMap.id ℝ F : F →L[ℝ] F) :
+        F →ₗ[ℝ] F) Ω =
+      Module.End.pointSpectralSubspace (T : F →ₗ[ℝ] F) ((· - ρ) ⁻¹' Ω) := by
+  simpa [Module.End.one_eq_id] using
+    Module.End.pointSpectralSubspace_sub_smul_one (A := (T : F →ₗ[ℝ] F)) (Ω := Ω) ρ
 
 end ContinuousLinearMap
 

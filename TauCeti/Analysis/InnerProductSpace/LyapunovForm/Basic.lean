@@ -123,12 +123,10 @@ symmetric with `α ‖v‖ ≤ ‖A v‖` and `|c| < α`, then `A - c • id` is
 theorem hasLyapunovForm_sub_smul_id_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) {α c : ℝ}
     (hgap : ∀ v, α * ‖v‖ ≤ ‖A v‖) (hc : |c| < α) :
     (A - c • ContinuousLinearMap.id ℝ E).HasLyapunovForm := by
-  refine hasLyapunovForm_of_isSymmetric (fun x y ↦ ?_) (sub_pos.2 hc) fun v ↦ ?_
-  · simp [inner_sub_left, inner_sub_right, real_inner_smul_left, real_inner_smul_right,
-      hA.apply_clm x y]
-  · calc (α - |c|) * ‖v‖ = α * ‖v‖ - ‖c • v‖ := by rw [norm_smul, Real.norm_eq_abs]; ring
-      _ ≤ ‖A v‖ - ‖c • v‖ := by linarith [hgap v]
-      _ ≤ ‖(A - c • ContinuousLinearMap.id ℝ E) v‖ := by simpa using norm_sub_norm_le (A v) (c • v)
+  refine hasLyapunovForm_of_isSymmetric (isSymmetric_sub_smul_id hA c) (sub_pos.2 hc) fun v ↦ ?_
+  calc (α - |c|) * ‖v‖ = α * ‖v‖ - ‖c • v‖ := by rw [norm_smul, Real.norm_eq_abs]; ring
+    _ ≤ ‖A v‖ - ‖c • v‖ := by linarith [hgap v]
+    _ ≤ ‖(A - c • ContinuousLinearMap.id ℝ E) v‖ := by simpa using norm_sub_norm_le (A v) (c • v)
 
 /-- **A Lyapunov form survives small perturbations.** If `A` has a Lyapunov form, then a single
 symmetric `S` and a single constant `c > 0` satisfy `c ‖v‖² ≤ ⟪S (B v), v⟫` for every `B`

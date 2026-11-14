@@ -570,21 +570,31 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {A : ℝ → E →L[ℝ] E}
 
 /-- **The index of the trajectory operator is a difference of Morse indices.** Let `A` be a
-continuous family of operators on a finite-dimensional real inner product space with invertible
-symmetric limits `A±` at `±∞`. Then the index of the
+continuous family of operators on a finite-dimensional real inner product space with injective,
+hence invertible, symmetric limits `A±` at `±∞`. Then the index of the
 trajectory operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the number of negative
 eigenvalues of `A⁻` minus the number of negative eigenvalues of `A⁺`, counted with multiplicity:
 the dimensions of the sums of their eigenspaces at negative eigenvalues. -/
 theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E} (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
-    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)
-    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric) (hminus : Function.Injective Aminus)
+    (hplus : Function.Injective Aplus)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
+  -- Injective operators on a finite-dimensional space are bounded below, with a common constant.
+  obtain ⟨αminus, hαminus, hgapminus⟩ :=
+    ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_injective hminus
+  obtain ⟨αplus, hαplus, hgapplus⟩ :=
+    ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_injective hplus
+  have hα : 0 < min αminus αplus := lt_min hαminus hαplus
+  have hgapminus' (v : E) : min αminus αplus * ‖v‖ ≤ ‖Aminus v‖ :=
+    (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hgapminus v)
+  have hgapplus' (v : E) : min αminus αplus * ‖v‖ ≤ ‖Aplus v‖ :=
+    (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hgapplus v)
   -- Replace `A` by the model coefficient with the same limits, whose index is computable.
   set M := modelCoefficient Aminus Aplus
   set ML := (memLp_top_modelCoefficient (Aminus := Aminus) (Aplus := Aplus)
@@ -594,11 +604,11 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   have hMbot : Tendsto M atBot (𝓝 Aminus) := tendsto_modelCoefficient_atBot
   have hMtop : Tendsto M atTop (𝓝 Aplus) := tendsto_modelCoefficient_atTop
   rw [index_trajectoryOperator_eq_of_tendsto hA continuous_modelCoefficient
-      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymminus hα hminus)
-      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymplus hα hplus) hbot htop hMbot hMtop
-      AL ML hAL hML,
-    index_trajectoryOperator_eq_finrank_sub_finrank continuous_modelCoefficient hMsym hα hminus
-      hplus hMbot hMtop ML hML,
+      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymminus hα hgapminus')
+      (ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsymplus hα hgapplus') hbot htop hMbot
+      hMtop AL ML hAL hML,
+    index_trajectoryOperator_eq_finrank_sub_finrank continuous_modelCoefficient hMsym hα hgapminus'
+      hgapplus' hMbot hMtop ML hML,
     neg_modelCoefficient, squareIntegrableSolutions_modelCoefficient hsymminus hsymplus]
   rw [squareIntegrableSolutions_modelCoefficient hsymminus.neg hsymplus.neg,
     ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_neg,
@@ -609,13 +619,9 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   set W := Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
   have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ :=
-    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2
-      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-        (le_inv_mul_iff₀ hα).2 (hplus v)))).symm
+    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2 hplus)).symm
   have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ :=
-    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2
-      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-        (le_inv_mul_iff₀ hα).2 (hminus v)))).symm
+    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2 hminus)).symm
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal
@@ -656,7 +662,7 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of
       ht.1 ht.2)
     (fun t ht ↦ ContinuousLinearMap.hasLyapunovForm_one_sub_smul_add_smul hSplus hcplus hplus
       ht.1 ht.2)]
-  -- The symmetric Lyapunov forms are bounded below, with a common constant.
+  -- The symmetric Lyapunov forms are bounded below, hence injective.
   obtain ⟨αminus, hαminus, hgapminus⟩ :=
     ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hSminus
       hcminus hminus
@@ -664,9 +670,11 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank_of
     ContinuousLinearMap.exists_pos_forall_mul_norm_le_norm_apply_of_forall_le_inner hSplus
       hcplus hplus
   exact index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-    continuous_modelCoefficient hSminus hSplus (lt_min hαminus hαplus)
-    (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hgapminus v))
-    (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hgapplus v))
+    continuous_modelCoefficient hSminus hSplus
+    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+      (le_inv_mul_iff₀ hαminus).2 (hgapminus v))
+    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+      (le_inv_mul_iff₀ hαplus).2 (hgapplus v))
     hMbot hMtop ML hML
 
 /-- **The index of the trajectory operator with hyperbolic limits counts stable directions.** Let

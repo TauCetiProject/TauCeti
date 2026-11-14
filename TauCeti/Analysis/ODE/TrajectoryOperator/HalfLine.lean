@@ -335,14 +335,17 @@ private theorem finrank_squareIntegrableSolutions_add_finrank (hA : Continuous A
   have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A := MemLp.coeFn_toLp _
   have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
     ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
+  have hinjplus : Function.Injective Aplus :=
+    ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v)
   have h1 := WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     hA (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
-    hsymplus hα hminus hplus hbot htop AL hAL
+    hsymplus
+    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hminus v))
+    hinjplus hbot htop AL hAL
   have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hA hsym hα hminus hplus
     hbot htop AL hAL
   -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
-  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
+  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2 hinjplus
   have hcompl := Submodule.finrank_add_eq_of_isCompl
     (hsymplus.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
   omega
