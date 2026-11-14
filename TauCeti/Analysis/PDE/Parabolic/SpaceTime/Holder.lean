@@ -338,4 +338,10 @@ theorem compSlabSpaceL_apply (f : HolderSpace α E Y) (p : slab (E := E) a b) :
     compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
   compLipschitzL_apply _ _ _
 
+/-- Viewing a Hölder field on space as a time-independent field on a slab does not increase its
+norm. -/
+theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
+    ‖(compSlabSpaceL f : HolderSpace α (slab (E := E) a b) Y)‖ ≤ ‖f‖ :=
+  ((compLipschitzL _ _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f).trans_eq (one_mul _)
+
 end TauCeti.HolderSpace

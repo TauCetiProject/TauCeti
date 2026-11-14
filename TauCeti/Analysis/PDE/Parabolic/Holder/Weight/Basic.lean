@@ -50,14 +50,21 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
 ## Main declarations
 
 * `TauCeti.ParabolicC2HolderSpace.hasFDerivAt_exp_smul`,
-  `TauCeti.ParabolicC2HolderSpace.fderiv_fderiv_exp_smul_apply` and
-  `TauCeti.ParabolicC2HolderSpace.hasDerivWithinAt_exp_smul`: the derivatives of the weighted
-  map `exp (ℓ x) • v(x, t)`.
+  `TauCeti.ParabolicC2HolderSpace.fderiv_fderiv_exp_smul_apply`,
+  `TauCeti.ParabolicC2HolderSpace.hasDerivWithinAt_exp_smul` and
+  `TauCeti.ParabolicC2HolderSpace.derivWithin_eq_exp_smul_timeDerivL`: the derivatives of the
+  weighted map `exp (ℓ x) • v(x, t)`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanWeightedFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanWeightedZerothOrderCoeff`: the coefficients `b_w` and
-  `c_w` of the conjugated operator.
+  `c_w` of the conjugated operator, with the norm bounds
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedZerothOrderCoeff_le` and their uniform
+  forms `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le_of_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedZerothOrderCoeff_le_of_le`.
 * `TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanParabolicOperatorL_eq`: the conjugation
-  identity `w P_w v = P (w v)`.
+  identity `w P_w v = P (w v)`, and
+  `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_weightedCoeff_eq_iff`: `P_w v = g`
+  exactly when `w v` is a classical solution of `P u = w g`.
 * `TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq`: the weight `1 + exp x` on the line
   satisfies the hypotheses of the conjugation identity.
 
@@ -144,6 +151,20 @@ theorem hasDerivWithinAt_exp_smul (v : ParabolicC2HolderSpace α E F ht) (x : E)
       (exp (ℓ x) • timeDerivL v (slabMk x t)) (Icc t₀ t₁) t :=
   (v.hasTimeDerivWithinAt x t).const_smul _
 
+/-- **The time derivative of a weighted map**, as a derivative within the closed time interval:
+if `u (y, s) = exp (ℓ y) • v(y, s)` on the slab, then `∂ₜu (x, t) = exp (ℓ x) • ∂ₜv (x, t)`, also
+at the initial and terminal times. -/
+theorem derivWithin_eq_exp_smul_timeDerivL (v : ParabolicC2HolderSpace α E F ht)
+    {u : E → ℝ → F} (hu : ∀ y (s : Icc t₀ t₁), u y s = exp (ℓ y) • v (slabMk y s)) (x : E)
+    (t : Icc t₀ t₁) :
+    derivWithin (u x) (Icc t₀ t₁) t = exp (ℓ x) • timeDerivL v (slabMk x t) := by
+  rw [derivWithin_congr (f := fun s ↦ exp (ℓ x) • timeExtension ht.le v x s)
+    (fun s hs ↦ by
+      simp only [timeExtension_def, projIcc_of_mem ht.le hs]
+      exact hu x ⟨s, hs⟩)
+    (by simp only [timeExtension_def, projIcc_val]; exact hu x t),
+    (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.2)]
+
 end WeightedMap
 
 /-! ### The conjugated operator on Euclidean space -/
@@ -197,6 +218,66 @@ theorem euclideanWeightedZerothOrderCoeff_apply (p : slab (E := EuclideanSpace �
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff]
 
+/-- **Bound on the conjugated first-order coefficients.**
+`‖b_wⁱ‖ ≤ ‖bⁱ‖ + ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖`. -/
+theorem norm_euclideanWeightedFirstOrderCoeff_le (i : ι) :
+    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤ ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
+  refine (norm_add_le _ _).trans (add_le_add le_rfl ((norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun j _ ↦ (norm_mul_le _ _).trans ?_)))
+  gcongr
+  · exact norm_add_le _ _
+  · exact HolderSpace.norm_compSlabSpaceL_apply_le _
+
+/-- **Bound on the conjugated zeroth-order coefficient.**
+`‖c_w‖ ≤ ‖c‖ + ∑ᵢⱼ ‖aⁱʲ‖ (‖∂ᵢ∂ⱼℓ‖ + ‖∂ᵢℓ‖ ‖∂ⱼℓ‖) + ∑ᵢ ‖bⁱ‖ ‖∂ᵢℓ‖`. -/
+theorem norm_euclideanWeightedZerothOrderCoeff_le :
+    ‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ ≤
+      ‖c‖ + ∑ i, ∑ j, ‖a i j‖ * (‖d2ℓ i j‖ + ‖dℓ i‖ * ‖dℓ j‖) + ∑ i, ‖b i‖ * ‖dℓ i‖ := by
+  refine (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add le_rfl
+    ((norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_sum_le _ _).trans
+      (Finset.sum_le_sum fun j _ ↦ (norm_mul_le _ _).trans ?_)))))
+    ((norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_mul_le _ _).trans ?_)))
+  · gcongr
+    exact (HolderSpace.norm_compSlabSpaceL_apply_le _).trans
+      ((norm_add_le _ _).trans (add_le_add le_rfl (norm_mul_le _ _)))
+  · gcongr
+    exact HolderSpace.norm_compSlabSpaceL_apply_le _
+
+/-- **Uniform bound on the conjugated first-order coefficients.** If the coefficients have norms
+at most `K` and the partial derivatives `∂ⱼℓ` have norms at most `L`, then
+`‖b_wⁱ‖ ≤ K + n (2 K L)` on `ℝⁿ`. -/
+theorem norm_euclideanWeightedFirstOrderCoeff_le_of_le {K L : ℝ} (hak : ∀ i j, ‖a i j‖ ≤ K)
+    (hbk : ∀ i, ‖b i‖ ≤ K) (hdk : ∀ j, ‖dℓ j‖ ≤ L) (i : ι) :
+    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤ K + Fintype.card ι * (2 * K * L) := by
+  have hsum : ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ ≤ ∑ _j : ι, 2 * K * L :=
+    Finset.sum_le_sum fun j _ ↦ by
+      have hK : 0 ≤ K := (norm_nonneg _).trans (hak i j)
+      nlinarith [mul_le_mul (add_le_add (hak i j) (hak j i)) (hdk j) (norm_nonneg _)
+        (by positivity : 0 ≤ K + K)]
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
+  linarith [norm_euclideanWeightedFirstOrderCoeff_le (a := a) (b := b) (dℓ := dℓ) i, hbk i]
+
+/-- **Uniform bound on the conjugated zeroth-order coefficient.** If the coefficients have norms
+at most `K` and the partial derivatives `∂ᵢℓ`, `∂ᵢ∂ⱼℓ` have norms at most `L`, then
+`‖c_w‖ ≤ K + n (n K (L + L²)) + n K L` on `ℝⁿ`. -/
+theorem norm_euclideanWeightedZerothOrderCoeff_le_of_le {K L : ℝ} (hak : ∀ i j, ‖a i j‖ ≤ K)
+    (hbk : ∀ i, ‖b i‖ ≤ K) (hck : ‖c‖ ≤ K) (hdk : ∀ i, ‖dℓ i‖ ≤ L)
+    (hd2k : ∀ i j, ‖d2ℓ i j‖ ≤ L) :
+    ‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ ≤
+      K + Fintype.card ι * (Fintype.card ι * (K * (L + L * L))) +
+        Fintype.card ι * (K * L) := by
+  have hK : 0 ≤ K := (norm_nonneg _).trans hck
+  have hsum₂ : ∑ i, ∑ j, ‖a i j‖ * (‖d2ℓ i j‖ + ‖dℓ i‖ * ‖dℓ j‖) ≤
+      ∑ _i : ι, ∑ _j : ι, K * (L + L * L) :=
+    Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ mul_le_mul (hak i j)
+      (add_le_add (hd2k i j) (mul_le_mul (hdk i) (hdk j) (norm_nonneg _)
+        ((norm_nonneg _).trans (hdk i)))) (by positivity) hK
+  have hsum₁ : ∑ i, ‖b i‖ * ‖dℓ i‖ ≤ ∑ _i : ι, K * L :=
+    Finset.sum_le_sum fun i _ ↦ mul_le_mul (hbk i) (hdk i) (norm_nonneg _) hK
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum₁ hsum₂
+  linarith [norm_euclideanWeightedZerothOrderCoeff_le (a := a) (b := b) (c := c) (dℓ := dℓ)
+    (d2ℓ := d2ℓ)]
+
 /-- **Conjugation by a spatial weight.** Let `ℓ` be `C²` on `ℝⁿ`, with partial derivatives
 `∂ᵢℓ = dℓ i` and `∂ᵢ∂ⱼℓ = d2ℓ i j` bounded and `α`-Hölder, and let `u = exp ℓ • v` on the slab
 for some `v ∈ C_b^{2+α,1+α/2}`. Then the classical parabolic operator
@@ -225,20 +306,44 @@ theorem exp_mul_euclideanParabolicOperatorL_eq [DecidableEq ι] (hα : α ≤ 1)
   have hspace := PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq
     (Matrix.of fun i j ↦ a i j (slabMk x t)) (∑ i, b i (slabMk x t) • EuclideanSpace.single i 1)
     (c (slabMk x t)) (hℓ.contDiffAt (x := x)) (v.contDiff_spatialSlice t).contDiffAt
-  -- In time, `u x` agrees on the closed interval with the weighted time extension of `v`.
-  have htime : derivWithin (u x) (Icc t₀ t₁) t = exp (ℓ x) * timeDerivL v (slabMk x t) := by
-    rw [derivWithin_congr (f := fun s ↦ exp (ℓ x) • timeExtension ht.le v x s)
-      (fun s hs ↦ by
-        simp only [timeExtension_def, projIcc_of_mem ht.le hs, smul_eq_mul]
-        exact hu x ⟨s, hs⟩)
-      (by simp only [timeExtension_def, projIcc_val, smul_eq_mul]; exact hu x t),
-      (hasDerivWithinAt_exp_smul v x t).derivWithin (uniqueDiffOn_Icc ht t t.2), smul_eq_mul]
+  have htime : derivWithin (u x) (Icc t₀ t₁) t = exp (ℓ x) * timeDerivL v (slabMk x t) :=
+    derivWithin_eq_exp_smul_timeDerivL v (fun y s ↦ (hu y s).trans (smul_eq_mul _ _).symm) x t
   rw [htime, hslice, hu x t]
   simp only [euclideanParabolicOperatorL_apply, euclideanWeightedFirstOrderCoeff_apply,
     euclideanWeightedZerothOrderCoeff_apply, space_slabMk, fderiv_eq, fderiv_fderiv_eq, hdℓ, hd2ℓ,
     Matrix.of_apply, map_add, map_sum, map_smul, smul_eq_mul, add_mul,
     Finset.sum_add_distrib] at hspace ⊢
   linear_combination -hspace
+
+/-- **Weighted solutions on Euclidean space.** For `u = exp ℓ * v` with `v ∈ C_b^{2+α,1+α/2}`,
+`v` solves the conjugated equation `P_w v = g` if and only if `u` is a classical solution of
+`P u = exp ℓ * g`, with the time derivative of `u` taken within the closed time interval: forcing
+terms transform by division by the weight. -/
+theorem euclideanParabolicOperatorL_weightedCoeff_eq_iff [DecidableEq ι] (hα : α ≤ 1)
+    {ℓ : EuclideanSpace ℝ ι → ℝ} (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+    {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc t₀ t₁), u y s = exp (ℓ y) * v (slabMk y s))
+    (g : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanParabolicOperatorL hα a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) v = g ↔
+      ∀ (x : EuclideanSpace ℝ ι) (t : Icc t₀ t₁), derivWithin (u x) (Icc t₀ t₁) t -
+        (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+            (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+          ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+          c (slabMk x t) * u x t) = exp (ℓ x) * g (slabMk x t) := by
+  constructor
+  · intro h x t
+    rw [← exp_mul_euclideanParabolicOperatorL_eq hα hℓ hdℓ hd2ℓ v hu x t, h]
+  · intro h
+    refine HolderSpace.ext fun p ↦ ?_
+    rw [← slabMk_space_slabTime p]
+    have hp := h (p : ParabolicSpaceTime _).space (slabTime p)
+    rw [← exp_mul_euclideanParabolicOperatorL_eq hα hℓ hdℓ hd2ℓ v hu] at hp
+    exact mul_left_cancel₀ (exp_pos _).ne' hp
 
 end Euclidean
 
