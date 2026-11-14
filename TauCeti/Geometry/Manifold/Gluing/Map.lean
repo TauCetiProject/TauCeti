@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Gluing.GlueData
+public import TauCeti.Topology.Category.TopCat.GlueData.Map
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 
 /-!
@@ -21,7 +22,16 @@ since they use the colimit in `TopCat.{u}`. Extensionality has no target-univers
 `TopCat.GlueData.IsCompatible.mapContMDiffMap` constructs maps between compatible gluings
 piecewise, with identity and composition laws. Map regularity `m` may be any `m ≤ n`, where
 `n` is the regularity of the compatible gluing and its piece manifolds. For maps between
-gluings, each gluing may have its own regularity, with `m` bounded by each one.
+gluings, each gluing may have its own regularity, with `m` bounded by each one. Its underlying
+continuous map is the topological glued map `TopCat.GlueData.gluedMap`.
+
+Local diffeomorphisms of the pieces glue to a local diffeomorphism of the glued manifolds
+(`TopCat.GlueData.IsCompatible.isLocalDiffeomorph_gluedMap`). Hence an isomorphism of compatible
+gluings, given by a surjective map of indices and diffeomorphisms of the pieces under which two
+points are identified exactly when their images are, induces a diffeomorphism of the glued
+manifolds, `TopCat.GlueData.IsCompatible.gluedDiffeomorph`. Its underlying map is the glued map
+of the pieces, as for the homeomorphism `TopCat.GlueData.gluedHomeomorph` induced by the
+underlying homeomorphisms of the pieces.
 
 No separation, countability, or nonemptiness hypothesis is needed. Taking the scalar field
 to be `ℂ` gives the holomorphic universal property on exactly the same carrier and atlas.
@@ -207,6 +217,22 @@ theorem mapContMDiffMap_ι (a : D.J → D'.J)
   -- the bundled constructors coerce to these functions, evaluated as ι (a i) (f i x).
   exact h.descContMDiffMap_ι hm _ hf i x
 
+/-- The map induced between gluings is the glued map of the underlying continuous piece maps. -/
+theorem coe_mapContMDiffMap (a : D.J → D'.J)
+    (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
+    (hf : ∀ i j (x : D.V (i, j)),
+      D'.toGlueData.ι (a i) (f i (D.f i j x)) =
+        D'.toGlueData.ι (a j) (f j (D.f j i (D.t i j x)))) :
+    letI := D.chartedSpace H
+    letI := D'.chartedSpace H'
+    ⇑(h.mapContMDiffMap hm h' hm' a f hf) =
+      gluedMap a (fun i ↦ ⟨f i, (f i).contMDiff.continuous⟩) hf := by
+  let := D.chartedSpace H
+  let := D'.chartedSpace H'
+  funext x
+  obtain ⟨i, y, rfl⟩ := D.ι_jointly_surjective x
+  simp
+
 /-- Identity piece maps induce the identity map of the glued manifold. -/
 @[simp]
 theorem mapContMDiffMap_id :
@@ -238,11 +264,8 @@ theorem _root_.TopCat.GlueData.mapContMDiffMap_comp_compatible
         D''.toGlueData.ι (b j) (g j (D'.f j i (D'.t i j x))))
     (i j : D.J) (x : D.V (i, j)) :
     D''.toGlueData.ι (b (a i)) (g (a i) (f i (D.f i j x))) =
-      D''.toGlueData.ι (b (a j)) (g (a j) (f j (D.f j i (D.t i j x)))) := by
-  obtain ⟨y, hyi, hyj⟩ := (D'.ι_eq_iff_rel _ _ _ _).mp (hf i j x)
-  dsimp only at hyi hyj
-  rw [← hyi, ← hyj]
-  exact hg _ _ y
+      D''.toGlueData.ι (b (a j)) (g (a j) (f j (D.f j i (D.t i j x)))) :=
+  ι_apply_eq_ι_apply_of_ι_eq (fun j ↦ g j) hg (hf i j x)
 
 /-- Composition of piece maps induces composition on the glued manifolds. The overlap
 condition on the composite follows from those of the two families. -/
@@ -273,6 +296,86 @@ theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n'') (hm'' : m ≤ n'')
   simp only [ContMDiffMap.comp_apply, mapContMDiffMap_ι, Function.comp_apply]
 
 end Maps
+
+section Diffeomorph
+
+variable {D' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H' (D'.U i)]
+  [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n (D'.U i)]
+  (h' : D'.IsCompatible I' n)
+
+include h h' in
+/-- Local diffeomorphisms of the pieces which agree on overlaps glue to a local diffeomorphism of
+the glued manifolds. -/
+theorem isLocalDiffeomorph_gluedMap {a : D.J → D'.J} (φ : ∀ i, C(D.U i, D'.U (a i)))
+    (hφ : ∀ i j (x : D.V (i, j)), D'.toGlueData.ι (a i) (φ i (D.f i j x)) =
+      D'.toGlueData.ι (a j) (φ j (D.f j i (D.t i j x))))
+    (hloc : ∀ i, IsLocalDiffeomorph I I' n (φ i)) :
+    letI := D.chartedSpace H
+    letI := D'.chartedSpace H'
+    IsLocalDiffeomorph I I' n (gluedMap a φ hφ) := by
+  let := D.chartedSpace H
+  let := D'.chartedSpace H'
+  refine h.isLocalDiffeomorph_iff.2 fun i ↦ ?_
+  have heq : gluedMap a φ hφ ∘ D.toGlueData.ι i = D'.toGlueData.ι (a i) ∘ φ i :=
+    funext (gluedMap_ι i)
+  rw [heq]
+  exact fun x ↦ (hloc i x).comp (hg := h'.isLocalDiffeomorph_ι (a i) (φ i x))
+
+/-- An isomorphism of compatible gluings, given by a surjective map of indices and
+diffeomorphisms of the pieces which preserve and reflect identifications, induces a
+diffeomorphism of the glued manifolds. -/
+noncomputable def gluedDiffeomorph {σ : D.J → D'.J} (hσ : Function.Surjective σ)
+    (φ : ∀ i, D.U i ≃ₘ^n⟮I, I'⟯ D'.U (σ i))
+    (hφ : ∀ i j (x : D.U i) (y : D.U j), D'.toGlueData.ι (σ i) (φ i x) =
+      D'.toGlueData.ι (σ j) (φ j y) ↔ D.toGlueData.ι i x = D.toGlueData.ι j y) :
+    letI := D.chartedSpace H
+    letI := D'.chartedSpace H'
+    D.toGlueData.glued ≃ₘ^n⟮I, I'⟯ D'.toGlueData.glued := by
+  letI := D.chartedSpace H
+  letI := D'.chartedSpace H'
+  exact (h.isLocalDiffeomorph_gluedMap h' (fun i ↦ ⟨φ i, (φ i).continuous⟩)
+    (fun i j x ↦ (hφ _ _ _ _).2 (D.glue_condition_apply i j x).symm)
+    fun i ↦ (φ i).isLocalDiffeomorph).diffeomorphOfBijective
+    -- State the bijectivity proof at type `Function.Bijective`, not its unfolding, so that
+    -- `IsLocalDiffeomorph.coe_diffeomorphOfBijective` rewrites the result.
+    (show Function.Bijective _ from ⟨injective_gluedMap fun i j x y ↦ (hφ i j x y).1,
+      surjective_gluedMap hσ fun i ↦ (φ i).surjective⟩)
+
+/-- The diffeomorphism induced by an isomorphism of compatible gluings is the given
+diffeomorphism on each piece. -/
+@[simp]
+theorem gluedDiffeomorph_ι {σ : D.J → D'.J} (hσ : Function.Surjective σ)
+    (φ : ∀ i, D.U i ≃ₘ^n⟮I, I'⟯ D'.U (σ i))
+    (hφ : ∀ i j (x : D.U i) (y : D.U j), D'.toGlueData.ι (σ i) (φ i x) =
+      D'.toGlueData.ι (σ j) (φ j y) ↔ D.toGlueData.ι i x = D.toGlueData.ι j y)
+    (i : D.J) (x : D.U i) :
+    letI := D.chartedSpace H
+    letI := D'.chartedSpace H'
+    h.gluedDiffeomorph h' hσ φ hφ (D.toGlueData.ι i x) = D'.toGlueData.ι (σ i) (φ i x) := by
+  let := D.chartedSpace H
+  let := D'.chartedSpace H'
+  unfold gluedDiffeomorph
+  rw [IsLocalDiffeomorph.coe_diffeomorphOfBijective]
+  exact gluedMap_ι i x
+
+/-- The inverse of the diffeomorphism induced by an isomorphism of compatible gluings is the
+inverse of the given diffeomorphism on each piece. -/
+@[simp]
+theorem gluedDiffeomorph_symm_ι {σ : D.J → D'.J} (hσ : Function.Surjective σ)
+    (φ : ∀ i, D.U i ≃ₘ^n⟮I, I'⟯ D'.U (σ i))
+    (hφ : ∀ i j (x : D.U i) (y : D.U j), D'.toGlueData.ι (σ i) (φ i x) =
+      D'.toGlueData.ι (σ j) (φ j y) ↔ D.toGlueData.ι i x = D.toGlueData.ι j y)
+    (i : D.J) (y : D'.U (σ i)) :
+    letI := D.chartedSpace H
+    letI := D'.chartedSpace H'
+    (h.gluedDiffeomorph h' hσ φ hφ).symm (D'.toGlueData.ι (σ i) y) =
+      D.toGlueData.ι i ((φ i).symm y) := by
+  let := D.chartedSpace H
+  let := D'.chartedSpace H'
+  nth_rw 1 [← (φ i).apply_symm_apply y]
+  rw [← h.gluedDiffeomorph_ι h' hσ φ hφ, Diffeomorph.symm_apply_apply]
+
+end Diffeomorph
 
 end IsCompatible
 
