@@ -175,10 +175,11 @@ theorem _root_.Irreducible.smodEq_maximalIdeal_pow_iff_dvd {ϖ : S} (hϖ : Irred
     x ≡ y [SMOD maximalIdeal S ^ n] ↔ ϖ ^ n ∣ x - y := by
   rw [SModEq.sub_mem, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
 
-/-- A discrete valuation ring is infinite: the powers of a uniformizer are pairwise distinct. -/
-instance infinite : Infinite S := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  exact .of_injective _ (pow_injective_of_not_isUnit hϖ.not_isUnit hϖ.ne_zero)
+/-- A discrete valuation ring is infinite: a finite domain is a field, and a discrete valuation
+ring is not. -/
+instance infinite : Infinite S :=
+  not_finite_iff_infinite.mp fun _ ↦
+    _root_.IsDiscreteValuationRing.not_isField S (Finite.isField_of_domain S)
 
 section Map
 
