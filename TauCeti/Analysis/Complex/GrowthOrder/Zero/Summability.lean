@@ -11,18 +11,17 @@ public import TauCeti.Analysis.PSeries
 /-!
 # Summability over zeros of an entire function of finite order
 
-For an entire function of order at most `A` that is nonzero at the origin,
-its zeros, counted with multiplicity, have summable reciprocal `p`th powers
+The zeros of an entire function of order at most `A`, counted with multiplicity,
+have summable reciprocal `p`th powers
 whenever `p > A`. Nonpositive exponents reduce to constants by Liouville's theorem.
 For order below two this is, with natural multiplicities, the inverse-square summability that the
 genus-one product `TauCeti.divisorProductOne` assumes.
 The family is indexed by the support of Mathlib's native divisor on the whole plane.
 Its integer values are nonnegative because the function is entire.
 
-The proof uses `TauCeti.OrderLE.isBigO_sum_divisor` at an intermediate
-exponent `B < p`. On each dyadic annulus, the contribution is bounded by a
-constant times `2 ^ ((B - p) * n)`. Mathlib's `summable_partition` and its
-geometric-series theorem then give summability. Local finiteness of the
+The proof uses `TauCeti.OrderLE.eventually_sum_divisor_le` at an intermediate
+exponent `B < p`, followed by the dyadic counting criterion
+`TauCeti.summable_mul_rpow_of_count_growth`. Local finiteness of the
 native divisor handles the zeros in the unit disk. No enumeration of the
 zeros is required.
 
@@ -39,10 +38,10 @@ open scoped BigOperators
 namespace TauCeti
 
 /-- The reciprocal `p`th powers of the zeros of an entire function of order at most `A`
-are summable with their divisor multiplicities for every `p > A`, provided the function
-is nonzero at the origin. -/
+are summable with their divisor multiplicities for every `p > A`. For positive `p`, the
+term at the origin is zero under the totalized real-power convention. -/
 theorem OrderLE.summable_divisor_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
-    (h : OrderLE f A) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (hAp : A < p) :
+    (h : OrderLE f A) (hf : Differentiable ℂ f) (hAp : A < p) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       (MeromorphicOn.divisor f Set.univ ρ : ℝ) * ‖(ρ : ℂ)‖ ^ (-p)) := by
   classical
@@ -75,7 +74,7 @@ theorem OrderLE.summable_divisor_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
       dsimp [B]
       linarith
     have hBp : B < p := by have := max_lt hAp hp; dsimp [B]; linarith
-    obtain ⟨C, _, hC⟩ := h.eventually_sum_divisor_le hf hf0 hAB
+    obtain ⟨C, _, hC⟩ := h.eventually_sum_divisor_le hf hAB
     have hcount : ∀ᶠ R : ℝ in atTop,
         (∑' ρ : {ρ : d.support | r ρ ≤ R}, w ρ) ≤ C * R ^ B :=
       hC.mono (fun R hR ↦ (hcompare R).trans hR)
