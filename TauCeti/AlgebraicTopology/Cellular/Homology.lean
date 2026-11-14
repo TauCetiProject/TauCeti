@@ -80,9 +80,8 @@ instance isIso_singularHomologyMap_skeletonBasePairToSkeletonPair_zero (k : ℕ)
 skeleta. -/
 private def skeletonBaseTripleToSkeletonTriple (n : ℕ) :
     skeletonBaseTriple C n ⟶ skeletonTriple C n :=
-  ⟨ComposableArrows.homMk₂
-    (TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_zero_subset_skeletonLT C n)))
-    (𝟙 _) (𝟙 _) rfl rfl⟩
+  TopTriple.homMk (TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_zero_subset_skeletonLT C n)))
+    (𝟙 _) (𝟙 _) rfl rfl
 
 /-- The connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ, X⁻¹)` of the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`. -/
 def skeletonBaseTripleδ (n : ℕ) :
