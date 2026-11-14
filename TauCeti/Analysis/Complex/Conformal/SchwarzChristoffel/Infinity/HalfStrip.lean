@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Parallel
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.SimpleBoundary
 import TauCeti.Algebra.BigOperators.Finset.Fiber
-import TauCeti.Topology.Frontier
+import TauCeti.Analysis.Complex.HorizontalStrip
 
 /-!
 # The half-strip end of a logarithmic Schwarz--Christoffel image
@@ -131,32 +131,21 @@ private theorem exists_mem_image_in_strip_of_sum_eq_neg_one
     ((eventually_gt_atTop (0 : ℝ)).and ((hre.eventually (eventually_gt_atTop R)).and hstrip)).exists
   exact ⟨F ((y : ℂ) * I), ⟨(y : ℂ) * I, by simpa using hy, rfl⟩, hyr, hyim⟩
 
-/-- Far to the right, a preconnected set avoiding the two boundary heights `l` and `h` lies
-inside an open set `U`, or outside its closure, when the frontier of `U` there lies on those
-heights. -/
-private theorem subset_or_subset_compl_closure_of_frontier {U : Set ℂ} {l h R : ℝ}
-    (hUo : IsOpen U) (hfr : ∀ w ∈ frontier U, R < w.re → w.im = l ∨ w.im = h)
-    {s : Set ℂ} (hs : IsPreconnected s)
-    (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ l ∧ w.im ≠ h) : s ⊆ U ∨ s ⊆ (closure U)ᶜ :=
-  (hs.subset_interior_or_subset_compl_closure (Set.disjoint_left.mpr fun w hw hwfr =>
-    let h := havoid w hw
-    (hfr w hwfr h.1).elim h.2.1 h.2.2)).imp_left fun h => h.trans hUo.interior_eq.le
-
 /-- If the open set `U` is confined to the strip `l - δ < im < h + δ` far to the right, and its
 frontier far to the right lies on the heights `l < h`, then the regions below `l` and above `h`
-are outside the closure of `U`. -/
-private theorem outer_regions_subset_compl_closure {U : Set ℂ} {l h δ R : ℝ} (hlh : l < h)
-    (hδ : 0 < δ) (hUo : IsOpen U) (hfr : ∀ w ∈ frontier U, R < w.re → w.im = l ∨ w.im = h)
+are outside `U`. -/
+private theorem outer_regions_subset_compl {U : Set ℂ} {l h δ R : ℝ} (hlh : l < h)
+    (hδ : 0 < δ) (hfr : ∀ w ∈ frontier U, R < w.re → w.im = l ∨ w.im = h)
     (hbounds : ∀ w ∈ U, R < w.re → l - δ < w.im ∧ w.im < h + δ) :
-    {w : ℂ | R < w.re ∧ w.im < l} ⊆ (closure U)ᶜ ∧
-      {w : ℂ | R < w.re ∧ h < w.im} ⊆ (closure U)ᶜ := by
+    {w : ℂ | R < w.re ∧ w.im < l} ⊆ Uᶜ ∧ {w : ℂ | R < w.re ∧ h < w.im} ⊆ Uᶜ := by
+  -- The frontier of `Uᶜ` is that of `U`, and a far point outside the wider strip is not in `U`.
+  have hfr' : ∀ w ∈ frontier Uᶜ, R < w.re → w.im = l ∨ w.im = h := frontier_compl U ▸ hfr
   have hout (b : ℝ) (s : Set ℂ) (hs : IsPreconnected s)
       (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ l ∧ w.im ≠ h)
       (hb : b < l - δ ∨ h + δ < b)
-      (hmem : (R + 1 : ℂ) + (b : ℂ) * I ∈ s) : s ⊆ (closure U)ᶜ := by
-    refine (subset_or_subset_compl_closure_of_frontier hUo hfr hs havoid).resolve_left
-      fun hsU => ?_
-    have h' := hbounds _ (hsU hmem) (by simp)
+      (hmem : (R + 1 : ℂ) + (b : ℂ) * I ∈ s) : s ⊆ Uᶜ := by
+    refine hs.subset_of_forall_mem_frontier_im_eq_or_eq hfr' havoid ⟨_, hmem, fun hU => ?_⟩
+    have h' := hbounds _ hU (by simp)
     simp only [add_im, ofReal_im, mul_I_im, ofReal_re, zero_add, one_im] at h'
     rcases hb with hb | hb <;> linarith
   refine ⟨?_, ?_⟩
@@ -212,16 +201,14 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_neg_one
       exists_mem_image_in_strip_of_sum_eq_neg_one a e z₀ hsum R
     -- Each of the three regions to the right of `R` avoids the frontier, so connectedness
     -- makes membership in the open image constant on that region.
-    exact (subset_or_subset_compl_closure_of_frontier hUo hfr hs
-      (fun w hw => ⟨hw.1, ne_of_gt hw.2.1, ne_of_lt hw.2.2⟩)).resolve_right
-      (fun h => h ⟨hwR, hwlo, hwhi⟩ (subset_closure hwU))
+    exact hs.subset_of_forall_mem_frontier_im_eq_or_eq hfr
+      (fun w hw => ⟨hw.1, ne_of_gt hw.2.1, ne_of_lt hw.2.2⟩) ⟨w, ⟨hwR, hwlo, hwhi⟩, hwU⟩
   -- The wider asymptotic strip gives exterior witnesses above and below the two rays.
-  obtain ⟨hlow, hhigh⟩ := outer_regions_subset_compl_closure
-    (lt_add_of_pos_right c.im Real.pi_pos) one_pos hUo hfr
+  obtain ⟨hlow, hhigh⟩ := outer_regions_subset_compl
+    (lt_add_of_pos_right c.im Real.pi_pos) one_pos hfr
     (by rintro _ ⟨z, hz, rfl⟩ hwR; exact hbounds z hz ((le_max_right R₁ R₂).trans_lt hwR))
   -- The boundary lines themselves are excluded because the image is open.
   refine ⟨R, fun w hwR => ⟨fun hwU => ?_, fun hw => hS ⟨hwR, hw⟩⟩⟩
-  have hwcl := subset_closure hwU
   have hne : w.im ≠ c.im ∧ w.im ≠ c.im + Real.pi := by
     constructor <;> intro h
     all_goals
@@ -229,7 +216,7 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_neg_one
       rw [hUo.frontier_eq] at hwfr
       exact hwfr.2 hwU
   constructor
-  · exact lt_of_le_of_ne (le_of_not_gt (fun h => hlow ⟨hwR, h⟩ hwcl)) hne.1.symm
-  · exact lt_of_le_of_ne (le_of_not_gt (fun h => hhigh ⟨hwR, h⟩ hwcl)) hne.2
+  · exact lt_of_le_of_ne (le_of_not_gt (fun h => hlow ⟨hwR, h⟩ hwU)) hne.1.symm
+  · exact lt_of_le_of_ne (le_of_not_gt (fun h => hhigh ⟨hwR, h⟩ hwU)) hne.2
 
 end TauCeti

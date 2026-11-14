@@ -322,7 +322,7 @@ private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
   have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
       (v.valuation K).ord u + if v₀ = v then 1 else 0 := by
     have h := congrArg (FractionalIdeal.count K v) hu
-    rwa [FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
+    rwa [FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O W),
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       FractionalIdeal.count_mul K v (FractionalIdeal.spanSingleton_ne_zero_iff.2 hu₀)
         (FractionalIdeal.coeIdeal_ne_zero.2 v₀.ne_bot), FractionalIdeal.count_maximal,

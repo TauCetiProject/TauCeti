@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 import Mathlib.RingTheory.Idempotents
