@@ -57,8 +57,10 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.stackCells_inclusion`: restricting a stack to a subset of its base cuts each ambient
   cell down to the part lying over that subset.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
-  `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
-  over its base, and over a connected base they are connected.
+  `TauCeti.sUnion_biUnion_stackCells`, `TauCeti.pairwiseDisjoint_biUnion_stackCells`,
+  `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack (and of a family of
+  stacks over disjoint bases) partition the cylinder over their base, and over a connected base
+  they are connected.
 * `TauCeti.ordConnected_setOf_cons_mem_of_mem_stackCells`: every ambient cell meets each line
   parallel to the distinguished axis in an order-connected set.
 
@@ -687,6 +689,33 @@ theorem pairwiseDisjoint_stackCells (hθ : ∀ x, Injective fun i ↦ θ i x) :
   · exact disjoint_sectionSet_sectorSet θ i j'
   · exact (disjoint_sectionSet_sectorSet θ i' j).symm
   · exact pairwise_disjoint_sectorSet θ fun h ↦ hne (h ▸ rfl)
+
+/-- If over each set in `𝒟` a pointwise monotone stack is chosen, the cells of all these stacks
+cover the cylinder over `⋃₀ 𝒟`. -/
+theorem sUnion_biUnion_stackCells {𝒟 : Set (Set (Fin n → α))} {k : Set (Fin n → α) → ℕ}
+    {θ : ∀ C : Set (Fin n → α), Fin (k C) → C → α}
+    (hθ : ∀ C ∈ 𝒟, ∀ x, Monotone fun i ↦ θ C i x) :
+    ⋃₀ (⋃ C ∈ 𝒟, stackCells C (θ C)) = Fin.tail ⁻¹' ⋃₀ 𝒟 := by
+  simp_rw [sUnion_iUnion, iUnion₂_congr fun C hC ↦ sUnion_stackCells (hθ C hC),
+    ← preimage_iUnion, ← sUnion_eq_biUnion]
+
+/-- If `𝒟` is pairwise disjoint and each stack `θ C` is pointwise injective in its section index,
+the cells of all these stacks are pairwise disjoint. -/
+theorem pairwiseDisjoint_biUnion_stackCells {𝒟 : Set (Set (Fin n → α))}
+    {k : Set (Fin n → α) → ℕ} {θ : ∀ C : Set (Fin n → α), Fin (k C) → C → α}
+    (hdisj : 𝒟.PairwiseDisjoint id) (hθ : ∀ C ∈ 𝒟, ∀ x, Injective fun i ↦ θ C i x) :
+    (⋃ C ∈ 𝒟, stackCells C (θ C)).PairwiseDisjoint id := by
+  rintro E₁ hE₁ E₂ hE₂ hne
+  obtain ⟨C₁, hC₁, hE₁C⟩ := mem_iUnion₂.mp hE₁
+  obtain ⟨C₂, hC₂, hE₂C⟩ := mem_iUnion₂.mp hE₂
+  rcases eq_or_ne C₁ C₂ with rfl | hCC
+  · exact pairwiseDisjoint_stackCells (hθ C₁ hC₁) hE₁C hE₂C hne
+  · refine disjoint_left.mpr fun v hv₁ hv₂ ↦ ?_
+    have ht₁ : Fin.tail v ∈ C₁ := by
+      rcases mem_stackCells.mp hE₁C with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.mp hv₁).1
+    have ht₂ : Fin.tail v ∈ C₂ := by
+      rcases mem_stackCells.mp hE₂C with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.mp hv₂).1
+    exact disjoint_left.mp (hdisj hC₁ hC₂ hCC) ht₁ ht₂
 
 /-- Every cell of a stack meets each line parallel to the distinguished axis in an
 order-connected set: a point or nothing for a section, an open interval for a sector. -/
