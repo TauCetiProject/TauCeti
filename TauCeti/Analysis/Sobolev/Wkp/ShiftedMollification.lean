@@ -180,7 +180,7 @@ private theorem shiftAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (h : E)
     (f : Lp F p (mu.restrict Omega)) :
     shiftAverage hp phi h f =ᵐ[mu.restrict Omega] fun x => smoothField phi f (x + h) := by
-  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.measurableSet f
+  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.nullMeasurableSet f
   have hshift := (Measure.coeFn_translateLp (mu := mu.restrict (univ : Set E)) (p := p) h
     (normedBumpLp hp phi (mu.restrict univ)
       (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _) f))).trans

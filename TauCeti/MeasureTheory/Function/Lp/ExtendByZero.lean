@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.Restrict
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 
@@ -21,10 +22,10 @@ together with the almost-everywhere description of its values, `TauCeti.coeFn_ex
 
 The one point that needs care is that `Lᵖ` elements are equivalence classes: `s.indicator ⇑f`
 depends on the chosen representative `⇑f`, which is only pinned down `μ.restrict s`-almost
-everywhere, whereas the answer must be pinned down `μ.restrict t`-almost everywhere.  Mathlib's
-`MeasureTheory.ae_restrict_iff'₀` reconciles the two: an identity holding `μ.restrict s`-almost
-everywhere holds `μ`-almost everywhere on `s`, so it survives multiplication by the indicator of
-`s` as an identity against `μ`, hence against every restriction of `μ`.
+everywhere, whereas the answer must be pinned down `μ.restrict t`-almost everywhere.
+`MeasureTheory.ae_eq_restrict_iff_indicator_ae_eq₀` reconciles the two: an identity holding
+`μ.restrict s`-almost everywhere survives multiplication by the indicator of `s` as an identity
+against `μ`, hence against every restriction of `μ`.
 
 ## Main declarations
 
@@ -53,17 +54,6 @@ open scoped ENNReal
 variable {α : Type*} [MeasurableSpace α] {F : Type*} [NormedAddCommGroup F] (𝕜 : Type*)
   [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {p : ℝ≥0∞} {μ : Measure α} {s t : Set α}
 
-/-- Functions agreeing almost everywhere on a null-measurable set `s` have indicators of `s`
-agreeing almost everywhere on any set `t`.  This is what makes `s.indicator ⇑f` independent, as an
-element of `Lᵖ(t)`, of the representative `⇑f` of an element of `Lᵖ(s)`. -/
-private theorem indicator_ae_eq_restrict_of_ae_eq {β : Type*} [Zero β] {f g : α → β}
-    (hs : NullMeasurableSet s μ) (h : f =ᵐ[μ.restrict s] g) :
-    s.indicator f =ᵐ[μ.restrict t] s.indicator g :=
-  ae_restrict_of_ae <| ((ae_restrict_iff'₀ hs).1 h).mono fun x hx => by
-    by_cases hxs : x ∈ s
-    · simp [hxs, hx hxs]
-    · simp [hxs]
-
 /-- The indicator of `s` applied to an `Lᵖ(s)` function is in `Lᵖ(t)`, for every set `t`. -/
 private theorem memLp_indicator_coeFn (hs : NullMeasurableSet s μ) (f : Lp F p (μ.restrict s)) :
     MemLp (s.indicator f) p (μ.restrict t) :=
@@ -75,11 +65,13 @@ private def extendByZeroLpₗ (hs : NullMeasurableSet s μ) :
   toFun f := (memLp_indicator_coeFn hs f).toLp _
   map_add' f g := by
     rw [← MemLp.toLp_add]
-    exact MemLp.toLp_congr _ _ <| (indicator_ae_eq_restrict_of_ae_eq hs (Lp.coeFn_add f g)).trans
+    refine MemLp.toLp_congr _ _ <| ae_restrict_of_ae ?_
+    exact ((ae_eq_restrict_iff_indicator_ae_eq₀ hs).1 (Lp.coeFn_add f g)).trans
       (.of_eq (indicator_add' s _ _))
   map_smul' c f := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-    exact MemLp.toLp_congr _ _ <| (indicator_ae_eq_restrict_of_ae_eq hs (Lp.coeFn_smul c f)).trans
+    refine MemLp.toLp_congr _ _ <| ae_restrict_of_ae ?_
+    exact ((ae_eq_restrict_iff_indicator_ae_eq₀ hs).1 (Lp.coeFn_smul c f)).trans
       (.of_eq (indicator_const_smul s c _))
 
 /-- The value of `extendByZeroLpₗ`, as the class of the indicator of a representative. -/
@@ -144,7 +136,8 @@ theorem extendByZeroLpₗᵢ_extendByZeroLpₗᵢ [Fact (1 ≤ p)] {u : Set α} 
       extendByZeroLpₗᵢ 𝕜 μ hs (hst.trans htu) f := by
   refine Lp.ext ?_
   filter_upwards [coeFn_extendByZeroLpₗᵢ 𝕜 ht htu (extendByZeroLpₗᵢ 𝕜 μ hs hst f),
-    indicator_ae_eq_restrict_of_ae_eq ht (coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f),
+    ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq₀ ht).1
+      (coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f)),
     coeFn_extendByZeroLpₗᵢ 𝕜 hs (hst.trans htu) f] with x h1 h2 h3
   rw [h1, h2, h3, indicator_indicator, inter_eq_self_of_subset_right hst]
 
@@ -155,9 +148,9 @@ theorem extendByZeroLpₗᵢ_eq_of_ae_eq [Fact (1 ≤ p)] (hs : NullMeasurableSe
     {h : α → F} (hsupp : Function.support h ⊆ s) {f : Lp F p (μ.restrict s)}
     {g : Lp F p (μ.restrict t)} (hf : ∀ᵐ x ∂μ.restrict s, f x = h x)
     (hg : ∀ᵐ x ∂μ.restrict t, g x = h x) : extendByZeroLpₗᵢ 𝕜 μ hs hst f = g :=
-  Lp.ext <| ((coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f).trans <|
-    (indicator_ae_eq_restrict_of_ae_eq hs hf).trans (.of_eq (indicator_eq_self.2 hsupp))).trans
-    (Filter.EventuallyEq.symm hg)
+  Lp.ext <| ((coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f).trans <| ae_restrict_of_ae <|
+    ((ae_eq_restrict_iff_indicator_ae_eq₀ hs).1 hf).trans
+      (.of_eq (indicator_eq_self.2 hsupp))).trans (Filter.EventuallyEq.symm hg)
 
 /-- **Extension by zero commutes with pointwise postcomposition by a map fixing `0`.**  If `g'` is
 the pointwise image of `f` under `L`, then the extension of `g'` is the pointwise image under `L`
@@ -171,7 +164,7 @@ theorem coeFn_extendByZeroLpₗᵢ_comp {G : Type*} [NormedAddCommGroup G] [Modu
     (extendByZeroLpₗᵢ 𝕜 μ hs hst g' : α → G) =ᵐ[μ.restrict t]
       fun x => L (extendByZeroLpₗᵢ 𝕜 μ hs hst f x) := by
   filter_upwards [coeFn_extendByZeroLpₗᵢ 𝕜 hs hst g', coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f,
-    indicator_ae_eq_restrict_of_ae_eq hs hg'] with x h1 h2 h3
+    ae_restrict_of_ae ((ae_eq_restrict_iff_indicator_ae_eq₀ hs).1 hg')] with x h1 h2 h3
   rw [h1, h3, h2]
   exact congrFun (Set.indicator_comp_of_zero hL) x
 
