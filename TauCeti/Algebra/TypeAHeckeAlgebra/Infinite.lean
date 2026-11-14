@@ -484,10 +484,9 @@ theorem toSubmodule_stage_add_two (n : ℕ) :
     -- Split `a ∈ Hₘ₊₂` as `Hₘ₊₁ + Hₘ₊₁ Tₘ Hₘ₊₁`; then `Tₘ₊₁` commutes past `Hₘ₊₁`.
     refine toSubmodule_stage_add_two_le_stageSplit fun a ha ↦ ?_
     let P : Submodule R (InfiniteTypeAHeckeAlgebra R q) := (stageSplit R q (m + 1)).comap
-      ((LinearMap.mulLeft R (T q (m + 1))).comp (LinearMap.mulRight R (T q (m + 1))))
-    have hP : ∀ a, a ∈ P ↔ T q (m + 1) * a * T q (m + 1) ∈ stageSplit R q (m + 1) := fun a ↦ by
-      simp only [P, Submodule.mem_comap, LinearMap.comp_apply, LinearMap.mulLeft_apply,
-        LinearMap.mulRight_apply, mul_assoc]
+      (LinearMap.mulLeftRight R (T q (m + 1), T q (m + 1)))
+    have hP : ∀ a, a ∈ P ↔ T q (m + 1) * a * T q (m + 1) ∈ stageSplit R q (m + 1) :=
+      fun _ ↦ Iff.rfl
     refine (hP a).1 <| (ih.trans (stageSplit_le_iff.2 ⟨fun d hd ↦ (hP d).2 ?_,
       fun d hd e he ↦ (hP _).2 ?_⟩)) ha
     · rw [(commute_T_of_mem_stage le_rfl hd).eq, mul_assoc, T_mul_self, mul_add, mul_one,
