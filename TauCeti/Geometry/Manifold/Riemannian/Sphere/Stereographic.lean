@@ -39,6 +39,8 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
   `y ↦ σ⁻¹ (2 J y)` for a linear isometry `J` into that hyperplane.
 * `TauCeti.inner_mfderiv_stereographic'_symm`: the round metric pulled back along the inverse of
   the stereographic chart `stereographic' n v`.
+* `TauCeti.inner_mvfderiv_coe_sphere`: at the centre of the preferred chart, the differential of
+  the inclusion of the sphere is an isometry from the chart coordinates.
 
 ## References
 
@@ -153,5 +155,27 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
     inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).2 (U.symm a).2 (U.symm b).2,
     Submodule.norm_coe, LinearIsometryEquiv.norm_map, ← Submodule.coe_inner,
     LinearIsometryEquiv.inner_map_map]
+
+/-- **The preferred chart is isometric at its centre.** The preferred chart of the unit sphere at
+`x` is stereographic projection from `-x`, which sends `x` to the origin, where the conformal factor
+`(4 / (‖y‖² + 4))²` is one. So the differential at `x` of the inclusion of the sphere, read in that
+chart, preserves the Euclidean inner product of the chart coordinates. -/
+theorem inner_mvfderiv_coe_sphere (x : sphere (0 : E) 1) (a b : EuclideanSpace ℝ (Fin n)) :
+    inner ℝ (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x a)
+        (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x b) = inner ℝ a b := by
+  -- The preferred chart at `x` is `stereographic' n (-x)`; it sends `x` to the origin, where the
+  -- differential of its inverse is the identity.
+  have hid := mfderivWithin_range_extChartAt_symm (I := 𝓡 n) (x := x)
+  have hx := extChartAt_to_inv (I := 𝓡 n) x
+  rw [extChartAt_sphere_apply_self, ModelWithCorners.range_eq_univ, mfderivWithin_univ,
+    extChartAt_coe_symm, modelWithCornersSelf_coe_symm, Function.comp_id, chartAt_sphere] at hid
+  rw [extChartAt_sphere_apply_self, extChartAt_coe_symm, modelWithCornersSelf_coe_symm,
+    Function.comp_id, chartAt_sphere] at hx
+  have ha (c : EuclideanSpace ℝ (Fin n)) :
+      mfderiv (𝓡 n) (𝓡 n) (stereographic' n (-x)).symm 0 c = c :=
+    DFunLike.congr_fun hid c
+  have h := inner_mfderiv_stereographic'_symm (-x) 0 a b
+  rw [inner_tangentSpace_sphere, ha, ha, hx] at h
+  simpa using h
 
 end TauCeti
