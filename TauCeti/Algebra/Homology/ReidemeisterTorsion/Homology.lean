@@ -50,6 +50,8 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 * `HomologicalComplex.torsionBracketWithHomology`: the bracket `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
 * `HomologicalComplex.torsionBracketWithHomology_eq_det_append`: the bracket is the determinant of
   the boundary basis followed by the homology representatives and the lifts.
+* `HomologicalComplex.exists_torsionBracketWithHomology_eq_det_comp`: the same for choices
+  indexed by arbitrary finite types, up to the order of the family.
 * `HomologicalComplex.torsionBracketWithHomology_eq_mul`: the change of a bracket under a change
   of the boundary bases, the homology basis, the representatives and the lifts.
 * `HomologicalComplex.reidemeisterTorsionWithHomology`: the torsion `τ(C, c, h)`.
@@ -202,7 +204,49 @@ theorem torsionBracketWithHomology_eq_torsionBracket (hC : C.ExactAt (j + 1)) :
   | left k => simp [Fin.append_right_nil _ _ rfl, Fin.append_left]
   | right k => simp [Fin.append_right]
 
+/-- A bracket computed from boundary bases, a homology basis and lifts indexed by arbitrary finite
+types, reindexed by `Fin`, is the determinant with respect to `c (j + 1)` of the boundary basis
+followed by the homology representatives and the lifts, taken in some order. -/
+theorem exists_torsionBracketWithHomology_eq_det_comp {ιB ιH ιL : Type*}
+    (β₁ : Basis ιB F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
+    (eB : ιB ≃ Fin p) (H : Basis ιH F (C.homology (j + 1))) (eH : ιH ≃ Fin m)
+    (z : ιH → C.cycles (j + 1)) (hz : ∀ k, C.homologyπ (j + 1) (z k) = H k)
+    (β₀ : Basis ιL F (LinearMap.range (C.d (j + 1) j).hom)) (eL : ιL ≃ Fin q)
+    (t : ιL → C.X (j + 1)) (ht : ∀ k, (C.d (j + 1) j).hom (t k) = β₀ k) :
+    ∃ e : Fin (n (j + 1)) ≃ (ιB ⊕ ιH) ⊕ ιL,
+      torsionBracketWithHomology c (β₁.reindex eB) (H.reindex eH) (z ∘ eH.symm)
+          (fun k ↦ by simp [hz]) (β₀.reindex eL) (t ∘ eL.symm) (fun k ↦ by simp [ht]) =
+        (c (j + 1)).det (Sum.elim (Sum.elim (fun k ↦ (β₁ k : C.X (j + 1)))
+          fun k ↦ C.iCycles (j + 1) (z k)) t ∘ e) := by
+  have hn := eq_add_add c (β₁.reindex eB) (H.reindex eH) (z ∘ eH.symm) (fun k ↦ by simp [hz])
+    (β₀.reindex eL) (t ∘ eL.symm) (fun k ↦ by simp [ht])
+  refine ⟨(finCongr hn).trans (finSumFinEquiv.symm.trans (Equiv.sumCongr
+    (finSumFinEquiv.symm.trans (Equiv.sumCongr eB.symm eH.symm)) eL.symm)), ?_⟩
+  rw [torsionBracketWithHomology_eq_det_append c _ _ _ _ _ _ _ hn]
+  congr 1
+  funext i
+  simp only [Function.comp_apply, Equiv.trans_apply, finCongr_apply]
+  generalize Fin.cast hn i = k
+  induction k using Fin.addCases with
+  | left k =>
+    induction k using Fin.addCases with
+    | left k => simp
+    | right k => simp
+  | right k => simp
+
 end Bracket
+
+include c in
+/-- The homology of a based complex vanishes in a degree where the complex vanishes: a basis of
+`Hᵢ(C)` is empty when the basis of `Cᵢ` is. -/
+theorem eq_zero_of_basis_homology {m : ℤ → ℕ} (h : ∀ i, Basis (Fin (m i)) F (C.homology i))
+    {i : ℤ} (hi : n i = 0) : m i = 0 := by
+  have : IsEmpty (Fin (n i)) := by rw [hi]; infer_instance
+  have := (c i).repr.toEquiv.subsingleton
+  have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+  have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+  by_contra hm
+  exact (h i).ne_zero ⟨0, Nat.pos_of_ne_zero hm⟩ (Subsingleton.elim _ _)
 
 section Torsion
 
@@ -247,7 +291,7 @@ variable (hn : {i | n i ≠ 0}.Finite)
 
 include hn in
 /-- For a bounded complex, the alternating brackets have finite multiplicative support. -/
-private theorem hasFiniteMulSupport_torsionBracketWithHomology {r : ℤ → ℕ}
+theorem hasFiniteMulSupport_torsionBracketWithHomology {r : ℤ → ℕ}
     (b : ∀ j, Basis (Fin (r j)) F (LinearMap.range (C.d (j + 1) j).hom))
     (y : ∀ i, Fin (m i) → C.cycles i) (hy : ∀ i k, C.homologyπ i (y i k) = h i k)
     (s : ∀ j, Fin (r j) → C.X (j + 1)) (hs : ∀ j k, (C.d (j + 1) j).hom (s j k) = b j k) :
