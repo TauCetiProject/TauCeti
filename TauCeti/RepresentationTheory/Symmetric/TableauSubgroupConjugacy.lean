@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Young.Partitions
 public import TauCeti.RepresentationTheory.Symmetric.RowColumnSubgroup
-public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup
+public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Basic
 
 /-!
 # Tableau row groups and Young subgroups
