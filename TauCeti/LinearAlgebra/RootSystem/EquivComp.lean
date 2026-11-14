@@ -48,6 +48,11 @@ instance, so they are not restated here.
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
   functorial.
+* `RootPairing.Hom.weightMap_comp_of_indexEquiv`,
+  `RootPairing.Hom.indexEquiv_apply_of_weightMap_comp`,
+  `RootPairing.Equiv.weightEquiv_comp_weightMap_of_indexEquiv`, and
+  `RootPairing.Equiv.indexEquiv_apply_of_weightEquiv_comp_weightMap`: intertwining of weight-space
+  endomorphisms and root-index permutations for homomorphisms and equivalences.
 
 ## References
 
@@ -193,5 +198,52 @@ theorem autCongr_comp (e : P.Equiv Q) (f : Q.Equiv S) :
       RootPairing.Equiv.symm_comp, RootPairing.Equiv.comp_assoc]
 
 end Conjugation
+
+section Intertwine
+
+/-- When the roots of `P` span, a homomorphism intertwining `σ` and `τ` on root indices intertwines
+their weight-space endomorphisms on all of `M`. -/
+theorem _root_.RootPairing.Hom.weightMap_comp_of_indexEquiv [P.IsRootSystem]
+    (f : P.Hom Q) {σ : Aut P} {τ : Aut Q}
+    (h : ∀ j, f.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (f.indexEquiv j)) :
+    f.weightMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ f.weightMap := by
+  apply LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P))
+  intro j
+  simp only [LinearMap.comp_apply, Hom.root_weightMap_apply P P j σ.toHom,
+    Hom.root_weightMap_apply P Q _ f, Hom.root_weightMap_apply Q Q _ τ.toHom, h j]
+
+/-- A homomorphism intertwining the weight-space endomorphisms of `σ` and `τ` intertwines their
+index permutations. No spanning assumption is needed. -/
+theorem _root_.RootPairing.Hom.indexEquiv_apply_of_weightMap_comp
+    (f : P.Hom Q) {σ : Aut P} {τ : Aut Q}
+    (hw : f.weightMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ f.weightMap) (j : ι) :
+    f.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (f.indexEquiv j) := by
+  apply Q.root.injective
+  have hx := LinearMap.congr_fun hw (P.root j)
+  simpa only [LinearMap.comp_apply, Hom.root_weightMap_apply P P j σ.toHom,
+    Hom.root_weightMap_apply P Q _ f, Hom.root_weightMap_apply Q Q _ τ.toHom] using hx
+
+/-- When the roots of `P` span, an equivalence intertwining `σ` and `τ` on root indices intertwines
+their weight-space endomorphisms along `e.weightEquiv`. -/
+theorem weightEquiv_comp_weightMap_of_indexEquiv [P.IsRootSystem]
+    (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q}
+    (h : ∀ j, e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j)) :
+    e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap := by
+  have hto : e.weightEquiv.toLinearMap = e.toHom.weightMap := LinearMap.ext e.weightEquiv_apply
+  rw [hto]
+  exact e.toHom.weightMap_comp_of_indexEquiv h
+
+/-- An equivalence intertwining the weight-space endomorphisms of `σ` and `τ` along `e.weightEquiv`
+intertwines their index permutations. No spanning assumption is needed. -/
+theorem indexEquiv_apply_of_weightEquiv_comp_weightMap
+    (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q}
+    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap)
+    (j : ι) :
+    e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j) := by
+  have hto : e.weightEquiv.toLinearMap = e.toHom.weightMap := LinearMap.ext e.weightEquiv_apply
+  rw [hto] at hw
+  exact e.toHom.indexEquiv_apply_of_weightMap_comp hw j
+
+end Intertwine
 
 end RootPairing.Equiv
