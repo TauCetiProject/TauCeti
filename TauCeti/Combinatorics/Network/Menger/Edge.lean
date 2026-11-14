@@ -21,17 +21,17 @@ of `F`.
 
 This file proves the local edge form of Menger's theorem for directed networks with finitely many
 vertices and arrows: the largest number of arrow-disjoint `s`–`t` paths equals the least number of
-arrows separating `t` from `s`. Weak duality, that every arrow-disjoint family of `s`–`t` walks has
-at most as many members as every separating set of arrows, needs no finiteness of the vertex or
-arrow types: each member traverses an arrow of the separating set, and different members traverse
-different arrows.
+arrows separating `t` from `s`. Weak duality, that every finite arrow-disjoint family of `s`–`t`
+walks has at most as many members as every finite separating set of arrows, needs no finiteness of
+the vertex or arrow types: each member traverses an arrow of the separating set, and different
+members traverse different arrows.
 
 It also proves the set-to-set form for disjoint vertex sets `A` and `B`. An *`A`–`B` path* runs from
 a vertex of `A` to a vertex of `B` and has no other vertex in `A` or `B`; arrow-disjoint `A`–`B`
 paths may share their endpoints. A set of arrows *separates* `B` from `A` when after deleting it no
 vertex of `B` is reachable from a vertex of `A`. The largest number of arrow-disjoint `A`–`B` paths
-equals the least number of arrows separating `B` from `A`; weak duality again needs no finiteness of
-the vertex or arrow types.
+equals the least number of arrows separating `B` from `A`; weak duality for finite families and
+finite separating sets again needs no finiteness of the vertex or arrow types.
 
 Attainment is reduced to the max-flow/min-cut theorem over `ℤ` with capacity one on every arrow,
 between the vertex sets `A` and `B` (`TauCeti.SetFlow.exists_val_eq_arrowSum`). A maximum flow has
@@ -48,12 +48,13 @@ singleton terminal sets `A = {s}` and `B = {t}`.
 * `TauCeti.natCard_sub_one_le_card_of_completeCut`: a finite set of arrows containing every
   arrow across a nontrivial complete directed cut has at least one fewer member than the number
   of vertices.
-* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, an arrow-disjoint family of
-  `s`–`t` walks has at most as many members as any set of arrows separating `t` from `s`.
+* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, a finite arrow-disjoint family
+  of `s`–`t` walks has at most as many members as any finite set of arrows separating `t` from
+  `s`.
 * `TauCeti.SetFlow.exists_paths_card_eq_val`: an integer `A`–`B` flow carrying at most one unit on
   every arrow carries as many arrow-disjoint paths from `A` to `B` as its value.
-* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for arrow-disjoint walks from
-  `A` to `B` and sets of arrows separating `B` from `A`.
+* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for finite arrow-disjoint
+  families of walks from `A` to `B` and finite sets of arrows separating `B` from `A`.
 * `TauCeti.exists_paths_setArrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint
   directed paths between disjoint vertex sets, in witness form.
 * `TauCeti.forall_exists_reachableWithout_iff_exists_paths`: its predicate form.

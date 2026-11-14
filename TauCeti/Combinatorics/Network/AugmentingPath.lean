@@ -82,8 +82,8 @@ variable [Preorder K] {lo hi : Assignment Q K} {s t : V}
 def IsMaximum (f : BoundedFlow lo hi s t) : Prop :=
   IsMaxOn val Set.univ f
 
-/-- A bounded `s`–`t` assignment is maximum exactly when no bounded assignment has a larger
-value. -/
+/-- A bounded `s`–`t` assignment `f` is maximum exactly when every bounded `s`–`t` assignment for
+the same bounds has value at most `f.val`. -/
 theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
     f.IsMaximum ↔ ∀ g : BoundedFlow lo hi s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
@@ -97,8 +97,8 @@ terminal value. No sign condition is imposed on that value. -/
 def IsMinimum (f : BoundedFlow lo hi s t) : Prop :=
   IsMinOn val Set.univ f
 
-/-- A bounded terminal assignment is minimum exactly when no bounded assignment has a smaller
-value. -/
+/-- A bounded `s`–`t` assignment `f` is minimum exactly when every bounded `s`–`t` assignment for
+the same bounds has value at least `f.val`. -/
 theorem isMinimum_iff {f : BoundedFlow lo hi s t} :
     f.IsMinimum ↔ ∀ g : BoundedFlow lo hi s t, f.val ≤ g.val :=
   isMinOn_univ_iff
@@ -258,7 +258,8 @@ flows for the same capacities. -/
 def IsMaximum (f : Flow cap s t) : Prop :=
   IsMaxOn (fun g : Flow cap s t ↦ g.val) Set.univ f
 
-/-- An ordinary `s`–`t` flow is maximum exactly when no ordinary flow has a larger value. -/
+/-- An ordinary `s`–`t` flow `f` is maximum exactly when every ordinary `s`–`t` flow for the same
+capacities has value at most `f.val`. -/
 theorem isMaximum_iff {f : Flow cap s t} : f.IsMaximum ↔ ∀ g : Flow cap s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
 
@@ -313,8 +314,8 @@ def AugmentsTo (f g : Flow cap s t) : Prop :=
     (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
       f.augmentBottleneck p hp hne = g
 
-/-- Unfolds `AugmentsTo`: `g` arises from `f` by augmenting along an augmenting walk by its
-bottleneck. -/
+/-- `g` arises from `f` by augmenting by the bottleneck along an augmenting walk that traverses at
+least one arrow and no arrow twice. -/
 theorem augmentsTo_iff {f g : Flow cap s t} :
     f.AugmentsTo g ↔ ∃ (p : ArrowWalk (ResidualHom Q) s t) (hp : p.arrows.Nodup)
       (hne : p.arrows ≠ []), (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
