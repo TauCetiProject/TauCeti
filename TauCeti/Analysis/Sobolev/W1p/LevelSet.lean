@@ -99,7 +99,7 @@ theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
     with x hx hux hgx
   intro h
   apply sub_eq_zero.mp
-  simpa only [hgx, Pi.sub_apply] using hx (by simp [hux, h])
+  simpa only [hgx, Pi.sub_apply] using hx (by rw [hux, Pi.sub_apply, h, sub_self])
 
 /-- If increasing levels `mⱼ`, eventually above `k`, have a null intersection of the sets
 `{u > mⱼ, ∇u ≠ 0}`, and each lies below an admissible level `l ≥ k` (one exceeded by `u` on a set
