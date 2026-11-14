@@ -17,7 +17,7 @@ second moment on a bounded neighbourhood of zero is nevertheless finite. Consequ
 compensation
 `exp (t * x * I) - 1 - t * sin x * I` is absolutely integrable: it vanishes quadratically
 at zero and is bounded outside a neighbourhood of zero. The same argument applies along any
-unit complex direction `u` in place of `I` once the exponential term is essentially bounded,
+complex direction `u` in place of `I` once the exponential term is essentially bounded,
 which covers the real kernel `exp (t * x) - 1 - t * sin x` on a half-line carrying the Lévy
 measure. The cutoff integrals converge to this integral,
 which is the analytic input to compensated compound Poisson approximations.

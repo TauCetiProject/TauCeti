@@ -47,6 +47,10 @@ is a Dirac mass, which has no density; its characteristic function is not integr
   parameter value.
 * `TauCeti.Probability.stablePDFReal_nonneg`, `TauCeti.Probability.continuous_stablePDFReal` and
   `TauCeti.Probability.stablePDFReal_le`: nonnegativity, continuity and the uniform bound.
+* `TauCeti.Probability.norm_stablePDFReal_le_integral`: the bound `(2π)⁻¹ ∫ |φ|` for every
+  parameter value.
+* `TauCeti.Probability.mutuallySingular_stableMeasure_zero_scale`: a zero-scale stable law is
+  singular with respect to Lebesgue measure.
 * `TauCeti.Probability.hasPDF_of_hasLaw_stableMeasure`,
   `TauCeti.Probability.pdf_eq_stablePDF_of_hasLaw_stableMeasure` and
   `TauCeti.Probability.rnDeriv_stableMeasure`: the density interfaces.
@@ -151,6 +155,7 @@ theorem stablePDF_zero_scale (α β m : ℝ) : stablePDF α β 0 m = 0 := by
   simp [stablePDF_eq_ofReal]
 
 /-- For invalid shapes the stable density vanishes. -/
+@[simp]
 theorem stablePDF_of_invalid (h : α ≤ 0 ∨ 2 < α ∨ 1 < |β|) (s : ℝ≥0) (m : ℝ) :
     stablePDF α β s m = 0 := by
   ext x
@@ -179,6 +184,13 @@ theorem measurable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
 @[fun_prop]
 theorem measurable_stablePDF (α β : ℝ) (s : ℝ≥0) (m : ℝ) : Measurable (stablePDF α β s m) :=
   (measurable_stablePDFReal α β s m).ennreal_ofReal
+
+/-- The stable density is uniformly bounded for every parameter value, by `(2π)⁻¹` times the
+`L¹` norm of its characteristic function. -/
+theorem norm_stablePDFReal_le_integral (α β : ℝ) (s : ℝ≥0) (m x : ℝ) :
+    ‖stablePDFReal α β s m x‖ ≤ (2 * Real.pi)⁻¹ * ∫ t, ‖charFun (stableMeasure α β s m) t‖ := by
+  rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x), stablePDFReal_def]
+  exact Measure.charFunDensity_le _ x
 
 /-- **The stable density is bounded.** For `0 < α ≤ 2` it is at most `Γ(1/α) / (π α s)`, which is
 `(2π)⁻¹ ∫ |φ|` for valid skewness and positive scale. For invalid skewness and at scale zero the
@@ -256,7 +268,7 @@ theorem hasPDF_of_hasLaw_stableMeasure (hs : 0 < s) (hX : HasLaw X (stableMeasur
 
 /-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
 shape or skewness parameters, this is the singularity of the zero measure. -/
-theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
+theorem mutuallySingular_stableMeasure_zero_scale (α β m : ℝ) :
     stableMeasure α β 0 m ⟂ₘ volume := by
   by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
   · rw [stableMeasure_zero_scale h.1 h.2]
@@ -270,7 +282,7 @@ theorem rnDeriv_stableMeasure (α β : ℝ) (s : ℝ≥0) (m : ℝ) :
     (stableMeasure α β s m).rnDeriv volume =ᵐ[volume] stablePDF α β s m := by
   rcases eq_zero_or_pos s with rfl | hs
   · rw [stablePDF_zero_scale]
-    exact (mutuallySingular_stableMeasure_zero_scale m).rnDeriv_ae_eq_zero
+    exact (mutuallySingular_stableMeasure_zero_scale α β m).rnDeriv_ae_eq_zero
   · rw [stableMeasure_eq_withDensity α β hs]
     exact Measure.rnDeriv_withDensity volume (measurable_stablePDF α β s m)
 
