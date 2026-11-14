@@ -20,7 +20,9 @@ point have vanishing Lie bracket there (`IsTorsionFree.mlieBracket_eq_zero_of_co
 supplies the torsion hypothesis for curvature identities such as the first Bianchi identity.
 `isTorsionFree_addOneForm` shows that adding a symmetric endomorphism-valued one-form to a
 torsion-free connection keeps it torsion-free, as used for the conformally changed Levi-Civita
-connection.
+connection. The symmetrization `CovariantDerivative.symmetrize` removes torsion when the scalar
+field has characteristic different from two, without changing the derivative of a section at a
+zero of that section. No regularity of the connection is required.
 -/
 
 public section
@@ -109,5 +111,90 @@ theorem isTorsionFree_iff_torsion_eq_zero
     (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
     cov.IsTorsionFree ↔ cov.torsion = 0 :=
   cov.torsion_eq_zero_iff.symm
+
+/-- The symmetrization of a tangent-bundle connection, obtained by subtracting half its torsion
+from the derivative. With the argument order used by `addOneForm`, this adds half the torsion.
+It is torsion-free when `2 ≠ 0`. -/
+noncomputable def symmetrize
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    _root_.CovariantDerivative I E (TangentSpace I : M → Type _) :=
+  cov.addOneForm (fun x ↦ (2 : 𝕜)⁻¹ • cov.torsion x)
+
+/-- Symmetrization adds half the torsion as an endomorphism-valued one-form. -/
+theorem symmetrize_def
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.symmetrize = cov.addOneForm (fun x ↦ (2 : 𝕜)⁻¹ • cov.torsion x) := (rfl)
+
+/-- The characteristic equation for the symmetrized connection. -/
+@[simp]
+theorem symmetrize_apply
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
+    (X : Π x : M, TangentSpace I x) (x : M) :
+    cov.symmetrize X x = cov X x + (2 : 𝕜)⁻¹ • cov.torsion x (X x) := (rfl)
+
+/-- Symmetrization preserves the covariant derivative at a zero of the section. -/
+theorem symmetrize_apply_of_eq_zero
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _))
+    {X : Π x : M, TangentSpace I x} {x : M} (hX : X x = 0) :
+    cov.symmetrize X x = cov X x := by
+  simp [symmetrize_apply, hX]
+
+/-- Symmetrizing a connection removes its torsion when the scalar field has characteristic
+different from two. -/
+@[simp]
+theorem isTorsionFree_symmetrize [NeZero (2 : 𝕜)]
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.symmetrize.IsTorsionFree := by
+  intro X Y x hX hY
+  rw [symmetrize_apply, symmetrize_apply]
+  simp only [add_apply, smul_apply]
+  rw [cov.torsion_antisymm (Y x) (X x), smul_neg]
+  have hhalf : (2 : 𝕜)⁻¹ • cov.torsion x (X x) (Y x) +
+      (2 : 𝕜)⁻¹ • cov.torsion x (X x) (Y x) = cov.torsion x (X x) (Y x) := by
+    rw [← add_smul, ← two_mul, mul_inv_cancel₀ (NeZero.ne (2 : 𝕜)), one_smul]
+  calc
+    _ = cov Y x (X x) - cov X x (Y x) -
+        ((2 : 𝕜)⁻¹ • cov.torsion x (X x) (Y x) +
+          (2 : 𝕜)⁻¹ • cov.torsion x (X x) (Y x)) := by abel
+    _ = mlieBracket I X Y x := by
+      rw [hhalf, cov.torsion_apply hX hY]
+      abel
+
+/-- Symmetrization has zero torsion when the scalar field has characteristic different from two. -/
+@[simp]
+theorem torsion_symmetrize [NeZero (2 : 𝕜)]
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.symmetrize.torsion = 0 :=
+  (isTorsionFree_iff_torsion_eq_zero _).mp cov.isTorsionFree_symmetrize
+
+/-- A torsion-free covariant derivative is unchanged by symmetrization. -/
+theorem IsTorsionFree.symmetrize_eq_self
+    {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (ht : cov.IsTorsionFree) : cov.symmetrize = cov := by
+  have htorsion := (isTorsionFree_iff_torsion_eq_zero cov).mp ht
+  ext X x v
+  simp [htorsion]
+
+/-- In characteristic different from two, symmetrization fixes exactly the torsion-free
+covariant derivatives. -/
+theorem symmetrize_eq_self_iff [NeZero (2 : 𝕜)]
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.symmetrize = cov ↔ cov.IsTorsionFree := by
+  constructor
+  · intro h
+    rw [← h]
+    exact cov.isTorsionFree_symmetrize
+  · exact IsTorsionFree.symmetrize_eq_self
+
+/-- Symmetrization is idempotent, including in characteristic two, where it is the identity. -/
+@[simp]
+theorem symmetrize_symmetrize
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.symmetrize.symmetrize = cov.symmetrize := by
+  by_cases htwo : (2 : 𝕜) = 0
+  · ext X x v
+    simp [htwo]
+  · have : NeZero (2 : 𝕜) := ⟨htwo⟩
+    exact IsTorsionFree.symmetrize_eq_self cov.isTorsionFree_symmetrize
 
 end CovariantDerivative
