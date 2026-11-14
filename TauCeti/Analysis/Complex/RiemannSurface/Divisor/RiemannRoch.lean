@@ -17,10 +17,10 @@ sheaf. For a divisor `D`, write `h⁰(D)` and `h¹(D)` for the dimensions of the
 the first Čech cohomology of the divisor sheaf `𝒪(D)`.
 
 The finiteness of `H¹(X, 𝒪)` is an analytic theorem which is not proved here; every statement that
-needs it takes it as an explicit instance argument. Under that hypothesis this file proves:
+needs it takes it as an explicit instance argument. Under that hypothesis `H¹(X, 𝒪(D))` is
+finite-dimensional for every divisor `D`, because finiteness is unchanged by a point twist
+(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one`), and this file proves:
 
-* `H¹(X, 𝒪(D))` is finite-dimensional for every divisor `D`, because finiteness is unchanged by a
-  point twist (`finiteDimensional_divisorCechCohomology_one`);
 * **Riemann–Roch for divisor sheaves**: `h⁰(D) - h¹(D) = deg D + 1 - g_an`
   (`finrank_divisorSheaf_euler_characteristic`). The proof is induction over the point twists
   `𝒪(D) → 𝒪(D + x)`, each of which raises `h⁰ - h¹` by one, starting from `h⁰(0) = 1`
@@ -36,9 +36,6 @@ computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
 * `TauCeti.RiemannSurface.analyticGenus`: the analytic genus `dim H¹(X, 𝒪)`;
 * `TauCeti.RiemannSurface.analyticGenus_eq_finrank_divisorCechCohomology`: it is also the
   dimension of `H¹(X, 𝒪(0))`;
-* `TauCeti.RiemannSurface.finrank_divisorSheaf_zero`: `h⁰(0) = 1`;
-* `TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one_iff`: whether `H¹(X, 𝒪(D))`
-  is finite-dimensional does not depend on `D`;
 * `TauCeti.RiemannSurface.finrank_divisorSheaf_euler_characteristic`: Riemann–Roch for divisor
   sheaves;
 * `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_of_degree_neg`:
@@ -70,61 +67,21 @@ def analyticGenus : ℕ :=
   Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
     (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)
 
-variable [IsManifold 𝓘(ℂ) 1 X]
+/-- The analytic genus is the dimension of the first Čech cohomology of the holomorphic structure
+sheaf. -/
+theorem analyticGenus_def :
+    analyticGenus X = Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
+      (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) :=
+  (rfl)
 
-/-- The Čech cohomology of the divisor sheaf `𝒪(0)` is that of the structure sheaf, through the
-identification `𝒪(0) ≅ 𝒪` of sheaves. -/
-def divisorCechCohomologyZeroIso (n : ℕ) :
-    divisorCechCohomology (0 : WeilDivisor X) n ≅
-      (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj
-        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj :=
-  (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapIso
-    ((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X))
+variable [IsManifold 𝓘(ℂ) 1 X]
 
 /-- The analytic genus is the dimension of the first cohomology of the divisor sheaf `𝒪(0)`. -/
 theorem analyticGenus_eq_finrank_divisorCechCohomology :
     analyticGenus X = Module.finrank ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) :=
-  (divisorCechCohomologyZeroIso (X := X) 1).toLinearEquiv.finrank_eq.symm
+  (divisorCechCohomologyZeroIso X 1).toLinearEquiv.finrank_eq.symm
 
-/-- `H¹(X, 𝒪(0))` is finite-dimensional exactly when `H¹(X, 𝒪)` is. -/
-theorem finiteDimensional_divisorCechCohomology_zero_iff :
-    FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) ↔
-      FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-        (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) :=
-  ⟨fun _ ↦ (divisorCechCohomologyZeroIso (X := X) 1).toLinearEquiv.finiteDimensional,
-    fun _ ↦ (divisorCechCohomologyZeroIso (X := X) 1).toLinearEquiv.symm.finiteDimensional⟩
-
-variable [CompactSpace X]
-
-/-- **`h⁰(0) = 1`.** On a compact connected Riemann surface the global sections of `𝒪(0)` are the
-constants, by the maximum principle. -/
-theorem finrank_divisorSheaf_zero [ConnectedSpace X] :
-    Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 := by
-  exact (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
-    (op ⊤)).toLinearEquiv.finrank_eq.trans
-      (holomorphicStructureSheafModules.finrank_globalSections 𝓘(ℂ) X)
-
-variable [T2Space X]
-
-/-- **Finiteness of `H¹(X, 𝒪(D))` does not depend on `D`.** No finiteness is asserted for any
-divisor. -/
-theorem finiteDimensional_divisorCechCohomology_one_iff (D E : WeilDivisor X) :
-    FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
-      FiniteDimensional ℂ (divisorCechCohomology E 1) := by
-  suffices h : ∀ D : WeilDivisor X, FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
-      FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) from (h D).trans (h E).symm
-  exact WeilDivisor.induction_add_ofPoint Iff.rfl fun D x ↦ by
-    rw [finiteDimensional_divisorCechCohomology_one_add_point_iff]
-
-/-- If `H¹(X, 𝒪)` is finite-dimensional, then so is `H¹(X, 𝒪(D))` for every divisor `D`. -/
-instance finiteDimensional_divisorCechCohomology_one
-    [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-      (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
-    (D : WeilDivisor X) : FiniteDimensional ℂ (divisorCechCohomology D 1) :=
-  (finiteDimensional_divisorCechCohomology_one_iff D 0).mpr
-    (finiteDimensional_divisorCechCohomology_zero_iff.mpr inferInstance)
-
-variable [ConnectedSpace X]
+variable [CompactSpace X] [T2Space X] [ConnectedSpace X]
   [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
   (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
