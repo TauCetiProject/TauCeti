@@ -134,8 +134,7 @@ private theorem coeff_one_formalNum_mul_inverseDenom (C : VariableChange R)
     (W : WeierstrassCurve R) :
     coeff 1 ((PowerSeries.C (C.u : R) ^ 2 * X +
       PowerSeries.C C.r * formalW (C • W)) * C.inverseDenom W) = (↑(C.u⁻¹) : R) := by
-  simp [coeff_mul, Finset.Nat.antidiagonal_succ, constantCoeff_inverseDenom,
-    ← map_pow]
+  simp [coeff_one_mul, constantCoeff_inverseDenom, ← map_pow]
   simp only [← Units.val_pow_eq_pow_val, ← Units.val_mul]
   congr 1
   group
@@ -157,7 +156,6 @@ theorem formalCoordinate_toPowerSeries (C : VariableChange R) (W : WeierstrassCu
     (C.formalCoordinate W).toPowerSeries =
       (PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) *
         invOfUnit (C.formalDenom W) (C.u ^ 3) := by
-  rw [← inverseDenom_def]
   rfl
 
 /-- The induced parameter has linear coefficient `u⁻¹`, in the direction from
