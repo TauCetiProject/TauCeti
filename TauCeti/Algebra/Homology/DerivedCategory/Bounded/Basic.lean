@@ -51,6 +51,11 @@ variable {A}
     (singleFunctors A).functor n = singleFunctor A n :=
   rfl
 
+/-- The bounded single functor is the derived single functor on underlying morphisms. -/
+@[simp] lemma singleFunctor_map_hom (n : ℤ) {X Y : A} (f : X ⟶ Y) :
+    ((singleFunctor A n).map f).hom = (DerivedCategory.singleFunctor A n).map f :=
+  rfl
+
 /-- The bounded single functors are additive, as the derived single functors are. -/
 instance (n : ℤ) : (singleFunctor A n).Additive where
   map_add {_ _ f g} :=
@@ -85,5 +90,22 @@ lemma _root_.CategoryTheory.ShortComplex.ShortExact.boundedSingleTriangle_distin
     hS.boundedSingleTriangle ∈ distTriang (DerivedCategory.Bounded A) :=
   (DerivedCategory.Bounded.ι.map_distinguished_iff _).1 <|
     isomorphic_distinguished _ hS.singleTriangle_distinguished _ hS.boundedSingleTriangleιIso
+
+/-- **The connecting morphism of the bounded single triangle is natural** in morphisms of short
+exact sequences. -/
+@[reassoc]
+lemma _root_.CategoryTheory.ShortComplex.ShortExact.boundedSingleTriangle_mor₃_naturality
+    {S₁ S₂ : ShortComplex A} (φ : S₁ ⟶ S₂) (h₁ : S₁.ShortExact) (h₂ : S₂.ShortExact) :
+    (DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₃ ≫ h₂.boundedSingleTriangle.mor₃ =
+      h₁.boundedSingleTriangle.mor₃ ≫
+        ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁)⟦(1 : ℤ)⟧' := by
+  apply DerivedCategory.Bounded.ι.map_injective
+  have h := (ShortComplex.ShortExact.singleTriangle.map h₁ h₂ φ).comm₃
+  simp only [ShortComplex.ShortExact.singleTriangle_mor₃,
+    ShortComplex.ShortExact.singleTriangle.map_hom₁,
+    ShortComplex.ShortExact.singleTriangle.map_hom₃] at h
+  simpa [← reassoc_of% h] using
+    h₁.singleδ ≫= DerivedCategory.Bounded.ι.commShiftIso_inv_naturality
+      ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁) (1 : ℤ)
 
 end TauCeti
