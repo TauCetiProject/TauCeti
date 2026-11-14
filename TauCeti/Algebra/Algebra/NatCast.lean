@@ -32,6 +32,8 @@ differentiation.
 * `TauCeti.natCast_mul_algebraMap_inv`: `m · (1 / m) = 1` in a `ℚ`-algebra, for `m ≠ 0`.
 * `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • a * (k + 1) = a` in a
   `ℚ`-algebra.
+* `TauCeti.natCast_add_one_mul_algebraMap_inv_smul`: `(k + 1) * ((1 / (k + 1)) • a) = a` in an
+  algebra over a `ℚ`-algebra, the scalar `1 / (k + 1)` coming from `ℚ`.
 -/
 
 public section
@@ -82,5 +84,15 @@ theorem inv_natCast_add_one_smul_mul_natCast_add_one {R : Type*} [Semiring R] [A
   have hcast : (k : R) + 1 = algebraMap ℚ R ((k : ℚ) + 1) := by simp
   rw [hcast, ← Algebra.commutes, ← Algebra.smul_def, smul_smul]
   simp [Nat.cast_add_one_ne_zero]
+
+/-- Multiplying by `k + 1` cancels the scalar `1 / (k + 1)` of a `ℚ`-algebra `R` acting on an
+`R`-algebra `A`. -/
+theorem natCast_add_one_mul_algebraMap_inv_smul {R A : Type*} [CommSemiring R] [Algebra ℚ R]
+    [Semiring A] [Algebra R A] (k : ℕ) (a : A) :
+    ((k : A) + 1) * (algebraMap ℚ R ((k : ℚ) + 1)⁻¹ • a) = a := by
+  have h := natCast_mul_algebraMap_inv (K := R) k.succ_ne_zero
+  push_cast at h
+  rw [Algebra.smul_def, ← mul_assoc, show ((k : A) + 1) = algebraMap R A ((k : R) + 1) by simp,
+    ← map_mul, h, map_one, one_mul]
 
 end TauCeti
