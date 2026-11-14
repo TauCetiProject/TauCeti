@@ -559,15 +559,16 @@ variable {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
   (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   {c : ∀ i, U i} {K : ∀ i, Compacts (extChartAt I (c i)).target}
+  (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
+    ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
+      (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
+        (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
+include hK in
 /-- **The finite-atlas `C^k` seminorms (`k ≤ n`) generate `ContMDiffSection.frameTopology`** on
 `C^n` sections when the relative interiors of the compact pieces cover `M`, for any regularity
 `n : ℕ∞ω` (neither local compactness of the model nor absence of boundary is required). -/
-theorem withSeminorms_finiteAtlasSeminorm_subtype
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+theorem withSeminorms_finiteAtlasSeminorm_subtype :
     letI := frameTopology (I := I) (n := n) e U hU
     WithSeminorms
       (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
@@ -586,14 +587,11 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype
     simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
       ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L le_rfl hm s).trans (hbound s)
 
+include hK in
 /-- On a locally compact model space, the finite-atlas `C^k` seminorms (`k ≤ n`) of any finite
 chart-frame atlas whose compact pieces have relative interiors covering `M` generate
 `ContMDiffSection.frameTopology` on `C^n` sections for *any* covering smooth frame system. -/
 theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover [LocallyCompactSpace E]
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
     {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
     (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
@@ -621,38 +619,33 @@ private theorem withSeminorms_unit_of_subtype [TopologicalSpace Cₛ^k⟮I; F, V
       (fun m : {m : ℕ // (m : ℕ∞ω) ≤ k} ↦ finiteAtlasSeminorm (n := k) e U hU c K m.1 m.2)) :
     WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
   refine hp.congr ?_ ?_
-  · intro _
-    refine ⟨{⟨k, le_rfl⟩}, 1, ?_⟩
-    rw [Finset.sup_singleton, one_smul]
-    rfl
-  · intro m
-    have hmk : m.1 ≤ k := Nat.cast_le.mp m.2
-    refine ⟨{()}, 1, ?_⟩
-    rw [Finset.sup_singleton, one_smul]
-    exact finiteAtlasSeminorm_le_of_le (n := k) e U hU c K hmk le_rfl
+  · exact fun _ ↦ ⟨{⟨k, le_rfl⟩}, 1, by
+      simpa only [Finset.sup_singleton, one_smul, Seminorm.comp_id] using le_rfl⟩
+  · exact fun m ↦ ⟨{()}, 1, by
+      simpa only [Finset.sup_singleton, one_smul, Seminorm.comp_id] using
+        finiteAtlasSeminorm_le_of_le (n := k) e U hU c K (Nat.cast_le.mp m.2) le_rfl⟩
 
+variable (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
+  ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
+    (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
+      (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
+
+include hK in
 /-- **The finite-atlas `C^k` norm generates `ContMDiffSection.frameTopology`** on `C^k` sections
 when the relative interiors of its compact pieces cover `M`. Neither local compactness of the model
 nor absence of boundary is required. -/
-theorem withSeminorms_finiteAtlasSeminorm
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+theorem withSeminorms_finiteAtlasSeminorm :
     letI := frameTopology (I := I) (n := k) e U hU
     WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
   let _ := frameTopology (I := I) (n := k) e U hU
   exact withSeminorms_unit_of_subtype k e U hU
     (withSeminorms_finiteAtlasSeminorm_subtype (n := k) e U hU hK)
 
+include hK in
 /-- On a locally compact model space, a finite chart-frame `C^k` norm whose compact pieces have
 relative interiors covering `M` generates `ContMDiffSection.frameTopology` for *any* covering
 smooth frame system. -/
 theorem withSeminorms_finiteAtlasSeminorm_of_cover [LocallyCompactSpace E]
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
     {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
     (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
@@ -662,16 +655,12 @@ theorem withSeminorms_finiteAtlasSeminorm_of_cover [LocallyCompactSpace E]
   exact withSeminorms_unit_of_subtype k e U hU
     (withSeminorms_finiteAtlasSeminorm_subtype_of_cover (n := k) e U hU hK e' U' hU' hcover')
 
+include hK in
 /-- The normed group of `C^k` bundle sections equipped with the `C^k` norm of a finite chart-frame
 atlas whose compact pieces have relative interiors covering `M`. Its topology is definitionally
 `ContMDiffSection.frameTopology e U hU`. -/
 @[instance_reducible]
-def finiteAtlasNormedAddCommGroup
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
-    NormedAddCommGroup Cₛ^k⟮I; F, V⟯ :=
+def finiteAtlasNormedAddCommGroup : NormedAddCommGroup Cₛ^k⟮I; F, V⟯ :=
   letI := frameTopology (I := I) (n := k) e U hU
   letI : Norm Cₛ^k⟮I; F, V⟯ := ⟨finiteAtlasSeminorm e U hU c K k le_rfl⟩
   NormedAddCommGroup.ofCoreReplaceTopology
@@ -685,11 +674,7 @@ def finiteAtlasNormedAddCommGroup
 
 /-- The normed space structure on `C^k` bundle sections for a covering finite chart-frame atlas. -/
 @[instance_reducible]
-def finiteAtlasNormedSpace
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+def finiteAtlasNormedSpace :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     NormedSpace 𝕜 Cₛ^k⟮I; F, V⟯ :=
   letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
@@ -697,24 +682,14 @@ def finiteAtlasNormedSpace
 
 /-- The norm in `ContMDiffSection.finiteAtlasNormedAddCommGroup` is the finite-atlas `C^k`
 seminorm. -/
-theorem norm_finiteAtlas
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
-    (s : Cₛ^k⟮I; F, V⟯) :
+theorem norm_finiteAtlas (s : Cₛ^k⟮I; F, V⟯) :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     ‖s‖ = finiteAtlasSeminorm e U hU c K k le_rfl s :=
   (rfl)
 
 /-- The distance in `ContMDiffSection.finiteAtlasNormedAddCommGroup` is the finite-atlas `C^k`
 seminorm of the difference. -/
-theorem dist_finiteAtlas
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
-    (s t : Cₛ^k⟮I; F, V⟯) :
+theorem dist_finiteAtlas (s t : Cₛ^k⟮I; F, V⟯) :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     dist s t = finiteAtlasSeminorm e U hU c K k le_rfl (s - t) := by
   let _ := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
@@ -723,11 +698,7 @@ theorem dist_finiteAtlas
 /-- The topology underlying `ContMDiffSection.finiteAtlasNormedAddCommGroup` is
 `ContMDiffSection.frameTopology e U hU`. -/
 @[simp]
-theorem topologicalSpace_finiteAtlasNormedAddCommGroup
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+theorem topologicalSpace_finiteAtlasNormedAddCommGroup :
     (finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK).toUniformSpace.toTopologicalSpace =
       frameTopology (I := I) (n := k) e U hU :=
   (rfl)
@@ -736,11 +707,7 @@ theorem topologicalSpace_finiteAtlasNormedAddCommGroup
 modelled on a locally compact space over `ℝ` or `ℂ`, `C^k` sections of a bundle with complete model
 fibre form a Banach space for any covering finite chart-frame norm. -/
 theorem completeSpace_finiteAtlas [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E]
-    [I.Boundaryless] [CompleteSpace F]
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+    [I.Boundaryless] [CompleteSpace F] :
     letI := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
     CompleteSpace Cₛ^k⟮I; F, V⟯ := by
   let _ := finiteAtlasNormedAddCommGroup (𝕜 := 𝕜) k e U hU hK
@@ -764,30 +731,28 @@ variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
   (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
   {c : ∀ i, U i} {K : ∀ i, Compacts (extChartAt I (c i)).target}
+  (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
+    ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
+      (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
+        (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
 
+include hK in
 /-- **The finite-atlas `C^k` norms generate the `C^∞` section topology.** When the relative
 interiors of the compact pieces cover `M`, the countable sequence of finite-atlas `C^k` seminorms
 (`k : ℕ`) generates `ContMDiffSection.frameTopology` on smooth sections, including on manifolds with
 boundary and corners. -/
-theorem withSeminorms_finiteAtlasSeminorm_infty
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+theorem withSeminorms_finiteAtlasSeminorm_infty :
     letI := frameTopology (I := I) (n := ∞) e U hU
     WithSeminorms (fun k : ℕ ↦ finiteAtlasSeminorm (n := ∞) e U hU c K k (by simp)) := by
   let _ := frameTopology (I := I) (n := ∞) e U hU
   exact (withSeminorms_finiteAtlasSeminorm_subtype (n := ∞) e U hU hK).congr_equiv
     (Equiv.subtypeUnivEquiv fun k : ℕ ↦ (by simp : (k : ℕ∞ω) ≤ ∞)).symm
 
+include hK in
 /-- On a locally compact model space, the countable sequence of `C^k` norms of any finite
 chart-frame atlas with covering relative interiors generates `ContMDiffSection.frameTopology` on
 smooth sections for *any* covering smooth frame system. -/
 theorem withSeminorms_finiteAtlasSeminorm_infty_of_cover [LocallyCompactSpace E]
-    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
-      ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target))
     {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
     (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
