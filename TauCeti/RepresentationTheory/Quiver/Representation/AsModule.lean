@@ -61,9 +61,7 @@ that isomorphism becomes `TauCeti.QuiverRep.asModuleShrinkIso`, the essential su
   representation, `TauCeti.QuiverRep.asModuleShrinkEquiv` identifying the two.
 * `TauCeti.quiverRepEquivalence`: **representations of a quiver are modules over its path
   algebra**, with `TauCeti.quiverRepEquivalenceFunctorObjShrinkIso` identifying the module it sends
-  a representation to with `TauCeti.QuiverRep.asModuleShrink`, and
-  `TauCeti.quiverRepEquivalenceFunctorObjIso` identifying it with `TauCeti.QuiverRep.asModule`
-  itself in the universe where the direct sum lives.
+  a representation to with `TauCeti.QuiverRep.asModuleShrink`.
 
 ## Main results
 
@@ -116,8 +114,7 @@ vertex components are those of `asModule` because `TauCeti.QuiverRep.asModuleShr
 `kQ`-linear, is what witnesses essential surjectivity there; `TauCeti.quiverRepEquivalence`'s
 forward direction is identified with that model by
 `TauCeti.quiverRepEquivalenceFunctorObjShrinkIso`.  The concrete direct-sum API is kept at
-`max v t`, and `TauCeti.quiverRepEquivalenceFunctorObjIso` identifies the forward direction with
-`asModule` itself at that universe.
+`max v t`.
 
 ## References
 
@@ -577,25 +574,12 @@ theorem _root_.TauCeti.quiverRepEquivalence_inverse :
 `CategoryTheory.Functor.inv`, so on objects it is a choice of preimage; this identifies that choice
 with the model of `TauCeti.QuiverRep.asModule` built here, at the arbitrary representation universe
 `t` the equivalence is stated at, which is what a consumer transporting a representation across it
-needs.  For a representation valued in the universe `max v t` where the direct sum `⨁ᵥ Mᵥ` itself
-lives, `TauCeti.quiverRepEquivalenceFunctorObjIso` identifies the preimage with that sum
-directly. -/
+needs. -/
 noncomputable def _root_.TauCeti.quiverRepEquivalenceFunctorObjShrinkIso [DecidableEq Q]
     (M : QuiverRep.{u, v, w, t} k Q) :
     (quiverRepEquivalence.{u, v, w, t} k Q).functor.obj M ≅ asModuleShrink k Q M :=
   (quiverRepFunctorFullyFaithful k Q).preimageIso
     ((quiverRepFunctor.{u, v, w, t} k Q).objObjPreimageIso M ≪≫ (asModuleShrinkIso k Q M).symm)
-
-/-- **The forward direction of `TauCeti.quiverRepEquivalence` is
-`TauCeti.QuiverRep.asModule`**, at the universe `max v t` where the direct sum `⨁ᵥ Mᵥ` lives: the
-concrete form of `TauCeti.quiverRepEquivalenceFunctorObjShrinkIso`, identifying the chosen preimage
-with the direct sum itself rather than with a model of it. -/
-noncomputable def _root_.TauCeti.quiverRepEquivalenceFunctorObjIso [DecidableEq Q]
-    (M : QuiverRep.{u, v, w, max v t} k Q) :
-    (quiverRepEquivalence.{u, v, w, max v t} k Q).functor.obj M
-      ≅ ModuleCat.of (pathAlgebra k Q) (asModule k Q M) :=
-  (quiverRepFunctorFullyFaithful k Q).preimageIso
-    ((quiverRepFunctor.{u, v, w, max v t} k Q).objObjPreimageIso M ≪≫ (asModuleIso k Q M).symm)
 
 end Equivalence
 
