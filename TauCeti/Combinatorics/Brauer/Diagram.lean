@@ -276,7 +276,7 @@ theorem throughPerm_apply (hD : ∀ x, D.IsThrough x) (i : Fin k) :
 @[simp]
 theorem permToBrauer_throughPerm (hD : ∀ x, D.IsThrough x) :
     permToBrauer (throughPerm D hD) = D := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rw [permToBrauer_val_inl, throughPerm_apply, Sum.inr_getRight]
   · obtain ⟨m, hm⟩ : ∃ m, D.val (Sum.inr j) = Sum.inl m :=

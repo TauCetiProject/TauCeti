@@ -122,7 +122,7 @@ theorem composeDiagram_capCup_reconnect :
   have hXc : X.val (Sum.inr c) = Sum.inl a := PerfectMatching.reconnect_val_self Sum.inl_ne_inr
   have hXd : X.val (Sum.inr d) = Sum.inl b :=
     hcap ▸ hcup ▸ PerfectMatching.reconnect_val_val_self Sum.inl_ne_inr
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   -- The four points `a`, `b`, `c`, `d` are treated by hand; every other point keeps its arc.
   by_cases hxa : x = Sum.inl a
   · subst x
