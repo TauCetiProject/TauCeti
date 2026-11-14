@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
+import TauCeti.NumberTheory.Chebyshev.Mertens
 
 /-!
 # Weighted prime sums and their Mellin smoothing
@@ -28,7 +29,9 @@ recovers the prime series with the exponent shifted by `η`:
 
 The proof is partial summation at a finite cutoff `N`, followed by the limit `N → ∞`: the
 boundary term `N^(-η) • weightedPrimeSum a N` tends to zero and the truncated integrals converge,
-both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`.
+both controlled by the growth of `weightedPrimeSum a t`, for which Mertens's first theorem supplies
+the linear-logarithmic bound `‖weightedPrimeSum a t‖ ≤ log 4 + 4 + log t` for `t ≥ 1` alongside the
+elementary harmonic bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`.
 
 ## Main results
 
@@ -38,13 +41,17 @@ both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`.
 * `TauCeti.weightedPrimeSum_add`, `TauCeti.weightedPrimeSum_smul`, `TauCeti.weightedPrimeSum_neg`,
   `TauCeti.weightedPrimeSum_sub`: linearity in the weights;
 * `TauCeti.norm_weightedPrimeSum_le`: `‖weightedPrimeSum a t‖ ≤ (1 + log t)²` when `‖a p‖ ≤ 1`;
+* `TauCeti.norm_weightedPrimeSum_le_mul_add_log`, `TauCeti.norm_weightedPrimeSum_le_add_log`:
+  the Mertens bound `‖weightedPrimeSum a t‖ ≤ log 4 + 4 + log t` for `t ≥ 1` when `‖a p‖ ≤ 1`;
 * `TauCeti.smul_intervalIntegral_rpow_smul_weightedPrimeSum`: the finite-cutoff partial summation
   formula;
 * `TauCeti.integrableOn_rpow_smul_weightedPrimeSum`: Bochner integrability of `t^(-1-η) • A(t)`
   on `(1, ∞)`;
 * `TauCeti.summable_weightedPrimeSeries`, `TauCeti.hasSum_weightedPrimeSeries`,
   `TauCeti.tsum_weightedPrimeSeries`: summability of `Σ_p (log p / p^(1+η)) • a p` over
-  `Nat.Primes` and the Mellin identity.
+  `Nat.Primes` and the Mellin identity;
+* `TauCeti.norm_mellinWeightIntegral_weightedPrimeSum_le`,
+  `TauCeti.norm_tsum_weightedPrimeSeries_le`: the resulting `η⁻¹ + log 4 + 4` bound for `η > 0`.
 -/
 
 public section
@@ -162,6 +169,33 @@ theorem norm_weightedPrimeSum_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p
         simp_rw [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
     _ ≤ log n * (1 + log n) := mul_le_mul_of_nonneg_left (harmonic_le_one_add_log n) hlogn
     _ ≤ (1 + log t) ^ 2 := by nlinarith
+
+/-- **Mertens bound for weighted prime sums**: if `‖a p‖ ≤ M` on the primes `p ≤ t` (with `M ≥ 0`)
+and `t ≥ 1`, then `‖Σ_{p ≤ t} (log p / p) • a p‖ ≤ M (log 4 + 4 + log t)`. -/
+theorem norm_weightedPrimeSum_le_mul_add_log {a : ℕ → E} {M t : ℝ} (hM : 0 ≤ M)
+    (ha : ∀ p ∈ Nat.primesLE ⌊t⌋₊, ‖a p‖ ≤ M) (ht : 1 ≤ t) :
+    ‖weightedPrimeSum a t‖ ≤ M * (log 4 + 4 + log t) := by
+  calc ‖weightedPrimeSum a t‖
+      ≤ ∑ p ∈ Nat.primesLE ⌊t⌋₊, (log p / p) * M := by
+        rw [weightedPrimeSum_def]
+        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun p hp ↦ ?_)
+        have hp1 : (1 : ℝ) ≤ p := by exact_mod_cast (Nat.one_lt_of_mem_primesLE hp).le
+        have hlp : 0 ≤ log p / p := div_nonneg (log_nonneg hp1) (by linarith)
+        rw [norm_smul, norm_of_nonneg hlp]
+        exact mul_le_mul_of_nonneg_left (ha p hp) hlp
+    _ = (∑ p ∈ Nat.primesLE ⌊t⌋₊, log p / p) * M := (Finset.sum_mul _ _ _).symm
+    _ ≤ (log t + log 4 + 4) * M :=
+        mul_le_mul_of_nonneg_right (sum_primesLE_floor_log_div_le ht) hM
+    _ = M * (log 4 + 4 + log t) := by ring
+
+/-- **Mertens bound for unit-bounded prime weights**: if `‖a p‖ ≤ 1` at all primes and `t ≥ 1`,
+then `‖Σ_{p ≤ t} (log p / p) • a p‖ ≤ log 4 + 4 + log t`. -/
+theorem norm_weightedPrimeSum_le_add_log {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {t : ℝ}
+    (ht : 1 ≤ t) :
+    ‖weightedPrimeSum a t‖ ≤ log 4 + 4 + log t := by
+  rw [← one_mul (log 4 + 4 + log t)]
+  exact norm_weightedPrimeSum_le_mul_add_log zero_le_one
+    (fun p hp ↦ ha p (Nat.prime_of_mem_primesLE hp)) ht
 
 /-! ### Partial summation at a finite cutoff -/
 
@@ -360,5 +394,35 @@ theorem tsum_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
     ∑' p : Nat.Primes, (log p / (p : ℝ) ^ (1 + η)) • a p =
       mellinWeightIntegral η (weightedPrimeSum a) :=
   (hasSum_weightedPrimeSeries ha hη).tsum_eq
+
+/-- Combining the Mertens bound `‖A(t)‖ ≤ log 4 + 4 + log t` with the scalar Mellin moments bounds
+the Mellin-smoothed weighted prime sum by `log 4 + 4 + η⁻¹` for every `η > 0`. -/
+theorem norm_mellinWeightIntegral_weightedPrimeSum_le {a : ℕ → E}
+    (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 < η) :
+    ‖mellinWeightIntegral η (weightedPrimeSum a)‖ ≤ log 4 + 4 + η⁻¹ := by
+  have hconst : IntegrableOn (fun t : ℝ ↦ t ^ (-1 - η) • (log 4 + 4)) (Ioi 1) :=
+    (integrableOn_rpow_neg_one_sub hη).smul_const (log 4 + 4)
+  have hlog : IntegrableOn (fun t : ℝ ↦ t ^ (-1 - η) • log t) (Ioi 1) :=
+    integrableOn_rpow_mul_log hη
+  have hmaj : IntegrableOn (fun t : ℝ ↦ t ^ (-1 - η) * (((fun _ : ℝ ↦ log 4 + 4) + log) t))
+      (Ioi 1) := by
+    refine (hconst.add hlog).congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
+    simp [Pi.add_apply, smul_eq_mul, mul_add]
+  calc ‖mellinWeightIntegral η (weightedPrimeSum a)‖
+      ≤ mellinWeightIntegral η ((fun _ : ℝ ↦ log 4 + 4) + log) :=
+        norm_mellinWeightIntegral_le hη.le hmaj
+          fun t ht ↦ norm_weightedPrimeSum_le_add_log ha (le_of_lt ht)
+    _ = mellinWeightIntegral η (fun _ : ℝ ↦ log 4 + 4) + mellinWeightIntegral η log :=
+        mellinWeightIntegral_add hconst hlog
+    _ = log 4 + 4 + η⁻¹ := by
+        rw [mellinWeightIntegral_const hη, mellinWeightIntegral_log hη]
+
+/-- For weights bounded by `1` on primes and `η > 0`,
+`‖Σ_p (log p / p^(1+η)) • a p‖ ≤ log 4 + 4 + η⁻¹`. -/
+theorem norm_tsum_weightedPrimeSeries_le [CompleteSpace E] {a : ℕ → E}
+    (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 < η) :
+    ‖∑' p : Nat.Primes, (log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ log 4 + 4 + η⁻¹ := by
+  rw [tsum_weightedPrimeSeries ha hη]
+  exact norm_mellinWeightIntegral_weightedPrimeSum_le ha hη
 
 end TauCeti
