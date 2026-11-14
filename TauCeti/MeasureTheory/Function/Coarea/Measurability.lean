@@ -27,13 +27,12 @@ remainder) are measurable by `IsCompact.measurable_hausdorffMeasure_inter_preima
 Eilenberg's inequality.
 
 If `f` is Lipschitz (or, in a second-countable domain, locally Lipschitz) on `A` with values in a
-finite-dimensional real normed space with additive Haar measure `μ`, and `A` is σ-compact up to a
-`μH[m + t]`-null set, where `m` is the dimension of the target, then
-`y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable: the fibers of the null part are
-null for almost every `y` by Eilenberg's inequality. In particular this holds for any map locally
-Lipschitz on a Lebesgue measurable subset `A` of a finite-dimensional real inner product space of
-dimension `n` and the normalized Hausdorff measures `μHE[k]` with `n ≤ m + k`, which include the
-coarea dimension `k = n - m`.
+real normed space `Y` with additive Haar measure `μ`, and `A` is σ-compact up to a
+`μH[finrank ℝ Y + t]`-null set, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere
+measurable: the fibers of the null part are null for almost every `y` by Eilenberg's inequality.
+In particular this holds for any map locally Lipschitz on a Lebesgue measurable subset `A` of a
+finite-dimensional real inner product space of dimension `n` and the normalized Hausdorff measures
+`μHE[k]` with `n ≤ finrank ℝ Y + k`, which include the coarea dimension `k = n - finrank ℝ Y`.
 
 We extend the complementary-dimensional result to maps with within-set derivatives using
 Mathlib's countable partition into Lipschitz pieces. Measurable-function induction then gives
@@ -48,8 +47,8 @@ derivative nor integrability of the weight is required.
   set that is σ-compact up to a null set.
 * `LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage`: the normalized fiber
   measures `μHE[k]` of a map locally Lipschitz on a Lebesgue measurable subset of an
-  `n`-dimensional real inner product space into an `m`-dimensional real normed space are almost
-  everywhere measurable when `n ≤ m + k`.
+  `n`-dimensional real inner product space into a real normed space `Y` are almost everywhere
+  measurable when `n ≤ finrank ℝ Y + k`.
 * `MeasureTheory.aemeasurable_euclideanHausdorffMeasure_inter_preimage_of_hasFDerivWithinAt`,
   `MeasureTheory.aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt`: almost-everywhere
   measurability of complementary-dimensional fiber measures and weighted fiber integrals for maps
@@ -70,12 +69,12 @@ variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 section FiberMeasurability
 
-variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [FiniteDimensional ℝ Y] [MeasurableSpace Y]
-  [BorelSpace Y] (μ : Measure Y) [μ.IsAddHaarMeasure] {K : ℝ≥0} {t : ℝ}
+variable [NormedAddCommGroup Y] [NormedSpace ℝ Y] [MeasurableSpace Y] [BorelSpace Y]
+  (μ : Measure Y) [μ.IsAddHaarMeasure] {K : ℝ≥0} {t : ℝ}
 
 /-- **Fiber measures of a Lipschitz map are almost everywhere measurable.** Let `f` be Lipschitz
-on `A`, with values in an `m`-dimensional real normed space with additive Haar measure `μ`, and
-let `t` be real. If `A` contains a σ-compact set `S` with `μH[m + t] (A \ S) = 0`, then
+on `A`, with values in a real normed space `Y` with additive Haar measure `μ`, and let `t` be
+real. If `A` contains a σ-compact set `S` with `μH[finrank ℝ Y + t] (A \ S) = 0`, then
 `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. -/
 theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → Y} {A S : Set X}
     (hf : LipschitzOnWith K f A) (hSA : S ⊆ A) (hS : IsSigmaCompact S)
@@ -86,10 +85,10 @@ theorem LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage {f : X → 
     ((hf.mono sdiff_subset).ae_hausdorffMeasure_inter_preimage_eq_zero μ hAS)
 
 /-- **Fiber measures of a locally Lipschitz map on a second-countable domain are almost everywhere
-measurable.** Let `f` be locally Lipschitz on `A`, with values in an `m`-dimensional real normed
-space with additive Haar measure `μ`, and let `t` be real. If `A` contains a σ-compact set `S` with
-`μH[m + t] (A \ S) = 0`, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable.
-Unlike `LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage`, this assumes
+measurable.** Let `f` be locally Lipschitz on `A`, with values in a real normed space `Y` with
+additive Haar measure `μ`, and let `t` be real. If `A` contains a σ-compact set `S` with
+`μH[finrank ℝ Y + t] (A \ S) = 0`, then `y ↦ μH[t] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere
+measurable. Unlike `LipschitzOnWith.aemeasurable_hausdorffMeasure_inter_preimage`, this assumes
 `[SecondCountableTopology X]` to cover `A \ S` by countably many Lipschitz pieces. -/
 theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
     [SecondCountableTopology X] {f : X → Y} {A S : Set X}
@@ -102,10 +101,11 @@ theorem LocallyLipschitzOn.aemeasurable_hausdorffMeasure_inter_preimage
 
 /-- **Normalized fiber measures of a locally Lipschitz map on a Lebesgue measurable set are almost
 everywhere measurable.** Let `f` be locally Lipschitz on a Lebesgue measurable subset `A` of an
-`n`-dimensional real inner product space, with values in an `m`-dimensional real normed space
-with additive Haar measure `μ`. If `n ≤ m + k`, then `y ↦ μHE[k] (A ∩ f ⁻¹' {y})` is
-`μ`-almost everywhere measurable. Neither openness of `A` nor a global Lipschitz bound is needed.
-This applies to the coarea dimension `k = n - m`, for which `n ≤ m + k` is `le_add_tsub`. -/
+`n`-dimensional real inner product space, with values in a real normed space `Y` with additive
+Haar measure `μ`. If `n ≤ finrank ℝ Y + k`, then `y ↦ μHE[k] (A ∩ f ⁻¹' {y})` is `μ`-almost
+everywhere measurable. Neither openness of `A` nor a global Lipschitz bound is needed. This
+applies to the coarea dimension `k = n - finrank ℝ Y`, for which `n ≤ finrank ℝ Y + k` is
+`le_add_tsub`. -/
 theorem LocallyLipschitzOn.aemeasurable_euclideanHausdorffMeasure_inter_preimage {E : Type*}
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
     [BorelSpace E] {f : E → Y} {A : Set E} (hf : LocallyLipschitzOn A f)

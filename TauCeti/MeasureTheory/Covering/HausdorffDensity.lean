@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Measure.Hausdorff
 /-!
 # Upper densities and Hausdorff measure
 
-Let `μ` be a measure on a metric space `X` and `d ≥ 0`. If at every point `x` of a set `A` the
+Let `μ` be a measure on a metric space `X` and `d : ℝ`. If at every point `x` of a set `A` the
 measure of arbitrarily small closed balls satisfies `μ (closedBall x r) ≥ c (2 r) ^ d`, that is, if
 the `d`-dimensional upper density of `μ` is at least `c` on `A`, then `μ` dominates `c` times the
 `d`-dimensional Hausdorff measure on `A`:
@@ -177,7 +177,7 @@ variable {X : Type u} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 /-- **Density comparison for Hausdorff measure**, open-set form. If at every point `x` of `A`
 there are arbitrarily small radii `r > 0` with `c (2 r) ^ d ≤ μ (closedBall x r)`, then
 `c * μH[d] A ≤ μ U` for every open set `U` containing `A`. -/
-theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd : 0 ≤ d)
+theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
     {c : ℝ≥0∞} {A U : Set X} (hU : IsOpen U) (hAU : A ⊆ U)
     (h : ∀ x ∈ A, ∃ᶠ r in 𝓝[>] 0, c * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall x r)) :
     c * μH[d] A ≤ μ U := by
@@ -205,7 +205,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd
   obtain ⟨hu, hsum⟩ := TauCeti.countable_and_tsum_le_of_pairwiseDisjoint μ hc0 hUtop hud
     fun p hp => ⟨(huT hp).2.1, (huT hp).2.2.2.1, (huT hp).2.2.2.2⟩
   have : Countable u := hu.to_subtype
-  have h3 : (3 : ℝ≥0∞) ^ d ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hd (by simp)
+  have h3 : (3 : ℝ≥0∞) ^ d ≠ ∞ := ENNReal.rpow_ne_top_of_ne_zero (by simp) (by simp)
   -- Choose a finite subfamily `F` whose complement has a small sum.
   obtain ⟨F, hF⟩ := ((ENNReal.tendsto_nhds_zero.1 (ENNReal.tendsto_tsum_compl_atTop_zero
     (ne_top_of_le_ne_top (ENNReal.div_lt_top hUtop hc0).ne hsum)) _
@@ -234,13 +234,13 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd
 /-- **Density comparison for Hausdorff measure**, outer regular form. If `μ` is outer regular
 and at every point `x` of `A` there are arbitrarily small radii `r > 0` with
 `c (2 r) ^ d ≤ μ (closedBall x r)`, then `c * μH[d] A ≤ μ A`. -/
-theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : ℝ} (hd : 0 ≤ d)
+theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : ℝ}
     {c : ℝ≥0∞} {A : Set X}
     (h : ∀ x ∈ A, ∃ᶠ r in 𝓝[>] 0, c * ENNReal.ofReal (2 * r) ^ d ≤ μ (closedBall x r)) :
     c * μH[d] A ≤ μ A := by
   refine le_of_forall_gt fun b hb => ?_
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
-  exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hd hU hAU h).trans_lt hUb
+  exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hU hAU h).trans_lt hUb
 
 /-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
 closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then
@@ -279,7 +279,7 @@ variable {X : Type u} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- A measurable set of finite `μH[d]` measure has upper `d`-density less than `c` at
 `μH[d]`-almost every point outside it, for each `c ≠ 0`. -/
-private lemma hausdorffMeasure_setOf_frequently_le_eq_zero {d : ℝ} (hd : 0 ≤ d) {A : Set X}
+private lemma hausdorffMeasure_setOf_frequently_le_eq_zero {d : ℝ} {A : Set X}
     (hA : MeasurableSet A) (hAfin : μH[d] A ≠ ∞) {c : ℝ≥0∞} (hc : c ≠ 0) :
     μH[d] {x | x ∉ A ∧ ∃ᶠ r in 𝓝[>] 0,
       c * ENNReal.ofReal (2 * r) ^ d ≤ μH[d] (A ∩ closedBall x r)} = 0 := by
@@ -294,8 +294,8 @@ private lemma hausdorffMeasure_setOf_frequently_le_eq_zero {d : ℝ} (hd : 0 ≤
     (by rwa [restrict_apply_self]) (ENNReal.coe_ne_zero.2 hε.ne')
   rw [Measure.restrict_apply (hA.diff hF.measurableSet), inter_eq_left.2 sdiff_subset] at hAF
   -- Near a point outside `F`, the part of `A` in a small ball lies in `A \ F`.
-  have key := mul_hausdorffMeasure_le_measure_of_isOpen (μH[d].restrict (A \ F)) hd
-    hF.isOpen_compl (c := c) (A := B) (fun x hx => fun hxF => hx.1 (hFA hxF)) fun x hx =>
+  have key := mul_hausdorffMeasure_le_measure_of_isOpen (μH[d].restrict (A \ F))
+    hF.isOpen_compl (d := d) (c := c) (A := B) (fun x hx => fun hxF => hx.1 (hFA hxF)) fun x hx =>
       hx.2.mp ((eventually_nhdsWithin_of_eventually_nhds (eventually_closedBall_subset
         (hF.isOpen_compl.mem_nhds fun hxF => hx.1 (hFA hxF)))).mono fun r hr hle => ?_)
   · rw [Measure.restrict_apply hF.isOpen_compl.measurableSet,
@@ -307,14 +307,14 @@ private lemma hausdorffMeasure_setOf_frequently_le_eq_zero {d : ℝ} (hd : 0 ≤
 /-- **Zero density outside a set.** A null-measurable set `A` of finite `d`-dimensional Hausdorff
 measure has upper `d`-density zero at almost every point outside it:
 `μH[d] (A ∩ closedBall x r) / (2 r) ^ d → 0` as `r → 0⁺` for `μH[d]`-almost every `x ∉ A`. -/
-theorem ae_tendsto_hausdorffMeasure_inter_closedBall_div {d : ℝ} (hd : 0 ≤ d) {A : Set X}
+theorem ae_tendsto_hausdorffMeasure_inter_closedBall_div {d : ℝ} {A : Set X}
     (hA : NullMeasurableSet A μH[d]) (hAfin : μH[d] A ≠ ∞) :
     ∀ᵐ x ∂μH[d], x ∉ A → Tendsto (fun r => μH[d] (A ∩ closedBall x r) /
       ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 0) := by
   obtain ⟨A₀, hA₀A, hA₀, hA₀ae⟩ := hA.exists_measurable_subset_ae_eq
   have hball (x : X) (r : ℝ) : μH[d] (A ∩ closedBall x r) = μH[d] (A₀ ∩ closedBall x r) :=
     measure_congr (hA₀ae.symm.inter Filter.EventuallyEqSet.rfl)
-  have hnull := fun n : ℕ => hausdorffMeasure_setOf_frequently_le_eq_zero hd hA₀
+  have hnull := fun n : ℕ => hausdorffMeasure_setOf_frequently_le_eq_zero hA₀
     (ne_top_of_le_ne_top hAfin (measure_mono hA₀A)) (c := (n : ℝ≥0∞)⁻¹) (by simp)
   filter_upwards [ae_all_iff.2 fun n => measure_eq_zero_iff_ae_notMem.1 (hnull n)]
     with x hx hxA
