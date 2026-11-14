@@ -377,10 +377,14 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi_add_finrank_pointSpectralSubspac
   have hneg : Module.End.pointSpectralSubspace ((-1 : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊤ := by
     simpa using Module.End.pointSpectralSubspace_smul_one_of_mem (𝕜 := ℝ) (E := E) (μ := -1)
       (Ω := Iio 0) (by norm_num)
-  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, top_inf_eq,
-    squareIntegrableSolutionsOn_Ioi_congr hB hA fun τ hτ ↦ leftCap_of_nonneg hτ,
-    ← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', bot_inf_eq, finrank_bot,
-    Nat.cast_zero, sub_zero, hneg, finrank_top] at h
+  -- So the whole-line solutions of `B` are the stable solutions of `A`, and those of the adjoint
+  -- equation vanish.
+  have hsol : squareIntegrableSolutions B = squareIntegrableSolutionsOn A (Ioi 0) := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, top_inf_eq]
+    exact squareIntegrableSolutionsOn_Ioi_congr hB hA fun τ hτ ↦ leftCap_of_nonneg hτ
+  have hsol' : squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) = ⊥ := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', bot_inf_eq]
+  simp only [hsol, hsol', hneg, finrank_bot, finrank_top] at h
   omega
 
 /-- **The dimension of the stable solutions of the adjoint equation.** Let `A` be a continuous
@@ -419,10 +423,16 @@ theorem finrank_squareIntegrableSolutionsOn_neg_adjoint_Ioi
   have hpos : Module.End.pointSpectralSubspace ((1 : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊥ := by
     simpa using Module.End.pointSpectralSubspace_smul_one_of_notMem (𝕜 := ℝ) (E := E) (μ := 1)
       (Ω := Iio 0) (by norm_num)
-  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, bot_inf_eq, finrank_bot,
-    ← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', top_inf_eq,
-    squareIntegrableSolutionsOn_Ioi_congr hBadj hAadj fun τ hτ ↦ by simp [B, leftCap_of_nonneg hτ],
-    Nat.cast_zero, zero_sub, hpos, finrank_bot] at h
+  -- So the whole-line solutions of `B` vanish, and those of the adjoint equation are the stable
+  -- solutions of the adjoint equation of `A`.
+  have hsol : squareIntegrableSolutions B = ⊥ := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hB, hU, bot_inf_eq]
+  have hsol' : squareIntegrableSolutions (fun τ ↦ -ContinuousLinearMap.adjoint (B τ)) =
+      squareIntegrableSolutionsOn (fun τ ↦ -ContinuousLinearMap.adjoint (A τ)) (Ioi 0) := by
+    rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hBadj, hU', top_inf_eq]
+    exact squareIntegrableSolutionsOn_Ioi_congr hBadj hAadj fun τ hτ ↦ by
+      simp [B, leftCap_of_nonneg hτ]
+  simp only [hsol, hsol', hpos, finrank_bot] at h
   omega
 
 /-- **The dimension of the stable solutions for an invertible symmetric limit.** Let `A` be a

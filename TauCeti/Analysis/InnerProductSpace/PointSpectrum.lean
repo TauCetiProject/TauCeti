@@ -274,14 +274,16 @@ theorem pointSpectralSubspace_union :
     A.pointSpectralSubspace (Ω ∪ Ω') = A.pointSpectralSubspace Ω ⊔ A.pointSpectralSubspace Ω' :=
   iSup_union
 
-/-- Every vector is an eigenvector of the scalar operator `μ • 1` with eigenvalue `μ`, so its
+/-- Every vector lies in the `μ`-eigenspace of the scalar operator `μ • 1`, so its
 point-spectral subspace selected by a set containing `μ` is the whole space. -/
+@[simp]
 theorem pointSpectralSubspace_smul_one_of_mem (h : μ ∈ Ω) :
     ((μ : 𝕜) • 1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊤ :=
   eq_top_iff.2 fun _ _ ↦ eigenspace_le_pointSpectralSubspace h (by simp)
 
 /-- The scalar operator `μ • 1` has no eigenvalue other than `μ`, so its point-spectral subspace
 selected by a set not containing `μ` is zero. -/
+@[simp]
 theorem pointSpectralSubspace_smul_one_of_notMem (h : μ ∉ Ω) :
     ((μ : 𝕜) • 1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊥ := by
   refine eq_bot_iff.2 (pointSpectralSubspace_le_iff.2 fun ν hν x hx ↦ ?_)
