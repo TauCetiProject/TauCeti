@@ -9,12 +9,17 @@ public import Mathlib.NumberTheory.Height.Basic
 
 import all Mathlib.NumberTheory.Height.Basic
 import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.NumberTheory.Height.Affine
 
 /-!
 # Height bounds for coordinate ratios and from local estimates
 
 The height of a ratio of two coordinates is bounded by the projective height of the tuple, and
-the height of a quotient by the sum of the heights of its numerator and denominator. If
+the height of a quotient by the sum of the heights of its numerator and denominator. Conversely,
+normalizing at any nonzero coordinate `x i₀ ≠ 0` bounds `mulHeight x` by the product of
+`mulHeight₁ (x i / x i₀)` over `i ≠ i₀` (`Height.mulHeight_le_prod_mulHeight₁_div`), so on a
+nontrivial index type at least one ratio has logarithmic height at least `h(x) / (card ι - 1)`
+(`Height.exists_logHeight_le_mul_logHeight₁_div`). If
 `t (x - θ₂ y) = x - θ₀ y`, the formula `x / y = (θ₀ - t θ₂) / (1 - t)` bounds the height of
 `x / y` by those of `t`, `θ₀` and `θ₂`; this recovers a Thue solution from a unit equation.
 These bounds control the affine coordinates of a projective point after normalization.
@@ -50,12 +55,15 @@ is reached by `import all`, as in `TauCeti/NumberTheory/Height/LinearForm.lean`.
 
 The ratio bounds are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
-commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0). The local-to-global bound follows
+commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0), and the converse Segre ratio lower
+bound follows E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), proof of
+Lemma 7.5.19, and `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
+commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0). The local-to-global bound follows
 `DiophantineApproximation/HeightTransport.lean` in the same repository, snapshot
-`c26d909dc48cf7fe` (Apache 2.0); see also E. Bombieri and W. Gubler,
-*Heights in Diophantine Geometry* (2006), §1.6. The constant bound, the bound for natural numbers
-and the height of the tuple of powers follow `DiophantineApproximation/MonomialHeight.lean` in
-the same repository, commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
+`c26d909dc48cf7fe` (Apache 2.0); see also Bombieri–Gubler, §1.6. The constant bound, the bound for
+natural numbers and the height of the tuple of powers follow
+`DiophantineApproximation/MonomialHeight.lean` in the same repository, commit
+`09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -76,6 +84,67 @@ lemma logHeight₁_div_le_logHeight (x : ι → K) (i j : ι) :
     logHeight₁ (x i / x j) ≤ logHeight x := by
   rw [logHeight₁_div_eq_logHeight]
   simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq] using logHeight_comp_le ![i, j] x
+
+omit [Finite ι] in
+/-- For any nonzero coordinate `x i₀ ≠ 0`, the multiplicative height `mulHeight x` is at most the
+product of the heights `mulHeight₁ (x i / x i₀)` of the coordinate ratios for `i ≠ i₀`. -/
+lemma mulHeight_le_prod_mulHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    mulHeight x ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
+  -- Normalize `x` by `(x i₀)⁻¹` and bound the affine height by the product of coordinate heights.
+  calc mulHeight x
+      = mulHeight ((x i₀)⁻¹ • x) := (mulHeight_smul_eq_mulHeight x (inv_ne_zero hx₀)).symm
+    _ = mulHeight (fun i ↦ x i / x i₀) :=
+        congrArg mulHeight (funext fun i ↦ (div_eq_inv_mul (x i) (x i₀)).symm)
+    _ ≤ mulHeightAff (fun i ↦ x i / x i₀) := mulHeight_le_mulHeightAff _
+    _ ≤ ∏ i, mulHeight₁ (x i / x i₀) := mulHeightAff_le_prod_mulHeight₁ _
+    _ = ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
+        rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀), div_self hx₀, mulHeight₁_one, one_mul]
+
+omit [Finite ι] in
+/-- For any nonzero coordinate `x i₀ ≠ 0`, the logarithmic height `logHeight x` is at most the sum
+of the logarithmic heights `logHeight₁ (x i / x i₀)` of the coordinate ratios for `i ≠ i₀`. -/
+lemma logHeight_le_sum_logHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    logHeight x ≤ ∑ i ∈ Finset.univ.erase i₀, logHeight₁ (x i / x i₀) := by
+  rw [logHeight_eq_log_mulHeight]
+  refine (Real.log_le_log (mulHeight_pos x) (mulHeight_le_prod_mulHeight₁_div hx₀)).trans_eq ?_
+  rw [Real.log_prod fun i _ ↦ (mulHeight₁_pos _).ne']
+  exact Finset.sum_congr rfl fun i _ ↦ (logHeight₁_eq_log_mulHeight₁ _).symm
+
+/-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
+with `x i₀ ≠ 0` such that `mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1)`. -/
+lemma exists_mulHeight_le_pow_mulHeight₁_div [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
+    ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
+      mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+  classical
+  cases nonempty_fintype ι
+  obtain ⟨i₀, hx₀⟩ := Function.ne_iff.mp hx
+  obtain ⟨j, hj⟩ := exists_ne i₀
+  have hs : (Finset.univ.erase i₀).Nonempty := ⟨j, Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩⟩
+  obtain ⟨i₁, hi₁, hmax⟩ := Finset.exists_max_image _ (fun i ↦ mulHeight₁ (x i / x i₀)) hs
+  refine ⟨i₀, i₁, (Finset.ne_of_mem_erase hi₁).symm, hx₀, ?_⟩
+  calc mulHeight x
+      ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) :=
+        mulHeight_le_prod_mulHeight₁_div hx₀
+    _ ≤ ∏ _ ∈ Finset.univ.erase i₀, mulHeight₁ (x i₁ / x i₀) := by
+        gcongr with i hi
+        exact hmax i hi
+    _ = mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+        rw [Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ i₀), Finset.card_univ,
+          Nat.card_eq_fintype_card]
+
+/-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
+with `x i₀ ≠ 0` such that `logHeight x ≤ (Nat.card ι - 1) * logHeight₁ (x i₁ / x i₀)`. -/
+lemma exists_logHeight_le_mul_logHeight₁_div [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
+    ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
+      logHeight x ≤ (Nat.card ι - 1 : ℝ) * logHeight₁ (x i₁ / x i₀) := by
+  obtain ⟨i₀, i₁, hne, hx₀, hle⟩ := exists_mulHeight_le_pow_mulHeight₁_div hx
+  refine ⟨i₀, i₁, hne, hx₀, ?_⟩
+  have hcard : 1 ≤ Nat.card ι := Nat.one_le_iff_ne_zero.mpr (Nat.card_pos.ne')
+  rw [logHeight_eq_log_mulHeight]
+  refine (Real.log_le_log (mulHeight_pos x) hle).trans_eq ?_
+  rw [Real.log_pow, Nat.cast_sub hcard, Nat.cast_one, logHeight₁_eq_log_mulHeight₁]
 
 /-- The logarithmic height of a quotient is at most the sum of the logarithmic heights. -/
 lemma logHeight₁_div_le (x y : K) : logHeight₁ (x / y) ≤ logHeight₁ x + logHeight₁ y := by
