@@ -750,7 +750,7 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv [Nonempt
     -- `0 ≤ u^s ≤ (u + δ)^s`, and `(u + δ)^s` is integrable on `B(x₀, R/2)`, hence so is `u^s`.
     have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ s) (Metric.ball x₀ (R / 2)) mu :=
       hHi.congr (hwvh.mono fun y hy => congrArg (· ^ s) hy)
-    obtain ⟨hint, hmono⟩ := integrable_and_average_rpow_le hs hδ0.le hu0h hint'
+    obtain ⟨hint, hmono⟩ := integrable_and_average_rpow_le hs.le hδ0.le hu0h hint'
     exact ⟨hint, (Real.rpow_le_rpow
       (average_nonneg_of_ae (hu0h.mono fun y hy => Real.rpow_nonneg hy _))
       hmono (inv_nonneg.2 hs.le)).trans hH⟩
