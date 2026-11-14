@@ -12,7 +12,9 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -64,6 +66,9 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
+* `TauCeti.W1p.exists_w1p0_value_ae_eq_mul_value_compL`: a function vanishing on the boundary
+  portion `∂Ω ∩ W` still vanishes on the boundary of `U` after precomposition with a map of `U` onto
+  `Ω ∩ W`, once localized by a cutoff.
 * `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`: the chain rule for weak derivatives under a
   `C¹` change of variables.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: its affine case `x ↦ A x + b`.
@@ -423,6 +428,69 @@ theorem W1p.compL_compL_of_leftInvOn {Ψ : E → E} {L' c' : ℝ} (hΨ : Differe
   rw [h1, h2, hΨΦ hx]
 
 end ChangeOfVariables
+
+section BoundaryValues
+
+variable [mu.IsAddHaarMeasure]
+
+/-- **Zero values on a boundary portion are carried along a change of variables.** Let `Φ` map `U`
+into `Ω ∩ W` with the hypotheses of `TauCeti.W1p.compL`, and have a left inverse `Ψ` on `U` that
+is continuous on `Ω ∩ W` and maps it into `U`. Let `Φ` also be continuous on a set `U'` and map
+it into `W`. If `χ u ∈ W^{1,p}_0(Ω)` for every smooth `χ` compactly supported in `W`, so that `u`
+vanishes on `∂Ω ∩ W`, then `ψ (u ∘ Φ) ∈ W^{1,p}_0(U)` for every smooth `ψ` compactly supported in
+`U'`. -/
+theorem W1p.exists_w1p0_value_ae_eq_mul_value_compL {Omega W : Opens E} {U' : Set E} {Ψ : E → E}
+    (hp : p ≠ ⊤) (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U)
+    (hmaps : MapsTo Φ U ((Omega ⊓ W : Opens E) : Set E))
+    (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L) (hc : 0 < c)
+    (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ Φ x).det|) (hΦc : ContinuousOn Φ U')
+    (hΦW : MapsTo Φ U' W) (hΨ : ContinuousOn Ψ (Omega ⊓ W : Opens E))
+    (hΨmaps : MapsTo Ψ (Omega ⊓ W : Opens E) U) (hΨΦ : LeftInvOn Ψ Φ U) {u : W1p mu Omega p}
+    (hu0 : ∀ χ : E → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ → tsupport χ ⊆ W →
+      ∃ v : W1p0 mu Omega p,
+        W1p.value (v : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => χ x * W1p.value u x)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψU : tsupport ψ ⊆ U') :
+    ∃ v : W1p0 mu U p, W1p.value (v : W1p mu U p) =ᵐ[mu.restrict U]
+      fun x => ψ x * W1p.value (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet
+        (W1p.restrictL (inf_le_left : Omega ⊓ W ≤ Omega) u)) x := by
+  have hae : ∀ {P : E → Prop}, (∀ᵐ y ∂mu.restrict (Omega ⊓ W : Opens E), P y) →
+      ∀ᵐ x ∂mu.restrict U, P (Φ x) := fun hP =>
+    ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet)) hP
+  -- A cutoff `χ`, supported in `W`, equal to one near the compact set `Φ(supp ψ)`.
+  have hK : IsCompact (Φ '' tsupport ψ) :=
+    hψc.isCompact.image_of_continuousOn (hΦc.mono hψU)
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχs⟩ :=
+    hK.exists_contDiff_cutoff_eventuallyEq_one W.isOpen (hΦW.mono_left hψU).image_subset
+  -- `χ u ∈ W^{1,p}_0(Ω)` restricts to `W^{1,p}_0(Ω ∩ W)`, and precomposition with `Φ` keeps it
+  -- in `W^{1,p}_0`.
+  obtain ⟨w, hw⟩ := hu0 χ hχ hχc hχs
+  have hw0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport χ → W1p.value (w : W1p mu Omega p) x = 0 := by
+    filter_upwards [hw] with x hx hxχ
+    rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
+  have hw' := W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp hΦ hinj hmaps hL hc hdet hΨ hΨmaps
+    hΨΦ (W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs w.2 hw0)
+  -- Multiplying by `ψ` keeps zero boundary values.
+  obtain ⟨M, hM, hψM, hgM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
+  refine ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hψ hM (fun x _ => hψM x) (fun x _ => hgM x) hw'⟩,
+    ?_⟩
+  have hΩW : ((Omega ⊓ W : Opens E) : Set E) ⊆ Omega := fun _ hx => hx.1
+  filter_upwards [W1p.value_contDiffSMul_ae hψ hM (fun x _ => hψM x) (fun x _ => hgM x)
+      (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet (W1p.restrictL inf_le_left (w : W1p mu Omega p))),
+    W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc hdet
+      (W1p.restrictL inf_le_left (w : W1p mu Omega p)),
+    W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc hdet (W1p.restrictL inf_le_left u),
+    hae (W1p.value_restrictL_ae inf_le_left (w : W1p mu Omega p)),
+    hae (W1p.value_restrictL_ae inf_le_left u),
+    hae (ae_restrict_of_ae_restrict_of_subset hΩW hw)] with x h1 h2 h3 h4 h5 h6
+  rw [h1, h2, h3, h4, h5, h6, smul_eq_mul]
+  -- On `supp ψ`, the cutoff `χ ∘ Φ` is one.
+  by_cases hx : x ∈ tsupport ψ
+  · rw [(hχ1 _ (mem_image_of_mem Φ hx)).self_of_nhds, one_mul]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
+
+end BoundaryValues
 
 /-! ### The chain rule for weak derivatives under a `C¹` change of variables -/
 

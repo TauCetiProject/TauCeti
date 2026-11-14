@@ -375,6 +375,18 @@ theorem mono {j : ℕ} (h : IsChangeOfVariables k U V Φ L c) (hj : j ≤ k) :
   pos := h.pos
   le_abs_det := h.le_abs_det
 
+/-- A change of variables from `U` into `V` restricts to one from a smaller open set `U₁ ⊆ U` into
+any open set `V₁` containing its image, with the same constants. -/
+theorem restrict {U₁ V₁ : Opens E} (h : IsChangeOfVariables k U V Φ L c) (hU : U₁ ≤ U)
+    (hmaps : MapsTo Φ U₁ V₁) : IsChangeOfVariables k U₁ V₁ Φ L c where
+  contDiffOn := h.contDiffOn.mono hU
+  differentiableOn := h.differentiableOn.mono hU
+  injOn := h.injOn.mono hU
+  mapsTo := hmaps
+  norm_iteratedFDeriv_le i hi hik x hx := h.norm_iteratedFDeriv_le i hi hik x (hU hx)
+  pos := h.pos
+  le_abs_det x hx := h.le_abs_det x (hU hx)
+
 /-- The derivative of a change of variables of order at least one is bounded by `L`. -/
 theorem norm_fderiv_le (h : IsChangeOfVariables (k + 1) U V Φ L c) :
     ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L := fun x hx => by
