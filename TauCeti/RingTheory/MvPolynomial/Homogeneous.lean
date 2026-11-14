@@ -44,7 +44,9 @@ homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq
 degree-one component of a polynomial in finitely many variables as the linear form
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 The top component of a nonzero polynomial is nonzero
-(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`). With no variables every homogeneous
+(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`), and a polynomial of total degree at
+most `m` is the sum of its components of degree at most `m`
+(`MvPolynomial.sum_homogeneousComponent_of_totalDegree_le`). With no variables every homogeneous
 polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
@@ -258,6 +260,15 @@ theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p
   rw [component_eq]
   simpa only [weightInitialForm_def, weightedTotalDegree_one] using
     (weightInitialForm_eq_zero_iff (1 : σ → ℕ) p).not.mpr hp
+
+/-- A polynomial of total degree at most `m` is the sum of its homogeneous components of degree
+at most `m`. -/
+theorem sum_homogeneousComponent_of_totalDegree_le {φ : MvPolynomial σ R} {m : ℕ}
+    (h : φ.totalDegree ≤ m) :
+    ∑ d ∈ Finset.range (m + 1), homogeneousComponent d φ = φ := by
+  conv_rhs => rw [← sum_homogeneousComponent φ]
+  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun d _ hd ↦ ?_).symm
+  exact homogeneousComponent_eq_zero d φ (by simpa using hd)
 
 /-- The degree-one component of a polynomial in finitely many variables is the linear form whose
 coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
