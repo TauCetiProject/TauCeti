@@ -31,15 +31,20 @@ solutions of their generalised equations.
 
 * `TauCeti.GenEq.IsSolutionTable r W T u`: the table `T`, with the words `u z` for its letters,
   is a partition table of `r` spelling the assignment `W`.
+* `TauCeti.GenEq.IsSolutionTable.solution`: the solution `U` of `Ω_T` given by the words of the
+  letters of a table of `W`.
 
 ## Main results
 
-* `TauCeti.GenEq.IsSolutionTable.eval_eq_one`: an assignment with a table is a solution.
+* `TauCeti.GenEq.IsSolutionTable.map`: renaming the letters of a table gives a table of the same
+  assignment.
 * `TauCeti.GenEq.IsSolutionTable.exists_fin_systemSize`: at most `|S|` letters occur in a table,
   so the letters may be taken in `Fin |S|`.
-* `TauCeti.GenEq.IsSolutionTable.exists_solution`: the words of the letters give a solution `U`
-  of `Ω_T` whose word maps `P_x(U)` spell the reduced word of `W x` for every variable `x`
-  occurring in `r`.
+* `TauCeti.GenEq.IsSolutionTable.substituteVars_wordMap`: the word maps `P_x(U)` of the solution
+  spell the reduced word of `W x` for every variable `x` occurring in `r`.
+* `TauCeti.GenEq.IsSolutionTable.eval_eq_one`: an assignment with a table is a solution.
+* `TauCeti.GenEq.IsSolutionTable.exists_solution`: `Ω_T` has a solution `U` with `P_x(U) = W x`
+  graphically for every variable `x` occurring in `r`.
 
 ## Implementation notes
 
@@ -73,6 +78,7 @@ assignment* `W` for the system of words `r` (Kharlampovich–Myasnikov, §4.2, p
 `T` is a partition table of `r`, substituting the words `u z` into the word `T o` of an occurrence
 gives, letter by letter and without free reduction, a reduced word representing the value of that
 occurrence under `W`, and the letters occurring in `T` have nonempty words. -/
+@[mk_iff]
 structure IsSolutionTable (r : List (List ((X ⊕ A) × Bool))) (W : X → FreeGroup A)
     (T : Occurrence r → List ((Z ⊕ A) × Bool)) (u : Z → List (A × Bool)) : Prop where
   /-- The table is a partition table. -/
@@ -93,71 +99,43 @@ theorem IsSolutionTable.isReduced_of_mem (h : IsSolutionTable r W T u) (o : Occu
     {b : Bool} (hz : (Sum.inl z, b) ∈ T o) : FreeGroup.IsReduced (u z) :=
   (h.isReduced_substituteVars o).of_substituteVars hz
 
-/-- Renaming the letters of `Z` in a table of an assignment, by a map which is injective on the
-letters occurring in each word of the table, gives a table of the same assignment, for any words
-of the new letters which agree with the words of the letters occurring in the table. -/
-private theorem IsSolutionTable.map (h : IsSolutionTable r W T u) (f : Z → Z')
-    (hf : ∀ o, Set.InjOn f {z | ∃ b, (Sum.inl z, b) ∈ T o}) {u' : Z' → List (A × Bool)}
+/-- Renaming the letters of `Z` in a table of an assignment gives a table of the same assignment,
+for any words of the new letters which agree with the words of the letters occurring in the
+table. -/
+theorem IsSolutionTable.map (h : IsSolutionTable r W T u) (f : Z → Z') {u' : Z' → List (A × Bool)}
     (hu : ∀ o z b, (Sum.inl z, b) ∈ T o → u' (f z) = u z) :
-    IsSolutionTable r W (fun o => (T o).map (Prod.map (Sum.map f id) id)) u' where
-  isPartitionTable := h.isPartitionTable.map f hf
-  isReduced_substituteVars o := by
-    rw [FreeGroup.substituteVars_map_sumMap (hu o)]
-    exact h.isReduced_substituteVars o
-  mk_substituteVars o := by
-    rw [FreeGroup.substituteVars_map_sumMap (hu o)]
-    exact h.mk_substituteVars o
-  ne_nil_of_mem o z' b hz := by
+    IsSolutionTable r W (fun o => (T o).map (Prod.map (Sum.map f id) id)) u' := by
+  have hsub (o : Occurrence r) :
+      substituteVars u' ((T o).map (Prod.map (Sum.map f id) id)) = substituteVars u (T o) := by
+    rw [FreeGroup.substituteVars_map_sumMap, FreeGroup.substituteVars_congr (U := u' ∘ f) (hu o)]
+  have hne (o : Occurrence r) {z' : Z'} {b : Bool}
+      (hz : (Sum.inl z', b) ∈ (T o).map (Prod.map (Sum.map f id) id)) : u' z' ≠ [] := by
     obtain ⟨⟨z | a, b'⟩, hy, heq⟩ := List.mem_map.1 hz
     · obtain ⟨rfl, rfl⟩ : f z = z' ∧ b' = b := by simpa using heq
       rw [hu o z b' hy]
       exact h.ne_nil_of_mem o hy
     · simp at heq
+  have hred (o : Occurrence r) :
+      FreeGroup.IsReduced (substituteVars u' ((T o).map (Prod.map (Sum.map f id) id))) := by
+    rw [hsub o]
+    exact h.isReduced_substituteVars o
+  refine ⟨h.isPartitionTable.map f fun o => (hred o).of_substituteVars_of_ne_nil fun _ _ => hne o,
+    hred, fun o => ?_, hne⟩
+  rw [hsub o]
+  exact h.mk_substituteVars o
 
-/-- If words over `A^{±1}` spell the values of the letters of a word in the variables and
-constants, their concatenation spells the value of the word. -/
-private theorem eval_mk_map_fst (R : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)))
-    (hR : ∀ e ∈ R, FreeGroup.mk (substituteVars u e.2) =
-      EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk [e.1])) :
-    EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk (R.map Prod.fst)) =
-      FreeGroup.mk (substituteVars u (R.flatMap Prod.snd)) := by
-  induction R with
-  | nil => simp [← FreeGroup.one_eq_mk]
-  | cons e R ih =>
-    have hmk : FreeGroup.mk (e.1 :: R.map Prod.fst) =
-        FreeGroup.mk [e.1] * FreeGroup.mk (R.map Prod.fst) := by
-      rw [FreeGroup.mul_mk, List.singleton_append]
-    simp [hmk, ← FreeGroup.mul_mk, hR e List.mem_cons_self,
-      ih fun e he => hR e (List.mem_cons_of_mem _ he)]
-
-/-- An assignment with a table solves the system. -/
-theorem IsSolutionTable.eval_eq_one (h : IsSolutionTable r W T u) {w : List ((X ⊕ A) × Bool)}
-    (hw : w ∈ r) : EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk w) = 1 := by
-  obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hw
-  set R := (List.finRange r[(⟨i, hi⟩ : Fin r.length)].length).map fun j =>
-    (r[(⟨i, hi⟩ : Fin r.length)][j], T ⟨⟨i, hi⟩, j⟩) with hR
-  have := eval_mk_map_fst (W := W) (u := u) R fun e he => by
-    obtain ⟨j, -, rfl⟩ := List.mem_map.1 he
-    exact h.mk_substituteVars ⟨⟨i, hi⟩, j⟩
-  have hfst : R.map Prod.fst = r[i] := by
-    simp [hR, Function.comp_def, List.map_getElem_finRange]
-  have hsnd : FreeGroup.mk (R.flatMap Prod.snd) = 1 := by
-    simpa [hR, List.flatMap_map] using h.isPartitionTable.mk_flatMap_eq_one ⟨i, hi⟩
-  rwa [hfst, FreeGroup.mk_substituteVars, hsnd, map_one] at this
-
-/-- A table of an assignment all of whose words are empty stays one with any alphabet of letters
-and any words for them. -/
-private theorem IsSolutionTable.of_forall_eq_nil (h : IsSolutionTable r W T u) (hT : ∀ o, T o = [])
-    (u' : Z' → List (A × Bool)) :
-    IsSolutionTable r W (fun _ => ([] : List ((Z' ⊕ A) × Bool))) u' where
-  isPartitionTable :=
-    { isReduced _ := .nil
-      mk_flatMap_eq_one i := by rw [List.flatMap_eq_nil_iff.2 fun _ _ => rfl, FreeGroup.one_eq_mk]
-      length_le _ := by simp
-      eq_of_eq_inr o a ha := by simpa [hT o] using h.isPartitionTable.eq_of_eq_inr o ha
-      eq_nil_iff _ _ _ := Iff.rfl }
+/-- The table with empty words is a table of an assignment under which every letter of the system
+has the value `1`, with any words for the letters of `Z`. -/
+theorem IsSolutionTable.nil
+    (h : ∀ o : Occurrence r, EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk [r[o.1][o.2]]) = 1) :
+    IsSolutionTable r W (fun _ => []) u where
+  isPartitionTable := .nil fun o a ha => by
+    obtain ⟨s, hs⟩ : ∃ s, r[o.1][o.2] = (Sum.inr a, s) := ⟨_, Prod.ext ha rfl⟩
+    have := h o
+    rw [hs, EqIneqSystem.eval_eq_lift, FreeGroup.lift_mk_singleton] at this
+    cases s <;> simp at this
   isReduced_substituteVars _ := by simp
-  mk_substituteVars o := by simpa [hT o] using h.mk_substituteVars o
+  mk_substituteVars o := by rw [h o, FreeGroup.substituteVars_nil, FreeGroup.one_eq_mk]
   ne_nil_of_mem _ _ _ hz := by simp at hz
 
 /-- **Kharlampovich–Myasnikov, §4.2.** At most `|S|` letters occur in a partition table, so a table
@@ -166,68 +144,144 @@ theorem IsSolutionTable.exists_fin_systemSize (h : IsSolutionTable r W T u) :
     ∃ (T' : Occurrence r → List ((Fin (systemSize r) ⊕ A) × Bool))
       (u' : Fin (systemSize r) → List (A × Bool)), IsSolutionTable r W T' u' := by
   rcases Nat.eq_zero_or_pos (systemSize r) with hn | hn
-  · exact ⟨fun _ => [], fun _ => [],
-      h.of_forall_eq_nil (h.isPartitionTable.eq_nil_of_systemSize_eq_zero hn) _⟩
+  · refine ⟨fun _ => [], fun _ => [], .nil fun o => ?_⟩
+    rw [← h.mk_substituteVars o, h.isPartitionTable.eq_nil_of_systemSize_eq_zero hn o,
+      FreeGroup.substituteVars_nil, FreeGroup.one_eq_mk]
   · obtain ⟨f, hf⟩ := h.isPartitionTable.exists_injOn_fin hn
-    have hf' (o : Occurrence r) : Set.InjOn f {z | ∃ b, (Sum.inl z, b) ∈ T o} :=
-      fun _ hz _ hz' hzz' => hf ⟨o, hz⟩ ⟨o, hz'⟩ hzz'
     refine ⟨_, Function.extend ({z | ∃ o b, (Sum.inl z, b) ∈ T o}.domRestrict f) (fun z => u z)
-      fun _ => [], h.map f hf' fun o z b hz => ?_⟩
+      fun _ => [], h.map f fun o z b hz => ?_⟩
     exact hf.injective.extend_apply _ _ ⟨z, o, b, hz⟩
 
-variable [DecidableEq A]
+/-- In a table of an assignment, the word of each occurrence spells the reduced word of the value
+of that occurrence. -/
+theorem IsSolutionTable.substituteVars_eq_toWord [DecidableEq A] (h : IsSolutionTable r W T u)
+    (o : Occurrence r) : substituteVars u (T o) =
+      (EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk [r[o.1][o.2]])).toWord :=
+  (h.isReduced_substituteVars o).eq_of_mk_eq FreeGroup.isReduced_toWord <| by
+    rw [FreeGroup.mk_toWord, h.mk_substituteVars o]
 
-/-- In a table of the assignment `W`, the word of an occurrence of the variable `x`, raised to the
-sign of the occurrence, spells the reduced word of `W x`. -/
-private theorem IsSolutionTable.substituteVars_cond (h : IsSolutionTable r W T u)
-    {e : ((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)} (he : e ∈ tableEntries r T) {x : X}
-    (hx : e.1.1 = Sum.inl x) :
-    substituteVars u (cond e.1.2 e.2 (FreeGroup.invRev e.2)) = (W x).toWord := by
-  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
-  obtain ⟨s, hs⟩ : ∃ s, r[o.1][o.2] = (Sum.inl x, s) := ⟨_, Prod.ext hx rfl⟩
+/-- A table of an assignment is a partition table in which the word of each occurrence spells the
+reduced word of the value of that occurrence, and the letters occurring have nonempty words. -/
+theorem isSolutionTable_iff_toWord [DecidableEq A] : IsSolutionTable r W T u ↔
+    IsPartitionTable r T ∧ (∀ o : Occurrence r, substituteVars u (T o) =
+      (EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk [r[o.1][o.2]])).toWord) ∧
+    ∀ (o : Occurrence r) {z : Z} {b : Bool}, (Sum.inl z, b) ∈ T o → u z ≠ [] :=
+  ⟨fun h => ⟨h.isPartitionTable, h.substituteVars_eq_toWord, h.ne_nil_of_mem⟩,
+    fun ⟨hT, hu, hne⟩ => ⟨hT, fun o => hu o ▸ FreeGroup.isReduced_toWord,
+      fun o => by rw [hu o, FreeGroup.mk_toWord], hne⟩⟩
+
+/-- In a table of the assignment `W`, the word of an occurrence `x ^ s` of a variable, raised to
+the sign `s`, spells the reduced word of `W x`. -/
+theorem IsSolutionTable.substituteVars_cond [DecidableEq A] (h : IsSolutionTable r W T u)
+    {o : Occurrence r} {x : X} {s : Bool} (hx : r[o.1][o.2] = (Sum.inl x, s)) :
+    substituteVars u (cond s (T o) (FreeGroup.invRev (T o))) = (W x).toWord := by
   have hmk := h.mk_substituteVars o
-  rw [hs, EqIneqSystem.eval_eq_lift, FreeGroup.lift_mk_singleton] at hmk
+  rw [hx, EqIneqSystem.eval_eq_lift, FreeGroup.lift_mk_singleton] at hmk
   refine FreeGroup.IsReduced.eq_of_mk_eq
     (FreeGroup.isReduced_substituteVars_cond u _ _ (h.isReduced_substituteVars o))
     FreeGroup.isReduced_toWord ?_
-  rw [FreeGroup.mk_toWord, hs]
+  rw [FreeGroup.mk_toWord]
   cases s
   · simpa [FreeGroup.substituteVars_invRev, ← FreeGroup.inv_mk, inv_eq_iff_eq_inv] using hmk
   · simpa using hmk
+
+/-- `IsSolutionTable.substituteVars_cond` for an entry of the table. -/
+private theorem IsSolutionTable.substituteVars_cond_of_mem [DecidableEq A]
+    (h : IsSolutionTable r W T u) {e : ((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool)}
+    (he : e ∈ tableEntries r T) {x : X} (hx : e.1.1 = Sum.inl x) :
+    substituteVars u (cond e.1.2 e.2 (FreeGroup.invRev e.2)) = (W x).toWord := by
+  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
+  exact h.substituteVars_cond (Prod.ext hx rfl)
+
+/-- A letter of `Z` carried by an item of the generalised equation of a table occurs in a word of
+the table. -/
+private theorem exists_mem_of_itemLetter_eq {c : Fin (ofEntries (tableEntries r T)).numItems}
+    {z : Z} {s : Bool} (hc : itemLetter (tableEntries r T) c = (Sum.inl z, s)) :
+    ∃ o, (Sum.inl z, s) ∈ T o := by
+  have : (Sum.inl z, s) ∈ (tableEntries r T).flatMap Prod.snd := by
+    rw [← hc, ← map_itemLetter_finRange]
+    exact List.mem_map_of_mem (List.mem_finRange c)
+  obtain ⟨e, he, hz⟩ := List.mem_flatMap.1 this
+  obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
+  exact ⟨o, hz⟩
+
+/-- **Kharlampovich–Myasnikov, §4.2, proof of Lemma 14.** The solution `U` of the generalised
+equation `Ω_T` of a table `T` of an assignment, given by the words of the letters of the table:
+an item carrying `z ^ ±1` gets `(u z) ^ ±1`, and an item carrying a letter of `A^{±1}` gets that
+letter. -/
+def IsSolutionTable.solution (h : IsSolutionTable r W T u) :
+    (ofEntries (tableEntries r T)).Solution :=
+  Solution.ofLetterWords (tableEntries r T) u
+    (fun _ _ _ hc => (exists_mem_of_itemLetter_eq hc).elim fun o ho => h.isReduced_of_mem o ho)
+    (fun _ _ _ hc => (exists_mem_of_itemLetter_eq hc).elim fun o ho => h.ne_nil_of_mem o ho)
+    (fun p _ => by
+      obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem p.1.isLt)
+      rw [Fin.getElem_fin, ← ho]
+      exact h.isReduced_substituteVars o)
+    (fun p hp => by
+      classical
+      obtain ⟨-, hl, heq, -⟩ := (isVarPair_iff _).1 hp
+      obtain ⟨x, hx⟩ := Sum.isLeft_iff.1 hl
+      simp only [Fin.getElem_fin] at hx heq ⊢
+      rw [h.substituteVars_cond_of_mem (List.getElem_mem p.1.isLt) hx,
+        h.substituteVars_cond_of_mem (List.getElem_mem p.2.isLt) (heq ▸ hx)])
+
+/-- The words of the items of the solution of a table of an assignment are given by
+`itemWord`. -/
+@[simp]
+theorem IsSolutionTable.word_solution (h : IsSolutionTable r W T u) :
+    h.solution.word = itemWord (tableEntries r T) u :=
+  Solution.word_ofLetterWords ..
+
+/-- **Kharlampovich–Myasnikov, §4.2, proof of Lemma 14.** The word maps send the solution of a
+table of the assignment `W` to `W`: `P_x(U)` is the reduced word of `W x` for every variable `x`
+occurring in the system. -/
+theorem IsSolutionTable.substituteVars_wordMap [DecidableEq A] (h : IsSolutionTable r W T u)
+    {o : Occurrence r} {x : X} (hx : r[o.1][o.2].1 = Sum.inl x) :
+    substituteVars h.solution.word (wordMap (tableEntries r T) x) = (W x).toWord := by
+  obtain ⟨k, hk⟩ := exists_getElem_tableEntries T o
+  obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq _ k ((congrArg (·.1.1) hk).trans hx)
+  rw [hw, word_solution, substituteVars_itemWord_entry _ u k₀.isLt]
+  exact h.substituteVars_cond_of_mem (List.getElem_mem k₀.isLt) hk₀
+
+/-- Under the solution of a table of an assignment, every word map is reduced as written. -/
+theorem IsSolutionTable.isReduced_substituteVars_wordMap (h : IsSolutionTable r W T u) (x : X) :
+    FreeGroup.IsReduced (substituteVars h.solution.word (wordMap (tableEntries r T) x)) := by
+  classical
+  by_cases hx : ∀ k : Fin (tableEntries r T).length, (tableEntries r T)[k].1.1 ≠ Sum.inl x
+  · rw [wordMap_eq_nil _ hx, FreeGroup.substituteVars_nil]
+    exact .nil
+  obtain ⟨k, hk⟩ := not_forall_not.1 hx
+  obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem k.isLt)
+  rw [h.substituteVars_wordMap (o := o) ((congrArg (·.1.1) ho).trans hk)]
+  exact FreeGroup.isReduced_toWord
+
+/-- Under the solution of a table of the assignment `W`, the word map of a variable `x` occurring
+in the system represents `W x`. -/
+theorem IsSolutionTable.mk_substituteVars_wordMap (h : IsSolutionTable r W T u)
+    {o : Occurrence r} {x : X} (hx : r[o.1][o.2].1 = Sum.inl x) :
+    FreeGroup.mk (substituteVars h.solution.word (wordMap (tableEntries r T) x)) = W x := by
+  classical
+  rw [h.substituteVars_wordMap hx, FreeGroup.mk_toWord]
+
+/-- An assignment with a table solves the system. -/
+theorem IsSolutionTable.eval_eq_one (h : IsSolutionTable r W T u) {w : List ((X ⊕ A) × Bool)}
+    (hw : w ∈ r) : EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk w) = 1 := by
+  refine (EqIneqSystem.eval_mk_congr FreeGroup.of fun x b hx => ?_).trans
+    (h.isPartitionTable.eval_substituteVars_eq_one h.solution hw)
+  obtain ⟨j, hj, hjx⟩ := List.getElem_of_mem hx
+  obtain ⟨o, ho⟩ := exists_occurrence_of_mem hw hj
+  exact (h.mk_substituteVars_wordMap (o := o) (by rw [ho, hjx])).symm
 
 /-- **Kharlampovich–Myasnikov, §4.2, proof of Lemma 14.** The words of the letters of a table of
 the assignment `W` give a solution `U` of the generalised equation of the table, and the word
 maps send `U` to `W`: `P_x(U)` is the reduced word of `W x` for every variable `x` occurring in
 the system. -/
-theorem IsSolutionTable.exists_solution (h : IsSolutionTable r W T u) :
+theorem IsSolutionTable.exists_solution [DecidableEq A] (h : IsSolutionTable r W T u) :
     ∃ U : (ofEntries (tableEntries r T)).Solution, ∀ (o : Occurrence r) (x : X),
       r[o.1][o.2].1 = Sum.inl x →
-        substituteVars U.word (wordMap (tableEntries r T) x) = (W x).toWord := by
-  have hmem : ∀ c z s, itemLetter (tableEntries r T) c = (Sum.inl z, s) →
-      ∃ o, (Sum.inl z, s) ∈ T o := by
-    intro c z s hc
-    have : (Sum.inl z, s) ∈ (tableEntries r T).flatMap Prod.snd := by
-      rw [← hc, ← map_itemLetter_finRange]
-      exact List.mem_map_of_mem (List.mem_finRange c)
-    obtain ⟨e, he, hz⟩ := List.mem_flatMap.1 this
-    obtain ⟨o, rfl⟩ := mem_tableEntries.1 he
-    exact ⟨o, hz⟩
-  refine ⟨Solution.ofLetterWords (tableEntries r T) u
-    (fun c z s hc => (hmem c z s hc).elim fun o ho => h.isReduced_of_mem o ho)
-    (fun c z s hc => (hmem c z s hc).elim fun o ho => h.ne_nil_of_mem o ho)
-    (fun p _ => ?_) (fun p hp => ?_), fun o x hx => ?_⟩
-  · obtain ⟨o, ho⟩ := mem_tableEntries.1 (List.getElem_mem p.1.isLt)
-    rw [Fin.getElem_fin, ← ho]
-    exact h.isReduced_substituteVars o
-  · obtain ⟨-, hl, heq, -⟩ := (isVarPair_iff _).1 hp
-    obtain ⟨x, hx⟩ := Sum.isLeft_iff.1 hl
-    simp only [Fin.getElem_fin] at hx heq ⊢
-    rw [h.substituteVars_cond (List.getElem_mem p.1.isLt) hx,
-      h.substituteVars_cond (List.getElem_mem p.2.isLt) (heq ▸ hx)]
-  · obtain ⟨k, hk⟩ := exists_getElem_tableEntries T o
-    obtain ⟨k₀, hk₀, hw⟩ := exists_wordMap_eq _ k ((congrArg (·.1.1) hk).trans hx)
-    rw [hw, Solution.word_ofLetterWords, substituteVars_itemWord_entry _ u k₀.isLt]
-    exact h.substituteVars_cond (List.getElem_mem k₀.isLt) hk₀
+        substituteVars U.word (wordMap (tableEntries r T) x) = (W x).toWord :=
+  ⟨h.solution, fun _ _ => h.substituteVars_wordMap⟩
 
 /-! ### Examples -/
 
@@ -236,18 +290,11 @@ section Examples
 /-- The solution `x ↦ 1` of the equation `x = 1` has the table with the empty word. -/
 example {X A : Type*} (x : X) (W : X → FreeGroup A) (hW : W x = 1) :
     IsSolutionTable [[(Sum.inl x, true)]] W (fun _ => ([] : List ((Empty ⊕ A) × Bool)))
-      Empty.elim := by
-  refine ⟨⟨fun _ => .nil, fun i => ?_, fun _ => by simp, fun o a ha => ?_, fun _ _ _ => Iff.rfl⟩,
-    fun _ => by simp, fun o => ?_, fun _ _ _ hz => by simp at hz⟩
-  · rw [List.flatMap_eq_nil_iff.2 fun _ _ => rfl, FreeGroup.one_eq_mk]
-  · obtain ⟨i, j⟩ := o
+      Empty.elim :=
+  .nil fun ⟨i, j⟩ => by
     fin_cases i
     fin_cases j
-    simp at ha
-  · obtain ⟨i, j⟩ := o
-    fin_cases i
-    fin_cases j
-    simp [EqIneqSystem.eval_eq_lift, hW, FreeGroup.one_eq_mk]
+    simp [EqIneqSystem.eval_eq_lift, hW]
 
 /-- The equation `x y b⁻¹ a⁻¹ = 1` over `F(a, b)`, with `x = 0`, `y = 1`, `a = 0` and `b = 1`. -/
 private abbrev xyEqAB : List (List ((Fin 2 ⊕ Fin 2) × Bool)) :=

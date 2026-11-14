@@ -663,29 +663,28 @@ theorem length_flatMap_tableEntries :
   simp [tableEntries, List.flatMap_assoc, List.flatMap_map, List.length_flatMap,
     Fin.sum_univ_def]
 
-/-- Renaming the letters of `Z` in a partition table, by a map which is injective on the letters
-occurring in each word of the table, gives a partition table. -/
+/-- Renaming the letters of `Z` in a partition table gives a partition table, provided the renamed
+words are reduced. -/
 theorem IsPartitionTable.map {Z' : Type*} (hT : IsPartitionTable r T) (f : Z → Z')
-    (hf : ∀ o, Set.InjOn f {z | ∃ b, (Sum.inl z, b) ∈ T o}) :
+    (hf : ∀ o, FreeGroup.IsReduced ((T o).map (Prod.map (Sum.map f id) id))) :
     IsPartitionTable r fun o => (T o).map (Prod.map (Sum.map f id) id) where
-  isReduced o := by
-    have h := hT.isReduced o
-    rw [FreeGroup.IsReduced] at h ⊢
-    rw [List.isChain_map]
-    refine h.imp_of_mem_imp ?_
-    rintro ⟨y, b⟩ ⟨y', b'⟩ hy hy' hR heq
-    refine hR ?_
-    rcases y with z | a <;> rcases y' with z' | a'
-    · exact congrArg Sum.inl (hf o ⟨b, hy⟩ ⟨b', hy'⟩ (by simpa using heq))
-    · simp at heq
-    · simp at heq
-    · simpa using heq
+  isReduced := hf
   mk_flatMap_eq_one i := by
     simpa [FreeGroup.map.mk, List.map_flatMap, Prod.map_def] using
       congrArg (FreeGroup.map (Sum.map f id)) (hT.mk_flatMap_eq_one i)
   length_le o := by simpa using hT.length_le o
   eq_of_eq_inr o a h := by simp [hT.eq_of_eq_inr o h]
   eq_nil_iff o o' h := by simpa using hT.eq_nil_iff o o' h
+
+/-- The table with empty words is a partition table of a system of words in which no constant
+occurs. -/
+theorem IsPartitionTable.nil (h : ∀ (o : Occurrence r) (a : A), r[o.1][o.2].1 ≠ Sum.inr a) :
+    IsPartitionTable r fun _ => ([] : List ((Z ⊕ A) × Bool)) where
+  isReduced _ := .nil
+  mk_flatMap_eq_one _ := by rw [List.flatMap_eq_nil_iff.2 fun _ _ => rfl, FreeGroup.one_eq_mk]
+  length_le _ := by simp
+  eq_of_eq_inr o a ha := (h o a ha).elim
+  eq_nil_iff _ _ _ := Iff.rfl
 
 /-- The words of a partition table of a system of size `0` are empty. -/
 theorem IsPartitionTable.eq_nil_of_systemSize_eq_zero (hT : IsPartitionTable r T)
