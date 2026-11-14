@@ -524,6 +524,37 @@ theorem Rad_eq_top_iff : Rad ι S = ⊤ ↔ ∀ v ∈ V ι S, eval ι v = 1 := b
 theorem Rad_eq_top_of_V_eq_empty (hS : V ι S = ∅) : Rad ι S = ⊤ := by
   rw [Rad_def, hS, I_empty]
 
+variable (ι) in
+/-- A word map between sets of points pulls equations vanishing on the target back to equations
+vanishing on the source. -/
+theorem I_le_comap_of_mapsTo_wordMap {Y : Type*} {s : Set (X → H)} {t : Set (Y → H)}
+    {w : Y → GX G X} (hw : Set.MapsTo (wordMap ι w) s t) :
+    I ι t ≤ (I ι s).comap (eval (inl : G →* GX G X) w) := by
+  intro u hu
+  rw [Subgroup.mem_comap, mem_I]
+  intro v hv
+  rw [← MonoidHom.comp_apply, eval_comp_eval]
+  exact (mem_I.mp hu) _ (hw hv)
+
+variable (ι) in
+/-- A word map between algebraic sets pulls equations vanishing on the target back to
+equations vanishing on the source. -/
+theorem Rad_le_comap_of_mapsTo_wordMap {Y : Type*} (S : Set (GX G X)) (T : Set (GX G Y))
+    (w : Y → GX G X) (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T)) :
+    Rad ι T ≤ (Rad ι S).comap (eval (inl : G →* GX G X) w) :=
+  I_le_comap_of_mapsTo_wordMap ι hw
+
+/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
+radical of the original system. -/
+theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
+    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
+  have h := Rad_le_comap_of_mapsTo_wordMap ι S (σ ⁻¹' S)
+    (fun y => σ (inr (FreeGroup.of y))) (fun v hv => wordMap_mem_V ι σ S v hv)
+  have heval : eval (inl : G →* GX G X) (fun y => σ (inr (FreeGroup.of y))) =
+      σ.toMonoidHom := eval_eq_of_comp_inl σ.comp_coeff
+  rwa [heval] at h
+
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
 theorem I_singleton_comp (hι : Function.Injective ι) (g : X → G) :
@@ -742,7 +773,7 @@ theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
 variable (ι) in
 /-- The coordinate group `G_{R(S)}` of a system with a solution in a `G`-group `H`, as a
 `G`-group. -/
-@[expose] def toGGroup (hι : Function.Injective ι) (hS : (V ι S).Nonempty) : GGroup G :=
+abbrev toGGroup (hι : Function.Injective ι) (hS : (V ι S).Nonempty) : GGroup G :=
   ⟨CoordGroup ι S, coeff ι S, coeff_injective hι hS⟩
 
 @[simp]
@@ -875,50 +906,16 @@ theorem eq_evalGHom (hv : v ∈ V ι S) (hS : V ι S ⊆ {v}) (φ : GHom (coeff 
 variable {Y : Type*}
 variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y))
 
-/-- A tuple of words maps the solution set of `S` into the solution set of `T`. -/
-def MapsToWordMap (w : Y → GX G X) : Prop :=
-  Set.MapsTo (wordMap ι w) (V ι S) (V ι T)
-
-/-- A tuple of words maps solutions of `S` to solutions of `T` precisely when its word map
-does so at every solution. -/
-theorem mapsToWordMap_iff (w : Y → GX G X) :
-    MapsToWordMap ι S T w ↔ ∀ v ∈ V ι S, wordMap ι w v ∈ V ι T :=
-  Iff.rfl
-
-/-- A word map between algebraic sets pulls equations vanishing on the target back to
-equations vanishing on the source. -/
-theorem Rad_le_comap_of_mapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
-    Rad ι T ≤ (Rad ι S).comap (eval (inl : G →* GX G X) w) := by
-  intro t ht
-  rw [Subgroup.mem_comap, mem_Rad]
-  intro v hv
-  rw [← MonoidHom.comp_apply, eval_comp_eval]
-  exact (mem_Rad.mp ht) _ ((mapsToWordMap_iff ι S T w).mp hw v hv)
-
-/-- The tuple of variables maps an algebraic set to itself. -/
-theorem mapsToWordMap_id : MapsToWordMap ι S S fun x => inr (FreeGroup.of x) :=
-  (mapsToWordMap_iff ι S S _).2 fun v hv => by rwa [wordMap_id]
-
-variable {ι S T} in
-/-- Substituting one tuple of words into another composes the corresponding maps of algebraic
-sets. -/
-theorem MapsToWordMap.comp {Z : Type*} {U : Set (GX G Z)} {w : Y → GX G X} {u : Z → GX G Y}
-    (hu : MapsToWordMap ι T U u) (hw : MapsToWordMap ι S T w) :
-    MapsToWordMap ι S U fun z => eval (inl : G →* GX G X) w (u z) := by
-  refine (mapsToWordMap_iff ι S U _).2 fun v hv => ?_
-  rw [← wordMap_wordMap]
-  exact (mapsToWordMap_iff ι T U u).1 hu _ ((mapsToWordMap_iff ι S T w).1 hw v hv)
-
 /-- A word map between algebraic sets induces a coefficient-preserving homomorphism of
 coordinate groups in the opposite direction. -/
-def homOfMapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
+def homOfMapsToWordMap (w : Y → GX G X) (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T)) :
     GHom (coeff ι T) (coeff ι S) where
   toMonoidHom := QuotientGroup.map _ _ (eval (inl : G →* GX G X) w)
-    (Rad_le_comap_of_mapsToWordMap ι S T w hw)
+    (Rad_le_comap_of_mapsTo_wordMap ι S T w hw)
   map_coeff' g := by simp [coeff_apply]
 
 @[simp]
-theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : MapsToWordMap ι S T w)
+theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T))
     (t : GX G Y) :
     homOfMapsToWordMap ι S T w hw (t : CoordGroup ι T) =
       (eval (inl : G →* GX G X) w t : CoordGroup ι S) := by
@@ -927,22 +924,24 @@ theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : MapsToWordMap ι S T w)
 /-- The tuple of variables induces the identity of the coordinate group. -/
 @[simp]
 theorem homOfMapsToWordMap_id :
-    homOfMapsToWordMap ι S S (fun x => inr (FreeGroup.of x)) (mapsToWordMap_id ι S) =
+    homOfMapsToWordMap ι S S (fun x => inr (FreeGroup.of x)) (mapsTo_wordMap_id ι (V ι S)) =
       GHom.id (coeff ι S) :=
   gHom_ext fun _ => by simp
 
 /-- The homomorphism induced by a composite of word maps is the composite of the induced
 homomorphisms, in the opposite order. -/
 theorem homOfMapsToWordMap_comp {Z : Type*} (U : Set (GX G Z)) {w : Y → GX G X}
-    {u : Z → GX G Y} (hw : MapsToWordMap ι S T w) (hu : MapsToWordMap ι T U u) :
-    homOfMapsToWordMap ι S U (fun z => eval (inl : G →* GX G X) w (u z)) (hu.comp hw) =
+    {u : Z → GX G Y} (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T))
+    (hu : Set.MapsTo (wordMap ι u) (V ι T) (V ι U)) :
+    homOfMapsToWordMap ι S U (fun z => eval (inl : G →* GX G X) w (u z))
+        (mapsTo_wordMap_comp hu hw) =
       (homOfMapsToWordMap ι S T w hw).comp (homOfMapsToWordMap ι T U u hu) :=
   gHom_ext fun _ => by simp
 
 /-- Evaluating the induced coordinate-group homomorphism at a point is the original word
 map of that point. -/
 theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
-    (hw : MapsToWordMap ι S T w) (v : V ι S) :
+    (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T)) (v : V ι S) :
     (homEquiv ι T ((evalGHom v.1 v.2).comp
       (homOfMapsToWordMap ι S T w hw)) : Y → H) = wordMap ι w v.1 := by
   funext y
@@ -977,17 +976,6 @@ theorem homEquiv_comp_homOfWordMap {Y : Type*} (ι : G →* H)
   funext y; simp
 
 end CoordGroup
-
-/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
-radical of the original system. -/
-theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
-    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
-    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
-  have h := CoordGroup.Rad_le_comap_of_mapsToWordMap ι S (σ ⁻¹' S)
-    (fun y => σ (inr (FreeGroup.of y))) (fun v hv => wordMap_mem_V ι σ S v hv)
-  have heval : eval (inl : G →* GX G X) (fun y => σ (inr (FreeGroup.of y))) =
-      σ.toMonoidHom := eval_eq_of_comp_inl σ.comp_coeff
-  rwa [heval] at h
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
@@ -1118,8 +1106,8 @@ namespace CoordGroup
 /-- If every solution of `S` in `H` is a solution of `T`, the identity on the variables induces a
 `G`-homomorphism `G_{R(T)} → G_{R(S)}` of coordinate groups. -/
 def homOfVSubset (h : V ι S ⊆ V ι T) : GHom (coeff ι T) (coeff ι S) :=
-  homOfMapsToWordMap ι S T (fun x => inr (FreeGroup.of x)) <|
-    (mapsToWordMap_iff ι S T _).2 fun v hv => by simpa only [wordMap_id] using h hv
+  homOfMapsToWordMap ι S T (fun x => inr (FreeGroup.of x))
+    ((mapsTo_wordMap_id ι (V ι S)).mono_right h)
 
 @[simp]
 theorem homOfVSubset_mk (h : V ι S ⊆ V ι T) (w : GX G X) :

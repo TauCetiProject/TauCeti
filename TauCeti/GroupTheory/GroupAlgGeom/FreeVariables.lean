@@ -305,7 +305,7 @@ to the coordinate group of the system with free variables. -/
 def inclFreeVarsHom (Y : Type*) (S : Set (GX G X)) :
     GHom (coeff ι S) (coeff ι (addFreeVars Y S)) :=
   homOfMapsToWordMap ι (addFreeVars Y S) S (fun x => inr (FreeGroup.of (Sum.inl x)))
-    <| (mapsToWordMap_iff ..).2 fun v hv => by
+    <| fun v hv => by
       have h : wordMap ι (fun x : X => (inr (FreeGroup.of (Sum.inl x)) : GX G (X ⊕ Y))) v =
           v ∘ Sum.inl := funext fun _ => by simp
       exact h ▸ mem_V_addFreeVars.1 hv
