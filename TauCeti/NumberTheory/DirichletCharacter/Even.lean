@@ -25,6 +25,8 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
 * `DirichletCharacter.exists_odd`: above level two there is an odd character, when the values
   have enough roots of unity.
 * `DirichletCharacter.even_of_le_two`: at the levels `1` and `2` every character is even.
+* `DirichletCharacter.subsingleton_of_le_two`: at the levels `1` and `2` there is only one
+  character.
 * `DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`: if one of two levels
   exceeds two, exactly half of the pairs of characters at these levels have a given product
   parity.
@@ -78,24 +80,38 @@ theorem even_of_le_two [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter R n) :
   have h : (-1 : ZMod n) = 1 := ZMod.neg_one_eq_one_iff.mpr (by have := NeZero.ne n; omega)
   rw [DirichletCharacter.Even, h, map_one]
 
+/-- At the levels `1` and `2` there is only one Dirichlet character, since `(ℤ/nℤ)ˣ` is trivial
+there. -/
+theorem subsingleton_of_le_two {R : Type*} [CommMonoidWithZero R] [NeZero n] (hn : n ≤ 2) :
+    Subsingleton (DirichletCharacter R n) := by
+  have : Subsingleton (ZMod n)ˣ := by
+    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
+    all_goals infer_instance
+  exact ⟨fun χ ψ ↦ MulChar.ext fun u ↦ by rw [Subsingleton.elim u 1]; simp⟩
+
 /-- If one of two levels exceeds `2`, exactly half of the pairs of Dirichlet characters at these
 levels have a prescribed product parity `ε = ±1`: multiplying by a pair of parity `-1` exchanges
 the two parities. -/
 theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [NeZero b]
-    [IsDomain R] [NeZero (2 : R)] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod a)ˣ)]
+    [IsDomain R] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod a)ˣ)]
     [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod b)ˣ)] (hab : 2 < a ∨ 2 < b) {ε : R}
     (hε : ε = 1 ∨ ε = -1) :
     2 * Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //
       q.1 (-1) * q.2 (-1) = ε} = a.totient * b.totient := by
   classical
-  obtain ⟨x, hx⟩ : ∃ x : DirichletCharacter R a × DirichletCharacter R b,
-      x.1 (-1) * x.2 (-1) = -1 := by
+  have key {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) :
+      ∃ χ : DirichletCharacter R n, χ.Odd ∧ (1 : R) ≠ -1 := by
+    have : Fact (2 < n) := ⟨hn⟩
+    obtain ⟨χ, hχ⟩ := exists_apply_ne_one_of_hasEnoughRootsOfUnity R (ZMod.neg_one_ne_one (n := n))
+    have h := χ.even_or_odd.resolve_left hχ
+    exact ⟨χ, h, fun h1 ↦ hχ (by rw [h]; exact h1.symm)⟩
+  obtain ⟨x, hx, hne⟩ : ∃ x : DirichletCharacter R a × DirichletCharacter R b,
+      x.1 (-1) * x.2 (-1) = -1 ∧ (1 : R) ≠ -1 := by
     rcases hab with h | h
-    · obtain ⟨χ, hχ⟩ := exists_odd (R := R) h
-      exact ⟨(χ, 1), by rw [hχ, MulChar.one_apply isUnit_one.neg, mul_one]⟩
-    · obtain ⟨χ, hχ⟩ := exists_odd (R := R) h
-      exact ⟨(1, χ), by rw [hχ, MulChar.one_apply isUnit_one.neg, one_mul]⟩
-  have hne : (1 : R) ≠ -1 := fun h ↦ (two_ne_zero : (2 : R) ≠ 0) (by linear_combination h)
+    · obtain ⟨χ, hχ, hne⟩ := key h
+      exact ⟨(χ, 1), by rw [hχ, MulChar.one_apply isUnit_one.neg, mul_one], hne⟩
+    · obtain ⟨χ, hχ, hne⟩ := key h
+      exact ⟨(1, χ), by rw [hχ, MulChar.one_apply isUnit_one.neg, one_mul], hne⟩
   have hpar (q : DirichletCharacter R a × DirichletCharacter R b) :
       ¬q.1 (-1) * q.2 (-1) = 1 ↔ q.1 (-1) * q.2 (-1) = -1 := by
     rcases q.1.even_or_odd with h₁ | h₁ <;> rcases q.2.even_or_odd with h₂ | h₂ <;>
@@ -120,23 +136,19 @@ theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [
 /-- If neither of two levels exceeds `2`, there is a single pair of Dirichlet characters at these
 levels, and it is even: the pairs of product parity `ε` number one when `ε = 1` and none
 otherwise. -/
-theorem card_apply_neg_one_mul_apply_neg_one_eq_of_le_two {a b : ℕ} [NeZero a] [NeZero b]
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod a)ˣ)]
-    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod b)ˣ)] [DecidableEq R] (ha : a ≤ 2)
-    (hb : b ≤ 2) (ε : R) :
+theorem card_apply_neg_one_mul_apply_neg_one_eq_of_le_two {R : Type*} [CommMonoidWithZero R]
+    {a b : ℕ} [NeZero a] [NeZero b] [DecidableEq R] (ha : a ≤ 2) (hb : b ≤ 2) (ε : R) :
     Nat.card {q : DirichletCharacter R a × DirichletCharacter R b //
       q.1 (-1) * q.2 (-1) = ε} = if ε = 1 then 1 else 0 := by
-  have ha' : ∀ χ : DirichletCharacter R a, χ (-1) = 1 := even_of_le_two ha
-  have hb' : ∀ χ : DirichletCharacter R b, χ (-1) = 1 := even_of_le_two hb
-  have htot {n : ℕ} [NeZero n] (hn : n ≤ 2) : n.totient = 1 := by
-    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
-    all_goals rfl
-  simp only [ha', hb', one_mul]
+  have hneg {n : ℕ} [NeZero n] (hn : n ≤ 2) (χ : DirichletCharacter R n) : χ (-1) = 1 := by
+    rw [ZMod.neg_one_eq_one_iff.mpr (by have := NeZero.ne n; omega), map_one]
+  have := subsingleton_of_le_two (R := R) ha
+  have := subsingleton_of_le_two (R := R) hb
+  simp only [hneg ha, hneg hb, one_mul]
   split_ifs with hε
   · subst hε
     rw [Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ rfl), Nat.card_prod,
-      card_eq_totient_of_hasEnoughRootsOfUnity R a, card_eq_totient_of_hasEnoughRootsOfUnity R b,
-      htot ha, htot hb]
+      Nat.card_unique, Nat.card_unique]
   · have : IsEmpty {_q : DirichletCharacter R a × DirichletCharacter R b // (1 : R) = ε} :=
       ⟨fun ⟨_, h⟩ ↦ hε h.symm⟩
     exact Nat.card_of_isEmpty
