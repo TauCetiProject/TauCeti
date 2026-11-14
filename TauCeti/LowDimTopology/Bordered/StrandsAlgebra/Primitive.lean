@@ -49,10 +49,19 @@ commute, so they are equal. Hence the idempotents of the matched subalgebra lyin
 `I(s)` are the `c I(s)`
 (`TauCeti.StrandsAlgebra.exists_isIdempotentElem_and_eq_smul_matchedIdem`); for coefficients
 without nontrivial idempotents they are `0` and `I(s)`
-(`TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`). This is the corner
-condition that makes each nonzero `I(s)` primitive once the matched subalgebra is given its unit,
-although for a matched pair with two points `I(s)` splits in `A(n)` as the sum of the two
-orthogonal `I(S)`.
+(`TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`).
+
+So the `I(s)` are primitive idempotents of the matched subalgebra, although for a matched pair
+with two points `I(s)` splits in `A(n)` as the sum of the two orthogonal `I(S)`. Over any
+commutative semiring the coefficient at an identity diagram `I(S)` is multiplicative
+(`TauCeti.StrandsAlgebra.repr_mul_apply_idOn`), so a decomposition `I(s) = f₁ + f₂` into
+orthogonal idempotents of the matched subalgebra gives a decomposition of `1` by the coefficients
+at `I(S)`; an idempotent in the corner of `I(s)` whose coefficient at `I(S)` vanishes has zero
+horizontal part and is zero. Hence `I(s)` is a primitive idempotent of the matched subalgebra
+exactly when `s` is a set of matched pairs and `1` is primitive in the coefficient semiring
+(`TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`). Together with
+`TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedIdem`, the `I(s)` form a complete
+family of orthogonal primitive idempotents of `A(Z)` over `𝔽₂`.
 
 ## Main definitions
 
@@ -72,6 +81,14 @@ orthogonal `I(S)`.
 * `TauCeti.StrandsAlgebra.exists_isIdempotentElem_and_eq_smul_matchedIdem` and
   `TauCeti.StrandsAlgebra.eq_zero_or_eq_matchedIdem_of_isIdempotentElem`: the idempotents of the
   corner of `I(s)` in the matched subalgebra.
+* `TauCeti.StrandsAlgebra.repr_mul_apply_idOn`: the coefficient at an identity diagram is
+  multiplicative.
+* `TauCeti.StrandsAlgebra.eq_zero_of_isIdempotentElem_of_repr_apply_idOn_eq_zero`: an idempotent
+  in the corner of `I(s)` in the matched subalgebra with a vanishing coefficient at an identity
+  diagram over `s` is zero.
+* `TauCeti.StrandsAlgebra.isPrimitiveIdempotent_matchedIdem_iff`: `I(s)` is a primitive
+  idempotent of the matched subalgebra exactly when `s` is a set of matched pairs and `1` is
+  primitive in the coefficient semiring.
 
 ## References
 
@@ -244,6 +261,19 @@ theorem horizontalPart_matchedIdem {β : Type*} [DecidableEq β] (M : α → β)
     horizontalPart R α (matchedIdem R M s) = matchedIdem R M s := by
   simp only [matchedIdem_def, map_sum, horizontalPart_idem]
 
+/-- **The coefficient at an identity diagram is multiplicative**: the coefficient of `x y` at
+`I(S)` is the product of those of `x` and `y`, because the horizontal part is multiplicative. -/
+theorem repr_mul_apply_idOn (x y : StrandsAlgebra R α) (S : Finset α) :
+    (basis R α).repr (x * y) (idOn S) =
+      (basis R α).repr x (idOn S) * (basis R α).repr y (idOn S) := by
+  have h := idem_mul_horizontalPart S (x * y)
+  rw [map_mul, ← mul_assoc, idem_mul_horizontalPart, smul_mul_assoc, idem_mul_horizontalPart,
+    smul_smul] at h
+  have h' := congrArg (fun z ↦ (basis R α).repr z (idOn S)) h
+  simp only [map_smul, Finsupp.smul_apply, idem_def, ← basis_apply, Module.Basis.repr_self,
+    Finsupp.single_eq_same, smul_eq_mul, mul_one] at h'
+  exact h'.symm
+
 /-! ### The nilpotence of the kernel of the horizontal part -/
 
 variable (R α) in
@@ -367,46 +397,6 @@ theorem isPrimitiveIdempotent_idem (hR : IsPrimitiveIdempotent (1 : R)) (s : Fin
 
 variable {β : Type*} [DecidableEq β] {M : α → β}
 
-/-- An element of the matched subalgebra has the same coefficient on the identity diagrams of any
-two sets with the same image, each mapped injectively by `M`: such sets are related by moving
-their points to matched points one at a time. The induction is on the number of points of `S`
-outside `T`. -/
-private theorem repr_idOn_eq_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
-    (hx : x ∈ matchedSubalgebra R M) :
-    ∀ (n : ℕ) (S T : Finset α), #(S \ T) = n → S.image M = T.image M →
-      #(S.image M) = #S → #(T.image M) = #T →
-      (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
-  intro n
-  induction n with
-  | zero =>
-    intro S T hn hST hS hT
-    rw [card_eq_zero, sdiff_eq_empty_iff_subset] at hn
-    rw [eq_of_subset_of_card_le hn (by rw [← hS, ← hT, hST])]
-  | succ n ih =>
-    intro S T hn hST hS hT
-    obtain ⟨a, ha⟩ : (S \ T).Nonempty := card_pos.1 (by omega)
-    rw [mem_sdiff] at ha
-    obtain ⟨b, hbT, hba⟩ : ∃ b ∈ T, M b = M a := by
-      have hmem := mem_image_of_mem M ha.1
-      rw [hST, mem_image] at hmem
-      exact hmem
-    have hinj : Set.InjOn M (S : Set α) := card_image_iff.1 hS
-    have hbS : b ∉ S := fun hbS ↦ ha.2 (hinj ha.1 hbS hba.symm ▸ hbT)
-    set S' := insert b (S.erase a)
-    have hS'image : S'.image M = S.image M := by
-      rw [image_insert, hba, ← image_insert, insert_erase ha.1]
-    have hS'card : #S' = #S := by
-      rw [card_insert_of_notMem fun h ↦ hbS (mem_of_mem_erase h), card_erase_of_mem ha.1]
-      have := card_pos.2 ⟨a, ha.1⟩
-      omega
-    have hS'T : S' \ T = (S \ T).erase a := by
-      rw [insert_sdiff_of_mem _ hbT, erase_sdiff_comm]
-    have hswap := (mem_matchedSubalgebra.1 hx).2 (idOn S) a b hba.symm
-    rw [swapHorizontal_idOn ha.1 hbS] at hswap
-    rw [← hswap]
-    refine ih S' T ?_ (hS'image.trans hST) (by rw [hS'image, hS'card, hS]) hT
-    rw [hS'T, card_erase_of_mem (mem_sdiff.2 ha), hn, Nat.add_sub_cancel]
-
 /-- **The idempotents of the matched subalgebra in the corner of `I(s)`** are the multiples
 `c I(s)` by idempotents `c` of the coefficient ring. -/
 theorem exists_isIdempotentElem_and_eq_smul_matchedIdem {e : StrandsAlgebra R α} {s : Finset β}
@@ -416,17 +406,17 @@ theorem exists_isIdempotentElem_and_eq_smul_matchedIdem {e : StrandsAlgebra R α
   by_cases hsec : ∃ S : Finset α, S.image M = s ∧ #S = #s
   · obtain ⟨S₀, hS₀, hcard₀⟩ := hsec
     set c := (basis R α).repr e (idOn S₀)
+    have hmem {S : Finset α} (h : S.image M = s ∧ #S = #s) : S ∈ matchedChoices M s :=
+      mem_matchedChoices.2 ⟨h.1, card_image_iff.1 (by rw [h.1, h.2])⟩
     -- The horizontal part of `e` is that of `I(s) e`, and all its coefficients on the sets over
     -- `s` agree with `c`.
     have hhe : horizontalPart R α e = c • matchedIdem R M s := by
       conv_lhs => rw [← hl, map_mul, horizontalPart_matchedIdem, matchedIdem_def, sum_mul]
       rw [matchedIdem_def, smul_sum]
       refine sum_congr rfl fun S hS ↦ ?_
-      obtain ⟨hSim, hScard⟩ := (mem_filter.1 hS).2
       rw [idem_mul_horizontalPart]
       congr 1
-      exact repr_idOn_eq_of_mem_matchedSubalgebra hm _ S S₀ rfl (hSim.trans hS₀.symm)
-        (by rw [hSim, hScard]) (by rw [hS₀, hcard₀])
+      exact repr_apply_idOn_eq hm (hmem (mem_filter.1 hS).2) (hmem ⟨hS₀, hcard₀⟩)
     refine ⟨c, eq_smul_of_horizontalPart_eq_smul (φ := idOn S₀) he
       (isIdempotentElem_matchedIdem M s) (horizontalPart_matchedIdem M s) ?_ hl hr hhe⟩
     rw [repr_matchedIdem_apply, source_idOn, ite_eq_left ⟨rfl, hS₀, hcard₀⟩]
@@ -448,6 +438,96 @@ theorem eq_zero_or_eq_matchedIdem_of_isIdempotentElem (hR : IsPrimitiveIdempoten
   exact smul_eq_zero_or_eq_of_isIdempotentElem hR hc _
 
 end CommRing
+
+/-! ### The primitive idempotents of the matched subalgebra -/
+
+section MatchedSubalgebra
+
+variable {R α β : Type*} [CommSemiring R] [LinearOrder α] [Fintype α] [DecidableEq β]
+  {M : α → β} {s : Finset β}
+
+/-- **The idempotents of the corner of `I(s)` vanishing at an identity diagram.** An idempotent
+`x` of the matched subalgebra with `I(s) x = x` whose coefficient vanishes at the identity diagram
+of some set `S` of points over `s` is zero: its coefficients vanish at all the identity diagrams,
+so it has zero horizontal part and is nilpotent. -/
+theorem eq_zero_of_isIdempotentElem_of_repr_apply_idOn_eq_zero {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) (hxx : IsIdempotentElem x) (hex : matchedIdem R M s * x = x)
+    {S : Finset α} (hS : S ∈ matchedChoices M s) (h0 : (basis R α).repr x (idOn S) = 0) :
+    x = 0 := by
+  refine hxx.eq_zero_of_isNilpotent (isNilpotent_of_horizontalPart_eq_zero
+    ((basis R α).repr.injective (Finsupp.ext fun φ ↦ ?_)))
+  rw [repr_horizontalPart_apply, map_zero, Finsupp.coe_zero, Pi.zero_apply]
+  refine ite_eq_right_iff.2 fun hφ ↦ ?_
+  rw [hφ]
+  by_cases hT : φ.source ∈ matchedChoices M s
+  · rw [← repr_apply_idOn_eq hx hS hT, h0]
+  · rw [← hex, repr_matchedIdem_mul_apply, source_idOn]
+    simp [hT]
+
+/-- **The idempotents `I(s)` are primitive.** The idempotent `I(s)` of the matched subalgebra is
+primitive exactly when `s` is a set of matched pairs and `1` is primitive in the ground semiring,
+that is, the ground semiring is nontrivial and `1` is not the sum of two nonzero orthogonal
+idempotents, as for `𝔽₂`. -/
+theorem isPrimitiveIdempotent_matchedIdem_iff :
+    IsPrimitiveIdempotent
+        (⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩ : matchedSubalgebra R M) ↔
+      IsPrimitiveIdempotent (1 : R) ∧ s ⊆ univ.image M := by
+  set e : matchedSubalgebra R M := ⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩
+  have he : IsIdempotentElem e := Subtype.ext (isIdempotentElem_matchedIdem M s)
+  constructor
+  · intro hprim
+    have hs : s ⊆ univ.image M := by
+      by_contra hs
+      exact hprim.ne_zero (Subtype.ext ((matchedIdem_eq_horizontalCompletion M s).trans
+        (horizontalCompletion_eq_zero_of_not_subset _ hs)))
+    obtain ⟨S, hS⟩ := exists_mem_matchedChoices hs
+    have : Nontrivial R := by
+      refine (subsingleton_or_nontrivial R).resolve_left fun _ ↦ hprim.ne_zero ?_
+      exact Subtype.ext ((basis R α).repr.injective (Subsingleton.elim _ _))
+    -- A decomposition `1 = a + b` gives the decomposition `I(s) = a I(s) + b I(s)`, and the
+    -- coefficient of `r I(s)` at `I(S)` is `r`.
+    have hcoeff (r : R) : (basis R α).repr ((r • e : matchedSubalgebra R M) : StrandsAlgebra R α)
+        (idOn S) = r := by
+      rw [NonUnitalSubalgebra.coe_smul, map_smul, Finsupp.smul_apply,
+        repr_matchedIdem_apply_idOn hS, smul_eq_mul, mul_one]
+    have hidem {r : R} (hr : IsIdempotentElem r) : IsIdempotentElem (r • e) := by
+      rw [IsIdempotentElem, smul_mul_smul_comm, hr.eq, he.eq]
+    have horth {r r' : R} (h : r * r' = 0) : (r • e) * (r' • e) = 0 := by
+      rw [smul_mul_smul_comm, h, zero_smul]
+    refine ⟨⟨.one, one_ne_zero, fun {a b} ha hb hab hba hsum ↦ ?_⟩, hs⟩
+    refine (hprim.eq_zero_or_eq_zero_of_add (hidem ha) (hidem hb) (horth hab) (horth hba)
+      (by rw [← add_smul, hsum, one_smul])).imp (fun h ↦ ?_) fun h ↦ ?_
+    · rw [← hcoeff a, h]
+      simp
+    · rw [← hcoeff b, h]
+      simp
+  · rintro ⟨h1, hs⟩
+    have := h1.nontrivial
+    obtain ⟨S, hS⟩ := exists_mem_matchedChoices hs
+    refine ⟨he, fun he0 ↦ ?_, fun {f₁ f₂} h₁ h₂ h₁₂ h₂₁ hsum ↦ ?_⟩
+    · -- The ambient element of `e = 0` is `I(s) = 0`, but `I(s)` has coefficient `1` at `I(S)`.
+      have h0 : matchedIdem R M s = 0 := by simpa [e] using congrArg Subtype.val he0
+      simpa [h0] using repr_matchedIdem_apply_idOn (R := R) hS
+    -- The coefficients at `I(S)` decompose `1` into orthogonal idempotents of `R`, so one of them
+    -- vanishes, and then so does the corresponding summand.
+    have hmul (f g : matchedSubalgebra R M) : (basis R α).repr (f * g : matchedSubalgebra R M)
+        (idOn S) = (basis R α).repr f (idOn S) * (basis R α).repr g (idOn S) :=
+      repr_mul_apply_idOn _ _ _
+    have hcorner₁ : e * f₁ = f₁ := by rw [← hsum, add_mul, h₁.eq, h₂₁, add_zero]
+    have hcorner₂ : e * f₂ = f₂ := by rw [← hsum, add_mul, h₁₂, h₂.eq, zero_add]
+    have hone : (basis R α).repr f₁ (idOn S) + (basis R α).repr f₂ (idOn S) = 1 := by
+      rw [← Finsupp.add_apply, ← map_add]
+      exact (congrArg (fun y ↦ (basis R α).repr y (idOn S)) (congrArg Subtype.val hsum)).trans
+        (repr_matchedIdem_apply_idOn hS)
+    refine (h1.eq_zero_or_eq_zero_of_add (by rw [IsIdempotentElem, ← hmul, h₁.eq])
+      (by rw [IsIdempotentElem, ← hmul, h₂.eq]) (by rw [← hmul, h₁₂]; simp)
+      (by rw [← hmul, h₂₁]; simp) hone).imp (fun h ↦ ?_) fun h ↦ ?_
+    · exact Subtype.ext (eq_zero_of_isIdempotentElem_of_repr_apply_idOn_eq_zero f₁.2
+        (congrArg Subtype.val h₁.eq) (congrArg Subtype.val hcorner₁) hS h)
+    · exact Subtype.ext (eq_zero_of_isIdempotentElem_of_repr_apply_idOn_eq_zero f₂.2
+        (congrArg Subtype.val h₂.eq) (congrArg Subtype.val hcorner₂) hS h)
+
+end MatchedSubalgebra
 
 end StrandsAlgebra
 
