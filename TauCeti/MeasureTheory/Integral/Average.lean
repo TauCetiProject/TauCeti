@@ -446,11 +446,14 @@ section SquareIntegrable
 variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
   {s : Set X}
 
-/-- **Jensen's inequality for the square of a mean.** On a set `s` of finite nonzero measure, the
-square of the mean of `‖g‖` is at most the mean of `‖g‖²`. -/
-theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
-    (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
+/-- **Jensen's inequality for the square of a mean.** The square of the mean of `‖g‖` over `s` is
+at most the mean of `‖g‖²`. If `μ s` is `0` or `∞`, both averages are `0`. -/
+theorem sq_setAverage_norm_le_setAverage_norm_sq (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
     (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ := by
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · simp [Measure.restrict_eq_zero.2 hs0]
+  rcases eq_or_ne (μ s) ⊤ with hs | hs
+  · simp [setAverage_eq, measureReal_def, hs]
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have hmeas : AEStronglyMeasurable (fun x ↦ ‖g x‖) (μ.restrict s) :=
     (Real.continuous_sqrt.comp_aestronglyMeasurable hg2.aestronglyMeasurable).congr
@@ -688,7 +691,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
   have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
     simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
   have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ :=
-    sq_setAverage_norm_le_setAverage_norm_sq h0 hs hfc
+    sq_setAverage_norm_le_setAverage_norm_sq hfc
   have haJ : μ.real s * a ^ 2 ≤ J := by
     calc μ.real s * a ^ 2 ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ := by
           gcongr
@@ -991,12 +994,15 @@ end LargeValue
 
 section Rpow
 
-/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s > 0`, then so is `f^s`, and its
+/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s ≥ 0`, then so is `f^s`, and its
 average is at most that of `(f + δ)^s`. -/
 theorem integrable_and_average_rpow_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 < s) (hδ : 0 ≤ δ)
+    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 ≤ s) (hδ : 0 ≤ δ)
     (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y) (hint' : Integrable (fun y => (f y + δ) ^ s) μ) :
     Integrable (fun y => f y ^ s) μ ∧ ⨍ y, f y ^ s ∂μ ≤ ⨍ y, (f y + δ) ^ s ∂μ := by
+  -- For `s = 0` both powers are identically `1`.
+  rcases hs.eq_or_lt with rfl | hs
+  · simpa using hint'
   -- Measurability of `f` is recovered from that of `(f + δ) ^ s` by inverting the power.
   have hf : AEStronglyMeasurable f μ :=
     (((hint'.aemeasurable.pow_const s⁻¹).sub_const δ).aestronglyMeasurable).congr <| by
@@ -1067,7 +1073,7 @@ theorem average_rpow_le_average_add_const_rpow {α : Type*} [MeasurableSpace α]
     {m : Measure α} [IsFiniteMeasure m] {f : α → ℝ} {p δ : ℝ} (hp : 0 < p)
     (hδ : 0 ≤ δ) (hf : MemLp f (ENNReal.ofReal p) m) (hf0 : ∀ᵐ y ∂m, 0 ≤ f y) :
     ⨍ y, f y ^ p ∂m ≤ ⨍ y, (f y + δ) ^ p ∂m := by
-  exact (integrable_and_average_rpow_le hp hδ hf0
+  exact (integrable_and_average_rpow_le hp.le hδ hf0
     ((hf.add (memLp_const δ)).integrable_rpow hp)).2
 
 end Rpow

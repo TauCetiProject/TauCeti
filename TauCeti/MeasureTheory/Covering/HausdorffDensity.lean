@@ -185,28 +185,6 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
   · simp
   rcases eq_or_ne (μ U) ∞ with hUtop | hUtop
   · simp [hUtop]
-  rcases lt_or_ge d 0 with hd | hd
-  · -- For a negative exponent the density bound fails at every point of `A`, so `A` is empty.
-    rcases A.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-    · simp
-    exfalso
-    have hneg : Tendsto (fun r : ℝ => ENNReal.ofReal (2 * r) ^ (-d)) (𝓝[>] 0) (𝓝 0) := by
-      have := (ENNReal.continuous_rpow_const (y := -d)).tendsto 0
-      rw [ENNReal.zero_rpow_of_pos (by linarith)] at this
-      exact this.comp ((ENNReal.continuous_ofReal.comp
-        (continuous_const.mul continuous_id)).tendsto' 0 0 (by simp) |>.mono_left
-          nhdsWithin_le_nhds)
-    have hpow : Tendsto (fun r : ℝ => ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 ⊤) := by
-      have := tendsto_inv_iff.2 hneg
-      simpa only [ENNReal.rpow_neg, inv_inv, ENNReal.inv_zero] using this
-    have hg : Tendsto (fun r : ℝ => c * ENNReal.ofReal (2 * r) ^ d) (𝓝[>] 0) (𝓝 ⊤) := by
-      rw [← ENNReal.mul_top hc0]
-      exact ENNReal.Tendsto.const_mul hpow (Or.inl ENNReal.top_ne_zero)
-    obtain ⟨r, hr1, hr2, hr3⟩ := ((h x hx).and_eventually
-      ((hg.eventually (lt_mem_nhds hUtop.lt_top)).and
-        (eventually_nhdsWithin_of_eventually_nhds (eventually_closedBall_subset
-          (hU.mem_nhds (hAU hx)))))).exists
-    exact absurd (hr1.trans (measure_mono hr3)) (not_le.2 hr2)
   refine le_trans ?_ (ENNReal.mul_div_le (a := c) (b := μ U))
   gcongr
   refine TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover fun δ hδ ε hε => ?_
@@ -227,7 +205,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
   obtain ⟨hu, hsum⟩ := TauCeti.countable_and_tsum_le_of_pairwiseDisjoint μ hc0 hUtop hud
     fun p hp => ⟨(huT hp).2.1, (huT hp).2.2.2.1, (huT hp).2.2.2.2⟩
   have : Countable u := hu.to_subtype
-  have h3 : (3 : ℝ≥0∞) ^ d ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hd (by simp)
+  have h3 : (3 : ℝ≥0∞) ^ d ≠ ∞ := ENNReal.rpow_ne_top_of_ne_zero (by simp) (by simp)
   -- Choose a finite subfamily `F` whose complement has a small sum.
   obtain ⟨F, hF⟩ := ((ENNReal.tendsto_nhds_zero.1 (ENNReal.tendsto_tsum_compl_atTop_zero
     (ne_top_of_le_ne_top (ENNReal.div_lt_top hUtop hc0).ne hsum)) _

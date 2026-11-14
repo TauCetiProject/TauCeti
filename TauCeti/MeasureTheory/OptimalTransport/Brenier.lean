@@ -322,17 +322,17 @@ private theorem IsCoupling.integral_inner_le_of_ae_mem_subdifferential [IsFinite
         rw [← kantorovichDualValue_eq_integral hσ hφ hψ, kantorovichDualValue_eq_integral hπ hφ hψ]
     _ = ∫ z, ⟪z.1, z.2⟫ ∂π := integral_congr_ae (hgraph.mono fun z hz => hz.2.2)
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **Plans on cyclically monotone sets are optimal for the quadratic cost.** Let `μ` and `ν`
 be finite measures with finite second moments on a real inner product space. A coupling `π` of
 `μ` and `ν` concentrated on a `c`-cyclically monotone set for the cost `‖x - y‖ ^ 2 / 2` is an
 optimal plan for that cost. -/
 theorem IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two
-    [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
+    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν)
     {S : Set (E × E)} (hS : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) S)
     (h : ∀ᵐ z ∂π, z ∈ S) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν := by
-  have : OpensMeasurableSpace E := OpensMeasurableSpace.of_prod_left (Y := E)
   -- By Rockafellar's theorem `S` lies in the subdifferential graph of a conjugate `u = g⋆`; both
   -- `u` and `u⋆` are lower semicontinuous, hence measurable.
   obtain ⟨g, hg⟩ := hS.exists_fenchelConjugate_innerₗ_subset_subdifferential
@@ -344,12 +344,13 @@ theorem IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone_norm_sub_sq_div_two
   exact ENNReal.ofReal_le_ofReal (sub_le_sub_left
     (hπ.integral_inner_le_of_ae_mem_subdifferential hσ hμ hν hu hv (h.mono fun _ hz => hg hz)) _)
 
+omit [OpensMeasurableSpace (E × E)] in
 /-- **Plans on subdifferential graphs are optimal for the quadratic cost.** Let `μ` and `ν` be
 finite measures with finite second moments on a real inner product space, and `u : E → EReal`
 any function. A coupling `π` of `μ` and `ν` such that `y ∈ ∂u(x)` for `π`-almost every
 `(x, y)` is an optimal plan for the cost `‖x - y‖ ^ 2 / 2`. -/
 theorem IsCoupling.isOptimalCoupling_of_ae_mem_subdifferential
-    [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
+    [OpensMeasurableSpace E] [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) (hμ : MemLp id 2 μ)
     (hν : MemLp id 2 ν)
     {u : E → EReal} (h : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1) :
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
@@ -369,6 +370,7 @@ theorem isKantorovichOptimalTransportMap_of_ae_mem_subdifferential
       μ ν T := by
   -- The diagonal of `E` is closed, hence measurable, as `TauCeti.ae_snd_eq_graphPlan` requires.
   have : MeasurableEq E := ⟨isClosed_diagonal.measurableSet⟩
+  have : OpensMeasurableSpace E := OpensMeasurableSpace.of_prod_left (Y := E)
   have hγ := isCoupling_graphPlan hT
   refine (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hT
     continuous_ofReal_norm_sub_sq_div_two.measurable.aemeasurable).2
@@ -404,6 +406,7 @@ theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
     IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν ↔
       ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
         (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+  have : OpensMeasurableSpace E := OpensMeasurableSpace.of_prod_left (Y := E)
   refine ⟨fun h => ?_, fun ⟨_, _, _, _, _, hu⟩ =>
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ hν hu⟩
   have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
