@@ -116,13 +116,13 @@ private theorem ofReal_abs_integral_mul_inner_polarDensity_le
   have hφ : (φ : E → ℝ) = ψ := coe_mk
   simp only [divergenceCLM_postcompCLM_toSpanSingleton, postcompCLM_apply, comp_apply,
     ContinuousLinearMap.toSpanSingleton_apply, hφ, real_inner_smul_left] at h
-  rw [← abs_neg, ← h, ← Real.enorm_eq_ofReal_abs]
-  refine (enorm_integral_le_lintegral_enorm _).trans <|
+  rw [← abs_neg, ← h, ← Real.eNorm_eq_ofReal_abs]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans <|
     (lintegral_mono fun y => ?_).trans (lintegral_indicator_const_le _ _)
   have hd : ∂_{v} φ y = fderiv ℝ ψ y v := by
     rw [lineDerivOp_apply]
     exact (hψ.differentiable (by simp) y).lineDeriv_eq_fderiv
-  rw [hd, enorm_mul]
+  rw [hd, eNorm_mul]
   refine le_trans ?_ (enorm_fderiv_mul_indicator_le_indicator hψ01 hψ1 hψR hψK s y)
   gcongr
   exact (fderiv ℝ ψ y).le_opENorm_of_le (by simpa [← ofReal_norm] using hv) |>.trans_eq (mul_one _)
@@ -144,18 +144,18 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
   -- `σ` is integrable on the compact sets `closedBall x ρ ⊆ Ω`.
   have hint (ρ : ℝ) (hρ : closedBall x ρ ⊆ Ω) :
       IntegrableOn σ (((↑) : Ω → E) ⁻¹' closedBall x ρ) ν :=
-    (locallyIntegrable_polarDensity hu hfin).integrableOn_isCompact
+    (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).integrableOn_isCompact
       (Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x ρ)
         (by rwa [Subtype.range_coe]))
   -- Cutoffs between `closedBall x r` and `ball x (r + h)` with Lipschitz constant `t / h`.
   choose! ψ hψs hψ01 hψ1 hψR hψK using fun h (hh : 0 < h) =>
-    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hr hh ht
+    exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv x hh ht
   -- The pairings with the cutoffs converge to `⟪v, Dχ_s (closedBall x r)⟫`.
   have hlim : Tendsto (fun h => ∫ y, ψ h y * ⟪v, σ y⟫ ∂ν) (𝓝[>] 0)
       (𝓝 ⟪v, ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂ν⟫) := by
     rw [← integral_inner (hint r hΩ) v]
     simpa only [smul_eq_mul] using tendsto_integral_smul_of_cutoff (g := fun y => ⟪v, σ y⟫)
-      measurable_subtype_coe (measurable_polarDensity.const_inner.aestronglyMeasurable) hδ
+      measurable_subtype_coe hδ
       ((hint (r + δ) (by rwa [add_comm])).const_inner v)
       (fun h hh => (hψs h hh).continuous.measurable)
       (fun h hh y => abs_le.2 ⟨(neg_nonpos.2 zero_le_one).trans (hψ01 h hh (mem_range_self y)).1,
@@ -180,15 +180,18 @@ finite perimeter in `Ω` and `closedBall x r ⊆ Ω`,
 
 `‖Dχ_s (closedBall x r)‖ ≤ liminf_{h → 0⁺} μ(s ∩ (ball x (r + h) \ ball x r)) / h`,
 
-where `Dχ_s (closedBall x r) = ∫_{closedBall x r} σ d|Dχ_s|`. -/
-theorem enorm_setIntegral_polarDensity_closedBall_le_liminf
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (hΩ : closedBall x r ⊆ Ω) :
+where `Dχ_s (closedBall x r) = ∫_{closedBall x r} σ d|Dχ_s|`. If `s` is not of locally finite
+perimeter in `Ω`, the variation measure is `0` by convention and the statement is trivial. -/
+theorem enorm_setIntegral_polarDensity_closedBall_le_liminf (hΩ : closedBall x r ⊆ Ω) :
     ‖∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, polarDensity μ Ω (s.indicator 1) y
         ∂variationMeasure μ Ω (s.indicator 1)‖ₑ ≤
       liminf (fun h => μ (s ∩ (ball x (r + h) \ ball x r)) / ENNReal.ofReal h) (𝓝[>] 0) := by
+  by_cases hv : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧
+      ∀ K, IsCompact K → K ⊆ Ω →
+        ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞
+  swap
+  · simp [variationMeasure_eq_zero_of_not hv]
+  obtain ⟨hu, hfin⟩ := hv
   rcases lt_or_ge r 0 with hr | hr
   · simp [closedBall_eq_empty.2 hr]
   set w := ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, polarDensity μ Ω (s.indicator 1) y
@@ -199,7 +202,7 @@ theorem enorm_setIntegral_polarDensity_closedBall_le_liminf
     simpa using ENNReal.le_add_of_forall_one_lt_le_add_mul (b := 0) fun t ht => by
       simpa using ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf hu hfin hr hΩ hv ht
   rcases eq_or_ne w 0 with hw | hw
-  · rw [hw, enorm_zero]
+  · rw [hw, eNorm_zero]
     exact zero_le
   have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw
   have h := key (‖w‖⁻¹ • w) (by rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hw'.ne'])
@@ -213,32 +216,25 @@ finite on compact sets, a null-measurable set `s` of locally finite perimeter in
 `closedBall x r ⊆ Ω`, if `m(ρ) = μ(s ∩ ball x ρ)` has right derivative `D` at `r`, then
 `‖Dχ_s (closedBall x r)‖ ≤ D`. -/
 theorem enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt
-    [IsFiniteMeasureOnCompacts μ]
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (hs : NullMeasurableSet s μ) (hΩ : closedBall x r ⊆ Ω) {D : ℝ}
+    [IsFiniteMeasureOnCompacts μ] (hs : NullMeasurableSet s μ) (hΩ : closedBall x r ⊆ Ω) {D : ℝ}
     (hD : HasDerivWithinAt (fun ρ => μ.real (s ∩ ball x ρ)) D (Ioi r) r) :
     ‖∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, polarDensity μ Ω (s.indicator 1) y
         ∂variationMeasure μ Ω (s.indicator 1)‖ₑ ≤ ENNReal.ofReal D := by
   rw [← (tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt hs hD).liminf_eq]
-  exact enorm_setIntegral_polarDensity_closedBall_le_liminf hu hfin hΩ
+  exact enorm_setIntegral_polarDensity_closedBall_le_liminf hΩ
 
 /-- **The derivative of a set on a closed ball, at almost every radius.** For a measure `μ` finite
 on compact sets, a null-measurable set `s` of locally finite perimeter in `Ω` and almost every `r`
 with `closedBall x r ⊆ Ω`,
 `‖Dχ_s (closedBall x r)‖ ≤ m'(r)`, where `m(ρ) = μ(s ∩ ball x ρ)`. -/
 theorem ae_enorm_setIntegral_polarDensity_closedBall_le [IsFiniteMeasureOnCompacts μ]
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
     (hs : NullMeasurableSet s μ) (x : E) :
     ∀ᵐ r, closedBall x r ⊆ Ω →
       ‖∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, polarDensity μ Ω (s.indicator 1) y
           ∂variationMeasure μ Ω (s.indicator 1)‖ₑ ≤
         ENNReal.ofReal (deriv (fun ρ => μ.real (s ∩ ball x ρ)) r) := by
   filter_upwards [(monotone_measureReal_inter_ball μ s x).ae_differentiableAt] with r hdiff hΩ
-  exact enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hu hfin hs hΩ
+  exact enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hs hΩ
     hdiff.hasDerivAt.hasDerivWithinAt
 
 /-- At a point `x` of the reduced boundary, for every `t > 1` and every small `r`, the perimeter
@@ -282,12 +278,11 @@ theorem eventually_variationMeasure_closedBall_le [μ.IsAddHaarMeasure]
     (hx : x ∈ reducedBoundary μ Ω s) {t : ℝ≥0} (ht : 1 < t) :
     ∀ᶠ r in 𝓝[>] 0, variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) ≤
       t * ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   obtain ⟨ε, hε, hεΩ⟩ :=
     nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   filter_upwards [eventually_variationMeasure_closedBall_le_mul_enorm_setIntegral hx ht,
     Ioc_mem_nhdsGT hε] with r hr hrε
-  refine hr.trans (mul_le_mul_right ((enorm_setIntegral_polarDensity_closedBall_le_liminf hu hfin
+  refine hr.trans (mul_le_mul_right ((enorm_setIntegral_polarDensity_closedBall_le_liminf
     ((closedBall_subset_closedBall hrε.2).trans hεΩ)).trans ?_) _)
   -- The growth rate of the measure of `s` in the balls is at most that of the balls.
   have hD : HasDerivWithinAt (fun ρ => μ.real (univ ∩ ball x ρ))
@@ -305,16 +300,10 @@ theorem eventually_perimeter_ball_le [μ.IsAddHaarMeasure] (hx : x ∈ reducedBo
     {t : ℝ≥0} (ht : 1 < t) :
     ∀ᶠ r in 𝓝[>] 0, perimeter μ ⟨ball x r, isOpen_ball⟩ s ≤
       t * ENNReal.ofReal (finrank ℝ E * r ^ (finrank ℝ E - 1) * μ.real (ball 0 1)) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ :=
-    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  filter_upwards [eventually_variationMeasure_closedBall_le hx ht, Ioc_mem_nhdsGT hε]
-    with r hr hrε
-  have hball : ball x r ⊆ closedBall x r := ball_subset_closedBall
-  rw [perimeter_def, ← variationMeasure_preimage_coe hu hfin
-    (U := ⟨ball x r, isOpen_ball⟩)
-    fun y hy => hεΩ (closedBall_subset_closedBall hrε.2 (hball hy))]
-  exact (measure_mono (preimage_mono hball)).trans hr
+  filter_upwards [eventually_variationMeasure_closedBall_le hx ht,
+    eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
+    with r hr hP
+  exact hP.trans hr
 
 /-- **The perimeter measure is bounded by Hausdorff measure on the reduced boundary.** Let `μ` be
 an additive Haar measure on a space of dimension `n`. Every set `A` of points of the reduced

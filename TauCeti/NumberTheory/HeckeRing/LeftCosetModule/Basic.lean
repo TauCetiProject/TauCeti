@@ -20,15 +20,15 @@ additive in both arguments and faithful. Since `HgH` sends `βH` to `Σᵢ βσ�
 multiplication, this is **right** multiplication, encoded as scalar operations of the
 opposite ring `(𝕋 Δ H R)ᵐᵒᵖ` per Mathlib convention. This file provides only the scalar
 operations, not yet an action: Shimura's compatibility law `(f * g) • m = g • (f • m)`
-(Proposition 3.2) is exactly `mul_smul` for the opposite ring, and is established — turning
-these scalars into a genuine action — together with the degree homomorphism in the
-follow-up development.
+(Proposition 3.2) is exactly `mul_smul` for the opposite ring, and is proved in
+`HeckeRing/LeftCosetModule/Action.lean`, where it turns these scalars into the genuine action
+`LeftCosetModule.instModuleMulOpposite`.
 
 Ported from the AINTLIB `LeanModularForms` project
 (`HeckeRIngs/AbstractHeckeRing/Module.lean`,
-<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), per the
-ModularForms roadmap's dependency policy, rebuilt on the left-coset quotient of the vendored
-Mathlib stack.
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), rebuilt on the
+double-coset quotient `HeckeCoset`, whose bottom-left case `HeckeCoset Δ ⊥ H` serves as the
+left-coset quotient.
 
 ## Main definitions
 
@@ -309,8 +309,8 @@ coset scales a left coset by summing over its orbit, extended biadditively. Sinc
 sends `βH` to the cosets `βσᵢgH` by **right** multiplication, the scalars come from the
 opposite ring `(𝕋 Δ H R)ᵐᵒᵖ`, per Mathlib convention. Shimura's compatibility
 `(f * g) • m = g • (f • m)` — precisely `mul_smul` for the opposite ring, which upgrades
-these scalar operations to an action — is proved with the degree homomorphism in the
-follow-up development. -/
+these scalar operations to an action — is proved in `HeckeRing/LeftCosetModule/Action.lean`,
+giving `LeftCosetModule.instModuleMulOpposite`. -/
 noncomputable instance instSMulLeftCosetModule :
     SMul (𝕋 Δ H R)ᵐᵒᵖ (LeftCosetModule Δ H R) where
   smul t m := t.unop.sum fun D b₁ ↦ m.sum fun q b₂ ↦

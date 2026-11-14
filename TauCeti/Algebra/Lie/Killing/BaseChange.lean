@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 # The Killing property under base change
 
 `LieAlgebra.IsKilling R L` says that the Killing form of `L` is nonsingular. This file proves that
-for a finite free Lie algebra over an integral domain the property descends along any base change
+for a free Lie algebra over an integral domain the property descends along any base change
 into a second integral domain, and that an injective base change loses nothing either:
 
 ```text
@@ -47,22 +47,13 @@ between semisimplicity and the Killing property, not the base change of the Kill
 * `TauCeti.isKilling_baseChange_iff`: along an injective base change of integral domains the
   descent is an equivalence.
 
-## Roadmap
+## Applications
 
-This is a prerequisite for Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, "**The
-Chevalley--Demazure construction.** For each root datum, an explicitly constructed split reductive
-group scheme over `ℤ` realizing it, via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
-algebra", which is consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`. The
-declaration that will consume it is `TauCeti.IsChevalleySystem`, whose ambient Lie algebra carries
-`[LieAlgebra.IsKilling K L]`, applied to `TauCeti.DynkinType.lieAlgebra`. That Lie algebra is
-defined over `ℚ`, and
-`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/LieAlgebra.lean` records that it "is not
-asserted to be semisimple: Mathlib derives that from Geck's construction over an algebraically
-closed field, and `ℚ` is not one", Mathlib's
-`RootPairing.GeckConstruction.instHasTrivialRadical` carrying an `[IsAlgClosed K]` hypothesis. This
-file supplies the general half of closing that gap; the remaining half is the identification of
-`AlgebraicClosure ℚ ⊗[ℚ] TauCeti.DynkinType.lieAlgebra` with Geck's Lie algebra over
-`AlgebraicClosure ℚ`.
+`TauCeti.IsChevalleySystem` asks its ambient Lie algebra for `[LieAlgebra.IsKilling K L]`, and is
+applied to the rational Lie algebra `TauCeti.DynkinType.lieAlgebra`. Mathlib's
+`RootPairing.GeckConstruction.instHasTrivialRadical` carries an `[IsAlgClosed K]` hypothesis, so
+`TauCeti.DynkinType.instIsKillingLieAlgebra` obtains the Killing property over
+`AlgebraicClosure ℚ` and descends it to `ℚ` with `TauCeti.isKilling_of_isKilling_baseChange`.
 
 ## References
 
@@ -81,20 +72,28 @@ namespace TauCeti
 open LieAlgebra LieModule
 
 variable (R A L : Type*) [CommRing R] [CommRing A] [Algebra R A]
-variable [LieRing L] [LieAlgebra R L] [Module.Free R L] [Module.Finite R L]
+variable [LieRing L] [LieAlgebra R L] [Module.Free R L]
 variable [IsDomain A]
 
-/-- **Descent of the Killing property.** A finite free Lie algebra over an integral domain is
+/-- A free Lie algebra with a Killing base change into an integral domain is finite: the base
+change is finite over `A` by `TauCeti.finite_of_isKilling`, and carries the base-changed basis. -/
+private theorem finite_of_isKilling_baseChange [IsKilling A (A ⊗[R] L)] : Module.Finite R L := by
+  have : Module.Finite A (A ⊗[R] L) := finite_of_isKilling
+  have := Module.Finite.finite_basis ((Module.Free.chooseBasis R L).baseChange A)
+  exact Module.Finite.of_basis (Module.Free.chooseBasis R L)
+
+/-- **Descent of the Killing property.** A free Lie algebra over an integral domain is
 Killing as soon as some base change of it into an integral domain is; the structure map is
 unrestricted, so this covers reduction of an integral form as well as extension of scalars. -/
 theorem isKilling_of_isKilling_baseChange [IsDomain R] [IsKilling A (A ⊗[R] L)] :
     IsKilling R L := by
+  have := finite_of_isKilling_baseChange R A L
   rw [isKilling_iff_killingForm_nondegenerate]
   apply (killingForm R L).nondegenerate_of_nondegenerate_baseChange A (Module.Free.chooseBasis R L)
   rw [← traceForm_baseChange R L L A, ← isKilling_iff_killingForm_nondegenerate]
   infer_instance
 
-/-- **The Killing property under an injective base change.** For a finite free Lie algebra over an
+/-- **The Killing property under an injective base change.** For a free Lie algebra over an
 integral domain, and an injective structure map into a second integral domain, the base change is
 Killing exactly when the original is. -/
 @[simp]
@@ -102,14 +101,17 @@ theorem isKilling_baseChange_iff [FaithfulSMul R A] :
     IsKilling A (A ⊗[R] L) ↔ IsKilling R L := by
   have : IsDomain R :=
     Function.Injective.isDomain (algebraMap R A) (FaithfulSMul.algebraMap_injective R A)
+  refine ⟨fun _ ↦ isKilling_of_isKilling_baseChange R A L, fun hR ↦ ?_⟩
+  have := finite_of_isKilling (R := R) (L := L)
   -- `killingForm` is Mathlib's reducible abbreviation for the trace form of the adjoint
   -- representation, so `LieModule.traceForm_baseChange` says that the Killing form of `A ⊗[R] L`
   -- is the base change of the Killing form of `L`. `rw` matches up to instances only, so it does
   -- not see the abbreviation; the equation is named here at its `killingForm` spelling.
   have hform : killingForm A (A ⊗[R] L) = (killingForm R L).baseChange A :=
     traceForm_baseChange R L L A
-  rw [isKilling_iff_killingForm_nondegenerate, isKilling_iff_killingForm_nondegenerate, hform]
-  exact (killingForm R L).nondegenerate_baseChange_iff (Module.Free.chooseBasis R L)
+  rw [isKilling_iff_killingForm_nondegenerate, hform]
+  exact ((killingForm R L).nondegenerate_baseChange_iff (Module.Free.chooseBasis R L)).2
+    ((isKilling_iff_killingForm_nondegenerate R L).1 hR)
 
 /-! The intended application is a field extension, where every hypothesis above is automatic. -/
 

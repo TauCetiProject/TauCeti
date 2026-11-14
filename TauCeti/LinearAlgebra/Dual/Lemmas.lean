@@ -27,6 +27,8 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.apply_eq_mul_apply_of_nonneg`: over an ordered ring, if `f x = 1`, a functional `g`
+  nonnegative on the half-space `{v | 0 ≤ f v}` is the multiple `g x • f` of `f`.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
   `U`, then `ker f ⊓ U` has codimension one in `U`. This is the relative form of Mathlib's
   `Module.Dual.finrank_ker_add_one_of_ne_zero`.
@@ -45,7 +47,8 @@ and so separate points.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
   functional vanishes on `p` and equals one at some vector.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
-  algebra is.
+  algebra is, and `Module.Finite.of_surjective_end`: in particular once a finite-dimensional space
+  maps linearly onto its endomorphism algebra.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
@@ -82,6 +85,25 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
 
 end Semiring
 
+section OrderedCommRing
+
+variable {R V : Type*} [CommRing R] [PartialOrder R] [IsOrderedAddMonoid R] [AddCommGroup V]
+  [Module R V]
+
+/-- If `f x = 1`, a functional `g` that is nonnegative on the half-space `{v | 0 ≤ f v}` is the
+multiple `g x • f` of `f`. -/
+theorem apply_eq_mul_apply_of_nonneg (f g : Dual R V) {x : V} (hfx : f x = 1)
+    (hg : ∀ v, 0 ≤ f v → 0 ≤ g v) (u : V) : g u = g x * f u := by
+  -- `g` vanishes on the kernel of `f`, which contains `u - f u • x`.
+  have hker (v : V) (hv : f v = 0) : g v = 0 :=
+    le_antisymm (by simpa using hg (-v) (by simp [hv])) (hg v hv.ge)
+  have hrest : f (u - f u • x) = 0 := by simp [hfx]
+  calc
+    g u = g (f u • x + (u - f u • x)) := by rw [add_sub_cancel]
+    _ = g x * f u := by rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
+
+end OrderedCommRing
+
 section DivisionRing
 
 variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
@@ -99,9 +121,11 @@ theorem finrank_ker_inf_add_one {f : Dual K V} {U : Submodule K V} [FiniteDimens
   rwa [hker, (Submodule.comapSubtypeEquivOfLe inf_le_right).finrank_eq] at hfin
 
 /-- A hyperplane contained in the kernel of a nonzero functional equals that kernel. -/
-theorem ker_eq_of_le_of_finrank_add_one [FiniteDimensional K V] (f : Dual K V)
+theorem ker_eq_of_le_of_finrank_add_one (f : Dual K V)
     (hf : f ≠ 0) {S : Submodule K V} (hle : S ≤ LinearMap.ker f)
     (hdim : finrank K S + 1 = finrank K V) : LinearMap.ker f = S := by
+  -- the hypothesis `hdim` forces `V` to be finite-dimensional
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   apply (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
   have hker := finrank_ker_add_one_of_ne_zero hf
   omega
@@ -128,12 +152,15 @@ theorem linearIndependent_sub_div_smul (f : Dual K V) {ι : Type*} {X : ι → V
 /-- If `X` is a family of `finrank K V` linearly independent vectors and `f (X j) ≠ 0`, the vectors
 `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, span the kernel of `f`. Together with
 `Module.Dual.linearIndependent_sub_div_smul`, they form a basis of `ker f`. -/
-theorem span_sub_div_smul_eq_ker [FiniteDimensional K V] (f : Dual K V) {ι : Type*} [Fintype ι]
+theorem span_sub_div_smul_eq_ker (f : Dual K V) {ι : Type*} [Fintype ι]
     {X : ι → V} (hX : LinearIndependent K X) (hcard : Fintype.card ι = finrank K V) {j : ι}
     (hj : f (X j) ≠ 0) :
     Submodule.span K (Set.range fun i : {i // i ≠ j} ↦ X i - (f (X i) / f (X j)) • X j) =
       LinearMap.ker f := by
   classical
+  -- the index `j` makes `ι` nonempty, so `hcard` forces `V` to be finite-dimensional
+  have : FiniteDimensional K V :=
+    Module.finite_of_finrank_pos (hcard ▸ Fintype.card_pos_iff.2 ⟨j⟩)
   have hli := f.linearIndependent_sub_div_smul hX j
   refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
   · rw [Submodule.span_le]
@@ -243,6 +270,16 @@ theorem of_finite_end (K S : Type*) [Field K] [AddCommGroup S] [Module K S]
     exact hx ((forall_dual_apply_eq_zero_iff K x).1 h)
   exact Module.Finite.of_surjective (LinearMap.applyₗ x)
     fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
+
+/-- A vector space is finite-dimensional if a finite-dimensional space maps linearly onto its
+endomorphism algebra; for instance, a module over a finite-dimensional algebra `A` on which
+`Algebra.lsmul : A → End_K S` is surjective. -/
+theorem of_surjective_end {K E S F : Type*} [Field K] [AddCommMonoid E] [Module K E]
+    [Module.Finite K E] [AddCommGroup S] [Module K S] [FunLike F E (Module.End K S)]
+    [LinearMapClass F K E (Module.End K S)] (f : F) (hf : Function.Surjective f) :
+    Module.Finite K S :=
+  have : Module.Finite K (Module.End K S) := .of_surjective (f : E →ₗ[K] Module.End K S) hf
+  .of_finite_end K S
 
 end Module.Finite
 

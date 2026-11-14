@@ -110,6 +110,7 @@ theorem constantCoeff_triangularFamily {α : σ → ℕ} (hα : ∀ i, α i ≠ 
     (x : Option σ) : (triangularFamily α u x).constantCoeff = 0 := by
   cases x <;> simp [triangularFamily, hα]
 
+omit [IsUltrametricDist R] in
 /-- For `‖u‖ ≤ 1` the triangular polynomials have all coefficients of norm at most `1`. -/
 theorem norm_coeff_triangularFamily_le {u : R} (hu : ‖u‖ ≤ 1) (α : σ → ℕ)
     (x : Option σ) (t : Option σ →₀ ℕ) : ‖(triangularFamily α u x).coeff t‖ ≤ 1 := by
@@ -124,8 +125,10 @@ theorem norm_coeff_triangularFamily_le {u : R} (hu : ‖u‖ ≤ 1) (α : σ →
           u * (MvPolynomial.X none ^ α i : MvPolynomial (Option σ) R).coeff t := by
       simp [triangularFamily, MvPolynomial.coeff_C_mul]
     rw [h, MvPolynomial.coeff_X, MvPolynomial.coeff_X_pow]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_) <;>
-      split_ifs <;> simp [hu]
+    -- The monomials `X (some i)` and `X none ^ α i` have disjoint supports.
+    split_ifs with h1 h2 h2 <;> simp [hu]
+    have := congrArg (fun f : Option σ →₀ ℕ ↦ f (some i)) (h1.trans h2.symm)
+    simp at this
 
 omit [IsUltrametricDist R] [NormOneClass R] in
 /-- The triangular families for `u` and `v = -u` are inverse to each other under substitution. -/
@@ -284,7 +287,7 @@ private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
           triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) d →
         ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε := by
   classical
-  obtain ⟨d₀, hd₀⟩ := exists_achievesGaussNorm f
+  obtain ⟨d₀, hd₀⟩ := f.2.exists_achievesGaussNorm
   obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
   simp only [AchievesGaussNorm, ← norm_eq_gaussNorm, one_pow, Finsupp.prod_fun_one,
     mul_one] at hd₀ hε
@@ -329,14 +332,14 @@ private theorem exists_isDistinguished_of_triangularDegree_dominant [Finite σ] 
   have hcore := norm_coeff_restrictedTriangularEquiv_sub_le hα f ν hε0 hν
   -- Past degree `s` every coefficient has norm at most `ε`.
   have hbeyond (m : ℕ) (hm : s < m) : ‖PowerSeries.coeff m (G : PowerSeries Tate)‖ ≤ ε := by
-    rw [norm_le_iff hε0]
+    rw [norm_le_iff]
     intro t
     have h := hcore t hm.le
     rw [ite_eq_right fun h ↦ hm.ne' h.1, sub_zero, ← hcoeffG] at h
     simpa using h
   -- In degree `s` the coefficient is within `ε` of the constant `a`.
   have hat : ‖PowerSeries.coeff s (G : PowerSeries Tate) - algebraMap R Tate a‖ ≤ ε := by
-    rw [norm_le_iff hε0]
+    rw [norm_le_iff]
     intro t
     have h := hcore t le_rfl
     rw [← hcoeffG] at h
@@ -346,7 +349,7 @@ private theorem exists_isDistinguished_of_triangularDegree_dominant [Finite σ] 
       Subtype.ext (coe_algebraMap_isRestrictedSubring _)
     rw [h, norm_C, hνM]
   refine ⟨s, a, hνM,
-    PowerSeries.isDistinguished_of_norm_coeff_sub_lt zero_le_one
+    PowerSeries.isDistinguished_of_norm_coeff_sub_lt
       (by rw [one_pow, mul_one, hGn, hCa])
       (by rw [one_pow, mul_one, hGn]; exact hat.trans_lt hεM)
       (fun m hm ↦ by rw [one_pow, mul_one, hGn]; exact (hbeyond m hm).trans_lt hεM),

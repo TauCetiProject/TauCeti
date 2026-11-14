@@ -344,7 +344,7 @@ theorem gromovWassersteinDistortion_top_le_iff [SFinite π]
       (fun _ ↦ (1 : ℝ≥0∞)) (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))) (π.prod π) :=
     (measurable_const.indicator measurableSet_Ioi).comp_aemeasurable hmeas.aemeasurable
   rw [gromovWassersteinDistortion_def, eLpNorm_exponent_top hmeas, lintegral_eq_zero_iff' hind]
-  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_enorm_bound ?_⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_eNorm_bound ?_⟩
   · filter_upwards [ae_le_eLpNormEssSup (f := fun q : (X × Y) × (X × Y) ↦
       edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))] with q hq
     simpa using (hq.trans h).not_gt
@@ -586,8 +586,8 @@ theorem gromovWassersteinEDist_triangle_of_exists_glue (hp : 1 ≤ p) [IsFiniteM
     _ ≤ eLpNorm ((fun q : (X × Y × W) × (X × Y × W) ↦
             edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2.1, q.2.2.1))) +
           fun q ↦ edist (ωY (q.1.2.1, q.2.2.1)) (ωW (q.1.2.2, q.2.2.2))) p (γ.prod γ) :=
-        eLpNorm_mono_enorm (aestronglyMeasurable_edist_comp hX hW hωX hωW) fun q ↦ by
-          simpa only [Pi.add_apply, enorm_eq_self] using edist_triangle _ _ _
+        eLpNorm_mono_eNorm (aestronglyMeasurable_edist_comp hX hW hωX hωW) fun q ↦ by
+          simpa only [Pi.add_apply, eNorm_eq_self] using edist_triangle _ _ _
     _ ≤ _ := eLpNorm_add_le hp
 
 /-- **The triangle inequality.** For `1 ≤ p` and a standard Borel third carrier, the
@@ -610,17 +610,16 @@ variable [MeasurableSingletonClass Y]
 coupling with the Dirac measure `δ_y`, so the Gromov–Wasserstein distance from `({y}, δ_y, ωY)` to
 `(X, μ, ωX)` is the `L^p (μ ⊗ μ)` size of `ωX` about the point `ωY (y, y)`. -/
 theorem gromovWassersteinEDist_dirac_left (y : Y) (ωY : Y × Y → Z) [IsProbabilityMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (p : ℝ≥0∞) :
+    (p : ℝ≥0∞) :
     gromovWassersteinEDist p (Measure.dirac y) ωY μ ωX =
       eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) := by
-  have hy : MeasurePreserving (fun _ : X ↦ y) μ (Measure.dirac y) :=
-    ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
-  have hωY : AEStronglyMeasurable ωY ((Measure.dirac y).prod (Measure.dirac y)) := by
-    rw [Measure.dirac_prod_dirac]
-    exact aestronglyMeasurable_dirac
   have key : gromovWassersteinDistortion p ωY ωX (μ.map (Prod.mk y)) =
-      eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) :=
-    gromovWassersteinDistortion_map_prodMk hy (MeasurePreserving.id μ) hωY hωX p
+      eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) := by
+    rw [gromovWassersteinDistortion_def,
+      Measure.map_prod_map μ μ measurable_prodMk_left measurable_prodMk_left,
+      ((measurableEmbedding_prodMk_left y).prodMap
+        (measurableEmbedding_prodMk_left y)).eLpNorm_map_measure]
+    rfl
   refine le_antisymm ((gromovWassersteinEDist_le (isCoupling_map_prodMk y μ) p ωY ωX).trans_eq
     key) (le_gromovWassersteinEDist fun π hπ ↦ ?_)
   rw [hπ.eq_map_prodMk, key]
@@ -629,10 +628,10 @@ theorem gromovWassersteinEDist_dirac_left (y : Y) (ωY : Y × Y → Z) [IsProbab
 Gromov–Wasserstein distance from `(X, μ, ωX)` to `({y}, δ_y, ωY)` is the `L^p (μ ⊗ μ)` size of
 `ωX` about the point `ωY (y, y)`. -/
 theorem gromovWassersteinEDist_dirac_right (y : Y) (ωY : Y × Y → Z) [IsProbabilityMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (p : ℝ≥0∞) :
+    (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX (Measure.dirac y) ωY =
       eLpNorm (fun q : X × X ↦ edist (ωX q) (ωY (y, y))) p (μ.prod μ) := by
-  rw [gromovWassersteinEDist_comm, gromovWassersteinEDist_dirac_left y ωY hωX]
+  rw [gromovWassersteinEDist_comm, gromovWassersteinEDist_dirac_left y ωY]
   exact eLpNorm_congr_ae (.of_forall fun q ↦ edist_comm _ _)
 
 end Dirac

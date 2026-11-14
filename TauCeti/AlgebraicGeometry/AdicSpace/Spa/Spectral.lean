@@ -70,9 +70,9 @@ theorem isProConstructible_val_preimage_spa (P : PairOfDefinition A) (Aplus : Su
 
 /-- `spa Aplus` is a spectral space, from an explicit pair of definition: its trace on
 `Spv (A, IA)` is pro-constructible, hence spectral, so
-`spectralSpace_of_isEmbedding` carries it back along the subtype embedding. At a ring
-of integral elements this is Wedhorn's Theorem 7.35; the instance below supplies it for any
-Huber ring without naming a pair. -/
+`Topology.IsEmbedding.spectralSpace_preimage_iff` carries it back along the subtype embedding.
+At a ring of integral elements this is Wedhorn's Theorem 7.35; the instance below supplies it for
+any Huber ring without naming a pair. -/
 theorem spectralSpace_spa_of_pairOfDefinition (P : PairOfDefinition A) (Aplus : Subring A) :
     SpectralSpace (spa Aplus) := by
   have := spectralSpace_spvOfIdeal P.extendedIdealOfDefinition
@@ -81,7 +81,7 @@ theorem spectralSpace_spa_of_pairOfDefinition (P : PairOfDefinition A) (Aplus : 
       ⟨P.extendedIdealOfDefinition, P.fg_extendedIdealOfDefinition, rfl⟩ → Spv A) := by
     rw [Subtype.range_val]
     exact spa_subset_spvOfIdeal P Aplus
-  exact spectralSpace_of_isEmbedding Topology.IsEmbedding.subtypeVal hsub
+  exact (Topology.IsEmbedding.subtypeVal.spectralSpace_preimage_iff hsub).mp
     (isProConstructible_val_preimage_spa P Aplus).spectralSpace
 
 /-- **Wedhorn Theorem 7.35** (at a ring of integral elements): over a Huber ring, `spa Aplus`

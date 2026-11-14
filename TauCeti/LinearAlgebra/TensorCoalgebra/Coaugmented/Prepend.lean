@@ -123,9 +123,13 @@ theorem prepend_subword {n : ℕ} (z : Fin n → M) {a : ℕ} (ha : a < n) (b : 
 /-- Prepending a letter `e` to the block that follows the first `d` letters of a block replaces
 those `d` letters by `e`. -/
 theorem prepend_subword_eq_splice {n : ℕ} (z : Fin n → M) {a b d : ℕ} (hd : 0 < d)
-    (hdb : d ≤ b) (hab : a + b ≤ n) (e : M) :
+    (hdb : d ≤ b) (e : M) :
     prepend R M e (subword R z (a + d) (b - d)) =
       ReducedTensorWords.splice R z a b 0 d e := by
+  by_cases hab : a + b ≤ n
+  swap
+  · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero,
+      ReducedTensorWords.splice_eq_zero_of_length_lt_add R z e (by omega)]
   rw [subword_eq_of_tprod R z (by omega), prepend_of_tprod,
     ReducedTensorWords.splice_eq_of_tprod R z e hd (by omega) hab]
   refine ReducedTensorWords.of_tprod_congr R M _ (by omega) fun i ↦ ?_
@@ -176,7 +180,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- Prepending a letter of degree `p` to a word of total degree `D` gives a word of total degree
 `p + D`. -/
-theorem prepend_mem_gradedPiece {G : InternalGrading R M} {p D : ℤ} {a : M}
+theorem prepend_mem_gradedPiece {G : InternalGrading R M ℤ} {p D : ℤ} {a : M}
     (ha : a ∈ G.piece p) {w : TensorWords R M} (hw : w ∈ gradedPiece G D) :
     prepend R M a w ∈ ReducedTensorWords.gradedPiece G (p + D) := by
   refine gradedPiece_induction
@@ -197,7 +201,7 @@ theorem prepend_mem_gradedPiece {G : InternalGrading R M} {p D : ℤ} {a : M}
 
 /-- Uncurried prepending preserves total degrees: it is homogeneous of degree zero from the
 tensor-product grading of `M ⊗ Tᶜ(M)` to the total-letter-degree grading of the reduced words. -/
-theorem isHomogeneous_lift_prepend (G : InternalGrading R M) :
+theorem isHomogeneous_lift_prepend (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (TensorProduct.lift (prepend R M))
       (G.tensorProduct (grading G)).piece (ReducedTensorWords.gradedPiece G) 0 := by
   rw [LinearMap.isHomogeneous_def]

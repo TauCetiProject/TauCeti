@@ -194,19 +194,19 @@ variable (G)
 group element is a deck transformation, and every deck transformation arises this way because
 the countable join is connected. -/
 def classifyingSpaceDeckMulEquiv : G ≃* deck (classifyingSpaceProj G) :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv (isQuotientCoveringMap_classifyingSpaceProj G)
+  (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv
 
 /-- The deck transformation attached to a group element is translation by that element. -/
 @[simp]
 theorem classifyingSpaceDeckMulEquiv_apply (g : G) (x : universalGSpace G) :
     (classifyingSpaceDeckMulEquiv G g).1 x = g • x :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv_apply _ g x
+  (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv_apply g x
 
 /-- A deck transformation of the orbit map is translation by the group element it corresponds
 to. -/
 @[simp]
 theorem classifyingSpaceDeckMulEquiv_symm_apply (φ : deck (classifyingSpaceProj G))
     (x : universalGSpace G) : (classifyingSpaceDeckMulEquiv G).symm φ • x = φ.1 x :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv_symm_apply _ φ x
+  (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv_symm_apply φ x
 
 end TauCeti
