@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInvariance
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInvariance
+import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
 
 /-!
 # Weak homotopy equivalences induce isomorphisms on singular homology
@@ -93,8 +93,6 @@ homotopy equivalences are what the dual statements for singular cohomology are d
 -/
 
 public section
-
-noncomputable section
 
 open CategoryTheory AlgebraicTopology TauCeti
 
