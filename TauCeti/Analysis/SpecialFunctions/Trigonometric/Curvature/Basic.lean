@@ -253,6 +253,14 @@ theorem curvatureSine_div_sq_mul (κ c t : ℝ) :
       (neg_pos.2 hc) (-t)).1
     rwa [neg_sq, neg_mul_neg, curvatureSine_neg, neg_mul_neg] at h
 
+/-- **Unit-time rescaling** of the model sine: `s_(κ c²)(1) = s_κ(c) / c` for `c ≠ 0`. -/
+theorem curvatureSine_mul_sq_one (κ : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    curvatureSine (κ * c ^ 2) 1 = curvatureSine κ c / c := by
+  have hc2 : c ^ 2 ≠ 0 := pow_ne_zero 2 hc
+  have h := curvatureSine_div_sq_mul (κ * c ^ 2) c 1
+  rw [mul_div_cancel_right₀ κ hc2, mul_one] at h
+  exact eq_div_of_mul_eq hc (by linarith)
+
 /-- **Scaling law** of the model cosine: `c_(κ/c²)(c t) = c_κ(t)` for `c ≠ 0`. -/
 theorem curvatureCosine_div_sq_mul (κ : ℝ) {c : ℝ} (hc : c ≠ 0) (t : ℝ) :
     curvatureCosine (κ / c ^ 2) (c * t) = curvatureCosine κ t := by
