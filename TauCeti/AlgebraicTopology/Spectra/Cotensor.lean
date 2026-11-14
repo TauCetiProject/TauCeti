@@ -315,6 +315,16 @@ noncomputable def levelSmashCotensorAdjunction (K : PointedSSet.{0}) :
     (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
       Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K))
 
+/-- Smashing symmetric spectra with a fixed pointed simplicial set `K` is a left adjoint, hence
+preserves colimits of all sizes. -/
+instance (K : PointedSSet.{0}) : (levelSmashRight K).IsLeftAdjoint :=
+  (levelSmashCotensorAdjunction K).isLeftAdjoint
+
+/-- Cotensoring symmetric spectra by a fixed pointed simplicial set `K` is a right adjoint, hence
+preserves limits of all sizes. -/
+instance (K : PointedSSet.{0}) : (cotensor K).IsRightAdjoint :=
+  (levelSmashCotensorAdjunction K).isRightAdjoint
+
 /-- The cotensor adjunction curries a map after identifying levelwise smash with balanced smash
 by the free spectrum and exchanging the two factors. -/
 lemma levelSmashCotensorAdjunction_homEquiv_apply (K : PointedSSet.{0})
