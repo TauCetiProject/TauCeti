@@ -233,7 +233,7 @@ theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_
     IsHyperellipticFunctionField k F ↔
       2 ≤ genus k F ∧ ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
   refine ⟨fun hhyp ↦ ?_, fun ⟨hg, x, hx, hrank⟩ ↦
-    ⟨hg, x, hx, hrank, isSeparable_adjoin_of_finrank_prime (by omega) hx (hrank ▸ Nat.prime_two)⟩⟩
+    ⟨hg, x, hx, hrank, isSeparable_adjoin_of_finrank_prime (by omega) (hrank ▸ Nat.prime_two)⟩⟩
   obtain ⟨x, hx, hrank, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
   exact ⟨hhyp.two_le_genus, x, hx, hrank⟩
 
