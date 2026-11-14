@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.FredholmDet
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Spectrum
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
 
@@ -79,7 +78,7 @@ zeros of `H_u` in `L`.
 public section
 
 open Topology
-open scoped ZeroAtInfty NNReal
+open scoped ZeroAtInfty
 
 variable {I : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 
