@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Volume
@@ -33,6 +34,11 @@ linear symplectic orientation: its orientation of each tangent space is the symp
 (`TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`), so every Darboux basis
 of a tangent space is positively oriented. Closedness of `σ` is not used.
 
+The volume form of a product form `σ ⊕ τ` on `M × N` factors on product frames:
+`(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` takes the value `(σⁿ / n!)(v) (τᵐ / m!)(w)` on the family
+`(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`
+(`TauCeti.SmoothTwoForm.volumeForm_prod_apply_sumElim`).
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.volumeForm σ n`: the form `σⁿ / n!`.
@@ -53,6 +59,8 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
   on it.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`: the symplectic
   orientation of each tangent space is the linear symplectic orientation of the value of the form.
+* `TauCeti.SmoothTwoForm.volumeForm_prod_apply_sumElim`: the volume form of a product form on
+  product frames.
 
 ## References
 
@@ -106,17 +114,11 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
     (hb : (h.symplecticFormAt x).IsDarbouxBasis b) :
     (σ.volumeForm n).1 x (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
       1 := by
-  have hσ (v w : TangentSpace I x) : σ.1 x ![v, w] = h.symplecticFormAt x v w := by
+  have hσ (v w : TangentSpace I x) : h.symplecticFormAt x v w = σ.1 x ![v, w] := by
     rw [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
-  have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.1 x) (m := n) b
-    (fun i j ↦ by rw [hσ, hb.apply_fst_fst])
-    (fun i j ↦ by rw [hσ, hb.apply_fst_snd])
-  have hb' : ⇑b ∘ (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).symm =
-      fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
-    funext r
-    simp only [Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm, finCongr_apply]
-  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex, hb', hval,
-    smul_eq_mul, inv_mul_cancel₀ (by positivity)]
+  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.wedgePow_apply_reindex_of_isDarbouxBasis (σ.1 x) hσ hb, smul_eq_mul,
+    inv_mul_cancel₀ (by positivity)]
 
 /-- **The volume criterion for nondegenerate two-forms.** On a manifold modelled on a space of
 dimension `2 * n`, a smooth two-form is fiberwise nondegenerate exactly when its volume form
@@ -184,6 +186,29 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
     ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
+/-- **The volume form of a product form factors on product frames.** For two-forms `σ` on `M` and
+`τ` on `N`, the volume form `(σ ⊕ τ)ⁿ⁺ᵐ / (n + m)!` of the product form takes the value
+`(σⁿ / n!)(v) (τᵐ / m!)(w)` on the family `(v₁, 0), …, (v₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)` of tangent
+vectors at `(x, y)`. -/
+theorem volumeForm_prod_apply_sumElim {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] [IsManifold J ∞ N] {m : ℕ} (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
+    (x : M) (y : N) (v : Fin (2 * n) → TangentSpace I x) (w : Fin (2 * m) → TangentSpace J y) :
+    ((σ.prod τ).volumeForm (n + m)).1 (x, y)
+        (fun r ↦ (Manifold.tangentSpaceProdEquiv (x, y)).symm (Sum.elim (fun i ↦ (v i, 0))
+          (fun j ↦ (0, w j)) (finSumFinEquiv.symm (Fin.cast (mul_add 2 n m) r)))) =
+      (σ.volumeForm n).1 x v * (τ.volumeForm m).1 y w := by
+  rw [volumeForm_apply, volumeForm_apply, volumeForm_apply, prod_toRoughForm_apply,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    ← ContinuousAlternatingMap.smul_apply]
+  simp only [Function.comp_def, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
+  open _root_.ContinuousAlternatingMap in
+  exact
+    inv_factorial_smul_wedgePow_compContinuousLinearMap_fst_add_compContinuousLinearMap_snd_sumElim
+      (σ.1 x) (τ.1 y) v w
 
 end SmoothTwoForm
 

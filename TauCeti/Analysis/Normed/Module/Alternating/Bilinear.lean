@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
+public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Alternatization of a continuous bilinear map
@@ -25,9 +26,6 @@ of bilinear maps has a smooth alternatization. As in Mathlib's `alternatizeUncur
   bilinear maps, as a continuous linear map into the continuous alternating two-forms.
 * `TauCeti.ContinuousAlternatingMap.alternatizeBilinCLM_apply`: it evaluates to
   `B (v 0) (v 1) - B (v 1) (v 0)`.
-* `ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two`: the pullback of a
-  two-form along a continuous linear map, evaluated on `(u, w)`, is the form evaluated on
-  `(L u, L w)`.
 * `ContinuousAlternatingMap.nondegenerate_compContinuousLinearEquiv`: a two-form with trivial left
   kernel keeps a trivial left kernel when pulled back along a continuous linear equivalence.
 -/
@@ -74,23 +72,6 @@ end ContinuousAlternatingMap
 end TauCeti
 
 namespace ContinuousAlternatingMap
-
-section Pullback
-
-variable {R M M' N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
-  [AddCommMonoid M'] [Module R M'] [TopologicalSpace M'] [AddCommMonoid N] [Module R N]
-  [TopologicalSpace N]
-
-/-- The pullback of a two-form along a continuous linear map, evaluated on `(u, w)`, is the form
-evaluated on `(L u, L w)`. -/
-theorem compContinuousLinearMap_apply_vecCons_two (a : M [⋀^Fin 2]→L[R] N) (L : M' →L[R] M)
-    (u w : M') : a.compContinuousLinearMap L ![u, w] = a ![L u, L w] := by
-  rw [compContinuousLinearMap_apply]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
-
-end Pullback
 
 variable {𝕜 F V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W] [NormedSpace 𝕜 W]

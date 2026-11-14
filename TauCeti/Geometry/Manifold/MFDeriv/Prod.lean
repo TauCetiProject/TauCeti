@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
+import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -61,6 +63,8 @@ fields on a product manifold.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
+* `TauCeti.mfderivWithin_extChartAt_prod_symm`: the inverse of a product chart differentiates
+  componentwise, so coordinate expressions on `M × N` split into those on `M` and on `N`.
 
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
@@ -372,6 +376,24 @@ theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M}
       hg (h.comp y hι).snd
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hdiff,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
+
+/-- **The inverse of a product chart differentiates componentwise.** At a point of the target of
+the preferred extended chart of `M × N`, the derivative within `range (I.prod J)` of its inverse is
+the product of the derivatives within `range I` and `range J` of the inverses of the factor
+charts. -/
+theorem mfderivWithin_extChartAt_prod_symm [IsManifold I 1 M] [IsManifold J 1 N] (p : M × N)
+    {z : E × E'} (hz : z ∈ (extChartAt (I.prod J) p).target) :
+    mfderivWithin 𝓘(𝕜, E × E') (I.prod J) (extChartAt (I.prod J) p).symm
+        (Set.range (I.prod J)) z =
+      (mfderivWithin 𝓘(𝕜, E) I (extChartAt I p.1).symm (Set.range I) z.1).prodMap
+        (mfderivWithin 𝓘(𝕜, E') J (extChartAt J p.2).symm (Set.range J) z.2) := by
+  rw [extChartAt_prod] at hz ⊢
+  obtain ⟨hz₁, hz₂⟩ := hz
+  rw [ModelWithCorners.range_prod, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact mfderivWithin_prodMap (mdifferentiableWithinAt_extChartAt_symm hz₁)
+    (mdifferentiableWithinAt_extChartAt_symm hz₂)
+    (I.uniqueMDiffOn _ (extChartAt_target_subset_range _ hz₁))
+    (J.uniqueMDiffOn _ (extChartAt_target_subset_range _ hz₂))
 
 end ProdMap
 

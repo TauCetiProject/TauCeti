@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
+public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure.Prod
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Support
 
@@ -41,6 +41,10 @@ This file develops the basic properties of the measure that need no reduction th
   (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_smul`), and restricting `σ` and `μ` to an open
   subset `U` gives the pushforward of the Liouville measure restricted to `U`
   (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_mpullback_subtypeVal`).
+* **Products.** The measure of the product form `σ ⊕ τ` on `M × N` and the map `μ × ν` is the
+  product of the measures of `(σ, μ)` and `(τ, ν)`
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_prod`). For Hamiltonian actions of tori `T₁`
+  on `M` and `T₂` on `N`, `μ × ν` is the moment map of the action of `T₁ × T₂` on `M × N`.
 * **Support.** For a nondegenerate form and a continuous map, the support of the measure is the
   closure of the image of `μ` (`TauCeti.SmoothTwoForm.support_duistermaatHeckmanMeasure`).
 * **Invariance.** A differentiable homeomorphism `Φ : M → N` with `Φ^* τ = σ`, intertwining the
@@ -68,12 +72,16 @@ open scoped ContDiff Manifold
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M]
   {n : ℕ} [Fact (finrank ℝ E = 2 * n)] [MeasurableSpace F]
 
 namespace TauCeti
 
 namespace SmoothTwoForm
+
+section LindelofSpace
+
+variable [LindelofSpace M]
 
 variable (σ : SmoothTwoForm I M) (n) in
 /-- The **Duistermaat–Heckman measure** `μ_* |σⁿ / n!|` of a map `μ : M → F`, typically the moment
@@ -165,6 +173,28 @@ theorem support_duistermaatHeckmanMeasure [TopologicalSpace F] [BorelSpace F]
   have := hσ.isOpenPosMeasure_liouvilleMeasure (n := n)
   exact Measure.support_map_eq_closure_range _ Measure.support_eq_univ hμ
 
+end LindelofSpace
+
+section Prod
+
+variable {E' H' N G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [SecondCountableTopology N] {m : ℕ}
+  [Fact (finrank ℝ E' = 2 * m)] [Fact (finrank ℝ (E × E') = 2 * (n + m))] [MeasurableSpace G]
+  {μ : M → F}
+
+/-- **The Duistermaat–Heckman measure of a product.** For the product form `σ ⊕ τ` on `M × N`
+and measurable maps `μ` on `M` and `ν` on `N`, the Duistermaat–Heckman measure of `μ × ν` is the
+product of the Duistermaat–Heckman measures of `μ` and of `ν`. -/
+theorem duistermaatHeckmanMeasure_prod [SecondCountableTopology M] (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) {ν : N → G} (hμ : Measurable μ) (hν : Measurable ν) :
+    (σ.prod τ).duistermaatHeckmanMeasure (n + m) (Prod.map μ ν) =
+      (σ.duistermaatHeckmanMeasure n μ).prod (τ.duistermaatHeckmanMeasure m ν) := by
+  rw [duistermaatHeckmanMeasure_def, duistermaatHeckmanMeasure_def,
+    duistermaatHeckmanMeasure_def, liouvilleMeasure_prod, Measure.map_prod_map _ _ hμ hν]
+
+end Prod
+
 end SmoothTwoForm
 
 end TauCeti
@@ -174,7 +204,8 @@ namespace Homeomorph
 open TauCeti
 
 variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
+  [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [LindelofSpace M]
+  [LindelofSpace N]
 
 /-- **Invariance of the Duistermaat–Heckman measure.** If a differentiable homeomorphism
 `Φ : M → N` pulls `τ` back to `σ` and `μ = ν ∘ Φ`, then `σ` and `μ` have the same

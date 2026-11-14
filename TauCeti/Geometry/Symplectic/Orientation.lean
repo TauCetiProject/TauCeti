@@ -15,6 +15,7 @@ import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The symplectic orientation
@@ -179,22 +180,7 @@ theorem orientation_prod [FiniteDimensional ℝ W] (ω₁ : SymplecticForm V) (�
     Orientation.prod_basis_orientation, ← (hb.prod hc).orientation_reindex hmk h]
   congr 1
   -- Both bases list `(q₁, p₁, …)` of `ω₁` followed by `(q'₁, p'₁, …)` of `ω₂`.
-  set e : (Fin (m / 2) × Fin 2) ⊕ (Fin (k / 2) × Fin 2) ≃ Fin (m / 2 + k / 2) × Fin 2 :=
-    (Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))
-  set F := (Equiv.sumCongr (finProdFinEquiv.trans (finCongr h₁))
-    (finProdFinEquiv.trans (finCongr h₂))).trans finSumFinEquiv
-  have hF (p) : F p = finProdFinEquiv.trans (finCongr h) (e p) := by
-    rcases p with ⟨i, a⟩ | ⟨i, a⟩
-    · ext
-      simp [F, e]
-    · ext
-      simp [F, e]
-      omega
-  refine Basis.eq_of_apply_eq fun x ↦ ?_
-  obtain ⟨p, rfl⟩ := F.surjective x
-  conv_lhs => rw [Basis.reindex_apply, Basis.reindex_apply, hF, Equiv.symm_apply_apply,
-    Equiv.symm_apply_apply]
-  rcases p with p | p <;> simp [F, Basis.reindex_apply, Basis.prod_apply]
+  rw [← Basis.prod_reindex_finProdFinEquiv b c h₁ h₂ h rfl, finCongr_refl, Equiv.trans_refl]
 
 /-- The symplectic orientations of `ω` indexed by `Fin k` and by `Fin k'`, for `k = k'`, correspond
 under the identification `finCongr` of the index types. -/
