@@ -20,13 +20,16 @@ public import TauCeti.RingTheory.GlobalDimension.MulOpposite
 
 Let `C` be a preadditive category with finite biproducts and kernels, `M` an additive generator of
 `C` and `Γ = End M`. Then every finitely presented right `Γ`-module has projective dimension at most
-two, so the right global dimension of `Γ` is at most two when `Γ` is right Noetherian, and so is its
-left global dimension when `Γ` is also left Noetherian.
+two, so the right global dimension of `Γ` is at most two when `Γ` is right Noetherian.
 
 For an additive generator `M` of `mod A = FGModuleCat A`, where `A` is a finite algebra over a
 commutative Noetherian ring, for instance an Artin algebra, this gives
 `TauCeti.globalDimension (Module.End A M) ≤ 2`: the global dimension half of the statement that
-`Module.End A M` is an Auslander algebra.
+`Module.End A M` is an Auslander algebra. There `Γ` is Noetherian on both sides, and the left
+global dimension is bounded by the right one
+(`TauCeti.globalDimension_le_globalDimension_mulOpposite`). The left bound holds whenever `Γ` is
+left Noetherian, since the weak global dimension is then at most two (Auslander); that form needs
+`Tor` over noncommutative rings and is not proved here.
 
 ## Main results
 
@@ -34,8 +37,6 @@ commutative Noetherian ring, for instance an Artin algebra, this gives
   `End M`-module has projective dimension at most two.
 * `TauCeti.IsAdditiveGenerator.globalDimension_mulOpposite_end_le_two`: the right global dimension
   of a right Noetherian `End M` is at most two.
-* `TauCeti.IsAdditiveGenerator.globalDimension_end_le_two`: the left global dimension of a left and
-  right Noetherian `End M` is at most two.
 * `TauCeti.IsAdditiveGenerator.globalDimension_moduleEnd_le_two`: for an additive generator `M` of
   `mod A` over a finite algebra `A` over a commutative Noetherian ring,
   `TauCeti.globalDimension (Module.End A M) ≤ 2`.
@@ -104,13 +105,6 @@ theorem globalDimension_mulOpposite_end_le_two (hM : IsAdditiveGenerator M)
   have := Module.finitePresentation_of_finite (End M)ᵐᵒᵖ N (h := hN)
   exact hM.hasProjectiveDimensionLE_two N
 
-/-- If `M` is an additive generator of a preadditive category with kernels and `End M` is left and
-right Noetherian, then the left global dimension of `End M` is at most two. -/
-theorem globalDimension_end_le_two (hM : IsAdditiveGenerator M) [IsNoetherianRing (End M)]
-    [IsNoetherianRing (End M)ᵐᵒᵖ] : globalDimension.{v} (End M) ≤ 2 :=
-  (globalDimension_le_globalDimension_mulOpposite (End M)).trans
-    hM.globalDimension_mulOpposite_end_le_two
-
 end Category
 
 open scoped ModuleCat.Algebra in
@@ -129,7 +123,8 @@ theorem globalDimension_moduleEnd_le_two {R : Type*} [CommRing R] [IsNoetherianR
     ((ObjectProperty.fullyFaithfulι (ModuleCat.isFG A)).ringEquivEnd M).trans
       (ModuleCat.endRingEquiv M.obj)
   rw [← e.globalDimension_eq]
-  exact hM.globalDimension_end_le_two
+  exact (globalDimension_le_globalDimension_mulOpposite (End M)).trans
+    hM.globalDimension_mulOpposite_end_le_two
 
 end IsAdditiveGenerator
 
