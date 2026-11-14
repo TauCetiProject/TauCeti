@@ -14,6 +14,7 @@ import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 
 /-!
@@ -35,7 +36,9 @@ assumption on the divisor is needed, and negative coefficients are included.
 
 * `divisorSections.toChartGerm`: the coordinate meromorphic germ of a normalized local section,
   compatible with restriction and divisor inclusions.
-* `divisorSections.pointTwistCoefficient`: extraction of the newly permitted coefficient.
+* `divisorSections.pointTwistCoefficient`: extraction of the newly permitted coefficient;
+  `divisorSections.pointTwistCoefficient_eq_apply` identifies it with the value at `x` where
+  `D + [x]` vanishes at `x`.
 * `exists_section_toChartGerm_eq`: every meromorphic coordinate germ satisfying the divisor
   bound has an actual local divisor-section representative.
 * `pointTwistMap` and `pointTwistCoefficientStalk`: the coefficient morphisms of sheaves and
@@ -114,6 +117,38 @@ theorem pointTwistCoefficient_restrict {V : Opens X} (h : V ≤ U) (hx : x ∈ V
   congr 1
   apply Subtype.ext
   simpa only [LinearMap.codRestrict_apply] using toChartGerm_restrict h hx f
+
+/-- Where `D + [x]` vanishes at `x`, the newly permitted coefficient at `x` of a section of
+`𝒪(D + [x])` is its value at `x`. -/
+theorem pointTwistCoefficient_eq_apply {x : U} (hD : D x.1 = -1)
+    (f : divisorSections (D + WeilDivisor.ofPoint x.1) U) :
+    pointTwistCoefficient D U x f = f.1 x := by
+  have hx : (D + WeilDivisor.ofPoint x.1) x.1 = 0 := by
+    have h₁ : (WeilDivisor.ofPoint x.1) x.1 = 1 := WeilDivisor.coeff_ofPoint_self x.1
+    simp [hD, h₁]
+  have hg : AnalyticAt ℂ (Subtype.val.extend f.1 (0 : X → ℂ) ∘ (chartAt ℂ x.1).symm)
+      (chartAt ℂ x.1 x.1) := by
+    simpa using contMDiffAt_omega_iff_analyticAt.1
+      ((isDivisorSectionAt_extend f.2 x).contMDiffAt hx.le)
+  have hm : _root_.MeromorphicAt
+      (fun z ↦ (Subtype.val.extend f.1 (0 : X → ℂ) ∘ (chartAt ℂ x.1).symm) z /
+        (z - chartAt ℂ x.1 x.1)) (chartAt ℂ x.1 x.1) :=
+    hg.meromorphicAt.div (by fun_prop)
+  have hgerm : (meromorphicGerms.coordinate (chartAt ℂ x.1 x.1))⁻¹ *
+      toChartGerm (D + WeilDivisor.ofPoint x.1) U x f = meromorphicGerms.mk _ hm := by
+    apply Subtype.ext
+    rw [Subring.coe_mul, meromorphicGerms.coe_inv, meromorphicGerms.coe_coordinate,
+      coe_toChartGerm, meromorphicGerms.coe_mk, ← Germ.coe_inv, ← Germ.coe_mul, inv_mul_eq_div]
+    rfl
+  have he : -(-D x.1 - 1) - 1 = (-1 : ℤ) := by omega
+  rw [pointTwistCoefficient_apply, meromorphicGerms.coeff_apply]
+  simp only [he, zpow_neg_one]
+  rw [hgerm, meromorphicGerms.residue_mk]
+  have hres := Contour.residue_div_sub_pow_of_analyticAt hg 0
+  simp only [zero_add, pow_one, iteratedDeriv_zero, Nat.factorial_zero, Nat.cast_one,
+    div_one] at hres
+  rw [hres, Function.comp_apply, (chartAt ℂ x.1).left_inv (mem_chart_source ℂ x.1)]
+  exact Subtype.val_injective.extend_apply _ _ x
 
 
 /-- A section from the old divisor has zero newly permitted coefficient. -/
