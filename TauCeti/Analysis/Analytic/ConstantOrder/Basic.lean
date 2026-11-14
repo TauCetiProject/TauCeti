@@ -74,6 +74,20 @@ end NontriviallyNormedField
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
+/-- Scaling the distinguished variable by a real `t ∈ [0, 1]` does not increase the norm. -/
+private lemma norm_scaleSnd_le {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    ‖(ContinuousLinearMap.inl 𝕜 E 𝕜).comp (ContinuousLinearMap.fst 𝕜 E 𝕜) +
+      (t : 𝕜) • (ContinuousLinearMap.inr 𝕜 E 𝕜).comp (ContinuousLinearMap.snd 𝕜 E 𝕜)‖ ≤ 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w ↦ ?_
+  have hw : ((ContinuousLinearMap.inl 𝕜 E 𝕜).comp (ContinuousLinearMap.fst 𝕜 E 𝕜) +
+      (t : 𝕜) • (ContinuousLinearMap.inr 𝕜 E 𝕜).comp (ContinuousLinearMap.snd 𝕜 E 𝕜)) w =
+      (w.1, t * w.2) := by
+    ext <;> simp
+  rw [hw, one_mul, Prod.norm_def, Prod.norm_def]
+  refine max_le_max le_rfl ?_
+  rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
+  exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+
 /-- **Hadamard's lemma** in a distinguished variable: a function `G` analytic at `(x₀, y₀)` that
 vanishes on the hyperplane `y = y₀` near `x₀` is `(y - y₀) • H (x, y)` near `(x₀, y₀)`, with `H`
 analytic at `(x₀, y₀)`. -/
@@ -96,13 +110,7 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   have hLc : Continuous L := by
     rw [hL]
     fun_prop
-  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := by
-    intro t ht
-    refine (L t).opNorm_le_bound zero_le_one fun w ↦ ?_
-    rw [hLapply, one_mul, Prod.norm_def, Prod.norm_def]
-    refine max_le_max le_rfl ?_
-    rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+  have hL1 : ∀ t ∈ Icc (0 : ℝ) 1, ‖L t‖ ≤ 1 := fun t ht ↦ norm_scaleSnd_le ht
   refine ⟨fun z ↦ ∫ t in (0 : ℝ)..1, K ((x₀, y₀) + L t (z - (x₀, y₀))),
     (hKa hG).intervalIntegral_comp hLc.aestronglyMeasurable (.of_forall fun t ht ↦
       hL1 t <| Ioc_subset_Icc_self <| by rwa [uIoc_of_le zero_le_one] at ht), ?_⟩
@@ -114,12 +122,8 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   -- the segment from `(x, y₀)` to `(x, y)` stays in the ball
   have hmem (t : ℝ) (ht : t ∈ Icc 0 1) :
       ((x, y₀ + t • (y - y₀)) : E × 𝕜) ∈ Metric.ball (x₀, y₀) ρ := by
-    rw [Metric.mem_ball] at hz ⊢
-    refine lt_of_le_of_lt ?_ hz
-    rw [Prod.dist_eq, Prod.dist_eq]
-    refine max_le_max le_rfl ?_
-    rw [dist_eq_norm, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg ht.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+    rw [← ball_prod_same] at hz ⊢
+    exact ⟨hz.1, (convex_ball y₀ ρ).add_smul_sub_mem (Metric.mem_ball_self hρ) hz.2 ht⟩
   -- the fundamental theorem of calculus along the segment
   have hFTC := intervalIntegral.integral_unitInterval_deriv_eq_sub (f := fun s ↦ G (x, s))
     (f' := fun s ↦ K (x, s)) (z₀ := y₀) (z₁ := y - y₀)
