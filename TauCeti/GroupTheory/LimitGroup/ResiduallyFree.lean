@@ -10,7 +10,9 @@ public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Domain
+public import TauCeti.GroupTheory.MalcevEquation
 import TauCeti.GroupTheory.FreeGroup.MaximalExponent
+import TauCeti.GroupTheory.FreeGroup.Vaught
 
 /-!
 # Residually free and fully residually free groups
@@ -29,7 +31,10 @@ coefficients in the sense of `TauCeti.GroupAlgGeom`. This makes both properties 
 universes and gives their inheritance by subgroups.
 
 Free groups are fully residually free, and residually free groups have unique roots, hence are
-torsion-free; in particular a nontrivial finite group is not residually free. Every nonidentity
+torsion-free; in particular a nontrivial finite group is not residually free. Residually free
+groups satisfy Vaught's condition: if `x ^ 2 * y ^ 2 * z ^ 2 = 1` and two of `x`, `y`, `z` did not
+commute, their commutator would survive in a free group where the equation holds, contradicting
+Lyndon's theorem there (`IsFreeGroup.isVaught`). Every nonidentity
 element of a residually free group is a positive power of an element that is not a proper power,
 because its root exponents are bounded by those of a nonidentity image in a free group. With unique
 roots, that root has the same centralizer as the element (`Subgroup.centralizer_pow_eq`), so an
@@ -66,6 +71,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
+* `TauCeti.LimitGroup.IsResiduallyFree.isVaught`: residually free groups satisfy Vaught's
+  condition.
 * `TauCeti.LimitGroup.IsResiduallyFree.exists_maximalRoot`: in a residually free group every
   nonidentity element is `r ^ k` with `k ≠ 0`, `r` not a proper power, and `k` the greatest root
   exponent of the element.
@@ -91,7 +98,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * C. Champetier, V. Guirardel, *Limit groups as limits of free groups*, Israel J. Math. 146
   (2005), §2.3 (Definition 2.5) and Proposition 3.1.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §2.6.
+  (2005), §2.6 and §3.1 (Lemma 2).
+* R. C. Lyndon, *The equation `a²b² = c²` in free groups*, Michigan Math. J. 6 (1959).
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
   and ideal theory*, J. Algebra 219 (1999), §2.1.
 -/
@@ -261,6 +269,23 @@ theorem IsResiduallyFree.hasUniqueRoots (h : IsResiduallyFree G) : HasUniqueRoot
 theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsionFree G :=
   have := h.hasUniqueRoots
   inferInstance
+
+/-- A residually free group satisfies Vaught's condition: `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces `x`,
+`y` and `z` to commute pairwise. For a fully residually free group, apply it to
+`IsFullyResiduallyFree.isResiduallyFree`. -/
+theorem IsResiduallyFree.isVaught (h : IsResiduallyFree G) : IsVaught G := by
+  refine (isVaught_iff G).2 fun x y z hxyz => ?_
+  -- Two elements whose images commute in every free group commute: otherwise their commutator
+  -- would survive in some free group.
+  have key {a b : G} (hab : ∀ (ι : Type u) (φ : G →* FreeGroup ι), Commute (φ a) (φ b)) :
+      Commute a b := by
+    by_contra hne
+    obtain ⟨ι, φ, hφ⟩ := h ⁅a, b⁆ (mt commutatorElement_eq_one_iff_commute.1 hne)
+    simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hab ι φ] at hφ
+  -- The images of `x`, `y`, `z` in a free group commute pairwise by Lyndon's theorem.
+  have hφ (ι : Type u) (φ : G →* FreeGroup ι) :=
+    (isVaught_iff _).1 IsFreeGroup.isVaught (φ x) (φ y) (φ z) (by simpa using congrArg φ hxyz)
+  exact ⟨key fun ι φ => (hφ ι φ).1, key fun ι φ => (hφ ι φ).2.1, key fun ι φ => (hφ ι φ).2.2⟩
 
 /-- Every nonidentity element `u` of a residually free group is `r ^ k` for some `k ≠ 0` and some
 `r` that is not a proper power, with `k` the greatest exponent of a root of `u`: root exponents of

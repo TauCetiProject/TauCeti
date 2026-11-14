@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Basic
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # Changing the metric of a Riemannian vector bundle
@@ -96,13 +97,9 @@ private theorem continuous_inner_bilinearComp_orthonormalFrame (e : Trivializati
       Continuous fun y : e.baseSet ↦ TotalSpace.mk' F (y : B) (σ y w) :=
     (OrthonormalFrameBundle.continuous_totalSpaceMk_frame w).comp
       (e.continuous_orthonormalFrame c _)
-  refine continuous_clm_apply.2 fun w ↦ continuous_clm_apply.2 fun w' ↦ ?_
-  -- The values of `h` on two continuous sections form a continuous section of the trivial bundle.
-  have : Continuous fun y : e.baseSet ↦
-      TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) (y : B) (h.inner y (σ y w) (σ y w')) :=
-    (h.continuous.comp continuous_subtype_val).clm_bundle_apply₂ (F₁ := F) (F₂ := F)
-      (hσ w) (hσ w')
-  exact continuous_snd.comp ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp this)
+  exact h.continuous_inner_bilinearComp
+    (f := fun y : e.baseSet ↦ (y : B))
+    (fun y ↦ (σ y : EuclideanSpace ℝ (Fin n) →L[ℝ] E y)) hσ
 
 omit [∀ b, FiniteDimensional ℝ (E b)] [IsContinuousRiemannianBundle F E] in
 /-- Read in an orthonormal frame, `h` is again an inner product. -/

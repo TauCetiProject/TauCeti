@@ -1123,11 +1123,11 @@ theorem dgDifferential_mapExtensionHom : dgDifferential R 0 (mapExtensionHom G h
           (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g) (zero_add 1) := by
     rw [← dgMap_dgDifferential, dgDifferential_extensionFst, map_neg,
       dgMap_dgComp]
-  rw [mapExtensionHom_def, map_add, dgDifferential_dgComp, dgDifferential_dgComp, hfst,
+  simp only [mapExtensionHom_def, map_add, dgDifferential_dgComp, hfst,
     G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero
-      (dgDifferential_extensionSnd R hg)]
-  simp only [dgDifferential_extensionInl, dgDifferential_extensionInr, neg_dgComp, zero_dgComp,
-    dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
+      (dgDifferential_extensionSnd R hg), dgDifferential_extensionInl,
+    dgDifferential_extensionInr, neg_dgComp, zero_dgComp, dgComp_zero, smul_zero, add_zero,
+    zero_add, Int.negOnePow_zero, one_smul]
   exact neg_add_eq_zero.2 (dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) rfl)
 
 
