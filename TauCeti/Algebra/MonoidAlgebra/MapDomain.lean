@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.Algebra.Ring.Subsemiring.Basic
 
 /-!
 # Pushing coefficients of a monoid algebra forward along a map
@@ -24,7 +25,13 @@ which `R[M]` acts through `mapDomain ι` for `ι : M →* N`, the action of `sin
 induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of the composite
 `F ∘ φ`.
 
+The image of an arbitrary coefficient homomorphism is characterized coefficientwise by
+`mem_rangeS_mapRingHom_iff`.
+
 ## Main results
+
+* `MonoidAlgebra.mem_rangeS_mapRingHom_iff` and its additive form characterize the image of
+  any coefficient homomorphism by the image membership of every coefficient.
 
 * `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`: the functor laws, with
   additive forms `AddMonoidAlgebra.mapDomain_id` and `AddMonoidAlgebra.mapDomain_mapDomain`.
@@ -53,6 +60,17 @@ public section
 namespace MonoidAlgebra
 
 variable {R : Type*} [Semiring R] {M N O : Type*}
+
+/-- A monoid-algebra element comes from a coefficient map exactly when each coefficient does.
+No injectivity or surjectivity assumption on the coefficient map is needed. -/
+@[to_additive (dont_translate := R S)
+/-- An additive monoid-algebra element comes from a coefficient map exactly when each
+coefficient does. No injectivity or surjectivity assumption on the coefficient map is needed. -/]
+theorem mem_rangeS_mapRingHom_iff {S : Type*} [Semiring S] [Monoid M] (f : R →+* S)
+    (p : MonoidAlgebra S M) :
+    p ∈ (mapRingHom M f).rangeS ↔ ∀ m, p.coeff m ∈ f.rangeS := by
+  rw [← SetLike.mem_coe, RingHom.coe_rangeS, coe_mapRingHom, range_map]
+  simp
 
 /-- Pushing the coefficients forward along the identity does nothing. -/
 @[to_additive (attr := simp)
