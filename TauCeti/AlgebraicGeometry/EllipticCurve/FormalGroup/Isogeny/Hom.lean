@@ -136,7 +136,8 @@ private theorem dblAddXYZ_formalW_subst_pair {q₁ q₂ : MvPowerSeries σ K}
     funext k; fin_cases k
     · rfl
     · simp
-    · change S (subst (fun _ : Unit ↦ r) W.formalW) = subst (fun _ : Unit ↦ S r) W.formalW
+    · simp only [Nat.succ_eq_add_one, Nat.reduceAdd, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        Fin.reduceFinMk, Function.comp_apply, Fin.isValue, Matrix.cons_val, PowerSeries.subst_def]
       rw [coe_substAlgHom,
         subst_comp_subst_apply (hasSubst_of_constantCoeff_zero fun _ ↦ hr) (hasSubst_pair hq₁ hq₂)]
   have h₁ := hpt (X (Sum.inl ())) (constantCoeff_X _)
@@ -247,19 +248,18 @@ private theorem paramPoint_subst_formalGroup [DecidableEq KK] {q₁ q₂ : MvPow
   set P₂ : Fin 3 → MvPowerSeries σ K := ![q₂, -1, PowerSeries.subst q₂ W.formalW]
   set F₁₂ : MvPowerSeries σ K := subst ![q₁, q₂] (formalGroup W).toPowerSeries
   set ρ := algebraMap (MvPowerSeries σ K) KK
-  have hcurveK : (W.map (algebraMap K (MvPowerSeries σ K))).map ρ = W⁄KK := by
-    rw [WeierstrassCurve.map_map, ← IsScalarTower.algebraMap_eq]; rfl
+  have hcurveK : (W.toProjective.map (algebraMap K (MvPowerSeries σ K))).map ρ =
+      (W⁄KK).toProjective := by
+    rw [Projective.map, Projective.map, WeierstrassCurve.map_map,
+      ← IsScalarTower.algebraMap_eq, ← WeierstrassCurve.baseChange, toProjective]
   have hdblK : (W⁄KK).toProjective.dblAddXYZ (paramVec (KK := KK) W q₁)
       (paramVec (KK := KK) W q₂) =
         (-ρ ((W.toProjective.map (algebraMap K (MvPowerSeries σ K))).dblAddY P₁ P₂)) •
           paramVec (KK := KK) W F₁₂ := by
-    have hK := Projective.map_dblAddXYZ
-      (W' := W.toProjective.map (algebraMap K (MvPowerSeries σ K))) ρ P₁ P₂
-    change ((W.map (algebraMap K (MvPowerSeries σ K))).map ρ).toProjective.dblAddXYZ
-        (paramVec (KK := KK) W q₁) (paramVec (KK := KK) W q₂) =
-      ρ ∘ (W.toProjective.map (algebraMap K (MvPowerSeries σ K))).dblAddXYZ P₁ P₂ at hK
-    rw [hcurveK, hdbl] at hK
-    rw [hK]; funext k; fin_cases k <;> simp [paramVec, ρ]
+    rw [← hcurveK, paramVec, paramVec,
+      Projective.map_dblAddXYZ (W' := W.toProjective.map (algebraMap K (MvPowerSeries σ K)))
+        ρ P₁ P₂, hdbl]
+    funext k; fin_cases k <;> simp [paramVec, ρ]
   have huK : IsUnit (-ρ ((W.toProjective.map (algebraMap K (MvPowerSeries σ K))).dblAddY P₁ P₂)) :=
     (hu.map ρ).neg
   have hN₁ := nonsingular_paramVec (KK := KK) W hq₁
@@ -367,9 +367,10 @@ end LiftLaurentSubst
 theorem formalSeries_injective :
     Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
   intro φ ψ h
-  refine Isogeny.ext (AlgHom.ext fun x ↦ W₁.functionFieldLaurentExpansion.injective ?_)
+  refine Isogeny.ext (AlgHom.ext fun x ↦ ?_)
   rw [← φ.fieldPullback_algebraMap, ← ψ.fieldPullback_algebraMap]
-  change W₁.functionFieldLaurentExpansion _ = W₁.functionFieldLaurentExpansion _
+  apply W₁.functionFieldLaurentExpansion.injective
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   rw [φ.functionFieldLaurentExpansion_fieldPullback, ψ.functionFieldLaurentExpansion_fieldPullback]
   exact congrArg
     (fun s : {s : K⟦X⟧ // PowerSeries.constantCoeff s = 0 ∧ s ≠ 0} ↦
@@ -664,7 +665,7 @@ private theorem pointMap_ofIsogeny_map_genericPoint [W₁.IsElliptic] [W₂.IsEl
     (E : W₁.toAffine.FunctionField →ₐ[K] KK) :
     (Hom.ofIsogeny (φ.baseChange KK)).pointMap (Point.map E W₁.toAffine.genericPoint) =
       Point.map E φ.pullback.tautologicalPoint := by
-  set ι := algebraMap K KK
+  let ι := algebraMap K KK
   have hP₁ : (W₁.toAffine.map ι).Nonsingular (E W₁.toAffine.genericX)
       (E W₁.toAffine.genericY) := by
     rw [genericX_def, genericY_def]
@@ -685,6 +686,9 @@ private theorem pointMap_ofIsogeny_map_genericPoint [W₁.IsElliptic] [W₂.IsEl
         (E (φ.fieldPullback W₂.toAffine.genericY)) hP₂ : (W₂.toAffine.map ι).Point) := by
     rw [Isogeny.tautologicalPoint_eq_map_genericPoint, Point.map_map, genericPoint_eq_some,
       Point.map_some]; rfl
+  -- `Isogeny.baseChange` (`abbrev` for `φ.map ι`) is typed over the semireducible `def`
+  -- `WeierstrassCurve.baseChange`, which `dsimp`/`rw` do not unfold inside `Hom.ofIsogeny`'s
+  -- implicit curve parameters under `implicit` transparency.
   change (Hom.ofIsogeny (φ.map ι)).pointMap (Point.map E W₁.toAffine.genericPoint) =
     Point.map E φ.pullback.tautologicalPoint
   rw [hsrc, hdst, Hom.pointMap_eq_iff, Hom.tautologicalPoint_ofIsogeny,

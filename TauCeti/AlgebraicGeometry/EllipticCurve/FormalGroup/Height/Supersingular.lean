@@ -141,15 +141,13 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic] {p : ℕ}
 curve is ordinary if and only if its formal group has height `1` (Silverman V.3.1). -/
 theorem isOrdinary_iff_height_formalGroup_eq_one [hp : Fact p.Prime] [CharP K p] :
     W.IsOrdinary p ↔ (formalGroup W).height p = 1 := by
-  have hp0 : (p : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
-  let φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine hp0
-  have hmul : φ.separableDegree * φ.inseparableDegree = p * p := by
-    rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
-      Int.natAbs_natCast, sq]
   rw [W.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p hp.out, ← Nat.cast_one,
     FormalGroup.height_eq_natCast_iff, pow_one, W.order_nsmulSeries_formalGroup hp.out.ne_zero,
     Nat.cast_inj (R := ℕ∞)]
-  change φ.separableDegree = p ↔ φ.inseparableDegree = p
+  set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine (Nat.cast_ne_zero.mpr hp.out.ne_zero)
+  have hmul : φ.separableDegree * φ.inseparableDegree = p * p := by
+    rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
+      Int.natAbs_natCast, sq]
   constructor <;> intro h
   · rw [h] at hmul
     exact Nat.mul_left_cancel hp.out.pos hmul
@@ -162,15 +160,13 @@ theorem isSupersingular_iff_height_formalGroup_eq_two [CharP K p] :
     W.IsSupersingular p ↔ (formalGroup W).height p = 2 := by
   rcases CharP.char_is_prime_or_zero K p with hp | rfl
   · have : Fact p.Prime := ⟨hp⟩
-    have hp0 : (p : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne_zero
-    let φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine hp0
-    have hmul : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
-      rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
-        Int.natAbs_natCast]
     rw [W.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one p,
       ← Nat.cast_ofNat (n := 2), FormalGroup.height_eq_natCast_iff,
       W.order_nsmulSeries_formalGroup hp.ne_zero, Nat.cast_inj (R := ℕ∞)]
-    change φ.separableDegree = 1 ↔ φ.inseparableDegree = p ^ 2
+    set φ := TauCeti.Isogeny.mulByIntIsogenyOfNeZero W.toAffine (Nat.cast_ne_zero.mpr hp.ne_zero)
+    have hmul : φ.separableDegree * φ.inseparableDegree = p ^ 2 := by
+      rw [φ.separableDegree_mul_inseparableDegree, TauCeti.Isogeny.degree_mulByIntIsogenyOfNeZero,
+        Int.natAbs_natCast]
     constructor <;> intro h
     · rwa [h, one_mul] at hmul
     · rw [h] at hmul

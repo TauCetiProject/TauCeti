@@ -176,11 +176,11 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff (hp : p.Prime)
           PowerSeries.coeff (p ^ (i : ℕ)) ((formalGroup W).nsmulSeries p)) ↔
       IsWeaklyRegular M
         [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  set v : ℕ → R := fun i ↦ PowerSeries.coeff (p ^ i) ((formalGroup W).nsmulSeries p)
+  set v : ℕ → R := fun i ↦ PowerSeries.coeff (p ^ i) ((formalGroup W).nsmulSeries p) with hv
   obtain ⟨k, rfl⟩ : ∃ k, n = 2 + k := ⟨n - 2, by omega⟩
   have hhead : (List.ofFn fun i : Fin 2 ↦ v i) = [(p : R), v 1] := by
     simp [List.ofFn_succ, v, pow_one]
-  change IsWeaklyRegular M (List.ofFn fun i : Fin (2 + k) ↦ v i) ↔ _
+  simp_rw [← congrFun hv]
   rw [List.ofFn_add]
   simp only [Fin.val_castLE, hhead, isWeaklyRegular_append_iff']
   refine (and_iff_left ?_).trans ?_
@@ -188,10 +188,9 @@ theorem isWeaklyRegular_ofFn_coeff_nsmulSeries_formalGroup_iff (hp : p.Prime)
   · simpa [v] using W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp M
   rcases k with _ | k
   · simp [IsWeaklyRegular.nil]
-  · set I := Ideal.ofList [(p : R), v 1]
+  · set I := Ideal.ofList [(p : R), v 1] with hI_def
     have hI : I = (formalGroup W).heightIdeal p 2 := by
-      change Ideal.ofList [(p : R), v 1] = _
-      rw [← hhead, Ideal.ofList_ofFn, (formalGroup W).heightIdeal_eq_span hp 2]
+      rw [hI_def, ← hhead, Ideal.ofList_ofFn, (formalGroup W).heightIdeal_eq_span hp 2]
       congr 1
       ext x
       simp [Fin.exists_iff, v]

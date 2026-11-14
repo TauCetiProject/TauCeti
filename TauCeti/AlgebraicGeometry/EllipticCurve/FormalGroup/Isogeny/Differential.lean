@@ -126,24 +126,22 @@ theorem inv_mul_derivative_functionFieldLaurentExpansion_genericX [W.IsElliptic]
     simp [invariantDifferentialDenom_def, Affine.evalEval_polynomialY, WeierstrassCurve.baseChange,
       W.functionFieldLaurentExpansion_genericX_eq_X_div_formalW,
       W.functionFieldLaurentExpansion_genericY_eq_neg_one_div_formalW, map_ofNat, q, w]
-  have hw : w ≠ 0 := fun hw0 ↦ (map_ne_zero W.functionFieldLaurentExpansion).mpr
-    W.toAffine.genericY_ne_zero (by
-      rw [W.functionFieldLaurentExpansion_genericY_eq_neg_one_div_formalW,
-        show (formalW W : K⸨X⸩) = w from rfl, hw0, div_zero])
+  have hw : w ≠ 0 := fun hw0 : (formalW W : K⸨X⸩) = 0 ↦
+    (map_ne_zero W.functionFieldLaurentExpansion).mpr W.toAffine.genericY_ne_zero
+      (by rw [W.functionFieldLaurentExpansion_genericY_eq_neg_one_div_formalW, hw0, div_zero])
   have hu : -2 + algebraMap K K⸨X⸩ W.a₁ * q + algebraMap K K⸨X⸩ W.a₃ * w ≠ 0 := fun hu0 ↦
     hdenom_ne <| by
+      have hcalc : 2 * (-1 / w) + algebraMap K K⸨X⸩ W.a₁ * (q / w) + algebraMap K K⸨X⸩ W.a₃ =
+          (-2 + algebraMap K K⸨X⸩ W.a₁ * q + algebraMap K K⸨X⸩ W.a₃ * w) / w := by field_simp
       rw [hdenom_eq, Affine.evalEval_polynomialY]
       simp only [WeierstrassCurve.baseChange, map_a₁, map_a₃]
-      rw [show 2 * (-1 / w) + algebraMap K K⸨X⸩ W.a₁ * (q / w) + algebraMap K K⸨X⸩ W.a₃ =
-        (-2 + algebraMap K K⸨X⸩ W.a₁ * q + algebraMap K K⸨X⸩ W.a₃ * w) / w by field_simp,
-        hu0, zero_div]
+      rw [hcalc, hu0, zero_div]
   have hkey := W.inv_evalEval_polynomialY_smul_derivation_div (TauCeti.laurentSeriesDerivation K)
     heq hG hu
-  have hDq : _root_.LaurentSeries.derivative K q = 1 := by
-    rw [show q = ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) from rfl, ← PowerSeries.coe_derivative,
-      PowerSeries.derivative_X, PowerSeries.coe_one]
+  have hDq : _root_.LaurentSeries.derivative K ((PowerSeries.X : K⟦X⟧) : K⸨X⸩) = 1 := by
+    rw [← PowerSeries.coe_derivative, PowerSeries.derivative_X, PowerSeries.coe_one]
   rw [hdenom_eq, W.functionFieldLaurentExpansion_genericX_eq_X_div_formalW]
-  simp only [TauCeti.laurentSeriesDerivation_apply, smul_eq_mul, hDq, mul_one] at hkey
+  simp only [TauCeti.laurentSeriesDerivation_apply, smul_eq_mul, q, hDq, mul_one] at hkey
   exact hkey.trans (inv_eq_of_mul_eq_one_left (W.coe_formalInvariantDifferentialDenom ▸ hinv))
 
 end WeierstrassCurve
@@ -263,9 +261,9 @@ theorem coeff_one_formalSeries_of_pullbackDifferential_eq_smul {c : K}
   have hsub :
       PowerSeries.constantCoeff
           (PowerSeries.subst φ.formalSeries (formalGroup W₂).invariantDifferential) = 1 := by
-    change MvPowerSeries.constantCoeff _ = 1
-    simpa using PowerSeries.constantCoeff_subst_of_constantCoeff_zero
-      φ.constantCoeff_formalSeries (formalGroup W₂).invariantDifferential
+    rw [PowerSeries.constantCoeff_eq,
+      PowerSeries.constantCoeff_subst_of_constantCoeff_zero φ.constantCoeff_formalSeries]
+    simp
   rw [map_mul, map_mul, hsub, one_mul, ← PowerSeries.coeff_zero_eq_constantCoeff_apply,
     PowerSeries.coeff_derivative] at h
   simpa using h
@@ -301,8 +299,8 @@ has vanishing order `1`. -/
 theorem isSeparable_iff_order_formalSeries_eq_one :
     Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField ↔
       φ.formalSeries.order = 1 := by
-  rw [φ.isSeparable_iff_coeff_one_formalSeries_ne_zero,
-    show (1 : ℕ∞) = ((1 : ℕ) : ℕ∞) from rfl, PowerSeries.order_eq_nat]
+  rw [φ.isSeparable_iff_coeff_one_formalSeries_ne_zero, ← Nat.cast_one (R := ℕ∞),
+    PowerSeries.order_eq_nat]
   refine ⟨fun h ↦ ⟨h, fun i hi ↦ ?_⟩, fun h ↦ h.1⟩
   obtain rfl : i = 0 := Nat.lt_one_iff.mp hi
   simp
@@ -313,10 +311,9 @@ theorem order_formalSeries_eq_one
     φ.formalSeries.order = 1 :=
   φ.isSeparable_iff_order_formalSeries_eq_one.mp ‹_›
 
-/-- **The vanishing order of an isogeny's formal series equals its inseparable degree**:
-factoring `φ = χ ∘ F^r` into an `r`-fold relative Frobenius (with formal series `X ^ (p ^ r)`) and a
-separable isogeny `χ` (with formal series of order `1`) gives
-`φ.formalSeries.order = p ^ r = φ.inseparableDegree`. -/
+/-- **The vanishing order of an isogeny's formal series equals its inseparable degree**: for any
+isogeny `φ : W₁ → W₂` to an elliptic curve over a field `K`,
+`φ.formalSeries.order = φ.inseparableDegree` in `ℕ∞`. -/
 theorem order_formalSeries : φ.formalSeries.order = φ.inseparableDegree := by
   obtain ⟨p, _⟩ := ExpChar.exists K
   obtain ⟨r, χ, hsep, hχ⟩ := exists_isSeparable_comp_iterateRelativeFrobeniusIsogeny_eq p φ
