@@ -27,10 +27,12 @@ transport of complexes through the stalk comparison for an embedding.
 
 The stalk of an additive-group-valued presheaf at `x` vanishes exactly when every section over a
 neighbourhood of `x` restricts to zero on a smaller neighbourhood of `x`
-(`TopCat.Presheaf.isZero_stalk_iff`). Since sheafification does not change stalks
-(`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf vanishes exactly
-when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`). The same
-criteria hold for module-valued presheaves (`TopCat.Presheaf.isZero_stalk_iff_moduleCat` and
+(`TopCat.Presheaf.isZero_stalk_iff`). If a morphism of presheaves valued in a preadditive category
+vanishes on all opens inside `V`, its induced map on stalks vanishes at every point of `V`
+(`TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero`). Since sheafification does not change
+stalks (`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf vanishes
+exactly when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`). The
+same criteria hold for module-valued presheaves (`TopCat.Presheaf.isZero_stalk_iff_moduleCat` and
 `TopCat.Presheaf.isZero_presheafToSheaf_obj_iff_moduleCat`).
 
 Taking stalks commutes with a coefficient functor preserving the neighborhood colimit,
@@ -50,6 +52,26 @@ universe u
 noncomputable section
 
 namespace TopCat.Presheaf
+
+section Preadditive
+
+/-- A morphism of presheaves valued in a preadditive category that vanishes on all opens inside `V`
+induces the zero map on stalks at every point of `V`. -/
+theorem stalkFunctor_map_eq_zero_of_app_eq_zero
+    {C : Type*} [Category.{u} C] [Preadditive C] [HasColimits C]
+    {X : TopCat.{u}} {F G : X.Presheaf C} (α : F ⟶ G) {V : Opens X}
+    (hα : ∀ ⦃W : Opens X⦄, W ≤ V → α.app (op W) = 0) {x : X} (hx : x ∈ V) :
+    (stalkFunctor C x).map α = 0 := by
+  refine F.stalk_hom_ext fun U hxU ↦ ?_
+  have hxUV : x ∈ U ⊓ V := ⟨hxU, hx⟩
+  have hUV : F.germ (U ⊓ V) x hxUV ≫ (stalkFunctor C x).map α = 0 :=
+    (stalkFunctor_map_germ (U ⊓ V) x hxUV α).trans
+      ((congrArg (· ≫ G.germ (U ⊓ V) x hxUV) (hα inf_le_right)).trans zero_comp)
+  have hres := F.germ_res_assoc (homOfLE inf_le_left : U ⊓ V ⟶ U) x hxUV
+    ((stalkFunctor C x).map α)
+  exact (hres.symm.trans ((congrArg (_ ≫ ·) hUV).trans comp_zero)).trans comp_zero.symm
+
+end Preadditive
 
 variable {X : TopCat.{u}} (F : X.Presheaf AddCommGrpCat.{u}) (x : X)
   {T : Type u} [AddCommGroup T]
