@@ -27,7 +27,9 @@ gives the action of `Equiv.Perm ι` on a tensor power by algebra automorphisms
 (`PiTensorProduct.permAlgEquiv`).
 
 Applying algebra equivalences factorwise gives `PiTensorProduct.congrAlgEquiv`, the algebra
-version of Mathlib's `PiTensorProduct.congr`.
+version of Mathlib's `PiTensorProduct.congr`; applying algebra multiplication factorwise via
+`PiTensorProduct.map₂` gives the algebra multiplication on `⨂[R] i, A i`
+(`PiTensorProduct.map₂_mul`).
 
 For finite index types, the tensor product of the split algebras `κ i → R` is the split algebra
 of functions on `Π i, κ i` (`PiTensorProduct.piScalarAlgEquiv`), built from Mathlib's
@@ -47,6 +49,14 @@ open scoped TensorProduct
 namespace PiTensorProduct
 
 variable {R : Type*} [CommSemiring R]
+
+/-- Applying algebra multiplication in every factor via `PiTensorProduct.map₂` is the
+multiplication of the indexed tensor product of algebras. -/
+@[simp]
+theorem map₂_mul {ι : Type*} {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] :
+    PiTensorProduct.map₂ (fun i ↦ LinearMap.mul R (A i)) = LinearMap.mul R (⨂[R] i, A i) := by
+  ext x y
+  simp [map₂_tprod_tprod, tprod_mul_tprod, Pi.mul_def]
 
 /-- Reindexing an indexed tensor product of algebras as an algebra equivalence. -/
 noncomputable def reindexAlgEquiv {ι κ : Type*} (A : ι → Type*)

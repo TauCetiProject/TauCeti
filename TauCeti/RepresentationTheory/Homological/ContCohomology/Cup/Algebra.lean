@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Action.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.DiscreteRing
+public import TauCeti.Topology.Algebra.MulAction.Discrete
 
 /-!
 # The multiplication pairing of a discrete `G`-algebra
@@ -19,11 +19,11 @@ jointly continuous and `G`-equivariant, hence defines a coefficient pairing `Tau
 and the `G`-action is continuous, on `TauCeti.SmoothDiscreteTopRep.of R G A`
 (`TauCeti.SmoothDiscreteTopRep.ofMulPairing`).
 
-No commutativity of `A` is needed for the pairing itself; when `A` is commutative, the carrier
-projections inherit `CommMonoid` instances as well. Over `R = ℤ`, continuity of scalar
-multiplication holds automatically for every discrete `G`-ring `A`, generalizing
-`TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul` to `R`-algebras over any commutative
-topological ring `R`.
+No commutativity of `A` is needed for the pairing itself; when `A` is commutative, the pairing is
+symmetric (`ofDiscreteModuleMulPairing_flip`, `SmoothDiscreteTopRep.ofMulPairing_flip`) and the
+carrier projections inherit `CommMonoid` instances alongside their `Monoid` instances. Over `R = ℤ`,
+both pairings agree (`ofDiscreteModuleMulPairing_int`, `SmoothDiscreteTopRep.ofMulPairing_int`)
+with `TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul`.
 
 ## Main definitions
 
@@ -39,17 +39,51 @@ universe u v w
 
 namespace TauCeti
 
+section CarrierInstances
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Monoid G]
+
+/-- The underlying module of `ofDiscreteModule R G M` inherits a `Monoid` structure on `M` at
+instance transparency. -/
+instance instMonoidOfDiscreteModuleV
+    (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] [Monoid M] :
+    Monoid (ofDiscreteModule R G M).V :=
+  inferInstanceAs (Monoid M)
+
+/-- The underlying module of `ofDiscreteModule R G M` inherits a `CommMonoid` structure on `M` at
+instance transparency. -/
+instance instCommMonoidOfDiscreteModuleV
+    (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
+    [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] [CommMonoid M] :
+    CommMonoid (ofDiscreteModule R G M).V :=
+  inferInstanceAs (CommMonoid M)
+
+/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `Monoid` structure on
+`X.V` at instance transparency; in particular this covers `(SmoothDiscreteTopRep.of R G A).obj.V`.
+-/
+instance instMonoidToSmoothDiscreteObjV [TopologicalSpace G]
+    (X : DiscreteRep.{u, v, w} R G) [Monoid X.V] :
+    Monoid ((toSmoothDiscrete R G).obj X).obj.V :=
+  inferInstanceAs (Monoid X.V)
+
+/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `CommMonoid` structure
+on `X.V` at instance transparency; in particular this covers
+`(SmoothDiscreteTopRep.of R G A).obj.V`. -/
+instance instCommMonoidToSmoothDiscreteObjV [TopologicalSpace G]
+    (X : DiscreteRep.{u, v, w} R G) [CommMonoid X.V] :
+    CommMonoid ((toSmoothDiscrete R G).obj X).obj.V :=
+  inferInstanceAs (CommMonoid X.V)
+
+end CarrierInstances
+
 section GeneralRing
 
 variable (R : Type u) [CommRing R] [TopologicalSpace R]
   (G : Type v) [Monoid G]
   (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
   [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul R A]
-
-/-- The underlying module of `ofDiscreteModule R G A` inherits the monoid structure of `A` at
-instance transparency. -/
-instance instMonoidOfDiscreteModuleV : Monoid (ofDiscreteModule R G A).V :=
-  inferInstanceAs (Monoid A)
 
 /-- Algebra multiplication on a discrete `G`-algebra `A` as a `TauCeti.TopPairing` on
 `ofDiscreteModule R G A`. For `R = ℤ`, continuity of scalar multiplication holds automatically for
@@ -75,15 +109,30 @@ theorem ofDiscreteModuleMulPairing_bil_apply (x y : A) :
 
 end GeneralRing
 
-/-- When `A` is commutative, the underlying module of `ofDiscreteModule R G A` inherits the
-commutative monoid structure of `A` at instance transparency. -/
-instance instCommMonoidOfDiscreteModuleV
+/-- When `A` is commutative, `ofDiscreteModuleMulPairing` is invariant under `TopPairing.flip`. -/
+@[simp]
+theorem ofDiscreteModuleMulPairing_flip
     (R : Type u) [CommRing R] [TopologicalSpace R]
     (G : Type v) [Monoid G]
     (A : Type w) [CommRing A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
     [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul R A] :
-    CommMonoid (ofDiscreteModule R G A).V :=
-  inferInstanceAs (CommMonoid A)
+    (ofDiscreteModuleMulPairing R G A).flip = ofDiscreteModuleMulPairing R G A :=
+  TopPairing.ext <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦
+    ((ofDiscreteModuleMulPairing R G A).flip_bil x y).trans <|
+      (ofDiscreteModuleMulPairing_bil_apply R G A y x).trans <|
+        (mul_comm y x).trans (ofDiscreteModuleMulPairing_bil_apply R G A x y).symm
+
+/-- Over `ℤ`, `ofDiscreteModuleMulPairing` agrees with `ofDiscreteModulePairing` at
+`AddMonoidHom.mul`. -/
+theorem ofDiscreteModuleMulPairing_int
+    (G : Type v) [Monoid G]
+    (A : Type w) [Ring A] [TopologicalSpace A] [DiscreteTopology A] [MulSemiringAction G A] :
+    ofDiscreteModuleMulPairing ℤ G A =
+      ofDiscreteModulePairing AddMonoidHom.mul (fun g a b ↦ (smul_mul' g a b).symm) :=
+  TopPairing.ext <| LinearMap.ext fun x ↦ LinearMap.ext fun y ↦
+    (ofDiscreteModuleMulPairing_bil_apply ℤ G A x y).trans <|
+      (AddMonoidHom.mul_apply (R := A) x y).symm.trans
+        (ofDiscreteModulePairing_bil_apply (AddMonoidHom.mul (R := A)) _ x y).symm
 
 namespace SmoothDiscreteTopRep
 
@@ -94,21 +143,21 @@ variable (R : Type u) [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
   (A : Type w) [Ring A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
   [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul G A]
 
-/-- The underlying module of `(SmoothDiscreteTopRep.of R G A).obj` inherits the monoid structure
-of `A` at instance transparency. -/
-instance instMonoidOfV : Monoid (SmoothDiscreteTopRep.of R G A).obj.V :=
-  inferInstanceAs (Monoid A)
-
 /-- Algebra multiplication on a discrete `G`-algebra `A` over a discrete commutative ring `R`, as a
 `TauCeti.TopPairing` on `(SmoothDiscreteTopRep.of R G A).obj`. Continuity of scalar multiplication
-by `R` holds automatically because both `R` and `A` are discrete; when a `ContinuousSMul R A`
-instance is already in scope (for instance at `R = ℤ`), this agrees with
-`ofDiscreteModuleMulPairing R G A` by `rfl`. -/
+by `R` holds automatically via `TauCeti.continuousSMul_of_discreteTopology`; when a
+`ContinuousSMul R A` instance is in scope, this agrees with `ofDiscreteModuleMulPairing R G A`
+(`SmoothDiscreteTopRep.ofMulPairing_eq_ofDiscreteModuleMulPairing`). -/
 def ofMulPairing :
     TopPairing (SmoothDiscreteTopRep.of R G A).obj (SmoothDiscreteTopRep.of R G A).obj
       (SmoothDiscreteTopRep.of R G A).obj :=
-  letI : ContinuousSMul R A := ⟨continuous_of_discreteTopology⟩
   ofDiscreteModuleMulPairing R G A
+
+/-- `SmoothDiscreteTopRep.ofMulPairing` agrees with `ofDiscreteModuleMulPairing` for any ambient
+`ContinuousSMul R A` instance. -/
+theorem ofMulPairing_eq_ofDiscreteModuleMulPairing [ContinuousSMul R A] :
+    ofMulPairing R G A = ofDiscreteModuleMulPairing R G A :=
+  (rfl)
 
 /-- The bilinear map underlying `SmoothDiscreteTopRep.ofMulPairing` is `LinearMap.mul R A`. -/
 @[simp]
@@ -125,15 +174,26 @@ theorem ofMulPairing_bil_apply (x y : A) :
 
 end DiscreteRing
 
-/-- When `A` is commutative, the underlying module of `(SmoothDiscreteTopRep.of R G A).obj`
-inherits the commutative monoid structure of `A` at instance transparency. -/
-instance instCommMonoidOfV
+/-- When `A` is commutative, `SmoothDiscreteTopRep.ofMulPairing` is invariant under
+`TopPairing.flip`. -/
+@[simp]
+theorem ofMulPairing_flip
     (R : Type u) [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
     (G : Type v) [Monoid G] [TopologicalSpace G]
     (A : Type w) [CommRing A] [Algebra R A] [TopologicalSpace A] [DiscreteTopology A]
     [MulSemiringAction G A] [SMulCommClass G R A] [ContinuousSMul G A] :
-    CommMonoid (SmoothDiscreteTopRep.of R G A).obj.V :=
-  inferInstanceAs (CommMonoid A)
+    (ofMulPairing R G A).flip = ofMulPairing R G A :=
+  ofDiscreteModuleMulPairing_flip R G A
+
+/-- Over `ℤ`, `SmoothDiscreteTopRep.ofMulPairing` agrees with `ofDiscreteModulePairing` at
+`AddMonoidHom.mul`. -/
+theorem ofMulPairing_int
+    (G : Type v) [Monoid G] [TopologicalSpace G]
+    (A : Type w) [Ring A] [TopologicalSpace A] [DiscreteTopology A]
+    [MulSemiringAction G A] [ContinuousSMul G A] :
+    ofMulPairing ℤ G A =
+      ofDiscreteModulePairing AddMonoidHom.mul (fun g a b ↦ (smul_mul' g a b).symm) :=
+  (ofMulPairing_eq_ofDiscreteModuleMulPairing ℤ G A).trans (ofDiscreteModuleMulPairing_int G A)
 
 end SmoothDiscreteTopRep
 

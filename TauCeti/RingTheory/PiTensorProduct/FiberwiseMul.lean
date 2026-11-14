@@ -39,8 +39,6 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 
 ## Main results
 
-* `PiTensorProduct.map₂_mul`: applying algebra multiplication factorwise via `PiTensorProduct.map₂`
-  is the multiplication of the indexed tensor product of algebras.
 * `PiTensorProduct.productMap_tprod`, `PiTensorProduct.productMap_singleAlgHom`: the values of
   `PiTensorProduct.productMap` on pure tensors and on the factor inclusions.
 * `PiTensorProduct.fiberwiseMul_tprod`, `PiTensorProduct.fiberwiseMul_singleAlgHom`: its values on
@@ -66,21 +64,6 @@ public section
 open scoped TensorProduct
 
 namespace PiTensorProduct
-
-section Map₂
-
-variable {R : Type*} [CommSemiring R] {ι : Type*} {A : ι → Type*}
-  [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
-
-/-- Applying algebra multiplication in every factor via `PiTensorProduct.map₂` is the
-multiplication of the indexed tensor product of algebras. -/
-@[simp]
-theorem map₂_mul :
-    PiTensorProduct.map₂ (fun i ↦ LinearMap.mul R (A i)) = LinearMap.mul R (⨂[R] i, A i) := by
-  ext x y
-  simp [map₂_tprod_tprod, tprod_mul_tprod, Pi.mul_def]
-
-end Map₂
 
 variable {R : Type*} [CommSemiring R] {σ τ υ : Type*} {A : τ → Type*}
   [∀ j, CommSemiring (A j)] [∀ j, Algebra R (A j)]

@@ -77,8 +77,10 @@ tensor-induced ring and `G`-ring multiplication of a commutative `G`-ring.
   `G`-equivariant.
 * `Subgroup.tensorInducedMulAlgHom_changeTransversalAlgEquiv`: transversal multiplication is
   independent of the chosen transversal up to `Subgroup.tensorInducedChangeTransversalAlgEquiv`.
-* `Subgroup.tensorInducedMulAlgHom_reindexAlgEquiv`: transversal multiplication commutes with
-  reindexing along a group homomorphism inducing a bijection of coset spaces.
+* `Subgroup.tensorInducedMulAlgHom_reindexAlgEquiv`,
+  `Subgroup.tensorInducedMulAlgHom_tensorInducedMapEquiv`: transversal multiplication commutes with
+  reindexing and `Subgroup.tensorInducedMapEquiv` along a group homomorphism inducing a bijection of
+  coset spaces.
 
 ## References
 
@@ -136,22 +138,6 @@ theorem tensorAlgAut_singleAlgHom [DecidableEq ι] (a : WreathProduct D ι) (i :
     PiTensorProduct.permAlgEquiv_singleAlgHom, PiTensorProduct.congrAlgEquiv_singleAlgHom,
     MulSemiringAction.toAlgEquiv_apply]
 
-/-- The base subgroup of the wreath product acts independently by algebra automorphisms in each
-tensor factor. This derived normal form is an explicit rewrite lemma rather than a simp lemma, since
-`tensorAlgAut_tprod` already simplifies its left-hand side. -/
-theorem tensorAlgAut_inl_tprod (a : ι → D) (m : ι → A) :
-    tensorAlgAut R D A ι (SemidirectProduct.inl a) (PiTensorProduct.tprod R m) =
-      PiTensorProduct.tprod R fun i ↦ a i • m i := by
-  simp [Equiv.Perm.one_def]
-
-/-- The top symmetric subgroup of the wreath product acts by reindexing the tensor factors. This
-derived normal form is an explicit rewrite lemma rather than a simp lemma, since
-`tensorAlgAut_tprod` already proves it by simplification. -/
-theorem tensorAlgAut_inr_tprod (σ : Equiv.Perm ι) (m : ι → A) :
-    tensorAlgAut R D A ι (SemidirectProduct.inr σ) (PiTensorProduct.tprod R m) =
-      PiTensorProduct.tprod R fun i ↦ m (σ.symm i) := by
-  simp
-
 /-- The underlying linear map of the wreath-product algebra automorphism is
 `Representation.wreathTensor` of `Representation.ofDistribMulAction`. -/
 @[simp]
@@ -177,24 +163,26 @@ noncomputable def tensorMulSemiringAction :
     MulSemiringAction (WreathProduct D ι) (⨂[R] _ : ι, A) :=
   { DistribMulAction.compHom (⨂[R] _ : ι, A)
       ((Representation.ofDistribMulAction R D A).wreathTensor ι) with
-    smul_one a := by
-      -- Express the action via `tensorAlgAut`, which preserves `1` as an algebra equivalence.
-      change (Representation.ofDistribMulAction R D A).wreathTensor ι a 1 = 1
-      rw [← tensorAlgAut_apply, map_one]
-    smul_mul a y z := by
-      -- Express the action via `tensorAlgAut`, which preserves `*` as an algebra equivalence.
-      change (Representation.ofDistribMulAction R D A).wreathTensor ι a (y * z) =
-        (Representation.ofDistribMulAction R D A).wreathTensor ι a y *
-          (Representation.ofDistribMulAction R D A).wreathTensor ι a z
-      rw [← tensorAlgAut_apply, ← tensorAlgAut_apply, ← tensorAlgAut_apply, map_mul] }
+    smul_one a := (tensorAlgAut_apply a 1).symm.trans (map_one (tensorAlgAut R D A ι a))
+    smul_mul a y z :=
+      ((tensorAlgAut_apply a (y * z)).symm.trans (map_mul (tensorAlgAut R D A ι a) y z)).trans
+        (congrArg₂ (· * ·) (tensorAlgAut_apply a y) (tensorAlgAut_apply a z)) }
+
+/-- Scalar multiplication for `TauCeti.WreathProduct.tensorMulSemiringAction` evaluates
+`TauCeti.WreathProduct.tensorAlgAut`. -/
+theorem tensorMulSemiringAction_smul (a : WreathProduct D ι) (z : ⨂[R] _ : ι, A) :
+    letI := tensorMulSemiringAction R D A ι
+    a • z = tensorAlgAut R D A ι a z :=
+  (tensorAlgAut_apply a z).symm
 
 variable (R D A ι) in
 /-- The wreath-product action on `⨂[R] _ : ι, A` commutes with scalar multiplication by `R`. -/
 theorem tensorSMulCommClass :
     letI := tensorMulSemiringAction R D A ι
-    SMulCommClass (WreathProduct D ι) R (⨂[R] _ : ι, A) :=
-  letI := tensorMulSemiringAction R D A ι
-  ⟨fun a r z ↦ ((Representation.ofDistribMulAction R D A).wreathTensor ι a).map_smul r z⟩
+    SMulCommClass (WreathProduct D ι) R (⨂[R] _ : ι, A) := by
+  let _ := tensorMulSemiringAction R D A ι
+  refine ⟨fun a r z ↦ ?_⟩
+  rw [tensorMulSemiringAction_smul, tensorMulSemiringAction_smul, map_smul]
 
 end TauCeti.WreathProduct
 
@@ -248,7 +236,7 @@ theorem tensorInducedAlgAut_tprod (g : G) (m : G ⧸ U → A) :
     U.tensorInducedAlgAut s R A g (PiTensorProduct.tprod R m) =
       PiTensorProduct.tprod R fun x ↦ (U.monomialHom s g).left x • m (g⁻¹ • x) := by
   rw [tensorInducedAlgAut_apply, tensorInducedRepresentation_apply_tprod]
-  rfl
+  simp only [Representation.ofDistribMulAction_apply_apply]
 
 /-- On a single-slot inclusion at coset `x`, `Subgroup.tensorInducedAlgAut` moves the entry to coset
 `g • x` and acts by `(U.monomialHom s g).left (g • x)`. -/
@@ -286,13 +274,20 @@ noncomputable def tensorInducedMulSemiringAction :
     smul_one g := U.tensorInducedRepresentation_ofDistribMulAction_one s R A g
     smul_mul g y z := U.tensorInducedRepresentation_ofDistribMulAction_mul s R A g y z }
 
+/-- Scalar multiplication for `Subgroup.tensorInducedMulSemiringAction` evaluates
+`Subgroup.tensorInducedAlgAut`. -/
+theorem tensorInducedMulSemiringAction_smul (g : G) (z : ⨂[R] _ : G ⧸ U, A) :
+    letI := U.tensorInducedMulSemiringAction s R A
+    g • z = U.tensorInducedAlgAut s R A g z :=
+  (U.tensorInducedAlgAut_apply s R A g z).symm
+
 /-- The tensor-induced `MulSemiringAction` commutes with scalar multiplication by `R`. -/
 theorem tensorInducedSMulCommClass :
     letI := U.tensorInducedMulSemiringAction s R A
-    SMulCommClass G R (⨂[R] _ : G ⧸ U, A) :=
-  letI := U.tensorInducedMulSemiringAction s R A
-  ⟨fun g r z ↦
-    (U.tensorInducedRepresentation s (Representation.ofDistribMulAction R U A) g).map_smul r z⟩
+    SMulCommClass G R (⨂[R] _ : G ⧸ U, A) := by
+  let _ := U.tensorInducedMulSemiringAction s R A
+  refine ⟨fun g r z ↦ ?_⟩
+  rw [tensorInducedMulSemiringAction_smul, tensorInducedMulSemiringAction_smul, map_smul]
 
 /-! ### Change of transversal as an isomorphism of `G`-algebras -/
 
@@ -323,8 +318,7 @@ theorem tensorInducedChangeTransversalAlgEquiv_apply (z : ⨂[R] _ : G ⧸ U, A)
     U.tensorInducedChangeTransversalAlgEquiv s t R A z =
       U.tensorInducedChangeTransversal s t (Representation.ofDistribMulAction R U A) z := by
   rw [tensorInducedChangeTransversal_apply,
-    ← tensorInducedChangeTransversalAlgEquiv_toLinearEquiv]
-  rfl
+    ← tensorInducedChangeTransversalAlgEquiv_toLinearEquiv, AlgEquiv.coe_toLinearEquiv]
 
 /-- On a pure tensor, changing the transversal applies the transversal difference in each coset
 coordinate. -/
@@ -350,7 +344,7 @@ theorem tensorInducedChangeTransversalAlgEquiv_singleAlgHom [DecidableEq (G ⧸ 
 theorem tensorInducedChangeTransversalAlgEquiv_self :
     U.tensorInducedChangeTransversalAlgEquiv s s R A = AlgEquiv.refl := by
   rw [tensorInducedChangeTransversalAlgEquiv, monomialChangeTransversal_self, map_one]
-  rfl
+  exact AlgEquiv.ext fun _ ↦ AlgEquiv.one_apply _
 
 /-- Change-of-transversal algebra equivalences compose across an intermediate transversal. -/
 theorem tensorInducedChangeTransversalAlgEquiv_trans (v : U.LeftTransversal) :
@@ -370,8 +364,8 @@ theorem tensorInducedChangeTransversalAlgEquiv_symm :
   intro z
   apply (U.tensorInducedChangeTransversalAlgEquiv s t R A).injective
   rw [AlgEquiv.apply_symm_apply, ← AlgEquiv.trans_apply,
-    tensorInducedChangeTransversalAlgEquiv_trans, tensorInducedChangeTransversalAlgEquiv_self]
-  rfl
+    tensorInducedChangeTransversalAlgEquiv_trans, tensorInducedChangeTransversalAlgEquiv_self,
+    AlgEquiv.coe_refl, id_eq]
 
 /-- **Change of transversal is `G`-equivariant on tensor-induced algebras**: the comparison
 `Subgroup.tensorInducedChangeTransversalAlgEquiv` intertwines the `G`-algebra actions attached to
@@ -468,8 +462,8 @@ theorem tensorInducedUntwistAlgEquiv_tensorInducedAlgAut (g : G) (z : ⨂[R] _ :
       MulSemiringAction.toAlgEquiv_apply, Function.comp_def]
     congr 2
     funext x
-    rw [Subgroup.smul_def, monomialHom_left, ← mul_smul, transversal_mul_lWord, mul_smul]
-    rfl
+    rw [Subgroup.smul_def, monomialHom_left, ← mul_smul, transversal_mul_lWord, mul_smul,
+      MulAction.toPerm_symm_apply]
   | add y z hy hz => simp only [map_add, hy, hz]
 
 end Untwist
@@ -528,19 +522,17 @@ homomorphism of `G`-algebras from the tensor-induced algebra `⨂[R] _ : G ⧸ U
 theorem tensorInducedMulAlgHom_tensorInducedAlgAut (g : G) (z : ⨂[R] _ : G ⧸ U, A) :
     U.tensorInducedMulAlgHom s R A (U.tensorInducedAlgAut s R A g z) =
       g • U.tensorInducedMulAlgHom s R A z := by
-  induction z using PiTensorProduct.induction_on with
+  rw [← mulAlgHom_tensorInducedUntwistAlgEquiv, tensorInducedUntwistAlgEquiv_tensorInducedAlgAut,
+    ← mulAlgHom_tensorInducedUntwistAlgEquiv]
+  generalize U.tensorInducedUntwistAlgEquiv s R A z = w
+  induction w using PiTensorProduct.induction_on with
   | smul_tprod r m =>
-    rw [map_smul, map_smul, map_smul, smul_comm g r, tensorInducedAlgAut_tprod,
-      tensorInducedMulAlgHom_tprod, tensorInducedMulAlgHom_tprod]
+    simp only [map_smul, smul_comm g r, PiTensorProduct.permAlgEquiv_tprod,
+      PiTensorProduct.congrAlgEquiv_tprod, PiTensorProduct.mulAlgHom_tprod, Function.comp_def]
     congr 1
-    have hcoord (x : G ⧸ U) :
-        U.leftTransversalRep s x • ((U.monomialHom s g).left x • m (g⁻¹ • x)) =
-          g • (U.leftTransversalRep s (g⁻¹ • x) • m (g⁻¹ • x)) := by
-      rw [Subgroup.smul_def, monomialHom_left, ← mul_smul, transversal_mul_lWord, mul_smul]
-    simp_rw [hcoord, ← MulSemiringAction.toAlgHom_apply R A g]
-    rw [← map_prod, MulSemiringAction.toAlgHom_apply]
-    exact congrArg (g • ·)
-      (Equiv.prod_comp (MulAction.toPerm g⁻¹) fun x ↦ U.leftTransversalRep s x • m x)
+    simpa only [MulSemiringAction.toAlgEquiv_apply, MulSemiringAction.toAlgHom_apply] using
+      (Equiv.prod_comp (MulAction.toPerm g).symm fun x ↦ g • m x).trans
+        (map_prod (MulSemiringAction.toAlgHom R A g) m Finset.univ).symm
   | add y z hy hz => simp only [map_add, smul_add, hy, hz]
 
 /-- Equivariance of `Subgroup.tensorInducedMulAlgHom`, phrased directly in terms of
@@ -616,14 +608,14 @@ theorem tensorInducedMulAlgHom_eq_mulAlgHom_of_smul_eq_self
   | smul_tprod r m => simp [hA]
   | add y z hy hz => simp only [map_add, hy, hz]
 
-/-- When `G` acts trivially on `A`, transversal multiplication sends the constant pure tensor
+/-- On a `G`-invariant element `a`, transversal multiplication sends the constant pure tensor
 `⨂ₜ _, a` to `a ^ |G ⧸ U|`. -/
 theorem tensorInducedMulAlgHom_tprod_const_of_smul_eq_self
-    (hA : ∀ (g : G) (a : A), g • a = a) (a : A) :
+    (a : A) (ha : ∀ g : G, g • a = a) :
     U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ a) =
       a ^ Fintype.card (G ⧸ U) := by
   rw [tensorInducedMulAlgHom_tprod]
-  simp [hA]
+  simp [ha]
 
 end Multiplication
 
@@ -672,6 +664,38 @@ theorem tensorInducedMulAlgHom_reindexAlgEquiv [MulSemiringAction G A'] [SMulCom
   simpa only [AlgHom.toLinearMap_id, PiTensorProduct.map_id, LinearMap.id_apply, AlgHom.id_apply]
     using tensorInducedMulAlgHom_map_reindexAlgEquiv (R := R) (U := U) (U' := U') (A := A')
       (A' := A') s φ e he (AlgHom.id R A') hφ z
+
+/-- `Subgroup.tensorInducedMapEquiv` intertwines transversal multiplication along `s` and
+`s.map φ e he` whenever the `G`-action on `A'` agrees with pullback along `φ`. -/
+theorem tensorInducedMulAlgHom_tensorInducedMapEquiv
+    [MulSemiringAction G A'] [SMulCommClass G R A']
+    (s : U.LeftTransversal) (φ : G →* G') (ψ : U →* U') (hψ : ∀ u, (ψ u : G') = φ u)
+    (e : G ⧸ U ≃ G' ⧸ U') (he : ∀ g : G, e g = (φ g : G' ⧸ U'))
+    (ρ : Representation R U' A') (hφ : ∀ (g : G) (a : A'), g • a = φ g • a)
+    (z : ⨂[R] _ : G ⧸ U, A') :
+    U'.tensorInducedMulAlgHom (s.map φ e he) R A'
+        (tensorInducedMapEquiv φ ψ hψ e he s ρ z) =
+      U.tensorInducedMulAlgHom s R A' z := by
+  rw [← tensorInducedMulAlgHom_reindexAlgEquiv s φ e he hφ z]
+  congr 1
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod r m => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
+
+/-- `Subgroup.tensorInducedMapEquiv.symm` intertwines transversal multiplication along
+`s.map φ e he` and `s` whenever the `G`-action on `A'` agrees with pullback along `φ`. -/
+theorem tensorInducedMulAlgHom_tensorInducedMapEquiv_symm
+    [MulSemiringAction G A'] [SMulCommClass G R A']
+    (s : U.LeftTransversal) (φ : G →* G') (ψ : U →* U') (hψ : ∀ u, (ψ u : G') = φ u)
+    (e : G ⧸ U ≃ G' ⧸ U') (he : ∀ g : G, e g = (φ g : G' ⧸ U'))
+    (ρ : Representation R U' A') (hφ : ∀ (g : G) (a : A'), g • a = φ g • a)
+    (z : ⨂[R] _ : G' ⧸ U', A') :
+    U.tensorInducedMulAlgHom s R A'
+        ((tensorInducedMapEquiv φ ψ hψ e he s ρ).symm z) =
+      U'.tensorInducedMulAlgHom (s.map φ e he) R A' z := by
+  simpa only [Representation.Equiv.apply_symm_apply] using
+    (tensorInducedMulAlgHom_tensorInducedMapEquiv s φ ψ hψ e he ρ hφ
+      ((tensorInducedMapEquiv φ ψ hψ e he s ρ).symm z)).symm
 
 end Naturality
 
@@ -733,13 +757,23 @@ theorem tensorInducedMulSubsingletonAlgEquiv_apply (z : ⨂[R] _ : G ⧸ U, A) :
       U.tensorInducedMulAlgHom s R A z :=
   (rfl)
 
-/-- When `G ⧸ U` has one coset and its chosen representative is `1`, transversal multiplication
-sends the pure tensor with entry `a` to `a`. -/
-theorem tensorInducedMulAlgHom_tprod_of_subsingleton
-    (hs : U.leftTransversalRep s (QuotientGroup.mk 1) = 1) (m : G ⧸ U → A) :
-    U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R m) = m (QuotientGroup.mk 1) := by
-  rw [tensorInducedMulAlgHom_tprod, Finset.prod_eq_single (QuotientGroup.mk 1)
-    (fun x _ hx ↦ absurd (Subsingleton.elim x _) hx) (by simp), hs, one_smul]
+/-- When `G ⧸ U` has one coset, transversal multiplication on a pure tensor acts on the entry at
+`⟦1⟧` by its chosen transversal representative. -/
+theorem tensorInducedMulAlgHom_tprod_of_subsingleton (m : G ⧸ U → A) :
+    U.tensorInducedMulAlgHom s R A (PiTensorProduct.tprod R m) =
+      U.leftTransversalRep s (QuotientGroup.mk 1) • m (QuotientGroup.mk 1) := by
+  rw [tensorInducedMulAlgHom_tprod]
+  exact Finset.prod_eq_single (QuotientGroup.mk 1)
+    (fun x _ hx ↦ absurd (Subsingleton.elim x _) hx) (by simp)
+
+/-- The inverse of `Subgroup.tensorInducedMulSubsingletonAlgEquiv` sends `a` to the pure tensor
+whose coordinate at `x` is `(r_s x)⁻¹ • a`. -/
+@[simp]
+theorem tensorInducedMulSubsingletonAlgEquiv_symm_apply (a : A) :
+    (U.tensorInducedMulSubsingletonAlgEquiv s R A).symm a =
+      PiTensorProduct.tprod R fun x ↦ (U.leftTransversalRep s x)⁻¹ • a := by
+  rw [AlgEquiv.symm_apply_eq, tensorInducedMulSubsingletonAlgEquiv_apply,
+    tensorInducedMulAlgHom_tprod_of_subsingleton, smul_inv_smul]
 
 end Subsingleton
 
@@ -785,13 +819,11 @@ private abbrev TwoGroup := Multiplicative (ZMod 2)
 
 private def twoGroupGen : TwoGroup := Multiplicative.ofAdd 1
 
-private theorem bot_index_twoGroup : (⊥ : Subgroup TwoGroup).index = 2 := by
-  rw [Subgroup.index_bot]
-  exact Nat.card_zmod 2
+private theorem bot_index_twoGroup : (⊥ : Subgroup TwoGroup).index = 2 :=
+  (Subgroup.index_bot (G := TwoGroup)).trans (Nat.card_zmod 2)
 
 private theorem twoGroupGen_notMem_bot : twoGroupGen ∉ (⊥ : Subgroup TwoGroup) := by
-  rw [Subgroup.mem_bot]
-  decide
+  rw [Subgroup.mem_bot]; decide
 
 private noncomputable def twoGroupBotTransversal : (⊥ : Subgroup TwoGroup).LeftTransversal :=
   ⟨Set.range ((⊥ : Subgroup TwoGroup).indexTwoTransversal twoGroupGen),
@@ -835,19 +867,15 @@ example :
     MulSemiringAction.compHom ℤ (1 : TwoGroup →* (ℤ →+* ℤ))
   intro v₂₃ swap
   have hne : (QuotientGroup.mk twoGroupGen : TwoGroup ⧸ (⊥ : Subgroup TwoGroup)) ≠
-      QuotientGroup.mk 1 :=
-    TauCeti.mk_ne_mk_one_of_notMem twoGroupGen_notMem_bot
+      QuotientGroup.mk 1 := TauCeti.mk_ne_mk_one_of_notMem twoGroupGen_notMem_bot
   have hsmul : ∀ (g : TwoGroup) (n : ℤ), g • n = n := fun _ _ ↦ rfl
-  constructor
-  · rw [twoGroupBotTransversal_tprod, hsmul]
-    dsimp only [v₂₃]
-    simp only [hne, ↓reduceIte]
-    norm_num
+  refine ⟨?_, ?_⟩
+  · rw [twoGroupBotTransversal_tprod, hsmul]; dsimp only [v₂₃]
+    simp only [hne, ↓reduceIte]; norm_num
   · rw [PiTensorProduct.permAlgEquiv_tprod, twoGroupBotTransversal_tprod, hsmul]
     dsimp only [v₂₃, swap, Function.comp_def]
     rw [Equiv.symm_swap, Equiv.swap_apply_left, Equiv.swap_apply_right]
-    simp only [hne, ↓reduceIte]
-    norm_num
+    simp only [hne, ↓reduceIte]; norm_num
 
 /-- Check 2: for one coset (`U = ⊤`) with chosen representative `1`, transversal multiplication
 sends `a` to `a` and `1` to `1`. -/
@@ -863,17 +891,16 @@ example {G : Type*} [Group G] {A : Type*} [CommRing A] [MulSemiringAction G A] (
   let _ : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
   let _ : Fintype (G ⧸ (⊤ : Subgroup G)) := Fintype.ofSubsingleton (QuotientGroup.mk 1)
   intro s
-  have hs : (⊤ : Subgroup G).leftTransversalRep s (QuotientGroup.mk 1) = 1 := by
-    have hrep := (⊤ : Subgroup G).leftTransversalRep_range
-      (fun _ : G ⧸ (⊤ : Subgroup G) ↦ (1 : G)) (fun x ↦ Subsingleton.elim _ x)
-    exact congrFun hrep (QuotientGroup.mk 1)
-  exact ⟨(⊤ : Subgroup G).tensorInducedMulAlgHom_tprod_of_subsingleton s ℤ A hs _,
-    map_one _⟩
+  have hs : (⊤ : Subgroup G).leftTransversalRep s (QuotientGroup.mk 1) = 1 :=
+    congrFun ((⊤ : Subgroup G).leftTransversalRep_range
+      (fun _ : G ⧸ (⊤ : Subgroup G) ↦ (1 : G)) (fun x ↦ Subsingleton.elim _ x))
+      (QuotientGroup.mk 1)
+  refine ⟨?_, map_one _⟩
+  rw [(⊤ : Subgroup G).tensorInducedMulAlgHom_tprod_of_subsingleton, hs, one_smul]
 
 private noncomputable def negXAlgEquiv : ℤ[X] ≃ₐ[ℤ] ℤ[X] :=
   AlgEquiv.ofAlgHom (aeval (-X : ℤ[X])) (aeval (-X : ℤ[X]))
-    (Polynomial.algHom_ext <| by simp)
-    (Polynomial.algHom_ext <| by simp)
+    (Polynomial.algHom_ext <| by simp) (Polynomial.algHom_ext <| by simp)
 
 private noncomputable def twoGroupPolyAct : TwoGroup →* (ℤ[X] →+* ℤ[X]) where
   toFun g := if g.toAdd = 0 then RingHom.id ℤ[X] else negXAlgEquiv.toAlgHom.toRingHom
@@ -883,9 +910,7 @@ private noncomputable def twoGroupPolyAct : TwoGroup →* (ℤ[X] →+* ℤ[X]) 
     · simp [toAdd_mul, hg, ← RingHom.one_def]
     · by_cases hh : h.toAdd = 0
       · simp [toAdd_mul, hh, ← RingHom.one_def]
-      · have hgh : (g * h).toAdd = 0 := by
-          revert hg hh g h
-          decide
+      · have hgh : (g * h).toAdd = 0 := by revert hg hh g h; decide
         simp only [hgh, hg, hh, ↓reduceIte]
         refine RingHom.ext fun p ↦ ?_
         -- Multiplication in `ℤ[X] →+* ℤ[X]` is composition of ring homomorphisms.
@@ -894,8 +919,8 @@ private noncomputable def twoGroupPolyAct : TwoGroup →* (ℤ[X] →+* ℤ[X]) 
 
 open Classical in
 /-- Check 3: on `A = ℤ[X]` with `C₂` acting by `X ↦ -X` and `U = ⊥`, multiplication along
-`{1, σ}` sends `X ⊗ 1` to `X` and `1 ⊗ X` to `-X`, and swapping the two tensor factors agrees
-with acting by `σ` on `ℤ[X]`. -/
+`{1, σ}` sends `X ⊗ 1` to `X`, `1 ⊗ X` to `-X`, and the `C₂`-invariant tensor `X² ⊗ X²` to
+`(X²) ^ 2`, and swapping the two tensor factors agrees with acting by `σ` on `ℤ[X]`. -/
 example :
     letI : MulSemiringAction TwoGroup ℤ[X] := MulSemiringAction.compHom ℤ[X] twoGroupPolyAct
     let xLeft : ⨂[ℤ] _ : TwoGroup ⧸ (⊥ : Subgroup TwoGroup), ℤ[X] :=
@@ -907,6 +932,8 @@ example :
     (⊥ : Subgroup TwoGroup).tensorInducedMulAlgHom twoGroupBotTransversal ℤ ℤ[X] xLeft = X ∧
       (⊥ : Subgroup TwoGroup).tensorInducedMulAlgHom twoGroupBotTransversal ℤ ℤ[X]
           xRight = -X ∧
+      (⊥ : Subgroup TwoGroup).tensorInducedMulAlgHom twoGroupBotTransversal ℤ ℤ[X]
+          (PiTensorProduct.tprod ℤ fun _ ↦ X ^ 2) = (X ^ 2) ^ 2 ∧
       ∀ z : ⨂[ℤ] _ : TwoGroup ⧸ (⊥ : Subgroup TwoGroup), ℤ[X],
         (⊥ : Subgroup TwoGroup).tensorInducedMulAlgHom twoGroupBotTransversal ℤ ℤ[X]
             (PiTensorProduct.permAlgEquiv ℤ[X] swap z) =
@@ -916,21 +943,26 @@ example :
   let _ : MulSemiringAction TwoGroup ℤ[X] := MulSemiringAction.compHom ℤ[X] twoGroupPolyAct
   intro xLeft xRight swap
   have hne : (QuotientGroup.mk twoGroupGen : TwoGroup ⧸ (⊥ : Subgroup TwoGroup)) ≠
-      QuotientGroup.mk 1 :=
-    TauCeti.mk_ne_mk_one_of_notMem twoGroupGen_notMem_bot
+      QuotientGroup.mk 1 := TauCeti.mk_ne_mk_one_of_notMem twoGroupGen_notMem_bot
   have hσX : twoGroupGen • (X : ℤ[X]) = -X := by
     -- Unfold the action through `MulSemiringAction.compHom` to evaluate `twoGroupPolyAct`.
     change twoGroupPolyAct twoGroupGen X = -X
     simp [twoGroupPolyAct, twoGroupGen, negXAlgEquiv]
   have hσ1 : twoGroupGen • (1 : ℤ[X]) = 1 := smul_one twoGroupGen
-  refine ⟨?_, ?_, fun z ↦ ?_⟩
-  · dsimp only [xLeft]
-    rw [twoGroupBotTransversal_tprod]
+  have hinvX2 : ∀ g : TwoGroup, g • (X ^ 2 : ℤ[X]) = X ^ 2 := fun g ↦ by
+    -- Unfold `•` through `MulSemiringAction.compHom` to check both cases of `twoGroupPolyAct`.
+    change twoGroupPolyAct g (X ^ 2) = X ^ 2
+    by_cases hg : g = 1 <;> simp [twoGroupPolyAct, hg, negXAlgEquiv]
+  refine ⟨?_, ?_, ?_, fun z ↦ ?_⟩
+  · dsimp only [xLeft]; rw [twoGroupBotTransversal_tprod]
     simp only [hne, ↓reduceIte, hσ1, mul_one]
-  · dsimp only [xRight]
-    rw [twoGroupBotTransversal_tprod]
+  · dsimp only [xRight]; rw [twoGroupBotTransversal_tprod]
     simp only [hne, ↓reduceIte, hσX, one_mul]
+  · rw [(⊥ : Subgroup TwoGroup).tensorInducedMulAlgHom_tprod_const_of_smul_eq_self
+      twoGroupBotTransversal ℤ ℤ[X] (X ^ 2) hinvX2,
+      Fintype.card_eq_nat_card, ← Subgroup.index_eq_card, bot_index_twoGroup]
   · -- For `U = ⊥`, every transversal word lies in `⊥` and is `1`, while `σ` swaps the cosets.
+    have hinv := mt (⊥ : Subgroup TwoGroup).inv_mem_iff.1 twoGroupGen_notMem_bot
     have hperm : PiTensorProduct.permAlgEquiv (R := ℤ) ℤ[X] swap z =
         (⊥ : Subgroup TwoGroup).tensorInducedAlgAut
           twoGroupBotTransversal ℤ ℤ[X] twoGroupGen z := by
@@ -940,22 +972,17 @@ example :
           Function.comp_def]
         dsimp only [swap]
         rw [Equiv.symm_swap]
-        congr 2
-        funext x
+        congr 2; funext x
         have hu :
             ((⊥ : Subgroup TwoGroup).monomialHom twoGroupBotTransversal twoGroupGen).left x = 1 :=
           Subsingleton.elim _ _
         rw [hu, one_smul]
         rcases TauCeti.eq_mk_one_or_eq_mk_of_index_two bot_index_twoGroup
           twoGroupGen_notMem_bot x with rfl | rfl
-        · rw [Equiv.swap_apply_left,
-            TauCeti.smul_mk_one_of_notMem_of_index_two bot_index_twoGroup
-              twoGroupGen_notMem_bot (mt (⊥ : Subgroup TwoGroup).inv_mem_iff.1
-                twoGroupGen_notMem_bot)]
-        · rw [Equiv.swap_apply_right,
-            TauCeti.smul_mk_of_notMem_of_index_two bot_index_twoGroup
-              twoGroupGen_notMem_bot (mt (⊥ : Subgroup TwoGroup).inv_mem_iff.1
-                twoGroupGen_notMem_bot)]
+        · rw [Equiv.swap_apply_left, TauCeti.smul_mk_one_of_notMem_of_index_two bot_index_twoGroup
+            twoGroupGen_notMem_bot hinv]
+        · rw [Equiv.swap_apply_right, TauCeti.smul_mk_of_notMem_of_index_two bot_index_twoGroup
+            twoGroupGen_notMem_bot hinv]
       | add y z hy hz => simp only [map_add, hy, hz]
     rw [hperm, Subgroup.tensorInducedMulAlgHom_tensorInducedAlgAut]
 
