@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 import TauCeti.MeasureTheory.Integral.RieszThorin
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The kernel of the Schrödinger propagator and the dispersive estimate
@@ -57,6 +58,11 @@ dominated convergence.
   dispersive estimate.
 * `TauCeti.eLpNorm_schrodingerPropagator_le_of_memLp`: the dispersive estimate from `Lᵖ` to `L^q`,
   `‖S(t) f‖_q ≤ (4π|t|)^(-n (1/2 - 1/q)) ‖f‖_p` for conjugate exponents with `2 ≤ q ≤ ∞`.
+* `TauCeti.norm_fourierInv_phaseSymbol_laplacianSymbol_smul_fourier_le`: for a Schwartz
+  function `f`, the dispersive estimate holds at every point for the Schwartz representative
+  `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)` of `S(t) f`.
+* `SchwartzMap.norm_integral_cexp_quadratic_smul_le`: the same estimate as a bound for the
+  oscillatory integral `∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ` of a Schwartz function `ψ`.
 * `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
   `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
@@ -308,6 +314,66 @@ theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q 
   rw [NNReal.one_rpow, mul_one, ← Real.toNNReal_rpow_of_nonneg (by positivity),
     ENNReal.ofNNReal_toNNReal, hc, ← Real.rpow_mul (by positivity)]
   congr 3
+  ring
+
+/-! ### The dispersive estimate at every point -/
+
+/-- **The dispersive estimate for Schwartz functions, at every point.** For `t ≠ 0` and a Schwartz
+function `f`, the Schwartz function `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)`, which represents `S(t) f`,
+satisfies `|S(t) f (x)| ≤ (4π|t|)^(-n/2) ‖f‖₁` at every point `x`, not only almost everywhere. -/
+theorem norm_fourierInv_phaseSymbol_laplacianSymbol_smul_fourier_le {t : ℝ} (ht : t ≠ 0)
+    (f : 𝓢(E, F)) (x : E) :
+    ‖𝓕⁻ (fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ) x‖ ≤
+      (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖f y‖ := by
+  set c : ℝ := (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖f y‖
+  have hg := hasTemperateGrowth_phaseSymbol_laplacianSymbol (E := E) t
+  set G : 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F (phaseSymbol laplacianSymbol t) f
+  have hG : ∀ y, G y = 𝓕⁻ (fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ) y :=
+    fun y ↦ by
+      have h : ⇑(SchwartzMap.smulLeftCLM F (phaseSymbol laplacianSymbol t) (𝓕 f)) =
+          fun ξ ↦ phaseSymbol laplacianSymbol t ξ • 𝓕 (f : E → F) ξ := by
+        funext ξ
+        rw [SchwartzMap.smulLeftCLM_apply_apply hg, SchwartzMap.fourier_coe]
+      simp only [G, SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.fourierInv_coe, h]
+  have hL2 := SchwartzMap.toLp_fourierMultiplierCLM_eq hg (memLp_phaseSymbol laplacianSymbol t) f
+  have hae := norm_schrodingerPropagator_apply_le ht (f.toLp 2)
+    (f.integrable.congr (f.coeFn_toLp 2).symm)
+  rw [schrodingerPropagator_def, phasePropagator_def, hL2] at hae
+  have hint : ∫ y, ‖(f.toLp 2 : E → F) y‖ = ∫ y, ‖f y‖ :=
+    integral_congr_ae (by filter_upwards [f.coeFn_toLp 2] with y hy; rw [hy])
+  rw [hint] at hae
+  have hae' : ∀ᵐ y ∂volume, ‖G y‖ ≤ c := by
+    filter_upwards [hae, G.coeFn_toLp 2] with y h₁ h₂
+    rwa [h₂] at h₁
+  -- `G` is continuous, so the almost-everywhere bound holds everywhere.
+  rw [← hG]
+  exact (Continuous.ae_le_iff_le volume (f := fun y ↦ ‖G y‖) G.continuous.norm
+    continuous_const).1 hae' x
+
+open scoped RealInnerProductSpace in
+/-- **The dispersive estimate as an oscillatory integral bound.** For a Schwartz function `ψ` and
+`s ≠ 0`, `‖∫ exp(2πi (⟪ξ, x⟫ + s ‖ξ‖²)) ψ(ξ) dξ‖ ≤ (2|s|)^(-n/2) ‖𝓕⁻ ψ‖₁` at every point `x`. -/
+theorem _root_.SchwartzMap.norm_integral_cexp_quadratic_smul_le (ψ : 𝓢(E, F)) {s : ℝ}
+    (hs : s ≠ 0) (x : E) :
+    ‖∫ ξ, cexp (((2 * π * (⟪ξ, x⟫ + s * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) • ψ ξ‖ ≤
+      (2 * |s|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ∫ y, ‖𝓕⁻ (ψ : E → F) y‖ := by
+  have hτ : -s / (2 * π) ≠ 0 := div_ne_zero (neg_ne_zero.2 hs) (by positivity)
+  have h := norm_fourierInv_phaseSymbol_laplacianSymbol_smul_fourier_le hτ (𝓕⁻ ψ) x
+  have hψ : 𝓕 (⇑(𝓕⁻ ψ : 𝓢(E, F)) : E → F) = ψ := by
+    rw [← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq]
+  have h4 : 4 * π * |-s / (2 * π)| = 2 * |s| := by
+    rw [abs_div, abs_neg, abs_of_pos (by positivity : (0 : ℝ) < 2 * π)]
+    field_simp
+    ring
+  rw [hψ, h4, SchwartzMap.fourierInv_coe] at h
+  refine le_of_eq_of_le ?_ h
+  rw [fourierInv_eq']
+  congr 2
+  ext ξ
+  rw [phaseSymbol_apply, laplacianSymbol_apply, smul_smul, ← Complex.exp_add]
+  congr 2
+  push_cast
+  field_simp
   ring
 
 /-! ### The evolution of a Gaussian -/

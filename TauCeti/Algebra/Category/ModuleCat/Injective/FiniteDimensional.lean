@@ -14,8 +14,8 @@ import Mathlib.RingTheory.Finiteness.Small
 # Finite injective presentations over finite-dimensional algebras
 
 Every finitely generated module over a finite-dimensional algebra embeds into a finitely
-generated ambient injective module. The injective term can stay in the universe of the
-original module whenever the algebra is small in that universe.
+generated ambient injective module. The injective term stays in the universe of the original
+module.
 
 This packages `TauCeti.exists_isInjectiveEnvelope_of_finite` as Mathlib's
 `InjectivePresentation`. Such presentations let finite-dimensional subcategories test
@@ -36,7 +36,7 @@ open CategoryTheory
 universe u v w
 
 variable (k : Type u) {A : Type v} [Field k] [Ring A] [Algebra k A]
-  [FiniteDimensional k A] [Small.{w} A]
+  [FiniteDimensional k A]
 
 include k in
 /-- A finitely generated module over a finite-dimensional algebra has an ambient injective
@@ -44,6 +44,14 @@ presentation with finitely generated target, in the same universe as the source.
 theorem exists_injectivePresentation_of_finite (M : ModuleCat.{w} A) [Module.Finite A M] :
     ∃ I : InjectivePresentation M, Module.Finite A I.J := by
   classical
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · exact ⟨{ J := M, injective := (isZero_of_subsingleton M).injective, f := 𝟙 M }, inferInstance⟩
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  have : Small.{w} A := by
+    have : Small.{w} k := by
+      let : Module k M := Module.compHom M (algebraMap k A)
+      exact small_of_injective (smul_left_injective k hm)
+    exact Module.Finite.small k A
   obtain ⟨Q, _, _, _, _, _, i, hi⟩ :=
     TauCeti.exists_isInjectiveEnvelope_of_finite (k := k) (A := A) M
   have : Module.Finite A Q := Module.Finite.of_restrictScalars_finite k A Q
