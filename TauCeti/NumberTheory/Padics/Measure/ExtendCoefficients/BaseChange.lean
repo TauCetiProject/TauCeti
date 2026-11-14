@@ -24,22 +24,29 @@ measures across the diagram `R → O → K`:
 * `AbstractMeasure.extendCoefficients j hj : D(X, O) →+ D(X, K)`, extending integral coefficients
   into `K` via locally constant functions and ultrametric completion.
 
-This file proves that the two constructions commute without requiring continuity of `j`:
+This file proves that these constructions are compatible:
 
-* `extendCoefficients j hj (extendScalars O μ)` equals the coefficient extension of `μ` along
-  `j.comp (algebraMap R O)` (`AbstractMeasure.extendCoefficients_extendScalars`);
-* on a pure tensor `a ⊗ₜ μ`, `extendCoefficients j hj` produces `j a` times the extension of `μ`
-  along `R → K` (`AbstractMeasure.extendCoefficients_baseChangeLinearEquiv_tmul`,
+* without assuming continuity of `j : O →+* K`, `extendCoefficients j hj (extendScalars O μ)`
+  equals the coefficient extension of `μ` along `j.comp (algebraMap R O)`
+  (`AbstractMeasure.extendCoefficients_extendScalars`);
+* without assuming continuity of `j`, on a pure tensor `a ⊗ₜ μ`, `extendCoefficients j hj`
+  produces `j a` times the extension of `μ` along `R → K`
+  (`AbstractMeasure.extendCoefficients_baseChangeLinearEquiv_tmul`,
   `AbstractMeasure.extendCoefficients_baseChangeAlgEquiv_tmul`), and hence decomposes the
-  extension of every `ν ∈ D(X, O)` in any finite `R`-basis of `O`
-  (`AbstractMeasure.extendCoefficients_eq_sum_basis`);
+  extension of every `ν ∈ D(X, O)` in any finite `R`-basis `b` of `O` via
+  `AbstractMeasure.mapScalars (b.coord i) ν` (`AbstractMeasure.extendCoefficients_eq_sum_basis`);
 * on a profinite topological monoid `G`, extended character integration
-  `ContinuousMonoidHom.extendedCharacterRingHom` transforms accordingly on `extendScalars O` and
-  on `baseChangeAlgEquiv O`;
+  `ContinuousMonoidHom.extendedCharacterRingHom` transforms accordingly on `extendScalars O`, on
+  `baseChangeAlgEquiv O`, and in any finite `R`-basis `b` of `O`
+  (`ContinuousMonoidHom.extendedCharacterRingHom_eq_sum_basis`), again without continuity of `j`;
 * on `ℤ_p`, `extendScalars O` applies `algebraMap ℤ_[p] O` coefficientwise to the Amice transform
-  (`AbstractMeasure.amiceTransform_extendScalars`), and combining with `extendCoefficients` along
-  an `O →ₐ[ℤ_[p]] K` into the unit ball recovers `j a • PowerSeries.map (algebraMap ℤ_[p] K) A(μ)`
-  (`AbstractMeasure.amiceTransform_extendCoefficients_baseChangeLinearEquiv_tmul`).
+  (`AbstractMeasure.amiceTransform_extendScalars`); when `K` is a complete ultrametric `ℤ_p`-field
+  with continuous `ℤ_p`-action (`[ContinuousSMul ℤ_[p] K]`) and `j : O →ₐ[ℤ_[p]] K` maps into the
+  closed unit ball, no separate `Continuous j` hypothesis is needed because `ℤ_p`-linearity and
+  `[ContinuousSMul ℤ_[p] K]` make `j` automatically continuous
+  (`AbstractMeasure.amiceTransform_extendCoefficients_of_finite`,
+  `AbstractMeasure.amiceTransform_extendCoefficients_algebraMap`,
+  `AbstractMeasure.amiceTransform_extendCoefficients_baseChangeLinearEquiv_tmul`).
 
 ## References
 
@@ -108,18 +115,16 @@ theorem extendCoefficients_algHom_baseChangeLinearEquiv_tmul [Algebra R K] (j : 
     (congrArg (j a • ·) (extendCoefficients_algHom_extendScalars j hj μ))
 
 /-- In any finite `R`-basis `b` of `O`, the coefficient extension of an arbitrary `O`-valued
-measure `ν ∈ D(X, O)` decomposes as a `K`-linear combination of `R`-valued coordinate extensions. -/
+measure `ν ∈ D(X, O)` decomposes as a `K`-linear combination of the extensions of its `R`-valued
+coordinate retractions `mapScalars (b.coord i) ν`. -/
 theorem extendCoefficients_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
     (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (ν : D(X, O)) :
-    ∃ c : ι → D(X, R),
-      extendCoefficients j hj ν =
-        ∑ i : ι, j (b i) •
-          extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r)) (c i) ∧
-        ∀ i (g : C(X, R)), c i g = b.coord i (ν ((algebraMapCLM R O : C(R, O)).comp g)) := by
-  obtain ⟨c, hc, hcg⟩ := baseChangeLinearEquiv_symm_apply_comp_algebraMap b ν
-  refine ⟨c, ?_, hcg⟩
-  have hν : ν = baseChangeLinearEquiv O (∑ i : ι, b i ⊗ₜ[R] c i) := by
-    rw [← hc, LinearEquiv.apply_symm_apply]
+    extendCoefficients j hj ν =
+      ∑ i : ι, j (b i) •
+        extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r))
+          (mapScalars (b.coord i) ν) := by
+  have hν : ν = baseChangeLinearEquiv O (∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν) := by
+    rw [← baseChangeLinearEquiv_symm_apply b ν, LinearEquiv.apply_symm_apply]
   conv_lhs => rw [hν]
   simp [map_sum]
 
@@ -156,6 +161,24 @@ theorem extendCoefficients_algHom_baseChangeAlgEquiv_tmul [Algebra R K] (j : O �
 
 end ProfiniteMonoid
 
+/-- Extending `μ ∈ D(ℤ_[p], ℤ_[p])` along `algebraMap ℤ_[p] K` into the closed unit ball of a
+complete ultrametric `ℤ_p`-field `K` with continuous `ℤ_p`-action (`[ContinuousSMul ℤ_[p] K]`)
+applies `algebraMap ℤ_[p] K` coefficientwise to its Amice transform; no separate continuity
+hypothesis is needed because `[ContinuousSMul ℤ_[p] K]` makes `algebraMap ℤ_[p] K` continuous. -/
+@[simp]
+theorem amiceTransform_extendCoefficients_algebraMap {p : ℕ} [Fact p.Prime] {K : Type*}
+    [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+    [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K]
+    (hj : ∀ r, ‖algebraMap ℤ_[p] K r‖ ≤ 1) (μ : D(ℤ_[p], ℤ_[p])) :
+    (extendCoefficients (algebraMap ℤ_[p] K) hj μ).amiceTransform =
+      PowerSeries.map (algebraMap ℤ_[p] K) μ.amiceTransform := by
+  have hcont : Continuous (Algebra.ofId ℤ_[p] K) := by
+    rw [← RingHom.coe_coe, Algebra.toRingHom_ofId]
+    exact continuous_algebraMap ℤ_[p] K
+  simpa only [Algebra.toRingHom_ofId] using
+    amiceTransform_extendCoefficients (Algebra.ofId ℤ_[p] K) hcont
+      (fun r ↦ by simpa only [Algebra.ofId_apply] using hj r) μ
+
 section Amice
 
 variable {p : ℕ} [Fact p.Prime] {O K : Type*}
@@ -181,24 +204,36 @@ theorem amiceTransform_baseChangeLinearEquiv_tmul (a : O) (μ : D(ℤ_[p], ℤ_[
       a • PowerSeries.map (algebraMap ℤ_[p] O) μ.amiceTransform := by
   simp
 
+omit [Module.Free ℤ_[p] O] in
+/-- For a finite Hausdorff topological `ℤ_p`-algebra `O` with continuous `ℤ_p`-action and a
+`ℤ_p`-algebra homomorphism `j : O →ₐ[ℤ_[p]] K` into the closed unit ball of a complete ultrametric
+`ℤ_p`-field `K` with `[ContinuousSMul ℤ_[p] K]`, extending `ν ∈ D(ℤ_[p], O)` along `j` maps its
+Amice transform by `PowerSeries.map j`; no separate `Continuous j` hypothesis is needed because
+`ℤ_p`-linearity and `[ContinuousSMul ℤ_[p] K]` make `j` automatically continuous. -/
+@[simp]
+theorem amiceTransform_extendCoefficients_of_finite
+    [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
+    [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K]
+    (j : O →ₐ[ℤ_[p]] K) (hj : ∀ a, ‖j a‖ ≤ 1) (ν : D(ℤ_[p], O)) :
+    (extendCoefficients (j : O →+* K) hj ν).amiceTransform =
+      PowerSeries.map (j : O →+* K) ν.amiceTransform :=
+  amiceTransform_extendCoefficients j j.toLinearMap.continuous_of_finite_of_compactSpace hj ν
+
 /-- Extending `baseChangeLinearEquiv O (a ⊗ₜ μ)` along a `ℤ_p`-algebra homomorphism
-`j : O →ₐ[ℤ_[p]] K` into the closed unit ball of a complete ultrametric `ℤ_p`-field `K` maps its
-Amice transform to `j a • PowerSeries.map (algebraMap ℤ_[p] K) μ.amiceTransform`, without assuming
-continuity of `j`. -/
+`j : O →ₐ[ℤ_[p]] K` into the closed unit ball of a complete ultrametric `ℤ_p`-field `K` with
+`[ContinuousSMul ℤ_[p] K]` maps its Amice transform to
+`j a • PowerSeries.map (algebraMap ℤ_[p] K) μ.amiceTransform`; no separate `Continuous j`
+hypothesis is needed because `ℤ_p`-linearity and `[ContinuousSMul ℤ_[p] K]` make `j` automatically
+continuous. -/
 theorem amiceTransform_extendCoefficients_baseChangeLinearEquiv_tmul
     [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
     [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K]
     (j : O →ₐ[ℤ_[p]] K) (hj : ∀ a, ‖j a‖ ≤ 1) (a : O) (μ : D(ℤ_[p], ℤ_[p])) :
     (extendCoefficients (j : O →+* K) hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] μ))).amiceTransform =
       j a • PowerSeries.map (algebraMap ℤ_[p] K) μ.amiceTransform := by
-  rw [extendCoefficients_algHom_baseChangeLinearEquiv_tmul, map_smul]
-  have hcont : Continuous (Algebra.ofId ℤ_[p] K) := by
-    rw [← RingHom.coe_coe, Algebra.toRingHom_ofId]
-    exact continuous_algebraMap ℤ_[p] K
-  simpa only [Algebra.toRingHom_ofId] using congrArg (j a • ·)
-    (amiceTransform_extendCoefficients (Algebra.ofId ℤ_[p] K) hcont
-      (fun r ↦ by simpa only [Algebra.ofId_apply, AlgHom.commutes] using hj (algebraMap ℤ_[p] O r))
-      μ)
+  rw [amiceTransform_extendCoefficients_of_finite, amiceTransform_baseChangeLinearEquiv_tmul]
+  ext n
+  simp
 
 end Amice
 
@@ -232,6 +267,20 @@ theorem extendedCharacterRingHom_baseChangeAlgEquiv_tmul (χ : G →ₜ* K) (j :
       j a * χ.extendedCharacterRingHom (j.comp (algebraMap R O))
         (fun r ↦ hj (algebraMap R O r)) μ := by
   simp
+
+/-- In any finite `R`-basis `b` of `O`, extended character integration of an arbitrary `O`-valued
+measure `ν ∈ D(G, O)` decomposes as a `K`-linear combination of the extended character integrals
+of its `R`-valued coordinate retractions `mapScalars (b.coord i) ν`. -/
+theorem extendedCharacterRingHom_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
+    (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (ν : D(G, O)) :
+    χ.extendedCharacterRingHom j hj ν =
+      ∑ i : ι, j (b i) *
+        χ.extendedCharacterRingHom (j.comp (algebraMap R O))
+          (fun r ↦ hj (algebraMap R O r)) (mapScalars (b.coord i) ν) := by
+  have hν : ν = baseChangeAlgEquiv O (∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν) := by
+    rw [← baseChangeAlgEquiv_symm_apply b ν, AlgEquiv.apply_symm_apply]
+  conv_lhs => rw [hν]
+  simp only [map_sum, extendedCharacterRingHom_baseChangeAlgEquiv_tmul]
 
 end ContinuousMonoidHom
 
