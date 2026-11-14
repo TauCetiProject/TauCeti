@@ -64,7 +64,9 @@ to the canonical fraction fields used by Mathlib's different API.
 
 ## Main results
 
-* `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`.
+* `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`,
+  and `TauCeti.Place.ramificationIdx_pos_and_ord_algebraMap_eq_of_integers_comap_eq` for the same
+  scaling at any contracting place without assuming `F' / F` integral.
 * `TauCeti.Place.ramificationIdx_eq_of_ringEquiv`: the ramification index is unchanged when the
   field below is replaced by an isomorphic copy with the same image in `F'`.
 * `TauCeti.Place.restrict_eq_iff_integers_le`, `TauCeti.Place.restrict_eq_iff_forall_ord_pos`
@@ -386,6 +388,38 @@ theorem ord_algebraMap_restrict (f : F) :
   simpa only [Valuation.ord_comap, ← valuation_restrict k F P', ord_valuation,
     ramificationIdx_def, mul_comm] using
     (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
+
+variable {k F} in
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+  [Algebra.IsIntegral F F'] in
+/-- A place `Q'` of `F' / k'` whose valuation ring contracts to that of a place `Q` of `F / k` has
+positive ramification index over `F` scaling `Q.ord`, with no integrality assumption on `F' / F`. -/
+theorem ramificationIdx_pos_and_ord_algebraMap_eq_of_integers_comap_eq
+    {Q : Place k F} {Q' : Place k' F'} (hQ' : Q'.integers.comap (algebraMap F F') = Q.integers) :
+    0 < Q'.ramificationIdx F ∧
+      ∀ f : F, Q'.ord (algebraMap F F' f) = Q'.ramificationIdx F * Q.ord f := by
+  set w := Q'.valuation.comap (algebraMap F F')
+  have hw : w.IsEquiv Q.valuation := (Valuation.isEquiv_iff_valuationSubring _ _).mpr <| by
+    ext f; rw [Valuation.mem_valuationSubring_iff, Valuation.comap_apply, ← Q'.mem_integers_iff,
+      ← ValuationSubring.mem_comap, hQ', Q.mem_integers_iff, Valuation.mem_valuationSubring_iff]
+  obtain ⟨t, ht⟩ := Q.ord_surjective 1
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
+  have hwt : w t < 1 := (Valuation.isEquiv_iff_val_lt_one.mp hw).mpr
+    (by rw [Q.valuation_eq_exp_neg_ord ht0, ht]; simp)
+  have : w.IsNontrivial := ⟨t, w.ne_zero_iff.mpr ht0, hwt.ne⟩
+  have hpos : 0 < Valuation.ordIndex w :=
+    Nat.pos_of_ne_zero (Valuation.ordIndex_ne_zero_of_isNontrivial w)
+  have hkt : w.IsTrivialOn k :=
+    ⟨fun c hc ↦ (Valuation.isEquiv_iff_val_eq_one.mp hw).mpr (Q.isTrivialOn.eq_one c hc)⟩
+  let Q₀ : Place k F := ⟨w.normalization, Valuation.normalization_surjective w hpos.ne',
+    Valuation.IsTrivialOn.normalization w⟩
+  have hQ₀ : w.normalization = Q.valuation :=
+    congrArg Place.valuation (eq_of_isEquiv ((Valuation.isEquiv_normalization w).trans hw) : Q₀ = Q)
+  refine ⟨by rwa [ramificationIdx_def], fun f ↦ ?_⟩
+  have hord := Valuation.ord_normalization_mul_ordIndex w f
+  rw [hQ₀, Q.ord_valuation, mul_comm, ← ramificationIdx_def, Valuation.ord_comap,
+    Q'.ord_valuation] at hord
+  exact hord.symm
 
 /-- The order at `P'` of the term `c y ^ i` of a polynomial evaluated at `y`, for `c ≠ 0 ≠ y`:
 `e(P' ∣ P) · ord_P c + i · ord_{P'} y`. -/
