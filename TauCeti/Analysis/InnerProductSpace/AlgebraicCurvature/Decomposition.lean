@@ -259,28 +259,24 @@ theorem IsAlgebraicCurvature.weyl {r : FourTensor V} (hr : IsAlgebraicCurvature 
 /-- For `2 ≤ finrank ℝ V`, `ricci (scalarPart r) = (scalar r / n) • g`. -/
 theorem ricci_scalarPart (hdim : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     ricci (scalarPart r) = (scalar r / Module.finrank ℝ V) • innerₗ V := by
-  have hn1 : ((Module.finrank ℝ V : ℝ) - 1) ≠ 0 := by
-    have : (2 : ℝ) ≤ Module.finrank ℝ V := by exact_mod_cast hdim
-    linarith
+  have hn1 : ((Module.finrank ℝ V : ℝ) - 1) ≠ 0 :=
+    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
   rw [scalarPart_apply, map_smul, ricci_constantCurvature, smul_smul]
-  congr 1
-  field_simp [hn1]
+  congr 1; field_simp [hn1]
 
 /-- For `2 ≤ finrank ℝ V`, `scalarPart` preserves the scalar contraction. -/
 theorem scalar_scalarPart (hdim : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     scalar (scalarPart r) = scalar r := by
   have hn0 : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have hn1 : ((Module.finrank ℝ V : ℝ) - 1) ≠ 0 := by
-    have : (2 : ℝ) ≤ Module.finrank ℝ V := by exact_mod_cast hdim
-    linarith
+  have hn1 : ((Module.finrank ℝ V : ℝ) - 1) ≠ 0 :=
+    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 1))
   rw [scalarPart_apply, map_smul, scalar_constantCurvature, smul_eq_mul,
     div_mul_cancel₀ _ (mul_ne_zero hn0 hn1)]
 
 /-- For `2 ≤ finrank ℝ V`, `scalarPart r` has vanishing trace-free Ricci contraction. -/
 theorem tracelessRicci_scalarPart (hdim : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     tracelessRicci (scalarPart r) = 0 := by
-  rw [tracelessRicci_apply, ricci_scalarPart hdim, scalar_scalarPart hdim]
-  ext; simp
+  rw [tracelessRicci_apply, ricci_scalarPart hdim, scalar_scalarPart hdim]; ext; simp
 
 /-- `tracelessRicciPart r` has zero scalar contraction in every dimension. -/
 @[simp]
@@ -292,17 +288,15 @@ theorem scalar_tracelessRicciPart (r : FourTensor V) :
 /-- For `3 ≤ finrank ℝ V`, `ricci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem ricci_tracelessRicciPart (hdim : 3 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     ricci (tracelessRicciPart r) = tracelessRicci r := by
-  have hn2 : ((Module.finrank ℝ V : ℝ) - 2) ≠ 0 := by
-    have : (3 : ℝ) ≤ Module.finrank ℝ V := by exact_mod_cast hdim
-    linarith
+  have hn2 : ((Module.finrank ℝ V : ℝ) - 2) ≠ 0 :=
+    sub_ne_zero.mpr (by exact_mod_cast (by omega : Module.finrank ℝ V ≠ 2))
   rw [tracelessRicciPart_apply, map_smul, ricci_kulkarniNomizu_innerₗ,
     bilinFormTrace_tracelessRicci, zero_smul, add_zero, inv_smul_smul₀ hn2]
 
 /-- For `3 ≤ finrank ℝ V`, `tracelessRicci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem tracelessRicci_tracelessRicciPart (hdim : 3 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     tracelessRicci (tracelessRicciPart r) = tracelessRicci r := by
-  rw [tracelessRicci_apply, ricci_tracelessRicciPart hdim, scalar_tracelessRicciPart]
-  ext; simp
+  rw [tracelessRicci_apply, ricci_tracelessRicciPart hdim, scalar_tracelessRicciPart]; ext; simp
 
 /-- For `2 ≤ finrank ℝ V`, `weyl r` has zero scalar contraction. -/
 theorem scalar_weyl (hdim : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
@@ -313,17 +307,13 @@ theorem scalar_weyl (hdim : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
 /-- For `3 ≤ finrank ℝ V`, `weyl r` has zero Ricci contraction. -/
 theorem ricci_weyl (hdim : 3 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     ricci (weyl r) = 0 := by
-  have hsub₁ := map_sub ricci (r - scalarPart r) (tracelessRicciPart r)
-  have hsub₂ := map_sub ricci r (scalarPart r)
-  rw [weyl_apply, hsub₁, hsub₂, ricci_scalarPart (by omega), ricci_tracelessRicciPart hdim,
-    tracelessRicci_apply]
-  ext; simp
+  rw [weyl_apply, map_sub, map_sub, ricci_scalarPart (by omega), ricci_tracelessRicciPart hdim,
+    tracelessRicci_apply]; ext; simp
 
 /-- For `3 ≤ finrank ℝ V`, `weyl r` has zero trace-free Ricci contraction. -/
 theorem tracelessRicci_weyl (hdim : 3 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     tracelessRicci (weyl r) = 0 := by
-  rw [tracelessRicci_apply, ricci_weyl hdim, scalar_weyl (by omega)]
-  ext; simp
+  rw [tracelessRicci_apply, ricci_weyl hdim, scalar_weyl (by omega)]; ext; simp
 
 /-- `scalarPart` is idempotent for `2 ≤ finrank ℝ V`. -/
 theorem scalarPart_scalarPart (hdim : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
@@ -388,8 +378,7 @@ dimension. -/
 theorem IsAlgebraicCurvature.tracelessRicci_weyl {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) :
     tracelessRicci (FourTensor.weyl r) = 0 := by
-  rw [tracelessRicci_apply, hr.ricci_weyl, hr.scalar_weyl]
-  ext; simp
+  rw [tracelessRicci_apply, hr.ricci_weyl, hr.scalar_weyl]; ext; simp
 
 /-! ### Operator form and Hilbert–Schmidt orthogonality on bivectors -/
 
@@ -438,9 +427,7 @@ theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_tracelessRicciPart_comp
     LinearMap.comp_id, map_smul, smul_eq_mul]
   have htr := hr₁.tracelessRicciPart.scalar_eq_two_mul_trace_curvatureEndomorphism
   rw [scalar_tracelessRicciPart] at htr
-  have h0 : LinearMap.trace ℝ (⋀[ℝ]^2 V)
-      (curvatureEndomorphism (FourTensor.tracelessRicciPart r₁)) = 0 := by linarith
-  rw [h0, mul_zero]
+  exact mul_eq_zero_of_right _ (by linarith)
 
 /-- The Weyl and scalar bivector operators are Hilbert–Schmidt orthogonal in every dimension. -/
 theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_weyl_comp_scalarPart
@@ -452,9 +439,7 @@ theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_weyl_comp_scalarPart
     LinearMap.comp_id, map_smul, smul_eq_mul]
   have htr := hr₁.weyl.scalar_eq_two_mul_trace_curvatureEndomorphism
   rw [hr₁.scalar_weyl] at htr
-  have h0 : LinearMap.trace ℝ (⋀[ℝ]^2 V)
-      (curvatureEndomorphism (FourTensor.weyl r₁)) = 0 := by linarith
-  rw [h0, mul_zero]
+  exact mul_eq_zero_of_right _ (by linarith)
 
 /-- The Weyl and trace-free Ricci bivector operators are Hilbert–Schmidt orthogonal in every
 dimension. -/
@@ -466,12 +451,8 @@ theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_weyl_comp_tracelessRicc
   rw [curvatureEndomorphism_tracelessRicciPart, LinearMap.comp_smul, map_smul, smul_eq_mul]
   have htr := hr₁.weyl.isPairSymmetric.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id
     (stdOrthonormalBasis ℝ V) (tracelessRicciEndomorphism r₂)
-  rw [hr₁.ricci_weyl] at htr
-  simp only [LinearMap.zero_apply, Finset.sum_const_zero] at htr
-  have h0 : LinearMap.trace ℝ (⋀[ℝ]^2 V)
-      (curvatureEndomorphism (FourTensor.weyl r₁) ∘ₗ
-        exteriorPower.symmMap₂ (tracelessRicciEndomorphism r₂) LinearMap.id) = 0 := by linarith
-  rw [h0, mul_zero]
+  simp only [hr₁.ricci_weyl, LinearMap.zero_apply, Finset.sum_const_zero] at htr
+  exact mul_eq_zero_of_right _ (by linarith)
 
 /-! ### Low dimensions and orthogonal equivariance -/
 

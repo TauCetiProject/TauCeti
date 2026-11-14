@@ -57,53 +57,38 @@ variable {R M N : Type*} [CommRing R] [Invertible (2 : R)]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 private noncomputable def symmWedgeBilin (f g : M →ₗ[R] N) : M →ₗ[R] M →ₗ[R] ⋀[R]^2 N :=
-  LinearMap.mk₂ R
-    (fun u v ↦ ⅟(2 : R) • (ιMulti R 2 ![f u, g v] + ιMulti R 2 ![g u, f v]))
-    (fun u₁ u₂ v ↦ by
-      simp only [map_add, ιMulti_two_add_left]
-      module)
-    (fun c u v ↦ by
-      simp only [map_smul, ιMulti_two_smul_left]
-      module)
-    (fun u v₁ v₂ ↦ by
-      simp only [map_add, ιMulti_two_add_right]
-      module)
-    (fun c u v ↦ by
-      simp only [map_smul, ιMulti_two_smul_right]
-      module)
+  LinearMap.mk₂ R (fun u v ↦ ⅟(2 : R) • (ιMulti R 2 ![f u, g v] + ιMulti R 2 ![g u, f v]))
+    (fun _ _ _ ↦ by simp only [map_add, ιMulti_two_add_left]; module)
+    (fun _ _ _ ↦ by simp only [map_smul, ιMulti_two_smul_left]; module)
+    (fun _ _ _ ↦ by simp only [map_add, ιMulti_two_add_right]; module)
+    (fun _ _ _ ↦ by simp only [map_smul, ιMulti_two_smul_right]; module)
 
 private theorem isAlt_symmWedgeBilin (f g : M →ₗ[R] N) : (symmWedgeBilin f g).IsAlt := fun x ↦ by
   simp only [symmWedgeBilin, LinearMap.mk₂_apply]
-  have hswap : ![g x, f x] = ![f x, g x] ∘ Equiv.swap 0 1 := by
-    funext i; fin_cases i <;> rfl
+  have hswap : ![g x, f x] = ![f x, g x] ∘ Equiv.swap 0 1 := by funext i; fin_cases i <;> rfl
   rw [hswap, (ιMulti R 2).map_add_swap _ (by decide), smul_zero]
 
 /-- The symmetric exterior product of two linear maps `f, g : M →ₗ[R] N` on the second exterior
 power, characterized by `symmMap₂ f g (u ∧ v) = ⅟2 • (f u ∧ g v + g u ∧ f v)`. -/
 noncomputable def symmMap₂ :
     (M →ₗ[R] N) →ₗ[R] (M →ₗ[R] N) →ₗ[R] (⋀[R]^2 M →ₗ[R] ⋀[R]^2 N) :=
-  LinearMap.mk₂ R
-    (fun f g ↦ alternatingMapLinearEquiv (isAlt_symmWedgeBilin f g).toAlternatingMap)
-    (fun f₁ f₂ g ↦ linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.add_apply,
+  LinearMap.mk₂ R (fun f g ↦ alternatingMapLinearEquiv (isAlt_symmWedgeBilin f g).toAlternatingMap)
+    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
+      simp only [LinearMap.compAlternatingMap_apply, LinearMap.add_apply, symmWedgeBilin,
         alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        symmWedgeBilin, LinearMap.mk₂_apply, ιMulti_two_add_left, ιMulti_two_add_right]
-      module)
-    (fun c f g ↦ linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.smul_apply,
+        LinearMap.mk₂_apply, ιMulti_two_add_left, ιMulti_two_add_right]; module)
+    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
+      simp only [LinearMap.compAlternatingMap_apply, LinearMap.smul_apply, symmWedgeBilin,
         alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        symmWedgeBilin, LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]
-      module)
-    (fun f g₁ g₂ ↦ linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.add_apply,
+        LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
+    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
+      simp only [LinearMap.compAlternatingMap_apply, LinearMap.add_apply, symmWedgeBilin,
         alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        symmWedgeBilin, LinearMap.mk₂_apply, ιMulti_two_add_left, ιMulti_two_add_right]
-      module)
-    (fun c f g ↦ linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      simp only [LinearMap.compAlternatingMap_apply, LinearMap.smul_apply,
+        LinearMap.mk₂_apply, ιMulti_two_add_left, ιMulti_two_add_right]; module)
+    (fun _ _ _ ↦ linearMap_ext <| AlternatingMap.ext fun _ ↦ by
+      simp only [LinearMap.compAlternatingMap_apply, LinearMap.smul_apply, symmWedgeBilin,
         alternatingMapLinearEquiv_apply_ιMulti, LinearMap.IsAlt.toAlternatingMap_apply,
-        symmWedgeBilin, LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]
-      module)
+        LinearMap.mk₂_apply, ιMulti_two_smul_left, ιMulti_two_smul_right]; module)
 
 /-- On `u ∧ v`, `symmMap₂ f g` evaluates to `⅟2 • (f u ∧ g v + g u ∧ f v)`. -/
 @[simp]

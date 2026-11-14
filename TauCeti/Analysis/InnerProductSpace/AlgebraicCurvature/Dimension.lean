@@ -218,39 +218,10 @@ private def bianchiMultilinear (r : FourTensor V) :
     (fun m ↦ r ![m 0, m 1, m 2, m 3] + r ![m 1, m 2, m 0, m 3] + r ![m 2, m 0, m 1, m 3])
     (fun m i x y ↦ by
       fin_cases i <;>
-        simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Function.update_self,
-          Function.update_of_ne (by decide : (0 : Fin 4) ≠ 1),
-          Function.update_of_ne (by decide : (0 : Fin 4) ≠ 2),
-          Function.update_of_ne (by decide : (0 : Fin 4) ≠ 3),
-          Function.update_of_ne (by decide : (1 : Fin 4) ≠ 0),
-          Function.update_of_ne (by decide : (1 : Fin 4) ≠ 2),
-          Function.update_of_ne (by decide : (1 : Fin 4) ≠ 3),
-          Function.update_of_ne (by decide : (2 : Fin 4) ≠ 0),
-          Function.update_of_ne (by decide : (2 : Fin 4) ≠ 1),
-          Function.update_of_ne (by decide : (2 : Fin 4) ≠ 3),
-          Function.update_of_ne (by decide : (3 : Fin 4) ≠ 0),
-          Function.update_of_ne (by decide : (3 : Fin 4) ≠ 1),
-          Function.update_of_ne (by decide : (3 : Fin 4) ≠ 2),
-          apply_add_first, apply_add_second, apply_add_third, apply_add_fourth] <;>
-        ring)
+        simp [apply_add_first, apply_add_second, apply_add_third, apply_add_fourth] <;> ring)
     (fun m i c x ↦ by
       fin_cases i <;>
-        simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Function.update_self,
-          Function.update_of_ne (by decide : (0 : Fin 4) ≠ 1),
-          Function.update_of_ne (by decide : (0 : Fin 4) ≠ 2),
-          Function.update_of_ne (by decide : (0 : Fin 4) ≠ 3),
-          Function.update_of_ne (by decide : (1 : Fin 4) ≠ 0),
-          Function.update_of_ne (by decide : (1 : Fin 4) ≠ 2),
-          Function.update_of_ne (by decide : (1 : Fin 4) ≠ 3),
-          Function.update_of_ne (by decide : (2 : Fin 4) ≠ 0),
-          Function.update_of_ne (by decide : (2 : Fin 4) ≠ 1),
-          Function.update_of_ne (by decide : (2 : Fin 4) ≠ 3),
-          Function.update_of_ne (by decide : (3 : Fin 4) ≠ 0),
-          Function.update_of_ne (by decide : (3 : Fin 4) ≠ 1),
-          Function.update_of_ne (by decide : (3 : Fin 4) ≠ 2),
-          apply_smul_first, apply_smul_second, apply_smul_third, apply_smul_fourth,
-          RingHom.id_apply, smul_eq_mul] <;>
-        ring)
+        simp [apply_smul_first, apply_smul_second, apply_smul_third, apply_smul_fourth] <;> ring)
 
 private theorem bianchiMultilinear_apply (r : FourTensor V) (m : Fin 4 → V) :
     bianchiMultilinear r m =
@@ -424,28 +395,25 @@ def pairSymmetricEquivSymmBilin :
   invFun B :=
     ⟨fourTensorOfExteriorBilin B.1,
       mem_pairSymmetricSubmodule.mpr (isPairSymmetric_fourTensorOfExteriorBilin B)⟩
-  map_add' r q := Subtype.ext <| by
+  map_add' _ _ := Subtype.ext <| by
     dsimp only [Submodule.coe_add, exteriorBilinOfPairSymmetric]
     rw [LinearMap.exteriorSquareBilinear_eq_iff]
-    intro v w
-    simp [LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
-  map_smul' c r := Subtype.ext <| by
+    intro _ _; simp [LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
+  map_smul' _ _ := Subtype.ext <| by
     dsimp only [SetLike.val_smul, RingHom.id_apply, exteriorBilinOfPairSymmetric]
     rw [LinearMap.exteriorSquareBilinear_eq_iff]
-    intro v w
-    simp [LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
+    intro _ _; simp [LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
   left_inv r := Subtype.ext <| toLinearMap₄_injective <| by
     ext u v z w
-    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]
-    exact LinearMap.exteriorSquareBilinear_ιMulti_ιMulti _ _ _ ![u, v] ![z, w]
-  right_inv B := Subtype.ext <| by
+    exact (fourTensorOfExteriorBilin_apply _ u v z w).trans
+      (LinearMap.exteriorSquareBilinear_ιMulti_ιMulti _ _ _ ![u, v] ![z, w])
+  right_inv _ := Subtype.ext <| by
     dsimp only [exteriorBilinOfPairSymmetric]
     rw [LinearMap.exteriorSquareBilinear_eq_iff]
     intro v w
     have hv : v = ![v 0, v 1] := by funext i; fin_cases i <;> rfl
     have hw : w = ![w 0, w 1] := by funext i; fin_cases i <;> rfl
-    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]
-    conv_lhs => rw [hv, hw]
+    rw [toLinearMap₄_apply, fourTensorOfExteriorBilin_apply]; conv_lhs => rw [hv, hw]
 
 /-- Evaluation of `pairSymmetricEquivSymmBilin` on pure wedges `u ∧ v` and `z ∧ w`. -/
 @[simp]
@@ -472,32 +440,25 @@ theorem bianchiAlternatingMap_surjective :
     (1 / 3 : ℝ) •
       { ω.toMultilinearMap with cont := ω.toMultilinearMap.continuous_of_finiteDimensional }
   have hrω_apply (m : Fin 4 → V) : rω m = (1 / 3 : ℝ) * ω m := rfl
-  have hswap (m : Fin 4 → V) {i j : Fin 4} (hij : i ≠ j) : ω (m ∘ Equiv.swap i j) = -ω m :=
-    ω.map_swap m hij
   have h01 (a b c d : V) : ω ![b, a, c, d] = -ω ![a, b, c, d] := by
-    have : (![a, b, c, d] ∘ Equiv.swap (0 : Fin 4) 1) = ![b, a, c, d] := by
-      funext k; fin_cases k <;> rfl
-    rw [← this]; exact hswap _ (by decide)
+    convert ω.map_swap ![a, b, c, d] (by decide : (0 : Fin 4) ≠ 1) using 2
+    funext k; fin_cases k <;> rfl
   have h12 (a b c d : V) : ω ![a, c, b, d] = -ω ![a, b, c, d] := by
-    have : (![a, b, c, d] ∘ Equiv.swap (1 : Fin 4) 2) = ![a, c, b, d] := by
-      funext k; fin_cases k <;> rfl
-    rw [← this]; exact hswap _ (by decide)
+    convert ω.map_swap ![a, b, c, d] (by decide : (1 : Fin 4) ≠ 2) using 2
+    funext k; fin_cases k <;> rfl
   have h23 (a b c d : V) : ω ![a, b, d, c] = -ω ![a, b, c, d] := by
-    have : (![a, b, c, d] ∘ Equiv.swap (2 : Fin 4) 3) = ![a, b, d, c] := by
-      funext k; fin_cases k <;> rfl
-    rw [← this]; exact hswap _ (by decide)
+    convert ω.map_swap ![a, b, c, d] (by decide : (2 : Fin 4) ≠ 3) using 2
+    funext k; fin_cases k <;> rfl
   have hrω_mem : IsPairSymmetric rω := by
     refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;> simp only [hrω_apply]
     · rw [h01 v u z w]; ring
     · rw [h23 u v w z]; ring
     · rw [h12 u z v w, h01 z u v w, h23 z u w v, h12 z w u v]; ring
-  refine ⟨⟨rω, mem_pairSymmetricSubmodule.mpr hrω_mem⟩, ?_⟩
-  ext m
+  refine ⟨⟨rω, mem_pairSymmetricSubmodule.mpr hrω_mem⟩, AlternatingMap.ext fun m ↦ ?_⟩
   have hm : ![m 0, m 1, m 2, m 3] = m := by funext k; fin_cases k <;> rfl
   simp only [bianchiAlternatingMap_apply, hrω_apply]
   rw [h12 (m 1) (m 0) (m 2) (m 3), h01 (m 0) (m 1) (m 2) (m 3),
-    h01 (m 0) (m 2) (m 1) (m 3), h12 (m 0) (m 1) (m 2) (m 3), hm]
-  ring
+    h01 (m 0) (m 2) (m 1) (m 3), h12 (m 0) (m 1) (m 2) (m 3), hm]; ring
 
 private theorem choose_symm_sub_choose_four {n d : ℕ}
     (hrk : n.choose 4 + d = n.choose 2 * (n.choose 2 + 1) / 2) :
@@ -505,35 +466,29 @@ private theorem choose_symm_sub_choose_four {n d : ℕ}
   match n with
   | 0 | 1 | 2 | 3 => norm_num [Nat.choose] at hrk ⊢; omega
   | m + 4 =>
-    have hs3 : m + 4 - 3 = m + 1 := by omega
-    have hs2 : m + 4 - 2 = m + 2 := by omega
-    have hs1 : m + 4 - 1 = m + 3 := by omega
     have hc4 : 24 * (m + 4).choose 4 = (m + 4) * (m + 3) * (m + 2) * (m + 1) := by
       have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 4).symm
-      simp only [Nat.descFactorial_succ, Nat.descFactorial_zero, hs3, hs2, hs1, Nat.sub_zero] at h
-      norm_num [Nat.factorial] at h
-      rw [h]; ring
+      simp only [Nat.descFactorial_succ, Nat.descFactorial_zero,
+        show m + 4 - 3 = m + 1 by omega, show m + 4 - 2 = m + 2 by omega,
+        show m + 4 - 1 = m + 3 by omega, Nat.sub_zero] at h
+      norm_num [Nat.factorial] at h; rw [h]; ring
     have hc2 : 2 * (m + 4).choose 2 = (m + 4) * (m + 3) := by
       have h := (Nat.descFactorial_eq_factorial_mul_choose (m + 4) 2).symm
-      simp only [Nat.descFactorial_succ, Nat.descFactorial_zero, hs1, Nat.sub_zero] at h
-      norm_num [Nat.factorial] at h
-      rw [h]; ring
+      simp only [Nat.descFactorial_succ, Nat.descFactorial_zero,
+        show m + 4 - 1 = m + 3 by omega, Nat.sub_zero] at h
+      norm_num [Nat.factorial] at h; rw [h]; ring
     have hp : 2 * ((m + 4).choose 2 * ((m + 4).choose 2 + 1) / 2) =
         (m + 4).choose 2 * ((m + 4).choose 2 + 1) :=
       Nat.mul_div_cancel' (Nat.even_mul_succ_self _).two_dvd
     have h24 : 24 * ((m + 4).choose 4 + d) =
         12 * (2 * ((m + 4).choose 2 * ((m + 4).choose 2 + 1) / 2)) := by omega
-    rw [hp] at h24
     have hpoly : 12 * ((m + 4).choose 2 * ((m + 4).choose 2 + 1)) =
         3 * (2 * (m + 4).choose 2) * (2 * (m + 4).choose 2 + 2) := by ring
-    rw [hpoly, hc2] at h24
+    rw [hp, hpoly, hc2] at h24
     have hsq : (m + 3) * (m + 5) + 1 = (m + 4) ^ 2 := by ring
-    have hsq' : (m + 4) ^ 2 - 1 = (m + 3) * (m + 5) := by omega
     have hident : 3 * ((m + 4) * (m + 3)) * ((m + 4) * (m + 3) + 2) =
-        (m + 4) * (m + 3) * (m + 2) * (m + 1) +
-          2 * ((m + 4) ^ 2 * ((m + 3) * (m + 5))) := by ring
-    rw [hsq']
-    omega
+        (m + 4) * (m + 3) * (m + 2) * (m + 1) + 2 * ((m + 4) ^ 2 * ((m + 3) * (m + 5))) := by ring
+    rw [show (m + 4) ^ 2 - 1 = (m + 3) * (m + 5) by omega]; omega
 
 /-- **Dimension of the space of algebraic curvature tensors**: on an `n`-dimensional real normed
 space `V`, `Module.finrank ℝ (algebraicCurvatureSubmodule V) = n ^ 2 * (n ^ 2 - 1) / 12`. -/
