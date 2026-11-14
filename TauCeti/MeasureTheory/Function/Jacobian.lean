@@ -32,7 +32,7 @@ Without differentiability of `f`, if `f` is almost everywhere measurable on `s` 
 an open set `t`, a differentiable left inverse `g` on `t` still controls the pushforward of `μ` on
 `s` by an upper bound on `|det Dg|` or on `‖Dg‖ ^ n` along `f '' s`
 (`MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn`,
-`MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`).
+`MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn_of_norm_fderiv_le`).
 
 Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
@@ -60,9 +60,9 @@ a permutation of the vertices of a simplex, acts on integrals over it.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn`,
-  `MeasureTheory.map_restrict_le_smul_restrict_of_norm_fderiv_le`: pushforward bounds on `s` for an
-  almost-everywhere measurable `f` from a differentiable left inverse `g` on an open set `t`,
-  without differentiability of `f`.
+  `MeasureTheory.map_restrict_le_smul_restrict_of_leftInvOn_of_norm_fderiv_le`: pushforward bounds
+  on `s` for an almost-everywhere measurable `f` from a differentiable left inverse `g` on an open
+  set `t`, without differentiability of `f`.
 * `MeasureTheory.ae_restrict_comp_of_differentiableOn`: almost-everywhere properties pull back
   along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact
@@ -169,7 +169,7 @@ theorem map_restrict_le_smul_restrict_of_leftInvOn {g : E → E} {M : ℝ}
 everywhere measurable on `s`, `g` is differentiable on an open set `t`, `f` maps `s` into `t`
 with `g (f x) = x` on `s`, and `‖fderiv ℝ g (f x)‖ ≤ L` on `s`, then `f` pushes `μ` restricted to
 `s` forward to at most `L ^ finrank ℝ E` times `μ` restricted to `t`. -/
-theorem map_restrict_le_smul_restrict_of_norm_fderiv_le {g : E → E} {L : ℝ}
+theorem map_restrict_le_smul_restrict_of_leftInvOn_of_norm_fderiv_le {g : E → E} {L : ℝ}
     (hf : AEMeasurable f (μ.restrict s)) (ht : IsOpen t) (hg : DifferentiableOn ℝ g t)
     (hmaps : MapsTo f s t) (hgf : LeftInvOn g f s) (hL : ∀ x ∈ s, ‖fderiv ℝ g (f x)‖ ≤ L) :
     (μ.restrict s).map f ≤ ENNReal.ofReal (L ^ Module.finrank ℝ E) • μ.restrict t :=

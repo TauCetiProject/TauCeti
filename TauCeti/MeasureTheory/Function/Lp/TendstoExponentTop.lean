@@ -59,6 +59,12 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
+private theorem tendsto_mul_rpow_one_div_atTop (M : ℝ≥0∞) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
+    Tendsto (fun p : ℝ≥0 ↦ M * c ^ (1 / (p : ℝ))) atTop (𝓝 M) := by
+  simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
+    ((ENNReal.tendsto_rpow_one_div_atTop hc0 hc).comp
+      (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+
 section ENorm
 
 variable {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε] [ContinuousENorm ε]
@@ -83,12 +89,7 @@ theorem eLpNorm_exponent_top_le_liminf :
       fun _ ↦ le_of_lt
   -- Chebyshev gives `s * min c 1 ^ (1 / p) ≤ eLpNorm f p μ`, and the left side tends to `s`.
   set c' := min c 1
-  have hc'0 : c' ≠ 0 := by simp [c', hc0]
-  have hc'top : c' ≠ ∞ := by simp [c']
-  have hlim : Tendsto (fun p : ℝ≥0 ↦ s * c' ^ (1 / (p : ℝ))) atTop (𝓝 s) := by
-    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-      ((ENNReal.tendsto_rpow_one_div_atTop hc'0 hc'top).comp
-        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  have hlim := tendsto_mul_rpow_one_div_atTop s (c := c') (by simp [c', hc0]) (by simp [c'])
   refine le_liminf_of_le (by isBoundedDefault) ?_
   filter_upwards [hlim.eventually (lt_mem_nhds hrs), eventually_ne_atTop 0] with p hp hp0
   refine hp.le.trans ?_
@@ -107,12 +108,8 @@ theorem eLpNorm_exponent_top_le_of_eventually_le {M a : ℝ≥0∞} (ha : a ≠ 
     (h : ∀ᶠ p : ℝ≥0 in atTop, eLpNorm f p μ ≤ M * a ^ (1 / (p : ℝ))) :
     eLpNorm f ∞ μ ≤ M := by
   set a' := max 1 a
-  have ha'0 : a' ≠ 0 := (zero_lt_one.trans_le (le_max_left 1 a)).ne'
-  have ha'top : a' ≠ ∞ := max_ne_top ENNReal.one_ne_top ha
-  have hlim : Tendsto (fun p : ℝ≥0 ↦ M * a' ^ (1 / (p : ℝ))) atTop (𝓝 M) := by
-    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-      ((ENNReal.tendsto_rpow_one_div_atTop ha'0 ha'top).comp
-        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  have hlim := tendsto_mul_rpow_one_div_atTop M (c := a')
+    (zero_lt_one.trans_le (le_max_left 1 a)).ne' (max_ne_top ENNReal.one_ne_top ha)
   refine eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf ?_).trans_eq hlim.liminf_eq)
   exact h.mono fun p hp ↦ hp.trans
     (mul_le_mul' le_rfl (ENNReal.rpow_le_rpow (le_max_right 1 a) (by positivity)))
@@ -129,11 +126,8 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
   · simp
   refine tendsto_of_le_liminf_of_limsup_le eLpNorm_exponent_top_le_liminf ?_
   -- The comparison with the `L^∞` seminorm weighted by the root of the total mass.
-  have hlim : Tendsto (fun p : ℝ≥0 ↦ eLpNorm f ∞ μ * μ Set.univ ^ (1 / (p : ℝ))) atTop
-      (𝓝 (eLpNorm f ∞ μ)) := by
-    simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-      ((ENNReal.tendsto_rpow_one_div_atTop (by simp [NeZero.ne μ]) (measure_ne_top μ _)).comp
-        (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
+  have hlim := tendsto_mul_rpow_one_div_atTop (eLpNorm f ∞ μ) (c := μ Set.univ)
+    (by simp [NeZero.ne μ]) (measure_ne_top μ _)
   refine (limsup_le_limsup (.of_forall fun p ↦ ?_)).trans_eq hlim.limsup_eq
   simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ (le_top : (p : ℝ≥0∞) ≤ ∞) hf
 
@@ -150,11 +144,8 @@ theorem ae_norm_le_of_eventually_nnreal_eLpNorm_le {α F : Type*} [MeasurableSpa
     eLpNorm_exponent_top_le_of_eventually_le (a := ENNReal.ofReal a) ENNReal.ofReal_ne_top <|
       h.mono fun q hq ↦ hq.trans_eq <| by
         rw [ENNReal.ofReal_mul hM, ENNReal.ofReal_rpow_of_nonneg ha (by positivity)]
-  have hf : AEStronglyMeasurable f μ := by
-    by_contra hf
-    exact ENNReal.ofReal_ne_top (top_le_iff.1 (eLpNorm_of_not_aestronglyMeasurable hf ▸ htop))
-  rw [eLpNorm_exponent_top hf] at htop
   filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with y hy
-  exact (ENNReal.ofReal_le_ofReal_iff hM).1 (by simpa only [ofReal_norm] using hy.trans htop)
+  exact (ENNReal.ofReal_le_ofReal_iff hM).1
+    (by simpa only [ofReal_norm] using hy.trans (eLpNormEssSup_le_eLpNorm_top.trans htop))
 
 end TauCeti

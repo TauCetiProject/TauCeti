@@ -563,7 +563,7 @@ theorem of_leftInvOn {Ψ : E → E} {L' : ℝ} (hk : 1 ≤ k) (hΦ : ContDiffOn 
     (hΨ (Φ x) (hmaps hx)).differentiableAt (V.isOpen.mem_nhds (hmaps hx))
   have hev : Ψ ∘ Φ =ᶠ[𝓝 x] _root_.id :=
     Filter.eventuallyEq_of_mem (U.isOpen.mem_nhds hx) fun y hy => hΨΦ hy
-  exact hΦx.inv_pow_le_abs_det_fderiv_of_eventuallyEq hΨx hev
+  exact hΦx.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id hΨx hev
     ((hL' x hx).trans (le_max_right 1 L'))
 
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
@@ -849,48 +849,52 @@ private def measurableExtension (Φ : E → E) (U : Opens E) : E → E := by
   classical exact (U : Set E).piecewise Φ fun _ => 0
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
-private theorem measurable_measurableExtension_of_continuousOn (hΦ : ContinuousOn Φ U) :
+private theorem measurable_measurableExtension (hΦ : ContinuousOn Φ U) :
     Measurable (measurableExtension Φ U) := by
-  classical
-  exact ContinuousOn.measurable_piecewise hΦ continuousOn_const U.isOpen.measurableSet
-
-omit [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
-private theorem measurable_measurableExtension (h : IsChangeOfVariables k U V Φ L c) :
-    Measurable (measurableExtension Φ U) :=
-  measurable_measurableExtension_of_continuousOn h.differentiableOn.continuousOn
+  classical exact ContinuousOn.measurable_piecewise hΦ continuousOn_const U.isOpen.measurableSet
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
-private theorem measurableExtension_ae_eq :
-    measurableExtension Φ U =ᵐ[mu.restrict U] Φ := by
+private theorem measurableExtension_ae_eq : measurableExtension Φ U =ᵐ[mu.restrict U] Φ := by
   classical
   filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
   exact Set.piecewise_eq_of_mem _ _ _ hx
 
-private theorem map_measurableExtension_le (h : IsChangeOfVariables k U V Φ L c) :
-    (mu.restrict U).map (measurableExtension Φ U) ≤ (ENNReal.ofReal c)⁻¹ • mu.restrict V := by
-  rw [Measure.map_congr measurableExtension_ae_eq]
-  exact h.map_restrict_le mu
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
+private theorem map_measurableExtension_le {C : ℝ}
+    (hmap : (mu.restrict U).map Φ ≤ ENNReal.ofReal C • mu.restrict V) :
+    (mu.restrict U).map (measurableExtension Φ U) ≤ ENNReal.ofReal C • mu.restrict V :=
+  (Measure.map_congr measurableExtension_ae_eq).trans_le hmap
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
 /-- Precomposition with `Φ` on `Lᵖ`. -/
-private def compLp (h : IsChangeOfVariables k U V Φ L c) :
+private def compLp {C : ℝ} (hΦ : ContinuousOn Φ U)
+    (hmap : (mu.restrict U).map Φ ≤ ENNReal.ofReal C • mu.restrict V) :
     Lp ℝ p (mu.restrict V) →L[ℝ] Lp ℝ p (mu.restrict U) :=
-  Lp.compOfMapLeSmul ℝ (measurable_measurableExtension h)
-    (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne') (map_measurableExtension_le h)
+  Lp.compOfMapLeSmul ℝ (measurable_measurableExtension hΦ) ENNReal.ofReal_ne_top
+    (map_measurableExtension_le hmap)
 
-private theorem compLp_ae (h : IsChangeOfVariables k U V Φ L c) (g : Lp ℝ p (mu.restrict V)) :
-    compLp h g =ᵐ[mu.restrict U] fun x => g (Φ x) := by
-  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) (measurable_measurableExtension h)
-    (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne') (map_measurableExtension_le h) g,
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
+private theorem compLp_ae {C : ℝ} (hΦ : ContinuousOn Φ U)
+    (hmap : (mu.restrict U).map Φ ≤ ENNReal.ofReal C • mu.restrict V)
+    (g : Lp ℝ p (mu.restrict V)) :
+    compLp hΦ hmap g =ᵐ[mu.restrict U] fun x => g (Φ x) := by
+  filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) (measurable_measurableExtension hΦ)
+    ENNReal.ofReal_ne_top (map_measurableExtension_le hmap) g,
     measurableExtension_ae_eq (mu := mu) (Φ := Φ) (U := U)] with x hx hx'
   rw [compLp, hx, Function.comp_apply, hx']
 
-private theorem norm_compLp_le (h : IsChangeOfVariables k U V Φ L c)
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
+private theorem norm_compLp_le {C : ℝ} (hΦ : ContinuousOn Φ U)
+    (hmap : (mu.restrict U).map Φ ≤ ENNReal.ofReal C • mu.restrict V) (hC : 0 ≤ C)
     (g : Lp ℝ p (mu.restrict V)) :
-    ‖compLp h g‖ ≤ c⁻¹ ^ (1 / p).toReal * ‖g‖ := by
-  refine (Lp.norm_compOfMapLeSmul_le (measurable_measurableExtension h)
-    (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne') (map_measurableExtension_le h) g).trans
-    (le_of_eq ?_)
-  rw [← ENNReal.toReal_rpow, ENNReal.toReal_inv, ENNReal.toReal_ofReal h.pos.le]
+    ‖compLp hΦ hmap g‖ ≤ C ^ (1 / p).toReal * ‖g‖ := by
+  refine (Lp.norm_compOfMapLeSmul_le (measurable_measurableExtension hΦ) ENNReal.ofReal_ne_top
+    (map_measurableExtension_le hmap) g).trans (le_of_eq ?_)
+  rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hC]
+
+private theorem IsChangeOfVariables.map_restrict_le' (h : IsChangeOfVariables k U V Φ L c) :
+    (mu.restrict U).map Φ ≤ ENNReal.ofReal c⁻¹ • mu.restrict V :=
+  ENNReal.ofReal_inv_of_pos h.pos ▸ h.map_restrict_le mu
 
 /-- Precomposition in `W^{k,p}` for finite exponent `p < ∞`, defined by continuous extension from
 `Cᵏ` representatives. -/
@@ -906,14 +910,17 @@ private theorem compLFinite_apply_smooth (h : IsChangeOfVariables k U V Φ L c) 
 
 private theorem valueL_comp_compLFinite (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
     (valueL k).comp (compLFinite h hp) =
-      (compLp h).comp (valueL (mu := mu) (Omega := V) (p := p) k) := by
+      (compLp h.differentiableOn.continuousOn h.map_restrict_le').comp
+        (valueL (mu := mu) (Omega := V) (p := p) k) := by
   refine DFunLike.coe_injective (Continuous.ext_on (denseRange_smoothSubmodule_subtype hp)
-    ((valueL k).comp (compLFinite h hp)).continuous ((compLp h).comp (valueL k)).continuous ?_)
+    ((valueL k).comp (compLFinite h hp)).continuous
+    ((compLp h.differentiableOn.continuousOn h.map_restrict_le').comp (valueL k)).continuous ?_)
   rintro _ ⟨u, rfl⟩
   refine Lp.ext ?_
   simp only [Submodule.coe_subtype, ContinuousLinearMap.coe_comp, Function.comp_apply,
     valueL_apply, compLFinite_apply_smooth h hp]
-  exact (value_compSmooth_ae h u).trans (compLp_ae h _).symm
+  exact (value_compSmooth_ae h u).trans
+    (compLp_ae h.differentiableOn.continuousOn h.map_restrict_le' _).symm
 
 private theorem value_compLFinite_ae (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p k) :
@@ -921,7 +928,7 @@ private theorem value_compLFinite_ae (h : IsChangeOfVariables k U V Φ L c) (hp 
   have he := congrArg (fun T => T u) (valueL_comp_compLFinite h hp)
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, valueL_apply] at he
   rw [he]
-  exact compLp_ae h _
+  exact compLp_ae h.differentiableOn.continuousOn h.map_restrict_le' _
 
 private theorem norm_compLFinite_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p k) :
@@ -954,12 +961,14 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
       (value 1 w : E → ℝ) =ᵐ[mu.restrict U] (fun x => value 1 u (Φ x)) ∧
       ‖iteratedGradient 0 w‖ ≤ max 1 L * ‖u‖ ∧
       ‖w‖ ≤ compLBound ⊤ 1 L c * ‖u‖ := by
-  set u₀ : Lp ℝ ⊤ (mu.restrict U) := compLp h (value 1 u)
+  set u₀ : Lp ℝ ⊤ (mu.restrict U) :=
+    compLp h.differentiableOn.continuousOn h.map_restrict_le' (value 1 u)
   set g₀ : E → E := fun x => (fderiv ℝ Φ x).adjoint (iteratedGradient 0 u (Φ x))
   have hweak₀ : HasWeakFDerivOn mu U u₀ (fun x => innerSL ℝ (g₀ x)) := by
     have hc0 := (hasWeakFDerivOn_value u).comp_contDiffOn_diffeo h.contDiffOn h.injOn
       (fun x hx => abs_ne_zero.1 (h.pos.trans_le (h.le_abs_det x hx)).ne') h.mapsTo
-    refine (hc0.congr_ae (compLp_ae h (value 1 u)).symm).congr_ae_deriv (.of_forall fun x => ?_)
+    refine (hc0.congr_ae (compLp_ae h.differentiableOn.continuousOn h.map_restrict_le'
+      (value 1 u)).symm).congr_ae_deriv (.of_forall fun x => ?_)
     ext v
     simp [g₀, ContinuousLinearMap.adjoint_inner_left]
   have hg₀_ae : ∀ᵐ x ∂mu.restrict U, ‖g₀ x‖ ≤ max 1 L * ‖u‖ := by
@@ -982,12 +991,14 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
     (mul_nonneg (max_one_pos L).le (norm_nonneg u))
     (hg₀_mem.coeFn_toLp.mp (hg₀_ae.mono fun _ hx hxy => hxy ▸ hx))
   have hu₀n : ‖u₀‖ ≤ ‖u‖ :=
-    (norm_compLp_le h (value 1 u)).trans (by simpa using norm_value_le 1 u)
+    (norm_compLp_le h.differentiableOn.continuousOn h.map_restrict_le'
+      (inv_nonneg.2 h.pos.le) (value 1 u)).trans (by simpa using norm_value_le 1 u)
   have hval : value 1 w = u₀ := (value_one w).trans (W1p.value_mk u₀ g hweak)
   have hgrad : iteratedGradient 0 w = g :=
     (iteratedGradient_zero w).trans (W1p.gradient_mk u₀ g hweak)
   have hlow : lowerOrder 0 w = u₀ := (lowerOrder_zero w).trans (W1p.value_mk u₀ g hweak)
-  refine ⟨w, hval ▸ compLp_ae h (value 1 u), hgrad.symm ▸ hgn, ?_⟩
+  refine ⟨w, hval ▸ compLp_ae h.differentiableOn.continuousOn h.map_restrict_le' (value 1 u),
+    hgrad.symm ▸ hgn, ?_⟩
   have hsum : compLBound ⊤ 1 L c = 1 + max 1 L := by simp [compLBound_succ, Fintype.card_unique]
   have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 w
   rw [hlow, hgrad] at hle
@@ -1140,8 +1151,12 @@ private theorem exists_comp_top :
         | m + 1, w => ‖iteratedGradient m w‖ ≤
             max 1 L ^ (m + 1) * Fintype.card (OrderedFinpartition (m + 1)) * ‖u‖
   | 0, _, _, _, _, h, u =>
-      ⟨compLp h u, by rw [value_zero, value_zero]; exact compLp_ae h u,
-        by simpa using norm_compLp_le h u, trivial⟩
+      ⟨compLp h.differentiableOn.continuousOn h.map_restrict_le' u,
+        by simpa only [value_zero] using
+            compLp_ae h.differentiableOn.continuousOn h.map_restrict_le' u,
+        by simpa using norm_compLp_le h.differentiableOn.continuousOn h.map_restrict_le'
+            (inv_nonneg.2 h.pos.le) u,
+        trivial⟩
   | 1, _, _, _, _, h, u =>
       let ⟨w, hw, hg, hn⟩ := exists_comp_top_one h u
       ⟨w, hw, hn, by simpa [Fintype.card_unique] using hg⟩
@@ -1168,8 +1183,10 @@ private theorem value_compFun_ae (h : IsChangeOfVariables k U V Φ L c) (u : Wkp
   (exists_comp h u).choose_spec.1
 
 private theorem value_compFun (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
-    value k (compFun h u) = compLp h (value k u) :=
-  Lp.ext ((value_compFun_ae h u).trans (compLp_ae h (value k u)).symm)
+    value k (compFun h u) =
+      compLp h.differentiableOn.continuousOn h.map_restrict_le' (value k u) :=
+  Lp.ext ((value_compFun_ae h u).trans
+    (compLp_ae h.differentiableOn.continuousOn h.map_restrict_le' (value k u)).symm)
 
 private theorem norm_compFun_le (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
     ‖compFun h u‖ ≤ compLBound p k L c * ‖u‖ :=
@@ -1356,13 +1373,11 @@ end Equiv
 
 section LeftInvOn
 
-private theorem map_measurableExtension_le_of_leftInvOn (hΦ : ContinuousOn Φ U)
+private theorem map_restrict_le_of_leftInvOn (hΦ : ContinuousOn Φ U)
     (hΨ : DifferentiableOn ℝ Ψ V) (hmaps : MapsTo Φ U V) (hΨΦ : LeftInvOn Ψ Φ U)
     (hL' : ∀ x ∈ (U : Set E), ‖fderiv ℝ Ψ (Φ x)‖ ≤ L') :
-    (mu.restrict U).map (measurableExtension Φ U) ≤
-      ENNReal.ofReal (max 1 L' ^ Module.finrank ℝ E) • mu.restrict V := by
-  rw [Measure.map_congr measurableExtension_ae_eq]
-  exact map_restrict_le_smul_restrict_of_norm_fderiv_le mu
+    (mu.restrict U).map Φ ≤ ENNReal.ofReal (max 1 L' ^ Module.finrank ℝ E) • mu.restrict V :=
+  map_restrict_le_smul_restrict_of_leftInvOn_of_norm_fderiv_le mu
     (hΦ.aemeasurable U.isOpen.measurableSet) V.isOpen hΨ hmaps hΨΦ fun x hx =>
       (hL' x hx).trans (le_max_right 1 L')
 
@@ -1377,9 +1392,7 @@ def compOfLeftInvOnL : ∀ {k : ℕ}, ContDiffOn ℝ k Φ U → DifferentiableOn
     (∀ i, 1 ≤ i → i ≤ k → ∀ x ∈ (U : Set E), ‖iteratedFDeriv ℝ i Φ x‖ ≤ L) →
     (∀ x ∈ (U : Set E), ‖fderiv ℝ Ψ (Φ x)‖ ≤ L') → Wkp mu V p k →L[ℝ] Wkp mu U p k
   | 0, hΦ, hΨ, hmaps, hΨΦ, _, hL' =>
-      Lp.compOfMapLeSmul ℝ (measurable_measurableExtension_of_continuousOn hΦ.continuousOn)
-        ENNReal.ofReal_ne_top
-        (map_measurableExtension_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL')
+      compLp hΦ.continuousOn (map_restrict_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL')
   | k + 1, hΦ, hΨ, hmaps, hΨΦ, hL, hL' =>
       compL (IsChangeOfVariables.of_leftInvOn k.succ_pos hΦ hΨ hmaps hΨΦ hL hL')
 
@@ -1402,11 +1415,8 @@ theorem value_compOfLeftInvOnL_ae (hΦ : ContDiffOn ℝ k Φ U) (hΨ : Different
       fun x => value k u (Φ x) := by
   cases k with
   | zero =>
-      filter_upwards [Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ)
-          (measurable_measurableExtension_of_continuousOn hΦ.continuousOn) ENNReal.ofReal_ne_top
-          (map_measurableExtension_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL') u,
-        measurableExtension_ae_eq (mu := mu) (Φ := Φ) (U := U)] with x hx hx'
-      simpa only [compOfLeftInvOnL, value_zero, Function.comp_apply, hx'] using hx
+      simpa only [compOfLeftInvOnL, value_zero] using compLp_ae hΦ.continuousOn
+        (map_restrict_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL') u
   | succ m =>
       exact value_compL_ae (IsChangeOfVariables.of_leftInvOn m.succ_pos hΦ hΨ hmaps hΨΦ hL hL') u
 
@@ -1431,13 +1441,9 @@ theorem norm_compOfLeftInvOnL_le (hΦ : ContDiffOn ℝ k Φ U) (hΨ : Differenti
       compLBound p k L (max 1 L' ^ Module.finrank ℝ E)⁻¹ * ‖u‖ := by
   cases k with
   | zero =>
-      have hM : 0 ≤ max 1 L' ^ Module.finrank ℝ E := pow_nonneg (max_one_pos L').le _
-      refine (Lp.norm_compOfMapLeSmul_le
-        (measurable_measurableExtension_of_continuousOn hΦ.continuousOn) ENNReal.ofReal_ne_top
-        (map_measurableExtension_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL') u).trans
-        (le_of_eq ?_)
-      rw [← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hM]
-      simp
+      simpa [compOfLeftInvOnL] using norm_compLp_le hΦ.continuousOn
+        (map_restrict_le_of_leftInvOn hΦ.continuousOn hΨ hmaps hΨΦ hL')
+        (pow_nonneg (max_one_pos L').le _) u
   | succ m =>
       exact norm_compL_le (IsChangeOfVariables.of_leftInvOn m.succ_pos hΦ hΨ hmaps hΨΦ hL hL') u
 

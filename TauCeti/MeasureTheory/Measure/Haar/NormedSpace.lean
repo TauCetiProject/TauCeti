@@ -110,9 +110,9 @@ For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 * `ContinuousLinearMap.inv_pow_le_norm_det_of_comp_eq_id`,
   `ContinuousLinearMap.inv_pow_le_abs_det_of_comp_eq_id`: if `g ∘L f = id` and `‖g‖ ≤ L`, then
   `(L ^ n)⁻¹ ≤ ‖det f‖`.
-* `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_eventuallyEq`,
-  `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_eventuallyEq`: the corresponding Jacobian lower
-  bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
+* `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id`,
+  `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id`: the corresponding Jacobian
+  lower bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 -/
@@ -593,8 +593,8 @@ end ContinuousLinearMap
 
 /-- If `g ∘ f =ᶠ[𝓝 x] id` for maps differentiable at `x` and `f x` over an `RCLike` field, and
 `‖fderiv 𝕜 g (f x)‖ ≤ L`, then `(L ^ finrank 𝕜 E)⁻¹ ≤ ‖det (fderiv 𝕜 f x)‖`. -/
-theorem DifferentiableAt.inv_pow_le_norm_det_fderiv_of_eventuallyEq {𝕜 E : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E → E} {x : E} {L : ℝ}
+theorem DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id {𝕜 E : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f g : E → E} {x : E} {L : ℝ}
     (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g (f x))
     (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv 𝕜 g (f x)‖ ≤ L) :
     (L ^ finrank 𝕜 E)⁻¹ ≤ ‖(fderiv 𝕜 f x).det‖ := by
@@ -606,12 +606,13 @@ theorem DifferentiableAt.inv_pow_le_norm_det_fderiv_of_eventuallyEq {𝕜 E : Ty
 
 /-- If `g ∘ f =ᶠ[𝓝 x] id` for real-differentiable maps at `x` and `f x`, and
 `‖fderiv ℝ g (f x)‖ ≤ L`, then `(L ^ finrank ℝ E)⁻¹ ≤ |det (fderiv ℝ f x)|`. -/
-theorem DifferentiableAt.inv_pow_le_abs_det_fderiv_of_eventuallyEq {E : Type*}
+theorem DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : E → E} {x : E} {L : ℝ}
     (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g (f x))
     (hgf : g ∘ f =ᶠ[nhds x] id) (hL : ‖fderiv ℝ g (f x)‖ ≤ L) :
     (L ^ finrank ℝ E)⁻¹ ≤ |(fderiv ℝ f x).det| := by
-  simpa only [Real.norm_eq_abs] using hf.inv_pow_le_norm_det_fderiv_of_eventuallyEq hg hgf hL
+  simpa only [Real.norm_eq_abs] using
+    hf.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id hg hgf hL
 
 namespace ContinuousAffineMap
 
