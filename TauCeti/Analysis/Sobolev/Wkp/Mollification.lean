@@ -21,14 +21,17 @@ kernel support is contained in `Ω`; no regularity of the boundary is assumed.
 
 The result supplies the successive derivative identities needed to construct smooth
 local approximations in the iterated weak Sobolev spaces. It uses the weak-derivative
-identity recorded at each graph step and the interior convolution theorem.
+identity recorded at each graph step and the interior convolution theorem. Iterating these
+identities, `TauCeti.Wkp.iteratedGradientChain_smoothField_value` identifies
+every classical iterated-gradient field of a mollified value with the mollified weak derivative
+of the same order, wherever the bump stays in `Ω`.
 
 The interior mollification is packaged as `TauCeti.Wkp.smoothField`, the convolution of a
 normalized bump with the zero extension of a field in `Lᵖ(Ω)`. It is smooth on the whole space
 (`TauCeti.Wkp.contDiff_smoothField`); where the bump stays in `Ω`, its gradient and Hessian are the
-mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`,
-`TauCeti.Wkp.fderiv_gradient_smoothField_value`); and the mollification of a function agreeing
-with a continuous `v` stays close to `v` where `v` varies little
+mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`, and the order-one
+case of `TauCeti.Wkp.iteratedGradientChain_smoothField_value`); and the mollification of a
+function agreeing with a continuous `v` stays close to `v` where `v` varies little
 (`TauCeti.Wkp.dist_smoothField_le`). `TauCeti.Wkp.smoothField_eq_zero_of_notMem_add_closedBall`
 locates its support near the set off which the field vanishes.
 These are the inputs for passing estimates from smooth functions to strong `W^{2,p}` solutions.
@@ -281,19 +284,6 @@ theorem gradient_smoothField (u : Wkp mu Omega p 1)
   filter_upwards with y
   by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
 
-/-- Where every bump centred near `x` stays in `Ω`, the derivative at `x` of the gradient of the
-mollified value of `u ∈ W^{2,p}(Ω)`, its Hessian operator, is the mollified weak Hessian. -/
-theorem fderiv_gradient_smoothField_value (u : Wkp mu Omega p 2) (phi : ContDiffBump (0 : E))
-    {x : E} (hx : ∀ᶠ y in 𝓝 x, Metric.closedBall y phi.rOut ⊆ Omega) :
-    fderiv ℝ (∇ (smoothField phi (value 2 u))) x = smoothField phi (iteratedGradient 1 u) x := by
-  have hgrad : ∇ (smoothField phi (value 2 u)) =ᶠ[𝓝 x]
-      smoothField phi (iteratedGradient 0 (lowerOrder 1 u)) := by
-    filter_upwards [hx] with y hy
-    rw [value_succ]
-    exact gradient_smoothField (lowerOrder 1 u) phi y hy
-  rw [hgrad.fderiv_eq]
-  exact fderiv_smoothField 0 u phi x hx.self_of_nhds
-
 omit [Fact (1 ≤ p)] in
 /-- **Mollification of a continuous representative.** If `f ∈ Lᵖ(Ω)` agrees almost everywhere on
 `Ω` with `v`, the ball of radius `phi.rOut` about `x` lies in `Ω`, and `v` stays within `ε` of
@@ -318,5 +308,30 @@ theorem dist_smoothField_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ 
   · exact (Set.indicator_of_mem hxO v).symm
   · rw [Set.indicator_of_mem (hx hy), Set.indicator_of_mem hxO]
     exact hv y hy
+
+/-- **Derivatives of a mollified Sobolev function.** Let `u ∈ W^{k+1,p}(Ω)` and let `φ` be a smooth
+bump whose closed support ball, centred at any point of the open set `U`, lies in `Ω`. On `U`, the
+classical iterated-gradient field of order `k` of the mollified value of `u` is the mollified
+highest weak derivative of `u`. -/
+theorem iteratedGradientChain_smoothField_value (phi : ContDiffBump (0 : E))
+    {U : Set E} (hU : IsOpen U) (hphi : ∀ x ∈ U, Metric.closedBall x phi.rOut ⊆ Omega) :
+    ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)) (x : E), x ∈ U →
+      iteratedGradientChain (smoothField phi (value (k + 1) u)) k x =
+        smoothField phi (iteratedGradient k u) x := by
+  intro k
+  induction k with
+  | zero =>
+      intro u x hx
+      rw [iteratedGradientChain_zero]
+      exact gradient_smoothField u phi x (hphi x hx)
+  | succ k ih =>
+      intro u x hx
+      rw [iteratedGradientChain_succ]
+      have heq : iteratedGradientChain (smoothField phi (value (k + 1 + 1) u)) k =ᶠ[𝓝 x]
+          smoothField phi (iteratedGradient k (lowerOrder (k + 1) u)) := by
+        filter_upwards [hU.mem_nhds hx] with y hy
+        simpa only [value_succ (k + 1) u] using ih (lowerOrder (k + 1) u) y hy
+      rw [heq.fderiv_eq]
+      exact fderiv_smoothField k u phi x (hphi x hx)
 
 end TauCeti.Wkp

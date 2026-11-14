@@ -81,22 +81,11 @@ private theorem iteratedGradient_localTest (chi : 𝓓(Omega, ℝ))
     ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)) (x : E), x ∈ U →
       iteratedGradientTestFunction (localTest chi phi (k + 1) u) k x =
         smoothField phi (iteratedGradient k u) x := by
-  intro k
-  induction k with
-  | zero =>
-      intro u x hx
-      simp only [iteratedGradientTestFunction_zero]
-      rw [(localTest_eventuallyEq chi hchi phi 1 u x hx).gradient_eq]
-      exact gradient_smoothField u phi x (hphi x hx)
-  | succ k ih =>
-      intro u x hx
-      rw [iteratedGradientTestFunction_succ, ← localTest_lowerOrder chi phi (k + 1) u]
-      have heq : iteratedGradientTestFunction
-          (localTest chi phi (k + 1) (lowerOrder (k + 1) u)) k =ᶠ[𝓝 x]
-          smoothField phi (iteratedGradient k (lowerOrder (k + 1) u)) := by
-        filter_upwards [U.isOpen.mem_nhds hx] with y hy using ih _ y hy
-      rw [heq.fderiv_eq]
-      exact fderiv_smoothField k u phi x (hphi x hx)
+  intro k u x hx
+  -- Near `x ∈ U` the test function is the mollified value, and so are its derivatives.
+  rw [iteratedGradientTestFunction_def,
+    ((localTest_eventuallyEq chi hchi phi (k + 1) u x hx).iteratedGradientChain k).eq_of_nhds]
+  exact iteratedGradientChain_smoothField_value phi U.isOpen hphi k u x hx
 
 /-- The restricted `Lᵖ` class of a mollified zero extension used in the approximation. -/
 private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
