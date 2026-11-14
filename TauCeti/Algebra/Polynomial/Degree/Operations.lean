@@ -75,13 +75,15 @@ degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g`
 `A`, `B` have degrees below `m - d` and `n - d`: the combination then has degree below `d`, so
 the divisor `g` forces it to vanish. -/
 theorem _root_.Polynomial.mul_add_mul_eq_zero_of_coeff_window {S : Type*} [CommSemiring S]
-    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ} (hp : p ≠ 0)
+    [NoZeroDivisors S] {p q A B g : S[X]} {m n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q)
     (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
     (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
       (A * q + B * p).coeff (i + g.natDegree) = 0) :
     A * q + B * p = 0 := by
-  have hg0 : g ≠ 0 := ne_zero_of_dvd_ne_zero hp hgp
+  rcases eq_or_ne g 0 with rfl | hg0
+  · rw [zero_dvd_iff] at hgp hgq
+    simp [hgp, hgq]
   set d := g.natDegree
   have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) :=
     degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm hn hAdeg hBdeg
