@@ -90,9 +90,9 @@ Michael Stoll's `EllipticCurves` project (`github.com/MichaelStollBayreuth/Ellip
 Apache-2.0, at commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`. There the reduction step the first one uses is a separate
 lemma; here that step is `AdjoinRoot.mk_modByMonic`. The source proves the second from a
-named helper `eq_zero_of_monic_dvd_of_degree_lt`; that helper is a one-line composition of
-Mathlib's `Polynomial.modByMonic_eq_self_iff` and `Polynomial.modByMonic_eq_zero_iff_dvd`, so it is
-inlined here rather than re-declared. They are harvested here rather than in the file that consumes
+named helper `eq_zero_of_monic_dvd_of_degree_lt`; here it follows directly from Mathlib's
+`AdjoinRoot.mk_ne_zero_of_degree_lt`, so the helper is not re-declared, and `R` need not be
+nontrivial. They are harvested here rather than in the file that consumes
 them because nothing about elliptic curves enters either statement.
 -/
 
@@ -200,11 +200,11 @@ lemma exists_degree_lt_mk_eq [Nontrivial R] {g : R[X]} (hg : g.Monic) (a : Adjoi
 /-- **Two polynomials of degree less than that of a monic relator have the same class in
 `AdjoinRoot` only if they are equal.** Together with `AdjoinRoot.exists_degree_lt_mk_eq` this says
 that the polynomials of degree `< deg g` are a set of unique representatives. -/
-lemma mk_eq_mk_iff_of_degree_lt [Nontrivial R] {g : R[X]} (hg : g.Monic) {p q : R[X]}
+lemma mk_eq_mk_iff_of_degree_lt {g : R[X]} (hg : g.Monic) {p q : R[X]}
     (hp : p.degree < g.degree) (hq : q.degree < g.degree) : mk g p = mk g q ↔ p = q :=
-  ⟨fun h ↦ sub_eq_zero.mp <|
-    ((modByMonic_eq_self_iff hg).mpr <| (degree_sub_le p q).trans_lt (max_lt hp hq)).symm.trans <|
-      (modByMonic_eq_zero_iff_dvd hg).mpr (mk_eq_mk.mp h), fun h ↦ h ▸ rfl⟩
+  ⟨fun h ↦ by_contra fun hne ↦ mk_ne_zero_of_degree_lt hg (sub_ne_zero.mpr hne)
+      ((degree_sub_le p q).trans_lt (max_lt hp hq)) (by rw [map_sub, h, sub_self]),
+    fun h ↦ h ▸ rfl⟩
 
 /-- **An `R`-linear endomorphism of `AdjoinRoot g` commuting with multiplication by the root is
 multiplication by its value at `1`.** It commutes with multiplication by every power of the root,
