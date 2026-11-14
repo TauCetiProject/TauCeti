@@ -47,6 +47,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   the variables `s` occurring in `f`.
 * `Finsupp.weight_le_degree_nsmul_of_monotone`: for monotone weights `w`, if every variable
   occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
+* `Finsupp.weight_nonneg`, `Finsupp.weight_pos_of_ne_zero`, `Finsupp.weight_eq_zero_iff_of_pos`:
+  lower bounds and zero-detection for nonnegative and strictly positive ordered weights, without
+  requiring a canonically ordered target monoid.
 * `Finsupp.weight_filter_lt_add_smul_add_weight_filter_gt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 * `Finsupp.weight_comp_eq_apply_linearCombination`: the weight of `u` for the weights `f ∘ w` is
@@ -160,6 +163,41 @@ weight of `f` is at most its degree times `w i`. -/
 theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w : σ → M}
     (hw : Monotone w) {i : σ} (hf : ∀ s ∈ f.support, s ≤ i) : weight w f ≤ degree f • w i :=
   weight_le_degree_nsmul_of_mem_support f fun s hs ↦ hw (hf s hs)
+
+/-- If every variable occurring in `f` has nonnegative weight, then `f` has nonnegative weight. -/
+theorem weight_nonneg_of_mem_support (f : σ →₀ ℕ) {w : σ → M}
+    (hw : ∀ s ∈ f.support, 0 ≤ w s) : 0 ≤ weight w f := by
+  have : (0 : M) = ∑ s ∈ f.support, f s • (0 : M) := by simp
+  rw [this, weight_apply, Finsupp.sum]
+  gcongr with s hs
+  exact hw s hs
+
+/-- Nonnegative variable weights give nonnegative monomial weights. -/
+theorem weight_nonneg (f : σ →₀ ℕ) {w : σ → M} (hw : ∀ s, 0 ≤ w s) : 0 ≤ weight w f :=
+  weight_nonneg_of_mem_support f fun s _ ↦ hw s
+
+/-- Under strictly positive variable weights in a preordered additive monoid with monotone addition,
+every nonzero exponent vector has strictly positive weight. Unlike
+`Finsupp.weight_eq_zero_iff_eq_zero`, this does not require `M` to be canonically ordered, so it
+applies to integer weights. -/
+theorem weight_pos_of_ne_zero {f : σ →₀ ℕ} {w : σ → M} (hw : ∀ s, 0 < w s) (hf : f ≠ 0) :
+    0 < weight w f := by
+  classical
+  obtain ⟨s, hs⟩ := DFunLike.ne_iff.mp hf
+  have hmem : s ∈ f.support := mem_support_iff.mpr hs
+  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hs
+  rw [weight_apply, Finsupp.sum, Finset.sum_eq_add_sum_sdiff_singleton_of_mem hmem, hk, succ_nsmul']
+  have hrest : 0 ≤ k • w s + ∑ x ∈ f.support \ {s}, f x • w x :=
+    add_nonneg (nsmul_nonneg (hw s).le k)
+      (Finset.sum_nonneg fun x _ ↦ nsmul_nonneg (hw x).le (f x))
+  exact (hw s).trans_le (by simpa [add_assoc] using add_le_add_right hrest (w s))
+
+/-- Under strictly positive variable weights in a preordered additive monoid with monotone addition,
+a monomial weight vanishes if and only if all exponents vanish. -/
+theorem weight_eq_zero_iff_of_pos {f : σ →₀ ℕ} {w : σ → M} (hw : ∀ s, 0 < w s) :
+    weight w f = 0 ↔ f = 0 :=
+  ⟨fun h ↦ Classical.not_not.mp fun hf ↦ (weight_pos_of_ne_zero hw hf).ne' h,
+    fun h ↦ by simp [h]⟩
 
 end Finsupp
 
