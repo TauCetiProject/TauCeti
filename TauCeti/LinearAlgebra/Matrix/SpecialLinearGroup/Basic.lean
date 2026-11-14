@@ -17,10 +17,7 @@ import TauCeti.Data.ZMod.Units
 The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong approximation for
 `SL₂`; Shimura §1.6, Serre Ch. VII) — jointly so at two coprime moduli, by the Chinese
 remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` sends
-`-I` to `-I`. Base change is functorial: `SL(n, -)` carries a composite of ring homs to the
-composite of the induced group homs, and the identity to the identity, which is what lets a
-congruence on a whole matrix be reduced along a further ring map in one step rather than entry
-by entry. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
+`-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
 recorded here for downstream matrix computations, together with what the determinant says about
 a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation `a d - b c = 1` for
 the top row `(a, b)`.
@@ -55,9 +52,6 @@ proof is independent of the source's.
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
-* `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
-  laws for base change, which support whole-matrix reduction arguments such as the level
-  antitonicity of the principal congruence subgroups.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
@@ -130,26 +124,12 @@ theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
 
-/-- **Functoriality of the induced map on special linear groups, identity law.** Base change
-along the identity ring hom is the identity. -/
-@[simp]
-theorem map_id {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
-    map (n := n) (RingHom.id R) = MonoidHom.id (SpecialLinearGroup n R) := rfl
-
-/-- **Functoriality of the induced map on special linear groups, composition law.** Base change
-along `f` and then along `g` is base change along `g ∘ f`, so a composite of induced maps is
-again a single induced map. -/
-@[simp]
-theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Type*} [Fintype n]
-    [DecidableEq n] (f : R →+* S) (g : S →+* T) :
-    (map (n := n) g).comp (map f) = map (g.comp f) := rfl
-
 /-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
 @[simp]
 theorem map_intCast_coe {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
     [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n ℤ) :
     map f (g : SpecialLinearGroup n R) = (g : SpecialLinearGroup n S) := by
-  rw [← MonoidHom.comp_apply, map_comp,
+  rw [← MonoidHom.comp_apply, map_comp_map,
     RingHom.ext_int (f.comp (Int.castRingHom R)) (Int.castRingHom S)]
 
 /-- The inclusion into the general linear group commutes with entrywise ring maps. -/

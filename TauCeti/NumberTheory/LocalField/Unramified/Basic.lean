@@ -66,6 +66,9 @@ computational input to the norm and trace of an unramified extension.
   `f(L/K) = [L : K]`.
 * `TauCeti.isUnramified_of_finrank_eq_one`: a degree-one extension is unramified.
 * `TauCeti.IsUnramified.isTamelyRamified`: an unramified extension is tamely ramified.
+* `TauCeti.IsUnramified.wildRamificationExponent_eq_zero` and
+  `TauCeti.IsUnramified.tameRamificationIndex_eq_one`: an unramified extension has wild
+  ramification exponent zero and tame index one.
 * `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
   `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
   exactly when both steps of a tower `M/L/K` are.
@@ -74,6 +77,9 @@ computational input to the norm and trace of an unramified extension.
   `TauCeti.IsUnramified.isTotallyRamified_iff_finrank_eq`: over an unramified `L/K`, the top
   step `M/L` has the ramification index of `M/K`, has residue degree `f(M/K) / [L : K]`, and is
   totally ramified exactly when `[L : K] = f(M/K)`.
+* `TauCeti.IsUnramified.wildRamificationExponent_tower_eq` and
+  `TauCeti.IsUnramified.tameRamificationIndex_tower_eq`: over an unramified `L/K`, the top
+  step `M/L` has the wild ramification exponent and tame index of `M/K`.
 * `TauCeti.isUnramified_iff_formallyUnramified`, `TauCeti.isUnramified_iff_isUnramifiedAt` and
   `TauCeti.isUnramified_iff_etale`: the comparison with Mathlib's `Algebra.FormallyUnramified`,
   `Algebra.IsUnramifiedAt` and `Algebra.Etale` for `𝒪[L]` over `𝒪[K]`.
@@ -255,6 +261,24 @@ theorem IsUnramified.isTamelyRamified [IsUnramified K L] : IsTamelyRamified K L 
   rw [isTamelyRamified_iff, IsUnramified.ramificationIndex_eq_one, Nat.dvd_one]
   exact (CharP.prime_ringChar 𝓀[K]).ne_one
 
+variable (K L) in
+omit [ValuativeExtension K L] in
+/-- An unramified extension has wild ramification exponent zero. -/
+@[simp]
+theorem IsUnramified.wildRamificationExponent_eq_zero [IsUnramified K L] :
+    wildRamificationExponent K L = 0 := by
+  simp only [wildRamificationExponent_def, IsUnramified.ramificationIndex_eq_one,
+    Nat.factorization_one, Finsupp.zero_apply]
+
+variable (K L) in
+omit [ValuativeExtension K L] in
+/-- An unramified extension has tame ramification index one. -/
+@[simp]
+theorem IsUnramified.tameRamificationIndex_eq_one [IsUnramified K L] :
+    tameRamificationIndex K L = 1 := by
+  rw [tameRamificationIndex_def, IsUnramified.ramificationIndex_eq_one,
+    IsUnramified.wildRamificationExponent_eq_zero, pow_zero, Nat.div_one]
+
 section Tower
 
 variable (K L) (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
@@ -300,6 +324,22 @@ theorem IsUnramified.ramificationIndex_tower_eq [IsUnramified K L] :
     ramificationIndex L M = ramificationIndex K M := by
   rw [ramificationIndex_tower (K := K) (L := L) M,
     IsUnramified.ramificationIndex_eq_one (K := K) (L := L), one_mul]
+
+omit [ValuativeExtension K M] in
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the wild ramification
+exponent of the whole extension. -/
+theorem IsUnramified.wildRamificationExponent_tower_eq [IsUnramified K L] :
+    wildRamificationExponent L M = wildRamificationExponent K M := by
+  rw [wildRamificationExponent_tower K L M,
+    IsUnramified.wildRamificationExponent_eq_zero K L, zero_add]
+
+omit [ValuativeExtension K M] in
+/-- Over an unramified `L/K`, the top step of a tower `M/L/K` has the tame ramification index
+of the whole extension. -/
+theorem IsUnramified.tameRamificationIndex_tower_eq [IsUnramified K L] :
+    tameRamificationIndex L M = tameRamificationIndex K M := by
+  rw [tameRamificationIndex_tower K L M, IsUnramified.tameRamificationIndex_eq_one K L,
+    one_mul]
 
 omit [ValuativeExtension K L] in
 /-- Over an unramified `L/K`, the residue degree of a tower `M/L/K` factors as

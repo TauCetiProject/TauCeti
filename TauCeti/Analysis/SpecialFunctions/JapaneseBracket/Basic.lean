@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -54,6 +55,11 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
+  and rescaling of the shifted power `x ↦ (T + ‖x‖) ^ (-q)`, for every additive Haar measure.
+* `TauCeti.norm_integral_le_max_mul_rpow_sub_mul_integral`: on a space of dimension `d < q`, an
+  integral whose integrand is bounded by `T ^ (-q)` where `c ‖x‖ ≤ T` and by `‖x‖ ^ (-q)`
+  elsewhere is `O(T ^ (d - q))`.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
@@ -126,6 +132,75 @@ theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure
   rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
     Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
 
+/-- The shifted power `x ↦ (T + ‖x‖) ^ (-q)` with `T > 0` is integrable on a finite-dimensional
+real normed space of dimension `d < q`, for every additive Haar measure. For `T = 1` this is
+Mathlib's `integrable_one_add_norm`. -/
+theorem integrable_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] {q T : ℝ}
+    (hq : (finrank ℝ V : ℝ) < q) (hT : 0 < T) :
+    Integrable (fun x : V ↦ (T + ‖x‖) ^ (-q)) μ := by
+  refine (((integrable_one_add_norm (μ := μ) hq).comp_smul (inv_ne_zero hT.ne')).const_mul
+    (T ^ (-q))).congr (.of_forall fun x ↦ ?_)
+  beta_reduce
+  rw [← Real.mul_rpow hT.le (by positivity), norm_smul, norm_inv, Real.norm_of_nonneg hT.le,
+    mul_add, mul_one, mul_inv_cancel_left₀ hT.ne']
+
+/-- Rescaling the shifted power: on a space of dimension `d`, for every additive Haar measure and
+`T > 0`, `∫ (T + ‖x‖) ^ (-q) dx = T ^ (d - q) ∫ (1 + ‖x‖) ^ (-q) dx`. -/
+theorem integral_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] (q : ℝ) {T : ℝ}
+    (hT : 0 < T) :
+    ∫ x : V, (T + ‖x‖) ^ (-q) ∂μ =
+      T ^ ((finrank ℝ V : ℝ) - q) * ∫ x : V, (1 + ‖x‖) ^ (-q) ∂μ := by
+  have h : ∀ x : V, (T + ‖x‖) ^ (-q) = T ^ (-q) * (1 + ‖T⁻¹ • x‖) ^ (-q) := fun x ↦ by
+    rw [← Real.mul_rpow hT.le (by positivity), norm_smul, norm_inv, Real.norm_of_nonneg hT.le,
+      mul_add, mul_one, mul_inv_cancel_left₀ hT.ne']
+  simp_rw [h]
+  rw [integral_const_mul,
+    Measure.integral_comp_inv_smul_of_nonneg μ (fun x ↦ (1 + ‖x‖) ^ (-q)) hT.le, smul_eq_mul,
+    ← mul_assoc, ← Real.rpow_natCast, ← Real.rpow_add hT, neg_add_eq_sub]
+
+/-- **Splitting an integral at `c ‖x‖ = T`.** Let `V` have dimension `d < q`, and let `T > 0`
+and `c > 0`. If `‖f x‖ ≤ C T ^ (-q)` where `c ‖x‖ ≤ T` and `‖f x‖ ≤ D ‖x‖ ^ (-q)` where
+`T ≤ c ‖x‖`, then `‖∫ f dμ‖ ≤ K T ^ (d - q) ∫ (1 + ‖x‖) ^ (-q) dμ`, with `K` depending only on
+`c`, `q`, `C` and `D`: both bounds are dominated by a multiple of `(T + ‖x‖) ^ (-q)`, whose
+integral is `T ^ (d - q) ∫ (1 + ‖x‖) ^ (-q) dμ`. -/
+theorem norm_integral_le_max_mul_rpow_sub_mul_integral (μ : Measure V) [μ.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : V → F} {T c q C D : ℝ}
+    (hT : 0 < T) (hc : 0 < c) (hq : (finrank ℝ V : ℝ) < q)
+    (hnear : ∀ x, c * ‖x‖ ≤ T → ‖f x‖ ≤ C * T ^ (-q))
+    (hfar : ∀ x, T ≤ c * ‖x‖ → ‖f x‖ ≤ D * ‖x‖ ^ (-q)) :
+    ‖∫ x, f x ∂μ‖ ≤ max (C * (1 + 1 / c) ^ q) (D * (c + 1) ^ q) *
+      (T ^ ((finrank ℝ V : ℝ) - q) * ∫ x : V, (1 + ‖x‖) ^ (-q) ∂μ) := by
+  have hq0 : 0 ≤ q := (Nat.cast_nonneg _).trans hq.le
+  have hC : 0 ≤ C := nonneg_of_mul_nonneg_left
+    ((norm_nonneg _).trans (hnear 0 (by simpa using hT.le))) (rpow_pos_of_pos hT _)
+  set K := max (C * (1 + 1 / c) ^ q) (D * (c + 1) ^ q)
+  rw [← integral_add_norm_rpow_neg μ q hT, ← integral_const_mul]
+  refine norm_integral_le_of_norm_le ((integrable_add_norm_rpow_neg μ hq hT).const_mul K)
+    (Eventually.of_forall fun x ↦ ?_)
+  have hTx : 0 < T + ‖x‖ := by positivity
+  rcases le_total (c * ‖x‖) T with hx | hx
+  · have hcmp : T ^ (-q) ≤ (1 + 1 / c) ^ q * (T + ‖x‖) ^ (-q) := by
+      refine rpow_neg_le_mul_rpow_neg hTx (by positivity) hq0 ?_
+      have : ‖x‖ ≤ T / c := by rw [le_div_iff₀ hc]; linarith
+      calc T + ‖x‖ ≤ T + T / c := by linarith
+        _ = (1 + 1 / c) * T := by ring
+    calc ‖f x‖ ≤ C * T ^ (-q) := hnear x hx
+      _ ≤ C * ((1 + 1 / c) ^ q * (T + ‖x‖) ^ (-q)) := by gcongr
+      _ = C * (1 + 1 / c) ^ q * (T + ‖x‖) ^ (-q) := by ring
+      _ ≤ K * (T + ‖x‖) ^ (-q) := by gcongr; exact le_max_left _ _
+  · have hx0 : 0 < ‖x‖ := by
+      refine (norm_nonneg x).lt_of_ne fun h0 ↦ ?_
+      rw [← h0, mul_zero] at hx
+      linarith
+    have hcmp : ‖x‖ ^ (-q) ≤ (c + 1) ^ q * (T + ‖x‖) ^ (-q) :=
+      rpow_neg_le_mul_rpow_neg hTx (by positivity) hq0 (by linarith)
+    have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hfar x hx))
+      (rpow_pos_of_pos hx0 _)
+    calc ‖f x‖ ≤ D * ‖x‖ ^ (-q) := hfar x hx
+      _ ≤ D * ((c + 1) ^ q * (T + ‖x‖) ^ (-q)) := by gcongr
+      _ = D * (c + 1) ^ q * (T + ‖x‖) ^ (-q) := by ring
+      _ ≤ K * (T + ‖x‖) ^ (-q) := by gcongr; exact le_max_right _ _
+
 section Cone
 
 open scoped Pointwise
@@ -187,7 +262,7 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
         = ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) * μ (((4 : ℝ) ^ k) • A) := by
           rw [hμ, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_assoc,
             ← Real.rpow_add (by positivity), neg_add_cancel, Real.rpow_zero, mul_one]
-      _ = ∫⁻ x in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
+      _ = ∫⁻ _ in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
           (setLIntegral_const _ _).symm
       _ ≤ ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := by
           refine setLIntegral_mono' (hSm k) fun x hx ↦ ?_
@@ -299,7 +374,7 @@ theorem integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsA
     ∫ x : V, ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ =
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) *
         (beta (((finrank ℝ V : ℝ) + p) / 2) ((r - finrank ℝ V - p) / 2) / 2) := by
-  set d := finrank ℝ V with hd
+  set d := finrank ℝ V
   have hd0 : 0 < d := finrank_pos
   -- In polar coordinates the moment is the radial beta integral with `s = d + p`.
   have hrad :
@@ -502,7 +577,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
         (log (1 + (R / t) ^ 2) -
           ∑ k ∈ Finset.range (m - 1), (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
-  rcases eq_or_ne t 0 with rfl | ht
+  rcases eq_or_ne t 0 with rfl | _
   · simp [hm]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
   simp only [Nat.add_sub_cancel]
@@ -603,7 +678,6 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   have hmoment := integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (volume : Measure V)
     le_rfl (p := 0) (r := r) (by rwa [add_zero])
   simp only [Real.rpow_zero, one_mul, add_zero, sub_zero] at hmoment
-  have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
   rw [hmoment, volume_real_unitBall, beta, Gamma_add_one (by positivity), hsum, ← hd]
   field_simp
 

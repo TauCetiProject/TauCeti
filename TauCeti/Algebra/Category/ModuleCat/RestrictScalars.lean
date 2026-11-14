@@ -20,7 +20,8 @@ finiteness properties defining `K₀(proj R)` and `G₀(mod R)` survive it.
 
 * Along a **surjective** ring homomorphism, finite generation is preserved and reflected: every
   scalar of `S` is the image of a scalar of `R`, so the `S`-span and the `R`-span of a set
-  coincide.
+  coincide. For the same reason every `R`-linear map between such modules is `S`-linear, so
+  restriction of scalars is full.
 * Along a ring homomorphism making `S` a **finitely generated** `R`-module, finite generation is
   preserved, so restriction of scalars is a functor between the categories of finitely generated
   modules.
@@ -49,6 +50,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
 
 * `RingHom.finite_restrictScalars_iff` and `RingHom.isFG_restrictScalars_iff`: finite generation
   is invariant under restriction of scalars along a surjective ring homomorphism.
+* `RingHom.full_restrictScalars`: restriction of scalars along a surjective ring homomorphism is
+  full.
 * `RingHom.isFG_restrictScalars_of_finite`: finite generation is preserved by restriction of
   scalars along a ring homomorphism `f : R →+* S` making `S` a finitely generated `R`-module.
 * `RingHom.projective_restrictScalars_of_projective`: projectivity is preserved by restriction of
@@ -92,6 +95,20 @@ theorem finite_restrictScalars_iff (f : R →+* S) (hf : Function.Surjective f)
   haveI : RingHomSurjective f := ⟨hf⟩
   LinearMap.finite_iff_of_bijective (f.restrictScalarsSemilinearMap M)
     Function.bijective_id
+
+/-- **Restriction of scalars along a surjective ring homomorphism is full.** An `R`-linear map
+between `S`-modules with scalars restricted along a surjective `f : R →+* S` is `S`-linear, since
+every scalar of `S` is the image of a scalar of `R`. -/
+theorem full_restrictScalars (f : R →+* S) (hf : Function.Surjective f) :
+    (ModuleCat.restrictScalars.{v} f).Full where
+  map_surjective {M N} g :=
+    ⟨ModuleCat.ofHom
+      { toFun := g
+        map_add' := map_add g.hom
+        map_smul' := fun s m ↦ by
+          obtain ⟨r, rfl⟩ := hf s
+          rw [RingHom.id_apply, ← ModuleCat.restrictScalars.smul_def' f r m, map_smul,
+            ModuleCat.restrictScalars.smul_def] }, rfl⟩
 
 /-- Restricting scalars along a surjective ring homomorphism preserves and reflects the object
 property of being finitely generated. -/

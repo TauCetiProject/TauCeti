@@ -107,7 +107,7 @@ theorem lintegral_enorm_setIntegral_le [IsFiniteMeasure μ] [SFinite ν]
     (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (S : Set ℝ≥0) :
     ∫⁻ z, ‖∫ x in S, f (x + z) ∂μ‖ₑ ∂ν ≤ C * B * μ S := by
   calc ∫⁻ z, ‖∫ x in S, f (x + z) ∂μ‖ₑ ∂ν ≤ ∫⁻ z, ∫⁻ x in S, ‖f (x + z)‖ₑ ∂μ ∂ν :=
-        lintegral_mono fun z ↦ enorm_integral_le_lintegral_enorm _
+        lintegral_mono fun z ↦ eNorm_integral_le_lintegral_eNorm _
     _ = ∫⁻ x in S, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ :=
         lintegral_lintegral_swap (by fun_prop)
     _ ≤ C * B * μ S := lintegral_lintegral_enorm_comp_add_le hf hν S
@@ -164,8 +164,8 @@ theorem dist_integral_setIntegral_Iic_le [IsFiniteMeasure μ] [SFinite ν]
   simp_rw [hsplit]
   rw [integral_add (integrable_setIntegral_comp_add hf hν hB _)
     (integrable_setIntegral_comp_add hf hν hB _), dist_eq_norm, add_sub_cancel_left,
-    ← toReal_enorm]
-  exact ENNReal.toReal_mono (by finiteness) ((enorm_integral_le_lintegral_enorm _).trans
+    ← toReal_eNorm]
+  exact ENNReal.toReal_mono (by finiteness) ((eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_enorm_setIntegral_le hf hν _))
 
 /-- Restricted to `[0, n]`, the function `z ↦ ∫ f (x + z) dμ(x)` is compactly supported. -/

@@ -34,7 +34,8 @@ every linear form by a multiple of `ℓ`, and conversely. This is the divisibili
 divided-difference operator of a pseudoreflection.
 
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
-`Dual Y ⊗ X`, this counts intertwiners in both directions alike.
+`Dual Y ⊗ X`, this counts intertwiners in both directions alike. The invariant bilinear forms of `ρ`
+are the intertwiners into `ρ.dual`, so counting them is counting invariants of a dual.
 
 ## Main results
 
@@ -59,12 +60,6 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
   of `Dual X ⊗ Y`.
 * `FDRep.finrank_hom_comm`: when `|G|` is invertible in `k`, there are as many
   intertwiners `X → Y` as `Y → X`.
-
-## References
-
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7, “Invariant bilinear forms”: the invariant forms of `ρ` are the intertwiners into
-  `ρ.dual`, so counting them is counting invariants of a dual.
 -/
 
 public section

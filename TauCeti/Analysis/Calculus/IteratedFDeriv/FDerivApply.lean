@@ -36,6 +36,10 @@ of a smooth family of compactly supported functions with respect to a parameter.
 
 * `ContDiff.iteratedFDeriv_fderiv_apply`: `Dⁱ (y ↦ Df(y) v) = D(Dⁱ f)(·) v`.
 * `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`: `‖Dⁱ (y ↦ Df(y) v)‖ ≤ ‖D^{i+1} f‖ ‖v‖`.
+* `ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le`: a bound on the derivatives of `f`
+  up to order `k + 1` bounds those of `y ↦ Df(y) v` up to order `k`.
+* `ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc`: the pointwise form
+  `Dⁱ (y ↦ Df(y) v) (x) m = D^{i+1} f (x) (m, v)`, with `v` in the last slot.
 * `TauCeti.tsupport_sub_sub_add_fderiv_subset`: the support of the first-order Taylor remainder.
 * `HasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le`: the uniform estimate on
   the derivatives of the first-order Taylor remainder.
@@ -94,6 +98,31 @@ theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le {n : WithTop ℕ∞} {f : E
     ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ ‖iteratedFDeriv 𝕜 (i + 1) f x‖ * ‖v‖ := by
   rw [hf.iteratedFDeriv_fderiv_apply hi, ← norm_fderiv_iteratedFDeriv]
   exact (fderiv 𝕜 (iteratedFDeriv 𝕜 i f) x).le_opNorm v
+
+/-- A uniform bound `C` on the iterated derivatives of `f` up to order `k + 1` bounds those of a
+directional derivative `y ↦ Df(y) v` up to order `k` by `C ‖v‖`. -/
+theorem ContDiff.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le {n : WithTop ℕ∞} {f : E → F}
+    (hf : ContDiff 𝕜 n f) {k : ℕ} (hk : minSmoothness 𝕜 (k + 1) ≤ n) {C : ℝ}
+    (hC : ∀ i ≤ k + 1, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) (v : E) :
+    ∀ i ≤ k, ∀ x, ‖iteratedFDeriv 𝕜 i (fun y ↦ fderiv 𝕜 f y v) x‖ ≤ C * ‖v‖ := fun i hi x ↦
+  (hf.norm_iteratedFDeriv_fderiv_apply_le ((minSmoothness_monotone (by gcongr)).trans hk) v x).trans
+    (mul_le_mul_of_nonneg_right (hC (i + 1) (by omega) x) (norm_nonneg v))
+
+/-- **The innermost derivative of an iterated derivative.** If `f` is `C^{k+1}` at `x`, the `k`-th
+iterated derivative of the directional derivative `y ↦ Df(y) v` at `x` is the `(k + 1)`-th
+iterated derivative of `f` at `x` with `v` in the last slot. Unlike
+`ContDiff.iteratedFDeriv_fderiv_apply`, this needs smoothness only at `x` and no symmetry of
+derivatives. -/
+theorem ContDiffAt.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc {f : E → F} {x : E}
+    {k : ℕ} (hf : ContDiffAt 𝕜 (k + 1) f x) (v : E) (m : Fin k → E) :
+    iteratedFDeriv 𝕜 k (fun y ↦ fderiv 𝕜 f y v) x m =
+      iteratedFDeriv 𝕜 (k + 1) f x (Fin.snoc m v) := by
+  have hv : (fun y ↦ fderiv 𝕜 f y v) = ContinuousLinearMap.apply 𝕜 F v ∘ fderiv 𝕜 f := by
+    ext
+    simp
+  rw [iteratedFDeriv_succ_apply_right, Fin.init_snoc, Fin.snoc_last, hv,
+    (ContinuousLinearMap.apply 𝕜 F v).iteratedFDeriv_comp_left (hf.fderiv_right le_rfl) le_rfl]
+  simp
 
 namespace TauCeti
 
