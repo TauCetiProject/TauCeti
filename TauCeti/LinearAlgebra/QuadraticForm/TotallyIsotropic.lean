@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
@@ -26,6 +27,11 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
   the image under `f`.
 * `QuadraticMap.maximal_isTotallyIsotropic_bot_iff`: the zero submodule is maximal totally
   isotropic exactly when the form is anisotropic.
+* `QuadraticMap.IsTotallyIsotropic.le_orthogonal_polarBilin`: a totally isotropic submodule of a
+  quadratic form lies in its polar orthogonal complement.
+* `QuadraticMap.IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff`: when the polar form is
+  nondegenerate on a finite-dimensional vector space, a totally isotropic subspace equals its polar
+  orthogonal complement exactly when it has half the ambient dimension.
 * `QuadraticMap.IsTotallyIsotropic.eq_zero_of_polar_eq_zero`: for a nondegenerate form and
   `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'` which is polar-orthogonal to `W`
   vanishes.
@@ -161,12 +167,29 @@ theorem IsTotallyIsotropic.polarBilin_compl₁₂_flip_injective (hW' : Q.IsTota
   refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.2 fun x hx => ?_
   simpa using LinearMap.congr_fun hy ⟨x, hx⟩
 
+/-- A submodule that is totally isotropic for a scalar-valued quadratic map is contained in its
+polar orthogonal complement. -/
+theorem IsTotallyIsotropic.le_orthogonal_polarBilin {Q : QuadraticForm R M}
+    (hW : Q.IsTotallyIsotropic W) : W ≤ LinearMap.BilinForm.orthogonal Q.polarBilin W :=
+  fun _ hx _ hy ↦ hW.polar_eq_zero hy hx
+
 end Ring
 
 section Field
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {W W' : Submodule K V}
+
+/-- In a finite-dimensional quadratic space whose polar bilinear form is nondegenerate, a totally
+isotropic subspace equals its polar orthogonal complement if and only if its dimension is half the
+ambient dimension. -/
+theorem IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff [FiniteDimensional K V]
+    (hW : Q.IsTotallyIsotropic W) (hQ : Q.polarBilin.Nondegenerate) :
+    LinearMap.BilinForm.orthogonal Q.polarBilin W = W ↔
+      2 * Module.finrank K W = Module.finrank K V := by
+  have horth := LinearMap.BilinForm.finrank_orthogonal (B := Q.polarBilin) hQ W
+  refine ⟨fun h ↦ by rw [h] at horth; omega, fun h ↦ ?_⟩
+  exact (Submodule.eq_of_le_of_finrank_eq hW.le_orthogonal_polarBilin (by omega)).symm
 
 /-- If `W` is finite-dimensional and `W ⊔ W' = ⊤` with `W'` totally isotropic in a nondegenerate
 space, then `W'` is finite-dimensional: the polar pairing embeds `W'` into the dual of `W`. -/

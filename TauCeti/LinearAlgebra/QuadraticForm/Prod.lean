@@ -29,7 +29,8 @@ orthogonal sum along an equivalence of its index types is isometric; and so is d
 summands of an orthogonal sum that are carried by trivial modules.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
-direct-sum decomposition of the underlying module that is orthogonal for the polar form.
+direct-sum decomposition of the underlying module that is orthogonal for the polar form, and the
+componentwise nondegeneracy of the polar bilinear form on binary and finite orthogonal sums.
 
 Finally, it embeds the product of the orthogonal groups of two quadratic maps with a common
 codomain into the orthogonal group of their orthogonal sum, acting componentwise, and identifies
@@ -59,6 +60,9 @@ the two summands gives an orthogonal family of the orthogonal sum.
 
 ## Main results
 
+* `QuadraticMap.nondegenerate_polarBilin_prod_iff` and
+  `QuadraticMap.nondegenerate_polarBilin_pi_iff`: the polar bilinear form of a binary or finite
+  orthogonal sum is nondegenerate exactly when each summand's polar form is.
 * `QuadraticMap.orthogonalGroupProd_injective` and
   `QuadraticMap.specialOrthogonalGroupProd_injective`: both maps are injective.
 * `QuadraticMap.mem_range_orthogonalGroupProd_iff`: the image of `orthogonalGroupProd` is exactly
@@ -530,5 +534,54 @@ theorem isOrthoᵢ_associated_prod {ι₁ ι₂ : Type*} {v₁ : ι₁ → M₁}
   · simpa using h₂ i j (Sum.inr.inj_iff.not.1 hij)
 
 end Orthogonal
+
+section PolarNondegenerate
+
+variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂]
+
+/-- The polar bilinear form of an orthogonal product of quadratic forms is nondegenerate if and only
+if the polar forms of both summands are nondegenerate, in any characteristic. -/
+theorem nondegenerate_polarBilin_prod_iff {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} :
+    (Q₁.prod Q₂).polarBilin.Nondegenerate ↔
+      Q₁.polarBilin.Nondegenerate ∧ Q₂.polarBilin.Nondegenerate := by
+  have h0 : (Q₁.prod Q₂).polarBilin.IsRefl := fun x y h ↦ by simpa [polar_comm] using h
+  have h1 : Q₁.polarBilin.IsRefl := fun x y h ↦ by simpa [polar_comm] using h
+  have h2 : Q₂.polarBilin.IsRefl := fun x y h ↦ by simpa [polar_comm] using h
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft h0,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft h1,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft h2]
+  refine ⟨fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩, fun ⟨h₁, h₂⟩ p hp ↦ Prod.ext ?_ ?_⟩
+  · exact congrArg Prod.fst (h (x, 0) fun z ↦ by simpa using hx z.1)
+  · exact congrArg Prod.snd (h (0, y) fun z ↦ by simpa using hy z.2)
+  · exact h₁ p.1 fun x ↦ by simpa using hp (x, 0)
+  · exact h₂ p.2 fun y ↦ by simpa using hp (0, y)
+
+/-- The polar bilinear form of a finite orthogonal sum of quadratic forms is nondegenerate if and
+only if every summand has nondegenerate polar form, in any characteristic. -/
+theorem nondegenerate_polarBilin_pi_iff {ι : Type*} [Fintype ι]
+    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+    {Q : ∀ i, QuadraticForm R (M i)} :
+    (QuadraticMap.pi Q).polarBilin.Nondegenerate ↔ ∀ i, (Q i).polarBilin.Nondegenerate := by
+  classical
+  have h0 : (QuadraticMap.pi Q).polarBilin.IsRefl := fun x y h ↦ by simpa [polar_comm] using h
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft h0]
+  have hi (i : ι) : (Q i).polarBilin.IsRefl := fun x y h ↦ by simpa [polar_comm] using h
+  simp_rw [fun i ↦ LinearMap.IsRefl.nondegenerate_iff_separatingLeft (hi i)]
+  refine ⟨fun h i x hx ↦ ?_, fun h x hx ↦ funext fun i ↦ h i (x i) fun y ↦ ?_⟩
+  · have hsingle := h (Pi.single i x) fun z ↦ by
+      rw [polarBilin_apply_apply, QuadraticMap.Ring.polar_pi]
+      refine Finset.sum_eq_zero fun j _ ↦ ?_
+      rcases eq_or_ne j i with rfl | hji
+      · simpa using hx (z j)
+      · simp [Pi.single_eq_of_ne hji]
+    simpa using congrFun hsingle i
+  · have hsum := hx (Pi.single i y)
+    rw [polarBilin_apply_apply, QuadraticMap.Ring.polar_pi,
+      Finset.sum_eq_single i (fun j _ hji ↦ by simp [Pi.single_eq_of_ne hji])
+        (fun hi ↦ absurd (Finset.mem_univ i) hi)] at hsum
+    simpa using hsum
+
+end PolarNondegenerate
 
 end QuadraticMap
