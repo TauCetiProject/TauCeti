@@ -243,7 +243,7 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
     IsCompactOperator (restrict (E := E) (hU'K.trans hKU)) := by
   -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
   -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
-  refine (isCompactOperator_of_equicontinuousOn
+  refine (IsCompact.isCompactOperator_of_equicontinuousOn
     (U.isOpenEmbedding'.isInducing.isCompact_preimage' hK (by simpa using hKU))
     (ContinuousMap.inclusion (hU'K.trans hKU)) (fun z => hU'K z.2)
     (T := fun f => (restrict (hU'K.trans hKU) f : U' →ᵇ E)) (restrict_apply _)
