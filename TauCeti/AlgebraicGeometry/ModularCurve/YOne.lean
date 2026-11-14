@@ -428,6 +428,11 @@ noncomputable def universalTatePoint :
     𝟙_ (Over (universalTate B).base) ⟶ Over.mk (universalTate B).curve.structureMap :=
   prodCurvePoint B UniversalTate.pointHom
 
+/-- `universalTatePoint B` is the base change `prodCurvePoint B UniversalTate.pointHom`. -/
+theorem universalTatePoint_def :
+    universalTatePoint B = prodCurvePoint B UniversalTate.pointHom :=
+  (rfl)
+
 section Classifying
 
 variable {B} {X : EllObj B}
