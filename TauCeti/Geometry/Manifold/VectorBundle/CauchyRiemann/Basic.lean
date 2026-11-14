@@ -8,12 +8,17 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
+public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Geometry.Manifold.Notation
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Real Cauchy–Riemann operators
@@ -37,6 +42,20 @@ differentiable.
   its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`), a
   projection onto the `(0,1)`-forms
   (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`).
+* `TauCeti.SmoothAlmostComplexStructure.inCoordinates_zeroOnePart`,
+  `TauCeti.SmoothAlmostComplexStructure.isZeroOneForm_iff_inCoordinates`: where `j` reads as
+  multiplication by `i` in tangent coordinates, the `(0,1)`-part of a one-form is read as the
+  complex antilinear part `ContinuousLinearMap.complexAntilinearPartL` of its reading, and a
+  `(0,1)`-form is a one-form whose reading is complex antilinear.
+* `TauCeti.SmoothAlmostComplexStructure.zeroOnePart_smulRight_eq_zero_iff`: for `w ≠ 0`, the
+  `(0,1)`-part of `η ⊗ w` vanishes exactly when the complex valued one-form `η` is complex linear.
+* `TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm`: on a
+  complex curve, a `(0,1)`-form read in a chart is `w ↦ conj w • η (∂/∂x)`.
+* `TauCeti.IsRealCauchyRiemannOperator.apply_eq_of_eventuallyEq`: locality, a real Cauchy–Riemann
+  operator at `x` only sees the germ at `x` of a section differentiable at `x`.
+* `TauCeti.IsRealCauchyRiemannOperator.leibniz_complex`: the Leibniz rule
+  `D (f • ξ) = f • D ξ + (∂bar f) ⊗ ξ` of a complex linear real Cauchy–Riemann operator for
+  complex valued `f`.
 * `TauCeti.IsRealCauchyRiemannOperator.difference`: two real Cauchy–Riemann operators differ by a
   zeroth-order term, a `(0,1)`-form with values in the real endomorphisms of `V`
   (`TauCeti.IsRealCauchyRiemannOperator.isZeroOneForm_difference`).
@@ -63,7 +82,7 @@ differentiable.
 public section
 
 open Bundle FiberBundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -191,7 +210,8 @@ theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M)
       (j.toEndomorphism x).toLinearMap (DistribSMul.toLinearMap ℝ (V x) Complex.I)
       ((d% g x).smulRight (σ x)).toLinearMap := by
     ext v
-    simp [dbarSMulRight_apply, complexAntilinearPart_apply]
+    simp [dbarSMulRight_apply, complexAntilinearPart_apply,
+      -mvfderiv_apply_eq_mfderiv_apply]
   rw [isZeroOneForm_iff_isComplexAntilinear, h]
   exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
     Complex.toLinearMap_I_comp_toLinearMap_I _
@@ -260,6 +280,21 @@ theorem zeroOnePart_add {x : M} (η η' : TangentSpace I x →L[ℝ] V x) :
   simp only [zeroOnePart_apply, add_apply, smul_add]
   abel
 
+/-- The `(0,1)`-part of the zero one-form is zero. -/
+@[simp]
+theorem zeroOnePart_zero {x : M} : j.zeroOnePart (0 : TangentSpace I x →L[ℝ] V x) = 0 := by
+  ext v
+  simp [zeroOnePart_apply]
+
+/-- The `(0,1)`-projection commutes with finite sums. -/
+theorem zeroOnePart_sum {κ : Type*} (s : Finset κ) {x : M}
+    (η : κ → TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart (∑ i ∈ s, η i) = ∑ i ∈ s, j.zeroOnePart (η i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, zeroOnePart_add, ih, Finset.sum_insert hi]
+
 /-- The `(0,1)`-projection commutes with real scalars. -/
 theorem zeroOnePart_smul (c : ℝ) {x : M} (η : TangentSpace I x →L[ℝ] V x) :
     j.zeroOnePart (c • η) = c • j.zeroOnePart η := by
@@ -280,6 +315,126 @@ theorem zeroOnePart_smulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
   ext v
   simp only [zeroOnePart_apply, dbarSMulRight_apply, ContinuousLinearMap.smulRight_apply,
     smul_comm Complex.I (_ : ℝ)]
+
+/-- For a nonzero vector `w`, the `(0,1)`-part of `η ⊗ w` vanishes exactly when the complex valued
+one-form `η` is complex linear for `j`. -/
+theorem zeroOnePart_smulRight_eq_zero_iff {x : M} (η : TangentSpace I x →L[ℝ] ℂ)
+    {w : V x} (hw : w ≠ 0) :
+    j.zeroOnePart (η.smulRight w) = 0 ↔ ∀ v, η (j x v) = Complex.I * η v := by
+  have key (v : TangentSpace I x) :
+      j.zeroOnePart (η.smulRight w) v = ((2⁻¹ : ℂ) * (η v + Complex.I * η (j x v))) • w := by
+    rw [zeroOnePart_apply, ContinuousLinearMap.smulRight_apply,
+      ContinuousLinearMap.smulRight_apply, RCLike.real_smul_eq_coe_smul (K := ℂ)]
+    simp only [smul_smul, ← add_smul]
+    congr 1
+    push_cast
+    ring
+  constructor
+  · intro h v
+    have hv := congrArg (· v) h
+    simp only [key, zero_apply, smul_eq_zero, hw, or_false, mul_eq_zero, inv_eq_zero,
+      two_ne_zero, false_or] at hv
+    linear_combination (-Complex.I) * hv + η (j x v) * Complex.I_mul_I
+  · intro h
+    ext v
+    rw [key, h, zero_apply]
+    simp only [← mul_assoc, Complex.I_mul_I]
+    simp
+
+/-! ### `(0,1)`-forms in coordinates -/
+
+section Coordinates
+
+variable [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+
+/-- Outside the chart at `x₀` a reading in the tangent coordinates at `x₀` vanishes, so it can
+only be multiplication by `i` if the model space is trivial. -/
+private theorem subsingleton_of_inTangentCoordinates_eq {x₀ x : M}
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hx : x ∉ (chartAt H x₀).source) : Subsingleton E := by
+  have hx' : x ∉ (trivializationAt E (TangentSpace I) x₀).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  have h (v : E) : v = 0 := by
+    have h := DFunLike.congr_fun hj v
+    simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
+      ContinuousLinearMap.comp_apply, Trivialization.symmL_apply_of_notMem _ hx', map_zero,
+      smul_apply, ContinuousLinearMap.id_apply] at h
+    exact (smul_eq_zero.1 h.symm).resolve_left Complex.I_ne_zero
+  exact ⟨fun v w ↦ (h v).trans (h w).symm⟩
+
+/-- Where `j` reads as multiplication by `i` in the tangent coordinates at `x₀`, it maps the
+inverse tangent coordinates of `v` to those of `i • v`. -/
+private theorem toEndomorphism_symmL_of_inTangentCoordinates_eq {x₀ x : M}
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hx : x ∈ (chartAt H x₀).source) (v : E) :
+    j.toEndomorphism x ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x v) =
+      (trivializationAt E (TangentSpace I) x₀).symmL ℝ x (Complex.I • v) := by
+  have h := DFunLike.congr_fun hj v
+  simp only [inTangentCoordinates, ContinuousLinearMap.inCoordinates, id_eq,
+    ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply] at h
+  rw [← h, Trivialization.symmL_continuousLinearMapAt]
+  rwa [TangentBundle.trivializationAt_baseSet]
+
+/-- At a point `x` where `j` reads as multiplication by `i` in the tangent coordinates at `x₀`, the
+`(0,1)`-part of a one-form read in these coordinates and the trivialization of `V` at `y₀` is the
+complex antilinear part of its reading. -/
+theorem inCoordinates_zeroOnePart {x₀ x : M} (y₀ : M)
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (η : TangentSpace I x →L[ℝ] V x) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x (j.zeroOnePart η) =
+      ContinuousLinearMap.complexAntilinearPartL
+        (ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η) := by
+  by_cases hx : x ∈ (chartAt H x₀).source
+  · ext v
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.complexAntilinearPartL_apply_apply, zeroOnePart_apply]
+    rw [toEndomorphism_symmL_of_inTangentCoordinates_eq hj hx, map_smul, map_add,
+      Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_smul]
+  · have := subsingleton_of_inTangentCoordinates_eq hj hx
+    exact Subsingleton.elim _ _
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [IsScalarTower ℝ ℂ F] in
+/-- At a point `x` of the base set of the trivialization of `V` at `y₀`, where `j` reads as
+multiplication by `i` in the tangent coordinates at `x₀`, a one-form is a `(0,1)`-form exactly when
+its reading in these coordinates is complex antilinear. -/
+theorem isZeroOneForm_iff_inCoordinates {x₀ x y₀ : M}
+    (hj : inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E)
+    (hy : x ∈ (trivializationAt F V y₀).baseSet) {η : TangentSpace I x →L[ℝ] V x} :
+    j.IsZeroOneForm η ↔ ∀ v,
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η (Complex.I • v) =
+        -(Complex.I • ContinuousLinearMap.inCoordinates E (TangentSpace I) F V x₀ x y₀ x η v) := by
+  by_cases hx : x ∈ (chartAt H x₀).source
+  · have hx' : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by
+      rwa [TangentBundle.trivializationAt_baseSet]
+    -- The tangent coordinates at `x` are onto and the trivialization of `V` is injective at `x`.
+    have hS : Function.Surjective ((trivializationAt E (TangentSpace I) x₀).symmL ℝ x) :=
+      fun w ↦ ⟨_, Trivialization.symmL_continuousLinearMapAt _ hx' w⟩
+    have hT : Function.Injective ((trivializationAt F V y₀).continuousLinearMapAt ℝ x) :=
+      Function.LeftInverse.injective (g := (trivializationAt F V y₀).symmL ℝ x)
+        (Trivialization.symmL_continuousLinearMapAt _ hy)
+    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
+    rw [isZeroOneForm_iff, hS.forall]
+    refine forall_congr' fun v ↦ ?_
+    have hTI (u : V x) : -(Complex.I • (trivializationAt F V y₀).continuousLinearMapAt ℝ x u) =
+        (trivializationAt F V y₀).continuousLinearMapAt ℝ x (-(Complex.I • u)) := by
+      rw [Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt ℝ ℂ, map_neg,
+        map_smul]
+    rw [← toEndomorphism_symmL_of_inTangentCoordinates_eq hj hx, hTI, hT.eq_iff]
+  · have := subsingleton_of_inTangentCoordinates_eq hj hx
+    have : Subsingleton (TangentSpace I x) :=
+      (VectorBundle.continuousLinearEquivAt ℝ E (TangentSpace I) x).injective.subsingleton
+    have h0 (w : TangentSpace I x) : w = 0 := Subsingleton.elim w 0
+    refine iff_of_true (fun v ↦ ?_) fun v ↦ ?_
+    · rw [h0 (j x v), h0 v, map_zero, smul_zero, neg_zero]
+    · rw [Subsingleton.elim v 0, smul_zero, map_zero, smul_zero, neg_zero]
+
+end Coordinates
 
 end SmoothAlmostComplexStructure
 
@@ -353,6 +508,46 @@ theorem tensorialAt_sub (hD : IsRealCauchyRiemannOperator F j D)
   add hσ hσ' := by
     simp only [hD.add hσ hσ', hD'.add hσ hσ']
     abel
+
+/-- **Locality.** At `x`, a real Cauchy–Riemann operator only sees the germ of a section
+differentiable at `x`. -/
+theorem apply_eq_of_eventuallyEq [VectorBundle ℝ F V] (hD : IsRealCauchyRiemannOperator F j D)
+    {σ σ' : Π x : M, V x} {x : M} (hσ' : MDiffAt (T% σ') x) (h : ∀ᶠ y in 𝓝 x, σ y = σ' y) :
+    D σ x = D σ' x := by
+  obtain ⟨U, hU, hUo, hxU⟩ := eventually_nhds_iff.mp h
+  classical
+  -- `τ = σ - σ'` vanishes on `U`; the indicator `g` of `Uᶜ` is `0` near `x` and `g • τ = τ`.
+  set τ : Π x : M, V x := σ - σ'
+  let g : M → ℝ := Set.indicator Uᶜ 1
+  have hg0 : g =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+    filter_upwards [hUo.mem_nhds hxU] with y hy
+    simp [g, hy]
+  have hσ : MDiffAt (T% σ) x :=
+    hσ'.congr_of_eventuallyEq (h.mono fun y hy ↦ by simp [hy])
+  have hτ : MDiffAt (T% τ) x := by
+    simpa [τ, sub_eq_add_neg] using
+      mdifferentiableAt_add_section hσ (mdifferentiableAt_neg_section hσ')
+  have hgτ : g • τ = τ := by
+    ext y
+    by_cases hy : y ∈ U
+    · simp [τ, hU y hy]
+    · simp [g, hy]
+  have hgx : MDiffAt g x := mdifferentiableAt_const.congr_of_eventuallyEq hg0
+  have hgx0 : g x = 0 := hg0.self_of_nhds
+  have hτx : τ x = 0 := by simp [τ, hU x hxU]
+  have hDτ : D τ x = 0 := by
+    have hl := hD.leibniz hτ hgx
+    rw [hgτ] at hl
+    have : j.dbarSMulRight g τ x = 0 := by
+      ext v
+      rw [dbarSMulRight_apply, hτx]
+      simp only [smul_zero, add_zero, zero_apply]
+    rw [this, add_zero, hgx0, zero_smul] at hl
+    exact hl
+  have hστ : σ = σ' + τ := by
+    ext y
+    simp [τ]
+  rw [hστ, hD.add hσ' hτ, hDτ, add_zero]
 
 section Difference
 
@@ -431,6 +626,48 @@ theorem isComplexLinearOperator_sectionComplexLinearPart (hD : IsRealCauchyRiema
     smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
   module
 
+/-- **Complex Leibniz rule.** A complex linear real Cauchy–Riemann operator satisfies
+`D (f • ξ) = f • D ξ + (∂bar f) ⊗ ξ` for complex valued `f`, where `(∂bar f) ⊗ ξ` is the
+`(0,1)`-part of `df ⊗ ξ`. -/
+theorem leibniz_complex [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V]
+    (hD : IsRealCauchyRiemannOperator F j D)
+    (hDℂ : IsComplexLinearOperator F D) {σ : Π x : M, V x} {f : M → ℂ} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hf : MDifferentiableAt I 𝓘(ℝ, ℂ) f x) :
+    D (f • σ) x = f x • D σ x + j.zeroOnePart ((d% f x).smulRight (σ x)) := by
+  set a : M → ℝ := Complex.reCLM ∘ f
+  set b : M → ℝ := Complex.imCLM ∘ f
+  have ha : MDiffAt a x := Complex.reCLM.differentiableAt.comp_mdifferentiableAt hf
+  have hb : MDiffAt b x := Complex.imCLM.differentiableAt.comp_mdifferentiableAt hf
+  have hda (v : TangentSpace I x) : d% a x v = (d% f x v).re :=
+    Complex.reCLM.mvfderiv_comp_apply hf v
+  have hdb (v : TangentSpace I x) : d% b x v = (d% f x v).im :=
+    Complex.imCLM.mvfderiv_comp_apply hf v
+  have hIσ := hσ.const_smul_section Complex.I
+  have hsplit : f • σ = a • σ + b • (Complex.I • σ) := by
+    ext y
+    simp only [Pi.smul_apply', Pi.add_apply, Pi.smul_apply, a, b, Function.comp_apply,
+      Complex.reCLM_apply, Complex.imCLM_apply]
+    conv_lhs => rw [← Complex.re_add_im (f y)]
+    rw [add_smul, mul_smul, RCLike.real_smul_eq_coe_smul (K := ℂ),
+      RCLike.real_smul_eq_coe_smul (K := ℂ) (f y).im]
+    rfl
+  rw [hsplit, hD.add (ha.smul_section hσ) (hb.smul_section hIσ), hD.leibniz hσ ha,
+    hD.leibniz hIσ hb, hDℂ.complex_I_smul hσ, dbarSMulRight_complex_I_smul]
+  ext v
+  simp only [add_apply, smul_apply, dbarSMulRight_apply, zeroOnePart_apply,
+    ContinuousLinearMap.smulRight_apply, hda, hdb]
+  obtain ⟨p, q, hpq⟩ : ∃ p q : ℝ, d% f x v = p + q * Complex.I :=
+    ⟨_, _, (Complex.re_add_im _).symm⟩
+  obtain ⟨p', q', hpq'⟩ : ∃ p q : ℝ, d% f x (j.toEndomorphism x v) = p + q * Complex.I :=
+    ⟨_, _, (Complex.re_add_im _).symm⟩
+  conv_rhs => rw [← Complex.re_add_im (f x)]
+  simp only [hpq, hpq', Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im]
+  simp only [RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V x)]
+  simp only [a, b, Function.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply, mul_zero,
+    sub_zero, add_zero, mul_one, zero_add]
+  module
+
 variable [VectorBundle ℝ F V] [FiniteDimensional ℝ F] [ContMDiffVectorBundle 1 F V I]
 
 /-- The antilinear part `A = D - D^ℂ` of a real Cauchy–Riemann operator, a zeroth-order term:
@@ -439,6 +676,12 @@ variable [VectorBundle ℝ F V] [FiniteDimensional ℝ F] [ContMDiffVectorBundle
 def antilinearPart (hD : IsRealCauchyRiemannOperator F j D) (x : M) :
     V x →L[ℝ] TangentSpace I x →L[ℝ] V x :=
   hD.difference hD.isRealCauchyRiemannOperator_sectionComplexLinearPart x
+
+/-- The antilinear part of a real Cauchy–Riemann operator is its difference with its complex
+linear part. -/
+theorem antilinearPart_eq_difference (hD : IsRealCauchyRiemannOperator F j D) :
+    hD.antilinearPart = hD.difference hD.isRealCauchyRiemannOperator_sectionComplexLinearPart :=
+  (rfl)
 
 theorem antilinearPart_apply (hD : IsRealCauchyRiemannOperator F j D) {σ : Π x : M, V x} {x : M}
     (hσ : MDiffAt (T% σ) x) :
@@ -492,5 +735,53 @@ theorem antilinearPart_eq_of_eq_add (hD : IsRealCauchyRiemannOperator F j D)
 end ComplexPart
 
 end IsRealCauchyRiemannOperator
+
+end TauCeti
+
+/-! ### `(0,1)`-forms on complex curves -/
+
+namespace TauCeti
+
+section Curve
+
+open Set
+open scoped TauCeti.ComplexManifold
+open SmoothAlmostComplexStructure
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
+  {V : M → Type*} [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)]
+
+/-- On a complex curve, a `(0,1)`-form at the point `φ⁻¹ z` of the chart `φ` at `x₀` is determined
+by its value on the coordinate vector `∂/∂x = dφ⁻¹ 1`: on `dφ⁻¹ w` it is `conj w` times that
+value. -/
+theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartAt_symm {x₀ : M}
+    {z : ℂ} (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target)
+    {η : TangentSpace 𝓘(ℝ, ℂ) ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z) →L[ℝ]
+      V ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)}
+    (hη : (ofComplexManifold ℂ M).IsZeroOneForm η) (w : ℂ) :
+    η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z w) =
+      starRingEnd ℂ w • η (mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
+        (range 𝓘(ℝ, ℂ)) z (1 : ℂ)) := by
+  set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z
+  -- `dφ⁻¹` is complex linear, so `dφ⁻¹ i = j (dφ⁻¹ 1)`, on which `η` is `-i • η (dφ⁻¹ 1)`.
+  have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
+    have h : L (Complex.I • (1 : ℂ)) = (Complex.I • ContinuousLinearMap.id ℝ ℂ) (L (1 : ℂ)) :=
+      mfderivWithin_extChartAt_symm_smul ℝ (𝕜' := ℂ) hz Complex.I (1 : ℂ)
+    rw [smul_eq_mul, mul_one] at h
+    rw [h]
+    exact (ofComplexManifold_apply (E := ℂ) _ _).symm
+  have hηI : η (L Complex.I) = -(Complex.I • η (L (1 : ℂ))) := by
+    rw [hLI]
+    exact isZeroOneForm_iff.1 hη _
+  have h : η (L w) = w.re • η (L (1 : ℂ)) + w.im • η (L Complex.I) :=
+    LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
+  rw [h, hηI]
+  conv_rhs => rw [← Complex.re_add_im w]
+  simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
+    RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V _)]
+  module
+
+end Curve
 
 end TauCeti
