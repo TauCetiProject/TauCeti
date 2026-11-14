@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary
 
@@ -56,6 +57,7 @@ the union of the conjugates of a maximal torus; for `SU(2)` the same statement i
   torus.
 * `TauCeti.exists_isConj_unitaryTorusHom`: every element of `U(n)` is conjugate to
   `diag (z₁, …, zₙ)` for some points `zᵢ` of the circle.
+* `Matrix.UnitaryGroup.isSquare`: every element of `U(n)` is a square.
 
 ## References
 
@@ -198,3 +200,19 @@ theorem exists_isConj_unitaryTorusHom (g : unitaryGroup n ℂ) :
   exact ⟨z, isConj_iff.mpr ⟨u, hz.symm⟩⟩
 
 end TauCeti
+
+namespace Matrix.UnitaryGroup
+
+open TauCeti
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Every element of `U(n)` is a square**: conjugate it into the diagonal torus and take a square
+root on the circle of each diagonal entry. -/
+theorem isSquare (g : unitaryGroup n ℂ) : IsSquare g := by
+  obtain ⟨z, hz⟩ := exists_isConj_unitaryTorusHom g
+  obtain ⟨c, rfl⟩ := isConj_iff.mp hz.symm
+  choose y hy using fun i => Circle.isSquare (z i)
+  exact (IsSquare.map (unitaryTorusHom n) ⟨y, funext hy⟩).map (MulAut.conj c)
+
+end Matrix.UnitaryGroup

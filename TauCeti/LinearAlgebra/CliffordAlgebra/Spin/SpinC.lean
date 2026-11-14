@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The group `Spinᶜ(Q)`
@@ -59,8 +58,9 @@ a double cover of `SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)
 * `CliffordAlgebra.spinCGroup.finite_ker_toSpecialOrthogonal_prod_det`: that kernel is finite.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_prod_det_surjective`: this map is onto when the
   Spin action is onto `SO(Q)`.
-* `CliffordAlgebra.spinCGroup.circle_hom_ext`: a homomorphism from the circle to `Spinᶜ(Q)` is
-  determined by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`.
+* `CliffordAlgebra.spinCGroup.hom_ext_of_isSquare`: a homomorphism to `Spinᶜ(Q)` from a group in
+  which every element is a square, such as the circle, is determined by its composite with
+  `Spinᶜ(Q) → SO(Q) × U(1)`.
 * `QuadraticMap.Isometry.det_spinCGroupMap` and
   `QuadraticMap.Isometry.toSpecialOrthogonal_spinCGroupMap_apply`: the induced map preserves the
   determinant character, and its rotations extend the rotations of the source along `f`.
@@ -357,20 +357,22 @@ theorem card_fiber_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
     exact Circle.neg_ne_self (1 : Circle)
       ((ofCircle_injective Q hQ) (h.symm.trans hone.symm)))
 
-/-! ### Homomorphisms from the circle -/
+/-! ### Homomorphisms from monoids of squares -/
 
-/-- **A homomorphism from the circle to `Spinᶜ(Q)` is determined by its composite with
-`Spinᶜ(Q) → SO(Q) × U(1)`**, for a finite-dimensional nondegenerate form. Two such homomorphisms
-differ by a homomorphism into the central kernel `{1, [1, -1]}`, and this is trivial because every
-point of the circle is a square while the kernel has exponent two. -/
-theorem circle_hom_ext [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
-    {φ ψ : Circle →* spinCGroup Q hQ}
+/-- **A homomorphism to `Spinᶜ(Q)` from a monoid in which every element is a square is determined
+by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`**, for a finite-dimensional nondegenerate form.
+Two such homomorphisms differ by a homomorphism into the central kernel `{1, [1, -1]}`, and this is
+trivial because every element of the source is a square while the kernel has exponent two. This
+applies to the circle (`Circle.isSquare`) and to the unitary groups
+(`Matrix.UnitaryGroup.isSquare`). -/
+theorem hom_ext_of_isSquare [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate) {G : Type*} [Monoid G]
+    (hG : ∀ g : G, IsSquare g) {φ ψ : G →* spinCGroup Q hQ}
     (h : ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).comp φ =
       ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).comp ψ) :
     φ = ψ := by
   have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
   -- The defect `φ y (ψ y)⁻¹` lies in the kernel `{1, [1, -1]}`: it is central and squares to `1`.
-  have hk (y : Circle) :
+  have hk (y : G) :
       φ y * (ψ y)⁻¹ ∈ Subgroup.center (spinCGroup Q hQ) ∧ (φ y * (ψ y)⁻¹) ^ 2 = 1 := by
     have hmem : φ y * (ψ y)⁻¹ ∈ ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker := by
       rw [MonoidHom.mem_ker, map_mul, map_inv, ← MonoidHom.comp_apply, h, MonoidHom.comp_apply,
@@ -380,10 +382,10 @@ theorem circle_hom_ext [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
     · exact ⟨one_mem _, one_pow 2⟩
     · exact ⟨ofCircle_mem_center Q hQ _, by rw [← map_pow]; simp⟩
   ext z
-  obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
+  obtain ⟨y, rfl⟩ := hG z
   obtain ⟨hc, hsq⟩ := hk y
   have hcomm : Commute (φ y * (ψ y)⁻¹) (ψ y) := (Subgroup.mem_center_iff.mp hc (ψ y)).symm
-  rw [map_pow, map_pow, ← inv_mul_cancel_right (φ y) (ψ y), hcomm.mul_pow, hsq, one_mul]
+  rw [← sq, map_pow, map_pow, ← inv_mul_cancel_right (φ y) (ψ y), hcomm.mul_pow, hsq, one_mul]
 
 end spinCGroup
 

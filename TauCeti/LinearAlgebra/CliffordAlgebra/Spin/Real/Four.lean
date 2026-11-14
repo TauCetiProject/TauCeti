@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.Algebra.Star.Unitary
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 
 /-!
@@ -32,6 +33,8 @@ split real group.
   unit-quaternion groups and exposes its forward and inverse Clifford equations.
 * `TauCeti.normSq_fst_realSpinFourEquivQuaternionUnitaryProd` and
   `TauCeti.normSq_snd_realSpinFourEquivQuaternionUnitaryProd` state the two norm-one conditions.
+* `TauCeti.realSpinFourEquivQuaternionUnitaryProd_negOne`: the central element `-1` is the pair
+  `(-1, -1)`.
 * `TauCeti.realSpinFourEquivQuaternionUnitaryProd_action` identifies the vector action with left
   multiplication by the first quaternion and inverse right multiplication by the second.
 * `TauCeti.realSpinFourEquivSpecialUnitaryProd` identifies compact real `Spin(4)` with
@@ -156,6 +159,19 @@ theorem normSq_snd_realSpinFourEquivQuaternionUnitaryProd
     Quaternion.normSq
         ((realSpinFourEquivQuaternionUnitaryProd s).2 : ℍ[ℝ]) = (1 : ℝ) :=
   Quaternion.normSq_coe_unitary_eq_one _
+
+/-- The central element `-1` of compact `Spin(4)` is the pair `(-1, -1)` of unit quaternions. -/
+@[simp]
+theorem realSpinFourEquivQuaternionUnitaryProd_negOne (hQ : realCliffordForm 4 0 ≠ 0) :
+    realSpinFourEquivQuaternionUnitaryProd (CliffordAlgebra.spinGroup.negOne _ hQ) = -1 := by
+  rw [← MulEquiv.eq_symm_apply]
+  apply Subtype.ext
+  rw [coe_realSpinFourEquivQuaternionUnitaryProd_symm_apply, CliffordAlgebra.spinGroup.coe_negOne]
+  have : (((-1 : unitary ℍ[ℝ] × unitary ℍ[ℝ]).1 : ℍ[ℝ]),
+      ((-1 : unitary ℍ[ℝ] × unitary ℍ[ℝ]).2 : ℍ[ℝ])) = -1 := by
+    ext <;> simp [Unitary.coe_neg]
+  rw [this, map_neg, map_one]
+  simp
 
 private abbrev Q4 := realCliffordForm 4 0
 
