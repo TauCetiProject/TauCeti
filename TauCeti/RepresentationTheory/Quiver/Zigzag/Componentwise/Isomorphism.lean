@@ -97,4 +97,34 @@ theorem zigzagAlgebraEquiv_mem_zigzagAlgebraIntegerGrade_iff (e : G ≃g H) {d :
   · simp only [zigzagAlgebraIntegerGrade_eq_bot_of_neg _ _ (lt_of_not_ge hd),
       Submodule.mem_bot, EmbeddingLike.map_eq_zero_iff]
 
+/-- On a connected graph with at least two vertices, the canonical comparison with the uniform
+relation quotient preserves and reflects each nonnegative graded piece. -/
+@[simp]
+theorem zigzagAlgebraEquivNonisolated_mem_zigzagGrade_iff (hconn : G.Connected) [Nontrivial V]
+    {n : ℕ} {x : zigzagAlgebra k G} :
+    zigzagAlgebraEquivNonisolated k G hconn x ∈ zigzagGrade k G n ↔
+      x ∈ zigzagAlgebraGrade k G n := by
+  let _ := connectedComponentUnique G hconn
+  let _ : Nontrivial (default : G.ConnectedComponent) :=
+    nontrivial_connectedComponent G hconn default
+  rw [zigzagAlgebraEquivNonisolated_apply k G hconn x default,
+    nonisolatedZigzagQuotientEquiv_mem_zigzagGrade_iff,
+    ← mem_zigzagComponentGrade_of_nontrivial, mem_zigzagAlgebraGrade]
+  exact ⟨fun hx D ↦ Subsingleton.elim D default ▸ hx, fun hx ↦ hx default⟩
+
+/-- On a connected graph with at least two vertices, the canonical comparison with the uniform
+relation quotient preserves and reflects the signed integer grading. -/
+@[simp]
+theorem zigzagAlgebraEquivNonisolated_mem_zigzagIntegerGrade_iff (hconn : G.Connected)
+    [Nontrivial V] {d : ℤ} {x : zigzagAlgebra k G} :
+    zigzagAlgebraEquivNonisolated k G hconn x ∈ zigzagIntegerGrade k G d ↔
+      x ∈ zigzagAlgebraIntegerGrade k G d := by
+  by_cases hd : 0 ≤ d
+  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
+    simp only [zigzagIntegerGrade_ofNat, zigzagAlgebraIntegerGrade_ofNat,
+      zigzagAlgebraEquivNonisolated_mem_zigzagGrade_iff]
+  · simp only [zigzagIntegerGrade_eq_bot_of_neg _ _ (lt_of_not_ge hd),
+      zigzagAlgebraIntegerGrade_eq_bot_of_neg _ _ (lt_of_not_ge hd),
+      Submodule.mem_bot, EmbeddingLike.map_eq_zero_iff]
+
 end TauCeti

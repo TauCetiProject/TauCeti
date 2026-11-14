@@ -52,6 +52,9 @@ particular they cover the affine `Dₙ` graphs, see
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra`: when `2` is invertible, a loop deformation
   whose quartic operation is not a Hochschild coboundary of the strict zigzag algebra is not
   formal.
+* `not_isFormal_zigzagLoopAInfinityAlgebra_of_not_exists_hochschildDifferential_eq_obstruction`:
+  over a `ℚ`-algebra, a loop deformation in any arity whose operation is not a Hochschild coboundary
+  of the strict zigzag algebra is not formal.
 * `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal`: if a loop
   deformation is not formal, then the strict zigzag algebra is not intrinsically formal.
 * `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_single` and
@@ -61,10 +64,13 @@ particular they cover the affine `Dₙ` graphs, see
 * `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra` and
   `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_walk`: the corresponding
   statements that the strict zigzag algebra is not intrinsically formal.
-* `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree` and
-  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree`: the strict
-  zigzag algebra is not intrinsically formal when `G` has a vertex of degree at least four, or two
-  distinct vertices of degree at least three joined by a walk.
+* `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree`,
+  `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree`,
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree` and
+  `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree`: a non-formal
+  quartic loop deformation exists, and the strict zigzag algebra is not intrinsically formal, when
+  `G` has a vertex of degree at least four or two distinct vertices of degree at least three joined
+  by a walk.
 
 ## References
 
@@ -108,11 +114,34 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra [Invertible (2 : k)] (c : (Fin 4
     (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
     (zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by decide) (by decide)) hobs
 
+/-- **A loop deformation in any arity whose operation is not a coboundary is not formal**, over a
+`ℚ`-algebra. If the operation `m_{n + 2}` of the loop deformation with coefficients `c` is not the
+Hochschild differential of a suspended cochain of degree zero of the strict zigzag algebra, then
+the loop deformation is not formal, equivalently not `A∞` isomorphic to the strict zigzag
+algebra (`TauCeti.AInfinityAlgebra.IsMinimal.isFormal_iff_exists_isIso`). -/
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_exists_hochschildDifferential_eq_obstruction
+    [Algebra ℚ k] {n : ℕ} (c : (Fin (n + 2) → G.Dart) →₀ k)
+    (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
+    (hobs : ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+        nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 ∧
+        (𝒵).hochschildDifferential 0 φ =
+          (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) :
+    ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal :=
+  AInfinityAlgebra.IsMinimal.not_isFormal_of_not_exists_hochschildDifferential_eq_obstruction
+    (isMinimal_zigzagLoopAInfinityAlgebra c hc) isMinimal_zigzagStrictAInfinityAlgebra
+    (fun _ hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega))
+    (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading c hc)
+    (zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc)
+    (fun _ hk hkn ↦ zigzagLoopAInfinityAlgebra_m_eq_zero c hc (by omega) (by omega)) hobs
+
 /-- **A non-formal loop deformation shows that the strict zigzag algebra is not intrinsically
 formal.** A loop deformation is a minimal `A∞` structure on the zigzag algebra with its grading and
 product, so if it is not formal, then the strict zigzag algebra is not intrinsically formal. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal
-    {c : (Fin 4 → G.Dart) →₀ k} {hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd}
+    {n : ℕ} [NeZero n] {c : (Fin n → G.Dart) →₀ k}
+    {hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd}
     (h : ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal) : ¬(𝒵).IsIntrinsicallyFormal := fun hf ↦
   h <| hf.isFormal_of_isMinimal
     (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _)
@@ -144,6 +173,18 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra [Nontrivial k]
   not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal
     (not_isFormal_zigzagLoopAInfinityAlgebra_single hδ hv)
 
+/-- **A graph with a vertex of degree at least four admits a non-formal quartic loop deformation**,
+over every nontrivial commutative ring in which `2` is invertible. -/
+theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree [Nontrivial k]
+    [Invertible (2 : k)] {v : V} [Fintype (G.neighborSet v)] (hv : 4 ≤ G.degree v) :
+    ∃ (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
+      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
+  obtain ⟨ι⟩ : Nonempty (Fin 4 ↪ G.neighborSet v) := Function.Embedding.nonempty_of_card_le
+    (by rwa [Fintype.card_fin, SimpleGraph.card_neighborSet_eq_degree])
+  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_single
+    (δ := fun i ↦ ⟨((ι i : V), v), (ι i).2.symm⟩)
+    (fun i j h ↦ ι.injective (Subtype.ext (congrArg (·.fst) h))) (v := v) fun _ ↦ rfl⟩
+
 /-- **The zigzag algebra of a graph with a vertex of degree at least four is not intrinsically
 formal**, over every nontrivial commutative ring in which `2` is invertible. This is
 `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra` for the darts into `v` from four
@@ -151,11 +192,9 @@ distinct neighbours. -/
 theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree [Nontrivial k]
     [Invertible (2 : k)] {v : V} [Fintype (G.neighborSet v)] (hv : 4 ≤ G.degree v) :
     ¬(𝒵).IsIntrinsicallyFormal := by
-  obtain ⟨ι⟩ : Nonempty (Fin 4 ↪ G.neighborSet v) := Function.Embedding.nonempty_of_card_le
-    (by rwa [Fintype.card_fin, SimpleGraph.card_neighborSet_eq_degree])
-  exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra
-    (δ := fun i ↦ ⟨((ι i : V), v), (ι i).2.symm⟩)
-    (fun i j h ↦ ι.injective (Subtype.ext (congrArg (·.fst) h))) (v := v) fun _ ↦ rfl
+  obtain ⟨_, _, hnf⟩ :=
+    exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_four_le_degree (k := k) (hns := hns) hv
+  exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
 /-! ### Two branch vertices joined by a walk -/
 
@@ -198,18 +237,13 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_walk [Nontrivi
     (not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk hde hed hf₀ hdf hef hf hf' hfd hde' hd'
       he' hdf' hef')
 
-/-- **The zigzag algebra of a graph with two branch vertices in one component is not
-intrinsically formal**, over every nontrivial commutative ring in which `2` is invertible: if two
-distinct vertices `v` and `w` of `G`, each of degree at least three, are joined by a walk, then
-some `A∞` algebra whose cohomology algebra is the path-graded zigzag algebra is not formal. The
-detecting deformation is that of `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk`
-along a path from `v` to `w`. Together with
-`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree` this covers
-every finite tree other than a path or a tree with exactly one vertex of degree three. -/
-theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree [Nontrivial k]
+/-- **A graph with two branch vertices in one component admits a non-formal quartic loop
+deformation**, over every nontrivial commutative ring in which `2` is invertible. -/
+theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree [Nontrivial k]
     [Invertible (2 : k)] {v w : V} [Fintype (G.neighborSet v)] [Fintype (G.neighborSet w)]
     (hvw : v ≠ w) (hr : G.Reachable v w) (hv : 3 ≤ G.degree v) (hw : 3 ≤ G.degree w) :
-    ¬(𝒵).IsIntrinsicallyFormal := by
+    ∃ (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
+      ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
   classical
   -- The darts `f 0, …, f n` of a path `p` from `v` to `w`; the vertices of `p` are distinct.
   obtain ⟨p, hp⟩ := hr.exists_isPath
@@ -226,13 +260,13 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degre
   have hd : (⟨(a, v), ha.symm⟩ : G.Dart).snd = p.getVert 0 := p.getVert_zero.symm
   -- Distinct darts are told apart by their tails. The vertices `(f 0).snd` and `(f n).fst` unfold
   -- to `p.getVert 1` and `p.getVert n`, and consecutive darts of `f` are adjacent by definition.
-  refine not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_walk (f := f)
+  refine ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk (f := f)
     (d := ⟨(a, v), ha.symm⟩) (e := ⟨(b, v), hb.symm⟩) (d' := ⟨(a', w), ha'.symm⟩)
     (e' := ⟨(b', w), hb'.symm⟩)
     (fun h ↦ hab (congrArg (·.fst) h)) rfl ?_ (fun h ↦ hau (congrArg (·.fst) h))
     (fun h ↦ hbu (congrArg (·.fst) h)) (fun _ ↦ rfl) (fun t h ↦ ?_) (fun t h ↦ ?_)
     (fun h ↦ hab' (congrArg (·.fst) h)) ?_ ?_ (fun h ↦ hau' (congrArg (·.fst) h))
-    (fun h ↦ hbu' (congrArg (·.fst) h))
+    (fun h ↦ hbu' (congrArg (·.fst) h))⟩
   · simp [f]
   · have := hinj (by omega) (by omega) (congrArg (·.fst) h)
     simp only [Fin.val_castSucc, Fin.val_succ] at this
@@ -240,5 +274,21 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degre
   · rw [hd] at h
     exact Nat.succ_ne_zero _ (hinj (by omega) (by omega) h)
   all_goals simp [f, ← hn]
+
+/-- **The zigzag algebra of a graph with two branch vertices in one component is not
+intrinsically formal**, over every nontrivial commutative ring in which `2` is invertible: if two
+distinct vertices `v` and `w` of `G`, each of degree at least three, are joined by a walk, then
+some `A∞` algebra whose cohomology algebra is the path-graded zigzag algebra is not formal. The
+detecting deformation is that of `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_single_of_walk`
+along a path from `v` to `w`. Together with
+`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_four_le_degree` this covers
+every finite tree other than a path or a tree with exactly one vertex of degree three. -/
+theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree [Nontrivial k]
+    [Invertible (2 : k)] {v w : V} [Fintype (G.neighborSet v)] [Fintype (G.neighborSet w)]
+    (hvw : v ≠ w) (hr : G.Reachable v w) (hv : 3 ≤ G.degree v) (hw : 3 ≤ G.degree w) :
+    ¬(𝒵).IsIntrinsicallyFormal := by
+  obtain ⟨_, _, hnf⟩ := exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree
+    (k := k) (hns := hns) hvw hr hv hw
+  exact not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_not_isFormal hnf
 
 end TauCeti
