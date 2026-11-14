@@ -103,32 +103,10 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   have hmem : ∀ p : ι × Fin (l + 1),
       (c p.1 : F) * (x : F) ^ (p.2 : ℕ) ∈ riemannRochSpace (l • Divisor.poles hF x + C) := by
     rintro ⟨i, j⟩
-    have hjle : (j : ℕ) ≤ l := Nat.lt_succ_iff.mp j.isLt
-    have hpow : Divisor.principal hF (x ^ (j : ℕ)) =
-        (j : ℕ) • Divisor.principal hF x := by
-      rw [← zpow_natCast x (j : ℕ), Divisor.principal_zpow, natCast_zsmul]
-    have hsplit : l • Divisor.poles hF x =
-        (j : ℕ) • Divisor.poles hF x + (l - (j : ℕ)) • Divisor.poles hF x := by
-      rw [← add_nsmul, Nat.add_sub_cancel' hjle]
-    have hkey : Divisor.principal hF (c i * x ^ (j : ℕ)) +
-          (l • Divisor.poles hF x + C) =
-        Divisor.zeros hF (c i) + (C - Divisor.poles hF (c i)) +
-          (j : ℕ) • Divisor.zeros hF x + (l - (j : ℕ)) • Divisor.poles hF x := by
-      rw [Divisor.principal_mul, hpow, hsplit,
-        ← Divisor.zeros_sub_poles hF (c i), ← Divisor.zeros_sub_poles hF x]
-      module
-    have hnonneg : (0 : Divisor k F) ≤
-        Divisor.principal hF (c i * x ^ (j : ℕ)) + (l • Divisor.poles hF x + C) := by
-      rw [hkey]
-      refine add_nonneg (add_nonneg (add_nonneg ?_ ?_) ?_) ?_
-      · exact Divisor.zeros_nonneg hF (c i)
-      · exact sub_nonneg.mpr (hC i)
-      · exact nsmul_nonneg (Divisor.zeros_nonneg hF x) _
-      · exact nsmul_nonneg (Divisor.poles_nonneg hF x) _
-    have hval : ((c i * x ^ (j : ℕ) : Fˣ) : F) = (c i : F) * (x : F) ^ (j : ℕ) := by
-      rw [Units.val_mul, Units.val_pow_eq_pow_val]
-    rw [← hval]
-    exact (mem_riemannRochSpace_units_iff hF).mpr hnonneg
+    rw [add_comm (l • Divisor.poles hF x) C, ← natCast_zsmul]
+    exact mul_mem_riemannRochSpace_add (riemannRochSpace_mono (hC i)
+      (mem_riemannRochSpace_poles hF (c i))) (pow_mem_riemannRochSpace_zsmul_poles_of_le hF x
+        (Int.ofNat_le.mpr (Nat.lt_succ_iff.mp j.isLt)))
   have hfam := Transcendental.linearIndependent_mul_pow_fin hx hc (l + 1)
   have hv : LinearIndependent k fun p : ι × Fin (l + 1) ↦
       (⟨(c p.1 : F) * (x : F) ^ (p.2 : ℕ), hmem p⟩ :
