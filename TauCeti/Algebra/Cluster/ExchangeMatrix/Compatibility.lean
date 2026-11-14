@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Dual
 
@@ -257,14 +258,8 @@ theorem principalForm_eq_fromBlocks :
 
 /-- The bilinear form on the integral exponent lattice defined by the principal matrix
 is alternating. -/
-theorem isAlt_principalForm : (toBilin' B.principalForm).IsAlt := by
-  intro x
-  have he := congrArg (fun M ↦ x ⬝ᵥ M *ᵥ x) B.transpose_principalForm
-  have ht : x ⬝ᵥ B.principalFormᵀ *ᵥ x = x ⬝ᵥ B.principalForm *ᵥ x := by
-    rw [dotProduct_mulVec, vecMul_transpose, dotProduct_comm]
-  rw [ht] at he
-  simpa only [neg_mulVec, dotProduct_neg, ← add_eq_zero_iff_eq_neg,
-    add_self_eq_zero, toBilin'_apply'] using he
+theorem isAlt_principalForm : (toBilin' B.principalForm).IsAlt :=
+  Matrix.isAlt_toBilin'_of_transpose_eq_neg B.transpose_principalForm
 
 /-- The principal extension and principal form are compatible with the original
 positive symmetrizer as weights. -/

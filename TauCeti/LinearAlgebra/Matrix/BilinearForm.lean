@@ -41,6 +41,8 @@ orthogonal such families is determined up to squares by their Gram matrices.
 
 ## Main results
 
+* `Matrix.isAlt_toBilin'_of_transpose_eq_neg`: a skew-symmetric matrix over a
+  characteristic-zero domain gives an alternating form.
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
 * `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
@@ -86,6 +88,18 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
     [Nontrivial R] : (toBilin' (1 : Matrix n n R)).IsAlt ↔ IsEmpty n := by
   refine ⟨fun h => ⟨fun i => by simpa using h (Pi.single i 1)⟩, fun hn x => ?_⟩
   simp [Subsingleton.elim x 0]
+
+/-- Over a characteristic-zero domain, a skew-symmetric matrix defines an alternating
+bilinear form. -/
+theorem isAlt_toBilin'_of_transpose_eq_neg {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [NoZeroDivisors R] [CharZero R] {M : Matrix n n R} (h : Mᵀ = -M) :
+    (toBilin' M).IsAlt := by
+  have halt : (toBilin' M).IsAlt ↔ LinearMap.IsAlt (toBilin' M) := Iff.rfl
+  rw [halt, LinearMap.isAlt_iff_eq_neg_flip]
+  ext x y
+  have he := congrFun (congrFun h y) x
+  simp only [transpose_apply] at he
+  simpa [Matrix.toBilin'_apply', dotProduct_transpose_mulVec] using he
 
 end Matrix
 

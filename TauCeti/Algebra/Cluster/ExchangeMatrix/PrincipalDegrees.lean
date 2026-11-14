@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Compatibility
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Divisibility
+public import TauCeti.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Principal compatible pairs with exchange degrees
@@ -57,22 +58,38 @@ theorem principal_degreePrincipalExtension :
     (B.degreePrincipalExtension r).principal = B := by
   ext i j <;> simp
 
+/-- The principal columns have a common divisor precisely when the mutable columns do,
+and the divisor divides the degree of the column. -/
+@[simp↓]
+theorem dvd_degreePrincipalExtension_column_iff (d : ℤ) (j : K) :
+    (∀ i, d ∣ (B.degreePrincipalExtension r).matrix i j) ↔
+      (∀ i, d ∣ B.matrix i j) ∧ d ∣ r j := by
+  constructor
+  · intro h
+    exact ⟨fun i ↦ h (Sum.inl i), by simpa [diagonal] using h (Sum.inr j)⟩
+  · rintro ⟨hB, hr⟩ (i | i)
+    · exact hB i
+    · by_cases hij : i = j
+      · simpa [diagonal, hij] using hr
+      · simp [diagonal, hij]
+
 /-- Column divisibility of the principal extension is exactly column divisibility
-of the mutable matrix. The new frozen entries impose no additional condition. -/
+of the mutable matrix. -/
 @[simp↓]
 theorem dvd_degreePrincipalExtension_iff :
     (∀ i j, r j ∣ (B.degreePrincipalExtension r).matrix i j) ↔
       ∀ i j, r j ∣ B.matrix i j := by
-  constructor
-  · exact fun h i j ↦ h (Sum.inl i) j
-  · intro h i j
-    rcases i with i | i
-    · exact h i j
-    · by_cases hij : i = j <;> simp [diagonal, hij]
+  calc
+    _ ↔ ∀ j, (∀ i, r j ∣ B.matrix i j) ∧ r j ∣ r j := by
+      rw [forall_comm]
+      simp_rw [dvd_degreePrincipalExtension_column_iff]
+    _ ↔ _ := by
+      simp only [dvd_rfl, and_true]
+      exact forall_comm
 
 /-- Dividing the principal columns by their nonzero degrees leaves an identity
 frozen block. This is the primitive-column presentation used in exchange monomials. -/
-theorem degreePrincipalExtension_dividedMatrix (hr : ∀ i, r i ≠ 0) :
+theorem of_degreePrincipalExtension_matrix_ediv (hr : ∀ i, r i ≠ 0) :
     (of fun i j ↦ (B.degreePrincipalExtension r).matrix i j / r j) =
       fromRows (of fun i j ↦ B.matrix i j / r j) 1 := by
   ext (i | i) j
@@ -109,16 +126,24 @@ theorem degreePrincipalForm_inr_inr (i j : K) :
       (B.matrix j i / r i) * (B.symmetrizer j / r j) :=
   (rfl)
 
+/-- The whole block-matrix presentation of the degree-compatible principal form. -/
+theorem degreePrincipalForm_def :
+    B.degreePrincipalForm r =
+      fromBlocks 0 (-diagonal (fun i ↦ B.symmetrizer i / r i))
+        (diagonal (fun i ↦ B.symmetrizer i / r i))
+        (of fun i j ↦ (B.matrix j i / r i) * (B.symmetrizer j / r j)) :=
+  (rfl)
+
 /-- Multiplying the frozen-frozen entry by its two degrees recovers the
 corresponding entry of `Bᵀ * diagonal d`. This characterizes the integral divisions. -/
-theorem degreePrincipalForm_inr_inr_mul
-    (hcol : ∀ i j, r j ∣ B.matrix i j) (hd : ∀ i, r i ∣ B.symmetrizer i) (i j : K) :
+theorem degreePrincipalForm_inr_inr_mul {i j : K}
+    (hcol : r i ∣ B.matrix j i) (hd : r j ∣ B.symmetrizer j) :
     B.degreePrincipalForm r (Sum.inr i) (Sum.inr j) * (r i * r j) =
       B.matrix j i * B.symmetrizer j := by
   rw [degreePrincipalForm_inr_inr]
   calc
     _ = (B.matrix j i / r i * r i) * (B.symmetrizer j / r j * r j) := by ring
-    _ = _ := by rw [Int.ediv_mul_cancel (hcol j i), Int.ediv_mul_cancel (hd j)]
+    _ = _ := by rw [Int.ediv_mul_cancel hcol, Int.ediv_mul_cancel hd]
 
 /-- The degree-compatible principal form is skew-symmetric. -/
 @[simp]
@@ -132,8 +157,8 @@ theorem transpose_degreePrincipalForm
   · by_cases hij : i = j <;> simp [diagonal, hij, eq_comm]
   · apply mul_right_cancel₀ (mul_ne_zero (hr i) (hr j))
     simp only [transpose_apply, Matrix.neg_apply, neg_mul]
-    rw [B.degreePrincipalForm_inr_inr_mul r hcol hd i j,
-      mul_comm (r i) (r j), B.degreePrincipalForm_inr_inr_mul r hcol hd j i]
+    rw [B.degreePrincipalForm_inr_inr_mul r (hcol j i) (hd j),
+      mul_comm (r i) (r j), B.degreePrincipalForm_inr_inr_mul r (hcol i j) (hd i)]
     simpa [mul_comm] using B.symmetrizer_mul_matrix i j
 
 /-- The diagonal vanishes even before imposing the divisibility hypotheses. -/
@@ -149,19 +174,20 @@ section Finite
 
 variable [Fintype K]
 
+/-- The lower-right block is the product of the divided transpose and the diagonal
+quotient of the symmetrizer by the degrees. -/
+theorem degreePrincipalForm_eq_fromBlocks :
+    B.degreePrincipalForm r = fromBlocks 0 (-diagonal (fun i ↦ B.symmetrizer i / r i))
+      (diagonal (fun i ↦ B.symmetrizer i / r i))
+      ((of fun i j ↦ B.matrix i j / r j)ᵀ * diagonal (fun i ↦ B.symmetrizer i / r i)) := by
+  rw [degreePrincipalForm_def]
+  ext (i | i) (j | j) <;> simp
+
 /-- The bilinear form defined by the degree-compatible principal matrix is alternating. -/
 theorem isAlt_degreePrincipalForm
     (hcol : ∀ i j, r j ∣ B.matrix i j) (hd : ∀ i, r i ∣ B.symmetrizer i) :
-    (toBilin' (B.degreePrincipalForm r)).IsAlt := by
-  intro x
-  have he := congrArg (fun M ↦ x ⬝ᵥ M *ᵥ x)
-    (B.transpose_degreePrincipalForm r hcol hd)
-  have ht : x ⬝ᵥ (B.degreePrincipalForm r)ᵀ *ᵥ x =
-      x ⬝ᵥ B.degreePrincipalForm r *ᵥ x := by
-    rw [dotProduct_mulVec, vecMul_transpose, dotProduct_comm]
-  rw [ht] at he
-  simpa only [neg_mulVec, dotProduct_neg, ← add_eq_zero_iff_eq_neg,
-    add_self_eq_zero, toBilin'_apply'] using he
+    (toBilin' (B.degreePrincipalForm r)).IsAlt :=
+  Matrix.isAlt_toBilin'_of_transpose_eq_neg (B.transpose_degreePrincipalForm r hcol hd)
 
 /-- The degree-compatible principal pair has the original symmetrizer as its weights.
 In particular, no invertibility assumption on the mutable matrix is required. -/
@@ -196,28 +222,28 @@ theorem diagonal_mul_degreePrincipalForm_mul_diagonal
   · by_cases hij : i = j <;>
       simp [diagonal, hij, Int.mul_ediv_cancel' (hd j)]
   · simpa only [mul_assoc, mul_left_comm, principalForm_inr_inr] using
-      B.degreePrincipalForm_inr_inr_mul r hcol hd i j
+      B.degreePrincipalForm_inr_inr_mul r (hcol j i) (hd j)
 
 end Finite
 
-/-- The frozen diagonal makes the extended columns independent over a coefficient
-domain whenever the degree images are nonzero, including for infinite index sets. -/
-theorem linearIndependent_degreePrincipalExtension {R : Type*} [CommRing R] [IsDomain R]
-    (hr : ∀ i, (r i : R) ≠ 0) :
+/-- The frozen diagonal makes the extended columns independent over a ring whenever
+the degree images are right-regular, including for infinite index sets. -/
+theorem linearIndependent_degreePrincipalExtension {R : Type*} [Ring R]
+    (hr : ∀ i, IsRightRegular (r i : R)) :
     LinearIndependent R ((B.degreePrincipalExtension r).matrix.map (Int.castRingHom R)).col := by
   apply LinearIndependent.of_comp (LinearMap.funLeft R R Sum.inr)
-  convert (Pi.linearIndependent_single_one K R).smul_of_isRightRegular
-    (fun i ↦ (IsRegular.of_ne_zero (hr i)).right) using 1
+  convert (Pi.linearIndependent_single_one K R).smul_of_isRightRegular hr using 1
   ext k i
   by_cases hki : k = i <;>
     simp [LinearMap.funLeft_apply, diagonal, hki, eq_comm]
 
-/-- In finite rank the extended matrix has full rational column rank. -/
-theorem rank_degreePrincipalExtension [Fintype K] (hr : ∀ i, r i ≠ 0) :
-    ((B.degreePrincipalExtension r).matrix.map (Int.castRingHom ℚ)).rank = Fintype.card K := by
-  simpa only [row_transpose, rank_transpose] using
-    (B.linearIndependent_degreePrincipalExtension r
-      (fun i ↦ Int.cast_ne_zero.mpr (hr i) : ∀ i, (r i : ℚ) ≠ 0)).rank_matrix
+/-- In finite rank the extended matrix has full column rank whenever the degree images
+are right-regular over a commutative ring satisfying the strong rank condition. -/
+theorem rank_degreePrincipalExtension [Fintype K] {R : Type*} [CommRing R] [StrongRankCondition R]
+    (hr : ∀ i, IsRightRegular (r i : R)) :
+    ((B.degreePrincipalExtension r).matrix.map (Int.castRingHom R)).rank = Fintype.card K := by
+  rw [Matrix.rank_eq_finrank_span_cols,
+    finrank_span_eq_card (B.linearIndependent_degreePrincipalExtension r hr)]
 
 /-! ### Relabelling and degree one -/
 
