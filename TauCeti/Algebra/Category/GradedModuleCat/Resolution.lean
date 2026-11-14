@@ -169,6 +169,25 @@ theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton 
   have := h i hi
   exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
 
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shifting a graded module `M` to `M{d}` shifts any concrete graded projective resolution of `M`
+termwise by `d`, with `(Pₙ{d})ₚ = (Pₙ)_{p - d}`. -/
+noncomputable abbrev shiftObj (d : ℤ) :
+    GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
+  r.shift (-d)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The `n`th graded object of `r.shiftObj d` is `(r.termObj n).shiftObj d`. -/
+@[simp]
+theorem shiftObj_termObj (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d := (rfl)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Minimality is preserved and reflected by shifting a concrete resolution to `M{d}`. -/
+theorem isMinimal_shiftObj_iff (d : ℤ) :
+    (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
+  r.isMinimal_shift_iff (-d)
+
 end GradedProjectiveResolution
 
 end TauCeti

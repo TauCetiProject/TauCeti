@@ -171,6 +171,63 @@ theorem IsLinear.isGeneratedInDegree_zero (hr : r.IsLinear) : G.IsGeneratedInDeg
   rintro _ ⟨z, hz, rfl⟩
   simpa using r.isHomogeneous_π.map_mem hz
 
+omit [GradedAlgebra 𝒜] in
+/-- Shifting the internal grading of the resolved module and every resolution term by `c` leaves
+the underlying modules, differentials, and augmentation unchanged. -/
+noncomputable abbrev shift (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    GradedProjectiveResolution 𝒜 (G.shift c) where
+  X := r.X
+  grading n := (r.grading n).shift c
+  gradedSMul n := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    simpa [add_assoc] using SetLike.GradedSMul.smul_mem (B := (r.grading n).piece) ha hx⟩
+  projective := r.projective
+  d := r.d
+  «π» := r.π
+  isHomogeneous_d n := LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    rw [add_right_comm]
+    exact (r.isHomogeneous_d n).map_mem hx
+  isHomogeneous_π := LinearMap.isHomogeneous_def.2 fun p x hx ↦ by
+    rw [InternalGrading.shift_piece] at hx ⊢
+    rw [add_right_comm]
+    exact r.isHomogeneous_π.map_mem hx
+  surjective_π := r.surjective_π
+  exact_d_π := r.exact_d_π
+  exact_d_d := r.exact_d_d
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves the underlying carrier of every term unchanged. -/
+@[simp]
+theorem shift_X (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).X n = r.X n := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution shifts the internal grading of every term by the same amount. -/
+@[simp]
+theorem shift_grading (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).grading n = (r.grading n).shift c := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its differentials unchanged. -/
+@[simp]
+theorem shift_d (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) (n : ℕ) :
+    (r.shift c).d n = r.d n := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Shifting a resolution leaves its augmentation unchanged. -/
+@[simp]
+theorem shift_π (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).π = r.π := (rfl)
+
+omit [GradedAlgebra 𝒜] in
+/-- Minimality of a resolution depends only on the positive-degree scalar action on its underlying
+modules and differentials, so it is invariant under internal grading shifts. -/
+@[simp]
+theorem isMinimal_shift_iff (r : GradedProjectiveResolution 𝒜 G) (c : ℤ) :
+    (r.shift c).IsMinimal ↔ r.IsMinimal :=
+  Iff.rfl
+
 end GradedProjectiveResolution
 
 /-! ### Direct sums -/
