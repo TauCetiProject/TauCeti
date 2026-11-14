@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Padics.TwistedUnits
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.Group.Subgroup.ZPowers
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.Topology.Algebra.Group.Subgroup
 

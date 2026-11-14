@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.MarkedCase
 public import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The dyadic cyclotomic image in the even-degree cases

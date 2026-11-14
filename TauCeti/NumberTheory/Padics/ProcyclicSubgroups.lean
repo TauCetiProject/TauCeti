@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.GeneratedClosedSubgroups
-import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Procyclic closed subgroups of the dyadic units
