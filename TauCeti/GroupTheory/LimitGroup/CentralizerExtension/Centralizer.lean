@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Prod
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.FreeGroup.CSA
@@ -26,11 +27,10 @@ on `u, t₀, …, tₙ₋₁`. For a basis element `a` and `n = 1` this is the s
 
 ## Main definitions
 
-* `TauCeti.LimitGroup.CentralizerExt.centralizerEquiv`: for a CSA group `G`, the isomorphism of
-  `C_G(u) × ℤⁿ` with the centralizer of `u` in `G(u, ℤⁿ)`.
-* `TauCeti.LimitGroup.CentralizerExt.centralizerEquivOfNotIsProperPower`: the isomorphism of
-  `ℤ × ℤⁿ` with the centralizer of `u` in `F(u, ℤⁿ)`, for `u` in a free group `F` not a proper
-  power.
+* `TauCeti.LimitGroup.CentralizerExt.prodEquivCentralizer`: for a CSA group `G`, the isomorphism
+  of `C_G(u) × ℤⁿ` with the centralizer of `u` in `G(u, ℤⁿ)`.
+* `TauCeti.LimitGroup.CentralizerExt.intProdEquivCentralizer`: the isomorphism of `ℤ × ℤⁿ` with
+  the centralizer of `u` in `F(u, ℤⁿ)`, for `u` in a free group `F` not a proper power.
 
 ## Main results
 
@@ -136,31 +136,43 @@ theorem centralizer_of_eq_map_sup_closure (hG : IsCSA G) :
   rw [centralizer_of_eq_range_ofProd hG, range_ofProd]
 
 /-- For a CSA group `G`, the centralizer of `u` in `G(u, ℤⁿ)` is `C_G(u) × ℤⁿ`. -/
-noncomputable def centralizerEquiv (hG : IsCSA G) :
+noncomputable def prodEquivCentralizer (hG : IsCSA G) :
     centralizer {u} × (Fin n → Multiplicative ℤ) ≃* centralizer {(of u : CentralizerExt u n)} :=
   (MonoidHom.ofInjective ofProd_injective).trans
     (MulEquiv.subgroupCongr (centralizer_of_eq_range_ofProd hG).symm)
 
-@[simp] theorem coe_centralizerEquiv_apply (hG : IsCSA G)
+@[simp] theorem coe_prodEquivCentralizer_apply (hG : IsCSA G)
     (p : centralizer {u} × (Fin n → Multiplicative ℤ)) :
-    (centralizerEquiv hG p : CentralizerExt u n) = ofProd p :=
-  (rfl)
+    (prodEquivCentralizer hG p : CentralizerExt u n) = ofProd p := by
+  simp [prodEquivCentralizer, MonoidHom.ofInjective_apply]
 
-@[simp] theorem centralizerEquiv_symm_apply_ofProd (hG : IsCSA G)
+@[simp] theorem prodEquivCentralizer_symm_apply_ofProd (hG : IsCSA G)
     (p : centralizer {u} × (Fin n → Multiplicative ℤ))
     (hp : (ofProd p : CentralizerExt u n) ∈ centralizer {of u}) :
-    (centralizerEquiv hG).symm ⟨ofProd p, hp⟩ = p :=
-  (centralizerEquiv hG).symm_apply_eq.2 (Subtype.ext (coe_centralizerEquiv_apply hG p).symm)
+    (prodEquivCentralizer hG).symm ⟨ofProd p, hp⟩ = p :=
+  (prodEquivCentralizer hG).symm_apply_eq.2 (Subtype.ext (by simp))
 
-@[simp] theorem centralizerEquiv_symm_apply_of (hG : IsCSA G) (c : centralizer {u})
-    (hc : (of (c : G) : CentralizerExt u n) ∈ centralizer {of u}) :
-    (centralizerEquiv hG).symm ⟨of (c : G), hc⟩ = (c, 1) :=
-  (centralizerEquiv hG).symm_apply_eq.2 (Subtype.ext (by simp))
+@[simp] theorem prodEquivCentralizer_symm_apply_of (hG : IsCSA G) (g : G)
+    (hg : (of g : CentralizerExt u n) ∈ centralizer {of u}) :
+    (prodEquivCentralizer hG).symm ⟨of g, hg⟩ = (⟨g, of_mem_centralizer_of_iff.1 hg⟩, 1) :=
+  (prodEquivCentralizer hG).symm_apply_eq.2 (Subtype.ext (by simp))
 
-@[simp] theorem centralizerEquiv_symm_apply_t (hG : IsCSA G) (i : Fin n)
+@[simp] theorem prodEquivCentralizer_symm_apply_zpowersPiHom (hG : IsCSA G)
+    (v : Fin n → Multiplicative ℤ)
+    (hv : (zpowersPiHom t commute_t_t v : CentralizerExt u n) ∈ centralizer {of u}) :
+    (prodEquivCentralizer hG).symm ⟨zpowersPiHom t commute_t_t v, hv⟩ = (1, v) :=
+  (prodEquivCentralizer hG).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem prodEquivCentralizer_symm_apply_t (hG : IsCSA G) (i : Fin n)
     (ht : (t i : CentralizerExt u n) ∈ centralizer {of u}) :
-    (centralizerEquiv hG).symm ⟨t i, ht⟩ = (1, Pi.mulSingle i (.ofAdd 1)) :=
-  (centralizerEquiv hG).symm_apply_eq.2 (Subtype.ext (by simp))
+    (prodEquivCentralizer hG).symm ⟨t i, ht⟩ = (1, Pi.mulSingle i (.ofAdd 1)) :=
+  (prodEquivCentralizer hG).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem prodEquivCentralizer_symm_apply_inv (hG : IsCSA G) (x : CentralizerExt u n)
+    (hx : x⁻¹ ∈ centralizer {of u}) :
+    (prodEquivCentralizer hG).symm ⟨x⁻¹, hx⟩ =
+      ((prodEquivCentralizer hG).symm ⟨x, inv_mem_iff.1 hx⟩)⁻¹ :=
+  (prodEquivCentralizer hG).symm_apply_eq.2 (Subtype.ext (by simp))
 
 section IsFreeGroup
 
@@ -180,34 +192,63 @@ theorem centralizer_of_eq_closure_insert (hu : ¬IsProperPower u) :
 /-- For an element `u` of a free group `F` that is not a proper power, the centralizer of `u` in
 `F(u, ℤⁿ)` is free abelian of rank `n + 1`, on `u` and the new letters. For a basis element `a`
 and `n = 1` it is `⟨a, t⟩ ≅ ℤ²`. -/
-noncomputable def centralizerEquivOfNotIsProperPower (hu : ¬IsProperPower u) :
+noncomputable def intProdEquivCentralizer (hu : ¬IsProperPower u) :
     Multiplicative ℤ × (Fin n → Multiplicative ℤ) ≃* centralizer {(of u : CentralizerExt u n)} :=
   ((IsFreeGroup.intEquivCentralizer hu).prodCongr (.refl _)).trans
-    (centralizerEquiv IsFreeGroup.isCSA)
+    (prodEquivCentralizer IsFreeGroup.isCSA)
 
-@[simp] theorem coe_centralizerEquivOfNotIsProperPower_apply (hu : ¬IsProperPower u)
+@[simp] theorem coe_intProdEquivCentralizer_apply (hu : ¬IsProperPower u)
     (p : Multiplicative ℤ × (Fin n → Multiplicative ℤ)) :
-    (centralizerEquivOfNotIsProperPower hu p : CentralizerExt u n) =
+    (intProdEquivCentralizer hu p : CentralizerExt u n) =
       of u ^ p.1.toAdd * zpowersPiHom t commute_t_t p.2 := by
-  rw [← map_zpow, ← IsFreeGroup.coe_intEquivCentralizer_apply hu, ← ofProd_apply]
-  -- By definition the left side is `ofProd (intEquivCentralizer hu p.1, p.2)`; Mathlib has no
-  -- evaluation lemma for `MulEquiv.prodCongr`.
-  rfl
+  simp [intProdEquivCentralizer, ofProd_apply]
 
-@[simp] theorem centralizerEquivOfNotIsProperPower_symm_apply_of_zpow (hu : ¬IsProperPower u)
-    (k : ℤ) (hk : (of u : CentralizerExt u n) ^ k ∈ centralizer {of u}) :
-    (centralizerEquivOfNotIsProperPower hu).symm ⟨of u ^ k, hk⟩ = (.ofAdd k, 1) :=
-  (centralizerEquivOfNotIsProperPower hu).symm_apply_eq.2 (Subtype.ext (by simp))
+@[simp] theorem intProdEquivCentralizer_symm_apply_ofProd (hu : ¬IsProperPower u)
+    (p : centralizer {u} × (Fin n → Multiplicative ℤ))
+    (hp : (ofProd p : CentralizerExt u n) ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨ofProd p, hp⟩ =
+      ((IsFreeGroup.intEquivCentralizer hu).symm p.1, p.2) := by
+  simp [intProdEquivCentralizer]
 
-@[simp] theorem centralizerEquivOfNotIsProperPower_symm_apply_of (hu : ¬IsProperPower u)
-    (hk : (of u : CentralizerExt u n) ∈ centralizer {of u}) :
-    (centralizerEquivOfNotIsProperPower hu).symm ⟨of u, hk⟩ = (.ofAdd 1, 1) :=
-  (centralizerEquivOfNotIsProperPower hu).symm_apply_eq.2 (Subtype.ext (by simp))
+@[simp] theorem intProdEquivCentralizer_symm_apply_of (hu : ¬IsProperPower u) (g : F)
+    (hg : (of g : CentralizerExt u n) ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨of g, hg⟩ =
+      ((IsFreeGroup.intEquivCentralizer hu).symm ⟨g, of_mem_centralizer_of_iff.1 hg⟩, 1) := by
+  simp [intProdEquivCentralizer]
 
-@[simp] theorem centralizerEquivOfNotIsProperPower_symm_apply_t (hu : ¬IsProperPower u)
-    (i : Fin n) (ht : (t i : CentralizerExt u n) ∈ centralizer {of u}) :
-    (centralizerEquivOfNotIsProperPower hu).symm ⟨t i, ht⟩ = (1, Pi.mulSingle i (.ofAdd 1)) :=
-  (centralizerEquivOfNotIsProperPower hu).symm_apply_eq.2 (Subtype.ext (by simp))
+@[simp] theorem intProdEquivCentralizer_symm_apply_zpowersPiHom (hu : ¬IsProperPower u)
+    (v : Fin n → Multiplicative ℤ)
+    (hv : (zpowersPiHom t commute_t_t v : CentralizerExt u n) ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨zpowersPiHom t commute_t_t v, hv⟩ = (1, v) := by
+  simp [intProdEquivCentralizer]
+
+@[simp] theorem intProdEquivCentralizer_symm_apply_t (hu : ¬IsProperPower u) (i : Fin n)
+    (ht : (t i : CentralizerExt u n) ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨t i, ht⟩ = (1, Pi.mulSingle i (.ofAdd 1)) := by
+  simp [intProdEquivCentralizer]
+
+@[simp] theorem intProdEquivCentralizer_symm_apply_inv (hu : ¬IsProperPower u)
+    (x : CentralizerExt u n) (hx : x⁻¹ ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨x⁻¹, hx⟩ =
+      ((intProdEquivCentralizer hu).symm ⟨x, inv_mem_iff.1 hx⟩)⁻¹ :=
+  (intProdEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem intProdEquivCentralizer_symm_apply_of_zpow_mul_zpowersPiHom
+    (hu : ¬IsProperPower u) (k : ℤ) (v : Fin n → Multiplicative ℤ)
+    (h : (of u ^ k * zpowersPiHom t commute_t_t v : CentralizerExt u n) ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨of u ^ k * zpowersPiHom t commute_t_t v, h⟩ =
+      (.ofAdd k, v) :=
+  (intProdEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem intProdEquivCentralizer_symm_apply_of_zpow (hu : ¬IsProperPower u) (k : ℤ)
+    (hk : (of u : CentralizerExt u n) ^ k ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨of u ^ k, hk⟩ = (.ofAdd k, 1) :=
+  (intProdEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem intProdEquivCentralizer_symm_apply_of_pow (hu : ¬IsProperPower u) (m : ℕ)
+    (hm : (of u : CentralizerExt u n) ^ m ∈ centralizer {of u}) :
+    (intProdEquivCentralizer hu).symm ⟨of u ^ m, hm⟩ = (.ofAdd ↑m, 1) :=
+  (intProdEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
 
 end IsFreeGroup
 

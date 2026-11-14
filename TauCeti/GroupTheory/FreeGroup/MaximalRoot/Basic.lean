@@ -85,21 +85,31 @@ theorem centralizer_singleton_eq_zpowers_self {u : G} (hu : ¬IsProperPower u) :
 cyclic: `k ↦ u ^ k` is an isomorphism of `ℤ` with it. -/
 noncomputable def intEquivCentralizer {u : G} (hu : ¬IsProperPower u) :
     Multiplicative ℤ ≃* centralizer {u} :=
-  (MonoidHom.ofInjective (f := zpowersHom G u) fun _ _ h => Multiplicative.toAdd.injective <|
-    IsMulTorsionFree.zpow_right_injective (ne_one_of_not_isProperPower hu) h).trans
+  (MonoidHom.ofInjective <| (injective_iff_map_eq_one (zpowersHom G u)).2 fun k hk => by
+    simpa [ne_one_of_not_isProperPower hu] using hk).trans
     (MulEquiv.subgroupCongr <| (range_zpowersHom u).trans
       (centralizer_singleton_eq_zpowers_self hu).symm)
 
 @[simp] theorem coe_intEquivCentralizer_apply {u : G} (hu : ¬IsProperPower u)
-    (k : Multiplicative ℤ) : (intEquivCentralizer hu k : G) = u ^ k.toAdd :=
-  (rfl)
+    (k : Multiplicative ℤ) : (intEquivCentralizer hu k : G) = u ^ k.toAdd := by
+  simp [intEquivCentralizer, MonoidHom.ofInjective_apply]
 
 @[simp] theorem intEquivCentralizer_symm_apply_zpow {u : G} (hu : ¬IsProperPower u) (k : ℤ)
     (hk : u ^ k ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u ^ k, hk⟩ = .ofAdd k :=
   (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
 
+@[simp] theorem intEquivCentralizer_symm_apply_pow {u : G} (hu : ¬IsProperPower u) (m : ℕ)
+    (hm : u ^ m ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u ^ m, hm⟩ = .ofAdd ↑m :=
+  (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
 @[simp] theorem intEquivCentralizer_symm_apply_self {u : G} (hu : ¬IsProperPower u)
     (hk : u ∈ centralizer {u}) : (intEquivCentralizer hu).symm ⟨u, hk⟩ = .ofAdd 1 :=
+  (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp] theorem intEquivCentralizer_symm_apply_inv {u : G} (hu : ¬IsProperPower u) (x : G)
+    (hx : x⁻¹ ∈ centralizer {u}) :
+    (intEquivCentralizer hu).symm ⟨x⁻¹, hx⟩ =
+      ((intEquivCentralizer hu).symm ⟨x, inv_mem_iff.1 hx⟩)⁻¹ :=
   (intEquivCentralizer hu).symm_apply_eq.2 (Subtype.ext (by simp))
 
 /-- Uniqueness of maximal roots in a free group: if `r` and `s` are not proper powers and the
