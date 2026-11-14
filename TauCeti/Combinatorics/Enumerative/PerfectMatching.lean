@@ -544,6 +544,15 @@ theorem apply_reconnect_val {β : Type*} {f : α → β} (hf : ∀ x, f (D.val x
     Equiv.apply_swap_eq_self ((hf a).trans hab) y
   rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, hσ, hf, hσ]
 
+omit hba in
+/-- A Boolean function reversing values along every arc of `D` and taking opposite values at `a`
+and `b` still reverses values along every arc of `D.reconnect a b`. -/
+theorem not_apply_reconnect_val {f : α → Bool} (hf : ∀ x, f (D.val x) = !f x)
+    (hab : f b = !f a) (x : α) : f ((D.reconnect a b).val x) = !f x := by
+  have hσ (y : α) : f (Equiv.swap (D.val a) b y) = f y :=
+    Equiv.apply_swap_eq_self ((hf a).trans hab.symm) y
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, hσ, hf, hσ]
+
 end Reconnect
 
 end PerfectMatching

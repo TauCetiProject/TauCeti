@@ -14,7 +14,8 @@ public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Seifert
 
 For an oriented planar diagram with `c` link components, every enhanced state has quantum
 degree congruent to `c` modulo two. Consequently the shifted resolution modules vanish in
-quantum degrees of the opposite parity, over every commutative coefficient ring.
+quantum degrees of the opposite parity over every commutative coefficient ring, as do the
+coefficients of the enhanced state sum.
 
 The Seifert state supplies the reference parity: its circle count `s` satisfies
 `s - n + c ≡ 0 (mod 2)`. Along a planar cube edge both the B-smoothing count and the circle
@@ -75,5 +76,18 @@ theorem circleQuantumGrading_piece_eq_bot_of_mod_two_ne (hD : D.toPDCode.IsPlana
   rw [enhancedQuantumDegree_def] at h
   dsimp only at h
   omega
+
+/-- Every coefficient of `D.enhancedStateSum` in a quantum degree whose parity differs from
+`D.componentCount` vanishes. -/
+theorem coeff_enhancedStateSum_eq_zero_of_mod_two_ne (hD : D.toPDCode.IsPlanar) {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    D.enhancedStateSum.coeff j = 0 := by
+  classical
+  rw [enhancedStateSum_def, AddMonoidAlgebra.coeff_sum, Finset.sum_apply']
+  refine Finset.sum_eq_zero fun e _ ↦ ?_
+  have hne : D.enhancedQuantumDegree e ≠ j := fun h ↦
+    hj (h ▸ D.enhancedQuantumDegree_mod_two hD e)
+  rw [AddMonoidAlgebra.coeff_smul_apply, LaurentPolynomial.T, AddMonoidAlgebra.coeff_single]
+  simp [hne]
 
 end TauCeti.OrientedPDCode

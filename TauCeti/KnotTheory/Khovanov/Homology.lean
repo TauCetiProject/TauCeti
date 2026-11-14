@@ -16,7 +16,8 @@ The homology of each quantum component of the normalized complex defines
 `TauCeti.OrientedPDCode.khovanovHomology`. The normalized complex has finite free terms over
 every commutative ring, and its homology is finitely generated over a Noetherian ring (in
 particular over the integers), hence finite-dimensional over a field. Both gradings have finite
-support, uniformly in the coefficient ring, including the zero ring and the empty diagram.
+support and vanish in quantum degrees whose parity differs from `D.componentCount`, uniformly in
+the coefficient ring, including the zero ring and the empty diagram.
 
 `khovanovHomologyBracketIso` compares the normalized groups with bracket homology at the
 translated bidegree. It uses the signed native-shift comparison, not an unsigned identification
@@ -126,6 +127,21 @@ theorem isZero_khovanovHomology_of_quantum_notMem_Icc {j : ℤ}
     IsZero (D.khovanovHomology hD R i j) :=
   (ExactAt.of_isZero
     (D.isZero_khovanovComplex_X_of_quantum_notMem_Icc hD R hj i)).isZero_homology
+
+/-- The entire quantum-component Khovanov complex vanishes when `j % 2 ≠ D.componentCount % 2`. -/
+theorem isZero_khovanovComplex_of_mod_two_ne {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    IsZero (D.khovanovComplex hD R j) := by
+  rw [IsZero.iff_id_eq_zero]
+  ext i : 1
+  exact (D.isZero_khovanovComplex_X_of_mod_two_ne hD R hj i).eq_of_src _ _
+
+/-- **Quantum-parity vanishing of Khovanov homology**: `Khⁱʲ(D; R)` is zero whenever `j` does not
+have the parity of `D.componentCount`, over any commutative coefficient ring `R`. -/
+theorem isZero_khovanovHomology_of_mod_two_ne (i : ℤ) {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    IsZero (D.khovanovHomology hD R i j) :=
+  (ExactAt.of_isZero (D.isZero_khovanovComplex_X_of_mod_two_ne hD R hj i)).isZero_homology
 
 /-- Only finitely many normalized quantum-component complexes are nonzero. -/
 theorem finite_quantumSupport_khovanovComplex :
