@@ -50,7 +50,9 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 
 ## Main results
 
-* `TauCeti.isOpen_integerBox`, `TauCeti.isCompact_integerBox`: the integer box is open and compact.
+* `TauCeti.isOpen_integerBox`, `TauCeti.isCompact_integerBox`,
+  `TauCeti.exists_addHaarMeasure_integerBox_eq_one`: the integer box is open and compact, and on a
+  finite product there is an additive Haar measure giving it volume `1`.
 * `TauCeti.isCompact_scaledIntegerBox`, `TauCeti.exists_mem_scaledIntegerBox`: the scaled
   integer boxes are compact, and for a uniformizer `ϖ` they exhaust `ι → K`.
 * `TauCeti.univ_pi_image_maximalIdeal_pow_subset`,
@@ -147,6 +149,19 @@ theorem isOpen_integerBox [IsValuativeTopology K] [Finite ι] : IsOpen (integerB
 theorem isCompact_integerBox [CompactSpace 𝒪[K]] : IsCompact (integerBox K ι) := by
   rw [integerBox_def]
   exact isCompact_univ_pi fun _ ↦ isCompact_iff_compactSpace.2 ‹_›
+
+variable (K ι) in
+/-- If `K` has valuative topology and `𝒪[K]` is compact, any finite product `ι → K` carries an
+additive Haar measure normalized so that `integerBox K ι` has measure `1`. -/
+theorem exists_addHaarMeasure_integerBox_eq_one [IsValuativeTopology K] [CompactSpace 𝒪[K]]
+    [Finite ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)] :
+    ∃ μ : MeasureTheory.Measure (ι → K), μ.IsAddHaarMeasure ∧ μ (integerBox K ι) = 1 := by
+  let B : TopologicalSpace.PositiveCompacts (ι → K) :=
+    ⟨⟨integerBox K ι, isCompact_integerBox⟩, by
+      rw [isOpen_integerBox.interior_eq]
+      exact ⟨0, by simp⟩⟩
+  exact ⟨MeasureTheory.Measure.addHaarMeasure B, inferInstance,
+    MeasureTheory.Measure.addHaarMeasure_self⟩
 
 /-- If `𝒪[K]` is compact, a scaled integer box with nonzero scale is compact: it is the preimage
 of the integer box under a homeomorphism. -/

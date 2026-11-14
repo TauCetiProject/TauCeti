@@ -28,7 +28,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
 * `TauCeti.Polynomial.monicOfCoeff`: the monic polynomial `X ^ n + ∑ i, c i * X ^ i` of degree `n`
   whose `n` lower coefficients are `c`.
 * `TauCeti.Polynomial.monic_monicOfCoeff`, `TauCeti.Polynomial.natDegree_monicOfCoeff`,
-  `TauCeti.Polynomial.eval_monicOfCoeff`: its monicity, its degree and its values.
+  `TauCeti.Polynomial.natDegree_eq_of_map_eq_monicOfCoeff`, `TauCeti.Polynomial.eval_monicOfCoeff`:
+  its monicity, its degree and its values.
 * `TauCeti.Polynomial.star_eval_monicOfCoeff`: over a commutative star ring, conjugating its value
   conjugates the coefficients and the argument.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
@@ -139,6 +140,12 @@ theorem natDegree_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).natDegree = 
     rw [degree_X_pow]
     exact degree_sum_monomial_lt c
   rw [monicOfCoeff, natDegree_add_eq_left_of_degree_lt hlt, natDegree_X_pow]
+
+/-- Any polynomial mapped injectively onto `monicOfCoeff c` has degree `n`. -/
+theorem natDegree_eq_of_map_eq_monicOfCoeff {S : Type*} [Semiring S] {φ : S →+* R}
+    (hφ : Function.Injective φ) {f : S[X]} {c : Fin n → R} (hf : f.map φ = monicOfCoeff c) :
+    f.natDegree = n := by
+  rw [← natDegree_map_eq_of_injective hφ f, hf, natDegree_monicOfCoeff]
 
 /-- Every monic polynomial of degree `n` is the monic polynomial attached to its own lower
 coefficients: together with `TauCeti.Polynomial.coeff_monicOfCoeff` this identifies the monic
