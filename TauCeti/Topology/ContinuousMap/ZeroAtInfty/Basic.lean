@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -29,8 +30,11 @@ needed for scalar actions beyond normed fields:
   linear map `C₀(α, E) →L[R] C₀(α, F)`, by `f ↦ (x ↦ u x (f x))`;
 * `ZeroAtInftyContinuousMap.compLeft`: its constant case, the postcomposition with one continuous
   linear map `u : E →L[R] F` with a uniform bound `‖u e‖ ≤ C * ‖e‖`;
-* `ZeroAtInftyContinuousMap.congrLeft`: a homeomorphism `α ≃ₜ β` induces a linear isometry
-  equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)`.
+* `ZeroAtInftyContinuousMap.congrLeft` and `ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv`: a
+  homeomorphism `α ≃ₜ β` induces a linear isometry equivalence `C₀(α, E) ≃ₗᵢ[R] C₀(β, E)` and a
+  norm-preserving star-algebra equivalence `C₀(α, δ) ≃⋆ₐ[R] C₀(β, δ)`;
+* `ContinuousMap.isometry_liftZeroAtInfty` and `ContinuousMap.liftZeroAtInftyStarAlgEquiv`: on a
+  compact space `α`, lifting `C(α, A)` to `C₀(α, A)` is an isometric star-algebra equivalence.
 
 With `α` discrete these are the basic structures of the model space `C₀(I, R)` of
 nonarchimedean functional analysis over normed rings; its coordinate structure is developed in
@@ -235,4 +239,115 @@ theorem congrLeft_compLeft (e : α ≃ₜ β) (u : E →L[R] F) (hu : ∃ C, ∀
 
 end Comparison
 
+section StarFunctoriality
+
+variable {R β γ δ : Type*} [TopologicalSpace β] [TopologicalSpace γ] [TopologicalSpace δ]
+
+variable (R δ) in
+/-- Reindexing `C₀(α, δ)` along a homeomorphism `e : α ≃ₜ β` as a star-algebra equivalence
+`f ↦ f ∘ e.symm`, matching `ZeroAtInftyContinuousMap.congrLeft`. -/
+@[expose]
+def congrLeftStarAlgEquiv [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) : C₀(α, δ) ≃⋆ₐ[R] C₀(β, δ) where
+  toFun f := f.comp e.symm.toCocompactMap
+  invFun f := f.comp e.toCocompactMap
+  left_inv f := by ext; simp
+  right_inv f := by ext; simp
+  map_smul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- `congrLeftStarAlgEquiv R δ e f` evaluates as `f (e.symm y)`. -/
+@[simp]
+theorem congrLeftStarAlgEquiv_apply [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) (f : C₀(α, δ)) (y : β) :
+    congrLeftStarAlgEquiv R δ e f y = f (e.symm y) := (rfl)
+
+/-- The inverse of `congrLeftStarAlgEquiv R δ e` is `congrLeftStarAlgEquiv R δ e.symm`. -/
+@[simp]
+theorem congrLeftStarAlgEquiv_symm [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) :
+    (congrLeftStarAlgEquiv R δ e).symm = congrLeftStarAlgEquiv R δ e.symm := (rfl)
+
+/-- Reindexing along `Homeomorph.refl α` is the identity star-algebra equivalence. -/
+@[simp]
+theorem congrLeftStarAlgEquiv_refl [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ] :
+    congrLeftStarAlgEquiv R δ (Homeomorph.refl α) = StarAlgEquiv.refl R C₀(α, δ) := (rfl)
+
+/-- Reindexing along a composite homeomorphism is the composite of the star-algebra equivalences. -/
+theorem congrLeftStarAlgEquiv_trans [NonUnitalNonAssocSemiring δ] [IsTopologicalSemiring δ]
+    [StarAddMonoid δ] [ContinuousStar δ] [SMulZeroClass R δ] [ContinuousConstSMul R δ]
+    (e : α ≃ₜ β) (e' : β ≃ₜ γ) :
+    congrLeftStarAlgEquiv R δ (e.trans e') =
+      (congrLeftStarAlgEquiv R δ e).trans (congrLeftStarAlgEquiv R δ e') := (rfl)
+
+/-- Reindexing `C₀` along a homeomorphism preserves the supremum norm. -/
+@[simp]
+theorem norm_congrLeftStarAlgEquiv {E : Type*} [NonUnitalSeminormedRing E] [StarAddMonoid E]
+    [ContinuousStar E] [SMulZeroClass R E] [ContinuousConstSMul R E]
+    (e : α ≃ₜ β) (f : C₀(α, E)) :
+    ‖congrLeftStarAlgEquiv R E e f‖ = ‖f‖ :=
+  norm_comp_toCocompactMap f e.symm
+
+end StarFunctoriality
+
 end ZeroAtInftyContinuousMap
+
+namespace ContinuousMap
+
+section CompactLift
+
+variable {R α β E A : Type*} [TopologicalSpace α] [CompactSpace α]
+
+/-- On a compact space, `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty` is an isometry. -/
+theorem isometry_liftZeroAtInfty [PseudoMetricSpace β] [Zero β] :
+    Isometry (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty : C(α, β) → C₀(α, β)) :=
+  Isometry.of_dist_eq fun f g ↦ by
+    rw [← ZeroAtInftyContinuousMap.dist_toBCF_eq_dist,
+      ← BoundedContinuousFunction.dist_mkOfCompact]
+    congr 1
+
+/-- On a compact space, `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty` preserves the
+supremum norm. -/
+@[simp]
+theorem norm_liftZeroAtInfty [SeminormedAddCommGroup E] (f : C(α, E)) :
+    ‖ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty f‖ = ‖f‖ :=
+  isometry_liftZeroAtInfty.norm_map_of_map_zero rfl f
+
+variable (R α A) in
+/-- On a compact space `α`, `C(α, A)` and `C₀(α, A)` are canonically isomorphic as star
+algebras via `ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty`. -/
+@[expose]
+def liftZeroAtInftyStarAlgEquiv [NonUnitalNonAssocSemiring A] [TopologicalSpace A]
+    [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [SMulZeroClass R A]
+    [ContinuousConstSMul R A] : C(α, A) ≃⋆ₐ[R] C₀(α, A) where
+  toEquiv := ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty
+  map_smul' _ _ := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+  map_star' _ := rfl
+
+/-- As a map, `liftZeroAtInftyStarAlgEquiv R α A` is
+`ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty`. -/
+@[simp]
+theorem coe_liftZeroAtInftyStarAlgEquiv [NonUnitalNonAssocSemiring A] [TopologicalSpace A]
+    [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A] [SMulZeroClass R A]
+    [ContinuousConstSMul R A] :
+    ⇑(liftZeroAtInftyStarAlgEquiv R α A) =
+      ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty := (rfl)
+
+/-- The inverse of `liftZeroAtInftyStarAlgEquiv R α A` forgets the zero-at-infinity witness. -/
+@[simp]
+theorem liftZeroAtInftyStarAlgEquiv_symm_apply [NonUnitalNonAssocSemiring A]
+    [TopologicalSpace A] [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A]
+    [SMulZeroClass R A] [ContinuousConstSMul R A] (f : C₀(α, A)) :
+    (liftZeroAtInftyStarAlgEquiv R α A).symm f = f.toContinuousMap := (rfl)
+
+end CompactLift
+
+end ContinuousMap

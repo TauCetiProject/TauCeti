@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import Mathlib.Analysis.RCLike.Lemmas
 public import TauCeti.Analysis.Normed.Algebra.Character.Pullback
 public import TauCeti.Analysis.Normed.Algebra.Character.Unitization
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.OnePoint
+
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Nonunital Gelfand Duality
@@ -36,12 +40,12 @@ minimal C⋆-unitization `A⁺¹ = Unitization ℂ A` and the augmentation chara
   are automatically norm-preserving isometries via Mathlib's `StarAlgEquiv.norm_map` and
   `StarAlgEquiv.isometry`;
 * `TauCeti.nonUnitalGelfandStarTransform_eq_of_unital`,
-  `TauCeti.compactSpace_characterSpace_iff_exists_mul_id`, and
-  `TauCeti.isOpen_singleton_augmentation_iff_exists_mul_id`: when `A` is unital, the nonunital
-  Gelfand `⋆`-transform agrees with `gelfandStarTransform A` lifted to `C₀`, and conversely
+  `TauCeti.compactSpace_characterSpace_iff_isUnital`, and
+  `TauCeti.isOpen_singleton_augmentation_iff_isUnital`: when `A` is unital, the nonunital Gelfand
+  `⋆`-transform agrees with `gelfandStarTransform A` lifted to `C₀`, and conversely
   `characterSpace ℂ A` is compact (equivalently `{ε}` is open in `characterSpace ℂ A⁺¹`) if and
-  only if `A` has a two-sided multiplicative identity;
-* `WeakDual.CharacterSpace.onePointHomeoUnitizationZeroAtInfty` and
+  only if `IsUnital A`;
+* `WeakDual.CharacterSpace.unitizationZeroAtInftyHomeoEval` and
   `WeakDual.CharacterSpace.zeroAtInftyHomeoEval`: for any weakly locally compact Hausdorff space
   `Y` and `RCLike` scalar field `𝕜`, point evaluation identifies `OnePoint Y` with
   `characterSpace 𝕜 (Unitization 𝕜 C₀(Y, 𝕜))` (sending `∞` to `ε`) and `Y` with
@@ -53,20 +57,10 @@ minimal C⋆-unitization `A⁺¹ = Unitization ℂ A` and the augmentation chara
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Theorem 2.1.10.
 -/
 
-public section
+@[expose] public section
 
 open Filter Function Set Topology OnePoint WeakDual
 open scoped CStarAlgebra ZeroAtInfty
-
-namespace WeakDual.CharacterSpace
-
-/-- `WeakDual.CharacterSpace.homeoEval` evaluates a continuous function at the given point. -/
-@[simp]
-theorem homeoEval_apply {X 𝕜 : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-    [RCLike 𝕜] (x : X) (f : C(X, 𝕜)) :
-    homeoEval X 𝕜 x f = f x := (rfl)
-
-end WeakDual.CharacterSpace
 
 namespace TauCeti
 
@@ -93,17 +87,15 @@ theorem map_gelfandStarTransform_inrRange :
   ext F
   simp only [NonUnitalStarSubalgebra.mem_map, NonUnitalStarAlgHom.mem_range,
     Unitization.inrNonUnitalStarAlgHom_apply, ContinuousMap.mem_evalKerSubalgebra]
-  refine ⟨?_, fun hF => ?_⟩
+  refine ⟨?_, fun hF ↦ ?_⟩
   · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
     exact gelfandStarTransform_unitization_inr_apply_augmentation a
   · set u : A⁺¹ := (gelfandStarTransform A⁺¹).symm F
-    have hu : u.fst = 0 := by
-      rw [← gelfandStarTransform_unitization_apply_augmentation u,
+    have hu : Unitization.augmentation ℂ A u = 0 := by
+      rw [Unitization.augmentation_apply, ← gelfandStarTransform_unitization_apply_augmentation u,
         StarAlgEquiv.apply_symm_apply, hF]
-    refine ⟨u, ⟨u.snd, ?_⟩, (gelfandStarTransform A⁺¹).apply_symm_apply F⟩
-    ext
-    · exact (Unitization.fst_inr ℂ u.snd).trans hu.symm
-    · simp
+    exact ⟨u, ⟨u.snd, Unitization.inr_snd_of_augmentation_eq_zero hu⟩,
+      (gelfandStarTransform A⁺¹).apply_symm_apply F⟩
 
 /-- Set-level form of `map_gelfandStarTransform_inrRange`: the Gelfand transform of `A⁺¹` carries
 `Set.range (Unitization.inr : A → A⁺¹)` onto `{F ∈ C(characterSpace ℂ A⁺¹, ℂ) : F ε = 0}`. -/
@@ -111,15 +103,7 @@ theorem image_gelfandStarTransform_range_inr :
     gelfandStarTransform A⁺¹ '' Set.range (Unitization.inr : A → A⁺¹) =
       {F : C(characterSpace ℂ A⁺¹, ℂ) | F (Unitization.augmentation ℂ A) = 0} := by
   ext F
-  have hF := SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F
-  rw [NonUnitalStarSubalgebra.mem_map, ContinuousMap.mem_evalKerSubalgebra] at hF
-  refine ⟨?_, fun h0 => ?_⟩
-  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
-    exact gelfandStarTransform_unitization_inr_apply_augmentation a
-  · obtain ⟨u, hu, rfl⟩ := hF.mpr h0
-    rw [NonUnitalStarAlgHom.mem_range] at hu
-    obtain ⟨a, rfl⟩ := hu
-    exact ⟨a, ⟨a, rfl⟩, rfl⟩
+  simpa using SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F
 
 variable (A) in
 /-- **Nonunital Gelfand transform via the punctured unitization character space.** Restricting
@@ -128,42 +112,26 @@ variable (A) in
 `C₀({φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}, ℂ)`, with inverse given by
 extension by zero across the augmentation character. -/
 noncomputable def puncturedGelfandStarTransform :
-    A ≃⋆ₐ[ℂ] C₀({φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}, ℂ) where
-  toFun a :=
-    (gelfandStarTransform A⁺¹ (a : A⁺¹)).restrictComplSingleton
-      (gelfandStarTransform_unitization_inr_apply_augmentation a)
-  invFun g := ((gelfandStarTransform A⁺¹).symm g.extendZero).snd
-  left_inv a := by
-    dsimp only
-    rw [ZeroAtInftyContinuousMap.extendZero_restrictComplSingleton,
-      StarAlgEquiv.symm_apply_apply, Unitization.snd_inr]
-  right_inv g := by
-    dsimp only
-    set u : A⁺¹ := (gelfandStarTransform A⁺¹).symm g.extendZero
-    have hfst : u.fst = 0 := by
-      rw [← gelfandStarTransform_unitization_apply_augmentation u,
-        StarAlgEquiv.apply_symm_apply]
-      exact g.extendZero_apply_self
-    have hu : (u.snd : A⁺¹) = u := by
-      ext
-      · exact (Unitization.fst_inr ℂ u.snd).trans hfst.symm
-      · simp
-    ext φ
-    rw [ContinuousMap.restrictComplSingleton_apply, hu, StarAlgEquiv.apply_symm_apply,
-      g.extendZero_apply_coe]
-  map_smul' c a := by ext φ; simp
-  map_add' a b := by ext φ; simp
-  map_mul' a b := by ext φ; simp
-  map_star' a := by
-    ext φ
-    rw [ContinuousMap.restrictComplSingleton_apply, Unitization.inr_star, map_star]
-    simp
+    A ≃⋆ₐ[ℂ] C₀({φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}, ℂ) :=
+  let Φ : A →⋆ₙₐ[ℂ] C(characterSpace ℂ A⁺¹, ℂ) :=
+    (gelfandStarTransform A⁺¹).toNonUnitalStarAlgHom.comp (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  let hΦ : Function.Bijective
+      (Φ.codRestrict (ContinuousMap.evalKerSubalgebra ℂ ℂ (Unitization.augmentation ℂ A))
+        gelfandStarTransform_unitization_inr_apply_augmentation) :=
+    ⟨(NonUnitalStarAlgHom.injective_codRestrict _ _ _).mpr <|
+        (gelfandStarTransform A⁺¹).injective.comp Unitization.inr_injective,
+      fun F ↦ by
+        obtain ⟨_, ⟨a, rfl⟩, hu⟩ :=
+          (SetLike.ext_iff.mp map_gelfandStarTransform_inrRange F.1).mpr F.2
+        exact ⟨a, Subtype.ext hu⟩⟩
+  (StarAlgEquiv.ofBijective _ hΦ).trans
+    (ContinuousMap.restrictComplSingletonStarAlgEquiv ℂ ℂ (Unitization.augmentation ℂ A))
 
+/-- `puncturedGelfandStarTransform A a` evaluates `φ.1` on `(a : A⁺¹)`. -/
 @[simp]
 theorem puncturedGelfandStarTransform_apply (a : A)
     (φ : {φ : characterSpace ℂ A⁺¹ // φ ≠ Unitization.augmentation ℂ A}) :
-    puncturedGelfandStarTransform A a φ = φ.1 (a : A⁺¹) := by
-  simp [puncturedGelfandStarTransform]
+    puncturedGelfandStarTransform A a φ = φ.1 (a : A⁺¹) := (rfl)
 
 /-- Extending `puncturedGelfandStarTransform A a` by zero at the augmentation character recovers
 `gelfandStarTransform A⁺¹ ↑a`. -/
@@ -194,10 +162,45 @@ noncomputable def nonUnitalGelfandStarTransform :
     (ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ ℂ
       (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).symm)
 
+/-- Factorization of `nonUnitalGelfandStarTransform A` through `puncturedGelfandStarTransform A` and
+`unitizationComplAugmentationHomeomorph ℂ A`. -/
+theorem nonUnitalGelfandStarTransform_def (A : Type*) [NonUnitalCommCStarAlgebra A] :
+    nonUnitalGelfandStarTransform A =
+      (puncturedGelfandStarTransform A).trans
+        (ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ ℂ
+          (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).symm) := (rfl)
+
+/-- `nonUnitalGelfandStarTransform A a` evaluates a character `χ` at `a`. -/
 @[simp]
 theorem nonUnitalGelfandStarTransform_apply (a : A) (χ : characterSpace ℂ A) :
     nonUnitalGelfandStarTransform A a χ = χ a := by
   simp [nonUnitalGelfandStarTransform]
+
+/-- Extending `nonUnitalGelfandStarTransform A a` by zero to `OnePoint (characterSpace ℂ A)` and
+transporting along `(onePointHomeomorphUnitization ℂ A).symm` recovers
+`gelfandStarTransform A⁺¹ (a : A⁺¹)`. -/
+theorem toOnePoint_nonUnitalGelfandStarTransform_comp_symm (a : A) :
+    (nonUnitalGelfandStarTransform A a).toOnePoint.comp
+        (WeakDual.CharacterSpace.onePointHomeomorphUnitization ℂ A).symm =
+      gelfandStarTransform A⁺¹ (a : A⁺¹) := by
+  ext φ
+  by_cases hφ : φ = Unitization.augmentation ℂ A
+  · subst hφ
+    simp
+  · simp [WeakDual.CharacterSpace.onePointHomeomorphUnitization_symm_apply_of_ne hφ]
+
+/-- Embedding `(nonUnitalGelfandStarTransform A).symm f` into `A⁺¹` equals applying
+`(gelfandStarTransform A⁺¹).symm` to `f.toOnePoint` transported along
+`onePointHomeomorphUnitization ℂ A`. -/
+@[simp]
+theorem inr_nonUnitalGelfandStarTransform_symm (f : C₀(characterSpace ℂ A, ℂ)) :
+    (((nonUnitalGelfandStarTransform A).symm f : A) : A⁺¹) =
+      (gelfandStarTransform A⁺¹).symm
+        (f.toOnePoint.comp
+          (WeakDual.CharacterSpace.onePointHomeomorphUnitization ℂ A).symm) := by
+  apply EquivLike.injective (gelfandStarTransform A⁺¹)
+  rw [← toOnePoint_nonUnitalGelfandStarTransform_comp_symm, StarAlgEquiv.apply_symm_apply,
+    StarAlgEquiv.apply_symm_apply]
 
 end NonUnitalGelfand
 
@@ -246,52 +249,29 @@ theorem nonUnitalGelfandStarTransform_eq_of_unital (A : Type*) [CommCStarAlgebra
   simp
 
 /-- In a nonunital commutative complex C⋆-algebra `A`, `characterSpace ℂ A` is compact if and only
-if `A` has a two-sided multiplicative identity. -/
-theorem compactSpace_characterSpace_iff_exists_mul_id (A : Type*) [NonUnitalCommCStarAlgebra A] :
-    CompactSpace (characterSpace ℂ A) ↔ ∃ e : A, ∀ a : A, e * a = a ∧ a * e = a := by
-  refine ⟨fun _ => ?_, ?_⟩
-  · let oneC₀ : C₀(characterSpace ℂ A, ℂ) :=
-      ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ (characterSpace ℂ A) ℂ 1
-    refine ⟨(nonUnitalGelfandStarTransform A).symm oneC₀, fun a => ?_⟩
-    have hleft : (nonUnitalGelfandStarTransform A).symm oneC₀ * a = a := by
-      apply EquivLike.injective (nonUnitalGelfandStarTransform A)
-      rw [map_mul, StarAlgEquiv.apply_symm_apply]
-      ext χ
-      simp [oneC₀]
-    exact ⟨hleft, (mul_comm a _).trans hleft⟩
-  · rintro ⟨e, he⟩
-    let f : C₀(characterSpace ℂ A, ℂ) := nonUnitalGelfandStarTransform A e
-    have hf : ∀ χ : characterSpace ℂ A, f χ = 1 := fun χ => by
-      have hex : ∃ a : A, χ a ≠ 0 := by
-        by_contra! h0
-        exact χ.prop.1 (ContinuousLinearMap.ext h0)
-      obtain ⟨a, ha⟩ := hex
-      refine mul_right_cancel₀ ha ?_
-      calc
-        f χ * χ a = χ (e * a) := by simp [f, ← map_mul]
-        _ = 1 * χ a := by rw [(he a).1, one_mul]
-    obtain ⟨K, hK, hsub⟩ :=
-      Filter.mem_cocompact'.mp (zero_at_infty f (Metric.ball_mem_nhds 0 zero_lt_one))
-    have hK_univ : K = Set.univ :=
-      Set.eq_univ_of_forall fun χ =>
-        hsub fun hball => by
-          have hlt : dist (f χ) 0 < 1 := Metric.mem_ball.mp hball
-          simp [hf χ] at hlt
-    exact ⟨hK_univ ▸ hK⟩
+if `A` has a multiplicative identity (`IsUnital A`). -/
+theorem compactSpace_characterSpace_iff_isUnital (A : Type*) [NonUnitalCommCStarAlgebra A] :
+    CompactSpace (characterSpace ℂ A) ↔ IsUnital A := by
+  refine ⟨fun _ ↦ ⟨?_⟩, fun _ ↦ WeakDual.CharacterSpace.compactSpace_of_isUnital⟩
+  let oneC₀ : C₀(characterSpace ℂ A, ℂ) :=
+    ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ (characterSpace ℂ A) ℂ 1
+  refine ⟨(nonUnitalGelfandStarTransform A).symm oneC₀, fun a ↦ ?_⟩
+  have hleft : (nonUnitalGelfandStarTransform A).symm oneC₀ * a = a := by
+    apply EquivLike.injective (nonUnitalGelfandStarTransform A)
+    rw [map_mul, StarAlgEquiv.apply_symm_apply]
+    ext χ
+    simp [oneC₀]
+  exact ⟨hleft, (mul_comm a _).trans hleft⟩
 
 /-- In a nonunital commutative complex C⋆-algebra `A`, the augmentation character is isolated in
-`characterSpace ℂ A⁺¹` if and only if `A` has a two-sided multiplicative identity. -/
-theorem isOpen_singleton_augmentation_iff_exists_mul_id (A : Type*)
-    [NonUnitalCommCStarAlgebra A] :
-    IsOpen ({Unitization.augmentation ℂ A} : Set (characterSpace ℂ A⁺¹)) ↔
-      ∃ e : A, ∀ a : A, e * a = a ∧ a * e = a := by
+`characterSpace ℂ A⁺¹` if and only if `A` has a multiplicative identity (`IsUnital A`). -/
+theorem isOpen_singleton_augmentation_iff_isUnital (A : Type*) [NonUnitalCommCStarAlgebra A] :
+    IsOpen ({Unitization.augmentation ℂ A} : Set (characterSpace ℂ A⁺¹)) ↔ IsUnital A := by
   rw [← compactSpace_complSingleton_iff_isOpen_singleton,
-    ← compactSpace_characterSpace_iff_exists_mul_id]
+    ← compactSpace_characterSpace_iff_isUnital]
   exact
-    ⟨fun _ =>
-      (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).symm.compactSpace,
-     fun _ =>
-      (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).compactSpace⟩
+    ⟨fun _ ↦ (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).symm.compactSpace,
+     fun _ ↦ (WeakDual.CharacterSpace.unitizationComplAugmentationHomeomorph ℂ A).compactSpace⟩
 
 end UnitalComparison
 
@@ -306,91 +286,82 @@ variable (Y 𝕜 : Type*) [TopologicalSpace Y] [WeaklyLocallyCompactSpace Y] [T2
 /-- Point evaluation identifies `OnePoint Y` with the character space of
 `Unitization 𝕜 C₀(Y, 𝕜)`, sending `∞` to `Unitization.augmentation 𝕜 C₀(Y, 𝕜)` and `(y : Y)` to
 `u ↦ u.fst + u.snd y`. -/
-noncomputable def onePointHomeoUnitizationZeroAtInfty :
+noncomputable def unitizationZeroAtInftyHomeoEval :
     OnePoint Y ≃ₜ characterSpace 𝕜 (Unitization 𝕜 C₀(Y, 𝕜)) :=
   (homeoEval (OnePoint Y) 𝕜).trans
     (AlgEquiv.characterSpaceHomeomorph (A := Unitization 𝕜 C₀(Y, 𝕜)) (B := C(OnePoint Y, 𝕜))
       (ZeroAtInftyContinuousMap.unitizationAlgEquiv Y 𝕜 𝕜))
 
+/-- `unitizationZeroAtInftyHomeoEval Y 𝕜` sends `∞` to `Unitization.augmentation 𝕜 C₀(Y, 𝕜)`. -/
 @[simp]
-theorem onePointHomeoUnitizationZeroAtInfty_apply_infty :
-    onePointHomeoUnitizationZeroAtInfty Y 𝕜 ∞ = Unitization.augmentation 𝕜 C₀(Y, 𝕜) := by
+theorem unitizationZeroAtInftyHomeoEval_apply_infty :
+    unitizationZeroAtInftyHomeoEval Y 𝕜 ∞ = Unitization.augmentation 𝕜 C₀(Y, 𝕜) := by
   ext u
-  simp [onePointHomeoUnitizationZeroAtInfty]
+  simp [unitizationZeroAtInftyHomeoEval]
 
+/-- `(unitizationZeroAtInftyHomeoEval Y 𝕜).symm` sends `Unitization.augmentation 𝕜 C₀(Y, 𝕜)` to `∞`.
+-/
 @[simp]
-theorem onePointHomeoUnitizationZeroAtInfty_apply_coe (y : Y) (u : Unitization 𝕜 C₀(Y, 𝕜)) :
-    onePointHomeoUnitizationZeroAtInfty Y 𝕜 y u = u.fst + u.snd y := by
-  simp [onePointHomeoUnitizationZeroAtInfty]
+theorem unitizationZeroAtInftyHomeoEval_symm_apply_augmentation :
+    (unitizationZeroAtInftyHomeoEval Y 𝕜).symm (Unitization.augmentation 𝕜 C₀(Y, 𝕜)) = ∞ := by
+  rw [Homeomorph.symm_apply_eq]
+  exact (unitizationZeroAtInftyHomeoEval_apply_infty Y 𝕜).symm
 
-private theorem onePointHomeoUnitizationZeroAtInfty_coe_ne_augmentation (y : Y) :
-    onePointHomeoUnitizationZeroAtInfty Y 𝕜 y ≠ Unitization.augmentation 𝕜 C₀(Y, 𝕜) := by
-  rw [← onePointHomeoUnitizationZeroAtInfty_apply_infty Y 𝕜]
-  exact (onePointHomeoUnitizationZeroAtInfty Y 𝕜).injective.ne (OnePoint.coe_ne_infty y)
-
-private theorem onePointHomeoUnitizationZeroAtInfty_symm_ne_infty (χ : characterSpace 𝕜 C₀(Y, 𝕜)) :
-    (onePointHomeoUnitizationZeroAtInfty Y 𝕜).symm
-      (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜) χ).1 ≠ ∞ := by
-  intro h
-  apply (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜) χ).2
-  have h' := congrArg (onePointHomeoUnitizationZeroAtInfty Y 𝕜) h
-  simpa using h'
+/-- `unitizationZeroAtInftyHomeoEval Y 𝕜` evaluates `u` at a finite point `y : Y` as
+`u.fst + u.snd y`. -/
+@[simp]
+theorem unitizationZeroAtInftyHomeoEval_apply_coe (y : Y) (u : Unitization 𝕜 C₀(Y, 𝕜)) :
+    unitizationZeroAtInftyHomeoEval Y 𝕜 y u = u.fst + u.snd y := by
+  simp [unitizationZeroAtInftyHomeoEval]
 
 /-- Natural homeomorphism between a weakly locally compact Hausdorff space `Y` and
 `characterSpace 𝕜 C₀(Y, 𝕜)` given by point evaluation `y ↦ (f ↦ f y)`. This is the nonunital
 counterpart of `WeakDual.CharacterSpace.homeoEval`. -/
 noncomputable def zeroAtInftyHomeoEval :
-    Y ≃ₜ characterSpace 𝕜 C₀(Y, 𝕜) where
-  toFun y :=
-    (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜)).symm
-      ⟨onePointHomeoUnitizationZeroAtInfty Y 𝕜 y,
-        onePointHomeoUnitizationZeroAtInfty_coe_ne_augmentation Y 𝕜 y⟩
-  invFun χ :=
-    (OnePoint.ne_infty_iff_exists.mp
-      (onePointHomeoUnitizationZeroAtInfty_symm_ne_infty Y 𝕜 χ)).choose
-  left_inv y := by
-    apply OnePoint.coe_injective
-    have hchoose :=
-      (OnePoint.ne_infty_iff_exists.mp
-        (onePointHomeoUnitizationZeroAtInfty_symm_ne_infty Y 𝕜
-          ((unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜)).symm
-            ⟨onePointHomeoUnitizationZeroAtInfty Y 𝕜 y,
-              onePointHomeoUnitizationZeroAtInfty_coe_ne_augmentation Y 𝕜 y⟩))).choose_spec
-    rw [hchoose]
-    simp
-  right_inv χ := by
-    apply (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜)).injective
-    apply Subtype.ext
-    have hchoose :=
-      (OnePoint.ne_infty_iff_exists.mp
-        (onePointHomeoUnitizationZeroAtInfty_symm_ne_infty Y 𝕜 χ)).choose_spec
-    dsimp only
-    rw [Homeomorph.apply_symm_apply]
-    dsimp only
-    rw [hchoose, Homeomorph.apply_symm_apply]
-  continuous_toFun :=
-    (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜)).symm.continuous.comp
-      (((onePointHomeoUnitizationZeroAtInfty Y 𝕜).continuous.comp
-        OnePoint.continuous_coe).subtype_mk _)
-  continuous_invFun := by
-    rw [OnePoint.isOpenEmbedding_coe.isInducing.continuous_iff]
-    have hfun :
-        (OnePoint.some ∘ fun χ : characterSpace 𝕜 C₀(Y, 𝕜) =>
-          (OnePoint.ne_infty_iff_exists.mp
-            (onePointHomeoUnitizationZeroAtInfty_symm_ne_infty Y 𝕜 χ)).choose) =
-          fun χ => (onePointHomeoUnitizationZeroAtInfty Y 𝕜).symm
-            (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜) χ).1 := by
-      ext χ
-      exact (OnePoint.ne_infty_iff_exists.mp
-        (onePointHomeoUnitizationZeroAtInfty_symm_ne_infty Y 𝕜 χ)).choose_spec
-    rw [hfun]
-    exact (onePointHomeoUnitizationZeroAtInfty Y 𝕜).symm.continuous.comp
-      (continuous_subtype_val.comp (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜)).continuous)
+    Y ≃ₜ characterSpace 𝕜 C₀(Y, 𝕜) :=
+  OnePoint.isOpenEmbedding_coe.isEmbedding.toHomeomorph.trans <|
+    ((unitizationZeroAtInftyHomeoEval Y 𝕜).subtype fun p ↦ by
+      rw [← OnePoint.compl_infty, Set.mem_compl_singleton_iff,
+        ← unitizationZeroAtInftyHomeoEval_apply_infty Y 𝕜]
+      exact (unitizationZeroAtInftyHomeoEval Y 𝕜).injective.ne_iff.symm).trans
+      (unitizationComplAugmentationHomeomorph 𝕜 C₀(Y, 𝕜)).symm
 
+/-- `zeroAtInftyHomeoEval Y 𝕜 y` evaluates `f : C₀(Y, 𝕜)` at `y`. -/
 @[simp]
 theorem zeroAtInftyHomeoEval_apply (y : Y) (f : C₀(Y, 𝕜)) :
     zeroAtInftyHomeoEval Y 𝕜 y f = f y := by
   simp [zeroAtInftyHomeoEval]
+
+/-- On finite points `y : Y`, `unitizationZeroAtInftyHomeoEval Y 𝕜 y` is the unital extension of
+`zeroAtInftyHomeoEval Y 𝕜 y`. -/
+theorem unitizationZeroAtInftyHomeoEval_coe_eq_unitizationExtend (y : Y) :
+    unitizationZeroAtInftyHomeoEval Y 𝕜 y =
+      (unitizationExtend (zeroAtInftyHomeoEval Y 𝕜 y)).1 := by
+  ext u
+  simp
+
+/-- On a punctured character `φ` of `Unitization 𝕜 C₀(Y, 𝕜)`,
+`(unitizationZeroAtInftyHomeoEval Y 𝕜).symm φ.1` equals
+`(zeroAtInftyHomeoEval Y 𝕜).symm (unitizationRestrict φ)`. -/
+@[simp]
+theorem unitizationZeroAtInftyHomeoEval_symm_apply_coe
+    (φ : {φ : characterSpace 𝕜 (Unitization 𝕜 C₀(Y, 𝕜)) //
+      φ ≠ Unitization.augmentation 𝕜 C₀(Y, 𝕜)}) :
+    (unitizationZeroAtInftyHomeoEval Y 𝕜).symm φ.1 =
+      ((zeroAtInftyHomeoEval Y 𝕜).symm (unitizationRestrict φ) : OnePoint Y) := by
+  rw [Homeomorph.symm_apply_eq, unitizationZeroAtInftyHomeoEval_coe_eq_unitizationExtend,
+    Homeomorph.apply_symm_apply, unitizationExtend_unitizationRestrict]
+
+/-- Extending `zeroAtInftyHomeoEval Y 𝕜` to `OnePoint Y` and composing with
+`onePointHomeomorphUnitization 𝕜 C₀(Y, 𝕜)` recovers `unitizationZeroAtInftyHomeoEval Y 𝕜`. -/
+theorem onePointCongr_zeroAtInftyHomeoEval_trans_onePointHomeomorphUnitization :
+    (zeroAtInftyHomeoEval Y 𝕜).onePointCongr.trans
+        (onePointHomeomorphUnitization 𝕜 C₀(Y, 𝕜)) =
+      unitizationZeroAtInftyHomeoEval Y 𝕜 := by
+  ext p u
+  induction p using OnePoint.rec with
+  | infty => simp
+  | coe y => simp
 
 /-- Applying `TauCeti.nonUnitalGelfandStarTransform` to `C₀(Y, ℂ)` and reindexing along
 `WeakDual.CharacterSpace.zeroAtInftyHomeoEval Y ℂ` recovers the identity star-algebra equivalence

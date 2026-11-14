@@ -150,6 +150,16 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
+/-- In a compact Hausdorff space `X`, the punctured space `{x : X // x ≠ x₀}` is compact if and
+only if `x₀` is an isolated point (`{x₀}` is open). -/
+theorem compactSpace_complSingleton_iff_isOpen_singleton [CompactSpace X] [T2Space X] {x₀ : X} :
+    CompactSpace {x : X // x ≠ x₀} ↔ IsOpen ({x₀} : Set X) := by
+  refine ⟨fun _ ↦ ?_, fun hx ↦ isCompact_iff_compactSpace.mp hx.isClosed_compl.isCompact⟩
+  rw [← isClosed_compl_iff]
+  have hrange : range (Subtype.val : {x : X // x ≠ x₀} → X) = {x₀}ᶜ := by ext; simp
+  rw [← hrange]
+  exact (isCompact_range continuous_subtype_val).isClosed
+
 section TubeLemma
 
 variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]

@@ -184,18 +184,20 @@ variable {𝕜 A B C : Type*} [NontriviallyNormedField 𝕜]
 
 /-- An algebra equivalence `e : A ≃ₐ[𝕜] B` between unital Banach algebras induces a weak-star
 homeomorphism `characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A` by character pullback. -/
+@[expose]
 noncomputable def characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
     characterSpace 𝕜 B ≃ₜ characterSpace 𝕜 A where
   toFun := e.toAlgHom.characterPullback
   invFun := e.symm.toAlgHom.characterPullback
-  left_inv φ := CharacterSpace.ext fun b => congrArg φ (e.apply_symm_apply b)
-  right_inv χ := CharacterSpace.ext fun a => congrArg χ (e.symm_apply_apply a)
+  left_inv φ := by ext b; simp
+  right_inv χ := by ext a; simp
   continuous_toFun := map_continuous _
   continuous_invFun := map_continuous _
 
 @[simp]
 theorem characterSpaceHomeomorph_apply (e : A ≃ₐ[𝕜] B) (φ : characterSpace 𝕜 B) (a : A) :
-    e.characterSpaceHomeomorph φ a = φ (e a) := (rfl)
+    e.characterSpaceHomeomorph φ a = φ (e a) :=
+  e.toAlgHom.characterPullback_apply φ a
 
 @[simp]
 theorem characterSpaceHomeomorph_symm (e : A ≃ₐ[𝕜] B) :
@@ -204,7 +206,9 @@ theorem characterSpaceHomeomorph_symm (e : A ≃ₐ[𝕜] B) :
 @[simp]
 theorem coe_characterSpaceHomeomorph (e : A ≃ₐ[𝕜] B) :
     (e.characterSpaceHomeomorph : C(characterSpace 𝕜 B, characterSpace 𝕜 A)) =
-      e.toAlgHom.characterPullback := (rfl)
+      e.toAlgHom.characterPullback := by
+  ext φ a
+  simp
 
 @[simp]
 theorem characterSpaceHomeomorph_refl :

@@ -21,7 +21,8 @@ statement about a quotient, such as a group modulo a kernel, is pulled back to t
 
 A continuous injection out of a weakly locally compact space into a Hausdorff space is a
 topological embedding on an open neighbourhood of any compact set
-(`Continuous.exists_opens_isEmbedding_restrict`).
+(`Continuous.exists_opens_isEmbedding_restrict`). Removing a point from a locally compact `T₁`
+space yields a locally compact subspace (`Subtype.instLocallyCompactSpaceNe`).
 -/
 
 public section
@@ -71,3 +72,8 @@ theorem Continuous.exists_opens_isEmbedding_restrict {X Y : Type*} [TopologicalS
     ((hf.comp continuous_subtype_val).isClosedEmbedding
       (hinj.comp Subtype.val_injective)).isEmbedding
   exact ⟨⟨interior L, isOpen_interior⟩, hKL, h.comp (IsEmbedding.inclusion interior_subset)⟩
+
+/-- Removing a point from a locally compact `T₁` space yields a locally compact subspace. -/
+instance Subtype.instLocallyCompactSpaceNe {X : Type*} [TopologicalSpace X] [LocallyCompactSpace X]
+    [T1Space X] {x₀ : X} : LocallyCompactSpace {x : X // x ≠ x₀} :=
+  isClosed_singleton.isOpen_compl.locallyCompactSpace
