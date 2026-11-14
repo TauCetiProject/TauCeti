@@ -140,6 +140,12 @@ theorem mkPrincipal_eq_one_of_isTotallyPositive (O : NumberFieldOrder K) {x : K�
     (hx : IsTotallyPositive (x : K)) : mkPrincipal O x = 1 :=
   (mkPrincipal_eq_one_iff O).mpr ⟨1, by simpa using hx⟩
 
+/-- Two units of `K` whose quotient is totally positive have the same narrow Picard class. -/
+theorem mkPrincipal_eq_of_isTotallyPositive_mul_inv (O : NumberFieldOrder K) {x y : Kˣ}
+    (h : IsTotallyPositive ((x * y⁻¹ : Kˣ) : K)) : mkPrincipal O x = mkPrincipal O y := by
+  rw [← mul_inv_eq_one, ← map_inv, ← map_mul]
+  exact mkPrincipal_eq_one_of_isTotallyPositive O h
+
 /-- Every principal narrow Picard class has order dividing two, since a square is totally
 positive at every real place. -/
 theorem mkPrincipal_sq (O : NumberFieldOrder K) (x : Kˣ) :
