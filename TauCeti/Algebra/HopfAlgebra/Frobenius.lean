@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
+public import TauCeti.Algebra.HopfAlgebra.Cointegral.Existence
 
 /-!
 # Frobenius functionals from invariant integrals
@@ -20,8 +21,21 @@ A Frobenius functional on a finite-dimensional bialgebra pairs nontrivially with
 both integral spaces: each has a unique element on which the functional is one.
 For a right invariant functional, strong invariance gives a reconstruction formula
 from the coproduct of its normalized left integral. In particular the antipode is
-bijective. These statements assume a nonzero invariant functional; they do not
-assert its existence.
+bijective. These statements assume a nonzero invariant functional.
+
+Over a field, the existence of a nonzero right cointegral, proved in
+`TauCeti.Algebra.HopfAlgebra.Cointegral.Existence`, removes this hypothesis: a
+finite-dimensional Hopf algebra is a Frobenius algebra, its antipode is bijective, and its
+spaces of left and right integrals and of left and right cointegrals are lines.
+
+## Main declarations
+
+* `TauCeti.HopfAlgebra.exists_isFrobeniusFunctional`: a finite-dimensional Hopf algebra over a
+  field is Frobenius.
+* `TauCeti.HopfAlgebra.antipode_bijective_of_finiteDimensional`: bijectivity of the antipode.
+* `TauCeti.finrank_leftIntegral`, `TauCeti.finrank_rightIntegral`,
+  `TauCeti.finrank_leftCointegrals`, `TauCeti.finrank_rightCointegrals`: the integral and
+  cointegral spaces are one-dimensional.
 
 ## References
 
@@ -167,3 +181,62 @@ theorem IsRightInvariantIntegral.antipode_bijective [FiniteDimensional k H]
 end Hopf
 
 end LinearMap
+
+namespace TauCeti
+
+section Field
+
+variable {k H : Type*} [Field k] [Ring H] [_root_.HopfAlgebra k H] [FiniteDimensional k H]
+
+variable (k H) in
+/-- **Larson–Sweedler theorem**: a finite-dimensional Hopf algebra over a field is a Frobenius
+algebra. A nonzero right cointegral is a Frobenius functional. -/
+theorem HopfAlgebra.exists_isFrobeniusFunctional :
+    ∃ φ : H →ₗ[k] k, φ.IsFrobeniusFunctional := by
+  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero k H
+  exact ⟨φ, (LinearMap.isRightInvariantIntegral_iff.mpr
+    ((isRightCointegral_def φ).mp hφ)).isFrobeniusFunctional h0⟩
+
+variable (k H) in
+/-- The antipode of a finite-dimensional Hopf algebra over a field is bijective. -/
+theorem HopfAlgebra.antipode_bijective_of_finiteDimensional :
+    Function.Bijective (antipode k : H → H) := by
+  obtain ⟨φ, hφ, h0⟩ := exists_isRightCointegral_ne_zero k H
+  exact (LinearMap.isRightInvariantIntegral_iff.mpr
+    ((isRightCointegral_def φ).mp hφ)).antipode_bijective h0
+
+variable (k H) in
+/-- The left integrals of a finite-dimensional Hopf algebra over a field form a line. -/
+theorem finrank_leftIntegral : Module.finrank k (leftIntegral k H) = 1 :=
+  (HopfAlgebra.exists_isFrobeniusFunctional k H).choose_spec.finrank_leftIntegral
+
+variable (k H) in
+/-- The right integrals of a finite-dimensional Hopf algebra over a field form a line. -/
+theorem finrank_rightIntegral : Module.finrank k (rightIntegral k H) = 1 :=
+  (HopfAlgebra.exists_isFrobeniusFunctional k H).choose_spec.finrank_rightIntegral
+
+variable (k H) in
+/-- The right cointegrals of a finite-dimensional Hopf algebra over a field form a line. -/
+theorem finrank_rightCointegrals : Module.finrank k (rightCointegrals k H) = 1 := by
+  let e := (WithConv.linearEquiv k (Module.Dual k H)).symm
+  have hmap : (rightCointegrals k H).map e.toLinearMap =
+      rightIntegral k (ConvolutionDual k H) := by
+    ext ψ
+    rw [Submodule.mem_map_equiv, ← WithConv.toConv_ofConv ψ, toConv_mem_rightIntegral_iff]
+    simp [e, mem_rightCointegrals]
+  rw [← LinearEquiv.finrank_map_eq e, hmap, finrank_rightIntegral]
+
+variable (k H) in
+/-- The left cointegrals of a finite-dimensional Hopf algebra over a field form a line. -/
+theorem finrank_leftCointegrals : Module.finrank k (leftCointegrals k H) = 1 := by
+  let e := (WithConv.linearEquiv k (Module.Dual k H)).symm
+  have hmap : (leftCointegrals k H).map e.toLinearMap =
+      leftIntegral k (ConvolutionDual k H) := by
+    ext ψ
+    rw [Submodule.mem_map_equiv, ← WithConv.toConv_ofConv ψ, toConv_mem_leftIntegral_iff]
+    simp [e, mem_leftCointegrals]
+  rw [← LinearEquiv.finrank_map_eq e, hmap, finrank_leftIntegral]
+
+end Field
+
+end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +22,8 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`.
+of `TauCeti.ConvolutionDual`, so cointegrals are exactly the integrals of the finite dual
+bialgebra.
 
 ## References
 
@@ -178,5 +180,24 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
   rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
   simpa [mul_comm] using heq
+
+section Bialgebra
+
+variable {k H : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
+  [Module.Finite k H] [Module.Projective k H]
+
+/-- Right cointegrals are exactly the right integrals of the finite dual bialgebra. -/
+@[simp]
+theorem toConv_mem_rightIntegral_iff (φ : Module.Dual k H) :
+    WithConv.toConv φ ∈ rightIntegral k (ConvolutionDual k H) ↔ IsRightCointegral φ := by
+  simp [mem_rightIntegral_iff, isRightCointegral_iff_convMul]
+
+/-- Left cointegrals are exactly the left integrals of the finite dual bialgebra. -/
+@[simp]
+theorem toConv_mem_leftIntegral_iff (φ : Module.Dual k H) :
+    WithConv.toConv φ ∈ leftIntegral k (ConvolutionDual k H) ↔ IsLeftCointegral φ := by
+  simp [mem_leftIntegral_iff, isLeftCointegral_iff_convMul]
+
+end Bialgebra
 
 end TauCeti
