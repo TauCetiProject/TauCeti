@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.PartitionMaximal
-import TauCeti.Analysis.QuadraticSums
+import TauCeti.Analysis.QuadraticSums.Basic
 import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
 import Mathlib.MeasureTheory.Integral.Indicator
 
@@ -25,7 +25,7 @@ These are the uniform partition limits used in stochastic change-of-variables fo
 
 The proof combines the maximal grid-point estimates in
 `TauCeti.Probability.BrownianMotion.PartitionMaximal` with the deterministic unfinished-cell
-estimate in `TauCeti.Analysis.QuadraticSums`.
+estimate in `TauCeti.Analysis.QuadraticSums.Basic`.
 
 ## References
 
