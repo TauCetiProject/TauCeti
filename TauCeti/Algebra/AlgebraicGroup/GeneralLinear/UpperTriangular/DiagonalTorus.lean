@@ -55,10 +55,9 @@ theorem diagonalTorusPoints_mem
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) := by
   rw [mem_definingPointsSubgroup_iff,
-    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, UpperTriangularGroup.mem_iff]
-  intro i j hji
-  rw [diagGL_coe]
-  exact Matrix.diagonal_apply_ne _ (ne_of_gt hji)
+    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, UpperTriangularGroup.mem_iff,
+    diagGL_coe]
+  exact Matrix.blockTriangular_diagonal _
 
 end Points
 
