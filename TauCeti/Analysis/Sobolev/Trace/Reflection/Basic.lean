@@ -202,7 +202,7 @@ theorem normalReflection_eq_self_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
 /-- The normal reflection in `{a} × E` exchanges the open half-spaces on either side. -/
 theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
     normalReflection E a x ∈ normalHalfSpace (E := E) a ↔ x.fst < a := by
-  simp only [mem_normalHalfSpace, normalReflection_apply]
+  simp only [mem_normalHalfSpace, normalReflection_apply, WithLp.toLp_fst]
   constructor <;> intro h <;> linarith
 
 /-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
