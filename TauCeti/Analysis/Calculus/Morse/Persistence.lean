@@ -131,7 +131,7 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
     (h.contDiffAt.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
   obtain ⟨ρ, hρ, hρf⟩ := Metric.eventually_nhds_iff.1
     (hcont.eventually_mem (Metric.ball_mem_nhds (fderiv ℝ (fderiv ℝ f) x) (half_pos hκ)))
-  let K : ℝ := 2 * C + 8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2
+  let K : ℝ := 2 * C + 2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2
   refine ⟨K, ?_⟩
   filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
   refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgx hgf ↦ ?_⟩
@@ -149,7 +149,7 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hεr
   have hsub : closedBall x (2 * C * n) ⊆ closedBall x r := closedBall_subset_closedBall hεr
   have hKC : 2 * C ≤ K := by
-    have : 0 ≤ 8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2 := by positivity
+    have : 0 ≤ 2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2 := by positivity
     linarith
   refine ⟨y, hsub hyε, ⟨hg y (hsub hyε), hy0, hinv ?_⟩, ?_, ?_, huniq⟩
   · -- Nondegeneracy: the Hessian of `g` at `y` is within `κ < ε₀` of `L`.
@@ -159,10 +159,13 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   · calc dist y x ≤ 2 * C * n := mem_closedBall.1 hyε
       _ ≤ K * n := by gcongr
   · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
-    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * (2 * (2 * C * n)) * (2 * C * n) :=
-        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero
-          (fun w hw ↦ (hg w (hsub hw)).differentiableAt (by norm_num)) hsub hyε hy0
-      _ = (8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
+    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * ‖y - x‖ ^ 2 :=
+        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero (convex_closedBall x r)
+          (fun w hw ↦ (hg w hw).differentiableAt (by norm_num)) (mem_closedBall_self hr.1.le)
+          (hsub hyε) hy0
+      _ ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) / 2 * (2 * C * n) ^ 2 := by
+        gcongr; exact mem_closedBall_iff_norm.1 hyε
+      _ = (2 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
       _ ≤ K * n ^ 2 := by gcongr; linarith
 
 /-- **The Morse index is stable under small changes of the Hessian.**
