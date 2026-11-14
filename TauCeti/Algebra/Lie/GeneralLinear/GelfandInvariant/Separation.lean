@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.GelfandInvariant.HighestWeight
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.Data.Fintype.CardFilterOrder
+import TauCeti.Data.Fintype.Card.FilterOrder
 import Mathlib.Data.Finset.Sort
 import Mathlib.Order.WellFounded
 

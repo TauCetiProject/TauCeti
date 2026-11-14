@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ModuleCovolume
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.ReducedBasis
 import Mathlib.Analysis.Convex.Measure
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
