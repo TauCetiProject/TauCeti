@@ -11,13 +11,13 @@ public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 /-!
 # Pushforward of compactly supported currents along smooth maps
 
-Let `Ω ⊆ E` and `Ω' ⊆ E'` be open subsets of real normed spaces, with `E` finite-dimensional, and
+Let `Ω ⊆ E` and `Ω' ⊆ E'` be open subsets of real normed spaces, and
 let `T` be a current on `Ω`: a continuous linear map on test `k`-forms. Pushing `T` forward along a
 map `Φ : E → E'` by `Φ_# T = T ∘ Φ^*` needs the pullback `Φ^* ω` of a test form on `Ω'` to be a
 test form on `Ω`, which holds when `Φ` is proper from `Ω` to `Ω'` (`TestFunction.pullbackCLM`).
 When the support of `T` is a compact subset of `Ω`, properness is not needed: choose a test
-function `χ` on `Ω` equal to one near the support of `T` (`TestFunction.exists_eventually_eq_one`)
-and put
+function `χ` on `Ω` equal to one near the support of `T` (when `E` is finite-dimensional,
+`TestFunction.exists_eventually_eq_one` supplies one) and put
 
 `Φ_# T = T ∘ (χ Φ^*)`,
 
@@ -55,7 +55,7 @@ open scoped Distributions Topology NNReal ENNReal BoundedContinuousFunction
 
 namespace ContinuousLinearMap
 
-variable {E E' E'' F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' E'' F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup E''] [NormedSpace ℝ E'']
   [NormedAddCommGroup F] [NormedSpace ℝ F] [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   {Ω : Opens E} {Ω' : Opens E'} {Ω'' : Opens E''} {Φ : E → E'} {k : ℕ} {χ χ₁ χ₂ : 𝓓(Ω, ℝ)}
@@ -128,7 +128,7 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- **The support of a pushforward**: the support of `T ∘ (χ Φ^*)` lies in the image under `Φ` of
 the part of the support of `T` in the support of `χ`. In particular it is compact, and when `χ` is
 equal to one near the support of `T`, it lies in the image of the support of `T`. -/
-theorem dsupport_comp_cutoffPullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+theorem dsupport_comp_cutoffPullbackCLM_subset [AddCommMonoid V]
     [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
     (T : 𝓕) :
     dsupport (T ∘ (cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) ⊆

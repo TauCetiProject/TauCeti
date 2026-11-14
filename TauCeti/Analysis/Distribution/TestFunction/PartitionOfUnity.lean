@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+public import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
@@ -21,9 +22,8 @@ Near a point where a complex test function `φ` does not vanish, every complex t
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
 arguments replace one cutoff by another.
-In a finite-dimensional space, a compact set `K` in the interior of a compact set `K'` has a
-complex smooth cutoff supported in `K'` and equal to one on `K`
-(`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
+A compact set `K` in the interior of a compact set `K'` has a complex smooth cutoff supported in
+`K'` and equal to one on `K` (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
 Multiplication by a smooth function `χ` whose closed support meets `Ω` only inside an open set `U`
 sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continuous linear map
@@ -95,6 +95,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {n : ℕ∞}
 
+omit [FiniteDimensional ℝ E] in
 /-- A test function is a finite sum of test functions supported in members of an open cover
 of its topological support. The summands are pointwise no larger in norm than the test function
 itself. -/
@@ -103,6 +104,10 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
     ∃ (s : Finset ι) (ψ : s → 𝓓^{n}(Ω, F)),
       (∀ i, tsupport (ψ i) ⊆ U i) ∧ ∑ i, ψ i = φ ∧ ∀ i x, ‖ψ i x‖ ≤ ‖φ x‖ := by
   classical
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact ⟨∅, isEmptyElim, isEmptyElim, by simp [eq_zero_of_not_finiteDimensional φ hE],
+      isEmptyElim⟩
   obtain ⟨s, hs⟩ := φ.hasCompactSupport.elim_finite_subcover U hU hcover
   have hs' : tsupport φ ⊆ ⋃ i : s, U i := by
     intro x hx
@@ -186,12 +191,17 @@ theorem exists_norm_le_one_mul_eq_abs {s : Finset E} (a : E → ℝ) (hs : (s : 
       have hψx : ψ x = 0 := ψ.zero_on_compl hxU
       simp [φ, hχx, hψx, abs_of_neg (lt_of_not_ge hxpos)]
 
+omit [FiniteDimensional ℝ E] in
 /-- Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a `C^n` multiple of `φ`. -/
 theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
     {φ : 𝓓^{n}(Ω, ℂ)} {x : E} (hφx : φ x ≠ 0) :
     ∃ U ∈ 𝓝 x, ∀ ψ : 𝓓^{n}(Ω, ℂ), tsupport ψ ⊆ U →
       ∃ g : E → ℂ, ContDiff ℝ n g ∧ ∀ y, ψ y = φ y * g y := by
+  -- A nonzero test function forces finite dimension.
+  have : FiniteDimensional ℝ E := by
+    by_contra hE
+    simp [eq_zero_of_not_finiteDimensional φ hE] at hφx
   -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
   obtain ⟨χ, hχ, -, hχ1, -, hχs⟩ := (isCompact_singleton (x := x)).exists_contDiff_cutoff
     (isOpen_ne_fun φ.continuous continuous_const) (singleton_subset_iff.2 hφx)
@@ -221,10 +231,14 @@ namespace ContDiffMapSupportedIn
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- A compact set `K` in the interior of a compact set `K'` of a finite-dimensional space has a
-smooth cutoff supported in `K'` and equal to one on `K`. -/
-theorem exists_eqOn_one_of_subset_interior [FiniteDimensional ℝ E] {K K' : Compacts E}
+/-- A compact set `K` in the interior of a compact set `K'` has a smooth cutoff supported in `K'`
+and equal to one on `K`. In infinite dimension `K'` has empty interior (Riesz), so `K` is empty. -/
+theorem exists_eqOn_one_of_subset_interior {K K' : Compacts E}
     (h : (K : Set E) ⊆ interior K') : ∃ χ : 𝓓_{K'}(E, ℂ), EqOn χ 1 K := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact ⟨0, fun x hx => absurd (FiniteDimensional.of_totallyBounded_nhds ℝ
+      (mem_interior_iff_mem_nhds.1 (h hx)) K'.isCompact.totallyBounded) hE⟩
   obtain ⟨ψ, hψ, -, hψ1, -, hψK'⟩ := K.isCompact.exists_contDiff_cutoff isOpen_interior h
   have hsmooth : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := Complex.ofRealCLM.contDiff.comp hψ
   have hsupp : Function.support (fun x ↦ (ψ x : ℂ)) ⊆ K' := fun x hx ↦
@@ -241,6 +255,7 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [AddCommMonoid G] {Ω : Opens E} {n : ℕ∞}
 
+omit [FiniteDimensional ℝ E] in
 /-- An additive map on test functions vanishes if every point of the domain has an open
 neighborhood on whose supported tests it vanishes. -/
 theorem eq_zero_of_locally_vanishing (T : 𝓓^{n}(Ω, F) →+ G)

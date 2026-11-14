@@ -82,6 +82,7 @@ does not have locally finite mass, `‖T‖` is zero and so is this functional. 
 def extendL1 (T : 𝓕) : Lp F 1 (massMeasure T) →L[ℝ] ℝ :=
   (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ).extendOfNorm (TestFunction.toLp 1 (massMeasure T)).toLinearMap
 
+omit [FiniteDimensional ℝ E] in
 /-- The domination of `T` by its mass measure, in the form used by `LinearMap.extendOfNorm`. -/
 private theorem norm_apply_le_one_mul (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     ‖(T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) φ‖ ≤ 1 * ‖(TestFunction.toLp 1 (massMeasure T)).toLinearMap φ‖ := by
