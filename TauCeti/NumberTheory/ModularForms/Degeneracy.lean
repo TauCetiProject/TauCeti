@@ -83,8 +83,6 @@ the lower level. The `q`-expansion results go up only.
   in `Γ₀(M)` with the same lower-right entry, `V_d` carries `M_k(Γ₁(M), χ)` into
   `M_k(Γ₁(N), χ ∘ ZMod.unitsMap)`, and likewise for `S_k`: the nebentypus of `V_d f` is that of
   `f` read along `(ZMod N)ˣ → (ZMod M)ˣ`.
-* `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace`: the `N = d * M` case for cusp forms, the
-  transport to exactly the raised level.
 * `TauCeti.ModularForm.restrict_mem_modFormCharSpace`,
   `TauCeti.CuspForm.restrict_mem_cuspFormCharSpace`: the same transport for the degeneracy map
   `V₁` at a divisor. Reading a form of level `M` as a form of level `N` for any `M ∣ N` carries
@@ -869,6 +867,14 @@ lemma ModularForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
   rw [coe_levelRaise, _root_.ModularForm.smul_slash, σ_mapGL_real_eq_refl,
     ContinuousAlgEquiv.refl_apply, slash_scaleGL_slash_mapGL]
 
+/-- The underlying function of the level-raise of a cusp form is that of the level-raise of the
+cusp form read as a modular form. -/
+lemma _root_.CuspForm.coe_levelRaise_eq_modularForm [𝒢'.HasDetOne] [NeZero d]
+    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
+    ⇑(CuspForm.levelRaise d hle f) = ⇑(ModularForm.levelRaise d hle (f : ModularForm 𝒢 k)) := by
+  rw [CuspForm.coe_levelRaise, ModularForm.coe_levelRaise]
+  rfl
+
 /-- Slashing a level-raised cusp form by an integral matrix `γ` whose lower-left entry is
 divisible by `d` is the level-raise of the slash of `f` by the conjugate matrix
 `conjScale d γ`. -/
@@ -876,8 +882,9 @@ lemma CuspForm.coe_levelRaise_slash [𝒢'.HasDetOne] [NeZero d]
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k)
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) :
     ⇑(levelRaise d hle f) ∣[k] mapGL ℝ γ =
-      (d : ℂ) ^ (1 - k) • ((⇑f ∣[k] mapGL ℝ (conjScale d γ c hc)) ∣[k] scaleGL d) :=
-  ModularForm.coe_levelRaise_slash hle (f : ModularForm 𝒢 k) γ hc
+      (d : ℂ) ^ (1 - k) • ((⇑f ∣[k] mapGL ℝ (conjScale d γ c hc)) ∣[k] scaleGL d) := by
+  rw [CuspForm.coe_levelRaise_eq_modularForm]
+  exact ModularForm.coe_levelRaise_slash hle (f : ModularForm 𝒢 k) γ hc
 
 /-- **Eigenvalue transport.** If `f` is an eigenvector of the slash by `conjScale d γ` with
 eigenvalue `z`, then `V_d f` is an eigenvector of the slash by `γ` with the same eigenvalue.
@@ -902,8 +909,9 @@ lemma _root_.CuspForm.coe_levelRaise_slash_eq_smul [𝒢'.HasDetOne] [NeZero d]
     (γ : SL(2, ℤ)) {c : ℤ} (hc : γ 1 0 = d * c) {z : ℂ}
     (hf : ⇑f ∣[k] mapGL ℝ (conjScale d γ c hc) = z • ⇑f) :
     ⇑(CuspForm.levelRaise d hle f) ∣[k] mapGL ℝ γ =
-      z • ⇑(CuspForm.levelRaise d hle f) :=
-  ModularForm.coe_levelRaise_slash_eq_smul hle (f : ModularForm 𝒢 k) γ hc hf
+      z • ⇑(CuspForm.levelRaise d hle f) := by
+  rw [CuspForm.coe_levelRaise_eq_modularForm]
+  exact ModularForm.coe_levelRaise_slash_eq_smul hle (f : ModularForm 𝒢 k) γ hc hf
 
 end Slash
 
@@ -997,15 +1005,6 @@ theorem CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd {M d N : ℕ} [NeZero d
   obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
   rw [MonoidHom.comp_apply, ← heq]
   exact CuspForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
-
-/-- **The nebentypus of a level-raise at the exact level (cusp forms).** The `N = d * M` case of
-`TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd`. -/
-theorem CuspForm.levelRaise_mem_cuspFormCharSpace (M d : ℕ) [NeZero d]
-    (χ : (ZMod M)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
-    (hf : f ∈ cuspFormCharSpace k χ) :
-    levelRaise d (Gamma1_map_le_conjAct_scaleGL M d) f ∈
-      cuspFormCharSpace k (χ.comp (ZMod.unitsMap (Dvd.intro_left d rfl : M ∣ d * M))) :=
-  levelRaise_mem_cuspFormCharSpace_of_dvd dvd_rfl χ hf
 
 /-- **The `T`-factorisation lift carries the label of the element it lifts.** Reduced to a level
 `M ∣ N`, the nebentypus label of a `Γ₀(N)` element `γ` whose lower-right entry differs from that
@@ -1240,8 +1239,9 @@ of `ModularForm.qExpansion_levelRaise` reads the same way on cusp forms. -/
 theorem CuspForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
-    qExpansion 1 (CuspForm.levelRaise d hle f) = (qExpansion 1 f).expand d (NeZero.ne d) :=
-  ModularForm.qExpansion_levelRaise h𝒢 hle (f : ModularForm 𝒢 k)
+    qExpansion 1 (CuspForm.levelRaise d hle f) = (qExpansion 1 f).expand d (NeZero.ne d) := by
+  rw [CuspForm.coe_levelRaise_eq_modularForm]
+  exact ModularForm.qExpansion_levelRaise h𝒢 hle (f : ModularForm 𝒢 k)
 
 /-- **The `q`-expansion of a level-raised cusp form, on coefficients.**
 `aₙ(V_d f) = a_{n/d}(f)` when `d ∣ n`, and `0` otherwise. -/

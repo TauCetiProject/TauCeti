@@ -190,6 +190,12 @@ lemma Subgroup.integerCuspWidth_mem_strictPeriods :
     (Subgroup.integerCuspWidth 𝒢 : ℝ) ∈ 𝒢.strictPeriods :=
   Subgroup.natCast_mem_strictPeriods_iff.mpr dvd_rfl
 
+/-- `∞` is a cusp of a subgroup of finite relative index in `𝒮ℒ`, since its integer cusp width is
+a positive strict period. -/
+lemma Subgroup.isCusp_infty_of_finiteRelIndex [𝒢.IsFiniteRelIndex 𝒮ℒ] :
+    IsCusp OnePoint.infty 𝒢 :=
+  (Fact.out : IsCusp OnePoint.infty 𝒮ℒ).of_isFiniteRelIndex
+
 /-- The integer cusp width is minimal among positive integer strict periods. -/
 lemma Subgroup.integerCuspWidth_le {n : ℕ} (hpos : 0 < n)
     (hmem : (n : ℝ) ∈ 𝒢.strictPeriods) : Subgroup.integerCuspWidth 𝒢 ≤ n :=

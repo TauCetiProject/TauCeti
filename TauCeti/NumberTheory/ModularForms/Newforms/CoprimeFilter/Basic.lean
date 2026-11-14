@@ -194,7 +194,7 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd (χ : (
   ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd (Nat.dvd_mul_left N p)) f -
       CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL N p) (heckeTCuspNat (N := N) k p f),
     Submodule.sub_mem _ (CuspForm.restrict_mem_cuspFormCharSpace χ _ hf)
-      (CuspForm.levelRaise_mem_cuspFormCharSpace N p χ
+      (CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd (d := p) dvd_rfl χ
         (heckeTCuspNat_mem_cuspFormCharSpace_of_primeFactors_subset k χ p hpN hf)),
     qExpansion_coeff_restrict_sub_levelRaise_heckeTCuspNat hpN f⟩
 
