@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
-import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 
 /-!
 # Norm recovery and point separation by nondegenerate representations
