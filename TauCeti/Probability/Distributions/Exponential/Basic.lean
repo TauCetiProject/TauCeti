@@ -14,8 +14,9 @@ public import Mathlib.Probability.ConditionalProbability
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Probability.Density
 import TauCeti.Probability.Distributions.Gamma.CharFun
--- Non-public: the finite-extrema CDF formulas are used only inside proofs.
+-- Non-public: the finite-extrema CDF and independence formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
+import TauCeti.Probability.Independence.Lattice
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Order.ConditionallyCompleteLattice.Finset
 
@@ -63,9 +64,10 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
 * `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
   has the original exponential law;
-* `map_min_expMeasure` — the minimum map sends a product of exponential laws to the exponential
-  law whose rate is the sum of the rates;
-* `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;
+* `map_min_expMeasure`, `map_min_pi_expMeasure` — the minimum map sends a binary or nonempty finite
+  product of exponential laws to the exponential law whose rate is the sum of the rates;
+* `hasLaw_min_expMeasure_of_indepFun`, `hasLaw_min_indep_expMeasure` — minimum of independent
+  heterogeneous exponentials;
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
 * `nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`.
@@ -499,6 +501,51 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
     congr 2
     ring
   · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]
+
+/-- **Minimum of independent heterogeneous exponentials.** Under a nonempty finite product of
+exponential laws with positive rates `r i`, the coordinatewise minimum is exponential of rate
+`∑ i, r i`. -/
+theorem map_min_pi_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι] {r : ι → ℝ}
+    (hr : ∀ i, 0 < r i) :
+    (Measure.pi fun i ↦ expMeasure (r i)).map
+      (fun x ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ x i) =
+      expMeasure (∑ i, r i) := by
+  have hsum : 0 < ∑ i, r i := Finset.sum_pos (fun i _ ↦ hr i) Finset.univ_nonempty
+  have _ (i : ι) : IsProbabilityMeasure (expMeasure (r i)) :=
+    isProbabilityMeasure_expMeasure (hr i)
+  have _ : IsProbabilityMeasure (expMeasure (∑ i, r i)) := isProbabilityMeasure_expMeasure hsum
+  refine Measure.eq_of_cdf _ _ ?_
+  ext x
+  rw [cdf_map_min_pi, cdf_expMeasure_eq hsum x]
+  by_cases hx : 0 ≤ x
+  · rw [ite_eq_left hx]
+    have hterm : (∏ i, (1 - cdf (expMeasure (r i)) x)) = exp (-((∑ i, r i) * x)) := by
+      calc
+        (∏ i, (1 - cdf (expMeasure (r i)) x)) = ∏ i, exp (-(r i * x)) := by
+          refine Finset.prod_congr rfl fun i _ ↦ ?_
+          rw [cdf_expMeasure_eq (hr i) x, ite_eq_left hx, sub_sub_cancel]
+        _ = exp (∑ i, -(r i * x)) := (exp_sum Finset.univ _).symm
+        _ = exp (-((∑ i, r i) * x)) := by
+          congr 1
+          rw [Finset.sum_neg_distrib, Finset.sum_mul]
+    rw [hterm]
+  · rw [ite_eq_right hx]
+    have hterm : (∏ i, (1 - cdf (expMeasure (r i)) x)) = 1 := by
+      refine Finset.prod_eq_one fun i _ ↦ ?_
+      rw [cdf_expMeasure_eq (hr i) x, ite_eq_right hx, sub_zero]
+    rw [hterm, sub_self]
+
+/-- Random-variable form of `TauCeti.Probability.map_min_pi_expMeasure` for independent
+heterogeneous exponential random variables. Positivity of the rates is deduced automatically from
+`HasLaw` on the underlying probability space. -/
+theorem hasLaw_min_indep_expMeasure {Ω ι : Type*} {_ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι]
+    {P : Measure Ω} {r : ι → ℝ} {X : ι → Ω → ℝ} (hindep : iIndepFun X P)
+    (hX : ∀ i, HasLaw (X i) (expMeasure (r i)) P) :
+    HasLaw (fun ω ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ X i ω)
+      (expMeasure (∑ i, r i)) P := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  rw [← map_min_pi_expMeasure fun i ↦ pos_of_hasLaw_expMeasure (hX i)]
+  exact hindep.hasLaw_inf' hX Finset.univ Finset.univ_nonempty
 
 /-- The exponential measure of rate `r` on `ℝ≥0`, obtained by transporting the usual exponential
 law on `ℝ` along `Real.toNNReal`.

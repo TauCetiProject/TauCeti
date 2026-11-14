@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Cdf
 public import TauCeti.Probability.Quantile
-import TauCeti.Analysis.SpecialFunctions.IncompleteBeta.Inverse
 
 /-!
 # Quantiles and powers of Beta laws

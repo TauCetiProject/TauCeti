@@ -16,7 +16,21 @@ For independent real coordinates with distribution functions `Fᵢ`, the number 
 at most `t` has Poisson-binomial success probabilities `Fᵢ(t)`. The order statistic at position
 `k`, counted from zero, is at most `t` exactly when this count exceeds `k`. Thus its cdf is a
 Poisson-binomial tail, equivalently a finite sum over success sets of cardinality greater than
-`k`. These formulas retain repeated values and atoms, and allow probabilities zero and one.
+`k`. At the extreme indices `0` and `Fin.last n`, this Poisson-binomial tail collapses to
+`1 - ∏ i, (1 - Fᵢ(t))` and `∏ i, Fᵢ(t)`, recovering the sample minimum and maximum formulas.
+These formulas retain repeated values and atoms, and allow probabilities zero and one.
+
+## Main results
+
+* `TauCeti.Probability.cdf_map_orderStatistic_pi_eq_poissonBinomial`,
+  `TauCeti.Probability.cdf_map_orderStatistic_pi_eq_sum`,
+  `TauCeti.Probability.measureReal_setOf_orderStatistic_le_indep` — Poisson-binomial tail and sum
+  formulas for general non-iid order statistics;
+* `TauCeti.Probability.cdf_map_orderStatistic_zero_pi`,
+  `TauCeti.Probability.cdf_map_orderStatistic_last_pi`,
+  `TauCeti.Probability.measureReal_setOf_orderStatistic_zero_le_indep`,
+  `TauCeti.Probability.measureReal_setOf_orderStatistic_last_le_indep` — closed-form endpoint CDFs
+  at `0` and `Fin.last n`, atoms included.
 
 ## References
 
@@ -31,6 +45,8 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Finset
 
 namespace TauCeti.Probability
+
+section General
 
 variable {n : ℕ} (μ : Fin n → Measure ℝ) [∀ i, IsProbabilityMeasure (μ i)]
 
@@ -73,5 +89,57 @@ theorem measureReal_setOf_orderStatistic_le_indep
   rw [← cdf_map_orderStatistic_pi_eq_poissonBinomial, cdf_eq_real,
     map_measureReal_apply (measurable_orderStatistic k) measurableSet_Iic]
   exact (hindep.hasLaw_pi hX).measureReal_eq (measurable_orderStatistic k measurableSet_Iic)
+
+end General
+
+section Endpoints
+
+variable {n : ℕ}
+
+/-- At index `0`, the Poisson-binomial order-statistic cumulative distribution function of
+independent (not necessarily identically distributed) real coordinates collapses to
+`1 - ∏ i, (1 - cdf (μ i) t)`, recovering the sample minimum formula even for atomic laws. -/
+@[simp]
+theorem cdf_map_orderStatistic_zero_pi [NeZero n] (μ : Fin n → Measure ℝ)
+    [∀ i, IsProbabilityMeasure (μ i)] (t : ℝ) :
+    cdf ((Measure.pi μ).map (orderStatistic 0)) t = 1 - ∏ i, (1 - cdf (μ i) t) := by
+  rw [cdf_map_orderStatistic_pi_eq_poissonBinomial, Fin.val_zero,
+    poissonBinomialMeasure_real_Ioi_zero]
+
+/-- At index `Fin.last n`, the Poisson-binomial order-statistic cumulative distribution function of
+independent (not necessarily identically distributed) real coordinates collapses to
+`∏ i, cdf (μ i) t`, recovering the sample maximum formula even for atomic laws. -/
+@[simp]
+theorem cdf_map_orderStatistic_last_pi (μ : Fin (n + 1) → Measure ℝ)
+    [∀ i, IsProbabilityMeasure (μ i)] (t : ℝ) :
+    cdf ((Measure.pi μ).map (orderStatistic (Fin.last n))) t = ∏ i, cdf (μ i) t := by
+  simpa [cdf_map_orderStatistic_pi_eq_poissonBinomial] using
+    poissonBinomialMeasure_real_Ioi_card_sub_one
+      (fun i : Fin (n + 1) ↦ ⟨cdf (μ i) t, cdf_nonneg _ _, cdf_le_one _ _⟩)
+
+/-- For an independent family of real random variables with laws `μ i`, the least order statistic is
+at most `t` with probability `1 - ∏ i, (1 - cdf (μ i) t)`. -/
+theorem measureReal_setOf_orderStatistic_zero_le_indep {Ω : Type*} {_ : MeasurableSpace Ω}
+    [NeZero n] {P : Measure Ω} {μ : Fin n → Measure ℝ} {X : Fin n → Ω → ℝ}
+    (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (μ i) P) (t : ℝ) :
+    P.real {ω | orderStatistic 0 (fun i ↦ X i ω) ≤ t} = 1 - ∏ i, (1 - cdf (μ i) t) := by
+  have := hindep.isProbabilityMeasure
+  have _ (i : Fin n) : IsProbabilityMeasure (μ i) := (hX i).isProbabilityMeasure_iff.1 this
+  rw [measureReal_setOf_orderStatistic_le_indep μ hindep hX 0 t, Fin.val_zero,
+    poissonBinomialMeasure_real_Ioi_zero]
+
+/-- For an independent family of real random variables with laws `μ i`, the greatest order statistic
+is at most `t` with probability `∏ i, cdf (μ i) t`. -/
+theorem measureReal_setOf_orderStatistic_last_le_indep {Ω : Type*} {_ : MeasurableSpace Ω}
+    {P : Measure Ω} {μ : Fin (n + 1) → Measure ℝ} {X : Fin (n + 1) → Ω → ℝ}
+    (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (μ i) P) (t : ℝ) :
+    P.real {ω | orderStatistic (Fin.last n) (fun i ↦ X i ω) ≤ t} = ∏ i, cdf (μ i) t := by
+  have := hindep.isProbabilityMeasure
+  have _ (i : Fin (n + 1)) : IsProbabilityMeasure (μ i) := (hX i).isProbabilityMeasure_iff.1 this
+  rw [measureReal_setOf_orderStatistic_le_indep μ hindep hX (Fin.last n) t]
+  simpa using poissonBinomialMeasure_real_Ioi_card_sub_one
+    (fun i : Fin (n + 1) ↦ ⟨cdf (μ i) t, cdf_nonneg _ _, cdf_le_one _ _⟩)
+
+end Endpoints
 
 end TauCeti.Probability

@@ -55,11 +55,14 @@ The real-variable theory of Euler's beta integral that the construction rests on
 * `TauCeti.integral_Ioi_rpow_one_add_rpow_eq_interval_tail` and
   `TauCeti.integral_Ioi_rpow_one_add_rpow_tail_eq` — the second-beta-integral upper tail,
   rewritten through the incomplete beta function;
-* `TauCeti.regularizedIncompleteBeta_symm` — the reflection formula
-  `I_x(a, b) = 1 - I_{1-x}(b, a)`;
-* `TauCeti.regularizedIncompleteBeta_one_right` and
-  `TauCeti.regularizedIncompleteBeta_one_left` — the elementary values `x ^ a` and
-  `1 - (1 - x) ^ b` at a unit parameter;
+* `TauCeti.regularizedIncompleteBeta_symm` and
+  `TauCeti.inverseRegularizedIncompleteBeta_symm` — the reflection formulas
+  `I_x(a, b) = 1 - I_{1-x}(b, a)` and `I⁻¹_u(a, b) = 1 - I⁻¹_{1-u}(b, a)`;
+* `TauCeti.regularizedIncompleteBeta_one_right`,
+  `TauCeti.regularizedIncompleteBeta_one_left`,
+  `TauCeti.inverseRegularizedIncompleteBeta_one_right`, and
+  `TauCeti.inverseRegularizedIncompleteBeta_one_left` — the elementary values `x ^ a`,
+  `1 - (1 - x) ^ b`, `u ^ a⁻¹`, and `1 - (1 - u) ^ b⁻¹` at a unit parameter;
 * `TauCeti.regularizedIncompleteBeta_add_one_left` and
   `TauCeti.regularizedIncompleteBeta_add_one_right` — the unit-step recurrences
   `I_x(a + 1, b) = I_x(a, b) - x ^ a * (1 - x) ^ b / (a * Β(a, b))` and
@@ -660,6 +663,47 @@ theorem regularizedIncompleteBeta_one_left (hb : 0 < b) (hx0 : 0 ≤ x) (hx1 : x
     regularizedIncompleteBeta 1 b x = 1 - (1 - x) ^ b := by
   rw [regularizedIncompleteBeta_symm one_pos hb x,
     regularizedIncompleteBeta_one_right hb (by linarith) (by linarith)]
+
+/-- **Reflection of the inverse regularized incomplete beta function.** On the interior domain
+`0 < a`, `0 < b`, and `0 < u < 1`, swapping the shape parameters reflects both the probability
+level and the output across `1 / 2`. Outside `(0, 1)` the zero junk value breaks the outer
+`1 - ·` reflection. -/
+theorem inverseRegularizedIncompleteBeta_symm (ha : 0 < a) (hb : 0 < b)
+    (hu0 : 0 < u) (hu1 : u < 1) :
+    inverseRegularizedIncompleteBeta a b u =
+      1 - inverseRegularizedIncompleteBeta b a (1 - u) := by
+  have hu'0 : 0 < 1 - u := sub_pos.mpr hu1
+  have hu'1 : 1 - u < 1 := sub_lt_self 1 hu0
+  have hmem := inverseRegularizedIncompleteBeta_mem_Ioo hb ha hu'0 hu'1
+  set y : ℝ := 1 - inverseRegularizedIncompleteBeta b a (1 - u)
+  have hy0 : 0 < y := sub_pos.mpr hmem.2
+  have hy1 : y < 1 := sub_lt_self 1 hmem.1
+  have hval : regularizedIncompleteBeta a b y = u := by
+    rw [regularizedIncompleteBeta_symm ha hb y, sub_sub_cancel,
+      regularizedIncompleteBeta_inverse hb ha hu'0 hu'1, sub_sub_cancel]
+  conv_lhs => rw [← hval]
+  exact inverseRegularizedIncompleteBeta_regularizedIncompleteBeta ha hb hy0 hy1
+
+/-- At second shape parameter `1`, the inverse regularized incomplete beta function on `(0, 1)` is
+the power `u ^ a⁻¹`. -/
+@[simp]
+theorem inverseRegularizedIncompleteBeta_one_right (ha : 0 < a) (hu0 : 0 < u) (hu1 : u < 1) :
+    inverseRegularizedIncompleteBeta a 1 u = u ^ a⁻¹ := by
+  have hq : u ^ a⁻¹ ∈ Ioo 0 1 :=
+    ⟨Real.rpow_pos_of_pos hu0 _, Real.rpow_lt_one hu0.le hu1 (inv_pos.2 ha)⟩
+  have hval : regularizedIncompleteBeta a 1 (u ^ a⁻¹) = u := by
+    rw [regularizedIncompleteBeta_one_right ha hq.1.le hq.2.le, ← Real.rpow_mul hu0.le,
+      inv_mul_cancel₀ ha.ne', Real.rpow_one]
+  conv_lhs => rw [← hval]
+  exact inverseRegularizedIncompleteBeta_regularizedIncompleteBeta ha one_pos hq.1 hq.2
+
+/-- At first shape parameter `1`, the inverse regularized incomplete beta function on `(0, 1)` is
+the complementary power `1 - (1 - u) ^ b⁻¹`. -/
+@[simp]
+theorem inverseRegularizedIncompleteBeta_one_left (hb : 0 < b) (hu0 : 0 < u) (hu1 : u < 1) :
+    inverseRegularizedIncompleteBeta 1 b u = 1 - (1 - u) ^ b⁻¹ := by
+  rw [inverseRegularizedIncompleteBeta_symm one_pos hb hu0 hu1,
+    inverseRegularizedIncompleteBeta_one_right hb (sub_pos.mpr hu1) (sub_lt_self 1 hu0)]
 
 /-! ## The unit-step recurrence -/
 

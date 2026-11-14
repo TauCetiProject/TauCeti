@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Order.Lattice
 public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
@@ -15,13 +16,15 @@ public import TauCeti.Probability.Quantile
 import Mathlib.Algebra.Order.Interval.Set.SuccPred
 import TauCeti.Probability.Distributions.Beta.Cdf
 import TauCeti.Probability.Distributions.Binomial.Tail
+import TauCeti.Probability.Independence.Lattice
 
 /-!
 # Laws of order statistics
 
 The generic finite-tuple order-statistic API is in `TauCeti.Data.Fin.Tuple.OrderStatistic`.
 This file uses its counting characterization and measurability to reduce order-statistic laws to
-binomial tails. If the entries are independent with common law `μ`, the number of entries at most
+binomial tails, and specializes the extreme positions `0` and `Fin.last n` to finite sample minima
+and maxima. If the entries are independent with common law `μ`, the number of entries at most
 `t` is binomial with success probability `F(t) = cdf μ t`, so the `k`-th order statistic has
 cumulative distribution function
 
@@ -38,18 +41,28 @@ independent `μ`-distributed entries, with random-variable forms for an independ
 
 ## Main results
 
+* `TauCeti.Probability.map_orderStatistic_zero`, `TauCeti.Probability.map_orderStatistic_last`,
+  `TauCeti.Probability.hasLaw_orderStatistic_zero_iff`,
+  `TauCeti.Probability.hasLaw_orderStatistic_last_iff`,
+  `TauCeti.Probability.hasLaw_orderStatistic_zero_indep`,
+  `TauCeti.Probability.hasLaw_orderStatistic_last_indep` — measure and `HasLaw` bridges between
+  `orderStatistic 0` / `orderStatistic (Fin.last n)` and finite sample minima / maxima;
 * `TauCeti.Probability.cdf_map_orderStatistic_pi` — the cumulative distribution function of an
   order statistic of independent entries with a common law, as a binomial tail sum, and
   `TauCeti.Probability.cdf_map_orderStatistic_pi_eq_regularizedIncompleteBeta` the same as an
   incomplete beta value, with the random-variable form
-  `TauCeti.Probability.measureReal_setOf_orderStatistic_le_iid`;
+  `TauCeti.Probability.measureReal_setOf_orderStatistic_le_iid` and endpoint specializations at
+  `0` and `Fin.last n`;
 * `TauCeti.Probability.map_orderStatistic_pi_uniformMeasure` — the `k`-th order statistic of `n`
   independent unit uniforms has the law `betaMeasure (k + 1) (n - k)`, with the random-variable
-  form `TauCeti.Probability.hasLaw_orderStatistic_iid_uniformMeasure`;
+  form `TauCeti.Probability.hasLaw_orderStatistic_iid_uniformMeasure` and endpoint specializations
+  `TauCeti.Probability.map_orderStatistic_zero_pi_uniformMeasure` and
+  `TauCeti.Probability.map_orderStatistic_last_pi_uniformMeasure`;
 * `TauCeti.Probability.map_orderStatistic_pi_eq_map_betaMeasure_quantile` — the `k`-th order
   statistic of an iid sample from any real probability law `μ` is obtained by applying
   `μ.quantile` to a beta variable, with random-variable form
-  `TauCeti.Probability.hasLaw_orderStatistic_iid_map_betaMeasure_quantile`.
+  `TauCeti.Probability.hasLaw_orderStatistic_iid_map_betaMeasure_quantile` and endpoint
+  specializations at `0` and `Fin.last n`.
 
 ## References
 
@@ -198,5 +211,139 @@ theorem hasLaw_orderStatistic_iid_map_betaMeasure_quantile [IsProbabilityMeasure
   exact (hasLaw_map (measurable_orderStatistic k).aemeasurable).comp (hindep.hasLaw_pi hlaw)
 
 end Law
+
+/-! ### Extreme positions: sample minimum and maximum -/
+
+section LinearOrder
+
+variable {α : Type*} [LinearOrder α] [MeasurableSpace α] {n : ℕ}
+
+/-- Pushing any tuple measure forward along `orderStatistic 0` coincides with pushing it forward
+along the tuple minimum. No measurability assumption on the order operations is needed because the
+two maps are pointwise equal. -/
+theorem map_orderStatistic_zero [NeZero n] (ρ : Measure (Fin n → α)) :
+    ρ.map (orderStatistic 0) = ρ.map (fun x ↦ Finset.univ.inf' Finset.univ_nonempty x) :=
+  congrArg ρ.map (funext orderStatistic_zero)
+
+/-- Pushing any tuple measure forward along `orderStatistic (Fin.last n)` coincides with pushing it
+forward along the tuple maximum. -/
+theorem map_orderStatistic_last (ρ : Measure (Fin (n + 1) → α)) :
+    ρ.map (orderStatistic (Fin.last n)) =
+      ρ.map (fun x ↦ Finset.univ.sup' Finset.univ_nonempty x) :=
+  congrArg ρ.map (funext orderStatistic_last)
+
+/-- Having a given law for `orderStatistic 0` of a nonempty tuple of random variables is equivalent
+to having that law for their sample minimum. -/
+theorem hasLaw_orderStatistic_zero_iff {Ω : Type*} {_ : MeasurableSpace Ω} [NeZero n]
+    {P : Measure Ω} {ν : Measure α} {X : Fin n → Ω → α} :
+    HasLaw (fun ω ↦ orderStatistic 0 fun i ↦ X i ω) ν P ↔
+      HasLaw (fun ω ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ X i ω) ν P := by
+  have hfun : (fun ω ↦ orderStatistic 0 fun i ↦ X i ω) =
+      fun ω ↦ Finset.univ.inf' Finset.univ_nonempty fun i ↦ X i ω :=
+    funext fun ω ↦ orderStatistic_zero (fun i ↦ X i ω)
+  rw [hfun]
+
+/-- Having a given law for `orderStatistic (Fin.last n)` of a tuple of random variables is
+equivalent to having that law for their sample maximum. -/
+theorem hasLaw_orderStatistic_last_iff {Ω : Type*} {_ : MeasurableSpace Ω}
+    {P : Measure Ω} {ν : Measure α} {X : Fin (n + 1) → Ω → α} :
+    HasLaw (fun ω ↦ orderStatistic (Fin.last n) fun i ↦ X i ω) ν P ↔
+      HasLaw (fun ω ↦ Finset.univ.sup' Finset.univ_nonempty fun i ↦ X i ω) ν P := by
+  have hfun : (fun ω ↦ orderStatistic (Fin.last n) fun i ↦ X i ω) =
+      fun ω ↦ Finset.univ.sup' Finset.univ_nonempty fun i ↦ X i ω :=
+    funext fun ω ↦ orderStatistic_last (fun i ↦ X i ω)
+  rw [hfun]
+
+/-- The least order statistic of independent coordinates has the pushforward of the product measure
+along `orderStatistic 0`. Only `MeasurableInf₂ α` is needed because `orderStatistic 0` is the
+sample minimum. -/
+theorem hasLaw_orderStatistic_zero_indep {Ω : Type*} {_ : MeasurableSpace Ω} [MeasurableInf₂ α]
+    [NeZero n] {P : Measure Ω} {μ : Fin n → Measure α} {X : Fin n → Ω → α}
+    (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (μ i) P) :
+    HasLaw (fun ω ↦ orderStatistic 0 fun i ↦ X i ω)
+      ((Measure.pi μ).map (orderStatistic 0)) P := by
+  rw [hasLaw_orderStatistic_zero_iff, map_orderStatistic_zero]
+  exact hindep.hasLaw_inf' hX Finset.univ Finset.univ_nonempty
+
+/-- The greatest order statistic of independent coordinates has the pushforward of the product
+measure along `orderStatistic (Fin.last n)`. Only `MeasurableSup₂ α` is needed because
+`orderStatistic (Fin.last n)` is the sample maximum. -/
+theorem hasLaw_orderStatistic_last_indep {Ω : Type*} {_ : MeasurableSpace Ω} [MeasurableSup₂ α]
+    {P : Measure Ω} {μ : Fin (n + 1) → Measure α} {X : Fin (n + 1) → Ω → α}
+    (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) (μ i) P) :
+    HasLaw (fun ω ↦ orderStatistic (Fin.last n) fun i ↦ X i ω)
+      ((Measure.pi μ).map (orderStatistic (Fin.last n))) P := by
+  rw [hasLaw_orderStatistic_last_iff, map_orderStatistic_last]
+  exact hindep.hasLaw_sup' hX Finset.univ Finset.univ_nonempty
+
+end LinearOrder
+
+section Endpoints
+
+variable {n : ℕ} {μ : Measure ℝ}
+
+/-- For an iid sample of size `n ≠ 0` from `μ`, the least order statistic has cumulative
+distribution function `1 - (1 - cdf μ t) ^ n`. -/
+theorem cdf_map_orderStatistic_zero_pi_const [NeZero n] (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (t : ℝ) :
+    cdf ((Measure.pi fun _ : Fin n ↦ μ).map (orderStatistic 0)) t =
+      1 - (1 - cdf μ t) ^ n := by
+  simp
+
+/-- For an iid sample of size `n + 1` from `μ`, the greatest order statistic has cumulative
+distribution function `cdf μ t ^ (n + 1)`. -/
+theorem cdf_map_orderStatistic_last_pi_const (μ : Measure ℝ) [IsProbabilityMeasure μ] (t : ℝ) :
+    cdf ((Measure.pi fun _ : Fin (n + 1) ↦ μ).map (orderStatistic (Fin.last n))) t =
+      cdf μ t ^ (n + 1) := by
+  simp
+
+/-- For an iid family of size `n ≠ 0` with law `μ`, the least order statistic is at most `t` with
+probability `1 - (1 - cdf μ t) ^ n`. -/
+theorem measureReal_setOf_orderStatistic_zero_le_iid {Ω : Type*} {_ : MeasurableSpace Ω}
+    [NeZero n] {P : Measure Ω} {X : Fin n → Ω → ℝ}
+    (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) μ P) (t : ℝ) :
+    P.real {ω | orderStatistic 0 (fun i ↦ X i ω) ≤ t} = 1 - (1 - cdf μ t) ^ n := by
+  simpa using measureReal_setOf_orderStatistic_zero_le_indep (μ := fun _ ↦ μ) hindep hX t
+
+/-- For an iid family of size `n + 1` with law `μ`, the greatest order statistic is at most `t`
+with probability `cdf μ t ^ (n + 1)`. -/
+theorem measureReal_setOf_orderStatistic_last_le_iid {Ω : Type*} {_ : MeasurableSpace Ω}
+    {P : Measure Ω} {X : Fin (n + 1) → Ω → ℝ}
+    (hindep : iIndepFun X P) (hX : ∀ i, HasLaw (X i) μ P) (t : ℝ) :
+    P.real {ω | orderStatistic (Fin.last n) (fun i ↦ X i ω) ≤ t} = cdf μ t ^ (n + 1) := by
+  simpa using measureReal_setOf_orderStatistic_last_le_indep (μ := fun _ ↦ μ) hindep hX t
+
+/-- The least order statistic of `n ≠ 0` independent unit uniforms has law `betaMeasure 1 n`. -/
+theorem map_orderStatistic_zero_pi_uniformMeasure [NeZero n] :
+    (Measure.pi fun _ : Fin n ↦ uniformMeasure 0 1).map (orderStatistic 0) =
+      betaMeasure 1 n := by
+  simpa using map_orderStatistic_pi_uniformMeasure (0 : Fin n)
+
+/-- The greatest order statistic of `n + 1` independent unit uniforms has law
+`betaMeasure (n + 1) 1`. -/
+theorem map_orderStatistic_last_pi_uniformMeasure :
+    (Measure.pi fun _ : Fin (n + 1) ↦ uniformMeasure 0 1).map (orderStatistic (Fin.last n)) =
+      betaMeasure ((n : ℝ) + 1) 1 := by
+  have h := map_orderStatistic_pi_uniformMeasure (Fin.last n)
+  have hsub : ((n + 1 : ℕ) : ℝ) - (n : ℝ) = 1 := by push_cast; ring
+  simpa [Fin.val_last, hsub] using h
+
+/-- The least order statistic of an iid sample of size `n ≠ 0` from `μ` is the pushforward of
+`betaMeasure 1 n` under `μ.quantile`, atoms included. -/
+theorem map_orderStatistic_zero_pi_eq_map_betaMeasure_quantile [NeZero n] [IsProbabilityMeasure μ] :
+    (Measure.pi fun _ : Fin n ↦ μ).map (orderStatistic 0) =
+      (betaMeasure 1 n).map μ.quantile := by
+  simpa using map_orderStatistic_pi_eq_map_betaMeasure_quantile (μ := μ) (0 : Fin n)
+
+/-- The greatest order statistic of an iid sample of size `n + 1` from `μ` is the pushforward of
+`betaMeasure (n + 1) 1` under `μ.quantile`, atoms included. -/
+theorem map_orderStatistic_last_pi_eq_map_betaMeasure_quantile [IsProbabilityMeasure μ] :
+    (Measure.pi fun _ : Fin (n + 1) ↦ μ).map (orderStatistic (Fin.last n)) =
+      (betaMeasure ((n : ℝ) + 1) 1).map μ.quantile := by
+  have h := map_orderStatistic_pi_eq_map_betaMeasure_quantile (μ := μ) (Fin.last n)
+  have hsub : ((n + 1 : ℕ) : ℝ) - (n : ℝ) = 1 := by push_cast; ring
+  simpa [Fin.val_last, hsub] using h
+
+end Endpoints
 
 end TauCeti.Probability
