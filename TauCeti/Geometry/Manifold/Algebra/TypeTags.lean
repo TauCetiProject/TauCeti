@@ -6,27 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth algebraic structures on additive and multiplicative type tags
 
 The type tags retain the topology, atlas and smooth structure of their original carrier.
-Smooth addition and negation become smooth multiplication and inversion on `Multiplicative`,
-and the reverse transfer equips `Additive` with its additive Lie-group structure.
-The transfers preserve the field, model with corners, universes and regularity.
+Smooth addition, negation and additive actions become smooth multiplication, inversion and
+multiplicative actions on `Multiplicative`, and the reverse transfer equips `Additive` with its
+additive Lie-group and smooth-action structures. The transfers preserve the field, models with
+corners, universes and regularity.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 7,
   Example 7.3(f), pp.151–152, for vector spaces viewed as additive Lie groups.
-* Mathlib, `Geometry/Manifold/Algebra/LieGroup.lean`, for the smooth algebraic structures.
+* Mathlib, `Geometry/Manifold/Algebra/LieGroup.lean` and `Geometry/Manifold/Algebra/SMul.lean`,
+  for the smooth algebraic structures.
 -/
 
 public section
 
 open scoped Manifold ContDiff
 
-universe u v w
+universe u v w u' v' w'
 
 namespace Multiplicative
 
@@ -51,6 +54,19 @@ instance contMDiffMul [Add M] [ContMDiffAdd I n M] : ContMDiffMul I n (Multiplic
 /-- An additive Lie group is a multiplicative Lie group after changing its type tag. -/
 instance lieGroup [AddGroup M] [LieAddGroup I n M] : LieGroup I n (Multiplicative M) where
   contMDiff_inv := contMDiff_neg (I := I) (n := n) (G := M)
+
+/-- A `C^n` additive action becomes a `C^n` multiplicative action of `Multiplicative M`. -/
+instance contMDiffSMul {E' : Type u'} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type v'} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {P : Type w'} [TopologicalSpace P] [ChartedSpace H' P] [VAdd M P]
+    [ContMDiffVAdd I I' n M P] : ContMDiffSMul I I' n (Multiplicative M) P where
+  contMDiff_smul := contMDiff_vadd (I := I) (I' := I') (n := n) (G := M) (M := P)
+
+/-- An additive action by `C^n` maps becomes a multiplicative action of `Multiplicative Γ` by `C^n`
+maps. -/
+instance contMDiffConstSMul {Γ : Type*} [VAdd Γ M] [ContMDiffConstVAdd I n Γ M] :
+    ContMDiffConstSMul I n (Multiplicative Γ) M where
+  contMDiff_const_smul γ := contMDiff_const_vadd (I := I) (n := n) γ.toAdd
 
 end Multiplicative
 
@@ -77,5 +93,18 @@ instance contMDiffAdd [Mul M] [ContMDiffMul I n M] : ContMDiffAdd I n (Additive 
 /-- A multiplicative Lie group is an additive Lie group after changing its type tag. -/
 instance lieAddGroup [Group M] [LieGroup I n M] : LieAddGroup I n (Additive M) where
   contMDiff_neg := contMDiff_inv (I := I) (n := n) (G := M)
+
+/-- A `C^n` multiplicative action becomes a `C^n` additive action of `Additive M`. -/
+instance contMDiffVAdd {E' : Type u'} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type v'} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {P : Type w'} [TopologicalSpace P] [ChartedSpace H' P] [SMul M P]
+    [ContMDiffSMul I I' n M P] : ContMDiffVAdd I I' n (Additive M) P where
+  contMDiff_vadd := contMDiff_smul (I := I) (I' := I') (n := n) (G := M) (M := P)
+
+/-- A multiplicative action by `C^n` maps becomes an additive action of `Additive Γ` by `C^n`
+maps. -/
+instance contMDiffConstVAdd {Γ : Type*} [SMul Γ M] [ContMDiffConstSMul I n Γ M] :
+    ContMDiffConstVAdd I n (Additive Γ) M where
+  contMDiff_const_vadd γ := contMDiff_const_smul (I := I) (n := n) γ.toMul
 
 end Additive

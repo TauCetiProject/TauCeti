@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -224,6 +225,14 @@ theorem orbitTangent_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
   simp
 
 end orbit
+
+/-- Where an infinitesimal action is locally free (`𝔤_x = 0`), the dimension of `𝔤` is at most the
+dimension of `M`. -/
+theorem finrank_le_of_isotropy_eq_bot [FiniteDimensional ℝ E] (a : InfinitesimalAction 𝔤 I M)
+    {x : M} (hx : a.isotropy x = ⊥) : Module.finrank ℝ 𝔤 ≤ Module.finrank ℝ E := by
+  have hle : Module.finrank ℝ (a.orbitTangent x) ≤ Module.finrank ℝ (TangentSpace I x) :=
+    Submodule.finrank_le _
+  rwa [a.finrank_orbitTangent_of_isotropy_eq_bot x hx, finrank_tangentSpace] at hle
 
 section prod
 
