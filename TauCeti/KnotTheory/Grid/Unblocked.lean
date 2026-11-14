@@ -13,6 +13,7 @@ public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
+import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
 # The unblocked grid complex `GC⁻`
@@ -300,58 +301,29 @@ namespace GridChain
 
 variable {n : ℕ} (R : Type*) [CommRing R]
 
-/-- The linear map underlying `gaugeEquiv`. -/
-private noncomputable def gaugeMap (f : GridState n → ℤˣ) :
-    GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.single x ((f x : ℤ) • (1 : MvPolynomial (Fin n) R))
-
-private theorem gaugeMap_single (f : GridState n → ℤˣ) (x : GridState n)
-    (a : MvPolynomial (Fin n) R) :
-    gaugeMap R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) := by
-  rw [gaugeMap, Finsupp.linearCombination_single, Finsupp.smul_single, smul_eq_mul,
-    mul_smul_comm, mul_one]
-
-private theorem gaugeMap_involutive (f : GridState n → ℤˣ) :
-    Function.Involutive (gaugeMap R f) := fun c => by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, map_zero]
-  | add c d hc hd => rw [map_add, map_add, hc, hd]
-  | single x a =>
-      rw [gaugeMap_single, gaugeMap_single, smul_smul, ← Units.val_mul, Int.units_mul_self,
-        Units.val_one, one_smul]
-
 /-- The diagonal automorphism of `GC⁻` multiplying the generator of each grid state `x` by the
 sign `f x`. It is its own inverse. -/
 noncomputable def gaugeEquiv (f : GridState n → ℤˣ) :
     GridChainMinus R n ≃ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  LinearEquiv.ofInvolutive (gaugeMap R f) (gaugeMap_involutive R f)
+  Finsupp.signEquiv (MvPolynomial (Fin n) R) f
 
 /-- The gauge automorphism multiplies the generator of a grid state by its sign. -/
 @[simp]
 theorem gaugeEquiv_single (f : GridState n → ℤˣ) (x : GridState n)
     (a : MvPolynomial (Fin n) R) :
     gaugeEquiv R f (Finsupp.single x a) = Finsupp.single x ((f x : ℤ) • a) :=
-  gaugeMap_single R f x a
+  Finsupp.signEquiv_single x a
 
 /-- The gauge automorphism multiplies the coefficient of each grid state `y` by its sign. -/
 @[simp]
 theorem gaugeEquiv_apply_apply (f : GridState n → ℤˣ) (c : GridChainMinus R n) (y : GridState n) :
-    gaugeEquiv R f c y = (f y : ℤ) • c y := by
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd => rw [map_add, Finsupp.add_apply, Finsupp.add_apply, hc, hd, smul_add]
-  | single x a =>
-      rw [gaugeEquiv_single]
-      rcases eq_or_ne x y with rfl | hxy
-      · simp
-      · rw [Finsupp.single_eq_of_ne hxy.symm, Finsupp.single_eq_of_ne hxy.symm, smul_zero]
+    gaugeEquiv R f c y = (f y : ℤ) • c y :=
+  Finsupp.signEquiv_apply c y
 
 /-- The gauge automorphism is its own inverse. -/
 @[simp]
 theorem gaugeEquiv_symm (f : GridState n → ℤˣ) : (gaugeEquiv R f).symm = gaugeEquiv R f :=
-  LinearEquiv.ext fun c => (gaugeEquiv R f).symm_apply_eq.mpr <| by
-    rw [gaugeEquiv, LinearEquiv.coe_ofInvolutive, gaugeMap_involutive R f c]
+  Finsupp.signEquiv_symm
 
 end GridChain
 
