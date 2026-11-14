@@ -45,10 +45,10 @@ The proof has three steps.
   radial squeeze about `y` which is the identity near `y`
   (`TauCeti.exists_continuousOn_injOn_mapsTo_sphere`) gives a map `k`, continuous and injective on
   `Sⁿ \ {p}`, carrying `f(Q)` into the neighbourhood `f(Q ∩ U)` of `y`. Then `g = f⁻¹ ∘ k ∘ f`
-  on `Q \ X`, extended by the identity on `X`, is a continuous injection of `Q` into `U`: near
-  `X` it is the identity, and elsewhere the inverse of `f` is continuous because `Q` is compact
-  (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`,
-  `ContinuousOn.exists_continuousOn_injOn_lift`). Its image is a cell containing `X` in
+  on `Q \ X`, extended by the identity on `X`, is a continuous injection of `Q` into `U`
+  (`ContinuousOn.exists_continuousOn_injOn_lift`): near `X` it is the identity, and elsewhere the
+  inverse of `f` is continuous because `Q` is compact
+  (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`). Its image is a cell containing `X` in
   its interior, and iterating with `U` shrinking to `X` exhibits `X` as cellular.
 
 For Theorem 4, let `g` map `Sⁿ` onto itself, injective off the fibres `A = g⁻¹(p)` and

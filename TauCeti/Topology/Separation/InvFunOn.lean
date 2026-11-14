@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Continuity of inverses of maps out of compact sets
+# Continuous inverses of maps out of compact sets, and lifts through them
 
 A continuous injection from a compact space to a Hausdorff space is a closed embedding. This file
 records the version of that fact needed for the characteristic maps of cells: let `f` be continuous
@@ -22,10 +22,13 @@ The proof is the closed map argument: the preimage under the inverse of a closed
 trace on `f '' U` of the compact, hence closed, set `f '' (C ∩ K)`.
 
 Such an inverse lifts maps of the target through `f`, as in M. Brown's proof of the generalized
-Schoenflies theorem: if `f` takes values in a `T₁` space and `k` is continuous on `f '' Q` and the
-identity near `y` within `f '' Q`, then there is a lift `g` of `k` through `f`, continuous on `Q`
-and fixing `Q ∩ f⁻¹(y)` pointwise, which is injective on every `R ⊆ Q` such that `k` is injective
-on `f '' R` and `f` is injective on `R \ f⁻¹(y)` (`ContinuousOn.exists_continuousOn_injOn_lift`).
+Schoenflies theorem. Let `f` be continuous on `Q`, with values in a `T₁` space, and injective on
+`P` with inverse continuous on `f '' P`. Let `k` be continuous on `f '' Q` and the identity near
+`y` within `f '' Q`, and suppose that `k ∘ f` maps `Q \ f⁻¹(y)` into `f '' P` and that every point
+of `Q \ f⁻¹(y)` mapped into `f '' P` lies in `P`. Then there is a lift `g` of `k` through `f`,
+continuous on `Q` and fixing `Q ∩ f⁻¹(y)` pointwise, which is injective on every `R ⊆ Q` such that
+`k` is injective on `f '' R` and `f` is injective on `R \ f⁻¹(y)`
+(`ContinuousOn.exists_continuousOn_injOn_lift`).
 -/
 
 public section
