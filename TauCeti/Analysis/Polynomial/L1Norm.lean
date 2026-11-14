@@ -169,7 +169,7 @@ theorem l1Norm_le_natDegree_add_one_mul_supNorm (P : R[X]) :
 theorem l1Norm_eq_zero_iff {A : Type*} [NormedRing A] (P : A[X]) : P.l1Norm = 0 ↔ P = 0 := by
   constructor
   · intro hP
-    exact ext fun i ↦ norm_eq_zero.mp <|
+    exact AddMonoidAlgebra.ext <| Finsupp.ext fun i ↦ norm_eq_zero.mp <|
       le_antisymm (hP ▸ P.norm_coeff_le_l1Norm i) (norm_nonneg _)
   · rintro rfl
     exact l1Norm_zero

@@ -83,7 +83,7 @@ theorem norm_testFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
 the function vanishes outside `Omega`, so the restriction may be dropped. -/
 theorem enorm_testFunctionLp_eq_eLpNorm (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     ‖testFunctionLp (mu := mu) q phi‖ₑ = eLpNorm (phi : E → ℝ) q mu := by
-  rw [Lp.enorm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae q phi),
+  rw [Lp.eNorm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae q phi),
     eLpNorm_restrict_eq_of_support_subset phi.continuous.aestronglyMeasurable
       ((subset_tsupport _).trans phi.tsupport_subset)]
 
@@ -168,7 +168,7 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   let T := testFunctionLpₗ mu Omega q
   have hnorm (phi : 𝓓(Omega, ℝ)) :
       ‖T phi‖ = (eLpNorm (phi : E → ℝ) q mu).toReal := by
-    rw [testFunctionLpₗ_apply, ← toReal_enorm]
+    rw [testFunctionLpₗ_apply, ← toReal_eNorm]
     exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm q phi)
   have hker : LinearMap.ker T.rangeRestrict ≤ LinearMap.ker ℓ.toLinearMap := by
     rw [LinearMap.ker_rangeRestrict]
@@ -264,7 +264,7 @@ theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
   have hw : HasWeakFDerivOn mu Omega u (fderiv ℝ u) := hasWeakFDerivOn_of_differentiableOn
     (hD.locallyIntegrableOn Omega.isOpen.measurableSet) (fun x hx =>
       (hu.differentiableOn one_ne_zero x hx).differentiableAt (Omega.isOpen.mem_nhds hx))
-  rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, enorm_neg,
+  rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, eNorm_neg,
     ← setIntegral_smul_eq_integral_smul phi]
   have hmeas : AEStronglyMeasurable (fun x => fderiv ℝ u x v) (mu.restrict Omega) :=
     (hD.clm_apply continuousOn_const).aestronglyMeasurable Omega.isOpen.measurableSet
@@ -345,7 +345,7 @@ theorem enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv (q : ENNReal) (phi : 𝓓
     ((contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous
       |>.stronglyMeasurable_of_hasCompactSupport
         (phi.hasCompactSupport.fderiv ℝ)).aestronglyMeasurable
-  rw [Lp.enorm_def, eLpNorm_congr_ae (gradientTestFunctionLp_apply_ae q phi),
+  rw [Lp.eNorm_def, eLpNorm_congr_ae (gradientTestFunctionLp_apply_ae q phi),
     eLpNorm_restrict_eq_of_support_subset hgrad (support_gradient_testFunction_subset phi),
     eLpNorm_congr_norm_ae hgrad hfderiv
       (ae_of_all _ fun x => norm_gradient_eq_norm_fderiv (𝕜 := ℝ) (phi : E → ℝ) x)]

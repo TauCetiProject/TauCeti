@@ -15,7 +15,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 For a morphism of schemes `f : X ⟶ Y`, `Scheme.Modules.pullbackExteriorPowerComparison f n` is the
 canonical natural map `f^* (⋀ⁿ M) ⟶ ⋀ⁿ (f^* M)`, the scheme case of
-`TauCeti.SheafOfModules.pullbackExteriorPowerComparison`. It is characterized by its transpose
+`SheafOfModules.pullbackExteriorPowerComparison`. It is characterized by its transpose
 under the pullback--pushforward adjunction, and it is an isomorphism in degree one.
 
 For a ring map `φ : R ⟶ S`, pullback along `Spec φ` commutes with exterior powers of the
@@ -125,18 +125,16 @@ noncomputable section
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- The canonical comparison `f^* (⋀ⁿ M) ⟶ ⋀ⁿ (f^* M)` for modules on schemes:
-`TauCeti.SheafOfModules.pullbackExteriorPowerComparison` along `f.toRingCatSheafHom`. -/
+`SheafOfModules.pullbackExteriorPowerComparison` along `f.toRingCatSheafHom`. -/
 def pullbackExteriorPowerComparison (n : ℕ) :
     SheafOfModules.exteriorPower Y.sheaf n ⋙ pullback f ⟶
       pullback f ⋙ SheafOfModules.exteriorPower X.sheaf n :=
-  TauCeti.SheafOfModules.pullbackExteriorPowerComparison
-    (pullbackPushforwardAdjunction f) n
+  SheafOfModules.pullbackExteriorPowerComparison (pullbackPushforwardAdjunction f) n
 
 /-- The scheme comparison is the sheaf comparison for the scheme pullback adjunction. -/
 theorem pullbackExteriorPowerComparison_eq (n : ℕ) :
     pullbackExteriorPowerComparison f n =
-      TauCeti.SheafOfModules.pullbackExteriorPowerComparison
-        (pullbackPushforwardAdjunction f) n :=
+      SheafOfModules.pullbackExteriorPowerComparison (pullbackPushforwardAdjunction f) n :=
   (rfl)
 
 /-- The mate of the scheme comparison under the pullback--pushforward adjunction is the
@@ -145,9 +143,8 @@ pushforward comparison along `f.toRingCatSheafHom`. -/
 theorem mateEquiv_pullbackExteriorPowerComparison (n : ℕ) :
     mateEquiv (pullbackPushforwardAdjunction f) (pullbackPushforwardAdjunction f)
         (pullbackExteriorPowerComparison f n) =
-      TauCeti.SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n :=
-  TauCeti.SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-    (pullbackPushforwardAdjunction f) n
+      SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n :=
+  SheafOfModules.mateEquiv_pullbackExteriorPowerComparison (pullbackPushforwardAdjunction f) n
 
 /-- The adjunction equation characterizing the pullback comparison for modules on schemes: its
 transpose is the exterior power of the unit `M ⟶ f_* f^* M` followed by the exterior-power
@@ -156,9 +153,9 @@ theorem unit_comp_pushforward_map_pullbackExteriorPowerComparison_app (n : ℕ) 
     (pullbackPushforwardAdjunction f).unit.app ((SheafOfModules.exteriorPower Y.sheaf n).obj M) ≫
         (pushforward f).map ((pullbackExteriorPowerComparison f n).app M) =
       (SheafOfModules.exteriorPower Y.sheaf n).map ((pullbackPushforwardAdjunction f).unit.app M) ≫
-        (TauCeti.SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n).app
+        (SheafOfModules.pushforwardExteriorPowerComparison f.toRingCatSheafHom n).app
           ((pullback f).obj M) :=
-  TauCeti.SheafOfModules.unit_comp_pushforward_pullbackExteriorPowerComparison
+  SheafOfModules.unit_comp_pushforward_pullbackExteriorPowerComparison
     (pullbackPushforwardAdjunction f) n M
 
 /-- In degree one, the pullback comparison for modules on schemes is the identity of `f^* M`,
@@ -167,13 +164,13 @@ theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso (M : Y.Modu
     (pullbackExteriorPowerComparison f 1).app M ≫
         (SheafOfModules.exteriorPowerOneIso X.sheaf).hom.app ((pullback f).obj M) =
       (pullback f).map ((SheafOfModules.exteriorPowerOneIso Y.sheaf).hom.app M) :=
-  TauCeti.SheafOfModules.pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso
+  SheafOfModules.pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso
     (pullbackPushforwardAdjunction f) M
 
 /-- The pullback comparison for modules on schemes is an isomorphism in degree one. -/
 instance isIso_pullbackExteriorPowerComparison_one :
     IsIso (pullbackExteriorPowerComparison f 1) :=
-  TauCeti.SheafOfModules.isIso_pullbackExteriorPowerComparison_one (pullbackPushforwardAdjunction f)
+  SheafOfModules.isIso_pullbackExteriorPowerComparison_one (pullbackPushforwardAdjunction f)
 
 end
 

@@ -181,11 +181,11 @@ private theorem le_mul_iInf_enorm {a c : ℝ≥0∞} {T : E →L[𝕜] F} (hc : 
 private theorem iInf_enorm_smul_le (c : 𝕜) (T : E →L[𝕜] F) :
     ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = c • T), ‖u‖ₑ ≤
       ‖c‖ₑ * ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ := by
-  refine le_mul_iInf_enorm enorm_ne_top (fun hc ↦ ?_) fun u hu ↦ ?_
-  · rw [enorm_eq_zero] at hc
+  refine le_mul_iInf_enorm eNorm_ne_top (fun hc ↦ ?_) fun u hu ↦ ?_
+  · rw [eNorm_eq_zero] at hc
     subst hc
-    exact le_antisymm ((iInf₂_le 0 (by simp)).trans_eq enorm_zero) bot_le
-  · exact (iInf₂_le (c • u) (by rw [map_smul, hu])).trans_eq (enorm_smul c u)
+    exact le_antisymm ((iInf₂_le 0 (by simp)).trans_eq eNorm_zero) bot_le
+  · exact (iInf₂_le (c • u) (by rw [map_smul, hu])).trans_eq (eNorm_smul c u)
 
 variable (𝕜 E F) in
 /-- The **nuclear norm** `ν(T)` as an operator gauge: the infimum of the projective norms of the
@@ -196,7 +196,7 @@ approximation numbers. -/
 def nuclearGauge : OperatorGauge 𝕜 E F where
   toFun T := ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ
   map_add_le' S T := ENNReal.le_iInf₂_add_iInf₂ fun u hu v hv ↦
-    (iInf₂_le (u + v) (by rw [map_add, hu, hv])).trans (enorm_add_le u v)
+    (iInf₂_le (u + v) (by rw [map_add, hu, hv])).trans (eNorm_add_le u v)
   map_smul' c T := by
     refine le_antisymm (iInf_enorm_smul_le c T) ?_
     rcases eq_or_ne c 0 with rfl | hc
@@ -205,8 +205,8 @@ def nuclearGauge : OperatorGauge 𝕜 E F where
       _ ≤ ‖c‖ₑ * (‖c⁻¹‖ₑ * ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = c • T), ‖u‖ₑ) := by
         gcongr
         simpa [smul_smul, inv_mul_cancel₀ hc] using iInf_enorm_smul_le c⁻¹ (c • T)
-      _ = _ := by rw [← mul_assoc, ← enorm_mul, mul_inv_cancel₀ hc, enorm_one, one_mul]
-  enorm_le' T := le_iInf₂ fun u hu ↦ hu ▸ enorm_le_iff_norm_le.2
+      _ = _ := by rw [← mul_assoc, ← eNorm_mul, mul_inv_cancel₀ hc, eNorm_one, one_mul]
+  enorm_le' T := le_iInf₂ fun u hu ↦ hu ▸ eNorm_le_iff_norm_le.2
     (((toContinuousLinearMap 𝕜 E F).le_of_opNorm_le norm_toContinuousLinearMap_le u).trans_eq
       (one_mul _))
 
@@ -232,7 +232,7 @@ theorem exists_toContinuousLinearMap_eq_of_nuclearGauge_lt {T : E →L[𝕜] F} 
 theorem nuclearGauge_lt_top_iff {T : E →L[𝕜] F} :
     nuclearGauge 𝕜 E F T < ∞ ↔ T ∈ nuclearOperators 𝕜 E F := by
   refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦
-    hu ▸ (nuclearGauge_toContinuousLinearMap_le u).trans_lt enorm_lt_top⟩
+    hu ▸ (nuclearGauge_toContinuousLinearMap_le u).trans_lt eNorm_lt_top⟩
   obtain ⟨u, hu, -⟩ := exists_toContinuousLinearMap_eq_of_nuclearGauge_lt h
   exact ⟨u, hu⟩
 
@@ -269,7 +269,7 @@ theorem nuclearGauge_toContinuousLinearMap
 theorem nuclearGauge_comp_comp_le (A : F →L[𝕜] G) (T : E →L[𝕜] F) (B : D →L[𝕜] E) :
     nuclearGauge 𝕜 D G (A ∘L T ∘L B) ≤ ‖A‖ₑ * nuclearGauge 𝕜 E F T * ‖B‖ₑ := by
   rw [mul_right_comm, nuclearGauge_apply T]
-  refine le_mul_iInf_enorm (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top) (fun h ↦ ?_)
+  refine le_mul_iInf_enorm (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top) (fun h ↦ ?_)
     fun u hu ↦ ?_
   · -- If `‖A‖ ‖B‖ = 0`, then `A ∘L T ∘L B = 0`.
     have hle : ‖A ∘L T ∘L B‖ₑ ≤ ‖A‖ₑ * ‖T‖ₑ * ‖B‖ₑ :=
@@ -296,14 +296,14 @@ theorem comp_left_mem_nuclearOperators (A : F →L[𝕜] G) {T : E →L[𝕜] F}
     (hT : T ∈ nuclearOperators 𝕜 E F) : A ∘L T ∈ nuclearOperators 𝕜 E G := by
   rw [← nuclearGauge_lt_top_iff] at hT ⊢
   simpa using (nuclearGauge_comp_comp_le A T (ContinuousLinearMap.id 𝕜 E)).trans_lt
-    (ENNReal.mul_lt_top (ENNReal.mul_lt_top enorm_lt_top hT) enorm_lt_top)
+    (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top hT) eNorm_lt_top)
 
 /-- Nuclear operators are stable under composition on the right. -/
 theorem comp_right_mem_nuclearOperators {T : E →L[𝕜] F} (hT : T ∈ nuclearOperators 𝕜 E F)
     (B : D →L[𝕜] E) : T ∘L B ∈ nuclearOperators 𝕜 D F := by
   rw [← nuclearGauge_lt_top_iff] at hT ⊢
   simpa using (nuclearGauge_comp_comp_le (ContinuousLinearMap.id 𝕜 F) T B).trans_lt
-    (ENNReal.mul_lt_top (ENNReal.mul_lt_top enorm_lt_top hT) enorm_lt_top)
+    (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top hT) eNorm_lt_top)
 
 /-- The rank-one operator `x ↦ f x • y` has nuclear norm `‖f‖ ‖y‖`. -/
 @[simp]
@@ -315,7 +315,7 @@ theorem nuclearGauge_smulRight (f : StrongDual 𝕜 E) (y : F) :
     rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _),
       Completion.norm_coe, ProjectiveTensor.norm_def]
     exact ENNReal.ofReal_le_ofReal (TensorProduct.projectiveSeminorm_tmul_le f y)
-  · simpa [enorm_eq_nnnorm] using (nuclearGauge 𝕜 E F).enorm_le (f.smulRight y)
+  · simpa [eNorm_eq_nnNorm] using (nuclearGauge 𝕜 E F).enorm_le (f.smulRight y)
 
 /-! ### Series representations -/
 
@@ -482,7 +482,7 @@ theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (y : F) :
 @[simp]
 theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) : ‖smulRight f y‖ = ‖f‖ * ‖y‖ := by
   rw [OperatorGauge.Carrier.norm_def, toContinuousLinearMap_smulRight, nuclearGauge_smulRight,
-    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
 end NuclearOperator
 

@@ -547,7 +547,8 @@ private lemma linearIndepOn_e6Root :
   have hcomp : e6Root ∘ e6SimpleIndex = fun i => CartanMatrix.E 6 i :=
     funext root_e6SimpleIndex
   rw [hcomp]
-  exact Matrix.linearIndependent_rows_of_det_ne_zero (by rw [CartanMatrix.E₆_det]; norm_num)
+  exact Matrix.linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 6)
+    (by rw [CartanMatrix.E₆_det]; norm_num)
 
 private lemma linearIndepOn_e6Coroot :
     LinearIndepOn ℤ e6Coroot (e6SimpleSupport : Set (Fin 72)) := by

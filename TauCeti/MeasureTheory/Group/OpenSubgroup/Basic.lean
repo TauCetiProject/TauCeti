@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.MeasureTheory.Function.Lp.Subtype
 public import TauCeti.MeasureTheory.Group.Arithmetic
+public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.SigmaCompactSupport
 public import TauCeti.MeasureTheory.Integral.PeakFunction
@@ -26,11 +27,12 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 `μ.comap ((↑) : H → G)` turns ambient analysis on `G` into subgroup analysis on `H`:
 
 * **Haar measures, regularity, and modular character:** When `H` is an open subgroup of a Borel
-  group `G`, `μ.comap ((↑) : H → G)` inherits left and right multiplication invariance,
-  `IsOpenPosMeasure`, `IsHaarMeasure`, `Regular`, and `InnerRegular`; if `H` is moreover σ-compact
-  and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on a non-σ-compact group
-  does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and the modular character of
-  `H` agrees with the restriction of the modular character of `G`
+  group `G`, `μ.comap ((↑) : H → G)` inherits `IsOpenPosMeasure`, `IsHaarMeasure`, `Regular`, and
+  `InnerRegular` (left and right multiplication invariance hold for every subgroup, by the instances
+  `Measure.isMulLeftInvariant_comap_subtype` and `Measure.isMulRightInvariant_comap_subtype`); if
+  `H` is moreover σ-compact and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on
+  a non-σ-compact group does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and
+  the modular character of `H` agrees with the restriction of the modular character of `G`
   (`OpenSubgroup.modularCharacter_eq`).
 * **Translated-coset calculations:** For a measurable subgroup `H`, left translation `u ↦ g * u`
   from `(H, μ.comap (↑))` onto `(G, μ.restrict (g • H))` is a measure-preserving measurable
@@ -80,20 +82,6 @@ namespace OpenSubgroup
 section HaarAndRegularity
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
-
-@[to_additive]
-instance instIsMulLeftInvariantComap [MeasurableMul G] [OpensMeasurableSpace G]
-    (μ : Measure G) [μ.IsMulLeftInvariant] (H : OpenSubgroup G) :
-    (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
-  Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-    (MeasurableEmbedding.subtype_coe H.isOpen.measurableSet)
-
-@[to_additive]
-instance instIsMulRightInvariantComap [MeasurableMul G] [OpensMeasurableSpace G]
-    (μ : Measure G) [μ.IsMulRightInvariant] (H : OpenSubgroup G) :
-    (μ.comap ((↑) : H → G)).IsMulRightInvariant :=
-  Measure.IsMulRightInvariant.comap μ (f := SubgroupClass.subtype H)
-    (MeasurableEmbedding.subtype_coe H.isOpen.measurableSet)
 
 @[to_additive]
 instance instIsOpenPosMeasureComap [BorelSpace G] (μ : Measure G) [μ.IsOpenPosMeasure]
@@ -248,12 +236,9 @@ theorem eLpNorm_restrict_leftCoset_eq_comap {ε : Type*} [TopologicalSpace ε]
 /-- **Left-coset representative independence for lower Lebesgue integrals.** -/
 @[to_additive /-- **Left-coset representative independence for lower Lebesgue integrals.** -/]
 theorem lintegral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] [μ.IsMulLeftInvariant]
-    (hH : MeasurableSet (H : Set G)) {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → ℝ≥0∞) :
+    {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → ℝ≥0∞) :
     ∫⁻ u : H, f (g₁ * (u : G)) ∂(μ.comap ((↑) : H → G)) =
       ∫⁻ u : H, f (g₂ * (u : G)) ∂(μ.comap ((↑) : H → G)) := by
-  have : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
-    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-      (MeasurableEmbedding.subtype_coe hH)
   rw [← lintegral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]
@@ -262,12 +247,9 @@ theorem lintegral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] [μ.IsMul
 @[to_additive /-- **Left-coset representative independence for Bochner integrals.** -/]
 theorem integral_mul_left_comap_eq_of_inv_mul_mem [SubgroupClass S G] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [μ.IsMulLeftInvariant]
-    (hH : MeasurableSet (H : Set G)) {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → E) :
+    {g₁ g₂ : G} (hg : g₁⁻¹ * g₂ ∈ H) (f : G → E) :
     ∫ u : H, f (g₁ * (u : G)) ∂(μ.comap ((↑) : H → G)) =
       ∫ u : H, f (g₂ * (u : G)) ∂(μ.comap ((↑) : H → G)) := by
-  have : (μ.comap ((↑) : H → G)).IsMulLeftInvariant :=
-    Measure.IsMulLeftInvariant.comap μ (f := SubgroupClass.subtype H)
-      (MeasurableEmbedding.subtype_coe hH)
   rw [← integral_mul_left_eq_self (fun u : H ↦ f (g₁ * (u : G))) ⟨g₁⁻¹ * g₂, hg⟩]
   congr 1 with u
   simp [MulMemClass.coe_mul, ← mul_assoc]

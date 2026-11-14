@@ -146,7 +146,7 @@ theorem ae_norm_scalarRNDeriv_variation_eq_one (μ : VectorMeasure X 𝕜) :
   have hd : μ.variation.withDensity (fun x ↦ ‖scalarRNDeriv μ μ.variation x‖ₑ) =
       μ.variation.withDensity (fun _ ↦ 1) := by simpa using h.symm
   have hae := (withDensity_eq_iff_of_sigmaFinite
-    (integrable_scalarRNDeriv μ μ.variation).aestronglyMeasurable.enorm
+    (integrable_scalarRNDeriv μ μ.variation).aestronglyMeasurable.eNorm
     measurable_const.aemeasurable).1 hd
   filter_upwards [hae] with x hx
   simpa using congrArg ENNReal.toReal hx

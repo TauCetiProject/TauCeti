@@ -120,7 +120,8 @@ theorem eq_zero_of_two_eq_zero_of_aeval_X_X_eq_zero (h2 : (2 : R) = 0) {k : ℕ}
   · rw [lazardCocycle_eq_zero_of_lt_two (by norm_num), smul_zero]
   · -- The diagonal of `r • C_{2ᵏ}` is `r • X^{2ᵏ}`, whose coefficient of `X^{2ᵏ}` is `r`.
     rw [map_smul, aeval_diag_lazardCocycle_two_pow h2 hk] at hd
-    have hr : r = 0 := by simpa using congrArg (Polynomial.coeff · (2 ^ k)) hd
+    have hr : r = 0 := by
+      simpa using congrArg (fun p : Polynomial R ↦ p.coeff (2 ^ k)) hd
     rw [hr, zero_smul]
 
 end TauCeti
