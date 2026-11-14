@@ -10,7 +10,6 @@ public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Net
 public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.Analysis.Normed.Module.CoveringNumber
 public import Mathlib.Analysis.Matrix.Hermitian
-public import Mathlib.Analysis.Matrix.MeasurableSpace
 import TauCeti.Probability.Moments.SubGaussian.Net
 
 /-!
@@ -49,34 +48,8 @@ private lemma isotropicRows_proxy_lower_bound {Ω m n : Type*} [MeasurableSpace 
   classical
   let x₀ := EuclideanSpace.single (Classical.arbitrary n) (1 : ℝ)
   have hx₀ : ‖x₀‖ = 1 := by simp [x₀]
-  let X : Ω → ℝ := fun ω ↦ A ω (Classical.arbitrary m) ⬝ᵥ x₀
-  have hX : HasSubgaussianMGF X c P := hsub (Classical.arbitrary m) x₀ hx₀
-  have hiso : ∫ ω, X ω ^ 2 ∂P = 1 := hiso (Classical.arbitrary m) x₀ hx₀
-  by_cases hc : c = 0
-  · subst c
-    have hzero := hX.ae_eq_zero_of_hasSubgaussianMGF_zero
-    have : ∫ ω, X ω ^ 2 ∂P = 0 := integral_eq_zero_of_ae (hzero.mono fun _ h ↦ by simp [h])
-    linarith
-  have : 0 < (c : ℝ) := by exact_mod_cast (pos_iff_ne_zero.mpr hc)
-  let s : ℝ := (4 * (c : ℝ))⁻¹
-  have hs : 2 * (c : ℝ) * s = 1 / 2 := by dsimp [s]; field_simp; ring
-  have hint := hX.integrable_exp_mul_sq (s := s) (by linarith)
-  have hbound := hX.integral_exp_mul_sq_le (s := s) (by positivity) (by linarith)
-  have hrpow : (1 / 2 : ℝ) ^ (-(1 / 2 : ℝ)) ≤ 2 := by
-    rw [Real.rpow_neg (by norm_num),
-      ← Real.inv_rpow (by norm_num)]
-    norm_num only [inv_div, div_one]
-    exact (Real.rpow_le_rpow_of_exponent_le one_le_two (by norm_num)).trans_eq (rpow_one 2)
-  have hle : ∫ ω, 1 + s * X ω ^ 2 ∂P ≤ ∫ ω, exp (s * X ω ^ 2) ∂P :=
-    integral_mono ((integrable_const 1).add (((hX.memLp 2).integrable_sq).const_mul s))
-      hint (fun ω ↦ by linarith [add_one_le_exp (s * X ω ^ 2)])
-  rw [integral_add (integrable_const 1) (((hX.memLp 2).integrable_sq).const_mul s),
-    integral_const, probReal_univ, one_smul, integral_const_mul, hiso, mul_one] at hle
-  have hs_le : s ≤ 1 := by
-    rw [hs] at hbound
-    norm_num only [sub_half] at hbound
-    linarith [hbound.trans hrpow]
-  have : 1 ≤ 4 * (c : ℝ) := (inv_le_one₀ (by positivity : 0 < 4 * (c : ℝ))).mp hs_le
+  have hb := (hsub (Classical.arbitrary m) x₀ hx₀).integral_sq_le
+  rw [hiso (Classical.arbitrary m) x₀ hx₀] at hb
   linarith
 
 private lemma row_tail_rate (m : ℕ) {c s : ℝ} (hm : 0 < m) (hc : 0 < c) (hs : 0 ≤ s) :
@@ -95,12 +68,6 @@ private lemma row_tail_rate (m : ℕ) {c s : ℝ} (hm : 0 < m) (hc : 0 < c) (hs 
     apply (le_div_iff₀ hc).mpr
     nlinarith [mul_nonneg (Real.sqrt_nonneg (m : ℝ)) hs]
   nlinarith [le_min hquad hlin]
-
-private lemma one_net_card_exp_le (n : ℕ) {a t : ℝ} (ha : a ≤ 9 ^ n) (ht : 0 ≤ t) :
-    a * exp (-(4 * (√n + t) ^ 2)) ≤ exp (-(t ^ 2)) := by
-  simpa only [Nat.cast_zero, Real.sqrt_zero, zero_add, mul_one] using
-    TauCeti.net_card_mul_exp_le (m := 0) ha (by simp : (1 : ℝ) ≤ 9 ^ (0 : ℕ))
-      zero_le_one ht
 
 variable {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n] [DecidableEq n]
   {P : Measure Ω} [IsProbabilityMeasure P] {A : Ω → Matrix m n ℝ} {c : ℝ≥0}
@@ -121,6 +88,7 @@ private lemma gram_bad_subset_net {N : Finset (EuclideanSpace ℝ n)}
       isHermitian_conjTranspose_mul_self (A ω)
   have hSymm := isSymmetric_toEuclideanLin_iff.mpr
     (hHerm.sub (isHermitian_one.smul (by simp : IsSelfAdjoint (Fintype.card m : ℝ))))
+  rw [← coe_toEuclideanCLM_eq_toEuclideanLin] at hSymm
   have hb := ContinuousLinearMap.norm_le_of_isSymmetric_of_abs_re_inner_map_self_le_of_isCover
     (toEuclideanCLM (n := n) (𝕜 := ℝ) ((A ω)ᵀ * A ω - (Fintype.card m : ℝ) • 1))
     hSymm
@@ -141,15 +109,13 @@ private lemma gram_bad_subset_net {N : Finset (EuclideanSpace ℝ n)}
         Finset.card_univ, nsmul_eq_mul, mul_one] using h x hx) hNcover
   have hfactor : (1 - 2 * ((1 / 4 : ℝ≥0) : ℝ))⁻¹ = 2 := by norm_num
   rw [hfactor, l2_opNorm_toEuclideanCLM] at hb
-  have : ‖(A ω)ᵀ * A ω - (Fintype.card m : ℝ) • 1‖ ≤ 2 * r := by
-    simpa only [Matrix.l2_opNorm_toEuclideanCLM] using hb
-  exact (not_lt_of_ge this) hω
+  exact (not_lt_of_ge hb) hω
 
 omit [IsProbabilityMeasure P] in
 /-- Concentration of the unnormalized Gram matrix of independent isotropic sub-Gaussian rows.
 The proxy `c` bounds every unit linear form; the two terms in the threshold give the usual
-square-root and linear sample-size regimes. -/
-theorem measureReal_gram_sub_smul_one_gt_le
+square-root and linear dimension regimes. -/
+theorem measureReal_l2_opNorm_transpose_mul_self_sub_smul_one_gt_le
     (hindep : iIndepFun (fun i ω ↦ A ω i) P)
     (hsub : ∀ i (x : EuclideanSpace ℝ n), ‖x‖ = 1 →
       HasSubgaussianMGF (fun ω ↦ A ω i ⬝ᵥ x) c P)
@@ -194,7 +160,9 @@ theorem measureReal_gram_sub_smul_one_gt_le
     have hx1 := mem_sphere_zero_iff_norm.mp (hNs hx)
     have hi : iIndepFun (fun i ω ↦ A ω i ⬝ᵥ x) P :=
       hindep.comp (fun _ v ↦ v ⬝ᵥ x) (fun _ ↦ by fun_prop)
-    have hb := hi.measureReal_abs_sum_sq_sub_integral_gt_le (fun i ↦ hsub i x hx1) hr
+    have hb := hi.measureReal_abs_sum_sq_sub_integral_gt_le
+      (s := Finset.univ) (fun i _ ↦ hsub i x hx1) hr
+    simp only [Finset.card_univ] at hb
     simp_rw [hiso _ x hx1] at hb
     exact hb.trans (by
       gcongr
@@ -214,8 +182,8 @@ theorem measureReal_gram_sub_smul_one_gt_le
       measureReal_biUnion_finset_le _ _
     _ ≤ ∑ x ∈ N, 2 * exp (-(4 * s ^ 2)) := Finset.sum_le_sum htail
     _ = 2 * ((N.card : ℝ) * exp (-(4 * s ^ 2))) := by simp; ring
-    _ ≤ 2 * exp (-(t ^ 2)) := mul_le_mul_of_nonneg_left (one_net_card_exp_le
-      (Fintype.card n) hNc' ht) (by norm_num)
+    _ ≤ 2 * exp (-(t ^ 2)) := mul_le_mul_of_nonneg_left
+      (TauCeti.mul_exp_neg_four_mul_sq_le_exp_neg_sq hNc' ht) (by norm_num)
 
 private lemma singularValues_bad_subset_gram [Nonempty m]
     (hsub : ∀ i (x : EuclideanSpace ℝ n), ‖x‖ = 1 →
@@ -296,6 +264,6 @@ theorem measureReal_exists_abs_singularValues_sub_sqrt_gt_le
   have hbad := singularValues_bad_subset_gram hsub hiso
     (s := √(Fintype.card n) + t) (by positivity)
   exact (measureReal_mono hbad (measure_ne_top _ _)).trans
-    (hindep.measureReal_gram_sub_smul_one_gt_le hsub hiso ht)
+    (hindep.measureReal_l2_opNorm_transpose_mul_self_sub_smul_one_gt_le hsub hiso ht)
 
 end ProbabilityTheory.iIndepFun

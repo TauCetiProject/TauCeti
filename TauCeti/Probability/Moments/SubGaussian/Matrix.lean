@@ -11,7 +11,6 @@ import TauCeti.Probability.Moments.SubGaussian.Net
 import TauCeti.Analysis.InnerProductSpace.BilinearNet
 import TauCeti.Analysis.Normed.Module.CoveringNumber
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Positivity
@@ -230,7 +229,7 @@ theorem iIndepFun.measureReal_matrix_l2_opNorm_gt_le [DecidableEq n] [IsProbabil
       ring
     _ ≤ 2 * exp (-(t ^ 2)) :=
       mul_le_mul_of_nonneg_left
-        (TauCeti.net_card_mul_exp_le hNc' hMc'
+        (TauCeti.mul_mul_exp_neg_four_mul_sq_le_exp_neg_sq hNc' hMc'
           (Nat.cast_nonneg _) ht) (by norm_num)
 
 end RandomMatrix

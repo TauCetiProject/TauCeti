@@ -282,8 +282,9 @@ theorem abs_sq_singularValues_sub_le {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m
       T.adjoint_comp_self_rightSingularBasis j
     rw [hTv]
     simp [sub_smul]
-  have hb : ‖toEuclideanLin (Aᴴ * A - a • 1) v‖ ≤ ‖Aᴴ * A - a • 1‖ * ‖v‖ :=
-    l2_opNorm_mulVec (Aᴴ * A - a • 1) v
+  have hb := (toEuclideanCLM (n := n) (𝕜 := 𝕜) (Aᴴ * A - a • 1)).le_opNorm v
+  rw [← ContinuousLinearMap.coe_coe, coe_toEuclideanCLM_eq_toEuclideanLin,
+    l2_opNorm_toEuclideanCLM] at hb
   simpa only [hDv, norm_smul, RCLike.norm_ofReal, hv, mul_one] using hb
 
 end Matrix

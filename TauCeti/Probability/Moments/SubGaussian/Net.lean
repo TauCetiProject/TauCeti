@@ -41,7 +41,7 @@ open Real
 namespace TauCeti
 
 /-- The cardinality cost of two quarter-nets is absorbed by the Gaussian exponent. -/
-theorem net_card_mul_exp_le {m n : ℕ} {t a b : ℝ}
+theorem mul_mul_exp_neg_four_mul_sq_le_exp_neg_sq {m n : ℕ} {t a b : ℝ}
     (ha : a ≤ 9 ^ n) (hb : b ≤ 9 ^ m) (hb0 : 0 ≤ b) (ht : 0 ≤ t) :
     a * b * exp (-(4 * (√m + √n + t) ^ 2)) ≤ exp (-(t ^ 2)) := by
   have h9 : (9 : ℝ) ≤ exp 3 := by
@@ -72,5 +72,13 @@ theorem net_card_mul_exp_le {m n : ℕ} {t a b : ℝ}
     _ ≤ exp (-(t ^ 2)) := by
       apply exp_le_exp.2
       nlinarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m), (Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
+
+/-- The cardinality cost of one quarter-net is absorbed by the Gaussian exponent. -/
+theorem mul_exp_neg_four_mul_sq_le_exp_neg_sq {n : ℕ} {t a : ℝ}
+    (ha : a ≤ 9 ^ n) (ht : 0 ≤ t) :
+    a * exp (-(4 * (√n + t) ^ 2)) ≤ exp (-(t ^ 2)) := by
+  simpa only [Nat.cast_zero, Real.sqrt_zero, zero_add, mul_one] using
+    mul_mul_exp_neg_four_mul_sq_le_exp_neg_sq (m := 0) ha
+      (by simp : (1 : ℝ) ≤ 9 ^ (0 : ℕ)) zero_le_one ht
 
 end TauCeti
