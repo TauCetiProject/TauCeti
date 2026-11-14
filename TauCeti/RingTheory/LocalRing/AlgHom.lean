@@ -60,12 +60,6 @@ theorem surjective_self {k R : Type*} [CommSemiring k] [Semiring R] [Algebra k R
     (ε : R →ₐ[k] k) : Function.Surjective ε :=
   fun c ↦ ⟨algebraMap k R c, ε.commutes c⟩
 
-/-- Subtracting the scalar image of `ε r` puts `r` into the kernel of an augmentation
-`ε : R →ₐ[k] k`. -/
-theorem sub_algebraMap_apply_mem_ker {k R : Type*} [CommRing k] [CommRing R] [Algebra k R]
-    (ε : R →ₐ[k] k) (r : R) : r - algebraMap k R (ε r) ∈ RingHom.ker ε := by
-  simp [RingHom.mem_ker]
-
 /-- Over a field `k`, every `k`-algebra augmentation `R →ₐ[k] k` of a local ring `R` (not assumed
 commutative) reflects units. -/
 instance isLocalHom_self {k R : Type*} [Field k] [Ring R] [IsLocalRing R] [Algebra k R]
@@ -131,7 +125,7 @@ theorem surjective_algebraMap_residueField {k R : Type*} [Field k] [CommRing R] 
   rw [IsScalarTower.algebraMap_apply k R (IsLocalRing.ResidueField R),
     IsLocalRing.ResidueField.algebraMap_eq, ← sub_eq_zero, ← map_sub,
     IsLocalRing.residue_eq_zero_iff, ← ε.ker_eq_maximalIdeal]
-  exact neg_mem_iff.1 (by simpa only [neg_sub] using ε.sub_algebraMap_apply_mem_ker r)
+  simp [RingHom.mem_ker]
 
 end Augmentation
 

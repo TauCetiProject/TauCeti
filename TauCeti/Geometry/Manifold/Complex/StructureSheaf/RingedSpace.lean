@@ -933,26 +933,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {Y : Type} [TopologicalSpace Y] [ChartedSpace E' Y]
   (e : OpenPartialHomeomorph Y E') (he : e ∈ maximalAtlas 𝓘(ℂ, E') ω Y)
 
-/-- Centered linear coordinate `z ↦ b.coord i (e z - e y)` on `e.source` as a holomorphic section
-over `⟨e.source, e.open_source⟩`. -/
-def holomorphicCoordinateSection {ι : Type*} (b : Module.Basis ι ℂ E') (y : Y) (i : ι) :
-    (holomorphicStructureSheaf 𝓘(ℂ, E') Y).obj.obj (op ⟨e.source, e.open_source⟩) :=
-  ofContMDiff (fun z : (⟨e.source, e.open_source⟩ : Opens Y) ↦
-      b.coord i (e z.1 - e y)) <| by
-    intro z
-    have hlin := (LinearMap.toContinuousLinearMap (b.coord i)).contDiff (n := ω)
-    have hez := ((contMDiffOn_of_mem_maximalAtlas he).contMDiffAt
-      (e.open_source.mem_nhds z.2)).comp z contMDiff_subtype_val.contMDiffAt
-    exact hlin.contMDiff.contMDiffAt.comp z (hez.sub contMDiffAt_const)
-
-/-- Evaluating `e.holomorphicCoordinateSection he b y i` at `z ∈ e.source` gives
-`b.coord i (e z - e y)`. -/
-@[simp]
-theorem holomorphicCoordinateSection_apply {ι : Type*} (b : Module.Basis ι ℂ E') (y : Y) (i : ι)
-    (z : (⟨e.source, e.open_source⟩ : Opens Y)) :
-    e.holomorphicCoordinateSection he b y i z = b.coord i (e z.1 - e y) :=
-  ofContMDiff_apply _ _ z
-
 include he in
 /-- **Chart-independent local coordinate recovery.** In *any* holomorphic chart `e` around
 `φ.base x` and *any* basis `b` of `E'`, the base map `φ.base` of a `ℂ`-linear morphism is given on
@@ -969,15 +949,18 @@ theorem base_eq_symm_sum_of_c_app_top_algebraMap {ι : Type*} [Fintype ι] (b : 
     φ.base w.1 = e.symm (e (φ.base x) +
       ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
         ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
-          (e.holomorphicCoordinateSection he b (φ.base x) i)) w • b i) := by
+          (e.holomorphicLinearCoordinateSection he
+            (LinearMap.toContinuousLinearMap (b.coord i)) (e (φ.base x)))) w • b i) := by
   have hsum : ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
       ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
-        (e.holomorphicCoordinateSection he b (φ.base x) i)) w • b i =
+        (e.holomorphicLinearCoordinateSection he
+          (LinearMap.toContinuousLinearMap (b.coord i)) (e (φ.base x)))) w • b i =
       e (φ.base w.1) - e (φ.base x) := by
     refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans (b.sum_repr (e (φ.base w.1) - e (φ.base x)))
     rw [c_app_apply_of_c_app_top_algebraMap φ hφ ⟨e.source, e.open_source⟩ _ w]
     exact congrArg (· • b i)
-      (e.holomorphicCoordinateSection_apply he b (φ.base x) i ⟨φ.base w.1, w.2⟩)
+      (e.holomorphicLinearCoordinateSection_apply he
+        (LinearMap.toContinuousLinearMap (b.coord i)) (e (φ.base x)) ⟨φ.base w.1, w.2⟩)
   rw [hsum, add_sub_cancel, e.left_inv w.2]
 
 end OpenPartialHomeomorph
