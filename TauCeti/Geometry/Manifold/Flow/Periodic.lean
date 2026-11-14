@@ -77,6 +77,8 @@ isolated, fixed points is finite.
   field whose periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
   assuming only that they are nondegenerate.
+* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`: a periodic solution that is a
+  uniform limit (along an inducing map) of null-homotopic loops is contractible.
 
 ## References
 
@@ -140,6 +142,24 @@ theorem mem_contractiblePeriodicSolutions {γ : ℝ → M} :
 theorem contractiblePeriodicSolutions_subset :
     contractiblePeriodicSolutions X T ⊆ periodicSolutions X T :=
   fun _ hγ ↦ hγ.1
+
+/-- **Uniform limits of null-homotopic loops are contractible periodic solutions.** If a
+`T`-periodic solution `γ` (`0 < T`) on a manifold `M` lies in a set `K` on which `e : M → F` is
+topologically inducing, and `e ∘ u i` converges uniformly to `e ∘ γ` along a filter `l` along
+which `u i` eventually takes values in `K` and frequently descends to a null-homotopic map on
+`AddCircle T`, then `γ` is a contractible `T`-periodic solution. -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly {γ : ℝ → M}
+    (hγ : γ ∈ periodicSolutions X T) (hT : 0 < T) {K : Set M} (hγK : ∀ t, γ t ∈ K)
+    {F : Type*} [UniformSpace F] {e : M → F} (he : IsInducing fun p : K ↦ e p)
+    {ι : Type*} {l : Filter ι} {u : ι → ℝ → M} (huK : ∀ᶠ i in l, ∀ t, u i t ∈ K)
+    (hunif : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l)
+    (hnull : ∃ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) :
+    γ ∈ contractiblePeriodicSolutions X T := by
+  have : Fact (0 < T) := ⟨hT⟩
+  let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
+  exact ⟨hγ, Periodic.exists_nullhomotopic_of_tendstoUniformly hγ.2
+    (continuous_of_mem_periodicSolutions hγ) hγK he huK hunif hnull⟩
 
 section Flow
 

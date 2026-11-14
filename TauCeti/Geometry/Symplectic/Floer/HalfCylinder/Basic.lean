@@ -378,11 +378,11 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
     (fun v t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
-      hfloer hE) hC fun x hxper hx hxK ↦ ?_
+      hfloer hE) hC fun x hxper hx hxK _ ↦ ?_
   -- A nondegenerate orbit starts at an isolated fixed point of the time-one map.
   have hiso := (hnd x hxper hx hxK).eventually_not_isFixedPt
   rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
   obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
-  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hy hyper (hyx 0)⟩
+  exact ⟨ε, hε, fun y hyper hy _ _ hyx ↦ h y hy hyper (hyx 0)⟩
 
 end TauCeti.SymplecticForm

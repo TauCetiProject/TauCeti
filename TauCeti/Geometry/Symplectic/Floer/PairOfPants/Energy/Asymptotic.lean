@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -43,9 +44,11 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 ## Main results
 
 * `TauCeti.Floer.tendsto_setIntegral_truncation`,
-  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`: integrals over `S` are limits of integrals over
-  its truncations, and integrals of a Hamiltonian along the end loops converge to its integral
-  along their pointwise limits.
+  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`,
+  `TauCeti.Floer.tendsto_intervalIntegral_endChart_of_isCompact`: integrals over `S` are limits of
+  integrals over its truncations, and integrals of a Hamiltonian along the end loops converge to
+  its integral along their pointwise limits (either under a global bound or when `u` maps `S` into
+  a compact set).
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -115,6 +118,28 @@ theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
     hu.comp_continuous (Complex.equivRealProdCLM.continuous.comp
       ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))) hmem
   exact ((hHc q).comp (continuous_id.prodMk hloop)).aestronglyMeasurable
+
+/-- If `u` maps `S` into a compact set `B ⊆ M` and its end loops `t ↦ u(φ_q(±s, t))` converge
+pointwise to `y` as `s → ∞`, then the period integrals of a continuous function `G` along them
+converge to `∫₀¹ G(t, y(t)) dt`, without assuming any bound on `G` outside `[0, 1] × B`. -/
+theorem tendsto_intervalIntegral_endChart_of_isCompact {M : Type*} [TopologicalSpace M]
+    {G : ℝ → M → ℝ} (hG : Continuous (uncurry G)) {B : Set M} (hB : IsCompact B)
+    {u : ℝ × ℝ → M} (hu : ContinuousOn u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B) {q : Puncture} {y : ℝ → M}
+    (hy : ∀ t, Tendsto (fun s : ℝ ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t))) :
+    Tendsto (fun s : ℝ ↦ ∫ t in (0 : ℝ)..1, G t (u (endChart q (q.endSign * s, t)))) atTop
+      (𝓝 (∫ t in (0 : ℝ)..1, G t (y t))) := by
+  have hmem (s : Ioi (0 : ℝ)) (t : ℝ) :
+      endChart q (q.endSign * (s : ℝ), t) ∈ thricePuncturedSphereReal :=
+    endChart_mem_thricePuncturedSphereReal
+      (by simpa only [← mul_assoc, endSign_mul_self, one_mul] using mem_Ioi.1 s.2)
+  refine (tendsto_comap'_iff (i := ((↑) : Ioi (0 : ℝ) → ℝ))
+    (Subtype.range_coe.symm ▸ Ioi_mem_atTop 0)).1 ?_
+  exact tendsto_intervalIntegral_comp_of_tendsto hG hB
+    (fun s ↦ (hu.comp_continuous ((contDiff_endChart q 0).continuous.comp (by fun_prop))
+      (hmem s)).continuousOn)
+    (fun s t _ ↦ huB _ (hmem s t))
+    fun t _ ↦ (hy t).comp tendsto_comap
 
 end Floer
 

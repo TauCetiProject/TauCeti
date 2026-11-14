@@ -66,6 +66,8 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`: such a map with
   surjective differential carries a tamed almost complex structure to one tamed by the constant
   form.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_tame_mvfderiv`: coercivity
+  `c ‖dφ v‖² ≤ form(v, J v)` with `c > 0` and injective `dφ` implies that `form` tames `J`.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
   symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
   partial-diffeomorphism pullback characterizations
@@ -403,6 +405,16 @@ theorem IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv (h : form.IsNondege
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
   rw [← hJv, ← hform, ← IsNondegenerate.symplecticFormAt_apply]
   exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
+
+/-- Uniform coercivity `c * ‖dφ v‖ ^ 2 ≤ form_x(v, J v)` with `0 < c` and injective `dφ` at `x`
+implies that `form_x` tames `J`. -/
+theorem IsNondegenerate.tames_of_tame_mvfderiv (h : form.IsNondegenerate)
+    (hde : Function.Injective (mvfderiv I φ x))
+    {J : AlmostComplexStructure (TangentSpace I x)} {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ v, c * ‖mvfderiv I φ x v‖ ^ 2 ≤ h.symplecticFormAt x v (J v)) :
+    (h.symplecticFormAt x).Tames J := fun v hv ↦
+  have hev : mvfderiv I φ x v ≠ 0 := fun h0 ↦ hv (hde (h0.trans (map_zero _).symm))
+  (mul_pos hc (pow_pos (norm_pos_iff.2 hev) 2)).trans_le (hJc v)
 
 end Chart
 
