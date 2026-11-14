@@ -222,10 +222,12 @@ noncomputable def posRootsFinset [Finite ι] : Finset ι := (posRoots_finite P b
 /-- The negative roots of a base, as a finset, so that they can be summed over. -/
 noncomputable def negRootsFinset [Finite ι] : Finset ι := (negRoots_finite P b).toFinset
 
+/-- Membership in the finset of positive roots. -/
 @[simp]
 lemma mem_posRootsFinset [Finite ι] (i : ι) : i ∈ posRootsFinset P b ↔ i ∈ posRoots P b :=
   (posRoots_finite P b).mem_toFinset
 
+/-- Membership in the finset of negative roots. -/
 @[simp]
 lemma mem_negRootsFinset [Finite ι] (i : ι) : i ∈ negRootsFinset P b ↔ i ∈ negRoots P b :=
   (negRoots_finite P b).mem_toFinset
@@ -254,7 +256,7 @@ lemma posRoots_nonempty [Nonempty ι] : (posRoots P b).Nonempty := by
   · exact ⟨i, hi⟩
   · exact ⟨-i, hi⟩
 
-/-- The negative of a positive root is negative. -/
+/-- The negative of a root is negative exactly when the root is positive. -/
 lemma reflectionPerm_self_mem_negRoots_iff_mem_posRoots (i : ι) :
     P.reflectionPerm i i ∈ negRoots P b ↔ i ∈ posRoots P b := by
   let := P.indexNeg
