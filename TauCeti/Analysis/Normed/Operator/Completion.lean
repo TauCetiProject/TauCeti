@@ -49,6 +49,10 @@ extension to the completions has the same property.
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
+* `SeparationQuotient.norm_liftCLM`: descending a bounded semilinear map to the separation
+  quotient preserves its operator norm.
+* `UniformSpace.Completion.separationQuotientEquiv`: the canonical linear isometric equivalence
+  `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E`.
 -/
 
 public section
@@ -227,3 +231,60 @@ theorem toLinearIsometry_completion (e : E ≃ₛₗᵢ[σ₁₂] F) :
 end NormedAddCommGroup
 
 end LinearIsometryEquiv
+
+namespace SeparationQuotient
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Descending a bounded semilinear map to the separation quotient of its domain preserves
+its operator norm. -/
+@[simp]
+theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
+    ‖liftCLM f hf‖ = ‖f‖ := by
+  rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
+  congr 1
+  ext c
+  refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
+  · simpa only [liftCLM_mk, norm_mk] using h (mk x)
+  · obtain ⟨x, rfl⟩ := surjective_mk x
+    simpa only [liftCLM_mk, norm_mk] using h x
+
+end SeparationQuotient
+
+namespace UniformSpace.Completion
+
+variable (𝕜 E : Type*) [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The completion of the separation quotient of a seminormed space is canonically linearly
+isometrically equivalent to the completion of the space itself. -/
+noncomputable def separationQuotientEquiv :
+    Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E :=
+  (LinearEquiv.refl 𝕜 E).extendOfIsometry
+    (toComplₗᵢ.toLinearMap.comp (SeparationQuotient.mkCLM 𝕜 E).toLinearMap)
+    toComplₗᵢ.toLinearMap
+    (denseRange_coe.comp SeparationQuotient.surjective_mk.denseRange (continuous_coe _))
+    denseRange_coe
+    fun x ↦ by simp
+
+variable {𝕜 E}
+
+/-- On classes from `E`, `separationQuotientEquiv` sends
+`(mk x : Completion (SeparationQuotient E))` to `(x : Completion E)`. -/
+@[simp]
+theorem separationQuotientEquiv_coe_mk (x : E) :
+    separationQuotientEquiv 𝕜 E
+        ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
+      (x : Completion E) :=
+  LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ x
+
+/-- The inverse of `separationQuotientEquiv` sends `(x : Completion E)` to
+`(mk x : Completion (SeparationQuotient E))`. -/
+@[simp]
+theorem separationQuotientEquiv_symm_coe (x : E) :
+    (separationQuotientEquiv 𝕜 E).symm (x : Completion E) =
+      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) :=
+  LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ x
+
+end UniformSpace.Completion
