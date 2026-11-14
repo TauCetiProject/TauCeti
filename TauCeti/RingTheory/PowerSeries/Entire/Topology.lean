@@ -38,8 +38,8 @@ constant multiple of the Gauss norm at the radius `2 ‖b‖ + 1`
 * `TauCeti.PowerSeries.IsEntire.denseRange_polynomialHom`: polynomials are dense.
 * `TauCeti.PowerSeries.IsEntire.range_restrictFamily`: the image of the restriction embedding.
 * `TauCeti.PowerSeries.IsEntire.continuous_evalAtHom`: evaluation is continuous.
-* Instances: `IsUniformAddGroup`, `IsTopologicalRing`, `T2Space` and, over complete coefficients,
-  `CompleteSpace` on `PowerSeries.IsEntire.subring R`.
+* Instances: `IsUniformAddGroup`, `IsTopologicalRing`, `NonarchimedeanRing`, `T2Space` and, over
+  complete coefficients, `CompleteSpace` on `PowerSeries.IsEntire.subring R`.
 
 ## References
 
@@ -141,6 +141,9 @@ instance : IsUniformAddGroup (IsEntire.subring R) :=
 
 instance : IsTopologicalRing (IsEntire.subring R) :=
   GaussFamily.isTopologicalRing isUniformInducing_restrictFamily
+
+instance : NonarchimedeanRing (IsEntire.subring R) :=
+  GaussFamily.nonarchimedeanRing isUniformInducing_restrictFamily
 
 /-- Polynomial truncations converge in the Gauss norms at all positive radii simultaneously. -/
 theorem tendsto_polynomialHom_trunc (f : IsEntire.subring R) :

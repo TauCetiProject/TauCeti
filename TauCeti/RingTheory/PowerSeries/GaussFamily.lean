@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
+public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+public import TauCeti.RingTheory.PowerSeries.TateAlgebra
+import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
 # The Gauss topology of a family of radii
@@ -20,9 +23,9 @@ norms at all the radii `ρ i` once, so that each of these algebras is a speciali
 The subring is described by a membership condition `hT`, and its uniformity by the hypothesis
 that restriction to the closed discs of all radii is uniformly inducing. Under these hypotheses,
 convergence is convergence in each Gauss norm, and it may be tested at any family of radii that
-dominates `ρ`. The resulting uniform ring is a topological ring in which polynomial truncations
-converge. When `ι` is nonempty, restriction is a uniform embedding whose image consists of the
-families with the same formal coefficients at every radius. That image is closed, so the
+dominates `ρ`. The resulting uniform ring is a nonarchimedean topological ring in which polynomial
+truncations converge. When `ι` is nonempty, restriction is a uniform embedding whose image consists
+of the families with the same formal coefficients at every radius. That image is closed, so the
 algebra is Hausdorff and is complete when `R` is complete.
 
 ## Main definitions
@@ -37,9 +40,10 @@ algebra is Hausdorff and is complete when `R` is complete.
   any dominating family of radii.
 * `TauCeti.PowerSeries.GaussFamily.denseRange_polynomialHom`: polynomials are dense.
 * `TauCeti.PowerSeries.GaussFamily.range_restrictFamily`: the image of the restriction embedding.
-* `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`, `TauCeti.PowerSeries.GaussFamily.t2Space`
-  and `TauCeti.PowerSeries.GaussFamily.completeSpace`: the ring structure, separation and
-  completeness of the Gauss topology.
+* `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`,
+  `TauCeti.PowerSeries.GaussFamily.nonarchimedeanRing`, `TauCeti.PowerSeries.GaussFamily.t2Space`
+  and `TauCeti.PowerSeries.GaussFamily.completeSpace`: the nonarchimedean ring structure,
+  separation and completeness of the Gauss topology.
 -/
 
 public section
@@ -173,6 +177,17 @@ theorem isUniformAddGroup : IsUniformAddGroup T :=
 theorem isTopologicalRing : IsTopologicalRing T :=
   have := isUniformAddGroup hu
   { continuous_mul := (hu.isInducing.continuousMul (restrictFamily hT)).continuous_mul }
+
+/-- The Gauss topology makes `T` a nonarchimedean ring, since open additive subgroups of the
+product of closed-disc algebras pull back to open additive subgroups of `T`. -/
+theorem nonarchimedeanRing : NonarchimedeanRing T :=
+  have := isTopologicalRing hu
+  { is_nonarchimedean U hU := by
+      rw [hu.isInducing.nhds_eq_comap, map_zero] at hU
+      obtain ⟨V, hV, hVU⟩ := Filter.mem_comap.mp hU
+      obtain ⟨W, hWV⟩ := NonarchimedeanAddGroup.is_nonarchimedean V hV
+      exact ⟨⟨W.toAddSubgroup.comap (restrictFamily hT).toAddMonoidHom,
+        W.isOpen.preimage hu.uniformContinuous.continuous⟩, (Set.preimage_mono hWV).trans hVU⟩ }
 
 /-- Polynomial truncations converge in the Gauss norms at all the radii simultaneously, for any
 inclusion `φ` of the polynomials into `T`. -/
