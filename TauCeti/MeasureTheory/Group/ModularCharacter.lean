@@ -50,8 +50,11 @@ none of this assumes σ-finiteness.
   supported integrands.
 * `MeasureTheory.Measure.isMulRightInvariant_withDensity_modularCharacter`: `μ.withDensity c`
   is right invariant for an inner regular Haar measure `μ`.
-* `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter`: `μ.inv = μ.withDensity c` for an
-  inner regular Haar measure `μ`.
+* `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter` and
+  `MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular`: `μ.inv = μ.withDensity c` and
+  `μ.inv ≪ μ` for an inner regular Haar measure `μ`.
+* `MeasureTheory.Measure.quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous`: `y ↦ y⁻¹ * x`
+  preserves null sets of any left-invariant measure satisfying `μ.inv ≪ μ`.
 * `MeasureTheory.Measure.map_right_mul_eq_modularCharacter_smul_of_regular`:
   `map (· * g) μ = c(g) • μ` for a regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter_of_regular`:
@@ -259,6 +262,18 @@ private theorem isMulRightInvariant_withDensity_modularCharacter_of_map
   simp only [Pi.smul_apply, smul_eq_mul, ← ENNReal.coe_mul]
   rw [map_mul, mul_left_comm, ← map_mul, mul_inv_cancel, map_one, mul_one]
 
+omit [LocallyCompactSpace G] in
+/-- If `μ` is left-invariant and `μ.inv ≪ μ`, then `y ↦ y⁻¹ * x` is quasi-measure-preserving for
+every `x : G`, since `y⁻¹ * x = (x⁻¹ * y)⁻¹` is left translation followed by inversion. -/
+theorem quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous [μ.IsMulLeftInvariant]
+    (hinv : μ.inv ≪ μ) (x : G) :
+    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ := by
+  have hinv_qmp : QuasiMeasurePreserving Inv.inv μ μ := ⟨measurable_inv.aemeasurable, hinv⟩
+  have hcomp := hinv_qmp.comp (measurePreserving_mul_left μ x⁻¹).quasiMeasurePreserving
+  convert hcomp using 1
+  ext y
+  simp [mul_inv_rev]
+
 variable [μ.IsHaarMeasure]
 
 /-- Weighting an inner regular Haar measure by the modular character gives a right invariant
@@ -328,6 +343,12 @@ theorem inv_eq_withDensity_modularCharacter [μ.InnerRegular] :
           exact lintegral_mono' (restrict_mono subset_rfl h₁) le_rfl
       _ = μ.inv := inv_withDensity_modularCharacter_withDensity μ
   exact le_antisymm hle hge
+
+/-- Inversion maps null sets of an inner regular Haar measure to null sets: `μ.inv ≪ μ`. Compare
+`MeasureTheory.inv_absolutelyContinuous`, which assumes σ-finiteness instead of inner regularity. -/
+theorem inv_absolutelyContinuous_of_innerRegular [μ.InnerRegular] : μ.inv ≪ μ := by
+  rw [inv_eq_withDensity_modularCharacter μ]
+  exact withDensity_absolutelyContinuous _ _
 
 section Regular
 
