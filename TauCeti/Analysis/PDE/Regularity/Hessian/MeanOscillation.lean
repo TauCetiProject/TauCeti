@@ -62,7 +62,7 @@ the columns: `‖T‖² ≤ (n + 1) ∑ₖ ‖T eₖ‖²` and `‖T eₖ‖ ≤
 For a measurable coefficient field `a`, the equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` is compared with the one
 frozen at a constant uniformly elliptic matrix `A`: `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ) ∂ᵢ∂ⱼu`.
 The error is at most `θ ‖D²u‖` pointwise, with `θ = ∑ᵢⱼ |aᵢⱼ - Aᵢⱼ|`
-(`Matrix.abs_sum_sum_mul_apply_single_le`), so the estimate above holds with `∫_{B_r} f²`
+(`Matrix.abs_contraction_le_sum_sum_abs_mul`), so the estimate above holds with `∫_{B_r} f²`
 replaced by `2 (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²)`
 (`TauCeti.PDE.setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_sub_le`).
 No continuity of `a` is used. If `|aᵢⱼ - Aᵢⱼ| ≤ M` and `D²u ∈ L^{2q}(B_r)`, Hölder's inequality with
@@ -375,6 +375,66 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_m
 
 variable {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
 
+/-- Freezing the coefficients of `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` at a constant matrix `A` gives the datum
+`f + c` with error `c = ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ) ∂ᵢ∂ⱼu`. If `a` is measurable and stays entrywise within
+`M` of `A` on `B_r`, then `∫_{B_r} (f + c)² ≤ 2 (∫_{B_r} f² + ∫_{B_r} θ² ‖D²u‖²)` with
+`θ = ∑ᵢⱼ |aᵢⱼ - Aᵢⱼ|`. -/
+private theorem setIntegral_ball_add_contraction_sub_sq_le {M : ℝ}
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
+    (ham : ∀ i j, AEStronglyMeasurable (fun x => a x i j) (volume.restrict (ball x₀ r)))
+    (haM : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∀ i j, |a x i j - A i j| ≤ M)
+    (heqA : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, A i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        f x + Matrix.contraction (A - a x) (Wkp.iteratedGradient 1 u x)) :
+    ∫ x in ball x₀ r, (f x + Matrix.contraction (A - a x) (Wkp.iteratedGradient 1 u x)) ^ 2 ≤
+      2 * ((∫ x in ball x₀ r, f x ^ 2) +
+        ∫ x in ball x₀ r, (∑ i, ∑ j, |a x i j - A i j|) ^ 2 *
+          ‖Wkp.iteratedGradient 1 u x‖ ^ 2) := by
+  -- `|c| ≤ θ ‖D²u‖` with `θ` bounded makes `c`, and hence `f`, square integrable; then
+  -- `(f + c)² ≤ 2 f² + 2 θ² ‖D²u‖²` pointwise.
+  set μr := volume.restrict (ball x₀ r)
+  set H : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+    ⇑(Wkp.iteratedGradient 1 u)
+  set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ∑ i, ∑ j, |a x i j - A i j|
+  set c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => Matrix.contraction (A - a x) (H x)
+  have hH : MemLp H 2 μr :=
+    (memLp_iteratedGradient_one u).mono_measure (Measure.restrict_mono hball le_rfl)
+  have hθm : AEStronglyMeasurable θ μr := by fun_prop
+  have hcm : AEStronglyMeasurable c μr := by
+    simp only [c, Matrix.contraction_apply, Matrix.sub_apply]
+    refine Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
+      fun j _ => (aestronglyMeasurable_const.sub (ham i j)).mul ?_
+    exact ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1)))
+      (EuclideanSpace.single i 1)).continuous.comp_aestronglyMeasurable
+        hH.aestronglyMeasurable).inner aestronglyMeasurable_const
+  have hc : ∀ x, |c x| ≤ θ x * ‖H x‖ := fun x => by
+    simpa only [θ, Matrix.sub_apply, abs_sub_comm (A _ _)] using
+      Matrix.abs_contraction_le_sum_sum_abs_mul (A - a x) (H x)
+  have hθH : MemLp (fun x => θ x * ‖H x‖) 2 μr := by
+    refine (hH.norm.const_mul ((n + 1) ^ 2 * M)).of_le (hθm.mul hH.aestronglyMeasurable.norm) ?_
+    filter_upwards [haM] with x hx
+    have hθx : θ x ≤ (n + 1) ^ 2 * M := by simpa [sq] using Matrix.sum_sum_abs_le hx
+    rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, abs_mul, abs_norm]
+    exact mul_le_mul_of_nonneg_right (hθx.trans (le_abs_self _)) (norm_nonneg _)
+  have hc2 : MemLp c 2 μr := hθH.of_le hcm (ae_of_all _ fun x => (hc x).trans (le_abs_self _))
+  have hf2 : MemLp f 2 μr := by
+    refine (((Matrix.contraction A).comp_memLp' hH).sub hc2).ae_eq ?_
+    filter_upwards [heqA] with x hx
+    rw [Pi.sub_apply, Function.comp_apply, Matrix.contraction_apply, hx]
+    exact add_sub_cancel_right _ _
+  have h1 := hf2.integrable_sq
+  have h2 : Integrable (fun x => θ x ^ 2 * ‖H x‖ ^ 2) μr := by
+    simpa only [mul_pow] using hθH.integrable_sq
+  rw [← integral_add h1 h2, ← integral_const_mul]
+  refine integral_mono_of_nonneg (ae_of_all _ fun x => sq_nonneg _) ((h1.add h2).const_mul 2)
+    (ae_of_all _ fun x => ?_)
+  have hcx : c x ^ 2 ≤ θ x ^ 2 * ‖H x‖ ^ 2 := by
+    rw [← mul_pow, ← sq_abs (c x)]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hc x) 2
+  nlinarith [sq_nonneg (f x - c x)]
+
 /-- **Mean oscillation of the Hessian for variable coefficients, by freezing.** Let
 `u ∈ W^{2,2}(Ω)` solve `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r = ball x₀ r ⊆ Ω`, where the
 coefficient `a` is measurable and stays entrywise within `M` of a constant matrix `A` that is
@@ -406,80 +466,21 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_abs_s
             ((∫ x in ball x₀ r, f x ^ 2) +
               ∫ x in ball x₀ r, (∑ i, ∑ j, |a x i j - A i j|) ^ 2 *
                 ‖Wkp.iteratedGradient 1 u x‖ ^ 2)) := by
-  -- Freeze the coefficients at `A`, check that the datum `f + c` of the frozen equation is square
-  -- integrable, apply the constant-coefficient estimate and bound `(f + c)² ≤ 2 f² + 2 θ² ‖D²u‖²`.
-  set μr := volume.restrict (ball x₀ r)
-  set H : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
-    ⇑(Wkp.iteratedGradient 1 u)
-  set θ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => ∑ i, ∑ j, |a x i j - A i j|
-  -- The error `c x = ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ(x)) ∂ᵢ∂ⱼu(x)` of freezing the coefficients at `A`.
-  set c : EuclideanSpace ℝ (Fin (n + 1)) → ℝ := fun x => Matrix.contraction (A - a x) (H x)
-  have hH : MemLp H 2 μr :=
-    (memLp_iteratedGradient_one u).mono_measure (Measure.restrict_mono hball le_rfl)
-  have hθm : AEStronglyMeasurable θ μr := by fun_prop
-  have hcm : AEStronglyMeasurable c μr := by
-    simp only [c, Matrix.contraction_apply, Matrix.sub_apply]
-    refine Finset.aestronglyMeasurable_fun_sum _ fun i _ => Finset.aestronglyMeasurable_fun_sum _
-      fun j _ => (aestronglyMeasurable_const.sub (ham i j)).mul ?_
-    exact ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-      (EuclideanSpace.single i 1)).continuous.comp_aestronglyMeasurable
-        hH.aestronglyMeasurable).inner aestronglyMeasurable_const
-  have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ (n + 1) ^ 2 * M := by
-    filter_upwards [haM] with x hx
-    exact ⟨by positivity, (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
-      hx i j).trans_eq (by simp; ring)⟩
-  have hc : ∀ x, |c x| ≤ θ x * ‖H x‖ := fun x => by
-    convert Matrix.abs_sum_sum_mul_apply_single_le (A - a x).transpose (H x) using 2
-    · simp only [c, Matrix.contraction_apply, EuclideanSpace.inner_single_right,
-        Matrix.transpose_apply]
-      rw [Finset.sum_comm]
-      simp
-    · simp only [θ, Matrix.transpose_apply, Matrix.sub_apply, abs_sub_comm (A _ _)]
-      exact Finset.sum_comm
-  have hθH : MemLp (fun x => θ x * ‖H x‖) 2 μr := by
-    refine (hH.norm.const_mul ((n + 1) ^ 2 * M)).of_le (hθm.mul hH.aestronglyMeasurable.norm) ?_
-    filter_upwards [hθ] with x hx
-    rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, abs_mul,
-      abs_norm]
-    exact mul_le_mul_of_nonneg_right (hx.2.trans (le_abs_self _)) (norm_nonneg _)
-  have hc2 : MemLp c 2 μr := hθH.of_le hcm (ae_of_all _ fun x => (hc x).trans (le_abs_self _))
-  -- Frozen at `A`, the equation reads `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + c`.
-  have heqA : ∀ᵐ x ∂μr, ∑ i, ∑ j, A i j *
-      ⟪H x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = f x + c x := by
+  -- Freeze the coefficients at `A`: the equation reads `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = f + c` with
+  -- `c x = ∑ᵢⱼ (Aᵢⱼ - aᵢⱼ(x)) ∂ᵢ∂ⱼu(x)`. Apply the constant-coefficient estimate and bound
+  -- `∫ (f + c)²` by `setIntegral_ball_add_contraction_sub_sq_le`.
+  have heqA : ∀ᵐ x ∂(volume.restrict (ball x₀ r)), ∑ i, ∑ j, A i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        f x + Matrix.contraction (A - a x) (Wkp.iteratedGradient 1 u x) := by
     filter_upwards [heq] with x hx
-    simp only [c, Matrix.contraction_sub, sub_apply,
-      Matrix.contraction_apply, ← hx]
+    simp only [Matrix.contraction_sub, sub_apply, Matrix.contraction_apply, ← hx]
     ring
-  have hf2 : MemLp f 2 μr := by
-    refine (((Matrix.contraction A).comp_memLp' hH).sub hc2).ae_eq ?_
-    filter_upwards [heqA] with x hx
-    simp only [Function.comp_apply, Pi.sub_apply, Matrix.contraction_apply, hx,
-      add_sub_cancel_right]
-  have key := setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
-    hA u hball heqA hρ hρr
-  -- The frozen datum `f + c` has `∫ (f + c)² ≤ 2 (∫ f² + ∫ θ² ‖D²u‖²)`.
-  have hint : ∫ x in ball x₀ r, (f x + c x) ^ 2 ≤
-      2 * ((∫ x in ball x₀ r, f x ^ 2) + ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2) := by
-    have h1 := hf2.integrable_sq
-    have h2 : Integrable (fun x => θ x ^ 2 * ‖H x‖ ^ 2) μr := by
-      simpa only [mul_pow] using hθH.integrable_sq
-    rw [← integral_add h1 h2, ← integral_const_mul]
-    refine integral_mono_of_nonneg (ae_of_all _ fun x => sq_nonneg _) ((h1.add h2).const_mul 2)
-      (ae_of_all _ fun x => ?_)
-    have hcx : c x ^ 2 ≤ θ x ^ 2 * ‖H x‖ ^ 2 := by
-      rw [← mul_pow, ← sq_abs (c x)]
-      exact pow_le_pow_left₀ (abs_nonneg _) (hc x) 2
-    nlinarith [sq_nonneg (f x - c x)]
-  refine key.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  refine (setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_add_of_sum_mul_inner_eq
+    hA u hball heqA hρ hρr).trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl ?_) (by positivity))
   have hC : 0 ≤ (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 := by
     positivity
-  have h2 : (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
-        ∫ x in ball x₀ r, (f x + c x) ^ 2 ≤
-      2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
-        ((∫ x in ball x₀ r, f x ^ 2) + ∫ x in ball x₀ r, θ x ^ 2 * ‖H x‖ ^ 2) :=
-    (mul_le_mul_of_nonneg_left hint hC).trans_eq (by ring)
-  exact add_le_add le_rfl h2
+  exact (mul_le_mul_of_nonneg_left
+    (setIntegral_ball_add_contraction_sub_sq_le u hball ham haM heqA) hC).trans_eq (by ring)
 
 /-- **Krylov's mean oscillation estimate for the Hessian.** Let `u ∈ W^{2,2}(Ω)` solve
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B_r = ball x₀ r ⊆ Ω`, where the coefficient `a` is
@@ -536,8 +537,7 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_abs_sub_le
   have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K := by
     filter_upwards [haM] with x hx
-    exact ⟨by positivity, (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
-      hx i j).trans_eq (by simp; ring)⟩
+    exact ⟨by positivity, by simpa [K, sq] using Matrix.sum_sum_abs_le hx⟩
   have hK : 0 ≤ K := by
     have := ae_restrict_neBot.2 (measure_ball_pos volume x₀ hr).ne'
     obtain ⟨x, hx⟩ := hθ.exists
