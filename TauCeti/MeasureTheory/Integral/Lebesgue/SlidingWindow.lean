@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Convolution.Young
 
 /-!
 # Lower integrals over sliding windows
@@ -30,10 +31,11 @@ and the square-function form
 `∫ (∫_{s - t ∈ W} f(s)² ds)^{1/2} g(t) dt ≤ (μ W)^{1/2} ‖f‖₂ ‖g‖₂`. On `ℝ` with `W` an interval
 of length `L`, these are the estimates for a time pairing localized to `|s - t| ≈ L`.
 
-The window integral `t ↦ ∫_{s - t ∈ W} f(s) ds` is the convolution `1_{-W} ⋆ₗ f`
-(`MeasureTheory.lconvolution`), and the window-kernel bound is the case `L¹ ⋆ L² ⊆ L²` of Young's
-inequality combined with Cauchy–Schwarz; the statements here keep the windows explicit, which is
-the form in which time-localized pairings arise.
+The window integral `t ↦ ∫_{s - t ∈ W} f(s) ds` is the convolution `f ⋆ₗ 1_{-W}`
+(`MeasureTheory.lconvolution`), and the window-kernel bound is proved from the case
+`L² ⋆ L¹ ⊆ L²` of Young's inequality (`MeasureTheory.eLpNorm_lconvolution_le`) combined with
+Cauchy–Schwarz; the statements here keep the windows explicit, which is the form in which
+time-localized pairings arise.
 
 ## Main declarations
 
@@ -46,9 +48,17 @@ the form in which time-localized pairings arise.
 public section
 
 open MeasureTheory Set Function
-open scoped ENNReal
+open scoped ENNReal Pointwise
 
 namespace MeasureTheory
+
+/-- The `L²` norm of an extended nonnegative function as a lower integral. -/
+private theorem eLpNorm_two_eq_lintegral {α : Type*} {_ : MeasurableSpace α} {ν : Measure α}
+    {h : α → ℝ≥0∞} (hh : AEMeasurable h ν) :
+    eLpNorm h 2 ν = (∫⁻ s, h s ^ (2 : ℝ) ∂ν) ^ (1 / 2 : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+    hh.aestronglyMeasurable]
+  simp only [eNorm_eq_self, ENNReal.toReal_ofNat]
 
 variable {G : Type*} [MeasurableSpace G] [AddCommGroup G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant] {W : Set G}
@@ -117,16 +127,11 @@ theorem lintegral_rpow_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {
   have hφ2 : ∫⁻ t, φ t ^ (2 : ℝ) ∂μ = μ W * ∫⁻ s, f s ^ (2 : ℝ) ∂μ := by
     simp only [φ, ENNReal.rpow_inv_rpow (two_ne_zero : (2 : ℝ) ≠ 0)]
     exact lintegral_setLIntegral_sub_preimage hW (hf.pow_const _)
-  have hnorm (h : G → ℝ≥0∞) (hh : AEMeasurable h μ) :
-      eLpNorm h 2 μ = (∫⁻ s, h s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-      hh.aestronglyMeasurable]
-    simp only [enorm_eq_self, ENNReal.toReal_ofNat, one_div]
   calc ∫⁻ t, φ t * g t ∂μ
       ≤ (∫⁻ t, φ t ^ (2 : ℝ) ∂μ) ^ (1 / 2 : ℝ) * (∫⁻ t, g t ^ (2 : ℝ) ∂μ) ^ (1 / 2 : ℝ) :=
         ENNReal.lintegral_mul_le_Lp_mul_Lq μ h2 hφ.aemeasurable hg
     _ = μ W ^ (2⁻¹ : ℝ) * eLpNorm f 2 μ * eLpNorm g 2 μ := by
-        rw [hφ2, hnorm f hf, hnorm g hg, one_div,
+        rw [hφ2, eLpNorm_two_eq_lintegral hf, eLpNorm_two_eq_lintegral hg, one_div,
           ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
 
 /-- **The window kernel on `L²`.** The integrals of `f` over the windows `{s | s - t ∈ W}`,
@@ -135,35 +140,30 @@ theorem lintegral_setLIntegral_sub_preimage_mul_le (hW : MeasurableSet W) {f g :
     (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
     ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ) * g t ∂μ ≤
       μ W * eLpNorm f 2 μ * eLpNorm g 2 μ := by
-  -- On each window, Cauchy–Schwarz bounds the integral of `f` by `(μ W)^{1/2}` times its `L²`
-  -- norm there.
-  have hwin (t : G) : ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ ≤
-      μ W ^ (2⁻¹ : ℝ) * (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ) := by
-    have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2)
-      (μ := μ.restrict ((fun s ↦ s - t) ⁻¹' W)) one_le_two hf.restrict.aestronglyMeasurable
-    rw [eLpNorm_one_eq_lintegral_enorm hf.restrict.aestronglyMeasurable,
-      eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-        hf.restrict.aestronglyMeasurable, Measure.restrict_apply_univ,
-      (measurePreserving_sub_right μ t).measure_preimage hW.nullMeasurableSet] at h
-    simp only [enorm_eq_self, ENNReal.toReal_one, ENNReal.toReal_ofNat] at h
-    have hexp : (1 / 1 - 1 / 2 : ℝ) = 2⁻¹ := by norm_num
-    rw [hexp, one_div, mul_comm] at h
-    exact h
+  -- The window integrals are the convolution of `f` with the indicator of `-W`, so Young's
+  -- inequality `L² ⋆ L¹ ⊆ L²` and Cauchy–Schwarz give the bound.
+  set k : G → ℝ≥0∞ := (-W).indicator fun _ ↦ 1 with hk_def
+  have hk : AEMeasurable k μ := (measurable_const.indicator hW.neg).aemeasurable
+  have hconv (t : G) : ∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ = (f ⋆ₗ[μ] k) t := by
+    rw [lconvolution_def, ← lintegral_indicator (measurable_sub_const t hW)]
+    refine lintegral_congr fun s ↦ ?_
+    have h : -s + t ∈ -W ↔ s ∈ (fun s ↦ s - t) ⁻¹' W := by simp [neg_add_eq_sub]
+    by_cases hs : s ∈ (fun s ↦ s - t) ⁻¹' W
+    · rw [indicator_of_mem hs, hk_def, indicator_of_mem (h.2 hs), mul_one]
+    · rw [indicator_of_notMem hs, hk_def, indicator_of_notMem (mt h.1 hs), mul_zero]
+  have hkW : eLpNorm k 1 μ = μ W := by
+    rw [eLpNorm_indicator_const hW.neg.nullMeasurableSet one_ne_zero ENNReal.one_ne_top,
+      Measure.measure_neg]
+    simp
+  have hfk := aemeasurable_lconvolution hf hk
   calc ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ∂μ) * g t ∂μ
-      ≤ ∫⁻ t, μ W ^ (2⁻¹ : ℝ) *
-          ((∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ) * g t) ∂μ :=
-        lintegral_mono fun t ↦ by rw [← mul_assoc]; gcongr; exact hwin t
-    _ = μ W ^ (2⁻¹ : ℝ) *
-          ∫⁻ t, (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, f s ^ (2 : ℝ) ∂μ) ^ (2⁻¹ : ℝ) * g t ∂μ :=
-        lintegral_const_mul'' _
-          (((measurable_setLIntegral_sub_preimage hW (hf.pow_const _)).pow_const _).aemeasurable.mul
-            hg)
-    _ ≤ μ W ^ (2⁻¹ : ℝ) * (μ W ^ (2⁻¹ : ℝ) * eLpNorm f 2 μ * eLpNorm g 2 μ) := by
+      = ∫⁻ t, (f ⋆ₗ[μ] k) t * g t ∂μ := by simp only [hconv]
+    _ ≤ eLpNorm (f ⋆ₗ[μ] k) 2 μ * eLpNorm g 2 μ := by
+        rw [eLpNorm_two_eq_lintegral hfk, eLpNorm_two_eq_lintegral hg]
+        exact ENNReal.lintegral_mul_le_Lp_mul_Lq μ Real.HolderConjugate.two_two hfk hg
+    _ ≤ eLpNorm f 2 μ * eLpNorm k 1 μ * eLpNorm g 2 μ := by
         gcongr
-        exact lintegral_rpow_setLIntegral_sub_preimage_mul_le hW hf hg
-    _ = μ W * eLpNorm f 2 μ * eLpNorm g 2 μ := by
-        rw [← mul_assoc, ← mul_assoc, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num)
-          (by norm_num)]
-        norm_num
+        exact eLpNorm_lconvolution_le one_le_two le_rfl (by rw [inv_one, add_comm]) hf hk
+    _ = μ W * eLpNorm f 2 μ * eLpNorm g 2 μ := by rw [hkW, mul_comm (eLpNorm f 2 μ)]
 
 end MeasureTheory

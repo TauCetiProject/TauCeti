@@ -68,7 +68,7 @@ them at the corners from which Keel and Tao obtain the general exponents by inte
 public section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal InnerProductSpace InnerProduct ComplexConjugate
+open scoped ENNReal NNReal InnerProductSpace InnerProduct ComplexConjugate Pointwise
 
 namespace TauCeti
 
@@ -114,7 +114,7 @@ theorem lintegral_setLIntegral_enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] 
     fun s hs ↦ by
     have hst : s ≠ t := by linarith [hs.2]
     have hsep : ENNReal.ofReal L ≤ ‖s - t‖ₑ := by
-      rw [Real.enorm_eq_ofReal_abs, abs_sub_comm, abs_of_pos (by linarith [hs.2])]
+      rw [Real.eNorm_eq_ofReal_abs, abs_sub_comm, abs_of_pos (by linarith [hs.2])]
       exact ENNReal.ofReal_le_ofReal (by linarith [hs.2])
     calc _ ≤ A * ‖s - t‖ₑ ^ (-γ) * a s * b t := enorm_inner_adjoint_le hU hst _ _
       _ ≤ A * ENNReal.ofReal L ^ (-γ) * a s * b t := by
@@ -161,11 +161,11 @@ theorem enorm_integral_inner_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp
     ‖∫ t, ⟪∫ s in Ico (t - 2 * L) (t - L), ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ ≤
       A * ENNReal.ofReal L ^ (1 - γ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) 2 *
         eLpNorm (fun t ↦ eLpNorm (G t) r' μ) 2 := by
-  refine (enorm_integral_le_lintegral_enorm _).trans (le_trans (lintegral_mono fun t ↦ ?_)
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (le_trans (lintegral_mono fun t ↦ ?_)
     (lintegral_setLIntegral_enorm_inner_adjoint_le hγ hL hU hF hG))
   -- Move the inner integral out of the pairing.
   rw [← integral_inner_left hUF.integrableOn]
-  exact enorm_integral_le_lintegral_enorm _
+  exact eNorm_integral_le_lintegral_eNorm _
 
 /-- The time exponents of the energy corner: for Hölder conjugate `p` and `q > 2`,
 `1 / p = 1 - 1 / q` and `p ≤ 2`. -/
@@ -218,9 +218,9 @@ private theorem enorm_setIntegral_adjoint_le {p q : ℝ≥0} (hq : 2 < q)
         exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp2 ha.restrict.aestronglyMeasurable
     _ = C * A ^ (2⁻¹ : ℝ) * volume S ^ (2⁻¹ - (q : ℝ)⁻¹) *
           (∫⁻ s in S, a s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ) := by
-        rw [eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+        rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
           ha.restrict.aestronglyMeasurable]
-        simp only [enorm_eq_self, ENNReal.toReal_ofNat, ENNReal.coe_toReal, one_div, hpinv]
+        simp only [eNorm_eq_self, ENNReal.toReal_ofNat, ENNReal.coe_toReal, one_div, hpinv]
         rw [show (1 : ℝ) - (q : ℝ)⁻¹ - 2⁻¹ = 2⁻¹ - (q : ℝ)⁻¹ by ring]
         ring
 
@@ -231,7 +231,7 @@ private theorem enorm_adjoint_apply_le {T : H →L[𝕜] Lp E 2 μ} {B : ℝ≥0
   calc ‖(T†) g‖ₑ ≤ ‖T†‖ₑ * ‖g‖ₑ := (T†).le_opENorm _
     _ ≤ B * ‖g‖ₑ := by
         gcongr
-        rw [enorm_eq_nnnorm, LinearIsometryEquiv.nnnorm_map, ← enorm_eq_nnnorm]
+        rw [eNorm_eq_nnNorm, LinearIsometryEquiv.nnNorm_map, ← eNorm_eq_nnNorm]
         exact hT
 
 omit [CompleteSpace E] in
@@ -299,7 +299,7 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
   refine ⟨C, fun U A B hB hU W hW F G hF hUF hG ↦ ?_⟩
   set a := fun s ↦ eLpNorm (F s) r' μ
   have ha : AEMeasurable a := hF.aemeasurable_eLpNorm_Lp .rfl r'
-  have hGm : AEMeasurable fun t ↦ ‖G t‖ₑ := hG.enorm
+  have hGm : AEMeasurable fun t ↦ ‖G t‖ₑ := hG.eNorm
   -- The `L²` norms of `a` over the windows, and their measurability.
   set φ := fun t ↦ (∫⁻ s in (fun s ↦ s - t) ⁻¹' W, a s ^ (2 : ℝ)) ^ (2⁻¹ : ℝ)
   have hφ : Measurable φ :=
@@ -310,11 +310,11 @@ theorem exists_enorm_integral_inner_setIntegral_sub_preimage_adjoint_le {p q : �
     have h := enorm_setIntegral_adjoint_le hq hpq (hC U A hU) hF hUF (measurable_sub_const t hW)
     rwa [(measurePreserving_sub_right volume t).measure_preimage hW.nullMeasurableSet] at h
   have hq2 : (q : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ two_pos (by exact_mod_cast hq.le)
-  refine (enorm_integral_le_lintegral_enorm _).trans ?_
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
   calc ∫⁻ t, ‖⟪∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s), ((U t)†) (G t)⟫_𝕜‖ₑ
       ≤ ∫⁻ t, c * B * (φ t * ‖G t‖ₑ) := lintegral_mono fun t ↦ by
         calc _ ≤ ‖∫ s in (fun s ↦ s - t) ⁻¹' W, ((U s)†) (F s)‖ₑ * ‖((U t)†) (G t)‖ₑ :=
-              enorm_inner_le_enorm _ _
+              eNorm_inner_le_eNorm _ _
           _ ≤ c * φ t * (B * ‖G t‖ₑ) := by
               gcongr
               · exact hwin t
@@ -395,7 +395,7 @@ theorem exists_enorm_integral_inner_setIntegral_adjoint_le' {p q : ℝ≥0} (hq 
       conj (∫ s, ⟪∫ t in (fun t ↦ t - s) ⁻¹' W, ((U t)†) (G t), ((U s)†) (F s)⟫_𝕜) := by
     rw [← integral_conj]
     simp only [inner_conj_symm]
-  rw [hconj, RCLike.enorm_conj]
+  rw [hconj, RCLike.eNorm_conj]
   refine (hC U A B hB hU measurableSet_Ico.neg G F hG hUG hF).trans_eq ?_
   rw [hW]
   ring
