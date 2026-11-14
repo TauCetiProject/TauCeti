@@ -17,8 +17,10 @@ The variables may take values in different measurable spaces and have different 
 everywhere measurability of each coordinate suffices.
 
 The one-sided and two-sided McDiarmid inequalities have exponent `-2 t² / ∑ i, (c i)²`.
-When this denominator vanishes, the statistic equals its mean almost everywhere, including
-for an empty coordinate family. No moment assumptions on the coordinates are needed.
+When this denominator vanishes,
+`TauCeti.Probability.eq_integral_of_bounded_differences_of_sum_sq_eq_zero` applied to
+`fun ω i => X i ω` proves that the statistic equals its mean at every point, including for an
+empty coordinate family. No moment assumptions on the coordinates are needed.
 
 ## References
 
@@ -39,7 +41,7 @@ namespace ProbabilityTheory.iIndepFun
 
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι]
   {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
-  {P : Measure Ω} [IsProbabilityMeasure P] {X : ∀ i, Ω → β i}
+  {P : Measure Ω} {X : ∀ i, Ω → β i}
 
 /-- **McDiarmid's MGF bound for independent coordinates.** A measurable function with coordinate
 oscillations bounded by `c i` is sub-Gaussian about its mean, with variance proxy
@@ -52,6 +54,7 @@ theorem hasSubgaussianMGF_of_bounded_differences (h : iIndepFun X P)
     HasSubgaussianMGF
       (fun ω => f (fun i => X i ω) - ∫ ω', f (fun i => X i ω') ∂P)
       (∑ i, c i ^ 2 / 4) P := by
+  have := h.isProbabilityMeasure
   let ν i := P.map (X i)
   have (i : ι) : IsProbabilityMeasure (ν i) :=
     (Measure.isProbabilityMeasure_map_iff (hX i)).mpr inferInstance
@@ -76,7 +79,7 @@ private theorem exponent_variance_proxy (c : ι → ℝ≥0) (t : ℝ) :
 /-- **One-sided McDiarmid inequality.** For independent coordinates and bounded differences
 `c i`, the probability of an upward deviation of at least `t ≥ 0` is at most
 `exp (-2 t² / ∑ i, (c i)²)`. -/
-theorem measureReal_sub_ge_le_of_bounded_differences (h : iIndepFun X P)
+theorem measureReal_sub_integral_ge_le_of_bounded_differences (h : iIndepFun X P)
     (hX : ∀ i, AEMeasurable (X i) P) (f : (∀ i, β i) → ℝ) (hf : Measurable f)
     (c : ι → ℝ≥0)
     (hbd : ∀ (i : ι) (x x' : ∀ i, β i),
@@ -89,10 +92,10 @@ theorem measureReal_sub_ge_le_of_bounded_differences (h : iIndepFun X P)
 
 /-- **Two-sided McDiarmid inequality.** For independent coordinates and bounded differences
 `c i`, the probability of an absolute deviation of at least `t ≥ 0` is at most
-`2 exp (-2 t² / ∑ i, (c i)²)`. When every bound is zero, use
+`2 exp (-2 t² / ∑ i, (c i)²)`. When the denominator is zero, use
 `TauCeti.Probability.eq_integral_of_bounded_differences_of_sum_sq_eq_zero`
-for the exact conclusion. -/
-theorem measureReal_abs_sub_ge_le_of_bounded_differences (h : iIndepFun X P)
+with the map `fun ω i => X i ω` for pointwise equality to the mean. -/
+theorem measureReal_abs_sub_integral_ge_le_of_bounded_differences (h : iIndepFun X P)
     (hX : ∀ i, AEMeasurable (X i) P) (f : (∀ i, β i) → ℝ) (hf : Measurable f)
     (c : ι → ℝ≥0)
     (hbd : ∀ (i : ι) (x x' : ∀ i, β i),

@@ -360,22 +360,21 @@ theorem hasSubgaussianMGF_of_bounded_differences
     ((hd.hasLaw.identDistrib ProbabilityTheory.HasLaw.id).comp (hf.sub_const _))
 
 /-- With zero total squared coordinate oscillation, a bounded-differences function equals its
-mean at every point under any probability measure on the product. In particular, no independence,
-measurability, or moment assumptions are needed for this degenerate case. -/
+mean after composition with any map from a probability space. No independence, measurability,
+or moment assumptions on the map or function are needed, nor measurable coordinate spaces. -/
 theorem eq_integral_of_bounded_differences_of_sum_sq_eq_zero
-    {ι : Type*} [Fintype ι] {β : ι → Type*} [∀ i, MeasurableSpace (β i)]
-    {μ : Measure (∀ i, β i)} [IsProbabilityMeasure μ]
-    (f : (∀ i, β i) → ℝ) (c : ι → ℝ)
+    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {β : ι → Type*}
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
+    (X : Ω → ∀ i, β i) (f : (∀ i, β i) → ℝ) (c : ι → ℝ)
     (hbd : ∀ (i : ι) (x x' : ∀ i, β i),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
-    (hc : ∑ i, c i ^ 2 = 0) (x : ∀ i, β i) : f x = ∫ y, f y ∂μ := by
+    (hc : ∑ i, c i ^ 2 = 0) (x : ∀ i, β i) : f x = ∫ ω, f (X ω) ∂μ := by
   have hzero (i : ι) : c i = 0 := by
     have hi := (Finset.sum_eq_zero_iff_of_nonneg (fun j _ => sq_nonneg (c j))).mp hc
     exact sq_eq_zero_iff.mp (hi i (Finset.mem_univ i))
-  have hconst : f = fun _ => f x := by
-    funext y
-    have hle := abs_sub_le_of_bounded_differences c f hbd y x
-    simpa only [hzero, Finset.sum_const_zero, abs_nonpos_iff, sub_eq_zero] using hle
+  have hconst : (fun ω => f (X ω)) = fun _ => f x := by
+    funext ω
+    exact eq_of_bounded_differences_of_sum_eq_zero c f hbd (by simp [hzero]) (X ω) x
   rw [hconst]
   simp
 
