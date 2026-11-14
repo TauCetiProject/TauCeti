@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Homotopy
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
@@ -105,8 +103,10 @@ on every model, its cycles of positive degree are boundaries and its `0`-chains 
 zero are boundaries. -/
 structure IsAcyclicOn (G : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ) (M : ℕ → C)
     (ε : ∀ X : C, (G.obj X).X 0 →ₗ[k] k) : Prop where
+  /-- Every cycle of positive degree on a model is a boundary. -/
   exists_d_eq_of_d_eq_zero (n q : ℕ) (z : (G.obj (M n)).X (q + 1))
     (hz : (G.obj (M n)).d (q + 1) q z = 0) : ∃ b, (G.obj (M n)).d (q + 2) (q + 1) b = z
+  /-- Every `0`-chain of augmentation zero on a model is a boundary. -/
   exists_d_eq_of_augment_eq_zero (n : ℕ) (z : (G.obj (M n)).X 0) (hz : ε (M n) z = 0) :
     ∃ b, (G.obj (M n)).d 1 0 b = z
 
@@ -121,6 +121,7 @@ variable (B : ModelPresentation F)
 def extend {m n : ℕ} (t : (G.obj (B.model n)).X m) (X : C) : (F.obj X).X n →ₗ[k] (G.obj X).X m :=
   linearCombination k (fun σ ↦ ((G.map σ).f m).hom t) ∘ₗ B.coord X n
 
+/-- The value of `extend` on an element, as a combination of the images of `t`. -/
 theorem extend_apply {m n : ℕ} (t : (G.obj (B.model n)).X m) (X : C) (x : (F.obj X).X n) :
     B.extend t X x = (B.coord X n x).sum fun σ a ↦ a • (G.map σ).f m t := by
   simp [extend, linearCombination_apply]
@@ -154,8 +155,10 @@ structure MultiModelPresentation (F : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ)
 `0`-chains of augmentation zero are boundaries. -/
 structure IsAcyclicOnMulti (G : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ) {ι : ℕ → Type w'}
     (M : ∀ n, ι n → C) (ε : ∀ X : C, (G.obj X).X 0 →ₗ[k] k) : Prop where
+  /-- Every cycle of positive degree on a model is a boundary. -/
   exists_d_eq_of_d_eq_zero (n : ℕ) (i : ι n) (q : ℕ) (z : (G.obj (M n i)).X (q + 1))
     (hz : (G.obj (M n i)).d (q + 1) q z = 0) : ∃ b, (G.obj (M n i)).d (q + 2) (q + 1) b = z
+  /-- Every `0`-chain of augmentation zero on a model is a boundary. -/
   exists_d_eq_of_augment_eq_zero (n : ℕ) (i : ι n) (z : (G.obj (M n i)).X 0)
     (hz : ε (M n i) z = 0) : ∃ b, (G.obj (M n i)).d 1 0 b = z
 
@@ -170,6 +173,7 @@ def extend {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (X : C) :
   linearCombination k
       (fun p : Σ i : ι n, (B.model n i ⟶ X) ↦ ((G.map p.2).f m).hom (t p.1)) ∘ₗ B.coord X n
 
+/-- The value of `extend` on an element, as a combination of the images of the `tᵢ`. -/
 theorem extend_apply {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (X : C)
     (x : (F.obj X).X n) :
     B.extend t X x = (B.coord X n x).sum fun p a ↦ a • (G.map p.2).f m (t p.1) := by
