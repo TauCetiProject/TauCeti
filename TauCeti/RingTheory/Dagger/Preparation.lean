@@ -25,8 +25,8 @@ variables can be smaller than the radius in `Y`, as is necessary for `Y + X²`.
 Uniqueness is detected at unit radius and needs no completeness hypothesis.
 `washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq` restates existence
 in the overconvergent algebra itself, evaluating the monic polynomial at `Y` by
-`washnitzerAlgebra.polynomialToOption`. After a triangular change of variables, every nonzero
-series in finitely many variables is associated to such an evaluation
+`washnitzerAlgebra.polynomialToOption`. Up to a ring automorphism of the overconvergent algebra,
+every nonzero series in finitely many variables is associated to such an evaluation
 (`washnitzerAlgebra.exists_associated_polynomialToOption`).
 
 ## Main results
@@ -41,7 +41,8 @@ series in finitely many variables is associated to such an evaluation
 * `TauCeti.Dagger.washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq`:
   existence restated in the overconvergent algebra itself.
 * `TauCeti.Dagger.washnitzerAlgebra.exists_associated_polynomialToOption`: every nonzero series in
-  finitely many variables is associated to such an evaluation after a change of variables.
+  finitely many variables is associated to such an evaluation, up to a ring automorphism of the
+  overconvergent algebra.
 
 ## References
 
@@ -227,11 +228,9 @@ theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s 
   obtain ⟨h1, h2⟩ := eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq hg he' he hm' hm heq' heq
   exact Prod.ext h1 h2
 
-/-- After a change of variables, every nonzero series `f` of `K⟨X, Y⟩†` (in finitely many variables
-`σ`) is associated to the evaluation at `Y` of a monic polynomial `ω ∈ K⟨X⟩†[Y]` which is
-distinguished at unit radius. The change of variables is the inverse of a triangular automorphism
-making `f` distinguished in `Y` (`exists_triangularEquiv_isDistinguished_isUnit`), followed by
-Weierstrass preparation. -/
+/-- Up to a ring automorphism of `K⟨X, Y⟩†`, every nonzero series `f` of `K⟨X, Y⟩†` (in finitely
+many variables `σ`) is associated to the evaluation at `Y` of a monic polynomial `ω ∈ K⟨X⟩†[Y]`
+which is distinguished at unit radius. -/
 theorem exists_associated_polynomialToOption [CompleteSpace K] [Finite σ] (f : W) (hf : f ≠ 0) :
     ∃ (E : W ≃+* W) (s : ℕ) (ω : Polynomial W₀),
       PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) ∧
