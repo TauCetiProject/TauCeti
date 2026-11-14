@@ -24,8 +24,9 @@ This file provides generic results about full submodules over fraction fields. I
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
 surjective linear maps preserve full lattices over commutative-ring algebras, as do finite
-products. Finally, a free full lattice over an integral domain rationalizes to its ambient vector
-space over the fraction field.
+products. Injective linear maps pull back full lattices over Noetherian domains with the given
+fraction field. Finally, a free full lattice over an integral domain rationalizes to its ambient
+vector space over the fraction field.
 
 ## Main declarations
 
@@ -41,6 +42,8 @@ space over the fraction field.
   with restricting a submodule to another submodule.
 * `Submodule.isLattice_span`: the span of a finite set spanning the ambient module is a full
   lattice.
+* `Submodule.isLattice_comap`: pullback of a full lattice along an injective linear map over
+  a Noetherian domain with the given fraction field.
 * `Module.Finite.of_isLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
@@ -520,6 +523,30 @@ theorem exists_ne_zero_forall_smul_mem (S : Submodule R V')
   obtain ⟨r, hr, h⟩ := hM.exists_smul_mem_of_le_span (F := K) (nonZeroDivisors R) (M := S)
     (by rw [hS]; exact fun _ _ ↦ Submodule.mem_top)
   exact ⟨r, nonZeroDivisors.ne_zero hr, h⟩
+
+omit [IsDomain R] in
+/-- Pulling back a full lattice along an injective linear map gives a full lattice over a
+Noetherian domain with fraction field `K`. In particular, intersection with a vector subspace
+is a lattice in that subspace. -/
+theorem _root_.Submodule.isLattice_comap {W : Type*} [AddCommGroup W] [Module R W]
+    [Module K W] [IsScalarTower R K W] [IsNoetherianRing R]
+    (S : Submodule R V') [S.IsLattice K] (f : W →ₗ[K] V') (hf : Function.Injective f) :
+    (S.comap (f.restrictScalars R)).IsLattice K where
+  fg := by
+    have := Module.Finite.of_injective ((f.restrictScalars R).submoduleComap S)
+      (fun x y h ↦ Subtype.ext (hf (congrArg Subtype.val h)))
+    exact Module.Finite.iff_fg.mp inferInstance
+  span_eq_top := by
+    apply top_unique
+    intro w _
+    obtain ⟨r, hr, hw⟩ := exists_ne_zero_smul_mem K S (IsLattice.span_eq_top (M := S)) (f w)
+    have hrK : algebraMap R K r ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr hr
+    have hmem : r • w ∈ S.comap (f.restrictScalars R) := by
+      simpa using hw
+    have hspan := Submodule.smul_mem (Submodule.span K
+      (S.comap (f.restrictScalars R) : Set W)) (algebraMap R K r)⁻¹
+      (Submodule.subset_span hmem)
+    simpa only [← IsScalarTower.algebraMap_smul K r w, inv_smul_smul₀ hrK] using hspan
 
 variable (K) in
 /-- **Commensurability over a discrete valuation ring.** A power of the maximal ideal multiplies a
