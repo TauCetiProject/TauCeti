@@ -47,6 +47,9 @@ objects. The restricted pairing `TauCeti.TopPairing.res` is the canonical choice
   compatibility with restriction, inflation and coefficient maps;
   `TauCeti.TopPairing.cup_coeffMap_left_id` is the case of a coefficient map on the right factor
   only.
+* `TauCeti.TopPairing.cupCochain_cochainsMap_right_id`,
+  `TauCeti.TopPairing.cupCochain_cochainsMap_left_id`: naturality on homogeneous cochains in a
+  coefficient map of the left, respectively the right, factor only.
 
 ## References
 
@@ -189,6 +192,32 @@ theorem cup_coeffMap_left_id {Y' Z' : TopRep.{max v w} R G} (P' : TopPairing X Y
       P'.cup m n a (ContinuousCohomology.coeffMap g n b) := by
   have := P.cup_coeffMap P' (𝟙 X) g h (fun x y ↦ by rw [hcompat, CategoryTheory.id_apply]) m n a b
   rwa [ContinuousCohomology.coeffMap_id] at this
+
+/-- Naturality of the cup product of homogeneous cochains in the coefficients of the left factor
+only: coefficient morphisms `f`, `h` with `h (P.bil x y) = P'.bil (f x) y` satisfy
+`h (a ⌣ b) = f a ⌣' b`. This is `cupCochain_cochainsMap` with `fY = 𝟙 Y`. -/
+theorem cupCochain_cochainsMap_right_id {X' Z' : TopRep.{max v w} R G} (P' : TopPairing X' Y Z')
+    (f : X ⟶ X') (h : Z ⟶ Z')
+    (hcompat : ∀ (x : X.V) (y : Y.V), h (P.bil x y) = P'.bil (f x) y) (m n : ℕ)
+    (a : (TopRep.homogeneousCochains X).X m) (b : (TopRep.homogeneousCochains Y).X n) :
+    (cochainsMap (ContinuousMonoidHom.id G) h).f (m + n) (P.cupCochain m n a b) =
+      P'.cupCochain m n ((cochainsMap (ContinuousMonoidHom.id G) f).f m a) b := by
+  have := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G) f (𝟙 Y) h hcompat m n a b
+  rw [cochainsMap_id] at this
+  simpa only [HomologicalComplex.id_f, ConcreteCategory.id_apply] using this
+
+/-- Naturality of the cup product of homogeneous cochains in the coefficients of the right factor
+only: coefficient morphisms `g`, `h` with `h (P.bil x y) = P'.bil x (g y)` satisfy
+`h (a ⌣ b) = a ⌣' g b`. This is `cupCochain_cochainsMap` with `fX = 𝟙 X`. -/
+theorem cupCochain_cochainsMap_left_id {Y' Z' : TopRep.{max v w} R G} (P' : TopPairing X Y' Z')
+    (g : Y ⟶ Y') (h : Z ⟶ Z')
+    (hcompat : ∀ (x : X.V) (y : Y.V), h (P.bil x y) = P'.bil x (g y)) (m n : ℕ)
+    (a : (TopRep.homogeneousCochains X).X m) (b : (TopRep.homogeneousCochains Y).X n) :
+    (cochainsMap (ContinuousMonoidHom.id G) h).f (m + n) (P.cupCochain m n a b) =
+      P'.cupCochain m n a ((cochainsMap (ContinuousMonoidHom.id G) g).f n b) := by
+  have := P.cupCochain_cochainsMap P' (ContinuousMonoidHom.id G) (𝟙 X) g h hcompat m n a b
+  rw [cochainsMap_id] at this
+  simpa only [HomologicalComplex.id_f, ConcreteCategory.id_apply] using this
 
 /-- **Restriction preserves cup products** (NSW (1.5.3)(i)): for a subgroup `S ≤ G` and a pairing
 `Pres` of the restricted coefficients with the same underlying bilinear map as `P`,
