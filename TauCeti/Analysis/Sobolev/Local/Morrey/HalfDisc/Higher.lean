@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 public import TauCeti.Analysis.Sobolev.Local.Reflection
 public import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 public import TauCeti.Analysis.Complex.ReImTopology
+public import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
+public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Complex.EvenReflection
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -216,5 +218,83 @@ theorem MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul_inter_setOf_im_nonneg 
   obtain ⟨V, hSV, -, hV⟩ := exists_opens_memWkpLoc_planarReflection_aux hp hu
   obtain ⟨g, hg, hrg⟩ := hV.exists_continuousOn_ae_eq_of_two_lt_mul hp hkp
   exact ⟨g, hg.mono hSV, ae_eq_of_planarReflection_ae_eq hSV hrg⟩
+
+/-! ### Local bounds -/
+
+/-- The half-disc of the Lipschitz-domain library, read in the coordinates `z ↦ (im z, re z)`, is
+the upper half `ball 0 r ∩ {0 < im}` of the disc of radius `r` in `ℂ`. -/
+theorem preimage_equivRealProdL2Swap_halfDisc (r : ℝ) :
+    Complex.equivRealProdL2Swap ⁻¹' (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) =
+      ball (0 : ℂ) r ∩ {z | 0 < z.im} := by
+  ext z
+  rw [mem_preimage, SetLike.mem_coe, mem_halfDisc, Complex.equivRealProdL2Swap.norm_map]
+  simp
+
+variable {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
+
+/-- **Local `C^{j,1-2/q}` bounds on a disc.** For `2 < q < ∞` there is a constant `K` such that
+every real `u ∈ MemWkpLoc q (ball c r) (j + 1)` is represented on `ball c (r / 2)` by some
+`v ∈ W^{j+1,q}(ball c (r / 2))` and agrees almost everywhere there with a map `g` that is `Cʲ` on
+`ball c (r / 2)`, whose derivatives of order `i ≤ j` are bounded by `K ‖v‖` and Hölder of
+exponent `1 - 2 / q` with constant `K ‖v‖` on `ball c (r / 2)`. -/
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball (hq : 2 < q) (c : ℂ)
+    (r : ℝ) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ u : ℂ → ℝ, MemWkpLoc q (ball c r) (j + 1) u →
+      ∃ v : Wkp volume (⟨ball c (r / 2), isOpen_ball⟩ : Opens ℂ) q (j + 1),
+        Wkp.value (j + 1) v =ᵐ[volume.restrict (ball c (r / 2))] u ∧
+        ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball c (r / 2)) ∧
+          u =ᵐ[volume.restrict (ball c (r / 2))] g ∧ ∀ i ≤ j,
+            (∀ z ∈ ball c (r / 2), ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖v‖) ∧
+              HolderOnWith (K * ‖v‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g) (ball c (r / 2)) := by
+  obtain ⟨K, hK⟩ := Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall c (r / 2) hq j
+  refine ⟨K, fun u hu => ?_⟩
+  have hsub : closure (ball c (r / 2)) ⊆ ball c r := by
+    rcases le_or_gt r 0 with hr | hr
+    · rw [ball_eq_empty.2 (by linarith), closure_empty]
+      exact empty_subset _
+    · exact closure_ball_subset_closedBall.trans (closedBall_subset_ball (by linarith))
+  obtain ⟨v, hv⟩ := hu.exists_wkp (Ω := ⟨ball c r, isOpen_ball⟩)
+    (W := ⟨ball c (r / 2), isOpen_ball⟩)
+    ((isCompact_closedBall c (r / 2)).of_isClosed_subset isClosed_closure
+      closure_ball_subset_closedBall) hsub
+  obtain ⟨g, hg, hvg, hb⟩ := hK v
+  exact ⟨v, hv, g, hg, hv.symm.trans hvg, hb⟩
+
+/-- **Local `C^{j,1-2/q}` bounds on a half-disc, up to the real axis.** For `2 < q < ∞` there is a
+constant `K` such that every real `u ∈ MemWkpLoc q (ball 0 r ∩ {0 ≤ im}) (j + 1)` is represented
+on the upper half-disc `ball 0 (r / 2) ∩ {0 < im}` by some `v` in `W^{j+1,q}` of it and agrees
+almost everywhere there with a map `g` that is `Cʲ` on it, whose derivatives of order `i ≤ j` are
+bounded by `K ‖v‖` and Hölder of exponent `1 - 2 / q` with constant `K ‖v‖` on it. The Hölder
+bound is uniform up to the segment of the real axis. -/
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf_im_nonneg
+    (hq : 2 < q) (r : ℝ) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ u : ℂ → ℝ, MemWkpLoc q (ball 0 r ∩ {z | 0 ≤ z.im}) (j + 1) u →
+      ∃ v : Wkp volume (Opens.upperHalf ⟨ball 0 (r / 2), isOpen_ball⟩) q (j + 1),
+        Wkp.value (j + 1) v =ᵐ[volume.restrict (ball 0 (r / 2) ∩ {z | 0 < z.im})] u ∧
+        ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball 0 (r / 2) ∩ {z | 0 < z.im}) ∧
+          u =ᵐ[volume.restrict (ball 0 (r / 2) ∩ {z | 0 < z.im})] g ∧ ∀ i ≤ j,
+            (∀ z ∈ ball 0 (r / 2) ∩ {z | 0 < z.im}, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖v‖) ∧
+              HolderOnWith (K * ‖v‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g)
+                (ball 0 (r / 2) ∩ {z | 0 < z.im}) := by
+  have hO : (⟨Complex.equivRealProdL2Swap ⁻¹' halfDisc (r / 2),
+      (halfDisc (r / 2)).isOpen.preimage Complex.equivRealProdL2Swap.continuous⟩ : Opens ℂ) =
+      Opens.upperHalf ⟨ball 0 (r / 2), isOpen_ball⟩ :=
+    Opens.ext ((preimage_equivRealProdL2Swap_halfDisc _).trans
+      (Opens.coe_upperHalf ⟨ball 0 (r / 2), isOpen_ball⟩).symm)
+  have h := Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexHalfDisc (p := q) (r / 2) hq j
+  rw [hO, preimage_equivRealProdL2Swap_halfDisc] at h
+  obtain ⟨K, hK⟩ := h
+  refine ⟨K, fun u hu => ?_⟩
+  obtain ⟨v, hv⟩ : ∃ v : Wkp volume (Opens.upperHalf ⟨ball 0 (r / 2), isOpen_ball⟩) q (j + 1),
+      Wkp.value (j + 1) v =ᵐ[volume.restrict (ball 0 (r / 2) ∩ {z | 0 < z.im})] u := by
+    rcases lt_or_ge 0 r with hr | hr
+    · exact hu.exists_wkp_ball_half_inter_setOf_im_pos hr
+    · have h0 : volume.restrict (ball (0 : ℂ) (r / 2) ∩ {z | 0 < z.im}) = 0 := by
+        rw [ball_eq_empty.2 (by linarith), empty_inter, Measure.restrict_empty]
+      refine ⟨0, ?_⟩
+      rw [h0, ae_zero]
+      exact Filter.eventually_bot
+  obtain ⟨g, hg, hvg, hb⟩ := hK v
+  exact ⟨v, hv, g, hg, hv.symm.trans hvg, hb⟩
 
 end TauCeti
