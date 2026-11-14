@@ -40,7 +40,10 @@ The contraction and decomposition API follows the design proposed in
 ## Main definitions
 
 * `LaurentSeries.contract`: the exponent-congruence component of a Laurent series.
-* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d`.
+* `TauCeti.LaurentSeries.Level`: the level-`d` Laurent field with base map `X ↦ X ^ d` and scalar
+  tower `K → K⸨X⸩ → Level K d`.
+* `TauCeti.LaurentSeries.Level.algEquivLaurentSeries`: the `K`-algebra equivalence
+  `Level K d ≃ₐ[K] K⸨X⸩` in the level parameter.
 * `TauCeti.LaurentSeries.Level.powerBasis`: the power basis `1, u, ..., u ^ (d - 1)`.
 * `TauCeti.puiseuxField.level`: the actual level-`d` intermediate field in the Puiseux field.
 * `TauCeti.puiseuxField.levelPowerBasis`: its transported power basis.
@@ -116,6 +119,38 @@ theorem algebraMap_apply (f : K⸨X⸩) :
 @[simp]
 theorem ringEquivLaurentSeries_ofLaurentSeries (f : K⸨X⸩) :
     ringEquivLaurentSeries K d (.ofLaurentSeries f) = f := (rfl)
+
+/-- Level `d` is a `K`-algebra through the base Laurent-series field `K⸨X⸩`. -/
+noncomputable instance : Algebra K (Level K d) :=
+  ((Algebra.algebraMap K⸨X⸩ (Level K d)).comp (Algebra.algebraMap K K⸨X⸩)).toAlgebra
+
+/-- Constants from `K` embed into `Level K d` as constant Laurent series in the level variable. -/
+@[simp]
+theorem ringEquivLaurentSeries_algebraMap_base (c : K) :
+    ringEquivLaurentSeries K d (Algebra.algebraMap K (Level K d) c) =
+      Algebra.algebraMap K K⸨X⸩ c := by
+  change expand K d (Algebra.algebraMap K K⸨X⸩ c) = Algebra.algebraMap K K⸨X⸩ c
+  exact (expand K d).commutes c
+
+/-- The `K`-algebra structure on `Level K d` factors through `K⸨X⸩`. -/
+instance : IsScalarTower K K⸨X⸩ (Level K d) where
+  smul_assoc r f x := by
+    rw [Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, ← C_mul_eq_smul,
+      ← _root_.LaurentSeries.algebraMap_apply, map_mul, mul_assoc]
+    rfl
+
+/-- The `K`-algebra equivalence from a ramified level to its underlying Laurent-series field. -/
+noncomputable def algEquivLaurentSeries : Level K d ≃ₐ[K] K⸨X⸩ where
+  __ := ringEquivLaurentSeries K d
+  commutes' := ringEquivLaurentSeries_algebraMap_base K d
+
+@[simp]
+theorem algEquivLaurentSeries_apply (x : Level K d) :
+    algEquivLaurentSeries K d x = ringEquivLaurentSeries K d x := (rfl)
+
+@[simp]
+theorem algEquivLaurentSeries_symm_apply (f : K⸨X⸩) :
+    (algEquivLaurentSeries K d).symm f = (ringEquivLaurentSeries K d).symm f := (rfl)
 
 end Level
 
