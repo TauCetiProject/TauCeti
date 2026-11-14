@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Interior
 public import TauCeti.Geometry.Lie.RightInvariantVectorField
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 
 /-!
 # Derivative of the Lie-group exponential
@@ -24,6 +25,8 @@ calculation supplies reusable chain rules for functions along translated exponen
 
 * `hasFDerivAt_extChartAt_mulInvariantExp_zero`: in model-space identity coordinates, the
   tangent-space exponential has derivative the identity at zero.
+* `hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`: on complex charts, that derivative is
+  the complex identity.
 * `hasFDerivAt_extChartAt_lieExp_zero`: the identity-chart derivative of the derivation-based
   exponential is the canonical linear isometry to the model space.
 * `hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zero`: two exponential
@@ -270,6 +273,22 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_zero
     rw [extChartAt_mulInvariantExp_smul_eq v]
     exact hasDerivAt_extChartAt_mulInvariantIntegralCurve_zero (I := I) (G := G) v
   exact hline.unique hlineCurve
+
+/-- **The derivative of the exponential at `0` is complex linear on complex charts**: for a real
+Lie group charted by a complex space `E`, read in the complex chart at the identity, the
+tangent-space exponential has complex derivative the identity at `0`. -/
+theorem hasFDerivAt_extChartAt_mulInvariantExp_zero_complex [NormedSpace ℂ E]
+    [IsScalarTower ℝ ℂ E] [FiniteDimensional ℝ E] [ChartedSpace E G] [LieGroup 𝓘(ℝ, E) ∞ G]
+    [T2Space G] :
+    HasFDerivAt (fun v : E ↦ extChartAt 𝓘(ℂ, E) (1 : G)
+      (mulInvariantExp (I := 𝓘(ℝ, E)) (v : GroupLieAlgebra 𝓘(ℝ, E) G)))
+      (ContinuousLinearMap.id ℂ E) 0 := by
+  have hchart : extChartAt 𝓘(ℂ, E) (1 : G) = extChartAt 𝓘(ℝ, E) (1 : G) := by
+    rw [← ModelWithCorners.extChartAt_restrictScalars ℝ, modelWithCornersSelf_restrictScalars]
+  rw [hchart]
+  exact hasFDerivAt_of_restrictScalars ℝ
+    (hasFDerivAt_extChartAt_mulInvariantExp_zero (I := 𝓘(ℝ, E)))
+    (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 /-- In identity-chart coordinates, the derivative of the derivation-based Lie exponential at zero
 is the canonical linear isometry from left-invariant derivations to the model space. -/
