@@ -37,6 +37,11 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
   `f z₀ ≠ 0`.
 * `AnalyticOnNhd.sum_divisor_half_le`: at most `log M / log 2` zeros in `closedBall z₀ (R / 2)`
   under the same bound.
+* `AnalyticOnNhd.le_circleAverage_log_norm`: Jensen's inequality from below, the circle average of
+  `log ‖f‖` is at least `k * log r + log ‖τ‖`, where `k` is the order of `f` at the centre and `τ`
+  its trailing coefficient there.
+* `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm`: for `f` analytic on `ball c R` and
+  `s > 0`, a uniform lower bound for these averages on the circles with radii in `[s, R)`.
 
 ## Implementation notes
 
@@ -187,6 +192,41 @@ theorem sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
     ((∑ᶠ ρ, divisor f (closedBall z₀ (R / 2)) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log 2 := by
   have := hf.sum_divisor_le_log_div_log (r := R / 2) (by linarith) (by linarith) hz₀ hM
   rwa [div_div_cancel₀ hR.ne'] at this
+
+/-- **Jensen's inequality from below.** If `f` is analytic on the closed disc of radius `|r|`
+about `c`, with `r ≠ 0`, the circle average of `log ‖f‖` is at least `k * log r + log ‖τ‖`, where
+`k` is the order of `f` at `c` and `τ` its trailing coefficient there.
+
+This is Jensen's formula `MeromorphicOn.circleAverage_log_norm` with the contributions of the zeros
+other than `c` dropped, each of which is nonnegative. -/
+theorem le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|)) (hr : r ≠ 0) :
+    analyticOrderNatAt f c * Real.log r + Real.log ‖meromorphicTrailingCoeffAt f c‖ ≤
+      circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
+  rw [hf.meromorphicOn.circleAverage_log_norm hr,
+    hf.meromorphicOn.divisor_eq_analyticOrderNatAt (hf c (by simp)) (by simp), Int.cast_natCast]
+  have hsum : 0 ≤ ∑ᶠ u, (divisor f (closedBall c |r|) u : ℝ) * Real.log (r * ‖c - u‖⁻¹) := by
+    refine finsum_nonneg fun u ↦ ?_
+    by_cases hu : u ∈ closedBall c |r|
+    · refine mul_nonneg (mod_cast hf.divisor_nonneg u) ?_
+      rcases eq_or_ne u c with rfl | huc
+      · simp
+      · rw [mem_closedBall, dist_comm, dist_eq_norm] at hu
+        have hpos : 0 < ‖c - u‖ := norm_pos_iff.2 (sub_ne_zero.2 huc.symm)
+        rw [← Real.log_abs]
+        exact Real.log_nonneg (by simpa [← div_eq_mul_inv, abs_div, one_le_div hpos] using hu)
+    · simp [hu]
+  linarith
+
+/-- By Jensen's inequality, the circle averages of `log ‖f‖` of a function analytic on `ball c R`
+are bounded below on the circles about `c` with radii in `[s, R)`, for any `s > 0`. -/
+theorem exists_forall_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (ball c R)) {s : ℝ}
+    (hs : 0 < s) : ∃ L, ∀ r ∈ Ico s R, L ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
+  refine ⟨analyticOrderNatAt f c * Real.log s + Real.log ‖meromorphicTrailingCoeffAt f c‖,
+    fun r hr ↦ le_trans ?_ ((hf.mono ?_).le_circleAverage_log_norm (hs.trans_le hr.1).ne')⟩
+  · gcongr
+    exact hr.1
+  · rw [abs_of_pos (hs.trans_le hr.1)]
+    exact closedBall_subset_ball hr.2
 
 end AnalyticOnNhd
 
