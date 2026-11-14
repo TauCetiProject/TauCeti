@@ -79,6 +79,19 @@ theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
   · exact (norm_mul_le _ _).trans
       (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
 
+/-- Without the normalisation `‖1‖ = 1`, a product with a finite product of powers still
+satisfies `‖b * ∏_{s ∈ S} (a s) ^ (e s)‖ ≤ ‖b‖ * ∏_{s ∈ S} ‖a s‖ ^ (e s)`, including empty `S`
+and zero exponents. The product bounds `Finset.norm_prod_le`, `TauCeti.norm_prod_le_prod_norm`
+and `Finsupp.norm_prod_pow_le` assume `NormOneClass`. -/
+theorem _root_.Finset.norm_mul_prod_pow_le {ι R : Type*} [SeminormedCommRing R] (S : Finset ι)
+    (a : ι → R) (e : ι → ℕ) (b : R) : ‖b * ∏ s ∈ S, a s ^ e s‖ ≤ ‖b‖ * ∏ s ∈ S, ‖a s‖ ^ e s := by
+  classical
+  induction S using Finset.induction_on generalizing b with
+  | empty => simp
+  | insert t S ht ih =>
+    rw [Finset.prod_insert ht, Finset.prod_insert ht, ← mul_assoc, ← mul_assoc]
+    exact (ih _).trans (by gcongr; exact norm_mul_pow_le _ _ _)
+
 /-- Multiplicativity of the norm gives `‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1)` without assuming
 `NormOneClass R`. -/
 theorem norm_pow_succ {R : Type*} [Norm R] [Monoid R] [NormMulClass R] (x : R) (n : ℕ) :
