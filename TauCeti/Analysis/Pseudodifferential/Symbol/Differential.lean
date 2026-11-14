@@ -40,7 +40,8 @@ For the differential symbol of order `m`:
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
   (`TauCeti.ClassicalSymbol.principal_negLaplacian`); it is elliptic
-  (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`).
+  (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`), and its quantization is Mathlib's `-Δ` on
+  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
 
 ## References
 
@@ -181,13 +182,14 @@ theorem coefficient_toSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSp
     (negLaplacian n V).toSymbol.coefficient p = ‖p.2‖ ^ 2 • ContinuousLinearMap.id ℂ V := by
   rw [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_negLaplacian]
 
-/-- The negative Laplacian is the sum of the negative second derivatives on Schwartz input. -/
+open Laplacian in
+/-- The quantization of `negLaplacian` is the negative Laplacian `-Δ` on Schwartz input. -/
 theorem quantizeSchwartzValue_negLaplacian [CompleteSpace V] (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
-    quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x =
-      -∑ j : Fin n, ∂^{fun _ : Fin 2 ↦ EuclideanSpace.single j (1 : ℝ)} u x := by
-  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol]
-  simp
+    quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x = -Δ u x := by
+  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol,
+    SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun (Fin n) ℝ)]
+  simp [LineDeriv.iteratedLineDerivOp_succ_left, EuclideanSpace.basisFun_apply, Fin.tail]
 
 /-- The principal symbol of the negative Laplacian is `‖ξ‖²`. -/
 @[simp]

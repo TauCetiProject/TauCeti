@@ -45,6 +45,9 @@ section.
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
   read through an atlas trivialization, is a `C^n` section over its base set.
+* `Bundle.Trivialization.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet`: the
+  interior of an extended chart target intersected with the inverse-chart preimage of a
+  trivialization's base set is open.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
 -/
@@ -254,6 +257,26 @@ theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.base
     (hu : ContMDiffOn IB 𝓘(𝕜, F) n u U) :
     ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (e.symm x (u x))) U :=
   (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+open Set
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {Z F : Type*} [TopologicalSpace Z] [TopologicalSpace F] {p : Z → B}
+
+/-- The interior of an extended chart target intersected with the inverse-chart preimage of a
+trivialization's base set is open in the model space. -/
+theorem isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet
+    (e : Trivialization F p) (x : B) :
+    IsOpen (interior (extChartAt IB x).target ∩ (extChartAt IB x).symm ⁻¹' e.baseSet) :=
+  ((continuousOn_extChartAt_symm x).mono interior_subset).isOpen_inter_preimage
+    isOpen_interior e.open_baseSet
 
 end Bundle.Trivialization
 

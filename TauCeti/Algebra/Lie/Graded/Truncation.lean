@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Graded.Quotient
+public import TauCeti.Algebra.Lie.Graded.Supported
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.PositiveDegrees.Grading
 public import Mathlib.Algebra.Lie.Nilpotent
@@ -17,7 +18,8 @@ For a positively graded Lie algebra, the sum of the homogeneous pieces above a d
 homogeneous Lie ideal `PositiveDegrees.degreeIdeal`. Bracketing adds degrees, so the lower central
 series lies in these ideals and every degree truncation `PositiveDegrees.truncatedLie` is
 nilpotent. The truncations inherit a positive grading, and the surjective transitions between
-cutoffs are the quotient maps `LieIdeal.factor`.
+cutoffs are the quotient maps `LieIdeal.factor`. Degree quotients and cutoff transitions
+also commute with selecting an additive set of supported degrees.
 
 The transition from order `k + 1` to order `k` has central kernel, equal to the sum of the
 surviving pieces of degree exactly `k + 1`. Each stage of the tower of truncations is therefore a
@@ -45,6 +47,11 @@ No freeness, finite rank, or assumption on the coefficient ring beyond commutati
 Adapted from `Mei/Algebra/Lie/Graded/Truncation/{Basic,Transition}.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`, released under Apache 2.0.
+The supported-degree image results are adapted from
+`Mei/Algebra/Lie/Graded/Supported.lean` in the same repository, commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+Original notice: Copyright (c) 2026 Mei contributors. All rights reserved.
+Authors: Codex.
 -/
 
 public section
@@ -265,6 +272,23 @@ theorem map_truncationMap_truncatedGrading {k l : ℕ} (h : k ≤ l) (n : N) :
   congr 1
   ext x
   exact d.truncationMap_mk ℒ h x
+
+/-- Taking a degree quotient commutes with selecting an additive set of degrees. -/
+@[simp]
+theorem map_mkQ_supportedLieSubalgebra (S : AddSubsemigroup N) (k : ℕ) :
+    (supportedLieSubalgebra ℒ S).map (d.degreeIdeal ℒ k).mkQ =
+      supportedLieSubalgebra (d.truncatedGrading ℒ k) S := by
+  simpa only [LieIdeal.coe_mkQ, ← d.truncatedGrading_eq ℒ k] using
+    map_supportedLieSubalgebra ℒ S (d.degreeIdeal ℒ k).mkQ
+
+/-- Lowering the cutoff maps a supported Lie subalgebra onto its lower-order counterpart. -/
+@[simp]
+theorem map_truncationMap_supportedLieSubalgebra (S : AddSubsemigroup N)
+    {k l : ℕ} (h : k ≤ l) :
+    (supportedLieSubalgebra (d.truncatedGrading ℒ l) S).map (d.truncationMap ℒ h) =
+      supportedLieSubalgebra (d.truncatedGrading ℒ k) S := by
+  simpa only [d.map_truncationMap_truncatedGrading ℒ h] using
+    map_supportedLieSubalgebra (d.truncatedGrading ℒ l) S (d.truncationMap ℒ h)
 
 /-- The kernel of the transition from order `k + 1` to order `k` is exactly the sum of the pieces
 of the newly retained degree `k + 1`. -/
