@@ -541,18 +541,15 @@ theorem localArithmeticFactor_one_apply_pow {P : HeightOneSpectrum (𝓞 K)} {q 
 
 /-- The local factors of the trivial function at two primes of norm `p` convolve to `k + 1` at
 `p ^ k`, the number of ways to write `p ^ k` as a product of two powers of `p`. -/
-theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ} (hp : p.Prime)
+theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ}
     {P Q : HeightOneSpectrum (𝓞 K)} (hP : Ideal.absNorm P.asIdeal = p)
     (hQ : Ideal.absNorm Q.asIdeal = p) (k : ℕ) :
     ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
       (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
-  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
-    (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
-      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b),
-    Nat.sum_divisors_prime_pow hp]
-  rw [Finset.sum_congr rfl fun i hi ↦ by
-    rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hp.pos,
-      localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
+  have hp : 1 < p := hP ▸ NumberField.HeightOneSpectrum.one_lt_absNorm P
+  simp only [localArithmeticFactor, hP, hQ]
+  rw [← _root_.map_mul (ArithmeticFunction.ofPowerSeries p) (localPowerSeries 1 P)
+    (localPowerSeries 1 Q), ArithmeticFunction.ofPowerSeries_apply_pow hp, PowerSeries.coeff_mul]
   simp
 
 end IdealArithmeticFunction

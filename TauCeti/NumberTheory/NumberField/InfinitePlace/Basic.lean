@@ -71,6 +71,8 @@ An infinite place is archimedean, since it takes the value `2` at `2`.
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
+* `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
+  places.
 -/
 
 public section
@@ -81,6 +83,11 @@ open scoped ComplexOrder
 namespace NumberField
 
 variable {K : Type*} [Field K]
+
+/-- A totally real field has no complex infinite places. -/
+instance IsTotallyReal.instIsEmptyIsComplex [IsTotallyReal K] :
+    IsEmpty {w : InfinitePlace K // w.IsComplex} :=
+  ⟨fun w ↦ not_isReal_iff_isComplex.mpr w.2 (IsTotallyReal.isReal w.1)⟩
 
 /-- **An extension of a totally real field unramified at infinity is totally real.** If every
 infinite place of `K` is unramified over a totally real field `k`, then every infinite place of
@@ -283,7 +290,7 @@ theorem InfinitePlace.embedding_of_isReal_comap {k : Type*} [Field k] (f : k →
 Mathlib's `AbsoluteValue.LiesOver` instance is this statement for `AbsoluteValue.under`, which is
 not the spelling `InfinitePlace.comap` produces, so it is registered here. Constructions indexed by
 `w.comap (algebraMap k K)` that consume a `LiesOver` hypothesis, such as
-`NumberField.LiesOver.completionMap`, need it. -/
+`AbsoluteValue.Completion.map`, need it. -/
 instance InfinitePlace.liesOver_comap {k : Type*} [Field k] [Algebra k K]
     (w : InfinitePlace K) : w.LiesOver (w.comap (algebraMap k K)) :=
   ⟨rfl⟩

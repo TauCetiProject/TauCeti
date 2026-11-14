@@ -22,8 +22,10 @@ the number of vertices. No connectedness or nonemptiness assumption is needed. T
 darts, rather than their endpoint pairs, provide the forest coordinates used in cycle bases.
 
 Two vertices are joined in the simple support of a reversal-closed set of darts exactly when a
-path through those darts joins them. In particular, the simple support of an orientation has
-the connectivity of the graph.
+path through those darts joins them. A set of darts containing at least one dart of every
+reversal pair, such as an orientation, has the simple support of all darts, and hence the
+connectivity of the graph: its simple support has exactly one component precisely when the
+graph is connected.
 
 ## References
 
@@ -78,6 +80,29 @@ theorem supportGraph_mono {O O' : Set Γ.E} (h : O ⊆ O') :
   ext x y
   simp [supportGraph_adj]
 
+variable {Γ O} in
+/-- A chosen dart that is not a loop joins its endpoints in the simple support. -/
+theorem supportGraph_adj_src_tgt {e : Γ.E} (he : e ∈ O) (hne : Γ.src e ≠ Γ.tgt e) :
+    (Γ.supportGraph O).Adj (Γ.src e) (Γ.tgt e) :=
+  (Γ.supportGraph_adj O _ _).mpr ⟨hne, .inl ⟨e, he, rfl, rfl⟩⟩
+
+/-- The simple support has no edges exactly when every chosen dart is a loop. -/
+theorem supportGraph_eq_bot_iff : Γ.supportGraph O = ⊥ ↔ ∀ e ∈ O, Γ.src e = Γ.tgt e := by
+  refine ⟨fun h e he => by_contra fun hne => ?_, fun h => ?_⟩
+  · simpa [h] using supportGraph_adj_src_tgt he hne
+  · ext x y
+    simp only [supportGraph_adj, SimpleGraph.bot_adj, iff_false]
+    rintro ⟨hxy, ⟨e, he, rfl, rfl⟩ | ⟨e, he, rfl, rfl⟩⟩
+    exacts [hxy (h e he), hxy (h e he).symm]
+
+/-- The simple support of a single dart is the single edge joining its endpoints; it has no
+edge when the dart is a loop. -/
+theorem supportGraph_singleton (e : Γ.E) :
+    Γ.supportGraph {e} = SimpleGraph.edge (Γ.src e) (Γ.tgt e) := by
+  ext x y
+  simp only [supportGraph_adj, Set.mem_singleton_iff, exists_eq_left, SimpleGraph.edge_adj]
+  tauto
+
 /-- A spanning forest on actual chosen darts. Besides acyclicity of the simple support,
 loops and repeated unordered endpoint pairs are excluded explicitly. -/
 structure IsSpanningForest (F : Set Γ.E) : Prop where
@@ -106,6 +131,46 @@ the ambient multigraph has infinitely many loops or parallel edges. -/
 theorem IsSpanningForest.finite [Finite Γ.V] (hF : Γ.IsSpanningForest O F) : F.Finite :=
   hF.bijOn_endpoints.finite_iff_finite.mpr (Set.toFinite _)
 
+/-- The empty set of darts is a spanning forest exactly when every chosen dart is a loop:
+isolated vertices and loops need no forest edge, and any other dart needs one. -/
+theorem isSpanningForest_empty_iff : Γ.IsSpanningForest O ∅ ↔ ∀ e ∈ O, Γ.src e = Γ.tgt e := by
+  rw [← supportGraph_eq_bot_iff]
+  refine ⟨fun hF => ?_, fun h => ⟨Set.empty_subset O, by simp, Set.injOn_empty _, by simp,
+    by rw [h, supportGraph_empty]⟩⟩
+  ext x y
+  simp only [SimpleGraph.bot_adj, iff_false]
+  intro hxy
+  have hreach := hxy.reachable
+  rw [← hF.reachable_eq, supportGraph_empty, SimpleGraph.reachable_bot] at hreach
+  exact hxy.ne hreach
+
+/-- When every chosen dart is a loop, the only spanning forest is the empty one: a spanning
+forest never contains a loop. -/
+theorem IsSpanningForest.eq_empty (hF : Γ.IsSpanningForest O F)
+    (h : ∀ e ∈ O, Γ.src e = Γ.tgt e) : F = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e he => hF.src_ne_tgt e he (h e (hF.subset he))
+
+/-- A dart that is not a loop is a spanning forest of any family of darts whose members are
+loops or join the same two vertices, in either direction. This covers a bundle of parallel
+edges together with loops at their endpoints, with no restriction on the other vertices. -/
+theorem isSpanningForest_singleton {e : Γ.E} (he : e ∈ O) (hne : Γ.src e ≠ Γ.tgt e)
+    (hO : ∀ f ∈ O, Γ.src f ≠ Γ.tgt f → s(Γ.src f, Γ.tgt f) = s(Γ.src e, Γ.tgt e)) :
+    Γ.IsSpanningForest O {e} := by
+  have hsupport : Γ.supportGraph {e} = Γ.supportGraph O := by
+    apply SimpleGraph.edgeSet_injective
+    rw [supportGraph_edgeSet, supportGraph_edgeSet]
+    ext q
+    simp only [Set.mem_image, Set.mem_ofPred_eq, Set.mem_singleton_iff]
+    exact ⟨by rintro ⟨f, ⟨rfl, hf⟩, rfl⟩; exact ⟨f, ⟨he, hf⟩, rfl⟩,
+      by rintro ⟨f, ⟨hfO, hf⟩, rfl⟩; exact ⟨e, ⟨rfl, hne⟩, (hO f hfO hf).symm⟩⟩
+  have hacyc : (Γ.supportGraph {e}).IsAcyclic := by
+    have h : (⊥ ⊔ SimpleGraph.edge (Γ.src e) (Γ.tgt e)).IsAcyclic :=
+      SimpleGraph.isAcyclic_sup_fromEdgeSet_iff.mpr
+        ⟨SimpleGraph.isAcyclic_bot, fun h => .inl (SimpleGraph.reachable_bot.mp h)⟩
+    rwa [bot_sup_eq, ← supportGraph_singleton] at h
+  exact ⟨Set.singleton_subset_iff.mpr he, by simpa using hne, Set.injOn_singleton _ _, hacyc,
+    by rw [hsupport]⟩
+
 /-- Every chosen set of darts admits a spanning forest of actual edges. No finiteness,
 orientation, connectedness or nonemptiness is required. -/
 theorem exists_spanningForest (Γ : SerreGraph.{u, v}) (O : Set Γ.E) :
@@ -133,6 +198,16 @@ theorem IsSpanningForest.card_add_card_connectedComponent [Finite Γ.V]
     ((Γ.supportGraph F).connectedComponentEquivOfReachableEq hF.reachable_eq)
   have h := hF.isAcyclic.ncard_edgeSet_add_card_connectedComponent
   simpa only [Nat.card_coe_set_eq, ← hcard, hcomp] using h
+
+/-- When every chosen dart is a loop, each vertex is its own component. In particular this
+counts the components of a graph without edges. -/
+theorem card_connectedComponent_supportGraph_of_forall_src_eq_tgt
+    (h : ∀ e ∈ O, Γ.src e = Γ.tgt e) :
+    Nat.card (Γ.supportGraph O).ConnectedComponent = Nat.card Γ.V := by
+  rw [(Γ.supportGraph_eq_bot_iff O).mpr h]
+  exact (Nat.card_congr (Equiv.ofBijective _ ⟨fun _ _ hab =>
+    SimpleGraph.reachable_bot.mp (SimpleGraph.ConnectedComponent.exact hab),
+    Quot.mk_surjective⟩)).symm
 
 /-! ### Reachability in the simple support -/
 
@@ -168,35 +243,75 @@ theorem reachable_supportGraph_iff {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e �
     rintro f (hf | rfl)
     exacts [hp f hf, he]
 
-/-- The positive darts of a reversal-closed set of darts have the same simple support as the
-whole set. -/
-theorem IsOrientation.supportGraph_inter (hO : Γ.IsOrientation O) {S : Set Γ.E}
-    (hS : ∀ e ∈ S, Γ.rev e ∈ S) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S := by
+/-- The darts of a reversal-closed set `S` lying in `O` have the same simple support as `S`
+when `O` contains at least one dart of every reversal pair in `S`. -/
+theorem supportGraph_inter {S : Set Γ.E} (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+    (hO : ∀ e ∈ S, e ∈ O ∨ Γ.rev e ∈ O) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S := by
   have key : ∀ x y, ∀ e ∈ S, x ≠ y → Γ.src e = x → Γ.tgt e = y →
       (Γ.supportGraph (S ∩ O)).Adj x y := by
     intro x y e he hne h₁ h₂
     refine (Γ.supportGraph_adj _ x y).mpr ⟨hne, ?_⟩
-    by_cases heO : e ∈ O
+    rcases hO e he with heO | heO
     · exact .inl ⟨e, ⟨he, heO⟩, h₁, h₂⟩
-    · exact .inr ⟨Γ.rev e, ⟨hS e he, (hO.mem_rev_iff Γ e).mpr heO⟩, by simpa using h₂,
-        by simpa using h₁⟩
+    · exact .inr ⟨Γ.rev e, ⟨hS e he, heO⟩, by simpa using h₂, by simpa using h₁⟩
   refine le_antisymm (Γ.supportGraph_mono Set.inter_subset_left) fun x y hxy => ?_
   obtain ⟨hne, ⟨e, he, h₁, h₂⟩ | ⟨e, he, h₁, h₂⟩⟩ := (Γ.supportGraph_adj S x y).mp hxy
   · exact key x y e he hne h₁ h₂
   · exact (key y x e he hne.symm h₁ h₂).symm
 
+/-- The positive darts of a reversal-closed set of darts have the same simple support as the
+whole set. -/
+theorem IsOrientation.supportGraph_inter (hO : Γ.IsOrientation O) {S : Set Γ.E}
+    (hS : ∀ e ∈ S, Γ.rev e ∈ S) : Γ.supportGraph (S ∩ O) = Γ.supportGraph S :=
+  SerreGraph.supportGraph_inter hS fun e _ => hO.mem_or_rev_mem e
+
+/-- A dart set containing at least one dart of every reversal pair has the simple support of
+all darts: the simple support does not see the direction of a dart. -/
+theorem supportGraph_eq_supportGraph_univ (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    Γ.supportGraph O = Γ.supportGraph Set.univ := by
+  simpa using SerreGraph.supportGraph_inter (S := Set.univ) (by simp) fun e _ => hO e
+
+/-- An orientation has the simple support of all darts. -/
+theorem IsOrientation.supportGraph_eq_supportGraph_univ (hO : Γ.IsOrientation O) :
+    Γ.supportGraph O = Γ.supportGraph Set.univ :=
+  SerreGraph.supportGraph_eq_supportGraph_univ hO.mem_or_rev_mem
+
+/-- For a dart set containing at least one dart of every reversal pair, two vertices are joined
+in the simple support exactly when they are joined by a path of the graph. -/
+theorem reachable_supportGraph_iff_nonempty_path (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) {a b : Γ.V} :
+    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) := by
+  simp [supportGraph_eq_supportGraph_univ hO, reachable_supportGraph_iff]
+
 /-- Two vertices are joined in the simple support of an orientation exactly when they are
 joined by a path of the graph. -/
-theorem IsOrientation.reachable_supportGraph_iff (hO : Γ.IsOrientation O) {a b : Γ.V} :
-    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) := by
-  rw [← Set.univ_inter O, hO.supportGraph_inter fun _ _ => Set.mem_univ _,
-    SerreGraph.reachable_supportGraph_iff fun _ _ => Set.mem_univ _]
-  exact ⟨fun ⟨p, _⟩ => ⟨p⟩, fun ⟨p⟩ => ⟨p, fun _ _ => Set.mem_univ _⟩⟩
+theorem IsOrientation.reachable_supportGraph_iff_nonempty_path (hO : Γ.IsOrientation O)
+    {a b : Γ.V} :
+    (Γ.supportGraph O).Reachable a b ↔ Nonempty (Γ.Path a b) :=
+  SerreGraph.reachable_supportGraph_iff_nonempty_path hO.mem_or_rev_mem
+
+/-- The simple support of a dart set containing at least one dart of every reversal pair is
+connected exactly when the graph is. -/
+theorem connected_supportGraph_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    (Γ.supportGraph O).Connected ↔ Γ.Connected := by
+  simp only [SimpleGraph.connected_iff, SimpleGraph.Preconnected,
+    reachable_supportGraph_iff_nonempty_path hO, connected_iff, preconnected_iff, and_comm]
 
 /-- The simple support of an orientation is connected exactly when the graph is. -/
 theorem IsOrientation.connected_supportGraph_iff (hO : Γ.IsOrientation O) :
-    (Γ.supportGraph O).Connected ↔ Γ.Connected := by
-  simp only [SimpleGraph.connected_iff, SimpleGraph.Preconnected, hO.reachable_supportGraph_iff,
-    connected_iff, preconnected_iff, and_comm]
+    (Γ.supportGraph O).Connected ↔ Γ.Connected :=
+  SerreGraph.connected_supportGraph_iff hO.mem_or_rev_mem
+
+/-- For a dart set containing at least one dart of every reversal pair, the simple support has
+exactly one component precisely when the Serre graph is connected; an empty graph has none. -/
+theorem card_connectedComponent_supportGraph_eq_one_iff (hO : ∀ e, e ∈ O ∨ Γ.rev e ∈ O) :
+    Nat.card (Γ.supportGraph O).ConnectedComponent = 1 ↔ Γ.Connected :=
+  SimpleGraph.card_connectedComponent_eq_one_iff.trans (connected_supportGraph_iff hO)
+
+/-- The simple support of an orientation has exactly one component precisely when the Serre
+graph is connected; an empty graph has none. -/
+theorem IsOrientation.card_connectedComponent_supportGraph_eq_one_iff
+    (hO : Γ.IsOrientation O) :
+    Nat.card (Γ.supportGraph O).ConnectedComponent = 1 ↔ Γ.Connected :=
+  SerreGraph.card_connectedComponent_supportGraph_eq_one_iff hO.mem_or_rev_mem
 
 end TauCeti.SerreGraph

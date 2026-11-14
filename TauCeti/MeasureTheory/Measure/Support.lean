@@ -157,6 +157,13 @@ theorem support_map_eq_closure_image (μ : Measure X) (hμ : μ.support ∈ ae �
     exact (mem_support_iff_forall x).mp hx (f ⁻¹' U)
       ((hU.preimage hf).mem_nhds hxU)
 
+/-- Casting a natural-valued law to the reals casts its support. The image is already closed,
+so no new real limit points appear. -/
+theorem support_map_natCast (μ : Measure ℕ) :
+    (μ.map (Nat.cast : ℕ → ℝ)).support = (Nat.cast : ℕ → ℝ) '' μ.support := by
+  rw [support_map_eq_closure_image μ support_mem_ae (by fun_prop)]
+  exact (Nat.isClosedEmbedding_coe_real.isClosedMap _ isClosed_support).closure_eq
+
 /-- The support of the pushforward of a full-support measure by a continuous map is the closure of
 the map's range. No injectivity, surjectivity, or properness hypothesis is needed. -/
 theorem support_map_eq_closure_range (μ : Measure X) {f : X → Y} (hμ : μ.support = Set.univ)
