@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Height.NumberField
 import TauCeti.RingTheory.Polynomial.Primitive
 import Mathlib.Analysis.Normed.Ring.Int
 import TauCeti.Analysis.Polynomial.L1Norm
+import TauCeti.Analysis.Polynomial.SupNorm.Factor
 
 /-!
 # Naive height of an algebraic number
@@ -22,7 +23,9 @@ The value at a transcendental element is one.
 
 For rational numbers it agrees with the multiplicative Weil height. For general
 algebraic numbers it instead measures the size of their defining polynomial;
-its bounds control denominators and the norms of real or complex roots, and
+its bounds control denominators and the norms of real or complex roots, Gelfond's
+divisor estimate bounds the naive height of any root of a nonzero integer polynomial `P`
+by `2 ^ deg P * P.supNorm` (`naiveHeight_le_two_pow_mul_supNorm_of_aeval_eq_zero`), and
 `norm_aeval_primitiveMinpoly_le` bounds the primitive minimal polynomial near its
 complex roots.
 
@@ -30,6 +33,7 @@ complex roots.
 
 * J.-H. Evertse, *Diophantine Approximation* (2019), ch. 3, §3.1,
   Exercise 3.1, and ch. 6, §6.1.
+* Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), Lemma A.3.
 -/
 
 public section
@@ -237,5 +241,14 @@ theorem norm_aeval_primitiveMinpoly_le {α z : ℂ} (hα : IsAlgebraic ℚ α) :
       _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d * ‖z - α‖ :=
           le_mul_of_one_le_right (by positivity) hz.le
       _ = (d + 1) * (2 + ‖z‖) ^ d * naiveHeight α * ‖z - α‖ := by ring
+
+/-- If a nonzero integer polynomial `P` vanishes at `x`, then the naive height of `x` is at most
+`2 ^ P.natDegree * P.supNorm`, by Gelfond's factor bound applied to `primitiveMinpoly x ∣ P`. -/
+theorem naiveHeight_le_two_pow_mul_supNorm_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P ≠ 0)
+    (hx : aeval x P = 0) :
+    naiveHeight x ≤ 2 ^ P.natDegree * P.supNorm := by
+  rw [naiveHeight_def]
+  exact supNorm_le_two_pow_mul_supNorm_of_dvd
+    ((primitiveMinpoly_dvd_iff (isAlgebraic_rat_of_aeval_eq_zero hP hx)).2 hx) hP
 
 end TauCeti

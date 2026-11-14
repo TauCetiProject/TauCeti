@@ -98,6 +98,14 @@ theorem isRootEnumeration_comp_equiv_iff (e : κ ≃ ι) :
   rw [isRootEnumeration_iff, isRootEnumeration_iff, ← Multiset.map_map,
     Multiset.map_univ_val_equiv]
 
+/-- Base change along a scalar tower preserves root enumerations. -/
+@[simp]
+theorem isRootEnumeration_map {S : Type*} [CommRing S] [Algebra R S] [Algebra S L]
+    [IsScalarTower R S L] (f : R[X]) (x : ι → L) :
+    (f.map (algebraMap R S)).IsRootEnumeration x ↔ f.IsRootEnumeration x := by
+  rw [isRootEnumeration_iff, isRootEnumeration_iff, Polynomial.map_map,
+    ← IsScalarTower.algebraMap_eq]
+
 namespace IsRootEnumeration
 
 /-- The number of entries of an enumeration is the number of roots of `f` in `L`. -/

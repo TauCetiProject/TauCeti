@@ -651,9 +651,12 @@ theorem aeval_linearFormPoly {A : Type*} [CommRing A] {n : ℕ} (x : ℤ × (Fin
     aeval z (linearFormPoly x) = (x.1 : A) + ∑ j, (x.2 j : A) * z ^ (j.val + 1) := by
   rw [← coeffVec_linearForm (natDegree_linearFormPoly_le x), coeffVec_linearFormPoly]
 
-/-- The coefficient sup norm of `linearFormPoly x` is at most the sup norm of `x`. -/
-theorem supNorm_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
-    (linearFormPoly x).supNorm ≤ ‖x‖ := by
+/-- The coefficient sup norm of `linearFormPoly x` equals the sup norm of `x`. -/
+@[simp]
+theorem supNorm_linearFormPoly {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
+    (linearFormPoly x).supNorm = ‖x‖ := by
+  refine le_antisymm ?_
+    (by simpa only [coeffVec_linearFormPoly] using norm_coeffVec_le n (linearFormPoly x))
   rw [supNorm_eq_iSup]
   refine ciSup_le fun i ↦ ?_
   simp only [linearFormPoly, coeff_add, coeff_C, finsetSum_coeff, coeff_C_mul_X_pow]
@@ -666,6 +669,11 @@ theorem supNorm_linearFormPoly_le {n : ℕ} (x : ℤ × (Fin n → ℤ)) :
         have := j.isLt
         omega
       simp [h]
+
+/-- For `P ∈ ℤ[X]` of degree at most `n`, the sup norm of `coeffVec n P` equals `P.supNorm`. -/
+theorem norm_coeffVec_eq_supNorm {n : ℕ} {P : ℤ[X]} (hP : P.natDegree ≤ n) :
+    ‖coeffVec n P‖ = P.supNorm := by
+  simpa only [linearFormPoly_coeffVec hP] using (supNorm_linearFormPoly (coeffVec n P)).symm
 
 end CoeffVec
 

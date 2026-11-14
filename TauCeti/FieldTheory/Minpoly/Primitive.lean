@@ -50,7 +50,10 @@ clears the denominator of `x` when `F` is a field.
   has positive leading coefficient, and for algebraic `x` is irreducible and vanishes at `x`.
 * `TauCeti.rootSet_primitiveMinpoly`: `F_x` and `minpoly ℚ x` have the same
   roots in every commutative domain that is a `ℚ`-algebra.
-* `TauCeti.primitiveMinpoly_dvd_iff`: for algebraic `x`, `F_x ∣ P` in `ℤ[X]` iff `P(x) = 0`.
+* `TauCeti.isAlgebraic_rat_of_aeval_eq_zero`, `TauCeti.primitiveMinpoly_dvd_iff`,
+  `TauCeti.natDegree_minpoly_rat_le_of_aeval_eq_zero`: any root of a nonzero `P ∈ ℤ[X]` is
+  algebraic over `ℚ` of degree at most `P.natDegree`, and for algebraic `x`, `F_x ∣ P` in `ℤ[X]`
+  iff `P(x) = 0`.
 * `TauCeti.primitiveMinpoly_eq_of_irreducible`: the uniqueness characterisation of `F_x`.
 * `TauCeti.primitiveMinpoly_eq_minpoly_int`: `F_x = minpoly ℤ x` for `x` integral over `ℤ`.
 * `TauCeti.primitiveMinpoly_ratCast`: `F_q = (den q) X - num q` for `q ∈ ℚ`.
@@ -242,6 +245,20 @@ theorem primitiveMinpoly_dvd_iff {x : F} (hx : IsAlgebraic ℚ x) {P : ℤ[X]} :
     (associated_map_primitiveMinpoly hx).dvd_iff_dvd_left]
   exact minpoly.dvd ℚ x (by rw [← algebraMap_int_eq, aeval_map_algebraMap, h])
 
+/-- Any root in a characteristic-zero division ring of a nonzero integer polynomial is algebraic
+over `ℚ`. -/
+theorem isAlgebraic_rat_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P ≠ 0) (hx : aeval x P = 0) :
+    IsAlgebraic ℚ x :=
+  IsAlgebraic.extendScalars (RingHom.injective_int (algebraMap ℤ ℚ)) ⟨P, hP, hx⟩
+
+/-- If a nonzero integer polynomial `P` vanishes at `x`, then `x` has degree over `ℚ` at most
+`P.natDegree`. -/
+theorem natDegree_minpoly_rat_le_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P ≠ 0)
+    (hx : aeval x P = 0) : (minpoly ℚ x).natDegree ≤ P.natDegree :=
+  natDegree_primitiveMinpoly x ▸
+    Polynomial.natDegree_le_of_dvd
+      ((primitiveMinpoly_dvd_iff (isAlgebraic_rat_of_aeval_eq_zero hP hx)).2 hx) hP
+
 /-- If the primitive minimal polynomial of `x` vanishes at `y`, possibly in another
 division ring, then `x` and `y` are conjugate: they have the same minimal polynomial over `ℚ`.
 (For transcendental `x` the hypothesis is never satisfied.) -/
@@ -276,9 +293,7 @@ nonconstant, hence primitive. -/
 theorem primitiveMinpoly_eq_of_irreducible {x : F} {P : ℤ[X]} (hirr : Irreducible P)
     (hlc : 0 < P.leadingCoeff) (hPx : aeval x P = 0) :
     primitiveMinpoly x = P := by
-  have hx : IsAlgebraic ℚ x := ⟨P.map (Int.castRingHom ℚ),
-    (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).mpr hirr.ne_zero,
-    by rw [← algebraMap_int_eq, aeval_map_algebraMap, hPx]⟩
+  have hx : IsAlgebraic ℚ x := isAlgebraic_rat_of_aeval_eq_zero hirr.ne_zero hPx
   have hnorm (p : ℤ[X]) (hp : 0 < p.leadingCoeff) : normalize p = p := by
     simp [normalize_apply, Int.normUnit_eq, hp.le]
   exact Associated.eq_of_normalized

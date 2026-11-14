@@ -103,14 +103,14 @@ theorem supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric
     prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric Finset.univ ![f, g] φ
 
 /-- The Gelfond factor bound for a finite product of integer polynomials. -/
-theorem prod_supNorm_int_le_two_pow_mul_supNorm_prod {ι : Type*} (s : Finset ι) (f : ι → ℤ[X]) :
+theorem prod_supNorm_le_two_pow_mul_supNorm_prod_int {ι : Type*} (s : Finset ι) (f : ι → ℤ[X]) :
     ∏ i ∈ s, (f i).supNorm ≤
       2 ^ (∏ i ∈ s, f i).natDegree * (∏ i ∈ s, f i).supNorm :=
   prod_supNorm_le_two_pow_mul_supNorm_prod_of_ringHomIsometric s f (Int.castRingHom ℂ)
 
 /-- The Gelfond bound for two integer polynomials: `f.supNorm * g.supNorm ≤ 2 ^ d * (f * g).supNorm`
 where `d = (f * g).natDegree`. -/
-theorem supNorm_int_mul_supNorm_le_two_pow_mul_supNorm_mul (f g : ℤ[X]) :
+theorem supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_int (f g : ℤ[X]) :
     f.supNorm * g.supNorm ≤ 2 ^ (f * g).natDegree * (f * g).supNorm :=
   supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_of_ringHomIsometric f g (Int.castRingHom ℂ)
 
@@ -121,13 +121,13 @@ theorem supNorm_le_two_pow_mul_supNorm_of_dvd {p q : ℤ[X]} (hpq : p ∣ q) (hq
   obtain ⟨r, rfl⟩ := hpq
   have hr : r ≠ 0 := right_ne_zero_of_mul hq
   exact (le_mul_of_one_le_right p.supNorm_nonneg (one_le_supNorm_of_ne_zero hr)).trans
-    (supNorm_int_mul_supNorm_le_two_pow_mul_supNorm_mul p r)
+    (supNorm_mul_supNorm_le_two_pow_mul_supNorm_mul_int p r)
 
-/-! ### Sharpness of the exponential factor -/
+/-! ### Failure of supermultiplicativity -/
 
-/-- A factor of an integer polynomial can have strictly larger coefficient sup norm than the
-product itself, and the product of the factor sup norms (`4`) exceeds `(f * g).supNorm = 3`,
-so an exponential factor in the degree cannot be omitted in Gelfond's bound. -/
+/-- The factors `2 * X + 1` and `X - 2` in `ℤ[X]` each have coefficient sup norm `2`, whereas
+their product `2 * X ^ 2 - 3 * X - 2` has coefficient sup norm `3 < 2 * 2`: `Polynomial.supNorm` is
+not supermultiplicative, so the `2 ^ d` factor in Gelfond's bound cannot be dropped. -/
 example : ((2 * X + 1) * (X - 2) : ℤ[X]).supNorm = 3 ∧
     (2 * X + 1 : ℤ[X]).supNorm = 2 ∧ (X - 2 : ℤ[X]).supNorm = 2 := by
   have hsup {p : ℤ[X]} {B : ℝ} (hle : ∀ i, ‖p.coeff i‖ ≤ B)

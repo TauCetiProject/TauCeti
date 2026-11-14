@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Polynomial.MahlerMeasure
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Data.Nat.Choose.Bounds
+import Mathlib.RingTheory.Polynomial.Tower
 
 /-!
 # Root location and separated-disc evaluation estimates
@@ -18,16 +19,18 @@ around `z`, then each root factor `‖z - α‖` is bounded below by a fixed mul
 roots of modulus at most `2 (‖z‖ + 1)` use `r ≤ ‖z - α‖`, while larger roots satisfy
 `‖α‖ / 2 ≤ ‖α‖ - ‖z‖ ≤ ‖z - α‖`. Multiplying over the roots bounds `p.mahlerMeasure`, and hence
 `p.supNorm`, by `‖p.eval z‖` up to `(r / (4 (‖z‖ + 1))) ^ (-n)`
-(`Polynomial.mahlerMeasure_le_of_forall_isRoot_le_norm_sub`,
-`Polynomial.supNorm_le_of_forall_isRoot_le_norm_sub`). Contrapositively, a value strictly below
-`(r / (4 (‖z‖ + 1))) ^ n * p.supNorm` forces a complex root within `r` of `z`
+(`Polynomial.pow_mul_mahlerMeasure_le_norm_eval_of_forall_isRoot_le_norm_sub`,
+`Polynomial.pow_mul_supNorm_le_norm_eval_of_forall_isRoot_le_norm_sub`). Contrapositively, a value
+strictly below `(r / (4 (‖z‖ + 1))) ^ n * p.supNorm` forces a complex root within `r` of `z`
 (`Polynomial.exists_isRoot_norm_sub_lt_of_norm_eval_lt`).
 
 When this small-value condition holds simultaneously at `n` points `β₀, …, βₙ₋₁` whose open
 `r`-discs are pairwise disjoint, `p` acquires one root `αᵢ` in each disc; these `n` distinct roots
-exhaust the degree bound, so `p` has degree `n`, simple roots enumerated by `α`, and any isolated
-real disc of a real polynomial contains a real root
-(`Polynomial.exists_isRootEnumeration_of_forall_norm_eval_lt`,
+exhaust the degree bound, so `p` has degree `n` and simple roots enumerated by `α`
+(`Polynomial.exists_isRootEnumeration_of_forall_norm_eval_lt`). Over any coefficient ring `R` in a
+scalar tower `R → ℝ → ℂ` (such as `ℤ`, `ℚ`, or `ℝ`), any complex root strictly closer to a real
+point `x` than every other complex root is real
+(`Polynomial.im_eq_zero_of_aeval_eq_zero_of_norm_sub_lt`,
 `Polynomial.IsRootEnumeration.im_eq_zero_of_norm_sub_lt`). Conversely, when all other roots stay at
 distance at least `1` from `z` and all roots are bounded by `B ≥ 1`, `p.supNorm * ‖z - αᵢ‖` is
 bounded above by `(2 B) ^ n * ‖p.eval z‖`
@@ -99,7 +102,7 @@ private theorem multiset_prod_max_le_norm_prod_sub (s : Multiset ℂ) (z : ℂ) 
 
 /-- If `p ∈ ℂ[X]` has no root within `r` (`0 ≤ r ≤ 1`) of `z`, then its Mahler measure is bounded
 in terms of `‖p.eval z‖`: `(r / (2 (‖z‖ + 1))) ^ deg p * M(p) ≤ ‖p(z)‖`. -/
-theorem mahlerMeasure_le_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {r : ℝ}
+theorem pow_mul_mahlerMeasure_le_norm_eval_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {r : ℝ}
     (hr₀ : 0 ≤ r) (hr₁ : r ≤ 1) (hroot : ∀ α : ℂ, p.IsRoot α → r ≤ ‖z - α‖) :
     (r / (2 * (‖z‖ + 1))) ^ p.natDegree * p.mahlerMeasure ≤ ‖p.eval z‖ := by
   rcases eq_or_ne p 0 with rfl | hp
@@ -120,7 +123,7 @@ theorem mahlerMeasure_le_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {r 
 
 /-- If `p ∈ ℂ[X]` of degree at most `n` has no root within `r` (`0 ≤ r ≤ 1`) of `z`, then
 `(r / (4 (‖z‖ + 1))) ^ n * p.supNorm ≤ ‖p.eval z‖`. -/
-theorem supNorm_le_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {n : ℕ}
+theorem pow_mul_supNorm_le_norm_eval_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {n : ℕ}
     (hn : p.natDegree ≤ n) {r : ℝ} (hr₀ : 0 ≤ r) (hr₁ : r ≤ 1)
     (hroot : ∀ α : ℂ, p.IsRoot α → r ≤ ‖z - α‖) :
     (r / (4 * (‖z‖ + 1))) ^ n * p.supNorm ≤ ‖p.eval z‖ := by
@@ -140,7 +143,8 @@ theorem supNorm_le_of_forall_isRoot_le_norm_sub (p : ℂ[X]) (z : ℂ) {n : ℕ}
         congr 2
         field_simp
         ring
-    _ ≤ ‖p.eval z‖ := p.mahlerMeasure_le_of_forall_isRoot_le_norm_sub z hr₀ hr₁ hroot
+    _ ≤ ‖p.eval z‖ :=
+        p.pow_mul_mahlerMeasure_le_norm_eval_of_forall_isRoot_le_norm_sub z hr₀ hr₁ hroot
 
 /-- **Root location from a small value.** If `p ∈ ℂ[X]` of degree at most `n` satisfies
 `‖p.eval z‖ < (r / (4 (‖z‖ + 1))) ^ n * p.supNorm` for `0 ≤ r ≤ 1`, then `p` has a complex root
@@ -150,16 +154,16 @@ theorem exists_isRoot_norm_sub_lt_of_norm_eval_lt (p : ℂ[X]) (z : ℂ) {n : �
     (hlt : ‖p.eval z‖ < (r / (4 * (‖z‖ + 1))) ^ n * p.supNorm) :
     ∃ α : ℂ, p.IsRoot α ∧ ‖z - α‖ < r := by
   by_contra! h
-  exact hlt.not_ge (p.supNorm_le_of_forall_isRoot_le_norm_sub z hn hr₀ hr₁ h)
+  exact hlt.not_ge (p.pow_mul_supNorm_le_norm_eval_of_forall_isRoot_le_norm_sub z hn hr₀ hr₁ h)
 
 /-! ### Complete root enumeration from separated small values -/
 
-/-- If a nonzero `p ∈ ℂ[X]` of degree at most `Fintype.card ι` is small relative to `p.supNorm` at
-points `β : ι → ℂ` pairwise at distance at least `2 r` (`0 ≤ r ≤ 1`), then `p` has degree
+/-- If `p ∈ ℂ[X]` of degree at most `Fintype.card ι` is small relative to `p.supNorm` at points
+`β : ι → ℂ` pairwise at distance at least `2 r` (`0 ≤ r ≤ 1`), then `p` has degree
 `Fintype.card ι` and an injective root enumeration `α : ι → ℂ` with `‖β i - α i‖ < r` for every
 `i`. -/
 theorem exists_isRootEnumeration_of_forall_norm_eval_lt {ι : Type*} [Fintype ι] (p : ℂ[X])
-    (hp : p ≠ 0) (hn : p.natDegree ≤ Fintype.card ι) {β : ι → ℂ} {r : ℝ} (hr₀ : 0 ≤ r)
+    (hn : p.natDegree ≤ Fintype.card ι) {β : ι → ℂ} {r : ℝ} (hr₀ : 0 ≤ r)
     (hr₁ : r ≤ 1) (hsep : Pairwise fun i j ↦ 2 * r ≤ ‖β i - β j‖)
     (heval : ∀ i, ‖p.eval (β i)‖ < (r / (4 * (‖β i‖ + 1))) ^ Fintype.card ι * p.supNorm) :
     ∃ α : ι → ℂ, Function.Injective α ∧ p.IsRootEnumeration α ∧ p.natDegree = Fintype.card ι ∧
@@ -172,7 +176,8 @@ theorem exists_isRootEnumeration_of_forall_norm_eval_lt {ι : Type*} [Fintype ι
     have htri := norm_sub_le (β i - α i) (β j - α j)
     rw [hij, sub_sub_sub_cancel_right] at htri
     linarith [hsep hne, hij ▸ hdist i, hdist j]
-  let f : ι → p.rootSet ℂ := fun i ↦ ⟨α i, (mem_rootSet_of_ne hp).2 (hroot i)⟩
+  let f : ι → p.rootSet ℂ := fun i ↦
+    ⟨α i, (mem_rootSet_of_ne fun hp0 ↦ (heval i).not_ge (by simp [hp0])).2 (hroot i)⟩
   have hf_inj : Function.Injective f := fun i j h ↦ hinj (Subtype.ext_iff.1 h)
   have hcard_ge : Fintype.card ι ≤ Fintype.card (p.rootSet ℂ) :=
     Fintype.card_le_of_injective f hf_inj
@@ -191,26 +196,35 @@ theorem exists_isRootEnumeration_of_forall_norm_eval_lt {ι : Type*} [Fintype ι
   rw [isRootEnumeration_comp_equiv_iff] at henum
   exact ⟨α, hinj, henum, hdeg, hdist⟩
 
+/-- If `z ∈ ℂ` is a root of a polynomial `p` over a base `R` in a scalar tower `R → ℝ → ℂ`
+(such as `ℤ`, `ℚ`, or `ℝ`) and is strictly closer to a real point `x` than every other complex
+root of `p`, then `z` is real: complex conjugation preserves `aeval · p = 0` and distance to
+`x`. -/
+theorem im_eq_zero_of_aeval_eq_zero_of_norm_sub_lt {R : Type*} [CommSemiring R] [Algebra R ℝ]
+    [Algebra R ℂ] [IsScalarTower R ℝ ℂ] {p : R[X]} {z : ℂ} (hz : aeval z p = 0) {x : ℝ}
+    (hfar : ∀ w : ℂ, aeval w p = 0 → w ≠ z → ‖(x : ℂ) - z‖ < ‖(x : ℂ) - w‖) :
+    z.im = 0 := by
+  have hconj : aeval (conj z) p = 0 := by
+    rw [← aeval_map_algebraMap ℝ, aeval_conj, aeval_map_algebraMap, hz, map_zero]
+  have heq : conj z = z := by_contra fun hne ↦ (hfar (conj z) hconj hne).ne' <| by
+    have hsub : (x : ℂ) - conj z = conj ((x : ℂ) - z) := by simp
+    rw [hsub, RCLike.norm_conj]
+  exact Complex.conj_eq_iff_im.1 heq
+
 namespace IsRootEnumeration
 
-/-- If `α : ι → ℂ` is a root enumeration of a real polynomial `p` and `α i` is the unique entry
-strictly within `r` of a real point `x`, then `α i` is real: complex conjugation permutes the roots
-while preserving distance to `x`. -/
-theorem im_eq_zero_of_norm_sub_lt {ι : Type*} [Fintype ι] {p : ℝ[X]} {α : ι → ℂ}
-    (hα : p.IsRootEnumeration α) {i : ι} {x r : ℝ}
-    (hxi : ‖(x : ℂ) - α i‖ < r) (hfar : ∀ j ≠ i, r ≤ ‖(x : ℂ) - α j‖) :
+/-- If `α : ι → ℂ` is a root enumeration of `p ∈ R[X]` for a scalar tower `R → ℝ → ℂ` (such as
+`R = ℤ`, `ℚ`, or `ℝ`) and `α i` is strictly closer to a real point `x` than every distinct entry
+`α j`, then `α i` is real. -/
+theorem im_eq_zero_of_norm_sub_lt {R ι : Type*} [CommRing R] [Algebra R ℝ] [Algebra R ℂ]
+    [IsScalarTower R ℝ ℂ] [Fintype ι] {p : R[X]} {α : ι → ℂ} (hα : p.IsRootEnumeration α)
+    {i : ι} {x : ℝ} (hfar : ∀ j, α j ≠ α i → ‖(x : ℂ) - α i‖ < ‖(x : ℂ) - α j‖) :
     (α i).im = 0 := by
   have hmem : α i ∈ p.rootSet ℂ := hα.range_eq_rootSet ▸ Set.mem_range_self i
-  rw [mem_rootSet] at hmem
-  have hconj : conj (α i) ∈ p.rootSet ℂ := by
-    rw [mem_rootSet]
-    exact ⟨hmem.1, by rw [aeval_conj, hmem.2, map_zero]⟩
-  obtain ⟨j, hj⟩ := hα.range_eq_rootSet.symm ▸ hconj
-  have hxj : ‖(x : ℂ) - α j‖ < r := by
-    have heq : (x : ℂ) - α j = conj ((x : ℂ) - α i) := by simp [← hj]
-    rwa [heq, RCLike.norm_conj]
-  have hji : j = i := by_contra fun hne ↦ (hfar j hne).not_gt hxj
-  exact Complex.conj_eq_iff_im.1 (hj.symm.trans (congrArg α hji))
+  obtain ⟨hp0, hzi⟩ := mem_rootSet'.1 hmem
+  refine im_eq_zero_of_aeval_eq_zero_of_norm_sub_lt (x := x) hzi fun w hw hne ↦ ?_
+  obtain ⟨j, rfl⟩ := hα.range_eq_rootSet.symm ▸ (mem_rootSet'.2 ⟨hp0, hw⟩)
+  exact hfar j hne
 
 /-- **Value lower bound near an isolated simple root.** Let `α : ι → ℂ` enumerate the roots of
 `p ∈ ℂ[X]`. If all roots have norm at most `B ≥ 1` and all entries `α j` with `j ≠ i` stay at

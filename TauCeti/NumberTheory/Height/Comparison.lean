@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Height.MahlerMeasure
 public import TauCeti.NumberTheory.Height.Naive
-import TauCeti.Analysis.Polynomial.SupNorm.Factor
 
 /-!
 # Comparison of naive height and Mahler measure
@@ -15,9 +14,7 @@ import TauCeti.Analysis.Polynomial.SupNorm.Factor
 The naive height of an algebraic number is the coefficient sup norm of its primitive minimal
 polynomial, while its Mahler measure records the sizes of the roots as well as the leading
 coefficient. The standard coefficient estimate and Landau's inequality compare these two size
-functions in terms of the degree of the rational minimal polynomial. Combining them through
-Gelfond's factor bound also bounds the naive height of any root of a nonzero integer polynomial `P`
-by `2 ^ deg P * P.supNorm` (`TauCeti.naiveHeight_le_two_pow_mul_supNorm_of_aeval_eq_zero`).
+functions in terms of the degree of the rational minimal polynomial.
 
 The statements include transcendental elements under the conventions that their primitive
 minimal polynomial is `1`, their rational minimal polynomial is `0`, and both heights are `1`.
@@ -27,7 +24,6 @@ They provide the polynomial estimates used to compare naive, Mahler, and absolut
 
 * J.-H. Evertse, *Diophantine Approximation* (2019), Chapter 6, Theorem 6.1.
 * Xiaorun Wu, *Diophantine geometry, week 08: arithmetic heights* (2023), Lemma 3.3.
-* Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), Lemma A.3.
 -/
 
 public section
@@ -72,16 +68,5 @@ theorem mahlerMeasure_le_sqrt_natDegree_add_one_mul_naiveHeight (x : F) :
     ← supNorm_map _ (Int.castRingHom ℂ),
     ← natDegree_map_primitiveMinpoly x]
   exact mahlerMeasure_le_sqrt_natDegree_add_one_mul_supNorm _
-
-/-- If a nonzero integer polynomial `P` vanishes at `x`, then the naive height of `x` is at most
-`2 ^ P.natDegree * P.supNorm`, by Gelfond's factor bound applied to `primitiveMinpoly x ∣ P`. -/
-theorem naiveHeight_le_two_pow_mul_supNorm_of_aeval_eq_zero {x : F} {P : ℤ[X]} (hP : P ≠ 0)
-    (hx : aeval x P = 0) :
-    naiveHeight x ≤ 2 ^ P.natDegree * P.supNorm := by
-  have halg : IsAlgebraic ℚ x := ⟨P.map (Int.castRingHom ℚ),
-    (Polynomial.map_ne_zero_iff (RingHom.injective_int _)).2 hP,
-    by rw [← algebraMap_int_eq, aeval_map_algebraMap, hx]⟩
-  rw [naiveHeight_def]
-  exact supNorm_le_two_pow_mul_supNorm_of_dvd ((primitiveMinpoly_dvd_iff halg).2 hx) hP
 
 end TauCeti

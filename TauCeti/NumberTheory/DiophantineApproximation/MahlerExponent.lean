@@ -180,7 +180,7 @@ theorem IsAlgebraic.mahlerExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n :
           have := (linearFormPoly x).supNorm_nonneg
           gcongr
           · exact hx.2
-          · exact supNorm_linearFormPoly_le x
+          · exact (supNorm_linearFormPoly x).le
       _ = ‖x‖ ^ ((e : ℝ) - w) := by
           rw [← Real.rpow_natCast, ← Real.rpow_add hx0]
           ring_nf
@@ -252,10 +252,8 @@ private theorem mahlerExponent_mul_add_div_mul_add_le_of_int (n : ℕ) {ξ : ℝ
           (norm_coeffVec_le _ _).trans (supNorm_le_l1Norm _)
       _ ≤ (linearFormPoly x).supNorm * (g.l1Norm + k.l1Norm) ^ n :=
           l1Norm_aeval_homogenize_le _ _ _ _
-      _ ≤ (g.l1Norm + k.l1Norm) ^ n * ‖x‖ := by
-          rw [mul_comm]
-          exact mul_le_mul_of_nonneg_left (supNorm_linearFormPoly_le x)
-            (pow_nonneg (add_nonneg g.l1Norm_nonneg k.l1Norm_nonneg) n)
+      _ = (g.l1Norm + k.l1Norm) ^ n * ‖x‖ := by
+          rw [supNorm_linearFormPoly, mul_comm]
 
 /-- Mahler's exponent is invariant under a Möbius transformation with integer coefficients and
 nonzero determinant, away from its pole: the inverse transformation has matrix
