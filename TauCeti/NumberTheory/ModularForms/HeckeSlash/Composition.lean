@@ -59,11 +59,11 @@ its right cosets exactly once, then the composite operator is the operator of `�
 `Γ₁ = Γ₂ = Γ₃ = Γ₁(N)` this is `heckeSlashGamma1ModularFormEnd_mul_of_doubleCoset_eq_mul` and
 its cusp-form companion. The criterion is formally analogous to the ring-side
 single-basis-element criterion `HeckeCosetModule.mul_single_single_of_mulMap_eq`, and the two
-are identified here: `HeckeCoset.mulMap_eq_of_mul_subset_doubleCoset` derives the hypothesis of
-the ring-side criterion from the product-set equation `hD₃`, so
-`heckeSlashGamma1RingModularFormLinearMap_mul_single_single` and its cusp-form companion apply
-both criteria at once, and the ring product of two basis elements maps to the composite of their
-operators.
+are combined here: `HeckeCoset.mulMap_eq_of_mul_subset_doubleCoset` derives only the `mulMap`
+(single-coset) hypothesis of the ring-side criterion from the product-set equation `hD₃`. The
+multiplicity bound `hmul ≤ 1` of the ring-side criterion is not derived from `hD₃`, and neither is
+the right-coset injectivity `hinj₃` of the operator-side criterion: both stay as hypotheses of
+`heckeSlashGamma1RingModularFormLinearMap_mul_single_single` and its cusp-form companion.
 
 The general multiplicity-weighted statement — the composite as `∑_D m(D₁, D₂; D) · T_D` — is
 `heckeSlashSum_heckeSlashSum_eq_sum_nsmul`. It partitions the pairs `(v, w)` by the double coset
@@ -98,8 +98,10 @@ it is what makes the Hecke ring commutative there (Shimura's Proposition 3.8).
   its right cosets.
 * `HeckeRing.GL2.heckeSlashGamma1RingModularFormLinearMap_mul_single_single` and
   `HeckeRing.GL2.heckeSlashGamma1CuspRingLinearMap_mul_single_single`: the ring-level reading of
-  those two — the Hecke ring acts multiplicatively on basis elements whose product is a single
-  double coset. The map is an *anti*-homomorphism there, since `Module.End` composes.
+  those two — on basis elements `single ℤ D₁ 1` and `single ℤ D₂ 1` whose product set is the
+  single double coset `D₃`, and under the injectivity hypothesis `hinj₃` and the multiplicity bound
+  `hmul ≤ 1`, the ring product maps to the composite of the operators in the opposite order, since
+  `Module.End` composes.
 * `HeckeRing.GL2.heckeSlashSum_heckeSlashSum_eq_sum_nsmul`: **the multiplicity-weighted
   composite**, `(f ∣[Γ₁ δ₁ Γ₂]ₖ) ∣[Γ₂ δ₂ Γ₃]ₖ = ∑_D m(D₁, D₂; D) • (f ∣[Γ₁ δ₃ Γ₃]ₖ)`, for a
   `Γ₁`-invariant `f`.
@@ -335,8 +337,11 @@ theorem heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul :
     D₃ hD₃ hinj₃ ⇑f hf
   simpa [coe_heckeSlashGamma1CuspFormEnd] using congrFun this τ
 
-/-- **The Hecke ring acts multiplicatively on modular forms, where the product of two double
-cosets is again a single double coset.** The modular-form half of the pair; see
+/-- **Anti-multiplicativity of the Hecke ring action on modular forms, on basis elements.** If
+the product set of `D₁` and `D₂` is the single double coset `D₃` (`hD₃`), the right cosets are met
+exactly once (`hinj₃`), and the multiplicity is at most one (`hmul`), then the image of
+`single ℤ D₁ 1 * single ℤ D₂ 1` is the composite of the images of `single ℤ D₂ 1` and
+`single ℤ D₁ 1`, in that order. The modular-form half of the pair; see
 `heckeSlashGamma1CuspRingLinearMap_mul_single_single` for cusp forms.
 
 The two are parallel rather than one specialising the other: the operators live in
@@ -362,20 +367,18 @@ theorem heckeSlashGamma1RingModularFormLinearMap_mul_single_single
   exact (heckeSlashGamma1ModularFormEnd_mul_of_doubleCoset_eq_mul k D₁ D₂ D₃ a b
     hcover₁ hinj₁ hcover₂ hinj₂ hD₃ hinj₃).symm
 
-/-- **The Hecke ring acts multiplicatively on cusp forms, where the product of two double cosets
-is again a single double coset.** This is the ring-level reading of
-`heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul`: the product-set hypothesis `hD₃` feeds
-both criteria, with `mul_single_single_of_mulMap_eq` supplying the product in the Hecke ring and
-the composition theorem supplying it in `Module.End`.
+/-- **Anti-multiplicativity of the Hecke ring action on cusp forms, on basis elements.** The
+ring-level reading of `heckeSlashGamma1CuspFormEnd_mul_of_doubleCoset_eq_mul`: under the product-set
+hypothesis `hD₃`, the right-coset injectivity `hinj₃` and the multiplicity bound `hmul ≤ 1`, the
+image of `single ℤ D₁ 1 * single ℤ D₂ 1` is the composite of the images of `single ℤ D₂ 1` and
+`single ℤ D₁ 1`, in that order.
 
-Note the order. `Module.End` multiplies by composition and the slash acts on the right, so the
-basis element `D₁` of the *left* factor becomes the operator applied *first*: the map is an
-anti-homomorphism on these elements, not a homomorphism.
+`Module.End` multiplies by composition and the slash acts on the right, so the basis element `D₁`
+of the *left* factor gives the operator applied *first*.
 
-Full multiplicativity (Shimura, Proposition 3.37) is not available — it needs the structure
-constants of a product that spreads over several double cosets with multiplicity, whereas both
-criteria used here assume the product collapses to the single coset `D₃`. This lemma is the part
-that is provable from what is on hand. -/
+The multiplicity-weighted statement for products spreading over several double cosets is
+`heckeSlashSum_heckeSlashSum_eq_sum_nsmul`; turning it into a ring statement is blocked by the
+mismatch of left and right multiplicities described in the module docstring. -/
 theorem heckeSlashGamma1CuspRingLinearMap_mul_single_single
     (hmul : multiplicity ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
