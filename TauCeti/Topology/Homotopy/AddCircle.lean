@@ -39,6 +39,11 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
 `g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
 `t ↦ g (t * a)` on `AddCircle (T / |a|)` (`ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`).
 
+In the other direction, the circle with one point removed contracts in the circle: lifting its
+points to the open interval of length `p` above it, they move linearly to its midpoint
+(`AddCircle.nullhomotopic_subtypeVal_compl_singleton`). So any subset of a torus on which every
+coordinate avoids a point of its circle has nullhomotopic inclusion.
+
 ## Main declarations
 
 * `ContinuousMap.toLoop`: a continuous map `f : C(AddCircle p, X)` read as a based loop at `f 0`
@@ -53,6 +58,8 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
   contractible exactly when its loop over a period is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
+* `AddCircle.nullhomotopic_subtypeVal_compl_singleton`: the circle with a point removed contracts
+  in the circle.
 -/
 
 public section
@@ -197,3 +204,28 @@ theorem exists_nullhomotopic_iff_loop_homotopic_refl [Fact (0 < p)] (hp : Period
     exact ⟨g, hrot g ((key g hgγ).2 h), hgγ⟩
 
 end Function.Periodic
+
+namespace AddCircle
+
+variable {p : ℝ} [Fact (0 < p)]
+
+/-- **The circle with a point removed contracts in the circle.** The inclusion of the complement
+of a point `c` of `AddCircle p` is nullhomotopic: lifting to the interval `(a, a + p)` above it,
+where `a` represents `c`, the points move linearly to the midpoint of that interval. -/
+theorem nullhomotopic_subtypeVal_compl_singleton (c : AddCircle p) :
+    (ContinuousMap.subtypeVal ({c}ᶜ : Set (AddCircle p))).Nullhomotopic := by
+  obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective c
+  have hL : Continuous fun x : ({(a : AddCircle p)}ᶜ : Set (AddCircle p)) ↦
+      (equivIco p a x : ℝ) :=
+    continuous_iff_continuousAt.2 fun x ↦ continuous_subtype_val.continuousAt.comp
+      ((continuousAt_equivIco p a x.2).comp continuous_subtype_val.continuousAt)
+  refine ⟨((a + p / 2 : ℝ) : AddCircle p), ⟨{
+    toFun := fun q ↦ ((((1 : ℝ) - q.1) * equivIco p a q.2 + q.1 * (a + p / 2) : ℝ) : AddCircle p)
+    continuous_toFun := continuous_quotient_mk'.comp
+      (((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
+        (hL.comp continuous_snd)).add
+        ((continuous_subtype_val.comp continuous_fst).mul continuous_const))
+    map_zero_left := fun x ↦ by simp
+    map_one_left := fun x ↦ by simp }⟩⟩
+
+end AddCircle
