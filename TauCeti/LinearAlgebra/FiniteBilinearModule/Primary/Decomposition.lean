@@ -31,8 +31,8 @@ orthogonality and finite-sum identities proved in
   `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponents`: nondegeneracy is equivalent
   to nondegeneracy of the orthogonal product.
 * `TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent` and
-  `TauCeti.FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent`: two modules of the
-  same order are isometric when their primary components are isometric at every prime.
+  `TauCeti.FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent`: two modules are
+  isometric when their primary components are isometric at every prime.
 
 ## References
 
@@ -143,13 +143,15 @@ private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
       f q.1 (Nat.prime_of_mem_primeFactors q.2) (x ((primeFactorsEquiv hcard).symm q)) :=
   rfl
 
-/-- **Primary components decide isometry.** Two finite bilinear modules of the same order are
-isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+/-- **Primary components decide isometry.** Two finite bilinear modules are isometric as soon as,
+at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteBilinearModule}
-    (hcard : Nat.card A = Nat.card B)
     (h : ∀ p : ℕ, p.Prime →
       Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
+  have hcard : Nat.card A = Nat.card B :=
+    AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
+      Nat.card_congr (h p hp).some.toAddEquiv.toEquiv
   let f p hp := (h p hp).some
   let g := primaryComponentsAddEquiv hcard fun p hp ↦ (f p hp).toAddEquiv
   refine ⟨A.primaryDecomposition.symm.trans (Isometry.trans ⟨g, fun x y ↦ ?_⟩
@@ -220,13 +222,15 @@ theorem isNondegenerate_primaryComponents :
     A.primaryComponents.IsNondegenerate ↔ A.IsNondegenerate :=
   A.primaryDecomposition.isNondegenerate_iff
 
-/-- **Primary components decide isometry.** Two finite quadratic modules of the same order are
-isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+/-- **Primary components decide isometry.** Two finite quadratic modules are isometric as soon as,
+at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModule}
-    (hcard : Nat.card A = Nat.card B)
     (h : ∀ p : ℕ, p.Prime →
       Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
     Nonempty (Isometry A B) := by
+  have hcard : Nat.card A = Nat.card B :=
+    AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
+      Nat.card_congr (h p hp).some.toLinearEquiv.toAddEquiv.toEquiv
   let f p hp := (h p hp).some
   let g := FiniteBilinearModule.primaryComponentsAddEquiv hcard fun p hp ↦
     (f p hp).toLinearEquiv.toAddEquiv
