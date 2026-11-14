@@ -44,12 +44,10 @@ theorem MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas (hk : k ≤ 1)
     (hu : MemWkpLoc p U k u) :
     MemWkpLoc p ((φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U) k
       (fun y ↦ u (ψ (φ.symm y))) := by
-  -- The chart transition has an invertible derivative on its source.
+  -- The chart transition has nonvanishing Jacobian determinant on its source.
   have hdet : ∀ y ∈ (φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U,
-      (fderiv ℝ (φ.symm.trans ψ) y).det ≠ 0 := fun y hy ↦ by
-    obtain ⟨L, hL⟩ := exists_hasFDerivAt_symm_trans one_ne_zero hφ hψ hy.1
-    rw [hL.fderiv]
-    exact L.toLinearEquiv.isUnit_det'.ne_zero
+      (fderiv ℝ (φ.symm.trans ψ) y).det ≠ 0 := fun y hy ↦
+    det_fderiv_symm_trans_ne_zero one_ne_zero hφ hψ hy.1
   -- As a function, the chart transition is `ψ ∘ φ.symm` (`OpenPartialHomeomorph.coe_trans`).
   simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply] using
     hu.comp_contDiffOn_diffeo hk (φ.symm.trans ψ).open_source

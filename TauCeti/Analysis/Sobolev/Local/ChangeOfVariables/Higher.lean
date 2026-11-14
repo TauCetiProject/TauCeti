@@ -88,7 +88,8 @@ private theorem MemWkpLoc.comp_contDiffOn_injOn_real [Fact (1 ≤ p)] (hp : p �
   obtain ⟨V', hV'o, hKV', hV'V, hV'c⟩ := exists_open_between_and_isCompact_closure hK V.isOpen
     (by rintro _ ⟨z, hz, rfl⟩; exact hmaps (hWU hz))
   obtain ⟨L, c, h⟩ := Wkp.IsChangeOfVariables.exists_of_isCompact_closure (V := ⟨V', hV'o⟩)
-    U.isOpen hk hΦ (hinj.mono (subset_closure.trans hWU)) (fun z hz => hdet z (hWU hz)) hWc hWU
+    U.isOpen hΦ le_rfl (by exact_mod_cast hk) (hinj.mono (subset_closure.trans hWU))
+    (fun z hz => hdet z (hWU hz)) hWc hWU
     fun z hz => hKV' ⟨z, subset_closure hz, rfl⟩
   obtain ⟨v, hv⟩ := hu.exists_wkp (W := ⟨V', hV'o⟩) hV'c hV'V
   exact ⟨Wkp.compL h hp v, (Wkp.value_compL_ae h hp v).trans (h.ae_comp hv)⟩
