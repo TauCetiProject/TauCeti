@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 public import Mathlib.Analysis.Distribution.TestFunction
+public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 
 /-!
 # Mollification in the test-function topology
 
 A test function may be convolved with a normalized smooth bump whenever the enlarged support
-stays inside its open domain. Every derivative commutes with this operation. For shrinking
+stays inside its open domain. Every derivative and the divergence of a test vector field commute
+with this operation. For shrinking
 bumps, the mollifications converge in the native LF topology, so every distribution can be
 evaluated along this approximation.
 
@@ -98,6 +100,48 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
       ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) := by
   rw [coe_mollify]
   exact φ.hasCompactSupport.iteratedFDeriv_normed_convolution φ.contDiff ρ (by simp)
+
+/-- The Fréchet derivative commutes with mollification of test functions. -/
+theorem fderiv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ρ : ContDiffBump (0 : E))
+    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) :
+    fderiv ℝ (mollify φ μ ρ h : E → F) =
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] fderiv ℝ (φ : E → F) := by
+  ext x : 1
+  have hpre : (lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).precompR E = lsmul ℝ ℝ := by ext; rfl
+  rw [coe_mollify, (φ.hasCompactSupport.hasFDerivAt_convolution_right (lsmul ℝ ℝ)
+    (ρ.continuous_normed (μ := μ)).locallyIntegrable (φ.contDiff.of_le (by simp)) x).fderiv, hpre]
+
+/-- As functions, the divergence of a mollified test vector field is the normalized-bump
+convolution of its divergence. -/
+theorem coe_divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ρ : ContDiffBump (0 : E))
+    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) :
+    (divergenceCLM (mollify φ μ ρ h) : E → ℝ) =
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (divergenceCLM φ : E → ℝ) := by
+  ext x
+  have hφ1 : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
+  have hex := (ρ.hasCompactSupport_normed (μ := μ)).convolutionExists_left_of_continuous_right
+    (lsmul ℝ ℝ) (ρ.integrable_normed (μ := μ)).locallyIntegrable
+    (hφ1.continuous_fderiv one_ne_zero) x
+  have hdiv : (divergenceCLM φ : E → ℝ) =
+      fun y => TauCeti.traceCLM ℝ E (fderiv ℝ (φ : E → E) y) := by
+    ext y
+    rw [divergenceCLM_apply, ← TauCeti.traceCLM_apply]
+  rw [divergenceCLM_apply, ← TauCeti.traceCLM_apply, fderiv_mollify, hdiv]
+  exact ((TauCeti.traceCLM ℝ E).convolution_lsmul_comp_comm hex).symm
+
+/-- Divergence commutes with mollification of test vector fields. -/
+theorem divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ρ : ContDiffBump (0 : E))
+    (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
+    (hdiv : closedBall (0 : E) ρ.rOut + tsupport (divergenceCLM φ) ⊆ (Ω : Set E) := by
+      exact (Set.add_subset_add_left (closure_minimal
+        (Function.support_subset_iff'.2 fun x hx => by simp [fderiv_of_notMem_tsupport ℝ hx])
+        (isClosed_tsupport _))).trans h) :
+    divergenceCLM (mollify φ μ ρ h) = mollify (divergenceCLM φ) μ ρ hdiv := by
+  ext x
+  exact congrFun (coe_divergenceCLM_mollify φ μ ρ h) x
 
 variable [CompleteSpace F]
 

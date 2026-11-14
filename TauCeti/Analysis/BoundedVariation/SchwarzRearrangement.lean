@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.BoundedVariation.Ball
 import TauCeti.Analysis.BoundedVariation.Coarea
 import TauCeti.Analysis.BoundedVariation.Composition
-import TauCeti.Analysis.BoundedVariation.Isoperimetric
+import TauCeti.Analysis.BoundedVariation.Isoperimetric.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
