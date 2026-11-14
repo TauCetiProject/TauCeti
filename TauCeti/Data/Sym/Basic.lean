@@ -21,30 +21,29 @@ import TauCeti.Data.Finsupp.Multiset
 # Basic lemmas for symmetric powers
 
 This file records small API extensions for Mathlib's symmetric powers, and the map
-`TauCeti.Sym.ofFn` reading an ordered `n`-tuple `f : Fin n → α` as an unordered one.
+`Sym.ofFn` reading an ordered `n`-tuple `f : Fin n → α` as an unordered one.
 
 `ofFn` presents `Sym α n` as a quotient of `Fin n → α`: it is surjective, and its fibres are the
-orbits of the permutation action, by `TauCeti.Sym.ofFn_eq_ofFn_iff`. Nothing here is topological;
+orbits of the permutation action, by `Sym.ofFn_eq_ofFn_iff`. Nothing here is topological;
 `TauCeti/Topology/Sym/Basic.lean` uses this to give `Sym α n` the quotient topology coinduced along
 `ofFn`.
 
 ## Main declarations
 
-* `TauCeti.Sym.ofFn`: the ordered tuple `f : Fin n → α` read as a point of `Sym α n`, and
-  `TauCeti.Sym.ofFn_surjective`, that every unordered tuple arises this way.
-* `TauCeti.Sym.map_ofFn`, `TauCeti.Sym.map_comp_ofFn` and `TauCeti.Sym.ofFn_fin_append`: `ofFn`
-  intertwines postcomposition with `Sym.map`, and concatenation of ordered tuples with
-  `Sym.append`.
-* `TauCeti.Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple
-  exactly when one is a reindexing of the other by a permutation.
-* `TauCeti.Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number
-  of entries of the ordered tuple taking that value.
-* `TauCeti.Sym.sum_single_eq_sum_single_iff`: two ordered tuples have the same letter counts
-  `∑ₜ single (f t) 1` exactly when they have the same underlying unordered tuple, and
-  `TauCeti.Sym.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
-  exponent vectors of total degree `n`.
-* `TauCeti.Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
-  `TauCeti.Sym.range_cons` identifies it with the range of adjoining that point.
+* `Sym.ofFn`: the ordered tuple `f : Fin n → α` read as a point of `Sym α n`, and
+  `Sym.ofFn_surjective`, that every unordered tuple arises this way.
+* `Sym.map_ofFn`, `Sym.map_comp_ofFn` and `Sym.ofFn_fin_append`: `ofFn` intertwines
+  postcomposition with `Sym.map`, and concatenation of ordered tuples with `Sym.append`.
+* `Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple exactly when
+  one is a reindexing of the other by a permutation.
+* `Sym.rel_coe_ofFn_iff`: an unordered tuple is matched to `ofFn f` by a relation, in the sense of
+  `Multiset.Rel`, exactly when it is `ofFn g` for an ordered tuple `g` related to `f` entrywise.
+* `Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number of entries
+  of the ordered tuple taking that value.
+* `Sym.sum_single_eq_sum_single_iff`: two ordered tuples have the same letter counts
+  `∑ₜ single (f t) 1` exactly when they have the same underlying unordered tuple.
+* `Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
+  `Sym.range_cons` identifies it with the range of adjoining that point.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
   entries are `0`, so there are `d + 1` of them.
 -/
@@ -61,12 +60,6 @@ symmetric-power points. -/
 theorem map_append (f : X → Y) (s : Sym X d) (t : Sym X e) :
     Sym.map f (s.append t) = (Sym.map f s).append (Sym.map f t) :=
   Subtype.ext <| by simp [Multiset.map_add]
-
-end Sym
-
-namespace TauCeti
-
-namespace Sym
 
 variable {α β : Type*} {m n : ℕ}
 
@@ -93,7 +86,7 @@ theorem count_coe_ofFn [DecidableEq α] (f : Fin n → α) (a : α) :
 /-- The points of `ofFn f` are exactly the values of `f`. -/
 @[simp]
 theorem mem_ofFn {a : α} {f : Fin n → α} : a ∈ ofFn f ↔ ∃ i, f i = a := by
-  rw [← _root_.Sym.mem_coe, coe_ofFn]
+  rw [← Sym.mem_coe, coe_ofFn]
   simp
 
 /-- Every unordered `n`-tuple is the image of an ordered one: `ofFn` is the quotient map
@@ -158,6 +151,34 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
   · rintro ⟨σ, rfl⟩
     exact (ofFn_comp_perm σ f).symm
 
+/-! ### Matchings -/
+
+/-- **Matchings with an ordered tuple.** An unordered tuple `s` is matched to `ofFn f` by a
+relation `r`, in the sense of `Multiset.Rel`, exactly when `s = ofFn g` for an ordered tuple `g`
+whose entries are related to those of `f` index by index. -/
+theorem rel_coe_ofFn_iff {r : α → β → Prop} {f : Fin n → α} {s : Sym β n} :
+    Multiset.Rel r (ofFn f : Multiset α) s ↔ ∃ g : Fin n → β, ofFn g = s ∧ ∀ i, r (f i) (g i) := by
+  induction n with
+  | zero =>
+    refine ⟨fun _ => ⟨Fin.elim0, Subsingleton.elim _ _, fun i => i.elim0⟩, fun _ => ?_⟩
+    rw [Sym.eq_nil_of_card_zero s]
+    simp
+  | succ n ih =>
+    rw [← Fin.cons_self_tail f, ofFn_cons, Sym.coe_cons, Multiset.rel_cons_left]
+    constructor
+    · rintro ⟨b, t, hb, ht, hs⟩
+      have hcard : Multiset.card t = n := by
+        have := congrArg Multiset.card hs
+        rw [Sym.card_coe, Multiset.card_cons] at this
+        omega
+      obtain ⟨g, hg, hfg⟩ := (ih (s := ⟨t, hcard⟩)).1 ht
+      refine ⟨Fin.cons b g, Sym.coe_injective ?_, Fin.cases hb hfg⟩
+      rw [ofFn_cons, Sym.coe_cons, hg, hs]
+      rfl
+    · rintro ⟨g, rfl, hfg⟩
+      refine ⟨g 0, ofFn (Fin.tail g), hfg 0, ih.2 ⟨Fin.tail g, rfl, fun i => hfg i.succ⟩, ?_⟩
+      rw [← Sym.coe_cons, ← ofFn_cons, Fin.cons_self_tail]
+
 /-! ### Letter counts -/
 
 /-- Two ordered tuples have the same letter counts exactly when they have the same underlying
@@ -171,22 +192,6 @@ theorem sum_single_eq_sum_single_iff {f g : Fin n → α} :
   · simpa only [count_coe_ofFn, Finsupp.sum_single_one_apply] using
       congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) h
 
-/-- The letter counts of ordered `n`-tuples are exactly the exponent vectors of total degree
-`n`. -/
-theorem exists_sum_single_eq_iff (l : α →₀ ℕ) :
-    (∃ f : Fin n → α, ∑ t, Finsupp.single (f t) 1 = l) ↔ (l.sum fun _ k => k) = n := by
-  classical
-  refine ⟨?_, fun hl => ?_⟩
-  · rintro ⟨f, rfl⟩
-    rw [← Finsupp.sum_finsetSum_index (fun _ => rfl) fun _ _ _ => rfl]
-    simp
-  · obtain ⟨f, hf⟩ := ofFn_surjective (α := α) (n := n)
-      ⟨Finsupp.toMultiset l, by rw [Finsupp.card_toMultiset]; exact hl⟩
-    refine ⟨f, Finsupp.ext fun a => ?_⟩
-    simpa only [count_coe_ofFn, Finsupp.sum_single_one_apply, _root_.Sym.coe_mk,
-      Finsupp.count_toMultiset]
-      using congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) hf
-
 /-! ### Adjoining a fixed point -/
 
 /-- The divisor of unordered tuples containing the fixed point `a`. -/
@@ -199,7 +204,7 @@ theorem mem_basepointDivisor {a : α} {s : Sym α n} :
 /-- No unordered tuple of length zero contains a point. -/
 @[simp]
 theorem basepointDivisor_zero (a : α) : (basepointDivisor a : Set (Sym α 0)) = ∅ :=
-  Set.eq_empty_of_forall_notMem fun s => by simp [_root_.Sym.eq_nil_of_card_zero s]
+  Set.eq_empty_of_forall_notMem fun s => by simp [Sym.eq_nil_of_card_zero s]
 
 /-- The unordered `(n + 1)`-tuples obtained by adjoining the point `a` are exactly those that
 contain `a`. -/
@@ -211,6 +216,8 @@ theorem range_cons (a : α) :
     fun hs => (Sym.exists_cons_of_mem hs).imp fun _ => Eq.symm⟩
 
 end Sym
+
+namespace TauCeti
 
 /-! ### Unordered tuples over a two-element type -/
 

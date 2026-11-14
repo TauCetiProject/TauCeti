@@ -47,6 +47,10 @@ conjugate or not.
   function is determined by those pairings.
 * `TauCeti.ClassFunction.exists_nonempty_equiv`: **such a family is a complete list of the
   irreducibles**, every irreducible representation being equivalent to one of its members.
+* `TauCeti.ClassFunction.exists_equiv_nonempty_equiv`: two such families are relabellings of
+  each other.
+* `TauCeti.sum_finrank_sq_eq_card`: the squares of the dimensions of such a family add up to `|G|`,
+  and `TauCeti.sum_finrank_mul_character`: `∑ᵢ dim(Vᵢ) χᵢ(g)` is `|G|` at `g = 1` and `0` elsewhere.
 * `TauCeti.ClassFunction.card_conjClass_mul_sum_char_mul_char_inv`: **the second orthogonality
   relation**, in a form free of division, and `TauCeti.ClassFunction.sum_char_mul_char_inv` in the
   quotient form `|G| / |C_g|`.
@@ -106,11 +110,13 @@ theorem basisOfIrreducibleCharacters_apply (i : ι) :
     basisOfIrreducibleCharacters ρ hind hcard i = ofCharacter (ρ i) :=
   congrFun (coe_basisOfIrreducibleCharacters ρ hind hcard) i
 
+omit [Finite ι] in
 /-- **Completeness**: the irreducible characters span the class functions. -/
 theorem span_range_ofCharacter_eq_top :
     Submodule.span k (Set.range fun i => ofCharacter (ρ i)) =
-      (⊤ : Submodule k (ClassFunction k G)) :=
-  coe_basisOfIrreducibleCharacters ρ hind hcard ▸
+      (⊤ : Submodule k (ClassFunction k G)) := by
+  have : Finite ι := Nat.finite_of_card_ne_zero (by rw [hcard]; exact Nat.card_pos.ne')
+  exact coe_basisOfIrreducibleCharacters ρ hind hcard ▸
     (basisOfIrreducibleCharacters ρ hind hcard).span_eq
 
 end Basis
@@ -165,6 +171,19 @@ theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y :
   conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
   simp
 
+end Orthogonality
+
+section Columns
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
 open scoped Classical in
 /-- **The second (column) orthogonality relation**, in a form free of division: the columns of the
 character table at `g` and at `h`, weighted by the size of the class of `g`, sum to `|G|` when `g`
@@ -174,6 +193,7 @@ theorem card_conjClass_mul_sum_char_mul_char_inv (g h : G) :
         ∑ i, (ρ i).character g * (ρ i).character h⁻¹ =
       if IsConj g h then (Nat.card G : k) else 0 := by
   classical
+  let _ := Fintype.ofFinite G
   have hval := apply_eq_sum_characterPairing_mul_character ρ hind hcard
     (classIndicator (k := k) g⁻¹) h⁻¹
   have hpair : ∀ i, characterPairing (ofCharacter (ρ i)) (classIndicator (k := k) g⁻¹) =
@@ -217,7 +237,7 @@ theorem sum_char_mul_char_inv (g h : G) :
   · rw [ite_eq_right hconj] at hgh ⊢
     exact (mul_eq_zero.mp hgh).resolve_left hc
 
-end Orthogonality
+end Columns
 
 section Classification
 
@@ -230,12 +250,14 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
 
 include hind hcard
 
+omit [Finite ι] in
 /-- **A complete family exhausts the irreducibles**: every irreducible
 representation of `G` is equivalent to a member of the family. Were it equivalent to none of them,
 its character would be orthogonal to a basis of the class functions, hence zero; but an irreducible
 character pairs to `1` with itself. -/
 theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W]
     (σ : Representation k G W) [σ.IsIrreducible] : ∃ i, Nonempty (σ.Equiv (ρ i)) := by
+  have : Finite ι := Nat.finite_of_card_ne_zero (by rw [hcard]; exact Nat.card_pos.ne')
   let _ := Fintype.ofFinite G
   let _ := Fintype.ofFinite ι
   by_contra hcon
@@ -248,11 +270,27 @@ theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W]
   rw [h0] at h1
   simp at h1
 
+omit [Finite ι] in
+/-- **Two complete families of irreducibles are relabellings of each other**: there is a bijection
+between their indices matching each member of the first family with an equivalent member of the
+second. -/
+theorem exists_equiv_nonempty_equiv {κ : Type*} {W : κ → Type*} [∀ j, AddCommGroup (W j)]
+    [∀ j, Module k (W j)] (σ : ∀ j, Representation k G (W j)) [∀ j, (σ j).IsIrreducible]
+    (hind' : Pairwise fun i j => IsEmpty ((σ i).Equiv (σ j)))
+    (hcard' : Nat.card κ = Nat.card (ConjClasses G)) :
+    ∃ e : ι ≃ κ, ∀ i, Nonempty ((ρ i).Equiv (σ (e i))) := by
+  have : Finite κ := Nat.finite_of_card_ne_zero (by rw [hcard']; exact Nat.card_pos.ne')
+  choose e he using fun i => exists_nonempty_equiv σ hind' hcard' (ρ i)
+  have hinj : Function.Injective e := fun i j hij => by
+    by_contra hne
+    exact (hind hne).elim ((he i).some.trans (hij ▸ (he j).some).symm)
+  exact ⟨Equiv.ofBijective e (hinj.bijective_of_nat_card_le (by rw [hcard, hcard'])), he⟩
+
 end Classification
 
 section Existence
 
-variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable (k : Type u) (G : Type v) [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **The irreducible characters of a finite group are a basis of its class functions.** There is a
@@ -265,6 +303,8 @@ theorem exists_basis_ofCharacter :
     ∃ (d : ConjClasses G → ℕ) (ρ : ∀ C, Representation k G (Fin (d C) → k))
       (b : Module.Basis (ConjClasses G) k (ClassFunction k G)),
       (∀ C, (ρ C).IsIrreducible) ∧ ∀ C, b C = ofCharacter (ρ C) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
   obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
   have := hirr
@@ -284,6 +324,8 @@ theorem le_span_irreducibleCharacters :
       {f : G → k | ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧
         ρ.character = f} := by
   classical
+  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   let _ := Fintype.ofFinite (ConjClasses G)
   obtain ⟨d, ρ, b, hirr, hb⟩ := exists_basis_ofCharacter k G
   have hcoe : ∀ C, ((ofCharacter (ρ C) : ClassFunction k G) : G → k) = (ρ C).character :=
@@ -299,5 +341,40 @@ theorem le_span_irreducibleCharacters :
 end Existence
 
 end ClassFunction
+
+section Dimensions
+
+variable {k G : Type*} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type*}
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
+/-- **The squares of the dimensions of a complete family of irreducibles add up to `|G|`**: the
+family is a relabelling of the blocks of a Wedderburn presentation of `k[G]`, whose squared
+dimensions add up to the dimension `|G|` of `k[G]`. -/
+theorem sum_finrank_sq_eq_card : ∑ i, Module.finrank k (V i) ^ 2 = Nat.card G := by
+  have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  let _ : Fintype (ConjClasses G) := Fintype.ofFinite (ConjClasses G)
+  obtain ⟨d, τ, hirr, hind', hsum⟩ := exists_irreducible_family_conjClasses k G
+  have := hirr
+  obtain ⟨e, he⟩ := ClassFunction.exists_equiv_nonempty_equiv ρ hind hcard τ hind' rfl
+  rw [← hsum, finsum_eq_sum_of_fintype]
+  refine Fintype.sum_equiv e _ _ fun i => ?_
+  rw [(he i).some.toLinearEquiv.finrank_eq, Module.finrank_fin_fun]
+
+open scoped Classical in
+/-- **The degree-weighted sum of the characters of a complete family of irreducibles**:
+`∑ᵢ dim(Vᵢ) χᵢ(g)` is `|G|` at the identity and `0` elsewhere. -/
+theorem sum_finrank_mul_character (g : G) :
+    ∑ i, (Module.finrank k (V i) : k) * (ρ i).character g =
+      if g = 1 then (Nat.card G : k) else 0 := by
+  have := fun i => (ρ i).asModuleEquiv.finiteDimensional
+  simpa using ClassFunction.card_conjClass_mul_sum_char_mul_char_inv ρ hind hcard 1 g⁻¹
+
+end Dimensions
 
 end TauCeti

@@ -12,13 +12,14 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.Analysis.Contour.Argument.Lift
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 
 /-!
 # The Hungerbühler–Wasem crossing angle and regularity conditions (A′) and (B)
 
 For a curve `γ : ℝ → ℂ` on `[a, b]` and an integrand `f : ℂ → ℂ`, this file defines the **crossing
-angle** and the **flatness** of `γ` at a time, and the roadmap's two Hungerbühler–Wasem regularity
+angle** and the **flatness** of `γ` at a time, and the two Hungerbühler–Wasem regularity
 conditions at its on-curve singularities: the geometric flatness condition **(A′)** and the analytic
 sector-cancellation condition **(B)**, the two regularity hypotheses of the generalized residue
 theorem (HW Thm 3.3), evaluating the Cauchy principal value `PV ∮_γ f`. Condition (A′) asks that
@@ -74,16 +75,16 @@ Both conditions read the on-curve pole orders of `f` from `meromorphicOrderAt`. 
 no explicit singular set — it fires **intrinsically** at the times `t₀` where
 `meromorphicOrderAt f (γ t₀) < -1` (a pole of order `> 1`), so it is `S`-free. Condition (A′) is
 imposed at the prescribed set `S` (selecting the singularities), with the required flatness order
-taken from `f`. Both match the roadmap signatures and the way the residue theorem consumes them.
+taken from `f`. Both match the way the residue theorem consumes them.
 
 ## Provenance
 
 Migrated and adapted from the AINTLIB `LeanModularForms` project (`angleAtCrossing`, `FlatOfOrder`,
-and `SatisfiesConditionB`), specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design of the
-contour-integration roadmap. `FlatOfOrder` here uses HW Def. 3.2's tangent-*line* (orthogonal
-projection) distance, so it is speed-independent at every order. Condition (A′) matches the flatness
-order to `f`'s pole order at each `s ∈ S`; condition (B) detects the higher-order poles of
-`f` intrinsically via `meromorphicOrderAt`.
+and `SatisfiesConditionB`), specialised to curves given as raw functions `γ : ℝ → ℂ` on `[a, b]`.
+`FlatOfOrder` here uses HW Def. 3.2's tangent-*line* (orthogonal projection) distance, so it is
+speed-independent at every order. Condition (A′) matches the flatness order to `f`'s pole order at
+each `s ∈ S`; condition (B) detects the higher-order poles of `f` intrinsically via
+`meromorphicOrderAt`.
 
 ## References
 
@@ -340,6 +341,12 @@ theorem conditionAprime_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S 
           FlatOfOrderBasepoint γ (min a b) (max a b) n) :=
   ⟨fun h => ⟨h.finite_crossings, h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2.1, h.2.2⟩⟩
 
+/-- Condition (A′) restricts to any subset of the prescribed singularities. -/
+theorem ConditionAprime.mono {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S T : Finset ℂ}
+    (hA : ConditionAprime γ a b f S) (hTS : T ⊆ S) : ConditionAprime γ a b f T :=
+  ⟨fun s hs ↦ hA.finite_crossings s (hTS hs), fun t ht hmem ↦ hA.interior t ht (hTS hmem),
+    fun hmem ↦ hA.basepoint (hTS hmem)⟩
+
 /-- Condition (A′) is invariant under swapping the endpoints: all its clauses are stated over
 `min`/`max`. -/
 theorem conditionAprime_comm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S : Finset ℂ} :
@@ -476,8 +483,8 @@ private theorem pow_unit_eq_of_angle_resonance {L_R L_L : ℂ} {θ : ℝ} {k : �
       = (k : ℝ) * Complex.arg (-L_L) + (-((m : ℝ) + (k : ℝ) * (j : ℝ))) * (2 * Real.pi) := by
     linear_combination -hm
   have hnorm : (‖L_L‖ : ℂ) = (‖-L_L‖ : ℂ) := by rw [norm_neg]
-  rw [div_norm_eq_exp_arg_mul_I hL_R, hnorm,
-    div_norm_eq_exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
+  rw [← Complex.exp_arg_mul_I hL_R, hnorm,
+    ← Complex.exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
     ← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
   refine ⟨-(m + (k : ℤ) * j), ?_⟩
   have hC := congrArg (fun x : ℝ => (x : ℂ) * Complex.I) h_real

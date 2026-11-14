@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Norm.Basic
 public import Mathlib.RingTheory.Trace.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import TauCeti.RingTheory.TensorProduct.Finite
 
 /-!
 # Norm and trace under scalar extension
@@ -22,17 +23,20 @@ noncommutative algebras.
 
 * `TauCeti.Algebra.norm_baseChange_tmul`, `TauCeti.Algebra.trace_baseChange_tmul`: the norm and
   trace of `1 ⊗ x ∈ A ⊗[K] B` over `A` are the images of those of `x`.
-* `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: for a free `K`-algebra
-  `B` of finite rank, the matrix of multiplication and the norm of `P ⊗[K] B` over `P` are
-  compatible with every `K`-algebra map `φ : P →ₐ[K] T`. Taking `P` to be a polynomial ring and `φ`
-  an evaluation map, the norm on every base change `T ⊗[K] B` is a specialization of the generic
-  norm form.
+* `TauCeti.Algebra.leftMulMatrix_rTensor`, `TauCeti.Algebra.norm_rTensor`: the matrix of
+  multiplication on `P ⊗[K] B` (for a finite `K`-basis of `B`) and the norm of `P ⊗[K] B` over `P`
+  (for a free `K`-algebra `B`, finite or not) are compatible with every `K`-algebra map
+  `φ : P →ₐ[K] T`. When `B` has a finite `K`-basis, taking `P` to be a polynomial ring and `φ` an
+  evaluation map shows that the norm on every base change `T ⊗[K] B` is a specialization of the
+  generic norm form.
 * `TauCeti.Algebra.norm_sum_X_tmul_tensorProductBasis`: the generic norm form of `T ⊗[K] B` over
   `T` is the image of that of `B` over `K`.
-* `TauCeti.Algebra.charpoly_lmul_eq_norm`: the characteristic polynomial of multiplication by
-  `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
+* `Module.Basis.norm_sum_tmul_eq_aeval`: the norm of `∑ j, xⱼ ⊗ bⱼ` over `T` is the generic norm
+  form of `B` evaluated at `x`.
+* `TauCeti.Algebra.charpoly_lmul_eq_norm`: for a finite free `K`-algebra `B`, the characteristic
+  polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
 * `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
-  `R`-algebra `C` with `S ⊗[R] C` finite free over `S`, the trace of `1 ⊗ c` in `T ⊗[R] C` is the
+  `R`-algebra `C` with `S ⊗[R] C` free over `S`, the trace of `1 ⊗ c` in `T ⊗[R] C` is the
   image of its trace in `S ⊗[R] C`.
 -/
 
@@ -70,19 +74,26 @@ theorem Algebra.leftMulMatrix_rTensor {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 end LeftMulMatrix
 
-variable [Module.Free K B] [Module.Finite K B]
+variable [Module.Free K B]
 variable {P T : Type*} [CommRing P] [Algebra K P] [CommRing T] [Algebra K T]
 
 /-- The norm of `P ⊗[K] B` over `P` commutes with base change along a `K`-algebra map
-`φ : P →ₐ[K] T`. -/
+`φ : P →ₐ[K] T`. When `B` is not finite over `K` both norms are `1`. -/
 theorem Algebra.norm_rTensor (φ : P →ₐ[K] T) (x : P ⊗[K] B) :
     Algebra.norm T (Algebra.TensorProduct.rTensor B φ x) = φ (Algebra.norm P x) := by
   classical
-  let b := Module.Free.chooseBasis K B
-  rw [Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis T b),
-    Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis P b),
-    Algebra.leftMulMatrix_rTensor]
-  exact (φ.toRingHom.map_det _).symm
+  by_cases hfin : Module.Finite K B
+  · let b := Module.Free.chooseBasis K B
+    rw [Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis T b),
+      Algebra.norm_eq_matrix_det (Algebra.TensorProduct.basis P b),
+      Algebra.leftMulMatrix_rTensor]
+    exact (φ.toRingHom.map_det _).symm
+  · nontriviality T
+    have : Nontrivial P := φ.toRingHom.domain_nontrivial
+    rw [Algebra.norm_eq_one_of_not_module_finite (mt Module.Finite.of_baseChange hfin),
+      Algebra.norm_eq_one_of_not_module_finite (mt Module.Finite.of_baseChange hfin), map_one]
+
+variable [Module.Finite K B]
 
 /-- The characteristic polynomial of multiplication by `x ∈ T ⊗[K] B` over `T` is the norm of
 `X - x` over `T[X]`. -/
@@ -110,13 +121,15 @@ variable {A B : Type*} [CommRing A] [Algebra K A]
 section Norm
 
 variable [Ring B] [Algebra K B]
-variable [Module.Free K B] [Module.Finite K B]
+variable [Module.Free K B]
 
-/-- Norm commutes with scalar extension on a pure tensor. -/
+/-- Norm commutes with scalar extension on a pure tensor. When `B` is not finite over `K` both
+norms are `1`. -/
 @[simp]
 theorem Algebra.norm_baseChange_tmul (x : B) :
     Algebra.norm A ((1 : A) ⊗ₜ[K] x) = algebraMap K A (Algebra.norm K x) := by
-  simp only [Algebra.norm_apply, ← Algebra.baseChange_lmul, LinearMap.det_baseChange]
+  simpa [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid K B) ((1 : K) ⊗ₜ[K] x)] using
+    Algebra.norm_rTensor (Algebra.ofId K A) ((1 : K) ⊗ₜ[K] x)
 
 end Norm
 
@@ -135,7 +148,6 @@ theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
       MvPolynomial.map (algebraMap K T) (Algebra.norm (MvPolynomial ι K)
         (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
   let := Module.Free.of_basis b
-  let := Module.Finite.of_basis b
   -- Reassociate and remove the middle copy of `T`, allowing `B` to be noncommutative.
   let e := (Algebra.TensorProduct.assoc K T (MvPolynomial ι T) (MvPolynomial ι T) T B).symm.trans
     (Algebra.TensorProduct.congr (Algebra.TensorProduct.rid T (MvPolynomial ι T)
@@ -144,19 +156,36 @@ theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
   rw [← Algebra.norm_eq_of_algEquiv e]
   simp [e]
 
+/-- The norm of `∑ j, xⱼ ⊗ bⱼ` in `T ⊗[K] B` over `T` is the generic norm form of `B` in the basis
+`b`, evaluated at `x`. -/
+theorem _root_.Module.Basis.norm_sum_tmul_eq_aeval {ι : Type*} [Fintype ι] (b : Module.Basis ι K B)
+    (x : ι → T) :
+    Algebra.norm T (∑ j, x j ⊗ₜ[K] b j) = MvPolynomial.aeval x
+      (Algebra.norm (MvPolynomial ι K) (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
+  let := Module.Free.of_basis b
+  rw [← Algebra.norm_rTensor]
+  simp
+
 end GenericNorm
 
 section Trace
 
 variable [CommRing B] [Algebra K B]
-variable [Module.Free K B] [Module.Finite K B]
+variable [Module.Free K B]
 
-/-- Trace commutes with scalar extension on a pure tensor. -/
+/-- Trace commutes with scalar extension on a pure tensor. When `B` is not finite over `K` both
+traces are `0`. -/
 @[simp]
 theorem Algebra.trace_baseChange_tmul (x : B) :
     Algebra.trace A (TensorProduct K A B) ((1 : A) ⊗ₜ[K] x) =
       algebraMap K A (Algebra.trace K B x) := by
-  simp only [Algebra.trace_apply, ← Algebra.baseChange_lmul, LinearMap.trace_baseChange]
+  by_cases hfin : Module.Finite K B
+  · simp only [Algebra.trace_apply, ← Algebra.baseChange_lmul, LinearMap.trace_baseChange]
+  · nontriviality A
+    have hfin' : ¬ Module.Finite A (A ⊗[K] B) := mt Module.Finite.of_baseChange hfin
+    rw [Algebra.trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (.of_basis b),
+      Algebra.trace_eq_zero_of_not_exists_basis A fun ⟨_, ⟨b⟩⟩ ↦ hfin' (.of_basis b)]
+    simp
 
 end Trace
 
@@ -164,9 +193,9 @@ section TraceTower
 
 variable {R S T C : Type*} [CommRing R] [CommRing S] [CommRing T] [CommRing C] [Algebra R S]
   [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra R C]
-  [Module.Free S (S ⊗[R] C)] [Module.Finite S (S ⊗[R] C)]
+  [Module.Free S (S ⊗[R] C)]
 
-/-- Let `R → S → T` be a tower of rings and `C` an `R`-algebra with `S ⊗[R] C` finite free over
+/-- Let `R → S → T` be a tower of rings and `C` an `R`-algebra with `S ⊗[R] C` free over
 `S`. The trace of `1 ⊗ c` in `T ⊗[R] C` over `T` is the image of the trace of `1 ⊗ c` in
 `S ⊗[R] C` over `S`. -/
 theorem Algebra.trace_baseChange_tmul_of_isScalarTower (c : C) :

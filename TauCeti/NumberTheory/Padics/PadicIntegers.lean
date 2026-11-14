@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
@@ -20,11 +21,14 @@ import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
 /-!
-# Units of the `p`-adic integers
+# The `p`-adic integers: units, norms and local-global statements
 
-Complements to Mathlib's `PadicInt` API on the units of `ℤ_p`: `1 + x` is a unit whenever
+Complements to Mathlib's `PadicInt` API, chiefly on the units of `ℤ_p`: `1 + x` is a unit whenever
 `p ∣ x`, because `ℤ_p` is a local ring whose maximal ideal is `pℤ_p`. This is the criterion
-that makes `1 + p^f ℤ_p` a subgroup of `ℤ_pˣ`.
+that makes `1 + p^f ℤ_p` (for `f ≥ 1`) a subgroup of `ℤ_pˣ`. The file also contains summability
+and norm lemmas for `ℤ_p`, local-global statements for the ideals of `ℤ` (through the extensions
+to every `ℤ_p`), valuation lemmas for `ℚ_p`, and the vanishing of continuous additive
+homomorphisms `ℤ_p → ℤ`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
@@ -50,6 +54,11 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
+* `PadicInt.isUnit_natCast_of_coprime`: a natural number prime to `p` is a unit of `ℤ_[p]`.
+* `PadicInt.isUnit_natCard_of_isPGroup`: the order of a finite `ℓ`-group is a unit of `ℤ_[p]` for
+  a prime `ℓ ≠ p`.
+* `PadicInt.isUnit_natCast_or_isMaximal_span`: a prime is a unit of `ℤ_[p]` or generates a maximal
+  ideal.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
 * `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
@@ -59,6 +68,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
+* `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
+  field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`, and `PadicInt.isUnit_natCast_iff` for natural numbers), and `2`
@@ -139,6 +150,14 @@ theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2)
 theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
   isUnit_iff.mpr (norm_natCast_eq_one_iff.mpr h)
 
+/-- The order of a finite `ℓ`-group is a unit in `ℤ_p` for a prime `ℓ ≠ p`. -/
+theorem isUnit_natCard_of_isPGroup {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ p) {S : Type*} [Group S]
+    [Finite S] (hS : IsPGroup ℓ S) : IsUnit (Nat.card S : ℤ_[p]) := by
+  obtain ⟨e, he⟩ := hS.exists_card_eq
+  rw [he, Nat.cast_pow]
+  exact (isUnit_natCast_of_coprime
+    ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
+
 /-- Every prime number `ℓ` is a unit in `ℤ_p` or generates a maximal ideal of `ℤ_p`: it is a unit
 for `ℓ ≠ p` and generates the maximal ideal for `ℓ = p`. -/
 theorem isUnit_natCast_or_isMaximal_span {ℓ : ℕ} (hℓ : ℓ.Prime) :
@@ -180,6 +199,12 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
 
+/-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
+theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
+    ‖algebraMap ℚ_[p] K y‖ ≤ 1 := by
+  rw [norm_algebraMap', ← norm_def]
+  exact norm_le_one y
+
 /-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
 theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
   by_cases hz : IsUnit z
@@ -199,8 +224,9 @@ theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ 
 
 /-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
 
-Not a `simp` lemma: `simp` rewrites the left-hand side by the general
-`IsLocalRing.isUnit_natCast_iff_not_dvd` first. -/
+Not tagged `simp`: in a module importing `TauCeti.Algebra.CharP.LocalRing`, `simp` rewrites the
+left-hand side by the general `IsLocalRing.isUnit_natCast_iff_not_dvd` first (in this module alone
+`simp` makes no progress on the statement). -/
 theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
   rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 

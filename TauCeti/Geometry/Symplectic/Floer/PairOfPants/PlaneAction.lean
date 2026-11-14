@@ -91,12 +91,8 @@ theorem integral_symplecticForm_fderiv_closedBall_eq_neg_loopArea (ω : Symplect
   have h := ω.integral_fderiv_apply_closedBall (u := v) (b := b) 0
     (mul_pos two_pos (Real.exp_pos _)) fun z _ ↦
       (hu.comp Complex.equivRealProdCLM.contDiff).contDiffAt
-  have h₁ : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
-    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
-  have hI : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
-    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
   simp only [v, ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, h₁, hI] at h
+    ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one, equivRealProdCLM_I] at h
   -- The boundary loop is the circle traversed backwards.
   have hg : Periodic (fun θ ↦ v (circleMap 0 b θ)) (2 * π) := fun θ ↦ by
     simp only [periodic_circleMap 0 b θ]
@@ -185,8 +181,8 @@ private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V) (hH
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)| ≤ B := by
   rw [← ENNReal.ofReal_le_ofReal_iff ((abs_nonneg _).trans (hB 0 0)),
-    ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+    ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hH hHs hB u)
 
 /-- **The energy identity on discs of the negative plane, in terms of the action.** Let `K` be

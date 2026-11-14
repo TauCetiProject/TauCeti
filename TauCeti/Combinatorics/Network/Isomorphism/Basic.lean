@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Combinatorics.Network.Flow
+public import TauCeti.Combinatorics.Network.Shift
 public import TauCeti.Combinatorics.Network.Walk
 
 /-!
@@ -15,7 +16,8 @@ public import TauCeti.Combinatorics.Network.Walk
 An isomorphism of bounded networks consists of an equivalence of vertices and equivalences of
 the corresponding arrow types that preserve both bounds.  This file supplies identity, inverse,
 and composition, together with transport of assignments, feasibility, excess, circulations,
-bounded terminal assignments, ordinary flows, and directed paths.
+bounded terminal assignments, ordinary flows, prescribed- and interval-excess assignments, and
+directed paths.
 
 Arrow identities are retained by transport, so the constructions apply unchanged to networks
 with parallel arrows, antiparallel arrows, and loops.  Finiteness is needed only for excess and
@@ -259,6 +261,13 @@ theorem assignmentEquiv_apply (e : N ≃ₙ N') (R : Type w') (f : N.Assignment 
     e.assignmentEquiv R f (e.homEquiv x y a) = f a := by
   simp [assignmentEquiv]
 
+/-- Assignment transport preserves evaluation on a total arrow, including its endpoints. -/
+@[simp]
+theorem assignmentEquiv_apply_totalHomEquiv (e : N ≃ₙ N') (R : Type w')
+    (f : N.Assignment R) (a : Σ x y, N.Hom x y) :
+    e.assignmentEquiv R f (e.totalHomEquiv a).2.2 = f a.2.2 :=
+  e.assignmentEquiv_apply R f a.2.2
+
 /-- Pulling an assignment back evaluates by applying the forward arrow equivalence. -/
 @[simp]
 theorem assignmentEquiv_symm_apply (e : N ≃ₙ N') (R : Type w') (f : N'.Assignment R)
@@ -395,6 +404,16 @@ theorem excessAt_assignmentEquiv [Fintype V] [Fintype W]
   funext x y a
   exact e.assignmentEquiv_apply R f a
 
+/-- The excess of a transported assignment is the original excess composed with the inverse vertex
+equivalence. -/
+theorem excessAt_assignmentEquiv_eq_comp [Fintype V] [Fintype W]
+    [∀ x y, Fintype (N.Hom x y)] [∀ x y, Fintype (N'.Hom x y)]
+    {R : Type w'} [AddCommGroup R] (e : N ≃ₙ N') (f : N.Assignment R) :
+    TauCeti.excessAt (e.assignmentEquiv R f) = TauCeti.excessAt f ∘ e.vertexEquiv.symm := by
+  funext y
+  obtain ⟨x, rfl⟩ := e.vertexEquiv.surjective y
+  simp
+
 /-- Assignment transport preserves the circulation predicate. -/
 @[simp]
 theorem isCirculation_assignmentEquiv_iff [Fintype V] [Fintype W]
@@ -494,6 +513,12 @@ theorem length_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
     (e.mapPath p).length = p.length :=
   @Prefunctor.length_mapPath V W (Quiver.mk N.Hom) (Quiver.mk N'.Hom) e.toPrefunctor x y p
 
+/-- Walk transport maps the vertex sequence in order, retaining repeated vertices. -/
+@[simp]
+theorem vertices_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
+    (e.mapPath p).vertices = p.vertices.map e.vertexEquiv :=
+  @Prefunctor.vertices_mapPath V W ⟨N.Hom⟩ ⟨N'.Hom⟩ e.toPrefunctor x y p
+
 /-- Path transport preserves concatenation. -/
 @[simp]
 theorem mapPath_comp (e : N ≃ₙ N') {x y z : V} (p : ArrowWalk N.Hom x y)
@@ -566,6 +591,56 @@ theorem mapFlow_toFun (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
 theorem val_mapFlow (e : N ≃ₙ N') {cap : N.Assignment K} {s t : V}
     (f : TauCeti.Flow cap s t) : (e.mapFlow f).val = f.val := by
   simp [TauCeti.BoundedFlow.val_def]
+
+/-- Transport identifies the assignments with prescribed excess `b` and those for the transported
+bounds with prescribed excess `b ∘ e.vertexEquiv.symm`. -/
+def excessFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment K) (b : V → K) :
+    TauCeti.ExcessFlow lo hi b ≃
+      TauCeti.ExcessFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+        (b ∘ e.vertexEquiv.symm) :=
+  (e.assignmentEquiv K).subtypeEquiv fun f ↦ by
+    rw [e.assignmentEquiv_mem_Icc_map_iff, e.excessAt_assignmentEquiv_eq_comp,
+      e.vertexEquiv.symm.surjective.injective_comp_right.eq_iff]
+
+@[simp]
+theorem excessFlowEquiv_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K} {b : V → K}
+    (f : TauCeti.ExcessFlow lo hi b) :
+    (e.excessFlowEquiv lo hi b f).val = e.assignmentEquiv K f.val :=
+  (rfl)
+
+@[simp]
+theorem excessFlowEquiv_symm_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K} {b : V → K}
+    (g : TauCeti.ExcessFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+      (b ∘ e.vertexEquiv.symm)) :
+    ((e.excessFlowEquiv lo hi b).symm g).val = (e.assignmentEquiv K).symm g.val :=
+  (rfl)
+
+/-- Transport identifies the assignments with excess between `a` and `b` and those for the
+transported arrow bounds with excess between `a ∘ e.vertexEquiv.symm` and
+`b ∘ e.vertexEquiv.symm`. -/
+def excessIntervalFlowEquiv (e : N ≃ₙ N') (lo hi : N.Assignment K) (a b : V → K) :
+    TauCeti.ExcessIntervalFlow lo hi a b ≃
+      TauCeti.ExcessIntervalFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+        (a ∘ e.vertexEquiv.symm) (b ∘ e.vertexEquiv.symm) :=
+  (e.assignmentEquiv K).subtypeEquiv fun f ↦ by
+    rw [e.assignmentEquiv_mem_Icc_map_iff, e.excessAt_assignmentEquiv_eq_comp]
+    refine and_congr_right fun _ ↦ ⟨fun h ↦ ⟨fun y ↦ h.1 _, fun y ↦ h.2 _⟩, fun h ↦ ?_⟩
+    exact ⟨fun x ↦ by simpa using h.1 (e.vertexEquiv x),
+      fun x ↦ by simpa using h.2 (e.vertexEquiv x)⟩
+
+@[simp]
+theorem excessIntervalFlowEquiv_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K} {a b : V → K}
+    (f : TauCeti.ExcessIntervalFlow lo hi a b) :
+    (e.excessIntervalFlowEquiv lo hi a b f).val = e.assignmentEquiv K f.val :=
+  (rfl)
+
+@[simp]
+theorem excessIntervalFlowEquiv_symm_apply_val (e : N ≃ₙ N') {lo hi : N.Assignment K}
+    {a b : V → K}
+    (g : TauCeti.ExcessIntervalFlow (e.assignmentEquiv K lo) (e.assignmentEquiv K hi)
+      (a ∘ e.vertexEquiv.symm) (b ∘ e.vertexEquiv.symm)) :
+    ((e.excessIntervalFlowEquiv lo hi a b).symm g).val = (e.assignmentEquiv K).symm g.val :=
+  (rfl)
 
 end Iso
 

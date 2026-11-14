@@ -40,8 +40,11 @@ The construction follows the organization of Mathlib's bounded-below category
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes. It is
   a localization functor with respect to the homotopy equivalences, so functors and their shift
   compatibilities descend along it.
+* `TauCeti.HomotopyCategory.Bounded.toPlus`: the inclusion `Kᵇ(C) ⥤ K⁺(C)`.
+* `TauCeti.HomotopyCategory.Bounded.mk`: the class in `Kᵇ(C)` of a bounded cochain complex.
 * `TauCeti.HomotopyCategory.Bounded.rep`: the underlying cochain complex of an object of the
-  bounded homotopy category.
+  bounded homotopy category, strictly bounded below and above
+  (`TauCeti.HomotopyCategory.Bounded.exists_isStrictlyGE_isStrictlyLE`).
 * `TauCeti.HomotopyCategory.Bounded.quotientCompιIso`: the bounded quotient followed by the
   inclusion agrees with the ordinary homotopy quotient.
 * `TauCeti.HomotopyCategory.Bounded.singleFunctors`: the single functors
@@ -277,6 +280,10 @@ abbrev ι : HomotopyCategory.Bounded C ⥤ HomotopyCategory C (.up ℤ) :=
 abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
+/-- The inclusion `Kᵇ(C) ⥤ K⁺(C)` of bounded complexes into bounded below complexes. -/
+abbrev toPlus : HomotopyCategory.Bounded C ⥤ _root_.HomotopyCategory.Plus C :=
+  ObjectProperty.ιOfLE (bounded_le_plus C)
+
 variable {C} in
 /-- The bounded cochain complex underlying an object of the bounded homotopy category. -/
 def rep (K : HomotopyCategory.Bounded C) : CochainComplex C ℤ :=
@@ -295,6 +302,29 @@ lemma bounded_rep (K : HomotopyCategory.Bounded C) : CochainComplex.bounded C (r
   rw [← HomotopyCategory.bounded_quotient_obj_iff, quotient_obj_rep]
   exact K.property
 
+variable {C} in
+/-- The class in `Kᵇ(C)` of a bounded cochain complex. -/
+abbrev mk (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
+    HomotopyCategory.Bounded C :=
+  ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩
+
+variable {C} in
+/-- The underlying complex of an object of the bounded homotopy category is strictly bounded
+below and above. -/
+lemma exists_isStrictlyGE_isStrictlyLE (K : HomotopyCategory.Bounded C) :
+    ∃ a b : ℤ, CochainComplex.IsStrictlyGE K.obj.as a ∧ CochainComplex.IsStrictlyLE K.obj.as b :=
+  (CochainComplex.bounded_iff C _).1 (bounded_rep K)
+
+variable {C} in
+/-- The underlying complexes of two objects of the bounded homotopy category are strictly bounded
+above by a common integer. -/
+lemma exists_isStrictlyLE_isStrictlyLE (K L : HomotopyCategory.Bounded C) :
+    ∃ n : ℤ, CochainComplex.IsStrictlyLE K.obj.as n ∧ CochainComplex.IsStrictlyLE L.obj.as n := by
+  obtain ⟨_, b, _, _⟩ := exists_isStrictlyGE_isStrictlyLE K
+  obtain ⟨_, b', _, _⟩ := exists_isStrictlyGE_isStrictlyLE L
+  exact ⟨max b b', CochainComplex.isStrictlyLE_of_le K.obj.as b _ (le_max_left _ _),
+    CochainComplex.isStrictlyLE_of_le L.obj.as b' _ (le_max_right _ _)⟩
+
 /-- The quotient functor from bounded cochain complexes to their bounded homotopy category. -/
 @[implicit_reducible]
 def quotient : CochainComplex.Bounded C ⥤ HomotopyCategory.Bounded C :=
@@ -305,21 +335,11 @@ def quotient : CochainComplex.Bounded C ⥤ HomotopyCategory.Bounded C :=
       rw [HomotopyCategory.bounded_quotient_obj_iff]
       exact hK)
 
-private lemma quotient_obj_obj_private (X : CochainComplex.Bounded C) :
-    ((quotient C).obj X).obj = (HomotopyCategory.quotient C (.up ℤ)).obj X.obj := rfl
-
 /-- Inclusion sends a bounded quotient object to the ordinary homotopy quotient. -/
 @[simp]
 lemma quotient_obj_obj (X : CochainComplex.Bounded C) :
     ((quotient C).obj X).obj = (HomotopyCategory.quotient C (.up ℤ)).obj X.obj :=
-  quotient_obj_obj_private C X
-
-private lemma quotient_map_hom_private {X Y : CochainComplex.Bounded C} (f : X ⟶ Y) :
-    ((quotient C).map f).hom =
-      eqToHom (quotient_obj_obj C X) ≫
-        (HomotopyCategory.quotient C (.up ℤ)).map f.hom ≫
-        eqToHom (quotient_obj_obj C Y).symm := by
-  simp [quotient]
+  (rfl)
 
 /-- The bounded quotient acts on maps by the ordinary homotopy quotient, after transporting
 along the object comparison equalities. -/
@@ -328,7 +348,8 @@ lemma quotient_map_hom {X Y : CochainComplex.Bounded C} (f : X ⟶ Y) :
     ((quotient C).map f).hom =
       eqToHom (quotient_obj_obj C X) ≫
         (HomotopyCategory.quotient C (.up ℤ)).map f.hom ≫
-        eqToHom (quotient_obj_obj C Y).symm := quotient_map_hom_private C f
+        eqToHom (quotient_obj_obj C Y).symm := by
+  simp [quotient]
 
 variable {C} in
 /-- The underlying complex of the class of a bounded complex has the same homotopy class as that
@@ -338,25 +359,17 @@ lemma quotient_obj_rep_quotient_obj (K : CochainComplex.Bounded C) :
       (HomotopyCategory.quotient C (.up ℤ)).obj K.obj :=
   (quotient_obj_rep _).trans (quotient_obj_obj C K)
 
-private def quotientCompιIsoAux :
-    quotient C ⋙ ι C ≅
-      CochainComplex.Bounded.ι C ⋙ HomotopyCategory.quotient C (.up ℤ) :=
-  ObjectProperty.liftCompιIso ..
-
 /-- The bounded quotient followed by the inclusion agrees with the ordinary homotopy quotient. -/
 def quotientCompιIso :
     quotient C ⋙ ι C ≅
       CochainComplex.Bounded.ι C ⋙ HomotopyCategory.quotient C (.up ℤ) :=
-  quotientCompιIsoAux C
-
-private lemma quotientCompιIso_hom_app_private (X : CochainComplex.Bounded C) :
-    (quotientCompιIso C).hom.app X = eqToHom (quotient_obj_obj C X) := rfl
+  ObjectProperty.liftCompιIso ..
 
 /-- The comparison isomorphism has the canonical component at each bounded complex. -/
 @[simp]
 lemma quotientCompιIso_hom_app (X : CochainComplex.Bounded C) :
     (quotientCompιIso C).hom.app X = eqToHom (quotient_obj_obj C X) :=
-  quotientCompιIso_hom_app_private C X
+  (rfl)
 
 /-- The inverse comparison has the reverse canonical component at each bounded complex. -/
 @[simp]

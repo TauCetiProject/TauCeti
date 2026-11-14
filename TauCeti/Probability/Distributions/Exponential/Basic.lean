@@ -132,9 +132,19 @@ theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   exact ae_pos_gammaMeasure 1 r
 
 /-- A random variable with an exponential law is almost surely positive. -/
-theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
   (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
+
+/-- A nonnegative random variable with an exponential law has probability strictly less than
+one of being zero. -/
+lemma measure_eq_zero_lt_one_of_hasLaw_expMeasure
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ≥0}
+    (hlaw : HasLaw (fun ω ↦ (X ω : ℝ)) (expMeasure r) P) :
+    P {ω | X ω = 0} < 1 := by
+  refine (measure_mono_null (fun ω hω ↦ ?_)
+    (ae_iff.1 (ae_pos_of_hasLaw_expMeasure hlaw))).trans_lt zero_lt_one
+  simp_all
 
 /-- The rate of an exponential law of a random variable on a probability space is positive,
 because `expMeasure r` is the zero measure for `r ≤ 0`. -/
@@ -146,9 +156,9 @@ theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Me
 
 /-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
 @[simp]
-theorem expMeasure_map_const_mul (hr : 0 < r) {c : ℝ} (hc : 0 < c) :
+theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
-  simpa only [expMeasure] using gammaMeasure_map_const_mul one_pos hr hc
+  simpa only [expMeasure] using gammaMeasure_map_const_mul hc
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the shared density
 bridge of `TauCeti/Probability/Density.lean` applies. -/

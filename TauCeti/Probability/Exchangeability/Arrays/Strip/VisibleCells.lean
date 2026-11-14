@@ -61,12 +61,10 @@ theorem SeparatelyExchangeable.iCondIndepFun_visibleCells
   have hm' : m' ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) := by
     simpa only [m', Z] using
       (Set.measurable_restrict (X := fun _ : ℕ × ℕ => α) H).comap_le
-  have hm (p : V) : m p ≤ (MeasurableSpace.pi : MeasurableSpace (ℕ × ℕ → α)) :=
-    (measurable_pi_apply (X := fun _ : ℕ × ℕ => α) p.1).comap_le
   apply (iCondIndepFun_iff_iCondIndep (mΩ := MeasurableSpace.pi)
     m' hm' (fun _ : V => inferInstance)
     (fun p : V => fun x : ℕ × ℕ → α => x p.1) ρ).2
-  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm' hm
+  apply iCondIndep_of_condIndep_compl (mΩ := MeasurableSpace.pi) hm'
   intro p
   let C : Set (ℕ × ℕ) := ({p.1.1} : Set ℕ) ×ˢ ({p.1.2} : Set ℕ)
   have hC : C = {p.1} := by ext q; simp [C, Prod.ext_iff]

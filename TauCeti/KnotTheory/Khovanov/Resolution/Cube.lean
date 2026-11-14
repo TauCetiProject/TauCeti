@@ -56,9 +56,10 @@ All in the namespace `TauCeti.PDCode`:
 
 ## References
 
-* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §3.
+* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000),
+  §§3.2, 4.2.
 * D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*,
-  Algebr. Geom. Topol. 2 (2002), §2.2.
+  Algebr. Geom. Topol. 2 (2002), §§3.1-3.2.
 -/
 
 public section
@@ -158,8 +159,8 @@ theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (
   obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
   simp [cubeState, hj]
 
-/-- Along an edge `S ⋖ T` of the cube, the states of `S` and `T` differ at the added crossing
-`a ∈ T \ S`. -/
+/-- If `a ∉ S` and `a ∈ T`, the states of `S` and `T` differ at `a` (in particular, along an edge
+`S ⋖ T` of the cube, at its added crossing). -/
 theorem cubeState_ne_of_notMem_of_mem {S T : Finset (Fin n)} {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) : cubeState S a ≠ cubeState T a := by
   simp [cubeState, haS, haT]
@@ -390,11 +391,12 @@ crossing added along the edge. This restates
 `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι` for a target which is only
 propositionally `insert a S`. -/
 theorem resolutionCube_map_homOfLE_comp_resolutionCubeι {S T : Finset (Fin n)} {a : Fin n}
-    (ha : a ∉ S) (hT : insert a S = T) (hST : S ⊆ T)
+    (hT : insert a S = T) (hST : S ⊆ T)
     (hst : ∀ i, i ≠ a → cubeState S i = cubeState T i) (hc : cubeState S a ≠ cubeState T a)
     (h : #(D.circlesAt (cubeState S) a) = 2 ∨ #(D.circlesAt (cubeState T) a) = 2) :
     (D.resolutionCube hD R j).map (homOfLE hST) ≫ D.resolutionCubeι hD R j T =
       D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (D.resolutionEdgeMap hst hc h R) := by
+  have ha : a ∉ S := fun hm => hc (by subst hT; simp [Finset.insert_eq_of_mem hm])
   subst hT
   exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j ha
 

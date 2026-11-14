@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
 import Mathlib.Algebra.CharP.Invertible
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Derivative identities for power series
@@ -46,6 +47,7 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `PowerSeries.constantCoeff_iterate_of_derivative_subst`: iteration and coefficient extraction
   for an operator intertwined with the derivative by substitution.
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
+* `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
 * `PowerSeries.coeff_iterate_derivative_eq_descFactorial`: the `M`-th coefficient of `f⁽ⁱ⁾` is
@@ -89,6 +91,12 @@ variable {R S : Type*} [CommSemiring R] [CommSemiring S]
 theorem derivative_map (φ : R⟦X⟧) (f : R →+* S) : d⁄dX (map f φ) = map f (d⁄dX φ) := by
   ext n
   simp [coeff_derivative]
+
+/-- **The chain rule for rescaling**: the derivative of `f(a X)` is `a f'(a X)`. -/
+theorem derivative_rescale (φ : R⟦X⟧) (a : R) : d⁄dX (rescale a φ) = C a * rescale a (d⁄dX φ) := by
+  ext n
+  simp only [coeff_derivative, coeff_rescale, coeff_C_mul]
+  ring
 
 /-- Iterated derivatives of a polynomial, viewed as a power series, are computed as
 polynomials. -/
@@ -297,6 +305,19 @@ theorem polynomial_map_algebraMap_smul {S : Type*} [CommSemiring S] [Algebra R S
   rw [Algebra.smul_def, Algebra.smul_def, algebraMap_apply', algebraMap_apply',
     ← Polynomial.polynomial_map_coe, ← Polynomial.polynomial_map_coe, Polynomial.map_map,
     ← IsScalarTower.algebraMap_eq]
+
+/-- Nonzero polynomials over the base field act injectively on power series over any
+commutative algebra. -/
+instance {k K : Type*} [Field k] [CommRing K] [Algebra k K] :
+    Module.IsTorsionFree (Polynomial k) K⟦X⟧ where
+  isSMulRegular p hp := by
+    have hp' : (p : k⟦X⟧) ≠ 0 := by simpa using hp.ne_zero
+    have hu := (isUnit_divided_by_X_pow_order hp').map (map (algebraMap k K))
+    intro f g hfg
+    simp only [Algebra.smul_def, algebraMap_apply'] at hfg
+    rw [← X_pow_order_mul_divXPowOrder (f := (p : k⟦X⟧))] at hfg
+    simp only [map_mul, map_pow, map_X, mul_assoc] at hfg
+    exact hu.mul_right_injective (X_pow_mul_injective hfg)
 
 end Algebra
 

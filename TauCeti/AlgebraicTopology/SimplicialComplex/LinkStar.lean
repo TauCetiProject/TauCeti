@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Set.Card
 import Mathlib.Basic.Finite.Prod
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 
@@ -21,14 +22,12 @@ subcomplexes that organise `K` around `σ`:
 * the **link** `link K σ`, the part of the closed star disjoint from `σ`;
 * the **deletion** `deletion K σ` (the *anti-star*), the faces of `K` that do not contain `σ`.
 
-These are the "basic API (faces, the star and link of a simplex)" that the geometric-topology
-roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 11) asks for on top of Mathlib's
-`AbstractSimplicialComplex`. The link is the load-bearing one downstream: a combinatorial
-`n`-manifold is defined there by the condition that the link of every vertex is a combinatorial
-`(n-1)`-sphere or `(n-1)`-ball, so `link` is the primitive that condition is phrased against. The
-definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3, and
-they work for `PreAbstractSimplicialComplex` (the singleton-free version), since the link of a
-simplex need not contain every vertex even when `K` does.
+Of the three, the link is the load-bearing one downstream: a combinatorial `n`-manifold
+(`CombinatorialManifold.Basic`) is defined by the condition that the link of every vertex is a
+combinatorial `(n-1)`-sphere or `(n-1)`-ball, so `link` is the primitive that condition is phrased
+against. The definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*,
+Chapter 3, and they work for `PreAbstractSimplicialComplex` (the singleton-free version), since
+the link of a simplex need not contain every vertex even when `K` does.
 
 ## Main definitions
 
@@ -55,6 +54,13 @@ simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.isCone_closedStar` / `isCone_deletion`: the closed star of
   a face is a cone with apex any vertex of that face, and deleting a face missing the apex of a
   cone leaves a cone with the same apex.
+* `PreAbstractSimplicialComplex.deletion_singleton_eq_of_forall_notMem`: deleting a vertex that
+  lies in no face changes nothing.
+* `PreAbstractSimplicialComplex.ncard_incident_deletion_lt`: deleting a face containing `v`
+  strictly shrinks the finite set of faces containing `v`.
+* `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
+  `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
+  domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -248,6 +254,51 @@ theorem deletion_mono (h : K ≤ L) : deletion K σ ≤ deletion L σ :=
   fun _ hρ => by
     obtain ⟨hρ, hσ⟩ := mem_deletion.mp hρ
     exact mem_deletion.mpr ⟨h hρ, hσ⟩
+
+omit [DecidableEq ι] in
+/-- If no face contains `v`, deleting `v` changes nothing. -/
+@[simp]
+theorem deletion_singleton_eq_of_forall_notMem {v : ι}
+    (hempty : ∀ σ ∈ K, v ∉ σ) : deletion K {v} = K := by
+  apply SetLike.ext
+  intro σ
+  simp only [mem_deletion, Finset.singleton_subset_iff]
+  exact ⟨And.left, fun hσ => ⟨hσ, hempty σ hσ⟩⟩
+
+omit [DecidableEq ι] in
+/-- Deleting a face `σ` containing `v` strictly decreases the set of faces containing `v`. -/
+theorem ncard_incident_deletion_lt {v : ι} (hσ : σ ∈ K) (hvσ : v ∈ σ)
+    (hfin : {τ : Finset ι | τ ∈ K ∧ v ∈ τ}.Finite) :
+    {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ}.ncard < {τ : Finset ι | τ ∈ K ∧ v ∈ τ}.ncard := by
+  refine Set.ncard_lt_ncard (Set.ssubset_iff_subset_ne.mpr
+    ⟨fun _ h => ⟨deletion_le h.1, h.2⟩, ?_⟩) hfin
+  intro heq
+  have hσT : σ ∈ {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ} := by
+    rw [heq]
+    exact ⟨hσ, hvσ⟩
+  exact (mem_deletion.mp hσT.1).2 Finset.Subset.rfl
+
+/-- Domination of `v` by `w ∉ σ` survives deleting the face `σ`. -/
+theorem insert_mem_deletion_of_notMem {v w : ι} (hwσ : w ∉ σ)
+    (hdom : ∀ τ ∈ K, v ∈ τ → insert w τ ∈ K) :
+    ∀ τ ∈ deletion K σ, v ∈ τ → insert w τ ∈ deletion K σ := by
+  intro τ hτ hvτ
+  obtain ⟨hτK, hστ⟩ := mem_deletion.mp hτ
+  exact mem_deletion.mpr ⟨hdom τ hτK hvτ,
+    fun hsub => hστ ((Finset.subset_insert_iff_of_notMem hwσ).mp hsub)⟩
+
+omit [DecidableEq ι] in
+/-- Deleting a face `σ` containing `v` does not affect a subsequent deletion of `v`. -/
+@[simp]
+theorem deletion_deletion_singleton_of_mem {v : ι} (hvσ : v ∈ σ) :
+    deletion (deletion K σ) {v} = deletion K {v} := by
+  apply SetLike.ext
+  intro τ
+  simp only [mem_deletion, Finset.singleton_subset_iff]
+  constructor
+  · exact fun h => ⟨h.1.1, h.2⟩
+  · rintro ⟨hτ, hvτ⟩
+    exact ⟨⟨hτ, fun hστ => hvτ (hστ hvσ)⟩, hvτ⟩
 
 variable {ρ : Finset ι}
 

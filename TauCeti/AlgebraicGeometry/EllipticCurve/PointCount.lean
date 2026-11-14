@@ -63,27 +63,27 @@ model, so the comparison with the point type becomes a theorem.
 
 public section
 
-namespace TauCeti
+namespace WeierstrassCurve
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve F)
 
 /-- **The number of `F`-points of the projective Weierstrass model**, the singular point included
 when there is one: `Nat.card` of the solutions of the affine equation, singular or not, plus one
 for the point at infinity. It is the honest count whenever that solution type is finite. -/
-noncomputable def _root_.WeierstrassCurve.pointCount : ℕ :=
+noncomputable def pointCount : ℕ :=
   Nat.card {p : F × F // W.toAffine.Equation p.1 p.2} + 1
 
 /-- The defining equation of `pointCount`. -/
 @[simp]
 -- Needed as a lemma rather than left to unfolding: `pointCount`'s body is not exposed across a
 -- module boundary, so `rfl` for this equation fails in a downstream file.
-theorem _root_.WeierstrassCurve.pointCount_def :
+theorem pointCount_def :
     W.pointCount = Nat.card {p : F × F // W.toAffine.Equation p.1 p.2} + 1 := (rfl)
 
 /-- **On an elliptic model the projective count is the cardinality of Mathlib's point type.**
 An elliptic model has no singular point to include, so the solutions of the equation are exactly
 the nonsingular ones, and the point at infinity is the one Mathlib's type adjoins. -/
-theorem _root_.WeierstrassCurve.pointCount_eq_card_point
+theorem pointCount_eq_card_point
     [Finite {p : F × F // W.toAffine.Equation p.1 p.2}] [W.IsElliptic] :
     W.pointCount = Nat.card W.toAffine.Point := by
   rw [WeierstrassCurve.pointCount_def, Nat.card_congr W.toAffine.pointEquiv]
@@ -98,7 +98,7 @@ model: `a_q` at an elliptic one, and `1`, `−1`, `0` at split multiplicative, n
 multiplicative and additive reduction. That is why it carries no ellipticity hypothesis. It is
 elliptic-specific only in its reading as a *trace*, which rests on the identity
 `deg (1 − π_q) = #E(𝔽_q)`. -/
-noncomputable def _root_.WeierstrassCurve.frobeniusTrace [Finite F] : ℤ :=
+noncomputable def frobeniusTrace [Finite F] : ℤ :=
   -- `q` is a number only because the base is finite, so the count is taken through that
   -- finiteness; `frobeniusTrace_def` restates it with `Nat.card`, the form the API is phrased in
   have : Fintype F := Fintype.ofFinite F
@@ -106,13 +106,13 @@ noncomputable def _root_.WeierstrassCurve.frobeniusTrace [Finite F] : ℤ :=
 
 /-- The defining equation of `frobeniusTrace`. -/
 @[simp]
-theorem _root_.WeierstrassCurve.frobeniusTrace_def [Finite F] :
+theorem frobeniusTrace_def [Finite F] :
     W.frobeniusTrace = (Nat.card F : ℤ) + 1 - W.pointCount := by
   simp only [WeierstrassCurve.frobeniusTrace, @Nat.card_eq_fintype_card F (Fintype.ofFinite F)]
 
 /-- **Over a finite field, on an elliptic model the trace is measured against Mathlib's point
 type**, which is the classical `a_q`. -/
-theorem _root_.WeierstrassCurve.frobeniusTrace_eq_card_point [Finite F] [W.IsElliptic] :
+theorem frobeniusTrace_eq_card_point [Finite F] [W.IsElliptic] :
     W.frobeniusTrace = (Nat.card F : ℤ) + 1 - Nat.card W.toAffine.Point := by
   rw [WeierstrassCurve.frobeniusTrace_def, WeierstrassCurve.pointCount_eq_card_point]
 
@@ -120,7 +120,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_card_point [Finite F] [W.IsEll
 affine substitution `(x, y) ↦ (u² x + r, u³ y + u² s x + t)` is a bijection of `F × F` carrying the
 solutions of the equation of `C • W` onto those of `W`. -/
 @[simp 1100]
-theorem _root_.WeierstrassCurve.variableChange_pointCount (C : WeierstrassCurve.VariableChange F) :
+theorem variableChange_pointCount (C : WeierstrassCurve.VariableChange F) :
     (C • W).pointCount = W.pointCount := by
   have hu : (C.u : F) ≠ 0 := C.u.ne_zero
   let e : F × F ≃ F × F :=
@@ -135,12 +135,12 @@ theorem _root_.WeierstrassCurve.variableChange_pointCount (C : WeierstrassCurve.
 
 /-- **The Frobenius trace is invariant under a change of variables.** -/
 @[simp 1100]
-theorem _root_.WeierstrassCurve.variableChange_frobeniusTrace [Finite F]
+theorem variableChange_frobeniusTrace [Finite F]
     (C : WeierstrassCurve.VariableChange F) :
     (C • W).frobeniusTrace = W.frobeniusTrace := by
   rw [WeierstrassCurve.frobeniusTrace_def, WeierstrassCurve.frobeniusTrace_def,
     WeierstrassCurve.variableChange_pointCount]
 
-end TauCeti
+end WeierstrassCurve
 
 end

@@ -45,10 +45,6 @@ the expansion `l2sq_sub` needs no additional side conditions.
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1/2 — `l2sq` and the analytic energy
-  stack.  The `l2sq` signature and the `l2sq_nonneg` proof are taken from
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean` (Layer 1/2); the pairing `l2inner` and its
-  bilinear API are developed here.
 * The set-integral Cauchy--Schwarz argument follows `Graphon/Regularity.lean` in
   `cameronfreer/graphon` (Apache 2.0) at commit
   `6eccca5bbe5c9df46d7129bf59575b8b9b1d6699`.
@@ -209,7 +205,7 @@ theorem sq_rectIntegral_le_measureReal_mul_l2sq (K : SymmKernel Ω μ) (S T : Se
             ∫ p in S ×ˢ T, K p.1 p.2 ^ 2 ∂(μ.prod μ) :=
       MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
         (measure_ne_top _ _)
-        K.integrable_uncurry.integrableOn (K.integrable_sq μ).integrableOn
+        (K.integrable_sq μ).integrableOn
     _ ≤ (μ.prod μ).real (S ×ˢ T) * ∫ p, K p.1 p.2 ^ 2 ∂(μ.prod μ) := by
       exact mul_le_mul_of_nonneg_left
         (setIntegral_le_integral (K.integrable_sq μ) (ae_of_all _ fun _ => sq_nonneg _))

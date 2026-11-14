@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Diffeomorphism.Group
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Orientation behavior of manifold maps
@@ -25,10 +26,12 @@ point either preserves or reverses orientations there
 The inverse of a diffeomorphism preserves orientation wherever the diffeomorphism does
 (`IsOrientationPreservingAt.diffeomorph_symm`), so a diffeomorphism of `M` preserving an
 orientation everywhere has all its integer powers orientation preserving
-(`isOrientationPreservingAt_zpow`).
+(`isOrientationPreservingAt_zpow`). The same holds for the inverse of a partial diffeomorphism, such
+as a chart, at the points of its target (`IsOrientationPreservingAt.partialDiffeomorph_symm`).
 
-For orientation lifts with a common model orientation, the chart signs of the lifts compensate the
-sign of the coordinate Jacobian of an orientation-preserving map.
+For orientation lifts whose model orientations correspond under a linear equivalence of the model
+spaces, the chart signs of the lifts compensate the sign of the coordinate Jacobian of an
+orientation-preserving map, read in the source model through that equivalence.
 
 For one-dimensional manifolds modelled on `ℝ` whose orientations are the standard orientation of
 `ℝ` at the relevant points, `isOrientationPreservingAt_of_orientationAt_eq` and
@@ -406,6 +409,21 @@ theorem IsOrientationPreservingAt.diffeomorph_symm [IsManifold I 1 M] [IsManifol
   rw [hid]
   exact isOrientationPreservingAt_id o' y
 
+/-- The inverse of a `C^n` partial diffeomorphism `Φ`, `n ≠ 0`, preserves orientations at a point
+`y` of its target when `Φ` preserves them at `Φ.symm y`. -/
+theorem IsOrientationPreservingAt.partialDiffeomorph_symm [IsManifold I 1 M]
+    [IsManifold I' 1 M'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {n : WithTop ℕ∞} {Φ : PartialDiffeomorph I I' M M' n} {y : M'} (hy : y ∈ Φ.target)
+    (h : IsOrientationPreservingAt o o' Φ (Φ.symm y)) (hn : n ≠ 0) :
+    IsOrientationPreservingAt o' o Φ.symm y := by
+  refine h.of_comp (isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o'
+    (Φ.toPartialEquiv.right_inv hy) ?_) (Φ.symm.mdifferentiableAt hn hy)
+  have heq : ⇑Φ ∘ ⇑Φ.symm =ᶠ[𝓝 y] id := Φ.toOpenPartialHomeomorph.eventually_right_inverse hy
+  rw [heq.mfderiv_eq, mfderiv_id]
+  -- `EventuallyEq.mfderiv_eq` composes with `tangentSpaceCast`, the identification of the
+  -- tangent spaces at `y` and `Φ (Φ.symm y)`, which is the identity map.
+  exact ContinuousLinearMap.ext fun _ ↦ rfl
+
 /-- If a `C^n` diffeomorphism `φ` of `M`, `n ≠ 0`, preserves an orientation `o` at every point,
 then so does each of its integer powers `φ ^ k`. -/
 theorem isOrientationPreservingAt_zpow [IsManifold I 1 M] {o : Manifold.Orientation I M ι}
@@ -527,22 +545,15 @@ private theorem modelOrientationAt_neg (o : Manifold.Orientation 𝓘(ℝ, E) E 
     modelOrientationAt (-o) x = -modelOrientationAt o x := by
   rw [modelOrientationAt, modelOrientationAt, orientationAt_neg, _root_.Orientation.map_neg]
 
-/-- Read in `E`, the constant model orientation is the orientation it is built from. -/
-private theorem modelOrientationAt_model (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
-    modelOrientationAt (model (I := 𝓘(ℝ, E)) o hι) x = o := by
-  rw [modelOrientationAt, orientationAt_model]
-  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
-  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
-
 /-- An orientation of the connected model space `E`, read in `E`, has the same tangent
 orientation at any two points. -/
 private theorem modelOrientationAt_eq (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x y : E) :
     modelOrientationAt o x = modelOrientationAt o y := by
   obtain h | h := o.eq_or_eq_neg (model (I := 𝓘(ℝ, E)) (modelOrientationAt o x) o.card_eq)
-  · rw [h, modelOrientationAt_model, modelOrientationAt_model]
-  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg, modelOrientationAt_model,
-      modelOrientationAt_model]
+  · rw [h]
+    simp only [modelOrientationAt, map_orientationAt_model]
+  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg]
+    simp only [modelOrientationAt, map_orientationAt_model]
 
 /-- **An orientation of the model space is constant.** An orientation of the connected model space
 `E` has the same tangent orientation at any two points, the tangent spaces of `E` all being `E`. -/
@@ -683,62 +694,81 @@ end TauCeti.Manifold.Orientation
 
 namespace TauCeti.Manifold.OrientationLift
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
 
 open Set
 
-/-- If `f` preserves the orientations of two lifts with the same model orientation, then the
-chart signs of the lifts compensate the sign of the coordinate Jacobian of `f` between any two
-preferred charts. -/
+/-- If `f` preserves the orientations of two lifts whose model orientations correspond under a
+continuous linear equivalence `C : E ≃ E'` of the model spaces, then the chart signs of the lifts
+compensate the sign of the coordinate Jacobian of `f` between any two preferred charts, read in
+`E` through `C`. -/
 theorem signAt_mul_signAt_mul_det_pos
-    (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k))
-    (hl : l'.modelOrientation = l.modelOrientation) {f : M → N} {x : M}
-    (hf : MDifferentiableAt I J f x)
+    (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k)) (C : E ≃L[ℝ] E')
+    (hl : l'.modelOrientation =
+      _root_.Orientation.map (Fin k) C.toLinearEquiv l.modelOrientation)
+    {f : M → N} {x : M}
     (ho : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hx : x ∈ (chartAt H β).source) (hfx : f x ∈ (chartAt H' α).source) :
     0 < (l.signAt β x : ℝ) * (l'.signAt α (f x) : ℝ) *
-      (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-        (extChartAt I β x)).det := by
+      ((C.symm : E' →L[ℝ] E) ∘L fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm)
+        (range I) (extChartAt I β x)).det := by
   obtain ⟨e, he, hp⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mp ho
   rw [Manifold.Orientation.orientationAt_mk, Manifold.Orientation.orientationAt_mk] at hp
-  -- The tangent spaces are the model space `E`; restate `hp` there, where the tangent
+  -- The tangent spaces are the model spaces `E` and `E'`; restate `hp` there, where the tangent
   -- orientations can be rewritten to the signed model orientations they equal.
-  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℝ] E, A = e.toLinearEquiv := ⟨_, rfl⟩
+  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℝ] E', A = e.toLinearEquiv := ⟨_, rfl⟩
   replace hp : _root_.Orientation.map (Fin k) A
       (l.orientationAt x : _root_.Orientation ℝ E (Fin k)) =
-        (l'.orientationAt (f x) : _root_.Orientation ℝ E (Fin k)) := by
+        (l'.orientationAt (f x) : _root_.Orientation ℝ E' (Fin k)) := by
     subst hA
     exact hp
-  rw [orientationAt_eq, orientationAt_eq] at hp
-  rw [chartOrientation_eq_ite, chartOrientation_eq_ite, hl,
+  rw [orientationAt_eq, orientationAt_eq, chartOrientation_eq_ite, chartOrientation_eq_ite, hl,
     ← _root_.Orientation.intCast_units_smul_eq_ite,
     ← _root_.Orientation.intCast_units_smul_eq_ite] at hp
-  have h₁ := (_root_.Orientation.map_units_smul_eq_iff_det_mul_pos l.modelOrientation
-    A _ _ l.card_eq).mp hp
+  have h₁ := (_root_.Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos
+    l.modelOrientation A C.toLinearEquiv _ _ l.card_eq).mp hp
   have h₂ := l.compatible β x x hx (mem_chart_source H x)
   have h₃ := l'.compatible (f x) α (f x) (mem_chart_source H' (f x)) hfx
   rw [← tangentCoordChange_def] at h₂ h₃
-  -- The tangent spaces at `x` and `f x` are the model space `E`, so the manifold derivative of
-  -- `f` is an endomorphism `D` of `E`, which composes with the tangent coordinate changes.
-  obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] E, D = mfderiv I J f x := ⟨_, rfl⟩
+  -- The tangent spaces at `x` and `f x` are the model spaces, so the manifold derivative of `f`
+  -- is a map `D : E → E'`, which composes with the tangent coordinate changes.
+  obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] E', D = mfderiv I J f x := ⟨_, rfl⟩
+  -- If `f` is not differentiable at `x`, then `D = 0` is an equivalence, so `E` is trivial and
+  -- every map out of `E` is zero; otherwise `f` is continuous at `x`.
   have hD : fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
       (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
         tangentCoordChange I β x x := by
-    subst hD₀
-    exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
-      (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
-  have hdet : LinearMap.det (D : E →ₗ[ℝ] E) = LinearMap.det (A : E →ₗ[ℝ] E) := by
+    by_cases hd : MDifferentiableAt I J f x
+    · subst hD₀
+      exact hd.continuousAt.fderivWithin_extChartAt_comp_extChartAt_symm
+        (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    · have hsub : Subsingleton E := by
+        refine ⟨fun v w ↦ ?_⟩
+        have h0 : (e : TangentSpace I x →L[ℝ] TangentSpace J (f x)) = 0 :=
+          he.trans (mfderiv_zero_of_not_mdifferentiableAt hd)
+        exact sub_eq_zero.1 (e.injective
+          ((DFunLike.congr_fun h0 (v - w)).trans (map_zero e).symm))
+      ext v
+      rw [Subsingleton.elim v 0]
+      simp
+  -- `e` is the derivative `D`, read as a linear equivalence of the model spaces; this is `rfl`
+  -- because `TangentSpace I x` and `TangentSpace J (f x)` are by definition `E` and `E'`.
+  have hDA : (D : E →ₗ[ℝ] E') = A := by
     subst hD₀ hA
     rw [← he]
     rfl
-  rw [hD, signAt_of_mem _ hx, signAt_of_mem _ hfx, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.det_comp, LinearMap.det_comp, hdet]
+  have hdet : ((C.symm : E' →L[ℝ] E) ∘L D).det =
+      LinearMap.det (A.trans C.toLinearEquiv.symm).toLinearMap := by
+    rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, hDA, LinearEquiv.coe_trans,
+      ← ContinuousLinearEquiv.toLinearEquiv_symm,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  rw [hD, C.det_symm_comp_comp_comp, hdet, signAt_of_mem _ hx, signAt_of_mem _ hfx]
   simp only [Units.coe_map] at h₁
   -- Multiply the three positive quantities; the signs at `x` and at `f x` appear squared.
   have ha := Int.isUnit_mul_self (l.sign x ⟨x, mem_chart_source H x⟩).isUnit
@@ -751,7 +781,8 @@ theorem signAt_mul_signAt_mul_det_pos
   convert hprod using 1
   linear_combination
     (-((l.sign β ⟨x, hx⟩ : ℤ) : ℝ) * (l'.sign α ⟨f x, hfx⟩ : ℤ) *
-      (tangentCoordChange J (f x) α (f x)).det * LinearMap.det (A : E →ₗ[ℝ] E) *
+      (tangentCoordChange J (f x) α (f x)).det *
+      LinearMap.det (A.trans C.toLinearEquiv.symm).toLinearMap *
       (tangentCoordChange I β x x).det) * ((c : ℝ) * c * ha' + hc')
 
 end TauCeti.Manifold.OrientationLift

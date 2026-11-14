@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
 # Basic facts about monoid algebras
@@ -32,6 +34,9 @@ none of the further theory built on it.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
+* The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
+* `TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion`: the monoid algebra of a commutative torsion
+  monoid is integral over its coefficient ring.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -91,7 +96,10 @@ namespace MonoidAlgebra
 variable {R : Type*} [CommSemiring R] {M : Type*}
 
 /-- An element of `R[M]` lies in `I • R[M]` exactly when all of its coefficients lie in `I`. -/
-@[simp]
+@[to_additive (dont_translate := R I) (attr := simp)
+  _root_.AddMonoidAlgebra.mem_ideal_smul_top_iff
+/-- An element of an additive monoid algebra lies in `I • ⊤` exactly when all of its
+coefficients lie in `I`. -/]
 theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
     x ∈ I • (⊤ : Submodule R (MonoidAlgebra R M)) ↔ ∀ m, x.coeff m ∈ I := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
@@ -104,13 +112,29 @@ theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
       Submodule.smul_mem_smul (hx m) (Submodule.mem_top (x := MonoidAlgebra.single m (1 : R)))
 
 /-- Applying a ring homomorphism `f` to the coefficients kills exactly `ker f • R[M]`. -/
-@[simp]
+@[to_additive (dont_translate := R S) (attr := simp)
+  _root_.AddMonoidAlgebra.mapRingHom_eq_zero_iff
+/-- Applying a coefficient homomorphism `f` kills exactly the submodule `ker f • ⊤`. -/]
 theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* S)
     {x : MonoidAlgebra R M} :
     MonoidAlgebra.mapRingHom M f x = 0 ↔
       x ∈ RingHom.ker f • (⊤ : Submodule R (MonoidAlgebra R M)) := by
   rw [mem_ideal_smul_top_iff, ← MonoidAlgebra.coeff_inj]
   simp [Finsupp.ext_iff, MonoidAlgebra.coeff_mapRingHom]
+
+/-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
+Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
+theorem isIntegral_of_isMulTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG : IsMulTorsion G) :
+    Algebra.IsIntegral R (MonoidAlgebra R G) := by
+  refine ⟨fun x ↦ ?_⟩
+  induction x using MonoidAlgebra.induction_on with
+  | of m =>
+    obtain ⟨n, hn, hnm⟩ := isOfFinOrder_iff_pow_eq_one.1 (hG m)
+    refine IsIntegral.of_pow hn ?_
+    rw [← map_pow, hnm, map_one]
+    exact isIntegral_one
+  | add x y hx hy => exact hx.add hy
+  | smul r x hx => exact hx.smul r
 
 end MonoidAlgebra
 
@@ -185,6 +209,13 @@ instance instHasUniqueDiv [HasUniqueDiv R] : HasUniqueDiv (MonoidAlgebra R M) :=
     coeffAddEquiv.injective
 
 end TorsionFree
+
+/-- A monoid algebra over a finite semiring is finite when the monoid is. -/
+@[to_additive
+/-- An additive monoid algebra over a finite semiring is finite when the additive monoid is. -/]
+instance instFinite {R M : Type*} [Semiring R] [Finite R] [Finite M] :
+    Finite (MonoidAlgebra R M) :=
+  .of_injective (fun x ↦ ⇑x.coeff) (DFunLike.coe_injective.comp coeff_injective)
 
 /-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
 noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=

@@ -388,8 +388,23 @@ theorem ofReal_norm_sq_eq_tsum (a : CircleSobolev s E) :
 /-- A coefficientwise bound of weighted norms gives the corresponding bound on the norms, possibly
 between different orders. -/
 theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C : ℝ}
-    (hC : 0 ≤ C) (h : ∀ n, weight t n * ‖b.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖)) :
+    (h : ∀ n, weight t n * ‖b.coeff n‖ ≤ C * (weight s n * ‖a.coeff n‖)) :
     ‖b‖ ≤ C * ‖a‖ := by
+  rcases lt_or_ge C 0 with hC | hC
+  · -- For `C < 0` both sides of `h` vanish, so `a = 0` and `b = 0`.
+    have hx (n : ℤ) : weight s n * ‖a.coeff n‖ = 0 := by
+      have := (mul_nonneg (weight_nonneg t n) (norm_nonneg (b.coeff n))).trans (h n)
+      nlinarith [mul_nonneg (weight_nonneg s n) (norm_nonneg (a.coeff n))]
+    have hy (n : ℤ) : weight t n * ‖b.coeff n‖ = 0 :=
+      le_antisymm (by simpa [hx n] using h n)
+        (mul_nonneg (weight_nonneg t n) (norm_nonneg _))
+    have hzero {r : ℝ} {c : ℤ → E} {w : ℤ → ℝ} (hc : ∀ n, w n * ‖c n‖ = 0)
+        (hs : HasSum (fun n ↦ (w n * ‖c n‖) ^ 2) (r ^ 2)) : r = 0 := by
+      have h0 : HasSum (fun n ↦ (w n * ‖c n‖) ^ 2) 0 := by simp [hc]
+      exact pow_eq_zero_iff two_ne_zero |>.1 (hs.unique h0)
+    rw [hzero (w := weight s) (c := a.coeff) hx (hasSum_sq_weight_mul_norm_coeff a),
+      hzero (w := weight t) (c := b.coeff) hy (hasSum_sq_weight_mul_norm_coeff b)]
+    simp
   have hle : ‖b‖ ^ 2 ≤ (C * ‖a‖) ^ 2 := by
     rw [mul_pow]
     refine hasSum_le (fun n ↦ ?_) (hasSum_sq_weight_mul_norm_coeff b)
@@ -510,6 +525,15 @@ theorem inner_eq_tsum (a b : CircleSobolev s F) :
     inner ℂ a b = ∑' n, (weight (2 * s) n : ℂ) * inner ℂ (a.coeff n) (b.coeff n) :=
   (hasSum_inner a b).tsum_eq.symm
 
+/-- The real Hilbert structure of `H^s`, the real part of its complex inner product. Operators
+with real-linear coefficients, such as the linearized Hamiltonian operators on loops, are
+symmetric only for this inner product. -/
+noncomputable instance instInnerProductSpaceReal : InnerProductSpace ℝ (CircleSobolev s F) :=
+  InnerProductSpace.complexToReal
+
+theorem real_inner_eq_re_inner (a b : CircleSobolev s F) : inner ℝ a b = (inner ℂ a b).re :=
+  (rfl)
+
 end Inner
 
 /-! ### Fourier monomials and density of trigonometric polynomials -/
@@ -596,7 +620,7 @@ def inclusion (h : t ≤ s) : CircleSobolev s E →L[ℂ] CircleSobolev t E :=
     { toFun a := ⟨a.coeff, memℓp_of_forall_le (weight_mul_norm_le_of_le h a)⟩
       map_add' _ _ := (rfl)
       map_smul' _ _ := (rfl) }
-    1 fun a ↦ norm_le_of_forall_le zero_le_one (weight_mul_norm_le_of_le h a)
+    1 fun a ↦ norm_le_of_forall_le (weight_mul_norm_le_of_le h a)
 
 @[simp]
 theorem coeff_inclusion (h : t ≤ s) (a : CircleSobolev s E) :
@@ -622,7 +646,7 @@ theorem inclusion_injective (h : t ≤ s) :
   fun _ _ hab ↦ CircleSobolev.ext (by simpa using congr_arg coeff hab)
 
 theorem norm_inclusion_le (h : t ≤ s) (a : CircleSobolev s E) : ‖inclusion h a‖ ≤ ‖a‖ := by
-  simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) zero_le_one
+  simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) (C := 1)
     (by simpa using weight_mul_norm_le_of_le h a)
 
 section Restrict
@@ -710,7 +734,7 @@ end RestrictEquiv
 `t < s` when `E` is finite-dimensional. -/
 theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     IsCompactOperator (inclusion (E := E) h.le) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have := FiniteDimensional.proper ℂ E
   -- The inclusion is the operator-norm limit of the truncations `F N` of the Fourier series to the
   -- frequencies `|n| ≤ N`, which factor through finitely many copies of `E`.
@@ -723,7 +747,7 @@ theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) hlim
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun a ↦ ?_
-    refine norm_le_of_forall_le (by positivity) fun m ↦ ?_
+    refine norm_le_of_forall_le fun m ↦ ?_
     have hw : 0 ≤ weight s m * ‖a.coeff m‖ := mul_nonneg (weight_nonneg s m) (norm_nonneg _)
     by_cases hm : m ∈ Finset.Icc (-(N : ℤ)) N
     · simp [hF, Finset.sum_apply, Pi.single_apply, hm,

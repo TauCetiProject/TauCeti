@@ -17,6 +17,9 @@ for each translate of the centre different from the centre itself, the correspon
 perpendicular bisector bounds the distance dominance region. Constraints coming from the
 stabilizer are automatically satisfied and are omitted from this intersection.
 
+Finitely many of these distance inequalities can be traded for finitely many closed half-planes
+(`UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane`).
+
 Consequently the domain contains the geodesic segment between any two of its points. Neither
 this convexity nor the half-plane description requires discreteness or a trivial stabilizer.
 They provide the geometric description of the Dirichlet domain needed to construct its sides.
@@ -77,6 +80,26 @@ theorem ordConnected_preimage_geodesicLine_dirichletDomain {k : PSL(2, ℝ)} {p 
       ordConnected_preimage_geodesicLine_closure_leftHalfPlane k _
 
 variable {G}
+
+/-- Finitely many distance inequalities `dist z p ≤ dist z (g • p)` define the same set as finitely
+many closed geodesic half-planes: the elements fixing the centre `p` impose no condition, and for
+the others the inequality is the closure of the half-plane left of the perpendicular bisector. -/
+theorem _root_.UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane
+    (p : ℍ) (s : Finset G) :
+    ∃ s' : Finset G, (∀ g ∈ s', p ≠ g • p) ∧
+      ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} =
+        ⋂ g ∈ s', closure (leftHalfPlane (perpBisector p (g • p))) := by
+  classical
+  refine ⟨s.filter (fun g ↦ p ≠ g • p), fun g hg ↦ (Finset.mem_filter.mp hg).2, ?_⟩
+  ext z
+  simp only [mem_iInter, Finset.mem_filter]
+  constructor
+  · intro hz g hg
+    exact (mem_closure_leftHalfPlane_perpBisector_iff hg.2 z).mpr (hz g hg.1)
+  · intro hz g hg
+    by_cases hgp : p = g • p
+    · simp [← hgp]
+    · exact (mem_closure_leftHalfPlane_perpBisector_iff hgp z).mp (hz g ⟨hg, hgp⟩)
 
 /-- A family of Dirichlet inequalities which agrees with the domain on an open neighbourhood
 of the whole domain defines it globally. Geodesic convexity prevents the intersection from

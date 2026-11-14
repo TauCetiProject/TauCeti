@@ -63,6 +63,56 @@ theorem mem_splitGluingPairs {p : WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × E
         p.1.fst = g p.1.snd ∧ p.2 = splitPassage ε p.1 ∧ p.2.snd = k p.2.fst :=
   Iff.rfl
 
+/-- If the entrance points over `Ioc 0 r₀` are parametrized by an exhaustive family `w` of the
+sphere of radius `ε`, then the entrance and exit pairs built from `w` over `Ioc 0 δ` are exactly the
+pairs of the split gluing. -/
+theorem image_pairs_eq_splitGluingPairs {δ : ℝ} {w : ℝ → Eᵤ}
+    (hδr : δ ≤ r₀) (hwnorm : ∀ r ∈ Ioc 0 r₀, ‖w r‖ = ε)
+    (himage : {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧ z.fst = g z.snd ∧
+        (splitPassage ε z).snd = k (splitPassage ε z).fst} =
+      (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀) :
+    (fun r ↦ (WithLp.toLp 2 (g (r • w r), r • w r),
+      WithLp.toLp 2 (r • g (r • w r), w r))) '' Ioc 0 δ = splitGluingPairs ε δ g k := by
+  let F : ℝ → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ) := fun r ↦
+    (WithLp.toLp 2 (g (r • w r), r • w r), WithLp.toLp 2 (r • g (r • w r), w r))
+  have hentry {r : ℝ} (hr : r ∈ Ioc 0 δ) :
+      (F r).1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
+        z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} := by
+    rw [himage]
+    exact ⟨r, ⟨hr.1, hr.2.trans hδr⟩, rfl⟩
+  have hpass {r : ℝ} (hr : r ∈ Ioc 0 δ) :
+      (F r).2 = splitPassage ε (F r).1 :=
+    (splitPassage_toLp_smul (g (r • w r)) (hwnorm r ⟨hr.1, hr.2.trans hδr⟩)
+      (pos_of_mem_splitPassage_source (hentry hr).1) hr.1).symm
+  ext p
+  rw [mem_splitGluingPairs]
+  constructor
+  · rintro ⟨r, hr, rfl⟩
+    have hrentry := hentry hr
+    refine ⟨hrentry.1, ?_, hrentry.2.2.1, hpass hr, ?_⟩
+    · simp only [WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
+        hwnorm r ⟨hr.1, hr.2.trans hδr⟩]
+      exact mul_le_mul_of_nonneg_right hr.2 (pos_of_mem_splitPassage_source hrentry.1).le
+    · rw [hpass hr]
+      exact hrentry.2.2.2
+  · rintro ⟨hsrc, hbound, hgraph, hexit, hkgraph⟩
+    have hε := pos_of_mem_splitPassage_source hsrc
+    have hentry' : p.1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
+        z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} :=
+      ⟨hsrc, hbound.trans (mul_le_mul_of_nonneg_right hδr hε.le), hgraph,
+        by rwa [← hexit]⟩
+    rw [himage] at hentry'
+    obtain ⟨r, hr, hre⟩ := hentry'
+    have hnormr : r * ε = ‖p.1.snd‖ := by
+      simpa only [WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
+        hwnorm r hr] using congrArg (fun z ↦ ‖z.snd‖) hre
+    have hrδ : r ∈ Ioc 0 δ := ⟨hr.1, (mul_le_mul_iff_left₀ hε).mp
+      (by simpa only [mul_comm ε] using hnormr.trans_le hbound)⟩
+    have hFe : (F r).1 = p.1 := by
+      simpa only [F] using hre
+    refine ⟨r, hrδ, Prod.ext hFe ?_⟩
+    rw [hpass hrδ, hFe, ← hexit]
+
 /-- Extend the paired gluing parametrization continuously to parameter zero. The norm
 coordinate recovers the parameter even at the broken pair. -/
 private theorem exists_splitGluingPairs_parametrization [CompleteSpace Eᵤ]
@@ -93,31 +143,13 @@ private theorem exists_splitGluingPairs_parametrization [CompleteSpace Eᵤ]
     ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).comp_continuousOn (ha.prodMk hv)).prodMk
       ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).comp_continuousOn
         ((continuousOn_id.smul ha).prodMk hw.continuousOn))
-  have hpass (r : ℝ) (hr : r ∈ Ioc 0 r₀) : (F r).2 = splitPassage ε (F r).1 :=
-     (splitPassage_toLp_smul (a r) (hwnorm r (Ioc_subset_Icc_self hr)) hε hr.1).symm
   have hnorm (r : ℝ) (hr : r ∈ Icc 0 r₀) : ‖(F r).1.snd‖ / ε = r := by
     simp only [F, WithLp.toLp_snd, v, norm_smul, Real.norm_of_nonneg hr.1, hwnorm r hr]
     exact mul_div_cancel_right₀ r hε.ne'
   refine ⟨F, hF, ?_, by simp [F, a, v, hw₀], hnorm⟩
   -- The existing surjectivity theorem for entrance points also captures every exit pair.
-  ext p
-  constructor
-  · rintro ⟨r, hr, rfl⟩
-    have hentry : (F r).1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
-        z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} := by
-      rw [himage]
-      exact ⟨r, hr, rfl⟩
-    exact ⟨hentry.1, hentry.2.1, hentry.2.2.1, hpass r hr,
-      by rw [hpass r hr]; exact hentry.2.2.2⟩
-  · rintro ⟨hsrc, hbound, hgraph, hexit, hkgraph⟩
-    have hentry : p.1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
-        z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} :=
-      ⟨hsrc, hbound, hgraph, by rwa [← hexit]⟩
-    rw [himage] at hentry
-    obtain ⟨r, hr, heq⟩ := hentry
-    refine ⟨r, hr, Prod.ext heq ?_⟩
-    rw [hpass r hr]
-    exact (congrArg (splitPassage ε) heq).trans hexit.symm
+  exact image_pairs_eq_splitGluingPairs le_rfl
+    (fun r hr ↦ hwnorm r (Ioc_subset_Icc_self hr)) himage
 
 variable [CompleteSpace Eᵤ]
   (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
@@ -143,7 +175,7 @@ theorem closure_splitGluingPairs :
     have h := ContinuousOn.image_closure (s := Ioc 0 r₀) (f := F)
       (by rwa [closure_Ioc hr₀.ne])
     simpa only [closure_Ioc hr₀.ne] using h
-  rw [← himage, hclosure, ← Ioc_insert_left hr₀.le, image_insert_eq, hF₀]
+  rw [← himage, hclosure, ← insert_left_Ioc hr₀.le, image_insert_eq, hF₀]
 
 /-- The local compactified gluing space is a closed interval. Its inverse gluing coordinate
 is the expanding entrance norm divided by the box radius, and parameter zero is the broken
@@ -157,7 +189,7 @@ theorem exists_homeomorph_closure_splitGluingPairs :
     exists_splitGluingPairs_parametrization hg hgε hk hkε hε hr₀₁ hK
   have hclosure : closure (splitGluingPairs ε r₀ g k) = F '' Icc 0 r₀ := by
     rw [closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK, ← himage,
-      ← hF₀, ← image_insert_eq, Ioc_insert_left hr₀.le]
+      ← hF₀, ← image_insert_eq, insert_left_Ioc hr₀.le]
   let f : Icc (0 : ℝ) r₀ → closure (splitGluingPairs ε r₀ g k) :=
     fun r ↦ ⟨F r, by rw [hclosure]; exact mem_image_of_mem F r.property⟩
   have hf : Continuous f := hF.domRestrict.codRestrict _
@@ -180,12 +212,26 @@ theorem exists_homeomorph_closure_splitGluingPairs :
         fun_prop }
   exact ⟨e, fun _ ↦ rfl, hF₀⟩
 
+omit hr₀ in
 /-- The closure of the paired local gluing space is compact, even when the stable and
 unstable ambient spaces are infinite dimensional. -/
 theorem isCompact_closure_splitGluingPairs :
     IsCompact (closure (splitGluingPairs ε r₀ g k)) := by
-  obtain ⟨e, -, -⟩ :=
-    exists_homeomorph_closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK
-  exact isCompact_iff_compactSpace.mpr e.compactSpace
+  rcases lt_or_ge 0 r₀ with hr₀ | hr₀
+  · obtain ⟨e, -, -⟩ :=
+      exists_homeomorph_closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK
+    exact isCompact_iff_compactSpace.mpr e.compactSpace
+  · -- If `r₀ ≤ 0` the entrance point has zero unstable coordinate, so there is at most one pair.
+    have hsub : splitGluingPairs ε r₀ g k ⊆
+        {(WithLp.toLp 2 (g 0, 0), splitPassage ε (WithLp.toLp 2 (g 0, 0)))} := by
+      intro p hp
+      obtain ⟨-, hb, hg', he, -⟩ := mem_splitGluingPairs.1 hp
+      have h0 : p.1.snd = 0 := by
+        simpa using hb.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
+      have h1 : p.1 = WithLp.toLp 2 (g 0, 0) :=
+        WithLp.ofLp_injective 2 (Prod.ext (hg'.trans (congrArg g h0)) h0)
+      exact Prod.ext h1 (he.trans (by rw [h1]))
+    exact isCompact_singleton.of_isClosed_subset isClosed_closure
+      (closure_minimal hsub isClosed_singleton)
 
 end TauCeti

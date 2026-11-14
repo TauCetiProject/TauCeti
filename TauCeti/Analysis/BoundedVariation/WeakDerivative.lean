@@ -118,9 +118,9 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
       (ae_of_all _ fun x => mem_closedBall_zero_iff.1 (inv_norm_smul_mem_unitClosedBall (g x)))
   have hrep (φ : 𝓓(Ω, E)) : ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, τ x⟫ ∂variationMeasure μ Ω u := by
-    rw [hvar, integral_withDensity_eq_integral_toReal_smul₀ hgm.enorm
-      (ae_of_all _ fun _ => enorm_lt_top)]
-    simp_rw [toReal_enorm, smul_eq_mul, ← real_inner_smul_right, hτ]
+    rw [hvar, integral_withDensity_eq_integral_toReal_smul₀ hgm.eNorm
+      (ae_of_all _ fun _ => eNorm_lt_top)]
+    simp_rw [toReal_eNorm, smul_eq_mul, ← real_inner_smul_right, hτ]
     have hsub : ∫ x : Ω, ⟪(φ : E → E) x, g x⟫ ∂ν = ∫ x in Ω, ⟪(φ : E → E) x, g x⟫ ∂μ :=
       integral_subtype_comap hΩ fun x => ⟪(φ : E → E) x, g x⟫
     rw [hsub, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
@@ -130,7 +130,7 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
   have hae := ae_eq_polarDensity h.locallyIntegrableOn
     (fun K hK hKΩ => h.exists_totalVariationOn_ne_top hK hKΩ) hτloc hrep
   rw [hvar] at hae
-  filter_upwards [(ae_withDensity_iff' hgm.enorm).1 hae] with x hx
+  filter_upwards [(ae_withDensity_iff' hgm.eNorm).1 hae] with x hx
   rcases eq_or_ne (g x) 0 with h0 | h0
   · simp [h0]
   · rw [← hx (by simpa using h0), hτ]
@@ -151,11 +151,11 @@ theorem setLIntegral_enorm_rnDeriv_smul_polarDensity_le [IsFiniteMeasureOnCompac
       ≤ ∫⁻ x in A, (variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x *
           ‖polarDensity μ Ω u x‖ₑ ∂μ.comap (↑) := by
         refine lintegral_mono fun x => ?_
-        rw [enorm_smul, Real.enorm_of_nonneg ENNReal.toReal_nonneg]
+        rw [eNorm_smul, Real.eNorm_of_nonneg ENNReal.toReal_nonneg]
         gcongr
         exact ENNReal.ofReal_toReal_le
     _ = ∫⁻ x in A, ‖polarDensity μ Ω u x‖ₑ ∂variationMeasure μ Ω u :=
-        setLIntegral_rnDeriv_mul hac measurable_polarDensity.enorm.aemeasurable hA
+        setLIntegral_rnDeriv_mul hac measurable_polarDensity.eNorm.aemeasurable hA
     _ ≤ ∫⁻ _ in A, 1 ∂variationMeasure μ Ω u := lintegral_mono_ae <| ae_restrict_of_ae <|
         (ae_norm_polarDensity_eq_one hu hfin).mono fun x hx => by simp [← ofReal_norm, hx]
     _ = variationMeasure μ Ω u A := by simp

@@ -26,11 +26,11 @@ coordinate functions. Specializing to two
 vertices gives a homeomorphism from the standard one-simplex to the unit interval. Its boundary,
 the bottom abstract complex on `Fin 2`, is then identified with the unit zero-sphere.
 
-These are the first realization round-trips in layer 11 of the geometric-topology roadmap. The
-roadmap asks that the realization of the boundary of the standard `n`-simplex be homeomorphic to
-`Sⁿ⁻¹`; `realizationOneSimplexBoundaryHomeomorphSphereZero` establishes the base case `n = 1`.
-The interval identification also supplies the standard topological model for the simplicial
-interval used in the later product-and-collapse formulation of Zeeman's conjecture.
+The realization of the boundary of the standard `(n + 1)`-simplex is homeomorphic to the unit
+`n`-sphere (`Simplex.BoundarySphere`); `realizationOneSimplexBoundaryHomeomorphSphereZero` is a
+direct proof of the case `n = 0`, with the sphere taken in `ℝ`. The interval identification also
+supplies the standard topological model for the simplicial interval used in the product-and-collapse
+formulation of Zeeman's conjecture (`Zeeman`).
 
 The barycentric simplex uses Mathlib's `Convexity.StdSimplex`, and its homeomorphism with the
 unit interval is Mathlib's `Convexity.StdSimplex.homeomorphI`. The zero-sphere identification is
@@ -154,6 +154,17 @@ theorem continuous_of_continuousOn_coordinates {X : Type*} [TopologicalSpace X]
 @[simp]
 theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
     ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
+
+/-- Extending the finite coordinate vector of a point of a closed coordinate simplex by zero
+recovers its barycentric coordinates. -/
+theorem extend_val_standardSimplex (x : StandardSimplex σ) :
+    Function.extend (Subtype.val : σ → α) (fun a => x.1 a) 0 = x.1 := by
+  ext a
+  by_cases ha : a ∈ σ
+  · exact Subtype.val_injective.extend_apply (fun b : σ => x.1 b) 0 ⟨a, ha⟩
+  · rw [Function.extend_apply' _ _ _ (by simpa using ha)]
+    exact (Finsupp.notMem_support_iff.mp
+      (fun h => ha (StandardSimplex.support_subset x h))).symm
 
 /-- The barycentric coordinates of a point of a closed coordinate simplex sum to one. -/
 theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
@@ -327,19 +338,20 @@ theorem realizationTopHomeomorphStdSimplex_symm_apply_val (x : Convexity.StdSimp
       (topFace (ι := ι)) _)
 
 omit [Fintype ι] [Nonempty ι] in
-/-- The coordinate vectors of the realization of the full complex on a finite type are the weight
-vectors of the standard simplex. -/
-theorem range_realization_coe_top [Finite ι] :
+/-- The coordinate vectors of the realization of the full complex are the weight vectors of the
+standard simplex. -/
+theorem range_realization_coe_top :
     range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
       range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights := by
-  have := Fintype.ofFinite ι
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · ext z
-    rw [mem_range_realization_coe_iff, Convexity.StdSimplex.range_toFun_comp_weights]
-    simp
-  · rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
-    exact congrArg range (funext fun x => funext fun i =>
-      (realizationTopHomeomorphStdSimplex_apply x i).symm)
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    obtain ⟨hnn, hsum, -⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.2
+    exact ⟨⟨x.1, fun i => hnn i, hsum⟩, rfl⟩
+  · rintro ⟨t, rfl⟩
+    refine ⟨⟨t.weights, TauCeti.mem_standardGeometricComplex_space_iff.mpr
+      ⟨fun i => t.nonneg i, t.total, ?_⟩⟩, rfl⟩
+    exact t.support_weights_nonempty
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/

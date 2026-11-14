@@ -173,7 +173,7 @@ theorem multivariateTMeasure_smul_eq_bind_gammaMeasure (μ : EuclideanSpace ℝ 
     multivariateTMeasure μ ((ρ / n) • S) n =
       (gammaMeasure (n / 2) (ρ / 2)).bind fun τ => multivariateGaussian μ (τ⁻¹ • S) := by
   have hgamma : gammaMeasure (n / 2) (ρ / 2) = (gammaMeasure (n / 2) (1 / 2)).map (ρ⁻¹ * ·) := by
-    rw [gammaMeasure_map_const_mul (by positivity) (by norm_num) (inv_pos.mpr hρ)]
+    rw [gammaMeasure_map_const_mul (inv_pos.mpr hρ)]
     congr 1
     field_simp
   rw [multivariateTMeasure_eq_bind μ hn (hS.smul (div_pos hρ hn).le),
@@ -227,7 +227,7 @@ theorem ae_mem_affineRange_multivariateTMeasure (m : EuclideanSpace ℝ ι) (S :
   · simp [multivariateTMeasure, h]
   have hA : MeasurableSet (AffineSubspace.mk' m (LinearMap.range (Matrix.toEuclideanLin S)) :
       Set (EuclideanSpace ℝ ι)) :=
-    (AffineSubspace.closed_of_finiteDimensional _).measurableSet
+    (AffineSubspace.isClosed_of_finiteDimensional _).measurableSet
   rw [multivariateTMeasure_of_posSemidef m h.1 h.2]
   refine (ae_map_iff (measurable_scaleMixture m ν).aemeasurable hA).mpr ?_
   have hZ := ae_mem_affineRange_multivariateGaussian h.2 (0 : EuclideanSpace ℝ ι)

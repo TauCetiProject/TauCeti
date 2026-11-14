@@ -162,7 +162,7 @@ theorem resolveCrossingSaddle_app_comp_resolutionCubeι (S : Finset (Fin n))
     ← D.resolveCrossingCubeIso_hom_app_comp_resolutionCubeι c false hD
       (hD.resolveCrossing _ c false) R (j := j) (j' := j - 1) (by simp) S,
     Iso.inv_hom_id_app_assoc,
-    D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j (a := c) (by simp) (by simp) _ hst hc
+    D.resolutionCube_map_homOfLE_comp_resolutionCubeι hD R j (a := c) (by simp) _ hst hc
       h,
     D.resolveCrossingCubeIso_hom_app_comp_resolutionCubeι_assoc c true hD
       (hD.resolveCrossing _ c true) R (j := j) (j' := j) (by simp) S]

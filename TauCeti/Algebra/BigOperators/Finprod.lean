@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Ring.NegOnePow
 
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 
 /-!
@@ -33,6 +34,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
+* `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
+  along an injection when the family is trivial outside its range.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
 * `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
   `g` over `t`.
@@ -60,6 +63,7 @@ left-regular element commutes with `finsum` even when the support is infinite.
   least, respectively at most, `1`.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
+* `Multiset.finsum_count_eq_card`: the multiplicities of a multiset add up to its cardinality.
 -/
 
 public section
@@ -106,6 +110,14 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
   rw [← finprod_mem_univ, ← range_inl_union_range_inr,
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
+
+/-- Reindex a product along an injection when every factor outside its range is `1`. -/
+@[to_additive /-- Reindex a sum along an injection when every term outside its range is `0`. -/]
+theorem finprod_comp_eq_of_injective {g : α → β} (hg : Function.Injective g) (F : β → M)
+    (hF : ∀ x ∉ Set.range g, F x = 1) : (∏ᶠ y, F (g y)) = ∏ᶠ x, F x := by
+  rw [← finprod_mem_range (f := F) hg, ← finprod_mem_univ (f := F)]
+  exact finprod_mem_inter_mulSupport_eq' _ _ _ fun x hx ↦
+    ⟨fun _ ↦ Set.mem_univ x, fun _ ↦ by_contra fun h ↦ hx (hF x h)⟩
 
 /-- Regroup a finitely supported product by the fibers of an arbitrary map. Neither the index
 sets nor the fibers need be finite. -/
@@ -284,8 +296,8 @@ theorem prod_le_finprod_of_one_le₀ (s : Finset ι) (hf : HasFiniteMulSupport f
     (hf₀ : ∀ i ∈ s, 0 ≤ f i) (hf₁ : ∀ i ∉ s, 1 ≤ f i) : ∏ i ∈ s, f i ≤ ∏ᶠ i, f i := by
   classical
   rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
-    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
-  exact Finset.prod_le_prod_of_subset_of_one_le₀ Finset.subset_union_left hf₀
+    fun i hi ↦ mem_union_right s (hf.mem_toFinset.mpr hi)]
+  exact prod_le_prod_of_subset_of_one_le₀ subset_union_left hf₀
     fun i _ hi ↦ hf₁ i hi
 
 omit [ZeroLEOneClass M₀] in
@@ -296,12 +308,12 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
     (hf₀ : ∀ i, 0 ≤ f i) (hf₁ : ∀ i ∉ s, f i ≤ 1) : ∏ᶠ i, f i ≤ ∏ i ∈ s, f i := by
   classical
   rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
-    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
+    fun i hi ↦ mem_union_right s (hf.mem_toFinset.mpr hi)]
   by_cases hsub : hf.toFinset ⊆ s
-  · rw [Finset.union_eq_left.mpr hsub]
-  · obtain ⟨i, -, his⟩ := Finset.not_subset.mp hsub
+  · rw [union_eq_left.mpr hsub]
+  · obtain ⟨i, -, his⟩ := not_subset.mp hsub
     have : ZeroLEOneClass M₀ := ⟨(hf₀ i).trans (hf₁ i his)⟩
-    exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
+    exact prod_le_prod_of_subset_of_le_one₀ subset_union_left (fun i _ ↦ hf₀ i)
       fun i _ hi ↦ hf₁ i hi
 
 end OrderedWithZero
@@ -314,3 +326,14 @@ has no zero divisors. -/
 theorem IsLeftRegular.mul_finsum {ι R : Type*} [NonUnitalNonAssocSemiring R] {r : R}
     (hr : IsLeftRegular r) (f : ι → R) : r * ∑ᶠ i, f i = ∑ᶠ i, r * f i :=
   (AddMonoidHom.mulLeft r).map_finsum_of_injective hr f
+
+/-- The multiplicities of the elements of a multiset, summed with `finsum` over the whole type,
+add up to its cardinality. This is the `finsum` form of `Multiset.toFinset_sum_count_eq`. -/
+@[simp]
+theorem Multiset.finsum_count_eq_card {α R : Type*} [DecidableEq α] [AddCommMonoidWithOne R]
+    (s : Multiset α) : ∑ᶠ a, (s.count a : R) = Multiset.card s := by
+  rw [finsum_eq_sum_of_support_subset _ (s := s.toFinset) fun a ha ↦ ?_, ← Nat.cast_sum,
+    Multiset.toFinset_sum_count_eq]
+  rw [Function.mem_support] at ha
+  exact Finset.mem_coe.2 <| Multiset.mem_toFinset.2 <|
+    Multiset.count_ne_zero.1 fun h ↦ ha (by simp [h])

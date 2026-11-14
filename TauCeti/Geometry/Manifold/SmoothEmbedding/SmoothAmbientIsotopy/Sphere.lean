@@ -77,16 +77,18 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-- **Matching two circles in a sphere to first order.** In the unit sphere `Sⁿ` of a real inner
 product space, `n ≥ 2`, a `C^k` embedding `K` of the circle, `k ≠ 0`, is smoothly ambient isotopic
-to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`,
-differentiable with injective derivative at `z₀`: `K' z₀ = L z₀`, and `K'` and `L` have the same
+to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`
+with injective derivative at `z₀` (so `L` is differentiable at `z₀`, the derivative of a
+non-differentiable map being the junk value `0`): `K' z₀ = L z₀`, and `K'` and `L` have the same
 derivative at `z₀`. -/
 theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     (K : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1))
-    {L : Circle → sphere (0 : E) 1} {z₀ : Circle} (hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀)
+    {L : Circle → sphere (0 : E) 1} {z₀ : Circle}
     (hL : Injective (mfderiv (𝓡 1) (𝓡 n) L z₀)) :
     ∃ K' : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1),
       K.SmoothAmbientIsotopic K' ∧ K' z₀ = L z₀ ∧
         mfderiv (𝓡 1) (𝓡 n) K' z₀ = mfderiv (𝓡 1) (𝓡 n) L z₀ := by
+  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀ := mdifferentiableAt_of_mfderiv_injective hL
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z₀
   -- The points `x`, `y` and velocities `v`, `w` of `K` and `L` over `exp (t i)`, read in `E`.
   set γ : ℝ → E := fun s => (K (Circle.exp s) : E)
@@ -129,24 +131,15 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     refine (mdifferentiableAt_iff_differentiableAt.1 ?_).hasDerivAt
     exact ((contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero).comp t
       (hKd.comp t ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero))
-  have hey : e x = - -y := by rw [hex, neg_neg]
   have hB := ((differentiableAt_sphereBoost (cosh_add_sinh_mul_inner_pos hy
     (by simp [γ]) a).ne').hasFDerivAt.comp_hasDerivAt t
       (e.toContinuousLinearEquiv.hasFDerivAt.comp_hasDerivAt t hγ)).congr_of_eventuallyEq
         (Filter.Eventually.of_forall hK')
   rw [hB.deriv]
-  have hperp : ⟪e v, -y⟫ = 0 := by
-    rw [inner_neg_right, ← hex, LinearIsometryEquiv.inner_map_map, real_inner_comm, hxv,
-      neg_zero]
-  have hev' : e v = ‖v‖ • ‖w‖⁻¹ • w := by
-    rw [← hev, ← LinearIsometryEquiv.map_smul, smul_inv_smul₀ (norm_ne_zero_iff.2 hv)]
   -- `hB` reads `e` through the continuous linear map it induces and the point as `(e ∘ γ) t`;
   -- these are `e v` and `e x` by definition.
   change fderiv ℝ (sphereBoost (-y) a) (e x) (e v) = w
-  rw [hey, fderiv_sphereBoost_neg_self_apply hy a hperp, hev', exp_log (by positivity),
-    smul_smul, smul_smul]
-  rw [show ‖w‖ / ‖v‖ * ‖v‖ * ‖w‖⁻¹ = 1 by
-    field_simp [norm_ne_zero_iff.2 hv, norm_ne_zero_iff.2 hw], one_smul]
+  exact e.toLinearIsometry.fderiv_sphereBoost_log_apply_eq hy hex hxv hev
 
 /-- **Isometries of the same determinant give ambient isotopic embeddings.** Moving a `C^k`
 embedding into the unit sphere `Sⁿ` by two linear isometries of `E` with the same determinant gives

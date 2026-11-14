@@ -79,11 +79,11 @@ theorem cartier_one (q r : ℕ) (hq : q ≠ 0) :
 
 /-- On a monomial, a Cartier operator keeps precisely its residue class. -/
 @[simp]
-theorem cartier_monomial (q r m : ℕ) (hq : q ≠ 0) (hr : r < q) (a : R) :
+theorem cartier_monomial (q r m : ℕ) (hr : r < q) (a : R) :
     cartier R q r (monomial m a) =
       if m % q = r then monomial (m / q) a else 0 := by
   ext n
-  have hq' := Nat.pos_of_ne_zero hq
+  have hq' : 0 < q := Nat.lt_of_le_of_lt (Nat.zero_le r) hr
   have hn : q * n + r = m ↔ m % q = r ∧ n = m / q := by
     constructor
     · rintro rfl
@@ -104,7 +104,7 @@ theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynom
     ?_⟩
   ext n
   simp only [coeff_cartier, Polynomial.coeff_coe, Polynomial.finsetSum_coeff,
-    Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range]
+    Polynomial.coeff_monomial_apply, Finset.sum_ite_eq', Finset.mem_range]
   split_ifs with hn
   · rfl
   · refine Polynomial.coeff_eq_zero_of_natDegree_lt ?_
@@ -132,9 +132,8 @@ theorem cartier_expand_mul (q r : ℕ) (hq : q ≠ 0) (hr : r < q)
   · intro ij hij _
     rw [Finset.mem_antidiagonal] at hij ⊢
     nlinarith [hij]
-  · intro ij hij _ kl hkl _ heq
+  · intro ij _ _ kl _ _ heq
     obtain ⟨h₁, h₂⟩ := Prod.mk.inj heq
-    have hq' := Nat.pos_of_ne_zero hq
     apply Prod.ext <;> nlinarith
   · intro ij hij hne
     have hi : q ∣ ij.1 := by
@@ -142,7 +141,6 @@ theorem cartier_expand_mul (q r : ℕ) (hq : q ≠ 0) (hr : r < q)
       simp [coeff_expand_of_not_dvd q hq F hi] at hne
     obtain ⟨i, hi⟩ := hi
     have heq := Finset.mem_antidiagonal.mp hij
-    have hq' := Nat.pos_of_ne_zero hq
     have hin : i ≤ n := by nlinarith
     have hj : ij.2 = q * (n - i) + r := by
       have := Nat.sub_add_cancel hin
@@ -150,7 +148,7 @@ theorem cartier_expand_mul (q r : ℕ) (hq : q ≠ 0) (hr : r < q)
     refine ⟨(i, n - i), Finset.mem_antidiagonal.mpr (Nat.add_sub_of_le hin), ?_, ?_⟩
     · simpa [hi, hj, coeff_cartier] using hne
     · exact Prod.ext hi.symm hj.symm
-  · intro ij hij _
+  · intro ij _ _
     simp [coeff_cartier]
 
 /-- Every series is the sum of its expanded Cartier components, one for each residue. -/

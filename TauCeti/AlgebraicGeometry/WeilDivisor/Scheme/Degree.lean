@@ -57,7 +57,7 @@ lemma relativeDegree_comp (f : X ⟶ Y) (g : Y ⟶ Z) (D : SchemeWeilDivisor X) 
       WeilDivisor.weightedDegree
         (fun x : CodimensionOnePoint X ↦
           (g.residueDegree (f x) : ℤ) * f.residueDegree x) D := by
-  simp only [relativeDegree, residueDegree_comp, Nat.cast_mul]
+  simp only [relativeDegree, Scheme.Hom.residueDegree_comp, Nat.cast_mul]
 
 /-- An effective divisor has nonnegative relative degree: residue degrees are nonnegative. -/
 lemma relativeDegree_nonneg (f : X ⟶ Y) {D : SchemeWeilDivisor X}

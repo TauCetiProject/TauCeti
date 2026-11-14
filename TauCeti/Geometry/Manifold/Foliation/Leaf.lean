@@ -239,7 +239,7 @@ theorem sameLeaf_ofSubmodule_iff : (ofSubmodule S hn).SameLeaf x y ↔ y - x ∈
   constructor
   · -- A curve with velocity in `S` has constant image in the quotient `E ⧸ S`, which is a normed
     -- space because the finite-dimensional subspace `S` is closed.
-    have : IsClosed (S : Set E) := S.closed_of_finiteDimensional
+    have : IsClosed (S : Set E) := S.isClosed_of_finiteDimensional
     set q : E →L[ℝ] E ⧸ S := S.mkQL
     have hq : ∀ v, q v = 0 ↔ v ∈ S := fun _ ↦ Submodule.Quotient.mk_eq_zero S
     have hr : Equivalence fun x y : E ↦ y - x ∈ S :=
