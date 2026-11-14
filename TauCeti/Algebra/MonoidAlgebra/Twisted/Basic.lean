@@ -378,6 +378,10 @@ theorem finrank_eq_natCard [StrongRankCondition k] :
 
 variable {k G α}
 
+/-- Cancellation of addition transfers from the coefficients to a twisted monoid algebra. -/
+instance [IsCancelAdd k] : IsCancelAdd (twistedMonoidAlgebra k G α) :=
+  (basis k G α).repr.injective.isCancelAdd _ (map_add _)
+
 /-- The coefficients of a product are the twisted convolution of the two coefficient families. -/
 theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
     (basis k G α).repr (f * g) =
