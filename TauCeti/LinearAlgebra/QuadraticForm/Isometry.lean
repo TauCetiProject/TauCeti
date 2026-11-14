@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -30,7 +31,9 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.trans_apply`: composition of isometries acts by composition.
-* `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
+* `QuadraticMap.IsometryEquiv.nondegenerate_iff`,
+  `QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff`: nondegeneracy of a quadratic map and of
+  its polar bilinear form are invariant under isometry.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
@@ -188,6 +191,27 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     apply Cardinal.lift_le_one_iff.mp
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
+
+/-- Nondegeneracy of the polar bilinear form is invariant under an isometric equivalence. -/
+theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    (e : Q₁.IsometryEquiv Q₂) :
+    Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate := by
+  have hrefl₁ : Q₁.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₁ y x).trans
+  have hrefl₂ : Q₂.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₂ y x).trans
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₁,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₂]
+  refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ ?_⟩
+  · have h0 := h (e.symm y) fun x ↦ by
+      rw [polarBilin_apply_apply, ← e.polar_apply, e.apply_symm_apply]
+      simpa [polarBilin_apply_apply] using hy (e x)
+    simpa using congrArg e h0
+  · have h0 := h (e x) fun y ↦ by
+      rw [polarBilin_apply_apply, ← e.symm.polar_apply, e.symm_apply_apply]
+      simpa [polarBilin_apply_apply] using hx (e.symm y)
+    simpa using congrArg e.symm h0
 
 section Neg
 

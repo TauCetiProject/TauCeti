@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Totally isotropic submodules
@@ -32,6 +35,12 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
 * `QuadraticMap.IsTotallyIsotropic.finrank_eq_of_codisjoint`: two totally isotropic subspaces
   spanning a nondegenerate quadratic space have the same `finrank` (the dimension when finite,
   and `0` for both otherwise).
+* `QuadraticMap.IsTotallyIsotropic.le_orthogonal_polarBilin`,
+  `QuadraticMap.IsTotallyIsotropic.two_mul_finrank_le_finrank`,
+  `QuadraticMap.IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff`: a totally isotropic subspace
+  lies in its polar orthogonal complement, has at most half the ambient dimension when
+  `Q.polarBilin` is nondegenerate, and equals its polar orthogonal complement precisely at half
+  the ambient dimension.
 
 The Witt-index comparison for maximal totally isotropic subspaces (Lam I.4.4) is in
 `TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic`.
@@ -161,6 +170,12 @@ theorem IsTotallyIsotropic.polarBilin_compl₁₂_flip_injective (hW' : Q.IsTota
   refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.2 fun x hx => ?_
   simpa using LinearMap.congr_fun hy ⟨x, hx⟩
 
+/-- A submodule on which `Q` vanishes is polar-orthogonal to itself. -/
+theorem IsTotallyIsotropic.le_orthogonal_polarBilin {Q : QuadraticForm R M}
+    (hW : Q.IsTotallyIsotropic W) :
+    W ≤ LinearMap.BilinForm.orthogonal Q.polarBilin W :=
+  fun _ hx _ hy ↦ hW.polar_eq_zero hy hx
+
 end Ring
 
 section Field
@@ -197,6 +212,28 @@ theorem IsTotallyIsotropic.finrank_eq_of_codisjoint (hW : Q.IsTotallyIsotropic W
   · by_cases hfW' : FiniteDimensional K W'
     · exact absurd (hW.finiteDimensional_of_codisjoint hQ hWW'.symm) hfW
     · rw [Module.finrank_of_not_finite hfW, Module.finrank_of_not_finite hfW']
+
+/-- In a finite-dimensional quadratic space with nondegenerate polar form, a `Q`-totally-isotropic
+subspace has at most half the ambient dimension. -/
+theorem IsTotallyIsotropic.two_mul_finrank_le_finrank [FiniteDimensional K V]
+    (hW : Q.IsTotallyIsotropic W) (hQ : Q.polarBilin.Nondegenerate) :
+    2 * Module.finrank K W ≤ Module.finrank K V :=
+  LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal hQ hW.le_orthogonal_polarBilin
+
+/-- In a finite-dimensional quadratic space with nondegenerate polar form, a `Q`-totally-isotropic
+subspace equals its own polar orthogonal complement if and only if its dimension is half the
+ambient dimension. -/
+theorem IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff [FiniteDimensional K V]
+    (hW : Q.IsTotallyIsotropic W) (hQ : Q.polarBilin.Nondegenerate) :
+    LinearMap.BilinForm.orthogonal Q.polarBilin W = W ↔
+      2 * Module.finrank K W = Module.finrank K V := by
+  have hrefl : Q.polarBilin.IsRefl := fun x y ↦ (polar_comm Q y x).trans
+  have hdim := LinearMap.BilinForm.finrank_add_finrank_orthogonal hrefl W
+  rw [LinearMap.BilinForm.orthogonal_top_eq_bot hQ, inf_bot_eq, finrank_bot, add_zero] at hdim
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h] at hdim
+    omega
+  · exact (Submodule.eq_of_le_of_finrank_eq hW.le_orthogonal_polarBilin (by omega)).symm
 
 end Field
 

@@ -100,6 +100,11 @@ regular case.
   `QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`: in any splitting
   `Q ≅ 0 ⊥ Q'` with `Q'` of trivial radical, `Q'` is the regular part and the zero summand lives
   on a copy of the radical.
+* `QuadraticMap.ker_polarBilin_le_radical_iff`, `QuadraticMap.radical_eq_ker_polarBilin_iff`,
+  `QuadraticMap.nondegenerate_polarBilin_lift_ker_polarBilin`,
+  `QuadraticMap.nondegenerate_lift_ker_polarBilin`,
+  `QuadraticMap.nondegenerate_of_nondegenerate_polarBilin`: characteristic-free descent of `Q` to
+  `M ⧸ Q.polarBilin.ker` with nondegenerate polar form when `Q` vanishes on `Q.polarBilin.ker`.
 -/
 
 public section
@@ -259,6 +264,64 @@ possibly degenerate form. -/
 theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticMap R M P) :
     (Q.lift Q.radical le_rfl).Nondegenerate := by
   rw [nondegenerate_iff_radical_eq_bot, radical_lift_radical]
+
+/-- The polar kernel of `Q` lies in `Q.radical` if and only if `Q` vanishes on
+`Q.polarBilin.ker`. -/
+theorem ker_polarBilin_le_radical_iff {Q : QuadraticMap R M P} :
+    Q.polarBilin.ker ≤ Q.radical ↔ Q.IsTotallyIsotropic Q.polarBilin.ker := by
+  rw [isTotallyIsotropic_iff]
+  exact ⟨fun h _ hx ↦ (h hx).1, fun h _ hx ↦ ⟨h _ hx, hx⟩⟩
+
+/-- The radical of `Q` equals `Q.polarBilin.ker` if and only if `Q` vanishes on
+`Q.polarBilin.ker`. -/
+theorem radical_eq_ker_polarBilin_iff {Q : QuadraticMap R M P} :
+    Q.radical = Q.polarBilin.ker ↔ Q.IsTotallyIsotropic Q.polarBilin.ker :=
+  ⟨fun h ↦ ker_polarBilin_le_radical_iff.mp h.symm.le,
+    fun h ↦ le_antisymm Q.radical_le_ker_polarBilin (ker_polarBilin_le_radical_iff.mpr h)⟩
+
+/-- Polarization of `Q.lift N hN` on quotient classes agrees with polarization of `Q`. -/
+@[simp]
+theorem polar_lift_mk (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical)
+    (x y : M) :
+    polar (Q.lift N hN) (Submodule.Quotient.mk x) (Submodule.Quotient.mk y) = polar Q x y := by
+  rw [polar, ← Submodule.Quotient.mk_add, lift_mk, lift_mk, lift_mk, polar]
+
+/-- When `Q.polarBilin.ker ≤ Q.radical`, the quadratic map descended to `M ⧸ Q.polarBilin.ker` has
+trivial polar kernel. -/
+@[simp]
+theorem ker_polarBilin_lift_ker_polarBilin (Q : QuadraticMap R M P)
+    (h : Q.polarBilin.ker ≤ Q.radical) :
+    (Q.lift Q.polarBilin.ker h).polarBilin.ker = ⊥ := by
+  rw [Submodule.eq_bot_iff]
+  intro x hx
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    rw [Submodule.Quotient.mk_eq_zero, LinearMap.mem_ker]
+    ext y
+    simpa [polarBilin_apply_apply] using
+      LinearMap.congr_fun (LinearMap.mem_ker.mp hx) (Submodule.Quotient.mk y)
+
+/-- When `Q` vanishes on `Q.polarBilin.ker`, the quadratic form descended to `M ⧸ Q.polarBilin.ker`
+has nondegenerate polar bilinear form. -/
+theorem nondegenerate_polarBilin_lift_ker_polarBilin {Q : QuadraticForm R M}
+    (h : Q.polarBilin.ker ≤ Q.radical) :
+    (Q.lift Q.polarBilin.ker h).polarBilin.Nondegenerate := by
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
+    (Q.lift Q.polarBilin.ker h).isSymm_polarBilin.isRefl,
+    LinearMap.separatingLeft_iff_ker_eq_bot, ker_polarBilin_lift_ker_polarBilin]
+
+/-- When `Q.polarBilin.ker ≤ Q.radical`, the quadratic map descended to `M ⧸ Q.polarBilin.ker` is
+nondegenerate. -/
+theorem nondegenerate_lift_ker_polarBilin {Q : QuadraticMap R M P}
+    (h : Q.polarBilin.ker ≤ Q.radical) :
+    (Q.lift Q.polarBilin.ker h).Nondegenerate :=
+  nondegenerate_of_ker_polarBilin_eq_bot (ker_polarBilin_lift_ker_polarBilin Q h)
+
+/-- A quadratic form whose polar bilinear form is nondegenerate is itself nondegenerate. The
+converse fails in characteristic two on odd-dimensional spaces. -/
+theorem nondegenerate_of_nondegenerate_polarBilin {Q : QuadraticForm R M}
+    (hQ : Q.polarBilin.Nondegenerate) : Q.Nondegenerate :=
+  nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.separatingLeft_iff_ker_eq_bot.mp hQ.1)
 
 /-- **An isometry out of a quadratic map with trivial radical is injective.** Its kernel lies in the
 radical: an element `x` killed by `f` has `Q₁ x = Q₂ 0 = 0` and `Q₁ (x + n) = Q₂ (f n) = Q₁ n`. -/
