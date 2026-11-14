@@ -338,6 +338,55 @@ end Convex
 open Bornology Metric Topology
 open scoped Pointwise
 
+section TopologicalModule
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  {C : Set E} {c : E}
+
+/-- For a point `c` of the intrinsic interior of `C`, the displacements `v` in the direction of
+the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
+theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C) :
+    {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} ∈ 𝓝 0 := by
+  obtain ⟨y, hy, rfl⟩ := hc
+  -- Translating the direction by `y` is a continuous map into the affine span sending `0` to `y`.
+  let φ : (affineSpan ℝ C).direction → affineSpan ℝ C :=
+    fun v ↦ ⟨(v : E) + y, by simpa using AffineSubspace.vadd_mem_of_mem_direction v.2 y.2⟩
+  have hφ : Continuous φ := (by fun_prop : Continuous fun v : (affineSpan ℝ C).direction ↦
+    (v : E) + y).subtype_mk _
+  have hφ0 : φ 0 = y := Subtype.ext (zero_add _)
+  refine Filter.mem_of_superset
+    (hφ.continuousAt.preimage_mem_nhds (hφ0 ▸ isOpen_interior.mem_nhds hy)) fun v hv ↦ ?_
+  simpa [φ, add_comm] using interior_subset hv
+
+variable [ContinuousSMul ℝ E]
+
+/-- From a point `c` of the intrinsic interior of `C`, every sufficiently small move `ε • v` along
+a direction `v` of the affine span of `C` stays in `C`. -/
+theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
+    {v : E} (hv : v ∈ (affineSpan ℝ C).direction) : ∀ᶠ ε in 𝓝 (0 : ℝ), c + ε • v ∈ C := by
+  have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
+  simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
+    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
+
+/-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
+point `c` of `C` vanishes on all of `C`. -/
+theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg : ∀ y ∈ C, 0 ≤ g y)
+    (hc : c ∈ intrinsicInterior ℝ C) (hgc : g c = 0) {y : E} (hy : y ∈ C) : g y = 0 := by
+  -- Push `c` slightly away from `y` inside `C`; there `g` takes the value `-ε * g y`.
+  have hv : c - y ∈ (affineSpan ℝ C).direction := by
+    rw [direction_affineSpan]
+    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hc) hy
+  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono
+    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  have hgε : g (c + ε • (c - y)) = g c + ε * (g c - g y) := by
+    rw [add_comm c, ← vadd_eq_add, AffineMap.map_vadd, map_smul, ← vsub_eq_sub,
+      AffineMap.linear_apply_vsub, vadd_eq_add, smul_eq_mul, vsub_eq_sub, add_comm]
+  have h := hg _ hε
+  rw [hgε, hgc] at h
+  nlinarith [hg y hy, mem_Ioi.1 hεpos]
+
+end TopologicalModule
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C : Set E} {c : E}
 
 /-! ### A closed bounded convex set as a ball around an intrinsic interior point -/
@@ -413,21 +462,6 @@ lemma add_mem_intrinsicFrontier_iff (v : (affineSpan ℝ C).direction) :
     exact this ▸ hw
   · exact fun hv ↦ ⟨v, hv, rfl⟩
 
-/-- For a point `c` of the intrinsic interior of `C`, the displacements `v` in the direction of
-the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
-theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C) :
-    {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} ∈ 𝓝 0 := by
-  obtain ⟨y, hy, rfl⟩ := hc
-  -- Translating the direction by `y` is a continuous map into the affine span sending `0` to `y`.
-  let φ : (affineSpan ℝ C).direction → affineSpan ℝ C :=
-    fun v ↦ ⟨(v : E) + y, by simpa using AffineSubspace.vadd_mem_of_mem_direction v.2 y.2⟩
-  have hφ : Continuous φ := (by fun_prop : Continuous fun v : (affineSpan ℝ C).direction ↦
-    (v : E) + y).subtype_mk _
-  have hφ0 : φ 0 = y := Subtype.ext (zero_add _)
-  refine Filter.mem_of_superset
-    (hφ.continuousAt.preimage_mem_nhds (hφ0 ▸ isOpen_interior.mem_nhds hy)) fun v hv ↦ ?_
-  simpa [φ, add_comm] using interior_subset hv
-
 /-- The gauge of the translated set in its affine direction is positive exactly away from
 zero, for a bounded set with an intrinsic interior center. -/
 lemma gauge_setOf_add_mem_pos_iff (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
@@ -435,31 +469,6 @@ lemma gauge_setOf_add_mem_pos_iff (hb : IsBounded C) (hc : c ∈ intrinsicInteri
     0 < gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v ↔ v ≠ 0 :=
   gauge_pos (absorbent_nhds_zero (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc))
     (isVonNBounded_setOf_add_mem hb)
-
-/-- From a point `c` of the intrinsic interior of `C`, every sufficiently small move `ε • v` along
-a direction `v` of the affine span of `C` stays in `C`. -/
-theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
-    {v : E} (hv : v ∈ (affineSpan ℝ C).direction) : ∀ᶠ ε in 𝓝 (0 : ℝ), c + ε • v ∈ C := by
-  have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
-  simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
-    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
-
-/-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
-point `c` of `C` vanishes on all of `C`. -/
-theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg : ∀ y ∈ C, 0 ≤ g y)
-    (hc : c ∈ intrinsicInterior ℝ C) (hgc : g c = 0) {y : E} (hy : y ∈ C) : g y = 0 := by
-  -- Push `c` slightly away from `y` inside `C`; there `g` takes the value `-ε * g y`.
-  have hv : c - y ∈ (affineSpan ℝ C).direction := by
-    rw [direction_affineSpan]
-    exact vsub_mem_vectorSpan ℝ (intrinsicInterior_subset hc) hy
-  obtain ⟨ε, hε, hεpos⟩ := (((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono
-    nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi 0))).exists
-  have hgε : g (c + ε • (c - y)) = g c + ε * (g c - g y) := by
-    rw [add_comm c, ← vadd_eq_add, AffineMap.map_vadd, map_smul, ← vsub_eq_sub,
-      AffineMap.linear_apply_vsub, vadd_eq_add, smul_eq_mul, vsub_eq_sub, add_comm]
-  have h := hg _ hε
-  rw [hgε, hgc] at h
-  nlinarith [hg y hy, mem_Ioi.1 hεpos]
 
 /-- If `a ≤ b` on `s` for two affine functions, with equality at an intrinsic interior point of
 the convex hull of `s`, then `a = b` on the whole convex hull. -/
