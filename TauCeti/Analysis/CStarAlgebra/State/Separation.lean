@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Analysis.CStarAlgebra.State.Extension
 import TauCeti.Analysis.CStarAlgebra.State.Unitization
-import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
+import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # Separation of points, norms, and positivity by states
@@ -141,7 +141,7 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm [Nontrivial A] (a : A) [IsStarN
     ∃ φ ∈ stateSpace A, ‖φ a‖ = ‖a‖ := by
   rcases eq_or_ne a 0 with rfl | ha
   · obtain ⟨φ, hφ⟩ := stateSpace_nonempty_iff.2 ‹Nontrivial A›
-    exact ⟨φ, hφ, by rw [← toStrongDual_apply]; simp⟩
+    exact ⟨φ, hφ, by simp⟩
   · exact exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero ha
 
 /-- On a nontrivial C⋆-algebra, every nonnegative element `a` (including `0`) has a state taking
@@ -150,7 +150,7 @@ theorem exists_mem_stateSpace_apply_eq_norm_of_nonneg [Nontrivial A] {a : A} (ha
     ∃ φ ∈ stateSpace A, φ a = ‖a‖ := by
   rcases eq_or_ne a 0 with rfl | ha0
   · obtain ⟨φ, hφ⟩ := stateSpace_nonempty_iff.2 ‹Nontrivial A›
-    exact ⟨φ, hφ, by rw [← toStrongDual_apply]; simp⟩
+    exact ⟨φ, hφ, by simp⟩
   · exact exists_mem_stateSpace_apply_eq_norm_of_nonneg_of_ne_zero ha ha0
 
 /-- On a nontrivial C⋆-algebra, every element `a` has a state taking the value `‖a‖ ^ 2` at
@@ -159,7 +159,7 @@ theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq [Nontrivial A] (a :
     ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 := by
   rcases eq_or_ne a 0 with rfl | ha
   · obtain ⟨φ, hφ⟩ := stateSpace_nonempty_iff.2 ‹Nontrivial A›
-    exact ⟨φ, hφ, by rw [← toStrongDual_apply]; simp⟩
+    exact ⟨φ, hφ, by simp⟩
   · exact exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero ha
 
 /-- **Norm recovery from states.** For every normal element `a` of a C⋆-algebra `A` (possibly
@@ -167,7 +167,7 @@ nonunital or trivial), `‖a‖` is the supremum of `‖φ a‖` over all states
 theorem norm_eq_iSup_norm_apply_stateSpace (a : A) [IsStarNormal a] :
     ‖a‖ = ⨆ φ : stateSpace A, ‖φ.1 a‖ := by
   rcases eq_or_ne a 0 with rfl | ha
-  · simp [← toStrongDual_apply, Real.iSup_const_zero]
+  · simp [Real.iSup_const_zero]
   · have hbdd : BddAbove (range fun φ : stateSpace A => ‖φ.1 a‖) :=
       ⟨‖a‖, by rintro _ ⟨φ, rfl⟩; exact norm_apply_le_of_mem_stateSpace φ.2 a⟩
     obtain ⟨φ, hφ, hφa⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero ha
@@ -186,51 +186,29 @@ theorem eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero {a : A}
 /-- **State separation of zero.** If `φ a = 0` for every state `φ` of `A`, then `a = 0`. -/
 theorem eq_zero_of_forall_mem_stateSpace_apply_eq_zero {a : A}
     (h : ∀ φ ∈ stateSpace A, φ a = 0) : a = 0 := by
-  -- Decompose `a = realPart a + I • imaginaryPart a`; since states take real values on both parts,
-  -- vanishing of `φ a` forces both `φ (realPart a) = 0` and `φ (imaginaryPart a) = 0`.
-  have hpart (φ : WeakDual ℂ A) (hφ : φ ∈ stateSpace A) :
-      φ (realPart a : A) = 0 ∧ φ (imaginaryPart a : A) = 0 := by
-    have hr : (φ (realPart a : A)).im = 0 :=
-      Complex.conj_eq_iff_im.1 (isSelfAdjoint_apply_of_mem_stateSpace hφ (realPart a).2)
-    have hi : (φ (imaginaryPart a : A)).im = 0 :=
-      Complex.conj_eq_iff_im.1 (isSelfAdjoint_apply_of_mem_stateSpace hφ (imaginaryPart a).2)
-    have hsum : φ (realPart a : A) + Complex.I * φ (imaginaryPart a : A) = 0 := by
-      have happ := h φ hφ
-      rw [← realPart_add_I_smul_imaginaryPart a, ← toStrongDual_apply, map_add, map_smul,
-        smul_eq_mul, toStrongDual_apply, toStrongDual_apply] at happ
-      exact happ
-    have hre0 : (φ (realPart a : A)).re = 0 := by
-      simpa [Complex.add_re, Complex.mul_re, hi] using congr_arg Complex.re hsum
-    have him0 : (φ (imaginaryPart a : A)).re = 0 := by
-      simpa [Complex.add_im, Complex.mul_im, hr] using congr_arg Complex.im hsum
-    exact ⟨Complex.ext hre0 hr, Complex.ext him0 hi⟩
-  have hre_part : (realPart a : A) = 0 := by
-    by_contra hne
-    have : IsStarNormal (realPart a : A) := (realPart a).2.isStarNormal
-    obtain ⟨φ, hφ, hφnorm⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero hne
-    exact hne (norm_eq_zero.1 (by simpa [(hpart φ hφ).1] using hφnorm.symm))
-  have him_part : (imaginaryPart a : A) = 0 := by
-    by_contra hne
-    have : IsStarNormal (imaginaryPart a : A) := (imaginaryPart a).2.isStarNormal
-    obtain ⟨φ, hφ, hφnorm⟩ := exists_mem_stateSpace_norm_apply_eq_norm_of_ne_zero hne
-    exact hne (norm_eq_zero.1 (by simpa [(hpart φ hφ).2] using hφnorm.symm))
-  rw [← realPart_add_I_smul_imaginaryPart a, hre_part, him_part, smul_zero, add_zero]
+  have hsa (x : selfAdjoint A) (hx : ∀ φ : stateSpace A, φ.1 x = 0) : (x : A) = 0 := by
+    have : IsStarNormal (x : A) := x.2.isStarNormal
+    exact norm_eq_zero.1 <| by simp [norm_eq_iSup_norm_apply_stateSpace (x : A), hx,
+      Real.iSup_const_zero]
+  rw [← realPart_add_I_smul_imaginaryPart a,
+    hsa (realPart a) fun φ => by
+      simpa [h φ.1 φ.2] using map_realPart (StateSpace.toPositiveLinearMap φ) a,
+    hsa (imaginaryPart a) fun φ => by
+      simpa [h φ.1 φ.2] using map_imaginaryPart (StateSpace.toPositiveLinearMap φ) a,
+    smul_zero, add_zero]
 
 /-- An element `a` of a C⋆-algebra is zero if and only if every state vanishes on `a`. -/
 @[simp]
 theorem forall_mem_stateSpace_apply_eq_zero_iff {a : A} :
     (∀ φ ∈ stateSpace A, φ a = 0) ↔ a = 0 :=
-  ⟨eq_zero_of_forall_mem_stateSpace_apply_eq_zero, by
-    rintro rfl φ _
-    rw [← toStrongDual_apply]
-    simp⟩
+  ⟨eq_zero_of_forall_mem_stateSpace_apply_eq_zero, by rintro rfl φ _; simp⟩
 
 /-- **States separate points.** Two elements of a C⋆-algebra are equal if every state takes the
 same value on them. -/
 theorem eq_of_forall_mem_stateSpace_apply_eq {a b : A}
     (h : ∀ φ ∈ stateSpace A, φ a = φ b) : a = b :=
   sub_eq_zero.1 <| eq_zero_of_forall_mem_stateSpace_apply_eq_zero fun φ hφ => by
-    rw [← toStrongDual_apply, map_sub, toStrongDual_apply, toStrongDual_apply, h φ hφ, sub_self]
+    rw [map_sub, h φ hφ, sub_self]
 
 /-- Two elements of a C⋆-algebra are equal if and only if every state takes the same value on
 them. -/
@@ -260,26 +238,13 @@ theorem nonneg_iff_forall_mem_stateSpace {a : A} :
   -- nonnegative.
   have hunit (ψ : WeakDual ℂ A⁺¹) (hψ : ψ ∈ stateSpace A⁺¹) : 0 ≤ ψ (a : A⁺¹) := by
     set φ := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
-    by_cases hφ0 : toStrongDual φ = 0
-    · have hzero : φ a = 0 := DFunLike.congr_fun hφ0 a
-      simpa [φ] using hzero.ge
-    · have hnorm_pos : 0 < ‖toStrongDual φ‖ := norm_pos_iff.2 hφ0
-      set c : ℝ := ‖toStrongDual φ‖⁻¹
-      have hc_pos : 0 < c := inv_pos.2 hnorm_pos
-      have hcφ_mem : c • φ ∈ stateSpace A := by
-        refine mem_stateSpace_iff.2 ⟨fun b hb => ?_, ?_⟩
-        · rw [WeakDual.real_smul_apply]
-          exact mul_nonneg (Complex.zero_le_real.2 hc_pos.le)
-            (map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ hb)
-        · rw [WeakDual.real_smul_eq_coe_smul, map_smul, norm_smul, RCLike.norm_ofReal,
-            abs_of_nonneg hc_pos.le, inv_mul_cancel₀ hnorm_pos.ne']
-      have hcφ_nonneg : 0 ≤ (c : ℂ) * φ a := by
-        simpa [WeakDual.real_smul_apply] using h (c • φ) hcφ_mem
-      have hφ_nonneg : 0 ≤ φ a := by
-        have hmul := mul_nonneg (Complex.zero_le_real.2 hnorm_pos.le) hcφ_nonneg
-        rwa [← mul_assoc, ← Complex.ofReal_mul, mul_inv_cancel₀ hnorm_pos.ne',
-          Complex.ofReal_one, one_mul] at hmul
-      simpa [φ] using hφ_nonneg
+    by_cases hφ0 : φ = 0
+    · simpa [φ] using (DFunLike.congr_fun (congr_arg toStrongDual hφ0) a).ge
+    · have hpos : 0 < ‖toStrongDual φ‖ := by simp [hφ0]
+      have hcφ := h _ (inv_norm_toStrongDual_smul_mem_stateSpace
+        (fun _ => map_nonneg_pullbackFunctional_inr_of_mem_stateSpace hψ) hφ0)
+      simpa [-Complex.real_smul, φ, smul_smul, mul_inv_cancel₀ hpos.ne'] using
+        smul_nonneg hpos.le hcφ
   rw [← Unitization.inr_nonneg_iff]
   have ha_inr_sa : IsSelfAdjoint (a : A⁺¹) := ha_sa.inr ℂ
   have : IsStarNormal (a : A⁺¹) := ha_inr_sa.isStarNormal

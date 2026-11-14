@@ -5,17 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
+public import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 public import TauCeti.Analysis.CStarAlgebra.Representation.HilbertSum
 public import TauCeti.Analysis.CStarAlgebra.State.Space
+import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.State.Separation
 
 /-!
 # The universal GNS representation and the Gelfand–Naimark theorem
 
-Every C⋆-algebra `A`, possibly nonunital and nonseparable, is isometrically `⋆`-isomorphic to a
-norm-closed `⋆`-subalgebra of bounded operators on a complete complex Hilbert space in the same
-universe, acting nondegenerately.
+Every C⋆-algebra `A`, possibly nonunital and nonseparable, admits an injective (hence isometric,
+with norm-closed range) nondegenerate `⋆`-representation by bounded operators on a complete complex
+Hilbert space in the same universe.
 
 When `A` carries its C⋆-order, `TauCeti.gnsUniversalRepresentation A` is the concrete universal
 representation of `A`: the Hilbert direct sum (`NonUnitalStarAlgHom.hilbertSum`) of the GNS
@@ -105,20 +106,14 @@ theorem isNondegenerate_gnsUniversalRepresentation :
 representations of all states of `A` is injective. -/
 theorem gnsUniversalRepresentation_injective :
     Function.Injective (gnsUniversalRepresentation A) := by
-  refine (NonUnitalStarAlgHom.hilbertSum_injective_iff _).2 fun a ha => ?_
-  by_contra ha0
-  have hmul : a * star a ≠ 0 := mul_star_self_eq_zero.not.2 ha0
-  -- Choose a state witnessing `φ ((a * a⋆)⋆ * (a * a⋆)) = ‖a * a⋆‖ ^ 2 ≠ 0`; then in the `φ`-th
-  -- GNS summand, `π_φ(a)` sends `[a⋆]` to `[a * a⋆] ≠ 0`.
-  obtain ⟨φ, hφ, hφ_val⟩ := exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero hmul
+  refine (NonUnitalStarAlgHom.hilbertSum_injective_iff _).2 fun a ha =>
+    mul_star_self_eq_zero.1 <| eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero
+      fun φ hφ => ?_
   let s : stateSpace A := ⟨φ, hφ⟩
   have hact : (StateSpace.toPositiveLinearMap s).toGNS (a * star a) = 0 := by
     simpa [PositiveLinearMap.toGNS_apply] using
       DFunLike.congr_fun (ha s) ((StateSpace.toPositiveLinearMap s).toGNS (star a))
-  have hzero : φ (star (a * star a) * (a * star a)) = 0 := by
-    simpa using ((StateSpace.toPositiveLinearMap s).toGNS_eq_zero_iff (a * star a)).1 hact
-  have hnorm_zero : (‖a * star a‖ ^ 2 : ℂ) = 0 := hφ_val.symm.trans hzero
-  exact hmul (norm_eq_zero.1 (Complex.ofReal_eq_zero.1 (sq_eq_zero_iff.1 hnorm_zero)))
+  simpa using ((StateSpace.toPositiveLinearMap s).toGNS_eq_zero_iff (a * star a)).1 hact
 
 /-- The universal GNS representation is an isometry. -/
 theorem isometry_gnsUniversalRepresentation : Isometry (gnsUniversalRepresentation A) :=

@@ -102,11 +102,9 @@ summand `π i`. -/
 @[simp]
 theorem hilbertSum_apply_eq_zero_iff (π : ∀ i, A →⋆ₙₐ[ℂ] (H i →L[ℂ] H i)) (a : A) :
     hilbertSum π a = 0 ↔ ∀ i, π i a = 0 := by
-  classical
-  refine ⟨fun h i => ContinuousLinearMap.ext fun v => ?_, fun h => ?_⟩
-  · simpa using congr_arg (fun x : lp H 2 => x i) (congr($h (lp.single 2 i v)))
-  · ext x i
-    simp [h i]
+  rw [hilbertSum_apply_eq_mapCLM,
+    ← lp.mapCLM_zero (p := 2) (norm_nonneg a) fun _ => by simp [norm_nonneg a],
+    lp.mapCLM_inj, funext_iff]
 
 /-- The direct sum `hilbertSum π` is injective if and only if the kernels of the summands `π i`
 have trivial intersection. -/

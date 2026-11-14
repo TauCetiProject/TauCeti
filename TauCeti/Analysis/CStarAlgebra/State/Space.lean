@@ -88,6 +88,14 @@ theorem norm_toStrongDual_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : ‖toS
 theorem norm_apply_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
   simpa [norm_toStrongDual_of_mem_stateSpace hφ] using (toStrongDual φ).le_opNorm a
 
+/-- Normalizing a nonzero positive functional by its norm produces a state. -/
+theorem inv_norm_toStrongDual_smul_mem_stateSpace (hpos : ∀ a, 0 ≤ a → 0 ≤ φ a) (hφ : φ ≠ 0) :
+    ‖toStrongDual φ‖⁻¹ • φ ∈ stateSpace A := by
+  have hnorm : 0 < ‖toStrongDual φ‖ := by simp [hφ]
+  refine mem_stateSpace_iff.2 ⟨fun a ha => smul_nonneg (inv_nonneg.2 hnorm.le) (hpos a ha), ?_⟩
+  rw [WeakDual.real_smul_eq_coe_smul, map_smul, norm_smul, RCLike.norm_ofReal,
+    abs_of_nonneg (inv_nonneg.2 hnorm.le), inv_mul_cancel₀ hnorm.ne']
+
 /-- A subsingleton C⋆-algebra has no states. -/
 @[simp]
 theorem stateSpace_eq_empty [Subsingleton A] : stateSpace A = ∅ := by
