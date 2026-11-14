@@ -32,9 +32,10 @@ sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
 use this to discard every term containing a coordinate that occurs only once.
 
 Selecting, among all maps, those that agree with a fixed map `f` away from a coordinate `i` and
-summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`). A sum over maps
-on `Fin (n + 1)` splits as a sum over their first `n` values and their last value
-(`Fintype.sum_fin_snoc`).
+summing over them is summing over the value at `i` (`Fintype.sum_ite_eq_update`); doing the same
+away from two distinct coordinates `i` and `j` is a double sum over the values at `i` and `j`
+(`Fintype.sum_ite_eq_update_update`). A sum over maps on `Fin (n + 1)` splits as a sum over their
+first `n` values and their last value (`Fintype.sum_fin_snoc`).
 -/
 
 public section
@@ -188,6 +189,32 @@ theorem prod_ite_eq_update {ι α M : Type*} [Fintype ι] [DecidableEq ι] [Fint
     · rintro ⟨x, rfl⟩
       simp
   rw [himage, prod_image fun x _ y _ h ↦ Function.update_injective f i h]
+
+/-- A product over all maps of the factors at the maps that agree with `f` away from two distinct
+coordinates `i` and `j`, the other factors being `1`, is a double product over the values at `i`
+and `j`. -/
+@[to_additive /-- A sum over all maps of the terms at the maps that agree with `f` away from two
+distinct coordinates `i` and `j`, the other terms being `0`, is a double sum over the values at
+`i` and `j`. -/]
+theorem prod_ite_eq_update_update {ι α M : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype α] [DecidableEq α] [CommMonoid M] (f : ι → α) {i j : ι} (hij : i ≠ j)
+    (g : (ι → α) → M) :
+    ∏ h, (if h = Function.update (Function.update f i (h i)) j (h j) then g h else 1) =
+      ∏ x, ∏ y, g (Function.update (Function.update f i x) j y) := by
+  rw [← prod_filter]
+  have himage :
+      ({h | h = Function.update (Function.update f i (h i)) j (h j)} : Finset (ι → α)) =
+        (univ ×ˢ univ).image
+          (fun p : α × α ↦ Function.update (Function.update f i p.1) j p.2) := by
+    ext h
+    simp only [mem_filter, mem_univ, true_and, and_self, mem_image, mem_product]
+    constructor
+    · exact fun hh ↦ ⟨(h i, h j), hh.symm⟩
+    · rintro ⟨⟨x, y⟩, rfl⟩
+      simp [hij]
+  rw [himage, prod_image ?_, prod_product]
+  rintro ⟨x₁, y₁⟩ _ ⟨x₂, y₂⟩ _ h
+  exact Prod.ext (by simpa [hij] using congrFun h i) (by simpa using congrFun h j)
 
 /-- A product over the maps on `Fin (n + 1)` splits as a product over their restrictions to the
 first `n` coordinates and over their last values, glued back together with `Fin.snoc`. -/
