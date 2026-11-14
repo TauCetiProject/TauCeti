@@ -593,8 +593,8 @@ private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
   rw [hPK]
   exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
 
-/-- A point of the surface whose glued image lies in the slab below height `1 - c`, respectively
-above height `1 - 2 c`, lies in the matching slab of the original surface. -/
+/-- A point of the surface whose glued image lies above height `1 - 2 c` also lies above height
+`1 - 2 c` in the original surface `S`. -/
 private theorem lt_snd_toFun_of_lt_snd_glueFun (hc : 0 < c) (y : S.carrier)
     (hy : 1 - 2 * c < (glueFun C S hc y).2) :
     1 - 2 * c < (S.toFun y).2 := by

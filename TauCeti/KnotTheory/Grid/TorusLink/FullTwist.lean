@@ -231,7 +231,8 @@ private theorem twistSlide_last {n m : ℕ} (hm : m + 1 ≤ p + 1) (hn : n = p +
 
 /-! ### Crossing-change distances -/
 
-/-- The first `k ≤ m` exchanges of the slide of the first column are crossing changes. -/
+/-- After `k ≤ m` exchanges of the slide of the first column, the grid link is at crossing-change
+distance at most `k` from the starting link. -/
 private theorem edist_twistSlide_le {n m : ℕ} (hm : m + 1 ≤ p + 1)
     (hn' : n = p + 1 + (q + 1) + (m + 1)) (k : ℕ) (hk : k ≤ m) :
     GridLink.crossingChangeGraph.edist

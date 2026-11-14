@@ -273,8 +273,9 @@ private theorem polynomialExtensionIsoStabilizeXCenter_hom_comp_eval :
     CategoryTheory.Functor.map_id, Category.id_comp, ← HomologicalComplex.comp_f_assoc,
     Iso.hom_inv_id_assoc]
 
-/-- Undoing the identification with the polynomial extension of `GC⁻(G)` and evaluating at `V_s`
-acts on pure tensors by evaluating the polynomial factor at `V_s`. -/
+/-- Send a pure tensor `p ⊗ₜ[A] f` of the polynomial extension of `GC⁻(G)` into the center complex
+by the identification with the polynomial extension. Undoing that identification and evaluating at
+`V_s` maps this image to `f` scaled by the polynomial factor `p` evaluated at `V_s`. -/
 private theorem polynomialExtensionEval_stabilizeXCenter_tmul (p : Polynomial A)
     (f : GridChainMinus R n) :
     ((ModuleCat.restrictScalars

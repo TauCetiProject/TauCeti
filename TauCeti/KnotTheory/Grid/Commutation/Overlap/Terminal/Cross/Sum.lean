@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Counted
 public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Weight
-import TauCeti.Algebra.BigOperators.Finset.Pairing
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Removing terminal-side cross-overlap contributions from the pentagon chain-map equation

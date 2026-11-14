@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Decomposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
-import TauCeti.Algebra.BigOperators.Finset.Pairing
+import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
 # Common-terminal-side recuts of a rectangle followed by an initial-side pentagon
@@ -458,7 +458,7 @@ theorem add_sum_rectangleInitialPentagonWeight_eq_add_sum_iff_sdiff_terminalOver
   exact Finset.add_sum_eq_add_sum_iff_sdiff
     (G.initialPentagonTerminalOverlapSources_subset C)
     (G.initialPentagonTerminalOverlapPartners_subset C)
-    (G.sum_rectangleInitialPentagonWeight_terminalOverlapSources_eq_sum_partners C x z R) _ _
+    (G.sum_rectangleInitialPentagonWeight_terminalOverlapSources_eq_sum_partners C x z R)
 
 end GridDiagram
 

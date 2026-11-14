@@ -429,24 +429,6 @@ private theorem stabilizeXConeWeight_lt_or_of_mem_XHomotopyRectangles
     ((G.stabilizeXMatching_eq_inr_iff s _ _).mpr
       (by rw [stabilizeXConeStateEquiv_apply_inl, hswap])).symm⟩
 
-/-- The center insertion identifies the fully blocked rectangles of `G` and of its stabilization,
-so a fully blocked rectangle of `G` gives one of the stabilization between the inserted states. -/
-private theorem nonempty_fullyBlockedRectangles_stabilizeX_insertPoint (x x' : GridState n)
-    {r : GridRectangleBetween x x'} (hr : r ∈ G.fullyBlockedRectangles x x') :
-    ((G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles
-      (x.insertPoint s.succ (G.X s).succ) (x'.insertPoint s.succ (G.X s).succ)).Nonempty := by
-  have hcard : ((G.stabilizeX s.castSucc (G.X s).castSucc s).fullyBlockedRectangles
-      (x.insertPoint s.succ (G.X s).succ) (x'.insertPoint s.succ (G.X s).succ)).card =
-        (G.fullyBlockedRectangles x x').card := by
-    have h := (G.stabilizeX s.castSucc (G.X s).castSucc
-      s).constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles ℕ
-        (x.insertPoint s.succ (G.X s).succ) (x'.insertPoint s.succ (G.X s).succ)
-    rw [unblockedCoefficient_stabilizeX_insertPoint, constantCoeff_rename,
-      constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles] at h
-    exact_mod_cast h.symm
-  rw [← Finset.card_pos, hcard]
-  exact Finset.card_pos.mpr ⟨r, hr⟩
-
 /-- **Center to center.** A fully blocked rectangle of `G` strictly lowers the weight of the
 corresponding center generators. -/
 private theorem stabilizeXConeWeight_lt_of_mem_fullyBlockedRectangles (x x' : GridState n)
@@ -455,8 +437,10 @@ private theorem stabilizeXConeWeight_lt_of_mem_fullyBlockedRectangles (x x' : Gr
   set G' := G.stabilizeX s.castSucc (G.X s).castSucc s
   set y := x.insertPoint s.succ (G.X s).succ
   set z := x'.insertPoint s.succ (G.X s).succ
-  obtain ⟨r', hr'⟩ : (G'.fullyBlockedRectangles y z).Nonempty :=
-    G.nonempty_fullyBlockedRectangles_stabilizeX_insertPoint s x x' hr
+  -- The center insertion `r'` of `r` is a fully blocked rectangle of `G'`.
+  obtain ⟨r', hr'⟩ : ∃ r' : GridRectangleBetween y z, r' ∈ G'.fullyBlockedRectangles y z :=
+    ⟨r.insertPoint s.succ (G.X s).succ,
+      (G.mem_fullyBlockedRectangles_stabilizeX_insertPoint r).mpr hr⟩
   have hO := r'.disjoint_coveredSquares_OSet_of_avoidsMarkings
     (avoidsMarkings_of_mem_fullyBlockedRectangles _ _ _ hr')
   have hys : y s.succ = (G.X s).succ := GridState.insertPoint_apply_newColumn _ _ _
