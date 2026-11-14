@@ -468,6 +468,8 @@ noncomputable def antisymmetrizerOn (X : Finset α) : MonoidAlgebra R (Equiv.Per
   subgroupCharSum ((Units.coeHom R).comp (signLinearCharacter R α))
     (fixingSubgroup (Equiv.Perm α) ((X : Set α)ᶜ))
 
+/-- Unfolding `TauCeti.antisymmetrizerOn X`: the signed sum over the subgroup of permutations
+fixing every point outside `X`. -/
 theorem antisymmetrizerOn_def (X : Finset α) :
     antisymmetrizerOn R X =
       subgroupCharSum ((Units.coeHom R).comp (signLinearCharacter R α))
@@ -493,7 +495,8 @@ theorem antisymmetrizerOn_coeff (X : Finset α) (σ : Equiv.Perm α) :
   rw [antisymmetrizerOn_def, subgroupCharSum_coeff]
   simp [mem_fixingSubgroup_iff]
 
-/-- The permutations summed over by `TauCeti.antisymmetrizerOn X`, as a `Finset`. -/
+/-- A permutation lies in the `Finset` of those fixing every point outside `X` iff it lies in the
+subgroup that `TauCeti.antisymmetrizerOn X` is summed over. -/
 private theorem mem_filter_forall_notMem_iff (X : Finset α)
     [DecidablePred fun σ : Equiv.Perm α => ∀ k ∉ X, σ k = k] (σ : Equiv.Perm α) :
     σ ∈ ({σ : Equiv.Perm α | ∀ k ∉ X, σ k = k} : Finset (Equiv.Perm α)) ↔
