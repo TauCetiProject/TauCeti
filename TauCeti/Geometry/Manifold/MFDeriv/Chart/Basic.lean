@@ -57,9 +57,6 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   differentiable) at the chart image of the point.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint`: the same for `C^n` maps at
   an interior point of a manifold with boundary.
-* `MDifferentiableOn.differentiableOn_comp_extChartAt_symm`: a map into a normed space that is
-  differentiable on a set is differentiable, read in any extended chart, on the part of the chart
-  target that the inverse chart maps into that set.
 * `ContMDiffAt.contDiffAt_comp_prod_extChartAt_symm`: the same for a map on a product of
   boundaryless manifolds, read in the product of the preferred charts at the two factors.
 * `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
@@ -343,15 +340,6 @@ theorem _root_.ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint {n
   -- At an interior point the range of `I` is a neighbourhood of the chart image of `x`.
   contMDiffAt_iff_contDiffAt.mp
     ((contMDiffAt_iff_source.mp hf).contMDiffAt (mem_interior_iff_mem_nhds.mp hx))
-
-/-- A map into a normed space that is differentiable on `s`, read in the extended chart at `x`,
-is differentiable on the part of the chart target that the inverse chart maps into `s`. -/
-theorem _root_.MDifferentiableOn.differentiableOn_comp_extChartAt_symm {s : Set M}
-    (hf : MDifferentiableOn I 𝓘(𝕜, F) f s) (x : M) :
-    DifferentiableOn 𝕜 (f ∘ (extChartAt I x).symm)
-      ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' s) :=
-  (hf.comp (mdifferentiableOn_extChartAt_symm.mono inter_subset_left)
-    fun _ hy => hy.2).differentiableOn
 
 end TauCeti
 
