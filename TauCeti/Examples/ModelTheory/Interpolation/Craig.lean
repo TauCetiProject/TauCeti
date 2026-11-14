@@ -106,6 +106,24 @@ private def rightTwoElem : TwoGraph.Sentenceω :=
       (BoundedFormulaInf.equal &0 &1).not) ⊔
     BoundedFormulaInf.ex (BoundedFormulaInf.rel rightRel ![&0, &0])
 
+private theorem realize_leftTwoElem {M : Type w} [TwoGraph.Structure M] :
+    SentenceInf.Realize leftTwoElem M ↔
+      ∃ x y : M, x ≠ y ∧ Structure.RelMap (L := TwoGraph) leftRel ![x, y] := by
+  simp only [leftTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_not,
+    BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel]
+  refine exists_congr fun x => exists_congr fun y => and_congr Iff.rfl (of_eq (congrArg _ ?_))
+  ext i; fin_cases i <;> rfl
+
+private theorem realize_rightTwoElem {M : Type w} [TwoGraph.Structure M] :
+    SentenceInf.Realize rightTwoElem M ↔
+      (∃ x y : M, x ≠ y) ∨ ∃ x : M, Structure.RelMap (L := TwoGraph) rightRel ![x, x] := by
+  simp only [rightTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_sup, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_not,
+    BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel]
+  refine or_congr Iff.rfl (exists_congr fun x => of_eq (congrArg _ ?_))
+  ext i; fin_cases i <;> rfl
+
 -- Relational Craig interpolation produces a sentence with empty relation support that holds on a
 -- two-element structure and fails on a one-element structure.
 example :
@@ -117,11 +135,8 @@ example :
       (∃ S₁ : TwoGraph.Structure Unit, ¬ @SentenceInf.Realize _ ℕ θ Unit S₁) := by
   have hent : Sentenceω.Entails leftTwoElem rightTwoElem := by
     refine Sentenceω.entails_iff.2 fun M _ _ h => ?_
-    simp only [leftTwoElem, rightTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
-      BoundedFormulaInf.realize_sup, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_inf,
-      BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal] at h ⊢
-    obtain ⟨x, y, hxy, -⟩ := h
-    exact .inl ⟨x, y, hxy⟩
+    obtain ⟨x, y, hxy, -⟩ := realize_leftTwoElem.1 h
+    exact realize_rightTwoElem.2 (.inl ⟨x, y, hxy⟩)
   obtain ⟨θ, hrel, h₁, h₂⟩ := craig_interpolation_relational leftTwoElem rightTwoElem hent
   have hdisj : leftTwoElem.relationsIn ∩ rightTwoElem.relationsIn = ∅ := by
     refine Set.eq_empty_of_forall_notMem ?_
@@ -135,20 +150,12 @@ example :
   refine ⟨θ, Set.subset_empty_iff.1 (hdisj ▸ hrel), h₁, h₂, ?_, ?_⟩
   · let S₂ : TwoGraph.Structure Bool := ⟨fun f => isEmptyElim f, fun _ _ => True⟩
     let : TwoGraph.Structure Bool := S₂
-    refine ⟨S₂, h₁.realize Bool ?_⟩
-    simp only [leftTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
-      BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_not,
-      BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel]
-    exact ⟨false, true, Bool.false_ne_true, trivial⟩
+    exact ⟨S₂, h₁.realize Bool (realize_leftTwoElem.2 ⟨false, true, Bool.false_ne_true, trivial⟩)⟩
   · let S₁ : TwoGraph.Structure Unit := ⟨fun f => isEmptyElim f, fun _ _ => False⟩
     let : TwoGraph.Structure Unit := S₁
     refine ⟨S₁, fun hθ => ?_⟩
-    have hr := h₂.realize Unit hθ
-    simp only [rightTwoElem, SentenceInf.realize_def, FormulaInf.realize_def,
-      BoundedFormulaInf.realize_sup, BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_not,
-      BoundedFormulaInf.realize_equal, BoundedFormulaInf.realize_rel] at hr
-    rcases hr with ⟨_, _, hxy⟩ | ⟨_, hx⟩
-    · exact hxy trivial
+    rcases realize_rightTwoElem.1 (h₂.realize Unit hθ) with ⟨_, _, hxy⟩ | ⟨_, hx⟩
+    · exact hxy (Subsingleton.elim _ _)
     · exact hx
 
 end Nondegenerate
@@ -214,6 +221,8 @@ private theorem involutionGraphSentence_realize_iff {M : Type w} [InvLang.Struct
         Structure.RelMap (L := InvLang) invRel ![y, x]) := by
   rw [involutionGraphSentence, SentenceInf.realize_inf, Sentence.realize_toInf,
     Relations.realize_symmetric, symm_def]
+  -- the `rfl` rewrites put the numerals `1` and `2` in the `Fin.last`/`castSucc` form that
+  -- `Fin.snoc_last` and `Fin.snoc_castSucc` expect
   simp only [SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_all, BoundedFormulaInf.realize_ex,
     BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom,
@@ -257,13 +266,35 @@ private theorem realize_involutionGraphSentence_graphStructure {M : Type w}
   exact ⟨fun x => ⟨f x, rfl⟩, fun _ _ _ hxy hxz => hxy.symm.trans hxz,
     fun x _ hxy => by rw [← hxy, hf x]⟩
 
+/-- Over `Language.empty`, every finite structure of even cardinality is in the projective class
+of `evenFiniteSentence`: expand it by a fixed-point-free involution. -/
+private theorem pcMem_evenFiniteSentence_of_even {M : Type w} [Language.empty.Structure M]
+    (hfin : Finite M) {k : ℕ} (hk : Nat.card M = k + k) :
+    LHom.PCMem LHom.sumInl evenFiniteSentence M := by
+  rw [LHom.pcMem_iff]
+  let : Fintype M := Fintype.ofFinite M
+  let e : M ≃ Fin k ⊕ Fin k := Fintype.equivOfCardEq <| by
+    rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_fin]
+  let f : M → M := fun x => e.symm ((Equiv.sumComm (Fin k) (Fin k)) (e x))
+  have hnofix : ∀ x, f x ≠ x := fun x hx => by
+    have hx' : (e x).swap = e x := by simpa [f] using congrArg e hx
+    rcases h : e x with i | i <;> simp [h] at hx'
+  let S : InvLang.Structure M := graphStructure f
+  let : InvLang.Structure M := S
+  refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
+  rw [evenFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
+    SentenceInf.realize_not, realize_infiniteSentence_iff]
+  exact ⟨⟨not_infinite_iff_finite.2 hfin,
+    realize_involutionGraphSentence_graphStructure fun x => by simp [f]⟩,
+    by simp [S, irrefl_def, hnofix]⟩
+
 /-- Over `Language.empty`, the projective class of `evenFiniteSentence` consists of the finite
 structures whose carrier has even cardinality. -/
 theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     LHom.PCMem LHom.sumInl evenFiniteSentence M ↔ Finite M ∧ Even (Nat.card M) := by
-  rw [LHom.pcMem_iff]
   constructor
-  · rintro ⟨S, -, hS⟩
+  · intro h
+    obtain ⟨S, -, hS⟩ := LHom.pcMem_iff.1 h
     let : InvLang.Structure M := S
     obtain ⟨h₁, hlast⟩ := SentenceInf.realize_inf.1 hS
     obtain ⟨hfin0, hinv⟩ := SentenceInf.realize_inf.1 h₁
@@ -279,21 +310,7 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     obtain ⟨x, hx⟩ := Equiv.Perm.exists_fixed_point_of_prime (p := 2) (n := 1) hndvd hσ
     exact hnofix x hx
   · rintro ⟨hfin, k, hk⟩
-    let : Fintype M := Fintype.ofFinite M
-    let e : M ≃ Fin k ⊕ Fin k := Fintype.equivOfCardEq <| by
-      rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_fin]
-    let f : M → M := fun x => e.symm ((Equiv.sumComm (Fin k) (Fin k)) (e x))
-    have hnofix : ∀ x, f x ≠ x := fun x hx => by
-      have hx' : (e x).swap = e x := by simpa [f] using congrArg e hx
-      rcases h : e x with i | i <;> simp [h] at hx'
-    let S : InvLang.Structure M := graphStructure f
-    let : InvLang.Structure M := S
-    refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
-    rw [evenFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
-      SentenceInf.realize_not, realize_infiniteSentence_iff]
-    exact ⟨⟨not_infinite_iff_finite.2 hfin,
-      realize_involutionGraphSentence_graphStructure fun x => by simp [f]⟩,
-      by simp [S, irrefl_def, hnofix]⟩
+    exact pcMem_evenFiniteSentence_of_even hfin hk
 
 /-- Over `Language.empty`, every finite structure of odd cardinality is in the projective
 class of `oddFiniteSentence`: expand it by an involution with a single fixed point. -/
@@ -353,6 +370,7 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     obtain ⟨x₀, hx₀⟩ : ∃ x : M, σ x = x := by
       simpa [SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hgraph] using hex0
     have huniqfix : ∀ x y : M, σ x = x → σ y = y → x = y := by
+      -- the `rfl` rewrites `1 : Fin 2` as `Fin.last 1`, the index form `Fin.snoc_last` expects
       simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
         BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom,
         Fin.snoc_apply_zero, Fin.snoc_zero,
