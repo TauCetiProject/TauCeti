@@ -67,10 +67,16 @@ theorem dirichletData_completed_orderLE_one (hne : χ ≠ 1) :
   obtain ⟨C, -, hC⟩ := exists_norm_dirichletData_completed_le_exp_mul_log χ hχ hne
   exact orderLE_one_of_norm_le_exp_mul_log hC
 
+/-- **Order at most one.** The entire completion of a primitive nonprincipal Dirichlet record has
+growth order at most `1`. -/
+theorem dirichletData_entireCompletion_orderLE_one (hne : χ ≠ 1) :
+    OrderLE (dirichletData χ hχ).entireCompletion 1 := by
+  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
+  exact dirichletData_completed_orderLE_one χ hχ hne
+
 /-- A primitive nonprincipal Dirichlet record has finite order. -/
-theorem dirichletData_isFiniteOrder (hne : χ ≠ 1) : (dirichletData χ hχ).IsFiniteOrder := by
-  rw [AnalyticLFunctionData.IsFiniteOrder, dirichletData_entireCompletion_of_ne_one χ hχ hne]
-  exact (dirichletData_completed_orderLE_one χ hχ hne).isFiniteOrder
+theorem dirichletData_isFiniteOrder (hne : χ ≠ 1) : (dirichletData χ hχ).IsFiniteOrder :=
+  (dirichletData_entireCompletion_orderLE_one χ hχ hne).isFiniteOrder
 
 /-- **Vertical-strip growth.** The completed function of a primitive nonprincipal Dirichlet
 record has vertical-strip growth. -/

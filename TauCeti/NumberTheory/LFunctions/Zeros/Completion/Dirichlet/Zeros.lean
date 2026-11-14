@@ -170,4 +170,16 @@ theorem divisor_dirichletData_entireCompletion_one_sub_of_inv_eq (hreal : χ⁻�
   simpa only [dirichletData_inv_of_inv_eq χ hχ hreal] using
     divisor_dirichletData_entireCompletion_one_sub χ hχ s
 
+/-- On the positive half-plane, the natural divisor multiplicity of the entire completion equals
+the analytic vanishing order `analyticOrderNatAt χ.LFunction s`. -/
+theorem toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt (hne : χ ≠ 1)
+    {s : ℂ} (hs : 0 < s.re) :
+    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
+      analyticOrderNatAt χ.LFunction s := by
+  have hm := dirichletData_hasMeromorphicContinuation χ hχ
+  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hm.meromorphicOn_entireCompletion
+    (hm.analyticAt_entireCompletion s) (Set.mem_univ s), Int.toNat_natCast,
+    analyticOrderNatAt, analyticOrderNatAt,
+    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs]
+
 end TauCeti.LFunctions

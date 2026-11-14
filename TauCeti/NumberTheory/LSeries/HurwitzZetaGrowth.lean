@@ -29,9 +29,10 @@ are David Loeffler's work in Mathlib.
 
 ## Main results
 
-* `HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log` and
-  `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`: global logarithmic-exponential
-  bounds.
+* `HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log`,
+  `HurwitzZeta.exists_norm_completedHurwitzZetaOdd_le_exp_mul_log`, and
+  `TauCeti.orderLE_completedRiemannZeta₀`: global logarithmic-exponential bounds and order at most
+  one for `completedRiemannZeta₀`.
 * `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaEven₀` and
   `HurwitzZeta.hasVerticalStripGrowth_completedHurwitzZetaOdd`: vertical-strip growth.
 * `ZMod.exists_norm_completedLFunction₀_le_exp_mul_log`, `ZMod.orderLE_completedLFunction₀`
@@ -222,3 +223,12 @@ theorem hasVerticalStripGrowth_completedLFunction₀ (Φ : ZMod N → ℂ) :
       (hasVerticalStripGrowth_completedHurwitzZetaOdd (toAddCircle j)).const_mul (Φ j)))
 
 end ZMod
+
+namespace TauCeti
+
+/-- Mathlib's entire part `completedRiemannZeta₀` has growth order at most `1`. -/
+theorem orderLE_completedRiemannZeta₀ : OrderLE completedRiemannZeta₀ 1 := by
+  obtain ⟨C, -, hC⟩ := HurwitzZeta.exists_norm_completedHurwitzZetaEven₀_le_exp_mul_log 0
+  exact orderLE_one_of_norm_le_exp_mul_log hC
+
+end TauCeti

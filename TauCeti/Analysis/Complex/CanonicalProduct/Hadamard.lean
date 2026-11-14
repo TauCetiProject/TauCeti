@@ -7,13 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.Divisor
 public import TauCeti.Analysis.Complex.GrowthOrder
-import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Summability
 import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.Convex.SimplyConnected
-import TauCeti.Analysis.Meromorphic.Conj
 
 /-!
 # Hadamard's factorization theorem at order at most one
@@ -30,7 +27,11 @@ has the paired partial-fraction expansion
 
 `logDeriv f s = logDeriv f 0 + ∑' ρ, m_ρ * (1 / (s - ρ) + 1 / ρ)`,
 
-converging absolutely at each point off the zeros and locally uniformly on `{s | f s ≠ 0}`.
+converging absolutely at each point and locally uniformly on `{s | f s ≠ 0}`. The hypothesis
+`f 0 ≠ 0` ensures that `0` is not in the divisor support, so every zero `ρ` is nonzero and the
+origin-normalized factors `E₁(s / ρ)` and subtraction terms `1 / ρ` are nonsingular at every zero,
+while `divisorProductOne f 0 = 1` and `deriv (divisorProductOne f) 0 = 0` identify the affine
+exponential prefactor in terms of `f 0` and `logDeriv f 0`.
 
 The proof follows Landau's local logarithmic-derivative method (Montgomery–Vaughan §11.1):
 1. Jensen's bound and dyadic summation (`TauCeti.OrderLE.summable_divisor_mul_norm_rpow`) give
@@ -45,12 +46,12 @@ The proof follows Landau's local logarithmic-derivative method (Montgomery–Vau
    `f = divisorProductOne f * exp H` for an entire `H` whose derivative agrees with `logDeriv f 0`
    near `0`, hence everywhere by analytic continuation.
 
-When every zero of `f` lies in the closed critical strip `0 ≤ Re ρ ≤ 1`, the bound
-`0 ≤ Re (1 / ρ) ≤ ‖ρ⁻¹‖ ^ 2` makes `∑' ρ, m_ρ * Re (1 / ρ)` and `∑' ρ, m_ρ * Re (1 / (s - ρ))`
-separately summable. Under a functional symmetry `f (1 - z) = c * conj (f (conj z))`, permuting the
-zeros by `ρ ↦ 1 - conj ρ` (`TauCeti.divisorSupportOneSubConj`, `TauCeti.logDeriv_one_sub_conj`)
-yields `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and eliminates the constant term from
-`Re (logDeriv f s)`.
+At growth order `1`, `∑_ρ m_ρ / ‖ρ‖` can diverge, so `1 / (s - ρ)` and `1 / ρ` cannot in general
+be summed separately. When all zeros of `f` lie in a bounded vertical strip `|Re ρ| ≤ B` (such as
+the critical strip of an L-function completion or the zero strip of an exponential polynomial),
+`Re (1 / ρ) = Re ρ / ‖ρ‖ ^ 2` gains an extra factor of `‖ρ‖⁻¹`, making both
+`∑' ρ, m_ρ * Re (1 / ρ)` and `∑' ρ, m_ρ * Re (1 / (s - ρ))` separately summable so that the real
+part of the paired series unpairs termwise.
 
 ## Main results
 
@@ -63,10 +64,9 @@ yields `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and eliminates the con
   `Multipliable` and `∏' ρ : ℂ, weierstrassFactorOne (s / ρ) ^ m_ρ`.
 * `TauCeti.OrderLE.logDeriv_eq_add_tsum`, `TauCeti.OrderLE.hasSumLocallyUniformlyOn_logDeriv`:
   pointwise and locally uniform partial-fraction expansions of `logDeriv f`.
-* `TauCeti.OrderLE.re_logDeriv_zero_eq_neg_tsum`, `TauCeti.OrderLE.re_logDeriv_eq_tsum`:
-  real-part cancellation `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and
-  `Re (logDeriv f s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))` under critical-strip zero location and
-  functional symmetry.
+* `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div`,
+  `TauCeti.OrderLE.summable_divisor_toNat_mul_re_one_div_sub`: separate summability of the real
+  parts `m_ρ * Re (1 / ρ)` and `m_ρ * Re (1 / (s - ρ))` when all zeros have bounded real part.
 
 ## References
 
@@ -79,7 +79,7 @@ yields `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)` and eliminates the con
 
 public section
 
-open Complex ComplexConjugate Filter Metric Topology Asymptotics Bornology
+open Complex Filter Metric Topology Asymptotics Bornology
 open scoped BigOperators
 
 namespace TauCeti
@@ -92,9 +92,9 @@ theorem summable_divisor_toNat_mul_norm_inv_sq {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
   refine (h.summable_divisor_mul_norm_rpow hf (by norm_num : (1 : ℝ) < 2)).congr fun ρ ↦ ?_
-  rw [hfa.natCast_toNat_divisor, Real.rpow_neg (norm_nonneg _), Real.rpow_two, norm_inv, inv_pow]
+  rw [(hf.analyticAt ρ).natCast_toNat_divisor, Real.rpow_neg (norm_nonneg _), Real.rpow_two,
+    norm_inv, inv_pow]
 
 /-- The genus-one native divisor product of an entire function of order at most `1` is entire. -/
 @[fun_prop]
@@ -140,8 +140,8 @@ private theorem finsum_divisor_closedBall_eq_sum_sublevel {f : ℂ → ℂ}
     rw [MeromorphicOn.divisor_apply hball.meromorphicOn hρR,
       MeromorphicOn.divisor_apply hfa.meromorphicOn (Set.mem_univ _)]
   dsimp only [emb]
-  rw [Function.Embedding.coeFn_mk, hdD, ← hfa.natCast_toNat_divisor, zero_sub, div_neg,
-    sub_neg_eq_add]
+  rw [Function.Embedding.coeFn_mk, hdD, ← (hf.analyticAt ρ).natCast_toNat_divisor, zero_sub,
+    div_neg, sub_neg_eq_add]
 
 /-- Applying the subtracted Landau bound on `closedBall 0 (2 * n)` at growth exponent `3 / 2`
 bounds the difference between `logDeriv f s - logDeriv f 0` and the radius-`n` partial-fraction sum
@@ -214,7 +214,7 @@ theorem logDeriv_eq_add_logDeriv_divisorProductOne {f : ℂ → ℂ}
     ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)
   have hg_sum : HasSum g (logDeriv (divisorProductOne f) s) := by
     rw [logDeriv_divisorProductOne h0 hsum hssupp]
-    exact (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div h0 hsum hssupp).of_norm.hasSum
+    exact (summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hsum s).of_norm.hasSum
   obtain ⟨K, hbound⟩ := exists_eventually_norm_logDeriv_sub_sum_sublevel_le h hf hf0 hs
   have htwo_nat : Tendsto (fun n : ℕ ↦ 2 * (n : ℝ)) atTop atTop :=
     (tendsto_natCast_atTop_atTop (R := ℝ)).const_mul_atTop two_pos
@@ -232,7 +232,8 @@ theorem logDeriv_eq_add_logDeriv_divisorProductOne {f : ℂ → ℂ}
   have hlhs : Tendsto (fun n : ℕ ↦ ‖logDeriv f s - logDeriv f 0 -
       ∑ ρ ∈ (MeromorphicOn.divisor_norm_sublevel_finite f n).toFinset, g ρ‖)
       atTop (𝓝 ‖logDeriv f s - logDeriv f 0 - logDeriv (divisorProductOne f) s‖) :=
-    (tendsto_const_nhds.sub (MeromorphicOn.tendsto_sum_divisor_norm_sublevel_atTop hg_sum)).norm
+    (tendsto_const_nhds.sub
+      (hg_sum.tendsto_sum_divisor_norm_sublevel_atTop.comp tendsto_natCast_atTop_atTop)).norm
   have hzero : ‖logDeriv f s - logDeriv f 0 - logDeriv (divisorProductOne f) s‖ ≤ 0 :=
     le_of_tendsto_of_tendsto hlhs hrhs hbound
   have heq := norm_le_zero_iff.mp hzero
@@ -297,16 +298,14 @@ theorem exists_eq_cexp_add_logDeriv_mul_divisorProductOne {f : ℂ → ℂ}
     rw [exp_add, exp_log hf0]
     exact h.eq_mul_cexp_logDeriv_mul_divisorProductOne hf hf0 z⟩
 
-/-- The paired partial-fraction series of `logDeriv f` is absolutely convergent at every point off
-the zeros of `f`. -/
+/-- The paired partial-fraction series of `logDeriv f` is absolutely convergent at every point,
+using total division at `ρ = 0` and `ρ = s`. -/
 theorem summable_norm_natCast_divisor_mul_one_div_sub_add_one_div {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) {s : ℂ} (hs : f s ≠ 0) :
+    (h : OrderLE f 1) (hf : Differentiable ℂ f) (s : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)‖) :=
   TauCeti.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div
-    ((hf.analyticAt 0).notMem_divisor_support hf0)
-    (h.summable_divisor_toNat_mul_norm_inv_sq hf)
-    ((hf.analyticAt s).notMem_divisor_support hs)
+    (h.summable_divisor_toNat_mul_norm_inv_sq hf) s
 
 /-- **Partial-fraction expansion of the logarithmic derivative** at order at most one: away from
 the zeros of `f`, `logDeriv f s = logDeriv f 0 + ∑' ρ, m_ρ * (1 / (s - ρ) + 1 / ρ)`. -/
@@ -345,125 +344,40 @@ theorem hasSumLocallyUniformlyOn_logDeriv {f : ℂ → ℂ}
       exact hs'
     rw [h.logDeriv_eq_add_logDeriv_divisorProductOne hf hf0 hfs, add_sub_cancel_left]
 
-/-! ### Critical-strip zero location and real-part cancellation -/
+/-! ### Vertical-strip zero location and real-part summability -/
 
-/-- When every zero of `f` has real part in `[0, 1]`, the real parts `m_ρ * Re (1 / ρ)` are
-nonnegative and summable, bounded termwise by `m_ρ * ‖ρ⁻¹‖ ^ 2`. -/
+/-- For an entire function `f` of growth order at most `1` whose zeros have bounded real part
+(`|ρ.re| ≤ B`), the real-part series `ρ ↦ m_ρ * Re (1 / ρ)` is summable on the divisor support. -/
 theorem summable_divisor_toNat_mul_re_one_div {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f)
-    (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1) :
+    {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
-  refine Summable.of_nonneg_of_le (fun ρ ↦ ?_) (fun ρ ↦ ?_)
-    (h.summable_divisor_toNat_mul_norm_inv_sq hf)
-  · have hρ := hstrip ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
-    exact mul_nonneg (Nat.cast_nonneg _)
-      (by simpa only [one_div, Complex.inv_re_nonneg] using hρ.1)
-  · have hρ := hstrip ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
-    refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
-    rw [one_div, inv_re, normSq_eq_norm_sq, norm_inv, inv_pow, ← one_div]
-    exact div_le_div_of_nonneg_right hρ.2 (sq_nonneg _)
+  refine Summable.of_norm_bounded
+    ((h.summable_divisor_toNat_mul_norm_inv_sq hf).mul_left (max B 0)) fun ρ ↦ ?_
+  have hρ := (hre ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)).trans
+    (le_max_left B 0)
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Nat.cast_nonneg _), one_div, inv_re, abs_div,
+    abs_of_nonneg (normSq_nonneg _), normSq_eq_norm_sq, norm_inv, inv_pow, ← mul_assoc,
+    mul_comm (max B 0), mul_assoc, ← div_eq_mul_inv]
+  exact mul_le_mul_of_nonneg_left (div_le_div_of_nonneg_right hρ (sq_nonneg _)) (Nat.cast_nonneg _)
 
-/-- When every zero of `f` has real part in `[0, 1]`, the unsubtracted real-part series
-`∑' ρ, m_ρ * Re (1 / (s - ρ))` is summable at every point `s` with `f s ≠ 0`. -/
+/-- For an entire function `f` of growth order at most `1` whose zeros have bounded real part
+(`|ρ.re| ≤ B`), the unsubtracted real-part series `ρ ↦ m_ρ * Re (1 / (s - ρ))` is summable on the
+divisor support for every `s : ℂ`. -/
 theorem summable_divisor_toNat_mul_re_one_div_sub {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1) {s : ℂ} (hs : f s ≠ 0) :
+    (h : OrderLE f 1) (hf : Differentiable ℂ f)
+    {B : ℝ} (hre : ∀ ρ : ℂ, f ρ = 0 → |ρ.re| ≤ B) (s : ℂ) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re) := by
   have hpair : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)).re) :=
     Complex.reCLM.summable
-      (h.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hf hf0 hs).of_norm
-  have hinv := h.summable_divisor_toNat_mul_re_one_div hf hstrip
+      (h.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hf s).of_norm
+  have hinv := h.summable_divisor_toNat_mul_re_one_div hf hre
   refine (hpair.sub hinv).congr fun ρ ↦ ?_
   simp only [mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re]
   ring
-
-/-- Splitting `Re (logDeriv f s)` into `Re (logDeriv f 0)`, `∑' ρ, m_ρ * Re (1 / (s - ρ))`, and
-`∑' ρ, m_ρ * Re (1 / ρ)` when every zero lies in `0 ≤ Re ρ ≤ 1`. -/
-private theorem re_logDeriv_eq_add_tsum_add_tsum {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1) {s : ℂ} (hs : f s ≠ 0) :
-    (logDeriv f s).re = (logDeriv f 0).re +
-      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re) +
-      (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-        ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
-  have hc := (h.summable_norm_natCast_divisor_mul_one_div_sub_add_one_div hf hf0 hs).of_norm
-  have hsub := h.summable_divisor_toNat_mul_re_one_div_sub hf hf0 hstrip hs
-  have hinv := h.summable_divisor_toNat_mul_re_one_div hf hstrip
-  have htsum_re : (∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (s - ρ) + 1 / ρ)).re =
-      ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-        (((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re +
-          ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re) := by
-    rw [← Complex.reCLM_apply, ContinuousLinearMap.map_tsum Complex.reCLM hc]
-    refine tsum_congr fun ρ ↦ ?_
-    rw [Complex.reCLM_apply, mul_re, natCast_re, natCast_im, zero_mul, sub_zero, add_re, mul_add]
-  rw [h.logDeriv_eq_add_tsum hf hf0 hs, add_re, htsum_re, Summable.tsum_add hsub hinv, add_assoc]
-
-/-- **Real-part formula for the Hadamard linear constant.** Let `f` be entire of order at most `1`
-with `f 0 ≠ 0`, all zeros in `0 ≤ Re ρ ≤ 1`, and `f (1 - z) = c * conj (f (conj z))` for a
-constant `c`. Then `Re (logDeriv f 0) = -∑' ρ, m_ρ * Re (1 / ρ)`. -/
-theorem re_logDeriv_zero_eq_neg_tsum {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1)
-    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z))) :
-    (logDeriv f 0).re = -∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re := by
-  have hc : c ≠ 0 := by
-    rintro rfl
-    have h0 := hfe 1
-    simp only [sub_self, zero_mul] at h0
-    exact hf0 h0
-  have hf1 : f 1 ≠ 0 := by
-    have h1 := hfe 0
-    rw [sub_zero, map_zero] at h1
-    rw [h1]
-    exact mul_ne_zero hc (star_ne_zero.mpr hf0)
-  have hlog1 : (logDeriv f 1).re = -(logDeriv f 0).re := by
-    have h0 := congrArg re (logDeriv_one_sub_conj hfe 0)
-    simpa using h0
-  let d := MeromorphicOn.divisor f Set.univ
-  have hperm : (∑' ρ : d.support, ((d ρ).toNat : ℝ) * (1 / (1 - (ρ : ℂ))).re) =
-      ∑' ρ : d.support, ((d ρ).toNat : ℝ) * (1 / (ρ : ℂ)).re := by
-    symm
-    rw [← (divisorSupportOneSubConj hfe).tsum_eq]
-    refine tsum_congr fun ρ ↦ ?_
-    simp only [d, coe_divisorSupportOneSubConj_apply, divisor_one_sub_conj hfe]
-    congr 1
-    rw [← conj_re]
-    simp
-  have hexp1 := h.re_logDeriv_eq_add_tsum_add_tsum hf hf0 hstrip hf1
-  rw [hperm, hlog1] at hexp1
-  linarith
-
-/-- **Cancelled real-part expansion of the logarithmic derivative.** Under the hypotheses of
-`OrderLE.re_logDeriv_zero_eq_neg_tsum`, for every `s` with `f s ≠ 0` one has
-`Re (logDeriv f s) = ∑' ρ, m_ρ * Re (1 / (s - ρ))`, with no additive constant. -/
-theorem re_logDeriv_eq_tsum {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
-    (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1)
-    {c : ℂ} (hfe : ∀ z : ℂ, f (1 - z) = c * conj (f (conj z)))
-    {s : ℂ} (hs : f s ≠ 0) :
-    (logDeriv f s).re = ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
-  rw [h.re_logDeriv_eq_add_tsum_add_tsum hf hf0 hstrip hs,
-    h.re_logDeriv_zero_eq_neg_tsum hf hf0 hstrip hfe]
-  ring
-
-/-- When every zero lies in `0 ≤ Re ρ ≤ 1` and `1 ≤ Re s`, every summand `m_ρ * Re (1 / (s - ρ))`
-is nonnegative, so their series has nonnegative sum. -/
-theorem tsum_divisor_toNat_mul_re_one_div_sub_nonneg {f : ℂ → ℂ}
-    (hstrip : ∀ ρ : ℂ, f ρ = 0 → ρ.re ∈ Set.Icc 0 1) (hf : Differentiable ℂ f)
-    {s : ℂ} (hs : 1 ≤ s.re) :
-    0 ≤ ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
-      ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * (1 / (s - ρ)).re := by
-  refine tsum_nonneg fun ρ ↦ mul_nonneg (Nat.cast_nonneg _) ?_
-  have hρ := hstrip ρ ((hf.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero ρ.property)
-  rw [one_div, Complex.inv_re_nonneg, sub_re, sub_nonneg]
-  exact hρ.2.trans hs
 
 end OrderLE
 

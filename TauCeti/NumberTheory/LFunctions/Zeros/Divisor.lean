@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
+import TauCeti.Analysis.Meromorphic.Conj
 
 /-!
 # The zero divisor of a meromorphically continued L-function record
@@ -21,6 +22,13 @@ bounded region it exceeds the signed count of `Λ` by the number of poles in the
 particular the two signed counts agree on regions avoiding the poles. These adapters let
 counting arguments run on whichever of `Λ` and its entire completion is more convenient.
 
+For any function whose punctured germs obey a critical-line functional-conjugation symmetry
+`(fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] z] fun w ↦ c * conj (f (conj w))`, the reflection `z ↦ 1 - conj z`
+preserves `meromorphicOrderAt f` and `MeromorphicOn.divisor f Set.univ`; whenever a whole-plane
+divisor is invariant under `z ↦ 1 - conj z`, `TauCeti.divisorSupportOneSubConj` packages that
+reflection as an involutive permutation of `(MeromorphicOn.divisor f Set.univ).support` for
+reindexing sums and products over the zeros.
+
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., §12 and §15.
@@ -28,7 +36,7 @@ counting arguments run on whichever of `Λ` and its entire completion is more co
 
 public section
 
-open Set
+open ComplexConjugate Set Topology
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
@@ -130,3 +138,86 @@ theorem HasMeromorphicContinuation.zeroCount_completed_eq_divisorCount_add
     h.divisorCount_entireCompletion hR]
 
 end TauCeti.LFunctions.AnalyticLFunctionData
+
+namespace TauCeti
+
+/-- Under a punctured-neighbourhood functional-conjugation identity
+`(fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] z] fun w ↦ c * conj (f (conj w))`, the reflection `z ↦ 1 - conj z`
+preserves `meromorphicOrderAt f`. -/
+theorem meromorphicOrderAt_one_sub_conj {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, (fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] z] fun w ↦ c * conj (f (conj w))) (z : ℂ) :
+    meromorphicOrderAt f (1 - conj z) = meromorphicOrderAt f z := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have hzero (u : ℂ) : f =ᶠ[𝓝[≠] u] (0 : ℂ → ℂ) := by
+      have hsub : Filter.Tendsto (fun v : ℂ ↦ 1 - v) (𝓝[≠] u) (𝓝[≠] (1 - u)) :=
+        (continuous_const.sub continuous_id).continuousWithinAt.tendsto_nhdsWithin fun v hv ↦
+          sub_right_injective.ne hv
+      filter_upwards [hsub.eventually (hfe (1 - u))] with v hv
+      simpa using hv
+    rw [meromorphicOrderAt_congr (hzero (1 - conj z)), meromorphicOrderAt_congr (hzero z)]
+    simp
+  · have hlhs : meromorphicOrderAt (fun w : ℂ ↦ f (1 - w)) (conj z) =
+        meromorphicOrderAt f (1 - conj z) :=
+      meromorphicOrderAt_comp_of_deriv_ne_zero (f := f) (g := fun w : ℂ ↦ 1 - w)
+        (by fun_prop) (by simp)
+    have hrhs : meromorphicOrderAt (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
+        meromorphicOrderAt f z := by
+      have hsmul : (fun w : ℂ ↦ c * conj (f (conj w))) = c • (conj ∘ f ∘ conj) := by
+        funext w
+        simp [Function.comp_def, smul_eq_mul]
+      rw [hsmul, meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc,
+        meromorphicOrderAt_conj_conj, Complex.conj_conj]
+    rw [← hlhs, meromorphicOrderAt_congr (hfe (conj z)), hrhs]
+
+/-- Under a punctured-neighbourhood functional-conjugation identity
+`(fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] z] fun w ↦ c * conj (f (conj w))`, the reflection `z ↦ 1 - conj z`
+preserves the whole-plane divisor of `f`. -/
+theorem divisor_one_sub_conj {f : ℂ → ℂ} {c : ℂ}
+    (hfe : ∀ z : ℂ, (fun w ↦ f (1 - w)) =ᶠ[𝓝[≠] z] fun w ↦ c * conj (f (conj w))) (z : ℂ) :
+    MeromorphicOn.divisor f Set.univ (1 - conj z) = MeromorphicOn.divisor f Set.univ z := by
+  by_cases hm : MeromorphicOn f univ
+  · rw [hm.divisor_apply (mem_univ _), hm.divisor_apply (mem_univ _),
+      meromorphicOrderAt_one_sub_conj hfe z]
+  · simp [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm]
+
+/-- When the whole-plane divisor of `f` is invariant under `z ↦ 1 - conj z`, that reflection
+restricts to an involutive permutation of `(MeromorphicOn.divisor f Set.univ).support`. -/
+noncomputable def divisorSupportOneSubConj {f : ℂ → ℂ}
+    (hd : ∀ z : ℂ, MeromorphicOn.divisor f Set.univ (1 - conj z) =
+      MeromorphicOn.divisor f Set.univ z) :
+    Equiv.Perm (MeromorphicOn.divisor f Set.univ).support :=
+  Function.Involutive.toPerm
+    (fun ρ ↦ ⟨1 - conj (ρ : ℂ), Function.mem_support.mpr <| by
+      rw [hd]
+      exact Function.mem_support.mp ρ.property⟩)
+    fun ρ ↦ by ext; simp
+
+/-- The support permutation `divisorSupportOneSubConj` acts on the underlying point by
+`ρ ↦ 1 - conj ρ`. -/
+@[simp]
+theorem coe_divisorSupportOneSubConj_apply {f : ℂ → ℂ}
+    (hd : ∀ z : ℂ, MeromorphicOn.divisor f Set.univ (1 - conj z) =
+      MeromorphicOn.divisor f Set.univ z)
+    (ρ : (MeromorphicOn.divisor f Set.univ).support) :
+    (divisorSupportOneSubConj hd ρ : ℂ) = 1 - conj (ρ : ℂ) :=
+  (rfl)
+
+/-- `divisorSupportOneSubConj` is its own inverse. -/
+@[simp]
+theorem divisorSupportOneSubConj_symm {f : ℂ → ℂ}
+    (hd : ∀ z : ℂ, MeromorphicOn.divisor f Set.univ (1 - conj z) =
+      MeromorphicOn.divisor f Set.univ z) :
+    (divisorSupportOneSubConj hd).symm = divisorSupportOneSubConj hd :=
+  (rfl)
+
+/-- `divisorSupportOneSubConj` is an involution on the divisor support. -/
+@[simp]
+theorem divisorSupportOneSubConj_apply_apply {f : ℂ → ℂ}
+    (hd : ∀ z : ℂ, MeromorphicOn.divisor f Set.univ (1 - conj z) =
+      MeromorphicOn.divisor f Set.univ z)
+    (ρ : (MeromorphicOn.divisor f Set.univ).support) :
+    divisorSupportOneSubConj hd (divisorSupportOneSubConj hd ρ) = ρ := by
+  ext
+  simp
+
+end TauCeti

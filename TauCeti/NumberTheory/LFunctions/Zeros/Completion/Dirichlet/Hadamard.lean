@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CanonicalProduct.Hadamard
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard
 
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.LogDeriv
@@ -17,22 +17,31 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 # Hadamard factorization and retained-zero inequalities for Dirichlet L-functions
 
 Let `χ` be a primitive nonprincipal Dirichlet character modulo `N`, and write
-`Λ₀ = (dirichletData χ hχ).entireCompletion`. Combining `OrderLE Λ₀ 1`, `Λ₀ 0 ≠ 0`, confinement of
-all zeros of `Λ₀` to `0 < Re ρ < 1`, and the combined functional and conjugation identity
-`Λ₀ (1 - z) = ε(χ) * conj (Λ₀ (conj z))` with `TauCeti.OrderLE.re_logDeriv_zero_eq_neg_tsum` gives:
+`Λ₀ = (dirichletData χ hχ).entireCompletion`. Because `χ ≠ 1`, `Λ₀` has no poles and satisfies
+`Λ₀ 0 ≠ 0` (via Euler-product nonvanishing at `1` and the functional equation), has growth order at
+most `1`, has all its zeros inside the open critical strip `0 < Re ρ < 1`, and obeys the combined
+functional and conjugation identity `Λ₀ (1 - z) = ε(χ) * conj (Λ₀ (conj z))`. Specializing the
+order-one Hadamard and real-part cancellation theorems gives:
 
 * **Hadamard factorization** (`dirichletData_entireCompletion_hadamard`): `Λ₀` factors globally as
   `exp (a + b * s)` times the multipliable genus-one canonical product over its zeros.
 * **Real-part cancellation** (`re_logDeriv_dirichletData_entireCompletion_zero` and
   `re_logDeriv_dirichletData_entireCompletion_eq_tsum`): for every primitive `χ ≠ 1` (real or
   complex), `(logDeriv Λ₀ 0).re = -∑' ρ, m_ρ * (1 / ρ).re`, so off the zeros one has
-  `(logDeriv Λ₀ s).re = ∑' ρ, m_ρ * (1 / (s - ρ)).re` with no constant term.
+  `(logDeriv Λ₀ s).re = ∑' ρ, m_ρ * (1 / (s - ρ)).re` with no additive constant.
 * **Retained-zero inequalities** (`finite_zero_sum_le_logDeriv` and `one_zero_le_logDeriv`): for
-  `σ ∈ [1, 2]`, every zero summand is nonnegative and the archimedean logarithmic derivative is
-  bounded in norm by `TauCeti.gammaLogDerivBound`, so any finite subset `S` in `0 < Re ρ` satisfies
-  `∑ ρ ∈ S, analyticOrderNatAt χ.LFunction ρ * Re (1 / (σ - ρ)) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`,
-  and any real zero `0 < β` of `L(·, χ)` satisfies
-  `1 / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`.
+  `σ ∈ [1, 2]`, every zero summand `m_ρ * Re (1 / (σ - ρ))` is nonnegative and the archimedean
+  logarithmic derivative is bounded in norm by `TauCeti.gammaLogDerivBound` (`C_Γ`), so discarding
+  all zeros outside a chosen finite set `S` (or keeping a single real zero `0 < β`) yields
+  `∑ ρ ∈ S, analyticOrderNatAt χ.LFunction ρ * Re (1 / (σ - ρ)) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`
+  and `1 / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`.
+
+Dropping outside nonnegative zero terms on `σ ∈ [1, 2]` turns upper bounds on `-Re (L'/L)(σ, χ)`
+into quantitative bounds on zeros near `Re s = 1` (for zero-free regions and real-zero exclusion).
+In `finite_zero_sum_le_logDeriv`, the hypothesis `0 < ρ.re` on `S` restricts to the right
+half-plane where `Λ₀` and `χ.LFunction` share the same zero multiplicities, excluding the trivial
+Gamma-cancelled zero `L(0, χ) = 0` of even characters while allowing non-zeros in `S` since they
+contribute `analyticOrderNatAt χ.LFunction ρ = 0`.
 
 ## References
 
@@ -50,16 +59,10 @@ namespace TauCeti.LFunctions
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
-/-- **Order at most one.** The entire completion of a primitive nonprincipal Dirichlet record has
-growth order at most `1`. -/
-theorem dirichletData_entireCompletion_orderLE_one (hne : χ ≠ 1) :
-    OrderLE (dirichletData χ hχ).entireCompletion 1 := by
-  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
-  exact dirichletData_completed_orderLE_one χ hχ hne
-
-private theorem re_mem_Icc_of_dirichletData_entireCompletion_eq_zero (hne : χ ≠ 1) (ρ : ℂ)
-    (hρ : (dirichletData χ hχ).entireCompletion ρ = 0) : ρ.re ∈ Set.Icc 0 1 :=
-  Set.Ioo_subset_Icc_self (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ)
+private theorem abs_re_le_one_of_dirichletData_entireCompletion_eq_zero (hne : χ ≠ 1) (ρ : ℂ)
+    (hρ : (dirichletData χ hχ).entireCompletion ρ = 0) : |ρ.re| ≤ 1 := by
+  have h := re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ
+  exact abs_le.mpr ⟨by linarith [h.1], h.2.le⟩
 
 private theorem dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj (hne : χ ≠ 1)
     (z : ℂ) :
@@ -111,9 +114,9 @@ theorem logDeriv_dirichletData_entireCompletion_eq_add_tsum (hne : χ ≠ 1) {s 
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne) hs
 
-/-- **Real-part formula for `B(χ)`.** For every primitive nonprincipal Dirichlet character `χ`
-(real or complex), the real part of `logDeriv (dirichletData χ hχ).entireCompletion 0` equals
-`-∑' ρ, m_ρ * Re (1 / ρ)`. -/
+/-- **Real-part formula for the Hadamard linear constant.** For every primitive nonprincipal
+Dirichlet character `χ` (real or complex), the real part of
+`logDeriv (dirichletData χ hχ).entireCompletion 0` equals `-∑' ρ, m_ρ * Re (1 / ρ)`. -/
 theorem re_logDeriv_dirichletData_entireCompletion_zero (hne : χ ≠ 1) :
     (logDeriv (dirichletData χ hχ).entireCompletion 0).re =
       -∑' ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support,
@@ -122,7 +125,7 @@ theorem re_logDeriv_dirichletData_entireCompletion_zero (hne : χ ≠ 1) :
   (dirichletData_entireCompletion_orderLE_one χ hχ hne).re_logDeriv_zero_eq_neg_tsum
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
-    (re_mem_Icc_of_dirichletData_entireCompletion_eq_zero χ hχ hne)
+    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le)
     (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ hne)
 
 /-- **Cancelled real-part partial-fraction expansion.** Off the zeros of
@@ -137,7 +140,7 @@ theorem re_logDeriv_dirichletData_entireCompletion_eq_tsum (hne : χ ≠ 1) {s :
   (dirichletData_entireCompletion_orderLE_one χ hχ hne).re_logDeriv_eq_tsum
     (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
-    (re_mem_Icc_of_dirichletData_entireCompletion_eq_zero χ hχ hne)
+    (fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le)
     (dirichletData_entireCompletion_one_sub_eq_rootNumber_mul_conj_conj χ hχ hne) hs
 
 /-- On `1 ≤ Re s`, the real part of the logarithmic derivative of a primitive nonprincipal
@@ -146,29 +149,18 @@ theorem re_logDeriv_dirichletData_entireCompletion_nonneg (hne : χ ≠ 1) {s : 
     0 ≤ (logDeriv (dirichletData χ hχ).entireCompletion s).re := by
   rw [re_logDeriv_dirichletData_entireCompletion_eq_tsum χ hχ hne
     (dirichletData_entireCompletion_ne_zero_of_one_le_re χ hχ hne hs)]
-  exact OrderLE.tsum_divisor_toNat_mul_re_one_div_sub_nonneg
-    (re_mem_Icc_of_dirichletData_entireCompletion_eq_zero χ hχ hne)
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion hs
+  exact tsum_divisor_toNat_mul_re_one_div_sub_nonneg
+    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
+    fun _ hρ ↦ (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le.trans hs
 
 /-! ### Retained-zero inequalities -/
-
-/-- On the positive half-plane, the natural divisor multiplicity of the entire completion equals
-the analytic vanishing order `analyticOrderNatAt χ.LFunction s`. -/
-theorem toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt (hne : χ ≠ 1)
-    {s : ℂ} (hs : 0 < s.re) :
-    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
-      analyticOrderNatAt χ.LFunction s := by
-  have hm := dirichletData_hasMeromorphicContinuation χ hχ
-  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hm.meromorphicOn_entireCompletion
-    (hm.analyticAt_entireCompletion s) (Set.mem_univ s), Int.toNat_natCast,
-    analyticOrderNatAt, analyticOrderNatAt,
-    analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs]
 
 include hχ in
 /-- **Finite retained-zero inequality.** For any primitive nonprincipal Dirichlet character `χ` of
 conductor `N` (real or complex), any finite set `S ⊆ {ρ : ℂ | 0 < ρ.re}`, and any `σ ∈ [1, 2]`,
 the multiplicity-weighted sum over `S` satisfies
-`∑ ρ ∈ S, analyticOrderNatAt χ.LFunction ρ * Re (1 / (σ - ρ)) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`. -/
+`∑ ρ ∈ S, analyticOrderNatAt χ.LFunction ρ * Re (1 / (σ - ρ)) ≤`
+`Re (L'/L)(σ, χ) + ½ log N + gammaLogDerivBound`. -/
 theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ ρ ∈ S, 0 < ρ.re)
     {σ : ℝ} (hσ : σ ∈ Set.Icc 1 2) :
     ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / ((σ : ℂ) - ρ)).re ≤
@@ -188,8 +180,7 @@ theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ 
     have hord := dirichletData_entireCompletion_orderLE_one χ hχ hne
     exact (hord.summable_divisor_toNat_mul_re_one_div_sub
       (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-      (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)
-      (re_mem_Icc_of_dirichletData_entireCompletion_eq_zero χ hχ hne) hΛσ).hasSum
+      (abs_re_le_one_of_dirichletData_entireCompletion_eq_zero χ hχ hne) σ).hasSum
   have hF_sum : HasSum F (logDeriv Λ₀ σ).re :=
     (hasSum_subtype_iff_of_support_subset hF_supp).mp hsub_sum
   have hF_nonneg (ρ : ℂ) : 0 ≤ F ρ := by
@@ -220,7 +211,7 @@ theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ 
 include hχ in
 /-- **One-zero inequality.** For any primitive nonprincipal Dirichlet character `χ` of conductor
 `N` (real or complex), any real zero `0 < β` of `L(·, χ)`, and any `σ ∈ [1, 2]`,
-`1 / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`. -/
+`1 / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + gammaLogDerivBound`. -/
 theorem one_zero_le_logDeriv (hne : χ ≠ 1) {β σ : ℝ} (hβ : 0 < β)
     (hzero : χ.LFunction β = 0) (hσ : σ ∈ Set.Icc 1 2) :
     1 / (σ - β) ≤ (logDeriv χ.LFunction σ).re + Real.log N / 2 + gammaLogDerivBound := by
@@ -254,7 +245,7 @@ theorem one_zero_le_logDeriv (hne : χ ≠ 1) {β σ : ℝ} (hβ : 0 < β)
 include hχ in
 /-- Specializing `finite_zero_sum_le_logDeriv` to the empty set at `σ = 2` shows that for every
 primitive nonprincipal Dirichlet character `χ` modulo `N`,
-`0 ≤ Re (L'/L)(2, χ) + ½ log N + C_Γ`. -/
+`0 ≤ Re (L'/L)(2, χ) + ½ log N + gammaLogDerivBound`. -/
 example (hne : χ ≠ 1) :
     0 ≤ (logDeriv χ.LFunction 2).re + Real.log N / 2 + gammaLogDerivBound := by
   have h := finite_zero_sum_le_logDeriv χ hχ hne ∅ (by simp) (σ := 2) ⟨by norm_num, le_rfl⟩
