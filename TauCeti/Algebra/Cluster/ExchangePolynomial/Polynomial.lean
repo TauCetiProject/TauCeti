@@ -200,11 +200,6 @@ theorem eval₂_toPolynomial_reverse_mul_pow (H : ExchangePolynomial R) (f : R �
   simpa only [toPolynomial_reverse, invOf_units] using
     H.toPolynomial.eval₂_reflect_mul_pow' f (x : S) H.natDegree_toPolynomial_le
 
-/-- Reversal preserves the sum of the coefficients. -/
-theorem eval₂_one_toPolynomial_reverse (H : ExchangePolynomial R) (f : R →+* S) :
-    H.reverse.toPolynomial.eval₂ f 1 = H.toPolynomial.eval₂ f 1 := by
-  simp
-
 /-- Evaluation is the finite sum of the realized coefficients times the corresponding powers. -/
 theorem eval₂_toPolynomial (H : ExchangePolynomial R) (f : R →+* S) (x : S) :
     H.toPolynomial.eval₂ f x = ∑ i : Fin (H.degree + 1), f (H.coeff i) * x ^ (i : ℕ) := by
@@ -215,11 +210,6 @@ theorem eval₂_toPolynomial (H : ExchangePolynomial R) (f : R →+* S) (x : S) 
 theorem eval_toPolynomial (H : ExchangePolynomial R) (x : R) :
     H.toPolynomial.eval x = ∑ i : Fin (H.degree + 1), H.coeff i * x ^ (i : ℕ) := by
   simpa using H.eval₂_toPolynomial (.id R) x
-
-/-- Reversal preserves evaluation at one. -/
-theorem eval_one_toPolynomial_reverse (H : ExchangePolynomial R) :
-    H.reverse.toPolynomial.eval 1 = H.toPolynomial.eval 1 := by
-  simp
 
 /-- The reciprocal identity for polynomial evaluation holds at every coefficient unit. -/
 theorem eval_toPolynomial_reverse_mul_pow (H : ExchangePolynomial R) (x : Rˣ) :

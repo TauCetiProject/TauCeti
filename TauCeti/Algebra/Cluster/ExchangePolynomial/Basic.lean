@@ -43,12 +43,16 @@ structure ExchangePolynomial (K : Type*) [CommMonoidWithZero K] where
   isUnit_coeff_zero : IsUnit (coeff 0)
   isUnit_coeff_degree : IsUnit (coeff degree)
 
-attribute [simp] ExchangePolynomial.isUnit_coeff_zero ExchangePolynomial.isUnit_coeff_degree
+attribute [simp] ExchangePolynomial.degree_pos ExchangePolynomial.isUnit_coeff_zero
+  ExchangePolynomial.isUnit_coeff_degree
 
 namespace ExchangePolynomial
 
 variable {K L M : Type*} [CommMonoidWithZero K] [CommMonoidWithZero L]
   [CommMonoidWithZero M]
+
+@[simp] theorem degree_ne_zero (H : ExchangePolynomial K) : H.degree ≠ 0 :=
+  H.degree_pos.ne'
 
 /-- Exchange polynomials are determined by their degrees and coefficients through those degrees. -/
 @[ext]
@@ -84,6 +88,13 @@ def reverse (H : ExchangePolynomial K) : ExchangePolynomial K where
   simp only [degree_reverse] at hi
   simp [hi, Nat.sub_sub_self hi]
 
+@[simp] theorem reverse_inj {H G : ExchangePolynomial K} :
+    H.reverse = G.reverse ↔ H = G := by
+  constructor
+  · intro h
+    simpa using congrArg reverse h
+  · exact congrArg reverse
+
 /-- Dilating by `κ` replaces the formal variable `T` by `κ T`. -/
 def dilate (H : ExchangePolynomial K) (κ : Kˣ) : ExchangePolynomial K where
   degree := H.degree
@@ -109,6 +120,15 @@ def dilate (H : ExchangePolynomial K) (κ : Kˣ) : ExchangePolynomial K where
   apply ext (by simp)
   simp [mul_pow, mul_assoc]
 
+@[simp] theorem dilate_left_inj (κ : Kˣ) {H G : ExchangePolynomial K} :
+    H.dilate κ = G.dilate κ ↔ H = G := by
+  constructor
+  · intro h
+    apply ext (by simpa using congrArg degree h)
+    intro i _hi
+    exact κ.isUnit.pow i |>.mul_left_cancel (congrArg (fun F => F.coeff i) h)
+  · exact congrArg (fun F : ExchangePolynomial K => F.dilate κ)
+
 /-- Scaling multiplies every coefficient by the same unit. -/
 def scale (H : ExchangePolynomial K) (e : Kˣ) : ExchangePolynomial K where
   degree := H.degree
@@ -133,6 +153,15 @@ def scale (H : ExchangePolynomial K) (e : Kˣ) : ExchangePolynomial K where
   apply ext (by simp)
   simp [mul_assoc]
 
+@[simp] theorem scale_left_inj (e : Kˣ) {H G : ExchangePolynomial K} :
+    H.scale e = G.scale e ↔ H = G := by
+  constructor
+  · intro h
+    apply ext (by simpa using congrArg degree h)
+    intro i _hi
+    exact e.isUnit.mul_left_cancel (congrArg (fun F => F.coeff i) h)
+  · exact congrArg (fun F : ExchangePolynomial K => F.scale e)
+
 @[simp] theorem reverse_scale (H : ExchangePolynomial K) (e : Kˣ) :
     (H.scale e).reverse = H.reverse.scale e := by
   apply ext (by simp)
@@ -152,9 +181,7 @@ theorem reverse_dilate (H : ExchangePolynomial K) (κ : Kˣ) :
   intro i hi
   simp only [degree_dilate, degree_reverse] at hi
   have hp : κ ^ H.degree * (κ⁻¹) ^ i = κ ^ (H.degree - i) := by
-    conv_lhs => rw [← Nat.sub_add_cancel hi]
-    rw [pow_add]
-    simp [mul_assoc]
+    rw [inv_pow, ← pow_sub κ hi]
   have hv := congrArg (fun u : Kˣ => (u : K)) hp
   simp only [Units.val_mul, Units.val_pow_eq_pow_val] at hv
   simp only [coeff_reverse, degree_dilate, hi, ite_true, coeff_dilate,
@@ -267,6 +294,24 @@ noncomputable def leadingUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff
   ext
   simp
 
+@[simp] theorem scale_right_inj (H : ExchangePolynomial K) {e f : Kˣ} :
+    H.scale e = H.scale f ↔ e = f := by
+  constructor
+  · intro h
+    have h0 := congrArg (fun F : ExchangePolynomial K => F.coeff 0) h
+    simpa only [coeff_scale] using
+      Units.ext (H.isUnit_coeff_zero.mul_right_cancel h0)
+  · exact congrArg (H.scale ·)
+
+@[simp] theorem scale_eq_self (H : ExchangePolynomial K) {e : Kˣ} :
+    H.scale e = H ↔ e = 1 := by
+  constructor
+  · intro h
+    have hs : H.scale e = H.scale 1 := by simpa using h
+    exact H.scale_right_inj.mp hs
+  · rintro rfl
+    exact H.scale_one
+
 @[simp] theorem constantUnit_map (H : ExchangePolynomial K) (f : K →*₀ L) :
     (H.map f).constantUnit = Units.map f.toMonoidHom H.constantUnit := by
   ext
@@ -293,12 +338,6 @@ noncomputable def dilationFactor (H : ExchangePolynomial K) (b : ℤ) : Kˣ :=
 theorem dilationFactor_def (H : ExchangePolynomial K) (b : ℤ) :
     H.dilationFactor b = H.leadingUnit ^ (b⁺ : ℤ) * (H.constantUnit ^ (b⁻ : ℤ))⁻¹ := (rfl)
 
-private theorem natCast_toNat_posPart (b : ℤ) : (b.toNat : ℤ) = b⁺ := by
-  rw [Int.ofNat_toNat, posPart_def]
-
-private theorem natCast_toNat_negPart (b : ℤ) : ((-b).toNat : ℤ) = b⁻ := by
-  rw [Int.ofNat_toNat, negPart_def, max_comm]
-
 @[simp] theorem dilationFactor_zero (H : ExchangePolynomial K) : H.dilationFactor 0 = 1 := by
   simp [dilationFactor_def]
 
@@ -307,23 +346,12 @@ private theorem natCast_toNat_negPart (b : ℤ) : ((-b).toNat : ℤ) = b⁻ := b
     H.reverse.dilationFactor b = (H.dilationFactor (-b))⁻¹ := by
   simp [dilationFactor, mul_comm]
 
-/-- Reversal together with the sign change of the matrix entry inverts the propagation factor. -/
-theorem dilationFactor_reverse_neg (H : ExchangePolynomial K) (b : ℤ) :
-    H.reverse.dilationFactor (-b) = (H.dilationFactor b)⁻¹ := by
-  simp
-
 @[simp] theorem dilationFactor_scale (H : ExchangePolynomial K) (e : Kˣ) (b : ℤ) :
     (H.scale e).dilationFactor b = e ^ b * H.dilationFactor b := by
-  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg b
-  · simp only [dilationFactor, constantUnit_scale, leadingUnit_scale, Int.toNat_natCast,
-      Int.toNat_neg_natCast, pow_zero, inv_one, mul_one, mul_pow,
-      ← natCast_toNat_posPart, ← natCast_toNat_negPart, zpow_natCast]
-  · have hn : (- - (n : ℤ)).toNat = n := by
-      rw [Int.neg_neg, Int.toNat_natCast]
-    simp only [dilationFactor, constantUnit_scale, leadingUnit_scale, Int.toNat_neg_natCast,
-      pow_zero, mul_inv_rev, mul_pow, hn, ← natCast_toNat_posPart, ← natCast_toNat_negPart,
-      zpow_neg, zpow_natCast]
-    ac_rfl
+  have he : e ^ b = e ^ (b⁺ : ℤ) * (e ^ (b⁻ : ℤ))⁻¹ := by
+    rw [← zpow_sub, posPart_sub_negPart]
+  simp only [he, dilationFactor, constantUnit_scale, leadingUnit_scale, mul_zpow, mul_inv_rev]
+  ac_rfl
 
 @[simp] theorem dilationFactor_dilate (H : ExchangePolynomial K) (κ : Kˣ) (b : ℤ) :
     (H.dilate κ).dilationFactor b = (κ ^ H.degree) ^ (b⁺ : ℤ) * H.dilationFactor b := by
@@ -333,18 +361,12 @@ theorem dilationFactor_reverse_neg (H : ExchangePolynomial K) (b : ℤ) :
 /-- For a nonnegative matrix entry the leading endpoint supplies the propagation factor. -/
 theorem dilationFactor_of_nonneg (H : ExchangePolynomial K) {b : ℤ} (hb : 0 ≤ b) :
     H.dilationFactor b = H.leadingUnit ^ b := by
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hb
-  simp [dilationFactor, zpow_natCast]
+  simp [dilationFactor, posPart_eq_self.mpr hb, negPart_eq_zero.mpr hb]
 
 /-- For a nonpositive matrix entry the inverse constant endpoint supplies the factor. -/
 theorem dilationFactor_of_nonpos (H : ExchangePolynomial K) {b : ℤ} (hb : b ≤ 0) :
     H.dilationFactor b = H.constantUnit ^ b := by
-  by_cases hb0 : b = 0
-  · simp [hb0]
-  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg b
-  · have hn : n = 0 := by omega
-    exact absurd (Int.natCast_eq_zero.mpr hn) hb0
-  · simp [dilationFactor]
+  simp [dilationFactor, posPart_eq_zero.mpr hb, negPart_eq_neg.mpr hb]
 
 /-- Coefficient realization preserves endpoint propagation, without requiring additivity. -/
 @[simp] theorem dilationFactor_map (H : ExchangePolynomial K) (f : K →*₀ L) (b : ℤ) :
