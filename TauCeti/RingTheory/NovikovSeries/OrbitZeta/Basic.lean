@@ -61,6 +61,8 @@ linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.Ret
 
 * `TauCeti.NovikovSeries.orbitZeta_def`: the orbit zeta function is the exponential of the orbit
   logarithm.
+* `TauCeti.NovikovSeries.finite_setOf_period_succ_nsmul_lt`: finitely many iterates lie below each
+  cutoff.
 * `TauCeti.NovikovSeries.hasSum_orbitLog`, `TauCeti.NovikovSeries.orbitLog_mem_periodFiltration`:
   convergence and support of the orbit logarithm.
 * `TauCeti.NovikovSeries.orbitLog_mem_nonnegSubring`, `TauCeti.NovikovSeries.orbitLog_mem_posIdeal`:
@@ -128,6 +130,28 @@ private theorem single_iterate_mem_periodFiltration {g : H} (hg : 0 ≤ N g) (k 
     rw [period_succ_nsmul]
     nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]) (single_mem_periodFiltration _ _)
 
+/-- **Finitely many iterates below a cutoff.** When the periods of the orbits are positive and
+only finitely many lie below each cutoff, only finitely many iterates `(k + 1) • γ i` have period
+below a given cutoff. -/
+theorem finite_setOf_period_succ_nsmul_lt (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (C : ℝ) :
+    {p : ι × ℕ | N ((p.2 + 1) • γ p.1) < C}.Finite := by
+  obtain ⟨c, hc, hcγ⟩ := hfin.exists_gt_forall_le hpos
+  -- An iterate below the cutoff `C` comes from an orbit of period below `C`, iterated fewer than
+  -- `C / c` times.
+  refine ((((northcott_iff_tendsto _).2 hfin).finite_le C).prod
+    (Set.finite_Iio ⌈C / c⌉₊)).subset ?_
+  rintro ⟨i, k⟩ hik
+  have hlt : ((k : ℝ) + 1) * N (γ i) < C := by
+    rw [← period_succ_nsmul]
+    exact hik
+  have hk : (k : ℝ) < C / c := by
+    rw [lt_div_iff₀ hc]
+    nlinarith [hcγ i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+  refine ⟨?_, Nat.lt_ceil.2 hk⟩
+  simp only [Set.mem_ofPred_eq]
+  nlinarith [hpos i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+
 /-- The orbit logarithm converges in the period topology when only finitely many periods lie below
 each cutoff. -/
 theorem hasSum_orbitLog (hpos : ∀ i, 0 < N (γ i))
@@ -137,22 +161,9 @@ theorem hasSum_orbitLog (hpos : ∀ i, 0 < N (γ i))
       (orbitLog K N γ ε) := by
   refine (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
     (hasBasis_nhds_zero.tendsto_right_iff.2 fun C _ => eventually_cofinite.2 ?_)).hasSum
-  obtain ⟨c, hc, hcγ⟩ := hfin.exists_gt_forall_le hpos
-  -- A term below the cutoff `C` comes from an orbit of period below `C`, iterated fewer than
-  -- `C / c` times.
-  refine ((((northcott_iff_tendsto _).2 hfin).finite_le C).prod
-    (Set.finite_Iio ⌈C / c⌉₊)).subset ?_
-  rintro ⟨i, k⟩ hik
-  have hlt : ((k : ℝ) + 1) * N (γ i) < C := by
-    refine lt_of_not_ge fun hC =>
-      hik (antitone_periodFiltration ?_ (single_mem_periodFiltration _ _))
-    rwa [period_succ_nsmul]
-  have hk : (k : ℝ) < C / c := by
-    rw [lt_div_iff₀ hc]
-    nlinarith [hcγ i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-  refine ⟨?_, Nat.lt_ceil.2 hk⟩
-  simp only [Set.mem_ofPred_eq]
-  nlinarith [hpos i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+  -- A term outside `periodFiltration C` is an iterate of period below `C`.
+  refine (finite_setOf_period_succ_nsmul_lt hpos hfin C).subset fun p hp => ?_
+  exact lt_of_not_ge fun hC => hp (antitone_periodFiltration hC (single_mem_periodFiltration _ _))
 
 /-- The orbit logarithm lies above every nonnegative lower bound of the periods. -/
 theorem orbitLog_mem_periodFiltration {c : ℝ} (hc₀ : 0 ≤ c) (hc : ∀ i, c ≤ N (γ i))

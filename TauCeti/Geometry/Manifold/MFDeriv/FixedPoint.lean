@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
-public import Mathlib.Dynamics.FixedPoints.Defs
+public import Mathlib.Dynamics.FixedPoints.Basic
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -99,6 +101,10 @@ computed in any chart, also on manifolds with boundary or corners
   excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 * `TauCeti.fixedPointDerivative_iterate`: at a fixed point where `f` is differentiable, the
   fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
+* `Diffeomorph.det_id_sub_fixedPointDerivative_of_semiconj`: a diffeomorphism conjugating `f` to
+  `g` carries `det (1 - df_x)` to `det (1 - dg_(h x))`.
+* `Diffeomorph.det_id_sub_fixedPointDerivative_iterate_apply_iterate`: for a diffeomorphism `φ`,
+  `det (1 - d(φ^[k])_y)` is the same at all points `y` of a periodic orbit of period `k`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
@@ -456,6 +462,85 @@ theorem fixedPointDerivative_iterate_mul {d : ℕ} (hx : IsPeriodicPt f d x)
     rfl
   rw [key _ (iterate_mul f d n)]
   exact fixedPointDerivative_iterate ⟨x, hx.eq⟩ hf n
+
+section Conjugation
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] {n : WithTop ℕ∞}
+
+/-- **Conjugation invariance of `det (1 - df_x)`.** Let a `Cⁿ` diffeomorphism `h`, `n ≠ 0`,
+conjugate `f` to `g`, that is `h ∘ f = g ∘ h`. At a fixed point `x` of `f` at which `f` is
+differentiable, the fixed-point derivative of `g` at the fixed point `h x` is that of `f` at `x`
+conjugated by `dh_x`, so `det (1 - dg_(h x)) = det (1 - df_x)`. Over `ℝ`, the local Lefschetz
+signs of `f` at `x` and of `g` at `h x` agree. -/
+theorem _root_.Diffeomorph.det_id_sub_fixedPointDerivative_of_semiconj
+    (h : M ≃ₘ^n⟮I, I'⟯ M') (hn : n ≠ 0) {g : M' → M'} (hfg : Semiconj h f g) (x : {x // f x = x})
+    (hf : MDifferentiableAt I I f x.1) :
+    LinearMap.det (LinearMap.id - fixedPointDerivative I' g ⟨h x.1, IsFixedPt.map x.2 hfg⟩) =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I f x) := by
+  obtain ⟨x, hx⟩ := x
+  -- The differentials of `h` at `x`, of `h⁻¹` at `h x` and of `f` at `x`.
+  set A : TangentSpace I x →L[𝕜] TangentSpace I' (h x) := mfderiv I I' h x
+  set A' : TangentSpace I' (h x) →L[𝕜] TangentSpace I x := mfderiv I' I h.symm (h x)
+  set D : TangentSpace I x →L[𝕜] TangentSpace I x := mfderiv I I f x
+  have hA : HasMFDerivAt I I' h x A := (h.mdifferentiable hn x).hasMFDerivAt
+  have hA' : HasMFDerivAt I' I h.symm (h x) A' := (h.symm.mdifferentiable hn (h x)).hasMFDerivAt
+  have hD : HasMFDerivAt I I f x D := hf.hasMFDerivAt
+  have hAs : HasMFDerivAt I I' h (h.symm (h x)) A := by rw [h.symm_apply_apply]; exact hA
+  -- `A' = dh⁻¹_(h x)` is a right inverse of `A`, by the chain rule for `h ∘ h⁻¹ = id`.
+  have h₂ : A.comp A' = ContinuousLinearMap.id 𝕜 (TangentSpace I' (h x)) := by
+    have hc := hAs.comp (h x) hA'
+    rw [show h ∘ h.symm = id from funext h.apply_symm_apply] at hc
+    exact hc.mfderiv.symm.trans (hasMFDerivAt_id (h x)).mfderiv
+  -- Since `g = h ∘ f ∘ h⁻¹`, its differential at `h x` is `A D A'`.
+  have hB : HasMFDerivAt I' I' g (h x) (A.comp (D.comp A')) := by
+    have hg : g = h ∘ f ∘ h.symm := funext fun y ↦ by
+      rw [comp_apply, comp_apply, hfg.eq, h.apply_symm_apply]
+    have hDs : HasMFDerivAt I I f (h.symm (h x)) D := by rw [h.symm_apply_apply]; exact hD
+    have hAf : HasMFDerivAt I I' h (f (h.symm (h x))) A := by
+      rw [h.symm_apply_apply, hx]; exact hA
+    rw [hg]
+    exact hAf.comp (h x) (hDs.comp (h x) hA')
+  -- The differential of `h` at `x` as a linear equivalence, whose inverse is `A'`.
+  let e : TangentSpace I x ≃ₗ[𝕜] TangentSpace I' (h x) :=
+    (h.mfderivToContinuousLinearEquiv hn x).toLinearEquiv
+  have he (v : TangentSpace I x) : e v = A v :=
+    DFunLike.congr_fun (h.mfderivToContinuousLinearEquiv_coe hn (x := x)) v
+  have he' (v : TangentSpace I' (h x)) : e.symm v = A' v :=
+    e.symm_apply_eq.2 (by rw [he]; exact (DFunLike.congr_fun h₂ v).symm)
+  -- So `A D A'` is the conjugate of `D` by `e`, and conjugation commutes with `1 - ·`.
+  have hconj : ((A.comp (D.comp A') : TangentSpace I' (h x) →L[𝕜] _) :
+      TangentSpace I' (h x) →ₗ[𝕜] TangentSpace I' (h x)) =
+        e.conjRingEquiv (D : TangentSpace I x →ₗ[𝕜] TangentSpace I x) :=
+    LinearMap.ext fun v ↦ by rw [LinearEquiv.conjRingEquiv_apply_apply, he', he]; rfl
+  rw [HasMFDerivAt.fixedPointDerivative_eq (x := ⟨h x, IsFixedPt.map hx hfg⟩) hB,
+    HasMFDerivAt.fixedPointDerivative_eq (x := ⟨x, hx⟩) hD, hconj, ← Module.End.one_eq_id,
+    ← map_one e.conjRingEquiv, ← map_sub]
+  exact LinearMap.det_conj (1 - (D : TangentSpace I x →ₗ[𝕜] TangentSpace I x)) e
+
+/-- **The local Lefschetz sign is constant along an orbit.** For a `Cⁿ` diffeomorphism `φ`,
+`n ≠ 0`, and a point `x` of period `k`, the points `φ^[j] x` of the same orbit are fixed points
+of `φ^[k]` with `det (1 - d(φ^[k])_(φ^[j] x)) = det (1 - d(φ^[k])_x)`. -/
+theorem _root_.Diffeomorph.det_id_sub_fixedPointDerivative_iterate_apply_iterate
+    (φ : M ≃ₘ^n⟮I, I⟯ M) (hn : n ≠ 0) {k : ℕ} (hx : IsPeriodicPt φ k x) (j : ℕ) :
+    LinearMap.det (LinearMap.id -
+        fixedPointDerivative I (⇑φ)^[k] ⟨(⇑φ)^[j] x, (hx.apply_iterate j).eq⟩) =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I (⇑φ)^[k] ⟨x, hx.eq⟩) := by
+  induction j with
+  | zero => rfl
+  | succ j ih =>
+    -- Transport along `φ^[j + 1] x = φ (φ^[j] x)`, then conjugate by `φ`.
+    have key : ∀ (y : M) (hy : y = φ ((⇑φ)^[j] x)) (p : (⇑φ)^[k] y = y),
+        fixedPointDerivative I (⇑φ)^[k] ⟨y, p⟩ =
+          fixedPointDerivative I (⇑φ)^[k] ⟨φ ((⇑φ)^[j] x), hy ▸ p⟩ := by
+      rintro _ rfl _
+      rfl
+    rw [key _ (iterate_succ_apply' _ _ _), ← ih]
+    exact φ.det_id_sub_fixedPointDerivative_of_semiconj hn
+      (Function.Commute.iterate_right (Function.Commute.refl _) k)
+      ⟨_, (hx.apply_iterate j).eq⟩ ((φ.contMDiff.iterate k).mdifferentiableAt hn)
+
+end Conjugation
 
 /-- **Nondegeneracy as a determinant condition.** On a manifold modelled on a finite-dimensional
 space, a fixed point `x` at which `f` is differentiable is nondegenerate exactly when
