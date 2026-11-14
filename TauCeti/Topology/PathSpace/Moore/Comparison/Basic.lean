@@ -9,7 +9,6 @@ public import TauCeti.Topology.PathSpace.Loop
 public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.Topology.UnitInterval.NNReal
 public import Mathlib.Topology.Homotopy.Equiv
-public import Mathlib.Topology.Homotopy.Path
 
 /-!
 # Moore paths and paths on the unit interval
