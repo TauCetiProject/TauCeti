@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.Examples.CurveArea.RectifiableSignedArea
 import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # The area–energy inequality for closed plane curves
 
-For a plane curve `γ = x + i y : ℝ → ℂ` on `[a, b]`, its **signed area** is the boundary integral
-`½ ∫ₐᵇ (x y' - y x')` (`TauCeti.signedArea`, defined in
+For an absolutely continuous plane curve `γ = x + i y : ℝ → ℂ` on `[a, b]`, its **signed area** is
+the boundary integral `½ ∫ₐᵇ (x y' - y x')` (`TauCeti.signedArea`, defined in
 `TauCeti.Analysis.Green.Examples.CurveArea.SignedArea`).
 
 The main result is the sharp **area–energy inequality** for absolutely continuous closed curves
