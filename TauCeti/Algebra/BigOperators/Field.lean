@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.CharZero.Defs
-import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.NormNum.Basic
 
@@ -24,6 +24,8 @@ values `∏ (1 - q^{-k})` of local densities.
 
 ## Main results
 
+* `Finset.sum_range_natCast`, `Finset.sum_range_natCast_sq`: sums of naturals and their squares in
+  a division ring where `2 ≠ 0` (and, for the squares, also `3 ≠ 0`).
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
   the increment of the quadratic from `0` to the end of the grid.
@@ -51,5 +53,19 @@ theorem sum_range_add_mul_add_div_two {K : Type*} [Field K] [CharZero K] (a u X 
   induction n with
   | zero => simp
   | succ n ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
+
+/-- The sum of the natural numbers below `n`, cast into a division ring where `2 ≠ 0`. -/
+theorem sum_range_natCast {K : Type*} [DivisionRing K] [NeZero (2 : K)] (n : ℕ) :
+    ∑ r ∈ range n, (r : K) = n * (n - 1) / 2 :=
+  (eq_div_iff two_ne_zero).2 (sum_range_natCast_mul_two n)
+
+/-- The sum of the squares of natural numbers below `n`, in a division ring where `2 ≠ 0` and
+`3 ≠ 0`. -/
+theorem sum_range_natCast_sq {K : Type*} [DivisionRing K] [NeZero (2 : K)] [NeZero (3 : K)]
+    (n : ℕ) : ∑ r ∈ range n, (r : K) ^ 2 = n * (n - 1) * (2 * n - 1) / 6 := by
+  have h6 : (6 : K) ≠ 0 := by
+    rw [show (6 : K) = 2 * 3 by norm_num]
+    exact mul_ne_zero two_ne_zero three_ne_zero
+  exact (eq_div_iff h6).2 (sum_range_natCast_sq_mul_six n)
 
 end Finset
