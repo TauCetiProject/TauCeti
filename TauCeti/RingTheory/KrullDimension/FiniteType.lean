@@ -8,17 +8,11 @@ module
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.KrullDimension.Polynomial
-public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Localization.InvSubmonoid
 public import Mathlib.RingTheory.NoetherNormalization
 public import Mathlib.RingTheory.Polynomial.RationalRoot
-public import Mathlib.RingTheory.Polynomial.UniqueFactorization
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.KrullDimension.Integral
 public import TauCeti.RingTheory.KrullDimension.Quotient
-public import TauCeti.Topology.KrullDimension.Local
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Ideal.Height
@@ -335,7 +329,6 @@ theorem topologicalKrullDim_inter_eq_of_finiteType {A : Type*} [CommRing A] [Alg
         (ringKrullDim_localization_away k hg _).symm
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
         p.ringKrullDim_localization_away_quotient_le g (Set.inter_subset_inter hZp.le hgU)
-
 
 variable (k) in
 /-- In a finitely generated domain over a field, quotienting by a prime of height one lowers the
