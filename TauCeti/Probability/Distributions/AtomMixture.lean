@@ -115,19 +115,6 @@ private theorem mgf_atomMixture_of_integrable (μ : Measure ℝ) (c : ℝ)
       (w : ℝ) * Real.exp (t * c) + (1 - (w : ℝ)) * mgf id μ t := by
   simpa [mgf] using μ.integral_atomMixture c w (fun x => Real.exp (t * x)) hμ
 
-/-- Away from the pure-atom endpoint, an atom mixture has an exponential moment exactly when its
-base component does. -/
-theorem integrable_exp_mul_id_atomMixture_iff (μ : Measure ℝ) (c : ℝ)
-    {w : unitInterval} (hw : w ≠ 1) (t : ℝ) :
-    Integrable (fun x => Real.exp (t * x)) (μ.atomMixture c w) ↔
-      Integrable (fun x => Real.exp (t * x)) μ := by
-  have hwlt : (w : ℝ) < 1 := unitInterval.lt_one_iff_ne_one.mpr hw
-  have hcoeff : ENNReal.ofReal (1 - (w : ℝ)) ≠ 0 :=
-    ENNReal.ofReal_ne_zero_iff.mpr (sub_pos.mpr hwlt)
-  rw [Measure.atomMixture_def, integrable_add_measure,
-    integrable_smul_measure hcoeff ENNReal.ofReal_ne_top]
-  exact and_iff_right ((integrable_dirac (by simp)).smul_measure (by simp))
-
 /-- The exact exponential-integrability domain of an atom mixture.  A pure atom has every
 exponential moment; otherwise the domain is that of the base component. -/
 theorem integrableExpSet_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval) :
@@ -140,7 +127,7 @@ theorem integrableExpSet_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitIn
     exact iff_true_intro (integrable_dirac (by finiteness))
   · simp only [hw, ↓reduceIte]
     ext t
-    exact μ.integrable_exp_mul_id_atomMixture_iff c hw t
+    exact μ.integrable_atomMixture_iff c hw
 
 /-- The moment-generating function of an atom mixture is the convex combination of the component
 moment-generating functions throughout the mixture's exact exponential-integrability domain. -/
@@ -152,7 +139,7 @@ theorem mgf_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval) (t : 
   · subst w
     simp [mgf, Measure.atomMixture_def]
   · exact μ.mgf_atomMixture_of_integrable c w t
-      ((μ.integrable_exp_mul_id_atomMixture_iff c hw t).mp ht)
+      ((μ.integrable_atomMixture_iff c hw).mp ht)
 
 /-- The cumulant-generating function of an atom mixture is the logarithm of the weighted sum of
 component mgfs, rather than a mixture of their cumulant-generating functions. -/
