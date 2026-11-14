@@ -146,8 +146,7 @@ theorem gaussSum_zero [Fintype V] : (0 : QuadraticForm (ZMod 2) V).gaussSum = Fi
 @[simp]
 theorem gaussSum_subsingleton [Fintype V] [Subsingleton V] (Q : QuadraticForm (ZMod 2) V) :
     Q.gaussSum = 1 := by
-  rw [gaussSum_def, Fintype.sum_subsingleton _ (0 : V), map_zero]
-  rfl
+  rw [gaussSum_def, Fintype.sum_subsingleton _ (0 : V), map_zero, ZMod.val_zero, pow_zero]
 
 /-- The Gauss sum is multiplicative on orthogonal products. -/
 @[simp]
@@ -194,7 +193,7 @@ theorem gaussSum_symplecticPlane (a b : ZMod 2) :
     Fintype.sum_prod_type, ZMod.sum_univ_two]
   simp only [ZMod.sum_univ_two]
   rcases a.eq_zero_or_eq_one with rfl | rfl <;>
-    rcases b.eq_zero_or_eq_one with rfl | rfl <;> rfl
+    rcases b.eq_zero_or_eq_one with rfl | rfl <;> decide
 
 end TauCeti
 
@@ -518,8 +517,7 @@ theorem gaussSum_eq_card_subtype_apply_eq_zero_sub_card_subtype_apply_eq_one
     have hconst : ∑ v ∈ Finset.univ with Q v = 0, (-1 : ℤ) ^ (Q v).val =
         ∑ _v ∈ Finset.filter (fun v : V ↦ Q v = 0) Finset.univ, (1 : ℤ) := by
       refine Finset.sum_congr rfl fun v hv ↦ ?_
-      rw [(Finset.mem_filter.mp hv).2]
-      rfl
+      rw [(Finset.mem_filter.mp hv).2, ZMod.val_zero, pow_zero]
     rw [hconst, Finset.sum_const, nsmul_one]
   have h1 : ∑ v ∈ Finset.univ with ¬Q v = 0, (-1 : ℤ) ^ (Q v).val =
       -(Fintype.card {v : V // Q v = 1} : ℤ) := by
@@ -531,8 +529,7 @@ theorem gaussSum_eq_card_subtype_apply_eq_zero_sub_card_subtype_apply_eq_one
     have hconst : ∑ v ∈ Finset.univ with Q v = 1, (-1 : ℤ) ^ (Q v).val =
         ∑ _v ∈ Finset.filter (fun v : V ↦ Q v = 1) Finset.univ, (-1 : ℤ) := by
       refine Finset.sum_congr rfl fun v hv ↦ ?_
-      rw [(Finset.mem_filter.mp hv).2]
-      rfl
+      rw [(Finset.mem_filter.mp hv).2, ZMod.val_one, pow_one]
     rw [hconst, Finset.sum_const, nsmul_eq_mul, mul_neg_one]
   rw [h0, h1, sub_eq_add_neg]
 
@@ -613,13 +610,9 @@ theorem arf_eq_zero_iff_gaussSum_pos {Q : QuadraticForm (ZMod 2) V}
   rw [Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
   have hpow : (0 : ℤ) < 2 ^ m := pow_pos (by decide : (0 : ℤ) < 2) m
   rcases Q.arf.eq_zero_or_eq_one with h0 | h1
-  · rw [h0]
-    have hval : (-1 : ℤ) ^ (0 : ZMod 2).val = 1 := rfl
-    rw [hval, one_mul]
+  · rw [h0, ZMod.val_zero, pow_zero, one_mul]
     exact ⟨fun _ ↦ hpow, fun _ ↦ rfl⟩
-  · rw [h1]
-    have hval : (-1 : ℤ) ^ (1 : ZMod 2).val = -1 := rfl
-    rw [hval]
+  · rw [h1, ZMod.val_one, pow_one]
     exact ⟨fun h ↦ absurd h (by decide), fun h ↦ absurd h (by omega)⟩
 
 /-- For `Q` with nondegenerate polar form on a finite `ZMod 2`-space, `Q.arf = 1` if and only if
@@ -631,13 +624,9 @@ theorem arf_eq_one_iff_gaussSum_neg {Q : QuadraticForm (ZMod 2) V}
   rw [Q.gaussSum_eq_of_finrank_eq hQ (by omega : Module.finrank (ZMod 2) V = 2 * m)]
   have hpow : (0 : ℤ) < 2 ^ m := pow_pos (by decide : (0 : ℤ) < 2) m
   rcases Q.arf.eq_zero_or_eq_one with h0 | h1
-  · rw [h0]
-    have hval : (-1 : ℤ) ^ (0 : ZMod 2).val = 1 := rfl
-    rw [hval, one_mul]
+  · rw [h0, ZMod.val_zero, pow_zero, one_mul]
     exact ⟨fun h ↦ absurd h (by decide), fun h ↦ absurd h (by omega)⟩
-  · rw [h1]
-    have hval : (-1 : ℤ) ^ (1 : ZMod 2).val = -1 := rfl
-    rw [hval]
+  · rw [h1, ZMod.val_one, pow_one]
     exact ⟨fun _ ↦ by omega, fun _ ↦ rfl⟩
 
 /-- **Majority-vote characterization of `Q.arf = 0`.** A quadratic form `Q` with nondegenerate

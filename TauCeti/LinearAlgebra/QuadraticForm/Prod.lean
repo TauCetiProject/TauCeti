@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Projection
-public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Prod
 
@@ -71,7 +70,7 @@ the two summands gives an orthogonal family of the orthogonal sum.
   the determinants.
 * `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
   orthogonal family of `Q₁.prod Q₂`.
-* `QuadraticMap.polarBilin_prod_eq_prod`, `QuadraticMap.nondegenerate_polarBilin_prod_iff`,
+* `QuadraticMap.nondegenerate_polarBilin_prod_iff`,
   `QuadraticMap.nondegenerate_polarBilin_pi_iff`: the polar form of an orthogonal product or finite
   orthogonal sum is nondegenerate precisely when every summand's polar form is.
 
@@ -539,11 +538,6 @@ section PolarNondegenerate
 
 variable {R M₁ M₂ P : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup P] [Module R P]
-
-/-- The polar bilinear form of `Q₁.prod Q₂` is the block-diagonal product of the polar forms. -/
-theorem polarBilin_prod_eq_prod (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) :
-    (Q₁.prod Q₂).polarBilin = LinearMap.BilinForm.prod Q₁.polarBilin Q₂.polarBilin :=
-  LinearMap.ext₂ fun x y ↦ by simp [polarBilin_apply_apply]
 
 /-- The polar bilinear map of an orthogonal product is nondegenerate if and only if both factors
 have nondegenerate polar bilinear maps. -/
