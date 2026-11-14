@@ -17,8 +17,10 @@ powers `(a - b) ^ φ(n)` and `(a + b) ^ φ(n)`:
 non-strict bounds hold for every `n` and also at `b = 0`, where `Φ_n(a, 0) = a ^ φ(n)`. These are
 the two-variable forms of Mathlib's bounds `(q - 1) ^ φ(n) < Φ_n(q) < (q + 1) ^ φ(n)` for real
 `q > 1`, obtained from `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)`; they are also stated for integer bases.
-For a prime `p` and bases `a, b ≥ 1`, the geometric sum
+For a prime `p` and `a, b ≥ 1`, the geometric sum
 `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` is at least `p`, and exceeds `p` once `a > 1`.
+For a prime `p` not dividing `m` and real `0 < b < a`, `Φ_{p m}(a, b)` strictly exceeds
+`((a ^ p - b ^ p) / (a + b)) ^ φ(m)`.
 
 The lower bounds show that `Φ_n(a, b)` is large compared with the prime divisors of `n`, which is
 how the Bang–Zsigmondy theorem rules out cyclotomic values made only of nonprimitive prime
@@ -31,6 +33,8 @@ divisors.
 * `TauCeti.sub_pow_totient_le_homogeneousCyclotomic`,
   `TauCeti.homogeneousCyclotomic_le_add_pow_totient`: the non-strict bounds over `ℝ`, for every
   `n` and `0 ≤ b < a`.
+* `TauCeti.pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic`: for a prime `p`, `p ∤ m`,
+  and real `0 < b < a`, `((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)`.
 * `Int.sub_pow_totient_lt_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_lt_add_pow_totient`,
   `Int.sub_pow_totient_le_homogeneousCyclotomic`, `Int.homogeneousCyclotomic_le_add_pow_totient`:
   the same bounds for integer bases.
@@ -94,6 +98,31 @@ theorem homogeneousCyclotomic_le_add_pow_totient (n : ℕ) {a b : ℝ} (hb : 0 �
   calc _ ≤ (a / b + 1) ^ n.totient * b ^ n.totient := mul_le_mul_of_nonneg_right
         (cyclotomic_eval_le_add_one_pow_totient ((one_lt_div hb).2 hba) n) (pow_nonneg hb.le _)
     _ = (a + b) ^ n.totient := by rw [← mul_pow, add_one_mul, div_mul_cancel₀ a hb.ne']
+
+/-- For a prime `p`, `p ∤ m`, and real `0 < b < a`,
+`((a ^ p - b ^ p) / (a + b)) ^ φ(m) < Φ_{p m}(a, b)`. Neither condition on the index may be
+dropped: `Φ_12(2, 1) = 13 < 25 = ((2 ^ 4 - 1) / 3) ^ φ(3)` and
+`Φ_4(1 / 5, 1 / 10) = 1 / 20 < 1 / 10`. -/
+theorem pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic {p m : ℕ} (hp : p.Prime)
+    (hpm : ¬p ∣ m) {a b : ℝ} (hb : 0 < b) (hba : b < a) :
+    ((a ^ p - b ^ p) / (a + b)) ^ m.totient < homogeneousCyclotomic (p * m) a b := by
+  -- Write `Φ_{p m}(a, b) = Φ_m(a ^ p, b ^ p) / Φ_m(a, b)` and bound numerator and denominator.
+  have hm0 : m ≠ 0 := fun h => hpm (h ▸ dvd_zero p)
+  have hpos : 0 < homogeneousCyclotomic m a b := homogeneousCyclotomic_pos hb.le hba m
+  have hexp : homogeneousCyclotomic (p * m) a b =
+      homogeneousCyclotomic m (a ^ p) (b ^ p) / homogeneousCyclotomic m a b :=
+    eq_div_of_mul_eq hpos.ne'
+      (mul_comm p m ▸ homogeneousCyclotomic_mul_prime_mul_homogeneousCyclotomic hp hpm a b)
+  have hbp : 0 < b ^ p := pow_pos hb p
+  have hbap : b ^ p < a ^ p := pow_lt_pow_left₀ hba hb.le hp.ne_zero
+  rcases eq_or_ne m 1 with rfl | hm1
+  · rw [hexp, Nat.totient_one, pow_one, homogeneousCyclotomic_one, homogeneousCyclotomic_one]
+    exact div_lt_div_of_pos_left (sub_pos.2 hbap) (sub_pos.2 hba) (by linarith)
+  · have hm2 : 2 ≤ m := by omega
+    rw [div_pow, hexp]
+    exact (div_le_div_of_nonneg_left (pow_nonneg (sub_pos.2 hbap).le _) hpos
+      (homogeneousCyclotomic_le_add_pow_totient m hb.le hba)).trans_lt
+      (div_lt_div_of_pos_right (sub_pow_totient_lt_homogeneousCyclotomic hm2 hbp hbap) hpos)
 
 /-! ### Prime indices -/
 
