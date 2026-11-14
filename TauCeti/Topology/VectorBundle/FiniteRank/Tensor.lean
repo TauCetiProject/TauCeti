@@ -205,12 +205,14 @@ variable {X : Type*} {Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- Pulling back commutes with tensor products of bundle morphisms. -/
 @[simp] theorem pullbackMap_tensorHom {A A' D D' : FiniteRankBundleCore 𝕜 Y}
     (a : A ⟶ A') (b : D ⟶ D') (f : C(X, Y)) :
-    pullbackMap (tensorHom a b) f = tensorHom (pullbackMap a f) (pullbackMap b f) :=
-  hom_ext fun x ↦ (fiberMap_pullbackMap (tensorHom a b) f x).trans
-    ((fiberMap_tensorHom a b (f x)).trans
-      ((congrArg₂ ContinuousLinearMap.kronecker (fiberMap_pullbackMap a f x).symm
-        (fiberMap_pullbackMap b f x).symm).trans
-        (fiberMap_tensorHom (pullbackMap a f) (pullbackMap b f) x).symm))
+    pullbackMap (tensorHom a b) f = tensorHom (pullbackMap a f) (pullbackMap b f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_tensorHom, ← fiberMap_pullbackMap a f x,
+    ← fiberMap_pullbackMap b f x]
+  -- `(tensor A D).pullback f` is definitionally `tensor (A.pullback f) (D.pullback f)`
+  -- (`pullback_tensor`), identifying the implicit cores of `fiberMap` on the right.
+  exact Eq.symm (fiberMap_tensorHom _ _ x)
 
 end Pullback
 

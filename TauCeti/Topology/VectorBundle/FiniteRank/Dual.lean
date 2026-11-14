@@ -417,11 +417,13 @@ variable {X : Type*} {Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- Pulling back commutes with transposing bundle maps. -/
 @[simp] theorem pullbackMap_dualMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
     (f : C(X, Y)) :
-    pullbackMap (dualMap a) f = dualMap (pullbackMap a f) :=
-  hom_ext fun x ↦ (fiberMap_pullbackMap (dualMap a) f x).trans
-    ((fiberMap_dualMap a (f x)).trans
-      ((congrArg ContinuousLinearMap.piTranspose (fiberMap_pullbackMap a f x).symm).trans
-        (fiberMap_dualMap (pullbackMap a f) x).symm))
+    pullbackMap (dualMap a) f = dualMap (pullbackMap a f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_dualMap, ← fiberMap_pullbackMap a f x]
+  -- `D.dual.pullback f` and `A.dual.pullback f` are definitionally `(D.pullback f).dual` and
+  -- `(A.pullback f).dual` (`pullback_dual`), identifying the implicit cores of `fiberMap`.
+  exact Eq.symm (fiberMap_dualMap _ x)
 
 /-- Duality commutes strictly with pullback as contravariant functors. -/
 theorem dualFunctor_comp_pullbackFunctor (f : C(X, Y)) :
@@ -431,24 +433,31 @@ theorem dualFunctor_comp_pullbackFunctor (f : C(X, Y)) :
 /-- Pulling back the double-dual identification gives the double-dual identification of the
 pullback. -/
 @[simp] theorem pullbackMap_dualDualHom (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    pullbackMap (dualDualHom A) f = dualDualHom (A.pullback f) :=
-  hom_ext fun x ↦ (fiberMap_pullbackMap (dualDualHom A) f x).trans
-    ((fiberMap_dualDualHom A (f x)).trans (fiberMap_dualDualHom (A.pullback f) x).symm)
+    pullbackMap (dualDualHom A) f = dualDualHom (A.pullback f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_dualDualHom]
+  -- `A.dual.dual.pullback f` is definitionally `(A.pullback f).dual.dual` (`pullback_dual`).
+  exact Eq.symm (fiberMap_dualDualHom _ x)
 
 /-- Pulling back the inverse double-dual identification gives the inverse double-dual
 identification of the pullback. -/
 @[simp] theorem pullbackMap_dualDualInv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
-    pullbackMap (dualDualInv A) f = dualDualInv (A.pullback f) :=
-  hom_ext fun x ↦ (fiberMap_pullbackMap (dualDualInv A) f x).trans
-    ((fiberMap_dualDualInv A (f x)).trans (fiberMap_dualDualInv (A.pullback f) x).symm)
+    pullbackMap (dualDualInv A) f = dualDualInv (A.pullback f) := by
+  apply hom_ext
+  intro x
+  rw [fiberMap_pullbackMap, fiberMap_dualDualInv]
+  -- `A.dual.dual.pullback f` is definitionally `(A.pullback f).dual.dual` (`pullback_dual`).
+  exact Eq.symm (fiberMap_dualDualInv _ x)
 
 /-- On every fibre, `dualFiberEquiv` on a pulled-back dual core evaluates the functional of `A` at
 the image base point. -/
 theorem dualFiberEquiv_pullback_apply (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
     (x : X) (w : Fin A.rank → 𝕜) (v : Fin A.rank → 𝕜) :
-    dualFiberEquiv (A.pullback f) x w v = dualFiberEquiv A (f x) w v :=
-  (dualFiberEquiv_apply_apply (A.pullback f) x w v).trans
-    (dualFiberEquiv_apply_apply A (f x) w v).symm
+    dualFiberEquiv (A.pullback f) x w v = dualFiberEquiv A (f x) w v := by
+  simp only [dualFiberEquiv_apply_apply]
+  -- Both sums range over `Fin A.rank` definitionally, as recorded by `rank_pullback`.
+  rfl
 
 end Pullback
 

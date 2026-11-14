@@ -31,9 +31,9 @@ Via `pullbackTotalSpaceDiffeomorph`, Mathlib's pullback universal property trans
 `(A.pullback f).core.TotalSpace`:
 
 * `FiniteRankBundleCore.contMDiff_pullbackLift` and
-  `FiniteRankBundleCore.contMDiff_core_pullback_iff` show that `A.pullbackLift f` is `C^n` when `f`
-  is, and that a map into `(A.pullback f).core.TotalSpace` is `C^n` if and only if its base
-  projection and its lift to `A.core.TotalSpace` are `C^n`;
+  `FiniteRankBundleCore.contMDiff_core_pullback_iff` show that when `f` is `C^n`,
+  `A.pullbackLift f` is `C^n` and a map into `(A.pullback f).core.TotalSpace` is `C^n` if and only
+  if its base projection and its lift to `A.core.TotalSpace` are `C^n`;
 * `FiniteRankBundleCore.contMDiff_totalSpaceMap_pullbackMap` and
   `FiniteRankBundleCore.pullbackMapIsoDiffeomorph` show that `C^n` bundle morphisms and core
   isomorphisms pull back along `C^n` maps to `C^n` total-space maps and diffeomorphisms without
@@ -90,27 +90,18 @@ theorem contMDiff_pullbackHomeomorph (A : FiniteRankBundleCore 𝕜 Y) (f : C(X,
     (fun p ↦ by rw [pullbackHomeomorph_apply])
     (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) fun x p ↦ by
       rw [pullback_trivializationAt_eq, A.pullbackHomeomorph_localTriv f x p]
-      rfl
+      exact (ContinuousLinearMap.id_apply _).symm
 
 /-- The inverse of `pullbackHomeomorph` is `C^n` on total spaces, without any smoothness assumption
 on `f`, on the bases, or on `A`, and without completeness of `𝕜`. -/
 theorem contMDiff_pullbackHomeomorph_symm (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     ContMDiff (IX.prod 𝓘(𝕜, Fin A.rank → 𝕜))
-      (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) n (A.pullbackHomeomorph f).symm := by
-  intro p₀
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  simp only [pullbackHomeomorph_symm_apply]
-  refine ⟨(contMDiff_proj _).contMDiffAt, ?_⟩
-  refine (p₀.contMDiffAt_trivializationAt_snd (IB := IX) (n := n)).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun q ↦ ?_)
-  dsimp only
-  let r : (A.pullback f).core.TotalSpace := ⟨q.proj, q.2⟩
-  rw [(A.pullback f).trivializationAt_core, pullback_trivializationAt_eq]
-  calc ((A.pullback f).core.localTriv p₀.proj r).2
-      = ((A.core.localTriv (f p₀.proj)).pullback f (A.pullbackHomeomorph f r)).2 :=
-        (congrArg Prod.snd (A.pullbackHomeomorph_localTriv f p₀.proj r)).symm
-    _ = ((A.core.localTriv (f p₀.proj)).pullback f q).2 := by
-        rw [A.pullbackHomeomorph_apply]
+      (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) n (A.pullbackHomeomorph f).symm :=
+  (A.pullback f).contMDiff_of_trivializationAt_snd (A.pullbackHomeomorph f).symm
+    (fun p ↦ by rw [pullbackHomeomorph_symm_apply])
+    (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) fun x p ↦ by
+      rw [pullback_trivializationAt_eq, ← A.pullbackHomeomorph_localTriv f x,
+        Homeomorph.apply_symm_apply, ContinuousLinearMap.id_apply]
 
 /-- The reconstructed total space of `A.pullback f` is `C^n`-diffeomorphic (and, over complex models
 at `n = ∞`, biholomorphic) to the total space of Mathlib's native pullback bundle
@@ -155,24 +146,6 @@ theorem lift_pullbackTotalSpaceDiffeomorph (IX : ModelWithCorners 𝕜 EX HX) (n
     Pullback.lift f (pullbackTotalSpaceDiffeomorph IX n A f p) = A.pullbackLift f p :=
   A.lift_pullbackHomeomorph f p
 
-/-- `pullbackTotalSpaceDiffeomorph` carries the core chart at `i` to Mathlib's pullback of the chart
-at `f i`. -/
-theorem pullbackTotalSpaceDiffeomorph_localTriv (IX : ModelWithCorners 𝕜 EX HX) (n : WithTop ℕ∞)
-    (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) (i : X)
-    (p : (A.pullback f).core.TotalSpace) :
-    (A.core.localTriv (f i)).pullback f (pullbackTotalSpaceDiffeomorph IX n A f p) =
-      (A.pullback f).core.localTriv i p :=
-  A.pullbackHomeomorph_localTriv f i p
-
-/-- `pullbackTotalSpaceDiffeomorph` intertwines the total-space map of `pullbackMap a f` with
-`a.totalSpaceMap` along `Pullback.lift f`. -/
-theorem pullbackTotalSpaceDiffeomorph_naturality (IX : ModelWithCorners 𝕜 EX HX) (n : WithTop ℕ∞)
-    {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y))
-    (p : (A.pullback f).core.TotalSpace) :
-    Pullback.lift f (pullbackTotalSpaceDiffeomorph IX n D f ((pullbackMap a f).totalSpaceMap p)) =
-      a.totalSpaceMap (Pullback.lift f (pullbackTotalSpaceDiffeomorph IX n A f p)) :=
-  pullbackHomeomorph_naturality a f p
-
 end MathlibPullback
 
 section PullbackRegularity
@@ -212,8 +185,7 @@ theorem contMDiffOn_inChartCoordinates_pullbackMap {A D : FiniteRankBundleCore �
         ((pullbackMap a f).fiberMap x))
       ((A.pullback f).core.baseSet i ∩ (D.pullback f).core.baseSet j) := by
   refine (ha.comp hf fun _ hx ↦ hx).congr fun x _ ↦ ?_
-  rw [fiberMap_pullbackMap, inChartCoordinates_pullback]
-  rfl
+  rw [Function.comp_apply, fiberMap_pullbackMap, inChartCoordinates_pullback]
 
 /-- The canonical lift `A.pullbackLift f` is `C^n` at every total-space point over which `f` is
 `C^n`. -/
@@ -242,8 +214,8 @@ section UniversalProperty
 variable {EZ : Type*} {HZ : Type*} {Z : Type*} [NormedAddCommGroup EZ] [NormedSpace 𝕜 EZ]
   [TopologicalSpace HZ] {IZ : ModelWithCorners 𝕜 EZ HZ} [TopologicalSpace Z] [ChartedSpace HZ Z]
 
-/-- A map into `(A.pullback f).core.TotalSpace` is `C^n` at `z` if and only if its base projection
-and its lift to `A.core.TotalSpace` are `C^n` at `z`. -/
+/-- When `f` is `C^n` at `(q z).proj`, a map `q` into `(A.pullback f).core.TotalSpace` is `C^n` at
+`z` if and only if its base projection and its lift to `A.core.TotalSpace` are `C^n` at `z`. -/
 theorem contMDiffAt_core_pullback_iff (A : FiniteRankBundleCore 𝕜 Y) {f : C(X, Y)}
     {q : Z → (A.pullback f).core.TotalSpace} {z : Z}
     (hf : ContMDiffAt IX IY n f (q z).proj) :
@@ -263,8 +235,8 @@ theorem contMDiffAt_core_pullback_iff (A : FiniteRankBundleCore 𝕜 Y) {f : C(X
     Bundle.Pullback.contMDiffAt_iff f (q := pullbackTotalSpaceDiffeomorph IX n A f ∘ q) hf',
     h₁, h₂]
 
-/-- A map into `(A.pullback f).core.TotalSpace` is `C^n` if and only if its base projection and its
-lift to `A.core.TotalSpace` are `C^n`. -/
+/-- When `f` is `C^n`, a map `q` into `(A.pullback f).core.TotalSpace` is `C^n` if and only if its
+base projection and its lift to `A.core.TotalSpace` are `C^n`. -/
 theorem contMDiff_core_pullback_iff (A : FiniteRankBundleCore 𝕜 Y) {f : C(X, Y)}
     (hf : ContMDiff IX IY n f) {q : Z → (A.pullback f).core.TotalSpace} :
     ContMDiff IZ (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) n q ↔
@@ -331,9 +303,26 @@ theorem coe_pullbackMapIsoDiffeomorph_symm {A D : FiniteRankBundleCore 𝕜 Y} (
     ⇑(pullbackMapIsoDiffeomorph e he he' hf).symm = (pullbackMap e.inv f).totalSpaceMap := by
   simp [pullbackMapIsoDiffeomorph]
 
+/-- Pulling back a cocycle morphism with bijective fibre maps preserves fibrewise bijectivity. -/
+private theorem bijective_fiberMap_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
+    (hbij : ∀ y, Function.Bijective (a.fiberMap y)) (f : C(X, Y)) (x : X) :
+    Function.Bijective ((pullbackMap a f).fiberMap x) := by
+  simpa only [fiberMap_pullbackMap] using hbij (f x)
+
 section CompleteSpace
 
 variable [CompleteSpace 𝕜]
+
+/-- On every fibre, the continuous linear equivalence `CoordinateHom.fiberEquiv` of a pulled-back
+cocycle morphism `pullbackMap a f` agrees with that of `a` at `f x`. -/
+theorem fiberEquiv_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)
+    (hbij : ∀ y, Function.Bijective (a.fiberMap y)) (f : C(X, Y))
+    (hbij' : ∀ x, Function.Bijective ((pullbackMap a f).fiberMap x)) (x : X) :
+    (pullbackMap a f).fiberEquiv hbij' x = a.fiberEquiv hbij (f x) := by
+  ext v
+  rw [CoordinateHom.fiberEquiv_apply, fiberMap_pullbackMap]
+  -- Both fibres are `Fin A.rank → 𝕜` (`rank_pullback`), matching `CoordinateHom.fiberEquiv_apply`.
+  exact (CoordinateHom.fiberEquiv_apply a hbij (f x) v).symm
 
 /-- Over a complete scalar field, pulling back a cocycle morphism `a : A ⟶ D` between `C^n` cores
 with `C^n` chart operators and bijective fibre maps along a `C^n` map `f` produces a `C^n`
@@ -348,12 +337,12 @@ noncomputable def pullbackMapDiffeomorph {A D : FiniteRankBundleCore 𝕜 Y}
     (A.pullback f).core.TotalSpace
       ≃ₘ^n⟮IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜),
         IX.prod 𝓘(𝕜, Fin (D.pullback f).rank → 𝕜)⟯
-      (D.pullback f).core.TotalSpace :=
-  have := isContMDiff_pullback_of_contMDiff A hf
-  have := isContMDiff_pullback_of_contMDiff D hf
-  (pullbackMap a f).toDiffeomorph
+      (D.pullback f).core.TotalSpace := by
+  letI := isContMDiff_pullback_of_contMDiff A hf
+  letI := isContMDiff_pullback_of_contMDiff D hf
+  exact (pullbackMap a f).toDiffeomorph
     (fun i j ↦ contMDiffOn_inChartCoordinates_pullbackMap a (ha (f i) (f j)) hf.contMDiffOn)
-    (fun x ↦ by simpa only [fiberMap_pullbackMap] using hbij (f x))
+    (bijective_fiberMap_pullbackMap a hbij f)
 
 /-- `pullbackMapDiffeomorph` acts on total spaces as `(pullbackMap a f).totalSpaceMap`. -/
 @[simp]
@@ -365,9 +354,7 @@ theorem coe_pullbackMapDiffeomorph {A D : FiniteRankBundleCore 𝕜 Y}
     (hbij : ∀ y, Function.Bijective (a.fiberMap y))
     {f : C(X, Y)} (hf : ContMDiff IX IY n f) :
     ⇑(pullbackMapDiffeomorph a ha hbij hf) = (pullbackMap a f).totalSpaceMap := by
-  have := isContMDiff_pullback_of_contMDiff A hf
-  have := isContMDiff_pullback_of_contMDiff D hf
-  exact CoordinateHom.coe_toDiffeomorph _ _ _
+  simp only [pullbackMapDiffeomorph, CoordinateHom.coe_toDiffeomorph]
 
 /-- The inverse of `pullbackMapDiffeomorph` acts on the fibre over `x` by the inverse of
 `a.fiberEquiv hbij (f x)`. -/
@@ -381,20 +368,10 @@ theorem pullbackMapDiffeomorph_symm_apply {A D : FiniteRankBundleCore 𝕜 Y}
     {f : C(X, Y)} (hf : ContMDiff IX IY n f) (p : (D.pullback f).core.TotalSpace) :
     (pullbackMapDiffeomorph a ha hbij hf).symm p =
       ⟨p.proj, (a.fiberEquiv hbij (f p.proj)).symm p.2⟩ := by
-  have := isContMDiff_pullback_of_contMDiff A hf
-  have := isContMDiff_pullback_of_contMDiff D hf
-  have hbij' : ∀ x, Function.Bijective ((pullbackMap a f).fiberMap x) :=
-    fun x ↦ by simpa only [fiberMap_pullbackMap] using hbij (f x)
-  refine (CoordinateHom.toDiffeomorph_symm_apply (pullbackMap a f)
-    (fun i j ↦ contMDiffOn_inChartCoordinates_pullbackMap a (ha (f i) (f j)) hf.contMDiffOn)
-    hbij' p).trans (congrArg (TotalSpace.mk' _ p.proj) ?_)
-  apply (a.fiberEquiv hbij (f p.proj)).injective
-  let w : Fin A.rank → 𝕜 := ((pullbackMap a f).fiberEquiv hbij' p.proj).symm p.2
-  exact (CoordinateHom.fiberEquiv_apply a hbij (f p.proj) w).trans
-    ((DFunLike.congr_fun (fiberMap_pullbackMap a f p.proj).symm w).trans
-      (((CoordinateHom.fiberEquiv_apply (pullbackMap a f) hbij' p.proj w).symm).trans
-        ((ContinuousLinearEquiv.apply_symm_apply _ p.2).trans
-          (ContinuousLinearEquiv.apply_symm_apply _ p.2).symm)))
+  simp only [pullbackMapDiffeomorph, CoordinateHom.toDiffeomorph_symm_apply,
+    fiberEquiv_pullbackMap a hbij]
+  -- Both fibres are `Fin A.rank → 𝕜` definitionally, as recorded by `rank_pullback`.
+  rfl
 
 end CompleteSpace
 
@@ -440,7 +417,8 @@ theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_pullbackLift_iff {f : C(X, 
         (g ∘ A.pullbackLift f) ⟨x, v⟩ ↔
       ContMDiffAt (IY.prod 𝓘(𝕜, Fin A.rank → 𝕜)) IZ m g ⟨f x, v⟩ := by
   refine ⟨fun hg ↦ ?_,
-    fun hg ↦ hg.comp ⟨x, v⟩ (contMDiffAt_pullbackLift A (hf.contMDiffAt.of_le hm))⟩
+    fun hg ↦ hg.comp_of_eq (contMDiffAt_pullbackLift A (hf.contMDiffAt.of_le hm))
+      (A.pullbackLift_mk f x v)⟩
   let q₀ : A.core.TotalSpace := ⟨f x, v⟩
   let s : A.core.TotalSpace → (A.pullback f).core.TotalSpace :=
     fun q ↦ ⟨hf.localInverse q.proj, q.2⟩
@@ -453,7 +431,8 @@ theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_comp_pullbackLift_iff {f : C(X, 
   have heq : (fun q ↦ A.pullbackLift f (s q)) =ᶠ[nhds q₀] id := by
     filter_upwards [hf.localInverse_eventuallyEq_right.comp_tendsto
       (A.core.continuous_proj.tendsto q₀)] with ⟨y, w⟩ (hy : f (hf.localInverse y) = y)
-    exact congrArg (fun y' ↦ (⟨y', w⟩ : A.core.TotalSpace)) hy
+    exact TotalSpace.ext ((A.pullbackLift_proj f (s ⟨y, w⟩)).trans hy)
+      (heq_of_eq (A.pullbackLift_snd f (s ⟨y, w⟩)))
   have hs : ContMDiffAt (IY.prod 𝓘(𝕜, Fin A.rank → 𝕜))
       (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) m s q₀ :=
     (contMDiffAt_core_pullback_iff A
@@ -508,17 +487,24 @@ def pullbackIdDiffeomorph (IY : ModelWithCorners 𝕜 EY HY) (n : WithTop ℕ∞
       A.core.TotalSpace where
   toFun := A.pullbackLift (ContinuousMap.id Y)
   invFun p := ⟨p.proj, p.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+  left_inv p := TotalSpace.ext (A.pullbackLift_proj (ContinuousMap.id Y) p)
+    (heq_of_eq (A.pullbackLift_snd (ContinuousMap.id Y) p))
+  right_inv p := TotalSpace.ext (A.pullbackLift_proj (ContinuousMap.id Y) ⟨p.proj, p.2⟩)
+    (heq_of_eq (A.pullbackLift_snd (ContinuousMap.id Y) ⟨p.proj, p.2⟩))
   contMDiff_toFun := contMDiff_pullbackLift A contMDiff_id
   contMDiff_invFun :=
-    (contMDiff_core_pullback_iff A contMDiff_id).2 ⟨contMDiff_proj _, contMDiff_id⟩
+    (contMDiff_core_pullback_iff A contMDiff_id).2
+      ⟨contMDiff_proj _, contMDiff_id.congr fun p ↦
+        TotalSpace.ext (A.pullbackLift_proj (ContinuousMap.id Y) ⟨p.proj, p.2⟩)
+          (heq_of_eq (A.pullbackLift_snd (ContinuousMap.id Y) ⟨p.proj, p.2⟩))⟩
 
 /-- `pullbackIdDiffeomorph` acts as the identity on base points and preferred fibre coordinates. -/
 @[simp]
 theorem pullbackIdDiffeomorph_apply (IY : ModelWithCorners 𝕜 EY HY) (n : WithTop ℕ∞)
     (A : FiniteRankBundleCore 𝕜 Y) (p : (A.pullback (ContinuousMap.id Y)).core.TotalSpace) :
-    pullbackIdDiffeomorph IY n A p = ⟨p.proj, p.2⟩ := (rfl)
+    pullbackIdDiffeomorph IY n A p = ⟨p.proj, p.2⟩ :=
+  TotalSpace.ext (A.pullbackLift_proj (ContinuousMap.id Y) p)
+    (heq_of_eq (A.pullbackLift_snd (ContinuousMap.id Y) p))
 
 /-- The inverse of `pullbackIdDiffeomorph` acts as the identity on base points and preferred fibre
 coordinates. -/
@@ -529,7 +515,7 @@ theorem pullbackIdDiffeomorph_symm_apply (IY : ModelWithCorners 𝕜 EY HY) (n :
 
 /-- `pullbackTotalSpaceDiffeomorph` followed by Mathlib's `Bundle.Pullback.idDiffeomorph` agrees
 with `pullbackIdDiffeomorph`. -/
-theorem idDiffeomorph_comp_pullbackTotalSpaceDiffeomorph {m : WithTop ℕ∞}
+theorem idDiffeomorph_pullbackTotalSpaceDiffeomorph {m : WithTop ℕ∞}
     (A : FiniteRankBundleCore 𝕜 Y)
     (p : (A.pullback ((ContMDiffMap.id : C^m⟮IY, Y; IY, Y⟯) : C(Y, Y))).core.TotalSpace) :
     Bundle.Pullback.idDiffeomorph (I := IY) (m := m) (n := n) A.core.Fiber
@@ -575,15 +561,22 @@ theorem lift_compDiffeomorph_pullbackTotalSpaceDiffeomorph {m : WithTop ℕ∞}
       pullbackTotalSpaceDiffeomorph IY n A (g : C(Y, Z))
         ((A.pullback (g : C(Y, Z))).pullbackLift (f : C(X, Y)) p) := by
   rcases p with ⟨x, v⟩
-  let q₁ := pullbackTotalSpaceDiffeomorph IX n A (g.comp f : C(X, Z)) ⟨x, v⟩
-  have hq₁ : q₁ = ⟨x, v⟩ := pullbackTotalSpaceDiffeomorph_apply IX n A (g.comp f : C(X, Z)) ⟨x, v⟩
-  have hcomp : Bundle.Pullback.compDiffeomorph (n := n) A.core.Fiber g f q₁ = ⟨x, v⟩ :=
-    (congrArg (Bundle.Pullback.compDiffeomorph (n := n) A.core.Fiber g f) hq₁).trans
-      (Bundle.Pullback.compDiffeomorph_apply (E := A.core.Fiber) g f ⟨x, v⟩)
-  exact (congrArg (Pullback.lift (f : C(X, Y))) hcomp).trans
-    ((Pullback.lift_mk (E := ((g : Y → Z) *ᵖ A.core.Fiber)) (F := Fin A.rank → 𝕜)
-      (f : C(X, Y)) x v).trans
-      (pullbackTotalSpaceDiffeomorph_apply IY n A (g : C(Y, Z)) ⟨f x, v⟩).symm)
+  calc Pullback.lift (f : C(X, Y)) (Bundle.Pullback.compDiffeomorph (n := n) A.core.Fiber g f
+          (pullbackTotalSpaceDiffeomorph IX n A (g.comp f : C(X, Z)) ⟨x, v⟩))
+      = Pullback.lift (f : C(X, Y)) (Bundle.Pullback.compDiffeomorph (n := n) A.core.Fiber g f
+          ⟨x, v⟩) := by rw [pullbackTotalSpaceDiffeomorph_apply]
+    _ = Pullback.lift (E := (g : Y → Z) *ᵖ A.core.Fiber) (f : C(X, Y)) ⟨x, v⟩ :=
+        congrArg (Pullback.lift (f : C(X, Y)))
+          (Bundle.Pullback.compDiffeomorph_apply (E := A.core.Fiber) g f ⟨x, v⟩)
+    _ = ⟨f x, v⟩ :=
+        Pullback.lift_mk (E := ((g : Y → Z) *ᵖ A.core.Fiber)) (F := Fin A.rank → 𝕜)
+          (f : C(X, Y)) x v
+    _ = pullbackTotalSpaceDiffeomorph IY n A (g : C(Y, Z)) ⟨f x, v⟩ :=
+        (pullbackTotalSpaceDiffeomorph_apply IY n A (g : C(Y, Z)) ⟨f x, v⟩).symm
+    _ = pullbackTotalSpaceDiffeomorph IY n A (g : C(Y, Z))
+          ((A.pullback (g : C(Y, Z))).pullbackLift (f : C(X, Y)) ⟨x, v⟩) :=
+        congrArg (pullbackTotalSpaceDiffeomorph IY n A (g : C(Y, Z)))
+          ((A.pullback (g : C(Y, Z))).pullbackLift_mk (f : C(X, Y)) x v).symm
 
 end Composition
 
@@ -593,16 +586,16 @@ theorem whitneySumTotalSpaceDiffeomorph_pullbackLift (A D : FiniteRankBundleCore
     (f : C(X, Y)) (p : ((whitneySum A D).pullback f).core.TotalSpace) :
     whitneySumTotalSpaceDiffeomorph IY n A D ((whitneySum A D).pullbackLift f p) =
       ⟨f p.proj, (whitneySumTotalSpaceDiffeomorph IX n (A.pullback f) (D.pullback f) p).2⟩ := by
-  let p' : (whitneySum (A.pullback f) (D.pullback f)).core.TotalSpace := p
-  change whitneySumTotalSpaceDiffeomorph IY n A D ((whitneySum A D).pullbackLift f p) =
-    ⟨f p.proj, (whitneySumTotalSpaceDiffeomorph IX n (A.pullback f) (D.pullback f) p').2⟩
-  generalize hq : whitneySumTotalSpaceDiffeomorph IX n (A.pullback f) (D.pullback f) p' = q
-  obtain rfl : q = ⟨p'.proj, whitneySumFiberEquiv (A.pullback f) (D.pullback f) p'.proj p'.2⟩ :=
-    hq.symm.trans (whitneySumTotalSpaceDiffeomorph_apply IX n (A.pullback f) (D.pullback f) p')
-  refine (whitneySumTotalSpaceDiffeomorph_apply IY n A D
-    ((whitneySum A D).pullbackLift f p)).trans ?_
-  exact congrArg (TotalSpace.mk' _ (f p.proj))
-    (whitneySumFiberEquiv_pullback_apply A D f p.proj p.2).symm
+  rcases p with ⟨x, v⟩
+  rw [pullbackLift_mk]
+  -- Rebind the point across the definitional equality `pullback_whitneySum` so the pullback-side
+  -- `whitneySumTotalSpaceDiffeomorph_apply` matches at reducible transparency.
+  let q : (whitneySum (A.pullback f) (D.pullback f)).core.TotalSpace := ⟨x, v⟩
+  change whitneySumTotalSpaceDiffeomorph IY n A D ⟨f x, v⟩ =
+    ⟨f x, (whitneySumTotalSpaceDiffeomorph IX n (A.pullback f) (D.pullback f) q).2⟩
+  rw [whitneySumTotalSpaceDiffeomorph_apply, whitneySumTotalSpaceDiffeomorph_apply]
+  exact congrArg (TotalSpace.mk' _ (f x))
+    (whitneySumFiberEquiv_pullback_apply A D f x q.2).symm
 
 /-- On a pulled-back dual core, `dualTotalSpaceDiffeomorph` over `X` and over `Y` evaluate to the
 same linear functional on every coordinate vector along `pullbackLift`. -/
@@ -610,17 +603,15 @@ theorem dualTotalSpaceDiffeomorph_pullbackLift [CompleteSpace 𝕜] (A : FiniteR
     (f : C(X, Y)) (p : (A.dual.pullback f).core.TotalSpace) (v : Fin A.rank → 𝕜) :
     ((A.pullback f).dualTotalSpaceDiffeomorph IX n p).2 v =
       (A.dualTotalSpaceDiffeomorph IY n (A.dual.pullbackLift f p)).2 v := by
-  let p' : (A.pullback f).dual.core.TotalSpace := p
-  change ((A.pullback f).dualTotalSpaceDiffeomorph IX n p').2 v =
-    (A.dualTotalSpaceDiffeomorph IY n (A.dual.pullbackLift f p)).2 v
-  generalize hq₁ : (A.pullback f).dualTotalSpaceDiffeomorph IX n p' = q₁
-  obtain rfl : q₁ = ⟨p'.proj, dualFiberEquiv (A.pullback f) p'.proj p'.2⟩ :=
-    hq₁.symm.trans ((A.pullback f).dualTotalSpaceDiffeomorph_apply (I := IX) (n := n) p')
-  generalize hq₂ : A.dualTotalSpaceDiffeomorph IY n (A.dual.pullbackLift f p) = q₂
-  obtain rfl : q₂ = ⟨(A.dual.pullbackLift f p).proj,
-      dualFiberEquiv A (A.dual.pullbackLift f p).proj (A.dual.pullbackLift f p).2⟩ :=
-    hq₂.symm.trans (A.dualTotalSpaceDiffeomorph_apply (I := IY) (n := n) (A.dual.pullbackLift f p))
-  exact dualFiberEquiv_pullback_apply A f p.proj p.2 v
+  rcases p with ⟨x, w⟩
+  rw [pullbackLift_mk]
+  -- Rebind the point across the definitional equality `pullback_dual` so the pullback-side
+  -- `dualTotalSpaceDiffeomorph_apply` matches at reducible transparency.
+  let q : (A.pullback f).dual.core.TotalSpace := ⟨x, w⟩
+  change ((A.pullback f).dualTotalSpaceDiffeomorph IX n q).2 v =
+    (A.dualTotalSpaceDiffeomorph IY n ⟨f x, w⟩).2 v
+  rw [dualTotalSpaceDiffeomorph_apply, dualTotalSpaceDiffeomorph_apply]
+  exact dualFiberEquiv_pullback_apply A f x w v
 
 end CoherenceAndOperations
 
