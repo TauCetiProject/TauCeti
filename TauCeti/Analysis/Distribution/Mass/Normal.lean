@@ -175,9 +175,9 @@ theorem IsNormal.add (hT : IsNormal T) (hS : IsNormal S) : IsNormal (T + S) := b
 theorem IsNormal.smul (hT : IsNormal T) (a : ℝ) : IsNormal (a • T) := by
   cases k
   · rw [isNormal_finZero_iff, FunLike.coe_smul, mass_smul]
-    exact ENNReal.mul_ne_top enorm_ne_top hT
+    exact ENNReal.mul_ne_top eNorm_ne_top hT
   · rw [isNormal_succ_iff, smul_comp, FunLike.coe_smul, FunLike.coe_smul, mass_smul, mass_smul]
-    exact ⟨ENNReal.mul_ne_top enorm_ne_top hT.1, ENNReal.mul_ne_top enorm_ne_top hT.2⟩
+    exact ⟨ENNReal.mul_ne_top eNorm_ne_top hT.1, ENNReal.mul_ne_top eNorm_ne_top hT.2⟩
 
 theorem IsNormal.neg (hT : IsNormal T) : IsNormal (-T) := by
   simpa using hT.smul (-1)

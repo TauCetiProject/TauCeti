@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Adjoin.Polynomial.Basic
+public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Span
@@ -22,7 +23,8 @@ it has exactly `n` elements, while for `n = 0` it is the infinite ring `ℤ`, wh
 
 Together they let arithmetic arguments move between divisibility in `ℤ` and membership in `Q`,
 and pin the residue cardinality that `AlgHom.IsArithFrobAt` exponentiates by, without repeating
-the translation at each use site.
+the translation at each use site. If moreover `Q` is maximal and the ring is integral over `ℤ`,
+then `Q ∩ ℤ = (n)` is a maximal ideal of `ℤ`, so `n` is a prime.
 
 For a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C`, the residue rings
 `A ⧸ p`, `B ⧸ Q` and `C ⧸ P` form a tower of algebras for the `Ideal.LiesOver` algebra structures.
@@ -36,6 +38,8 @@ modulo `Q` once the residue of `x` generates `C ⧸ Q` over `A ⧸ p`, and `Q` i
 * `Ideal.algebraMap_mem_iff_dvd_of_liesOver`: `algebraMap R S m ∈ Q ↔ a ∣ m`.
 * `Ideal.finite_quotient_of_liesOver`: if `B ⧸ P` is finite for `P` over `p`, so is `R ⧸ p`.
 * `Ideal.natCard_quotient_under_of_liesOver`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`.
+* `Ideal.prime_of_isMaximal_of_liesOver`: a maximal ideal over `(p)` of a ring integral over `ℤ`
+  forces `p` to be prime.
 * `Ideal.Quotient.isScalarTower_quotient_of_liesOver`: `A ⧸ p → B ⧸ Q → C ⧸ P` is a tower of
   algebras.
 * `Ideal.exists_mem_adjoin_sub_mem`: `A[x]` meets every residue class modulo `Q` when the residue
@@ -75,6 +79,19 @@ theorem natCard_quotient_under_of_liesOver {S : Type*} [Ring S] {n : ℕ}
     (Q : Ideal S) [Q.LiesOver (span {(n : ℤ)})] :
     Nat.card (ℤ ⧸ Q.under ℤ) = n := by
   rw [← over_def Q (span {(n : ℤ)}), Int.card_ideal_quot]
+
+/-- **A maximal ideal over `(p)` forces `p` to be prime.** In a ring integral over `ℤ`, a maximal
+ideal lying over `span {p}` contracts to a maximal ideal of `ℤ`, so `span {p}` is a nonzero prime
+ideal and `p` is a prime. -/
+theorem prime_of_isMaximal_of_liesOver {R : Type*} [CommRing R] [Algebra.IsIntegral ℤ R] {p : ℕ}
+    (𝔭 : Ideal R) [𝔭.IsMaximal] [𝔭.LiesOver (span {(p : ℤ)})] : p.Prime := by
+  have hmax : (span {(p : ℤ)}).IsMaximal := by
+    rw [𝔭.over_def (span {(p : ℤ)})]
+    infer_instance
+  have hp0 : (p : ℤ) ≠ 0 := by
+    rw [Ne, ← span_singleton_eq_bot]
+    exact Ring.ne_bot_of_isMaximal_of_not_isField hmax Int.not_isField
+  exact Nat.prime_iff_prime_int.2 ((span_singleton_prime hp0).1 hmax.isPrime)
 
 /-- The residue rings of a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C` form
 a tower of algebras. -/

@@ -75,15 +75,15 @@ theorem CountablyRectifiable.exists_bilipschitz_cover {k : ℕ} {s : Set V}
   choose A hAm hAanti hAnull using hex
   let f (p : ℕ × ℕ) : A p.1 p.2 → V := (A p.1 p.2).domRestrict (F p.1)
   have hcover (n : ℕ) : range (F n) ≤ᵐ[μHE[k]] ⋃ j, range (f (n, j)) := by
-    simpa only [range_domRestrict, f] using ae_le_set.mpr (hAnull n)
+    simpa only [range_domRestrict, f] using ae_subset.mpr (hAnull n)
   refine ⟨fun n ↦ A (Nat.unpair n).1 (Nat.unpair n).2,
     fun n ↦ F (Nat.unpair n).1, fun n ↦ hAm _ _, fun n ↦ ?_, ?_⟩
   · obtain ⟨L, hL⟩ := hAanti (Nat.unpair n).1 (Nat.unpair n).2
     exact ⟨_, L, hF (Nat.unpair n).1, hL⟩
-  · apply ae_le_set.mp
+  · apply ae_subset.mp
     rw [Set.iUnion_unpair (fun n j ↦ F n '' A n j)]
     simp_rw [← range_domRestrict]
-    exact (ae_le_set.mpr hnull).trans
+    exact (ae_subset.mpr hnull).trans
       ((Filter.EventuallySubset.countable_iUnion fun n ↦
         Filter.Eventually.of_forall (fun _ hx ↦ by
           rcases hx with ⟨x, rfl⟩

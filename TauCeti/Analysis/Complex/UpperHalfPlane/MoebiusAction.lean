@@ -48,6 +48,9 @@ unfolded by hand.
   counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, ℝ)`-action.
+* `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
+  `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
+  subgroup, so that the law need only be checked on generators.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
 * `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
@@ -223,6 +226,33 @@ lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ}
   rw [h_mul, mul_smul, glScalar_smul]
 
 end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+/-- **The subgroup of the transformation law.** The elements `g ∈ SL(2, ℝ)` for which `f`
+satisfies the weight-`k` transformation law `f (g • τ) = denom g τ ^ k * f τ` on all of `ℍ` form
+a subgroup, by the cocycle law of the automorphy factor
+(`Matrix.SpecialLinearGroup.denom_mapGL_mul`). -/
+def transformationLawSubgroup (k : ℤ) (f : ℍ → ℂ) : Subgroup SL(2, ℝ) where
+  carrier := {g | ∀ τ : ℍ, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ}
+  mul_mem' {a b} ha hb τ := by
+    rw [mul_smul, ha, hb, ← mul_assoc, ← mul_zpow, ← Matrix.SpecialLinearGroup.denom_mapGL_mul]
+  one_mem' τ := by simp
+  inv_mem' {a} ha τ := by
+    have h := ha (a⁻¹ • τ)
+    have hd := Matrix.SpecialLinearGroup.denom_mapGL_mul a a⁻¹ τ
+    rw [smul_inv_smul] at h
+    rw [mul_inv_cancel, map_one, denom_one] at hd
+    rw [h, ← mul_assoc, ← mul_zpow, mul_comm (denom (Matrix.SpecialLinearGroup.mapGL ℝ a⁻¹) τ),
+      ← hd, one_zpow, one_mul]
+
+@[simp]
+theorem mem_transformationLawSubgroup {k : ℤ} {f : ℍ → ℂ} {g : SL(2, ℝ)} :
+    g ∈ transformationLawSubgroup k f ↔
+      ∀ τ : ℍ, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ :=
+  Iff.rfl
+
+end TauCeti.UpperHalfPlane
 
 namespace ModularGroup
 

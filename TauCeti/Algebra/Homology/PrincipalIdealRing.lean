@@ -37,6 +37,10 @@ the simpler reason that all modules are semisimple (`TauCeti.Algebra.Homology.Se
   when the next term is projective.
 * `HomologicalComplex.free_cokernel_iCycles_of_isPrincipalIdealRing`: the quotient of a term by
   its cycles is free when the next term is projective.
+* `HomologicalComplex.free_homology_of_d_eq_zero` and
+  `ChainComplex.free_homology_of_isZero_X_succ`: when the incoming differential into a projective
+  term vanishes, its homology coincides with its cycles and is free, without any finiteness
+  assumption on rank.
 
 ## References
 
@@ -86,4 +90,41 @@ instance free_cokernel_iCycles_of_isPrincipalIdealRing [Module.Projective k (K.X
     (cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _)).hom
     ((ModuleCat.mono_iff_injective _).mp inferInstance)
 
+/-- Over a principal ideal ring without zero divisors, if every differential into `K.X i` vanishes
+and `K.X i` is projective, then `K.homology i` is free: with no incoming boundaries, `K.homologyπ i`
+is an isomorphism from the free module of cycles `K.cycles i`. -/
+theorem free_homology_of_d_eq_zero [Module.Projective k (K.X i)]
+    (h : ∀ j, c.Rel j i → K.d j i = 0) : Module.Free k (K.homology i) := by
+  have hd : K.d (c.prev i) i = 0 := by
+    by_cases hrel : c.Rel (c.prev i) i
+    · exact h _ hrel
+    · exact K.shape _ _ hrel
+  exact .of_equiv (K.isoHomologyπ (c.prev i) i rfl hd).toLinearEquiv
+
+/-- Over a principal ideal ring without zero divisors, if every term with a differential into
+`K.X i` is zero and `K.X i` is projective, then `K.homology i` is free. -/
+theorem free_homology_of_isZero_X [Module.Projective k (K.X i)]
+    (h : ∀ j, c.Rel j i → IsZero (K.X j)) : Module.Free k (K.homology i) :=
+  K.free_homology_of_d_eq_zero i fun j hj ↦ (h j hj).eq_of_src _ _
+
 end HomologicalComplex
+
+namespace ChainComplex
+
+variable {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
+  {α : Type*} [AddRightCancelSemigroup α] [One α]
+  (K : ChainComplex (ModuleCat.{v} k) α) (n : α)
+
+/-- Over a principal ideal ring without zero divisors, if `K.d (n + 1) n = 0` and `K.X n` is
+projective, then `K.homology n` is free. -/
+theorem free_homology_of_d_eq_zero [Module.Projective k (K.X n)] (h : K.d (n + 1) n = 0) :
+    Module.Free k (K.homology n) :=
+  HomologicalComplex.free_homology_of_d_eq_zero K n fun _ hj ↦ hj ▸ h
+
+/-- Over a principal ideal ring without zero divisors, if `K.X (n + 1)` is zero and `K.X n` is
+projective, then `K.homology n` is free. -/
+theorem free_homology_of_isZero_X_succ [Module.Projective k (K.X n)] (h : IsZero (K.X (n + 1))) :
+    Module.Free k (K.homology n) :=
+  K.free_homology_of_d_eq_zero n (h.eq_of_src _ _)
+
+end ChainComplex

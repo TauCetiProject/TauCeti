@@ -6,23 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Topology.Coherent
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import Mathlib.Topology.Coherent
 
 /-!
 # Sublevels of real functions
 
 If a real function has a unique global minimum and one compact sublevel strictly above it,
 then sufficiently small sublevels lie in any prescribed open neighbourhood of the minimum
-(`TauCeti.exists_pos_sublevel_subset_of_unique_min`).
-This allows local descriptions near the minimum to describe whole sublevels. Continuity is
-needed only on the one compact sublevel, not on the entire space. Similarly, if a superlevel
-`{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
-whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
+(`TauCeti.exists_pos_sublevel_subset_of_unique_min`). More generally, if `f` is strictly positive
+outside a set `A` and one positive sublevel `{f ≤ a}` is compact with `f` continuous on it, every
+neighbourhood of `A` contains a positive sublevel `{f ≤ δ}`
+(`TauCeti.exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet`, and on a compact space
+`TauCeti.exists_pos_sublevel_subset_of_mem_nhdsSet`). This allows local descriptions near `A` to
+describe whole sublevels; continuity is needed only on the one compact sublevel, not on the entire
+space. Similarly, if a superlevel `{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding
+the zero level of `w` avoids a whole band `{|w| ≤ η}` around it
+(`TauCeti.exists_forall_abs_le_notMem`).
 
 The local counterpart concerns a strict local minimum `x` of a function `f` continuous near `x`
 on a locally compact Hausdorff space: for every neighbourhood `U` of `x`, a preconnected set
@@ -37,11 +43,22 @@ compact (`TauCeti.not_isCompact_inter_preimage_Iic`). A compact sublevel `{f ≤
 is continuous, lies strictly above some value `a ≤ b`, whose sublevel is then empty
 (`TauCeti.exists_le_forall_lt_of_isCompact_sublevel`).
 
+Along levels `a i` unbounded above, the sublevels `{f ≤ a i}` cover the space
+(`TauCeti.iUnion_sublevel_eq_univ`), and when `f` is continuous each point lies in the open
+sublevel `{f < a i}` for some `i`, so the space carries the topology coherent with the sublevels
+(`TauCeti.isCoherentWith_range_sublevel`). This is what lets maps and homotopies defined on an
+exhausting sequence of sublevels, such as the regular sublevels of a proper function, be glued
+into maps and homotopies of the whole space.
+
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
 `TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`, a closed embedding when
-`f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`). This is the topological half
+`f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`), and when `f ≤ b` everywhere the
+sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeomorphUniv`), so
+`TauCeti.sublevelInclusion` composed with `TauCeti.sublevelHomeomorphUniv` is the subtype inclusion
+(`TauCeti.coe_sublevelHomeomorphUniv_comp_sublevelInclusion`,
+`TauCeti.sublevelInclusion_comp_sublevelHomeomorphUniv`). This is the topological half
 of the deformation of sublevels across a band without critical points, where the motion is the
 flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
@@ -52,7 +69,9 @@ cobordism relative to its incoming boundary. Relative to its upper level, the ba
 `TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
 negating `f` exchanges the two (`TauCeti.bandPair_neg`). All sublevels together form the functor
 `TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
-of their inclusions into `X`.
+of their inclusions into `X`. Along levels tending to infinity the sublevels cover `X`
+(`TauCeti.iUnion_sublevel_eq_univ_of_tendsto`), and for continuous `f` the topology of `X` is
+coherent with them (`TauCeti.isCoherentWith_range_sublevel_of_tendsto`).
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -70,7 +89,7 @@ band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_pr
 
 public section
 
-open Set
+open Set Topology
 
 universe u
 
@@ -104,6 +123,35 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
   · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
+
+/-- If `f` is strictly positive outside a set `A` and one positive sublevel `{f ≤ a}` (`a > 0`) is
+compact with `f` continuous on it, then every neighbourhood `W` of `A` contains a positive sublevel
+`{f ≤ δ}` (`δ > 0`). -/
+theorem exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet {X : Type*} [TopologicalSpace X]
+    {f : X → ℝ} {a : ℝ} (ha : 0 < a) (hcompact : IsCompact {x | f x ≤ a})
+    (hf : ContinuousOn f {x | f x ≤ a}) {A W : Set X} (hpos : ∀ x ∉ A, 0 < f x)
+    (hW : W ∈ 𝓝ˢ A) : ∃ δ > 0, {x | f x ≤ δ} ⊆ W := by
+  have hAint : A ⊆ interior W := subset_interior_iff_mem_nhdsSet.2 hW
+  by_cases hne : ({x | f x ≤ a} \ interior W).Nonempty
+  · obtain ⟨z, hz, hzm⟩ := (hcompact.diff isOpen_interior).exists_isMinOn hne
+      (hf.mono sdiff_subset)
+    have hfz : 0 < f z := hpos z fun hzA ↦ hz.2 (hAint hzA)
+    refine ⟨min a (f z) / 2, half_pos (lt_min ha hfz), fun y hy ↦ interior_subset ?_⟩
+    by_contra hyW
+    have hy' : f y ≤ min a (f z) / 2 := hy
+    have hyK : y ∈ {x | f x ≤ a} \ interior W :=
+      ⟨hy'.trans (by linarith [min_le_left a (f z)]), hyW⟩
+    have hzy : f z ≤ f y := hzm hyK
+    linarith [min_le_right a (f z)]
+  · exact ⟨a, ha, fun y hy ↦ interior_subset (by_contra fun hyW ↦ hne ⟨y, hy, hyW⟩)⟩
+
+/-- On a compact space `X`, if `f : X → ℝ` is continuous and strictly positive outside `A`, then
+every neighbourhood `W` of `A` contains a positive sublevel `{f ≤ δ}` (`δ > 0`). -/
+theorem exists_pos_sublevel_subset_of_mem_nhdsSet {X : Type*} [TopologicalSpace X] [CompactSpace X]
+    {f : X → ℝ} (hf : Continuous f) {A W : Set X} (hpos : ∀ x ∉ A, 0 < f x) (hW : W ∈ 𝓝ˢ A) :
+    ∃ δ > 0, {x | f x ≤ δ} ⊆ W :=
+  exists_pos_sublevel_subset_of_isCompact_of_mem_nhdsSet zero_lt_one
+    (isClosed_Iic.preimage hf).isCompact hf.continuousOn hpos hW
 
 open Filter Topology in
 /-- **Stability of a strict local minimum.** Let `x` be a strict local minimum of a real function
@@ -185,6 +233,42 @@ theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
     Monotone fun a : β ↦ {x | f x ≤ a} :=
   fun _ _ hab ↦ ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab
 
+/-- Along a family of levels `a` that is unbounded above, the sublevels `{f ≤ a i}` cover `X`. -/
+theorem iUnion_sublevel_eq_univ {X β ι : Type*} [LinearOrder β] (f : X → β) {a : ι → β}
+    (ha : ¬BddAbove (range a)) : ⋃ i, {x | f x ≤ a i} = univ :=
+  preimage_iUnion.symm.trans <|
+    (congrArg (f ⁻¹' ·) (iUnion_Iic_of_not_bddAbove_range ha)).trans preimage_univ
+
+/-- Along a family of levels `a` that is unbounded above, every point has a neighbourhood which is
+one of the sublevels `{f ≤ a i}` of a continuous function `f`, namely one with `f x < a i`. So `X`
+carries the topology coherent with these sublevels: a set is open as soon as it meets each of them
+in a relatively open set. -/
+theorem isCoherentWith_range_sublevel {X β ι : Type*} [TopologicalSpace X] [LinearOrder β]
+    [TopologicalSpace β] [ClosedIciTopology β] {f : X → β} (hf : Continuous f) {a : ι → β}
+    (ha : ¬BddAbove (range a)) : Topology.IsCoherentWith (range fun i ↦ {x | f x ≤ a i}) := by
+  refine .of_nhds fun x ↦ ?_
+  obtain ⟨_, ⟨i, rfl⟩, hi⟩ := not_bddAbove_iff.1 ha (f x)
+  exact ⟨_, mem_range_self i, Filter.mem_of_superset ((isOpen_Iio.preimage hf).mem_nhds hi)
+    fun _ hy ↦ le_of_lt hy⟩
+
+open Filter in
+/-- The sublevels `{f ≤ a k}` along levels `a k` tending to infinity cover `X`. -/
+theorem iUnion_sublevel_eq_univ_of_tendsto {X ι β : Type*} [Preorder β] (f : X → β)
+    {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
+    ⋃ k, {x | f x ≤ a k} = univ :=
+  eq_univ_of_forall fun x ↦ mem_iUnion.2 (ha.eventually_ge_atTop (f x)).exists
+
+open Filter Topology in
+/-- For continuous `f`, the space carries the topology coherent with the sublevels `{f ≤ a k}`
+along levels `a k` tending to infinity: every point has one of them as a neighbourhood. -/
+theorem isCoherentWith_range_sublevel_of_tendsto {X ι β : Type*} [TopologicalSpace X]
+    [LinearOrder β] [TopologicalSpace β] [OrderClosedTopology β] [NoMaxOrder β] {f : X → β}
+    (hf : Continuous f) {l : Filter ι} [l.NeBot] {a : ι → β} (ha : Tendsto a l atTop) :
+    IsCoherentWith (range fun k ↦ {x | f x ≤ a k}) := .of_nhds fun x ↦ by
+  obtain ⟨k, hk⟩ := (ha.eventually_gt_atTop (f x)).exists
+  exact ⟨_, ⟨k, rfl⟩, mem_of_superset ((isOpen_lt hf continuous_const).mem_nhds hk)
+    fun _ hy ↦ le_of_lt hy⟩
+
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
 def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
     (hab : a ≤ b) : C({x | f x ≤ a}, {x | f x ≤ b}) :=
@@ -210,6 +294,51 @@ theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preo
     sublevelInclusion f a b hab =
       ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
   (rfl)
+
+/-- The range of the inclusion `{f ≤ a} → {f ≤ b}` consists of the points of `{f ≤ b}` at which
+`f ≤ a`. -/
+theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) :
+    range (sublevelInclusion f a b hab) = ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ b}) :=
+  range_inclusion (sublevel_mono f hab)
+
+/-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
+`X` via `Subtype.val`. -/
+def sublevelHomeomorphUniv {X β : Type*} [TopologicalSpace X] [LE β] {f : X → β} {b : β}
+    (hfb : ∀ x, f x ≤ b) : {x | f x ≤ b} ≃ₜ X :=
+  (Homeomorph.setCongr (eq_univ_of_forall hfb)).trans (Homeomorph.Set.univ X)
+
+@[simp]
+theorem coe_sublevelHomeomorphUniv {X β : Type*} [TopologicalSpace X] [LE β] {f : X → β} {b : β}
+    (hfb : ∀ x, f x ≤ b) : ⇑(sublevelHomeomorphUniv hfb) = Subtype.val :=
+  (rfl)
+
+@[simp]
+theorem sublevelHomeomorphUniv_symm_apply {X β : Type*} [TopologicalSpace X] [LE β] {f : X → β}
+    {b : β} (hfb : ∀ x, f x ≤ b) (x : X) :
+    (sublevelHomeomorphUniv hfb).symm x = ⟨x, hfb x⟩ :=
+  (rfl)
+
+/-- When `f ≤ b` everywhere on `X`, composing `TauCeti.sublevelInclusion f a b hab` with
+`TauCeti.sublevelHomeomorphUniv hfb` gives the subtype inclusion `{f ≤ a} ↪ X`. -/
+@[simp]
+theorem coe_sublevelHomeomorphUniv_comp_sublevelInclusion {X β : Type*} [TopologicalSpace X]
+    [Preorder β] {f : X → β} {a b : β} (hab : a ≤ b) (hfb : ∀ x, f x ≤ b) :
+    ContinuousMap.comp (sublevelHomeomorphUniv hfb : C({x | f x ≤ b}, X))
+        (sublevelInclusion f a b hab) =
+      ContinuousMap.subtypeVal {x | f x ≤ a} :=
+  (rfl)
+
+open CategoryTheory in
+/-- Categorical form of `TauCeti.coe_sublevelHomeomorphUniv_comp_sublevelInclusion` in `TopCat`. -/
+theorem sublevelInclusion_comp_sublevelHomeomorphUniv {X : Type u} [TopologicalSpace X]
+    {β : Type*} [Preorder β] {f : X → β} {a b : β} (hab : a ≤ b) (hfb : ∀ x, f x ≤ b) :
+    TopCat.ofHom (sublevelInclusion f a b hab) ≫
+        (TopCat.isoOfHomeo (X := TopCat.of ↥{x | f x ≤ b}) (Y := TopCat.of X)
+          (sublevelHomeomorphUniv hfb)).hom =
+      TopCat.ofHom (ContinuousMap.subtypeVal {x | f x ≤ a}) := by
+  ext x
+  simp
 
 /-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
 theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
