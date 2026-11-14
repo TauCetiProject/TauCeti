@@ -59,6 +59,12 @@ noncomputable def continuousLinearMap : (ι → M) →L[R] (κ → M) :=
 theorem continuousLinearMap_apply (x : ι → M) :
     continuousLinearMap R M e x = Function.extend e x 0 := (rfl)
 
+/-- The underlying linear map of the continuous extension by zero is Mathlib's
+`Function.ExtendByZero.linearMap`. -/
+@[simp, norm_cast]
+theorem toLinearMap_continuousLinearMap :
+    (continuousLinearMap R M e : (ι → M) →ₗ[R] (κ → M)) = linearMap R M e := (rfl)
+
 /-- Mathlib's coordinate restriction `Pi.compRightL` recovers every function extended by zero
 along an injective index map. -/
 theorem leftInverse_compRightL_continuousLinearMap (he : Function.Injective e) :

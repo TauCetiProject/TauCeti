@@ -56,7 +56,7 @@ variable {α β κ ν : Type*} [DecidableEq κ] [DecidableEq ν]
 the original polyhedra. Its explicit formula extends the input coordinates by zero
 and restricts the output coordinates. For a homeomorphism, use the theorem with its
 inverse and the two relabelings exchanged to descend the inverse formula. -/
-theorem isPLOn_restriction_comp_extendByZero
+theorem isPLOn_compRightL_comp_extendByZero
     (h : {x : Realization A // x.1.support ∈ P.map e} →
       {y : Realization B // y.1.support ∈ Q.map d})
     (f : (κ → ℝ) → (ν → ℝ))
@@ -86,7 +86,7 @@ theorem isPLOn_restriction_comp_extendByZero
   intro x
   simp only [Function.comp_apply,
     ← relabelingHomeomorph_coe_eq_extendByZero P e hK hA x,
-    hcoord, relabelingHomeomorph_symm_coe_eq_restriction]
+    hcoord, relabelingHomeomorph_symm_coe_eq_compRightL]
 
 /-- A PL homeomorphism after two injective relabelings descends to a PL homeomorphism before
 relabeling. The two complexes may use different embeddings into the common target vertex type.
@@ -106,9 +106,9 @@ theorem PLHomeomorphic.of_common_relabeling
   let g' : (α → ℝ) → (α → ℝ) :=
     Pi.compRightL ℝ (fun _ : κ ↦ ℝ) e ∘ g ∘
       Function.ExtendByZero.continuousLinearMap ℝ ℝ d
-  have hf' := isPLOn_restriction_comp_extendByZero A B e d
+  have hf' := isPLOn_compRightL_comp_extendByZero A B e d
     (le_top _) (le_top _) (le_top _) (le_top _) φ f hf hφ
-  have hg' := isPLOn_restriction_comp_extendByZero B A d e
+  have hg' := isPLOn_compRightL_comp_extendByZero B A d e
     (le_top _) (le_top _) (le_top _) (le_top _) φ.symm g hg hφinv
   refine PLHomeomorphic.intro ψ f' g' hf'.1 hg'.1 ?_ ?_
   · intro x
@@ -136,7 +136,7 @@ theorem PLHomeomorphic.relabeling {γ δ : Type*} [DecidableEq δ]
     simpa only [r, f] using (relabelingHomeomorph_coe_eq_extendByZero
       P e (le_top P) (le_top (P.map e)) x).symm
   · intro y
-    simpa only [r, g] using (relabelingHomeomorph_symm_coe_eq_restriction
+    simpa only [r, g] using (relabelingHomeomorph_symm_coe_eq_compRightL
       P e (le_top P) (le_top (P.map e)) y).symm
 
 /-- Realize a PL homeomorphism inside arbitrary ambient simplicial complexes containing its two

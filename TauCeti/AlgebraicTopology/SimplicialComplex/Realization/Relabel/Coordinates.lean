@@ -49,7 +49,7 @@ theorem relabelingHomeomorph_coe_eq_extendByZero
 
 /-- Inverse relabeling of polyhedra restricts the ambient coordinate vector along the
 vertex embedding. -/
-theorem relabelingHomeomorph_symm_coe_eq_restriction
+theorem relabelingHomeomorph_symm_coe_eq_compRightL
     (y : {y : Realization L // y.1.support ∈ P.map e}) :
     (((P.relabelingHomeomorph e hK hL).symm y).1.1 : α → ℝ) =
       Pi.compRightL ℝ (fun _ : β ↦ ℝ) e (y.1.1 : β → ℝ) := by
