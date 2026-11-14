@@ -34,6 +34,8 @@ bounds.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
+* `MeasureTheory.MemLp.eLpNorm_two_eq_ofReal_sqrt_integral`: the `L²` seminorm of a
+  square-integrable function is the square root of the integral of its squared norm.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
   convergence of the integral of the squared norm.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
@@ -71,6 +73,8 @@ bounds.
 * `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
   sets with a common representative glue to a class on any set they cover, with norm at most the
   sum of their norms.
+* `MeasureTheory.Lp.norm_le_mul_norm_of_ae_eq_smul`: multiplying an `Lᵖ` class by a function
+  bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
 -/
@@ -123,13 +127,8 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
   · refine ⟨0, fun u => ?_⟩
     rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
     exact zero_le
-  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
-    rw [sub_nonneg]
-    rcases eq_or_ne pstar ∞ with h | h
-    · simp only [h, ENNReal.toReal_top, div_zero]
-      positivity
-    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
-        (ENNReal.toReal_mono h hq)
+  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal :=
+    ENNReal.one_div_toReal_sub_one_div_toReal_nonneg hq0 hq
   have hc : m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg hexp hm
   refine ⟨‖S‖₊ * (m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
@@ -247,6 +246,14 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- The `L²` seminorm of a square-integrable function is the square root of the integral of its
+squared pointwise norm. -/
+theorem MemLp.eLpNorm_two_eq_ofReal_sqrt_integral {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : MemLp f 2 m) :
+    eLpNorm f 2 m = ENNReal.ofReal √(∫ x, ‖f x‖ ^ 2 ∂m) := by
+  rw [hf.eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two, Real.sqrt_eq_rpow, one_div]
 
 /-- The squared `L²` norm of the class of a square-integrable function is the integral of its
 squared pointwise norm. -/
@@ -404,6 +411,23 @@ theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {
     (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
+
+section Smul
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+
+/-- **Multiplication by a bounded function.** If `‖ψ‖ ≤ C` almost everywhere and `v = ψ • u`
+almost everywhere for `u, v ∈ Lᵖ`, then `‖v‖ ≤ C ‖u‖`. -/
+theorem Lp.norm_le_mul_norm_of_ae_eq_smul {𝕜 : Type*} [SeminormedAddGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {p : ℝ≥0∞} {ψ : X → 𝕜} {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖ψ x‖ ≤ C)
+    {u v : Lp F p μ} (hv : v =ᵐ[μ] fun x ↦ ψ x • u x) :
+    ‖v‖ ≤ C * ‖u‖ := by
+  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+  filter_upwards [hv, hC] with x hx hCx
+  rw [hx]
+  exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right hCx (norm_nonneg _))
+
+end Smul
 
 section IntegralRpow
 

@@ -88,8 +88,8 @@ theorem tendsto_quantile_map_coe_apply_lkjMeasure_of_ne_nhdsGT_zero (hη : 0 < �
     Tendsto ((lkjMeasure p η).map
         (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
           (R : Matrix (Fin p) (Fin p) ℝ) i j)).quantile (𝓝[>] 0) (𝓝 (-1)) := by
-  have ha := entry_shape_pos hη hij
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero (η + ((p : ℝ) - 2) / 2)
+    (η + ((p : ℝ) - 2) / 2)).const_mul 2).const_add (-1)
   simp only [mul_zero, add_zero] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
@@ -136,8 +136,8 @@ theorem tendsto_quantile_map_eval_partialCorrelationOfCorrelationCoordinates_lkj
     Tendsto ((lkjMeasure p η).map
       (fun R ↦ partialCorrelationOfCorrelationCoordinates (correlationCoordinates p R) ij)).quantile
         (𝓝[>] 0) (𝓝 (-1)) := by
-  have ha := lkjPartialCorrelationShape_pos hη ij
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero (lkjPartialCorrelationShape p η ij)
+    (lkjPartialCorrelationShape p η ij)).const_mul 2).const_add (-1)
   simp only [mul_zero, add_zero] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu

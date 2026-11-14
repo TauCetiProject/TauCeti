@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.Exponent
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -22,10 +24,11 @@ finite-measure sets.
 
 ## Main declarations
 
-* `MeasureTheory.Measure.LpToL1CLM`: the continuous inclusion from `Lᵖ` to `L¹` on
-  a finite-measure space.
-* `MeasureTheory.Measure.LpToL1CLM_coeFn`: the inclusion has the original representative almost
-  everywhere.
+* `TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`: convergence of representatives on a
+  finite-measure set.
+* `MeasureTheory.MemLp.coeFn_toLp_indicator_restrict`: recover a function from its zero extension
+  on a measurable subset.
+
 * `Set.LpToL1RestrictCLM`: restriction from `Lᵖ` to `L¹` on a finite-measure set.
 * `Set.LpToL1RestrictCLM_coeFn`: the restricted class has the original representative almost
   everywhere.
@@ -48,43 +51,6 @@ public section
 
 noncomputable section
 
-namespace MeasureTheory.Measure
-
-open ContinuousLinearMap Filter MeasureTheory Set
-open scoped ENNReal
-
-variable {E F 𝕜 : Type*} [MeasurableSpace E]
-  [NormedAddCommGroup F] [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F]
-
-/-- The continuous inclusion from `Lᵖ` to `L¹` on a finite-measure space. -/
-def LpToL1CLM (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
-    [Fact (1 ≤ p)] : Lp F p μ →L[𝕜] Lp F 1 μ :=
-  LinearMap.mkContinuous
-    { toFun f := ((Lp.memLp f).mono_exponent Fact.out).toLp f
-      map_add' f g := by
-        rw [← MemLp.toLp_add]
-        exact MemLp.toLp_congr _ _ (Lp.coeFn_add f g)
-      map_smul' c f := by
-        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-        exact MemLp.toLp_congr _ _ (Lp.coeFn_smul c f) }
-    (μ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal)).toReal fun f => by
-      -- Hölder's inequality on the finite measure `μ` bounds the `L¹` norm by the `Lᵖ` norm.
-      have hC : μ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal) ≠ ∞ :=
-        ENNReal.rpow_ne_top_of_nonneg (TauCeti.MeasureTheory.sub_one_div_toReal_nonneg Fact.out)
-          (measure_ne_top μ univ)
-      rw [LinearMap.coe_mk, AddHom.coe_mk, Lp.norm_toLp, Lp.norm_def, ← ENNReal.toReal_mul]
-      exact ENNReal.toReal_mono (ENNReal.mul_ne_top hC (Lp.eLpNorm_ne_top f))
-        ((eLpNorm_le_eLpNorm_mul_rpow_measure_univ Fact.out (Lp.aestronglyMeasurable f)).trans_eq
-          (mul_comm _ _))
-
-/-- The finite-measure `Lᵖ` to `L¹` inclusion has the original representative almost everywhere. -/
-theorem LpToL1CLM_coeFn (μ : Measure E) (p : ENNReal) [IsFiniteMeasure μ]
-    [Fact (1 ≤ p)] (f : Lp F p μ) : LpToL1CLM (𝕜 := 𝕜) μ p f =ᵐ[μ] f := by
-  simp only [LpToL1CLM, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk]
-  exact MemLp.coeFn_toLp _
-
-end MeasureTheory.Measure
-
 namespace Set
 
 open ContinuousLinearMap Filter MeasureTheory Set
@@ -98,7 +64,7 @@ variable {E F 𝕜 : Type*} [MeasurableSpace E]
 def LpToL1RestrictCLM (s : Set E) (hμs : μ s < ∞) :
     Lp F p μ →L[𝕜] Lp F 1 (μ.restrict s) := by
   letI : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
-  exact (Measure.LpToL1CLM (𝕜 := 𝕜) (μ := μ.restrict s) p).comp
+  exact (Lp.ofExponentLEL (ν := μ.restrict s) 𝕜 F (Fact.out : 1 ≤ p)).comp
     (LpToLpRestrictCLM E F 𝕜 μ p s)
 
 /-- The restricted `L¹` class agrees almost everywhere with the original `Lᵖ` class. -/
@@ -106,9 +72,8 @@ theorem LpToL1RestrictCLM_coeFn (s : Set E) (hμs : μ s < ∞)
     (f : Lp F p μ) :
     LpToL1RestrictCLM (𝕜 := 𝕜) s hμs f =ᵐ[μ.restrict s] f := by
   let _ : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
-  rw [LpToL1RestrictCLM, ContinuousLinearMap.comp_apply]
-  exact (Measure.LpToL1CLM_coeFn (𝕜 := 𝕜) (μ.restrict s) p _).trans
-    (LpToLpRestrictCLM_coeFn 𝕜 s f)
+  rw [LpToL1RestrictCLM, ContinuousLinearMap.comp_apply, Lp.coeFn_ofExponentLEL]
+  exact LpToLpRestrictCLM_coeFn 𝕜 s f
 
 variable [NormedSpace ℝ F] [SMulCommClass ℝ 𝕜 F] [CompleteSpace F]
 
@@ -220,7 +185,8 @@ theorem setIntegral_norm_le_toReal_eLpNorm_restrict (hp : 1 ≤ p) {s : Set α} 
   refine ENNReal.toReal_mono hg.eLpNorm_ne_top <|
     (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hg.aestronglyMeasurable).trans ?_
   refine mul_le_of_le_one_right'
-    (ENNReal.rpow_le_one ?_ (MeasureTheory.sub_one_div_toReal_nonneg hp))
+    (ENNReal.rpow_le_one ?_
+      (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp))
   rwa [Measure.restrict_apply_univ]
 
 end TauCeti

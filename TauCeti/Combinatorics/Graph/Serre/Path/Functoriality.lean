@@ -206,9 +206,9 @@ end Restrict
 /-- Every reduced loop at the base vertex comes from a reduced loop of the based core. -/
 theorem mem_range_map_coreInclusion {v : Γ.V} (g : PathGroup Γ v) :
     g ∈ (map (Γ.coreInclusion v)
-      ((Γ.coreInclusion_mapV v (Γ.coreBase v)).trans (Γ.coreBase_val v))).range := by
+      ((Γ.subgraphInclusion_mapV _ _ _ _ (Γ.coreBase v)).trans (Γ.coreBase_val v))).range := by
   obtain ⟨q, hq⟩ := Γ.exists_core_loop v g.toPath g.isReduced
-  have h := (Γ.coreInclusion_mapV v (Γ.coreBase v)).trans (Γ.coreBase_val v)
+  have h := (Γ.subgraphInclusion_mapV _ _ _ _ (Γ.coreBase v)).trans (Γ.coreBase_val v)
   have hv := ((Γ.coreInclusion v).toPrefunctor_obj (Γ.coreBase v)).trans h
   have hc := (Quiver.Path.cast_eq_iff_heq hv hv _ _).mpr (heq_of_eq hq)
   exact ⟨ofPath q, (map_ofPath _ h q).trans ((congrArg ofPath hc).trans (ofPath_toPath g))⟩
