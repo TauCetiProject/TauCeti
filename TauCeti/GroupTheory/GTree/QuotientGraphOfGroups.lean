@@ -127,6 +127,16 @@ private theorem edgeTwist_rev (y : T.quotient.E) :
   rcases GeomEdge.out_toGeomEdge_eq_or_eq_rev T.quotient y with h | h <;>
     simp [edgeTwist, h, T.quotient.rev_ne y, (T.quotient.rev_ne y).symm]
 
+private theorem edgeTwist_rev_of_out_eq {y : T.quotient.E}
+    (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = y) :
+    D.edgeTwist (T.quotient.rev y) = 1 := by
+  rw [D.edgeTwist_rev, D.edgeTwist_of_out_eq h, mul_inv_cancel]
+
+private theorem edgeTwist_rev_of_out_eq_rev {y : T.quotient.E}
+    (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = T.quotient.rev y) :
+    D.edgeTwist (T.quotient.rev y) = D.twist y := by
+  rw [D.edgeTwist_rev, D.edgeTwist_of_out_eq_rev h, mul_one]
+
 private theorem edgeTwist_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts) :
     D.edgeTwist y = 1 := by
   simp [edgeTwist, hy]
@@ -134,9 +144,10 @@ private theorem edgeTwist_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts) :
 private theorem stabilizer_dart_rev_eq_map_edgeTwist (y : T.quotient.E) :
     stabilizer G (D.dart (T.quotient.rev y)) =
       (stabilizer G (D.dart (GeomEdge.out T.quotient (T.quotient.toGeomEdge y)))).map
-        (MulAut.conj (D.edgeTwist y)).toMonoidHom := by
+        (MulAut.conj (D.edgeTwist y) : G →* G) := by
   rcases GeomEdge.out_toGeomEdge_eq_or_eq_rev T.quotient y with h | h
-  · rw [D.edgeTwist_of_out_eq h, h, D.stabilizer_dart_rev]
+  · rw [D.edgeTwist_of_out_eq h, h]
+    exact D.stabilizer_dart_rev y
   · rw [D.edgeTwist_of_out_eq_rev h, h, map_one]
     exact (Subgroup.map_id _).symm
 
@@ -149,6 +160,11 @@ noncomputable def edgeGroupHom (y : T.quotient.E) :
   (Subgroup.inclusion (D.stabilizer_dart_rev_le_stabilizer_vertex y)).comp
     (((MulAut.conj (D.edgeTwist y)).subgroupMap _).trans
       (MulEquiv.subgroupCongr (D.stabilizer_dart_rev_eq_map_edgeTwist y).symm)).toMonoidHom
+
+private theorem coe_edgeGroupHom (y : T.quotient.E)
+    (c : stabilizer G (D.dart (GeomEdge.out T.quotient (T.quotient.toGeomEdge y)))) :
+    (D.edgeGroupHom y c : G) = MulAut.conj (D.edgeTwist y) (c : G) := by
+  simp [edgeGroupHom]
 
 /-- The boundary monomorphism `edgeGroupHom y` is injective. -/
 theorem edgeGroupHom_injective (y : T.quotient.E) :
@@ -180,36 +196,49 @@ instance instCoeOutVertexGroup (b : T.quotient.V) : CoeOut (D.graphOfGroups.vert
   ⟨D.vertexGroupSubtype b⟩
 
 noncomputable instance instCoeOutEdgeGroup (z : T.quotient.GeomEdge) :
-    CoeOut (D.graphOfGroups.edgeGroup z) G :=
-  ⟨D.edgeGroupSubtype z⟩
+    CoeOut (D.graphOfGroups.edgeGroup z) G := ⟨D.edgeGroupSubtype z⟩
+
+-- `(g : G)` elaborates to `D.vertexGroupSubtype b g` / `D.edgeGroupSubtype z g`, so `@[simp]` goes
+-- on `*_mk` rather than `*_apply` to keep `(g : G)` in `simp`-normal form.
+theorem vertexGroupSubtype_apply (b : T.quotient.V) (g : D.graphOfGroups.vertexGroup b) :
+    D.vertexGroupSubtype b g = (g : stabilizer G (D.vertex b)).1 := (rfl)
+
+theorem edgeGroupSubtype_apply (z : T.quotient.GeomEdge) (g : D.graphOfGroups.edgeGroup z) :
+    D.edgeGroupSubtype z g = (g : stabilizer G (D.dart (GeomEdge.out T.quotient z))).1 := (rfl)
+
+@[simp] theorem vertexGroupSubtype_mk (b : T.quotient.V) (g : G)
+    (hg : g ∈ stabilizer G (D.vertex b)) : D.vertexGroupSubtype b ⟨g, hg⟩ = g := (rfl)
+
+@[simp] theorem edgeGroupSubtype_mk (z : T.quotient.GeomEdge) (g : G)
+    (hg : g ∈ stabilizer G (D.dart (GeomEdge.out T.quotient z))) :
+    D.edgeGroupSubtype z ⟨g, hg⟩ = g := (rfl)
+
+theorem vertexGroupSubtype_mem (b : T.quotient.V) (g : D.graphOfGroups.vertexGroup b) :
+    (g : G) ∈ stabilizer G (D.vertex b) := g.2
+
+theorem edgeGroupSubtype_mem (z : T.quotient.GeomEdge) (g : D.graphOfGroups.edgeGroup z) :
+    (g : G) ∈ stabilizer G (D.dart (GeomEdge.out T.quotient z)) := g.2
 
 @[simp] theorem range_vertexGroupSubtype (b : T.quotient.V) :
-    (D.vertexGroupSubtype b).range = stabilizer G (D.vertex b) :=
-  Subgroup.range_subtype _
+    (D.vertexGroupSubtype b).range = stabilizer G (D.vertex b) := Subgroup.range_subtype _
 
 @[simp] theorem range_edgeGroupSubtype (z : T.quotient.GeomEdge) :
     (D.edgeGroupSubtype z).range = stabilizer G (D.dart (GeomEdge.out T.quotient z)) :=
   Subgroup.range_subtype _
 
 theorem vertexGroupSubtype_injective (b : T.quotient.V) :
-    Function.Injective (D.vertexGroupSubtype b) :=
-  Subgroup.subtype_injective _
+    Function.Injective (D.vertexGroupSubtype b) := Subgroup.subtype_injective _
 
 theorem edgeGroupSubtype_injective (z : T.quotient.GeomEdge) :
-    Function.Injective (D.edgeGroupSubtype z) :=
-  Subgroup.subtype_injective _
+    Function.Injective (D.edgeGroupSubtype z) := Subgroup.subtype_injective _
 
 private theorem coe_vertexGroup_cast {b₁ b₂ : T.quotient.V} (h : b₁ = b₂)
     (x : D.graphOfGroups.vertexGroup b₁) :
-    ((MulEquiv.cast (M := D.graphOfGroups.vertexGroup) h x :
-      D.graphOfGroups.vertexGroup b₂) : G) = x := by
-  subst h; rfl
+    (MulEquiv.cast (M := D.graphOfGroups.vertexGroup) h x : G) = x := by subst h; rfl
 
 private theorem coe_edgeGroup_cast {z₁ z₂ : T.quotient.GeomEdge} (h : z₁ = z₂)
     (x : D.graphOfGroups.edgeGroup z₁) :
-    ((MulEquiv.cast (M := D.graphOfGroups.edgeGroup) h x :
-      D.graphOfGroups.edgeGroup z₂) : G) = x := by
-  subst h; rfl
+    (MulEquiv.cast (M := D.graphOfGroups.edgeGroup) h x : G) = x := by subst h; rfl
 
 theorem graphOfGroups_vertexGroup (b : T.quotient.V) :
     D.graphOfGroups.vertexGroup b = stabilizer G (D.vertex b) := (rfl)
@@ -222,7 +251,9 @@ theorem graphOfGroups_ω (y : T.quotient.E) :
 
 private theorem coe_ω_eq_conj_edgeTwist (y : T.quotient.E)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
-    (D.graphOfGroups.ω y c : G) = MulAut.conj (D.edgeTwist y) (c : G) := rfl
+    (D.graphOfGroups.ω y c : G) = MulAut.conj (D.edgeTwist y) (c : G) := by
+  rw [vertexGroupSubtype_apply, edgeGroupSubtype_apply]
+  exact D.coe_edgeGroupHom y c
 
 private theorem coe_α_eq_conj_edgeTwist_rev (y : T.quotient.E)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
@@ -241,8 +272,7 @@ theorem coe_ω_of_out_eq_rev {y : T.quotient.E}
     (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = T.quotient.rev y)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
     (D.graphOfGroups.ω y c : G) = c := by
-  rw [coe_ω_eq_conj_edgeTwist, D.edgeTwist_of_out_eq_rev h, MulAut.conj_apply]
-  simp
+  rw [coe_ω_eq_conj_edgeTwist, D.edgeTwist_of_out_eq_rev h, map_one, MulAut.one_apply]
 
 /-- On the chosen dart `GeomEdge.out` of a geometric edge, `α_y` is the plain subgroup inclusion in
 `G`. -/
@@ -250,31 +280,27 @@ theorem coe_α_of_out_eq {y : T.quotient.E}
     (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = y)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
     (D.graphOfGroups.α y c : G) = c := by
-  rw [coe_α_eq_conj_edgeTwist_rev, D.edgeTwist_rev, D.edgeTwist_of_out_eq h, mul_inv_cancel,
-    MulAut.conj_apply]
-  simp
+  rw [coe_α_eq_conj_edgeTwist_rev, D.edgeTwist_rev_of_out_eq h, map_one, MulAut.one_apply]
 
 /-- On the dart opposite to `GeomEdge.out`, `α_y` conjugates by `D.twist y`. -/
 theorem coe_α_of_out_eq_rev {y : T.quotient.E}
     (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = T.quotient.rev y)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
     (D.graphOfGroups.α y c : G) = D.twist y * (c : G) * (D.twist y)⁻¹ := by
-  rw [coe_α_eq_conj_edgeTwist_rev, D.edgeTwist_rev, D.edgeTwist_of_out_eq_rev h, mul_one,
-    MulAut.conj_apply]
+  rw [coe_α_eq_conj_edgeTwist_rev, D.edgeTwist_rev_of_out_eq_rev h, MulAut.conj_apply]
 
 /-- On a dart of the spanning tree, `ω_y` is the plain subgroup inclusion in `G`. -/
 @[simp] theorem coe_ω_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
     (D.graphOfGroups.ω y c : G) = c := by
-  rw [coe_ω_eq_conj_edgeTwist, D.edgeTwist_of_mem hy, MulAut.conj_apply]
-  simp
+  rw [coe_ω_eq_conj_edgeTwist, D.edgeTwist_of_mem hy, map_one, MulAut.one_apply]
 
 /-- On a dart of the spanning tree, `α_y` is the plain subgroup inclusion in `G`. -/
 @[simp] theorem coe_α_of_mem {y : T.quotient.E} (hy : y ∈ D.tree.darts)
     (c : D.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y)) :
     (D.graphOfGroups.α y c : G) = c := by
-  rw [coe_α_eq_conj_edgeTwist_rev, D.edgeTwist_of_mem (D.tree.rev_mem y hy), MulAut.conj_apply]
-  simp
+  rw [coe_α_eq_conj_edgeTwist_rev, D.edgeTwist_of_mem (D.tree.rev_mem y hy), map_one,
+    MulAut.one_apply]
 
 /-- Every dart `y` and edge element `c` satisfy the Bass–Serre relation
 `D.twist y * ω_y(c) * (D.twist y)⁻¹ = α_y(c)` in `G`. -/
@@ -481,8 +507,7 @@ theorem π₁TreeToGroup_bijective : Function.Bijective D.π₁TreeToGroup :=
 /-- **Structure theorem (spanning-tree presentation).** For any lifting `D` of a `G`-tree `T`,
 the fundamental group `π₁(D.graphOfGroups, D.tree)` of the quotient graph of groups is canonically
 isomorphic to `G`. -/
-noncomputable def π₁TreeEquiv :
-    GraphOfGroups.π₁Tree D.graphOfGroups D.tree.darts ≃* G :=
+noncomputable def π₁TreeEquiv : GraphOfGroups.π₁Tree D.graphOfGroups D.tree.darts ≃* G :=
   MulEquiv.ofBijective D.π₁TreeToGroup D.π₁TreeToGroup_bijective
 
 @[simp] theorem coe_π₁TreeEquiv :
@@ -490,8 +515,7 @@ noncomputable def π₁TreeEquiv :
   (rfl)
 
 theorem π₁TreeEquiv_apply (x : GraphOfGroups.π₁Tree D.graphOfGroups D.tree.darts) :
-    D.π₁TreeEquiv x = D.π₁TreeToGroup x :=
-  (rfl)
+    D.π₁TreeEquiv x = D.π₁TreeToGroup x := (rfl)
 
 @[simp] theorem π₁TreeEquiv_of (b : T.quotient.V) (g : D.graphOfGroups.vertexGroup b) :
     D.π₁TreeEquiv (GraphOfGroups.π₁Tree.of D.tree.darts b g) = g :=
@@ -520,8 +544,7 @@ theorem π₁TreeEquiv_apply (x : GraphOfGroups.π₁Tree D.graphOfGroups D.tree
 /-- **Structure theorem (path fundamental group).** For any lifting `D` of a `G`-tree `T` and any
 base vertex `b₀` of `T.quotient`, the fundamental group `π₁(D.graphOfGroups, b₀)` of closed paths
 is isomorphic to `G`. -/
-noncomputable def π₁Equiv (b₀ : T.quotient.V) :
-    GraphOfGroups.π₁ D.graphOfGroups b₀ ≃* G :=
+noncomputable def π₁Equiv (b₀ : T.quotient.V) : GraphOfGroups.π₁ D.graphOfGroups b₀ ≃* G :=
   (GraphOfGroups.π₁Equiv D.graphOfGroups b₀ D.tree).trans D.π₁TreeEquiv
 
 theorem π₁Equiv_apply (b₀ : T.quotient.V) (x : GraphOfGroups.π₁ D.graphOfGroups b₀) :
@@ -566,21 +589,14 @@ private theorem orbit_twist_mem_stabilizer {u : T.quotient.V → G}
         D₁.dart (GeomEdge.out T.quotient (T.quotient.toGeomEdge y)) :=
     inv_smul_eq_iff.mpr (hv _)
   rcases GeomEdge.out_toGeomEdge_eq_or_eq_rev T.quotient y with h | h
-  · have h₁ : D₁.edgeTwist (T.quotient.rev y) = 1 :=
-      D₁.edgeTwist_of_out_eq_rev (y := T.quotient.rev y) (by simpa using h)
-    have h₂ : D₂.edgeTwist (T.quotient.rev y) = 1 :=
-      D₂.edgeTwist_of_out_eq_rev (y := T.quotient.rev y) (by simpa using h)
-    rw [h₁, h₂, mul_one, inv_one, mul_one, mul_smul]
+  · rw [D₁.edgeTwist_rev_of_out_eq h, D₂.edgeTwist_rev_of_out_eq h, mul_one, inv_one, mul_one,
+      mul_smul]
     have hsrc : (v (T.quotient.toGeomEdge y))⁻¹ • D₂.vertex (T.quotient.src y) =
         D₁.vertex (T.quotient.src y) := by
       have := congrArg T.src hv'
       rwa [src_smul, h, D₂.src_dart, D₁.src_dart] at this
     rw [hsrc, ← hu]
-  · have h₁ : D₁.edgeTwist (T.quotient.rev y) = D₁.twist y := by
-      simpa [D₁.twist_rev] using D₁.edgeTwist_of_out_eq (y := T.quotient.rev y) (by simpa using h)
-    have h₂ : D₂.edgeTwist (T.quotient.rev y) = D₂.twist y := by
-      simpa [D₂.twist_rev] using D₂.edgeTwist_of_out_eq (y := T.quotient.rev y) (by simpa using h)
-    rw [h₁, h₂]
+  · rw [D₁.edgeTwist_rev_of_out_eq_rev h, D₂.edgeTwist_rev_of_out_eq_rev h]
     have htgt₂ : (D₂.twist y)⁻¹ • D₂.vertex (T.quotient.src y) =
         T.tgt (D₂.dart (GeomEdge.out T.quotient (T.quotient.toGeomEdge y))) := by
       rw [h, D₂.tgt_dart, T.quotient.tgt_rev, D₂.twist_rev]
@@ -633,23 +649,19 @@ private theorem coe_edgeGroup_stabilizerEquivStabilizer {z : T.quotient.GeomEdge
 
 private theorem orbitEdgeHom_rev {v : T.quotient.GeomEdge → G}
     (hv : ∀ z, D₂.dart (GeomEdge.out T.quotient z) = v z • D₁.dart (GeomEdge.out T.quotient z))
-    (y : T.quotient.E) (c : D₁.graphOfGroups.edgeGroup (T.quotient.toGeomEdge (T.quotient.rev y))) :
+    (y : T.quotient.E)
+    (c : D₁.graphOfGroups.edgeGroup (T.quotient.toGeomEdge (T.quotient.rev y))) :
     (stabilizerEquivStabilizer (hv (T.quotient.toGeomEdge (T.quotient.rev y)))).toMonoidHom c =
       MulEquiv.cast (M := D₂.graphOfGroups.edgeGroup) (T.quotient.toGeomEdge_rev y).symm
         ((stabilizerEquivStabilizer (hv (T.quotient.toGeomEdge y))).toMonoidHom
-          (MulEquiv.cast (M := D₁.graphOfGroups.edgeGroup) (T.quotient.toGeomEdge_rev y) c)) :=
-  let c' := MulEquiv.cast (M := D₁.graphOfGroups.edgeGroup) (T.quotient.toGeomEdge_rev y) c
-  let x : D₂.graphOfGroups.edgeGroup (T.quotient.toGeomEdge y) :=
-    (stabilizerEquivStabilizer (hv (T.quotient.toGeomEdge y))).toMonoidHom c'
-  D₂.edgeGroupSubtype_injective _ <|
-    (coe_edgeGroup_stabilizerEquivStabilizer D₁ D₂
-        (hv (T.quotient.toGeomEdge (T.quotient.rev y))) c).trans <|
-      (congrArg (fun z => MulAut.conj (v z) (c : G)) (T.quotient.toGeomEdge_rev y)).trans <|
-        (congrArg (MulAut.conj (v (T.quotient.toGeomEdge y)))
-          (coe_edgeGroup_cast D₁ _ c).symm).trans <|
-          (coe_edgeGroup_stabilizerEquivStabilizer D₁ D₂
-              (hv (T.quotient.toGeomEdge y)) c').symm.trans
-            (coe_edgeGroup_cast D₂ (T.quotient.toGeomEdge_rev y).symm x).symm
+          (MulEquiv.cast (M := D₁.graphOfGroups.edgeGroup) (T.quotient.toGeomEdge_rev y) c)) := by
+  suffices ∀ {z₁ z₂} (hz : z₁ = z₂)
+      (f : ∀ z, D₁.graphOfGroups.edgeGroup z →* D₂.graphOfGroups.edgeGroup z)
+      (c : D₁.graphOfGroups.edgeGroup z₁),
+      f z₁ c = MulEquiv.cast hz.symm (f z₂ (MulEquiv.cast hz c)) from
+    this (T.quotient.toGeomEdge_rev y) (fun z => (stabilizerEquivStabilizer (hv z)).toMonoidHom) c
+  rintro _ _ rfl _ _
+  simp
 
 private theorem orbitVertexHom_α {u : T.quotient.V → G}
     (hu : ∀ b, D₂.vertex b = u b • D₁.vertex b) {v : T.quotient.GeomEdge → G}
@@ -739,9 +751,7 @@ private theorem coe_homOfOrbits_twist {u : T.quotient.V → G}
     {y : T.quotient.E} (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = y) :
     ((homOfOrbits D₁ D₂ hu hv).twist y : G) =
       u (T.quotient.src y) * (v (T.quotient.toGeomEdge y))⁻¹ := by
-  rw [coe_homOfOrbits_twist,
-    D₁.edgeTwist_of_out_eq_rev (y := T.quotient.rev y) (by simpa using h),
-    D₂.edgeTwist_of_out_eq_rev (y := T.quotient.rev y) (by simpa using h)]
+  rw [coe_homOfOrbits_twist, D₁.edgeTwist_rev_of_out_eq h, D₂.edgeTwist_rev_of_out_eq h]
   simp
 
 /-- On the dart opposite to `GeomEdge.out`, the twisting element of `homOfOrbits` is
@@ -753,11 +763,7 @@ private theorem coe_homOfOrbits_twist {u : T.quotient.V → G}
     (h : GeomEdge.out T.quotient (T.quotient.toGeomEdge y) = T.quotient.rev y) :
     ((homOfOrbits D₁ D₂ hu hv).twist y : G) =
       u (T.quotient.src y) * D₁.twist y * (v (T.quotient.toGeomEdge y))⁻¹ * (D₂.twist y)⁻¹ := by
-  have h₁ : D₁.edgeTwist (T.quotient.rev y) = D₁.twist y := by
-    simpa [D₁.twist_rev] using D₁.edgeTwist_of_out_eq (y := T.quotient.rev y) (by simpa using h)
-  have h₂ : D₂.edgeTwist (T.quotient.rev y) = D₂.twist y := by
-    simpa [D₂.twist_rev] using D₂.edgeTwist_of_out_eq (y := T.quotient.rev y) (by simpa using h)
-  rw [coe_homOfOrbits_twist, h₁, h₂]
+  rw [coe_homOfOrbits_twist, D₁.edgeTwist_rev_of_out_eq_rev h, D₂.edgeTwist_rev_of_out_eq_rev h]
 
 /-- Every vertex-group homomorphism of `homOfOrbits` is bijective. -/
 theorem homOfOrbits_vertexHom_bijective {u : T.quotient.V → G}
@@ -939,8 +945,7 @@ noncomputable def equivFreeGroup (hV : ∀ v : T.V, stabilizer G v = ⊥)
     {O : Set T.quotient.E} (hO : T.quotient.IsOrientation O) :
     G ≃* FreeGroup ↥(O \ D.tree.darts) :=
   have := D.subsingleton_vertexGroup_of_stabilizer_eq_bot hV
-  D.π₁TreeEquiv.symm.trans
-    (GraphOfGroups.π₁Tree.equivFreeGroup D.graphOfGroups hO D.tree.rev_mem)
+  D.π₁TreeEquiv.symm.trans (GraphOfGroups.π₁Tree.equivFreeGroup D.graphOfGroups hO D.tree.rev_mem)
 
 @[simp] theorem equivFreeGroup_twist (hV : ∀ v : T.V, stabilizer G v = ⊥)
     {O : Set T.quotient.E} (hO : T.quotient.IsOrientation O) {y : T.quotient.E}
@@ -958,16 +963,13 @@ noncomputable def equivFreeGroup (hV : ∀ v : T.V, stabilizer G v = ⊥)
 
 end FreeAction
 
-/-- For any lifting of the one-vertex `G`-tree `point G`, the vertex group at the unique quotient
-vertex is the top subgroup `⊤`, and the canonical inclusion into `π₁(D.graphOfGroups, D.tree)` is
-bijective. -/
-theorem point_of_bijective (D : (point.{u, v} G).Lifting) (b : (point.{u, v} G).quotient.V) :
+/-- For any lifting of the one-vertex `G`-tree `point G`, the canonical inclusion of the vertex
+group into `π₁(D.graphOfGroups, D.tree)` is bijective. -/
+theorem π₁TreeOf_point_bijective (D : (point.{u, v} G).Lifting) (b : (point.{u, v} G).quotient.V) :
     Function.Bijective (GraphOfGroups.π₁Tree.of (𝔸 := D.graphOfGroups) D.tree.darts b) := by
-  have hsub : Function.Bijective (D.vertexGroupSubtype b) :=
-    ⟨Subgroup.subtype_injective _, fun g => ⟨⟨g, by simp⟩, rfl⟩⟩
   rw [← Function.Bijective.of_comp_iff' D.π₁TreeToGroup_bijective, ← MonoidHom.coe_comp,
     D.π₁TreeToGroup_comp_of]
-  exact hsub
+  exact ⟨D.vertexGroupSubtype_injective b, fun g => ⟨⟨g, by simp⟩, D.vertexGroupSubtype_mk b g _⟩⟩
 
 end Lifting
 
