@@ -26,10 +26,10 @@ Tate module of the unit group:
 This file identifies the finite levels with `Additive (rootsOfUnity (p ^ n) K)`.  When `K` has
 enough `p`-power roots of unity (for example, a separably closed field in which `p` is nonzero),
 the twist is a free `ℤ_p`-module of rank one.
-Ring automorphisms act on it componentwise; this action is scalar multiplication by Mathlib's
-`p`-adic cyclotomic character (the twist is trivial unless all `p`-power roots of unity
-exist).  These are the coefficient
-module and action used by `p`-adic Weil pairings.
+For a prime `p`, the twist over a commutative monoid is trivial unless `K` has a primitive
+`p ^ n`-th root of unity for every `n`. For a field extension `K / F`, the group `Gal(K / F)` acts
+on it componentwise, and this action is scalar multiplication by Mathlib's `p`-adic cyclotomic
+character. These are the coefficient module and action used by `p`-adic Weil pairings.
 
 For `ℓ` nonzero and prime to `p`, the powers `ℓ ^ n` are levels of the prime-to-`p` Tate module
 `ℤ̂^{(p')}(1) = lim_{p ∤ m} μ_m`, and keeping the components at these levels is a continuous,
@@ -168,14 +168,12 @@ end Compact
 
 section Subsingleton
 
-variable {p : ℕ} {K : Type*} [CommRing K] [IsDomain K] [Fact p.Prime]
+variable {p : ℕ} {K : Type*} [CommMonoid K] [Fact p.Prime]
 
-/-- If a domain lacks primitive `p ^ N`-th roots of unity for some `N`, then the
-`p`-adic Tate twist over it is trivial: every root of unity of `p`-power order has order dividing
-`p ^ (N - 1)`, so compatible components are killed by the transition maps. -/
-theorem subsingleton_of_not_forall_hasEnoughRootsOfUnity
-    (h : ¬ ∀ n, HasEnoughRootsOfUnity K (p ^ n)) : Subsingleton (PadicTateTwist p K) := by
-  obtain ⟨N, hN⟩ := not_forall.mp h
+/-- For a prime `p`, if a commutative monoid `K` has no primitive `p ^ N`-th root of unity for
+some `N`, then the `p`-adic Tate twist over `K` is trivial. -/
+theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
+    (h : ¬ ∃ ζ : K, IsPrimitiveRoot ζ (p ^ N)) : Subsingleton (PadicTateTwist p K) := by
   -- every `p`-power torsion unit is killed by `p ^ N`
   have hkill : ∀ (m : ℕ) (ζ : Kˣ), ζ ^ p ^ m = 1 → ζ ^ p ^ N = 1 := by
     intro m ζ hζ
@@ -191,24 +189,14 @@ theorem subsingleton_of_not_forall_hasEnoughRootsOfUnity
       rw [Nat.div_eq_iff_eq_mul_left (pow_pos (Fact.out : p.Prime).pos _) hdvd, ← pow_add]
       congr 1; omega
     rw [this] at h2
-    exact hN ⟨⟨(ζ ^ p ^ (e - N) : Kˣ), IsPrimitiveRoot.coe_units_iff.mpr h2⟩, inferInstance⟩
-  -- compatible components are `p ^ j`-th powers of later components
-  have hpow : ∀ (x : PadicTateTwist p K) (n j : ℕ),
-      ((TateModule.proj (n + j) x : Additive Kˣ).toMul : Kˣ) ^ p ^ j =
-        (TateModule.proj n x : Additive Kˣ).toMul := by
-    intro x n j
-    simpa [toMul_nsmul] using congrArg Additive.toMul (TateModule.coe_proj_eq_pow_nsmul x n j).symm
-  refine ⟨fun x y ↦ ?_⟩
-  have hzero : ∀ (z : PadicTateTwist p K) (n : ℕ), TateModule.proj n z = 0 := by
-    intro z n
-    apply Subtype.ext
-    apply Additive.toMul.injective
-    rw [← hpow z n N]
-    refine hkill (n + N) _ ?_
-    have hz : p ^ (n + N) • (TateModule.proj (n + N) z : Additive Kˣ) = 0 :=
-      congrArg Subtype.val (AddSubgroup.torsionBy.nsmul (TateModule.proj (n + N) z))
-    simpa [toMul_nsmul] using congrArg Additive.toMul hz
-  exact TateModule.ext fun n ↦ by rw [hzero x n, hzero y n]
+    exact h ⟨(ζ ^ p ^ (e - N) : Kˣ), IsPrimitiveRoot.coe_units_iff.mpr h2⟩
+  have hzero : ∀ z : PadicTateTwist p K, z = 0 := fun z ↦
+    TateModule.eq_zero_of_pow_nsmul_eq_zero (k := N) <| TateModule.ext fun n ↦ Subtype.ext <| by
+      apply Additive.toMul.injective
+      have hz : p ^ n • (TateModule.proj n z : Additive Kˣ) = 0 :=
+        congrArg Subtype.val (AddSubgroup.torsionBy.nsmul (TateModule.proj n z))
+      simpa [toMul_nsmul] using hkill n _ (by simpa [toMul_nsmul] using congrArg Additive.toMul hz)
+  exact ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
 
 end Subsingleton
 
@@ -301,11 +289,12 @@ theorem galoisRepresentation_apply_eq_smul
     (σ : K ≃ₐ[F] K) (x : PadicTateTwist p K) :
     galoisRepresentation (p := p) (F := F) σ x =
       ((cyclotomicCharacter K p σ.toRingEquiv : ℤ_[p]ˣ) : ℤ_[p]) • x := by
-  by_cases h : ∀ n, HasEnoughRootsOfUnity K (p ^ n)
+  by_cases h : ∀ n, ∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)
   swap
-  · have := subsingleton_of_not_forall_hasEnoughRootsOfUnity (p := p) (K := K) h
+  · obtain ⟨N, hN⟩ := not_forall.mp h
+    have := subsingleton_of_not_exists_isPrimitiveRoot hN
     exact Subsingleton.elim _ _
-  have := h
+  have : ∀ n, HasEnoughRootsOfUnity K (p ^ n) := fun n ↦ ⟨h n, rootsOfUnity.isCyclic _ _⟩
   apply PadicTateTwist.ext
   intro n
   apply Additive.toMul.injective
@@ -329,11 +318,6 @@ theorem galoisRepresentation_apply_eq_smul
 theorem continuous_galoisRepresentation :
     Continuous fun q : (K ≃ₐ[F] K) × PadicTateTwist p K ↦
       galoisRepresentation (p := p) (F := F) q.1 q.2 := by
-  by_cases h : ∀ n, HasEnoughRootsOfUnity K (p ^ n)
-  swap
-  · have := subsingleton_of_not_forall_hasEnoughRootsOfUnity (p := p) (K := K) h
-    exact continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
-  have := h
   have hχ : Continuous fun σ : K ≃ₐ[F] K ↦
       ((cyclotomicCharacter K p σ.toRingEquiv : ℤ_[p]ˣ) : ℤ_[p]) :=
     Units.continuous_val.comp (cyclotomicCharacter.continuous p F K)
