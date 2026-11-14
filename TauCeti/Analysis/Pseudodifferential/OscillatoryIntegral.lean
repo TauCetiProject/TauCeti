@@ -26,7 +26,8 @@ lets `ε → 0`.
 
 The limit exists, and is independent of the cutoff, as soon as the position derivatives of the
 amplitude have polynomial growth in the frequency: if `b` is a.e. strongly measurable on
-`E × E`, `y ↦ b(y, ξ)` is `C^N` with integrable derivatives, and both `∫ ‖b(y, ξ)‖ dy` and
+`E × E`, its position derivatives below order `N` are differentiable and those through order
+`N` are integrable, and both `∫ ‖b(y, ξ)‖ dy` and
 `∫ ‖D_y^N b(y, ξ)‖ dy` are at most `C ⟨ξ⟩ ^ m`, where `⟨ξ⟩ ^ s = (1 + ‖ξ‖²) ^ (s / 2)` and
 `N > m + dim E`. Integrating by parts `N` times in the position,
 `‖ξ‖ ^ N ‖∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy‖ ≤ ∫ ‖D_y^N b(y, ξ)‖ dy`, so the position integral is
@@ -76,8 +77,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The oscillatory integral `∫∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ` of an amplitude `b(y, ξ)`, as the
 iterated Bochner integral with the position integral inside. It is the oscillatory integral only
 for amplitudes whose position slices `y ↦ b(y, ξ)` are integrable; otherwise the inner Bochner
-integral is `0`. If `b` is a.e. strongly measurable on `E × E`, the slices are `C^N` with
-integrable derivatives up to order `N`, and both `∫ ‖b(y, ξ)‖ dy` and `∫ ‖D_y^N b(y, ξ)‖ dy`
+integral is `0`. If `b` is a.e. strongly measurable on `E × E`, its position derivatives below
+order `N` are differentiable, those through order `N` are integrable, and both
+`∫ ‖b(y, ξ)‖ dy` and `∫ ‖D_y^N b(y, ξ)‖ dy`
 are at most `C ⟨ξ⟩ ^ m` with `N > m + dim E`, the position integral is integrable in the
 frequency (`integrable_integral_exp_smul`) and this is the limit of the regularized double
 integrals (`tendsto_integral_cutoff_smul_oscillatoryIntegral`). -/
@@ -168,11 +170,12 @@ private lemma aestronglyMeasurable_exp_smul (hb : AEStronglyMeasurable b) :
     ).aestronglyMeasurable.smul hb
 
 /-- **The position integral is integrable.** If `b` is a.e. strongly measurable, its position
-slices `y ↦ b(y, ξ)` are `C^N` with integrable derivatives, and `∫ ‖b(y, ξ)‖ dy` and
+slices have differentiable derivatives below order `N` and integrable derivatives through order
+`N`, and `∫ ‖b(y, ξ)‖ dy` and
 `∫ ‖D_y^N b(y, ξ)‖ dy` are at most `C ⟨ξ⟩ ^ m` with `N > m + dim E`, then
 `ξ ↦ ∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy` is integrable. -/
 theorem integrable_integral_exp_smul (hb : AEStronglyMeasurable b)
-    (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y, ξ))
+    (hdiff : ∀ ξ, ∀ k < N, Differentiable ℝ (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (hint : ∀ ξ, ∀ k ≤ N, Integrable (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (h₀ : ∀ ξ, ∫ y, ‖b (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -180,14 +183,13 @@ theorem integrable_integral_exp_smul (hb : AEStronglyMeasurable b)
     Integrable fun ξ ↦ ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ) := by
   exact ((integrable_one_add_norm_sq_rpow_sub hNm).const_mul (2 ^ (N + 1) * C)).mono'
     (aestronglyMeasurable_exp_smul hb).prod_swap.integral_prod_right'
-    (ae_of_all _ (norm_integral_exp_smul_le
-      (fun ξ k hk ↦ (hdiff ξ).differentiable_iteratedFDeriv (by exact_mod_cast hk))
-      hint h₀ hN))
+    (ae_of_all _ (norm_integral_exp_smul_le hdiff hint h₀ hN))
 
 /-- **Bound on the oscillatory integral.** Under the hypotheses of
 `integrable_integral_exp_smul`,
 `‖∫∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ‖ ≤ 2 ^ (N + 1) C ∫ ⟨ξ⟩ ^ (m - N) dξ`. -/
-theorem norm_oscillatoryIntegral_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y, ξ))
+theorem norm_oscillatoryIntegral_le
+    (hdiff : ∀ ξ, ∀ k < N, Differentiable ℝ (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (hint : ∀ ξ, ∀ k ≤ N, Integrable (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (h₀ : ∀ ξ, ∫ y, ‖b (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -195,9 +197,7 @@ theorem norm_oscillatoryIntegral_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b 
     ‖oscillatoryIntegral b‖ ≤ 2 ^ (N + 1) * C * ∫ ξ : E, (1 + ‖ξ‖ ^ 2) ^ ((m - N) / 2) := by
   rw [oscillatoryIntegral_def, ← integral_const_mul]
   exact norm_integral_le_of_norm_le ((integrable_one_add_norm_sq_rpow_sub hNm).const_mul _)
-    (ae_of_all _ (norm_integral_exp_smul_le
-      (fun ξ k hk ↦ (hdiff ξ).differentiable_iteratedFDeriv (by exact_mod_cast hk))
-      hint h₀ hN))
+    (ae_of_all _ (norm_integral_exp_smul_le hdiff hint h₀ hN))
 
 variable {χ : E → ℂ}
 
@@ -239,7 +239,7 @@ theorem integrable_cutoff_smul (hb : AEStronglyMeasurable b)
 `∫∫ χ(εξ) exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ` tend to the oscillatory integral of `b` as `ε → 0`;
 in particular the limit does not depend on the cutoff. -/
 theorem tendsto_integral_cutoff_smul_oscillatoryIntegral (hb : AEStronglyMeasurable b)
-    (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b (y, ξ))
+    (hdiff : ∀ ξ, ∀ k < N, Differentiable ℝ (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (hint : ∀ ξ, ∀ k ≤ N, Integrable (iteratedFDeriv ℝ k fun y ↦ b (y, ξ)))
     (h₀ : ∀ ξ, ∫ y, ‖b (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hN : ∀ ξ, ∫ y, ‖iteratedFDeriv ℝ N (fun y ↦ b (y, ξ)) y‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
@@ -250,9 +250,11 @@ theorem tendsto_integral_cutoff_smul_oscillatoryIntegral (hb : AEStronglyMeasura
       (𝓝[≠] 0) (𝓝 (oscillatoryIntegral b)) := by
   set F := fun ξ ↦ ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ)
   have hF : Integrable F := integrable_integral_exp_smul hb hdiff hint h₀ hN hNm
-  have hint₀ : ∀ ξ, Integrable fun y ↦ b (y, ξ) := fun ξ ↦
-    (integrable_norm_iff (hdiff ξ).continuous.aestronglyMeasurable).mp
-      (by simpa only [norm_iteratedFDeriv_zero] using (hint ξ 0 (Nat.zero_le _)).norm)
+  have hint₀ : ∀ ξ, Integrable fun y ↦ b (y, ξ) := by
+    intro ξ
+    have h := hint ξ 0 (Nat.zero_le _)
+    rwa [iteratedFDeriv_zero_eq_comp, Function.comp_def,
+      LinearIsometryEquiv.integrable_comp_iff] at h
   obtain ⟨M, hM⟩ := hχ.bounded_above_of_compact_support hχs
   -- Fubini: for `ε ≠ 0` the regularized double integral is `∫ χ(εξ) F(ξ) dξ`.
   have hfub : ∀ ε : ℝ, ε ≠ 0 → ∫ p : E × E,
@@ -342,7 +344,8 @@ theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue [CompleteSpace V]
     simp only [L, ContinuousLinearMap.coe_restrictScalars', smul_apply]
   have key := tendsto_integral_cutoff_smul_oscillatoryIntegral (b := fun p ↦ L p.2 (u p.1))
     (N := N) hmeas'
-    (fun ξ ↦ ((L ξ).contDiff.comp (u.smooth ⊤)).of_le (mod_cast le_top))
+    (fun ξ k hk ↦ ((L ξ).contDiff.comp (u.smooth N)).differentiable_iteratedFDeriv
+      (by exact_mod_cast hk))
     (fun ξ k _ ↦ u.integrable_iteratedFDeriv_comp_left (L ξ) k)
     (fun ξ ↦ by simpa only [norm_iteratedFDeriv_zero] using hbound ξ 0 (by simpa using hK₀))
     (fun ξ ↦ hbound ξ N hKN)
