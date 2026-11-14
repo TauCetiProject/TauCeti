@@ -25,7 +25,10 @@ test functions are dense in `H¹₀(Ω)`, a distributional solution `u ∈ H¹(�
 * `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_smul_eq`:
   if `u ∈ H¹(Ω)` solves `-Δu = f` in the sense of distributions on `Ω`, with `f ∈ L²(Ω)`, then
   `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
-* `TauCeti.PDE.isWeakSolutionDirichlet_one_zero_zero_iff_forall_setIntegral_laplacian_mul_eq`:
+* `forall_energyFormH1_one_zero_zero_eq_setIntegral_iff_forall_neg_setIntegral_laplacian_mul_eq`:
+  `u ∈ H¹(Ω)` satisfies `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)` exactly when `-Δu = f`
+  in the sense of distributions on `Ω`.
+* `TauCeti.PDE.isWeakSolutionDirichlet_one_zero_zero_iff_forall_neg_setIntegral_laplacian_mul_eq`:
   `u ∈ H¹₀(Ω)` is a weak solution of `-Δu = f` exactly when `-Δu = f` in the sense of
   distributions on `Ω`.
 
@@ -88,16 +91,18 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_of_forall_integral_laplacian_s
   · filter_upwards [hF] with x hx
     rw [hx]
 
-/-- **Weak and distributional solutions of Poisson's equation agree on `H¹₀(Ω)`.** For
-`u ∈ H¹₀(Ω)` and `f ∈ L²(Ω)`, `u` is a weak solution of `-Δu = f` with Dirichlet boundary
-condition exactly when `-Δu = f` in the sense of distributions on `Ω`, that is
-`-∫_Ω Δφ u = ∫_Ω f φ` for every test function `φ` on `Ω`. -/
-theorem isWeakSolutionDirichlet_one_zero_zero_iff_forall_setIntegral_laplacian_mul_eq
-    [DecidableEq ι] (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p0 mu Omega 2) :
-    IsWeakSolutionDirichlet (fun _ => 1) 0 0 f u ↔
-      ∀ φ : 𝓓(Omega, ℝ), -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x *
-        W1p.value (u : W1p mu Omega 2) x ∂mu = ∫ x in Omega, f x * φ x ∂mu := by
-  rw [isWeakSolutionDirichlet_iff_forall_testFunction (memLp_energyIntegrand_const_zero_zero 1)]
+/-- **Weak and distributional solutions of Poisson's equation agree.** For `u ∈ H¹(Ω)` and
+`f ∈ L²(Ω)`, the weak equation `∫_Ω ∇v · ∇u = ∫_Ω f v` holds for every `v ∈ H¹₀(Ω)` exactly when
+`-Δu = f` in the sense of distributions on `Ω`, that is `-∫_Ω Δφ u = ∫_Ω f φ` for every test
+function `φ` on `Ω`. No boundary condition is imposed on `u`. -/
+theorem forall_energyFormH1_one_zero_zero_eq_setIntegral_iff_forall_neg_setIntegral_laplacian_mul_eq
+    [DecidableEq ι] (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    (∀ v : W1p0 mu Omega 2, energyFormH1 (fun _ => 1) 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ↔
+      ∀ φ : 𝓓(Omega, ℝ), -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * W1p.value u x ∂mu =
+        ∫ x in Omega, f x * φ x ∂mu := by
+  rw [forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
+    (memLp_energyIntegrand_const_zero_zero 1)]
   refine forall_congr' fun φ => ?_
   -- The integral of `Δφ • u` over the whole space only sees `Ω`, which carries `Δφ`.
   rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul
@@ -105,6 +110,19 @@ theorem isWeakSolutionDirichlet_one_zero_zero_iff_forall_setIntegral_laplacian_m
       rw [image_eq_zero_of_notMem_tsupport fun h' =>
         hx (φ.tsupport_subset (tsupport_laplacian_subset _ h')), zero_smul]]
   simp_rw [smul_eq_mul]
+
+/-- **Weak and distributional solutions of Poisson's equation agree on `H¹₀(Ω)`.** For
+`u ∈ H¹₀(Ω)` and `f ∈ L²(Ω)`, `u` is a weak solution of `-Δu = f` with Dirichlet boundary
+condition exactly when `-Δu = f` in the sense of distributions on `Ω`, that is
+`-∫_Ω Δφ u = ∫_Ω f φ` for every test function `φ` on `Ω`. -/
+theorem isWeakSolutionDirichlet_one_zero_zero_iff_forall_neg_setIntegral_laplacian_mul_eq
+    [DecidableEq ι] (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichlet (fun _ => 1) 0 0 f u ↔
+      ∀ φ : 𝓓(Omega, ℝ), -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x *
+        W1p.value (u : W1p mu Omega 2) x ∂mu = ∫ x in Omega, f x * φ x ∂mu :=
+  (isWeakSolutionDirichlet_iff f u).trans
+    (forall_energyFormH1_one_zero_zero_eq_setIntegral_iff_forall_neg_setIntegral_laplacian_mul_eq
+      f u)
 
 end PDE
 
