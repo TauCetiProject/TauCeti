@@ -71,7 +71,7 @@ excludes equal characteristic, where the formula is false.
 * `TauCeti.Iwasawa.growthTransition_mul_growthTransition`: `ν_{k,n₀} ν_{n,k+1} = ν_{n,n₀}`.
 * `TauCeti.Iwasawa.one_add_X_pow_sub_one_mul_growthTransition`: `ω_c ν_{n,c+1} = ω_n`.
 * `TauCeti.Iwasawa.exists_forall_torsionBy_growthTransition_eq`: the kernels `M[ν_{n,n₀}]` of a
-  finitely generated module stabilize.
+  noetherian module stabilize.
 * `TauCeti.Iwasawa.associated_resultant_growthTransition`: `Res(F, ν_{m,n₀})` is associated to
   `Res(F, ν_{n,n₀}) p ^ (deg F (m - n))` for `n₀ ≤ n + 1`, `n > e deg F` and `m ≥ n`.
 * `TauCeti.Iwasawa.exists_natCard_quotSMulTop_growthTransition_eq`: the growth formula
@@ -224,11 +224,10 @@ section Growth
 
 variable {O : Type*} [CommRing O]
 
-/-- **The kernels of the transition polynomials stabilize.** For a finitely generated module `M`
-over `O⟦X⟧`, `O` noetherian, the kernels `M[ν_{n,n₀}]` increase with `n`, so they are eventually
-constant. -/
-theorem exists_forall_torsionBy_growthTransition_eq [IsNoetherianRing O] (p n₀ : ℕ) (M : Type*)
-    [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] :
+/-- **The kernels of the transition polynomials stabilize.** For a noetherian `O⟦X⟧`-module `M`,
+the kernels `M[ν_{n,n₀}]` increase with `n`, so they are eventually constant. -/
+theorem exists_forall_torsionBy_growthTransition_eq (p n₀ : ℕ) (M : Type*)
+    [AddCommMonoid M] [Module O⟦X⟧ M] [IsNoetherian O⟦X⟧ M] :
     ∃ N, ∀ n, N ≤ n → torsionBy O⟦X⟧ M (growthTransition p O n₀ n : O⟦X⟧) =
       torsionBy O⟦X⟧ M (growthTransition p O n₀ N : O⟦X⟧) := by
   let f : ℕ →o Submodule O⟦X⟧ M :=
