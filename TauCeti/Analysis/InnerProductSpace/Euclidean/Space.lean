@@ -16,8 +16,9 @@ The first lemma derives positive ambient dimension from two distinct points, in 
 a nonzero vector. Distinct points thus supply the dimension hypothesis needed for Newtonian-kernel
 monotonicity and Poisson-kernel positivity.
 
-The instance `TauCeti.factFinrankEuclideanSpaceComplex` records the real dimension of `ℂᵏ⁺¹` as
-`(2k + 1) + 1`. This is the form of the hypothesis `Fact (finrank ℝ E = n + 1)` under which
+The lemma `TauCeti.finrank_real_euclideanSpace_complex` and the instance
+`TauCeti.factFinrankEuclideanSpaceComplex` record the real dimension of `ℂᵏ⁺¹` as `(2k + 1) + 1`.
+This is the form of the hypothesis `Fact (finrank ℝ E = n + 1)` under which
 Mathlib puts a manifold structure on the unit sphere of `E`
 (`EuclideanSpace.instChartedSpaceSphere`), so instance search finds the sphere of `ℂᵏ⁺¹`, and its
 quotients, to be manifolds of dimension `2k + 1`.
@@ -37,11 +38,17 @@ theorem pos_of_ne_euclideanSpace {𝕜 : Type*} {n : ℕ} {x y : EuclideanSpace 
     (hxy : x ≠ y) : 0 < n :=
   Nat.pos_of_ne_zero (by rintro rfl; exact hxy (Subsingleton.elim x y))
 
+/-- The real dimension of `ℂᵏ⁺¹` is `2k + 2`, written as `(2k + 1) + 1`, so that its unit sphere
+is `S²ᵏ⁺¹`. -/
+theorem finrank_real_euclideanSpace_complex (k : ℕ) :
+    Module.finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = 2 * k + 1 + 1 := by
+  rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring
+
 /-- The real dimension of `ℂᵏ⁺¹` is `2k + 2`, written as `(2k + 1) + 1` so that its unit sphere,
 and quotients of the sphere, are found to be manifolds of dimension `2k + 1`. -/
 instance factFinrankEuclideanSpaceComplex (k : ℕ) :
     Fact (Module.finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = 2 * k + 1 + 1) :=
-  ⟨by rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring⟩
+  ⟨finrank_real_euclideanSpace_complex k⟩
 
 /-- The real coordinates of `ℂⁱ`, as a continuous `ℝ`-linear isomorphism onto `ℝᵐ` for `m = 2i`:
 coordinate `j + i * a` of the image of `v` is the real part of `vⱼ` for `a = 0` and its imaginary
