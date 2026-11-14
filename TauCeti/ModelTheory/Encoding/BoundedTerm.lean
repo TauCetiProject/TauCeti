@@ -8,7 +8,6 @@ module
 public import TauCeti.Computability.Primrec.Basic
 public import TauCeti.Logic.Encodable.Basic
 public import TauCeti.ModelTheory.Encoding.Term
-public import TauCeti.ModelTheory.Term.Substitution
 
 /-!
 # Primitive-recursive codes of terms with bound-variable slots
@@ -225,32 +224,6 @@ theorem primrec_relabel_sigma_val :
     Primrec fun t : Σ k, L.Term (α ⊕ Fin k) => t.2.relabel (Sum.map id Fin.val) :=
   Primrec.snd.comp (primrec_sigma_iff.1 .id)
 
-/-- Substitution along a primitive recursive family of assignments is primitive recursive: the
-spelling of a substituted term replaces each variable letter by the spelling of the term
-substituted for it. -/
-private theorem primrec₂_subst_term {γ β : Type*} [Primcodable γ] [Primcodable β]
-    {f : γ → α → L.Term β} (hf : Primrec₂ f) :
-    Primrec₂ fun c (t : L.Term α) => t.subst (f c) := by
-  have hspell (c : γ) (t : L.Term α) : (t.subst (f c)).listEncode =
-      t.listEncode.flatMap (Sum.elim (fun a => (f c a).listEncode) fun F => [Sum.inr F]) := by
-    induction t with
-    | var => simp [listEncode]
-    | func F ts ih => simp [listEncode, ih, List.flatMap_assoc]
-  have h : Primrec₂ fun (p : γ × L.Term α) (x : α ⊕ Σ i, L.Functions i) =>
-      Sum.elim (fun a => (f p.1 a).listEncode) (fun F => [Sum.inr F]) x :=
-    (Primrec.sumCasesOn .snd
-      (primrec_listEncode.comp (hf.comp (Primrec.fst.comp (Primrec.fst.comp .fst)) .snd)).to₂
-      (Primrec.list_cons.comp (Primrec.sumInr.comp .snd) (.const [])).to₂).to₂.of_eq
-      fun _ x => by rcases x with a | F <;> rfl
-  exact primrec_listEncode_iff.1 <| (Primrec.list_flatMap (primrec_listEncode.comp .snd) h).of_eq
-    fun p => (hspell p.1 p.2).symm
-
-/-- Relabelling along a primitive recursive family of maps of variables is primitive
-recursive. -/
-private theorem primrec₂_relabel_term {γ β : Type*} [Primcodable γ] [Primcodable β]
-    {g : γ → α → β} (hg : Primrec₂ g) : Primrec₂ fun c (t : L.Term α) => t.relabel (g c) :=
-  (primrec₂_subst_term (primrec_var.comp hg).to₂).of_eq fun c t => (relabel_eq_subst t (g c)).symm
-
 /-- Raising the bound-variable slots `≥ m` by `n'` (`Term.liftAt n' m`) is primitive recursive,
 jointly in `(n', m)` and the term. -/
 theorem primrec₂_liftAt_sigma :
@@ -265,7 +238,7 @@ theorem primrec₂_liftAt_sigma :
       fun _ x => by rcases x with a | i <;> rfl
   refine primrec_sigma_iff.2 <| (Primrec.pair
     (Primrec.nat_add.comp (primrec_sigma_fst.comp .snd) (Primrec.fst.comp .fst))
-    ((primrec₂_relabel_term hlift).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq
+    ((primrec₂_relabel hlift).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq
     fun p => ?_
   rw [relabel_val_liftAt]
 
@@ -303,7 +276,7 @@ theorem primrec₂_relabel_relabelAux_sigma {γ β : Type*} [Primcodable γ] [Pr
       rcases x with a | j <;> rfl
   refine primrec_sigma_iff.2 <| (Primrec.pair
     (Primrec.nat_add.comp (.const n) (primrec_sigma_fst.comp .snd))
-    ((primrec₂_relabel_term hmap).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq
+    ((primrec₂_relabel hmap).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq
     fun p => ?_
   rw [relabel_val_relabelAux]
 
@@ -316,7 +289,7 @@ theorem primrec₂_subst_sigma {γ β : Type*} [Primcodable γ] [Primcodable β]
       (⟨t.1, t.2.subst (Sum.elim (Term.relabel Sum.inl ∘ f c) (var ∘ Sum.inr))⟩ :
         Σ k, L.Term (β ⊕ Fin k)) := by
   have hinl : Primrec₂ fun (c : γ) (a : α) => (f c a).relabel (Sum.inl : β → β ⊕ ℕ) :=
-    (primrec₂_relabel_term (g := fun (_ : Unit) => (Sum.inl : β → β ⊕ ℕ))
+    (primrec₂_relabel (g := fun (_ : Unit) => (Sum.inl : β → β ⊕ ℕ))
       (Primrec.sumInl.comp .snd)).comp (.const ()) hf
   have hσ : Primrec₂ fun (c : γ) (x : α ⊕ ℕ) =>
       Sum.elim (Term.relabel Sum.inl ∘ f c) (var ∘ Sum.inr) x :=
@@ -324,7 +297,7 @@ theorem primrec₂_subst_sigma {γ β : Type*} [Primcodable γ] [Primcodable β]
       (primrec_var.comp (Primrec.sumInr.comp .snd)).to₂).to₂.of_eq fun _ x => by
       rcases x with a | j <;> rfl
   refine primrec_sigma_iff.2 <| (Primrec.pair (primrec_sigma_fst.comp .snd)
-    ((primrec₂_subst_term hσ).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq fun p => ?_
+    ((primrec₂_subst hσ).comp .fst (primrec_relabel_sigma_val.comp .snd))).of_eq fun p => ?_
   rw [relabel_val_subst]
 
 end Primcodable
