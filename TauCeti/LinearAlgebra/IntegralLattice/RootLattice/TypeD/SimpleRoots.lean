@@ -111,7 +111,7 @@ private theorem ratOfIntVec_injective : Function.Injective (ratOfIntVec n) := by
 sum is `0` or `2`. -/
 theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n) :
     checkerboardSimpleRoot n hn i ∈ checkerboardCarrier n :=
-  mem_checkerboardCarrier_of (DynkinType.typeDSimpleRoot n hn i)
+  mem_checkerboardCarrier_of_even_sum (DynkinType.typeDSimpleRoot n hn i)
     (checkerboardSimpleRoot_apply hn i) (DynkinType.even_sum_typeDSimpleRoot hn i)
 
 /-! ## The Gram matrix -/

@@ -133,6 +133,12 @@ class PickerWorkflow(unittest.TestCase):
             self.assertFalse(expression(condition, action=action))
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
 
+    def test_fleet_pr_queue_configuration_is_valid_and_small(self):
+        config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
+        self.assertIs(type(config["pr_queue_limit"]), int)
+        self.assertEqual(config["pr_queue_limit"], 3)
+        self.assertEqual(config["pr_order"], ["github", "fleet"])
+
     def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
         group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]

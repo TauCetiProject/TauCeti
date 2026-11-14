@@ -545,22 +545,15 @@ private theorem modelOrientationAt_neg (o : Manifold.Orientation 𝓘(ℝ, E) E 
     modelOrientationAt (-o) x = -modelOrientationAt o x := by
   rw [modelOrientationAt, modelOrientationAt, orientationAt_neg, _root_.Orientation.map_neg]
 
-/-- Read in `E`, the constant model orientation is the orientation it is built from. -/
-private theorem modelOrientationAt_model (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
-    modelOrientationAt (model (I := 𝓘(ℝ, E)) o hι) x = o := by
-  rw [modelOrientationAt, orientationAt_model]
-  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
-  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
-
 /-- An orientation of the connected model space `E`, read in `E`, has the same tangent
 orientation at any two points. -/
 private theorem modelOrientationAt_eq (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x y : E) :
     modelOrientationAt o x = modelOrientationAt o y := by
   obtain h | h := o.eq_or_eq_neg (model (I := 𝓘(ℝ, E)) (modelOrientationAt o x) o.card_eq)
-  · rw [h, modelOrientationAt_model, modelOrientationAt_model]
-  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg, modelOrientationAt_model,
-      modelOrientationAt_model]
+  · rw [h]
+    simp only [modelOrientationAt, map_orientationAt_model]
+  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg]
+    simp only [modelOrientationAt, map_orientationAt_model]
 
 /-- **An orientation of the model space is constant.** An orientation of the connected model space
 `E` has the same tangent orientation at any two points, the tangent spaces of `E` all being `E`. -/
