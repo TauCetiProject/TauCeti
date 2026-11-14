@@ -39,8 +39,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Orientation preservation by the actual derivative implies the signed Jacobian identity
 in every preferred chart, including at intrinsic boundary points. -/
 theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.OrientationLift I M (Fin k))
-    (b : Module.Basis (Fin k) ℝ E) {f : M → E} (hf : MDifferentiable I 𝓘(ℝ, E) f)
-    (F : M → E ≃L[ℝ] E)
+    (b : Module.Basis (Fin k) ℝ E) {f : M → E} (F : M → E ≃L[ℝ] E)
     (hF : ∀ x, (F x).toContinuousLinearMap = mfderiv I 𝓘(ℝ, E) f x)
     (ho : ∀ x, _root_.Orientation.map (Fin k) (F x).toLinearEquiv
       ((Manifold.Orientation.mk l).orientationAt x : _root_.Orientation ℝ E (Fin k)) =
@@ -66,7 +65,7 @@ theorem Manifold.OrientationLift.sign_mul_det_embedding (l : Manifold.Orientatio
     rw [← _root_.Orientation.intCast_units_smul_eq_ite] at hp
     exact _root_.Orientation.signBasis_mul_units_mul_det_pos l.modelOrientation b
       (F x).toLinearEquiv _ hp
-  rw [(hf x).fderivWithin_comp_extChartAt_symm α hx, ← hF x]
+  rw [TauCeti.fderivWithin_comp_extChartAt_symm α hx, ← hF x]
   -- The continuous-linear composition and its underlying linear composition share a determinant.
   change _ * _ * ((F x).toLinearEquiv.toLinearMap.comp
     (tangentCoordChange I α x x).toLinearMap).det =
@@ -118,7 +117,7 @@ theorem signedInChartAt_mpullback_eq_abs_det (l : Manifold.OrientationLift I M (
     exact ContinuousAlternatingMap.compContinuousLinearMap_apply_basis
       ((ω (f x)).compContinuousLinearMap
         (NormedSpace.fromTangentSpace (f x)).symm.toContinuousLinearMap) b D
-  rw [he, ← mul_assoc, ← mul_assoc, l.sign_mul_det_embedding b hf F hF ho α hx]
+  rw [he, ← mul_assoc, ← mul_assoc, l.sign_mul_det_embedding b F hF ho α hx]
 
 
 variable [MeasurableSpace E] [BorelSpace E]
