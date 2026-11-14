@@ -5,28 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Coalgebra.Hom
 public import TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Basic
 
 /-!
 # Converse perfectness, dual-basis expansions, and the handle element
 
-This file completes the correspondence between perfect trace pairings and Frobenius coalgebras
-from `TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Basic`, and develops the dual-basis and handle
-identities of a Frobenius coalgebra.
+This file completes the correspondence between perfect trace pairings and Frobenius coalgebras from
+`TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Basic`, and develops dual-basis and handle identities.
 
-For a unital algebra `A` over a commutative semiring `R` with `Coalgebra.IsFrobenius R A`, the
-pairing `(a, b) ↦ ε (a * b)` is perfect (`Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`),
-without associativity or commutativity of `A`. When `A` is commutative, every Frobenius coalgebra is
-cocommutative (`Coalgebra.IsFrobenius.instIsCocomm`), and
+For a unital `R`-algebra `A` with `Coalgebra.IsFrobenius R A`, the pairing `(a, b) ↦ ε (a * b)` is
+perfect (`Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`), without associativity or
+commutativity of `A`. When `A` is commutative, every Frobenius coalgebra is cocommutative
+(`Coalgebra.IsFrobenius.instIsCocomm`), and when `A` is also finite and projective over `R`,
 `TauCeti.perfPairTraceEquivFrobeniusCoalgebra` packages reconstruction and counit extraction as a
 bijection between perfect traces and Frobenius coalgebra structures on `A`.
 
 The **handle operator** `Coalgebra.handleOp R A = mul' ∘ comul` and **handle element**
 `Coalgebra.handleElem R A = mul' (comul 1)` represent attaching a handle in 2D TQFT and foam
-evaluation. On any associative Frobenius algebra, `handleOp R A` acts by multiplication on either
-side by `handleElem R A`, so `handleElem R A` is central; on a commutative Frobenius algebra with a
-finite basis of size `n`, `handleElem R A` is the sum of dual-basis products and its counit is `n`.
+evaluation. On an associative Frobenius algebra, `handleOp R A` acts by multiplication on either
+side by the central element `handleElem R A`; on a commutative Frobenius algebra with a finite basis
+of size `n`, `handleElem R A` is the sum of dual-basis products and its counit is `n`.
 
 ## Main definitions
 
@@ -38,15 +36,15 @@ finite basis of size `n`, `handleElem R A` is the sum of dual-basis products and
 
 * `Coalgebra.IsFrobenius.isPerfPair_mul_compr₂_counit`, `Coalgebra.IsFrobenius.instIsCocomm`.
 * `Coalgebra.IsFrobenius.comul_eq_sum_traceDualBasis`,
-  `Coalgebra.IsFrobenius.comul_one_eq_sum_traceDualBasis`: dual-basis expansions of `comul`.
+  `Coalgebra.IsFrobenius.comul_one_eq_sum_traceDualBasis`.
 * `Coalgebra.handleOp_apply_eq_mul_handleElem`, `Coalgebra.commute_handleElem`,
   `Coalgebra.iterate_handleOp_apply`, `Coalgebra.handleElem_eq_sum_mul_traceDualBasis`,
-  `Coalgebra.counit_handleElem`: action, centrality, iterates, and torus evaluation.
+  `Coalgebra.counit_handleElem`.
 
 ## References
 
 * J. Kock, *Frobenius Algebras and 2D Topological Quantum Field Theories*, §§2.3, 3.3.
-* F. Goertz, L. Marino, P. Wedrich, *Filtered foams and deformations in link homology*,
+* F. Goertz, L. Marino, P. Wedrich, *Monoidal 2-categories from foam evaluation*,
   `arXiv:2602.11120v1`, §§2–3.
 -/
 
@@ -60,6 +58,27 @@ open TensorProduct
 
 namespace Coalgebra.IsFrobenius
 
+section CoalgebraStruct
+
+variable {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A] [CoalgebraStruct R A]
+
+/-- Evaluating `Coalgebra.IsFrobenius.left` on `a ⊗ₜ b` multiplies the second leg of `comul a` on
+the right by `b`. -/
+@[simp] theorem left_tmul (a b : A) :
+    left R A (a ⊗ₜ[R] b) = (LinearMap.mulRight R b).lTensor A (Coalgebra.comul (R := R) a) := by
+  simp only [left_def, LinearMap.comp_apply, LinearMap.rTensor_tmul]
+  induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn <;> simp_all [add_tmul]
+
+/-- Evaluating `Coalgebra.IsFrobenius.right` on `a ⊗ₜ b` multiplies the first leg of `comul b` on
+the left by `a`. -/
+@[simp] theorem right_tmul (a b : A) :
+    right R A (a ⊗ₜ[R] b) = (LinearMap.mulLeft R a).rTensor A (Coalgebra.comul (R := R) b) := by
+  simp only [right_def, LinearMap.comp_apply, LinearMap.lTensor_tmul]
+  induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn <;> simp_all [tmul_add]
+
+end CoalgebraStruct
+
 section NonUnitalNonAssocSemiring
 
 variable {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
@@ -68,18 +87,12 @@ variable {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R 
 /-- Multiplying the first leg of the coproduct on the left multiplies its input on the left. -/
 theorem comul_mul_left (a b : A) :
     Coalgebra.comul (R := R) (a * b) = (LinearMap.mulLeft R a).rTensor A (Coalgebra.comul b) := by
-  have h := LinearMap.congr_fun (right_eq_comul_comp_mul' (R := R) (A := A)).symm (a ⊗ₜ[R] b)
-  simp only [right_def, LinearMap.comp_apply, LinearMap.lTensor_tmul, LinearMap.mul'_apply] at h
-  refine h.trans ?_
-  induction Coalgebra.comul (R := R) b using TensorProduct.inductionOn <;> simp_all [tmul_add]
+  simpa using (LinearMap.congr_fun (right_eq_comul_comp_mul' (R := R) (A := A)) (a ⊗ₜ[R] b)).symm
 
 /-- Multiplying the second leg of the coproduct on the right multiplies its input on the right. -/
 theorem comul_mul_right (a b : A) :
     Coalgebra.comul (R := R) (a * b) = (LinearMap.mulRight R b).lTensor A (Coalgebra.comul a) := by
-  have h := LinearMap.congr_fun (left_eq_comul_comp_mul' (R := R) (A := A)).symm (a ⊗ₜ[R] b)
-  simp only [left_def, LinearMap.comp_apply, LinearMap.rTensor_tmul, LinearMap.mul'_apply] at h
-  refine h.trans ?_
-  induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn <;> simp_all [add_tmul]
+  simpa using (LinearMap.congr_fun (left_eq_comul_comp_mul' (R := R) (A := A)) (a ⊗ₜ[R] b)).symm
 
 end NonUnitalNonAssocSemiring
 
@@ -92,37 +105,13 @@ variable {R A : Type*} [CommSemiring R] [NonAssocSemiring A] [Module R A]
 the first tensor factor on the left by `a`. -/
 theorem comul_eq_rTensor_mulLeft_comul_one (a : A) :
     Coalgebra.comul (R := R) a = (LinearMap.mulLeft R a).rTensor A (Coalgebra.comul (1 : A)) := by
-  have h := LinearMap.congr_fun (left_eq_right (R := R) (A := A)) (a ⊗ₜ[R] 1)
-  simp only [left_def, right_def, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-    LinearMap.lTensor_tmul] at h
-  have hl : (LinearMap.mul' R A).lTensor A
-      (TensorProduct.assoc R A A A (Coalgebra.comul (R := R) a ⊗ₜ[R] 1)) =
-      Coalgebra.comul (R := R) a := by
-    induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn <;> simp_all [add_tmul]
-  have hr : (LinearMap.mul' R A).rTensor A ((TensorProduct.assoc R A A A).symm
-      (a ⊗ₜ[R] Coalgebra.comul (R := R) (1 : A))) =
-      (LinearMap.mulLeft R a).rTensor A (Coalgebra.comul (1 : A)) := by
-    induction Coalgebra.comul (R := R) (1 : A) using TensorProduct.inductionOn <;>
-      simp_all [tmul_add]
-  exact hl.symm.trans (h.trans hr)
+  simpa using LinearMap.congr_fun (left_eq_right (R := R) (A := A)) (a ⊗ₜ[R] 1)
 
 /-- In a unital Frobenius algebra-coalgebra, `comul a` is obtained from `comul 1` by multiplying
 the second tensor factor on the right by `a`. -/
 theorem comul_eq_lTensor_mulRight_comul_one (a : A) :
     Coalgebra.comul (R := R) a = (LinearMap.mulRight R a).lTensor A (Coalgebra.comul (1 : A)) := by
-  have h := LinearMap.congr_fun (left_eq_right (R := R) (A := A)).symm (1 ⊗ₜ[R] a)
-  simp only [left_def, right_def, LinearMap.comp_apply, LinearMap.rTensor_tmul,
-    LinearMap.lTensor_tmul] at h
-  have hr : (LinearMap.mul' R A).rTensor A
-      ((TensorProduct.assoc R A A A).symm (1 ⊗ₜ[R] Coalgebra.comul (R := R) a)) =
-      Coalgebra.comul (R := R) a := by
-    induction Coalgebra.comul (R := R) a using TensorProduct.inductionOn <;> simp_all [tmul_add]
-  have hl : (LinearMap.mul' R A).lTensor A
-      (TensorProduct.assoc R A A A (Coalgebra.comul (R := R) (1 : A) ⊗ₜ[R] a)) =
-      (LinearMap.mulRight R a).lTensor A (Coalgebra.comul (1 : A)) := by
-    induction Coalgebra.comul (R := R) (1 : A) using TensorProduct.inductionOn <;>
-      simp_all [add_tmul]
-  exact hr.symm.trans (h.trans hl)
+  simpa using (LinearMap.congr_fun (left_eq_right (R := R) (A := A)) (1 ⊗ₜ[R] a)).symm
 
 end NonAssocSemiringStruct
 
@@ -131,31 +120,17 @@ section NonAssocSemiring
 variable {R A : Type*} [CommSemiring R] [NonAssocSemiring A] [Module R A]
   [SMulCommClass R A A] [IsScalarTower R A A] [Coalgebra R A] [Coalgebra.IsFrobenius R A]
 
-/-- The flipped multiplication-counit pairing `b ↦ (a ↦ ε (a * b))` of a unital Frobenius coalgebra
-is bijective. -/
-theorem flip_compr₂_mul_counit_bijective :
-    Function.Bijective (((LinearMap.mul R A).compr₂ Coalgebra.counit).flip) := by
-  obtain ⟨S, hS⟩ := TensorProduct.exists_finset (R := R) (Coalgebra.comul (R := R) (1 : A))
-  have hleft (a : A) : ∑ x ∈ S, Coalgebra.counit (R := R) (a * x.1) • x.2 = a := by
-    simpa [hS, tmul_sum] using (congrArg ((TensorProduct.lid R A).toLinearMap ∘ₗ
-      Coalgebra.counit.rTensor A) (comul_eq_rTensor_mulLeft_comul_one (R := R) a)).symm
-  have hright (a : A) : ∑ x ∈ S, Coalgebra.counit (R := R) (x.2 * a) • x.1 = a := by
-    simpa [hS, sum_tmul] using (congrArg ((TensorProduct.rid R A).toLinearMap ∘ₗ
-      Coalgebra.counit.lTensor A) (comul_eq_lTensor_mulRight_comul_one (R := R) a)).symm
-  refine ⟨fun a b hab => ?_, fun f => ⟨∑ x ∈ S, f x.2 • x.1, LinearMap.ext fun b => ?_⟩⟩
-  · simp only [LinearMap.ext_iff, LinearMap.flip_apply, LinearMap.compr₂_apply,
-      LinearMap.mul_apply_apply] at hab
-    rw [← hright a, ← hright b]; simp [hab]
-  · trans ∑ x ∈ S, Coalgebra.counit (R := R) (b * x.1) • f x.2
-    · simp [mul_comm (f _)]
-    · simp only [← map_smul, ← map_sum, hleft b]
-
 /-- **The trace pairing of a unital Frobenius coalgebra is perfect.** No associativity or
 commutativity assumption on `A` is needed. -/
 instance isPerfPair_mul_compr₂_counit :
-    ((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).IsPerfPair where
-  bijective_left := compr₂_mul_counit_bijective
-  bijective_right := flip_compr₂_mul_counit_bijective
+    ((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).IsPerfPair :=
+  .of_bijective _ compr₂_mul_counit_bijective
+
+/-- Right-hand counterpart of `Coalgebra.IsFrobenius.compr₂_mul_counit_bijective`: the flipped
+multiplication-counit pairing `b ↦ (a ↦ ε (a * b))` of a unital Frobenius coalgebra is bijective. -/
+theorem flip_compr₂_mul_counit_bijective :
+    Function.Bijective (((LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))).flip) :=
+  LinearMap.IsPerfPair.bijective_right _
 
 /-- Contracting the first leg of `comul a` against `x ↦ counit (b * x)` produces `b * a`. -/
 theorem lid_rTensor_counit_mulLeft_comul (b a : A) :
@@ -186,8 +161,8 @@ theorem tensor_eq_of_forall_lid_rTensor_counit_mulLeft {z₁ z₂ : A ⊗[R] A}
     TensorProduct.ext' fun _ _ => by simp [smul_tmul]
   have hexpand (z : A ⊗[R] A) : z = ∑ x ∈ S, x.1 ⊗ₜ[R]
       (_root_.TensorProduct.lid R A) (((ε ∘ₗ LinearMap.mulLeft R x.2).rTensor A) z) := by
-    conv_lhs => rw [show z = (LinearMap.id : A →ₗ[R] A).rTensor A z by simp,
-      hid, hrsum, LinearMap.sum_apply]
+    have hz0 : z = (LinearMap.id : A →ₗ[R] A).rTensor A z := by simp
+    conv_lhs => rw [hz0, hid, hrsum, LinearMap.sum_apply]
     exact Finset.sum_congr rfl fun x _ => by rw [hsmul]; rfl
   rw [hexpand z₁, hexpand z₂]
   exact Finset.sum_congr rfl fun x _ => by rw [hz x.2]
@@ -199,8 +174,7 @@ section CommSemiring
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   [Coalgebra R A] [Coalgebra.IsFrobenius R A]
 
-/-- **A commutative Frobenius coalgebra is cocommutative**: under `traceTensorEquiv`, both `comul a`
-and its tensor swap represent the symmetric bilinear form `(x, y) ↦ ε (a * (x * y))`. -/
+/-- **A commutative Frobenius coalgebra is cocommutative.** -/
 instance instIsCocomm : Coalgebra.IsCocomm R A where
   comm_comp_comul := by
     ext a; let ε : A →ₗ[R] R := Coalgebra.counit
@@ -220,8 +194,6 @@ end Coalgebra.IsFrobenius
 
 namespace LinearMap
 
-section CocommAndDualBasis
-
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- The Frobenius coalgebra reconstructed from a perfect trace on a finite projective commutative
@@ -230,8 +202,6 @@ theorem frobeniusCoalgebra_isCocomm [Module.Finite R A] [Module.Projective R A]
     (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair] :
     letI := ε.frobeniusCoalgebra; Coalgebra.IsCocomm R A := by
   let := ε.frobeniusCoalgebra; have := ε.frobeniusCoalgebra_isFrobenius; infer_instance
-
-section DualBasis
 
 variable (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
 
@@ -243,7 +213,7 @@ variable (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
 
 /-- Expansion of an algebra element in the trace-dual basis, with coefficients given by trace
 pairings against the primal basis. -/
-theorem sum_counit_mul_smul_traceDualBasis {ι : Type*} [Fintype ι]
+theorem sum_apply_mul_smul_traceDualBasis {ι : Type*} [Fintype ι]
     (b : Module.Basis ι R A) (a : A) : ∑ i, ε (a * b i) • traceDualBasis ε b i = a := by
   simpa only [traceDualBasis_repr] using (traceDualBasis ε b).sum_repr a
 
@@ -253,19 +223,17 @@ theorem sum_traceDualBasis_mul_smul {ι : Type*} [Fintype ι]
     (b : Module.Basis ι R A) (a : A) : ∑ i, ε (traceDualBasis ε b i * a) • b i = a := by
   simpa only [traceDualBasis_mul] using b.sum_repr a
 
-end DualBasis
-
-end CocommAndDualBasis
-
 end LinearMap
 
 namespace TauCeti
 
+variable (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [Module.Finite R A] [Module.Projective R A]
+
 /-- **Perfect traces correspond bijectively to Frobenius coalgebras.** On a finite projective
 commutative `R`-algebra `A`, reconstructing `ε.frobeniusCoalgebra` from a perfect trace `ε` and
 taking the counit of a Frobenius coalgebra are mutually inverse bijections. -/
-def perfPairTraceEquivFrobeniusCoalgebra (R A : Type*) [CommSemiring R] [CommSemiring A]
-    [Algebra R A] [Module.Finite R A] [Module.Projective R A] :
+def perfPairTraceEquivFrobeniusCoalgebra :
     {ε : A →ₗ[R] R // ((LinearMap.mul R A).compr₂ ε).IsPerfPair} ≃
       {c : Coalgebra R A // letI := c; Coalgebra.IsFrobenius R A} where
   toFun ε := letI := ε.2; ⟨ε.1.frobeniusCoalgebra, ε.1.frobeniusCoalgebra_isFrobenius⟩
@@ -274,14 +242,12 @@ def perfPairTraceEquivFrobeniusCoalgebra (R A : Type*) [CommSemiring R] [CommSem
   right_inv c := Subtype.ext <| by
     let := c.1; let := c.2; exact c.1.counit.frobeniusCoalgebra_eq c.1 rfl c.2
 
-@[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_apply_coe (R A : Type*) [CommSemiring R]
-    [CommSemiring A] [Algebra R A] [Module.Finite R A] [Module.Projective R A]
+@[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_apply_coe
     (ε : {ε : A →ₗ[R] R // ((LinearMap.mul R A).compr₂ ε).IsPerfPair}) :
     (perfPairTraceEquivFrobeniusCoalgebra R A ε : Coalgebra R A) =
       (letI := ε.2; ε.1.frobeniusCoalgebra) := (rfl)
 
-@[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_symm_apply_coe (R A : Type*) [CommSemiring R]
-    [CommSemiring A] [Algebra R A] [Module.Finite R A] [Module.Projective R A]
+@[simp] theorem perfPairTraceEquivFrobeniusCoalgebra_symm_apply_coe
     (c : {c : Coalgebra R A // letI := c; Coalgebra.IsFrobenius R A}) :
     ((perfPairTraceEquivFrobeniusCoalgebra R A).symm c : A →ₗ[R] R) = c.1.counit := (rfl)
 
@@ -323,39 +289,47 @@ end Coalgebra.IsFrobenius
 
 namespace Coalgebra
 
-section Defs
+section NonUnital
 
-variable (R A : Type*) [CommSemiring R]
+variable (R A : Type*) [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A] [CoalgebraStruct R A]
 
 /-- The **handle operator** (or window operator) `mul' ∘ comul` of an algebra-coalgebra, sending
 `a` to the product of the legs of `comul a`. In 2D TQFT and foam evaluation it represents inserting
 a handle (genus-one tube) on a sheet. -/
-def handleOp [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A]
-    [IsScalarTower R A A] [CoalgebraStruct R A] : A →ₗ[R] A :=
-  LinearMap.mul' R A ∘ₗ Coalgebra.comul
+def handleOp : A →ₗ[R] A := LinearMap.mul' R A ∘ₗ Coalgebra.comul
 
-theorem handleOp_def [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A]
-    [IsScalarTower R A A] [CoalgebraStruct R A] :
-    handleOp R A = LinearMap.mul' R A ∘ₗ Coalgebra.comul := (rfl)
+theorem handleOp_def : handleOp R A = LinearMap.mul' R A ∘ₗ Coalgebra.comul := (rfl)
 
-theorem handleOp_apply [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A]
-    [IsScalarTower R A A] [CoalgebraStruct R A] (a : A) :
+theorem handleOp_apply (a : A) :
     handleOp R A a = LinearMap.mul' R A (Coalgebra.comul (R := R) a) := (rfl)
+
+end NonUnital
+
+section Unital
+
+variable (R A : Type*) [CommSemiring R] [NonAssocSemiring A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A] [CoalgebraStruct R A]
 
 /-- The **handle element** (or Euler / characteristic element) `m (Δ 1)` of a unital
 algebra-coalgebra, obtained by evaluating `Coalgebra.handleOp` at `1`. -/
-def handleElem [NonAssocSemiring A] [Module R A] [SMulCommClass R A A]
-    [IsScalarTower R A A] [CoalgebraStruct R A] : A :=
-  handleOp R A 1
+def handleElem : A := handleOp R A 1
 
-@[simp] theorem handleOp_one [NonAssocSemiring A] [Module R A] [SMulCommClass R A A]
-    [IsScalarTower R A A] [CoalgebraStruct R A] : handleOp R A 1 = handleElem R A := (rfl)
+theorem handleElem_def : handleElem R A = LinearMap.mul' R A (Coalgebra.comul (R := R) 1) := (rfl)
+
+@[simp] theorem handleOp_one : handleOp R A 1 = handleElem R A := (rfl)
+
+end Unital
+
+/-- On the base commutative semiring `R` with its canonical coalgebra structure, the handle
+operator is the identity. -/
+@[simp] theorem handleOp_self (R : Type*) [CommSemiring R] : handleOp R R = LinearMap.id := by
+  ext; simp [handleOp]
 
 /-- On the base commutative semiring `R` with its canonical coalgebra structure, the handle element
 is `1`. -/
-@[simp] theorem handleElem_self : handleElem R R = 1 := by simp [handleElem, handleOp]
-
-end Defs
+@[simp] theorem handleElem_self (R : Type*) [CommSemiring R] : handleElem R R = 1 := by
+  simp [handleElem]
 
 section Semiring
 

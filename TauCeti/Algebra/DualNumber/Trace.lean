@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.PerfectPairing.Basis
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # The Frobenius trace pairing on the dual numbers
@@ -127,8 +126,7 @@ theorem toMatrix₂_mul_compr₂_smul_sndHom (r : k) :
     LinearMap.toMatrix₂ (dualNumberBasis k) (dualNumberBasis k)
       ((LinearMap.mul k (DualNumber k)).compr₂ (r • TrivSqZeroExt.sndHom k k)) =
       !![0, r; r, 0] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix₂_apply]
+  ext i j; fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix₂_apply]
 
 /-- In the basis `(1, ε)`, the Gram matrix of `dualNumberTracePairing` is `!![0, 1; 1, 0]`. -/
 theorem toMatrix₂_dualNumberTracePairing :
@@ -142,9 +140,8 @@ theorem toMatrix₂_dualNumberTracePairing :
 theorem isPerfPair_mul_compr₂_smul_sndHom_iff (r : k) :
     ((LinearMap.mul k (DualNumber k)).compr₂ (r • TrivSqZeroExt.sndHom k k)).IsPerfPair ↔
       IsUnit r := by
-  constructor
-  · intro h
-    obtain ⟨x, hx⟩ := h.bijective_left.surjective (TrivSqZeroExt.sndHom k k)
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain ⟨x, hx⟩ := h.bijective_left.surjective (TrivSqZeroExt.sndHom k k)
     have hxε := LinearMap.congr_fun hx DualNumber.eps
     simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.smul_apply,
       TrivSqZeroExt.sndHom_apply, DualNumber.snd_mul, DualNumber.fst_eps, DualNumber.snd_eps,
@@ -154,29 +151,22 @@ theorem isPerfPair_mul_compr₂_smul_sndHom_iff (r : k) :
     have heq : (LinearMap.mul k (DualNumber k)).compr₂ ((u : k) • TrivSqZeroExt.sndHom k k) =
         ((dualNumberTracePairing k).toPerfPair.trans
           (DistribMulAction.toLinearEquiv k (Module.Dual k (DualNumber k)) u)).toLinearMap := by
-      ext x y
-      simp [dualNumberTracePairing, Units.smul_def, mul_add]
-    rw [heq]
-    infer_instance
+      ext x y; simp [dualNumberTracePairing, Units.smul_def, mul_add]
+    rw [heq]; infer_instance
 
 /-- Over any commutative semiring `k`, the scaled trace `r • sndHom` is a Frobenius functional on
 `DualNumber k` if and only if multiplication by `r` on `k` has trivial kernel. -/
 theorem isFrobeniusFunctional_smul_sndHom_iff (r : k) :
     (r • TrivSqZeroExt.sndHom k k).IsFrobeniusFunctional ↔ ∀ x : k, r * x = 0 → x = 0 := by
   rw [LinearMap.isFrobeniusFunctional_iff]
-  constructor
-  · intro h x hrx
-    have ha : TrivSqZeroExt.inl (M := k) x = 0 := h.1 (TrivSqZeroExt.inl x) fun b => by
+  refine ⟨fun h x hrx => ?_, fun hr => ⟨fun a ha => ?_, fun b hb => ?_⟩⟩
+  · have ha : TrivSqZeroExt.inl (M := k) x = 0 := h.1 (TrivSqZeroExt.inl x) fun b => by
       simp [smul_eq_mul, ← mul_assoc, hrx]
     simpa using congrArg TrivSqZeroExt.fst ha
-  · intro hr
-    refine ⟨fun a ha => ?_, fun b hb => ?_⟩
-    · apply TrivSqZeroExt.ext
-      · exact hr a.fst (by simpa [smul_eq_mul] using ha DualNumber.eps)
-      · exact hr a.snd (by simpa [smul_eq_mul] using ha 1)
-    · apply TrivSqZeroExt.ext
-      · exact hr b.fst (by simpa [smul_eq_mul] using hb DualNumber.eps)
-      · exact hr b.snd (by simpa [smul_eq_mul] using hb 1)
+  · exact TrivSqZeroExt.ext (hr a.fst (by simpa [smul_eq_mul] using ha DualNumber.eps))
+      (hr a.snd (by simpa [smul_eq_mul] using ha 1))
+  · exact TrivSqZeroExt.ext (hr b.fst (by simpa [smul_eq_mul] using hb DualNumber.eps))
+      (hr b.snd (by simpa [smul_eq_mul] using hb 1))
 
 end CommSemiring
 
@@ -189,15 +179,13 @@ variable (R : Type w) [CommRing R]
 theorem det_toMatrix₂_mul_compr₂_smul_sndHom (r : R) :
     (LinearMap.toMatrix₂ (dualNumberBasis R) (dualNumberBasis R)
       ((LinearMap.mul R (DualNumber R)).compr₂ (r • TrivSqZeroExt.sndHom R R))).det = -(r ^ 2) := by
-  rw [toMatrix₂_mul_compr₂_smul_sndHom, Matrix.det_fin_two_of]
-  ring
+  rw [toMatrix₂_mul_compr₂_smul_sndHom, Matrix.det_fin_two_of]; ring
 
 /-- Over `ℤ`, scaling the dual-number trace by `2` gives Gram determinant `-4` in `(1, ε)`. -/
 theorem det_toMatrix₂_mul_compr₂_two_smul_sndHom_int :
     (LinearMap.toMatrix₂ (dualNumberBasis ℤ) (dualNumberBasis ℤ)
       ((LinearMap.mul ℤ (DualNumber ℤ)).compr₂ ((2 : ℤ) • TrivSqZeroExt.sndHom ℤ ℤ))).det = -4 := by
-  rw [det_toMatrix₂_mul_compr₂_smul_sndHom]
-  norm_num
+  rw [det_toMatrix₂_mul_compr₂_smul_sndHom]; norm_num
 
 /-- Over `ℤ`, the scaled trace `2 • sndHom` is a Frobenius functional (its bilinear form is
 nondegenerate). -/
@@ -210,11 +198,9 @@ theorem isFrobeniusFunctional_two_smul_sndHom_int :
 is a Frobenius functional (`TauCeti.isFrobeniusFunctional_two_smul_sndHom_int`). -/
 theorem not_isPerfPair_mul_compr₂_two_smul_sndHom_int :
     ¬ ((LinearMap.mul ℤ (DualNumber ℤ)).compr₂
-      ((2 : ℤ) • TrivSqZeroExt.sndHom ℤ ℤ)).IsPerfPair := by
-  intro h
+      ((2 : ℤ) • TrivSqZeroExt.sndHom ℤ ℤ)).IsPerfPair := fun h => by
   have hu := (dualNumberBasis ℤ).isUnit_det_of_isPerfPair (dualNumberBasis ℤ) _ h
-  rw [det_toMatrix₂_mul_compr₂_two_smul_sndHom_int, Int.isUnit_iff] at hu
-  omega
+  rw [det_toMatrix₂_mul_compr₂_two_smul_sndHom_int, Int.isUnit_iff] at hu; omega
 
 end CommRing
 

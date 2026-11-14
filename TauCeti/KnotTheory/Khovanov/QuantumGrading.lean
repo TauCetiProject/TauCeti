@@ -273,32 +273,24 @@ noncomputable instance instGradedAlgebraShiftOne :
     (inferInstance : DirectSum.Decomposition ((quantumGrading R).shift 1).piece) with }
 
 /-- The regraded Khovanov algebra `W = V⟨-1⟩` is concentrated in even degrees (`0` and `-2`). -/
-@[simp]
-theorem parityGrading_quantumGrading_shift_one_one :
+@[simp] theorem parityGrading_quantumGrading_shift_one_one :
     parityGrading ((quantumGrading R).shift 1).piece 1 = ⊥ :=
   parityGrading_one_eq_bot_iff.mpr fun k => by
-    rw [InternalGrading.shift_piece]
-    exact quantumGrading_piece_eq_bot (by omega) (by omega)
+    rw [InternalGrading.shift_piece]; exact quantumGrading_piece_eq_bot (by omega) (by omega)
 
 variable {R}
 
 /-- In the regrading `W = V⟨-1⟩`, the generator `X = ε` has degree `-2`. -/
 theorem eps_mem_quantumGrading_shift_one_piece_neg_two :
-    (ε : R[ε]) ∈ ((quantumGrading R).shift 1).piece (-2) := by
-  simp
+    (ε : R[ε]) ∈ ((quantumGrading R).shift 1).piece (-2) := by simp
 
 /-- In the regrading `W = V⟨-1⟩` (`deg 1 = 0`, `deg X = -2`), the counit has degree `2`. -/
 theorem isHomogeneous_counit_shift_one :
     TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
-      ((quantumGrading R).shift 1).piece (trivialGrading R R) 2 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
-  intro p x hx
-  rw [InternalGrading.shift_piece, mem_quantumGrading_piece_iff] at hx
-  rw [mem_trivialGrading_iff, DualNumber.khovanov_counit_apply]
-  by_cases h : x.snd = 0
-  · exact Or.inr h
-  · have hp := hx.2 h
-    exact Or.inl (by omega)
+      ((quantumGrading R).shift 1).piece (trivialGrading R R) 2 :=
+  TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ hx => by
+    rw [InternalGrading.shift_piece] at hx
+    simpa [add_assoc] using isHomogeneous_counit.map_mem hx
 
 /-- In the regrading `W = V⟨-1⟩` (`deg 1 = 0`, `deg X = -2`), the coproduct has degree `-2`. -/
 theorem isHomogeneous_comul_shift_one :
@@ -322,18 +314,15 @@ variable {R : Type u} [CommSemiring R]
 degree `-2`. -/
 theorem isHomogeneous_counit_dualNumberIntegerGrade :
     TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
-      (dualNumberIntegerGrade R) (trivialGrading R R) (-2) := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
-  intro p x hx
-  by_cases hp2 : p = 2
-  · subst hp2
-    simp
-  · by_cases hp0 : p = 0
-    · subst hp0
-      rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx
-      simp [hx]
-    · rw [dualNumberIntegerGrade_eq_bot R hp0 hp2, Submodule.mem_bot] at hx
-      simp [hx]
+      (dualNumberIntegerGrade R) (trivialGrading R R) (-2) :=
+  TauCeti.LinearMap.isHomogeneous_def.mpr fun p x hx => by
+    by_cases hp2 : p = 2
+    · subst hp2; simp
+    · by_cases hp0 : p = 0
+      · subst hp0
+        rw [← Nat.cast_zero, dualNumberIntegerGrade_ofNat, mem_dualNumberGrade_zero] at hx
+        simp [hx]
+      · rw [dualNumberIntegerGrade_eq_bot R hp0 hp2, Submodule.mem_bot] at hx; simp [hx]
 
 /-- With `deg 1 = 0` and `deg X = 2` (`TauCeti.dualNumberIntegerGrade R`), the Khovanov coproduct
 has degree `2`. -/

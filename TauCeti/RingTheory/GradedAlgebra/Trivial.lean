@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
 # The trivial grading of an algebra
@@ -14,12 +15,15 @@ public import TauCeti.Algebra.Module.GradedModule.Trivial
 The trivial grading `TauCeti.trivialGrading` of `TauCeti.Algebra.Module.GradedModule.Trivial`,
 concentrated in degree zero, is an internal `GradedAlgebra` when the module is an algebra.  This
 file records that instance, whose decomposition and degree projection come from the module-level
-file.  This grading is the canonical target for augmentations of integer-graded algebras and the
-grading of coefficients in degree-zero examples.
+file, and shows that the unit map `Algebra.linearMap R A` from `trivialGrading R R` into any
+`ℤ`-indexed family `𝒜` with `1 ∈ 𝒜 0` has degree `0`.  This grading is the canonical target for
+augmentations of integer-graded algebras and the grading of coefficients in degree-zero examples.
 
 ## Main results
 
 * `TauCeti.instGradedAlgebraTrivialGrading`: the trivial grading of an algebra is a graded algebra.
+* `TauCeti.isHomogeneous_algebraLinearMap`: `Algebra.linearMap R A` is homogeneous of degree `0`
+  from `trivialGrading R R` to `𝒜` whenever `[SetLike.GradedOne 𝒜]`.
 -/
 
 public section
@@ -42,5 +46,16 @@ instance instGradedAlgebraTrivialGrading : GradedAlgebra (trivialGrading R A) wh
   __ := instDecompositionTrivialGrading R A
 
 end Algebra
+
+/-- The algebra unit map `Algebra.linearMap R A` is homogeneous of degree `0` from the trivially
+graded base ring `trivialGrading R R` into any `ℤ`-indexed family `𝒜` with `1 ∈ 𝒜 0`. -/
+theorem isHomogeneous_algebraLinearMap {R A σ : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [SetLike σ A] [ZeroMemClass σ A] [SMulMemClass σ R A] (𝒜 : ℤ → σ) [SetLike.GradedOne 𝒜] :
+    LinearMap.IsHomogeneous (Algebra.linearMap R A) (trivialGrading R R) 𝒜 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ r hr => by
+    rcases (mem_trivialGrading_iff R R).mp hr with rfl | rfl
+    · rw [add_zero, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one]
+      exact SMulMemClass.smul_mem r (SetLike.one_mem_graded 𝒜)
+    · simp
 
 end TauCeti
