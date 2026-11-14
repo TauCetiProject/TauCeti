@@ -31,10 +31,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
 
-* `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: preferred-chart invariance of
-  manifold differentiability.
-* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
-  manifold derivatives when the source atlas changes.
+* `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: manifold differentiability at a point
+  depends only on the preferred chart at that point.
+* `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred chart at a point preserves
+  the manifold derivative there when the source atlas changes.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
@@ -50,7 +50,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
   some chart locally agree with maps having equal Fréchet derivatives have equal differentials.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
-  of a `C¹` family in the extended chart at `x` transfers to the manifold.
+  of a family with differentiable slices in the extended chart at `x` transfers to the manifold.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.

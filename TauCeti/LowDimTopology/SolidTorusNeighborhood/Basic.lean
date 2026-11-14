@@ -490,15 +490,14 @@ private theorem continuous_tangentVector {f : Circle → V} (hf : ContMDiff (�
   ext1 t
   exact tangentVector_circleExp f t
 
-/-- The velocity of an immersed loop is nonzero, and the normal space is its orthogonal
-complement. -/
-private theorem tangentVector_ne_zero_and_mem_normalSubspace_iff {f : Circle → V}
-    (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z)) (z : Circle) :
+/-- At a point where a loop has injective derivative, its velocity is nonzero, and the normal
+space is its orthogonal complement. -/
+private theorem tangentVector_ne_zero_and_mem_normalSubspace_iff {f : Circle → V} {z : Circle}
+    (hinj : Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z)) :
     tangentVector f z ≠ 0 ∧
       ∀ v, v ∈ normalSubspace (𝓡 1) f z ↔ ⟪tangentVector f z, v⟫ = 0 := by
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  obtain ⟨hne, hrange⟩ :=
-    deriv_comp_circleExp_ne_zero_and_range_mfderiv himm t
+  obtain ⟨hne, hrange⟩ := deriv_comp_circleExp_ne_zero_and_range_mfderiv hinj
   rw [tangentVector_circleExp]
   refine ⟨hne, fun v => ?_⟩
   rw [normalSubspace, hrange]
@@ -532,7 +531,7 @@ private theorem exists_normalFrame {f : Circle → ℝ³} (hf : ContMDiff (𝓡 
     ∃ n₁ n₂ : Circle → ℝ³, Continuous n₁ ∧ Continuous n₂ ∧ ∀ z,
       ‖n₁ z‖ = 1 ∧ ‖n₂ z‖ = 1 ∧ ⟪n₁ z, n₂ z⟫ = 0 ∧
       ∀ v, v ∈ normalSubspace (𝓡 1) f z ↔ v = ⟪n₁ z, v⟫ • n₁ z + ⟪n₂ z, v⟫ • n₂ z := by
-  have hτ := tangentVector_ne_zero_and_mem_normalSubspace_iff himm
+  have hτ := fun z ↦ tangentVector_ne_zero_and_mem_normalSubspace_iff (himm z)
   obtain ⟨a, ha⟩ := exists_forall_notMem_span_tangentVector (by simp) hf
   -- The unit tangent `u`, and the component `p` of `a` orthogonal to it.
   set u : Circle → ℝ³ := fun z => ‖tangentVector f z‖⁻¹ • tangentVector f z
@@ -626,7 +625,7 @@ private theorem exists_hasFDerivAt_tube {f : Circle → V} (hf : ContMDiff (𝓡
   refine ⟨_, hcore.congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => by simp),
     (injective_iff_map_eq_zero _).2 fun x hx => ?_⟩
   -- `τ` is nonzero and orthogonal to the normal plane containing the values of `ψ 1`.
-  obtain ⟨hτ, hτn⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff himm 1
+  obtain ⟨hτ, hτn⟩ := tangentVector_ne_zero_and_mem_normalSubspace_iff (himm 1)
   replace hx : x.2 • τ + r • ψ 1 x.1 = 0 := by simpa using hx
   have ht : x.2 = 0 := by
     have hτψ : ⟪τ, ψ 1 x.1⟫ = 0 := (hτn _).1 (hψn x.1)
