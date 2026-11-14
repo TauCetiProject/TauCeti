@@ -5,20 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Algebra.CharP.Two
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
-import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
@@ -43,9 +41,9 @@ models and characteristic-two structure that underpin the Arf invariant:
    `a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2` carries a unimodular polar pairing whenever `2 = 0` (or
    `a = b = 0`). Over any commutative ring, `symplecticPlane R a 0` and `symplecticPlane R 0 b` are
    explicitly isometric to the hyperbolic plane `symplecticPlane R 0 0`. In characteristic two, the
-   diagonal submodule of `Q.prod Q` is always `Q`-totally-isotropic, and the orthogonal sum of two
-   copies of `symplecticPlane R 1 1` is explicitly isometric to the orthogonal sum of two copies of
-   `symplecticPlane R 0 0`.
+   diagonal submodule of `M × M` is always `(Q.prod Q)`-totally-isotropic, and the orthogonal sum of
+   two copies of `symplecticPlane R 1 1` is explicitly isometric to the orthogonal sum of two copies
+   of `symplecticPlane R 0 0`.
 2. **Symplectic-basis decomposition.** Whenever `b : Module.Basis (ι ⊕ ι) R M` puts `Q.polarBilin`
    in standard symplectic form `Matrix.J ι R`, `Q` decomposes isometrically as the orthogonal sum of
    the planes `symplecticPlane R (Q (b (Sum.inl i))) (Q (b (Sum.inr i)))`.
@@ -70,14 +68,13 @@ models and characteristic-two structure that underpin the Arf invariant:
 
 ## Main results
 
-* `QuadraticMap.nondegenerate_polarBilin_of_toMatrix_eq_J`: any finite basis putting `Q.polarBilin`
-  in standard symplectic form `Matrix.J` witnesses `Q.polarBilin.Nondegenerate`.
-* `QuadraticMap.isTotallyIsotropic_diag_prod`: in characteristic two, the diagonal submodule of
-  `Q.prod Q` is totally isotropic.
+* `QuadraticMap.isTotallyIsotropic_range_inl_add_inr_prod_self`: in characteristic two, the diagonal
+  submodule of `M × M` is `(Q.prod Q)`-totally-isotropic.
 * `QuadraticMap.isAlt_polarBilin`: in characteristic two, `Q.polarBilin` is alternating.
 * `QuadraticMap.even_finrank_of_nondegenerate_polarBilin`,
-  `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J`: over a field of characteristic two, a
-  finite-dimensional space with nondegenerate polar form has even dimension and a symplectic
+  `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J`,
+  `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq`: over a field of characteristic
+  two, a finite-dimensional space with nondegenerate polar form has even dimension and a symplectic
   basis.
 * `QuadraticMap.equivalent_pi_symplecticPlane_zero_iff_exists_isTotallyIsotropic_orthogonal_eq`:
   over a field of characteristic two, splitting into hyperbolic planes is equivalent to the
@@ -89,32 +86,23 @@ models and characteristic-two structure that underpin the Arf invariant:
   Reine Angew. Math. **183** (1941), 148--167.
 * R. Elman, N. Karpenko, and A. Merkurjev, *The Algebraic and Geometric Theory of Quadratic Forms*,
   American Mathematical Society Colloquium Publications 56 (2008), Chapter II, §§7--8.
+* A. Pyronneau, *The Arf and Rohklin's invariant* (January 2024), §2.1, Lemma 2.13 and
+  Theorem 2.15, pp. 4--5.
 -/
 
 public section
 
 universe u
 
-/-! ### Symplectic polar matrices and characteristic-two diagonals -/
+/-! ### Characteristic-two diagonals and alternating polarization -/
 
 namespace QuadraticMap
 
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup P] [Module R P]
 
-/-- If a finite basis puts `Q.polarBilin` in standard symplectic form `Matrix.J`, then
-`Q.polarBilin` is nondegenerate. -/
-theorem nondegenerate_polarBilin_of_toMatrix_eq_J {ι : Type*} [Fintype ι] [DecidableEq ι]
-    {Q : QuadraticForm R M} {b : Module.Basis (ι ⊕ ι) R M}
-    (hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J ι R) :
-    Q.polarBilin.Nondegenerate := by
-  refine (LinearMap.BilinForm.nondegenerate_toMatrix_iff b).mp ?_
-  rw [hb]
-  exact Matrix.Nondegenerate.of_det_mem_nonZeroDivisors
-    (Matrix.isUnit_det_J ι R).mem_nonZeroDivisors
-
 /-- In characteristic two, the diagonal submodule `{(x, x) | x : M}` is totally isotropic for
 `Q.prod Q`. -/
-theorem isTotallyIsotropic_diag_prod [CharP R 2] (Q : QuadraticMap R M P) :
+theorem isTotallyIsotropic_range_inl_add_inr_prod_self [CharP R 2] (Q : QuadraticMap R M P) :
     (Q.prod Q).IsTotallyIsotropic
       (LinearMap.range (LinearMap.inl R M M + LinearMap.inr R M M)) := by
   rw [isTotallyIsotropic_iff]
@@ -196,17 +184,35 @@ theorem nondegenerate_polarBilin_symplecticPlane_zero :
   ext i
   fin_cases i <;> simp [h0, h1]
 
+/-- Whenever `2 * a = 0` and `2 * b = 0`, the polar bilinear form of `symplecticPlane R a b`
+coincides with that of `symplecticPlane R 0 0`. -/
+theorem polarBilin_symplecticPlane_of_two_mul_eq_zero {a b : R} (ha : 2 * a = 0) (hb : 2 * b = 0) :
+    (symplecticPlane R a b).polarBilin = (symplecticPlane R 0 0).polarBilin :=
+  LinearMap.ext₂ fun x y ↦ by
+    rw [polarBilin_apply_apply, polarBilin_apply_apply, polar_symplecticPlane,
+      polar_symplecticPlane_zero, mul_add 2, ← mul_assoc 2 a, ← mul_assoc 2 b, ha, hb,
+      zero_mul, zero_mul, add_zero, zero_add]
+
+/-- In characteristic two, the polar bilinear form of `symplecticPlane R a b` coincides with that
+of `symplecticPlane R 0 0`. -/
+theorem polarBilin_symplecticPlane_of_charTwo [CharP R 2] (a b : R) :
+    (symplecticPlane R a b).polarBilin = (symplecticPlane R 0 0).polarBilin :=
+  LinearMap.ext₂ fun x y ↦ by simp [polarBilin_apply_apply]
+
+/-- Whenever `2 * a = 0` and `2 * b = 0`, `symplecticPlane R a b` has nondegenerate polar bilinear
+form. -/
+theorem nondegenerate_polarBilin_symplecticPlane_of_two_mul_eq_zero {a b : R}
+    (ha : 2 * a = 0) (hb : 2 * b = 0) :
+    (symplecticPlane R a b).polarBilin.Nondegenerate := by
+  rw [polarBilin_symplecticPlane_of_two_mul_eq_zero ha hb]
+  exact nondegenerate_polarBilin_symplecticPlane_zero
+
 /-- In characteristic two, `symplecticPlane R a b` has nondegenerate polar bilinear form for all
 `a, b : R`. -/
 theorem nondegenerate_polarBilin_symplecticPlane [CharP R 2] (a b : R) :
     (symplecticPlane R a b).polarBilin.Nondegenerate := by
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    (symplecticPlane R a b).isSymm_polarBilin.isRefl]
-  intro x hx
-  have h0 : x 0 = 0 := by simpa [polarBilin_apply_apply] using hx ![0, 1]
-  have h1 : x 1 = 0 := by simpa [polarBilin_apply_apply] using hx ![1, 0]
-  ext i
-  fin_cases i <;> simp [h0, h1]
+  rw [polarBilin_symplecticPlane_of_charTwo]
+  exact nondegenerate_polarBilin_symplecticPlane_zero
 
 /-- The first coordinate axis `{x | x 1 = 0}` is totally isotropic for `symplecticPlane R 0 b`. -/
 theorem isTotallyIsotropic_ker_proj_one_symplecticPlane (b : R) :
@@ -253,6 +259,12 @@ theorem isometryEquivSymplecticPlaneLeft_apply (a : R) (x : Fin 2 → R) :
     isometryEquivSymplecticPlaneLeft a x = ![x 0, a * x 0 + x 1] :=
   (rfl)
 
+/-- Coordinates of the inverse of `TauCeti.isometryEquivSymplecticPlaneLeft`. -/
+@[simp]
+theorem isometryEquivSymplecticPlaneLeft_symm_apply (a : R) (u : Fin 2 → R) :
+    (isometryEquivSymplecticPlaneLeft a).symm u = ![u 0, u 1 - a * u 0] :=
+  (rfl)
+
 /-- Explicit shear isometry `(x 0, x 1) ↦ (x 0 + b * x 1, x 1)` from `symplecticPlane R 0 b` to
 `symplecticPlane R 0 0`, valid over every commutative ring. -/
 def isometryEquivSymplecticPlaneRight (b : R) :
@@ -279,6 +291,12 @@ def isometryEquivSymplecticPlaneRight (b : R) :
 @[simp]
 theorem isometryEquivSymplecticPlaneRight_apply (b : R) (x : Fin 2 → R) :
     isometryEquivSymplecticPlaneRight b x = ![x 0 + b * x 1, x 1] :=
+  (rfl)
+
+/-- Coordinates of the inverse of `TauCeti.isometryEquivSymplecticPlaneRight`. -/
+@[simp]
+theorem isometryEquivSymplecticPlaneRight_symm_apply (b : R) (u : Fin 2 → R) :
+    (isometryEquivSymplecticPlaneRight b).symm u = ![u 0 - b * u 1, u 1] :=
   (rfl)
 
 /-- In characteristic two, the orthogonal sum of two copies of `symplecticPlane R 1 1` is
@@ -315,6 +333,23 @@ def isometryEquivSymplecticPlaneOneProd [CharP R 2] :
       (p.1 0 * p.1 1 + p.1 0 * p.2 0 + p.1 0 * p.2 1 + p.1 1 * p.2 0 + p.1 1 * p.2 1) *
         CharTwo.two_eq_zero (R := R)
 
+/-- Coordinates of `TauCeti.isometryEquivSymplecticPlaneOneProd`. -/
+@[simp]
+theorem isometryEquivSymplecticPlaneOneProd_apply [CharP R 2]
+    (p : (Fin 2 → R) × (Fin 2 → R)) :
+    isometryEquivSymplecticPlaneOneProd p = (![p.1 0 + p.2 1, p.1 1 + p.2 1],
+      ![p.2 0 + p.1 0 + p.1 1, p.2 1 + p.2 0 + p.1 0 + p.1 1]) :=
+  (rfl)
+
+/-- Coordinates of the inverse of `TauCeti.isometryEquivSymplecticPlaneOneProd`. -/
+@[simp]
+theorem isometryEquivSymplecticPlaneOneProd_symm_apply [CharP R 2]
+    (q : (Fin 2 → R) × (Fin 2 → R)) :
+    isometryEquivSymplecticPlaneOneProd.symm q =
+      (![q.1 0 + q.2 0 + q.2 1, q.1 1 + q.2 0 + q.2 1],
+        ![q.1 0 + q.1 1 + q.2 0, q.2 0 + q.2 1]) :=
+  (rfl)
+
 end CommRing
 
 section Field
@@ -338,13 +373,6 @@ theorem anisotropic_symplecticPlane_one_iff {K : Type u} [Field K] (c : K) :
       have hx' : x 0 ^ 2 + x 0 * x 1 + c * x 1 ^ 2 = 0 := by
         simpa [symplecticPlane_apply] using hx
       rw [hx', zero_div]
-
-/-- Over `ZMod 2`, `symplecticPlane (ZMod 2) 1 1` (`x 0 ^ 2 + x 0 * x 1 + x 1 ^ 2`) is
-anisotropic. -/
-theorem anisotropic_symplecticPlane_one : (symplecticPlane (ZMod 2) 1 1).Anisotropic := by
-  rw [anisotropic_symplecticPlane_one_iff]
-  intro t
-  fin_cases t <;> decide
 
 end Field
 
@@ -434,6 +462,15 @@ theorem isometryEquivPiSymplecticPlane_apply (Q : QuadraticForm R M)
     Q.isometryEquivPiSymplecticPlane b hb v i = ![b.repr v (Sum.inl i), b.repr v (Sum.inr i)] :=
   (rfl)
 
+/-- Inverse of `QuadraticMap.isometryEquivPiSymplecticPlane`. -/
+@[simp]
+theorem isometryEquivPiSymplecticPlane_symm_apply (Q : QuadraticForm R M)
+    (b : Module.Basis (ι ⊕ ι) R M)
+    (hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J ι R) (c : ι → Fin 2 → R) :
+    (Q.isometryEquivPiSymplecticPlane b hb).symm c =
+      b.equivFun.symm (Sum.elim (fun i ↦ c i 0) (fun i ↦ c i 1)) :=
+  (rfl)
+
 end SymplecticDecomposition
 
 section CharTwoField
@@ -447,6 +484,19 @@ theorem exists_basis_toMatrix_polarBilin_eq_J {Q : QuadraticForm K V}
     ∃ (m : ℕ) (b : Module.Basis (Fin m ⊕ Fin m) K V),
       LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin m) K :=
   LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J Q.isAlt_polarBilin hQ
+
+/-- Over a field of characteristic two, a finite-dimensional quadratic space of dimension `2 * m`
+with nondegenerate polar form admits a symplectic basis `b : Module.Basis (Fin m ⊕ Fin m) K V`. -/
+theorem exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq {Q : QuadraticForm K V}
+    (hQ : Q.polarBilin.Nondegenerate) {m : ℕ} (hdim : Module.finrank K V = 2 * m) :
+    ∃ b : Module.Basis (Fin m ⊕ Fin m) K V,
+      LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin m) K := by
+  obtain ⟨k, b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J hQ
+  have hkm : k = m := by
+    have hcard := Module.finrank_eq_card_basis b
+    simp only [Fintype.card_sum, Fintype.card_fin] at hcard
+    omega
+  exact hkm ▸ ⟨b, hb⟩
 
 /-- Over a field of characteristic two, a finite-dimensional quadratic space with nondegenerate
 polar form has even dimension. -/

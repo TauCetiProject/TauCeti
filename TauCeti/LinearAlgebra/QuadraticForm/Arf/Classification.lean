@@ -60,56 +60,64 @@ classification of finite-dimensional quadratic forms over `ZMod 2` with nondegen
 * W. Browder, *Surgery on Simply-Connected Manifolds*, Ergebnisse der Mathematik und ihrer
   Grenzgebiete 65, Springer (1972), Chapter III, §1.
 * R. Elman, N. Karpenko, and A. Merkurjev, *The Algebraic and Geometric Theory of Quadratic Forms*,
-  American Mathematical Society Colloquium Publications 56 (2008), Chapter II, §14.
+  American Mathematical Society Colloquium Publications 56 (2008), Chapter II, §13.
+* A. Pyronneau, *The Arf and Rohklin's invariant* (January 2024), §2.1, Lemma 2.13 and
+  Theorem 2.15, pp. 4--5.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- Over `ZMod 2`, every binary symplectic plane `symplecticPlane (ZMod 2) a b` is explicitly
-isometric via an involution to `symplecticPlane (ZMod 2) (a * b) (a * b)` (either the hyperbolic
-plane `symplecticPlane (ZMod 2) 0 0` or the anisotropic plane `symplecticPlane (ZMod 2) 1 1`). -/
-def isometryEquivSymplecticPlaneMul (a b : ZMod 2) :
-    (symplecticPlane (ZMod 2) a b).IsometryEquiv (symplecticPlane (ZMod 2) (a * b) (a * b)) where
+private def symplecticPlaneMulLinearMap (a b : ZMod 2) :
+    (Fin 2 → ZMod 2) →ₗ[ZMod 2] (Fin 2 → ZMod 2) where
   toFun x := ![x 0 + (1 + a) * b * x 1, a * (1 + b) * x 0 + x 1]
-  invFun x := ![x 0 + (1 + a) * b * x 1, a * (1 + b) * x 0 + x 1]
   map_add' x y := by
     ext i
     fin_cases i <;> simp [mul_add, add_assoc, add_left_comm]
   map_smul' r x := by
     ext i
     fin_cases i <;> simp [mul_add, mul_assoc, mul_left_comm]
-  left_inv x := by
-    ext i
-    fin_cases i <;>
-      rcases a.eq_zero_or_eq_one with rfl | rfl <;>
-      rcases b.eq_zero_or_eq_one with rfl | rfl <;>
-      rcases (x 0).eq_zero_or_eq_one with hx0 | hx0 <;>
-      rcases (x 1).eq_zero_or_eq_one with hx1 | hx1 <;>
-      (simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one, hx0, hx1];
-        rfl)
-  right_inv x := by
-    ext i
-    fin_cases i <;>
-      rcases a.eq_zero_or_eq_one with rfl | rfl <;>
-      rcases b.eq_zero_or_eq_one with rfl | rfl <;>
-      rcases (x 0).eq_zero_or_eq_one with hx0 | hx0 <;>
-      rcases (x 1).eq_zero_or_eq_one with hx1 | hx1 <;>
-      (simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one, hx0, hx1];
-        rfl)
+
+private theorem involutive_symplecticPlaneMulLinearMap (a b : ZMod 2) :
+    Function.Involutive (symplecticPlaneMulLinearMap a b) := fun x ↦ by
+  have h : ∀ a b x₀ x₁ : ZMod 2,
+      (x₀ + (1 + a) * b * x₁ + (1 + a) * b * (a * (1 + b) * x₀ + x₁) = x₀) ∧
+      (a * (1 + b) * (x₀ + (1 + a) * b * x₁) + (a * (1 + b) * x₀ + x₁) = x₁) := by decide
+  ext i
+  fin_cases i <;>
+    simp only [symplecticPlaneMulLinearMap, LinearMap.coe_mk, AddHom.coe_mk,
+      Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one]
+  · exact (h a b (x 0) (x 1)).1
+  · exact (h a b (x 0) (x 1)).2
+
+/-- Over `ZMod 2`, every binary symplectic plane `symplecticPlane (ZMod 2) a b` is explicitly
+isometric via an involution to `symplecticPlane (ZMod 2) (a * b) (a * b)` (either the hyperbolic
+plane `symplecticPlane (ZMod 2) 0 0` or the anisotropic plane `symplecticPlane (ZMod 2) 1 1`). -/
+def isometryEquivSymplecticPlaneMul (a b : ZMod 2) :
+    (symplecticPlane (ZMod 2) a b).IsometryEquiv (symplecticPlane (ZMod 2) (a * b) (a * b)) where
+  toLinearEquiv := LinearEquiv.ofInvolutive (symplecticPlaneMulLinearMap a b)
+    (involutive_symplecticPlaneMulLinearMap a b)
   map_app' x := by
-    rcases a.eq_zero_or_eq_one with rfl | rfl <;>
-      rcases b.eq_zero_or_eq_one with rfl | rfl <;>
-      rcases (x 0).eq_zero_or_eq_one with hx0 | hx0 <;>
-      rcases (x 1).eq_zero_or_eq_one with hx1 | hx1 <;>
-      (simp only [symplecticPlane_apply, Matrix.cons_val_zero, Matrix.cons_val_one, hx0, hx1];
-        rfl)
+    have h : ∀ a b x₀ x₁ : ZMod 2,
+        a * b * (x₀ + (1 + a) * b * x₁) ^ 2 +
+          (x₀ + (1 + a) * b * x₁) * (a * (1 + b) * x₀ + x₁) +
+          a * b * (a * (1 + b) * x₀ + x₁) ^ 2 =
+        a * x₀ ^ 2 + x₀ * x₁ + b * x₁ ^ 2 := by decide
+    simp only [symplecticPlaneMulLinearMap, symplecticPlane_apply]
+    exact h a b (x 0) (x 1)
 
 /-- Coordinates of `TauCeti.isometryEquivSymplecticPlaneMul`. -/
 @[simp]
 theorem isometryEquivSymplecticPlaneMul_apply (a b : ZMod 2) (x : Fin 2 → ZMod 2) :
     isometryEquivSymplecticPlaneMul a b x =
+      ![x 0 + (1 + a) * b * x 1, a * (1 + b) * x 0 + x 1] :=
+  (rfl)
+
+/-- Coordinates of the inverse of `TauCeti.isometryEquivSymplecticPlaneMul`. -/
+@[simp]
+theorem isometryEquivSymplecticPlaneMul_symm_apply (a b : ZMod 2) (x : Fin 2 → ZMod 2) :
+    (isometryEquivSymplecticPlaneMul a b).symm x =
       ![x 0 + (1 + a) * b * x 1, a * (1 + b) * x 0 + x 1] :=
   (rfl)
 
@@ -122,11 +130,56 @@ theorem equivalent_symplecticPlane_iff {a b c d : ZMod 2} :
   · exact ⟨(isometryEquivSymplecticPlaneMul a b).trans
       (h ▸ (isometryEquivSymplecticPlaneMul c d).symm)⟩
 
+/-- The orthogonal sum of `m` hyperbolic planes `symplecticPlane (ZMod 2) 0 0` has Arf invariant
+`0`. -/
+@[simp]
+theorem arf_pi_symplecticPlane_zero (m : ℕ) :
+    (QuadraticMap.pi fun _ : Fin m ↦ symplecticPlane (ZMod 2) 0 0).arf = 0 := by
+  rw [QuadraticMap.arf_pi fun _ ↦ nondegenerate_polarBilin_symplecticPlane 0 0]
+  simp
+
+/-- The orthogonal sum of one anisotropic plane `symplecticPlane (ZMod 2) 1 1` and `k` hyperbolic
+planes `symplecticPlane (ZMod 2) 0 0` has Arf invariant `1`. -/
+@[simp]
+theorem arf_symplecticPlane_one_prod_pi_zero (k : ℕ) :
+    ((symplecticPlane (ZMod 2) 1 1).prod
+      (QuadraticMap.pi fun _ : Fin k ↦ symplecticPlane (ZMod 2) 0 0)).arf = 1 := by
+  rw [QuadraticMap.arf_prod (nondegenerate_polarBilin_symplecticPlane 1 1)
+    (QuadraticMap.nondegenerate_polarBilin_pi_iff.mpr fun _ ↦
+      nondegenerate_polarBilin_symplecticPlane 0 0),
+    arf_symplecticPlane, arf_pi_symplecticPlane_zero]
+  rfl
+
 end TauCeti
 
 namespace QuadraticMap
 
 open TauCeti
+
+/-- Adjoining a hyperbolic plane to `11 ⊕ 00^k` gives `11 ⊕ 00^(k + 1)`. -/
+private def isometryEquivZeroProdOneProdPiZero (k : ℕ) :
+    ((symplecticPlane (ZMod 2) 0 0).prod
+      ((symplecticPlane (ZMod 2) 1 1).prod
+        (QuadraticMap.pi fun _ : Fin k ↦ symplecticPlane (ZMod 2) 0 0))).IsometryEquiv
+      ((symplecticPlane (ZMod 2) 1 1).prod
+        (QuadraticMap.pi fun _ : Fin (k + 1) ↦ symplecticPlane (ZMod 2) 0 0)) :=
+  (IsometryEquiv.prodLeftComm _ _ _).trans
+    ((IsometryEquiv.refl _).prod
+      (IsometryEquiv.consPi fun _ : Fin (k + 1) ↦ symplecticPlane (ZMod 2) 0 0))
+
+/-- Cancelling the pair of anisotropic planes in `11 ⊕ (11 ⊕ 00^k)` via `11 ⊕ 11 ≃qᵢ 00 ⊕ 00`
+gives `00^(k + 2)`. -/
+private def isometryEquivOneProdOneProdPiZero (k : ℕ) :
+    ((symplecticPlane (ZMod 2) 1 1).prod
+      ((symplecticPlane (ZMod 2) 1 1).prod
+        (QuadraticMap.pi fun _ : Fin k ↦ symplecticPlane (ZMod 2) 0 0))).IsometryEquiv
+      (QuadraticMap.pi fun _ : Fin (k + 2) ↦ symplecticPlane (ZMod 2) 0 0) :=
+  (((((IsometryEquiv.prodAssoc _ _ _).symm.trans
+    (isometryEquivSymplecticPlaneOneProd.prod (IsometryEquiv.refl _))).trans
+    (IsometryEquiv.prodAssoc _ _ _)).trans
+    ((IsometryEquiv.refl _).prod
+      (IsometryEquiv.consPi fun _ : Fin (k + 1) ↦ symplecticPlane (ZMod 2) 0 0))).trans
+    (IsometryEquiv.consPi fun _ : Fin (k + 2) ↦ symplecticPlane (ZMod 2) 0 0))
 
 /-- Simultaneous normal-form reduction of an orthogonal sum of normalized planes
 `symplecticPlane (ZMod 2) (c i) (c i)`: pairs of anisotropic planes cancel into pairs of hyperbolic
@@ -151,95 +204,45 @@ private theorem normalForm_pi_symplecticPlane :
   | m + 1, c => by
       let c' : Fin m → ZMod 2 := fun i ↦ c i.succ
       obtain ⟨ih0, ih1⟩ := normalForm_pi_symplecticPlane m c'
-      have esplit :=
+      -- Peel off the `0`-th plane and reduce the remaining `m` planes by the induction hypothesis.
+      have esplit :
+          (QuadraticMap.pi fun i : Fin (m + 1) ↦
+            symplecticPlane (ZMod 2) (c i) (c i)).IsometryEquiv
+            ((symplecticPlane (ZMod 2) (c 0) (c 0)).prod
+              (QuadraticMap.pi fun i : Fin m ↦ symplecticPlane (ZMod 2) (c' i) (c' i))) :=
         (IsometryEquiv.consPi fun i : Fin (m + 1) ↦ symplecticPlane (ZMod 2) (c i) (c i)).symm
       refine ⟨fun hsum ↦ ?_, fun hsum ↦ ?_⟩
-      · rw [Fin.sum_univ_succ] at hsum
+      · -- Even parity (`∑ i, c i = 0`): either `00 ⊕ 00^m` or `11 ⊕ (11 ⊕ 00^k)`.
+        rw [Fin.sum_univ_succ] at hsum
         rcases (c 0).eq_zero_or_eq_one with hc0 | hc0
         · have hsum' : ∑ i, c' i = 0 := by simpa [c', hc0] using hsum
           obtain ⟨e'⟩ := ih0 hsum'
-          have esplit0 :
-              (QuadraticMap.pi fun i : Fin (m + 1) ↦
-                symplecticPlane (ZMod 2) (c i) (c i)).IsometryEquiv
-                ((symplecticPlane (ZMod 2) 0 0).prod
-                  (QuadraticMap.pi fun i : Fin m ↦ symplecticPlane (ZMod 2) (c' i) (c' i))) := by
-            simpa [c', hc0] using esplit
-          exact ⟨(esplit0.trans ((IsometryEquiv.refl _).prod e')).trans
+          rw [hc0] at esplit
+          exact ⟨(esplit.trans ((IsometryEquiv.refl _).prod e')).trans
             (IsometryEquiv.consPi fun _ : Fin (m + 1) ↦ symplecticPlane (ZMod 2) 0 0)⟩
-        · have hsum' : ∑ i, c' i = 1 := by
-            rcases (∑ i, c' i).eq_zero_or_eq_one with hs | hs
-            · exfalso
-              revert hsum
-              simp [c', hc0, hs]
-            · exact hs
+        · have hsum' : ∑ i, c' i = 1 :=
+            (CharTwo.add_eq_zero.mp (by simpa [c', hc0] using hsum)).symm
           obtain ⟨k, rfl, ⟨e'⟩⟩ := ih1 hsum'
-          have esplit1 :
-              (QuadraticMap.pi fun i : Fin (k + 1 + 1) ↦
-                symplecticPlane (ZMod 2) (c i) (c i)).IsometryEquiv
-                ((symplecticPlane (ZMod 2) 1 1).prod
-                  (QuadraticMap.pi fun i : Fin (k + 1) ↦
-                    symplecticPlane (ZMod 2) (c' i) (c' i))) := by
-            simpa [c', hc0] using esplit
-          exact ⟨((((((esplit1.trans ((IsometryEquiv.refl _).prod e')).trans
-            (IsometryEquiv.prodAssoc _ _ _).symm).trans
-            (isometryEquivSymplecticPlaneOneProd.prod (IsometryEquiv.refl _))).trans
-            (IsometryEquiv.prodAssoc _ _ _)).trans
-            ((IsometryEquiv.refl _).prod
-              (IsometryEquiv.consPi fun _ : Fin (k + 1) ↦ symplecticPlane (ZMod 2) 0 0))).trans
-            (IsometryEquiv.consPi fun _ : Fin (k + 2) ↦ symplecticPlane (ZMod 2) 0 0))⟩
-      · rw [Fin.sum_univ_succ] at hsum
+          rw [hc0] at esplit
+          exact ⟨(esplit.trans ((IsometryEquiv.refl _).prod e')).trans
+            (isometryEquivOneProdOneProdPiZero k)⟩
+      · -- Odd parity (`∑ i, c i = 1`): either `00 ⊕ (11 ⊕ 00^k)` or `11 ⊕ 00^m`.
+        rw [Fin.sum_univ_succ] at hsum
         rcases (c 0).eq_zero_or_eq_one with hc0 | hc0
         · have hsum' : ∑ i, c' i = 1 := by simpa [c', hc0] using hsum
           obtain ⟨k, rfl, ⟨e'⟩⟩ := ih1 hsum'
-          have esplit0 :
-              (QuadraticMap.pi fun i : Fin (k + 1 + 1) ↦
-                symplecticPlane (ZMod 2) (c i) (c i)).IsometryEquiv
-                ((symplecticPlane (ZMod 2) 0 0).prod
-                  (QuadraticMap.pi fun i : Fin (k + 1) ↦
-                    symplecticPlane (ZMod 2) (c' i) (c' i))) := by
-            simpa [c', hc0] using esplit
-          refine ⟨k + 1, rfl, ⟨(((esplit0.trans ((IsometryEquiv.refl _).prod e')).trans
-            (IsometryEquiv.prodLeftComm _ _ _)).trans
-            ((IsometryEquiv.refl _).prod
-              (IsometryEquiv.consPi fun _ : Fin (k + 1) ↦ symplecticPlane (ZMod 2) 0 0)))⟩⟩
-        · have hsum' : ∑ i, c' i = 0 := by
-            rcases (∑ i, c' i).eq_zero_or_eq_one with hs | hs
-            · exact hs
-            · exfalso
-              revert hsum
-              simp [c', hc0, hs]
+          rw [hc0] at esplit
+          exact ⟨k + 1, rfl, ⟨(esplit.trans ((IsometryEquiv.refl _).prod e')).trans
+            (isometryEquivZeroProdOneProdPiZero k)⟩⟩
+        · have hsum' : ∑ i, c' i = 0 := by simpa [c', hc0] using hsum
           obtain ⟨e'⟩ := ih0 hsum'
-          have esplit1 :
-              (QuadraticMap.pi fun i : Fin (m + 1) ↦
-                symplecticPlane (ZMod 2) (c i) (c i)).IsometryEquiv
-                ((symplecticPlane (ZMod 2) 1 1).prod
-                  (QuadraticMap.pi fun i : Fin m ↦ symplecticPlane (ZMod 2) (c' i) (c' i))) := by
-            simpa [c', hc0] using esplit
-          exact ⟨m, rfl, ⟨esplit1.trans ((IsometryEquiv.refl _).prod e')⟩⟩
+          rw [hc0] at esplit
+          exact ⟨m, rfl, ⟨esplit.trans ((IsometryEquiv.refl _).prod e')⟩⟩
 
 section Classification
 
 variable {V V₁ V₂ : Type*} [AddCommGroup V] [Module (ZMod 2) V]
   [AddCommGroup V₁] [Module (ZMod 2) V₁] [AddCommGroup V₂] [Module (ZMod 2) V₂]
-
-/-- The orthogonal sum of `m` hyperbolic planes `symplecticPlane (ZMod 2) 0 0` has Arf invariant
-`0`. -/
-@[simp]
-theorem arf_pi_symplecticPlane_zero (m : ℕ) :
-    (QuadraticMap.pi fun _ : Fin m ↦ symplecticPlane (ZMod 2) 0 0).arf = 0 := by
-  rw [arf_pi fun _ ↦ nondegenerate_polarBilin_symplecticPlane 0 0]
-  simp
-
-/-- The orthogonal sum of one anisotropic plane `symplecticPlane (ZMod 2) 1 1` and `k` hyperbolic
-planes `symplecticPlane (ZMod 2) 0 0` has Arf invariant `1`. -/
-@[simp]
-theorem arf_symplecticPlane_one_prod_pi_zero (k : ℕ) :
-    ((symplecticPlane (ZMod 2) 1 1).prod
-      (QuadraticMap.pi fun _ : Fin k ↦ symplecticPlane (ZMod 2) 0 0)).arf = 1 := by
-  rw [arf_prod (nondegenerate_polarBilin_symplecticPlane 1 1)
-    (nondegenerate_polarBilin_pi_iff.mpr fun _ ↦ nondegenerate_polarBilin_symplecticPlane 0 0),
-    arf_symplecticPlane, arf_pi_symplecticPlane_zero]
-  rfl
 
 /-- **Hyperbolic normal form (`Q.arf = 0`).** A finite-dimensional quadratic space over `ZMod 2` of
 dimension `2 * m` with nondegenerate polar form has `Q.arf = 0` if and only if it is isometric to
@@ -249,66 +252,57 @@ theorem arf_eq_zero_iff_equivalent_pi_symplecticPlane_zero [FiniteDimensional (Z
     (hdim : Module.finrank (ZMod 2) V = 2 * m) :
     Q.arf = 0 ↔ Q.Equivalent (QuadraticMap.pi fun _ : Fin m ↦ symplecticPlane (ZMod 2) 0 0) := by
   refine ⟨fun harf ↦ ?_, fun h ↦ h.arf_eq.trans (arf_pi_symplecticPlane_zero m)⟩
-  obtain ⟨k, b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J hQ
-  have hkm : k = m := by
-    have hc := Module.finrank_eq_card_basis b
-    simp only [Fintype.card_sum, Fintype.card_fin] at hc
-    omega
-  subst hkm
-  let c : Fin k → ZMod 2 := fun i ↦ Q (b (Sum.inl i)) * Q (b (Sum.inr i))
+  obtain ⟨b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq hQ hdim
+  let c : Fin m → ZMod 2 := fun i ↦ Q (b (Sum.inl i)) * Q (b (Sum.inr i))
   have hc_sum : ∑ i, c i = 0 := by
     rw [← Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, harf]
-  obtain ⟨enorm⟩ := (normalForm_pi_symplecticPlane k c).1 hc_sum
+  obtain ⟨enorm⟩ := (normalForm_pi_symplecticPlane m c).1 hc_sum
   exact ⟨((Q.isometryEquivPiSymplecticPlane b hb).trans
     (IsometryEquiv.pi fun i ↦
       isometryEquivSymplecticPlaneMul (Q (b (Sum.inl i))) (Q (b (Sum.inr i))))).trans enorm⟩
 
-/-- **Anisotropic normal form (`Q.arf = 1`).** A finite-dimensional quadratic space over `ZMod 2`
-of dimension `2 * m` with nondegenerate polar form has `Q.arf = 1` if and only if `m = k + 1` and
-`Q` is isometric to `symplecticPlane (ZMod 2) 1 1` orthogonal-summed with `k` hyperbolic planes. -/
+/-- **Anisotropic normal form (`Q.arf = 1`).** A quadratic space over `ZMod 2` with
+`Module.finrank (ZMod 2) V = 2 * m` has `Q.arf = 1` if and only if `m = k + 1` and `Q` is isometric
+to `symplecticPlane (ZMod 2) 1 1` orthogonal-summed with `k` hyperbolic planes. -/
 theorem arf_eq_one_iff_exists_equivalent_symplecticPlane_one_prod_pi
-    [FiniteDimensional (ZMod 2) V] {Q : QuadraticForm (ZMod 2) V}
-    (hQ : Q.polarBilin.Nondegenerate) {m : ℕ} (hdim : Module.finrank (ZMod 2) V = 2 * m) :
+    {Q : QuadraticForm (ZMod 2) V} {m : ℕ} (hdim : Module.finrank (ZMod 2) V = 2 * m) :
     Q.arf = 1 ↔
       ∃ k : ℕ, m = k + 1 ∧
         Q.Equivalent
           ((symplecticPlane (ZMod 2) 1 1).prod
             (QuadraticMap.pi fun _ : Fin k ↦ symplecticPlane (ZMod 2) 0 0)) := by
   refine ⟨fun harf ↦ ?_, fun ⟨k, _, h⟩ ↦ h.arf_eq.trans (arf_symplecticPlane_one_prod_pi_zero k)⟩
-  obtain ⟨n, b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J hQ
-  have hnm : n = m := by
-    have hc := Module.finrank_eq_card_basis b
-    simp only [Fintype.card_sum, Fintype.card_fin] at hc
-    omega
-  subst hnm
-  let c : Fin n → ZMod 2 := fun i ↦ Q (b (Sum.inl i)) * Q (b (Sum.inr i))
+  have hne : Q.arf ≠ 0 := by rw [harf]; decide
+  have : FiniteDimensional (ZMod 2) V := Q.finiteDimensional_of_arf_ne_zero hne
+  have hQ : Q.polarBilin.Nondegenerate := Q.nondegenerate_polarBilin_of_arf_ne_zero hne
+  obtain ⟨b, hb⟩ := Q.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq hQ hdim
+  let c : Fin m → ZMod 2 := fun i ↦ Q (b (Sum.inl i)) * Q (b (Sum.inr i))
   have hc_sum : ∑ i, c i = 1 := by
     rw [← Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, harf]
-  obtain ⟨k, hnk, ⟨enorm⟩⟩ := (normalForm_pi_symplecticPlane n c).2 hc_sum
-  exact ⟨k, hnk, ⟨((Q.isometryEquivPiSymplecticPlane b hb).trans
+  obtain ⟨k, hmk, ⟨enorm⟩⟩ := (normalForm_pi_symplecticPlane m c).2 hc_sum
+  exact ⟨k, hmk, ⟨((Q.isometryEquivPiSymplecticPlane b hb).trans
     (IsometryEquiv.pi fun i ↦
       isometryEquivSymplecticPlaneMul (Q (b (Sum.inl i))) (Q (b (Sum.inr i))))).trans enorm⟩⟩
 
-/-- When `Module.finrank (ZMod 2) V = 2 * (k + 1)` and `Q.polarBilin` is nondegenerate, `Q.arf = 1`
-if and only if `Q` is isometric to `symplecticPlane (ZMod 2) 1 1` orthogonal-summed with `k`
-hyperbolic planes. -/
+/-- When `Module.finrank (ZMod 2) V = 2 * (k + 1)`, `Q.arf = 1` if and only if `Q` is isometric to
+`symplecticPlane (ZMod 2) 1 1` orthogonal-summed with `k` hyperbolic planes. -/
 theorem arf_eq_one_iff_equivalent_symplecticPlane_one_prod_pi
-    [FiniteDimensional (ZMod 2) V] {Q : QuadraticForm (ZMod 2) V}
-    (hQ : Q.polarBilin.Nondegenerate) {k : ℕ}
+    {Q : QuadraticForm (ZMod 2) V} {k : ℕ}
     (hdim : Module.finrank (ZMod 2) V = 2 * (k + 1)) :
     Q.arf = 1 ↔
       Q.Equivalent
         ((symplecticPlane (ZMod 2) 1 1).prod
           (QuadraticMap.pi fun _ : Fin k ↦ symplecticPlane (ZMod 2) 0 0)) := by
-  rw [Q.arf_eq_one_iff_exists_equivalent_symplecticPlane_one_prod_pi hQ hdim]
+  rw [Q.arf_eq_one_iff_exists_equivalent_symplecticPlane_one_prod_pi hdim]
   refine ⟨fun ⟨k', hk', heq⟩ ↦ ?_, fun heq ↦ ⟨k, rfl, heq⟩⟩
   obtain rfl : k' = k := by omega
   exact heq
 
-/-- Any finite-dimensional quadratic space over `ZMod 2` with `Q.arf = 1` has positive dimension. -/
-theorem finrank_pos_of_arf_eq_one [FiniteDimensional (ZMod 2) V]
-    {Q : QuadraticForm (ZMod 2) V} (harf : Q.arf = 1) :
+/-- Any quadratic space over `ZMod 2` with `Q.arf = 1` has positive `finrank`. -/
+theorem finrank_pos_of_arf_eq_one {Q : QuadraticForm (ZMod 2) V} (harf : Q.arf = 1) :
     0 < Module.finrank (ZMod 2) V := by
+  have : FiniteDimensional (ZMod 2) V :=
+    Q.finiteDimensional_of_arf_ne_zero (by rw [harf]; decide)
   by_contra h
   have : Subsingleton V := Module.finrank_zero_iff.mp (Nat.eq_zero_of_not_pos h)
   exact absurd (Q.arf_subsingleton.symm.trans harf) (by decide)
@@ -332,9 +326,9 @@ theorem equivalent_iff_finrank_eq_and_arf_eq
       (Q₂.arf_eq_zero_iff_equivalent_pi_symplecticPlane_zero hQ₂ hdim₂).mp (harf.symm.trans h0)
     exact ⟨e₁.trans e₂.symm⟩
   · obtain ⟨k, rfl, ⟨e₁⟩⟩ :=
-      (Q₁.arf_eq_one_iff_exists_equivalent_symplecticPlane_one_prod_pi hQ₁ hdim₁).mp h1
+      (Q₁.arf_eq_one_iff_exists_equivalent_symplecticPlane_one_prod_pi hdim₁).mp h1
     obtain ⟨e₂⟩ :=
-      (Q₂.arf_eq_one_iff_equivalent_symplecticPlane_one_prod_pi hQ₂ hdim₂).mp (harf.symm.trans h1)
+      (Q₂.arf_eq_one_iff_equivalent_symplecticPlane_one_prod_pi hdim₂).mp (harf.symm.trans h1)
     exact ⟨e₁.trans e₂.symm⟩
 
 /-- **Quadratic Lagrangian criterion for `Q.arf = 0` (fixed half-dimension `m`).** For a

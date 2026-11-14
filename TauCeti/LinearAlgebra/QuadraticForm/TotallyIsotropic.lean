@@ -227,9 +227,8 @@ theorem IsTotallyIsotropic.orthogonal_polarBilin_eq_self_iff [FiniteDimensional 
     (hW : Q.IsTotallyIsotropic W) (hQ : Q.polarBilin.Nondegenerate) :
     LinearMap.BilinForm.orthogonal Q.polarBilin W = W ↔
       2 * Module.finrank K W = Module.finrank K V := by
-  have hrefl : Q.polarBilin.IsRefl := fun x y ↦ (polar_comm Q y x).trans
-  have hdim := LinearMap.BilinForm.finrank_add_finrank_orthogonal hrefl W
-  rw [LinearMap.BilinForm.orthogonal_top_eq_bot hQ, inf_bot_eq, finrank_bot, add_zero] at hdim
+  have hdim := LinearMap.BilinForm.finrank_orthogonal hQ W
+  have hle := Submodule.finrank_le W
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [h] at hdim
     omega

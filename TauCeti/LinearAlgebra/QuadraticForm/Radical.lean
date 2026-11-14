@@ -101,10 +101,10 @@ regular case.
   `Q ≅ 0 ⊥ Q'` with `Q'` of trivial radical, `Q'` is the regular part and the zero summand lives
   on a copy of the radical.
 * `QuadraticMap.ker_polarBilin_le_radical_iff`, `QuadraticMap.radical_eq_ker_polarBilin_iff`,
-  `QuadraticMap.nondegenerate_polarBilin_lift_ker_polarBilin`,
+  `QuadraticMap.ker_polarBilin_lift`, `QuadraticMap.nondegenerate_polarBilin_lift_ker_polarBilin`,
   `QuadraticMap.nondegenerate_lift_ker_polarBilin`,
   `QuadraticMap.nondegenerate_of_nondegenerate_polarBilin`: characteristic-free descent of `Q` to
-  `M ⧸ Q.polarBilin.ker` with nondegenerate polar form when `Q` vanishes on `Q.polarBilin.ker`.
+  `M ⧸ Q.polarBilin.ker` with nondegenerate polar map when `Q` vanishes on `Q.polarBilin.ker`.
 -/
 
 public section
@@ -286,28 +286,37 @@ theorem polar_lift_mk (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q
     polar (Q.lift N hN) (Submodule.Quotient.mk x) (Submodule.Quotient.mk y) = polar Q x y := by
   rw [polar, ← Submodule.Quotient.mk_add, lift_mk, lift_mk, lift_mk, polar]
 
+/-- For any `N ≤ Q.radical`, the polar kernel of `Q.lift N hN` is the image of `Q.polarBilin.ker`
+under the quotient projection `N.mkQ`. -/
+theorem ker_polarBilin_lift (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical) :
+    (Q.lift N hN).polarBilin.ker = Q.polarBilin.ker.map N.mkQ := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    simp only [LinearMap.mem_ker, Submodule.mem_map, Submodule.mkQ_apply]
+    refine ⟨fun hx ↦ ⟨m, ?_, rfl⟩, fun ⟨m', hm', hmm'⟩ ↦ ?_⟩
+    · ext y
+      simpa [polarBilin_apply_apply] using LinearMap.congr_fun hx (Submodule.Quotient.mk y)
+    · rw [← hmm']
+      ext y
+      simpa [polarBilin_apply_apply] using LinearMap.congr_fun hm' y
+
 /-- When `Q.polarBilin.ker ≤ Q.radical`, the quadratic map descended to `M ⧸ Q.polarBilin.ker` has
 trivial polar kernel. -/
 @[simp]
 theorem ker_polarBilin_lift_ker_polarBilin (Q : QuadraticMap R M P)
     (h : Q.polarBilin.ker ≤ Q.radical) :
     (Q.lift Q.polarBilin.ker h).polarBilin.ker = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro x hx
-  induction x using Submodule.Quotient.induction_on with
-  | H m =>
-    rw [Submodule.Quotient.mk_eq_zero, LinearMap.mem_ker]
-    ext y
-    simpa [polarBilin_apply_apply] using
-      LinearMap.congr_fun (LinearMap.mem_ker.mp hx) (Submodule.Quotient.mk y)
+  rw [ker_polarBilin_lift, Submodule.mkQ_map_self]
 
-/-- When `Q` vanishes on `Q.polarBilin.ker`, the quadratic form descended to `M ⧸ Q.polarBilin.ker`
-has nondegenerate polar bilinear form. -/
-theorem nondegenerate_polarBilin_lift_ker_polarBilin {Q : QuadraticForm R M}
+/-- When `Q` vanishes on `Q.polarBilin.ker`, the quadratic map descended to `M ⧸ Q.polarBilin.ker`
+has nondegenerate polar bilinear map. -/
+theorem nondegenerate_polarBilin_lift_ker_polarBilin {Q : QuadraticMap R M P}
     (h : Q.polarBilin.ker ≤ Q.radical) :
     (Q.lift Q.polarBilin.ker h).polarBilin.Nondegenerate := by
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    (Q.lift Q.polarBilin.ker h).isSymm_polarBilin.isRefl,
+  have hrefl : (Q.lift Q.polarBilin.ker h).polarBilin.IsRefl :=
+    fun x y ↦ (polar_comm _ y x).trans
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl,
     LinearMap.separatingLeft_iff_ker_eq_bot, ker_polarBilin_lift_ker_polarBilin]
 
 /-- When `Q.polarBilin.ker ≤ Q.radical`, the quadratic map descended to `M ⧸ Q.polarBilin.ker` is
@@ -317,9 +326,9 @@ theorem nondegenerate_lift_ker_polarBilin {Q : QuadraticMap R M P}
     (Q.lift Q.polarBilin.ker h).Nondegenerate :=
   nondegenerate_of_ker_polarBilin_eq_bot (ker_polarBilin_lift_ker_polarBilin Q h)
 
-/-- A quadratic form whose polar bilinear form is nondegenerate is itself nondegenerate. The
+/-- A quadratic map whose polar bilinear map is nondegenerate is itself nondegenerate. The
 converse fails in characteristic two on odd-dimensional spaces. -/
-theorem nondegenerate_of_nondegenerate_polarBilin {Q : QuadraticForm R M}
+theorem nondegenerate_of_nondegenerate_polarBilin {Q : QuadraticMap R M P}
     (hQ : Q.polarBilin.Nondegenerate) : Q.Nondegenerate :=
   nondegenerate_of_ker_polarBilin_eq_bot (LinearMap.separatingLeft_iff_ker_eq_bot.mp hQ.1)
 

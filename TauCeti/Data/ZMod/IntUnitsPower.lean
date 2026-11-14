@@ -106,7 +106,6 @@ theorem eq_hilbertSign_iff (u : ℤˣ) (x : ZMod 2) : u = hilbertSign x ↔ (u =
     rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
 
 /-- Coerced to `ℤ`, `TauCeti.hilbertSign x` is `(-1 : ℤ) ^ x.val`. -/
-@[simp]
 theorem coe_hilbertSign (x : ZMod 2) : (hilbertSign x : ℤ) = (-1 : ℤ) ^ x.val := by
   rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl
   · simp

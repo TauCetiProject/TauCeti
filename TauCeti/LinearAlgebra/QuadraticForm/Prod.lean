@@ -537,26 +537,42 @@ end Orthogonal
 
 section PolarNondegenerate
 
-variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
-  [AddCommGroup M₂] [Module R M₂]
+variable {R M₁ M₂ P : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup P] [Module R P]
 
 /-- The polar bilinear form of `Q₁.prod Q₂` is the block-diagonal product of the polar forms. -/
 theorem polarBilin_prod_eq_prod (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) :
     (Q₁.prod Q₂).polarBilin = LinearMap.BilinForm.prod Q₁.polarBilin Q₂.polarBilin :=
   LinearMap.ext₂ fun x y ↦ by simp [polarBilin_apply_apply]
 
-/-- The polar bilinear form of an orthogonal product is nondegenerate if and only if both factors
-have nondegenerate polar bilinear forms. -/
-theorem nondegenerate_polarBilin_prod_iff {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} :
+/-- The polar bilinear map of an orthogonal product is nondegenerate if and only if both factors
+have nondegenerate polar bilinear maps. -/
+theorem nondegenerate_polarBilin_prod_iff
+    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} :
     (Q₁.prod Q₂).polarBilin.Nondegenerate ↔
       Q₁.polarBilin.Nondegenerate ∧ Q₂.polarBilin.Nondegenerate := by
-  rw [polarBilin_prod_eq_prod]
-  exact LinearMap.BilinForm.nondegenerate_prod_iff
+  have hrefl : (Q₁.prod Q₂).polarBilin.IsRefl :=
+    fun x y ↦ (polar_comm (Q₁.prod Q₂) y x).trans
+  have hrefl₁ : Q₁.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₁ y x).trans
+  have hrefl₂ : Q₂.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₂ y x).trans
+  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₁,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₂]
+  refine ⟨fun h ↦ ⟨fun x₁ hx₁ ↦ ?_, fun x₂ hx₂ ↦ ?_⟩, fun ⟨h₁, h₂⟩ p hp ↦ ?_⟩
+  · have h0 := h (x₁, 0) fun q ↦ by
+      simpa [polarBilin_apply_apply] using hx₁ q.1
+    exact congrArg Prod.fst h0
+  · have h0 := h (0, x₂) fun q ↦ by
+      simpa [polarBilin_apply_apply] using hx₂ q.2
+    exact congrArg Prod.snd h0
+  · refine Prod.ext (h₁ p.1 fun y₁ ↦ ?_) (h₂ p.2 fun y₂ ↦ ?_)
+    · simpa [polarBilin_apply_apply] using hp (y₁, 0)
+    · simpa [polarBilin_apply_apply] using hp (0, y₂)
 
-/-- The polar bilinear form of a finite orthogonal sum is nondegenerate if and only if every
-summand has nondegenerate polar bilinear form. -/
+/-- The polar bilinear map of a finite orthogonal sum is nondegenerate if and only if every
+summand has nondegenerate polar bilinear map. -/
 theorem nondegenerate_polarBilin_pi_iff {ι : Type*} [Fintype ι] {M : ι → Type*}
-    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {Q : ∀ i, QuadraticForm R (M i)} :
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {Q : ∀ i, QuadraticMap R (M i) P} :
     (QuadraticMap.pi Q).polarBilin.Nondegenerate ↔
       ∀ i, (Q i).polarBilin.Nondegenerate := by
   classical

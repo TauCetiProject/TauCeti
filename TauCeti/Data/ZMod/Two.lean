@@ -33,6 +33,7 @@ exactly the two elements `1` and `σ = Multiplicative.ofAdd 1`, so a sum over `C
 * `ZMod.eq_zero_or_eq_one`: every element of `ZMod 2` is `0` or `1`.
 * `ZMod.ne_zero_iff_eq_one`: a residue in `ZMod 2` is nonzero if and only if it equals `1`.
 * `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
+* `ZMod.sum_univ_two`: a sum over `ZMod 2` is the sum of the values at `0` and at `1`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^n` when `u` is.
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/n` is even or odd.
@@ -50,10 +51,9 @@ theorem natCast_gcd_two (n : ℕ) : ((Nat.gcd 2 n : ℕ) : ZMod 2) = n := by
   rcases Nat.mod_two_eq_zero_or_one n with h | h <;> rw [h] <;> decide
 
 /-- Every residue modulo two is `0` or `1`. -/
-theorem eq_zero_or_eq_one (a : ZMod 2) : a = 0 ∨ a = 1 :=
-  match a with
-  | 0 => Or.inl rfl
-  | 1 => Or.inr rfl
+theorem eq_zero_or_eq_one (a : ZMod 2) : a = 0 ∨ a = 1 := by
+  revert a
+  decide
 
 /-- A residue modulo two is nonzero if and only if it equals `1`. -/
 theorem ne_zero_iff_eq_one {a : ZMod 2} : a ≠ 0 ↔ a = 1 := by
@@ -63,6 +63,12 @@ theorem ne_zero_iff_eq_one {a : ZMod 2} : a ≠ 0 ↔ a = 1 := by
 theorem val_eq_ite_mod_two (a : ZMod 2) : a.val = if a ≠ 0 then 1 else 0 := by
   revert a
   decide
+
+/-- A sum over `ZMod 2` is the sum of the values at `0` and at `1`. -/
+theorem sum_univ_two {M : Type*} [AddCommMonoid M] (f : ZMod 2 → M) :
+    ∑ a : ZMod 2, f a = f 0 + f 1 :=
+  Fintype.sum_eq_add 0 1 (by decide) fun a ha ↦ by
+    rcases a.eq_zero_or_eq_one with rfl | rfl <;> simp at ha
 
 variable {n : ℕ}
 

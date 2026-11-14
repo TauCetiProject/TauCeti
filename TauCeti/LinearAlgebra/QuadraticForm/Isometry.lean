@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -192,26 +191,20 @@ theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_iff
     rw [← e.toLinearEquiv.lift_rank_map_eq Q₁.polarBilin.ker, hpolar]
     exact Cardinal.lift_le_one_iff.mpr hQ₂.rank_rad_polar_le
 
-/-- Nondegeneracy of the polar bilinear form is invariant under an isometric equivalence. -/
+/-- Nondegeneracy of the polar bilinear map is invariant under an isometric equivalence. -/
 theorem _root_.QuadraticMap.IsometryEquiv.nondegenerate_polarBilin_iff
-    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} {N : Type w} [CommRing R]
     [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
-    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    [AddCommGroup N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) :
     Q₁.polarBilin.Nondegenerate ↔ Q₂.polarBilin.Nondegenerate := by
-  have hrefl₁ : Q₁.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₁ y x).trans
-  have hrefl₂ : Q₂.polarBilin.IsRefl := fun x y ↦ (polar_comm Q₂ y x).trans
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₁,
-    LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl₂]
-  refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ ?_⟩
-  · have h0 := h (e.symm y) fun x ↦ by
-      rw [polarBilin_apply_apply, ← e.polar_apply, e.apply_symm_apply]
-      simpa [polarBilin_apply_apply] using hy (e x)
-    simpa using congrArg e h0
-  · have h0 := h (e x) fun y ↦ by
-      rw [polarBilin_apply_apply, ← e.symm.polar_apply, e.symm_apply_apply]
-      simpa [polarBilin_apply_apply] using hx (e.symm y)
-    simpa using congrArg e.symm h0
+  have hcongr :
+      e.toLinearEquiv.arrowCongr (e.toLinearEquiv.arrowCongr (LinearEquiv.refl R N))
+        Q₁.polarBilin = Q₂.polarBilin :=
+    LinearMap.ext₂ fun x y ↦ by
+      simp [polarBilin_apply_apply]
+  rw [← hcongr, LinearMap.nondegenerate_congr_iff]
 
 section Neg
 
