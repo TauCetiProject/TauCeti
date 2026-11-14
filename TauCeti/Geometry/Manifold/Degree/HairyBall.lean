@@ -19,9 +19,10 @@ import TauCeti.Geometry.Sphere.Connected
 Let `E` be a real inner product space of dimension `n + 1` with `n` even, and let `Sⁿ` be its unit
 sphere. The antipodal map of `Sⁿ` is not homotopic to the identity
 (`TauCeti.not_homotopic_id_neg_sphere`), and so every continuous tangent vector field on `Sⁿ`
-vanishes somewhere. The latter is stated twice: for a map `v : E → E` continuous on `Sⁿ` with
-`⟪v x, x⟫ = 0` there (`TauCeti.exists_eq_zero_of_inner_eq_zero`), and for a continuous section of
-the tangent bundle of Mathlib's manifold `sphere (0 : E) 1`
+vanishes somewhere. The latter is stated three times: for a continuous map `v : Sⁿ → E` with
+`⟪v x, x⟫ = 0` (`TauCeti.exists_eq_zero_of_continuous_of_inner_eq_zero`), for a map `v : E → E`
+continuous on `Sⁿ` with `⟪v x, x⟫ = 0` there (`TauCeti.exists_eq_zero_of_inner_eq_zero`), and for a
+continuous section of the tangent bundle of Mathlib's manifold `sphere (0 : E) 1`
 (`TauCeti.exists_eq_zero_of_continuous_section`), which the derivative of the inclusion carries to
 a field of the first kind.
 
@@ -45,8 +46,10 @@ unit circle of `ℂ` it is `z ↦ i z`.
 
 * `TauCeti.not_homotopic_id_neg_sphere`: the antipodal map of an even-dimensional unit sphere is
   not homotopic to the identity.
-* `TauCeti.exists_eq_zero_of_inner_eq_zero`: a continuous tangent vector field on an
-  even-dimensional unit sphere vanishes somewhere.
+* `TauCeti.exists_eq_zero_of_continuous_of_inner_eq_zero`: a continuous tangent vector field
+  `v : Sⁿ → E` on an even-dimensional unit sphere vanishes somewhere.
+* `TauCeti.exists_eq_zero_of_inner_eq_zero`: the same for a field `v : E → E` continuous on the
+  even-dimensional unit sphere.
 * `TauCeti.exists_eq_zero_of_continuous_section`: a continuous section of the tangent bundle of an
   even-dimensional unit sphere vanishes somewhere.
 * `TauCeti.exists_inner_eq_zero_and_ne_zero_iff_odd`: the unit sphere `Sⁿ` carries a
@@ -122,10 +125,13 @@ theorem not_homotopic_id_neg_sphere (hn : Even n) :
   · have : NeZero n := ⟨hpos.ne'⟩
     exact not_homotopic_id_neg_sphere_of_neZero hn
 
-/-- The hairy ball theorem for a continuous tangent field defined on the sphere: if it vanished
-nowhere, the great circles `t ↦ cos (π t) • x + sin (π t) • v x / ‖v x‖` would be a homotopy from
-the identity to the antipodal map. -/
-private theorem exists_eq_zero_of_continuous_of_inner_eq_zero (hn : Even n)
+/-- **The hairy ball theorem, sphere-domain form.** A continuous tangent vector field defined on
+an even-dimensional unit sphere vanishes somewhere: if `v : Sⁿ → E` is continuous on the unit sphere
+`Sⁿ` of a real inner product space `E` of dimension `n + 1`, with `n` even, and `⟪v x, x⟫ = 0` for
+every `x`, then `v x = 0` for some `x`. If `v` vanished nowhere, the great circles
+`t ↦ cos (π t) • x + sin (π t) • v x / ‖v x‖` would be a homotopy from the identity to the antipodal
+map. -/
+theorem exists_eq_zero_of_continuous_of_inner_eq_zero (hn : Even n)
     {v : sphere (0 : E) 1 → E} (hv : Continuous v) (ht : ∀ x, ⟪v x, (x : E)⟫_ℝ = 0) :
     ∃ x, v x = 0 := by
   by_contra! h0
