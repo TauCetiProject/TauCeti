@@ -776,12 +776,6 @@ theorem bijOn_reflectionPerm_posRoots_diff_singleton {i : ι} (hi : i ∈ b.supp
     (fun _ hj ↦ (reflectionPerm_mem_posRoots_diff_singleton_iff P b hi _).mpr hj)
     (fun _ hj ↦ (reflectionPerm_mem_posRoots_diff_singleton_iff P b hi _).mpr hj)
 
-/-- The image form of `bijOn_reflectionPerm_posRoots_diff_singleton`: a simple reflection maps the
-positive roots other than its own simple root onto themselves. -/
-theorem image_reflectionPerm_posRoots_diff_singleton {i : ι} (hi : i ∈ b.support) :
-    P.reflectionPerm i '' (posRoots P b \ {i}) = posRoots P b \ {i} :=
-  (bijOn_reflectionPerm_posRoots_diff_singleton P b hi).image_eq
-
 /-- The finset form of `reflectionPerm_mem_posRoots_diff_singleton_iff`. -/
 lemma reflectionPerm_mem_posRootsFinset_erase_iff [DecidableEq ι] {i : ι} (hi : i ∈ b.support)
     (j : ι) :
