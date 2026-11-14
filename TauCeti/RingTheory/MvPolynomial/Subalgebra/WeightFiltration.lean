@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Weight
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Flat
+public import TauCeti.RingTheory.MvPolynomial.WeightFiltration
 
 /-!
 # The induced weight filtration on a polynomial subalgebra
@@ -14,8 +14,7 @@ public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Flat
 For a subalgebra `A` of a multivariate polynomial ring, pull back the ambient weight
 filtration to `A`. Its Rees algebra is realized inside `A[t]` using `coeffSubalgebra`.
 The coefficientwise embedding into the ambient polynomial ring identifies it with the
-intersection of the ambient weight Rees algebra and `A[t]`. Thus the existing bounded
-SAGBI certificates identify their Rees presentation with this carrier.
+intersection of the ambient weight Rees algebra and `A[t]`.
 
 Over a field this Rees algebra is flat over `k[t]`, without any finite generation or SAGBI
 hypothesis. The increasing and exhaustive filtration also permits applying the shared
@@ -133,31 +132,6 @@ variable {σ R : Type*} [CommRing R] (A : Subalgebra R (MvPolynomial σ R)) (w :
 noncomputable instance weightReesAlgebraCommRing : CommRing (A.weightReesAlgebra w) :=
   letI : CommRing A := A.toCommRing
   @Subalgebra.toCommRing R A[X] _ _ _ (A.weightReesAlgebra w)
-
-/-- Under bounded relation certificates, the SAGBI Rees presentation is exactly the embedded
-Rees algebra of the induced filtration, not merely an algebra with the same generators. -/
-theorem map_weightReesAlgebra_eq_range_weightReesAeval
-    {ι J : Type*} {c g : ι → MvPolynomial σ R} {d : ι → ℕ}
-    {r Q : J → MvPolynomial ι R} {e : J → ℕ}
-    (hA : A = Algebra.adjoin R (Set.range c))
-    (hc : ∀ i, c i ∈ TauCeti.MvPolynomial.weightFiltration R w (d i))
-    (hg : ∀ i, MvPolynomial.weightedHomogeneousComponent w (d i) (c i) = g i)
-    (hJ : RingHom.ker (MvPolynomial.aeval g) = Ideal.span (Set.range r))
-    (hr : ∀ j, (r j).IsWeightedHomogeneous d (e j))
-    (hQ : ∀ j, Q j ∈ TauCeti.MvPolynomial.weightFiltrationLT R d (e j))
-    (hQc : ∀ j, MvPolynomial.aeval c (Q j) = MvPolynomial.aeval c (r j)) :
-    (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) = (weightReesAeval c d).range := by
-  rw [A.map_weightReesAlgebra,
-    range_weightReesAeval_eq_inf hc hg hJ hr hQ hQc]
-  congr 1
-  ext p
-  have hv' : p ∈ (Polynomial.mapAlgHom A.val).range ↔ ∀ n, p.coeff n ∈ A.val.range :=
-    Polynomial.mem_map_rangeS A.val.toRingHom
-  rw [Subalgebra.range_val] at hv'
-  have hc' : p ∈ (Polynomial.mapAlgHom (MvPolynomial.aeval c)).range ↔
-      ∀ n, p.coeff n ∈ (MvPolynomial.aeval (R := R) c).range :=
-    Polynomial.mem_map_rangeS (MvPolynomial.aeval (R := R) c).toRingHom
-  rw [hv', hc', MvPolynomial.aeval_range, hA]
 
 /-- The induced weight Rees algebra is flat over the actual parameter ring. No SAGBI basis,
 finite generation, positivity of weights, or finite-variable hypothesis is needed. -/

@@ -49,6 +49,9 @@ No finiteness is needed: `I` is arbitrary, and the weights may vanish.
 * `Ideal.mem_weightReesIdeal_of_map_C_mul_mem`: the Rees ideal is saturated with respect to every
   `r ∈ R[t]` with a unit leading coefficient.
 * `Ideal.flat_quotient_weightReesIdeal`: over a field `k`, the family is flat over `k[t]`.
+* `TauCeti.MvPolynomial.ker_weightReesAeval_eq_weightReesIdeal`: for any family `c` and generator
+  weights `d`, the kernel of `weightReesAeval c d` is the weight Rees ideal of
+  `RingHom.ker (aeval c)`.
 
 ## References
 
@@ -209,3 +212,19 @@ theorem flat_quotient_weightReesIdeal :
 end Field
 
 end Ideal
+
+namespace TauCeti.MvPolynomial
+
+variable {σ ι R : Type*} [CommSemiring R]
+
+/-- **Kernel of the Rees presentation as a weight Rees ideal.** Over any commutative semiring and
+for any family `c` and generator weights `d`, the kernel of `weightReesAeval c d` is the weight
+Rees ideal of the presentation kernel `RingHom.ker (aeval c)` for the weights `d`. -/
+theorem ker_weightReesAeval_eq_weightReesIdeal (c : ι → MvPolynomial σ R) (d : ι → ℕ) :
+    RingHom.ker (weightReesAeval c d) = (RingHom.ker (aeval (R := R) c)).weightReesIdeal d := by
+  ext f
+  rw [RingHom.mem_ker, weightReesAeval_eq_comp, AlgHom.comp_apply, Polynomial.coe_mapAlgHom,
+    Ideal.mem_weightReesIdeal_iff]
+  simp [AddMonoidAlgebra.ext_iff, DFunLike.ext_iff, RingHom.mem_ker]
+
+end TauCeti.MvPolynomial
