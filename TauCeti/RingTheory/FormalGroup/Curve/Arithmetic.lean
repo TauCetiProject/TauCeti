@@ -12,8 +12,10 @@ import TauCeti.RingTheory.PowerSeries.Expand
 # Arithmetic of curves
 
 For the additive formal group, forgetting a curve preserves addition of power series.
-For any commutative formal group, multiplication by an invertible natural number is an
-additive automorphism of curves. Its inverse supplies division by that number even when the
+Monomial curves `c Tⁿ` (`n ≠ 0`, `FormalGroup.monomialCurve`) provide the elementary summands in
+curve expansions such as Ravenel's modulo-`p` `[p]`-series formula, and commute with base change
+and Verschiebung. For any commutative formal group, multiplication by an invertible natural number
+is an additive automorphism of curves. Its inverse supplies division by that number even when the
 formal group law does not give a scalar action of the coefficient ring. These arithmetic maps
 support normalized Cartier operators on curves. Verschiebung `Vₙ` (the substitution of `X^n`
 for the curve parameter `X`) is injective for every nonzero index `n`, without commutativity of
@@ -39,6 +41,44 @@ theorem additiveToPowerSeriesHom_apply (γ : (𝔾ₐ (R := R)).Curve) :
     additiveToPowerSeriesHom γ = γ.toPowerSeries := (rfl)
 
 end Curve
+
+/-! ### Monomial curves -/
+
+/-- The monomial curve `c Tⁿ` (`n ≠ 0`) on a formal group law `F`. -/
+noncomputable def monomialCurve (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) (c : R) : F.Curve :=
+  ⟨c • PowerSeries.X ^ n, by simp [zero_pow hn]⟩
+
+/-- The underlying power series of `F.monomialCurve n hn c` is `c • X ^ n`. -/
+@[simp]
+theorem toPowerSeries_monomialCurve (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) (c : R) :
+    (F.monomialCurve n hn c).toPowerSeries = c • PowerSeries.X ^ n := (rfl)
+
+/-- A monomial curve with zero coefficient is the zero curve. -/
+@[simp]
+theorem monomialCurve_zero (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) :
+    F.monomialCurve n hn 0 = 0 :=
+  Curve.ext (zero_smul R _)
+
+/-- The degree-`1` monomial curve with coefficient `1` is the tautological curve `X`. -/
+@[simp]
+theorem monomialCurve_one (F : FormalGroup R) :
+    F.monomialCurve 1 one_ne_zero 1 = F.tautologicalCurve :=
+  Curve.ext (by simp)
+
+/-- Base change sends a monomial curve `c Tⁿ` to `(φ c) Tⁿ`. -/
+@[simp]
+theorem map_monomialCurve (F : FormalGroup R) (φ : R →+* S) (n : ℕ) (hn : n ≠ 0) (c : R) :
+    Curve.map φ (F.monomialCurve n hn c) = (F.map φ).monomialCurve n hn (φ c) := by
+  ext k
+  simp [apply_ite φ]
+
+/-- Verschiebung `Vₘ` sends a monomial curve `c Tⁿ` to `c T^(n m)`. -/
+@[simp]
+theorem verschiebungCurve_monomialCurve (F : FormalGroup R) {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)
+    (c : R) :
+    F.verschiebungCurve m hm (F.monomialCurve n hn c) =
+      F.monomialCurve (n * m) (mul_ne_zero hn hm) c :=
+  Curve.ext (by simp [← pow_mul, mul_comm])
 
 /-! ### Division by invertible natural numbers -/
 

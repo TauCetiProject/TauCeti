@@ -64,6 +64,9 @@ the logarithm of a formal group law over `ℤ_(p)[v₁, v₂, …]`. With `σ = 
   and only if `ψ` has coefficients in `A`.
 * `TauCeti.coeff_inv_smul_𝔾ₐ_toPowerSeries_mem`: **Hazewinkel's functional equation lemma**, the
   formal group law `f⁻¹(f(X) + f(Y))` has coefficients in `A`.
+* `TauCeti.SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul_iff`: for a solution
+  `f = b₁ X + ⋯` with `b₁` a unit of `A`, `ψ` of zero constant coefficient, and `k ≠ 0`, `f(ψ)` has
+  all coefficients in `p ^ k A` if and only if `ψ` does.
 
 ## References
 
@@ -468,6 +471,133 @@ theorem coeff_inv_smul_𝔾ₐ_toPowerSeries_mem (hσ : Set.MapsTo σ A A)
   rw [FormalGroup.subst_toPowerSeries_eq_subst_smul_toPowerSeries, smul_smul, mul_inv_cancel,
     one_smul, FormalGroup.𝔾ₐ_toPowerSeries, subst_add h, subst_X h, subst_X h]
   exact (hX 0).add (hX 1)
+
+/-- Let `f` satisfy the functional equation with zero constant coefficient. If `ψ` has zero
+constant coefficient and all its coefficients lie in `p ^ k A` (`k ≠ 0`), then all coefficients of
+`f(ψ)` lie in `p ^ k A`. -/
+theorem SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul (hσ : Set.MapsTo σ A A)
+    (hs : ∀ i, (p : K) * s i ∈ A) {f : PowerSeries K} (hf₀ : PowerSeries.constantCoeff f = 0)
+    (hf : SatisfiesFunctionalEquation p σ s A f) {ψ : MvPowerSeries τ K}
+    (hψ₀ : constantCoeff ψ = 0) {k : ℕ} (hk : k ≠ 0)
+    (hψ : ∀ d, ∃ a ∈ A, coeff d ψ = (p : K) ^ k * a) (d : τ →₀ ℕ) :
+    ∃ b ∈ A, coeff d (f.subst ψ) = (p : K) ^ k * b := by
+  choose c hcA hc using hψ
+  let φ : MvPowerSeries τ A := fun e ↦ ⟨c e, hcA e⟩
+  have hψφ : ψ = C ((p : K) ^ k) * map A.subtype φ := by
+    ext e
+    rw [hc e, coeff_C_mul, coeff_map, Subring.coe_subtype, coeff_apply]
+  have hpow (m : ℕ) : coeff d (ψ ^ m) = (p : K) ^ (k * m) * A.subtype (coeff d (φ ^ m)) := by
+    rw [hψφ, mul_pow, ← map_pow, ← pow_mul, ← map_pow, coeff_C_mul, coeff_map]
+  -- Write `fₘ ψ^m` using `p^(vₚ(m)) fₘ ∈ A` and `vₚ(m) + k ≤ k * m` for `m ≥ 1`.
+  let term : ℕ → K := fun m ↦
+    if m = 0 then 0
+    else ((p : K) ^ m.factorization p * PowerSeries.coeff m f) *
+      (p : K) ^ (k * m - (m.factorization p + k)) * A.subtype (coeff d (φ ^ m))
+  refine ⟨∑ m ∈ Finset.range (d.degree + 1), term m, Subring.sum_mem _ fun m _ ↦ ?_, ?_⟩
+  · dsimp only [term]
+    split_ifs
+    · exact zero_mem A
+    · exact mul_mem (mul_mem (hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
+        (pow_mem (natCast_mem A p) _)) (Subtype.mem _)
+  · rw [PowerSeries.coeff_subst_eq_sum_range_degree hψ₀, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun m _ ↦ ?_
+    dsimp only [term]
+    split_ifs with hm
+    · subst hm
+      rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, hf₀, zero_smul, mul_zero]
+    · obtain ⟨m', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
+      have hr : (m' + 1).factorization p < m' + 1 :=
+        (Nat.lt_pow_self hp.out.one_lt).trans_le
+          (Nat.le_of_dvd (Nat.succ_pos m') (Nat.ordProj_dvd (m' + 1) p))
+      have hle : (m' + 1).factorization p + k ≤ k * (m' + 1) := by
+        calc (m' + 1).factorization p + k ≤ m' + k := by omega
+          _ ≤ k * m' + k :=
+            Nat.add_le_add_right (Nat.le_mul_of_pos_left _ (Nat.pos_of_ne_zero hk)) k
+          _ = k * (m' + 1) := (Nat.mul_succ k m').symm
+      obtain ⟨q, hq⟩ := Nat.exists_eq_add_of_le hle
+      rw [smul_eq_mul, hpow, hq, Nat.add_sub_cancel_left]
+      ring
+
+/-- Let `f = b₁ X + ⋯` satisfy the functional equation with zero constant coefficient and `b₁` a
+unit of `A`. If `ψ` has zero constant coefficient and all coefficients of `f(ψ)` lie in `p ^ k A`
+(`k ≠ 0`), then all coefficients of `ψ` lie in `p ^ k A`. -/
+theorem SatisfiesFunctionalEquation.exists_coeff_eq_pow_mul_of_subst (hσ : Set.MapsTo σ A A)
+    (hs : ∀ i, (p : K) * s i ∈ A) {f : PowerSeries K} (hf₀ : PowerSeries.constantCoeff f = 0)
+    (hf₁ : ∃ u ∈ A, u * PowerSeries.coeff 1 f = 1) (hf : SatisfiesFunctionalEquation p σ s A f)
+    {ψ : MvPowerSeries τ K} (hψ₀ : constantCoeff ψ = 0) {k : ℕ} (hk : k ≠ 0)
+    (h : ∀ d, ∃ b ∈ A, coeff d (f.subst ψ) = (p : K) ^ k * b) (d : τ →₀ ℕ) :
+    ∃ a ∈ A, coeff d ψ = (p : K) ^ k * a := by
+  obtain ⟨u, hu, hu₁⟩ := hf₁
+  induction hD : d.degree using Nat.strong_induction_on generalizing d with
+  | _ D ih =>
+  rcases Nat.eq_zero_or_pos D with rfl | hD₀
+  · refine ⟨0, zero_mem A, ?_⟩
+    rw [(Finsupp.degree_eq_zero_iff d).mp hD, coeff_zero_eq_constantCoeff_apply, hψ₀, mul_zero]
+  -- truncate `ψ` below degree `D`: `f(ψ')` lies in `p ^ k A` by induction, and `f(ψ) - f(ψ')`
+  -- has degree-`D` coefficient `b₁ ψ_d`
+  set ψ' : MvPowerSeries τ K := fun e ↦ if e.degree < D then coeff e ψ else 0
+  have hψ'c (e : τ →₀ ℕ) : coeff e ψ' = if e.degree < D then coeff e ψ else 0 := by
+    rw [coeff_apply]
+  have hψ'A (e : τ →₀ ℕ) : ∃ a ∈ A, coeff e ψ' = (p : K) ^ k * a := by
+    rw [hψ'c]
+    split_ifs with he
+    · exact ih _ he e rfl
+    · exact ⟨0, zero_mem A, (mul_zero _).symm⟩
+  have hψ'₀ : constantCoeff ψ' = 0 := by
+    rw [← coeff_zero_eq_constantCoeff_apply, hψ'c, coeff_zero_eq_constantCoeff_apply, hψ₀,
+      ite_self]
+  have hε : (D : ℕ∞) ≤ (ψ - ψ').order := le_order fun e he ↦ by
+    have he' : e.degree < D := by exact_mod_cast he
+    simp [hψ'c, he']
+  have hdiff : coeff d (f.subst ψ) - coeff d (f.subst ψ') = PowerSeries.coeff 1 f * coeff d ψ := by
+    rw [PowerSeries.coeff_subst_eq_sum_range_degree hψ₀,
+      PowerSeries.coeff_subst_eq_sum_range_degree hψ'₀, ← Finset.sum_sub_distrib,
+      Finset.sum_eq_single 1]
+    · simp [hψ'c, hD]
+    · intro n _ hn
+      rcases n with _ | _ | n
+      · simp
+      · exact absurd rfl hn
+      · rw [smul_eq_mul, smul_eq_mul, ← mul_sub, ← map_sub, coeff_of_lt_order, mul_zero]
+        refine lt_of_lt_of_le ?_ (order_sub_add_one_le_order_pow_sub_pow hψ₀ hψ'₀ (by omega))
+        refine lt_of_lt_of_le ?_ (add_le_add hε le_rfl)
+        exact_mod_cast (by omega : d.degree < D + 1)
+    · intro h1
+      simp [hD] at h1
+      omega
+  obtain ⟨b, hbA, hb⟩ := h d
+  obtain ⟨b', hb'A, hb'⟩ := hf.exists_coeff_subst_eq_pow_mul hσ hs hf₀ hψ'₀ hk hψ'A d
+  refine ⟨u * (b - b'), mul_mem hu (sub_mem hbA hb'A), ?_⟩
+  have hkey : coeff d ψ = u * (coeff d (f.subst ψ) - coeff d (f.subst ψ')) := by
+    rw [hdiff, ← mul_assoc, hu₁, one_mul]
+  rw [hkey, hb, hb']
+  ring
+
+/-- **`p ^ k`-divisibility of substitutions.** Let `f = b₁ X + ⋯` satisfy the functional equation
+with zero constant coefficient and `b₁` a unit of `A`. For a power series `ψ` of zero constant
+coefficient and `k ≠ 0`, every coefficient of `f(ψ)` lies in `p ^ k A` if and only if every
+coefficient of `ψ` lies in `p ^ k A`. -/
+theorem SatisfiesFunctionalEquation.exists_coeff_subst_eq_pow_mul_iff (hσ : Set.MapsTo σ A A)
+    (hs : ∀ i, (p : K) * s i ∈ A) {f : PowerSeries K} (hf₀ : PowerSeries.constantCoeff f = 0)
+    (hf₁ : ∃ u ∈ A, u * PowerSeries.coeff 1 f = 1) (hf : SatisfiesFunctionalEquation p σ s A f)
+    {ψ : MvPowerSeries τ K} (hψ₀ : constantCoeff ψ = 0) {k : ℕ} (hk : k ≠ 0) :
+    (∀ d, ∃ b ∈ A, coeff d (f.subst ψ) = (p : K) ^ k * b) ↔
+      ∀ d, ∃ a ∈ A, coeff d ψ = (p : K) ^ k * a :=
+  ⟨hf.exists_coeff_eq_pow_mul_of_subst hσ hs hf₀ hf₁ hψ₀ hk,
+    hf.exists_coeff_subst_eq_pow_mul hσ hs hf₀ hψ₀ hk⟩
+
+/-- **`p`-divisibility of substitutions.** Let `f = b₁ X + ⋯` satisfy the functional equation
+with zero constant coefficient and `b₁` a unit of `A`. For a power series `ψ` of zero constant
+coefficient, every coefficient of `f(ψ)` lies in `p A` if and only if every coefficient of `ψ`
+lies in `p A`. -/
+theorem SatisfiesFunctionalEquation.exists_coeff_subst_eq_mul_iff (hσ : Set.MapsTo σ A A)
+    (hs : ∀ i, (p : K) * s i ∈ A) {f : PowerSeries K} (hf₀ : PowerSeries.constantCoeff f = 0)
+    (hf₁ : ∃ u ∈ A, u * PowerSeries.coeff 1 f = 1) (hf : SatisfiesFunctionalEquation p σ s A f)
+    {ψ : MvPowerSeries τ K} (hψ₀ : constantCoeff ψ = 0) :
+    (∀ d, ∃ b ∈ A, coeff d (f.subst ψ) = (p : K) * b) ↔
+      ∀ d, ∃ a ∈ A, coeff d ψ = (p : K) * a := by
+  simpa only [pow_one] using
+    hf.exists_coeff_subst_eq_pow_mul_iff hσ hs hf₀ hf₁ hψ₀ one_ne_zero
 
 end Integrality
 
