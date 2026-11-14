@@ -126,6 +126,32 @@ theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Mea
   rw [ProbabilityTheory.variance_eq_sub hg] at h
   simpa only [Pi.pow_apply, sub_nonneg] using h
 
+section Centering
+
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- Centering a Hilbert-space-valued square-integrable variable subtracts the squared norm
+of its mean from its second absolute moment. -/
+theorem MemLp.integral_norm_sub_integral_sq [IsProbabilityMeasure μ] {f : α → E}
+    (hf : MemLp f 2 μ) :
+    ∫ x, ‖f x - ∫ y, f y ∂μ‖ ^ 2 ∂μ =
+      (∫ x, ‖f x‖ ^ 2 ∂μ) - ‖∫ x, f x ∂μ‖ ^ 2 := by
+  have hi := hf.integrable one_le_two
+  have hs := (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf
+  have hc : Integrable (fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) μ :=
+    (hi.const_inner _).const_mul 2
+  simp_rw [norm_sub_sq_real, real_inner_comm (∫ y, f y ∂μ)]
+  rw [integral_add (f := fun x ↦ ‖f x‖ ^ 2 - 2 * ⟪(∫ y, f y ∂μ), f x⟫)
+      (g := fun _ ↦ ‖∫ y, f y ∂μ‖ ^ 2) (hs.sub hc) (integrable_const _),
+    integral_sub (f := fun x ↦ ‖f x‖ ^ 2)
+      (g := fun x ↦ 2 * ⟪(∫ y, f y ∂μ), f x⟫) hs hc,
+    integral_const_mul, integral_inner hi, real_inner_self_eq_norm_sq,
+    integral_const, probReal_univ, one_smul]
+  ring
+
+end Centering
+
 end MeasureTheory
 
 namespace TauCeti

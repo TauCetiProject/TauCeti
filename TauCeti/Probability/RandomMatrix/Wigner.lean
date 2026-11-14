@@ -14,6 +14,7 @@ public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
+public import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
 # Wigner matrices
@@ -82,6 +83,14 @@ noncomputable def wignerMatrix (ξ : StrictUpper → Ω → ℂ) (η : ℕ → �
 section Deterministic
 
 variable (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) {n : ℕ} (ω : Ω)
+
+/-- Subtracting two Wigner matrices subtracts their coordinate arrays, including at size zero. -/
+theorem wignerMatrix_sub (ξ' : StrictUpper → Ω → ℂ) (η' : ℕ → Ω → ℝ) (n : ℕ) :
+    wignerMatrix ξ η n ω - wignerMatrix ξ' η' n ω =
+      wignerMatrix (fun ij ω ↦ ξ ij ω - ξ' ij ω) (fun i ω ↦ η i ω - η' i ω) n ω := by
+  ext i j
+  simp only [wignerMatrix, of_apply, Matrix.sub_apply]
+  split_ifs <;> simp_all [mul_sub, -Fin.val_fin_lt]
 
 /-- Above the diagonal the Wigner matrix has entry `ξ (i, j)/√n`. -/
 @[simp]
@@ -395,6 +404,17 @@ theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} (hξ : ∀ ij, MemLp (ξ ij) p
     exact (hη _).ofReal.const_mul _
   · simp only [wignerMatrix_apply_of_gt _ _ _ h]
     exact (hξ _).star.const_mul _
+
+open scoped Matrix.Norms.Frobenius in
+/-- Square-integrable coordinates give an integrable squared Frobenius norm. -/
+theorem integrable_norm_wignerMatrix_sq (hξ : ∀ ij, MemLp (ξ ij) 2 P)
+    (hη : ∀ i, MemLp (η i) 2 P) (n : ℕ) :
+    Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω‖ ^ 2) P := by
+  simp_rw [Matrix.frobenius_norm_sq_eq_sum_normSq, Complex.normSq_eq_norm_sq]
+  exact integrable_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦
+    (memLp_two_iff_integrable_sq_norm
+      (memLp_wignerMatrix_apply hξ hη i j).aestronglyMeasurable).mp
+        (memLp_wignerMatrix_apply hξ hη i j)
 
 /-- A product of `k` entries of a Wigner matrix, indexed by a finite type `ι` of cardinality `k`,
 is integrable when the entries of the array lie in `Lᵏ`. -/
