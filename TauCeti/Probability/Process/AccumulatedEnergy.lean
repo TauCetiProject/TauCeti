@@ -9,6 +9,8 @@ public import TauCeti.MeasureTheory.Integral.Lebesgue.Cumulative
 public import TauCeti.MeasureTheory.Integral.Lebesgue.CumulativeRepair
 public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Function.Lp.SquaredNorm
+import TauCeti.MeasureTheory.Integral.Bochner.UniformInMeasure
 
 /-!
 # Predictable accumulated energy and finite-energy cutoffs
@@ -25,7 +27,11 @@ energy. Its accumulated energy is continuous, even on paths with immediate right
 explosion of the original energy. The lower integral retains infinite energy instead of the
 fallback zero of a nonintegrable Bochner integral.
 
-The results allow any s-finite atomless time measure; for Brownian integration use
+L² convergence on a finite-horizon time-product measure implies uniform convergence in
+outer probability of the finite accumulated energies throughout that horizon. This controls
+the quadratic normalization when passing from elementary exponential densities to limits.
+
+The path-regularity results allow any s-finite atomless time measure; for Brownian integration use
 Lebesgue measure pulled back from `ℝ` to `ℝ≥0`. The closed initial segment can be replaced
 by `(0,t]`, since the time-zero singleton is null.
 
@@ -40,7 +46,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace MeasureTheory.Measure
 
@@ -132,6 +138,46 @@ theorem accumulatedEnergy_finiteEnergyCutoff_le (μ : Measure ℝ≥0)
   intro s
   simp only [finiteEnergyCutoff_def]
   split_ifs <;> simp
+
+/-- L²-convergent integrands have uniformly convergent accumulated square energies in
+outer probability on the whole horizon. The lower energies are finite on one sample-full
+event for each integrand; no path continuity, predictability or probability normalization
+is assumed. -/
+theorem tendsto_measure_exists_accumulatedEnergy_sub_gt {K : Type*}
+    [MeasurableSpace Ω] {μ : Measure ℝ≥0} {P : Measure Ω} [SFinite μ] [SFinite P]
+    {H : ℝ≥0 → Ω → E} {F : K → ℝ≥0 → Ω → E} {T : ℝ≥0} {l : Filter K}
+    (hH : MemLp (Function.uncurry H) 2 ((μ.restrict (Iic T)).prod P))
+    (hF : ∀ k, MemLp (Function.uncurry (F k)) 2 ((μ.restrict (Iic T)).prod P))
+    (hlim : Filter.Tendsto (fun k ↦ eLpNorm
+      (Function.uncurry (F k) - Function.uncurry H) 2 ((μ.restrict (Iic T)).prod P)) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : ε ≠ 0) :
+    Filter.Tendsto (fun k ↦ P {ω | ∃ t ≤ T, ε <
+      ‖(μ.accumulatedEnergy (F k) t ω).toReal - (μ.accumulatedEnergy H t ω).toReal‖ₑ})
+      l (𝓝 0) := by
+  have hH₂ : Integrable (fun p : ℝ≥0 × Ω ↦ ‖H p.1 p.2‖ ^ 2)
+      ((μ.restrict (Iic T)).prod P) := hH.norm.integrable_sq
+  have hF₂ (k : K) : Integrable (fun p : ℝ≥0 × Ω ↦ ‖F k p.1 p.2‖ ^ 2)
+      ((μ.restrict (Iic T)).prod P) := (hF k).norm.integrable_sq
+  have hb := tendsto_measure_exists_eNorm_setIntegral_sub_gt hH₂.aestronglyMeasurable
+    (fun k ↦ (hF₂ k).aestronglyMeasurable)
+    (fun t : Iic T ↦ Iic t.val) (tendsto_eLpNorm_norm_sq_sub hH hF hlim) hε
+  refine hb.congr fun k ↦ measure_congr ?_
+  filter_upwards [hH₂.prod_left_ae, (hF₂ k).prod_left_ae] with ω hHω hFω
+  have heq (G : ℝ≥0 → Ω → E)
+      (hG : IntegrableOn (fun s ↦ ‖G s ω‖ ^ 2) (Iic T) μ) (t : ℝ≥0) (ht : t ≤ T) :
+      (∫ s in Iic t, ‖G s ω‖ ^ 2 ∂μ.restrict (Iic T)) =
+        (μ.accumulatedEnergy G t ω).toReal := by
+    rw [Measure.restrict_restrict measurableSet_Iic,
+      inter_eq_left.mpr (Iic_subset_Iic.mpr ht)]
+    rw [accumulatedEnergy_def]
+    simp_rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+    exact integral_eq_lintegral_of_nonneg_ae (.of_forall fun _ ↦ sq_nonneg _)
+      (hG.mono_set (Iic_subset_Iic.mpr ht)).aestronglyMeasurable
+  constructor
+  · rintro ⟨⟨t, ht⟩, h⟩
+    exact ⟨t, ht, by simpa only [heq (F k) hFω t ht, heq H hHω t ht] using h⟩
+  · rintro ⟨t, ht, h⟩
+    exact ⟨⟨t, ht⟩, by simpa only [heq (F k) hFω t ht, heq H hHω t ht] using h⟩
 
 end MeasureTheory.Measure
 
