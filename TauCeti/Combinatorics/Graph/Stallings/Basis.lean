@@ -27,7 +27,8 @@ this basis.
 Consequently the accepted subgroup is finitely generated exactly when there are finitely many
 positive non-tree darts, its rank is then their number, and it is trivial exactly when there
 are none. For a connected graph with finitely many vertices this gives the Euler form of the
-rank: the rank plus the number of vertices is the number of positive darts plus one.
+rank: the rank plus the number of vertices is the number of positive darts plus one, so that as
+an integer the rank is the number of positive darts minus the number of vertices plus one.
 
 ## References
 
@@ -238,6 +239,15 @@ theorem rank_subgroup_add_card (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     Group.rank (S.subgroup a) + Nat.card S.graph.V = Nat.card O + 1 := by
   have : Group.FG (PathGroup S.graph a) := (isMulFG_congr (S.pathGroupEquivSubgroup hS a)).mpr ‹_›
   rw [← Group.rank_congr (S.pathGroupEquivSubgroup hS a), hO.rank_pathGroup_add_card h a]
+
+/-- As an integer, the rank of the subgroup accepted by a connected folded graph with finitely
+many vertices, when finitely generated, is the number of positive darts of any orientation `O`
+minus the number of vertices plus one. -/
+theorem rank_subgroup_eq_card_sub_card_add_one (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    (Group.rank (S.subgroup a) : ℤ) = Nat.card O - Nat.card S.graph.V + 1 := by
+  have := S.rank_subgroup_add_card a hS hO h
+  omega
 
 /-- A folded graph accepts only the identity exactly when its basis is empty: every positive
 dart lies in the spanning tree. In particular a graph without darts accepts the trivial

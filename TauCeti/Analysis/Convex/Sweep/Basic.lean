@@ -30,28 +30,60 @@ public section
 
 namespace Set
 
-section Algebra
-
-variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V]
-
 /-- The negative ray sweep of a set. -/
 def sweep (𝕜 : Type*) [Field 𝕜] [LinearOrder 𝕜]
     {V : Type*} [AddCommGroup V] [Module 𝕜 V] (P : Set V) (n : V) : Set V :=
   {y | ∃ x ∈ P, ∃ t : 𝕜, 0 ≤ t ∧ y = x - t • n}
 
-omit [IsStrictOrderedRing 𝕜] in
+section Field
+
+variable {𝕜 V : Type*} [Field 𝕜] [AddCommGroup V] [Module 𝕜 V]
+
+/-- A transverse direction admits a linear height constant on the base. -/
+theorem exists_sweep_height {P : Set V} {n : V} (hP : P.Nonempty)
+    (hn : n ∉ vectorSpan 𝕜 P) :
+    ∃ (f : V →ₗ[𝕜] 𝕜) (c : 𝕜), f n = 1 ∧ ∀ x ∈ P, f x = c := by
+  obtain ⟨f, hfn, hf⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hn inferInstance
+  obtain ⟨p, hp⟩ := hP
+  refine ⟨(f n)⁻¹ • f, (f n)⁻¹ * f p, ?_, ?_⟩
+  · simp [hfn]
+  · intro x hx
+    have h : f (x - p) = 0 := by
+      have hmem : f (x - p) ∈ (vectorSpan 𝕜 P).map f :=
+        Submodule.mem_map_of_mem (vsub_mem_vectorSpan 𝕜 hx hp)
+      rwa [hf, Submodule.mem_bot] at hmem
+    have heq : f x = f p := sub_eq_zero.mp (by simpa only [map_sub] using h)
+    simp [heq]
+
+/-- Points in a transverse affine span have unique base and ray coordinates. -/
+theorem sweep_coordinates_unique {P : Set V} {n : V} (hn : n ∉ vectorSpan 𝕜 P)
+    {x x' : V} (hx : x ∈ affineSpan 𝕜 P) (hx' : x' ∈ affineSpan 𝕜 P) {t t' : 𝕜}
+    (h : x - t • n = x' - t' • n) : x = x' ∧ t = t' := by
+  obtain ⟨f, c, hfn, hfP⟩ :=
+    exists_sweep_height ((affineSpan_nonempty 𝕜).mp ⟨x, hx⟩) hn
+  have hfA : ∀ y ∈ affineSpan 𝕜 P, f y = c :=
+    AffineMap.eqOn_affineSpan (f := f.toAffineMap) (g := AffineMap.const 𝕜 V c) hfP
+  have hheight := congrArg f h
+  simp only [map_sub, map_smul, hfA x hx, hfA x' hx', hfn, smul_eq_mul,
+    mul_one, sub_right_inj] at hheight
+  subst t'
+  exact ⟨sub_left_inj.mp h, rfl⟩
+
+end Field
+
+section LinearOrder
+
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [AddCommGroup V] [Module 𝕜 V]
+
 /-- The sweep consists of base points translated by nonpositive multiples of `n`. -/
 theorem sweep_def (P : Set V) (n : V) :
-    sweep 𝕜 P n = {y | ∃ x ∈ P, ∃ t : 𝕜, 0 ≤ t ∧ y = x - t • n} := (rfl)
+    sweep 𝕜 P n = {y | ∃ x ∈ P, ∃ t : 𝕜, 0 ≤ t ∧ y = x - t • n} := by rfl
 
-omit [IsStrictOrderedRing 𝕜] in
 /-- A point belongs to the sweep exactly when it has base and nonnegative ray coordinates. -/
 @[simp]
 theorem mem_sweep_iff_exists {P : Set V} {n y : V} :
-    y ∈ sweep 𝕜 P n ↔ ∃ x ∈ P, ∃ t : 𝕜, 0 ≤ t ∧ y = x - t • n := (Iff.rfl)
+    y ∈ sweep 𝕜 P n ↔ ∃ x ∈ P, ∃ t : 𝕜, 0 ≤ t ∧ y = x - t • n := Iff.rfl
 
-omit [IsStrictOrderedRing 𝕜] in
 /-- A point belongs to a sweep exactly when moving it forward along the ray
 reaches the base at a nonnegative time. -/
 theorem mem_sweep_iff {P : Set V} {n y : V} :
@@ -62,7 +94,6 @@ theorem mem_sweep_iff {P : Set V} {n y : V} :
   · rintro ⟨t, ht, hx⟩
     exact ⟨y + t • n, hx, t, ht, by simp⟩
 
-omit [IsStrictOrderedRing 𝕜] in
 /-- A zero sweeping vector leaves the base unchanged. -/
 @[simp]
 theorem sweep_zero (P : Set V) : sweep 𝕜 P (0 : V) = P := by
@@ -70,19 +101,20 @@ theorem sweep_zero (P : Set V) : sweep 𝕜 P (0 : V) = P := by
   simp only [mem_sweep_iff, smul_zero, add_zero]
   exact ⟨fun h => h.choose_spec.2, fun h => ⟨0, le_rfl, h⟩⟩
 
-omit [IsStrictOrderedRing 𝕜] in
 /-- Every base point belongs to its sweep with ray parameter zero. -/
 theorem subset_sweep (P : Set V) (n : V) : P ⊆ sweep 𝕜 P n := by
   intro x hx
   exact ⟨x, hx, 0, le_rfl, by simp⟩
 
-omit [IsStrictOrderedRing 𝕜] in
+/-- A sweep of a nonempty set is nonempty. -/
+theorem Nonempty.sweep {P : Set V} (hP : P.Nonempty) (n : V) :
+    (sweep 𝕜 P n).Nonempty := hP.mono (subset_sweep P n)
+
 /-- Sweeping preserves inclusions. -/
 theorem sweep_mono {P Q : Set V} (h : P ⊆ Q) (n : V) : sweep 𝕜 P n ⊆ sweep 𝕜 Q n := by
   rintro y ⟨x, hx, t, ht, he⟩
   exact ⟨x, h hx, t, ht, he⟩
 
-omit [IsStrictOrderedRing 𝕜] in
 /-- Sweeping a cylinder only changes its base. The unrestricted coordinate absorbs
 every second component of the sweeping vector, including when the first is zero. -/
 @[simp]
@@ -97,12 +129,88 @@ theorem sweep_prod_univ {E : Type*} [AddCommGroup E] [Module 𝕜 E]
     refine ⟨(x, y.2 + t • n.2), ⟨hx, Set.mem_univ _⟩, t, ht, ?_⟩
     exact Prod.ext he (by simp)
 
-omit [IsStrictOrderedRing 𝕜] in
 /-- The empty base has empty sweep. -/
 @[simp]
 theorem sweep_empty (n : V) : sweep 𝕜 (∅ : Set V) n = ∅ := by
   ext y
   simp [sweep]
+
+/-- Subdivision covers remain covers under sweeping. -/
+theorem sweep_iUnion {ι : Sort*} (P : ι → Set V) (n : V) :
+    sweep 𝕜 (⋃ i, P i) n = ⋃ i, sweep 𝕜 (P i) n := by
+  ext y
+  simp only [sweep, Set.mem_ofPred_eq, Set.mem_iUnion]
+  constructor
+  · rintro ⟨x, ⟨i, hx⟩, t, ht, he⟩
+    exact ⟨i, x, hx, t, ht, he⟩
+  · rintro ⟨i, x, hx, t, ht, he⟩
+    exact ⟨x, ⟨i, hx⟩, t, ht, he⟩
+
+/-- The prism parameterization of a transverse sweep is a bijection. -/
+noncomputable def sweepEquiv (P : Set V) (n : V)
+    (hn : n ∉ vectorSpan 𝕜 P) :
+    (P × {t : 𝕜 // 0 ≤ t}) ≃ sweep 𝕜 P n :=
+  Equiv.ofBijective
+    (fun z => ⟨z.1.1 - z.2.1 • n, z.1.1, z.1.2, z.2.1, z.2.2, rfl⟩)
+    ⟨by
+      intro z w h
+      have he := sweep_coordinates_unique hn (subset_affineSpan 𝕜 P z.1.2)
+        (subset_affineSpan 𝕜 P w.1.2) (congrArg Subtype.val h)
+      exact Prod.ext (Subtype.ext he.1) (Subtype.ext he.2), by
+      rintro ⟨y, x, hx, t, ht, rfl⟩
+      exact ⟨(⟨x, hx⟩, ⟨t, ht⟩), rfl⟩⟩
+
+/-- The prism equivalence evaluates by subtracting the ray parameter. -/
+@[simp]
+theorem sweepEquiv_apply (P : Set V) (n : V) (hn : n ∉ vectorSpan 𝕜 P)
+    (z : P × {t : 𝕜 // 0 ≤ t}) :
+    (sweepEquiv P n hn z : V) = z.1.1 - z.2.1 • n := by rfl
+
+/-- On a transverse common base sweeping creates no new intersections. -/
+theorem sweep_inter_sweep {P Q : Set V} {n : V} (hn : n ∉ vectorSpan 𝕜 (P ∪ Q)) :
+    sweep 𝕜 P n ∩ sweep 𝕜 Q n = sweep 𝕜 (P ∩ Q) n := by
+  ext y
+  constructor
+  · rintro ⟨⟨x, hx, t, ht, he⟩, ⟨x', hx', t', _, he'⟩⟩
+    have hxx := (sweep_coordinates_unique hn (subset_affineSpan 𝕜 _ (Or.inl hx))
+      (subset_affineSpan 𝕜 _ (Or.inr hx'))
+      (he.symm.trans he')).1
+    exact ⟨x, ⟨hx, hxx ▸ hx'⟩, t, ht, he⟩
+  · rintro ⟨x, ⟨hx, hx'⟩, t, ht, he⟩
+    exact ⟨⟨x, hx, t, ht, he⟩, ⟨x, hx', t, ht, he⟩⟩
+
+/-- A base cell meets a swept cell only along their original intersection when
+both bases lie in a common transverse affine subspace. -/
+theorem inter_sweep_of_transverse {P Q : Set V} {n : V}
+    (hn : n ∉ vectorSpan 𝕜 (P ∪ Q)) : P ∩ sweep 𝕜 Q n = P ∩ Q := by
+  ext y
+  constructor
+  · rintro ⟨hy, x, hx, t, _, he⟩
+    have hxy := sweep_coordinates_unique hn (subset_affineSpan 𝕜 _ (Or.inl hy))
+      (subset_affineSpan 𝕜 _ (Or.inr hx))
+      (t := 0) (t' := t) (by simpa using he)
+    exact ⟨hy, hxy.1 ▸ hx⟩
+  · exact fun hy => ⟨hy.1, subset_sweep Q n hy.2⟩
+
+/-- Sweeping subsets of a common transverse base identifies no distinct supports. -/
+theorem sweep_eq_sweep_iff_of_subset {P Q B : Set V} {n : V}
+    (hn : n ∉ vectorSpan 𝕜 B) (hP : P ⊆ B) (hQ : Q ⊆ B) :
+    sweep 𝕜 P n = sweep 𝕜 Q n ↔ P = Q := by
+  constructor
+  · intro he
+    have hbase (S : Set V) (hS : S ⊆ B) : B ∩ sweep 𝕜 S n = S := by
+      rw [inter_sweep_of_transverse (fun hm => hn (vectorSpan_mono 𝕜
+        (Set.union_subset le_rfl hS) hm)), Set.inter_eq_right.mpr hS]
+    rw [← hbase P hP, he, hbase Q hQ]
+  · rintro rfl
+    rfl
+
+end LinearOrder
+
+section StrictOrderedRing
+
+variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
 
 /-- Positive rescaling of the sweeping vector does not change the swept support. -/
 @[simp]
@@ -123,23 +231,6 @@ theorem sub_smul_mem_sweep {P : Set V} {n y : V} (hy : y ∈ sweep 𝕜 P n)
   refine ⟨x, hx, t + s, add_nonneg ht hs, ?_⟩
   module
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- A transverse direction admits a linear height constant on the base. -/
-theorem exists_sweep_height {P : Set V} {n : V} (hP : P.Nonempty)
-    (hn : n ∉ vectorSpan 𝕜 P) :
-    ∃ (f : V →ₗ[𝕜] 𝕜) (c : 𝕜), f n = 1 ∧ ∀ x ∈ P, f x = c := by
-  obtain ⟨f, hfn, hf⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hn inferInstance
-  obtain ⟨p, hp⟩ := hP
-  refine ⟨(f n)⁻¹ • f, (f n)⁻¹ * f p, ?_, ?_⟩
-  · simp [hfn]
-  · intro x hx
-    have h : f (x - p) = 0 := by
-      have hmem : f (x - p) ∈ (vectorSpan 𝕜 P).map f :=
-        Submodule.mem_map_of_mem (vsub_mem_vectorSpan 𝕜 hx hp)
-      rwa [hf, Submodule.mem_bot] at hmem
-    have heq : f x = f p := sub_eq_zero.mp (by simpa only [map_sub] using h)
-    simp [heq]
-
 /-- Membership via the uniquely determined base point and nonnegative height. -/
 theorem mem_sweep_iff_of_height {P : Set V} {n y : V} (f : V →ₗ[𝕜] 𝕜) (c : 𝕜)
     (hfn : f n = 1) (hfP : ∀ x ∈ P, f x = c) :
@@ -154,43 +245,6 @@ theorem mem_sweep_iff_of_height {P : Set V} {n y : V} (f : V →ₗ[𝕜] 𝕜) 
   · rintro ⟨hy, hx⟩
     refine ⟨y + (c - f y) • n, hx, c - f y, sub_nonneg.mpr hy, ?_⟩
     module
-
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- Points in a transverse affine span have unique base and ray coordinates. -/
-theorem sweep_coordinates_unique {P : Set V} {n : V} (hn : n ∉ vectorSpan 𝕜 P)
-    {x x' : V} (hx : x ∈ affineSpan 𝕜 P) (hx' : x' ∈ affineSpan 𝕜 P) {t t' : 𝕜}
-    (h : x - t • n = x' - t' • n) : x = x' ∧ t = t' := by
-  obtain ⟨f, c, hfn, hfP⟩ :=
-    exists_sweep_height ((affineSpan_nonempty 𝕜).mp ⟨x, hx⟩) hn
-  have hfA : ∀ y ∈ affineSpan 𝕜 P, f y = c :=
-    AffineMap.eqOn_affineSpan (f := f.toAffineMap) (g := AffineMap.const 𝕜 V c) hfP
-  have hheight := congrArg f h
-  simp only [map_sub, map_smul, hfA x hx, hfA x' hx', hfn, smul_eq_mul,
-    mul_one, sub_right_inj] at hheight
-  subst t'
-  exact ⟨sub_left_inj.mp h, rfl⟩
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- The prism parameterization of a transverse sweep is a bijection. -/
-noncomputable def sweepEquiv (P : Set V) (n : V)
-    (hn : n ∉ vectorSpan 𝕜 P) :
-    (P × {t : 𝕜 // 0 ≤ t}) ≃ sweep 𝕜 P n :=
-  Equiv.ofBijective
-    (fun z => ⟨z.1.1 - z.2.1 • n, z.1.1, z.1.2, z.2.1, z.2.2, rfl⟩)
-    ⟨by
-      intro z w h
-      have he := sweep_coordinates_unique hn (subset_affineSpan 𝕜 P z.1.2)
-        (subset_affineSpan 𝕜 P w.1.2) (congrArg Subtype.val h)
-      exact Prod.ext (Subtype.ext he.1) (Subtype.ext he.2), by
-      rintro ⟨y, x, hx, t, ht, rfl⟩
-      exact ⟨(⟨x, hx⟩, ⟨t, ht⟩), rfl⟩⟩
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- The prism equivalence evaluates by subtracting the ray parameter. -/
-@[simp]
-theorem sweepEquiv_apply (P : Set V) (n : V) (hn : n ∉ vectorSpan 𝕜 P)
-    (z : P × {t : 𝕜 // 0 ≤ t}) :
-    (sweepEquiv P n hn z : V) = z.1.1 - z.2.1 • n := (rfl)
 
 /-- A normalized height gives the inverse prism coordinates explicitly. -/
 theorem sweepEquiv_symm_apply {P : Set V} {n : V} (hn : n ∉ vectorSpan 𝕜 P)
@@ -223,65 +277,6 @@ theorem notMem_recessionCone_sweep {P : Set V} {n : V} (hP : P.Nonempty)
   obtain ⟨x, hx⟩ := hP
   exact add_smul_notMem_sweep hn hx zero_lt_one
     (h x (subset_sweep P n hx) 1 zero_le_one)
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- A sweep of a nonempty set is nonempty. -/
-theorem Nonempty.sweep {P : Set V} (hP : P.Nonempty) (n : V) :
-    (sweep 𝕜 P n).Nonempty := hP.mono (subset_sweep P n)
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- Subdivision covers remain covers under sweeping. -/
-theorem sweep_iUnion {ι : Sort*} (P : ι → Set V) (n : V) :
-    sweep 𝕜 (⋃ i, P i) n = ⋃ i, sweep 𝕜 (P i) n := by
-  ext y
-  simp only [sweep, Set.mem_ofPred_eq, Set.mem_iUnion]
-  constructor
-  · rintro ⟨x, ⟨i, hx⟩, t, ht, he⟩
-    exact ⟨i, x, hx, t, ht, he⟩
-  · rintro ⟨i, x, hx, t, ht, he⟩
-    exact ⟨x, ⟨i, hx⟩, t, ht, he⟩
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- On a transverse common base sweeping creates no new intersections. -/
-theorem sweep_inter_sweep {P Q : Set V} {n : V} (hn : n ∉ vectorSpan 𝕜 (P ∪ Q)) :
-    sweep 𝕜 P n ∩ sweep 𝕜 Q n = sweep 𝕜 (P ∩ Q) n := by
-  ext y
-  constructor
-  · rintro ⟨⟨x, hx, t, ht, he⟩, ⟨x', hx', t', _, he'⟩⟩
-    have hxx := (sweep_coordinates_unique hn (subset_affineSpan 𝕜 _ (Or.inl hx))
-      (subset_affineSpan 𝕜 _ (Or.inr hx'))
-      (he.symm.trans he')).1
-    exact ⟨x, ⟨hx, hxx ▸ hx'⟩, t, ht, he⟩
-  · rintro ⟨x, ⟨hx, hx'⟩, t, ht, he⟩
-    exact ⟨⟨x, hx, t, ht, he⟩, ⟨x, hx', t, ht, he⟩⟩
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- A base cell meets a swept cell only along their original intersection when
-both bases lie in a common transverse affine subspace. -/
-theorem inter_sweep_of_transverse {P Q : Set V} {n : V}
-    (hn : n ∉ vectorSpan 𝕜 (P ∪ Q)) : P ∩ sweep 𝕜 Q n = P ∩ Q := by
-  ext y
-  constructor
-  · rintro ⟨hy, x, hx, t, _, he⟩
-    have hxy := sweep_coordinates_unique hn (subset_affineSpan 𝕜 _ (Or.inl hy))
-      (subset_affineSpan 𝕜 _ (Or.inr hx))
-      (t := 0) (t' := t) (by simpa using he)
-    exact ⟨hy, hxy.1 ▸ hx⟩
-  · exact fun hy => ⟨hy.1, subset_sweep Q n hy.2⟩
-
-omit [IsStrictOrderedRing 𝕜] in
-/-- Sweeping subsets of a common transverse base identifies no distinct supports. -/
-theorem sweep_eq_sweep_iff_of_subset {P Q B : Set V} {n : V}
-    (hn : n ∉ vectorSpan 𝕜 B) (hP : P ⊆ B) (hQ : Q ⊆ B) :
-    sweep 𝕜 P n = sweep 𝕜 Q n ↔ P = Q := by
-  constructor
-  · intro he
-    have hbase (S : Set V) (hS : S ⊆ B) : B ∩ sweep 𝕜 S n = S := by
-      rw [inter_sweep_of_transverse (fun hm => hn (vectorSpan_mono 𝕜
-        (Set.union_subset le_rfl hS) hm)), Set.inter_eq_right.mpr hS]
-    rw [← hbase P hP, he, hbase Q hQ]
-  · rintro rfl
-    rfl
 
 /-- The direction of a nonempty sweep gains exactly the sweeping line. -/
 theorem vectorSpan_sweep {P : Set V} (hP : P.Nonempty) (n : V) :
@@ -373,7 +368,7 @@ theorem affineSpan_sweep_ne_top [FiniteDimensional 𝕜 V] (P : Set V) (n : V)
     finrank_top] at hle
   exact (not_le_of_gt (hdim hP)) hle
 
-end Algebra
+end StrictOrderedRing
 
 end Set
 
