@@ -99,7 +99,7 @@ theorem mem_congruenceLattice_iff {𝔪 : Modulus K} {I : (FractionalIdeal (𝓞
     x ∈ congruenceLattice 𝔪 I ↔
       ∃ y ∈ (I : FractionalIdeal (𝓞 K)⁰ K) * 𝔪.finitePart, mixedEmbedding K y = x := by
   rw [congruenceLattice_def, mem_idealLattice]
-  simp [← FractionalIdeal.mem_coe, FractionalIdeal.coe_mul]
+  simp [← FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.coeToSubmodule_mul]
 
 /-- The congruence lattice is a sublattice of the ideal lattice of `I`. -/
 theorem congruenceLattice_le_idealLattice (𝔪 : Modulus K) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :

@@ -65,7 +65,8 @@ from it.
 * `MeasureTheory.Measure.decreasingRearrangement_indicator`,
   `MeasureTheory.Measure.decreasingRearrangement_const_mul`,
   `MeasureTheory.Measure.decreasingRearrangement_sub_const`: indicators, and multiplication by and
-  subtraction of constants.
+  subtraction of constants; `MeasureTheory.Measure.lintegral_decreasingRearrangement_indicator`:
+  the formula `∫₀ᵗ (c 1_A)* = c min (t, μ A)`.
 * `MeasureTheory.Measure.volume_restrict_setOf_lt_decreasingRearrangement`: equimeasurability,
   with the consequences `lintegral_rpow_decreasingRearrangement`,
   `eLpNorm_decreasingRearrangement`, `memLp_decreasingRearrangement_iff` and
@@ -343,10 +344,10 @@ theorem eLpNorm_decreasingRearrangement (hf : AEMeasurable f μ) (p : ℝ≥0∞
   · rw [eLpNorm_exponent_zero hg, eLpNorm_exponent_zero hf']
   rcases eq_or_ne p ∞ with rfl | hptop
   · rw [eLpNorm_exponent_top hg, eLpNorm_exponent_top hf']
-    simp only [eLpNormEssSup_eq_essSup_enorm, enorm_eq_self, essSup_decreasingRearrangement]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hptop hf']
-  simp only [enorm_eq_self]
+    simp only [eLpNormEssSup_eq_essSup_eNorm, eNorm_eq_self, essSup_decreasingRearrangement]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hg,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hptop hf']
+  simp only [eNorm_eq_self]
   rw [μ.lintegral_rpow_decreasingRearrangement hf (ENNReal.toReal_pos hp0 hptop)]
 
 /-- The decreasing rearrangement lies in `Lᵖ(0, ∞)` exactly when `f` lies in `Lᵖ(μ)`, for every
@@ -355,6 +356,32 @@ exponent `p ∈ [0, ∞]`. -/
 theorem memLp_decreasingRearrangement_iff (hf : AEMeasurable f μ) {p : ℝ≥0∞} :
     MemLp (μ.decreasingRearrangement f) p (volume.restrict (Ioi 0)) ↔ MemLp f p μ := by
   rw [memLp_iff, memLp_iff, eLpNorm_decreasingRearrangement μ hf]
+
+/-- The integral of the decreasing rearrangement of `c 1_A` over `(0, t]` is `c min (t, μ A)`. -/
+theorem lintegral_decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞) (t : ℝ) :
+    ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (A.indicator fun _ ↦ c) s =
+      c * min (ENNReal.ofReal t) (μ A) := by
+  simp_rw [μ.decreasingRearrangement_indicator]
+  have hS : MeasurableSet {s : ℝ | ENNReal.ofReal s < μ A} :=
+    measurableSet_lt ENNReal.measurable_ofReal measurable_const
+  have hind : (fun s : ℝ ↦ if ENNReal.ofReal s < μ A then c else 0) =
+      {s : ℝ | ENNReal.ofReal s < μ A}.indicator fun _ ↦ c := by
+    ext s
+    simp [Set.indicator_apply]
+  rw [hind, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc, lintegral_indicator_const hS,
+    Measure.restrict_apply hS]
+  congr 1
+  rcases eq_or_ne (μ A) ∞ with hA | hA
+  · simp [hA]
+  have hset : {s : ℝ | ENNReal.ofReal s < μ A} ∩ Ioo 0 t = Ioo 0 t ∩ Iio (μ A).toReal := by
+    ext s
+    constructor
+    · rintro ⟨hs, hs₀, hst⟩
+      exact ⟨⟨hs₀, hst⟩, (ENNReal.ofReal_lt_iff_lt_toReal hs₀.le hA).1 hs⟩
+    · rintro ⟨⟨hs₀, hst⟩, hs⟩
+      exact ⟨(ENNReal.ofReal_lt_iff_lt_toReal hs₀.le hA).2 hs, hs₀, hst⟩
+  rw [hset, Ioo_inter_Iio, Real.volume_Ioo, sub_zero, ENNReal.ofReal_min,
+    ENNReal.ofReal_toReal hA]
 
 /-! ### The `K`-functional of `(L¹, L∞)` -/
 
@@ -438,10 +465,10 @@ theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
   · subst hsum
     by_cases h₀ : AEStronglyMeasurable f₀ μ
     · have h₁ : AEStronglyMeasurable f₁ μ := by simpa using hf.sub h₀
-      rw [eLpNorm_one_eq_lintegral_enorm h₀, eLpNorm_exponent_top h₁,
-        eLpNormEssSup_eq_essSup_enorm]
-      exact μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.enorm t
-        (ae_of_all _ fun y ↦ enorm_add_le (f₀ y) (f₁ y))
+      rw [eLpNorm_one_eq_lintegral_eNorm h₀, eLpNorm_exponent_top h₁,
+        eLpNormEssSup_eq_essSup_eNorm]
+      exact μ.lintegral_decreasingRearrangement_le_lintegral_add_mul_essSup hf.eNorm t
+        (ae_of_all _ fun y ↦ eNorm_add_le (f₀ y) (f₁ y))
     · simp [eLpNorm_of_not_aestronglyMeasurable h₀]
   · set c := μ.decreasingRearrangement (‖f ·‖ₑ) t
     rcases eq_or_ne c ∞ with hc | hc
@@ -467,9 +494,9 @@ theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
           TauCeti.norm_radialRetraction hr, ENNReal.ofReal_max, ENNReal.ofReal_zero,
           max_eq_left zero_le, ENNReal.ofReal_sub _ hr, hcr]
         exact ⟨rfl, (ENNReal.ofReal_le_ofReal (min_le_right _ _)).trans_eq hcr⟩
-      rw [eLpNorm_one_eq_lintegral_enorm (hf.sub hf₁), eLpNorm_exponent_top hf₁,
-        eLpNormEssSup_eq_essSup_enorm,
-        μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.enorm t]
+      rw [eLpNorm_one_eq_lintegral_eNorm (hf.sub hf₁), eLpNorm_exponent_top hf₁,
+        eLpNormEssSup_eq_essSup_eNorm,
+        μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.eNorm t]
       gcongr ?_ + _ * ?_
       · exact (lintegral_congr fun y ↦ (htrunc y).1).le
       · exact essSup_le_of_ae_le c (ae_of_all _ fun y ↦ (htrunc y).2)

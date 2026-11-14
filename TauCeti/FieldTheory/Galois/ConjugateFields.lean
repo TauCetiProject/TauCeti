@@ -65,7 +65,7 @@ theorem stabilizer_eq_normalizer_fixingSubgroup (E : IntermediateField K L) :
       E.fixingSubgroup.map (MulAut.conj σ) = (σ • E).fixingSubgroup := by
         rw [AlgEquiv.smul_intermediateField_def, IsGalois.map_fixingSubgroup]
         congr 1
-      _ = E.fixingSubgroup := congrArg IntermediateField.fixingSubgroup h
+      _ = E.fixingSubgroup := congrArg fixingSubgroup h
   · intro h
     rw [← InfiniteGalois.fixedField_fixingSubgroup (σ • E), AlgEquiv.smul_intermediateField_def,
       IsGalois.map_fixingSubgroup]
@@ -83,7 +83,7 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
       E.fixingSubgroup.map (MulAut.conj σ) = (E.map σ.toAlgHom).fixingSubgroup := by
         rw [IsGalois.map_fixingSubgroup]
         congr 1
-      _ = E'.1.fixingSubgroup := congrArg IntermediateField.fixingSubgroup hσ⟩
+      _ = E'.1.fixingSubgroup := congrArg fixingSubgroup hσ⟩
   invFun H := ⟨fixedField H.1, by
     obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.2
     apply mem_conjugateFields_iff.mpr
