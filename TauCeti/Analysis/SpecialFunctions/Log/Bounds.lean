@@ -5,7 +5,7 @@ Authors: Matteo Cipollina, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
 
 /-!
@@ -37,5 +37,12 @@ theorem neg_log_le_sqrt_two_div {x : ℝ} (hx : 0 ≤ x) :
       nlinarith [hmain]
     exact (Real.le_sqrt ht (div_nonneg (by norm_num) hx.le)).2 hsq
   · exact (lt_of_not_ge ht).le.trans (Real.sqrt_nonneg _)
+
+/-- The positive logarithm is bounded by a square-root majorant, including zero. -/
+theorem posLog_le_sqrt_two_mul (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * |x|) := by
+  rw [Real.posLog_apply]
+  refine max_le (Real.sqrt_nonneg _) ?_
+  simpa only [Real.log_inv, neg_neg, div_inv_eq_mul, Real.log_abs] using
+    (neg_log_le_sqrt_two_div (inv_nonneg.mpr (abs_nonneg x)))
 
 end Real
