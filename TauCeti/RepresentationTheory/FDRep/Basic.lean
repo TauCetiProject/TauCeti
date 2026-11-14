@@ -501,6 +501,7 @@ noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Eq
   .mk (isoToLinearEquiv i) fun g => LinearMap.ext fun v => by
     simp [Iso.conj_ρ i g, LinearEquiv.conj_apply]
 
+/-- The linear equivalence underlying `FDRep.isoToEquiv i` is `FDRep.isoToLinearEquiv i`. -/
 @[simp]
 theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
     (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
