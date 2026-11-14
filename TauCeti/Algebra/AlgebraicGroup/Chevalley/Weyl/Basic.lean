@@ -68,9 +68,17 @@ theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank �
   Subgroup.subset_closure (Or.inl ⟨s, rfl⟩)
 
 /-- Each pinned simple Weyl representative belongs to the Weyl subgroup. -/
-theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
+theorem weylElement_simpleIndex_one_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
+
+/-- Every product of pinned simple Weyl representatives lies in `D.weylSubgroup A`. -/
+theorem weylWord_mem_weylSubgroup (A : Type v) [CommRing A] (l : List (Fin t.rank)) :
+    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A :=
+  Subgroup.list_prod_mem _ fun x hx => by
+    rw [List.mem_map] at hx
+    obtain ⟨i, _, rfl⟩ := hx
+    exact D.weylElement_simpleIndex_one_mem_weylSubgroup A i
 
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple
@@ -306,14 +314,14 @@ theorem weylProjection_torusPoints (k : Type v) [Field k]
         (fun j => Units.map (algebraMap k (AlgebraicClosure k) : k →* AlgebraicClosure k) (s j))))
 
 /-- Each pinned simple Weyl representative projects to the corresponding simple reflection. -/
--- Concrete rank and root-count equations can normalize the dependent indices before matching.
-@[simp↓]
-theorem weylProjection_weylElement (k : Type v) [Field k] (i : Fin t.rank) :
+theorem weylProjection_weylElement_simpleIndex_one (k : Type v) [Field k] (i : Fin t.rank) :
     D.weylProjection k
-        ⟨D.weylElement (t.simpleIndex ht i) k 1, D.weylElement_mem_weylSubgroup k i⟩ =
+        ⟨D.weylElement (t.simpleIndex ht i) k 1,
+          D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) :=
   D.realizesWeyl_unique
-    (D.exists_realizesWeyl_algebraicClosure k (D.weylElement_mem_weylSubgroup k i)).choose_spec
+    (D.exists_realizesWeyl_algebraicClosure k
+      (D.weylElement_simpleIndex_one_mem_weylSubgroup k i)).choose_spec
     (by simpa only [RealizesWeyl, map_weylElement, map_one] using
       D.weylElement_conj_weightTorus (AlgebraicClosure k) i)
 
@@ -332,8 +340,8 @@ private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one_field
   have hw : D.weylElement (t.simpleIndex ht i) k 1 = 1 := by
     simp only [D.weylElement_def, inv_one, Units.val_one, hx, hy, one_mul]
   have hsub : (⟨D.weylElement (t.simpleIndex ht i) k 1,
-      D.weylElement_mem_weylSubgroup k i⟩ : D.weylSubgroup k) = 1 := Subtype.ext hw
-  have hproj := D.weylProjection_weylElement k i
+      D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ : D.weylSubgroup k) = 1 := Subtype.ext hw
+  have hproj := D.weylProjection_weylElement_simpleIndex_one k i
   rw [hsub, map_one] at hproj
   exact RootPairing.weylGroup.ofIdx_ne_one (t.simplyConnectedRootDatum ht)
     (t.simpleIndex ht i) hproj.symm
@@ -371,21 +379,39 @@ theorem rootSubgroupPoints_ofAdd_one_ne_one
     · simpa [hε, hx] using hconj
     · simpa [hε, ofAdd_neg, map_inv, hx] using hconj
 
+/-- A word in the simple Weyl representatives projects to the word product in the Weyl group. -/
+-- Concrete lists and Dynkin types normalize inside `Subtype.mk` before matching.
+@[simp↓]
+theorem weylProjection_weylWord (k : Type v) [Field k] (l : List (Fin t.rank)) :
+    D.weylProjection k
+        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+          D.weylWord_mem_weylSubgroup k l⟩ =
+      t.geckWeylWordProd ht l := by
+  induction l with
+  | nil =>
+    have h1 :
+        (⟨([].map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
+            D.weylWord_mem_weylSubgroup k []⟩ : D.weylSubgroup k) = 1 :=
+      rfl
+    rw [h1, map_one, geckWeylWordProd_nil]
+  | cons i l ih =>
+    have hsub :
+        (⟨((i :: l).map fun j => D.weylElement (t.simpleIndex ht j) k 1).prod,
+            D.weylWord_mem_weylSubgroup k (i :: l)⟩ : D.weylSubgroup k) =
+          ⟨D.weylElement (t.simpleIndex ht i) k 1,
+            D.weylElement_simpleIndex_one_mem_weylSubgroup k i⟩ *
+          ⟨(l.map fun j => D.weylElement (t.simpleIndex ht j) k 1).prod,
+            D.weylWord_mem_weylSubgroup k l⟩ :=
+      Subtype.ext (by simp)
+    rw [hsub, map_mul, D.weylProjection_weylElement_simpleIndex_one, ih, geckWeylWordProd_cons]
+
 /-- The Weyl projection is surjective: the pinned representatives lift every word in the
 simple reflections. -/
 theorem weylProjection_surjective (k : Type v) [Field k] :
     Function.Surjective (D.weylProjection k) := by
-  have hword (l : List (Fin t.rank)) :
-      ∃ g : D.weylSubgroup k, D.weylProjection k g = t.geckWeylWordProd ht l := by
-    induction l with
-    | nil => exact ⟨1, by simp⟩
-    | cons i l ih =>
-      obtain ⟨g, hg⟩ := ih
-      exact ⟨⟨D.weylElement (t.simpleIndex ht i) k 1,
-        D.weylElement_mem_weylSubgroup k i⟩ * g, by simp [hg]⟩
   intro w
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
-  exact hword l
+  exact ⟨⟨_, D.weylWord_mem_weylSubgroup k l⟩, D.weylProjection_weylWord k l⟩
 
 /-- The kernel consists of those points that commute with all represented full-weight torus
 points. Identifying these points with the actual torus is a separate assertion. -/

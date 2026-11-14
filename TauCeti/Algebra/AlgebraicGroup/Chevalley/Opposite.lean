@@ -40,7 +40,7 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v
+universe v v'
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
@@ -249,6 +249,16 @@ theorem rootSubgroupPoints_mem_negativePoints (A : Type v) [CommRing A] {γ : Fi
     (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.negativePoints A :=
   (D.negativePoints_le_iff.mp le_rfl) γ hγ u
+
+/-- A ring map carries every negative point into the negative subgroup over the target ring. -/
+theorem map_negativePoints_le {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) :
+    (D.negativePoints A).map ((D.pointsPresentation A).map (D.pointsPresentation B) f) ≤
+      D.negativePoints B := by
+  rw [Subgroup.map_le_iff_le_comap, D.negativePoints_le_iff]
+  intro γ hγ u
+  simpa only [Subgroup.mem_comap, D.map_rootSubgroupPoints] using
+    D.rootSubgroupPoints_mem_negativePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
 
 private theorem points_inf_sup_range_torusPoints_eq_bot (A : Type v) [CommRing A]
     {P Q : Subgroup (D.points A)}

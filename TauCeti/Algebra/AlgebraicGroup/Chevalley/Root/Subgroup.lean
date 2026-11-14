@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Conjugate
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
@@ -60,6 +61,8 @@ Following Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19, write
 * `TauCeti.DynkinType.ChevalleyDatum.map_rootSubgroupPoints`: naturality in the ring of points.
 * `TauCeti.DynkinType.ChevalleyDatum.weylElement_conj_rootSubgroupPoints`: the signed conjugation
   identity `nᵢ x_γ(u) nᵢ⁻¹ = x_{sᵢ γ}(ε u)`.
+* `TauCeti.DynkinType.ChevalleyDatum.weylElement_conj_weylElement`: conjugating `n_γ(s)` by
+  `n_{αᵢ}(1)` produces `n_{sᵢ γ}(ε s)`.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective_iff`: a root subgroup is
   injective exactly when the underlying divided-power exponential is.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective_of_simple`: if the positive
@@ -241,6 +244,43 @@ theorem weylElement_conj_rootSubgroupPoints (i : Fin t.rank) (γ : Fin t.numRoot
   exact congrArg _ (kostantWeylGL_conj_chevalleyRootSubgroup D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator i γ
     (CommAlgCat.of ℤ A) u)
+
+/-- **Conjugating Steinberg's Weyl element by a simple Weyl representative.** Over every
+commutative ring `A`, `nᵢ * n_γ(s) * nᵢ⁻¹ = n_{sᵢ γ}(ε s)` where `ε = chevalleyWeylSign αᵢ γ`. -/
+theorem weylElement_conj_weylElement (i : Fin t.rank) (γ : Fin t.numRoots) (A : Type v)
+    [CommRing A] (s : Aˣ) :
+    D.weylElement (t.simpleIndex ht i) A 1 * D.weylElement γ A s *
+        (D.weylElement (t.simpleIndex ht i) A 1)⁻¹ =
+      D.weylElement
+        ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A
+        (Units.map (Int.castRingHom A).toMonoidHom
+          (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) * s) := by
+  let P := t.simplyConnectedRootDatum ht
+  let nᵢ := D.weylElement (t.simpleIndex ht i) A 1
+  let ε := t.chevalleyWeylSign ht (t.simpleIndex ht i) γ
+  let εA : Aˣ := Units.map (Int.castRingHom A).toMonoidHom ε
+  have hp : P.reflectionPerm (t.simpleIndex ht i) (P.reflectionPerm γ γ) =
+      P.reflectionPerm (P.reflectionPerm (t.simpleIndex ht i) γ)
+        (P.reflectionPerm (t.simpleIndex ht i) γ) :=
+    (RootPairing.Equiv.reflection P (t.simpleIndex ht i)).toHom.indexEquiv_reflectionPerm γ γ
+  have hε_inv : ε⁻¹ = ε := inv_eq_of_mul_eq_one_left (Int.units_mul_self ε)
+  have hval_pos : ((ε : ℤ) : A) * (s : A) = ((εA * s : Aˣ) : A) := by
+    simp [εA]
+  have hval_neg : ((ε : ℤ) : A) * -((s⁻¹ : Aˣ) : A) = -(((εA * s)⁻¹ : Aˣ) : A) := by
+    rw [mul_inv_rev, ← map_inv, hε_inv, Units.val_mul, mul_comm ((s⁻¹ : Aˣ) : A)]
+    simp [mul_neg]
+  calc
+    nᵢ * D.weylElement γ A s * nᵢ⁻¹
+        = MulAut.conj nᵢ (D.weylElement γ A s) := (MulAut.conj_apply _ _).symm
+    _ = MulAut.conj nᵢ (D.rootSubgroupPoints γ A (Multiplicative.ofAdd (s : A))) *
+          MulAut.conj nᵢ (D.rootSubgroupPoints (P.reflectionPerm γ γ) A
+            (Multiplicative.ofAdd (-((s⁻¹ : Aˣ) : A)))) *
+          MulAut.conj nᵢ (D.rootSubgroupPoints γ A (Multiplicative.ofAdd (s : A))) := by
+        rw [D.weylElement_def, map_mul, map_mul]
+    _ = D.weylElement (P.reflectionPerm (t.simpleIndex ht i) γ) A (εA * s) := by
+        dsimp only [MulAut.conj_apply, nᵢ]
+        rw [D.weylElement_conj_rootSubgroupPoints, D.weylElement_conj_rootSubgroupPoints,
+          t.chevalleyWeylSign_reflectionPerm_self, hp, hval_pos, hval_neg, D.weylElement_def]
 
 /-- A root subgroup of the datum is injective exactly when the underlying divided-power
 exponential on the base-changed lattice is. -/
