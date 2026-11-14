@@ -18,6 +18,9 @@ ranges of two linear maps. Applied to the finitely supported linear-combination 
 families, this gives an isometry between their spans sending corresponding vectors to each
 other. No independence, finiteness of the index type, or completeness is needed.
 
+Likewise, a map preserving inner products on a set spanning its source agrees on that set with a
+linear isometry, again without any finiteness of dimension.
+
 For families in a common finite-dimensional inner-product space, the span isometry extends
 to an ambient isometry. Thus equality of Gram matrices characterizes equivalence under an
 ambient linear isometric equivalence, including dependent families and zero vectors.
@@ -125,6 +128,26 @@ theorem exists_linearIsometryEquiv_of_inner_eq [FiniteDimensional 𝕜 E] {v w :
     (Submodule.span 𝕜 (Set.range w)).subtypeₗᵢ.comp (spanEquivOfInnerEq h).toLinearIsometry
   refine ⟨L.extend.toLinearIsometryEquiv rfl, fun i => ?_⟩
   simpa [L] using L.extend_apply ⟨v i, Submodule.subset_span (Set.mem_range_self i)⟩
+
+/-- A map preserving inner products on a set spanning the source agrees on that set with a
+linear isometry. No finiteness of dimension is needed. -/
+theorem exists_linearIsometry_eqOn_of_inner_eq {s : Set E} (hs : Submodule.span 𝕜 s = ⊤)
+    {f : E → F} (h : ∀ x ∈ s, ∀ y ∈ s, ⟪f x, f y⟫_𝕜 = ⟪x, y⟫_𝕜) :
+    ∃ L : E →ₗᵢ[𝕜] F, Set.EqOn f L s := by
+  have hrange : Submodule.span 𝕜 (Set.range ((↑) : s → E)) = ⊤ := by
+    rwa [Subtype.range_coe]
+  let e := spanEquivOfInnerEq (v := ((↑) : s → E)) (w := fun x : s => f x)
+    fun x y => (h x x.2 y y.2).symm
+  refine ⟨(Submodule.span 𝕜 (Set.range fun x : s => f x)).subtypeₗᵢ.comp
+    (e.toLinearIsometry.comp (LinearIsometryEquiv.ofTop E _ hrange).symm.toLinearIsometry),
+    fun x hx => ?_⟩
+  have hx' : (LinearIsometryEquiv.ofTop E _ hrange).symm x =
+      ⟨(⟨x, hx⟩ : s), Submodule.subset_span (Set.mem_range_self (⟨x, hx⟩ : s))⟩ :=
+    Subtype.ext (by simp)
+  simp only [LinearIsometry.coe_comp, Function.comp_apply,
+    LinearIsometryEquiv.coe_toLinearIsometry, hx', Submodule.coe_subtypeₗᵢ, e]
+  exact (congrArg Subtype.val (spanEquivOfInnerEq_apply (𝕜 := 𝕜) (v := ((↑) : s → E))
+    (w := fun x : s => f x) (fun x y => (h x x.2 y y.2).symm) ⟨x, hx⟩)).symm
 
 /-- Equal Gram matrices characterize ambient isometric equivalence of families in a
 finite-dimensional real or complex inner-product space. The index type may be infinite. -/
