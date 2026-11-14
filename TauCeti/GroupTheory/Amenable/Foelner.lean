@@ -6,27 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
 public import Mathlib.MeasureTheory.Measure.Count
+import Mathlib.Algebra.Group.Equiv.TypeTags
 import TauCeti.Data.ENNReal.NatCastDiv
 
 /-!
 # Følner sets of a group for counting measure
 
-Mathlib's `IsFoelner G μ l F` and `maxFoelner G μ` describe Følner families and the maximal Følner
-filter for a group `G` acting on a measure space. For the left regular action of a group on itself
-with counting measure on all subsets, this file identifies nontriviality of the maximal Følner
-filter with the classical finite-set condition: for every finite `K ⊆ G` and `ε > 0` there is a
-finite nonempty `F ⊆ G` with
+Mathlib's `IsFoelner G μ l F` and `maxFoelner G μ` (and their additive counterparts `IsAddFoelner`
+and `maxAddFoelner`) describe Følner families and the maximal Følner filter for a group acting on a
+measure space. For the left regular action of a group on itself with counting measure on all
+subsets, this file identifies nontriviality of the maximal Følner filter with the classical
+finite-set condition: for every finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ G` with
 
 ```text
 |gF △ F| < ε · |F|        for all g ∈ K.
 ```
 
-`TauCeti.HasFoelnerSets G` names nontriviality of the counting-measure Følner filter. It installs
-the discrete measurable space `⊤` locally, so every subset is measurable and the notion depends
-only on the group, with no topology or countability hypothesis.
+`TauCeti.HasFoelnerSets G` and `TauCeti.HasAddFoelnerSets A` name nontriviality of the
+counting-measure Følner filter for multiplicative and additive groups. Each installs the discrete
+measurable space `⊤` locally, so every subset is measurable and the notion depends only on the
+group, with no topology or countability hypothesis; for any ambient measurable space with
+measurable singletons, nontriviality of `maxFoelner G Measure.count` is equivalent to
+`HasFoelnerSets G` (`TauCeti.hasFoelnerSets_iff_maxFoelner_neBot`).
 
 The two directions go through explicit Følner families, which we treat for counting measure on
 any type `X` with measurable singletons acted on by `G`. A Følner family along a nontrivial filter
@@ -34,23 +39,37 @@ passes all finite tests, because finitely many eventual conditions hold simultan
 Conversely, if every finite test has a witness, there is a Følner family of finite nonempty sets
 indexed by pairs `(K, n)` of a finite test set and a natural number, along `atTop`, which is a
 nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance `1 / (n + 1)`.
+Compatibility lemmas relate `IsFoelner`, `maxFoelner` and `HasFoelnerSets` across `Multiplicative`
+and `Additive`.
 
 ## Main definitions
 
-* `TauCeti.HasFoelnerSets G`: the counting-measure Følner filter of `G` is nontrivial.
+* `TauCeti.HasFoelnerSets G` and `TauCeti.HasAddFoelnerSets A`: the counting-measure Følner filter
+  of `G` (or `A`) is nontrivial.
 
 ## Main results
 
-* `IsFoelner.tendsto_card_smul_symmDiff_div_card`: the real cardinality ratios of a
+* `IsFoelner.tendsto_card_smul_symmDiff_div_card` and
+  `IsAddFoelner.tendsto_card_vadd_symmDiff_div_card`: the real cardinality ratios of a
   counting-measure Følner family of finite sets tend to zero.
-* `IsFoelner.exists_finset_card_smul_symmDiff_lt`: a nontrivial counting-measure Følner family
+* `IsFoelner.exists_finset_card_smul_symmDiff_lt` and
+  `IsAddFoelner.exists_finset_card_vadd_symmDiff_lt`: a nontrivial counting-measure Følner family
   passes every finite test.
-* `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
-  of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
-* `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
-* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
-  relative translation boundaries along a nontrivial filter give Følner sets.
-* `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
+* `TauCeti.exists_isFoelner_atTop` and `TauCeti.exists_isAddFoelner_atTop`: if every finite test
+  has a witness, there is a Følner family of finite nonempty sets indexed by `Finset G × ℕ` along
+  `atTop`.
+* `TauCeti.hasFoelnerSets_iff` and `TauCeti.hasAddFoelnerSets_iff`: `HasFoelnerSets` and
+  `HasAddFoelnerSets` are equivalent to the finite-set condition.
+* `IsFoelner.hasFoelnerSets` and `IsAddFoelner.hasAddFoelnerSets`: any counting-measure Følner
+  family along a nontrivial filter witnesses `HasFoelnerSets` / `HasAddFoelnerSets`.
+* `TauCeti.hasFoelnerSets_iff_maxFoelner_neBot` and
+  `TauCeti.hasAddFoelnerSets_iff_maxAddFoelner_neBot`: invariance of nontriviality of the maximal
+  counting-measure Følner filter across all measurable spaces with measurable singletons.
+* `TauCeti.isFoelner_multiplicative_iff`, `TauCeti.isFoelner_count_image_ofAdd_iff`, and
+  `TauCeti.hasFoelnerSets_multiplicative_iff`: compatibility between multiplicative and additive
+  Følner conditions.
+* `MulEquiv.hasFoelnerSets_iff` and `AddEquiv.hasAddFoelnerSets_iff`: invariance under group
+  isomorphisms.
 
 ## References
 
@@ -65,12 +84,38 @@ open scoped ENNReal Pointwise symmDiff Topology
 
 variable {G : Type*} [Group G]
 
+section TypeTagMeasurableSingleton
+
+/-- `Additive α` inherits measurable singletons from `α`. -/
+instance _root_.Additive.instMeasurableSingletonClass {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] : MeasurableSingletonClass (Additive α) where
+  measurableSet_singleton x := by
+    have hpre : Additive.toMul ⁻¹' ({x.toMul} : Set α) = {x} := by
+      ext y
+      simp
+    rw [← hpre]
+    exact measurableSet_preimage_toMul.2 (measurableSet_singleton x.toMul)
+
+/-- `Multiplicative α` inherits measurable singletons from `α`. -/
+instance _root_.Multiplicative.instMeasurableSingletonClass {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] : MeasurableSingletonClass (Multiplicative α) where
+  measurableSet_singleton x := by
+    have hpre : Multiplicative.toAdd ⁻¹' ({x.toAdd} : Set α) = {x} := by
+      ext y
+      simp
+    rw [← hpre]
+    exact measurableSet_preimage_toAdd.2 (measurableSet_singleton x.toAdd)
+
+end TypeTagMeasurableSingleton
+
 section Count
 
 variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] [DecidableEq X]
 
 /-- For a finite nonempty `F`, the counting-measure Følner ratio of `F` at `m` is below
 `ENNReal.ofReal ε` exactly when `|mF △ F| < ε · |F|`. -/
+@[to_additive /-- For a finite nonempty `F`, the counting-measure additive Følner ratio of `F` at
+`m` is below `ENNReal.ofReal ε` exactly when `|(m +ᵥ F) △ F| < ε · |F|`. -/]
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : Type*}
     [SMul M X] {F : Finset X} (hF : F.Nonempty) (m : M) {ε : ℝ} :
     Measure.count ((m • (F : Set X)) ∆ F) / Measure.count (F : Set X) < ENNReal.ofReal ε ↔
@@ -82,6 +127,8 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
 omit [MeasurableSingletonClass X] in
 /-- The counting-measure Følner ratio of a measurable finite set bounds the cardinality ratio
 from above. -/
+@[to_additive /-- The counting-measure additive Følner ratio of a measurable finite set bounds the
+cardinality ratio from above. -/]
 theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M : Type*}
     [SMul M X] {F : Finset X} (hFm : MeasurableSet (F : Set X)) (m : M) :
     (#((m • F) ∆ F) : ℝ≥0∞) / #F ≤
@@ -95,6 +142,8 @@ theorem MeasureTheory.Measure.card_smul_symmDiff_div_card_le_count_div_count {M 
 omit [MeasurableSingletonClass X] in
 /-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
 zero for every group element. -/
+@[to_additive /-- The real cardinality ratios of a counting-measure additive Følner family of
+finite sets tend to zero for every group element. -/]
 theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type*}
     {l : Filter ι} {F : ι → Finset X}
     (hF : IsFoelner G Measure.count l (fun i => (F i : Set X))) (g : G) :
@@ -113,6 +162,9 @@ omit [MeasurableSingletonClass X] in
 /-- A Følner family for counting measure along a nontrivial filter passes every finite test: for
 each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with `|gF △ F| < ε · |F|` for
 all `g ∈ K`. -/
+@[to_additive /-- An additive Følner family for counting measure along a nontrivial filter passes
+every finite test: for each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with
+`|(g +ᵥ F) △ F| < ε · |F|` for all `g ∈ K`. -/]
 theorem IsFoelner.exists_finset_card_smul_symmDiff_lt [MulAction G X] {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Set X} (hF : IsFoelner G Measure.count l F)
     (K : Finset G) {ε : ℝ} (hε : 0 < ε) :
@@ -137,6 +189,9 @@ namespace TauCeti
 
 /-- If every finite test has a witness, then there is a Følner family of finite nonempty sets for
 counting measure, indexed by `Finset G × ℕ` along `atTop`. -/
+@[to_additive exists_isAddFoelner_atTop /-- If every finite test has a witness, then there is an
+additive Følner family of finite nonempty sets for counting measure, indexed by `Finset G × ℕ`
+along `atTop`. -/]
 theorem exists_isFoelner_atTop [MulAction G X]
     (h : ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset X, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F) :
@@ -169,12 +224,19 @@ variable (G) in
 /-- A group `G` has Følner sets when Mathlib's maximal Følner filter for the left regular action
 of `G` on itself with counting measure is nontrivial. The measurable space `⊤` is installed
 locally, so every subset of `G` is measurable and the notion depends only on the group. -/
+@[to_additive HasAddFoelnerSets /-- An additive group `G` has Følner sets when Mathlib's maximal
+additive Følner filter for the left regular action of `G` on itself with counting measure is
+nontrivial. The measurable space `⊤` is installed locally, so every subset of `G` is measurable and
+the notion depends only on the additive group. -/]
 abbrev HasFoelnerSets : Prop :=
   letI : MeasurableSpace G := ⊤
   NeBot (maxFoelner G (Measure.count : Measure G))
 
 /-- A group has Følner sets exactly when for every finite `K ⊆ G` and every `ε > 0` there is a
 finite nonempty `F ⊆ G` with `|gF △ F| < ε · |F|` for all `g ∈ K`. -/
+@[to_additive hasAddFoelnerSets_iff /-- An additive group has Følner sets exactly when for every
+finite `K ⊆ G` and every `ε > 0` there is a finite nonempty `F ⊆ G` with `|(g +ᵥ F) △ F| < ε · |F|`
+for all `g ∈ K`. -/]
 theorem hasFoelnerSets_iff [DecidableEq G] : HasFoelnerSets G ↔
     ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset G, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
@@ -184,8 +246,32 @@ theorem hasFoelnerSets_iff [DecidableEq G] : HasFoelnerSets G ↔
   obtain ⟨F, -, hF⟩ := exists_isFoelner_atTop h
   exact ((isFoelner_iff_tendsto _ _).1 hF).neBot
 
+/-- A counting-measure Følner family along a nontrivial filter witnesses `HasFoelnerSets`, for any
+measurable space on `G`. -/
+@[to_additive IsAddFoelner.hasAddFoelnerSets /-- An additive counting-measure Følner family along a
+nontrivial filter witnesses `HasAddFoelnerSets`, for any measurable space on `G`. -/]
+theorem _root_.IsFoelner.hasFoelnerSets [MeasurableSpace G] {ι : Type*} {l : Filter ι} [l.NeBot]
+    {F : ι → Set G} (hF : IsFoelner G Measure.count l F) : HasFoelnerSets G := by
+  classical
+  exact hasFoelnerSets_iff.2 fun K _ hε => hF.exists_finset_card_smul_symmDiff_lt K hε
+
+/-- For any measurable space on `G` with measurable singletons, nontriviality of the maximal
+counting-measure Følner filter agrees with `HasFoelnerSets G`. -/
+@[to_additive hasAddFoelnerSets_iff_maxAddFoelner_neBot /-- For any measurable space on `G` with
+measurable singletons, nontriviality of the maximal counting-measure additive Følner filter agrees
+with `HasAddFoelnerSets G`. -/]
+theorem hasFoelnerSets_iff_maxFoelner_neBot [MeasurableSpace G] [MeasurableSingletonClass G] :
+    HasFoelnerSets G ↔ NeBot (maxFoelner G (Measure.count : Measure G)) := by
+  classical
+  refine ⟨fun h => ?_, fun _ => (isFoelner_maxFoelner G Measure.count).hasFoelnerSets⟩
+  obtain ⟨F, -, hF⟩ := exists_isFoelner_atTop (hasFoelnerSets_iff.1 h)
+  exact ((isFoelner_iff_tendsto _ _).1 hF).neBot
+
 /-- A group has Følner sets if a family of eventually nonempty finite sets has vanishing
 relative translation boundaries along a nontrivial filter. -/
+@[to_additive HasAddFoelnerSets.of_tendsto_card_vadd_symmDiff_div_card /-- An additive group has
+Følner sets if a family of eventually nonempty finite sets has vanishing relative translation
+boundaries along a nontrivial filter. -/]
 theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
     (hF : ∀ g : G, Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
@@ -207,6 +293,7 @@ open TauCeti
 variable {H : Type*} [Group H]
 
 /-- An isomorphism carries Følner sets of `G` to Følner sets of `H`. -/
+@[to_additive /-- An additive isomorphism carries Følner sets of `G` to Følner sets of `H`. -/]
 private theorem hasFoelnerSets_of_mulEquiv (e : G ≃* H) (h : HasFoelnerSets G) :
     HasFoelnerSets H := by
   classical
@@ -221,7 +308,125 @@ private theorem hasFoelnerSets_of_mulEquiv (e : G ≃* H) (h : HasFoelnerSets G)
   exact hFK _ (mem_image_of_mem _ hg)
 
 /-- Having Følner sets is invariant under group isomorphisms. -/
+@[to_additive AddEquiv.hasAddFoelnerSets_iff /-- Having additive Følner sets is invariant under
+additive group isomorphisms. -/]
 theorem hasFoelnerSets_iff (e : G ≃* H) : HasFoelnerSets G ↔ HasFoelnerSets H :=
   ⟨hasFoelnerSets_of_mulEquiv e, hasFoelnerSets_of_mulEquiv e.symm⟩
 
 end MulEquiv
+
+namespace TauCeti
+
+section TypeTagCompatibility
+
+/-- For an additive group `A` acting on a measure space `(X, μ)`, a family of sets is Følner for
+the induced action of `Multiplicative A` if and only if it is additively Følner for `A`. -/
+@[simp]
+theorem isFoelner_multiplicative_iff {A X : Type*} [AddGroup A] [MeasurableSpace X]
+    {μ : Measure X} [AddAction A X] {ι : Type*} {l : Filter ι} {F : ι → Set X} :
+    IsFoelner (Multiplicative A) μ l F ↔ IsAddFoelner A μ l F := by
+  simp [isFoelner_iff, isAddFoelner_iff, Multiplicative.forall]
+
+/-- For a group `G` acting on a measure space `(X, μ)`, a family of sets is additively Følner for
+the induced action of `Additive G` if and only if it is Følner for `G`. -/
+@[simp]
+theorem isAddFoelner_additive_iff {G X : Type*} [Group G] [MeasurableSpace X]
+    {μ : Measure X} [MulAction G X] {ι : Type*} {l : Filter ι} {F : ι → Set X} :
+    IsAddFoelner (Additive G) μ l F ↔ IsFoelner G μ l F := by
+  simp [isFoelner_iff, isAddFoelner_iff, Additive.forall]
+
+/-- The maximal Følner filter of `Multiplicative A` acting on `(X, μ)` coincides with the maximal
+additive Følner filter of `A`. -/
+@[simp]
+theorem maxFoelner_multiplicative (A : Type*) {X : Type*} [AddGroup A] [MeasurableSpace X]
+    (μ : Measure X) [AddAction A X] :
+    maxFoelner (Multiplicative A) μ = maxAddFoelner A μ :=
+  le_antisymm
+    ((isAddFoelner_iff_tendsto _ _).1
+      (isFoelner_multiplicative_iff.1 (isFoelner_maxFoelner (Multiplicative A) μ)))
+    ((isFoelner_iff_tendsto _ _).1
+      (isFoelner_multiplicative_iff.2 (isAddFoelner_maxAddFoelner A μ)))
+
+/-- The maximal additive Følner filter of `Additive G` acting on `(X, μ)` coincides with the
+maximal Følner filter of `G`. -/
+@[simp]
+theorem maxAddFoelner_additive (G : Type*) {X : Type*} [Group G] [MeasurableSpace X]
+    (μ : Measure X) [MulAction G X] :
+    maxAddFoelner (Additive G) μ = maxFoelner G μ :=
+  le_antisymm
+    ((isFoelner_iff_tendsto _ _).1
+      (isAddFoelner_additive_iff.1 (isAddFoelner_maxAddFoelner (Additive G) μ)))
+    ((isAddFoelner_iff_tendsto _ _).1
+      (isAddFoelner_additive_iff.2 (isFoelner_maxFoelner G μ)))
+
+/-- Transporting a family `F : ι → Set A` to `Multiplicative A` via `Multiplicative.ofAdd '' ·`
+preserves and reflects the counting-measure Følner condition. -/
+theorem isFoelner_count_image_ofAdd_iff {A : Type*} [AddGroup A] [MeasurableSpace A]
+    [MeasurableSingletonClass A] {ι : Type*} {l : Filter ι} {F : ι → Set A} :
+    IsFoelner (Multiplicative A) Measure.count l (fun i => Multiplicative.ofAdd '' F i) ↔
+      IsAddFoelner A Measure.count l F := by
+  have himage (s : Set A) : Multiplicative.ofAdd '' s = Multiplicative.toAdd ⁻¹' s :=
+    Multiplicative.ofAdd.image_eq_preimage_symm s
+  have hsmul (a : A) (s : Set A) :
+      Multiplicative.ofAdd a • (Multiplicative.ofAdd '' s) = Multiplicative.ofAdd '' (a +ᵥ s) := by
+    ext y
+    constructor
+    · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+      exact ⟨a + x, ⟨x, hx, rfl⟩, rfl⟩
+    · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+      exact ⟨Multiplicative.ofAdd x, ⟨x, hx, rfl⟩, rfl⟩
+  simp only [isFoelner_iff, isAddFoelner_iff, Multiplicative.forall]
+  refine and_congr (by simp [himage]) (and_congr ?_ (and_congr ?_ (forall_congr' fun a => ?_)))
+  · simp [Measure.count_injective_image Multiplicative.ofAdd.injective]
+  · simp [Measure.count_injective_image Multiplicative.ofAdd.injective]
+  · simp only [hsmul, ← Set.image_symmDiff Multiplicative.ofAdd.injective,
+      Measure.count_injective_image Multiplicative.ofAdd.injective]
+
+/-- Transporting a family `F : ι → Set G` to `Additive G` via `Additive.ofMul '' ·` preserves and
+reflects the counting-measure Følner condition. -/
+theorem isAddFoelner_count_image_ofMul_iff {G : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableSingletonClass G] {ι : Type*} {l : Filter ι} {F : ι → Set G} :
+    IsAddFoelner (Additive G) Measure.count l (fun i => Additive.ofMul '' F i) ↔
+      IsFoelner G Measure.count l F := by
+  have himage (s : Set G) : Additive.ofMul '' s = Additive.toMul ⁻¹' s :=
+    Additive.ofMul.image_eq_preimage_symm s
+  have hvadd (g : G) (s : Set G) :
+      Additive.ofMul g +ᵥ (Additive.ofMul '' s) = Additive.ofMul '' (g • s) := by
+    ext y
+    constructor
+    · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+      exact ⟨g * x, ⟨x, hx, rfl⟩, rfl⟩
+    · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+      exact ⟨Additive.ofMul x, ⟨x, hx, rfl⟩, rfl⟩
+  simp only [isFoelner_iff, isAddFoelner_iff, Additive.forall]
+  refine and_congr (by simp [himage]) (and_congr ?_ (and_congr ?_ (forall_congr' fun g => ?_)))
+  · simp [Measure.count_injective_image Additive.ofMul.injective]
+  · simp [Measure.count_injective_image Additive.ofMul.injective]
+  · simp only [hvadd, ← Set.image_symmDiff Additive.ofMul.injective,
+      Measure.count_injective_image Additive.ofMul.injective]
+
+/-- `Multiplicative A` has Følner sets if and only if `A` has additive Følner sets. -/
+@[simp]
+theorem hasFoelnerSets_multiplicative_iff {A : Type*} [AddGroup A] :
+    HasFoelnerSets (Multiplicative A) ↔ HasAddFoelnerSets A := by
+  constructor
+  · intro h
+    let : MeasurableSpace (Multiplicative A) := ⊤
+    have hA : HasAddFoelnerSets (Additive (Multiplicative A)) :=
+      (isAddFoelner_count_image_ofMul_iff.2
+        (isFoelner_maxFoelner (Multiplicative A) Measure.count)).hasAddFoelnerSets
+    exact (AddEquiv.additiveMultiplicative A).hasAddFoelnerSets_iff.1 hA
+  · intro h
+    let : MeasurableSpace A := ⊤
+    exact (isFoelner_count_image_ofAdd_iff.2
+      (isAddFoelner_maxAddFoelner A Measure.count)).hasFoelnerSets
+
+/-- `Additive G` has additive Følner sets if and only if `G` has Følner sets. -/
+@[simp]
+theorem hasAddFoelnerSets_additive_iff {G : Type*} [Group G] :
+    HasAddFoelnerSets (Additive G) ↔ HasFoelnerSets G := by
+  rw [← hasFoelnerSets_multiplicative_iff, (MulEquiv.multiplicativeAdditive G).hasFoelnerSets_iff]
+
+end TypeTagCompatibility
+
+end TauCeti
