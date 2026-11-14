@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.LogDeriv
 
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 
 /-!
 # Periodicity of the derivative and the logarithmic derivative
@@ -39,6 +40,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   function is periodic.
 * `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation passes to
   the Fréchet derivative.
+* `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
+  translations along a vector `v` has derivative vanishing on `v`.
 -/
 
 public section
@@ -92,6 +95,15 @@ theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [No
     simp [hf]
   · let _ := invertibleOfNonzero ha
     rw [← fderiv_comp_add_right, hfun, fderiv_const_smul_of_invertible]
+
+/-- A function invariant under all translations along a vector `v`, that is periodic with every
+period `τ • v`, has Fréchet derivative vanishing on `v` at every point. Since `fderiv` is again
+invariant (`Function.Periodic.fderiv`), the same holds for the iterated derivatives. Such an `f`
+is even along every line in the direction `v` (`fderiv_apply_eq_zero_of_apply_add_smul_neg`). -/
+theorem fderiv_apply_eq_zero_of_forall_periodic_smul {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {v : E}
+    (h : ∀ τ : ℝ, Function.Periodic f (τ • v)) (x : E) : fderiv ℝ f x v = 0 :=
+  fderiv_apply_eq_zero_of_apply_add_smul_neg v fun τ ↦ (h τ x).trans (h (-τ) x).symm
 
 end TauCeti
 

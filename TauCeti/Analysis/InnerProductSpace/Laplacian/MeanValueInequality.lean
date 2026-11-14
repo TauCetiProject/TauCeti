@@ -46,12 +46,20 @@ The proof has two steps.
   `r² w x₀ ≤ 4 ε² c` is the claim; otherwise `δ² = 1 / (4 A c)` contradicts the smallness of
   `∫ w`.
 
+For the linear inequality `Δ w ≥ -A w` with `w ≥ 0`, the function `w + κ` with `κ > 0`
+satisfies `Δ (w + κ) ≥ -(A / κ) (w + κ)²`. On a ball with `16 A μ (ball x₀ r) ≤ μ (ball 0 1)`,
+the quadratic inequality applies as soon as `κ > 16 A ∫ w / μ (ball 0 1)`, and letting `κ` decrease
+to this value gives `μ (ball x₀ r) * w x₀ ≤ 15 ∫ w` without any smallness condition on `∫ w`.
+
 ## Main declarations
 
 * `TauCeti.mul_le_setIntegral_ball_add_of_neg_le_laplacian`: the mean-value inequality for
   `Δ w ≥ -K`, in any dimension.
 * `TauCeti.mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian`: **the mean-value
   inequality** for `Δ w ≥ -A w²` in dimension two.
+* `TauCeti.mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian`: the linear version for
+  `Δ w ≥ -A w` on balls with `16 A μ (ball x₀ r) ≤ μ (ball 0 1)`, which needs no smallness of
+  `∫ w`.
 
 ## References
 
@@ -262,5 +270,80 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
     nlinarith
   · -- Otherwise `δ ^ 2 = 1 / (4 A' c) < ε ^ 2` gives `V ≤ 8 A' I`, contradicting smallness.
     exact (false_of_quadratic_local_bound hA' hc hε hloc hcase hsmall').elim
+
+/-- **The mean-value inequality for `Δ w ≥ -A w`.** Let `w ≥ 0` be `C²` on the ball `ball x₀ r`,
+continuous on its closure, with `Δ w ≥ -A w` on the ball, in dimension two. If the ball is small
+for `A`, `16 A μ (ball x₀ r) ≤ μ (ball 0 1)`, then `w` is controlled at the centre by its integral:
+
+`μ (ball x₀ r) * w x₀ ≤ 15 * ∫ x in ball x₀ r, w x ∂μ`.
+
+For Lebesgue measure on `ℂ` the smallness condition is `16 A r² ≤ 1`. Unlike the inequality for
+`Δ w ≥ -A w²`, no smallness of `∫ w` is needed, and the bound is linear in `∫ w`. -/
+theorem mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
+    (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {x₀ : E} {r A : ℝ}
+    (hw : ContDiffOn ℝ 2 w (ball x₀ r)) (hwc : ContinuousOn w (closedBall x₀ r))
+    (hw0 : ∀ x ∈ ball x₀ r, 0 ≤ w x) (hΔ : ∀ x ∈ ball x₀ r, -(A * w x) ≤ Δ w x)
+    (hr : 16 * A * μ.real (ball x₀ r) ≤ μ.real (ball (0 : E) 1)) :
+    μ.real (ball x₀ r) * w x₀ ≤ 15 * ∫ x in ball x₀ r, w x ∂μ := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  set m := μ.real (ball x₀ r)
+  set I := ∫ x in ball x₀ r, w x ∂μ
+  set V := μ.real (ball (0 : E) 1)
+  have hV : 0 < V := Metric.measureReal_ball_pos μ 0 one_pos
+  have : 0 ≤ m := measureReal_nonneg
+  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball hw0
+  -- Replacing `A` by `A' = max A 0` only weakens the hypotheses.
+  set A' := max A 0 with hA'_def
+  have : 0 ≤ A' := le_max_right _ _
+  have hΔ' : ∀ x ∈ ball x₀ r, -(A' * w x) ≤ Δ w x := fun x hx ↦
+    le_trans (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _) (hw0 x hx))) (hΔ x hx)
+  have hr' : 16 * A' * m ≤ V := by
+    rcases le_total A 0 with hA | hA
+    · rw [hA'_def, max_eq_right hA]
+      simpa using hV.le
+    · rwa [hA'_def, max_eq_left hA]
+  have hint : IntegrableOn w (ball x₀ r) μ :=
+    (hwc.integrableOn_compact (isCompact_closedBall x₀ r)).mono_set ball_subset_closedBall
+  -- For `κ > 0` the function `w + κ ≥ κ` satisfies `Δ (w + κ) ≥ -(A' / κ) (w + κ)²`, and its
+  -- integral is small once `κ > 16 A' ∫ w / μ (ball 0 1)`.
+  have key : ∀ κ, 16 * A' * I / V < κ → m * w x₀ ≤ 8 * I + 7 * κ * m := by
+    intro κ hκ
+    have hκ0 : 0 < κ := lt_of_le_of_lt (by positivity) hκ
+    have hIκ : 16 * A' * I < κ * V := by rwa [div_lt_iff₀ hV] at hκ
+    have hΔκ : ∀ x ∈ ball x₀ r, -(A' / κ * (w x + κ) ^ 2) ≤ Δ (fun x ↦ w x + κ) x := by
+      intro x hx
+      have hwx := hw0 x hx
+      have hadd : Δ (fun x ↦ w x + κ) x = Δ w x := by
+        rw [← Pi.add_def, (hw.contDiffAt (isOpen_ball.mem_nhds hx)).laplacian_add contDiffAt_const,
+          laplacian_const, Pi.zero_apply, add_zero]
+      rw [hadd]
+      refine le_trans ?_ (hΔ' x hx)
+      rw [neg_le_neg_iff, div_mul_eq_mul_div, le_div_iff₀ hκ0]
+      have h1 : 0 ≤ A' * (w x ^ 2 + w x * κ + κ ^ 2) := by positivity
+      linear_combination h1
+    have hsum : ∫ x in ball x₀ r, (w x + κ) ∂μ = I + κ * m := by
+      rw [integral_add hint (integrableOn_const (by simp [measure_ball_lt_top.ne])),
+        setIntegral_const, smul_eq_mul, mul_comm]
+    have h := mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian (μ := μ) hE
+      (w := fun x ↦ w x + κ) (A := A' / κ) (hw.add contDiffOn_const)
+      (hwc.add continuousOn_const) (fun x hx ↦ by linarith [hw0 x hx]) hΔκ (by
+        rw [hsum, mul_div_assoc', div_mul_eq_mul_div, div_lt_iff₀ hκ0]
+        nlinarith)
+    rw [hsum] at h
+    linarith
+  -- Let `κ` decrease to `16 A' ∫ w / μ (ball 0 1)`.
+  have hlim : m * w x₀ ≤ 8 * I + 7 * (16 * A' * I / V) * m := by
+    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+    have h := key (16 * A' * I / V + ε / (7 * m + 1)) (by
+      have : 0 < ε / (7 * m + 1) := by positivity
+      linarith)
+    have hεm : 7 * (ε / (7 * m + 1)) * m ≤ ε := by
+      rw [mul_comm 7, mul_assoc, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+      nlinarith
+    nlinarith
+  have hfin : 7 * (16 * A' * I / V) * m ≤ 7 * I := by
+    rw [mul_assoc, div_mul_eq_mul_div, mul_div_assoc', div_le_iff₀ hV]
+    nlinarith
+  linarith
 
 end TauCeti

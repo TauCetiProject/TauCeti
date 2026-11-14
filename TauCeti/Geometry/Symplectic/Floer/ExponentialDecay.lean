@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
+public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
@@ -63,10 +65,23 @@ energy at most `C exp (-κ s) / h`, and the bound on `∂_s u` moves this estima
 `s` at a cost of `L h`. The step `h = exp (-κ s / 3)` balances the two terms and gives the rate
 `κ / 3`.
 
-Exponential convergence of a Floer solution to its asymptotic orbit is what places the moduli
-spaces of Floer cylinders and pairs of pants in weighted Sobolev spaces. Exponential decay of the
-derivatives of `u - x`, and the optimal rate given by the spectral gap of the asymptotic operator,
-are not treated here.
+**Exponential decay of the derivatives.** For a `C³` Hamiltonian and a `C²` family `J_t(x)` tamed
+on a compact set containing the image of `u`, `∂ₛu` decays exponentially too: eventually
+`‖∂ₛu(s, t)‖ ≤ C exp (-κ s)` for every `t`
+(`TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp`). On a
+cylindrical end, `‖∂ₛu(s, t)‖²` is at most a constant times the energy of `u` over
+`(s - 1, ∞) × [0, 1]`
+(`SymplecticForm.exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensity`),
+so this follows from the exponential decay of the energy. With the equation
+`∂ₜu - X_{H_t}(u) = J_t(u) ∂ₛu`, the Lipschitz bound of `X_{H_t}` near the orbit and the
+exponential convergence of the loops, the full derivative of `u` then converges exponentially to
+the derivative `(σ, τ) ↦ τ X_{H_t}(x(t))` of the stationary cylinder over `x`
+(`TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`).
+
+Exponential convergence of a Floer solution to its asymptotic orbit, in `C¹`, is what places the
+moduli spaces of Floer cylinders and pairs of pants in weighted Sobolev spaces. The optimal rate
+given by the spectral gap of the asymptotic operator, and the decay of higher derivatives, are
+not treated here.
 
 ## Main results
 
@@ -85,12 +100,18 @@ are not treated here.
   square root of the energy of its slice.
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp`: a finite-energy Floer
   half-cylinder with bounded `∂_s u` converges exponentially to its nondegenerate asymptotic orbit.
+* `TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp`: `∂_s u`
+  decays exponentially at a nondegenerate end.
+* `TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`: the derivative
+  of `u` converges exponentially to the derivative of the stationary cylinder.
 
 ## References
 
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
   Math. Ser. 7 (1999), Lecture 2, on the exponential decay of finite-energy Floer trajectories
   at nondegenerate orbits.
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Section 4.3,
+  on the mean-value inequality behind the pointwise derivative bounds.
 * J. Robbin and D. Salamon, *Asymptotic behaviour of holomorphic strips*, Ann. Inst. H. Poincaré
   Anal. Non Linéaire 18 (2001), 573–612.
 -/
@@ -626,5 +647,174 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
         norm_sub_le_norm_sub_add_norm_sub _ _ _
     _ ≤ L * h + K * √C₁ * h := add_le_add (by rwa [norm_sub_rev]) hσx
     _ = (K * √C₁ + L) * Real.exp (-(κ₀ / 3 * s)) := by ring
+
+end TauCeti.SymplecticForm
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {H : ℝ → V → ℝ} {J : ℝ → V → AlmostComplexStructure V}
+  {W : Set (ℝ × V)} {K : Set V} {u : ℝ × ℝ → V} {a : ℝ} {x : ℝ → V}
+
+/-- **Exponential decay of `∂ₛu` at a nondegenerate end.** Let `H` be a `C³`, `1`-periodic
+Hamiltonian and `J_t(x)` a `1`-periodic family of almost complex structures, `C²` on an open set
+`W ⊆ ℝ × V` containing `ℝ × K` for a compact `K ⊆ V`, and tamed by `ω` on `ℝ × K`. Let `u` be a
+`C³` solution of the Floer equation `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` on the half-cylinder
+`s > a`, with `1`-periodic loops in `K` and finite energy, whose loops `u(s, ·)` converge uniformly
+to a `1`-periodic orbit `x` that is nondegenerate: the propagator of `ζ' = dX_{H_t}(x(t)) ζ` has no
+nonzero fixed vector at time `1`. Then `∂ₛu` decays exponentially: for some `κ > 0` and `C`,
+eventually `‖∂ₛu(s, t)‖ ≤ C exp (-κ s)` for every `t`. -/
+theorem exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
+    (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hxper : Periodic x 1) (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
+      v = 0)
+    (hux : TendstoUniformly (fun s t ↦ u (s, t)) x atTop) :
+    ∃ κ > 0, ∃ C, ∀ᶠ s in atTop, ∀ t, ‖fderiv ℝ u (s, t) (1, 0)‖ ≤ C * Real.exp (-(κ * s)) := by
+  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hK
+    (hJ.continuousOn.mono hKW) hJper hJt
+  -- The energy of the end beyond `s` decays exponentially.
+  obtain ⟨κ, hκ, C₀, hdecay⟩ := exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
+    (J := fun z ↦ J z.2 (u z)) (hH.of_le (by norm_num)) hHper (hu.of_le (by norm_num)) hper hc
+    (fun z hz v ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) v).1)
+    (fun z hz v ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) v).2) hfloer hE hxper hx hnd hux
+  -- `‖∂ₛu(z)‖²` is bounded by the energy beyond `z.1 - 1`.
+  obtain ⟨C₁, hC₁⟩ := exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensity
+    hH hHper hW hJ hJper hK hKW hJt hu hper huK hfloer hE (lt_add_one a)
+  set B := max C₁ 0 * (max C₀ 0 * Real.exp κ)
+  have hB : 0 ≤ B := by positivity
+  obtain ⟨s₀, hs₀⟩ := eventually_atTop.1 hdecay
+  refine ⟨κ / 2, by positivity, √B, (eventually_ge_atTop (max (s₀ + 1) (a + 1))).mono
+    fun s hs t ↦ ?_⟩
+  have hs1 : s₀ ≤ s - 1 := by linarith [le_max_left (s₀ + 1) (a + 1)]
+  have hsa : a + 1 ≤ s := (le_max_right _ _).trans hs
+  have hsq : ‖fderiv ℝ u (s, t) (1, 0)‖ ^ 2 ≤ B * Real.exp (-(κ * s)) := by
+    have h := (hC₁ (s, t) hsa).trans (mul_le_mul' (ENNReal.ofReal_le_ofReal (le_max_left C₁ 0))
+      ((lintegral_mono_set (Set.prod_mono Ioi_subset_Ici_self le_rfl)).trans
+        ((hs₀ (s - 1) hs1).trans (ENNReal.ofReal_le_ofReal
+          (mul_le_mul_of_nonneg_right (le_max_left C₀ 0) (Real.exp_pos _).le)))))
+    rw [← ENNReal.ofReal_mul (le_max_right _ _),
+      ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
+    refine h.trans_eq ?_
+    rw [show -(κ * (s - 1)) = κ + -(κ * s) by ring, Real.exp_add]
+    ring
+  have hexp : (√B * Real.exp (-(κ / 2 * s))) ^ 2 = B * Real.exp (-(κ * s)) := by
+    rw [mul_pow, Real.sq_sqrt hB, ← Real.exp_nat_mul]
+    congr 2
+    push_cast
+    ring
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1
+    (hsq.trans_eq hexp.symm)
+
+
+/-- **Exponential `C¹` convergence at a nondegenerate end.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp`, the derivative of
+`u` converges exponentially to the derivative `(σ, τ) ↦ τ X_{H_t}(x(t))` of the stationary cylinder
+`(s, t) ↦ x(t)`: for some `κ > 0` and `C`, eventually
+
+`‖du(s, t) - dt ⊗ X_{H_t}(x(t))‖ ≤ C exp (-κ s)` for every `t`.
+
+Together with the exponential convergence of the loops
+(`TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp`), `u` converges to `x` in `C¹`
+at an exponential rate along the end. -/
+theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff ℝ 3 (uncurry H))
+    (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hK : IsCompact K) (hKW : univ ×ˢ K ⊆ W)
+    (hJt : ∀ t, ∀ x ∈ K, ω.Tames (J t x))
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    (hxper : Periodic x 1) (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : ∀ v, dysonSeriesLeft (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v →
+      v = 0)
+    (hux : TendstoUniformly (fun s t ↦ u (s, t)) x atTop) :
+    ∃ κ > 0, ∃ C, ∀ᶠ s in atTop, ∀ t, ‖fderiv ℝ u (s, t) -
+      (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)) := by
+  obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hK
+    (hJ.continuousOn.mono hKW) hJper hJt
+  have hH2 : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  -- `∂ₛu` decays exponentially.
+  obtain ⟨κ₁, hκ₁, C₁, h₁⟩ := exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp hH hHper hW
+    hJ hJper hK hKW hJt hu hper huK hfloer hE hxper hx hnd hux
+  -- The loops converge exponentially, since `du` is bounded beyond `a + 1`.
+  obtain ⟨L, hL⟩ := exists_forall_norm_fderiv_le_of_floer hH hHper hW hJ hJper hK hKW hJt hu hper
+    huK hfloer hE (lt_add_one a)
+  have hsub : Ioi (a + 1) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ Icc 0 1 :=
+    Set.prod_mono (Ioi_subset_Ioi (by linarith)) le_rfl
+  obtain ⟨κ₂, hκ₂, C₂, h₂⟩ := exists_pos_eventually_norm_sub_le_exp (a := a + 1)
+    (J := fun z ↦ J z.2 (u z)) (L := L) hH2 hHper
+    ((hu.of_le (by norm_num)).mono (Set.prod_mono (Ioi_subset_Ioi (by linarith)) le_rfl))
+    (fun s hs ↦ hper s (by linarith)) hc
+    (fun z hz v ↦ (hcM z.2 _ (huK z.1 (hsub hz).1 z.2) v).1)
+    (fun z hz v ↦ (hcM z.2 _ (huK z.1 (hsub hz).1 z.2) v).2)
+    (fun z hz ↦ hfloer z (hsub hz)) (ne_top_of_le_ne_top hE (lintegral_mono_set hsub))
+    (fun z hz ↦ ((fderiv ℝ u z).unit_le_opNorm _ (by simp)).trans
+      (hL z (mem_Ioi.1 hz.1).le))
+    hxper hx hnd hux
+  -- A Lipschitz constant for every `X_{H_t}` on `K` and the orbit.
+  obtain ⟨Lx, hLx⟩ := ω.exists_forall_lipschitzOnWith_hamiltonianVectorField hH2 hHper
+    (hK.union (hxper.compact_of_continuous one_ne_zero hxc)).isBounded
+  set M' := max M 0
+  refine ⟨min κ₁ κ₂, lt_min hκ₁ hκ₂, (1 + M') * max C₁ 0 + Lx * max C₂ 0,
+    (h₁.and (h₂.and (eventually_ge_atTop (max (a + 1) 0)))).mono fun s ⟨hs₁, hs₂, hs⟩ t ↦ ?_⟩
+  have hsa : a < s := by linarith [le_max_left (a + 1) 0]
+  have hs0 : 0 ≤ s := (le_max_right _ _).trans hs
+  set D := fderiv ℝ u (s, t) -
+    (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))
+  -- The Floer equation: `∂ₜu - X_{H_t}(u) = J_t(u) ∂ₛu`.
+  have hdef : fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t)) =
+      J t (u (s, t)) (fderiv ℝ u (s, t) (1, 0)) := by
+    have h := (isComplexLinearMap_perturbedFDeriv_of_periodic hHper hJper isOpen_Ioi hper hfloer
+      (z := (s, t)) ⟨hsa, mem_univ _⟩).apply_stdComplexLineImag
+    simp only [ContinuousLinearMap.coe_coe, perturbedFDeriv_apply_stdComplexLineImag,
+      perturbedFDeriv_apply_stdComplexLineReal] at h
+    simpa [stdComplexLineReal_eq, stdComplexLineImag_eq, hamiltonianVectorField_const] using h
+  have hD₁ : D (1, 0) = fderiv ℝ u (s, t) (1, 0) := by simp [D]
+  have hD₂ : ‖D (0, 1)‖ ≤ M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := by
+    have h : D (0, 1) = J t (u (s, t)) (fderiv ℝ u (s, t) (1, 0)) +
+        (ω.hamiltonianVectorField (H t) (u (s, t)) - ω.hamiltonianVectorField (H t) (x t)) := by
+      rw [← hdef]
+      simp [D]
+    rw [h]
+    refine norm_add_le_of_le (((hcM t _ (huK s hsa t) _).2).trans ?_)
+      ((hLx t).norm_sub_le (Or.inl (huK s hsa t)) (Or.inr (mem_range_self t)))
+    gcongr
+    exact le_max_left _ _
+  have he₁ : Real.exp (-(κ₁ * s)) ≤ Real.exp (-(min κ₁ κ₂ * s)) :=
+    Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (min_le_left _ _) hs0))
+  have he₂ : Real.exp (-(κ₂ * s)) ≤ Real.exp (-(min κ₁ κ₂ * s)) :=
+    Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (min_le_right _ _) hs0))
+  have hu₁ : ‖fderiv ℝ u (s, t) (1, 0)‖ ≤ max C₁ 0 * Real.exp (-(min κ₁ κ₂ * s)) :=
+    (hs₁ t).trans ((mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le).trans
+      (mul_le_mul_of_nonneg_left he₁ (le_max_right _ _)))
+  have hu₂ : ‖u (s, t) - x t‖ ≤ max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s)) :=
+    (hs₂ t).trans ((mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le).trans
+      (mul_le_mul_of_nonneg_left he₂ (le_max_right _ _)))
+  have : 0 ≤ M' := le_max_right _ _
+  have : (0 : ℝ) ≤ Lx := Lx.coe_nonneg
+  calc ‖D‖ ≤ ‖fderiv ℝ u (s, t) (1, 0)‖ +
+        (M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖) := by
+        refine D.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans ?_
+        rw [hD₁]
+        exact add_le_add le_rfl hD₂
+    _ = (1 + M') * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := by ring
+    _ ≤ (1 + M') * (max C₁ 0 * Real.exp (-(min κ₁ κ₂ * s))) +
+        Lx * (max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s))) := by gcongr
+    _ = _ := by ring
 
 end TauCeti.SymplecticForm
