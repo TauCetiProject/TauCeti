@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-public import TauCeti.Combinatorics.Brauer.Associativity
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.Combinatorics.Brauer.Generator
-public import TauCeti.Combinatorics.Brauer.WeightedAssociativity
+
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import TauCeti.Combinatorics.Brauer.Associativity
+import TauCeti.Combinatorics.Brauer.WeightedAssociativity
 
 /-!
 # The Brauer algebra
