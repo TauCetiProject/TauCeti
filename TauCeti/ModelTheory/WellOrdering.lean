@@ -260,9 +260,7 @@ private theorem insert (h : Gapped Q x γ (α + 1 + α)) (s : ℚ) :
       hx q (Finset.mem_filter.1 hq).1 (Finset.mem_filter.1 hq).2
   have hmax {c : Ordinal.{w}} : ∀ a, a + (α + 1 + α) < c → ∀ b, b + (α + 1 + α) < c →
       (a ⊔ b) + (α + 1 + α) < c := fun a ha b hb => by
-    obtain h | h := le_total a b
-    · rwa [sup_eq_right.2 h]
-    · rwa [sup_eq_left.2 h]
+    simpa only [max_add, max_lt_iff] using And.intro ha hb
   have hβ : α ≤ α + 1 + α := le_add_self
   have hlt_top : lo + (α + 1 + α) < γ :=
     hsup (by simpa using h.lt_top) hmax fun q hq _ => h.add_lt_top hq
