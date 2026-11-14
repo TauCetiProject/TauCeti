@@ -223,23 +223,23 @@ noncomputable def geckRootSubgroupBaseChangeCoordinateMap
     (i : Fin t.rank ⊕ Fin t.rank) :
     GeneralLinear.coordinateHopfAlgebra A (t.geckDim ht) ⟶
       AdditiveGroup.coordinateHopfAlgebra A :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupBaseChangePresentationCoordinateMap
+  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
     (t.geckCoordinateLattice ht).toAddSubgroup
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.isNilpotent_geckRepresentation_rootGenerator ht)
-    (t.geckCoordinateBasisFin ht) A i
+    i (t.isNilpotent_geckRepresentation_rootGenerator ht i)
+    (t.geckCoordinateBasisFin ht) A
 
 /-- The transported Geck root-subgroup map is the generic Kostant root-subgroup map after
 scalar extension into the directly constructed coordinate algebras. -/
 theorem geckRootSubgroupBaseChangeCoordinateMap_def (i : Fin t.rank ⊕ Fin t.rank) :
     t.geckRootSubgroupBaseChangeCoordinateMap ht A i =
-      kostantRootSubgroupBaseChangePresentationCoordinateMap
+      kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap
         (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) A i :=
+        i (t.isNilpotent_geckRepresentation_rootGenerator ht i)
+        (t.geckCoordinateBasisFin ht) A :=
   (rfl)
 
 /-- The base-changed `i`th Geck root-subgroup coordinate map factored through the transported
@@ -561,12 +561,12 @@ theorem geckGeneratorCoordinateMap_baseChange (j : Sum (Fin t.rank ⊕ Fin t.ran
       t.geckGeneratorCoordinateMap ht K j := by
   rcases j with i | _
   · rw [geckGeneratorCoordinateMap_inl, geckGeneratorCoordinateMap_inl]
-    exact kostantRootSubgroupBaseChangePresentationCoordinateMap_baseChange
+    exact kostantRootSubgroupGeneralLinearBaseChangeCoordinateMap_baseChange
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (t.geckCoordinateBasisFin ht) k K i
+      i (t.isNilpotent_geckRepresentation_rootGenerator ht i)
+      (t.geckCoordinateBasisFin ht) k K
   · rw [geckGeneratorCoordinateMap_inr, geckGeneratorCoordinateMap_inr]
     exact GeneralLinear.weightTorusBaseChangeCoordinateMap_baseChange ℤ k K (t.geckWeightFin ht)
 
