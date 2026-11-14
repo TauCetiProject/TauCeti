@@ -499,7 +499,8 @@ theorem toGraph_toSimpleGraph (d : (ofSimpleGraph G).EarDecomposition K)
       (Ear.toGraph_toSimpleGraph_heq _ _)
 
 @[simp]
-theorem isVertexStart_toSimpleGraph (d : (ofSimpleGraph G).EarDecomposition K)
+theorem exists_initial_toSimpleGraph_eq_singletonSubgraph_iff
+    (d : (ofSimpleGraph G).EarDecomposition K)
     (h : H.toGraph = K) :
     (∃ v, (d.toSimpleGraph h).initial = G.singletonSubgraph v) ↔ d.IsVertexStart := by
   rw [← SimpleGraph.EarDecomposition.isVertexStart_toGraph, toGraph_toSimpleGraph,
