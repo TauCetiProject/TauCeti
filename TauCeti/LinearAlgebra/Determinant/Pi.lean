@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import TauCeti.LinearAlgebra.Determinant.Line
 import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 import Mathlib.RingTheory.SimpleModule.Rank
-import TauCeti.LinearAlgebra.LinearIndependent.Fin
+import TauCeti.LinearAlgebra.ExteriorPower.Pi
 
 /-!
 # Determinant lines of finite products of even-dimensional spaces
@@ -71,7 +71,7 @@ private def detLineSingle (h : ∀ i, Even (finrank K (U i))) (i : ι) :
     detLine K (U i) →ₗ[K] Subalgebra.center K (ExteriorAlgebra K ((i : ι) → U i)) where
   toFun x := ⟨ExteriorAlgebra.map (LinearMap.single K U i) (x : ExteriorAlgebra K (U i)),
     ExteriorAlgebra.mem_center_of_mem_of_even
-      (ExteriorAlgebra.map_mem_exteriorPower _ x.2) (h i)⟩
+      ((LinearMap.single K U i).exteriorAlgebra_map_mem_exteriorPower x.2) (h i)⟩
   map_add' x y := Subtype.ext (by simp)
   map_smul' r x := Subtype.ext (by simp)
 
@@ -91,44 +91,10 @@ private theorem coe_prod_detLineSingle_mem (h : ∀ i, Even (finrank K (U i)))
   | empty => simp
   | insert a s ha ih =>
     rw [Finset.prod_insert ha, Finset.sum_insert ha, Subalgebra.coe_mul]
-    exact SetLike.mul_mem_graded (ExteriorAlgebra.map_mem_exteriorPower _ (x a).2) ih
+    exact SetLike.mul_mem_graded
+      ((LinearMap.single K U a).exteriorAlgebra_map_mem_exteriorPower (x a).2) ih
 
-variable [∀ i, FiniteDimensional K (U i)]
-
-/-- The family of exterior products of the bases `Module.finBasis K (U i)`, pushed into `Πᵢ U i`
-and multiplied along a list of distinct indices, is the exterior product of a linearly independent
-family of vectors vanishing at the indices off the list. -/
-private theorem exists_linearIndependent_prod_map_eq_ιMulti (l : List ι) (hl : l.Nodup) :
-    ∃ N, ∃ v : Fin N → ((i : ι) → U i), LinearIndependent K v ∧ (∀ k, ∀ j ∉ l, v k j = 0) ∧
-      (l.map fun i ↦ ExteriorAlgebra.ιMulti K _
-        (LinearMap.single K U i ∘ Module.finBasis K (U i))).prod =
-        ExteriorAlgebra.ιMulti K N v := by
-  induction l with
-  | nil => exact ⟨0, Fin.elim0, linearIndependent_empty_type, fun k ↦ k.elim0, by simp⟩
-  | cons a l ih =>
-    rw [List.nodup_cons] at hl
-    obtain ⟨N, v, hv, hsupp, heq⟩ := ih hl.2
-    refine ⟨_, Fin.append (LinearMap.single K U a ∘ Module.finBasis K (U a)) v, ?_, ?_, ?_⟩
-    · refine linearIndependent_fin_append.2 ⟨(Module.finBasis K (U a)).linearIndependent.map'
-        _ (LinearMap.ker_eq_bot.2 fun x y hxy ↦ by simpa using congrFun hxy a), hv, ?_⟩
-      -- The first block lies in the `a`th factor, the second vanishes at `a`.
-      have h₁ : Submodule.span K (Set.range (LinearMap.single K U a ∘ Module.finBasis K (U a))) ≤
-          LinearMap.range (LinearMap.single K U a) :=
-        Submodule.span_le.2 (Set.range_subset_iff.2 fun k ↦ LinearMap.mem_range_self _ _)
-      have h₂ : Submodule.span K (Set.range v) ≤ LinearMap.ker (LinearMap.proj a) :=
-        Submodule.span_le.2 (Set.range_subset_iff.2 fun k ↦ hsupp k a hl.1)
-      refine Submodule.disjoint_def.2 fun x hx hx' ↦ ?_
-      obtain ⟨y, rfl⟩ := h₁ hx
-      have hy : y = 0 := by simpa using h₂ hx'
-      simp [hy]
-    · intro k j hj
-      rw [List.mem_cons, not_or] at hj
-      induction k using Fin.addCases with
-      | left k => simp [hj.1]
-      | right k => simpa using hsupp k j hj.2
-    · rw [List.map_cons, List.prod_cons, heq, ExteriorAlgebra.ιMulti_mul_ιMulti]
-
-variable [Fintype ι]
+variable [∀ i, FiniteDimensional K (U i)] [Fintype ι]
 
 /-- The multilinear map `(ωᵢ)ᵢ ↦ ∏ᵢ ωᵢ` from the determinant lines of the `U i` to that of
 `Πᵢ U i`, the product being taken in the center of the exterior algebra. -/
@@ -171,8 +137,9 @@ private theorem bijective_lift_detLinePiMultilinear (h : ∀ i, Even (finrank K 
   refine LinearMap.bijective_of_ne_zero (M := ⨂[K] i, detLine K (U i))
     (N := detLine K ((i : ι) → U i)) fun hf ↦ ?_
   set e := (Fintype.equivFin ι).symm
-  obtain ⟨N, v, hv, -, heq⟩ := exists_linearIndependent_prod_map_eq_ιMulti K U
-    (List.ofFn e) (List.nodup_ofFn.2 e.injective)
+  obtain ⟨N, v, hv, -, heq⟩ :=
+    ExteriorAlgebra.exists_linearIndependent_prod_ιMulti_single_eq_ιMulti
+      (fun i ↦ (Module.finBasis K (U i)).linearIndependent) (List.nodup_ofFn.2 e.injective)
   have h0 := coe_lift_detLinePiMultilinear_tprod K U h
     (fun i ↦ exteriorPower.ιMulti K _ (Module.finBasis K (U i))) e
   refine (exteriorPower.ιMulti_ne_zero_iff v).2 hv (Subtype.ext ?_)

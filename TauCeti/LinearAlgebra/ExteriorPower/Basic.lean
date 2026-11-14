@@ -68,7 +68,7 @@ and moving the remaining factors by vectors of that subspace does not change the
   degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`; in particular
-  that map preserves the exterior degree (`TauCeti.ExteriorAlgebra.map_mem_exteriorPower`).
+  that map preserves the exterior degree (`LinearMap.exteriorAlgebra_map_mem_exteriorPower`).
 * `TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one` and
   `TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one`: the first exterior power consists of
   the vectors, and `ExteriorAlgebra.ιInv` recovers the vector from its image.
@@ -447,8 +447,9 @@ theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
 
 /-- The map of exterior algebras induced by a linear map preserves the exterior degree: it carries
 `⋀ⁿ M` into `⋀ⁿ N`. -/
-theorem map_mem_exteriorPower (f : M →ₗ[R] N) {n : ℕ} {x : _root_.ExteriorAlgebra R M}
-    (hx : x ∈ ⋀[R]^n M) : _root_.ExteriorAlgebra.map f x ∈ ⋀[R]^n N := by
+theorem _root_.LinearMap.exteriorAlgebra_map_mem_exteriorPower (f : M →ₗ[R] N) {n : ℕ}
+    {x : _root_.ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
+    _root_.ExteriorAlgebra.map f x ∈ ⋀[R]^n N := by
   simpa only [exteriorPower.coe_map] using (exteriorPower.map n f ⟨x, hx⟩).2
 
 /-- A vector lies in the first exterior power. -/
