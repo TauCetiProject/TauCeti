@@ -37,13 +37,19 @@ lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2`
 
 * `TauCeti.BinaryQuadraticForm.eq_root_iff`: `root f` is the only point of `ℍ` at which
   `a z² + b z + c` vanishes.
+* `TauCeti.BinaryQuadraticForm.discrim_neg_of_quadratic_upperHalfPlane`: an integral quadratic
+  relation `a τ² + b τ + c = 0` satisfied by `τ ∈ ℍ` with `a ≠ 0` has negative discriminant.
 * `TauCeti.BinaryQuadraticForm.root_smul`: `root (γ • f) = γ • root f`.
 * `TauCeti.BinaryQuadraticForm.root_injective`: for fixed `D`, a form is determined by its root.
 * `TauCeti.BinaryQuadraticForm.normSq_root`: `|root f|² = c / a`.
+* `TauCeti.BinaryQuadraticForm.conj_denom_mul_denom_root`:
+  `conj (denom γ (root f)) * denom γ (root f) = (γ • f).a / f.a`.
 * `TauCeti.BinaryQuadraticForm.stabilizer_root`: the stabiliser of `root f` in `SL(2, ℤ)` is
   the stabiliser of `f`.
 * `TauCeti.BinaryQuadraticForm.root_of_eq_reflected`: the root of the reflected form
   `a x² - b x y + c y²` is the reflection `-conj τ` of the root `τ` of `a x² + b x y + c y²`.
+* `TauCeti.BinaryQuadraticForm.root_eq_root_of_eq_primPart`: a positive definite form and its
+  primitive part have the same root in `ℍ`.
 
 ## References
 
@@ -54,7 +60,7 @@ lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2`
 
 public section
 
-open Complex
+open Complex ComplexConjugate
 open UpperHalfPlane hiding I
 open scoped MatrixGroups
 
@@ -97,6 +103,28 @@ theorem eq_root_iff (f : posDef D) (z : ℍ) :
     or_iff_left fun h ↦ z.coe_im_pos.not_ge ?_]
   simp [h, div_im, div_nonpos_iff, ha.le, mul_nonneg]
 
+/-- An integral quadratic relation `a τ² + b τ + c = 0` satisfied by `τ ∈ ℍ` with `a ≠ 0` has
+strictly negative discriminant `b² - 4 a c < 0`. -/
+theorem discrim_neg_of_quadratic_upperHalfPlane {τ : ℍ} {a b c : ℤ} (ha : a ≠ 0)
+    (hrel : (a : ℂ) * (τ : ℂ) ^ 2 + b * (τ : ℂ) + c = 0) :
+    (⟨a, b, c⟩ : BinaryQuadraticForm ℤ).discrim < 0 := by
+  have him := congrArg Complex.im hrel
+  have hre := congrArg Complex.re hrel
+  simp only [sq, add_im, mul_im, intCast_re, intCast_im, zero_mul, add_zero, coe_re, coe_im,
+    add_re, mul_re, sub_zero, zero_im, zero_re] at him hre
+  have him' : (2 * (a : ℝ) * τ.re + b) * τ.im = 0 := by linear_combination him
+  have h2ax : 2 * (a : ℝ) * τ.re + b = 0 := (mul_eq_zero.mp him').resolve_right τ.im_ne_zero
+  have hdiscR : ((b ^ 2 - 4 * a * c : ℤ) : ℝ) = -(4 * (a : ℝ) ^ 2 * τ.im ^ 2) := by
+    push_cast
+    linear_combination (2 * (a : ℝ) * τ.re + b) * h2ax - 4 * (a : ℝ) * hre
+  have : (a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr ha
+  have hnegR : ((b ^ 2 - 4 * a * c : ℤ) : ℝ) < 0 := by
+    rw [hdiscR]
+    have hpos : 0 < 4 * (a : ℝ) ^ 2 * τ.im ^ 2 := by positivity
+    linarith
+  rw [discrim_def, discrim]
+  exact_mod_cast hnegR
+
 /-- The root map is `SL(2, ℤ)`-equivariant: `root (γ • f) = γ • root f`, with the action
 `γ • f = f ∘ γ⁻¹` on forms and the Möbius action on `ℍ`. -/
 @[simp]
@@ -129,6 +157,26 @@ theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := 
   field_simp
   linear_combination hD + Real.sq_sqrt D.cast_nonneg
 
+/-- The product `conj (denom γ (root f)) · denom γ (root f)` equals the ratio `(γ • f).a / f.a` of
+leading coefficients. -/
+theorem conj_denom_mul_denom_root (f : posDef D) (γ : SL(2, ℤ)) :
+    conj (denom γ (root f)) * denom γ (root f) = ((γ • f).1.a : ℂ) / (f.1.a : ℂ) := by
+  have hfa : (f.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
+  have hgfa : ((γ • f).1.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp (γ • f).2).2.ne'
+  have hsqrt : √(D : ℝ) ≠ 0 := (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (NeZero.pos D))).ne'
+  have hden : Complex.normSq (denom γ (root f)) ≠ 0 :=
+    (Complex.normSq_pos.mpr (denom_ne_zero γ (root f))).ne'
+  have him : √(D : ℝ) / (2 * (γ • f).1.a) =
+      (√(D : ℝ) / (2 * f.1.a)) / Complex.normSq (denom γ (root f)) := by
+    simpa only [im_root, _root_.ModularGroup.im_smul_eq_div_normSq] using
+      congrArg UpperHalfPlane.im (root_smul γ f)
+  have hnorm : Complex.normSq (denom γ (root f)) = ((γ • f).1.a : ℝ) / (f.1.a : ℝ) := by
+    field_simp at him ⊢
+    linarith
+  rw [mul_comm, Complex.mul_conj, hnorm]
+  push_cast
+  rfl
+
 /-- The stabiliser of the root of `f` in `SL(2, ℤ)` is the stabiliser of `f`. -/
 @[simp]
 theorem stabilizer_root (f : posDef D) :
@@ -145,6 +193,27 @@ theorem root_of_eq_reflected {f g : posDef D} (hg : g.1 = f.1.reflected) :
     push_cast
     ring
   · rw [im_root, J_smul_im, im_root, hg, reflected_a]
+
+/-- A positive definite form and its primitive part have the same root in the upper half-plane. -/
+theorem root_eq_root_of_eq_primPart {D' : ℕ} [NeZero D'] {f : posDef D} {g : posDef D'}
+    (hg : g.1 = f.1.primPart) : root g = root f := by
+  symm
+  rw [eq_root_iff]
+  have hf0 : f.1 ≠ 0 := fun h ↦ (mem_posDef.mp f.2).2.ne' (by simp [h])
+  have hc : (f.1.content : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr ((f.1.content_pos_iff).mpr hf0).ne'
+  have hsmul := f.1.content_smul_primPart
+  have ha : (f.1.content : ℤ) * g.1.a = f.1.a := by
+    simpa only [hg, smul_a', nsmul_eq_mul] using congrArg BinaryQuadraticForm.a hsmul
+  have hb : (f.1.content : ℤ) * g.1.b = f.1.b := by
+    simpa only [hg, smul_b', nsmul_eq_mul] using congrArg BinaryQuadraticForm.b hsmul
+  have hc' : (f.1.content : ℤ) * g.1.c = f.1.c := by
+    simpa only [hg, smul_c', nsmul_eq_mul] using congrArg BinaryQuadraticForm.c hsmul
+  have hrel := (eq_root_iff f (root f)).mp rfl
+  rw [← ha, ← hb, ← hc'] at hrel
+  push_cast at hrel
+  have hfac : (f.1.content : ℂ) * ((g.1.a : ℂ) * (root f : ℂ) ^ 2 + g.1.b * (root f : ℂ) +
+      g.1.c) = 0 := by linear_combination hrel
+  exact (mul_eq_zero.mp hfac).resolve_left hc
 
 end BinaryQuadraticForm
 

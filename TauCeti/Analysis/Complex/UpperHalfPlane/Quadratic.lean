@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.Algebra.QuadraticAlgebra.PeriodMatrix
+public import TauCeti.RingTheory.IntegralOrder.LeftOrder
 
 /-!
 # Multipliers of a principal quadratic period lattice
@@ -14,6 +15,11 @@ public import TauCeti.Algebra.QuadraticAlgebra.PeriodMatrix
 If `τ ∈ ℍ` satisfies `τ² + Bτ + C = 0` with integral coefficients, the lattice
 `ℤ τ + ℤ` is a subalgebra of `ℂ`. It is exactly the ring of complex scalars preserving that
 lattice, and evaluation at `τ` identifies it with `QuadraticAlgebra ℤ (-C) (-B)`.
+More generally, rescaling a period pair preserves `Submodule.leftOrder`
+(`PeriodPair.leftOrder_lattice_smul`), and for any `τ ∈ ℍ` the left order of `ℤ τ + ℤ` is strictly
+larger than `ℤ` (`⊥`) if and only if `τ` satisfies an integral quadratic equation
+`a τ² + b τ + c = 0` with `a > 0` (`UpperHalfPlane.leftOrder_lattice_periodPair_ne_bot_iff`); when
+`(a, b, c)` generate the unit ideal of `ℤ`, the left order is `ℤ + ℤ(a τ) = ℤ[a τ]`.
 These are scalar endomorphisms of the lattice; no algebraic elliptic-curve comparison is asserted.
 
 The multiplication matrix uses row coordinates in the ordered periods `(τ, 1)`, as for division
@@ -25,6 +31,8 @@ points of a complex torus. Thus multiplication by `t + sτ` sends a row `r` to
 
 * D. A. Cox, *Primes of the Form x² + ny²*, Chapter 11, for the lattice description of complex
   multiplication.
+* J. H. Silverman, *The Arithmetic of Elliptic Curves*, 2nd ed., Graduate Texts in Mathematics
+  106, Springer, 2009, Theorem VI.6.1.
 * D. H. Shin, *Generation of class fields by Siegel-Ramachandra invariants*, §2, for the
   multiplication matrices in the row-coordinate convention.
 -/
@@ -34,6 +42,18 @@ public section
 noncomputable section
 
 open Complex Matrix
+open scoped MatrixGroups Pointwise
+
+namespace PeriodPair
+
+/-- Rescaling a period pair by `c ∈ ℂˣ` does not change the left order of its lattice. -/
+@[simp]
+theorem leftOrder_lattice_smul (c : ℂˣ) (L : PeriodPair) :
+    (c • L).lattice.leftOrder = L.lattice.leftOrder := by
+  rw [lattice_smul]
+  exact L.lattice.leftOrder_smul c.isUnit.isRegular.left (by simp)
+
+end PeriodPair
 
 namespace UpperHalfPlane
 
@@ -117,5 +137,146 @@ theorem quadraticOrderEquiv_mul_divisionPoint
   congr 1
   simp [Matrix.vecMul, dotProduct, Fin.sum_univ_two]
   linear_combination (z.im : ℂ) * r 0 * hτ
+
+section LeftOrder
+
+-- Not `@[simp]`: `ModularGroup.sl_moeb` simplifies its left side, so it fails `simpNF`.
+/-- The complex multiplier order of `ℤ τ + ℤ` is invariant under the Möbius action of
+`SL(2, ℤ)`. -/
+theorem leftOrder_lattice_periodPair_smul (γ : SL(2, ℤ)) (τ : ℍ) :
+    (γ • τ).periodPair.lattice.leftOrder = τ.periodPair.lattice.leftOrder := by
+  rw [lattice_periodPair_smul, PeriodPair.leftOrder_lattice_smul]
+
+/-- A complex number `x` preserves `ℤ τ + ℤ` under multiplication if and only if `x` and `x τ` both
+lie in `ℤ τ + ℤ`. -/
+theorem mem_leftOrder_lattice_periodPair_iff {τ : ℍ} {x : ℂ} :
+    x ∈ τ.periodPair.lattice.leftOrder ↔
+      x ∈ τ.periodPair.lattice ∧ x * (τ : ℂ) ∈ τ.periodPair.lattice := by
+  rw [Submodule.mem_leftOrder_iff]
+  refine ⟨fun h ↦ ⟨by simpa using h 1 (periodPair_ω₂ τ ▸ τ.periodPair.ω₂_mem_lattice),
+    h (τ : ℂ) (periodPair_ω₁ τ ▸ τ.periodPair.ω₁_mem_lattice)⟩, fun ⟨hx₁, hxτ⟩ m hm ↦ ?_⟩
+  obtain ⟨r, s, rfl⟩ := PeriodPair.mem_lattice.mp hm
+  simp only [periodPair_ω₁, periodPair_ω₂, mul_one]
+  have hmem : (r : ℂ) * (x * (τ : ℂ)) + (s : ℂ) * x ∈ τ.periodPair.lattice := by
+    simpa [zsmul_eq_mul] using add_mem (τ.periodPair.lattice.smul_mem r hxτ)
+      (τ.periodPair.lattice.smul_mem s hx₁)
+  convert hmem using 1
+  ring
+
+/-- If `(a : ℂ) * τ² + b * τ + c = 0` for integers `a, b, c`, then `(a : ℂ) * τ` preserves the
+lattice `ℤ τ + ℤ`. -/
+theorem intCast_mul_mem_leftOrder_lattice_periodPair_of_quadratic {τ : ℍ} {a b c : ℤ}
+    (hrel : (a : ℂ) * (τ : ℂ) ^ 2 + b * (τ : ℂ) + c = 0) :
+    (a : ℂ) * (τ : ℂ) ∈ τ.periodPair.lattice.leftOrder := by
+  rw [mem_leftOrder_lattice_periodPair_iff]
+  refine ⟨by simpa using intCast_mul_add_intCast_mem_lattice_periodPair τ a 0, ?_⟩
+  have hmul : (a : ℂ) * (τ : ℂ) * (τ : ℂ) = ((-b : ℤ) : ℂ) * (τ : ℂ) + (-c : ℤ) := by
+    push_cast
+    linear_combination hrel
+  rw [hmul]
+  exact intCast_mul_add_intCast_mem_lattice_periodPair τ (-b) (-c)
+
+/-- **Complex multiplication dichotomy for `ℤ τ + ℤ`** (Silverman, *AEC*, Theorem VI.6.1):
+the multiplier order of `ℤ τ + ℤ` is strictly larger than `ℤ` if and only if `τ` satisfies an
+integral quadratic equation `a τ² + b τ + c = 0` with `a > 0`. -/
+theorem leftOrder_lattice_periodPair_ne_bot_iff {τ : ℍ} :
+    τ.periodPair.lattice.leftOrder ≠ ⊥ ↔
+      ∃ a b c : ℤ, 0 < a ∧ (a : ℂ) * (τ : ℂ) ^ 2 + b * (τ : ℂ) + c = 0 := by
+  constructor
+  · intro hne
+    have hnot : ¬ τ.periodPair.lattice.leftOrder ≤ ⊥ := fun hle ↦
+      hne (le_antisymm hle bot_le)
+    obtain ⟨x, hx, hxbot⟩ := IsConcreteLE.not_le_iff_exists.mp hnot
+    obtain ⟨hx₁, hxτ⟩ := mem_leftOrder_lattice_periodPair_iff.mp hx
+    obtain ⟨s, t, rfl⟩ := PeriodPair.mem_lattice.mp hx₁
+    obtain ⟨p, q, hpq⟩ := PeriodPair.mem_lattice.mp hxτ
+    simp only [periodPair_ω₁, periodPair_ω₂, mul_one] at hpq hxbot ⊢
+    have hs : s ≠ 0 := fun hs0 ↦ hxbot (Algebra.mem_bot.mpr ⟨t, by simp [hs0]⟩)
+    rcases lt_or_gt_of_ne hs with hneg | hpos
+    · refine ⟨-s, p - t, q, neg_pos.mpr hneg, ?_⟩
+      push_cast
+      linear_combination hpq
+    · refine ⟨s, t - p, -q, hpos, ?_⟩
+      push_cast
+      linear_combination -hpq
+  · rintro ⟨a, b, c, ha, hrel⟩ hbot
+    have hmem : (a : ℂ) * (τ : ℂ) ∈ (⊥ : Subalgebra ℤ ℂ) :=
+      hbot ▸ intCast_mul_mem_leftOrder_lattice_periodPair_of_quadratic hrel
+    obtain ⟨m, hm⟩ := Algebra.mem_bot.mp hmem
+    have him := congrArg Complex.im hm
+    simp only [Algebra.algebraMap_eq_smul_one, zsmul_one, intCast_im, mul_im, intCast_re,
+      zero_mul, add_zero, coe_im] at him
+    have haR : (0 : ℝ) < a := Int.cast_pos.mpr ha
+    exact (mul_pos haR τ.im_pos).ne him
+
+/-- The multiplier order of `ℤ τ + ℤ` is `ℤ` (`⊥`) if and only if `τ` satisfies no nontrivial
+integral quadratic equation. -/
+theorem leftOrder_lattice_periodPair_eq_bot_iff {τ : ℍ} :
+    τ.periodPair.lattice.leftOrder = ⊥ ↔
+      ∀ a b c : ℤ, 0 < a → (a : ℂ) * (τ : ℂ) ^ 2 + b * (τ : ℂ) + c ≠ 0 := by
+  rw [← not_iff_not, ← ne_eq, leftOrder_lattice_periodPair_ne_bot_iff]
+  push Not
+  rfl
+
+/-- **Exact multiplier order of an imaginary quadratic lattice**: if `τ ∈ ℍ` satisfies an integral
+quadratic relation `a τ² + b τ + c = 0` whose coefficients `(a, b, c)` generate the unit ideal of
+`ℤ`, then the multipliers of `ℤ τ + ℤ` are precisely the integral combinations `m + k (a τ)`. -/
+theorem mem_leftOrder_lattice_periodPair_iff_of_quadratic_of_linearCombination_eq_one
+    {τ : ℍ} {a b c : ℤ} (hrel : (a : ℂ) * (τ : ℂ) ^ 2 + b * (τ : ℂ) + c = 0)
+    (hprim : ∃ u v w : ℤ, u * a + v * b + w * c = 1) {x : ℂ} :
+    x ∈ τ.periodPair.lattice.leftOrder ↔ ∃ m k : ℤ, x = m + k * ((a : ℂ) * (τ : ℂ)) := by
+  constructor
+  · intro hx
+    obtain ⟨u, v, w, huvw⟩ := hprim
+    obtain ⟨hx₁, hxτ⟩ := mem_leftOrder_lattice_periodPair_iff.mp hx
+    obtain ⟨s, t, rfl⟩ := PeriodPair.mem_lattice.mp hx₁
+    obtain ⟨p, q, hpq⟩ := PeriodPair.mem_lattice.mp hxτ
+    simp only [periodPair_ω₁, periodPair_ω₂, mul_one] at hpq ⊢
+    -- Comparing coefficients of `τ` and `1` in `a (x τ - (s τ + t) τ) + s (a τ² + b τ + c) = 0`.
+    have hlin : ((a * p - a * t + s * b : ℤ) : ℂ) * (τ : ℂ) + ((a * q + s * c : ℤ) : ℂ) = 0 := by
+      push_cast
+      linear_combination (a : ℂ) * hpq + s * hrel
+    obtain ⟨h₁, h₂⟩ := intCast_mul_add_intCast_eq_zero_iff.mp hlin
+    have hsb : s * b = (t - p) * a := by linear_combination h₁
+    have hsc : s * c = -q * a := by linear_combination h₂
+    have hs : s = (u * s + v * (t - p) - w * q) * a := by
+      linear_combination -s * huvw + v * hsb + w * hsc
+    refine ⟨t, u * s + v * (t - p) - w * q, ?_⟩
+    have hsC : (s : ℂ) = ((u * s + v * (t - p) - w * q : ℤ) : ℂ) * a := by exact_mod_cast hs
+    rw [hsC]
+    push_cast
+    ring
+  · rintro ⟨m, k, rfl⟩
+    have hθ := intCast_mul_mem_leftOrder_lattice_periodPair_of_quadratic hrel
+    simpa [zsmul_eq_mul] using add_mem (τ.periodPair.lattice.leftOrder.algebraMap_mem m)
+      (τ.periodPair.lattice.leftOrder.smul_mem hθ k)
+
+/-- If `τ ∈ ℍ` satisfies a primitive integral quadratic relation `a τ² + b τ + c = 0`, then the
+left order of `ℤ τ + ℤ` is `ℤ[a τ]`. -/
+theorem leftOrder_lattice_periodPair_eq_adjoin_of_quadratic_of_linearCombination_eq_one
+    {τ : ℍ} {a b c : ℤ} (hrel : (a : ℂ) * (τ : ℂ) ^ 2 + b * (τ : ℂ) + c = 0)
+    (hprim : ∃ u v w : ℤ, u * a + v * b + w * c = 1) :
+    τ.periodPair.lattice.leftOrder = Algebra.adjoin ℤ {(a : ℂ) * (τ : ℂ)} := by
+  refine le_antisymm (fun x hx ↦ ?_) (Algebra.adjoin_le ?_)
+  · obtain ⟨m, k, rfl⟩ :=
+      (mem_leftOrder_lattice_periodPair_iff_of_quadratic_of_linearCombination_eq_one
+        hrel hprim).mp hx
+    have hθ : (a : ℂ) * (τ : ℂ) ∈ Algebra.adjoin ℤ {(a : ℂ) * (τ : ℂ)} :=
+      Algebra.subset_adjoin (Set.mem_singleton _)
+    simpa [zsmul_eq_mul] using add_mem ((Algebra.adjoin ℤ _).algebraMap_mem m)
+      ((Algebra.adjoin ℤ _).smul_mem hθ k)
+  · rw [Set.singleton_subset_iff]
+    exact intCast_mul_mem_leftOrder_lattice_periodPair_of_quadratic hrel
+
+/-- For a monic quadratic point `τ² + B τ + C = 0`, the left order of `ℤ τ + ℤ` agrees with
+`UpperHalfPlane.quadraticOrder`. -/
+theorem leftOrder_lattice_periodPair_eq_quadraticOrder {τ : ℍ} {B C : ℤ}
+    (hτ : (τ : ℂ) ^ 2 + B * τ + C = 0) :
+    τ.periodPair.lattice.leftOrder = τ.quadraticOrder hτ := by
+  ext x
+  rw [Submodule.mem_leftOrder_iff]
+  exact (τ.mem_quadraticOrder_iff_mul_mem hτ x).symm
+
+end LeftOrder
 
 end UpperHalfPlane

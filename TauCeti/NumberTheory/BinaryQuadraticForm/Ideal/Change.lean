@@ -52,6 +52,13 @@ def idealChangeFactor (f : BinaryQuadraticForm ℤ) (D : ℤ)
   ((f.a : ℚ)⁻¹) •
     star (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D)
 
+/-- Definitional expansion of `idealChangeFactor`. -/
+theorem idealChangeFactor_def (f : BinaryQuadraticForm ℤ) (D : ℤ) (γ : SL(2, ℤ)) :
+    f.idealChangeFactor D γ =
+      ((f.a : ℚ)⁻¹) •
+        star (γ 1 1 • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + γ 1 0 • f.idealGenerator D) :=
+  (rfl)
+
 /-- Scaling the first changed basis vector gives the new leading coefficient. -/
 @[simp] theorem idealChangeFactor_mul_first (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) (ha : f.a ≠ 0) (γ : SL(2, ℤ)) :

@@ -82,6 +82,15 @@ theorem parameter_discr (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
   rw [QuadraticAlgebra.discr_def]
   omega
 
+/-- For `D ≡ 0, 1 mod 4` and any integer `f`, `f² D ≡ 0, 1 mod 4`. -/
+theorem sq_mul_emod_four_eq_zero_or_one {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) (f : ℤ) :
+    f ^ 2 * D % 4 = 0 ∨ f ^ 2 * D % 4 = 1 := by
+  rw [Int.mul_emod, Int.sq_emod_four]
+  rcases hD with hd | hd
+  · simp [hd]
+  · simp only [hd, mul_one]
+    omega
+
 /-- The half-integral generator satisfies the defining integral relation. -/
 theorem generator_mul_generator (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
     generator D * generator D = ((D - D ^ 2) / 4) • 1 + D • generator D := by

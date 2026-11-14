@@ -5,21 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.Endomorphism
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Quadratic
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Root
 public import TauCeti.NumberTheory.QuadraticOrder.ComplexEmbedding
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
-# Complex lattices attached to binary quadratic forms
+# Complex submodules and lattices attached to binary quadratic forms
 
 For an integral binary quadratic form `f = (a, b, c)` of nonpositive discriminant `D ≤ 0`, the
 distinguished complex embedding `QuadraticAlgebra.complexEmbedding` of `ℚ(√D)` maps the second
 ideal generator `(-b + ω) / 2` to `(-b + √(-D) · i) / 2` and sends the order module
-`f.orderIdeal D` to the `ℤ`-submodule `f.complexOrderIdeal D = a ℤ + ((-b + √(-D) · i) / 2) ℤ ⊆ ℂ`.
+`f.orderIdeal D` to the `ℤ`-submodule `f.complexOrderIdeal D = a ℤ + ((-b + √(-D) · i) / 2) ℤ ⊆ ℂ`
+(isomorphic as a `ℤ`-module to `f.orderIdeal D` when `D < 0`; `equivComplexOrderIdeal`).
 Because `f.orderIdeal D` is a module over `QuadraticOrder.toSubalgebra D`, the embedded quadratic
-order `complexOrder D` acts on `f.complexOrderIdeal D` by multiplication
+subalgebra `complexOrder D` acts on `f.complexOrderIdeal D` by multiplication
 (`complexOrder_le_leftOrder_complexOrderIdeal`).
 
 When `f ∈ posDef n` (`n > 0`, `D = -n`), the embedded generator equals `a · root f`
@@ -27,15 +28,16 @@ When `f ∈ posDef n` (`n > 0`, `D = -n`), the embedded generator equals `a · r
 rescaled period pair `a • (root f).periodPair` — explicitly homothetic to `ℤ · root f + ℤ`
 (`complexOrderIdeal_eq_lattice_smul_periodPair_root`). Under a proper change of variables
 `γ ∈ SL(2, ℤ)`, the algebraic scaling factor `f.idealChangeFactor (-n) γ` embeds to
-`conj (denom γ (root f))` (`complexEmbedding_idealChangeFactor_posDef`), whose product with the
-analytic automorphy factor `denom γ (root f)` is `(γ • f).a / f.a` (`conj_denom_mul_denom_root`),
-giving naturality of `complexOrderIdeal` under the `SL(2, ℤ)`-action (`complexOrderIdeal_smul` and
+`conj (denom γ (root f))` (`complexEmbedding_idealChangeFactor_posDef`), giving naturality of
+`complexOrderIdeal` under the `SL(2, ℤ)`-action (`complexOrderIdeal_smul` and
 `complexOrderIdeal_smul_posDef`).
 
 ## Main definitions
 
 * `TauCeti.BinaryQuadraticForm.complexOrderIdeal`: the `ℤ`-submodule
   `a ℤ + ((-b + √(-D) · i) / 2) ℤ ⊆ ℂ` attached to a form `f` of discriminant `D ≤ 0`.
+* `TauCeti.BinaryQuadraticForm.equivComplexOrderIdeal`: `f.orderIdeal D hf ≃ₗ[ℤ]
+  f.complexOrderIdeal D hD0.le hf` for `D < 0`.
 
 ## Main results
 
@@ -74,8 +76,9 @@ section NonposDiscrim
   push_cast
   ring
 
-/-- **The complex lattice of a binary quadratic form** of discriminant `D ≤ 0`: the image of the
-form module `f.orderIdeal D` in `ℂ` under `QuadraticAlgebra.complexEmbedding`. -/
+/-- **The complex `ℤ`-submodule attached to a binary quadratic form** of discriminant `D ≤ 0`: the
+image of the form module `f.orderIdeal D` in `ℂ` under `QuadraticAlgebra.complexEmbedding` (a
+lattice in `ℂ` when `f` is positive definite, `D < 0`). -/
 def complexOrderIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D ≤ 0)
     (hf : f.discrim = D) : Submodule ℤ ℂ :=
   ((f.orderIdeal D hf).restrictScalars ℤ).map
@@ -110,6 +113,62 @@ theorem mem_complexOrderIdeal_iff (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 :
       ∃ m k : ℤ, (m : ℂ) * f.a + k * ((-(f.b : ℂ) + (√(-(D : ℝ)) : ℂ) * I) / 2) = z := by
   rw [complexOrderIdeal_eq_span, Submodule.mem_span_pair]
   simp only [zsmul_eq_mul]
+
+/-- The leading coefficient `f.a` belongs to `f.complexOrderIdeal D`. -/
+@[simp] theorem a_mem_complexOrderIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D ≤ 0)
+    (hf : f.discrim = D) :
+    (f.a : ℂ) ∈ f.complexOrderIdeal D hD0 hf :=
+  (mem_complexOrderIdeal_iff f D hD0 hf).mpr ⟨1, 0, by simp⟩
+
+/-- The embedded second generator `(-f.b + √(-D) · i) / 2` belongs to `f.complexOrderIdeal D`. -/
+@[simp] theorem neg_b_add_sqrt_neg_mul_I_div_two_mem_complexOrderIdeal
+    (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D ≤ 0) (hf : f.discrim = D) :
+    (-(f.b : ℂ) + (√(-(D : ℝ)) : ℂ) * I) / 2 ∈ f.complexOrderIdeal D hD0 hf :=
+  (mem_complexOrderIdeal_iff f D hD0 hf).mpr ⟨0, 1, by simp⟩
+
+/-- For `D < 0`, an element of `ℚ(√D)` maps into `f.complexOrderIdeal D` under
+`QuadraticAlgebra.complexEmbedding` if and only if it belongs to `f.orderIdeal D`. -/
+@[simp] theorem complexEmbedding_mem_complexOrderIdeal_iff (f : BinaryQuadraticForm ℤ)
+    {D : ℤ} {ha : (D : ℚ) ≤ 0} {hD_le : D ≤ 0} (hD0 : D < 0) (hf : f.discrim = D)
+    {z : QuadraticAlgebra ℚ (D : ℚ) 0} :
+    complexEmbedding ha z ∈ f.complexOrderIdeal D hD_le hf ↔ z ∈ f.orderIdeal D hf := by
+  rw [complexOrderIdeal_def, Submodule.mem_map]
+  constructor
+  · rintro ⟨w, hw, hwz⟩
+    have hweq : w = z :=
+      complexEmbedding_injective (by exact_mod_cast hD0) hwz
+    exact hweq ▸ hw
+  · intro hz
+    exact ⟨z, hz, rfl⟩
+
+/-- For `D < 0`, the distinguished complex embedding restricts to a `ℤ`-linear equivalence
+`f.orderIdeal D hf ≃ₗ[ℤ] f.complexOrderIdeal D hD0.le hf`. -/
+def equivComplexOrderIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D < 0)
+    (hf : f.discrim = D) :
+    f.orderIdeal D hf ≃ₗ[ℤ] f.complexOrderIdeal D hD0.le hf :=
+  LinearEquiv.ofBijective
+    ({ toFun := fun z ↦ ⟨complexEmbedding (Int.cast_nonpos.mpr hD0.le) z.1, ⟨z.1, z.2, rfl⟩⟩
+       map_add' := fun x y ↦ by ext; exact map_add _ x.1 y.1
+       map_smul' := fun r x ↦ by ext; exact map_zsmul _ r x.1 } :
+      f.orderIdeal D hf →ₗ[ℤ] f.complexOrderIdeal D hD0.le hf)
+    ⟨fun x y h ↦ Subtype.ext (complexEmbedding_injective (by exact_mod_cast hD0)
+      (Subtype.ext_iff.mp h)),
+     fun ⟨_, w, hw, rfl⟩ ↦ ⟨⟨w, hw⟩, rfl⟩⟩
+
+/-- Evaluation of `equivComplexOrderIdeal` agrees with `QuadraticAlgebra.complexEmbedding`. -/
+@[simp] theorem coe_equivComplexOrderIdeal_apply (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hD0 : D < 0) (hf : f.discrim = D) (z : f.orderIdeal D hf) :
+    (equivComplexOrderIdeal f D hD0 hf z : ℂ) =
+      complexEmbedding (Int.cast_nonpos.mpr hD0.le) (z : QuadraticAlgebra ℚ (D : ℚ) 0) :=
+  (rfl)
+
+/-- Applying `QuadraticAlgebra.complexEmbedding` after `(equivComplexOrderIdeal f D hD0 hf).symm`
+recovers the complex element. -/
+@[simp] theorem complexEmbedding_equivComplexOrderIdeal_symm (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hD0 : D < 0) (hf : f.discrim = D) (z : f.complexOrderIdeal D hD0.le hf) :
+    complexEmbedding (Int.cast_nonpos.mpr hD0.le)
+        ((equivComplexOrderIdeal f D hD0 hf).symm z : QuadraticAlgebra ℚ (D : ℚ) 0) = z := by
+  rw [← coe_equivComplexOrderIdeal_apply f D hD0 hf, LinearEquiv.apply_symm_apply]
 
 /-- Every element of `f.complexOrderIdeal D` lies in `QuadraticOrder.complexOrder D`. -/
 theorem complexOrderIdeal_le_complexOrder (f : BinaryQuadraticForm ℤ) (D : ℤ) (hD0 : D ≤ 0)
@@ -193,6 +252,17 @@ theorem complexEmbedding_idealGenerator_posDef (f : posDef n)
   rw [hsqrt]
   field_simp
 
+/-- For `f ∈ posDef n`, `f.a · root f` belongs to `f.1.complexOrderIdeal (-n)`. -/
+@[simp] theorem a_mul_root_mem_complexOrderIdeal (f : posDef n) :
+    (f.1.a : ℂ) * (root f : ℂ) ∈
+      f.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        (mem_posDef.mp f.2).1 := by
+  have hgen := complexEmbedding_idealGenerator_posDef f
+    (Int.cast_nonpos.mpr (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)))
+  rw [complexEmbedding_idealGenerator] at hgen
+  rw [← hgen]
+  exact neg_b_add_sqrt_neg_mul_I_div_two_mem_complexOrderIdeal _ _ _ _
+
 /-- **Complex lattice of `f ∈ posDef n` as a rescaled period lattice**: `f.1.complexOrderIdeal (-n)`
 equals `(a • (root f).periodPair).lattice = ℤ · (a · root f) + ℤ · a`, hence is homothetic to
 `ℤ · root f + ℤ`. -/
@@ -221,47 +291,13 @@ theorem leftOrder_complexOrderIdeal_posDef (f : posDef n) :
 
 /-- For `f ∈ posDef n`, `QuadraticOrder.complexOrder (-n)` is contained in the multiplier order of
 `ℤ · root f + ℤ`. -/
-theorem complexOrder_le_leftOrder_periodPair_root (f : posDef n) :
+theorem complexOrder_le_leftOrder_lattice_periodPair_root (f : posDef n) :
     QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
         ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one) ≤
       (root f).periodPair.lattice.leftOrder := by
   rw [← leftOrder_complexOrderIdeal_posDef]
   exact complexOrder_le_leftOrder_complexOrderIdeal f.1 (-n)
     (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) (mem_posDef.mp f.2).1
-
-/-- The product `conj (denom γ (root f)) · denom γ (root f)` equals the ratio `(γ • f).a / f.a` of
-leading coefficients. -/
-theorem conj_denom_mul_denom_root (f : posDef n) (γ : SL(2, ℤ)) :
-    conj (denom γ (root f)) * denom γ (root f) = ((γ • f).1.a : ℂ) / (f.1.a : ℂ) := by
-  have hfaR : (f.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
-  have hnorm : Complex.normSq (denom γ (root f)) = ((γ • f).1.a : ℝ) / (f.1.a : ℝ) := by
-    have hroot := normSq_root f
-    rw [ModularGroup.denom_apply]
-    have hcalc : Complex.normSq ((γ 1 0 : ℂ) * (root f : ℂ) + γ 1 1) =
-        (γ 1 0 : ℝ) ^ 2 * Complex.normSq (root f : ℂ) +
-          2 * (γ 1 0 : ℝ) * (γ 1 1 : ℝ) * (root f).re + (γ 1 1 : ℝ) ^ 2 := by
-      simp only [Complex.normSq_apply, add_re, add_im, mul_re, mul_im, intCast_re, intCast_im,
-        zero_mul, sub_zero, add_zero, coe_re, coe_im]
-      ring
-    rw [hcalc, hroot, re_root]
-    have hsmul : ((γ • f).1.a : ℝ) =
-        (f.1.a : ℝ) * (γ 1 1 : ℝ) ^ 2 - (f.1.b : ℝ) * (γ 1 1 : ℝ) * (γ 1 0 : ℝ) +
-          (f.1.c : ℝ) * (γ 1 0 : ℝ) ^ 2 := by
-      change ((γ • f.1).a : ℝ) = _
-      rw [smul_a]
-      push_cast
-      ring
-    rw [hsmul]
-    field_simp
-    ring
-  calc
-    conj (denom γ (root f)) * denom γ (root f) =
-        (Complex.normSq (denom γ (root f)) : ℂ) := by
-      rw [mul_comm, Complex.mul_conj]
-    _ = ((γ • f).1.a : ℂ) / (f.1.a : ℂ) := by
-      rw [hnorm]
-      push_cast
-      rfl
 
 /-- **Embedded proper-change factor as conjugate automorphy factor**: for `f ∈ posDef n` and
 `γ ∈ SL(2, ℤ)`, `f.1.idealChangeFactor (-n) γ` maps under `QuadraticAlgebra.complexEmbedding` to
@@ -270,24 +306,13 @@ theorem complexEmbedding_idealChangeFactor_posDef (f : posDef n) (γ : SL(2, ℤ
     (ha : ((-(n : ℤ) : ℤ) : ℚ) ≤ 0) :
     complexEmbedding ha (f.1.idealChangeFactor (-n) γ) = conj (denom γ (root f)) := by
   have hfa : (f.1.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
-  have hden : denom γ (root f) ≠ 0 := denom_ne_zero γ (root f)
-  have h₀ := congrArg (complexEmbedding ha)
-    (idealChangeFactor_mul_first f.1 (-n) (mem_posDef.mp f.2).1 (mem_posDef.mp f.2).2.ne' γ)
-  simp only [map_mul, map_add, map_intCast, complexEmbedding_idealGenerator_posDef] at h₀
-  have hfac : (γ 1 1 : ℂ) * f.1.a + (γ 1 0 : ℂ) * ((f.1.a : ℂ) * (root f : ℂ)) =
-      (f.1.a : ℂ) * denom γ (root f) := by
-    rw [ModularGroup.denom_apply]
-    ring
-  rw [hfac] at h₀
-  have hconj := conj_denom_mul_denom_root f γ
-  have hconj' : conj (denom γ (root f)) * ((f.1.a : ℂ) * denom γ (root f)) = ((γ • f.1).a : ℂ) := by
-    change conj (denom γ (root f)) * ((f.1.a : ℂ) * denom γ (root f)) = ((γ • f).1.a : ℂ)
-    calc
-      conj (denom γ (root f)) * ((f.1.a : ℂ) * denom γ (root f)) =
-          (conj (denom γ (root f)) * denom γ (root f)) * (f.1.a : ℂ) := by ring
-      _ = (((γ • f).1.a : ℂ) / (f.1.a : ℂ)) * (f.1.a : ℂ) := by rw [hconj]
-      _ = ((γ • f).1.a : ℂ) := div_mul_cancel₀ _ hfa
-  exact mul_right_cancel₀ (mul_ne_zero hfa hden) (h₀.trans hconj'.symm)
+  rw [idealChangeFactor_def, (complexEmbedding ha).map_smul_of_tower, Rat.smul_def, Rat.cast_inv,
+    Rat.cast_intCast, complexEmbedding_star, map_add, map_zsmul, map_zsmul, map_intCast,
+    complexEmbedding_idealGenerator_posDef, map_add, map_zsmul, map_zsmul, map_intCast, map_mul,
+    map_intCast, zsmul_eq_mul, zsmul_eq_mul, ModularGroup.denom_apply, map_add, map_mul,
+    map_intCast, map_intCast]
+  field_simp
+  ring
 
 /-- **Proper `SL(2, ℤ)`-equivariance of `complexOrderIdeal` on `posDef n`**: acting by
 `γ ∈ SL(2, ℤ)` scales `f.1.complexOrderIdeal (-n)` by `conj (denom γ (root f))`. -/

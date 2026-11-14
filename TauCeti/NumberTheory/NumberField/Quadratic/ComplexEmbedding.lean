@@ -30,6 +30,8 @@ chosen square root of the radicand lies in the upper half-plane.
 
 * `QuadraticAlgebra.complexEmbedding`: the embedding `ω ↦ √(-a) · i`.
 * `QuadraticAlgebra.complexEmbedding_star`: it intertwines `star` with complex conjugation.
+* `QuadraticAlgebra.complexEmbedding_injective`: for `a < 0`, the distinguished embedding is
+  injective.
 * `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv`: every `ℚ`-algebra map to `ℂ` is the
   distinguished embedding or its precomposition with `starAlgEquiv`.
 * `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_pos`,
@@ -92,6 +94,12 @@ theorem complexEmbedding_apply (ha : a ≤ 0) (z : QuadraticAlgebra ℚ a 0) :
 @[simp] theorem complexEmbedding_star (ha : a ≤ 0) (z : QuadraticAlgebra ℚ a 0) :
     complexEmbedding ha (star z) = conj (complexEmbedding ha z) := by
   apply Complex.ext <;> simp
+
+/-- For `a < 0`, the distinguished complex embedding of `ℚ(√a)` is injective. -/
+theorem complexEmbedding_injective (ha : a < 0) :
+    Function.Injective (complexEmbedding ha.le) :=
+  have : Fact (¬ IsSquare a) := ⟨not_isSquare_of_neg ha⟩
+  (complexEmbedding ha.le).injective
 
 /-- **The two complex embeddings of `ℚ(√a)`.** For `a ≤ 0`, every `ℚ`-algebra map
 `QuadraticAlgebra ℚ a 0 → ℂ` is the distinguished embedding or its precomposition with the
