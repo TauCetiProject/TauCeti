@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
+public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 
 /-!
 # Invariant integrals on Hopf algebras
@@ -249,3 +250,14 @@ theorem IsLeftInvariantIntegral.eq_zero_of_forall_mul_eq_zero
 
 end Field
 end LinearMap
+
+namespace TauCeti
+
+/-- Right cointegrals are the right invariant integrals of `TauCeti.Algebra.HopfAlgebra.Integral`;
+the two predicates have the same defining equation. -/
+theorem isRightCointegral_iff_isRightInvariantIntegral {k H : Type*} [CommSemiring k] [Semiring H]
+    [Bialgebra k H] {φ : Module.Dual k H} :
+    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
+  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
+
+end TauCeti
