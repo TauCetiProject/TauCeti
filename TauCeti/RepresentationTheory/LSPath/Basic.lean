@@ -56,6 +56,7 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 * `TauCeti.LSPath.toPLPath`: the piecewise-linear path presented by it.
 * `TauCeti.LSPath.straight` and `TauCeti.LSPath.simple`: the straight path and the
   two-direction paths along a simple root.
+* `TauCeti.LSPath.cast`: equivalence `LSPath P b λ ≃ LSPath P b λ'` induced by `λ = λ'`.
 
 ## Main results
 
@@ -446,6 +447,95 @@ theorem isAChain (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) (j :
   rwa [hhead, hlast, ← hhead₀, ← hlast₀]
 
 end Chains
+
+section Cast
+
+/-- Transport a Lakshmibai–Seshadri encoding along an equality of shapes, keeping the same
+underlying Weyl directions and break times. -/
+def cast {lam lam' : M} (h : lam = lam') : LSPath P b lam ≃ LSPath P b lam' where
+  toFun π :=
+    { length := π.length
+      dir := fun j ↦ ⟨(π.dir j).1, h ▸ (π.dir j).2⟩
+      time := π.time
+      time_zero := π.time_zero
+      time_last := π.time_last
+      strictMono_time := π.strictMono_time
+      dir_succ_ne := by subst h; exact π.dir_succ_ne
+      exists_isAChain := by subst h; exact π.exists_isAChain }
+  invFun π :=
+    { length := π.length
+      dir := fun j ↦ ⟨(π.dir j).1, h.symm ▸ (π.dir j).2⟩
+      time := π.time
+      time_zero := π.time_zero
+      time_last := π.time_last
+      strictMono_time := π.strictMono_time
+      dir_succ_ne := by subst h; exact π.dir_succ_ne
+      exists_isAChain := by subst h; exact π.exists_isAChain }
+  left_inv π := by subst h; rfl
+  right_inv π := by subst h; rfl
+
+@[simp]
+theorem cast_rfl {lam : M} (π : LSPath P b lam) : cast rfl π = π :=
+  (rfl)
+
+@[simp]
+theorem symm_cast {lam lam' : M} (h : lam = lam') :
+    (cast (P := P) (b := b) h).symm = cast h.symm :=
+  (rfl)
+
+@[simp]
+theorem cast_cast {lam₁ lam₂ lam₃ : M} (h₁ : lam₁ = lam₂) (h₂ : lam₂ = lam₃)
+    (π : LSPath P b lam₁) :
+    cast h₂ (cast h₁ π) = cast (h₁.trans h₂) π := by
+  subst h₁; subst h₂; rfl
+
+@[simp]
+theorem length_cast {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+    (cast h π).length = π.length :=
+  (rfl)
+
+@[simp]
+theorem coe_dir_cast {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
+    (j : Fin ((cast h π).length + 1)) :
+    ((cast h π).dir j).1 = (π.dir (j.cast (by rw [length_cast]))).1 :=
+  (rfl)
+
+@[simp]
+theorem time_cast {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
+    (k : Fin ((cast h π).length + 2)) :
+    (cast h π).time k = π.time (k.cast (by rw [length_cast])) :=
+  (rfl)
+
+@[simp]
+theorem duration_cast {lam lam' : M} (h : lam = lam') (π : LSPath P b lam)
+    (j : Fin ((cast h π).length + 1)) :
+    (cast h π).duration j = π.duration (j.cast (by rw [length_cast])) := by
+  simp [duration_def]
+
+@[simp]
+theorem cast_straight {lam lam' : M} (h : lam = lam') :
+    cast (P := P) (b := b) h (straight lam) = straight lam' := by
+  subst h; rfl
+
+section RealizationCast
+
+variable (𝕜 : Type*) {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
+
+omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+@[simp]
+theorem timed_cast {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+    (cast h π).timed 𝕜 f = π.timed 𝕜 f := by
+  subst h; rfl
+
+@[simp]
+theorem toPLPath_cast {lam lam' : M} (h : lam = lam') (π : LSPath P b lam) :
+    (cast h π).toPLPath 𝕜 f = π.toPLPath 𝕜 f := by
+  subst h; rfl
+
+end RealizationCast
+
+end Cast
 
 end LSPath
 

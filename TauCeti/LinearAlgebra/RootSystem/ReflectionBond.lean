@@ -35,6 +35,9 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
   and `y` divides `f x - f y` for every linear form `f`.
 * `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
   sign.
+* `RootPairing.reflectionBond_swap` and `RootPairing.reflectionBond_neg`: swapping or negating the
+  two weights negates their bond, so reversing and negating a pair preserves its bond
+  (`RootPairing.reflectionBond_neg_swap`).
 
 ## References
 
@@ -184,5 +187,40 @@ theorem reflectionBond_add_add [P.IsReduced] [NoZeroDivisors R] {χ : M}
   · rw [reflectionBond_eq_zero_of_not_exists h, reflectionBond_eq_zero_of_not_exists]
     rintro ⟨β, hβ, h'⟩
     exact h ⟨β, hβ, by simpa [hrefl] using h'⟩
+
+/-- Swapping the two weights negates their bond: if `y = s_β x`, then `x = s_β y` and
+`⟨x, β^∨⟩ = -⟨y, β^∨⟩`. -/
+theorem reflectionBond_swap [P.IsReduced] [NoZeroDivisors R] (x y : M) :
+    P.reflectionBond b y x = -P.reflectionBond b x y := by
+  by_cases hxy : y = x
+  · simp [hxy]
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · obtain ⟨β, hβ, h⟩ := h
+    have hyx : P.reflection β y = x := by rw [← h, reflection_same]
+    rw [reflectionBond_eq_coroot' hβ hyx (Ne.symm hxy), reflectionBond_eq_neg_coroot' hβ h hxy,
+      neg_neg]
+  · rw [reflectionBond_eq_zero_of_not_exists, reflectionBond_eq_zero_of_not_exists h, neg_zero]
+    rintro ⟨β, hβ, hyx⟩
+    exact h ⟨β, hβ, by rw [← hyx, reflection_same]⟩
+
+/-- Negating both weights negates their bond. -/
+@[simp]
+theorem reflectionBond_neg [P.IsReduced] [NoZeroDivisors R] (x y : M) :
+    P.reflectionBond b (-x) (-y) = -P.reflectionBond b x y := by
+  by_cases hxy : y = x
+  · simp [hxy]
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · obtain ⟨β, hβ, h⟩ := h
+    have hneg : P.reflection β (-x) = -y := by rw [map_neg, h]
+    rw [reflectionBond_eq_coroot' hβ hneg (fun h' ↦ hxy (neg_inj.mp h')),
+      reflectionBond_eq_coroot' hβ h hxy, map_neg]
+  · rw [reflectionBond_eq_zero_of_not_exists, reflectionBond_eq_zero_of_not_exists h, neg_zero]
+    rintro ⟨β, hβ, hneg⟩
+    exact h ⟨β, hβ, neg_inj.mp (by rwa [← map_neg])⟩
+
+/-- Reversing and negating two weights preserves their bond. -/
+theorem reflectionBond_neg_swap [P.IsReduced] [NoZeroDivisors R] (x y : M) :
+    P.reflectionBond b (-y) (-x) = P.reflectionBond b x y := by
+  rw [reflectionBond_neg, reflectionBond_swap, neg_neg]
 
 end RootPairing

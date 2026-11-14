@@ -49,10 +49,13 @@ the transport by `-χ` inverting the transport by `χ`.
   `TauCeti.LSPath.minHeight_toPLPath_centralTransport`: the endpoint moves by `χ` and the minimum
   height of a form killing `χ` is unchanged.
 * `TauCeti.LSPath.toPLPath_centralTransport_centralTransport`,
-  `TauCeti.LSPath.toPLPath_centralTransport_zero` and
-  `TauCeti.LSPath.toPLPath_centralTransport_neg`: on realized paths the transports compose
-  additively, the transport by `0` is the identity, and the transport by `-χ` inverts the
-  transport by `χ`.
+  `TauCeti.LSPath.toPLPath_centralTransport_zero`,
+  `TauCeti.LSPath.toPLPath_centralTransport_neg`,
+  `TauCeti.LSPath.centralTransport_centralTransport_eq_cast`,
+  `TauCeti.LSPath.centralTransport_zero_eq_cast`, and
+  `TauCeti.LSPath.centralTransport_neg_eq_cast`: on realized paths and at the encoding level (up to
+  `LSPath.cast`), the transports compose additively, the transport by `0` is the identity, and the
+  transport by `-χ` inverts the transport by `χ`.
 
 ## References
 
@@ -261,6 +264,57 @@ theorem toPLPath_centralTransport_neg (π : LSPath P b (lam + χ)) :
   conv_lhs => rw [← (centralTransport χ hχ).apply_symm_apply π]
   rw [toPLPath_centralTransport_centralTransport]
   simp [toPLPath_def, PLPath.shiftTimed_zero]
+
+section CastCoherence
+
+variable {lam : M}
+
+/-- **Central transport by `0` is `cast` along `λ = λ + 0`.** -/
+theorem centralTransport_zero_eq_cast (h0 : ∀ i ∈ b.support, P.coroot' i (0 : M) = 0)
+    (π : LSPath P b lam) :
+    centralTransport (0 : M) h0 π = cast (add_zero lam).symm π := by
+  refine ext ?_ ?_
+  · refine List.ext_getElem (by simp) fun i h₁ h₂ ↦ Subtype.ext ?_
+    simp only [List.getElem_ofFn, dir_centralTransport, coe_dir_cast]
+    rfl
+  · refine List.ext_getElem (by simp) fun i h₁ h₂ ↦ ?_
+    simp only [List.getElem_ofFn, time_centralTransport, time_cast]
+    rfl
+
+/-- **Successive central transports compose additively**, up to `cast` along associativity of
+addition. -/
+theorem centralTransport_centralTransport_eq_cast {χ ψ : M}
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
+    (hψ : ∀ i ∈ b.support, P.coroot' i ψ = 0)
+    (hχψ : ∀ i ∈ b.support, P.coroot' i (χ + ψ) = 0)
+    (π : LSPath P b lam) :
+    centralTransport ψ hψ (centralTransport χ hχ π) =
+      cast (add_assoc lam χ ψ).symm (centralTransport (χ + ψ) hχψ π) := by
+  refine ext ?_ ?_
+  · refine List.ext_getElem (by simp) fun i h₁ h₂ ↦ Subtype.ext ?_
+    simp only [List.getElem_ofFn, dir_centralTransport, coe_dir_cast]
+    rfl
+  · refine List.ext_getElem (by simp) fun i h₁ h₂ ↦ ?_
+    simp only [List.getElem_ofFn, time_centralTransport, time_cast]
+    rfl
+
+/-- **Central transport by `-χ` is the inverse of central transport by `χ`**, up to `cast` along
+`λ = (λ + χ) + (-χ)`. -/
+theorem centralTransport_neg_eq_cast {χ : M}
+    (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
+    (hneg : ∀ i ∈ b.support, P.coroot' i (-χ) = 0)
+    (ρ : LSPath P b (lam + χ)) :
+    centralTransport (-χ) hneg ρ =
+      cast (add_neg_cancel_right lam χ).symm ((centralTransport χ hχ).symm ρ) := by
+  refine ext ?_ ?_
+  · refine List.ext_getElem (by simp) fun i h₁ h₂ ↦ Subtype.ext ?_
+    simp only [List.getElem_ofFn, dir_centralTransport, coe_dir_cast, dir_centralTransport_symm]
+    rfl
+  · refine List.ext_getElem (by simp) fun i h₁ h₂ ↦ ?_
+    simp only [List.getElem_ofFn, time_centralTransport, time_cast, time_centralTransport_symm]
+    rfl
+
+end CastCoherence
 
 end LSPath
 

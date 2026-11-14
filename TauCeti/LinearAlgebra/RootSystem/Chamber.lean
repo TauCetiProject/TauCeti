@@ -64,6 +64,9 @@ Weyl-invariant.
   are negative.
 * `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
   prescribed values at some point of the coweight space.
+* `RootPairing.mem_dominantChamber_add_of_forall_coroot_eq_zero` and
+  `RootPairing.mem_dominantChamber_add_iff_of_forall_coroot_eq_zero`: adding a weight annihilating
+  the simple coroots preserves the dominant chamber.
 
 ## Implementation notes
 
@@ -467,5 +470,38 @@ theorem Base.exists_forall_root'_eq (c : ι → R) : ∃ x : N, ∀ i ∈ b.supp
     Module.Basis.span_apply] at h
   rw [← h, ← LinearMap.flip_apply (m := P.root i), ← flip_toLinearMap,
     ← LinearMap.toPerfPair_apply, LinearEquiv.apply_symm_apply]
+
+end RootPairing
+
+namespace RootPairing
+
+variable {ι R M N : Type*} [CommRing R] [Preorder R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) {b : P.Base}
+
+omit [Preorder R] in
+/-- Convert central-weight vanishing on `b.support` from `P.toLinearMap x (P.coroot i) = 0` to
+`∀ i ∈ b.support, P.coroot' i x = 0`. -/
+theorem forall_mem_support_coroot'_eq_zero {x : M}
+    (hx : ∀ i : b.support, P.toLinearMap x (P.coroot i) = 0) :
+    ∀ i ∈ b.support, P.coroot' i x = 0 :=
+  fun i hi ↦ hx ⟨i, hi⟩
+
+/-- Adding a weight annihilating the simple coroots preserves the dominant chamber. -/
+theorem mem_dominantChamber_add_of_forall_coroot_eq_zero {x χ : M}
+    (hx : x ∈ P.dominantChamber b)
+    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+    x + χ ∈ P.dominantChamber b := by
+  rw [mem_dominantChamber] at hx ⊢
+  intro i hi
+  simpa [hχ ⟨i, hi⟩] using hx i hi
+
+/-- Adding a weight annihilating the simple coroots does not change membership in the dominant
+chamber. -/
+theorem mem_dominantChamber_add_iff_of_forall_coroot_eq_zero {x χ : M}
+    (hχ : ∀ i : b.support, P.toLinearMap χ (P.coroot i) = 0) :
+    x + χ ∈ P.dominantChamber b ↔ x ∈ P.dominantChamber b := by
+  refine ⟨fun h ↦ ?_, fun h ↦ P.mem_dominantChamber_add_of_forall_coroot_eq_zero h hχ⟩
+  have hneg : ∀ i : b.support, P.toLinearMap (-χ) (P.coroot i) = 0 := by simp [hχ]
+  simpa using P.mem_dominantChamber_add_of_forall_coroot_eq_zero h hneg
 
 end RootPairing
