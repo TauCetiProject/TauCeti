@@ -85,8 +85,6 @@ therefore makes every shifted tail integrable.
   every level;
 * `MeasureTheory.Measure.measurable_measure_ofReal_lt` — the distribution function
   `t ↦ m {f > t}` is measurable;
-* `TauCeti.exists_lt_lt_measure_setOf_lt` — the distribution function `t ↦ m {f > t}` is right
-  continuous;
 * `MeasureTheory.Measure.lintegral_min_rpow_eq` — the integral of a truncated power
   `min f k ^ p`, level by level up to the cap `k`;
 * `MeasureTheory.Measure.tendsto_lintegral_mul_min_rpow` — the truncated integrals
@@ -259,27 +257,6 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       filter_upwards [hf.ae_eq_mk, hg.ae_eq_mk] with a hfa hga
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
-
-/-- **Right continuity of the distribution function.** The measure of a strict superlevel set
-`{t < f}` is approached by those of strictly higher levels, so anything below it is already below
-`μ {s < f}` for some `s > t`. -/
-theorem exists_lt_lt_measure_setOf_lt (μ : Measure α) {f : α → ℝ≥0∞} {t c : ℝ≥0∞}
-    (h : c < μ {y | t < f y}) :
-    ∃ s, t < s ∧ c < μ {y | s < f y} := by
-  have ht : t ≠ ∞ := by
-    rintro rfl
-    simp at h
-  obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictAnti_tendsto' (lt_top_iff_ne_top.2 ht)
-  have hunion : {y | t < f y} = ⋃ n, {y | u n < f y} := by
-    ext y
-    simp only [mem_ofPred_eq, mem_iUnion]
-    exact ⟨fun hy ↦ (hlim.eventually (gt_mem_nhds hy)).exists,
-      fun ⟨n, hn⟩ ↦ (hut n).1.trans hn⟩
-  have hmono : Monotone fun n ↦ {y | u n < f y} :=
-    fun m n hmn y hy ↦ (hu.antitone hmn).trans_lt hy
-  rw [hunion, hmono.measure_iUnion, lt_iSup_iff] at h
-  obtain ⟨n, hn⟩ := h
-  exact ⟨u n, (hut n).1, hn⟩
 
 end TauCeti
 

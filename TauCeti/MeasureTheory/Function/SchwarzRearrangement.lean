@@ -13,6 +13,8 @@ public import Mathlib.Topology.EMetricSpace.Weak
 -- Proof-only: one- and two-function layer-cake formulas.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
+-- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
+import TauCeti.MeasureTheory.Measure.Continuity
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -122,7 +124,7 @@ theorem lt_schwarzRearrangement_iff {x : E} {t : ℝ≥0∞} :
     obtain ⟨hball, hts⟩ := hs
     exact hball.trans_le (measure_mono fun y hy ↦ hts.trans hy)
   · intro h
-    obtain ⟨s, hts, hs⟩ := exists_lt_lt_measure_setOf_lt μ h
+    obtain ⟨s, hts, hs⟩ := μ.exists_lt_lt_measure_setOf_lt h
     exact ⟨s, lt_iSup_iff.2 ⟨hs, hts⟩⟩
 
 /-- The strict superlevel sets of the Schwarz rearrangement, as sets. -/
