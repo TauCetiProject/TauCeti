@@ -209,4 +209,50 @@ theorem coe_constIsoDiffeomorph_symm
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he).symm =
       (constIso hbase e he).inv.totalSpaceMap := (rfl)
 
+omit [A.core.IsContMDiff I n] in
+/-- The forward morphism of a constant intertwining equivalence between `C^n` cores has `C^n`
+chart operators, without completeness assumptions on `𝕜`. -/
+theorem contMDiffOn_inChartCoordinates_constIso_hom
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
+    (i j : B) :
+    ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+      (fun x ↦ A.core.inChartCoordinates D.core i j x ((constIso hbase e he).hom.fiberMap x))
+      (A.core.baseSet i ∩ D.core.baseSet j) :=
+  contMDiffOn_inChartCoordinates_of_coordChange_comp (constIso hbase e he).hom (hbase i).le
+    e.toContinuousLinearMap fun x hx v ↦ by
+      rw [fiberMap_constIso_hom]
+      exact DFunLike.congr_fun (he i x x hx.1 (A.mem_baseSet_self x)) v
+
+omit [D.core.IsContMDiff I n] in
+/-- The inverse morphism of a constant intertwining equivalence between `C^n` cores has `C^n`
+chart operators, without completeness assumptions on `𝕜`. -/
+theorem contMDiffOn_inChartCoordinates_constIso_inv
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
+    (i j : B) :
+    ContMDiffOn I 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) n
+      (fun x ↦ D.core.inChartCoordinates A.core i j x ((constIso hbase e he).inv.fiberMap x))
+      (D.core.baseSet i ∩ A.core.baseSet j) :=
+  contMDiffOn_inChartCoordinates_of_coordChange_comp (constIso hbase e he).inv (hbase i).ge
+    e.symm.toContinuousLinearMap fun x hx v ↦ by
+      rw [fiberMap_constIso_inv]
+      exact DFunLike.congr_fun
+        (coordChange_intertwines_symm hbase e he i x x hx.1 (D.mem_baseSet_self x)) v
+
+omit [D.core.IsContMDiff I n] in
+/-- Transporting along an equality of `C^n` finite-rank cores has `C^n` chart operators. -/
+theorem contMDiffOn_inChartCoordinates_eqToHom (h : A = D) (i j : B) :
+    ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+      (fun x ↦ A.core.inChartCoordinates D.core i j x ((eqToHom h).fiberMap x))
+      (A.core.baseSet i ∩ D.core.baseSet j) := by
+  subst h
+  exact CoordinateHom.contMDiffOn_inChartCoordinates_id i j
+
 end TauCeti.FiniteRankBundleCore
