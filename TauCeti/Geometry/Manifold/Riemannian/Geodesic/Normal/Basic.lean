@@ -160,18 +160,20 @@ theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U)
     (mem_expDomain_iff.1 (h.subset_expDomain hv)) ⟨ht₀, ht₁⟩
 
 /-- A normal domain, as an open subset of the tangent space. -/
-@[expose]
 def opens (h : IsNormalDomain I M p U) : TopologicalSpace.Opens (TangentSpace I p) :=
   ⟨U, h.isOpen⟩
 
 @[simp]
 theorem coe_opens (h : IsNormalDomain I M p U) : (h.opens : Set (TangentSpace I p)) = U :=
-  rfl
+  (rfl)
+
+@[simp]
+theorem mem_opens (h : IsNormalDomain I M p U) : v ∈ h.opens ↔ v ∈ U :=
+  Iff.rfl
 
 /-- The origin belongs to a normal domain, seen as an open subset of the tangent space. -/
-theorem zero_mem_opens (h : IsNormalDomain I M p U) : (0 : TangentSpace I p) ∈ h.opens := by
-  rw [← SetLike.mem_coe, coe_opens]
-  exact h.zero_mem
+theorem zero_mem_opens (h : IsNormalDomain I M p U) : (0 : TangentSpace I p) ∈ h.opens :=
+  h.mem_opens.2 h.zero_mem
 
 /-- A normal domain, seen as an open subset of the tangent space, is star-shaped about the
 origin. -/
@@ -188,7 +190,7 @@ theorem contMDiff_riemannianExp_comp_val (h : IsNormalDomain I M p U) {n : ℕ�
   intro v
   have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
       (v : TangentSpace I p) :=
-    h.isLocalDiffeomorphOn ⟨v, v.2⟩
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.2⟩
   exact (h'.contMDiffAt.of_le (by simpa using hn)).comp v contMDiff_subtype_val.contMDiffAt
 
 /-- On a normal domain, the differential of the exponential map read on the open subset is the
@@ -201,7 +203,7 @@ theorem mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U) (v : h.opens
         (tangentSpaceOpenEquiv (I := 𝓘(ℝ, TangentSpace I p)) v).toContinuousLinearMap := by
   have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
       (v : TangentSpace I p) :=
-    h.isLocalDiffeomorphOn ⟨v, v.2⟩
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.2⟩
   rw [mfderiv_comp v (h'.contMDiffAt.mdifferentiableAt (by simp))
     (contMDiff_subtype_val.contMDiffAt.mdifferentiableAt one_ne_zero),
     mfderiv_subtype_val (I := 𝓘(ℝ, TangentSpace I p)) v]
@@ -212,7 +214,7 @@ theorem isInvertible_mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U)
     (mfderiv 𝓘(ℝ, TangentSpace I p) I
       (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) v).IsInvertible := by
   rw [h.mfderiv_riemannianExp_comp_val v]
-  exact ((h.isLocalDiffeomorphOn ⟨v, v.2⟩).isInvertible_mfderiv (by simp)).comp
+  exact ((h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.2⟩).isInvertible_mfderiv (by simp)).comp
     ContinuousLinearMap.isInvertible_equiv
 
 variable [I.Boundaryless] [T2Space M]
