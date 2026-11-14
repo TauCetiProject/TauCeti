@@ -126,6 +126,9 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   almost everywhere, so `M f` depends on `f` only through `‖f‖ₑ` and only up to a null set.
 * `TauCeti.maximalFunction_enorm`: replacing a function by its extended norm leaves its maximal
   function unchanged.
+* `TauCeti.exists_measurable_maximalFunction_eq`: a countable family with almost everywhere
+  measurable extended norms has simultaneous measurable representatives with the same maximal
+  functions.
 * `TauCeti.maximalFunction_zero`, `TauCeti.maximalFunction_add_le`,
   `TauCeti.maximalFunction_const_smul`: `M` is sublinear. Subadditivity and the endpoint bounds
   feed directly into `TauCeti.lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup`.
@@ -239,6 +242,19 @@ theorem maximalFunction_congr_ae (h : ∀ᵐ y ∂μ, ‖f y‖ₑ = ‖g y‖�
 theorem maximalFunction_enorm (μ : Measure X) (f : X → F) :
     maximalFunction μ (fun x => ‖f x‖ₑ) = maximalFunction μ f :=
   funext fun _ => maximalFunction_congr_ae (.of_forall fun _ => by simp)
+
+/-- A countable family whose extended norms are almost everywhere measurable has measurable
+representatives `g i` of `‖f i‖ₑ`, simultaneously almost everywhere, with the same maximal
+functions. -/
+theorem exists_measurable_maximalFunction_eq {κ : Type*} [Countable κ] {f : κ → X → F}
+    (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ) μ) :
+    ∃ g : κ → X → ℝ≥0∞, (∀ i, Measurable (g i)) ∧
+      (∀ i x, maximalFunction μ (f i) x = maximalFunction μ (g i) x) ∧
+      ∀ᵐ x ∂μ, ∀ i, ‖f i x‖ₑ = g i x := by
+  refine ⟨fun i => (hf i).mk _, fun i => (hf i).measurable_mk, fun i x =>
+    maximalFunction_congr_ae ?_, ae_all_iff.2 fun i => (hf i).ae_eq_mk⟩
+  filter_upwards [(hf i).ae_eq_mk] with y hy
+  rw [hy, eNorm_eq_self]
 
 /-- The `L^∞` endpoint of the maximal inequality: the maximal function of `f` is bounded by the
 essential supremum of `‖f‖`, with constant `1`. -/

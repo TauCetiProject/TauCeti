@@ -152,46 +152,6 @@ theorem setLIntegral_compl_closedBall_enorm_le_of_hormander {K : X → X → E �
 
 end Kernel
 
-section WeakType
-
-variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The closed ball around the centre of a dyadic cube of level `k` whose radius is `c` times half
-the side of the cube has at most `cⁿ` times the volume of the cube. -/
-private theorem volume_closedBall_dyadicCube_le (c : ℝ) (k : ℤ) (m : ι → ℤ) :
-    volume (closedBall (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (c * (2 ^ k / 2))) ≤
-      ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube k m) := by
-  rcases lt_or_ge c 0 with hc | hc
-  · rw [closedBall_eq_empty.2 (mul_neg_of_neg_of_pos hc (by positivity)), measure_empty]
-    exact zero_le
-  have hr : (2 : ℝ) * (c * (2 ^ k / 2)) = c * 2 ^ k := by ring
-  rw [Real.volume_pi_closedBall _ (by positivity), volume_dyadicCube, hr, mul_pow,
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hc]
-
-/-- The union of the balls `c B_Q` around the Calderón–Zygmund cubes `Q` of `g` at height `t` has
-measure at most `cⁿ / t` times the integral of `g`. -/
-private theorem mul_volume_biUnion_closedBall_le (c : ℝ) (g : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
-    t * volume (⋃ q ∈ calderonZygmundCubes g t,
-        closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
-      ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
-  calc _ ≤ t * ∑' q : calderonZygmundCubes g t, volume
-        (closedBall (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (c * (2 ^ q.1.1 / 2))) :=
-        mul_le_mul_right (measure_biUnion_le _ (to_countable _) _) _
-    _ ≤ t * ∑' q : calderonZygmundCubes g t,
-          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.1.1 q.1.2) :=
-        mul_le_mul_right (tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _) _
-    _ = ENNReal.ofReal c ^ Fintype.card ι *
-          (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by
-        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
-          pairwiseDisjoint_calderonZygmundCubes fun q _ => measurableSet_dyadicCube q.1 q.2]
-        ring
-    _ ≤ ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x :=
-        mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
-          (setLIntegral_le_lintegral _ _)) _
-
-end WeakType
-
 end TauCeti
 
 namespace ContinuousLinearMap
@@ -444,7 +404,7 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le
     _ ≤ 4 * 2 ^ Fintype.card ι * ‖T‖ₑ ^ 2 * (∫⁻ x, ‖f x‖ₑ) +
           ENNReal.ofReal c ^ Fintype.card ι * (∫⁻ x, ‖f x‖ₑ) + 4 * B * ∫⁻ x, ‖f x‖ₑ := by
         exact add_le_add (add_le_add (mul_volume_lt_enorm_calderonZygmundGood_le T hf ht ht')
-          (mul_volume_biUnion_closedBall_le c (fun x => ‖f x‖ₑ) t))
+          (mul_volume_biUnion_closedBall_calderonZygmundCubes_le c (fun x => ‖f x‖ₑ) t))
           (mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le T hT f hf ht ht')
     _ = (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B) *
           ∫⁻ x, ‖f x‖ₑ := by ring
