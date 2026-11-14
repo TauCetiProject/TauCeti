@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -57,6 +58,8 @@ The `H^{r+1}` norm of `u` is the `L²` norm of `W = ⟨ξ⟩^{r+1} 𝓕 u`, wher
 * `BesselPotentialSpace.norm_lineDerivCLM_apply_le`: `‖∂_m u‖_{H^r} ≤ 2π ‖m‖ ‖u‖_{H^s}`.
 * `BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`: the Plancherel
   identity for the norms of consecutive orders.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: its case `r = 0` on Schwartz functions,
+  `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 
 ## References
 
@@ -294,3 +297,36 @@ theorem norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq {ι : Type*} [
   field_simp
 
 end BesselPotentialSpace
+
+namespace SchwartzMap
+
+/-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
+basis `b` of `E`,
+
+`‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+
+This is the case `r = 0` of
+`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`. -/
+theorem norm_toBesselPotentialSpaceCLM_one_sq {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
+      (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
+  rw [BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq
+    (r := 0) (by norm_num) b]
+  simp only [BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
+    BesselPotentialSpace.lineDerivCLM_toBesselPotentialSpaceCLM,
+    ← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM_zero, norm_toLp_sq]
+
+/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
+along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
+theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
+    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
+  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
+  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
+    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
+      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
+  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
+
+end SchwartzMap

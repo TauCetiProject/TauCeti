@@ -20,7 +20,8 @@ Two computations on the real line test the identification of Mathlib's Bessel-po
 
 **The factor `2π`.** Mathlib's Bessel potential is the multiplier `(1 + ξ²)^{s/2}`, while the
 derivative has the symbol `2πi ξ`, so by the Plancherel identity
-(`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`)
+(`BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq`, here in its
+Schwartz form `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`)
 
 `‖u‖²_{H^{1,2}} = ‖u‖²_{L²} + (2π)⁻² ‖u'‖²_{L²}`.
 
@@ -91,14 +92,9 @@ Mathlib's Bessel potential has the symbol `(1 + ξ²)^{1/2}`, not `(1 + 4π² ξ
 theorem norm_toBesselPotentialSpaceCLM_one_gaussian_sq {b : ℂ} (hb : 0 < b.re) :
     ‖SchwartzMap.toBesselPotentialSpaceCLM (1 : ℝ) 2 (SchwartzMap.gaussian (V := ℝ) hb)‖ ^ 2 =
       √(π / (2 * b.re)) * (1 + ‖b‖ ^ 2 / (4 * π ^ 2 * b.re)) := by
-  have key := BesselPotentialSpace.norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq
-    (r := 0) (by norm_num) (OrthonormalBasis.singleton (Fin 1) ℝ)
-    (SchwartzMap.toBesselPotentialSpaceCLM (1 : ℝ) 2 (SchwartzMap.gaussian (V := ℝ) hb))
-  simp only [BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-    OrthonormalBasis.singleton_apply, BesselPotentialSpace.lineDerivCLM_toBesselPotentialSpaceCLM,
-    Finset.univ_unique, Finset.sum_singleton, ← BesselPotentialSpace.norm_toLp_eq,
-    SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero] at key
-  rw [← BesselPotentialSpace.norm_toLp_eq, key, norm_toLp_gaussian_sq,
+  simp only [SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq
+      (OrthonormalBasis.singleton (Fin 1) ℝ), OrthonormalBasis.singleton_apply,
+    Finset.univ_unique, Finset.sum_singleton, ← SchwartzMap.norm_toLp_sq, norm_toLp_gaussian_sq,
     norm_toLp_lineDerivOp_one_gaussian_sq]
   have : 0 < b.re := hb
   field_simp
