@@ -410,14 +410,44 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
 
-/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
-differentiable, its velocity at `t + c` is its velocity at `t`. -/
-theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+/-- Translating a curve's parameter preserves differentiability at the corresponding point. -/
+theorem mdifferentiableAt_comp_add_right_iff {c : 𝕜} :
+    MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun s ↦ γ (s + c)) t ↔
+      MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c) := by
+  constructor
+  · intro ht
+    have hc := ht.comp_of_eq (x := t + c)
+      (differentiableAt_fun_id.sub_const c).mdifferentiableAt (add_sub_cancel_right t c)
+    simpa only [Function.comp_def, sub_add_cancel] using hc
+  · intro ht
+    simpa only [Function.comp_def] using
+      ht.comp t (differentiableAt_fun_id.add_const c).mdifferentiableAt
+
+variable (I) in
+/-- Translating the parameter translates the velocity, including at points where the curve is
+not differentiable. -/
+theorem curveVelocity_comp_add_right (γ : 𝕜 → M) (t c : 𝕜) :
+    curveVelocity I (fun s ↦ γ (s + c)) t = curveVelocity I γ (t + c) := by
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)
+  · simpa only [Function.comp_def, one_smul] using
+      curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+  have hshift := mt mdifferentiableAt_comp_add_right_iff.mp hγ
+  rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hshift,
+    mfderiv_zero_of_not_mdifferentiableAt hγ]
+  exact (zero_apply _).trans (zero_apply _).symm
+
+/-- Differentiability of a periodic curve is unchanged by shifting by a period. -/
+theorem _root_.Function.Periodic.mdifferentiableAt_add {c : 𝕜} (h : Function.Periodic γ c) :
+    MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c) ↔ MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t := by
+  simpa only [h.funext] using
+    (mdifferentiableAt_comp_add_right_iff (I := I) (γ := γ) (t := t) (c := c)).symm
+
+/-- The velocity of a `c`-periodic curve is `c`-periodic: its velocity at `t + c` is its velocity
+at `t`. Both vanish when the curve is not differentiable at these points. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c) :
     curveVelocity I γ (t + c) = curveVelocity I γ t := by
-  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
-  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
-  exact h'.symm
+  -- Tangent spaces at different base points are definitionally the model vector space `E`.
+  rw [← curveVelocity_comp_add_right, h.funext]
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
