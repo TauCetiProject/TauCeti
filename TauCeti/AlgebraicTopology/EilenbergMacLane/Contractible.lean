@@ -23,6 +23,9 @@ This is the contractibility needed to apply the cellular projective resolution
 
 ## Main results
 
+* `IsCoveringMap.contractibleSpace_of_cwType_of_isAspherical`: a simply connected covering space of
+  CW type over an aspherical base is contractible.
+* `IsCoveringMap.contractibleSpace_univ_of_cwType_of_isAspherical`: the same for `univ : Set E`.
 * `IsCoveringMap.contractibleSpace_of_isAspherical`: the simply connected cover of an aspherical
   CW complex is contractible.
 * `IsCoveringMap.contractibleSpace_preimage_univ_of_isAspherical`: the same for the lift
@@ -46,6 +49,23 @@ open TauCeti
 
 variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {e : E} {b : B}
 
+/-- **A simply connected covering space of CW type over an aspherical base is contractible.** If `B`
+is aspherical at a point `b` lifting to `e` and `E` is simply connected and has CW type, then `E` is
+weakly contractible and hence contractible by Whitehead's theorem. -/
+theorem contractibleSpace_of_cwType_of_isAspherical (hp : IsCoveringMap p) [CWType E]
+    [SimplyConnectedSpace E] (he : p e = b) (hb : IsAspherical B b) :
+    ContractibleSpace E :=
+  contractibleSpace_of_subsingleton_homotopyGroup e
+    (hp.subsingleton_homotopyGroup_of_isAspherical he hb)
+
+/-- **The whole-space subset `univ : Set E` of a simply connected covering space of CW type over an
+aspherical base is contractible.** -/
+theorem contractibleSpace_univ_of_cwType_of_isAspherical (hp : IsCoveringMap p) [CWType E]
+    [SimplyConnectedSpace E] (he : p e = b) (hb : IsAspherical B b) :
+    ContractibleSpace (univ : Set E) :=
+  have := hp.contractibleSpace_of_cwType_of_isAspherical he hb
+  (Homeomorph.Set.univ E).contractibleSpace
+
 /-- **The simply connected cover of an aspherical CW complex is contractible.** If `B` carries a
 CW structure on the whole space and is aspherical at a point `b` lifting to `e`, and `E` is simply
 connected, then `E` is weakly contractible; it has CW type, through the lifted CW structure, so it
@@ -58,8 +78,7 @@ theorem contractibleSpace_of_isAspherical (hp : IsCoveringMap p) [T2Space B]
   let φ : (p ⁻¹' (univ : Set B)) ≃ₜ E :=
     (Homeomorph.setCongr preimage_univ).trans (Homeomorph.Set.univ E)
   have : CWType E := φ.symm.cwType
-  exact contractibleSpace_of_subsingleton_homotopyGroup e
-    (hp.subsingleton_homotopyGroup_of_isAspherical he hb)
+  exact hp.contractibleSpace_of_cwType_of_isAspherical he hb
 
 /-- **The lift of an aspherical CW complex to a simply connected cover is contractible**: the form
 of `IsCoveringMap.contractibleSpace_of_isAspherical` for `p ⁻¹' univ`, the space carrying the

@@ -47,7 +47,10 @@ group, with precomposition by the compatible coefficient map on the internal-hom
 * `MonoidHom.coinvariantsTensorMap`: the map `(A ⊗ X)_G ⟶ (B ⊗ Y)_H` induced by `f`, `φ`
   and `v`.
 * `Rep.coinvariantsHomLinearEquiv`: `Hom(X_G, N) ≃ₗ[k] Hom_G(X, N)`.
+* `Rep.coinvariantsTensorTrivialNatIso`: the natural isomorphism `(k ⊗ X)_G ≅ X_G` for the trivial
+  representation `k`.
 * `Rep.coinvariantsTensorHomLinearEquiv`: `Hom((A ⊗ X)_G, N) ≃ₗ[k] Hom_G(X, Homₖ(A, N))`.
+* `Rep.coinvariantsFreeIso`: the coinvariants `(k[G]⊕α)_G ≅ α →₀ k` of a free representation.
 
 ## Main results
 
@@ -170,6 +173,43 @@ theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ R
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
 
+variable (k G) in
+/-- **Tensor coinvariants with the trivial representation `k` are ordinary coinvariants.** Since
+`Rep.trivial k G k` is the monoidal unit of `Rep k G`, the left unitor `λ_ X : k ⊗ X ≅ X`
+identifies `(k ⊗ X)_G` naturally with `X_G`. -/
+def coinvariantsTensorTrivialNatIso :
+    (coinvariantsTensor k G).obj (Rep.trivial k G k) ≅ coinvariantsFunctor.{u} k G :=
+  NatIso.ofComponents (fun X ↦ (coinvariantsFunctor k G).mapIso (λ_ X)) fun f ↦ by
+    dsimp only [coinvariantsTensor, Functor.postcompose₂_obj_obj_obj_map,
+      MonoidalCategory.curriedTensor_obj_map, Functor.mapIso_hom]
+    rw [← Functor.map_comp, ← Functor.map_comp]
+    exact congrArg (coinvariantsFunctor k G).map (leftUnitor_naturality f)
+
+/-- On tensor classes, `Rep.coinvariantsTensorTrivialNatIso` sends `⟦r ⊗ x⟧` to `r • ⟦x⟧`. -/
+-- Match before simplification changes the presentation of the tensor carrier.
+@[simp↓]
+theorem coinvariantsTensorTrivialNatIso_hom_app_coinvariantsTensorMk
+    (X : Rep.{u} k G) (r : k) (x : X) :
+    ((coinvariantsTensorTrivialNatIso k G).hom.app X)
+        (coinvariantsTensorMk (Rep.trivial k G k) X r x) =
+      r • Representation.Coinvariants.mk X.ρ x := by
+  change (Representation.Coinvariants.map _ _ (λ_ X).hom.hom)
+      (Representation.Coinvariants.mk _ (r ⊗ₜ[k] x)) = _
+  rw [Representation.Coinvariants.map_mk, hom_hom_leftUnitor]
+  simp
+
+/-- The inverse of `Rep.coinvariantsTensorTrivialNatIso` sends `⟦x⟧` to `⟦1 ⊗ x⟧`. -/
+-- Match before simplification changes the presentation of the coinvariants carrier.
+@[simp↓]
+theorem coinvariantsTensorTrivialNatIso_inv_app_mk (X : Rep.{u} k G) (x : X) :
+    ((coinvariantsTensorTrivialNatIso k G).inv.app X)
+        (Representation.Coinvariants.mk X.ρ x) =
+      coinvariantsTensorMk (Rep.trivial k G k) X (1 : k) x := by
+  change (Representation.Coinvariants.map _ _ (λ_ X).inv.hom)
+      (Representation.Coinvariants.mk X.ρ x) = _
+  rw [Representation.Coinvariants.map_mk, hom_inv_leftUnitor]
+  rfl
+
 end Monoid
 
 section Group
@@ -281,6 +321,43 @@ theorem coinvariantsTensorFreeLEquiv_naturality (f : A ⟶ B) (α : Type u) :
   apply LinearMap.ext
   intro a
   simp [coinvariantsTensorFreeLEquiv, Representation.Coinvariants.map_mk]
+
+variable (k G) in
+/-- **The coinvariants of a free representation `k[G]⊕α` are `α →₀ k`**, sending
+`⟦single i (single g r)⟧` to `single i r` and `single i r` to `⟦single i (single 1 r)⟧`. -/
+def coinvariantsFreeIso (α : Type u) :
+    (coinvariantsFunctor k G).obj (free k G α) ≅ ModuleCat.of k (α →₀ k) :=
+  (coinvariantsTensorTrivialNatIso k G).symm.app (free k G α) ≪≫
+    (coinvariantsTensorFreeLEquiv (Rep.trivial k G k) α).toModuleIso
+
+/-- The inverse of `Rep.coinvariantsFreeIso` sends `single i r` to `⟦single i (single 1 r)⟧`. -/
+-- Match before simplification changes the presentation of the coinvariants carrier.
+@[simp↓]
+theorem coinvariantsFreeIso_inv_single (α : Type u) (i : α) (r : k) :
+    (coinvariantsFreeIso k G α).inv (Finsupp.single i r) =
+      Representation.Coinvariants.mk (free k G α).ρ
+        (Finsupp.single i (MonoidAlgebra.single (1 : G) r)) := by
+  change ((coinvariantsTensorTrivialNatIso k G).hom.app (free k G α))
+      (finsuppToCoinvariantsTensorFree (Rep.trivial k G k) α (Finsupp.single i r)) = _
+  rw [finsuppToCoinvariantsTensorFree_single]
+  refine (coinvariantsTensorTrivialNatIso_hom_app_coinvariantsTensorMk _ r _).trans ?_
+  rw [← map_smul, Finsupp.smul_single, MonoidAlgebra.smul_single, smul_eq_mul, mul_one]
+
+/-- `Rep.coinvariantsFreeIso` sends `⟦single i (single g r)⟧` to `single i r`. -/
+-- Match before simplification changes the presentation of the coinvariants carrier.
+@[simp↓]
+theorem coinvariantsFreeIso_hom_mk_single (α : Type u) (i : α) (g : G) (r : k) :
+    (coinvariantsFreeIso k G α).hom
+        (Representation.Coinvariants.mk (free k G α).ρ
+          (Finsupp.single i (MonoidAlgebra.single g r))) =
+      Finsupp.single i r := by
+  change (coinvariantsTensorFreeLEquiv (Rep.trivial k G k) α)
+      (((coinvariantsTensorTrivialNatIso k G).inv.app (free k G α))
+        (Representation.Coinvariants.mk (free k G α).ρ
+          (Finsupp.single i (MonoidAlgebra.single g r)))) = _
+  rw [coinvariantsTensorTrivialNatIso_inv_app_mk]
+  simp [coinvariantsTensorFreeLEquiv, coinvariantsTensorFreeToFinsupp,
+    Representation.finsuppTensorRight]
 
 end Exactness
 

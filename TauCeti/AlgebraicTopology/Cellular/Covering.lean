@@ -94,6 +94,16 @@ def cellularChainRepresentation (n : ℕ) :
   cellularActionRepresentation (p ⁻¹' C) (preimageSMul C hG)
     (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
 
+/-- `TauCeti.cellularChainRepresentation` is `TauCeti.cellularActionRepresentation` for
+`TauCeti.preimageSMul`. -/
+theorem cellularChainRepresentation_eq (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    cellularChainRepresentation C hG R n =
+      cellularActionRepresentation (p ⁻¹' C) (preimageSMul C hG)
+        (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n :=
+  (rfl)
+
 /-- An element `g` acts on the cellular chains of the lift by the chain map of translation by
 `g`. -/
 @[simp]
@@ -154,6 +164,16 @@ def cellularChainComplexRep : ChainComplex (Rep.{w} R G) ℕ :=
   haveI := hG.isCoveringMap.t2Space
   cellularActionComplex (p ⁻¹' C) (preimageSMul C hG)
     (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
+
+/-- `TauCeti.cellularChainComplexRep` is `TauCeti.cellularActionComplex` for
+`TauCeti.preimageSMul`. -/
+theorem cellularChainComplexRep_eq :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    cellularChainComplexRep C hG R =
+      cellularActionComplex (p ⁻¹' C) (preimageSMul C hG)
+        (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R :=
+  (rfl)
 
 /-- The objects of `TauCeti.cellularChainComplexRep` are the representations
 `TauCeti.cellularChainRepresentation`. -/

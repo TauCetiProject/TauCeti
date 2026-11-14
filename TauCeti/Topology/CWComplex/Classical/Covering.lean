@@ -47,8 +47,10 @@ a closed set. The covering map is cellular for the lifted structure
 When `p` is the quotient covering map of a free action of a group `G` on `E`
 (`IsQuotientCoveringMap p G`), the group permutes the lifted cells
 (`TauCeti.cellPreimageMulAction`), translating characteristic maps
-(`TauCeti.map_smul_cellPreimage`). The action is free (`TauCeti.isCancelSMul_cellPreimage`), and
-there is exactly one orbit over each cell of `C` (`TauCeti.exists_cellPreimageEquiv_fst_eq` and
+(`TauCeti.map_smul_cellPreimage`) and open cells (`TauCeti.smul_openCell_cellPreimage`). The action
+is free on lifted cells and open cells (`TauCeti.isCancelSMul_cellPreimage`,
+`TauCeti.eq_one_of_smul_openCell_cellPreimage`), and there is exactly one orbit over each cell of
+`C` (`TauCeti.exists_cellPreimageEquiv_fst_eq` and
 `TauCeti.exists_smul_eq_iff_cellPreimageEquiv_fst_eq`): for a choice `s` of lifts of the cells
 of `C`, the lifted cells are the translates `g • s i`, each exactly once
 (`TauCeti.sigmaSMulLiftEquiv`). Translation by `g`, restricted to `p ⁻¹' C`
@@ -641,6 +643,30 @@ theorem isCancelSMul_cellPreimage :
   have := hG.isCancelSMul
   refine ⟨fun g g' c h ↦ IsCancelSMul.right_cancel g g' ((cellPreimageEquiv C _ n c).2 : E) ?_⟩
   rw [← coe_cellPreimageEquiv_smul_snd C hG, ← coe_cellPreimageEquiv_smul_snd C hG, h]
+
+open scoped Pointwise in
+/-- Translating an open lifted cell by `g` gives the open cell of `g • c`. -/
+theorem smul_openCell_cellPreimage (g : G)
+    (c : letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    letI := cellPreimageMulAction C hG n
+    g • openCell n c = openCell n (g • c) := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  let := cellPreimageMulAction C hG n
+  rw [openCell, openCell, ← image_smul, image_image]
+  exact image_congr fun x _ ↦ (map_smul_cellPreimage C hG g c x).symm
+
+open scoped Pointwise in
+/-- Only `1` carries an open lifted cell onto itself. -/
+theorem eq_one_of_smul_openCell_cellPreimage (g : G)
+    (c : letI := cwComplexPreimage C hG.isCoveringMap; cell (p ⁻¹' C) n)
+    (h : letI := cwComplexPreimage C hG.isCoveringMap; g • openCell n c = openCell n c) :
+    g = 1 := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  let := cellPreimageMulAction C hG n
+  have := isCancelSMul_cellPreimage C hG (n := n)
+  rw [smul_openCell_cellPreimage C hG g c] at h
+  exact IsCancelSMul.eq_one_of_smul (openCell_congr n h)
 
 /-- Two lifted cells lie in the same `G`-orbit exactly when they lift the same cell of `C`. -/
 theorem exists_smul_eq_iff_cellPreimageEquiv_fst_eq

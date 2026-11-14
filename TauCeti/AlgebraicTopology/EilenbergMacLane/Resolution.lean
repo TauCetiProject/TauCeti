@@ -16,17 +16,30 @@ an action of a group `G` on a simply connected space `E`, so that `E` is a unive
 and `G` its group of deck transformations. Then the lift `p ⁻¹' univ` of the CW structure on `B`
 is contractible (`IsCoveringMap.contractibleSpace_preimage_univ_of_isAspherical`), so its cellular
 chains, on which `G` acts by translating the lifted cells, form a free resolution of the trivial
-representation of `G` (`TauCeti.cellularResolution`).
+representation of `G` (`TauCeti.cellularResolution`), and passing to `G`-coinvariants identifies the
+cellular homology of `B` with `groupHomology (Rep.trivial k G k) n`
+(`TauCeti.cellularHomologyIsoGroupHomologyOfIsAspherical`).
 
-When `B` is a `K(G, 1)`, this is the resolution of the trivial `G`-module computing the group
-homology and cohomology of `G` from the cells of `B`: in degree `n` it is free over `k[G]` with one
-generator for each `n`-cell of `B`.
+Conversely, if `E` itself is a simply connected Hausdorff CW complex carrying a free cellular
+`G`-action with quotient covering map `p : E → B` onto an aspherical space `B`, then `E` is
+contractible by Whitehead's theorem (`IsCoveringMap.contractibleSpace_of_cwType_of_isAspherical`),
+its cellular chains form a projective resolution `TauCeti.freeCellularResolutionOfIsAspherical` of
+`Rep.trivial k G k`, and equipping `B` with the orbit CW structure
+`IsQuotientCoveringMap.cwComplexQuotient` identifies the cellular homology of `B` with
+`groupHomology (Rep.trivial k G k) n`
+(`IsQuotientCoveringMap.cellularHomologyIsoGroupHomologyOfIsAspherical`).
 
 ## Main definitions
 
-* `TauCeti.cellularResolutionOfIsAspherical`: the projective resolution of the trivial
-  representation of `G` by the lifted cellular chains of a simply connected quotient covering of
-  an aspherical CW complex.
+* `TauCeti.cellularResolutionOfIsAspherical`: the projective resolution of `Rep.trivial k G k` by
+  the lifted cellular chains of a simply connected quotient covering of an aspherical CW complex.
+* `TauCeti.cellularHomologyIsoGroupHomologyOfIsAspherical`: the resulting isomorphism between the
+  cellular homology of `B` and `groupHomology (Rep.trivial k G k) n`.
+* `TauCeti.freeCellularResolutionOfIsAspherical`: the projective resolution of `Rep.trivial k G k`
+  by the cellular chains of a simply connected free `G`-CW cover of an aspherical space.
+* `IsQuotientCoveringMap.cellularHomologyIsoGroupHomologyOfIsAspherical`: the resulting isomorphism
+  between the cellular homology of the orbit CW complex `B` and
+  `groupHomology (Rep.trivial k G k) n`.
 
 ## References
 
@@ -38,11 +51,13 @@ public section
 
 noncomputable section
 
-open CategoryTheory Set Topology
+open CategoryTheory Set Topology Topology.RelCWComplex
 
 universe w
 
 namespace TauCeti
+
+section Preimage
 
 variable {E B : Type w} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {G : Type w}
   [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G) [T2Space B]
@@ -78,5 +93,74 @@ lemma cellularResolutionOfIsAspherical_π :
         cellularChainComplexRepAugmentation univ hG k :=
   haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical he hb
   cellularResolution_π ..
+
+/-- **The cellular homology of an aspherical Hausdorff CW complex is the group homology of its deck
+transformation group.** -/
+def cellularHomologyIsoGroupHomologyOfIsAspherical (n : ℕ) :
+    (cellularChainComplex (univ : Set B) (ModuleCat.of k k)).homology n ≅
+      groupHomology (Rep.trivial k G k) n :=
+  haveI := hG.isCoveringMap.contractibleSpace_preimage_univ_of_isAspherical he hb
+  cellularHomologyIsoGroupHomology univ hG k n
+
+end Preimage
+
+section FreeAction
+
+open scoped Pointwise
+
+variable {E B : Type w} [TopologicalSpace E] [T2Space E] [TopologicalSpace B]
+  [CWComplex (univ : Set E)] [SimplyConnectedSpace E]
+  {p : E → B} {G : Type w} [Group G] [MulAction G E] (hG : IsQuotientCoveringMap p G)
+  (hcell : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
+    ∃ j : cell (univ : Set E) n, g • openCell n i = openCell n j)
+  (hfree : ∀ (g : G) (n : ℕ) (i : cell (univ : Set E) n),
+    g • openCell n i = openCell n i → g = 1)
+  {e : E} {b : B} (he : p e = b) (hb : IsAspherical B b) (k : Type w) [CommRing k]
+
+include hG hcell hfree he hb
+
+/-- **Projective resolution of the trivial representation from a simply connected free `G`-CW cover
+of an aspherical space.** Here `B` need not carry a pre-existing CW structure: `E` has CW type via
+its own CW structure, hence is contractible by Whitehead's theorem. -/
+def freeCellularResolutionOfIsAspherical : ProjectiveResolution (Rep.trivial k G k) :=
+  haveI := hG.toContinuousConstSMul
+  haveI := hG.isCoveringMap.contractibleSpace_univ_of_cwType_of_isAspherical he hb
+  freeCellularResolution (univ : Set E) hcell hfree k
+
+/-- The underlying chain complex of `TauCeti.freeCellularResolutionOfIsAspherical` is
+`TauCeti.cellularSMulComplex`. -/
+@[simp]
+lemma freeCellularResolutionOfIsAspherical_complex :
+    haveI := hG.toContinuousConstSMul
+    (freeCellularResolutionOfIsAspherical hG hcell hfree he hb k).complex =
+      cellularSMulComplex (univ : Set E) hcell k :=
+  haveI := hG.toContinuousConstSMul
+  haveI := hG.isCoveringMap.contractibleSpace_univ_of_cwType_of_isAspherical he hb
+  freeCellularResolution_complex ..
+
+/-- The augmentation of `TauCeti.freeCellularResolutionOfIsAspherical` is
+`TauCeti.cellularSMulComplexAugmentation`. -/
+@[simp]
+lemma freeCellularResolutionOfIsAspherical_π :
+    haveI := hG.toContinuousConstSMul
+    (freeCellularResolutionOfIsAspherical hG hcell hfree he hb k).π =
+      eqToHom (freeCellularResolutionOfIsAspherical_complex hG hcell hfree he hb k) ≫
+        cellularSMulComplexAugmentation (univ : Set E) hcell k :=
+  haveI := hG.toContinuousConstSMul
+  haveI := hG.isCoveringMap.contractibleSpace_univ_of_cwType_of_isAspherical he hb
+  freeCellularResolution_π ..
+
+/-- **The cellular homology of the orbit CW complex of a simply connected free `G`-CW cover over an
+aspherical base is group homology.** Equipping `B` with `IsQuotientCoveringMap.cwComplexQuotient`
+identifies `H_n^{\mathrm{cell}}(B; k)` with `H_n(G, k)`. -/
+def _root_.IsQuotientCoveringMap.cellularHomologyIsoGroupHomologyOfIsAspherical (n : ℕ) :
+    letI := hG.cwComplexQuotient hcell hfree
+    haveI := hG.t2Space_of_cwComplex hcell hfree
+    (cellularChainComplex (univ : Set B) (ModuleCat.of k k)).homology n ≅
+      groupHomology (Rep.trivial k G k) n :=
+  haveI := hG.isCoveringMap.contractibleSpace_of_cwType_of_isAspherical he hb
+  hG.cellularHomologyIsoGroupHomology hcell hfree k n
+
+end FreeAction
 
 end TauCeti

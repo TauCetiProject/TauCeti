@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
-public import Mathlib.RepresentationTheory.Rep.Iso
-public import TauCeti.AlgebraicTopology.Cellular.Augmentation
 public import TauCeti.AlgebraicTopology.Cellular.Covering
+public import TauCeti.AlgebraicTopology.Cellular.FreeAction
 
 /-!
 # The cellular chains of a contractible free cover as a projective resolution
@@ -28,14 +26,21 @@ complex is exact (`TauCeti.quasiIso_cellularChainComplexAugmentation`), so the c
 `p ⁻¹' C` form a projective resolution of the trivial representation of `G` over `R`
 (`TauCeti.cellularResolution`).
 
+Passing to `G`-coinvariants along the cellular covering map `p ⁻¹' C → C`
+(`TauCeti.isCellular_restrictPreimage`) identifies the coinvariants of
+`TauCeti.cellularChainComplexRep` with the cellular chain complex of `C`
+(`TauCeti.cellularChainComplexRepCoinvariantsIso`,
+`TauCeti.cellularChainComplexRepCoinvariantsTensorIso`), so when `p ⁻¹' C` is contractible the
+cellular homology of `C` is isomorphic to the group homology of `G` with trivial `R`-coefficients
+(`TauCeti.cellularHomologyIsoGroupHomology`).
+
 This applies to the universal cover of a `K(G, 1)` CW complex: if `B` carries a CW structure on
 the whole space and is aspherical, and `E` is simply connected, then `E` is weakly contractible, and
 since it has CW type, it is contractible by Whitehead's theorem
 (`IsCoveringMap.contractibleSpace_preimage_univ_of_isAspherical`, in
 `TauCeti.AlgebraicTopology.EilenbergMacLane.Contractible`). The group acting is `G`, acting on `E`
 by the given action; Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` identifies `G` with
-the opposite of the fundamental group of `B`. This resolution is the input for identifying the
-cellular homology and cohomology of `B` with the group homology and cohomology of `G`.
+the opposite of the fundamental group of `B`.
 
 ## Main definitions
 
@@ -45,11 +50,18 @@ cellular homology and cohomology of `B` with the group homology and cohomology o
   representations.
 * `TauCeti.cellularResolution`: for contractible `p ⁻¹' C`, the projective resolution of the
   trivial representation by the lifted cellular chains.
+* `TauCeti.cellularChainComplexRepCoinvariantsIso` and
+  `TauCeti.cellularChainComplexRepCoinvariantsTensorIso`: the `G`-coinvariants of the lifted
+  cellular chain complex identify with the cellular chain complex of `C`.
+* `TauCeti.cellularHomologyIsoGroupHomology`: for contractible `p ⁻¹' C`, the cellular homology of
+  `C` is isomorphic to `groupHomology (Rep.trivial R G R) n`.
 
 ## Main results
 
 * `TauCeti.quasiIso_cellularChainComplexRepAugmentation`: for contractible `p ⁻¹' C`, the
   augmentation is a quasi-isomorphism.
+* `TauCeti.coinvariantsMk_comp_cellularChainRepCoinvariantsIso_hom`: the coinvariant isomorphism is
+  induced by the cellular covering map `p ⁻¹' C → C`.
 
 ## References
 
@@ -61,7 +73,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Set Topology Topology.RelCWComplex
+open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
 
 universe w
 
@@ -186,5 +198,156 @@ lemma cellularResolution_π [ContractibleSpace (p ⁻¹' C)] :
     (cellularResolution C hG R).π =
       eqToHom (cellularResolution_complex C hG R) ≫ cellularChainComplexRepAugmentation C hG R :=
   (Category.id_comp _).symm
+
+omit [T2Space B] [CWComplex C] in
+private theorem preimageSMul_comp_restrictPreimage (g : G) :
+    preimageSMul C hG g ≫ TopCat.ofHom ⟨C.restrictPreimage p, hG.continuous.restrictPreimage⟩ =
+      TopCat.ofHom ⟨C.restrictPreimage p, hG.continuous.restrictPreimage⟩ := by
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Subtype.ext
+  change p (preimageSMul C hG g x).1 = p x.1
+  rw [coe_preimageSMul_apply, hG.map_smul]
+
+private theorem exists_preimage_lift (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    ∃ (e : Rep.of (cellularActionRepresentation (p ⁻¹' C) (preimageSMul C hG)
+        (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n) ≅
+        Rep.free R G (cell C n))
+      (s : cell C n → cell (p ⁻¹' C) n),
+      (∀ b, e.inv.hom (Finsupp.single b (MonoidAlgebra.single 1 1)) =
+        cellularChainBasis (p ⁻¹' C) R n (s b)) ∧
+      ∀ b, ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, ∀ hx : map n (s b) x ∈ p ⁻¹' C,
+        ((TopCat.ofHom ⟨C.restrictPreimage p, hG.continuous.restrictPreimage⟩ :
+          TopCat.of (p ⁻¹' C) ⟶ TopCat.of C) ⟨map n (s b) x, hx⟩).1 = map n b x := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  let := cellPreimageMulAction C hG n
+  have := hG.isCoveringMap.t2Space
+  choose s hs using fun b ↦
+    exists_cellPreimageEquiv_fst_eq C hG.isCoveringMap hG.surjective (n := n) b
+  have hrep := cellularChainRepresentation_eq C hG R n
+  refine ⟨eqToIso (congrArg Rep.of hrep.symm) ≪≫ cellularChainRepIsoFree C hG R s hs, s,
+    fun b ↦ ?_, fun b x hx _ ↦ ?_⟩
+  · have hcast : ∀ {ρ₁ ρ₂ : Representation R G
+        (cellularChainGroup (p ⁻¹' C) (ModuleCat.of R R) n : ModuleCat R)} (_ : ρ₁ = ρ₂)
+        (h' : Rep.of ρ₁ = Rep.of ρ₂)
+        (f : Rep.free R G (cell C n) ⟶ Rep.of ρ₁) (w : Rep.free R G (cell C n)),
+        (f ≫ eqToHom h').hom w = f.hom w := by
+      rintro ρ₁ _ rfl h' f w
+      rw [eqToHom_refl, Category.comp_id]
+    rw [Iso.trans_inv, eqToIso.inv, hcast hrep _ (cellularChainRepIsoFree C hG R s hs).inv,
+      cellularChainRepIsoFree_inv_hom_single, one_smul]
+  · change p (map n (s b) x) = map n b x
+    have hmap := apply_map_cellPreimageEquiv_symm C hG.isCoveringMap
+      (cellPreimageEquiv C hG.isCoveringMap n (s b)) hx
+    rwa [Equiv.symm_apply_apply, hs b] at hmap
+
+/-- **The `G`-coinvariants of the `n`-th lifted cellular chain group identify with the `n`-th
+cellular chain group of `C`.** -/
+def cellularChainRepCoinvariantsIso (n : ℕ) :
+    (Rep.coinvariantsFunctor R G).obj (Rep.of (cellularChainRepresentation C hG R n)) ≅
+      cellularChainGroup C (ModuleCat.of R R) n :=
+  letI := cwComplexPreimage C hG.isCoveringMap
+  haveI := hG.isCoveringMap.t2Space
+  eqToIso (by rw [cellularChainRepresentation_eq]) ≪≫
+    cellularActionCoinvariantsIso (p ⁻¹' C) C (preimageSMul C hG)
+      (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+      (isCellular_restrictPreimage C hG.isCoveringMap)
+      (preimageSMul_comp_restrictPreimage C hG) R (exists_preimage_lift C hG R n)
+
+/-- Precomposing `TauCeti.cellularChainRepCoinvariantsIso` with the coinvariants quotient map gives
+the cellular chain map induced by the covering projection `p ⁻¹' C → C`. -/
+@[reassoc (attr := simp)]
+theorem coinvariantsMk_comp_cellularChainRepCoinvariantsIso_hom (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    (Rep.coinvariantsMk R G).app (Rep.of (cellularChainRepresentation C hG R n)) ≫
+      (cellularChainRepCoinvariantsIso C hG R n).hom =
+      cellularChainGroupMap (p ⁻¹' C) C (isCellular_restrictPreimage C hG.isCoveringMap)
+        (ModuleCat.of R R) n := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  have hcast : ∀ {ρ₁ ρ₂ : Representation R G
+      (cellularChainGroup (p ⁻¹' C) (ModuleCat.of R R) n : ModuleCat R)} (_ : ρ₁ = ρ₂)
+      (h' : (Rep.coinvariantsFunctor R G).obj (Rep.of ρ₁) =
+        (Rep.coinvariantsFunctor R G).obj (Rep.of ρ₂)),
+      (Rep.coinvariantsMk R G).app (Rep.of ρ₁) ≫ eqToHom h' =
+        (Rep.coinvariantsMk R G).app (Rep.of ρ₂) := by
+    rintro ρ₁ _ rfl _
+    exact Category.comp_id _
+  unfold cellularChainRepCoinvariantsIso
+  rw [Iso.trans_hom, eqToIso.hom, ← Category.assoc, hcast (cellularChainRepresentation_eq C hG R n),
+    coinvariantsMk_comp_cellularActionCoinvariantsIso_hom]
+
+/-- On coinvariant classes, `TauCeti.cellularChainRepCoinvariantsIso` acts by the cellular chain map
+induced by the covering projection `p ⁻¹' C → C`. -/
+-- Match before simplification changes the presentation of the coinvariants carrier.
+@[simp↓]
+theorem cellularChainRepCoinvariantsIso_hom_mk (n : ℕ)
+    (x : letI := cwComplexPreimage C hG.isCoveringMap
+      haveI := hG.isCoveringMap.t2Space
+      (cellularChainGroup (p ⁻¹' C) (ModuleCat.of R R) n : ModuleCat R)) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    (cellularChainRepCoinvariantsIso C hG R n).hom
+        (Representation.Coinvariants.mk (cellularChainRepresentation C hG R n) x) =
+      cellularChainGroupMap (p ⁻¹' C) C (isCellular_restrictPreimage C hG.isCoveringMap)
+        (ModuleCat.of R R) n x := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  exact ConcreteCategory.congr_hom
+    (coinvariantsMk_comp_cellularChainRepCoinvariantsIso_hom C hG R n) x
+
+/-- **The `G`-coinvariants of the lifted cellular chain complex identify with the cellular chain
+complex of `C`.** -/
+def cellularChainComplexRepCoinvariantsIso :
+    (((Rep.coinvariantsFunctor R G).mapHomologicalComplex _).obj
+      (cellularChainComplexRep C hG R)) ≅
+      cellularChainComplex C (ModuleCat.of R R) :=
+  letI := cwComplexPreimage C hG.isCoveringMap
+  haveI := hG.isCoveringMap.t2Space
+  eqToIso (by rw [cellularChainComplexRep_eq]) ≪≫
+    cellularActionComplexCoinvariantsIso (p ⁻¹' C) C (preimageSMul C hG)
+      (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+      (isCellular_restrictPreimage C hG.isCoveringMap)
+      (preimageSMul_comp_restrictPreimage C hG) R (exists_preimage_lift C hG R)
+
+/-- In degree `n`, `TauCeti.cellularChainComplexRepCoinvariantsIso` is
+`TauCeti.cellularChainRepCoinvariantsIso` up to object transports. -/
+@[simp]
+theorem cellularChainComplexRepCoinvariantsIso_hom_f (n : ℕ) :
+    (cellularChainComplexRepCoinvariantsIso C hG R).hom.f n =
+      eqToHom (by rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplexRep_X]) ≫
+        (cellularChainRepCoinvariantsIso C hG R n).hom ≫
+        eqToHom (cellularChainComplex_X C (ModuleCat.of R R) n).symm := by
+  let := cwComplexPreimage C hG.isCoveringMap
+  have := hG.isCoveringMap.t2Space
+  unfold cellularChainComplexRepCoinvariantsIso cellularChainRepCoinvariantsIso
+  rw [Iso.trans_hom, HomologicalComplex.comp_f, eqToIso.hom, HomologicalComplex.eqToHom_f,
+    cellularActionComplexCoinvariantsIso_hom_f, Iso.trans_hom, eqToIso.hom]
+  simp only [Category.assoc, eqToHom_trans_assoc]
+
+/-- **The tensor coinvariants `(R ⊗ C_*(p ⁻¹' C))_G` identify with the cellular chain complex of
+`C`.** -/
+def cellularChainComplexRepCoinvariantsTensorIso :
+    (cellularChainComplexRep C hG R).coinvariantsTensorObj (Rep.trivial R G R) ≅
+      cellularChainComplex C (ModuleCat.of R R) :=
+  letI := cwComplexPreimage C hG.isCoveringMap
+  haveI := hG.isCoveringMap.t2Space
+  eqToIso (by rw [cellularChainComplexRep_eq]) ≪≫
+    cellularActionComplexCoinvariantsTensorIso (p ⁻¹' C) C (preimageSMul C hG)
+      (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+      (isCellular_restrictPreimage C hG.isCoveringMap)
+      (preimageSMul_comp_restrictPreimage C hG) R (exists_preimage_lift C hG R)
+
+/-- **The cellular homology of `C` is the group homology of `G` when the free cover `p ⁻¹' C` is
+contractible.** -/
+def cellularHomologyIsoGroupHomology [ContractibleSpace (p ⁻¹' C)] (n : ℕ) :
+    (cellularChainComplex C (ModuleCat.of R R)).homology n ≅
+      groupHomology (Rep.trivial R G R) n :=
+  ((HomologicalComplex.homologyFunctor (ModuleCat R) (ComplexShape.down ℕ) n).mapIso
+      (cellularChainComplexRepCoinvariantsTensorIso C hG R)).symm ≪≫
+    (groupHomologyIso (Rep.trivial R G R) n (cellularResolution C hG R)).symm
 
 end TauCeti

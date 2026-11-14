@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.Map
+public import TauCeti.AlgebraicTopology.Cellular.Augmentation
 public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
@@ -13,7 +13,10 @@ public import Mathlib.RepresentationTheory.Rep.Basic
 
 A family of cellular self-maps satisfying the action laws induces representations on cellular
 chains. Naturality of the cellular differential assembles these into a complex in `Rep`.
-The forgetful isomorphism identifies it with the original cellular chain complex.
+The forgetful isomorphism identifies it with the original cellular chain complex. Naturality of the
+cellular augmentation promotes it to a chain map into the trivial representation placed in degree
+`0` (`TauCeti.cellularActionComplexAugmentation`), which is a quasi-isomorphism whenever the CW
+complex is contractible (`TauCeti.quasiIso_cellularActionComplexAugmentation`).
 
 The maps act on the CW subset itself; no extension to its ambient space or compatibility with
 chosen characteristic maps is required.
@@ -137,5 +140,74 @@ theorem cellularActionComplexForget₂Iso_inv_f (n : ℕ) :
         rw [Functor.mapHomologicalComplex_obj_X, cellularActionComplex_X,
           cellularChainComplex_X]
         rfl) := (rfl)
+
+/-- The augmentation of cellular chains in degree `0`, as a morphism of representations to the
+trivial representation: cellular maps preserve the augmentation. -/
+def cellularActionAugmentation :
+    Rep.of (cellularActionRepresentation C ρ hcell hone hmul R 0) ⟶ Rep.trivial R G R :=
+  Rep.ofHom
+    { toLinearMap := (cellularAugmentation C (ModuleCat.of R R)).hom
+      isIntertwining' g := LinearMap.ext fun x ↦ by
+        rw [LinearMap.comp_apply, LinearMap.comp_apply, Representation.trivial_apply,
+          cellularActionRepresentation_apply]
+        exact ConcreteCategory.congr_hom
+          (cellularChainGroupMap_comp_cellularAugmentation C C (hcell g) (ModuleCat.of R R)) x }
+
+/-- The underlying linear map of `TauCeti.cellularActionAugmentation` is the cellular
+augmentation. -/
+@[simp]
+theorem cellularActionAugmentation_hom_toLinearMap :
+    (cellularActionAugmentation C ρ hcell hone hmul R).hom.toLinearMap =
+      (cellularAugmentation C (ModuleCat.of R R)).hom := (rfl)
+
+/-- The equivariant augmentation vanishes on the boundaries of `1`-cells. -/
+@[reassoc (attr := simp)]
+theorem cellularActionDifferential_comp_cellularActionAugmentation :
+    cellularActionDifferential C ρ hcell hone hmul R 0 ≫
+      cellularActionAugmentation C ρ hcell hone hmul R = 0 := by
+  refine Rep.hom_ext <| Representation.IntertwiningMap.ext <| LinearMap.ext fun x ↦ ?_
+  have h := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (cellularDifferential_comp_cellularAugmentation C (ModuleCat.of R R))) x
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_zero, LinearMap.comp_apply,
+    LinearMap.zero_apply] at h
+  simpa [Rep.hom_comp] using h
+
+/-- The augmentation of the equivariant cellular chain complex, as a chain map to the trivial
+representation placed in degree `0`. -/
+def cellularActionComplexAugmentation :
+    cellularActionComplex C ρ hcell hone hmul R ⟶
+      (ChainComplex.single₀ (Rep.{u} R G)).obj (Rep.trivial R G R) :=
+  ((cellularActionComplex C ρ hcell hone hmul R).toSingle₀Equiv _).symm
+    ⟨eqToHom (cellularActionComplex_X C ρ hcell hone hmul R 0) ≫
+      cellularActionAugmentation C ρ hcell hone hmul R, by
+        simp [cellularActionComplex_d]⟩
+
+/-- In degree `0`, `TauCeti.cellularActionComplexAugmentation` is
+`TauCeti.cellularActionAugmentation`. -/
+@[simp]
+theorem cellularActionComplexAugmentation_f_zero :
+    (cellularActionComplexAugmentation C ρ hcell hone hmul R).f 0 =
+      eqToHom (cellularActionComplex_X C ρ hcell hone hmul R 0) ≫
+        cellularActionAugmentation C ρ hcell hone hmul R :=
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+
+/-- **For a contractible CW complex, the equivariant cellular augmentation is a
+quasi-isomorphism.** Forgetting the `G`-action recovers the geometric cellular chain complex
+augmentation, which is a quasi-isomorphism on a contractible CW complex. -/
+theorem quasiIso_cellularActionComplexAugmentation [ContractibleSpace C] :
+    QuasiIso (cellularActionComplexAugmentation C ρ hcell hone hmul R) := by
+  rw [← HomologicalComplex.quasiIso_map_iff_of_preservesHomology _ (forget₂ _ (ModuleCat R)),
+    quasiIso_iff_of_arrow_mk_iso _
+      (cellularChainComplexAugmentation C (ModuleCat.of R R)) ?_]
+  · exact quasiIso_cellularChainComplexAugmentation _ _
+  · refine Arrow.isoMk' _ _ (cellularActionComplexForget₂Iso C ρ hcell hone hmul R).symm
+      ((HomologicalComplex.singleMapHomologicalComplex _ _ 0).app _) ?_
+    have h : (forget₂ (Rep R G) (ModuleCat R)).map
+        (cellularActionAugmentation C ρ hcell hone hmul R) =
+          cellularAugmentation C (ModuleCat.of R R) := by
+      rw [Rep.forget₂_moduleCat_map, cellularActionAugmentation_hom_toLinearMap,
+        ModuleCat.ofHom_hom]
+    ext : 1
+    simp [-Rep.forget₂_moduleCat_map, eqToHom_map, h]
 
 end TauCeti

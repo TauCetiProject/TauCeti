@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.CWComplex.Classical.CellAction
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
@@ -12,9 +13,11 @@ public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 A cellular map preserves the skeletal filtration of a relative CW complex. This condition
 ensures that the map restricts to each skeleton and to each consecutive skeletal pair, the
-restrictions used to act on cellular chains. A map carrying the base into the base and the
-characteristic map of every cell onto the characteristic map of a cell of the same dimension is
-cellular (`TauCeti.isCellular_of_map_eq`).
+restrictions used to act on cellular chains. A map carrying the base into the base and every open
+cell into an open cell of the same dimension is cellular (`TauCeti.isCellular_of_mapsTo_openCell`),
+as is one matching characteristic maps on the closed unit ball (`TauCeti.isCellular_of_map_eq`).
+In particular, continuous scalar multiplication preserving open cells of a CW complex restricts to
+cellular self-maps (`TauCeti.cellularSMul`, `TauCeti.isCellular_cellularSMul`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -47,6 +50,21 @@ lemma IsCellular.comp {C'' : Set Z} [RelCWComplex C'' F]
     {f : TopCat.of C ⟶ TopCat.of C'} {g : TopCat.of C' ⟶ TopCat.of C''}
     (hf : IsCellular C C' f) (hg : IsCellular C' C'' g) :
     IsCellular C C'' (f ≫ g) := fun n _ hx ↦ hg n (hf n hx)
+
+/-- A map of relative CW complexes carrying the base into the base and every open cell into an open
+cell of the same dimension is cellular. -/
+lemma isCellular_of_mapsTo_openCell {f : TopCat.of C ⟶ TopCat.of C'}
+    (hD : ∀ x : C, x.1 ∈ D → (f x).1 ∈ E)
+    (hf : ∀ (n : ℕ) (i : cell C n), ∃ i' : cell C' n,
+      ∀ x : C, x.1 ∈ openCell n i → (f x).1 ∈ openCell n i') :
+    IsCellular C C' f := by
+  rintro n ⟨x, hxC⟩ (hx : x ∈ skeletonLT C n)
+  change (f ⟨x, hxC⟩).1 ∈ skeletonLT C' n
+  rw [RelCWComplex.mem_skeletonLT_iff] at hx ⊢
+  obtain hxD | ⟨m, hm, i, hxi⟩ := hx
+  · exact Or.inl (hD _ hxD)
+  · obtain ⟨i', hi'⟩ := hf m i
+    exact Or.inr ⟨m, hm, i', hi' ⟨x, hxC⟩ hxi⟩
 
 /-- A map of relative CW complexes carrying the base into the base and the characteristic map of
 every cell onto the characteristic map of a cell of the same dimension, on the closed unit ball,
@@ -114,5 +132,53 @@ lemma skeletonMap_comp (n : ℕ) :
       skeletonMap C C' hf n ≫ skeletonMap C' C'' hg n := by
   ext x
   rfl
+
+section CellularSMul
+
+open scoped Pointwise
+
+variable {W : Type w} [TopologicalSpace W] (K : Set W) [CWComplex K] {G : Type*}
+
+/-- Continuous translation by `g`, restricted to a CW complex `K` whose open cells are carried onto
+open cells of the same dimension. -/
+def cellularSMul [SMul G W] [ContinuousConstSMul G W]
+    (hcell : ∀ (g : G) (n : ℕ) (i : cell K n), ∃ j : cell K n, g • openCell n i = openCell n j)
+    (g : G) : TopCat.of K ⟶ TopCat.of K :=
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, smul_mem_complex g (hcell g) x.2⟩, by fun_prop⟩
+
+/-- On points, `TauCeti.cellularSMul` acts by scalar multiplication in the ambient space. -/
+@[simp]
+lemma coe_cellularSMul_apply [SMul G W] [ContinuousConstSMul G W]
+    (hcell : ∀ (g : G) (n : ℕ) (i : cell K n), ∃ j : cell K n, g • openCell n i = openCell n j)
+    (g : G) (x : K) :
+    (cellularSMul K hcell g x : W) = g • (x : W) :=
+  (rfl)
+
+/-- Translation by `1` on a CW complex is the identity morphism. -/
+@[simp]
+lemma cellularSMul_one [Monoid G] [MulAction G W] [ContinuousConstSMul G W]
+    (hcell : ∀ (g : G) (n : ℕ) (i : cell K n), ∃ j : cell K n, g • openCell n i = openCell n j) :
+    cellularSMul K hcell (1 : G) = 𝟙 (TopCat.of K) := by
+  ext x
+  exact one_smul G x.1
+
+/-- Translation by `g * h` on a CW complex is successive translation by `h` then `g`. -/
+lemma cellularSMul_mul [Monoid G] [MulAction G W] [ContinuousConstSMul G W]
+    (hcell : ∀ (g : G) (n : ℕ) (i : cell K n), ∃ j : cell K n, g • openCell n i = openCell n j)
+    (g h : G) :
+    cellularSMul K hcell (g * h) = cellularSMul K hcell h ≫ cellularSMul K hcell g := by
+  ext x
+  exact mul_smul g h x.1
+
+/-- Continuous translation preserving open cells of a Hausdorff CW complex is cellular. -/
+lemma isCellular_cellularSMul [T2Space W] [SMul G W] [ContinuousConstSMul G W]
+    (hcell : ∀ (g : G) (n : ℕ) (i : cell K n), ∃ j : cell K n, g • openCell n i = openCell n j)
+    (g : G) :
+    IsCellular K K (cellularSMul K hcell g) := by
+  refine isCellular_of_mapsTo_openCell K K (fun _ hx ↦ hx.elim) fun n i ↦ ?_
+  obtain ⟨j, hj⟩ := hcell g n i
+  exact ⟨j, fun x hx ↦ hj ▸ Set.smul_mem_smul_set hx⟩
+
+end CellularSMul
 
 end TauCeti

@@ -48,6 +48,8 @@ of a quotient chart in the free proper quotient theorem.
   the number of points.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
+* `MulAction.sigmaSMulEquiv`: for a free action and an indexing `s : ι → X` of orbit
+  representatives, `(i, g) ↦ g • s i` is an equivalence `(Σ _ : ι, G) ≃ X`.
 * `MulAction.injOn_smul_univ_prod_iff`: injectivity of `(g, s) ↦ g • σ s` on a tube `G × U`.
 
 ## References
@@ -133,6 +135,44 @@ theorem selfEquivOrbitsQuotientProd_symm_apply (h : ∀ b : X, stabilizer G b = 
     (q : orbitRel.Quotient G X) (g : G) :
     (selfEquivOrbitsQuotientProd h).symm (q, g) = g • q.out :=
   selfEquivOrbitsQuotientProd'_symm_apply _ h q g
+
+/-- **Orbit-transversal decomposition of a free action.** Given a family `s : ι → X` that meets
+every `G`-orbit in a unique index, translating those representatives identifies `Σ _ : ι, G` with
+`X` via `⟨i, g⟩ ↦ g • s i`. -/
+@[to_additive
+  /-- **Orbit-transversal decomposition of a free additive action.** Given a family `s : ι → X`
+  that meets every `G`-orbit in a unique index, translating those representatives identifies
+  `Σ _ : ι, G` with `X` via `⟨i, g⟩ ↦ g +ᵥ s i`. -/]
+noncomputable def sigmaSMulEquiv [IsCancelSMul G X] {ι : Type*} {s : ι → X}
+    (hs : Function.Bijective fun i ↦ (Quotient.mk'' (s i) : orbitRel.Quotient G X)) :
+    (Σ _ : ι, G) ≃ X :=
+  let e : ι ≃ orbitRel.Quotient G X := Equiv.ofBijective _ hs
+  have hφ : Function.LeftInverse Quotient.mk'' (s ∘ e.symm) := e.apply_symm_apply
+  let φ : (Σ _ : ι, G) ≃ X :=
+    (Equiv.sigmaEquivProd ι G).trans <|
+      (e.prodCongr (Equiv.refl G)).trans <|
+        (selfEquivOrbitsQuotientProd' hφ IsCancelSMul.stabilizer_eq_bot).symm
+  Equiv.ofBijective (fun p ↦ p.2 • s p.1) <| by
+    convert φ.bijective with ⟨i, g⟩
+    simp [φ]
+
+/-- `MulAction.sigmaSMulEquiv` sends `⟨i, g⟩` to the translate `g • s i`. -/
+@[to_additive (attr := simp)
+  /-- `AddAction.sigmaVAddEquiv` sends `⟨i, g⟩` to the translate `g +ᵥ s i`. -/]
+theorem sigmaSMulEquiv_apply [IsCancelSMul G X] {ι : Type*} {s : ι → X}
+    (hs : Function.Bijective fun i ↦ (Quotient.mk'' (s i) : orbitRel.Quotient G X))
+    (i : ι) (g : G) :
+    sigmaSMulEquiv hs ⟨i, g⟩ = g • s i :=
+  (rfl)
+
+/-- The inverse of `MulAction.sigmaSMulEquiv` sends `g • s i` back to `⟨i, g⟩`. -/
+@[to_additive (attr := simp)
+  /-- The inverse of `AddAction.sigmaVAddEquiv` sends `g +ᵥ s i` back to `⟨i, g⟩`. -/]
+theorem sigmaSMulEquiv_symm_smul [IsCancelSMul G X] {ι : Type*} {s : ι → X}
+    (hs : Function.Bijective fun i ↦ (Quotient.mk'' (s i) : orbitRel.Quotient G X))
+    (i : ι) (g : G) :
+    (sigmaSMulEquiv hs).symm (g • s i) = ⟨i, g⟩ :=
+  (sigmaSMulEquiv hs).symm_apply_eq.2 (sigmaSMulEquiv_apply hs i g).symm
 
 open Set in
 /-- **Injectivity of a slice map on a tube.** The map `(g, s) ↦ g • σ s` is injective on

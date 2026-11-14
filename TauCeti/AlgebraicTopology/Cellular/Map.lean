@@ -199,6 +199,13 @@ lemma cellularChainGroupMap_def (n : ℕ) :
     cellularChainGroupMap C C' hf R n =
       TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := (rfl)
 
+/-- Equal cellular maps induce equal morphisms on cellular chain groups. -/
+lemma cellularChainGroupMap_congr {f' : TopCat.of C ⟶ TopCat.of C'}
+    (hf' : IsCellular C C' f') (h : f = f') (n : ℕ) :
+    cellularChainGroupMap C C' hf R n = cellularChainGroupMap C C' hf' R n := by
+  subst h
+  rfl
+
 /-- The identity cellular map acts as the identity on each cellular chain group. -/
 @[simp]
 lemma cellularChainGroupMap_id (n : ℕ) :
