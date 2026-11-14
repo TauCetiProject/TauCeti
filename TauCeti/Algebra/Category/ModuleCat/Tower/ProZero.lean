@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 public import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 public import TauCeti.CategoryTheory.Functor.ProZero
 import Mathlib.RingTheory.Multiplicity
@@ -15,10 +16,14 @@ import Mathlib.RingTheory.Multiplicity
 A tower of modules `A₀ ← A₁ ← A₂ ← ⋯` is pro-zero (`CategoryTheory.Functor.IsProZero`) when every
 term `Aₙ` is killed by some composite transition `Aₘ → Aₙ`. This file shows that a pro-zero tower
 has `lim A = 0` and `lim¹ A = 0`, so pro-zero error terms are invisible to `lim` and `lim¹`.
+A levelwise injective comparison that is exact with a pro-zero obstruction tower is therefore
+bijective on inverse limits; the obstruction maps need not be surjective.
 
 The basic family of examples is the tower `R ← R ← ⋯` whose transitions are right multiplication
 by an element `a`: it is pro-zero exactly when `a` is nilpotent. In particular, for a prime `p` the
-tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-zero.
+tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-zero. More generally,
+the scalar-multiplication tower of a module over a commutative ring is pro-zero exactly when
+one power of the scalar annihilates the whole module.
 
 ## Main declarations
 
@@ -37,6 +42,12 @@ tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-ze
 * `TauCeti.ModuleTower.isProZero_multiplicationTower_iff`: it is pro-zero exactly when `a` is
   nilpotent; `TauCeti.ModuleTower.isProZero_multiplicationTower_iff_eq_zero` is the case of a
   reduced ring.
+* `TauCeti.ModuleTower.isProZero_smulTower_iff`: a scalar-multiplication tower is pro-zero
+  exactly when a uniform power of the scalar annihilates its module.
+* `TauCeti.ModuleTower.limMap_bijective_of_isProZero`: a levelwise injective comparison with
+  exact pro-zero obstructions is bijective on limits.
+* `TauCeti.ModuleTower.limMap_bijective_of_pow_smul_eq_zero`: the comparison for levelwise
+  obstruction maps with scalar transitions and a uniform annihilating power.
 
 ## References
 
@@ -76,6 +87,15 @@ theorem lim_eq_bot_of_isProZero (hF : F.IsProZero) : F.lim = ⊥ := by
   have h := hF.isZero_of_isLimit F.isLimitLimCone
   rw [limCone_pt, ModuleCat.isZero_of_iff_subsingleton] at h
   exact Submodule.subsingleton_iff_eq_bot.1 h
+
+/-- A levelwise injective comparison of towers is bijective on limits if it is exact with
+a pro-zero obstruction tower. The obstruction maps need not be surjective. -/
+theorem limMap_bijective_of_isProZero
+    {F G H : ModuleTower.{v} R} (i : F ⟶ G) (δ : G ⟶ H)
+    (hi : ∀ n, Function.Injective (i.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ.app (op n)).hom)
+    (hH : H.IsProZero) : Function.Bijective (limMap i) :=
+  limMap_bijective_of_lim_eq_bot i δ hi hex (lim_eq_bot_of_isProZero hH)
 
 /-- A pro-zero tower is Mittag-Leffler: the images of the composite transitions into each term
 are eventually zero. -/
@@ -206,6 +226,48 @@ theorem isProZero_multiplicationTower_iff_eq_zero [IsReduced R] (a : R) :
   rw [isProZero_multiplicationTower_iff, isNilpotent_iff_eq_zero]
 
 end MultiplicationTower
+
+section SMulTower
+
+variable {R : Type u} [CommRing R]
+variable {Q : Type v} [AddCommGroup Q] [Module R Q]
+
+/-- A scalar-multiplication tower is pro-zero exactly when a uniform power of the scalar
+annihilates the module. Elementwise power torsion alone is not sufficient. -/
+theorem isProZero_smulTower_iff (f : R) :
+    (smulTower Q f).IsProZero ↔ ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0 := by
+  rw [isProZero_iff_exists_transitionOfLE_eq_zero]
+  constructor
+  · intro h
+    obtain ⟨k, _, hk⟩ := h 0
+    -- The tower's terms are `Q`; use this typed identity to evaluate the linear map.
+    have hk' : f ^ k • (LinearMap.id : Q →ₗ[R] Q) = 0 := by
+      rw [smulTower_transitionOfLE, Nat.sub_zero] at hk
+      exact hk
+    exact ⟨k, fun x ↦ by simpa using LinearMap.congr_fun hk' x⟩
+  · rintro ⟨k, hk⟩ n
+    refine ⟨n + k, Nat.le_add_right _ _, ?_⟩
+    have hk' : f ^ k • (LinearMap.id : Q →ₗ[R] Q) = 0 := by
+      ext x
+      simpa using hk x
+    rw [smulTower_transitionOfLE, Nat.add_sub_cancel_left]
+    exact hk'
+
+/-- A levelwise injective comparison of towers is bijective on limits if its obstruction
+maps form an exact sequence into a scalar-multiplication tower annihilated by a uniform
+power of the scalar. The obstruction maps need not be surjective. -/
+theorem limMap_bijective_of_pow_smul_eq_zero
+    {F G : ModuleTower.{v} R} (i : F ⟶ G) (f : R)
+    (δ : ∀ n, G.obj (op n) →ₗ[R] Q)
+    (hi : ∀ n, Function.Injective (i.app (op n)).hom)
+    (hex : ∀ n, Function.Exact (i.app (op n)).hom (δ n))
+    (hδ : ∀ n x, δ n (G.transition n x) = f • δ (n + 1) x)
+    (hQ : ∃ k : ℕ, ∀ x : Q, f ^ k • x = 0) :
+    Function.Bijective (limMap i) :=
+  limMap_bijective_of_isProZero i (toSmulTower f δ hδ) hi
+    (fun n ↦ by rw [toSmulTower_app_hom]; exact hex n) ((isProZero_smulTower_iff f).2 hQ)
+
+end SMulTower
 
 end ModuleTower
 
