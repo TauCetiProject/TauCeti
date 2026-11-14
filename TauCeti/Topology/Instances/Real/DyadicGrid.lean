@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -24,11 +25,13 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
   the dyadic grids of all levels `n ≥ m`.
 * `TauCeti.dense_setOfPred_eq_add_mul_div_two_pow`: the points of the dyadic grids of `[a, b]`,
   of all levels, are dense in `[a, b]` for `a ≤ b`.
+* `TauCeti.nnrealDyadicPoint`: the `ℝ≥0`-valued level-`n` dyadic grid on `[0, t]`.
 -/
 
 public section
 
 open Set
+open scoped NNReal
 
 namespace TauCeti
 
@@ -107,5 +110,55 @@ theorem dense_iUnion_range_dyadicPoint {a b : ℝ} (hab : a ≤ b) :
   rintro t ⟨n, k, hk, ht⟩
   refine mem_iUnion.2 ⟨n, ⟨⟨k, Nat.lt_succ_of_le hk⟩, Subtype.ext ?_⟩⟩
   simpa only [coe_dyadicPoint, Fin.val_mk] using ht.symm
+
+/-- The `k`th point of the level-`n` dyadic grid on `[0, t]` in `ℝ≥0`. -/
+noncomputable def nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) : ℝ≥0 :=
+  NNReal.mk (dyadicPoint t.coe_nonneg n k : ℝ) (dyadicPoint t.coe_nonneg n k).2.1
+
+/-- The real coordinate of an `ℝ≥0` dyadic grid point on `[0, t]`. -/
+@[simp] theorem coe_nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    (nnrealDyadicPoint t n k : ℝ) = k * ((t : ℝ) / (2 : ℝ) ^ n) := by simp [nnrealDyadicPoint]
+
+/-- The initial point of the `ℝ≥0` dyadic grid on `[0, t]` is `0`. -/
+@[simp] theorem nnrealDyadicPoint_zero (t : ℝ≥0) (n : ℕ) : nnrealDyadicPoint t n 0 = 0 := by
+  ext; simp
+
+/-- The terminal point of the `ℝ≥0` dyadic grid on `[0, t]` is `t`. -/
+@[simp] theorem nnrealDyadicPoint_last (t : ℝ≥0) (n : ℕ) :
+    nnrealDyadicPoint t n (Fin.last (2 ^ n)) = t := by
+  ext; simp [mul_div_cancel₀ (t : ℝ) (by positivity : (2 : ℝ) ^ n ≠ 0)]
+
+/-- Each level-`n` dyadic grid on `[0, t]` is monotone in the grid index. -/
+theorem monotone_nnrealDyadicPoint (t : ℝ≥0) (n : ℕ) : Monotone (nnrealDyadicPoint t n) :=
+  fun _ _ hij ↦ NNReal.coe_le_coe.mp (by
+    simp only [coe_nnrealDyadicPoint]
+    exact mul_le_mul_of_nonneg_right (Nat.cast_le.mpr hij) (by positivity))
+
+/-- Every point of the `ℝ≥0` dyadic grid on `[0, t]` is at most `t`. -/
+theorem nnrealDyadicPoint_le (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
+    nnrealDyadicPoint t n k ≤ t := NNReal.coe_le_coe.mp (dyadicPoint t.coe_nonneg n k).2.2
+
+/-- Every point of the level-`m` dyadic grid on `[0, t]` belongs to every finer grid `n ≥ m`. -/
+theorem exists_nnrealDyadicPoint_eq_of_le (t : ℝ≥0) {m n : ℕ} (k : Fin (2 ^ m + 1))
+    (hmn : m ≤ n) : ∃ j, nnrealDyadicPoint t m k = nnrealDyadicPoint t n j := by
+  obtain ⟨j, hj⟩ := exists_dyadicPoint_eq_of_le t.coe_nonneg k hmn
+  exact ⟨j, by simp only [nnrealDyadicPoint, hj]⟩
+
+/-- Consecutive points of the level-`n` dyadic grid on `[0, t]` are at distance `t / 2 ^ n`. -/
+theorem dist_nnrealDyadicPoint_succ (t : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n)) :
+    dist (nnrealDyadicPoint t n k.succ) (nnrealDyadicPoint t n k.castSucc) = (t : ℝ) / 2 ^ n := by
+  rw [NNReal.dist_eq, abs_of_nonneg (sub_nonneg.mpr
+    (NNReal.coe_le_coe.mpr (monotone_nnrealDyadicPoint t n k.castSucc_le_succ)))]
+  simp only [coe_nnrealDyadicPoint, Fin.val_succ, Fin.val_castSucc]; push_cast; ring
+
+/-- Any open set of `ℝ≥0` meeting `[0, t]` contains a dyadic grid point on `[0, t]`. -/
+theorem exists_nnrealDyadicPoint_mem_open {t s : ℝ≥0} (hst : s ≤ t) {U : Set ℝ≥0} (hU : IsOpen U)
+    (hs : s ∈ U) : ∃ n : ℕ, ∃ k : Fin (2 ^ n + 1), nnrealDyadicPoint t n k ∈ U := by
+  let f : Icc (0 : ℝ) t → ℝ≥0 := fun x ↦ NNReal.mk x.1 x.2.1
+  obtain ⟨x, hx_grid, hxU⟩ := (dense_iUnion_range_dyadicPoint t.coe_nonneg).exists_mem_open
+    (hU.preimage (Continuous.subtype_mk continuous_subtype_val _ : Continuous f))
+    ⟨⟨s, s.coe_nonneg, hst⟩, hs⟩
+  obtain ⟨n, k, rfl⟩ := by simpa only [mem_iUnion, mem_range] using hx_grid
+  exact ⟨n, k, hxU⟩
 
 end TauCeti
