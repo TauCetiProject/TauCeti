@@ -131,25 +131,11 @@ theorem coe_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Type v) [CommRing A]
     latticeBasis f4ShortRootWeight (ZMod 2) k
     (CommAlgCat.of (ZMod 2) A) q
   rw [hu] at hq
-  have hcomp :
-      (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app (CommAlgCat.of (ZMod 2) A) q =
-        CommHopfAlgCat.quotientPointsHom
-          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
-          (kostantToralBaseChangePresentationIdeal rootGen cartanGen rep lattice.toAddSubgroup
-            rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
-        f4ShortRootWeight
-            (ZMod 2))
-          (CommAlgCat.of (ZMod 2) A)
-          ((CommHopfAlgCat.Hom.mapPointsFunctor
-            (kostantRootSubgroupToralBaseChangePresentationCoordinateMap rootGen cartanGen rep
-              lattice.toAddSubgroup rep_kostantForm_mem_lattice
-              isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight (ZMod 2) k)).app
-            (CommAlgCat.of (ZMod 2) A) q) := by
-    apply CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-    rw [generator_inl]
-    exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
-      rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
-      isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight (ZMod 2) k
+  have hcomp := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp _ _ _
+    ((mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap rootGen
+        cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
+        isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight (ZMod 2) k).trans
+      (generator_inl k).symm) (CommAlgCat.of (ZMod 2) A) q
   rw [_root_.TauCeti.F4ShortRoot.coe_rootSubgroupPoints, ← hq, ← hcomp]
   rfl
 
@@ -199,25 +185,11 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] [Algebra (ZMod 2) A] (s 
     latticeBasis f4ShortRootWeight (ZMod 2) _root_.TauCeti.F4ShortRoot.definingIdeal_def
     (CommAlgCat.of (ZMod 2) A) q
   rw [hs] at hq
-  have hcomp :
-      (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inr ()))).app (CommAlgCat.of (ZMod 2) A) q =
-        CommHopfAlgCat.quotientPointsHom
-          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26)
-          (kostantToralBaseChangePresentationIdeal rootGen cartanGen rep lattice.toAddSubgroup
-            rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
-        f4ShortRootWeight
-            (ZMod 2))
-          (CommAlgCat.of (ZMod 2) A)
-          ((CommHopfAlgCat.Hom.mapPointsFunctor
-            (kostantWeightTorusToralBaseChangePresentationCoordinateMap rootGen cartanGen rep
-              lattice.toAddSubgroup rep_kostantForm_mem_lattice
-              isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight (ZMod 2))).app
-            (CommAlgCat.of (ZMod 2) A) q) := by
-    apply CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-    rw [generator_inr]
-    exact mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap
-      rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
-      isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight (ZMod 2)
+  have hcomp := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp _ _ _
+    ((mkQuotient_comp_kostantWeightTorusToralBaseChangePresentationCoordinateMap rootGen
+        cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
+        isNilpotent_rep_serreRootGenerator latticeBasis f4ShortRootWeight (ZMod 2)).trans
+      generator_inr.symm) (CommAlgCat.of (ZMod 2) A) q
   rw [_root_.TauCeti.F4ShortRoot.coe_weightTorusPoints, ← hq, ← hcomp]
   rfl
 
