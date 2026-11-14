@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 
 /-!
 # The complex upper incomplete Gamma function
@@ -55,27 +54,21 @@ theorem integrableOn_upperIncompleteGamma_integrand (a : ℂ) {z : ℂ}
     (hz : z ∈ _root_.Complex.slitPlane) :
     IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
       (Ioi 0) := by
-  have hc : ContinuousOn (fun t : ℝ => (z + t) ^ (a - 1)) (Ici 0) := by
-    simpa only [add_comm] using TauCeti.continuousOn_ofReal_add_cpow_Ici hz (a - 1)
-  have he : (fun t : ℝ => z + (t : ℂ)) ~[atTop] (fun t : ℝ => (t : ℂ)) :=
-    (IsEquivalent.refl).const_add_of_norm_tendsto_atTop (by
-      simpa [Function.comp_def] using tendsto_abs_atTop_atTop)
-  have ht : (fun t : ℝ => ‖z + (t : ℂ)‖) =Θ[atTop] (fun t : ℝ => t) := by
-    have hn := he.isTheta.norm_left.norm_right
-    exact hn.trans (EventuallyEq.isTheta (by
-      filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-      simp [abs_of_nonneg ht]))
-  have hp : (fun t : ℝ => (z + t) ^ (a - 1)) =O[atTop]
-      (fun t : ℝ => Real.exp ((1 / 2 : ℝ) * t)) :=
-    (_root_.Complex.isBigO_cpow_rpow isBoundedUnder_const).trans
-      ((ht.rpow (Filter.Eventually.of_forall fun _ => norm_nonneg _)
-        (eventually_ge_atTop 0)).isBigO.trans
-        (isLittleO_rpow_exp_pos_mul_atTop (a - 1).re (by norm_num)).isBigO)
-  have hi := integrableOn_exp_neg_smul_of_isBigO_exp
-    (hc.locallyIntegrableOn measurableSet_Ici) hp (b := 1) (by norm_num)
-  refine ((integrableOn_Ici_iff_integrableOn_Ioi (by finiteness)).mp hi).congr_fun (fun t _ => ?_)
-    measurableSet_Ioi
-  simp [Algebra.smul_def, _root_.Complex.ofReal_exp, mul_comm]
+  have hi : IntegrableOn (fun t : ℝ => Real.exp (-t) * t ^ (a - 1).re) (Ioi 1) :=
+    integrable_of_isBigO_exp_neg one_half_pos
+      (continuousOn_id.neg.rexp.mul (continuousOn_id.rpow_const (by grind)))
+      (Real.Gamma_integrand_isLittleO _).isBigO
+  have hs := ((measurePreserving_add_left volume (1 : ℝ)).integrableOn_comp_preimage
+    (MeasurableEquiv.addLeft (1 : ℝ)).measurableEmbedding).mpr hi
+  have hw : IntegrableOn
+      (fun t : ℝ => ‖_root_.Complex.exp (-(t : ℂ))‖ * (1 + t) ^ (a - 1).re)
+      (Ioi 0) := by
+    simpa [IntegrableOn, preimage_const_add_Ioi, Function.comp_def, norm_exp, neg_add, Real.exp_add,
+      Real.exp_neg, mul_comm, mul_left_comm, mul_assoc] using hs.const_mul (Real.exp 1)
+  simpa only [mul_comm, add_comm] using
+    (TauCeti.integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow
+      hz (a - 1)).mpr ⟨(by fun_prop : Continuous
+        (fun t : ℝ => _root_.Complex.exp (-(t : ℂ)))).aestronglyMeasurable, hw⟩
 
 /-- The defining ray integral with the exponential prefactor absorbed into the integrand
 (DLMF 8.2.2). -/
