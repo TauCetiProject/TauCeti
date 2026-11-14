@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.PointProcess.Poisson.Independence
 public import TauCeti.Probability.PointProcess.Poisson.Marking
 import Mathlib.Probability.Independence.InfinitePi
-import Mathlib.Probability.Kernel.Composition.Lemmas
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Distributions.Bernoulli.Measurability
@@ -141,28 +141,6 @@ private theorem measurable_sliceFamily {X ι : Type*} [MeasurableSpace X] [Measu
 variable {Ω X : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [StandardBorelSpace X]
   {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X} [SigmaFinite Λ]
 
-private theorem sum_eq_of_compProd_map_sliceFamily {ι : Type*} [Countable ι] [MeasurableSpace ι]
-    [MeasurableSingletonClass ι]
-    (hN : IsPoissonRandomMeasure P N Λ) {η₀ : Kernel Ω (Measure (X × ι))} [IsMarkovKernel η₀]
-    (hproj : ∀ᵐ w ∂(P ⊗ₘ η₀), w.2.map Prod.fst = N w.1) :
-    ∀ᵐ z ∂(P ⊗ₘ η₀.map (sliceFamily (X := X) (ι := ι))), Measure.sum z.2 = N z.1 := by
-  let := hN.isProbabilityMeasure
-  have : IsMarkovKernel (η₀.map (sliceFamily (X := X) (ι := ι))) :=
-    Kernel.IsMarkovKernel.map η₀ measurable_sliceFamily
-  have hΦ : Measurable (Prod.map (id : Ω → Ω) (sliceFamily (X := X) (ι := ι))) :=
-    measurable_id.prodMap measurable_sliceFamily
-  refine (hN.compProd_fst _).ae_eq_of_forall_ae_eq fun A hA ↦ ?_
-  have hEA : MeasurableSet {z : Ω × (ι → Measure X) | Measure.sum z.2 A = N z.1 A} :=
-    measurableSet_eq_fun
-      ((Measure.measurable_coe hA).comp (Measure.measurable_sum.comp measurable_snd))
-      ((Measure.measurable_coe hA).comp (hN.measurable.comp measurable_fst))
-  rw [Measure.compProd_map measurable_sliceFamily]
-  refine (ae_map_iff hΦ.aemeasurable hEA).2 ?_
-  filter_upwards [hproj] with w hw
-  dsimp only [Prod.map_fst, Prod.map_snd, id_eq]
-  unfold sliceFamily
-  rw [Measure.sum_map_fst_restrict_univ_prod_singleton, hw]
-
 /-- **Countable categorical thinning of an uncoloured Poisson random measure** (Last–Penrose,
 Corollary 5.9). Independently classifying occurrences of `N` with a Markov kernel
 `κ : Kernel X ι` into a countable discrete colour space `ι` yields a realization-level Markov kernel
@@ -184,17 +162,14 @@ theorem IsPoissonRandomMeasure.exists_categorical_thinning {ι : Type*} [Countab
     Kernel.IsMarkovKernel.map η₀ measurable_sliceFamily
   have hΦ : Measurable (Prod.map (id : Ω → Ω) (sliceFamily (X := X) (ι := ι))) :=
     measurable_id.prodMap measurable_sliceFamily
-  have hcomap : (η₀.map (sliceFamily (X := X) (ι := ι))).comap N hN.measurable =
-      (η₀.comap N hN.measurable).map sliceFamily :=
-    Kernel.comap_map_comm η₀ hN.measurable measurable_sliceFamily
-  have hmap : P ⊗ₘ (η₀.map (sliceFamily (X := X) (ι := ι))).comap N hN.measurable =
-      (P ⊗ₘ η₀.comap N hN.measurable).map (Prod.map id sliceFamily) := by
-    rw [hcomap, Measure.compProd_map measurable_sliceFamily]
+  have hmap :=
+    Measure.compProd_comap_map P η₀ hN.measurable (measurable_sliceFamily (X := X) (ι := ι))
   have hslice (i : ι) := hM₀.map_fst_restrict_univ_prod_compProd (measurableSet_singleton i)
   have hind₀ := hM₀.iIndepFun_map_fst_restrict_univ_prod
     (fun i : ι ↦ measurableSet_singleton i) (fun _ _ hij ↦ Set.disjoint_singleton.mpr hij)
   have hcoord (i : ι) : Measurable (fun z : Ω × (ι → Measure X) ↦ z.2 i) :=
     (measurable_pi_apply i).comp measurable_snd
+  -- Push the marked Poisson law, slice independence, and ground recovery forward via `hmap`.
   refine ⟨η₀.map sliceFamily, hη, fun i ↦ ?_, ?_, ?_⟩
   · refine (hslice i).of_identDistrib (hcoord i)
       ⟨(hslice i).measurable.aemeasurable, (hcoord i).aemeasurable, ?_⟩
@@ -204,8 +179,17 @@ theorem IsPoissonRandomMeasure.exists_categorical_thinning {ι : Type*} [Countab
     rw [hmap, Measure.map_map (measurable_pi_iff.2 hcoord) hΦ]
     simp_rw [Measure.map_map (hcoord _) hΦ]
     exact hind₀.map_fun_eq_infinitePi_map fun i ↦ (hslice i).measurable
-  · rw [hcomap]
-    exact sum_eq_of_compProd_map_sliceFamily hN hproj
+  · refine (hN.compProd_fst _).ae_eq_of_forall_ae_eq fun A hA ↦ ?_
+    have hEA : MeasurableSet {z : Ω × (ι → Measure X) | Measure.sum z.2 A = N z.1 A} :=
+      measurableSet_eq_fun
+        ((Measure.measurable_coe hA).comp (Measure.measurable_sum.comp measurable_snd))
+        ((Measure.measurable_coe hA).comp (hN.measurable.comp measurable_fst))
+    rw [hmap]
+    refine (ae_map_iff hΦ.aemeasurable hEA).2 ?_
+    filter_upwards [hproj] with w hw
+    dsimp only [Prod.map_fst, Prod.map_snd, id_eq]
+    unfold sliceFamily
+    rw [Measure.sum_map_fst_restrict_univ_prod_singleton, hw]
 
 /-- Homogeneous categorical thinning specialization of
 `IsPoissonRandomMeasure.exists_categorical_thinning` for a fixed colour distribution `Q`: each
@@ -222,24 +206,8 @@ theorem IsPoissonRandomMeasure.exists_categorical_thinning_const {ι : Type*} [C
   simp only [Kernel.const_apply, withDensity_const] at hP
   exact ⟨η, hη, hP, hind, hsum⟩
 
-/-- Measurable equivalence identifying `Bool → α` with `α × α` in `(f true, f false)` order. -/
-private def boolArrowTrueFalseEquivProd (α : Type*) [MeasurableSpace α] :
-    (Bool → α) ≃ᵐ α × α :=
-  ((MeasurableEquiv.arrowCongr' finTwoEquiv.symm (.refl α)).trans
-    MeasurableEquiv.finTwoArrow).trans MeasurableEquiv.prodComm
-
-private theorem boolArrowTrueFalseEquivProd_fst {α : Type*} [MeasurableSpace α] (f : Bool → α) :
-    (boolArrowTrueFalseEquivProd α f).1 = f true := by
-  simp [boolArrowTrueFalseEquivProd, MeasurableEquiv.arrowCongr', Equiv.arrowCongr',
-    MeasurableEquiv.prodComm, finTwoEquiv]
-
-private theorem boolArrowTrueFalseEquivProd_snd {α : Type*} [MeasurableSpace α] (f : Bool → α) :
-    (boolArrowTrueFalseEquivProd α f).2 = f false := by
-  simp [boolArrowTrueFalseEquivProd, MeasurableEquiv.arrowCongr', Equiv.arrowCongr',
-    MeasurableEquiv.prodComm, finTwoEquiv]
-
 /-- Binary specialization of `IsPoissonRandomMeasure.exists_categorical_thinning` transporting the
-`Bool`-indexed output along `boolArrowTrueFalseEquivProd` into a pair of random measures. -/
+`Bool`-indexed output along `MeasurableEquiv.boolArrowEquivProd` into `(true, false)` order. -/
 private theorem exists_bool_thinning
     (hN : IsPoissonRandomMeasure P N Λ) (κ : Kernel X Bool) [IsMarkovKernel κ] :
     ∃ η : Kernel (Measure X) (Measure X × Measure X),
@@ -252,20 +220,17 @@ private theorem exists_bool_thinning
       ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.1 + z.2.2 = N z.1 := by
   let := hN.isProbabilityMeasure
   obtain ⟨η₀, _, hP, hind, hsum⟩ := hN.exists_categorical_thinning κ
-  let e := boolArrowTrueFalseEquivProd (Measure X)
+  let e := (MeasurableEquiv.boolArrowEquivProd (Measure X)).trans .prodComm
   let E := MeasurableEquiv.prodCongr (.refl Ω) e
-  have hE_fst (w : Ω × (Bool → Measure X)) : (E w).1 = w.1 := by
-    simp [E, MeasurableEquiv.prodCongr]
-  have hE_snd_fst (w : Ω × (Bool → Measure X)) : (E w).2.1 = w.2 true := by
-    simp [E, e, MeasurableEquiv.prodCongr, boolArrowTrueFalseEquivProd_fst]
-  have hE_snd_snd (w : Ω × (Bool → Measure X)) : (E w).2.2 = w.2 false := by
-    simp [E, e, MeasurableEquiv.prodCongr, boolArrowTrueFalseEquivProd_snd]
+  have hE_fst (w : Ω × (Bool → Measure X)) : (E w).1 = w.1 := by simp [E]
+  have hE_snd_fst (w : Ω × (Bool → Measure X)) : (E w).2.1 = w.2 true := by simp [E, e]
+  have hE_snd_snd (w : Ω × (Bool → Measure X)) : (E w).2.2 = w.2 false := by simp [E, e]
   -- Push the `Bool`-indexed thinning kernel forward to `Measure X × Measure X` via `e`.
   have hη : IsMarkovKernel (η₀.map e) := Kernel.IsMarkovKernel.map η₀ e.measurable
   have hmap : P ⊗ₘ (η₀.map e).comap N hN.measurable =
       (P ⊗ₘ η₀.comap N hN.measurable).map E := by
-    rw [Kernel.comap_map_comm η₀ hN.measurable e.measurable, Measure.compProd_map e.measurable]
-    rfl
+    simp only [E, MeasurableEquiv.coe_prodCongr, MeasurableEquiv.coe_refl,
+      Measure.compProd_comap_map P η₀ hN.measurable e.measurable]
   refine ⟨η₀.map e, hη, ?_, ?_, ?_, ?_⟩
   -- Transfer the `true` and `false` Poisson laws, independence, and almost-sure sum along `E`.
   · refine (hP true).of_identDistrib measurable_snd.fst

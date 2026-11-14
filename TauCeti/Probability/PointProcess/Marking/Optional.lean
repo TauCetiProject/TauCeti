@@ -14,6 +14,7 @@ public import TauCeti.Probability.RandomMeasure.Superposition
 public import TauCeti.MeasureTheory.MeasurableSpace.Option
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import TauCeti.MeasureTheory.Integral.Lebesgue.ExpNeg
 import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 import TauCeti.Probability.RandomMeasure.AeEq
 
@@ -262,18 +263,16 @@ theorem lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral {ι : Type*} [
       (ENNReal.expNeg (∫⁻ a,
         (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
         ∂Measure.sum (fun i => (x i).elim 0 Measure.dirac)) : ℝ≥0∞) := by
-  let g : X → ℝ≥0∞ := fun a =>
-    (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
-  have hg : Measurable g := by fun_prop
-  have hle (a : X) : ∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a ≤ 1 :=
-    lintegral_le_const (ae_of_all _ fun _ => ENNReal.coe_le_one_iff.mpr (ENNReal.expNeg_le_one _))
   rw [lintegral_expNeg_optionalTupleMarking κ x hf, lintegral_sum_measure, ENNReal.coe_expNeg_tsum]
   refine tprod_congr fun i => ?_
   cases x i with
   | none => simp
   | some a =>
-    simpa only [Option.elim_some, lintegral_dirac' _ hg, g] using
-      (ENNReal.coe_expNeg_toENNReal_neg_log (hle a)).symm
+    simp only [Option.elim_some]
+    rw [lintegral_dirac' a ?_]
+    · exact (ENNReal.coe_expNeg_toENNReal_neg_log
+        (TauCeti.lintegral_coe_expNeg_le_one (μ := κ a) fun e => f (a, e))).symm
+    · fun_prop
 
 /-- Under optional tuple marking, the ground projection on any measurable set almost surely equals
 the counting-measure mass of the present entries. No assumption on the ground measurable space is

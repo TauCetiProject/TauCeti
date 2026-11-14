@@ -19,9 +19,7 @@ construction usable without retaining an arbitrary labeling of the occurrences.
 Using Laplace-functional determinacy on `Kernel.optionalTupleMarking`, both optional and total
 occurrence enumerations enjoy enumeration independence on any measurable ground space, with no
 measurable-singleton, standard Borel, nonemptiness, simplicity, or local-finiteness hypothesis,
-and with gaps (`none`) and infinite multiplicities allowed. In particular,
-`Kernel.optionalTupleMarking_eq_tupleMarking` identifies optional tuple marking with ordinary
-tuple marking restricted to the subtype of present indices.
+and with gaps (`none`) and infinite multiplicities allowed.
 
 ## References
 
@@ -70,27 +68,6 @@ theorem optionalTupleMarking_eq_iff_sum_elim_dirac_eq {ι ι' : Type*} [Countabl
   have heval := congrArg (fun ν : Measure (Measure X) => ν.map (fun μ => μ s)) hground
   simpa only [Measure.map_dirac' (Measure.measurable_coe hs),
     MeasureTheory.dirac_eq_dirac_iff] using heval
-
-/-- Optional tuple marking coincides with ordinary tuple marking restricted to the subtype of
-present indices. No assumption on the ground measurable space is required. -/
-theorem optionalTupleMarking_eq_tupleMarking {ι : Type*} [Countable ι] (x : ι → Option X) :
-    κ.optionalTupleMarking ι x =
-      κ.tupleMarking {i : ι // (x i).isSome} (fun j => (x j.1).get j.2) := by
-  rw [← optionalTupleMarking_some]
-  refine κ.optionalTupleMarking_eq_of_sum_elim_dirac_eq ?_
-  ext s hs
-  simp only [Measure.sum_apply _ hs, Option.elim_some]
-  let f : ι → ℝ≥0∞ := fun i => ((x i).elim 0 Measure.dirac) s
-  have hsub : (∑' j : {i : ι // (x i).isSome}, Measure.dirac ((x j.1).get j.2) s) =
-      ∑' j : ({i : ι | (x i).isSome = true} : Set ι), f j.1 :=
-    tsum_congr fun j => by
-      dsimp only [f]
-      conv_rhs => rw [← Option.some_get j.2]
-      rw [Option.elim_some]
-  symm
-  rw [hsub, tsum_subtype {i : ι | (x i).isSome = true} f]
-  refine tsum_congr fun i => ?_
-  cases hx : x i <;> simp [f, hx]
 
 /-- Independently marking two enumerations of the same counting measure gives the same law,
 even when the enumerations use different countable index types. No assumption on the ground

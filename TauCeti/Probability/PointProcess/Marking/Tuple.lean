@@ -47,16 +47,7 @@ variable {X E : Type*} [MeasurableSpace X] [MeasurableSpace E]
 /-- The law of independently marking each occurrence of a countable tuple.
 Equal ground locations still receive independent marks. -/
 def tupleMarking (ι : Type*) [Countable ι] : Kernel (ι → X) (Measure (X × E)) :=
-  (κ.optionalTupleMarking ι).comap (fun (x : ι → X) i => some (x i))
-    (Measurable.of_eval fun i => Option.measurable_some.comp (measurable_pi_apply i))
-
-/-- Kernel-level characterization of `Kernel.tupleMarking` as the pullback of
-`Kernel.optionalTupleMarking` along `fun x i => some (x i)`. -/
-theorem tupleMarking_def (ι : Type*) [Countable ι] :
-    κ.tupleMarking ι =
-      (κ.optionalTupleMarking ι).comap (fun (x : ι → X) i => some (x i))
-        (Measurable.of_eval fun i => Option.measurable_some.comp (measurable_pi_apply i)) :=
-  (rfl)
+  (κ.optionalTupleMarking ι).comap (fun x i => some (x i)) (by fun_prop)
 
 /-- Marking a tuple with no absent entries agrees with ordinary tuple marking. -/
 @[simp]
@@ -122,17 +113,6 @@ theorem lintegral_expNeg_tupleMarking {ι : Type*} [Countable ι] (x : ι → X)
   simpa only [optionalTupleMarking_some, Option.elim_some] using
     lintegral_expNeg_optionalTupleMarking κ (fun i => some (x i)) hf
 
-/-- Exponential-integral form of the Laplace functional of tuple marking, expressed as an integral
-against the ground counting measure of the tuple. -/
-theorem lintegral_expNeg_tupleMarking_eq_expNeg_lintegral {ι : Type*} [Countable ι] (x : ι → X)
-    {f : X × E → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ μ, (ENNReal.expNeg (∫⁻ p, f p ∂μ) : ℝ≥0∞) ∂κ.tupleMarking ι x =
-      (ENNReal.expNeg (∫⁻ a,
-        (-ENNReal.log (∫⁻ e, (ENNReal.expNeg (f (a, e)) : ℝ≥0∞) ∂κ a)).toENNReal
-        ∂Measure.sum (fun i => Measure.dirac (x i))) : ℝ≥0∞) := by
-  simpa only [optionalTupleMarking_some, Option.elim_some] using
-    lintegral_expNeg_optionalTupleMarking_eq_expNeg_lintegral κ (fun i => some (x i)) hf
-
 /-- Deterministic marks give a deterministic marked counting measure, for finite
 or infinite tuples and with multiplicities retained. -/
 @[simp]
@@ -149,42 +129,5 @@ theorem tupleMarking_of_isEmpty {ι : Type*} [Countable ι] [IsEmpty ι] (x : ι
     κ.tupleMarking ι x = Measure.dirac 0 := by
   simpa only [optionalTupleMarking_some] using
     optionalTupleMarking_of_isEmpty κ (fun i => some (x i))
-
-/-- Under tuple marking, the ground projection on any measurable set almost surely equals the
-counting-measure mass of the tuple. No assumption on the ground measurable space is required. -/
-theorem ae_map_fst_apply_tupleMarking {ι : Type*} [Countable ι] (x : ι → X)
-    {A : Set X} (hA : MeasurableSet A) :
-    ∀ᵐ μ ∂κ.tupleMarking ι x,
-      μ.map Prod.fst A = (Measure.sum fun i => Measure.dirac (x i)) A := by
-  simpa only [optionalTupleMarking_some, Option.elim_some] using
-    ae_map_fst_apply_optionalTupleMarking κ (fun i => some (x i)) hA
-
-/-- Setwise ground-projection recovery for tuple marking of an arbitrary random measure: on any
-fixed measurable set `A`, projecting the marked realization back to `X` almost surely recovers
-`N z.1 A`. -/
-theorem ae_map_fst_apply_compProd_tupleMarking {Ω ι : Type*} [MeasurableSpace Ω] [Countable ι]
-    {P : Measure Ω} {N : Ω → Measure X}
-    {e : Ω → ι → X} (he : Measurable e)
-    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => Measure.dirac (e ω i)))
-    {A : Set X} (hA : MeasurableSet A) :
-    ∀ᵐ z ∂(P ⊗ₘ (κ.tupleMarking ι).comap e he), z.2.map Prod.fst A = N z.1 A := by
-  rw [tupleMarking_def, ← Kernel.comap_comp_right]
-  exact κ.ae_map_fst_apply_compProd_optionalTupleMarking _
-    (by simpa only [Function.comp_apply, Option.elim_some] using hae) hA
-
-/-- Measure-level ground-projection recovery for tuple marking on a countably generated ground
-space: if `N` is almost surely finite on each piece of a countable measurable cover of `X`,
-projecting the marked realization onto the first coordinate recovers `N z.1` almost surely. -/
-theorem ae_map_fst_compProd_tupleMarking [MeasurableSpace.CountablyGenerated X]
-    {Ω ι ι' : Type*} [MeasurableSpace Ω] [Countable ι] [Countable ι']
-    {P : Measure Ω} {N : Ω → Measure X}
-    {e : Ω → ι → X} (he : Measurable e)
-    (hae : ∀ᵐ ω ∂P, N ω = Measure.sum (fun i => Measure.dirac (e ω i)))
-    {s : ι' → Set X} (hs : ∀ j, MeasurableSet (s j)) (hcover : ⋃ j, s j = Set.univ)
-    (hfin : ∀ j, ∀ᵐ ω ∂P, N ω (s j) ≠ ∞) :
-    ∀ᵐ z ∂(P ⊗ₘ (κ.tupleMarking ι).comap e he), z.2.map Prod.fst = N z.1 := by
-  rw [tupleMarking_def, ← Kernel.comap_comp_right]
-  exact κ.ae_map_fst_compProd_optionalTupleMarking _
-    (by simpa only [Function.comp_apply, Option.elim_some] using hae) hs hcover hfin
 
 end ProbabilityTheory.Kernel

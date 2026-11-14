@@ -53,29 +53,33 @@ theorem IsPoissonRandomMeasure.ae_sigmaFinite (h : IsPoissonRandomMeasure P N Λ
   filter_upwards [ae_all_iff.2 hfinite] with ω hω
   exact ⟨⟨⟨spanningSets Λ, fun _ => mem_univ _, hω, iUnion_spanningSets Λ⟩⟩⟩
 
+/-- On a countably generated measurable space, restricting a Poisson random measure to a
+finite-intensity measurable set gives almost surely integer-valued realizations, without any
+global σ-finiteness assumption on the intensity. -/
+theorem IsPoissonRandomMeasure.ae_isIntegerValued_restrict [MeasurableSpace.CountablyGenerated X]
+    (h : IsPoissonRandomMeasure P N Λ) {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, ((N ω).restrict A).IsIntegerValued := by
+  classical
+  obtain ⟨C, hcount, hpi, huniv, hgen⟩ :=
+    MeasurableSpace.exists_countable_isPiSystem_generateFrom (α := X)
+  have hmeas : ∀ B ∈ C, MeasurableSet B := fun B hB => by
+    rw [hgen]
+    exact MeasurableSpace.measurableSet_generateFrom hB
+  have hcounts : ∀ B ∈ C, ∀ᵐ ω ∂P, ∃ k : ℕ, N ω (B ∩ A) = k := fun B hB =>
+    h.ae_exists_eq_natCast ((hmeas B hB).inter hA)
+      ((measure_mono inter_subset_right).trans_lt hfin)
+  filter_upwards [(ae_ball_iff hcount).2 hcounts] with ω hω
+  refine Measure.isIntegerValued_of_isPiSystem hgen hpi (fun B hB => ?_) ?_
+  · simpa only [Measure.restrict_apply (hmeas B hB)] using hω B hB
+  · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using hω univ huniv
+
 /-- On a countably generated measurable space, a Poisson random measure with sigma-finite
 intensity is almost surely integer-valued, simultaneously on all measurable sets. -/
 theorem IsPoissonRandomMeasure.ae_isIntegerValued (h : IsPoissonRandomMeasure P N Λ)
     [MeasurableSpace.CountablyGenerated X] [SigmaFinite Λ] :
     ∀ᵐ ω ∂P, (N ω).IsIntegerValued := by
-  classical
-  obtain ⟨C, hcount, hpi, huniv, hgen⟩ :=
-    MeasurableSpace.exists_countable_isPiSystem_generateFrom (α := X)
-  have hmeas : ∀ A ∈ C, MeasurableSet A := fun A hA => by
-    rw [hgen]
-    exact MeasurableSpace.measurableSet_generateFrom hA
-  -- Restrict to finite-intensity pieces before taking the countable intersection of
-  -- full-measure events. Integrality on a generating π-system then controls all sets.
-  have hpiece (n : ℕ) : ∀ᵐ ω ∂P, ((N ω).restrict (spanningSets Λ n)).IsIntegerValued := by
-    have hcounts : ∀ A ∈ C, ∀ᵐ ω ∂P, ∃ k : ℕ, N ω (A ∩ spanningSets Λ n) = k := by
-      intro A hA
-      exact h.ae_exists_eq_natCast ((hmeas A hA).inter (measurableSet_spanningSets Λ n))
-        ((measure_mono inter_subset_right).trans_lt (measure_spanningSets_lt_top Λ n))
-    filter_upwards [(ae_ball_iff hcount).2 hcounts] with ω hω
-    apply Measure.isIntegerValued_of_isPiSystem hgen hpi
-    · intro A hA
-      simpa only [Measure.restrict_apply (hmeas A hA)] using hω A hA
-    · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using hω univ huniv
+  have hpiece (n : ℕ) :=
+    h.ae_isIntegerValued_restrict (measurableSet_spanningSets Λ n) (measure_spanningSets_lt_top Λ n)
   filter_upwards [ae_all_iff.2 hpiece] with ω hω
   exact Measure.isIntegerValued_of_restrict (iUnion_spanningSets Λ) hω
 

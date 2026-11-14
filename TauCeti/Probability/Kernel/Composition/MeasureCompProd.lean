@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
+import Mathlib.Probability.Kernel.Composition.Lemmas
 
 /-!
 # Operations on the base of a composition-product
@@ -26,6 +27,8 @@ kernel masses of the vertical sections.
 
 * `MeasureTheory.Measure.map_prodMap_compProd_comap` — for `f : W → Y` measurable and
   `κ : Kernel Y Z`, `(μ ⊗ₘ κ.comap f hf).map (Prod.map f id) = μ.map f ⊗ₘ κ`.
+* `MeasureTheory.Measure.compProd_comap_map` — pushing a kernel forward along `g` before pulling
+  its input back along `f` pushes the composition-product forward along `Prod.map id g`.
 * `MeasureTheory.Measure.compProd_restrict_left` — restricting the base to `s` restricts the
   composition-product to `s ×ˢ univ`.
 * `MeasureTheory.Measure.map_fst_restrict_compProd_eq_withDensity` — restricting `μ ⊗ₘ κ` to `A`
@@ -74,6 +77,18 @@ theorem map_prodMap_compProd_comap (μ : Measure W) [SFinite μ] (κ : Kernel Y 
   rw [map_apply hmap hs, compProd_apply (hs.preimage hmap), compProd_apply hs,
     lintegral_map (Kernel.measurable_kernel_prodMk_left hs) hf]
   simp [Set.preimage_preimage]
+
+/-- Pushing a kernel forward along `g` before pulling its input back along `f` pushes the second
+factor of the composition-product forward along `Prod.map id g`, with no s-finiteness assumption on
+the base measure `μ`. -/
+theorem compProd_comap_map {T : Type*} [MeasurableSpace T] (μ : Measure W)
+    (κ : Kernel Y Z) [IsSFiniteKernel κ] {f : W → Y} (hf : Measurable f)
+    {g : Z → T} (hg : Measurable g) :
+    μ ⊗ₘ (κ.map g).comap f hf = (μ ⊗ₘ κ.comap f hf).map (Prod.map id g) := by
+  by_cases hμ : SFinite μ
+  swap
+  · simp [compProd_of_not_sfinite _ _ hμ]
+  rw [Kernel.comap_map_comm κ hf hg, compProd_map hg]
 
 /-- Restricting the base of a composition-product to `s` restricts the product to `s ×ˢ univ`.
 This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_restrict_left`. -/

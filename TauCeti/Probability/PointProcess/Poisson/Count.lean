@@ -178,11 +178,8 @@ theorem ae_forall_nat_count_finsetSum_eq (I : Finset ι) {M₀ : Ω → Measure 
     (hsum : ∀ᵐ ω ∂P, ∑ i ∈ I, N i ω = M₀ ω) :
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ = ⌊(M₀ ω (Ioc 0 t)).toNNReal⌋₊ := by
-  classical
   refine ae_forall_natFloor_toNNReal_Ioc_finsetSum_eq I
-    (fun i hi n ↦ by
-      have : IsFiniteMeasure ((Λs i).restrict (Ioc 0 (n : ℝ≥0))) := ⟨by simpa using hΛ i hi n⟩
-      exact ((h i hi).restrict measurableSet_Ioc).ae_isIntegerValued)
+    (fun i hi n ↦ (h i hi).ae_isIntegerValued_restrict measurableSet_Ioc (hΛ i hi n))
     (fun n ↦ ?_) hsum
   have hfin : ∀ᵐ ω ∂P, ∀ i : I, N i.1 ω (Ioc 0 (n : ℝ≥0)) < ∞ :=
     ae_all_iff.2 fun i ↦ (h i.1 i.2).ae_lt_top measurableSet_Ioc (hΛ i.1 i.2 n)
@@ -203,14 +200,14 @@ theorem IsPoissonRandomMeasure.ae_forall_nat_count_add_eq
     ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
       ⌊(M₁ ω (Ioc 0 t)).toNNReal⌋₊ + ⌊(M₂ ω (Ioc 0 t)).toNNReal⌋₊ =
         ⌊(M₀ ω (Ioc 0 t)).toNNReal⌋₊ := by
-  let N : Bool → Ω → Measure ℝ≥0 := fun b ↦ cond b M₁ M₂
-  let Λs : Bool → Measure ℝ≥0 := fun b ↦ cond b Λ₁ Λ₂
-  have h := ae_forall_nat_count_finsetSum_eq (Finset.univ : Finset Bool)
-    (N := N) (M₀ := M₀) (Λs := Λs)
-    (fun b _ ↦ by cases b <;> assumption)
-    (fun b _ ↦ by cases b <;> assumption)
-    (by simpa only [N, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using hadd)
-  simpa only [N, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using h
+  refine ae_forall_natFloor_toNNReal_Ioc_add_eq
+    (fun n ↦ h₁.ae_isIntegerValued_restrict measurableSet_Ioc (hΛ₁ n))
+    (fun n ↦ h₂.ae_isIntegerValued_restrict measurableSet_Ioc (hΛ₂ n))
+    (fun n ↦ ?_) hadd
+  filter_upwards [h₁.ae_lt_top measurableSet_Ioc (hΛ₁ n),
+    h₂.ae_lt_top measurableSet_Ioc (hΛ₂ n), hadd] with ω hω₁ hω₂ hωadd
+  rw [← hωadd, add_apply]
+  exact ENNReal.add_lt_top.2 ⟨hω₁, hω₂⟩
 
 /-- Natural counts commute with finite superposition simultaneously at every time, almost
 surely. Only the selected intensities need be locally finite; independence is unnecessary. -/
