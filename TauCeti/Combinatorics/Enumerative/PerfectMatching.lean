@@ -406,6 +406,19 @@ transposition of `D.val a` with `b`. The arcs at `a` and `b` are distinct when `
 def reconnect (D : PerfectMatching α) (a b : α) : PerfectMatching α :=
   congr (Equiv.swap (D.val a) b) D
 
+/-- Reconnecting two arcs is transporting the perfect matching along `Equiv.swap (D.val a) b`. -/
+theorem reconnect_def (D : PerfectMatching α) (a b : α) :
+    D.reconnect a b = congr (Equiv.swap (D.val a) b) D :=
+  (rfl)
+
+/-- Transporting a perfect matching along an equivalence commutes with reconnecting two arcs. -/
+@[simp]
+theorem congr_reconnect [DecidableEq β] (e : α ≃ β) (D : PerfectMatching α) (a b : α) :
+    congr e (D.reconnect a b) = (congr e D).reconnect (e a) (e b) := by
+  have he : (Equiv.swap (D.val a) b).trans e = e.trans (Equiv.swap (e (D.val a)) (e b)) :=
+    Equiv.ext (e.injective.map_swap (D.val a) b)
+  rw [reconnect_def, reconnect_def, congr_val_apply_apply, congr_trans, congr_trans, he]
+
 /-- The involution underlying a reconnected matching is the old one conjugated by the
 transposition of `D.val a` with `b`. -/
 theorem reconnect_val (D : PerfectMatching α) (a b : α) :

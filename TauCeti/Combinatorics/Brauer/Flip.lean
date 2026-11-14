@@ -57,8 +57,9 @@ graph (`TauCeti.middleAdj_flip`) with the same interior vertices
 * `TauCeti.BrauerDiagram.isCap_flip` and `TauCeti.BrauerDiagram.isCup_flip`: reflection exchanges
   caps and cups, with `TauCeti.BrauerDiagram.bottomCap_flip` and
   `TauCeti.BrauerDiagram.topCup_flip` the same statements on the boundary `Finset`s.
-* `TauCeti.BrauerDiagram.flip_permToBrauer`: reflection inverts a permutation diagram, and
-  `TauCeti.BrauerDiagram.flip_relabel`: it exchanges the two renamings of a relabelling.
+* `TauCeti.BrauerDiagram.flip_permToBrauer`: reflection inverts a permutation diagram,
+  `TauCeti.BrauerDiagram.flip_relabel`: it exchanges the two renamings of a relabelling, and
+  `TauCeti.BrauerDiagram.flip_reconnect`: it commutes with reconnecting two arcs.
 * `TauCeti.flip_composeDiagram`: **reflection reverses stacking.**
 * `TauCeti.middleAdj_flip`, `TauCeti.reflTransGen_middleAdj_flip` and
   `TauCeti.isMiddleVertex_flip`: the two stacks have the same middle graph, with the same
@@ -86,6 +87,11 @@ def flip (D : BrauerDiagram k) : BrauerDiagram k :=
   PerfectMatching.congr (Equiv.sumComm (Fin k) (Fin k)) D
 
 variable (D : BrauerDiagram k)
+
+/-- Reflecting a Brauer diagram is transporting its underlying perfect matching along
+`Equiv.sumComm`. -/
+theorem flip_def : D.flip = PerfectMatching.congr (Equiv.sumComm (Fin k) (Fin k)) D :=
+  (rfl)
 
 /-- The arcs of the reflected diagram are the arcs of the diagram with both endpoints
 reflected. -/
@@ -187,6 +193,13 @@ theorem flip_relabel (σ τ : Equiv.Perm (Fin k)) :
     Equiv.ext fun x => by rcases x with i | j <;> rfl
   rw [flip, relabel_def, relabel_def, flip, PerfectMatching.congr_trans,
     PerfectMatching.congr_trans, he]
+
+/-- Reconnecting two arcs commutes with reflecting a diagram upside down, after reflecting the two
+chosen endpoints. -/
+@[simp]
+theorem flip_reconnect (x y : Fin k ⊕ Fin k) :
+    flip (D.reconnect x y) = D.flip.reconnect x.swap y.swap := by
+  simp only [flip_def, PerfectMatching.congr_reconnect, Equiv.sumComm_apply]
 
 end BrauerDiagram
 
