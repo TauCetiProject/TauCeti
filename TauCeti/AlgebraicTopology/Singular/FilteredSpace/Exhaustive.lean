@@ -94,12 +94,12 @@ theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
     -- Transport the preimage `y` from degree `n` to degree `m = -n` of the extended complexes.
     obtain ⟨z, rfl⟩ := (mem_range_extendMap_f_iff _
       (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M) hn x).2 ⟨y, hy⟩
-    refine ⟨q, (singularChainFiltrationIso M X q).inv.f m z, ?_⟩
-    rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
-      ← singularChainFiltrationIso_hom_comp_singularChainFiltrationι, Iso.inv_hom_id_assoc,
-      singularChainFiltrationι_def]
+    refine ⟨q, (subspaceChainFiltrationIso
+      ((AlgebraicTopology.singularChainComplexFunctor _).obj M) X q).inv.f m |>.hom z, ?_⟩
+    have e := (Iso.inv_comp_eq _).2 (subspaceChainFiltrationIso_hom_comp_subspaceChainFiltrationι
+      ((AlgebraicTopology.singularChainComplexFunctor _).obj M) X q).symm
     -- The two sides differ only in the coercion of a linear map to a function.
-    rfl
+    exact congrArg (fun g ↦ (g.f m).hom z) (e.trans (subspaceChainFiltrationι_def _ X q))
   · push Not at hm
     refine ⟨0, ?_⟩
     rw [(ModuleCat.isZero_iff_subsingleton.1 (isZero_extend_X _ _ m hm)).elim x 0]

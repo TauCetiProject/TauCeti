@@ -528,6 +528,12 @@ def singularRelπ (P : TopPair.{u}) :
     (singularChains k).obj P.fst ⟶ P.singularChainComplex (ModuleCat.of k k) :=
   P.singularChainComplexπ _
 
+/-- The quotient map `TopPair.singularRelπ` is the quotient map `TopPair.singularChainComplexπ`
+onto the relative singular chains. -/
+lemma singularRelπ_eq (P : TopPair.{u}) :
+    singularRelπ k P = P.singularChainComplexπ (ModuleCat.of k k) := by
+  rw [singularRelπ]
+
 instance (P : TopPair.{u}) : Epi (singularRelπ k P) :=
   epi_of_isColimit_cofork (P.isColimitCokernelCoforkSingularChainComplex _)
 
