@@ -39,9 +39,8 @@ open scoped MatrixGroups
 
 namespace TauCeti.EisensteinSeries
 
-variable {N : ℕ} [NeZero N]
+variable {N : ℕ}
 
-omit [NeZero N] in
 /-- At squarefree level, the corrected weight-two Eisenstein series and the cusp forms are
 complementary in the full modular-form space. This includes `N = 1`, when the Eisenstein span
 and the entire weight-two space are both zero. -/
